@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+main.js
+main.js.map
+
+# Coverage
+coverage/
+
+# Test output
+playwright-report/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug/logs
+*.log
+
+# Local config (user-specific)
+data.json
+data/

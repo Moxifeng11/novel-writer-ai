@@ -1,0 +1,79 @@
+/**
+ * cowrite-mappers.ts - 协同写作纯映射函数（C3 抽离）
+ *
+ * 从 CoWritingView 抽出的无状态映射/标签函数：联想类型到建议、方向/风格
+ * 标签、空指标占位。这些函数不依赖视图实例，便于复用与单测。
+ */
+
+import { SuggestionRecord, SuggestionDirection, PlotCompletionMetrics } from '../../shared/types';
+import { AssociationSuggestion } from '../../shared/co-writer-types';
+
+export function associationTypeToDirection(type: string): SuggestionDirection {
+  if (type === "entity-action")
+    return "action";
+  if (type === "escalate")
+    return "conflict";
+  if (type === "foreshadow")
+    return "foreshadow";
+  if (type === "dialogue")
+    return "dialogue";
+  return "emotion";
+}
+
+export function getAssociationLabel(type: string): string {
+  const labels: Record<string, string> = {
+    "entity-action": "\u{1F3AD} \u89D2\u8272\u52A8\u4F5C",
+    escalate: "\u26A1 \u51B2\u7A81\u5347\u7EA7",
+    foreshadow: "\u{1F52E} \u4F0F\u7B14\u8054\u60F3",
+    emotion: "\u{1FAC0} \u60C5\u7EEA\u5EF6\u5C55",
+    dialogue: "\u{1F4AC} \u5BF9\u8BDD\u8865\u5168"
+  };
+  return labels[type] || "\u2728 \u8054\u60F3";
+}
+
+export function associationToSuggestion(association: AssociationSuggestion, index: number): SuggestionRecord {
+  return {
+    id: `assoc_${Date.now()}_${index}`,
+    text: association.text,
+    direction: associationTypeToDirection(association.type),
+    style: "creative",
+    temperature: 0.7,
+    reasoning: `\u8054\u60F3\u8F93\u5165\uFF1A${getAssociationLabel(association.type)}\uFF0C\u7F6E\u4FE1\u5EA6 ${Math.round((association.confidence || 0) * 100)}%`,
+    preview: association.preview
+  };
+}
+
+export function getDirectionLabel(direction: string): string {
+  const labels: Record<string, string> = {
+    action: "\u2694\uFE0F \u52A8\u4F5C",
+    emotion: "\u{1FAC0} \u60C5\u7EEA",
+    dialogue: "\u{1F4AC} \u5BF9\u8BDD",
+    description: "\u{1F5BC}\uFE0F \u73AF\u5883",
+    foreshadow: "\u{1F52E} \u4F0F\u7B14",
+    conflict: "\u26A1 \u51B2\u7A81",
+    resolution: "\u{1F3C1} \u6536\u675F",
+    surprise: "\u{1F4A5} \u8F6C\u6298"
+  };
+  return labels[direction] || direction;
+}
+
+export function getStyleLabel(style: string): string {
+  if (style === "creative")
+    return "\u521B\u610F";
+  if (style === "conservative")
+    return "\u7A33\u5065";
+  return "\u9ED8\u8BA4";
+}
+
+export function emptyMetrics(): PlotCompletionMetrics {
+  return {
+    sceneObjectivesMet: 0,
+    characterArcsAdvanced: 0,
+    foreshadowingSeeded: 0,
+    emotionalArcProgress: 0,
+    overallCompletion: 0,
+    suggestionAdvice: "\u5C1A\u672A\u8BC4\u4F30\u3002\u63A5\u53D7\u4E00\u53E5\u5EFA\u8BAE\u540E\u4F1A\u81EA\u52A8\u66F4\u65B0\u3002",
+    nextDirectionHints: ["action", "emotion", "dialogue"],
+    evaluatedAt: Date.now()
+  };
+}

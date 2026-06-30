@@ -1,0 +1,283 @@
+import { App, Notice, TFile } from 'obsidian';
+import { pjVolumeOutlineDir, pjVolumeOutlineFile } from '../shared/paths';
+import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
+
+/**
+ * 在所有顶层工作台/Modal 容器上加 nw-scope class，
+ * 使 styles.css 中以 .nw-scope 为作用域前缀的 39 条规则生效。
+ *
+ * 设计：ItemView 挂在 containerEl.parentElement（view-content 的父级）；
+ * Modal 挂在 this.modalEl 上。
+ *
+ * @param el Obsidian ItemView 或 Modal 的根元素引用
+ */
+export function applyNwScope(el: { containerEl?: HTMLElement; modalEl?: HTMLElement }): void {
+    let target: HTMLElement | null = null;
+    if (el.containerEl?.parentElement) {
+        target = el.containerEl.parentElement;
+    } else if (el.modalEl) {
+        target = el.modalEl;
+    }
+    if (target && !target.classList.contains('nw-scope')) {
+        target.classList.add('nw-scope');
+    }
+}
+
+let currentNotice: Notice | null = null;
+
+export function showProgress(message: string): void {
+    if (currentNotice) {
+        currentNotice.setMessage(message);
+    } else {
+        currentNotice = new Notice(message, 0);
+    }
+}
+
+export function hideProgress(): void {
+    if (currentNotice) {
+        currentNotice.hide();
+        currentNotice = null;
+    }
+}
+
+export function showSuccess(message: string, duration: number = 3000): void {
+    hideProgress();
+    new Notice(`✅ ${message}`, duration);
+}
+
+export function showError(message: string, duration: number = 5000): void {
+    hideProgress();
+    new Notice(`❌ ${message}`, duration);
+}
+
+export function showWarning(message: string, duration: number = 5000): void {
+    hideProgress();
+    new Notice(`⚠️ ${message}`, duration);
+}
+
+export async function mkdirp(app: App, dirPath: string, fs?: FileSystemPort): Promise<void> {
+    const fileSystem = fs || new ObsidianFileSystem(app);
+    const vaultMeta = new ObsidianVaultMeta(app);
+    if (vaultMeta.getAbstractFileByPath(dirPath)) return;
+    await fileSystem.mkdir(dirPath);
+}
+
+export async function readTmpl(app: App, path: string, fs?: FileSystemPort): Promise<string | null> {
+    try {
+        const fileSystem = fs || new ObsidianFileSystem(app);
+        return await fileSystem.read(path);
+    } catch (e) {
+        console.warn('readTmpl: 读取模板失败:', path, e);
+        return null;
+    }
+}
+
+export function stripFrontmatter(t: string): string {
+    return t.replace(/^---[\s\S]*?---\n/, '').trim();
+}
+
+export function extractVolumeFromPath(path: string): string | null {
+    // v4.0：卷目录位于 正文/ 与 步骤结果/ 之下，兼容旧版直挂 03-大纲与章节/ 下的写法
+    const match = path.match(/03-大纲与章节\/(?:正文\/|步骤结果\/)?(第\d+卷)/);
+    return match ? match[1] : null;
+}
+
+export function extractChapterNumber(path: string): number | null {
+    const match = path.match(/第(\d+)章/);
+    return match ? parseInt(match[1]) : null;
+}
+
+export function getNextRowNum(content: string): number {
+    const match = content.match(/\| (\d+) \|/g);
+    if (!match) return 1;
+    const nums = match.map(m => parseInt(m.match(/\| (\d+) \|/)![1]));
+    return Math.max(...nums) + 1;
+}
+
+export function hasTableSeparator(content: string): boolean {
+    return content.includes('|---');
+}
+
+export function appendAfterSeparator(content: string, newRow: string): string {
+    const lines = content.split('\n');
+    let found = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('|---')) {
+            lines.splice(i + 1, 0, newRow);
+            found = true;
+            break;
+        }
+    }
+    
+    return found ? lines.join('\n') : content + '\n' + newRow;
+}
+
+export function getNextRowNumInSection(content: string, section: string): number {
+    let maxNum = 0, inSection = false;
+    for (const l of content.split('\n')) {
+        if (l.includes(section)) { inSection = true; continue; }
+        if (inSection && l.startsWith('#')) break;
+        if (!inSection) continue;
+        if (!l.match(/^\|.*\|/)) continue;
+        const cols = l.split('|').map(s => s.trim()).filter(Boolean);
+        if (cols.length >= 1 && /^\d+$/.test(cols[0])) { 
+            const n = parseInt(cols[0]); 
+            if (n > maxNum) maxNum = n; 
+        }
+    }
+    return maxNum + 1;
+}
+
+export function renumberTable(lines: string[], section: string): void {
+    let inSection = false, num = 1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes(section)) { inSection = true; continue; }
+        if (!inSection) continue;
+        if (lines[i].match(/^\|[- ]+\|/)) continue;
+        if (lines[i].match(/^\|.*\|/)) { 
+            const cols = lines[i].split('|'); 
+            if (cols.length >= 2 && /^\s*\d+\s*$/.test(cols[0].replace(/^\|/, "").trim())) { 
+                cols[0] = "| " + String(num); 
+                lines[i] = cols.join("|"); 
+                num++; 
+            } 
+        }
+        if (lines[i].startsWith("#") && !lines[i].includes(section)) break;
+    }
+}
+
+export function moveForeshadowToRevealed(content: string, name: string, revealChapter: string): string | null {
+    const lines = content.split('\n');
+    let foundRow = -1, foundCols: string[] | null = null, revealedStart = -1;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        if (l.includes('已回收伏笔')) revealedStart = i;
+        if (revealedStart === -1 && l.match(/^\|.*\|/)) {
+            const cols = l.split('|').map(s => s.trim()).filter(Boolean);
+            if (cols.length >= 8 && cols[1] === name) { 
+                foundRow = i; 
+                foundCols = cols; 
+            }
+        }
+    }
+    
+    if (foundRow === -1 || !foundCols) return null;
+    
+    lines.splice(foundRow, 1);
+    
+    let sepIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('已回收伏笔')) { 
+            for (let j = i + 1; j < lines.length; j++) { 
+                if (lines[j].match(/^\|[- ]+\|/)) { 
+                    sepIdx = j; 
+                    break; 
+                } 
+            } 
+            break; 
+        }
+    }
+    
+    if (sepIdx !== -1) {
+        const newRowNum = getNextRowNumInSection(lines.join('\n'), '已回收伏笔');
+        lines.splice(sepIdx + 1, 0, `| ${newRowNum} | ${foundCols[1]} | ${foundCols[2] || '中'} | ${foundCols[3] || ''} | ${foundCols[5] || ''} | ${foundCols[6] || ''} | ${revealChapter} | 正文揭示 |`);
+    }
+    
+    renumberTable(lines, '未回收伏笔');
+    
+    return lines.join('\n');
+}
+
+// ============================================================
+// 分卷大纲（v4.0 按卷归档）读写工具
+// ============================================================
+
+/** 写入文件：存在则覆盖内容，否则新建 */
+async function writeOrReplaceFile(app: App, path: string, content: string, fs?: FileSystemPort): Promise<void> {
+    const fileSystem = fs || new ObsidianFileSystem(app);
+    await fileSystem.write(path, content);
+}
+
+/**
+ * v4.0：将整本大纲（含 `## 全书总览` + `## 分卷大纲` + 多个 `### 第N卷`）
+ * 按卷拆分写入 `分卷大纲/第N卷_分卷大纲.md`。
+ *
+ * 全书总览 / 前言块归入第 1 卷文件头部，使读取第 1 卷即可命中
+ * 总字数目标 / 分卷数 等全局字段（与 getVolumeOutlinePath 语义保持一致）。
+ *
+ * @returns 实际写入的卷文件数量
+ */
+export async function writeVolumeOutlines(app: App, project: string, outlineBody: string, fs?: FileSystemPort): Promise<number> {
+    const fileSystem = fs || new ObsidianFileSystem(app);
+    const dir = pjVolumeOutlineDir(project);
+    await mkdirp(app, dir, fileSystem);
+
+    const fm = '---\ntags: [大纲]\n---\n\n';
+    const title = '# 全书规划 & 分卷大纲\n\n';
+
+    // 定位每个 ### 第N卷 段落
+    const headerRe = /^###\s+第(\d+)卷.*$/gm;
+    const matches: Array<{ volN: number; index: number }> = [];
+    let m: RegExpExecArray | null;
+    while ((m = headerRe.exec(outlineBody)) !== null) {
+        matches.push({ volN: parseInt(m[1]), index: m.index });
+    }
+
+    // 无法识别分卷时整体写入第1卷，保证内容不丢失
+    if (matches.length === 0) {
+        const content = `${fm}${title}${outlineBody.trim()}\n`;
+        await writeOrReplaceFile(app, pjVolumeOutlineFile(project, 1), content);
+        return 1;
+    }
+
+    const preamble = outlineBody.slice(0, matches[0].index).trim();
+    let written = 0;
+    for (let i = 0; i < matches.length; i++) {
+        const { volN, index } = matches[i];
+        const end = i + 1 < matches.length ? matches[i + 1].index : outlineBody.length;
+        const section = outlineBody.slice(index, end).trim();
+        // 第1卷文件头部冠以全书总览 / 前言块
+        const head = volN === matches[0].volN && preamble ? `${preamble}\n\n` : '';
+        const content = `${fm}${title}${head}${section}\n`;
+        await writeOrReplaceFile(app, pjVolumeOutlineFile(project, volN), content);
+        written++;
+    }
+    return written;
+}
+
+/**
+ * v4.0：合并读取 `分卷大纲/*_分卷大纲.md`（按卷号升序），
+ * 向后兼容旧版单文件 `03-大纲与章节/分卷大纲.md`。
+ *
+ * @returns 合并后的大纲文本；若两者皆缺失返回空串
+ */
+export async function readMergedVolumeOutline(app: App, project: string, fs?: FileSystemPort, vaultMeta?: VaultMetaPort): Promise<string> {
+    const fileSystem = fs || new ObsidianFileSystem(app);
+    const meta = vaultMeta || new ObsidianVaultMeta(app);
+    const parts: string[] = [];
+
+    // 旧版单文件兜底（v3.x）
+    const legacyPath = `${project}/03-大纲与章节/分卷大纲.md`;
+    const legacy = meta.getAbstractFileByPath(legacyPath);
+    if (legacy instanceof TFile) {
+        try { parts.push(await fileSystem.read(legacyPath)); } catch (e) { console.warn('[小说工坊] 读取旧版分卷大纲失败:', e); }
+    }
+
+    // v4.0 按卷归档
+    const dir = pjVolumeOutlineDir(project);
+    const volFiles = meta.getFiles()
+        .filter(f => f.path.startsWith(`${dir}/`) && f.name.endsWith('_分卷大纲.md'))
+        .sort((a, b) => {
+            const na = parseInt(a.name.match(/第(\d+)卷/)?.[1] || '0');
+            const nb = parseInt(b.name.match(/第(\d+)卷/)?.[1] || '0');
+            return na - nb;
+        });
+    for (const f of volFiles) {
+        try { parts.push(await fileSystem.read(f.path)); } catch (e) { console.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }
+    }
+
+    return parts.join('\n\n');
+}

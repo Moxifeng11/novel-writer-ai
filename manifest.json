@@ -1,0 +1,12 @@
+{
+    "id": "novel-writer-ai",
+    "name": "小说工坊 AI",
+    "version": "4.5.1",
+    "minAppVersion": "1.5.0",
+    "description": "全流程AI长篇小说创作系统 — v4.5.1：修复 FullWriterView 多实例、协同写作路径错误、frontmatter 丢失等关键 bug",
+    "author": "南柯一梦",
+    "authorUrl": "https://trae.cn",
+    "fundingUrl": "https://trae.cn",
+    "isDesktopOnly": false,
+    "main": "main.js"
+}

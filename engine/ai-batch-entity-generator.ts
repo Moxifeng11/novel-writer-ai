@@ -1,0 +1,487 @@
+import NovelWriterPlugin, { PROVIDERS } from '../main';
+import {
+    FACTION_FRONTMATTER_KEYS,
+    LOCATION_FRONTMATTER_KEYS,
+    ITEM_FRONTMATTER_KEYS,
+    ENTITY_BODY_SECTIONS,
+} from '../shared/format-constants';
+import { AIApiClient } from './ai-api-client';
+import type { APIResponse, BatchEntityResult } from './ai-engine';
+import {
+    validateFactionOutput,
+    validateLocationOutput,
+    validateItemOutput,
+    type ValidationResult,
+} from '../shared/template-validator';
+
+import type { Notifier } from '../shared/types';
+import { NOOP_NOTIFIER } from '../shared/types';
+import { Notice } from 'obsidian';
+import { NOTICE_ERROR } from '../shared/thresholds';
+export class BatchEntityGenerator {
+    private plugin: NovelWriterPlugin;
+    private notifier: Notifier;
+    private apiClient: AIApiClient;
+
+    constructor(plugin: NovelWriterPlugin, apiClient: AIApiClient, notifier?: Notifier) {
+        this.notifier = notifier || NOOP_NOTIFIER;
+        this.plugin = plugin;
+        this.apiClient = apiClient;
+    }
+
+    async generateFactionsBatch(
+        worldview: string,
+        names: string[],
+        description: string,
+        count: number,
+        customSystemPrompt?: string
+    ): Promise<BatchEntityResult[]> {
+        return this._generateEntitiesBatchInternal(
+            '势力', FACTION_FRONTMATTER_KEYS, '名称、类型、领袖',
+            `---
+tags: [势力]
+entity_status: active
+entity_created_at:
+entity_last_changed_at:
+entity_last_changed_reason:
+名称:
+别称:
+类型:
+地位/排名:
+描述:
+领袖:
+---
+
+# 势力名
+
+## 确定性设定
+- 领袖：
+- 核心成员：
+- 层级体系：
+- 规模：
+- 宗旨：
+- 行事风格：
+- 资源底蕴：
+
+## 不确定性
+- 内部矛盾：
+- 隐藏目的：
+- 潜在变数：
+
+## 与其他元素的互信息
+- [[关联人物]] :
+- [[敌对势力]] :
+- [[关联地点]] :
+
+## 变更记录
+- [章节名] 时间戳 | 变更描述`,
+            worldview, names, description, count, customSystemPrompt
+        );
+    }
+
+    async generateLocationsBatch(
+        worldview: string,
+        names: string[],
+        description: string,
+        count: number,
+        customSystemPrompt?: string
+    ): Promise<BatchEntityResult[]> {
+        return this._generateEntitiesBatchInternal(
+            '地点', LOCATION_FRONTMATTER_KEYS, '名称、类型、地理位置',
+            `---
+tags: [地点]
+名称:
+别称:
+类型:
+描述:
+重要程度:
+地理特征:
+主要居民/势力:
+所在世界/区域:
+---
+
+# 地点名
+
+## 确定性设定
+- 地理特征：
+- 气候：
+- 灵脉/资源：
+- 规模：
+- 主要居民/势力：
+- 文化风俗：
+
+## 不确定性
+- 隐藏秘密：
+- 未探索区域：
+- 潜在危机：
+
+## 与其他元素的互信息
+- [[关联人物]] :
+- [[关联势力]] :
+- [[关联事件]] :
+
+## 变更记录
+- [章节名] 时间戳 | 变更描述`,
+            worldview, names, description, count, customSystemPrompt
+        );
+    }
+
+    async generateItemsBatch(
+        worldview: string,
+        names: string[],
+        description: string,
+        count: number,
+        customSystemPrompt?: string,
+        itemType?: string
+    ): Promise<BatchEntityResult[]> {
+        const typeLabel = itemType || '物品/功法';
+        const typeKey = itemType === '功法' ? '功法' : '物品';
+        return this._generateEntitiesBatchInternal(
+            typeLabel, ITEM_FRONTMATTER_KEYS, '名称、类型、品级',
+            `---
+tags: [${typeKey}]
+entity_status: active
+entity_created_at:
+entity_last_changed_at:
+entity_last_changed_reason:
+名称:
+类型:
+品阶/等级:
+所属/归属:
+描述:
+效果:
+---
+
+# 物品/功法名
+
+## 确定性设定
+- 外观/形态：
+- 特性：
+- 主要用途：
+- 特殊效果：
+
+## 不确定性
+- 隐藏能力：
+- 限制/副作用：
+- 真正来历：
+
+## 与其他元素的互信息
+- [[持有者/修炼者]] :
+- [[关联剧情]] :
+- [[关联物品]] :
+
+## 变更记录
+- [章节名] 时间戳 | 变更描述`,
+            worldview, names, description, count, customSystemPrompt
+        );
+    }
+
+    private async _generateEntitiesBatchInternal(
+        entityType: string,
+        frontmatterKeys: readonly string[],
+        mandatoryFields: string,
+        templateExample: string,
+        worldview: string,
+        names: string[],
+        description: string,
+        count: number,
+        customSystemPrompt?: string
+    ): Promise<BatchEntityResult[]> {
+        const nameList = names?.filter(n => n && n.trim().length > 0) || [];
+        const namedCount = nameList.length;
+        const aiGenerateCount = Math.max(0, count - namedCount);
+
+        if (namedCount === 0 && aiGenerateCount === 0) {
+            return [];
+        }
+
+        const validateFn = this._getValidateFn(entityType);
+
+        const namesPrompt = nameList.length > 0
+            ? `\n【指定${entityType}名称】\n${nameList.map((n, i) => `${i + 1}. ${n}`).join('\n')}\n\n前 ${namedCount} 个必须使用上述指定名称，剩余 ${aiGenerateCount} 个由你自由命名。`
+            : `\n请自由生成 ${count} 个${entityType}的名称。`;
+
+        let systemPrompt = customSystemPrompt || `你是专业的${entityType}设定师。请一次性生成多个${entityType}。
+
+【不可违反的输出契约】
+每个${entityType}必须严格按照以下模板输出，不得跳过任何字段：
+
+YAML frontmatter 字段（${frontmatterKeys.length}个）：
+${frontmatterKeys.map((k, i) => `${i + 1}. ${k}`).join('\n')}
+其中以下为【强制必填】：${mandatoryFields}
+
+正文分节（${ENTITY_BODY_SECTIONS.length}个）：
+${ENTITY_BODY_SECTIONS.map((s, i) => `${i + 1}. ## ${s}`).join('\n')}
+
+【输出格式——严格遵循】
+每个${entityType}之间用 "---" 分隔线隔开。
+每个${entityType}格式示例：
+${templateExample}
+
+【要求】
+- 一次性输出全部 ${count} 个${entityType}
+- 每个${entityType}必须完整，不得使用省略号
+- 名称必须有辨识度，不要太普通
+- 所有${entityType}的设定不能互相矛盾
+- ⚠️ 生成不完整的实体将被直接丢弃，不会展示给用户`;
+
+        if (!customSystemPrompt) {
+            systemPrompt += namesPrompt;
+        }
+
+        const userPrompt = `请生成 ${count} 个${entityType}。
+
+【世界观参考】
+${worldview.slice(0, 2000)}
+
+${description ? `【补充要求】\n${description}` : ''}
+
+请直接输出所有${entityType}内容，不要额外解释。`;
+
+        const response = await this.apiClient.callAI(
+            systemPrompt,
+            userPrompt,
+            this.plugin.settings.flashModel,
+            0.7,
+            this.plugin.settings.maxOutput
+        );
+
+        if (response.error || !response.content) {
+            console.error(`[批量生成${entityType}] AI调用失败:`, response.error);
+            this.notifier.showNotice(`❌ 生成失败: ${response.error || '未知错误'}`, NOTICE_ERROR);
+            return [];
+        }
+
+        let results = this._parseEntityBlocks(response.content, entityType, nameList, count);
+
+        const MAX_RETRIES = this.plugin.settings.maxEntityBatchRetries ?? 2;
+        for (let retry = 0; retry < MAX_RETRIES; retry++) {
+            const incomplete: { name: string; content: string; missing: string[] }[] = [];
+            const complete: BatchEntityResult[] = [];
+
+            for (const r of results) {
+                const v = validateFn(r.content);
+                if (v.valid) {
+                    complete.push(r);
+                } else {
+                    incomplete.push({ name: r.name, content: r.content, missing: v.missingFields });
+                }
+            }
+
+            if (incomplete.length === 0) {
+                results = complete;
+                break;
+            }
+
+            console.warn(`[批量生成${entityType}] 第${retry + 1}轮：${complete.length}个完整 / ${incomplete.length}个不完整，开始补全...`);
+
+            const retryResults: BatchEntityResult[] = [...complete];
+
+            for (const inc of incomplete) {
+                const fixed = await this._retryFixEntity(
+                    entityType, inc.name, inc.content, inc.missing,
+                    frontmatterKeys, worldview, customSystemPrompt
+                );
+                if (fixed) {
+                    retryResults.push(fixed);
+                } else {
+                    console.warn(`[批量生成${entityType}] 补全失败，丢弃：${inc.name}`);
+                }
+            }
+
+            results = retryResults;
+
+            const stillIncomplete = results.filter(r => !validateFn(r.content).valid);
+            if (stillIncomplete.length === 0) break;
+        }
+
+        results = results.filter(r => validateFn(r.content).valid);
+        results = results.slice(0, count);
+
+        if (results.length < count) {
+            console.warn(`[批量生成${entityType}] 最终完整实体 ${results.length}/${count}，不足部分已丢弃`);
+            this.notifier.showNotice(
+                `⚠️ 生成 ${results.length}/${count} 个完整${entityType}，其余不完整的已自动丢弃`,
+                4000
+            );
+        }
+
+        return results;
+    }
+
+    private _getValidateFn(entityType: string): (content: string) => ValidationResult {
+        switch (entityType) {
+            case '势力': return validateFactionOutput;
+            case '地点': return validateLocationOutput;
+            case '物品/功法':
+            case '物品':
+            case '功法': return validateItemOutput;
+            default: return () => ({ valid: true, missingFields: [] });
+        }
+    }
+
+    private _parseEntityBlocks(
+        content: string,
+        entityType: string,
+        nameList: string[],
+        count: number
+    ): BatchEntityResult[] {
+        const results: BatchEntityResult[] = [];
+        const namedCount = nameList.length;
+
+        const blocks = this._splitEntityBlocks(content);
+        console.log(`[批量生成${entityType}] 解析: AI 原始长度 ${content.length}，切出 ${blocks.length} 个实体块`);
+
+        for (let i = 0; i < blocks.length && results.length < count; i++) {
+            const entityContent = blocks[i].trim();
+            if (!entityContent) continue;
+
+            let entityName = '';
+            const yaml = entityContent.match(/^---\s*\n([\s\S]*?)\n---/);
+            if (yaml) {
+                const nameMatch = yaml[1].match(/^(?:名称|name)\s*:\s*(.+)$/m);
+                if (nameMatch && nameMatch[1].trim()) {
+                    entityName = nameMatch[1].trim();
+                }
+            }
+
+            if (!entityName) {
+                const titleMatch = entityContent.match(/^#\s+(.+)$/m);
+                if (titleMatch && titleMatch[1].trim()
+                    && titleMatch[1].trim() !== '物品/功法名'
+                    && titleMatch[1].trim() !== '势力名'
+                    && titleMatch[1].trim() !== '地点名') {
+                    entityName = titleMatch[1].trim();
+                }
+            }
+
+            if (!entityName && yaml) {
+                const firstLine = yaml[1].split('\n').find(l => l.includes(':') && !l.startsWith('#'));
+                if (firstLine) {
+                    const val = firstLine.split(':')[1]?.trim();
+                    if (val && val.length > 1 && val.length < 50) {
+                        entityName = val;
+                    }
+                }
+            }
+
+            if (!entityName) {
+                const weaponMatch = entityContent.match(/【(.+?)】/);
+                if (weaponMatch) entityName = weaponMatch[1];
+            }
+
+            if (i < namedCount && nameList[i]) {
+                entityName = nameList[i];
+            }
+
+            if (!entityName) {
+                entityName = `${entityType}${results.length + 1}`;
+            }
+
+            entityName = entityName.replace(/[<>:"/\\|?*]/g, '·').trim();
+
+            results.push({ name: entityName, content: entityContent });
+        }
+
+        console.log(`[批量生成${entityType}] 解析结果: 有效实体块 ${results.length} 个 / 原始块 ${blocks.length} 个`);
+        return results;
+    }
+
+    private _splitEntityBlocks(content: string): string[] {
+        const normalized = content.replace(/\r\n/g, '\n');
+        const lines = normalized.split('\n');
+        const dashPositions: number[] = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            if (/^---\s*$/.test(lines[i])) {
+                dashPositions.push(i);
+            }
+        }
+
+        if (dashPositions.length < 2) {
+            return normalized.trim() ? [normalized.trim()] : [];
+        }
+
+        const blocks: string[] = [];
+        let i = 0;
+        while (i + 1 < dashPositions.length) {
+            const openIdx = dashPositions[i];
+            const closeIdx = dashPositions[i + 1];
+
+            let endLine = normalized.length;
+            if (i + 2 < dashPositions.length) {
+                endLine = dashPositions[i + 2];
+                i += 2;
+            } else {
+                endLine = normalized.length;
+                i = dashPositions.length;
+            }
+
+            const blockLines = lines.slice(openIdx, endLine);
+            const blockText = blockLines.join('\n').trim();
+            if (blockText) {
+                blocks.push(blockText);
+            }
+        }
+
+        return blocks;
+    }
+
+    private async _retryFixEntity(
+        entityType: string,
+        name: string,
+        currentContent: string,
+        missingFields: string[],
+        frontmatterKeys: readonly string[],
+        worldview: string,
+        customSystemPrompt?: string
+    ): Promise<BatchEntityResult | null> {
+        const systemPrompt = customSystemPrompt || `你是专业的${entityType}设定师。请补全以下不完整的${entityType}卡片。
+
+【补全要求】
+1. 只输出补全后的完整${entityType}卡片，不要额外解释
+2. 保持原有内容不变，只补充缺失的部分
+3. 缺失的字段和分节必须全部填充有意义的内容，禁止用"待补充"或省略号
+4. 补全内容需与世界观一致
+
+【缺失的字段/分节】
+${missingFields.map((f, i) => `${i + 1}. ${f}`).join('\n')}
+
+【当前不完整的${entityType}卡片】
+${currentContent.slice(0, 2000)}`;
+
+        const userPrompt = `请补全这个${entityType}：${name}
+
+【世界观参考】
+${worldview.slice(0, 1500)}
+
+请直接输出完整的${entityType}卡片。`;
+
+        try {
+            const response = await this.apiClient.callAI(
+                systemPrompt,
+                userPrompt,
+                this.plugin.settings.flashModel,
+                0.7,
+                this.plugin.settings.maxOutput
+            );
+
+            if (response.error || !response.content) return null;
+
+            const blocks = this._splitEntityBlocks(response.content);
+            if (blocks.length === 0) return null;
+
+            let content = blocks[0].trim();
+            if (!content.startsWith('---')) {
+                content = '---\n' + content;
+            }
+
+            return { name, content };
+        } catch (e: unknown) {
+            const errMsg = e instanceof Error ? e.message : String(e);
+            console.error(`[批量生成${entityType}] 补全 "${name}" 失败:`, errMsg);
+            new Notice(`❌ 补全"${name}"失败: ${errMsg}`, 5000);
+            return null;
+        }
+    }
+}

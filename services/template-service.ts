@@ -1,0 +1,490 @@
+import { App, TFile } from 'obsidian';
+import {
+    pjBodyTemplate,
+    pjInfoPlanTemplate,
+    pjPlotDistillTemplate,
+    pjOutlineTemplate,
+    pjVolumeOutlineTemplate,
+    pjWorldviewTemplate,
+    pjAnalysisTemplate,
+    pjSettlementTemplate,
+    pjCharTemplate,
+    pjLocTemplate,
+    pjFactionTemplate,
+    pjItemTemplate,
+    pjContinuityReviewTemplate,
+    pjSelfCheckTemplate,
+    pjFixTemplate,
+    pjFinalFixTemplate,
+    pjQualityControlTemplate,
+    pjEmotionPlanTemplate,
+    pjSceneExpandTemplate,
+    pjCharacterSoulTemplate,
+    pjPromptSystemTemplate,
+    pjPromptUserTemplate,
+    pjWritingRulesPromptTemplate,
+} from '../shared/paths';
+import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import {
+    getStepTemplate,
+    WRITING_RULES,
+    type PromptTemplate,
+} from '../engine/prompt-templates';
+
+export interface TemplateVariables {
+    project?: string;
+    volume?: string;
+    chapterName?: string;
+    chapterNumber?: number;
+    title?: string;
+}
+
+const DEFAULT_TEMPLATES: Record<string, string> = {
+    body: `---
+tags: [正文]
+卷: ""
+章: ""
+标题: ""
+status: pending
+word_count: 0
+writing_mode: pipeline
+涉及人物: []
+涉及地点: []
+涉及势力: []
+涉及物品功法: []
+---
+
+# 第X章
+
+`,
+    infoPlan: `---
+tags: [信息规划]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+情感温度: ""
+冲突强度: ""
+节奏节拍: ""
+---
+
+# 第X章 信息规划
+
+## 章名
+
+## 核心冲突
+
+## 情感与冲突量化
+- 情感温度（0-10级）：
+- 冲突强度阶梯（1-5级）：
+- 节奏节拍模式：
+
+## 熵预算
+- 本章需解决的不确定性（降熵）：
+- 本章新增的不确定性（提熵）：
+- 预计章末信息熵水平：高/中/低
+
+## 自信息目标
+- 本章至少设计一个低概率但合理的事件（惊喜）：
+  - 事件描述：
+  - 为何合理：
+
+## 互信息强化
+- 必须强化的设定关联（行为-动机/伏笔-主线）：
+- 禁止出现的互信息断裂（OOC行为）：
+
+## 伏笔操作
+- 需回收的旧伏笔：
+- 需埋下的新伏笔：
+`,
+    plotDistill: `---
+tags: [情节蒸馏]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 情节蒸馏
+
+## 场景节奏设计
+- 起（铺垫）：
+- 承（发展）：
+- 转（转折）：
+- 合（收尾）：
+
+## 情节节点规划（3-5个）
+- 节点1：
+- 节点2：
+- 节点3：
+- 节点4：（可选）
+- 节点5：（可选）
+
+## 爽点设计
+- 核心爽点：
+- 爽点类型：逆袭/打脸/成长/揭秘/情感爆发
+- 铺垫方式：
+
+## 冲突升级路径
+- 初始状态：
+- 升级点1：
+- 升级点2：
+- 高潮点：
+- 回落/悬念：
+
+## 信息密度指标
+- 预计章节字数：
+- 情节节点密度：每千字≥1个节点
+- 信息增量：高/中/低
+`,
+    outline: `---
+tags: [大纲摘要]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 大纲摘要
+
+## 全书定位
+- 本章处于全书 [开端/发展/转折/高潮/收尾] 阶段
+- 负责推进：
+- 负责揭示：
+- 负责铺垫：
+
+## 关键场景（3-5个）
+| # | 地点 | 人物 | 冲突 | 叙事目标 | 信息增量 |
+|---|---|---|---|---|---|
+| 1 | | | | | |
+| 2 | | | | | |
+| 3 | | | | | |
+| 4 | | | | | |
+
+## 结尾钩子
+- 钩子类型：悬念式/反转式/预告式/前置冲突
+- 钩子内容：
+`,
+    continuityReview: `---
+tags: [审查报告]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+审查时间: ""
+审查范围: 单章
+---
+
+# 第X章 连贯性审查
+
+> 待执行「连贯性审查」步骤后生成
+`,
+    analysisReport: `---
+tags: [分析报告]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 分析报告
+
+> 待执行「分析报告」步骤后生成
+`,
+    settlement: `---
+tags: [结算表]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 结算表
+
+> 待执行「结算」步骤后生成
+`,
+    selfCheck: `---
+tags: [自检报告]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 自检报告
+
+> 待执行「自检」步骤后生成
+`,
+    fix: `---
+tags: [修正记录]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 修正记录
+
+> 待执行「修正」步骤后生成
+`,
+    finalFix: `---
+tags: [最终修正]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 最终修正
+
+> 待执行「最终修正」步骤后生成
+`,
+    emotionPlan: `---
+tags: [情绪规划]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 情绪规划
+
+> 待执行「情绪规划」步骤后生成
+`,
+    sceneExpand: `---
+tags: [Scene展开]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 Scene展开
+
+> 待执行「Scene展开」步骤后生成
+`,
+    characterSoul: `---
+tags: [角色灵魂]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 角色灵魂
+
+> 待执行「角色灵魂」步骤后生成
+`,
+    qualityControl: `---
+tags: [质量控制]
+卷: ""
+章: ""
+step_status: pending
+step_model: ""
+step_timestamp: ""
+---
+
+# 第X章 质量控制
+
+> 待执行「质量控制」步骤后生成
+`,
+};
+
+const TEMPLATE_PATH_MAP: Record<string, () => string> = {
+    body: pjBodyTemplate,
+    infoPlan: pjInfoPlanTemplate,
+    plotDistill: pjPlotDistillTemplate,
+    outline: pjOutlineTemplate,
+    volumeOutline: pjVolumeOutlineTemplate,
+    worldview: pjWorldviewTemplate,
+    analysisReport: pjAnalysisTemplate,
+    settlement: pjSettlementTemplate,
+    character: pjCharTemplate,
+    location: pjLocTemplate,
+    faction: pjFactionTemplate,
+    item: pjItemTemplate,
+    continuityReview: pjContinuityReviewTemplate,
+    selfCheck: pjSelfCheckTemplate,
+    fix: pjFixTemplate,
+    finalFix: pjFinalFixTemplate,
+    qualityControl: pjQualityControlTemplate,
+    emotionPlan: pjEmotionPlanTemplate,
+    sceneExpand: pjSceneExpandTemplate,
+    characterSoul: pjCharacterSoulTemplate,
+};
+
+export class TemplateService {
+    private app: App;
+
+    constructor(app: App) {
+        this.app = app;
+    }
+
+    async getTemplate(type: string, vars: TemplateVariables = {}): Promise<string> {
+        const templatePathFn = TEMPLATE_PATH_MAP[type];
+        let content = DEFAULT_TEMPLATES[type] || '';
+
+        if (templatePathFn) {
+            const path = templatePathFn();
+            const templateFile = this.app.vault.getAbstractFileByPath(path);
+            if (templateFile instanceof TFile) {
+                try {
+                    content = await this.app.vault.read(templateFile);
+                } catch (e) {
+                    console.warn('[TemplateService] 读取模板失败，使用默认模板:', path, e);
+                }
+            } else {
+                console.warn('[TemplateService] 模板文件不存在，使用默认模板:', path);
+            }
+        }
+
+        return this.replaceVariables(content, vars);
+    }
+
+    private replaceVariables(content: string, vars: TemplateVariables): string {
+        let result = content;
+
+        const chapterName = vars.chapterName || `第${vars.chapterNumber || 'X'}章`;
+        const chapterNumber = vars.chapterNumber;
+
+        result = result.replace(/第X章/g, chapterName);
+        result = result.replace(/卷: ""/g, `卷: "${vars.volume || ''}"`);
+        result = result.replace(/章: ""/g, `章: "${chapterName}"`);
+        result = result.replace(/标题: ""/g, `标题: "${vars.title || ''}"`);
+
+        if (chapterNumber !== undefined) {
+            result = result.replace(/章节编号:/g, `章节编号: ${chapterNumber}`);
+            result = result.replace(/本卷章:/g, `本卷章: ${vars.volume || ''}${chapterName}`);
+        }
+
+        return result;
+    }
+
+    async getBodyTemplate(vars: TemplateVariables): Promise<string> {
+        return this.getTemplate('body', vars);
+    }
+
+    async getInfoPlanTemplate(vars: TemplateVariables): Promise<string> {
+        return this.getTemplate('infoPlan', vars);
+    }
+
+    async getPlotDistillTemplate(vars: TemplateVariables): Promise<string> {
+        return this.getTemplate('plotDistill', vars);
+    }
+
+    async getOutlineTemplate(vars: TemplateVariables): Promise<string> {
+        return this.getTemplate('outline', vars);
+    }
+
+    async getStepTemplate(stepType: string, vars: TemplateVariables): Promise<string> {
+        return this.getTemplate(stepType, vars);
+    }
+
+    async getVolumeOutlineTemplate(vars: TemplateVariables): Promise<string> {
+        return this.getTemplate('volumeOutline', vars);
+    }
+
+    async getWorldviewTemplate(vars: TemplateVariables): Promise<string> {
+        return this.getTemplate('worldview', vars);
+    }
+
+    async getStepPrompt(stepKey: string): Promise<PromptTemplate | null> {
+        const systemPath = pjPromptSystemTemplate(stepKey);
+        const userPath = pjPromptUserTemplate(stepKey);
+
+        const defaultTemplate = getStepTemplate(stepKey);
+        let systemPrompt = defaultTemplate?.systemPrompt || '';
+        let userPrompt = defaultTemplate?.userPrompt || '';
+        const description = defaultTemplate?.description || '';
+
+        const systemFile = this.app.vault.getAbstractFileByPath(systemPath);
+        if (systemFile instanceof TFile) {
+            try {
+                systemPrompt = await this.app.vault.read(systemFile);
+            } catch (e) {
+                console.warn('[TemplateService] 读取 system prompt 模板失败，使用默认模板:', systemPath, e);
+            }
+        }
+
+        const userFile = this.app.vault.getAbstractFileByPath(userPath);
+        if (userFile instanceof TFile) {
+            try {
+                userPrompt = await this.app.vault.read(userFile);
+            } catch (e) {
+                console.warn('[TemplateService] 读取 user prompt 模板失败，使用默认模板:', userPath, e);
+            }
+        }
+
+        if (!systemPrompt && !userPrompt) {
+            return null;
+        }
+
+        return { description, systemPrompt, userPrompt };
+    }
+
+    async getWritingRules(): Promise<string> {
+        const rulesPath = pjWritingRulesPromptTemplate();
+        const rulesFile = this.app.vault.getAbstractFileByPath(rulesPath);
+        if (rulesFile instanceof TFile) {
+            try {
+                return await this.app.vault.read(rulesFile);
+            } catch (e) {
+                console.warn('[TemplateService] 读取写作规则失败，使用默认规则:', rulesPath, e);
+            }
+        }
+        return WRITING_RULES;
+    }
+
+    async hasCustomPrompt(stepKey: string): Promise<boolean> {
+        const systemPath = pjPromptSystemTemplate(stepKey);
+        const userPath = pjPromptUserTemplate(stepKey);
+        return !!(this.app.vault.getAbstractFileByPath(systemPath) ||
+                   this.app.vault.getAbstractFileByPath(userPath));
+    }
+
+    /**
+     * 获取任意类型的自定义 prompt 模板（世界观/实体/DEAI 等）
+     * @param promptKey prompt 类型标识（如 worldviewSkeleton, character, deaiCheck 等）
+     * @param fallback 默认值（当无自定义模板时使用）
+     * @returns 自定义模板内容，如果不存在则返回 fallback
+     */
+    async getCustomPrompt(promptKey: string, fallback: { system?: string; user?: string } = {}): Promise<{ system: string; user: string }> {
+        const systemPath = pjPromptSystemTemplate(promptKey);
+        const userPath = pjPromptUserTemplate(promptKey);
+
+        let systemPrompt = fallback.system || '';
+        let userPrompt = fallback.user || '';
+
+        const systemFile = this.app.vault.getAbstractFileByPath(systemPath);
+        if (systemFile instanceof TFile) {
+            try {
+                systemPrompt = await this.app.vault.read(systemFile);
+            } catch (e) {
+                console.warn('[TemplateService] 读取自定义 prompt 失败:', systemPath, e);
+            }
+        }
+
+        const userFile = this.app.vault.getAbstractFileByPath(userPath);
+        if (userFile instanceof TFile) {
+            try {
+                userPrompt = await this.app.vault.read(userFile);
+            } catch (e) {
+                console.warn('[TemplateService] 读取自定义 prompt 失败:', userPath, e);
+            }
+        }
+
+        return { system: systemPrompt, user: userPrompt };
+    }
+}

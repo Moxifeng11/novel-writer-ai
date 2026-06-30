@@ -1,0 +1,40 @@
+{
+    "name": "novel-writer-ai",
+    "version": "4.5.0",
+    "description": "Obsidian plugin for AI-powered novel writing",
+    "main": "main.js",
+    "scripts": {
+        "dev": "esbuild main.ts --bundle --external:obsidian --format=cjs --outfile=main.js --watch",
+        "build": "esbuild main.ts --bundle --external:obsidian --format=cjs --platform=node --outfile=main.js",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:cov": "vitest run --coverage",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
+        "test:e2e:headed": "playwright test --headed",
+        "test:e2e:report": "playwright show-report"
+    },
+    "keywords": [
+        "obsidian",
+        "plugin",
+        "novel",
+        "writing",
+        "AI"
+    ],
+    "author": "Trae AI",
+    "license": "MIT",
+    "devDependencies": {
+        "@playwright/test": "^1.61.1",
+        "@types/node": "^20.0.0",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "@vitest/coverage-v8": "^1.6.1",
+        "electron": "^42.5.1",
+        "electron-builder": "^26.15.3",
+        "esbuild": "^0.19.0",
+        "obsidian": "^1.5.0",
+        "typescript": "^5.0.0",
+        "vitest": "^1.6.1",
+        "wait-on": "^9.0.10"
+    }
+}
