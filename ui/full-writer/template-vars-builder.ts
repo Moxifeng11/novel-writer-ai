@@ -7,8 +7,8 @@
 import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { GatheredContext, CharacterData } from '../../engine/context-manager';
-import { WRITING_RULES } from '../../engine/prompt-templates';
-import { getForeshadowWarnings } from '../../engine/foreshadow-manager';
+import { getForeshadowWarnings } from '../../services/foreshadow-manager';
+import { RulesService } from '../../services/rules-service';
 import { filterForeshadowsByChapter, getInvolvedEntities } from '../../engine/chapter-context-builder';
 import { scoreAndFilterEntities, ScoredEntity } from '../../engine/entity-scorer';
 import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../../engine/character-soul';
@@ -17,6 +17,9 @@ import { chapterOutlineSection } from '../../shared/format-constants';
 import { stripFrontmatter, readMergedVolumeOutline } from '../../utils/helpers';
 import { findBodyFileV4 } from '../../engine/chapter-utils';
 import { findWritingStyleFile } from '../writing-style-paths';
+import { createLogger } from '../../shared/logger';
+
+const log = createLogger('TemplateVarsBuilder');
 import {
     CHAR_TO_TOKEN_RATIO,
     INFO_DEBT_MAX,
@@ -415,7 +418,8 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
           }
         }
       }
-    } catch {
+    } catch (e) {
+      log.warn('[小说工坊] 伏笔计划解析失败:', e);
     }
   }
   const tl = d.timeline || [];
@@ -478,13 +482,13 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
       vars["chapPlan"] = chapMatch?.[0]?.trim() || "";
     }
   } catch (e) {
-    console.warn("[小说工坊] 操作失败:", e);
+    log.warn("[小说工坊] 操作失败:", e);
   }
   vars["chapPosition"] = `第${deps.chapterNum}章（${deps.volume}）`;
 }
 export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<string, string>> {
   const vars: Record<string, string> = {};
-  vars["writingRules"] = WRITING_RULES;
+  vars["writingRules"] = await RulesService.getInstance(deps.plugin.app).getWritingRules();
   vars["chapNum"] = String(deps.chapterNum);
   vars["chapName"] = deps.chapterName;
   vars["project"] = deps.project;
@@ -605,12 +609,12 @@ ${vars["allItems"]}`);
     vars["characterCores"] = summary.allSouls;
     if (summary.protagonist) {
       vars["protagonistSoulDetail"] = getProtagonistSoulDetail(summary.protagonist);
-      console.log("[V2] 主角灵魂层已注入:", summary.protagonist.name, "9字段完整:", summary.protagonist.hasSoul);
+      log.info("[V2] 主角灵魂层已注入:", summary.protagonist.name, "9字段完整:", summary.protagonist.hasSoul);
     } else {
       vars["protagonistSoulDetail"] = "";
     }
     vars["characterCores"] = summary.allSouls;
-    console.log("[V2] 角色灵魂层注入完毕:", souls.length, "人, hasSoulData:", summary.hasSoulData);
+    log.info("[V2] 角色灵魂层注入完毕:", souls.length, "人, hasSoulData:", summary.hasSoulData);
   } else {
     vars["characterCores"] = "";
     vars["protagonistSoulDetail"] = "";
@@ -663,6 +667,7 @@ export async function buildSceneStyleHint(deps: TemplateVarsDeps, vars: Record<s
     vars["suggestedRhythm"] = rhythmMap[sceneType] || rhythmMap.dialogue;
     vars["_sceneType"] = vars["_sceneType"] || sceneType;
   } catch (e) {
+    log.warn('[小说工坊] 场景风格提取失败:', e);
   }
 }
 

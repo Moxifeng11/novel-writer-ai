@@ -1,3 +1,6 @@
+import { createLogger } from './logger';
+
+const log = createLogger('SettingsMigrator');
 /**
  * settings-migrator.ts — 设置版本迁移器
  *
@@ -10,7 +13,25 @@
  * 4. 新安装用户直接使用最新版本，不执行迁移
  */
 
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
+
+interface MigrationCustomProvider {
+    id: string;
+    name: string;
+    endpoint: string;
+    models: string[];
+    maxContext: number;
+    maxOutput: number;
+    isDefault?: boolean;
+    isHidden?: boolean;
+}
+
+const DEFAULT_PROVIDERS_TEMPLATE: Record<string, MigrationCustomProvider> = {
+    volc:     { id: 'volc',     name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072, isDefault: true },
+    ollama:   { id: 'ollama',   name: '本地 Ollama',  endpoint: 'http://localhost:11434/v1/chat/completions',            models: ['qwen2.5:7b', 'deepseek-r1:7b'],                                      maxContext: 32768,  maxOutput: 8192,   isDefault: true },
+    catcat:   { id: 'catcat',   name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions',              models: ['gemini-3.1-pro-preview-search'],                                    maxContext: 1048576, maxOutput: 65536,  isDefault: true },
+    deepseek: { id: 'deepseek', name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions',            models: ['deepseek-v4-flash', 'deepseek-v4-pro'],                             maxContext: 1048576, maxOutput: 384000, isDefault: true },
+};
 
 export interface VersionedData {
     schemaVersion?: number;
@@ -42,7 +63,6 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [
         from: 2,
         to: 3,
         migrate: (data) => {
-            // v7.0: modelOverrides 从单层索引（modelName→values）升级为两层索引（endpoint→modelName→values）
             const oldOverrides = data.modelOverrides as Record<string, { maxContext?: number; maxOutput?: number }> | undefined;
             const newOverrides: Record<string, Record<string, { maxContext?: number; maxOutput?: number }>> = {};
             if (oldOverrides && typeof oldOverrides === 'object') {
@@ -56,6 +76,36 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [
                 schemaVersion: 3,
                 modelOverrides: newOverrides,
             };
+        },
+    },
+    {
+        from: 3,
+        to: 4,
+        migrate: (data) => {
+            const customProviders = (data.customProviders as MigrationCustomProvider[] | undefined) || [];
+            const hiddenPresets = (data.hiddenPresets as string[] | undefined) || [];
+            const customProviderIds = new Set(customProviders.map(p => p.id));
+            const newCustomProviders: MigrationCustomProvider[] = [...customProviders];
+
+            for (const [id, preset] of Object.entries(DEFAULT_PROVIDERS_TEMPLATE)) {
+                if (!customProviderIds.has(id)) {
+                    newCustomProviders.push({ ...preset });
+                }
+            }
+
+            for (const provider of newCustomProviders) {
+                if (hiddenPresets.includes(provider.id)) {
+                    provider.isHidden = true;
+                }
+            }
+
+            const newData: Record<string, unknown> = {
+                ...data,
+                schemaVersion: 4,
+                customProviders: newCustomProviders,
+            };
+            delete newData.hiddenPresets;
+            return newData;
         },
     },
 ];
@@ -72,7 +122,7 @@ export function migrateSettings(rawData: Record<string, unknown>): Record<string
     while (currentVersion < CURRENT_SCHEMA_VERSION) {
         const migration = migrations.find(m => m.from === currentVersion);
         if (!migration) {
-            console.warn(
+            log.warn(
                 `[SettingsMigrator] 警告：找不到从 v${currentVersion} 开始的迁移，停止升级`
             );
             break;
@@ -81,7 +131,7 @@ export function migrateSettings(rawData: Record<string, unknown>): Record<string
             data = migration.migrate(data);
             currentVersion = migration.to;
         } catch (e) {
-            console.warn(
+            log.warn(
                 `[SettingsMigrator] 迁移 v${migration.from}→v${migration.to} 失败:`,
                 e instanceof Error ? e.message : String(e)
             );
@@ -90,7 +140,7 @@ export function migrateSettings(rawData: Record<string, unknown>): Record<string
     }
 
     if ((data as VersionedData).schemaVersion !== CURRENT_SCHEMA_VERSION) {
-        console.warn(
+        log.warn(
             `[SettingsMigrator] 警告：数据版本 ${(data as VersionedData).schemaVersion} 与最新版本 ${CURRENT_SCHEMA_VERSION} 不一致`
         );
     }

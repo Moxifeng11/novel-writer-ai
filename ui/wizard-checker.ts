@@ -30,6 +30,9 @@ import { WV_SECTIONS } from '../shared/format-constants';
 
 // WizardTab/WizardStep 接口由 full-writer/wizard-types 统一定义，避免重复（v6.0 去重）
 import { WizardTab, WizardStep } from './full-writer/wizard-types';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('WizardChecker');
 export type { WizardTab, WizardStep };
 
 export class WizardChecker {
@@ -59,7 +62,7 @@ export class WizardChecker {
             if (step.id in checks) {
                 try {
                     const isComplete = await checks[step.id]();
-                    console.warn('[Wizard:restoreStatus] step=', step.id, 'isComplete=', isComplete, 'currentStatus=', step.status);
+                    log.warn('[Wizard:restoreStatus] step=', step.id, 'isComplete=', isComplete, 'currentStatus=', step.status);
                     if (isComplete) {
                         if (step.status === 'complete_with_warnings' || step.status === 'retry' || step.status === 'executing') {
                             step.status = 'done';
@@ -75,7 +78,7 @@ export class WizardChecker {
                         }
                     }
                 } catch (e) {
-                    console.error('[Wizard:restoreStatus] check异常:', step.id, e);
+                    log.error('[Wizard:restoreStatus] check异常:', step.id, e);
                 }
             }
         }
@@ -84,13 +87,13 @@ export class WizardChecker {
             && (tab.steps[tab.currentStepIdx]?.status === 'done' || tab.steps[tab.currentStepIdx]?.status === 'complete_with_warnings')
             && tab.currentStepIdx < tab.steps.length - 1) {
             const nextIdx = tab.steps.findIndex((s, i) => i > tab.currentStepIdx && s.status !== 'done' && s.status !== 'complete_with_warnings' && s.status !== 'skipped');
-            console.warn('[Wizard:autoAdvance] 当前步骤=', tab.steps[tab.currentStepIdx]?.id, 'status=', tab.steps[tab.currentStepIdx]?.status, 'nextIdx=', nextIdx);
+            log.warn('[Wizard:autoAdvance] 当前步骤=', tab.steps[tab.currentStepIdx]?.id, 'status=', tab.steps[tab.currentStepIdx]?.status, 'nextIdx=', nextIdx);
             if (nextIdx !== -1) {
                 tab.currentStepIdx = nextIdx;
-                console.warn('[Wizard:autoAdvance] → 跳转到', tab.steps[nextIdx]?.id);
+                log.warn('[Wizard:autoAdvance] → 跳转到', tab.steps[nextIdx]?.id);
             } else {
                 tab.currentStepIdx = tab.steps.length - 1;
-                console.warn('[Wizard:autoAdvance] → 所有完成，跳到最后一页');
+                log.warn('[Wizard:autoAdvance] → 所有完成，跳到最后一页');
             }
         }
     }
@@ -102,13 +105,13 @@ export class WizardChecker {
         const filePath = pjWorldview(project);
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!(file instanceof TFile)) {
-            console.warn('[checkWorldviewComplete] ❌ 文件不存在:', filePath);
+            log.warn('[checkWorldviewComplete] ❌ 文件不存在:', filePath);
             return false;
         }
 
         const content = await this.app.vault.read(file);
         if (content.trim().length === 0) {
-            console.warn('[checkWorldviewComplete] ❌ 文件为空:', filePath);
+            log.warn('[checkWorldviewComplete] ❌ 文件为空:', filePath);
             return false;
         }
 
@@ -125,9 +128,9 @@ export class WizardChecker {
             const projName = extractFieldVal('项目名称');
             const nameValid = (s: string): boolean => !!s && s !== '—' && s !== '-' && !/^\{\{.+\}\}$/.test(s);
             fmNamesComplete = nameValid(worldName) || nameValid(projName);
-            console.log('[checkWorldviewComplete] fm 名称:', { worldName, projName, fmNamesComplete });
+            log.info('[checkWorldviewComplete] fm 名称:', { worldName, projName, fmNamesComplete });
         } else {
-            console.warn('[checkWorldviewComplete] ⚠️ 无 frontmatter');
+            log.warn('[checkWorldviewComplete] ⚠️ 无 frontmatter');
         }
 
         const modules = WV_SECTIONS.map(s => `## ${s}`);
@@ -138,14 +141,14 @@ export class WizardChecker {
         for (const modTitle of modules) {
             const normalizedContent = content.replace(/\r\n/g, '\n').replace(/[ \t]+/g, ' ');
             if (!normalizedContent.includes(modTitle)) {
-                console.warn('[checkWorldviewComplete] ❌ 缺失模块标题:', modTitle);
+                log.warn('[checkWorldviewComplete] ❌ 缺失模块标题:', modTitle);
                 return false;
             }
             const escapedTitle = modTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const modRegex = new RegExp(escapedTitle + '[\\s\\S]*?(?=\\n## |$)', '');
             const modMatch = normalizedContent.match(modRegex);
             if (!modMatch) {
-                console.warn('[checkWorldviewComplete] ❌ 无法提取模块内容:', modTitle);
+                log.warn('[checkWorldviewComplete] ❌ 无法提取模块内容:', modTitle);
                 return false;
             }
             const modContent = modMatch[0];
@@ -163,28 +166,28 @@ export class WizardChecker {
             const historyOk = isHistoryModule && historySubs.some(sub => modContent.includes(sub));
             
             if (!hasRealContent && !historyOk) {
-                console.warn('[checkWorldviewComplete] ❌ 模块:', modTitle,
+                log.warn('[checkWorldviewComplete] ❌ 模块:', modTitle,
                     `| 实线=${realLines.length} | 命中提示=${JSON.stringify(hitHints)}`);
                 const rawLines = modContent.split('\n');
                 for (let i = 0; i < rawLines.length; i++) {
                     const l = rawLines[i];
                     for (const h of hitHints) {
                         if (l.includes(h)) {
-                            console.warn(`[checkWorldviewComplete]    → L${i}: "${l.trim().slice(0, 80)}" 命中 "${h}"`);
+                            log.warn(`[checkWorldviewComplete]    → L${i}: "${l.trim().slice(0, 80)}" 命中 "${h}"`);
                         }
                     }
                 }
                 return false;
             }
-            console.log('[checkWorldviewComplete] ✅ 模块通过:', modTitle, `${realLines.length} 行`);
+            log.info('[checkWorldviewComplete] ✅ 模块通过:', modTitle, `${realLines.length} 行`);
         }
 
         if (!fmNamesComplete) {
-            console.log('[checkWorldviewComplete] ✏️ 触发自动填充名称');
+            log.info('[checkWorldviewComplete] ✏️ 触发自动填充名称');
             await this.autoFillWorldviewNames(project, file, content);
         }
 
-        console.log('[checkWorldviewComplete] ✅ 全部通过');
+        log.info('[checkWorldviewComplete] ✅ 全部通过');
         return true;
     }
 
@@ -276,7 +279,7 @@ export class WizardChecker {
         const newContent = `---\n${fm}\n---${body}`;
         await this.app.vault.modify(file, newContent);
         new Notice(`📝 世界观名称已自动填充：${writes.join('，')}`, NOTICE_INFO);
-        console.log('[小说工坊] 自动填充世界观名称:', { 世界名称: worldName, 项目名称: projName, writes });
+        log.info('[小说工坊] 自动填充世界观名称:', { 世界名称: worldName, 项目名称: projName, writes });
 
         if (writes.includes(`项目名称="${projName}"`) && projName !== folderName) {
             await this.renameProjectFolder(project, projName);
@@ -292,19 +295,19 @@ export class WizardChecker {
             const newPath = parent ? `${parent}/${newName}` : newName;
             const existing = this.app.vault.getAbstractFileByPath(newPath);
             if (existing) {
-                console.warn('[小说工坊] 目标文件夹已存在，跳过重命名:', newPath);
+                log.warn('[小说工坊] 目标文件夹已存在，跳过重命名:', newPath);
                 return;
             }
             const folder = this.app.vault.getAbstractFileByPath(oldPath);
             if (!folder) {
-                console.warn('[小说工坊] 源文件夹不存在，跳过重命名:', oldPath);
+                log.warn('[小说工坊] 源文件夹不存在，跳过重命名:', oldPath);
                 return;
             }
             await this.app.fileManager.renameFile(folder, newPath);
             new Notice(`📁 项目文件夹已重命名: ${oldPath.replace(/^.*\//, '')} → ${newName}`, NOTICE_ERROR);
-            console.log('[小说工坊] 项目文件夹已重命名:', oldPath, '→', newPath);
+            log.info('[小说工坊] 项目文件夹已重命名:', oldPath, '→', newPath);
         } catch (e) {
-            console.error('[小说工坊] 项目文件夹重命名失败:', e);
+            log.error('[小说工坊] 项目文件夹重命名失败:', e);
             new Notice(`⚠️ 项目文件夹重命名失败: ${e instanceof Error ? e.message : '未知错误'}`, NOTICE_ERROR);
         }
     }
@@ -340,7 +343,7 @@ export class WizardChecker {
             }
         }
         if (missingSections.length > 0) {
-            console.warn(`[checkSettingLibComplete] 设定库缺少 ${missingSections.length} 个模块: ${missingSections.join(', ')}（非阻塞，仍允许步进）`);
+            log.warn(`[checkSettingLibComplete] 设定库缺少 ${missingSections.length} 个模块: ${missingSections.join(', ')}（非阻塞，仍允许步进）`);
         }
         if (content.includes('> ⚠️ 填充完此文件后删除本行')) return false;
         return true;
@@ -366,11 +369,11 @@ export class WizardChecker {
             }
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);
-            console.warn('[wizard-checker] 读取 frontmatter 失败:', errMsg);
+            log.warn('[wizard-checker] 读取 frontmatter 失败:', errMsg);
         }
         const isUserModified = fmSource === 'manual' || fmSource === 'ai-generated';
         if (isUserModified) {
-            console.warn('[checkWritingStyleComplete] source字段匹配:', fmSource, '→ 已完成');
+            log.warn('[checkWritingStyleComplete] source字段匹配:', fmSource, '→ 已完成');
             return true;
         }
 
@@ -411,13 +414,13 @@ export class WizardChecker {
 
         for (const { name, dir, templateName } of entityDirs) {
             if (!await adapter.exists(dir)) {
-                console.log(`[checkEntitiesComplete] ${name}目录不存在: ${dir}`);
+                log.info(`[checkEntitiesComplete] ${name}目录不存在: ${dir}`);
                 return false;
             }
             const dirList = await adapter.list(dir);
             const mdFiles = dirList.files.filter(f => f.endsWith('.md') && !f.endsWith(templateName));
             if (mdFiles.length === 0) {
-                console.log(`[checkEntitiesComplete] ${name}目录无有效文件（排除模板 ${templateName}）`);
+                log.info(`[checkEntitiesComplete] ${name}目录无有效文件（排除模板 ${templateName}）`);
                 return false;
             }
             const checkFile = this.app.vault.getAbstractFileByPath(mdFiles[0]);
@@ -526,7 +529,7 @@ export class WizardChecker {
             const hasInfo = await isUsefulStepFile(findChapterFile(allFiles, folder, CHAPTER_FILE_TYPES.infoPlan) ?? null);
             if (hasBody || hasOutline || hasInfo) validCount++;
         }
-        console.log(`[WizardChecker] checkChaptersComplete: ${validCount}/${checkDirs.length} 章节有效`);
+        log.info(`[WizardChecker] checkChaptersComplete: ${validCount}/${checkDirs.length} 章节有效`);
         return validCount > 0;
     }
 }

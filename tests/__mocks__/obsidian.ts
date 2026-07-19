@@ -14,6 +14,11 @@ export class Component {
 export class Vault {
     private _store: Map<string, string> = new Map();
     private _folders: Set<string> = new Set();
+    adapter: DataAdapter;
+
+    constructor() {
+        this.adapter = new DataAdapter(this._store, this._folders);
+    }
 
     /** 测试辅助：种子文件（路径→内容） */
     _seedFile(path: string, content: string): TFile {
@@ -21,16 +26,19 @@ export class Vault {
         const f = new TFile();
         f.path = path;
         f.name = path.split('/').pop() || 'unknown.md';
+        f.basename = f.name.replace(/\.[^/.]+$/, '');
         f.vault = this;
+        f.stat.size = content.length;
         return f;
     }
 
     /** 测试辅助：检查文件或文件夹是否存在 */
     exists(path: string): boolean {
-        // 如果是文件路径
         if (this._store.has(path)) return true;
-        // 如果是文件夹路径
-        return this._folders.has(path);
+        if (this._folders.has(path)) return true;
+        const normalized = path.endsWith('/') ? path.slice(0, -1) : path + '/';
+        if (this._folders.has(normalized)) return true;
+        return false;
     }
 
     /** 测试辅助：写入文件 */
@@ -52,29 +60,131 @@ export class Vault {
     read = async (file: TFile): Promise<string> => {
         return this._store.get(file.path) ?? '';
     };
+
     /** 模拟文件修改 */
-    async modify(_file: TFile, _data: string): Promise<void> {}
+    modify = async (file: TFile, data: string): Promise<void> => {
+        this._store.set(file.path, data);
+    };
+
     /** 模拟文件删除 */
-    async delete(_file: TAbstractFile): Promise<void> {}
+    async delete(file: TAbstractFile): Promise<void> {
+        this._store.delete(file.path);
+        this._folders.delete(file.path);
+    }
+
     /** 模拟文件创建 */
-    async create(_path: string, _data: string): Promise<TFile> {
-        this._store.set(_path, _data);
+    async create(path: string, data: string): Promise<TFile> {
+        this._store.set(path, data);
         const f = new TFile();
-        f.path = _path;
-        f.name = _path.split('/').pop() || 'unknown.md';
+        f.path = path;
+        f.name = path.split('/').pop() || 'unknown.md';
+        f.basename = f.name.replace(/\.[^/.]+$/, '');
+        f.vault = this;
+        f.stat.size = data.length;
+        return f;
+    }
+
+    /** 模拟文件夹创建 */
+    async createFolder(path: string): Promise<TFolder> {
+        this._folders.add(path);
+        const f = new TFolder();
+        f.path = path;
+        f.name = path.split('/').pop() || path;
         f.vault = this;
         return f;
     }
-    /** 模拟文件夹创建 */
-    async createFolder(_path: string): Promise<TFolder> {
-        this._folders.add(_path);
-        return new TFolder();
-    }
-    getAbstractFileByPath(_path: string): TAbstractFile | null {
+
+    /** 模拟根据路径获取文件或文件夹 */
+    getAbstractFileByPath(path: string): TAbstractFile | null {
+        if (this._store.has(path)) {
+            const f = new TFile();
+            f.path = path;
+            f.name = path.split('/').pop() || 'unknown.md';
+            f.basename = f.name.replace(/\.[^/.]+$/, '');
+            f.vault = this;
+            f.stat.size = (this._store.get(path) || '').length;
+            return f;
+        }
+        let folderPath = path;
+        if (!this._folders.has(folderPath)) {
+            const normalized = folderPath.endsWith('/') ? folderPath.slice(0, -1) : folderPath + '/';
+            if (this._folders.has(normalized)) {
+                folderPath = normalized;
+            }
+        }
+        if (this._folders.has(folderPath)) {
+            const f = new TFolder();
+            f.path = folderPath;
+            f.name = folderPath.split('/').filter(Boolean).pop() || folderPath;
+            f.vault = this;
+            return f;
+        }
         return null;
     }
+
     getFiles(): TFile[] {
-        return [];
+        const files: TFile[] = [];
+        for (const path of this._store.keys()) {
+            const f = new TFile();
+            f.path = path;
+            f.name = path.split('/').pop() || 'unknown.md';
+            f.basename = f.name.replace(/\.[^/.]+$/, '');
+            f.vault = this;
+            files.push(f);
+        }
+        return files;
+    }
+}
+
+/** 模拟 DataAdapter（底层文件系统适配器，用于点文件访问） */
+export class DataAdapter {
+    private _store: Map<string, string>;
+    private _folders: Set<string>;
+
+    constructor(store: Map<string, string>, folders: Set<string>) {
+        this._store = store;
+        this._folders = folders;
+    }
+
+    async exists(path: string): Promise<boolean> {
+        return this._store.has(path) || this._folders.has(path);
+    }
+
+    async read(path: string): Promise<string> {
+        return this._store.get(path) ?? '';
+    }
+
+    async write(path: string, data: string): Promise<void> {
+        this._store.set(path, data);
+    }
+
+    async mkdir(path: string): Promise<void> {
+        this._folders.add(path);
+    }
+
+    async rmdir(path: string, _recursive?: boolean): Promise<void> {
+        this._folders.delete(path);
+    }
+
+    async remove(path: string): Promise<void> {
+        this._store.delete(path);
+    }
+
+    async list(path: string): Promise<{ files: string[]; folders: string[] }> {
+        const prefix = path.endsWith('/') ? path : path + '/';
+        const files: string[] = [];
+        const folders: string[] = [];
+        for (const p of this._store.keys()) {
+            if (p.startsWith(prefix) && !p.substring(prefix.length).includes('/')) {
+                files.push(p);
+            }
+        }
+        for (const p of this._folders) {
+            if (p.startsWith(prefix) && !p.substring(prefix.length).includes('/')) {
+                folders.push(p);
+            }
+        }
+        return { files, folders };
     }
 }
 
@@ -160,5 +270,48 @@ export function request(_req: any): Promise<any> { return Promise.resolve({ stat
 export function getIcon(_iconId: string): HTMLElement { return document.createElement('span'); }
 export function setIcon(_el: HTMLElement, _iconId: string): void {}
 export function normalizePath(_path: string): string { return _path; }
-export function parseYaml(_yaml: string): any { return {}; }
-export function stringifyYaml(_obj: any): string { return ''; }
+
+export function parseYaml(yaml: string): any {
+    try {
+        const result: Record<string, any> = {};
+        const lines = yaml.split('\n').filter(l => !l.trim().startsWith('#') && l.trim() !== '');
+        for (const line of lines) {
+            const match = line.match(/^([^:]+):\s*(.*)$/);
+            if (match) {
+                const key = match[1].trim();
+                let value: any = match[2].trim();
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.slice(1, -1);
+                } else if (value.startsWith("'") && value.endsWith("'")) {
+                    value = value.slice(1, -1);
+                } else if (value === 'true') value = true;
+                else if (value === 'false') value = false;
+                else if (!isNaN(Number(value)) && value !== '') value = Number(value);
+                else if (value.startsWith('[') && value.endsWith(']')) {
+                    try { value = JSON.parse(value); } catch { value = value; }
+                }
+                result[key] = value;
+            }
+        }
+        return result;
+    } catch {
+        return {};
+    }
+}
+
+export function stringifyYaml(obj: any): string {
+    if (!obj || typeof obj !== 'object') return '';
+    const lines: string[] = [];
+    for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'string') {
+            lines.push(`${key}: ${value}`);
+        } else if (typeof value === 'number' || typeof value === 'boolean') {
+            lines.push(`${key}: ${value}`);
+        } else if (Array.isArray(value)) {
+            lines.push(`${key}: ${JSON.stringify(value)}`);
+        } else {
+            lines.push(`${key}: ${JSON.stringify(value)}`);
+        }
+    }
+    return lines.join('\n') + '\n';
+}

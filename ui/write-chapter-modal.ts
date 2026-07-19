@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @deprecated Legacy 单章 AI 写作 Modal（命令 ID: novel-writer-write-chapter, 显示名带"〔旧〕"）。
  *
  * 当前推荐入口：
@@ -16,7 +16,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine, ChapterContext } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
-import { ForeshadowManager } from '../engine/foreshadow-manager';
+import { ForeshadowManager } from '../services/foreshadow-manager';
 import { ReviewAgent } from '../engine/review-agent';
 import { scoreAndFilterEntities, ScoredEntity } from '../engine/entity-scorer';
 import { stripFrontmatter, showProgress, hideProgress, showSuccess, showError, showWarning } from '../utils/helpers';
@@ -26,9 +26,14 @@ import { isInfoPlanComplete, isOutlineComplete } from '../shared/info-debt';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
 import { FIX_PROMPTS, fillTemplate } from '../engine/prompt-templates';
 import { SettlementEngine, SettlementResult } from '../engine/settlement-engine';
+import { ENGINE_NAMES } from '../engine/engine-registry';
 import { pjBodyDir, pjBodyFile, pjForeshadowDB, pjStepDir, pjVolumeOutlineFile, SUBDIR_STEP_ROOT } from '../shared/paths';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
+import { buildStepFrontmatter } from '../shared/step-frontmatter';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('WriteChapterModal');
 export class WriteChapterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -41,8 +46,8 @@ export class WriteChapterModal extends Modal {
         this.plugin = plugin;
         this.aiEngine = plugin.aiEngine;
         this.contextManager = plugin.ctxManager;
-        this.foreshadowManager = new ForeshadowManager(plugin);
-        this.reviewAgent = new ReviewAgent(plugin);
+        this.foreshadowManager = plugin.foreshadowManager;
+        this.reviewAgent = plugin.reviewAgent;
     }
 
     onOpen(): void {
@@ -53,11 +58,9 @@ export class WriteChapterModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -97,7 +100,7 @@ export class WriteChapterModal extends Modal {
         const chapDir = pjStepDir(project, volN, chapN);
 
         const aiEngine = plugin.aiEngine;
-        const reviewAgent = new ReviewAgent(plugin);
+        const reviewAgent = plugin.reviewAgent;
 
         await WriteChapterModal.doWriteChapter(
             app, plugin, aiEngine, reviewAgent,
@@ -146,7 +149,7 @@ export class WriteChapterModal extends Modal {
             // v4.0：分卷大纲按卷归档
             const pf = app.vault.getAbstractFileByPath(pjVolumeOutlineFile(project, volN));
             if (pf instanceof TFile) planForThisChap = await app.vault.read(pf);
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
         const chapPlan = planForThisChap.match(new RegExp(`第${chapNum}章[\\s\\S]*?(?=\\n###|$)`))?.[0] || '';
 
         if (showStepProgress) showProgress('📖 读取前文摘要...');
@@ -209,7 +212,7 @@ export class WriteChapterModal extends Modal {
                             prevChaptersSummary += `\n【上章审查发现的问题】\n${issues.slice(0, 5).join('\n')}`;
                         }
                     }
-                } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
             }
         }
 
@@ -244,7 +247,7 @@ export class WriteChapterModal extends Modal {
                     unrevealedForeshadow += '\n' + filtered.summary;
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let selectedToReveal: string[] = [];
         const allUnrevealed = unrevealedForeshadow.split('\n').filter(s => s.startsWith('- ')).map(s => s.replace(/^- /, '').trim());
@@ -295,7 +298,7 @@ export class WriteChapterModal extends Modal {
             try {
                 const { chars } = await getInvolvedEntities(app, bodyFile);
                 if (chars.length > 0) involvedSet = new Set(chars);
-            } catch (e) { console.warn('[小说工坊] 读取涉及人物失败:', e); }
+            } catch (e) { log.warn('[小说工坊] 读取涉及人物失败:', e); }
         }
 
         let allChars = '';
@@ -369,14 +372,16 @@ export class WriteChapterModal extends Modal {
 
             if (planResult.content) {
                 if (!app.vault.getAbstractFileByPath(chapDir)) {
-                    try { await app.vault.createFolder(chapDir); } catch (e) { console.warn('[小说工坊] 创建步骤目录失败:', chapDir, e); }
+                    try { await app.vault.createFolder(chapDir); } catch (e) { log.warn('[小说工坊] 创建步骤目录失败:', chapDir, e); }
                 }
                 const infoPath = `${chapDir}/${getChapterFileName(chapName, '信息规划')}`;
-                const infoContent = `---
-tags: [章节规划]
-章节编号: ${chapNum}
-本卷章: ${volName}${chapName}
----
+                const infoFm = buildStepFrontmatter({
+                    tag: '信息规划',
+                    volume: volName,
+                    chapter: chapName,
+                    model: plugin.settings.flashModel,
+                });
+                const infoContent = `${infoFm}
 
 # 第${chapNum}章 信息规划
 
@@ -406,11 +411,13 @@ ${infoPlan.slice(0, 800)}
             hideProgress();
             if (olResult.content) {
                 try {
-                    await app.vault.modify(outlineFile, `---
-tags: [大纲摘要]
-卷: ${volName}
-章: ${chapName}
----
+                    const outlineFm = buildStepFrontmatter({
+                        tag: '大纲摘要',
+                        volume: volName,
+                        chapter: chapName,
+                        model: plugin.settings.defaultModel,
+                    });
+                    await app.vault.modify(outlineFile, `${outlineFm}
 
 # ${chapName} · 大纲摘要
 
@@ -418,7 +425,7 @@ tags: [大纲摘要]
 
 ${olResult.content.trim()}
 `);
-                } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
                 outlineContent = stripFrontmatter(olResult.content);
             }
         }
@@ -455,7 +462,7 @@ ${olResult.content.trim()}
                         }
                     }
                 }
-            } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+            } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
             const revealedNames = selectedToReveal.map(n => `- ${n}`).join('\n');
             forcedRevealHint = `【本章必须揭示的伏笔】以下伏笔必须在本章正文中通过剧情/对话揭示：\n${revealedNames}\n请在正文中明确交代这些伏笔的结果。${revealContext}`;
         }
@@ -523,11 +530,13 @@ ${olResult.content.trim()}
 
         if (reportResult.content) {
             const reportPath = `${chapDir}/${getChapterFileName(chapName, '分析报告')}`;
-            const reportFull = `---
-tags: [分析报告]
-卷: ${volName}
-章: ${chapName}
----
+            const reportFm = buildStepFrontmatter({
+                tag: '分析报告',
+                volume: volName,
+                chapter: chapName,
+                model: plugin.settings.flashModel,
+            });
+            const reportFull = `${reportFm}
 
 # 第${chapNum}章 分析报告
 
@@ -540,27 +549,23 @@ ${reportResult.content}
             showSuccess(`分析报告已生成：${getChapterFileName(chapName, '分析报告')}`);
 
             showProgress('⏳ 正在执行章节结算...');
-            const settleResult = await WriteChapterModal.executeSettlement(app, project, chapDir, chapName, reportResult.content, bodyText, selectedToReveal);
+            const settleResult = await WriteChapterModal.executeSettlement(plugin, project, chapDir, chapName, reportResult.content, bodyText, selectedToReveal);
             hideProgress();
             showSuccess(`结算：更新${settleResult.updated}项 / 新建${settleResult.created}项`, 8000);
 
             // v4.0: 结算表带 frontmatter（与 元文件/00-系统模板/结算表模板.md 对齐）
-            const settleVolMatch = chapDir.match(/\/步骤结果\/(第\d+卷)\/(第\d+章)/);
-            const settleVol = settleVolMatch ? settleVolMatch[1] : '';
-            const settleChap = settleVolMatch ? settleVolMatch[2] : `第${chapName}章`;
             const settleNow = new Date().toISOString();
-            const settleFm = `---
-tags: [结算表]
-卷: "${settleVol}"
-章: "${settleChap}"
-step_status: generated
-step_model: ""
-step_timestamp: ${settleNow}
-结算时间: ${settleNow}
-结算状态: completed
----
-
-`;
+            const settleFm = buildStepFrontmatter({
+                tag: '结算表',
+                volume: volName,
+                chapter: chapName,
+                model: plugin.settings.flashModel,
+                timestamp: settleNow,
+                extra: {
+                    '结算时间': settleNow,
+                    '结算状态': 'completed',
+                },
+            });
             const settleSummary = `${settleFm}# 第${chapName}章 结算表
 
 ## 更新状态
@@ -580,7 +585,7 @@ step_timestamp: ${settleNow}
                 const existingSettleFile = app.vault.getAbstractFileByPath(sp);
                 if (existingSettleFile) await app.vault.delete(existingSettleFile);
                 await app.vault.create(sp, settleSummary);
-            } catch (e) { console.warn('结算表写入失败:', e); }
+            } catch (e) { log.warn('结算表写入失败:', e); }
 
             try {
                 let currentBody = await app.vault.read(bodyFile);
@@ -641,7 +646,7 @@ step_timestamp: ${settleNow}
                     const updatedBody = newFm + currentBody.replace(/^---\n[\s\S]*?\n---\n/, '');
                     await app.vault.modify(bodyFile, updatedBody);
                 }
-            } catch (e) { console.warn('frontmatter更新失败:', e); }
+            } catch (e) { log.warn('frontmatter更新失败:', e); }
 
             if (titleMatch) {
                 try {
@@ -653,7 +658,7 @@ step_timestamp: ${settleNow}
                     if (oldPath !== newPath && !app.vault.getAbstractFileByPath(newPath)) {
                         await app.vault.adapter.rename(oldPath, newPath);
                     }
-                } catch (e) { console.warn('正文文件重命名失败:', e); }
+                } catch (e) { log.warn('正文文件重命名失败:', e); }
             }
 
             showProgress('⏳ 正在执行连贯性审查...');
@@ -702,7 +707,7 @@ step_timestamp: ${settleNow}
                             showSuccess('审查问题已自动修正');
                         }
                     }
-                } catch (e) { console.warn('[小说工坊] 审查修正失败:', e); }
+                } catch (e) { log.warn('[小说工坊] 审查修正失败:', e); }
             }
         }
     }
@@ -745,8 +750,8 @@ step_timestamp: ${settleNow}
     }
 
 
-    private static async executeSettlement(app: App, project: string, chapDir: string, chapName: string, report: string, bodyText: string, forceReveal: string[] = []): Promise<SettlementResult> {
-        const engine = new SettlementEngine(app);
+    private static async executeSettlement(plugin: NovelWriterPlugin, project: string, chapDir: string, chapName: string, report: string, bodyText: string, forceReveal: string[] = []): Promise<SettlementResult> {
+        const engine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
         return engine.settle(project, chapDir, chapName, report, bodyText,
             { forceReveal: forceReveal.length > 0 ? forceReveal : undefined }
         );

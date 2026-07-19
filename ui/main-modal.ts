@@ -1,7 +1,10 @@
-﻿import { App, Modal, Notice } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('MainModal');
 export class NovelWriterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -19,11 +22,9 @@ export class NovelWriterModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(700px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(700px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(700px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
@@ -34,11 +35,11 @@ export class NovelWriterModal extends Modal {
         contentEl.createEl('p', { text: '全流程AI长篇小说创作系统' });
 
         try {
-            console.log('开始渲染按钮组...');
+            log.info('开始渲染按钮组...');
             this.renderButtonGroups(contentEl);
-            console.log('按钮组渲染完成');
+            log.info('按钮组渲染完成');
         } catch (e) {
-            console.error('渲染按钮组失败:', e);
+            log.error('渲染按钮组失败:', e);
         }
     }
 
@@ -48,7 +49,6 @@ export class NovelWriterModal extends Modal {
                 label: '核心写作',
                 buttons: [
                     { label: '协同写作工作台', icon: '✍️', commandId: 'novel-writer-co-writing', description: '句级联想、写作控制、保存与结算的统一正文入口' },
-                    { label: '协同浮窗工作台', icon: '🧩', commandId: 'novel-writer-float-workbench', description: '打开协同写作主窗与监控浮窗' },
                     { label: '流程规划工作台', icon: '🎯', commandId: 'novel-writer-full-writer', description: '章节规划、上下文采集与步骤结果管理' },
                 ]
             },
@@ -85,6 +85,7 @@ export class NovelWriterModal extends Modal {
                 label: '审查与优化',
                 buttons: [
                     { label: '连贯性审查', icon: '🔍', commandId: 'novel-writer-review-chapter', description: '检查设定一致性和人物OOC' },
+                    { label: '步骤结果查看', icon: '📋', commandId: 'novel-writer-step-result-viewer', description: '按章节查看所有步骤结果文件（信息规划/大纲/分析报告等）' },
                     { label: '章节结算', icon: '✅', commandId: 'novel-writer-chapter-settlement', description: '更新人物状态和伏笔' },
                     { label: '文笔风格蒸馏', icon: '🎨', commandId: 'novel-writer-style-distiller', description: '分析并提取写作风格' },
                     { label: '上下文注入', icon: '💉', commandId: 'novel-writer-context-injector', description: '注入相关设定到章节' },
@@ -128,21 +129,21 @@ export class NovelWriterModal extends Modal {
                 
                 button.addEventListener('click', () => {
                     try {
-                        console.log(`[小说工坊] 点击按钮: ${btn.label}, 命令ID: ${btn.commandId}`);
+                        log.info(`[小说工坊] 点击按钮: ${btn.label}, 命令ID: ${btn.commandId}`);
                         new Notice(`⏳ 正在执行: ${btn.label}...`);
                         
                         const result = this.plugin.executeCommand(btn.commandId);
-                        console.log(`[小说工坊] 命令执行结果:`, result);
+                        log.info(`[小说工坊] 命令执行结果:`, result);
                         
                         if (result === false) {
-                            console.error(`[小说工坊] 命令执行返回 false: ${btn.commandId}`);
+                            log.error(`[小说工坊] 命令执行返回 false: ${btn.commandId}`);
                             new Notice(`❌ 命令执行失败: ${btn.label}`);
                         } else {
                             new Notice(`✅ ${btn.label} 执行完成`);
                             this.close();
                         }
                     } catch (error: any) {
-                        console.error(`[小说工坊] 命令执行失败: ${btn.commandId}`, error);
+                        log.error(`[小说工坊] 命令执行失败: ${btn.commandId}`, error);
                         new Notice(`❌ ${btn.label} 执行失败: ${error.message || '未知错误'}`);
                     }
                 });

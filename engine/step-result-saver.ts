@@ -16,7 +16,10 @@ import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapt
 import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('StepResultSaver');
 export interface EntityNames {
     chars: string[];
     factions: string[];
@@ -104,7 +107,7 @@ export class StepResultSaver {
         volume: string,
     ): Promise<boolean> {
         if (!chapDir) {
-            console.warn('[StepResultSaver] saveStepResult: chapDir 为空，跳过保存 stepKey=', stepKey);
+            log.warn('[StepResultSaver] saveStepResult: chapDir 为空，跳过保存 stepKey=', stepKey);
             return false;
         }
 
@@ -136,7 +139,7 @@ export class StepResultSaver {
         };
 
         const targetPath = fileMap[stepKey];
-        if (!targetPath) { console.warn('[StepResultSaver] stepKey 未映射到文件', stepKey); return false; }
+        if (!targetPath) { log.warn('[StepResultSaver] stepKey 未映射到文件', stepKey); return false; }
 
         try {
             const fs = this.getFS();
@@ -162,7 +165,7 @@ export class StepResultSaver {
                 if (foundBody) {
                     actualTargetPath = foundBody.path;
                 } else {
-                    console.warn(`[StepResultSaver] bodyGeneration: 未找到已有正文文件，将创建新文件 → ${actualTargetPath}`);
+                    log.warn(`[StepResultSaver] bodyGeneration: 未找到已有正文文件，将创建新文件 → ${actualTargetPath}`);
                 }
 
                 // 去除 content 中可能已有的 frontmatter
@@ -197,7 +200,7 @@ export class StepResultSaver {
                             this.updateFrontmatterFields(fm, ct, volume, chapName, entityNames, 'pipeline');
                         });
                     } catch (fmErr) {
-                        console.warn('[StepResultSaver] bodyGeneration processFrontMatter 失败:', fmErr);
+                        log.warn('[StepResultSaver] bodyGeneration processFrontMatter 失败:', fmErr);
                     }
                 }
 
@@ -238,17 +241,17 @@ export class StepResultSaver {
                             this.setStepTags(fm, stepKey, chapName);
                         });
                     } catch (fmErr) {
-                        console.warn('[StepResultSaver] processFrontMatter 失败:', fmErr);
+                        log.warn('[StepResultSaver] processFrontMatter 失败:', fmErr);
                     }
                 }
             }
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);
-            console.error('[StepResultSaver] 保存步骤结果失败:', e);
+            log.error('[StepResultSaver] 保存步骤结果失败:', e);
             this.deps.showNotice?.(`❌ 保存步骤结果失败：${errMsg}`, 5000);
             return false;
         }
-        console.log(`[StepResultSaver] saveStepResult: ${stepKey} → ${targetPath} (${content.length} 字)`);
+        log.info(`[StepResultSaver] saveStepResult: ${stepKey} → ${targetPath} (${content.length} 字)`);
         return true;
     }
 
@@ -263,7 +266,7 @@ export class StepResultSaver {
                 : chapDir;
             const foundBody = findChapterFile(this.getVaultMeta().getFiles(), bodyLookupDir, '正文', this.app);
             if (!foundBody) {
-                console.warn('[StepResultSaver] writeFixToBody: 未找到正文文件，跳过覆写', bodyLookupDir);
+                log.warn('[StepResultSaver] writeFixToBody: 未找到正文文件，跳过覆写', bodyLookupDir);
                 return;
             }
 
@@ -318,10 +321,10 @@ export class StepResultSaver {
             const newContent = `---\n${updatedFm}\n---\n\n${cleanBody}`;
             await this.getFS().write(foundBody.path, newContent);
 
-            console.warn(`[StepResultSaver] writeFixToBody: ✅ 修正已写回正文 → ${foundBody.path} (${cleanBody.length} 字)` +
+            log.warn(`[StepResultSaver] writeFixToBody: ✅ 修正已写回正文 → ${foundBody.path} (${cleanBody.length} 字)` +
                 (entityNames ? ` 涉及字段已刷新` : ''));
         } catch (e) {
-            console.error('[StepResultSaver] writeFixToBody 失败:', e);
+            log.error('[StepResultSaver] writeFixToBody 失败:', e);
             this.deps.showNotice?.('❌ 修正回写失败，正文未更新：' + (e instanceof Error ? e.message : String(e)), 6000);
         }
     }
@@ -350,14 +353,14 @@ export class StepResultSaver {
                             if (nameMatch) result[key].push(nameMatch[1].trim());
                         }
                     } catch (e) {
-                        console.warn('[StepResultSaver] 实体文件读取失败:', e);
+                        log.warn('[StepResultSaver] 实体文件读取失败:', e);
                     }
                 }
             }
             return result;
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);
-            console.warn('[StepResultSaver] extractEntityNames 失败:', e);
+            log.warn('[StepResultSaver] extractEntityNames 失败:', e);
             this.deps.showNotice?.(`⚠️ 读取实体名称失败：${errMsg}`, 5000);
             return null;
         }

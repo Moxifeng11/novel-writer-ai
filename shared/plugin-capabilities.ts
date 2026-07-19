@@ -46,6 +46,13 @@ export interface PluginSettings {
     maxUnrevealedForeshadow?: number;
 }
 
+/** 实体缓存管理器接口（用于 capabilities 注入） */
+export interface EntityCachePort {
+    getEntry: (project: string, path: string) => { mtime: number; frontmatter: Record<string, unknown> } | undefined;
+    updateEntry: (project: string, path: string, mtime: number, frontmatter: Record<string, unknown>, entityType: string) => void;
+    cleanup: (project: string, existingPaths: Set<string>) => void;
+}
+
 /** 插件能力接口 — engine 层只需要知道这些能力 */
 export interface PluginCapabilities {
     /** Obsidian App 实例 */
@@ -59,13 +66,15 @@ export interface PluginCapabilities {
     /** 上下文管理器实例 */
     contextManager?: import('../engine/context-manager').ContextManager;
     /** 伏笔管理器实例 */
-    foreshadowManager?: import('../engine/foreshadow-manager').ForeshadowManager;
+    foreshadowManager?: import('../services/foreshadow-manager').ForeshadowManager;
     /** 审查代理实例 */
     reviewAgent?: import('../engine/review-agent').ReviewAgent;
     /** 文件系统抽象（可选，已有懒加载兜底） */
     fs?: import('./file-system-port').FileSystemPort;
     /** Vault 元数据抽象（可选，已有懒加载兜底） */
     vaultMeta?: import('./file-system-port').VaultMetaPort;
+    /** 实体缓存管理器（可选，由 capabilities 注入） */
+    entityCache?: EntityCachePort;
 }
 
 /**

@@ -1,4 +1,4 @@
-﻿import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine } from '../engine/ai-engine';
 import { mkdirp } from '../utils/helpers';
@@ -6,6 +6,8 @@ import { mkdirp } from '../utils/helpers';
 export class AddFanficSettingModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
+    private generateButton: HTMLButtonElement | null = null;
+    private originalButtonText: string = '';
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -20,11 +22,9 @@ export class AddFanficSettingModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -47,8 +47,8 @@ export class AddFanficSettingModal extends Modal {
             cls: 'nw-input novel-writer-input'
         });
 
-        const generateButton = contentEl.createEl('button', { text: '生成同人设定', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
-        generateButton.onclick = async () => {
+        this.generateButton = contentEl.createEl('button', { text: '生成同人设定', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
+        this.generateButton.onclick = async () => {
             const workName = nameInput.value.trim();
             const workType = typeInput.value.trim();
             const author = authorInput.value.trim();
@@ -68,9 +68,15 @@ export class AddFanficSettingModal extends Modal {
             return;
         }
 
+        if (this.generateButton) {
+            this.originalButtonText = this.generateButton.textContent || '';
+            this.generateButton.disabled = true;
+            this.generateButton.textContent = '⏳ 生成中...';
+        }
         const genNotice = new Notice(`⏳ 正在生成《${workName}》的世界观设定...`, 0);
 
-        const systemPrompt = `你是一个资深的小说设定整理专家。请根据作品名称，生成一份详细的世界观设定文件。
+        try {
+            const systemPrompt = `你是一个资深的小说设定整理专家。请根据作品名称，生成一份详细的世界观设定文件。
 
 【输出格式要求】
 必须严格按照以下 Markdown 格式输出，包含完整的 YAML frontmatter：
@@ -119,39 +125,44 @@ export class AddFanficSettingModal extends Modal {
 3. 保持设定的完整性和一致性
 4. 语言简洁明了，便于同人作者参考`;
 
-        const userContent = `请为《${workName}》生成详细的世界观设定文件。${author ? `作者是${author}。` : ""}`;
+            const userContent = `请为《${workName}》生成详细的世界观设定文件。${author ? `作者是${author}。` : ""}`;
 
-        const result = await this.aiEngine.callAI(systemPrompt, userContent, undefined, 0.7, 8192);
+            const result = await this.aiEngine.callAI(systemPrompt, userContent, undefined, 0.7, 8192);
 
-        genNotice.hide();
+            if (result.error) {
+                new Notice(`❌ ${result.error}`, 12000);
+                return;
+            }
 
-        if (result.error) {
-            new Notice(`❌ ${result.error}`, 12000);
-            return;
+            const fanficDir = '元文件/05-同人设定库';
+            await mkdirp(this.app, fanficDir);
+
+            const safeName = workName.replace(/[\\/:*?"<>|]/g, "_").trim();
+            const filePath = `${fanficDir}/${safeName}设定.md`;
+
+            const existingSetting = this.app.vault.getAbstractFileByPath(filePath);
+            if (existingSetting) {
+                const overwrite = window.confirm(`「${safeName}设定.md」已存在，覆盖？`);
+                if (!overwrite) return;
+                await this.app.vault.delete(existingSetting);
+            }
+
+            await this.app.vault.create(filePath, result.content);
+            new Notice(`✅ 《${workName}》设定已保存到 ${fanficDir}`, 6000);
+
+            const file = this.app.vault.getAbstractFileByPath(filePath);
+            if (file instanceof TFile) {
+                await this.plugin.safeOpenFile(file);
+            }
+
+            this.close();
+        } finally {
+            genNotice.hide();
+            if (this.generateButton) {
+                this.generateButton.disabled = false;
+                this.generateButton.textContent = this.originalButtonText;
+            }
         }
-
-        const fanficDir = '元文件/05-同人设定库';
-        await mkdirp(this.app, fanficDir);
-
-        const safeName = workName.replace(/[\\/:*?"<>|]/g, "_").trim();
-        const filePath = `${fanficDir}/${safeName}设定.md`;
-
-        const existingSetting = this.app.vault.getAbstractFileByPath(filePath);
-        if (existingSetting) {
-            const overwrite = window.confirm(`「${safeName}设定.md」已存在，覆盖？`);
-            if (!overwrite) return;
-            await this.app.vault.delete(existingSetting);
-        }
-
-        await this.app.vault.create(filePath, result.content);
-        new Notice(`✅ 《${workName}》设定已保存到 ${fanficDir}`, 6000);
-
-        const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (file instanceof TFile) {
-            await this.plugin.safeOpenFile(file);
-        }
-
-        this.close();
     }
 
     onClose(): void {

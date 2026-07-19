@@ -2,7 +2,10 @@ import { App, TFile, TFolder } from 'obsidian';
 import { ChapterFrontmatter } from '../shared/types';
 import { pjBodyDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ChapterUtils');
 export const CHAPTER_FILE_TYPES = {
     body: '正文',
     outline: '大纲摘要',
@@ -118,7 +121,7 @@ export async function migrateLegacyFile(
                 else if (content.includes('结算表') || content.includes('更新状态')) detectedType = '结算表';
                 else if (content.includes('连贯性') || content.includes('互信息断裂')) detectedType = '连贯性审查';
             }
-        } catch { console.warn('[chapter-utils] 章节类型检测失败:', file?.path); }
+        } catch { log.warn('[chapter-utils] 章节类型检测失败:', file?.path); }
     }
 
     if (!detectedType) return null;
@@ -161,7 +164,7 @@ export async function migrateLegacyFile(
                 if (oldBody.length > newBody.length) {
                     await fs.write(newPath, oldContent);
                 }
-            } catch { console.warn('[chapter-utils] 章节类型检测失败:', file?.path); }
+            } catch { log.warn('[chapter-utils] 章节类型检测失败:', file?.path); }
         }
         // 删除旧文件
         try { await fs.delete(file.path); } catch { /* ignore */ }
@@ -173,7 +176,7 @@ export async function migrateLegacyFile(
         const migrated = vaultMeta.getFiles().find(f => f.path === newPath);
         return migrated || null;
     } catch (e) {
-        console.warn('[小说工坊] 迁移旧格式文件失败:', file.path, e);
+        log.warn('[小说工坊] 迁移旧格式文件失败:', file.path, e);
         return null;
     }
 }
@@ -244,7 +247,7 @@ export function findChapterFile(files: TFile[], chapDir: string, type: string, a
                 const hasBodyTag = Array.isArray(tags) ? tags.includes('正文') : String(tags || '').includes('正文');
                 const hasStatus = !!cache?.frontmatter?.['status'];
                 if (hasBodyTag || hasStatus) {
-                    console.log(`[findChapterFile] frontmatter 回退找到正文: ${f.path} (tags=${String(tags)}, status=${String(cache?.frontmatter?.['status'] || '')})`);
+                    log.info(`[findChapterFile] frontmatter 回退找到正文: ${f.path} (tags=${String(tags)}, status=${String(cache?.frontmatter?.['status'] || '')})`);
                     return f;
                 }
             } catch { /* skip unreadable files */ }

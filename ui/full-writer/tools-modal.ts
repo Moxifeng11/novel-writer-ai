@@ -1,4 +1,4 @@
-﻿/**
+/**
  * tools-modal.ts - ToolsModal extracted from full-writer-view.ts (v6.0)
  */
 
@@ -20,13 +20,14 @@ export class ToolsModal extends Modal {
                 label: '✍️ 核心写作',
                 buttons: [
                     { label: '协同写作工作台', desc: '句级联想、写作控制、设定检查、保存与结算的统一正文入口', icon: '✍️', commandId: 'novel-writer-co-writing' },
-                    { label: '协同浮窗工作台', desc: '打开协同写作主窗与监控浮窗', icon: '🧩', commandId: 'novel-writer-float-workbench' },
                     { label: '流程规划工作台', desc: '章节规划、上下文采集与步骤结果管理', icon: '🎯', commandId: 'novel-writer-full-writer' },
                 ]
             },
             {
                 label: '📋 项目规划',
                 buttons: [
+                    { label: '脑洞构思工坊', desc: '题材发散、创意评估、核心概念提炼的创作前期工具', icon: '💡', commandId: 'novel-writer-ideation' },
+                    { label: '黄金开篇工坊', desc: '黄金三章设计、钩子生成、节奏分析、开篇吸引力评分', icon: '🌟', commandId: 'novel-writer-golden-opening' },
                     { label: '新建项目', desc: '创建一个新的小说项目', icon: '📁', commandId: 'novel-writer-create-project' },
                     { label: 'AI 全书规划', desc: 'AI 辅助规划整本书的分卷大纲', icon: '📋', commandId: 'novel-writer-plan-book' },
                     { label: '续写规划', desc: '规划下一章/下一卷的内容方向', icon: '🔄', commandId: 'novel-writer-continue-chapters' },
@@ -57,6 +58,7 @@ export class ToolsModal extends Modal {
                 label: '🔍 审查与优化',
                 buttons: [
                     { label: '连贯性审查', desc: '检查本章与前文的连贯性', icon: '🔍', commandId: 'novel-writer-review-chapter' },
+                    { label: '步骤结果查看', desc: '按章节查看所有步骤结果文件（信息规划/大纲/分析报告等）', icon: '📋', commandId: 'novel-writer-step-result-viewer' },
                     { label: '章节结算', desc: '完成本章的结算（分析报告+状态更新）', icon: '✅', commandId: 'novel-writer-chapter-settlement' },
                     { label: '文笔风格蒸馏', desc: '学习并应用新的文笔风格', icon: '🎨', commandId: 'novel-writer-style-distiller' },
                     { label: '上下文注入', desc: '手动注入上下文信息到当前章节', icon: '💉', commandId: 'novel-writer-context-injector' },
@@ -80,9 +82,12 @@ export class ToolsModal extends Modal {
 
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
+        this.modalEl.addClass('novel-writer-tools-modal-shell');
+        this.modalEl.style.setProperty('width', 'clamp(800px, 85vw, 1100px)', 'important');
+        this.modalEl.style.setProperty('max-width', '1100px', 'important');
+        this.modalEl.style.setProperty('margin', 'auto', 'important');
         const { contentEl } = this;
         contentEl.empty();
-        this.modalEl.addClass('novel-writer-tools-modal-shell');
         contentEl.addClass('novel-writer-tools-modal');
 
         const container = contentEl.createDiv({ cls: 'nw-tools-container' });

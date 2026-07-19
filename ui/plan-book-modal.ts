@@ -5,7 +5,10 @@ import { ContextManager } from '../engine/context-manager';
 import { writeVolumeOutlines } from '../utils/helpers';
 import { pjWorldview, pjForeshadowDB, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_WORLDVIEW_FILE } from '../shared/paths';
 import { ChapterOutlineTreeModal } from './chapter-outline-tree-modal';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('PlanBookModal');
 export class PlanBookModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -25,11 +28,9 @@ export class PlanBookModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(700px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(700px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(700px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
@@ -177,7 +178,7 @@ export class PlanBookModal extends Modal {
         try {
             const wf = this.app.vault.getAbstractFileByPath(pjWorldview(project));
             if (wf instanceof TFile) worldView = await this.app.vault.read(wf);
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let genreInfo: { genre: string; theme: string } | null = null;
 
@@ -235,36 +236,53 @@ ${worldviewResult.content}`;
             timelineEvents: await this.readContextFile(project, '02-时间线与伏笔/时间线看板'),
         };
 
-        const result = await this.aiEngine.generateOutline(worldView, {
-            totalWords: String(this.parseTotalWords(totalChars)),
-            volumes: volumes,
-            wordsPerChapter: wordsPerChapter,
-            theme: genreInfo?.theme || '',
-            genre: genreInfo?.genre || ''
-        }, existingWorldElements, customPrompt, (phase: string, current: number, total: number) => {
-            if (phase === 'skeleton') {
-                genNotice.setMessage(`⏳ Phase 1: 正在规划全局结构...`);
-            } else if (phase === 'volume') {
-                genNotice.setMessage(`⏳ Phase 2: 正在生成第${current}/${total}卷大纲...`);
+        try {
+            const result = await this.aiEngine.generateOutline(worldView, {
+                totalWords: String(this.parseTotalWords(totalChars)),
+                volumes: volumes,
+                wordsPerChapter: wordsPerChapter,
+                theme: genreInfo?.theme || '',
+                genre: genreInfo?.genre || ''
+            }, existingWorldElements, customPrompt, (phase: string, current: number, total: number) => {
+                if (phase === 'skeleton' || phase === 'blueprint') {
+                    genNotice.setMessage(`⏳ Phase 1: 正在规划全局结构...`);
+                } else if (phase === 'volume') {
+                    genNotice.setMessage(`⏳ Phase 2: 正在生成第${current}/${total}卷大纲...`);
+                } else if (phase === 'validation') {
+                    genNotice.setMessage(`⏳ Phase 3: 正在验证跨卷连贯性...`);
+                } else if (phase === 'repair') {
+                    genNotice.setMessage(`⏳ Phase 4: 正在修复第${current}/${total}轮...`);
+                }
+            });
+
+            genNotice.hide();
+
+            if (result.error) {
+                new Notice(`❌ 全书规划生成失败: ${result.error}`, 12000);
+                return;
             }
-        });
 
-        genNotice.hide();
+            // v4.0：按卷拆分写入 分卷大纲/第N卷_分卷大纲.md（全书总览归入第1卷头部）
+            const volCount = await writeVolumeOutlines(this.app, project, result.content || '');
 
-        if (result.error) {
-            new Notice(`❌ 全书规划生成失败: ${result.error}`, 12000);
-            return;
+            // 检查是否有验证警告
+            const hasWarnings = (result.content || '').includes('验证警告');
+            if (hasWarnings) {
+                new Notice(`⚠️ 大纲已生成（共 ${volCount} 卷），但存在待完善问题，请检查大纲内容`, 8000);
+            } else {
+                new Notice(`✅ 全书规划已生成（共 ${volCount} 卷分卷大纲）`, 3000);
+            }
+
+            // v4.2: 统一使用 ChapterOutlineTreeModal 展示完整的章节冲突预览
+            // 替换旧版 renderOutlineTree（只能解析 #### 第X章 格式，不兼容 v4.0 表格格式）
+            this.close();
+            new ChapterOutlineTreeModal(this.app, this.plugin, project).open();
+        } catch (error: any) {
+            genNotice.hide();
+            const errorMsg = error.message || '生成失败';
+            new Notice(`❌ 全书规划生成失败: ${errorMsg}`, 12000);
+            log.error('[小说工坊] 大纲生成异常:', error);
         }
-
-        // v4.0：按卷拆分写入 分卷大纲/第N卷_分卷大纲.md（全书总览归入第1卷头部）
-        const volCount = await writeVolumeOutlines(this.app, project, result.content || '');
-
-        new Notice(`✅ 全书规划已生成（共 ${volCount} 卷分卷大纲）`, 3000);
-
-        // v4.2: 统一使用 ChapterOutlineTreeModal 展示完整的章节冲突预览
-        // 替换旧版 renderOutlineTree（只能解析 #### 第X章 格式，不兼容 v4.0 表格格式）
-        this.close();
-        new ChapterOutlineTreeModal(this.app, this.plugin, project).open();
     }
 
     private async loadContextPreview(project: string, container: HTMLElement): Promise<void> {
@@ -430,7 +448,7 @@ ${worldviewResult.content}`;
                         }
                     }
                 } catch (e) {
-                    console.warn('Failed to read context file:', file.path, e);
+                    log.warn('Failed to read context file:', file.path, e);
                 }
             }
         }

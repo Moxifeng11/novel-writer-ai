@@ -8,7 +8,6 @@ export class ActionPanel {
     render(container: HTMLElement) {
         const actions = [
             { label: '✍️ 协同写作', cmd: 'novel-writer-co-writing' },
-            { label: '🧩 浮窗工作台', cmd: 'novel-writer-float-workbench' },
             { label: '👤 生成角色', cmd: 'novel-writer-character' },
             { label: '📍 生成地点', cmd: 'novel-writer-location' },
             { label: '📋 全书规划', cmd: 'novel-writer-plan-book' },

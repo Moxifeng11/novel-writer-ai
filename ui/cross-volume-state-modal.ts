@@ -1,9 +1,12 @@
-﻿import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { pjBodyDir, pjControlDir, pjCharsDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
 import { mkdirp } from '../utils/helpers';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('CrossVolumeStateModal');
 export class CrossVolumeStateModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -18,11 +21,9 @@ export class CrossVolumeStateModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -142,13 +143,13 @@ export class CrossVolumeStateModal extends Modal {
                     }
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let timeline = '';
         try {
             const tlFile = this.app.vault.getAbstractFileByPath(`${pjTimelineBoard(project)}`);
             if (tlFile instanceof TFile) timeline = (await this.app.vault.read(tlFile)).slice(0, 1000);
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         // v4.0：状态快照权威位置统一到 04-项目总控/
         await mkdirp(this.app, pjControlDir(project));
@@ -194,7 +195,7 @@ ${timeline || '（无时间线事件）'}
             await this.app.vault.create(snapshotPath, snapshotContent);
         } catch (e) {
             writeFailed = true;
-            console.warn('[小说工坊] 状态快照写入失败:', e);
+            log.warn('[小说工坊] 状态快照写入失败:', e);
             new Notice('❌ 状态快照保存失败，请检查磁盘空间', 6000);
         }
 

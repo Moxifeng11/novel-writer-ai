@@ -1,4 +1,4 @@
-﻿import { App, Modal, Setting, Notice, TFile } from 'obsidian';
+import { App, Modal, Setting, Notice, TFile } from 'obsidian';
 import NovelWriterAI from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { AIEngine } from '../engine/ai-engine';
@@ -7,7 +7,10 @@ import { readMergedVolumeOutline } from '../utils/helpers';
 import { pjWorldview, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, SUBDIR_OUTLINE_ROOT } from '../shared/paths';
 import { WV_SECTIONS } from '../shared/format-constants';
 import { WizardStep, buildWizardSteps } from './full-writer/wizard-types';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ProjectWizardModal');
 interface WizardProjectInfo {
     name: string;
     genre: string;
@@ -18,6 +21,12 @@ interface WizardProjectInfo {
     projectPath: string;
 }
 
+/**
+ * @deprecated 旧版项目向导实现
+ * 项目向导已重构为 WizardController 模式，核心入口功能正常
+ * 此类仅作为历史代码保留，不再推荐使用
+ * 推荐使用: ui/full-writer/wizard-controller.ts 中的 WizardController
+ */
 export class ProjectWizardModal extends Modal {
     private plugin: NovelWriterAI;
     private projectInfo: WizardProjectInfo;
@@ -54,7 +63,7 @@ export class ProjectWizardModal extends Modal {
                         if (ws) ws.status = 'done';
                     }
                 }
-            } catch (e) { console.warn('[小说工坊] restoreWizardStepStatus 读取世界观文件失败:', e instanceof Error ? e.message : e); }
+            } catch (e) { log.warn('[小说工坊] restoreWizardStepStatus 读取世界观文件失败:', e instanceof Error ? e.message : e); }
         }
 
         // 实体
@@ -90,7 +99,7 @@ export class ProjectWizardModal extends Modal {
                 const os = this.steps.find(s => s.id === 'outline');
                 if (os) os.status = 'done';
             }
-        } catch (e) { console.warn('[小说工坊] restoreWizardStepStatus 读取大纲文件失败:', e instanceof Error ? e.message : e); }
+        } catch (e) { log.warn('[小说工坊] restoreWizardStepStatus 读取大纲文件失败:', e instanceof Error ? e.message : e); }
 
         // 批量建章 — 检测是否已生成章节正文/步骤结果
         // v4.0：卷目录已下沉到 03-大纲与章节/正文/第N卷 与 步骤结果/第N卷/第M章。
@@ -119,7 +128,7 @@ export class ProjectWizardModal extends Modal {
                 const cs = this.steps.find(s => s.id === 'chapters');
                 if (cs) cs.status = 'done';
             }
-        } catch (e) { console.warn('[小说工坊] restoreWizardStepStatus 检测章节目录失败:', e instanceof Error ? e.message : e); }
+        } catch (e) { log.warn('[小说工坊] restoreWizardStepStatus 检测章节目录失败:', e instanceof Error ? e.message : e); }
     }
 
     async onOpen() {
@@ -284,7 +293,7 @@ export class ProjectWizardModal extends Modal {
                 genBtn.textContent = '⏳ 生成中...';
                 const progressEl = doneBox.createDiv({ attr: { style: 'margin-top:8px; color:var(--text-muted);' } });
                 try {
-                    const ai = new AIEngine(this.plugin);
+                    const ai = this.plugin.aiEngine;
                     await ai.generateWorldviewForProject(this.app, this.projectInfo.name, undefined, (phase: string) => { progressEl.setText(phase); });
                     progressEl.setText('✅ 世界观已重新生成');
                     this.renderSidebar();
@@ -329,7 +338,7 @@ export class ProjectWizardModal extends Modal {
             progressEl.setText('正在生成世界观骨架...');
 
             try {
-                const ai = new AIEngine(this.plugin);
+                const ai = this.plugin.aiEngine;
                 
                 await ai.generateWorldviewForProject(this.app, this.projectInfo.name, undefined, (phase: string, module?: string) => {
                     if (module) {
@@ -634,10 +643,9 @@ export function renderWizardEntitiesInline(container: HTMLElement, plugin?: any)
 }
 
 export function renderWizardWorldviewInline(container: HTMLElement, project: string): void {
-    container.createEl('p', { text: '🌍 AI 将根据模板生成世界观的 7 个模块：' });
-    const modules = ['世界层级体系', '力量体系', '货币体系', '势力分类', '地理格局', '历史大事记', '特殊规则'];
+    container.createEl('p', { text: `🌍 AI 将根据模板生成世界观的 ${WV_SECTIONS.length} 个模块：` });
     const list = container.createEl('ol', { attr: { style: 'margin-top:8px;' } });
-    for (const m of modules) {
+    for (const m of WV_SECTIONS) {
         list.createEl('li', { text: m });
     }
     container.createEl('p', { text: `目标项目: ${project}`, attr: { style: 'margin-top:16px;color:var(--text-muted);' } });

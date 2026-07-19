@@ -2,7 +2,10 @@ import { ItemView, WorkspaceLeaf } from 'obsidian';
 import { ContextPanel } from './rendering/context-panel';
 import { GatheredContext } from '../engine/context-manager';
 import type { NovelWriterPluginAPI } from '../shared/plugin-api';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('MonitorView');
 export const VIEW_TYPE_MONITOR = 'novel-writer-monitor';
 
 /**
@@ -87,7 +90,7 @@ export class NovelMonitorView extends ItemView {
                 this.estimateTotalChars,
             );
         } catch (e) {
-            console.warn('[小说工坊] 监控面板渲染异常:', e);
+            log.warn('[小说工坊] 监控面板渲染异常:', e);
             this.bodyEl.createDiv({ cls: 'novel-writer-fw-warning', text: '⚠️ 上下文面板渲染失败' });
         }
     }

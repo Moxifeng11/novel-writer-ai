@@ -7,7 +7,10 @@
  */
 import { App, Notice } from 'obsidian';
 import { getProjectCover } from '../project-utils';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('CoverPickerController');
 export class CoverPickerController {
     private app: App;
 
@@ -24,7 +27,7 @@ export class CoverPickerController {
     openCoverPicker(project: string, coverArea: HTMLElement) {
         // 防重入：避免并发触发多个文件选择器（v3.4.7 P0-4）
         if (this._coverPickerActive) {
-            console.log('[小说工坊] 封面选择器已在运行，忽略重复调用');
+            log.info('[小说工坊] 封面选择器已在运行，忽略重复调用');
             return;
         }
         this._coverPickerActive = true;
@@ -41,7 +44,7 @@ export class CoverPickerController {
             clearActive();
             try { if (document.body.contains(input)) input.remove(); } catch (e) {
                 // P1-2: input 节点清理失败仅记录，不影响后续流程
-                console.warn('[cover-picker] 60s 超时清理 input 失败:', e instanceof Error ? e.message : String(e));
+                log.warn('[cover-picker] 60s 超时清理 input 失败:', e instanceof Error ? e.message : String(e));
             }
         }, 60000);
 
@@ -50,7 +53,7 @@ export class CoverPickerController {
             const file = input.files?.[0];
             try { input.remove(); } catch (e) {
                 // P1-2: input 节点已可能在 cleanup 中移除，忽略但记录
-                console.warn('[cover-picker] onchange 清理 input 失败:', e instanceof Error ? e.message : String(e));
+                log.warn('[cover-picker] onchange 清理 input 失败:', e instanceof Error ? e.message : String(e));
             }
             clearActive();
             if (!file) return;
@@ -83,10 +86,10 @@ export class CoverPickerController {
             if (!_coverDirExists) {
                 try {
                     await this.app.vault.createFolder(coverDir);
-                    console.log('[小说工坊] 创建封面目录:', coverDir);
+                    log.info('[小说工坊] 创建封面目录:', coverDir);
                 } catch (e: any) {
                     // 多语言兼容：Obsidian 可能返回 "Folder already exists" / "文件夹已存在" 等
-                    console.warn('[小说工坊] 创建封面目录失败（将尝试继续）:', coverDir, e?.message || e);
+                    log.warn('[小说工坊] 创建封面目录失败（将尝试继续）:', coverDir, e?.message || e);
                     // 不 rethrow — 后续 createBinary 若真的缺目录会自然失败
                 }
             }
@@ -107,13 +110,13 @@ export class CoverPickerController {
 
             notice.hide();
             new Notice(`✅ 封面已保存（${(buf.byteLength / 1024).toFixed(0)} KB）`, 3000);
-            console.log('[小说工坊] 封面保存成功:', coverPath, `${(buf.byteLength / 1024).toFixed(0)} KB`);
+            log.info('[小说工坊] 封面保存成功:', coverPath, `${(buf.byteLength / 1024).toFixed(0)} KB`);
 
             // 前端层：刷新封面显示
             this.refreshCoverDisplay(project, coverArea);
         } catch (e) {
             notice.hide();
-            console.error('[小说工坊] 保存封面失败:', e);
+            log.error('[小说工坊] 保存封面失败:', e);
             new Notice(`❌ 保存封面失败：${e instanceof Error ? e.message : '未知错误'}`, 5000);
         }
     }

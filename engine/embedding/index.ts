@@ -1,0 +1,11 @@
+export type { EmbeddingProvider, EmbeddingAvailability, ProviderInfo, EmbeddingOptions } from './embedding-provider';
+export { OllamaEmbeddingProvider } from './ollama-provider';
+export type { OllamaProviderOptions } from './ollama-provider';
+export { OpenAIEmbeddingProvider } from './openai-provider';
+export type { OpenAIProviderOptions } from './openai-provider';
+export { DoubaoEmbeddingProvider } from './doubao-provider';
+export type { DoubaoProviderOptions } from './doubao-provider';
+export { QwenEmbeddingProvider } from './qwen-provider';
+export type { QwenProviderOptions } from './qwen-provider';
+export { EmbeddingProviderFactory } from './provider-factory';
+export type { VectorProviderType, EmbeddingMode, ProviderFactoryConfig } from './provider-factory';

@@ -1,4 +1,4 @@
-﻿import { App, TFile, TFolder } from 'obsidian';
+import { App, TFile, TFolder } from 'obsidian';
 import { getChapterFile, getChapterFileName, CHAPTER_FILE_TYPES, findBodyFileV4 } from './chapter-utils';
 import NovelWriterPlugin from '../main';
 import { extractVolumeFromPath, showProgress, showError, readMergedVolumeOutline } from '../utils/helpers';
@@ -17,6 +17,15 @@ import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromConte
 import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import { PluginCapabilities } from '../shared/plugin-capabilities';
+import type {
+    CharacterRepository,
+    ChapterRepository,
+    ProjectRepository,
+    FactionRepository,
+    LocationRepository,
+    ItemRepository,
+} from './repository';
+import type { EngineRegistry } from './engine-registry';
 
 /**
  * ContextManager 全部类型已迁移至 ./context/context-types.ts（P1-3 拆分阶段一）
@@ -38,6 +47,14 @@ export type {
     WritingRules,
     RuleItem,
     ContextIssue,
+    SmartEntityContextOptions,
+    SmartEntityContextResult,
+    ScoredEntity,
+    TrimmedEntityInfo,
+    RelationContext,
+    EntityAppearanceRecord,
+    CharacterImportance,
+    EntitySelectionReason,
 } from './context/context-types';
 import type {
     ContextManagerOptions,
@@ -55,7 +72,29 @@ import type {
     WritingRules,
     RuleItem,
     ContextIssue,
+    SmartEntityContextOptions,
+    SmartEntityContextResult,
+    ScoredEntity,
+    TrimmedEntityInfo,
+    RelationContext,
+    EntityAppearanceRecord,
+    CharacterImportance,
+    EntitySelectionReason,
 } from './context/context-types';
+import type { MultiLayerCache } from './cache';
+import type { AnyEntityDomainModel } from '../shared/entity-models';
+import type { CharacterPairRelation } from './relationship-engine';
+import { ContextDiffDetector } from './context/context-diff-detector';
+import type { ContextChangeSet } from './context/context-diff-detector';
+import { IncrementalUpdater } from './context/incremental-updater';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('ContextManager');
+import type {
+    VersionedGatheredContext,
+    SectionRefetcher,
+    IncrementalUpdaterDeps,
+} from './context/incremental-updater';
 
 const DEFAULT_PROMPT_OPTIONS: Required<PromptContextOptions> = {
     includeWorldView: true,
@@ -73,8 +112,8 @@ interface ContextCacheEntry {
     timestamp: number;
 }
 
-/** 默认缓存 TTL：30 秒 */
-const DEFAULT_CONTEXT_CACHE_TTL_MS = 30_000;
+/** 默认缓存 TTL：300 秒（5 分钟） */
+const DEFAULT_CONTEXT_CACHE_TTL_MS = 300_000;
 
 export function detectProjects(app: App): string[] {
     const projects: string[] = [];
@@ -126,13 +165,48 @@ export class ContextManager {
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
 
+    // ─── Repository 实例（可选，优先使用） ───
+    private characterRepo: CharacterRepository | null = null;
+    private chapterRepo: ChapterRepository | null = null;
+    private projectRepo: ProjectRepository | null = null;
+    private factionRepo: FactionRepository | null = null;
+    private locationRepo: LocationRepository | null = null;
+    private itemRepo: ItemRepository | null = null;
+    private engineRegistry: EngineRegistry | null = null;
+    private multiLayerCache: MultiLayerCache | null = null;
+
     // ─── gatherAll 内存缓存 ───
     private contextCache = new Map<string, ContextCacheEntry>();
     private contextCacheTTL = DEFAULT_CONTEXT_CACHE_TTL_MS;
 
+    // ─── 缓存统计 ───
+    private cacheStats = { hits: 0, misses: 0, evictions: 0 };
+
+    // ─── 增量更新支持（Task 4.3） ───
+    /** 增量上下文缓存：与常规缓存分离，不被 invalidateCacheByPath 清除 */
+    private incrementalContextCache = new Map<string, { result: GatheredContext; timestamp: number }>();
+    /** 文件变更追踪器：记录文件修改事件，供 gatherIncremental 使用 */
+    private fileChangeTracker = new Map<string, Set<string>>();
+    /** 上下文变更检测器 */
+    private diffDetector = new ContextDiffDetector();
+    /** 增量更新器实例（懒初始化） */
+    private incrementalUpdater: IncrementalUpdater | null = null;
+
+    // ─── 性能埋点统计 ───
+    private perfStats = {
+        totalAccesses: 0,
+        repoHits: 0,
+        fallbackHits: 0,
+        totalLoadTimeMs: 0,
+        repoLoadTimeMs: 0,
+        fallbackLoadTimeMs: 0,
+    };
+
+    private _partialFailures: string[] = [];
+
     /**
      * 构造函数
-     * @param options 构造选项，支持传统模式(plugin)或解耦模式(capabilities+fs)
+     * @param options 构造选项，支持传统模式(plugin)、解耦模式(capabilities+fs)或Repository模式
      */
     constructor(options: ContextManagerOptions);
     /** @deprecated 请使用 ContextManagerOptions 形式 */
@@ -154,6 +228,14 @@ export class ContextManager {
                 throw new Error('ContextManager: 必须提供 plugin 或 capabilities');
             }
             this.fs = options.fs || null;
+            this.characterRepo = options.characterRepository || null;
+            this.chapterRepo = options.chapterRepository || null;
+            this.projectRepo = options.projectRepository || null;
+            this.factionRepo = options.factionRepository || null;
+            this.locationRepo = options.locationRepository || null;
+            this.itemRepo = options.itemRepository || null;
+            this.engineRegistry = options.engineRegistry || null;
+            this.multiLayerCache = options.multiLayerCache || null;
         } else {
             // 旧式构造：NovelWriterPlugin（兼容）
             const plugin = optionsOrPlugin as NovelWriterPlugin;
@@ -201,6 +283,194 @@ export class ContextManager {
         return { maxContext: 8000 };
     }
 
+    // ============================================================
+    // 性能埋点辅助方法
+    // ============================================================
+
+    /** 记录性能统计（开发模式输出调试信息） */
+    private recordPerf(useRepo: boolean, loadTimeMs: number): void {
+        this.perfStats.totalAccesses++;
+        this.perfStats.totalLoadTimeMs += loadTimeMs;
+        if (useRepo) {
+            this.perfStats.repoHits++;
+            this.perfStats.repoLoadTimeMs += loadTimeMs;
+        } else {
+            this.perfStats.fallbackHits++;
+            this.perfStats.fallbackLoadTimeMs += loadTimeMs;
+        }
+    }
+
+    /** 获取性能统计信息（用于调试） */
+    getPerfStats(): {
+        totalAccesses: number;
+        repoHits: number;
+        fallbackHits: number;
+        repoHitRate: string;
+        avgLoadTimeMs: string;
+        avgRepoLoadTimeMs: string;
+        avgFallbackLoadTimeMs: string;
+    } {
+        const total = this.perfStats.totalAccesses || 1;
+        const repoHits = this.perfStats.repoHits;
+        const fallbackHits = this.perfStats.fallbackHits;
+        return {
+            totalAccesses: this.perfStats.totalAccesses,
+            repoHits,
+            fallbackHits,
+            repoHitRate: ((repoHits / total) * 100).toFixed(1) + '%',
+            avgLoadTimeMs: (this.perfStats.totalLoadTimeMs / total).toFixed(2),
+            avgRepoLoadTimeMs: repoHits > 0 ? (this.perfStats.repoLoadTimeMs / repoHits).toFixed(2) : 'N/A',
+            avgFallbackLoadTimeMs: fallbackHits > 0 ? (this.perfStats.fallbackLoadTimeMs / fallbackHits).toFixed(2) : 'N/A',
+        };
+    }
+
+    // ============================================================
+    // Repository 转换辅助方法
+    // ============================================================
+
+    /**
+     * 获取指定项目的 CharacterRepository（优先使用构造时注入的，其次从 engineRegistry 获取）
+     */
+    private getCharacterRepo(project: string): CharacterRepository | null {
+        if (this.characterRepo) return this.characterRepo;
+        if (this.engineRegistry) {
+            try {
+                return this.engineRegistry.getCharacterRepository(project);
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定项目的 FactionRepository
+     */
+    private getFactionRepo(project: string): FactionRepository | null {
+        if (this.factionRepo) return this.factionRepo;
+        if (this.engineRegistry) {
+            try {
+                return this.engineRegistry.getFactionRepository(project);
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定项目的 LocationRepository
+     */
+    private getLocationRepo(project: string): LocationRepository | null {
+        if (this.locationRepo) return this.locationRepo;
+        if (this.engineRegistry) {
+            try {
+                return this.engineRegistry.getLocationRepository(project);
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定项目的 ItemRepository
+     */
+    private getItemRepo(project: string): ItemRepository | null {
+        if (this.itemRepo) return this.itemRepo;
+        if (this.engineRegistry) {
+            try {
+                return this.engineRegistry.getItemRepository(project);
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定项目的 ChapterRepository
+     */
+    private getChapterRepo(project: string): ChapterRepository | null {
+        if (this.chapterRepo) return this.chapterRepo;
+        if (this.engineRegistry) {
+            try {
+                return this.engineRegistry.getChapterRepository(project);
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 将 Character 领域对象转换为 CharacterData (CharacterFrontmatter) 格式
+     */
+    private characterToFrontmatter(character: {
+        id: string;
+        name: string;
+        filePath: string;
+        frontmatter: { toObject(): Record<string, any> };
+    }): CharacterData {
+        const fm = character.frontmatter.toObject();
+        const fileName = character.filePath.split('/').pop() || '';
+        return {
+            ...fm,
+            name: fm.name || fm['姓名'] || character.name,
+            姓名: fm['姓名'] || character.name,
+            fileName,
+            filePath: character.filePath,
+        } as CharacterData;
+    }
+
+    /**
+     * 将 Faction 领域对象转换为 FactionFrontmatter 格式
+     */
+    private factionToFrontmatter(faction: {
+        id: string;
+        name: string;
+        filePath: string;
+        frontmatter: { toObject(): Record<string, any> };
+    }): FactionFrontmatter {
+        const fm = faction.frontmatter.toObject();
+        return {
+            ...fm,
+            名称: fm['名称'] || faction.name,
+        } as FactionFrontmatter;
+    }
+
+    /**
+     * 将 Location 领域对象转换为 LocationFrontmatter 格式
+     */
+    private locationToFrontmatter(location: {
+        id: string;
+        name: string;
+        filePath: string;
+        frontmatter: { toObject(): Record<string, any> };
+    }): LocationFrontmatter {
+        const fm = location.frontmatter.toObject();
+        return {
+            ...fm,
+            名称: fm['名称'] || location.name,
+        } as LocationFrontmatter;
+    }
+
+    /**
+     * 将 Item 领域对象转换为 ItemFrontmatter 格式
+     */
+    private itemToFrontmatter(item: {
+        id: string;
+        name: string;
+        filePath: string;
+        frontmatter: { toObject(): Record<string, any> };
+    }): ItemFrontmatter {
+        const fm = item.frontmatter.toObject();
+        return {
+            ...fm,
+            名称: fm['名称'] || item.name,
+        } as ItemFrontmatter;
+    }
+
     async detectProjects(): Promise<string[]> {
         return detectProjects(this.app);
     }
@@ -219,27 +489,150 @@ export class ContextManager {
      */
     invalidateContextCache(project?: string): void {
         if (project) {
+            let evicted = 0;
             for (const key of this.contextCache.keys()) {
                 if (key.startsWith(`${project}::`)) {
                     this.contextCache.delete(key);
+                    evicted++;
                 }
             }
+            this.cacheStats.evictions += evicted;
+            log.debug(`[ContextManager] 项目缓存失效 | project=${project} | 失效条目=${evicted}`);
+
+            if (this.multiLayerCache) {
+                this.multiLayerCache.invalidateByPrefix(`context:gatherAll:${project}::`);
+            }
         } else {
+            const evicted = this.contextCache.size;
+            this.cacheStats.evictions += evicted;
             this.contextCache.clear();
+            log.debug(`[ContextManager] 全部缓存失效 | 失效条目=${evicted}`);
+
+            if (this.multiLayerCache) {
+                this.multiLayerCache.invalidateByPrefix('context:gatherAll:');
+            }
         }
     }
 
-    async gatherAll(project: string, currentChapter?: string): Promise<GatheredContext> {
+    /**
+     * 根据文件路径增量失效缓存
+     * 当实体/设定库/世界观等文件修改时调用，自动识别项目并失效该项目缓存
+     *
+     * Task 4.3 增强（智能失效策略）：
+     * 1. 记录文件变更到 fileChangeTracker，供 gatherIncremental 使用
+     * 2. 精确失效 MultiLayerCache 中的分区级缓存（context:section:*）
+     * 3. 常规全量缓存仍按原逻辑失效（向后兼容 gatherAll）
+     *
+     * @param filePath 修改的文件路径
+     * @returns 是否触发了缓存失效
+     */
+    invalidateCacheByPath(filePath: string): boolean {
+        const project = this.extractProjectFromPath(filePath);
+        if (!project) return false;
+
+        const shouldInvalidate = this.isContextRelatedPath(filePath, project);
+        if (shouldInvalidate) {
+            // 1. 记录文件变更，供 gatherIncremental 使用
+            this.recordFileChange(project, filePath);
+
+            // 2. 精确失效分区级缓存（Task 4.3 智能失效策略）
+            if (this.multiLayerCache) {
+                const changeSet = this.diffDetector.createChangeSetFromPaths([filePath], project);
+                for (const section of changeSet.affectedSections) {
+                    const sectionCacheKey = `context:section:${project}:${section}`;
+                    this.multiLayerCache.invalidate(sectionCacheKey);
+                }
+            }
+
+            // 3. 常规全量缓存失效（保持原有行为，向后兼容 gatherAll）
+            this.invalidateContextCache(project);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 判断文件路径是否与上下文数据相关
+     */
+    private isContextRelatedPath(filePath: string, project: string): boolean {
+        const worldArchDir = `${project}/${SUBDIR_WORLD_ARCH}/`;
+        const outlineDir = `${project}/${SUBDIR_OUTLINE_ROOT}/`;
+        const stepDir = `${project}/${SUBDIR_STEP_ROOT}/`;
+        const bodyDir = `${project}/${SUBDIR_BODY_ROOT}/`;
+
+        const worldViewPath = getWorldviewPath(project);
+        const settingLibPath = getSettingLibPath(project);
+        const foreshadowPath = pjForeshadowDB(project);
+        const timelinePath = pjTimelineBoard(project);
+        const writingRulesPath = pjWritingRules(project);
+        const writingStylePath = getWritingStylePath(project);
+        const legacyWritingStylePath = getLegacyWritingStylePath(project);
+        const fanficPath = pjFanficFile(project, '');
+
+        if (filePath === worldViewPath) return true;
+        if (filePath === settingLibPath) return true;
+        if (filePath === foreshadowPath) return true;
+        if (filePath === timelinePath) return true;
+        if (filePath === writingRulesPath) return true;
+        if (filePath === writingStylePath) return true;
+        if (filePath === legacyWritingStylePath) return true;
+        if (filePath.startsWith(worldArchDir)) return true;
+        if (filePath.startsWith(outlineDir)) return true;
+        if (filePath.startsWith(stepDir)) return true;
+        if (filePath.startsWith(bodyDir)) return true;
+        if (filePath.startsWith(fanficPath.replace(/\/[^\/]*$/, '/'))) return true;
+
+        return false;
+    }
+
+    /** 获取缓存统计信息（用于调试和监控） */
+    getCacheStats(): { hits: number; misses: number; evictions: number; size: number; ttl: number } {
+        return {
+            hits: this.cacheStats.hits,
+            misses: this.cacheStats.misses,
+            evictions: this.cacheStats.evictions,
+            size: this.contextCache.size,
+            ttl: this.contextCacheTTL,
+        };
+    }
+
+    async gatherAll(project: string, currentChapter?: string, onProgress?: (completedCount: number, totalCount: number, currentTaskName: string) => void): Promise<GatheredContext> {
         // ─── 缓存命中检查 ───
-        const cacheKey = `${project}::${currentChapter || '_global'}`;
+        const cacheKey = `context:gatherAll:${project}::${currentChapter || '_global'}`;
+        const legacyCacheKey = `${project}::${currentChapter || '_global'}`;
+
+        if (this.multiLayerCache) {
+            const cached = await this.multiLayerCache.get<GatheredContext>(cacheKey);
+            if (cached) {
+                this.cacheStats.hits++;
+                log.debug(
+                    `[ContextManager] 多层缓存命中 | key=${cacheKey} | 命中=${this.cacheStats.hits} | 未命中=${this.cacheStats.misses} | 命中率=${((this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses)) * 100).toFixed(1)}%`
+                );
+                return cached;
+            }
+        }
+
         if (this.contextCacheTTL > 0) {
-            const cached = this.contextCache.get(cacheKey);
+            const cached = this.contextCache.get(legacyCacheKey);
             if (cached && (Date.now() - cached.timestamp) < this.contextCacheTTL) {
+                this.cacheStats.hits++;
+                log.debug(
+                    `[ContextManager] 缓存命中 | key=${legacyCacheKey} | 命中=${this.cacheStats.hits} | 未命中=${this.cacheStats.misses} | 命中率=${((this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses)) * 100).toFixed(1)}%`
+                );
                 return cached.result;
             }
-            // 过期条目删除
-            if (cached) this.contextCache.delete(cacheKey);
+            if (cached) {
+                this.contextCache.delete(legacyCacheKey);
+                this.cacheStats.evictions++;
+                log.debug(`[ContextManager] 缓存过期失效 | key=${legacyCacheKey}`);
+            }
         }
+        this.cacheStats.misses++;
+        log.debug(
+            `[ContextManager] 缓存未命中 | key=${cacheKey} | 命中=${this.cacheStats.hits} | 未命中=${this.cacheStats.misses} | 命中率=${((this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses)) * 100).toFixed(1)}%`
+        );
+
+        this._partialFailures = [];
 
         const context: GatheredContext = {
             project,
@@ -250,8 +643,8 @@ export class ContextManager {
 
         const gatherTasks = [
             { name: '人物状态', task: this.gatherCharacterState(project) },
-            { name: '人物灵魂层', task: this.gatherCharacterCores(project) },     // V2
-            { name: '记忆碎片', task: this.gatherMemories(project) },               // V2 Phase 3
+            { name: '人物灵魂层', task: this.gatherCharacterCores(project) },
+            { name: '记忆碎片', task: this.gatherMemories(project) },
             { name: '地点', task: this.gatherLocations(project) },
             { name: '势力', task: this.gatherFactions(project) },
             { name: '物品功法', task: this.gatherItems(project) },
@@ -270,22 +663,37 @@ export class ContextManager {
             gatherTasks.push({ name: 'Scene展开', task: this.gatherSceneExpansion(project, currentChapter) });
         }
 
-        // ✅ v1.6.0: 每个 gather 独立容错，避免一个失败导致全部丢失
+        const totalCount = gatherTasks.length;
+        let completedCount = 0;
+
         const results = await Promise.all(
-            gatherTasks.map(t =>
-                t.task.catch((e: Error) => {
-                    console.warn(`[小说工坊] ${t.name} 加载失败（已跳过）:`, e.message);
-                    return null;
-                })
-            )
+            gatherTasks.map(t => {
+                const wrappedTask = t.task
+                    .then(result => {
+                completedCount++;
+                onProgress?.(completedCount, totalCount, t.name);
+                return result;
+            })
+            .catch((e: Error) => {
+                completedCount++;
+                onProgress?.(completedCount, totalCount, t.name);
+                log.warn(`[小说工坊] ${t.name} 加载失败（已跳过）:`, e.message);
+                return null;
+            });
+                return wrappedTask;
+            })
         );
 
-        // ✅ v1.6.0: 标记失败的模块
         const failedModules = gatherTasks
             .filter((_, i) => results[i] === null)
             .map(t => t.name);
+
+        if (this._partialFailures.length > 0) {
+            failedModules.push(...this._partialFailures);
+        }
+
         if (failedModules.length > 0) {
-            console.warn('[小说工坊] 以下模块加载失败（已跳过）:', failedModules.join('、'));
+            log.warn('[小说工坊] 以下模块加载失败（已跳过）:', failedModules.join('、'));
             this.notifier.showNotice(`⚠️ 上下文加载不完整：${failedModules.join('、')} 加载失败，AI 可能遗漏对应设定。请检查对应模块文件是否损坏或缺失。`, NOTICE_CRITICAL);
         }
 
@@ -332,12 +740,323 @@ export class ContextManager {
             this.getSettings().maxContext
         );
 
-        // ─── 写入缓存 ───
-        if (this.contextCacheTTL > 0) {
-            this.contextCache.set(cacheKey, { result: context, timestamp: Date.now() });
+        if (context.data.compressed.truncationApplied) {
+            log.warn('【重要】世界观/设定数据因过长被硬截断，当前内容可能不完整');
         }
 
+        // ─── 写入缓存 ───
+        if (this.contextCacheTTL > 0) {
+            this.contextCache.set(legacyCacheKey, { result: context, timestamp: Date.now() });
+        }
+        if (this.multiLayerCache) {
+            await this.multiLayerCache.set(cacheKey, context);
+        }
+
+        // Task 4.3: 同步写入增量缓存，供 gatherIncremental 复用
+        this.updateIncrementalCache(project, currentChapter, context);
+
+        // Task 4.3: 记录全量版本
+        const updater = this.getIncrementalUpdater();
+        updater.markFullFallback();
+
         return context;
+    }
+
+    // ============================================================
+    // Task 4.3: 上下文增量更新
+    // ============================================================
+
+    /**
+     * 增量获取上下文
+     *
+     * 优先使用增量更新：仅重新获取受变更影响的分区，未变更部分从增量缓存复用。
+     * 变更范围超过 50% 时自动回退全量 gatherAll。
+     *
+     * 流程：
+     * 1. 从增量缓存获取上一次的完整上下文
+     * 2. 从 fileChangeTracker 获取待处理的文件变更
+     * 3. 通过 ContextDiffDetector 将文件路径映射为 ContextChangeSet
+     * 4. 判断变更范围，超过阈值则回退 gatherAll
+     * 5. 通过 IncrementalUpdater 仅重新获取受影响分区
+     * 6. 更新增量缓存与版本号
+     *
+     * @param project 项目名
+     * @param currentChapter 当前章节（可选）
+     * @returns 完整的 GatheredContext（增量或全量）
+     */
+    async gatherIncremental(
+        project: string,
+        currentChapter?: string,
+    ): Promise<GatheredContext> {
+        const incrementalCacheKey = `${project}::${currentChapter || '_global'}`;
+
+        // 1. 获取上一次的完整上下文
+        const cached = this.incrementalContextCache.get(incrementalCacheKey);
+        if (!cached) {
+            // 无缓存基础，回退全量
+            return this.gatherAll(project, currentChapter);
+        }
+
+        // 2. 获取待处理的文件变更
+        const changedFiles = this.fileChangeTracker.get(project);
+        if (!changedFiles || changedFiles.size === 0) {
+            // 无变更，直接返回缓存（仍新鲜）
+            return cached.result;
+        }
+
+        // 3. 清除已记录的变更（消费掉）
+        this.fileChangeTracker.delete(project);
+
+        // 4. 将文件路径映射为变更集
+        const changeSet = this.diffDetector.createChangeSetFromPaths(
+            Array.from(changedFiles),
+            project,
+        );
+
+        // 5. 判断变更范围
+        const updater = this.getIncrementalUpdater();
+        if (!updater.isIncrementalUpdateFaster(changeSet)) {
+            // 变更范围过大，回退全量
+            log.debug(
+                `[ContextManager] 增量更新回退全量 | project=${project} | changeScope=${(changeSet.changeScope * 100).toFixed(1)}%`,
+            );
+            return this.gatherAll(project, currentChapter);
+        }
+
+        // 6. 增量更新
+        log.debug(
+            `[ContextManager] 增量更新 | project=${project} | affectedSections=${changeSet.affectedSections.join(',')} | changeScope=${(changeSet.changeScope * 100).toFixed(1)}%`,
+        );
+
+        try {
+            const newContext = await updater.updateContext(
+                cached.result,
+                changeSet,
+                project,
+                currentChapter,
+            );
+
+            // 7. 重算受影响的派生数据（compressed）
+            this.recomputeDerivedData(newContext, project, currentChapter);
+
+            // 8. 重新检测 issues
+            newContext.issues = this.detectIssues(newContext);
+
+            // 9. 更新增量缓存
+            this.updateIncrementalCache(project, currentChapter, newContext);
+
+            // 10. 同步到常规缓存（保持一致性）
+            const legacyCacheKey = `${project}::${currentChapter || '_global'}`;
+            if (this.contextCacheTTL > 0) {
+                this.contextCache.set(legacyCacheKey, { result: newContext, timestamp: Date.now() });
+            }
+            if (this.multiLayerCache) {
+                const multiCacheKey = `context:gatherAll:${project}::${currentChapter || '_global'}`;
+                await this.multiLayerCache.set(multiCacheKey, newContext);
+            }
+
+            return newContext;
+        } catch (e) {
+            log.warn('[ContextManager] 增量更新失败，回退全量:', e);
+            return this.gatherAll(project, currentChapter);
+        }
+    }
+
+    /**
+     * 获取版本历史
+     */
+    getVersionHistory() {
+        return this.getIncrementalUpdater().getVersionHistory();
+    }
+
+    /**
+     * 获取当前版本
+     */
+    getCurrentContextVersion() {
+        return this.getIncrementalUpdater().getCurrentVersion();
+    }
+
+    /**
+     * 获取增量更新统计
+     */
+    getIncrementalStats() {
+        return this.getIncrementalUpdater().getStats();
+    }
+
+    /**
+     * 清除增量缓存（项目切换或手动刷新时）
+     * @param project 指定项目则只清除该项目，不传则清除全部
+     */
+    invalidateIncrementalCache(project?: string): void {
+        if (project) {
+            for (const key of this.incrementalContextCache.keys()) {
+                if (key.startsWith(`${project}::`)) {
+                    this.incrementalContextCache.delete(key);
+                }
+            }
+            this.fileChangeTracker.delete(project);
+        } else {
+            this.incrementalContextCache.clear();
+            this.fileChangeTracker.clear();
+        }
+    }
+
+    // ─── Task 4.3 内部方法 ───────────────────────────────────
+
+    /**
+     * 获取或创建 IncrementalUpdater 实例（懒初始化）
+     */
+    private getIncrementalUpdater(): IncrementalUpdater {
+        if (!this.incrementalUpdater) {
+            const refetcher: SectionRefetcher = {
+                refetchSection: async (
+                    project: string,
+                    section: string,
+                    currentChapter?: string,
+                ) => {
+                    return this.refetchSection(project, section, currentChapter);
+                },
+            };
+
+            const deps: IncrementalUpdaterDeps = {
+                refetcher,
+                multiLayerCache: this.multiLayerCache || undefined,
+            };
+
+            this.incrementalUpdater = new IncrementalUpdater(deps);
+        }
+        return this.incrementalUpdater;
+    }
+
+    /**
+     * 重新获取指定分区的数据（实现 SectionRefetcher 接口）
+     */
+    private async refetchSection(
+        project: string,
+        section: string,
+        currentChapter?: string,
+    ): Promise<Partial<ContextData>> {
+        switch (section) {
+            case 'character_state':
+                return this.gatherCharacterState(project);
+            case 'character_cores':
+                return this.gatherCharacterCores(project);
+            case 'triggered_memories':
+                return this.gatherMemories(project);
+            case 'locations':
+                return this.gatherLocations(project);
+            case 'factions':
+                return this.gatherFactions(project);
+            case 'items':
+                return this.gatherItems(project);
+            case 'setting_lib':
+                return this.gatherSettingLib(project);
+            case 'writing_style':
+                return this.gatherWritingStyle(project);
+            case 'foreshadows':
+                return this.gatherForeshadows(project);
+            case 'timeline':
+            case 'timeline_eras':
+            case 'timeline_inconsistencies':
+                return this.gatherTimeline(project, currentChapter);
+            case 'writing_rules':
+                return this.gatherWritingRules(project);
+            case 'world_view':
+                return this.gatherWorldView(project);
+            case 'previous_chapter':
+                return currentChapter
+                    ? this.gatherPreviousChapter(project, currentChapter)
+                    : {};
+            case 'outline':
+                return currentChapter
+                    ? this.gatherOutline(project, currentChapter)
+                    : {};
+            case 'emotion_plan':
+                return currentChapter
+                    ? this.gatherEmotionPlan(project, currentChapter)
+                    : {};
+            case 'scene_expansion':
+                return currentChapter
+                    ? this.gatherSceneExpansion(project, currentChapter)
+                    : {};
+            default:
+                log.warn(`[ContextManager] 未知分区，无法重新获取: ${section}`);
+                return {};
+        }
+    }
+
+    /**
+     * 记录文件变更
+     */
+    private recordFileChange(project: string, filePath: string): void {
+        let changes = this.fileChangeTracker.get(project);
+        if (!changes) {
+            changes = new Set();
+            this.fileChangeTracker.set(project, changes);
+        }
+        changes.add(filePath);
+        log.debug(`[ContextManager] 记录文件变更 | project=${project} | file=${filePath}`);
+    }
+
+    /**
+     * 更新增量缓存
+     */
+    private updateIncrementalCache(
+        project: string,
+        currentChapter: string | undefined,
+        context: GatheredContext,
+    ): void {
+        const key = `${project}::${currentChapter || '_global'}`;
+        this.incrementalContextCache.set(key, {
+            result: context,
+            timestamp: Date.now(),
+        });
+    }
+
+    /**
+     * 重算受变更影响的派生数据（compressed）
+     */
+    private recomputeDerivedData(
+        context: GatheredContext,
+        _project: string,
+        currentChapter?: string,
+    ): void {
+        const outlineText = (context.data.outline as MarkdownContent)?.raw || '';
+        const chapterNum = currentChapter
+            ? (parseInt(currentChapter.match(/第(\d+)章/)?.[1] || '0') || 0)
+            : 0;
+
+        const fsData = context.data.foreshadows as ForeshadowData;
+        const foreshadowStr = fsData ? [
+            ...fsData.unrevealed.map(f =>
+                `${f.id || ''}|${f.name || ''}|${f.importance || '中'}|${f.buryChapter || '?'}|${f.plannedReveal || '待定'}|${f.status || '未揭示'}`
+            ),
+            ...fsData.revealed.map(f =>
+                `${f.id || ''}|${f.name || ''}|${f.importance || '中'}|${f.buryChapter || '?'}|${f.revealChapter || '?'}|已揭示`
+            ),
+            ...fsData.abandoned.map(f =>
+                `${f.id || ''}|${f.name || ''}|${f.reason || ''}|${f.abandonChapter || '?'}|废弃|废弃`
+            )
+        ].join('\n') : '';
+
+        const tlData = context.data.timeline as TimelineEvent[];
+        const timelineStr = tlData ? tlData.map(t =>
+            `${t.time || ''}|${t.chapter || ''}|${t.event || ''}|${t.impact || ''}`
+        ).join('\n') : '';
+
+        context.data.compressed = compressWorldContext(
+            (context.data.world_view as MarkdownContent)?.raw || '',
+            (context.data.setting_lib as MarkdownContent)?.raw || '',
+            foreshadowStr,
+            timelineStr,
+            outlineText,
+            chapterNum,
+            this.getSettings().maxContext,
+        );
+
+        if (context.data.compressed.truncationApplied) {
+            log.warn('【重要】世界观/设定数据因过长被硬截断，当前内容可能不完整');
+        }
     }
 
     /**
@@ -380,8 +1099,8 @@ export class ContextManager {
                 cleanup: (p, paths) => cm.cleanupEntityCache(p, paths),
             };
         }
-        if (this.capabilities && (this.capabilities as any).entityCache) {
-            return (this.capabilities as any).entityCache;
+        if (this.capabilities && this.capabilities.entityCache) {
+            return this.capabilities.entityCache;
         }
         return null;
     }
@@ -432,7 +1151,7 @@ export class ContextManager {
                 }
                 items.push(item);
             } catch (e) {
-                console.warn(`Failed to read ${entityType} file:`, file.path, e);
+                log.warn(`Failed to read ${entityType} file:`, file.path, e);
             }
         }
         return items;
@@ -445,6 +1164,24 @@ export class ContextManager {
     }
 
     async gatherCharacterState(project: string): Promise<ContextData> {
+        const startTime = Date.now();
+        const repo = this.getCharacterRepo(project);
+
+        if (repo) {
+            try {
+                const chars = await repo.findAll();
+                const characters = chars
+                    .filter(c => !c.id.includes(CHARACTER_FILE_EXCLUDE))
+                    .map(c => this.characterToFrontmatter(c));
+                const loadTime = Date.now() - startTime;
+                this.recordPerf(true, loadTime);
+                log.debug(`[ContextManager] gatherCharacterState via Repository | project=${project} | count=${characters.length} | time=${loadTime}ms`);
+                return { character_state: characters };
+            } catch (e) {
+                log.warn('[ContextManager] CharacterRepository 不可用，回退到直接读文件:', e);
+            }
+        }
+
         const characters: CharacterData[] = [];
         const folderPath = pjCharsDir(project);
         const files = this.getFilesInFolder(folderPath).filter(f => !f.name.includes(CHARACTER_FILE_EXCLUDE));
@@ -485,10 +1222,13 @@ export class ContextManager {
                 data.name = data.name || data.姓名 || file.name.replace('.md', '');
                 characters.push(data);
             } catch (e) {
-                console.warn('Failed to read character file:', file.path, e);
+                log.warn('Failed to read character file:', file.path, e);
             }
         }
 
+        const loadTime = Date.now() - startTime;
+        this.recordPerf(false, loadTime);
+        log.debug(`[ContextManager] gatherCharacterState via fallback | project=${project} | count=${characters.length} | time=${loadTime}ms`);
         return { character_state: characters };
     }
 
@@ -507,7 +1247,7 @@ export class ContextManager {
                     const name = file.name.replace(/\.md$/, '');
                     souls.push(extractCharacterCoreFromContent(name, content));
                 } catch (e) {
-                    console.warn('Failed to read character soul:', file.path, e);
+                    log.warn('Failed to read character soul:', file.path, e);
                 }
             }
         }
@@ -521,33 +1261,40 @@ export class ContextManager {
      */
     async gatherMemories(project: string, sceneText?: string, presentCharacters?: string[], protagonistName?: string, chapterNum?: number): Promise<ContextData> {
         const result: ContextData = {};
+        let damagedFiles = 0;
+        let totalFiles = 0;
         try {
             const app = this.getApp();
             const fs = this.getFS();
             const vaultMeta = this.getVaultMeta();
             const memDir = pjMemoryShardsDir(project);
 
-            // 首先尝试从目录读取
             const dir = vaultMeta.getAbstractFileByPath(memDir);
             if (!(dir instanceof TFolder)) return result;
 
             const allShards: MemoryShard[] = [];
             for (const child of dir.children) {
                 if (child instanceof TFile && child.name.endsWith('_记忆碎片.md')) {
+                    totalFiles++;
                     try {
                         const content = await this.app.vault.cachedRead(child);
                         const charName = child.name.replace(/_记忆碎片\.md$/, '');
-                        // Parse using the memory-trigger module
                         const { loadCharacterMemories } = await import('./memory-trigger');
                         const shards = await loadCharacterMemories(app, project, charName);
                         allShards.push(...shards);
-                    } catch { /* skip malformed files */ }
+                    } catch (e) {
+                        damagedFiles++;
+                        log.warn('[ContextManager] 记忆碎片文件损坏，已跳过:', child.name, e);
+                    }
                 }
             }
 
             result.triggered_memories = allShards;
 
-            // 如果有场景文本，立即匹配触发
+            if (damagedFiles > 0) {
+                this._partialFailures.push(`记忆碎片（${damagedFiles}/${totalFiles}个文件损坏）`);
+            }
+
             if (sceneText && presentCharacters && presentCharacters.length > 0 && protagonistName) {
                 const { promptText } = await gatherTriggeredMemories(
                     app, project, sceneText, presentCharacters,
@@ -556,7 +1303,8 @@ export class ContextManager {
                 result.triggered_memories_prompt = promptText;
             }
         } catch (e) {
-            console.warn('[ContextManager] 记忆碎片加载失败（已跳过）:', e);
+            log.warn('[ContextManager] 记忆碎片加载失败（已跳过）:', e);
+            throw e;
         }
         return result;
     }
@@ -566,7 +1314,26 @@ export class ContextManager {
      * 扫描 01-世界架构/地点/ 目录下的所有 .md 文件
      */
     async gatherLocations(project: string): Promise<ContextData> {
+        const startTime = Date.now();
+        const repo = this.getLocationRepo(project);
+
+        if (repo) {
+            try {
+                const locs = await repo.findAll();
+                const locations = locs.map(l => this.locationToFrontmatter(l));
+                const loadTime = Date.now() - startTime;
+                this.recordPerf(true, loadTime);
+                log.debug(`[ContextManager] gatherLocations via Repository | project=${project} | count=${locations.length} | time=${loadTime}ms`);
+                return { locations };
+            } catch (e) {
+                log.warn('[ContextManager] LocationRepository 不可用，回退到直接读文件:', e);
+            }
+        }
+
         const locations = await this.gatherEntityRecords(pjLocsDir(project), '地点');
+        const loadTime = Date.now() - startTime;
+        this.recordPerf(false, loadTime);
+        log.debug(`[ContextManager] gatherLocations via fallback | project=${project} | count=${locations.length} | time=${loadTime}ms`);
         return { locations };
     }
 
@@ -575,7 +1342,26 @@ export class ContextManager {
      * 扫描 01-世界架构/势力/ 目录下的所有 .md 文件
      */
     async gatherFactions(project: string): Promise<ContextData> {
+        const startTime = Date.now();
+        const repo = this.getFactionRepo(project);
+
+        if (repo) {
+            try {
+                const factions = await repo.findAll();
+                const result = factions.map(f => this.factionToFrontmatter(f));
+                const loadTime = Date.now() - startTime;
+                this.recordPerf(true, loadTime);
+                log.debug(`[ContextManager] gatherFactions via Repository | project=${project} | count=${result.length} | time=${loadTime}ms`);
+                return { factions: result };
+            } catch (e) {
+                log.warn('[ContextManager] FactionRepository 不可用，回退到直接读文件:', e);
+            }
+        }
+
         const factions = await this.gatherEntityRecords(pjFactionsDir(project), '势力');
+        const loadTime = Date.now() - startTime;
+        this.recordPerf(false, loadTime);
+        log.debug(`[ContextManager] gatherFactions via fallback | project=${project} | count=${factions.length} | time=${loadTime}ms`);
         return { factions };
     }
 
@@ -584,7 +1370,26 @@ export class ContextManager {
      * 扫描 01-世界架构/物品功法/ 目录下的所有 .md 文件
      */
     async gatherItems(project: string): Promise<ContextData> {
+        const startTime = Date.now();
+        const repo = this.getItemRepo(project);
+
+        if (repo) {
+            try {
+                const items = await repo.findAll();
+                const result = items.map(i => this.itemToFrontmatter(i));
+                const loadTime = Date.now() - startTime;
+                this.recordPerf(true, loadTime);
+                log.debug(`[ContextManager] gatherItems via Repository | project=${project} | count=${result.length} | time=${loadTime}ms`);
+                return { items: result };
+            } catch (e) {
+                log.warn('[ContextManager] ItemRepository 不可用，回退到直接读文件:', e);
+            }
+        }
+
         const items = await this.gatherEntityRecords(pjItemsDir(project), '物品功法');
+        const loadTime = Date.now() - startTime;
+        this.recordPerf(false, loadTime);
+        log.debug(`[ContextManager] gatherItems via fallback | project=${project} | count=${items.length} | time=${loadTime}ms`);
         return { items };
     }
 
@@ -597,7 +1402,7 @@ export class ContextManager {
                 return { setting_lib: parseMdContent(content) };
             }
         } catch (e) {
-            console.warn('Failed to gather setting lib:', e);
+            log.warn('Failed to gather setting lib:', e);
         }
         return { setting_lib: null };
     }
@@ -618,7 +1423,7 @@ export class ContextManager {
             }
             if (placeholderContent) return { writing_style: parseMdContent(placeholderContent) };
         } catch (e) {
-            console.warn('Failed to gather writing style:', e);
+            log.warn('Failed to gather writing style:', e);
         }
         return { writing_style: null };
     }
@@ -633,7 +1438,7 @@ export class ContextManager {
                 return { foreshadows: result };
             }
         } catch (e) {
-            console.warn('Failed to gather foreshadows:', e);
+            log.warn('Failed to gather foreshadows:', e);
         }
         return { foreshadows: { unrevealed: [], revealed: [], abandoned: [] } };
     }
@@ -649,10 +1454,10 @@ export class ContextManager {
                 let events = parsed.events;
 
                 if (parsed.eraCount > 1) {
-                    console.log(`[Timeline] 检测到 ${parsed.eraCount} 个纪元：${parsed.eraNames.join('、')}`);
+                    log.info(`[Timeline] 检测到 ${parsed.eraCount} 个纪元：${parsed.eraNames.join('、')}`);
                 }
                 if (parsed.inconsistencies.length > 0) {
-                    console.warn(`[Timeline] 发现 ${parsed.inconsistencies.length} 处时间线不一致:`, parsed.inconsistencies);
+                    log.warn(`[Timeline] 发现 ${parsed.inconsistencies.length} 处时间线不一致:`, parsed.inconsistencies);
                 }
 
                 if (currentChapter) {
@@ -681,7 +1486,7 @@ export class ContextManager {
                 ctx.timeline = [];
             }
         } catch (e) {
-            console.warn('Failed to gather timeline:', e);
+            log.warn('Failed to gather timeline:', e);
             ctx.timeline = [];
         }
 
@@ -693,14 +1498,19 @@ export class ContextManager {
                 const ffPath = pjFanficFile(project, strategy.fanficSettingsPath.replace('.md', ''));
                 const ffFile = this.getVaultMeta().getAbstractFileByPath(ffPath);
                 if (ffFile instanceof TFile) {
-                    const ffContent = await this.app.vault.cachedRead(ffFile);
-                    ctx.fanfic_canon_timeline = parseCanonTimelineTable(ffContent);
-                    ctx.fanfic_fan_timeline = parseFanTimelineTable(ffContent);
-                    ctx.fanfic_rules = loadFanficRules(ffContent);
+                    try {
+                        const ffContent = await this.app.vault.cachedRead(ffFile);
+                        ctx.fanfic_canon_timeline = parseCanonTimelineTable(ffContent);
+                        ctx.fanfic_fan_timeline = parseFanTimelineTable(ffContent);
+                        ctx.fanfic_rules = loadFanficRules(ffContent);
+                    } catch (e) {
+                        log.warn('Failed to parse fanfic timeline file:', ffPath, e);
+                        this._partialFailures.push('同人设定（文件损坏）');
+                    }
                 }
             }
         } catch (e) {
-            console.warn('Failed to gather fanfic timeline:', e);
+            log.warn('Failed to gather fanfic timeline:', e);
         }
 
         return ctx;
@@ -719,7 +1529,7 @@ export class ContextManager {
             if (!(ffFile instanceof TFile)) return [];
             const ffContent = await this.app.vault.cachedRead(ffFile);
             return parseCanonTimelineTable(ffContent);
-        } catch (e) { console.warn('loadFanficCanonTimeline failed:', e); return []; }
+        } catch (e) { log.warn('loadFanficCanonTimeline failed:', e); return []; }
     }
 
     /** 加载同人故事背景时间线表格 */
@@ -735,7 +1545,7 @@ export class ContextManager {
             if (!(ffFile instanceof TFile)) return [];
             const ffContent = await this.app.vault.cachedRead(ffFile);
             return parseFanTimelineTable(ffContent);
-        } catch (e) { console.warn('loadFanficFanTimeline failed:', e); return []; }
+        } catch (e) { log.warn('loadFanficFanTimeline failed:', e); return []; }
     }
 
     /** 加载同人OOC防护规则 */
@@ -751,7 +1561,7 @@ export class ContextManager {
             if (!(ffFile instanceof TFile)) return { mustFollow: [], adaptScope: '', redlines: [] };
             const ffContent = await this.app.vault.cachedRead(ffFile);
             return loadFanficRules(ffContent);
-        } catch (e) { console.warn('loadFanficRules failed:', e); return { mustFollow: [], adaptScope: '', redlines: [] }; }
+        } catch (e) { log.warn('loadFanficRules failed:', e); return { mustFollow: [], adaptScope: '', redlines: [] }; }
     }
 
     async gatherPreviousChapter(project: string, currentChapter: string): Promise<ContextData> {
@@ -802,24 +1612,24 @@ export class ContextManager {
                     }
                 }
 
-                const outlineFile = this.getVaultMeta().getAbstractFileByPath(`${stepBase}/大纲摘要.md`);
-                if (outlineFile instanceof TFile) {
-                    result.outline = await this.app.vault.cachedRead(outlineFile);
+                const outlineFile = this.findStepFile(stepBase, `第${prevNum}章`, '大纲摘要');
+                if (outlineFile) {
+                    result.outline = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(outlineFile) as TFile);
                 }
 
-                const analysisFile = this.getVaultMeta().getAbstractFileByPath(`${stepBase}/分析报告.md`);
-                if (analysisFile instanceof TFile) {
-                    result.analysisReport = await this.app.vault.cachedRead(analysisFile);
+                const analysisFile = this.findStepFile(stepBase, `第${prevNum}章`, '分析报告');
+                if (analysisFile) {
+                    result.analysisReport = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(analysisFile) as TFile);
                 }
 
-                const reviewFile = this.getVaultMeta().getAbstractFileByPath(`${stepBase}/连贯性审查.md`);
-                if (reviewFile instanceof TFile) {
-                    result.continuityReview = await this.app.vault.cachedRead(reviewFile);
+                const reviewFile = this.findStepFile(stepBase, `第${prevNum}章`, '连贯性审查');
+                if (reviewFile) {
+                    result.continuityReview = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(reviewFile) as TFile);
                 }
 
-                const infoPlanFile = this.getVaultMeta().getAbstractFileByPath(`${stepBase}/信息规划.md`);
-                if (infoPlanFile instanceof TFile) {
-                    result.infoPlan = await this.app.vault.cachedRead(infoPlanFile);
+                const infoPlanFile = this.findStepFile(stepBase, `第${prevNum}章`, '信息规划');
+                if (infoPlanFile) {
+                    result.infoPlan = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(infoPlanFile) as TFile);
                 }
 
                 if (result.content || result.outline) {
@@ -829,7 +1639,7 @@ export class ContextManager {
 
             return { previous_chapter: result };
         } catch (e) {
-            console.warn('Failed to gather previous chapter:', e);
+            log.warn('Failed to gather previous chapter:', e);
             return { previous_chapter: null };
         }
     }
@@ -849,7 +1659,7 @@ export class ContextManager {
                     return { writing_rules: this.parseWritingRules(content) };
             }
         } catch (e) {
-            console.warn('Failed to gather writing rules:', e);
+            log.warn('Failed to gather writing rules:', e);
         }
         return { writing_rules: null };
     }
@@ -887,7 +1697,7 @@ export class ContextManager {
                 }
             }
         } catch (e) {
-            console.warn('Failed to gather outline:', e);
+            log.warn('Failed to gather outline:', e);
         }
         return { outline: null };
     }
@@ -913,7 +1723,7 @@ export class ContextManager {
                 }
             }
         } catch (e) {
-            console.warn('Failed to gather emotion plan:', e);
+            log.warn('Failed to gather emotion plan:', e);
         }
         return { emotion_plan: null };
     }
@@ -939,7 +1749,7 @@ export class ContextManager {
                 }
             }
         } catch (e) {
-            console.warn('Failed to gather scene expansion:', e);
+            log.warn('Failed to gather scene expansion:', e);
         }
         return { scene_expansion: null };
     }
@@ -988,7 +1798,7 @@ export class ContextManager {
                 return { world_view: parseMdContent(content) };
             }
         } catch (e) {
-            console.warn('Failed to gather world view:', e);
+            log.warn('Failed to gather world view:', e);
         }
         return { world_view: null };
     }
@@ -1263,6 +2073,101 @@ export class ContextManager {
         return summary.join(' | ');
     }
 
+    /**
+     * v5.0: 构建智能实体上下文
+     * 基于当前场景智能选择相关实体，并按重要度裁剪信息
+     */
+    async buildSmartEntityContext(
+        project: string,
+        options: SmartEntityContextOptions,
+    ): Promise<SmartEntityContextResult> {
+        const { getEntityContextEngine } = await import('./entity-context-engine');
+        const { entityFromFrontmatter } = await import('../shared/entity-models');
+        const { loadRelationshipStates } = await import('./relationship-engine');
+        const engine = getEntityContextEngine();
+
+        const [charData, locData, facData, itemData] = await Promise.all([
+            this.gatherCharacterState(project),
+            this.gatherLocations(project),
+            this.gatherFactions(project),
+            this.gatherItems(project),
+        ]);
+
+        const allEntities: AnyEntityDomainModel[] = [];
+
+        const chars = charData.character_state as CharacterData[] || [];
+        for (const ch of chars) {
+            try {
+                const model = entityFromFrontmatter('character', ch as any, '', ch.filePath || '');
+                allEntities.push(model);
+            } catch (e) {
+                log.warn('[ContextManager] 人物实体转换失败:', ch.name || ch.姓名, e);
+            }
+        }
+
+        const locs = locData.locations as Record<string, any>[] || [];
+        for (const loc of locs) {
+            try {
+                const model = entityFromFrontmatter('location', loc, '', '');
+                allEntities.push(model);
+            } catch (e) {
+                log.warn('[ContextManager] 地点实体转换失败:', loc.name || loc.名称, e);
+            }
+        }
+
+        const factions = facData.factions as Record<string, any>[] || [];
+        for (const fac of factions) {
+            try {
+                const model = entityFromFrontmatter('faction', fac, '', '');
+                allEntities.push(model);
+            } catch (e) {
+                log.warn('[ContextManager] 势力实体转换失败:', fac.name || fac.名称, e);
+            }
+        }
+
+        const items = itemData.items as Record<string, any>[] || [];
+        for (const item of items) {
+            try {
+                const model = entityFromFrontmatter('item', item, '', '');
+                allEntities.push(model);
+            } catch (e) {
+                log.warn('[ContextManager] 物品实体转换失败:', item.name || item.名称, e);
+            }
+        }
+
+        let relations: CharacterPairRelation[] = [];
+        try {
+            relations = await loadRelationshipStates(this.app, project);
+        } catch (e) {
+            log.warn('[ContextManager] 加载关系状态失败:', e);
+        }
+
+        const scored = engine.selectRelevantEntities(allEntities, options, relations);
+        const result = engine.buildSmartContext(scored, options, relations);
+
+        return result;
+    }
+
+    /**
+     * 获取实体上下文引擎实例
+     */
+    async getEntityContextEngineInstance() {
+        const { getEntityContextEngine } = await import('./entity-context-engine');
+        return getEntityContextEngine();
+    }
+
+    /**
+     * v5.0: 获取格式化后的智能实体上下文（用于 AI 提示词注入）
+     */
+    async getSmartEntityContextText(
+        project: string,
+        options: SmartEntityContextOptions,
+    ): Promise<string> {
+        const result = await this.buildSmartEntityContext(project, options);
+        const engine = await this.getEntityContextEngineInstance();
+        return engine.formatSmartContextForPrompt(result);
+    }
+
     /** 统一上下文构建：返回 AI-ready 的格式化文本，保留 Markdown 结构（标题、表格等） */
     async buildPromptSection(project: string, options?: PromptContextOptions): Promise<PromptContextSection> {
         const opts = { ...DEFAULT_PROMPT_OPTIONS, ...options };
@@ -1354,7 +2259,7 @@ export class ContextManager {
                 return content.replace(/^---[\s\S]*?---\n/, '').trim();
             }
         } catch (e) {
-            console.warn(`Failed to read raw md: ${filePath}`, e);
+            log.warn(`Failed to read raw md: ${filePath}`, e);
         }
         return '';
     }

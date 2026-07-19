@@ -1,4 +1,4 @@
-﻿import { App, Modal, Notice, TFile, TFolder, TAbstractFile } from 'obsidian';
+import { App, Modal, Notice, TFile, TFolder, TAbstractFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { AIEngine } from '../engine/ai-engine';
@@ -8,8 +8,11 @@ import {
     ENTITY_BODY_SECTIONS,
 } from '../shared/format-constants';
 import { validateCharacterOutput } from '../shared/template-validator';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('AiBuilderModal');
 import {
-    pjWorldview,
+    pjWorldview, pjSettingLib,
     SUBDIR_CHARS, SUBDIR_FACTIONS, SUBDIR_LOCS, SUBDIR_ITEMS,
 } from '../shared/paths';
 
@@ -80,6 +83,7 @@ export class AiBuilderModal extends Modal {
     private selectedType: EntityTypeConfig | null = null;
     private selectedProject: string = '';
     private worldContent: string = '';
+    private settingLibContent: string = '';
     private existingCounts: Record<string, number> = {};
 
     constructor(app: App, plugin: NovelWriterPlugin) {
@@ -95,11 +99,9 @@ export class AiBuilderModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -109,7 +111,7 @@ export class AiBuilderModal extends Modal {
 
         // 强制设置外层 modal 尺寸（内联 style 优先级最高，覆盖主题/插件冲突）
         modalEl.style.width = '96vw';
-        modalEl.style.maxWidth = '1400px';
+        modalEl.addClass('nw-modal-xl');
         modalEl.style.height = '96vh';
         modalEl.style.maxHeight = '96vh';
         modalEl.style.margin = '0 auto';
@@ -278,10 +280,22 @@ export class AiBuilderModal extends Modal {
     // ─────── 加载世界观内容 ───────
     private async loadWorldContent(project: string): Promise<void> {
         this.worldContent = '';
+        this.settingLibContent = '';
         try {
             const woPath = pjWorldview(project);
             const woFile = this.app.vault.getAbstractFileByPath(woPath);
             if (woFile) this.worldContent = await this.app.vault.read(woFile as TFile);
+        } catch (e) { /* ignore */ }
+        // 读取设定库
+        try {
+            const sf = this.app.vault.getAbstractFileByPath(pjSettingLib(project));
+            if (sf instanceof TFile) {
+                const raw = await this.app.vault.read(sf);
+                // 设定库只有注释占位符时视为空
+                if (raw.trim().replace(/<!--[\s\S]*?-->/g, '').trim().length > 0) {
+                    this.settingLibContent = raw;
+                }
+            }
         } catch (e) { /* ignore */ }
         // 刷新统计数据
         this.existingCounts = await this.getProjectEntityStats(project);
@@ -562,7 +576,7 @@ export class AiBuilderModal extends Modal {
                                 new Notice(`✅ 世界观已生成！目标「${novelName}」已存在，未重命名`, 5000);
                             }
                         } catch (renameErr) {
-                            console.warn('[小说工坊] 项目重命名失败:', renameErr);
+                            log.warn('[小说工坊] 项目重命名失败:', renameErr);
                             new Notice('✅ 世界观已生成！', 5000);
                         }
                     } else {
@@ -745,21 +759,23 @@ export class AiBuilderModal extends Modal {
         } catch (e: any) {
             genNotice.hide();
             new Notice(`❌ ${cfg.label}生成失败: ${e.message || '未知错误'}`, 8000);
-            console.error(`[小说工坊] ${cfg.label}生成失败:`, e);
+            log.error(`[小说工坊] ${cfg.label}生成失败:`, e);
         }
     }
 
     private async generateSingle(cfg: EntityTypeConfig, params: GenerateParams, genNotice: Notice): Promise<void> {
         let worldView = this.worldContent || '';
+        let settingLib = this.settingLibContent || '';
         if (!worldView) {
             // 尝试重新加载
             await this.loadWorldContent(this.selectedProject);
             worldView = this.worldContent || '';
+            settingLib = this.settingLibContent || '';
         }
 
         switch (cfg.engineMethod) {
             case 'generateCharacters': {
-                const result = await this.aiEngine.generateCharacters(worldView, params.count || 1, params.prompt || undefined);
+                const result = await this.aiEngine.generateCharacters(worldView, params.count || 1, params.prompt || undefined, undefined, undefined, undefined, settingLib);
                 if (result.error) throw new Error(result.error);
                 await this.saveGeneratedContent(cfg, result.content, true);
                 break;
@@ -788,6 +804,7 @@ export class AiBuilderModal extends Modal {
     private async generateBatch(cfg: EntityTypeConfig, params: GenerateParams, genNotice: Notice): Promise<void> {
         const n = Math.min(Math.max(params.count || 3, 1), 20);
         let worldView = this.worldContent || '';
+        let settingLib = this.settingLibContent || '';
 
         // 人物批量：分批调用，每次最多2个，避免一次性生成太多导致截断/压缩
         if (cfg.engineMethod === 'generateCharacters') {
@@ -796,9 +813,9 @@ export class AiBuilderModal extends Modal {
             while (generated < n) {
                 const batchSize = Math.min(2, n - generated);
                 genNotice.setMessage(`⏳ 正在生成角色 (${generated + 1}-${generated + batchSize}/${n})...`);
-                const result = await this.aiEngine.generateCharacters(worldView, batchSize, params.prompt || undefined);
+                const result = await this.aiEngine.generateCharacters(worldView, batchSize, params.prompt || undefined, undefined, undefined, undefined, settingLib);
                 if (result.error) {
-                    console.warn(`[小说工坊] 第${generated + 1}批角色生成失败:`, result.error);
+                    log.warn(`[小说工坊] 第${generated + 1}批角色生成失败:`, result.error);
                     generated += batchSize;
                     continue;
                 }
@@ -836,7 +853,7 @@ export class AiBuilderModal extends Modal {
             }
 
             if (result.error) {
-                console.warn(`[小说工坊] 批量第${i + 1}个${cfg.label}失败:`, result.error);
+                log.warn(`[小说工坊] 批量第${i + 1}个${cfg.label}失败:`, result.error);
                 continue;
             }
 
@@ -850,7 +867,7 @@ export class AiBuilderModal extends Modal {
             // 避免与已有文件冲突
             const existingFile = this.app.vault.getAbstractFileByPath(savePath);
             if (existingFile) {
-                try { await this.app.vault.delete(existingFile); } catch (e) { console.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }
+                try { await this.app.vault.delete(existingFile); } catch (e) { log.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }
             }
 
             try {
@@ -858,7 +875,7 @@ export class AiBuilderModal extends Modal {
                 saved++;
                 savedNames.push(realName);
             } catch (e) {
-                console.warn(`[小说工坊] 保存${cfg.label}失败:`, e);
+                log.warn(`[小说工坊] 保存${cfg.label}失败:`, e);
             }
         }
 
@@ -900,7 +917,7 @@ export class AiBuilderModal extends Modal {
             for (const block of blocks) {
                 const name = this.extractCharacterName(block);
                 if (!name) {
-                    console.warn('[小说工坊] 跳过无法提取姓名的角色片段');
+                    log.warn('[小说工坊] 跳过无法提取姓名的角色片段');
                     skipped++;
                     continue;
                 }
@@ -910,7 +927,7 @@ export class AiBuilderModal extends Modal {
                 const validation = validateCharacterOutput(trimmed);
                 let finalBlock = trimmed;
                 if (!validation.valid) {
-                    console.warn(`[小说工坊] 角色「${name}」不完整，缺失: ${validation.missingFields.join(', ')}，启动修补...`);
+                    log.warn(`[小说工坊] 角色「${name}」不完整，缺失: ${validation.missingFields.join(', ')}，启动修补...`);
                     const repaired = await this.repairCharacterBlock(cfg, name, validation.missingFields, 0);
                     if (repaired) finalBlock = repaired;
                     else {
@@ -924,7 +941,7 @@ export class AiBuilderModal extends Modal {
                     try {
                         await this.app.vault.create(savePath, finalBlock);
                         saved++;
-                    } catch (e) { console.warn('保存角色失败:', e); }
+                    } catch (e) { log.warn('保存角色失败:', e); }
                 }
             }
             let msg = `✅ 人物已保存：${saved} 个 → ${this.selectedProject}`;
@@ -942,7 +959,7 @@ export class AiBuilderModal extends Modal {
     ): Promise<string | null> {
         // 最多重试 3 次；失败则放弃，不输出这个不完整的文件
         if (retryDepth >= 3) {
-            console.warn(`[小说工坊] 角色「${characterName}」3次修补均失败，跳过不输出`);
+            log.warn(`[小说工坊] 角色「${characterName}」3次修补均失败，跳过不输出`);
             return null;
         }
 

@@ -11,7 +11,15 @@ import { EntityGenerator } from './ai-entity-generator';
 import { BatchEntityGenerator } from './ai-batch-entity-generator';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
+import { KnowledgeInjector } from './knowledge-injector';
+import { WritingProfileManager } from './writing-profile';
+import { ENGINE_NAMES } from './engine-registry';
+import { getModelMaxOutput } from '../shared/token-estimator';
+import { WorldviewCacheService } from '../services/worldview-cache-service';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('AiEngine');
 export interface BatchEntityResult {
     name: string;
     content: string;
@@ -59,9 +67,14 @@ export class AIEngine {
         this.chapterHelpers = new ChapterHelpers(plugin, this.apiClient, this.notifier);
         this.worldviewGen = new WorldviewGenerator(plugin, this.apiClient, this.notifier);
         this.outlineGen = new OutlineGenerator(plugin, this.apiClient, this.notifier);
-        this.characterGen = new CharacterGenerator(plugin, this.apiClient, this.notifier);
+        this.characterGen = plugin.engineRegistry.get<CharacterGenerator>(ENGINE_NAMES.CHARACTER_GENERATOR);
         this.entityGen = new EntityGenerator(plugin, this.apiClient, this.notifier);
         this.batchEntityGen = new BatchEntityGenerator(plugin, this.apiClient, this.notifier);
+
+        const cacheService = plugin.engineRegistry.getOrNull<WorldviewCacheService>(ENGINE_NAMES.WORLDVIEW_CACHE_SERVICE);
+        if (cacheService) {
+            this.worldviewGen.setCacheService(cacheService);
+        }
     }
 
     async callAI(
@@ -72,7 +85,10 @@ export class AIEngine {
         maxTokens: number = 4096,
         options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string }
     ): Promise<APIResponse> {
-        return this.apiClient.callAI(systemPrompt, userPrompt, model, temperature, maxTokens, options);
+        const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const modelMaxOutput = getModelMaxOutput(effectiveModel);
+        const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
+        return this.apiClient.callAI(systemPrompt, userPrompt, model, temperature, safeMaxTokens, options);
     }
 
     async callAIStream(
@@ -82,13 +98,47 @@ export class AIEngine {
         temperature: number = 0.7,
         maxTokens: number = 4096,
         onChunk?: (text: string, done: boolean) => void,
-        options?: { isWritingTask?: boolean }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
     ): Promise<APIResponse> {
-        return this.apiClient.callAIStream(systemPrompt, userPrompt, model, temperature, maxTokens, onChunk, options);
+        const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const modelMaxOutput = getModelMaxOutput(effectiveModel);
+        const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
+        return this.apiClient.callAIStream(systemPrompt, userPrompt, model, temperature, safeMaxTokens, onChunk, options);
+    }
+
+    async *callAIAsyncIterator(
+        systemPrompt: string,
+        userPrompt: string,
+        model?: string,
+        temperature: number = 0.7,
+        maxTokens: number = 4096,
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean }
+    ): AsyncGenerator<string, APIResponse, unknown> {
+        const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const modelMaxOutput = getModelMaxOutput(effectiveModel);
+        const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
+        return yield* this.apiClient.callAIAsyncIterator(systemPrompt, userPrompt, model, temperature, safeMaxTokens, options);
     }
 
     async generateChapter(context: ChapterContext): Promise<APIResponse> {
-        const systemPrompt = this.buildSystemPrompt(context);
+        let knowledgeInjection = '';
+        try {
+            // 通过 EngineRegistry 获取共享的 WritingProfileManager 实例，避免多实例状态不同步
+            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profile = await profileManager.load(context.project);
+            if (profile && profile.fingerprint.injectionStrength > 0) {
+                knowledgeInjection = await injector.injectForBodyGeneration(profile, {
+                    projectPath: context.project,
+                    chapterIndex: context.chapterNumber,
+                    outline: context.outline,
+                });
+            }
+        } catch (e) {
+            log.warn('[AIEngine] 知识注入失败，跳过:', e);
+        }
+
+        const systemPrompt = this.buildSystemPrompt(context, knowledgeInjection);
         const userPrompt = this.buildUserPrompt(context);
         return this.callAI(systemPrompt, userPrompt, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput, { isWritingTask: true });
     }
@@ -128,16 +178,16 @@ export class AIEngine {
         return this.worldviewGen.generateWorldviewForProject(app, project, genre, onProgress);
     }
 
-    async generateSettingLibForProject(app: App, project: string): Promise<string> {
-        return this.worldviewGen.generateSettingLibForProject(app, project);
+    async generateSettingLibForProject(app: App, project: string, worldview?: string): Promise<string> {
+        return this.worldviewGen.generateSettingLibForProject(app, project, worldview);
     }
 
     async generateFanficWorldviewForProject(app: App, project: string, onProgress?: (phase: string) => void): Promise<string> {
         return this.worldviewGen.generateFanficWorldviewForProject(app, project, onProgress);
     }
 
-    async generateCharacters(worldview: string, count: number = 5, customPrompt?: string, templateContent?: string, isFirstCharacter?: boolean, names?: string[]): Promise<APIResponse> {
-        return this.characterGen.generateCharacters(worldview, count, customPrompt, templateContent, isFirstCharacter, names);
+    async generateCharacters(worldview: string, count: number = 5, customPrompt?: string, templateContent?: string, isFirstCharacter?: boolean, names?: string[], settingLib?: string, signal?: AbortSignal, existingEntities?: string): Promise<APIResponse> {
+        return this.characterGen.generateCharacters(worldview, count, customPrompt, templateContent, isFirstCharacter, names, settingLib, signal, existingEntities);
     }
 
     async generateGlobalSkeleton(
@@ -171,16 +221,16 @@ export class AIEngine {
         return this.outlineGen.generateOutline(worldview, settings, existingWorldElements, customPrompt, onProgress);
     }
 
-    async generateFaction(worldview: string, name: string, description: string, templateContent?: string): Promise<APIResponse> {
-        return this.entityGen.generateFaction(worldview, name, description, templateContent);
+    async generateFaction(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
+        return this.entityGen.generateFaction(worldview, name, description, templateContent, settingLib);
     }
 
-    async generateLocation(worldview: string, name: string, description: string, templateContent?: string): Promise<APIResponse> {
-        return this.entityGen.generateLocation(worldview, name, description, templateContent);
+    async generateLocation(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
+        return this.entityGen.generateLocation(worldview, name, description, templateContent, settingLib);
     }
 
-    async generateItem(worldview: string, name: string, description: string, templateContent?: string): Promise<APIResponse> {
-        return this.entityGen.generateItem(worldview, name, description, templateContent);
+    async generateItem(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
+        return this.entityGen.generateItem(worldview, name, description, templateContent, settingLib);
     }
 
     async generateFactionsBatch(
@@ -188,9 +238,10 @@ export class AIEngine {
         names: string[],
         description: string,
         count: number,
-        customSystemPrompt?: string
+        customSystemPrompt?: string,
+        settingLib?: string
     ): Promise<BatchEntityResult[]> {
-        return this.batchEntityGen.generateFactionsBatch(worldview, names, description, count, customSystemPrompt);
+        return this.batchEntityGen.generateFactionsBatch(worldview, names, description, count, customSystemPrompt, settingLib);
     }
 
     async generateLocationsBatch(
@@ -198,9 +249,10 @@ export class AIEngine {
         names: string[],
         description: string,
         count: number,
-        customSystemPrompt?: string
+        customSystemPrompt?: string,
+        settingLib?: string
     ): Promise<BatchEntityResult[]> {
-        return this.batchEntityGen.generateLocationsBatch(worldview, names, description, count, customSystemPrompt);
+        return this.batchEntityGen.generateLocationsBatch(worldview, names, description, count, customSystemPrompt, settingLib);
     }
 
     async generateItemsBatch(
@@ -209,9 +261,10 @@ export class AIEngine {
         description: string,
         count: number,
         customSystemPrompt?: string,
-        itemType?: string
+        itemType?: string,
+        settingLib?: string
     ): Promise<BatchEntityResult[]> {
-        return this.batchEntityGen.generateItemsBatch(worldview, names, description, count, customSystemPrompt, itemType);
+        return this.batchEntityGen.generateItemsBatch(worldview, names, description, count, customSystemPrompt, itemType, settingLib);
     }
 
     async reviewChapter(chapterContent: string, context: ReviewContext): Promise<APIResponse> {
@@ -230,8 +283,8 @@ export class AIEngine {
         return this.chapterHelpers.extractElements(bodyText);
     }
 
-    async analyzeStyle(novelName: string): Promise<APIResponse> {
-        return this.chapterHelpers.analyzeStyle(novelName);
+    async analyzeStyle(novelName: string, signal?: AbortSignal): Promise<APIResponse> {
+        return this.chapterHelpers.analyzeStyle(novelName, signal);
     }
 
     async deaiRewrite(bodyText: string): Promise<{
@@ -257,12 +310,72 @@ export class AIEngine {
         return this.chapterHelpers.iterativeRefine(bodyText, contextPrompt, maxRounds, chapNum, onProgress);
     }
 
-    private buildSystemPrompt(context: ChapterContext): string {
-        return buildSystemPromptFn(context, { minWordCount: this.plugin.settings.minWordCount, maxWordCount: this.plugin.settings.maxWordCount });
+    private buildSystemPrompt(context: ChapterContext, knowledgeInjection?: string): string {
+        return buildSystemPromptFn(context, { minWordCount: this.plugin.settings.minWordCount, maxWordCount: this.plugin.settings.maxWordCount }, knowledgeInjection);
     }
 
     private buildUserPrompt(context: ChapterContext): string {
         return buildUserPromptFn(context, { minWordCount: this.plugin.settings.minWordCount });
+    }
+
+    async callAIWithTemplate(
+        templateId: string,
+        variables: Record<string, string>,
+        model?: string,
+        temperature: number = 0.7,
+        maxTokens: number = 4096,
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string }
+    ): Promise<APIResponse & { templateVersion?: string; abTestId?: string; abVariant?: 'a' | 'b' }> {
+        const promptManager = this.plugin.promptManager;
+        let systemPrompt = '';
+        let userPrompt = '';
+        let templateVersion: string | undefined;
+        let abTestId: string | undefined;
+        let abVariant: 'a' | 'b' | undefined;
+
+        if (promptManager) {
+            const result = promptManager.getPromptWithABTest(templateId, variables);
+            if (result) {
+                systemPrompt = result.systemPrompt;
+                userPrompt = result.userPrompt;
+                templateVersion = result.version;
+                abTestId = result.abTestId;
+                abVariant = result.abVariant;
+            }
+        }
+
+        if (!systemPrompt && !userPrompt) {
+            return {
+                content: '',
+                error: `Prompt template not found: ${templateId}`,
+            };
+        }
+
+        const startTime = Date.now();
+        const response = await this.callAI(systemPrompt, userPrompt, model, temperature, maxTokens, options);
+        const durationMs = Date.now() - startTime;
+
+        if (promptManager && templateVersion) {
+            try {
+                await promptManager.recordUsage({
+                    templateId,
+                    version: templateVersion,
+                    durationMs,
+                    tokensUsed: response.usage,
+                    abTestId,
+                    abVariant,
+                });
+            } catch (e) {
+                log.warn('[AIEngine] Failed to record prompt usage:', e);
+            }
+        }
+
+        return {
+            ...response,
+            templateVersion,
+            abTestId,
+            abVariant,
+        };
     }
 }
 

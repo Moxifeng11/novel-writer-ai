@@ -1,4 +1,4 @@
-﻿import { App, Modal, Notice } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ReviewAgent } from '../engine/review-agent';
 
@@ -9,7 +9,7 @@ export class ReviewChapterModal extends Modal {
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
         this.plugin = plugin;
-        this.reviewAgent = new ReviewAgent(plugin);
+        this.reviewAgent = plugin.reviewAgent;
     }
 
     onOpen(): void {
@@ -19,11 +19,9 @@ export class ReviewChapterModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(700px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(700px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(700px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * draggable-panel.ts — v5.5 浮窗基础组件
  * 提供可拖动、缩放、折叠、自动保存位置的浮动面板基类
  */
@@ -235,6 +235,7 @@ export class DraggablePanel extends ItemView {
       writing: { x: 24, y: 88, width: Math.min(760, viewportWidth - 360), height: Math.min(680, viewportHeight - 140) },
       "monitor-a": { x: Math.max(360, viewportWidth - 360), y: 88, width: 330, height: Math.min(420, viewportHeight - 140) },
       "monitor-b": { x: Math.max(360, viewportWidth - 360), y: Math.min(530, viewportHeight - 360), width: 330, height: 320 },
+      knowledge: { x: 24, y: 88, width: 360, height: Math.min(560, viewportHeight - 140) },
     };
     const p = presets[this.panelId] || { x: 80, y: 120, width: 520, height: 420 };
     return {

@@ -6,7 +6,10 @@
  */
 
 import { Notice } from 'obsidian';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('CryptoService');
 /** CryptoService 所需的最小 App 接口 */
 export interface CryptoServiceDeps {
     vault: {
@@ -81,7 +84,7 @@ export class CryptoService {
             );
             return new TextDecoder().decode(plaintext);
         } catch (e) {
-            console.warn('[小说工坊] 密钥解密失败:', e);
+            log.warn('[小说工坊] 密钥解密失败:', e);
             new Notice('小说工坊：数据读取异常，部分功能可能受限');
             return stored;
         }

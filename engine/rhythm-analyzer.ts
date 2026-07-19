@@ -10,7 +10,10 @@ import { AIEngine } from './ai-engine';
 import { RhythmSegment, RhythmAnalysis } from '../shared/co-writer-types';
 import { extractResponseText } from '../shared/api-response-utils';
 import type { NovelWriterSettingsAPI } from '../shared/plugin-api';
+import { createLogger } from '../shared/logger';
  
+
+const log = createLogger('RhythmAnalyzer');
  export interface RhythmAnalyzerOptions {
     app: App;
     aiEngine: AIEngine;
@@ -49,7 +52,7 @@ export class RhythmAnalyzer {
                  const segment = await this.analyzeParagraph(trimmed, pos);
                  segments.push(segment);
              } catch (e) {
-                 console.warn('[RhythmAnalyzer] 段落分析失败:', e);
+                 log.warn('[RhythmAnalyzer] 段落分析失败:', e);
                  // 添加默认段落
                  segments.push(this.getDefaultSegment(trimmed, pos));
              }

@@ -14,7 +14,12 @@ import { App } from 'obsidian';
 import { SettlementEngine, SettlementResult } from '../engine/settlement-engine';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
+import type NovelWriterPlugin from '../main';
+import { ENGINE_NAMES } from '../engine/engine-registry';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('SettlementService');
 export interface SettlementContext {
   project: string;
   chapDir: string;
@@ -25,14 +30,14 @@ export interface SettlementContext {
 export type { SettlementResult } from '../engine/settlement-engine';
 
 export class SettlementService {
-  private app: App;
+  private plugin: NovelWriterPlugin;
   private settlementEngine: SettlementEngine;
   private notifier: Notifier;
 
-  constructor(app: App, notifier?: Notifier) {
-    this.app = app;
+  constructor(plugin: NovelWriterPlugin, notifier?: Notifier) {
+    this.plugin = plugin;
     this.notifier = notifier || NOOP_NOTIFIER;
-    this.settlementEngine = new SettlementEngine(app, this.notifier);
+    this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
   }
 
   /**
@@ -52,7 +57,7 @@ export class SettlementService {
       return result;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[SettlementService] 结算异常:', msg);
+      log.error('[SettlementService] 结算异常:', msg);
       throw e; // 让调用方处理
     }
   }

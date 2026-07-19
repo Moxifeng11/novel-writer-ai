@@ -8,6 +8,7 @@ import {
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import { TemplateService } from '../services/template-service';
+import { ENGINE_NAMES } from './engine-registry';
 
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
@@ -21,11 +22,14 @@ export class EntityGenerator {
         this.notifier = notifier || NOOP_NOTIFIER;
         this.plugin = plugin;
         this.apiClient = apiClient;
-        this.templateService = new TemplateService(plugin.app);
+        this.templateService = plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
     }
 
-    async generateFaction(worldview: string, name: string, description: string, templateContent?: string): Promise<APIResponse> {
+    async generateFaction(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         const tmplGuide = templateContent ? `\n【用户自定义势力模板，必须遵循此结构和字段】\n${templateContent.slice(0, 1000)}\n` : '';
+        const settingLibSection = settingLib && settingLib.trim().length > 0
+            ? `\n参考以下设定库表格，确保生成的实体与设定库不矛盾：\n\n${settingLib}\n`
+            : '';
         const defaultSystemPrompt = `
 【不可违反的输出契约】
 你必须为生成的势力严格按照以下模板字段输出完整档案。
@@ -85,7 +89,7 @@ entity_last_changed_reason:
 【核心要求】
 1. 必须有完整的YAML frontmatter
 2. 正文必须按四个分节组织：确定性设定、不确定性、与其他元素的互信息、变更记录
-3. 每个分节必须有详细内容`;
+3. 每个分节必须有详细内容${settingLibSection}`;
 
         const defaultUserPrompt = name
             ? `请生成一个名为「${name}」的势力设定。
@@ -109,8 +113,11 @@ ${description ? `【参考方向】${description}` : '【参考方向】无具�
         return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, 4096);
     }
 
-    async generateLocation(worldview: string, name: string, description: string, templateContent?: string): Promise<APIResponse> {
+    async generateLocation(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         const tmplGuide = templateContent ? `\n【用户自定义地点模板，必须遵循此结构和字段】\n${templateContent.slice(0, 1000)}\n` : '';
+        const settingLibSection = settingLib && settingLib.trim().length > 0
+            ? `\n参考以下设定库表格，确保生成的实体与设定库不矛盾：\n\n${settingLib}\n`
+            : '';
         const defaultSystemPrompt = `
 【不可违反的输出契约】
 你必须为生成的地点严格按照以下模板字段输出完整档案。
@@ -171,7 +178,7 @@ entity_last_changed_reason:
 【核心要求】
 1. 必须有完整的YAML frontmatter
 2. 正文必须按四个分节组织：确定性设定、不确定性、与其他元素的互信息、变更记录
-3. 每个分节必须有详细内容`;
+3. 每个分节必须有详细内容${settingLibSection}`;
 
         const defaultUserPrompt = name
             ? `请生成一个名为「${name}」的地点设定。
@@ -195,8 +202,11 @@ ${description ? `【参考方向】${description}` : '【参考方向】无具�
         return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, 4096);
     }
 
-    async generateItem(worldview: string, name: string, description: string, templateContent?: string): Promise<APIResponse> {
+    async generateItem(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         const tmplGuide = templateContent ? `\n【用户自定义物品功法模板，必须遵循此结构和字段】\n${templateContent.slice(0, 1000)}\n` : '';
+        const settingLibSection = settingLib && settingLib.trim().length > 0
+            ? `\n参考以下设定库表格，确保生成的实体与设定库不矛盾：\n\n${settingLib}\n`
+            : '';
         const defaultSystemPrompt = `
 【不可违反的输出契约】
 你必须为生成的物品功法严格按照以下模板字段输出完整档案。
@@ -253,7 +263,7 @@ entity_last_changed_reason:
 【核心要求】
 1. 必须有完整的YAML frontmatter
 2. 正文必须按四个分节组织：确定性设定、不确定性、与其他元素的互信息、变更记录
-3. 每个分节必须有详细内容`;
+3. 每个分节必须有详细内容${settingLibSection}`;
 
         const defaultUserPrompt = name
             ? `请生成一个名为「${name}」的物品/功法设定。

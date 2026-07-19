@@ -11,7 +11,10 @@
 
 import { SerializedWriter } from './serialized-writer';
 import { pluginDataDir } from './paths';
+import { createLogger } from './logger';
 
+
+const log = createLogger('PluginCache');
 export interface PanelLayoutCache {
     panels: Array<{
         id: string;
@@ -36,6 +39,12 @@ export interface PluginCacheData {
     panelLayout?: PanelLayoutCache;
     modelOverrideHistory?: ModelOverrideHistoryEntry[];
     entityMetadata?: Record<string, ProjectEntityCache>;
+    updateLastCheck?: string;
+    updateLastResult?: unknown;
+    updateNotifiedVersion?: string;
+    lastRunVersion?: string;
+    settingsBackup?: unknown;
+    welcomed?: boolean;
 }
 
 /** 单个项目的实体元数据缓存 */
@@ -48,7 +57,7 @@ export interface ProjectEntityCache {
 export interface EntityCacheEntry {
     path: string;
     mtime: number;
-    frontmatter: Record<string, any>;
+    frontmatter: Record<string, unknown>;
     entityType: string;
 }
 
@@ -73,7 +82,7 @@ export class PluginCacheManager {
                 this.data = JSON.parse(raw) as PluginCacheData;
             }
         } catch (e) {
-            console.warn('[PluginCache] 缓存文件读取失败，使用空缓存:', e instanceof Error ? e.message : String(e));
+            log.warn('[PluginCache] 缓存文件读取失败，使用空缓存:', e instanceof Error ? e.message : String(e));
             this.data = {};
         }
         this.loaded = true;
@@ -133,7 +142,7 @@ export class PluginCacheManager {
         project: string,
         filePath: string,
         mtime: number,
-        frontmatter: Record<string, any>,
+        frontmatter: Record<string, unknown>,
         entityType: string,
     ): void {
         if (!this.data.entityMetadata) {
@@ -158,7 +167,7 @@ export class PluginCacheManager {
     /** 批量更新实体缓存 */
     batchUpdateEntityEntries(
         project: string,
-        entries: Array<{ path: string; mtime: number; frontmatter: Record<string, any>; entityType: string }>,
+        entries: Array<{ path: string; mtime: number; frontmatter: Record<string, unknown>; entityType: string }>,
     ): void {
         if (!this.data.entityMetadata) {
             this.data.entityMetadata = {};
@@ -206,13 +215,67 @@ export class PluginCacheManager {
         }
     }
 
+    getUpdateLastCheck(): string | undefined {
+        return this.data.updateLastCheck;
+    }
+
+    setUpdateLastCheck(time: string): void {
+        this.data.updateLastCheck = time;
+        this.save();
+    }
+
+    getUpdateLastResult(): unknown {
+        return this.data.updateLastResult;
+    }
+
+    setUpdateLastResult(result: unknown): void {
+        this.data.updateLastResult = result;
+        this.save();
+    }
+
+    getUpdateNotifiedVersion(): string | undefined {
+        return this.data.updateNotifiedVersion;
+    }
+
+    setUpdateNotifiedVersion(version: string): void {
+        this.data.updateNotifiedVersion = version;
+        this.save();
+    }
+
+    getLastRunVersion(): string | undefined {
+        return this.data.lastRunVersion;
+    }
+
+    setLastRunVersion(version: string): void {
+        this.data.lastRunVersion = version;
+        this.save();
+    }
+
+    getSettingsBackup(): unknown {
+        return this.data.settingsBackup;
+    }
+
+    setSettingsBackup(backup: unknown): void {
+        this.data.settingsBackup = backup;
+        this.save();
+    }
+
+    hasWelcomed(): boolean {
+        return this.data.welcomed === true;
+    }
+
+    setWelcomed(welcomed: boolean): void {
+        this.data.welcomed = welcomed;
+        this.save();
+    }
+
     async flush(): Promise<void> {
         await this.writer.flush();
     }
 
     dispose(): void {
         this.flush().catch(e =>
-            console.warn('[PluginCache] 卸载时缓存写入失败:', e instanceof Error ? e.message : String(e))
+            log.warn('[PluginCache] 卸载时缓存写入失败:', e instanceof Error ? e.message : String(e))
         );
     }
 }

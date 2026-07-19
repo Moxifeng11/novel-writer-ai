@@ -1,11 +1,14 @@
-﻿import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '../utils/helpers';
 import { validateWorldviewOutput } from '../shared/template-validator';
 import { pjWorldview, pjSettingLib, SUBDIR_WORLD_ARCH } from '../shared/paths';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('GenerateWorldviewModal');
 export class GenerateWorldviewModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -26,11 +29,9 @@ export class GenerateWorldviewModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
@@ -214,7 +215,7 @@ ${result.content}`;
                         }
                     }
                 } catch (renameErr) {
-                    console.warn('项目文件夹重命名失败：', renameErr);
+                    log.warn('项目文件夹重命名失败：', renameErr);
                     new Notice(`⚠️ 自动重命名失败，项目名保留为「${project}」`, 4000);
                 }
             }
@@ -243,7 +244,7 @@ ${result.content}`;
                             new Notice('✅ 设定库已自动填充');
                         }
                     }
-                } catch (e) { console.warn('[小说工坊] 自动填充设定库失败:', e); }
+                } catch (e) { log.warn('[小说工坊] 自动填充设定库失败:', e); }
             }
 
             this.close();

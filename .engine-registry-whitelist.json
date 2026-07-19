@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "EngineRegistry 治理白名单 — 列出允许直接 new 实例化的类（多实例或合理 fallback 或延迟迁移）",
+  "lastUpdated": "2026-07-13",
+  "whitelist": [
+    {
+      "className": "AbortController",
+      "reason": "JavaScript 内置类，每次调用需要独立的 abort 信号，不可共享",
+      "category": "language-builtin",
+      "allowedInstances": -1
+    },
+    {
+      "className": "LocalVectorStore",
+      "reason": "按 scope (global/project) 和 project 参数区分实例，不同 scope 必须独立",
+      "category": "scope-based-multi-instance",
+      "allowedInstances": -1
+    },
+    {
+      "className": "AdaptiveDebounceManager",
+      "reason": "每个组件需要独立的 debounce 上下文，共享会导致键冲突",
+      "category": "context-isolated",
+      "allowedInstances": -1
+    },
+    {
+      "className": "EntityStateManager",
+      "reason": "不同调用方传入不同配置上下文（plugin/CoWriterEngine/UI Controller），各自隔离管理",
+      "category": "context-isolated",
+      "allowedInstances": -1
+    },
+    {
+      "className": "StyleVectorStore",
+      "reason": "按 scope (global/project) 区分实例，与 LocalVectorStore 同模式",
+      "category": "scope-based-multi-instance",
+      "allowedInstances": -1
+    },
+    {
+      "className": "RhythmAnalyzer",
+      "reason": "每次实例化使用独立的配置参数（不同的语料与目标风格），分析器无状态可独立",
+      "category": "context-isolated",
+      "allowedInstances": -1
+    },
+    {
+      "className": "ChapterVersionService",
+      "reason": "ChapterVersionModal 中 ?? new ChapterVersionService(app) 为向后兼容 fallback，正常路径已通过 EngineRegistry.get 获取",
+      "category": "backward-compat-fallback",
+      "allowedInstances": 1
+    },
+    {
+      "className": "KnowledgeVectorStore",
+      "reason": "CoWriterEngine 使用独立的 OllamaEmbeddingClient 创建独立实例，与 registry 中实例使用不同 embedding provider，不可合并",
+      "category": "context-isolated",
+      "allowedInstances": 1
+    },
+    {
+      "className": "PromptBuilder",
+      "reason": "Builder 模式，每次构造新的 prompt 上下文，transient 类型",
+      "category": "transient",
+      "allowedInstances": -1
+    },
+    {
+      "className": "PreloadManager",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "SentenceDiversityEngine",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "EntityContextEngine",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "PromptManager",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "FloatWorkspaceManager",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "RulesService",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "SuggestionHistoryStore",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "ChapterStateManager",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "PlotCompletionEngine",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "PlotDivergenceEngine",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "WritingQualityEngine",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    },
+    {
+      "className": "EndingTractionEngine",
+      "reason": "P1 延迟迁移类：当前单实例单例未注册到 registry，暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "category": "p1-deferred",
+      "allowedInstances": 1
+    }
+  ],
+  "notes": {
+    "allowedInstances": {
+      "-1": "不限制实例数",
+      "N": "允许的最大实例数（N >= 0）"
+    },
+    "category": {
+      "language-builtin": "JavaScript 语言内置类，不可由用户管理",
+      "scope-based-multi-instance": "按作用域区分实例，不同 scope 必须独立",
+      "context-isolated": "每个实例独立上下文，互不影响",
+      "backward-compat-fallback": "向后兼容的 fallback 路径，正常路径已通过 registry",
+      "transient": "Builder/DTO/Config 等瞬态对象",
+      "p1-deferred": "P1 延迟迁移类：当前未注册到 registry，已评估暂不强制迁移，建议未来统一通过 registry.get 获取"
+    }
+  }
+}

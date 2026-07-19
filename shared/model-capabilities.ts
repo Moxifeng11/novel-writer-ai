@@ -10,6 +10,9 @@ export interface ModelCapability {
 
 /** 主流模型能力映射表 */
 export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
+    // ── SenseNova（日日新）──
+    'sensenova-6.7-flash-lite':      { maxContext: 262144,  maxOutput: 65536 },
+    'sensenova-u1-fast':             { maxContext: 65536,   maxOutput: 4096 },
     // ── DeepSeek V4（官方 api-docs.deepseek.com）──
     'deepseek-v4-flash':             { maxContext: 1048576, maxOutput: 131072 },
     'deepseek-v4-pro':               { maxContext: 1048576, maxOutput: 131072 },
@@ -42,10 +45,11 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
     'gpt-4.1-nano':                  { maxContext: 1048576, maxOutput: 32768 },
     'o4-mini':                       { maxContext: 200000,  maxOutput: 100000 },
     'o3':                            { maxContext: 200000,  maxOutput: 100000 },
-    // ── Gemini ──
+    // ── Gemini（Google）── gemini-2.5-pro 覆盖所有 2.5-pro-* 变体，gemini-3 覆盖所有 3.x 变体
     'gemini-3.1-pro-preview-search': { maxContext: 1048576, maxOutput: 65536 },
     'gemini-2.5-pro':                { maxContext: 1048576, maxOutput: 65536 },
     'gemini-2.5-flash':              { maxContext: 1048576, maxOutput: 65536 },
+    'gemini-3':                      { maxContext: 1048576, maxOutput: 65536 },
     // ── Claude ──
     'claude-opus-4-8':               { maxContext: 1048576, maxOutput: 131072 },
     'claude-sonnet-4-6':             { maxContext: 1048576, maxOutput: 65536 },

@@ -2,11 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../../main', () => ({
     default: class NovelWriterPlugin {},
-    PROVIDERS: {
-        ollama: {
-            endpoint: 'http://localhost:11434/v1/chat/completions',
-        },
-    },
 }));
 
 import { CoWriterEngine, ContextSnapshot } from '../../../engine/co-writer-engine';

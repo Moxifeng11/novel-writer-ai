@@ -10,7 +10,10 @@ import { TFile } from 'obsidian';
 import type { CoWritingView } from '../co-writing-view';
 import { SentenceEditRecord } from '../../shared/types';
 import { pjStepDir } from '../../shared/paths';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('SuggestionHistoryStore');
 export class SuggestionHistoryStore {
   view: CoWritingView;
 
@@ -43,7 +46,7 @@ export class SuggestionHistoryStore {
       const records = Array.isArray(parsed?.records) ? parsed.records : Array.isArray(parsed) ? parsed : [];
       view.suggestionHistory = records.filter((rec: SentenceEditRecord) => rec && rec.id).slice(-20);
     } catch (e) {
-      console.warn("[SuggestionHistoryStore] B3: 历史建议加载失败:", e);
+      log.warn("[SuggestionHistoryStore] B3: 历史建议加载失败:", e);
     }
   }
 
@@ -70,7 +73,7 @@ export class SuggestionHistoryStore {
         await view.app.vault.create(historyPath, payload);
       }
     } catch (e) {
-      console.warn("[SuggestionHistoryStore] B3: 历史建议保存失败:", e);
+      log.warn("[SuggestionHistoryStore] B3: 历史建议保存失败:", e);
     }
   }
 }

@@ -140,7 +140,14 @@ export class ObsidianFileSystem implements FileSystemPort {
             currentPath = currentPath ? `${currentPath}/${folderName}` : folderName;
             const existing = this.app.vault.getAbstractFileByPath(currentPath);
             if (!existing) {
-                await this.app.vault.createFolder(currentPath);
+                try {
+                    await this.app.vault.createFolder(currentPath);
+                } catch (e) {
+                    if (e instanceof Error && (e.message.includes('Folder already exists') || e.message.includes('already exists'))) {
+                        continue;
+                    }
+                    throw e;
+                }
             }
         }
     }
@@ -154,7 +161,11 @@ export class ObsidianFileSystem implements FileSystemPort {
     async delete(path: string): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file) {
-            await this.app.vault.delete(file);
+            if (file instanceof TFolder) {
+                await this.app.vault.delete(file, true);
+            } else {
+                await this.app.vault.delete(file);
+            }
         }
     }
 
@@ -172,7 +183,7 @@ export class ObsidianFrontmatter implements FrontmatterPort {
     ) {}
 
     async processFrontmatter(file: TFile, updater: (fm: Record<string, unknown>) => void): Promise<void> {
-        await this.app.fileManager.processFrontMatter(file, updater as any);
+        await this.app.fileManager.processFrontMatter(file, updater);
     }
 }
 
@@ -249,14 +260,14 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
 
     async listFiles(dirPath: string): Promise<TFile[]> {
         return Array.from(this.files.keys())
-            .filter(p => p.startsWith(dirPath + '/'))
+            .filter(p => dirPath === '' ? true : p.startsWith(dirPath + '/'))
             .map(p => this.toTFile(p));
     }
 
     async listFolders(dirPath: string): Promise<TFolder[]> {
         const subFolders = new Set<string>();
         for (const path of this.folders) {
-            if (path.startsWith(dirPath + '/') && path !== dirPath) {
+            if (dirPath === '' ? true : (path.startsWith(dirPath + '/') && path !== dirPath)) {
                 subFolders.add(path);
             }
         }
@@ -274,6 +285,17 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
     async delete(path: string): Promise<void> {
         this.files.delete(path);
         this.folders.delete(path);
+        const prefix = path + '/';
+        for (const filePath of Array.from(this.files.keys())) {
+            if (filePath.startsWith(prefix)) {
+                this.files.delete(filePath);
+            }
+        }
+        for (const folderPath of Array.from(this.folders)) {
+            if (folderPath.startsWith(prefix)) {
+                this.folders.delete(folderPath);
+            }
+        }
     }
 
     async rename(oldPath: string, newPath: string): Promise<void> {

@@ -45,6 +45,20 @@ title: 测试
         const fm = parseFrontmatter(content);
         expect(fm.title).toBe('测试');
     });
+
+    it('解析 Windows 风格换行符 (\\r\\n) 的 frontmatter', () => {
+        const content = '---\r\ntitle: Windows测试\r\ntags: [测试]\r\n---\r\n正文内容';
+        const fm = parseFrontmatter(content);
+        expect(fm.title).toBe('Windows测试');
+        expect(fm.tags).toBe('[测试]');
+    });
+
+    it('解析混合换行符的 frontmatter', () => {
+        const content = '---\r\nkey1: value1\nkey2: value2\r\n---\n正文';
+        const fm = parseFrontmatter(content);
+        expect(fm.key1).toBe('value1');
+        expect(fm.key2).toBe('value2');
+    });
 });
 
 describe('parseMarkdownContent', () => {

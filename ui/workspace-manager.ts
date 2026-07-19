@@ -7,12 +7,14 @@ import { MonitorPanelA, VIEW_TYPE_MONITOR_A } from "./monitor-panel-a";
 import { MonitorPanelB, VIEW_TYPE_MONITOR_B } from "./monitor-panel-b";
 import { CoWriteFloatingPanel, VIEW_TYPE_FLOAT_COWRITE } from "./co-write-floating-panel";
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from "./co-writing-view";
+import { KnowledgeFloatingPanel, VIEW_TYPE_KNOWLEDGE } from "./knowledge-floating-panel";
 
 export const FLOAT_VIEW_TYPES = [
   VIEW_TYPE_CO_WRITE,
   VIEW_TYPE_FLOAT_COWRITE,
   VIEW_TYPE_MONITOR_A,
   VIEW_TYPE_MONITOR_B,
+  VIEW_TYPE_KNOWLEDGE,
 ];
 
 export class FloatWorkspaceManager {
@@ -35,6 +37,10 @@ export class FloatWorkspaceManager {
     this.plugin.registerView(
       VIEW_TYPE_FLOAT_COWRITE,
       (leaf) => new CoWriteFloatingPanel(leaf, this.plugin)
+    );
+    this.plugin.registerView(
+      VIEW_TYPE_KNOWLEDGE,
+      (leaf) => new KnowledgeFloatingPanel(leaf, this.plugin)
     );
   }
 
@@ -112,5 +118,11 @@ export class FloatWorkspaceManager {
   getMonitorPanelB(): MonitorPanelB | null {
     const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_MONITOR_B);
     return leaves.length > 0 ? (leaves[0].view as MonitorPanelB) : null;
+  }
+
+  /** 获取知识库面板引用 */
+  getKnowledgePanel(): KnowledgeFloatingPanel | null {
+    const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_KNOWLEDGE);
+    return leaves.length > 0 ? (leaves[0].view as KnowledgeFloatingPanel) : null;
   }
 }

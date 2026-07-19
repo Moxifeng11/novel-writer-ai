@@ -7,7 +7,11 @@ import { readMergedVolumeOutline } from '../utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir, pjStepFile, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
 import { mkdirp } from '../utils/helpers';
 import { TemplateService } from '../services/template-service';
+import { ENGINE_NAMES } from '../engine/engine-registry';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('BatchCreateModal');
 export class BatchCreateModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -26,11 +30,9 @@ export class BatchCreateModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(680px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(680px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(680px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
@@ -131,7 +133,7 @@ export class BatchCreateModal extends Modal {
                         this._volumeData = volumeMap;
                         return;
                     } catch (e) {
-                        console.warn('解析分卷大纲失败，回退到文件夹扫描:', e);
+                        log.warn('解析分卷大纲失败，回退到文件夹扫描:', e);
                     }
                 }
 
@@ -211,7 +213,7 @@ export class BatchCreateModal extends Modal {
         let count = 0;
         const volN = parseInt(volume.match(/\d+/)?.[0] || '0') || 1;
         const allFiles = this.app.vault.getFiles();
-        const templateService = new TemplateService(this.app);
+        const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
 
         for (let i = start; i <= end; i++) {
             const chapterName = `第${i}章`;
@@ -269,7 +271,7 @@ export class BatchCreateModal extends Modal {
 
                 count++;
             } catch (e) {
-                console.warn(`创建第${i}章失败:`, e);
+                log.warn(`创建第${i}章失败:`, e);
             }
         }
 

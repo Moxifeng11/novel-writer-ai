@@ -134,12 +134,12 @@ describe('buildCharacterSoulSummary', () => {
 });
 
 describe('getProtagonistSoulDetail', () => {
-    it('完整 soul 输出 9 行第二人称描述', () => {
+    it('完整 soul 输出 9 行第三人称描述', () => {
         const soul = extractCharacterCoreFromContent('林惊鸿', FULL_NESTED_FM);
         const out = getProtagonistSoulDetail(soul);
         expect(out.split('\n').length).toBe(9);
-        expect(out).toContain('你知道自己最想得到什么：找回失踪的妹妹');
-        expect(out).toContain('你知道自己的底线在哪里：不杀无辜');
+        expect(out).toContain('他/她最渴望的是：找回失踪的妹妹');
+        expect(out).toContain('他/她的底线是：不杀无辜');
     });
 
     it('未完整 soul 时返回空串', () => {

@@ -11,7 +11,10 @@ import { extractResponseText } from '../shared/api-response-utils';
 import { pjOutlineDir, pjVolumeOutlineDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { NovelWriterSettingsAPI } from '../shared/plugin-api';
+import { createLogger } from '../shared/logger';
  
+
+const log = createLogger('EndingTractionEngine');
  export interface PlotThread {
      id: string;
      name: string;
@@ -91,7 +94,7 @@ export class EndingTractionEngine {
          try {
              const outlineContents = await this.loadVolumeOutlineContents(project);
              if (!outlineContents.length) {
-                 console.warn('[EndingTractionEngine] D4: 未找到分卷大纲文件:', project);
+                 log.warn('[EndingTractionEngine] D4: 未找到分卷大纲文件:', project);
                  return;
              }
              const content = outlineContents.map(item => item.content).join('\n\n');
@@ -101,9 +104,9 @@ export class EndingTractionEngine {
                  this.threads.set(thread.id, thread);
              }
              
-             console.log('[EndingTractionEngine] D4: 解析到', this.threads.size, '条情节线');
+             log.info('[EndingTractionEngine] D4: 解析到', this.threads.size, '条情节线');
          } catch (e) {
-             console.warn('[EndingTractionEngine] D4: 初始化失败:', e);
+             log.warn('[EndingTractionEngine] D4: 初始化失败:', e);
          }
      }
      
@@ -198,7 +201,7 @@ export class EndingTractionEngine {
                  const aiThreads = await this.parseThreadsWithAI(content);
                  threads.push(...aiThreads);
              } catch (e) {
-                 console.warn('[EndingTractionEngine] AI 解析情节线失败:', e);
+                 log.warn('[EndingTractionEngine] AI 解析情节线失败:', e);
              }
          }
          
@@ -347,7 +350,7 @@ export class EndingTractionEngine {
                         results.push({ path, content });
                     }
                 } catch (e) {
-                    console.warn('[EndingTractionEngine] D4: 读取分卷大纲失败:', path, e);
+                    log.warn('[EndingTractionEngine] D4: 读取分卷大纲失败:', path, e);
                 }
             }
         };

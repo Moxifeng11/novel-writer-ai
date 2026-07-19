@@ -1,4 +1,4 @@
-﻿import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import { SUBDIR_OUTLINE_ROOT, pjVolumeOutlineDir } from '../shared/paths';
 
 import NovelWriterPlugin from '../main';
@@ -10,6 +10,8 @@ export class NovelTagsModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
     private aiEngine: AIEngine;
+    private analyzeButton: HTMLButtonElement | null = null;
+    private originalButtonText: string = '';
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -25,11 +27,9 @@ export class NovelTagsModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -48,8 +48,8 @@ export class NovelTagsModal extends Modal {
                 projectSelect.createEl('option', { value: project, text: project });
             });
 
-            const analyzeButton = contentEl.createEl('button', { text: '分析作品标签', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
-            analyzeButton.onclick = async () => {
+            this.analyzeButton = contentEl.createEl('button', { text: '分析作品标签', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
+            this.analyzeButton.onclick = async () => {
                 await this.analyzeTags(projectSelect.value);
             };
         };
@@ -85,11 +85,17 @@ export class NovelTagsModal extends Modal {
             return;
         }
 
-        const fullSummary = this.buildFullSummary(volumes);
-
+        if (this.analyzeButton) {
+            this.originalButtonText = this.analyzeButton.textContent || '';
+            this.analyzeButton.disabled = true;
+            this.analyzeButton.textContent = '⏳ 生成中...';
+        }
         const genNotice = new Notice('⏳ 正在分析作品标签...', 0);
 
-        const sysPrompt = `你是一位资深网络小说平台编辑，精通番茄小说和起点中文网的标签分类体系。
+        try {
+            const fullSummary = this.buildFullSummary(volumes);
+
+            const sysPrompt = `你是一位资深网络小说平台编辑，精通番茄小说和起点中文网的标签分类体系。
 
 根据提供的全书大纲数据，分析这部小说的标签分类，输出一份完整的标签分析报告。
 
@@ -147,7 +153,7 @@ export class NovelTagsModal extends Modal {
 3. 给出 5-10 个热门标签词
 4. 给出对标作品推荐（风格相似的热门小说）`;
 
-        const userPrompt = `请根据以下全书大纲数据，分析这部小说的标签分类。
+            const userPrompt = `请根据以下全书大纲数据，分析这部小说的标签分类。
 
 【全书总览】
 - 总字数目标：${bookSummary.totalWords || '未设定'}
@@ -184,16 +190,14 @@ ${fullSummary}
 ## 五、封面文案参考（选做）
 （30-50 字的副标题/广告语，突出标签卖点）`;
 
-        const result = await this.aiEngine.callAI(sysPrompt, userPrompt, undefined, 0.7, 4096);
+            const result = await this.aiEngine.callAI(sysPrompt, userPrompt, undefined, 0.7, 4096);
 
-        genNotice.hide();
+            if (result.error) {
+                new Notice(`❌ API 调用失败: ${result.error}`, 8000);
+                return;
+            }
 
-        if (result.error) {
-            new Notice(`❌ API 调用失败: ${result.error}`, 8000);
-            return;
-        }
-
-        const content = `---
+            const content = `---
 tags: [标签分析]
 生成时间: ${new Date().toLocaleString()}
 ---
@@ -203,24 +207,31 @@ tags: [标签分析]
 ${result.content}
 `;
 
-        try {
-            if (existingFile instanceof TFile) {
-                await this.app.vault.modify(existingFile, content);
-            } else {
-                await this.app.vault.create(resultPath, content);
+            try {
+                if (existingFile instanceof TFile) {
+                    await this.app.vault.modify(existingFile, content);
+                } else {
+                    await this.app.vault.create(resultPath, content);
+                }
+            } catch (e) {
+                new Notice(`❌ 保存失败: ${(e as Error).message}`, 5000);
+                return;
             }
-        } catch (e) {
-            new Notice(`❌ 保存失败: ${(e as Error).message}`, 5000);
-            return;
-        }
 
-        const savedFile = this.app.vault.getAbstractFileByPath(resultPath);
-        if (savedFile instanceof TFile) {
-            await this.plugin.safeOpenFile(savedFile);
-        }
+            const savedFile = this.app.vault.getAbstractFileByPath(resultPath);
+            if (savedFile instanceof TFile) {
+                await this.plugin.safeOpenFile(savedFile);
+            }
 
-        new Notice('✅ 作品标签分析已生成', 6000);
-        this.close();
+            new Notice('✅ 作品标签分析已生成', 6000);
+            this.close();
+        } finally {
+            genNotice.hide();
+            if (this.analyzeButton) {
+                this.analyzeButton.disabled = false;
+                this.analyzeButton.textContent = this.originalButtonText;
+            }
+        }
     }
 
     private parseOutline(content: string): { bookSummary: BookSummary; volumes: VolumeData[] } {

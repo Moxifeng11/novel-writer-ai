@@ -1,0 +1,398 @@
+/* ==========================================================================
+ * 小说工坊 Novel Writer AI - CSS 设计令牌基线
+ * ==========================================================================
+ * 
+ * 本文件定义统一的设计令牌（Design Tokens）体系，用于规范整个插件的样式。
+ * 所有组件样式应基于这些令牌构建，确保视觉一致性和主题兼容性。
+ * 
+ * 设计原则：
+ * 1. 所有颜色基于 Obsidian 原生变量，确保主题兼容
+ * 2. 间距系统采用 4px 基准，保持视觉节奏一致
+ * 3. 圆角系统从 xs 到 xl，覆盖所有组件需求
+ * 4. 阴影层级分明，避免视觉混乱
+ * 
+ * 分类结构：
+ * ├── 颜色系统 (Color System)
+ * ├── 间距系统 (Spacing System)
+ * ├── 圆角系统 (Border Radius)
+ * ├── 字体系统 (Typography)
+ * ├── 阴影系统 (Shadow)
+ * ├── 交互状态 (Interactive States)
+ * ├── 布局变量 (Layout)
+ * └── 语义色 (Semantic Colors)
+ * ========================================================================== */
+
+:root {
+    /* ============================================
+     * 颜色系统 (Color System)
+     * ============================================ */
+    
+    --nw-color-bg-primary: var(--background-primary);
+    --nw-color-bg-secondary: var(--background-secondary);
+    --nw-color-bg-tertiary: var(--background-tertiary);
+    --nw-color-bg-alt: var(--background-primary-alt);
+    --nw-color-bg-hover: var(--background-modifier-hover);
+    --nw-color-bg-active: var(--background-modifier-active);
+    --nw-color-bg-focus: var(--background-modifier-focus);
+    
+    --nw-color-text-primary: var(--text-normal);
+    --nw-color-text-secondary: var(--text-muted);
+    --nw-color-text-muted: var(--text-faint);
+    --nw-color-text-accent: var(--interactive-accent);
+    --nw-color-text-on-accent: var(--text-on-accent);
+    
+    --nw-color-accent: var(--interactive-accent);
+    --nw-color-accent-hover: color-mix(in srgb, var(--interactive-accent), black 8%);
+    --nw-color-accent-muted: rgba(124, 58, 237, 0.08);
+    --nw-color-accent-border: rgba(124, 58, 237, 0.2);
+    
+    --nw-color-border: var(--background-modifier-border);
+    --nw-color-border-hover: var(--background-modifier-border-hover);
+    --nw-color-divider: var(--background-modifier-border);
+    
+    /* ============================================
+     * 语义色 (Semantic Colors)
+     * ============================================ */
+    
+    --nw-color-success: #0f7b6c;
+    --nw-color-success-hover: #0d665b;
+    --nw-color-success-bg: rgba(15, 123, 108, 0.08);
+    --nw-color-success-border: rgba(15, 123, 108, 0.2);
+    
+    --nw-color-danger: #e03e3e;
+    --nw-color-danger-hover: #c93333;
+    --nw-color-danger-bg: rgba(224, 62, 62, 0.08);
+    --nw-color-danger-border: rgba(224, 62, 62, 0.2);
+    
+    --nw-color-warning: #f59e0b;
+    --nw-color-warning-hover: #d97706;
+    --nw-color-warning-bg: rgba(245, 158, 11, 0.12);
+    --nw-color-warning-border: rgba(245, 158, 11, 0.2);
+    
+    --nw-color-info: #3b82f6;
+    --nw-color-info-hover: #2563eb;
+    --nw-color-info-bg: rgba(59, 130, 246, 0.08);
+    --nw-color-info-border: rgba(59, 130, 246, 0.2);
+    
+    /* ============================================
+     * 间距系统 (Spacing System)
+     * 基准: 4px
+     * ============================================ */
+    
+    --nw-space-1: 4px;
+    --nw-space-2: 8px;
+    --nw-space-3: 12px;
+    --nw-space-4: 16px;
+    --nw-space-5: 20px;
+    --nw-space-6: 24px;
+    --nw-space-8: 32px;
+    --nw-space-10: 40px;
+    --nw-space-12: 48px;
+    --nw-space-16: 64px;
+    
+    /* ============================================
+     * 圆角系统 (Border Radius)
+     * ============================================ */
+    
+    --nw-radius-xs: 4px;
+    --nw-radius-sm: 6px;
+    --nw-radius-md: 8px;
+    --nw-radius-lg: 12px;
+    --nw-radius-xl: 16px;
+    --nw-radius-full: 9999px;
+    
+    /* ============================================
+     * 字体系统 (Typography)
+     * ============================================ */
+    
+    --nw-font-size-xs: 11px;
+    --nw-font-size-sm: 12px;
+    --nw-font-size-base: 14px;
+    --nw-font-size-lg: 15px;
+    --nw-font-size-xl: 16px;
+    --nw-font-size-2xl: 18px;
+    --nw-font-size-3xl: 20px;
+    --nw-font-size-4xl: 24px;
+    
+    --nw-font-weight-normal: 400;
+    --nw-font-weight-medium: 500;
+    --nw-font-weight-semibold: 600;
+    --nw-font-weight-bold: 700;
+    
+    --nw-line-height-tight: 1.25;
+    --nw-line-height-normal: 1.5;
+    --nw-line-height-relaxed: 1.75;
+    
+    /* ============================================
+     * 阴影系统 (Shadow)
+     * ============================================ */
+    
+    --nw-shadow-none: none;
+    --nw-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --nw-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --nw-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.05);
+    --nw-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.05);
+    --nw-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --nw-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
+    /* ============================================
+     * 交互状态 (Interactive States)
+     * ============================================ */
+    
+    --nw-focus-ring-width: 2px;
+    --nw-focus-ring-color: rgba(124, 58, 237, 0.3);
+    --nw-focus-ring-offset: 2px;
+    
+    --nw-transition-fast: 100ms ease;
+    --nw-transition-normal: 200ms ease;
+    --nw-transition-slow: 300ms ease;
+    
+    /* ============================================
+     * 布局变量 (Layout)
+     * ============================================ */
+    
+    --nw-layout-gap: 8px;
+    --nw-layout-gap-lg: 12px;
+    --nw-layout-padding: 12px;
+    
+    --nw-modal-max-w: 96vw;
+    --nw-modal-max-h: 90vh;
+    --nw-modal-md-w: min(1000px, 85vw);
+    --nw-modal-lg-w: min(1200px, 90vw);
+    
+    --nw-panel-min-w: 200px;
+    --nw-panel-max-w: 400px;
+    
+    --nw-card-padding: 16px;
+    --nw-section-gap: 32px;
+    
+    --nw-scrollbar-width: 8px;
+    
+    /* ============================================
+     * Z-index 层级
+     * ============================================ */
+    
+    --nw-z-dropdown: 100;
+    --nw-z-sticky: 200;
+    --nw-z-modal: 300;
+    --nw-z-toast: 400;
+    --nw-z-tooltip: 500;
+}
+
+/* ============================================
+ * 基础组件样式类
+ * ============================================ */
+
+.nw-card {
+    background: var(--nw-color-bg-primary);
+    border-radius: var(--nw-radius-md);
+    border: 1px solid var(--nw-color-border);
+    padding: var(--nw-space-4);
+    box-shadow: var(--nw-shadow-card);
+}
+
+.nw-card:hover {
+    box-shadow: var(--nw-shadow-card-hover);
+}
+
+.nw-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--nw-space-2) var(--nw-space-4);
+    border-radius: var(--nw-radius-sm);
+    font-size: var(--nw-font-size-sm);
+    font-weight: var(--nw-font-weight-medium);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all var(--nw-transition-fast);
+    gap: var(--nw-space-2);
+}
+
+.nw-btn-primary {
+    background: var(--nw-color-accent);
+    color: var(--nw-color-text-on-accent);
+}
+
+.nw-btn-primary:hover {
+    background: var(--nw-color-accent-hover);
+}
+
+.nw-btn-secondary {
+    background: transparent;
+    color: var(--nw-color-text-primary);
+    border-color: var(--nw-color-border);
+}
+
+.nw-btn-secondary:hover {
+    background: var(--nw-color-bg-hover);
+}
+
+.nw-btn-ghost {
+    background: transparent;
+    color: var(--nw-color-text-secondary);
+    border-color: transparent;
+}
+
+.nw-btn-ghost:hover {
+    background: var(--nw-color-bg-hover);
+    color: var(--nw-color-text-primary);
+}
+
+.nw-input {
+    width: 100%;
+    padding: var(--nw-space-2) var(--nw-space-3);
+    border: 1px solid var(--nw-color-border);
+    border-radius: var(--nw-radius-sm);
+    background: var(--nw-color-bg-alt);
+    color: var(--nw-color-text-primary);
+    font-size: var(--nw-font-size-sm);
+    transition: border-color var(--nw-transition-fast), box-shadow var(--nw-transition-fast);
+}
+
+.nw-input:focus {
+    outline: none;
+    border-color: var(--nw-color-accent);
+    box-shadow: 0 0 0 var(--nw-focus-ring-width) var(--nw-focus-ring-color);
+}
+
+.nw-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--nw-space-2);
+    border-radius: var(--nw-radius-full);
+    font-size: var(--nw-font-size-xs);
+    font-weight: var(--nw-font-weight-medium);
+    background: var(--nw-color-accent-muted);
+    color: var(--nw-color-accent);
+}
+
+.nw-badge-success {
+    background: var(--nw-color-success-bg);
+    color: var(--nw-color-success);
+}
+
+.nw-badge-warning {
+    background: var(--nw-color-warning-bg);
+    color: var(--nw-color-warning);
+}
+
+.nw-badge-danger {
+    background: var(--nw-color-danger-bg);
+    color: var(--nw-color-danger);
+}
+
+.nw-divider {
+    height: 1px;
+    background: var(--nw-color-divider);
+    margin: var(--nw-space-4) 0;
+}
+
+.nw-text-muted {
+    color: var(--nw-color-text-muted);
+}
+
+.nw-text-secondary {
+    color: var(--nw-color-text-secondary);
+}
+
+.nw-text-accent {
+    color: var(--nw-color-accent);
+}
+
+.nw-flex {
+    display: flex;
+}
+
+.nw-flex-col {
+    flex-direction: column;
+}
+
+.nw-items-center {
+    align-items: center;
+}
+
+.nw-justify-center {
+    justify-content: center;
+}
+
+.nw-justify-between {
+    justify-content: space-between;
+}
+
+.nw-gap-1 {
+    gap: var(--nw-space-1);
+}
+
+.nw-gap-2 {
+    gap: var(--nw-space-2);
+}
+
+.nw-gap-3 {
+    gap: var(--nw-space-3);
+}
+
+.nw-gap-4 {
+    gap: var(--nw-space-4);
+}
+
+.nw-p-2 {
+    padding: var(--nw-space-2);
+}
+
+.nw-p-3 {
+    padding: var(--nw-space-3);
+}
+
+.nw-p-4 {
+    padding: var(--nw-space-4);
+}
+
+.nw-mt-2 {
+    margin-top: var(--nw-space-2);
+}
+
+.nw-mt-4 {
+    margin-top: var(--nw-space-4);
+}
+
+.nw-mb-2 {
+    margin-bottom: var(--nw-space-2);
+}
+
+.nw-mb-4 {
+    margin-bottom: var(--nw-space-4);
+}
+
+.nw-w-full {
+    width: 100%;
+}
+
+.nw-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nw-color-border) transparent;
+}
+
+.nw-scrollbar-thin::-webkit-scrollbar {
+    width: var(--nw-scrollbar-width);
+    height: var(--nw-scrollbar-width);
+}
+
+.nw-scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.nw-scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--nw-color-border);
+    border-radius: var(--nw-radius-full);
+}
+
+.nw-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--nw-color-border-hover);
+}

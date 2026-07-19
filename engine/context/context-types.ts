@@ -15,15 +15,27 @@ import type { TimelineRow, FanficRules } from '../../shared/template-validator';
 import type { CompressedContext } from '../context-compressor';
 import type { CharacterSoul } from '../character-soul';
 import type { MemoryShard } from '../memory-trigger';
+import type {
+    CharacterRepository,
+    ChapterRepository,
+    ProjectRepository,
+    FactionRepository,
+    LocationRepository,
+    ItemRepository,
+} from '../repository';
+import type { EngineRegistry } from '../engine-registry';
+import type { MultiLayerCache } from '../cache';
 
 // ============================================================
 // 构造选项
 // ============================================================
 
 /**
- * ContextManager 构造选项 — 支持双模式：
+ * ContextManager 构造选项 — 支持多种模式：
  *   ①传统模式：传入 plugin，直接使用 plugin.app
  *   ②解耦模式：传入 capabilities 和可选 fs，使用抽象接口
+ *   ③Repository 模式：传入各 Repository 实例，通过仓储层访问数据
+ *   ④EngineRegistry 模式：传入 engineRegistry，按需获取项目级 Repository
  */
 export interface ContextManagerOptions {
     /** 插件实例（传统模式） */
@@ -34,6 +46,22 @@ export interface ContextManagerOptions {
     fs?: FileSystemPort;
     /** 通知器 */
     notifier?: Notifier;
+    /** 人物仓储（可选，优先使用） */
+    characterRepository?: CharacterRepository;
+    /** 章节仓储（可选，优先使用） */
+    chapterRepository?: ChapterRepository;
+    /** 项目仓储（可选，优先使用） */
+    projectRepository?: ProjectRepository;
+    /** 势力仓储（可选，优先使用） */
+    factionRepository?: FactionRepository;
+    /** 地点仓储（可选，优先使用） */
+    locationRepository?: LocationRepository;
+    /** 物品仓储（可选，优先使用） */
+    itemRepository?: ItemRepository;
+    /** 引擎注册表（可选，用于按需获取项目级 Repository） */
+    engineRegistry?: EngineRegistry;
+    /** 多层缓存（可选，用于增强缓存能力） */
+    multiLayerCache?: MultiLayerCache;
 }
 
 // ============================================================
@@ -188,3 +216,14 @@ export interface ContextIssue {
     message: string;
     suggestion: string;
 }
+
+export type {
+    SmartEntityContextOptions,
+    SmartEntityContextResult,
+    ScoredEntity,
+    TrimmedEntityInfo,
+    RelationContext,
+    EntityAppearanceRecord,
+    CharacterImportance,
+    EntitySelectionReason,
+} from '../entity-context-engine';

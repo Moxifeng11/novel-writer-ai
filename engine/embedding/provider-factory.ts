@@ -1,0 +1,138 @@
+import type { EmbeddingProvider } from './embedding-provider';
+import { OllamaEmbeddingProvider } from './ollama-provider';
+import { OpenAIEmbeddingProvider } from './openai-provider';
+import { DoubaoEmbeddingProvider } from './doubao-provider';
+import { QwenEmbeddingProvider } from './qwen-provider';
+import { createLogger } from '../../shared/logger';
+
+
+const log = createLogger('ProviderFactory');
+export type VectorProviderType = 'ollama' | 'openai' | 'doubao' | 'qwen';
+
+export type EmbeddingMode = 'auto' | 'primary' | 'hybrid';
+
+export interface ProviderFactoryConfig {
+    vectorProviderType: VectorProviderType;
+    vectorMode?: EmbeddingMode;
+    vectorHybridThreshold?: number;
+    vectorOllamaBaseUrl: string;
+    vectorOllamaModel: string;
+    vectorOpenaiBaseUrl: string;
+    vectorOpenaiModel: string;
+    vectorOpenaiApiKey: string;
+    vectorDoubaoBaseUrl?: string;
+    vectorDoubaoModel?: string;
+    vectorDoubaoApiKey?: string;
+    vectorQwenBaseUrl?: string;
+    vectorQwenModel?: string;
+    vectorQwenApiKey?: string;
+    embeddingEndpoint?: string;
+    embeddingModel?: string;
+}
+
+export class EmbeddingProviderFactory {
+    static create(config: ProviderFactoryConfig): EmbeddingProvider {
+        const providerType = config.vectorProviderType || this.inferProviderType(config);
+
+        switch (providerType) {
+            case 'ollama':
+                return this.createOllamaProvider(config);
+            case 'openai':
+                return this.createOpenAIProvider(config);
+            case 'doubao':
+                return this.createDoubaoProvider(config);
+            case 'qwen':
+                return this.createQwenProvider(config);
+            default:
+                return this.createOllamaProvider(config);
+        }
+    }
+
+    private static inferProviderType(config: ProviderFactoryConfig): VectorProviderType {
+        if (config.vectorProviderType) {
+            return config.vectorProviderType;
+        }
+        return 'ollama';
+    }
+
+    private static createOllamaProvider(config: ProviderFactoryConfig): OllamaEmbeddingProvider {
+        const baseUrl = config.vectorOllamaBaseUrl || config.embeddingEndpoint || 'http://localhost:11434';
+        const model = config.vectorOllamaModel || config.embeddingModel || 'bge-m3';
+        return new OllamaEmbeddingProvider({ baseUrl, model });
+    }
+
+    private static createOpenAIProvider(config: ProviderFactoryConfig): OpenAIEmbeddingProvider {
+        const apiKey = config.vectorOpenaiApiKey || '';
+        const baseUrl = config.vectorOpenaiBaseUrl || 'https://api.openai.com/v1';
+        const model = config.vectorOpenaiModel || 'text-embedding-3-small';
+        return new OpenAIEmbeddingProvider({ apiKey, baseUrl, model });
+    }
+
+    private static createDoubaoProvider(config: ProviderFactoryConfig): DoubaoEmbeddingProvider {
+        const apiKey = config.vectorDoubaoApiKey || config.vectorOpenaiApiKey || '';
+        const baseUrl = config.vectorDoubaoBaseUrl || 'https://ark.cn-beijing.volces.com/api/v3';
+        const model = config.vectorDoubaoModel || 'doubao-embedding-text-240915';
+        return new DoubaoEmbeddingProvider({ apiKey, baseUrl, model });
+    }
+
+    private static createQwenProvider(config: ProviderFactoryConfig): QwenEmbeddingProvider {
+        const apiKey = config.vectorQwenApiKey || '';
+        const baseUrl = config.vectorQwenBaseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+        const model = config.vectorQwenModel || 'text-embedding-v3';
+        return new QwenEmbeddingProvider({ apiKey, baseUrl, model });
+    }
+
+    static async createWithFallback(config: ProviderFactoryConfig): Promise<EmbeddingProvider> {
+        const primaryProvider = this.create(config);
+        const primaryAvailable = await primaryProvider.isAvailable();
+
+        if (primaryAvailable.available) {
+            return primaryProvider;
+        }
+
+        log.warn(`[EmbeddingProviderFactory] 主 provider (${config.vectorProviderType}) 不可用: ${primaryAvailable.reason}`);
+
+        const fallbackOrder = this.getFallbackOrder(config.vectorProviderType);
+
+        for (const fallbackType of fallbackOrder) {
+            try {
+                const fallbackConfig: ProviderFactoryConfig = {
+                    ...config,
+                    vectorProviderType: fallbackType,
+                };
+                const fallbackProvider = this.create(fallbackConfig);
+                const fallbackAvailable = await fallbackProvider.isAvailable();
+
+                if (fallbackAvailable.available) {
+                    log.warn(`[EmbeddingProviderFactory] 已降级到 ${fallbackType}`);
+                    return fallbackProvider;
+                }
+            } catch (e) {
+                log.warn(`[EmbeddingProviderFactory] 降级 provider ${fallbackType} 创建失败`, e);
+            }
+        }
+
+        throw new Error(
+            `所有向量 provider 均不可用。主 provider (${config.vectorProviderType}): ${primaryAvailable.reason || '未知错误'}`
+        );
+    }
+
+    private static getFallbackOrder(primaryType: VectorProviderType): VectorProviderType[] {
+        const allTypes: VectorProviderType[] = ['ollama', 'openai', 'doubao', 'qwen'];
+        return allTypes.filter(t => t !== primaryType);
+    }
+
+    static getAllProviderTypes(): VectorProviderType[] {
+        return ['ollama', 'openai', 'doubao', 'qwen'];
+    }
+
+    static getProviderLabel(type: VectorProviderType): string {
+        const labels: Record<VectorProviderType, string> = {
+            ollama: '本地 Ollama',
+            openai: 'OpenAI 兼容',
+            doubao: '豆包/火山引擎',
+            qwen: '通义千问',
+        };
+        return labels[type];
+    }
+}

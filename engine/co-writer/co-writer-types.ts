@@ -48,11 +48,9 @@ export interface ContextSnapshot {
     allLocs: string;
     allItems: string;
     /**
-     * 伏笔库聚合数据。结构由 gatherAll 返回的 ForeshadowData 决定（详见 ../context/context-types.ts），
-     * 但此处保留 any 以兼容历史调用方（co-writer-engine.ts 与 prompt-builder.ts 内部均以 any 解构 `.unrevealed` 等字段）。
+     * 伏笔库聚合数据。结构由 gatherAll 返回的 ForeshadowData 决定（详见 ../context/context-types.ts）。
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    foreshadows: any;
+    foreshadows: unknown;
     relationshipStates: CharacterPairRelation[];
     crossVolumeContext: string;
     worldView: string;

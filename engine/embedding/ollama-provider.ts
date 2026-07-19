@@ -1,0 +1,163 @@
+import type { EmbeddingProvider, EmbeddingAvailability, ProviderInfo, EmbeddingOptions } from './embedding-provider';
+import { createLogger } from '../../shared/logger';
+
+
+const log = createLogger('OllamaProvider');
+export interface OllamaProviderOptions {
+    baseUrl?: string;
+    model?: string;
+    dimensions?: number;
+}
+
+export class OllamaEmbeddingProvider implements EmbeddingProvider {
+    private baseUrl: string;
+    private model: string;
+    private cachedDimensions: number | null = null;
+
+    constructor(options: OllamaProviderOptions = {}) {
+        this.baseUrl = (options.baseUrl || 'http://localhost:11434').replace(/\/$/, '');
+        this.model = options.model || 'bge-m3';
+        this.cachedDimensions = options.dimensions || null;
+    }
+
+    async embed(text: string, options?: EmbeddingOptions): Promise<number[]> {
+        const endpoint = `${this.baseUrl}/api/embeddings`;
+
+        // 创建超时 AbortController
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => timeoutController.abort(), 30000); // 30秒超时
+
+        // 如果有外部 signal，监听它并转发到 timeoutController
+        if (options?.signal) {
+            if (options.signal.aborted) {
+                clearTimeout(timeoutId);
+                throw new Error('Embedding 已取消');
+            }
+            options.signal.addEventListener('abort', () => timeoutController.abort());
+        }
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    prompt: text,
+                }),
+                signal: timeoutController.signal,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Ollama embedding API error (HTTP ${response.status}): ${errorText}`);
+            }
+
+            const data = await response.json();
+            const embedding = data.embedding;
+
+            if (!embedding || !Array.isArray(embedding)) {
+                throw new Error('Invalid embedding response format');
+            }
+
+            if (this.cachedDimensions === null) {
+                this.cachedDimensions = embedding.length;
+            }
+
+            return embedding as number[];
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                throw new Error('Ollama embedding 请求超时（30秒），请检查 Ollama 服务是否正常');
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
+    async embedBatch(texts: string[], options?: EmbeddingOptions): Promise<number[][]> {
+        const MAX_CONCURRENT = 5; // 并发限流
+
+        const executeOne = async (text: string): Promise<number[]> => {
+            if (options?.signal?.aborted) {
+                throw new Error('Embedding batch 已取消');
+            }
+            return this.embed(text, options);
+        };
+
+        // 简单限流器：最多 MAX_CONCURRENT 个并发
+        const results: number[][] = new Array(texts.length);
+        let nextIndex = 0;
+
+        const worker = async () => {
+            while (nextIndex < texts.length) {
+                const currentIndex = nextIndex++;
+                if (options?.signal?.aborted) {
+                    throw new Error('Embedding batch 已取消');
+                }
+                results[currentIndex] = await executeOne(texts[currentIndex]);
+            }
+        };
+
+        // 启动 MAX_CONCURRENT 个 worker
+        const workers: Promise<void>[] = [];
+        for (let i = 0; i < Math.min(MAX_CONCURRENT, texts.length); i++) {
+            workers.push(worker());
+        }
+
+        await Promise.all(workers);
+        return results;
+    }
+
+    async isAvailable(): Promise<EmbeddingAvailability> {
+        try {
+            const testVector = await this.embed('test');
+            const available = Array.isArray(testVector) && testVector.length > 0;
+            return {
+                available,
+                model: this.model,
+                dimensions: testVector.length,
+                reason: available ? undefined : '返回的向量为空',
+            };
+        } catch (e) {
+            const reason = e instanceof Error ? e.message : String(e);
+            return { available: false, reason };
+        }
+    }
+
+    getProviderInfo(): ProviderInfo {
+        return {
+            type: 'ollama',
+            name: '本地 Ollama',
+            model: this.model,
+            dimensions: this.cachedDimensions ?? undefined,
+        };
+    }
+
+    getModelName(): string {
+        return this.model;
+    }
+
+    async getDimensions(): Promise<number> {
+        if (this.cachedDimensions !== null) {
+            return this.cachedDimensions;
+        }
+        try {
+            const testVector = await this.embed('test');
+            this.cachedDimensions = testVector.length;
+            return testVector.length;
+        } catch (e) {
+            log.warn('[OllamaEmbeddingProvider] 获取向量维度失败，使用默认值 1024', e);
+            return 1024;
+        }
+    }
+
+    getBaseUrl(): string {
+        return this.baseUrl;
+    }
+
+    getModel(): string {
+        return this.model;
+    }
+}

@@ -10,7 +10,10 @@ import { AIEngine } from './ai-engine';
 import { EmotionPoint, EmotionCurve } from '../shared/co-writer-types';
 import { extractResponseText } from '../shared/api-response-utils';
 import type { NovelWriterSettingsAPI } from '../shared/plugin-api';
+import { createLogger } from '../shared/logger';
  
+
+const log = createLogger('EmotionCurveAnalyzer');
  export interface EmotionCurveAnalyzerOptions {
     app: App;
     aiEngine: AIEngine;
@@ -45,7 +48,7 @@ export class EmotionCurveAnalyzer {
                  const point = await this.analyzeSegment(segments[i], i);
                  points.push(point);
              } catch (e) {
-                 console.warn(`[EmotionCurveAnalyzer] 片段 ${i} 分析失败:`, e);
+                 log.warn(`[EmotionCurveAnalyzer] 片段 ${i} 分析失败:`, e);
                  // 添加空点保持连续性
                  points.push({
                      position: i,

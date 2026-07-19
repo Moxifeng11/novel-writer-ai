@@ -13,7 +13,10 @@ import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePat
 import { readProjectMeta } from '../shared/paths';
 import { readMergedVolumeOutline, extractVolumeFromPath } from '../utils/helpers';
 import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS } from '../shared/format-constants';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ProjectUtils');
 /** 按章号数字排序 */
 export function sortChaptersByNumber<T extends { chapter: string }>(chapters: T[]): T[] {
     return chapters.sort((a, b) => {
@@ -134,7 +137,7 @@ export function getChaptersForProject(app: App, project: string): Array<{ chapte
             const cache = app.metadataCache.getFileCache(file);
             status = (typeof cache?.frontmatter?.['status'] === 'string' ? cache.frontmatter['status'] : '').trim();
         } catch (e) {
-            console.warn('[project-utils] getChaptersForProject:', e);
+            log.warn('[project-utils] getChaptersForProject:', e);
         }
         return { chapMatch: chapMatch[1], volName, title, status, file };
     });

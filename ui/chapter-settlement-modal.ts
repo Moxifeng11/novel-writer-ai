@@ -1,11 +1,15 @@
-﻿import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
 
 import NovelWriterPlugin from '../main';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './full-writer-view';
 import { SettlementEngine } from '../engine/settlement-engine';
+import { ENGINE_NAMES } from '../engine/engine-registry';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ChapterSettlementModal');
 interface SettlementTargetChapter {
     project: string;
     chapDir: string;
@@ -24,7 +28,7 @@ export class ChapterSettlementModal extends Modal {
     constructor(app: App, plugin: NovelWriterPlugin, initial?: { project: string; volume: string; chapterNum: number; chapterName?: string }) {
         super(app);
         this.plugin = plugin;
-        this.settlementEngine = new SettlementEngine(app);
+        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
         this.initialProject = initial?.project;
         this.initialVolume = initial?.volume;
         this.initialChapterNum = initial?.chapterNum;
@@ -36,11 +40,9 @@ export class ChapterSettlementModal extends Modal {
         const { contentEl } = this;
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -202,7 +204,7 @@ export class ChapterSettlementModal extends Modal {
     private async markBodySettled(target: SettlementTargetChapter, settlePath: string): Promise<void> {
         const bodyFile = this.app.vault.getAbstractFileByPath(target.bodyPath);
         if (!(bodyFile instanceof TFile)) {
-            console.warn('[ChapterSettlementModal] 正文文件不存在，无法回写 settled 状态:', target.bodyPath);
+            log.warn('[ChapterSettlementModal] 正文文件不存在，无法回写 settled 状态:', target.bodyPath);
             return;
         }
 
@@ -211,7 +213,7 @@ export class ChapterSettlementModal extends Modal {
                 fm['status'] = 'settled';
             });
         } catch (e) {
-            console.warn('[ChapterSettlementModal] 回写正文 settled 状态失败:', e);
+            log.warn('[ChapterSettlementModal] 回写正文 settled 状态失败:', e);
             new Notice('⚠️ 结算表已生成，但正文状态回写失败，请检查 frontmatter');
         }
     }

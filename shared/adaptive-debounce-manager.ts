@@ -1,3 +1,6 @@
+import { createLogger } from './logger';
+
+const log = createLogger('AdaptiveDebounceManager');
 /**
  * AdaptiveDebounceManager — 自适应防抖管理器
  *
@@ -71,7 +74,7 @@ export class AdaptiveDebounceManager {
         const delay = this.calculateAdaptiveDelay(key);
 
         if (this.debug) {
-            console.log(`[AdaptiveDebounce] debounce '${key}', delay=${delay}ms`);
+            log.info(`[AdaptiveDebounce] debounce '${key}', delay=${delay}ms`);
         }
 
         this.schedule(key, fn, delay);
@@ -85,7 +88,7 @@ export class AdaptiveDebounceManager {
      */
     debounceFixed(key: string, fn: () => void | Promise<void>, delay: number): void {
         if (this.debug) {
-            console.log(`[AdaptiveDebounce] debounceFixed '${key}', delay=${delay}ms`);
+            log.info(`[AdaptiveDebounce] debounceFixed '${key}', delay=${delay}ms`);
         }
 
         this.schedule(key, fn, delay);
@@ -100,7 +103,7 @@ export class AdaptiveDebounceManager {
             clearTimeout(entry.timer);
             this.timers.delete(key);
             if (this.debug) {
-                console.log(`[AdaptiveDebounce] cancel '${key}'`);
+                log.info(`[AdaptiveDebounce] cancel '${key}'`);
             }
         }
     }
@@ -115,18 +118,18 @@ export class AdaptiveDebounceManager {
             this.timers.delete(key);
 
             if (this.debug) {
-                console.log(`[AdaptiveDebounce] flush '${key}'`);
+                log.info(`[AdaptiveDebounce] flush '${key}'`);
             }
 
             try {
                 const result = entry.fn();
                 if (result && typeof (result as Promise<void>).catch === 'function') {
                     (result as Promise<void>).catch(e =>
-                        console.warn(`[AdaptiveDebounce] flush '${key}' error:`, e)
+                        log.warn(`[AdaptiveDebounce] flush '${key}' error:`, e)
                     );
                 }
             } catch (e) {
-                console.warn(`[AdaptiveDebounce] flush '${key}' error:`, e);
+                log.warn(`[AdaptiveDebounce] flush '${key}' error:`, e);
             }
         }
     }
@@ -141,7 +144,7 @@ export class AdaptiveDebounceManager {
         this.timers.clear();
 
         if (this.debug) {
-            console.log(`[AdaptiveDebounce] cancelAll`);
+            log.info(`[AdaptiveDebounce] cancelAll`);
         }
     }
 
@@ -158,16 +161,16 @@ export class AdaptiveDebounceManager {
                 const result = entry.fn();
                 if (result && typeof (result as Promise<void>).catch === 'function') {
                     (result as Promise<void>).catch(e =>
-                        console.warn(`[AdaptiveDebounce] flushAll '${key}' error:`, e)
+                        log.warn(`[AdaptiveDebounce] flushAll '${key}' error:`, e)
                     );
                 }
             } catch (e) {
-                console.warn(`[AdaptiveDebounce] flushAll '${key}' error:`, e);
+                log.warn(`[AdaptiveDebounce] flushAll '${key}' error:`, e);
             }
         }
 
         if (this.debug) {
-            console.log(`[AdaptiveDebounce] flushAll, flushed ${entries.length} keys`);
+            log.info(`[AdaptiveDebounce] flushAll, flushed ${entries.length} keys`);
         }
     }
 
@@ -193,7 +196,7 @@ export class AdaptiveDebounceManager {
         this.callHistory.clear();
 
         if (this.debug) {
-            console.log(`[AdaptiveDebounce] dispose`);
+            log.info(`[AdaptiveDebounce] dispose`);
         }
     }
 
@@ -217,18 +220,18 @@ export class AdaptiveDebounceManager {
             this.timers.delete(key);
 
             if (this.debug) {
-                console.log(`[AdaptiveDebounce] execute '${key}'`);
+                log.info(`[AdaptiveDebounce] execute '${key}'`);
             }
 
             try {
                 const result = fn();
                 if (result && typeof (result as Promise<void>).catch === 'function') {
                     (result as Promise<void>).catch(e =>
-                        console.warn(`[AdaptiveDebounce] '${key}' error:`, e)
+                        log.warn(`[AdaptiveDebounce] '${key}' error:`, e)
                     );
                 }
             } catch (e) {
-                console.warn(`[AdaptiveDebounce] '${key}' error:`, e);
+                log.warn(`[AdaptiveDebounce] '${key}' error:`, e);
             }
         }, delay);
 
@@ -297,7 +300,7 @@ export class AdaptiveDebounceManager {
         }
 
         if (this.debug) {
-            console.log(`[AdaptiveDebounce] cleanupOldKeys, removed ${toRemove} keys`);
+            log.info(`[AdaptiveDebounce] cleanupOldKeys, removed ${toRemove} keys`);
         }
     }
 }

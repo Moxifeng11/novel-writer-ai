@@ -1,8 +1,11 @@
-﻿import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { getInvolvedEntities } from '../engine/chapter-context-builder';
 import { pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, SUBDIR_TIMELINE } from '../shared/paths';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ContextInjectorModal');
 export class ContextInjectorModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -17,11 +20,9 @@ export class ContextInjectorModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -165,7 +166,7 @@ export class ContextInjectorModal extends Modal {
                     if (m) unrevealed.push(m[1].trim());
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
         if (unrevealed.length > 0) {
             context += '\n### 待揭示伏笔\n\n';
             for (const fb of unrevealed.slice(0, 3)) {

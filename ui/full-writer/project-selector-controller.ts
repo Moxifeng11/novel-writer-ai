@@ -13,6 +13,7 @@ import { ContextManager } from '../../engine/context-manager';
 import { CoverPickerController } from './cover-picker-controller';
 import { ToolsModal } from './tools-modal';
 import { WritingStyleModal } from '../writing-style-modal';
+import { CreateProjectModal } from '../create-project-modal';
 import {
     getProjectCover,
     getProjectMeta,
@@ -47,11 +48,46 @@ export class ProjectSelectorController {
 
     private cleanup: (() => void) | null = null;
     private selectedProject: string | null = null;
+    private container: HTMLElement | null = null;
+    private projectGrid: HTMLElement | null = null;
+    private previewPanel: HTMLElement | null = null;
+    private projectArea: HTMLElement | null = null;
+    private highlightedProject: string | null = null;
 
     constructor(app: App, plugin: NovelWriterPlugin, deps: ProjectSelectorDeps) {
         this.app = app;
         this.plugin = plugin;
         this.deps = deps;
+    }
+
+    async refresh(maxRetries = 2): Promise<void> {
+        if (!this.container) return;
+        await this.render(this.container);
+        // 如果有高亮项目但未在列表中找到，重试
+        if (this.highlightedProject && maxRetries > 0) {
+            const hasProject = this.projectGrid?.querySelector(`[data-project="${this.highlightedProject}"]`);
+            if (!hasProject) {
+                await new Promise(r => setTimeout(r, 300));
+                await this.refresh(maxRetries - 1);
+            }
+        }
+    }
+
+    async highlightProject(projectName: string): Promise<void> {
+        this.highlightedProject = projectName;
+        if (this.container) {
+            await this.render(this.container);
+        }
+        requestAnimationFrame(() => {
+            const card = this.projectGrid?.querySelector(`[data-project="${projectName}"]`);
+            if (card && card instanceof HTMLElement) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('novel-writer-fw-project-card-highlight');
+                setTimeout(() => {
+                    card.classList.remove('novel-writer-fw-project-card-highlight');
+                }, 2000);
+            }
+        });
     }
 
     /**
@@ -62,6 +98,7 @@ export class ProjectSelectorController {
             this.cleanup();
             this.cleanup = null;
         }
+        this.container = container;
         container.empty();
 
         const wrapper = container.createDiv({
@@ -69,9 +106,16 @@ export class ProjectSelectorController {
         });
 
         const previewPanel = wrapper.createDiv({ cls: 'novel-writer-fw-preview-panel hidden' });
+        this.previewPanel = previewPanel;
         const projectArea = wrapper.createDiv({ cls: 'novel-writer-fw-project-area' });
+        this.projectArea = projectArea;
 
         const toolbar = projectArea.createDiv({ cls: 'novel-writer-fw-toolbar' });
+        const newProjectBtn = toolbar.createEl('button', { text: '📂 新建项目', cls: 'novel-writer-fw-new-project-btn' });
+        newProjectBtn.onclick = (e: MouseEvent) => {
+            e.stopPropagation();
+            new CreateProjectModal(this.app, this.plugin).open();
+        };
         const toolsBtn = toolbar.createEl('button', { text: '⚡️ 工具', cls: 'novel-writer-fw-tools-btn' });
         toolsBtn.onclick = (e: MouseEvent) => {
             e.stopPropagation();
@@ -84,16 +128,19 @@ export class ProjectSelectorController {
 
         if (projects.length === 0) {
             const emptyState = projectArea.createDiv({ cls: 'novel-writer-fw-empty-state' });
-            emptyState.createSpan({ text: '📚', cls: 'icon' });
-            emptyState.createEl('p', { text: '当前没有项目，请先创建新项目' });
-            const createBtn = emptyState.createEl('button', { text: '📁 新建项目', cls: 'novel-writer-fw-card-action-btn' });
+            const heroCard = emptyState.createDiv({ cls: 'novel-writer-fw-hero-card' });
+            heroCard.createDiv({ text: '📚', cls: 'novel-writer-fw-hero-icon' });
+            heroCard.createEl('h2', { text: '开始你的创作之旅', cls: 'novel-writer-fw-hero-title' });
+            heroCard.createEl('p', { text: '创建一个新项目，AI 将协助你完成从世界观到正文的全程写作', cls: 'novel-writer-fw-hero-desc' });
+            const createBtn = heroCard.createEl('button', { text: '📁 创建新项目', cls: 'novel-writer-fw-hero-btn' });
             createBtn.onclick = () => {
-                this.deps.executeCommand('novel-writer-create-project');
+                new CreateProjectModal(this.app, this.plugin).open();
             };
             return;
         }
 
         const projectGrid = projectArea.createDiv({ cls: 'novel-writer-fw-project-grid' });
+        this.projectGrid = projectGrid;
 
         const renderPreviewFor = async (project: string) => {
             previewPanel.empty();
@@ -152,7 +199,12 @@ export class ProjectSelectorController {
             }
 
             const actions = previewPanel.createDiv({ cls: 'novel-writer-fw-preview-actions' });
-            const openBtn = actions.createEl('button', { text: '🚀 打开项目', cls: 'novel-writer-fw-preview-open-btn' });
+            const wizardBtn = actions.createEl('button', { text: '🧙 开始项目向导', cls: 'novel-writer-fw-preview-wizard-btn primary' });
+            wizardBtn.onclick = async () => {
+                await this.deps.onOpenWizard(project);
+            };
+
+            const openBtn = actions.createEl('button', { text: '✍️ 继续写作', cls: 'novel-writer-fw-preview-open-btn' });
             openBtn.onclick = async () => {
                 if (nextChapter) {
                     await this.deps.onSelectChapter(project, nextChapter);
@@ -162,11 +214,6 @@ export class ProjectSelectorController {
             const updateWsBtn = actions.createEl('button', { text: '🔄 文笔风格', cls: 'novel-writer-fw-preview-update-ws-btn' });
             updateWsBtn.onclick = async () => {
                 new WritingStyleModal(this.app, this.plugin, project).open();
-            };
-
-            const wizardBtn = actions.createEl('button', { text: '🧙 项目向导', cls: 'novel-writer-fw-preview-wizard-btn' });
-            wizardBtn.onclick = async () => {
-                await this.deps.onOpenWizard(project);
             };
 
             const deleteBtn = actions.createEl('button', { text: '🗑️ 删除项目', cls: 'novel-writer-fw-preview-delete-btn' });
@@ -184,6 +231,7 @@ export class ProjectSelectorController {
 
         for (const project of projects) {
             const card = projectGrid.createDiv({ cls: 'novel-writer-fw-project-card' });
+            card.setAttr('data-project', project);
 
             const coverArea = card.createDiv({ cls: 'novel-writer-fw-cover-area' });
             const coverUrl = getProjectCover(this.app, project);
@@ -202,7 +250,11 @@ export class ProjectSelectorController {
 
             const info = card.createDiv({ cls: 'novel-writer-fw-card-info-inner' });
 
-            info.createDiv({ text: `📖 ${project}`, cls: 'novel-writer-fw-card-name' });
+            const nameRow = info.createDiv({ cls: 'novel-writer-fw-card-name-row' });
+            nameRow.createDiv({ text: `📖 ${project}`, cls: 'novel-writer-fw-card-name' });
+            if (project === this.highlightedProject) {
+                nameRow.createSpan({ text: '新', cls: 'novel-writer-fw-card-new-badge' });
+            }
 
             const metaRow = info.createDiv({ cls: 'novel-writer-fw-card-meta' });
             const meta = await getProjectMeta(this.app, project);
@@ -238,7 +290,14 @@ export class ProjectSelectorController {
             }
 
             const actions = card.createDiv({ cls: 'novel-writer-fw-card-actions' });
-            const openBtn = actions.createEl('button', { text: '✍️ 继续写作', cls: 'novel-writer-fw-card-action-btn' });
+            const wizardBtn = actions.createEl('button', { text: '🧙 向导', cls: 'novel-writer-fw-card-action-btn' });
+            wizardBtn.setAttribute('title', '打开项目向导，逐步搭建世界观和大纲');
+            wizardBtn.onclick = async (e: MouseEvent) => {
+                e.stopPropagation();
+                await this.deps.onOpenWizard(project);
+            };
+
+            const openBtn = actions.createEl('button', { text: '✍️ 写作', cls: 'novel-writer-fw-card-action-btn secondary' });
             openBtn.onclick = async (e: MouseEvent) => {
                 e.stopPropagation();
                 if (nextChapter) {

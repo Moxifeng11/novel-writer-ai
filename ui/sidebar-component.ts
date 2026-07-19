@@ -13,7 +13,6 @@ export class SidebarComponent {
         
         const actions = [
             { label: '✍️ 协同写作', action: () => this.plugin.executeCommand('novel-writer-co-writing') },
-            { label: '🧩 浮窗工作台', action: () => this.plugin.executeCommand('novel-writer-float-workbench') },
             { label: '📋 全书规划', action: () => new PlanBookModal(this.plugin.app, this.plugin).open() },
             { label: '📂 新建项目', action: () => new CreateProjectModal(this.plugin.app, this.plugin).open() },
         ];

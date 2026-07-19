@@ -128,7 +128,7 @@ TIMELINE: 时间点 | 事件描述`;
         return this.apiClient.callAI(systemPrompt, userContent, this.plugin.settings.flashModel, 0.5, this.plugin.settings.maxOutput);
     }
 
-    async analyzeStyle(novelName: string): Promise<APIResponse> {
+    async analyzeStyle(novelName: string, signal?: AbortSignal): Promise<APIResponse> {
         const systemPrompt = `你是一位资深网络小说编辑，精通各大平台（番茄、起点、七猫等）热门小说的文笔风格分析。
 
 根据用户提供的小说名称，分析该小说的文笔风格特征，按照以下格式输出分析报告。
@@ -181,7 +181,7 @@ TIMELINE: 时间点 | 事件描述`;
 
         const userPrompt = `请分析《${novelName}》的文笔风格特征，按指定格式输出分析报告。`;
 
-        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 4096);
+        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 4096, { signal });
     }
 
     async deaiRewrite(bodyText: string): Promise<{

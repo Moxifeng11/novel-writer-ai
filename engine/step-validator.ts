@@ -260,6 +260,10 @@ function validateSceneExpandWrapper(content: string): StepValidationResult {
 /**
  * 正文生成校验
  * 必填：字数达标（>=70%目标）/ 有开头 / 有对话 / 有结尾
+ * 
+ * @deprecated bodyGeneration 步骤已废弃，推荐使用句级协同写作（CoWriterEngine）。
+ *             此校验函数保留用于兼容旧数据和句级写作完成后的正文完整性检查。
+ *             两条路径共享同一正文文件格式，校验规则一致。
  */
 function validateBodyGeneration(content: string, minWords = 2100): StepValidationResult {
     const pureText = content.replace(/^---[\s\S]*?---/, '').trim();

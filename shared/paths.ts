@@ -105,22 +105,19 @@ export function pjStepFile(project: string, volN: number, chapN: number, stepTyp
 /** 分卷大纲目录 */
 export function pjVolumeOutlineDir(project: string) { return `${project}/03-大纲与章节/分卷大纲`; }
 /** 某卷分卷大纲文件 */
-/** @deprecated v4.0: 使用 pjVolumeOutlineFile(project, 1) 替代（分卷大纲已按卷归档） */
-export function pjVolumeOutline(project: string) { return pjVolumeOutlineFile(project, 1); }
 export function pjVolumeOutlineFile(project: string, volN: number) { return `${project}/03-大纲与章节/分卷大纲/第${volN}卷_分卷大纲.md`; }
 
 /** 卷目录（正文+步骤结果的父级概念，用于扫描） */
 export function pjVolumeDir(project: string, n: number) { return `${project}/03-大纲与章节/正文/第${n}卷`; }
 
 // ---- 旧路径（v4.0 废弃，0 调用者，待 Batch-E 移除） ----
-/** @deprecated v4.0: 使用 pjBodyFile / pjStepFile 替代 */
-export function pjChapterDir(project: string, volN: number, chapN: number) { return `${project}/03-大纲与章节/第${volN}卷/第${chapN}章`; }
 
 // ============================================================
 // 5. 时间线 / 伏笔
 // ============================================================
 export function pjTimelineDir(project: string) { return `${project}/02-时间线与伏笔`; }
 export function pjForeshadowDB(project: string) { return `${project}/02-时间线与伏笔/伏笔库.md`; }
+export function pjForeshadowTracker(project: string) { return `${project}/04-项目总控/伏笔追踪.md`; }
 export function pjTimelineBoard(project: string) { return `${project}/02-时间线与伏笔/时间线看板.md`; }
 export function pjMemoryShardsDir(project: string) { return `${project}/02-时间线与伏笔/记忆碎片`; }
 
@@ -271,4 +268,115 @@ const PLUGIN_DATA_DIR = '.obsidian/plugins/novel-writer-ai/data';
 export function pluginDataDir(): string { return PLUGIN_DATA_DIR; }
 export function pluginPreferenceFile(project: string): string { return `${PLUGIN_DATA_DIR}/${project}-preferences.json`; }
 export function pluginStylePatternsFile(project: string): string { return `${PLUGIN_DATA_DIR}/${project}-style-patterns.json`; }
+
+// ============================================================
+// 15. 写作指纹库
+// ============================================================
+export const FINGERPRINT_LIBRARY_DIR = 'fingerprint-library';
+export const GLOBAL_FINGERPRINTS_FILE = 'global-fingerprints.json';
+export const FINGERPRINT_VECTORS_DIR = 'vectors';
+export const PROJECT_FINGERPRINT_LIBRARY_DIR = '写作指纹库';
+export const PROJECT_FINGERPRINTS_FILE = 'project-fingerprints.json';
+export const TEMPLATE_FINGERPRINTS_FILE = 'template-fingerprints.json';
+export const PROJECT_GLOBAL_FINGERPRINT_STATE_FILE = 'global-fingerprint-state.json';
+export const FINGERPRINT_INTENSITY_CONFIG_FILE = 'fingerprint-intensity-config.json';
+
+export function globalFingerprintLibraryDir(): string { return `${pluginDataDir()}/${FINGERPRINT_LIBRARY_DIR}`; }
+export function globalFingerprintsFile(): string { return `${pluginDataDir()}/${GLOBAL_FINGERPRINTS_FILE}`; }
+export function globalFingerprintVectorsDir(): string { return `${pluginDataDir()}/${FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}`; }
+export function projectFingerprintLibraryDir(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}`; }
+export function projectFingerprintsFile(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${PROJECT_FINGERPRINTS_FILE}`; }
+export function projectFingerprintVectorsDir(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}`; }
+export function templateFingerprintLibraryDir(): string { return `${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}`; }
+export function templateFingerprintsFile(): string { return `${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${TEMPLATE_FINGERPRINTS_FILE}`; }
+export function templateFingerprintVectorsDir(): string { return `${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}`; }
+export function projectGlobalFingerprintStateFile(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${PROJECT_GLOBAL_FINGERPRINT_STATE_FILE}`; }
+export function projectFingerprintIntensityFile(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_INTENSITY_CONFIG_FILE}`; }
+
+// ============================================================
+// 16. 写作知识库
+// ============================================================
+export const DEFAULT_KNOWLEDGE_BASE_DIR = '写作知识库';
+export const KB_INDEX_FILE = '知识库索引.md';
+export const KB_TAG_SYSTEM_FILE = '标签体系.md';
+export const KB_BASIC_INFO_FILE = '基本信息.md';
+export const KB_STYLE_FINGERPRINT_FILE = '风格指纹.json';
+export const KB_RHYTHM_ANALYSIS_FILE = '节奏分析.md';
+export const KB_WRITING_TECHNIQUES_FILE = '写作技巧.md';
+export const KB_STRUCTURE_BREAKDOWN_FILE = '结构拆解.md';
+export const KB_CHARACTER_EXTRACTION_FILE = '人设提取.md';
+export const KB_FORESHADOW_DB_FILE = '伏笔库.md';
+export const KB_COMMERCIAL_ANALYSIS_FILE = '商业价值.md';
+export const KB_READABILITY_ANALYSIS_FILE = '可读性分析.md';
+export const KB_BREAKDOWN_LOG_FILE = '拆解日志.md';
+export const KB_VECTORS_DIR = 'knowledge-vectors';
+export const KB_CONFIG_DIR = '_config';
+export const KB_CONFIG_FILE = 'knowledge-base-config.json';
+export const KB_IMPORT_HISTORY_FILE = 'import-history.json';
+export const KB_IMPORT_PRESETS_FILE = 'import-presets.json';
+
+export function kbKnowledgeBaseDir(baseDir?: string): string { return baseDir || DEFAULT_KNOWLEDGE_BASE_DIR; }
+export function kbConfigDir(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_CONFIG_DIR}`; }
+export function kbConfigFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_CONFIG_FILE}`; }
+export function kbIndexFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_INDEX_FILE}`; }
+export function kbTagSystemFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_TAG_SYSTEM_FILE}`; }
+export function kbBookDir(bookName: string, baseDir?: string): string {
+    const safeBookName = bookName.replace(/[\\/:*?"<>|]/g, '_');
+    return `${kbKnowledgeBaseDir(baseDir)}/${safeBookName}`;
+}
+export function kbBookBasicInfoFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_BASIC_INFO_FILE}`; }
+export function kbBookStyleFingerprintFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_STYLE_FINGERPRINT_FILE}`; }
+export function kbBookRhythmAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_RHYTHM_ANALYSIS_FILE}`; }
+export function kbBookWritingTechniquesFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_WRITING_TECHNIQUES_FILE}`; }
+export function kbBookStructureBreakdownFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_STRUCTURE_BREAKDOWN_FILE}`; }
+export function kbBookCharacterExtractionFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_CHARACTER_EXTRACTION_FILE}`; }
+export function kbBookForeshadowDBFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_FORESHADOW_DB_FILE}`; }
+export function kbBookCommercialAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_COMMERCIAL_ANALYSIS_FILE}`; }
+export function kbBookReadabilityAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_READABILITY_ANALYSIS_FILE}`; }
+export function kbBookBreakdownLogFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_BREAKDOWN_LOG_FILE}`; }
+export function kbVectorsDir(): string { return `${pluginDataDir()}/${KB_VECTORS_DIR}`; }
+export function kbImportHistoryFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_IMPORT_HISTORY_FILE}`; }
+export function kbImportPresetsFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_IMPORT_PRESETS_FILE}`; }
+
+// ============================================================
+// 17. 版本管理
+// ============================================================
+/** 项目内版本目录 */
+export const PROJECT_VERSIONS_DIR = '_versions';
+/** 版本索引文件名 */
+export const VERSION_INDEX_FILE = 'versions.json';
+/** 回滚历史文件名 */
+export const ROLLBACK_HISTORY_FILE = 'rollback-history.json';
+
+/** 项目内版本根目录 */
+export function pjVersionsDir(project: string): string { return `${project}/${PROJECT_VERSIONS_DIR}`; }
+
+/** 某内容类型的版本目录 */
+export function pjContentTypeVersionsDir(project: string, contentType: string): string {
+    return `${pjVersionsDir(project)}/${contentType}`;
+}
+
+/** 某内容的版本目录（按内容 key 分目录） */
+export function pjContentVersionsDir(project: string, contentType: string, contentKey: string): string {
+    const safeKey = contentKey.replace(/[\\/:*?"<>|]/g, '_');
+    return `${pjContentTypeVersionsDir(project, contentType)}/${safeKey}`;
+}
+
+/** 版本索引文件路径 */
+export function pjVersionIndexFile(project: string, contentType: string, contentKey: string): string {
+    return `${pjContentVersionsDir(project, contentType, contentKey)}/${VERSION_INDEX_FILE}`;
+}
+
+/** 具体版本内容文件路径 */
+export function pjVersionContentFile(project: string, contentType: string, contentKey: string, versionId: string): string {
+    return `${pjContentVersionsDir(project, contentType, contentKey)}/${versionId}.md`;
+}
+
+/** 回滚历史文件路径 */
+export function pjRollbackHistoryFile(project: string): string {
+    return `${pjVersionsDir(project)}/${ROLLBACK_HISTORY_FILE}`;
+}
+
+/** 插件数据目录中的版本目录（备用存储位置） */
+export function pluginVersionsDir(): string { return `${pluginDataDir()}/versions`; }
 

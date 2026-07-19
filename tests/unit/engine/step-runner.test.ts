@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// step-runner.ts 间接依赖 obsidian，需要在导入前 mock
+vi.mock('obsidian', () => ({}));
+
 import {
     ALL_FULL_STEPS,
     STEP_INDEX_MIGRATION_MAP,
     migrateStepIndex,
-} from '../../../engine/step-runner';
+} from '../../../engine/step-definitions';
 
 describe('ALL_FULL_STEPS 完整性', () => {
     it('共 11 个步骤', () => {

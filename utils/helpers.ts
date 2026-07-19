@@ -1,8 +1,11 @@
-import { App, Notice, TFile } from 'obsidian';
+import { App, Notice, TFile, TFolder } from 'obsidian';
 import { pjVolumeOutlineDir, pjVolumeOutlineFile } from '../shared/paths';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('Helpers');
 /**
  * 在所有顶层工作台/Modal 容器上加 nw-scope class，
  * 使 styles.css 中以 .nw-scope 为作用域前缀的 39 条规则生效。
@@ -68,7 +71,7 @@ export async function readTmpl(app: App, path: string, fs?: FileSystemPort): Pro
         const fileSystem = fs || new ObsidianFileSystem(app);
         return await fileSystem.read(path);
     } catch (e) {
-        console.warn('readTmpl: 读取模板失败:', path, e);
+        log.warn('readTmpl: 读取模板失败:', path, e);
         return null;
     }
 }
@@ -233,6 +236,27 @@ export async function writeVolumeOutlines(app: App, project: string, outlineBody
         return 1;
     }
 
+    // 清理残留旧卷文件：删除不在新输出中的旧分卷大纲文件
+    const newVolNumbers = new Set(matches.map(m => m.volN));
+    const dirFile = app.vault.getAbstractFileByPath(dir);
+    if (dirFile instanceof TFolder) {
+        for (const child of dirFile.children) {
+            if (!child.name || !child.name.endsWith('_分卷大纲.md')) continue;
+            const volMatch = child.name.match(/第(\d+)卷/);
+            if (volMatch) {
+                const oldVolN = parseInt(volMatch[1]);
+                if (!newVolNumbers.has(oldVolN)) {
+                    try {
+                        await app.vault.delete(child, true);
+                        log.info(`[小说工坊] 清理残留旧卷文件: ${child.name}`);
+                    } catch (e) {
+                        log.warn(`[小说工坊] 删除旧卷文件失败: ${child.name}`, e);
+                    }
+                }
+            }
+        }
+    }
+
     const preamble = outlineBody.slice(0, matches[0].index).trim();
     let written = 0;
     for (let i = 0; i < matches.length; i++) {
@@ -263,7 +287,7 @@ export async function readMergedVolumeOutline(app: App, project: string, fs?: Fi
     const legacyPath = `${project}/03-大纲与章节/分卷大纲.md`;
     const legacy = meta.getAbstractFileByPath(legacyPath);
     if (legacy instanceof TFile) {
-        try { parts.push(await fileSystem.read(legacyPath)); } catch (e) { console.warn('[小说工坊] 读取旧版分卷大纲失败:', e); }
+        try { parts.push(await fileSystem.read(legacyPath)); } catch (e) { log.warn('[小说工坊] 读取旧版分卷大纲失败:', e); }
     }
 
     // v4.0 按卷归档
@@ -276,7 +300,7 @@ export async function readMergedVolumeOutline(app: App, project: string, fs?: Fi
             return na - nb;
         });
     for (const f of volFiles) {
-        try { parts.push(await fileSystem.read(f.path)); } catch (e) { console.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }
+        try { parts.push(await fileSystem.read(f.path)); } catch (e) { log.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }
     }
 
     return parts.join('\n\n');

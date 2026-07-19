@@ -1,13 +1,17 @@
-﻿import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { AIEngine } from '../engine/ai-engine';
 import { mkdirp } from '../utils/helpers';
 import { TemplateService } from '../services/template-service';
+import { ENGINE_NAMES } from '../engine/engine-registry';
 import { getChapterFileName, CHAPTER_FILE_TYPES, normalizeChapterFiles, getChapterFile, findChapterFile } from '../engine/chapter-utils';
 import { readMergedVolumeOutline } from '../utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('RebuildChaptersModal');
 export class RebuildChaptersModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -27,11 +31,9 @@ export class RebuildChaptersModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -158,9 +160,9 @@ export class RebuildChaptersModal extends Modal {
                 }).join('\n');
                 if (tc !== before) await this.app.vault.modify(tf, tc);
             }
-        } catch (e) { console.warn('清理伏笔/时间线失败:', e); }
+        } catch (e) { log.warn('清理伏笔/时间线失败:', e); }
 
-        const templateService = new TemplateService(this.app);
+        const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
 
         let done = 0;
         let preserved = 0;
@@ -262,7 +264,7 @@ export class RebuildChaptersModal extends Modal {
                 done++;
                 new Notice(`✅ ${chapName}完成（${done}/${total}）${bodyExists ? '〔正文已保留〕' : ''}`, 5000);
             } catch (e) {
-                console.warn('重建失败:', chapName, e);
+                log.warn('重建失败:', chapName, e);
             }
         }
 

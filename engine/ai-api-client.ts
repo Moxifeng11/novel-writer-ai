@@ -1,5 +1,5 @@
 
-import NovelWriterPlugin, { PROVIDERS } from '../main';
+import NovelWriterPlugin from '../main';
 import {
     AI_RETRY_BACKOFF_MS,
     AI_RATE_LIMIT_WAIT_MS,
@@ -16,7 +16,11 @@ import type { APIResponse } from './ai-engine';
 
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
+import { performanceMonitor } from '../services/performance-monitor';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('AiApiClient');
 /** 安全提取 Error 的 message，未知类型返回空串 */
 function errorMessage(err: unknown): string {
     if (err instanceof Error) return err.message;
@@ -34,6 +38,11 @@ interface AIApiJsonResponse {
         input_tokens?: number;
         output_tokens?: number;
     };
+    // Ollama /api/generate 原生字段
+    response?: string;
+    prompt_eval_count?: number;
+    eval_count?: number;
+    done?: boolean;
 }
 
 export class AIApiClient {
@@ -70,7 +79,7 @@ export class AIApiClient {
         AIApiClient.rateLimitHits++;
         const backoff = Math.min(2_000 * Math.pow(2, AIApiClient.rateLimitHits), 60_000);
         AIApiClient.rateLimitBackoffUntil = Date.now() + backoff;
-        console.warn(`[小说工坊] 速率限制命中 #${AIApiClient.rateLimitHits}，并发降至1，退避 ${backoff}ms`);
+        log.warn(`[小说工坊] 速率限制命中 #${AIApiClient.rateLimitHits}，并发降至1，退避 ${backoff}ms`);
     }
 
     private static onRequestSuccess(): void {
@@ -95,7 +104,6 @@ export class AIApiClient {
         if (statusCode === 408) return true;
         if (statusCode && statusCode >= 400 && statusCode < 500) return false;
         if (error && typeof error === 'object' && 'name' in error && (error as { name: string }).name === 'AbortError') return true;
-        if (error instanceof TypeError) return true;
         const msg = errorMessage(error).toLowerCase();
         if (msg.includes('fetch failed') || msg.includes('networkerror')
             || msg.includes('timeout') || msg.includes('econnrefused')
@@ -128,7 +136,7 @@ export class AIApiClient {
     private async handleRateLimit(currentModel: string, hasMoreModels: boolean): Promise<'break' | 'continue'> {
         AIApiClient.onRateLimitHit();
         if (hasMoreModels) {
-            console.log(`[小说工坊] ${currentModel} 被限流，跳过到下一个模型`);
+            log.info(`[小说工坊] ${currentModel} 被限流，跳过到下一个模型`);
             return 'break';
         }
         await new Promise(r => setTimeout(r, AI_RATE_LIMIT_WAIT_MS));
@@ -159,7 +167,7 @@ export class AIApiClient {
         const modelMaxOutput = getModelMaxOutput(effectiveModel);
         const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
         if (maxTokens > modelMaxOutput) {
-            console.warn(`[小说工坊] maxTokens ${maxTokens} > ${effectiveModel} 上限 ${modelMaxOutput}，自动截断为 ${safeMaxTokens}`);
+            log.debug(`[小说工坊] maxTokens ${maxTokens} > ${effectiveModel} 上限 ${modelMaxOutput}，自动截断为 ${safeMaxTokens}`);
         }
 
         if (!endpoint) {
@@ -175,8 +183,8 @@ export class AIApiClient {
         const triedModels: string[] = [];
 
         if (triedModels.length === 0) {
-            const providerName = Object.entries(PROVIDERS).find(([_, p]) => p.endpoint === endpoint)?.[0] || '自定义';
-            console.debug(`[小说工坊] callAI → ${providerName} | ${effectiveModel}`);
+            const providerName = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint)?.name || '自定义';
+            log.debug(`[小说工坊] callAI → ${providerName} | ${effectiveModel}`);
         }
 
         const availableModels = this.plugin.settings.availableModels || [];
@@ -189,7 +197,7 @@ export class AIApiClient {
             const currentMaxOutput = getModelMaxOutput(currentModel);
             const currentSafeMaxTokens = Math.min(maxTokens, currentMaxOutput);
             if (maxTokens > currentMaxOutput) {
-                console.warn(`[小说工坊] fallback ${currentModel}: maxTokens ${maxTokens} > 上限 ${currentMaxOutput}，截断为 ${currentSafeMaxTokens}`);
+                log.debug(`[小说工坊] fallback ${currentModel}: maxTokens ${maxTokens} > 上限 ${currentMaxOutput}，截断为 ${currentSafeMaxTokens}`);
             }
             const finalMaxTokens = currentSafeMaxTokens;
 
@@ -200,7 +208,7 @@ export class AIApiClient {
                 : systemPrompt;
 
             if (isSwitch) {
-                console.log(`[小说工坊] 🔄 模型切换: ${triedModels[triedModels.length - 1]} → ${currentModel}`);
+                log.info(`[小说工坊] 🔄 模型切换: ${triedModels[triedModels.length - 1]} → ${currentModel}`);
                 this.notifier.showNotice(`⚠️ [${triedModels[triedModels.length - 1]}] 断联，切换至 [${currentModel}] 重试...`, NOTICE_CRITICAL);
             }
 
@@ -209,7 +217,7 @@ export class AIApiClient {
             if (triedModels.length === 1) {
                 const budget = calculateTokenBudget(effectiveSystemPrompt, userPrompt, currentModel);
                 if (!budget.isSafe) {
-                    console.warn(`[小说工坊] ⚠️ Token预算 — ${currentModel}: 输入~${budget.input}, 可用${budget.available}/${budget.contextWindow}`);
+                    log.warn(`[小说工坊] ⚠️ Token预算 — ${currentModel}: 输入~${budget.input}, 可用${budget.available}/${budget.contextWindow}`);
                     if (budget.available < 512) {
                         return { content: '', error: `输入过长(~${budget.input}tokens)，超出${currentModel}窗口，请减少上下文` };
                     }
@@ -229,13 +237,20 @@ export class AIApiClient {
                         externalSignal.addEventListener('abort', onExternalAbort, { once: true });
                     }
 
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
-                        },
-                        body: JSON.stringify({
+                    const isOllamaNative = endpoint.includes('/api/generate');
+
+                    const requestBody = isOllamaNative
+                        ? {
+                            model: currentModel,
+                            prompt: userPrompt,
+                            system: effectiveSystemPrompt,
+                            stream: false,
+                            options: {
+                                temperature: temperature,
+                                num_predict: Math.min(finalMaxTokens, ZAI_MAX_TOKENS)
+                            }
+                        }
+                        : {
                             model: currentModel,
                             messages: [
                                 { role: 'system', content: effectiveSystemPrompt },
@@ -243,9 +258,22 @@ export class AIApiClient {
                             ],
                             max_tokens: Math.min(finalMaxTokens, ZAI_MAX_TOKENS),
                             temperature: temperature
-                        }),
+                        };
+
+                    const perfFetchId = performanceMonitor.start('apiFetch', 'apiCall', undefined, {
+                        model: currentModel,
+                        endpoint: endpoint.substring(0, 50),
+                    });
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify(requestBody),
                         signal: ac.signal
                     });
+                    performanceMonitor.end(perfFetchId, { status: response.status });
 
                     clearTimeout(timer);
                     timer = null;
@@ -259,11 +287,11 @@ export class AIApiClient {
 
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.error(`[小说工坊] API响应错误 - 模型: ${currentModel}, 状态码: ${response.status}, 内容:`, errorText);
+                        log.error(`[小说工坊] API响应错误 - 模型: ${currentModel}, 状态码: ${response.status}, 内容:`, errorText);
 
                         if (this.shouldFallback(null, response.status, fallbackModels.length > triedModels.length)) {
                             lastError = `HTTP ${response.status} (${currentModel}): ${errorText}`;
-                            console.log(`[小说工坊] ${currentModel} 断联 (HTTP ${response.status})，尝试下一个模型`);
+                            log.info(`[小说工坊] ${currentModel} 断联 (HTTP ${response.status})，尝试下一个模型`);
                             break;
                         }
 
@@ -275,22 +303,34 @@ export class AIApiClient {
                     try {
                         data = JSON.parse(responseText) as AIApiJsonResponse;
                     } catch (jsonError) {
-                        console.error(`[小说工坊] API 返回非 JSON 响应（模型: ${currentModel}）:`, responseText.slice(0, 500));
+                        log.error(`[小说工坊] API 返回非 JSON 响应（模型: ${currentModel}）:`, responseText.slice(0, 500));
                         const isHtml = responseText.includes('<html') || responseText.includes('<!DOCTYPE');
                         const isGateway = responseText.includes('502') || responseText.includes('504') || responseText.includes('Bad Gateway');
                         if ((isHtml || isGateway) && fallbackModels.length > triedModels.length) {
                             lastError = `API 返回非 JSON 响应（${currentModel}）`;
-                            console.log(`[小说工坊] ${currentModel} 返回非 JSON（疑似服务端错误），尝试下一个模型`);
+                            log.info(`[小说工坊] ${currentModel} 返回非 JSON（疑似服务端错误），尝试下一个模型`);
                             break;
                         }
                         return { content: '', error: `API 返回格式异常：${responseText.slice(0, 200)}` };
+                    }
+                    // Ollama /api/generate 响应格式转换：{ model, response, done }
+                    if (isOllamaNative) {
+                        const ollamaContent = data.response;
+                        if (data.prompt_eval_count !== undefined || data.eval_count !== undefined) {
+                            data.usage = {
+                                prompt_tokens: data.prompt_eval_count || 0,
+                                completion_tokens: data.eval_count || 0,
+                                total_tokens: (data.prompt_eval_count || 0) + (data.eval_count || 0)
+                            };
+                        }
+                        data.choices = [{ message: { content: ollamaContent || '' } }];
                     }
                     const content = data.choices?.[0]?.message?.content;
 
                     if (!content) {
                         if (fallbackModels.length > triedModels.length) {
                             lastError = `AI返回为空 (${currentModel})`;
-                            console.log(`[小说工坊] ${currentModel} 返回空内容，尝试下一个模型`);
+                            log.info(`[小说工坊] ${currentModel} 返回空内容，尝试下一个模型`);
                             break;
                         }
                         return { content: '', error: 'AI返回为空' };
@@ -304,7 +344,7 @@ export class AIApiClient {
 
                     const contentLen = content.length;
                     const contentPreview = content.slice(0, 200);
-                    console.debug(`[小说工坊] API响应: ${currentModel} | ${contentLen}字 | tok=${usage?.total || '?'}`);
+                    log.debug(`[小说工坊] API响应: ${currentModel} | ${contentLen}字 | tok=${usage?.total || '?'}`);
 
                     if (data.usage) {
                         this._sessionTokens.input += data.usage.prompt_tokens || data.usage.input_tokens || 0;
@@ -312,7 +352,7 @@ export class AIApiClient {
                     }
 
                     if (isSwitch) {
-                        console.log(`[小说工坊] ✅ 模型切换成功: ${currentModel}`);
+                        log.info(`[小说工坊] ✅ 模型切换成功: ${currentModel}`);
                         this.notifier.showNotice(`✅ 已切换至 [${currentModel}] 并成功返回内容`, NOTICE_CRITICAL);
                     }
 
@@ -320,7 +360,7 @@ export class AIApiClient {
                 } catch (error: unknown) {
                     if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {
                         lastError = errorMessage(error) || '网络错误';
-                        console.log(`[小说工坊] ${currentModel} 网络断联: ${lastError}`);
+                        log.info(`[小说工坊] ${currentModel} 网络断联: ${lastError}`);
                         break;
                     }
                     // v6.3: 外部 abort 不触发重试/回退，直接退出
@@ -371,7 +411,7 @@ export class AIApiClient {
         const modelMaxOutput = getModelMaxOutput(effectiveModel);
         const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
         if (maxTokens > modelMaxOutput) {
-            console.warn(`[小说工坊] callAIStream: maxTokens ${maxTokens} > ${effectiveModel} 上限 ${modelMaxOutput}，自动截断为 ${safeMaxTokens}`);
+            log.debug(`[小说工坊] callAIStream: maxTokens ${maxTokens} > ${effectiveModel} 上限 ${modelMaxOutput}，自动截断为 ${safeMaxTokens}`);
         }
         const finalMaxTokens = safeMaxTokens;
 
@@ -401,8 +441,8 @@ export class AIApiClient {
                 return { content: '', error: 'API密钥未配置' };
             }
 
-            const providerName = Object.entries(PROVIDERS).find(([_, p]) => p.endpoint === endpoint)?.[0] || '自定义';
-            console.debug(`[小说工坊] 🔗 callAIStream → ${providerName} | ${effectiveModel}`);
+            const providerName = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint)?.name || '自定义';
+            log.debug(`[小说工坊] 🔗 callAIStream → ${providerName} | ${effectiveModel}`);
 
             const availableModels = this.plugin.settings.availableModels || [];
             const fallbackEnabled = this.plugin.settings.enableAutoModelFallback !== false && options?.disableFallback !== true;
@@ -418,7 +458,7 @@ export class AIApiClient {
                 const currentMaxOutput = getModelMaxOutput(currentModel);
                 const currentSafeMaxTokens = Math.min(maxTokens, currentMaxOutput);
                 if (maxTokens > currentMaxOutput) {
-                    console.warn(`[小说工坊] callAIStream fallback ${currentModel}: maxTokens ${maxTokens} > 上限 ${currentMaxOutput}，截断为 ${currentSafeMaxTokens}`);
+                    log.debug(`[小说工坊] callAIStream fallback ${currentModel}: maxTokens ${maxTokens} > 上限 ${currentMaxOutput}，截断为 ${currentSafeMaxTokens}`);
                 }
                 const finalMaxTokens = currentSafeMaxTokens;
 
@@ -429,7 +469,7 @@ export class AIApiClient {
                     : systemPrompt;
 
                 if (isSwitch) {
-                    console.log(`[小说工坊] 🔄 模型切换(流式): ${triedModels[triedModels.length - 1]} → ${currentModel}`);
+                    log.info(`[小说工坊] 🔄 模型切换(流式): ${triedModels[triedModels.length - 1]} → ${currentModel}`);
                     this.notifier.showNotice(`⚠️ [${triedModels[triedModels.length - 1]}] 断联，切换至 [${currentModel}] 重试...`, NOTICE_CRITICAL);
                 }
 
@@ -448,14 +488,20 @@ export class AIApiClient {
                             externalSignal.addEventListener('abort', onExternalAbort, { once: true });
                         }
 
-                        const response = await fetch(endpoint, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`,
-                                'Accept': 'text/event-stream',
-                            },
-                            body: JSON.stringify({
+                        const isOllamaNative = endpoint.includes('/api/generate');
+
+                        const streamRequestBody = isOllamaNative
+                            ? {
+                                model: currentModel,
+                                prompt: userPrompt,
+                                system: effectiveSystemPrompt,
+                                stream: true,
+                                options: {
+                                    temperature: temperature,
+                                    num_predict: Math.min(finalMaxTokens, ZAI_MAX_TOKENS)
+                                }
+                            }
+                            : {
                                 model: currentModel,
                                 messages: [
                                     { role: 'system', content: effectiveSystemPrompt },
@@ -464,9 +510,23 @@ export class AIApiClient {
                                 max_tokens: Math.min(finalMaxTokens, ZAI_MAX_TOKENS),
                                 temperature: temperature,
                                 stream: true,
-                            }),
+                            };
+
+                        const perfStreamFetchId = performanceMonitor.start('apiFetchStream', 'apiCall', undefined, {
+                            model: currentModel,
+                            endpoint: endpoint.substring(0, 50),
+                        });
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Accept': 'text/event-stream',
+                            },
+                            body: JSON.stringify(streamRequestBody),
                             signal: ac.signal
                         });
+                        performanceMonitor.end(perfStreamFetchId, { status: response.status });
 
                         clearTimeout(timer);
                         timer = null;
@@ -480,11 +540,11 @@ export class AIApiClient {
 
                         if (!response.ok) {
                             const errorText = await response.text();
-                            console.error(`[小说工坊] API响应错误(流式) - 模型: ${currentModel}, 状态码: ${response.status}, 内容:`, errorText);
+                            log.error(`[小说工坊] API响应错误(流式) - 模型: ${currentModel}, 状态码: ${response.status}, 内容:`, errorText);
 
                             if (this.shouldFallback(null, response.status, fallbackModels.length > triedModels.length)) {
                                 lastError = `HTTP ${response.status} (${currentModel}): ${errorText}`;
-                                console.log(`[小说工坊] ${currentModel} 断联 (HTTP ${response.status})，尝试下一个模型`);
+                                log.info(`[小说工坊] ${currentModel} 断联 (HTTP ${response.status})，尝试下一个模型`);
                                 break;
                             }
 
@@ -514,6 +574,26 @@ export class AIApiClient {
                                 const trimmed = line.trim();
                                 if (!trimmed) continue;
 
+                                // Ollama /api/generate 流式格式：每行是裸 JSON {"model":"...","response":"...","done":false}
+                                if (isOllamaNative) {
+                                    try {
+                                        const parsed = JSON.parse(trimmed);
+                                        const delta = parsed?.response;
+                                        if (delta) {
+                                            accumulatedContent += delta;
+                                            onChunk?.(accumulatedContent, false);
+                                        }
+                                        if (parsed?.done === true) {
+                                            isStreamDone = true;
+                                            break;
+                                        }
+                                    } catch {
+                                        log.warn('[小说工坊] Ollama 流式解析警告: 无法解析行:', trimmed.slice(0, 100));
+                                    }
+                                    continue;
+                                }
+
+                                // OpenAI SSE 格式
                                 if (trimmed === 'data: [DONE]') {
                                     isStreamDone = true;
                                     break;
@@ -538,7 +618,7 @@ export class AIApiClient {
                                         break;
                                     }
                                 } catch {
-                                    console.warn('[小说工坊] SSE 解析警告: 无法解析行:', jsonStr.slice(0, 100));
+                                    log.warn('[小说工坊] SSE 解析警告: 无法解析行:', jsonStr.slice(0, 100));
                                 }
                             }
                         }
@@ -549,7 +629,7 @@ export class AIApiClient {
                         if (!fullContent) {
                             if (fallbackModels.length > triedModels.length) {
                                 lastError = `AI流式返回为空 (${currentModel})`;
-                                console.log(`[小说工坊] ${currentModel} 流式返回空内容，尝试下一个模型`);
+                                log.info(`[小说工坊] ${currentModel} 流式返回空内容，尝试下一个模型`);
                                 break;
                             }
                             return { content: '', error: 'AI流式返回为空' };
@@ -558,7 +638,7 @@ export class AIApiClient {
                         const data = { content: fullContent };
 
                         if (isSwitch) {
-                            console.log(`[小说工坊] ✅ 模型切换成功(流式): ${currentModel}`);
+                            log.info(`[小说工坊] ✅ 模型切换成功(流式): ${currentModel}`);
                             this.notifier.showNotice(`✅ 已切换至 [${currentModel}] 并成功返回内容`, NOTICE_CRITICAL);
                         }
 
@@ -566,7 +646,7 @@ export class AIApiClient {
                     } catch (error: unknown) {
                         if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {
                             lastError = errorMessage(error) || '网络错误(流式)';
-                            console.log(`[小说工坊] ${currentModel} 网络断联(流式): ${lastError}`);
+                            log.info(`[小说工坊] ${currentModel} 网络断联(流式): ${lastError}`);
                             break;
                         }
 
@@ -599,5 +679,333 @@ export class AIApiClient {
         } finally {
             releaseSemaphore();
         }
+    }
+
+    async *callAIAsyncIterator(
+        systemPrompt: string,
+        userPrompt: string,
+        model?: string,
+        temperature: number = 0.7,
+        maxTokens: number = 4096,
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean }
+    ): AsyncGenerator<string, APIResponse, unknown> {
+        const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const externalSignal = options?.signal;
+
+        if (externalSignal?.aborted) {
+            return { content: '', error: 'aborted' };
+        }
+
+        const modelMaxOutput = getModelMaxOutput(effectiveModel);
+        const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
+        const finalMaxTokens = safeMaxTokens;
+
+        let fallbackStage: 'native' | 'simulated' | 'full' | 'done' = options?.forceSimulated ? 'simulated' : 'native';
+        let lastError: string | undefined;
+
+        while (fallbackStage !== ('done' as string)) {
+            try {
+                if (fallbackStage === 'native') {
+                    log.debug('[小说工坊] 流式降级: 尝试原生 SSE 流式');
+                    const result = yield* this.nativeStreamIterator(
+                        systemPrompt, userPrompt, effectiveModel, temperature, finalMaxTokens, options
+                    );
+                    if (!result.error || result.content) {
+                        return result;
+                    }
+                    lastError = result.error;
+                    log.warn('[小说工坊] 流式降级: 原生 SSE 失败，切换到模拟流式 -', lastError);
+                    fallbackStage = 'simulated';
+                } else if (fallbackStage === 'simulated') {
+                    log.debug('[小说工坊] 流式降级: 尝试模拟流式');
+                    const result = yield* this.simulatedStreamIterator(
+                        systemPrompt, userPrompt, effectiveModel, temperature, finalMaxTokens, options
+                    );
+                    if (!result.error || result.content) {
+                        return result;
+                    }
+                    lastError = result.error;
+                    log.warn('[小说工坊] 流式降级: 模拟流式失败，切换到完整响应 -', lastError);
+                    fallbackStage = 'full';
+                } else {
+                    log.debug('[小说工坊] 流式降级: 尝试完整响应（非流式）');
+                    const result = await this.callAI(
+                        systemPrompt, userPrompt, effectiveModel, temperature, finalMaxTokens, options
+                    );
+                    if (result.content) {
+                        yield result.content;
+                    }
+                    return result;
+                }
+            } catch (error: unknown) {
+                if (externalSignal?.aborted) {
+                    return { content: '', error: 'aborted' };
+                }
+                const errMsg = error instanceof Error ? error.message : String(error);
+                lastError = errMsg;
+                log.warn(`[小说工坊] 流式降级: ${fallbackStage} 阶段异常 -`, errMsg);
+
+                if (fallbackStage === 'native') {
+                    fallbackStage = 'simulated';
+                } else if (fallbackStage === 'simulated') {
+                    fallbackStage = 'full';
+                } else {
+                    return { content: '', error: lastError };
+                }
+            }
+        }
+
+        return { content: '', error: lastError || '流式生成失败' };
+    }
+
+    private async *nativeStreamIterator(
+        systemPrompt: string,
+        userPrompt: string,
+        model: string,
+        temperature: number,
+        maxTokens: number,
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
+    ): AsyncGenerator<string, APIResponse, unknown> {
+        const externalSignal = options?.signal;
+        const apiKey = options?.apiKey || this.plugin.settings.apiKey;
+        const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
+        const availableModels = this.plugin.settings.availableModels || [];
+        const fallbackEnabled = this.plugin.settings.enableAutoModelFallback !== false && options?.disableFallback !== true;
+        const isWriting = options?.isWritingTask === true;
+
+        const fallbackModels = this.buildFallbackModels(model, availableModels, fallbackEnabled, !options?.disableFallback);
+
+        let lastError: string | undefined;
+        const triedModels: string[] = [];
+
+        for (const currentModel of fallbackModels) {
+            const currentMaxOutput = getModelMaxOutput(currentModel);
+            const currentSafeMaxTokens = Math.min(maxTokens, currentMaxOutput);
+            const finalMaxTokens = currentSafeMaxTokens;
+
+            const isSwitch = triedModels.length > 0;
+
+            const effectiveSystemPrompt = isSwitch && isWriting
+                ? systemPrompt + this.getContinuityGuard(triedModels[triedModels.length - 1], currentModel)
+                : systemPrompt;
+
+            if (isSwitch) {
+                log.info(`[小说工坊] 🔄 模型切换(流式迭代器): ${triedModels[triedModels.length - 1]} → ${currentModel}`);
+            }
+
+            triedModels.push(currentModel);
+
+            const maxRetries = this.plugin.settings.maxApiRetries ?? 3;
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                let ac: AbortController | null = null;
+                let timer: ReturnType<typeof setTimeout> | null = null;
+
+                try {
+                    ac = new AbortController();
+                    timer = setTimeout(() => ac!.abort(), getTimeoutForModel(currentModel));
+                    const onExternalAbort = () => ac?.abort();
+                    if (externalSignal) {
+                        externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+                    }
+
+                    const isOllamaNative = endpoint.includes('/api/generate');
+
+                    const streamRequestBody = isOllamaNative
+                        ? {
+                            model: currentModel,
+                            prompt: userPrompt,
+                            system: effectiveSystemPrompt,
+                            stream: true,
+                            options: {
+                                temperature: temperature,
+                                num_predict: Math.min(finalMaxTokens, ZAI_MAX_TOKENS)
+                            }
+                        }
+                        : {
+                            model: currentModel,
+                            messages: [
+                                { role: 'system', content: effectiveSystemPrompt },
+                                { role: 'user', content: userPrompt }
+                            ],
+                            max_tokens: Math.min(finalMaxTokens, ZAI_MAX_TOKENS),
+                            temperature: temperature,
+                            stream: true,
+                        };
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`,
+                            'Accept': 'text/event-stream',
+                        },
+                        body: JSON.stringify(streamRequestBody),
+                        signal: ac.signal
+                    });
+
+                    clearTimeout(timer);
+                    timer = null;
+                    if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
+
+                    if (response.status === 429) {
+                        const rateLimitResult = await this.handleRateLimit(currentModel, fallbackModels.length > triedModels.length);
+                        if (rateLimitResult === 'break') break;
+                        continue;
+                    }
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        if (this.shouldFallback(null, response.status, fallbackModels.length > triedModels.length)) {
+                            lastError = `HTTP ${response.status} (${currentModel}): ${errorText}`;
+                            break;
+                        }
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
+                    const reader = response.body?.getReader();
+                    if (!reader) {
+                        throw new Error('ReadableStream 不可用');
+                    }
+
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    let accumulatedContent = '';
+                    let isStreamDone = false;
+
+                    while (!isStreamDone) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        if (externalSignal?.aborted) {
+                            try { reader.releaseLock(); } catch { }
+                            return { content: accumulatedContent, error: 'aborted' };
+                        }
+
+                        buffer += decoder.decode(value, { stream: true });
+
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (!trimmed) continue;
+
+                            if (isOllamaNative) {
+                                try {
+                                    const parsed = JSON.parse(trimmed);
+                                    const delta = parsed?.response;
+                                    if (delta) {
+                                        accumulatedContent += delta;
+                                        yield delta;
+                                    }
+                                    if (parsed?.done === true) {
+                                        isStreamDone = true;
+                                        break;
+                                    }
+                                } catch {
+                                }
+                                continue;
+                            }
+
+                            if (trimmed === 'data: [DONE]') {
+                                isStreamDone = true;
+                                break;
+                            }
+
+                            if (!trimmed.startsWith('data: ')) {
+                                continue;
+                            }
+
+                            const jsonStr = trimmed.slice(6);
+                            try {
+                                const parsed = JSON.parse(jsonStr);
+                                const delta = parsed?.choices?.[0]?.delta?.content;
+                                if (delta) {
+                                    accumulatedContent += delta;
+                                    yield delta;
+                                }
+                                if (parsed?.choices?.[0]?.finish_reason === 'stop') {
+                                    isStreamDone = true;
+                                    break;
+                                }
+                            } catch {
+                            }
+                        }
+                    }
+
+                    if (!accumulatedContent) {
+                        if (fallbackModels.length > triedModels.length) {
+                            lastError = `AI流式返回为空 (${currentModel})`;
+                            break;
+                        }
+                        throw new Error('AI流式返回为空');
+                    }
+
+                    return { content: accumulatedContent };
+                } catch (error: unknown) {
+                    if (externalSignal?.aborted) {
+                        if (timer) { clearTimeout(timer); timer = null; }
+                        return { content: '', error: 'aborted' };
+                    }
+
+                    if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {
+                        lastError = error instanceof Error ? error.message : String(error);
+                        break;
+                    }
+
+                    if (attempt < 2) {
+                        const base = AI_RETRY_BACKOFF_MS * Math.pow(2, attempt);
+                        const backoff = Math.min(base, 30_000);
+                        const jitter = Math.random() * backoff * 0.5;
+                        await new Promise(r => setTimeout(r, backoff + jitter));
+                    } else {
+                        lastError = error instanceof Error ? error.message : String(error);
+                    }
+                } finally {
+                    if (timer) {
+                        clearTimeout(timer);
+                        timer = null;
+                    }
+                    ac = null;
+                }
+            }
+        }
+
+        const msg = fallbackModels.length > 1
+            ? `所有模型均不可用（已尝试: ${triedModels.join(', ')}），最后错误: ${lastError || '未知'}`
+            : (lastError || '重试耗尽');
+        throw new Error(msg);
+    }
+
+    private async *simulatedStreamIterator(
+        systemPrompt: string,
+        userPrompt: string,
+        model: string,
+        temperature: number,
+        maxTokens: number,
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
+    ): AsyncGenerator<string, APIResponse, unknown> {
+        const response = await this.callAI(systemPrompt, userPrompt, model, temperature, maxTokens, options);
+
+        if (response.error && !response.content) {
+            return response;
+        }
+
+        if (!response.content) {
+            return { content: '', error: 'AI返回为空' };
+        }
+
+        const { createSimulatedStreamWithSignal } = await import('./streaming/simulated-stream');
+
+        const result = yield* createSimulatedStreamWithSignal(response.content, options?.signal, {
+            splitBy: 'sentence',
+            minDelayMs: 20,
+            maxDelayMs: 50,
+        });
+
+        return {
+            content: result,
+            usage: response.usage,
+        };
     }
 }

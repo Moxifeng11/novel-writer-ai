@@ -2,7 +2,10 @@ import { App, Notice, TFolder, TFile } from 'obsidian';
 import { getChapterFile, CHAPTER_FILE_TYPES, normalizeChapterFiles, findBodyFileV4 } from '../../engine/chapter-utils';
 import { ALL_FULL_STEPS, migrateStepIndex } from '../../engine/step-runner';
 import { validateStepResult, isTemplateSkeleton, StepLevel } from '../../engine/step-validator';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('ChapterStateManager');
 /**
  * 管理章节步骤状态的恢复与维护。
  * 保存步骤完成状态、步骤结果和当前步骤索引。
@@ -75,7 +78,7 @@ export class ChapterStateManager {
         const before = this.currentStepIndex;
         const after = migrateStepIndex(before);
         if (after !== before) {
-            console.warn(`[ChapterStateManager] P2-5 步骤索引迁移: ${before} → ${after}`);
+            log.warn(`[ChapterStateManager] P2-5 步骤索引迁移: ${before} → ${after}`);
             this.currentStepIndex = after;
         }
     }
@@ -88,13 +91,13 @@ export class ChapterStateManager {
      * 且 stepFileMap 中的英语 key 需转换为 CHAPTER_FILE_TYPES 的中文值。
      */
     async restoreChapterState(chapDir: string): Promise<void> {
-        if (!chapDir) { console.warn('[ChapterStateManager] restoreChapterState: chapDir 为空，跳过'); return; }
+        if (!chapDir) { log.warn('[ChapterStateManager] restoreChapterState: chapDir 为空，跳过'); return; }
 
         // 获取章节目录 TFolder
         const chapFolder = this.app.vault.getAbstractFileByPath(chapDir);
-        if (!(chapFolder instanceof TFolder)) { console.warn('[ChapterStateManager] restoreChapterState: chapDir 不是文件夹', chapDir); return; }
+        if (!(chapFolder instanceof TFolder)) { log.warn('[ChapterStateManager] restoreChapterState: chapDir 不是文件夹', chapDir); return; }
 
-        console.log('[ChapterStateManager] restoreChapterState: 开始恢复', chapDir);
+        log.info('[ChapterStateManager] restoreChapterState: 开始恢复', chapDir);
 
         // 【规范化】将旧格式文件统一迁移为标准格式
         const chapterName = chapDir.split('/').pop() || '';
@@ -141,7 +144,7 @@ export class ChapterStateManager {
             try {
                 content = await this.app.vault.read(file);
             } catch (e) {
-                console.warn(`[ChapterStateManager] 跳过无法读取的文件: ${file.path}`, e instanceof Error ? e.message : e);
+                log.warn(`[ChapterStateManager] 跳过无法读取的文件: ${file.path}`, e instanceof Error ? e.message : e);
                 continue;  // 单文件损坏不中断整个循环
             }
             const pureBody = content.replace(/^---[\s\S]*?---/, '').trim();
@@ -164,11 +167,11 @@ export class ChapterStateManager {
                     }
                 }
             } catch (e) {
-                console.warn('[ChapterState] 状态读取失败:', e);
+                log.warn('[ChapterState] 状态读取失败:', e);
                 new Notice('ChapterState：数据读取异常，部分功能可能受限');
             }
 
-            console.warn('[ChapterStateManager] restoreChapterState 步骤检查:', stepKey, '文件=', file.name, '长度=', pureBody.length, 'source=', fmSource);
+            log.warn('[ChapterStateManager] restoreChapterState 步骤检查:', stepKey, '文件=', file.name, '长度=', pureBody.length, 'source=', fmSource);
 
             // v6.0: 模板骨架检测
             const isTmplSkeleton = isTemplateSkeleton(pureBody, stepKey);
@@ -188,13 +191,13 @@ export class ChapterStateManager {
             if (stepKey === 'bodyGeneration') {
                 const bodyCache = this.app.metadataCache.getFileCache(file);
                 let bodyStatus = bodyCache?.frontmatter?.['status'];
-                console.warn('[ChapterStateManager] bodyGeneration: bodyPureLen=', pureBody.length, 'bodyStatus(cache)=', bodyCache?.frontmatter?.['status']);
+                log.warn('[ChapterStateManager] bodyGeneration: bodyPureLen=', pureBody.length, 'bodyStatus(cache)=', bodyCache?.frontmatter?.['status']);
                 if (!bodyStatus) {
                     try {
                         const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
                         if (fmMatch) { const sm = fmMatch[1].match(/^status:\s*(.+)$/m); if (sm) bodyStatus = sm[1].trim(); }
                     } catch (e) {
-                        console.warn('[ChapterState] 状态读取失败:', e);
+                        log.warn('[ChapterState] 状态读取失败:', e);
                         new Notice('ChapterState：数据读取异常，部分功能可能受限');
                     }
                 }
@@ -246,7 +249,7 @@ export class ChapterStateManager {
                     }
                 } catch (e) {
                     // P1-2: 读取正文 status 失败不影响主流程，但需要日志便于排查
-                    console.warn('[ChapterStateManager] 读取正文 status 失败:', e instanceof Error ? e.message : String(e));
+                    log.warn('[ChapterStateManager] 读取正文 status 失败:', e instanceof Error ? e.message : String(e));
                 }
                 isSettled = bodyStatus === '已完稿' || bodyStatus === 'settled';
 
@@ -273,7 +276,7 @@ export class ChapterStateManager {
                         }
                     }
                 } else {
-                    console.log('[ChapterStateManager] 正文 status=已完稿，跳过 mtime 标脏');
+                    log.info('[ChapterStateManager] 正文 status=已完稿，跳过 mtime 标脏');
                 }
             }
 
@@ -294,7 +297,7 @@ export class ChapterStateManager {
                         if (qcMtime > fixMtime) {
                             this.stepCompleted.delete('fix');
                             this.staleSteps.add('fix');
-                            console.warn(`[ChapterStateManager] qualityControl(${qcMtime}) > fix(${fixMtime}) → 标脏 fix`);
+                            log.warn(`[ChapterStateManager] qualityControl(${qcMtime}) > fix(${fixMtime}) → 标脏 fix`);
                         }
                     }
                 }
@@ -307,16 +310,16 @@ export class ChapterStateManager {
                         if (arContent.includes('CRITICAL_FAIL')) {
                             this.stepCompleted.delete('finalFix');
                             this.staleSteps.add('finalFix');
-                            console.warn('[ChapterStateManager] analysisReport 含 CRITICAL_FAIL → 标脏 finalFix');
+                            log.warn('[ChapterStateManager] analysisReport 含 CRITICAL_FAIL → 标脏 finalFix');
                         }
                     } catch (e) {
                         // P1-2: 读取 analysisReport 失败 → 保守地不标脏 finalFix
-                        console.warn('[ChapterStateManager] 读取 analysisReport 失败（保守不标脏 finalFix）:', e instanceof Error ? e.message : String(e));
+                        log.warn('[ChapterStateManager] 读取 analysisReport 失败（保守不标脏 finalFix）:', e instanceof Error ? e.message : String(e));
                     }
                 }
             }
         } catch (e) {
-            console.warn('[ChapterStateManager] 脏标记检查失败（已跳过，不影响主流程）:', e);
+            log.warn('[ChapterStateManager] 脏标记检查失败（已跳过，不影响主流程）:', e);
             this.staleSteps = new Set();
         }
 
@@ -325,7 +328,7 @@ export class ChapterStateManager {
         this.stepMissing['context'] = [];
         this.stepCompleted.add('context');
         this.currentStepIndex = this.stepCompleted.size > 0 ? 1 : 0;
-        console.warn('[ChapterStateManager] restoreChapterState 完成: stepCompleted=', [...this.stepCompleted], 'staleSteps=', [...this.staleSteps], 'stepLevels=', this.stepLevels);
+        log.warn('[ChapterStateManager] restoreChapterState 完成: stepCompleted=', [...this.stepCompleted], 'staleSteps=', [...this.staleSteps], 'stepLevels=', this.stepLevels);
     }
 
     /**

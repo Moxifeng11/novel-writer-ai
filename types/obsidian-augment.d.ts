@@ -130,6 +130,8 @@ declare module 'obsidian' {
             executeCommandById(id: string): boolean;
             [key: string]: any;
         };
+        /** Obsidian 内部：在系统文件管理器中打开文件夹（未暴露在官方类型） */
+        showInFolder?(path: string): void;
     }
 
     /** DataAdapter 增强：添加 basePath 属性 */

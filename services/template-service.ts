@@ -30,7 +30,11 @@ import {
     WRITING_RULES,
     type PromptTemplate,
 } from '../engine/prompt-templates';
+import { RulesService } from './rules-service';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('TemplateService');
 export interface TemplateVariables {
     project?: string;
     volume?: string;
@@ -343,10 +347,10 @@ export class TemplateService {
                 try {
                     content = await this.app.vault.read(templateFile);
                 } catch (e) {
-                    console.warn('[TemplateService] 读取模板失败，使用默认模板:', path, e);
+                    log.warn('[TemplateService] 读取模板失败，使用默认模板:', path, e);
                 }
             } else {
-                console.warn('[TemplateService] 模板文件不存在，使用默认模板:', path);
+                log.warn('[TemplateService] 模板文件不存在，使用默认模板:', path);
             }
         }
 
@@ -414,7 +418,7 @@ export class TemplateService {
             try {
                 systemPrompt = await this.app.vault.read(systemFile);
             } catch (e) {
-                console.warn('[TemplateService] 读取 system prompt 模板失败，使用默认模板:', systemPath, e);
+                log.warn('[TemplateService] 读取 system prompt 模板失败，使用默认模板:', systemPath, e);
             }
         }
 
@@ -423,7 +427,7 @@ export class TemplateService {
             try {
                 userPrompt = await this.app.vault.read(userFile);
             } catch (e) {
-                console.warn('[TemplateService] 读取 user prompt 模板失败，使用默认模板:', userPath, e);
+                log.warn('[TemplateService] 读取 user prompt 模板失败，使用默认模板:', userPath, e);
             }
         }
 
@@ -435,16 +439,7 @@ export class TemplateService {
     }
 
     async getWritingRules(): Promise<string> {
-        const rulesPath = pjWritingRulesPromptTemplate();
-        const rulesFile = this.app.vault.getAbstractFileByPath(rulesPath);
-        if (rulesFile instanceof TFile) {
-            try {
-                return await this.app.vault.read(rulesFile);
-            } catch (e) {
-                console.warn('[TemplateService] 读取写作规则失败，使用默认规则:', rulesPath, e);
-            }
-        }
-        return WRITING_RULES;
+        return RulesService.getInstance(this.app).getWritingRules();
     }
 
     async hasCustomPrompt(stepKey: string): Promise<boolean> {
@@ -472,7 +467,7 @@ export class TemplateService {
             try {
                 systemPrompt = await this.app.vault.read(systemFile);
             } catch (e) {
-                console.warn('[TemplateService] 读取自定义 prompt 失败:', systemPath, e);
+                log.warn('[TemplateService] 读取自定义 prompt 失败:', systemPath, e);
             }
         }
 
@@ -481,7 +476,7 @@ export class TemplateService {
             try {
                 userPrompt = await this.app.vault.read(userFile);
             } catch (e) {
-                console.warn('[TemplateService] 读取自定义 prompt 失败:', userPath, e);
+                log.warn('[TemplateService] 读取自定义 prompt 失败:', userPath, e);
             }
         }
 

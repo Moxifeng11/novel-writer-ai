@@ -8,7 +8,10 @@ import { App, TFile } from 'obsidian';
 import { findBodyFileV4 } from './chapter-utils';
 import { pjBodyFile } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('PlotRedundancyChecker');
 export interface PlotRedundancyIssue {
     type: 'repeated_phrase' | 'repeated_scene_word' | 'repeated_conflict_word';
     message: string;
@@ -95,7 +98,7 @@ export async function loadPreviousChapterBodies(app: App, project: string, volum
             try {
                 bodies.push(await fs.read(file.path));
             } catch (e) {
-                console.warn('[PlotRedundancyChecker] 读取前文失败:', path, e);
+                log.warn('[PlotRedundancyChecker] 读取前文失败:', path, e);
             }
         }
     }

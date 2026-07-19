@@ -44,7 +44,7 @@ describe('SettingsMigrator', () => {
                 },
             };
             const result = migrateSettings(data) as any;
-            expect(result.schemaVersion).toBe(3);
+            expect(result.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
             expect(result.modelOverrides).toBeDefined();
             expect(result.modelOverrides['https://api.example.com']).toBeDefined();
             expect(result.modelOverrides['https://api.example.com']['gpt-4']).toEqual({
@@ -67,8 +67,83 @@ describe('SettingsMigrator', () => {
         it('v2→v3 无 modelOverrides 时安全处理', () => {
             const data = { schemaVersion: 2 };
             const result = migrateSettings(data) as any;
-            expect(result.schemaVersion).toBe(3);
+            expect(result.schemaVersion).toBe(4);
             expect(result.modelOverrides).toEqual({});
+        });
+
+        it('v3→v4 将默认供应商添加到 customProviders', () => {
+            const data = {
+                schemaVersion: 3,
+                customProviders: [],
+                hiddenPresets: [],
+            };
+            const result = migrateSettings(data) as any;
+            expect(result.schemaVersion).toBe(4);
+            expect(result.customProviders.length).toBeGreaterThan(0);
+            expect(result.customProviders.find((p: any) => p.id === 'volc')).toBeDefined();
+            expect(result.customProviders.find((p: any) => p.id === 'volc').isDefault).toBe(true);
+            expect(result.hiddenPresets).toBeUndefined();
+        });
+
+        it('v3→v4 保留用户自定义的供应商', () => {
+            const customProvider = {
+                id: 'custom-1',
+                name: '我的自定义',
+                endpoint: 'https://custom.example.com',
+                models: ['model-a'],
+                maxContext: 8192,
+                maxOutput: 2048,
+            };
+            const data = {
+                schemaVersion: 3,
+                customProviders: [customProvider],
+                hiddenPresets: [],
+            };
+            const result = migrateSettings(data) as any;
+            expect(result.customProviders.find((p: any) => p.id === 'custom-1')).toBeDefined();
+            expect(result.customProviders.find((p: any) => p.id === 'custom-1').name).toBe('我的自定义');
+        });
+
+        it('v3→v4 不覆盖用户已修改的默认供应商', () => {
+            const modifiedVolc = {
+                id: 'volc',
+                name: '自定义火山',
+                endpoint: 'https://custom-volc.example.com',
+                models: ['my-model'],
+                maxContext: 1000,
+                maxOutput: 500,
+            };
+            const data = {
+                schemaVersion: 3,
+                customProviders: [modifiedVolc],
+                hiddenPresets: [],
+            };
+            const result = migrateSettings(data) as any;
+            const volc = result.customProviders.find((p: any) => p.id === 'volc');
+            expect(volc).toBeDefined();
+            expect(volc.name).toBe('自定义火山');
+            expect(volc.endpoint).toBe('https://custom-volc.example.com');
+        });
+
+        it('v3→v4 hiddenPresets 转换为 isHidden 标记', () => {
+            const data = {
+                schemaVersion: 3,
+                customProviders: [],
+                hiddenPresets: ['ollama', 'catcat'],
+            };
+            const result = migrateSettings(data) as any;
+            expect(result.customProviders.find((p: any) => p.id === 'ollama').isHidden).toBe(true);
+            expect(result.customProviders.find((p: any) => p.id === 'catcat').isHidden).toBe(true);
+            expect(result.customProviders.find((p: any) => p.id === 'volc').isHidden).toBeUndefined();
+            expect(result.hiddenPresets).toBeUndefined();
+        });
+
+        it('v3→v4 无 customProviders 和 hiddenPresets 时安全处理', () => {
+            const data = { schemaVersion: 3 };
+            const result = migrateSettings(data) as any;
+            expect(result.schemaVersion).toBe(4);
+            expect(result.customProviders.length).toBeGreaterThan(0);
+            expect(result.hiddenPresets).toBeUndefined();
         });
 
         it('不修改原始数据（纯函数）', () => {
@@ -112,8 +187,8 @@ describe('SettingsMigrator', () => {
     });
 
     describe('CURRENT_SCHEMA_VERSION', () => {
-        it('值为 3', () => {
-            expect(CURRENT_SCHEMA_VERSION).toBe(3);
+        it('值为 4', () => {
+            expect(CURRENT_SCHEMA_VERSION).toBe(4);
         });
     });
 });

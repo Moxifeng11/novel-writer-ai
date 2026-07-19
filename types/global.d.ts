@@ -3,6 +3,9 @@
 // polish-editor.ts 中的 paste 兜底使用 clipboardData
 
 declare global {
+    /** 插件版本号，由 esbuild --define 在构建时从 package.json 注入 */
+    const PLUGIN_VERSION: string;
+
     interface Window {
         /** WebKit 前缀的 SpeechRecognition（Safari / 旧版 Chrome） */
         webkitSpeechRecognition?: typeof SpeechRecognition;

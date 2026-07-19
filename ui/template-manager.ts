@@ -1,4 +1,4 @@
-﻿/**
+/**
  * template-manager.ts — 模板管理 UI 组件
  *
  * 职责：在设置界面中管理 AI prompt 模板
@@ -8,8 +8,11 @@
 
 import { App, Modal, Notice, TFile, Menu } from 'obsidian';
 import { PJ_PROMPT_TEMPLATE_DIR } from '../shared/paths';
-import { getStepTemplate, WRITING_RULES } from '../engine/prompt-templates';
+import { getStepTemplate } from '../engine/prompt-templates';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('TemplateManager');
 /** 模板分类 */
 export type TemplateCategory = 'step' | 'worldview' | 'entity' | 'deai';
 
@@ -172,11 +175,11 @@ export class TemplateManager {
 
     /** 渲染单个模板项 */
     private renderTemplateItem(container: HTMLElement, template: TemplateInfo): void {
-        const item = container.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin:4px 0;background:var(--background-modifier-hover);border-radius:6px;' } });
+        const item = container.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px;margin:4px 0;background:var(--background-modifier-hover);border-radius:6px;' } });
 
         // 左侧：名称和状态
-        const left = item.createDiv({ attr: { style: 'display:flex;align-items:center;gap:10px;' } });
-        left.createEl('span', { text: template.name, attr: { style: 'font-weight:500;' } });
+        const left = item.createDiv({ attr: { style: 'display:flex;align-items:center;gap:10px;flex-shrink:1;min-width:0;' } });
+        left.createEl('span', { text: template.name, attr: { style: 'font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' } });
 
         // 状态标签
         const statusDiv = left.createDiv({ attr: { style: 'display:flex;gap:4px;' } });
@@ -192,7 +195,7 @@ export class TemplateManager {
         }
 
         // 右侧：操作按钮
-        const right = item.createDiv({ attr: { style: 'display:flex;gap:6px;' } });
+        const right = item.createDiv({ attr: { style: 'display:flex;gap:6px;flex-shrink:0;' } });
         const editBtn = right.createEl('button', { text: '✏️', attr: { type: 'button', title: '编辑' } });
         editBtn.style.cssText = 'padding:4px 8px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;border-radius:4px;font-size:12px;';
         editBtn.onclick = () => this.showEditModal(template);
@@ -244,7 +247,7 @@ export class TemplateManager {
 
             new Notice(`✅ 已导出 ${template.name} 模板`);
         } catch (e) {
-            console.error('[TemplateManager] 导出模板失败:', e);
+            log.error('[TemplateManager] 导出模板失败:', e);
             new Notice(`❌ 导出失败: ${(e as Error).message}`);
         }
     }
@@ -289,7 +292,7 @@ export class TemplateManager {
 
             new Notice(`✅ 已导出 ${templates.filter(t => t.hasSystem || t.hasUser).length} 个模板`);
         } catch (e) {
-            console.error('[TemplateManager] 导出全部模板失败:', e);
+            log.error('[TemplateManager] 导出全部模板失败:', e);
             new Notice(`❌ 导出失败: ${(e as Error).message}`);
         }
     }
@@ -327,7 +330,7 @@ export class TemplateManager {
 
             new Notice(`✅ 已删除 ${template.name} 的 ${count} 个自定义模板`);
         } catch (e) {
-            console.error('[TemplateManager] 重置模板失败:', e);
+            log.error('[TemplateManager] 重置模板失败:', e);
             new Notice(`❌ 重置失败: ${(e as Error).message}`);
         }
     }
@@ -362,7 +365,7 @@ export class TemplateManager {
             new Notice(`✅ 已删除 ${count} 个自定义模板`);
             this.renderTemplateList(container);
         } catch (e) {
-            console.error('[TemplateManager] 重置全部模板失败:', e);
+            log.error('[TemplateManager] 重置全部模板失败:', e);
             new Notice(`❌ 重置失败: ${(e as Error).message}`);
         }
     }
@@ -486,7 +489,7 @@ class TemplateEditModal extends Modal {
                 this.refreshCallback();
             }
         } catch (e) {
-            console.error('[TemplateManager] 保存模板失败:', e);
+            log.error('[TemplateManager] 保存模板失败:', e);
             new Notice(`❌ 保存失败: ${(e as Error).message}`);
         }
     }
@@ -519,7 +522,7 @@ class TemplateEditModal extends Modal {
                 this.refreshCallback();
             }
         } catch (e) {
-            console.error('[TemplateManager] 删除模板失败:', e);
+            log.error('[TemplateManager] 删除模板失败:', e);
             new Notice(`❌ 删除失败: ${(e as Error).message}`);
         }
     }
@@ -652,7 +655,7 @@ class TemplateImportModal extends Modal {
                 }
             }, 1000);
         } catch (e) {
-            console.error('[TemplateManager] 导入模板失败:', e);
+            log.error('[TemplateManager] 导入模板失败:', e);
             statusDiv.setText(`❌ 导入失败: ${(e as Error).message}`);
             new Notice(`❌ 导入失败: ${(e as Error).message}`);
         }

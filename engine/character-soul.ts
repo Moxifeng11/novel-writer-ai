@@ -95,14 +95,12 @@ function buildSoul(name: string, content: string): CharacterSoul {
 /**
  * 从角色文件提取 CharacterSoul
  */
-export function extractCharacterCore(file: TFile, vault: Vault): CharacterSoul | null {
-    // 从文件名提取角色名（去掉.md后缀）
+export async function extractCharacterCore(file: TFile, vault: Vault): Promise<CharacterSoul | null> {
     const name = file.name.replace(/\.md$/, '');
     try {
-        // 同步读取（Obsidian vault API 支持同步缓存读取）
-        const content = vault.cachedRead(file);
-        // cachedRead 返回 string | null（TypeScript 类型），实际在文件存在时总是返回 string
-        return null; // 由外部通过异步读取后调用 extractCharacterCoreFromContent
+        const content = await vault.cachedRead(file);
+        if (!content) return null;
+        return buildSoul(name, content);
     } catch {
         return null;
     }
@@ -192,14 +190,14 @@ export function buildCharacterSoulSummary(
 export function getProtagonistSoulDetail(soul: CharacterSoul): string {
     if (!soul.hasSoul) return '';
     return [
-        `你知道自己最想得到什么：${soul.desire}`,
-        `你知道自己最怕什么：${soul.fear}`,
-        `你知道自己最执着什么：${soul.obsession}`,
-        `你有一段最不想回忆的经历：${soul.shame}`,
-        `你身上有一道无法愈合的伤：${soul.trauma}`,
-        `你知道自己的致命弱点：${soul.weakness}`,
-        `你对某些人/物毫无抵抗力：${soul.soft_spot}`,
-        `你知道什么会让你失控：${soul.rage_trigger}`,
-        `你知道自己的底线在哪里：${soul.moral_boundary}`,
+        `他/她最渴望的是：${soul.desire}`,
+        `他/她最恐惧的是：${soul.fear}`,
+        `他/她最执着的是：${soul.obsession}`,
+        `他/她有一段最不想回忆的经历：${soul.shame}`,
+        `他/她身上有一道无法愈合的伤：${soul.trauma}`,
+        `他/她的致命弱点是：${soul.weakness}`,
+        `他/她对某些人/物毫无抵抗力：${soul.soft_spot}`,
+        `让他/她失控的是：${soul.rage_trigger}`,
+        `他/她的底线是：${soul.moral_boundary}`,
     ].join('\n');
 }

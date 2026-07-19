@@ -1,12 +1,17 @@
 import { App, MarkdownRenderer, TFile, Component } from 'obsidian';
 import { GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '../../engine/context-manager';
+import { CompressedContext } from '../../engine/context-compressor';
 import { LocationFrontmatter, FactionFrontmatter, ItemFrontmatter } from '../../shared/types';
 import { TimelineRow, FanficRules } from '../../shared/template-validator';
 import { getWritingStylePath, getLegacyWritingStylePath } from '../../shared/paths';
 import { findWritingStyleFile, getWritingStyleCandidatePaths } from '../writing-style-paths';
 import { mkdirp, readMergedVolumeOutline } from '../../utils/helpers';
 import type { NovelWriterPluginAPI } from '../../shared/plugin-api';
+import { parseChineseNumber } from '../../engine/scene-expander';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('ContextPanel');
 /**
  * 上下文监控面板渲染器。
  * 在右侧栏中渲染人物状态、伏笔库、分卷大纲、时间线、世界观、设定库、写作规则等。
@@ -78,7 +83,7 @@ export class ContextPanel {
             try {
                 plugin.refreshFullWriterContextPanel();
             } catch (e) {
-                console.warn('[ContextPanel] 刷新上下文面板失败:', e);
+                log.warn('[ContextPanel] 刷新上下文面板失败:', e);
             }
         });
 
@@ -97,6 +102,55 @@ export class ContextPanel {
                 style: 'padding: 6px 10px; margin-bottom: 8px; background: var(--background-modifier-error-rgb, 255, 100, 100, 0.1); border-radius: 4px; font-size: 0.85em; color: var(--text-error);'
             }});
             warnEl.createSpan({ text: `⚠️ 以下模块加载失败：${failedModules.join('、')}（已跳过）` });
+        }
+
+        // ✅ 上下文压缩截断警告
+        const compressed = d.compressed as CompressedContext | undefined;
+        if (compressed?.truncationApplied) {
+            let detailsExpanded = false;
+
+            const truncationWarn = panel.createDiv({ cls: 'novel-writer-fw-truncation-warning', attr: {
+                style: 'padding: 8px 12px; margin-bottom: 10px; background: rgba(255, 170, 0, 0.15); border: 1px solid rgba(255, 170, 0, 0.4); border-radius: 6px; cursor: pointer; font-size: 0.85em; color: var(--text-normal); user-select: none;'
+            }});
+            const warnHeader = truncationWarn.createDiv({ attr: { style: 'display: flex; align-items: center; justify-content: space-between;' } });
+            warnHeader.createSpan({ text: '⚠️ 上下文过长，已智能压缩（点击查看详情）' });
+            const warnIcon = warnHeader.createSpan({ text: '▶', attr: { style: 'font-size: 0.8em; color: var(--text-muted);' } });
+
+            const detailsPanel = truncationWarn.createDiv({ attr: { style: 'display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 170, 0, 0.3); font-size: 0.9em;' } });
+
+            const wvRaw = (d.world_view as MarkdownContent)?.raw?.length || 0;
+            const wvComp = compressed.worldView?.length || 0;
+            const wvPct = wvRaw > 0 ? Math.round((1 - wvComp / wvRaw) * 100) : 0;
+
+            const slRaw = (d.setting_lib as MarkdownContent)?.raw?.length || 0;
+            const slComp = compressed.settingLib?.length || 0;
+            const slPct = slRaw > 0 ? Math.round((1 - slComp / slRaw) * 100) : 0;
+
+            const fsData = d.foreshadows as ForeshadowData;
+            const fsRawCount = fsData ? (fsData.unrevealed.length + fsData.revealed.length + fsData.abandoned.length) : 0;
+            const fsCompLines = compressed.foreshadows ? compressed.foreshadows.split('\n').filter(l => l.trim()).length : 0;
+
+            const tlRaw = (d.timeline as TimelineEvent[])?.length || 0;
+            const tlCompLines = compressed.timeline ? compressed.timeline.split('\n').filter(l => l.trim()).length : 0;
+
+            const detailItems = [
+                { label: '🌍 世界观', raw: `${wvRaw.toLocaleString()}字`, comp: `${wvComp.toLocaleString()}字`, extra: `（压缩${wvPct}%）` },
+                { label: '⚙️ 设定库', raw: `${slRaw.toLocaleString()}字`, comp: `${slComp.toLocaleString()}字`, extra: `（压缩${slPct}%）` },
+                { label: '🔮 伏笔', raw: `${fsRawCount}条`, comp: `${fsCompLines}条`, extra: '' },
+                { label: '⏱️ 时间线', raw: `${tlRaw}条`, comp: `${tlCompLines}条`, extra: '' },
+            ];
+
+            for (const item of detailItems) {
+                const row = detailsPanel.createDiv({ attr: { style: 'display: flex; justify-content: space-between; padding: 3px 0;' } });
+                row.createSpan({ text: item.label, attr: { style: 'color: var(--text-muted);' } });
+                row.createSpan({ text: `${item.raw} → ${item.comp}${item.extra}`, attr: { style: 'font-weight: 500;' } });
+            }
+
+            truncationWarn.addEventListener('click', () => {
+                detailsExpanded = !detailsExpanded;
+                detailsPanel.style.display = detailsExpanded ? 'block' : 'none';
+                warnIcon.setText(detailsExpanded ? '▼' : '▶');
+            });
         }
 
         // ✅ P0修复#2：按 contextScope 过滤显示
@@ -144,6 +198,131 @@ export class ContextPanel {
                 }
             }
         });
+
+        // ✨ 智能实体上下文（v5.0 新增）
+        this.renderCollapsibleCard(panel, '✨ 智能实体上下文', async (body) => {
+            try {
+                const smartCtx = (plugin as any)._smartEntityContext;
+                if (!smartCtx) {
+                    body.createEl('p', { text: '智能上下文加载中...', cls: 'novel-writer-fw-muted' });
+                    body.createEl('p', { 
+                        text: '💡 打开章节后自动生成智能实体推荐', 
+                        attr: { style: 'font-size: 11px; color: var(--text-faint); margin-top: 4px;' }
+                    });
+                    return;
+                }
+
+                const summary = smartCtx.selectionSummary;
+                if (summary) {
+                    const statsDiv = body.createDiv({ 
+                        attr: { 
+                            style: 'padding: 6px 8px; background: var(--background-modifier-hover); border-radius: 4px; margin-bottom: 8px; font-size: 11px;' 
+                        } 
+                    });
+                    statsDiv.createSpan({ 
+                        text: `已选择 ${summary.selectedCount}/${summary.totalEntities} 个实体`,
+                        attr: { style: 'font-weight: 600;' }
+                    });
+                    statsDiv.createEl('br');
+                    statsDiv.createSpan({ 
+                        text: `人物${summary.byCategory.character} · 地点${summary.byCategory.location} · 势力${summary.byCategory.faction} · 物品${summary.byCategory.item}`,
+                        attr: { style: 'color: var(--text-muted);' }
+                    });
+                    statsDiv.createEl('br');
+                    statsDiv.createSpan({ 
+                        text: `预估 ~${summary.estimatedTokens.toLocaleString()} tokens`,
+                        attr: { style: 'color: var(--text-muted);' }
+                    });
+                }
+
+                if (smartCtx.characters && smartCtx.characters.length > 0) {
+                    body.createEl('strong', { text: '🎭 相关人物', attr: { style: 'font-size: 11px; display: block; margin-bottom: 4px;' } });
+                    const charList = body.createEl('ul', { 
+                        attr: { style: 'list-style: none; padding: 0; margin: 0 0 8px 0; font-size: 11px;' } 
+                    });
+                    for (const c of smartCtx.characters.slice(0, 8)) {
+                        const li = charList.createEl('li', { 
+                            attr: { style: 'padding: 3px 0; border-bottom: 1px solid var(--background-modifier-border);' } 
+                        });
+                        const nameRow = li.createDiv({ attr: { style: 'display: flex; align-items: center; gap: 4px;' } });
+                        nameRow.createSpan({ text: c.name, attr: { style: 'font-weight: 600;' } });
+                        if (c.importanceLevel) {
+                            const impLabel = this.getImportanceBadge(c.importanceLevel);
+                            nameRow.createSpan({ text: impLabel, attr: { style: 'font-size: 10px; padding: 1px 4px; background: var(--background-modifier-hover); border-radius: 3px;' } });
+                        }
+                        if (c.detailLevel) {
+                            const levelMap: Record<string, string> = {
+                                full: '完整',
+                                core: '核心',
+                                brief: '简要',
+                                minimal: '极简'
+                            };
+                            nameRow.createSpan({ 
+                                text: levelMap[c.detailLevel] || c.detailLevel,
+                                attr: { style: 'font-size: 10px; color: var(--text-faint); margin-left: auto;' } 
+                            });
+                        }
+                        if (c.statusLabel) {
+                            li.createDiv({ 
+                                text: `状态：${c.statusLabel}`,
+                                attr: { style: 'color: var(--text-muted); font-size: 10px; margin-top: 2px;' } 
+                            });
+                        }
+                        if (c.lastAppearance) {
+                            li.createDiv({ 
+                                text: `最近出场：${c.lastAppearance}`,
+                                attr: { style: 'color: var(--text-faint); font-size: 10px; margin-top: 1px;' } 
+                            });
+                        }
+                    }
+                    if (smartCtx.characters.length > 8) {
+                        body.createEl('p', { 
+                            text: `...还有 ${smartCtx.characters.length - 8} 个相关人物`,
+                            cls: 'novel-writer-fw-muted',
+                            attr: { style: 'font-size: 10px; text-align: center; margin: 4px 0;' }
+                        });
+                    }
+                }
+
+                if (smartCtx.relations && smartCtx.relations.length > 0) {
+                    body.createEl('strong', { text: '💞 人物关系', attr: { style: 'font-size: 11px; display: block; margin: 8px 0 4px 0;' } });
+                    const relList = body.createEl('ul', { 
+                        attr: { style: 'list-style: none; padding: 0; margin: 0; font-size: 11px;' } 
+                    });
+                    for (const r of smartCtx.relations.slice(0, 6)) {
+                        const li = relList.createEl('li', { 
+                            attr: { style: 'padding: 2px 0; color: var(--text-muted);' } 
+                        });
+                        li.createSpan({ text: `${r.from} ↔ ${r.to}`, attr: { style: 'color: var(--text-normal);' } });
+                        li.createSpan({ text: `：${r.type}`, attr: { style: 'color: var(--text-faint);' } });
+                    }
+                    if (smartCtx.relations.length > 6) {
+                        body.createEl('p', { 
+                            text: `...还有 ${smartCtx.relations.length - 6} 条关系`,
+                            cls: 'novel-writer-fw-muted',
+                            attr: { style: 'font-size: 10px; text-align: center; margin: 4px 0;' }
+                        });
+                    }
+                }
+
+                if (smartCtx.missingEntities && smartCtx.missingEntities.length > 0) {
+                    body.createDiv({ 
+                        attr: { 
+                            style: 'margin-top: 8px; padding: 6px 8px; background: rgba(255, 170, 0, 0.1); border-radius: 4px; font-size: 11px;' 
+                        } 
+                    });
+                    body.createSpan({ text: '⚠️ 未设定人物：', attr: { style: 'color: var(--text-warning); font-weight: 600;' } });
+                    body.createEl('br');
+                    body.createSpan({ 
+                        text: smartCtx.missingEntities.join('、'),
+                        attr: { style: 'color: var(--text-muted); font-size: 10px;' } 
+                    });
+                }
+            } catch (e) {
+                body.createEl('p', { text: '智能上下文加载失败', cls: 'novel-writer-fw-muted' });
+                log.warn('[ContextPanel] 智能实体上下文渲染失败:', e);
+            }
+        }, true);
 
         // 伏笔库
         // ===== 地点 =====
@@ -227,6 +406,84 @@ export class ContextPanel {
                 }
             }
         });
+
+        // 场景细纲摘要
+        this.renderCollapsibleCard(panel, '🎬 场景细纲', async (body) => {
+            try {
+                const sceneExpansion = d.scene_expansion as MarkdownContent | undefined;
+                
+                if (!sceneExpansion || !sceneExpansion.raw || sceneExpansion.raw.trim() === '') {
+                    body.createEl('p', { text: '暂无场景数据', cls: 'novel-writer-fw-muted' });
+                    const tip = body.createEl('p', {
+                        text: '💡 在步骤6「Scene展开」中生成场景后可在此查看',
+                        attr: { style: 'font-size: 11px; color: var(--text-faint); margin-top: 4px;' }
+                    });
+                    return;
+                }
+
+                const sceneInfo = this.parseSceneSummary(sceneExpansion.raw);
+
+                if (sceneInfo.total === 0) {
+                    body.createEl('p', { text: '暂无场景数据', cls: 'novel-writer-fw-muted' });
+                    return;
+                }
+
+                const statsRow = body.createDiv({
+                    attr: { style: 'display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px;' }
+                });
+                statsRow.createSpan({ text: `共 ${sceneInfo.total} 个场景` });
+                statsRow.createSpan({
+                    text: sceneInfo.hasKeyScene ? '⭐ 有名场面' : '',
+                    attr: { style: 'color: var(--text-warning);' }
+                });
+
+                const sceneList = body.createEl('ul', {
+                    attr: { style: 'list-style: none; padding: 0; margin: 0; font-size: 11px;' }
+                });
+
+                for (let i = 0; i < Math.min(sceneInfo.scenes.length, 5); i++) {
+                    const s = sceneInfo.scenes[i];
+                    const li = sceneList.createEl('li', {
+                        attr: { style: 'padding: 3px 0; border-bottom: 1px solid var(--background-modifier-border);' }
+                    });
+                    const nameRow = li.createDiv({ attr: { style: 'display: flex; gap: 4px; align-items: center;' } });
+                    nameRow.createSpan({
+                        text: `场景${s.index}`,
+                        attr: { style: 'font-weight: 600; color: var(--text-accent);' }
+                    });
+                    if (s.isKeyScene) {
+                        nameRow.createSpan({ text: '⭐', attr: { style: 'font-size: 10px;' } });
+                    }
+                    nameRow.createSpan({
+                        text: s.name,
+                        attr: { style: 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;' }
+                    });
+                    if (s.objective) {
+                        li.createDiv({
+                            text: s.objective.slice(0, 30) + (s.objective.length > 30 ? '...' : ''),
+                            attr: { style: 'color: var(--text-faint); font-size: 10px; margin-top: 2px;' }
+                        });
+                    }
+                }
+
+                if (sceneInfo.total > 5) {
+                    body.createEl('p', {
+                        text: `...还有 ${sceneInfo.total - 5} 个场景`,
+                        attr: { style: 'text-align: center; color: var(--text-faint); font-size: 11px; margin-top: 6px;' }
+                    });
+                }
+
+                if (sceneInfo.hasCliffhanger) {
+                    body.createDiv({
+                        text: '🪝 已设置结尾钩子',
+                        attr: { style: 'margin-top: 8px; padding: 4px 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; font-size: 11px;' }
+                    });
+                }
+            } catch (e) {
+                body.createEl('p', { text: '加载场景数据失败', cls: 'novel-writer-fw-muted' });
+                log.warn('[ContextPanel] 场景细纲加载失败:', e);
+            }
+        }, true);
 
         this.renderCollapsibleCard(panel, '🔮 伏笔库', (body) => {
             const foreshadows = d.foreshadows as ForeshadowData | undefined;
@@ -577,6 +834,81 @@ export class ContextPanel {
     }
 
     /**
+     * 解析场景摘要信息
+     */
+    private parseSceneSummary(content: string): {
+        total: number;
+        hasKeyScene: boolean;
+        hasCliffhanger: boolean;
+        scenes: Array<{ index: number; name: string; objective: string; isKeyScene: boolean }>;
+    } {
+        const scenes: Array<{ index: number; name: string; objective: string; isKeyScene: boolean }> = [];
+        const sceneRegex = /^##\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene(\d+))\s*[：:]\s*(.+)$/gim;
+        const matches: { index: number; name: string; start: number }[] = [];
+        let m: RegExpExecArray | null;
+
+        while ((m = sceneRegex.exec(content)) !== null) {
+            let num = 0;
+            if (m[1] !== undefined) {
+                const cnNum = parseChineseNumber(m[1]);
+                num = cnNum ?? matches.length + 1;
+            } else if (m[2] !== undefined) {
+                num = parseInt(m[2], 10);
+            } else {
+                num = matches.length + 1;
+            }
+            matches.push({ index: num, name: m[3].trim(), start: m.index });
+        }
+
+        let hasKeyScene = false;
+        let hasCliffhanger = false;
+
+        for (let i = 0; i < matches.length; i++) {
+            const start = matches[i].start;
+            const end = i + 1 < matches.length ? matches[i + 1].start : content.length;
+            const sceneContent = content.slice(start, end);
+
+            const keySceneMatch = sceneContent.match(/^\s*\*?\*?key_scene\s*[：:]\s*(.+)$/im);
+            const isKey = keySceneMatch ? (/⭐|名场面/.test(keySceneMatch[1])) : false;
+            if (isKey) hasKeyScene = true;
+
+            const cliffhangerMatch = sceneContent.match(/^\s*\*?\*?cliffhanger\s*[：:]\s*(.+)$/im);
+            if (cliffhangerMatch && cliffhangerMatch[1].trim() && cliffhangerMatch[1].trim() !== '无') {
+                hasCliffhanger = true;
+            }
+
+            const objMatch = sceneContent.match(/^\s*\*?\*?objective\s*[：:]\s*(.+)$/im);
+
+            scenes.push({
+                index: matches[i].index,
+                name: matches[i].name,
+                objective: objMatch ? objMatch[1].trim() : '',
+                isKeyScene: isKey,
+            });
+        }
+
+        return {
+            total: scenes.length,
+            hasKeyScene,
+            hasCliffhanger,
+            scenes,
+        };
+    }
+
+    /**
+     * 获取角色重要度徽章文字
+     */
+    private getImportanceBadge(level: string): string {
+        const badges: Record<string, string> = {
+            protagonist: '⭐ 主角',
+            major_support: '🌟 重要配角',
+            minor_support: '✨ 次要角色',
+            walk_on: '👤 路人',
+        };
+        return badges[level] || level;
+    }
+
+    /**
      * 创建可折叠卡片
      */
     private renderCollapsibleCard(panel: HTMLElement, title: string, renderBody: (body: HTMLElement) => void, reRender: boolean = false): void {
@@ -606,7 +938,7 @@ export class ContextPanel {
         // v3.4.9 P0-1: 包裹 try-catch 防止任一卡片异常导致整个面板崩溃
         try { renderBody(body); } catch (e) {
             body.createEl('p', { text: '⚠️ 渲染异常', attr: { style: 'color:var(--text-error);font-size:11px;' } });
-            console.warn('[ContextPanel] renderCollapsibleCard renderBody 异常:', e);
+            log.warn('[ContextPanel] renderCollapsibleCard renderBody 异常:', e);
         }
     }
 }

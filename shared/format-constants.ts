@@ -51,7 +51,7 @@ export const RE_VOLUME_RANGE = /章节范围[：:]\s*(.+?)(?:\n\|$)/;
 
 /** 大纲中按章号查找段落 */
 export const chapterOutlineSection = (chapterNum: number) =>
-    new RegExp(`###?\\s*第${chapterNum}章[\\s\\S]*?(?=\\n###|$)`);
+    new RegExp(`###?\\s*第${chapterNum}章[\\s\\S]*?(?=\\n###|$)|\\|\\s*${chapterNum}\\s*\\|[\\s\\S]*?(?=\\n\\|\\s*\\d+\\s*\\||$)`);
 
 // ============================================================
 // 二、人物（Characters）
@@ -197,6 +197,18 @@ export const WV_SECTIONS = [
     '与主线关联',
 ] as const;
 
+/** 设定库 8 个模块名（与 AI 模板一致） */
+export const SL_SECTIONS = [
+    '世界观底层规则',
+    '核心设定（不可变更）',
+    '力量体系详情',
+    '科技水平',
+    '势力分布',
+    '地理/区域',
+    '关键历史事件',
+    '当前故事阶段',
+] as const;
+
 /** 世界观 frontmatter 字段 */
 export const WV_FRONTMATTER_KEYS = ['世界名称', '项目名称'] as const;
 
@@ -226,10 +238,11 @@ export const RE_WV_KV = (key: string) => new RegExp(`- \\*\\*${key}\\*\\*[：:]\
 // 十一、分卷大纲 + 时间线看板补充
 // ============================================================
 
-/** 每卷必填的 9 个字段名 */
+/** 每卷必填的 12 个字段名 */
 export const OUTLINE_REQUIRED_KEYS = [
     '卷名', '章节范围', '核心冲突', '主要事件', '人物弧光',
     '本卷字数', '本卷高潮', '结尾过渡',
+    '三幕结构', '爽点节奏', '反转路线', '情绪曲线',
 ] as const;
 
 /** 分卷大纲表格表头 */

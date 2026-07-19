@@ -12,7 +12,10 @@ import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { pluginDataDir, pluginStylePatternsFile } from '../shared/paths';
 import { SerializedWriter } from '../shared/serialized-writer';
 import type { NovelWriterPluginAPI } from '../shared/plugin-api';
+import { createLogger } from '../shared/logger';
  
+
+const log = createLogger('StyleLearner');
  export interface StylePattern {
      id: string;
      type: 'vocabulary' | 'sentence' | 'paragraph' | 'tone';
@@ -233,7 +236,7 @@ import type { NovelWriterPluginAPI } from '../shared/plugin-api';
                  learnedAt: Date.now()
              };
          } catch (e) {
-             console.warn('[StyleLearner] E1: 模式提取失败:', e);
+             log.warn('[StyleLearner] E1: 模式提取失败:', e);
              return null;
          }
      }
@@ -246,10 +249,10 @@ import type { NovelWriterPluginAPI } from '../shared/plugin-api';
              const data = await this.getFS().read(this.dataPath);
              const parsed = JSON.parse(data);
              this.patterns = new Map(Object.entries(parsed));
-             console.log('[StyleLearner] E1: 加载了', this.patterns.size, '个风格模式');
+             log.info('[StyleLearner] E1: 加载了', this.patterns.size, '个风格模式');
          } catch (e) {
              // 文件不存在，使用空状态
-             console.log('[StyleLearner] E1: 无已保存的风格模式');
+             log.info('[StyleLearner] E1: 无已保存的风格模式');
          }
      }
      
@@ -263,7 +266,7 @@ import type { NovelWriterPluginAPI } from '../shared/plugin-api';
             await this.getFS().mkdir(pluginDataDir()).catch(() => undefined);
             await this.getFS().write(this.dataPath, JSON.stringify(data, null, 2));
         }).catch(e => {
-            console.warn('[StyleLearner] E1: 保存失败:', e);
+            log.warn('[StyleLearner] E1: 保存失败:', e);
         });
     }
 

@@ -20,7 +20,10 @@ import { pjMemoryShardsDir } from '../shared/paths';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('MemoryTrigger');
 /** 记忆碎片 */
 export interface MemoryShard {
   /** 唯一标识，如 m001 */
@@ -350,6 +353,6 @@ revealed_chapter: ${chapterNumber}`,
     await fs.write(path, replaced);
     notifier.showNotice(`📝 记忆碎片 ${memoryId} 已标记为在第 ${chapterNumber} 章揭示`);
   } catch (e) {
-    console.warn(`[MemoryTrigger] 标记记忆 ${memoryId} 失败:`, e);
+    log.warn(`[MemoryTrigger] 标记记忆 ${memoryId} 失败:`, e);
   }
 }

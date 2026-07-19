@@ -1,10 +1,13 @@
-﻿import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB } from '../shared/paths';
 import { diagnoseOutline } from '../shared/info-debt';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('DiagnoseWriterModal');
 export class DiagnoseWriterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -22,11 +25,9 @@ export class DiagnoseWriterModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -192,7 +193,7 @@ export class DiagnoseWriterModal extends Modal {
             if (existingDiag) await this.app.vault.delete(existingDiag);
             await this.app.vault.create(rp, report.join('\n'));
         } catch (e) {
-            console.warn('[小说工坊] 操作失败:', e);
+            log.warn('[小说工坊] 操作失败:', e);
         }
 
         const f = this.app.vault.getAbstractFileByPath(rp);

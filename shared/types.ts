@@ -94,6 +94,7 @@ export interface ChapterFrontmatter {
     涉及势力?: string[];
     涉及物品功法?: string[];
     审查时间?: string;
+    scenes?: SceneNode[];             // v6.0 新增：场景列表
     [key: string]: any;
 }
 
@@ -123,13 +124,30 @@ export interface CharacterFrontmatter extends EntityMeta {
     人物背景?: string;
     外貌特征?: string;
     当前目标?: string;
-    // @deprecated v4.0: 替换为 entity_last_changed_at / entity_last_changed_reason
-    状态更新时间?: string;
-    状态更新章节?: string;
-    状态更新原因?: string;
     fileName?: string;
     filePath?: string;
     [key: string]: any;
+}
+
+// ============================================================
+// 统一角色领域模型 — 聚合 frontmatter + soul + 原始内容
+// v6.x: 已迁移至 shared/entity-models.ts，此处重新导出以保持向后兼容
+// ============================================================
+
+export type {
+    CharacterDomainModel,
+    CharacterSoulData,
+    PersonalityLayers,
+    CharacterArc,
+    CharacterRelation,
+} from './entity-models';
+
+export { toDomainModel } from './entity-models';
+
+/** 角色原始内容容器（生成器输出） */
+export interface CharacterRawData {
+    name: string;
+    rawContent: string;
 }
 
 // ============================================================
@@ -204,6 +222,130 @@ export interface OutlineTreeVolume {
     num: number;
     title: string;
     chapters: OutlineTreeChapter[];
+}
+
+// ============================================================
+// 场景级细纲数据结构 (v6.0 新增)
+// ============================================================
+
+/** 场景状态（v6.0+ 统一定义，兼容所有使用场景） */
+export type SceneStatus = 'not_started' | 'writing' | 'in_progress' | 'completed' | 'needs_revision';
+
+/** 场景类型 */
+export type SceneType =
+    | 'action'              // 动作场面
+    | 'dialogue'            // 对话推进
+    | 'emotion'             // 情绪/内心描写
+    | 'description'         // 环境/感官描写
+    | 'transition'          // 场景转换
+    | 'climax'              // 高潮戏
+    | 'foreshadow'          // 伏笔埋设
+    | 'resolution';         // 收束
+
+/** 伏笔引用 */
+export interface ForeshadowRef {
+    /** 伏笔 ID */
+    id: string;
+    /** 伏笔名称 */
+    name: string;
+    /** 类型：埋设/回收 */
+    type: 'plant' | 'payoff';
+}
+
+/** 场景节点 */
+export interface SceneNode {
+    /** 场景唯一 ID */
+    id: string;
+    /** 场景序号 */
+    order: number;
+    /** 场景标题 */
+    title: string;
+    /** 场景类型 */
+    type: SceneType;
+    /** 场景状态 */
+    status: SceneStatus;
+    /** 场景概要（50-200字） */
+    summary: string;
+    /** 涉及人物 */
+    characters: string[];
+    /** 涉及地点 */
+    locations: string[];
+    /** 涉及势力 */
+    factions: string[];
+    /** 涉及物品功法 */
+    items: string[];
+    /** 伏笔引用 */
+    foreshadowRefs: ForeshadowRef[];
+    /** 预计字数 */
+    wordCountPlan: number;
+    /** 实际字数 */
+    wordCountActual: number;
+    /** 关键对话要点 */
+    keyDialogues?: string[];
+    /** 情绪变化曲线 */
+    emotionArc?: string;
+    /** 场景目标 */
+    objective?: string;
+    /** 场景障碍 */
+    obstacle?: string;
+    /** 场景结果 */
+    outcome?: string;
+    /** 创建时间 */
+    createdAt?: string;
+    /** 最后修改时间 */
+    lastChangedAt?: string;
+
+    /** 扩展字段（保持与 ExtendedSceneData 兼容） */
+    index?: number;
+    name?: string;
+    conflict?: string;
+    sensoryHook?: string;
+    memoryTrigger?: string;
+    bodyReaction?: string;
+    subtext?: string;
+    relationshipShift?: string;
+    keyScene?: string;
+    dialogueFunction?: string;
+    cliffhanger?: string;
+    isKeyScene?: boolean;
+    location?: string;
+    timelinePosition?: string;
+    conflictType?: ConflictType;
+    pleasureType?: PleasureType;
+    infoIncrement?: string;
+    foreshadowPlant?: string;
+    foreshadowRecover?: string;
+    wordCountEstimate?: number;
+}
+
+/** 场景类型标签 */
+export const SCENE_TYPE_LABELS: Record<SceneType, string> = {
+    action: '动作场面',
+    dialogue: '对话推进',
+    emotion: '情绪描写',
+    description: '环境描写',
+    transition: '场景转换',
+    climax: '高潮戏',
+    foreshadow: '伏笔埋设',
+    resolution: '收束',
+};
+
+/** 场景状态标签 */
+export const SCENE_STATUS_LABELS: Record<SceneStatus, string> = {
+    not_started: '未开始',
+    writing: '写作中',
+    in_progress: '进行中',
+    completed: '已完成',
+    needs_revision: '需修改',
+};
+
+/** 三级大纲树（卷 → 章 → 场景） */
+export interface SceneOutlineTreeChapter extends OutlineTreeChapter {
+    scenes: SceneNode[];
+}
+
+export interface SceneOutlineTreeVolume extends OutlineTreeVolume {
+    chapters: SceneOutlineTreeChapter[];
 }
 
 // ============================================================
@@ -426,9 +568,99 @@ export interface FullAnalysisReport {
         summary: string;
     };
     
+    characterConsistency?: {
+        overallScore: number;
+        characterResults: Record<string, {
+            score: number;
+            inconsistencies: Array<{
+                type: 'personality' | 'behavior' | 'ability' | 'appearance';
+                severity: 'low' | 'medium' | 'high';
+                description: string;
+                location?: string;
+                suggestion?: string;
+                confidence: number;
+            }>;
+        }>;
+        summary: string;
+        details: string;
+    };
+    
     // 用户可见摘要
     summary: string;
     majorChanges: string[];      // 需要用户确认的重大变更列表
     warnings: string[];          // 警告信息
     suggestions: string[];       // 改进建议
+}
+
+// ============================================================
+// 场景细纲相关类型 (v6.x 新增)
+// ============================================================
+
+/** 冲突类型 */
+export type ConflictType = 'internal' | 'external' | 'interpersonal' | '';
+
+/** 爽点类型 */
+export type PleasureType = 'face_slap' | 'level_up' | 'reveal' | 'gain' | '';
+
+/** 扩展的场景数据结构（含网文特有字段） */
+export interface ExtendedSceneData {
+    // 基础信息
+    index: number;
+    name: string;
+    objective: string;
+    emotionArc: string;
+    conflict: string;
+    sensoryHook: string;
+    memoryTrigger: string;
+    bodyReaction: string;
+    subtext: string;
+    relationshipShift: string;
+    keyScene: string;
+    dialogueFunction: string;
+    cliffhanger: string;
+    isKeyScene: boolean;
+
+    // 网文特有扩展字段
+    characters: string;          // 出场人物
+    location: string;            // 场景地点
+    timelinePosition: string;    // 时间线位置
+    conflictType: ConflictType;  // 冲突类型
+    pleasureType: PleasureType;  // 爽点类型
+    infoIncrement: string;       // 信息增量（本章新披露的设定/信息）
+    foreshadowPlant: string;     // 伏笔埋设
+    foreshadowRecover: string;   // 伏笔回收
+
+    // 状态与统计
+    status: SceneStatus;         // 完成度状态
+    wordCountEstimate: number;   // 字数预估
+}
+
+/** 创建默认空场景 */
+export function createDefaultScene(index: number): ExtendedSceneData {
+    return {
+        index,
+        name: '',
+        objective: '',
+        emotionArc: '',
+        conflict: '',
+        sensoryHook: '',
+        memoryTrigger: '',
+        bodyReaction: '',
+        subtext: '',
+        relationshipShift: '',
+        keyScene: '否',
+        dialogueFunction: '',
+        cliffhanger: '',
+        isKeyScene: false,
+        characters: '',
+        location: '',
+        timelinePosition: '',
+        conflictType: '',
+        pleasureType: '',
+        infoIncrement: '',
+        foreshadowPlant: '',
+        foreshadowRecover: '',
+        status: 'not_started',
+        wordCountEstimate: 0,
+    };
 }

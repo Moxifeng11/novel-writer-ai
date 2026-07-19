@@ -10,7 +10,10 @@
 import { Notice } from 'obsidian';
 import type { CoWritingView } from '../co-writing-view';
 import { AdaptiveDebounceManager } from '../../shared/adaptive-debounce-manager';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('LiveAnalysisController');
 type RefreshTrigger = 'input' | 'insert' | 'save';
 type GuardTrigger = 'manual' | 'insert' | 'save';
 
@@ -40,6 +43,14 @@ export class LiveAnalysisController {
     this.debounceManager.debounceFixed('guard-check', () => {
       void this.inspectSettingGuard(trigger === "save" ? "save" : "insert");
     }, guardDelay);
+    const metricsDelay = trigger === "input" ? 3000 : 1000;
+    if (view.plugin.settings.autoPlotEvaluation) {
+      this.debounceManager.debounceFixed('plot-metrics', () => {
+        const body = view.rightEditor?.value || "";
+        if (body.trim().length < 50) return;
+        void view.refreshMetrics(false);
+      }, metricsDelay);
+    }
   }
 
   async refresh(trigger: RefreshTrigger) {
@@ -78,7 +89,7 @@ export class LiveAnalysisController {
         }
       }
     } catch (e) {
-      console.warn("[LiveAnalysisController] D4: \u7275\u5F15\u9762\u677F\u6E32\u67D3\u5931\u8D25:", e);
+      log.warn("[LiveAnalysisController] D4: \u7275\u5F15\u9762\u677F\u6E32\u67D3\u5931\u8D25:", e);
       view.tractionContainer.createDiv({ cls: "novel-writer-cowrite-error", text: "\u7275\u5F15\u5206\u6790\u5931\u8D25" });
     }
   }
@@ -138,7 +149,7 @@ export class LiveAnalysisController {
         }
       }
     } catch (e) {
-      console.warn("[LiveAnalysisController] 设定守卫检查失败:", e);
+      log.warn("[LiveAnalysisController] 设定守卫检查失败:", e);
     } finally {
       this.isInspectingGuard = false;
     }

@@ -6,10 +6,13 @@
  */
 
 import { Notice } from 'obsidian';
-import type { NovelWriterSettings, CustomProvider, ProviderPreset } from '../main';
-import { PROVIDERS } from '../main';
+import type { NovelWriterSettings, CustomProvider } from '../main';
+import { DEFAULT_PROVIDERS } from '../main';
 import { findModelCapability } from '../shared/model-capabilities';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ProviderManager');
 /** ProviderManager 所需的设置接口 */
 export interface ProviderSettings {
     apiEndpoint: string;
@@ -25,7 +28,6 @@ export interface ProviderSettings {
     providerKeys: Record<string, string>;
     customProviderName: string;
     customProviders: CustomProvider[];
-    hiddenPresets: string[];
 }
 
 /** ProviderManager 依赖的外部回调 */
@@ -48,11 +50,9 @@ export class ProviderManager {
         this.cb = callbacks;
     }
 
-    /** 获取当前提供商 ID（预设优先，再查自定义） */
+    /** 获取当前提供商 ID（从 customProviders 中按 endpoint 查找） */
     getCurrentProviderId(): string | null {
         const s = this.cb.getSettings();
-        const presetId = Object.keys(PROVIDERS).find(k => PROVIDERS[k].endpoint === s.apiEndpoint);
-        if (presetId) return presetId;
         const custom = s.customProviders?.find(c => c.endpoint === s.apiEndpoint);
         return custom ? custom.id : null;
     }
@@ -60,37 +60,25 @@ export class ProviderManager {
     /** 根据端点 URL 切换提供商 */
     switchByEndpoint(endpoint: string): boolean {
         const s = this.cb.getSettings();
-        let providerId: string | null = null;
-        let preset: ProviderPreset | null = null;
+        const provider = (s.customProviders || []).find(c => c.endpoint === endpoint);
+        if (!provider) return false;
 
-        const presetEntry = Object.entries(PROVIDERS).find(([_, p]) => p.endpoint === endpoint);
-        if (presetEntry) {
-            [providerId, preset] = presetEntry;
-        } else {
-            const custom = s.customProviders?.find(c => c.endpoint === endpoint);
-            if (custom) {
-                providerId = custom.id;
-                preset = { name: custom.name, endpoint: custom.endpoint, models: custom.models, maxContext: custom.maxContext, maxOutput: custom.maxOutput };
-            }
-        }
-        if (!providerId || !preset) return false;
+        const providerId = provider.id;
 
-        // 保存当前密钥
         s.providerKeys = s.providerKeys || {};
         const currentId = this.getCurrentProviderId();
         if (currentId) {
             s.providerKeys[currentId] = s.apiKey;
         }
-        // 更新为新提供商配置
-        s.apiEndpoint = preset.endpoint;
-        s.availableModels = [...preset.models];
-        s.defaultModel = preset.models[0];
-        s.flashModel = preset.models[0];
-        s.proModel = preset.models[1] || preset.models[0];
+        s.apiEndpoint = provider.endpoint;
+        s.availableModels = [...provider.models];
+        s.defaultModel = provider.models[0];
+        s.flashModel = provider.models[0];
+        s.proModel = provider.models[1] || provider.models[0];
         s.apiKey = s.providerKeys[providerId] || '';
         this.updateModelLimits(s.flashModel);
         this.cb.refreshContextPanel();
-        this.cb.saveSettings().catch(e => console.warn('[小说工坊] 提供商切换保存失败:', e));
+        this.cb.saveSettings().catch(e => log.warn('[小说工坊] 提供商切换保存失败:', e));
         return true;
     }
 
@@ -100,7 +88,7 @@ export class ProviderManager {
         const resolved = this.resolveModelLimits(modelName);
         s.maxContext = resolved.maxContext;
         s.maxOutput = resolved.maxOutput;
-        console.log(`[小说工坊] 模型 "${modelName}" → maxContext=${resolved.maxContext}, maxOutput=${resolved.maxOutput}`);
+        log.info(`[小说工坊] 模型 "${modelName}" → maxContext=${resolved.maxContext}, maxOutput=${resolved.maxOutput}`);
     }
 
     /** 根据 endpoint + 模型名确定 maxContext / maxOutput 生效值 */
@@ -149,11 +137,18 @@ export class ProviderManager {
         const trimmedEndpoint = endpoint.trim();
         const trimmedName = name.trim() || '自定义提供商';
         if (!trimmedEndpoint) return null;
-        const existing = s.customProviders.find(c => c.endpoint.trim().toLowerCase() === trimmedEndpoint.toLowerCase());
-        if (existing) {
-            new Notice(`已存在相同端点的提供商：${existing.name}`);
+
+        const existingByEndpoint = s.customProviders.find(c => c.endpoint.trim().toLowerCase() === trimmedEndpoint.toLowerCase());
+        if (existingByEndpoint) {
+            new Notice(`已存在相同端点的提供商：${existingByEndpoint.name}`);
             return null;
         }
+        const existingByName = s.customProviders.find(c => c.name.trim().toLowerCase() === trimmedName.toLowerCase());
+        if (existingByName) {
+            new Notice(`已存在相同名称的提供商：${existingByName.name}`);
+            return null;
+        }
+
         const existingIds = s.customProviders.map(c => c.id);
         let idx = 1;
         while (existingIds.includes(`custom-${idx}`)) idx++;
@@ -165,6 +160,7 @@ export class ProviderManager {
             id, name: trimmedName, endpoint: trimmedEndpoint,
             models: validModels.length > 0 ? validModels : ['gpt-4o-mini'],
             maxContext: safeMaxContext, maxOutput: safeMaxOutput,
+            isDefault: false, isHidden: false,
         });
         if (apiKey) s.providerKeys[id] = apiKey;
         this.switchByEndpoint(trimmedEndpoint);
@@ -185,86 +181,106 @@ export class ProviderManager {
         return true;
     }
 
-    /** 获取所有可用提供商 */
-    getAllProviders(): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; isPreset: boolean; isHidden?: boolean }> {
+    /** 获取所有可用提供商（过滤掉 isHidden 为 true 的） */
+    getAllProviders(): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
         const s = this.cb.getSettings();
-        const result: Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; isPreset: boolean; isHidden?: boolean }> = [];
-        const hidden = s.hiddenPresets || [];
         const customProviders = s.customProviders || [];
-
-        for (const [id, preset] of Object.entries(PROVIDERS)) {
-            if (hidden.includes(id)) continue;
-            const customOverride = customProviders.find(c => c.id === id);
-            if (customOverride) {
-                result.push({ ...customOverride, isPreset: false });
-            } else {
-                result.push({ id, ...preset, isPreset: true });
-            }
-        }
-        for (const cp of customProviders) {
-            if (PROVIDERS[cp.id]) continue;
-            result.push({ ...cp, isPreset: false });
-        }
-        return result;
+        return customProviders
+            .filter(c => !c.isHidden)
+            .map(c => ({
+                id: c.id,
+                name: c.name,
+                endpoint: c.endpoint,
+                models: [...c.models],
+                maxContext: c.maxContext,
+                maxOutput: c.maxOutput,
+                isPreset: !!c.isDefault,
+                isDefault: c.isDefault,
+                isHidden: c.isHidden,
+            }));
     }
 
-    /** 隐藏预设提供商 */
-    hidePreset(presetId: string): boolean {
+    /** 设置供应商的隐藏状态 */
+    setHidden(id: string, hidden: boolean): boolean {
         const s = this.cb.getSettings();
-        if (!PROVIDERS[presetId]) return false;
-        if (!s.hiddenPresets) s.hiddenPresets = [];
-        if (!s.hiddenPresets.includes(presetId)) s.hiddenPresets.push(presetId);
-        if (this.getCurrentProviderId() === presetId) {
+        const provider = (s.customProviders || []).find(c => c.id === id);
+        if (!provider) return false;
+        provider.isHidden = hidden;
+        if (hidden && this.getCurrentProviderId() === id) {
             const all = this.getAllProviders();
             if (all.length > 0) this.switchByEndpoint(all[0].endpoint);
         }
         return true;
     }
 
-    /** 恢复被隐藏的预设 */
+    /** @deprecated 请使用 setHidden(id, true) */
+    hidePreset(presetId: string): boolean {
+        log.warn('[ProviderManager] 警告: hidePreset() 已废弃，请使用 setHidden(id, true)');
+        return this.setHidden(presetId, true);
+    }
+
+    /** @deprecated 请使用 setHidden(id, false) */
     restorePreset(presetId: string): boolean {
-        const s = this.cb.getSettings();
-        if (!PROVIDERS[presetId]) return false;
-        if (!s.hiddenPresets) return true;
-        const idx = s.hiddenPresets.indexOf(presetId);
-        if (idx >= 0) s.hiddenPresets.splice(idx, 1);
-        return true;
+        log.warn('[ProviderManager] 警告: restorePreset() 已废弃，请使用 setHidden(id, false)');
+        return this.setHidden(presetId, false);
     }
 
-    /** 恢复所有预设 */
-    restoreAllPresets(): void {
-        this.cb.getSettings().hiddenPresets = [];
-    }
-
-    /** 保存预设的自定义覆盖 */
-    savePresetOverride(presetId: string, name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number): boolean {
-        if (!PROVIDERS[presetId]) return false;
+    /** 恢复所有默认供应商（缺失的添加回来，已存在的不覆盖） */
+    restoreDefaultProviders(): void {
         const s = this.cb.getSettings();
         s.customProviders = s.customProviders || [];
-        const existingIdx = s.customProviders.findIndex(c => c.id === presetId);
-        const override: CustomProvider = { id: presetId, name, endpoint, models: [...models], maxContext, maxOutput };
-        if (existingIdx >= 0) {
-            s.customProviders[existingIdx] = override;
-        } else {
-            s.customProviders.push(override);
+        const existingIds = new Set(s.customProviders.map(c => c.id));
+        for (const [id, defaultProvider] of Object.entries(DEFAULT_PROVIDERS)) {
+            if (!existingIds.has(id)) {
+                s.customProviders.push({
+                    ...defaultProvider,
+                    isDefault: true,
+                    isHidden: false,
+                });
+            } else {
+                const existing = s.customProviders.find(c => c.id === id);
+                if (existing) {
+                    existing.isDefault = true;
+                    existing.isHidden = false;
+                }
+            }
         }
-        if (this.getCurrentProviderId() === presetId) {
-            s.apiEndpoint = endpoint;
-            s.availableModels = [...models];
-            s.maxContext = maxContext;
-            s.maxOutput = maxOutput;
-            s.customProviderName = name;
+    }
+
+    /** @deprecated 请使用 restoreDefaultProviders() */
+    restoreAllPresets(): void {
+        log.warn('[ProviderManager] 警告: restoreAllPresets() 已废弃，请使用 restoreDefaultProviders()');
+        this.restoreDefaultProviders();
+    }
+
+    /** 更新供应商信息 */
+    updateProvider(id: string, updates: Partial<CustomProvider>): boolean {
+        const s = this.cb.getSettings();
+        const idx = (s.customProviders || []).findIndex(c => c.id === id);
+        if (idx === -1) return false;
+        s.customProviders[idx] = { ...s.customProviders[idx], ...updates };
+        if (this.getCurrentProviderId() === id) {
+            if (updates.endpoint !== undefined) s.apiEndpoint = updates.endpoint;
+            if (updates.models !== undefined) s.availableModels = [...updates.models];
+            if (updates.maxContext !== undefined) s.maxContext = updates.maxContext;
+            if (updates.maxOutput !== undefined) s.maxOutput = updates.maxOutput;
+            if (updates.name !== undefined) s.customProviderName = updates.name;
         }
-        this.cb.saveSettings().catch(e => console.warn('[小说工坊] 预设覆盖保存失败:', e));
+        this.cb.saveSettings().catch(e => log.warn('[小说工坊] 供应商更新保存失败:', e));
         return true;
     }
 
-    /** 重启后同步自定义提供商的模型列表到 availableModels */
+    /** @deprecated 请使用 updateProvider() */
+    savePresetOverride(presetId: string, name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number): boolean {
+        log.warn('[ProviderManager] 警告: savePresetOverride() 已废弃，请使用 updateProvider()');
+        return this.updateProvider(presetId, { name, endpoint, models: [...models], maxContext, maxOutput });
+    }
+
+    /** 重启后同步当前提供商的模型列表到 availableModels */
     syncCustomModelsOnRestart(): void {
         const s = this.cb.getSettings();
         const endpoint = s.apiEndpoint;
-        const isPreset = Object.values(PROVIDERS).some(p => p.endpoint === endpoint);
-        if (isPreset || !endpoint) return;
+        if (!endpoint) return;
         const custom = (s.customProviders || []).find(c => c.endpoint === endpoint);
         if (custom && custom.models?.length > 0) {
             s.availableModels = [...custom.models];
@@ -278,7 +294,7 @@ export class ProviderManager {
     private scheduleSave(): void {
         if (this._saveTimer) clearTimeout(this._saveTimer);
         this._saveTimer = setTimeout(() => {
-            this.cb.saveSettings().catch(e => console.warn('[小说工坊] 模型覆盖保存失败:', e));
+            this.cb.saveSettings().catch(e => log.warn('[小说工坊] 模型覆盖保存失败:', e));
         }, 500);
     }
 }

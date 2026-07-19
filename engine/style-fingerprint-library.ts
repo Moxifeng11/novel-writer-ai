@@ -1,0 +1,1332 @@
+/**
+ * style-fingerprint-library.ts — 写作指纹库引擎
+ *
+ * 功能：管理模板、全局和项目级的写作指纹，支持增删改查和向量检索
+ * 对应优化方向：风格一致性
+ *
+ * v2 升级：
+ * - 新增 template 层（模板指纹）
+ * - 新增 GlobalFingerprintStateStore（项目级全局指纹启用状态）
+ * - 新增层间复制和模板同步功能
+ * - 新增 v1 → v2 数据迁移（shape: tags/scope）
+ * - 新增 V1 → V2 维度迁移（7 维 → 12 维，含备份/回滚）
+ */
+
+import { App } from 'obsidian';
+import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
+import {
+    globalFingerprintsFile,
+    globalFingerprintLibraryDir,
+    projectFingerprintsFile,
+    projectFingerprintLibraryDir,
+    templateFingerprintsFile,
+    templateFingerprintLibraryDir,
+    projectGlobalFingerprintStateFile,
+    projectFingerprintIntensityFile,
+} from '../shared/paths';
+import { SerializedWriter } from '../shared/serialized-writer';
+import { StyleVectorStore, type StyleSimilarityResult, type StyleBlendOptions, type StyleInterpolationOptions, type StyleDimension, STYLE_DIMENSIONS } from './style-vector-store';
+import { OllamaEmbeddingClient } from './ollama-embedding-client';
+import {
+    migrateFileV1ToV2,
+    needsV1ToV2Migration,
+} from './style/fingerprint-migrator';
+import type { V2Fingerprint } from './style/style-dimensions-v2';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('StyleFingerprintLibrary');
+import {
+    FingerprintBlenderV2,
+    type BlendSource,
+    type BlendOptions,
+    type BlendResult,
+    type BlendedFingerprint,
+} from './style/fingerprint-blender-v2';
+import {
+    StyleIntensityEngine,
+    type StyleIntensityConfig,
+    type StyleIntensityPreview,
+    DEFAULT_INTENSITY_CONFIG,
+} from './style/style-intensity-engine';
+
+export interface StyleFingerprintStats {
+    avgSentenceLength: number;
+    avgParagraphLength: number;
+    dialogueRatio: number;
+    descriptionRatio: number;
+    wordCount: number;
+}
+
+/**
+ * V1 风格指纹特征（7 维字符串描述）
+ * @deprecated V1 类型，保留向后兼容。新代码应使用 V2 的 StyleFingerprintFeaturesV2（12 维结构化）。
+ * @see {@link import('./style/style-dimensions-v2').StyleFingerprintFeaturesV2}
+ */
+export interface StyleFingerprintFeatures {
+    sentenceRhythm: string;
+    wordPreference: string;
+    narrativeStyle: string;
+    rhetoric: string;
+    dialogueStyle: string;
+    paragraphStructure: string;
+    overallTone: string;
+}
+
+/**
+ * V1 风格指纹（7 维特征）
+ * @deprecated V1 类型，保留向后兼容。新代码应使用 V2Fingerprint（12 维结构化）。
+ * @see {@link import('./style/style-dimensions-v2').V2Fingerprint}
+ */
+export interface StyleFingerprint {
+    id: string;
+    name: string;
+    source: string;
+    scope: 'template' | 'global' | 'project';
+    enabled: boolean;
+    tags: string[];
+    stats: StyleFingerprintStats;
+    features: StyleFingerprintFeatures;
+    samples: string[];
+    extractedAt: number;
+    sourceText?: string;
+}
+
+export interface VectorStore {
+    add(fingerprintId: string, samples: string[]): Promise<void>;
+    search(query: string, topN?: number): Promise<Array<{ sample: string; score: number }>>;
+    delete(fingerprintId: string): Promise<void>;
+}
+
+export interface RefillFingerprintOptions {
+    refillFeatures?: boolean;
+    refillSamples?: boolean;
+    reVectorize?: boolean;
+}
+
+export interface SearchSimilarStylesOptions {
+    topN?: number;
+    minScore?: number;
+    dimensionWeights?: Partial<Record<StyleDimension, number>>;
+    scopes?: Array<'template' | 'global' | 'project'>;
+}
+
+export { StyleVectorStore, StyleSimilarityResult, StyleBlendOptions, StyleInterpolationOptions, StyleDimension, STYLE_DIMENSIONS };
+
+type V1StyleFingerprint = Omit<StyleFingerprint, 'tags' | 'scope'> & { tags?: string[]; scope?: string };
+
+function generateId(): string {
+    return 'fp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+}
+
+export class StyleFingerprintLibrary {
+    private app: App;
+    private project?: string;
+    private fs: FileSystemPort | null = null;
+    private templateFingerprints: Map<string, StyleFingerprint> = new Map();
+    private globalFingerprints: Map<string, StyleFingerprint> = new Map();
+    private projectFingerprints: Map<string, StyleFingerprint> = new Map();
+    private globalFingerprintStates: Map<string, Record<string, boolean>> = new Map();
+
+    private templateWriter = new SerializedWriter({ debug: false });
+    private globalWriter = new SerializedWriter({ debug: false });
+    private projectWriter = new SerializedWriter({ debug: false });
+    private globalStateWriter = new SerializedWriter({ debug: false });
+
+    private styleVectorStoreGlobal?: StyleVectorStore;
+    private styleVectorStoreProject?: StyleVectorStore;
+    private embeddingClient?: OllamaEmbeddingClient;
+    /** V2 多指纹融合引擎（懒加载） */
+    private fingerprintBlenderV2?: FingerprintBlenderV2;
+    /** V2 风格迁移强度引擎（懒加载） */
+    private intensityEngine?: StyleIntensityEngine;
+    /** 项目级指纹强度配置（按 projectId 索引，每个项目下 fpId → StyleIntensityConfig） */
+    private intensityConfigs: Map<string, Record<string, StyleIntensityConfig>> = new Map();
+    /** 强度配置序列化写入器 */
+    private intensityConfigWriter = new SerializedWriter({ debug: false });
+
+    constructor(app: App, project?: string) {
+        this.app = app;
+        this.project = project;
+    }
+
+    setEmbeddingClient(client: OllamaEmbeddingClient): void {
+        this.embeddingClient = client;
+        this.styleVectorStoreGlobal = undefined;
+        this.styleVectorStoreProject = undefined;
+    }
+
+    private getGlobalStyleVectorStore(): StyleVectorStore | undefined {
+        if (!this.embeddingClient) return undefined;
+        if (!this.styleVectorStoreGlobal) {
+            this.styleVectorStoreGlobal = new StyleVectorStore(
+                this.app,
+                'global',
+                this.embeddingClient
+            );
+        }
+        return this.styleVectorStoreGlobal;
+    }
+
+    private getProjectStyleVectorStore(): StyleVectorStore | undefined {
+        if (!this.embeddingClient || !this.project) return undefined;
+        if (!this.styleVectorStoreProject) {
+            this.styleVectorStoreProject = new StyleVectorStore(
+                this.app,
+                'project',
+                this.embeddingClient,
+                this.project
+            );
+        }
+        return this.styleVectorStoreProject;
+    }
+
+    private getStyleVectorStoreForScope(scope: 'template' | 'global' | 'project'): StyleVectorStore | undefined {
+        switch (scope) {
+            case 'template':
+            case 'global':
+                return this.getGlobalStyleVectorStore();
+            case 'project':
+                return this.getProjectStyleVectorStore();
+        }
+    }
+
+    private getFS(): FileSystemPort {
+        if (!this.fs) {
+            this.fs = new ObsidianFileSystem(this.app);
+        }
+        return this.fs;
+    }
+
+    // ============================================================
+    // Template 层方法
+    // ============================================================
+
+    async loadTemplate(): Promise<StyleFingerprint[]> {
+        try {
+            // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
+            await this.migrateV1ToV2Dimensions('template').catch(() => undefined);
+
+            const data = await this.getFS().read(templateFingerprintsFile());
+            const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
+            const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'template'));
+            this.templateFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+            return Array.from(this.templateFingerprints.values());
+        } catch {
+            this.templateFingerprints = new Map();
+            return [];
+        }
+    }
+
+    async addTemplate(fp: StyleFingerprint): Promise<void> {
+        this.templateFingerprints.set(fp.id, fp);
+        await this.saveTemplate();
+    }
+
+    async updateTemplate(fp: StyleFingerprint): Promise<void> {
+        if (!this.templateFingerprints.has(fp.id)) return;
+        this.templateFingerprints.set(fp.id, fp);
+        await this.saveTemplate();
+    }
+
+    async deleteTemplate(id: string): Promise<void> {
+        this.templateFingerprints.delete(id);
+        await this.saveTemplate();
+    }
+
+    getTemplate(id: string): StyleFingerprint | undefined {
+        return this.templateFingerprints.get(id);
+    }
+
+    listTemplate(): StyleFingerprint[] {
+        return Array.from(this.templateFingerprints.values());
+    }
+
+    async enableTemplate(id: string): Promise<void> {
+        const fp = this.templateFingerprints.get(id);
+        if (!fp) return;
+        fp.enabled = true;
+        await this.saveTemplate();
+    }
+
+    async disableTemplate(id: string): Promise<void> {
+        const fp = this.templateFingerprints.get(id);
+        if (!fp) return;
+        fp.enabled = false;
+        await this.saveTemplate();
+    }
+
+    private async saveTemplate(): Promise<void> {
+        await this.templateWriter.enqueueAutoClean(async () => {
+            const data = Array.from(this.templateFingerprints.values());
+            await this.getFS().mkdir(templateFingerprintLibraryDir()).catch(() => undefined);
+            await this.getFS().write(templateFingerprintsFile(), JSON.stringify(data, null, 2));
+        }).catch(e => {
+            log.warn('[StyleFingerprintLibrary] 模板指纹保存失败:', e);
+        });
+    }
+
+    // ============================================================
+    // Global 层方法
+    // ============================================================
+
+    async loadGlobal(): Promise<StyleFingerprint[]> {
+        try {
+            // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
+            await this.migrateV1ToV2Dimensions('global').catch(() => undefined);
+
+            const data = await this.getFS().read(globalFingerprintsFile());
+            const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
+            const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'global'));
+            this.globalFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+            return Array.from(this.globalFingerprints.values());
+        } catch {
+            this.globalFingerprints = new Map();
+            return [];
+        }
+    }
+
+    async addGlobal(fp: StyleFingerprint): Promise<void> {
+        this.globalFingerprints.set(fp.id, fp);
+        await this.saveGlobal();
+    }
+
+    async updateGlobal(fp: StyleFingerprint): Promise<void> {
+        if (!this.globalFingerprints.has(fp.id)) return;
+        this.globalFingerprints.set(fp.id, fp);
+        await this.saveGlobal();
+    }
+
+    async deleteGlobal(id: string): Promise<void> {
+        this.globalFingerprints.delete(id);
+        await this.saveGlobal();
+    }
+
+    getGlobal(id: string): StyleFingerprint | undefined {
+        return this.globalFingerprints.get(id);
+    }
+
+    listGlobal(): StyleFingerprint[] {
+        return Array.from(this.globalFingerprints.values());
+    }
+
+    async enableGlobal(id: string): Promise<void> {
+        const fp = this.globalFingerprints.get(id);
+        if (!fp) return;
+        fp.enabled = true;
+        await this.saveGlobal();
+    }
+
+    async disableGlobal(id: string): Promise<void> {
+        const fp = this.globalFingerprints.get(id);
+        if (!fp) return;
+        fp.enabled = false;
+        await this.saveGlobal();
+    }
+
+    private async saveGlobal(): Promise<void> {
+        await this.globalWriter.enqueueAutoClean(async () => {
+            const data = Array.from(this.globalFingerprints.values());
+            await this.getFS().mkdir(globalFingerprintLibraryDir()).catch(() => undefined);
+            await this.getFS().write(globalFingerprintsFile(), JSON.stringify(data, null, 2));
+        }).catch(e => {
+            log.warn('[StyleFingerprintLibrary] 全局指纹保存失败:', e);
+        });
+    }
+
+    // ============================================================
+    // Project 层方法
+    // ============================================================
+
+    async loadProject(): Promise<StyleFingerprint[]> {
+        if (!this.project) return [];
+        try {
+            // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
+            await this.migrateV1ToV2Dimensions('project').catch(() => undefined);
+
+            const data = await this.getFS().read(projectFingerprintsFile(this.project));
+            const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
+            const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'project'));
+            this.projectFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+            return Array.from(this.projectFingerprints.values());
+        } catch {
+            this.projectFingerprints = new Map();
+            return [];
+        }
+    }
+
+    async addProject(fp: StyleFingerprint): Promise<void> {
+        if (!this.project) return;
+        this.projectFingerprints.set(fp.id, fp);
+        await this.saveProject();
+    }
+
+    /**
+     * 从知识库导入指纹：强制 scope=project 后委托 addProject 入库。
+     */
+    async addFromKnowledge(fingerprint: StyleFingerprint): Promise<void> {
+        fingerprint.scope = 'project';
+        await this.addProject(fingerprint);
+    }
+
+    async updateProject(fp: StyleFingerprint): Promise<void> {
+        if (!this.project || !this.projectFingerprints.has(fp.id)) return;
+        this.projectFingerprints.set(fp.id, fp);
+        await this.saveProject();
+    }
+
+    async deleteProject(id: string): Promise<void> {
+        if (!this.project) return;
+        this.projectFingerprints.delete(id);
+        await this.saveProject();
+    }
+
+    getProject(id: string): StyleFingerprint | undefined {
+        return this.projectFingerprints.get(id);
+    }
+
+    listProject(): StyleFingerprint[] {
+        return Array.from(this.projectFingerprints.values());
+    }
+
+    async enableProject(id: string): Promise<void> {
+        const fp = this.projectFingerprints.get(id);
+        if (!fp) return;
+        fp.enabled = true;
+        await this.saveProject();
+    }
+
+    async disableProject(id: string): Promise<void> {
+        const fp = this.projectFingerprints.get(id);
+        if (!fp) return;
+        fp.enabled = false;
+        await this.saveProject();
+    }
+
+    private async saveProject(): Promise<void> {
+        if (!this.project) return;
+        await this.projectWriter.enqueueAutoClean(async () => {
+            const data = Array.from(this.projectFingerprints.values());
+            await this.getFS().mkdir(projectFingerprintLibraryDir(this.project!)).catch(() => undefined);
+            await this.getFS().write(projectFingerprintsFile(this.project!), JSON.stringify(data, null, 2));
+        }).catch(e => {
+            log.warn('[StyleFingerprintLibrary] 项目指纹保存失败:', e);
+        });
+    }
+
+    // ============================================================
+    // GlobalFingerprintStateStore - 项目级全局指纹启用状态
+    // ============================================================
+
+    async loadGlobalState(project?: string): Promise<Record<string, boolean>> {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return {};
+        try {
+            const data = await this.getFS().read(projectGlobalFingerprintStateFile(targetProject));
+            const state = JSON.parse(data) as Record<string, boolean>;
+            this.globalFingerprintStates.set(targetProject, state);
+            return state;
+        } catch {
+            const state: Record<string, boolean> = {};
+            this.globalFingerprintStates.set(targetProject, state);
+            return state;
+        }
+    }
+
+    async saveGlobalState(project?: string, state?: Record<string, boolean>): Promise<void> {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return;
+        const targetState = state ?? this.globalFingerprintStates.get(targetProject) ?? {};
+        this.globalFingerprintStates.set(targetProject, targetState);
+        await this.saveGlobalStateInternal(targetProject, targetState);
+    }
+
+    private async saveGlobalStateInternal(project: string, state: Record<string, boolean>): Promise<void> {
+        await this.globalStateWriter.enqueueAutoClean(async () => {
+            await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
+            await this.getFS().write(projectGlobalFingerprintStateFile(project), JSON.stringify(state, null, 2));
+        }).catch(e => {
+            log.warn('[StyleFingerprintLibrary] 全局指纹状态保存失败:', e);
+        });
+    }
+
+    isGlobalEnabledForProject(globalFpId: string, project?: string): boolean {
+        const targetProject = project ?? this.project;
+        if (!targetProject) {
+            const fp = this.globalFingerprints.get(globalFpId);
+            return fp?.enabled ?? true;
+        }
+        const state = this.globalFingerprintStates.get(targetProject);
+        if (state && globalFpId in state) {
+            return state[globalFpId];
+        }
+        const fp = this.globalFingerprints.get(globalFpId);
+        return fp?.enabled ?? true;
+    }
+
+    async setGlobalEnabledForProject(globalFpId: string, enabled: boolean, project?: string): Promise<void> {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return;
+        let state = this.globalFingerprintStates.get(targetProject);
+        if (!state) {
+            state = {};
+            this.globalFingerprintStates.set(targetProject, state);
+        }
+        state[globalFpId] = enabled;
+        await this.saveGlobalStateInternal(targetProject, state);
+    }
+
+    // ============================================================
+    // 风格迁移强度配置持久化（Task 5）
+    // ============================================================
+
+    /** 获取强度引擎实例（懒加载） */
+    getIntensityEngine(): StyleIntensityEngine {
+        if (!this.intensityEngine) {
+            this.intensityEngine = new StyleIntensityEngine();
+        }
+        return this.intensityEngine;
+    }
+
+    /**
+     * 加载项目级指纹强度配置
+     * - 文件不存在时返回空对象（使用默认强度 1.0）
+     */
+    async loadIntensityConfigs(project?: string): Promise<Record<string, StyleIntensityConfig>> {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return {};
+        try {
+            const data = await this.getFS().read(projectFingerprintIntensityFile(targetProject));
+            const configs = JSON.parse(data) as Record<string, StyleIntensityConfig>;
+            this.intensityConfigs.set(targetProject, configs);
+            return configs;
+        } catch {
+            const configs: Record<string, StyleIntensityConfig> = {};
+            this.intensityConfigs.set(targetProject, configs);
+            return configs;
+        }
+    }
+
+    /**
+     * 获取指定指纹的强度配置
+     * - 未配置时返回默认配置（globalIntensity = 1.0，完全启用）
+     */
+    getIntensityConfig(fpId: string, project?: string): StyleIntensityConfig {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return DEFAULT_INTENSITY_CONFIG;
+        const configs = this.intensityConfigs.get(targetProject);
+        if (configs && fpId in configs) {
+            return configs[fpId];
+        }
+        return DEFAULT_INTENSITY_CONFIG;
+    }
+
+    /**
+     * 设置指定指纹的强度配置并持久化
+     */
+    async setIntensityConfig(
+        fpId: string,
+        config: StyleIntensityConfig,
+        project?: string
+    ): Promise<void> {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return;
+        let configs = this.intensityConfigs.get(targetProject);
+        if (!configs) {
+            configs = {};
+            this.intensityConfigs.set(targetProject, configs);
+        }
+        configs[fpId] = config;
+        await this.saveIntensityConfigsInternal(targetProject, configs);
+    }
+
+    /**
+     * 删除指定指纹的强度配置
+     */
+    async removeIntensityConfig(fpId: string, project?: string): Promise<void> {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return;
+        const configs = this.intensityConfigs.get(targetProject);
+        if (!configs || !(fpId in configs)) return;
+        delete configs[fpId];
+        await this.saveIntensityConfigsInternal(targetProject, configs);
+    }
+
+    /**
+     * 预览强度效果（不修改指纹）
+     */
+    previewIntensity(config: StyleIntensityConfig): StyleIntensityPreview {
+        return this.getIntensityEngine().previewIntensity(config);
+    }
+
+    private async saveIntensityConfigsInternal(
+        project: string,
+        configs: Record<string, StyleIntensityConfig>
+    ): Promise<void> {
+        await this.intensityConfigWriter.enqueueAutoClean(async () => {
+            await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
+            await this.getFS().write(
+                projectFingerprintIntensityFile(project),
+                JSON.stringify(configs, null, 2)
+            );
+        }).catch(e => {
+            log.warn('[StyleFingerprintLibrary] 强度配置保存失败:', e);
+        });
+    }
+
+    // ============================================================
+    // 层间复制
+    // ============================================================
+
+    async copyFingerprint(
+        sourceScope: 'template' | 'global' | 'project',
+        targetScope: 'template' | 'global' | 'project',
+        fpId: string,
+        targetProject?: string
+    ): Promise<StyleFingerprint | null> {
+        const sourceMap = this.getScopeMap(sourceScope);
+        const sourceFp = sourceMap.get(fpId);
+        if (!sourceFp) return null;
+
+        const newFp: StyleFingerprint = {
+            id: generateId(),
+            name: sourceFp.name,
+            source: sourceFp.source,
+            scope: targetScope,
+            enabled: true,
+            tags: [...sourceFp.tags],
+            stats: { ...sourceFp.stats },
+            features: { ...sourceFp.features },
+            samples: [],
+            extractedAt: Date.now(),
+            sourceText: sourceFp.sourceText,
+        };
+
+        const effectiveTargetProject = targetProject ?? this.project;
+
+        switch (targetScope) {
+            case 'template':
+                this.templateFingerprints.set(newFp.id, newFp);
+                await this.saveTemplate();
+                break;
+            case 'global':
+                this.globalFingerprints.set(newFp.id, newFp);
+                await this.saveGlobal();
+                break;
+            case 'project':
+                if (!effectiveTargetProject) return null;
+                this.projectFingerprints.set(newFp.id, newFp);
+                await this.saveProject();
+                break;
+        }
+
+        return newFp;
+    }
+
+    private getScopeMap(scope: 'template' | 'global' | 'project'): Map<string, StyleFingerprint> {
+        switch (scope) {
+            case 'template': return this.templateFingerprints;
+            case 'global': return this.globalFingerprints;
+            case 'project': return this.projectFingerprints;
+        }
+    }
+
+    // ============================================================
+    // 模板同步
+    // ============================================================
+
+    async syncFromTemplate(project?: string): Promise<{ added: string[]; updated: string[]; deleted: string[] }> {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return { added: [], updated: [], deleted: [] };
+
+        const templateList = this.listTemplate();
+        const projectList = this.listProject();
+        const projectByName = new Map(projectList.map(fp => [fp.name, fp]));
+        const projectById = new Map(projectList.map(fp => [fp.id, fp]));
+
+        const added: string[] = [];
+        const updated: string[] = [];
+        const deleted: string[] = [];
+
+        for (const tplFp of templateList) {
+            const existing = projectByName.get(tplFp.name) ?? projectById.get(tplFp.id);
+            if (!existing) {
+                const newFp = await this.copyFingerprint('template', 'project', tplFp.id, targetProject);
+                if (newFp) {
+                    added.push(newFp.id);
+                }
+            } else if (tplFp.extractedAt > existing.extractedAt) {
+                const updatedFp: StyleFingerprint = {
+                    ...existing,
+                    name: tplFp.name,
+                    source: tplFp.source,
+                    tags: [...tplFp.tags],
+                    stats: { ...tplFp.stats },
+                    features: { ...tplFp.features },
+                    extractedAt: tplFp.extractedAt,
+                    sourceText: tplFp.sourceText,
+                };
+                this.projectFingerprints.set(existing.id, updatedFp);
+                updated.push(existing.id);
+            }
+        }
+
+        if (updated.length > 0) {
+            await this.saveProject();
+        }
+
+        return { added, updated, deleted };
+    }
+
+    // ============================================================
+    // 获取启用的指纹
+    // ============================================================
+
+    async getEnabledFingerprints(project?: string): Promise<StyleFingerprint[]> {
+        const targetProject = project ?? this.project;
+
+        const projectEnabled = Array.from(this.projectFingerprints.values())
+            .filter(fp => fp.enabled);
+
+        const globalEnabled = Array.from(this.globalFingerprints.values())
+            .filter(fp => this.isGlobalEnabledForProject(fp.id, targetProject));
+
+        return [...projectEnabled, ...globalEnabled];
+    }
+
+    // ============================================================
+    // v1 → v2 数据迁移
+    // ============================================================
+
+    /**
+     * 将加载的指纹数据统一为 V1 StyleFingerprint 格式
+     *
+     * 处理三种输入：
+     * 1. V1 旧格式（无 tags/scope）→ 补全 tags/scope
+     * 2. V1 新格式（有 tags/scope）→ 原样返回
+     * 3. V2 格式（version='v2' + v1Backup）→ 从 v1Backup 提取 V1 特征
+     *
+     * 这样保证内存中始终是 V1 StyleFingerprint，向后兼容现有代码。
+     * 磁盘上可能是 V2 格式（迁移后），但加载时自动转换回 V1。
+     */
+    private migrateFingerprintV1toV2(
+        fp: StyleFingerprint | V1StyleFingerprint | V2Fingerprint,
+        scope: 'template' | 'global' | 'project'
+    ): StyleFingerprint {
+        // 情况 3：V2 格式 — 从 v1Backup 提取 V1 特征
+        const maybeV2 = fp as Partial<V2Fingerprint>;
+        if (maybeV2.version === 'v2' && maybeV2.v1Backup) {
+            const v2 = maybeV2 as V2Fingerprint;
+            const v1Backup = v2.v1Backup!;
+            const v1Features = v1Backup.features as unknown as StyleFingerprintFeatures;
+            return {
+                id: v2.id,
+                name: v2.name,
+                source: v2.source,
+                scope: (v2.scope as StyleFingerprint['scope']) ?? scope,
+                enabled: v2.enabled,
+                tags: v2.tags ?? [],
+                stats: v2.stats as StyleFingerprintStats,
+                features: v1Features,
+                samples: v2.samples ?? [],
+                extractedAt: v2.extractedAt,
+                sourceText: v2.sourceText,
+            };
+        }
+
+        // 情况 1 & 2：V1 格式 — 补全 tags/scope
+        const v1 = fp as StyleFingerprint | V1StyleFingerprint;
+        const hasTags = 'tags' in v1 && v1.tags !== undefined;
+        const hasScope = 'scope' in v1 && v1.scope !== undefined;
+        if (hasTags && hasScope) {
+            return v1 as StyleFingerprint;
+        }
+        return {
+            ...v1,
+            tags: hasTags ? v1.tags! : [],
+            scope: hasScope ? (v1.scope as StyleFingerprint['scope']) : scope,
+        } as StyleFingerprint;
+    }
+
+    /**
+     * V1 → V2 维度迁移（文件级，含备份/回滚）
+     *
+     * 扫描指定作用域的指纹文件：
+     * - 检测 V1 格式（无 version 字段或 version='v1'）
+     * - 迁移为 V2 格式（12 维结构化）
+     * - 写入 .v1.bak 备份文件
+     * - 迁移失败自动回滚
+     *
+     * 幂等：V2 格式文件不会被重复迁移
+     *
+     * @param scope - 指纹作用域
+     * @returns 迁移结果（success=true 表示成功或无需迁移）
+     */
+    async migrateV1ToV2Dimensions(
+        scope?: 'template' | 'global' | 'project'
+    ): Promise<{ success: boolean; migrated: number; error?: string }> {
+        const fs = this.getFS();
+        let totalMigrated = 0;
+        const scopes = scope ? [scope] : ['template', 'global', 'project'] as const;
+
+        for (const s of scopes) {
+            let filePath: string;
+            if (s === 'template') {
+                filePath = templateFingerprintsFile();
+            } else if (s === 'global') {
+                filePath = globalFingerprintsFile();
+            } else {
+                if (!this.project) continue;
+                filePath = projectFingerprintsFile(this.project);
+            }
+
+            try {
+                if (!(await fs.exists(filePath))) continue;
+
+                // 检测是否需要迁移
+                const raw = await fs.read(filePath);
+                const parsed = JSON.parse(raw);
+                const arr = Array.isArray(parsed) ? parsed : [parsed];
+                const needsMigration = arr.some((item: unknown) => needsV1ToV2Migration(item));
+                if (!needsMigration) continue;
+
+                // 执行文件级迁移
+                const result = await migrateFileV1ToV2(fs, filePath, s);
+                if (result.success) {
+                    totalMigrated += Array.isArray(parsed) ? parsed.length : 1;
+                } else {
+                    return { success: false, migrated: totalMigrated, error: result.error };
+                }
+            } catch (e) {
+                log.warn(`[StyleFingerprintLibrary] ${s} 指纹 V1→V2 维度迁移失败:`, e);
+            }
+        }
+
+        return { success: true, migrated: totalMigrated };
+    }
+
+    async migrateV1toV2(): Promise<void> {
+        const fs = this.getFS();
+
+        const needsMigration = (arr: (StyleFingerprint | V1StyleFingerprint)[]): boolean => {
+            return arr.some(fp => !('tags' in fp) || fp.tags === undefined || !('scope' in fp) || fp.scope === undefined);
+        };
+
+        const templatePath = templateFingerprintsFile();
+        if (await fs.exists(templatePath)) {
+            try {
+                const data = await fs.read(templatePath);
+                const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint)[];
+                if (needsMigration(parsed)) {
+                    await fs.write(templatePath + '.bak', data);
+                    const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'template'));
+                    await fs.write(templatePath, JSON.stringify(migrated, null, 2));
+                    log.info('[StyleFingerprintLibrary] 模板指纹 v1→v2 迁移完成');
+                }
+            } catch (e) {
+                log.warn('[StyleFingerprintLibrary] 模板指纹迁移失败:', e);
+            }
+        }
+
+        const globalPath = globalFingerprintsFile();
+        if (await fs.exists(globalPath)) {
+            try {
+                const data = await fs.read(globalPath);
+                const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint)[];
+                if (needsMigration(parsed)) {
+                    await fs.write(globalPath + '.bak', data);
+                    const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'global'));
+                    await fs.write(globalPath, JSON.stringify(migrated, null, 2));
+                    log.info('[StyleFingerprintLibrary] 全局指纹 v1→v2 迁移完成');
+                }
+            } catch (e) {
+                log.warn('[StyleFingerprintLibrary] 全局指纹迁移失败:', e);
+            }
+        }
+
+        if (this.project) {
+            const projectPath = projectFingerprintsFile(this.project);
+            if (await fs.exists(projectPath)) {
+                try {
+                    const data = await fs.read(projectPath);
+                    const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint)[];
+                    if (needsMigration(parsed)) {
+                        await fs.write(projectPath + '.bak', data);
+                        const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'project'));
+                        await fs.write(projectPath, JSON.stringify(migrated, null, 2));
+                        log.info('[StyleFingerprintLibrary] 项目指纹 v1→v2 迁移完成');
+                    }
+                } catch (e) {
+                    log.warn('[StyleFingerprintLibrary] 项目指纹迁移失败:', e);
+                }
+            }
+        }
+    }
+
+    // ============================================================
+    // 指纹重新提取
+    // ============================================================
+
+    async refillFingerprint(
+        fpId: string,
+        scope: 'template' | 'global' | 'project',
+        options: RefillFingerprintOptions,
+        sourceText: string,
+        extractor: any,
+        vectorStore: any,
+        onProgress?: (progress: { phase: string; percent: number; message: string }) => void
+    ): Promise<void> {
+        const { refillFeatures = true, refillSamples = true, reVectorize = true } = options;
+
+        const fp = this.getFingerprint(fpId, scope);
+        if (!fp) {
+            throw new Error(`指纹不存在: ${fpId}`);
+        }
+
+        onProgress?.({ phase: 'init', percent: 0, message: '初始化重新提取...' });
+
+        if (refillFeatures) {
+            onProgress?.({ phase: 'feature-extraction', percent: 10, message: '正在重新提取特征...' });
+            
+            const features = await extractor.extractFeatures(sourceText, onProgress);
+            fp.features = features;
+            onProgress?.({ phase: 'feature-extraction', percent: 40, message: '特征提取完成' });
+        }
+
+        if (refillSamples) {
+            onProgress?.({ phase: 'sample-selection', percent: 45, message: '正在重新采样...' });
+            
+            const samples = await extractor.selectSamples(sourceText, onProgress);
+            fp.samples = samples;
+            onProgress?.({ phase: 'sample-selection', percent: 65, message: '采样完成' });
+        }
+
+        if (reVectorize) {
+            onProgress?.({ phase: 'vectorization', percent: 70, message: '正在重新向量化...' });
+            
+            await vectorStore.delete(fpId);
+            
+            if (fp.samples.length > 0) {
+                for (let i = 0; i < fp.samples.length; i++) {
+                    await vectorStore.add(fpId, [fp.samples[i]]);
+                    const percent = 70 + Math.round(((i + 1) / fp.samples.length) * 25);
+                    onProgress?.({ 
+                        phase: 'vectorization', 
+                        percent, 
+                        message: `向量化中 (${i + 1}/${fp.samples.length})` 
+                    });
+                }
+            }
+            onProgress?.({ phase: 'vectorization', percent: 95, message: '向量化完成' });
+        }
+
+        fp.extractedAt = Date.now();
+
+        switch (scope) {
+            case 'template':
+                await this.updateTemplate(fp);
+                break;
+            case 'global':
+                await this.updateGlobal(fp);
+                break;
+            case 'project':
+                await this.updateProject(fp);
+                break;
+        }
+
+        onProgress?.({ phase: 'complete', percent: 100, message: '重新提取完成' });
+    }
+
+    getFingerprint(fpId: string, scope: 'template' | 'global' | 'project'): StyleFingerprint | undefined {
+        const scopeMap = this.getScopeMap(scope);
+        return scopeMap.get(fpId);
+    }
+
+    // ============================================================
+    // 风格向量存储集成
+    // ============================================================
+
+    async vectorizeFingerprint(fpId: string, scope: 'template' | 'global' | 'project'): Promise<boolean> {
+        const fp = this.getFingerprint(fpId, scope);
+        if (!fp) return false;
+
+        const vectorStore = this.getStyleVectorStoreForScope(scope);
+        if (!vectorStore) return false;
+
+        try {
+            await vectorStore.addFingerprintVectors(fpId, fp.features);
+            return true;
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] 指纹向量化失败:', fpId, e);
+            return false;
+        }
+    }
+
+    async getFingerprintVectors(fpId: string, scope: 'template' | 'global' | 'project') {
+        const vectorStore = this.getStyleVectorStoreForScope(scope);
+        if (!vectorStore) return undefined;
+        return vectorStore.getFingerprintVectors(fpId);
+    }
+
+    // ============================================================
+    // 风格相似度搜索
+    // ============================================================
+
+    async searchSimilarStyles(
+        query: string | { fingerprintId: string; scope: 'template' | 'global' | 'project' },
+        options?: SearchSimilarStylesOptions
+    ): Promise<StyleSimilarityResult[]> {
+        const scopes = options?.scopes ?? ['template', 'global', 'project'];
+        const allFingerprints: StyleFingerprint[] = [];
+
+        if (scopes.includes('template')) {
+            allFingerprints.push(...this.listTemplate());
+        }
+        if (scopes.includes('global')) {
+            allFingerprints.push(...this.listGlobal());
+        }
+        if (scopes.includes('project')) {
+            allFingerprints.push(...this.listProject());
+        }
+
+        if (allFingerprints.length === 0) return [];
+
+        const globalVectorStore = this.getGlobalStyleVectorStore();
+        const projectVectorStore = this.getProjectStyleVectorStore();
+
+        const globalFps = allFingerprints.filter(fp => fp.scope === 'template' || fp.scope === 'global');
+        const projectFps = allFingerprints.filter(fp => fp.scope === 'project');
+
+        let results: StyleSimilarityResult[] = [];
+
+        try {
+            if (typeof query === 'string') {
+                if (globalVectorStore && globalFps.length > 0) {
+                    const globalResults = await globalVectorStore.searchSimilarByText(query, globalFps, options);
+                    results = results.concat(globalResults);
+                }
+                if (projectVectorStore && projectFps.length > 0) {
+                    const projectResults = await projectVectorStore.searchSimilarByText(query, projectFps, options);
+                    results = results.concat(projectResults);
+                }
+            } else {
+                const sourceScope = query.scope;
+                const sourceVectorStore = this.getStyleVectorStoreForScope(sourceScope);
+                if (!sourceVectorStore) return [];
+
+                const sourceFpsList = sourceScope === 'project' ? projectFps : globalFps;
+                const otherFps = sourceScope === 'project' ? globalFps : projectFps;
+                const otherVectorStore = sourceScope === 'project' ? globalVectorStore : projectVectorStore;
+
+                const sourceResults = await sourceVectorStore.searchSimilarByFingerprint(
+                    query.fingerprintId,
+                    sourceFpsList,
+                    options
+                );
+                results = results.concat(sourceResults);
+
+                if (otherVectorStore && otherFps.length > 0) {
+                    const sourceFp = sourceFpsList.find(f => f.id === query.fingerprintId);
+                    if (sourceFp) {
+                        const sourceVectors = await sourceVectorStore.getOrBuildVectors(sourceFp);
+                        if (sourceVectors && sourceVectors.overallVector.length > 0) {
+                            const queryText = this.buildQueryFromFeatures(sourceFp.features);
+                            const otherResults = await otherVectorStore.searchSimilarByText(queryText, otherFps, options);
+                            results = results.concat(otherResults);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] 风格相似度搜索失败:', e);
+        }
+
+        results.sort((a, b) => b.overallScore - a.overallScore);
+        return results.slice(0, options?.topN ?? 10);
+    }
+
+    private buildQueryFromFeatures(features: StyleFingerprintFeatures): string {
+        const parts: string[] = [];
+        for (const dim of STYLE_DIMENSIONS) {
+            const desc = features[dim as keyof StyleFingerprintFeatures];
+            if (desc) {
+                parts.push(desc);
+            }
+        }
+        return parts.join(' ');
+    }
+
+    // ============================================================
+    // 风格混合与插值
+    // ============================================================
+
+    blendStyles(
+        fingerprints: Array<{ fingerprint: StyleFingerprint; weight?: number }>,
+        options?: StyleBlendOptions
+    ): StyleFingerprintFeatures {
+        const fps = fingerprints.map(f => f.fingerprint);
+        const weights: Record<string, number> = {};
+
+        fingerprints.forEach(f => {
+            weights[f.fingerprint.id] = f.weight ?? 1;
+        });
+
+        const sampleStore = this.getGlobalStyleVectorStore() ?? this.getProjectStyleVectorStore();
+        if (sampleStore) {
+            return sampleStore.blendStyles(fps, { weights, ...options });
+        }
+
+        if (fps.length === 0) {
+            return {
+                sentenceRhythm: '',
+                wordPreference: '',
+                narrativeStyle: '',
+                rhetoric: '',
+                dialogueStyle: '',
+                paragraphStructure: '',
+                overallTone: '',
+            };
+        }
+
+        const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
+        const blended: Partial<StyleFingerprintFeatures> = {};
+
+        for (const dim of STYLE_DIMENSIONS) {
+            const parts: string[] = [];
+            fps.forEach(fp => {
+                const desc = fp.features[dim as keyof StyleFingerprintFeatures];
+                const w = (weights[fp.id] ?? 1) / totalWeight;
+                if (desc && w > 0.1) {
+                    parts.push(desc);
+                }
+            });
+            (blended as any)[dim] = parts.join('；');
+        }
+
+        return blended as StyleFingerprintFeatures;
+    }
+
+    interpolateStyles(
+        fpA: StyleFingerprint,
+        fpB: StyleFingerprint,
+        options?: StyleInterpolationOptions
+    ): StyleFingerprintFeatures {
+        return this.blendStyles(
+            [
+                { fingerprint: fpA, weight: 1 - (options?.ratio ?? 0.5) },
+                { fingerprint: fpB, weight: options?.ratio ?? 0.5 },
+            ]
+        );
+    }
+
+    generateBlendPrompt(blendedFeatures: StyleFingerprintFeatures): string {
+        const sampleStore = this.getGlobalStyleVectorStore() ?? this.getProjectStyleVectorStore();
+        if (sampleStore) {
+            return sampleStore.generateBlendPrompt(blendedFeatures);
+        }
+
+        const dimLabels: Record<string, string> = {
+            sentenceRhythm: '句式节奏',
+            wordPreference: '用词偏好',
+            narrativeStyle: '叙事风格',
+            rhetoric: '修辞特点',
+            dialogueStyle: '对话风格',
+            paragraphStructure: '段落结构',
+            overallTone: '整体基调',
+        };
+
+        const lines: string[] = ['【融合风格指南】'];
+        for (const dim of STYLE_DIMENSIONS) {
+            const desc = blendedFeatures[dim as keyof StyleFingerprintFeatures];
+            if (desc) {
+                lines.push(`${dimLabels[dim]}：${desc}`);
+            }
+        }
+        return lines.join('\n');
+    }
+
+    // ============================================================
+    // V2 多指纹加权融合（Task 4）
+    // ============================================================
+
+    /** 获取 V2 融合引擎（懒加载） */
+    private getFingerprintBlenderV2(): FingerprintBlenderV2 {
+        if (!this.fingerprintBlenderV2) {
+            this.fingerprintBlenderV2 = new FingerprintBlenderV2();
+        }
+        return this.fingerprintBlenderV2;
+    }
+
+    /**
+     * 多指纹加权融合（V2 入口）
+     *
+     * 调用方负责准备 V2Fingerprint 数据（从磁盘加载或迁移）。
+     * 融合结果可保存为独立指纹模板（调用 saveBlendedFingerprint）。
+     *
+     * @param sources 融合来源（1-3 个 V2 指纹 + 权重）
+     * @param options 融合选项
+     * @returns 融合结果（含 BlendedFingerprint 和可选向量）
+     */
+    blendFingerprints(
+        sources: BlendSource[],
+        options?: BlendOptions
+    ): BlendResult {
+        return this.getFingerprintBlenderV2().blend(sources, options);
+    }
+
+    /**
+     * 融合预览（不保存，仅计算）
+     * 等同于 blendFingerprints，语义上明确"仅预览"
+     */
+    blendFingerprintsPreview(
+        sources: BlendSource[],
+        options?: BlendOptions
+    ): BlendResult {
+        return this.getFingerprintBlenderV2().blend(sources, options);
+    }
+
+    /**
+     * 将融合指纹保存为独立指纹
+     *
+     * @param blended 融合结果中的 fingerprint
+     * @param scope 目标作用域（默认 'template'）
+     * @returns 保存后的指纹（V1 兼容形式），失败返回 null
+     */
+    async saveBlendedFingerprint(
+        blended: BlendedFingerprint,
+        scope: 'template' | 'global' | 'project' = 'template'
+    ): Promise<StyleFingerprint | null> {
+        // 将 BlendedFingerprint 转为 V1 兼容形式以复用现有保存逻辑
+        const v1Features = this.extractV1FeaturesFromV2(blended.features);
+        const v1Fp: StyleFingerprint = {
+            id: blended.id,
+            name: blended.name,
+            source: blended.source,
+            scope,
+            enabled: true,
+            tags: blended.tags,
+            stats: blended.stats,
+            features: v1Features,
+            samples: blended.samples,
+            extractedAt: blended.extractedAt,
+            sourceText: blended.sourceText,
+        };
+
+        try {
+            switch (scope) {
+                case 'template':
+                    await this.addTemplate(v1Fp);
+                    break;
+                case 'global':
+                    await this.addGlobal(v1Fp);
+                    break;
+                case 'project':
+                    if (!this.project) return null;
+                    await this.addProject(v1Fp);
+                    break;
+            }
+            return v1Fp;
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] 保存融合指纹失败:', e);
+            return null;
+        }
+    }
+
+    /**
+     * 从 V2 12 维 features 提取 V1 7 维字符串特征（用于 V1 兼容保存）
+     * 利用 V1_TO_V2_FIELD_MAP 的反向映射
+     */
+    private extractV1FeaturesFromV2(features: V2Fingerprint['features']): StyleFingerprintFeatures {
+        const v1Features: Partial<StyleFingerprintFeatures> = {};
+        // V1_TO_V2_FIELD_MAP: { sentenceRhythm: 'rhythm', wordPreference: 'wordChoice', ... }
+        // 反向：V2 → V1
+        const v2ToV1Map: Record<string, string> = {
+            rhythm: 'sentenceRhythm',
+            wordChoice: 'wordPreference',
+            perspective: 'narrativeStyle',
+            rhetoric: 'rhetoric',
+            dialogue: 'dialogueStyle',
+            narration: 'paragraphStructure',
+            languageTexture: 'overallTone',
+        };
+        for (const [v1Key, v2Key] of Object.entries(v2ToV1Map)) {
+            const dim = features[v2Key as keyof typeof features];
+            if (dim && typeof dim === 'object' && 'description' in dim) {
+                (v1Features as Record<string, string>)[v1Key] = dim.description || '';
+            }
+        }
+        return v1Features as StyleFingerprintFeatures;
+    }
+
+    // ============================================================
+    // 批量重建向量索引
+    // ============================================================
+
+    async rebuildAllStyleVectors(
+        onProgress?: (current: number, total: number, fingerprintId: string, scope: string) => void
+    ): Promise<void> {
+        const globalStore = this.getGlobalStyleVectorStore();
+        const projectStore = this.getProjectStyleVectorStore();
+
+        const templateFps = this.listTemplate();
+        const globalFps = this.listGlobal();
+        const projectFps = this.listProject();
+
+        const total = templateFps.length + globalFps.length + projectFps.length;
+        let current = 0;
+
+        if (globalStore) {
+            for (const fp of templateFps) {
+                current++;
+                onProgress?.(current, total, fp.id, 'template');
+                try {
+                    await globalStore.addFingerprintVectors(fp.id, fp.features);
+                } catch (e) {
+                    log.warn(`[StyleFingerprintLibrary] 模板指纹向量重建失败: ${fp.id}`, e);
+                }
+            }
+            for (const fp of globalFps) {
+                current++;
+                onProgress?.(current, total, fp.id, 'global');
+                try {
+                    await globalStore.addFingerprintVectors(fp.id, fp.features);
+                } catch (e) {
+                    log.warn(`[StyleFingerprintLibrary] 全局指纹向量重建失败: ${fp.id}`, e);
+                }
+            }
+        }
+
+        if (projectStore) {
+            for (const fp of projectFps) {
+                current++;
+                onProgress?.(current, total, fp.id, 'project');
+                try {
+                    await projectStore.addFingerprintVectors(fp.id, fp.features);
+                } catch (e) {
+                    log.warn(`[StyleFingerprintLibrary] 项目指纹向量重建失败: ${fp.id}`, e);
+                }
+            }
+        }
+    }
+
+    // ============================================================
+    // 刷新和脏状态
+    // ============================================================
+
+    async flush(): Promise<void> {
+        await this.templateWriter.flush();
+        await this.globalWriter.flush();
+        await this.projectWriter.flush();
+        await this.globalStateWriter.flush();
+    }
+
+    get hasPendingWrites(): boolean {
+        return (
+            this.templateWriter.isDirty ||
+            this.globalWriter.isDirty ||
+            this.projectWriter.isDirty ||
+            this.globalStateWriter.isDirty
+        );
+    }
+}
+
+export { StyleFingerprintLibrary as FingerprintLibraryManager };

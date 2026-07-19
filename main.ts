@@ -3,7 +3,7 @@ import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, Workspa
 import { AIEngine } from './engine/ai-engine';
 import { CoWriterEngine } from './engine/co-writer-engine';
 import { ContextManager } from './engine/context-manager';
-import { ForeshadowManager } from './engine/foreshadow-manager';
+import { ForeshadowManager } from './services/foreshadow-manager';
 import { ReviewAgent } from './engine/review-agent';
 import { NovelWriterModal } from './ui/main-modal';
 import { NovelWriterSettingTab } from './ui/settings-tab';
@@ -35,15 +35,37 @@ import { AiBuilderModal } from './ui/ai-builder-modal';
 import { AddFanficSettingModal } from './ui/add-fanfic-setting-modal';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './ui/full-writer-view';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
+import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
+import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
 import { ProviderSwitcherModal } from './ui/provider-switcher-modal';
+import { WelcomeModal } from './ui/welcome-modal';
+import { ChangelogModal } from './ui/changelog-modal';
+import { compareVersions, isMajorUpdate } from './services/update-checker';
+import { PromptManager } from './services/prompt-manager';
+import type { PromptManagerConfig } from './services/prompt-manager-types';
+import { DEFAULT_PROMPT_MANAGER_CONFIG } from './services/prompt-manager-types';
 
 import { FloatWorkspaceManager } from './ui/workspace-manager';
+import { KnowledgeBaseManager } from './services/knowledge-base-manager';
+import { KnowledgeVectorStore } from './engine/knowledge-vector-store';
+import { KnowledgeTagManager } from './engine/knowledge-tags';
+import { DeconstructionScheduler, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from './services/deconstruction-scheduler';
+import type { DeconstructionEngineSettings } from './services/deconstruction-scheduler';
+import { WorldviewCacheService } from './services/worldview-cache-service';
+import { WritingProfileManager } from './engine/writing-profile';
+import { EngineRegistry, ENGINE_NAMES } from './engine/engine-registry';
+import { AnalysisReportEngine } from './engine/analysis-report-engine';
+import { KnowledgeInjector } from './engine/knowledge-injector';
+import { CharacterConsistencyChecker } from './engine/character-consistency-checker';
+import { WritingProfileModal } from './ui/writing-profile-modal';
 import { EntityStateManager } from './engine/entity-state-manager';
 import { AdaptiveDebounceManager } from './shared/adaptive-debounce-manager';
+import { getDegradationNotifier } from './shared/degradation-notifier';
 import { SerializedWriter } from './shared/serialized-writer';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
+import { RulesService } from './services/rules-service';
 
 // ─── core 服务层（从 main.ts 拆出）───
 import { CryptoService } from './core/crypto-service';
@@ -53,14 +75,6 @@ import { CommandRegistry, parseChapterFromPath } from './core/command-registry';
 import { SettingsService, getDefaultSettings } from './core/settings-service';
 
 
-export interface ProviderPreset {
-    name: string;
-    endpoint: string;
-    models: string[];
-    maxContext: number;
-    maxOutput: number;
-}
-
 /** v3.5.0: 用户自定义 API 提供商，可持久化保存 */
 export interface CustomProvider {
     id: string;       // 唯一标识（自动生成，如 custom-1）
@@ -69,21 +83,27 @@ export interface CustomProvider {
     models: string[]; // 模型列表
     maxContext: number;
     maxOutput: number;
+    isDefault?: boolean; // 标记是否为初始默认供应商
+    isHidden?: boolean;  // 标记是否被隐藏
 }
 
 // 导入集中化的模型能力映射（避免与 token-estimator.ts 重复硬编码）
 import { MODEL_CAPABILITIES, findModelCapability } from './shared/model-capabilities';
+import { createLogger } from './shared/logger';
+
+const log = createLogger('Main');
 export { MODEL_CAPABILITIES, findModelCapability };
 
-// v3.4.7 P0-10: 根据各模型官方文档更新 maxContext / maxOutput
-// 注意：同一 provider 下不同模型可能有不同上限，此处取旗舰模型能力作为默认值，
-// 用户可在设置中针对具体模型降低。
-export const PROVIDERS: Record<string, ProviderPreset> = {
-    volc:   { name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072 },
-    openai: { name: 'OpenAI 兼容', endpoint: 'https://api.openai.com/v1/chat/completions', models: ['gpt-4o', 'gpt-4o-mini'], maxContext: 128000, maxOutput: 16384 },
-    ollama: { name: '本地 Ollama', endpoint: 'http://localhost:11434/v1/chat/completions', models: ['qwen2.5:7b', 'deepseek-r1:7b'], maxContext: 32768, maxOutput: 8192 },
-    catcat: { name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions', models: ['gemini-3.1-pro-preview-search'], maxContext: 1048576, maxOutput: 65536 },
-    deepseek:{ name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions', models: ['deepseek-v4-flash', 'deepseek-v4-pro'], maxContext: 1048576, maxOutput: 384000 },
+/**
+ * 默认提供商初始化模板，不作为运行时数据源
+ * 新代码应从 ProviderManager 获取供应商列表
+ */
+export const DEFAULT_PROVIDERS: Record<string, CustomProvider> = {
+    volc:     { id: 'volc',     name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072, isDefault: true },
+    ollama:   { id: 'ollama',   name: '本地 Ollama',  endpoint: 'http://localhost:11434/v1/chat/completions',            models: ['qwen2.5:7b', 'deepseek-r1:7b'],                                      maxContext: 32768,  maxOutput: 8192,   isDefault: true },
+    catcat:   { id: 'catcat',   name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions',              models: ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.1-pro-preview-search', 'gemini-3.1-pro-search', 'gemini-2.5-pro', 'gemini-2.5-pro-max', 'gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite-preview'], maxContext: 1048576, maxOutput: 65536,  isDefault: true },
+    deepseek: { id: 'deepseek', name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions',            models: ['deepseek-v4-flash', 'deepseek-v4-pro'],                             maxContext: 1048576, maxOutput: 384000, isDefault: true },
+    sensenova: { id: 'sensenova', name: '日日新/SenseNova', endpoint: 'https://token.sensenova.cn/v1/chat/completions',        models: ['sensenova-6.7-flash-lite', 'deepseek-v4-flash'],                   maxContext: 262144,  maxOutput: 65536,  isDefault: true },
 };
 
 // v3.4.7: 模型能力表已迁移至 shared/model-capabilities.ts，此处 re-export 仅用于向后兼容
@@ -101,6 +121,16 @@ export interface NovelWriterSettings {
     coWriteTemperature: number;
     /** v6.5: 协同写作本地模型 max_tokens（默认 600） */
     coWriteMaxTokens: number;
+    /** v7.2: 协同写作模型模式：'local'(本地Ollama) | 'cloud'(云端API) */
+    coWriteModelMode: 'local' | 'cloud';
+    /** v7.2: 云端模型所属供应商 ID（如 'volc'、'deepseek'、'openai'） */
+    coWriteCloudProvider: string;
+    /** v7.2: 云端模型名称（留空则使用 defaultModel） */
+    coWriteCloudModel: string;
+    /** v7.1: 是否启用自动剧情完成度评估（输入时自动刷新） */
+    autoPlotEvaluation: boolean;
+    /** v7.5: 是否启用精准模式（逐句检索+风格评分+反AI检测） */
+    precisionMode: boolean;
     availableModels: string[];
     maxContext: number;   // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
     maxOutput: number;    // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
@@ -139,8 +169,6 @@ export interface NovelWriterSettings {
     customProviderName: string;
     /** v3.5.0: 用户自定义 API 提供商列表，可持久化保存、切换、删除 */
     customProviders: CustomProvider[];
-    /** v6.0: 被用户隐藏/删除的预设提供商 ID（预设不会真删除，只是隐藏） */
-    hiddenPresets: string[];
     theme: 'light' | 'dark' | 'auto';
     themeColors?: {
         accent?: string;
@@ -166,7 +194,58 @@ export interface NovelWriterSettings {
         autoRestore: boolean;
         lastWorkspaceOpen: boolean;
     };
+    /** v7.3: 向量嵌入模型名称（用于写作指纹库检索） */
+    embeddingModel: string;
+    /** v7.3: 向量嵌入 API 端点（Ollama 默认 http://localhost:11434） */
+    embeddingEndpoint: string;
+    /** v7.4: 是否启用向量增强拆解 */
+    vectorEnhancedDeconstruction: boolean;
+    /** v7.4: 向量拆解置信度阈值（0.1-0.9） */
+    vectorDeconstructionThreshold: number;
+    /** v7.6: 向量模型提供商类型 */
+    vectorProviderType: 'ollama' | 'openai' | 'doubao' | 'qwen';
+    /** v7.6: Ollama 向量模型 baseUrl */
+    vectorOllamaBaseUrl: string;
+    /** v7.6: Ollama 向量模型名称 */
+    vectorOllamaModel: string;
+    /** v7.6: OpenAI 兼容向量模型 baseUrl */
+    vectorOpenaiBaseUrl: string;
+    /** v7.6: OpenAI 兼容向量模型名称 */
+    vectorOpenaiModel: string;
+    /** v7.6: OpenAI 兼容向量模型 API Key（加密存储） */
+    vectorOpenaiApiKey: string;
+    /** v7.7: 豆包/火山引擎向量模型 baseUrl */
+    vectorDoubaoBaseUrl?: string;
+    /** v7.7: 豆包/火山引擎向量模型名称 */
+    vectorDoubaoModel?: string;
+    /** v7.7: 豆包/火山引擎向量模型 API Key（加密存储） */
+    vectorDoubaoApiKey?: string;
+    /** v7.7: 通义千问向量模型 baseUrl */
+    vectorQwenBaseUrl?: string;
+    /** v7.7: 通义千问向量模型名称 */
+    vectorQwenModel?: string;
+    /** v7.7: 通义千问向量模型 API Key（加密存储） */
+    vectorQwenApiKey?: string;
+    /** v7.7: 向量模型模式：auto(自动降级) | primary(仅主提供商) | hybrid(混合模式) */
+    vectorMode?: 'auto' | 'primary' | 'hybrid';
+    /** v7.8: 是否启用自动更新检查 */
+    autoCheckUpdates?: boolean;
+    /** v7.8: 更新检查源：github / custom */
+    updateSource?: 'github' | 'custom';
+    /** v7.8: GitHub 仓库地址（owner/repo） */
+    updateGithubRepo?: string;
+    /** v7.8: 自定义更新检查 URL */
+    updateCustomUrl?: string;
+    /** v7.8: 更新检查间隔（小时） */
+    updateCheckIntervalHours?: number;
+    /** v7.9: 提示词管理配置（自定义模板、A/B测试等） */
+    promptManagerConfig?: PromptManagerConfig;
+    /** v8.0: 拆解引擎配置（增强级别、维度、向量、LLM、性能） */
+    deconstructionEngine?: DeconstructionEngineSettings;
 }
+
+export type { DeconstructionEngineSettings } from './services/deconstruction-scheduler';
+export { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from './services/deconstruction-scheduler';
 
 export const DEFAULT_SETTINGS: NovelWriterSettings = {
     apiKey: '',
@@ -177,7 +256,12 @@ export const DEFAULT_SETTINGS: NovelWriterSettings = {
     coWriteModel: '',  // v6.3: 空=使用 flashModel，可设为本地模型如 qwen2.5:7b
     coWriteTemperature: 0.7,  // v6.5: 协同写作本地模型 temperature
     coWriteMaxTokens: 600,    // v6.5: 协同写作本地模型 max_tokens
-    availableModels: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228'],
+    coWriteModelMode: 'local',
+    coWriteCloudProvider: '',
+    coWriteCloudModel: '',
+    autoPlotEvaluation: true,
+    precisionMode: false,
+    availableModels: DEFAULT_PROVIDERS.volc.models,
     maxContext: 128000,
     maxOutput: 32768,
     modelOverrides: {},       // v6.2: 用户手动覆盖值
@@ -195,9 +279,32 @@ export const DEFAULT_SETTINGS: NovelWriterSettings = {
     maxEntityBatchRetries: 2,
     providerKeys: {},
     customProviderName: '',
-    customProviders: [],
-    hiddenPresets: [],
-    theme: 'auto'
+    customProviders: Object.values(DEFAULT_PROVIDERS),
+    theme: 'auto',
+    embeddingModel: 'bge-m3',
+    embeddingEndpoint: 'http://localhost:11434',
+    vectorEnhancedDeconstruction: true,
+    vectorDeconstructionThreshold: 0.3,
+    vectorProviderType: 'ollama',
+    vectorOllamaBaseUrl: 'http://localhost:11434',
+    vectorOllamaModel: 'bge-m3',
+    vectorOpenaiBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    vectorOpenaiModel: 'doubao-embedding-text-240915',
+    vectorOpenaiApiKey: '',
+    vectorDoubaoBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    vectorDoubaoModel: 'doubao-embedding-text-240915',
+    vectorDoubaoApiKey: '',
+    vectorQwenBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    vectorQwenModel: 'text-embedding-v3',
+    vectorQwenApiKey: '',
+    vectorMode: 'auto',
+    autoCheckUpdates: false,
+    updateSource: 'github',
+    updateGithubRepo: 'trae-ai/novel-writer-ai',
+    updateCustomUrl: '',
+    updateCheckIntervalHours: 168,
+    promptManagerConfig: { ...DEFAULT_PROMPT_MANAGER_CONFIG },
+    deconstructionEngine: { ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS },
 };
 
 // 主题 CSS 变量已迁移至 core/theme-manager.ts
@@ -206,12 +313,13 @@ export default class NovelWriterPlugin extends Plugin {
     settings!: NovelWriterSettings;
     private statusBarItem!: HTMLElement;
     private _statusBarClickHandler: (() => void) | null = null;
-    private _aiEngine: AIEngine | null = null;
-    private _coWriterEngine: CoWriterEngine | null = null;
+    private _degradationSinkUnregister: (() => void) | null = null;
     private contextManager!: ContextManager;
-    private foreshadowManager!: ForeshadowManager;
-    private reviewAgent!: ReviewAgent;
+    private _foreshadowManager!: ForeshadowManager;
+    private _reviewAgent!: ReviewAgent;
     registry!: InternalRegistry;
+    /** 引擎注册表 — 集中管理所有引擎实例 */
+    public engineRegistry!: EngineRegistry;
     // ─── core 服务实例 ───
     private _cryptoService!: CryptoService;
     private _themeManager!: ThemeManager;
@@ -226,6 +334,8 @@ export default class NovelWriterPlugin extends Plugin {
     public _pendingEntityContext: { project: string; isEarlyStage: boolean } | null = null;
     /** 实体生成弹窗刚关闭标记（向导渲染时检测并刷新步骤状态） */
     public _entityModalJustClosed: boolean = false;
+    /** 实体生成弹窗关闭回调列表（向导渲染器注册，Modal onClose 时调用） */
+    public _entityModalCloseCallbacks: Array<() => void> = [];
     /** 工作台上下文标记：true=当前工作台视图打开中，Modal 不应在 Obsidian 主窗口打开文件 */
     public _isWorkbenchContext: boolean = false;
     /** 工作台当前章节上下文（由工作台视图运行时写入，协同视图/引擎读取） */
@@ -239,6 +349,21 @@ export default class NovelWriterPlugin extends Plugin {
     } | null = null;
     /** 浮窗管理器（运行时注入，可能未初始化） */
     public workspaceManager?: FloatWorkspaceManager;
+
+    public knowledgeBaseManager?: KnowledgeBaseManager;
+    public knowledgeVectorStore?: KnowledgeVectorStore;
+    public knowledgeTagManager?: KnowledgeTagManager;
+    public deconstructionScheduler?: DeconstructionScheduler;
+    public batchImportManager?: import('./services/batch-import-manager').BatchImportManager;
+    public writingProfileManager?: WritingProfileManager;
+    public knowledgeInjector?: KnowledgeInjector;
+    public characterConsistencyChecker?: CharacterConsistencyChecker;
+    public worldviewCacheService?: WorldviewCacheService;
+    /** 当前选中的参考书籍ID列表（用于生成时注入） */
+    public referenceBookIds: string[] = [];
+
+    /** 提示词管理器 */
+    public promptManager?: PromptManager;
 
     /** P0修复#2：当前章节涉及的实体集（由 FullWriterView 同步，context-panel 读取以过滤显示） */
     public _involvedChars: Set<string> = new Set<string>();
@@ -276,80 +401,80 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     async onload() {
-        this._cacheManager = new PluginCacheManager(this.app);
-        await this._cacheManager.load();
-        this.registry = new InternalRegistry();
-        window.novelAI = this.registry;
+        log.info(`[小说工坊] 开始加载插件 v${PLUGIN_VERSION}...`);
+        this.engineRegistry = new EngineRegistry();
+        try {
+            // ─── 引擎注册表初始化（Phase 1-8） ───
+            await this.engineRegistry.initialize(this, { settingsWriter: this._settingsWriter });
+            this._assignEngineFields();
 
-        // ─── 初始化 core 服务 ───
-        this._cryptoService = new CryptoService(this.app);
-        this._providerManager = new ProviderManager({
-            getSettings: () => this.settings,
-            saveSettings: () => this.saveSettings(),
-            refreshContextPanel: () => this.refreshFullWriterContextPanel(),
-            updateStatusBar: () => this.updateStatusBarText(),
-            addOverrideHistory: (entry) => this._cacheManager?.addModelOverrideHistory(entry),
-        });
-        this._themeManager = new ThemeManager(() => this.settings);
-        this._settingsService = new SettingsService({
-            crypto: this._cryptoService,
-            providerManager: this._providerManager,
-            cacheManager: this._cacheManager,
-            settingsWriter: this._settingsWriter,
-            getSettings: () => this.settings,
-            setSettings: (s) => { this.settings = s; },
-            loadData: () => this.loadData(),
-            saveData: (d) => this.saveData(d),
-        });
-        // 初始化引擎（必须在 CommandRegistry 之前，否则 Modal 中 ctxManager 为 undefined）
-this.contextManager = new ContextManager(this);
-this.foreshadowManager = new ForeshadowManager(this);
-this.reviewAgent = new ReviewAgent(this);
-console.log('[小说工坊] 引擎初始化完成');
+            // 恢复中断的拆解状态（插件重载时，磁盘上仍为 processing 的书籍需重置为 interrupted）
+            if (this.knowledgeBaseManager) {
+                const recoveredCount = await this.knowledgeBaseManager.recoverInterruptedBooks();
+                if (recoveredCount > 0) {
+                    new Notice(`⚠️ ${recoveredCount} 本书拆解被中断，请在知识库中查看`, 5000);
+                    log.warn(`[小说工坊] 恢复了 ${recoveredCount} 本中断的拆解书籍`);
+                }
+            }
 
-this._commandRegistry = new CommandRegistry({
-    app: this.app,
-    registry: this.registry,
-    aiEngine: { extractElements: (c) => this.aiEngine.extractElements(c) },
-    ctxManager: this.contextManager,
-    foreshadowManager: this.foreshadowManager,
-    getActiveProject: () => this.getActiveProject(),
-    openProviderSwitcher: () => this.openProviderSwitcher(),
-    refreshFullWriterContextPanel: () => this.refreshFullWriterContextPanel(),
-    populateSettingLib: () => this.commandPopulateSettingLib(),
-    getWorkbenchState: () => this._workbenchState,
-    isWorkbenchContext: () => this._isWorkbenchContext,
-});
-// 注册 InternalRegistry + Obsidian 命令
-this._commandRegistry.registerInternalCommands();
-this._commandRegistry.registerObsidianCommands((cmd) => this.addCommand(cmd));
+            window.novelAI = this.registry;
 
-console.log('[小说工坊] 开始加载插件...');
-try {
-    console.log('[小说工坊] 加载设置...');
-    await this.loadSettings();
-    console.log('[小说工坊] 设置加载完成');
+            await this._checkRulesVersion();
 
-    console.log('[小说工坊] 创建状态栏...');
-    this.statusBarItem = this.addStatusBarItem();
-    this.statusBarItem.addClass('novel-writer-status-bar');
-    this.updateStatusBarText();
-    this._statusBarClickHandler = () => {
-        this.openProviderSwitcher();
-    };
-    this.statusBarItem.addEventListener('click', this._statusBarClickHandler);
+            // 初始化提示词管理器
+            this.promptManager = new PromptManager({
+                getConfig: () => this.settings.promptManagerConfig || {},
+                setConfig: async (config) => {
+                    this.settings.promptManagerConfig = {
+                        ...DEFAULT_PROMPT_MANAGER_CONFIG,
+                        ...this.settings.promptManagerConfig,
+                        ...config,
+                    } as PromptManagerConfig;
+                    await this.saveSettings();
+                },
+            });
 
-    console.log('[小说工坊] 注册命令...');
-            this.registerCommands();
-            
+            // 注册 Obsidian 命令（CommandRegistry 已在 initialize 中创建并 registerInternalCommands）
+            const commandRegistry = this.engineRegistry.get<CommandRegistry>(ENGINE_NAMES.COMMAND_REGISTRY);
+            commandRegistry.registerObsidianCommands((cmd) => this.addCommand(cmd));
+
+            log.info('[小说工坊] 注册命令...');
             const registeredCmds = this.app.commands.listCommands().filter((cmd: { id: string }) => cmd.id.startsWith('novel-writer'));
-            console.log('[小说工坊] 命令注册完成，已注册:', registeredCmds.length, '个命令');
-            console.log('[小说工坊] 命令列表:', registeredCmds.map((c: { id: string }) => c.id));
+            log.info('[小说工坊] 命令注册完成，已注册:', registeredCmds.length, '个命令');
+            log.info('[小说工坊] 命令列表:', registeredCmds.map((c: { id: string }) => c.id));
 
-            console.log('[小说工坊] 添加设置面板...');
+            // vault rename 事件监听（从 registerCommands 迁移）
+            this.registerEvent(
+                this.app.vault.on('rename', (file, oldPath) => {
+                    if (file instanceof TFolder) {
+                        new Notice(`📁 项目已重命名: ${oldPath} → ${file.path}`, 4000);
+                    }
+                })
+            );
+
+            log.info('[小说工坊] 创建状态栏...');
+            this.statusBarItem = this.addStatusBarItem();
+            this.statusBarItem.addClass('novel-writer-status-bar');
+            this.updateStatusBarText();
+            this._statusBarClickHandler = () => {
+                this.openProviderSwitcher();
+            };
+            this.statusBarItem.addEventListener('click', this._statusBarClickHandler);
+
+            this._degradationSinkUnregister = getDegradationNotifier().registerSink((event) => {
+                if (event.severity === 'info') return;
+                const dim = event.dimension ? `[${event.dimension}] ` : '';
+                const icon = event.severity === 'critical' ? '❌' : '⚠️';
+                new Notice(
+                    `${icon} ${dim}能力降级: ${event.from} → ${event.to}（${event.reason}）`,
+                    event.severity === 'critical' ? 10000 : 6000
+                );
+            });
+
+            log.info('[小说工坊] 添加设置面板...');
             this.addSettingTab(new NovelWriterSettingTab(this.app, this));
 
-            console.log('[小说工坊] 添加侧边栏图标...');
+            log.info('[小说工坊] 添加侧边栏图标...');
             this.addRibbonIcon('book-open', '小说工坊', () => {
                 this.registry.execute('novel-writer-full-writer');
             });
@@ -359,7 +484,17 @@ try {
                 this.registry.execute('novel-writer-co-writing');
             });
 
-            console.log('[小说工坊] 注册视图...');
+            // 第三个 Ribbon 图标，知识库管理
+            this.addRibbonIcon('library', '小说工坊 · 知识库', () => {
+                this.openKnowledgeBaseView();
+            });
+
+            // 第四个 Ribbon 图标，写作指纹库
+            this.addRibbonIcon('fingerprint', '小说工坊 · 写作指纹库', () => {
+                this.registry.execute('novel-writer-fingerprint-library');
+            });
+
+            log.info('[小说工坊] 注册视图...');
             this.registerView(
                 FULL_WRITER_VIEW_TYPE,
                 (leaf) => new FullWriterView(leaf, this)
@@ -371,21 +506,34 @@ try {
                 (leaf) => new CoWritingView(leaf, this)
             );
 
+            // 注册知识库管理视图
+            this.registerView(
+                VIEW_TYPE_KNOWLEDGE_BASE,
+                (leaf) => new KnowledgeBaseView(leaf, this)
+            );
+
+            // 注册写作指纹库视图
+            this.registerView(
+                VIEW_TYPE_WRITING_FINGERPRINT,
+                (leaf) => new WritingFingerprintView(leaf, this)
+            );
+
             // v5.5: 实例化浮窗管理器并注册监控面板A/B视图
             // （此前 workspaceManager 仅声明字段、从未实例化 -> MONITOR_A/B 永不注册，
             //  导致分离监控面板「丢失」、分析结果回退塞进协同视图内嵌容器造成拥挤）
             this.workspaceManager = new FloatWorkspaceManager(this);
             this.workspaceManager.registerAll();
 
-            console.log('[小说工坊] 注册事件...');
+            log.info('[小说工坊] 注册事件...');
             this.registerEvent(
                 this.app.vault.on('modify', (file) => {
                     if (file.path.includes('/02-时间线与伏笔/')) {
-                        this.foreshadowManager.refreshInfoDebt();
+                        this._foreshadowManager.refreshInfoDebt();
                     }
                     if (file instanceof TFile && /\/03-大纲与章节\/正文\/.*第\d+卷\/第\d+章_正文\.md$/.test(file.path)) {
                         this.handleBodyFileModify(file);
                     }
+                    this.contextManager.invalidateCacheByPath(file.path);
                 })
             );
 
@@ -407,317 +555,53 @@ try {
             this.injectThemeVariables();
             this.injectLayoutVariables();  // v3.4.8: 布局变量全插件可用，不再依赖 full-writer-view 打开
 
-            console.log('[小说工坊] 插件加载完成！');
+            // v7.8: 版本管理 - 静默检查更新 + 欢迎引导 + 数据迁移验证
+            this.handleVersionManagement();
+
+            log.info('[小说工坊] 插件加载完成！');
         } catch (error: any) {
-            console.error('[小说工坊] 插件加载失败:', error.message);
-            console.error('[小说工坊] 错误堆栈:', error.stack);
+            log.error('[小说工坊] 插件加载失败:', error.message);
+            log.error('[小说工坊] 错误堆栈:', error.stack);
             new Notice(`❌ 小说工坊插件加载失败: ${error.message}`);
         }
     }
 
-    private registerCommands() {
-        this.addCommand({
-            id: 'novel-writer-create-project',
-            name: '新建项目',
-            callback: () => {
-                this.registry.execute('novel-writer-create-project').catch(err => console.error('[小说工坊]', err));
-            }
-        });
+    /**
+     * 从引擎注册表获取实例并赋值给 Plugin 的私有字段
+     * （私有字段无法从 EngineRegistry 直接赋值，需在 Plugin 内部完成）
+     */
+    private _assignEngineFields(): void {
+        this._cacheManager = this.engineRegistry.get<PluginCacheManager>(ENGINE_NAMES.CACHE_MANAGER);
+        this._cryptoService = this.engineRegistry.get<CryptoService>(ENGINE_NAMES.CRYPTO_SERVICE);
+        this._providerManager = this.engineRegistry.get<ProviderManager>(ENGINE_NAMES.PROVIDER_MANAGER);
+        this._themeManager = this.engineRegistry.get<ThemeManager>(ENGINE_NAMES.THEME_MANAGER);
+        this._settingsService = this.engineRegistry.get<SettingsService>(ENGINE_NAMES.SETTINGS_SERVICE);
+        this.contextManager = this.engineRegistry.get<ContextManager>(ENGINE_NAMES.CONTEXT_MANAGER);
+        this._foreshadowManager = this.engineRegistry.get<ForeshadowManager>(ENGINE_NAMES.FORESHADOW_MANAGER);
+        this._reviewAgent = this.engineRegistry.get<ReviewAgent>(ENGINE_NAMES.REVIEW_AGENT);
+        this._commandRegistry = this.engineRegistry.get<CommandRegistry>(ENGINE_NAMES.COMMAND_REGISTRY);
+    }
 
-        this.addCommand({
-            id: 'novel-writer-plan-book',
-            name: 'AI全书规划',
-            callback: () => {
-                this.registry.execute('novel-writer-plan-book').catch(err => console.error('[小说工坊]', err));
-            }
-        });
+    private async _checkRulesVersion(): Promise<void> {
+        try {
+            const rulesService = RulesService.getInstance(this.app);
+            const { current, expected } = await rulesService.checkRulesVersion();
+            const isPresent = await rulesService.isRulesFilePresent();
 
-        this.addCommand({
-            id: 'novel-writer-volume-intro',
-            name: '全书简介',
-            callback: () => {
-                this.registry.execute('novel-writer-volume-intro').catch(err => console.error('[小说工坊]', err));
+            if (!isPresent) {
+                new Notice('⚠️ 未检测到写作规则文件，将使用内置默认规则', 5000);
+                log.warn('[小说工坊] 写作规则文件不存在，使用内置默认规则');
+            } else if (current !== expected && current !== 'unknown') {
+                new Notice(`⚠️ 写作规则版本不匹配（当前: v${current}, 期望: v${expected}）`, 5000);
+                log.warn(`[小说工坊] 写作规则版本不匹配: 当前 v${current}, 期望 v${expected}`);
+            } else if (current === 'unknown') {
+                new Notice('⚠️ 无法检测写作规则版本', 5000);
+                log.warn('[小说工坊] 无法检测写作规则版本');
             }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-batch-chapters',
-            name: '批量写正文〔旧〕',
-            callback: () => {
-                this.registry.execute('novel-writer-batch-chapters').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-continue-chapters',
-            name: '续写规划',
-            callback: () => {
-                this.registry.execute('novel-writer-continue-chapters').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-auto-writer',
-            name: '自动写作器〔旧〕',
-            callback: () => {
-                this.registry.execute('novel-writer-auto-writer').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-diagnose',
-            name: '流程诊断',
-            callback: () => {
-                this.registry.execute('novel-writer-diagnose').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-tomato-rank',
-            name: '番茄榜单分析',
-            callback: () => {
-                this.registry.execute('novel-writer-tomato-rank').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-rebuild',
-            name: '重建章节',
-            callback: () => {
-                this.registry.execute('novel-writer-rebuild').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-backup',
-            name: '备份元文件',
-            callback: () => {
-                this.registry.execute('novel-writer-backup').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-protect',
-            name: '保护元文件',
-            callback: () => {
-                this.registry.execute('novel-writer-protect').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-narrative-overview',
-            name: '叙事总览',
-            callback: async () => {
-                const project = this.getActiveProject();
-                if (!project) { new Notice('请先选择项目'); return; }
-                const overviewPath = pjNarrativeOverview(project);
-                const file = this.app.vault.getAbstractFileByPath(overviewPath);
-                if (file instanceof TFile) {
-                    const leaf = this.app.workspace.getLeaf('tab');
-                    await leaf.openFile(file);
-                } else {
-                    new Notice('叙事总览尚未生成，请先执行章节结算');
-                }
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-tags',
-            name: '作品标签分析',
-            callback: () => {
-                this.registry.execute('novel-writer-tags').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-ai-builder',
-            name: 'AI世界元素生成',
-            callback: () => {
-                this.registry.execute('novel-writer-ai-builder').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-add-fanfic',
-            name: '添加同人设定',
-            callback: () => {
-                this.registry.execute('novel-writer-add-fanfic').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-write-chapter',
-            name: 'AI写正文〔旧〕',
-            callback: () => {
-                this.registry.execute('novel-writer-write-chapter').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-write-chapter-auto',
-            name: '后台AI写正文〔旧〕',
-            callback: () => {
-                this.registry.execute('novel-writer-write-chapter-auto').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-review-chapter',
-            name: '连贯性审查',
-            callback: () => {
-                this.registry.execute('novel-writer-review-chapter').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-batch-create',
-            name: '批量建章',
-            callback: () => {
-                this.registry.execute('novel-writer-batch-create').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-worldview',
-            name: '生成世界观',
-            callback: () => {
-                this.registry.execute('novel-writer-worldview').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-character',
-            name: '生成人物',
-            callback: () => {
-                this.registry.execute('novel-writer-character').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-faction',
-            name: '生成势力',
-            callback: () => {
-                this.registry.execute('novel-writer-faction').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-location',
-            name: '生成地点',
-            callback: () => {
-                this.registry.execute('novel-writer-location').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-item',
-            name: '生成物品功法',
-            callback: () => {
-                this.registry.execute('novel-writer-item').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-refresh-info-debt',
-            name: '刷新信息债看板',
-            callback: () => {
-                this.registry.execute('novel-writer-refresh-info-debt').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-cross-volume-state',
-            name: '跨卷状态继承',
-            callback: () => {
-                this.registry.execute('novel-writer-cross-volume-state').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-style-distiller',
-            name: '文笔风格蒸馏',
-            callback: () => {
-                this.registry.execute('novel-writer-style-distiller').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-context-injector',
-            name: '上下文注入',
-            callback: () => {
-                this.registry.execute('novel-writer-context-injector').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-chapter-settlement',
-            name: '章节结算',
-            callback: () => {
-                this.registry.execute('novel-writer-chapter-settlement').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-full-writer',
-            name: '📖 完整写作工作台',
-            callback: () => {
-                this.registry.execute('novel-writer-full-writer').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        // v6.0: 句级协同写作工作台直达命令（命令面板 / 自定义快捷键可达）
-        this.addCommand({
-            id: 'novel-writer-co-writing',
-            name: '✍️ 句级协同写作工作台',
-            callback: () => {
-                this.registry.execute('novel-writer-co-writing').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'switch-provider',
-            name: '快速切换 AI 提供商',
-            callback: () => {
-                this.registry.execute('switch-provider').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-extract-elements',
-            name: 'AI 元素提取',
-            callback: () => {
-                this.registry.execute('novel-writer-extract-elements').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        this.addCommand({
-            id: 'novel-writer-populate-setting-lib',
-            name: '从世界观生成设定库',
-            callback: () => {
-                this.registry.execute('populate-setting-lib').catch(err => console.error('[小说工坊]', err));
-            }
-        });
-
-        // v1.5.0: 手动重命名项目
-        this.addCommand({
-            id: 'novel-writer-rename-project',
-            name: '重命名当前项目',
-            callback: () => {
-                const activeFile = this.app.workspace.getActiveFile();
-                if (!activeFile) { new Notice('请先打开项目中的文件'); return; }
-                const project = activeFile.path.split('/')[0];
-                new Notice(`当前项目: ${project}。请在文件浏览器中右键文件夹重命名，或通过生成世界观自动重命名。`);
-            }
-        });
-
-        // v1.5.0: vault rename 事件监听
-        this.registerEvent(
-            this.app.vault.on('rename', (file, oldPath) => {
-                if (file instanceof TFolder) {
-                    new Notice(`📁 项目已重命名: ${oldPath} → ${file.path}`, 4000);
-                }
-            })
-        );
+        } catch (e) {
+            log.warn('[小说工坊] 规则版本检查失败:', e);
+            new Notice('⚠️ 写作规则检查异常，请查看控制台', 5000);
+        }
     }
 
     private async extractElementsCommand(): Promise<void> {
@@ -827,6 +711,26 @@ try {
         new Notice('已打开句级协同写作工作台。请先打开某章「正文」文件，或从完整写作工作台选择章节后再进入，即可自动绑定。', 6000);
     }
 
+    /** 打开知识库管理视图 */
+    public async openKnowledgeBaseView(): Promise<void> {
+        const { workspace } = this.app;
+        const existing = workspace.getLeavesOfType(VIEW_TYPE_KNOWLEDGE_BASE);
+        let leaf: any;
+        if (existing.length > 0) {
+            leaf = existing[0];
+            for (let i = 1; i < existing.length; i++) {
+                existing[i].detach();
+            }
+        } else {
+            leaf = workspace.getLeaf('tab');
+        }
+        await leaf.setViewState({
+            type: VIEW_TYPE_KNOWLEDGE_BASE,
+            active: true
+        });
+        workspace.revealLeaf(leaf);
+    }
+
     /**
      * v6.0: 从文件路径反解出协同写作所需的章节上下文。
      * 仅识别标准正文路径：<项目>/03-大纲与章节/正文/第X卷/第Y章_正文.md
@@ -877,12 +781,11 @@ try {
     public updateStatusBarText(): void {
         const providerId = this.getCurrentProviderId();
         let providerName = '';
-        if (providerId && PROVIDERS[providerId]) {
-            providerName = PROVIDERS[providerId].name;
+        const custom = this.settings.customProviders?.find(c => c.id === providerId);
+        if (custom) {
+            providerName = custom.name;
         } else if (providerId) {
-            // 自定义提供商
-            const custom = this.settings.customProviders?.find(c => c.id === providerId);
-            providerName = custom?.name || this.settings.customProviderName || '自定义';
+            providerName = this.settings.customProviderName || '自定义';
         } else {
             providerName = this.settings.customProviderName || '自定义';
         }
@@ -906,6 +809,9 @@ try {
     }
     public deleteCustomProvider(id: string): boolean { return this._providerManager.deleteCustom(id); }
     public getAllProviders() { return this._providerManager.getAllProviders(); }
+    public setHidden(id: string, hidden: boolean): boolean { return this._providerManager.setHidden(id, hidden); }
+    public restoreDefaultProviders(): void { this._providerManager.restoreDefaultProviders(); }
+    public updateProvider(id: string, updates: any): boolean { return this._providerManager.updateProvider(id, updates); }
     public hidePreset(presetId: string): boolean { return this._providerManager.hidePreset(presetId); }
     public restorePreset(presetId: string): boolean { return this._providerManager.restorePreset(presetId); }
     public restoreAllPresets(): void { this._providerManager.restoreAllPresets(); }
@@ -922,17 +828,20 @@ try {
     }
 
     get aiEngine(): AIEngine {
-        if (!this._aiEngine) {
-            this._aiEngine = new AIEngine(this);
-        }
-        return this._aiEngine;
+        return this.engineRegistry.get<AIEngine>(ENGINE_NAMES.AI_ENGINE);
     }
 
     get coWriterEngine(): CoWriterEngine {
-        if (!this._coWriterEngine) {
-            this._coWriterEngine = new CoWriterEngine(this.app, this.aiEngine, this.contextManager);
-        }
-        return this._coWriterEngine;
+        return this.engineRegistry.get<CoWriterEngine>(ENGINE_NAMES.CO_WRITER_ENGINE);
+    }
+
+    /** 公开访问器 — 供 Modal / UI 组件依赖注入使用 */
+    public get foreshadowManager(): ForeshadowManager { return this._foreshadowManager; }
+    public get reviewAgent(): ReviewAgent { return this._reviewAgent; }
+
+    /** 分析报告引擎（懒加载，首次访问时由注册表创建） */
+    get analysisReportEngine(): AnalysisReportEngine {
+        return this.engineRegistry.get<AnalysisReportEngine>(ENGINE_NAMES.ANALYSIS_REPORT_ENGINE);
     }
 
     get cacheManager(): PluginCacheManager {
@@ -945,14 +854,13 @@ try {
     executeCommand(commandId: string): boolean {
         // 使用内置的 Registry（函数指针）替代 Obsidian 字符串 ID 路由
         if (this.registry.has(commandId)) {
-            this.registry.execute(commandId).catch(err => console.error('[小说工坊] Registry 执行失败:', err));
+            this.registry.execute(commandId).catch(err => log.error('[小说工坊] Registry 执行失败:', err));
             return true;
         }
         // 临时兼容桥：registry 中不存在时 fallback 到 Obsidian 命令系统
-        console.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
+        log.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
         return this.app.commands.executeCommandById(commandId);
     }
-
 
 
     // ─── 自适应防抖管理器 ───
@@ -965,7 +873,7 @@ try {
 
     private scheduleOverrideSave(): void {
         this._debounceManager.debounceFixed('override-save', () => {
-            this.saveSettings().catch(e => console.warn('[小说工坊] 模型覆盖保存失败:', e));
+            this.saveSettings().catch(e => log.warn('[小说工坊] 模型覆盖保存失败:', e));
         }, 500);
     }
 
@@ -975,7 +883,7 @@ try {
         const path = file.path;
         this._debounceManager.debounceFixed(`body-modify:${path}`, () => {
             this.runEntityStateRecheck(file).catch(e =>
-                console.warn('[小说工坊] 正文编辑实体状态重检失败:', e)
+                log.warn('[小说工坊] 正文编辑实体状态重检失败:', e)
             );
         }, 3000);
     }
@@ -1008,10 +916,10 @@ try {
             if (changes.length > 0) {
                 await manager.applyStateChanges(project, changes, chapN, `第${chapN}章`);
                 await manager.updateInvolvedEntities(project, file.path, content);
-                console.log(`[小说工坊] 正文手动编辑触发实体状态更新: ${changes.length}项变更`);
+                log.info(`[小说工坊] 正文手动编辑触发实体状态更新: ${changes.length}项变更`);
             }
         } catch (e) {
-            console.warn('[小说工坊] 实体状态自动重检异常:', e);
+            log.warn('[小说工坊] 实体状态自动重检异常:', e);
         }
     }
 
@@ -1033,18 +941,18 @@ try {
             try {
                 leaf = workspace.getLeaf('tab');
             } catch (e) {
-                console.warn('[main] getLeaf(tab) 失败，回退到已有 leaf:', e);
+                log.warn('[main] getLeaf(tab) 失败，回退到已有 leaf:', e);
             }
             if (!leaf) {
                 // 完全回退，创建新的 leaf
-                console.warn('[main] 无法获取 workspace leaf，跳过面板创建');
+                log.warn('[main] 无法获取 workspace leaf，跳过面板创建');
                 new Notice('⚠️ 工作台面板创建失败，请检查侧边栏是否已打开', 5000);
                 return;
             }
             try {
                 await leaf.setViewState({ type: 'novel-writer-full-writer', active: true });
             } catch (e) {
-                console.error('[main] setViewState 失败:', e);
+                log.error('[main] setViewState 失败:', e);
                 new Notice('⚠️ 工作台面板激活失败，请重试', 5000);
                 return;
             }
@@ -1064,17 +972,142 @@ try {
             if (typeof (view as unknown as { selectChapter?: unknown }).selectChapter === 'function') {
                 // 需要通过 chapterPath 解析出 project 和 chapter 对象
                 // 暂时跳过自动选择章节，让用户手动选择
-                console.warn('[小说工坊] 自动选择章节功能待完善，请手动选择章节');
+                log.warn('[小说工坊] 自动选择章节功能待完善，请手动选择章节');
             }
         }
     }
 
+    // ─── 版本管理 ───
+
+    /**
+     * 处理版本管理相关逻辑：
+     * 1. 静默检查更新（如果启用）
+     * 2. 首次安装欢迎引导
+     * 3. 版本升级时显示更新内容
+     * 4. 数据迁移验证和备份
+     */
+    private handleVersionManagement(): void {
+        const currentVersion = PLUGIN_VERSION || '4.5.1';
+        const cacheManager = this._cacheManager;
+        if (!cacheManager) return;
+
+        const lastVersion = cacheManager.getLastRunVersion();
+        const isFirstInstall = !lastVersion;
+
+        // 备份设置（版本升级时）
+        if (lastVersion && lastVersion !== currentVersion) {
+            try {
+                const settingsCopy = JSON.parse(JSON.stringify(this.settings));
+                cacheManager.setSettingsBackup({
+                    version: lastVersion,
+                    timestamp: new Date().toISOString(),
+                    settings: settingsCopy,
+                });
+                log.info(`[版本管理] 已备份 v${lastVersion} 的设置`);
+            } catch (e) {
+                log.warn('[版本管理] 设置备份失败:', e);
+                new Notice('⚠️ 设置备份失败，请查看控制台', 5000);
+            }
+        }
+
+        // 更新上次运行版本
+        cacheManager.setLastRunVersion(currentVersion);
+
+        // 首次安装：显示欢迎模态框
+        if (isFirstInstall) {
+            setTimeout(() => {
+                this.showWelcomeModal(true);
+            }, 1000);
+            return;
+        }
+
+        // 版本升级时：大版本更新显示更新内容
+        if (lastVersion && compareVersions(currentVersion, lastVersion) > 0) {
+            const isMajor = isMajorUpdate(lastVersion, currentVersion);
+            if (isMajor) {
+                setTimeout(() => {
+                    this.showWelcomeModal(false);
+                }, 1000);
+            }
+        }
+
+        // 静默检查更新（后台执行，不阻塞）
+        if (this.settings.autoCheckUpdates) {
+            setTimeout(() => {
+                this.silentCheckForUpdates();
+            }, 3000);
+        }
+    }
+
+    /** 静默检查更新（后台运行，不打扰用户） */
+    private async silentCheckForUpdates(): Promise<void> {
+        try {
+            const updateChecker = this.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+            if (!updateChecker) return;
+
+            if (!updateChecker.shouldCheck()) return;
+
+            log.info('[版本管理] 正在后台检查更新...');
+            const result = await updateChecker.checkForUpdates(false);
+
+            if (result.hasUpdate && result.latestVersion) {
+                log.info(`[版本管理] 发现新版本: v${result.latestVersion}`);
+            } else if (result.error) {
+                log.warn('[版本管理] 更新检查失败:', result.error);
+            } else {
+                log.info('[版本管理] 已是最新版本');
+            }
+        } catch (e) {
+            log.warn('[版本管理] 静默检查更新异常:', e);
+        }
+    }
+
+    /** 显示欢迎/更新模态框 */
+    private showWelcomeModal(isNewInstall: boolean): void {
+        const cacheManager = this._cacheManager;
+        if (!cacheManager) return;
+
+        const modal = new WelcomeModal(this.app, {
+            currentVersion: PLUGIN_VERSION || '4.5.1',
+            isNewInstall,
+            onOpenSettings: () => {
+                const appAny = this.app as any;
+                if (appAny.setting) {
+                    appAny.setting.open();
+                    appAny.setting.openTabById('novel-writer-ai');
+                }
+            },
+            onStartWriting: () => {
+                this.openFullWriterView();
+            },
+            onChangelog: () => {
+                new ChangelogModal(this.app, {
+                    highlightVersion: PLUGIN_VERSION || '4.9.0',
+                    showWelcomeMessage: isNewInstall,
+                }).open();
+            },
+            onDontShowAgain: () => {
+                cacheManager.setWelcomed(true);
+            },
+        });
+        modal.open();
+    }
+
+    /** 打开更新日志模态框 */
+    public openChangelog(highlightVersion?: string): void {
+        new ChangelogModal(this.app, {
+            highlightVersion,
+        }).open();
+    }
+
     onunload() {
+        // 清理拆解调度器资源（定时器、看门狗、事件监听器）
+        this.deconstructionScheduler?.destroy();
         // 清理防抖管理器
         this._debounceManager.dispose();
         // 等待设置写入队列完成（不阻塞卸载，尽力而为）
         this._settingsWriter.flush().catch(e =>
-            console.warn('[小说工坊] 卸载时设置写入失败:', e)
+            log.warn('[小说工坊] 卸载时设置写入失败:', e)
         );
         // 清理缓存管理器
         this._cacheManager?.dispose();
@@ -1090,14 +1123,16 @@ try {
             this.statusBarItem.removeEventListener('click', this._statusBarClickHandler);
             this._statusBarClickHandler = null;
         }
+        // 注销降级事件 sink
+        if (this._degradationSinkUnregister) {
+            this._degradationSinkUnregister();
+            this._degradationSinkUnregister = null;
+        }
         // 清理所有注入的样式标签（匹配 novel-writer 前缀）
         const allStyles = document.querySelectorAll('style[id^="novel-writer-"]');
         allStyles.forEach(el => el.remove());
-        console.log('Novel Writer AI plugin unloaded');
+        log.info('Novel Writer AI plugin unloaded');
     }
 }
-
-
-
 
 

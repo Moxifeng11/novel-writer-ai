@@ -5,13 +5,16 @@ import { pjCharsDir, pjFactionsDir, pjForeshadowDB, pjTimelineBoard, pjControlDi
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('CrossVolumeIntegration');
 // ============================================================
 // 类型定义
 // ============================================================
 
 /** 人物快照条目 */
-interface CharacterSnapshot {
+export interface CharacterSnapshot {
     姓名: string;
     当前状态: string;
     当前情绪: string;
@@ -21,13 +24,13 @@ interface CharacterSnapshot {
 }
 
 /** 势力快照条目 */
-interface FactionSnapshot {
+export interface FactionSnapshot {
     名称: string;
     地位或排名: string;
 }
 
 /** 伏笔快照条目 */
-interface ForeshadowSnapshot {
+export interface ForeshadowSnapshot {
     name: string;
     importance: string;
     buryChapter: string;
@@ -35,10 +38,18 @@ interface ForeshadowSnapshot {
 }
 
 /** 时间线快照条目 */
-interface TimelineSnapshot {
+export interface TimelineSnapshot {
     time: string;
     chapter: string;
     event: string;
+}
+
+/** 跨卷状态快照 */
+export interface CrossVolumeSnapshot {
+    characters: CharacterSnapshot[];
+    factions: FactionSnapshot[];
+    foreshadows: ForeshadowSnapshot[];
+    timeline: TimelineSnapshot[];
 }
 
 // ============================================================
@@ -136,6 +147,23 @@ export class CrossVolumeIntegrator {
         return snapshot.slice(0, 2000);
     }
 
+    /**
+     * 扫描项目当前状态，返回结构化快照数据（不写入文件）
+     *
+     * @param project 项目根路径
+     * @returns 跨卷状态快照
+     */
+    async getSnapshotData(project: string): Promise<CrossVolumeSnapshot> {
+        const [characters, factions, foreshadows, timeline] = await Promise.all([
+            this.scanCharacters(project),
+            this.scanFactions(project),
+            this.scanForeshadows(project),
+            this.scanTimeline(project),
+        ]);
+
+        return { characters, factions, foreshadows, timeline };
+    }
+
     // ============================================================
     // isNewVolumeFirstChapter
     // ============================================================
@@ -217,7 +245,7 @@ export class CrossVolumeIntegrator {
                     所属势力: fm['所属势力'] || '',
                 });
             } catch (e) {
-                console.warn(`[CrossVolumeIntegrator] 无法读取人物文件: ${file.path}`, e);
+                log.warn(`[CrossVolumeIntegrator] 无法读取人物文件: ${file.path}`, e);
             }
         }
 
@@ -244,7 +272,7 @@ export class CrossVolumeIntegrator {
                     地位或排名: fm['地位/排名'] || fm['地位'] || '',
                 });
             } catch (e) {
-                console.warn(`[CrossVolumeIntegrator] 无法读取势力文件: ${file.path}`, e);
+                log.warn(`[CrossVolumeIntegrator] 无法读取势力文件: ${file.path}`, e);
             }
         }
 
@@ -298,7 +326,7 @@ export class CrossVolumeIntegrator {
                 });
             }
         } catch (e) {
-            console.warn(`[CrossVolumeIntegrator] 无法解析伏笔库: ${fp}`, e);
+            log.warn(`[CrossVolumeIntegrator] 无法解析伏笔库: ${fp}`, e);
         }
 
         return result;
@@ -355,7 +383,7 @@ export class CrossVolumeIntegrator {
                 });
             }
         } catch (e) {
-            console.warn(`[CrossVolumeIntegrator] 无法解析时间线看板: ${fp}`, e);
+            log.warn(`[CrossVolumeIntegrator] 无法解析时间线看板: ${fp}`, e);
         }
 
         return result;
@@ -477,7 +505,7 @@ tags: [状态快照]
             try {
                 await this.getFS().mkdir(dirPath);
             } catch (e) {
-                console.warn('[CrossVolume] 快照目录失败:', e);
+                log.warn('[CrossVolume] 快照目录失败:', e);
                 this.notifier.showNotice('CrossVolume：数据读取异常，部分功能可能受限');
             }
         }

@@ -1,13 +1,16 @@
 import { App, TFile } from 'obsidian';
 import { AIEngine, APIResponse } from './ai-engine';
-import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS, WRITING_RULES } from './prompt-templates';
+import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { mkdirp, stripFrontmatter } from '../utils/helpers';
 import { SettlementEngine } from './settlement-engine';
+import { ENGINE_NAMES } from './engine-registry';
 import { DEFAULT_CONTEXT_WINDOW, CHAR_TO_TOKEN_RATIO, TOKEN_SAFE_BUFFER, PROMPT_SPLIT_RATIO, NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '../shared/thresholds';
 import { generateEmotionPlan, validateEmotionPlan } from './emotion-planner';
 import { generateSceneExpansion, validateSceneExpansion } from './scene-expander';
 import { auditEmotions } from './emotion-auditor';
+import { KnowledgeInjector } from './knowledge-injector';
+import { WritingProfileManager } from './writing-profile';
 import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir, pjNarrativeOverview } from '../shared/paths';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { StepResultSaver } from './step-result-saver';
@@ -22,7 +25,10 @@ export { ALL_FULL_STEPS, STEP_INDEX_MIGRATION_MAP, migrateStepIndex, preCheckQua
 export type { FullStep, StepRunCtx, ModelStrategy, PreValidationFn, PostValidationFn } from './step-definitions';
 import type { StepRunCtx, ModelStrategy } from './step-definitions';
 import { ALL_FULL_STEPS, preCheckQualityControl } from './step-definitions';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('StepRunner');
 /**
  * step-runner.ts — 步骤执行引擎
  *
@@ -34,6 +40,13 @@ import { ALL_FULL_STEPS, preCheckQualityControl } from './step-definitions';
  * - DOM 渲染方法（renderErrorResult / showDeaiTwoPhaseModal 等）→ 保留在 engine 层供 UI 层调用
  *
  * @see step-runner-callbacks.ts — 回调接口定义
+ * @see step-definitions.ts — 步骤元数据与废弃说明
+ *
+ * 关于正文生成（bodyGeneration）的重要说明：
+ * - Step 7（bodyGeneration）已标记为 deprecated，为 v5.0 之前的旧模式
+ * - 推荐使用 CoWriterEngine（句级协同写作）生成正文
+ * - 两条路径数据完全兼容：共享同一正文文件和 stepResults['bodyGeneration']
+ * - 本类中的 bodyGeneration 处理逻辑仅作兼容保留，不再新增功能
  */
 export class StepRunner {
     private aiEngine: AIEngine;
@@ -44,13 +57,16 @@ export class StepRunner {
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
 
+    private static readonly MAX_RETRIES = 3;
+    private static readonly RETRY_DELAY_MS = 1000;
+
     constructor(
         private app: App,
         private plugin: NovelWriterPluginAPI,
         callbacks?: Partial<StepRunnerCallbacks>,
     ) {
         this.aiEngine = plugin.aiEngine;
-        this.settlementEngine = new SettlementEngine(app);
+        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
         // 合并默认空实现与传入的回调
         this.callbacks = { ...NOOP_CALLBACKS, ...callbacks };
         // 初始化结果持久化模块
@@ -68,6 +84,51 @@ export class StepRunner {
             saveStepResult: (k, c, d, n, v) => this.saveStepResult(k, c, d, n, v),
             callbacks: this.callbacks,
         });
+    }
+
+    private async callAIWithRetry(
+        systemPrompt: string,
+        userPrompt: string,
+        model: string,
+        temperature: number,
+        maxTokens: number,
+        stepLabel: string
+    ): Promise<APIResponse> {
+        let lastError: Error | undefined;
+        const maxRetries = StepRunner.MAX_RETRIES;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                if (attempt > 1) {
+                    const delay = StepRunner.RETRY_DELAY_MS * Math.pow(2, attempt - 2);
+                    this.callbacks.showProgress(`⏳ ${stepLabel} 重试中 (${attempt}/${maxRetries})，等待 ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                const result = await this.aiEngine.callAI(
+                    systemPrompt,
+                    userPrompt,
+                    model,
+                    temperature,
+                    maxTokens
+                );
+
+                if (!result.error) {
+                    return result;
+                }
+
+                lastError = new Error(result.error);
+            } catch (e) {
+                lastError = e instanceof Error ? e : new Error(String(e));
+            }
+
+            if (attempt < maxRetries) {
+                log.warn(`[StepRunner] ${stepLabel} 第 ${attempt} 次调用失败:`, lastError?.message);
+            }
+        }
+
+        log.error(`[StepRunner] ${stepLabel} 调用失败，已重试 ${maxRetries} 次:`, lastError?.message);
+        throw lastError || new Error('AI 调用失败');
     }
 
     /** 获取 FileSystemPort 实例（懒加载） */
@@ -186,7 +247,14 @@ export class StepRunner {
         this.callbacks.showProgress(`⏳ 执行中: ${currentStep.label}...`);
 
         const sendBtns = ctx.tabContent.querySelectorAll('.novel-writer-fw-btn-primary');
-        sendBtns.forEach(b => (b as HTMLButtonElement).disabled = true);
+        const originalTexts: string[] = [];
+        sendBtns.forEach((b, i) => {
+            const btn = b as HTMLButtonElement;
+            originalTexts[i] = btn.textContent || '';
+            btn.disabled = true;
+            btn.classList.add('nw-btn-loading');
+            btn.textContent = `⏳ 执行中：${currentStep.label}...`;
+        });
 
         // 策略模型映射
         const strategyModelMap: Record<ModelStrategy, string> = {
@@ -203,7 +271,12 @@ export class StepRunner {
                 this.callbacks.showError(preResult.error || '前置校验失败');
                 ctx.setIsLoading(false);
                 this.callbacks.hideProgress();
-                sendBtns.forEach(b => (b as HTMLButtonElement).disabled = false);
+                sendBtns.forEach((b, i) => {
+                    const btn = b as HTMLButtonElement;
+                    btn.disabled = false;
+                    btn.classList.remove('nw-btn-loading');
+                    btn.textContent = originalTexts[i] || '';
+                });
                 return;
             }
             if (preResult.warning) {
@@ -217,43 +290,145 @@ export class StepRunner {
             if (stepKey === 'characterSoul') {
                 ctx.setIsLoading(false);
                 this.callbacks.hideProgress();
-                sendBtns.forEach(b => (b as HTMLButtonElement).disabled = false);
+                sendBtns.forEach((b, i) => {
+                    const btn = b as HTMLButtonElement;
+                    btn.disabled = false;
+                    btn.classList.remove('nw-btn-loading');
+                    btn.textContent = originalTexts[i] || '';
+                });
                 const coresData = ctx.vars.characterCores || '';
                 ctx.stepResults['characterSoul'] = coresData;
-                await this.saveStepResult('characterSoul', coresData, ctx.chapDir, ctx.chapterName, ctx.volume);
-                this.callbacks.showSuccess('🫀 角色灵魂提取完成');
+                const saved = await this.saveStepResult('characterSoul', coresData, ctx.chapDir, ctx.chapterName, ctx.volume);
+                if (saved) {
+                    ctx.stepCompleted.add('characterSoul');
+                    if (ctx.onStepComplete) {
+                        try {
+                            await ctx.onStepComplete('characterSoul', coresData);
+                        } catch (e) {
+                            log.warn('[StepRunner] onStepComplete 回调异常:', e);
+                        }
+                    }
+                    this.callbacks.showSuccess('🫀 角色灵魂提取完成');
+                } else {
+                    log.warn('[StepRunner] characterSoul 文件写入失败，stepCompleted 未标记');
+                    this.callbacks.showError('❌ 角色灵魂提取保存失败，请重试');
+                }
+                await ctx.renderInContainer(ctx.tabContent);
                 return;
             }
 
             if (stepKey === 'emotionPlan') {
-                const emoContent = await generateEmotionPlan(this.aiEngine, this.app, ctx.vars, stepModel);
+                let emotionKnowledgeInjection = '';
+                try {
+                    // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
+                    const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+                    const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+                    const profile = await profileManager.load(ctx.project);
+                    if (profile && profile.fingerprint.injectionStrength > 0) {
+                        emotionKnowledgeInjection = await injector.injectForEmotionPlan(profile, {
+                            projectPath: ctx.project,
+                            chapterIndex: ctx.chapterNum,
+                            outline: ctx.vars.outlineContent || ctx.stepResults['outline'] || '',
+                        });
+                    }
+                } catch (e) {
+                    log.warn('[StepRunner] 情绪规划知识注入失败，跳过:', e);
+                }
+
+                const varsWithInjection = { ...ctx.vars };
+                if (emotionKnowledgeInjection) {
+                    varsWithInjection.emotionKnowledge = emotionKnowledgeInjection;
+                }
+
+                const emoContent = await generateEmotionPlan(this.aiEngine, this.app, varsWithInjection, stepModel);
                 const validation = validateEmotionPlan(emoContent);
                 if (!validation.valid) {
                     this.callbacks.showNotice(`⚠️ 情绪规划校验异常：${validation.errors.join('；')}`, NOTICE_CRITICAL);
                 }
                 ctx.stepResults['emotionPlan'] = emoContent;
-                await this.saveStepResult('emotionPlan', emoContent, ctx.chapDir, ctx.chapterName, ctx.volume);
+                const saved = await this.saveStepResult('emotionPlan', emoContent, ctx.chapDir, ctx.chapterName, ctx.volume);
                 ctx.vars.emotionPlan = emoContent;
                 ctx.setIsLoading(false);
                 this.callbacks.hideProgress();
-                sendBtns.forEach(b => (b as HTMLButtonElement).disabled = false);
-                this.callbacks.showSuccess('🎭 情绪规划完成');
+                sendBtns.forEach((b, i) => {
+                    const btn = b as HTMLButtonElement;
+                    btn.disabled = false;
+                    btn.classList.remove('nw-btn-loading');
+                    btn.textContent = originalTexts[i] || '';
+                });
+                if (saved) {
+                    ctx.stepCompleted.add('emotionPlan');
+                    if (ctx.onStepComplete) {
+                        try {
+                            await ctx.onStepComplete('emotionPlan', emoContent);
+                        } catch (e) {
+                            log.warn('[StepRunner] onStepComplete 回调异常:', e);
+                        }
+                    }
+                    this.callbacks.showSuccess('🎭 情绪规划完成');
+                } else {
+                    log.warn('[StepRunner] emotionPlan 文件写入失败，stepCompleted 未标记');
+                    this.callbacks.showError('❌ 情绪规划保存失败，请重试');
+                }
+                await ctx.renderInContainer(ctx.tabContent);
                 return;
             }
 
             if (stepKey === 'sceneExpand') {
-                const sceneContent = await generateSceneExpansion(this.aiEngine, ctx.vars, stepModel);
+                let sceneKnowledgeInjection = '';
+                try {
+                    // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
+                    const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+                    const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+                    const profile = await profileManager.load(ctx.project);
+                    if (profile && profile.fingerprint.injectionStrength > 0) {
+                        sceneKnowledgeInjection = await injector.injectForSceneExpand(profile, {
+                            projectPath: ctx.project,
+                            chapterIndex: ctx.chapterNum,
+                            outline: ctx.vars.outlineContent || ctx.stepResults['outline'] || '',
+                            emotionPlan: ctx.vars.emotionPlan || ctx.stepResults['emotionPlan'] || '',
+                        });
+                    }
+                } catch (e) {
+                    log.warn('[StepRunner] Scene展开知识注入失败，跳过:', e);
+                }
+
+                const varsWithInjection = { ...ctx.vars };
+                if (sceneKnowledgeInjection) {
+                    varsWithInjection.sceneKnowledge = sceneKnowledgeInjection;
+                }
+
+                const sceneContent = await generateSceneExpansion(this.aiEngine, varsWithInjection, stepModel);
                 const validation = validateSceneExpansion(sceneContent);
                 if (!validation.valid) {
                     this.callbacks.showNotice(`⚠️ Scene展开校验异常：${validation.errors.join('；')}`, NOTICE_CRITICAL);
                 }
                 ctx.stepResults['sceneExpand'] = sceneContent;
-                await this.saveStepResult('sceneExpand', sceneContent, ctx.chapDir, ctx.chapterName, ctx.volume);
+                const saved = await this.saveStepResult('sceneExpand', sceneContent, ctx.chapDir, ctx.chapterName, ctx.volume);
                 ctx.vars.sceneExpansion = sceneContent;
                 ctx.setIsLoading(false);
                 this.callbacks.hideProgress();
-                sendBtns.forEach(b => (b as HTMLButtonElement).disabled = false);
-                this.callbacks.showSuccess('🎬 Scene展开完成');
+                sendBtns.forEach((b, i) => {
+                    const btn = b as HTMLButtonElement;
+                    btn.disabled = false;
+                    btn.classList.remove('nw-btn-loading');
+                    btn.textContent = originalTexts[i] || '';
+                });
+                if (saved) {
+                    ctx.stepCompleted.add('sceneExpand');
+                    if (ctx.onStepComplete) {
+                        try {
+                            await ctx.onStepComplete('sceneExpand', sceneContent);
+                        } catch (e) {
+                            log.warn('[StepRunner] onStepComplete 回调异常:', e);
+                        }
+                    }
+                    this.callbacks.showSuccess('🎬 Scene展开完成');
+                } else {
+                    log.warn('[StepRunner] sceneExpand 文件写入失败，stepCompleted 未标记');
+                    this.callbacks.showError('❌ Scene展开保存失败，请重试');
+                }
+                await ctx.renderInContainer(ctx.tabContent);
                 return;
             }
 
@@ -266,7 +441,12 @@ export class StepRunner {
                     this.callbacks.showError(preResult.error || '前置校验失败');
                     ctx.setIsLoading(false);
                     this.callbacks.hideProgress();
-                    sendBtns.forEach(b => (b as HTMLButtonElement).disabled = false);
+                    sendBtns.forEach((b, i) => {
+                        const btn = b as HTMLButtonElement;
+                        btn.disabled = false;
+                        btn.classList.remove('nw-btn-loading');
+                        btn.textContent = originalTexts[i] || '';
+                    });
                     return;
                 }
                 if (preResult.warning) {
@@ -283,37 +463,66 @@ export class StepRunner {
 
             this.callbacks.showProgress(`⏳ AI 请求中: ${currentStep.label}（模型: ${stepModel}）...`);
 
+            // 大纲摘要步骤注入知识（风格 + 节奏 + 题材）
+            let outlineKnowledgeInjection = '';
+            if (stepKey === 'outline') {
+                try {
+                    // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
+                    const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+                    const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+                    const profile = await profileManager.load(ctx.project);
+                    if (profile && profile.fingerprint.injectionStrength > 0) {
+                        outlineKnowledgeInjection = await injector.injectForOutline(profile, {
+                            projectPath: ctx.project,
+                            chapterIndex: ctx.chapterNum,
+                            outline: ctx.vars.outlineContent || '',
+                        });
+                    }
+                } catch (e) {
+                    log.warn('[StepRunner] 大纲摘要知识注入失败，跳过:', e);
+                }
+            }
+
             // prompt 长度校验
             let effectiveUserPrompt = userPrompt;
+            if (outlineKnowledgeInjection) {
+                effectiveUserPrompt = effectiveUserPrompt + '\n\n' + outlineKnowledgeInjection;
+            }
             const totalChars = systemPrompt.length + userPrompt.length;
             const maxContext = this.plugin.settings.maxContext || DEFAULT_CONTEXT_WINDOW;
             const estimatedTokens = Math.ceil(totalChars / CHAR_TO_TOKEN_RATIO);
             const safeThreshold = maxContext - (this.plugin.settings.maxOutput || 4096) - TOKEN_SAFE_BUFFER;
             if (estimatedTokens > safeThreshold) {
-                console.warn(`[StepRunner] prompt 过长: ~${estimatedTokens}t > ${safeThreshold}t 安全线, 截断尾部变量`);
+                log.warn(`[StepRunner] prompt 过长: ~${estimatedTokens}t > ${safeThreshold}t 安全线, 截断尾部变量`);
                 const splitPoint = Math.floor(userPrompt.length * PROMPT_SPLIT_RATIO);
                 const tailKeep = Math.min(2500, Math.floor(userPrompt.length * 0.25));
                 const headKeep = Math.max(0, splitPoint - tailKeep);
                 effectiveUserPrompt = userPrompt.slice(0, headKeep)
-                    + '\n\n[⚠️ 上下文过长，中间资料已截断]\n\n'
+                    + `\n\n[⚠️ 上下文过长（~${estimatedTokens} tokens），已自动保留头部+尾部，中间资料已截断]\n\n`
                     + userPrompt.slice(userPrompt.length - tailKeep);
             }
 
-            const result: APIResponse = await this.aiEngine.callAI(
+            const result: APIResponse = await this.callAIWithRetry(
                 systemPrompt,
                 effectiveUserPrompt,
                 stepModel,
                 temperature,
-                this.plugin.settings.maxOutput
+                this.plugin.settings.maxOutput,
+                currentStep.label
             );
 
             if (estimatedTokens > safeThreshold) {
-                this.callbacks.showNotice(`⚠️ 上下文过长（~${estimatedTokens} tokens），部分设定已截断。建议减少前文摘要或分卷规划长度。`, NOTICE_CRITICAL);
+                this.callbacks.showNotice(`⚠️ 上下文过长（~${estimatedTokens} tokens），已自动保留头部+尾部，中间资料已截断。建议在设置中增加上下文上限（maxContext）或精简前文内容。`, NOTICE_CRITICAL);
             }
 
             ctx.setIsLoading(false);
             this.callbacks.hideProgress();
-            sendBtns.forEach(b => (b as HTMLButtonElement).disabled = false);
+            sendBtns.forEach((b, i) => {
+                const btn = b as HTMLButtonElement;
+                btn.disabled = false;
+                btn.classList.remove('nw-btn-loading');
+                btn.textContent = originalTexts[i] || '';
+            });
 
             if (result.error) {
                 this.callbacks.showError(`${currentStep.label} 失败: ${result.error}`);
@@ -348,9 +557,9 @@ export class StepRunner {
                     if (auditLines.length > 0) {
                         finalContent += '\n\n---\n【V2 情绪审计（程序自动检测）】\n' + auditLines.join('\n');
                     }
-                    console.log(`[V2] 情绪审计完成: 综合评分 ${audit.overallScore}/100, ${auditLines.length} 项警告`);
+                    log.info(`[V2] 情绪审计完成: 综合评分 ${audit.overallScore}/100, ${auditLines.length} 项警告`);
                 } catch (e) {
-                    console.warn('[V2] 情绪审计异常（不影响主流程）:', e);
+                    log.warn('[V2] 情绪审计异常（不影响主流程）:', e);
                 }
             }
 
@@ -389,12 +598,12 @@ export class StepRunner {
                     try {
                         await ctx.onStepComplete(stepKey, finalContent);
                     } catch (e) {
-                        console.warn('[StepRunner] onStepComplete 回调异常:', e);
+                        log.warn('[StepRunner] onStepComplete 回调异常:', e);
                     }
                 }
                 this.callbacks.showSuccess(`${currentStep.label} 完成（输出 ${pendingOutputLen} 字）`);
             } else {
-                console.warn(`[StepRunner] ${stepKey} 文件写入失败，stepCompleted 未标记`);
+                log.warn(`[StepRunner] ${stepKey} 文件写入失败，stepCompleted 未标记`);
                 this.callbacks.showError(`❌ ${currentStep.label} 保存失败，请重试`);
             }
 
@@ -408,10 +617,15 @@ export class StepRunner {
 
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);
-            console.error(`[小说工坊] ${currentStep.label} 异常:`, e);
+            log.error(`[小说工坊] ${currentStep.label} 异常:`, e);
             ctx.setIsLoading(false);
             this.callbacks.hideProgress();
-            sendBtns.forEach(b => (b as HTMLButtonElement).disabled = false);
+            sendBtns.forEach((b, i) => {
+                const btn = b as HTMLButtonElement;
+                btn.disabled = false;
+                btn.classList.remove('nw-btn-loading');
+                btn.textContent = originalTexts[i] || '';
+            });
             this.callbacks.showError(`${currentStep.label} 异常: ${errMsg}`);
             this.renderErrorResult(`执行异常: ${errMsg}`, stepKey, ctx.tabContent);
         }
@@ -497,7 +711,7 @@ export class StepRunner {
                     stepResults['analysisReport'] = reportContent;
                 } catch (e) {
                     const errMsg = e instanceof Error ? e.message : String(e);
-                    console.warn('[StepRunner] 无法从磁盘读取分析报告:', e);
+                    log.warn('[StepRunner] 无法从磁盘读取分析报告:', e);
                     this.callbacks.showNotice(`⚠️ 读取分析报告失败：${errMsg}`, NOTICE_ERROR);
                 }
             }
@@ -527,7 +741,7 @@ export class StepRunner {
             }
             // P2-3: 空结果检测 — forcedRevealHint 非空但未解析出任何名字时反馈
             if (forceReveal.length === 0) {
-                console.warn('[小说工坊] forcedRevealHint 非空但未解析出名字，输入:', forcedRevealHint.slice(0, 100));
+                log.warn('[小说工坊] forcedRevealHint 非空但未解析出名字，输入:', forcedRevealHint.slice(0, 100));
                 this.callbacks.showNotice('⚠️ 强制揭示提示未识别出任何名字（请用「揭示：名字1, 名字2」格式）', NOTICE_ERROR);
             }
         }
@@ -560,8 +774,8 @@ export class StepRunner {
                 } else {
                     await this.getFS().write(overviewPath, overview);
                 }
-                console.warn('[StepRunner] 叙事总览已更新:', overviewPath);
-            } catch (e) { console.warn('[StepRunner] 叙事总览生成失败（不影响结算）:', e); this.callbacks.showNotice('[StepRunner] 叙事总览生成失败，请稍后重试'); }
+                log.warn('[StepRunner] 叙事总览已更新:', overviewPath);
+            } catch (e) { log.warn('[StepRunner] 叙事总览生成失败（不影响结算）:', e); this.callbacks.showNotice('[StepRunner] 叙事总览生成失败，请稍后重试'); }
 
             // 通过事件总线通知统一工作台刷新上下文
             plugin.app.workspace.trigger('novel-writer:refresh-context-panel', {});

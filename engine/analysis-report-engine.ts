@@ -1,4 +1,4 @@
-import { App, TFile, TFolder } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
 import { 
@@ -13,9 +13,23 @@ import {
     pjLocsDir,
     pjFactionsDir,
     pjItemsDir,
-    pjForeshadowDB
+    pjForeshadowDB,
+    pjTimelineBoard
 } from '../shared/paths';
+import { CharacterConsistencyChecker, ConsistencyCheckResult } from './character-consistency-checker';
+import { VectorEnhancer } from './vector-enhancer';
+import { 
+    hasTableSeparator, 
+    appendAfterSeparator, 
+    getNextRowNum, 
+    mkdirp 
+} from '../utils/helpers';
+import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('AnalysisReportEngine');
 /**
  * v6.0 智能分析报告引擎
  * 
@@ -29,11 +43,41 @@ export class AnalysisReportEngine {
     private app: App;
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
+    private characterConsistencyChecker: CharacterConsistencyChecker;
+    private fs: FileSystemPort | null = null;
+    private vaultMeta: VaultMetaPort | null = null;
 
-    constructor(app: App, aiEngine: AIEngine, contextManager: ContextManager) {
+    constructor(
+        app: App,
+        aiEngine: AIEngine,
+        contextManager: ContextManager,
+        vectorEnhancer?: VectorEnhancer,
+        /** 共享的 CharacterConsistencyChecker；若不提供将延迟到首次 check 时抛错。
+         *  推荐：由 EngineRegistry 注入共享实例，避免多实例状态不同步。 */
+        characterConsistencyChecker?: CharacterConsistencyChecker,
+    ) {
         this.app = app;
         this.aiEngine = aiEngine;
         this.contextManager = contextManager;
+        // 仅使用注入的共享实例；不再内部 new 以避免多实例状态不同步。
+        // vectorEnhancer 参数保留用于向后兼容（旧调用方可能传递），但不再用于创建 CharacterConsistencyChecker。
+        void vectorEnhancer;
+        this.characterConsistencyChecker = characterConsistencyChecker
+            ?? (null as unknown as CharacterConsistencyChecker);
+    }
+
+    private getFS(): FileSystemPort {
+        if (!this.fs) {
+            this.fs = new ObsidianFileSystem(this.app);
+        }
+        return this.fs;
+    }
+
+    private getVaultMeta(): VaultMetaPort {
+        if (!this.vaultMeta) {
+            this.vaultMeta = new ObsidianVaultMeta(this.app);
+        }
+        return this.vaultMeta;
     }
 
     /**
@@ -49,22 +93,20 @@ export class AnalysisReportEngine {
         const startTime = Date.now();
         const wordCount = chapterText.length;
 
-        console.log(`[AnalysisReportEngine] 开始分析第${chapterNum}章: ${chapterName}`);
+        log.info(`[AnalysisReportEngine] 开始分析第${chapterNum}章: ${chapterName}`);
 
-        // 并行执行各项分析（简化版：先用mock数据保证流程通）
         const [
             entityAnalysis,
             foreshadowAnalysis,
             timelineAnalysis,
             emotionAnalysis
         ] = await Promise.all([
-            this.mockEntityAnalysis(),
-            this.mockForeshadowAnalysis(),
-            this.mockTimelineAnalysis(chapterNum),
-            this.mockEmotionAnalysis()
+            this.analyzeEntities(project, chapterText, chapterNum, chapterName),
+            this.analyzeForeshadows(project, chapterText, chapterNum),
+            this.analyzeTimeline(chapterText, chapterNum),
+            this.analyzeEmotion(chapterText)
         ]);
 
-        // 汇总报告
         const report: FullAnalysisReport = {
             meta: {
                 project,
@@ -73,7 +115,7 @@ export class AnalysisReportEngine {
                 volume,
                 wordCount,
                 timestamp: new Date().toISOString(),
-                aiModel: 'mock',
+                aiModel: 'ai-powered',
                 processingTimeMs: Date.now() - startTime
             },
             entities: entityAnalysis,
@@ -86,8 +128,82 @@ export class AnalysisReportEngine {
             suggestions: []
         };
 
-        console.log(`[AnalysisReportEngine] 分析完成，耗时 ${report.meta.processingTimeMs}ms`);
+        log.info(`[AnalysisReportEngine] 分析完成，耗时 ${report.meta.processingTimeMs}ms`);
         return report;
+    }
+
+    /**
+     * 运行人设一致性检测
+     * @param chapterText 章节正文
+     * @param characterInfos 人物信息列表
+     * @param historyTexts 历史章节文本（可选）
+     * @returns 一致性检测结果
+     */
+    async checkCharacterConsistency(
+        chapterText: string,
+        characterInfos: Array<{
+            name: string;
+            personality?: string;
+            appearance?: string;
+            abilities?: string;
+            background?: string;
+        }>,
+        historyTexts?: string[]
+    ): Promise<ConsistencyCheckResult> {
+        log.info('[AnalysisReportEngine] 开始执行人设一致性检测');
+        const result = await this.characterConsistencyChecker.check(
+            chapterText,
+            characterInfos,
+            historyTexts
+        );
+        log.info(`[AnalysisReportEngine] 人设一致性检测完成，得分 ${result.overallScore}`);
+        return result;
+    }
+
+    /**
+     * 将人设一致性检测结果附加到分析报告中
+     * @param report 分析报告
+     * @param chapterText 章节正文
+     * @param characterInfos 人物信息列表
+     * @returns 更新后的报告
+     */
+    async attachCharacterConsistencyToReport(
+        report: FullAnalysisReport,
+        chapterText: string,
+        characterInfos: Array<{
+            name: string;
+            personality?: string;
+            appearance?: string;
+            abilities?: string;
+            background?: string;
+        }>
+    ): Promise<FullAnalysisReport> {
+        try {
+            const consistencyResult = await this.checkCharacterConsistency(chapterText, characterInfos);
+            
+            report.characterConsistency = consistencyResult;
+            
+            const totalIssues = Object.values(consistencyResult.characterResults).reduce(
+                (sum, r) => sum + r.inconsistencies.length, 0
+            );
+            
+            if (totalIssues > 0) {
+                const highIssues = Object.values(consistencyResult.characterResults).reduce(
+                    (sum, r) => sum + r.inconsistencies.filter(i => i.severity === 'high').length, 0
+                );
+                
+                if (highIssues > 0) {
+                    report.warnings.push(`人设一致性警告：发现 ${highIssues} 处严重不一致，请查看详情`);
+                }
+                
+                report.suggestions.push(`人设一致性得分 ${consistencyResult.overallScore} 分，共 ${totalIssues} 处待确认`);
+            }
+            
+            return report;
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] 人设一致性检测失败，跳过', e);
+            return report;
+        }
     }
 
     /**
@@ -95,7 +211,7 @@ export class AnalysisReportEngine {
      * @returns 变更摘要 { applied: 已应用的项, pending: 需手动处理的项 }
      */
     async applyReportChanges(project: string, report: FullAnalysisReport): Promise<{ success: boolean; applied: string[]; pending: string[]; details: string }> {
-        console.log('[AnalysisReportEngine] 开始应用报告变更...');
+        log.info('[AnalysisReportEngine] 开始应用报告变更...');
         const applied: string[] = [];
         const pending: string[] = [];
 
@@ -116,10 +232,10 @@ export class AnalysisReportEngine {
             if (timelineResult.pending) pending.push(`时间线手动更新（${timelineResult.count} 项）`);
 
             const details = this.buildChangeSummary(applied, pending);
-            console.log('[AnalysisReportEngine] 变更应用完成:', applied.length, '项已应用,', pending.length, '项待手动处理');
+            log.info('[AnalysisReportEngine] 变更应用完成:', applied.length, '项已应用,', pending.length, '项待手动处理');
             return { success: true, applied, pending, details };
         } catch (e) {
-            console.error('[AnalysisReportEngine] 应用变更失败:', e);
+            log.error('[AnalysisReportEngine] 应用变更失败:', e);
             return { success: false, applied, pending, details: `应用失败: ${e}` };
         }
     }
@@ -141,52 +257,698 @@ export class AnalysisReportEngine {
     }
 
     // ============================================================
-    // 内部实现（v6.0第一阶段先用mock，保证流程通）
+    // 实体分析
     // ============================================================
 
-    private async mockEntityAnalysis(): Promise<FullAnalysisReport['entities']> {
+    private async analyzeEntities(
+        project: string,
+        chapterText: string,
+        chapterNum: number,
+        chapterName: string
+    ): Promise<FullAnalysisReport['entities']> {
+        const characters = await this.analyzeCharacterEntities(project, chapterText);
+        const locations = this.analyzeLocationEntities(project, chapterText);
+        const factions = this.analyzeFactionEntities(project, chapterText);
+        const items = this.analyzeItemEntities(project, chapterText);
+
+        const totalCount = characters.length + locations.length + factions.length + items.length;
+        const summary = `检测到 ${characters.length} 个人物，${locations.length} 个地点，${factions.length} 个势力，${items.length} 个物品`;
+
+        return { characters, locations, factions, items, summary };
+    }
+
+    private async analyzeCharacterEntities(
+        project: string,
+        chapterText: string
+    ): Promise<EntityChange[]> {
+        const changes: EntityChange[] = [];
+        const charFiles = this.getVaultMeta().getFiles().filter(f =>
+            f.path.startsWith(pjCharsDir(project)) && f instanceof TFile && f.name !== '人物模板.md'
+        );
+
+        const charNames: string[] = [];
+        const charStates: Record<string, { oldStatus?: string; file: TFile }> = {};
+
+        for (const f of charFiles) {
+            const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+            if (!fm) continue;
+            const name = fm['姓名'] || fm['名称'] || fm['name'] || '';
+            if (!name) continue;
+            charNames.push(name);
+            charStates[name] = {
+                oldStatus: fm['当前状态'] || undefined,
+                file: f as TFile
+            };
+        }
+
+        const appearedChars: string[] = [];
+        for (const name of charNames) {
+            const pattern = new RegExp(`(\\[\\[${name}\\]\\]|${this.escapeRegex(name)})`, 'g');
+            if (pattern.test(chapterText)) {
+                appearedChars.push(name);
+            }
+        }
+
+        if (appearedChars.length === 0) return [];
+
+        try {
+            const statusChanges = await this.detectCharacterStateChanges(chapterText, appearedChars);
+            for (const sc of statusChanges) {
+                const oldStatus = charStates[sc.entityName]?.oldStatus;
+                const isMajor = this.isMajorStatusChange(sc.newStatus);
+                changes.push({
+                    name: sc.entityName,
+                    category: 'character',
+                    changeType: 'status_updated',
+                    oldValue: oldStatus,
+                    newValue: sc.newStatus,
+                    isMajor,
+                    context: sc.reason
+                });
+            }
+
+            const detectedNames = new Set(statusChanges.map(s => s.entityName));
+            for (const name of appearedChars) {
+                if (!detectedNames.has(name)) {
+                    changes.push({
+                        name,
+                        category: 'character',
+                        changeType: 'appeared',
+                        isMajor: false
+                    });
+                }
+            }
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] 角色状态检测失败，降级为出现检测:', e);
+            for (const name of appearedChars) {
+                changes.push({
+                    name,
+                    category: 'character',
+                    changeType: 'appeared',
+                    isMajor: false
+                });
+            }
+        }
+
+        return changes;
+    }
+
+    private async detectCharacterStateChanges(
+        chapterText: string,
+        charNames: string[]
+    ): Promise<Array<{ entityName: string; newStatus: string; reason: string; confidence: number }>> {
+        const prompt = `你是一个小说实体状态变更检测器。
+
+【任务】分析以下正文内容，检测每位角色的状态是否发生变化。
+输出 JSON 数组（不要加 \`\`\` 包裹）：
+[
+  { "entityName": "角色名", "newStatus": "新状态描述", "reason": "变更原因简述", "confidence": 0.9 }
+]
+
+【规则】
+1. 只有状态确实发生变化时才输出（战斗受伤、情绪重大改变、位置迁移、境界突破等）
+2. 无明显变化的不输出
+3. 一次最多检测 8 个角色
+4. confidence：0.9=非常确定，0.7=比较确定，0.5=可能
+5. newStatus 应简洁（≤30字）
+
+【涉及角色】${charNames.join('、')}
+
+【正文内容】（前 5000 字）：
+${chapterText.slice(0, 5000)}
+
+【输出】仅输出 JSON 数组：`;
+
+        try {
+            const response = await this.aiEngine.callAI('', prompt, 'flash', 0.7, 2000);
+            if (response.error) return [];
+            const text = (response.content || '').trim();
+            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([\[{][\s\S]*)/);
+            const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+            const parsed = JSON.parse(jsonStr);
+            const changes = Array.isArray(parsed) ? parsed : (parsed.changes || []);
+            return changes
+                .filter((c: any) => c.entityName && c.newStatus && charNames.includes(c.entityName))
+                .map((c: any) => ({
+                    entityName: c.entityName,
+                    newStatus: c.newStatus,
+                    reason: c.reason || '',
+                    confidence: c.confidence || 0.8
+                }));
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] AI状态检测失败:', e);
+            return [];
+        }
+    }
+
+    private isMajorStatusChange(status: string): boolean {
+        const majorKeywords = ['死亡', '陨落', '牺牲', '重伤', '濒死', '突破', '觉醒', '入魔', '飞升', '重生'];
+        return majorKeywords.some(k => status.includes(k));
+    }
+
+    private analyzeLocationEntities(project: string, chapterText: string): EntityChange[] {
+        const changes: EntityChange[] = [];
+        const locFiles = this.getVaultMeta().getFiles().filter(f =>
+            f.path.startsWith(pjLocsDir(project)) && f instanceof TFile
+        );
+
+        for (const f of locFiles) {
+            const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+            if (!fm) continue;
+            const name = fm['名称'] || fm['name'] || '';
+            if (!name) continue;
+            const pattern = new RegExp(`(\\[\\[${name}\\]\\]|${this.escapeRegex(name)})`, 'g');
+            if (pattern.test(chapterText)) {
+                changes.push({
+                    name,
+                    category: 'location',
+                    changeType: 'appeared',
+                    isMajor: false
+                });
+            }
+        }
+
+        return changes;
+    }
+
+    private analyzeFactionEntities(project: string, chapterText: string): EntityChange[] {
+        const changes: EntityChange[] = [];
+        const factionFiles = this.getVaultMeta().getFiles().filter(f =>
+            f.path.startsWith(pjFactionsDir(project)) && f instanceof TFile
+        );
+
+        for (const f of factionFiles) {
+            const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+            if (!fm) continue;
+            const name = fm['名称'] || fm['name'] || '';
+            if (!name) continue;
+            const pattern = new RegExp(`(\\[\\[${name}\\]\\]|${this.escapeRegex(name)})`, 'g');
+            if (pattern.test(chapterText)) {
+                changes.push({
+                    name,
+                    category: 'faction',
+                    changeType: 'appeared',
+                    isMajor: false
+                });
+            }
+        }
+
+        return changes;
+    }
+
+    private analyzeItemEntities(project: string, chapterText: string): EntityChange[] {
+        const changes: EntityChange[] = [];
+        const itemFiles = this.getVaultMeta().getFiles().filter(f =>
+            f.path.startsWith(pjItemsDir(project)) && f instanceof TFile
+        );
+
+        for (const f of itemFiles) {
+            const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+            if (!fm) continue;
+            const name = fm['名称'] || fm['name'] || '';
+            if (!name) continue;
+            const pattern = new RegExp(`(\\[\\[${name}\\]\\]|${this.escapeRegex(name)})`, 'g');
+            if (pattern.test(chapterText)) {
+                changes.push({
+                    name,
+                    category: 'item',
+                    changeType: 'appeared',
+                    isMajor: false
+                });
+            }
+        }
+
+        return changes;
+    }
+
+    private escapeRegex(str: string): string {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // ============================================================
+    // 伏笔分析
+    // ============================================================
+
+    private async analyzeForeshadows(
+        project: string,
+        chapterText: string,
+        chapterNum: number
+    ): Promise<FullAnalysisReport['foreshadows']> {
+        const planted: ForeshadowChange[] = [];
+        const recovered: ForeshadowChange[] = [];
+        const mentioned: ForeshadowChange[] = [];
+
+        const unrevealedForeshadows = await this.getUnrevealedForeshadows(project);
+
+        for (const fs of unrevealedForeshadows) {
+            const pattern = new RegExp(this.escapeRegex(fs.name), 'g');
+            if (pattern.test(chapterText)) {
+                const context = this.extractContext(chapterText, fs.name);
+                const isRecovered = this.isForeshadowRecovered(chapterText, fs.name);
+                if (isRecovered) {
+                    recovered.push({
+                        id: fs.id,
+                        name: fs.name,
+                        changeType: 'recovered',
+                        plantedChapter: fs.buryChapter,
+                        context
+                    });
+                } else {
+                    mentioned.push({
+                        id: fs.id,
+                        name: fs.name,
+                        changeType: 'mentioned',
+                        plantedChapter: fs.buryChapter,
+                        context
+                    });
+                }
+            }
+        }
+
+        const newPlanted = this.detectNewForeshadows(chapterText, chapterNum);
+        planted.push(...newPlanted);
+
+        const summary = `本章埋入 ${planted.length} 个伏笔，回收 ${recovered.length} 个，提及 ${mentioned.length} 个`;
+        return { planted, recovered, mentioned, summary };
+    }
+
+    private async getUnrevealedForeshadows(project: string): Promise<Array<{ id: string; name: string; buryChapter: string; status: string }>> {
+        const items: Array<{ id: string; name: string; buryChapter: string; status: string }> = [];
+        try {
+            const fp = pjForeshadowDB(project);
+            const ff = this.getVaultMeta().getAbstractFileByPath(fp);
+            if (!(ff instanceof TFile)) return items;
+
+            const content = await this.getFS().read(fp);
+            const parsed = this.parseForeshadowTable(content);
+            for (const item of parsed) {
+                const s = item.status || '';
+                if (s.includes('未揭示') || s === '') {
+                    items.push({
+                        id: item.id,
+                        name: item.name,
+                        buryChapter: item.buryChapter,
+                        status: item.status
+                    });
+                }
+            }
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] 读取伏笔库失败:', e);
+        }
+        return items;
+    }
+
+    private parseForeshadowTable(content: string): Array<{ id: string; name: string; buryChapter: string; status: string }> {
+        const lines = content.split('\n');
+        let headerIdx = -1;
+        const colMap: Record<string, number> = {};
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line.match(/^\|.*\|$/)) continue;
+            const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+            if (cols.length < 2) continue;
+            const lowerCols = cols.map(c => c.toLowerCase());
+            const hasId = lowerCols.some(c => c === '#' || c === '编号' || c === 'id' || c === '序号');
+            const hasName = lowerCols.some(c => c.includes('伏笔') || c === '名称' || c === '名字' || c === '内容');
+            if (hasId && hasName) {
+                headerIdx = i;
+                for (let j = 0; j < cols.length; j++) {
+                    const col = lowerCols[j];
+                    if (col === '#' || col === '编号' || col === 'id' || col === '序号') colMap['id'] = j;
+                    else if (col.includes('伏笔') || col === '名称' || col === '名字' || col === '内容') colMap['name'] = j;
+                    else if (col.includes('埋设') || col.includes('埋入') || col.includes('出现') || col === '章节') {
+                        if (!colMap['buryChapter']) colMap['buryChapter'] = j;
+                    }
+                    else if (col.includes('状态') || col === 'status') colMap['status'] = j;
+                }
+                if (!colMap['status']) colMap['status'] = cols.length - 1;
+                break;
+            }
+        }
+
+        if (headerIdx === -1) return [];
+
+        const items: Array<{ id: string; name: string; buryChapter: string; status: string }> = [];
+        for (let i = headerIdx + 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line.match(/^\|.*\|$/)) continue;
+            const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+            if (cols.length < 2) continue;
+            if (cols[0].includes('---')) continue;
+
+            const status = colMap['status'] !== undefined ? (cols[colMap['status']] || '') : (cols[cols.length - 1] || '');
+            items.push({
+                id: colMap['id'] !== undefined ? (cols[colMap['id']] || String(items.length + 1)) : String(items.length + 1),
+                name: colMap['name'] !== undefined ? (cols[colMap['name']] || '') : (cols[1] || ''),
+                buryChapter: colMap['buryChapter'] !== undefined ? (cols[colMap['buryChapter']] || '') : (cols[3] || ''),
+                status: status || '未揭示'
+            });
+        }
+        return items;
+    }
+
+    private extractContext(text: string, keyword: string): string {
+        const idx = text.indexOf(keyword);
+        if (idx === -1) return '';
+        const start = Math.max(0, idx - 30);
+        const end = Math.min(text.length, idx + keyword.length + 30);
+        let excerpt = text.slice(start, end).replace(/\n/g, ' ');
+        if (start > 0) excerpt = '...' + excerpt;
+        if (end < text.length) excerpt = excerpt + '...';
+        return excerpt;
+    }
+
+    private isForeshadowRecovered(text: string, name: string): boolean {
+        const recoveryPatterns = [
+            `${name}.*终于`,
+            `${name}.*原来`,
+            `揭开.*${name}`,
+            `${name}.*真相`,
+            `${name}.*揭晓`,
+            `揭晓.*${name}`,
+            `${name}.*秘密`,
+        ];
+        for (const p of recoveryPatterns) {
+            if (new RegExp(p).test(text)) return true;
+        }
+        return false;
+    }
+
+    private detectNewForeshadows(text: string, chapterNum: number): ForeshadowChange[] {
+        const results: ForeshadowChange[] = [];
+        const seen = new Set<string>();
+
+        const patterns = [
+            { pattern: /那东西/g, category: '物件' },
+            { pattern: /神秘人/g, category: '人物' },
+            { pattern: /黑衣人/g, category: '人物' },
+            { pattern: /传说中的[^，。；！？\s]{1,6}/g, category: '设定' },
+            { pattern: /据说/g, category: '设定' },
+            { pattern: /传闻/g, category: '设定' },
+            { pattern: /那件事/g, category: '事件' },
+            { pattern: /当年的事/g, category: '事件' },
+            { pattern: /总有一天/g, category: '事件' },
+            { pattern: /三年后/g, category: '事件' },
+            { pattern: /五年后/g, category: '事件' },
+        ];
+
+        const paragraphs = text.split(/\n{2,}/).map(p => p.trim()).filter(p => p.length > 0);
+
+        for (let i = 0; i < paragraphs.length; i++) {
+            const para = paragraphs[i];
+            for (const { pattern, category } of patterns) {
+                let match;
+                while ((match = pattern.exec(para)) !== null) {
+                    const content = match[0];
+                    if (!seen.has(content)) {
+                        seen.add(content);
+                        const context = this.extractContext(para, content);
+                        results.push({
+                            name: content,
+                            changeType: 'planted',
+                            plantedChapter: `第${chapterNum}章`,
+                            context
+                        });
+                    }
+                }
+            }
+        }
+
+        return results.slice(0, 10);
+    }
+
+    // ============================================================
+    // 时间线分析
+    // ============================================================
+
+    private async analyzeTimeline(
+        chapterText: string,
+        chapterNum: number
+    ): Promise<FullAnalysisReport['timeline']> {
+        try {
+            const events = await this.extractTimelineEvents(chapterText, chapterNum);
+            const summary = `提取到 ${events.length} 个关键事件`;
+            return { events, summary };
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] 时间线提取失败:', e);
+            return { events: [], summary: '时间线提取失败' };
+        }
+    }
+
+    private async extractTimelineEvents(
+        chapterText: string,
+        chapterNum: number
+    ): Promise<TimelineEvent[]> {
+        const prompt = `你是一个小说关键事件提取器。
+
+【任务】从以下正文中提取本章的关键事件，生成时间线。
+输出 JSON 数组（不要加 \`\`\` 包裹）：
+[
+  {
+    "order": 1,
+    "event": "事件描述（20字以内）",
+    "time": "时间标记（如：黄昏/三日后/子时，没有则留空）",
+    "location": "地点（没有则留空）",
+    "involvedEntities": ["角色A", "角色B"],
+    "importance": "high|medium|low"
+  }
+]
+
+【规则】
+1. 只提取本章中实际发生的重要事件
+2. 按时间顺序排列
+3. 每章提取 3-8 个关键事件
+4. importance: high=主线重大事件, medium=重要支线, low=次要事件
+5. event 描述简洁，不超过20字
+
+【正文内容】（前 5000 字）：
+${chapterText.slice(0, 5000)}
+
+【输出】仅输出 JSON 数组：`;
+
+        try {
+            const response = await this.aiEngine.callAI('', prompt, 'flash', 0.6, 2000);
+            if (response.error) return [];
+            const text = (response.content || '').trim();
+            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([\[{][\s\S]*)/);
+            const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+            const parsed = JSON.parse(jsonStr);
+            const events = Array.isArray(parsed) ? parsed : (parsed.events || []);
+
+            return events
+                .filter((e: any) => e.event)
+                .map((e: any, idx: number) => ({
+                    chapter: chapterNum,
+                    order: e.order || idx + 1,
+                    event: e.event,
+                    time: e.time || undefined,
+                    location: e.location || undefined,
+                    involvedEntities: e.involvedEntities || [],
+                    importance: this.normalizeImportance(e.importance)
+                }));
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] AI时间线提取失败:', e);
+            return this.extractTimelineByRule(chapterText, chapterNum);
+        }
+    }
+
+    private normalizeImportance(imp: string): 'low' | 'medium' | 'high' {
+        if (!imp) return 'medium';
+        const lower = imp.toLowerCase();
+        if (lower.includes('high') || lower.includes('高') || lower.includes('重大')) return 'high';
+        if (lower.includes('low') || lower.includes('低') || lower.includes('次要')) return 'low';
+        return 'medium';
+    }
+
+    private extractTimelineByRule(chapterText: string, chapterNum: number): TimelineEvent[] {
+        const events: TimelineEvent[] = [];
+        const timeMarkers = [
+            /次日/g, /翌日/g, /三日后/g, /五日后/g, /十日后/g,
+            /子时/g, /丑时/g, /寅时/g, /卯时/g, /辰时/g, /巳时/g,
+            /午时/g, /未时/g, /申时/g, /酉时/g, /戌时/g, /亥时/g,
+            /清晨/g, /早晨/g, /上午/g, /中午/g, /下午/g, /黄昏/g, /傍晚/g, /深夜/g, /夜里/g,
+        ];
+
+        const sentences = chapterText.split(/[。！？]/).filter(s => s.trim().length > 10);
+        let order = 1;
+
+        for (const sentence of sentences) {
+            const trimmed = sentence.trim();
+            if (trimmed.length < 15 || trimmed.length > 60) continue;
+
+            let hasTime = false;
+            let timeMark = '';
+            for (const tm of timeMarkers) {
+                const match = trimmed.match(tm);
+                if (match) {
+                    hasTime = true;
+                    timeMark = match[0];
+                    break;
+                }
+            }
+
+            const actionKeywords = /(闯入|到达|发现|击败|杀死|救出|逃离|相遇|告别|突破|觉醒|进入|离开)/;
+            if (actionKeywords.test(trimmed) || hasTime) {
+                const importance = hasTime ? 'medium' : 'low';
+                events.push({
+                    chapter: chapterNum,
+                    order: order++,
+                    event: trimmed.slice(0, 30),
+                    time: timeMark || undefined,
+                    involvedEntities: [],
+                    importance
+                });
+                if (events.length >= 5) break;
+            }
+        }
+
+        return events;
+    }
+
+    // ============================================================
+    // 情绪曲线分析
+    // ============================================================
+
+    private async analyzeEmotion(chapterText: string): Promise<FullAnalysisReport['emotionCurve']> {
+        if (!chapterText || chapterText.length < 200) {
+            return {
+                points: [],
+                avgIntensity: 50,
+                peakIntensity: 50,
+                valleyIntensity: 50,
+                inflectionPoints: 0,
+                summary: '文本过短，无法分析'
+            };
+        }
+
+        const segments = this.segmentEmotionText(chapterText, 600);
+        const points: EmotionCurvePoint[] = [];
+        let pos = 0;
+
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            try {
+                const result = await this.analyzeEmotionSegment(seg, i, pos);
+                points.push(result);
+            } catch (e) {
+                log.warn(`[AnalysisReportEngine] 情绪片段 ${i} 分析失败:`, e);
+                points.push({
+                    segment: i,
+                    startIndex: pos,
+                    endIndex: pos + seg.length,
+                    intensity: 50,
+                    valence: 'neutral',
+                    dominantEmotion: '平静',
+                    isInflection: false
+                });
+            }
+            pos += seg.length;
+        }
+
+        const intensities = points.map(p => p.intensity);
+        const avgIntensity = intensities.length > 0
+            ? Math.round(intensities.reduce((a, b) => a + b, 0) / intensities.length)
+            : 50;
+        const peakIntensity = intensities.length > 0 ? Math.max(...intensities) : 50;
+        const valleyIntensity = intensities.length > 0 ? Math.min(...intensities) : 50;
+        const inflectionPoints = this.countInflectionPoints(points);
+
+        let summary = '';
+        if (avgIntensity >= 70) summary = '情绪强度较高，高潮章节';
+        else if (avgIntensity >= 40) summary = '情绪强度适中，叙事平稳';
+        else summary = '情绪强度较低，铺垫章节';
+
+        return { points, avgIntensity, peakIntensity, valleyIntensity, inflectionPoints, summary };
+    }
+
+    private segmentEmotionText(text: string, targetLength: number): string[] {
+        const segments: string[] = [];
+        let start = 0;
+
+        while (start < text.length) {
+            let end = Math.min(start + targetLength, text.length);
+            if (end < text.length) {
+                const lastPeriod = text.lastIndexOf('。', end);
+                const lastExclaim = text.lastIndexOf('！', end);
+                const lastQuestion = text.lastIndexOf('？', end);
+                const breakPoint = Math.max(lastPeriod, lastExclaim, lastQuestion);
+                if (breakPoint > start + targetLength / 2) {
+                    end = breakPoint + 1;
+                }
+            }
+            segments.push(text.slice(start, end));
+            start = end;
+        }
+
+        return segments;
+    }
+
+    private async analyzeEmotionSegment(
+        text: string,
+        index: number,
+        startPos: number
+    ): Promise<EmotionCurvePoint> {
+        const baseTension = this.estimateBaseTension(text);
+
+        let intensity = baseTension;
+        let valence: 'positive' | 'neutral' | 'negative' = 'neutral';
+        let dominantEmotion = '平静';
+
+        const positivePatterns = /(喜悦|开心|高兴|幸福|温暖|希望|振奋|激动|欣喜|释然)/;
+        const negativePatterns = /(悲伤|痛苦|绝望|恐惧|愤怒|仇恨|悲伤|难过|委屈|焦虑)/;
+        const tensionPatterns = /(紧张|惊险|危机|危险|战斗|厮杀|追杀|逃亡|对峙)/;
+
+        if (positivePatterns.test(text)) {
+            valence = 'positive';
+            dominantEmotion = '喜悦';
+            intensity = Math.min(100, intensity + 20);
+        } else if (negativePatterns.test(text)) {
+            valence = 'negative';
+            dominantEmotion = '悲伤';
+            intensity = Math.min(100, intensity + 15);
+        }
+
+        if (tensionPatterns.test(text)) {
+            intensity = Math.min(100, intensity + 25);
+            if (valence === 'neutral') {
+                valence = 'negative';
+                dominantEmotion = '紧张';
+            }
+        }
+
         return {
-            characters: [
-                { name: '李逍遥', category: 'character', changeType: 'status_updated', oldValue: '健康', newValue: '重伤', isMajor: true } as EntityChange,
-                { name: '赵灵儿', category: 'character', changeType: 'appeared', isMajor: false } as EntityChange
-            ],
-            locations: [
-                { name: '锁妖塔', category: 'location', changeType: 'appeared', isMajor: false } as EntityChange
-            ],
-            factions: [],
-            items: [],
-            summary: '检测到 2 个人物，1 个地点'
+            segment: index,
+            startIndex: startPos,
+            endIndex: startPos + text.length,
+            intensity,
+            valence,
+            dominantEmotion,
+            isInflection: false
         };
     }
 
-    private async mockForeshadowAnalysis(): Promise<FullAnalysisReport['foreshadows']> {
-        return {
-            planted: [],
-            recovered: [{ name: '女娲血脉', changeType: 'recovered' } as ForeshadowChange],
-            mentioned: [],
-            summary: '本章回收 1 个伏笔'
-        };
+    private estimateBaseTension(text: string): number {
+        const tensionKeywords = /[危险死亡威胁紧张恐惧惊恐愤怒仇恨杀战斗打冲]/g;
+        const matches = text.match(tensionKeywords);
+        const matchCount = matches ? matches.length : 0;
+        const density = (matchCount / Math.max(text.length, 1)) * 100;
+        return Math.min(100, 30 + density * 50);
     }
 
-    private async mockTimelineAnalysis(chapterNum: number): Promise<FullAnalysisReport['timeline']> {
-        return {
-            events: [
-                { chapter: chapterNum, order: 1, event: '李逍遥闯入锁妖塔', importance: 'high' } as TimelineEvent,
-                { chapter: chapterNum, order: 2, event: '赵灵儿觉醒女娲血脉', importance: 'high' } as TimelineEvent
-            ],
-            summary: '提取到 2 个关键事件'
-        };
-    }
-
-    private async mockEmotionAnalysis(): Promise<FullAnalysisReport['emotionCurve']> {
-        return {
-            points: [],
-            avgIntensity: 75,
-            peakIntensity: 95,
-            valleyIntensity: 30,
-            inflectionPoints: 2,
-            summary: '情绪强度较高，高潮章节'
-        };
+    private countInflectionPoints(points: EmotionCurvePoint[]): number {
+        if (points.length < 3) return 0;
+        let count = 0;
+        for (let i = 1; i < points.length - 1; i++) {
+            const prev = points[i - 1].intensity;
+            const curr = points[i].intensity;
+            const next = points[i + 1].intensity;
+            if ((curr > prev && curr > next) || (curr < prev && curr < next)) {
+                points[i].isInflection = true;
+                count++;
+            }
+        }
+        return count;
     }
 
     private generateSummary(
@@ -216,25 +978,233 @@ export class AnalysisReportEngine {
     private async applyEntityChanges(project: string, entities: FullAnalysisReport['entities']): Promise<{ applied: boolean; pending: boolean; count: number }> {
         const count = (entities?.characters?.length || 0) + (entities?.factions?.length || 0) + (entities?.locations?.length || 0) + (entities?.items?.length || 0);
         if (count === 0) return { applied: false, pending: false, count: 0 };
-        console.log('[AnalysisReportEngine] 实体状态变更需手动应用（共', count, '项）');
-        return { applied: false, pending: true, count };
+
+        let appliedCount = 0;
+
+        try {
+            const statusChanges = entities.characters.filter(c => c.changeType === 'status_updated' && c.newValue);
+            for (const change of statusChanges) {
+                const success = await this.applySingleCharacterStatusChange(project, change);
+                if (success) appliedCount++;
+            }
+
+            log.info('[AnalysisReportEngine] 实体状态更新完成:', appliedCount, '/', statusChanges.length, '项');
+            return {
+                applied: appliedCount > 0,
+                pending: appliedCount < statusChanges.length,
+                count: statusChanges.length
+            };
+        } catch (e) {
+            log.error('[AnalysisReportEngine] 实体状态更新失败:', e);
+            return { applied: false, pending: true, count };
+        }
+    }
+
+    private async applySingleCharacterStatusChange(project: string, change: EntityChange): Promise<boolean> {
+        try {
+            const folderPath = pjCharsDir(project);
+            const files = this.getVaultMeta().getFiles().filter(f =>
+                f.path.startsWith(folderPath) && f instanceof TFile
+            );
+
+            let targetFile: TFile | null = null;
+            for (const f of files) {
+                const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+                if (!fm) continue;
+                const name = fm['姓名'] || fm['名称'] || fm['name'] || '';
+                if (name === change.name) {
+                    targetFile = f as TFile;
+                    break;
+                }
+            }
+
+            if (!targetFile) return false;
+
+            const filePath = targetFile.path;
+            let content = await this.getFS().read(filePath);
+            const now = new Date().toISOString();
+
+            content = this.updateFrontmatterField(content, '当前状态', change.newValue || '');
+            content = this.updateFrontmatterField(content, 'entity_last_changed_at', change.context || `第${change.name}章`);
+            content = this.updateFrontmatterField(content, 'entity_last_changed_reason', change.context || '');
+            if (!content.match(/^entity_status:/m)) {
+                content = this.updateFrontmatterField(content, 'entity_status', 'active');
+            }
+            if (!content.match(/^entity_created_at:/m)) {
+                content = this.updateFrontmatterField(content, 'entity_created_at', now);
+            }
+
+            await this.getFS().write(filePath, content);
+            return true;
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] 人物状态更新失败:', change.name, e);
+            return false;
+        }
+    }
+
+    private updateFrontmatterField(content: string, fieldName: string, value: string): string {
+        const fieldRegex = new RegExp(`^(${fieldName}\\s*:).+$`, 'm');
+        const newLine = `${fieldName}: ${value}`;
+
+        if (fieldRegex.test(content)) {
+            return content.replace(fieldRegex, `$1 ${value}`);
+        } else {
+            return content.replace(
+                /^(---\s*\n)/m,
+                `$1${newLine}\n`
+            );
+        }
     }
 
     private async applyForeshadowChanges(
-        project: string, 
-        foreshadows: FullAnalysisReport['foreshadows'], 
+        project: string,
+        foreshadows: FullAnalysisReport['foreshadows'],
         chapterNum: number
     ): Promise<{ applied: boolean; pending: boolean; count: number }> {
         const count = (foreshadows?.planted?.length || 0) + (foreshadows?.recovered?.length || 0);
         if (count === 0) return { applied: false, pending: false, count: 0 };
-        console.log('[AnalysisReportEngine] 伏笔库变更需手动应用（共', count, '项）');
-        return { applied: false, pending: true, count };
+
+        let appliedCount = 0;
+
+        try {
+            const fp = pjForeshadowDB(project);
+            const ff = this.getVaultMeta().getAbstractFileByPath(fp);
+            if (!(ff instanceof TFile)) {
+                return { applied: false, pending: true, count };
+            }
+
+            let content = await this.getFS().read(fp);
+            let changed = false;
+
+            const chapterName = `第${chapterNum}章`;
+
+            if (foreshadows.recovered && foreshadows.recovered.length > 0) {
+                for (const f of foreshadows.recovered) {
+                    const newContent = this.moveForeshadowToRevealed(content, f.name, chapterName);
+                    if (newContent !== content) {
+                        content = newContent;
+                        changed = true;
+                        appliedCount++;
+                    }
+                }
+            }
+
+            if (foreshadows.planted && foreshadows.planted.length > 0) {
+                for (const f of foreshadows.planted) {
+                    const newRow = `| ${getNextRowNum(content)} | ${f.name} | 中 | 第${chapterNum}章 | 待定 | 未揭示 |`;
+                    if (hasTableSeparator(content)) {
+                        content = appendAfterSeparator(content, newRow);
+                        changed = true;
+                        appliedCount++;
+                    }
+                }
+            }
+
+            if (changed) {
+                await this.getFS().write(fp, content);
+                log.info('[AnalysisReportEngine] 伏笔库更新完成:', appliedCount, '项');
+            }
+
+            return {
+                applied: appliedCount > 0,
+                pending: appliedCount < count,
+                count
+            };
+        } catch (e) {
+            log.error('[AnalysisReportEngine] 伏笔库更新失败:', e);
+            return { applied: false, pending: true, count };
+        }
+    }
+
+    private moveForeshadowToRevealed(content: string, name: string, revealChapter: string): string {
+        const lines = content.split('\n');
+        let foundRow = -1;
+        let foundCols: string[] | null = null;
+
+        for (let i = 0; i < lines.length; i++) {
+            const l = lines[i];
+            if (l.match(/^\|.*\|/)) {
+                const cols = l.split('|').map(s => s.trim()).filter(Boolean);
+                if (cols.length >= 6 && cols[1] === name && !cols[cols.length - 1].includes('已揭示') && !cols[cols.length - 1].includes('揭示')) {
+                    foundRow = i;
+                    foundCols = cols;
+                }
+            }
+        }
+
+        if (foundRow === -1 || !foundCols) return content;
+
+        lines.splice(foundRow, 1);
+
+        let sepIdx = -1;
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('已揭示') || lines[i].includes('已回收')) {
+                for (let j = i + 1; j < lines.length; j++) {
+                    if (lines[j].match(/^\|[- ]+\|/)) {
+                        sepIdx = j;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        if (sepIdx !== -1) {
+            const newRowNum = getNextRowNum(lines.join('\n'));
+            const newRow = `| ${newRowNum} | ${foundCols[1]} | ${foundCols[2] || '中'} | ${foundCols[3] || ''} | ${foundCols[4] || ''} | ${revealChapter} | 已揭示 |`;
+            lines.splice(sepIdx + 1, 0, newRow);
+        }
+
+        return lines.join('\n');
     }
 
     private async applyTimelineChanges(project: string, timeline: FullAnalysisReport['timeline']): Promise<{ applied: boolean; pending: boolean; count: number }> {
         const count = timeline?.events?.length || 0;
         if (count === 0) return { applied: false, pending: false, count: 0 };
-        console.log('[AnalysisReportEngine] 时间线变更需手动应用（共', count, '项）');
-        return { applied: false, pending: true, count };
+
+        let appliedCount = 0;
+
+        try {
+            const fp = pjTimelineBoard(project);
+            const ff = this.getVaultMeta().getAbstractFileByPath(fp);
+
+            let content = '';
+            if (ff instanceof TFile) {
+                content = await this.getFS().read(fp);
+            } else {
+                const timelineDir = project + '/02-时间线与伏笔';
+                await mkdirp(this.app, timelineDir, this.getFS());
+                content = `# 时间线看板\n\n| # | 事件名称 | 时间 | 地点 | 涉及人物 | 章节 | 类型 |\n|---|---|---|---|---|---|---|\n`;
+            }
+
+            const highImportanceEvents = timeline.events.filter(e => e.importance === 'high' || e.importance === 'medium');
+
+            for (const event of highImportanceEvents) {
+                const rowNum = getNextRowNum(content);
+                const involved = event.involvedEntities && event.involvedEntities.length > 0
+                    ? event.involvedEntities.join('、')
+                    : '';
+                const newRow = `| ${rowNum} | ${event.event} | ${event.time || ''} | ${event.location || ''} | ${involved} | 第${event.chapter}章 | ${event.importance === 'high' ? '主线' : '支线'} |`;
+
+                if (hasTableSeparator(content)) {
+                    content = appendAfterSeparator(content, newRow);
+                    appliedCount++;
+                }
+            }
+
+            if (appliedCount > 0) {
+                await this.getFS().write(fp, content);
+                log.info('[AnalysisReportEngine] 时间线更新完成:', appliedCount, '项');
+            }
+
+            return {
+                applied: appliedCount > 0,
+                pending: appliedCount < count,
+                count
+            };
+        } catch (e) {
+            log.error('[AnalysisReportEngine] 时间线更新失败:', e);
+            return { applied: false, pending: true, count };
+        }
     }
 }

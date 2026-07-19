@@ -1,6 +1,9 @@
-﻿import { App, Modal, Notice } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import NovelWriterPlugin from '../main';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('BackupYuanModal');
 export class BackupYuanModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -16,11 +19,9 @@ export class BackupYuanModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -54,7 +55,7 @@ export class BackupYuanModal extends Modal {
                     result.files.push(f);
                 }
             } catch (e) {
-                console.warn('扫描目录失败:', dir, e);
+                log.warn('扫描目录失败:', dir, e);
             }
             return result;
         };
@@ -80,7 +81,7 @@ export class BackupYuanModal extends Modal {
                 if (!(await adapter.exists(d))) {
                     await adapter.mkdir(d);
                 }
-            } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+            } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
         }
 
         let count = 0;
@@ -90,7 +91,7 @@ export class BackupYuanModal extends Modal {
                 await adapter.write(f.replace('元文件', backupName), content);
                 count++;
             } catch (e) {
-                console.warn('备份失败:', f, e);
+                log.warn('备份失败:', f, e);
             }
         }
 

@@ -21,7 +21,11 @@ import {
     isStepClickable,
 } from './step-nav-presenter';
 import { showError, showSuccess } from '../../utils/helpers';
+import { SceneOutlineController } from './scene-outline-controller';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('StepRenderController');
 export interface StepRenderDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -144,6 +148,13 @@ export class StepRenderController {
             cs.generatedThisSession.has(stepKey) ||
             cs.stepCompleted.has(stepKey)
         );
+
+        // sceneExpand 步骤特殊处理：显示场景细纲编辑器
+        if (stepKey === 'sceneExpand' && showResult) {
+            this.renderSceneExpandResult(area);
+            return;
+        }
+
         if (showResult) {
             const resultContainer = area.createDiv({ cls: 'novel-writer-fw-result-section' });
             const titleRow = resultContainer.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;' } });
@@ -162,14 +173,15 @@ export class StepRenderController {
                 const newContent = textarea.value;
                 if (!newContent.trim()) { showError('内容不能为空'); return; }
                 try {
-                    console.warn('[小说工坊] 💾保存按钮: stepKey=', stepKey, 'chapDir=', d.getChapDir(), 'chapterName=', d.getChapterName(), 'len=', newContent.length);
+                    log.warn('[小说工坊] 💾保存按钮: stepKey=', stepKey, 'chapDir=', d.getChapDir(), 'chapterName=', d.getChapterName(), 'len=', newContent.length);
                     await d.stepRunner.saveStepResult(stepKey, newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
                     // v6.0: 保存后走结构化校验更新状态，不再直接标记完成
-                    cs.updateStepState(stepKey, newContent);
+                    // v6.x: 用户手动保存视为确认完成，强制标记为 complete
+                    cs.updateStepState(stepKey, newContent, true);
                     // v3.4.8: fix/finalFix 步骤保存时同步覆写正文文件
                     if (stepKey === 'fix' || stepKey === 'finalFix') {
                         cs.stepResults['bodyGeneration'] = newContent;
-                        cs.updateStepState('bodyGeneration', newContent);
+                        cs.updateStepState('bodyGeneration', newContent, true);
                         await d.stepRunner.writeFixToBody(newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
                     }
                     // 正文或修正变更 → 清除后续步骤
@@ -193,5 +205,105 @@ export class StepRenderController {
                 }
             };
         }
+    }
+
+    /**
+     * 渲染 Scene展开 步骤的结果区：场景细纲编辑器
+     */
+    private renderSceneExpandResult(area: HTMLElement): void {
+        const d = this.deps;
+        const cs = d.chapterState;
+
+        const resultContainer = area.createDiv({ cls: 'novel-writer-fw-result-section' });
+
+        const titleRow = resultContainer.createDiv({
+            attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' }
+        });
+        titleRow.createEl('h4', {
+            text: '🎬 场景细纲编辑器',
+            cls: 'novel-writer-fw-result-title',
+            attr: { style: 'margin:0;' }
+        });
+
+        const btnGroup = titleRow.createDiv({ attr: { style: 'display: flex; gap: 6px;' } });
+
+        const rawEditBtn = btnGroup.createEl('button', {
+            text: '📝 纯文本编辑',
+            attr: {
+                style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--background-secondary);'
+            }
+        });
+
+        const saveBtn = btnGroup.createEl('button', {
+            text: '💾 保存',
+            attr: {
+                style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);'
+            }
+        });
+
+        const editorContainer = resultContainer.createDiv({
+            cls: 'novel-writer-fw-result-card',
+            attr: { style: 'padding: 0; overflow: hidden;' }
+        });
+
+        const sceneEditorWrap = editorContainer.createDiv({
+            attr: { style: 'height: 500px; display: flex; flex-direction: column;' }
+        });
+
+        const sceneController = new SceneOutlineController({
+            app: d.app,
+            getProject: () => d.getProject(),
+            getChapterNum: () => {
+                const name = d.getChapterName();
+                const match = name.match(/\d+/);
+                return match ? parseInt(match[0]) : 0;
+            },
+            getVolume: () => d.getVolume(),
+            getChapDir: () => d.getChapDir(),
+            onSceneChange: () => {
+                showSuccess('场景细纲已自动保存');
+            }
+        });
+
+        sceneController.render(sceneEditorWrap);
+
+        let rawMode = false;
+        let rawTextarea: HTMLTextAreaElement | null = null;
+
+        rawEditBtn.onclick = () => {
+            rawMode = !rawMode;
+            if (rawMode) {
+                sceneEditorWrap.style.display = 'none';
+                rawEditBtn.setText('🎬 场景编辑器');
+                const rawContainer = editorContainer.createDiv({
+                    attr: { style: 'padding: 8px;' }
+                });
+                rawTextarea = rawContainer.createEl('textarea', {
+                    attr: {
+                        style: 'width:100%;min-height:460px;font-size:12px;padding:8px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;white-space:pre-wrap;'
+                    }
+                }) as HTMLTextAreaElement;
+                rawTextarea.value = cs.stepResults['sceneExpand'] || '';
+            } else {
+                sceneEditorWrap.style.display = 'flex';
+                rawEditBtn.setText('📝 纯文本编辑');
+                if (rawTextarea && rawTextarea.parentElement) {
+                    rawTextarea.parentElement.remove();
+                }
+                sceneController.render(sceneEditorWrap);
+            }
+        };
+
+        saveBtn.onclick = async () => {
+            try {
+                await sceneController.saveScenes();
+                const freshContent = cs.stepResults['sceneExpand'] || '';
+                cs.updateStepState('sceneExpand', freshContent, true);
+                showSuccess('Scene展开 已保存');
+                await d.renderInContainer(d.getTabContent());
+            } catch (e) {
+                showError(`保存失败: ${(e as Error).message}`);
+            }
+        };
     }
 }

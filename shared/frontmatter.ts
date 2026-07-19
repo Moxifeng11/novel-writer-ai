@@ -19,11 +19,11 @@ export interface MarkdownSection {
 
 /** 从 Markdown 文件内容中解析 YAML frontmatter 为键值对象 */
 export function parseFrontmatter(content: string): Record<string, string> {
-    const fm = content.match(/^---\n([\s\S]*?)\n---/);
+    const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!fm) return {};
 
     const result: Record<string, string> = {};
-    const lines = fm[1].split('\n');
+    const lines = fm[1].split(/\r?\n/);
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];

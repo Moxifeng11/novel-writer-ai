@@ -6,7 +6,7 @@ import type { ChapterContext } from './ai-types';
 import { PREV_SUMMARY_SLICE } from '../shared/thresholds';
 
 /** 系统提示词（写作引导） */
-export function buildSystemPrompt(ctx: ChapterContext, settings: { minWordCount: number; maxWordCount: number }): string {
+export function buildSystemPrompt(ctx: ChapterContext, settings: { minWordCount: number; maxWordCount: number }, knowledgeInjection?: string): string {
     const writingRules = `【写作引导——镜头贴着主角，不跳不解释】
 镜头贴着主角。他看到的，你写。他听到的，你写。他皮肤感受到的，你写。
 1. 从一个身体感觉开始：窄、烫、麻、凉、硌。感受到什么就写什么。
@@ -33,7 +33,7 @@ export function buildSystemPrompt(ctx: ChapterContext, settings: { minWordCount:
     const roleLockRule = '13. 从上下文中指定的已有角色里选角——主角和核心配角已经在设定库里，不需要自创';
     const cultureRule = '14. 社会行为必须符合世界观中的"文化与社会"设定（社会结构、价值观念、风俗禁忌），角色的言行举止不得违背其所处时代和阶层的行为规范';
 
-    return `镜头贴着主角。你不是作者——你只是记录他正在经历的事。
+    let systemPrompt = `镜头贴着主角。你不是作者——你只是记录他正在经历的事。
 
 ${writingRules}
 
@@ -43,6 +43,12 @@ ${roleLockRule}
 ${cultureRule}
 
 记住：你不是在写，你是在记。你是在记录主角刚刚经历的真实时刻。`;
+
+    if (knowledgeInjection && knowledgeInjection.trim()) {
+        systemPrompt += '\n\n' + knowledgeInjection.trim();
+    }
+
+    return systemPrompt;
 }
 
 /** 用户提示词（上下文拼接） */

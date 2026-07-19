@@ -18,6 +18,7 @@ import type { AIEngine } from '../engine/ai-engine';
 import type { ContextManager } from '../engine/context-manager';
 import type { FloatWorkspaceManager } from '../ui/workspace-manager';
 import type { PluginCacheManager } from './plugin-cache';
+import type { EngineRegistry } from '../engine/engine-registry';
 
 /** 提供商信息 */
 export interface ProviderInfo {
@@ -27,7 +28,9 @@ export interface ProviderInfo {
     models: string[];
     maxContext: number;
     maxOutput: number;
+    /** @deprecated 请使用 isDefault，单轨制下不再区分预设和自定义 */
     isPreset: boolean;
+    isDefault?: boolean;
     isHidden?: boolean;
 }
 
@@ -48,6 +51,7 @@ export interface NovelWriterEngineAPI {
     readonly aiEngine: AIEngine;
     readonly ctxManager: ContextManager;
     readonly cacheManager: PluginCacheManager;
+    readonly engineRegistry: EngineRegistry;
 }
 
 /** ─── 子接口：模型/提供商管理 ─── */

@@ -1,9 +1,10 @@
 import { App } from 'obsidian';
 import { AnalysisReportEngine } from '../../engine/analysis-report-engine';
 import { FullAnalysisReport } from '../../shared/types';
-import { AIEngine } from '../../engine/ai-engine';
-import { ContextManager } from '../../engine/context-manager';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('AnalysisReportPanel');
 /**
  * v6.0 智能分析报告展示面板
  * 展示实体变更、伏笔回收、时间线更新、情绪曲线
@@ -14,9 +15,9 @@ export class AnalysisReportPanel {
     private container: HTMLElement | null = null;
     private currentReport: FullAnalysisReport | null = null;
 
-    constructor(app: App, aiEngine: AIEngine, contextManager: ContextManager) {
+    constructor(app: App, engine: AnalysisReportEngine) {
         this.app = app;
-        this.engine = new AnalysisReportEngine(app, aiEngine, contextManager);
+        this.engine = engine;
     }
 
     /**
@@ -46,7 +47,7 @@ export class AnalysisReportPanel {
             this.renderReport(report);
             return report;
         } catch (e) {
-            console.error('[AnalysisReportPanel] 分析失败:', e);
+            log.error('[AnalysisReportPanel] 分析失败:', e);
             this.renderError(e as Error);
             throw e;
         }

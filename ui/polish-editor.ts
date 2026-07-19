@@ -12,9 +12,20 @@
  *   - renderPolishEditor (L3898) → PolishEditor.render()
  */
 
+import { App, Modal, Notice } from 'obsidian';
 import { StepRunner } from '../engine/step-runner';
 import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
+import NovelWriterPlugin from '../main';
+import { RhythmAnalyzer } from '../engine/rhythm-analyzer';
+import { StyleLearner } from '../engine/style-learner';
+import type { RhythmAnalysis } from '../shared/co-writer-types';
+import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
+import { WritingProfileManager } from '../engine/writing-profile';
+import { ENGINE_NAMES } from '../engine/engine-registry';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('PolishEditor');
 // ============================================================
 // 工具函数 (纯函数，无 this 依赖)
 // ============================================================
@@ -89,10 +100,12 @@ export function extractPlainTextFromEditor(
 
 export class PolishEditor {
     private stepRunner: StepRunner;
+    private plugin: NovelWriterPlugin;
     private debounceManager = new AdaptiveDebounceManager({ debug: false });
 
-    constructor(stepRunner: StepRunner) {
+    constructor(stepRunner: StepRunner, plugin: NovelWriterPlugin) {
         this.stepRunner = stepRunner;
+        this.plugin = plugin;
     }
 
     /**
@@ -121,10 +134,10 @@ export class PolishEditor {
     ): Promise<void> {
         const bodyText = stepResults['bodyGeneration'];
         if (!bodyText || !project) {
-            console.warn('[小说工坊] PolishEditor.render: 跳过 (bodyText=%s, project=%s)', !!bodyText, project || '(空)');
+            log.warn('[小说工坊] PolishEditor.render: 跳过 (bodyText=%s, project=%s)', !!bodyText, project || '(空)');
             return;
         }
-        console.warn('[小说工坊] PolishEditor.render: project=%s bodyLen=%d', project, bodyText.length);
+        log.warn('[小说工坊] PolishEditor.render: project=%s bodyLen=%d', project, bodyText.length);
 
         // 注入实体颜色 CSS
         injectPolishEditorStyles();
@@ -134,7 +147,23 @@ export class PolishEditor {
 
         // 标题行 + 自动保存状态
         const headerRow = area.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' } });
-        headerRow.createEl('h4', { text: '✏️ 文笔润色编辑器', attr: { style: 'margin:0;' } });
+        const titleSection = headerRow.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;' } });
+        titleSection.createEl('h4', { text: '✏️ 文笔润色编辑器', attr: { style: 'margin:0;' } });
+        const aiPolishBtn = titleSection.createEl('button', {
+            text: '✨ AI润色',
+            cls: 'nw-btn',
+            attr: { style: 'font-size:12px;padding:2px 10px;' },
+        });
+        const rhythmBtn = titleSection.createEl('button', {
+            text: '📊 节奏分析',
+            cls: 'nw-btn',
+            attr: { style: 'font-size:12px;padding:2px 10px;' },
+        });
+        const styleBtn = titleSection.createEl('button', {
+            text: '🎨 风格指南',
+            cls: 'nw-btn',
+            attr: { style: 'font-size:12px;padding:2px 10px;' },
+        });
         const statusSpan = headerRow.createSpan({ text: '💾 已保存', attr: { style: 'font-size:11px;color:var(--text-muted);' } });
 
         // 实体颜色图例
@@ -155,7 +184,7 @@ export class PolishEditor {
         try {
             entityNames = await this.stepRunner.getEntityNames(project);
         } catch (e) {
-            console.warn('[小说工坊] 获取实体名称失败:', e);
+            log.warn('[小说工坊] 获取实体名称失败:', e);
         }
 
         // 构造实体映射：名称 → 类型
@@ -176,7 +205,7 @@ export class PolishEditor {
             }
         }
 
-        console.warn('[小说工坊] PolishEditor.render: entityMap size=%d chars=%d locs=%d factions=%d items=%d bodyPreview=%s',
+        log.warn('[小说工坊] PolishEditor.render: entityMap size=%d chars=%d locs=%d factions=%d items=%d bodyPreview=%s',
             entityMap.size,
             entityNames?.chars?.length || 0,
             entityNames?.locs?.length || 0,
@@ -210,10 +239,10 @@ export class PolishEditor {
                     stepResults['bodyGeneration'] = plainText;
                     await this.stepRunner.writeFixToBody(plainText, chapDir, chapterName, volume);
                     statusSpan.setText('💾 已保存 ' + new Date().toLocaleTimeString());
-                    console.warn('[小说工坊] 润色编辑器自动保存:', plainText.length, '字');
+                    log.warn('[小说工坊] 润色编辑器自动保存:', plainText.length, '字');
                 } catch (e) {
                     statusSpan.setText('❌ 保存失败');
-                    console.error('[小说工坊] 润色编辑器保存失败:', e);
+                    log.error('[小说工坊] 润色编辑器保存失败:', e);
                 }
             }, 500);
         };
@@ -237,5 +266,535 @@ export class PolishEditor {
             }
             triggerAutoSave();
         });
+
+        // ✨ AI 润色按钮：弹出选项 → 调用 AI → 对比 → 应用
+        aiPolishBtn.onclick = () => {
+            try {
+                const fullText = extractPlainTextFromEditor(editorDiv, entityMap);
+                const selection = window.getSelection()?.toString() || '';
+                new PolishAIPolishModal(
+                    this.plugin.app,
+                    this.plugin,
+                    fullText,
+                    selection,
+                    (polishedText: string) => {
+                        // 重建带实体标记的 HTML 并替换编辑器内容
+                        const newMarkedHtml = buildEntityMarkedHtml(polishedText, entityMap, typeLabels);
+                        editorDiv.innerHTML = newMarkedHtml;
+                        triggerAutoSave();
+                    },
+                ).open();
+            } catch (e) {
+                log.error('[小说工坊] AI润色按钮点击失败:', e);
+                new Notice(`AI润色出错: ${e instanceof Error ? e.message : String(e)}`);
+            }
+        };
+
+        // 📊 节奏分析按钮
+        rhythmBtn.onclick = async () => {
+            try {
+                const fullText = extractPlainTextFromEditor(editorDiv, entityMap);
+                if (!fullText || fullText.trim().length < 100) {
+                    new Notice('正文内容太少，无法分析节奏（至少100字）');
+                    return;
+                }
+
+                rhythmBtn.setText('⏳ 分析中...');
+                rhythmBtn.disabled = true;
+
+                const analyzer = new RhythmAnalyzer({
+                    app: this.plugin.app,
+                    aiEngine: this.plugin.aiEngine,
+                    plugin: this.plugin,
+                });
+                const result = await analyzer.analyze(fullText);
+
+                rhythmBtn.setText('📊 节奏分析');
+                rhythmBtn.disabled = false;
+
+                // 展示分析结果
+                this.renderRhythmPanel(area, result, editorDiv);
+            } catch (e) {
+                rhythmBtn.setText('📊 节奏分析');
+                rhythmBtn.disabled = false;
+                log.error('[小说工坊] 节奏分析失败:', e);
+                new Notice(`节奏分析出错: ${e instanceof Error ? e.message : String(e)}`);
+            }
+        };
+
+        // 🎨 风格指南按钮
+        styleBtn.onclick = async () => {
+            try {
+                const learner = await this.plugin.engineRegistry.getStyleLearner(project);
+                const guide = learner.getStyleGuide();
+                this.renderStylePanel(area, guide);
+            } catch (e) {
+                log.error('[小说工坊] 风格指南获取失败:', e);
+                new Notice(`风格指南出错: ${e instanceof Error ? e.message : String(e)}`);
+            }
+        };
+    }
+
+    /** 渲染节奏分析面板 */
+    private renderRhythmPanel(area: HTMLElement, result: RhythmAnalysis, editorDiv: HTMLDivElement): void {
+        // 移除旧面板
+        area.querySelectorAll('.nw-rhythm-panel').forEach(el => el.remove());
+
+        const panel = area.createDiv({ cls: 'nw-rhythm-panel', attr: { style: 'margin:8px 0;padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);' } });
+
+        // 标题行
+        const header = panel.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;' } });
+        header.createEl('h5', { text: '📊 节奏分析结果', attr: { style: 'margin:0;font-size:14px;' } });
+        const closeBtn = header.createEl('button', { text: '✕', cls: 'nw-btn', attr: { style: 'font-size:11px;padding:1px 6px;' } });
+        closeBtn.onclick = () => panel.remove();
+
+        // 整体节奏
+        const paceLabels: Record<string, string> = { fast: '⚡ 偏快', medium: '⚖️ 均衡', slow: '🐌 偏慢', balanced: '⚖️ 均衡' };
+        const overviewRow = panel.createDiv({ attr: { style: 'display:flex;gap:12px;margin-bottom:8px;font-size:12px;flex-wrap:wrap;' } });
+        overviewRow.createSpan({ text: `整体节奏: ${paceLabels[result.overallPace] || result.overallPace}` });
+        overviewRow.createSpan({ text: `段落数: ${result.segments.length}` });
+        overviewRow.createSpan({ text: `拖沓段: ${result.slowSegments.length}`, attr: { style: result.slowSegments.length > 0 ? 'color:var(--text-warning);' : '' } });
+        overviewRow.createSpan({ text: `紧张段: ${result.fastSegments.length}`, attr: { style: result.fastSegments.length > 0 ? 'color:var(--text-success);' : '' } });
+
+        // 建议
+        if (result.suggestions.length > 0) {
+            const sugSection = panel.createDiv({ attr: { style: 'margin-bottom:8px;' } });
+            sugSection.createEl('div', { text: '💡 优化建议', attr: { style: 'font-size:12px;font-weight:600;margin-bottom:4px;' } });
+            for (const sug of result.suggestions) {
+                sugSection.createEl('div', { text: `• ${sug}`, attr: { style: 'font-size:11px;color:var(--text-muted);margin:2px 0;' } });
+            }
+        }
+
+        // 段落详情
+        if (result.segments.length > 0) {
+            const detailSection = panel.createDiv({ attr: { style: 'max-height:200px;overflow-y:auto;' } });
+            detailSection.createEl('div', { text: '段落详情', attr: { style: 'font-size:12px;font-weight:600;margin-bottom:4px;' } });
+
+            const typeLabels: Record<string, string> = { action: '⚔️动作', dialogue: '💬对话', description: '📝描写', introspection: '💭内心' };
+            const paceIcon: Record<string, string> = { fast: '⚡', medium: '➡️', slow: '🐌' };
+
+            for (let i = 0; i < result.segments.length; i++) {
+                const seg = result.segments[i];
+                const hasIssue = seg.issues.length > 0;
+                const row = detailSection.createDiv({
+                    attr: {
+                        style: `display:flex;gap:8px;font-size:11px;padding:3px 6px;margin:2px 0;border-radius:3px;${hasIssue ? 'background:rgba(245,158,11,0.1);' : ''}`,
+                        title: seg.issues.join('；'),
+                    }
+                });
+                row.createSpan({ text: `${paceIcon[seg.pace] || '➡️'}`, attr: { style: 'min-width:16px;' } });
+                row.createSpan({ text: `${typeLabels[seg.type] || seg.type}`, attr: { style: 'min-width:60px;color:var(--text-muted);' } });
+                row.createSpan({ text: `密度${seg.density}`, attr: { style: `min-width:50px;${seg.density < 30 ? 'color:var(--text-warning);' : seg.density > 85 ? 'color:var(--text-error);' : ''}` } });
+                row.createSpan({ text: `紧张${seg.tensionLevel}`, attr: { style: `min-width:50px;${seg.tensionLevel > 80 ? 'color:var(--text-success);' : ''}` } });
+                if (hasIssue) {
+                    row.createSpan({ text: `⚠️ ${seg.issues[0]}`, attr: { style: 'color:var(--text-warning);flex:1;' } });
+                }
+            }
+        }
+    }
+
+    /** 渲染风格指南面板 */
+    private renderStylePanel(area: HTMLElement, guide: string): void {
+        // 移除旧面板
+        area.querySelectorAll('.nw-style-panel').forEach(el => el.remove());
+
+        const panel = area.createDiv({ cls: 'nw-style-panel', attr: { style: 'margin:8px 0;padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);' } });
+
+        // 标题行
+        const header = panel.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;' } });
+        header.createEl('h5', { text: '🎨 作者风格指南', attr: { style: 'margin:0;font-size:14px;' } });
+        const closeBtn = header.createEl('button', { text: '✕', cls: 'nw-btn', attr: { style: 'font-size:11px;padding:1px 6px;' } });
+        closeBtn.onclick = () => panel.remove();
+
+        if (!guide || guide.trim().length === 0) {
+            panel.createEl('p', {
+                text: 'ℹ️ 暂无风格学习数据。随着写作积累，系统会自动学习您的风格偏好并在此展示。',
+                attr: { style: 'font-size:12px;color:var(--text-muted);margin:0;' }
+            });
+            return;
+        }
+
+        // 解析并展示风格指南
+        const lines = guide.split('\n');
+        const contentDiv = panel.createDiv({ attr: { style: 'font-size:12px;line-height:1.6;' } });
+
+        for (const line of lines) {
+            if (line.startsWith('【')) {
+                contentDiv.createEl('div', { text: line, attr: { style: 'font-weight:600;margin:8px 0 4px 0;color:var(--text-accent);' } });
+            } else if (line.startsWith('偏好风格：')) {
+                contentDiv.createEl('div', { text: '✅ 偏好风格', attr: { style: 'font-weight:600;margin:6px 0 2px 0;color:var(--text-success);' } });
+            } else if (line.startsWith('避免风格：')) {
+                contentDiv.createEl('div', { text: '❌ 避免风格', attr: { style: 'font-weight:600;margin:6px 0 2px 0;color:var(--text-error);' } });
+            } else if (line.startsWith('- ')) {
+                contentDiv.createEl('div', { text: line, attr: { style: 'margin:1px 0 1px 8px;color:var(--text-muted);' } });
+            } else if (line.trim()) {
+                contentDiv.createEl('div', { text: line, attr: { style: 'margin:2px 0;' } });
+            }
+        }
+    }
+}
+
+// ============================================================
+// PolishAIPolishModal — AI 润色弹窗（选项 / 加载 / 对比三阶段）
+// ============================================================
+
+type PolishScope = '全文润色' | '选中段落润色';
+type PolishStyle = '精简凝练' | '细节丰富' | '情感强化' | '节奏优化';
+
+const POLISH_STYLE_HINTS: Record<PolishStyle, string> = {
+    '精简凝练': '删减冗余词句，突出核心情节，让文字更加凝练有力',
+    '细节丰富': '在原意基础上丰富细节描写，让场景和人物更立体',
+    '情感强化': '加强情感表达，让人物内心活动更细腻动人',
+    '节奏优化': '调整叙事节奏，优化段落长短搭配，增强阅读韵律',
+};
+
+export class PolishAIPolishModal extends Modal {
+    private plugin: NovelWriterPlugin;
+    private fullText: string;
+    private selection: string;
+    private projectPath: string;
+
+    private polishScope: PolishScope = '全文润色';
+    private style: PolishStyle = '精简凝练';
+    private resultText: string = '';
+    private applyFingerprint: boolean = true;
+
+    private onApply: (polishedText: string) => void;
+
+    constructor(
+        app: App,
+        plugin: NovelWriterPlugin,
+        fullText: string,
+        selection: string,
+        onApply: (polishedText: string) => void,
+        projectPath?: string,
+    ) {
+        super(app);
+        this.plugin = plugin;
+        this.fullText = fullText;
+        this.selection = selection;
+        this.onApply = onApply;
+        this.projectPath = projectPath || plugin.getActiveProject() || '';
+    }
+
+    onOpen(): void {
+        this.modalEl.addClass('nw-scope');
+        this.renderInputForm();
+    }
+
+    onClose(): void {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+
+    private renderInputForm(): void {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.createEl('h2', { text: '✨ AI 润色' });
+
+        // 润色范围
+        const scopeSection = contentEl.createDiv();
+        scopeSection.style.cssText = 'margin-top:12px;';
+        scopeSection.createEl('h4', { text: '润色范围' });
+        const scopeBtns = scopeSection.createDiv();
+        scopeBtns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+        const scopeOptions: PolishScope[] = ['全文润色', '选中段落润色'];
+        for (const s of scopeOptions) {
+            const btn = scopeBtns.createEl('button', { text: s, cls: 'nw-btn' });
+            if (s === this.polishScope) btn.addClass('is-active');
+            btn.onclick = () => {
+                if (s === '选中段落润色' && (!this.selection || this.selection.trim().length === 0)) {
+                    new Notice('请先在编辑器中选中段落');
+                    return;
+                }
+                this.polishScope = s;
+                scopeBtns.querySelectorAll('button').forEach(b => b.removeClass('is-active'));
+                btn.addClass('is-active');
+            };
+        }
+        if (!this.selection || this.selection.trim().length === 0) {
+            const hint = scopeSection.createEl('p', {
+                text: 'ℹ️ 当前未检测到选中文本，「选中段落润色」需先在编辑器中选中文本。',
+                attr: { style: 'font-size:12px;color:var(--text-muted);margin:6px 0 0 0;' },
+            });
+            void hint;
+        }
+
+        // 润色风格
+        const styleSection = contentEl.createDiv();
+        styleSection.style.cssText = 'margin-top:16px;';
+        styleSection.createEl('h4', { text: '润色风格' });
+        const styleBtns = styleSection.createDiv();
+        styleBtns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+        const styleOptions: PolishStyle[] = ['精简凝练', '细节丰富', '情感强化', '节奏优化'];
+        for (const s of styleOptions) {
+            const btn = styleBtns.createEl('button', { text: s, cls: 'nw-btn' });
+            if (s === this.style) btn.addClass('is-active');
+            btn.onclick = () => {
+                this.style = s;
+                styleBtns.querySelectorAll('button').forEach(b => b.removeClass('is-active'));
+                btn.addClass('is-active');
+            };
+        }
+
+        // 写作指纹应用
+        if (this.projectPath) {
+            const fingerprintSection = contentEl.createDiv();
+            fingerprintSection.style.cssText = 'margin-top:16px;';
+            fingerprintSection.createEl('h4', { text: '写作指纹' });
+            const fingerprintDesc = fingerprintSection.createEl('p', {
+                text: '应用项目启用的写作指纹风格，让润色结果更贴合你的写作习惯',
+                attr: { style: 'font-size:12px;color:var(--text-muted);margin:4px 0 8px 0;' }
+            });
+            void fingerprintDesc;
+            
+            const fingerprintToggle = fingerprintSection.createDiv();
+            fingerprintToggle.style.cssText = 'display:flex;align-items:center;gap:8px;';
+            const checkbox = fingerprintToggle.createEl('input', {
+                type: 'checkbox',
+                attr: { style: 'cursor:pointer;' }
+            });
+            checkbox.checked = this.applyFingerprint;
+            checkbox.addEventListener('change', () => {
+                this.applyFingerprint = checkbox.checked;
+            });
+            fingerprintToggle.createEl('span', {
+                text: '应用写作指纹风格',
+                attr: { style: 'font-size:13px;cursor:pointer;' }
+            }).addEventListener('click', () => {
+                checkbox.checked = !checkbox.checked;
+                this.applyFingerprint = checkbox.checked;
+            });
+        }
+
+        // 操作按钮
+        const actions = contentEl.createDiv();
+        actions.style.cssText = 'display:flex;gap:8px;margin-top:20px;justify-content:flex-end;';
+        const startBtn = actions.createEl('button', {
+            text: '开始润色',
+            cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
+        });
+        startBtn.onclick = () => this.runPolish();
+        const cancelBtn = actions.createEl('button', { text: '取消', cls: 'nw-btn' });
+        cancelBtn.onclick = () => this.close();
+    }
+
+    private renderLoading(): void {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.createEl('h2', { text: '✨ AI 润色' });
+        contentEl.createEl('p', {
+            text: `⏳ 正在调用 AI 润色（${this.polishScope} · ${this.style}），请稍候...`,
+            attr: { style: 'color:var(--text-muted);' },
+        });
+        contentEl.createEl('p', {
+            text: '润色过程中请勿关闭窗口',
+            attr: { style: 'font-size:12px;color:var(--text-muted);' },
+        });
+    }
+
+    private async runPolish(): Promise<void> {
+        this.renderLoading();
+
+        const systemPrompt = '你是专业小说编辑，负责润色正文。保持原意不变，优化文笔。';
+        const styleHint = POLISH_STYLE_HINTS[this.style];
+        const isPartial = this.polishScope === '选中段落润色';
+        const targetText = isPartial ? this.selection : this.fullText;
+
+        let fingerprintStyleHint = '';
+        if (this.applyFingerprint && this.projectPath) {
+            try {
+                fingerprintStyleHint = await this.loadFingerprintStyleHint();
+            } catch (e) {
+                log.warn('[PolishAIPolishModal] 加载指纹风格失败:', e);
+            }
+        }
+
+        const userPrompt = `请润色以下${isPartial ? '选中的段落' : '小说正文'}。
+
+风格要求：${this.style}（${styleHint}）
+${fingerprintStyleHint}
+
+原文：
+---
+${targetText}
+---
+
+要求：
+1. 保持人称和时态一致
+2. 不要添加新情节
+3. 直接输出润色后的正文，不要添加任何解释、标注或前后缀`;
+
+        try {
+            const maxTokens = Math.min(
+                8000,
+                Math.max(2048, targetText.length * 2),
+            );
+            const resp = await this.plugin.aiEngine.callAI(
+                systemPrompt,
+                userPrompt,
+                this.plugin.settings.proModel,
+                0.7,
+                maxTokens,
+                { isWritingTask: true },
+            );
+            if (resp.error || !resp.content) {
+                log.error('[小说工坊] AI润色失败:', resp.error);
+                new Notice(`润色失败: ${resp.error || '返回为空'}`);
+                this.renderInputForm();
+                return;
+            }
+            this.resultText = resp.content.trim();
+            this.renderResult();
+        } catch (e) {
+            log.error('[小说工坊] AI润色调用异常:', e);
+            new Notice(`润色出错: ${e instanceof Error ? e.message : String(e)}`);
+            this.renderInputForm();
+        }
+    }
+
+    private async loadFingerprintStyleHint(): Promise<string> {
+        if (!this.projectPath) return '';
+
+        try {
+            const fingerprintLibrary = new StyleFingerprintLibrary(this.app, this.projectPath);
+            await fingerprintLibrary.loadGlobal();
+            await fingerprintLibrary.loadProject();
+            await fingerprintLibrary.loadGlobalState(this.projectPath);
+
+            // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
+            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const profile = await profileManager.load(this.projectPath);
+
+            const enabledProjectIds = profile.fingerprint.enabledProject || [];
+            const enabledGlobalIds = profile.fingerprint.enabledGlobal || [];
+
+            const enabledFingerprints: StyleFingerprint[] = [];
+
+            enabledProjectIds.forEach(id => {
+                const fp = fingerprintLibrary.getProject(id);
+                if (fp && fp.enabled) {
+                    enabledFingerprints.push(fp);
+                }
+            });
+
+            enabledGlobalIds.forEach(id => {
+                const fp = fingerprintLibrary.getGlobal(id);
+                if (fp && fingerprintLibrary.isGlobalEnabledForProject(id, this.projectPath)) {
+                    enabledFingerprints.push(fp);
+                }
+            });
+
+            if (enabledFingerprints.length === 0) {
+                return '';
+            }
+
+            const features: string[] = [];
+            const featureLabels: Record<string, string> = {
+                sentenceRhythm: '句式节奏',
+                wordPreference: '用词偏好',
+                narrativeStyle: '叙事风格',
+                rhetoric: '修辞特点',
+                dialogueStyle: '对话风格',
+                paragraphStructure: '段落结构',
+                overallTone: '整体基调',
+            };
+
+            const featureKeys: Array<keyof StyleFingerprint['features']> = [
+                'sentenceRhythm', 'wordPreference', 'narrativeStyle',
+                'rhetoric', 'dialogueStyle', 'paragraphStructure', 'overallTone'
+            ];
+
+            featureKeys.forEach(key => {
+                const values = enabledFingerprints
+                    .map(fp => fp.features[key])
+                    .filter(v => v && v.trim().length > 0);
+                
+                if (values.length > 0) {
+                    const uniqueValues = [...new Set(values)];
+                    const valueStr = uniqueValues.slice(0, 2).join('；');
+                    features.push(`- ${featureLabels[key]}：${valueStr}`);
+                }
+            });
+
+            if (features.length === 0) {
+                return '';
+            }
+
+            return `\n\n写作指纹风格参考（${enabledFingerprints.length}个启用指纹）：\n${features.join('\n')}\n\n请尽量贴合以上写作风格进行润色。`;
+        } catch (e) {
+            log.warn('[PolishAIPolishModal] 加载指纹风格失败:', e);
+            return '';
+        }
+    }
+
+    private renderResult(): void {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.createEl('h2', { text: '✨ AI 润色结果' });
+
+        const metaP = contentEl.createEl('p', {
+            text: `范围：${this.polishScope} · 风格：${this.style}`,
+            attr: { style: 'font-size:12px;color:var(--text-muted);margin:0 0 12px 0;' },
+        });
+        void metaP;
+
+        // 对比预览（两列）
+        const compare = contentEl.createDiv();
+        compare.style.cssText = 'display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;';
+
+        const origCol = compare.createDiv();
+        origCol.style.cssText = 'flex:1 1 280px;min-width:280px;';
+        origCol.createEl('h4', { text: '原文' });
+        const origBox = origCol.createEl('div');
+        const origDisplay = this.polishScope === '选中段落润色' ? this.selection : this.fullText;
+        origBox.setText(origDisplay);
+        origBox.style.cssText =
+            'border:1px solid var(--background-modifier-border);border-radius:6px;' +
+            'padding:10px 12px;max-height:320px;overflow:auto;white-space:pre-wrap;' +
+            'word-break:break-word;background:var(--background-secondary);font-size:13px;line-height:1.6;';
+
+        const newCol = compare.createDiv();
+        newCol.style.cssText = 'flex:1 1 280px;min-width:280px;';
+        newCol.createEl('h4', { text: '润色后' });
+        const newBox = newCol.createEl('div');
+        newBox.setText(this.resultText);
+        newBox.style.cssText =
+            'border:1px solid var(--interactive-accent);border-radius:6px;' +
+            'padding:10px 12px;max-height:320px;overflow:auto;white-space:pre-wrap;' +
+            'word-break:break-word;background:var(--background-secondary);font-size:13px;line-height:1.6;';
+
+        // 操作按钮
+        const actions = contentEl.createDiv();
+        actions.style.cssText = 'display:flex;gap:8px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap;';
+        const applyBtn = actions.createEl('button', {
+            text: '✅ 应用润色',
+            cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
+        });
+        applyBtn.onclick = () => {
+            this.applyResult();
+            new Notice('✅ 已应用润色结果', 2000);
+            this.close();
+        };
+        const retryBtn = actions.createEl('button', { text: '🔄 重新润色', cls: 'nw-btn' });
+        retryBtn.onclick = () => this.renderInputForm();
+        const cancelBtn = actions.createEl('button', { text: '取消', cls: 'nw-btn' });
+        cancelBtn.onclick = () => this.close();
+    }
+
+    private applyResult(): void {
+        let finalText: string;
+        if (this.polishScope === '选中段落润色' && this.selection) {
+            // 将选中段落替换为润色结果，保留全文其余部分
+            finalText = this.fullText.replace(this.selection, this.resultText);
+            if (finalText === this.fullText) {
+                // 替换未命中（如选中文本在编辑器中被实体 span 包裹），回退为直接拼接
+                log.warn('[小说工坊] 选中段落替换未命中，回退为追加润色结果');
+                finalText = this.fullText + '\n\n' + this.resultText;
+            }
+        } else {
+            finalText = this.resultText;
+        }
+        this.onApply(finalText);
     }
 }

@@ -11,7 +11,16 @@ import NovelWriterPlugin from "../main";
 import { DraggablePanel } from "./draggable-panel";
 import { CoWriterEngine } from "../engine/co-writer-engine";
 import { SuggestionRecord, SentenceEditRecord } from "../shared/types";
+import { AssociationSuggestion } from "../shared/co-writer-types";
+import { associationToSuggestion } from "./cowrite/cowrite-mappers";
+import { CharacterConsistencyChecker, ConsistencyCheckResult } from "../engine/character-consistency-checker";
+import { ProgressEmitter, type ProgressState } from "../shared/progress-emitter";
+import { StepListComponent } from "./components/progress/step-list";
+import { TimeEstimator } from "../shared/time-estimator";
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('CoWriteFloatingPanel');
 export const VIEW_TYPE_FLOAT_COWRITE = "nw-float-cowrite";
 
 export class CoWriteFloatingPanel extends DraggablePanel {
@@ -27,6 +36,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   private statusBar!: HTMLElement;
   private tractionContainer!: HTMLElement;
   private flowContainer!: HTMLElement;
+  private logicCheckContainer!: HTMLElement;
 
   // === 状态 ===
   private engine: CoWriterEngine;
@@ -40,9 +50,24 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   suggestionHistory: SentenceEditRecord[] = [];
   pendingRewriteRange: { start: number; end: number } | null = null;
 
+  // v7.3: 进度增强相关
+  private suggestAbortController: AbortController | null = null;
+  private suggestProgressEmitter: ProgressEmitter | null = null;
+  private suggestStepList: StepListComponent | null = null;
+  private suggestProgressContainer: HTMLElement | null = null;
+  private suggestCancelBtn: HTMLButtonElement | null = null;
+  private suggestRetryBtn: HTMLButtonElement | null = null;
+  private suggestErrorContainer: HTMLElement | null = null;
+  private suggestEtaDisplay: HTMLElement | null = null;
+  private timeEstimator: TimeEstimator | null = null;
+  private lastSuggestError: string | null = null;
+  private lastSuggestParams: { precedingText: string; cursorHint: string; mode: string; count: number } | null = null;
+  private suggestBtn: HTMLButtonElement | null = null;
+
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
     super(leaf, plugin, "cowrite", "\u270D\uFE0F \u534F\u540C\u5199\u4F5C\u6D6E\u7A97", "pen-nib");
     this.engine = plugin.coWriterEngine;
+    this.timeEstimator = new TimeEstimator();
   }
 
   protected renderBody(container: HTMLElement): void {
@@ -107,15 +132,23 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       { text: "\u21E5 \u5EFA\u8BAE", cls: "nw-btn-primary", action: () => this.handleTabSuggest() },
       { text: "\u2728 \u8054\u60F3", cls: "nw-btn-ghost", action: () => this.handleAssociationSuggest() },
       { text: "\u2702 \u6539\u5199", cls: "nw-btn-ghost", action: () => this.handleRewriteSelection() },
+      { text: "\uD83D\uDD0D \u903B\u8F91\u68C0\u67E5", cls: "nw-btn-ghost", action: () => this.handleLogicCheck() },
       { text: "\uD83D\uDCA1 \u4FDD\u5B58", cls: "nw-btn-ghost", action: () => this.saveBody() },
       { text: "\u2705 \u7ED3\u7B97", cls: "nw-btn-primary", action: () => this.handleComplete() },
     ];
     for (const a of actions) {
       const btn = actionsRow.createEl("button", { text: a.text, cls: `nw-btn ${a.cls}` });
       btn.addEventListener("click", () => a.action());
+      if (a.text.includes("\u5EFA\u8BAE")) {
+        this.suggestBtn = btn;
+      }
     }
 
     this.flowContainer = controlPanel.createDiv({ cls: "nw-cowrite-flow-panel" });
+
+    // 逻辑检查结果容器（默认隐藏，检查后显示）
+    this.logicCheckContainer = controlPanel.createDiv({ cls: "nw-cowrite-logic-check-panel" });
+    this.logicCheckContainer.style.display = "none";
 
     // === 事件绑定 ===
     this.bindEditorEvents();
@@ -160,7 +193,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       try {
         this.rightEditor.value = await this.app.vault.read(file);
       } catch (e) {
-        console.warn("[CoWriteFloating] \u8BFB\u53D6\u6B63\u6587\u5931\u8D25:", e);
+        log.warn("[CoWriteFloating] \u8BFB\u53D6\u6B63\u6587\u5931\u8D25:", e);
       }
     }
 
@@ -173,7 +206,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       this.engine.updateSnapshot(this.rightEditor.value);
       await this.renderFlowPanel();
     } catch (e) {
-      console.warn("[CoWriteFloating] \u521D\u59CB\u5316\u5931\u8D25:", e);
+      log.warn("[CoWriteFloating] \u521D\u59CB\u5316\u5931\u8D25:", e);
     }
   }
 
@@ -203,24 +236,281 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     }
   }
 
-  // === 建议生成（简化版） ===
+  // === 建议生成（进度增强版） ===
   async handleTabSuggest(): Promise<void> {
     if (this.isSuggesting) return;
+
+    if (this.suggestAbortController) {
+      this.suggestAbortController.abort();
+      this.suggestAbortController = null;
+    }
+    if (this.suggestProgressEmitter) {
+      this.suggestProgressEmitter.cancel();
+      this.suggestProgressEmitter = null;
+    }
+
+    this.suggestAbortController = new AbortController();
+    const signal = this.suggestAbortController.signal;
+
     this.isSuggesting = true;
+    if (this.suggestBtn) {
+      this.suggestBtn.disabled = true;
+      this.suggestBtn.setText("⏳ 生成中...");
+    }
+
+    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    const precedingText = this.rightEditor.value.slice(0, cursor);
+
+    this.lastSuggestParams = {
+      precedingText,
+      cursorHint: '',
+      mode: 'continue',
+      count: 3
+    };
+
+    this.suggestProgressEmitter = new ProgressEmitter(`suggest_${Date.now()}`, '生成建议');
+    this.suggestProgressEmitter.registerSteps([
+      '检索知识库内容',
+      '分析写作上下文',
+      '生成写作建议'
+    ]);
+
+    this.renderSuggestionLoading();
+    this.suggestProgressEmitter.start();
+
+    const startTime = Date.now();
+    const wordCount = precedingText.length;
+
+    if (this.timeEstimator) {
+      const est = this.timeEstimator.estimate({
+        operationType: 'co_write_suggest',
+        wordCount,
+        mode: 'statistical'
+      });
+      if (est.confidence > 0) {
+        this.suggestProgressEmitter.setProgress(1, `预计约 ${Math.ceil(est.eta / 1000)} 秒`);
+      }
+    }
+
+    let success = false;
     try {
-      const body = this.rightEditor.value;
-      const cursor = this.rightEditor.selectionStart;
-      const preceding = body.slice(0, cursor);
-      const response = await this.engine.suggestNext(preceding, '', 'continue', 3);
+      if (signal.aborted) return;
+      this.suggestProgressEmitter.nextStep('正在检索知识库...');
+      await this.simulateStepDelay(300, signal);
+      if (signal.aborted) return;
+
+      this.suggestProgressEmitter.setStepProgress(50, '正在匹配相关知识片段...');
+      await this.simulateStepDelay(200, signal);
+      if (signal.aborted) return;
+
+      this.suggestProgressEmitter.nextStep('正在分析写作上下文...');
+      this.suggestProgressEmitter.setStepProgress(30, '分析剧情进度与角色状态...');
+      await this.simulateStepDelay(200, signal);
+      if (signal.aborted) return;
+
+      this.suggestProgressEmitter.setStepProgress(70, '调整建议方向...');
+      await this.simulateStepDelay(200, signal);
+      if (signal.aborted) return;
+
+      this.suggestProgressEmitter.nextStep('正在生成写作建议...');
+      this.suggestProgressEmitter.setStepProgress(10, '调用 AI 模型...');
+
+      const response = await this.engine.suggestNext(precedingText, '', 'continue', 3, signal);
+      if (signal.aborted) return;
+
+      this.suggestProgressEmitter.setStepProgress(100, '生成完成');
+      this.suggestProgressEmitter.complete();
+
+      const duration = Date.now() - startTime;
+      if (this.timeEstimator) {
+        this.timeEstimator.record({
+          operationType: 'co_write_suggest',
+          wordCount,
+          mode: 'statistical',
+          duration
+        });
+        void this.timeEstimator.saveHistory();
+      }
+
       if (Array.isArray(response)) {
         this.currentSuggestions = response;
         this.renderSuggestions(response);
       }
+      success = true;
     } catch (e) {
-      console.warn("[CoWriteFloating] \u5EFA\u8BAE\u751F\u6210\u5931\u8D25:", e);
+      if (signal.aborted) {
+        if (this.suggestProgressEmitter) {
+          this.suggestProgressEmitter.cancel();
+        }
+        return;
+      }
+      log.warn("[CoWriteFloating] 建议生成失败:", e);
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      this.lastSuggestError = errorMsg;
+      if (this.suggestProgressEmitter) {
+        this.suggestProgressEmitter.fail(this.getFriendlyErrorMessage(errorMsg));
+      }
     } finally {
-      this.isSuggesting = false;
+      if (this.suggestAbortController?.signal === signal) {
+        this.isSuggesting = false;
+        this.suggestAbortController = null;
+        if (this.suggestBtn) {
+          this.suggestBtn.disabled = false;
+          this.suggestBtn.setText("⇥ 建议");
+        }
+      }
     }
+  }
+
+  private renderSuggestionLoading(): void {
+    this.suggestionContainer.empty();
+    this.lastSuggestError = null;
+
+    this.suggestProgressContainer = this.suggestionContainer.createDiv({
+      cls: "nw-suggest-progress-container",
+      attr: { style: "padding: 12px 16px;" }
+    });
+
+    const headerRow = this.suggestProgressContainer.createDiv({
+      attr: { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;" }
+    });
+    headerRow.createSpan({
+      text: "🤖 AI 正在生成建议",
+      attr: { style: "font-weight:600;font-size:13px;" }
+    });
+
+    this.suggestEtaDisplay = headerRow.createSpan({
+      text: "预估时间: 计算中...",
+      attr: { style: "font-size:11px;color:var(--text-muted);" }
+    });
+
+    const stepListContainer = this.suggestProgressContainer.createDiv({
+      attr: { style: "margin-bottom:12px;" }
+    });
+    this.suggestStepList = new StepListComponent(stepListContainer, [
+      "检索知识库内容",
+      "分析写作上下文",
+      "生成写作建议"
+    ]);
+
+    const actionsRow = this.suggestProgressContainer.createDiv({
+      attr: { style: "display:flex;gap:8px;justify-content:flex-end;" }
+    });
+
+    this.suggestCancelBtn = actionsRow.createEl("button", {
+      text: "✕ 取消",
+      cls: "nw-btn nw-btn-ghost"
+    });
+    this.suggestCancelBtn.addEventListener("click", () => this.cancelSuggestion());
+
+    this.suggestRetryBtn = actionsRow.createEl("button", {
+      text: "↻ 重试",
+      cls: "nw-btn nw-btn-primary",
+      attr: { style: "display:none;" }
+    });
+    this.suggestRetryBtn.addEventListener("click", () => this.retrySuggestion());
+
+    this.suggestErrorContainer = this.suggestProgressContainer.createDiv({
+      cls: "nw-suggest-error-container",
+      attr: {
+        style: "display:none;margin-top:10px;padding:10px;background:var(--background-secondary);border-radius:6px;border-left:3px solid var(--text-error, #ef4444);"
+      }
+    });
+
+    if (this.suggestProgressEmitter) {
+      this.suggestStepList.bindEmitter(this.suggestProgressEmitter);
+      this.suggestProgressEmitter.on((state: ProgressState) => {
+        this.updateSuggestProgressUI(state);
+      });
+    }
+  }
+
+  private updateSuggestProgressUI(state: ProgressState): void {
+    if (!this.suggestEtaDisplay) return;
+
+    if (state.status === 'running' && state.eta !== undefined && state.eta > 0) {
+      const seconds = Math.ceil(state.eta / 1000);
+      if (seconds > 0) {
+        this.suggestEtaDisplay.setText(`预估剩余: ${seconds} 秒`);
+      }
+    }
+
+    if (state.status === 'failed') {
+      this.showSuggestError(state.error || '生成失败，请重试');
+    }
+
+    if (state.status === 'cancelled') {
+      this.suggestionContainer.createDiv({
+        cls: "nw-suggestion-empty",
+        text: "已取消生成。按 Tab 重新生成。",
+        attr: { style: "padding:16px;text-align:center;color:var(--text-muted);font-size:13px;" }
+      });
+    }
+  }
+
+  private showSuggestError(error: string): void {
+    if (!this.suggestErrorContainer || !this.suggestRetryBtn || !this.suggestCancelBtn) return;
+
+    this.suggestErrorContainer.style.display = 'block';
+    this.suggestErrorContainer.empty();
+    this.suggestErrorContainer.createDiv({
+      text: "❌ 生成失败",
+      attr: { style: "font-weight:600;font-size:12px;margin-bottom:4px;color:var(--text-error, #ef4444);" }
+    });
+    this.suggestErrorContainer.createDiv({
+      text: error,
+      attr: { style: "font-size:11px;color:var(--text-muted);" }
+    });
+
+    this.suggestRetryBtn.style.display = 'inline-flex';
+    this.suggestCancelBtn.style.display = 'none';
+  }
+
+  private cancelSuggestion(): void {
+    if (this.suggestAbortController) {
+      this.suggestAbortController.abort();
+    }
+    if (this.suggestProgressEmitter) {
+      this.suggestProgressEmitter.cancel();
+    }
+  }
+
+  private retrySuggestion(): void {
+    if (!this.lastSuggestParams) return;
+    void this.handleTabSuggest();
+  }
+
+  private async simulateStepDelay(ms: number, signal: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => resolve(), ms);
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(new DOMException('Aborted', 'AbortError'));
+      }, { once: true });
+    });
+  }
+
+  private getFriendlyErrorMessage(error: string): string {
+    const lower = error.toLowerCase();
+    if (lower.includes('abort') || lower.includes('取消')) {
+      return '生成已取消';
+    }
+    if (lower.includes('network') || lower.includes('fetch') || lower.includes('网络')) {
+      return '网络连接失败，请检查网络连接后重试';
+    }
+    if (lower.includes('timeout') || lower.includes('超时')) {
+      return '请求超时，请稍后重试';
+    }
+    if (lower.includes('api key') || lower.includes('api_key') || lower.includes('密钥') || lower.includes('认证')) {
+      return 'API 密钥无效，请检查设置中的 API 配置';
+    }
+    if (lower.includes('rate limit') || lower.includes('限流') || lower.includes('429')) {
+      return '请求过于频繁，请稍后再试';
+    }
+    if (lower.includes('model') || lower.includes('模型')) {
+      return '模型调用失败，请检查模型配置';
+    }
+    return error || '生成失败，请重试';
   }
 
   // === 建议渲染 ===
@@ -239,11 +529,20 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     const s = this.currentSuggestions[index];
     if (!s) return;
     const ed = this.rightEditor;
-    const pos = ed.selectionStart;
-    const before = ed.value.slice(0, pos);
-    const after = ed.value.slice(pos);
-    ed.value = before + s.text + after;
-    ed.setSelectionRange(pos + s.text.length, pos + s.text.length);
+    if (this.pendingRewriteRange) {
+      const { start, end } = this.pendingRewriteRange;
+      const before = ed.value.slice(0, start);
+      const after = ed.value.slice(end);
+      ed.value = before + s.text + after;
+      ed.setSelectionRange(start + s.text.length, start + s.text.length);
+      this.pendingRewriteRange = null;
+    } else {
+      const pos = ed.selectionStart;
+      const before = ed.value.slice(0, pos);
+      const after = ed.value.slice(pos);
+      ed.value = before + s.text + after;
+      ed.setSelectionRange(pos + s.text.length, pos + s.text.length);
+    }
     this.currentSuggestions = [];
     this.suggestionContainer.empty();
     this.engine.updateSnapshot(ed.value);
@@ -268,18 +567,223 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     });
   }
 
-  // === 未完全实现的方法（后续扩展） ===
+  // === 联想功能 ===
   async handleAssociationSuggest(): Promise<void> {
-    new Notice("\u2728 \u8054\u60F3\u529F\u80FD\u5F85\u5B9E\u73B0");
+    if (this.isSuggesting) return;
+    this.isSuggesting = true;
+    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    try {
+      const associations = await this.engine.suggestAssociation(cursor, this.rightEditor.value, "manual");
+      if (associations.length === 0) {
+        new Notice("暂时没有联想到合适续写");
+        return;
+      }
+      this.currentSuggestions = associations.map((association, index) => associationToSuggestion(association, index));
+      this.pendingRewriteRange = null;
+      this.renderSuggestions(this.currentSuggestions);
+    } catch (e) {
+      log.warn("[CoWriteFloating] 联想输入失败:", e);
+      new Notice("联想输入失败，请稍后重试");
+    } finally {
+      this.isSuggesting = false;
+    }
   }
 
+  // === 改写功能 ===
   async handleRewriteSelection(): Promise<void> {
-    new Notice("\u2702 \u6539\u5199\u529F\u80FD\u5F85\u5B9E\u73B0");
+    const start = this.rightEditor.selectionStart;
+    const end = this.rightEditor.selectionEnd;
+    if (start === end) {
+      new Notice("请先选中需要改写的文本");
+      return;
+    }
+    if (this.isSuggesting) return;
+    this.isSuggesting = true;
+    const selectedText = this.rightEditor.value.slice(start, end);
+    const beforeContext = this.rightEditor.value.slice(0, start);
+    const afterContext = this.rightEditor.value.slice(end);
+    try {
+      const suggestions = await this.engine.rewriteSelection(selectedText, beforeContext, afterContext, "", 3);
+      if (suggestions.length === 0) {
+        new Notice("没有生成改写候选");
+        return;
+      }
+      this.currentSuggestions = suggestions;
+      this.pendingRewriteRange = { start, end };
+      this.renderSuggestions(suggestions);
+    } catch (e) {
+      log.warn("[CoWriteFloating] 选区改写失败:", e);
+      new Notice("选区改写失败，请稍后重试");
+    } finally {
+      this.isSuggesting = false;
+    }
   }
 
   async handleComplete(): Promise<void> {
     await this.saveBody();
     new Notice("\u2705 \u7AE0\u8282\u4FDD\u5B58\u5DF2\u5B8C\u6210\uFF0C\u8BF7\u5728\u5168\u672C\u5199\u4F5C\u89C6\u56FE\u4E2D\u6267\u884C\u7ED3\u7B97");
+  }
+
+  // === 逻辑检查（人设一致性） ===
+  async handleLogicCheck(): Promise<void> {
+    const body = this.rightEditor.value;
+    if (!body.trim()) {
+      new Notice("\u26A0\uFE0F \u6B63\u6587\u4E3A\u7A7A\uFF0C\u65E0\u6CD5\u6267\u884C\u903B\u8F91\u68C0\u67E5");
+      return;
+    }
+    if (!this.project) {
+      new Notice("\u26A0\uFE0F \u672A\u7ED1\u5B9A\u9879\u76EE\uFF0C\u65E0\u6CD5\u83B7\u53D6\u4EBA\u7269\u4FE1\u606F");
+      return;
+    }
+
+    const checker: CharacterConsistencyChecker | undefined = this.plugin.characterConsistencyChecker;
+    if (!checker) {
+      new Notice("\u26A0\uFE0F \u903B\u8F91\u68C0\u67E5\u5668\u672A\u521D\u59CB\u5316");
+      return;
+    }
+
+    new Notice("\uD83D\uDD0D \u6B63\u5728\u6267\u884C\u903B\u8F91\u68C0\u67E5...");
+
+    try {
+      const ctxData = await this.plugin.ctxManager.gatherCharacterState(this.project);
+      const rawCharacters = (ctxData.character_state || []) as Array<Record<string, unknown>>;
+      if (rawCharacters.length === 0) {
+        new Notice("\u26A0\uFE0F \u672A\u627E\u5230\u4EBA\u7269\u8BBE\u5B9A\u4FE1\u606F");
+        return;
+      }
+
+      const characterInfos = rawCharacters.map((c) => {
+        const name = (c.name as string) || (c["\u59D3\u540D"] as string) || (c.fileName as string) || "\u672A\u77E5";
+        const personality = (c["\u6027\u683C\u6807\u7B7E"] as string) || "";
+        const appearance = (c["\u5916\u8C8C\u7279\u5F81"] as string) || "";
+        const abilities =
+          (c["\u529F\u6CD5/\u6280\u80FD\u6811"] as string) ||
+          (c["\u91D1\u624B\u6307/\u7279\u6B8A\u80FD\u529B"] as string) ||
+          "";
+        const background = (c["\u4EBA\u7269\u80CC\u666F"] as string) || "";
+        return { name, personality, appearance, abilities, background };
+      }).filter((c) => c.name && c.name !== "\u672A\u77E5");
+
+      if (characterInfos.length === 0) {
+        new Notice("\u26A0\uFE0F \u672A\u627E\u5230\u6709\u6548\u4EBA\u7269\u4FE1\u606F");
+        return;
+      }
+
+      const result = await checker.check(body, characterInfos);
+      this.renderLogicCheckResult(result);
+      new Notice(`\u2705 \u903B\u8F91\u68C0\u67E5\u5B8C\u6210\uFF0C\u4E00\u81F4\u6027\u5F97\u5206: ${result.overallScore}`);
+    } catch (e) {
+      log.warn("[CoWriteFloating] \u903B\u8F91\u68C0\u67E5\u5931\u8D25:", e);
+      new Notice("\u26A0\uFE0F \u903B\u8F91\u68C0\u67E5\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+    }
+  }
+
+  private renderLogicCheckResult(result: ConsistencyCheckResult): void {
+    this.logicCheckContainer.empty();
+    this.logicCheckContainer.style.display = "block";
+
+    // 头部：标题 + 关闭按钮
+    const header = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-header" });
+    header.createSpan({ text: "\uD83D\uDD0D \u903B\u8F91\u68C0\u67E5\u7ED3\u679C" });
+    const closeBtn = header.createEl("button", { text: "\u2715", cls: "nw-btn nw-btn-ghost" });
+    closeBtn.setCssStyles({ fontSize: "0.75em", padding: "0 4px", lineHeight: "1" });
+    closeBtn.addEventListener("click", () => { this.logicCheckContainer.style.display = "none"; });
+
+    // 总体一致性评分
+    const scoreColor =
+      result.overallScore >= 80 ? "#10b981" : result.overallScore >= 60 ? "#f59e0b" : "#ef4444";
+    const scoreRow = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-score" });
+    scoreRow.createSpan({ text: "\u603B\u4F53\u4E00\u81F4\u6027" });
+    scoreRow.createSpan({
+      text: `${result.overallScore} \u5206`,
+      attr: { style: `color: ${scoreColor}; font-weight: 600; margin-left: 6px;` },
+    });
+
+    // 摘要
+    if (result.summary) {
+      this.logicCheckContainer.createDiv({
+        text: result.summary,
+        cls: "nw-logic-check-summary",
+        attr: { style: "font-size: 0.78em; color: var(--text-muted); margin-top: 4px;" },
+      });
+    }
+
+    // 每个人物的检测结果
+    const charNames = Object.keys(result.characterResults);
+    if (charNames.length === 0) {
+      this.logicCheckContainer.createDiv({
+        text: "\u65E0\u4EBA\u7269\u68C0\u6D4B\u7ED3\u679C",
+        attr: { style: "font-size: 0.8em; color: var(--text-muted); padding: 8px 0;" },
+      });
+      return;
+    }
+
+    for (const name of charNames) {
+      const charResult = result.characterResults[name];
+      const charCard = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-char" });
+      charCard.setCssStyles({
+        borderTop: "1px solid var(--background-modifier-border)",
+        paddingTop: "6px",
+        marginTop: "6px",
+      });
+
+      // 人物名 + 得分
+      const charHead = charCard.createDiv({ cls: "nw-logic-check-char-head" });
+      charHead.createSpan({ text: name, attr: { style: "font-weight: 600; font-size: 0.85em;" } });
+      const charScoreColor =
+        charResult.score >= 80 ? "#10b981" : charResult.score >= 60 ? "#f59e0b" : "#ef4444";
+      charHead.createSpan({
+        text: `${charResult.score} \u5206`,
+        attr: { style: `color: ${charScoreColor}; font-weight: 600; margin-left: 6px; font-size: 0.82em;` },
+      });
+
+      if (charResult.inconsistencies.length === 0) {
+        charCard.createDiv({
+          text: "\u2705 \u672A\u53D1\u73B0\u4E0D\u4E00\u81F4",
+          attr: { style: "font-size: 0.78em; color: #10b981; padding: 2px 0;" },
+        });
+        continue;
+      }
+
+      // 不一致项列表
+      for (const item of charResult.inconsistencies) {
+        const sevColor =
+          item.severity === "high" ? "#ef4444" : item.severity === "medium" ? "#f59e0b" : "#3b82f6";
+        const sevLabel =
+          item.severity === "high" ? "\uD83D\uDD34" : item.severity === "medium" ? "\uD83D\uDFE1" : "\uD83D\uDFE2";
+        const typeLabels: Record<string, string> = {
+          personality: "\u6027\u683C\u8BED\u6C14",
+          behavior: "\u884C\u4E3A\u903B\u8F91",
+          ability: "\u80FD\u529B\u8FB9\u754C",
+          appearance: "\u5916\u8C8C\u63CF\u8FF0",
+        };
+        const typeLabel = typeLabels[item.type] || item.type;
+
+        const itemEl = charCard.createDiv({ cls: "nw-logic-check-item" });
+        itemEl.setCssStyles({ padding: "3px 0", borderLeft: `3px solid ${sevColor}`, paddingLeft: "6px", margin: "3px 0" });
+
+        const descRow = itemEl.createDiv({ attr: { style: "display: flex; align-items: baseline; gap: 4px;" } });
+        descRow.createSpan({ text: sevLabel, attr: { style: `color: ${sevColor};` } });
+        descRow.createSpan({
+          text: `[${typeLabel}]`,
+          attr: { style: `font-size: 0.72em; color: ${sevColor}; font-weight: 600;` },
+        });
+        descRow.createSpan({ text: item.description, attr: { style: "font-size: 0.78em;" } });
+
+        if (item.location) {
+          itemEl.createDiv({
+            text: `\uD83D\uDCCD ${item.location}`,
+            attr: { style: "font-size: 0.72em; color: var(--text-muted); margin-left: 18px; margin-top: 1px;" },
+          });
+        }
+        if (item.suggestion) {
+          itemEl.createDiv({
+            text: `\uD83D\uDCA1 ${item.suggestion}`,
+            attr: { style: "font-size: 0.72em; color: var(--text-success, #10b981); margin-left: 18px; margin-top: 1px;" },
+          });
+        }
+      }
+    }
   }
 
   private applyHint(): void {
@@ -290,6 +794,22 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   }
 
   async onClose(): Promise<void> {
+    if (this.suggestAbortController) {
+      this.suggestAbortController.abort();
+      this.suggestAbortController = null;
+    }
+    if (this.suggestProgressEmitter) {
+      this.suggestProgressEmitter.cancel();
+      this.suggestProgressEmitter = null;
+    }
+    if (this.suggestStepList) {
+      this.suggestStepList.destroy();
+      this.suggestStepList = null;
+    }
+    if (this.timeEstimator) {
+      void this.timeEstimator.saveHistory();
+      this.timeEstimator = null;
+    }
     await super.onClose();
     await this.saveBody();
   }

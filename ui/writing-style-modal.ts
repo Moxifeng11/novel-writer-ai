@@ -1,7 +1,10 @@
-﻿import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('WritingStyleModal');
 const WS_SECTIONS = [
     { key: 'narrative', label: '一、叙事视角', hint: '第一人称/第三人称/多视角？是否限知？', rows: 2 },
     { key: 'overall', label: '二、文笔特征 — 总体风格', hint: '简洁/华丽/幽默/冷峻/热血？', rows: 2 },
@@ -60,11 +63,9 @@ export class WritingStyleModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(700px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(700px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(700px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
@@ -176,7 +177,7 @@ export class WritingStyleModal extends Modal {
                 }
             }
         } catch (e) {
-            console.warn('[小说工坊] 读取文笔风格失败:', e);
+            log.warn('[小说工坊] 读取文笔风格失败:', e);
         }
     }
 

@@ -12,7 +12,12 @@ import { withWriteLock } from './write-lock';
 import { pjCharsDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { NovelWriterPluginAPI } from '../shared/plugin-api';
+import type { CharacterRepository } from './repository';
+import type { EngineRegistry } from './engine-registry';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('EntityStateManager');
 export interface EntityStateChange {
     /** 实体名称（人物名） */
     entityName: string;
@@ -29,6 +34,8 @@ export interface EntityStateManagerOptions {
     plugin: NovelWriterPluginAPI;
     aiEngine: AIEngine;
     notifier?: Notifier;
+    characterRepository?: CharacterRepository | null;
+    engineRegistry?: EngineRegistry | null;
 }
 
 export class EntityStateManager {
@@ -39,11 +46,88 @@ export class EntityStateManager {
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
 
+    // Task 2.1: Repository 接入
+    private characterRepo: CharacterRepository | null = null;
+    private engineRegistry: EngineRegistry | null = null;
+
+    // 性能埋点统计
+    private repoPerfStats = {
+        totalAccesses: 0,
+        readHits: 0,
+        readMisses: 0,
+        writeHits: 0,
+        writeMisses: 0,
+    };
+
     constructor(opts: EntityStateManagerOptions) {
         this.app = opts.app;
         this.plugin = opts.plugin;
         this.aiEngine = opts.aiEngine;
         this.notifier = opts.notifier || NOOP_NOTIFIER;
+        if (opts.characterRepository) {
+            this.characterRepo = opts.characterRepository;
+        }
+        if (opts.engineRegistry) {
+            this.engineRegistry = opts.engineRegistry;
+        }
+    }
+
+    /**
+     * 获取 Repository 性能统计
+     */
+    getRepositoryPerfStats(): typeof this.repoPerfStats {
+        return { ...this.repoPerfStats };
+    }
+
+    /**
+     * 重置 Repository 性能统计
+     */
+    resetRepositoryPerfStats(): void {
+        this.repoPerfStats = {
+            totalAccesses: 0,
+            readHits: 0,
+            readMisses: 0,
+            writeHits: 0,
+            writeMisses: 0,
+        };
+    }
+
+    /**
+     * 设置 CharacterRepository 实例
+     */
+    setCharacterRepository(repo: CharacterRepository | null): void {
+        this.characterRepo = repo;
+    }
+
+    /**
+     * 获取指定项目的 CharacterRepository
+     * 优先使用已设置的实例，其次从 engineRegistry 获取
+     */
+    private getCharacterRepo(project: string): CharacterRepository | null {
+        if (this.characterRepo) {
+            return this.characterRepo;
+        }
+        if (this.engineRegistry && project) {
+            try {
+                const repo = this.engineRegistry.getCharacterRepository(project);
+                this.characterRepo = repo;
+                return repo;
+            } catch {
+                // 忽略错误，返回 null
+            }
+        }
+        // 尝试从 plugin 获取 engineRegistry
+        try {
+            const pluginAny = this.plugin as any;
+            if (pluginAny.engineRegistry && project) {
+                const repo = pluginAny.engineRegistry.getCharacterRepository(project);
+                this.characterRepo = repo;
+                return repo;
+            }
+        } catch {
+            // 忽略错误
+        }
+        return null;
     }
 
     /** 获取 FileSystemPort 实例（懒加载） */
@@ -89,7 +173,7 @@ export class EntityStateManager {
                 2000,                       // maxTokens
             );
             if (response.error) {
-                console.warn('[EntityStateManager] AI 调用失败:', response.error);
+                log.warn('[EntityStateManager] AI 调用失败:', response.error);
                 this.notifier.showNotice('⚠️ 实体状态检测失败，角色数据可能未更新。请稍后手动重试。', NOTICE_WARNING);
                 return [];
             }
@@ -107,7 +191,7 @@ export class EntityStateManager {
                     confidence: c.confidence || 0.8,
                 }));
         } catch (e) {
-            console.warn('[EntityStateManager] 状态检测失败:', e);
+            log.warn('[EntityStateManager] 状态检测失败:', e);
             this.notifier.showNotice('⚠️ 实体状态检测异常，角色数据可能未更新', NOTICE_ERROR);
             return [];
         }
@@ -143,7 +227,7 @@ export class EntityStateManager {
         const existing = getInvolvedEntities(this.app, bodyFile);
 
         // 从正文中提取人物名（基于 [[]] 链接 + 出现频率）
-        const mentionedNames = this.extractMentionedNames(bodyContent, project);
+        const mentionedNames = await this.extractMentionedNames(bodyContent, project);
         const mergedChars = [...new Set([...existing.chars, ...mentionedNames])];
 
         // 只在确实有新增时才写入
@@ -195,6 +279,31 @@ ${bodyContent.slice(0, 6000)}
         chapterNum: number,
         chapterName: string,
     ): Promise<void> {
+        const repo = this.getCharacterRepo(project);
+
+        // Task 2.1: 优先通过 CharacterRepository 更新
+        if (repo) {
+            this.repoPerfStats.totalAccesses++;
+            try {
+                const allChars = await repo.findAll();
+                const targetChar = allChars.find(c => c.name === change.entityName);
+                if (targetChar) {
+                    this.repoPerfStats.writeHits++;
+                    // 使用 Repository 的 save 方法更新（会自动更新缓存）
+                    const updatedChar = this.updateCharacterWithStateChange(targetChar, change, chapterNum, chapterName);
+                    await repo.save(updatedChar);
+                    log.info('[EntityStateManager] 通过 Repository 更新状态:', change.entityName);
+                    return;
+                } else {
+                    this.repoPerfStats.writeMisses++;
+                }
+            } catch (e) {
+                log.warn('[EntityStateManager] Repository 更新失败，回退到文件操作:', e);
+                this.repoPerfStats.writeMisses++;
+            }
+        }
+
+        // Fallback: 原有的文件直接读写方式
         const folderPath = pjCharsDir(project);
         const files = this.getVaultMeta().getFiles().filter(f =>
             f.path.startsWith(folderPath) && f instanceof TFile
@@ -238,6 +347,44 @@ ${bodyContent.slice(0, 6000)}
     }
 
     /**
+     * 使用 Character 聚合根的方式更新状态
+     */
+    private updateCharacterWithStateChange(
+        char: any,
+        change: EntityStateChange,
+        chapterNum: number,
+        chapterName: string,
+    ): any {
+        // 由于 Character 是不可变对象，我们通过 toJSON 获取所有属性，更新后重新创建
+        const charData = char.toJSON();
+        
+        // 更新 frontmatter 中的字段
+        if (charData.frontmatter) {
+            charData.frontmatter['当前状态'] = change.newStatus;
+            charData.frontmatter['entity_last_changed_at'] = chapterName || `第${chapterNum}章`;
+            charData.frontmatter['entity_last_changed_reason'] = change.reason;
+            if (!charData.frontmatter['entity_status']) {
+                charData.frontmatter['entity_status'] = 'active';
+            }
+            if (!charData.frontmatter['entity_created_at']) {
+                charData.frontmatter['entity_created_at'] = new Date().toISOString();
+            }
+        }
+
+        // 更新属性
+        charData.currentStatus = change.newStatus;
+        charData.lastChangedAt = chapterName || `第${chapterNum}章`;
+        charData.lastChangedReason = change.reason;
+
+        // 使用 from 方法重新创建（假设 Character 有 from 静态方法）
+        const CharacterClass = char.constructor;
+        if (typeof (CharacterClass as any).from === 'function') {
+            return (CharacterClass as any).from(charData);
+        }
+        return char;
+    }
+
+    /**
      * 更新 frontmatter 中的单个字段
      */
     private updateFrontmatterField(content: string, fieldName: string, value: string): string {
@@ -270,7 +417,41 @@ ${bodyContent.slice(0, 6000)}
     /**
      * 从正文中提取涉及的人物名
      */
-    private extractMentionedNames(bodyContent: string, project: string): string[] {
+    private async extractMentionedNames(bodyContent: string, project: string): Promise<string[]> {
+        const repo = this.getCharacterRepo(project);
+
+        // Task 2.1: 优先通过 CharacterRepository 获取人物列表（利用缓存）
+        if (repo) {
+            this.repoPerfStats.totalAccesses++;
+            try {
+                const chars = await repo.findAll();
+                if (chars.length > 0) {
+                    this.repoPerfStats.readHits++;
+                    const names: string[] = [];
+                    for (const char of chars) {
+                        const name = char.name;
+                        if (!name) continue;
+                        const pattern = new RegExp(`(\\[\\[${name}\\]\\]|\`${name}\`|${this.escapeRegex(name)})`, 'g');
+                        if (pattern.test(bodyContent)) {
+                            names.push(name);
+                        }
+                    }
+                    return names;
+                } else {
+                    this.repoPerfStats.readMisses++;
+                }
+            } catch {
+                this.repoPerfStats.readMisses++;
+            }
+        }
+
+        return this.extractMentionedNamesFallback(bodyContent, project);
+    }
+
+    /**
+     * Fallback: 原有的文件直接读取方式
+     */
+    private extractMentionedNamesFallback(bodyContent: string, project: string): string[] {
         // 方案：从人物文件夹获取所有人名，检查是否在正文中出现
         const folderPath = pjCharsDir(project);
         const files = this.getVaultMeta().getFiles().filter(f =>

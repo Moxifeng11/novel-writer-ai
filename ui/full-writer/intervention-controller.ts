@@ -11,7 +11,10 @@ import NovelWriterPlugin from '../../main';
 import { AIEngine } from '../../engine/ai-engine';
 import { StepRunner, ALL_FULL_STEPS } from '../../engine/step-runner';
 import { showProgress, hideProgress, showError } from '../../utils/helpers';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('InterventionController');
 export interface InterventionReport {
     summary: string;
     actions: Array<{
@@ -196,7 +199,7 @@ ${userInput}
         try {
             return JSON.parse(jsonStr);
         } catch (e) {
-            console.warn('[InterventionController] 干预理解 JSON 解析失败:', e);
+            log.warn('[InterventionController] 干预理解 JSON 解析失败:', e);
             return {
                 summary: userInput,
                 actions: [{ type: 'modify', target: '全文', content: userInput, confidence: 0.5 }],
@@ -300,7 +303,17 @@ ${userInput}
      * 语音输入
      */
     private startVoiceInput(): void {
-        const SpeechRecognition = (window as any).webkitSpeechRecognition ?? (window as any).SpeechRecognition;
+        type SpeechRecognitionCtor = new () => {
+            lang: string;
+            continuous: boolean;
+            interimResults: boolean;
+            start(): void;
+            stop(): void;
+            onresult: ((event: any) => void) | null;
+            onerror: ((event: any) => void) | null;
+        };
+        const w = window as unknown as { webkitSpeechRecognition?: SpeechRecognitionCtor; SpeechRecognition?: SpeechRecognitionCtor };
+        const SpeechRecognition = w.webkitSpeechRecognition ?? w.SpeechRecognition;
         if (!SpeechRecognition) {
             new Notice('⚠️ 当前浏览器不支持语音输入');
             return;
@@ -341,7 +354,7 @@ ${userInput}
         };
 
         recognition.onerror = (event: any) => {
-            console.error('Speech recognition error:', event.error);
+            log.error('Speech recognition error:', event.error);
             this.inputEl.placeholder = '输入您的介入意见...';
             isRecording = false;
         };

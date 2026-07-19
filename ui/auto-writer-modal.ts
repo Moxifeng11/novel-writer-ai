@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @deprecated Legacy 自动写作器 Modal（命令 ID: novel-writer-auto-writer, 显示名带"〔旧〕"）。
  *
  * 当前推荐入口：完整写作工作台（FullWriterView，含批量与自动模式）。
@@ -13,10 +13,15 @@ import { scoreAndFilterEntities, ScoredEntity } from '../engine/entity-scorer';
 import { mkdirp, showSuccess, showError, stripFrontmatter } from '../utils/helpers';
 import { getChapterFileName, findChapterFile } from '../engine/chapter-utils';
 import { SettlementEngine } from '../engine/settlement-engine';
+import { ENGINE_NAMES } from '../engine/engine-registry';
 import { pjBodyDir, pjBodyFile, pjStepDir, pjStepFile, pjCharsDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { TemplateService } from '../services/template-service';
+import { buildStepFrontmatter } from '../shared/step-frontmatter';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('AutoWriterModal');
 export class AutoWriterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -28,7 +33,7 @@ export class AutoWriterModal extends Modal {
         this.plugin = plugin;
         this.aiEngine = plugin.aiEngine;
         this.contextManager = plugin.ctxManager;
-        this.settlementEngine = new SettlementEngine(app);
+        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
     }
 
     onOpen(): void {
@@ -38,11 +43,9 @@ export class AutoWriterModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -209,7 +212,7 @@ export class AutoWriterModal extends Modal {
         const bodyDir = volN > 0 ? pjBodyDir(project, volN) : `${project}/${SUBDIR_BODY_ROOT}/${volume}`;
         const bodyTargetPath = volN > 0 ? pjBodyFile(project, volN, n) : `${bodyDir}/${chapName}_正文.md`;
 
-        const templateService = new TemplateService(this.app);
+        const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
         const vars = { project, volume, chapterName: chapName, chapterNumber: n };
 
         let infoPlan = '';
@@ -221,7 +224,13 @@ export class AutoWriterModal extends Modal {
             const infoPath = `${basePath}/${getChapterFileName(chapName, '信息规划')}`;
             await mkdirp(this.app, basePath);
             const infoTemplate = await templateService.getInfoPlanTemplate(vars);
-            await this.app.vault.create(infoPath, infoTemplate.replace(/---[\s\S]*?---\n/, `---\ntags: [信息规划]\n卷: ${volume}\n章: ${chapName}\n---\n\n${infoPlan}\n`));
+            const infoFm = buildStepFrontmatter({
+                tag: '信息规划',
+                volume,
+                chapter: chapName,
+                model: this.plugin.settings.defaultModel,
+            });
+            await this.app.vault.create(infoPath, infoTemplate.replace(/---[\s\S]*?---\n/, `${infoFm}\n\n${infoPlan}\n`));
         }
 
         let outline = '';
@@ -233,7 +242,13 @@ export class AutoWriterModal extends Modal {
             const outlinePath = `${basePath}/${getChapterFileName(chapName, '大纲摘要')}`;
             await mkdirp(this.app, basePath);
             const outlineTemplate = await templateService.getOutlineTemplate(vars);
-            await this.app.vault.create(outlinePath, outlineTemplate.replace(/---[\s\S]*?---\n/, `---\ntags: [大纲摘要]\n卷: ${volume}\n章: ${chapName}\n---\n\n${outline}\n`));
+            const outlineFm = buildStepFrontmatter({
+                tag: '大纲摘要',
+                volume,
+                chapter: chapName,
+                model: this.plugin.settings.defaultModel,
+            });
+            await this.app.vault.create(outlinePath, outlineTemplate.replace(/---[\s\S]*?---\n/, `${outlineFm}\n\n${outline}\n`));
         }
 
         const body = await this.generateBody(project, volume, n, infoPlan, outline);
@@ -256,7 +271,13 @@ export class AutoWriterModal extends Modal {
             await this.app.vault.delete(existingReport);
         }
         await mkdirp(this.app, basePath);
-        await this.app.vault.create(reportPath, `---\ntags: [分析报告]\n---\n\n${report}\n`);
+        const reportFm = buildStepFrontmatter({
+            tag: '分析报告',
+            volume,
+            chapter: chapName,
+            model: this.plugin.settings.defaultModel,
+        });
+        await this.app.vault.create(reportPath, `${reportFm}\n\n${report}\n`);
 
         await this.executeSettlement(project, basePath, chapName, report, body);
     }
@@ -299,7 +320,7 @@ export class AutoWriterModal extends Modal {
                     }
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         const sysPrompt = '你是一个小说信息规划师。根据前文和分卷大纲，规划本章需要呈现的信息。严禁规划与已有角色列表无关的新主角出场。';
         const userPrompt = `【前文摘要】${prevOutline || '无'}
@@ -391,7 +412,7 @@ ${infoPlan.slice(0, 800)}
                         const analysisContent = stripFrontmatter(await this.app.vault.read(analysisFile));
                         const nextPlan = analysisContent.match(/续写建议[：:][\s\S]*?(?=\n##|\n---|$)/);
                         if (nextPlan) prevSummary += `\n【前文续写建议】${nextPlan[0].slice(0, 300)}`;
-                    } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                    } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
                 }
                 // 尝试读取审查问题
                 const reviewFile = findChapterFile(this.app.vault.getFiles(), prevChapDir, '审查');
@@ -400,7 +421,7 @@ ${infoPlan.slice(0, 800)}
                         const reviewContent = stripFrontmatter(await this.app.vault.read(reviewFile));
                         const issues = reviewContent.match(/问题[：:][\s\S]*?(?=\n##|\n---|$)/);
                         if (issues) prevSummary += `\n【前文审查问题】${issues[0].slice(0, 200)}`;
-                    } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                    } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
                 }
                 break; // 只取最近一章
             }

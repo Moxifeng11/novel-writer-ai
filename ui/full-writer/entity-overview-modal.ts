@@ -1,4 +1,4 @@
-﻿/**
+/**
  * entity-overview-modal.ts — 实体概览 Modal（v3.4.2 从 full-writer-view.ts 提取）
  *
  * 左侧实体树 + 右侧卡片详情。
@@ -9,6 +9,7 @@ import NovelWriterPlugin from '../../main';
 import { ExistingEntityManagerModal } from '../existing-entity-manager';
 import { ENTITY_CATEGORIES } from '../../shared/entity-registry';
 import { SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS } from '../../shared/paths';
+import { UnifiedEntityManagerModal } from '../unified-entity-manager-modal';
 
 export class EntityOverviewModal extends Modal {
     private plugin: NovelWriterPlugin;
@@ -39,14 +40,21 @@ export class EntityOverviewModal extends Modal {
         contentEl.style.width = 'var(--nw-modal-max-w)';
 
         // 标题
-        const header = contentEl.createDiv({ attr: { style: 'padding:12px 16px; border-bottom:1px solid var(--background-modifier-border); display:flex; align-items:center; justify-content:space-between; gap:12px;' } });
-        header.createSpan({ text: `👥 实体概览 — ${this.project}`, attr: { style: 'font-weight:600; font-size:16px;' } });
+        const header = contentEl.createDiv({ attr: { style: 'padding:10px 40px 10px 16px; border-bottom:1px solid var(--background-modifier-border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;' } });
+        const titleWrap = header.createDiv({ attr: { style: 'display:flex; align-items:center; gap:10px;' } });
+        titleWrap.createSpan({ text: `👥 实体概览 — ${this.project}`, attr: { style: 'font-weight:600; font-size:16px;' } });
+
+        const unifiedMgrBtn = header.createEl('button', { text: '📚 统一管理', attr: { style: 'font-size:0.8em; padding:5px 12px; cursor:pointer; border-radius:4px; border:1px solid var(--text-accent); background:var(--text-accent); color:white;' } });
+        unifiedMgrBtn.onclick = () => {
+            this.close();
+            new UnifiedEntityManagerModal(this.app, this.plugin, this.project).open();
+        };
 
         // v3.5.3：管理实体快捷入口（4 类）
-        const manageBar = header.createDiv({ attr: { style: 'display:flex; gap:6px;' } });
+        const manageBar = header.createDiv({ attr: { style: 'display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin:0 auto;' } });
         const mkMgrBtn = (label: string, folder: string, displayLabel: string) => {
             const b = manageBar.createEl('button', { text: label });
-            b.style.cssText = 'font-size:0.78em; padding:4px 8px; cursor:pointer;';
+            b.style.cssText = 'font-size:0.78em; padding:4px 10px; cursor:pointer; border-radius:4px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
             b.onclick = () => {
                 new ExistingEntityManagerModal(this.app, this.plugin, this.project, folder, displayLabel).open();
             };

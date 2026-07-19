@@ -102,6 +102,8 @@ export const EMOTION_PLAN_USER_TEMPLATE = `根据以下素材，为第\${chapNum
 【角色灵魂层】
 \${characterSouls}
 
+\${emotionKnowledge}
+
 请按规范格式输出：总体情绪曲线 + 每个场景的详细情绪规划。
 所有场景必须严格遵循上述世界观与力量体系，不得出现与世界观不符的元素。`;
 
@@ -177,7 +179,8 @@ export async function generateEmotionPlan(
         .replace(/\${distilledContent}/g, vars.distilledContent || '')
         .replace(/\${outlineContent}/g, vars.outlineContent || '')
         .replace(/\${chapPlan}/g, vars.chapPlan || '')
-        .replace(/\${characterSouls}/g, vars.characterCores || '无角色灵魂层数据。');
+        .replace(/\${characterSouls}/g, vars.characterCores || '无角色灵魂层数据。')
+        .replace(/\${emotionKnowledge}/g, vars.emotionKnowledge || '');
 
     notifier.showNotice('🎭 正在生成情绪规划...');
     const response = await aiEngine.callAI(userPrompt, systemPrompt, model);

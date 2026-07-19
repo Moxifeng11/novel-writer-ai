@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @deprecated Legacy 批量写正文 Modal（命令 ID: novel-writer-batch-chapters, 显示名带"〔旧〕"）。
  *
  * 当前推荐入口：完整写作工作台（FullWriterView）+ 续写规划（ContinueChaptersModal）。
@@ -12,12 +12,18 @@ import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showError, showWarning, stripFrontmatter } from '../utils/helpers';
 import { getChapterFileName, findChapterFile, normalizeChapterFiles, getChapterFile, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { SettlementEngine, SettlementResult } from '../engine/settlement-engine';
+import { ENGINE_NAMES } from '../engine/engine-registry';
 import { scoreAndFilterEntities } from '../engine/entity-scorer';
 import { isOutlineComplete } from '../shared/info-debt';
 import { getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
 import { extractWorldviewMeta } from './utils/worldview-utils';
-import { pjBodyDir, pjBodyFile, pjStepDir, pjControlDir, pjForeshadowDB, pjInfoDebtBoard, pjCharsDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, WRITING_RULES_PATH_PROJECT, WRITING_RULES_PATH_TEMPLATE } from '../shared/paths';
+import { buildStepFrontmatter } from '../shared/step-frontmatter';
+import { pjBodyDir, pjBodyFile, pjStepDir, pjControlDir, pjForeshadowDB, pjInfoDebtBoard, pjCharsDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
+import { RulesService } from '../services/rules-service';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('BatchChaptersModal');
 export class BatchChaptersModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -29,7 +35,7 @@ export class BatchChaptersModal extends Modal {
         this.plugin = plugin;
         this.aiEngine = plugin.aiEngine;
         this.contextManager = plugin.ctxManager;
-        this.settlementEngine = new SettlementEngine(app);
+        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
     }
 
     onOpen(): void {
@@ -39,11 +45,9 @@ export class BatchChaptersModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -261,11 +265,13 @@ ${infoPlan.slice(0, 800)}
                 const olResult = await this.aiEngine.callAI('你是一个小说大纲规划师。', olPrompt);
                 olNotice.hide();
                 if (olResult.content) {
-                    const fullOutline = `---
-tags: [大纲摘要]
-卷: ${volume}
-章: ${chapName}
----
+                    const outlineFm = buildStepFrontmatter({
+                        tag: '大纲摘要',
+                        volume,
+                        chapter: chapName,
+                        model: this.plugin.settings.defaultModel,
+                    });
+                    const fullOutline = `${outlineFm}
 
 # ${chapName} · 大纲摘要
 
@@ -273,7 +279,7 @@ tags: [大纲摘要]
 
 ${olResult.content.trim()}
 `;
-                    try { if (outlineFile) await this.app.vault.modify(outlineFile, fullOutline); } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                    try { if (outlineFile) await this.app.vault.modify(outlineFile, fullOutline); } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
                     outline = stripFrontmatter(olResult.content);
                 }
             }
@@ -349,7 +355,7 @@ ${olResult.content.trim()}
                             const sm = reportText.match(/(?:续写建议|写作建议|建议)[：:]\s*([^#]+)/);
                             if (sm) prevSummary += `\n【上章分析·续写建议】${sm[1].trim().slice(0, 500)}`;
                         }
-                    } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                    } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
                 }
             }
 
@@ -373,27 +379,7 @@ ${olResult.content.trim()}
                 fsRule = `7. 信息债${unrevealedCount > 10 ? '过高' : '中等'}（当前未揭示${unrevealedCount}个），本章必须揭示：${selectedToReveal.join('、')}`;
             }
 
-            let writingRulesFromFile = '';
-            try {
-                const ruleFile = this.app.vault.getAbstractFileByPath(`${WRITING_RULES_PATH_PROJECT}`);
-                if (!ruleFile) {
-                    const ruleFileAlt = this.app.vault.getAbstractFileByPath(WRITING_RULES_PATH_TEMPLATE);
-                    if (ruleFileAlt instanceof TFile) {
-                        const raw = await this.app.vault.read(ruleFileAlt);
-                        const match = raw.match(/##\s*一、?强制写作规则[\s\S]*?(?=##|\n---|$)/);
-                        if (match) {
-                            writingRulesFromFile = match[0]
-                                .replace(/^---[\s\S]*?---\n*/, '')
-                                .replace(/^##.*$/m, '')
-                                .replace(/^###\s*\d+\..*/gm, '')
-                                .replace(/检查方法[：:].*(\n|$)/g, '')
-                                .replace(/^- /gm, '• ')
-                                .replace(/\n{3,}/g, '\n\n')
-                                .trim().slice(0, 1500);
-                        }
-                    }
-                }
-            } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+            const writingRulesFromFile = await RulesService.getInstance(this.app).getWritingRules();
 
             const rulesBody = writingRulesFromFile ? `${writingRulesFromFile}
 
@@ -548,7 +534,7 @@ ${title ? `标题: ${title}` : ''}
                     try {
                         // v3.4.9 起正文文件名固定为「第X章_正文.md」，不再嵌入标题
                         // 此处保留 if 框架但不重命名，避免新结构下不必要的 rename 竞态
-                    } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                    } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
                 }
 
                 const reportNotice = new Notice(`⏳ 正在分析 ${chapName}...`, 0);
@@ -593,7 +579,13 @@ NEW_TIMELINE: 时间点 | 事件
                     const rpFile = this.app.vault.getAbstractFileByPath(rp);
                     if (rpFile) await this.app.vault.delete(rpFile);
                     await mkdirp(this.app, basePath);
-                    await this.app.vault.create(rp, `---\ntags: [分析报告]\n---\n\n# ${chapName} 分析报告\n\n${reportContent}\n`);
+                    const reportFm = buildStepFrontmatter({
+                        tag: '分析报告',
+                        volume,
+                        chapter: chapName,
+                        model: this.plugin.settings.defaultModel,
+                    });
+                    await this.app.vault.create(rp, `${reportFm}\n\n# ${chapName} 分析报告\n\n${reportContent}\n`);
                 }
 
                 if (reportContent) {
@@ -605,7 +597,17 @@ NEW_TIMELINE: 时间点 | 事件
                         const bcVolMatch = basePath.match(/\/步骤结果\/(第\d+卷)\//);
                         const bcVol = bcVolMatch ? bcVolMatch[1] : '';
                         const bcNow = new Date().toISOString();
-                        const bcFm = `---\ntags: [结算表]\n卷: "${bcVol}"\n章: "${chapName}"\nstep_status: generated\nstep_model: ""\nstep_timestamp: ${bcNow}\n结算时间: ${bcNow}\n结算状态: completed\n---\n\n`;
+                        const bcFm = buildStepFrontmatter({
+                            tag: '结算表',
+                            volume: bcVol,
+                            chapter: chapName,
+                            model: this.plugin.settings.defaultModel,
+                            timestamp: bcNow,
+                            extra: {
+                                '结算时间': bcNow,
+                                '结算状态': 'completed',
+                            },
+                        });
                         const ss = `${bcFm}# ${chapName} 结算表\n\n## 更新状态\n- 人物状态更新：${sr.updatedChars} 人\n- 伏笔状态更新：${sr.updatedForeshadows} 个\n\n## 新建元素\n- 新建人物：${sr.createdChars} 个\n- 新建地点：${sr.createdLocs} 个\n- 新建势力：${sr.createdFactions} 个\n- 新建物品功法：${sr.createdItems} 个\n- 新建伏笔：${sr.createdForeshadows} 个\n- 新建时间线事件：${sr.createdTimelines} 个\n`;
                         const spFile = this.app.vault.getAbstractFileByPath(sp);
                         if (spFile) await this.app.vault.delete(spFile);
@@ -634,7 +636,7 @@ NEW_TIMELINE: 时间点 | 事件
                             await this.app.vault.modify(bf, upd);
                         }
                         }
-                    } catch (e) { console.warn(`${chapName} 结算失败:`, e); }
+                    } catch (e) { log.warn(`${chapName} 结算失败:`, e); }
                 }
 
                 done++;
@@ -665,7 +667,7 @@ NEW_TIMELINE: 时间点 | 事件
                     if (status.includes('未揭示') || status === '') count++;
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
         return count;
     }
 
@@ -686,7 +688,7 @@ NEW_TIMELINE: 时间点 | 事件
                     }
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
         return names;
     }
 
@@ -757,7 +759,7 @@ NEW_TIMELINE: 时间点 | 事件
                     else if (status.includes('已揭示') || status.includes('揭示')) revealed++;
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         const completedChaps = new Set<string>();
         for (const f of chapF) {
@@ -768,7 +770,7 @@ NEW_TIMELINE: 时间点 | 事件
                 if (status === 'written' || status === 'settled') {
                     completedChaps.add(f.name);
                 }
-            } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+            } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
         }
 
         let charOk = 0, charMiss = 0;
@@ -810,7 +812,7 @@ ${charMiss > 0 ? `- ⚠️ ${charMiss}个人物未填写当前状态` : ''}
             const existingDebtBoard = this.app.vault.getAbstractFileByPath(debtP);
             if (existingDebtBoard) await this.app.vault.delete(existingDebtBoard);
             await this.app.vault.create(debtP, debtContent);
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
     }
 
     onClose(): void {

@@ -2,11 +2,14 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine, BatchEntityResult } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
-import { mkdirp, showSuccess, showWarning, showError } from '../utils/helpers';
+import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '../utils/helpers';
 import { validateLocationOutput } from '../shared/template-validator';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { pjLocsDir, pjLocFile, pjWorldview, SUBDIR_LOCS } from '../shared/paths';
+import { pjLocsDir, pjLocFile, pjWorldview, pjSettingLib, SUBDIR_LOCS } from '../shared/paths';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('GenerateLocationModal');
 interface ManagedEntity {
     entity: BatchEntityResult;
     deleted: boolean;
@@ -34,11 +37,9 @@ export class GenerateLocationModal extends Modal {
 
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(680px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(680px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(680px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
@@ -47,13 +48,23 @@ export class GenerateLocationModal extends Modal {
         this._renderInputForm();
     }
 
+    onClose(): void {
+        super.onClose();
+        this.plugin._entityModalJustClosed = true;
+        const callbacks = this.plugin._entityModalCloseCallbacks;
+        while (callbacks.length > 0) {
+            const cb = callbacks.shift();
+            try { cb?.(); } catch (e) { log.warn('[小说工坊] 实体Modal关闭回调异常:', e); }
+        }
+    }
+
     private _renderInputForm(): void {
         const { contentEl } = this;
         contentEl.empty();
 
         const titleBar = contentEl.createDiv({ cls: 'nw-gen-modal-titlebar' });
         titleBar.createEl('h2', { text: '📍 生成地点' });
-        const manageBtn = titleBar.createEl('button', { text: '📂 管理已生成', cls: 'nw-gen-modal-manage-btn' });
+        const manageBtn = titleBar.createEl('button', { text: '📂 管理地点', cls: 'nw-gen-modal-manage-btn' });
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
 
@@ -119,6 +130,10 @@ export class GenerateLocationModal extends Modal {
 
             const progressLabel = contentEl.createDiv({ cls: 'nw-gen-modal-progress' });
 
+            // 脉冲动画进度条
+            const progressBarTrack = contentEl.createDiv({ cls: 'nw-gen-modal-progress-bar' });
+            const progressBarFill = progressBarTrack.createDiv({ cls: 'nw-gen-modal-progress-fill' });
+
             const generateButton = contentEl.createEl('button', {
                 text: '🚀 批量生成地点', cls: 'nw-btn nw-btn-primary novel-writer-primary-button'
             });
@@ -150,31 +165,56 @@ export class GenerateLocationModal extends Modal {
                     ? (prompt ? `${EARLY_STAGE_HINT}${prompt}` : EARLY_STAGE_HINT.trim())
                     : prompt;
 
-                let wv = '';
-                try { const wf = this.app.vault.getAbstractFileByPath(pjWorldview(project)); if (wf instanceof TFile) wv = await this.app.vault.read(wf); } catch (e) { console.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }
-                if (!wv) { new Notice('⚠️ 未找到世界观总览，建议先生成世界观', 5000); }
-
+                // 立即显示进度反馈，消除黑盒感
+                const originalButtonText = generateButton.textContent || '🚀 批量生成地点';
                 generateButton.disabled = true;
                 const modelName = this.plugin.settings.flashModel || this.plugin.settings.defaultModel || 'AI';
                 generateButton.setText(`⏳ 正在生成 ${count} 个地点（模型：${modelName}）...`);
                 progressLabel.style.display = 'block';
-                progressLabel.setText('⏳ AI 正在批量创作中...');
+                progressLabel.setText(`⏳ 准备中...（模型：${modelName}）`);
+                progressBarTrack.style.display = 'block';
+                progressBarFill.addClass('nw-progress-anim');
+                showProgress(`⏳ 正在生成地点...（模型：${modelName}）`);
+                await new Promise(r => requestAnimationFrame(r));
+
+                let wv = '';
+                try { const wf = this.app.vault.getAbstractFileByPath(pjWorldview(project)); if (wf instanceof TFile) wv = await this.app.vault.read(wf); } catch (e) { log.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }
+                if (!wv) { new Notice('⚠️ 未找到世界观总览，建议先生成世界观', 5000); }
+
+                // 读取设定库
+                let settingLib = '';
+                try {
+                    const sf = this.app.vault.getAbstractFileByPath(pjSettingLib(project));
+                    if (sf instanceof TFile) {
+                        settingLib = await this.app.vault.read(sf);
+                        if (settingLib.trim().replace(/<!--[\s\S]*?-->/g, '').trim().length === 0) {
+                            settingLib = '';
+                        }
+                    }
+                } catch (e) { log.warn('[小说工坊] 读取设定库失败:', e instanceof Error ? e.message : e); }
+
+                // 更新进度文字为生成中
+                progressLabel.setText(`⏳ AI 正在批量创作中...（模型：${modelName}）`);
 
                 let results;
                 try {
-                    results = await this.aiEngine.generateLocationsBatch(wv, nameList, effectivePrompt, count, '');
+                    results = await this.aiEngine.generateLocationsBatch(wv, nameList, effectivePrompt, count, '', settingLib);
                 } catch (e: any) {
+                    hideProgress();
                     new Notice(`❌ AI调用失败: ${e?.message || e}`, 8000);
-                    console.error('[生成地点] AI异常:', e);
-                    generateButton.disabled = false; generateButton.setText('🚀 批量生成地点'); progressLabel.style.display = 'none';
+                    log.error('[生成地点] AI异常:', e);
+                    generateButton.disabled = false; generateButton.setText(originalButtonText); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
                 if (results.length === 0) {
+                    hideProgress();
                     new Notice('❌ 生成失败', 8000);
-                    generateButton.disabled = false; generateButton.setText('🚀 批量生成地点'); progressLabel.style.display = 'none';
+                    generateButton.disabled = false; generateButton.setText(originalButtonText); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
 
+                hideProgress();
+                showSuccess(`已生成 ${results.length} 个地点`);
                 this._pendingResults = results.map(r => ({ entity: r, deleted: false, modified: false, validated: false }));
                 this._renderManagementPanel('地点');
             };
@@ -208,12 +248,32 @@ export class GenerateLocationModal extends Modal {
                 const nameSpan = titleRow.createEl('span', { text: `📍 ${managed.entity.name}`, cls: 'nw-gen-modal-entity-name' });
                 const renameBtn = titleRow.createEl('button', { text: '✏️ 改名', cls: 'nw-gen-modal-sm-btn' });
                 renameBtn.onclick = () => {
-                    const newName = prompt('输入新名字：', managed.entity.name);
-                    if (newName && newName.trim()) {
-                        managed.entity.name = newName.trim();
+                    const existing = card.querySelector('.rename-inline');
+                    if (existing) { existing.remove(); renameBtn.setText('✏️ 改名'); return; }
+                    renameBtn.setText('✏️ 收起');
+                    const inline = card.createDiv({ cls: 'rename-inline' });
+                    inline.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:6px;';
+                    const input = inline.createEl('input', { type: 'text', value: managed.entity.name });
+                    input.style.cssText = 'flex:1; font-size:0.85em; padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
+                    const confirmBtn = inline.createEl('button', { text: '✅ 确认' });
+                    confirmBtn.style.cssText = 'font-size:0.8em; padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
+                    confirmBtn.onclick = () => {
+                        const nm = input.value;
+                        if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText('✏️ 改名'); return; }
+                        managed.entity.name = nm.trim();
                         managed.modified = true;
                         nameSpan.setText(`📍 ${managed.entity.name}`);
-                    }
+                        inline.remove();
+                        renameBtn.setText('✏️ 改名');
+                    };
+                    const cancelBtn = inline.createEl('button', { text: '取消' });
+                    cancelBtn.style.cssText = 'font-size:0.8em; padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
+                    cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') confirmBtn.click();
+                        if (e.key === 'Escape') cancelBtn.click();
+                    });
+                    input.focus();
                 };
             }
 
@@ -227,12 +287,28 @@ export class GenerateLocationModal extends Modal {
             if (!managed.deleted) {
                 const editBtn = actionRow.createEl('button', { text: '✏️ 编辑', cls: 'nw-gen-modal-sm-btn' });
                 editBtn.onclick = () => {
-                    const newContent = prompt('编辑内容（YAML + 正文）：', managed.entity.content);
-                    if (newContent !== null) {
-                        managed.entity.content = newContent;
+                    const exist = card.querySelector('.entity-editor');
+                    if (exist) { exist.remove(); editBtn.setText('📝 编辑'); return; }
+                    editBtn.setText('📝 收起');
+                    const ed = card.createDiv({ cls: 'entity-editor' });
+                    ed.style.cssText = 'margin-top:8px;';
+                    const ta = ed.createEl('textarea');
+                    ta.value = managed.entity.content;
+                    ta.style.cssText = 'width:100%; min-height:240px; font-size:0.8em; font-family:monospace; box-sizing:border-box;';
+                    const br = ed.createDiv();
+                    br.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
+                    const sb = br.createEl('button', { text: '💾 暂存修改' });
+                    sb.style.cssText = 'font-size:0.8em; padding:4px 10px; cursor:pointer;';
+                    sb.onclick = () => {
+                        managed.entity.content = ta.value;
                         managed.modified = true;
-                        contentPreview.querySelector('pre')!.textContent = newContent.replace(/^---[\s\S]*?---/, '').trim().slice(0, 300);
-                    }
+                        contentPreview.querySelector('pre')!.textContent = ta.value.replace(/^---[\s\S]*?---/, '').trim().slice(0, 300);
+                        ed.remove();
+                        editBtn.setText('📝 编辑');
+                    };
+                    const cb = br.createEl('button', { text: '取消' });
+                    cb.style.cssText = 'font-size:0.8em; padding:4px 10px; cursor:pointer;';
+                    cb.onclick = () => { ed.remove(); editBtn.setText('📝 编辑'); };
                 };
                 const delBtn = actionRow.createEl('button', { text: '🗑️ 删除', cls: 'nw-gen-modal-sm-btn nw-gen-modal-del-btn' });
                 delBtn.onclick = () => {
@@ -274,7 +350,7 @@ export class GenerateLocationModal extends Modal {
                     await this.app.vault.create(locPath, managed.entity.content);
                     createdCount++;
                 }
-            } catch (e) { console.warn(`创建地点 ${managed.entity.name} 失败:`, e instanceof Error ? e.message : e); }
+            } catch (e) { log.warn(`创建地点 ${managed.entity.name} 失败:`, e instanceof Error ? e.message : e); }
         }
 
         showSuccess(`已保存 ${createdCount} 个${entityLabel}`);

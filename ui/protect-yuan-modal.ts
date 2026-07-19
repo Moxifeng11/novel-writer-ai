@@ -1,6 +1,9 @@
-﻿import { App, Modal, Notice, FileSystemAdapter } from 'obsidian';
+import { App, Modal, Notice, FileSystemAdapter } from 'obsidian';
 import NovelWriterPlugin from '../main';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ProtectYuanModal');
 export class ProtectYuanModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -16,11 +19,9 @@ export class ProtectYuanModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(650px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(650px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(650px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
@@ -53,7 +54,7 @@ export class ProtectYuanModal extends Modal {
 
             exec(cmd, (error: Error | null) => {
                 if (error) {
-                    console.error('attrib 失败:', error);
+                    log.error('attrib 失败:', error);
                     new Notice(
                         '❌ 自动设置失败，请手动操作：\n右键「元文件」→ 属性 → 勾选「只读」→ 应用到所有子文件',
                         10000
@@ -64,7 +65,7 @@ export class ProtectYuanModal extends Modal {
             });
 
         } catch (err) {
-            console.error('保护失败:', err);
+            log.error('保护失败:', err);
             new Notice(
                 '❌ 自动设置失败，请手动操作：\n在文件资源管理器中右键「元文件」→ 属性 → 只读',
                 10000

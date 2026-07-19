@@ -1,5 +1,8 @@
 import { Notice } from 'obsidian';
+import { createLogger } from '../../shared/logger';
 
+
+const log = createLogger('WizardResultsStore');
 /**
  * v3.4.6 向导结果持久化：使用 Proxy 自动写入 localStorage。
  *
@@ -20,14 +23,14 @@ export function createPersistentWizardResults(
         const saved = localStorage.getItem(key);
         if (saved) initial = JSON.parse(saved);
     } catch (e) {
-        console.warn('[FullWriter] 存储失败:', e);
+        log.warn('[FullWriter] 存储失败:', e);
         new Notice('FullWriter：数据读取异常，部分功能可能受限');
     }
     return new Proxy(initial, {
         set(_target, prop, value) {
             _target[String(prop)] = value;
             try { localStorage.setItem(storageKey(), JSON.stringify(_target)); } catch (e) {
-                console.warn('[FullWriter] 存储失败:', e);
+                log.warn('[FullWriter] 存储失败:', e);
                 new Notice('FullWriter：数据读取异常，部分功能可能受限');
             }
             return true;
@@ -35,7 +38,7 @@ export function createPersistentWizardResults(
         deleteProperty(_target, prop) {
             delete _target[String(prop)];
             try { localStorage.setItem(storageKey(), JSON.stringify(_target)); } catch (e) {
-                console.warn('[FullWriter] 存储失败:', e);
+                log.warn('[FullWriter] 存储失败:', e);
                 new Notice('FullWriter：数据读取异常，部分功能可能受限');
             }
             return true;

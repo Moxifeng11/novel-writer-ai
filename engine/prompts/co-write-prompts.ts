@@ -1,4 +1,4 @@
-﻿/**
+/**
  * engine/prompts/co-write-prompts.ts
  * 句级协同写作（CoWriter）方向化提示词。
  * 8 个方向：action / emotion / dialogue / sensory / pacing / narrative / hook / continuity
@@ -39,7 +39,9 @@ export const CO_WRITE_PROMPTS = {
             cursorHint ? '【临时指令】' : '',
             cursorHint || '',
             '',
-            '请写 1-3 句（50-150 字）。直接输出正文，不要解释，不要标题。'
+            (precedingText || '').trim().length < 10
+            ? '这是本章的开头。请根据本章大纲和设定，开始写正文。写 1-3 句（50-150 字）。直接输出正文，不要解释，不要标题。'
+            : '请写 1-3 句（50-150 字）。直接输出正文，不要解释，不要标题。'
         ].filter(line => line !== '').join('\n');
     },
     buildValidationPrompt(modifiedText: string, originalText: string, precedingContext: string): string {
@@ -74,6 +76,17 @@ export const CO_WRITE_PROMPTS = {
         ].join('\n');
     }
 };
+
+export const PRECISION_MODE_SYSTEM_APPEND = `
+【精准风格约束】
+你正在模仿特定作家的写作风格。请严格遵守以下约束：
+- 每句话的字数必须有明显波动，避免句长均匀
+- 连续句子的开头词语不得重复
+- 标点符号要多样化，适当使用感叹号、省略号、破折号
+- 避免使用AI高频词（然而、于是、随后、仿佛、似乎等）
+- 优先使用短句和口语化表达
+- 对话要自然，避免书面语
+`;
 
 // ============================================================
 // V2 Phase 3: 记忆碎片生成

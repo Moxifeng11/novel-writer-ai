@@ -7,19 +7,28 @@ import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL, NOTICE_SUCCESS } from '../shared/thresholds';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ReviewAgent');
 export class ReviewAgent {
     private plugin: NovelWriterPlugin;
     private app: App;
-    private aiEngine: AIEngine;
     private notifier: Notifier;
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
+    private _aiEngine: AIEngine | null = null;
+
+    private get aiEngine(): AIEngine {
+        if (!this._aiEngine) {
+            this._aiEngine = this.plugin.aiEngine;
+        }
+        return this._aiEngine;
+    }
 
     constructor(plugin: NovelWriterPlugin, notifier?: Notifier) {
         this.plugin = plugin;
         this.app = plugin.app;
-        this.aiEngine = plugin.aiEngine;
         this.notifier = notifier || NOOP_NOTIFIER;
     }
 
@@ -55,13 +64,13 @@ export class ReviewAgent {
             // v4.0: 设定库已迁移到 01-世界架构/
             const sf = this.getVaultMeta().getAbstractFileByPath(pjSettingLib(project));
             if (sf instanceof TFile) settingLib = await this.getFS().read(pjSettingLib(project));
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let worldView = '';
         try {
             const wf = this.getVaultMeta().getAbstractFileByPath(pjWorldview(project));
             if (wf instanceof TFile) worldView = await this.getFS().read(pjWorldview(project));
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let allChars = '';
         for (const f of this.getVaultMeta().getFiles()) {
@@ -76,7 +85,7 @@ export class ReviewAgent {
                         };
                         allChars += `\n- ${f.name.replace('.md', '')}：状态=${g('当前状态')}，动机=${g('核心动机')}，能力=${g('金手指/特殊能力')}`;
                     }
-                } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
             }
         }
 
@@ -88,7 +97,7 @@ export class ReviewAgent {
                 const unrevealedSection = fc.match(/## 未回收伏笔[\s\S]*?(?=##|$)/)?.[0] || fc;
                 foreshadows = unrevealedSection.slice(0, 2000);
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let previousChapter = '';
         try {
@@ -113,7 +122,7 @@ export class ReviewAgent {
                     }
                 }
             }
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         hideProgress?.();
 
@@ -153,7 +162,7 @@ export class ReviewAgent {
         const stepDir = pjStepDir(proj, volN, chapN);
         if (!this.getVaultMeta().getAbstractFileByPath(stepDir)) {
             try { await this.getFS().mkdir(stepDir); }
-            catch (e) { console.warn('[小说工坊] 创建步骤目录失败:', stepDir, e); }
+            catch (e) { log.warn('[小说工坊] 创建步骤目录失败:', stepDir, e); }
         }
 
         const reportPath = pjStepFile(proj, volN, chapN, CHAPTER_FILE_TYPES.continuityReview);
@@ -182,7 +191,7 @@ ${result.content}
             await this.getFS().write(reportPath, reportContent);
         } catch (e) {
             writeFailed = true;
-            console.warn('[小说工坊] 审查报告写入失败:', e);
+            log.warn('[小说工坊] 审查报告写入失败:', e);
             this.notifier.showNotice('❌ 审查报告保存失败，请检查磁盘空间或文件权限', NOTICE_WARNING);
         }
 
@@ -265,7 +274,7 @@ ${result.content}
                 const content = await this.getFS().read(file.path);
                 chapterContents.push({ path: file.path, content });
             } catch (e) {
-                console.warn('[ReviewAgent] 章节读取失败:', file.path, e);
+                log.warn('[ReviewAgent] 章节读取失败:', file.path, e);
                 readFailed++;
             }
         }
@@ -284,13 +293,13 @@ ${result.content}
         try {
             const sf = this.getVaultMeta().getAbstractFileByPath(pjSettingLib(project));
             if (sf instanceof TFile) settingLib = await this.getFS().read(sf.path);
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let worldView = '';
         try {
             const wf = this.getVaultMeta().getAbstractFileByPath(pjWorldview(project));
             if (wf instanceof TFile) worldView = await this.getFS().read(wf.path);
-        } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let allChars = '';
         for (const f of this.getVaultMeta().getFiles()) {
@@ -305,7 +314,7 @@ ${result.content}
                         };
                         allChars += `\n- ${f.name.replace('.md', '')}：状态=${g('当前状态')}，动机=${g('核心动机')}`;
                     }
-                } catch (e) { console.warn('[小说工坊] 操作失败:', e); }
+                } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
             }
         }
 
@@ -363,7 +372,7 @@ ${selectedChapters.map((c, i) => {
         const reportPath = `${volBodyRoot}/${getChapterFileName(volume, CHAPTER_FILE_TYPES.continuityReview)}`;
         if (!this.getVaultMeta().getAbstractFileByPath(volBodyRoot)) {
             try { await this.getFS().mkdir(volBodyRoot); }
-            catch (e) { console.warn('[小说工坊] 创建卷正文目录失败:', volBodyRoot, e); }
+            catch (e) { log.warn('[小说工坊] 创建卷正文目录失败:', volBodyRoot, e); }
         }
         const reportContent = `---
 tags: [审查报告]
@@ -391,7 +400,7 @@ ${result.content}
             await this.getFS().write(reportPath, reportContent);
         } catch (e) {
             writeFailed = true;
-            console.warn('[小说工坊] 分卷审查报告写入失败:', e);
+            log.warn('[小说工坊] 分卷审查报告写入失败:', e);
             this.notifier.showNotice('❌ 分卷审查报告保存失败，请检查磁盘空间', NOTICE_WARNING);
         }
 

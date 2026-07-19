@@ -1,7 +1,10 @@
-﻿import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { showSuccess, showError, showWarning } from '../utils/helpers';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('ExistingEntityManager');
 interface ExistingEntity {
     path: string;
     fileName: string;
@@ -48,8 +51,7 @@ export class ExistingEntityManagerModal extends Modal {
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { modalEl } = this;
-        modalEl.style.width = '720px';
-        modalEl.style.maxWidth = '92vw';
+        modalEl.addClass('nw-modal');
         this._loadAndRender();
     }
 
@@ -69,7 +71,7 @@ export class ExistingEntityManagerModal extends Modal {
         const dir = `${this.project}/${this.folderName}`;
         const folder = this.app.vault.getAbstractFileByPath(dir);
         if (!folder || !(folder instanceof TFolder)) {
-            console.warn(`[小说工坊] ExistingEntityManager 目录不存在：${dir}`);
+            log.warn(`[小说工坊] ExistingEntityManager 目录不存在：${dir}`);
             return [];
         }
 
@@ -83,7 +85,7 @@ export class ExistingEntityManagerModal extends Modal {
                 const isUnnamed = /^未命名[_\-\s]*\d/.test(fileName);
                 results.push({ path: child.path, fileName, yamlName, content, isUnnamed });
             } catch (e) {
-                console.error(`[小说工坊] 读取 ${child.path} 失败:`, e);
+                log.error(`[小说工坊] 读取 ${child.path} 失败:`, e);
             }
         }
         results.sort((a, b) => {
@@ -125,16 +127,14 @@ export class ExistingEntityManagerModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(720px, 92vw)', 'important');
-            wrapper.style.setProperty('width', 'min(720px, 92vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(720px, 92vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
         contentEl.empty();
-        contentEl.createEl('h2', { text: `📂 管理已生成${this.displayLabel}` });
+        contentEl.createEl('h2', { text: `📂 管理${this.displayLabel}` });
 
         const tip = contentEl.createEl('p', { text: '⏳ 正在扫描磁盘...' });
         tip.style.cssText = 'color:var(--text-muted); font-size:0.85em;';
@@ -439,7 +439,7 @@ export class ExistingEntityManagerModal extends Modal {
                 await this.app.vault.modify(file, newContent);
                 modified++;
             } catch (e) {
-                console.error(`[小说工坊] 修改 ${path} 失败:`, e);
+                log.error(`[小说工坊] 修改 ${path} 失败:`, e);
                 failed++;
             }
         }
@@ -463,7 +463,7 @@ export class ExistingEntityManagerModal extends Modal {
                     // 检查目标是否已存在
                     const existing = this.app.vault.getAbstractFileByPath(newPath);
                     if (existing && existing.path !== path) {
-                        console.warn(`[小说工坊] 改名冲突：${newPath} 已存在，跳过`);
+                        log.warn(`[小说工坊] 改名冲突：${newPath} 已存在，跳过`);
                         failed++;
                         continue;
                     }
@@ -471,7 +471,7 @@ export class ExistingEntityManagerModal extends Modal {
                 }
                 renamed++;
             } catch (e) {
-                console.error(`[小说工坊] 改名 ${path} → ${newName} 失败:`, e);
+                log.error(`[小说工坊] 改名 ${path} → ${newName} 失败:`, e);
                 failed++;
             }
         }
@@ -484,7 +484,7 @@ export class ExistingEntityManagerModal extends Modal {
                 await this.app.vault.trash(file, true);  // 移到系统回收站
                 deleted++;
             } catch (e) {
-                console.error(`[小说工坊] 删除 ${path} 失败:`, e);
+                log.error(`[小说工坊] 删除 ${path} 失败:`, e);
                 failed++;
             }
         }

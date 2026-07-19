@@ -3,8 +3,14 @@ import { App, ItemView, WorkspaceLeaf, TFile, TFolder, Modal, Notice } from 'obs
 import { EntityOverviewModal } from './full-writer/entity-overview-modal';
 import { ToolsModal } from './full-writer/tools-modal';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './full-writer/wizard-types';
-import { createPersistentWizardResults } from './full-writer/wizard-results-store';
 import { buildTemplateVars as buildTemplateVarsExternal } from './full-writer/template-vars-builder';
+import { FullWriterStoreImpl } from './full-writer/full-writer-store';
+import { TabController } from './full-writer/tab-controller';
+import { EntityStateController } from './full-writer/entity-state-controller';
+import { TitleBarController } from './full-writer/title-bar-controller';
+import { StatusBarController } from './full-writer/status-bar-controller';
+import { ContextLoaderController } from './full-writer/context-loader-controller';
+import { parseChapterFromPath, estimateTotalChars as calcTotalChars, rebuildChapDir, calcResumeStepIndex as calcResumeIdx, findStepByIndex } from './full-writer/full-writer-utils';
 import { OutlineTreeController } from './full-writer/outline-tree-controller';
 import { CoverPickerController } from './full-writer/cover-picker-controller';
 import { SettingLibController } from './full-writer/setting-lib-controller';
@@ -21,9 +27,9 @@ import { AIEngine, APIResponse } from '../engine/ai-engine';
 import { ContextManager, GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '../engine/context-manager';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { showProgress, hideProgress, showSuccess, showError, mkdirp, stripFrontmatter, applyNwScope } from '../utils/helpers';
-import { getStepTemplate, fillTemplate, WRITING_RULES } from '../engine/prompt-templates';
+import { getStepTemplate, fillTemplate } from '../engine/prompt-templates';
 import { TemplateService } from '../services/template-service';
-import { getForeshadowWarnings } from '../engine/foreshadow-manager';
+import { getForeshadowWarnings } from '../services/foreshadow-manager';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
 import { scoreAndFilterEntities, ScoredEntity } from '../engine/entity-scorer';
 import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../engine/character-soul';  // V2 P0-1
@@ -31,14 +37,11 @@ import { getChapterFile, getChapterFileName, findBodyFileV4 } from '../engine/ch
 import { MiniSettingsModal } from './mini-settings-modal';
 import { EntityStateManager } from '../engine/entity-state-manager';
 import { SettlementEngine } from '../engine/settlement-engine';
+import { ENGINE_NAMES } from '../engine/engine-registry';
 import { ChapterStateManager } from './states/chapter-state-manager';
 import { extractWorldviewMeta } from './utils/worldview-utils';
 import { StepRunner, ALL_FULL_STEPS, FullStep, StepRunCtx } from '../engine/step-runner';
 
-/** V2: 通过 logicalIndex 查找步骤（非数组下标） */
-function findStepByIndex(logicalIndex: number): FullStep | undefined {
-    return ALL_FULL_STEPS.find(s => s.index === logicalIndex);
-}
 import { CrossVolumeIntegrator } from '../engine/cross-volume-integration';
 import { ContextPanel } from './rendering/context-panel';
 import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS, chapterOutlineSection, CHAPTER_STATUS } from '../shared/format-constants';
@@ -56,7 +59,10 @@ import { pjSettingLib, pjWritingStyle, pjStepDir,
 import { getWritingStyleCandidatePaths } from './writing-style-paths';
 import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta } from './project-utils';
 import { CHAR_TO_TOKEN_RATIO, INFO_DEBT_MAX, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '../shared/thresholds';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('FullWriterView');
 export const VIEW_TYPE = 'novel-writer-full-writer';
 
 export class FullWriterView extends ItemView {
@@ -64,20 +70,19 @@ export class FullWriterView extends ItemView {
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
 
-    // === 状态 ===
-    private context: GatheredContext | null = null;
-    private project = '';
-    private chapterName = '';
-    private chapterNum = 0;
-    private volume = '';
-    private chapDir = '';
-    private vars: Record<string, string> = {};
-    private isLoading = false;
+    private state: FullWriterStoreImpl;
+    private tabController!: TabController;
+    private entityStateController!: EntityStateController;
+    private titleBarController!: TitleBarController;
+    private statusBarController!: StatusBarController;
+    private contextLoaderController!: ContextLoaderController;
 
-    // === 子模块 ===
+    private context: GatheredContext | null = null;
+
     private chapterStateManager: ChapterStateManager;
     private stepRunner: StepRunner;
     private contextPanel: ContextPanel;
+    private _progressNotice: Notice | null = null;
     private settlementEngine: SettlementEngine;
     private polishEditor: PolishEditor;
     private wizardChecker: WizardChecker;
@@ -92,51 +97,88 @@ export class FullWriterView extends ItemView {
     private projectSelectorController: ProjectSelectorController;
     private interventionController: InterventionController;
 
-    // === DOM 引用（由 renderContent 维护）===
     private mainContainer: HTMLElement | null = null;
     private workspace: HTMLElement | null = null;
 
-    // === 干预面板 DOM 引用（由 renderInterventionBox 维护）===
-    private interventionContainer!: HTMLElement;
-    private interventionInput!: HTMLTextAreaElement;
-    private interventionReportEl!: HTMLElement;
     private currentReport: any = null;
 
-    // 便捷访问器（代理到 ChapterStateManager）
     private get stepCompleted(): Set<string> { return this.chapterStateManager.stepCompleted; }
     private get stepResults(): Record<string, string> { return this.chapterStateManager.stepResults; }
     private get currentStepIndex(): number { return this.chapterStateManager.currentStepIndex; }
     private set currentStepIndex(v: number) { this.chapterStateManager.currentStepIndex = v; }
 
-    // === Tab 系统 ===
-    tabs: Array<{ id: string; label: string; type: 'selector' | 'chapter' | 'wizard'; chapterKey?: string; project?: string; chapterName?: string; volume?: string; chapDir?: string; chapterNum?: number; file?: TFile; projectType?: 'original' | 'fanfic'; currentStepIdx?: number; steps?: WizardStep[] }> = [];  // wizard-controller 需要访问
-    private activeTabId = '';
+    private get project(): string { return this.state.project; }
+    private set project(v: string) { this.state.project = v; }
+    private get chapterName(): string { return this.state.chapterName; }
+    private set chapterName(v: string) { this.state.chapterName = v; }
+    private get chapterNum(): number { return this.state.chapterNum; }
+    private set chapterNum(v: number) { this.state.chapterNum = v; }
+    private get volume(): string { return this.state.volume; }
+    private set volume(v: string) { this.state.volume = v; }
+    private get chapDir(): string { return this.state.chapDir; }
+    private set chapDir(v: string) { this.state.chapDir = v; }
+    private get vars(): Record<string, string> { return this.state.vars; }
+    private set vars(v: Record<string, string>) { this.state.vars = v; }
+    private get isLoading(): boolean { return this.state.isLoading; }
+    private set isLoading(v: boolean) { this.state.isLoading = v; }
+
+    get tabs(): any[] { return this.state.tabs as any[]; }
+    set tabs(v: any[]) { this.state.tabs = v; }
+    private get activeTabId(): string { return this.state.activeTabId; }
+    private set activeTabId(v: string) { this.state.activeTabId = v; }
+    private get navStack(): string[] { return this.state.navStack; }
+    private set navStack(v: string[]) { this.state.navStack = v; }
+
+    private get wizardStepResults(): Record<string, string> { return this.state.wizardStepResults; }
+    get wizardStepExecuting(): Set<string> { return this.state.wizardStepExecuting; }
+
     private tabBar!: HTMLDivElement;
-    tabContent!: HTMLDivElement;  // wizard-controller 需要访问
-    private navStack: string[] = [];
+    tabContent!: HTMLDivElement;
 
-    // === 向导状态 ===
-    // v3.4.6 localStorage 持久化（防止重启丢失上次执行结果）
-    private wizardStepResults: Record<string, string> = createPersistentWizardResults(() => this.project);
-    wizardStepExecuting: Set<string> = new Set();  // wizard-controller 需要访问
-
-    // === DOM 缓存 ===
     private systemPromptEl!: HTMLTextAreaElement;
     private userPromptEl!: HTMLTextAreaElement;
     private temperatureSlider!: HTMLInputElement;
     private temperatureValueEl!: HTMLSpanElement;
-    private chapterSelectEl!: HTMLSelectElement;
 
     constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
         super(leaf);
         this.plugin = plugin;
         this.aiEngine = plugin.aiEngine;
         this.contextManager = plugin.ctxManager;
-        this.settlementEngine = new SettlementEngine(this.app);
+        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
         this.chapterStateManager = new ChapterStateManager(this.app);
-        this.stepRunner = new StepRunner(this.app, plugin);
+        this.state = new FullWriterStoreImpl();
+
+        const stepRunnerCallbacks = {
+            showProgress: (message: string) => {
+                if (this._progressNotice) {
+                    this._progressNotice.hide();
+                }
+                this._progressNotice = new Notice(message, 0);
+            },
+            hideProgress: () => {
+                if (this._progressNotice) {
+                    this._progressNotice.hide();
+                    this._progressNotice = null;
+                }
+            },
+            showSuccess: (message: string, duration?: number) => {
+                new Notice(message, duration);
+            },
+            showError: (message: string, duration?: number) => {
+                new Notice(message, duration);
+            },
+            showNotice: (message: string, duration?: number) => {
+                new Notice(message, duration);
+            },
+            showWarning: (message: string, duration?: number) => {
+                new Notice(message, duration);
+            },
+        };
+
+        this.stepRunner = new StepRunner(this.app, plugin, stepRunnerCallbacks);
         this.contextPanel = new ContextPanel(this.app);
-        this.polishEditor = new PolishEditor(this.stepRunner);
+        this.polishEditor = new PolishEditor(this.stepRunner, this.plugin);
         this.wizardChecker = new WizardChecker(this.app);
         this.outlineTreeController = new OutlineTreeController(this.app, () => this.project);
         this.coverPickerController = new CoverPickerController(this.app);
@@ -220,6 +262,72 @@ export class FullWriterView extends ItemView {
                 getFlashModel: () => this.plugin.settings.flashModel,
             }
         );
+
+        this.tabController = new TabController({
+            app: this.app,
+            plugin: this.plugin,
+            state: this.state,
+            getTabBar: () => this.tabBar,
+            getTabContent: () => this.tabContent,
+            closeOutlineTreeModal: () => this.closeOutlineTreeModal(),
+            renderProjectSelector: () => this.renderProjectSelectorInTab(),
+            renderWizardTabContent: (tab, skipAutoAdvance) => this.renderWizardTabContent(tab, skipAutoAdvance),
+            renderInContainer: (c) => this.renderInContainer(c),
+            loadContext: () => this.loadContext(),
+            getChapterStateManager: () => this.chapterStateManager,
+            calcResumeStepIndex: () => this._calcResumeStepIndex(),
+            rebuildChapDirIfNeeded: (project, chapterName, volume, chapterNum) =>
+                this._rebuildChapDir(project, chapterName, volume, chapterNum),
+        });
+
+        this.entityStateController = new EntityStateController({
+            app: this.app,
+            plugin: this.plugin,
+            aiEngine: this.aiEngine,
+            state: this.state,
+            getContext: () => this.context,
+            getContextPanel: () => this.contextPanel,
+            getWorkspace: () => this.workspace || this.mainContainer?.querySelector('.novel-writer-fw-workspace') as HTMLElement || null,
+            estimateTotalChars: () => this.estimateTotalChars(),
+        });
+
+        this.titleBarController = new TitleBarController({
+            app: this.app,
+            plugin: this.plugin,
+            state: this.state,
+            contextManager: this.contextManager,
+            activateTab: (tabId) => this.activateTab(tabId),
+            switchProjectQuick: () => this.switchProjectQuick(),
+            getChaptersForProject: (project) => this.getChaptersForProject(project),
+            sortChaptersByNumber: (chapters) => this.sortChaptersByNumber(chapters),
+            selectChapter: (project, chapter) => this.selectChapter(project, chapter),
+            openCurrentChapterInCoWriting: () => this.openCurrentChapterInCoWriting(),
+            openKnowledgeBase: () => this.openKnowledgeBase(),
+        });
+
+        this.statusBarController = new StatusBarController({
+            app: this.app,
+            plugin: this.plugin,
+            state: this.state,
+            getChapterStateManager: () => this.chapterStateManager,
+            estimateTotalChars: () => this.estimateTotalChars(),
+        });
+
+        this.contextLoaderController = new ContextLoaderController({
+            app: this.app,
+            plugin: this.plugin,
+            state: this.state,
+            contextManager: this.contextManager,
+            getChapterStateManager: () => this.chapterStateManager,
+            getContext: () => this.context,
+            setContext: (ctx) => { this.context = ctx; },
+            activateTab: (tabId) => this.activateTab(tabId),
+            entityStateController: this.entityStateController,
+        });
+    }
+
+    private _rebuildChapDir(project: string, chapterName: string, volume: string, chapterNum?: number): string {
+        return rebuildChapDir(project, chapterName, volume, chapterNum);
     }
 
     getViewType(): string {
@@ -268,8 +376,7 @@ export class FullWriterView extends ItemView {
 
         // 创建 Tab 栏
         this.tabBar = contentEl.createDiv({
-            cls: 'novel-writer-fw-tabs-container',
-            attr: { style: 'display: flex; align-items: center; border-bottom: 1px solid var(--background-modifier-border); padding: 0 8px 0 4px; background: var(--background-secondary); min-height: 36px; flex-shrink: 0;' }
+            cls: 'novel-writer-fw-tabs-container novel-writer-fw-tabbar nw-fullwriter-tabbar',
         });
 
         // 创建 Tab 内容区
@@ -326,7 +433,7 @@ export class FullWriterView extends ItemView {
                 await this.renderTabContent();
             } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : String(e);
-                console.error('[FullWriter] onOpen error:', errMsg);
+                log.error('[FullWriter] onOpen error:', errMsg);
                 this.activateTab('project-selector');
             }
         } else {
@@ -337,7 +444,7 @@ export class FullWriterView extends ItemView {
                 await this.renderProjectSelectorInTab();
             } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : String(e);
-                console.error('[FullWriter] onOpen 加载失败:', errMsg);
+                log.error('[FullWriter] onOpen 加载失败:', errMsg);
                 new Notice('⚠️ 项目加载失败，请检查项目文件是否完整', 5000);
             }
         }
@@ -348,30 +455,24 @@ export class FullWriterView extends ItemView {
 
         // 监听项目创建事件（Obsidian Workspace 内置事件系统）
         this.registerEvent(
-            this.app.workspace.on('novel-writer:project-created', (data: { projectName: string; projectType: 'original' | 'fanfic' }) => {
-                console.warn('[FullWriter] project-created 事件触发:', data.projectName, data.projectType);
-                // v3.4.8: 直接推入向导 Tab。defer 到下一帧避免与 Modal.close() 竞态
-                const steps = this.buildWizardSteps(data.projectType);
-                const wizardId = `wizard-${Date.now()}`;
-                this.tabs.push({
-                    id: wizardId,
-                    label: '🧙 项目向导',
-                    type: 'wizard',
-                    project: data.projectName,
-                    projectType: data.projectType,
-                    currentStepIdx: 0,
-                    steps,
-                });
-                // v3.4.8: setTimeout 确保 Modal.close() 完成后再渲染向导
-                setTimeout(() => {
+            this.app.workspace.on('novel-writer:project-created', async (data: { projectName: string; projectType: 'original' | 'fanfic' }) => {
+                log.warn('[FullWriter] project-created 事件触发:', data.projectName, data.projectType);
+                // 1. 确保在 project-selector tab（不依赖 activateTab 的提前返回）
+                if (this.activeTabId !== 'project-selector') {
+                    await this.activateTab('project-selector');
+                }
+                // 2. 直接调用 renderProjectSelectorInTab 强制重渲染（不依赖 refresh/container）
+                //    延迟 150ms 确保 vault.create 已完成
+                setTimeout(async () => {
                     try {
-                        console.warn('[FullWriter] pushNav 向导:', wizardId, 'tabs:', this.tabs.map(t => t.id));
-                        this.pushNav(wizardId);
+                        await this.renderProjectSelectorInTab();
+                        // 3. 高亮新项目
+                        await this.projectSelectorController.highlightProject(data.projectName);
                     } catch (e: unknown) {
                         const errMsg = e instanceof Error ? e.message : String(e);
-                        console.error('[FullWriter] 向导 pushNav 失败:', errMsg);
+                        log.error('[FullWriter] 刷新项目列表失败:', errMsg);
                     }
-                }, 0);
+                }, 150);
             })
         );
 
@@ -424,126 +525,22 @@ export class FullWriterView extends ItemView {
     }
 
     // ============================================================
-    // Tab 系统
+    // Tab 系统（委托给 TabController）
     // ============================================================
     async pushNav(tabId: string): Promise<void> {
-        this.navStack.push(this.activeTabId);
-        await this.activateTab(tabId);
+        await this.tabController.pushNav(tabId);
     }
 
     popNav(): void {
-        const prevTabId = this.navStack.pop();
-        if (prevTabId) {
-            this.activateTab(prevTabId);
-        } else {
-            this.activateTab('project-selector');
-        }
+        this.tabController.popNav();
     }
 
     private renderTabBar(): void {
-        this.tabBar.empty();
-
-        // 导航返回按钮（仅在有导航历史时显示）
-        if (this.navStack.length > 0) {
-            const backBtn = this.tabBar.createEl('button', {
-                text: '← 返回',
-                attr: {
-                    title: '返回上一页',
-                    style: 'border: none; background: transparent; cursor: pointer; padding: 4px 8px; margin-right: 4px; font-size: 0.85em; color: var(--text-accent); border-radius: 4px;'
-                }
-            });
-            backBtn.addEventListener('mouseenter', () => { backBtn.style.background = 'var(--background-modifier-hover)'; });
-            backBtn.addEventListener('mouseleave', () => { backBtn.style.background = 'transparent'; });
-            backBtn.addEventListener('click', () => { this.popNav(); });
-        }
-
-        for (const tab of this.tabs) {
-            const isSelector = tab.type === 'selector';
-            const tabEl = this.tabBar.createDiv({
-                cls: 'novel-writer-fw-tab',
-                attr: {
-                    style: `display: flex; align-items: center; padding: 6px 12px; margin-right: 2px; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em; ${tab.id === this.activeTabId ? 'background: var(--background-primary); font-weight: 600;' : 'color: var(--text-muted);'}; user-select: none; flex-shrink: 0; white-space: nowrap;${isSelector && tab.id !== this.activeTabId ? ' border: 1px dashed var(--background-modifier-border); border-bottom: none; opacity: 0.7;' : ''}`
-                }
-            });
-            tabEl.createSpan({ text: tab.label });
-
-            // 关闭按钮（项目选择 Tab 不显示）
-            if (tab.type !== 'selector') {
-                const closeBtn = tabEl.createSpan({
-                    text: ' ×',
-                    attr: { style: 'margin-left: 8px; font-size: 1.1em; opacity: 0.5;' }
-                });
-                closeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.closeTab(tab.id);
-                });
-                closeBtn.addEventListener('mouseenter', () => { closeBtn.style.opacity = '1'; });
-                closeBtn.addEventListener('mouseleave', () => { closeBtn.style.opacity = '0.5'; });
-            }
-
-            tabEl.addEventListener('click', () => {
-                this.activateTab(tab.id);
-            });
-        }
-
-        // 弹性填充
-        const spacer = this.tabBar.createDiv({ attr: { style: 'flex: 1;' } });
-
-        // 「+」按钮
-        const addBtn = this.tabBar.createEl('button', {
-            text: '+',
-            attr: {
-                title: '切换至项目选择页面',
-                style: 'width: 28px; height: 28px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: transparent; cursor: pointer; font-size: 1.2em; line-height: 1; display: flex; align-items: center; justify-content: center; flex-shrink: 0;'
-            }
-        });
-        addBtn.addEventListener('click', () => {
-            this.activateTab('project-selector');
-        });
-
-        // 「⚙️ 设置」按钮 — 打开工作台设置
-        const settingsBtn = this.tabBar.createEl('button', {
-            text: '⚙️',
-            attr: {
-                title: '工作台设置（模型选择、上下文范围、热重载等）',
-                style: 'width: 28px; height: 28px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: transparent; cursor: pointer; font-size: 0.9em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 4px;'
-            }
-        });
-        settingsBtn.addEventListener('click', () => {
-            new MiniSettingsModal(this.app, this.plugin).open();
-        });
-
-        // 「🔄 热重载」按钮 — 与 MiniSettingsModal 一致的正确热重载机制
-        const reloadBtn = this.tabBar.createEl('button', {
-            text: '🔄',
-            attr: {
-                title: '热重载插件（按最新文件重新加载 UI 和后端）',
-                style: 'width: 28px; height: 28px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: transparent; cursor: pointer; font-size: 0.9em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 4px;'
-            }
-        });
-        reloadBtn.addEventListener('click', async () => {
-            // 在 disable 前保存状态（disablePlugin 会销毁当前实例，必须同步保存）
-            this.plugin._pendingReloadState = {
-                project: this.project || '',
-                chapterFileName: this.chapterName || '',
-                volume: this.volume || '',
-                chapDir: this.chapDir || ''
-            };
-            
-            // disablePlugin 必须同步调用（不 await），因为调用后会销毁当前插件实例
-            this.app.plugins.disablePlugin('novel-writer-ai');
-            // enablePlugin 用 await 等待加载完成后恢复工作台
-            await this.app.plugins.enablePlugin('novel-writer-ai');
-        });
+        this.tabController.renderTabBar();
     }
 
     private async activateTab(tabId: string): Promise<void> {
-        // 关闭已打开的大纲树 Modal，避免遮挡切换后的步骤 UI
-        this.closeOutlineTreeModal();
-        if (this.activeTabId === tabId) return;
-        this.activeTabId = tabId;
-        this.renderTabBar();
-        await this.renderTabContent();
+        await this.tabController.activateTab(tabId);
     }
 
     closeOutlineTreeModal(): void {
@@ -554,107 +551,15 @@ export class FullWriterView extends ItemView {
     }
 
     closeTab(tabId: string): void {
-        // Wizard Tab 关闭确认
-        const tab = this.tabs.find(t => t.id === tabId);
-        if (tab && tab.type === 'wizard') {
-            const wizardTab = tab as WizardTab;
-            // v3.4.6: complete 步骤是终点页（不需要执行），不参与"是否全部完成"判断
-            const allDone = wizardTab.steps
-                .filter(s => s.id !== 'complete')
-                .every(s => s.status === 'done' || s.status === 'skipped');
-            if (!allDone) {
-                new Notice('⚠️ 项目已创建但未完成初始化，可在项目选择中手动完成各步骤', 5000);
-            }
-        }
-
-        const idx = this.tabs.findIndex(t => t.id === tabId);
-        if (idx < 0) return;
-        this.tabs.splice(idx, 1);
-
-        if (this.activeTabId === tabId) {
-            // 切换到左侧相邻 Tab，如果没有则到项目选择
-            const targetIdx = Math.min(idx, this.tabs.length - 1);
-            this.activeTabId = this.tabs[targetIdx]?.id || 'project-selector';
-            this.renderTabBar();
-            this.renderTabContent();
-        } else {
-            this.renderTabBar();
-        }
+        this.tabController.closeTab(tabId);
     }
 
-    /**
-     * v3.4.7: 根据已完成步骤计算恢复索引 — 跳到第一个未完成的业务步骤
-     * 规则：
-     *  - context (index 0) 始终完成 → 从 index 1 开始检查
-     *  - 遍历 ALL_FULL_STEPS[1..13]，找到第一个 stepCompleted 中没有的步骤 key
-     *  - 全部完成 → 回到正文生成(index 7)供用户查看已完稿正文
-     *  - settlement(index 14) 是自动步骤，不计入
-     *  - P2-5：重排后 bodyGeneration 由 4 → 7
-     */
     private _calcResumeStepIndex(): number {
-        for (const step of ALL_FULL_STEPS) {
-            if (step.index === 0 || step.auto) continue; // 跳过自动步骤（上下文/结算）
-            const sk = step.key;
-            if (sk && !this.stepCompleted.has(sk)) {
-                console.warn('[小说工坊] _calcResumeStepIndex: 第一个未完成 =', step.label, 'stepCompleted=', [...this.stepCompleted]);
-                return step.index;
-            }
-        }
-        // 全部步骤完成 → 跳到正文生成步骤查看
-        return 7;
+        return calcResumeIdx(this.stepCompleted);
     }
 
     private async renderTabContent(): Promise<void> {
-        this.tabContent.empty();
-
-        const activeTab = this.tabs.find(t => t.id === this.activeTabId);
-        if (!activeTab) return;
-
-        if (activeTab.type === 'selector') {
-            await this.renderProjectSelectorInTab();
-        } else if (activeTab.type === 'wizard' && activeTab.project) {
-            this.project = activeTab.project;
-            this.chapterName = '';
-            this.chapDir = '';
-            this.volume = '';
-            this.chapterNum = 0;
-            this.context = null;
-            this.chapterStateManager.stepCompleted.clear();
-            this.chapterStateManager.stepResults = {};
-            await this.renderWizardTabContent(activeTab as WizardTab);
-            return;
-        } else if (activeTab.type === 'chapter' && activeTab.project && activeTab.chapterName) {
-            // 恢复该 Tab 对应的项目/章节状态
-            this.project = activeTab.project;
-            this.chapterName = activeTab.chapterName;
-            this.volume = activeTab.volume || '';
-            this.chapDir = activeTab.chapDir || '';
-            // v4.0: chapDir 为空的容错重建（热重载/tab切换异常时）
-            // 注意：v4.0 起 chapDir = 步骤结果目录（步骤结果/第X卷/第X章），正文文件已分离至 正文/ 子目录
-            if (!this.chapDir && this.project && this.chapterName && this.volume) {
-                const volMatchNum = this.volume.match(/第(\d+)卷/);
-                const chapMatchNum = this.chapterName.match(/第(\d+)章/);
-                const volN = volMatchNum ? parseInt(volMatchNum[1], 10) : 1;
-                const chapN = chapMatchNum ? parseInt(chapMatchNum[1], 10) : (activeTab.chapterNum || 1);
-                this.chapDir = pjStepDir(this.project, volN, chapN);
-                activeTab.chapDir = this.chapDir;
-                console.warn('[小说工坊] chapDir 为空，从上下文重建 (v4.0 步骤结果路径):', this.chapDir);
-            }
-            console.warn('[小说工坊] renderTabContent: chapDir=', this.chapDir, 'project=', this.project, 'volume=', this.volume, 'chapterName=', this.chapterName);
-            this.chapterNum = activeTab.chapterNum || 0;
-            
-            this.currentStepIndex = 0;
-            this.context = null;
-            this.chapterStateManager.stepCompleted.clear();
-            // v3.4.7: 切章节时清空 stepResults，防止旧章节数据泄漏（restoreChapterState 从磁盘恢复当前章节）
-            this.chapterStateManager.stepResults = {};
-            
-            await this.loadContext();
-            await this.chapterStateManager.restoreChapterState(this.chapDir);
-            // v3.4.7: 根据已完成步骤自动跳到第一个未完成步骤，而非永远从步骤1开始
-            this.currentStepIndex = this._calcResumeStepIndex();
-            await this.renderInContainer(this.tabContent);
-        }
+        await this.tabController.renderTabContent();
     }
 
     private async openCurrentChapterInCoWriting(): Promise<void> {
@@ -663,6 +568,10 @@ export class FullWriterView extends ItemView {
             return;
         }
         await this.plugin.activateCoWritingView(this.project, this.chapterName, this.volume || '第1卷', this.chapterNum);
+    }
+
+    private openKnowledgeBase(): void {
+        this.plugin.openKnowledgeBaseView();
     }
 
     /**
@@ -730,22 +639,12 @@ export class FullWriterView extends ItemView {
             return;
         }
 
-        const path = activeFile.path;
+        const parsed = parseChapterFromPath(activeFile.path);
+        this.project = parsed.project;
+        this.volume = parsed.volume;
+        this.chapterName = parsed.chapterName;
+        this.chapterNum = parsed.chapterNum;
 
-        // 提取项目名（第一级目录）
-        this.project = path.split('/')[0] || '';
-
-        // 提取卷名（v4.0：卷目录已下沉至 正文/第N卷 与 步骤结果/第N卷）
-        const volMatch = path.match(/03-大纲与章节\/(?:正文\/|步骤结果\/)?(第\d+卷)/);
-        this.volume = volMatch ? volMatch[1] : '';
-
-        // 提取章节号和章节目录
-        const chapMatch = path.match(/(第\d+章)/);
-        this.chapterName = chapMatch ? chapMatch[1] : '';
-        this.chapterNum = this.chapterName ? parseInt(this.chapterName.match(/\d+/)![0]) : 0;
-
-        // 计算章节目录（v4.0：chapDir 统一指向 步骤结果/第N卷/第N章）
-        // 不能再用活动文件父目录——正文文件父目录是 正文/第N卷，并非步骤结果目录。
         if (this.chapterName && this.volume && this.project) {
             const volN = parseInt(this.volume.match(/第(\d+)卷/)?.[1] || '1', 10);
             this.chapDir = pjStepDir(this.project, volN, this.chapterNum);
@@ -757,106 +656,31 @@ export class FullWriterView extends ItemView {
     // ============================================================
     // 项目切换
     // ============================================================
-    private async onProjectChange(): Promise<void> {
-        // 复用插件级 ContextManager（项目切换由 ContextManager 内部按 project 参数处理）
+    private async resetAndGoToSelector(): Promise<void> {
         this.contextManager = this.plugin.ctxManager;
-        this.chapterName = '';
-        this.chapterNum = 0;
-        this.volume = '';
-        this.chapDir = '';
+        const currentProject = this.state.project;
+        if (currentProject) {
+            this.contextManager.invalidateContextCache(currentProject);
+        }
+        this.state.resetNavState();
         this.chapterStateManager.reset();
         this.context = null;
-        this.vars = {};
-        // 显示项目+章节选择列表
         await this.activateTab('project-selector');
     }
 
-    /**
-     * 快速切换项目：仅切换项目上下文，保持在工作台视图（不跳转章节选择页）
-     */
+    private async onProjectChange(): Promise<void> {
+        await this.resetAndGoToSelector();
+    }
+
     private async switchProjectQuick(): Promise<void> {
-        this.contextManager = this.plugin.ctxManager;
-        this.chapterName = '';
-        this.chapterNum = 0;
-        this.volume = '';
-        this.chapDir = '';
-        this.chapterStateManager.reset();
-        this.context = null;
-        this.vars = {};
-        await this.activateTab('project-selector');
+        await this.resetAndGoToSelector();
     }
 
     // ============================================================
     // 上下文加载（步骤0）
     // ============================================================
     private async loadContext(): Promise<void> {
-        if (!this.project) {
-            this.activateTab('project-selector');
-            return;
-        }
-
-        showProgress('⏳ 加载上下文数据...');
-
-        try {
-            showProgress('⏳ 加载上下文数据...');
-            this.context = await this.contextManager.gatherAll(this.project, this.chapterName);
-
-            const failedModules = this.context?.data?.['_failedModules'] as string[] || [];
-            if (failedModules.length > 0) {
-                new Notice(`⚠️ 以下模块加载失败（已跳过）: ${failedModules.join('、')}`, 6000);
-            }
-
-            // v6.0: context 是特殊步骤，加载成功即标记为 complete
-            this.chapterStateManager.stepLevels['context'] = 'complete';
-            this.chapterStateManager.stepMissing['context'] = [];
-            this.stepCompleted.add('context');
-            hideProgress();
-            showSuccess('上下文加载完成');
-
-            // 生成信息摘要
-            const infoSummary = this.contextManager.getInfoSummary(this.context);
-            this.vars['infoSummary'] = infoSummary;
-
-            // 检测上下文是否被截断
-            if (this.context?.data?.compressed?.truncationApplied) {
-                this.vars['contextTruncated'] = 'true';
-            } else {
-                this.vars['contextTruncated'] = 'false';
-            }
-        } catch (e: unknown) {
-            const errMsg = e instanceof Error ? e.message : String(e);
-            console.error('[小说工坊] 上下文加载异常:', errMsg);
-            hideProgress();
-            // ✅ v1.6.0: 不 return，而是用已加载的部分数据（如果有的话）
-            if (!this.context) {
-                showError(`上下文加载失败: ${errMsg}`);
-                return;
-            } else {
-                new Notice(`⚠️ 上下文部分加载失败: ${errMsg}`, 6000);
-            }
-        }
-
-        // v1.4.1: 跨卷状态快照 — 检测新卷首章, 自动生成/注入快照
-        await this.ensureCrossVolumeSnapshot();
-
-        // 自动跳到步骤1（render 由调用方负责）
-        this.currentStepIndex = 1;
-
-        // ✅ P0修复#2+3：上下文加载后同步涉及实体集到 plugin
-        this.syncInvolvedEntitiesToPlugin();
-    }
-
-    // v1.4.1: 跨卷状态快照 — 检测新卷首章, 自动生成/注入快照
-    private async ensureCrossVolumeSnapshot(): Promise<void> {
-        if (!this.chapterNum) return;
-        const integrator = new CrossVolumeIntegrator(this.app);
-        const isNewVol = await integrator.isNewVolumeFirstChapter(this.project, this.chapterNum);
-        if (isNewVol) {
-            const volName = this.volume || `第${Math.ceil(this.chapterNum / 10)}卷`;
-            const snapshot = await integrator.generateSnapshot(this.project, volName, `${this.project}/04-项目总控`);
-            this.vars['crossVolumeSnapshot'] = snapshot.slice(0, 3000);
-            new Notice(`📸 已为「${volName}」生成状态快照`, 4000);
-        }
+        await this.contextLoaderController.loadContext();
     }
 
 
@@ -875,38 +699,7 @@ export class FullWriterView extends ItemView {
     }
 
     private async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile }): Promise<void> {
-        const chapKey = `${project}/${chapter.chapter}`;
-        
-        // 已有 Tab → 直接激活
-        const existingTab = this.tabs.find(t => t.chapterKey === chapKey);
-        if (existingTab) {
-            this.activateTab(existingTab.id);
-            return;
-        }
-
-        const chapterNum = parseInt(chapter.chapter.match(/\d+/)?.[0] || '0');
-        // v4.0: chapDir = 步骤结果目录（步骤结果/第X卷/第Y章），正文文件已分离至 正文/ 子目录。
-        // 旧实现用 `03-大纲与章节/{卷}/{章}` 正则反推，在新结构下永不命中 → chapDir 恒空。
-        const selVolN = parseInt(chapter.volume.match(/第(\d+)卷/)?.[1] || '1', 10);
-        const chapDir = (chapter.volume && chapterNum > 0) ? pjStepDir(project, selVolN, chapterNum) : '';
-
-        const newTab = {
-            id: `chapter-${Date.now()}`,
-            label: `✍️ ${chapter.chapter}`,
-            type: 'chapter' as const,
-            chapterKey: chapKey,
-            project,
-            chapterName: chapter.chapter,
-            volume: chapter.volume,
-            chapDir,
-            chapterNum,
-            file: chapter.file
-        };
-
-        this.tabs.push(newTab);
-        this.activeTabId = newTab.id;
-        this.renderTabBar();
-        await this.renderTabContent();
+        await this.tabController.selectChapter(project, chapter);
     }
 
     private showAllChapters(project: string, chapters: Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }>): void {
@@ -951,7 +744,7 @@ export class FullWriterView extends ItemView {
             const nextChapter = this.getNextChapter(sortedChapters);
             
             if (nextChapter) {
-                console.log('[小说工坊] 进入写作界面，定位章节:', nextChapter.chapter, nextChapter.title);
+                log.info('[小说工坊] 进入写作界面，定位章节:', nextChapter.chapter, nextChapter.title);
                 await this.selectChapter(project, nextChapter);
             } else {
                 // 没有章节则提示用户
@@ -959,7 +752,7 @@ export class FullWriterView extends ItemView {
             }
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
-            console.error('[小说工坊] 进入写作界面失败:', errMsg);
+            log.error('[小说工坊] 进入写作界面失败:', errMsg);
             new Notice('❌ 进入写作界面失败: ' + errMsg, 5000);
         }
     }
@@ -1050,7 +843,7 @@ export class FullWriterView extends ItemView {
             new Notice(`✅ 项目 "${projectName}" 已创建，开始引导向导`, 3000);
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
-            console.error('Quick create project failed:', errMsg);
+            log.error('Quick create project failed:', errMsg);
             new Notice('❌ 快速创建项目失败：' + errMsg, 5000);
         }
     }
@@ -1184,7 +977,7 @@ export class FullWriterView extends ItemView {
             try {
                 this.contextPanel.render(workspace, this.context, this.project, this.chapterNum, this.plugin, () => this.estimateTotalChars());
             } catch (e) {
-                console.warn('[小说工坊] 上下文面板渲染异常（已跳过）:', e);
+                log.warn('[小说工坊] 上下文面板渲染异常（已跳过）:', e);
                 workspace.createDiv({ text: '⚠️ 上下文面板渲染失败', cls: 'novel-writer-fw-warning' });
             }
 
@@ -1195,7 +988,7 @@ export class FullWriterView extends ItemView {
             injectFullWriterStyles();
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
-            console.error('[小说工坊] 渲染失败:', errMsg);
+            log.error('[小说工坊] 渲染失败:', errMsg);
             container.createEl('div', {
                 text: `❌ 渲染失败: ${errMsg}`,
                 cls: 'novel-writer-fw-empty'
@@ -1207,96 +1000,7 @@ export class FullWriterView extends ItemView {
     // 标题栏
     // ============================================================
     private async renderTitleBar(container: HTMLElement): Promise<void> {
-        const bar = container.createDiv({ cls: 'novel-writer-fw-titlebar' });
-
-        const titleRow = bar.createDiv({ cls: 'novel-writer-fw-title-row' });
-
-        // ← 返回项目与章节界面（v3.4.7 P0-5）
-        const backBtn = titleRow.createEl('button', {
-            text: '← 返回',
-            attr: {
-                style: 'padding:4px 10px; border:1px solid var(--background-modifier-border); border-radius:4px; cursor:pointer; background:var(--background-secondary); color:var(--text-muted); font-size:13px; margin-right:6px; white-space:nowrap;',
-                title: '返回项目与章节选择界面'
-            }
-        });
-        backBtn.onclick = () => {
-            this.activateTab('project-selector');
-        };
-
-        // 项目下拉菜单
-        const projectSelect = titleRow.createEl('select', { cls: 'nw-select novel-writer-fw-title' });
-        projectSelect.style.cssText = 'width:auto;height:28px;line-height:26px;font-size:14px;font-weight:bold;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:4px;padding:0 8px;color:var(--text-normal);min-width:120px;';
-
-        // 使用 detectProjects 只获取真正的小说项目
-        const projects = await this.contextManager.detectProjects();
-
-        if (projects.length === 0) {
-            projectSelect.createEl('option', { text: '📖 无项目' });
-        } else {
-            for (const name of projects) {
-                const opt = projectSelect.createEl('option', { text: `📖 ${name}` });
-                if (name === this.project) {
-                    opt.selected = true;
-                }
-            }
-        }
-
-        projectSelect.addEventListener('change', async () => {
-            const rawText = projectSelect.value;
-            const selected = rawText.replace('📖 ', '');
-            if (selected !== this.project && selected !== '无项目') {
-                this.project = selected;
-                await this.switchProjectQuick();
-            }
-        });
-
-        if (this.project) {
-            titleRow.createSpan({ text: ' · ', cls: 'novel-writer-fw-title-sep' });
-
-            const selectContainer = titleRow.createDiv({ cls: 'novel-writer-fw-chapter-select-container' });
-            this.chapterSelectEl = selectContainer.createEl('select', { cls: 'nw-select novel-writer-fw-chapter-select' });
-
-            const chapters = this.getChaptersForProject(this.project);
-            const sortedChapters = this.sortChaptersByNumber(chapters);
-            for (const ch of sortedChapters) {
-                const statusIcon = ch.status === 'written' || ch.status === 'settled' ? ' ✅' : ' 📝';
-                const option = this.chapterSelectEl.createEl('option', {
-                    text: `${ch.chapter} ${ch.title || ''}${statusIcon}`,
-                    value: `${ch.chapter}|${ch.volume}|${ch.file.path}`
-                });
-                if (ch.chapter === this.chapterName && (!ch.volume || ch.volume === this.volume)) {
-                    option.selected = true;
-                }
-            }
-
-            this.chapterSelectEl.onchange = async () => {
-                const [chapterName, volume, filePath] = this.chapterSelectEl.value.split('|');
-                if (!filePath) return;
-
-                const file = this.app.vault.getAbstractFileByPath(filePath);
-                if (file && file instanceof TFile) {
-                    await this.selectChapter(this.project, { chapter: chapterName, volume, file });
-                }
-            };
-
-            titleRow.createSpan({ text: ' 正文写作', cls: 'novel-writer-fw-title-suffix' });
-            titleRow.createDiv({ cls: 'novel-writer-fw-title-spacer' });
-        }
-
-        // Task 8.1: 次要控件容器包装「句级协同」和「设置」按钮，支持窄屏换行
-        const secondaryRow = titleRow.createDiv({ cls: 'novel-writer-fw-title-secondary' });
-
-        // v73: 正文写作标题栏常驻「句级协同」直达入口（不必进到正文生成步骤）
-        if (this.project && this.chapterName) {
-            const coBtn = secondaryRow.createEl('button', { text: '✍️ 句级协同', cls: 'novel-writer-settings-btn' });
-            coBtn.setAttribute('title', '进入句级协同写作工作台（当前章节）');
-            coBtn.onclick = () => this.openCurrentChapterInCoWriting();
-        }
-
-        const settingsBtn = secondaryRow.createEl('button', { text: '⚙️ 设置', cls: 'novel-writer-settings-btn' });
-        settingsBtn.onclick = () => {
-            new MiniSettingsModal(this.app, this.plugin).open();
-        };
+        await this.titleBarController.renderTitleBar(container);
     }
 
     // ============================================================
@@ -1327,7 +1031,7 @@ export class FullWriterView extends ItemView {
             return;
         }
 
-        const templateService = new TemplateService(this.app);
+        const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
         const customTemplate = await templateService.getStepPrompt(stepKey);
         const template = customTemplate || getStepTemplate(stepKey);
         if (!template) {
@@ -1381,13 +1085,35 @@ export class FullWriterView extends ItemView {
 
         if (stepKey === 'bodyGeneration') {
             const cowriteCard = area.createDiv({ cls: 'novel-writer-fw-cowrite-entry' });
-            cowriteCard.createEl('h4', { text: '✍️ 推荐：进入句级协同写作工作台' });
-            cowriteCard.createEl('p', { text: '按技术规格，正文生成阶段可切换为逐句协同：Tab 生成 3 条候选，用户接受/编辑/验证后写入正文；Step 5-9 不替代人工把关。' });
-            const cowriteBtn = cowriteCard.createEl('button', {
-                text: '进入句级协同写作',
-                cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary'
+            const cowriteHeader = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-header' });
+            cowriteHeader.createEl('h4', { text: '✨ 推荐方式：句级协同写作', cls: 'novel-writer-fw-cowrite-entry-title' });
+            cowriteHeader.createEl('span', { text: '当前主流', cls: 'novel-writer-fw-cowrite-entry-badge' });
+            
+            const cowriteDesc = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-desc' });
+            cowriteDesc.createEl('p', { text: '正文生成阶段建议使用句级协同写作工作台：AI 逐句生成 3 条不同方向的候选，你可以选择接受、编辑或重新生成，完全掌握创作主导权。' });
+            
+            const cowriteFeatures = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-features' });
+            const features = [
+                '🎯 逐句精控：每句话都可以选择和调整',
+                '🔄 多向候选：3 条不同方向，拓宽创作思路',
+                '🛡️ 降低 AI 痕迹：人工参与度高，反检测效果更好',
+                '📊 数据兼容：与旧模式共享同一正文文件，可随时切换',
+            ];
+            features.forEach(f => {
+                cowriteFeatures.createEl('div', { text: f, cls: 'novel-writer-fw-cowrite-entry-feature' });
+            });
+            
+            const cowriteBtnRow = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-btn-row' });
+            const cowriteBtn = cowriteBtnRow.createEl('button', {
+                text: '🚀 进入句级协同写作',
+                cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary novel-writer-fw-cowrite-entry-btn'
             });
             cowriteBtn.addEventListener('click', () => this.openCurrentChapterInCoWriting());
+            
+            const cowriteNote = cowriteCard.createEl('p', { 
+                text: '💡 提示：本页下方的「AI 自动生成」为 v5.0 之前的旧模式，仅作兼容保留。', 
+                cls: 'novel-writer-fw-cowrite-entry-note' 
+            });
         }
 
         // Temperature 滑块
@@ -1427,11 +1153,12 @@ export class FullWriterView extends ItemView {
         this.renderResultArea(area, stepKey);
 
         // v6.0: outline 步骤额外显示分卷大纲树状预览（辅助视图，不替代结果编辑器）
-        if (stepKey === 'outline' && this.stepCompleted.has('outline') && this.project) {
-            const previewSection = area.createDiv({ cls: 'novel-writer-fw-result-section' });
-            previewSection.createEl('h4', { text: '📚 分卷大纲预览', cls: 'novel-writer-fw-result-title' });
-            await this.outlineTreeController.render(previewSection);
-        }
+        // 已禁用：写作工作台（单章）的 outline 步骤不应显示全书分卷大纲树，那是全书规划向导的功能
+        // if (stepKey === 'outline' && this.stepCompleted.has('outline') && this.project) {
+        //     const previewSection = area.createDiv({ cls: 'novel-writer-fw-result-section' });
+        //     previewSection.createEl('h4', { text: '📚 分卷大纲预览', cls: 'novel-writer-fw-result-title' });
+        //     await this.outlineTreeController.render(previewSection);
+        // }
 
         // 步骤4完成后：显示消痕和迭代按钮
         if (stepKey === 'bodyGeneration' && this.stepCompleted.has('bodyGeneration')) {
@@ -1499,40 +1226,7 @@ export class FullWriterView extends ItemView {
     }
 
     private renderStatusBar(container: HTMLElement): void {
-        const sb = container.createDiv({ cls: 'novel-writer-fw-status-bar' });
-
-        const currentStep = findStepByIndex(this.currentStepIndex);
-        const ctxLoaded = this.stepCompleted.has('context');
-
-        sb.createSpan({ text: ctxLoaded ? '🟢 上下文已加载' : '🔴 上下文未加载', cls: 'novel-writer-fw-status-item' });
-        sb.createSpan({ text: ' | ', cls: 'novel-writer-fw-status-sep' });
-        sb.createSpan({ text: `当前步骤: ${currentStep?.label ?? '—'}`, cls: 'novel-writer-fw-status-item' });
-        sb.createSpan({ text: ' | ', cls: 'novel-writer-fw-status-sep' });
-
-        const completedCount = Array.from(this.stepCompleted).filter(k => k !== 'context' && k !== 'settlement').length;
-        const totalSteps = ALL_FULL_STEPS.filter(s => s.key && !s.auto).length;
-        sb.createSpan({ text: `进度: ${completedCount}/${totalSteps}`, cls: 'novel-writer-fw-status-item' });
-        sb.createSpan({ text: ' | ', cls: 'novel-writer-fw-status-sep' });
-
-        const totalChars = this.estimateTotalChars();
-        const estimatedTokens = Math.floor(totalChars / 4);
-        sb.createSpan({ text: `正文 tokens: ~${estimatedTokens.toLocaleString()}`, cls: 'novel-writer-fw-status-item' });
-        sb.createSpan({ text: ' | ', cls: 'novel-writer-fw-status-sep' });
-
-        // v3.5.0: 上下文窗口 token 估算
-        const ctxTokens = parseInt(this.vars['_contextTokens'] || '0') || 0;
-        const maxCtx = this.plugin.settings.maxContext || 128000;
-        const pct = maxCtx > 0 ? Math.round(ctxTokens / maxCtx * 100) : 0;
-        const ctxColor = pct > 70 ? 'var(--text-error)' : pct > 50 ? 'var(--text-warning)' : 'var(--text-muted)';
-        const ctxSpan = sb.createSpan({ text: `上下文: ~${ctxTokens.toLocaleString()}t (${pct}%)`, cls: 'novel-writer-fw-status-item', attr: { style: `color:${ctxColor};` } });
-        ctxSpan.setAttr('title', `上下文预算: ${ctxTokens}/${maxCtx} tokens`);
-        sb.createSpan({ text: ' | ', cls: 'novel-writer-fw-status-sep' });
-
-        // v3.5.0: 场景类型 + 节奏模式
-        const sceneType = this.vars['_sceneType'] || '';
-        const sceneLabel = sceneType === 'battle' ? '⚔️ 战斗' : sceneType === 'emotional' ? '💭 情感' : '💬 对话';
-        const rhythm = this.vars['suggestedRhythm']?.split(' — ')[0] || '起承转合';
-        sb.createSpan({ text: `${sceneLabel} · ${rhythm}`, cls: 'novel-writer-fw-status-item', attr: { title: `推荐节奏: ${this.vars['suggestedRhythm'] || '起承转合'}` } });
+        this.statusBarController.renderStatusBar(container);
     }
 
     // ============================================================
@@ -1551,17 +1245,7 @@ export class FullWriterView extends ItemView {
 
     // ============================================================
     private estimateTotalChars(): number {
-        let total = 0;
-        if (this.context) {
-            total += JSON.stringify(this.context.data).length;
-        }
-        for (const result of Object.values(this.stepResults)) {
-            total += result.length;
-        }
-        // 加上当前提示词
-        if (this.systemPromptEl) total += this.systemPromptEl.value.length;
-        if (this.userPromptEl) total += this.userPromptEl.value.length;
-        return total;
+        return calcTotalChars(this.context, this.stepResults, this.systemPromptEl, this.userPromptEl);
     }
 
     /**
@@ -1569,101 +1253,15 @@ export class FullWriterView extends ItemView {
      * 上下文面板 (context-panel.ts) 读取这些集来过滤显示
      */
     private syncInvolvedEntitiesToPlugin(): void {
-        this.plugin._involvedChars = new Set<string>();
-        this.plugin._involvedLocs = new Set<string>();
-        this.plugin._involvedFactions = new Set<string>();
-        this.plugin._involvedItems = new Set<string>();
-
-        if (this.plugin.settings.contextScope !== 'compact') return;
-
-        try {
-            // v4.0：正文位于 正文/第V卷/，与 chapDir（步骤结果）分离 → 用 findBodyFileV4 定位。
-            const volN = parseInt(this.volume.match(/第(\d+)卷/)?.[1] || '0', 10);
-            const bodyFile = findBodyFileV4(this.app, this.project, volN, this.chapterNum);
-            if (bodyFile instanceof TFile) {
-                const involved = getInvolvedEntities(this.app, bodyFile);
-                this.plugin._involvedChars = new Set(involved.chars);
-                this.plugin._involvedLocs = new Set(involved.locs);
-                this.plugin._involvedFactions = new Set(involved.factions);
-                this.plugin._involvedItems = new Set(involved.items);
-            }
-        } catch (e: unknown) {
-            const errMsg = e instanceof Error ? e.message : String(e);
-            console.warn('[FullWriterView] 同步涉及实体失败:', errMsg);
-        }
+        this.entityStateController.syncInvolvedEntitiesToPlugin();
     }
 
-    /**
-     * ✅ v1.6.0 实体状态追踪：检测并更新实体状态
-     * 在 Step 4（正文生成）完成后自动调用
-     */
     private async detectAndUpdateEntityStates(bodyContent: string): Promise<void> {
-        if (!this.project || !this.chapterNum) return;
-
-        try {
-            const manager = new EntityStateManager({
-                app: this.app,
-                plugin: this.plugin,
-                aiEngine: this.aiEngine,
-            });
-
-            // 检测状态变更
-            const changes = await manager.detectStateChanges(
-                bodyContent,
-                this.project,
-                this.chapterNum,
-                this.chapterName
-            );
-
-            if (changes.length > 0) {
-                // 写入人物 frontmatter
-                await manager.applyStateChanges(
-                    this.project,
-                    changes,
-                    this.chapterNum,
-                    this.chapterName
-                );
-
-                // 自动更新涉及实体索引（v4.0：正文在 正文/第V卷/，与 chapDir 分离）
-                const volN = parseInt(this.volume.match(/第(\d+)卷/)?.[1] || '0', 10);
-                const bodyFile = findBodyFileV4(this.app, this.project, volN, this.chapterNum);
-                if (bodyFile instanceof TFile) {
-                    const ctx = this.context;
-                    const d = ctx?.data;
-                    const bodyPath = bodyFile.path;
-                    await manager.updateInvolvedEntities(
-                        this.project,
-                        bodyPath,
-                        bodyContent
-                    );
-                }
-
-                new Notice(`✅ 已自动更新 ${changes.length} 位角色的状态`);
-                
-                // 刷新上下文面板
-                this.refreshContextBar();
-            }
-        } catch (e: unknown) {
-            const errMsg = e instanceof Error ? e.message : String(e);
-            console.warn('[FullWriterView] 实体状态检测失败:', errMsg);
-            new Notice('⚠️ 实体状态自动更新失败，将在结算时重试', 5000);
-        }
+        await this.entityStateController.detectAndUpdateEntityStates(bodyContent);
     }
 
     public refreshContextBar(): void {
-        // v3.4.9 P0-1: try-catch 防止渲染异常导致整个上下文面板不可用
-        try {
-            // 优先使用缓存的 workspace 引用；fallback 到 DOM 查询
-            const workspace = this.workspace || this.mainContainer?.querySelector('.novel-writer-fw-workspace');
-            if (!workspace) return;
-            // ✅ P0修复#2：预先计算涉及实体集，用于面板过滤显示
-            this.syncInvolvedEntitiesToPlugin();
-            workspace.querySelectorAll('.novel-writer-fw-context-card').forEach(el => el.remove());
-            this.contextPanel.render(workspace as HTMLElement, this.context, this.project, this.chapterNum, this.plugin, () => this.estimateTotalChars());
-        } catch (e: unknown) {
-            const errMsg = e instanceof Error ? e.message : String(e);
-            console.warn('[FullWriterView] refreshContextBar 异常:', errMsg);
-        }
+        this.entityStateController.refreshContextBar();
     }
 
     // ============================================================

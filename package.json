@@ -1,18 +1,20 @@
 {
     "name": "novel-writer-ai",
-    "version": "4.5.0",
+    "version": "4.10.6",
     "description": "Obsidian plugin for AI-powered novel writing",
     "main": "main.js",
     "scripts": {
-        "dev": "esbuild main.ts --bundle --external:obsidian --format=cjs --outfile=main.js --watch",
-        "build": "esbuild main.ts --bundle --external:obsidian --format=cjs --platform=node --outfile=main.js",
+        "version:sync": "node scripts/sync-version.js",
+        "build": "node scripts/sync-version.js && node scripts/build.js",
+        "dev": "node scripts/sync-version.js && node scripts/build.js --watch",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "test:cov": "vitest run --coverage",
         "test:e2e": "playwright test",
         "test:e2e:ui": "playwright test --ui",
         "test:e2e:headed": "playwright test --headed",
-        "test:e2e:report": "playwright show-report"
+        "test:e2e:report": "playwright show-report",
+        "check-engines": "node scripts/scan-engine-instances.mjs --check"
     },
     "keywords": [
         "obsidian",

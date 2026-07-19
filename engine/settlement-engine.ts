@@ -1,4 +1,4 @@
-﻿/**
+/**
  * settlement-engine.ts — 章节结算引擎
  *
  * 职责：解析分析报告 → 更新实体状态 → 更新伏笔库 → 更新时间线 → 写入文件
@@ -31,7 +31,10 @@ import {
     getNextRowNumInSection,
 } from './settlement/markdown-table-utils';
 import { createSettleContext, type SettleContext } from './settlement/settle-context';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('SettlementEngine');
 export interface SettlementOptions {
     forceReveal?: string[];
     involvedChars?: string[];
@@ -65,7 +68,7 @@ export interface SettlementResult {
 
 /** 指令类型与 FrontMatter 已外迁至 ./settlement/settlement-types.ts */
 
-export interface SettlementEngineDeps {
+interface SettlementEngineDeps {
     fs?: FileSystemPort;
     frontmatter?: FrontmatterPort;
     vaultMeta?: VaultMetaPort;
@@ -179,7 +182,7 @@ export class SettlementEngine {
                     result.updatedChars++;
                     result.chars.push(name);
                 } catch (e) {
-                    console.warn('[SettlementEngine] 轻量结算更新人物失败:', name, e);
+                    log.warn('[SettlementEngine] 轻量结算更新人物失败:', name, e);
                 }
             }
         }
@@ -200,7 +203,7 @@ export class SettlementEngine {
                     result.updatedLocations++;
                     result.locs.push(name);
                 } catch (e) {
-                    console.warn('[SettlementEngine] 轻量结算更新地点失败:', name, e);
+                    log.warn('[SettlementEngine] 轻量结算更新地点失败:', name, e);
                 }
             }
         }
@@ -221,7 +224,7 @@ export class SettlementEngine {
                     result.updatedFactions++;
                     result.factions.push(name);
                 } catch (e) {
-                    console.warn('[SettlementEngine] 轻量结算更新势力失败:', name, e);
+                    log.warn('[SettlementEngine] 轻量结算更新势力失败:', name, e);
                 }
             }
         }
@@ -242,7 +245,7 @@ export class SettlementEngine {
                     result.updatedItems++;
                     result.items.push(name);
                 } catch (e) {
-                    console.warn('[SettlementEngine] 轻量结算更新物品失败:', name, e);
+                    log.warn('[SettlementEngine] 轻量结算更新物品失败:', name, e);
                 }
             }
         }
@@ -267,7 +270,7 @@ export class SettlementEngine {
                         if (changed) { await this.getFS().write(fp, content); }
                     });
                 } catch (e) {
-                    console.warn('[SettlementEngine] 轻量结算更新伏笔库失败:', e);
+                    log.warn('[SettlementEngine] 轻量结算更新伏笔库失败:', e);
                 }
             }
         }
@@ -305,7 +308,7 @@ export class SettlementEngine {
                     }
                 });
             } catch (e) {
-                console.warn('[SettlementEngine] 轻量结算 body frontmatter回写失败:', e);
+                log.warn('[SettlementEngine] 轻量结算 body frontmatter回写失败:', e);
             }
         }
 
@@ -387,7 +390,7 @@ export class SettlementEngine {
         try {
             await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => { origVal = String(fm[field] ?? ''); });
         } catch (e) {
-            console.warn('[SettlementEngine] 快照失败:', e);
+            log.warn('[SettlementEngine] 快照失败:', e);
             this.notifier.showNotice('SettlementEngine：数据读取异常，部分功能可能受限');
         }
         ctx.snapshots.get(file.path)!.set(field, origVal);
@@ -404,7 +407,7 @@ export class SettlementEngine {
                     }
                 });
             } catch (e) {
-                console.warn('[SettlementEngine] 回滚失败:', filePath, e);
+                log.warn('[SettlementEngine] 回滚失败:', filePath, e);
                 this.notifier.showNotice(`⚠️ 结算回滚失败：${filePath.split('/').pop()}，数据可能处于不一致状态`, NOTICE_CRITICAL);
                 ctx.rollbackFailed = true;
             }
@@ -421,7 +424,7 @@ export class SettlementEngine {
         const validCharFields = new Set<string>(CHARACTER_DISPLAY_KEYS);
         for (const u of ctx.instr.uc) {
             if (!validCharFields.has(u.field)) {
-                console.warn(`[SettlementEngine] 跳过无效字段: ${u.field} (人物: ${u.name})`);
+                log.warn(`[SettlementEngine] 跳过无效字段: ${u.field} (人物: ${u.name})`);
                 continue;
             }
             const fp = pjCharFile(ctx.project, u.name);
@@ -436,7 +439,7 @@ export class SettlementEngine {
                 );
                 ctx.result.updatedChars++;
                 ctx.result.chars.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 更新人物失败:', u.name, e); this.notifier.showNotice(`❌ 更新人物「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新人物失败:', u.name, e); this.notifier.showNotice(`❌ 更新人物「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -455,7 +458,7 @@ export class SettlementEngine {
                 );
                 ctx.result.updatedFactions++;
                 ctx.result.factions.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 更新势力失败:', u.name, e); this.notifier.showNotice(`❌ 更新势力「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新势力失败:', u.name, e); this.notifier.showNotice(`❌ 更新势力「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -474,7 +477,7 @@ export class SettlementEngine {
                 );
                 ctx.result.updatedLocations++;
                 ctx.result.locs.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 更新地点失败:', u.name, e); this.notifier.showNotice(`❌ 更新地点「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新地点失败:', u.name, e); this.notifier.showNotice(`❌ 更新地点「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -493,7 +496,7 @@ export class SettlementEngine {
                 );
                 ctx.result.updatedItems++;
                 ctx.result.items.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 更新物品功法失败:', u.name, e); this.notifier.showNotice(`❌ 更新物品功法「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新物品功法失败:', u.name, e); this.notifier.showNotice(`❌ 更新物品功法「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -543,7 +546,7 @@ export class SettlementEngine {
 
                 if (changed) { await this.getFS().write(fp, content); }
             });
-        } catch (e) { console.warn('[SettlementEngine] 更新伏笔库失败:', e); ctx.hasPartialFailure = true; }
+        } catch (e) { log.warn('[SettlementEngine] 更新伏笔库失败:', e); ctx.hasPartialFailure = true; }
     }
 
     // ================================================================
@@ -608,7 +611,7 @@ ${nc.description || '暂无描述'}
                 ctx.createdFiles.push(fp);
                 ctx.result.createdChars++;
                 ctx.result.chars.push(nc.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 新建人物失败:', nc.name, e); this.notifier.showNotice(`❌ 新建人物「${nc.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 新建人物失败:', nc.name, e); this.notifier.showNotice(`❌ 新建人物「${nc.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -650,7 +653,7 @@ ${nl.description || '暂无描述'}
                 ctx.createdFiles.push(fp);
                 ctx.result.createdLocs++;
                 ctx.result.locs.push(nl.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 新建地点失败:', nl.name, e); this.notifier.showNotice(`❌ 新建地点「${nl.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 新建地点失败:', nl.name, e); this.notifier.showNotice(`❌ 新建地点「${nl.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -690,7 +693,7 @@ ${nf.description || '暂无描述'}
                 ctx.createdFiles.push(fp);
                 ctx.result.createdFactions++;
                 ctx.result.factions.push(nf.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 新建势力失败:', nf.name, e); this.notifier.showNotice(`❌ 新建势力「${nf.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 新建势力失败:', nf.name, e); this.notifier.showNotice(`❌ 新建势力「${nf.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -730,7 +733,7 @@ ${ni.description || '暂无描述'}
                 ctx.createdFiles.push(fp);
                 ctx.result.createdItems++;
                 ctx.result.items.push(ni.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); console.warn('[SettlementEngine] 新建物品功法失败:', ni.name, e); this.notifier.showNotice(`❌ 新建物品功法「${ni.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 新建物品功法失败:', ni.name, e); this.notifier.showNotice(`❌ 新建物品功法「${ni.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -752,7 +755,7 @@ ${ni.description || '暂无描述'}
                     else { await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {}); await this.getFS().write(fp, base); }
                 }
                 ctx.result.createdForeshadows++;
-            } catch (e) { console.warn('[SettlementEngine] 追加伏笔失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
+            } catch (e) { log.warn('[SettlementEngine] 追加伏笔失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -782,7 +785,7 @@ ${ni.description || '暂无描述'}
                     else { await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {}); await this.getFS().write(tlPath, base); }
                 }
                 ctx.result.createdTimelines++;
-            } catch (e) { console.warn('[SettlementEngine] 追加时间线失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
+            } catch (e) { log.warn('[SettlementEngine] 追加时间线失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -792,7 +795,7 @@ ${ni.description || '暂无描述'}
             try {
                 await this.updateRelation(ctx.project, r.entityA, r.entityB, r.relType, r.desc, ctx.chapName);
                 ctx.result.updatedRelations++;
-            } catch (e) { console.warn('[SettlementEngine] 更新关系失败:', r.entityA, r.entityB, e); }
+            } catch (e) { log.warn('[SettlementEngine] 更新关系失败:', r.entityA, r.entityB, e); }
         }
     }
 
@@ -815,7 +818,7 @@ ${ni.description || '暂无描述'}
                 }
                 await this.getFS().write(fp, content);
                 ctx.result.updatedGrowth++;
-            } catch (e) { console.warn('[SettlementEngine] 更新成长失败:', g.name, e); }
+            } catch (e) { log.warn('[SettlementEngine] 更新成长失败:', g.name, e); }
         }
     }
 
@@ -834,7 +837,7 @@ ${ni.description || '暂无描述'}
                     fm['entity_last_changed_reason'] = `结算：情绪更新为${e.emotion}`;
                 });
                 ctx.result.updatedEmotions++;
-            } catch (err) { console.warn('[SettlementEngine] 更新情绪失败:', e.name, err); }
+            } catch (err) { log.warn('[SettlementEngine] 更新情绪失败:', e.name, err); }
         }
     }
 
@@ -898,7 +901,7 @@ ${ni.description || '暂无描述'}
                 }
             });
         } catch (e) {
-            console.warn('[SettlementEngine] body frontmatter回写失败:', e);
+            log.warn('[SettlementEngine] body frontmatter回写失败:', e);
             this.notifier.showNotice('⚠️ 章节 frontmatter 回写失败：涉及人物/地点/势力/物品字段可能未更新', NOTICE_ERROR);
         }
     }
@@ -930,14 +933,14 @@ ${ni.description || '暂无描述'}
     private async settleStep_finalizeRollback(ctx: SettleContext): Promise<void> {
         // v3.4.6 回滚机制：如果任何 NEW 实体创建失败，恢复所有 UPDATE 的原始值
         if (ctx.hasPartialFailure && ctx.snapshots.size > 0) {
-            console.warn(`[SettlementEngine] 检测到部分失败，回滚 ${ctx.snapshots.size} 个文件的 frontmatter`);
+            log.warn(`[SettlementEngine] 检测到部分失败，回滚 ${ctx.snapshots.size} 个文件的 frontmatter`);
             await this.restoreSnapshots(ctx);
             // v3.4.9 P0-3: 清理 NEW 操作创建的文件
             for (const fp of ctx.createdFiles) {
                 try {
                     await this.getFS().delete(fp);
                 } catch (e) {
-                    console.warn('[SettlementEngine] 清理新建文件失败:', fp, e);
+                    log.warn('[SettlementEngine] 清理新建文件失败:', fp, e);
                 }
             }
             // 将 updated 计数清零（已回滚）
@@ -968,10 +971,10 @@ ${ni.description || '暂无描述'}
                 applyRelationshipChanges(relations, changes, ctx.chapName);
                 await saveRelationshipStates(this.app, ctx.project, relations, ctx.chapName);
                 v2RelationCount = changes.length;
-                console.log(`[SettlementEngine] V2 关系更新: ${changes.length} 条变更已写入关系状态.md`);
+                log.info(`[SettlementEngine] V2 关系更新: ${changes.length} 条变更已写入关系状态.md`);
             }
         } catch (e) {
-            console.warn('[SettlementEngine] V2 关系状态更新失败（已跳过）:', e);
+            log.warn('[SettlementEngine] V2 关系状态更新失败（已跳过）:', e);
             this.notifier.showNotice('⚠️ 关系状态更新失败，但不影响其他结算步骤。', NOTICE_ERROR);
         }
         // 合计（V1+V2 避免重复——V2 解析器可能捕获与 V1 相同的 RELATION 行）
@@ -1085,7 +1088,7 @@ ${ni.description || '暂无描述'}
                 content = content.slice(0, afterHeader + 1) + entry + '\n' + content.slice(afterHeader + 1);
             }
             await this.getFS().write(file.path, content);
-        } catch (e) { console.warn('[SettlementEngine] 追加互信息失败:', file.path, e); }
+        } catch (e) { log.warn('[SettlementEngine] 追加互信息失败:', file.path, e); }
     }
 
     // ================================================================
@@ -1100,7 +1103,7 @@ ${ni.description || '暂无描述'}
                     const content = await this.getFS().read(fp);
                     if (content.includes(entityName)) {  // 三重确认: 文件名匹配 + 内容匹配
                         await this.getFS().delete(fp);
-                        console.log(`[SettlementEngine] 删除人物: ${entityName}`);
+                        log.info(`[SettlementEngine] 删除人物: ${entityName}`);
                     }
                 }
             } else if (entityType === '伏笔') {
@@ -1115,7 +1118,7 @@ ${ni.description || '暂无描述'}
                     if (targetIdx !== -1) {
                         lines.splice(targetIdx, 1);
                         await this.getFS().write(fp, lines.join('\n'));
-                        console.log(`[SettlementEngine] 从伏笔库删除: ${entityName}`);
+                        log.info(`[SettlementEngine] 从伏笔库删除: ${entityName}`);
                     }
                 }
             } else if (entityType === '时间线') {
@@ -1145,7 +1148,7 @@ ${ni.description || '暂无描述'}
                 const file = this.getVaultMeta().getAbstractFileByPath(fp);
                 if (file) await this.getFS().delete(fp);
             }
-        } catch (e) { console.warn('[SettlementEngine] 删除实体失败:', entityType, entityName, e); }
+        } catch (e) { log.warn('[SettlementEngine] 删除实体失败:', entityType, entityName, e); }
     }
 
     // ================================================================
@@ -1175,7 +1178,7 @@ ${ni.description || '暂无描述'}
                         else abandoned++;
                     }
                 }
-            } catch (e) { console.warn('[SettlementEngine] 伏笔统计失败:', e); }
+            } catch (e) { log.warn('[SettlementEngine] 伏笔统计失败:', e); }
 
             // 2. 章节进度
             const chapCount = chapFiles.length;
@@ -1188,7 +1191,7 @@ ${ni.description || '暂无描述'}
                     if (status === 'written' || status === 'settled') {
                         completedChaps.add(f.name);
                     }
-                } catch (e) { console.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }
+                } catch (e) { log.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }
             }
 
             // 3. 人物卡状态
@@ -1249,7 +1252,7 @@ tags: [看板]
 
             const fp = pjInfoDebtBoard(project);
             await this.getFS().write(fp, content);
-        } catch (e) { console.warn('[SettlementEngine] 刷新信息债看板失败:', e); }
+        } catch (e) { log.warn('[SettlementEngine] 刷新信息债看板失败:', e); }
     }
 
     // ================================================================
@@ -1279,7 +1282,7 @@ tags: [看板]
                 if (raw.includes('status: settled') || raw.includes('status: written') || raw.includes('status: 已完稿')) completed++;
                 else drafts++;
             } catch (e) {
-                console.warn('[SettlementEngine] 叙事总览失败:', e);
+                log.warn('[SettlementEngine] 叙事总览失败:', e);
                 this.notifier.showNotice('SettlementEngine：数据读取异常，部分功能可能受限');
             }
         }
@@ -1297,7 +1300,7 @@ tags: [看板]
                     const status = (fm[1].match(/^状态:\s*(.+)$/m) || [])[1]?.trim() || '-';
                     rows.push(`| ${name} | ${status} | - |`);
                 } catch (e) {
-                    console.warn('[SettlementEngine] 叙事总览失败:', e);
+                    log.warn('[SettlementEngine] 叙事总览失败:', e);
                     this.notifier.showNotice('SettlementEngine：数据读取异常，部分功能可能受限');
                 }
             }
@@ -1319,7 +1322,7 @@ tags: [看板]
                 foreshadowRows = fsLines.slice(-20).join('\n');
             }
         } catch (e) {
-            console.warn('[SettlementEngine] 叙事总览失败:', e);
+            log.warn('[SettlementEngine] 叙事总览失败:', e);
             this.notifier.showNotice('SettlementEngine：数据读取异常，部分功能可能受限');
         }
 
@@ -1333,7 +1336,7 @@ tags: [看板]
                 timelineRows = tlLines.slice(-20).join('\n');
             }
         } catch (e) {
-            console.warn('[SettlementEngine] 叙事总览失败:', e);
+            log.warn('[SettlementEngine] 叙事总览失败:', e);
             this.notifier.showNotice('SettlementEngine：数据读取异常，部分功能可能受限');
         }
 

@@ -10,7 +10,10 @@ import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { pluginDataDir, pluginPreferenceFile } from '../shared/paths';
 import { SerializedWriter } from '../shared/serialized-writer';
 import type { NovelWriterPluginAPI } from '../shared/plugin-api';
+import { createLogger } from '../shared/logger';
  
+
+const log = createLogger('PreferenceMemory');
  export interface UserPreference {
      id: string;
      category: 'character' | 'plot' | 'style' | 'pacing' | 'dialogue' | 'description';
@@ -85,7 +88,7 @@ import type { NovelWriterPluginAPI } from '../shared/plugin-api';
          }
          
          await this.savePreferences();
-         console.log('[PreferenceMemory] E3: 记录偏好:', id, value);
+         log.info('[PreferenceMemory] E3: 记录偏好:', id, value);
      }
      
      /**
@@ -167,9 +170,9 @@ import type { NovelWriterPluginAPI } from '../shared/plugin-api';
              const data = await this.getFS().read(this.dataPath);
              const parsed = JSON.parse(data);
              this.preferences = new Map(Object.entries(parsed));
-             console.log('[PreferenceMemory] E3: 加载了', this.preferences.size, '个偏好');
+             log.info('[PreferenceMemory] E3: 加载了', this.preferences.size, '个偏好');
          } catch (e) {
-             console.log('[PreferenceMemory] E3: 无已保存的偏好');
+             log.info('[PreferenceMemory] E3: 无已保存的偏好');
          }
      }
      
@@ -183,7 +186,7 @@ import type { NovelWriterPluginAPI } from '../shared/plugin-api';
             await this.getFS().mkdir(pluginDataDir()).catch(() => undefined);
             await this.getFS().write(this.dataPath, JSON.stringify(data, null, 2));
         }).catch(e => {
-            console.warn('[PreferenceMemory] E3: 保存失败:', e);
+            log.warn('[PreferenceMemory] E3: 保存失败:', e);
         });
     }
 
@@ -227,7 +230,7 @@ import type { NovelWriterPluginAPI } from '../shared/plugin-api';
              }
              await this.savePreferences();
          } catch (e) {
-             console.warn('[PreferenceMemory] E3: 导入失败:', e);
+             log.warn('[PreferenceMemory] E3: 导入失败:', e);
          }
      }
  }

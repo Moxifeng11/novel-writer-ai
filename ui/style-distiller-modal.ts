@@ -1,11 +1,27 @@
-﻿import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine } from '../engine/ai-engine';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleBackupPath, getWritingStyleWritePath } from './writing-style-paths';
+import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
+import { LoadingOverlayComponent } from './components/progress/loading-overlay';
+import { ProgressEmitter } from '../shared/progress-emitter';
+
+const DISTILL_STEPS = [
+    '初始化与文本预处理',
+    'AI 风格分析',
+    '生成报告与保存结果',
+];
 
 export class StyleDistillerModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
+
+    private distillButton!: HTMLButtonElement;
+    private inputEl!: HTMLInputElement;
+    private loadingOverlay?: LoadingOverlayComponent;
+    private progressEmitter?: ProgressEmitter;
+    private isAnalyzing: boolean = false;
+    private currentNovelName: string = '';
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -17,37 +33,59 @@ export class StyleDistillerModal extends Modal {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
 
-        // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.style.setProperty('max-width', 'min(620px, 90vw)', 'important');
-            wrapper.style.setProperty('width', 'min(620px, 90vw)', 'important');
+            wrapper.addClass('nw-modal');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.maxWidth = 'min(620px, 90vw)';
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
+        contentEl.style.position = 'relative';
 
         contentEl.empty();
         contentEl.createEl('h2', { text: '🎨 文笔风格蒸馏' });
 
         contentEl.createEl('p', { text: '输入小说名，AI自动分析其文笔风格特征' });
 
-        const input = contentEl.createEl('input', {
+        this.inputEl = contentEl.createEl('input', {
             type: 'text',
             placeholder: '输入小说名（可加作者名，如「斩神·三九音域」）',
             cls: 'nw-input novel-writer-input'
         });
 
-        const distillButton = contentEl.createEl('button', { text: '开始分析', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
-        distillButton.onclick = async () => {
-            const novelName = input.value.trim();
+        this.distillButton = contentEl.createEl('button', { text: '开始分析', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
+        this.distillButton.style.marginTop = '12px';
+        this.distillButton.onclick = async () => {
+            const novelName = this.inputEl.value.trim();
             if (!novelName) {
                 new Notice('❌ 请输入小说名', 5000);
                 return;
             }
-            await this.distillStyle(novelName);
+            await this.handleStartDistill(novelName);
         };
+
+        this.inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !this.isAnalyzing) {
+                this.distillButton.click();
+            }
+        });
+    }
+
+    private async handleStartDistill(novelName: string): Promise<void> {
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '开始文笔风格分析',
+            description: `将对《${novelName}》进行文笔风格分析，生成详细的风格特征报告。`,
+            etaMin: 15000,
+            etaMax: 45000,
+            steps: DISTILL_STEPS,
+            confirmText: '开始分析',
+            cancelText: '取消',
+            rememberKey: 'style-distiller-confirm',
+        });
+
+        if (!confirmed) return;
+
+        await this.distillStyle(novelName);
     }
 
     private async distillStyle(novelName: string): Promise<void> {
@@ -56,18 +94,45 @@ export class StyleDistillerModal extends Modal {
             return;
         }
 
-        const genNotice = new Notice(`⏳ 正在分析《${novelName}》的文笔风格...`, 0);
+        this.currentNovelName = novelName;
+        this.setButtonLoading(true);
+        this.isAnalyzing = true;
 
-        const result = await this.aiEngine.analyzeStyle(novelName);
+        this.progressEmitter = new ProgressEmitter('style-distill', `分析《${novelName}》文笔风格`);
+        this.progressEmitter.registerSteps(DISTILL_STEPS);
 
-        genNotice.hide();
+        this.ensureLoadingOverlay();
+        this.loadingOverlay!.bindEmitter(this.progressEmitter);
+        this.loadingOverlay!.onCancel(() => {
+            this.handleOverlayAction();
+        });
 
-        if (result.error) {
-            new Notice(`❌ API调用失败: ${result.error}`, 8000);
-            return;
-        }
+        this.loadingOverlay!.show();
+        this.progressEmitter.start();
 
-        const styleContent = `---
+        try {
+            this.progressEmitter.nextStep('初始化分析环境...');
+            await this.delay(300);
+            this.progressEmitter.setStepProgress(100, '初始化完成');
+
+            this.progressEmitter.nextStep('AI 正在分析文笔风格...');
+            const signal = this.progressEmitter.getSignal();
+
+            const result = await this.aiEngine.analyzeStyle(novelName, signal);
+
+            if (signal.aborted) {
+                throw new DOMException('Aborted', 'AbortError');
+            }
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            this.progressEmitter.setStepProgress(100, '分析完成');
+
+            this.progressEmitter.nextStep('生成分析报告...');
+
+            const styleContent = `---
 tags: [文笔风格]
 source: ai-generated
 来源: ${novelName}
@@ -89,17 +154,120 @@ ${result.content}
 > 可根据需要修改、增删内容。
 `;
 
-        // 检测当前活动项目
-        const activeProject = this.getActiveProject();
+            this.progressEmitter.setStepProgress(50, '准备保存结果...');
 
-        if (activeProject) {
-            // 有活跃项目，询问写入目标
-            await this.showSaveTargetModal(novelName, styleContent, activeProject);
-        } else {
-            // 无活跃项目，直接存入文笔风格库
-            await this.saveToStyleLib(novelName, styleContent);
-            this.close();
+            const activeProject = this.getActiveProject();
+
+            if (activeProject) {
+                this.progressEmitter.setStepProgress(100, '分析完成');
+                this.progressEmitter.complete();
+                this.hideLoadingOverlay();
+                this.setButtonLoading(false);
+                this.isAnalyzing = false;
+                await this.showSaveTargetModal(novelName, styleContent, activeProject);
+            } else {
+                this.progressEmitter.setStepProgress(70, '正在保存到文笔风格库...');
+                await this.saveToStyleLib(novelName, styleContent);
+                this.progressEmitter.setStepProgress(100, '保存完成');
+                this.progressEmitter.complete();
+                setTimeout(() => {
+                    this.hideLoadingOverlay();
+                    this.setButtonLoading(false);
+                    this.isAnalyzing = false;
+                    this.close();
+                }, 800);
+            }
+        } catch (error) {
+            const err = error as Error;
+
+            if (err.name === 'AbortError' || err.message === 'Aborted' || this.progressEmitter?.getState().status === 'cancelled') {
+                this.progressEmitter?.cancel();
+                new Notice('⚠️ 已取消分析', 3000);
+            } else {
+                this.progressEmitter?.fail(err.message);
+                this.showErrorNotification(err);
+            }
+
+            this.hideLoadingOverlay();
+            this.setButtonLoading(false);
+            this.isAnalyzing = false;
         }
+    }
+
+    private showErrorNotification(error: Error): void {
+        const message = error.message || '未知错误';
+        let errorType = 'API调用失败';
+
+        if (message.includes('network') || message.includes('Network') || message.includes('fetch') || message.includes('连接')) {
+            errorType = '网络错误';
+        } else if (message.includes('401') || message.includes('403') || message.includes('密钥') || message.includes('api key') || message.includes('API key')) {
+            errorType = 'API密钥错误';
+        } else if (message.includes('rate') || message.includes('limit') || message.includes('限流') || message.includes('频率')) {
+            errorType = '频率限制';
+        } else if (message.includes('timeout') || message.includes('超时')) {
+            errorType = '请求超时';
+        }
+
+        new Notice(`❌ ${errorType}: ${message}`, 8000);
+    }
+
+    private handleOverlayAction(): void {
+        if (!this.progressEmitter) return;
+
+        const state = this.progressEmitter.getState();
+
+        if (state.status === 'failed') {
+            if (this.currentNovelName) {
+                this.loadingOverlay?.hide();
+                this.progressEmitter = undefined;
+                this.isAnalyzing = false;
+                this.setButtonLoading(false);
+                this.distillStyle(this.currentNovelName);
+            }
+        } else if (state.status === 'running') {
+            this.progressEmitter.cancel();
+        }
+    }
+
+    private setButtonLoading(loading: boolean): void {
+        if (!this.distillButton) return;
+
+        if (loading) {
+            this.distillButton.disabled = true;
+            this.distillButton.setText('分析中...');
+            this.distillButton.style.opacity = '0.7';
+            this.distillButton.style.cursor = 'not-allowed';
+        } else {
+            this.distillButton.disabled = false;
+            this.distillButton.setText('开始分析');
+            this.distillButton.style.opacity = '1';
+            this.distillButton.style.cursor = 'pointer';
+        }
+    }
+
+    private ensureLoadingOverlay(): void {
+        if (this.loadingOverlay) return;
+
+        const container = this.contentEl;
+        container.style.position = 'relative';
+
+        this.loadingOverlay = new LoadingOverlayComponent(container, {
+            title: '正在分析...',
+            showCancel: true,
+            showSteps: true,
+        });
+    }
+
+    private hideLoadingOverlay(): void {
+        if (this.loadingOverlay) {
+            setTimeout(() => {
+                this.loadingOverlay?.hide();
+            }, 500);
+        }
+    }
+
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /** 从当前活动文件检测项目名 */
@@ -107,9 +275,7 @@ ${result.content}
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) return null;
         const project = activeFile.path.split('/')[0];
-        // 排除系统目录
         if (project === '元文件' || project === '文笔风格库' || project.startsWith('.')) return null;
-        // 确认是项目目录。`.project` 点文件不入 vault 索引，改用被索引的项目文件夹判定。
         const folder = this.app.vault.getAbstractFileByPath(project);
         return folder instanceof TFolder ? project : null;
     }
@@ -160,21 +326,17 @@ ${result.content}
         try {
             await ensureWritingStyleFolder(this.app, projectName);
 
-            // 如果已有文笔风格文件，先备份（兼容新旧路径）
             const existingFile = await findWritingStyleFile(this.app, projectName, { allowPlaceholder: true });
             if (existingFile) {
                 const dateStr = new Date().toISOString().slice(0, 10);
                 const backupPath = getWritingStyleBackupPath(projectName, dateStr);
-                // 如果当天已有备份，覆盖它
                 const bakFile = this.app.vault.getAbstractFileByPath(backupPath);
                 if (bakFile) {
                     await this.app.vault.delete(bakFile);
                 }
-                // 复制旧文件为备份
                 const oldContent = await this.app.vault.read(existingFile as TFile);
                 await this.app.vault.create(backupPath, oldContent);
 
-                // 优先写入标准路径；如果旧文件在旧路径，不修改它而是在标准路径创建新文件
                 if (existingFile.path === wsPath) {
                     await this.app.vault.modify(existingFile as TFile, styleContent);
                 } else {
@@ -187,7 +349,6 @@ ${result.content}
 
             new Notice(`✅ 文笔风格已写入「${projectName}」`, 5000);
 
-            // 打开文笔风格文件
             const wsFile = this.app.vault.getAbstractFileByPath(wsPath);
             if (wsFile) {
                 await this.plugin.safeOpenFile(wsFile as TFile);
@@ -229,6 +390,18 @@ ${result.content}
     }
 
     onClose(): void {
+        if (this.progressEmitter && this.isAnalyzing) {
+            this.progressEmitter.cancel();
+        }
+
+        if (this.loadingOverlay) {
+            this.loadingOverlay.destroy();
+            this.loadingOverlay = undefined;
+        }
+
+        this.progressEmitter = undefined;
+        this.isAnalyzing = false;
+
         const { contentEl } = this;
         contentEl.empty();
     }

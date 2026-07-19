@@ -12,6 +12,7 @@ import { injectDeaiModalStyles as _injectDeai, injectRefineModalStyles as _injec
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { TemplateService } from '../services/template-service';
+import { ENGINE_NAMES } from './engine-registry';
 import { NOTICE_ERROR } from '../shared/thresholds';
 import {
     DEAI_CHECK_SYSTEM_PROMPT,
@@ -19,9 +20,12 @@ import {
     DEAI_REWRITE_SYSTEM_PROMPT,
     DEAI_REWRITE_USER_TEMPLATE,
     SELF_CHECK_PROMPTS,
-    WRITING_RULES,
 } from './prompt-templates';
+import { RulesService } from '../services/rules-service';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('StepModalController');
 export interface StepModalDeps {
     getAIEngine: () => AIEngine;
     getPlugin: () => any;
@@ -50,12 +54,13 @@ export class StepModalController {
         return this.fs;
     }
 
-    /** 获取 TemplateService 实例（懒加载） */
+    /** 获取 TemplateService 实例（通过 EngineRegistry 获取共享实例） */
     private getTemplateService(): TemplateService {
         if (!this.templateService) {
-            this.templateService = new TemplateService(this.app);
+            const plugin = this.deps.getPlugin();
+            this.templateService = plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE) as TemplateService;
         }
-        return this.templateService;
+        return this.templateService!;
     }
 
     /**
@@ -85,7 +90,7 @@ export class StepModalController {
                 user: DEAI_CHECK_USER_TEMPLATE,
             }),
             templateService.getCustomPrompt('deaiRewrite', {
-                system: DEAI_REWRITE_SYSTEM_PROMPT.replace('${writingRules}', WRITING_RULES),
+                system: DEAI_REWRITE_SYSTEM_PROMPT.replace('${writingRules}', await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules()),
                 user: DEAI_REWRITE_USER_TEMPLATE,
             }),
         ]);
@@ -211,8 +216,8 @@ export class StepModalController {
                     const deaiReportPath = `${chapDir}/AI消痕检测报告.md`;
                     const deaiReportContent = `# AI消痕检测报告\n\n> 检测时间: ${new Date().toLocaleString()}\n\n${checkResult.content}`;
                     await this.getFS().write(deaiReportPath, deaiReportContent);
-                    console.warn('[StepModalController] AI消痕检测报告已保存:', deaiReportPath);
-                } catch (e) { console.warn('[StepModalController] AI消痕检测报告保存失败:', e); this.deps.callbacks.showError('⚠️ AI消痕检测报告保存失败'); }
+                    log.warn('[StepModalController] AI消痕检测报告已保存:', deaiReportPath);
+                } catch (e) { log.warn('[StepModalController] AI消痕检测报告保存失败:', e); this.deps.callbacks.showError('⚠️ AI消痕检测报告保存失败'); }
 
                 rewriteUserTA.value = deaiRewriteUserTemplate
                     .replace('${deaiReport}', checkResult.content)
@@ -259,7 +264,7 @@ export class StepModalController {
             const finalText = rewriteResultTA.value;
             if (!finalText.trim()) { this.deps.callbacks.showError('改写内容不能为空'); return; }
             try {
-                console.warn('[StepModalController] AI消痕接受: chapDir=', chapDir, 'len=', finalText.length);
+                log.warn('[StepModalController] AI消痕接受: chapDir=', chapDir, 'len=', finalText.length);
                 stepResults['bodyGeneration'] = finalText;
                 await this.deps.saveStepResult('bodyGeneration', finalText, chapDir, chapterName, volume);
                 stepCompleted.delete('selfCheck');
@@ -271,7 +276,7 @@ export class StepModalController {
                 overlay.remove();
                 await renderInContainer(tabContent);
             } catch (e) {
-                console.error('[StepModalController] 接受消痕改写失败:', e);
+                log.error('[StepModalController] 接受消痕改写失败:', e);
                 this.deps.callbacks.showNotice('❌ 接受消痕改写失败：' + (e instanceof Error ? e.message : String(e)), NOTICE_ERROR);
                 this.deps.callbacks.showError('保存失败，请重试');
             }
@@ -440,7 +445,7 @@ export class StepModalController {
             const finalBody = resultBodyTA.value;
             if (!finalBody.trim()) { this.deps.callbacks.showError('内容不能为空'); return; }
             try {
-                console.warn('[StepModalController] 迭代精修接受: chapDir=', chapDir, 'len=', finalBody.length);
+                log.warn('[StepModalController] 迭代精修接受: chapDir=', chapDir, 'len=', finalBody.length);
                 stepResults['bodyGeneration'] = finalBody;
                 await this.deps.saveStepResult('bodyGeneration', finalBody, chapDir ?? '', chapterName ?? '', volume ?? '');
                 stepCompleted?.delete('selfCheck');
@@ -452,7 +457,7 @@ export class StepModalController {
                 overlay.remove();
                 await renderInContainer(tabContent);
             } catch (e) {
-                console.error('[StepModalController] 接受精修失败:', e);
+                log.error('[StepModalController] 接受精修失败:', e);
                 this.deps.callbacks.showNotice('❌ 接受精修失败：' + (e instanceof Error ? e.message : String(e)), NOTICE_ERROR);
                 this.deps.callbacks.showError('保存失败，请重试');
             }
@@ -514,7 +519,7 @@ export class StepModalController {
                     overlay.remove();
                     await renderInContainer(tabContent);
                 } catch (e) {
-                    console.error('[StepModalController] 选择迭代版本失败:', e);
+                    log.error('[StepModalController] 选择迭代版本失败:', e);
                     this.deps.callbacks.showNotice('❌ 选择迭代版本失败：' + (e instanceof Error ? e.message : String(e)), NOTICE_ERROR);
                     this.deps.callbacks.showError('选择版本失败，请重试');
                 }

@@ -1,0 +1,1769 @@
+{
+  "overview": {
+    "scanTime": "2026-07-13T05:40:23.542Z",
+    "projectRoot": "D:/小说工坊/小说工坊/.obsidian/plugins/novel-writer-ai",
+    "totalFiles": 325,
+    "totalInstances": 97,
+    "totalClasses": 65,
+    "singletonCount": 36,
+    "transientCount": 1,
+    "unknownCount": 28,
+    "registeredCount": 23,
+    "unregisteredCount": 42,
+    "multiInstanceCount": 8,
+    "multiInstanceSingletonCount": 6,
+    "registeredBypassedCount": 2
+  },
+  "registeredClasses": {
+    "file": "engine/engine-registry.ts",
+    "classes": [
+      "StyleLearner",
+      "CharacterRepository",
+      "ChapterRepository",
+      "FactionRepository",
+      "LocationRepository",
+      "ItemRepository",
+      "PluginCacheManager",
+      "InternalRegistry",
+      "CryptoService",
+      "ProviderManager",
+      "ThemeManager",
+      "SettingsService",
+      "ProjectRepository",
+      "ContextManager",
+      "ForeshadowManager",
+      "ReviewAgent",
+      "WorldviewCacheService",
+      "TemplateService",
+      "ChapterVersionService",
+      "TemplateManager",
+      "CommandRegistry",
+      "KnowledgeTagManager",
+      "KnowledgeBaseManager",
+      "KnowledgeVectorStore",
+      "VectorEnhancer",
+      "DeconstructionScheduler",
+      "BatchImportManager",
+      "WritingProfileManager",
+      "KnowledgeInjector",
+      "CharacterConsistencyChecker",
+      "AIEngine",
+      "CoWriterEngine",
+      "AnalysisReportEngine",
+      "SettlementEngine",
+      "CharacterGenerator",
+      "UpdateChecker"
+    ]
+  },
+  "classes": [
+    {
+      "className": "AbortController",
+      "totalCount": 14,
+      "bypassCount": 14,
+      "registryInternalCount": 0,
+      "fileCount": 9,
+      "files": [
+        "engine/ai-api-client.ts",
+        "engine/co-writer/parallel-suggestions.ts",
+        "engine/co-writer-engine.ts",
+        "services/batch-import-manager.ts",
+        "services/deconstruction-scheduler.ts",
+        "ui/co-writing-view.ts",
+        "ui/fingerprint-library-modal.ts",
+        "ui/generate-character-modal.ts",
+        "ui/unified-entity-generate-modal.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "AbortController",
+          "filePath": "engine/ai-api-client.ts",
+          "line": 230,
+          "code": "ac = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "engine/ai-api-client.ts",
+          "line": 482,
+          "code": "ac = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "engine/ai-api-client.ts",
+          "line": 802,
+          "code": "ac = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "engine/co-writer/parallel-suggestions.ts",
+          "line": 145,
+          "code": "this.abortController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "engine/co-writer/parallel-suggestions.ts",
+          "line": 198,
+          "code": "const attemptController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "engine/co-writer-engine.ts",
+          "line": 2624,
+          "code": "const controller = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "services/batch-import-manager.ts",
+          "line": 342,
+          "code": "const controller = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "services/deconstruction-scheduler.ts",
+          "line": 324,
+          "code": "const controller = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "ui/co-writing-view.ts",
+          "line": 646,
+          "code": "this.suggestAbortController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "ui/co-writing-view.ts",
+          "line": 1341,
+          "code": "this.metricsAbortController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "ui/co-writing-view.ts",
+          "line": 1496,
+          "code": "this.suggestAbortController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "ui/fingerprint-library-modal.ts",
+          "line": 243,
+          "code": "this.abortController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "ui/generate-character-modal.ts",
+          "line": 176,
+          "code": "this._abortController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "AbortController",
+          "filePath": "ui/unified-entity-generate-modal.ts",
+          "line": 604,
+          "code": "this._abortController = new AbortController();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "LocalVectorStore",
+      "totalCount": 8,
+      "bypassCount": 8,
+      "registryInternalCount": 0,
+      "fileCount": 6,
+      "files": [
+        "engine/co-writer-engine.ts",
+        "ui/mini-settings-modal.ts",
+        "ui/novel-analysis-modal.ts",
+        "ui/refill-modal.ts",
+        "ui/settings-tab.ts",
+        "ui/views/writing-fingerprint-view.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "LocalVectorStore",
+          "filePath": "engine/co-writer-engine.ts",
+          "line": 511,
+          "code": "this.vectorStore = new LocalVectorStore(this.app, 'project', embeddingClient, project);",
+          "args": "this.app, 'project', embeddingClient, project",
+          "inRegistry": false
+        },
+        {
+          "className": "LocalVectorStore",
+          "filePath": "ui/mini-settings-modal.ts",
+          "line": 728,
+          "code": "const vectorStore = new LocalVectorStore(this.app, scope, embeddingClient, activeProject || undefined);",
+          "args": "this.app, scope, embeddingClient, activeProject || undefined",
+          "inRegistry": false
+        },
+        {
+          "className": "LocalVectorStore",
+          "filePath": "ui/novel-analysis-modal.ts",
+          "line": 232,
+          "code": "const vectorStore = new LocalVectorStore(this.app, 'project', embeddingClient, projectName);",
+          "args": "this.app, 'project', embeddingClient, projectName",
+          "inRegistry": false
+        },
+        {
+          "className": "LocalVectorStore",
+          "filePath": "ui/refill-modal.ts",
+          "line": 657,
+          "code": "const vectorStore = new LocalVectorStore(this.app, vectorScope, embeddingClient);",
+          "args": "this.app, vectorScope, embeddingClient",
+          "inRegistry": false
+        },
+        {
+          "className": "LocalVectorStore",
+          "filePath": "ui/settings-tab.ts",
+          "line": 966,
+          "code": "const vectorStore = new LocalVectorStore(this.app, 'global', embeddingProvider);",
+          "args": "this.app, 'global', embeddingProvider",
+          "inRegistry": false
+        },
+        {
+          "className": "LocalVectorStore",
+          "filePath": "ui/settings-tab.ts",
+          "line": 1052,
+          "code": "const vectorStore = new LocalVectorStore(this.app, 'global', embeddingProvider);",
+          "args": "this.app, 'global', embeddingProvider",
+          "inRegistry": false
+        },
+        {
+          "className": "LocalVectorStore",
+          "filePath": "ui/settings-tab.ts",
+          "line": 1090,
+          "code": "const vectorStore = new LocalVectorStore(this.app, 'project', embeddingProvider, activeProject);",
+          "args": "this.app, 'project', embeddingProvider, activeProject",
+          "inRegistry": false
+        },
+        {
+          "className": "LocalVectorStore",
+          "filePath": "ui/views/writing-fingerprint-view.ts",
+          "line": 111,
+          "code": "this.vectorStore = new LocalVectorStore(this.app, project ? 'project' : 'global', embeddingClient, project || 'default');",
+          "args": "this.app, project ? 'project' : 'global', embeddingClient, project || 'default'",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "AdaptiveDebounceManager",
+      "totalCount": 6,
+      "bypassCount": 6,
+      "registryInternalCount": 0,
+      "fileCount": 5,
+      "files": [
+        "main.ts",
+        "ui/co-writing-view.ts",
+        "ui/cowrite/live-analysis-controller.ts",
+        "ui/monitor-panel-b.ts",
+        "ui/polish-editor.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "AdaptiveDebounceManager",
+          "filePath": "main.ts",
+          "line": 835,
+          "code": "private _debounceManager = new AdaptiveDebounceManager({ debug: false });",
+          "args": "{ debug: false }",
+          "inRegistry": false
+        },
+        {
+          "className": "AdaptiveDebounceManager",
+          "filePath": "ui/co-writing-view.ts",
+          "line": 120,
+          "code": "private ghostDebounceManager = new AdaptiveDebounceManager({ debug: false });",
+          "args": "{ debug: false }",
+          "inRegistry": false
+        },
+        {
+          "className": "AdaptiveDebounceManager",
+          "filePath": "ui/co-writing-view.ts",
+          "line": 121,
+          "code": "private autoSaveDebouncer = new AdaptiveDebounceManager({ debug: false });",
+          "args": "{ debug: false }",
+          "inRegistry": false
+        },
+        {
+          "className": "AdaptiveDebounceManager",
+          "filePath": "ui/cowrite/live-analysis-controller.ts",
+          "line": 19,
+          "code": "private debounceManager = new AdaptiveDebounceManager({ debug: false });",
+          "args": "{ debug: false }",
+          "inRegistry": false
+        },
+        {
+          "className": "AdaptiveDebounceManager",
+          "filePath": "ui/monitor-panel-b.ts",
+          "line": 91,
+          "code": "private debounceManager = new AdaptiveDebounceManager({ debug: false });",
+          "args": "{ debug: false }",
+          "inRegistry": false
+        },
+        {
+          "className": "AdaptiveDebounceManager",
+          "filePath": "ui/polish-editor.ts",
+          "line": 101,
+          "code": "private debounceManager = new AdaptiveDebounceManager({ debug: false });",
+          "args": "{ debug: false }",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "EntityStateManager",
+      "totalCount": 3,
+      "bypassCount": 3,
+      "registryInternalCount": 0,
+      "fileCount": 3,
+      "files": [
+        "engine/co-writer-engine.ts",
+        "main.ts",
+        "ui/full-writer/entity-state-controller.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "EntityStateManager",
+          "filePath": "engine/co-writer-engine.ts",
+          "line": 480,
+          "code": "this.entityStateManager = new EntityStateManager({",
+          "args": "{",
+          "inRegistry": false
+        },
+        {
+          "className": "EntityStateManager",
+          "filePath": "main.ts",
+          "line": 870,
+          "code": "const manager = new EntityStateManager({",
+          "args": "{",
+          "inRegistry": false
+        },
+        {
+          "className": "EntityStateManager",
+          "filePath": "ui/full-writer/entity-state-controller.ts",
+          "line": 56,
+          "code": "const manager = new EntityStateManager({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "StyleVectorStore",
+      "totalCount": 3,
+      "bypassCount": 3,
+      "registryInternalCount": 0,
+      "fileCount": 2,
+      "files": [
+        "engine/knowledge-to-fingerprint-converter.ts",
+        "engine/style-fingerprint-library.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "StyleVectorStore",
+          "filePath": "engine/knowledge-to-fingerprint-converter.ts",
+          "line": 97,
+          "code": "const tempStore = new StyleVectorStore(",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "StyleVectorStore",
+          "filePath": "engine/style-fingerprint-library.ts",
+          "line": 127,
+          "code": "this.styleVectorStoreGlobal = new StyleVectorStore(",
+          "args": "(none)",
+          "inRegistry": false
+        },
+        {
+          "className": "StyleVectorStore",
+          "filePath": "engine/style-fingerprint-library.ts",
+          "line": 139,
+          "code": "this.styleVectorStoreProject = new StyleVectorStore(",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "ChapterVersionService",
+      "totalCount": 2,
+      "bypassCount": 1,
+      "registryInternalCount": 1,
+      "fileCount": 2,
+      "files": [
+        "engine/engine-registry.ts",
+        "ui/chapter-version-modal.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "ChapterVersionService",
+          "filePath": "engine/engine-registry.ts",
+          "line": 929,
+          "code": "const chapterVersionService = new ChapterVersionService(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        },
+        {
+          "className": "ChapterVersionService",
+          "filePath": "ui/chapter-version-modal.ts",
+          "line": 58,
+          "code": "?? new ChapterVersionService(app);",
+          "args": "app",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "KnowledgeVectorStore",
+      "totalCount": 2,
+      "bypassCount": 1,
+      "registryInternalCount": 1,
+      "fileCount": 2,
+      "files": [
+        "engine/co-writer-engine.ts",
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "KnowledgeVectorStore",
+          "filePath": "engine/co-writer-engine.ts",
+          "line": 540,
+          "code": "this.knowledgeVectorStore = new KnowledgeVectorStore(this.app, kbEmbeddingClient);",
+          "args": "this.app, kbEmbeddingClient",
+          "inRegistry": false
+        },
+        {
+          "className": "KnowledgeVectorStore",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1011,
+          "code": "const knowledgeVectorStore = new KnowledgeVectorStore(plugin.app, embeddingProvider);",
+          "args": "plugin.app, embeddingProvider",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "RhythmAnalyzer",
+      "totalCount": 2,
+      "bypassCount": 2,
+      "registryInternalCount": 0,
+      "fileCount": 2,
+      "files": [
+        "ui/polish-editor.ts",
+        "ui/services/co-write-facade.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "RhythmAnalyzer",
+          "filePath": "ui/polish-editor.ts",
+          "line": 302,
+          "code": "const analyzer = new RhythmAnalyzer({",
+          "args": "{",
+          "inRegistry": false
+        },
+        {
+          "className": "RhythmAnalyzer",
+          "filePath": "ui/services/co-write-facade.ts",
+          "line": 358,
+          "code": "return new RhythmAnalyzer({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "AIEngine",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "AIEngine",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1067,
+          "code": "this.registerLazy(ENGINE_NAMES.AI_ENGINE, () => new AIEngine(plugin));",
+          "args": "plugin",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "AnalysisReportEngine",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "AnalysisReportEngine",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1074,
+          "code": "() => new AnalysisReportEngine(",
+          "args": "(none)",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "BatchEntityGenerator",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/ai-engine.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "BatchEntityGenerator",
+          "filePath": "engine/ai-engine.ts",
+          "line": 69,
+          "code": "this.batchEntityGen = new BatchEntityGenerator(plugin, this.apiClient, this.notifier);",
+          "args": "plugin, this.apiClient, this.notifier",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "BatchImportManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "BatchImportManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1031,
+          "code": "const batchImportManager = new BatchImportManager(",
+          "args": "(none)",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "ChapterStateManager",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "ChapterStateManager",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 146,
+          "code": "this.chapterStateManager = new ChapterStateManager(this.app);",
+          "args": "this.app",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "CharacterConsistencyChecker",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "CharacterConsistencyChecker",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1060,
+          "code": "const characterConsistencyChecker = new CharacterConsistencyChecker(vectorEnhancer);",
+          "args": "vectorEnhancer",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "CharacterGenerator",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "CharacterGenerator",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1091,
+          "code": "() => new CharacterGenerator(plugin, new AIApiClient(plugin), {",
+          "args": "plugin, new AIApiClient(plugin",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "ContextLoaderController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "ContextLoaderController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 313,
+          "code": "this.contextLoaderController = new ContextLoaderController({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "ContextManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "ContextManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 908,
+          "code": "const contextManager = new ContextManager({ plugin, engineRegistry: this });",
+          "args": "{ plugin, engineRegistry: this }",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "CoverPickerController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "CoverPickerController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 181,
+          "code": "this.coverPickerController = new CoverPickerController(this.app);",
+          "args": "this.app",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "CoWriterEngine",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "CoWriterEngine",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1070,
+          "code": "() => new CoWriterEngine(plugin.app, plugin.aiEngine, plugin.ctxManager, this)",
+          "args": "plugin.app, plugin.aiEngine, plugin.ctxManager, this",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "CryptoService",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "CryptoService",
+          "filePath": "engine/engine-registry.ts",
+          "line": 875,
+          "code": "const cryptoService = new CryptoService(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "EmotionCurveAnalyzer",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/services/co-write-facade.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "EmotionCurveAnalyzer",
+          "filePath": "ui/services/co-write-facade.ts",
+          "line": 350,
+          "code": "return new EmotionCurveAnalyzer({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "EndingTractionEngine",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/services/co-write-facade.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "EndingTractionEngine",
+          "filePath": "ui/services/co-write-facade.ts",
+          "line": 366,
+          "code": "const engine = new EndingTractionEngine({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "EntityContextEngine",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/entity-context-engine.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "EntityContextEngine",
+          "filePath": "engine/entity-context-engine.ts",
+          "line": 1056,
+          "code": "globalEntityContextEngine = new EntityContextEngine();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "EntityGenerator",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/ai-engine.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "EntityGenerator",
+          "filePath": "engine/ai-engine.ts",
+          "line": 68,
+          "code": "this.entityGen = new EntityGenerator(plugin, this.apiClient, this.notifier);",
+          "args": "plugin, this.apiClient, this.notifier",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "EntityStateController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "EntityStateController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 280,
+          "code": "this.entityStateController = new EntityStateController({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "FloatWorkspaceManager",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "main.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "FloatWorkspaceManager",
+          "filePath": "main.ts",
+          "line": 491,
+          "code": "this.workspaceManager = new FloatWorkspaceManager(this);",
+          "args": "this",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "ForeshadowManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "ForeshadowManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 911,
+          "code": "const foreshadowManager = new ForeshadowManager(plugin);",
+          "args": "plugin",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "InterventionController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "InterventionController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 245,
+          "code": "this.interventionController = new InterventionController(",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "KnowledgeBaseManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "KnowledgeBaseManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 969,
+          "code": "const knowledgeBaseManager = new KnowledgeBaseManager(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "KnowledgeTagManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "KnowledgeTagManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 965,
+          "code": "const knowledgeTagManager = new KnowledgeTagManager(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "LiveAnalysisController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/co-writing-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "LiveAnalysisController",
+          "filePath": "ui/co-writing-view.ts",
+          "line": 160,
+          "code": "this.liveAnalysis = new LiveAnalysisController(this);",
+          "args": "this",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "NovelAnalyzer",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/novel-analysis-modal.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "NovelAnalyzer",
+          "filePath": "ui/novel-analysis-modal.ts",
+          "line": 26,
+          "code": "this.analyzer = new NovelAnalyzer();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "OutlineGenerator",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/ai-engine.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "OutlineGenerator",
+          "filePath": "engine/ai-engine.ts",
+          "line": 66,
+          "code": "this.outlineGen = new OutlineGenerator(plugin, this.apiClient, this.notifier);",
+          "args": "plugin, this.apiClient, this.notifier",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "OutlineTreeController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "OutlineTreeController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 180,
+          "code": "this.outlineTreeController = new OutlineTreeController(this.app, () => this.project);",
+          "args": "this.app, (",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "ParallelSuggestionGenerator",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/co-writer-engine.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "ParallelSuggestionGenerator",
+          "filePath": "engine/co-writer-engine.ts",
+          "line": 951,
+          "code": "const generator = new ParallelSuggestionGenerator(factory, directions, {",
+          "args": "factory, directions, {",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "PlotCompletionEngine",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/monitor-panel-b.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "PlotCompletionEngine",
+          "filePath": "ui/monitor-panel-b.ts",
+          "line": 195,
+          "code": "this.completionEngine = new PlotCompletionEngine();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "PlotDivergenceEngine",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/monitor-panel-b.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "PlotDivergenceEngine",
+          "filePath": "ui/monitor-panel-b.ts",
+          "line": 196,
+          "code": "this.divergenceEngine = new PlotDivergenceEngine();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "PluginCacheManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "PluginCacheManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 865,
+          "code": "const cacheManager = new PluginCacheManager(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "PreloadManager",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/cache/preload-manager.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "PreloadManager",
+          "filePath": "engine/cache/preload-manager.ts",
+          "line": 597,
+          "code": "export const preloadManager = new PreloadManager();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "ProjectSelectorController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "ProjectSelectorController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 231,
+          "code": "this.projectSelectorController = new ProjectSelectorController(",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "PromptBuilder",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/co-writer-engine.ts"
+      ],
+      "category": "transient",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "PromptBuilder",
+          "filePath": "engine/co-writer-engine.ts",
+          "line": 522,
+          "code": "this.promptBuilder = new PromptBuilder(",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "PromptManager",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "main.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "PromptManager",
+          "filePath": "main.ts",
+          "line": 402,
+          "code": "this.promptManager = new PromptManager({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "ProviderManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "ProviderManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 878,
+          "code": "const providerManager = new ProviderManager({",
+          "args": "{",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "RulesService",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "services/rules-service.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "RulesService",
+          "filePath": "services/rules-service.ts",
+          "line": 24,
+          "code": "RulesService.instance = new RulesService(app);",
+          "args": "app",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "SceneOutlineController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer/step-render-controller.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "SceneOutlineController",
+          "filePath": "ui/full-writer/step-render-controller.ts",
+          "line": 250,
+          "code": "const sceneController = new SceneOutlineController({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "SentenceDiversityEngine",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/co-writer-engine.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "SentenceDiversityEngine",
+          "filePath": "engine/co-writer-engine.ts",
+          "line": 174,
+          "code": "this.diversityEngine = new SentenceDiversityEngine();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "SettingLibController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "SettingLibController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 182,
+          "code": "this.settingLibController = new SettingLibController(",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "SettingsService",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "SettingsService",
+          "filePath": "engine/engine-registry.ts",
+          "line": 890,
+          "code": "const settingsService = new SettingsService({",
+          "args": "{",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "SettlementEngine",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "SettlementEngine",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1085,
+          "code": "() => new SettlementEngine(plugin.app, {",
+          "args": "plugin.app, {",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "StatusBarController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "StatusBarController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 305,
+          "code": "this.statusBarController = new StatusBarController({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "StepModalController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/step-runner.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "StepModalController",
+          "filePath": "engine/step-runner.ts",
+          "line": 78,
+          "code": "this.modalController = new StepModalController(app, {",
+          "args": "app, {",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "StepRenderController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "StepRenderController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 188,
+          "code": "this.stepRenderController = new StepRenderController({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "SuggestionHistoryStore",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/co-writing-view.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "SuggestionHistoryStore",
+          "filePath": "ui/co-writing-view.ts",
+          "line": 161,
+          "code": "this.historyStore = new SuggestionHistoryStore(this);",
+          "args": "this",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "TabController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "TabController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 263,
+          "code": "this.tabController = new TabController({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "TemplateManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "TemplateManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 933,
+          "code": "const templateManager = new TemplateManager(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "TemplateService",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "TemplateService",
+          "filePath": "engine/engine-registry.ts",
+          "line": 925,
+          "code": "const templateService = new TemplateService(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "ThemeManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "ThemeManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 887,
+          "code": "const themeManager = new ThemeManager(() => plugin.settings);",
+          "args": "(",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "TitleBarController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "TitleBarController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 291,
+          "code": "this.titleBarController = new TitleBarController({",
+          "args": "{",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "UpdateChecker",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "UpdateChecker",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1100,
+          "code": "const updateChecker = new UpdateChecker(",
+          "args": "(none)",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "WizardChecker",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "WizardChecker",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 179,
+          "code": "this.wizardChecker = new WizardChecker(this.app);",
+          "args": "this.app",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "WizardController",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/full-writer-view.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "WizardController",
+          "filePath": "ui/full-writer-view.ts",
+          "line": 224,
+          "code": "this.wizardController = new WizardController(",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "WorldviewCacheService",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "WorldviewCacheService",
+          "filePath": "engine/engine-registry.ts",
+          "line": 917,
+          "code": "const worldviewCacheService = new WorldviewCacheService(",
+          "args": "(none)",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "WorldviewGenerator",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "engine/ai-engine.ts"
+      ],
+      "category": "unknown",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "WorldviewGenerator",
+          "filePath": "engine/ai-engine.ts",
+          "line": 65,
+          "code": "this.worldviewGen = new WorldviewGenerator(plugin, this.apiClient, this.notifier);",
+          "args": "plugin, this.apiClient, this.notifier",
+          "inRegistry": false
+        }
+      ]
+    },
+    {
+      "className": "WritingProfileManager",
+      "totalCount": 1,
+      "bypassCount": 0,
+      "registryInternalCount": 1,
+      "fileCount": 1,
+      "files": [
+        "engine/engine-registry.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": true,
+      "instances": [
+        {
+          "className": "WritingProfileManager",
+          "filePath": "engine/engine-registry.ts",
+          "line": 1047,
+          "code": "const writingProfileManager = new WritingProfileManager(plugin.app);",
+          "args": "plugin.app",
+          "inRegistry": true
+        }
+      ]
+    },
+    {
+      "className": "WritingQualityEngine",
+      "totalCount": 1,
+      "bypassCount": 1,
+      "registryInternalCount": 0,
+      "fileCount": 1,
+      "files": [
+        "ui/monitor-panel-b.ts"
+      ],
+      "category": "singleton",
+      "isRegistered": false,
+      "instances": [
+        {
+          "className": "WritingQualityEngine",
+          "filePath": "ui/monitor-panel-b.ts",
+          "line": 197,
+          "code": "this.qualityEngine = new WritingQualityEngine();",
+          "args": "(none)",
+          "inRegistry": false
+        }
+      ]
+    }
+  ]
+}

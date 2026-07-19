@@ -8,15 +8,18 @@ import { DraggablePanel } from "./draggable-panel";
 import { EmotionCurveAnalyzer } from "../engine/emotion-curve-analyzer";
 import { RhythmAnalyzer } from "../engine/rhythm-analyzer";
 import { EmotionCurveView } from "./components/emotion-curve-view";
+import { CoWriteFacade } from "./services/co-write-facade";
 
 export const VIEW_TYPE_MONITOR_A = "nw-float-monitor-a";
 
 export class MonitorPanelA extends DraggablePanel {
   private emotionAnalyzer: EmotionCurveAnalyzer | null = null;
   private rhythmAnalyzer: RhythmAnalyzer | null = null;
+  protected facade: CoWriteFacade;
 
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
     super(leaf, plugin, "monitor-a", "监控面板A · 节奏/情绪/OOC/实体", "bar-chart");
+    this.facade = new CoWriteFacade({ plugin });
   }
 
   protected renderBody(container: HTMLElement): void {
@@ -40,16 +43,8 @@ export class MonitorPanelA extends DraggablePanel {
     this.entityContent = entityCard.createDiv({ cls: "nw-float-card-body" });
 
     // 初始化引擎
-    this.emotionAnalyzer = new EmotionCurveAnalyzer({
-      app: this.app,
-      aiEngine: this.plugin.aiEngine,
-      plugin: this.plugin,
-    });
-    this.rhythmAnalyzer = new RhythmAnalyzer({
-      app: this.app,
-      aiEngine: this.plugin.aiEngine,
-      plugin: this.plugin,
-    });
+    this.emotionAnalyzer = this.facade.createEmotionCurveAnalyzer();
+    this.rhythmAnalyzer = this.facade.createRhythmAnalyzer();
 
     // 默认提示
     this.rhythmContent.createDiv({

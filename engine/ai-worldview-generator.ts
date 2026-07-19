@@ -10,13 +10,18 @@ import { getWorldviewPath, getSettingLibPath, pjFanficDir } from '../shared/path
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import { TemplateService } from '../services/template-service';
+import { WorldviewCacheService } from '../services/worldview-cache-service';
+import { ENGINE_NAMES } from './engine-registry';
 
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { NOTICE_ERROR } from '../shared/thresholds';
 import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { createLogger } from '../shared/logger';
 
+
+const log = createLogger('AiWorldviewGenerator');
 export class WorldviewGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -24,12 +29,17 @@ export class WorldviewGenerator {
     private templateService: TemplateService;
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
+    private cacheService: WorldviewCacheService | null = null;
 
     constructor(plugin: NovelWriterPlugin, apiClient: AIApiClient, notifier?: Notifier) {
         this.notifier = notifier || NOOP_NOTIFIER;
         this.plugin = plugin;
         this.apiClient = apiClient;
-        this.templateService = new TemplateService(plugin.app);
+        this.templateService = plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+    }
+
+    setCacheService(cacheService: WorldviewCacheService | null): void {
+        this.cacheService = cacheService;
     }
 
     private getFS(): FileSystemPort {
@@ -162,14 +172,14 @@ ${skeleton.slice(0, 3000)}
         onProgress?: (phase: string, current: number, total: number) => void
     ): Promise<APIResponse> {
         onProgress?.('skeleton', 0, WV_SECTIONS.length);
-        console.log('[小说工坊] 瀑布式世界观 - Phase 1: 生成骨架');
+        log.info('[小说工坊] 瀑布式世界观 - Phase 1: 生成骨架');
         
         const skeletonResult = await this.generateWorldviewSkeleton(
             worldName, projectName, genre, theme, customPrompt
         );
 
         if (skeletonResult.error) {
-            console.log('[小说工坊] 骨架生成失败，回退到单次生成');
+            log.info('[小说工坊] 骨架生成失败，回退到单次生成');
             return this.generateWorldviewFallback(worldName, projectName, genre, theme, customPrompt);
         }
 
@@ -177,18 +187,18 @@ ${skeleton.slice(0, 3000)}
         const foundModules = moduleNames.filter(m => skeletonResult.content.includes(m));
         
         if (foundModules.length < moduleNames.length) {
-            console.log(`[小说工坊] 骨架仅包含${foundModules.length}/${moduleNames.length}个模块，回退到单次生成`);
+            log.info(`[小说工坊] 骨架仅包含${foundModules.length}/${moduleNames.length}个模块，回退到单次生成`);
             return this.generateWorldviewFallback(worldName, projectName, genre, theme, customPrompt);
         }
 
-        console.log(`[小说工坊] 瀑布式世界观 - Phase 2: 逐模块生成 (共${foundModules.length}个)`);
+        log.info(`[小说工坊] 瀑布式世界观 - Phase 2: 逐模块生成 (共${foundModules.length}个)`);
         
         const moduleResults: { name: string; content: string }[] = [];
 
         for (let i = 0; i < foundModules.length; i++) {
             const moduleName = foundModules[i];
             onProgress?.('module', i + 1, foundModules.length);
-            console.log(`[小说工坊] 生成模块: ${moduleName} (${i + 1}/${foundModules.length})`);
+            log.info(`[小说工坊] 生成模块: ${moduleName} (${i + 1}/${foundModules.length})`);
 
             const result = await this.generateWorldviewModule(
                 moduleName,
@@ -199,7 +209,7 @@ ${skeleton.slice(0, 3000)}
             );
 
             if (result.error) {
-                console.error(`[小说工坊] 模块${moduleName}生成失败: ${result.error}`);
+                log.error(`[小说工坊] 模块${moduleName}生成失败: ${result.error}`);
                 return this.generateWorldviewFallback(worldName, projectName, genre, theme, customPrompt);
             }
 
@@ -216,7 +226,7 @@ ${skeleton.slice(0, 3000)}
             moduleSections,
         ].join('\n');
 
-        console.log(`[小说工坊] 瀑布式世界观完成！共${foundModules.length}个模块`);
+        log.info(`[小说工坊] 瀑布式世界观完成！共${foundModules.length}个模块`);
         return { content: assembledContent };
     }
 
@@ -281,7 +291,12 @@ ${theme ? `【主题】${theme}` : ''}`;
         let existingContent = '';
         if (file instanceof TFile) {
             try {
-                existingContent = await fs.read(wvPath);
+                if (this.cacheService) {
+                    const cached = await this.cacheService.getWorldview(project);
+                    existingContent = cached.rawText;
+                } else {
+                    existingContent = await fs.read(wvPath);
+                }
             } catch {
                 existingContent = '';
             }
@@ -317,7 +332,7 @@ ${theme ? `【主题】${theme}` : ''}`;
             const maxRetries = 2;
             
             while (!validation.valid && retryCount < maxRetries) {
-                console.log(`[小说工坊] 世界观输出校验失败，缺失字段: ${validation.missingFields.join(', ')}，重试 ${retryCount + 1}/${maxRetries}`);
+                log.info(`[小说工坊] 世界观输出校验失败，缺失字段: ${validation.missingFields.join(', ')}，重试 ${retryCount + 1}/${maxRetries}`);
                 
                 const fixPrompt = `⚠️ 上次生成的世界观输出未通过校验，缺少以下字段：\n${validation.missingFields.map(f => `- ${f}`).join('\n')}\n\n请重新生成完整的世界观设定，确保所有缺失字段均已补充。`;
                 
@@ -330,13 +345,14 @@ ${theme ? `【主题】${theme}` : ''}`;
             }
             
             if (!validation.valid) {
-                console.warn(`[小说工坊] 世界观校验${retryCount >= maxRetries ? '超过最大重试次数，接受当前输出' : '失败'}，缺失: ${validation.missingFields.join(', ')}`);
+                log.warn(`[小说工坊] 世界观校验${retryCount >= maxRetries ? '超过最大重试次数，接受当前输出' : '失败'}，缺失: ${validation.missingFields.join(', ')}`);
             }
         }
         
         if (!result.error && result.content) {
             const genNameMatch = result.content.match(/【项目名称】(.+?)【\/项目名称】/);
             const genProjectName = genNameMatch?.[1]?.trim() || projectName;
+            let finalContent = '';
 
             if (file instanceof TFile) {
                 const fmLines = (existingContent.match(/---\n([\s\S]*?)---/) || ['', ''])[1]
@@ -347,28 +363,39 @@ ${theme ? `【主题】${theme}` : ''}`;
                         return line;
                     })
                     .join('\n');
-                const content = `---\n${fmLines}---\n\n${result.content}`;
-                await fs.write(wvPath, content);
+                finalContent = `---\n${fmLines}---\n\n${result.content}`;
+                await fs.write(wvPath, finalContent);
             } else {
-                const freshFm = `---\n世界名称: "${worldName}"\n项目名称: "${genProjectName}"\ntags: [世界观]\n世界类型:\n创作阶段: 世界观设定\n---\n\n${result.content}`;
-                await fs.write(wvPath, freshFm);
+                finalContent = `---\n世界名称: "${worldName}"\n项目名称: "${genProjectName}"\ntags: [世界观]\n世界类型:\n创作阶段: 世界观设定\n---\n\n${result.content}`;
+                await fs.write(wvPath, finalContent);
+            }
+
+            if (this.cacheService) {
+                await this.cacheService.setWorldview(project, finalContent);
             }
         }
         
         return result.error ? '' : result.content || '';
     }
 
-    async generateSettingLibForProject(app: App, project: string): Promise<string> {
+    async generateSettingLibForProject(app: App, project: string, worldview?: string): Promise<string> {
         const fs = this.getFS();
         const vaultMeta = this.getVaultMeta();
-        const wvPath = getWorldviewPath(project);
-        const wvFile = vaultMeta.getAbstractFileByPath(wvPath);
-        let worldView = '';
-        if (wvFile instanceof TFile) {
-            try {
-                worldView = await fs.read(wvPath);
-            } catch {
-                worldView = '';
+        let worldView = worldview || '';
+        if (!worldView) {
+            const wvPath = getWorldviewPath(project);
+            const wvFile = vaultMeta.getAbstractFileByPath(wvPath);
+            if (wvFile instanceof TFile) {
+                try {
+                    if (this.cacheService) {
+                        const cached = await this.cacheService.getWorldview(project);
+                        worldView = cached.rawText;
+                    } else {
+                        worldView = await fs.read(wvPath);
+                    }
+                } catch {
+                    worldView = '';
+                }
             }
         }
 
@@ -382,7 +409,12 @@ ${theme ? `【主题】${theme}` : ''}`;
         let existingContent = '';
         if (existingFile instanceof TFile) {
             try {
-                existingContent = await fs.read(slPath);
+                if (this.cacheService) {
+                    const cached = await this.cacheService.getSettingLib(project);
+                    existingContent = cached.rawText;
+                } else {
+                    existingContent = await fs.read(slPath);
+                }
             } catch {
                 existingContent = '';
             }
@@ -473,6 +505,10 @@ ${existingContent ? `\n【已有设定库（请保留其中非冲突内容，进
             await fs.write(slPath, content);
         }
 
+        if (this.cacheService) {
+            await this.cacheService.setSettingLib(project, content);
+        }
+
         return content;
     }
 
@@ -504,7 +540,12 @@ ${existingContent ? `\n【已有设定库（请保留其中非冲突内容，进
         let existingContent = '';
         if (wvFile instanceof TFile) {
             try {
-                existingContent = await fs.read(wvPath);
+                if (this.cacheService) {
+                    const cached = await this.cacheService.getWorldview(project);
+                    existingContent = cached.rawText;
+                } else {
+                    existingContent = await fs.read(wvPath);
+                }
             } catch {
                 existingContent = '';
             }
@@ -567,14 +608,20 @@ ${existingContent ? `【已有世界观（请保留frontmatter，仅更新正文
             return '';
         }
 
+        let finalContent = '';
         if (wvFile instanceof TFile) {
             const fmMatch = existingContent.match(/---\n([\s\S]*?)---/);
             const fm = fmMatch ? fmMatch[1] : '';
             const newBody = result.content.replace(/^---[\s\S]*?---\n?/, '');
-            const content = `---\n${fm}---\n\n${newBody}`;
-            await fs.write(wvPath, content);
+            finalContent = `---\n${fm}---\n\n${newBody}`;
+            await fs.write(wvPath, finalContent);
         } else {
-            await fs.write(wvPath, result.content);
+            finalContent = result.content;
+            await fs.write(wvPath, finalContent);
+        }
+
+        if (this.cacheService) {
+            await this.cacheService.setWorldview(project, finalContent);
         }
 
         return result.content;
