@@ -6,6 +6,7 @@ import { WritingProfileManager } from '../engine/writing-profile';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE, SUBDIR_WORLD_ARCH, PJ_FANFIC_DIR, PJ_WORLD_ARCH_DIR, PJ_TEMPLATE_DIR, PJ_OUTLINE_DIR, pjFanficDir, pjProjectMeta, templateFingerprintsFile, projectFingerprintsFile, projectFingerprintLibraryDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
+import { ensureTemplateScaffold } from '../shared/template-scaffold';
 
 
 const log = createLogger('CreateProjectModal');
@@ -324,6 +325,11 @@ export class CreateProjectModal extends Modal {
             }
             return result;
         };
+
+        const scaffold = await ensureTemplateScaffold(this.app);
+        if (scaffold.failed > 0) {
+            log.warn('[小说工坊] 模板自举存在失败项:', scaffold);
+        }
 
         const source = await scanDir('元文件');
         if (source.files.length === 0) {

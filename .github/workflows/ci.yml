@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 校验内置模板生成物
+        run: npm run check:templates
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: 单元测试
+        run: npm test
+
+      - name: 构建
+        run: npm run build
+
+      - name: 发布资产校验
+        run: npm run check:release
+
+      - name: 校验构建未产生版本/生成物漂移
+        run: git diff --exit-code -- manifest.json shared/template-scaffold-assets.generated.ts
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: novel-writer-ai-dist
+          path: |
+            main.js
+            manifest.json
+            styles.css
+          if-no-files-found: error

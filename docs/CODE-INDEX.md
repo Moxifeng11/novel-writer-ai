@@ -1,6 +1,6 @@
 # 代码索引（Code Index）
 
-> 版本：v4.10.1 · 更新：2026-07-17 · 源文件：443 个 .ts（含 83 个测试）
+> 版本：v4.11.0 · 更新：2026-10-19 · 源文件：605 个 .ts（含 178 个测试）
 
 ---
 
@@ -9,13 +9,13 @@
 | 层级 | 目录 | 文件数 | 核心职责 |
 |------|------|--------|----------|
 | 入口 | `main.ts` | 1 | 插件注册、生命周期、命令绑定 |
-| UI 层 | `ui/` | 130 | 视图、Modal、组件、设置面板 |
-| Facade 层 | `ui/cowrite/` | 6 | 协同写作 UI 与引擎的中间层 |
-| 引擎层 | `engine/` | 162 | 业务逻辑、AI 引擎、质量检测、Repository |
-| 服务层 | `services/` | 23 | 跨引擎协调、Worker 管理、外部服务 |
+| UI 层 | `ui/` | 149 | 视图、Modal、组件、设置面板 |
+| Facade 层 | `ui/cowrite/` | 7 | 协同写作 UI 与引擎的中间层 |
+| 引擎层 | `engine/` | 317 | 业务逻辑、AI 引擎、质量检测、Repository |
+| 服务层 | `services/` | 37 | 跨引擎协调、Worker 管理、外部服务 |
 | 核心服务 | `core/` | 6 | 插件级核心服务（加密、设置、主题、Provider） |
-| 共享层 | `shared/` | 38 | 工具函数、状态管理、类型定义、文件系统抽象 |
-| 测试 | `tests/` | 83 | 单元测试、集成测试、E2E 测试 |
+| 共享层 | `shared/` | 67 | 工具函数、状态管理、类型定义、文件系统抽象 |
+| 测试 | `tests/` | 178 | 单元测试、集成测试、E2E 测试 |
 
 ---
 
@@ -408,6 +408,8 @@
 | `shared/plugin-api.ts` | — | 插件 API 类型 |
 | `shared/plugin-cache.ts` | — | 插件缓存 |
 | `shared/plugin-capabilities.ts` | — | 插件能力 |
+| `shared/template-scaffold.ts` | `ensureTemplateScaffold` | 全新安装的「元文件」模板自举（只补缺失、不覆盖） |
+| `shared/template-scaffold-assets.generated.ts` | `TEMPLATE_SCAFFOLD_FILES` | 内置模板资源（自动生成，勿手改） |
 
 ### 实体模型
 | 文件 | 内容 |
@@ -503,7 +505,9 @@
 | `scripts/build.js` | esbuild 构建脚本（main + 3 Worker 入口） |
 | `scripts/check-css.js` | CSS 检查脚本 |
 | `scripts/check-dependencies.mjs` | 依赖检查 |
+| `scripts/check-release.mjs` | 发布资产与版本一致性校验（三资产 / Worker / 内置模板） |
 | `scripts/cleanup-css.js` | CSS 清理 |
+| `scripts/generate-template-assets.mjs` | 将 `assets/template-scaffold/` 生成为 TS 模块（`--check` 校验一致性） |
 | `scripts/scan-engine-instances.mjs` | 引擎实例扫描 |
 | `scripts/stats-css.js` | CSS 统计 |
 | `scripts/sync-version.js` | 版本同步 |
@@ -521,6 +525,9 @@
 | `styles.css` | 插件样式 |
 | `design-tokens.css` | 设计令牌 CSS 变量 |
 | `.engine-registry-whitelist.json` | 引擎注册白名单 |
+| `.github/workflows/ci.yml` | CI 门禁（模板一致性 / lint / typecheck / test / build / 发布校验） |
+| `.github/workflows/release.yml` | 推送 `v*` tag 自动创建 GitHub Release（三资产） |
+| `assets/template-scaffold/` | 内置模板源文件（构建时嵌入 `main.js`） |
 
 ---
 

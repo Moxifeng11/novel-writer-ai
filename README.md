@@ -56,6 +56,8 @@ API 密钥支持口令派生加密（PBKDF2-SHA256 + AES-GCM），密文与业�
 3. 将三个文件放入该目录。
 4. 重启 Obsidian，在「设置 → 第三方插件」中启用 **小说工坊 AI**。
 
+> 首次启用时，插件会自动在 vault 根目录初始化「元文件」模板目录（34 个空白模板），无需手动准备模板。
+
 ### 方式二：从源码构建
 
 ```bash
@@ -140,7 +142,10 @@ npm run build          # 产出 main.js（版本号自动同步到 manifest.json
 npm install
 
 npm run dev         # watch 构建
-npm run build       # 生产构建（同步版本号）
+npm run build       # 生产构建（同步版本号 + 生成内置模板资源）
+npm run gen:templates   # 重新生成内置模板资源模块
+npm run check:templates # 校验生成物与 assets 一致
+npm run check:release   # 发布前资产与版本一致性校验
 npm run lint        # eslint（官方 obsidianmd 规则集）
 npm run typecheck   # tsc --noEmit
 npm test            # vitest 全量
@@ -151,8 +156,10 @@ npm run test:e2e    # Playwright
 提交前请确保以下 Gate 全绿：
 
 ```
-lint 0 error / 0 warning → typecheck 0 error → vitest 全绿 → build 成功
+check:templates → lint 0 error / 0 warning → typecheck 0 error → vitest 全绿 → build 成功 → check:release
 ```
+
+CI 与发布流水线见 `.github/workflows/`：PR 执行全量 Gate；推送 `v*` tag 自动创建 GitHub Release。
 
 ### 目录结构
 
@@ -162,6 +169,7 @@ engine/         引擎层：生成、拆解、质量、风格、仓储
 ui/             视图与弹窗（含 full-writer / cowrite 控制器）
 services/       调度、Worker、知识库、版本等基础设施
 shared/         跨层工具：路径、导出、设置迁移、类型
+assets/         内置模板资源（构建时嵌入 main.js）
 workers/        Web Worker 产物（拆解 / 质量 / 风格）
 tests/          单元、集成与 E2E 测试
 docs/           架构、API、开发、性能文档与版本发布说明

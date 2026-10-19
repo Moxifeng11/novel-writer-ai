@@ -1,8 +1,8 @@
 # 开发指南
 
-> **版本**: v4.10.6  
-> **最后更新**: 2026-07-27  
-> **状态**: 活跃可信 · 旧路径流式接入完成
+> **版本**: v4.11.0  
+> **最后更新**: 2026-10-19  
+> **状态**: 活跃可信 · P0 分发自举（Batch 1）已落地
 
 本文档描述如何在 Novel Writer AI Obsidian 插件中新增 Repository、状态切片、接入新功能，以及如何使用流式生成和缓存系统。所有代码示例均基于实际接口，可直接参考使用。
 
@@ -990,10 +990,13 @@ console.log(`清理了 ${pruned} 个过期条目`);
 ### 构建命令
 
 ```bash
-npm run build          # 生产构建
+npm run build          # 生产构建（同步版本号 + 生成内置模板资源）
 npm run dev            # 开发模式（watch）
 npm run typecheck      # 类型检查
 npm run version:sync   # 同步版本号
+npm run gen:templates  # 由 assets/template-scaffold 重新生成内置模板模块
+npm run check:templates # 校验生成物与资源目录一致（CI 使用）
+npm run check:release  # 发布前资产与版本一致性校验
 ```
 
 ### 测试命令
@@ -1009,13 +1012,27 @@ npm run test:e2e:report # 查看 E2E 测试报告
 
 ### 当前验证状态
 
-截至 2026-07-27：
+截至 2026-10-19（v4.11.0 + Batch 1）：
 
-- `npm run typecheck` 通过。
-- 旧路径流式与伏笔配置相关定向测试共 89 项通过。
-- `npm run build` 通过，构建版本为 v4.10.6。
-- 全量单元测试为 2703 项通过、3 项失败；失败均位于 `foreshadow-deconstructor.test.ts`，与章节流式链路无关。
+- `npm run check:templates` / `npm run lint` / `npm run typecheck` 通过。
+- `npm test`：164 个测试文件、3014 个用例全部通过。
+- `npm run build` 通过，构建版本为 v4.11.0。
+- `npm run check:release` 通过（三资产、Worker 产物、内置模板嵌入均校验）。
+- CI / 发布流水线配置位于 `.github/workflows/`（PR 全量 Gate；`v*` tag 自动发布）。
 - `npm run check-engines` 仍报告既有 EngineRegistry 治理项，需在独立治理任务中处理。
+
+### 发布流程
+
+1. 修改 `package.json` 的 `version`，执行 `npm run version:sync` 同步 `manifest.json`。
+2. 本地执行全量 Gate：`check:templates` → `lint` → `typecheck` → `test` → `build` → `check:release`。
+3. 合并到 `master` 后打 annotated tag（`vX.Y.Z`）。
+4. 推送 tag：`.github/workflows/release.yml` 会重新执行 Gate 并创建/更新 GitHub Release（`main.js` / `manifest.json` / `styles.css`）。
+
+### 内置模板资源
+
+- 资源源文件位于 `assets/template-scaffold/`；修改后执行 `npm run gen:templates` 更新 `shared/template-scaffold-assets.generated.ts`。
+- 生成物随 `main.js` 打包，保证仅安装 3 个发布文件时也能自举 `元文件/`。
+- 禁止在资源中放置示例项目数据或第三方作品原文（单测会校验受限内容）。
 
 ### 引擎合规检查
 

@@ -65,6 +65,7 @@ import { SerializedWriter } from './shared/serialized-writer';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
+import { ensureTemplateScaffold } from './shared/template-scaffold';
 import { RulesService } from './services/rules-service';
 import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
 
@@ -445,6 +446,20 @@ export default class NovelWriterPlugin extends Plugin {
             }
 
             window.novelAI = this.registry;
+
+            // P0 分发自举：全新安装（仅 3 个发布文件）时初始化「元文件」模板树
+            try {
+                const scaffold = await ensureTemplateScaffold(this.app);
+                if (scaffold.created > 0) {
+                    new Notice(`📁 已初始化模板目录「元文件」（${scaffold.created} 个文件）`, 5000);
+                    log.info('[小说工坊] 模板目录已初始化:', scaffold);
+                } else if (scaffold.failed > 0) {
+                    new Notice(`⚠️ 模板目录初始化不完整（${scaffold.failed} 个文件失败），详见控制台`, 8000);
+                }
+            } catch (e) {
+                log.error('[小说工坊] 模板目录初始化失败:', e);
+                new Notice('⚠️ 模板目录初始化失败，新建项目时仍会重试，详见控制台', 8000);
+            }
 
             await this._checkRulesVersion();
 

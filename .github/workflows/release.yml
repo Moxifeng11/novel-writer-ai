@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 校验内置模板生成物
+        run: npm run check:templates
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: 单元测试
+        run: npm test
+
+      - name: 构建
+        run: npm run build
+
+      - name: 发布资产校验（含 tag 版本一致性）
+        run: npm run check:release -- --tag "$GITHUB_REF_NAME"
+
+      - name: 发布 GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          NOTES="docs/releases/${TAG}.md"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG 已存在，覆盖上传资产"
+            gh release upload "$TAG" main.js manifest.json styles.css --clobber
+          elif [ -f "$NOTES" ]; then
+            gh release create "$TAG" main.js manifest.json styles.css \
+              --title "$TAG" --notes-file "$NOTES"
+          else
+            gh release create "$TAG" main.js manifest.json styles.css \
+              --title "$TAG" --generate-notes
+          fi

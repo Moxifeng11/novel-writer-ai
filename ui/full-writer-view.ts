@@ -60,6 +60,7 @@ import { getWritingStyleCandidatePaths } from './writing-style-paths';
 import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta } from './project-utils';
 import { CHAR_TO_TOKEN_RATIO, INFO_DEBT_MAX, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
+import { ensureTemplateScaffold } from '../shared/template-scaffold';
 
 
 const log = createLogger('FullWriterView');
@@ -823,6 +824,7 @@ export class FullWriterView extends ItemView {
             }
 
             // v4.0: 复制必需模板——AI引擎写入需要文件已存在
+            await ensureTemplateScaffold(this.app);
             const templateCopies = [
                 { src: '元文件/00-系统模板/世界观模板.md', dst: `${projectName}/${SUBDIR_WORLDVIEW_FILE}` },
                 { src: '元文件/00-系统模板/设定库模板.md', dst: `${projectName}/${SUBDIR_SETTING_LIB_FILE}` },

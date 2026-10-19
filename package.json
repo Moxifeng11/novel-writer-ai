@@ -5,8 +5,11 @@
   "main": "main.js",
   "scripts": {
     "version:sync": "node scripts/sync-version.js",
-    "build": "node scripts/sync-version.js && node scripts/build.js",
-    "dev": "node scripts/sync-version.js && node scripts/build.js --watch",
+    "gen:templates": "node scripts/generate-template-assets.mjs",
+    "check:templates": "node scripts/generate-template-assets.mjs --check",
+    "check:release": "node scripts/check-release.mjs",
+    "build": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build.js",
+    "dev": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build.js --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",

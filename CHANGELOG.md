@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased — P0 分发自举：内置模板资源 / CI 门禁 / 发布校验（Batch 1）
+
+> 依据 `.trae/specs/plugin-gap-analysis-2026q4/prd.md` 的 Batch 1（FR-F-01 / FR-E-01 / FR-E-03）
+
+### 🧭 动因
+Release 仅分发 `main.js` / `manifest.json` / `styles.css` 三个文件，但「新建项目」依赖 vault 根目录的 `元文件/` 模板树，且仓库缺少 CI 与发布资产校验。结果是：全新安装可以加载插件，却在第一个核心动作（新建项目）失败；发版完整性只能依赖人工记忆。
+
+### ✨ 改动
+
+**内置模板自举（FR-F-01 / FR-C-01）**
+- 新增 `assets/template-scaffold/`：34 个空白模板与项目骨架文件（系统模板、世界架构、时间线/伏笔、项目总控、同人设定模板、封面说明、作品信息）。已剔除示例项目数据与第三方作品原文。
+- 新增 `scripts/generate-template-assets.mjs`：将资源目录生成为字符串常量模块（`--check` 模式用于 CI 一致性校验）。
+- 新增 `shared/template-scaffold-assets.generated.ts`（自动生成，勿手改）。
+- 新增 `shared/template-scaffold.ts`：`ensureTemplateScaffold()` 只补缺失文件、不覆盖用户修改；单文件失败不阻断其余文件。
+- 接入点：插件 `onload`（首次安装提示并初始化）、`ui/create-project-modal.ts`（建项前兜底）、`ui/full-writer-view.ts`（快速建项前兜底）。
+
+**CI 门禁（FR-E-01）**
+- 新增 `.github/workflows/ci.yml`：PR / master push 执行 `check:templates` → lint → typecheck → vitest → build → `check:release`，并校验构建未产生未提交变更。
+
+**发布校验（FR-E-03）**
+- 新增 `scripts/check-release.mjs`：校验 package/manifest/tag 版本一致、manifest 关键字段、三资产存在且非空、Worker 产物存在、模板资源已嵌入 `main.js`。
+- 新增 `.github/workflows/release.yml`：打 `v*` tag 时自动执行全量 Gate 并创建/更新 GitHub Release（三资产）。
+- `package.json` 新增 `gen:templates` / `check:templates` / `check:release`；`build` 与 `dev` 自动先生成模板资源。
+
+### 🧪 验证
+- `npm run check:templates` / `lint` / `typecheck` / `build` / `check:release` 全部通过。
+- `npm test`：164 个测试文件、3014 个用例通过（新增模板自举 5 个用例）。
+
 ## 4.11.0 — v8.14 全面技术审计落地：安全收口 / 内存生命周期 / UX 断点 / 死代码清理 / CSS 一期 / lint 接入
 
 > 发布说明：`docs/releases/v4.11.0.md` · GitHub Release `v4.11.0`（2026-10-19）
