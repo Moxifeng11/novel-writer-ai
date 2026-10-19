@@ -122,5 +122,6 @@ export function scoreAndFilterEntities(
         return withScore.slice(0, topN);
     }
 
-    return scored.slice(0, entities.length);
+    // 回退：正向分实体不足 3 个时，仍按 topN 上限截断（而非全量），避免无关实体污染上下文
+    return scored.slice(0, Math.max(1, topN));
 }

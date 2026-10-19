@@ -830,6 +830,8 @@ export class AiBuilderModal extends Modal {
         // 使用与独立 Modal 完全一致的引擎方法，保证 frontmatter + 分节完整
         let saved = 0;
         const savedNames: string[] = [];
+        // U7（技术审计）：批量单项失败（生成/保存）此前仅写日志用户不可见，收集清单供结束汇总
+        const failures: string[] = [];
 
         for (let i = 0; i < n; i++) {
             genNotice.setMessage(`⏳ 正在生成${cfg.label} (${i + 1}/${n})...`);
@@ -854,6 +856,7 @@ export class AiBuilderModal extends Modal {
 
             if (result.error) {
                 log.warn(`[小说工坊] 批量第${i + 1}个${cfg.label}失败:`, result.error);
+                failures.push(`第${i + 1}个（生成失败）`);
                 continue;
             }
 
@@ -876,11 +879,15 @@ export class AiBuilderModal extends Modal {
                 savedNames.push(realName);
             } catch (e) {
                 log.warn(`[小说工坊] 保存${cfg.label}失败:`, e);
+                failures.push(`第${i + 1}个（保存失败）`);
             }
         }
 
         genNotice.hide();
-        if (saved > 0) {
+        // U7：失败项汇总反馈（截取前 5 个避免 Notice 过长，完整原因见控制台日志）
+        if (failures.length > 0) {
+            new Notice(`⚠️ 批量完成：成功 ${saved}/${n} 个，失败 ${failures.length} 个（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, 10000);
+        } else if (saved > 0) {
             const nameList = savedNames.join('、');
             new Notice(`✅ 批量完成：${saved}/${n} 个 → ${this.selectedProject}\n${nameList}`, 6000);
         } else {

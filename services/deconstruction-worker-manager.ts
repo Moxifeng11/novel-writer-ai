@@ -25,6 +25,7 @@ import { CharacterDeconstructor, CharacterAnalysisResult } from '../engine/decon
 import { ForeshadowDeconstructor, ForeshadowAnalysisResult } from '../engine/deconstructors/foreshadow-deconstructor';
 import { CommercialDeconstructor, CommercialAnalysisResult } from '../engine/deconstructors/commercial-deconstructor';
 import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from '../engine/deconstructors/readability-deconstructor';
+import { AntiAIDetector } from '../engine/anti-ai-detector';
 
 const log = createLogger('DeconstructionWorkerManager');
 
@@ -416,9 +417,12 @@ export class DeconstructionWorkerManager {
         }
 
         if (this.useWorkerMode && this.workerManager) {
-            return this.workerManager.executeTask<{ text: string }, T>(
+            // R2: Worker 是独立 bundle，主线程设置的扩充词无法自动抵达，
+            // 因此随任务载荷下发（空数组时不带该字段，载荷与改造前一致）。
+            const extraAiWords = AntiAIDetector.getExtraHighFreqWords();
+            return this.workerManager.executeTask<{ text: string; antiAiWords?: string[] }, T>(
                 taskType,
-                { text },
+                extraAiWords.length > 0 ? { text, antiAiWords: extraAiWords } : { text },
                 onProgress
             ) as CancelablePromise<T>;
         }

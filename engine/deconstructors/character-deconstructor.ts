@@ -223,11 +223,11 @@ const COMMON_WORDS = new Set([
     '然后', '可是', '但是', '所以', '因此', '因为', '如果', '虽然',
     '已经', '正在', '刚刚', '马上', '立刻', '突然', '渐渐', '慢慢',
     '没有', '不是', '就是', '只是', '还是', '还有', '也是', '才是',
-    '真是', '更是', '便是', '就是', '于是', '所以', '因此', '因而',
-    '而且', '并且', '或者', '还是', '要么', '不是', '不但', '不仅',
-    '虽然', '尽管', '即使', '就算', '只要', '只有', '无论', '不管',
+    '真是', '更是', '便是', '于是', '因而',
+    '而且', '并且', '或者', '要么', '不但', '不仅',
+    '尽管', '即使', '就算', '只要', '只有', '无论', '不管',
     '今天', '明天', '昨天', '现在', '以前', '以后', '后来', '从前',
-    '刚才', '马上', '立刻', '顿时', '忽然', '突然', '渐渐', '缓缓',
+    '刚才', '顿时', '忽然', '缓缓',
     '这里', '那里', '这边', '那边', '里面', '外面', '上面', '下面',
     '中间', '旁边', '面前', '身后', '左右', '前后', '上下', '内外',
     '眼睛', '心里', '口中', '手里', '脚下', '头上', '脸上', '身上',
@@ -235,7 +235,7 @@ const COMMON_WORDS = new Set([
     '力量', '气势', '气息', '光芒', '火焰', '寒气', '热气', '雾气',
     '时间', '空间', '世界', '天地', '乾坤', '阴阳', '五行', '八卦',
     '第一', '第二', '第三', '最后', '终于', '到底', '究竟', '毕竟',
-    '各种', '各样', '各种', '一切', '所有', '全部', '整个', '完整',
+    '各种', '各样', '一切', '所有', '全部', '整个', '完整',
     '不同', '相同', '一样', '一般', '普通', '特别', '非常', '十分',
     '更加', '越发', '比较', '相当', '最', '太', '更', '很',
     '过来', '过去', '起来', '下去', '上来', '下来', '出去', '进来',
@@ -243,13 +243,52 @@ const COMMON_WORDS = new Set([
     '点头', '摇头', '微笑', '大笑', '冷笑', '苦笑', '叹息', '叹气',
     '紧张', '放松', '高兴', '难过', '愤怒', '害怕', '惊讶', '疑惑',
     '着急', '担心', '放心', '开心', '郁闷', '烦躁', '平静', '激动',
-    '厉害', '厉害', '强大', '弱小', '厉害', '恐怖', '可怕', '惊人',
-    '不错', '挺好', '还好', '一般', '糟糕', '倒霉', '幸运', '可惜',
+    '厉害', '强大', '弱小', '恐怖', '可怕', '惊人',
+    '不错', '挺好', '还好', '糟糕', '倒霉', '幸运', '可惜',
     '当然', '显然', '果然', '居然', '竟然', '难道', '莫非', '大概',
-    '差不多', '几乎', '简直', '根本', '完全', '绝对', '肯定', '也许',
+    '差不多', '简直', '根本', '完全', '绝对', '肯定', '也许',
     '恐怕', '估计', '据说', '听说', '看来', '想来', '按理', '说起来',
     '不好意思', '没办法', '不知道', '不清楚', '不明白', '不理解',
-    '不得不', '不能不', '不会', '不敢', '不愿', '不肯', '不要', '不用'
+    '不得不', '不能不', '不会', '不敢', '不愿', '不肯', '不要', '不用',
+    '的', '了', '着', '过', '和', '与', '及', '或', '而', '且',
+    '但', '却', '则', '虽', '然', '所', '为', '被', '把', '将',
+    '从', '以', '对', '向', '到', '在', '于', '比', '因', '由',
+    '让', '给', '使', '令', '之', '乎', '者', '也', '矣',
+    '焉', '哉', '兮', '尔', '其', '此', '彼', '斯', '是', '乃',
+    '即', '皆', '俱', '悉', '诸', '众', '凡', '何',
+    '孰', '安', '谁', '哪', '啥', '怎', '奈', '岂', '奚',
+    '胡', '曷', '罢了', '而已', '乃是', '却是',
+    '都是', '总是', '不能', '能够', '足以',
+    '得', '能', '会', '可', '该', '当', '须', '应', '需', '要',
+    '个', '些', '等', '某', '各', '每', '另', '本', '该',
+    '这么', '那么', '这样', '那样',
+    '怎样', '如何', '为何', '何以', '因何',
+    '一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
+    '百', '千', '万', '亿', '兆', '零', '半', '全', '整', '满',
+    '左', '右', '里', '外', '中', '内',
+    '东', '南', '西', '北', '东北', '西北', '东南', '西南',
+    '春', '夏', '秋', '冬', '风', '霜', '雨', '雪', '雷', '电',
+    '我', '他', '她', '它', '们', '不', '人', '都', '也', '很', '去',
+    '你', '好', '不过', '已经', '还', '又', '再', '才', '只', '并',
+    '等等', '耳', '汝', '吾', '余', '予',
+    '往', '自', '自从', '对于', '关于', '为了', '由于',
+    '接着', '首先', '其次', '再次',
+    '一是', '二是', '三是', '一方面', '另一方面',
+    '既', '然而', '假如', '倘若',
+    '要是', '便', '哪怕', '总', '除非', '否则', '以及',
+    '地', '吧', '吗', '呢', '啊',
+    '呀', '哦', '哈', '嘿', '哼', '嗯', '唉', '喔', '咦', '嗨',
+    '喂', '呵', '哇', '噻', '噢', '呃', '哟', '啧', '喏', '喵',
+    '汪', '叽', '咔', '咚', '当', '砰', '哗', '轰', '嗡', '嘟',
+    '嘀', '嗒', '咻', '唰', '嗖', '叮', '铃', '哐', '锵',
+    '间', '旁', '来',
+    '这般', '那般',
+    '哪里', '哪儿', '几时', '多少', '几', '多', '少',
+    '大', '小', '长', '短', '高', '低', '快', '慢', '新', '旧',
+    '老', '少', '男', '女',
+    '听见', '感到', '以为', '认为',
+    '进去', '上去', '回去', '坐下',
+    '站起', '打开', '关上', '放下', '拿起', '带上', '脱下', '穿起'
 ]);
 
 const NAME_STOP_CHARS = new Set([
@@ -261,6 +300,43 @@ const NAME_STOP_CHARS = new Set([
     '看', '听', '走', '跑', '飞', '打', '杀', '死', '伤', '败',
     '来', '去', '进', '出', '上', '下', '起', '落', '开', '关'
 ]);
+
+const ENABLE_NGRAM_FREQ_FILTER = true;
+const ENABLE_CONTEXT_FUNC_WORD_CHECK = true;
+const ENABLE_VERB_PREFIX_SUFFIX_FILTER = true;
+
+const NGRAM_FREQ_THRESHOLD = 0.01;
+const NGRAM_FREQ_PENALTY = 3;
+
+const CONTEXT_FUNC_WORD_FRONT = new Set([
+    '的', '了', '在', '是', '有', '和', '与', '及', '等', '也',
+    '都', '就', '才', '又', '还', '而', '但', '如', '若'
+]);
+
+const CONTEXT_FUNC_WORD_BACK = new Set([
+    '的', '了', '着', '过', '地', '得', '是', '在', '有', '吗',
+    '呢', '啊', '吧', '啦'
+]);
+
+const CONTEXT_FUNC_WORD_PENALTY = 2;
+
+const VERB_PREFIX_CHARS = new Set([
+    '看', '听', '说', '走', '跑', '想', '知', '明', '感', '觉',
+    '吃', '喝', '睡', '醒', '做', '打', '杀', '死', '伤', '败',
+    '来', '去', '进', '出', '上', '下', '起', '落', '开', '关',
+    '读', '写', '画', '唱', '跳', '飞', '游', '爬', '站', '坐',
+    '笑', '哭', '怒', '喜', '悲', '恐', '惊', '思', '念', '忘',
+    '记', '懂', '会', '能', '可', '该', '当', '须', '应', '需'
+]);
+
+const VERB_SUFFIX_CHARS = new Set([
+    '了', '着', '过', '得', '地', '的', '是', '在', '有', '没',
+    '不', '也', '就', '都', '还', '又', '才', '只', '很', '最',
+    '更', '太', '真', '挺', '好', '坏', '对', '错', '行', '完'
+]);
+
+const VERB_PREFIX_PENALTY = 2;
+const VERB_SUFFIX_PENALTY = 1;
 
 const TITLE_SUFFIXES = [
     '先生', '小姐', '公子', '姑娘', '少爷', '夫人', '老爷', '太太',
@@ -284,6 +360,21 @@ const ALLY_RELATION_WORDS = [
 
 const ABILITY_PATTERN_WORDS = new Set([
     '能力', '才能', '擅长', '精通', '掌握', '本事', '技能'
+]);
+
+const ABILITY_NOUN_PREFIXES = new Set([
+    '军事', '领导', '战斗', '艺术', '商业', '医术', '占卜', '谋略', '指挥', '创造',
+    '预知', '控制', '感知', '治愈', '隐匿', '炼金', '制药', '魔法', '剑术', '刀法',
+    '枪法', '箭术', '厨艺', '音律', '书法', '绘画', '雕刻', '辩论', '演讲', '谈判',
+    '管理', '组织', '设计', '发明', '编程', '破解', '追踪', '潜行', '伪装', '易容',
+    '变身', '召唤', '契约', '封印', '献祭', '祈祷', '祝福', '诅咒', '催眠', '通灵',
+    '读心', '瞬移', '飞行', '潜水', '鉴定', '复制', '掠夺', '吞噬'
+]);
+
+const TIME_ADVERB_CHARS = new Set([
+    '晚', '天', '周', '月', '年', '日', '时', '后', '前',
+    '才', '就', '也', '还', '又', '再', '常', '总', '每', '各', '某',
+    '只', '仅', '刚', '已', '将', '正', '在', '便', '即'
 ]);
 
 const SURNAMES = [
@@ -422,7 +513,8 @@ export class CharacterDeconstructor {
         const characterMentions = this.countCharacterMentions(text, nameCandidates);
         await yieldToUI();
 
-        const characters = this.buildCharacters(text, paragraphs, characterMentions, totalLength);
+        let characters = this.buildCharacters(text, paragraphs, characterMentions, totalLength);
+        characters = this.mergeDuplicateCharacters(characters, text);
         const mainCharacter = this.determineMainCharacter(characters, text);
         // 强制主角 role 为 'protagonist'，并基于负面关系判定 antagonist
         if (mainCharacter) {
@@ -660,8 +752,75 @@ export class CharacterDeconstructor {
         return weight;
     }
 
+    private buildBigramFrequencyMap(text: string): Map<string, number> {
+        const freqMap = new Map<string, number>();
+        const chars = text.replace(/[^\u4e00-\u9fa5]/g, '');
+        let totalBigrams = 0;
+        for (let i = 0; i < chars.length - 1; i++) {
+            const bigram = chars.substring(i, i + 2);
+            freqMap.set(bigram, (freqMap.get(bigram) || 0) + 1);
+            totalBigrams++;
+        }
+        (freqMap as Map<string, number> & { _total?: number })._total = totalBigrams;
+        return freqMap;
+    }
+
+    private calculateNgramFrequencyPenalty(name: string, freqMap: Map<string, number>): number {
+        if (!ENABLE_NGRAM_FREQ_FILTER) return 0;
+        if (name.length !== 2) return 0;
+        const freq = freqMap.get(name) || 0;
+        const total = (freqMap as Map<string, number> & { _total?: number })._total || 1;
+        const ratio = freq / total;
+        if (ratio > NGRAM_FREQ_THRESHOLD) {
+            return NGRAM_FREQ_PENALTY;
+        }
+        return 0;
+    }
+
+    private calculateContextFuncWordPenalty(text: string, name: string): number {
+        if (!ENABLE_CONTEXT_FUNC_WORD_CHECK) return 0;
+        let penalty = 0;
+        let idx = 0;
+        let occurrenceCount = 0;
+        let bothSidesCount = 0;
+        while ((idx = text.indexOf(name, idx)) !== -1) {
+            occurrenceCount++;
+            const frontChar = idx > 0 ? text[idx - 1] : '';
+            const backChar = idx + name.length < text.length ? text[idx + name.length] : '';
+            const frontIsFunc = frontChar && CONTEXT_FUNC_WORD_FRONT.has(frontChar);
+            const backIsFunc = backChar && CONTEXT_FUNC_WORD_BACK.has(backChar);
+            if (frontIsFunc && backIsFunc) {
+                bothSidesCount++;
+            }
+            idx += name.length;
+        }
+        if (occurrenceCount > 0 && bothSidesCount / occurrenceCount >= 0.3) {
+            penalty = CONTEXT_FUNC_WORD_PENALTY;
+        }
+        return penalty;
+    }
+
+    private calculateVerbPrefixSuffixPenalty(name: string): number {
+        if (!ENABLE_VERB_PREFIX_SUFFIX_FILTER) return 0;
+        let penalty = 0;
+        const surnameSet = new Set(SURNAMES.filter(s => s.length === 1));
+        const firstChar = name[0];
+        const lastChar = name[name.length - 1];
+        if (name.length >= 2 && VERB_PREFIX_CHARS.has(firstChar)) {
+            const secondChar = name[1];
+            if (!surnameSet.has(secondChar)) {
+                penalty += VERB_PREFIX_PENALTY;
+            }
+        }
+        if (VERB_SUFFIX_CHARS.has(lastChar)) {
+            penalty += VERB_SUFFIX_PENALTY;
+        }
+        return penalty;
+    }
+
     private extractNameCandidates(text: string): string[] {
         const candidates = new Map<string, number>();
+        const bigramFreqMap = ENABLE_NGRAM_FREQ_FILTER ? this.buildBigramFrequencyMap(text) : new Map<string, number>();
 
         for (const surname of SURNAMES) {
             const regex = new RegExp(surname + '[\\u4e00-\\u9fa5]{1,2}', 'g');
@@ -686,7 +845,11 @@ export class CharacterDeconstructor {
         for (const [name, baseWeight] of candidates.entries()) {
             const paraWeight = this.calculateParagraphStartWeight(text, name);
             const titleWeight = this.calculateTitleCooccurrenceWeight(text, name);
-            candidates.set(name, baseWeight + paraWeight + titleWeight);
+            const ngramPenalty = this.calculateNgramFrequencyPenalty(name, bigramFreqMap);
+            const contextPenalty = this.calculateContextFuncWordPenalty(text, name);
+            const verbPenalty = this.calculateVerbPrefixSuffixPenalty(name);
+            const finalWeight = baseWeight + paraWeight + titleWeight - ngramPenalty - contextPenalty - verbPenalty;
+            candidates.set(name, Math.max(0, finalWeight));
         }
 
         const sortedCandidates = Array.from(candidates.entries())
@@ -1180,6 +1343,172 @@ export class CharacterDeconstructor {
         return aliases.slice(0, 5);
     }
 
+    private mergeDuplicateCharacters(characters: Character[], text: string): Character[] {
+        if (characters.length <= 1) return characters;
+
+        const parent = new Map<string, string>();
+        const find = (name: string): string => {
+            if (!parent.has(name)) parent.set(name, name);
+            if (parent.get(name) !== name) {
+                parent.set(name, find(parent.get(name)!));
+            }
+            return parent.get(name)!;
+        };
+        const union = (nameA: string, nameB: string) => {
+            const rootA = find(nameA);
+            const rootB = find(nameB);
+            if (rootA !== rootB) {
+                const charA = characters.find(c => c.name === rootA);
+                const charB = characters.find(c => c.name === rootB);
+                if (charA && charB) {
+                    if (charA.mentionCount >= charB.mentionCount) {
+                        parent.set(rootB, rootA);
+                    } else {
+                        parent.set(rootA, rootB);
+                    }
+                }
+            }
+        };
+
+        const nameToChar = new Map(characters.map(c => [c.name, c]));
+        for (const char of characters) {
+            find(char.name);
+        }
+
+        for (let i = 0; i < characters.length; i++) {
+            for (let j = i + 1; j < characters.length; j++) {
+                const charA = characters[i];
+                const charB = characters[j];
+
+                if (this.isSameCharacter(charA.name, charB.name, text)) {
+                    union(charA.name, charB.name);
+                }
+            }
+        }
+
+        for (const char of characters) {
+            const aliases = this.findAliases(text, char.name);
+            for (const alias of aliases) {
+                if (nameToChar.has(alias)) {
+                    union(char.name, alias);
+                }
+            }
+        }
+
+        const mergedMap = new Map<string, Character>();
+        for (const char of characters) {
+            const rootName = find(char.name);
+            if (!mergedMap.has(rootName)) {
+                mergedMap.set(rootName, { ...char, aliases: [...char.aliases] });
+            } else {
+                const merged = mergedMap.get(rootName)!;
+                merged.aliases = Array.from(new Set([...merged.aliases, char.name, ...char.aliases]))
+                    .filter(a => a !== merged.name)
+                    .slice(0, 10);
+                merged.mentionCount = Math.max(merged.mentionCount, char.mentionCount);
+                merged.appearanceCount = Math.max(merged.appearanceCount, char.appearanceCount);
+                merged.firstAppearance = Math.min(merged.firstAppearance, char.firstAppearance);
+                merged.lastAppearance = Math.max(merged.lastAppearance, char.lastAppearance);
+                merged.personality = Array.from(new Set([...merged.personality, ...char.personality])).slice(0, 8);
+                merged.abilities = Array.from(new Set([...merged.abilities, ...char.abilities])).slice(0, 10);
+                if (char.role === 'protagonist') merged.role = 'protagonist';
+                else if (char.role === 'antagonist' && merged.role !== 'protagonist') merged.role = 'antagonist';
+                else if (char.role === 'deuteragonist' && merged.role !== 'protagonist' && merged.role !== 'antagonist') merged.role = 'deuteragonist';
+                if (!merged.gender || merged.gender === 'unknown') {
+                    merged.gender = char.gender;
+                }
+                if (!merged.appearance && char.appearance) {
+                    merged.appearance = char.appearance;
+                }
+                if (!merged.background && char.background) {
+                    merged.background = char.background;
+                }
+                merged.growthStages = [...merged.growthStages, ...char.growthStages]
+                    .sort((a, b) => a.position - b.position)
+                    .slice(0, 15);
+            }
+        }
+
+        return Array.from(mergedMap.values()).sort((a, b) => b.mentionCount - a.mentionCount);
+    }
+
+    private isSameCharacter(nameA: string, nameB: string, text: string): boolean {
+        if (nameA === nameB) return true;
+        if (nameA.includes(nameB) || nameB.includes(nameA)) {
+            const shorter = nameA.length <= nameB.length ? nameA : nameB;
+            const longer = nameA.length > nameB.length ? nameA : nameB;
+            if (longer.startsWith(shorter) || longer.endsWith(shorter)) {
+                const minLen = Math.min(nameA.length, nameB.length);
+                if (minLen >= 2) {
+                    return true;
+                }
+            }
+        }
+
+        const surnameA = nameA[0];
+        const surnameB = nameB[0];
+        if (surnameA === surnameB && nameA.length >= 2 && nameB.length >= 2) {
+            const cooc = this.calculateSimpleCooccurrence(text, nameA, nameB);
+            if (cooc > 0.5) {
+                return false;
+            }
+        }
+
+        const aliasPatterns = [
+            new RegExp(`${nameA}[，,].*?又名[“"]${nameB}[”"]`, 'g'),
+            new RegExp(`${nameB}[，,].*?又名[“"]${nameA}[”"]`, 'g'),
+            new RegExp(`${nameA}[，,].*?又称[“"]${nameB}[”"]`, 'g'),
+            new RegExp(`${nameB}[，,].*?又称[“"]${nameA}[”"]`, 'g'),
+            new RegExp(`[“"]${nameB}[”"].*?即[是]?[，,]?${nameA}`, 'g'),
+            new RegExp(`[“"]${nameA}[”"].*?即[是]?[，,]?${nameB}`, 'g'),
+        ];
+        for (const pattern of aliasPatterns) {
+            if (pattern.test(text)) {
+                return true;
+            }
+        }
+
+        const similarity = this.calculateNameSimilarity(nameA, nameB);
+        if (similarity >= 0.6) {
+            const cooc = this.calculateSimpleCooccurrence(text, nameA, nameB);
+            if (cooc < 0.1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private calculateNameSimilarity(nameA: string, nameB: string): number {
+        if (nameA === nameB) return 1;
+        const setA = new Set(nameA.split(''));
+        const setB = new Set(nameB.split(''));
+        let intersection = 0;
+        for (const ch of setA) {
+            if (setB.has(ch)) intersection++;
+        }
+        const union = setA.size + setB.size - intersection;
+        return union > 0 ? intersection / union : 0;
+    }
+
+    private calculateSimpleCooccurrence(text: string, nameA: string, nameB: string): number {
+        const windowSize = 200;
+        let coocCount = 0;
+        let totalA = 0;
+        let idx = 0;
+        while ((idx = text.indexOf(nameA, idx)) !== -1) {
+            totalA++;
+            const start = Math.max(0, idx - windowSize);
+            const end = Math.min(text.length, idx + nameA.length + windowSize);
+            const window = text.substring(start, end);
+            if (window.includes(nameB)) {
+                coocCount++;
+            }
+            idx += nameA.length;
+        }
+        return totalA > 0 ? coocCount / totalA : 0;
+    }
+
     private extractGrowthStages(text: string, name: string, totalLength: number): Array<{ position: number; description: string }> {
         const stages: Array<{ position: number; description: string }> = [];
         const contextWindow = 80;
@@ -1233,10 +1562,20 @@ export class CharacterDeconstructor {
         if (keywordIdx === -1) return '';
 
         // 模式1: "XX才能" - 提取"XX才能"（如"军事才能"）
+        // 仅当"才能"是名词（天赋）而非副词"才+能"时才提取：
+        // 前缀必须在名词白名单中，或前缀不含时间/副词噪声字且非虚词。
         const abilityMatch = sentence.match(/([\u4e00-\u9fa5]{2,4})才能/);
         if (abilityMatch) {
-            const candidate = abilityMatch[1] + '才能';
-            if (candidate.length >= 3 && candidate.length <= 6) return candidate;
+            const prefix = abilityMatch[1];
+            const candidate = prefix + '才能';
+            if (candidate.length >= 3 && candidate.length <= 6) {
+                if (ABILITY_NOUN_PREFIXES.has(prefix)) return candidate;
+                if (prefix.length > 0 &&
+                    !COMMON_WORDS.has(prefix) &&
+                    !Array.from(prefix).some(ch => TIME_ADVERB_CHARS.has(ch))) {
+                    return candidate;
+                }
+            }
         }
 
         // 模式2: "擅长XX" / "精通XX" / "掌握XX" - 提取后的 2-4 字

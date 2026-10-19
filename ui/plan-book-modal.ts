@@ -6,9 +6,14 @@ import { writeVolumeOutlines } from '../utils/helpers';
 import { pjWorldview, pjForeshadowDB, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_WORLDVIEW_FILE } from '../shared/paths';
 import { ChapterOutlineTreeModal } from './chapter-outline-tree-modal';
 import { createLogger } from '../shared/logger';
+import { OperationConfirmModal } from './components/progress';
 
 
 const log = createLogger('PlanBookModal');
+
+/** 单个实体 frontmatter 摘要注入大纲上下文时的长度上限，防止超长字段拖垮 prompt（不裁剪实体数量） */
+const MAX_ENTITY_SUMMARY_LENGTH = 400;
+
 export class PlanBookModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -48,7 +53,7 @@ export class PlanBookModal extends Modal {
             }
             if (projects.length === 0) {
                 const errorEl = contentEl.createEl('p', { text: '❌ 未找到项目，请先创建新项目' });
-                const retryBtn = contentEl.createEl('button', { text: '🔄 重试', cls: 'nw-btn' });
+                const retryBtn = contentEl.createEl('button', { text: '🔄 重试', cls: 'nw-btn', attr: { title: '重新加载项目列表' } });
                 retryBtn.onclick = () => {
                     errorEl.remove();
                     retryBtn.remove();
@@ -153,7 +158,7 @@ export class PlanBookModal extends Modal {
                 this.loadContextPreview(projectSelect.value, contextPreview);
             };
 
-            const planButton = contentEl.createEl('button', { text: '🚀 生成全书规划', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
+            const planButton = contentEl.createEl('button', { text: '🚀 生成全书规划', cls: 'nw-btn nw-btn-primary novel-writer-primary-button', attr: { title: '生成全书规划（分卷大纲 + 章节分配）' } });
             planButton.onclick = async () => {
                 const project = projectSelect.value;
                 const totalChars = totalCharsInput.value;
@@ -183,7 +188,12 @@ export class PlanBookModal extends Modal {
         let genreInfo: { genre: string; theme: string } | null = null;
 
         if (!worldView) {
-            const confirmGenerate = confirm('未找到世界观总览，是否先生成世界观？');
+            const confirmGenerate = await OperationConfirmModal.confirm(this.app, {
+                title: '生成世界观',
+                description: '未找到世界观总览，是否先生成世界观？',
+                confirmText: '确认生成',
+                cancelText: '取消',
+            });
             if (confirmGenerate) {
                 genreInfo = await this.promptForGenre();
                 if (!genreInfo) return;
@@ -265,10 +275,11 @@ ${worldviewResult.content}`;
             // v4.0：按卷拆分写入 分卷大纲/第N卷_分卷大纲.md（全书总览归入第1卷头部）
             const volCount = await writeVolumeOutlines(this.app, project, result.content || '');
 
-            // 检查是否有验证警告
-            const hasWarnings = (result.content || '').includes('验证警告');
+            // 检查是否有验证警告或降级生成（本次生成未完全达标，但内容已保留）
+            const content = result.content || '';
+            const hasWarnings = content.includes('验证警告') || content.includes('降级生成提示');
             if (hasWarnings) {
-                new Notice(`⚠️ 大纲已生成（共 ${volCount} 卷），但存在待完善问题，请检查大纲内容`, 8000);
+                new Notice(`⚠️ 大纲已生成（共 ${volCount} 卷），但存在待完善/降级内容，请检查大纲`, 8000);
             } else {
                 new Notice(`✅ 全书规划已生成（共 ${volCount} 卷分卷大纲）`, 3000);
             }
@@ -401,6 +412,7 @@ ${worldviewResult.content}`;
     private async readContextFile(project: string, subPath: string): Promise<string> {
         const folderPath = `${project}/${subPath}`;
         const isCharacter = subPath.includes('人物');
+        const truncate = (s: string): string => s.length > MAX_ENTITY_SUMMARY_LENGTH ? s.slice(0, MAX_ENTITY_SUMMARY_LENGTH) + '…' : s;
 
         interface CharacterEntry { prefix: string; fields: string[]; }
         const characters: CharacterEntry[] = [];
@@ -444,7 +456,7 @@ ${worldviewResult.content}`;
                             }
                             characters.push({ prefix, fields });
                         } else {
-                            otherLines.push(`- ${fields.join(' | ')}`);
+                            otherLines.push(`- ${truncate(fields.join(' | '))}`);
                         }
                     }
                 } catch (e) {
@@ -458,7 +470,7 @@ ${worldviewResult.content}`;
             const order: Record<string, number> = { '【主角】': 0, '【反派】': 1, '【配角】': 2 };
             characters.sort((a, b) => order[a.prefix] - order[b.prefix]);
             for (const c of characters) {
-                otherLines.push(`${c.prefix} - ${c.fields.join(' | ')}`);
+                otherLines.push(`${c.prefix} - ${truncate(c.fields.join(' | '))}`);
             }
         }
 

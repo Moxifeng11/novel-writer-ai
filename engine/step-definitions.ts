@@ -43,7 +43,7 @@
  */
 
 import { validateStepResult } from './step-validator';
-import { WORD_MIN_RATIO } from '../shared/thresholds';
+import { getBusinessThreshold } from '../shared/thresholds';
 
 // ============================================================
 // 策略类型
@@ -94,7 +94,7 @@ const preCheckBodyGeneration: PreValidationFn = (ctx) => {
 const postCheckWordCount: PostValidationFn = (content, ctx) => {
     const baseWords = ctx.defaultWordCount || 3000;
     const outputLen = content.length;
-    const minWords = Math.floor(baseWords * WORD_MIN_RATIO);
+    const minWords = Math.floor(baseWords * getBusinessThreshold('wordMinRatio'));
     if (outputLen < minWords) {
         return { passed: false, error: `⚠️ 字数不足：输出 ${outputLen} 字，低于最低要求 ${minWords} 字（目标 ${baseWords} 字）。建议重新生成或使用迭代精修扩充。` };
     }
@@ -214,5 +214,6 @@ export type StepRunCtx = {
     /** 标记哪些 stepKey 在本会话中由 AI 生成（非磁盘恢复） */
     generatedThisSession?: Set<string>;
     /** 后置字数校验用的目标字数（默认 3000） */
+    getAbortController?: () => AbortController | null;
     defaultWordCount?: number;
 };

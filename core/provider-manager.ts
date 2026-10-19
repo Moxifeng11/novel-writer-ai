@@ -6,8 +6,8 @@
  */
 
 import { Notice } from 'obsidian';
-import type { NovelWriterSettings, CustomProvider } from '../main';
-import { DEFAULT_PROVIDERS } from '../main';
+import type { NovelWriterSettings, CustomProvider, ModelSourceType } from '../main';
+import { DEFAULT_PROVIDERS, resolveProviderSourceType } from '../main';
 import { findModelCapability } from '../shared/model-capabilities';
 import { createLogger } from '../shared/logger';
 
@@ -160,6 +160,7 @@ export class ProviderManager {
             id, name: trimmedName, endpoint: trimmedEndpoint,
             models: validModels.length > 0 ? validModels : ['gpt-4o-mini'],
             maxContext: safeMaxContext, maxOutput: safeMaxOutput,
+            sourceType: resolveProviderSourceType({ id, endpoint: trimmedEndpoint }),
             isDefault: false, isHidden: false,
         });
         if (apiKey) s.providerKeys[id] = apiKey;
@@ -182,7 +183,7 @@ export class ProviderManager {
     }
 
     /** 获取所有可用提供商（过滤掉 isHidden 为 true 的） */
-    getAllProviders(): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
+    getAllProviders(): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
         const s = this.cb.getSettings();
         const customProviders = s.customProviders || [];
         return customProviders
@@ -194,10 +195,28 @@ export class ProviderManager {
                 models: [...c.models],
                 maxContext: c.maxContext,
                 maxOutput: c.maxOutput,
+                sourceType: resolveProviderSourceType(c),
                 isPreset: !!c.isDefault,
                 isDefault: c.isDefault,
                 isHidden: c.isHidden,
             }));
+    }
+
+    /** 获取指定源类型（cloud/local）的提供商 */
+    getProvidersBySourceType(type: ModelSourceType): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
+        return this.getAllProviders().filter(p => p.sourceType === type);
+    }
+
+    /** 判断 provider 是否为本地源 */
+    isLocalProvider(provider: Pick<CustomProvider, 'id' | 'endpoint' | 'sourceType'>): boolean {
+        return resolveProviderSourceType(provider) === 'local';
+    }
+
+    /** 获取当前 provider 的源类型 */
+    getCurrentSourceType(): ModelSourceType {
+        const s = this.cb.getSettings();
+        const provider = (s.customProviders || []).find(c => c.endpoint === s.apiEndpoint);
+        return provider ? resolveProviderSourceType(provider) : 'cloud';
     }
 
     /** 设置供应商的隐藏状态 */

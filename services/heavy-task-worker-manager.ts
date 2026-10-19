@@ -278,4 +278,13 @@ export class HeavyTaskWorkerManager {
         }
         log.info('HeavyTaskWorkerManager 已销毁');
     }
+
+    /**
+     * M1（技术审计）：EngineRegistry 的 Disposable 契约只认 dispose()，
+     * 原类仅有 destroy() 导致 disposeAll() 无法清理 Worker 池。
+     * dispose 作为契约入口，内部复用幂等的 destroy()。
+     */
+    dispose(): void {
+        this.destroy();
+    }
 }

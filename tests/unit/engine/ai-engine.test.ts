@@ -250,6 +250,48 @@ describe('APIResponse 类型与错误处理', () => {
     });
 });
 
+describe('AIEngine.generateChapterStream', () => {
+    it('截断后携带前文尾部继续生成并合并结果', async () => {
+        const plugin = makeMockPlugin();
+        const engine = Object.create(AIEngine.prototype) as AIEngine;
+        (engine as any).plugin = plugin;
+        const responses: APIResponse[] = [
+            { content: '第一段'.repeat(30), finishReason: 'length' },
+            { content: '第二段', finishReason: 'stop' },
+        ];
+        const prompts: string[] = [];
+        vi.spyOn(engine, 'callAIStream').mockImplementation(async (_system, userPrompt, _model, _temperature, _maxTokens, onChunk) => {
+            prompts.push(userPrompt);
+            const response = responses.shift()!;
+            onChunk?.(response.content, false);
+            onChunk?.(response.content, true);
+            return response;
+        });
+
+        const result = await engine.generateChapterStream(makeChapterContext(), vi.fn());
+
+        expect(result.content).toBe('第一段'.repeat(30) + '第二段');
+        expect(prompts).toHaveLength(2);
+        expect(prompts[1]).toContain('第一段'.repeat(30).slice(-500));
+    });
+
+    it('连续续写无新增内容时停止，避免无限调用', async () => {
+        const plugin = makeMockPlugin();
+        const engine = Object.create(AIEngine.prototype) as AIEngine;
+        (engine as any).plugin = plugin;
+        const content = '稳定内容'.repeat(20);
+        const callAIStream = vi.spyOn(engine, 'callAIStream').mockImplementation(async () => ({
+            content,
+            finishReason: 'length',
+        }));
+
+        const result = await engine.generateChapterStream(makeChapterContext(), vi.fn());
+
+        expect(callAIStream).toHaveBeenCalledTimes(2);
+        expect(result.content).toBe(content + content);
+    });
+});
+
 describe('AIEngine 构造与委托', () => {
     it('构造函数正常初始化，不抛出错误', () => {
         const plugin = makeMockPlugin();

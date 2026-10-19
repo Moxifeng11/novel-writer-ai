@@ -75,17 +75,17 @@ export class LiveAnalysisController {
         parseInt(view.volume.replace(/\D/g, "")) || 1,
         view.chapterNum
       );
-      const progressDiv = view.tractionContainer.createDiv({ cls: "traction-progress" });
+      const progressDiv = view.tractionContainer.createDiv({ cls: "nw-traction-progress-value" });
       progressDiv.createSpan({ text: `\u6574\u4F53\u8FDB\u5EA6: ${state.overallProgress}%` });
-      const riskClass = `divergence-risk-${state.divergenceRisk}`;
+      const riskClass = `nw-divergence-risk-${state.divergenceRisk}`;
       view.tractionContainer.createDiv({
         cls: riskClass,
         text: `\u504F\u79BB\u98CE\u9669: ${state.divergenceRisk.toUpperCase()}`
       });
       if (state.recommendations.length > 0) {
-        const recDiv = view.tractionContainer.createDiv({ cls: "traction-recommendations" });
+        const recDiv = view.tractionContainer.createDiv({ cls: "nw-traction-recommendations" });
         for (const rec of state.recommendations) {
-          recDiv.createDiv({ cls: "traction-recommendation", text: rec });
+          recDiv.createDiv({ cls: "nw-traction-recommendation", text: rec });
         }
       }
     } catch (e) {
@@ -105,7 +105,14 @@ export class LiveAnalysisController {
 
   async inspectSettingGuard(trigger: GuardTrigger) {
     const view = this.view;
-    if (this.isInspectingGuard || !view.rightEditor?.value?.trim()) return;
+    if (this.isInspectingGuard) return;
+    if (!view.rightEditor?.value?.trim()) {
+      // UX 修复：正文为空时手动点击「检查」需给出明确反馈
+      if (trigger === "manual") {
+        new Notice("⚠️ 正文为空，无法执行设定检查", 3e3);
+      }
+      return;
+    }
     this.isInspectingGuard = true;
     const monitorPanelA = view.plugin.workspaceManager?.getMonitorPanelA?.();
     if (trigger === "manual") this.renderGuardLoading();
@@ -127,24 +134,26 @@ export class LiveAnalysisController {
         }
         view.warningContainer.empty();
         if (hasOOC && report.oocResult) {
-          const panel = view.warningContainer.createDiv({ cls: "ooc-warning-panel" });
+          const panel = view.warningContainer.createDiv({ cls: "nw-ooc-warning-panel" });
           panel.createEl("strong", { text: "⚠️ OOC警告 (一致性: " + report.oocResult.score + "%)" });
-          for (const w of report.oocResult.warnings) panel.createDiv({ cls: "warning-item", text: "· " + w });
+          for (const w of report.oocResult.warnings) panel.createDiv({ cls: "nw-warning-text", text: "· " + w });
         }
         if (hasEntityChanges) {
-          const panel = view.warningContainer.createDiv({ cls: "entity-state-panel" });
+          const panel = view.warningContainer.createDiv({ cls: "nw-entity-state-panel" });
           panel.createEl("strong", { text: "🔄 检测到实体状态变更" });
-          const list = panel.createDiv({ cls: "state-change-list" });
+          const list = panel.createDiv({ cls: "nw-state-change-list" });
           for (const change of report.entityChanges) {
-            const item = list.createDiv({ cls: "state-change-item" });
-            item.createSpan({ cls: "entity-name", text: change.entityName });
+            const item = list.createDiv({ cls: "nw-state-change-item" });
+            item.createSpan({ cls: "nw-entity-name-accent", text: change.entityName });
             item.createSpan({ text: " → " });
-            item.createSpan({ cls: "new-status", text: change.newStatus });
+            item.createSpan({ cls: "nw-new-status", text: change.newStatus });
           }
-          const confirmBtn = panel.createEl("button", { text: "确认变更", cls: "novel-writer-cowrite-secondary-btn" });
+          const confirmBtn = panel.createEl("button", { text: "📋 送入确认队列", cls: "novel-writer-cowrite-secondary-btn" });
           confirmBtn.addEventListener("click", async () => {
-            await view.engine.confirmStateChanges();
-            new Notice("✅ 实体状态已更新", 2e3);
+            const count = await view.engine.confirmStateChanges();
+            new Notice(count > 0
+              ? `📋 ${count} 项状态变化已进入待确认队列，可在「质量仪表盘」确认写入`
+              : "⚠️ 没有可确认的状态变化", 2e3);
           });
         }
       }

@@ -33,6 +33,7 @@ export interface APIResponse {
         completion: number;
         total: number;
     };
+    finishReason?: 'stop' | 'length' | 'error' | 'aborted';
 }
 
 export class AIEngine {
@@ -143,6 +144,95 @@ export class AIEngine {
         return this.callAI(systemPrompt, userPrompt, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput, { isWritingTask: true });
     }
 
+    async generateChapterStream(
+        context: ChapterContext,
+        onChunk: (text: string, done: boolean) => void,
+        signal?: AbortSignal
+    ): Promise<APIResponse> {
+        const MAX_CONTINUATIONS = 3;
+        const CONTINUE_PROMPT = '\n\n[继续无缝衔接上述内容，保持相同的风格、语气和叙事视角，不要重复已写内容，直接从中断处接续：]\n\n';
+
+        let knowledgeInjection = '';
+        try {
+            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profile = await profileManager.load(context.project);
+            if (profile && profile.fingerprint.injectionStrength > 0) {
+                knowledgeInjection = await injector.injectForBodyGeneration(profile, {
+                    projectPath: context.project,
+                    chapterIndex: context.chapterNumber,
+                    outline: context.outline,
+                });
+            }
+        } catch (e) {
+            log.warn('[AIEngine] 知识注入失败，跳过:', e);
+        }
+
+        const systemPrompt = this.buildSystemPrompt(context, knowledgeInjection);
+        const userPrompt = this.buildUserPrompt(context);
+
+        let fullContent = '';
+        let totalUsage = { prompt: 0, completion: 0, total: 0 };
+        let finalFinishReason: 'stop' | 'length' | 'error' | 'aborted' | undefined;
+
+        let currentUserPrompt = userPrompt;
+        let previousChunkContent = '';
+
+        for (let attempt = 0; attempt <= MAX_CONTINUATIONS; attempt++) {
+            if (signal?.aborted) {
+                finalFinishReason = 'aborted';
+                break;
+            }
+
+            const result = await this.callAIStream(
+                systemPrompt,
+                currentUserPrompt,
+                this.plugin.settings.proModel,
+                0.7,
+                this.plugin.settings.maxOutput,
+                (chunkText, _isDone) => {
+                    if (!signal?.aborted) {
+                        onChunk(fullContent + chunkText, false);
+                    }
+                },
+                { isWritingTask: true, signal }
+            );
+
+            if (result.error) {
+                return { content: fullContent, error: result.error, finishReason: 'error' };
+            }
+
+            const chunkContent = result.content || '';
+            fullContent += chunkContent;
+            finalFinishReason = (result as any).finishReason || 'stop';
+
+            if (result.usage) {
+                totalUsage.prompt += result.usage.prompt;
+                totalUsage.completion += result.usage.completion;
+                totalUsage.total += result.usage.total;
+            }
+
+            if (finalFinishReason !== 'length') {
+                break;
+            }
+
+            if (chunkContent.length < 50 || chunkContent === previousChunkContent) {
+                break;
+            }
+
+            previousChunkContent = chunkContent;
+            currentUserPrompt = `${fullContent.slice(-500)}${CONTINUE_PROMPT}`;
+        }
+
+        onChunk(fullContent, true);
+
+        return {
+            content: fullContent,
+            finishReason: finalFinishReason,
+            usage: totalUsage,
+        };
+    }
+
     async generateWorldviewSkeleton(
         worldName: string,
         projectName: string,
@@ -188,15 +278,6 @@ export class AIEngine {
 
     async generateCharacters(worldview: string, count: number = 5, customPrompt?: string, templateContent?: string, isFirstCharacter?: boolean, names?: string[], settingLib?: string, signal?: AbortSignal, existingEntities?: string): Promise<APIResponse> {
         return this.characterGen.generateCharacters(worldview, count, customPrompt, templateContent, isFirstCharacter, names, settingLib, signal, existingEntities);
-    }
-
-    async generateGlobalSkeleton(
-        worldview: string,
-        existingElements: { characters: string; factions: string; locations: string; items: string; foreshadows?: string; timelineEvents?: string; },
-        settings: { totalWords: number; volumes: number; wordsPerChapter: number; chaptersPerVolume: number; theme: string; genre: string; },
-        customPrompt?: string
-    ): Promise<APIResponse> {
-        return this.outlineGen.generateGlobalSkeleton(worldview, existingElements, settings, customPrompt);
     }
 
     async generateVolumeOutline(

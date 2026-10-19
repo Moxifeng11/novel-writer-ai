@@ -7,6 +7,8 @@ import type {
     ABTest,
     PromptTemplateVersion,
 } from '../services/prompt-manager-types';
+import { OperationConfirmModal } from './components/progress';
+import { exportTextFile } from '../shared/export-file';
 
 export class PromptManagerSettings {
     private plugin: NovelWriterPlugin;
@@ -211,7 +213,14 @@ export class PromptManagerSettings {
                 }
             });
             resetBtn.onclick = async () => {
-                if (confirm('确定要重置为默认提示词吗？自定义修改将丢失。')) {
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '重置提示词',
+                    description: '确定要重置为默认提示词吗？',
+                    warning: '自定义修改将丢失',
+                    confirmText: '确认重置',
+                    cancelText: '取消',
+                });
+                if (confirmed) {
                     await this.promptManager.resetTemplateToDefault(template.id);
                     new Notice('已重置为默认提示词');
                     this.render();
@@ -508,7 +517,13 @@ export class PromptManagerSettings {
             }
         });
         deleteBtn.onclick = async () => {
-            if (confirm('确定要删除这个测试吗？')) {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '删除测试',
+                description: '确定要删除这个测试吗？',
+                confirmText: '确认删除',
+                cancelText: '取消',
+            });
+            if (confirmed) {
                 await this.promptManager.deleteABTest(test.id);
                 this.selectedTestId = null;
                 new Notice('测试已删除');
@@ -618,7 +633,7 @@ export class PromptManagerSettings {
                 style: 'padding:8px 16px;cursor:pointer;border:none;border-radius:6px;background:var(--interactive-accent);color:var(--text-on-accent);font-size:13px;'
             }
         });
-        exportBtn.onclick = () => this.exportConfig();
+        exportBtn.onclick = () => { void this.exportConfig(); };
 
         const importSection = container.createDiv({
             attr: { style: 'padding:16px;background:var(--background-secondary);border-radius:8px;' }
@@ -651,16 +666,12 @@ export class PromptManagerSettings {
         });
     }
 
-    private exportConfig(): void {
+    private async exportConfig(): Promise<void> {
         const json = this.promptManager.exportConfig();
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `prompt-config-${new Date().toISOString().slice(0, 10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        new Notice('✅ 配置已导出');
+        await exportTextFile(this.app, `prompt-config-${new Date().toISOString().slice(0, 10)}.json`, json, {
+            mime: 'application/json',
+            successMessage: '✅ 配置已导出',
+        });
     }
 
     private showCreateTemplateModal(): void {

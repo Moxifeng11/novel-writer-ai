@@ -16,6 +16,7 @@ import { ExtendedSceneData, createDefaultScene, SceneStatus } from '../../shared
 import { pjStepDir, pjStepFile } from '../../shared/paths';
 import { parseChineseNumber } from '../../engine/scene-expander';
 import { createLogger } from '../../shared/logger';
+import { OperationConfirmModal } from '../components/progress';
 
 
 const log = createLogger('SceneOutlineController');
@@ -584,12 +585,18 @@ export class SceneOutlineController {
     }
 
     /** 删除场景 */
-    private deleteScene(): void {
+    private async deleteScene(): Promise<void> {
         if (this.scenes.length <= 1) {
             new Notice('⚠️ 至少保留一个场景', 2000);
             return;
         }
-        if (!confirm(`确定删除场景${this.scenes[this.currentSceneIndex].index}吗？`)) return;
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '删除场景',
+            description: `确定删除场景${this.scenes[this.currentSceneIndex].index}吗？`,
+            confirmText: '确认删除',
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
 
         this.scenes.splice(this.currentSceneIndex, 1);
         this.reindexScenes();

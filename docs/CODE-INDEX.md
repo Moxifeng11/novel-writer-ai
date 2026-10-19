@@ -157,6 +157,7 @@
 | `engine/style/style-vector-store-v2.ts` | `StyleVectorStoreV2` | 风格向量存储 V2 |
 | `engine/style/fingerprint-blender-v2.ts` | `FingerprintBlenderV2` | 指纹融合器 V2 |
 | `engine/style/fingerprint-migrator.ts` | `FingerprintMigrator` | 指纹迁移（V1→V2） |
+| `engine/style/v2-quantitative-extractor.ts` | `calculateRhythmStats` / `calculatePerspectiveStats` | V2 定量拆解（节奏/视角纯统计） |
 | `engine/style/style-intensity-engine.ts` | `StyleIntensityEngine` | 风格强度引擎 |
 | `engine/style/dynamic-injection-engine.ts` | `DynamicInjectionEngine` | 动态注入引擎 |
 | `engine/style/style-worker.ts` | — | 风格计算 Worker |
@@ -403,6 +404,7 @@
 | `shared/format-constants.ts` | — | 格式常量 |
 | `shared/changelog-data.ts` | — | 更新日志数据 |
 | `shared/model-capabilities.ts` | — | 模型能力映射 |
+| `shared/model-source.ts` | `ModelSourceType` / `resolveProviderSourceType` | 模型源类型定义与解析（云端/本地） |
 | `shared/plugin-api.ts` | — | 插件 API 类型 |
 | `shared/plugin-cache.ts` | — | 插件缓存 |
 | `shared/plugin-capabilities.ts` | — | 插件能力 |
@@ -426,7 +428,8 @@
 | 文件 | 类 | 职责 |
 |------|-----|------|
 | `ui/co-writing-view.ts` | `CoWritingView` | 协同写作主视图（Obsidian ItemView） |
-| `ui/action-panel.ts` | — | 操作面板 |
+
+> v8.14 技术审计批 D：`ui/action-panel.ts`（零引用死组件）已删除。
 
 ### 主要 Modal
 | 文件 | 功能 |
@@ -449,6 +452,7 @@
 | `ui/appearance-settings.ts` | 外观设置 |
 | `ui/backup-yuan-modal.ts` | 备份还原 |
 | `ui/changelog-modal.ts` | 更新日志 |
+| `ui/quality-dashboard-modal.ts` | 章节质量仪表盘（六维评分 + 时间范围筛选 + 维度钻取 + 导出） |
 
 ### 协同写作 UI（cowrite/）
 | 文件 | 功能 |
@@ -466,6 +470,7 @@
 |------|------|
 | `ui/components/analysis-report-panel.ts` | 分析报告面板 |
 | `ui/components/emotion-curve-view.ts` | 情绪曲线视图 |
+| `ui/components/empty-state.ts` | 空状态通用组件（图标+标题+描述+操作按钮，内联 SVG） |
 | `ui/components/progress/` | 进度组件（进度条、浮动球、加载遮罩、任务卡片、步骤列表、状态栏、确认弹窗） |
 
 ---
@@ -548,7 +553,7 @@
 | 性能问题 | `engine/performance/performance-monitor.ts` |
 | 缓存问题 | `engine/cache/multi-layer-cache.ts` |
 | 引擎找不到 | `engine/engine-registry.ts` + `.engine-registry-whitelist.json` |
-| 样式问题 | `styles.css` + `css/design-tokens.css` |
+| 样式问题 | `styles.css` + `design-tokens.css` |
 | 测试失败 | `tests/unit/` 对应目录 |
 | 拆解质量评分异常 / 交叉验证规则不生效 | `engine/quality-scorer.ts` + `services/deconstruction-scheduler.ts` |
 | 拆解引擎设置不生效 / 维度缺失 / 并发不对 / 全文分块未触发 | `services/deconstruction-scheduler.ts`（`addTask` / `breakdownDimensionWithSegments` / `getSegmentedBreakdownConfig`） + `services/scheduler-segment-integration.ts` + `main.ts`（`NovelWriterSettings.deconstructionEngine`） + 设置面板「🧬 拆解引擎」tab |

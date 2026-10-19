@@ -8,6 +8,8 @@
 import { AIEngine } from './ai-engine';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import type { VectorStore, StyleFingerprint, StyleFingerprintStats, StyleFingerprintFeatures } from './style-fingerprint-library';
+import { calculateRhythmStats, calculatePerspectiveStats } from './style/v2-quantitative-extractor';
+import type { RhythmStats, PerspectiveStats } from './style/style-dimensions-v2';
 import { extractResponseText } from '../shared/api-response-utils';
 import { createLogger } from '../shared/logger';
 
@@ -80,6 +82,18 @@ export class FingerprintExtractor {
         });
 
         return fingerprint;
+    }
+
+    /**
+     * 提取 V2 定量拆解数据（纯本地统计，不依赖 AI）。
+     * 当前覆盖节奏（rhythm）与视角（perspective）两个维度，
+     * 用于填补 V1→V2 迁移时定量字段全 0 的空缺。
+     */
+    extractV2Quantitative(text: string): { rhythm: RhythmStats; perspective: PerspectiveStats } {
+        return {
+            rhythm: calculateRhythmStats(text),
+            perspective: calculatePerspectiveStats(text),
+        };
     }
 
     private checkAbort(signal?: AbortSignal): void {

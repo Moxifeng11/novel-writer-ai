@@ -16,8 +16,17 @@ npm run test:cov    # 跑测试 + 覆盖率（v8）
 - `engine/emotion-planner.ts`：validateEmotionPlan 纯校验
 - `engine/scene-expander.ts`：validateSceneExpansion 纯校验
 - `engine/step-runner.ts`：ALL_FULL_STEPS / STEP_INDEX_MIGRATION_MAP / migrateStepIndex 常量与纯函数
+- `engine/incremental-result-aggregator.ts`：分段置信度传播、池化方差、单段角色重判与统计口径
 
 ai-engine / settlement-engine / ui-* 暂不覆盖（ROI 太低，需 fake timer + 完整 Obsidian harness）。
+
+## 聚合器回归测试
+
+```bash
+npx vitest run tests/unit/engine/incremental-result-aggregator.test.ts
+```
+
+覆盖一致与冲突视角的置信度、节奏池化方差、单段角色全局重判，以及修辞总量/总字数速率口径。
 
 ## Obsidian Mock
 

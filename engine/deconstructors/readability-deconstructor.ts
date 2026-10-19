@@ -44,6 +44,7 @@ export interface AITraceDimension {
     score: number;
     description: string;
     details: Record<string, number>;
+  dataStatus?: 'complete' | 'insufficient' | 'estimated';
 }
 
 export interface AITraceResult {
@@ -70,6 +71,10 @@ export interface ReadabilityAnalysisResult {
     showTell: ShowTellResult;
     aiTrace: AITraceResult;
     overallScore: number;
+  aggregation?: {
+    segmentCount: number;
+    dataStatus: 'complete' | 'partial';
+  };
 }
 
 export class ReadabilityDeconstructor {
@@ -81,7 +86,9 @@ export class ReadabilityDeconstructor {
     private explanationSet: Set<string>;
     private timeJumpSet: Set<string>;
     private vectorEnhancer?: VectorEnhancer;
-    private aiConnectorSet: Set<string>;
+    /** 连接词密度检测的补充连接词（与 AntiAIDetector 高频词表合并，每次检测实时合成） */
+    private readonly extraAiConnectors: string[] =
+        ['因此', '所以', '但是', '不过', '其实', '总之', '总而言之', '综上所述'];
     private explanatoryPatterns: string[];
     private parallelismPatterns: string[];
     private positiveEmotionSet: Set<string>;
@@ -99,9 +106,6 @@ export class ReadabilityDeconstructor {
         this.explanationSet = new Set(SHOW_TELL_WORDS.tell.explanation);
         this.timeJumpSet = new Set(SHOW_TELL_WORDS.tell.timeJump);
         this.vectorEnhancer = vectorEnhancer;
-
-        const extraConnectors = ['因此', '所以', '但是', '不过', '其实', '总之', '总而言之', '综上所述'];
-        this.aiConnectorSet = new Set([...AntiAIDetector.AI_HIGH_FREQ_WORDS, ...extraConnectors]);
 
         this.explanatoryPatterns = [
             '这不仅仅是', '更是', '不仅如此', '更重要的是',
@@ -323,7 +327,9 @@ export class ReadabilityDeconstructor {
         let totalCount = 0;
         const wordCounts: Record<string, number> = {};
 
-        for (const word of this.aiConnectorSet) {
+        // R2: 每次检测实时合成词表（内置高频词 + 补充连接词），用户扩充词即时生效
+        const connectorWords = new Set([...AntiAIDetector.AI_HIGH_FREQ_WORDS, ...this.extraAiConnectors]);
+        for (const word of connectorWords) {
             const count = (text.match(new RegExp(word, 'g')) || []).length;
             if (count > 0) {
                 wordCounts[word] = count;

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * engine/prompts/chapter-pipeline-prompts.ts
  * 章节生成 9 步流水线提示词：信息规划 / 情节蒸馏 / 大纲摘要 / 正文生成 (V1) /
  * 自检 / 修正 / 连贯性 / 分析报告 / 质量控制。
@@ -243,6 +243,10 @@ export const BODY_GENERATION_DESC = '✍️ 正文生成 — 你就是主角本�
 // ============================================================
 // 步骤 5: AI自检 (Step 14.6 in auto_writer.js)
 // ============================================================
+/**
+ * @deprecated v6.0 起 `selfCheck` 步骤已合并入 `qualityControl`（见 engine/step-definitions.ts
+ * 的 STEP_INDEX_MIGRATION_MAP）。本提示词仅为旧项目只读兼容保留，新流水线不再引用。
+ */
 export const SELF_CHECK_PROMPTS = {
     description: '🔍 AI自检 — 写作质量评估（开篇吸引力/冲突推进/情绪表达/AI味），不涉及人设/世界观/连贯性',
     systemPrompt: `你是一位小说编辑。你的任务是评估本章正文的**写作质量**，重点关注以下维度：
@@ -264,6 +268,10 @@ export const SELF_CHECK_PROMPTS = {
 // ============================================================
 // 步骤 6: AI修正 (Step 14.6 fix in auto_writer.js)
 // ============================================================
+/**
+ * @deprecated v6.0 起 `fix` / `finalFix` 步骤已合并入 `qualityControl`。本提示词仅为旧项目
+ * 只读兼容保留；新流水线的修正能力由质量控制步骤与反 AI 改写通道承担。
+ */
 export const FIX_PROMPTS = {
     description: '🔧 AI修正 — 根据审计发现的问题修正正文，打破AI味',
     systemPrompt: `你是一位小说编辑。根据以下审计发现的问题，对正文进行修改优化。
@@ -293,6 +301,10 @@ export const FIX_PROMPTS = {
 // ============================================================
 // 步骤 7: 连贯性审查 (shared_utils.js continuityCheck)
 // ============================================================
+/**
+ * @deprecated v6.0 起 `continuityCheck` 步骤已合并入 `qualityControl`；连贯性审查现由
+ * ReviewAgent.reviewChapter 按需执行。本提示词仅为旧项目只读兼容保留。
+ */
 export const CONTINUITY_CHECK_PROMPTS = {
     description: '🛡️ 连贯性审查 — 四维度检查（设定冲突/人物OOC/连贯性/伏笔逻辑）',
     systemPrompt: `你是一位严谨的小说连贯性审查员。逐项检查以下四个维度，每项必须输出一条结论。

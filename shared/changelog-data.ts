@@ -18,6 +18,22 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.10.7',
+        date: '2026-10-17',
+        title: '长篇 E2E 测试 · 3 个 P0 核心流程修复',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 问题修复',
+                items: [
+                    '修复正文写错位：多章项目正文生成稳定写入错误章节文件（step-result-saver 在卷目录下按 frontmatter 模糊匹配）',
+                    '修复后台窗口死锁：5 处 await requestAnimationFrame 在窗口后台永久挂起（改用 setTimeout 让出执行权）',
+                    '修复世界观生成后静默重命名项目：现需用户确认，且同步更新 .project 内容',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.10.6',
         date: '2026-07-19',
         title: '死代码清理 · 算法最优解 · 渲染路径修复',

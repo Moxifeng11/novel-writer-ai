@@ -5,7 +5,7 @@ import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapt
 import { mkdirp, stripFrontmatter } from '../utils/helpers';
 import { SettlementEngine } from './settlement-engine';
 import { ENGINE_NAMES } from './engine-registry';
-import { DEFAULT_CONTEXT_WINDOW, CHAR_TO_TOKEN_RATIO, TOKEN_SAFE_BUFFER, PROMPT_SPLIT_RATIO, NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '../shared/thresholds';
+import { DEFAULT_CONTEXT_WINDOW, CHAR_TO_TOKEN_RATIO, TOKEN_SAFE_BUFFER, getBusinessThreshold, NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '../shared/thresholds';
 import { generateEmotionPlan, validateEmotionPlan } from './emotion-planner';
 import { generateSceneExpansion, validateSceneExpansion } from './scene-expander';
 import { auditEmotions } from './emotion-auditor';
@@ -57,7 +57,13 @@ export class StepRunner {
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
 
-    private static readonly MAX_RETRIES = 3;
+    /**
+     * P0-2 重试去叠加（spec p0-api-efficiency-optimization 决策 D-1 备用方案）：
+     * 前置验证结论——api-client 已对网络错误/429 做同模型指数退避重试（maxApiRetries）+ 跨模型 fallback，
+     * 但对业务 error（HTTP 5xx 无 fallback / 空响应 / 非 JSON）不重试。
+     * 故此层从 3 降为 2（保留 1 次业务重试），最坏网络请求 3×3=9 → 2×3=6，常规业务失败仅 2 次调用。
+     */
+    private static readonly MAX_RETRIES = 2;
     private static readonly RETRY_DELAY_MS = 1000;
 
     constructor(
@@ -129,6 +135,81 @@ export class StepRunner {
 
         log.error(`[StepRunner] ${stepLabel} 调用失败，已重试 ${maxRetries} 次:`, lastError?.message);
         throw lastError || new Error('AI 调用失败');
+    }
+
+    private async callAIStreamWithRetry(
+        systemPrompt: string,
+        userPrompt: string,
+        model: string,
+        temperature: number,
+        maxTokens: number,
+        stepLabel: string,
+        onChunk: (text: string, done: boolean) => void,
+        signal?: AbortSignal
+    ): Promise<APIResponse> {
+        const MAX_CONTINUATIONS = 3;
+        const CONTINUE_PROMPT = '\n\n[继续无缝衔接上述内容，保持相同的风格、语气和叙事视角，不要重复已写内容，直接从中断处接续：]\n\n';
+
+        let fullContent = '';
+        let totalUsage = { prompt: 0, completion: 0, total: 0 };
+        let finalFinishReason: 'stop' | 'length' | 'error' | 'aborted' | undefined;
+
+        let currentUserPrompt = userPrompt;
+        let previousChunkContent = '';
+
+        for (let attempt = 0; attempt <= MAX_CONTINUATIONS; attempt++) {
+            if (signal?.aborted) {
+                finalFinishReason = 'aborted';
+                break;
+            }
+
+            const result = await this.aiEngine.callAIStream(
+                systemPrompt,
+                currentUserPrompt,
+                model,
+                temperature,
+                maxTokens,
+                (chunkText, _isDone) => {
+                    if (!signal?.aborted) {
+                        onChunk(fullContent + chunkText, false);
+                    }
+                },
+                { isWritingTask: true, signal }
+            );
+
+            if (result.error) {
+                return { content: fullContent, error: result.error, finishReason: 'error' };
+            }
+
+            const chunkContent = result.content || '';
+            fullContent += chunkContent;
+            finalFinishReason = (result as any).finishReason || 'stop';
+
+            if (result.usage) {
+                totalUsage.prompt += result.usage.prompt;
+                totalUsage.completion += result.usage.completion;
+                totalUsage.total += result.usage.total;
+            }
+
+            if (finalFinishReason !== 'length') {
+                break;
+            }
+
+            if (chunkContent.length < 50 || chunkContent === previousChunkContent) {
+                break;
+            }
+
+            previousChunkContent = chunkContent;
+            currentUserPrompt = `${fullContent.slice(-500)}${CONTINUE_PROMPT}`;
+        }
+
+        onChunk(fullContent, true);
+
+        return {
+            content: fullContent,
+            finishReason: finalFinishReason,
+            usage: totalUsage,
+        };
     }
 
     /** 获取 FileSystemPort 实例（懒加载） */
@@ -494,7 +575,7 @@ export class StepRunner {
             const safeThreshold = maxContext - (this.plugin.settings.maxOutput || 4096) - TOKEN_SAFE_BUFFER;
             if (estimatedTokens > safeThreshold) {
                 log.warn(`[StepRunner] prompt 过长: ~${estimatedTokens}t > ${safeThreshold}t 安全线, 截断尾部变量`);
-                const splitPoint = Math.floor(userPrompt.length * PROMPT_SPLIT_RATIO);
+                const splitPoint = Math.floor(userPrompt.length * getBusinessThreshold('promptSplitRatio'));
                 const tailKeep = Math.min(2500, Math.floor(userPrompt.length * 0.25));
                 const headKeep = Math.max(0, splitPoint - tailKeep);
                 effectiveUserPrompt = userPrompt.slice(0, headKeep)
@@ -502,14 +583,31 @@ export class StepRunner {
                     + userPrompt.slice(userPrompt.length - tailKeep);
             }
 
-            const result: APIResponse = await this.callAIWithRetry(
-                systemPrompt,
-                effectiveUserPrompt,
-                stepModel,
-                temperature,
-                this.plugin.settings.maxOutput,
-                currentStep.label
-            );
+            let result: APIResponse;
+            if (stepKey === 'bodyGeneration') {
+                const abortCtrl = ctx.getAbortController?.() ?? null;
+                result = await this.callAIStreamWithRetry(
+                    systemPrompt,
+                    effectiveUserPrompt,
+                    stepModel,
+                    temperature,
+                    this.plugin.settings.maxOutput,
+                    currentStep.label,
+                    (text, _done) => {
+                        this.callbacks.showProgress(`✍️ ${currentStep.label} 实时生成中... (${text.length} 字)`);
+                    },
+                    abortCtrl?.signal ?? undefined
+                );
+            } else {
+                result = await this.callAIWithRetry(
+                    systemPrompt,
+                    effectiveUserPrompt,
+                    stepModel,
+                    temperature,
+                    this.plugin.settings.maxOutput,
+                    currentStep.label
+                );
+            }
 
             if (estimatedTokens > safeThreshold) {
                 this.callbacks.showNotice(`⚠️ 上下文过长（~${estimatedTokens} tokens），已自动保留头部+尾部，中间资料已截断。建议在设置中增加上下文上限（maxContext）或精简前文内容。`, NOTICE_CRITICAL);
@@ -785,6 +883,275 @@ export class StepRunner {
         }
 
         await renderInContainer(tabContent);
+    }
+
+    async executeStepsSequential(
+        stepKeys: string[],
+        baseCtx: StepRunCtx,
+        options?: {
+            onStepStart?: (stepKey: string) => void;
+            onStepComplete?: (stepKey: string, content: string) => void;
+            onStepError?: (stepKey: string, error: string) => void;
+        }
+    ): Promise<{ successful: string[]; failed: string | null; failedAt: number }> {
+        const successful: string[] = [];
+        let failed: string | null = null;
+        let failedAt = -1;
+
+        const systemPromptEl = document.createElement('textarea');
+        const userPromptEl = document.createElement('textarea');
+        userPromptEl.value = ' ';
+        const temperatureSlider = document.createElement('input');
+        temperatureSlider.type = 'range';
+        temperatureSlider.value = '1.4';
+
+        const originalIndex = baseCtx.currentStepIndex;
+
+        for (let i = 0; i < stepKeys.length; i++) {
+            const stepKey = stepKeys[i];
+            if (baseCtx.stepCompleted.has(stepKey)) {
+                successful.push(stepKey);
+                continue;
+            }
+
+            const step = ALL_FULL_STEPS.find(s => s.key === stepKey);
+            if (!step) continue;
+
+            if (options?.onStepStart) {
+                options.onStepStart(stepKey);
+            }
+
+            const stepCtx: StepRunCtx = {
+                ...baseCtx,
+                currentStepIndex: step.index,
+                setCurrentStepIndex: (v: number) => { stepCtx.currentStepIndex = v; },
+                systemPromptEl,
+                userPromptEl,
+                temperatureSlider,
+                isLoading: false,
+                setIsLoading: (v: boolean) => { stepCtx.isLoading = v; },
+            };
+
+            try {
+                await this.executeCurrentStep(stepCtx);
+                const content = baseCtx.stepResults[stepKey] || '';
+                successful.push(stepKey);
+                if (options?.onStepComplete) {
+                    options.onStepComplete(stepKey, content);
+                }
+            } catch (e) {
+                failed = stepKey;
+                failedAt = i;
+                const errMsg = e instanceof Error ? e.message : String(e);
+                if (options?.onStepError) {
+                    options.onStepError(stepKey, errMsg);
+                }
+                break;
+            }
+        }
+
+        baseCtx.currentStepIndex = originalIndex;
+
+        return { successful, failed, failedAt };
+    }
+
+    async executePlanningCombined(ctx: StepRunCtx): Promise<{ success: boolean; error?: string }> {
+        const planningSteps = ['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand'];
+        const alreadyDone = planningSteps.filter(s => ctx.stepCompleted.has(s));
+        if (alreadyDone.length === planningSteps.length) {
+            return { success: true };
+        }
+
+        const vars = await ctx.buildTemplateVars();
+        const fill = (tpl: string): string => {
+            return tpl.replace(/\$\{(\w+)\}/g, (_, key) => vars[key] || '');
+        };
+
+        const systemPrompt = `你是一位资深小说编辑。请为第\${chapNum}章一次性生成完整的章节规划，包含5个模块。
+
+【输出格式——严格遵循，用分隔符划分5个模块】
+
+========== INFO_PLAN ==========
+（信息规划内容：章名与核心冲突、情感与冲突量化、信息释放计划、伏笔操作、关系推进）
+
+========== PLOT_DISTILL ==========
+（情节蒸馏内容：场景节奏设计、情节节点规划、爽点设计、冲突升级路径、信息密度指标）
+
+========== OUTLINE ==========
+（大纲摘要内容：全书定位、关键场景3-5个、结尾钩子）
+
+========== EMOTION_PLAN ==========
+（情绪规划内容：总体情绪曲线 + 每个场景的详细情绪规划）
+总体情绪曲线格式：开篇情绪: XXX(X/10) | 高潮情绪: XXX(X/10) | 结尾情绪: XXX(X/10)
+每个场景格式：
+### sceneN: 场景名
+emotion_start: XXX(N/10) — 原因
+emotion_end: XXX(N/10) — 原因（必须与start不同）
+emotion_delta: +N 或 -N
+body_reaction: 身体反应
+relationship_change: 关系变化
+
+========== SCENE_EXPAND ==========
+（Scene展开内容：每个场景的8要素）
+每个场景格式：
+## sceneN: 场景名
+objective: ...
+emotion_arc: XXX(N) → XXX(N) — 原因
+conflict: ...
+sensory_hook: ...
+memory_trigger: 无 / 触发描述
+body_reaction: ...
+subtext: ...
+relationship_shift: ...
+
+【约束】
+- 人物、地点、势力必须从「已有实体上下文」中选取，不得新创
+- 每个场景的情绪必须有变化（start ≠ end）
+- 信息规划输出三个量化指标：情感温度、冲突强度、节奏模式
+- 关键场景3-5个
+- 必须有结尾钩子（悬念式/反转式/预告式/前置冲突）`;
+
+        const userPrompt = `根据以下素材，为第\${chapNum}章一次性生成完整的章节规划（5个模块）。
+
+【分卷规划】
+\${chapPlan}
+
+【大纲摘要】
+\${outlineContent}
+
+【前文摘要】
+\${prevChaptersSummary}
+
+【未揭示伏笔】
+\${unrevealedForeshadow}
+\${forcedRevealHint}
+
+【时间线】
+\${timelineEvents}
+
+【已有实体上下文（人物/势力/地点/物品功法）】
+\${entityContext}
+
+【主角信息】主角名：\${protagonistName}
+
+【角色灵魂层】
+\${characterCores}
+
+请严格按照输出格式的分隔符（========== MODULE_NAME ==========）划分5个模块，每个模块内容完整。`;
+
+        const sysFilled = fill(systemPrompt);
+        const userFilled = fill(userPrompt);
+
+        const sendBtns = ctx.tabContent.querySelectorAll('.novel-writer-fw-btn-primary');
+        const originalTexts: string[] = [];
+        sendBtns.forEach((b, i) => {
+            const btn = b as HTMLButtonElement;
+            originalTexts[i] = btn.textContent || '';
+            btn.disabled = true;
+            btn.classList.add('nw-btn-loading');
+            btn.textContent = '⏳ 生成全章规划中...';
+        });
+
+        ctx.setIsLoading(true);
+        this.callbacks.showProgress('⏳ 生成全章规划（合并模式）...');
+
+        try {
+            const result: APIResponse = await this.callAIWithRetry(
+                sysFilled,
+                userFilled,
+                this.plugin.settings.flashModel,
+                1.4,
+                this.plugin.settings.maxOutput,
+                '章节规划（合并）'
+            );
+
+            if (result.error) {
+                this.callbacks.showError(`章节规划失败: ${result.error}`);
+                return { success: false, error: result.error };
+            }
+
+            const content = result.content || '';
+            const parsed = this.parseCombinedPlanning(content);
+
+            for (const stepKey of planningSteps) {
+                const stepContent = parsed[stepKey];
+                if (stepContent && stepContent.trim().length > 50) {
+                    ctx.stepResults[stepKey] = stepContent;
+                    ctx.stepCompleted.add(stepKey);
+                    try {
+                        await ctx.saveStepResult(stepKey, stepContent);
+                    } catch (e) {
+                        log.warn(`[PlanningCombined] 保存 ${stepKey} 失败:`, e);
+                    }
+                    if (ctx.onStepComplete) {
+                        try {
+                            await ctx.onStepComplete(stepKey, stepContent);
+                        } catch (e) {
+                            log.warn(`[PlanningCombined] onStepComplete ${stepKey} 异常:`, e);
+                        }
+                    }
+                }
+            }
+
+            const successCount = planningSteps.filter(s => ctx.stepCompleted.has(s)).length;
+            if (successCount >= 3) {
+                this.callbacks.showProgress('✅ 全章规划生成完成');
+                setTimeout(() => this.callbacks.hideProgress(), 1500);
+                return { success: true };
+            } else {
+                this.callbacks.showError(`⚠️ 规划生成不完整（${successCount}/5），建议单独生成缺失步骤`);
+                return { success: false, error: 'incomplete' };
+            }
+
+        } catch (e) {
+            const errMsg = e instanceof Error ? e.message : String(e);
+            this.callbacks.showError(`章节规划失败: ${errMsg}`);
+            return { success: false, error: errMsg };
+        } finally {
+            ctx.setIsLoading(false);
+            this.callbacks.hideProgress();
+            sendBtns.forEach((b, i) => {
+                const btn = b as HTMLButtonElement;
+                btn.disabled = false;
+                btn.classList.remove('nw-btn-loading');
+                btn.textContent = originalTexts[i] || '';
+            });
+        }
+    }
+
+    private parseCombinedPlanning(content: string): Record<string, string> {
+        const result: Record<string, string> = {};
+        const sections: { key: string; marker: string }[] = [
+            { key: 'infoPlan', marker: 'INFO_PLAN' },
+            { key: 'plotDistill', marker: 'PLOT_DISTILL' },
+            { key: 'outline', marker: 'OUTLINE' },
+            { key: 'emotionPlan', marker: 'EMOTION_PLAN' },
+            { key: 'sceneExpand', marker: 'SCENE_EXPAND' },
+        ];
+
+        for (let i = 0; i < sections.length; i++) {
+            const sec = sections[i];
+            const startMarker = `========== ${sec.marker} ==========`;
+            const startIdx = content.indexOf(startMarker);
+            if (startIdx === -1) continue;
+
+            let endIdx = content.length;
+            for (let j = i + 1; j < sections.length; j++) {
+                const nextMarker = `========== ${sections[j].marker} ==========`;
+                const nextIdx = content.indexOf(nextMarker, startIdx + startMarker.length);
+                if (nextIdx !== -1) {
+                    endIdx = nextIdx;
+                    break;
+                }
+            }
+
+            const sectionContent = content.slice(startIdx + startMarker.length, endIdx).trim();
+            if (sectionContent) {
+                result[sec.key] = sectionContent;
+            }
+        }
+
+        return result;
     }
 
 }

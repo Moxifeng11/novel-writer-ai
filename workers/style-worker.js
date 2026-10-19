@@ -83,6 +83,10 @@ var SUBDIR_ITEMS = `${SUBDIR_WORLD_ARCH}/\u7269\u54C1\u529F\u6CD5`;
 var SUBDIR_WORLDVIEW_FILE = `${SUBDIR_WORLD_ARCH}/\u4E16\u754C\u89C2\u603B\u89C8.md`;
 var SUBDIR_SETTING_LIB_FILE = `${SUBDIR_WORLD_ARCH}/\u8BBE\u5B9A\u5E93.md`;
 var SUBDIR_WRITING_STYLE_FILE = `${SUBDIR_WORLD_ARCH}/\u6587\u7B14\u98CE\u683C.md`;
+function sanitizeName(name) {
+  const cleaned = name.replace(/[\u0000-\u001f\u007f]/g, "").replace(/[\\/:*?"<>|]/g, "_").trim().replace(/^\.+/, "").replace(/\.+$/, "");
+  return cleaned || "\u672A\u547D\u540D";
+}
 var PJ_TEMPLATE_DIR = "\u5143\u6587\u4EF6/00-\u7CFB\u7EDF\u6A21\u677F";
 var PJ_PROMPT_TEMPLATE_DIR = `${PJ_TEMPLATE_DIR}/prompts`;
 var WRITING_RULES_PATH_TEMPLATE = `${PJ_TEMPLATE_DIR}/\u5199\u4F5C\u89C4\u5219.md`;
@@ -92,7 +96,7 @@ function kbKnowledgeBaseDir(baseDir) {
   return baseDir || DEFAULT_KNOWLEDGE_BASE_DIR;
 }
 function kbBookDir(bookName, baseDir) {
-  const safeBookName = bookName.replace(/[\\/:*?"<>|]/g, "_");
+  const safeBookName = sanitizeName(bookName);
   return `${kbKnowledgeBaseDir(baseDir)}/${safeBookName}`;
 }
 function kbBookStyleFingerprintFile(bookName, baseDir) {
@@ -1163,6 +1167,58 @@ function getDimensionPrompt(dimension, text, genreConfig, existingResult) {
   const builder = PROMPT_BUILDERS[dimension];
   return builder(text, genreConfig, existingResult);
 }
+function buildCharacterVerifyPrompt(candidates, textSample) {
+  const candidatesList = candidates.map((name, i) => `${i + 1}. ${name}`).join("\n");
+  return {
+    systemPrompt: `\u4F60\u662F\u4E00\u4E2A\u4E2D\u6587\u5C0F\u8BF4\u89D2\u8272\u8BC6\u522B\u4E13\u5BB6\u3002\u8BF7\u5224\u65AD\u4EE5\u4E0B\u8BCD\u8BED\u662F\u5426\u662F\u5C0F\u8BF4\u4E2D\u7684\u4EBA\u7269\u89D2\u8272\u540D\u3002
+
+\u4E25\u683C\u8981\u6C42\uFF1A
+1. \u53EA\u8F93\u51FA\u4E00\u4E2A JSON \u6570\u7EC4\uFF0C\u4E0D\u8981\u8F93\u51FA\u4EFB\u4F55\u89E3\u91CA\u6027\u6587\u5B57\u3001Markdown \u4EE3\u7801\u5757\u6216\u524D\u540E\u7F00
+2. \u6BCF\u4E2A\u5019\u9009\u8BCD\u90FD\u8981\u7ED9\u51FA\u5224\u65AD\uFF0C\u4E0D\u8981\u9057\u6F0F
+3. \u4E0D\u786E\u5B9A\u65F6\u7ED9\u51FA\u8F83\u4F4E\u7684\u7F6E\u4FE1\u5EA6\uFF0C\u4E0D\u8981\u5F3A\u884C\u5224\u65AD
+4. \u5224\u65AD\u5FC5\u987B\u57FA\u4E8E\u7ED9\u5B9A\u7684\u6587\u672C\u4E0A\u4E0B\u6587\uFF0C\u4E0D\u8981\u5F15\u5165\u5916\u90E8\u77E5\u8BC6
+5. \u8F93\u51FA\u5FC5\u987B\u662F\u5408\u6CD5\u7684 JSON \u6570\u7EC4
+
+\u8F93\u51FA JSON \u7ED3\u6784\uFF08\u6BCF\u9879\u5305\u542B\uFF09\uFF1A
+- name: \u5019\u9009\u540D\u79F0\uFF08\u5B57\u7B26\u4E32\uFF09
+- isCharacter: 0-1 \u7684\u7F6E\u4FE1\u5EA6\uFF081=\u786E\u5B9A\u662F\u89D2\u8272\uFF0C0=\u786E\u5B9A\u4E0D\u662F\uFF0C\u4FDD\u75592\u4F4D\u5C0F\u6570\uFF09
+- reason: \u7B80\u77ED\u5224\u65AD\u7406\u7531\uFF08\u4E0D\u8D85\u8FC7 20 \u5B57\uFF09`,
+    userPrompt: `\u6587\u672C\u4E0A\u4E0B\u6587\uFF1A
+${textSample}
+
+\u5019\u9009\u5217\u8868\uFF1A
+${candidatesList}
+
+\u8BF7\u4EE5 JSON \u6570\u7EC4\u683C\u5F0F\u8FD4\u56DE\u7ED3\u679C\uFF1A`
+  };
+}
+function buildTitleAliasPrompt(candidates, textSample) {
+  const candidatesList = candidates.map((name, i) => `${i + 1}. ${name}`).join("\n");
+  return {
+    systemPrompt: `\u4F60\u662F\u4E00\u4E2A\u4E2D\u6587\u5C0F\u8BF4\u89D2\u8272\u5206\u6790\u4E13\u5BB6\u3002\u8BF7\u5206\u6790\u6587\u672C\u4E2D\u540C\u4E00\u89D2\u8272\u7684\u4E0D\u540C\u79F0\u547C\u3001\u79F0\u53F7\u3001\u8EAB\u4EFD\u3001\u522B\u540D\u3002
+
+\u4E25\u683C\u8981\u6C42\uFF1A
+1. \u53EA\u8F93\u51FA\u4E00\u4E2A JSON \u6570\u7EC4\uFF0C\u4E0D\u8981\u8F93\u51FA\u4EFB\u4F55\u89E3\u91CA\u6027\u6587\u5B57\u3001Markdown \u4EE3\u7801\u5757\u6216\u524D\u540E\u7F00
+2. \u53EA\u8FD4\u56DE\u4F60\u6709\u8F83\u9AD8\u628A\u63E1\u7684\u5BF9\u5E94\u5173\u7CFB\uFF0C\u4E0D\u8981\u7F16\u9020
+3. sourceName \u5FC5\u987B\u662F\u79F0\u53F7/\u522B\u540D\uFF08\u51FA\u73B0\u5728\u6587\u672C\u4E2D\u4F46\u4E0D\u5728\u5DF2\u77E5\u89D2\u8272\u5217\u8868\u4E2D\u7684\u79F0\u547C\uFF09
+4. targetName \u5FC5\u987B\u662F\u5DF2\u77E5\u89D2\u8272\u5217\u8868\u4E2D\u7684\u540D\u79F0
+5. \u5224\u65AD\u5FC5\u987B\u57FA\u4E8E\u7ED9\u5B9A\u7684\u6587\u672C\u4E0A\u4E0B\u6587\uFF0C\u4E0D\u8981\u5F15\u5165\u5916\u90E8\u77E5\u8BC6
+6. \u8F93\u51FA\u5FC5\u987B\u662F\u5408\u6CD5\u7684 JSON \u6570\u7EC4
+
+\u8F93\u51FA JSON \u7ED3\u6784\uFF08\u6BCF\u9879\u5305\u542B\uFF09\uFF1A
+- sourceName: \u79F0\u53F7/\u522B\u540D\uFF08\u5B57\u7B26\u4E32\uFF09
+- targetName: \u4E3B\u540D\u79F0\uFF08\u5DF2\u77E5\u89D2\u8272\u5217\u8868\u4E2D\u7684\u540D\u79F0\uFF0C\u5B57\u7B26\u4E32\uFF09
+- reason: \u5224\u65AD\u7406\u7531\uFF08\u4E0D\u8D85\u8FC7 30 \u5B57\uFF0C\u5B57\u7B26\u4E32\uFF09
+- confidence: 0-1 \u7684\u7F6E\u4FE1\u5EA6\uFF08\u4FDD\u75592\u4F4D\u5C0F\u6570\uFF09`,
+    userPrompt: `\u6587\u672C\u4E0A\u4E0B\u6587\uFF1A
+${textSample}
+
+\u5DF2\u77E5\u89D2\u8272\u5217\u8868\uFF1A
+${candidatesList}
+
+\u8BF7\u627E\u51FA\u540C\u4E00\u89D2\u8272\u7684\u4E0D\u540C\u79F0\u547C\u3001\u79F0\u53F7\u3001\u8EAB\u4EFD\u3001\u522B\u540D\uFF0C\u4EE5 JSON \u6570\u7EC4\u683C\u5F0F\u8FD4\u56DE\uFF1A`
+  };
+}
 
 // shared/logger.ts
 var LOG_LEVEL_PRIORITY = {
@@ -1207,10 +1263,15 @@ var log = createLogger("LlmEnhancer");
 var LLM_DEGRADED = Symbol("llm_degraded");
 var DEFAULT_TEMPERATURE = 0.3;
 var DEFAULT_MAX_TOKENS = 2048;
+var VERIFY_BATCH_SIZE = 20;
+var TITLE_BATCH_SIZE = 8;
+var MAX_CACHE_SIZE = 500;
 var LLMEnhancer = class {
   constructor(caller, options) {
     this.caller = caller;
     this.options = options ?? {};
+    this.verifyCache = /* @__PURE__ */ new Map();
+    this.titleCache = /* @__PURE__ */ new Map();
   }
   /**
    * 通用 LLM 增强方法。
@@ -1312,6 +1373,7 @@ var LLMEnhancer = class {
    * 容错处理：
    * - 去除可能的 Markdown 代码块包裹（```json ... ```）
    * - 去除前后空白和非 JSON 字符
+   * - 支持对象和数组
    * - 解析失败返回 null
    */
   parseJSONResponse(content) {
@@ -1322,8 +1384,26 @@ var LLMEnhancer = class {
     if (trimmed.startsWith("```")) {
       trimmed = trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
     }
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
+    const objStart = trimmed.indexOf("{");
+    const arrStart = trimmed.indexOf("[");
+    const objEnd = trimmed.lastIndexOf("}");
+    const arrEnd = trimmed.lastIndexOf("]");
+    let start = -1;
+    let end = -1;
+    if (objStart !== -1 && arrStart !== -1) {
+      start = Math.min(objStart, arrStart);
+      if (start === objStart) {
+        end = objEnd;
+      } else {
+        end = arrEnd;
+      }
+    } else if (objStart !== -1) {
+      start = objStart;
+      end = objEnd;
+    } else if (arrStart !== -1) {
+      start = arrStart;
+      end = arrEnd;
+    }
     if (start === -1 || end === -1 || end <= start) {
       return null;
     }
@@ -1333,6 +1413,227 @@ var LLMEnhancer = class {
     } catch {
       return null;
     }
+  }
+  /**
+   * 简单哈希函数，用于生成缓存 key
+   */
+  simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  }
+  /**
+   * 获取缓存值
+   */
+  getFromCache(cache, key) {
+    const entry = cache.get(key);
+    if (entry) {
+      cache.delete(key);
+      entry.timestamp = Date.now();
+      cache.set(key, entry);
+      return entry.value;
+    }
+    return void 0;
+  }
+  /**
+   * 设置缓存值，带 LRU 淘汰
+   */
+  setInCache(cache, key, value) {
+    if (cache.has(key)) {
+      cache.delete(key);
+    }
+    cache.set(key, { value, timestamp: Date.now() });
+    while (cache.size > MAX_CACHE_SIZE) {
+      const firstKey = cache.keys().next().value;
+      if (firstKey !== void 0) {
+        cache.delete(firstKey);
+      }
+    }
+  }
+  /**
+   * 用 LLM 批量校验候选角色是否为人名
+   * @param candidates 角色候选列表
+   * @param textSample 文本样本（用于上下文参考）
+   * @returns 校验后的候选列表（置信度更新，明显不是人名的降低置信度）
+   */
+  async verifyCharactersWithLLM(candidates, textSample) {
+    if (candidates.length === 0 || !textSample || textSample.trim().length === 0) {
+      return candidates;
+    }
+    const cacheKey = this.simpleHash(
+      candidates.map((c) => c.name).join("|") + "::" + textSample
+    );
+    const cached = this.getFromCache(this.verifyCache, cacheKey);
+    if (cached) {
+      log.debug(`[LLMEnhancer] \u89D2\u8272\u6821\u9A8C\u547D\u4E2D\u7F13\u5B58\uFF0C${candidates.length} \u4E2A\u5019\u9009`);
+      return this.applyVerifyResults(candidates, cached);
+    }
+    try {
+      const allResults = [];
+      for (let i = 0; i < candidates.length; i += VERIFY_BATCH_SIZE) {
+        const batch = candidates.slice(i, i + VERIFY_BATCH_SIZE);
+        const batchNames = batch.map((c) => c.name);
+        const { systemPrompt, userPrompt } = buildCharacterVerifyPrompt(
+          batchNames,
+          textSample
+        );
+        const response = await this.caller.callAI(
+          systemPrompt,
+          userPrompt,
+          this.options.llmModel,
+          this.options.temperature ?? DEFAULT_TEMPERATURE,
+          this.options.maxTokens ?? DEFAULT_MAX_TOKENS
+        );
+        if (response.error) {
+          log.warn(`[LLMEnhancer] \u89D2\u8272\u6821\u9A8C LLM \u8C03\u7528\u8FD4\u56DE\u9519\u8BEF: ${response.error}\uFF0C\u964D\u7EA7`);
+          return candidates;
+        }
+        const batchResults = this.parseJSONResponse(response.content);
+        if (!batchResults || !Array.isArray(batchResults)) {
+          log.warn("[LLMEnhancer] \u89D2\u8272\u6821\u9A8C LLM \u8FD4\u56DE\u5185\u5BB9\u65E0\u6CD5\u89E3\u6790\u4E3A JSON \u6570\u7EC4\uFF0C\u964D\u7EA7");
+          return candidates;
+        }
+        allResults.push(...batchResults);
+      }
+      this.setInCache(this.verifyCache, cacheKey, allResults);
+      return this.applyVerifyResults(candidates, allResults);
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log.warn("[LLMEnhancer] \u89D2\u8272\u6821\u9A8C\u5F02\u5E38\uFF0C\u964D\u7EA7\u4F7F\u7528\u539F\u5019\u9009:", errMsg);
+      return candidates;
+    }
+  }
+  /**
+   * 将 LLM 校验结果应用到候选列表，更新置信度
+   */
+  applyVerifyResults(candidates, results) {
+    const resultMap = /* @__PURE__ */ new Map();
+    for (const r of results) {
+      if (r && typeof r.name === "string" && typeof r.isCharacter === "number") {
+        resultMap.set(r.name, r);
+      }
+    }
+    return candidates.map((candidate) => {
+      const result = resultMap.get(candidate.name);
+      if (!result) {
+        return { ...candidate };
+      }
+      const llmConfidence = Math.max(0, Math.min(1, result.isCharacter));
+      const originalConfidence = candidate.confidence;
+      const blendedConfidence = originalConfidence * 0.4 + llmConfidence * 0.6;
+      const finalConfidence = Math.max(0.01, Math.min(0.99, blendedConfidence));
+      return {
+        ...candidate,
+        confidence: finalConfidence,
+        source: "llm"
+      };
+    }).sort((a, b) => b.confidence - a.confidence);
+  }
+  /**
+   * 用 LLM 抽取角色的称号、身份、别名
+   * @param candidates 角色候选列表
+   * @param textSample 文本样本（包含角色出现的上下文）
+   * @returns 合并建议列表（character_merge 类型的建议）
+   */
+  async extractTitlesAndAliases(candidates, textSample) {
+    if (candidates.length === 0 || !textSample || textSample.trim().length === 0) {
+      return [];
+    }
+    const cacheKey = this.simpleHash(
+      candidates.map((c) => c.name).join("|") + "::title::" + textSample
+    );
+    const cached = this.getFromCache(this.titleCache, cacheKey);
+    if (cached) {
+      log.debug(`[LLMEnhancer] \u79F0\u53F7\u62BD\u53D6\u547D\u4E2D\u7F13\u5B58\uFF0C${candidates.length} \u4E2A\u89D2\u8272`);
+      return this.titleResultsToSuggestions(cached);
+    }
+    try {
+      const allResults = [];
+      for (let i = 0; i < candidates.length; i += TITLE_BATCH_SIZE) {
+        const batch = candidates.slice(i, i + TITLE_BATCH_SIZE);
+        const batchNames = batch.map((c) => c.name);
+        const { systemPrompt, userPrompt } = buildTitleAliasPrompt(
+          batchNames,
+          textSample
+        );
+        const response = await this.caller.callAI(
+          systemPrompt,
+          userPrompt,
+          this.options.llmModel,
+          this.options.temperature ?? DEFAULT_TEMPERATURE,
+          this.options.maxTokens ?? DEFAULT_MAX_TOKENS
+        );
+        if (response.error) {
+          log.warn(`[LLMEnhancer] \u79F0\u53F7\u62BD\u53D6 LLM \u8C03\u7528\u8FD4\u56DE\u9519\u8BEF: ${response.error}\uFF0C\u8FD4\u56DE\u7A7A`);
+          return [];
+        }
+        const batchResults = this.parseJSONResponse(response.content);
+        if (!batchResults || !Array.isArray(batchResults)) {
+          log.warn("[LLMEnhancer] \u79F0\u53F7\u62BD\u53D6 LLM \u8FD4\u56DE\u5185\u5BB9\u65E0\u6CD5\u89E3\u6790\u4E3A JSON \u6570\u7EC4\uFF0C\u8FD4\u56DE\u7A7A");
+          return [];
+        }
+        allResults.push(...batchResults);
+      }
+      this.setInCache(this.titleCache, cacheKey, allResults);
+      return this.titleResultsToSuggestions(allResults);
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log.warn("[LLMEnhancer] \u79F0\u53F7\u62BD\u53D6\u5F02\u5E38\uFF0C\u8FD4\u56DE\u7A7A\u5EFA\u8BAE:", errMsg);
+      return [];
+    }
+  }
+  /**
+   * 将称号抽取结果转换为 AnalysisSuggestion 格式
+   */
+  titleResultsToSuggestions(results) {
+    const suggestions = [];
+    const now = Date.now();
+    for (const result of results) {
+      if (!result || !result.sourceName || !result.targetName) {
+        continue;
+      }
+      const confidence = Math.max(0, Math.min(1, result.confidence ?? 0.5));
+      if (confidence < 0.3) {
+        continue;
+      }
+      suggestions.push({
+        id: "",
+        type: "character_merge",
+        status: "pending",
+        confidence,
+        source: "llm",
+        payload: {
+          sourceName: result.sourceName,
+          targetName: result.targetName,
+          reason: result.reason
+        },
+        createdAt: now,
+        reason: result.reason || "LLM \u5206\u6790\u8BA4\u4E3A\u662F\u540C\u4E00\u89D2\u8272\u7684\u4E0D\u540C\u79F0\u547C",
+        evidence: result.reason ? [result.reason] : []
+      });
+    }
+    return suggestions.sort((a, b) => b.confidence - a.confidence);
+  }
+  /**
+   * 清空 LLM 调用缓存
+   */
+  clearLLMCache() {
+    this.verifyCache.clear();
+    this.titleCache.clear();
+  }
+  /**
+   * 获取缓存统计信息
+   */
+  getCacheStats() {
+    return {
+      verifySize: this.verifyCache.size,
+      titleSize: this.titleCache.size,
+      maxSize: MAX_CACHE_SIZE
+    };
   }
   /**
    * 静态工具：为指定维度构建上下文摘要。

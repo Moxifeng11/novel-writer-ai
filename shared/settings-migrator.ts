@@ -22,15 +22,17 @@ interface MigrationCustomProvider {
     models: string[];
     maxContext: number;
     maxOutput: number;
+    sourceType?: 'cloud' | 'local';
     isDefault?: boolean;
     isHidden?: boolean;
 }
 
 const DEFAULT_PROVIDERS_TEMPLATE: Record<string, MigrationCustomProvider> = {
-    volc:     { id: 'volc',     name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072, isDefault: true },
-    ollama:   { id: 'ollama',   name: '本地 Ollama',  endpoint: 'http://localhost:11434/v1/chat/completions',            models: ['qwen2.5:7b', 'deepseek-r1:7b'],                                      maxContext: 32768,  maxOutput: 8192,   isDefault: true },
-    catcat:   { id: 'catcat',   name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions',              models: ['gemini-3.1-pro-preview-search'],                                    maxContext: 1048576, maxOutput: 65536,  isDefault: true },
-    deepseek: { id: 'deepseek', name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions',            models: ['deepseek-v4-flash', 'deepseek-v4-pro'],                             maxContext: 1048576, maxOutput: 384000, isDefault: true },
+    volc:     { id: 'volc',     name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072, sourceType: 'cloud', isDefault: true },
+    ollama:   { id: 'ollama',   name: '本地 Ollama',  endpoint: 'http://localhost:11434/v1/chat/completions',            models: ['qwen2.5:7b', 'deepseek-r1:7b'],                                      maxContext: 32768,  maxOutput: 8192,   sourceType: 'local', isDefault: true },
+    catcat:   { id: 'catcat',   name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions',              models: ['gemini-3.1-pro-preview-search'],                                    maxContext: 1048576, maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
+    deepseek: { id: 'deepseek', name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions',            models: ['deepseek-v4-flash', 'deepseek-v4-pro'],                             maxContext: 1048576, maxOutput: 384000, sourceType: 'cloud', isDefault: true },
+    sensenova: { id: 'sensenova', name: '日日新/SenseNova', endpoint: 'https://token.sensenova.cn/v1/chat/completions',        models: ['sensenova-6.7-flash-lite', 'deepseek-v4-flash'],                   maxContext: 262144,  maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
 };
 
 export interface VersionedData {
@@ -65,7 +67,9 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [
         migrate: (data) => {
             const oldOverrides = data.modelOverrides as Record<string, { maxContext?: number; maxOutput?: number }> | undefined;
             const newOverrides: Record<string, Record<string, { maxContext?: number; maxOutput?: number }>> = {};
-            if (oldOverrides && typeof oldOverrides === 'object') {
+            // 加固：数组也满足 typeof === 'object'，但 { ...[] } 会产出索引键对象（{0:..}）污染结构，
+            // 故显式排除数组；非对象/数组一律视为「无覆盖」。
+            if (oldOverrides && typeof oldOverrides === 'object' && !Array.isArray(oldOverrides)) {
                 const endpoint = (data as Record<string, unknown>).apiEndpoint as string || '';
                 if (endpoint) {
                     newOverrides[endpoint] = { ...oldOverrides };
@@ -82,8 +86,24 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [
         from: 3,
         to: 4,
         migrate: (data) => {
-            const customProviders = (data.customProviders as MigrationCustomProvider[] | undefined) || [];
-            const hiddenPresets = (data.hiddenPresets as string[] | undefined) || [];
+            // 加固：损坏的 data.json 可能把这两个字段写成非数组（如字符串），
+            // 直接用 `|| []` 只挡 falsy，真值非数组会在 .map/.includes 处抛 TypeError，
+            // 导致迁移中断、schemaVersion 停在 3，且 customProviders 变成字符串污染后续 .find/.filter。
+            const customProviders = Array.isArray(data.customProviders)
+                ? data.customProviders as MigrationCustomProvider[]
+                : [];
+            const hiddenPresets = Array.isArray(data.hiddenPresets)
+                ? data.hiddenPresets as string[]
+                : [];
+            // 加固：`modelOverrides` 若不是普通对象（如损坏成字符串 / 数组），下游
+            // `provider-manager.setModelOverride` 会执行 `overrides[endpoint] = {}` ——
+            // 对字符串赋属性在严格模式下抛 TypeError。此处统一规范为普通对象
+            // （`{}` 与 settings-service 的默认值等价，即「无覆盖」）。
+            const modelOverrides = (data.modelOverrides
+                && typeof data.modelOverrides === 'object'
+                && !Array.isArray(data.modelOverrides))
+                ? data.modelOverrides as Record<string, unknown>
+                : {};
             const customProviderIds = new Set(customProviders.map(p => p.id));
             const newCustomProviders: MigrationCustomProvider[] = [...customProviders];
 
@@ -103,6 +123,7 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [
                 ...data,
                 schemaVersion: 4,
                 customProviders: newCustomProviders,
+                modelOverrides,
             };
             delete newData.hiddenPresets;
             return newData;

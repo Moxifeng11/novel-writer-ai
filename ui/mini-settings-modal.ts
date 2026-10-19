@@ -28,7 +28,11 @@ import { BatchImportModal } from './batch-import-modal';
 import { KnowledgeMonitorModal } from './knowledge-monitor-modal';
 import { KnowledgeDetailModal } from './knowledge-detail-modal';
 import { kbKnowledgeBaseDir } from '../shared/paths';
+import { openKnowledgeFolder } from './knowledge-folder-navigation';
 import { createLogger } from '../shared/logger';
+import { exportTextFile } from '../shared/export-file';
+import { OperationConfirmModal } from './components/progress';
+import { rebuildKnowledgeIndexWithConfirm } from './knowledge-rebuild-action';
 
 
 const log = createLogger('MiniSettingsModal');
@@ -77,8 +81,6 @@ export class MiniSettingsModal extends Modal {
 
     async onOpen() {
         this.modalEl.addClass('nw-scope', 'nw-modal-xl');
-        this.modalEl.style.setProperty('width', 'clamp(900px, 85vw, 1300px)', 'important');
-        this.modalEl.style.setProperty('max-width', '1300px', 'important');
         this.modalEl.style.setProperty('margin', 'auto', 'important');
         const { contentEl } = this;
         contentEl.style.width = '100%';
@@ -221,7 +223,8 @@ export class MiniSettingsModal extends Modal {
                     return a.name.localeCompare(b.name);
                 });
                 allProviders.forEach(p => {
-                    const label = p.isPreset ? p.name : `🔧 ${p.name}`;
+                    const sourceIcon = p.sourceType === 'local' ? '💻' : '☁️';
+                    const label = `${sourceIcon} ${p.name}`;
                     dropdown.addOption(p.id, label);
                 });
                 dropdown.addOption('__manage__', '⚙️ 管理全部提供商...');
@@ -619,7 +622,14 @@ export class MiniSettingsModal extends Modal {
             onDetail: (fp) => this.showFingerprintDetail(fp, true),
             onDelete: async (fp) => {
                 if (!this.fingerprintLibrary) return;
-                if (!confirm(`确定要删除模板指纹「${fp.name}」吗？此操作不可恢复。`)) return;
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '删除模板指纹',
+                    description: `确定要删除模板指纹「${fp.name}」吗？`,
+                    warning: '此操作不可恢复',
+                    confirmText: '确认删除',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
                 await this.fingerprintLibrary.deleteTemplate(fp.id);
                 await this.loadFingerprints();
                 this.renderActiveTab();
@@ -661,7 +671,14 @@ export class MiniSettingsModal extends Modal {
             onDetail: (fp) => this.showFingerprintDetail(fp, true),
             onDelete: async (fp) => {
                 if (!this.fingerprintLibrary) return;
-                if (!confirm(`确定要删除全局指纹「${fp.name}」吗？此操作不可恢复。`)) return;
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '删除全局指纹',
+                    description: `确定要删除全局指纹「${fp.name}」吗？`,
+                    warning: '此操作不可恢复',
+                    confirmText: '确认删除',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
                 await this.fingerprintLibrary.deleteGlobal(fp.id);
                 await this.loadFingerprints();
                 this.renderActiveTab();
@@ -717,7 +734,14 @@ export class MiniSettingsModal extends Modal {
                 onDetail: (fp) => this.showFingerprintDetail(fp, true),
                 onDelete: async (fp) => {
                     if (!this.fingerprintLibrary) return;
-                    if (!confirm(`确定要删除项目指纹「${fp.name}」吗？此操作不可恢复。`)) return;
+                    const confirmed = await OperationConfirmModal.confirm(this.app, {
+                        title: '删除项目指纹',
+                        description: `确定要删除项目指纹「${fp.name}」吗？`,
+                        warning: '此操作不可恢复',
+                        confirmText: '确认删除',
+                        cancelText: '取消',
+                    });
+                    if (!confirmed) return;
                     await this.fingerprintLibrary.deleteProject(fp.id);
                     await this.loadFingerprints();
                     this.renderActiveTab();
@@ -921,7 +945,7 @@ export class MiniSettingsModal extends Modal {
                     const dirPath = kbKnowledgeBaseDir();
                     const file = this.app.vault.getAbstractFileByPath(dirPath);
                     if (file) {
-                        (this.app as unknown as { workspace: { revealLeafInNewTab: (f: unknown) => void } }).workspace.revealLeafInNewTab(file);
+                        void openKnowledgeFolder(this.app, dirPath);
                     } else {
                         new Notice('⚠️ 知识库目录不存在，请先导入书籍');
                     }
@@ -954,22 +978,7 @@ export class MiniSettingsModal extends Modal {
                 style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
             }
         });
-        rebuildBtn.addEventListener('click', async () => {
-            if (!confirm('确定要重建向量索引吗？这将重新扫描所有向量文件。')) return;
-            try {
-                new Notice('⏳ 正在重建索引...');
-                const store = (this.plugin as any).knowledgeVectorStore;
-                if (store && typeof store.rebuildIndex === 'function') {
-                    await store.rebuildIndex();
-                    new Notice('✅ 索引重建完成');
-                } else {
-                    new Notice('⚠️ 向量存储未初始化');
-                }
-            } catch (e) {
-                log.error('[MiniSettingsModal] 重建索引失败:', e);
-                new Notice('❌ 重建索引失败');
-            }
-        });
+        rebuildBtn.addEventListener('click', () => rebuildKnowledgeIndexWithConfirm(this.app, this.plugin));
 
         const filterBar = section.createDiv({
             attr: { style: 'padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
@@ -1651,7 +1660,7 @@ export class MiniSettingsModal extends Modal {
                 dropdown.addOption('', '（未选择）');
                 const allProviders = this.plugin.getAllProviders();
                 for (const p of allProviders) {
-                    if (p.id !== 'ollama') {
+                    if (p.sourceType !== 'local') {
                         dropdown.addOption(p.id, p.name);
                     }
                 }
@@ -1883,8 +1892,18 @@ export class MiniSettingsModal extends Modal {
             });
 
         new Setting(perfCard)
+            .setName('采样模式（仅分析前 N 字）')
+            .setDesc('默认关闭：全本智能分段拆解，逐段覆盖全部剧情。开启后仅分析开头“文本采样上限”字数，用于快速预览。')
+            .addToggle(toggle => {
+                toggle.setValue(cfg.sampleMode === true);
+                toggle.onChange(value => {
+                    cfg.sampleMode = value;
+                });
+            });
+
+        new Setting(perfCard)
             .setName('文本采样上限')
-            .setDesc(`单本书参与拆解的最大字数（当前: ${cfg.textSampleLimit.toLocaleString()}）`)
+            .setDesc(`仅采样模式生效：采样模式下参与拆解的最大字数（当前: ${cfg.textSampleLimit.toLocaleString()}）。全本模式下此项不生效。`)
             .addText(text => {
                 text.setValue(String(cfg.textSampleLimit));
                 text.setPlaceholder('100000');
@@ -2263,16 +2282,12 @@ export class MiniSettingsModal extends Modal {
                 style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;'
             }
         });
-        exportBtn.onclick = () => {
+        exportBtn.onclick = async () => {
             const json = performanceMonitor.exportLog();
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `performance-log-${new Date().toISOString().slice(0, 10)}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            new Notice('✅ 性能日志已导出', 2000);
+            await exportTextFile(this.app, `performance-log-${new Date().toISOString().slice(0, 10)}.json`, json, {
+                mime: 'application/json',
+                successMessage: '✅ 性能日志已导出',
+            });
         };
 
         const clearBtn = btnRow.createEl('button', {
@@ -2282,8 +2297,15 @@ export class MiniSettingsModal extends Modal {
                 style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-error);border:1px solid var(--background-modifier-error);border-radius:6px;font-size:13px;'
             }
         });
-        clearBtn.onclick = () => {
-            if (confirm('确定要清空所有性能日志吗？')) {
+        clearBtn.onclick = async () => {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '清空性能日志',
+                description: '确定要清空所有性能日志吗？',
+                warning: '此操作不可恢复',
+                confirmText: '确认清空',
+                cancelText: '取消',
+            });
+            if (confirmed) {
                 performanceMonitor.clearLog();
                 this.renderActiveTab();
                 new Notice('✅ 性能日志已清空', 2000);

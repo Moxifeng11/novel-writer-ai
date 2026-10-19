@@ -41,7 +41,7 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('KnowledgeBaseManager');
-const MAX_SOURCE_TEXT_LENGTH = 2_000_000; // 200 万字
+const MAX_SOURCE_TEXT_LENGTH = 20_000_000; // 2000 万字：仅作内存安全上限，非功能性截断；正常全本（含数百万字长篇）不会触发
 const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export type BreakdownStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'interrupted';
@@ -320,9 +320,15 @@ export class KnowledgeBaseManager {
                     const fm = this.parseFrontmatter(content);
                     const bookData = fm as Record<string, unknown>;
 
-                    if (bookData.id && typeof bookData.id === 'string') {
+                    // v6.3 加固：仅接纳带有效「书名」的条目。历史/损坏的基本信息可能缺少 name
+                    // （例如旧版本遗留的 `写作知识库/undefined/基本信息.md`），一旦被接纳，
+                    // 后续任何 kbBookDir(book.name) 都会因 undefined.replace 抛 TypeError。
+                    const validName = typeof bookData.name === 'string' && bookData.name.trim().length > 0;
+                    if (bookData.id && typeof bookData.id === 'string' && validName) {
                         const migrated = this.migrateBookData(bookData);
                         this.books.set(migrated.id, migrated);
+                    } else {
+                        log.warn(`[KnowledgeBaseManager] 跳过缺少有效书名或 id 的基本信息: ${bookName}`);
                     }
                 } catch (bookError) {
                     log.warn(`[KnowledgeBaseManager] 读取书籍基本信息失败: ${bookName}`, bookError);
@@ -714,7 +720,7 @@ export class KnowledgeBaseManager {
         }
 
         if (text.length > MAX_SOURCE_TEXT_LENGTH) {
-            log.warn(`[KnowledgeBaseManager] 源文本过长，已截断: ${book.name}, 原始长度: ${text.length}, 截断后: ${MAX_SOURCE_TEXT_LENGTH}`);
+            log.warn(`[KnowledgeBaseManager] ⚠️ 源文本超过内存安全上限，已截断（非全本）: ${book.name}, 原始长度: ${text.length} 字符, 实际读取: ${MAX_SOURCE_TEXT_LENGTH} 字符, 原因: 超过 MAX_SOURCE_TEXT_LENGTH 内存保护阈值`);
             return text.slice(0, MAX_SOURCE_TEXT_LENGTH);
         }
 
@@ -759,7 +765,7 @@ export class KnowledgeBaseManager {
             throw new Error(`书籍不存在: ${bookId}`);
         }
 
-        const dimensions: BreakdownDimension[] = ['style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow'];
+        const dimensions: BreakdownDimension[] = ['style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow', 'commercial', 'readability'];
         const missing: BreakdownDimension[] = [];
 
         for (const dimension of dimensions) {

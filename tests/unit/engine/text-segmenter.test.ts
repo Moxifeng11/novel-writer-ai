@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TextSegmenter } from '../../../engine/text-segmenter';
+import { TextSegmenter, countTotalChars } from '../../../engine/text-segmenter';
 
 describe('TextSegmenter', () => {
     const segmenter = new TextSegmenter();
@@ -212,5 +212,31 @@ Final content.`;
             expect(s['isChapterTitle']('第一句话是这样的。')).toBe(false);
             expect(s['isChapterTitle']('')).toBe(false);
         });
+    });
+});
+
+describe('countTotalChars', () => {
+    it('空文本返回 0', () => {
+        expect(countTotalChars('')).toBe(0);
+    });
+
+    it('中文字符逐字计数', () => {
+        expect(countTotalChars('诡秘之主')).toBe(4);
+    });
+
+    it('中文标点计入字数', () => {
+        expect(countTotalChars('你好，世界。')).toBe(6);
+    });
+
+    it('忽略空白（空格/换行/制表符）', () => {
+        expect(countTotalChars('你 好\n世\t界')).toBe(4);
+    });
+
+    it('ASCII 可打印字符与数字计入', () => {
+        expect(countTotalChars('abc123')).toBe(6);
+    });
+
+    it('中英混排组合计数（第/1/章=3，空格忽略，Hello=5）', () => {
+        expect(countTotalChars('第1章 Hello')).toBe(3 + 5);
     });
 });

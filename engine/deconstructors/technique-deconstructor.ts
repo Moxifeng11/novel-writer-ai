@@ -64,6 +64,10 @@ export interface TechniqueAnalysisResult {
     };
     genreId?: string;
     genreName?: string;
+    aggregation?: {
+        segmentCount: number;
+        dataStatus: 'complete' | 'partial';
+    };
 }
 
 interface TechniquePattern {

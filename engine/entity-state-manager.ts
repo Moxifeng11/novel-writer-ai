@@ -18,8 +18,11 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('EntityStateManager');
+/** 实体变化类型（Task 12 六类扩展：人物状态/新地点/新道具/关系/新伏笔/已完成节点） */
+export type EntityChangeType = 'character' | 'location' | 'prop' | 'relationship' | 'foreshadow' | 'plotNode';
+
 export interface EntityStateChange {
-    /** 实体名称（人物名） */
+    /** 实体名称（人物名/地名/道具名等） */
     entityName: string;
     /** 新状态描述 */
     newStatus: string;
@@ -27,6 +30,8 @@ export interface EntityStateChange {
     reason: string;
     /** 检测置信度 0-1 */
     confidence: number;
+    /** 实体变化类型；缺省视为 character（向后兼容旧检测结果） */
+    entityType?: EntityChangeType;
 }
 
 export interface EntityStateManagerOptions {
@@ -251,18 +256,26 @@ export class EntityStateManager {
     private buildDetectPrompt(bodyContent: string, project: string): string {
         return `你是一个小说实体状态变更检测器。
 
-【任务】分析以下正文内容，检测每位角色的状态是否发生变化。
+【任务】分析以下正文内容，检测以下六类变化：
+1. character：人物状态变化（战斗受伤、情绪重大改变、位置迁移、境界突破等）
+2. location：新地点（出现新的地名/场景）
+3. prop：新道具（出现新的物品/功法/装备）
+4. relationship：关系变化（人物之间关系建立/破裂/转变）
+5. foreshadow：新伏笔（埋设新的悬念/线索）
+6. plotNode：已完成节点（剧情节点完成/推进）
+
 输出 JSON 数组（不要加 \`\`\` 包裹）：
 [
-  { "entityName": "角色名", "newStatus": "新状态描述", "reason": "变更原因简述", "confidence": 0.9 }
+  { "entityType": "character", "entityName": "角色名", "newStatus": "新状态描述", "reason": "变更原因简述", "confidence": 0.9 }
 ]
 
 【规则】
-1. 只有状态确实发生变化时才输出（战斗受伤、情绪重大改变、位置迁移、境界突破等）
+1. 只有确实发生变化/出现新实体时才输出
 2. 无明显变化的不输出
-3. 一次最多检测 8 个角色
+3. 一次最多检测 12 项
 4. confidence：0.9=非常确定，0.7=比较确定，0.5=可能
 5. newStatus 应简洁（≤30字），如"与遗迹守卫激战中受伤，左臂中剑"
+6. entityType 必须是上述六类之一（character/location/prop/relationship/foreshadow/plotNode）
 
 【正文内容】（前 6000 字）：
 ${bodyContent.slice(0, 6000)}

@@ -26,3 +26,8 @@ Thumbs.db
 # Local config (user-specific)
 data.json
 data/
+
+# Local workspace artifacts (release hygiene)
+.trae/
+.tmp-*/
+*.tmp

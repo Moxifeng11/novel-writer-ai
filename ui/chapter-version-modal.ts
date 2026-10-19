@@ -359,7 +359,7 @@ export class ChapterVersionModal extends Modal {
         let lineNum = 1;
 
         for (const diff of this.currentLineDiffs) {
-            const lineEl = diffContent.createDiv({ cls: `nw-diff-line diff-${diff.op}` });
+            const lineEl = diffContent.createDiv({ cls: `nw-diff-line nw-diff-${diff.op}` });
 
             const gutter = lineEl.createSpan({ cls: 'nw-diff-gutter' });
             if (diff.op !== 'delete') {
@@ -405,20 +405,20 @@ export class ChapterVersionModal extends Modal {
         if (oldText && newText) {
             const charDiffs = charDiff(oldText, newText);
             for (const cd of charDiffs) {
-                const span = container.createSpan({ cls: `nw-char-diff diff-${cd.op}` });
+                const span = container.createSpan({ cls: `nw-char-diff nw-diff-${cd.op}` });
                 span.setText(cd.content || ' ');
             }
         } else if (oldText) {
-            const span = container.createSpan({ cls: 'nw-char-diff diff-delete' });
+            const span = container.createSpan({ cls: 'nw-char-diff nw-diff-delete' });
             span.setText(oldText);
         } else if (newText) {
-            const span = container.createSpan({ cls: 'nw-char-diff diff-insert' });
+            const span = container.createSpan({ cls: 'nw-char-diff nw-diff-insert' });
             span.setText(newText);
         }
     }
 
     private renderLine(container: HTMLElement, content: string, type: string, lineNum: number): void {
-        const lineEl = container.createDiv({ cls: `nw-diff-line diff-${type}` });
+        const lineEl = container.createDiv({ cls: `nw-diff-line nw-diff-${type}` });
 
         const gutter = lineEl.createSpan({ cls: 'nw-diff-gutter' });
         gutter.setText(String(lineNum));

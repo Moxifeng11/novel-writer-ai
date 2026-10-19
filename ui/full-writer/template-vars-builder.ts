@@ -489,7 +489,7 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
 export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<string, string>> {
   const vars: Record<string, string> = {};
   vars["writingRules"] = await RulesService.getInstance(deps.plugin.app).getWritingRules();
-  vars["chapNum"] = String(deps.chapterNum);
+  vars["chapNum"] = String(deps.chapterNum || parseInt(deps.chapterName.match(/\d+/)?.[0] || "0", 10));
   vars["chapName"] = deps.chapterName;
   vars["project"] = deps.project;
   vars["baseWords"] = String(deps.plugin.settings.defaultWordCount || 3e3);

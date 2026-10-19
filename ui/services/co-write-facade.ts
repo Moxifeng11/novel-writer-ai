@@ -168,9 +168,10 @@ export class CoWriteFacade {
         cursorHint: string,
         mode: string,
         count: number,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        onChunk?: (index: number, cumulativeText: string) => void
     ): Promise<SuggestionRecord[]> {
-        return this.engine.suggestNext(precedingText, cursorHint, mode as any, count, signal);
+        return this.engine.suggestNext(precedingText, cursorHint, mode as any, count, signal, onChunk);
     }
 
     async *suggestStream(
@@ -207,9 +208,11 @@ export class CoWriteFacade {
         beforeContext: string,
         afterContext: string,
         cursorHint: string,
-        count: number
+        count: number,
+        onChunk?: (index: number, cumulativeText: string) => void,
+        signal?: AbortSignal
     ): Promise<SuggestionRecord[]> {
-        return this.engine.rewriteSelection(selectedText, beforeContext, afterContext, cursorHint, count);
+        return this.engine.rewriteSelection(selectedText, beforeContext, afterContext, cursorHint, count, onChunk, signal);
     }
 
     async suggestAssociation(

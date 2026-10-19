@@ -215,8 +215,27 @@ export class FileManager {
     async processFrontMatter(_file: TFile, _fn: (fm: any) => void): Promise<void> {}
 }
 
+/** U11：step-result-viewer 等按平台分流 UI 的模块依赖 Platform 判定 */
+export const Platform = {
+    isMobile: false,
+    isDesktop: true,
+    isDesktopApp: true,
+    isMobileApp: false,
+};
+
 export class Notice {
-    constructor(_message: string | DocumentFragment, _timeout?: number) {}
+    message: string | DocumentFragment;
+    timeout?: number;
+    constructor(message: string | DocumentFragment, timeout?: number) {
+        this.message = message;
+        this.timeout = timeout;
+    }
+    /** 进度型 Notice 会复用同一条并更新文案 */
+    setMessage(message: string | DocumentFragment): this {
+        this.message = message;
+        return this;
+    }
+    hide(): void {}
 }
 
 export class App {

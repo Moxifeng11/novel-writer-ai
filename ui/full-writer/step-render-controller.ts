@@ -15,13 +15,15 @@ import NovelWriterPlugin from '../../main';
 import { StepRunner, ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
 import { ChapterStateManager } from '../states/chapter-state-manager';
 import {
-    resolveStepKey,
-    getStepColorClass,
-    getStepStatusDescriptor,
-    isStepClickable,
-} from './step-nav-presenter';
+    getStreamlinedPhases,
+    getPhaseStatusDescriptor,
+    isPhaseClickable,
+    mapStreamlinedPhaseToStepIndex,
+    StreamlinedPhase,
+} from './streamlined-nav-presenter';
 import { showError, showSuccess } from '../../utils/helpers';
 import { SceneOutlineController } from './scene-outline-controller';
+import { openSceneConfirmWizard } from '../scene-confirm-modal';
 import { createLogger } from '../../shared/logger';
 
 
@@ -53,45 +55,39 @@ export class StepRenderController {
         const d = this.deps;
         const cs = d.chapterState;
         const nav = workspace.createDiv({ cls: 'novel-writer-fw-step-nav' });
-        nav.createEl('h4', { text: '步骤导航', cls: 'novel-writer-fw-nav-title' });
+        nav.createEl('h4', { text: '阶段导航', cls: 'novel-writer-fw-nav-title' });
 
-        const list = nav.createDiv({ cls: 'novel-writer-fw-step-list' });
+        const list = nav.createDiv({ cls: 'novel-writer-fw-step-list novel-writer-fw-streamlined-list' });
 
-        for (const step of ALL_FULL_STEPS) {
-            const item = list.createDiv({ cls: 'novel-writer-fw-step-item' });
+        const phases = getStreamlinedPhases();
+        for (const phase of phases) {
+            const item = list.createDiv({ cls: 'novel-writer-fw-step-item novel-writer-fw-phase-item' });
 
-            // V2 步骤颜色分组：规划蓝 | 灵魂紫 | 创作绿 | 审查橙
-            const stepKey = resolveStepKey(step);
-            const colorClass = getStepColorClass(step);
-            if (colorClass) item.addClass(colorClass);
+            if (phase.colorClass) item.addClass(phase.colorClass);
 
-            // 状态图标（v6.0: 四级状态体系 + 缺失项提示）
-            const status = getStepStatusDescriptor(
-                step, stepKey, cs.currentStepIndex,
+            const status = getPhaseStatusDescriptor(
+                phase, cs.currentStepIndex,
                 cs.stepCompleted, cs.stepResults,
-                cs.staleSteps,
-                cs.stepLevels, cs.stepMissing,
+                cs.staleSteps, cs.stepLevels,
             );
             item.addClass(status.cls);
             if (status.title) item.setAttr('title', status.title);
 
             item.createSpan({ text: status.icon, cls: 'novel-writer-fw-step-icon' });
-            item.createSpan({ text: step.label, cls: 'novel-writer-fw-step-label' });
+            item.createSpan({ text: phase.label, cls: 'novel-writer-fw-step-label' });
 
-            // 点击处理：上下文加载完成后，所有步骤（1-10）均可自由点击导航
-            if (isStepClickable(step, stepKey, cs.currentStepIndex, cs.stepCompleted)) {
+            if (isPhaseClickable(phase, cs.currentStepIndex, cs.stepCompleted)) {
                 item.addClass('novel-writer-fw-step-clickable');
-                const idx = step.index;
                 item.onclick = async () => {
-                    if (idx !== cs.currentStepIndex) {
-                        cs.currentStepIndex = idx;
+                    const targetIndex = mapStreamlinedPhaseToStepIndex(phase.key, cs.stepCompleted);
+                    if (targetIndex !== cs.currentStepIndex) {
+                        cs.currentStepIndex = targetIndex;
                         await d.renderInContainer(d.getTabContent());
                     }
                 };
             }
         }
 
-        // 干预文本框：放在步骤导航底部，章节结算下方（v3.4.7 P0-9）
         d.renderInterventionBox(nav);
     }
 
@@ -233,6 +229,33 @@ export class StepRenderController {
                 style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--background-secondary);'
             }
         });
+
+        const sceneGenBtn = btnGroup.createEl('button', {
+            text: '🎬 逐场景生成',
+            attr: {
+                style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);'
+            }
+        });
+        sceneGenBtn.onclick = async () => {
+            const expansionText = cs.stepResults['sceneExpand'] || '';
+            if (!expansionText.trim()) { showError('请先生成 Scene展开 内容'); return; }
+            const chapterName = d.getChapterName();
+            const chapterNumMatch = chapterName.match(/\d+/);
+            const chapterNumber = chapterNumMatch ? parseInt(chapterNumMatch[0]) : 0;
+            const chapterPlan = cs.stepResults['outline'] || cs.stepResults['plotDistill'] || '';
+            try {
+                await openSceneConfirmWizard({
+                    plugin: d.plugin,
+                    project: d.getProject(),
+                    chapterName,
+                    chapterNumber,
+                    expansionText,
+                    chapterPlan,
+                });
+            } catch (e) {
+                showError(`打开逐场景生成失败: ${(e as Error).message}`);
+            }
+        };
 
         const saveBtn = btnGroup.createEl('button', {
             text: '💾 保存',

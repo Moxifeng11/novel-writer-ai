@@ -8,9 +8,10 @@
  *   新代码建议直接 `import { ... } from '../engine/prompts'`。
  *
  * 子文件职责：
- *   - writing-rules.ts        全局写作 15 心法
+ *   - writing-rules.ts        全局写作规则（16 心法 + 格式参考；与元文件/00-系统模板/写作规则.md 同结构）
  *   - chapter-pipeline-prompts.ts  9 步流水线 V1 模板
  *   - body-v2-prompts.ts      V2 正文生成（小说家模式）
+ *   - soul-driven-prompts.ts  V2 灵魂驱动步骤（角色灵魂 / 情绪规划 / Scene 展开）
  *   - deai-prompts.ts         去 AI 味独立通道
  *   - co-write-prompts.ts     句级协同写作 8 方向
  *   - memory-prompts.ts       记忆碎片生成
@@ -18,6 +19,11 @@
  */
 
 export { WRITING_RULES } from './writing-rules';
+export {
+    CHARACTER_SOUL_PROMPTS,
+    EMOTION_PLAN_PROMPTS,
+    SCENE_EXPAND_PROMPTS,
+} from './soul-driven-prompts';
 export {
     INFO_PLAN_PROMPTS,
     PLOT_DISTILL_PROMPTS,

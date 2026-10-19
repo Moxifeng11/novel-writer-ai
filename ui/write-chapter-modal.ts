@@ -485,7 +485,14 @@ ${olResult.content.trim()}
             unrevealedCount: unrevealedCount
         };
 
-        const result = await aiEngine.generateChapter(context);
+        const result = await aiEngine.generateChapterStream(
+            context,
+            (text, done) => {
+                if (!done) {
+                    showProgress(`⏳ 正在撰写第${chapNum}章（${text.length} 字）...`);
+                }
+            }
+        );
 
         hideProgress();
 

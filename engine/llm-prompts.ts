@@ -23,6 +23,21 @@ export type LLMEnhanceDimension =
     | 'foreshadow'
     | 'genre';
 
+/** 角色校验结果 */
+export interface CharacterVerifyResult {
+    name: string;
+    isCharacter: number;
+    reason: string;
+}
+
+/** 称号/别名抽取结果 */
+export interface TitleAliasResult {
+    sourceName: string;
+    targetName: string;
+    reason: string;
+    confidence: number;
+}
+
 /** 提示词构建结果 */
 export interface LLMPromptPair {
     systemPrompt: string;
@@ -229,4 +244,85 @@ export function getDimensionPrompt(
 ): LLMPromptPair {
     const builder = PROMPT_BUILDERS[dimension];
     return builder(text, genreConfig, existingResult);
+}
+
+/**
+ * 构建角色校验 Prompt
+ *
+ * 设计思路：
+ * - 让 LLM 基于文本上下文判断每个候选词是否是小说中的人物角色名
+ * - 给出 0-1 的置信度，便于后续与统计置信度加权融合
+ * - 要求提供简短理由，便于调试和人工审核
+ * - 批处理模式：每批最多 20 个候选，避免 prompt 过长
+ */
+export function buildCharacterVerifyPrompt(
+    candidates: string[],
+    textSample: string
+): LLMPromptPair {
+    const candidatesList = candidates.map((name, i) => `${i + 1}. ${name}`).join('\n');
+
+    return {
+        systemPrompt: `你是一个中文小说角色识别专家。请判断以下词语是否是小说中的人物角色名。
+
+严格要求：
+1. 只输出一个 JSON 数组，不要输出任何解释性文字、Markdown 代码块或前后缀
+2. 每个候选词都要给出判断，不要遗漏
+3. 不确定时给出较低的置信度，不要强行判断
+4. 判断必须基于给定的文本上下文，不要引入外部知识
+5. 输出必须是合法的 JSON 数组
+
+输出 JSON 结构（每项包含）：
+- name: 候选名称（字符串）
+- isCharacter: 0-1 的置信度（1=确定是角色，0=确定不是，保留2位小数）
+- reason: 简短判断理由（不超过 20 字）`,
+        userPrompt: `文本上下文：
+${textSample}
+
+候选列表：
+${candidatesList}
+
+请以 JSON 数组格式返回结果：`,
+    };
+}
+
+/**
+ * 构建称号/别名抽取 Prompt
+ *
+ * 设计思路：
+ * - 让 LLM 分析文本中同一角色的不同称呼、称号、身份、别名
+ * - 特别关注称号类（如"愚者"、"死神"等与本名无字符重叠的）
+ * - 返回 merge 建议格式，sourceName=称号/别名，targetName=主名称
+ * - 只生成建议，不直接合并，由上层 pipeline 决定是否采纳
+ * - 批处理模式：每批处理 5-10 个角色的上下文
+ */
+export function buildTitleAliasPrompt(
+    candidates: string[],
+    textSample: string
+): LLMPromptPair {
+    const candidatesList = candidates.map((name, i) => `${i + 1}. ${name}`).join('\n');
+
+    return {
+        systemPrompt: `你是一个中文小说角色分析专家。请分析文本中同一角色的不同称呼、称号、身份、别名。
+
+严格要求：
+1. 只输出一个 JSON 数组，不要输出任何解释性文字、Markdown 代码块或前后缀
+2. 只返回你有较高把握的对应关系，不要编造
+3. sourceName 必须是称号/别名（出现在文本中但不在已知角色列表中的称呼）
+4. targetName 必须是已知角色列表中的名称
+5. 判断必须基于给定的文本上下文，不要引入外部知识
+6. 输出必须是合法的 JSON 数组
+
+输出 JSON 结构（每项包含）：
+- sourceName: 称号/别名（字符串）
+- targetName: 主名称（已知角色列表中的名称，字符串）
+- reason: 判断理由（不超过 30 字，字符串）
+- confidence: 0-1 的置信度（保留2位小数）`,
+        userPrompt: `文本上下文：
+${textSample}
+
+已知角色列表：
+${candidatesList}
+
+请找出同一角色的不同称呼、称号、身份、别名，以 JSON 数组格式返回：`,
+    };
 }

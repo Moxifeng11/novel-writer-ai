@@ -27,7 +27,6 @@ import {
 import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import {
     getStepTemplate,
-    WRITING_RULES,
     type PromptTemplate,
 } from '../engine/prompt-templates';
 import { RulesService } from './rules-service';

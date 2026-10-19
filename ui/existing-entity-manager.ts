@@ -2,6 +2,7 @@ import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { showSuccess, showError, showWarning } from '../utils/helpers';
 import { createLogger } from '../shared/logger';
+import { OperationConfirmModal } from './components/progress';
 
 
 const log = createLogger('ExistingEntityManager');
@@ -389,9 +390,15 @@ export class ExistingEntityManagerModal extends Modal {
 
         const closeBtn = bar.createEl('button', { text: '关闭' });
         closeBtn.style.cssText = 'font-size:0.85em; padding:6px 14px; cursor:pointer;';
-        closeBtn.onclick = () => {
+        closeBtn.onclick = async () => {
             if (hasChanges) {
-                if (!confirm('有未应用的变更，确定关闭吗？')) return;
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '关闭管理面板',
+                    description: '有未应用的变更，确定关闭吗？',
+                    confirmText: '确认关闭',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
             }
             this.close();
         };

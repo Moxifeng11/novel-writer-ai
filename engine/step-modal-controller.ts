@@ -419,8 +419,10 @@ export class StepModalController {
             execBtn.disabled = true;
             execBtn.setText('⏳ 迭代中...');
             try {
+                // P0-4: 精修轮数参数化——原硬编码 3，现从 settings 读取（默认 3 保持兼容）
+                const refineRounds = this.deps.getPlugin()?.settings?.refineRounds ?? 3;
                 const result = await this.deps.getAIEngine().iterativeRefine(
-                    bodyText, contextPrompt, 3, chapNum,
+                    bodyText, contextPrompt, refineRounds, chapNum,
                     (msg) => { execBtn.setText(msg); }
                 );
                 summaryEl.empty();

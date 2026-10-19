@@ -78,9 +78,35 @@ export class ContextLoaderController {
 
         await this.ensureCrossVolumeSnapshot();
 
-        this.deps.getChapterStateManager().currentStepIndex = 1;
-
         this.deps.entityStateController.syncInvolvedEntitiesToPlugin();
+
+        const cs = this.deps.getChapterStateManager();
+        if (!cs.stepCompleted.has('characterSoul')) {
+            showProgress('🫀 提取角色灵魂...');
+            try {
+                const context = this.deps.getContext();
+                const characterCoresData = context?.data?.character_cores as Array<Record<string, unknown>> | undefined;
+                if (characterCoresData && characterCoresData.length > 0) {
+                    const allSouls = characterCoresData.map((c: Record<string, unknown>) => {
+                        const name = c.name || '未知角色';
+                        const personality = c.personality || '';
+                        const background = c.background || '';
+                        return `【${name}】性格：${personality}\n背景：${background}`;
+                    }).join('\n\n');
+                    cs.stepResults['characterSoul'] = allSouls;
+                    this.deps.state.vars['characterCores'] = allSouls;
+                    cs.stepLevels['characterSoul'] = 'complete';
+                    cs.stepMissing['characterSoul'] = [];
+                    cs.stepCompleted.add('characterSoul');
+                    showSuccess('🫀 角色灵魂提取完成');
+                }
+            } catch (e) {
+                log.warn('[ContextLoader] 自动提取角色灵魂失败:', e);
+            }
+            hideProgress();
+        }
+
+        cs.currentStepIndex = 1;
     }
 
     private async ensureCrossVolumeSnapshot(): Promise<void> {

@@ -125,7 +125,6 @@ export class GenreDetector {
         if (!sub) return 0;
         let count = 0;
         let pos = 0;
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             const idx = text.indexOf(sub, pos);
             if (idx === -1) break;

@@ -1,4 +1,5 @@
 import { App, Modal, Notice } from 'obsidian';
+import { OperationConfirmModal } from './components/progress';
 import { StyleFingerprint, StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
 import { migrateV1ToV2 } from '../engine/style/fingerprint-migrator';
 import { V2Fingerprint, StyleDimensionKeyV2, DimensionStatus } from '../engine/style/style-dimensions-v2';
@@ -492,8 +493,14 @@ export class FingerprintDetailModal extends Modal {
                     style: 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;'
                 }
             });
-            reextractBtn.addEventListener('click', () => {
-                if (!confirm('确定要重新提取该指纹吗？现有数据将被覆盖。')) return;
+            reextractBtn.addEventListener('click', async () => {
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '重新提取指纹',
+                    description: '确定要重新提取该指纹吗？现有数据将被覆盖。',
+                    confirmText: '确认提取',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
                 this.options.onReextract?.(fp);
             });
         }
@@ -520,8 +527,15 @@ export class FingerprintDetailModal extends Modal {
                     style: 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-error);border-radius:4px;font-size:12px;color:var(--text-error);background:transparent;'
                 }
             });
-            deleteBtn.addEventListener('click', () => {
-                if (!confirm(`确定要删除指纹「${fp.name}」吗？此操作不可恢复。`)) return;
+            deleteBtn.addEventListener('click', async () => {
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '删除指纹',
+                    description: `确定要删除指纹「${fp.name}」吗？`,
+                    warning: '此操作不可恢复',
+                    confirmText: '确认删除',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
                 this.options.onDelete?.(fp);
                 this.close();
             });

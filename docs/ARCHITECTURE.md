@@ -68,6 +68,7 @@ graph TD
 - `ui/co-writing-view.ts` — 句级协同写作视图
 - `ui/full-writer-view.ts` — 完整写作工作台
 - `ui/views/knowledge-base-view.ts` — 知识库管理视图
+- `ui/views/knowledge-base-modals.ts` — 知识库 Modal（导入/编辑书籍、题材编辑、批量操作）
 - `ui/views/writing-fingerprint-view.ts` — 写作指纹库视图
 
 **`ui/full-writer/` 子目录** — 工作台控制器集合：

@@ -10,6 +10,7 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { ContextManager } from '../../engine/context-manager';
+import { escapeHtml } from '../../utils/helpers';
 import { CoverPickerController } from './cover-picker-controller';
 import { ToolsModal } from './tools-modal';
 import { WritingStyleModal } from '../writing-style-modal';
@@ -362,7 +363,9 @@ export class ProjectSelectorController {
             if (isNext) item.classList.add('is-next');
 
             const stIcon = isCompleted ? ' ✅' : (isNext ? ' ✏️ 待写' : ' 📝');
-            item.innerHTML = `<span class="novel-writer-chapter-num">${ch.chapter}</span><span class="novel-writer-chapter-title">${ch.title || '无标题'}${stIcon}</span>`;
+            // F1：ch.title 来自 frontmatter（AI 生成/导入可写入任意文本），ch.chapter 为解析串，
+            // innerHTML 插值前必须转义，防止章节标题 XSS。
+            item.innerHTML = `<span class="novel-writer-chapter-num">${escapeHtml(ch.chapter)}</span><span class="novel-writer-chapter-title">${escapeHtml(ch.title || '无标题')}${stIcon}</span>`;
             item.onclick = async () => {
                 await this.deps.onSelectChapter(project, ch);
                 modal.close();

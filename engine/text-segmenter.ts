@@ -441,3 +441,67 @@ export class TextSegmenter {
         return text.slice(-charCount);
     }
 }
+
+export function countTotalChars(text: string): number {
+    let count = 0;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if ((ch >= '\u4e00' && ch <= '\u9fff') ||    // CJK统一汉字
+            (ch >= '\u3400' && ch <= '\u4dbf') ||    // CJK扩展A
+            (ch >= '\uf900' && ch <= '\ufaff') ||    // CJK兼容汉字
+            (ch >= '\u3000' && ch <= '\u303f') ||    // CJK标点
+            (ch >= '\uff00' && ch <= '\uffef') ||    // 全角标点/字母
+            (ch >= '\x00' && ch <= '\x7f' && !(' \t\n\r'.includes(ch))) || // ASCII可打印(排除空白)
+            (ch >= '\u0030' && ch <= '\u0039') ||    // ASCII数字
+            (ch >= '\uff10' && ch <= '\uff19')) {    // 全角数字
+            count++;
+        }
+    }
+    return count;
+}
+
+export type WordCountMode = 'total' | 'chinese_only' | 'platform';
+
+export function countWords(text: string, mode: WordCountMode = 'platform'): number {
+    if (!text) return 0;
+
+    switch (mode) {
+        case 'total':
+            return countTotalChars(text);
+
+        case 'chinese_only': {
+            let count = 0;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if ((ch >= '\u4e00' && ch <= '\u9fff') ||
+                    (ch >= '\u3400' && ch <= '\u4dbf') ||
+                    (ch >= '\uf900' && ch <= '\ufaff')) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        case 'platform':
+        default: {
+            let count = 0;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if ((ch >= '\u4e00' && ch <= '\u9fff') ||
+                    (ch >= '\u3400' && ch <= '\u4dbf') ||
+                    (ch >= '\uf900' && ch <= '\ufaff')) {
+                    count++;
+                } else if ((ch >= '0' && ch <= '9') ||
+                           (ch >= '\uff10' && ch <= '\uff19')) {
+                    count++;
+                } else if ((ch >= 'a' && ch <= 'z') ||
+                           (ch >= 'A' && ch <= 'Z') ||
+                           (ch >= '\uff21' && ch <= '\uff3a') ||
+                           (ch >= '\uff41' && ch <= '\uff5a')) {
+                    count += 0.5;
+                }
+            }
+            return Math.floor(count);
+        }
+    }
+}

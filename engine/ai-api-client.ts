@@ -1,5 +1,7 @@
 
-import NovelWriterPlugin from '../main';
+import type NovelWriterPlugin from '../main';
+import { computePromptHash } from './prompt-hash';
+import { getPromptCache } from './prompt-cache';
 import {
     AI_RETRY_BACKOFF_MS,
     AI_RATE_LIMIT_WAIT_MS,
@@ -12,6 +14,7 @@ import {
     getTimeoutForModel,
 } from '../shared/thresholds';
 import { calculateTokenBudget, getModelMaxOutput } from '../shared/token-estimator';
+import { resolveProviderSourceType } from '../shared/model-source';
 import type { APIResponse } from './ai-engine';
 
 import type { Notifier } from '../shared/types';
@@ -133,6 +136,39 @@ export class AIApiClient {
         return models.concat(others);
     }
 
+    /** 构造请求体（统一 Ollama 原生 / OpenAI 兼容两种格式，消除三份重复实现） */
+    private buildRequestBody(
+        isOllamaNative: boolean,
+        model: string,
+        userPrompt: string,
+        systemPrompt: string,
+        temperature: number,
+        maxTokens: number,
+        stream: boolean
+    ): Record<string, unknown> {
+        const safeMaxTokens = Math.min(maxTokens, ZAI_MAX_TOKENS);
+        if (isOllamaNative) {
+            return {
+                model,
+                prompt: userPrompt,
+                system: systemPrompt,
+                stream,
+                options: { temperature, num_predict: safeMaxTokens },
+            };
+        }
+        const body: Record<string, unknown> = {
+            model,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt },
+            ],
+            max_tokens: safeMaxTokens,
+            temperature,
+        };
+        if (stream) body.stream = true;
+        return body;
+    }
+
     private async handleRateLimit(currentModel: string, hasMoreModels: boolean): Promise<'break' | 'continue'> {
         AIApiClient.onRateLimitHit();
         if (hasMoreModels) {
@@ -146,6 +182,21 @@ export class AIApiClient {
     private shouldFallback(error: unknown, statusCode: number | undefined, hasMoreModels: boolean): boolean {
         if (!hasMoreModels) return false;
         return this.isDisconnectionError(error, statusCode);
+    }
+
+    /**
+     * v6.3: 本地模型源（Ollama / LM Studio / vLLM 等）通常无需 API 密钥。
+     * 仅当端点被判定为 local 且未配置任何密钥时豁免密钥守卫；云端端点行为完全不变。
+     * （此前 callAI / callAIStream 硬性要求 apiKey，导致「本地 Ollama + 空密钥」
+     * 这一内置配置下所有非流式 AI 调用都返回「API密钥未配置」，流水线无法运行。）
+     */
+    private isKeylessLocalEndpoint(endpoint: string): boolean {
+        const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
+        return resolveProviderSourceType({
+            id: provider?.id || '',
+            endpoint,
+            sourceType: provider?.sourceType,
+        }) === 'local';
     }
 
     async callAI(
@@ -164,6 +215,20 @@ export class AIApiClient {
             return { content: '', error: 'aborted' };
         }
 
+        // P0-3: prompt 五元组哈希缓存——命中时跳过 AI 调用（spec p0-api-efficiency-optimization §4.1，决策 D-3/D-6）
+        const cacheEnabled = (this.plugin as any).settings?.promptCacheEnabled !== false;
+        const promptCache = cacheEnabled ? getPromptCache() : null;
+        const cacheKey = promptCache
+            ? computePromptHash(systemPrompt, userPrompt, effectiveModel, temperature, maxTokens)
+            : '';
+        if (promptCache) {
+            const cached = promptCache.get(cacheKey);
+            if (cached) {
+                log.debug('[小说工坊] prompt 缓存命中，跳过 AI 调用');
+                return cached;
+            }
+        }
+
         const modelMaxOutput = getModelMaxOutput(effectiveModel);
         const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
         if (maxTokens > modelMaxOutput) {
@@ -174,7 +239,7 @@ export class AIApiClient {
             this.notifier.showNotice('❌ 请先配置API端点', NOTICE_ERROR);
             return { content: '', error: 'API端点未配置' };
         }
-        if (!apiKey) {
+        if (!apiKey && !this.isKeylessLocalEndpoint(endpoint)) {
             this.notifier.showNotice('❌ 请先配置API密钥', NOTICE_ERROR);
             return { content: '', error: 'API密钥未配置' };
         }
@@ -228,37 +293,28 @@ export class AIApiClient {
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                 let ac: AbortController | null = null;
                 let timer: ReturnType<typeof setTimeout> | null = null;
+                // v6.3: 外部 abort（用户连按 Tab）联动内部 abort，真正中断 fetch。
+                // 监听必须存活到响应体读完之后（见下方 finally 解绑），否则「生成中取消」
+                // 只能中断建连阶段，无法中断正在读取的响应体。
+                const onExternalAbort = () => ac?.abort();
+                if (externalSignal) {
+                    externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+                }
                 try {
                     ac = new AbortController();
                     timer = setTimeout(() => ac!.abort(), getTimeoutForModel(currentModel));
-                    // v6.3: 外部 abort（用户连按 Tab）联动内部 abort，真正中断 fetch
-                    const onExternalAbort = () => ac?.abort();
-                    if (externalSignal) {
-                        externalSignal.addEventListener('abort', onExternalAbort, { once: true });
-                    }
 
                     const isOllamaNative = endpoint.includes('/api/generate');
 
-                    const requestBody = isOllamaNative
-                        ? {
-                            model: currentModel,
-                            prompt: userPrompt,
-                            system: effectiveSystemPrompt,
-                            stream: false,
-                            options: {
-                                temperature: temperature,
-                                num_predict: Math.min(finalMaxTokens, ZAI_MAX_TOKENS)
-                            }
-                        }
-                        : {
-                            model: currentModel,
-                            messages: [
-                                { role: 'system', content: effectiveSystemPrompt },
-                                { role: 'user', content: userPrompt }
-                            ],
-                            max_tokens: Math.min(finalMaxTokens, ZAI_MAX_TOKENS),
-                            temperature: temperature
-                        };
+                    const requestBody = this.buildRequestBody(
+                        isOllamaNative,
+                        currentModel,
+                        userPrompt,
+                        effectiveSystemPrompt,
+                        temperature,
+                        finalMaxTokens,
+                        false
+                    );
 
                     const perfFetchId = performanceMonitor.start('apiFetch', 'apiCall', undefined, {
                         model: currentModel,
@@ -277,7 +333,6 @@ export class AIApiClient {
 
                     clearTimeout(timer);
                     timer = null;
-                    if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
 
                     if (response.status === 429) {
                         const rateLimitResult = await this.handleRateLimit(currentModel, fallbackModels.length > triedModels.length);
@@ -356,17 +411,22 @@ export class AIApiClient {
                         this.notifier.showNotice(`✅ 已切换至 [${currentModel}] 并成功返回内容`, NOTICE_CRITICAL);
                     }
 
+                    // P0-3: 成功响应写入缓存（error 响应不会走到此分支，天然不污染缓存）
+                    if (promptCache) {
+                        promptCache.set(cacheKey, { content, usage }, currentModel);
+                    }
+
                     return { content, usage };
                 } catch (error: unknown) {
+                    // v6.3: 外部取消优先于断联判定——AbortError 在 isDisconnectionError 中同属
+                    // 「断联」特征，若先走回退分支，用户取消会被误判为断联并切换到其他模型继续生成。
+                    if (externalSignal?.aborted) {
+                        return { content: '', error: 'aborted' };
+                    }
                     if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {
                         lastError = errorMessage(error) || '网络错误';
                         log.info(`[小说工坊] ${currentModel} 网络断联: ${lastError}`);
                         break;
-                    }
-                    // v6.3: 外部 abort 不触发重试/回退，直接退出
-                    if (externalSignal?.aborted) {
-                        if (timer) { clearTimeout(timer); timer = null; }
-                        return { content: '', error: 'aborted' };
                     }
 
                     if (attempt < 2) {
@@ -378,6 +438,8 @@ export class AIApiClient {
                         lastError = errorMessage(error) || '网络错误';
                     }
                 } finally {
+                    // v6.3: 解绑放在 finally，保证取消联动覆盖整个请求生命周期（含响应体读取）
+                    if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
                     if (timer) {
                         clearTimeout(timer);
                         timer = null;
@@ -436,7 +498,7 @@ export class AIApiClient {
                 this.notifier.showNotice('❌ 请先配置API端点', NOTICE_ERROR);
                 return { content: '', error: 'API端点未配置' };
             }
-            if (!apiKey) {
+            if (!apiKey && !this.isKeylessLocalEndpoint(endpoint)) {
                 this.notifier.showNotice('❌ 请先配置API密钥', NOTICE_ERROR);
                 return { content: '', error: 'API密钥未配置' };
             }
@@ -480,37 +542,26 @@ export class AIApiClient {
                     let ac: AbortController | null = null;
                     let timer: ReturnType<typeof setTimeout> | null = null;
 
+                    // v6.3: 取消联动覆盖到响应体读取结束（finally 解绑），与 callAI 保持一致
+                    const onExternalAbort = () => ac?.abort();
+                    if (externalSignal) {
+                        externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+                    }
                     try {
                         ac = new AbortController();
                         timer = setTimeout(() => ac!.abort(), getTimeoutForModel(currentModel));
-                        const onExternalAbort = () => ac?.abort();
-                        if (externalSignal) {
-                            externalSignal.addEventListener('abort', onExternalAbort, { once: true });
-                        }
 
                         const isOllamaNative = endpoint.includes('/api/generate');
 
-                        const streamRequestBody = isOllamaNative
-                            ? {
-                                model: currentModel,
-                                prompt: userPrompt,
-                                system: effectiveSystemPrompt,
-                                stream: true,
-                                options: {
-                                    temperature: temperature,
-                                    num_predict: Math.min(finalMaxTokens, ZAI_MAX_TOKENS)
-                                }
-                            }
-                            : {
-                                model: currentModel,
-                                messages: [
-                                    { role: 'system', content: effectiveSystemPrompt },
-                                    { role: 'user', content: userPrompt }
-                                ],
-                                max_tokens: Math.min(finalMaxTokens, ZAI_MAX_TOKENS),
-                                temperature: temperature,
-                                stream: true,
-                            };
+                        const streamRequestBody = this.buildRequestBody(
+                            isOllamaNative,
+                            currentModel,
+                            userPrompt,
+                            effectiveSystemPrompt,
+                            temperature,
+                            finalMaxTokens,
+                            true
+                        );
 
                         const perfStreamFetchId = performanceMonitor.start('apiFetchStream', 'apiCall', undefined, {
                             model: currentModel,
@@ -530,7 +581,6 @@ export class AIApiClient {
 
                         clearTimeout(timer);
                         timer = null;
-                        if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
 
                         if (response.status === 429) {
                             const rateLimitResult = await this.handleRateLimit(currentModel, fallbackModels.length > triedModels.length);
@@ -560,6 +610,7 @@ export class AIApiClient {
                         let buffer = '';
                         let accumulatedContent = '';
                         let isStreamDone = false;
+                        let streamFinishReason: 'stop' | 'length' | undefined;
 
                         while (!isStreamDone) {
                             const { done, value } = await reader.read();
@@ -584,6 +635,7 @@ export class AIApiClient {
                                             onChunk?.(accumulatedContent, false);
                                         }
                                         if (parsed?.done === true) {
+                                            streamFinishReason = 'stop';
                                             isStreamDone = true;
                                             break;
                                         }
@@ -613,7 +665,14 @@ export class AIApiClient {
                                         onChunk?.(accumulatedContent, false);
                                     }
 
-                                    if (parsed?.choices?.[0]?.finish_reason === 'stop') {
+                                    const finReason = parsed?.choices?.[0]?.finish_reason;
+                                    if (finReason === 'stop') {
+                                        streamFinishReason = 'stop';
+                                        isStreamDone = true;
+                                        break;
+                                    }
+                                    if (finReason === 'length') {
+                                        streamFinishReason = 'length';
                                         isStreamDone = true;
                                         break;
                                     }
@@ -635,7 +694,7 @@ export class AIApiClient {
                             return { content: '', error: 'AI流式返回为空' };
                         }
 
-                        const data = { content: fullContent };
+                        const data = { content: fullContent, finishReason: streamFinishReason };
 
                         if (isSwitch) {
                             log.info(`[小说工坊] ✅ 模型切换成功(流式): ${currentModel}`);
@@ -644,15 +703,14 @@ export class AIApiClient {
 
                         return data;
                     } catch (error: unknown) {
+                        // v6.3: 外部取消优先于断联判定（同 callAI，避免取消被误判为断联后切模型）
+                        if (externalSignal?.aborted) {
+                            return { content: '', error: 'aborted' };
+                        }
                         if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {
                             lastError = errorMessage(error) || '网络错误(流式)';
                             log.info(`[小说工坊] ${currentModel} 网络断联(流式): ${lastError}`);
                             break;
-                        }
-
-                        if (externalSignal?.aborted) {
-                            if (timer) { clearTimeout(timer); timer = null; }
-                            return { content: '', error: 'aborted' };
                         }
 
                         if (attempt < 2) {
@@ -664,6 +722,8 @@ export class AIApiClient {
                             lastError = errorMessage(error) || '网络错误(流式)';
                         }
                     } finally {
+                        // v6.3: 解绑放在 finally，保证取消联动覆盖整个请求生命周期（含响应体读取）
+                        if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
                         if (timer) {
                             clearTimeout(timer);
                             timer = null;
@@ -713,6 +773,12 @@ export class AIApiClient {
                     if (!result.error || result.content) {
                         return result;
                     }
+                    // v6.3: 用户取消优先短路——原生阶段中止时「返回」而非「抛出」aborted，
+                    // 若不在此拦截，会被误判为阶段失败并继续空跑 simulated/full 两阶段、
+                    // 打印误导性的「流式降级」警告。
+                    if (externalSignal?.aborted) {
+                        return { content: '', error: 'aborted' };
+                    }
                     lastError = result.error;
                     log.warn('[小说工坊] 流式降级: 原生 SSE 失败，切换到模拟流式 -', lastError);
                     fallbackStage = 'simulated';
@@ -723,6 +789,10 @@ export class AIApiClient {
                     );
                     if (!result.error || result.content) {
                         return result;
+                    }
+                    // v6.3: 同 native —— 模拟流式遇取消时 callAI 直接返回 aborted，需在此拦截
+                    if (externalSignal?.aborted) {
+                        return { content: '', error: 'aborted' };
                     }
                     lastError = result.error;
                     log.warn('[小说工坊] 流式降级: 模拟流式失败，切换到完整响应 -', lastError);
@@ -800,37 +870,26 @@ export class AIApiClient {
                 let ac: AbortController | null = null;
                 let timer: ReturnType<typeof setTimeout> | null = null;
 
+                // v6.3: 取消联动覆盖到响应体读取结束（finally 解绑），与 callAI 保持一致
+                const onExternalAbort = () => ac?.abort();
+                if (externalSignal) {
+                    externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+                }
                 try {
                     ac = new AbortController();
                     timer = setTimeout(() => ac!.abort(), getTimeoutForModel(currentModel));
-                    const onExternalAbort = () => ac?.abort();
-                    if (externalSignal) {
-                        externalSignal.addEventListener('abort', onExternalAbort, { once: true });
-                    }
 
                     const isOllamaNative = endpoint.includes('/api/generate');
 
-                    const streamRequestBody = isOllamaNative
-                        ? {
-                            model: currentModel,
-                            prompt: userPrompt,
-                            system: effectiveSystemPrompt,
-                            stream: true,
-                            options: {
-                                temperature: temperature,
-                                num_predict: Math.min(finalMaxTokens, ZAI_MAX_TOKENS)
-                            }
-                        }
-                        : {
-                            model: currentModel,
-                            messages: [
-                                { role: 'system', content: effectiveSystemPrompt },
-                                { role: 'user', content: userPrompt }
-                            ],
-                            max_tokens: Math.min(finalMaxTokens, ZAI_MAX_TOKENS),
-                            temperature: temperature,
-                            stream: true,
-                        };
+                    const streamRequestBody = this.buildRequestBody(
+                        isOllamaNative,
+                        currentModel,
+                        userPrompt,
+                        effectiveSystemPrompt,
+                        temperature,
+                        finalMaxTokens,
+                        true
+                    );
 
                     const response = await fetch(endpoint, {
                         method: 'POST',
@@ -845,7 +904,6 @@ export class AIApiClient {
 
                     clearTimeout(timer);
                     timer = null;
-                    if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
 
                     if (response.status === 429) {
                         const rateLimitResult = await this.handleRateLimit(currentModel, fallbackModels.length > triedModels.length);
@@ -871,6 +929,7 @@ export class AIApiClient {
                     let buffer = '';
                     let accumulatedContent = '';
                     let isStreamDone = false;
+                    let streamFinishReason: 'stop' | 'length' | undefined;
 
                     while (!isStreamDone) {
                         const { done, value } = await reader.read();
@@ -899,6 +958,7 @@ export class AIApiClient {
                                         yield delta;
                                     }
                                     if (parsed?.done === true) {
+                                        streamFinishReason = 'stop';
                                         isStreamDone = true;
                                         break;
                                     }
@@ -924,7 +984,14 @@ export class AIApiClient {
                                     accumulatedContent += delta;
                                     yield delta;
                                 }
-                                if (parsed?.choices?.[0]?.finish_reason === 'stop') {
+                                const finReason = parsed?.choices?.[0]?.finish_reason;
+                                if (finReason === 'stop') {
+                                    streamFinishReason = 'stop';
+                                    isStreamDone = true;
+                                    break;
+                                }
+                                if (finReason === 'length') {
+                                    streamFinishReason = 'length';
                                     isStreamDone = true;
                                     break;
                                 }
@@ -941,7 +1008,7 @@ export class AIApiClient {
                         throw new Error('AI流式返回为空');
                     }
 
-                    return { content: accumulatedContent };
+                    return { content: accumulatedContent, finishReason: streamFinishReason };
                 } catch (error: unknown) {
                     if (externalSignal?.aborted) {
                         if (timer) { clearTimeout(timer); timer = null; }
@@ -962,6 +1029,8 @@ export class AIApiClient {
                         lastError = error instanceof Error ? error.message : String(error);
                     }
                 } finally {
+                    // v6.3: 解绑放在 finally，保证取消联动覆盖整个请求生命周期（含响应体读取）
+                    if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
                     if (timer) {
                         clearTimeout(timer);
                         timer = null;

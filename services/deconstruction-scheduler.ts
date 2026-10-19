@@ -29,6 +29,7 @@ import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from '../engine/d
 import { DeconstructionWorkerManager } from './deconstruction-worker-manager';
 import { SchedulerSegmentIntegration } from './scheduler-segment-integration';
 import { SegmentAwareBreakdown } from './segment-aware-breakdown';
+import { countTotalChars } from '../engine/text-segmenter';
 import { ProgressEmitter } from '../shared/progress-emitter';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { TimeEstimator, refineEstimate } from '../shared/time-estimator';
@@ -168,6 +169,7 @@ export interface DeconstructionEngineSettings {
     maxConcurrency: number;
     textSampleLimit: number;
     dimensionConcurrency: number;
+    sampleMode?: boolean;
 }
 
 export const DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS: DeconstructionEngineSettings = {
@@ -185,6 +187,7 @@ export const DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS: DeconstructionEngineSetting
     maxConcurrency: 2,
     textSampleLimit: 100000,
     dimensionConcurrency: 3,
+    sampleMode: false,
 };
 
 export const ALL_BREAKDOWN_DIMENSIONS: BreakdownDimension[] = [
@@ -394,6 +397,10 @@ export class DeconstructionScheduler {
     private getTextSampleLimit(): number {
         const limit = this.getDeconstructionEngineSettings().textSampleLimit;
         return limit > 0 ? limit : DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS.textSampleLimit;
+    }
+
+    private isSampleModeEnabled(): boolean {
+        return this.getDeconstructionEngineSettings().sampleMode === true;
     }
 
     private getEffectiveSourceText(task: BreakdownTask): string {
@@ -748,10 +755,12 @@ export class DeconstructionScheduler {
         const dimensionQualityScores = new Map<BreakdownDimension, DimensionQualityScore>();
         const dimensionDurations = new Map<BreakdownDimension, number>();
         const dimensionResults = new Map<BreakdownDimension, any>();
-        const wordCount = task.sourceText.length;
-        task.preprocessedText = this.preprocessText(
-            task.sourceText.slice(0, this.getTextSampleLimit())
-        );
+        const sampleMode = this.isSampleModeEnabled();
+        const sampleLimit = this.getTextSampleLimit();
+        const rawWordCount = task.sourceText.length;
+        const inputText = sampleMode ? task.sourceText.slice(0, sampleLimit) : task.sourceText;
+        task.preprocessedText = this.preprocessText(inputText);
+        const wordCount = task.preprocessedText.cleaned.length;
         let effectiveLevel: DeconstructionQualityLevel = qualityLevel;
 
         // 预检向量模型可用性
@@ -791,8 +800,13 @@ export class DeconstructionScheduler {
             totalProgress: 0,
         });
 
-        const isSegmented = this.isSegmentedBreakdownEnabled() && wordCount > this.getSegmentedBreakdownConfig().threshold;
-        let logContent = `## ${this.formatDate(new Date())} - 开始拆解\n\n任务ID: ${taskId}\n拆解维度: ${task.dimensions.map(d => DIMENSION_LABELS[d]).join('、')}\n覆盖字数: ${wordCount} 字\n质量档位: ${qualityLevelLabels[qualityLevel]}${effectiveLevel !== qualityLevel ? `（实际: ${qualityLevelLabels[effectiveLevel]}）` : ''}\n向量增强: ${vectorAvailable && qualityLevel !== 'fast' ? '已启用' : '未启用'}\n执行模式: ${modeLabel}\n全文分批: ${isSegmented ? '是' : '否'}\n结果聚合: 否\n\n`;
+        const segmentThreshold = sampleMode ? Math.min(this.getSegmentedBreakdownConfig().threshold, sampleLimit) : this.getSegmentedBreakdownConfig().threshold;
+        const isSegmented = this.isSegmentedBreakdownEnabled() && wordCount > segmentThreshold;
+        const estimatedSegments = isSegmented ? this.segmentedBreakdown.estimateSegments(task.preprocessedText.cleaned) : 1;
+        const coverageLine = sampleMode
+            ? `覆盖字数: ${wordCount} 字（采样模式，前 ${sampleLimit} 字，原文 ${rawWordCount} 字）`
+            : `覆盖字数: ${wordCount} 字（全本，原文 ${rawWordCount} 字）`;
+        let logContent = `## ${this.formatDate(new Date())} - 开始拆解\n\n任务ID: ${taskId}\n拆解维度: ${task.dimensions.map(d => DIMENSION_LABELS[d]).join('、')}\n${coverageLine}\n分析模式: ${sampleMode ? '采样模式' : '全本模式'}\n质量档位: ${qualityLevelLabels[qualityLevel]}${effectiveLevel !== qualityLevel ? `（实际: ${qualityLevelLabels[effectiveLevel]}）` : ''}\n向量增强: ${vectorAvailable && qualityLevel !== 'fast' ? '已启用' : '未启用'}\n执行模式: ${modeLabel}\n全文分批: ${isSegmented ? `是（预计 ${estimatedSegments} 段）` : '否'}\n结果聚合: ${isSegmented ? '待完成' : '不适用'}\n\n`;
         await this.appendBreakdownLog(task.bookName, logContent);
 
         try {
@@ -981,6 +995,10 @@ export class DeconstructionScheduler {
             
             let finishLog = `## 拆解完成\n\n`;
             finishLog += `质量档位: ${qualityLevelLabels[effectiveLevel]}\n`;
+            finishLog += `分析模式: ${sampleMode ? '采样模式' : '全本模式'}\n`;
+            finishLog += `实际覆盖字数: ${wordCount} 字${sampleMode ? `（采样，原文 ${rawWordCount} 字）` : `（全本，原文 ${rawWordCount} 字）`}\n`;
+            finishLog += `全文分批: ${isSegmented ? `是（${estimatedSegments} 段）` : '否'}\n`;
+            finishLog += `结果聚合: ${isSegmented ? '已完成' : '不适用'}\n`;
             finishLog += `向量增强维度: ${vectorDimensions.length > 0 ? vectorDimensions.map(d => DIMENSION_LABELS[d]).join('、') : '无'}\n\n`;
             
             finishLog += `### 质量评分总览\n\n| 维度 | 综合评分 | 等级 | 完整性 | 一致性 | 置信度 | 耗时 |\n|------|----------|------|--------|--------|--------|------|\n`;
@@ -1099,7 +1117,9 @@ export class DeconstructionScheduler {
 
     private shouldUseSegmentedDimension(task: BreakdownTask): boolean {
         const config = this.getSegmentedBreakdownConfig();
-        const threshold = Math.min(config.threshold, this.getTextSampleLimit());
+        const threshold = this.isSampleModeEnabled()
+            ? Math.min(config.threshold, this.getTextSampleLimit())
+            : config.threshold;
         const text = this.getEffectiveSourceText(task);
         return text.length > threshold || (this.isSegmentedBreakdownEnabled() && this.segmentIntegration.shouldSegment(text, {
             maxDirectWords: config.threshold,
@@ -1118,7 +1138,9 @@ export class DeconstructionScheduler {
     ): Promise<{ usedVector: boolean; result: any }> {
         const config = this.getSegmentedBreakdownConfig();
         const useVector = vectorAvailable && this.isVectorEnhancementEnabled();
-        const maxDirectWords = Math.min(config.threshold, this.getTextSampleLimit());
+        const maxDirectWords = this.isSampleModeEnabled()
+            ? Math.min(config.threshold, this.getTextSampleLimit())
+            : config.threshold;
         const llmEnabled = this.isLlmEnhancementEnabled();
         const llmCaller = this.llmCallerGetter?.();
         const llmModel = this.getDeconstructionEngineSettings().llmModel;
@@ -1148,6 +1170,10 @@ export class DeconstructionScheduler {
                 }
             );
 
+            if (dimension === 'structure' && (result.combinedResult as any)?.stats) {
+                (result.combinedResult as any).stats.totalWordCount = countTotalChars(task.sourceText);
+            }
+
             await this.saveSegmentedDimensionResult(task, dimension, result.combinedResult);
             onProgress(100, `${DIMENSION_LABELS[dimension]} 全文分块拆解完成（${result.totalSegments} 块）`);
             return { usedVector: useVector, result: result.combinedResult };
@@ -1173,6 +1199,11 @@ export class DeconstructionScheduler {
                         },
                     }
                 );
+
+                if (dimension === 'structure' && (fallback.combinedResult as any)?.stats) {
+                    (fallback.combinedResult as any).stats.totalWordCount = countTotalChars(task.sourceText);
+                }
+
                 await this.saveSegmentedDimensionResult(task, dimension, fallback.combinedResult);
                 onProgress(100, `${DIMENSION_LABELS[dimension]} 全文分块拆解完成（纯统计降级，${fallback.totalSegments} 块）`);
                 return { usedVector: false, result: fallback.combinedResult };
@@ -1664,6 +1695,10 @@ export class DeconstructionScheduler {
 
         const elapsed = Date.now() - startTime;
         this.checkAbort(signal);
+
+        if (result?.stats) {
+            result.stats.totalWordCount = countTotalChars(task.sourceText);
+        }
 
         onProgress(60, vectorUsed ? '向量验证完成，生成结构导图...' : '正在拆解章节结构...');
         this.checkAbort(signal);

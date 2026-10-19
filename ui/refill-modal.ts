@@ -7,6 +7,7 @@ import { OllamaEmbeddingClient } from '../engine/ollama-embedding-client';
 import { LocalVectorStore } from '../engine/local-vector-store';
 import type { AIEngine } from '../engine/ai-engine';
 import { createLogger } from '../shared/logger';
+import { OperationConfirmModal } from './components/progress';
 
 
 const log = createLogger('RefillModal');
@@ -567,7 +568,13 @@ export class RefillModal extends Modal {
 
     private async startDeconstruction(): Promise<void> {
         if (this.mode === 'all') {
-            if (!confirm('确定要重新拆解所有维度吗？这将覆盖已有的拆解结果。')) {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '重新拆解',
+                description: '确定要重新拆解所有维度吗？这将覆盖已有的拆解结果。',
+                confirmText: '确认拆解',
+                cancelText: '取消',
+            });
+            if (!confirmed) {
                 return;
             }
         }

@@ -1,6 +1,7 @@
 import { App } from 'obsidian';
 import type { WritingProfile } from './writing-profile';
 import { WritingProfileManager } from './writing-profile';
+import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
 import type { StyleFingerprintLibrary, StyleFingerprint, StyleFingerprintFeatures } from './style-fingerprint-library';
 import type { ForeshadowManager, ForeshadowItem } from '../services/foreshadow-manager';
 import type { VectorEnhancer } from './vector-enhancer';
@@ -19,6 +20,84 @@ export interface InjectionContext {
     outline?: string;
     emotionPlan?: string;
     currentText?: string;
+    /** Task 6 必须层：当前场景目标 */
+    sceneObjective?: string;
+    /** Task 6 必须层：上一场景结尾 */
+    previousSceneEnding?: string;
+}
+
+/** ==== Task 6: 分层上下文注入契约（story-quality spec TR-6.1~6.4） ==== */
+
+/** 注入层级：必须 / 按需 / 低频 */
+export type InjectionLayer = 'required' | 'onDemand' | 'lowFrequency';
+
+/** 分层注入契约——显式声明每个上下文项的层级归属（契约化为代码，而非散落注释） */
+export const INJECTION_LAYER_CONTRACT: Record<string, InjectionLayer> = {
+    // 必须层：每次场景生成无条件注入
+    chapterBeats: 'required',         // 本章任务卡
+    sceneObjective: 'required',      // 当前场景目标
+    previousSceneEnding: 'required', // 上一场景结尾
+    characterStates: 'required',     // 当前人物状态
+    timeline: 'required',            // 时间地点
+    forbiddenReveals: 'required',    // 本章禁止事项
+    // 按需层：相关性命中才注入
+    characterFullProfile: 'onDemand', // 涉及人物完整设定
+    factionSetting: 'onDemand',       // 势力设定
+    locationSetting: 'onDemand',      // 地点设定
+    relatedForeshadows: 'onDemand',   // 相关伏笔
+    propsSetting: 'onDemand',         // 相关道具
+    // 低频层：不进入每次场景 prompt
+    fullWorldview: 'lowFrequency',    // 完整世界观
+    allArchives: 'lowFrequency',      // 全部档案
+    chronicle: 'lowFrequency',       // 大事记
+    allChapters: 'lowFrequency',     // 全部章节
+    allReports: 'lowFrequency',      // 全部报告
+};
+
+/** 按需层实体类别白名单：仅这些 kind 的候选可进入场景 prompt */
+export const ON_DEMAND_KINDS: ReadonlySet<string> = new Set([
+    'character', 'faction', 'location', 'foreshadow', 'prop',
+]);
+
+/** 低频层实体类别：契约拒绝注入场景 prompt */
+export const LOW_FREQUENCY_KINDS: ReadonlySet<string> = new Set([
+    'worldview', 'archive', 'chronicle', 'chapter', 'report',
+]);
+
+/** 按需层候选实体（调用方从实体库筛出候选，相关性过滤由本类完成） */
+export interface OnDemandCandidate {
+    id: string;
+    name: string;
+    content: string;
+    /** 实体类别；不在 ON_DEMAND_KINDS 内的一律按低频层契约拒绝 */
+    kind?: string;
+}
+
+/** injectForSceneBody 选项 */
+export interface LayeredInjectionOptions {
+    /** 章节状态快照（Task 1）：人物状态/时间地点/禁止事项数据源 */
+    snapshot?: ChapterStateSnapshot;
+    /** 本章任务卡（Task 2） */
+    beats?: StoryBeat[];
+    /** 当前场景目标（必须层；也可经 context.sceneObjective 提供） */
+    sceneObjective?: string;
+    /** 上一场景结尾（必须层；也可经 context.previousSceneEnding 提供） */
+    previousSceneEnding?: string;
+    /** 按需层候选实体 */
+    candidates?: OnDemandCandidate[];
+    /** 相关性判断（可注入 mock）；默认：名字出现在 outline/场景目标/出场人物中 */
+    relevanceMatcher?: (candidate: OnDemandCandidate, context: InjectionContext) => boolean;
+}
+
+/** 默认相关性判断：候选名出现在大纲/场景目标/出场人物任一文本中即相关 */
+function defaultRelevanceMatcher(candidate: OnDemandCandidate, context: InjectionContext): boolean {
+    const haystack = [
+        context.outline || '',
+        context.sceneObjective || '',
+        (context.characterNames || []).join('、'),
+    ].filter(Boolean).join('\n');
+    if (!haystack) return false;
+    return haystack.includes(candidate.name);
 }
 
 export interface InjectionSwitches {
@@ -745,6 +824,91 @@ export class KnowledgeInjector {
         }
 
         return this.formatInjection(sections);
+    }
+
+    /**
+     * Task 6: 场景正文分层上下文注入（必须/按需/低频三层契约）
+     *
+     * 区别于 injectForSceneExpand（场景展开设计的写作指引）：
+     * 本方法输出"故事约束上下文"——任务卡/场景目标/上一场景结尾/人物状态/时间地点/禁止事项，
+     * 与写作指引由调用方分别拼接。低频层（完整世界观/全部档案/大事记等）契约拒绝，不进场景 prompt。
+     */
+    async injectForSceneBody(context: InjectionContext, options: LayeredInjectionOptions = {}): Promise<string> {
+        if (!this.enabled) return '';
+
+        const sections: Array<{ title: string; content: string }> = [];
+
+        const required = this.buildRequiredLayer(context, options);
+        if (required) sections.push({ title: '本章必须遵循', content: required });
+
+        const onDemand = this.buildOnDemandLayer(context, options);
+        if (onDemand) sections.push({ title: '相关设定（按需注入）', content: onDemand });
+
+        return this.formatInjection(sections);
+    }
+
+    /** 必须层：每次场景生成无条件注入；缺失项静默跳过（不阻塞） */
+    private buildRequiredLayer(context: InjectionContext, options: LayeredInjectionOptions): string {
+        const lines: string[] = [];
+
+        const beats = options.beats || [];
+        if (beats.length > 0) {
+            lines.push('本章任务卡：');
+            for (const b of beats) {
+                lines.push(`- [${b.required ? '必做' : '可选'}] ${b.description}`);
+            }
+        }
+
+        const objective = options.sceneObjective ?? context.sceneObjective;
+        if (objective) lines.push(`当前场景目标：${objective}`);
+
+        const prevEnding = options.previousSceneEnding ?? context.previousSceneEnding;
+        if (prevEnding) lines.push(`上一场景结尾：${prevEnding}`);
+
+        const snapshot = options.snapshot;
+        if (snapshot) {
+            if (snapshot.characterStates.length > 0) {
+                lines.push('当前人物状态：');
+                for (const c of snapshot.characterStates) {
+                    const parts = [
+                        c.emotion ? `情绪:${c.emotion}` : '',
+                        c.injury ? `伤势:${c.injury}` : '',
+                        c.goal ? `当前目标:${c.goal}` : '',
+                    ].filter(Boolean);
+                    lines.push(`- ${c.name}${parts.length ? `（${parts.join('，')}）` : ''}`);
+                }
+            }
+            if (snapshot.timeline.time || snapshot.timeline.location) {
+                lines.push(`时间地点：${snapshot.timeline.time}，${snapshot.timeline.location}`);
+            }
+            if (snapshot.forbiddenReveals.length > 0) {
+                lines.push('本章禁止事项：');
+                for (const f of snapshot.forbiddenReveals) {
+                    lines.push(`- 禁止提前揭示：${f}`);
+                }
+            }
+        }
+
+        return lines.join('\n');
+    }
+
+    /** 按需层：候选经 kind 白名单 + 相关性双重过滤后注入完整设定 */
+    private buildOnDemandLayer(context: InjectionContext, options: LayeredInjectionOptions): string {
+        const candidates = options.candidates || [];
+        if (candidates.length === 0) return '';
+
+        const matcher = options.relevanceMatcher || defaultRelevanceMatcher;
+        const lines: string[] = [];
+        for (const c of candidates) {
+            // 低频层契约：类别不在按需白名单的一律拒绝（即使相关性命中）
+            const kind = c.kind || 'character';
+            if (!ON_DEMAND_KINDS.has(kind)) continue;
+            if (!matcher(c, context)) continue;
+            lines.push(`【${c.name}】`);
+            lines.push(c.content);
+            lines.push('');
+        }
+        return lines.join('\n').trim();
     }
 
     private buildStyleInjection(profile: WritingProfile, strength: number): string {

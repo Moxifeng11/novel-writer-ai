@@ -1,4 +1,5 @@
 import { App, Modal, Notice } from 'obsidian';
+import { OperationConfirmModal } from './components/progress';
 import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
 import { DeconstructionScheduler } from '../services/deconstruction-scheduler';
 import { KnowledgeToFingerprintConverter } from '../engine/knowledge-to-fingerprint-converter';
@@ -16,6 +17,9 @@ import { radarChart, barChart, donutChart, lineChart, scatterChart, timelineChar
 import { RefillModal } from './refill-modal';
 import { KnowledgeMonitorModal } from './knowledge-monitor-modal';
 import { createLogger } from '../shared/logger';
+import { normalizeDetailNumber } from './knowledge-detail-format';
+import { openKnowledgeFolder } from './knowledge-folder-navigation';
+import { escapeHtml } from '../utils/helpers';
 
 
 const log = createLogger('KnowledgeDetailModal');
@@ -548,9 +552,7 @@ export class KnowledgeDetailModal extends Modal {
         openFolderBtn.addEventListener('click', () => {
             const dir = kbBookDir(book.name, this.baseDir);
             const file = this.app.vault.getAbstractFileByPath(dir);
-            if (file) {
-                (this.app as unknown as { workspace: { revealLeafInNewTab: (f: unknown) => void } }).workspace.revealLeafInNewTab(file);
-            }
+            if (file) void openKnowledgeFolder(this.app, dir);
         });
 
         const deleteBtn = btnRow.createEl('button', {
@@ -561,7 +563,14 @@ export class KnowledgeDetailModal extends Modal {
             }
         });
         deleteBtn.addEventListener('click', async () => {
-            if (!confirm(`确定要删除书籍「${book.name}」吗？此操作不可恢复。`)) return;
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '删除书籍',
+                description: `确定要删除书籍「${book.name}」吗？`,
+                warning: '此操作不可恢复',
+                confirmText: '确认删除',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
             await this.knowledgeManager.deleteBook(this.bookId);
             new Notice('书籍已删除');
             this.close();
@@ -575,7 +584,7 @@ export class KnowledgeDetailModal extends Modal {
 
     private getDimensionProgress(index: number): number {
         const dataList = [this.styleData, this.rhythmData, this.techniqueData, this.structureData, this.characterData, this.foreshadowData];
-        return dataList[index] ? 85 : 0;
+        return dataList[index] ? 100 : 0;
     }
 
     // ============== Tab 2: 风格 ==============
@@ -999,7 +1008,7 @@ export class KnowledgeDetailModal extends Modal {
 
             const avatar = card.createDiv({
                 attr: {
-                    style: 'width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg, var(--interactive-accent), #7c3aed);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:600;'
+                    style: 'width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg, var(--interactive-accent), #D97706);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:600;'
                 }
             });
             avatar.textContent = char.name.charAt(0);
@@ -1129,13 +1138,13 @@ export class KnowledgeDetailModal extends Modal {
 
             nodes += `
                 <circle cx="${x}" cy="${y}" r="28" fill="var(--background-primary)" stroke="var(--interactive-accent)" stroke-width="2"/>
-                <text x="${x}" y="${y + 4}" text-anchor="middle" fill="var(--text-normal)" font-size="11">${name.slice(0, 4)}</text>
+                <text x="${x}" y="${y + 4}" text-anchor="middle" fill="var(--text-normal)" font-size="11">${escapeHtml(name.slice(0, 4))}</text>
             `;
         });
 
         nodes += `
             <circle cx="${centerX}" cy="${centerY}" r="38" fill="var(--interactive-accent)" stroke="var(--background-primary)" stroke-width="3"/>
-            <text x="${centerX}" y="${centerY + 4}" text-anchor="middle" fill="var(--text-on-accent)" font-size="13" font-weight="600">${centerChar.slice(0, 4)}</text>
+            <text x="${centerX}" y="${centerY + 4}" text-anchor="middle" fill="var(--text-on-accent)" font-size="13" font-weight="600">${escapeHtml(centerChar.slice(0, 4))}</text>
         `;
 
         return `
@@ -1162,24 +1171,26 @@ export class KnowledgeDetailModal extends Modal {
 
         const stats = data.stats;
         if (stats) {
-            const total = stats.resolved + stats.unresolved;
+            const resolved = normalizeDetailNumber(stats.resolved);
+            const unresolved = normalizeDetailNumber(stats.unresolved);
+            const total = resolved + unresolved;
 
             const totalCard = statsGrid.createDiv({
                 cls: 'nw-stat-card'
             });
-            totalCard.createEl('div', { text: total.toString(), cls: 'nw-stat-num-normal' });
+            totalCard.createEl('div', { text: String(total), cls: 'nw-stat-num-normal' });
             totalCard.createEl('div', { text: '伏笔总数', cls: 'nw-text-sm-muted' });
 
             const resolvedCard = statsGrid.createDiv({
                 cls: 'nw-stat-card'
             });
-            resolvedCard.createEl('div', { text: stats.resolved.toString(), cls: 'nw-stat-num-success' });
+            resolvedCard.createEl('div', { text: String(resolved), cls: 'nw-stat-num-success' });
             resolvedCard.createEl('div', { text: '已回收', cls: 'nw-text-sm-muted' });
 
             const unresolvedCard = statsGrid.createDiv({
                 cls: 'nw-stat-card'
             });
-            unresolvedCard.createEl('div', { text: stats.unresolved.toString(), cls: 'nw-stat-num-warning' });
+            unresolvedCard.createEl('div', { text: String(unresolved), cls: 'nw-stat-num-warning' });
             unresolvedCard.createEl('div', { text: '待回收', cls: 'nw-text-sm-muted' });
 
             const forgottenCount = data.unresolvedTracker?.forgottenForeshadows?.length || 0;
@@ -1245,8 +1256,8 @@ export class KnowledgeDetailModal extends Modal {
 
         if (stats) {
             const donutData = [
-                { label: '已回收', value: stats.resolved, color: '#10b981' },
-                { label: '待回收', value: stats.unresolved, color: '#f59e0b' },
+                { label: '已回收', value: normalizeDetailNumber(stats.resolved), color: '#10b981' },
+                { label: '待回收', value: normalizeDetailNumber(stats.unresolved), color: '#f59e0b' },
             ];
             donutCard.innerHTML += donutChart(donutData, { size: 220 });
         }

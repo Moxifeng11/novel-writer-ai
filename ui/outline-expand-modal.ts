@@ -106,11 +106,11 @@ export class OutlineExpandModal extends Modal {
 
     private renderHeader(container: HTMLElement): void {
         const header = container.createDiv({
-            attr: { style: 'padding:16px 20px;border-bottom:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;' }
+            attr: { style: 'padding:16px 20px;border-bottom:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;row-gap:10px;column-gap:12px;' }
         });
 
-        const left = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:16px;' } });
-        left.createEl('h2', { text: '✍️ 智能扩写编辑器', attr: { style: 'margin:0;font-size:18px;' } });
+        const left = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;row-gap:8px;min-width:0;' } });
+        left.createEl('h2', { text: '✍️ 智能扩写编辑器', attr: { style: 'margin:0;font-size:18px;white-space:nowrap;flex-shrink:0;' } });
 
         const modeSelector = left.createDiv({ attr: { style: 'display:flex;gap:4px;background:var(--background-secondary);border-radius:6px;padding:2px;' } });
         const modes: Array<{ key: ExpandMode; label: string }> = [
@@ -130,9 +130,9 @@ export class OutlineExpandModal extends Modal {
             };
         }
 
-        const right = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;' } });
+        const right = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:8px;margin-left:auto;' } });
 
-        const strategyLabel = right.createSpan({ text: '策略：', cls: 'nw-text-muted' });
+        const strategyLabel = right.createSpan({ text: '策略：', cls: 'nw-text-muted', attr: { style: 'white-space:nowrap;flex-shrink:0;' } });
         const strategySelect = right.createEl('select', {
             attr: { style: 'padding:4px 8px;border-radius:4px;border:1px solid var(--background-modifier-border);background:var(--background-primary);font-size:13px;' }
         }) as HTMLSelectElement;
@@ -149,8 +149,8 @@ export class OutlineExpandModal extends Modal {
             this.strategy = strategySelect.value as ExpansionStrategy;
         };
 
-        const wordInputWrap = right.createDiv({ attr: { style: 'display:flex;align-items:center;gap:4px;' } });
-        wordInputWrap.createSpan({ text: '目标字数：', cls: 'nw-text-muted' });
+        const wordInputWrap = right.createDiv({ attr: { style: 'display:flex;align-items:center;gap:4px;flex-shrink:0;' } });
+        wordInputWrap.createSpan({ text: '目标字数：', cls: 'nw-text-muted', attr: { style: 'white-space:nowrap;flex-shrink:0;' } });
         const wordInput = wordInputWrap.createEl('input', {
             type: 'number',
             value: String(this.targetWords),

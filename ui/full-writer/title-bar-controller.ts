@@ -18,6 +18,7 @@ export interface TitleBarControllerDeps {
     selectChapter: (project: string, chapter: { chapter: string; volume: string; file: TFile }) => Promise<void>;
     openCurrentChapterInCoWriting: () => void;
     openKnowledgeBase: () => void;
+    openFingerprintLibrary: () => void;
 }
 
 export class TitleBarController {
@@ -110,9 +111,13 @@ export class TitleBarController {
             coBtn.onclick = () => this.deps.openCurrentChapterInCoWriting();
         }
 
-        const kbBtn = secondaryRow.createEl('button', { text: '📚 知识库', cls: 'novel-writer-settings-btn' });
+        const kbBtn = secondaryRow.createEl('button', { text: '📚 知识库管理', cls: 'novel-writer-settings-btn' });
         kbBtn.setAttribute('title', '打开知识库管理视图');
         kbBtn.onclick = () => this.deps.openKnowledgeBase();
+
+        const fpBtn = secondaryRow.createEl('button', { text: '🔍 指纹库', cls: 'novel-writer-settings-btn' });
+        fpBtn.setAttribute('title', '打开写作指纹库');
+        fpBtn.onclick = () => this.deps.openFingerprintLibrary();
 
         if (this.deps.state.project) {
             const entityBtn = secondaryRow.createEl('button', { text: '👥 实体管理', cls: 'novel-writer-settings-btn' });

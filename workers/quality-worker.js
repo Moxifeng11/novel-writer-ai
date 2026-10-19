@@ -1186,11 +1186,13 @@ var QualityScoreEngine = class {
       coherenceScore * 0.5 + causalityScore * 0.3 + timelineScore * 0.2
     );
     for (const issue of report.issues) {
+      const idx = issue.sample ? text.indexOf(issue.sample) : -1;
       issues.push({
         id: `coherence_${issue.type}_${issues.length}`,
         dimension: "coherence",
         description: issue.message,
-        severity: issue.type === "duplicate_sentence" ? "high" : "medium"
+        severity: issue.type === "duplicate_sentence" ? "high" : "medium",
+        location: idx >= 0 ? { charOffset: idx, length: issue.sample.length } : void 0
       });
     }
     if (report.issues.length > 0) {

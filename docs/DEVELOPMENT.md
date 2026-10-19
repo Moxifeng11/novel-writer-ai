@@ -1,8 +1,8 @@
 # 开发指南
 
-> **版本**: v4.10.0  
-> **最后更新**: 2026-07-15  
-> **状态**: 活跃可信 · 与代码同步
+> **版本**: v4.10.6  
+> **最后更新**: 2026-07-27  
+> **状态**: 活跃可信 · 旧路径流式接入完成
 
 本文档描述如何在 Novel Writer AI Obsidian 插件中新增 Repository、状态切片、接入新功能，以及如何使用流式生成和缓存系统。所有代码示例均基于实际接口，可直接参考使用。
 
@@ -800,7 +800,23 @@ const result = await contentIterator.next();
 
 ---
 
-## 五、如何使用缓存
+### 6. 旧路径章节流式生成
+
+旧版完整章节入口和 `bodyGeneration` 步骤已统一接入流式调用：
+
+- `AIEngine.generateChapterStream()` 负责完整章节流式生成。
+- `StepRunner` 的 `bodyGeneration` 通过相同的流式回调持续刷新正文。
+- 响应因 `finishReason: 'length'` 截断时，最多自动续写 3 次，并携带已生成内容尾部避免断层。
+- `WriteChapterModal` 和 `FullWriterView` 均向底层传递 `AbortSignal`；关闭视图或主动取消会终止请求。
+- 最终回调以 `done: true` 返回合并后的完整正文，持久化仍只在完整结果确认后执行。
+
+定向回归命令：
+
+```bash
+npx vitest run tests/unit/engine/ai-engine.test.ts tests/unit/engine/step-runner.test.ts
+```
+
+## 五、缓存系统
 
 ### 1. 多层缓存（推荐用于 Repository）
 
@@ -990,6 +1006,16 @@ npm run test:e2e:ui    # E2E 测试（UI 模式）
 npm run test:e2e:headed # E2E 测试（有头模式）
 npm run test:e2e:report # 查看 E2E 测试报告
 ```
+
+### 当前验证状态
+
+截至 2026-07-27：
+
+- `npm run typecheck` 通过。
+- 旧路径流式与伏笔配置相关定向测试共 89 项通过。
+- `npm run build` 通过，构建版本为 v4.10.6。
+- 全量单元测试为 2703 项通过、3 项失败；失败均位于 `foreshadow-deconstructor.test.ts`，与章节流式链路无关。
+- `npm run check-engines` 仍报告既有 EngineRegistry 治理项，需在独立治理任务中处理。
 
 ### 引擎合规检查
 

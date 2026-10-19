@@ -10,6 +10,8 @@ import { App, Modal, Notice, TFile, Menu } from 'obsidian';
 import { PJ_PROMPT_TEMPLATE_DIR } from '../shared/paths';
 import { getStepTemplate } from '../engine/prompt-templates';
 import { createLogger } from '../shared/logger';
+import { exportTextFile } from '../shared/export-file';
+import { OperationConfirmModal } from './components/progress';
 
 
 const log = createLogger('TemplateManager');
@@ -136,15 +138,15 @@ export class TemplateManager {
 
         // 批量操作按钮
         const actionRow = container.createDiv({ attr: { style: 'display:flex;gap:8px;margin:12px 0;' } });
-        const exportAllBtn = actionRow.createEl('button', { text: '📤 导出全部', attr: { type: 'button' } });
+        const exportAllBtn = actionRow.createEl('button', { text: '📤 导出全部', attr: { type: 'button', title: '导出全部模板为文件' } });
         exportAllBtn.style.cssText = 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;color:var(--text-normal);border-radius:4px;font-size:12px;';
         exportAllBtn.onclick = () => this.exportAllTemplates();
 
-        const importBtn = actionRow.createEl('button', { text: '📥 导入', attr: { type: 'button' } });
+        const importBtn = actionRow.createEl('button', { text: '📥 导入', attr: { type: 'button', title: '从文件导入模板' } });
         importBtn.style.cssText = 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;color:var(--text-normal);border-radius:4px;font-size:12px;';
         importBtn.onclick = () => this.showImportModal(container);
 
-        const resetAllBtn = actionRow.createEl('button', { text: '🔄 重置全部', attr: { type: 'button' } });
+        const resetAllBtn = actionRow.createEl('button', { text: '🔄 重置全部', attr: { type: 'button', title: '重置全部模板为默认' } });
         resetAllBtn.style.cssText = 'padding:6px 14px;cursor:pointer;border:1px solid var(--text-error);background:transparent;color:var(--text-error);border-radius:4px;font-size:12px;';
         resetAllBtn.onclick = () => this.resetAllTemplates(container);
 
@@ -237,15 +239,10 @@ export class TemplateManager {
                 }
             }
 
-            const blob = new Blob(content, { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${template.key}-template.md`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            new Notice(`✅ 已导出 ${template.name} 模板`);
+            await exportTextFile(this.app, `${template.key}-template.md`, content.join(''), {
+                mime: 'text/markdown',
+                successMessage: `✅ 已导出 ${template.name} 模板`,
+            });
         } catch (e) {
             log.error('[TemplateManager] 导出模板失败:', e);
             new Notice(`❌ 导出失败: ${(e as Error).message}`);
@@ -282,15 +279,10 @@ export class TemplateManager {
                 }
             }
 
-            const blob = new Blob(content, { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `novel-writer-templates-${Date.now()}.md`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            new Notice(`✅ 已导出 ${templates.filter(t => t.hasSystem || t.hasUser).length} 个模板`);
+            await exportTextFile(this.app, `novel-writer-templates-${Date.now()}.md`, content.join(''), {
+                mime: 'text/markdown',
+                successMessage: `✅ 已导出 ${templates.filter(t => t.hasSystem || t.hasUser).length} 个模板`,
+            });
         } catch (e) {
             log.error('[TemplateManager] 导出全部模板失败:', e);
             new Notice(`❌ 导出失败: ${(e as Error).message}`);
@@ -307,9 +299,13 @@ export class TemplateManager {
 
     /** 重置单个模板 */
     async resetTemplate(template: TemplateInfo): Promise<void> {
-        if (!confirm(`确定要删除 ${template.name} 的自定义模板吗？\n这将从元文件中删除自定义模板文件。`)) {
-            return;
-        }
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '删除自定义模板',
+            description: `确定要删除 ${template.name} 的自定义模板吗？\n这将从元文件中删除自定义模板文件。`,
+            confirmText: '确认删除',
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
 
         try {
             let count = 0;
@@ -337,9 +333,14 @@ export class TemplateManager {
 
     /** 重置全部模板 */
     async resetAllTemplates(container: HTMLElement): Promise<void> {
-        if (!confirm('确定要删除所有自定义模板吗？\n这将从元文件中删除所有自定义模板文件。\n此操作不可撤销！')) {
-            return;
-        }
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '删除所有自定义模板',
+            description: '确定要删除所有自定义模板吗？\n这将从元文件中删除所有自定义模板文件。',
+            warning: '此操作不可撤销',
+            confirmText: '确认删除',
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
 
         try {
             const templates = await this.getAllTemplates();
@@ -495,9 +496,13 @@ class TemplateEditModal extends Modal {
     }
 
     private async deleteTemplate(): Promise<void> {
-        if (!confirm(`确定要删除 ${this.template.name} 的自定义模板吗？`)) {
-            return;
-        }
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '删除自定义模板',
+            description: `确定要删除 ${this.template.name} 的自定义模板吗？`,
+            confirmText: '确认删除',
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
 
         try {
             let count = 0;

@@ -1,4 +1,5 @@
 import { App, Modal, Notice, Setting } from 'obsidian';
+import { OperationConfirmModal } from './components/progress';
 
 interface ManageProvidersPlugin {
     settings: any;
@@ -44,7 +45,13 @@ export class ManageProvidersModal extends Modal {
             attr: { type: 'button', style: 'padding:6px 12px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-modifier-hover);' }
         });
         restoreBtn.onclick = async () => {
-            if (!confirm('确定要恢复默认供应商吗？已删除的默认供应商会重新加回来，已有的不会被覆盖。')) return;
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '恢复默认供应商',
+                description: '确定要恢复默认供应商吗？已删除的默认供应商会重新加回来，已有的不会被覆盖。',
+                confirmText: '确认恢复',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
             this.plugin.restoreDefaultProviders();
             await this.plugin.saveSettings();
             new Notice('✅ 已恢复默认供应商');
@@ -118,7 +125,13 @@ export class ManageProvidersModal extends Modal {
                 attr: { type: 'button', style: 'padding:4px 10px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;color:var(--text-error);' }
             });
             delBtn.onclick = async () => {
-                if (!confirm(`确定要删除供应商 "${p.name}" 吗？可以在「恢复默认供应商」中找回默认供应商。`)) return;
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '删除供应商',
+                    description: `确定要删除供应商 "${p.name}" 吗？可以在「恢复默认供应商」中找回默认供应商。`,
+                    confirmText: '确认删除',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
                 this.plugin.setHidden(p.id, true);
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();

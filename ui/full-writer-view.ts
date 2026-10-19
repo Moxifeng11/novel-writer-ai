@@ -83,6 +83,7 @@ export class FullWriterView extends ItemView {
     private stepRunner: StepRunner;
     private contextPanel: ContextPanel;
     private _progressNotice: Notice | null = null;
+    private stepAbortController: AbortController | null = null;
     private settlementEngine: SettlementEngine;
     private polishEditor: PolishEditor;
     private wizardChecker: WizardChecker;
@@ -131,6 +132,11 @@ export class FullWriterView extends ItemView {
 
     private get wizardStepResults(): Record<string, string> { return this.state.wizardStepResults; }
     get wizardStepExecuting(): Set<string> { return this.state.wizardStepExecuting; }
+
+    /** 供质量仪表盘等外部组件获取当前选中章节（工作台视图活动时 getActiveFile 为 null，需此 fallback） */
+    public getCurrentChapterState(): { project: string; chapterName: string; chapterNum: number; volume: string } {
+        return { project: this.project, chapterName: this.chapterName, chapterNum: this.chapterNum, volume: this.volume };
+    }
 
     private tabBar!: HTMLDivElement;
     tabContent!: HTMLDivElement;
@@ -303,6 +309,7 @@ export class FullWriterView extends ItemView {
             selectChapter: (project, chapter) => this.selectChapter(project, chapter),
             openCurrentChapterInCoWriting: () => this.openCurrentChapterInCoWriting(),
             openKnowledgeBase: () => this.openKnowledgeBase(),
+            openFingerprintLibrary: () => this.openFingerprintLibrary(),
         });
 
         this.statusBarController = new StatusBarController({
@@ -485,6 +492,8 @@ export class FullWriterView extends ItemView {
     }
 
     async onClose(): Promise<void> {
+        this.stepAbortController?.abort();
+        this.stepAbortController = null;
         await super.onClose();
         const { contentEl } = this;
         contentEl.empty();
@@ -574,6 +583,10 @@ export class FullWriterView extends ItemView {
         this.plugin.openKnowledgeBaseView();
     }
 
+    private openFingerprintLibrary(): void {
+        this.plugin.executeCommand('novel-writer-fingerprint-library');
+    }
+
     /**
      * v73: 从「项目与章节」卡片一步直达句级协同写作。
      * 接收章节对象（含 chapter/volume/file），解析全书连续章号后带上下文进入协同 view。
@@ -610,7 +623,14 @@ export class FullWriterView extends ItemView {
             buildTemplateVars: () => this.buildTemplateVars(),
             saveStepResult: async (key, content) => { await this.stepRunner.saveStepResult(key, content, this.chapDir, this.chapterName, this.volume); },
             renderInContainer: (c) => this.renderInContainer(c),
-            setIsLoading: (v) => { this.isLoading = v; },
+            setIsLoading: (v) => {
+                this.isLoading = v;
+                if (!v) this.stepAbortController = null;
+            },
+            getAbortController: () => {
+                if (!this.stepAbortController) this.stepAbortController = new AbortController();
+                return this.stepAbortController;
+            },
             refreshWorkspace: () => {},
 
             // ✅ v1.6.0 实体状态追踪：步骤完成后回调
@@ -1064,6 +1084,14 @@ export class FullWriterView extends ItemView {
         }
         header.createEl('p', { text: template.description, cls: 'novel-writer-fw-step-desc' });
 
+        if (stepKey === 'infoPlan') {
+            this.renderPlanningQuickStart(area);
+        }
+
+        if (stepKey === 'qualityControl' || stepKey === 'analysisReport') {
+            this.renderReviewPhaseTabs(area, stepKey);
+        }
+
         // 系统提示词
         const sysSection = area.createDiv({ cls: 'novel-writer-fw-prompt-section' });
         sysSection.createEl('label', { text: '系统提示词', cls: 'novel-writer-fw-label' });
@@ -1262,6 +1290,100 @@ export class FullWriterView extends ItemView {
 
     public refreshContextBar(): void {
         this.entityStateController.refreshContextBar();
+    }
+
+    private renderReviewPhaseTabs(area: HTMLElement, activeStep: string): void {
+        const tabs = [
+            { key: 'qualityControl', label: '质量控制', index: 8 },
+            { key: 'analysisReport', label: '分析报告', index: 9 },
+        ];
+
+        const tabBar = area.createDiv({ cls: 'novel-writer-fw-review-tabs' });
+        for (const tab of tabs) {
+            const tabEl = tabBar.createDiv({
+                cls: 'novel-writer-fw-review-tab' + (activeStep === tab.key ? ' is-active' : ''),
+                text: tab.label,
+            });
+            if (activeStep !== tab.key && this.stepCompleted.has('context')) {
+                tabEl.addClass('is-clickable');
+                tabEl.addEventListener('click', () => {
+                    this.currentStepIndex = tab.index;
+                    this.renderInContainer(this.tabContent);
+                });
+            }
+        }
+    }
+    private renderPlanningQuickStart(area: HTMLElement): void {
+        const planningSteps = [
+            { key: 'infoPlan', label: '信息规划' },
+            { key: 'plotDistill', label: '情节蒸馏' },
+            { key: 'outline', label: '大纲摘要' },
+            { key: 'emotionPlan', label: '情绪规划' },
+            { key: 'sceneExpand', label: 'Scene展开' },
+        ];
+
+        const card = area.createDiv({ cls: 'novel-writer-fw-planning-quickstart' });
+
+        const header = card.createDiv({ cls: 'novel-writer-fw-planning-header' });
+        header.createEl('h4', { text: '🚀 一键生成全章规划', cls: 'novel-writer-fw-planning-title' });
+
+        const statusList = card.createDiv({ cls: 'novel-writer-fw-planning-status-list' });
+        for (const step of planningSteps) {
+            const item = statusList.createDiv({ cls: 'novel-writer-fw-planning-status-item' });
+            const isDone = this.stepCompleted.has(step.key);
+            const icon = item.createSpan({ cls: 'novel-writer-fw-planning-status-icon' });
+            icon.setText(isDone ? '✅' : '○');
+            if (isDone) item.addClass('is-done');
+            item.createSpan({ text: step.label, cls: 'novel-writer-fw-planning-status-label' });
+        }
+
+        const btnRow = card.createDiv({ cls: 'novel-writer-fw-planning-btn-row' });
+        const generateBtn = btnRow.createEl('button', {
+            text: '⚡ 一键生成全部',
+            cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary',
+        });
+
+        const doneCount = planningSteps.filter(s => this.stepCompleted.has(s.key)).length;
+        if (doneCount > 0 && doneCount < planningSteps.length) {
+            generateBtn.setText('⚡ 继续生成剩余');
+        } else if (doneCount === planningSteps.length) {
+            generateBtn.setText('🔄 重新生成全部');
+        } else {
+            generateBtn.setText('⚡ 一键生成全章规划（更快）');
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            if (this.isLoading) return;
+
+            const doneCount = planningSteps.filter(s => this.stepCompleted.has(s.key)).length;
+            const allDone = doneCount === planningSteps.length;
+            const noneDone = doneCount === 0;
+
+            generateBtn.disabled = true;
+            generateBtn.setText('⏳ 生成中...');
+
+            try {
+                if (noneDone || allDone) {
+                    await this.stepRunner.executePlanningCombined(this._makeStepRunCtx());
+                } else {
+                    const remaining = planningSteps.filter(s => !this.stepCompleted.has(s.key));
+                    const stepKeys = remaining.map(s => s.key);
+                    await this.stepRunner.executeStepsSequential(
+                        stepKeys,
+                        this._makeStepRunCtx(),
+                        {
+                            onStepStart: () => { this.renderInContainer(this.tabContent); },
+                            onStepComplete: () => { this.renderInContainer(this.tabContent); },
+                            onStepError: () => { this.renderInContainer(this.tabContent); },
+                        }
+                    );
+                }
+            } catch (e) {
+                console.error('[Planning] 一键生成失败:', e);
+            } finally {
+                this.renderInContainer(this.tabContent);
+            }
+        });
     }
 
     // ============================================================

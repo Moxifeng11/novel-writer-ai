@@ -211,6 +211,8 @@ export class BatchCreateModal extends Modal {
         const createNotice = new Notice(`⏳ 正在批量创建第${start}-${end}章...`, 0);
 
         let count = 0;
+        // U7（技术审计）：批量单项失败此前仅写日志用户不可见，收集失败清单供结束汇总
+        const failures: string[] = [];
         const volN = parseInt(volume.match(/\d+/)?.[0] || '0') || 1;
         const allFiles = this.app.vault.getFiles();
         const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
@@ -236,6 +238,9 @@ export class BatchCreateModal extends Modal {
                     chapterNumber: i,
                 };
 
+                // 仅创建当前 11 步流水线实际使用的步骤文件；
+                // 旧版 selfCheck / fix / finalFix / continuityReview 已合并入 qualityControl，
+                // 不再预生成空报告占位（连贯性审查由 ReviewAgent 在需要时按需创建）。
                 const stepFileTypes: Array<{ key: string; type: string; templateKey: string }> = [
                     { key: 'infoPlan', type: CHAPTER_FILE_TYPES.infoPlan, templateKey: 'infoPlan' },
                     { key: 'plotDistill', type: CHAPTER_FILE_TYPES.plotDistill, templateKey: 'plotDistill' },
@@ -244,10 +249,6 @@ export class BatchCreateModal extends Modal {
                     { key: 'sceneExpand', type: CHAPTER_FILE_TYPES.sceneExpand, templateKey: 'sceneExpand' },
                     { key: 'characterSoul', type: CHAPTER_FILE_TYPES.characterSoul, templateKey: 'characterSoul' },
                     { key: 'qualityControl', type: CHAPTER_FILE_TYPES.qualityControl, templateKey: 'qualityControl' },
-                    { key: 'selfCheck', type: CHAPTER_FILE_TYPES.selfCheck, templateKey: 'selfCheck' },
-                    { key: 'fix', type: CHAPTER_FILE_TYPES.fix, templateKey: 'fix' },
-                    { key: 'finalFix', type: CHAPTER_FILE_TYPES.finalFix, templateKey: 'finalFix' },
-                    { key: 'continuityReview', type: CHAPTER_FILE_TYPES.continuityReview, templateKey: 'continuityReview' },
                     { key: 'analysisReport', type: CHAPTER_FILE_TYPES.analysisReport, templateKey: 'analysisReport' },
                 ];
 
@@ -272,11 +273,17 @@ export class BatchCreateModal extends Modal {
                 count++;
             } catch (e) {
                 log.warn(`创建第${i}章失败:`, e);
+                failures.push(`第${i}章`);
             }
         }
 
         createNotice.hide();
-        new Notice(`✅ 批量创建完成，成功创建 ${count} 个章节`, 5000);
+        // U7：失败项汇总反馈（截取前 5 个避免 Notice 过长，完整原因见控制台日志）
+        if (failures.length > 0) {
+            new Notice(`⚠️ 批量创建完成：成功 ${count} 章，失败 ${failures.length} 章（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, 10000);
+        } else {
+            new Notice(`✅ 批量创建完成，成功创建 ${count} 个章节`, 5000);
+        }
         this.close();
     }
 

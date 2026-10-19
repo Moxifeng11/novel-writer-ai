@@ -12,6 +12,7 @@ import { WizardTab, WizardStep } from './wizard-types';
 import { getWorldviewPath, getSettingLibPath, getWritingStylePath, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '../../shared/paths';
 import { findWritingStyleFile } from '../writing-style-paths';
 import { ChapterOutlineTreeModal } from '../chapter-outline-tree-modal';
+import { openPlotCanvas } from '../plot-canvas-modal';
 import { EntityOverviewModal } from './entity-overview-modal';
 import { ExistingEntityManagerModal } from '../existing-entity-manager';
 import { readMergedVolumeOutline } from '../../utils/helpers';
@@ -367,6 +368,11 @@ export class WizardStepRenderers {
                 this.registerOutlineTreeModal(modal);
                 modal.open();
             });
+            const canvasBtn = container.createEl('button', { 
+                text: '🗺️ 情节画布', 
+                attr: { style: 'margin:8px 0 8px 8px; padding:6px 14px; border-radius:6px; cursor:pointer; background:var(--interactive-accent); color:white; border:none; font-weight:600;' } 
+            });
+            canvasBtn.addEventListener('click', () => openPlotCanvas(this.plugin, tab.project));
             // v3.4.6: 内联"下一步"按钮已下线 — 保留右下角 nav bar 唯一下一步入口
         } else {
             // v4.2: 未判定完成时，若分卷大纲文件已存在也提供树状预览入口。

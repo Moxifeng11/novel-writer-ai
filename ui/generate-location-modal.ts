@@ -175,7 +175,8 @@ export class GenerateLocationModal extends Modal {
                 progressBarTrack.style.display = 'block';
                 progressBarFill.addClass('nw-progress-anim');
                 showProgress(`⏳ 正在生成地点...（模型：${modelName}）`);
-                await new Promise(r => requestAnimationFrame(r));
+                // P0-2 修复: 后台窗口 rAF 不触发会导致永久挂起，改用 setTimeout 让出执行权
+                await new Promise(r => setTimeout(r, 16));
 
                 let wv = '';
                 try { const wf = this.app.vault.getAbstractFileByPath(pjWorldview(project)); if (wf instanceof TFile) wv = await this.app.vault.read(wf); } catch (e) { log.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }

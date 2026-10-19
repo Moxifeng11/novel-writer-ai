@@ -160,12 +160,17 @@ export class StepResultSaver {
             let actualTargetPath = targetPath;
 
             if (stepKey === 'bodyGeneration') {
-                const bodyLookupDir = v4Match ? pjBodyDir(v4Project, v4VolN) : chapDir;
-                const foundBody = findChapterFile(this.getVaultMeta().getFiles(), bodyLookupDir, '正文', this.app);
-                if (foundBody) {
-                    actualTargetPath = foundBody.path;
+                // P0-3 修复: v4 项目正文路径由卷号+章号唯一确定，直接使用 bodyDefaultPath，
+                // 避免 findChapterFile 在卷目录下按 frontmatter 模糊匹配到错误章节（多章项目正文错位）
+                if (v4Match) {
+                    actualTargetPath = bodyDefaultPath;
                 } else {
-                    log.warn(`[StepResultSaver] bodyGeneration: 未找到已有正文文件，将创建新文件 → ${actualTargetPath}`);
+                    const foundBody = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
+                    if (foundBody) {
+                        actualTargetPath = foundBody.path;
+                    } else {
+                        log.warn(`[StepResultSaver] bodyGeneration: 未找到已有正文文件，将创建新文件 → ${actualTargetPath}`);
+                    }
                 }
 
                 // 去除 content 中可能已有的 frontmatter
@@ -197,7 +202,7 @@ export class StepResultSaver {
                 if (bodyFile instanceof TFile) {
                     try {
                         await this.getFrontmatter().processFrontmatter(bodyFile, (fm: Record<string, unknown>) => {
-                            this.updateFrontmatterFields(fm, ct, volume, chapName, entityNames, 'pipeline');
+                            this.updateFrontmatterFields(fm, ct, volume, chapName, entityNames, 'pipeline', bodyText);
                         });
                     } catch (fmErr) {
                         log.warn('[StepResultSaver] bodyGeneration processFrontMatter 失败:', fmErr);
@@ -384,6 +389,7 @@ export class StepResultSaver {
         chapterName: string,
         entityNames: EntityNames | null,
         writingMode: string,
+        bodyText?: string,
     ): void {
         fm['标题'] = title;
         fm['status'] = fm['status'] === 'pending' ? 'written' : (fm['status'] || 'written');
@@ -392,10 +398,12 @@ export class StepResultSaver {
         fm['章'] = chapterName;
         if (!fm['writing_mode']) fm['writing_mode'] = writingMode;
         if (entityNames) {
-            fm['涉及人物'] = entityNames.chars.filter((n: string) => true); // 简化判断
-            fm['涉及地点'] = entityNames.locs.filter((n: string) => true);
-            fm['涉及势力'] = entityNames.factions.filter((n: string) => true);
-            fm['涉及物品功法'] = entityNames.items.filter((n: string) => true);
+            // 仅写入本章正文中实际出现的实体，避免把所有项目实体都塞进每章 frontmatter
+            const inBody = (n: string): boolean => (bodyText ? bodyText.includes(n) : true);
+            fm['涉及人物'] = entityNames.chars.filter(inBody);
+            fm['涉及地点'] = entityNames.locs.filter(inBody);
+            fm['涉及势力'] = entityNames.factions.filter(inBody);
+            fm['涉及物品功法'] = entityNames.items.filter(inBody);
         } else {
             if (!fm['涉及人物']) fm['涉及人物'] = [];
             if (!fm['涉及地点']) fm['涉及地点'] = [];

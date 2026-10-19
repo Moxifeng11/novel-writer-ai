@@ -20,6 +20,7 @@ import { KnowledgeMonitorModal } from './knowledge-monitor-modal';
 import { KnowledgeDetailModal } from './knowledge-detail-modal';
 import { RefillModal } from './refill-modal';
 import { kbKnowledgeBaseDir } from '../shared/paths';
+import { openKnowledgeFolder } from './knowledge-folder-navigation';
 import { performanceMonitor, PerformanceCategory } from '../services/performance-monitor';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
@@ -29,6 +30,12 @@ import { BUILTIN_CHANGELOG } from '../shared/changelog-data';
 import { PromptManagerSettings } from './prompt-manager-settings';
 import { RulesService } from '../services/rules-service';
 import { createLogger } from '../shared/logger';
+import { exportTextFile } from '../shared/export-file';
+import { OperationConfirmModal } from './components/progress';
+import { rebuildKnowledgeIndexWithConfirm } from './knowledge-rebuild-action';
+import { ForeshadowConfigManager, ForeshadowTypeConfig, DEFAULT_FORESHADOW_CONFIG } from '../engine/foreshadow-config-manager';
+import { AntiAIDetector } from '../engine/anti-ai-detector';
+import { setBusinessThresholdOverrides } from '../shared/thresholds';
 
 
 const log = createLogger('SettingsTab');
@@ -79,6 +86,9 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             { id: 'api', label: '🔌 API 配置' },
             { id: 'cowrite', label: '🖥 协同写作' },
             { id: 'writing', label: '✍️ 写作配置' },
+            { id: 'recognition', label: '🎭 角色识别' },
+            { id: 'suggestions', label: '💡 建议设置' },
+            { id: 'charts', label: '📊 图表设置' },
             { id: 'template', label: '📋 模板管理' },
             { id: 'fingerprint', label: '🔍 写作指纹库' },
             { id: 'knowledge', label: '📚 写作知识库' },
@@ -87,7 +97,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             { id: 'rules', label: '📜 规则版本' },
             { id: 'appearance', label: '🎨 外观设置' },
             { id: 'layout', label: '🧩 工作台布局' },
-            { id: 'performance', label: '📊 性能监控' },
+            { id: 'performance', label: '📈 性能监控' },
             { id: 'about', label: 'ℹ️ 关于' },
         ];
         for (const tab of tabs) {
@@ -137,6 +147,9 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'api': this.renderApiSection(); break;
             case 'cowrite': this.renderCoWriteSection(); break;
             case 'writing': this.renderWritingSection(); break;
+            case 'recognition': this.renderRecognitionSection(); break;
+            case 'suggestions': this.renderSuggestionsSection(); break;
+            case 'charts': this.renderChartsSection(); break;
             case 'fingerprint': this.renderFingerprintSection(); break;
             case 'knowledge': this.renderKnowledgeSection(); break;
             case 'deconstruction': this.renderDeconstructionSection(); break;
@@ -176,7 +189,8 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 providerDropdown = dropdown;
                 const allProviders = this.plugin.getAllProviders();
                 allProviders.forEach(p => {
-                    const label = p.isPreset ? p.name : `🔧 ${p.name}`;
+                    const sourceIcon = p.sourceType === 'local' ? '💻' : '☁️';
+                    const label = `${sourceIcon} ${p.name}`;
                     dropdown.addOption(p.id, label);
                 });
                 dropdown.addOption('__manage__', '⚙️ 管理全部提供商...');
@@ -185,24 +199,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     if (value === '__manage__') {
                         dropdown.setValue(currentProviderId || '__manage__');
                         this.showManageProvidersModal();
-                        return;
-                    }
-                    const customMatch = customProviders.find(c => c.id === value);
-                    if (customMatch) {
-                        if (currentProviderId) {
-                            this.plugin.settings.providerKeys[currentProviderId] = this.plugin.settings.apiKey;
-                        }
-                        this.plugin.settings.apiEndpoint = customMatch.endpoint;
-                        this.plugin.settings.availableModels = [...customMatch.models];
-                        this.plugin.settings.defaultModel = customMatch.models[0];
-                        this.plugin.settings.flashModel = customMatch.models[0];
-                        this.plugin.settings.proModel = customMatch.models[1] || customMatch.models[0];
-                        this.plugin.settings.maxContext = customMatch.maxContext;
-                        this.plugin.settings.maxOutput = customMatch.maxOutput;
-                        this.plugin.settings.apiKey = this.plugin.settings.providerKeys[value] || '';
-                        await this.plugin.saveSettings();
-                        this.plugin.updateStatusBarText();
-                        this.renderActiveTab();
                         return;
                     }
                     const all = this.plugin.getAllProviders();
@@ -261,7 +257,14 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 });
                 editBtn.onclick = () => this.showEditCustomProviderForm(activeCustom);
                 deleteBtn.onclick = async () => {
-                    if (!confirm(`确定要删除自定义提供商 "${activeCustom.name}" 吗？`)) return;
+                    const confirmed = await OperationConfirmModal.confirm(this.app, {
+                        title: '删除自定义提供商',
+                        description: `确定要删除自定义提供商 "${activeCustom.name}" 吗？`,
+                        warning: '此操作不可恢复',
+                        confirmText: '确认删除',
+                        cancelText: '取消',
+                    });
+                    if (!confirmed) return;
                     this.plugin.deleteCustomProvider(activeCustom.id);
                     await this.plugin.saveSettings();
                     this.plugin.updateStatusBarText();
@@ -791,6 +794,64 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        // P0-4: 精修迭代轮数参数化（原硬编码 3，spec p0-api-efficiency-optimization AC-4.3）
+        new Setting(section)
+            .setName('精修迭代轮数')
+            .setDesc('「迭代精修」的最大审查-修复轮数（0-5，0=跳过精修，默认 3）。首轮审查通过时自动短路，不额外消耗调用。')
+            .addText(text => text
+                .setPlaceholder('3')
+                .setValue(String(this.plugin.settings.refineRounds ?? 3))
+                .onChange(async (value) => {
+                    const n = Math.max(0, Math.min(5, parseInt(value) || 0));
+                    this.plugin.settings.refineRounds = n;
+                    await this.plugin.saveSettings();
+                }));
+
+        // R2: 反AI 检测词表扩充（默认空 → 检测结果与内置词表一致，无行为变化）
+        new Setting(section)
+            .setName('AI 味词表扩充')
+            .setDesc('每行一个词。这些词会同时加入「AI 味检测」的 L1 词频命中、写作避用词黑名单，以及拆解引擎的连接词密度统计。留空则只用内置词表。')
+            .addTextArea(area => {
+                area.setPlaceholder('例如：\n话说\n说白了\n不妨\n')
+                    .setValue((this.plugin.settings.antiAiExtraWords ?? []).join('\n'))
+                    .onChange(async (value) => {
+                        const words = value.split('\n').map(w => w.trim()).filter(w => w.length > 0);
+                        this.plugin.settings.antiAiExtraWords = words;
+                        AntiAIDetector.setExtraHighFreqWords(words);
+                        await this.plugin.saveSettings();
+                    });
+                area.inputEl.rows = 4;
+            });
+
+        // R1: 业务阈值设置项化（默认值与 shared/thresholds.ts 内置常量一致，不改变默认行为）
+        new Setting(section)
+            .setName('步骤最低字数比例')
+            .setDesc('步骤输出低于「目标字数 × 此比例」即判定字数不足（0-1，默认 0.70）。')
+            .addText(text => text
+                .setPlaceholder('0.70')
+                .setValue(String(this.plugin.settings.wordMinRatio ?? 0.7))
+                .onChange(async (value) => {
+                    const ratio = Number.parseFloat(value);
+                    if (!Number.isFinite(ratio) || ratio <= 0 || ratio > 1) return;
+                    this.plugin.settings.wordMinRatio = ratio;
+                    setBusinessThresholdOverrides({ wordMinRatio: ratio });
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('超长提示词分片比例')
+            .setDesc('提示词超出上下文安全线时，保留头部的比例（0-1，默认 0.67；越小保留的中段资料越少）。')
+            .addText(text => text
+                .setPlaceholder('0.67')
+                .setValue(String(this.plugin.settings.promptSplitRatio ?? 0.67))
+                .onChange(async (value) => {
+                    const ratio = Number.parseFloat(value);
+                    if (!Number.isFinite(ratio) || ratio <= 0 || ratio > 1) return;
+                    this.plugin.settings.promptSplitRatio = ratio;
+                    setBusinessThresholdOverrides({ promptSplitRatio: ratio });
+                    await this.plugin.saveSettings();
+                }));
+
         new Setting(section)
             .setName('上下文范围')
             .setDesc('紧凑模式仅注入本章涉及实体（节省上下文），完整模式遍历全部实体（质量优先）')
@@ -942,7 +1003,14 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             onDelete: async (fp) => {
                 if (!this.fingerprintLibrary) return;
                 const scopeLabel = scope === 'template' ? '模板' : scope === 'global' ? '全局' : '项目';
-                if (!confirm(`确定要删除${scopeLabel}指纹「${fp.name}」吗？此操作不可恢复。`)) return;
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '删除指纹',
+                    description: `确定要删除${scopeLabel}指纹「${fp.name}」吗？`,
+                    warning: '此操作不可恢复',
+                    confirmText: '确认删除',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
                 if (scope === 'template') {
                     await this.fingerprintLibrary.deleteTemplate(fp.id);
                     await this.loadTemplateFingerprints();
@@ -1233,7 +1301,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     const dirPath = kbKnowledgeBaseDir();
                     const file = this.app.vault.getAbstractFileByPath(dirPath);
                     if (file) {
-                        (this.app as unknown as { workspace: { revealLeafInNewTab: (f: unknown) => void } }).workspace.revealLeafInNewTab(file);
+                        void openKnowledgeFolder(this.app, dirPath);
                     } else {
                         new Notice('⚠️ 知识库目录不存在，请先导入书籍');
                     }
@@ -1245,6 +1313,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             text: '📥 批量导入',
             attr: {
                 type: 'button',
+                title: '从文件夹批量导入书籍',
                 style: 'padding:6px 16px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:4px;font-size:13px;font-weight:500;'
             }
         });
@@ -1254,6 +1323,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             text: '📊 监控面板',
             attr: {
                 type: 'button',
+                title: '查看拆解任务监控面板',
                 style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
             }
         });
@@ -1263,25 +1333,11 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             text: '🔄 重建索引',
             attr: {
                 type: 'button',
+                title: '重建向量索引（重新扫描所有向量文件）',
                 style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
             }
         });
-        rebuildBtn.addEventListener('click', async () => {
-            if (!confirm('确定要重建向量索引吗？这将重新扫描所有向量文件。')) return;
-            try {
-                new Notice('⏳ 正在重建索引...');
-                const store = (this.plugin as any).knowledgeVectorStore;
-                if (store && typeof store.rebuildIndex === 'function') {
-                    await store.rebuildIndex();
-                    new Notice('✅ 索引重建完成');
-                } else {
-                    new Notice('⚠️ 向量存储未初始化');
-                }
-            } catch (e) {
-                log.error('[SettingsTab] 重建索引失败:', e);
-                new Notice('❌ 重建索引失败');
-            }
-        });
+        rebuildBtn.addEventListener('click', () => rebuildKnowledgeIndexWithConfirm(this.app, this.plugin));
 
         const filterBar = section.createDiv({
             attr: { style: 'padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
@@ -1454,9 +1510,20 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         const dimList = dimCard.createDiv({ attr: { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;' } });
         const dimSet = new Set(cfg.enabledDimensions);
+        const DIMENSION_DESC: Record<string, string> = {
+            style: '分析文笔风格与语言特色',
+            rhythm: '分析叙事节奏与张弛变化',
+            technique: '提取写作技巧与手法',
+            structure: '拆解情节结构与章节组织',
+            character: '提取人物设定与性格弧线',
+            foreshadow: '梳理伏笔铺设与回收',
+            commercial: '分析商业卖点与爽点',
+            readability: '分析可读性与流畅度',
+        };
         ALL_BREAKDOWN_DIMENSIONS.forEach(dim => {
             const item = new Setting(dimList)
                 .setName(DIMENSION_LABELS[dim])
+                .setDesc(DIMENSION_DESC[dim] || '')
                 .addToggle(toggle => {
                     toggle.setValue(dimSet.has(dim));
                     toggle.onChange(async (value) => {
@@ -1621,8 +1688,20 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             });
 
         new Setting(perfCard)
+            .setName('采样模式（仅分析前 N 字）')
+            .setDesc('默认关闭：全本智能分段拆解，逐段覆盖全部剧情。开启后仅分析开头“文本采样上限”字数，用于快速预览。')
+            .addToggle(toggle => {
+                toggle.setValue(cfg.sampleMode === true);
+                toggle.onChange(async (value) => {
+                    await this.ensureDeconstructionEngineSettingsPersists(s => {
+                        s.sampleMode = value;
+                    });
+                });
+            });
+
+        new Setting(perfCard)
             .setName('文本采样上限')
-            .setDesc(`单本书参与拆解的最大字数，超出部分会被截断（当前: ${cfg.textSampleLimit.toLocaleString()}）`)
+            .setDesc(`仅采样模式生效：采样模式下参与拆解的最大字数（当前: ${cfg.textSampleLimit.toLocaleString()}）。全本模式下此项不生效。`)
             .addText(text => {
                 text.setValue(String(cfg.textSampleLimit));
                 text.setPlaceholder('100000');
@@ -1643,10 +1722,17 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         const resetRow = section.createDiv({ attr: { style: 'display:flex;justify-content:flex-end;margin-top:12px;' } });
         const resetBtn = resetRow.createEl('button', {
             text: '↩️ 恢复默认',
-            attr: { type: 'button', style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);' }
+            attr: { type: 'button', title: '将拆解引擎所有配置恢复为默认值', style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);' }
         });
         resetBtn.addEventListener('click', async () => {
-            if (!confirm('确定要将拆解引擎所有配置恢复为默认值吗？')) return;
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '恢复默认配置',
+                description: '确定要将拆解引擎所有配置恢复为默认值吗？',
+                warning: '所有自定义配置将丢失',
+                confirmText: '确认恢复',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
             this.plugin.settings.deconstructionEngine = { ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS };
             await this.plugin.saveSettings();
             this.renderActiveTab();
@@ -1710,7 +1796,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         });
 
         const retryBtn = actionsRow.createEl('button', {
-            text: '🔄',
+            text: '🔄 重拆',
             attr: {
                 type: 'button',
                 title: '重新拆解',
@@ -1730,7 +1816,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         });
 
         const deleteBtn = actionsRow.createEl('button', {
-            text: '🗑',
+            text: '🗑 删除',
             attr: {
                 type: 'button',
                 title: '删除',
@@ -1739,7 +1825,14 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         });
         deleteBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (!confirm(`确定要删除《${book.name}》吗？此操作不可恢复。`)) return;
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '删除书籍',
+                description: `确定要删除《${book.name}》吗？`,
+                warning: '此操作不可恢复',
+                confirmText: '确认删除',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
             if (this.knowledgeBaseManager) {
                 await this.knowledgeBaseManager.deleteBook(book.id);
                 await this.loadKnowledgeBooks();
@@ -2202,6 +2295,257 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     this.plugin.settings.maxUnrevealedForeshadow = parseInt(value) || 20;
                     await this.plugin.saveSettings();
                 }));
+
+        section.createEl('h4', { text: '📝 伏笔类型配置' });
+        const descP = section.createEl('p', { cls: 'setting-item-description' });
+        descP.setText('自定义伏笔类型及其关键词，系统会根据配置自动识别和分类伏笔。');
+
+        const configManager = this.getForeshadowConfigManager();
+        const types = configManager.getAllTypes();
+
+        const typeList = section.createDiv({ cls: 'nw-foreshadow-type-list' });
+        types.forEach(type => {
+            const typeRow = typeList.createDiv({ cls: 'nw-foreshadow-type-row' });
+            
+            const colorDot = typeRow.createDiv({ 
+                cls: 'nw-foreshadow-color-dot',
+                attr: { style: `background-color: ${type.color || '#999'}` }
+            });
+            
+            const infoDiv = typeRow.createDiv({ cls: 'nw-foreshadow-type-info' });
+            infoDiv.createEl('span', { cls: 'nw-foreshadow-type-name', text: type.name });
+            infoDiv.createEl('span', { cls: 'nw-foreshadow-type-desc', text: type.description });
+            
+            const keywordsBadge = infoDiv.createEl('span', { cls: 'nw-foreshadow-keywords-count' });
+            keywordsBadge.setText(`${type.keywords.length} 关键词`);
+            
+            const actionsDiv = typeRow.createDiv({ cls: 'nw-foreshadow-type-actions' });
+            
+            const toggleBtn = actionsDiv.createEl('button', {
+                cls: 'nw-foreshadow-toggle-btn',
+                text: type.enabled ? '✅' : '❌',
+                attr: { title: type.enabled ? '点击禁用' : '点击启用' }
+            });
+            toggleBtn.onclick = async () => {
+                configManager.toggleType(type.id, !type.enabled);
+                this.saveForeshadowConfig(configManager);
+                this.renderActiveTab();
+            };
+            
+            const editBtn = actionsDiv.createEl('button', {
+                cls: 'nw-foreshadow-action-btn',
+                text: '编辑'
+            });
+            editBtn.onclick = () => {
+                this.showForeshadowTypeModal(type);
+            };
+            
+            const deleteBtn = actionsDiv.createEl('button', {
+                cls: 'nw-foreshadow-action-btn nw-foreshadow-delete-btn',
+                text: '删除'
+            });
+            deleteBtn.onclick = async () => {
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '删除伏笔类型',
+                    description: `确定删除伏笔类型 "${type.name}" 吗？`,
+                    warning: '此操作不可恢复',
+                    confirmText: '确认删除',
+                    cancelText: '取消',
+                });
+                if (confirmed) {
+                    configManager.deleteType(type.id);
+                    this.saveForeshadowConfig(configManager);
+                    this.renderActiveTab();
+                }
+            };
+        });
+
+        const addBtn = section.createEl('button', {
+            cls: 'nw-foreshadow-add-btn',
+            text: '+ 添加新伏笔类型'
+        });
+        addBtn.onclick = () => {
+            this.showForeshadowTypeModal();
+        };
+
+        const importExportDiv = section.createDiv({ cls: 'nw-foreshadow-import-export' });
+        
+        const exportBtn = importExportDiv.createEl('button', {
+            cls: 'nw-foreshadow-ie-btn',
+            text: '📥 导出配置'
+        });
+        exportBtn.onclick = () => {
+            const json = configManager.exportConfig();
+            navigator.clipboard.writeText(json).then(() => {
+                new Notice('配置已复制到剪贴板');
+            });
+        };
+        
+        const importBtn = importExportDiv.createEl('button', {
+            cls: 'nw-foreshadow-ie-btn',
+            text: '📤 导入配置'
+        });
+        importBtn.onclick = async () => {
+            const modal = new Modal(this.app);
+            modal.titleEl.setText('导入伏笔配置');
+            
+            const textarea = modal.contentEl.createEl('textarea', {
+                attr: { 
+                    placeholder: '粘贴导出的 JSON 配置...',
+                    style: 'width: 100%; height: 200px; margin: 10px 0;'
+                }
+            });
+            
+            const importBtn = modal.contentEl.createEl('button', {
+                cls: 'mod-cta',
+                text: '导入'
+            });
+            importBtn.onclick = async () => {
+                const result = configManager.importConfig(textarea.value);
+                if (result.success) {
+                    this.saveForeshadowConfig(configManager);
+                    new Notice('配置导入成功');
+                    modal.close();
+                    this.renderActiveTab();
+                } else {
+                    new Notice('导入失败: ' + result.errors.join(', '));
+                }
+            };
+            
+            modal.open();
+        };
+        
+        const resetBtn = importExportDiv.createEl('button', {
+            cls: 'nw-foreshadow-ie-btn nw-foreshadow-reset-btn',
+            text: '🔄 重置为默认'
+        });
+        resetBtn.onclick = async () => {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '重置伏笔类型',
+                description: '确定重置所有伏笔类型配置为默认值吗？',
+                warning: '所有自定义伏笔类型配置将丢失',
+                confirmText: '确认重置',
+                cancelText: '取消',
+            });
+            if (confirmed) {
+                configManager.resetToDefault();
+                this.saveForeshadowConfig(configManager);
+                new Notice('已重置为默认配置');
+                this.renderActiveTab();
+            }
+        };
+    }
+
+    private getForeshadowConfigManager(): ForeshadowConfigManager {
+        if (!this.plugin._foreshadowConfigManager) {
+            const savedConfig = this.plugin.settings.foreshadowConfig;
+            this.plugin._foreshadowConfigManager = new ForeshadowConfigManager(savedConfig);
+        }
+        return this.plugin._foreshadowConfigManager;
+    }
+
+    private saveForeshadowConfig(configManager: ForeshadowConfigManager): void {
+        this.plugin.settings.foreshadowConfig = configManager.getConfig();
+        this.plugin.saveSettings();
+    }
+
+    private showForeshadowTypeModal(existingType?: ForeshadowTypeConfig): void {
+        const modal = new Modal(this.app);
+        modal.titleEl.setText(existingType ? `编辑伏笔类型: ${existingType.name}` : '添加新伏笔类型');
+        
+        const form = modal.contentEl.createDiv({ cls: 'nw-foreshadow-type-form' });
+        
+        let nameValue = existingType?.name || '';
+        let descValue = existingType?.description || '';
+        let priorityValue = String(existingType?.priority || 50);
+        let colorValue = existingType?.color || '#4CAF50';
+        let keywordsValue = existingType?.keywords.join(', ') || '';
+
+        new Setting(form)
+            .setName('类型名称')
+            .setDesc('伏笔类型的显示名称')
+            .addText(text => text
+                .setPlaceholder('如：物品')
+                .setValue(nameValue)
+                .onChange(value => { nameValue = value; }));
+        
+        new Setting(form)
+            .setName('类型描述')
+            .setDesc('描述该类型的含义和用途')
+            .addText(text => text
+                .setPlaceholder('如：武器、道具、丹药等实体物品')
+                .setValue(descValue)
+                .onChange(value => { descValue = value; }));
+        
+        new Setting(form)
+            .setName('优先级')
+            .setDesc('数值越大优先级越高，匹配时优先选择高优先级类型')
+            .addText(text => text
+                .setPlaceholder('100')
+                .setValue(priorityValue)
+                .onChange(value => { priorityValue = value; }));
+        
+        new Setting(form)
+            .setName('显示颜色')
+            .setDesc('用于在界面中标识该类型的颜色')
+            .addText(text => text
+                .setPlaceholder('#4CAF50')
+                .setValue(colorValue)
+                .onChange(value => { colorValue = value; }));
+        
+        new Setting(form)
+            .setName('关键词（逗号分隔）')
+            .setDesc('用于匹配伏笔的关键词，支持部分匹配')
+            .addTextArea(textarea => textarea
+                .setPlaceholder('剑,刀,枪,玉佩')
+                .setValue(keywordsValue)
+                .onChange(value => { keywordsValue = value; }));
+        
+        const saveBtn = modal.contentEl.createEl('button', {
+            cls: 'mod-cta',
+            text: '保存'
+        });
+        saveBtn.onclick = async () => {
+            const name = nameValue.trim();
+            const desc = descValue.trim();
+            const priority = parseInt(priorityValue) || 50;
+            const color = colorValue.trim();
+            const keywords = keywordsValue.split(/[,，]/).map(k => k.trim()).filter(k => k);
+            
+            if (!name) {
+                new Notice('请输入类型名称');
+                return;
+            }
+            
+            const configManager = this.getForeshadowConfigManager();
+            
+            if (existingType) {
+                configManager.updateType(existingType.id, {
+                    name,
+                    description: desc,
+                    priority,
+                    color,
+                    keywords
+                });
+                new Notice('类型更新成功');
+            } else {
+                configManager.addType({
+                    name,
+                    description: desc,
+                    priority,
+                    enabled: true,
+                    color,
+                    keywords
+                });
+                new Notice('类型添加成功');
+            }
+            
+            this.saveForeshadowConfig(configManager);
+            modal.close();
+            this.renderActiveTab();
+        };
+        
+        modal.open();
     }
 
     private async renderTemplateSection(): Promise<void> {
@@ -2579,16 +2923,12 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;'
             }
         });
-        exportBtn.onclick = () => {
+        exportBtn.onclick = async () => {
             const json = performanceMonitor.exportLog();
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `performance-log-${new Date().toISOString().slice(0, 10)}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            new Notice('✅ 性能日志已导出', 2000);
+            await exportTextFile(this.app, `performance-log-${new Date().toISOString().slice(0, 10)}.json`, json, {
+                mime: 'application/json',
+                successMessage: '✅ 性能日志已导出',
+            });
         };
 
         const clearBtn = btnRow.createEl('button', {
@@ -2598,8 +2938,15 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-error);border:1px solid var(--background-modifier-error);border-radius:6px;font-size:13px;'
             }
         });
-        clearBtn.onclick = () => {
-            if (confirm('确定要清空所有性能日志吗？')) {
+        clearBtn.onclick = async () => {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '清空性能日志',
+                description: '确定要清空所有性能日志吗？',
+                warning: '此操作不可恢复',
+                confirmText: '确认清空',
+                cancelText: '取消',
+            });
+            if (confirmed) {
                 performanceMonitor.clearLog();
                 this.renderActiveTab();
                 new Notice('✅ 性能日志已清空', 2000);
@@ -3072,6 +3419,445 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         aboutCard.createEl('div', { text: '作者：南柯一梦', attr: { style: 'margin-bottom:4px;' } });
         aboutCard.createEl('div', { text: '许可证：MIT', attr: { style: 'margin-bottom:4px;' } });
+    }
+
+    private renderRecognitionSection(): void {
+        const section = this.tabContent.createEl('section');
+
+        section.createEl('h3', { text: '🎭 角色识别设置' });
+        section.createEl('p', {
+            text: '配置角色识别三层流水线的各层参数。',
+            cls: 'setting-item-description'
+        });
+
+        section.createEl('h4', { text: '启用的识别层', attr: { style: 'margin-top:20px;margin-bottom:8px;' } });
+
+        const layers = this.plugin.settings.characterRecognitionLayers || ['rule', 'vector'];
+
+        new Setting(section)
+            .setName('规则层')
+            .setDesc('基于统计规则的角色提取（提及次数、频率过滤等）')
+            .addToggle(toggle => toggle
+                .setValue(layers.includes('rule'))
+                .onChange(async (value) => {
+                    const current = [...(this.plugin.settings.characterRecognitionLayers || [])];
+                    if (value && !current.includes('rule')) {
+                        current.push('rule');
+                    } else if (!value) {
+                        const idx = current.indexOf('rule');
+                        if (idx > -1) current.splice(idx, 1);
+                    }
+                    this.plugin.settings.characterRecognitionLayers = current;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('向量层')
+            .setDesc('基于语义向量的角色过滤与同指消解')
+            .addToggle(toggle => toggle
+                .setValue(layers.includes('vector'))
+                .onChange(async (value) => {
+                    const current = [...(this.plugin.settings.characterRecognitionLayers || [])];
+                    if (value && !current.includes('vector')) {
+                        current.push('vector');
+                    } else if (!value) {
+                        const idx = current.indexOf('vector');
+                        if (idx > -1) current.splice(idx, 1);
+                    }
+                    this.plugin.settings.characterRecognitionLayers = current;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('LLM 层')
+            .setDesc('⚠️ 启用后会消耗额外的 token，用于角色校验和称号抽取')
+            .addToggle(toggle => toggle
+                .setValue(layers.includes('llm'))
+                .onChange(async (value) => {
+                    const current = [...(this.plugin.settings.characterRecognitionLayers || [])];
+                    if (value && !current.includes('llm')) {
+                        const confirmed = await OperationConfirmModal.confirm(this.app, {
+                            title: '启用 LLM 层',
+                            description: '启用 LLM 层会显著增加 token 消耗，确定要开启吗？',
+                            confirmText: '确认开启',
+                            cancelText: '取消',
+                        });
+                        if (!confirmed) {
+                            return;
+                        }
+                        current.push('llm');
+                    } else if (!value) {
+                        const idx = current.indexOf('llm');
+                        if (idx > -1) current.splice(idx, 1);
+                    }
+                    this.plugin.settings.characterRecognitionLayers = current;
+                    await this.plugin.saveSettings();
+                    this.renderActiveTab();
+                }));
+
+        const ruleLayer = this.plugin.settings.ruleLayer || {
+            minMentionCount: 5,
+            enableFreqFilter: true,
+            enableContextCheck: true,
+            enableVerbFilter: true,
+        };
+
+        section.createEl('h4', { text: '📋 规则层配置', attr: { style: 'margin-top:24px;margin-bottom:8px;' } });
+
+        new Setting(section)
+            .setName('最小提及次数')
+            .setDesc('角色名在文本中出现的最少次数才会被识别为角色候选')
+            .addText(text => text
+                .setPlaceholder('5')
+                .setValue(String(ruleLayer.minMentionCount))
+                .onChange(async (value) => {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num > 0) {
+                        this.plugin.settings.ruleLayer = {
+                            ...this.plugin.settings.ruleLayer!,
+                            minMentionCount: num,
+                        };
+                        await this.plugin.saveSettings();
+                    }
+                }));
+
+        new Setting(section)
+            .setName('启用频率过滤')
+            .setDesc('过滤掉出现频率异常高或异常低的候选词')
+            .addToggle(toggle => toggle
+                .setValue(ruleLayer.enableFreqFilter)
+                .onChange(async (value) => {
+                    this.plugin.settings.ruleLayer = {
+                        ...this.plugin.settings.ruleLayer!,
+                        enableFreqFilter: value,
+                    };
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('启用上下文虚词检查')
+            .setDesc('检查候选词前后是否为虚词，排除非人名用法')
+            .addToggle(toggle => toggle
+                .setValue(ruleLayer.enableContextCheck)
+                .onChange(async (value) => {
+                    this.plugin.settings.ruleLayer = {
+                        ...this.plugin.settings.ruleLayer!,
+                        enableContextCheck: value,
+                    };
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('启用动词前后缀过滤')
+            .setDesc('过滤掉前后紧跟动词的候选词（通常不是人名）')
+            .addToggle(toggle => toggle
+                .setValue(ruleLayer.enableVerbFilter)
+                .onChange(async (value) => {
+                    this.plugin.settings.ruleLayer = {
+                        ...this.plugin.settings.ruleLayer!,
+                        enableVerbFilter: value,
+                    };
+                    await this.plugin.saveSettings();
+                }));
+
+        const vectorLayer = this.plugin.settings.vectorLayer || {
+            enabled: true,
+            semanticFilterThreshold: 0.5,
+            mergeSimilarityThreshold: 0.85,
+        };
+
+        section.createEl('h4', { text: '🔗 向量层配置', attr: { style: 'margin-top:24px;margin-bottom:8px;' } });
+
+        new Setting(section)
+            .setName('启用向量层')
+            .setDesc('启用语义向量过滤和同指消解功能')
+            .addToggle(toggle => toggle
+                .setValue(vectorLayer.enabled)
+                .onChange(async (value) => {
+                    this.plugin.settings.vectorLayer = {
+                        ...this.plugin.settings.vectorLayer!,
+                        enabled: value,
+                    };
+                    await this.plugin.saveSettings();
+                    this.renderActiveTab();
+                }));
+
+        if (vectorLayer.enabled) {
+            new Setting(section)
+                .setName('语义过滤阈值')
+                .setDesc(`候选词与"角色"语义的相似度阈值，低于此值将被过滤。当前: ${vectorLayer.semanticFilterThreshold.toFixed(2)}`)
+                .addSlider(slider => {
+                    slider.setLimits(0, 1, 0.01);
+                    slider.setValue(vectorLayer.semanticFilterThreshold);
+                    slider.setDynamicTooltip();
+                    slider.onChange(async (value) => {
+                        this.plugin.settings.vectorLayer = {
+                            ...this.plugin.settings.vectorLayer!,
+                            semanticFilterThreshold: value,
+                        };
+                        await this.plugin.saveSettings();
+                    });
+                });
+
+            new Setting(section)
+                .setName('合并相似度阈值')
+                .setDesc(`两个角色候选的语义相似度高于此值时将被合并。当前: ${vectorLayer.mergeSimilarityThreshold.toFixed(2)}`)
+                .addSlider(slider => {
+                    slider.setLimits(0, 1, 0.01);
+                    slider.setValue(vectorLayer.mergeSimilarityThreshold);
+                    slider.setDynamicTooltip();
+                    slider.onChange(async (value) => {
+                        this.plugin.settings.vectorLayer = {
+                            ...this.plugin.settings.vectorLayer!,
+                            mergeSimilarityThreshold: value,
+                        };
+                        await this.plugin.saveSettings();
+                    });
+                });
+        }
+
+        const llmLayer = this.plugin.settings.llmLayer || {
+            enabled: false,
+            verifyBatchSize: 20,
+            titleBatchSize: 8,
+            minConfidence: 0.3,
+        };
+
+        section.createEl('h4', { text: '🤖 LLM 层配置', attr: { style: 'margin-top:24px;margin-bottom:8px;' } });
+
+        new Setting(section)
+            .setName('启用 LLM 层')
+            .setDesc('⚠️ 启用后会消耗额外 token，用于角色校验和称号抽取')
+            .addToggle(toggle => toggle
+                .setValue(llmLayer.enabled)
+                .onChange(async (value) => {
+                    if (value) {
+                        const confirmed = await OperationConfirmModal.confirm(this.app, {
+                            title: '启用 LLM 层',
+                            description: '启用 LLM 层会显著增加 token 消耗，确定要开启吗？',
+                            confirmText: '确认开启',
+                            cancelText: '取消',
+                        });
+                        if (!confirmed) return;
+                    }
+                    this.plugin.settings.llmLayer = {
+                        ...this.plugin.settings.llmLayer!,
+                        enabled: value,
+                    };
+                    await this.plugin.saveSettings();
+                    this.renderActiveTab();
+                }));
+
+        if (llmLayer.enabled) {
+            new Setting(section)
+                .setName('校验批处理大小')
+                .setDesc('每批发送给 LLM 进行角色校验的候选数量')
+                .addText(text => text
+                    .setPlaceholder('20')
+                    .setValue(String(llmLayer.verifyBatchSize))
+                    .onChange(async (value) => {
+                        const num = parseInt(value, 10);
+                        if (!isNaN(num) && num > 0) {
+                            this.plugin.settings.llmLayer = {
+                                ...this.plugin.settings.llmLayer!,
+                                verifyBatchSize: num,
+                            };
+                            await this.plugin.saveSettings();
+                        }
+                    }));
+
+            new Setting(section)
+                .setName('称号抽取批处理大小')
+                .setDesc('每批发送给 LLM 进行称号抽取的角色数量')
+                .addText(text => text
+                    .setPlaceholder('8')
+                    .setValue(String(llmLayer.titleBatchSize))
+                    .onChange(async (value) => {
+                        const num = parseInt(value, 10);
+                        if (!isNaN(num) && num > 0) {
+                            this.plugin.settings.llmLayer = {
+                                ...this.plugin.settings.llmLayer!,
+                                titleBatchSize: num,
+                            };
+                            await this.plugin.saveSettings();
+                        }
+                    }));
+
+            new Setting(section)
+                .setName('最小置信度')
+                .setDesc(`LLM 确认角色身份的最低置信度阈值。当前: ${llmLayer.minConfidence.toFixed(2)}`)
+                .addSlider(slider => {
+                    slider.setLimits(0, 1, 0.01);
+                    slider.setValue(llmLayer.minConfidence);
+                    slider.setDynamicTooltip();
+                    slider.onChange(async (value) => {
+                        this.plugin.settings.llmLayer = {
+                            ...this.plugin.settings.llmLayer!,
+                            minConfidence: value,
+                        };
+                        await this.plugin.saveSettings();
+                    });
+                });
+        }
+    }
+
+    private renderSuggestionsSection(): void {
+        const section = this.tabContent.createEl('section');
+
+        section.createEl('h3', { text: '💡 建议采纳设置' });
+        section.createEl('p', {
+            text: '配置分析建议的自动采纳和显示方式。',
+            cls: 'setting-item-description'
+        });
+
+        const suggestions = this.plugin.settings.suggestions || {
+            autoAdoptHighConfidence: false,
+            autoAdoptThreshold: 0.9,
+            showEvidenceByDefault: false,
+            batchAdoptThreshold: 0.7,
+        };
+
+        new Setting(section)
+            .setName('自动采纳高置信度建议')
+            .setDesc('自动采纳置信度高于阈值的建议，无需手动确认')
+            .addToggle(toggle => toggle
+                .setValue(suggestions.autoAdoptHighConfidence)
+                .onChange(async (value) => {
+                    this.plugin.settings.suggestions = {
+                        ...this.plugin.settings.suggestions!,
+                        autoAdoptHighConfidence: value,
+                    };
+                    await this.plugin.saveSettings();
+                    this.renderActiveTab();
+                }));
+
+        if (suggestions.autoAdoptHighConfidence) {
+            new Setting(section)
+                .setName('自动采纳阈值')
+                .setDesc(`置信度高于此值的建议将被自动采纳。当前: ${suggestions.autoAdoptThreshold.toFixed(2)}`)
+                .addSlider(slider => {
+                    slider.setLimits(0.5, 1, 0.01);
+                    slider.setValue(suggestions.autoAdoptThreshold);
+                    slider.setDynamicTooltip();
+                    slider.onChange(async (value) => {
+                        this.plugin.settings.suggestions = {
+                            ...this.plugin.settings.suggestions!,
+                            autoAdoptThreshold: value,
+                        };
+                        await this.plugin.saveSettings();
+                    });
+                });
+        }
+
+        new Setting(section)
+            .setName('默认展开证据')
+            .setDesc('建议列表中默认展开证据详情（关闭可节省界面空间）')
+            .addToggle(toggle => toggle
+                .setValue(suggestions.showEvidenceByDefault)
+                .onChange(async (value) => {
+                    this.plugin.settings.suggestions = {
+                        ...this.plugin.settings.suggestions!,
+                        showEvidenceByDefault: value,
+                    };
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('批量采纳默认阈值')
+            .setDesc(`批量采纳时的默认置信度阈值。当前: ${suggestions.batchAdoptThreshold.toFixed(2)}`)
+            .addSlider(slider => {
+                slider.setLimits(0.5, 1, 0.01);
+                slider.setValue(suggestions.batchAdoptThreshold);
+                slider.setDynamicTooltip();
+                slider.onChange(async (value) => {
+                    this.plugin.settings.suggestions = {
+                        ...this.plugin.settings.suggestions!,
+                        batchAdoptThreshold: value,
+                    };
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+
+    private renderChartsSection(): void {
+        const section = this.tabContent.createEl('section');
+
+        section.createEl('h3', { text: '📊 图表可视化设置' });
+        section.createEl('p', {
+            text: '配置数据可视化图表的显示方式和交互效果。',
+            cls: 'setting-item-description'
+        });
+
+        const charts = this.plugin.settings.charts || {
+            defaultDensity: 'normal',
+            enableAnimations: true,
+            defaultChartType: 'scatter',
+            labelRotationThreshold: 8,
+        };
+
+        new Setting(section)
+            .setName('默认密度模式')
+            .setDesc('图表元素的疏密程度')
+            .addDropdown(dropdown => {
+                dropdown.addOption('compact', '紧凑');
+                dropdown.addOption('normal', '正常');
+                dropdown.addOption('spacious', '宽松');
+                dropdown.setValue(charts.defaultDensity);
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.charts = {
+                        ...this.plugin.settings.charts!,
+                        defaultDensity: value as 'compact' | 'normal' | 'spacious',
+                    };
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        new Setting(section)
+            .setName('启用动画')
+            .setDesc('图表加载和交互时显示动画效果（关闭可提升性能）')
+            .addToggle(toggle => toggle
+                .setValue(charts.enableAnimations)
+                .onChange(async (value) => {
+                    this.plugin.settings.charts = {
+                        ...this.plugin.settings.charts!,
+                        enableAnimations: value,
+                    };
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('默认图表类型')
+            .setDesc('散点图等可切换图表的默认显示类型')
+            .addDropdown(dropdown => {
+                dropdown.addOption('scatter', '散点图');
+                dropdown.addOption('bubble', '气泡图');
+                dropdown.addOption('heatmap', '热力图');
+                dropdown.setValue(charts.defaultChartType);
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.charts = {
+                        ...this.plugin.settings.charts!,
+                        defaultChartType: value,
+                    };
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        new Setting(section)
+            .setName('标签旋转阈值')
+            .setDesc('当数据标签数量超过此值时自动旋转标签以避免重叠')
+            .addText(text => text
+                .setPlaceholder('8')
+                .setValue(String(charts.labelRotationThreshold))
+                .onChange(async (value) => {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num > 0) {
+                        this.plugin.settings.charts = {
+                            ...this.plugin.settings.charts!,
+                            labelRotationThreshold: num,
+                        };
+                        await this.plugin.saveSettings();
+                    }
+                }));
     }
 
     private renderInfoItem(container: HTMLElement, label: string, value: string): void {

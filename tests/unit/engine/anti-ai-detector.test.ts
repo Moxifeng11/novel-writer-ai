@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { AntiAIDetector } from '../../../engine/anti-ai-detector';
 
 const detector = new AntiAIDetector();
@@ -112,5 +112,109 @@ describe('AntiAIDetector — 边界情况', () => {
         }
         const result = detector.buildAntiAIConstraints({ recentSentences: sentences });
         expect(result.constraints.length).toBeLessThanOrEqual(200);
+    });
+});
+
+describe('AntiAIDetector — 多维检测引擎（P0-1 升级）', () => {
+    it('detectWithPositions 检出 AI 模板短语并返回正确位置', () => {
+        const text = '他的眼中闪过一丝惊讶，嘴角微微上扬。';
+        const hits = detector.detectWithPositions(text);
+        const l2Hits = hits.filter(h => h.type === 'l2');
+        expect(l2Hits.length).toBeGreaterThan(0);
+        for (const h of l2Hits) {
+            expect(text.slice(h.start, h.end)).toBe(h.text);
+            expect(h.start).toBeGreaterThanOrEqual(0);
+            expect(h.end).toBeLessThanOrEqual(text.length);
+        }
+    });
+
+    it('detect 返回完整检测结果（评分 0-100 + 命中 + 特征）', () => {
+        const text = '然而他仿佛意识到了什么，似乎某种力量在召唤他。他的眼中闪过一丝惊讶，嘴角微微上扬，心中暗道一声不好。';
+        const result = detector.detect(text);
+        expect(result.score).toBeGreaterThanOrEqual(0);
+        expect(result.score).toBeLessThanOrEqual(100);
+        expect(result.hits.length).toBeGreaterThan(0);
+        expect(result.features.length).toBeGreaterThan(0);
+    });
+
+    it('score 是 detect.score 的快捷方式', () => {
+        const text = '他的眼中闪过一丝惊讶，嘴角微微上扬。';
+        expect(detector.score(text)).toBe(detector.detect(text).score);
+    });
+
+    it('AI 模板短语文本得分高于干净文本', () => {
+        const aiText = '他的眼中闪过一丝惊讶，嘴角微微上扬，心中暗道一声不好，仿佛某种力量在召唤他。';
+        const cleanText = '他盯着对面的人，手里那把刀还没放下。刚才那一下，差点要了他的命。';
+        expect(detector.score(aiText)).toBeGreaterThan(detector.score(cleanText));
+    });
+
+    it('空文本返回 0 分且无命中', () => {
+        const result = detector.detect('');
+        expect(result.score).toBe(0);
+        expect(result.hits).toEqual([]);
+        expect(result.suggestions).toEqual([]);
+    });
+});
+
+describe('AntiAIDetector — A1 评分可解释性', () => {
+    it('每个特征分项都带上计入总分的原始得分', () => {
+        const text = '然而他仿佛意识到了什么，似乎某种力量在召唤他。他的眼中闪过一丝惊讶，嘴角微微上扬。';
+        const result = detector.detect(text);
+        for (const feature of result.features) {
+            expect(typeof feature.score).toBe('number');
+            expect(feature.score as number).toBeGreaterThanOrEqual(0);
+        }
+    });
+
+    it('各分项得分之和可解释总分（总分另有 100 上限）', () => {
+        const text = '然而他仿佛意识到了什么，于是不由得后退一步。与此同时，某种莫名的情绪涌了上来。';
+        const result = detector.detect(text);
+        const sum = result.features.reduce((acc, f) => acc + (f.score ?? 0), 0);
+        expect(sum).toBeGreaterThan(0);
+        expect(result.score).toBeLessThanOrEqual(Math.round(sum));
+    });
+
+    it('无 AI 味文本的分项得分全为 0（无需解释的分数）', () => {
+        const result = detector.detect('他盯着对面的人，手里那把刀还没放下。');
+        const sum = result.features.reduce((acc, f) => acc + (f.score ?? 0), 0);
+        expect(result.score).toBeLessThanOrEqual(Math.round(sum));
+    });
+});
+
+describe('AntiAIDetector — R2 词表可扩充', () => {
+    afterEach(() => {
+        AntiAIDetector.setExtraHighFreqWords([]);
+    });
+
+    it('默认为基础词表，长度不因扩充 API 引入而改变', () => {
+        expect(AntiAIDetector.getExtraHighFreqWords()).toEqual([]);
+        expect(AntiAIDetector.AI_HIGH_FREQ_WORDS.length).toBeGreaterThanOrEqual(15);
+    });
+
+    it('扩充词即时进入避用词检测与 L1 词频命中', () => {
+        AntiAIDetector.setExtraHighFreqWords(['话说']);
+        expect(AntiAIDetector.AI_HIGH_FREQ_WORDS).toContain('话说');
+        expect(detector.detectAIWords('话说你最近如何')).toContain('话说');
+        expect(detector.detectWithPositions('话说你最近如何').some(h => h.type === 'l1' && h.text === '话说')).toBe(true);
+    });
+
+    it('扩充词会实际抬高 AI 味评分', () => {
+        const text = '话说，这件事说来话长。话说回来，他早知道会这样。话说到这里，也就够了。';
+        const before = new AntiAIDetector().score(text);
+        AntiAIDetector.setExtraHighFreqWords(['话说']);
+        const after = new AntiAIDetector().score(text);
+        expect(after).toBeGreaterThan(before);
+    });
+
+    it('空白项、重复项与内置项会被剔除，保证词表不膨胀', () => {
+        AntiAIDetector.setExtraHighFreqWords(['  然而  ', '话说', '话说', '', '  ']);
+        expect(AntiAIDetector.getExtraHighFreqWords()).toEqual(['话说']);
+    });
+
+    it('传空数组或空值即恢复内置词表', () => {
+        AntiAIDetector.setExtraHighFreqWords(['话说']);
+        AntiAIDetector.setExtraHighFreqWords(undefined as unknown as string[]);
+        expect(AntiAIDetector.getExtraHighFreqWords()).toEqual([]);
+        expect(AntiAIDetector.AI_HIGH_FREQ_WORDS).not.toContain('话说');
     });
 });

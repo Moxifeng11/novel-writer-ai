@@ -197,3 +197,45 @@ export function getTimeoutForModel(modelId: string): number {
     const key = Object.keys(MODEL_TIMEOUT_MAP).find(k => lower.includes(k.toLowerCase()));
     return key ? MODEL_TIMEOUT_MAP[key] : MODEL_TIMEOUT_DEFAULT_MS;
 }
+
+// ============================================================
+// R1: 业务阈值运行时可覆盖
+//
+// 目的：把「真正被读取的业务阈值」开放为设置项，同时保持零行为变化——
+// 未在设置中填写时，生效值与上面的内置常量完全一致。
+// 仅纳入当前确实被调用的比例型阈值；阈值的定义权仍在本文件（单一事实源）。
+// ============================================================
+
+/** 可被设置项覆盖的业务阈值键 → 内置默认值（均为 0-1 比例型） */
+export const BUSINESS_THRESHOLD_DEFAULTS = {
+    /** 步骤输出最低字数比例（相对目标字数），见 step-definitions.postCheckWordCount */
+    wordMinRatio: WORD_MIN_RATIO,
+    /** 超长提示词保留头部的比例，见 step-runner 上下文截断 */
+    promptSplitRatio: PROMPT_SPLIT_RATIO,
+} as const;
+
+export type BusinessThresholdKey = keyof typeof BUSINESS_THRESHOLD_DEFAULTS;
+
+const businessThresholdOverrides = new Map<BusinessThresholdKey, number>();
+
+/**
+ * 应用业务阈值覆盖。非法值（非有限数、≤0、>1）会被忽略并回落到内置默认值，
+ * 因此调用方即使传入空设置也不改变现有行为。
+ */
+export function setBusinessThresholdOverrides(
+    next: Partial<Record<BusinessThresholdKey, number | undefined>>
+): void {
+    for (const key of Object.keys(BUSINESS_THRESHOLD_DEFAULTS) as BusinessThresholdKey[]) {
+        const value = next?.[key];
+        if (typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 1) {
+            businessThresholdOverrides.set(key, value);
+        } else {
+            businessThresholdOverrides.delete(key);
+        }
+    }
+}
+
+/** 读取当前生效的业务阈值（未覆盖时返回内置默认值） */
+export function getBusinessThreshold(key: BusinessThresholdKey): number {
+    return businessThresholdOverrides.get(key) ?? BUSINESS_THRESHOLD_DEFAULTS[key];
+}

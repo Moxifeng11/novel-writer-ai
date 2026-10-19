@@ -17,6 +17,7 @@ import { ForeshadowDeconstructor, ForeshadowAnalysisResult } from './foreshadow-
 import { CommercialDeconstructor, CommercialAnalysisResult } from './commercial-deconstructor';
 import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from './readability-deconstructor';
 import { VectorEnhancer } from '../vector-enhancer';
+import { AntiAIDetector } from '../anti-ai-detector';
 
 let styleDeconstructor: StyleDeconstructor | null = null;
 let rhythmDeconstructor: RhythmDeconstructor | null = null;
@@ -31,9 +32,21 @@ let vectorEnhancer: VectorEnhancer | null = null;
 interface DeconstructInput {
     text: string;
     vectorEnhancerConfig?: any;
+    /** R2: 主线程下发的用户扩充 AI 味词表（Worker 独立模块实例，需显式同步） */
+    antiAiWords?: string[];
 }
 
-function ensureDeconstructors(): void {
+/** 最近一次已应用的扩充词表指纹（避免每个任务重复重建拆解器） */
+let appliedAiWordsKey = '';
+
+function ensureDeconstructors(extraAiWords?: string[]): void {
+    // R2: 扩充词变化时先同步词表并重建可读性拆解器（其连接词密度依赖词表）
+    const key = (extraAiWords || []).join('|');
+    if (key !== appliedAiWordsKey) {
+        appliedAiWordsKey = key;
+        AntiAIDetector.setExtraHighFreqWords(extraAiWords || []);
+        readabilityDeconstructor = null;
+    }
     if (!styleDeconstructor) {
         styleDeconstructor = new StyleDeconstructor(vectorEnhancer || undefined);
     }
@@ -62,7 +75,7 @@ function ensureDeconstructors(): void {
 
 registerTaskHandler('deconstruct:style', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始风格分析');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await styleDeconstructor!.analyze(input.text);
     context.onProgress(100, '风格分析完成');
     return result as StyleAnalysisResult;
@@ -70,7 +83,7 @@ registerTaskHandler('deconstruct:style', async (input: DeconstructInput, context
 
 registerTaskHandler('deconstruct:style:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始风格分析（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await styleDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '风格分析完成（向量增强）');
     return result as StyleAnalysisResult;
@@ -78,7 +91,7 @@ registerTaskHandler('deconstruct:style:vector', async (input: DeconstructInput, 
 
 registerTaskHandler('deconstruct:rhythm', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始节奏分析');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await rhythmDeconstructor!.analyze(input.text);
     context.onProgress(100, '节奏分析完成');
     return result as RhythmAnalysisResult;
@@ -86,7 +99,7 @@ registerTaskHandler('deconstruct:rhythm', async (input: DeconstructInput, contex
 
 registerTaskHandler('deconstruct:rhythm:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始节奏分析（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await rhythmDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '节奏分析完成（向量增强）');
     return result as RhythmAnalysisResult;
@@ -94,7 +107,7 @@ registerTaskHandler('deconstruct:rhythm:vector', async (input: DeconstructInput,
 
 registerTaskHandler('deconstruct:technique', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始写作技巧分析');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await techniqueDeconstructor!.analyze(input.text);
     context.onProgress(100, '写作技巧分析完成');
     return result as TechniqueAnalysisResult;
@@ -102,7 +115,7 @@ registerTaskHandler('deconstruct:technique', async (input: DeconstructInput, con
 
 registerTaskHandler('deconstruct:technique:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始写作技巧分析（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await techniqueDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '写作技巧分析完成（向量增强）');
     return result as TechniqueAnalysisResult;
@@ -110,7 +123,7 @@ registerTaskHandler('deconstruct:technique:vector', async (input: DeconstructInp
 
 registerTaskHandler('deconstruct:structure', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始结构拆解');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await structureDeconstructor!.analyze(input.text);
     context.onProgress(100, '结构拆解完成');
     return result as StructureAnalysisResult;
@@ -118,7 +131,7 @@ registerTaskHandler('deconstruct:structure', async (input: DeconstructInput, con
 
 registerTaskHandler('deconstruct:structure:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始结构拆解（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await structureDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '结构拆解完成（向量增强）');
     return result as StructureAnalysisResult;
@@ -126,7 +139,7 @@ registerTaskHandler('deconstruct:structure:vector', async (input: DeconstructInp
 
 registerTaskHandler('deconstruct:character', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始人设提取');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await characterDeconstructor!.analyze(input.text);
     context.onProgress(100, '人设提取完成');
     return result as CharacterAnalysisResult;
@@ -134,7 +147,7 @@ registerTaskHandler('deconstruct:character', async (input: DeconstructInput, con
 
 registerTaskHandler('deconstruct:character:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始人设提取（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await characterDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '人设提取完成（向量增强）');
     return result as CharacterAnalysisResult;
@@ -142,7 +155,7 @@ registerTaskHandler('deconstruct:character:vector', async (input: DeconstructInp
 
 registerTaskHandler('deconstruct:foreshadow', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始伏笔梳理');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await foreshadowDeconstructor!.analyze(input.text);
     context.onProgress(100, '伏笔梳理完成');
     return result as ForeshadowAnalysisResult;
@@ -150,7 +163,7 @@ registerTaskHandler('deconstruct:foreshadow', async (input: DeconstructInput, co
 
 registerTaskHandler('deconstruct:foreshadow:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始伏笔梳理（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await foreshadowDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '伏笔梳理完成（向量增强）');
     return result as ForeshadowAnalysisResult;
@@ -158,7 +171,7 @@ registerTaskHandler('deconstruct:foreshadow:vector', async (input: DeconstructIn
 
 registerTaskHandler('deconstruct:commercial', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始商业价值分析');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await commercialDeconstructor!.analyze(input.text);
     context.onProgress(100, '商业价值分析完成');
     return result as CommercialAnalysisResult;
@@ -166,7 +179,7 @@ registerTaskHandler('deconstruct:commercial', async (input: DeconstructInput, co
 
 registerTaskHandler('deconstruct:commercial:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始商业价值分析（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await commercialDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '商业价值分析完成（向量增强）');
     return result as CommercialAnalysisResult;
@@ -174,7 +187,7 @@ registerTaskHandler('deconstruct:commercial:vector', async (input: DeconstructIn
 
 registerTaskHandler('deconstruct:readability', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始可读性分析');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await readabilityDeconstructor!.analyze(input.text);
     context.onProgress(100, '可读性分析完成');
     return result as ReadabilityAnalysisResult;
@@ -182,7 +195,7 @@ registerTaskHandler('deconstruct:readability', async (input: DeconstructInput, c
 
 registerTaskHandler('deconstruct:readability:vector', async (input: DeconstructInput, context) => {
     context.onProgress(0, '开始可读性分析（向量增强）');
-    ensureDeconstructors();
+    ensureDeconstructors(input.antiAiWords);
     const result = await readabilityDeconstructor!.analyzeWithVector(input.text);
     context.onProgress(100, '可读性分析完成（向量增强）');
     return result as ReadabilityAnalysisResult;

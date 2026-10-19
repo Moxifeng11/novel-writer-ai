@@ -43,6 +43,9 @@ export class OutlineTreeController {
     private _treeRoot: HTMLElement | null = null;
     private _area: HTMLElement | null = null;
     private _fs: ObsidianFileSystem;
+    /** S1: 文档级监听句柄 —— render 可被多次调用，须保留引用以便解绑，避免重复绑定与泄漏 */
+    private _onDocumentClick: (() => void) | null = null;
+    private _onDocumentKeyDown: ((e: KeyboardEvent) => void) | null = null;
 
     constructor(app: App, getProject: () => string | undefined) {
         this.app = app;
@@ -50,7 +53,28 @@ export class OutlineTreeController {
         this._fs = new ObsidianFileSystem(app);
     }
 
+    /**
+     * 解绑本控制器注册的文档级监听（S1）。
+     * 幂等：解绑后句柄置空，重复调用无副作用。
+     * 若日后恢复树状预览（`full-writer-view` 中被注释的 render(previewSection) 调用），
+     * 须在视图 onClose 时调用本方法。
+     */
+    dispose(): void {
+        if (this._onDocumentClick) {
+            document.removeEventListener('click', this._onDocumentClick);
+            this._onDocumentClick = null;
+        }
+        if (this._onDocumentKeyDown) {
+            document.removeEventListener('keydown', this._onDocumentKeyDown);
+            this._onDocumentKeyDown = null;
+        }
+        this._closeContextMenu();
+    }
+
     async render(area: HTMLElement): Promise<void> {
+        // S1: render 可能被多次调用，先解绑上一轮注册的文档级监听，避免重复绑定与泄漏
+        this.dispose();
+
         const project = this.getProject();
         if (!project) return;
 
@@ -89,7 +113,8 @@ export class OutlineTreeController {
             this._closeContextMenu();
         });
 
-        document.addEventListener('click', () => this._closeContextMenu());
+        this._onDocumentClick = () => this._closeContextMenu();
+        document.addEventListener('click', this._onDocumentClick);
 
         const onKeyDown = (e: KeyboardEvent) => {
             if (!this._area || !this._area.isConnected) return;
@@ -119,6 +144,7 @@ export class OutlineTreeController {
                 }
             }
         };
+        this._onDocumentKeyDown = onKeyDown;
         document.addEventListener('keydown', onKeyDown);
 
         const renderTree = () => this._renderTree();

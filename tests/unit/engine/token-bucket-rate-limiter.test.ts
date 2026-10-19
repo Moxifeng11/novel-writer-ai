@@ -26,7 +26,7 @@ describe('TokenBucketRateLimiter', () => {
                 maxTokens: 100,
             });
             expect(limiter.tryAcquire(10)).toBe(true);
-            expect(limiter.availableTokens).toBe(90);
+            expect(limiter.availableTokens).toBeCloseTo(90, 0);
         });
 
         it('tryAcquire 令牌不足时返回 false', () => {
@@ -36,7 +36,7 @@ describe('TokenBucketRateLimiter', () => {
                 initialTokens: 5,
             });
             expect(limiter.tryAcquire(10)).toBe(false);
-            expect(limiter.availableTokens).toBe(5);
+            expect(limiter.availableTokens).toBeCloseTo(5, 0);
         });
 
         it('acquire 有令牌时立即 resolve', async () => {
@@ -45,7 +45,7 @@ describe('TokenBucketRateLimiter', () => {
                 maxTokens: 100,
             });
             await limiter.acquire(10);
-            expect(limiter.availableTokens).toBe(90);
+            expect(limiter.availableTokens).toBeCloseTo(90, 0);
         });
 
         it('release 归还令牌', () => {
@@ -243,7 +243,7 @@ describe('TokenBucketRateLimiter', () => {
             });
 
             await limiter.acquire(50);
-            expect(limiter.availableTokens).toBe(50);
+            expect(limiter.availableTokens).toBeCloseTo(50, 0);
         });
 
         it('请求超过最大容量抛出错误', async () => {

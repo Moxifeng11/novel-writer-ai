@@ -41,6 +41,7 @@ import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
 import { ENGINE_NAMES } from './engine-registry';
+import { entityStateChangesToFacts } from './co-writer-state-sync';
 import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
 import { CrossVolumeIntegrator } from './cross-volume-integration';
 import { analyzeCoherence, CoherenceReport } from './coherence-checker';
@@ -78,6 +79,8 @@ import type { EngineRegistry } from './engine-registry';
 import type { CharacterRepository, ChapterRepository } from './repository';
 import { FrontmatterSerializer } from './repository/domain/serializers';
 import { createLogger } from '../shared/logger';
+import { resolveProviderSourceType } from '../shared/model-source';
+import { getDegradationNotifier } from '../shared/degradation-notifier';
 
 
 const log = createLogger('CoWriterEngine');
@@ -110,6 +113,13 @@ import type {
 // ============================================================
 // CoWriterEngine
 // ============================================================
+
+/**
+ * v6.3: 协同写作交互历史上限。
+ * 此前 interactionHistory / session.interactions 只增不减（长会话下线性增长）；
+ * 与 UI 侧 suggestionHistory（限 20）保持同一量级思路，同时保留足够的回溯上下文。
+ */
+const MAX_INTERACTION_HISTORY = 200;
 
 export class CoWriterEngine {
     private app: App;
@@ -551,6 +561,17 @@ export class CoWriterEngine {
                     log.info('[CoWriterEngine] 精准模式: 向量增强器与风格相似度评分器初始化完成');
                 } catch (veErr) {
                     log.warn('[CoWriterEngine] 精准模式: 向量增强器初始化失败，精准模式降级:', veErr);
+                    // A3: 精准模式是用户主动选择的档位，初始化失败原先只写日志（黑箱）。
+                    // 上报统一降级事件，让用户明确知道精准模式已退化为统计模式。
+                    getDegradationNotifier().notify({
+                        source: 'vector',
+                        dimension: 'co-write',
+                        from: 'vector',
+                        to: 'statistics',
+                        reason: veErr instanceof Error ? veErr.message : String(veErr),
+                        severity: 'warning',
+                        recoverable: true,
+                    });
                     this.vectorEnhancer = undefined;
                     this.styleScorer = undefined;
                 }
@@ -611,7 +632,8 @@ export class CoWriterEngine {
         cursorHint: string = '',
         mode: WritingMode = 'continue',
         count: number = 3,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        onChunk?: (index: number, cumulativeText: string) => void
     ): Promise<SuggestionRecord[]> {
         if (!this.snapshot) {
             log.warn('[CoWriterEngine] 未初始化，返回空建议');
@@ -625,7 +647,6 @@ export class CoWriterEngine {
         // 获取推荐方向（基于完成度动态调整）
         const directions = this.getRecommendDirections(count);
 
-        const suggestions: SuggestionRecord[] = [];
         const settings = this.aiEngine.getPlugin()?.settings;
         this.directionKnowledgeCounts = {};
 
@@ -637,8 +658,6 @@ export class CoWriterEngine {
         } catch (e) {
             log.warn('[CoWriterEngine] 指纹 prompt 生成失败，跳过:', e);
         }
-
-        let knowledgeParts: string[] = [];
 
         // E6: 全流程知识一致性注入 + 知识库深度注入
         let knowledgeInjection = '';
@@ -681,104 +700,162 @@ export class CoWriterEngine {
             ? this.extractRecentSentences(precedingText)
             : [];
 
-        for (let i = 0; i < Math.min(count, directions.length); i++) {
-            const direction = directions[i];
+        // P0-1: 三候选并行化（spec p0-api-efficiency-optimization AC-1.*，决策 D-4）
+        // 原为 for 循环串行逐方向 await 完整 AI 调用；现抽为独立任务并行执行。
+        // candidateParallel=false 时回退串行（本地小模型并发能力弱时可关闭）。
+        // 注意：工厂函数惰性启动，避免 map 阶段就把所有任务并发跑出去。
+        const makeTasks = directions.slice(0, Math.min(count, directions.length)).map((direction, i) => () =>
+            this.generateDirectionalCandidate(i, direction, {
+                precedingText,
+                cursorHint,
+                fingerprintParts,
+                knowledgeInjection,
+                kbDeepInjection,
+                recentSentences,
+                signal,
+                settings,
+                onChunk,
+            })
+        );
 
-            try {
-                if (this.promptBuilder && this.referenceBookIds.length > 0) {
-                    knowledgeParts = await this.promptBuilder.getKnowledgePromptParts(precedingText, direction);
-                } else {
-                    knowledgeParts = [];
-                }
-            } catch (e) {
-                log.warn(`[CoWriterEngine] 知识库检索失败 (方向: ${direction}):`, e);
-                knowledgeParts = [];
+        const collected: Array<SuggestionRecord | null> = [];
+        if (settings?.candidateParallel !== false) {
+            const results = await Promise.allSettled(makeTasks.map((make) => make()));
+            for (const r of results) {
+                collected.push(r.status === 'fulfilled' ? r.value : null);
             }
-            const kpCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
-            this.lastKnowledgeCount = kpCount;
-            this.directionKnowledgeCounts[direction] = kpCount;
-
-            const combinedInjection = [knowledgeInjection, kbDeepInjection].filter(Boolean).join('\n\n');
-            const prompt = this.buildDirectionalPrompt(precedingText, direction, cursorHint, fingerprintParts, knowledgeParts, combinedInjection);
-
-            if (this.precisionMode) {
+        } else {
+            for (const make of makeTasks) {
                 try {
-                    prompt.system += PRECISION_MODE_SYSTEM_APPEND;
-
-                    const antiAIResult = this.antiAIDetector.buildAntiAIConstraints({ recentSentences });
-                    if (antiAIResult.constraints) {
-                        prompt.system += '\n\n【反AI约束】\n' + antiAIResult.constraints;
-                    }
-
-                    const diversityResult = this.diversityEngine.analyzeDiversity(recentSentences);
-                    if (diversityResult.needsAdjustment && diversityResult.mergedHint) {
-                        prompt.system += '\n\n【多样性调整】\n' + diversityResult.mergedHint;
-                    }
-
-                    log.info('[CoWriterEngine] 精准模式: 约束已注入 (方向:', direction, ')');
-                } catch (pmErr) {
-                    log.warn('[CoWriterEngine] 精准模式: 约束注入失败，继续生成:', pmErr);
-                }
-            }
-
-            let retryCount = 0;
-            const maxRetries = this.precisionMode ? 2 : 0;
-            let generatedText = '';
-
-            while (retryCount <= maxRetries) {
-                try {
-                    if (signal?.aborted) return suggestions;
-                    const tempDelta = i * 0.05 - retryCount * 0.1;
-                    const response = await this.callCoWriteAI(prompt, tempDelta, signal);
-
-                    generatedText = extractResponseText(response);
-
-                    if (!generatedText) break;
-
-                    if (this.precisionMode && this.styleScorer) {
-                        try {
-                            const scoreResult = await this.styleScorer.score(generatedText, {
-                                position: precedingText.length
-                            });
-
-                            if (!scoreResult.passed && !scoreResult.degraded && retryCount < maxRetries) {
-                                log.info('[CoWriterEngine] 精准模式: 相似度不足 (', scoreResult.score, '), 重试', retryCount + 1, '/', maxRetries);
-                                if (scoreResult.retryHint) {
-                                    prompt.system += '\n' + scoreResult.retryHint;
-                                }
-                                retryCount++;
-                                continue;
-                            }
-
-                            if (scoreResult.passed) {
-                                log.info('[CoWriterEngine] 精准模式: 相似度通过 (', scoreResult.score, ')');
-                            }
-                        } catch (scoreErr) {
-                            log.warn('[CoWriterEngine] 精准模式: 相似度评分失败，跳过评分:', scoreErr);
-                        }
-                    }
-
-                    break;
+                    collected.push(await make());
                 } catch (e) {
-                    log.warn(`[CoWriterEngine] 建议生成失败 (方向: ${direction}):`, e);
-                    break;
+                    // 单方向失败不影响其余（与原 catch-continue 语义一致）
+                    log.warn('[CoWriterEngine] 串行候选生成失败，跳过该方向:', e);
                 }
-            }
-
-            if (generatedText) {
-                suggestions.push({
-                    id: `sug_${Date.now()}_${i}`,
-                    text: generatedText,
-                    direction,
-                    style: i === 0 ? 'default' : (i === 1 ? 'creative' : 'conservative'),
-                    temperature: (settings?.coWriteTemperature ?? 0.7) + i * 0.05,
-                    preview: generatedText.slice(0, 30) + (generatedText.length > 30 ? '...' : '')
-                });
             }
         }
 
+        const suggestions = collected.filter((s): s is SuggestionRecord => s !== null);
+
         // C1: 提前剧透检测——为每条建议标注剧透/越界风险
         return suggestions.map(s => this.annotateSuggestionRisk(s));
+    }
+
+    /**
+     * P0-1: 单方向候选生成任务（原 suggestNext for 循环体抽离，逻辑保持不变）。
+     * 返回 null 表示该方向未产出（失败/中断/空响应），由调用方丢弃。
+     */
+    private async generateDirectionalCandidate(
+        i: number,
+        direction: SuggestionDirection,
+        shared: {
+            precedingText: string;
+            cursorHint: string;
+            fingerprintParts: string[];
+            knowledgeInjection: string;
+            kbDeepInjection: string;
+            recentSentences: string[];
+            signal?: AbortSignal;
+            settings?: { coWriteTemperature?: number };
+            onChunk?: (index: number, cumulativeText: string) => void;
+        },
+    ): Promise<SuggestionRecord | null> {
+        let knowledgeParts: string[] = [];
+        try {
+            if (this.promptBuilder && this.referenceBookIds.length > 0) {
+                knowledgeParts = await this.promptBuilder.getKnowledgePromptParts(shared.precedingText, direction);
+            }
+        } catch (e) {
+            log.warn(`[CoWriterEngine] 知识库检索失败 (方向: ${direction}):`, e);
+            knowledgeParts = [];
+        }
+        const kpCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
+        this.lastKnowledgeCount = kpCount;
+        this.directionKnowledgeCounts[direction] = kpCount;
+
+        const combinedInjection = [shared.knowledgeInjection, shared.kbDeepInjection].filter(Boolean).join('\n\n');
+        const prompt = this.buildDirectionalPrompt(shared.precedingText, direction, shared.cursorHint, shared.fingerprintParts, knowledgeParts, combinedInjection);
+
+        if (this.precisionMode) {
+            try {
+                prompt.system += PRECISION_MODE_SYSTEM_APPEND;
+
+                const antiAIResult = this.antiAIDetector.buildAntiAIConstraints({ recentSentences: shared.recentSentences });
+                if (antiAIResult.constraints) {
+                    prompt.system += '\n\n【反AI约束】\n' + antiAIResult.constraints;
+                }
+
+                const diversityResult = this.diversityEngine.analyzeDiversity(shared.recentSentences);
+                if (diversityResult.needsAdjustment && diversityResult.mergedHint) {
+                    prompt.system += '\n\n【多样性调整】\n' + diversityResult.mergedHint;
+                }
+
+                log.info('[CoWriterEngine] 精准模式: 约束已注入 (方向:', direction, ')');
+            } catch (pmErr) {
+                log.warn('[CoWriterEngine] 精准模式: 约束注入失败，继续生成:', pmErr);
+            }
+        }
+
+        let retryCount = 0;
+        const maxRetries = this.precisionMode ? 2 : 0;
+        let generatedText = '';
+
+        while (retryCount <= maxRetries) {
+            try {
+                if (shared.signal?.aborted) return null;
+                const tempDelta = i * 0.05 - retryCount * 0.1;
+                // NBI-03: 有分片回调时走流式，无回调保持原非流式路径（兼容浮动面板与既有调用）
+                if (shared.onChunk) shared.onChunk(i, '');
+                generatedText = await this.callCoWriteText(
+                    prompt,
+                    tempDelta,
+                    shared.signal,
+                    shared.onChunk ? (text) => shared.onChunk!(i, text) : undefined
+                );
+
+                if (!generatedText) break;
+
+                if (this.precisionMode && this.styleScorer) {
+                    try {
+                        const scoreResult = await this.styleScorer.score(generatedText, {
+                            position: shared.precedingText.length
+                        });
+
+                        if (!scoreResult.passed && !scoreResult.degraded && retryCount < maxRetries) {
+                            log.info('[CoWriterEngine] 精准模式: 相似度不足 (', scoreResult.score, '), 重试', retryCount + 1, '/', maxRetries);
+                            if (scoreResult.retryHint) {
+                                prompt.system += '\n' + scoreResult.retryHint;
+                            }
+                            retryCount++;
+                            continue;
+                        }
+
+                        if (scoreResult.passed) {
+                            log.info('[CoWriterEngine] 精准模式: 相似度通过 (', scoreResult.score, ')');
+                        }
+                    } catch (scoreErr) {
+                        log.warn('[CoWriterEngine] 精准模式: 相似度评分失败，跳过评分:', scoreErr);
+                    }
+                }
+
+                break;
+            } catch (e) {
+                log.warn(`[CoWriterEngine] 建议生成失败 (方向: ${direction}):`, e);
+                break;
+            }
+        }
+
+        // 分片期间被中止时丢弃半成品，避免生成不完整候选
+        if (shared.signal?.aborted) return null;
+        if (!generatedText) return null;
+        return {
+            id: `sug_${Date.now()}_${i}`,
+            text: generatedText,
+            direction,
+            style: i === 0 ? 'default' : (i === 1 ? 'creative' : 'conservative'),
+            temperature: (shared.settings?.coWriteTemperature ?? 0.7) + i * 0.05,
+            preview: generatedText.slice(0, 30) + (generatedText.length > 30 ? '...' : ''),
+        };
     }
 
     async *suggestStream(
@@ -1099,14 +1176,54 @@ export class CoWriterEngine {
         );
     }
 
+    /**
+     * NBI-03: 统一的协同写作文本获取入口。
+     * 传入 onChunk 时走流式链路（逐片累积后回调累计文本），不传则保持原非流式调用，
+     * 以兼容浮动面板等既有调用方。
+     */
+    private async callCoWriteText(
+        prompt: { system: string; user: string },
+        tempDelta: number,
+        signal?: AbortSignal,
+        onChunk?: (cumulativeText: string) => void
+    ): Promise<string> {
+        if (!onChunk) {
+            const response = await this.callCoWriteAI(prompt, tempDelta, signal);
+            return extractResponseText(response);
+        }
+
+        let accumulated = '';
+        const iterator = this.callCoWriteAIStream(prompt, tempDelta, signal);
+        while (true) {
+            const step = await iterator.next();
+            if (step.done) {
+                const finalText = extractResponseText(step.value);
+                // 以最终响应为准：原生流失败后降级重启会重放全文，直接用累计值会重复
+                if (finalText && finalText !== accumulated) {
+                    accumulated = finalText;
+                    onChunk(accumulated);
+                }
+                break;
+            }
+            if (!step.value) continue;
+            accumulated += step.value;
+            onChunk(accumulated);
+        }
+        return accumulated;
+    }
+
     async rewriteSelection(
         selectedText: string,
         beforeContext: string,
         afterContext: string,
         cursorHint: string = '',
-        count: number = 3
+        count: number = 3,
+        onChunk?: (index: number, cumulativeText: string) => void,
+        signal?: AbortSignal
     ): Promise<SuggestionRecord[]> {
         if (!this.snapshot || !selectedText.trim() || !this.hasCoWriteModel()) return [];
+        // NBI-06: 已中止则不再发起任何模型调用
+        if (signal?.aborted) return [];
 
         const directions: SuggestionDirection[] = ['description', 'emotion', 'dialogue'];
         const suggestions: SuggestionRecord[] = [];
@@ -1132,6 +1249,8 @@ export class CoWriterEngine {
         this.lastKnowledgeCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
 
         for (let i = 0; i < Math.min(count, directions.length); i++) {
+            // NBI-06: 中止后停止后续方向，避免继续消耗调用
+            if (signal?.aborted) break;
             const direction = directions[i];
             const prompt = this.promptBuilder
                 ? this.promptBuilder.buildRewritePrompt(selectedText, beforeContext, afterContext, cursorHint, direction, fingerprintParts, knowledgeParts)
@@ -1151,8 +1270,14 @@ export class CoWriterEngine {
                 ].filter(Boolean).join('\n');
 
             try {
-                const response = await this.callCoWriteAI({ system: '', user: prompt }, i * 0.1);
-                const text = extractResponseText(response);
+                // NBI-03: 有分片回调时走流式渲染，无回调保持原非流式路径
+                if (onChunk) onChunk(i, '');
+                const text = await this.callCoWriteText(
+                    { system: '', user: prompt },
+                    i * 0.1,
+                    signal,
+                    onChunk ? (cumulative) => onChunk(i, cumulative) : undefined
+                );
                 if (text) {
                     suggestions.push({
                         id: `rewrite_${Date.now()}_${i}`,
@@ -1166,8 +1291,12 @@ export class CoWriterEngine {
                 }
             } catch (e) {
                 log.warn(`[CoWriterEngine] 选区改写失败 (方向: ${direction}):`, e);
+                // NBI-06: 中止引发的失败不继续后续方向
+                if (signal?.aborted) break;
             }
         }
+        // NBI-06: 中止后不返回半成品候选
+        if (signal?.aborted) return [];
         return suggestions.map(sg => this.annotateSuggestionRisk(sg));
     }
 
@@ -1408,8 +1537,15 @@ export class CoWriterEngine {
 
     recordInteraction(record: SentenceEditRecord): void {
         this.interactionHistory.push(record);
+        // v6.3: 加上限，避免长会话下无界增长（仅保留最近 MAX_INTERACTION_HISTORY 条）
+        if (this.interactionHistory.length > MAX_INTERACTION_HISTORY) {
+            this.interactionHistory.splice(0, this.interactionHistory.length - MAX_INTERACTION_HISTORY);
+        }
         if (this.session) {
             this.session.interactions.push(record);
+            if (this.session.interactions.length > MAX_INTERACTION_HISTORY) {
+                this.session.interactions.splice(0, this.session.interactions.length - MAX_INTERACTION_HISTORY);
+            }
         }
         void this.learnFromInteraction(record);
     }
@@ -2314,21 +2450,41 @@ export class CoWriterEngine {
     }
     
     /**
-     * 确认并应用待处理的状态变更
+     * 确认待处理的状态变更（Task 12 / AC-7：不直写正式库）。
+     * 确认动作把变化转为 PendingFact 进入 Task 11 待确认队列，
+     * 用户后续在质量仪表盘确认后才写入正式库。
+     * @returns 入队事实数量（0 = 无待处理项或入队失败，失败时保留待处理项可重试）
      */
-    async confirmStateChanges(): Promise<void> {
-        if (!this.entityStateManager || !this.pendingStateChanges.length || !this.session) return;
+    async confirmStateChanges(): Promise<number> {
+        if (!this.pendingStateChanges.length || !this.session) return 0;
+
+        const facts = entityStateChangesToFacts(this.pendingStateChanges);
+        if (facts.length === 0) {
+            this.pendingStateChanges = [];
+            return 0;
+        }
 
         try {
-            await this.entityStateManager.applyStateChanges(
-                this.session.project,
-                this.pendingStateChanges,
-                this.session.chapterNum,
-                this.session.chapterName
-            );
+            let registry = this.engineRegistry;
+            if (!registry) {
+                const plugin = this.aiEngine.getPlugin();
+                if (plugin && (plugin as any).engineRegistry) {
+                    registry = (plugin as any).engineRegistry as EngineRegistry;
+                    this.engineRegistry = registry;
+                }
+            }
+            if (!registry) {
+                log.warn('[CoWriterEngine] D1: EngineRegistry 不可用，状态变化入队跳过（保留待处理项）');
+                return 0;
+            }
+            const manager = await registry.getFactIndexManager(this.session.project);
+            await manager.enqueue(facts);
             this.pendingStateChanges = [];
+            log.info('[CoWriterEngine] D1: 状态变化已进入待确认队列:', facts.length);
+            return facts.length;
         } catch (e) {
-            log.warn('[CoWriterEngine] D1: 状态变更应用失败:', e);
+            log.warn('[CoWriterEngine] D1: 状态变化入队失败（保留待处理项可重试）:', e);
+            return 0;
         }
     }
     
@@ -2539,23 +2695,22 @@ export class CoWriterEngine {
 
 /**
  * 判断 provider 的 endpoint 是否指向本地
- * 判断规则：endpoint 包含 'localhost' 或 '127.0.0.1'（不区分大小写）
+ * 统一复用 model-source 的源类型解析（含 sourceType 显式标记 + endpoint 启发式兜底）
  */
 export function isLocalProviderEndpoint(endpoint: string): boolean {
     if (!endpoint) return false;
-    const lower = endpoint.toLowerCase();
-    return lower.includes('localhost') || lower.includes('127.0.0.1');
+    return resolveProviderSourceType({ id: '', endpoint }) === 'local';
 }
 
 /**
- * 判断当前 settings 中是否存在本地 provider（endpoint 指向 localhost/127.0.0.1）
+ * 判断当前 settings 中是否存在本地 provider（sourceType=local 或 endpoint 指向本地）
  * 用于在本地模式下放宽模型名识别：只要存在本地 provider，所有候选模型都视为本地模型
  */
 function hasLocalProvider(settings: any): boolean {
     if (!settings) return false;
     const providers = settings.customProviders;
     if (!Array.isArray(providers)) return false;
-    return providers.some((p: any) => p && typeof p.endpoint === 'string' && isLocalProviderEndpoint(p.endpoint));
+    return providers.some((p: any) => p && resolveProviderSourceType(p) === 'local');
 }
 
 /**
@@ -2646,6 +2801,9 @@ export async function fetchOllamaModels(): Promise<string[] | null> {
 
         return models;
     } catch (e) {
+        // S2: 原本静默 return null，Ollama 探测失败时无任何痕迹；
+        // 补诊断日志便于排查「本地模型列表为空」类问题，返回契约保持不变。
+        log.warn('[CoWriterEngine] Ollama 模型列表获取失败，降级为本地模型配置:', e);
         return null;
     }
 }

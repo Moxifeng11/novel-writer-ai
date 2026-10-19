@@ -50,9 +50,11 @@ export class ProtectYuanModal extends Modal {
             const { exec } = require('child_process');
             const cmd = `attrib +r "${yuanPath}" /s /d`;
 
-            new Notice('⏳ 正在设置元文件保护...', 0);
+            // M4（技术审计）：持久进度通知持有引用，所有出口（成功/失败/异常）hide
+            const progressNotice = new Notice('⏳ 正在设置元文件保护...', 0);
 
             exec(cmd, (error: Error | null) => {
+                progressNotice.hide();
                 if (error) {
                     log.error('attrib 失败:', error);
                     new Notice(

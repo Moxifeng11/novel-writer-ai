@@ -12,6 +12,7 @@ import { WORLDVIEW_WORDS } from '../dimension-keywords';
 import type { GenreConfig } from '../genre/types';
 import { LLMEnhancer } from '../llm-enhancer';
 import { createLogger } from '../../shared/logger';
+import { ForeshadowConfigManager, ForeshadowTypeConfig } from '../foreshadow-config-manager';
 
 
 const log = createLogger('ForeshadowDeconstructor');
@@ -834,6 +835,373 @@ const CHARACTER_TITLE_SUFFIXES = [
     '哥哥', '姐姐', '弟弟', '妹妹', '伯伯', '叔叔', '阿姨'
 ];
 
+/**
+ * 伏笔噪声字符：纯虚词/功能性字符集合，用于判断伏笔 name 是否全由无意义字符组成。
+ */
+const FORESHADOW_NOISE_CHARS = new Set([
+    '不','已','会','可','要','能','就','也','是','的','了','着','过','得','地','都','很','太','更','最','级','第','次',
+    '个','些','等','某','各','每','另','本','此','该','之','其','与','和','及','并','或','而','且','但','却','则','虽',
+    '然','所','为','被','把','将','从','以','对','向','到','在','于','比','因','由','让','叫','给','使','令'
+]);
+
+/**
+ * 常见噪声词黑名单：高频出现的非伏笔词组，直接过滤。
+ */
+const COMMON_NOISE_WORDS = new Set([
+    '无法','效果','隐秘','级封印','部分','一些','某种','其他','之类','比如','包括','其中','一般','普通','特殊',
+    '各种','一样','不同','完全','竟然','居然','忽然','突然','总是','一直','一定','必须','非常','特别','十分','更加',
+    '什么','怎么','怎样','这样','那样','这个','那个'
+]);
+
+/**
+ * 动词黑名单：这些动词不应被识别为伏笔，只有名词性实体（物品、人物、地点、信息）才能成为伏笔。
+ * 按主题分组便于维护。
+ */
+const VERB_BLACKLIST = new Set([
+    // 动作类动词
+    '修炼','修练','修行','修炼者','修行者',
+    '战斗','战争','决斗','交战','对战','比武',
+    '攻击','进攻','袭击','偷袭','伏击',
+    '防守','防御','守卫','保护',
+    '逃跑','逃离','撤退','撤离',
+    '追逐','追赶','追杀','追捕',
+    '寻找','搜寻','搜索','查找',
+    '发现','察觉','察觉','注意',
+    '思考','思索','思考','回想',
+    '决定','决心','决心','选择',
+    '行动','行动','行动','举动',
+    '说话','说道','说出','讲述',
+    '询问','问答','询问','打听',
+    '回答','回应','回答','答复',
+    '命令','指令','命令','吩咐',
+    '请求','恳求','请求','祈求',
+    '拒绝','拒绝','拒绝','推辞',
+    '接受','接纳','接受','认可',
+    '帮助','援助','帮助','支援',
+    '伤害','伤害','伤害','损害',
+    '杀死','杀害','杀死','灭口',
+    '复活','重生','复活','再生',
+    '成长','成长','成长','进步',
+    '变强','增强','变强','提升',
+    '变弱','减弱','变弱','下降',
+    '出现','消失','出现','显现',
+    '存在','消失','存在','留存',
+    '获得','失去','获得','得到',
+    '拥有','失去','拥有','持有',
+    '使用','运用','使用','利用',
+    '学习','掌握','学习','学会',
+    '领悟','领会','领悟','明白',
+    '创造','毁灭','创造','制造',
+    '毁灭','破坏','毁灭','摧毁',
+    '改变','变化','改变','转变',
+    '进化','退化','进化','升级',
+    '突破','突破','突破','冲破',
+    '到达','抵达','到达','抵达',
+    '离开','离开','离开','离去',
+    '返回','归来','返回','归来',
+    '等待','等待','等待','等候',
+    '出发','出发','出发','启程',
+    '到达','到达','到达','抵达',
+    '休息','休息','休息','休养',
+    '睡觉','睡眠','睡觉','入眠',
+    '醒来','苏醒','醒来','苏醒',
+    '吃饭','进食','吃饭','用餐',
+    '喝水','饮水','喝水','饮用',
+    '行走','行走','行走','步行',
+    '奔跑','飞奔','奔跑','快跑',
+    '飞行','飞翔','飞行','翱翔',
+    '跳跃','跳跃','跳跃','弹跳',
+    '攀爬','攀登','攀爬','攀登',
+    '游泳','游泳','游泳','畅游',
+    '站立','站立','站立','直立',
+    '坐下','坐下','坐下','就坐',
+    '躺下','躺卧','躺下','卧倒',
+    '跪下','跪拜','跪下','屈膝',
+    '弯腰','躬身','弯腰','鞠躬',
+    '挥手','招手','挥手','招手',
+    '点头','点头','点头','颔首',
+    '摇头','摇头','摇头','摇动',
+    '微笑','微笑','微笑','含笑',
+    '大笑','狂笑','大笑','欢笑',
+    '哭泣','流泪','哭泣','流泪',
+    '愤怒','发怒','愤怒','生气',
+    '悲伤','伤心','悲伤','哀伤',
+    '高兴','开心','高兴','快乐',
+    '惊讶','震惊','惊讶','吃惊',
+    '害怕','恐惧','害怕','畏惧',
+    '紧张','紧张','紧张','焦虑',
+    '放松','放松','放松','舒缓',
+    '信任','信赖','信任','相信',
+    '怀疑','质疑','怀疑','疑惑',
+    '喜欢','喜爱','喜欢','钟爱',
+    '讨厌','厌恶','讨厌','憎恶',
+    '尊重','尊敬','尊重','敬仰',
+    '鄙视','轻视','鄙视','蔑视',
+    '原谅','宽恕','原谅','饶恕',
+    '惩罚','处罚','惩罚','惩戒',
+    '奖励','奖赏','奖励','赏赐',
+    '帮助','协助','帮助','辅佐',
+    '背叛','出卖','背叛','反叛',
+    '忠诚','忠心','忠诚','效忠',
+    '欺骗','欺诈','欺骗','哄骗',
+    '诚实','真诚','诚实','诚恳',
+    '隐瞒','隐藏','隐瞒','藏匿',
+    '揭露','揭示','揭露','暴露',
+    '思考','思索','思考','琢磨',
+    '回忆','回想','回忆','追忆',
+    '想象','幻想','想象','构想',
+    '计划','谋划','计划','策划',
+    '执行','实施','执行','实行',
+    '完成','完结','完成','完毕',
+    '失败','受挫','失败','失利',
+    '胜利','成功','胜利','取胜',
+    '挑战','挑战','挑战','对决',
+    '应战','应战','应战','接受挑战',
+    '放弃','放弃','放弃','舍弃',
+    '坚持','坚持','坚持','坚守',
+    '妥协','让步','妥协','退让',
+    '合作','协作','合作','配合',
+    '竞争','竞赛','竞争','角逐',
+    '谈判','协商','谈判','商议',
+    '交易','买卖','交易','交换',
+    '赠送','馈赠','赠送','赠予',
+    '收取','接收','收取','接纳',
+    '支付','付款','支付','缴纳',
+    '赚取','获得','赚取','挣得',
+    '花费','消耗','花费','耗费',
+    '节省','节约','节省','节约',
+    '投资','投入','投资','倾注',
+    '回报','报答','回报','报答',
+    '欠债','负债','欠债','欠钱',
+    '还债','偿还','还债','清偿',
+    '借贷','借用','借贷','借入',
+    '归还','退还','归还','返还',
+    '租赁','租用','租赁','租借',
+    '购买','购置','购买','选购',
+    '销售','售卖','销售','出售',
+    '批发','零售','批发','零售',
+    '拍卖','竞拍','拍卖','竞买',
+    '收购','并购','收购','兼并',
+    '出售','出让','出售','变卖',
+    '交换','互换','交换','调换',
+    '赠送','赠予','赠送','捐赠',
+    '乞讨','乞求','乞讨','哀求',
+    '施舍','救济','施舍','救助',
+    '偷窃','盗窃','偷窃','盗取',
+    '抢劫','掠夺','抢劫','打劫',
+    '诈骗','欺诈','诈骗','骗取',
+    '贪污','腐败','贪污','挪用',
+    '贿赂','收买','贿赂','买通',
+    '走私','私运','走私','偷运',
+    '逃税','漏税','逃税','偷税',
+    '犯罪','违法','犯罪','作案',
+    '被捕','被抓','被捕','被擒',
+    '越狱','逃脱','越狱','逃走',
+    '审判','裁决','审判','判决',
+    '惩罚','惩处','惩罚','制裁',
+    '赦免','宽恕','赦免','免罪',
+    '释放','释放','释放','放出',
+    '关押','监禁','关押','囚禁',
+    '流放','放逐','流放','驱逐',
+    '死刑','处决','死刑','处死',
+    '赦免','赦免','赦免','宽宥',
+    // 状态变化动词
+    '变成','变为','变成','成为',
+    '保持','维持','保持','维持',
+    '恢复','复原','恢复','复原',
+    '失去','丧失','失去','丧失',
+    '获得','得到','获得','取得',
+    '增加','增多','增加','增长',
+    '减少','变少','减少','缩减',
+    '提高','提升','提高','升高',
+    '降低','下降','降低','减少',
+    '扩大','扩展','扩大','扩张',
+    '缩小','收缩','缩小','缩减',
+    '增强','加强','增强','强化',
+    '减弱','削弱','减弱','削弱',
+    '加快','加速','加快','提速',
+    '减慢','减速','减慢','减速',
+    '延长','拉长','延长','拉长',
+    '缩短','变短','缩短','缩减',
+    '变宽','加宽','变宽','拓宽',
+    '变窄','收窄','变窄','缩减',
+    '变高','增高','变高','升高',
+    '变低','降低','变低','下降',
+    '变重','增重','变重','加重',
+    '变轻','减重','变轻','减轻',
+    '变硬','硬化','变硬','固化',
+    '变软','软化','变软','柔化',
+    '变热','升温','变热','加热',
+    '变冷','降温','变冷','冷却',
+    '变亮','变亮','变亮','增亮',
+    '变暗','变暗','变暗','减弱',
+    '变清晰','变清晰','变清晰','变清楚',
+    '变模糊','变模糊','变模糊','变朦胧',
+    '变年轻','变年轻','变年轻','变青春',
+    '变老','变老','变老','变衰老',
+    '变强壮','变强壮','变强壮','变健壮',
+    '变虚弱','变虚弱','变虚弱','变衰弱',
+    '变聪明','变聪明','变聪明','变睿智',
+    '变愚蠢','变愚蠢','变愚蠢','变愚笨',
+    '变美丽','变美丽','变美丽','变漂亮',
+    '变丑陋','变丑陋','变丑陋','变难看',
+    // 心理活动动词
+    '思考','思考','思考','思索',
+    '考虑','考虑','考虑','思考',
+    '想','想','想','思考',
+    '觉得','觉得','觉得','认为',
+    '认为','认为','认为','以为',
+    '以为','以为','以为','认为',
+    '知道','知道','知道','了解',
+    '明白','明白','明白','懂得',
+    '理解','理解','理解','领会',
+    '懂得','懂得','懂得','明白',
+    '了解','了解','了解','知道',
+    '认识','认识','认识','熟悉',
+    '熟悉','熟悉','熟悉','了解',
+    '记住','记住','记住','铭记',
+    '忘记','忘记','忘记','遗忘',
+    '回忆','回忆','回忆','回想',
+    '想象','想象','想象','设想',
+    '幻想','幻想','幻想','想象',
+    '希望','希望','希望','期望',
+    '期望','期望','期望','希望',
+    '渴望','渴望','渴望','盼望',
+    '盼望','盼望','盼望','期望',
+    '期待','期待','期待','等待',
+    '等待','等待','等待','等候',
+    '担心','担心','担心','忧虑',
+    '忧虑','忧虑','忧虑','担心',
+    '害怕','害怕','害怕','恐惧',
+    '恐惧','恐惧','恐惧','害怕',
+    '紧张','紧张','紧张','焦虑',
+    '焦虑','焦虑','焦虑','紧张',
+    '放松','放松','放松','舒缓',
+    '平静','平静','平静','平和',
+    '安心','安心','安心','放心',
+    '放心','放心','放心','安心',
+    '信任','信任','信任','信赖',
+    '信赖','信赖','信赖','信任',
+    '怀疑','怀疑','怀疑','质疑',
+    '质疑','质疑','质疑','怀疑',
+    '相信','相信','相信','信任',
+    '不信','不信','不信','怀疑',
+    '猜测','猜测','猜测','推测',
+    '推测','推测','推测','猜测',
+    '推断','推断','推断','推理',
+    '推理','推理','推理','推断',
+    '判断','判断','判断','决断',
+    '决断','决断','决断','判断',
+    '决定','决定','决定','抉择',
+    '抉择','抉择','抉择','选择',
+    '选择','选择','选择','挑选',
+    '挑选','挑选','挑选','选择',
+    '放弃','放弃','放弃','舍弃',
+    '坚持','坚持','坚持','坚守',
+    '犹豫','犹豫','犹豫','迟疑',
+    '迟疑','迟疑','迟疑','犹豫',
+    '坚定','坚定','坚定','坚决',
+    '动摇','动摇','动摇','摇摆',
+    // 交流动词
+    '说话','说话','说话','交谈',
+    '交谈','交谈','交谈','说话',
+    '聊天','聊天','聊天','闲谈',
+    '闲谈','闲谈','闲谈','聊天',
+    '讨论','讨论','讨论','商议',
+    '商议','商议','商议','讨论',
+    '争论','争论','争论','争辩',
+    '争辩','争辩','争辩','争论',
+    '辩论','辩论','辩论','争论',
+    '争吵','争吵','争吵','争执',
+    '争执','争执','争执','争吵',
+    '说服','说服','说服','劝服',
+    '劝服','劝服','劝服','说服',
+    '解释','解释','解释','说明',
+    '说明','说明','说明','解释',
+    '介绍','介绍','介绍','引见',
+    '引见','引见','引见','介绍',
+    '询问','询问','询问','打听',
+    '打听','打听','打听','询问',
+    '回答','回答','回答','答复',
+    '答复','答复','答复','回答',
+    '追问','追问','追问','继续问',
+    '反问','反问','反问','质问',
+    '质问','质问','质问','责问',
+    '责问','责问','责问','质问',
+    '命令','命令','命令','指令',
+    '指令','指令','指令','命令',
+    '吩咐','吩咐','吩咐','命令',
+    '要求','要求','要求','请求',
+    '请求','请求','请求','要求',
+    '恳求','恳求','恳求','请求',
+    '哀求','哀求','哀求','恳求',
+    '拒绝','拒绝','拒绝','回绝',
+    '回绝','回绝','回绝','拒绝',
+    '接受','接受','接受','接纳',
+    '接纳','接纳','接纳','接受',
+    '同意','同意','同意','赞成',
+    '赞成','赞成','赞成','同意',
+    '反对','反对','反对','否决',
+    '否决','否决','否决','反对',
+    '建议','建议','建议','提议',
+    '提议','提议','提议','建议',
+    '推荐','推荐','推荐','推举',
+    '推举','推举','推举','推荐',
+    '批评','批评','批评','指责',
+    '指责','指责','指责','批评',
+    '表扬','表扬','表扬','赞扬',
+    '赞扬','赞扬','赞扬','表扬',
+    '鼓励','鼓励','鼓励','激励',
+    '激励','激励','激励','鼓励',
+    '安慰','安慰','安慰','抚慰',
+    '抚慰','抚慰','抚慰','安慰',
+    '警告','警告','警告','告诫',
+    '告诫','告诫','告诫','警告',
+    '提醒','提醒','提醒','提示',
+    '提示','提示','提示','提醒',
+    // 玄幻/仙侠特有动词
+    '渡劫','飞升','成仙','成神',
+    '化形','化神','化虚','化圣',
+    '悟道','证道','成道','得道',
+    '炼体','炼气','炼神','炼虚',
+    '筑基','结丹','元婴','化神',
+    '合体','大乘','渡劫','飞升',
+    '施法','布阵','符箓','丹药',
+    '炼器','炼药','炼符','炼阵',
+    '召唤','契约','融合','吞噬',
+    '夺舍','附身','转世','重生',
+    '穿越','回归','降临','陨落',
+    '陨落','重生','轮回','转世',
+    '觉醒','激活','升级','进化',
+    '突破','晋升','降级','跌落',
+    '封印','解封','破除','破解',
+    '诅咒','祝福','加持','buff',
+    'debuff','反噬','暴走','失控',
+    '暴走','失控','爆发','释放',
+    '爆发','释放','压制','镇压',
+    '压制','镇压','反抗','挣脱',
+    '反抗','挣脱','臣服','归顺',
+    '臣服','归顺','背叛','反叛',
+    '背叛','反叛','投靠','投奔',
+    '投靠','投奔','结盟','联合',
+    '结盟','联合','吞并','统一',
+    '吞并','统一','扩张','侵略',
+    '扩张','侵略','防守','保卫',
+    '防守','保卫','进攻','攻击',
+    '进攻','攻击','撤退','逃跑',
+    '撤退','逃跑','追击','追杀',
+    '追击','追杀','埋伏','偷袭',
+    '埋伏','偷袭','突围','突破',
+    '突围','突破','包围','围困',
+    '包围','围困','救援','支援',
+    '救援','支援','牺牲','奉献',
+    '牺牲','奉献','复活','重生',
+    '复活','重生','陨落','死亡',
+    '陨落','死亡','永生','不死',
+    '永生','不死','寂灭','涅槃',
+    '寂灭','涅槃','轮回','转世'
+]);
+
 export class ForeshadowDeconstructor {
     private itemSuffixSet: Set<string>;
     private skillSuffixSet: Set<string>;
@@ -850,8 +1218,9 @@ export class ForeshadowDeconstructor {
     private genreConfig?: GenreConfig;
     private genreForeshadowKeywords: string[];
     private llmEnhancer?: LLMEnhancer;
+    private configManager?: ForeshadowConfigManager;
 
-    constructor(vectorEnhancer?: any, genreId?: string, genreConfig?: GenreConfig) {
+    constructor(vectorEnhancer?: any, genreId?: string, genreConfig?: GenreConfig, configManager?: ForeshadowConfigManager) {
         this.itemSuffixSet = new Set(ITEM_SUFFIXES);
         this.skillSuffixSet = new Set(SKILL_SUFFIXES);
         this.settingKeywordSet = new Set(SETTING_KEYWORDS);
@@ -866,6 +1235,11 @@ export class ForeshadowDeconstructor {
         this.foreshadowCategoryDefs = this.knowledgeBase.getForeshadowCategories();
         this.genreConfig = genreConfig;
         this.genreForeshadowKeywords = genreConfig?.foreshadowTypes || [];
+        this.configManager = configManager;
+    }
+
+    setConfigManager(configManager: ForeshadowConfigManager): void {
+        this.configManager = configManager;
     }
 
     /**
@@ -933,10 +1307,13 @@ export class ForeshadowDeconstructor {
 
         foreshadows.sort((a, b) => b.importance - a.importance);
 
-        const typeDistribution = this.calculateTypeDistribution(foreshadows);
-        const stats = this.calculateStats(foreshadows);
-        const timeline = this.buildTimeline(foreshadows);
-        const qualityScore = this.calculateQualityScore({ foreshadows, typeDistribution, stats, timeline });
+        // 后处理过滤：清除语义碎片/虚词等噪声伏笔
+        const filteredForeshadows = this.filterNoiseForeshadows(foreshadows, paragraphs);
+
+        const typeDistribution = this.calculateTypeDistribution(filteredForeshadows);
+        const stats = this.calculateStats(filteredForeshadows);
+        const timeline = this.buildTimeline(filteredForeshadows);
+        const qualityScore = this.calculateQualityScore({ foreshadows: filteredForeshadows, typeDistribution, stats, timeline });
 
         await yieldToUI();
         const worldbuilding = this.extractWorldbuilding(text);
@@ -944,7 +1321,7 @@ export class ForeshadowDeconstructor {
         const settingDensity = await this.analyzeSettingDensity(text);
 
         const result: ForeshadowAnalysisResult = {
-            foreshadows: foreshadows.slice(0, 50),
+            foreshadows: filteredForeshadows.slice(0, 50),
             typeDistribution,
             stats,
             timeline: timeline.slice(0, 100),
@@ -965,6 +1342,90 @@ export class ForeshadowDeconstructor {
         }
 
         return result;
+    }
+
+    /**
+     * 后处理过滤：清除语义碎片/虚词等噪声伏笔。
+     * - name 长度 < 2
+     * - name 全部字符都在 FORESHADOW_NOISE_CHARS 中
+     * - name 出现在 COMMON_NOISE_WORDS 黑名单中
+     * - name 出现在 VERB_BLACKLIST 动词黑名单中（动词不应作为伏笔，只有名词性实体才能成为伏笔）
+     */
+    filterNoiseForeshadows(foreshadows: Foreshadow[], paragraphs?: string[]): Foreshadow[] {
+        return foreshadows.filter(f => {
+            if (f.name.length < 2) return false;
+            if (VERB_BLACKLIST.has(f.name)) return false;
+
+            if (this.looksLikeVerb(f.name)) return false;
+
+            let allNoiseChars = true;
+            for (const ch of f.name) {
+                if (!FORESHADOW_NOISE_CHARS.has(ch)) {
+                    allNoiseChars = false;
+                    break;
+                }
+            }
+            if (allNoiseChars) return false;
+
+            if (COMMON_NOISE_WORDS.has(f.name)) return false;
+
+            // character 类型跳过名词上下文打分：角色名来自"对话标签/称谓"提取路径
+            // （如"卡丹道：""帝林大人"），天然缺少名词性上下文，打 0 分会被误当噪声删除
+            // （与 classifyForeshadowType 的 looksLikeCharacterByName 判定矛盾）。
+            if (paragraphs && paragraphs.length > 0 && f.type !== 'character') {
+                const contextScore = this.calculateNounContextScore(f, paragraphs);
+                if (contextScore < 0.2) return false;
+            }
+
+            return true;
+        });
+    }
+
+    private calculateNounContextScore(foreshadow: Foreshadow, paragraphs: string[]): number {
+        const appearances = foreshadow.importantAppearances.length > 0
+            ? foreshadow.importantAppearances.slice(0, 3)
+            : [{ paragraphIndex: foreshadow.firstAppearance.paragraphIndex }];
+
+        let nounScore = 0;
+        let totalChecks = 0;
+
+        const nounIndicators = [
+            '的', '是', '叫', '名为', '叫做', '有', '拿', '取', '用', '使用',
+            '这个', '那个', '此', '该', '一件', '一把', '一枚', '一颗', '一本',
+        ];
+        const verbIndicators = [
+            '地', '了', '着', '过', '一下', '起来', '下去',
+        ];
+
+        for (const app of appearances) {
+            const para = paragraphs[app.paragraphIndex] || '';
+            if (!para) continue;
+
+            const idx = para.indexOf(foreshadow.name);
+            if (idx === -1) continue;
+
+            const beforeStart = Math.max(0, idx - 5);
+            const beforeContext = para.substring(beforeStart, idx);
+            const afterEnd = Math.min(para.length, idx + foreshadow.name.length + 5);
+            const afterContext = para.substring(idx + foreshadow.name.length, afterEnd);
+
+            for (const indicator of nounIndicators) {
+                if (beforeContext.includes(indicator) || afterContext.includes(indicator)) {
+                    nounScore += 1;
+                    break;
+                }
+            }
+            totalChecks++;
+
+            for (const indicator of verbIndicators) {
+                if (afterContext.startsWith(indicator)) {
+                    nounScore -= 0.5;
+                    break;
+                }
+            }
+        }
+
+        return totalChecks > 0 ? Math.max(0, nounScore / totalChecks) : 0.5;
     }
 
     async analyzeWithVector(text: string): Promise<ForeshadowAnalysisResult> {
@@ -1540,6 +2001,8 @@ export class ForeshadowDeconstructor {
 
         if (STOPWORDS_LARGE.has(word)) return false;
 
+        if (VERB_BLACKLIST.has(word)) return false;
+
         if (word.length === 2) {
             if (INVALID_SECOND_CHARS.has(word[1])) return false;
         }
@@ -1553,7 +2016,42 @@ export class ForeshadowDeconstructor {
             if (STOPWORDS_LARGE.has(rest)) return false;
         }
 
+        if (this.looksLikeVerb(word)) return false;
+
         return true;
+    }
+
+    private looksLikeVerb(word: string): boolean {
+        const verbSuffixes = [
+            '了', '着', '过', '得', '不', '一下', '起来', '下去', '出来', '出去',
+            '上来', '上去', '下来', '下来', '过来', '过去', '回来', '回去',
+            '笑', '哭', '说', '道', '喊', '叫', '问', '答', '想', '看', '听',
+            '走', '跑', '飞', '跳', '打', '杀', '死', '活', '变', '成',
+        ];
+        for (const suffix of verbSuffixes) {
+            if (word.endsWith(suffix) && word.length > suffix.length + 1) {
+                const prefix = word.slice(0, -suffix.length);
+                if (prefix.length >= 1 && this.isChineseChar(prefix[0])) {
+                    return true;
+                }
+            }
+        }
+
+        const verbPatterns = [
+            /^[打杀吃喝玩乐说笑哭怒骂看听闻想思念爱好恨怕].{1,2}$/,
+            // 方向动词短语限长 2-3 字（"上去/下来/走出来"），4 字名词（如"上古传承"）不再误杀
+            /^[进出上下回去过来起开停].{1,2}$/,
+        ];
+        for (const pattern of verbPatterns) {
+            if (pattern.test(word)) return true;
+        }
+
+        return false;
+    }
+
+    private isChineseChar(ch: string): boolean {
+        const code = ch.charCodeAt(0);
+        return code >= 0x4E00 && code <= 0x9FFF;
     }
 
     private classifyForeshadowType(
@@ -1561,14 +2059,20 @@ export class ForeshadowDeconstructor {
         appearances: Array<{ position: number; paragraphIndex: number }>,
         paragraphs: string[]
     ): ForeshadowType {
-        // 1. 角色上下文判定优先（最高优先级）：实体在文本中作为对话者或被称谓出现 → character
-        //    修复"卡丹"被误判为 item 的问题（卡丹名字尾字"丹"误匹配 ITEM_SUFFIXES）
+        // 0. 用户自定义配置匹配（最高优先级）
+        if (this.configManager) {
+            const matchedType = this.configManager.matchType(name);
+            if (matchedType) {
+                return this.mapConfigTypeToForeshadowType(matchedType);
+            }
+        }
+
+        // 1. 角色上下文判定优先：实体在文本中作为对话者或被称谓出现 → character
         if (this.looksLikeCharacterByName(name, appearances, paragraphs)) {
             return 'character';
         }
 
         // 2. 题材相关伏笔关键词匹配（从 genreConfig.foreshadowTypes 读取）→ event
-        //    如 military 的"阴谋/叛乱/暗杀/政治变局/密谋"
         if (this.genreForeshadowKeywords.length > 0) {
             for (const kw of this.genreForeshadowKeywords) {
                 if (name.includes(kw) || kw.includes(name)) {
@@ -1578,7 +2082,6 @@ export class ForeshadowDeconstructor {
         }
 
         // 3. 后缀匹配（item/skill），2 字名字要求后缀长度 >= 2 避免单字误匹配
-        //    如"卡丹"匹配单字"丹"会误判为 item，限制为双字后缀后只有"玉佩"等才匹配
         const minSuffixLength = name.length === 2 ? 2 : 1;
         for (const suffix of ITEM_SUFFIXES) {
             if (suffix.length >= minSuffixLength && name.endsWith(suffix)) {
@@ -1612,7 +2115,7 @@ export class ForeshadowDeconstructor {
             }
         }
 
-        // 7. 上下文打分（含 character 维度，补全原有 4 类 → 5 类）
+        // 7. 上下文打分（含 character 维度）
         let settingScore = 0;
         let eventScore = 0;
         let itemScore = 0;
@@ -1633,7 +2136,6 @@ export class ForeshadowDeconstructor {
             for (const sf of SKILL_SUFFIXES) {
                 if (para.includes(sf)) skillScore++;
             }
-            // 角色指代词上下文：实体名+对话词/称谓词紧邻
             for (const indicator of CHARACTER_DIALOGUE_INDICATORS) {
                 if (para.includes(name + indicator)) {
                     characterScore += 2;
@@ -1662,8 +2164,22 @@ export class ForeshadowDeconstructor {
             return scores[0].type;
         }
 
-        // 8. 默认改为 event（伏笔多为事件，比 item 更合理）
+        // 8. 默认改为 event
         return 'event';
+    }
+
+    private mapConfigTypeToForeshadowType(configType: ForeshadowTypeConfig): ForeshadowType {
+        const typeMap: Record<string, ForeshadowType> = {
+            'item': 'item',
+            'skill': 'skill',
+            'character': 'character',
+            'setting': 'setting',
+            'event': 'event',
+            'secret': 'event',
+            'organization': 'setting',
+            'bloodline': 'event'
+        };
+        return typeMap[configType.id] || 'event';
     }
 
     /**

@@ -1291,11 +1291,15 @@ export class QualityScoreEngine {
 
     // 生成问题
     for (const issue of report.issues) {
+      // 用 sample 在原文定位首现位置，供质量仪表盘局部重写取段落
+      // （sample 为句内连续子串，跨句拼接的假 gram 找不到时 location 留空，UI 走兜底提示）
+      const idx = issue.sample ? text.indexOf(issue.sample) : -1;
       issues.push({
         id: `coherence_${issue.type}_${issues.length}`,
         dimension: 'coherence',
         description: issue.message,
         severity: issue.type === 'duplicate_sentence' ? 'high' : 'medium',
+        location: idx >= 0 ? { charOffset: idx, length: issue.sample.length } : undefined,
       });
     }
 

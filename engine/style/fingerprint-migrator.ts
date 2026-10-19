@@ -42,6 +42,7 @@ import {
     V1_TO_V2_FIELD_MAP,
     V2_NEW_DIMENSIONS,
 } from './style-dimensions-v2';
+import { calculateRhythmStats, calculatePerspectiveStats } from './v2-quantitative-extractor';
 
 // ============================================================
 // V1 类型定义（本地定义，避免循环依赖）
@@ -308,6 +309,20 @@ export function migrateV1ToV2(
         infoDensity: createPendingInfoDensity(),
         description: createPendingDescription(),
     };
+
+    // 2.1 若存在原始文本，用纯统计补齐节奏/视角定量字段（填补迁移零值空缺）
+    if (v1.sourceText && v1.sourceText.trim().length > 0) {
+        const rhythm = calculateRhythmStats(v1.sourceText);
+        const perspective = calculatePerspectiveStats(v1.sourceText);
+        features.rhythm = {
+            ...rhythm,
+            description: v1.features.sentenceRhythm || rhythm.description,
+        };
+        features.perspective = {
+            ...perspective,
+            description: v1.features.narrativeStyle || perspective.description,
+        };
+    }
 
     // 3. 构造 V2 指纹
     return {

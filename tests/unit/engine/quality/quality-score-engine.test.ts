@@ -304,6 +304,23 @@ describe('QualityScoreEngine — 六维评分计算', () => {
     expect(dim.issues.some((i) => i.description.includes('重复'))).toBe(true);
   });
 
+  it('连贯性维度：重复 issue 带 location，定位到原文首现位置（供局部重写取段落）', async () => {
+    const text = '他抬起头看向远处的灯火。他抬起头看向远处的灯火。他抬起头看向远处的灯火。夜色渐渐深了下去，城头的风也越来越冷。'.repeat(3);
+    const dim = await engine.evaluateDimension(text, 'coherence');
+    const repeated = dim.issues.filter((i) => i.description.includes('重复'));
+    expect(repeated.length).toBeGreaterThan(0);
+    const located = repeated.filter((i) => i.location && i.location.charOffset !== undefined);
+    expect(located.length).toBeGreaterThan(0);
+    for (const issue of located) {
+      const offset = issue.location!.charOffset!;
+      const len = issue.location!.length ?? 0;
+      const snippet = text.slice(offset, offset + len);
+      expect(snippet.length).toBeGreaterThan(0);
+      // 定位片段必须是原文中该内容的首次出现（与 indexOf 一致）
+      expect(text.indexOf(snippet)).toBe(offset);
+    }
+  });
+
   it('连贯性维度：因果链检测', async () => {
     const dim = await engine.evaluateDimension(NORMAL_TEXT, 'coherence');
     expect(dim.details.causalityIndicators).toBeDefined();

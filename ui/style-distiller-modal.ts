@@ -299,7 +299,7 @@ ${result.content}
 
         const projectBtn = btnRow.createEl('button', {
             text: `📁 写入当前项目（${getWritingStyleWritePath(activeProject)}）`,
-            attr: { style: 'padding: 10px 16px; background: var(--nw-btn-primary-bg, #7c3aed); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9em;' }
+            attr: { style: 'padding: 10px 16px; background: var(--nw-btn-primary-bg, #C2410C); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9em;' }
         });
         projectBtn.onclick = async () => {
             modal.close();

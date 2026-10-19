@@ -1,4 +1,5 @@
 import { App, Modal, Notice, DataAdapter, TFile } from 'obsidian';
+import { OperationConfirmModal } from './components/progress';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { WritingProfileManager } from '../engine/writing-profile';
@@ -68,8 +69,8 @@ export class CreateProjectModal extends Modal {
 
         let projectType: 'original' | 'fanfic' = 'original';
 
-        const originalBtn = typeToggle.createEl('button', { text: '🎨 原创', cls: 'nw-type-btn active', attr: { type: 'button' } });
-        const fanficBtn = typeToggle.createEl('button', { text: '📖 同人', cls: 'nw-type-btn', attr: { type: 'button' } });
+        const originalBtn = typeToggle.createEl('button', { text: '🎨 原创', cls: 'nw-type-btn active', attr: { type: 'button', title: '原创小说项目' } });
+        const fanficBtn = typeToggle.createEl('button', { text: '📖 同人', cls: 'nw-type-btn', attr: { type: 'button', title: '同人小说项目（需填原作信息）' } });
 
         const fanficFields = bodyEl.createDiv({ cls: 'nw-fanfic-fields' });
 
@@ -87,7 +88,8 @@ export class CreateProjectModal extends Modal {
         const settingsSelector = settingsGroup.createDiv({ cls: 'nw-fanfic-selector' });
         const settingsTrigger = settingsSelector.createEl('button', {
             text: '选择设定库',
-            cls: 'nw-btn nw-btn-secondary nw-fanfic-selector-trigger'
+            cls: 'nw-btn nw-btn-secondary nw-fanfic-selector-trigger',
+            attr: { title: '从已有设定库导入同人设定' }
         });
         settingsTrigger.type = 'button';
         const settingsValue = settingsSelector.createDiv({ cls: 'nw-fanfic-selector-value' });
@@ -241,9 +243,9 @@ export class CreateProjectModal extends Modal {
         });
 
         const footerEl = contentEl.createDiv({ cls: 'nw-modal-footer' });
-        const cancelBtn = footerEl.createEl('button', { text: '取消', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button' } });
+        const cancelBtn = footerEl.createEl('button', { text: '取消', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button', title: '取消创建项目' } });
         cancelBtn.onclick = () => this.close();
-        const createButton = footerEl.createEl('button', { text: '创建项目', cls: 'nw-btn nw-btn-primary', attr: { type: 'button' } });
+        const createButton = footerEl.createEl('button', { text: '创建项目', cls: 'nw-btn nw-btn-primary', attr: { type: 'button', title: '创建项目并复制元文件模板' } });
         createButton.onclick = async () => {
             const projectName = projectNameInput.value.trim();
             const genre = genreInput.value.trim();
@@ -276,7 +278,12 @@ export class CreateProjectModal extends Modal {
     private async createProject(projectName: string, genre: string, description: string, projectType: 'original' | 'fanfic', sourceWork: string, sourceWorldview: string): Promise<void> {
         const exists = await this.adapter.exists(projectName);
         if (exists) {
-            const overwrite = confirm(`「${projectName}」已存在，覆盖？`);
+            const overwrite = await OperationConfirmModal.confirm(this.app, {
+                title: '覆盖项目',
+                description: `「${projectName}」已存在，覆盖？`,
+                confirmText: '确认覆盖',
+                cancelText: '取消',
+            });
             if (!overwrite) return;
 
             const removeDir = async (dirPath: string) => {

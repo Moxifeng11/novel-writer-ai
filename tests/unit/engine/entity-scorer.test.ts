@@ -28,12 +28,12 @@ describe('scoreAndFilterEntities — 边界情况', () => {
         expect(r.length).toBe(1);
     });
 
-    it('topN=0 时仍至少返回全员（无正向分回退）', () => {
+    it('topN=0 时回退返回至少 1 个实体（无正向分回退）', () => {
         const e1 = makeEntity('甲', { a: 'b' });
         const e2 = makeEntity('乙', { a: 'c' });
         const r = scoreAndFilterEntities([e1, e2], '无关上下文', 0);
-        // 无正向分时回退返回全部实体
-        expect(r.length).toBe(2);
+        // 无正向分时按 topN 上限回退，不再全量返回
+        expect(r.length).toBe(1);
     });
 });
 
@@ -94,14 +94,14 @@ describe('scoreAndFilterEntities — topN 截断', () => {
         }
     });
 
-    it('正向分实体 <3 时回退返回全部实体', () => {
+    it('正向分实体 <3 时按 topN 截断而非全量返回', () => {
         const e1 = makeEntity('甲', { a: 'b' });
         const e2 = makeEntity('乙', { a: 'c' });
         const e3 = makeEntity('丙', { a: 'd' });
         // 上下文不命中任何名称与关键词 → 无正向分
         const context = '完全无关的文本内容';
         const r = scoreAndFilterEntities([e1, e2, e3], context, 2);
-        expect(r.length).toBe(3);
+        expect(r.length).toBe(2);
     });
 });
 
@@ -132,5 +132,49 @@ describe('scoreAndFilterEntities — 结果结构与排序', () => {
         const e = makeEntity('林惊鸿', { 欲望: '复仇' });
         const r = scoreAndFilterEntities([e], '林惊鸿', 8);
         expect(r[0].text).toBe(e.formatText);
+    });
+});
+
+describe('scoreAndFilterEntities — 实体数据隔离（防污染）', () => {
+    it('不修改入参 entities 数组及其元素字段', () => {
+        const e1 = makeEntity('林惊鸿', { 欲望: '复仇', 所属势力: '青云宗' });
+        const e2 = makeEntity('苏白', { 欲望: '寻母' });
+        const snapshot = JSON.stringify([e1, e2]);
+        scoreAndFilterEntities([e1, e2], '林惊鸿出场', 8);
+        expect(JSON.stringify([e1, e2])).toBe(snapshot);
+    });
+
+    it('多任务连续调用：第二次结果不受第一次影响（无交叉污染）', () => {
+        const taskA = [makeEntity('甲', { 欲望: '复仇' }), makeEntity('乙', { 欲望: '寻母' })];
+        const taskB = [makeEntity('丙', { 欲望: '复仇' }), makeEntity('丁', { 欲望: '寻母' })];
+        const r1 = scoreAndFilterEntities(taskA, '甲出场', 8);
+        const r2 = scoreAndFilterEntities(taskB, '丁出场', 8);
+        const names1 = r1.map(x => x.name);
+        const names2 = r2.map(x => x.name);
+        expect(names1).toContain('甲');
+        expect(names1).not.toContain('丙');
+        expect(names1).not.toContain('丁');
+        expect(names2).toContain('丁');
+        expect(names2).not.toContain('甲');
+        expect(names2).not.toContain('乙');
+    });
+
+    it('正向分不足且实体数远大于 topN 时，仅返回 topN 个（不因实体多而全量回退）', () => {
+        const entities: ScoredEntity[] = [];
+        for (let i = 0; i < 30; i++) {
+            entities.push(makeEntity(`角色${i}`, { a: 'b' }));
+        }
+        const r = scoreAndFilterEntities(entities, '完全无关上下文文本', 8);
+        expect(r.length).toBe(8);
+        expect(r.length).toBeLessThan(entities.length);
+    });
+
+    it('多轮重复调用同一实体集合，结果稳定且不累积实体', () => {
+        const entities = [makeEntity('甲', { 欲望: '复仇' }), makeEntity('乙', { 欲望: '寻母' }), makeEntity('丙', { 欲望: '复仇' })];
+        const context = '甲出场';
+        const first = scoreAndFilterEntities(entities, context, 8);
+        const second = scoreAndFilterEntities(entities, context, 8);
+        expect(second.length).toBe(first.length);
+        expect(second.map(x => x.name)).toEqual(first.map(x => x.name));
     });
 });

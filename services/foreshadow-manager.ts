@@ -10,6 +10,7 @@ import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import { VectorEnhancer } from '../engine/vector-enhancer';
 import { createLogger } from '../shared/logger';
+import { getDegradationNotifier } from '../shared/degradation-notifier';
 
 
 const log = createLogger('ForeshadowManager');
@@ -354,6 +355,17 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
                 if (available) {
                     return await this.enhanceWithVector(uniqueCandidates);
                 }
+                // A3: 已开启向量增强但模型不可用，原先静默回退为纯关键词结果。
+                // 用 info 级上报（不弹 Notice，避免逐章噪音），保留可追溯的降级痕迹。
+                getDegradationNotifier().notify({
+                    source: 'vector',
+                    dimension: 'foreshadow',
+                    from: 'vector',
+                    to: 'keyword_stats',
+                    reason: this.vectorEnhancer.getUnavailableReason() || '向量模型不可用',
+                    severity: 'info',
+                    recoverable: true,
+                });
             } catch (e) {
                 log.warn('[ForeshadowManager] 向量增强失败，使用纯关键词结果', e);
             }
@@ -521,6 +533,16 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
                     }
                     return result;
                 }
+                // A3: 向量去重不可用 → 静默降级为文本去重，同样补 info 级降级痕迹。
+                getDegradationNotifier().notify({
+                    source: 'vector',
+                    dimension: 'foreshadow',
+                    from: 'vector',
+                    to: 'text_similarity',
+                    reason: this.vectorEnhancer.getUnavailableReason() || '向量模型不可用',
+                    severity: 'info',
+                    recoverable: true,
+                });
             } catch (e) {
                 log.warn('[ForeshadowManager] 向量去重失败，降级为文本去重', e);
             }
@@ -546,16 +568,38 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         return result;
     }
 
+    /**
+     * v6.3: 伏笔去重相似度。
+     * 原实现为「单字符集合 Jaccard」——中文短句因共用「的/了/他」等高频字而虚高，
+     * 配合 0.7 阈值易把不同伏笔误判为重复而丢弃（例如同一组字不同语序会被判为 1.0）。
+     * 改为「字符 bigram 集合的 Dice 系数」：bigram 保留局部词序；Dice 的分母是两侧集合大小之和，
+     * 等价于长度归一化——既能命中「仅个别字之差」的近重复，又能压低「长度悬殊但共享字多」的虚高
+     * （相比 bigram Jaccard，Dice 对个别字差异更宽容，不至于让近重复跌破 0.7 阈值）。
+     */
     private textSimilarity(a: string, b: string): number {
         if (!a || !b) return 0;
-        const setA = new Set(a.split(''));
-        const setB = new Set(b.split(''));
+        const A = a.replace(/\s+/g, '');
+        const B = b.replace(/\s+/g, '');
+        if (!A || !B) return 0;
+
+        const bigrams = (s: string): Set<string> => {
+            const set = new Set<string>();
+            if (s.length === 1) {
+                set.add(s);
+                return set;
+            }
+            for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
+            return set;
+        };
+
+        const setA = bigrams(A);
+        const setB = bigrams(B);
         let intersection = 0;
-        for (const char of setA) {
-            if (setB.has(char)) intersection++;
+        for (const gram of setA) {
+            if (setB.has(gram)) intersection++;
         }
-        const union = setA.size + setB.size - intersection;
-        return union > 0 ? intersection / union : 0;
+        const denominator = setA.size + setB.size;
+        return denominator > 0 ? (2 * intersection) / denominator : 0;
     }
 
     private async enhanceWithVector(candidates: TrackedForeshadowItem[]): Promise<TrackedForeshadowItem[]> {

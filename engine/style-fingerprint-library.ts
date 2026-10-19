@@ -26,7 +26,7 @@ import {
 } from '../shared/paths';
 import { SerializedWriter } from '../shared/serialized-writer';
 import { StyleVectorStore, type StyleSimilarityResult, type StyleBlendOptions, type StyleInterpolationOptions, type StyleDimension, STYLE_DIMENSIONS } from './style-vector-store';
-import { OllamaEmbeddingClient } from './ollama-embedding-client';
+import type { EmbeddingProvider } from './embedding/embedding-provider';
 import {
     migrateFileV1ToV2,
     needsV1ToV2Migration,
@@ -134,7 +134,7 @@ export class StyleFingerprintLibrary {
 
     private styleVectorStoreGlobal?: StyleVectorStore;
     private styleVectorStoreProject?: StyleVectorStore;
-    private embeddingClient?: OllamaEmbeddingClient;
+    private embeddingClient?: EmbeddingProvider;
     /** V2 多指纹融合引擎（懒加载） */
     private fingerprintBlenderV2?: FingerprintBlenderV2;
     /** V2 风格迁移强度引擎（懒加载） */
@@ -149,7 +149,7 @@ export class StyleFingerprintLibrary {
         this.project = project;
     }
 
-    setEmbeddingClient(client: OllamaEmbeddingClient): void {
+    setEmbeddingClient(client: EmbeddingProvider): void {
         this.embeddingClient = client;
         this.styleVectorStoreGlobal = undefined;
         this.styleVectorStoreProject = undefined;

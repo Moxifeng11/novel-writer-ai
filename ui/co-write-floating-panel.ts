@@ -12,7 +12,7 @@ import { DraggablePanel } from "./draggable-panel";
 import { CoWriterEngine } from "../engine/co-writer-engine";
 import { SuggestionRecord, SentenceEditRecord } from "../shared/types";
 import { AssociationSuggestion } from "../shared/co-writer-types";
-import { associationToSuggestion } from "./cowrite/cowrite-mappers";
+import { associationToSuggestion, getDirectionLabel, getStyleLabel } from "./cowrite/cowrite-mappers";
 import { CharacterConsistencyChecker, ConsistencyCheckResult } from "../engine/character-consistency-checker";
 import { ProgressEmitter, type ProgressState } from "../shared/progress-emitter";
 import { StepListComponent } from "./components/progress/step-list";
@@ -62,6 +62,8 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   private timeEstimator: TimeEstimator | null = null;
   private lastSuggestError: string | null = null;
   private lastSuggestParams: { precedingText: string; cursorHint: string; mode: string; count: number } | null = null;
+  /** 用户通过「临时指令」输入框（Enter 应用）设置的方向提示，随下次建议/改写传入引擎 */
+  private cursorHint: string = '';
   private suggestBtn: HTMLButtonElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
@@ -263,7 +265,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
     this.lastSuggestParams = {
       precedingText,
-      cursorHint: '',
+      cursorHint: this.cursorHint,
       mode: 'continue',
       count: 3
     };
@@ -315,7 +317,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       this.suggestProgressEmitter.nextStep('正在生成写作建议...');
       this.suggestProgressEmitter.setStepProgress(10, '调用 AI 模型...');
 
-      const response = await this.engine.suggestNext(precedingText, '', 'continue', 3, signal);
+      const response = await this.engine.suggestNext(precedingText, this.cursorHint, 'continue', 3, signal);
       if (signal.aborted) return;
 
       this.suggestProgressEmitter.setStepProgress(100, '生成完成');
@@ -519,9 +521,44 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     for (let i = 0; i < suggestions.length; i++) {
       const s = suggestions[i];
       const card = this.suggestionContainer.createDiv({ cls: "nw-suggestion-card" });
-      card.createDiv({ cls: "nw-suggestion-index", text: String(i + 1) });
+
+      const header = card.createDiv({ cls: "nw-suggestion-header" });
+      header.createDiv({ cls: "nw-suggestion-index", text: String(i + 1) });
+      header.createDiv({ cls: "nw-suggestion-tag", text: getDirectionLabel(s.direction) });
+      if (s.style && s.style !== "default") {
+        header.createDiv({ cls: "nw-suggestion-tag secondary", text: getStyleLabel(s.style) });
+      }
+
       card.createDiv({ cls: "nw-suggestion-text", text: s.text });
+
+      const actions = card.createDiv({ cls: "nw-suggestion-actions" });
+      const acceptBtn = actions.createEl("button", { text: "\u2713 \u63A5\u53D7", cls: "nw-btn nw-btn-primary" });
+      acceptBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        void this.acceptByIndex(i);
+      });
+      const rejectBtn = actions.createEl("button", { text: "\u2715 \u62D2\u7EDD", cls: "nw-btn nw-btn-ghost" });
+      rejectBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        this.rejectSuggestion(s.id);
+      });
+
       card.addEventListener("click", () => this.acceptByIndex(i));
+    }
+  }
+
+  /** 拒绝单条建议；全部拒绝后展示空态提示 */
+  private rejectSuggestion(suggestionId: string): void {
+    this.currentSuggestions = this.currentSuggestions.filter((s) => s.id !== suggestionId);
+    if (this.currentSuggestions.length > 0) {
+      this.renderSuggestions(this.currentSuggestions);
+    } else {
+      this.suggestionContainer.empty();
+      this.suggestionContainer.createDiv({
+        cls: "nw-suggestion-empty",
+        text: "\u5DF2\u62D2\u7EDD\u672C\u8F6E\u5EFA\u8BAE\u3002\u6309 Tab \u91CD\u65B0\u751F\u6210\u3002",
+        attr: { style: "padding:16px;text-align:center;color:var(--text-muted);font-size:13px;" },
+      });
     }
   }
 
@@ -603,7 +640,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     const beforeContext = this.rightEditor.value.slice(0, start);
     const afterContext = this.rightEditor.value.slice(end);
     try {
-      const suggestions = await this.engine.rewriteSelection(selectedText, beforeContext, afterContext, "", 3);
+      const suggestions = await this.engine.rewriteSelection(selectedText, beforeContext, afterContext, this.cursorHint, 3);
       if (suggestions.length === 0) {
         new Notice("没有生成改写候选");
         return;
@@ -789,8 +826,11 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   private applyHint(): void {
     const hint = this.hintInput.value.trim();
     if (!hint) return;
+    // 修复死代码：原先 Enter 仅 Notice 展示、从未真正应用指令。
+    // 现在把方向提示存到 cursorHint，供 suggestNext / rewriteSelection 实际传入引擎。
+    this.cursorHint = hint;
     this.hintInput.value = "";
-    new Notice(`\uD83D\uDCA1 \u6307\u4EE4: ${hint}`);
+    new Notice(`\uD83D\uDCA1 \u5DF2\u5E94\u7528\u6307\u4EE4\uFF0C\u5C06\u5728\u4E0B\u6B21\u751F\u6210\u65F6\u751F\u6548: ${hint}`);
   }
 
   async onClose(): Promise<void> {

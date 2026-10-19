@@ -1591,7 +1591,70 @@ interface ForeshadowTracking {
 
 ---
 
-## 九、相关文档
+## 九、数据可视化 API（svg-charts.ts）
+
+### 导入
+
+```typescript
+import {
+    radarChart, barChart, donutChart, lineChart, scatterChart,
+    timelineChart, wordCloud, heatmap, treeChart, areaChart,
+    attachChartInteractions, createChartContainer, spiralLayout,
+    // 类型
+    RadarDataItem, RadarOptions, BarDataItem, BarOptions,
+    DonutDataItem, DonutOptions, LineChartSeries, LineChartOptions,
+    HeatmapCell, HeatmapOptions, TreeNode, TreeOptions,
+    AreaSeries, AreaOptions, WordCloudItem, WordCloudOptions,
+    ChartContainerOptions, ChartContainerResult,
+} from '../ui/svg-charts';
+```
+
+### 9.1 图表函数
+
+所有图表函数均为纯函数，返回 SVG 字符串（含 `data-*` 属性和 CSS 类），支持响应式（`viewBox` + `preserveAspectRatio`）和动画过渡（CSS transition）。
+
+| 函数 | 用途 | 关键特性 |
+|------|------|---------|
+| `radarChart(data, options)` | 雷达图 | 5级网格、极坐标、顶点 hover tooltip |
+| `barChart(data, options)` | 柱状图 | 支持水平模式、图例点击筛选 |
+| `donutChart(data, options)` | 环形图 | 8色调色板、中心总计、扇区外扩 hover |
+| `lineChart(series, options)` | 折线图 | 贝塞尔平滑、十字线 hover、路径绘制动画 |
+| `scatterChart(data, options)` | 散点图 | 分类着色、HTML tooltip |
+| `timelineChart(data, options)` | 时间线 | 多级标签、类型分类着色 |
+| `wordCloud(items, options)` | 词云图 | 阿基米德螺线布局、bounding box 碰撞检测 |
+| `heatmap(data, options)` | 热力图 | 行列标签、颜色梯度、单元格 tooltip |
+| `treeChart(root, options)` | 树状图 | dendrogram 布局、层级折叠 |
+| `areaChart(series, options)` | 面积图 | 渐变填充、路径绘制动画 |
+
+### 9.2 交互能力
+
+```typescript
+// 在将图表 SVG 插入 DOM 后调用，启用 hover/tooltip/图例点击
+const container = document.createElement('div');
+container.innerHTML = lineChart(series, options);
+document.body.appendChild(container);
+attachChartInteractions(container);
+```
+
+`attachChartInteractions(container: HTMLElement)` 会：
+- 查找所有 `[data-value]` 和 `[data-label]` 元素
+- 添加 mouseenter/mouseleave 事件：显示/隐藏 HTML tooltip overlay
+- 为有图例的图表添加图例点击事件：toggle 数据系列显示
+
+### 9.3 ChartContainer 工厂
+
+```typescript
+const chart = createChartContainer({
+    width: 400, height: 300, title: '分析报告',
+    padding: { top: 30, right: 20, bottom: 40, left: 50 },
+    showGrid: true, showXAxis: true, showYAxis: true,
+});
+// chart.svgStart, chart.plotArea, chart.legendArea, chart.svgEnd
+```
+
+---
+
+## 十、相关文档
 
 - [架构视图](./ARCHITECTURE.md) — 分层架构与设计决策
 - [开发指南](./DEVELOPMENT.md) — 如何新增功能

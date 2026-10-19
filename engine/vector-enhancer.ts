@@ -1,5 +1,6 @@
 import type { EmbeddingProvider, EmbeddingAvailability } from './embedding/embedding-provider';
 import type { TokenBucketRateLimiter } from './token-bucket-rate-limiter';
+import type { CharacterCandidate, AnalysisSuggestion } from './types/analysis-suggestion';
 import { createLogger } from '../shared/logger';
 
 
@@ -549,5 +550,243 @@ export class VectorEnhancer {
 
     getRateLimiter(): TokenBucketRateLimiter | null {
         return this.rateLimiter;
+    }
+
+    /**
+     * 用语义相似度过滤掉明显不是人名的候选
+     * 通过计算候选词上下文与"人名"语义原型的相似度，调整置信度
+     * @param candidates 角色候选列表
+     * @param text 原文文本（用于提取上下文）
+     * @returns 过滤后的候选列表，每个候选的 confidence 会被更新
+     */
+    async filterCandidatesBySemantics(
+        candidates: CharacterCandidate[],
+        text: string
+    ): Promise<CharacterCandidate[]> {
+        if (candidates.length === 0 || !text) {
+            return candidates;
+        }
+
+        const available = await this.isAvailable();
+        if (!available) {
+            log.warn('[VectorEnhancer] 向量模型不可用，跳过语义过滤');
+            return candidates;
+        }
+
+        try {
+            const namePrototypes = [
+                '他是一个很有才华的人',
+                '她微笑着点了点头',
+                '这个人性格开朗',
+                '那位先生走了过来',
+                '这位女士名叫',
+            ];
+
+            const prototypeVectors = await this.embedTexts(namePrototypes);
+            const prototypeAvg = this.averageVectors(prototypeVectors);
+
+            const result: CharacterCandidate[] = [];
+            for (const candidate of candidates) {
+                const contextSentences = this.extractContextSentences(text, candidate.name, 3);
+                if (contextSentences.length === 0) {
+                    result.push({ ...candidate });
+                    continue;
+                }
+
+                const contextVectors = await this.embedTexts(contextSentences);
+                const contextAvg = this.averageVectors(contextVectors);
+
+                const similarity = this.cosineSimilarity(prototypeAvg, contextAvg);
+
+                const factor = 0.5 + similarity * 0.7;
+                const clampedFactor = Math.max(0.5, Math.min(1.2, factor));
+
+                const newConfidence = candidate.confidence * clampedFactor;
+                const clampedConfidence = Math.max(0.1, Math.min(0.99, newConfidence));
+
+                result.push({
+                    ...candidate,
+                    confidence: clampedConfidence,
+                });
+            }
+
+            result.sort((a, b) => b.confidence - a.confidence);
+            return result;
+        } catch (e) {
+            log.error('[VectorEnhancer] 语义过滤失败，返回原候选', e);
+            return candidates;
+        }
+    }
+
+    /**
+     * 基于上下文向量相似度合并同一角色的不同称呼（如"克莱恩"和"愚者"）
+     * 生成 character_merge 类型的建议，不直接修改候选列表
+     * @param candidates 角色候选列表
+     * @param text 原文文本
+     * @returns 合并建议列表
+     */
+    async mergeCandidatesByContextSimilarity(
+        candidates: CharacterCandidate[],
+        text: string
+    ): Promise<AnalysisSuggestion[]> {
+        if (candidates.length < 2 || !text) {
+            return [];
+        }
+
+        const available = await this.isAvailable();
+        if (!available) {
+            log.warn('[VectorEnhancer] 向量模型不可用，跳过上下文合并');
+            return [];
+        }
+
+        try {
+            const contextVectors: number[][] = [];
+            const validCandidates: CharacterCandidate[] = [];
+
+            for (const candidate of candidates) {
+                const contextSentences = this.extractContextSentences(text, candidate.name, 10);
+                if (contextSentences.length < 2) {
+                    continue;
+                }
+
+                const vectors = await this.embedTexts(contextSentences);
+                const avgVector = this.averageVectors(vectors);
+                contextVectors.push(avgVector);
+                validCandidates.push(candidate);
+            }
+
+            if (validCandidates.length < 2) {
+                return [];
+            }
+
+            const mergeSuggestions: AnalysisSuggestion[] = [];
+            const threshold = 0.85;
+            const processedPairs = new Set<string>();
+
+            for (let i = 0; i < validCandidates.length; i++) {
+                for (let j = i + 1; j < validCandidates.length; j++) {
+                    const candA = validCandidates[i];
+                    const candB = validCandidates[j];
+
+                    const pairKey = [candA.name, candB.name].sort().join('|');
+                    if (processedPairs.has(pairKey)) continue;
+                    processedPairs.add(pairKey);
+
+                    if (this.hasCharOverlap(candA.name, candB.name)) {
+                        continue;
+                    }
+
+                    if (this.appearInSameSentence(text, candA.name, candB.name)) {
+                        continue;
+                    }
+
+                    const similarity = this.cosineSimilarity(contextVectors[i], contextVectors[j]);
+                    if (similarity < threshold) continue;
+
+                    const primary = candA.mentionCount >= candB.mentionCount ? candA : candB;
+                    const secondary = candA.mentionCount >= candB.mentionCount ? candB : candA;
+
+                    mergeSuggestions.push({
+                        id: '',
+                        type: 'character_merge',
+                        status: 'pending',
+                        confidence: Math.min(0.95, similarity),
+                        source: 'vector',
+                        payload: {
+                            sourceName: secondary.name,
+                            targetName: primary.name,
+                            similarity,
+                        },
+                        createdAt: Date.now(),
+                        reason: `基于上下文语义相似度（${similarity.toFixed(3)}），"${secondary.name}"与"${primary.name}"可能是同一角色的不同称呼`,
+                        evidence: [
+                            `上下文向量相似度: ${similarity.toFixed(3)}`,
+                            `"${secondary.name}"出现 ${secondary.mentionCount} 次`,
+                            `"${primary.name}"出现 ${primary.mentionCount} 次`,
+                        ],
+                    });
+                }
+            }
+
+            mergeSuggestions.sort((a, b) => b.confidence - a.confidence);
+            return mergeSuggestions;
+        } catch (e) {
+            log.error('[VectorEnhancer] 上下文合并失败，返回空建议', e);
+            return [];
+        }
+    }
+
+    /**
+     * 计算多个向量的平均值
+     */
+    private averageVectors(vectors: number[][]): number[] {
+        if (vectors.length === 0) return [];
+        const dim = vectors[0].length;
+        const result = new Array(dim).fill(0);
+        for (const vec of vectors) {
+            for (let i = 0; i < dim; i++) {
+                result[i] += vec[i];
+            }
+        }
+        for (let i = 0; i < dim; i++) {
+            result[i] /= vectors.length;
+        }
+        return result;
+    }
+
+    /**
+     * 提取文本中包含关键词的句子
+     * @param text 原文
+     * @param keyword 关键词
+     * @param maxCount 最大句子数
+     */
+    private extractContextSentences(text: string, keyword: string, maxCount: number): string[] {
+        const sentences: string[] = [];
+        let idx = 0;
+
+        while ((idx = text.indexOf(keyword, idx)) !== -1 && sentences.length < maxCount) {
+            let start = idx;
+            while (start > 0 && !/[。！？!?；;\n]/.test(text[start - 1])) {
+                start--;
+            }
+
+            let end = idx + keyword.length;
+            while (end < text.length && !/[。！？!?\n]/.test(text[end])) {
+                end++;
+            }
+            if (end < text.length && /[。！？!?]/.test(text[end])) end++;
+
+            const sentence = text.substring(start, end).trim();
+            if (sentence && !sentences.includes(sentence)) {
+                sentences.push(sentence);
+            }
+
+            idx = end;
+        }
+
+        return sentences;
+    }
+
+    /**
+     * 检查两个名字是否有字符重叠
+     */
+    private hasCharOverlap(a: string, b: string): boolean {
+        for (const char of a) {
+            if (b.includes(char)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 检查两个名字是否出现在同一句话中
+     */
+    private appearInSameSentence(text: string, nameA: string, nameB: string): boolean {
+        const sentences = text.split(/[。！？!?\n]+/);
+        for (const sentence of sentences) {
+            if (sentence.includes(nameA) && sentence.includes(nameB)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

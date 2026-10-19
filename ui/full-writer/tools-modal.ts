@@ -83,8 +83,6 @@ export class ToolsModal extends Modal {
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('novel-writer-tools-modal-shell');
-        this.modalEl.style.setProperty('width', 'clamp(800px, 85vw, 1100px)', 'important');
-        this.modalEl.style.setProperty('max-width', '1100px', 'important');
         this.modalEl.style.setProperty('margin', 'auto', 'important');
         const { contentEl } = this;
         contentEl.empty();

@@ -331,13 +331,8 @@ export class WizardController {
             });
             const execBtn = rightGroup.createEl('button', { text: '▶ 执行', cls: 'nw-wizard-nav-btn-primary' });
             execBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
-        } else if (isDone && isMandatory) {
-            const nextBtn = rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-primary' });
-            nextBtn.addEventListener('click', () => {
-                tab.currentStepIdx++;
-                this.renderTabContent(tab, true);
-            });
         } else if (isDone) {
+            // 已完成（无论必填与否）：统一「下一步」，收敛原先 isDone && isMandatory 与 isDone 两个等价分支
             const nextBtn = rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-primary' });
             nextBtn.addEventListener('click', () => {
                 tab.currentStepIdx++;

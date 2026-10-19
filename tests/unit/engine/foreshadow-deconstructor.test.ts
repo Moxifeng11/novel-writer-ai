@@ -613,4 +613,69 @@ describe('ForeshadowDeconstructor - P6 伏笔检测增强', () => {
             expect(decon2).toBeDefined();
         });
     });
+
+    describe('filterNoiseForeshadows 噪声过滤', () => {
+        function makeForeshadow(name: string): any {
+            return {
+                id: name,
+                name,
+                type: 'item',
+                description: '',
+                firstAppearance: { position: 0, paragraphIndex: 0, excerpt: '' },
+                importantAppearances: [],
+                totalAppearances: 1,
+                importance: 0.5,
+            };
+        }
+
+        it('过滤黑名单虚词/动词（无法/效果/隐秘/级封印）', () => {
+            const decon = new ForeshadowDeconstructor(undefined);
+            const input = ['无法', '效果', '隐秘', '级封印'].map(makeForeshadow);
+            const result = decon.filterNoiseForeshadows(input);
+            expect(result.length).toBe(0);
+        });
+
+        it('过滤单字伏笔（name 长度 < 2）', () => {
+            const decon = new ForeshadowDeconstructor(undefined);
+            const result = decon.filterNoiseForeshadows([makeForeshadow('剑')]);
+            expect(result.length).toBe(0);
+        });
+
+        it('保留具体物品/人物名（灰雾之门/克莱恩）', () => {
+            const decon = new ForeshadowDeconstructor(undefined);
+            const input = ['灰雾之门', '克莱恩'].map(makeForeshadow);
+            const result = decon.filterNoiseForeshadows(input);
+            const names = result.map(f => f.name).sort();
+            expect(names).toEqual(['克莱恩', '灰雾之门']);
+        });
+
+        it('过滤动词黑名单中的动词（修炼/战斗/突破/渡劫）', () => {
+            const decon = new ForeshadowDeconstructor(undefined);
+            const input = ['修炼', '战斗', '突破', '渡劫', '飞升', '重生'].map(makeForeshadow);
+            const result = decon.filterNoiseForeshadows(input);
+            expect(result.length).toBe(0);
+        });
+
+        it('过滤心理活动动词（思考/回忆/想象/决定）', () => {
+            const decon = new ForeshadowDeconstructor(undefined);
+            const input = ['思考', '回忆', '想象', '决定', '希望', '害怕'].map(makeForeshadow);
+            const result = decon.filterNoiseForeshadows(input);
+            expect(result.length).toBe(0);
+        });
+
+        it('过滤交流动词（说话/询问/回答/命令）', () => {
+            const decon = new ForeshadowDeconstructor(undefined);
+            const input = ['说话', '询问', '回答', '命令', '请求', '拒绝'].map(makeForeshadow);
+            const result = decon.filterNoiseForeshadows(input);
+            expect(result.length).toBe(0);
+        });
+
+        it('保留名词性伏笔（项链/秘密/阴谋/禁地）', () => {
+            const decon = new ForeshadowDeconstructor(undefined);
+            const input = ['项链', '秘密', '阴谋', '禁地', '传承', '玉佩'].map(makeForeshadow);
+            const result = decon.filterNoiseForeshadows(input);
+            const names = result.map(f => f.name).sort();
+            expect(names).toEqual(['传承', '玉佩', '禁地', '秘密', '阴谋', '项链']);
+        });
+    });
 });

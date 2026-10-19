@@ -1,7 +1,6 @@
 import { App, Notice, TFile, Modal } from 'obsidian';
 import { FullWriterStore, WriterTab } from './full-writer-store';
 import { WizardTab } from './wizard-types';
-import { MiniSettingsModal } from '../mini-settings-modal';
 import NovelWriterPlugin from '../../main';
 import { pjStepDir } from '../../shared/paths';
 import { createLogger } from '../../shared/logger';
@@ -116,7 +115,7 @@ export class TabController {
             });
             this.deps.getChapterStateManager().stepCompleted.clear();
             this.deps.getChapterStateManager().stepResults = {};
-            await this.deps.renderWizardTabContent(activeTab as WizardTab);
+            await this.deps.renderWizardTabContent(activeTab as WizardTab, true);
             return;
         } else if (activeTab.type === 'chapter' && activeTab.project && activeTab.chapterName) {
             this.deps.state.setNavigationState({
@@ -208,17 +207,6 @@ export class TabController {
         });
         addBtn.addEventListener('click', () => {
             this.activateTab('project-selector');
-        });
-
-        const settingsBtn = tabBar.createEl('button', {
-            text: '⚙️',
-            cls: 'novel-writer-fw-tab-btn novel-writer-fw-tab-btn-settings nw-btn-settings',
-            attr: {
-                title: '工作台设置（模型选择、上下文范围、热重载等）',
-            }
-        });
-        settingsBtn.addEventListener('click', () => {
-            new MiniSettingsModal(this.deps.app, this.deps.plugin).open();
         });
 
         const reloadBtn = tabBar.createEl('button', {

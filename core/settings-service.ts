@@ -14,6 +14,7 @@ import type { PluginCacheManager } from '../shared/plugin-cache';
 import type { SerializedWriter } from '../shared/serialized-writer';
 import { DEFAULT_PROMPT_MANAGER_CONFIG } from '../services/prompt-manager-types';
 import { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '../services/deconstruction-scheduler';
+import { DEFAULT_FORESHADOW_CONFIG } from '../engine/foreshadow-config-manager';
 
 /** SettingsService 依赖 */
 export interface SettingsServiceDeps {
@@ -50,6 +51,62 @@ export class SettingsService {
                     ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS,
                     ...(userDe as Partial<typeof DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS>),
                 };
+            }
+
+            const defaults = getDefaultSettings();
+
+            const userRuleLayer = (migratedData as Record<string, unknown>).ruleLayer;
+            if (userRuleLayer && typeof userRuleLayer === 'object') {
+                settings.ruleLayer = {
+                    ...defaults.ruleLayer!,
+                    ...(userRuleLayer as Partial<typeof defaults.ruleLayer>),
+                };
+            }
+
+            const userVectorLayer = (migratedData as Record<string, unknown>).vectorLayer;
+            if (userVectorLayer && typeof userVectorLayer === 'object') {
+                settings.vectorLayer = {
+                    ...defaults.vectorLayer!,
+                    ...(userVectorLayer as Partial<typeof defaults.vectorLayer>),
+                };
+            }
+
+            const userLlmLayer = (migratedData as Record<string, unknown>).llmLayer;
+            if (userLlmLayer && typeof userLlmLayer === 'object') {
+                settings.llmLayer = {
+                    ...defaults.llmLayer!,
+                    ...(userLlmLayer as Partial<typeof defaults.llmLayer>),
+                };
+            }
+
+            const userSuggestions = (migratedData as Record<string, unknown>).suggestions;
+            if (userSuggestions && typeof userSuggestions === 'object') {
+                settings.suggestions = {
+                    ...defaults.suggestions!,
+                    ...(userSuggestions as Partial<typeof defaults.suggestions>),
+                };
+            }
+
+            const userCharts = (migratedData as Record<string, unknown>).charts;
+            if (userCharts && typeof userCharts === 'object') {
+                settings.charts = {
+                    ...defaults.charts!,
+                    ...(userCharts as Partial<typeof defaults.charts>),
+                };
+            }
+
+            if (typeof (migratedData as Record<string, unknown>).coWriteLayout === 'string') {
+                settings.coWriteLayout = (migratedData as Record<string, unknown>).coWriteLayout as 'split' | 'stacked';
+            }
+            if (typeof (migratedData as Record<string, unknown>).coWriteEditorWidthRatio === 'number') {
+                const ratio = (migratedData as Record<string, unknown>).coWriteEditorWidthRatio as number;
+                settings.coWriteEditorWidthRatio = Math.max(0.4, Math.min(0.85, ratio));
+            }
+            if (typeof (migratedData as Record<string, unknown>).coWriteSuggestionPanelVisible === 'boolean') {
+                settings.coWriteSuggestionPanelVisible = (migratedData as Record<string, unknown>).coWriteSuggestionPanelVisible as boolean;
+            }
+            if (typeof (migratedData as Record<string, unknown>).coWriteShowAdvanced === 'boolean') {
+                settings.coWriteShowAdvanced = (migratedData as Record<string, unknown>).coWriteShowAdvanced as boolean;
             }
         }
         this.deps.setSettings(settings);
@@ -118,6 +175,12 @@ export function getDefaultSettings(): NovelWriterSettings {
         coWriteCloudModel: '',
         autoPlotEvaluation: true,
         precisionMode: false,
+        refineRounds: 3,
+        candidateParallel: true,
+        promptCacheEnabled: true,
+        antiAiExtraWords: [],
+        wordMinRatio: 0.7,
+        promptSplitRatio: 0.67,
         availableModels: DEFAULT_PROVIDERS.volc.models,
         maxContext: 128000,
         maxOutput: 32768,
@@ -132,6 +195,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         contextScope: 'compact',
         infoDebtThreshold: 10,
         maxUnrevealedForeshadow: 20,
+        foreshadowConfig: { ...DEFAULT_FORESHADOW_CONFIG },
         maxApiRetries: 3,
         maxEntityBatchRetries: 2,
         providerKeys: {},
@@ -148,6 +212,13 @@ export function getDefaultSettings(): NovelWriterSettings {
         vectorOpenaiBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
         vectorOpenaiModel: 'doubao-embedding-text-240915',
         vectorOpenaiApiKey: '',
+        vectorDoubaoBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+        vectorDoubaoModel: 'doubao-embedding-text-240915',
+        vectorDoubaoApiKey: '',
+        vectorQwenBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        vectorQwenModel: 'text-embedding-v3',
+        vectorQwenApiKey: '',
+        vectorMode: 'auto',
         autoCheckUpdates: false,
         updateSource: 'github',
         updateGithubRepo: 'trae-ai/novel-writer-ai',
@@ -155,5 +226,39 @@ export function getDefaultSettings(): NovelWriterSettings {
         updateCheckIntervalHours: 168,
         promptManagerConfig: { ...DEFAULT_PROMPT_MANAGER_CONFIG },
         deconstructionEngine: { ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS },
+        characterRecognitionLayers: ['rule', 'vector'],
+        ruleLayer: {
+            minMentionCount: 5,
+            enableFreqFilter: true,
+            enableContextCheck: true,
+            enableVerbFilter: true,
+        },
+        vectorLayer: {
+            enabled: true,
+            semanticFilterThreshold: 0.5,
+            mergeSimilarityThreshold: 0.85,
+        },
+        llmLayer: {
+            enabled: false,
+            verifyBatchSize: 20,
+            titleBatchSize: 8,
+            minConfidence: 0.3,
+        },
+        suggestions: {
+            autoAdoptHighConfidence: false,
+            autoAdoptThreshold: 0.9,
+            showEvidenceByDefault: false,
+            batchAdoptThreshold: 0.7,
+        },
+        charts: {
+            defaultDensity: 'normal',
+            enableAnimations: true,
+            defaultChartType: 'scatter',
+            labelRotationThreshold: 8,
+        },
+        coWriteLayout: 'split',
+        coWriteEditorWidthRatio: 0.65,
+        coWriteSuggestionPanelVisible: true,
+        coWriteShowAdvanced: false,
     };
 }

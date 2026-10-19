@@ -146,6 +146,59 @@ describe('SettingsMigrator', () => {
             expect(result.hiddenPresets).toBeUndefined();
         });
 
+        it('v3→v4 字段类型损坏（非数组）时安全回退为空数组且迁移完成', () => {
+            const data = {
+                schemaVersion: 3,
+                customProviders: 'nope' as unknown as never,
+                hiddenPresets: 'nope' as unknown as never,
+            };
+            const result = migrateSettings(data) as any;
+            // 修复前：.map/.includes 抛 TypeError → 迁移中断 → schemaVersion 停在 3
+            expect(result.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+            expect(Array.isArray(result.customProviders)).toBe(true);
+            expect(result.customProviders.length).toBeGreaterThan(0);
+            expect(result.hiddenPresets).toBeUndefined();
+        });
+
+        it('v3→v4 modelOverrides 为字符串时规范为空对象且迁移完成', () => {
+            const data = {
+                schemaVersion: 3,
+                modelOverrides: 'nope' as unknown as never,
+            };
+            const result = migrateSettings(data) as any;
+            // 修复前：字符串在 provider-manager.setModelOverride 的 `overrides[endpoint] = {}`
+            // 处对原始值赋属性，严格模式下抛 TypeError
+            expect(result.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+            expect(result.modelOverrides).toEqual({});
+        });
+
+        it('v3→v4 modelOverrides 为数组时规范为空对象', () => {
+            const data = {
+                schemaVersion: 3,
+                modelOverrides: ['a', 'b'] as unknown as never,
+            };
+            const result = migrateSettings(data) as any;
+            expect(result.modelOverrides).toEqual({});
+        });
+
+        it('v3→v4 合法 modelOverrides 原样保留', () => {
+            const overrides = { 'https://api.example.com': { 'gpt-4': { maxContext: 100 } } };
+            const data = { schemaVersion: 3, modelOverrides: overrides };
+            const result = migrateSettings(data) as any;
+            expect(result.modelOverrides).toEqual(overrides);
+        });
+
+        it('v2→v3 modelOverrides 为数组时不产出索引键对象', () => {
+            const data = {
+                schemaVersion: 2,
+                apiEndpoint: 'https://api.example.com',
+                modelOverrides: ['a', 'b'] as unknown as never,
+            };
+            const result = migrateSettings(data) as any;
+            // 修复前：{ ...['a','b'] } → { 0:'a', 1:'b' } 会污染两层索引结构
+            expect(result.modelOverrides).toEqual({});
+        });
+
         it('不修改原始数据（纯函数）', () => {
             const data = { schemaVersion: 0, foo: 'bar' };
             const original = { ...data };

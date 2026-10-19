@@ -73,14 +73,36 @@ export function pjWritingRules(project: string) { return `${project}/00-系统�
 // ============================================================
 // 3. 实体
 // ============================================================
+
+/**
+ * 净化用户/AI 提供的名称段，防止路径穿越与非法文件名（技术审计 F5）。
+ *
+ * 规则：
+ * - 剥离控制字符与两侧空白
+ * - 路径分隔符等文件系统非法字符（\\ / : * ? " < > |）替换为 _
+ * - 剥离首尾的 `.`（消除 `..` 段，杜绝 `../` 逃逸出 vault 与 Windows 尾点问题）
+ * - 净化后为空时返回 '未命名'，保证调用方恒拿到可用相对段
+ *
+ * 例：`../../evil` → `_.._evil`；`C:\x` → `C__x`；`林晚舟` → `林晚舟`。
+ */
+export function sanitizeName(name: string): string {
+    const cleaned = name
+        .replace(/[\u0000-\u001f\u007f]/g, '')
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .trim()
+        .replace(/^\.+/, '')
+        .replace(/\.+$/, '');
+    return cleaned || '未命名';
+}
+
 export function pjCharsDir(project: string) { return `${project}/${SUBDIR_CHARS}`; }
 export function pjLocsDir(project: string) { return `${project}/${SUBDIR_LOCS}`; }
 export function pjFactionsDir(project: string) { return `${project}/${SUBDIR_FACTIONS}`; }
 export function pjItemsDir(project: string) { return `${project}/${SUBDIR_ITEMS}`; }
-export function pjCharFile(project: string, name: string) { return `${project}/${SUBDIR_CHARS}/${name}.md`; }
-export function pjLocFile(project: string, name: string) { return `${project}/${SUBDIR_LOCS}/${name}.md`; }
-export function pjFactionFile(project: string, name: string) { return `${project}/${SUBDIR_FACTIONS}/${name}.md`; }
-export function pjItemFile(project: string, name: string) { return `${project}/${SUBDIR_ITEMS}/${name}.md`; }
+export function pjCharFile(project: string, name: string) { return `${project}/${SUBDIR_CHARS}/${sanitizeName(name)}.md`; }
+export function pjLocFile(project: string, name: string) { return `${project}/${SUBDIR_LOCS}/${sanitizeName(name)}.md`; }
+export function pjFactionFile(project: string, name: string) { return `${project}/${SUBDIR_FACTIONS}/${sanitizeName(name)}.md`; }
+export function pjItemFile(project: string, name: string) { return `${project}/${SUBDIR_ITEMS}/${sanitizeName(name)}.md`; }
 
 // ============================================================
 // 4. 大纲 / 章节 (v4.0 重构)
@@ -196,7 +218,7 @@ export function pjWritingRulesPromptTemplate() { return `${PJ_PROMPT_TEMPLATE_DI
 // ============================================================
 /** v4.0: 99- → 05- */
 export function pjFanficDir(project: string) { return `${project}/05-同人设定库`; }
-export function pjFanficFile(project: string, name: string) { return `${project}/05-同人设定库/${name}.md`; }
+export function pjFanficFile(project: string, name: string) { return `${project}/05-同人设定库/${sanitizeName(name)}.md`; }
 
 // ============================================================
 // 9. 项目总控
@@ -226,6 +248,10 @@ export function getVolumeOutlinePath(project: string): string { return pjVolumeO
 export function pjInfoDebtBoard(project: string) { return `${project}/04-项目总控/信息债看板.md`; }
 /** 叙事总览 */
 export function pjNarrativeOverview(project: string) { return `${project}/04-项目总控/叙事总览.md`; }
+/** 事实索引（故事质量闭环 Task 11 待确认队列落盘） */
+export function pjFactIndexFile(project: string) { return `${project}/04-项目总控/事实索引.json`; }
+/** 生成断点目录（故事质量闭环 Task 7/10 断点落盘） */
+export function pjCheckpointDir(project: string) { return `${project}/04-项目总控/断点`; }
 
 // ============================================================
 // 13. 实体目录常量（供 filter / startsWith 判断使用）
@@ -321,7 +347,8 @@ export function kbConfigFile(baseDir?: string): string { return `${kbConfigDir(b
 export function kbIndexFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_INDEX_FILE}`; }
 export function kbTagSystemFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_TAG_SYSTEM_FILE}`; }
 export function kbBookDir(bookName: string, baseDir?: string): string {
-    const safeBookName = bookName.replace(/[\\/:*?"<>|]/g, '_');
+    // F5：sanitizeName 在原字符替换基础上补 `..` 段剥离，防止书名逃逸出知识库目录
+    const safeBookName = sanitizeName(bookName);
     return `${kbKnowledgeBaseDir(baseDir)}/${safeBookName}`;
 }
 export function kbBookBasicInfoFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_BASIC_INFO_FILE}`; }

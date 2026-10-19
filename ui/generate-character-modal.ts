@@ -189,7 +189,8 @@ export class GenerateCharacterModal extends Modal {
                 progressLabel.setText(`⏳ 准备中...（模型：${modelName}）`);
                 progressBarTrack.style.display = 'block';
                 progressBarFill.addClass('nw-progress-anim');
-                await new Promise(r => requestAnimationFrame(r));
+                // P0-2 修复: 后台窗口 rAF 不触发会导致永久挂起，改用 setTimeout 让出执行权
+                await new Promise(r => setTimeout(r, 16));
 
                 let worldView = '';
                 try {

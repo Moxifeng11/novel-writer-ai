@@ -663,6 +663,32 @@ describe('fingerprint-migrator', () => {
             expect(v2.sourceText).toBe('原始源文本内容');
         });
 
+        it('存在 sourceText 时用纯统计补齐节奏/视角定量字段', () => {
+            const v1 = makeV1Fingerprint();
+            v1.sourceText = '他来了，他走了，他回头看了一眼。你站在原地，不知所措。';
+            const v2 = migrateV1ToV2(v1, 'global');
+
+            // 定量字段被补齐（非零）
+            expect(v2.features.rhythm.avgSentenceLength).toBeGreaterThan(0);
+            expect(v2.features.rhythm.punctuationDensity).toBeGreaterThan(0);
+            expect(v2.features.perspective.personDistribution.third).toBeGreaterThan(0);
+            expect(v2.features.perspective.personDistribution.second).toBeGreaterThan(0);
+            // 定性描述仍保留 V1 分析，而非被统计描述覆盖
+            expect(v2.features.rhythm.description).toBe(v1.features.sentenceRhythm);
+            expect(v2.features.perspective.description).toBe(v1.features.narrativeStyle);
+            // 状态保持 complete
+            expect(v2.features.rhythm.status).toBe('complete');
+            expect(v2.features.perspective.status).toBe('complete');
+        });
+
+        it('无 sourceText 时节奏/视角定量字段保持零值', () => {
+            const v1 = makeV1Fingerprint();
+            const v2 = migrateV1ToV2(v1, 'global');
+
+            expect(v2.features.rhythm.avgSentenceLength).toBe(0);
+            expect(v2.features.perspective.personDistribution.third).toBe(0);
+        });
+
         it('stats 字段完整复制', () => {
             const v1 = makeV1Fingerprint({
                 stats: {

@@ -321,10 +321,6 @@ ${olResult.content.trim()}
                     formatText: c.data
                 })), outlineText, 8);
                 allChars = filtered.map(c => `\n- ${c.text}`).join('');
-                if (filtered.length < 3 && allCharsRaw.length > 3) {
-                    // 匹配不足3个时回退全量（最多前20个，防止 token 爆炸）
-                    allChars = allCharsRaw.slice(0, 20).map(c => `\n- ${c.data}`).join('');
-                }
             } else {
                 allChars = allCharsRaw.map(c => `\n- ${c.data}`).join('');
             }

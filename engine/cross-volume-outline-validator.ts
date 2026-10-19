@@ -205,8 +205,10 @@ const DEATH_STATES = ['死亡', '阵亡', '陨落', '陨命', '身亡', '死去'
 const ACTIVE_STATES = ['活跃', '出场', '行动', '现身', '登场', '对话', '战斗', '出现'];
 const SUBLINE_MARKERS = ['支线', '番外', '外传', '侧线'];
 const FORESHADOW_REVEAL_WORDS = ['回收', '揭晓', '揭露', '解开', '揭晓', '真相大白', '揭开'];
-const FACTION_RISE_WORDS = ['崛起', '兴盛', '壮大', '称霸', '登顶'];
-const FACTION_FALL_WORDS = ['覆灭', '灭亡', '衰落', '瓦解', '被灭', '衰败'];
+/** 势力崛起/兴盛的关键词（导出以便生成侧提示词与校验侧判定保持单一来源） */
+export const FACTION_RISE_WORDS = ['崛起', '兴盛', '壮大', '称霸', '登顶'];
+/** 势力覆灭/衰落的关键词（同上） */
+export const FACTION_FALL_WORDS = ['覆灭', '灭亡', '衰落', '瓦解', '被灭', '衰败'];
 const CAUSAL_CONNECTORS = ['因此', '于是', '导致', '因为', '源于', '引出', '牵扯', '牵连', '牵连主线', '回归主线'];
 
 function extractChapterRange(text: string): [number, number] | null {

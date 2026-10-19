@@ -19,7 +19,7 @@ import {
     kbBookCharacterExtractionFile,
     kbBookForeshadowDBFile,
 } from '../shared/paths';
-import { OllamaEmbeddingClient } from './ollama-embedding-client';
+import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { StyleVectorStore, STYLE_DIMENSIONS, STYLE_DIMENSION_LABELS } from './style-vector-store';
 import { createLogger } from '../shared/logger';
 
@@ -32,14 +32,14 @@ const PER_DIMENSION_SAMPLE_COUNT = 5;
 
 export class KnowledgeToFingerprintConverter {
     private app: App;
-    private embeddingClient?: OllamaEmbeddingClient;
+    private embeddingClient?: EmbeddingProvider;
 
-    constructor(app: App, embeddingClient?: OllamaEmbeddingClient) {
+    constructor(app: App, embeddingClient?: EmbeddingProvider) {
         this.app = app;
         this.embeddingClient = embeddingClient;
     }
 
-    setEmbeddingClient(client: OllamaEmbeddingClient): void {
+    setEmbeddingClient(client: EmbeddingProvider): void {
         this.embeddingClient = client;
     }
 

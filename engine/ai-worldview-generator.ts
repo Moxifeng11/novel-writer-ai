@@ -324,7 +324,7 @@ ${theme ? `【主题】${theme}` : ''}`;
             }
         };
         
-        let result = await this.generateWorldview(worldName, projectName, genre || '玄幻', '', undefined, adaptedProgress);
+        let result = await this.generateWorldviewFallback(worldName, projectName, genre || '玄幻', '');
         
         if (!result.error && result.content) {
             let validation = validateWorldviewOutput(result.content);

@@ -135,7 +135,9 @@ describe('TemplateService', () => {
         it('getWritingRules 返回写作规则', async () => {
             const result = await service.getWritingRules();
             expect(result.length).toBeGreaterThan(0);
-            expect(result).toContain('活在主角身体里');
+            // v3.6.0：回退文本已与元文件规范同结构（`## 编号章 + 格式参考`）
+            expect(result).toContain('一、角色活着');
+            expect(result).toContain('十六、写作自检');
             expect(result).toContain('主角');
         });
 

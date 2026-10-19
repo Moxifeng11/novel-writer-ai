@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { OperationConfirmModal } from './components/progress';
 import NovelWriterPlugin from '../main';
 import { AIEngine } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
@@ -205,11 +206,31 @@ ${result.content}`;
                         const newPath = generatedProjectName;
                         // 检查目标名称是否已被占用
                         if (!this.app.vault.getAbstractFileByPath(newPath)) {
-                            // renameFile 会自动更新所有子文件路径和内部链接
-                            await this.app.fileManager.renameFile(projectFolder, newPath);
-                            showSuccess(`项目已重命名为「${generatedProjectName}」`);
-                            // 更新后续使用的 project 变量
-                            project = generatedProjectName;
+                            // P0-1 修复: 重命名前需用户确认，避免静默改名导致项目名与 .project 不一致
+                            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                                title: '重命名项目',
+                                description: `AI 建议将项目重命名为「${generatedProjectName}」，是否重命名？\n\n点击「取消」保留原项目名「${project}」`,
+                                confirmText: '确认重命名',
+                                cancelText: '取消',
+                            });
+                            if (!confirmed) {
+                                new Notice(`已保留项目名「${project}」，可在文件浏览器中手动重命名`, 5000);
+                            } else {
+                                // renameFile 会自动更新所有子文件路径和内部链接
+                                await this.app.fileManager.renameFile(projectFolder, newPath);
+                                showSuccess(`项目已重命名为「${generatedProjectName}」`);
+                                // 同步更新 .project 内容中的项目名（重命名后路径已变）
+                                try {
+                                    const metaFile = this.app.vault.getAbstractFileByPath(`${newPath}/.project`);
+                                    if (metaFile instanceof TFile) {
+                                        const content = await this.app.vault.read(metaFile);
+                                        const updated = content.replace(/^#\s+.+$/m, `# ${generatedProjectName}`);
+                                        await this.app.vault.modify(metaFile, updated);
+                                    }
+                                } catch (e) { log.warn('[小说工坊] 同步 .project 项目名失败:', e); }
+                                // 更新后续使用的 project 变量
+                                project = generatedProjectName;
+                            }
                         } else {
                             new Notice(`⚠️ 文件夹「${generatedProjectName}」已存在，项目名保留为「${project}」`, 5000);
                         }

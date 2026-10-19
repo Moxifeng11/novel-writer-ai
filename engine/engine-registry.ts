@@ -113,6 +113,7 @@ export interface DependencyCheckResult {
 import { InternalRegistry } from './internal-registry';
 import { PluginCacheManager } from '../shared/plugin-cache';
 import { CryptoService } from '../core/crypto-service';
+import { PasswordModal } from '../ui/password-modal';
 import { ProviderManager } from '../core/provider-manager';
 import { ThemeManager } from '../core/theme-manager';
 import { SettingsService } from '../core/settings-service';
@@ -136,13 +137,22 @@ import { CharacterConsistencyChecker } from './character-consistency-checker';
 import { AIEngine } from './ai-engine';
 import { CoWriterEngine } from './co-writer-engine';
 import { AnalysisReportEngine } from './analysis-report-engine';
+import { ChapterSnapshotBuilder } from './chapter-snapshot-builder';
+import { SceneGenerationLoop } from './scene-generation-loop';
+import { QualityGate } from './quality-gate';
+import { FactIndexManager } from './fact-index-manager';
+import { VaultFactStorage, VaultFactWriter } from './fact-index-vault';
+import { GenerationCheckpointStore } from './generation-checkpoint';
+import { VaultCheckpointStorage } from './generation-checkpoint-vault';
 import { SettlementEngine } from './settlement-engine';
+import { getPromptCache } from './prompt-cache';
 import { CharacterGenerator } from './ai-character-generator';
 import { AIApiClient } from './ai-api-client';
 import { StyleLearner } from './style-learner';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
 import { UpdateChecker } from '../services/update-checker';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { pjFactIndexFile } from '../shared/paths';
 import { TemplateService } from '../services/template-service';
 import { ChapterVersionService } from '../services/chapter-version-service';
 import { TemplateManager } from '../ui/template-manager';
@@ -184,6 +194,11 @@ export const ENGINE_NAMES = {
     CO_WRITER_ENGINE: 'coWriterEngine',
     CO_WRITING_SESSION_STORE: 'coWritingSessionStore',
     ANALYSIS_REPORT_ENGINE: 'analysisReportEngine',
+    CHAPTER_SNAPSHOT_BUILDER: 'chapterSnapshotBuilder',
+    SCENE_GENERATION_LOOP: 'sceneGenerationLoop',
+    QUALITY_GATE: 'qualityGate',
+    GENERATION_CHECKPOINT_STORE: 'generationCheckpointStore',
+    PROMPT_CACHE: 'promptCache',
     SETTLEMENT_ENGINE: 'settlementEngine',
     CHARACTER_GENERATOR: 'characterGenerator',
     WORLDVIEW_CACHE_SERVICE: 'worldviewCacheService',
@@ -222,6 +237,7 @@ export class EngineRegistry {
     private lazyFactories = new Map<string, () => unknown>();
     private styleLearnerInstances = new Map<string, StyleLearner>();
     private repositoryInstances = new Map<string, Map<string, unknown>>();
+    private factIndexManagers = new Map<string, FactIndexManager>();
     private plugin: NovelWriterPlugin | null = null;
 
     // ─── 增强字段（Task 2） ───
@@ -780,6 +796,29 @@ export class EngineRegistry {
     }
 
     /**
+     * 获取指定项目的 FactIndexManager（项目级单例，故事质量闭环 Task 11）
+     * 同一 project 共享同一实例；落盘到项目事实索引 JSON，确认事实写入正式库。
+     */
+    async getFactIndexManager(project: string): Promise<FactIndexManager> {
+        if (!this.plugin) {
+            throw new Error('[EngineRegistry] 未初始化，无法创建 FactIndexManager');
+        }
+        const key = project || '__default__';
+        let mgr = this.factIndexManagers.get(key);
+        if (!mgr) {
+            const fs = new ObsidianFileSystem(this.plugin.app);
+            mgr = new FactIndexManager(
+                new VaultFactStorage(fs, pjFactIndexFile(key)),
+                new VaultFactWriter(fs, key),
+            );
+            await mgr.load();
+            this.factIndexManagers.set(key, mgr);
+            log.info(`[EngineRegistry] 创建项目级 FactIndexManager: ${key}`);
+        }
+        return mgr;
+    }
+
+    /**
      * 获取指定项目的 Repository 实例（项目级单例）
      * 同一 project 共享同一个实例，首次调用时自动创建
      *
@@ -878,7 +917,13 @@ export class EngineRegistry {
         this.register(ENGINE_NAMES.INTERNAL_REGISTRY, internalRegistry);
         plugin.registry = internalRegistry;
 
-        const cryptoService = new CryptoService(plugin.app);
+        // F4（技术审计）：注入口令交互回调，启用 v2 口令派生（PBKDF2-SHA256）。
+        // 旧版 seed 为公开常量可被任何人推导；v2 口令仅存于 CryptoService 内存（会话级），
+        // v1 密文永久兼容读取，用户下次保存密钥时自然升级为 v2。
+        const cryptoService = new CryptoService(plugin.app, {
+            requestPassword: () => PasswordModal.ask(plugin.app),
+            requestNewPassword: () => PasswordModal.setup(plugin.app),
+        });
         this.register(ENGINE_NAMES.CRYPTO_SERVICE, cryptoService);
 
         const providerManager = new ProviderManager({
@@ -1101,6 +1146,31 @@ export class EngineRegistry {
             () => new SettlementEngine(plugin.app, {
                 showNotice: (msg, dur) => new Notice(msg, dur),
             })
+        );
+        this.registerLazy(
+            ENGINE_NAMES.CHAPTER_SNAPSHOT_BUILDER,
+            () => new ChapterSnapshotBuilder(),
+            { description: '章节故事状态快照构造器（故事质量闭环 P0-1）' }
+        );
+        this.registerLazy(
+            ENGINE_NAMES.SCENE_GENERATION_LOOP,
+            () => new SceneGenerationLoop(),
+            { description: '场景级生成闭环引擎（故事质量闭环 P1-5）' }
+        );
+        this.registerLazy(
+            ENGINE_NAMES.QUALITY_GATE,
+            () => new QualityGate(),
+            { description: '三层质量验收编排器（故事质量闭环 P2-9）' }
+        );
+        this.registerLazy(
+            ENGINE_NAMES.GENERATION_CHECKPOINT_STORE,
+            () => new GenerationCheckpointStore(new VaultCheckpointStorage(new ObsidianFileSystem(plugin.app))),
+            { description: '生成断点存储（故事质量闭环 P1-7/10，vault 落盘）' }
+        );
+        this.registerLazy(
+            ENGINE_NAMES.PROMPT_CACHE,
+            () => getPromptCache(),
+            { description: 'prompt 响应内存 LRU 缓存（P0 API 效率 P0-3，与 api-client 共享模块单例）' }
         );
         this.registerLazy(
             ENGINE_NAMES.CHARACTER_GENERATOR,

@@ -61,14 +61,17 @@ export class WizardStepExecutors {
     }
 
     async executeWizardStep(tab: WizardTab, step: WizardStep): Promise<void> {
-        const isManualStep = step.id === 'writing_style';
-        if (!isManualStep) {
+        // writing_style/outline/chapters 均为"打开弹窗"步骤：AI 生成由弹窗内部按钮触发，
+        // 需用户在弹窗内二次确认，不能进入 executing 状态，否则 nav bar 会误导性显示"生成中...请等待 AI 返回"。
+        const isModalStep = step.id === 'writing_style' || step.id === 'outline' || step.id === 'chapters';
+        if (!isModalStep) {
             this.wizardStepExecuting.add(step.id);
             step.status = 'executing';
             // 立即重新渲染 UI，让用户"看到"执行中状态，而不是黑盒（outline/chapters 打开 Modal 后用户才能看到变化）
             this.renderTab(tab, true);
             // 让出执行权，让浏览器有机会渲染进度条（否则后续 modal.open / await 会阻塞绘制）
-            await new Promise(r => requestAnimationFrame(r));
+            // P0-2 修复: 后台窗口 rAF 不触发会导致永久挂起，改用 setTimeout 让出执行权
+            await new Promise(r => setTimeout(r, 16));
         }
 
         try {
@@ -102,8 +105,8 @@ export class WizardStepExecutors {
         } finally {
             this.wizardStepExecuting.delete(step.id);
             // v4.5: 统一渲染出口，避免多个回调叠加导致重复渲染
-            const skipAutoAdvance = step.id === 'entities' || step.id === 'setting_lib';
-            this.renderTab(tab, skipAutoAdvance);
+            // 执行完成后一律停留在当前步骤，由用户手动点击「下一步 →」步进，不再自动跳转
+            this.renderTab(tab, true);
         }
     }
 
@@ -386,6 +389,8 @@ export class WizardStepExecutors {
             await mkdirp(this.app, dirPath);
 
             let savedCount = 0;
+            // U7（技术审计）：批量单项失败此前仅写日志用户不可见，收集清单供汇总反馈
+            const failures: string[] = [];
             for (const entity of results) {
                 try {
                     const filePath = this.getEntityFilePath(project, entityType, entity.name);
@@ -403,6 +408,7 @@ export class WizardStepExecutors {
                     }
                 } catch (e) {
                     log.warn(`[Wizard:entities] 保存 ${entity.name} 失败:`, e);
+                    failures.push(entity.name);
                 }
             }
 
@@ -410,6 +416,10 @@ export class WizardStepExecutors {
             this.wizardStepResults[resultKey] = JSON.stringify(results.map(r => r.name));
 
             log.info(`[Wizard:entities] ${entityType} 生成完成，保存 ${savedCount}/${results.length} 个`);
+            // U7：部分失败时明确反馈（全失败走下方 return false 的既有错误路径）
+            if (failures.length > 0 && savedCount > 0) {
+                new Notice(`⚠️ ${entityType} 已保存 ${savedCount}/${results.length} 个，${failures.length} 个失败（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, 10000);
+            }
             return savedCount > 0;
         } catch (e) {
             log.error(`[Wizard:entities] ${entityType} 生成异常:`, e);

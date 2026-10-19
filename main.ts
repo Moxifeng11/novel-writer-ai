@@ -5,7 +5,6 @@ import { CoWriterEngine } from './engine/co-writer-engine';
 import { ContextManager } from './engine/context-manager';
 import { ForeshadowManager } from './services/foreshadow-manager';
 import { ReviewAgent } from './engine/review-agent';
-import { NovelWriterModal } from './ui/main-modal';
 import { NovelWriterSettingTab } from './ui/settings-tab';
 import { CreateProjectModal } from './ui/create-project-modal';
 import { PlanBookModal } from './ui/plan-book-modal';
@@ -57,15 +56,17 @@ import { EngineRegistry, ENGINE_NAMES } from './engine/engine-registry';
 import { AnalysisReportEngine } from './engine/analysis-report-engine';
 import { KnowledgeInjector } from './engine/knowledge-injector';
 import { CharacterConsistencyChecker } from './engine/character-consistency-checker';
-import { WritingProfileModal } from './ui/writing-profile-modal';
 import { EntityStateManager } from './engine/entity-state-manager';
 import { AdaptiveDebounceManager } from './shared/adaptive-debounce-manager';
 import { getDegradationNotifier } from './shared/degradation-notifier';
+import { AntiAIDetector } from './engine/anti-ai-detector';
+import { setBusinessThresholdOverrides } from './shared/thresholds';
 import { SerializedWriter } from './shared/serialized-writer';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
 import { RulesService } from './services/rules-service';
+import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
 
 // ─── core 服务层（从 main.ts 拆出）───
 import { CryptoService } from './core/crypto-service';
@@ -83,9 +84,15 @@ export interface CustomProvider {
     models: string[]; // 模型列表
     maxContext: number;
     maxOutput: number;
+    /** v4.11: 模型源类型，区分云端与本地（Ollama / LM Studio / vLLM 等 OpenAI 兼容端点） */
+    sourceType?: 'cloud' | 'local';
     isDefault?: boolean; // 标记是否为初始默认供应商
     isHidden?: boolean;  // 标记是否被隐藏
 }
+
+/** 模型源类型与解析（v4.11 架构底座，定义见 shared/model-source.ts） */
+export type { ModelSourceType } from './shared/model-source';
+export { resolveProviderSourceType } from './shared/model-source';
 
 // 导入集中化的模型能力映射（避免与 token-estimator.ts 重复硬编码）
 import { MODEL_CAPABILITIES, findModelCapability } from './shared/model-capabilities';
@@ -99,11 +106,11 @@ export { MODEL_CAPABILITIES, findModelCapability };
  * 新代码应从 ProviderManager 获取供应商列表
  */
 export const DEFAULT_PROVIDERS: Record<string, CustomProvider> = {
-    volc:     { id: 'volc',     name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072, isDefault: true },
-    ollama:   { id: 'ollama',   name: '本地 Ollama',  endpoint: 'http://localhost:11434/v1/chat/completions',            models: ['qwen2.5:7b', 'deepseek-r1:7b'],                                      maxContext: 32768,  maxOutput: 8192,   isDefault: true },
-    catcat:   { id: 'catcat',   name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions',              models: ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.1-pro-preview-search', 'gemini-3.1-pro-search', 'gemini-2.5-pro', 'gemini-2.5-pro-max', 'gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite-preview'], maxContext: 1048576, maxOutput: 65536,  isDefault: true },
-    deepseek: { id: 'deepseek', name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions',            models: ['deepseek-v4-flash', 'deepseek-v4-pro'],                             maxContext: 1048576, maxOutput: 384000, isDefault: true },
-    sensenova: { id: 'sensenova', name: '日日新/SenseNova', endpoint: 'https://token.sensenova.cn/v1/chat/completions',        models: ['sensenova-6.7-flash-lite', 'deepseek-v4-flash'],                   maxContext: 262144,  maxOutput: 65536,  isDefault: true },
+    volc:     { id: 'volc',     name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072, sourceType: 'cloud', isDefault: true },
+    ollama:   { id: 'ollama',   name: '本地 Ollama',  endpoint: 'http://localhost:11434/v1/chat/completions',            models: ['qwen2.5:7b', 'deepseek-r1:7b'],                                      maxContext: 32768,  maxOutput: 8192,   sourceType: 'local', isDefault: true },
+    catcat:   { id: 'catcat',   name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions',              models: ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.1-pro-preview-search', 'gemini-3.1-pro-search', 'gemini-2.5-pro', 'gemini-2.5-pro-max', 'gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite-preview'], maxContext: 1048576, maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
+    deepseek: { id: 'deepseek', name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions',            models: ['deepseek-v4-flash', 'deepseek-v4-pro'],                             maxContext: 1048576, maxOutput: 384000, sourceType: 'cloud', isDefault: true },
+    sensenova: { id: 'sensenova', name: '日日新/SenseNova', endpoint: 'https://token.sensenova.cn/v1/chat/completions',        models: ['sensenova-6.7-flash-lite', 'deepseek-v4-flash'],                   maxContext: 262144,  maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
 };
 
 // v3.4.7: 模型能力表已迁移至 shared/model-capabilities.ts，此处 re-export 仅用于向后兼容
@@ -131,6 +138,22 @@ export interface NovelWriterSettings {
     autoPlotEvaluation: boolean;
     /** v7.5: 是否启用精准模式（逐句检索+风格评分+反AI检测） */
     precisionMode: boolean;
+    /** P0 效率: 精修迭代轮数（0-5，默认 3，0=跳过精修；调用点 step-modal-controller） */
+    refineRounds?: number;
+    /** P0 效率: 句级候选并行生成（默认 true，本地小模型用户可关闭退回串行） */
+    candidateParallel?: boolean;
+    /** P0 效率: prompt 哈希缓存开关（默认 true，命中相同五元组时跳过 AI 调用） */
+    promptCacheEnabled?: boolean;
+    /**
+     * R2: 用户扩充的 AI 味高频词（每项一个词）。
+     * 默认空数组 → AI 味检测/协同写作约束/连接词密度统计与内置词表完全一致；
+     * 非空时同时作用于三处（见 engine/anti-ai-detector.ts）。
+     */
+    antiAiExtraWords?: string[];
+    /** R1: 步骤输出最低字数比例（相对目标字数，默认 0.70，见 shared/thresholds.ts） */
+    wordMinRatio?: number;
+    /** R1: 超长提示词保留头部的比例（默认 0.67，见 shared/thresholds.ts） */
+    promptSplitRatio?: number;
     availableModels: string[];
     maxContext: number;   // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
     maxOutput: number;    // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
@@ -162,6 +185,7 @@ export interface NovelWriterSettings {
     contextScope: 'full' | 'compact';  // 上下文范围：compact=仅本章涉及实体，full=遍历全部实体
     infoDebtThreshold: number;
     maxUnrevealedForeshadow: number;
+    foreshadowConfig?: ForeshadowConfig;
     maxApiRetries: number;
     maxEntityBatchRetries: number;
     /** 各提供商的 API Key，key=providerId, value=apiKey */
@@ -242,70 +266,63 @@ export interface NovelWriterSettings {
     promptManagerConfig?: PromptManagerConfig;
     /** v8.0: 拆解引擎配置（增强级别、维度、向量、LLM、性能） */
     deconstructionEngine?: DeconstructionEngineSettings;
+
+    /** v8.1: 角色识别 - 启用的识别层 */
+    characterRecognitionLayers?: ('rule' | 'vector' | 'llm')[];
+
+    /** v8.1: 角色识别 - 规则层配置 */
+    ruleLayer?: {
+        minMentionCount: number;
+        enableFreqFilter: boolean;
+        enableContextCheck: boolean;
+        enableVerbFilter: boolean;
+    };
+
+    /** v8.1: 角色识别 - 向量层配置 */
+    vectorLayer?: {
+        enabled: boolean;
+        semanticFilterThreshold: number;
+        mergeSimilarityThreshold: number;
+    };
+
+    /** v8.1: 角色识别 - LLM 层配置 */
+    llmLayer?: {
+        enabled: boolean;
+        verifyBatchSize: number;
+        titleBatchSize: number;
+        minConfidence: number;
+    };
+
+    /** v8.1: 建议采纳相关配置 */
+    suggestions?: {
+        autoAdoptHighConfidence: boolean;
+        autoAdoptThreshold: number;
+        showEvidenceByDefault: boolean;
+        batchAdoptThreshold: number;
+    };
+
+    /** v8.1: 图表可视化相关配置 */
+    charts?: {
+        defaultDensity: 'compact' | 'normal' | 'spacious';
+        enableAnimations: boolean;
+        defaultChartType: string;
+        labelRotationThreshold: number;
+    };
+
+    /** v8.2: 协同写作界面布局配置 */
+    coWriteLayout?: 'split' | 'stacked';
+    /** v8.2: 协同写作编辑器宽度比例（0.4-0.85，默认 0.65） */
+    coWriteEditorWidthRatio?: number;
+    /** v8.2: 协同写作建议面板是否可见 */
+    coWriteSuggestionPanelVisible?: boolean;
+    /** v8.2: 是否显示协同写作高级功能 */
+    coWriteShowAdvanced?: boolean;
 }
 
 export type { DeconstructionEngineSettings } from './services/deconstruction-scheduler';
 export { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from './services/deconstruction-scheduler';
 
-export const DEFAULT_SETTINGS: NovelWriterSettings = {
-    apiKey: '',
-    apiEndpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
-    defaultModel: 'deepseek-v3-2-251201',
-    flashModel: 'deepseek-v3-2-251201',
-    proModel: 'doubao-seed-2-0-pro-260215',
-    coWriteModel: '',  // v6.3: 空=使用 flashModel，可设为本地模型如 qwen2.5:7b
-    coWriteTemperature: 0.7,  // v6.5: 协同写作本地模型 temperature
-    coWriteMaxTokens: 600,    // v6.5: 协同写作本地模型 max_tokens
-    coWriteModelMode: 'local',
-    coWriteCloudProvider: '',
-    coWriteCloudModel: '',
-    autoPlotEvaluation: true,
-    precisionMode: false,
-    availableModels: DEFAULT_PROVIDERS.volc.models,
-    maxContext: 128000,
-    maxOutput: 32768,
-    modelOverrides: {},       // v6.2: 用户手动覆盖值
-    modelOverrideHistory: [], // v6.2: 修改历史
-    defaultWordCount: 3000,
-    minWordCount: 2500,
-    maxWordCount: 5000,
-    enableAutoReview: true,
-    enableAutoCorrect: true,
-    enableAutoModelFallback: true,  // P0-13: 默认开启断联自动切换
-    contextScope: 'compact',
-    infoDebtThreshold: 10,
-    maxUnrevealedForeshadow: 20,
-    maxApiRetries: 3,
-    maxEntityBatchRetries: 2,
-    providerKeys: {},
-    customProviderName: '',
-    customProviders: Object.values(DEFAULT_PROVIDERS),
-    theme: 'auto',
-    embeddingModel: 'bge-m3',
-    embeddingEndpoint: 'http://localhost:11434',
-    vectorEnhancedDeconstruction: true,
-    vectorDeconstructionThreshold: 0.3,
-    vectorProviderType: 'ollama',
-    vectorOllamaBaseUrl: 'http://localhost:11434',
-    vectorOllamaModel: 'bge-m3',
-    vectorOpenaiBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-    vectorOpenaiModel: 'doubao-embedding-text-240915',
-    vectorOpenaiApiKey: '',
-    vectorDoubaoBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-    vectorDoubaoModel: 'doubao-embedding-text-240915',
-    vectorDoubaoApiKey: '',
-    vectorQwenBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    vectorQwenModel: 'text-embedding-v3',
-    vectorQwenApiKey: '',
-    vectorMode: 'auto',
-    autoCheckUpdates: false,
-    updateSource: 'github',
-    updateGithubRepo: 'trae-ai/novel-writer-ai',
-    updateCustomUrl: '',
-    updateCheckIntervalHours: 168,
-    promptManagerConfig: { ...DEFAULT_PROMPT_MANAGER_CONFIG },
-    deconstructionEngine: { ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS },
-};
+export const DEFAULT_SETTINGS: NovelWriterSettings = getDefaultSettings();
 
 // 主题 CSS 变量已迁移至 core/theme-manager.ts
 
@@ -316,6 +333,7 @@ export default class NovelWriterPlugin extends Plugin {
     private _degradationSinkUnregister: (() => void) | null = null;
     private contextManager!: ContextManager;
     private _foreshadowManager!: ForeshadowManager;
+    public _foreshadowConfigManager!: ForeshadowConfigManager;
     private _reviewAgent!: ReviewAgent;
     registry!: InternalRegistry;
     /** 引擎注册表 — 集中管理所有引擎实例 */
@@ -407,6 +425,15 @@ export default class NovelWriterPlugin extends Plugin {
             // ─── 引擎注册表初始化（Phase 1-8） ───
             await this.engineRegistry.initialize(this, { settingsWriter: this._settingsWriter });
             this._assignEngineFields();
+
+            // R2: 应用用户扩充的 AI 味词表（默认空数组 → 与内置词表行为一致）
+            AntiAIDetector.setExtraHighFreqWords(this.settings.antiAiExtraWords ?? []);
+
+            // R1: 应用业务阈值覆盖（未设置/非法值 → 回落内置常量，行为不变）
+            setBusinessThresholdOverrides({
+                wordMinRatio: this.settings.wordMinRatio,
+                promptSplitRatio: this.settings.promptSplitRatio,
+            });
 
             // 恢复中断的拆解状态（插件重载时，磁盘上仍为 processing 的书籍需重置为 interrupted）
             if (this.knowledgeBaseManager) {
@@ -729,6 +756,7 @@ export default class NovelWriterPlugin extends Plugin {
             active: true
         });
         workspace.revealLeaf(leaf);
+        new Notice('📚 已打开知识库管理界面');
     }
 
     /**
@@ -1131,6 +1159,12 @@ export default class NovelWriterPlugin extends Plugin {
         // 清理所有注入的样式标签（匹配 novel-writer 前缀）
         const allStyles = document.querySelectorAll('style[id^="novel-writer-"]');
         allStyles.forEach(el => el.remove());
+        // M1（技术审计）：释放 EngineRegistry 全部实例（含 HeavyTaskWorkerManager 的 Worker 池等）。
+        // 此前 disposeAll 生产代码零调用，插件卸载/禁用后 Worker 与重资源残留。
+        // disposeAll 按依赖逆序逐个释放，单个失败不影响其他；同步清理在前，故置于末尾。
+        this.engineRegistry?.disposeAll().catch(e =>
+            log.warn('[小说工坊] 卸载时释放引擎实例失败:', e)
+        );
         log.info('Novel Writer AI plugin unloaded');
     }
 }

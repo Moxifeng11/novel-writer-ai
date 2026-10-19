@@ -27,20 +27,37 @@ export function applyNwScope(el: { containerEl?: HTMLElement; modalEl?: HTMLElem
     }
 }
 
-let currentNotice: Notice | null = null;
-
-export function showProgress(message: string): void {
-    if (currentNotice) {
-        currentNotice.setMessage(message);
-    } else {
-        currentNotice = new Notice(message, 0);
-    }
+/**
+ * HTML 转义（覆盖 & < > " '），用于 innerHTML / SVG text 插值前的防 XSS 净化。
+ * 统一落点：project-selector-controller、knowledge-detail-modal 等 UI 模块共用（审计 F1/F2）。
+ */
+export function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
-export function hideProgress(): void {
-    if (currentNotice) {
-        currentNotice.hide();
-        currentNotice = null;
+// M8：按 key 管理进度通知。不传 key 时行为与旧单例完全一致（默认槽）；
+// 并发流程传不同 key 即可互不吞掉对方的进度与 hide。
+const progressNotices = new Map<string, Notice>();
+
+export function showProgress(message: string, key: string = 'default'): void {
+    const existing = progressNotices.get(key);
+    if (existing) {
+        existing.setMessage(message);
+        return;
+    }
+    progressNotices.set(key, new Notice(message, 0));
+}
+
+export function hideProgress(key: string = 'default'): void {
+    const notice = progressNotices.get(key);
+    if (notice) {
+        notice.hide();
+        progressNotices.delete(key);
     }
 }
 

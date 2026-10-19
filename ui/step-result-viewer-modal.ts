@@ -1,4 +1,4 @@
-import { App, Modal, TFile, TFolder } from 'obsidian';
+import { App, Modal, Notice, Platform, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { parseStepFrontmatter, ParsedStepFrontmatter } from '../shared/step-frontmatter';
 import { SUBDIR_STEP_ROOT } from '../shared/paths';
@@ -389,6 +389,12 @@ export class StepResultViewerModal extends Modal {
                 cls: 'nw-btn nw-btn-secondary nw-btn-sm',
             });
             openFolderBtn.addEventListener('click', () => {
+                // U11（技术审计）：showInFolder 为桌面端 Electron 专属能力，
+                // 移动端无系统文件管理器概念，原实现静默失败，改为明确提示
+                if (Platform.isMobile) {
+                    new Notice('📱 移动端不支持打开系统文件夹，请在桌面版操作');
+                    return;
+                }
                 const chapDir = `${this.selectedProject}/${SUBDIR_STEP_ROOT}/${this.selectedVolume}/${this.selectedChapter}`;
                 const folder = this.app.vault.getAbstractFileByPath(chapDir);
                 if (folder) {

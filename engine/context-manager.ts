@@ -183,10 +183,10 @@ export class ContextManager {
     private cacheStats = { hits: 0, misses: 0, evictions: 0 };
 
     // ─── 增量更新支持（Task 4.3） ───
-    /** 增量上下文缓存：与常规缓存分离，不被 invalidateCacheByPath 清除 */
-    private incrementalContextCache = new Map<string, { result: GatheredContext; timestamp: number }>();
-    /** 文件变更追踪器：记录文件修改事件，供 gatherIncremental 使用 */
-    private fileChangeTracker = new Map<string, Set<string>>();
+    // M2（技术审计）：原 incrementalContextCache 每次 gatherAll 无上限写入完整 GatheredContext，
+    // 而唯一读取方 gatherIncremental 与清理方 invalidateIncrementalCache 生产代码零调用（纯死写，
+    // 长会话可积累数十 MB），已连同两个死方法与 fileChangeTracker 一并移除。
+    // diffDetector / incrementalUpdater 仍被 invalidateCacheByPath / gatherAll 的活路径使用，保留。
     /** 上下文变更检测器 */
     private diffDetector = new ContextDiffDetector();
     /** 增量更新器实例（懒初始化） */
@@ -518,10 +518,9 @@ export class ContextManager {
      * 根据文件路径增量失效缓存
      * 当实体/设定库/世界观等文件修改时调用，自动识别项目并失效该项目缓存
      *
-     * Task 4.3 增强（智能失效策略）：
-     * 1. 记录文件变更到 fileChangeTracker，供 gatherIncremental 使用
-     * 2. 精确失效 MultiLayerCache 中的分区级缓存（context:section:*）
-     * 3. 常规全量缓存仍按原逻辑失效（向后兼容 gatherAll）
+     * 智能失效策略：
+     * 1. 精确失效 MultiLayerCache 中的分区级缓存（context:section:*）
+     * 2. 常规全量缓存仍按原逻辑失效（向后兼容 gatherAll）
      *
      * @param filePath 修改的文件路径
      * @returns 是否触发了缓存失效
@@ -532,10 +531,7 @@ export class ContextManager {
 
         const shouldInvalidate = this.isContextRelatedPath(filePath, project);
         if (shouldInvalidate) {
-            // 1. 记录文件变更，供 gatherIncremental 使用
-            this.recordFileChange(project, filePath);
-
-            // 2. 精确失效分区级缓存（Task 4.3 智能失效策略）
+            // 1. 精确失效分区级缓存（智能失效策略）
             if (this.multiLayerCache) {
                 const changeSet = this.diffDetector.createChangeSetFromPaths([filePath], project);
                 for (const section of changeSet.affectedSections) {
@@ -544,7 +540,7 @@ export class ContextManager {
                 }
             }
 
-            // 3. 常规全量缓存失效（保持原有行为，向后兼容 gatherAll）
+            // 2. 常规全量缓存失效（保持原有行为，向后兼容 gatherAll）
             this.invalidateContextCache(project);
             return true;
         }
@@ -752,9 +748,6 @@ export class ContextManager {
             await this.multiLayerCache.set(cacheKey, context);
         }
 
-        // Task 4.3: 同步写入增量缓存，供 gatherIncremental 复用
-        this.updateIncrementalCache(project, currentChapter, context);
-
         // Task 4.3: 记录全量版本
         const updater = this.getIncrementalUpdater();
         updater.markFullFallback();
@@ -765,102 +758,6 @@ export class ContextManager {
     // ============================================================
     // Task 4.3: 上下文增量更新
     // ============================================================
-
-    /**
-     * 增量获取上下文
-     *
-     * 优先使用增量更新：仅重新获取受变更影响的分区，未变更部分从增量缓存复用。
-     * 变更范围超过 50% 时自动回退全量 gatherAll。
-     *
-     * 流程：
-     * 1. 从增量缓存获取上一次的完整上下文
-     * 2. 从 fileChangeTracker 获取待处理的文件变更
-     * 3. 通过 ContextDiffDetector 将文件路径映射为 ContextChangeSet
-     * 4. 判断变更范围，超过阈值则回退 gatherAll
-     * 5. 通过 IncrementalUpdater 仅重新获取受影响分区
-     * 6. 更新增量缓存与版本号
-     *
-     * @param project 项目名
-     * @param currentChapter 当前章节（可选）
-     * @returns 完整的 GatheredContext（增量或全量）
-     */
-    async gatherIncremental(
-        project: string,
-        currentChapter?: string,
-    ): Promise<GatheredContext> {
-        const incrementalCacheKey = `${project}::${currentChapter || '_global'}`;
-
-        // 1. 获取上一次的完整上下文
-        const cached = this.incrementalContextCache.get(incrementalCacheKey);
-        if (!cached) {
-            // 无缓存基础，回退全量
-            return this.gatherAll(project, currentChapter);
-        }
-
-        // 2. 获取待处理的文件变更
-        const changedFiles = this.fileChangeTracker.get(project);
-        if (!changedFiles || changedFiles.size === 0) {
-            // 无变更，直接返回缓存（仍新鲜）
-            return cached.result;
-        }
-
-        // 3. 清除已记录的变更（消费掉）
-        this.fileChangeTracker.delete(project);
-
-        // 4. 将文件路径映射为变更集
-        const changeSet = this.diffDetector.createChangeSetFromPaths(
-            Array.from(changedFiles),
-            project,
-        );
-
-        // 5. 判断变更范围
-        const updater = this.getIncrementalUpdater();
-        if (!updater.isIncrementalUpdateFaster(changeSet)) {
-            // 变更范围过大，回退全量
-            log.debug(
-                `[ContextManager] 增量更新回退全量 | project=${project} | changeScope=${(changeSet.changeScope * 100).toFixed(1)}%`,
-            );
-            return this.gatherAll(project, currentChapter);
-        }
-
-        // 6. 增量更新
-        log.debug(
-            `[ContextManager] 增量更新 | project=${project} | affectedSections=${changeSet.affectedSections.join(',')} | changeScope=${(changeSet.changeScope * 100).toFixed(1)}%`,
-        );
-
-        try {
-            const newContext = await updater.updateContext(
-                cached.result,
-                changeSet,
-                project,
-                currentChapter,
-            );
-
-            // 7. 重算受影响的派生数据（compressed）
-            this.recomputeDerivedData(newContext, project, currentChapter);
-
-            // 8. 重新检测 issues
-            newContext.issues = this.detectIssues(newContext);
-
-            // 9. 更新增量缓存
-            this.updateIncrementalCache(project, currentChapter, newContext);
-
-            // 10. 同步到常规缓存（保持一致性）
-            const legacyCacheKey = `${project}::${currentChapter || '_global'}`;
-            if (this.contextCacheTTL > 0) {
-                this.contextCache.set(legacyCacheKey, { result: newContext, timestamp: Date.now() });
-            }
-            if (this.multiLayerCache) {
-                const multiCacheKey = `context:gatherAll:${project}::${currentChapter || '_global'}`;
-                await this.multiLayerCache.set(multiCacheKey, newContext);
-            }
-
-            return newContext;
-        } catch (e) {
-            log.warn('[ContextManager] 增量更新失败，回退全量:', e);
-            return this.gatherAll(project, currentChapter);
-        }
-    }
 
     /**
      * 获取版本历史
@@ -881,24 +778,6 @@ export class ContextManager {
      */
     getIncrementalStats() {
         return this.getIncrementalUpdater().getStats();
-    }
-
-    /**
-     * 清除增量缓存（项目切换或手动刷新时）
-     * @param project 指定项目则只清除该项目，不传则清除全部
-     */
-    invalidateIncrementalCache(project?: string): void {
-        if (project) {
-            for (const key of this.incrementalContextCache.keys()) {
-                if (key.startsWith(`${project}::`)) {
-                    this.incrementalContextCache.delete(key);
-                }
-            }
-            this.fileChangeTracker.delete(project);
-        } else {
-            this.incrementalContextCache.clear();
-            this.fileChangeTracker.clear();
-        }
     }
 
     // ─── Task 4.3 内部方法 ───────────────────────────────────
@@ -982,80 +861,6 @@ export class ContextManager {
             default:
                 log.warn(`[ContextManager] 未知分区，无法重新获取: ${section}`);
                 return {};
-        }
-    }
-
-    /**
-     * 记录文件变更
-     */
-    private recordFileChange(project: string, filePath: string): void {
-        let changes = this.fileChangeTracker.get(project);
-        if (!changes) {
-            changes = new Set();
-            this.fileChangeTracker.set(project, changes);
-        }
-        changes.add(filePath);
-        log.debug(`[ContextManager] 记录文件变更 | project=${project} | file=${filePath}`);
-    }
-
-    /**
-     * 更新增量缓存
-     */
-    private updateIncrementalCache(
-        project: string,
-        currentChapter: string | undefined,
-        context: GatheredContext,
-    ): void {
-        const key = `${project}::${currentChapter || '_global'}`;
-        this.incrementalContextCache.set(key, {
-            result: context,
-            timestamp: Date.now(),
-        });
-    }
-
-    /**
-     * 重算受变更影响的派生数据（compressed）
-     */
-    private recomputeDerivedData(
-        context: GatheredContext,
-        _project: string,
-        currentChapter?: string,
-    ): void {
-        const outlineText = (context.data.outline as MarkdownContent)?.raw || '';
-        const chapterNum = currentChapter
-            ? (parseInt(currentChapter.match(/第(\d+)章/)?.[1] || '0') || 0)
-            : 0;
-
-        const fsData = context.data.foreshadows as ForeshadowData;
-        const foreshadowStr = fsData ? [
-            ...fsData.unrevealed.map(f =>
-                `${f.id || ''}|${f.name || ''}|${f.importance || '中'}|${f.buryChapter || '?'}|${f.plannedReveal || '待定'}|${f.status || '未揭示'}`
-            ),
-            ...fsData.revealed.map(f =>
-                `${f.id || ''}|${f.name || ''}|${f.importance || '中'}|${f.buryChapter || '?'}|${f.revealChapter || '?'}|已揭示`
-            ),
-            ...fsData.abandoned.map(f =>
-                `${f.id || ''}|${f.name || ''}|${f.reason || ''}|${f.abandonChapter || '?'}|废弃|废弃`
-            )
-        ].join('\n') : '';
-
-        const tlData = context.data.timeline as TimelineEvent[];
-        const timelineStr = tlData ? tlData.map(t =>
-            `${t.time || ''}|${t.chapter || ''}|${t.event || ''}|${t.impact || ''}`
-        ).join('\n') : '';
-
-        context.data.compressed = compressWorldContext(
-            (context.data.world_view as MarkdownContent)?.raw || '',
-            (context.data.setting_lib as MarkdownContent)?.raw || '',
-            foreshadowStr,
-            timelineStr,
-            outlineText,
-            chapterNum,
-            this.getSettings().maxContext,
-        );
-
-        if (context.data.compressed.truncationApplied) {
-            log.warn('【重要】世界观/设定数据因过长被硬截断，当前内容可能不完整');
         }
     }
 
@@ -1969,7 +1774,9 @@ export class ContextManager {
             if (!title) continue;
 
             if (title.includes(WRITING_RULE_TITLES[0])) {
-                const ruleBlocks = section.split(/^###\s/);
+                // 必须带 m 标志：`^` 否则只匹配整串开头，而段首是「格式参考（最低要求）」而非 `### `，
+                // 会导致 mandatory 恒为空（格式类强制规则无法进入提示词）。
+                const ruleBlocks = section.split(/^###\s/m);
                 for (let i = 1; i < ruleBlocks.length; i++) {
                     const ruleLines = ruleBlocks[i].split('\n');
                     const ruleTitle = ruleLines[0]?.trim();

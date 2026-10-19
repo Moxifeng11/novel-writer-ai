@@ -391,6 +391,18 @@ describe('CharacterDeconstructor - P2 人设提取修复', () => {
                 }
             }
         });
+
+        it('结构性过滤：时间/副词前缀的"才能"碎片不被误提取为能力', async () => {
+            // "晚上才能"是"晚上 + 才能(副词)"，非名词性天赋，不应作为能力
+            const text = '帝林晚上才能休息。帝林展现出卓越的军事才能。';
+            const deconstructor = new CharacterDeconstructor(undefined, undefined, militaryConfig);
+            const result = await deconstructor.analyze(text);
+            const diLin = result.characters.find(c => c.name === '帝林');
+            if (diLin) {
+                expect(diLin.abilities).not.toContain('晚上才能');
+                expect(diLin.abilities).not.toContain('上才能');
+            }
+        });
     });
 
     describe('Task 5: role 判定（盟友前置检查 + 提高 antagonist 阈值）', () => {

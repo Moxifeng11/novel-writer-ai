@@ -166,6 +166,8 @@ export class RebuildChaptersModal extends Modal {
 
         let done = 0;
         let preserved = 0;
+        // U7（技术审计）：批量单项失败此前仅写日志用户不可见，收集失败清单供结束汇总
+        const failures: string[] = [];
         for (let n = startNum; n <= endNum; n++) {
             const chapName = `第${n}章`;
             const bodyDir = pjBodyDir(project, volN);
@@ -265,11 +267,17 @@ export class RebuildChaptersModal extends Modal {
                 new Notice(`✅ ${chapName}完成（${done}/${total}）${bodyExists ? '〔正文已保留〕' : ''}`, 5000);
             } catch (e) {
                 log.warn('重建失败:', chapName, e);
+                failures.push(chapName);
             }
         }
 
         mainNotice.hide();
-        new Notice(`✅ 重建完成：${done}/${total} 章${preserved > 0 ? `（保留 ${preserved} 章已有正文）` : ''}`, 8000);
+        // U7：失败项汇总反馈（截取前 5 个避免 Notice 过长，完整原因见控制台日志）
+        if (failures.length > 0) {
+            new Notice(`⚠️ 重建完成：成功 ${done}/${total} 章，失败 ${failures.length} 章（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, 10000);
+        } else {
+            new Notice(`✅ 重建完成：${done}/${total} 章${preserved > 0 ? `（保留 ${preserved} 章已有正文）` : ''}`, 8000);
+        }
         this.close();
     }
 

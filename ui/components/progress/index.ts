@@ -7,8 +7,9 @@
  * - LoadingOverlayComponent: 加载遮罩
  * - TaskCardComponent: 任务卡片
  * - OperationConfirmModal: 操作确认弹窗
- * - FloatingProgressBall: 悬浮进度球
- * - StatusBarProgressIndicator: 状态栏进度指示器
+ *
+ * 技术审计批 D：FloatingProgressBall 与 StatusBarProgressIndicator 零外部消费，
+ * 已随死代码清理移除（2026-10）。
  */
 
 export { ProgressBarComponent } from './progress-bar';
@@ -24,8 +25,3 @@ export type { TaskCardOptions } from './task-card';
 
 export { OperationConfirmModal } from './operation-confirm-modal';
 export type { OperationConfirmOptions } from './operation-confirm-modal';
-
-export { FloatingProgressBall } from './floating-progress-ball';
-export type { FloatingProgressBallOptions } from './floating-progress-ball';
-
-export { StatusBarProgressIndicator } from './status-bar-indicator';

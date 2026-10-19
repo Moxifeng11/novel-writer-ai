@@ -216,7 +216,7 @@ export class AnalysisReportEngine {
         const pending: string[] = [];
 
         try {
-            // 1. 更新实体状态（待实现：生成待手动应用的清单）
+            // 1. 更新实体状态（自动应用 + 生成待手动处理清单）
             const entityResult = await this.applyEntityChanges(project, report.entities);
             if (entityResult.applied) applied.push(`实体状态更新（${entityResult.count} 项）`);
             if (entityResult.pending) pending.push(`实体状态手动更新（${entityResult.count} 项）`);
