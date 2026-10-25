@@ -1,5 +1,26 @@
 # Changelog
 
+## 4.12.1 — 2026-10-25
+
+> 发布说明：`docs/releases/v4.12.1.md` · 上一版本 v4.12.0
+
+### 🧭 动因
+- 审计 spec §5 的 5 条 `[待确认]` 尚未收口；`buildSceneRhythmInjection` 只输出硬编码模板，知识库 `rhythm` 维度从未被消费。
+- 两个 7 月早期草案（`prompt-management-system` / `style-ui-unification`）状态未判定。
+
+### ✨ 改动
+- **节奏注入接入检索（`engine/knowledge-injector.ts`）**：保留硬编码节奏模式与节奏建议，新增 `dimensions: ['rhythm']` 检索，最多 3 条、每条 160 字截断；无结果时行为与 4.12.0 一致。
+- **步骤下标契约（`tests/unit/engine/step-definitions-index.test.ts`）**：锁定 `ALL_FULL_STEPS.index === 数组下标`、key 唯一、迁移映射目标合法。
+- **fullCache 生命周期守卫（`tests/unit/engine/quality/quality-score-engine-cache-lifecycle.test.ts`）**：同上下文 1000 次只触发 1 次内核计算；上下文变化重算；`cacheSize` 上界生效。
+- **质量看板缓存注释（`ui/quality-dashboard-modal.ts`）**：明确 `qualityCache` 为 Modal 实例级，关闭即释放。
+- **审计 §5 收口**：worker 隔离、fullCache、qualityCache、rhythm 注入、步骤下标五项均给出结论/证据（`spec.md` §5）。
+- **草案判定**：`prompt-management-system` 已落地；`style-ui-unification` 部分完成，CSS 体积与内联样式未达 2026-07 目标，转为持续治理。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint`：通过
+- `npm test`：**330 个测试文件 / 4225 个用例全部通过**
+- `npm run test:cov` / `check:templates` / `check:deps` / `check-engines` / `build` / `check:release`：全绿
+
 ## 4.12.0 — 2026-10-25
 
 > 2026-10 缺陷与不合理设计审计全量落地：Phase 1–4（A/B/C/D 四组）与 Rev 153–192 迭代合并发布。
