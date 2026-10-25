@@ -1,5 +1,27 @@
 # Changelog
 
+## 4.12.2 — 2026-10-25
+
+> 发布说明：`docs/releases/v4.12.2.md` · 上一版本 v4.12.1
+
+### 🧭 动因
+- CSS 治理缺少可在 CI 失败的预算门禁：`check-css.js` 只查括号且从不 `exit(1)`，`check:css` 未接入 CI。
+- 批量命令/弹窗文案写「11 步 / 8 阶段」，实际 `BATCH_STEP_KEYS` 只有 7 个 key。
+- `long-novel-ai-evolution` spec 头部仍写「草案/未实施」，与 §3.0、v4.12.1 代码不一致。
+
+### ✨ 改动
+- **CSS 预算检查（`scripts/check-css.js`）**：保留括号检查，新增体积、`!important`、硬编码 hex、rgb/hsl、唯一类、非 `nw-` 前缀类、最大选择器深度指标；违规或超基线 `exit(1)`；支持 `--update-baseline`。
+- **内联样式基线（`scripts/check-inline-styles.mjs`）**：按文件统计 5 种内联写法（含静态/动态），新增 `.inline-style-baseline.json`；任何文件新增/回涨即失败。
+- **CI/发布门禁**：`check:css` / `check:inline-styles` 接入 `preflight`、CI verify 与 Release 流水线。
+- **批量步骤口径**：命令描述与弹窗文案对齐实际 7 步；新增 `batch-targets-contract.test.ts` 锁定 key 存在、顺序为子序列、无重复。
+- **long-novel spec 校准**：状态改为 Scoped Phase 1 进行中；基线更新到 v4.12.1 / 330 文件 / 4225 用例；新增 §3.0.1 记录 5 个缺口与本轮范围。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint`：通过
+- `npm test`：**331 个测试文件 / 4228 个用例全部通过**
+- `npm run test:cov` / `check:templates` / `check:css` / `check:inline-styles` / `check:deps` / `check-engines` / `build` / `check:release`：全绿
+- CSS 基线：348,156 bytes；`!important` 260；内联 2,617（静态 2,332 / 动态 285）；唯一类 1,401
+
 ## 4.12.1 — 2026-10-25
 
 > 发布说明：`docs/releases/v4.12.1.md` · 上一版本 v4.12.0
