@@ -1,5 +1,26 @@
 # Changelog
 
+## 4.14.0 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.14.0.md` · 上一版本 v4.13.0
+
+### 🧭 动因
+- 协同写作中间的编辑区仍是裸 `textarea`：没有 Markdown 工具条，段落缩进/合并/拆分/引号只能手改，小说格式排版依赖用户记住「空两格 / 空行」规则。
+- 项目「写作规则.md」已经能推导正文格式契约（`BodyWriter.resolveContract`），但编辑器侧没有消费它。
+
+### ✨ 改动
+- **Markdown 工具条**：加粗（Ctrl+B）、斜体（Ctrl+I）、二级标题（Ctrl+Alt+2）、引用（Ctrl+Alt+Q）、无序列表（Ctrl+Alt+L）、分隔线、行内代码（Ctrl+`）。
+- **段落工具**：首行缩进/取消（Ctrl+Alt+I）、增加/减少段落缩进（Ctrl+] / Ctrl+[）、合并选中段落、在光标处拆分段落、选中文本转中文引号。
+- **一键排版（Ctrl+Alt+F）**：按项目「写作规则.md」推导的分段/缩进契约排版全文；保留 frontmatter 与章节标题，剥离模型元叙述，统一段首缩进与段落间距。
+- **编辑器状态栏**：显示 `Markdown`、当前格式契约（如「空行分段 · 首行空两格」）、字数、段落数与快捷键提示。
+- **撤销友好**：文本变更优先走 `execCommand('insertText')`，保留原生撤销栈；失败时回退到 value + input。
+- 新增 `shared/novel-format.ts` 纯函数层与 15 个单测，覆盖排版、缩进、合并/拆分、Markdown 包裹、引号转换与状态描述。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint` / `npm run test:cov` / `npm run preflight` / `npm run build` / `npm run check:release` 全绿。
+- `npm test`：**335 个测试文件 / 4253 个用例全部通过**。
+- 真实 Obsidian 1.14.5：临时项目验证「一键排版（空行分段 + 首行空两格）」「加粗」「首行缩进」均按预期生效；工具条与状态栏截图验收通过。
+
 ## 4.13.0 — 2026-10-26
 
 > 发布说明：`docs/releases/v4.13.0.md` · 上一版本 v4.12.4
