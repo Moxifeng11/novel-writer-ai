@@ -19,6 +19,7 @@ import {
     describeBodyFormat,
 } from '../shared/body-format';
 import { assemblePromptWithinBudget, resolvePrecedingCharLimit, type PromptSection } from '../shared/prompt-budget';
+import { recordBudgetSnapshot } from '../shared/budget-telemetry';
 import { dedupeAdjacentChunks } from '../shared/knowledge-position';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { StyleIntensityEngine, type StyleIntensityConfig } from './style/style-intensity-engine';
@@ -789,6 +790,15 @@ export class PromptBuilder {
                 maxInputTokens: budget.maxInputTokens,
                 modelId: budget.modelId,
             });
+            recordBudgetSnapshot({
+                source: 'cowrite',
+                model: budget.modelId,
+                inputTokens: result.estimatedTokens,
+                maxInputTokens: budget.maxInputTokens,
+                droppedSections: result.droppedSections,
+                trimmedSections: result.trimmedSections,
+                overBudget: result.overBudget,
+            });
             if (result.droppedSections.length > 0 || result.trimmedSections.length > 0 || result.overBudget) {
                 log.info('[PromptBuilder] 协同 prompt 按预算裁剪', {
                     estimatedTokens: result.estimatedTokens,
@@ -824,6 +834,15 @@ export class PromptBuilder {
             tailParts,
             maxInputTokens: budget.maxInputTokens,
             modelId: budget.modelId,
+        });
+        recordBudgetSnapshot({
+            source: 'cowrite',
+            model: budget.modelId,
+            inputTokens: result.estimatedTokens,
+            maxInputTokens: budget.maxInputTokens,
+            droppedSections: result.droppedSections,
+            trimmedSections: result.trimmedSections,
+            overBudget: result.overBudget,
         });
         if (result.droppedSections.length > 0 || result.trimmedSections.length > 0 || result.overBudget) {
             log.info(`[PromptBuilder] ${label} prompt 按预算裁剪`, {

@@ -8,6 +8,7 @@ import type { VectorEnhancer } from './vector-enhancer';
 import type { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
 import type { KnowledgeVectorStore, KnowledgeSearchResult } from './knowledge-vector-store';
 import { assemblePromptWithinBudget } from '../shared/prompt-budget';
+import { recordBudgetSnapshot } from '../shared/budget-telemetry';
 import { formatKnowledgeChunkLabel, dedupeAdjacentChunks } from '../shared/knowledge-position';
 import { StyleIntensityEngine } from './style/style-intensity-engine';
 import {
@@ -944,6 +945,15 @@ export class KnowledgeInjector {
             tailParts: [],
             maxInputTokens: options.maxInputTokens,
             modelId: options.modelId,
+        });
+        recordBudgetSnapshot({
+            source: 'scene',
+            model: options.modelId,
+            inputTokens: result.estimatedTokens,
+            maxInputTokens: options.maxInputTokens,
+            droppedSections: result.droppedSections,
+            trimmedSections: result.trimmedSections,
+            overBudget: result.overBudget,
         });
 
         if (result.droppedSections.length > 0 || result.trimmedSections.length > 0 || result.overBudget) {

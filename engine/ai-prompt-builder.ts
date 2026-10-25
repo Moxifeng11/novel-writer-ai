@@ -8,6 +8,7 @@ import {
     BodyFormatContract, DEFAULT_BODY_FORMAT, describeBodyFormat,
 } from '../shared/body-format';
 import { assemblePromptWithinBudget, type PromptSection } from '../shared/prompt-budget';
+import { recordBudgetSnapshot } from '../shared/budget-telemetry';
 import { estimateInputTokens } from '../shared/token-estimator';
 
 /** 系统提示词（写作引导） */
@@ -109,12 +110,22 @@ export function buildChapterPrompts(
         priority: 25,
         shrinkable: true,
     }];
+    const maxInputTokens = Math.max(1, limits.maxContext - limits.maxOutput - TOKEN_SAFE_BUFFER);
     const result = assemblePromptWithinBudget({
         systemPrompt: system,
         sections,
         tailParts: [user],
-        maxInputTokens: Math.max(1, limits.maxContext - limits.maxOutput - TOKEN_SAFE_BUFFER),
+        maxInputTokens,
         modelId,
+    });
+    recordBudgetSnapshot({
+        source: 'chapter',
+        model: modelId,
+        inputTokens: result.estimatedTokens,
+        maxInputTokens,
+        droppedSections: result.droppedSections,
+        trimmedSections: result.trimmedSections,
+        overBudget: result.overBudget,
     });
 
     return {

@@ -569,6 +569,45 @@ describe('callAI — Ollama 上下文窗口 numCtx', () => {
         }
     });
 
+    it('自定义端口的本机 Ollama 同样改写为原生 /api/generate', async () => {
+        const urls: string[] = [];
+        const bodies: Array<Record<string, unknown>> = [];
+        vi.stubGlobal('fetch', (url: string, init: { body?: string }) => {
+            urls.push(url);
+            bodies.push(JSON.parse(init.body || '{}'));
+            return Promise.resolve(new Response(
+                JSON.stringify({ response: '他握剑立在崖边。', done: true, done_reason: 'stop' }),
+                { status: 200 }
+            ));
+        });
+        try {
+            const client = makeClient({ apiEndpoint: 'http://127.0.0.1:12345/v1/chat/completions' });
+            await client.callAI('sys', 'user', 'deepseek-r1:7b', 0.7, 64, { disableFallback: true });
+            expect(urls[0]).toBe('http://127.0.0.1:12345/api/generate');
+            expect((bodies[0].options as Record<string, unknown>).num_ctx).toBe(32768);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it('公网 OpenAI 兼容端点不被误改写', async () => {
+        const urls: string[] = [];
+        vi.stubGlobal('fetch', (url: string) => {
+            urls.push(url);
+            return Promise.resolve(new Response(
+                JSON.stringify({ choices: [{ message: { content: 'ok' } }] }),
+                { status: 200 }
+            ));
+        });
+        try {
+            const client = makeClient({ apiEndpoint: 'https://api.example.com/v1/chat/completions' });
+            await client.callAI('sys', 'user', 'gpt-4o-mini', 0.7, 64, { disableFallback: true });
+            expect(urls[0]).toBe('https://api.example.com/v1/chat/completions');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
     it('Ollama 原生 done_reason=length 映射为 finish_reason=length', async () => {
         vi.stubGlobal('fetch', () => Promise.resolve(new Response(
             JSON.stringify({ response: '写到一半', done: true, done_reason: 'length' }),

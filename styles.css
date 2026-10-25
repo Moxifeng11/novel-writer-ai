@@ -11248,3 +11248,63 @@ button.nw-btn-icon {
     }
 }
 
+/* ===== 诊断：最近预算 ===== */
+.nw-diagnose-budget {
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--nw-radius-md, 6px);
+  background: var(--background-secondary);
+}
+.nw-diagnose-budget h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.nw-diagnose-budget-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.nw-diagnose-budget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nw-diagnose-budget-row {
+  padding: 8px;
+  border-radius: var(--nw-radius-sm, 4px);
+  background: var(--background-primary);
+  font-size: 12px;
+}
+.nw-diagnose-budget-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.nw-diagnose-budget-source {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.nw-diagnose-budget-model {
+  color: var(--text-muted);
+}
+.nw-diagnose-budget-time {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+.nw-diagnose-budget-metrics {
+  color: var(--text-muted);
+}
+.nw-diagnose-budget-over {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--background-modifier-error);
+  color: var(--text-on-accent);
+}
+.nw-diagnose-budget-dropped,
+.nw-diagnose-budget-trimmed {
+  margin-top: 4px;
+  color: var(--text-muted);
+}

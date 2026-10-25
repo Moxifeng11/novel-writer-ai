@@ -21,6 +21,7 @@ import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { performanceMonitor } from '../services/performance-monitor';
 import { ensureLocalModelCapability } from '../services/local-model-probe';
+import { recordBudgetSnapshot } from '../shared/budget-telemetry';
 import { createLogger } from '../shared/logger';
 
 
@@ -304,7 +305,8 @@ export class AIApiClient {
      * 仅匹配 Ollama 默认端口，避免误伤 LM Studio / vLLM 等其它本地服务。
      */
     private normalizeOllamaEndpoint(endpoint: string): string {
-        if (!/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]):11434\//i.test(endpoint)) return endpoint;
+        // 只改写本机端点，端口不限定 11434：自定义端口/LAN 转发同样需要原生 /api/generate 才能透传 num_ctx。
+        if (!/^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?\//i.test(endpoint)) return endpoint;
         return endpoint.replace(/\/v1\/chat\/completions\/?$/i, '/api/generate');
     }
 
@@ -457,6 +459,15 @@ export class AIApiClient {
                 const budget = calculateTokenBudget(effectiveSystemPrompt, userPrompt, currentModel, {
                     maxContext: this.resolveMaxContext(currentModel, endpoint),
                     maxOutput: currentMaxOutput,
+                });
+                recordBudgetSnapshot({
+                    source: 'api',
+                    model: currentModel,
+                    inputTokens: budget.input,
+                    availableTokens: budget.available,
+                    contextWindow: budget.contextWindow,
+                    maxOutput: currentMaxOutput,
+                    overBudget: !budget.isSafe,
                 });
                 if (!budget.isSafe) {
                     log.warn(`[小说工坊] ⚠️ Token预算 — ${currentModel}: 输入~${budget.input}, 可用${budget.available}/${budget.contextWindow}`);
@@ -763,6 +774,15 @@ export class AIApiClient {
             const streamBudget = calculateTokenBudget(systemPrompt, userPrompt, streamBudgetModel, {
                 maxContext: this.resolveMaxContext(streamBudgetModel, endpoint),
                 maxOutput: this.resolveMaxOutput(streamBudgetModel, endpoint),
+            });
+            recordBudgetSnapshot({
+                source: 'api',
+                model: streamBudgetModel,
+                inputTokens: streamBudget.input,
+                availableTokens: streamBudget.available,
+                contextWindow: streamBudget.contextWindow,
+                maxOutput: this.resolveMaxOutput(streamBudgetModel, endpoint),
+                overBudget: streamBudget.available < 512,
             });
             if (streamBudget.available < 512) {
                 log.warn(`[小说工坊] ⚠️ 流式 Token预算不足 — ${streamBudgetModel}: 输入~${streamBudget.input}, 可用${streamBudget.available}/${streamBudget.contextWindow}`);
@@ -1178,6 +1198,15 @@ export class AIApiClient {
         const iteratorBudget = calculateTokenBudget(systemPrompt, userPrompt, iteratorBudgetModel, {
             maxContext: this.resolveMaxContext(iteratorBudgetModel, endpoint),
             maxOutput: this.resolveMaxOutput(iteratorBudgetModel, endpoint),
+        });
+        recordBudgetSnapshot({
+            source: 'api',
+            model: iteratorBudgetModel,
+            inputTokens: iteratorBudget.input,
+            availableTokens: iteratorBudget.available,
+            contextWindow: iteratorBudget.contextWindow,
+            maxOutput: this.resolveMaxOutput(iteratorBudgetModel, endpoint),
+            overBudget: iteratorBudget.available < 512,
         });
         if (iteratorBudget.available < 512) {
             log.warn(`[小说工坊] ⚠️ 迭代器 Token预算不足 — ${iteratorBudgetModel}: 输入~${iteratorBudget.input}, 可用${iteratorBudget.available}/${iteratorBudget.contextWindow}`);

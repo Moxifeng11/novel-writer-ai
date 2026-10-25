@@ -7,6 +7,7 @@ import { diagnoseOutline } from '../shared/info-debt';
 import { createLogger } from '../shared/logger';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { exportTextFile } from '../shared/export-file';
+import { getBudgetSnapshots } from '../shared/budget-telemetry';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 
 
@@ -35,6 +36,8 @@ export class DiagnoseWriterModal extends Modal {
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
         contentEl.createEl('h2', { text: '🔍 流程诊断工具' });
+
+        this.renderBudgetSection(contentEl);
 
         const bundleRow = contentEl.createDiv({ attr: { style: 'margin-bottom:12px;' } });
         const bundleBtn = bundleRow.createEl('button', {
@@ -88,6 +91,42 @@ export class DiagnoseWriterModal extends Modal {
         };
 
         populateProjects();
+    }
+
+    /** 最近 prompt 预算：模型/输入/可用/丢弃片段，帮助定位本地小窗口被裁剪的原因 */
+    private renderBudgetSection(contentEl: HTMLElement): void {
+        const section = contentEl.createDiv({ cls: 'nw-diagnose-budget' });
+        section.createEl('h3', { text: '📊 最近预算' });
+        const snapshots = getBudgetSnapshots().slice(-5).reverse();
+        if (snapshots.length === 0) {
+            section.createDiv({ cls: 'nw-diagnose-budget-empty', text: '暂无预算记录；执行一次生成/续写后再打开诊断。' });
+            return;
+        }
+        const list = section.createDiv({ cls: 'nw-diagnose-budget-list' });
+        for (const snapshot of snapshots) {
+            const row = list.createDiv({ cls: 'nw-diagnose-budget-row' });
+            const head = row.createDiv({ cls: 'nw-diagnose-budget-head' });
+            head.createSpan({ cls: 'nw-diagnose-budget-source', text: snapshot.source });
+            head.createSpan({ cls: 'nw-diagnose-budget-model', text: snapshot.model || '未记录模型' });
+            head.createSpan({ cls: 'nw-diagnose-budget-time', text: new Date(snapshot.at).toLocaleTimeString() });
+
+            const metrics: string[] = [];
+            if (typeof snapshot.inputTokens === 'number') metrics.push(`输入 ~${snapshot.inputTokens}`);
+            if (typeof snapshot.availableTokens === 'number') metrics.push(`可用 ${snapshot.availableTokens}`);
+            if (typeof snapshot.contextWindow === 'number') metrics.push(`窗口 ${snapshot.contextWindow}`);
+            if (typeof snapshot.maxInputTokens === 'number') metrics.push(`预算 ${snapshot.maxInputTokens}`);
+            row.createDiv({ cls: 'nw-diagnose-budget-metrics', text: metrics.join(' · ') || '未记录 token 指标' });
+
+            if (snapshot.overBudget) {
+                row.createSpan({ cls: 'nw-diagnose-budget-over', text: '超预算' });
+            }
+            if (snapshot.droppedSections.length > 0) {
+                row.createDiv({ cls: 'nw-diagnose-budget-dropped', text: `丢弃：${snapshot.droppedSections.join('、')}` });
+            }
+            if (snapshot.trimmedSections.length > 0) {
+                row.createDiv({ cls: 'nw-diagnose-budget-trimmed', text: `截断：${snapshot.trimmedSections.join('、')}` });
+            }
+        }
     }
 
     private async populateVolumes(project: string, selectEl: HTMLSelectElement): Promise<void> {
