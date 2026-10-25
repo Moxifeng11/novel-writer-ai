@@ -1,5 +1,20 @@
 # Changelog
 
+## 4.12.4 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.12.4.md` · 上一版本 v4.12.3
+
+### 🧭 动因
+- `check-css` 按工作树字节记基线：Windows CRLF 为 349,451B，Linux/Release LF 为 338,203B。若在 Windows 上完成 A2 迁移并更新基线，CI 会按 LF 口径判超限，导致跨平台失真。
+
+### 🛠 修复
+- `scripts/check-css.js` 读取 `styles.css` 后统一 `CRLF → LF`，基线重置为 **338,203B**；其它指标不变（`!important` 260 / hex 156 / rgb 192 / 唯一类 1,413）。
+- 不改变插件运行行为与 `styles.css` 内容。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint` / `npm run test:cov` / `npm run preflight` / `npm run build` / `npm run check:release` 全绿
+- `npm test`：**334 个测试文件 / 4238 个用例全部通过**
+
 ## 4.12.3 — 2026-10-25
 
 > 发布说明：`docs/releases/v4.12.3.md` · 上一版本 v4.12.2
