@@ -38,8 +38,26 @@ describe('B4 — selectFingerprintsForInjection', () => {
         expect(searchV2).toHaveBeenCalledWith('正文', {
             topN: 3,
             fingerprintIds: ['fp1', 'fp2', 'fp3', 'fp4', 'fp5'],
+            minScore: 0.15,
         });
         expect(result.map(fp => fp.id)).toEqual(['fp1', 'fp4', 'fp5']);
+    });
+
+    it('检索时传入 V2 相关性绝对下限，也可按调用方覆盖', async () => {
+        const searchV2 = vi.fn(async (
+            _query: string,
+            _options: { topN: number; fingerprintIds: string[]; minScore?: number },
+        ) => [
+            { fingerprintId: 'fp1' },
+            { fingerprintId: 'fp2' },
+            { fingerprintId: 'fp3' },
+        ]);
+
+        await selectFingerprintsForInjection(FIVE, { query: '正文', searchV2 });
+        expect(searchV2.mock.calls[0][1]).toMatchObject({ minScore: 0.15 });
+
+        await selectFingerprintsForInjection(FIVE, { query: '正文', searchV2, minScore: 0.3 });
+        expect(searchV2.mock.calls[1][1]).toMatchObject({ minScore: 0.3 });
     });
 
     it('检索不可用 + fallback=firstN：只保留前 3 并回调原因', async () => {

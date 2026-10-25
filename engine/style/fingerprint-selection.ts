@@ -12,6 +12,8 @@
  *   发降级事件（协同选 'all' 保住风格约束，11 步选 'firstN' 保住预算上限）。
  */
 
+import { RETRIEVAL_ABSOLUTE_MIN_SCORE } from '../../shared/thresholds';
+
 export const MAX_INJECTED_STYLE_FINGERPRINTS = 3;
 
 export interface FingerprintRef {
@@ -20,7 +22,7 @@ export interface FingerprintRef {
 
 export type FingerprintSearchV2 = (
     query: string,
-    options: { topN: number; fingerprintIds: string[] },
+    options: { topN: number; fingerprintIds: string[]; minScore?: number },
 ) => Promise<Array<{ fingerprintId: string }>>;
 
 export interface FingerprintSelectionOptions<F extends FingerprintRef> {
@@ -33,6 +35,8 @@ export interface FingerprintSelectionOptions<F extends FingerprintRef> {
     onFallback?: (reason: string) => void;
     /** 注入上限，默认 MAX_INJECTED_STYLE_FINGERPRINTS */
     limit?: number;
+    /** V2 相关性绝对下限，默认 RETRIEVAL_ABSOLUTE_MIN_SCORE（0.15） */
+    minScore?: number;
 }
 
 /**
@@ -63,6 +67,8 @@ export async function selectFingerprintsForInjection<F extends FingerprintRef>(
             topN: limit,
             // 只在启用指纹内排名：禁用指纹/模板来源库先占满 topN 会让交集为空
             fingerprintIds: enabled.map(fp => fp.id),
+            // V2 默认 minScore=0：低相关指纹会挤掉真正相近的风格；与知识检索共用绝对下限
+            minScore: options.minScore ?? RETRIEVAL_ABSOLUTE_MIN_SCORE,
         });
         if (!ranked || ranked.length === 0) {
             return fallback('V2 检索无结果');
