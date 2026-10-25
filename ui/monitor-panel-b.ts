@@ -25,7 +25,6 @@ import {
 import {
   WritingQualityEngine,
   WritingQualityResult,
-  WritingQualityEngineOptions,
   QualitySuggestion,
   getQualityGradeColor,
   getQualityGradeLabel,
@@ -1155,7 +1154,7 @@ export class MonitorPanelB extends DraggablePanel {
     }
   }
 
-  /** 执行质量评估 */
+  /** 执行质量评估（直接以 WQE 总分为准；QSE 在 v1 分支透传同一 overallScore，跨视图同分见 quality-score-engine-cross-view.test.ts） */
   private runQualityEval(): void {
     if (!this.qualityEngine || !this.qualityContent) return;
 
@@ -1844,12 +1843,6 @@ export class MonitorPanelB extends DraggablePanel {
   }
 
   /** 更新质量引擎选项 */
-  setQualityOptions(options: Partial<WritingQualityEngineOptions>): void {
-    if (this.qualityEngine) {
-      this.qualityEngine.updateOptions(options);
-    }
-  }
-
   /** 获取最新质量评估结果 */
   getLastQualityResult(): WritingQualityResult | null {
     return this.lastQualityResult;
