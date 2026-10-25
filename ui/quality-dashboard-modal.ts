@@ -69,6 +69,7 @@ export class QualityDashboardModal extends Modal {
     private chapters: ChapterEntry[] = [];
     private range: ChapterRange = 'current';
     private activeDimension: QualityDimensionKey | null = null;
+    /** 实例级缓存：命令每次打开都新建 Modal，关闭后随实例释放；单次打开内跨范围/维度切换复用 */
     private qualityCache = new Map<string, QualityScore>();
     private currentScores: ChapterQualityEntry[] = [];
     /** 人物名册按项目缓存 60s：看板一次评估多章，逐章读盘没有必要 */
