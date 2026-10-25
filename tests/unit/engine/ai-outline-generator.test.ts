@@ -166,6 +166,69 @@ describe('OutlineGenerator.generateOutline — 契约化质量优先 + 全程不
         expect(result.content).not.toContain('降级生成提示');
     });
 
+    it('长卷章节批次按受限并发执行，缩短串行等待时间', async () => {
+        let active = 0;
+        let maxActive = 0;
+        const { generator } = makeGenerator(async (system, user) => {
+            if (user.includes(BLUEPRINT_DETECT)) {
+                return { content: blueprintJson([[1, 70]]) };
+            }
+            if (system.includes(BATCH_DETECT)) {
+                active++;
+                maxActive = Math.max(maxActive, active);
+                await new Promise(resolve => setTimeout(resolve, 10));
+                active--;
+                const m = system.match(/第(\d+)章 到 第(\d+)章/);
+                const s = m ? parseInt(m[1], 10) : 0;
+                const e = m ? parseInt(m[2], 10) : 0;
+                const rows: string[] = [];
+                for (let n = s; n <= e; n++) rows.push(`| ${n} | 第${n}章核心冲突 |`);
+                return { content: rows.join('\n') };
+            }
+            if (system.includes(OVERVIEW_DETECT)) {
+                return { content: buildOverviewMarkdown(1, 1, 70) };
+            }
+            throw new Error('不应走到单次完整生成分支');
+        });
+
+        const result = await generator.generateOutline('世界观总览内容', { ...baseSettings, totalWords: '7000' });
+
+        expect(result.error).toBeUndefined();
+        expect(maxActive).toBeGreaterThan(1);
+        expect(result.content).toContain('| 70 | 第70章核心冲突 |');
+    });
+
+    it('章节批次上下文携带卷级伏笔 / 势力等结构化字段', async () => {
+        const batchPrompts: string[] = [];
+        const { generator } = makeGenerator(async (system, user) => {
+            if (user.includes(BLUEPRINT_DETECT)) {
+                return { content: blueprintJson([[1, 70]]) };
+            }
+            if (system.includes(BATCH_DETECT)) {
+                batchPrompts.push(user);
+                const m = system.match(/第(\d+)章 到 第(\d+)章/);
+                const s = m ? parseInt(m[1], 10) : 0;
+                const e = m ? parseInt(m[2], 10) : 0;
+                const rows: string[] = [];
+                for (let n = s; n <= e; n++) rows.push(`| ${n} | 第${n}章核心冲突 |`);
+                return { content: rows.join('\n') };
+            }
+            if (system.includes(OVERVIEW_DETECT)) {
+                return { content: buildOverviewMarkdown(1, 1, 70) };
+            }
+            throw new Error('不应走到单次完整生成分支');
+        });
+
+        const result = await generator.generateOutline('世界观总览内容', { ...baseSettings, totalWords: '7000' });
+
+        expect(result.error).toBeUndefined();
+        expect(batchPrompts.length).toBeGreaterThan(0);
+        expect(batchPrompts[0]).toContain('主要事件');
+        expect(batchPrompts[0]).toContain('伏笔安排');
+        expect(batchPrompts[0]).toContain('势力变动');
+        expect(batchPrompts[0]).toContain('裴家：衰落');
+    });
+
     it('跨卷关键问题触发定向修复，修复结果结构不退化时被采纳', async () => {
         const { generator } = makeGenerator(async (system, user) => {
             if (user.includes(BLUEPRINT_DETECT)) {
@@ -184,6 +247,69 @@ describe('OutlineGenerator.generateOutline — 契约化质量优先 + 全程不
 
         expect(result.error).toBeUndefined();
         expect(result.content).toContain('真凶浮现');
+        expect(result.content).not.toContain('待完善问题');
+    });
+
+    it('跨卷修复已补全的卷不再误报「降级生成提示」', async () => {
+        const baseVolume = buildVolumeMarkdown(1, 1, 1);
+        const repairedVolume = buildVolumeMarkdown(1, 1, 1, ['- **主线揭示**：真凶浮现']);
+        // 初轮缺「人物弧光」→ 单卷质量循环判定降级；跨卷修复返回完整卷后应撤销降级标记
+        const missingFieldVolume = baseVolume
+            .split('\n')
+            .filter(line => !line.startsWith('- **人物弧光**'))
+            .join('\n');
+
+        const { generator } = makeGenerator(async (system, user) => {
+            if (user.includes(BLUEPRINT_DETECT)) {
+                return {
+                    content: blueprintJson([[1, 1]], { turningPoint: '真凶浮现', foreshadow: '血脉真相' }),
+                };
+            }
+            if (system.includes(CROSS_REPAIR_DETECT)) {
+                return { content: repairedVolume };
+            }
+            return { content: missingFieldVolume };
+        });
+
+        const result = await generator.generateOutline('世界观总览内容', { ...baseSettings });
+
+        expect(result.error).toBeUndefined();
+        expect(result.content).toContain('真凶浮现');
+        expect(result.content).not.toContain('降级生成提示');
+    });
+
+    it('转折点在更早卷已出现时不触发整卷重写（减少无效 AI 调用）', async () => {
+        let repairCalls = 0;
+        const { generator } = makeGenerator(async (system, user) => {
+            if (user.includes(BLUEPRINT_DETECT)) {
+                return {
+                    content: JSON.stringify({
+                        expectedChapterRanges: [[1, 1], [2, 2], [3, 3]],
+                        turningPoints: [{ name: '真凶浮现', expectedVolume: 3 }],
+                        requiredForeshadows: [{ name: '真凶浮现', buryVolume: 1, expectedRevealVolume: 1 }],
+                    }),
+                };
+            }
+            if (system.includes(CROSS_REPAIR_DETECT)) {
+                repairCalls++;
+                return { content: buildVolumeMarkdown(1, 1, 1, ['- **主线揭示**：真凶浮现']) };
+            }
+            const vm = user.match(/为第(\d+)卷（共/);
+            const volumeNumber = vm ? parseInt(vm[1], 10) : 1;
+            const base = volumeBranchResponse(user).content;
+            return {
+                content: volumeNumber === 1 ? `${base}\n- **主线揭示**：真凶浮现` : base,
+            };
+        });
+
+        const result = await generator.generateOutline('世界观总览内容', {
+            totalWords: '300',
+            volumes: 3,
+            wordsPerChapter: 100,
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(repairCalls).toBe(0);
         expect(result.content).not.toContain('待完善问题');
     });
 

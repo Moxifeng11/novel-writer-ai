@@ -22,7 +22,7 @@ vi.mock('../../../main', () => ({
 
 import { AIEngine, APIResponse } from '../../../engine/ai-engine';
 import { AIApiClient } from '../../../engine/ai-api-client';
-import { buildSystemPrompt, buildUserPrompt } from '../../../engine/ai-prompt-builder';
+import { buildChapterPrompts, buildSystemPrompt, buildUserPrompt } from '../../../engine/ai-prompt-builder';
 import type { ChapterContext } from '../../../engine/ai-types';
 
 function makeMockPlugin() {
@@ -141,19 +141,35 @@ describe('buildSystemPrompt - 请求构建', () => {
         expect(prompt).toContain('信息债偏高');
     });
 
-    it('注入知识内容时追加到末尾', () => {
+    // B6：知识注入是 user 中的可裁剪层，不能拼到 system 尾部（否则窗口不足时最先被截掉）
+    it('知识注入进入 user 的可裁剪层而不是 system 尾部', () => {
         const ctx = makeChapterContext();
         const knowledge = '【文笔风格注入】主角说话习惯用短句';
-        const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 }, knowledge);
-        expect(prompt).toContain('【文笔风格注入】');
-        expect(prompt).toContain('主角说话习惯用短句');
+        const prompts = buildChapterPrompts(
+            ctx,
+            { minWordCount: 2000, maxWordCount: 4000 },
+            undefined,
+            knowledge,
+            { maxContext: 128000, maxOutput: 4096 },
+        );
+
+        expect(prompts.system).not.toContain('【文笔风格注入】');
+        expect(prompts.user).toContain('主角说话习惯用短句');
+        expect(prompts.droppedKnowledge).toBe(false);
     });
 
     it('空知识注入不改变 prompt 结构', () => {
         const ctx = makeChapterContext();
         const promptWithout = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 });
-        const promptWithEmpty = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 }, '   ');
-        expect(promptWithEmpty).toBe(promptWithout);
+        const prompts = buildChapterPrompts(
+            ctx,
+            { minWordCount: 2000, maxWordCount: 4000 },
+            undefined,
+            '   ',
+            { maxContext: 128000, maxOutput: 4096 },
+        );
+        expect(prompts.system).toBe(promptWithout);
+        expect(prompts.user).toBe(buildUserPrompt(ctx, { minWordCount: 2000 }));
     });
 });
 
@@ -319,6 +335,37 @@ describe('AIEngine 构造与委托', () => {
         const tokens = engine.sessionTokens;
         tokens.input = 999;
         expect(engine.sessionTokens.input).toBe(0);
+    });
+
+    it('callAI 未显式给 maxTokens 时使用 settings.maxOutput（不再被静态表压到 4096）', async () => {
+        const plugin = makeMockPlugin();
+        plugin.settings.maxOutput = 131072;
+        const engine = new AIEngine(plugin) as any;
+        const originalCallAI = engine.apiClient.callAI;
+        engine.apiClient.callAI = vi.fn().mockResolvedValue({ content: 'ok' });
+
+        await engine.callAI('system', 'user', 'deepseek-flash', 0.7);
+
+        expect(engine.apiClient.callAI).toHaveBeenCalledWith(
+            'system', 'user', 'deepseek-flash', 0.7, 131072, undefined
+        );
+
+        engine.apiClient.callAI = originalCallAI;
+    });
+
+    it('callAI 显式 maxTokens 原样透传，由 API 客户端按模型能力上限收敛', async () => {
+        const plugin = makeMockPlugin();
+        const engine = new AIEngine(plugin) as any;
+        const originalCallAI = engine.apiClient.callAI;
+        engine.apiClient.callAI = vi.fn().mockResolvedValue({ content: 'ok' });
+
+        await engine.callAI('system', 'user', 'deepseek-flash', 0.7, 2048);
+
+        expect(engine.apiClient.callAI).toHaveBeenCalledWith(
+            'system', 'user', 'deepseek-flash', 0.7, 2048, undefined
+        );
+
+        engine.apiClient.callAI = originalCallAI;
     });
 
     it('callAI 委托给 apiClient.callAI', async () => {

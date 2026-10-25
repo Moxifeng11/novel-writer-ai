@@ -170,6 +170,22 @@ describe('CrossVolumeOutlineValidator — 主线事件衔接', () => {
         expect(issue!.message).toContain('最终决战');
         expect(r.isValid).toBe(false);
     });
+
+    it('转折点在更早卷已出现时，不再要求预期卷重复书写（避免整卷重写）', () => {
+        const blueprint: GlobalStorylineBlueprint = {
+            turningPoints: [
+                { name: '宗门覆灭', expectedVolume: 3 },
+            ],
+        };
+        const volumes = [
+            makeVolumeText({ volumeIndex: 0, events: '## 宗门覆灭\n反派攻陷宗门' }),
+            makeVolumeText({ volumeIndex: 1 }),
+            makeVolumeText({ volumeIndex: 2 }),
+        ];
+        const r = validator.validate(volumes, blueprint);
+        expect(r.criticalIssues.some(i => i.type === 'turning_point_missing')).toBe(false);
+        expect(r.isValid).toBe(true);
+    });
 });
 
 describe('CrossVolumeOutlineValidator — 伏笔回收', () => {

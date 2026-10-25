@@ -294,6 +294,23 @@ describe('DynamicSampleSelector (TR-6.2)', () => {
         expect(result.length).toBe(2);
     });
 
+    it('fpId 缺失时不触发同指纹上限，可返回 3 条', () => {
+        const context: ContextFeatures = {
+            paragraphFunction: 'unknown',
+            emotionTone: 'neutral',
+            emotionIntensity: 0,
+            sceneType: 'unknown',
+            keywords: [],
+        };
+        const samples = [
+            makeSearchResult('样本一', 0.9),
+            makeSearchResult('样本二', 0.85),
+            makeSearchResult('样本三', 0.8),
+        ];
+        const result = selector.select(samples, context, 3);
+        expect(result.length).toBe(3);
+    });
+
     it('不同 fingerprintId 不受限', () => {
         const context: ContextFeatures = {
             paragraphFunction: 'unknown',

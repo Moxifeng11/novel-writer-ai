@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { FullWriterPage } from './pages/FullWriterPage';
 
-test.describe('项目卡片交互功能', () => {
+// Chromium 无法加载 app://obsidian.md，浏览器模拟链路已停用；
+// 真实链路见 obsidian-plugin.spec.ts（Electron + OBSIDIAN_PATH）。
+test.describe.skip('项目卡片交互功能（浏览器模拟，已停用）', () => {
   let fullWriterPage: FullWriterPage;
 
   test.beforeEach(async ({ page }) => {

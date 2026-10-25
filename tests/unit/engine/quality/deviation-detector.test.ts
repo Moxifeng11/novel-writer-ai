@@ -9,6 +9,7 @@ import {
   getDeviationSeverityLabel,
   getDeviationSeverityIcon,
   getDeviationSeverityColor,
+  listDeviatedTypes,
 } from '../../../../engine/quality/deviation-detector';
 import type {
   DeviationReport,
@@ -104,6 +105,34 @@ function createMockCharacterChecker(): ICharacterConsistencyChecker {
         },
       },
       summary: '检测了 2 个人物，发现 1 处不一致',
+    }),
+  };
+}
+
+/** 只有一条不一致的 V1 结果：用于验证 degree 与 severity 是否自洽 */
+function createSingleIssueChecker(
+  severity: 'low' | 'medium' | 'high',
+  score: number
+): ICharacterConsistencyChecker {
+  return {
+    check: vi.fn().mockResolvedValue({
+      overallScore: score,
+      characterResults: {
+        林惊鸿: {
+          score,
+          inconsistencies: [
+            {
+              type: 'appearance',
+              severity,
+              description: '外貌与设定不符',
+              location: '第1段附近',
+              suggestion: '核对人物外貌',
+              confidence: 0.95,
+            },
+          ],
+        },
+      },
+      summary: '检测到 1 处不一致',
     }),
   };
 }
@@ -369,6 +398,95 @@ describe('DeviationDetector — 6 类偏离检测', () => {
       expect(settingIssue!.severity).toBe('critical');
     });
 
+    it('同章不同段落出现反义外貌词不算人物矛盾（单换行分段）', async () => {
+      const detector = new DeviationDetector();
+      // 林惊鸿在第一段，金发写在第二段的苏白身上：不是同一个人
+      const text = '林惊鸿走进大殿，四下打量。\n苏白一头金发，站在门口。';
+      const issues = await detector.detectByType(text, 'contradiction', {
+        characterInfos: [{ name: '林惊鸿', appearance: '一头黑发' }],
+      });
+      expect(issues.find((i) => i.description.includes('外貌描述矛盾'))).toBeUndefined();
+    });
+
+    it('同段落内出现反义外貌词仍报人物矛盾', async () => {
+      const detector = new DeviationDetector();
+      const text = '林惊鸿一头金发，站在门口。\n苏白没有说话。';
+      const issues = await detector.detectByType(text, 'contradiction', {
+        characterInfos: [{ name: '林惊鸿', appearance: '一头黑发' }],
+      });
+      expect(issues.find((i) => i.description.includes('外貌描述矛盾'))).toBeDefined();
+    });
+
+    it('前文不同段落共现不算人物矛盾', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType('林惊鸿四下打量。', 'contradiction', {
+        characterInfos: [{ name: '林惊鸿', appearance: '一头黑发' }],
+        previousChapters: [{
+          chapterId: 'c1',
+          chapterNum: 1,
+          text: '林惊鸿走进大殿。\n苏白一头金发站在门口。',
+        }],
+      });
+      expect(issues.find((i) => i.description.includes('外貌描述与章节'))).toBeUndefined();
+    });
+
+    it('同一外貌矛盾在多个前文章节重复时只报一条，保留最近章节证据', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType('林惊鸿四下打量。', 'contradiction', {
+        characterInfos: [{ name: '林惊鸿', appearance: '一头黑发' }],
+        previousChapters: [
+          { chapterId: 'c1', chapterNum: 1, text: '林惊鸿一头金发，站在门口。' },
+          { chapterId: 'c3', chapterNum: 3, text: '林惊鸿一头金发，走进大殿。' },
+        ],
+      });
+      const settingIssues = issues.filter((i) => i.id.startsWith('contradiction_setting_'));
+      expect(settingIssues).toHaveLength(1);
+      expect(settingIssues[0].location?.chapterRef).toBe('c3');
+    });
+
+    it('当前章已出现同一外貌矛盾时，前文不再重复报', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType('林惊鸿一头金发，站在门口。', 'contradiction', {
+        characterInfos: [{ name: '林惊鸿', appearance: '一头黑发' }],
+        previousChapters: [
+          { chapterId: 'c1', chapterNum: 1, text: '林惊鸿一头金发，站在门口。' },
+        ],
+      });
+      const settingIssues = issues.filter((i) => i.id.startsWith('contradiction_setting_'));
+      expect(settingIssues).toHaveLength(1);
+      expect(settingIssues[0].location?.chapterRef).toBeUndefined();
+    });
+
+    it('设定同时提到两种发色时，同一矛盾词不会跨矛盾组重复报', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType('林惊鸿一头白发，站在门口。', 'contradiction', {
+        characterInfos: [
+          { name: '林惊鸿', appearance: '原本一头黑发，后因功法变成金发' },
+        ],
+      });
+      const settingIssues = issues.filter((i) => i.id.startsWith('contradiction_setting_'));
+      const ids = settingIssues.map((i) => i.id);
+      expect(ids).toHaveLength(1);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(ids[0]).toContain('白发');
+    });
+
+    it('不同人物或不同矛盾词各自保留，不被误去重', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType('大殿里很安静。', 'contradiction', {
+        characterInfos: [
+          { name: '林惊鸿', appearance: '一头黑发' },
+          { name: '苏白', appearance: '身材高大' },
+        ],
+        previousChapters: [
+          { chapterId: 'c2', chapterNum: 2, text: '林惊鸿一头金发。\n苏白身材瘦小。' },
+        ],
+      });
+      const settingIssues = issues.filter((i) => i.id.startsWith('contradiction_setting_'));
+      expect(settingIssues).toHaveLength(2);
+      expect(settingIssues.map((i) => i.location?.character).sort()).toEqual(['林惊鸿', '苏白']);
+    });
+
     it('无前文章节时仅检测当前章节内部', async () => {
       const detector = new DeviationDetector();
       const issues = await detector.detectByType(NORMAL_TEXT, 'contradiction', {});
@@ -542,6 +660,115 @@ describe('DeviationDetector — 6 类偏离检测', () => {
       expect(issues.length).toBeGreaterThan(0);
       expect(issues[0].severity).toBe('critical');
     });
+
+    it('有计划回收章且已逾期时按计划判定 critical', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType(NORMAL_TEXT, 'foreshadowForgot', {
+        chapterNum: 20,
+        foreshadows: [{
+          id: 'fs1',
+          description: '青铜古镜',
+          keywords: ['不存在关键词'],
+          plantedChapterNum: 3,
+          expectedRecoverChapterNum: 12,
+          recovered: false,
+        }],
+      });
+
+      expect(issues).toHaveLength(1);
+      expect(issues[0].severity).toBe('critical');
+      expect(issues[0].description).toContain('计划第 12 章回收');
+      expect(issues[0].degree).toBeGreaterThanOrEqual(60);
+    });
+
+    it('有计划回收章且临近时给 warning', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType(NORMAL_TEXT, 'foreshadowForgot', {
+        chapterNum: 18,
+        foreshadows: [{
+          id: 'fs1',
+          description: '青铜古镜',
+          keywords: ['不存在关键词'],
+          plantedChapterNum: 3,
+          expectedRecoverChapterNum: 20,
+          recovered: false,
+        }],
+      });
+
+      expect(issues).toHaveLength(1);
+      expect(issues[0].severity).toBe('warning');
+      expect(issues[0].description).toContain('仅剩 2 章');
+    });
+
+    it('长期伏笔未到计划回收章时，即使超过全局阈值也不告警', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType(NORMAL_TEXT, 'foreshadowForgot', {
+        chapterNum: 20,
+        foreshadows: [{
+          id: 'fs1',
+          description: '贯穿全书的暗线',
+          keywords: ['不存在关键词'],
+          plantedChapterNum: 3,
+          expectedRecoverChapterNum: 60,
+          recovered: false,
+        }],
+      });
+
+      expect(issues).toHaveLength(0);
+    });
+
+    it('计划回收章非法（早于埋设章）时回退全局阈值', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType(NORMAL_TEXT, 'foreshadowForgot', {
+        chapterNum: 25,
+        foreshadows: [{
+          id: 'fs1',
+          description: '青铜古镜',
+          keywords: ['不存在关键词'],
+          plantedChapterNum: 10,
+          expectedRecoverChapterNum: 5,
+          recovered: false,
+        }],
+      });
+
+      expect(issues).toHaveLength(1);
+      expect(issues[0].severity).toBe('critical');
+      expect(issues[0].description).toContain('阈值');
+    });
+
+    it('warning 的偏离度封顶 59，不与 critical 倒挂', async () => {
+      const detector = new DeviationDetector({ foreshadowRecoverChapters: 40 });
+      const issues = await detector.detectByType(NORMAL_TEXT, 'foreshadowForgot', {
+        chapterNum: 40,
+        foreshadows: [{
+          id: 'fs1',
+          description: '长线伏笔',
+          keywords: ['不存在关键词'],
+          plantedChapterNum: 1,
+          recovered: false,
+        }],
+      });
+
+      expect(issues).toHaveLength(1);
+      expect(issues[0].severity).toBe('warning');
+      expect(issues[0].degree).toBe(59);
+    });
+
+    it('当前章早于埋设章时不告警', async () => {
+      const detector = new DeviationDetector();
+      const issues = await detector.detectByType(NORMAL_TEXT, 'foreshadowForgot', {
+        chapterNum: 2,
+        foreshadows: [{
+          id: 'fs1',
+          description: '未来伏笔',
+          keywords: ['不存在关键词'],
+          plantedChapterNum: 10,
+          recovered: false,
+        }],
+      });
+
+      expect(issues).toHaveLength(0);
+    });
   });
 
   describe('类型 5：节奏偏离', () => {
@@ -602,6 +829,7 @@ describe('DeviationDetector — 完整检测报告', () => {
     expect(result).toHaveProperty('overallScore');
     expect(result).toHaveProperty('overallSeverity');
     expect(result).toHaveProperty('typeScores');
+    expect(result).toHaveProperty('unevaluatedTypes');
     expect(result).toHaveProperty('issues');
     expect(result).toHaveProperty('suggestions');
     expect(result).toHaveProperty('evaluatedAt');
@@ -625,6 +853,76 @@ describe('DeviationDetector — 完整检测报告', () => {
     });
     // 关键词未覆盖，触发 critical
     expect(['info', 'warning', 'critical']).toContain(result.overallSeverity);
+  });
+
+  it('单类严重问题不再被加权平均稀释：总评不低于最严重单条', async () => {
+    const detector = new DeviationDetector();
+    // 主线关键词完全不覆盖 → 单条 degree 100，权重 0.25 原本只能得 25（info）
+    const result = await detector.detect(NORMAL_TEXT, {
+      mainlineKeywords: ['完全不存在的关键词'],
+    });
+    const worst = result.issues.reduce((max, issue) => Math.max(max, issue.degree), 0);
+    expect(worst).toBeGreaterThanOrEqual(60);
+    expect(result.overallScore).toBeGreaterThanOrEqual(worst);
+    expect(result.overallSeverity).toBe('critical');
+  });
+
+  it('总分恒不低于报告内最严重问题（聚合不变量）', async () => {
+    const detector = new DeviationDetector();
+    const result = await detector.detect(NORMAL_TEXT, {
+      mainlineKeywords: ['不存在的关键词'],
+      characterInfos: [{ name: '林惊鸿', appearance: '金发' }],
+    });
+    const worst = result.issues.reduce((max, issue) => Math.max(max, issue.degree), 0);
+    expect(result.overallScore).toBeGreaterThanOrEqual(worst);
+  });
+
+  it('总分就是最严重单条 degree：加权平均不参与，避免虚假精度', async () => {
+    const detector = new DeviationDetector();
+    const result = await detector.detect(NORMAL_TEXT, {
+      mainlineKeywords: ['完全不存在的关键词'],
+      characterInfos: [{ name: '林惊鸿', appearance: '金发' }],
+    });
+    const worst = result.issues.reduce((max, issue) => Math.max(max, issue.degree), 0);
+    expect(worst).toBeGreaterThan(0);
+    expect(result.overallScore).toBe(Math.round(worst));
+  });
+
+  it('缺少数据源时标记未评估类型，不把「没数据」当成「没问题」', async () => {
+    const detector = new DeviationDetector();
+    const result = await detector.detect(NORMAL_TEXT, {});
+    // 顺序与 DEVIATION_TYPES 一致；前后矛盾/情绪断层为纯文本分析，始终可评估
+    expect(result.unevaluatedTypes).toEqual([
+      'mainline',
+      'characterOOC',
+      'foreshadowForgot',
+      'rhythm',
+    ]);
+  });
+
+  it('数据源齐备时不再标记未评估', async () => {
+    const detector = new DeviationDetector();
+    const result = await detector.detect(NORMAL_TEXT, {
+      chapterOutline: '主角进入大殿',
+      mainlineKeywords: ['林惊鸿'],
+      characterInfos: [{ name: '林惊鸿', personality: '冷静' }],
+      expectedRhythm: 'medium',
+      foreshadows: [{
+        id: 'f1',
+        description: '玄铁剑鞘的来历',
+        keywords: ['玄铁剑鞘'],
+        recovered: false,
+        plantedChapterNum: 1,
+      }],
+    });
+    expect(result.unevaluatedTypes).toEqual([]);
+  });
+
+  it('正文过短时整份报告不成立：不逐类型标记未评估', async () => {
+    const detector = new DeviationDetector();
+    const result = await detector.detect('太短了', {});
+    expect(result.overallScore).toBe(0);
+    expect(result.unevaluatedTypes).toEqual([]);
   });
 
   it('问题按严重度倒序', async () => {
@@ -651,6 +949,32 @@ describe('DeviationDetector — 完整检测报告', () => {
       const curr = SEVERITY_ORDER[result.suggestions[i].priority];
       expect(prev).toBeGreaterThanOrEqual(curr);
     }
+  });
+});
+
+describe('listDeviatedTypes — 已评估且有偏离的类型', () => {
+  it('只保留已评估且分数大于 0 的类型，顺序稳定', () => {
+    const typeScores = Object.fromEntries(
+      DEVIATION_TYPES.map(type => [type, 0])
+    ) as Record<(typeof DEVIATION_TYPES)[number], number>;
+    typeScores.contradiction = 75;
+    typeScores.rhythm = 30;
+    expect(listDeviatedTypes(typeScores)).toEqual(['contradiction', 'rhythm']);
+  });
+
+  it('未评估类型即使残留分数也不计入', () => {
+    const typeScores = Object.fromEntries(
+      DEVIATION_TYPES.map(type => [type, 0])
+    ) as Record<(typeof DEVIATION_TYPES)[number], number>;
+    typeScores.mainline = 100;
+    expect(listDeviatedTypes(typeScores, ['mainline'])).toEqual([]);
+  });
+
+  it('全部为 0 时返回空数组', () => {
+    const typeScores = Object.fromEntries(
+      DEVIATION_TYPES.map(type => [type, 0])
+    ) as Record<(typeof DEVIATION_TYPES)[number], number>;
+    expect(listDeviatedTypes(typeScores)).toEqual([]);
   });
 });
 
@@ -777,6 +1101,60 @@ describe('DeviationDetector — 结果缓存', () => {
     });
     // 应返回相同结果
     expect(issues2.length).toBe(issues1.length);
+  });
+
+  it('同一正文但大纲变化时不命中旧缓存（避免大纲晚到后结论被固化）', async () => {
+    const detector = new DeviationDetector();
+    const first = await detector.detect(NORMAL_TEXT, { chapterNum: 3 });
+    expect(first.fromCache).toBe(false);
+
+    // 大纲此时才加载：结论需要重算，不能复用上一次的空大纲结论
+    const second = await detector.detect(NORMAL_TEXT, {
+      chapterNum: 3,
+      chapterOutline: '主角潜入敌营窃取密令，中途遭遇伏击，最终负伤脱身。',
+    });
+    expect(second.fromCache).toBe(false);
+  });
+
+  it('同一正文但前文变化时不命中旧缓存', async () => {
+    const detector = new DeviationDetector();
+    const base = {
+      chapterId: '第3章',
+      chapterNum: 3,
+      previousChapters: [{ chapterId: '第2章', chapterNum: 2, text: '第2章正文。' }],
+    };
+    const first = await detector.detect(NORMAL_TEXT, base);
+    expect(first.fromCache).toBe(false);
+
+    const second = await detector.detect(NORMAL_TEXT, {
+      ...base,
+      previousChapters: [{ chapterId: '第2章', chapterNum: 2, text: '第2章正文，此处换了另一版内容。' }],
+    });
+    expect(second.fromCache).toBe(false);
+  });
+
+  it('同一正文但人物设定变化时不命中旧缓存', async () => {
+    const detector = new DeviationDetector();
+    const first = await detector.detect(NORMAL_TEXT, {
+      characterInfos: [{ name: '林惊鸿', personality: '冷静' }],
+    });
+    expect(first.fromCache).toBe(false);
+
+    const second = await detector.detect(NORMAL_TEXT, {
+      characterInfos: [{ name: '林惊鸿', personality: '暴躁' }],
+    });
+    expect(second.fromCache).toBe(false);
+  });
+
+  it('invalidateCache 清理同一正文的所有上下文变体', async () => {
+    const detector = new DeviationDetector();
+    await detector.detect(NORMAL_TEXT, { chapterNum: 3 });
+    await detector.detect(NORMAL_TEXT, { chapterNum: 3, chapterOutline: '另一个大纲' });
+
+    detector.invalidateCache(NORMAL_TEXT);
+
+    const result = await detector.detect(NORMAL_TEXT, { chapterNum: 3 });
+    expect(result.fromCache).toBe(false);
   });
 });
 
@@ -963,7 +1341,7 @@ describe('DeviationDetector — 与 V1 引擎集成', () => {
     );
   });
 
-  it('V1 CharacterConsistencyChecker 接收 historyTexts', async () => {
+  it('V1 CharacterConsistencyChecker 只接收正文与人物设定', async () => {
     const mockChecker = createMockCharacterChecker();
     const detector = new DeviationDetector({ characterChecker: mockChecker });
     await detector.detectByType(NORMAL_TEXT, 'characterOOC', {
@@ -972,11 +1350,61 @@ describe('DeviationDetector — 与 V1 引擎集成', () => {
         { chapterId: 'v1-c1', chapterNum: 1, text: '前文内容' },
       ],
     });
-    expect(mockChecker.check).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(Array),
-      ['前文内容']
-    );
+    const calls = (mockChecker.check as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toHaveLength(2);
+    expect(calls[0][1]).toEqual([{ name: '林惊鸿', personality: '冷静' }]);
+  });
+
+  it.each([
+    ['high', 85, 'critical'],
+    ['medium', 92, 'warning'],
+  ] as const)(
+    'V1 %s 不一致的 degree 不低于对应严重度阈值',
+    async (v1Severity, score, expectedSeverity) => {
+      const detector = new DeviationDetector({
+        characterChecker: createSingleIssueChecker(v1Severity, score),
+      });
+      const issues = await detector.detectByType(NORMAL_TEXT, 'characterOOC', {
+        characterInfos: [{ name: '林惊鸿', personality: '冷静' }],
+      });
+
+      expect(issues).toHaveLength(1);
+      expect(issues[0].severity).toBe(expectedSeverity);
+      const floor =
+        expectedSeverity === 'critical'
+          ? DEFAULT_SEVERITY_THRESHOLDS.critical
+          : DEFAULT_SEVERITY_THRESHOLDS.warning;
+      expect(issues[0].degree).toBeGreaterThanOrEqual(floor);
+    }
+  );
+
+  it('V1 low 不一致保持角色分推导的 degree', async () => {
+    const detector = new DeviationDetector({
+      characterChecker: createSingleIssueChecker('low', 97),
+    });
+    const issues = await detector.detectByType(NORMAL_TEXT, 'characterOOC', {
+      characterInfos: [{ name: '林惊鸿', personality: '冷静' }],
+    });
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].severity).toBe('info');
+    expect(issues[0].degree).toBe(3);
+  });
+
+  it('V1 不一致保留 checker 的段落位置证据', async () => {
+    const detector = new DeviationDetector({
+      characterChecker: createSingleIssueChecker('high', 85),
+    });
+    const issues = await detector.detectByType(NORMAL_TEXT, 'characterOOC', {
+      characterInfos: [{ name: '林惊鸿', personality: '冷静' }],
+    });
+
+    expect(issues).toHaveLength(1);
+    // checker 在每处不一致上都写了「第N段附近」，此前被恒等三元丢弃，
+    // 报告里的 issue 无法溯源到段落。
+    expect(issues[0].evidence).toEqual(['第1段附近']);
+    expect(issues[0].location?.character).toBe('林惊鸿');
   });
 
   it('V1 引擎未被修改（向后兼容）', () => {
@@ -987,6 +1415,44 @@ describe('DeviationDetector — 与 V1 引擎集成', () => {
     expect(detector).toBeDefined();
     // 引用未变
     expect(mockEngine.updateOptions).toBe(originalUpdateOptions);
+  });
+});
+
+describe('DeviationDetector — 情绪断层分段口径', () => {
+  const plainParagraphs = [
+    '林惊鸿推开门，走进空旷的大殿，殿内没有一个人。',
+    '只有烛火在风中摇晃，影子在石柱之间来回摆动。',
+    '他沿着石阶向前，脚步声在回廊里来回回荡。',
+    '墙上的壁画已经褪色，看不清原本画的是什么。',
+    '他继续向深处走去，脚步始终没有停下来。',
+    '前方是一扇半掩的木门，门缝里透出一线微光。',
+  ];
+
+  it('单换行分段的长正文也能检出连续无情绪段落', async () => {
+    const detector = new DeviationDetector();
+    const issues = await detector.detectByType(plainParagraphs.join('\n'), 'emotionBreak', {});
+    expect(issues.some(issue => issue.id === 'emotionBreak_empty_streak')).toBe(true);
+  });
+
+  it('CRLF 单换行分段同样生效', async () => {
+    const detector = new DeviationDetector();
+    const issues = await detector.detectByType(plainParagraphs.join('\r\n'), 'emotionBreak', {});
+    expect(issues.some(issue => issue.id === 'emotionBreak_empty_streak')).toBe(true);
+  });
+
+  it('空行分段保持原行为', async () => {
+    const detector = new DeviationDetector();
+    const issues = await detector.detectByType(plainParagraphs.join('\n\n'), 'emotionBreak', {});
+    expect(issues.some(issue => issue.id === 'emotionBreak_empty_streak')).toBe(true);
+  });
+
+  it('每段都含情绪元素时不报情绪断层（守卫）', async () => {
+    const detector = new DeviationDetector();
+    const text = plainParagraphs
+      .map(paragraph => `${paragraph}他心里隐隐觉得不对。`)
+      .join('\n');
+    const issues = await detector.detectByType(text, 'emotionBreak', {});
+    expect(issues.some(issue => issue.id === 'emotionBreak_empty_streak')).toBe(false);
   });
 });
 

@@ -20,7 +20,6 @@ import {
     type MonitorResult,
     type MonitorContext,
 } from '../../../../engine/quality/realtime-monitor';
-import { QualityHistoryStore } from '../../../../engine/quality/quality-history-store';
 import type { QualityScoreEngine, QualityScore, EvaluationContext } from '../../../../engine/quality/quality-score-engine';
 import type { DeviationDetector, DeviationReport, DeviationContext } from '../../../../engine/quality/deviation-detector';
 
@@ -65,6 +64,7 @@ function makeDeviationReport(score: number): DeviationReport {
             rhythm: score,
             emotionBreak: score,
         },
+        unevaluatedTypes: [],
         issues: [],
         suggestions: [],
         evaluatedAt: Date.now(),
@@ -155,17 +155,14 @@ function makeMonitorContext(overrides: Partial<MonitorContext> = {}): MonitorCon
 describe('RealtimeMonitor', () => {
     let scoreEngine: MockScoreEngine;
     let deviationDetector: MockDeviationDetector;
-    let historyStore: QualityHistoryStore;
     let monitor: RealtimeMonitor;
 
     beforeEach(() => {
         scoreEngine = new MockScoreEngine();
         deviationDetector = new MockDeviationDetector();
-        historyStore = new QualityHistoryStore();
         monitor = new RealtimeMonitor({
             scoreEngine: scoreEngine as unknown as QualityScoreEngine,
             deviationDetector: deviationDetector as unknown as DeviationDetector,
-            historyStore,
         });
     });
 
@@ -337,47 +334,6 @@ describe('RealtimeMonitor', () => {
     });
 
     // ----------------------------------------------------------
-    // 历史持久化
-    // ----------------------------------------------------------
-    describe('历史持久化', () => {
-        it('评估完成后自动写入历史', async () => {
-            await monitor.evaluate('test text', makeMonitorContext());
-
-            const entries = historyStore.getHistory('c1');
-            expect(entries).toBeDefined();
-            expect(entries!.length).toBe(1);
-            expect(entries![0].overallScore).toBe(75);
-        });
-
-        it('persistToHistory=false 不写入历史', async () => {
-            await monitor.evaluate('test', makeMonitorContext({ persistToHistory: false }));
-
-            const entries = historyStore.getHistory('c1');
-            expect(entries).toBeNull();
-        });
-
-        it('部分失败时仍持久化', async () => {
-            deviationDetector.failWith = new Error('deviation failed');
-            await monitor.evaluate('test', makeMonitorContext());
-
-            const entries = historyStore.getHistory('c1');
-            expect(entries).toBeDefined();
-            expect(entries!.length).toBe(1);
-            expect(entries![0].overallScore).toBe(75);
-        });
-
-        it('全部失败时不持久化', async () => {
-            scoreEngine.failWith = new Error('score failed');
-            deviationDetector.failWith = new Error('deviation failed');
-
-            await monitor.evaluate('test', makeMonitorContext());
-
-            const entries = historyStore.getHistory('c1');
-            expect(entries).toBeNull();
-        });
-    });
-
-    // ----------------------------------------------------------
     // 降级
     // ----------------------------------------------------------
     describe('降级策略', () => {
@@ -433,6 +389,18 @@ describe('RealtimeMonitor', () => {
             expect(result.deviations).toBeUndefined();
             expect(result.partialFailure).toBe(false);
         });
+
+        it('全部失败时仍返回失败原因，供 UI 区分「未评估」与「评估失败」', async () => {
+            scoreEngine.failWith = new Error('score boom');
+            deviationDetector.failWith = new Error('deviation boom');
+
+            const result = await monitor.evaluate('test', makeMonitorContext());
+
+            expect(result.failures).toEqual([
+                'quality: score boom',
+                'deviations: deviation boom',
+            ]);
+        });
     });
 
     // ----------------------------------------------------------
@@ -481,6 +449,27 @@ describe('RealtimeMonitor', () => {
 
             expect(events.length).toBe(1);
             expect(events[0].evaluationId).toBeDefined();
+        });
+
+        it('评估正常结束后移除外部 AbortSignal 监听', async () => {
+            const controller = new AbortController();
+            const removeSpy = vi.spyOn(controller.signal, 'removeEventListener');
+
+            await monitor.evaluate('test', makeMonitorContext(), controller.signal);
+
+            // 长生命周期 signal 上不能累积每次评估的闭包
+            expect(removeSpy).toHaveBeenCalledWith('abort', expect.any(Function));
+        });
+
+        it('外部 signal 已 abort 时不残留内部 AbortController', async () => {
+            const controller = new AbortController();
+            controller.abort();
+
+            const result = await monitor.evaluate('test', makeMonitorContext(), controller.signal);
+
+            expect(result.cancelled).toBe(true);
+            expect(monitor.getState()).toBe('idle');
+            expect((monitor as any).currentAbort).toBeUndefined();
         });
     });
 

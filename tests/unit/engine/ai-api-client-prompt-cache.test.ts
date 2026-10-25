@@ -93,6 +93,23 @@ describe('AIApiClient.callAI — P0-3 prompt 缓存', () => {
         expect(getPromptCache().size).toBe(0);
     });
 
+    it('bypassCache=true 时既不读缓存也不写缓存（创意类随机调用）', async () => {
+        const { plugin } = makePlugin();
+        const fetchMock = vi.fn()
+            .mockImplementationOnce(() => Promise.resolve(okResponse('第一次')))
+            .mockImplementationOnce(() => Promise.resolve(okResponse('第二次')));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const client = new AIApiClient(plugin);
+        const r1 = await client.callAI('s', 'u', 'test-model', 0.95, 1024, { bypassCache: true });
+        const r2 = await client.callAI('s', 'u', 'test-model', 0.95, 1024, { bypassCache: true });
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(r1.content).toBe('第一次');
+        expect(r2.content).toBe('第二次');
+        expect(getPromptCache().size).toBe(0);
+    });
+
     it('temperature / maxTokens / prompt 变化均 miss（D-6 五元组维度）', async () => {
         const { plugin } = makePlugin();
         const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(okResponse('x')));

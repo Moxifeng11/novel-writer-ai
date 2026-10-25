@@ -193,6 +193,8 @@ function makeV2Vectors(
         version: 'v2',
         dimensions,
         overallVector: Array.from({ length: 8 }, (_, i) => (vectorSeed + i) / 10),
+        modelId: 'test-model',
+        dimensionCount: 8,
         updatedAt: Date.now(),
     };
 }

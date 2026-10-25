@@ -1,176 +1,101 @@
 # E2E 端到端测试
 
-本目录包含使用 Playwright 编写的端到端（E2E）测试，用于验证插件的完整用户流程。
+本目录使用 Playwright 的 Electron 支持启动真实 Obsidian，加载本插件并验证关键用户旅程。
 
-## 📦 安装依赖
+## 运行前提
+
+1. 已安装 Obsidian 桌面端（**不支持**移动端或浏览器模拟）。
+2. 已构建插件：`npm run build`。
+3. 已设置 `OBSIDIAN_PATH`，指向 Obsidian 可执行文件：
+   - Windows：`C:\Users\<你>\AppData\Local\Obsidian\Obsidian.exe`
+   - macOS：`/Applications/Obsidian.app/Contents/MacOS/Obsidian`
+   - Linux：`/opt/Obsidian/obsidian`
+4. 运行前退出正在使用的 Obsidian 实例，避免单实例锁导致测试窗口无法启动。
 
 ```bash
-npm install --save-dev @playwright/test
-npx playwright install
-```
-
-## 🚀 运行测试
-
-### 运行所有 E2E 测试
-
-```bash
+# PowerShell
+$env:OBSIDIAN_PATH="C:\Users\me\AppData\Local\Obsidian\Obsidian.exe"
 npm run test:e2e
 ```
 
-### 运行特定测试文件
+未设置 `OBSIDIAN_PATH`（或路径不存在）时，Electron 用例会**明确跳过**并给出原因，不会执行任何占位断言。
 
-```bash
-npx playwright test tests/e2e/project-creation.spec.ts
+## 测试隔离
+
+每次运行会在系统临时目录创建独立 vault：
+
+```
+<tmp>/nw-e2e-vault-*/
+├── .obsidian/
+│   ├── community-plugins.json   # 仅启用 novel-writer-ai
+│   ├── app.json
+│   └── plugins/novel-writer-ai/
+│       ├── main.js              # 复制自构建产物
+│       ├── manifest.json
+│       ├── styles.css
+│       └── workers/
+└── （测试创建的项目目录）
 ```
 
-### 以 UI 模式运行（推荐调试时使用）
+测试结束自动删除；设置 `KEEP_E2E_VAULT=1` 可保留现场用于排查。
+不会复制本机 `data.json`，因此测试不会携带真实 API Key。
+
+## 覆盖范围
+
+| 旅程 | 状态 |
+|---|---|
+| 插件加载与命令注册 | ✅ |
+| 创建项目 → 自动打开完整写作工作台 → 项目卡片可见 → 目录落盘 | ✅ |
+| 世界观 / 角色生成 | ⏳ 未覆盖 |
+| 章节撰写 / 协同写作 | ⏳ 未覆盖 |
+
+`project-creation.spec.ts` 与 `project-card-interactions.spec.ts` 是旧的 Chromium 模拟用例，已标记 `describe.skip`，等待迁移到 Electron 链路。
+
+## 常用命令
 
 ```bash
-npx playwright test --ui
+npm run test:e2e              # 运行全部（未配置 OBSIDIAN_PATH 时跳过 Electron 用例）
+npx playwright test --list    # 仅校验用例可解析，不启动 Obsidian（CI 使用）
+npm run test:e2e:ui           # UI 模式调试
+npm run test:e2e:report       # 查看 HTML 报告
 ```
 
-这将打开 Playwright UI，你可以：
-- 实时查看测试执行过程
-- 查看每个步骤的截图
-- 检查网络请求
-- 调试失败的测试
+## CI 条件执行
 
-### 以 headed 模式运行（显示浏览器）
+`.github/workflows/ci.yml` 中的 `e2e-obsidian` job：
 
-```bash
-npx playwright test --headed
-```
+- 仅当仓库变量 `OBSIDIAN_PATH` 非空时运行，否则 job 显示 skipped。
+- 可用仓库变量 `OBSIDIAN_E2E_RUNNER` 指定 runner（默认 `windows-latest`）。
+- 由于需要本机安装 Obsidian，通常应指向**自托管 runner**；GitHub 托管 runner 不预装 Obsidian。
+- 失败时上传 `playwright-report/` 与 `test-results/`。
 
-### 生成测试报告
+常规 `verify` job 只执行 `npx playwright test --list`，确保用例语法与工程配置不会在合并后才暴露问题。
 
-```bash
-npx playwright show-report
-```
-
-## 📁 目录结构
+## 目录结构
 
 ```
 tests/e2e/
-├── pages/              # 页面对象模型 (Page Object Model)
-│   ├── BasePage.ts     # 基础页面对象
-│   └── FullWriterPage.ts # 完整写作工作台页面
-├── utils/              # 辅助函数
-│   └── helpers.ts      # 通用工具函数
-├── fixtures/           # 测试夹具（待扩展）
-├── project-creation.spec.ts # 项目创建测试
-└── README.md           # 本文档
+├── pages/                      # 旧浏览器模拟的页面对象（仅存量用例使用）
+├── utils/
+│   ├── obsidian-app.ts         # 临时 vault、Electron 启动、信任弹窗、命令执行
+│   ├── e2e-helpers.ts
+│   ├── helpers.ts
+│   └── test-data-generator.ts
+├── obsidian-plugin.spec.ts     # 真实 Electron 链路
+├── project-creation.spec.ts    # 已停用（skip）
+├── project-card-interactions.spec.ts # 已停用（skip）
+└── README.md
 ```
 
-## 🧪 编写新测试
+## 调试建议
 
-### 1. 创建页面对象
+- 首次打开带社区插件的 vault 时 Obsidian 会弹出信任提示，`obsidian-app.ts` 会自动点击“信任作者 / Trust author”类按钮；若 UI 文案变化，请更新 `clickTrustPromptIfPresent`。
+- 用例通过 `app.commands.executeCommandById` 触发命令，避免依赖命令面板的键盘交互。注意 Obsidian 会把插件命令命名空间化为 `novel-writer-ai:<command-id>`，裸 ID 会返回 false（已由 `toObsidianCommandId()` 统一处理）。
+- 插件命令 ID 可在运行中的 Obsidian 里用 `obsidian eval code="Object.keys(app.commands.commands).filter(id => id.includes('novel-writer-ai'))"` 核对。
+- 若插件未被加载，先检查：构建产物是否最新、`.obsidian/community-plugins.json` 是否包含 `novel-writer-ai`、信任弹窗是否被阻塞。
+- 失败时查看 `test-results/` 中的截图、视频与 trace。
 
-在 `pages/` 目录下创建新的页面对象类：
+## 参考资料
 
-```typescript
-import { Page, expect } from '@playwright/test';
-import { BasePage } from './BasePage';
-
-export class MyNewPage extends BasePage {
-  private readonly SOME_SELECTOR = 'your-css-selector';
-
-  constructor(page: Page) {
-    super(page);
-  }
-
-  async someAction() {
-    await this.page.click(this.SOME_SELECTOR);
-  }
-
-  async verifySomething() {
-    await expect(this.page.locator(this.SOME_SELECTOR)).toBeVisible();
-  }
-}
-```
-
-### 2. 编写测试用例
-
-在 `tests/e2e/` 目录下创建测试文件：
-
-```typescript
-import { test, expect } from '@playwright/test';
-import { MyNewPage } from './pages/MyNewPage';
-
-test.describe('功能描述', () => {
-  let myPage: MyNewPage;
-
-  test.beforeEach(async ({ page }) => {
-    myPage = new MyNewPage(page);
-    await myPage.goto();
-  });
-
-  test('应该执行某个操作', async ({ page }) => {
-    await myPage.someAction();
-    await myPage.verifySomething();
-  });
-});
-```
-
-## 🔍 调试技巧
-
-### 1. 使用 Playwright Inspector
-
-```bash
-npx playwright test --debug
-```
-
-### 2. 添加断点
-
-在测试代码中使用 `test.pause()`：
-
-```typescript
-test('调试测试', async ({ page }) => {
-  await page.pause(); // 执行到这里会暂停，打开调试器
-  // ... 其他代码
-});
-```
-
-### 3. 查看控制台日志
-
-Playwright 会自动捕获页面控制台输出，可以在测试报告中查看。
-
-### 4. 截图调试
-
-```typescript
-await page.screenshot({ path: 'debug-screenshot.png' });
-```
-
-## ️ 注意事项
-
-1. **Obsidian 环境**：当前测试配置假设 Obsidian 已经启动并加载了插件。如果需要自动化启动 Obsidian，需要额外配置 Electron 应用。
-
-2. **选择器稳定性**：尽量使用稳定的 CSS 选择器或 data-testid 属性，避免使用动态生成的类名或 ID。
-
-3. **等待策略**：使用 Playwright 的自动等待机制，避免硬编码 `waitForTimeout`。优先使用 `waitForSelector`、`waitForResponse` 等语义化等待。
-
-4. **测试隔离**：每个测试应该独立运行，不依赖其他测试的状态。使用 `beforeEach` 和 `afterEach` 进行清理。
-
-5. **并行执行**：默认情况下测试会并行执行。如果测试之间有依赖关系，可以使用 `test.serial()` 或配置 `workers: 1`。
-
-##  测试覆盖率
-
-当前覆盖的功能：
-- ✅ 项目创建流程
-- ⏳ 世界观生成（待实现）
--  角色生成（待实现）
-- ⏳ 章节撰写（待实现）
-- ⏳ 协同写作（待实现）
-
-## 🛠️ 未来改进
-
-- [ ] 集成 Electron 自动启动 Obsidian
-- [ ] 添加更多测试用例覆盖核心功能
-- [ ] 配置 CI/CD 自动运行 E2E 测试
-- [ ] 添加视觉回归测试（Visual Regression Testing）
-- [ ] 性能测试（页面加载时间、API 响应时间等）
-
-## 📚 参考资料
-
-- [Playwright 官方文档](https://playwright.dev/)
+- [Playwright Electron](https://playwright.dev/docs/api/class-electron)
 - [Playwright Test API](https://playwright.dev/docs/api/class-test)
-- [页面对象模式最佳实践](https://playwright.dev/docs/pom)

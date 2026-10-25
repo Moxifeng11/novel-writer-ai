@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { withWriteLock } from '../../../engine/write-lock';
+import { withWriteLock } from '../../../shared/write-lock';
 
 // 测试辅助：返回一个可控的 deferred Promise，便于精确控制锁的释放时机
 function createDeferred<T = void>(): {

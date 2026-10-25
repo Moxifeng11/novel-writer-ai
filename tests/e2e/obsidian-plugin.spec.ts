@@ -1,66 +1,87 @@
 import { test, expect } from '@playwright/test';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import {
+    createTestVault,
+    describeSkipReason,
+    executeCommand,
+    isObsidianE2EEnabled,
+    launchObsidian,
+    toObsidianCommandId,
+    waitForPluginLoaded,
+    type ObsidianSession,
+} from './utils/obsidian-app';
 
 /**
- * Obsidian 插件 E2E 测试
- * 
- * 注意：此测试需要在 Obsidian 已启动并加载插件的情况下运行
- * 当前版本使用 Chromium 浏览器模拟，未来可集成 Electron 实现完全自动化
+ * Obsidian 真实 Electron 链路 E2E。
+ *
+ * 覆盖 PRD §3 的 P0 旅程：创建项目 → 打开完整写作工作台。
+ * 运行前需设置 OBSIDIAN_PATH；未配置时整组用例明确跳过，而不是以占位断言“假通过”。
  */
 
-test.describe('Novel Writer AI 插件 - 完整流程测试', () => {
-  
-  test('插件应该正确加载', async ({ page }) => {
-    // 导航到 Obsidian
-    await page.goto('app://obsidian.md');
-    
-    // 等待页面加载
-    await page.waitForLoadState('networkidle');
-    
-    // 验证插件相关元素存在
-    // 这里需要根据实际 UI 结构调整选择器
-    const pluginLoaded = await page.locator('.workspace-leaf').count();
-    expect(pluginLoaded).toBeGreaterThan(0);
-  });
+const CREATE_PROJECT_COMMAND = toObsidianCommandId('novel-writer-create-project');
+const FULL_WRITER_VIEW_TYPE = 'novel-writer-full-writer';
 
-  test('完整写作工作台应该可以打开', async ({ page }) => {
-    await page.goto('app://obsidian.md');
-    await page.waitForLoadState('networkidle');
-    
-    // 尝试打开完整写作工作台视图
-    // 需要根据实际的命令 ID 或按钮选择器调整
-    const workspaceExists = await page.locator('.workspace').count();
-    expect(workspaceExists).toBeGreaterThan(0);
-  });
+test.describe('Novel Writer AI · 真实 Electron 链路', () => {
+    test.describe.configure({ mode: 'serial' });
+    test.skip(!isObsidianE2EEnabled(), describeSkipReason());
 
-  test('协同写作视图应该可以打开', async ({ page }) => {
-    await page.goto('app://obsidian.md');
-    await page.waitForLoadState('networkidle');
-    
-    // 验证协同写作相关元素
-    // 需要根据实际 UI 调整
-    const cowriteView = await page.locator('[data-type="co-writing-view"]').count();
-    // 如果视图存在则验证，否则跳过
-    if (cowriteView > 0) {
-      expect(cowriteView).toBeGreaterThan(0);
-    }
-  });
+    let session: ObsidianSession;
 
-  test('设置面板应该可以访问', async ({ page }) => {
-    await page.goto('app://obsidian.md');
-    await page.waitForLoadState('networkidle');
-    
-    // 尝试验证设置相关的元素
-    // 需要根据实际 UI 调整
-    const settingsButton = await page.locator('button:has-text("设置"), .setting-item').count();
-    // 设置按钮可能存在也可能不存在，取决于当前视图
-    console.log(`找到 ${settingsButton} 个设置相关元素`);
-  });
+    test.beforeAll(async () => {
+        const vault = createTestVault();
+        session = await launchObsidian(vault);
+        await waitForPluginLoaded(session.page);
+    });
 
-  test('项目数据目录应该存在', async ({ page }) => {
-    // 这个测试需要配合 Node.js API 或 Obsidian API
-    // 当前版本仅做占位，实际需要集成 Obsidian 的 vault API
-    
-    // 占位测试
-    expect(true).toBe(true);
-  });
+    test.afterAll(async () => {
+        if (!session) return;
+        await session.app.close().catch(() => undefined);
+        if (process.env.KEEP_E2E_VAULT !== '1') {
+            fs.rmSync(session.vault.path, { recursive: true, force: true });
+        }
+    });
+
+    test('插件应被 Obsidian 加载并注册命令', async () => {
+        const { page } = session;
+
+        const pluginLoaded = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, unknown> } };
+            };
+            return Boolean(host.app?.plugins?.plugins?.['novel-writer-ai']);
+        });
+        expect(pluginLoaded).toBe(true);
+
+        const commandRegistered = await page.evaluate((id) => {
+            const host = window as unknown as {
+                app?: { commands?: { commands?: Record<string, unknown> } };
+            };
+            return Boolean(host.app?.commands?.commands?.[id]);
+        }, CREATE_PROJECT_COMMAND);
+        expect(commandRegistered).toBe(true);
+    });
+
+    test('创建项目后应打开完整写作工作台并落盘目录', async () => {
+        const { page, vault } = session;
+        const projectName = `E2E项目${Date.now()}`;
+
+        expect(await executeCommand(page, CREATE_PROJECT_COMMAND)).toBe(true);
+
+        const modal = page.locator('.modal-container').last();
+        await expect(modal).toBeVisible();
+        await modal.locator('input[placeholder*="项目名称"]').fill(projectName);
+        await modal.locator('input[placeholder*="题材"]').fill('玄幻');
+        await modal.getByRole('button', { name: '创建项目', exact: true }).click();
+
+        const view = page.locator(`.workspace-leaf-content[data-type="${FULL_WRITER_VIEW_TYPE}"]`);
+        await expect(view).toBeVisible({ timeout: 90_000 });
+
+        const projectCard = view.locator(`.novel-writer-fw-project-card[data-project="${projectName}"]`);
+        await expect(projectCard).toBeVisible({ timeout: 30_000 });
+
+        expect(fs.existsSync(path.join(vault.path, projectName))).toBe(true);
+        expect(fs.existsSync(path.join(vault.path, projectName, '03-大纲与章节'))).toBe(true);
+        expect(fs.existsSync(path.join(vault.path, '元文件', '00-系统模板'))).toBe(true);
+    });
 });

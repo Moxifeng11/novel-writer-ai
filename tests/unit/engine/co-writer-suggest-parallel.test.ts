@@ -40,6 +40,7 @@ function makeSnapshot(): ContextSnapshot {
 
 const BASE_SETTINGS = {
     coWriteModel: 'qwen2.5:7b',
+    coWriteModelMode: 'cloud',
     defaultModel: 'deepseek-chat',
     availableModels: ['deepseek-chat'],
     coWriteTemperature: 0.7,
@@ -111,6 +112,32 @@ describe('CoWriterEngine.suggestNext — P0-1 三候选并行化', () => {
         expect(aiEngine.callAI).not.toHaveBeenCalled();
     });
 
+    it('TR-4.7: 某方向输出设定库/规划文本 → 该候选丢弃，不进入建议卡片', async () => {
+        let callSeq = 0;
+        const planning = [
+            '#### **世界观底层规则**',
+            '1. **物理法则**：灵力守恒',
+            '2. **时空特性**：三界分层',
+            '3. **因果规则**：行为决定业力',
+        ].join('\n');
+        const aiEngine = {
+            getPlugin: () => ({ settings: { ...BASE_SETTINGS } }),
+            callAI: vi.fn(async () => {
+                const n = ++callSeq;
+                if (n === 1) return { content: planning };
+                return { content: `沈砚握紧剑柄，指节发白。这是第${n}段正文。` };
+            }),
+        };
+        const contextManager = { gatherAll: vi.fn() };
+        const engine = new CoWriterEngine({} as any, aiEngine as any, contextManager as any) as any;
+        engine.snapshot = makeSnapshot();
+
+        const suggestions = await engine.suggestNext('前文', '', 'continue', 3);
+
+        expect(suggestions).toHaveLength(2);
+        expect(suggestions.every((s: { text: string }) => !s.text.includes('世界观底层规则'))).toBe(true);
+    });
+
     it('TR-4.4: candidateParallel=false → 回退串行（调用区间无重叠）', async () => {
         const { engine, callLog } = makeEngine({ candidateParallel: false }, 80);
 
@@ -118,6 +145,17 @@ describe('CoWriterEngine.suggestNext — P0-1 三候选并行化', () => {
         expect(suggestions).toHaveLength(3);
 
         // 串行判据：每个调用的 start 晚于前一个的 end
+        for (let i = 1; i < callLog.length; i++) {
+            expect(callLog[i].start).toBeGreaterThanOrEqual(callLog[i - 1].end - 5);
+        }
+    });
+
+    it('TR-4.6: 本地模型模式即使 candidateParallel=true 也串行（Ollama 单槽排队）', async () => {
+        const { engine, callLog } = makeEngine({ coWriteModelMode: 'local', candidateParallel: true }, 40);
+
+        const suggestions = await engine.suggestNext('前文', '', 'continue', 3);
+        expect(suggestions).toHaveLength(3);
+
         for (let i = 1; i < callLog.length; i++) {
             expect(callLog[i].start).toBeGreaterThanOrEqual(callLog[i - 1].end - 5);
         }

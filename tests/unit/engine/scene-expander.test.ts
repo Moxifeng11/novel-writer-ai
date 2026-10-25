@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
     validateSceneExpansion,
+    parseSceneHeadings,
+    splitSceneSections,
+    generateSceneExpansion,
     SCENE_EXPAND_SYSTEM_PROMPT,
     SCENE_EXPAND_USER_TEMPLATE,
 } from '../../../engine/scene-expander';
@@ -97,6 +100,61 @@ subtext: q
     });
 });
 
+describe('parseSceneHeadings — 场景标题解析', () => {
+    it('识别 ### sceneN: 标题（AI 常见输出）', () => {
+        const content = '### scene1: 碎砂渡·悬索栈桥边\nobjective: a\n\n### scene2: 测脉碑前\nobjective: b\n';
+        const headings = parseSceneHeadings(content);
+        expect(headings.map(h => h.name)).toEqual(['碎砂渡·悬索栈桥边', '测脉碑前']);
+        expect(headings.map(h => h.index)).toEqual([1, 2]);
+        expect(headings[0].start).toBe(0);
+    });
+
+    it('识别 ## 场景N：与中文数字序号', () => {
+        const content = '## 场景三：祠堂\nobjective: a\n## 场景四：后山\nobjective: b\n';
+        const headings = parseSceneHeadings(content);
+        expect(headings.map(h => h.index)).toEqual([3, 4]);
+        expect(headings.map(h => h.name)).toEqual(['祠堂', '后山']);
+    });
+
+    it('支持 #### 标题与无标题（标题为空时仍计数）', () => {
+        const content = '#### scene1:\nobjective: a\n### scene2: 标题二\n';
+        const headings = parseSceneHeadings(content);
+        expect(headings).toHaveLength(2);
+        expect(headings[0].name).toBe('');
+        expect(headings[1].name).toBe('标题二');
+    });
+
+    it('普通段落中的「场景1：」不被误判（必须带标题标记）', () => {
+        const content = '场景1：这是正文而不是标题\nobjective: a\n';
+        expect(parseSceneHeadings(content)).toHaveLength(0);
+    });
+
+    it('splitSceneSections 切出的正文不包含标题行', () => {
+        const content = '### scene1: 甲\nobjective: a\n### scene2: 乙\nobjective: b\n';
+        const sections = splitSceneSections(content);
+        expect(sections).toHaveLength(2);
+        expect(sections[0].body.trim().startsWith('objective: a')).toBe(true);
+        expect(sections[1].body.trim()).toBe('objective: b');
+    });
+
+    it('### sceneN: 格式的展开应通过 validateSceneExpansion', () => {
+        const content = `### scene1: 碎砂渡·悬索栈桥边
+objective: 收买录事
+emotion_arc: 希冀(6.5/10) → 焦虑(4.5/10)
+conflict: 录事拒收
+sensory_hook: 砂粒打在脸上
+memory_trigger: 三年前的测脉礼
+body_reaction: 手指攥紧布袋
+subtext: 嘴上说再等等，心里想走
+key_scene: ⭐ 名场面 — 父亲驼背的瞬间
+dialogue_function: 揭露录事做不了主
+cliffhanger: 碑后站着天阙的人
+`;
+        const r = validateSceneExpansion(content);
+        expect(r.valid).toBe(true);
+    });
+});
+
 describe('SCENE_EXPAND prompts 契约', () => {
     it('system prompt 含 8 要素关键词与占位符', () => {
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('objective');
@@ -107,11 +165,59 @@ describe('SCENE_EXPAND prompts 契约', () => {
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('${protagonistSoul}');
     });
 
-    it('user template 含核心占位符', () => {
+    it('user template 含核心占位符与跨章承接占位符', () => {
         expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${protagonistName}');
         expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${chapNum}');
         expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${outlineContent}');
         expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${emotionPlan}');
         expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${triggeredMemories}');
+        expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${infoPlan}');
+        expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${prevChapEnding}');
+        expect(SCENE_EXPAND_USER_TEMPLATE).toContain('${timelineEvents}');
+    });
+
+    it('system prompt 含跨章承接与时间线约束', () => {
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('上一章结尾');
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('时间');
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('信息规划');
+    });
+});
+
+describe('generateSceneExpansion — 跨章信息注入', () => {
+    it('注入信息规划/上一章结尾/时间线', async () => {
+        const callAI = vi.fn(async (_system: string, _user: string) => ({ content: '展开结果' }));
+
+        await generateSceneExpansion({ callAI } as never, {
+            protagonistName: '林晚',
+            chapNum: '3',
+            outlineContent: '林晚夜探书房。',
+            infoPlan: '信息释放：只揭示半封密信',
+            prevChapEnding: '林晚在门外听见父亲咳血。',
+            timelineEvents: '- 亥时 | 第2章 | 父亲病倒 | 林晚必须赶回',
+            emotionPlan: '警惕(5) → 恐惧(8)',
+        });
+
+        const system = String(callAI.mock.calls[0][0]);
+        const user = String(callAI.mock.calls[0][1]);
+        expect(system).toContain('上一章结尾');
+        expect(user).toContain('林晚在门外听见父亲咳血。');
+        expect(user).toContain('只揭示半封密信');
+        expect(user).toContain('父亲病倒');
+    });
+
+    it('缺失时不留下未替换占位符，并给出明确缺失标记', async () => {
+        const callAI = vi.fn(async (_system: string, _user: string) => ({ content: '展开结果' }));
+
+        await generateSceneExpansion({ callAI } as never, {
+            protagonistName: '林晚',
+            chapNum: '1',
+            outlineContent: '开篇。',
+        });
+
+        const user = String(callAI.mock.calls[0][1]);
+        expect(user).not.toContain('${');
+        expect(user).toContain('未执行信息规划');
+        expect(user).toContain('无上一章结尾信息');
+        expect(user).toContain('无时间线信息');
     });
 });

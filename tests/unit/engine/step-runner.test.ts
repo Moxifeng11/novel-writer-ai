@@ -8,6 +8,26 @@ import {
     STEP_INDEX_MIGRATION_MAP,
     migrateStepIndex,
 } from '../../../engine/step-definitions';
+import { calcStepIndexAfterPlanning, BODY_GENERATION_STEP_INDEX } from '../../../engine/planning-step-advance';
+
+describe('calcStepIndexAfterPlanning — 规划完成后的步骤推进', () => {
+    it('5 个规划步骤全部完成 → 直接进入正文写作 index 7', () => {
+        const completed = new Set(['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand', 'context']);
+        expect(calcStepIndexAfterPlanning(completed)).toBe(BODY_GENERATION_STEP_INDEX);
+        expect(BODY_GENERATION_STEP_INDEX).toBe(7);
+    });
+
+    it('仍有规划缺失 → 定位到第一个缺失的规划步骤', () => {
+        const completed = new Set(['infoPlan', 'outline', 'emotionPlan', 'sceneExpand', 'context']);
+        // plotDistill 缺失，其步骤 index 为 2
+        expect(calcStepIndexAfterPlanning(completed)).toBe(2);
+    });
+
+    it('只完成部分规划时不会跳到正文', () => {
+        const completed = new Set(['infoPlan', 'context']);
+        expect(calcStepIndexAfterPlanning(completed)).not.toBe(BODY_GENERATION_STEP_INDEX);
+    });
+});
 
 describe('ALL_FULL_STEPS 完整性', () => {
     it('共 11 个步骤', () => {

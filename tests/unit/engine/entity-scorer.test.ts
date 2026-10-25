@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scoreAndFilterEntities } from '../../../engine/entity-scorer';
+import { scoreAndFilterEntities, scoreAndFilterEntitiesByType } from '../../../engine/entity-scorer';
 import type { ScoredEntity } from '../../../engine/entity-scorer';
 
 function makeEntity(
@@ -34,6 +34,37 @@ describe('scoreAndFilterEntities — 边界情况', () => {
         const r = scoreAndFilterEntities([e1, e2], '无关上下文', 0);
         // 无正向分时按 topN 上限回退，不再全量返回
         expect(r.length).toBe(1);
+    });
+});
+
+describe('scoreAndFilterEntitiesByType — 分类预算', () => {
+    it('人物不会被势力/地点/物品挤掉名额', () => {
+        const characters = Array.from({ length: 12 }, (_, i) =>
+            makeEntity(`角色${i}`, { 欲望: '复仇' }, 'character'),
+        );
+        const factions = Array.from({ length: 20 }, (_, i) =>
+            makeEntity(`势力${i}`, { 类型: '宗门' }, 'faction'),
+        );
+        const locations = Array.from({ length: 20 }, (_, i) =>
+            makeEntity(`地点${i}`, { 类型: '城池' }, 'location'),
+        );
+        const items = Array.from({ length: 20 }, (_, i) =>
+            makeEntity(`物品${i}`, { 类型: '法宝' }, 'item'),
+        );
+        const context = [...characters, ...factions, ...locations, ...items]
+            .map((e) => e.name)
+            .join(' ');
+
+        const r = scoreAndFilterEntitiesByType(
+            [...characters, ...factions, ...locations, ...items],
+            context,
+            { character: 12, faction: 6, location: 6, item: 6 },
+        );
+
+        expect(r.filter((e) => e.type === 'character')).toHaveLength(12);
+        expect(r.filter((e) => e.type === 'faction')).toHaveLength(6);
+        expect(r.filter((e) => e.type === 'location')).toHaveLength(6);
+        expect(r.filter((e) => e.type === 'item')).toHaveLength(6);
     });
 });
 

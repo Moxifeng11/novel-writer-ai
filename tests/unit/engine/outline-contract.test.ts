@@ -254,6 +254,52 @@ describe('outline-contract — 章节表分析 / 补齐 / 净化', () => {
         expect(extractFieldValue(content, '结尾过渡')).toBe('踏入新舞台');
         expect(extractFieldValue(content, '核心冲突')).toBeNull();
     });
+
+    it('缩进子项书写的字段不被误判为空（人物弧光 / 三幕结构）', () => {
+        const content = [
+            '### 第1卷',
+            '- **卷名**：测试',
+            '- **章节范围**：第1章 - 第1章',
+            '- **核心冲突**：冲突',
+            '- **主要事件**：事件',
+            '- **人物弧光**：',
+            '  - **沈砚**：从忍到反抗',
+            '  - **季云归**：学会信任',
+            '- **本卷字数**：1万字',
+            '- **本卷高潮**：决战',
+            '- **结尾过渡**：接入下卷',
+            '- **三幕结构**：',
+            '  - **第一幕**：建置',
+            '  - **第二幕**：对抗',
+            '- **爽点节奏**：第1章打脸',
+            '- **反转路线**：小反转',
+            '- **情绪曲线**：压抑→爆发',
+            '- **伏笔安排**：埋设：X',
+            '- **势力变动**：甲：崛起',
+            '- **章节分配**：',
+            '| 章号 | 核心冲突 |',
+            '| 1 | A |',
+        ].join('\n');
+        expect(extractFieldValue(content, '人物弧光')).toContain('**沈砚**');
+        expect(extractFieldValue(content, '三幕结构')).toContain('**第一幕**');
+        expect(validateVolumeStructure(content, [1, 1], 1)).toEqual([]);
+    });
+
+    it('表格规范化：省略分隔行时自动补齐，分隔行写在末尾时移回表头后', () => {
+        const noSeparator = ['| 章号 | 核心冲突 |', '| 1 | A |', '| 2 | B |'].join('\n');
+        expect(consolidateChapterTable(noSeparator, 1, 2).split('\n').slice(0, 3)).toEqual([
+            '| 章号 | 核心冲突 |',
+            '|---|---|',
+            '| 1 | A |',
+        ]);
+
+        const trailingSeparator = ['| 章号 | 核心冲突 |', '| 1 | A |', '| 2 | B |', '|---|---|'].join('\n');
+        expect(consolidateChapterTable(trailingSeparator, 1, 2).split('\n').slice(0, 3)).toEqual([
+            '| 章号 | 核心冲突 |',
+            '|---|---|',
+            '| 1 | A |',
+        ]);
+    });
 });
 
 describe('outline-contract — 全局章号连续性终检', () => {

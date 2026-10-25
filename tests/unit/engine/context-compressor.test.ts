@@ -56,6 +56,20 @@ describe('compressWorldContext — 世界观压缩', () => {
         const r = compressWorldContext(wv, '', '', '', outline, 1, 8000);
         expect(r.worldView.length).toBeLessThanOrEqual(2000);
     });
+
+    it('设定库上限随模型窗口放大，不再固定 1000 字', () => {
+        const paragraphs = Array.from({ length: 8 }, (_, i) =>
+            `设定${i}：` + '设'.repeat(480),
+        );
+        const sl = paragraphs.join('\n\n'); // 约 4000 字
+
+        const small = compressWorldContext('', sl, '', '', '', 1, 8000);
+        const large = compressWorldContext('', sl, '', '', '', 1, 128000);
+
+        expect(small.settingLib.length).toBeLessThanOrEqual(1000);
+        expect(large.settingLib.length).toBeGreaterThan(1000);
+        expect(large.settingLib.length).toBeLessThanOrEqual(6000);
+    });
 });
 
 describe('compressWorldContext — 伏笔压缩', () => {

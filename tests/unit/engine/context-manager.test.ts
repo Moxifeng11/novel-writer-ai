@@ -499,3 +499,90 @@ describe('ContextManager.getInfoSummary - 信息摘要', () => {
         expect(result).toContain('前文: 已加载');
     });
 });
+
+describe('ContextManager - 同人设定读取（.project 路径即权威路径）', () => {
+    const PROJECT = '同人项目';
+    const FANFIC_PATH = `${PROJECT}/05-同人设定库/遮天设定.md`;
+
+    const REAL_CONTENT = `## 原作剧情时间线
+| 时间节点 | 原作事件 | 涉及人物 | 章节参考 | 你的同人如何切入 |
+|---|---|---|---|---|
+| 开篇 | 主角觉醒 | 主角 | 第1章 | 提前相遇 |
+
+## 故事背景时间线（你的同人）
+| 你的时间节点 | 你的事件 | 对应原作时间 | 涉及人物 |
+|---|---|---|---|
+| 第一年 | 加入组织 | 开篇 | 主角、配角 |
+
+## 创作规则
+- **必须遵守的原作规则**：主线事件不变
+- **允许改编的范围**：支线人物关系
+- **禁止触及的红线**：主要角色死亡
+`;
+
+    const PLACEHOLDER_CONTENT = `## 原作剧情时间线
+| 时间节点 | 原作事件 | 涉及人物 | 章节参考 | 你的同人如何切入 |
+|---|---|---|---|---|
+| 待补充 | 待补充 | 待补充 | 待补充 | 待补充 |
+
+## 故事背景时间线（你的同人）
+| 你的时间节点 | 你的事件 | 对应原作时间 | 涉及人物 |
+|---|---|---|---|
+| 待补充 | 待补充 | 待补充 | 待补充 |
+
+## 创作规则
+- **必须遵守的原作规则**：（待补充）
+- **允许改编的范围**：（待补充）
+- **禁止触及的红线**：（待补充）
+`;
+
+    function seedProject(recordedPath: string): { app: App; cm: ContextManager } {
+        const app = makeMockApp();
+        const vault = app.vault as any;
+        vault._seedFile(
+            `${PROJECT}/.project`,
+            `# ${PROJECT}\n\n## 类型\nfanfic\n\n## 同人设定路径\n${recordedPath}\n`
+        );
+        return { app, cm: new ContextManager({ plugin: makeMockPlugin(app) }) };
+    }
+
+    it('按 .project 记录的完整路径读取时间线与规则', async () => {
+        const { app, cm } = seedProject(FANFIC_PATH);
+        (app.vault as any)._seedFile(FANFIC_PATH, REAL_CONTENT);
+
+        const canon = await cm.loadFanficCanonTimeline(PROJECT);
+        expect(canon).toHaveLength(1);
+        expect(canon[0]['原作事件']).toBe('主角觉醒');
+        expect(canon[0]['你的同人如何切入']).toBe('提前相遇');
+
+        const fan = await cm.loadFanficFanTimeline(PROJECT);
+        expect(fan).toHaveLength(1);
+        expect(fan[0]['你的事件']).toBe('加入组织');
+
+        const rules = await cm.loadFanficRules(PROJECT);
+        expect(rules.mustFollow).toEqual(['主线事件不变']);
+        expect(rules.adaptScope).toBe('支线人物关系');
+        expect(rules.redlines).toEqual(['主要角色死亡']);
+    });
+
+    it('兼容旧数据里只记录文件名的情况', async () => {
+        const { app, cm } = seedProject('遮天设定');
+        (app.vault as any)._seedFile(FANFIC_PATH, REAL_CONTENT);
+
+        const canon = await cm.loadFanficCanonTimeline(PROJECT);
+        expect(canon).toHaveLength(1);
+        expect(canon[0]['原作事件']).toBe('主角觉醒');
+    });
+
+    it('骨架占位行与占位规则不作为上下文内容', async () => {
+        const { app, cm } = seedProject(FANFIC_PATH);
+        (app.vault as any)._seedFile(FANFIC_PATH, PLACEHOLDER_CONTENT);
+
+        expect(await cm.loadFanficCanonTimeline(PROJECT)).toEqual([]);
+        expect(await cm.loadFanficFanTimeline(PROJECT)).toEqual([]);
+        const rules = await cm.loadFanficRules(PROJECT);
+        expect(rules.mustFollow).toEqual([]);
+        expect(rules.adaptScope).toBe('');
+        expect(rules.redlines).toEqual([]);
+    });
+});

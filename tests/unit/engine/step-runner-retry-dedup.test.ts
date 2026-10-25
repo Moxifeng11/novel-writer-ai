@@ -39,4 +39,56 @@ describe('StepRunner.callAIWithRetry — P0-2 重试去叠加（D-1 备用方案
         expect(result.content).toBe('ok');
         expect(callAI).toHaveBeenCalledTimes(1);
     });
+
+    it('已取消的 signal 不发起调用，直接返回 aborted', async () => {
+        const { runner, callAI } = makeRunner(async () => ({ content: '不应调用' }));
+        const ctrl = new AbortController();
+        ctrl.abort();
+
+        const result = await runner.callAIWithRetry('sys', 'user', 'm', 0.7, 1024, '测试步骤', ctrl.signal);
+
+        expect(result.finishReason).toBe('aborted');
+        expect(result.error).toBe('已取消');
+        expect(callAI).not.toHaveBeenCalled();
+    });
+
+    it('调用中 abort 不重试，直接返回 aborted', async () => {
+        const ctrl = new AbortController();
+        const { runner, callAI } = makeRunner(async () => {
+            ctrl.abort();
+            const err = new Error('aborted');
+            err.name = 'AbortError';
+            throw err;
+        });
+
+        const result = await runner.callAIWithRetry('sys', 'user', 'm', 0.7, 1024, '测试步骤', ctrl.signal);
+
+        expect(result.finishReason).toBe('aborted');
+        expect(result.error).toBe('已取消');
+        expect(callAI).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('StepRunner.warnIfTruncated — 截断可见性', () => {
+    function makeRunnerWithNotice() {
+        const showNotice = vi.fn();
+        const plugin = { aiEngine: { callAI: vi.fn() }, engineRegistry: { get: () => ({}) } } as any;
+        const runner = new (StepRunner as any)({} as any, plugin, { showNotice }) as any;
+        return { runner, showNotice };
+    }
+
+    it('finishReason=length：提示结果可能不完整，并带上步骤名', () => {
+        const { runner, showNotice } = makeRunnerWithNotice();
+        runner.warnIfTruncated({ content: '半章', finishReason: 'length' }, '正文写作');
+        expect(showNotice).toHaveBeenCalledTimes(1);
+        const [message] = showNotice.mock.calls[0];
+        expect(message).toContain('正文写作');
+        expect(message).toContain('不完整');
+    });
+
+    it('finishReason=stop：不打扰用户', () => {
+        const { runner, showNotice } = makeRunnerWithNotice();
+        runner.warnIfTruncated({ content: '完整', finishReason: 'stop' }, '正文写作');
+        expect(showNotice).not.toHaveBeenCalled();
+    });
 });

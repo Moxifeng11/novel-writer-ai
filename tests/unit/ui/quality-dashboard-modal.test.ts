@@ -11,7 +11,7 @@ vi.mock('../../../main', () => ({
     default: class {},
 }));
 
-import { QualityDashboardModal } from '../../../ui/quality-dashboard-modal';
+import { QualityDashboardModal, openFileAtLine } from '../../../ui/quality-dashboard-modal';
 
 // ============================================================
 // 最小 DOM 模拟（覆盖 renderCharts / exportData 用到的 API）
@@ -89,6 +89,7 @@ class MockHTMLElement {
     }
 
     click(): void {}
+    remove(): void {}
     getAttribute(): string | null { return null; }
     setAttribute(): void {}
 }
@@ -134,16 +135,36 @@ function makeChapters(n: number): any[] {
         volume: '第1卷',
         chapterNum: i + 1,
         title: `章节${i + 1}`,
-        file: { path: `proj/03-大纲与章节/正文/第1卷/第${i + 1}章_正文.md` },
+        file: {
+            path: `proj/03-大纲与章节/正文/第1卷/第${i + 1}章_正文.md`,
+            stat: { mtime: 1 },
+        },
     }));
 }
 
-const evaluate = vi.fn(async (_text: string) => makeScore());
+const OUTLINE_FILE = {
+    path: 'proj/03-大纲与章节/步骤结果/第1卷/第1章/第1章_大纲摘要.md',
+    name: '第1章_大纲摘要.md',
+};
+
+const evaluate = vi.fn(async (_text: string, _context?: any) => makeScore());
 const fakeEngine = { evaluate };
 
 function setupModal(chapters: any[]): QualityDashboardModal {
     const modal = new QualityDashboardModal({} as any, {} as any, fakeEngine as any);
-    (modal as any).app = { vault: { read: vi.fn(async () => '正文内容') } };
+    (modal as any).app = {
+        vault: {
+            read: vi.fn(async (file: any) => (file.name === OUTLINE_FILE.name ? '本章大纲内容' : '正文内容')),
+            getFiles: () => [OUTLINE_FILE],
+        },
+    };
+    (modal as any).plugin = {
+        ctxManager: {
+            gatherCharacterState: vi.fn(async () => ({
+                character_state: [{ name: '林默' }, { '姓名': '苏晚' }, { name: '' }],
+            })),
+        },
+    };
     (modal as any).project = 'proj';
     (modal as any).chapters = chapters;
     (modal as any).radarEl = new MockHTMLElement('div');
@@ -161,6 +182,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     (globalThis as any).document = {
         createElement: (tagName: string) => new MockHTMLElement(tagName),
+        body: { appendChild: vi.fn() },
     };
 });
 
@@ -245,5 +267,85 @@ describe('QualityDashboardModal — 联动', () => {
         expect(issues).toHaveLength(2);
         expect(issues.every((i: any) => i.dimension === 'readability')).toBe(true);
         expect(payload.chapters[0].dimensions).toHaveLength(6);
+    });
+
+    it('C2：评估带人物名册与本章大纲；改稿（mtime 变化）后缓存失效', async () => {
+        const chapters = makeChapters(1);
+        const modal = setupModal(chapters);
+        (modal as any).range = 'current';
+
+        await (modal as any).refreshData();
+        expect(evaluate).toHaveBeenCalledTimes(1);
+        expect(evaluate.mock.calls[0][1]).toMatchObject({
+            characterNames: ['林默', '苏晚'],
+            chapterOutline: '本章大纲内容',
+        });
+
+        // mtime 未变 → 命中缓存，不重复评估
+        await (modal as any).refreshData();
+        expect(evaluate).toHaveBeenCalledTimes(1);
+
+        // 改稿后 mtime 变化 → 必须重新评估
+        chapters[0].file.stat.mtime = 2;
+        await (modal as any).refreshData();
+        expect(evaluate).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('openFileAtLine — 问题定位', () => {
+    function makeApp(editor: any, openFile: any = vi.fn(async () => {})) {
+        return {
+            workspace: {
+                getLeaf: vi.fn(() => ({ openFile, view: { editor } })),
+            },
+        } as any;
+    }
+
+    it('打开文件并把 1-based 行号转换为编辑器 0-based 光标', async () => {
+        const setCursor = vi.fn();
+        const scrollIntoView = vi.fn();
+        const openFile = vi.fn(async () => {});
+        const app = makeApp({ lineCount: () => 20, setCursor, scrollIntoView }, openFile);
+        const file = { path: 'proj/03-大纲与章节/正文/第1卷/第1章_正文.md' } as any;
+
+        const ok = await openFileAtLine(app, file, 5);
+
+        expect(ok).toBe(true);
+        expect(openFile).toHaveBeenCalledWith(file);
+        expect(setCursor).toHaveBeenCalledWith({ line: 4, ch: 0 });
+        expect(scrollIntoView).toHaveBeenCalledWith(
+            { from: { line: 4, ch: 0 }, to: { line: 4, ch: 0 } },
+            true
+        );
+    });
+
+    it('行号越界时收敛到末行', async () => {
+        const setCursor = vi.fn();
+        const app = makeApp({ lineCount: () => 3, setCursor, scrollIntoView: vi.fn() });
+
+        await openFileAtLine(app, { path: 'a.md' } as any, 99);
+
+        expect(setCursor).toHaveBeenCalledWith({ line: 2, ch: 0 });
+    });
+
+    it('无行号时仅打开文件，不移动光标', async () => {
+        const setCursor = vi.fn();
+        const openFile = vi.fn(async () => {});
+        const app = makeApp({ lineCount: () => 10, setCursor, scrollIntoView: vi.fn() }, openFile);
+
+        const ok = await openFileAtLine(app, { path: 'a.md' } as any);
+
+        expect(ok).toBe(true);
+        expect(openFile).toHaveBeenCalledTimes(1);
+        expect(setCursor).not.toHaveBeenCalled();
+    });
+
+    it('打开失败时返回 false 而不是抛异常', async () => {
+        const app = makeApp(
+            { lineCount: () => 10, setCursor: vi.fn(), scrollIntoView: vi.fn() },
+            vi.fn(async () => { throw new Error('not found'); })
+        );
+
+        await expect(openFileAtLine(app, { path: 'missing.md' } as any, 1)).resolves.toBe(false);
     });
 });

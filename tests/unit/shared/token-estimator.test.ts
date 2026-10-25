@@ -129,6 +129,21 @@ describe('TokenEstimator', () => {
             expect(budget.isSafe).toBe(false);
             expect(budget.available).toBeLessThan(0);
         });
+
+        it('用户模型覆盖优先于静态能力表', () => {
+            const budget = calculateTokenBudget('sys', 'usr', 'unknown-model', {
+                maxContext: 1048576,
+                maxOutput: 131072,
+            });
+            expect(budget.contextWindow).toBe(1048576);
+            expect(budget.maxOutput).toBe(131072);
+        });
+
+        it('未提供覆盖时回退静态能力表', () => {
+            const budget = calculateTokenBudget('sys', 'usr', 'unknown-model');
+            expect(budget.contextWindow).toBe(32768);
+            expect(budget.maxOutput).toBe(8192);
+        });
     });
 
     describe('recommendMaxTokens', () => {

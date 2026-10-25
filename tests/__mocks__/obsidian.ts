@@ -117,6 +117,19 @@ export class Vault {
             f.path = folderPath;
             f.name = folderPath.split('/').filter(Boolean).pop() || folderPath;
             f.vault = this;
+            // 直接子文件：供 loadStylePresets 等按目录枚举文件的逻辑使用
+            const prefix = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+            for (const filePath of this._store.keys()) {
+                if (!filePath.startsWith(prefix)) continue;
+                if (filePath.slice(prefix.length).includes('/')) continue;
+                const child = new TFile();
+                child.path = filePath;
+                child.name = filePath.split('/').pop() || 'unknown.md';
+                child.basename = child.name.replace(/\.[^/.]+$/, '');
+                child.vault = this;
+                child.stat.size = (this._store.get(filePath) || '').length;
+                f.children.push(child);
+            }
             return f;
         }
         return null;
@@ -130,9 +143,23 @@ export class Vault {
             f.name = path.split('/').pop() || 'unknown.md';
             f.basename = f.name.replace(/\.[^/.]+$/, '');
             f.vault = this;
+            f.stat.size = (this._store.get(path) || '').length;
             files.push(f);
         }
         return files;
+    }
+
+    /** 模拟 Vault.getAllLoadedFiles：已创建文件夹 + 全部文件 */
+    getAllLoadedFiles(): TAbstractFile[] {
+        const folders: TAbstractFile[] = [];
+        for (const path of this._folders) {
+            const f = new TFolder();
+            f.path = path;
+            f.name = path.split('/').filter(Boolean).pop() || path;
+            f.vault = this;
+            folders.push(f);
+        }
+        return [...folders, ...this.getFiles()];
     }
 }
 
@@ -168,6 +195,13 @@ export class DataAdapter {
 
     async remove(path: string): Promise<void> {
         this._store.delete(path);
+    }
+
+    /** 模拟 stat：落盘校验依赖 size 判断文件是否真实写入 */
+    async stat(path: string): Promise<{ type: string; ctime: number; mtime: number; size: number } | null> {
+        const content = this._store.get(path);
+        if (content === undefined) return null;
+        return { type: 'file', ctime: 0, mtime: 0, size: content.length };
     }
 
     async list(path: string): Promise<{ files: string[]; folders: string[] }> {

@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
     validateEmotionPlan,
+    generateEmotionPlan,
     EMOTION_PLAN_SYSTEM_PROMPT,
     EMOTION_PLAN_USER_TEMPLATE,
 } from '../../../engine/emotion-planner';
@@ -115,6 +116,33 @@ emotion_end: 狂怒(9/10) — y
         const noChangeErrors = r.errors.filter(e => e.includes('情绪无变化'));
         expect(noChangeErrors.length).toBe(1);
         expect(noChangeErrors[0]).toContain('scene1');
+    });
+});
+
+describe('generateEmotionPlan — 调用契约', () => {
+    it('必须以 (systemPrompt, userPrompt) 顺序调用 callAI', async () => {
+        const callAI = vi.fn(async (_system: string, _user: string) => ({ content: 'plan' }));
+        const aiEngine = { callAI } as any;
+
+        const out = await generateEmotionPlan(
+            aiEngine,
+            {} as any,
+            {
+                chapNum: '12',
+                worldView: '世界观X',
+                infoPlan: '规划Y',
+                characterCores: '灵魂Z',
+            },
+            'flash-model',
+        );
+
+        expect(out).toBe('plan');
+        const [system, user] = callAI.mock.calls[0];
+        expect(system).toContain('情绪规划师');
+        expect(system).toContain('灵魂Z');
+        expect(user).toContain('第12章');
+        expect(user).toContain('世界观X');
+        expect(user).toContain('规划Y');
     });
 });
 

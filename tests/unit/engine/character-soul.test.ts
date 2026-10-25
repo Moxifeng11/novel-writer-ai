@@ -131,6 +131,27 @@ describe('buildCharacterSoulSummary', () => {
         expect(summary.hasSoulData).toBe(false);
         expect(summary.allSouls).toBe('');
     });
+
+    it('按本章相关角色过滤，不再注入全部角色', () => {
+        const a = extractCharacterCoreFromContent('林惊鸿', FULL_NESTED_FM);
+        const b = extractCharacterCoreFromContent('苏白', FLAT_FM);
+        const c = extractCharacterCoreFromContent('张三', PARTIAL_FM);
+        const summary = buildCharacterSoulSummary([a, b, c], '林惊鸿', {
+            relevantNames: new Set(['林惊鸿']),
+        });
+
+        expect(summary.allSouls).toContain('林惊鸿');
+        expect(summary.allSouls).not.toContain('苏白');
+        expect(summary.allSouls).not.toContain('张三');
+    });
+
+    it('相关角色超出上限时只保留 maxSouls 个', () => {
+        const souls = Array.from({ length: 12 }, (_, i) =>
+            extractCharacterCoreFromContent(`角色${i}`, FULL_NESTED_FM.replace('林惊鸿', `角色${i}`)),
+        );
+        const summary = buildCharacterSoulSummary(souls, '角色0', { maxSouls: 3 });
+        expect(summary.allSouls.split('\n').length).toBe(3);
+    });
 });
 
 describe('getProtagonistSoulDetail', () => {
