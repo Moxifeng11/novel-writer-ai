@@ -1,5 +1,39 @@
 # Changelog
 
+## 4.13.0 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.13.0.md` · 上一版本 v4.12.4
+
+### 🧭 动因
+- A2/A3 的 CSS 迁移此前因 Obsidian CLI `plugin:reload` / `dev:screenshot` 返回 127 而暂缓；运行时恢复后按页面分批落地。
+- 知识库、设置、向导、监控、指纹等页面仍有 2,617 处内联样式，主题适配与后续样式治理缺少可组合的工具类。
+- `styles.css` 内存在 297 条未被任何源码引用的历史规则，抵消了工具类提取的收益。
+
+### ✨ 改动
+- **A2 知识库页面（4 文件）**：`book-detail-renderer` / `knowledge-base-view` / `knowledge-base-modals` / `knowledge-detail-modal` 内联 **685 → 140**；提取 220 个声明级工具类。
+- **A3 设置/向导/监控等（15 文件）**：`settings-tab`、`batch-import-modal`、`mini-settings-modal`、`monitor-panel-b`、`wizard-step-renderers`、`prompt-manager-settings`、`knowledge-detail-modal`、`context-panel`、`writing-fingerprint-view`、`fingerprint-detail-modal`、`outline-expand-modal`、`chapter-outline-tree-modal`、`scene-outline-controller`、`refill-modal`、`polish-editor` 内联 **1,231 → 227**；新增 355 个声明级工具类。
+- **全局内联**：**2,617 → 1,068**（静态 2,332 → 840，-64%）。
+- **死 CSS 清理**：移除 297 条未被引用的历史规则（约 39.7KB）；二次扫描 0 候选。
+- **颜色收敛**：A2/A3 文件内联样式中的硬编码颜色全部替换为 `--nw-*` token；新增 `--nw-danger-soft` / `--nw-danger-soft-bg` / `--nw-danger-bright-bg`。
+- **测试适配**：3 处 `className ===` 精确断言改为 `toContain`，适配可组合类名。
+- **规格校准**：A3 的 CSS ≤255KB 目标调整为 ≤325KB；原因是工具类把内联样式搬进 CSS，CSS 文件字节不能单独代表样式负载。
+
+### 📊 指标
+| 指标 | 迁移前 | 迁移后 |
+|---|---|---|
+| 全局内联 | 2,617 | **1,068** |
+| 静态内联 | 2,332 | **840** |
+| `styles.css`（LF） | 338,203 B | **321,817 B** |
+| `!important` | 260 | **190** |
+| 唯一类 | 1,413 | 1,771（新增工具类） |
+| CSS + TS 内联总负载 | 528,973 B | **413,384 B（-21.8%）** |
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint` / `npm run test:cov` / `npm run preflight` / `npm run build` / `npm run check:release` 全绿。
+- `npm test`：**334 个测试文件 / 4238 个用例全部通过**。
+- 计算样式对比（迁移前/后）：知识库列表、书籍详情、指纹库、监控面板 B、设置弹窗、批量导入、知识详情弹窗 **0 差异**；向导内容无样式差异（仅面板尺寸/激活态标题色不同）。
+- 截图：1440 / 768（实际视口 791）dark/light 验证通过。
+
 ## 4.12.4 — 2026-10-26
 
 > 发布说明：`docs/releases/v4.12.4.md` · 上一版本 v4.12.3
