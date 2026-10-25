@@ -1754,6 +1754,66 @@
      color: var(--text-muted);
  }
 
+/* ===== 协同写作 Markdown 编辑器（工具栏 / 状态栏） ===== */
+.nw-cowrite-md-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: var(--background-secondary);
+}
+.nw-cowrite-md-group { display: flex; align-items: center; gap: 4px; }
+.nw-cowrite-md-sep { width: 1px; height: 18px; background: var(--background-modifier-border); margin: 0 2px; }
+.nw-cowrite-md-btn {
+    min-width: 28px;
+    height: 26px;
+    padding: 0 7px;
+    font-size: 12px;
+    line-height: 1;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.nw-cowrite-md-btn:hover { border-color: var(--interactive-accent); color: var(--interactive-accent); }
+.nw-cowrite-md-btn.is-primary {
+    background: var(--interactive-accent);
+    border-color: transparent;
+    color: var(--text-on-accent);
+    font-weight: 600;
+}
+.nw-cowrite-md-btn.is-primary:hover { color: var(--text-on-accent); filter: brightness(1.05); }
+.nw-cowrite-editor.has-md-chrome { border-radius: 0; border-top: none; border-bottom: none; }
+.nw-cowrite-md-status {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+.nw-cowrite-md-status-item { white-space: nowrap; }
+.nw-cowrite-md-status-contract { color: var(--text-normal); }
+.nw-cowrite-md-status-hint { margin-left: auto; color: var(--text-faint); }
+@media (max-width: 720px) {
+    .nw-cowrite-md-status-hint { display: none; }
+    .nw-cowrite-md-toolbar { padding: 6px; gap: 4px; }
+    .nw-cowrite-md-btn { height: 24px; padding: 0 6px; }
+}
+
  /* ===== 建议卡片区 ===== */
  .nw-suggestions {
      display: grid;

@@ -34,6 +34,26 @@ import { captureScrollSnapshot, resolveRestoredScrollTop } from '../shared/previ
 import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
 import { BodySaveController } from './cowrite/body-save-controller';
+import { BodyWriter } from '../engine/body-writer';
+import {
+    DEFAULT_BODY_FORMAT,
+    INDENT_TWO_FULL_WIDTH,
+    type BodyFormatContract,
+} from '../shared/body-format';
+import {
+    countParagraphs,
+    convertToChineseQuotes,
+    describeContractShort,
+    formatNovelManuscript,
+    indentParagraphs,
+    insertBlock,
+    mergeSelectedParagraphs,
+    splitParagraphAtCursor,
+    toggleFirstLineIndent,
+    toggleLinePrefix,
+    wrapSelection,
+    type TextEdit,
+} from '../shared/novel-format';
 import { applyNwScope } from '../utils/helpers';
 import {
     associationTypeToDirection,
@@ -156,6 +176,15 @@ export class CoWritingView extends ItemView {
   private ghostDebounceManager = new AdaptiveDebounceManager({ debug: false });
   private autoSaveDebouncer = new AdaptiveDebounceManager({ debug: false });
   private bodySaveController: BodySaveController;
+  /** Markdown 编辑器：当前项目的正文格式契约（写作规则推导） */
+  private editorContract: BodyFormatContract = DEFAULT_BODY_FORMAT;
+  private editorContractProject = '';
+  private bodyWriter: BodyWriter | null = null;
+  private mdStatusEl: HTMLElement | null = null;
+  private mdStatusModeEl: HTMLElement | null = null;
+  private mdStatusContractEl: HTMLElement | null = null;
+  private mdStatusWordsEl: HTMLElement | null = null;
+  private mdStatusParagraphsEl: HTMLElement | null = null;
   lastGhostSeed = "";
   /** 上一次自动联想请求的时间（0 = 尚未请求）：慢速打字时限频，避免每次停顿都打 AI */
   private lastGhostRequestAt = 0;
@@ -450,6 +479,8 @@ export class CoWritingView extends ItemView {
     this.facade.syncChapterLoaded(project, volumeNum, chapterNum, chapterName2, bodyOnly, bodyOnly.trim().length);
     this.updateControlState("\u5DF2\u52A0\u8F7D");
     this.refreshStatusBar();
+    this.updateMarkdownStatus();
+    void this.resolveEditorContract().then(() => this.updateMarkdownStatus());
     // initEngine 之前 facade 仍是上一章的会话：用旧 metrics 会先渲染一遍旧章完成度
     this.renderMetrics(emptyMetrics());
     if (this.realtimeQuality.isEnabled()) this.scheduleQualityMonitor();
@@ -639,14 +670,16 @@ export class CoWritingView extends ItemView {
     this.centerPanel = centerPanel;
     const editorWrap = centerPanel.createDiv({ cls: "nw-cowrite-editor-wrap" });
     this.editorWrapEl = editorWrap;
-    this.rightEditor = editorWrap.createEl("textarea", { cls: "nw-cowrite-editor" });
+    this.buildMarkdownToolbar(editorWrap);
+    this.rightEditor = editorWrap.createEl("textarea", { cls: "nw-cowrite-editor has-md-chrome" });
     this.rightEditor.spellcheck = false;
-    this.rightEditor.placeholder = "在此写作……按 Tab 生成 AI 建议";
+    this.rightEditor.placeholder = "在此写作……支持 Markdown；Tab 生成 AI 建议";
     this.ghostSuggestionContainer = editorWrap.createDiv({ cls: "nw-cowrite-ghost-suggestion" });
     this.ghostSuggestionContainer.addEventListener("click", () => {
       if (this.ghostSuggestion && !this.isSuggesting)
         void this.handleAcceptSuggestion(this.ghostSuggestion);
     });
+    this.buildMarkdownStatus(editorWrap);
 
     // 拖拽分隔条
     this.resizerEl = centerPanel.createDiv({ cls: "nw-cowrite-resizer" });
@@ -888,6 +921,7 @@ export class CoWritingView extends ItemView {
     this.rightEditor.addEventListener("keydown", (event: KeyboardEvent) => this.handleEditorKeydown(event));
     this.rightEditor.addEventListener("input", () => {
       this.facade.updateSnapshot(this.rightEditor.value);
+      this.updateMarkdownStatus();
       this.updateControlState("编辑中");
       void this.refreshPreview(false);
       this.liveAnalysis.scheduleRefresh("input");
@@ -1024,7 +1058,239 @@ export class CoWritingView extends ItemView {
     const visible = this.appliedHint !== null && this.appliedHint !== "" && current === this.appliedHint;
     this.hintStateDisplay.style.display = visible ? "" : "none";
   }
+  /** 编辑器顶部：Markdown / 段落 / 一键排版工具条 */
+  private buildMarkdownToolbar(wrap: HTMLElement): void {
+    const toolbar = wrap.createDiv({ cls: 'nw-cowrite-md-toolbar' });
+    let group = toolbar.createDiv({ cls: 'nw-cowrite-md-group' });
+    const addSeparator = () => {
+      toolbar.createDiv({ cls: 'nw-cowrite-md-sep' });
+      group = toolbar.createDiv({ cls: 'nw-cowrite-md-group' });
+    };
+    const addButton = (label: string, title: string, handler: () => void, cls = '') => {
+      const button = group.createEl('button', {
+        text: label,
+        cls: `nw-cowrite-md-btn ${cls}`.trim(),
+        attr: { type: 'button', title, 'aria-label': title },
+      });
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        handler();
+      });
+    };
+    const selection = () => ({
+      start: this.rightEditor?.selectionStart ?? 0,
+      end: this.rightEditor?.selectionEnd ?? 0,
+    });
+    const indent = () => this.editorContract.indent || INDENT_TWO_FULL_WIDTH;
+    const applyEdit = (fn: (text: string, start: number, end: number) => TextEdit) => {
+      const editor = this.rightEditor;
+      if (!editor) return;
+      const { start, end } = selection();
+      this.applyTextEdit(fn(editor.value, start, end));
+    };
+
+    addButton('B', '加粗（Ctrl+B）', () => applyEdit((text, s, e) => wrapSelection(text, s, e, '**')));
+    addButton('I', '斜体（Ctrl+I）', () => applyEdit((text, s, e) => wrapSelection(text, s, e, '*')));
+    addButton('H', '二级标题（Ctrl+Alt+2）', () => applyEdit((text, s, e) => toggleLinePrefix(text, s, e, '## ')));
+    addButton('❝', '引用（Ctrl+Alt+Q）', () => applyEdit((text, s, e) => toggleLinePrefix(text, s, e, '> ')));
+    addButton('•', '无序列表（Ctrl+Alt+L）', () => applyEdit((text, s, e) => toggleLinePrefix(text, s, e, '- ')));
+    addButton('―', '分隔线', () => {
+      const { start } = selection();
+      const editor = this.rightEditor;
+      if (editor) this.applyTextEdit(insertBlock(editor.value, start, '---'));
+    });
+
+    addSeparator();
+    addButton('⇥', '首行缩进/取消（Ctrl+Alt+I）', () => applyEdit((text, s, e) => toggleFirstLineIndent(text, s, e, indent())));
+    addButton('↹', '增加段落缩进（Ctrl+]）', () => applyEdit((text, s, e) => indentParagraphs(text, s, e, indent(), 1)));
+    addButton('⇤', '减少段落缩进（Ctrl+[）', () => applyEdit((text, s, e) => indentParagraphs(text, s, e, indent(), -1)));
+    addButton('¶', '合并选中段落', () => applyEdit((text, s, e) => mergeSelectedParagraphs(text, s, e)));
+    addButton('↵', '在光标处拆分段落', () => {
+      const { start } = selection();
+      const editor = this.rightEditor;
+      if (editor) this.applyTextEdit(splitParagraphAtCursor(editor.value, start, this.editorContract));
+    });
+    addButton('“”', '选中文本转中文引号', () => applyEdit((text, s, e) => convertToChineseQuotes(text, s, e)));
+
+    addSeparator();
+    addButton('⚡ 一键排版', '按项目写作规则排版全文（Ctrl+Alt+F）', () => void this.applyNovelFormat(), 'is-primary');
+  }
+
+  /** 编辑器底部：Markdown / 格式契约 / 字数 / 段落 */
+  private buildMarkdownStatus(wrap: HTMLElement): void {
+    const status = wrap.createDiv({ cls: 'nw-cowrite-md-status' });
+    this.mdStatusEl = status;
+    this.mdStatusModeEl = status.createSpan({ cls: 'nw-cowrite-md-status-item', text: 'Markdown' });
+    this.mdStatusContractEl = status.createSpan({ cls: 'nw-cowrite-md-status-item nw-cowrite-md-status-contract' });
+    this.mdStatusWordsEl = status.createSpan({ cls: 'nw-cowrite-md-status-item' });
+    this.mdStatusParagraphsEl = status.createSpan({ cls: 'nw-cowrite-md-status-item' });
+    status.createSpan({ cls: 'nw-cowrite-md-status-hint', text: 'Ctrl+Alt+F 一键排版' });
+    this.updateMarkdownStatus();
+  }
+
+  private updateMarkdownStatus(): void {
+    if (!this.mdStatusEl) return;
+    const text = this.rightEditor?.value ?? '';
+    this.mdStatusModeEl?.setText('Markdown');
+    this.mdStatusContractEl?.setText(`格式：${describeContractShort(this.editorContract)}`);
+    this.mdStatusWordsEl?.setText(`字数 ${text.replace(/\s+/g, '').length}`);
+    this.mdStatusParagraphsEl?.setText(`段落 ${countParagraphs(text)}`);
+  }
+
+  private getBodyWriter(): BodyWriter {
+    if (!this.bodyWriter) this.bodyWriter = new BodyWriter({ app: this.app });
+    return this.bodyWriter;
+  }
+
+  /** 读取项目「写作规则.md」推导的正文契约；项目切换时重算 */
+  private async resolveEditorContract(): Promise<BodyFormatContract> {
+    const project = this.project || '';
+    if (project && this.editorContractProject === project) return this.editorContract;
+    if (!project) {
+      this.editorContract = { ...DEFAULT_BODY_FORMAT };
+      this.editorContractProject = '';
+      this.updateMarkdownStatus();
+      return this.editorContract;
+    }
+    try {
+      this.editorContract = await this.getBodyWriter().resolveContract(project);
+      this.editorContractProject = project;
+    } catch (e) {
+      log.warn('[CoWritingView] 读取写作规则失败，使用默认排版契约:', e);
+      this.editorContract = { ...DEFAULT_BODY_FORMAT };
+      this.editorContractProject = project;
+    }
+    this.updateMarkdownStatus();
+    return this.editorContract;
+  }
+
+  /**
+   * 应用一次编辑器文本变更。
+   * 优先 execCommand('insertText')，保留原生撤销栈；失败时回退到 value + input。
+   */
+  private applyTextEdit(edit: TextEdit): void {
+    const editor = this.rightEditor;
+    if (!editor) return;
+    if (edit.text === editor.value) {
+      editor.focus();
+      editor.setSelectionRange(edit.selectionStart, edit.selectionEnd);
+      return;
+    }
+    editor.focus();
+    let applied = false;
+    try {
+      editor.setSelectionRange(0, editor.value.length);
+      applied = document.execCommand('insertText', false, edit.text);
+    } catch {
+      applied = false;
+    }
+    if (!applied) {
+      editor.value = edit.text;
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    const start = Math.min(edit.selectionStart, editor.value.length);
+    const end = Math.min(edit.selectionEnd, editor.value.length);
+    editor.setSelectionRange(start, end);
+    this.updateMarkdownStatus();
+  }
+
+  private handleMarkdownShortcut(event: KeyboardEvent): boolean {
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (mod && event.altKey) {
+      if (key === '1' || key === '2' || key === '3') {
+        event.preventDefault();
+        const prefix = `${'#'.repeat(Number(key))} `;
+        const start = this.rightEditor.selectionStart;
+        const end = this.rightEditor.selectionEnd;
+        this.applyTextEdit(toggleLinePrefix(this.rightEditor.value, start, end, prefix));
+        return true;
+      }
+      if (key === 'q') {
+        event.preventDefault();
+        const start = this.rightEditor.selectionStart;
+        const end = this.rightEditor.selectionEnd;
+        this.applyTextEdit(toggleLinePrefix(this.rightEditor.value, start, end, '> '));
+        return true;
+      }
+      if (key === 'l') {
+        event.preventDefault();
+        const start = this.rightEditor.selectionStart;
+        const end = this.rightEditor.selectionEnd;
+        this.applyTextEdit(toggleLinePrefix(this.rightEditor.value, start, end, '- '));
+        return true;
+      }
+      if (key === 'i') {
+        event.preventDefault();
+        const start = this.rightEditor.selectionStart;
+        const end = this.rightEditor.selectionEnd;
+        this.applyTextEdit(toggleFirstLineIndent(this.rightEditor.value, start, end, this.editorContract.indent || INDENT_TWO_FULL_WIDTH));
+        return true;
+      }
+      if (key === 'f') {
+        event.preventDefault();
+        void this.applyNovelFormat();
+        return true;
+      }
+      return false;
+    }
+    if (!mod || event.shiftKey || event.altKey) return false;
+    if (key === 'b' || key === 'i') {
+      event.preventDefault();
+      const start = this.rightEditor.selectionStart;
+        const end = this.rightEditor.selectionEnd;
+      this.applyTextEdit(wrapSelection(this.rightEditor.value, start, end, key === 'b' ? '**' : '*'));
+      return true;
+    }
+    if (event.key === '`') {
+      event.preventDefault();
+      const start = this.rightEditor.selectionStart;
+        const end = this.rightEditor.selectionEnd;
+      this.applyTextEdit(wrapSelection(this.rightEditor.value, start, end, '`'));
+      return true;
+    }
+    if (event.key === ']' || event.key === '[') {
+      event.preventDefault();
+      const start = this.rightEditor.selectionStart;
+        const end = this.rightEditor.selectionEnd;
+      this.applyTextEdit(indentParagraphs(
+        this.rightEditor.value,
+        start,
+        end,
+        this.editorContract.indent || INDENT_TWO_FULL_WIDTH,
+        event.key === ']' ? 1 : -1,
+      ));
+      return true;
+    }
+    return false;
+  }
+
+  /** 一键排版：按项目写作规则把全文规整为小说格式 */
+  private async applyNovelFormat(): Promise<void> {
+    const editor = this.rightEditor;
+    if (!editor) return;
+    const raw = editor.value;
+    if (!raw.trim()) {
+      new Notice('编辑器为空，无法排版');
+      return;
+    }
+    const contract = await this.resolveEditorContract();
+    const formatted = formatNovelManuscript(raw, contract);
+    if (formatted === raw) {
+      new Notice('当前正文已是小说格式');
+      return;
+    }
+    this.applyTextEdit({
+      text: formatted,
+      selectionStart: formatted.length,
+      selectionEnd: formatted.length,
+    });
+    const sourceHint = contract.source === 'writing-rules' ? '' : '（未找到写作规则，使用默认格式）';
+    new Notice(`已按小说格式排版：${describeContractShort(contract)}${sourceHint}`, 4000);
+  }
+
   async handleEditorKeydown(event: KeyboardEvent) {
+    if (this.handleMarkdownShortcut(event)) return;
     if (event.key === "Tab") {
       event.preventDefault();
       // NBI-05: 生成中不接受幽灵建议，避免绕过候选就绪守卫
