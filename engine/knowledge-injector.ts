@@ -640,13 +640,40 @@ export class KnowledgeInjector {
 
         try {
             const lines: string[] = [];
-            
+
             const rhythmPatterns = this.getSceneRhythmPatterns(sceneCategory);
             if (rhythmPatterns.length > 0) {
                 lines.push('场景节奏参考模式：');
                 rhythmPatterns.forEach((pattern, i) => {
                     lines.push(`  ${i + 1}. ${pattern}`);
                 });
+            }
+
+            // 此前 knowledgeVectorStore / bookIds 只用于早退，节奏维度（拆解产物）从未被消费。
+            // 这里补上 rhythm 检索，硬编码模式保留为兜底，避免无向量数据时行为回退。
+            const queryText = (context.outline || context.emotionPlan || context.sceneObjective || context.currentText || '').slice(0, 500);
+            if (queryText) {
+                const results = await this.knowledgeVectorStore.search(queryText, {
+                    topN: Math.max(2, Math.round(strength * 4)),
+                    bookIds,
+                    dimensions: ['rhythm'],
+                });
+                const samples: string[] = [];
+                const seen = new Set<string>();
+                for (const result of results) {
+                    const sample = (result.sample || '').trim();
+                    if (!sample || seen.has(sample)) continue;
+                    seen.add(sample);
+                    samples.push(sample.length > 160 ? `${sample.slice(0, 160)}…` : sample);
+                    if (samples.length >= 3) break;
+                }
+                if (samples.length > 0) {
+                    lines.push('');
+                    lines.push('参考节奏片段：');
+                    samples.forEach((sample, i) => {
+                        lines.push(`  ${i + 1}. ${sample}`);
+                    });
+                }
             }
 
             const scenePace = this.getScenePaceSuggestion(sceneCategory);

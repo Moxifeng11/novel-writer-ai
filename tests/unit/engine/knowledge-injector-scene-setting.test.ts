@@ -67,4 +67,44 @@ describe('KnowledgeInjector — 设定注入的数据源维度', () => {
         expect(text).toContain('设定参考（结构拆解）');
         expect(text).toContain('起：主角被逐出宗门');
     });
+
+    it('场景节奏段按 rhythm 维度检索，并保留硬编码节奏模式', async () => {
+        const store = makeStore([
+            {
+                sample: '短句推进，交锋密集，转折前留半拍',
+                bookId: 'b1',
+                bookName: '参考书',
+                dimension: 'rhythm',
+                score: 0.82,
+            },
+        ]);
+        const injector = makeInjector(store);
+
+        const text = await (injector as any).buildSceneRhythmInjection(
+            { outline: '宗门大战，主角以弱胜强' },
+            0.6,
+            'battle',
+        );
+
+        expect(store.calls).toHaveLength(1);
+        expect(store.calls[0].dimensions).toEqual(['rhythm']);
+        expect(text).toContain('场景节奏参考模式');
+        expect(text).toContain('参考节奏片段');
+        expect(text).toContain('短句推进，交锋密集');
+    });
+
+    it('节奏检索无结果时回退硬编码模式，不输出空片段标题', async () => {
+        const store = makeStore([]);
+        const injector = makeInjector(store);
+
+        const text = await (injector as any).buildSceneRhythmInjection(
+            { outline: '宗门大战，主角以弱胜强' },
+            0.6,
+            'battle',
+        );
+
+        expect(store.calls).toHaveLength(1);
+        expect(text).toContain('场景节奏参考模式');
+        expect(text).not.toContain('参考节奏片段');
+    });
 });
