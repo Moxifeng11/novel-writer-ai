@@ -15,7 +15,9 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const cssPath = path.join(root, 'styles.css');
 const baselinePath = path.join(root, '.css-baseline.json');
-const css = fs.readFileSync(cssPath, 'utf8');
+// 统一按 LF 计费：Windows checkout 是 CRLF，若按工作树字节记基线，
+// Linux/Release 会少 ~1 byte/行，棘轮在不同平台上口径不一致。
+const css = fs.readFileSync(cssPath, 'utf8').replace(/\r\n/g, '\n');
 
 function stripComments(text) {
     return text.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
