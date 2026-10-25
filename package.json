@@ -25,6 +25,7 @@
     "check:inline-styles": "node scripts/check-inline-styles.mjs",
     "css:baseline": "node scripts/check-css.js --update-baseline",
     "inline:baseline": "node scripts/check-inline-styles.mjs --update-baseline",
+    "eval:fingerprint": "node scripts/eval-fingerprint-retrieval.mjs",
     "css:cleanup": "node scripts/cleanup-css.js",
     "css:stats": "node scripts/stats-css.js",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
