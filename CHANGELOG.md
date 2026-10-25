@@ -1,5 +1,30 @@
 # Changelog
 
+## 4.12.3 — 2026-10-25
+
+> 发布说明：`docs/releases/v4.12.3.md` · 上一版本 v4.12.2
+
+### 🧭 动因
+- R1 的预算结果只在 console 记录，本地小窗口被裁剪时无法从 UI 定位；`normalizeOllamaEndpoint` 已支持任意本机端口，但缺端到端测试。
+- R4 的仪表盘/协同/Panel B 都走 WQE，但没有同分测试；`MonitorPanelB#setQualityOptions` 是零调用死配置。
+- R6 的 V2 指纹检索 `minScore` 默认为 0，低相关指纹会挤掉真正相近的风格；也缺少 hit@k 评估工具。
+- R5 的浮窗保存只做过代码核对，没有 BodyWriter 契约单测。
+
+### ✨ 改动
+- **预算遥测（`shared/budget-telemetry.ts`）**：进程内环形缓冲最近 20 条，记录 api / chapter / scene / cowrite 四个来源的模型、输入/可用/窗口、丢弃与截断片段；「流程诊断」展示最近 5 条。
+- **本地 Ollama 端口**：`normalizeOllamaEndpoint` 覆盖 localhost / 127.0.0.1 / [::1] 的任意端口；补 ai-api-client 单测。
+- **跨视图同分（R4）**：新增 `quality-score-engine-cross-view.test.ts` 锁定仪表盘/协同/Panel B 同一文本、同一上下文的同分口径；移除零调用的 `setQualityOptions`。
+- **检索下限（R6）**：`selectFingerprintsForInjection` 向 V2 传 `minScore`，默认 `RETRIEVAL_ABSOLUTE_MIN_SCORE(0.15)`，调用方可覆盖；新增 `eval:fingerprint` 离线 hit@k/MRR 脚本。
+- **浮窗契约（R5）**：新增 `co-write-floating-panel-contract.test.ts`，锁定 BodyWriter 入口、完整身份字段与禁止直接 `vault.modify`。
+
+### ⏸ 未纳入本版
+- **A2/A3 CSS 迁移**：当前 Obsidian 1.12.7 的 CLI 在本机对 `plugin:reload` / `dev:screenshot` 返回 127，无法完成 1440/1024/768 × dark/light/Minimal 的视觉验收；按计划风险约束不盲改。A2 的 AST 可行性分析已记录在 `style-ui-unification/spec.md`，待可截图的运行时恢复后继续。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint`：通过
+- `npm test`：**334 个测试文件 / 4238 个用例全部通过**
+- `npm run test:cov` / `check:templates` / `check:css` / `check:inline-styles` / `check:deps` / `check-engines` / `build` / `check:release`：全绿
+
 ## 4.12.2 — 2026-10-25
 
 > 发布说明：`docs/releases/v4.12.2.md` · 上一版本 v4.12.1
