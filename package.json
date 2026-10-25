@@ -1,6 +1,6 @@
 {
   "name": "novel-writer-ai",
-  "version": "4.12.1",
+  "version": "4.12.2",
   "description": "Obsidian plugin for AI-powered novel writing",
   "main": "main.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "check:release": "node scripts/check-release.mjs",
     "build": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build.js",
     "build:release": "npm run preflight && npm run build",
-    "preflight": "npm run typecheck && npm run test && npm run check:templates && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines -- --baseline .arch-baseline.json",
+    "preflight": "npm run typecheck && npm run test && npm run check:templates && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines -- --baseline .arch-baseline.json",
     "dev": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build.js --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -22,6 +22,9 @@
     "check-engines": "node scripts/scan-engine-instances.mjs --check",
     "check:deps": "node scripts/check-dependencies.mjs",
     "check:css": "node scripts/check-css.js",
+    "check:inline-styles": "node scripts/check-inline-styles.mjs",
+    "css:baseline": "node scripts/check-css.js --update-baseline",
+    "inline:baseline": "node scripts/check-inline-styles.mjs --update-baseline",
     "css:cleanup": "node scripts/cleanup-css.js",
     "css:stats": "node scripts/stats-css.js",
     "audit:deps": "npm audit --omit=dev --audit-level=high",

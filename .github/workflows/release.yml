@@ -32,6 +32,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: CSS 预算与命名检查
+        run: npm run check:css
+
+      - name: 内联样式基线检查
+        run: npm run check:inline-styles
+
       - name: Typecheck
         run: npm run typecheck
 
