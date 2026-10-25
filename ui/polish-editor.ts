@@ -147,31 +147,31 @@ export class PolishEditor {
         injectPolishEditorStyles();
 
         // 分割线
-        area.createEl('hr', { attr: { style: 'margin:16px 0 12px 0;border-color:var(--background-modifier-border);' } });
+        area.createEl('hr', { cls: 'nw-u-m-16px-0-12px-0 nw-u-bordercolor-background-modifier-bo' });
 
         // 标题行 + 自动保存状态
-        const headerRow = area.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' } });
-        const titleSection = headerRow.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;' } });
-        titleSection.createEl('h4', { text: '✏️ 文笔润色编辑器', attr: { style: 'margin:0;' } });
+        const headerRow = area.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2' });
+        const titleSection = headerRow.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2' });
+        titleSection.createEl('h4', { text: '✏️ 文笔润色编辑器', cls: 'nw-u-m-0-2' });
         const aiPolishBtn = titleSection.createEl('button', {
             text: '✨ AI润色',
-            cls: 'nw-btn',
-            attr: { style: 'font-size:12px;padding:2px 10px;' },
+            cls: "nw-btn nw-u-fs-12px-2 nw-u-p-2px-10px",
+            attr: {},
         });
         const rhythmBtn = titleSection.createEl('button', {
             text: '📊 节奏分析',
-            cls: 'nw-btn',
-            attr: { style: 'font-size:12px;padding:2px 10px;' },
+            cls: "nw-btn nw-u-fs-12px-2 nw-u-p-2px-10px",
+            attr: {},
         });
         const styleBtn = titleSection.createEl('button', {
             text: '🎨 风格指南',
-            cls: 'nw-btn',
-            attr: { style: 'font-size:12px;padding:2px 10px;' },
+            cls: "nw-btn nw-u-fs-12px-2 nw-u-p-2px-10px",
+            attr: {},
         });
-        const statusSpan = headerRow.createSpan({ text: '💾 已保存', attr: { style: 'font-size:11px;color:var(--text-muted);' } });
+        const statusSpan = headerRow.createSpan({ text: '💾 已保存', cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2' });
 
         // 实体颜色图例
-        const legendRow = area.createDiv({ attr: { style: 'display:flex;gap:12px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;' } });
+        const legendRow = area.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-marginbottom-8px-2 nw-u-fs-11px-2 nw-u-fwr-wrap-2' });
         const legendItems: [string, string, string][] = [
             ['👤 人物', '#e74c3c', '人物'],
             ['📍 地点', '#3498db', '地点'],
@@ -344,17 +344,17 @@ export class PolishEditor {
         // 移除旧面板
         area.querySelectorAll('.nw-rhythm-panel').forEach(el => el.remove());
 
-        const panel = area.createDiv({ cls: 'nw-rhythm-panel', attr: { style: 'margin:8px 0;padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);' } });
+        const panel = area.createDiv({ cls: "nw-rhythm-panel nw-u-m-8px-0 nw-u-p-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-bg-background-secondary-2", attr: {} });
 
         // 标题行
-        const header = panel.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;' } });
-        header.createEl('h5', { text: '📊 节奏分析结果', attr: { style: 'margin:0;font-size:14px;' } });
-        const closeBtn = header.createEl('button', { text: '✕', cls: 'nw-btn', attr: { style: 'font-size:11px;padding:1px 6px;' } });
+        const header = panel.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-marginbottom-8px-2' });
+        header.createEl('h5', { text: '📊 节奏分析结果', cls: 'nw-u-m-0-2 nw-u-fs-14px-2' });
+        const closeBtn = header.createEl('button', { text: '✕', cls: "nw-btn nw-u-fs-11px-2 nw-u-p-1px-6px-2", attr: {} });
         closeBtn.onclick = () => panel.remove();
 
         // 整体节奏
         const paceLabels: Record<string, string> = { fast: '⚡ 偏快', medium: '⚖️ 均衡', slow: '🐌 偏慢', balanced: '⚖️ 均衡' };
-        const overviewRow = panel.createDiv({ attr: { style: 'display:flex;gap:12px;margin-bottom:8px;font-size:12px;flex-wrap:wrap;' } });
+        const overviewRow = panel.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-marginbottom-8px-2 nw-u-fs-12px-2 nw-u-fwr-wrap-2' });
         overviewRow.createSpan({ text: `整体节奏: ${paceLabels[result.overallPace] || result.overallPace}` });
         overviewRow.createSpan({ text: `段落数: ${result.segments.length}` });
         overviewRow.createSpan({ text: `拖沓段: ${result.slowSegments.length}`, attr: { style: result.slowSegments.length > 0 ? 'color:var(--text-warning);' : '' } });
@@ -362,17 +362,17 @@ export class PolishEditor {
 
         // 建议
         if (result.suggestions.length > 0) {
-            const sugSection = panel.createDiv({ attr: { style: 'margin-bottom:8px;' } });
-            sugSection.createEl('div', { text: '💡 优化建议', attr: { style: 'font-size:12px;font-weight:600;margin-bottom:4px;' } });
+            const sugSection = panel.createDiv({ cls: 'nw-u-marginbottom-8px-2' });
+            sugSection.createEl('div', { text: '💡 优化建议', cls: 'nw-u-fs-12px-2 nw-u-fwt-600-2 nw-u-marginbottom-4px-2' });
             for (const sug of result.suggestions) {
-                sugSection.createEl('div', { text: `• ${sug}`, attr: { style: 'font-size:11px;color:var(--text-muted);margin:2px 0;' } });
+                sugSection.createEl('div', { text: `• ${sug}`, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-m-2px-0' });
             }
         }
 
         // 段落详情
         if (result.segments.length > 0) {
-            const detailSection = panel.createDiv({ attr: { style: 'max-height:200px;overflow-y:auto;' } });
-            detailSection.createEl('div', { text: '段落详情', attr: { style: 'font-size:12px;font-weight:600;margin-bottom:4px;' } });
+            const detailSection = panel.createDiv({ cls: 'nw-u-maxh-200px-2 nw-u-ovy-auto-2' });
+            detailSection.createEl('div', { text: '段落详情', cls: 'nw-u-fs-12px-2 nw-u-fwt-600-2 nw-u-marginbottom-4px-2' });
 
             const typeLabels: Record<string, string> = { action: '⚔️动作', dialogue: '💬对话', description: '📝描写', introspection: '💭内心' };
             const paceIcon: Record<string, string> = { fast: '⚡', medium: '➡️', slow: '🐌' };
@@ -386,12 +386,12 @@ export class PolishEditor {
                         title: seg.issues.join('；'),
                     }
                 });
-                row.createSpan({ text: `${paceIcon[seg.pace] || '➡️'}`, attr: { style: 'min-width:16px;' } });
-                row.createSpan({ text: `${typeLabels[seg.type] || seg.type}`, attr: { style: 'min-width:60px;color:var(--text-muted);' } });
+                row.createSpan({ text: `${paceIcon[seg.pace] || '➡️'}`, cls: 'nw-u-minw-16px' });
+                row.createSpan({ text: `${typeLabels[seg.type] || seg.type}`, cls: 'nw-u-minw-60px nw-u-c-text-muted-2' });
                 row.createSpan({ text: `密度${seg.density}`, attr: { style: `min-width:50px;${seg.density < 30 ? 'color:var(--text-warning);' : seg.density > 85 ? 'color:var(--text-error);' : ''}` } });
                 row.createSpan({ text: `紧张${seg.tensionLevel}`, attr: { style: `min-width:50px;${seg.tensionLevel > 80 ? 'color:var(--text-success);' : ''}` } });
                 if (hasIssue) {
-                    row.createSpan({ text: `⚠️ ${seg.issues[0]}`, attr: { style: 'color:var(--text-warning);flex:1;' } });
+                    row.createSpan({ text: `⚠️ ${seg.issues[0]}`, cls: 'nw-u-c-text-warning nw-u-flex-1-2' });
                 }
             }
         }
@@ -402,37 +402,37 @@ export class PolishEditor {
         // 移除旧面板
         area.querySelectorAll('.nw-style-panel').forEach(el => el.remove());
 
-        const panel = area.createDiv({ cls: 'nw-style-panel', attr: { style: 'margin:8px 0;padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);' } });
+        const panel = area.createDiv({ cls: "nw-style-panel nw-u-m-8px-0 nw-u-p-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-bg-background-secondary-2", attr: {} });
 
         // 标题行
-        const header = panel.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;' } });
-        header.createEl('h5', { text: '🎨 作者风格指南', attr: { style: 'margin:0;font-size:14px;' } });
-        const closeBtn = header.createEl('button', { text: '✕', cls: 'nw-btn', attr: { style: 'font-size:11px;padding:1px 6px;' } });
+        const header = panel.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-marginbottom-8px-2' });
+        header.createEl('h5', { text: '🎨 作者风格指南', cls: 'nw-u-m-0-2 nw-u-fs-14px-2' });
+        const closeBtn = header.createEl('button', { text: '✕', cls: "nw-btn nw-u-fs-11px-2 nw-u-p-1px-6px-2", attr: {} });
         closeBtn.onclick = () => panel.remove();
 
         if (!guide || guide.trim().length === 0) {
             panel.createEl('p', {
                 text: 'ℹ️ 暂无风格学习数据。随着写作积累，系统会自动学习您的风格偏好并在此展示。',
-                attr: { style: 'font-size:12px;color:var(--text-muted);margin:0;' }
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-m-0-2'
             });
             return;
         }
 
         // 解析并展示风格指南
         const lines = guide.split('\n');
-        const contentDiv = panel.createDiv({ attr: { style: 'font-size:12px;line-height:1.6;' } });
+        const contentDiv = panel.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-lh-1-6-2' });
 
         for (const line of lines) {
             if (line.startsWith('【')) {
-                contentDiv.createEl('div', { text: line, attr: { style: 'font-weight:600;margin:8px 0 4px 0;color:var(--text-accent);' } });
+                contentDiv.createEl('div', { text: line, cls: 'nw-u-fwt-600-2 nw-u-m-8px-0-4px-0 nw-u-c-text-accent' });
             } else if (line.startsWith('偏好风格：')) {
-                contentDiv.createEl('div', { text: '✅ 偏好风格', attr: { style: 'font-weight:600;margin:6px 0 2px 0;color:var(--text-success);' } });
+                contentDiv.createEl('div', { text: '✅ 偏好风格', cls: 'nw-u-fwt-600-2 nw-u-m-6px-0-2px-0 nw-u-c-text-success' });
             } else if (line.startsWith('避免风格：')) {
-                contentDiv.createEl('div', { text: '❌ 避免风格', attr: { style: 'font-weight:600;margin:6px 0 2px 0;color:var(--text-error);' } });
+                contentDiv.createEl('div', { text: '❌ 避免风格', cls: 'nw-u-fwt-600-2 nw-u-m-6px-0-2px-0 nw-u-c-text-error' });
             } else if (line.startsWith('- ')) {
-                contentDiv.createEl('div', { text: line, attr: { style: 'margin:1px 0 1px 8px;color:var(--text-muted);' } });
+                contentDiv.createEl('div', { text: line, cls: 'nw-u-m-1px-0-1px-8px nw-u-c-text-muted-2' });
             } else if (line.trim()) {
-                contentDiv.createEl('div', { text: line, attr: { style: 'margin:2px 0;' } });
+                contentDiv.createEl('div', { text: line, cls: 'nw-u-m-2px-0' });
             }
         }
     }
@@ -521,7 +521,7 @@ export class PolishAIPolishModal extends Modal {
         if (!this.selection || this.selection.trim().length === 0) {
             const hint = scopeSection.createEl('p', {
                 text: 'ℹ️ 当前未检测到选中文本，「选中段落润色」需先在编辑器中选中文本。',
-                attr: { style: 'font-size:12px;color:var(--text-muted);margin:6px 0 0 0;' },
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-m-6px-0-0-0',
             });
             void hint;
         }
@@ -550,7 +550,7 @@ export class PolishAIPolishModal extends Modal {
             fingerprintSection.createEl('h4', { text: '写作指纹' });
             const fingerprintDesc = fingerprintSection.createEl('p', {
                 text: '应用项目启用的写作指纹风格，让润色结果更贴合你的写作习惯',
-                attr: { style: 'font-size:12px;color:var(--text-muted);margin:4px 0 8px 0;' }
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-m-4px-0-8px-0'
             });
             void fingerprintDesc;
             
@@ -558,7 +558,7 @@ export class PolishAIPolishModal extends Modal {
             fingerprintToggle.style.cssText = 'display:flex;align-items:center;gap:8px;';
             const checkbox = fingerprintToggle.createEl('input', {
                 type: 'checkbox',
-                attr: { style: 'cursor:pointer;' }
+                cls: 'nw-u-cur-pointer-2'
             });
             checkbox.checked = this.applyFingerprint;
             checkbox.addEventListener('change', () => {
@@ -566,7 +566,7 @@ export class PolishAIPolishModal extends Modal {
             });
             fingerprintToggle.createEl('span', {
                 text: '应用写作指纹风格',
-                attr: { style: 'font-size:13px;cursor:pointer;' }
+                cls: 'nw-u-fs-13px-2 nw-u-cur-pointer-2'
             }).addEventListener('click', () => {
                 checkbox.checked = !checkbox.checked;
                 this.applyFingerprint = checkbox.checked;
@@ -591,11 +591,11 @@ export class PolishAIPolishModal extends Modal {
         contentEl.createEl('h2', { text: '✨ AI 润色' });
         contentEl.createEl('p', {
             text: `⏳ 正在调用 AI 润色（${this.polishScope} · ${this.style}），请稍候...`,
-            attr: { style: 'color:var(--text-muted);' },
+            cls: 'nw-u-c-text-muted-2',
         });
         contentEl.createEl('p', {
             text: '润色过程中请勿关闭窗口',
-            attr: { style: 'font-size:12px;color:var(--text-muted);' },
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2',
         });
     }
 
@@ -726,7 +726,7 @@ ${targetText}
 
         const metaP = contentEl.createEl('p', {
             text: `范围：${this.polishScope} · 风格：${this.style}`,
-            attr: { style: 'font-size:12px;color:var(--text-muted);margin:0 0 12px 0;' },
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-m-0-0-12px-0-2',
         });
         void metaP;
 

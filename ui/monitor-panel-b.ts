@@ -371,7 +371,7 @@ export class MonitorPanelB extends DraggablePanel {
     });
     container.createDiv({
       text: reason,
-      attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
     });
   }
 
@@ -426,9 +426,7 @@ export class MonitorPanelB extends DraggablePanel {
     });
 
     const progressBar = this.divergenceContent.createDiv({
-      attr: {
-        style: "height:8px;background:var(--nw-bg-muted, var(--background-modifier-cover));border-radius:4px;overflow:hidden;margin-bottom:10px;"
-      }
+      cls: 'nw-u-h-8px-2 nw-u-bg-nw-bg-muted-background nw-u-brd-4px-2 nw-u-ov-hidden-2 nw-u-marginbottom-10px-2'
     });
     progressBar.createDiv({
       attr: {
@@ -446,17 +444,15 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const dim of dimensions) {
       const row = this.divergenceContent.createDiv({
-        attr: { style: "display:flex;align-items:center;gap:6px;margin:3px 0;" }
+        cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-m-3px-0'
       });
-      row.createSpan({ text: dim.icon, attr: { style: "font-size:12px;min-width:18px;" } });
+      row.createSpan({ text: dim.icon, cls: 'nw-u-fs-12px-2 nw-u-minw-18px' });
       row.createSpan({
         text: dim.label,
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-muted));min-width:40px;" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-mut nw-u-minw-40px'
       });
       const miniBar = row.createDiv({
-        attr: {
-          style: "flex:1;height:6px;background:var(--nw-bg-muted, var(--background-modifier-cover));border-radius:3px;overflow:hidden;"
-        }
+        cls: 'nw-u-flex-1-2 nw-u-h-6px-2 nw-u-bg-nw-bg-muted-background nw-u-brd-3px-2 nw-u-ov-hidden-2'
       });
       const dimLevel = this.getDivergenceLevelFromScore(dim.score);
       miniBar.createDiv({
@@ -480,22 +476,22 @@ export class MonitorPanelB extends DraggablePanel {
 
     if (allIssues.length > 0) {
       const issueRow = this.divergenceContent.createDiv({
-        attr: { style: "margin-top:8px;padding-top:6px;border-top:1px dashed var(--nw-divider, var(--background-modifier-border-hover));" }
+        cls: 'nw-u-margintop-8px-2 nw-u-paddingtop-6px nw-u-bt-1px-dashed-nw-divider-'
       });
       issueRow.createDiv({
         text: `🚨 ${allIssues.length}个问题`,
-        attr: { style: "font-size:11px;font-weight:600;color:var(--nw-danger, #ef4444);margin-bottom:4px;" }
+        cls: 'nw-u-fs-11px-2 nw-u-fwt-600-2 nw-u-c-nw-danger-ef4444 nw-u-marginbottom-4px-2'
       });
       for (const issue of allIssues.slice(0, 2)) {
         issueRow.createDiv({
           text: `• ${issue}`,
-          attr: { style: "font-size:10px;color:var(--nw-text-secondary, var(--text-muted));margin:2px 0;line-height:1.4;" }
+          cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-secondary-text nw-u-m-2px-0 nw-u-lh-1-4-2'
         });
       }
     }
 
     const metaRow = this.divergenceContent.createDiv({
-      attr: { style: "display:flex;gap:10px;margin-top:6px;font-size:10px;color:var(--nw-text-muted, var(--text-muted));" }
+      cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-margintop-6px nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-mut'
     });
     metaRow.createSpan({ text: `${result.wordCount}字` });
 
@@ -508,11 +504,11 @@ export class MonitorPanelB extends DraggablePanel {
       this.divergenceContent.empty();
       this.divergenceContent.createDiv({
         text: "整体偏离度 --",
-        attr: { style: "font-weight:700;font-size:16px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;" }
+        cls: 'nw-u-fwt-700-2 nw-u-fs-16px-2 nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-6px-2'
       });
       this.divergenceContent.createDiv({
         text: `正文不足 ${DEVIATION_MIN_EVALUABLE_CHARS} 字，暂不检测（当前 ${wordCount} 字）`,
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
       });
     }
     if (this.divergenceExpanded) {
@@ -521,7 +517,7 @@ export class MonitorPanelB extends DraggablePanel {
         this.divergenceDetailPanel.empty();
         this.divergenceDetailPanel.createDiv({
           text: "正文过短，暂无偏离详情",
-          attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+          cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
         });
       }
     }
@@ -532,10 +528,8 @@ export class MonitorPanelB extends DraggablePanel {
     if (!this.divergenceContent) return;
     if (this.divergenceDetailPanel && this.divergenceContent.contains(this.divergenceDetailPanel)) return;
     this.divergenceDetailPanel = this.divergenceContent.createDiv({
-      cls: "nw-divergence-detail",
-      attr: {
-        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
-      }
+      cls: "nw-divergence-detail nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-nw-divider-b",
+      attr: {}
     });
   }
 
@@ -578,7 +572,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.divergenceDetailPanel.empty();
       this.divergenceDetailPanel.createDiv({
         text: "正文过短，暂无偏离详情",
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
       });
       return;
     }
@@ -595,11 +589,11 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const section of sections) {
       const secDiv = this.divergenceDetailPanel.createDiv({
-        attr: { style: "margin-bottom:10px;" }
+        cls: 'nw-u-marginbottom-10px-2'
       });
 
       const secHeader = secDiv.createDiv({
-        attr: { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;" }
+        cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-4px-2'
       });
       secHeader.createSpan({
         text: section.label,
@@ -611,7 +605,7 @@ export class MonitorPanelB extends DraggablePanel {
       });
 
       const detailsRow = secDiv.createDiv({
-        attr: { style: "font-size:10px;color:var(--nw-text-muted, var(--text-muted));margin-bottom:4px;line-height:1.6;" }
+        cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-mut nw-u-marginbottom-4px-2 nw-u-lh-1-6-2'
       });
       const detailStr = Object.entries(section.dim.details)
         .map(([k, v]) => `${this.formatDivergenceDetailKey(k)}: ${v}`)
@@ -620,11 +614,11 @@ export class MonitorPanelB extends DraggablePanel {
 
       if (section.dim.issues.length > 0) {
         const issueList = secDiv.createDiv({
-          attr: { style: "font-size:10px;margin-bottom:4px;" }
+          cls: 'nw-u-fs-10px-2 nw-u-marginbottom-4px-2'
         });
         for (const issue of section.dim.issues) {
           const issueRow = issueList.createDiv({
-            attr: { style: "display:flex;align-items:flex-start;gap:4px;margin:2px 0;" }
+            cls: 'nw-u-d-flex-2 nw-u-ai-flex-start-2 nw-u-gap-4px-2 nw-u-m-2px-0'
           });
           issueRow.createSpan({
             text: "⚠️",
@@ -632,7 +626,7 @@ export class MonitorPanelB extends DraggablePanel {
           });
           issueRow.createSpan({
             text: issue,
-            attr: { style: "color:var(--nw-danger, #ef4444);line-height:1.4;" }
+            cls: 'nw-u-c-nw-danger-ef4444 nw-u-lh-1-4-2'
           });
         }
       }
@@ -644,7 +638,7 @@ export class MonitorPanelB extends DraggablePanel {
         for (const sug of section.dim.suggestions.slice(0, 2)) {
           sugList.createDiv({
             text: `💡 ${sug}`,
-            attr: { style: "color:var(--nw-text-secondary, var(--text-muted));margin:2px 0;line-height:1.4;" }
+            cls: 'nw-u-c-nw-text-secondary-text nw-u-m-2px-0 nw-u-lh-1-4-2'
           });
         }
       }
@@ -662,7 +656,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.renderDivergenceHistoryChart(historySection);
 
       const historyList = historySection.createDiv({
-        attr: { style: "margin-top:6px;" }
+        cls: 'nw-u-margintop-6px'
       });
       const recentHistory = [...this.divergenceHistory].reverse().slice(0, 5);
       for (let i = 0; i < recentHistory.length; i++) {
@@ -671,7 +665,7 @@ export class MonitorPanelB extends DraggablePanel {
         const icon = getDivergenceLevelIcon(entry.level);
         historyList.createDiv({
           text: `${icon} ${timeStr} · ${entry.overallDivergence}% · ${entry.wordCount}字`,
-          attr: { style: "font-size:10px;color:var(--nw-text-muted, var(--text-muted));margin:2px 0;" }
+          cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-mut nw-u-m-2px-0'
         });
       }
     }
@@ -818,9 +812,7 @@ export class MonitorPanelB extends DraggablePanel {
     });
 
     const progressBar = this.completionContent.createDiv({
-      attr: {
-        style: "height:8px;background:var(--nw-bg-muted, var(--background-modifier-cover));border-radius:4px;overflow:hidden;margin-bottom:10px;"
-      }
+      cls: 'nw-u-h-8px-2 nw-u-bg-nw-bg-muted-background nw-u-brd-4px-2 nw-u-ov-hidden-2 nw-u-marginbottom-10px-2'
     });
     const progressFill = progressBar.createDiv({
       attr: {
@@ -840,17 +832,15 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const dim of dimensions) {
       const row = this.completionContent.createDiv({
-        attr: { style: "display:flex;align-items:center;gap:6px;margin:3px 0;" }
+        cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-m-3px-0'
       });
-      row.createSpan({ text: dim.icon, attr: { style: "font-size:12px;min-width:18px;" } });
+      row.createSpan({ text: dim.icon, cls: 'nw-u-fs-12px-2 nw-u-minw-18px' });
       row.createSpan({
         text: dim.label,
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-muted));min-width:40px;" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-mut nw-u-minw-40px'
       });
       const miniBar = row.createDiv({
-        attr: {
-          style: "flex:1;height:6px;background:var(--nw-bg-muted, var(--background-modifier-cover));border-radius:3px;overflow:hidden;"
-        }
+        cls: 'nw-u-flex-1-2 nw-u-h-6px-2 nw-u-bg-nw-bg-muted-background nw-u-brd-3px-2 nw-u-ov-hidden-2'
       });
       miniBar.createDiv({
         attr: {
@@ -865,7 +855,7 @@ export class MonitorPanelB extends DraggablePanel {
     }
 
     const metaRow = this.completionContent.createDiv({
-      attr: { style: "display:flex;gap:10px;margin-top:8px;font-size:10px;color:var(--nw-text-muted, var(--text-muted));" }
+      cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-margintop-8px-2 nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-mut'
     });
     metaRow.createSpan({ text: `${result.wordCount}字` });
     metaRow.createSpan({ text: `${result.overallCompletion.details.paragraphs || 0}段` });
@@ -880,11 +870,11 @@ export class MonitorPanelB extends DraggablePanel {
       this.completionContent.empty();
       this.completionContent.createDiv({
         text: "综合完成度 --",
-        attr: { style: "font-weight:700;font-size:16px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;" }
+        cls: 'nw-u-fwt-700-2 nw-u-fs-16px-2 nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-6px-2'
       });
       this.completionContent.createDiv({
         text: `正文不足 ${PLOT_COMPLETION_MIN_EVALUABLE_CHARS} 字，暂不评估（当前 ${wordCount} 字）`,
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
       });
     }
     if (this.completionExpanded) {
@@ -893,7 +883,7 @@ export class MonitorPanelB extends DraggablePanel {
         this.completionDetailPanel.empty();
         this.completionDetailPanel.createDiv({
           text: "正文过短，暂无完成度详情",
-          attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+          cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
         });
       }
     }
@@ -904,10 +894,8 @@ export class MonitorPanelB extends DraggablePanel {
     if (!this.completionContent) return;
     if (this.completionDetailPanel && this.completionContent.contains(this.completionDetailPanel)) return;
     this.completionDetailPanel = this.completionContent.createDiv({
-      cls: "nw-completion-detail",
-      attr: {
-        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
-      }
+      cls: "nw-completion-detail nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-nw-divider-b",
+      attr: {}
     });
   }
 
@@ -950,7 +938,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.completionDetailPanel.empty();
       this.completionDetailPanel.createDiv({
         text: "正文过短，暂无完成度详情",
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
       });
       return;
     }
@@ -968,11 +956,11 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const section of sections) {
       const secDiv = this.completionDetailPanel.createDiv({
-        attr: { style: "margin-bottom:8px;" }
+        cls: 'nw-u-marginbottom-8px-2'
       });
 
       const secHeader = secDiv.createDiv({
-        attr: { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;" }
+        cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-4px-2'
       });
       secHeader.createSpan({
         text: section.label,
@@ -985,7 +973,7 @@ export class MonitorPanelB extends DraggablePanel {
       });
 
       const detailsRow = secDiv.createDiv({
-        attr: { style: "font-size:10px;color:var(--nw-text-muted, var(--text-muted));margin-bottom:4px;line-height:1.6;" }
+        cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-mut nw-u-marginbottom-4px-2 nw-u-lh-1-6-2'
       });
       const detailStr = Object.entries(section.dim.details)
         .map(([k, v]) => `${this.formatDetailKey(k)}: ${v}`)
@@ -999,7 +987,7 @@ export class MonitorPanelB extends DraggablePanel {
         for (const sug of section.dim.suggestions.slice(0, 2)) {
           sugList.createDiv({
             text: `💡 ${sug}`,
-            attr: { style: "color:var(--nw-text-secondary, var(--text-muted));margin:2px 0;" }
+            cls: 'nw-u-c-nw-text-secondary-text nw-u-m-2px-0'
           });
         }
       }
@@ -1067,7 +1055,7 @@ export class MonitorPanelB extends DraggablePanel {
     container.appendChild(svg);
 
     const historyMeta = container.createDiv({
-      attr: { style: "display:flex;justify-content:space-between;font-size:10px;color:var(--nw-text-muted, var(--text-muted));margin-top:4px;" }
+      cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-mut nw-u-margintop-4px-3'
     });
     historyMeta.createSpan({ text: `起点: ${scores[0]}分` });
     historyMeta.createSpan({ text: `当前: ${scores[scores.length - 1]}分` });
@@ -1325,7 +1313,7 @@ export class MonitorPanelB extends DraggablePanel {
     const trendLabel = getQualityTrendLabel(chapterTrend);
 
     const scoreRow = this.qualityContent.createDiv({
-      attr: { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;" }
+      cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-6px-2'
     });
     scoreRow.createSpan({
       text: "综合质量",
@@ -1335,14 +1323,14 @@ export class MonitorPanelB extends DraggablePanel {
       attr: { style: `font-weight:700;font-size:20px;color:${gradeColor};` }
     });
     scoreValue.createSpan({ text: `${overallScore}` });
-    scoreValue.createSpan({ text: ` ${grade}`, attr: { style: "font-size:14px;" } });
+    scoreValue.createSpan({ text: ` ${grade}`, cls: 'nw-u-fs-14px-2' });
 
     const gradeRow = this.qualityContent.createDiv({
       cls: "nw-overall-row"
     });
     gradeRow.createSpan({
       text: `${trendIcon} ${trendLabel}`,
-      attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
     });
     gradeRow.createSpan({
       text: gradeLabel,
@@ -1352,9 +1340,7 @@ export class MonitorPanelB extends DraggablePanel {
     this.renderBaselineComparison(result);
 
     const progressBar = this.qualityContent.createDiv({
-      attr: {
-        style: "height:10px;background:var(--nw-bg-muted, var(--background-modifier-cover));border-radius:5px;overflow:hidden;margin-bottom:10px;"
-      }
+      cls: 'nw-u-h-10px-2 nw-u-bg-nw-bg-muted-background nw-u-brd-5px-2 nw-u-ov-hidden-2 nw-u-marginbottom-10px-2'
     });
     progressBar.createDiv({
       attr: {
@@ -1373,17 +1359,15 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const dim of dimensions) {
       const row = this.qualityContent.createDiv({
-        attr: { style: "display:flex;align-items:center;gap:6px;margin:2px 0;" }
+        cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-m-2px-0'
       });
-      row.createSpan({ text: dim.icon, attr: { style: "font-size:11px;min-width:16px;" } });
+      row.createSpan({ text: dim.icon, cls: 'nw-u-fs-11px-2 nw-u-minw-16px' });
       row.createSpan({
         text: dim.label,
-        attr: { style: "font-size:10px;color:var(--nw-text-muted, var(--text-faint));min-width:32px;" }
+        cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-fai nw-u-minw-32px'
       });
       const miniBar = row.createDiv({
-        attr: {
-          style: "flex:1;height:5px;background:var(--nw-bg-muted, var(--background-modifier-cover));border-radius:3px;overflow:hidden;"
-        }
+        cls: 'nw-u-flex-1-2 nw-u-h-5px nw-u-bg-nw-bg-muted-background nw-u-brd-3px-2 nw-u-ov-hidden-2'
       });
       miniBar.createDiv({
         attr: {
@@ -1391,36 +1375,36 @@ export class MonitorPanelB extends DraggablePanel {
         }
       });
       row.createSpan({
-        attr: { style: "font-size:10px;min-width:28px;text-align:right;color:var(--nw-text-secondary, var(--text-muted));" },
+        cls: 'nw-u-fs-10px-2 nw-u-minw-28px nw-u-ta-right nw-u-c-nw-text-secondary-text',
         text: `${dim.score}分`
       });
     }
 
     if (result.topSuggestions.length > 0) {
       const sugSection = this.qualityContent.createDiv({
-        attr: { style: "margin-top:8px;padding-top:6px;border-top:1px dashed var(--nw-divider, var(--background-modifier-border-hover));" }
+        cls: 'nw-u-margintop-8px-2 nw-u-paddingtop-6px nw-u-bt-1px-dashed-nw-divider-'
       });
       sugSection.createDiv({
         text: `💡 Top 3 改进建议`,
-        attr: { style: "font-size:11px;font-weight:600;color:var(--nw-text-secondary, var(--text-muted));margin-bottom:4px;" }
+        cls: 'nw-u-fs-11px-2 nw-u-fwt-600-2 nw-u-c-nw-text-secondary-text nw-u-marginbottom-4px-2'
       });
       for (const sug of result.topSuggestions.slice(0, 3)) {
         const sugRow = sugSection.createDiv({
-          attr: { style: "display:flex;align-items:flex-start;gap:4px;margin:3px 0;" }
+          cls: 'nw-u-d-flex-2 nw-u-ai-flex-start-2 nw-u-gap-4px-2 nw-u-m-3px-0'
         });
         sugRow.createSpan({
           text: sug.priority === 'high' ? '🔴' : sug.priority === 'medium' ? '🟡' : '🟢',
-          attr: { style: "font-size:9px;flex-shrink:0;margin-top:1px;" }
+          cls: 'nw-u-fs-9px-2 nw-u-fsh-0-2 nw-u-margintop-1px-2'
         });
         sugRow.createSpan({
           text: sug.content,
-          attr: { style: "font-size:10px;color:var(--nw-text-secondary, var(--text-muted));line-height:1.4;flex:1;" }
+          cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-secondary-text nw-u-lh-1-4-2 nw-u-flex-1-2'
         });
       }
     }
 
     const metaRow = this.qualityContent.createDiv({
-      attr: { style: "display:flex;gap:8px;margin-top:6px;font-size:10px;color:var(--nw-text-muted, var(--text-faint));" }
+      cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-margintop-6px nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-fai'
     });
     metaRow.createSpan({ text: `${result.wordCount}字` });
     metaRow.createSpan({ text: `${result.evalTimeMs}ms` });
@@ -1443,11 +1427,11 @@ export class MonitorPanelB extends DraggablePanel {
       this.qualityContent.empty();
       this.qualityContent.createDiv({
         text: "综合质量 --",
-        attr: { style: "font-weight:700;font-size:20px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;" }
+        cls: 'nw-u-fwt-700-2 nw-u-fs-20px-2 nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-6px-2'
       });
       this.qualityContent.createDiv({
         text: `正文不足 ${QUALITY_MIN_EVALUABLE_CHARS} 字，暂不评估（当前 ${wordCount} 字）`,
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
       });
     }
     if (this.qualityExpanded) {
@@ -1456,7 +1440,7 @@ export class MonitorPanelB extends DraggablePanel {
         this.qualityDetailPanel.empty();
         this.qualityDetailPanel.createDiv({
           text: "正文过短，暂无质量详情",
-          attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+          cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
         });
       }
     }
@@ -1467,10 +1451,8 @@ export class MonitorPanelB extends DraggablePanel {
     if (!this.qualityContent) return;
     if (this.qualityDetailPanel && this.qualityContent.contains(this.qualityDetailPanel)) return;
     this.qualityDetailPanel = this.qualityContent.createDiv({
-      cls: "nw-quality-detail",
-      attr: {
-        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
-      }
+      cls: "nw-quality-detail nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-nw-divider-b",
+      attr: {}
     });
   }
 
@@ -1565,7 +1547,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.qualityDetailPanel.empty();
       this.qualityDetailPanel.createDiv({
         text: "正文过短，暂无质量详情",
-        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        cls: 'nw-u-fs-11px-2 nw-u-c-nw-text-muted-text-fai'
       });
       return;
     }
@@ -1583,11 +1565,11 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const section of sections) {
       const secDiv = this.qualityDetailPanel.createDiv({
-        attr: { style: "margin-bottom:8px;" }
+        cls: 'nw-u-marginbottom-8px-2'
       });
 
       const secHeader = secDiv.createDiv({
-        attr: { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;" }
+        cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-3px'
       });
       secHeader.createSpan({
         text: section.label,
@@ -1599,7 +1581,7 @@ export class MonitorPanelB extends DraggablePanel {
       });
 
       const detailsRow = secDiv.createDiv({
-        attr: { style: "font-size:10px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:3px;line-height:1.6;" }
+        cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-3px nw-u-lh-1-6-2'
       });
       const detailStr = Object.entries(section.dim.details)
         .map(([k, v]) => `${this.formatQualityDetailKey(k)}: ${v}`)
@@ -1612,15 +1594,15 @@ export class MonitorPanelB extends DraggablePanel {
         });
         for (const sug of section.dim.suggestions.slice(0, 2)) {
           const sugRow = sugList.createDiv({
-            attr: { style: "display:flex;align-items:flex-start;gap:4px;margin:2px 0;" }
+            cls: 'nw-u-d-flex-2 nw-u-ai-flex-start-2 nw-u-gap-4px-2 nw-u-m-2px-0'
           });
           sugRow.createSpan({
             text: "💡",
-            attr: { style: "font-size:9px;" }
+            cls: 'nw-u-fs-9px-2'
           });
           sugRow.createSpan({
             text: sug.content,
-            attr: { style: "color:var(--nw-text-secondary, var(--text-muted));line-height:1.4;flex:1;" }
+            cls: 'nw-u-c-nw-text-secondary-text nw-u-lh-1-4-2 nw-u-flex-1-2'
           });
         }
       }
@@ -1638,7 +1620,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.renderQualityHistoryChart(historySection);
 
       const historyList = historySection.createDiv({
-        attr: { style: "margin-top:6px;" }
+        cls: 'nw-u-margintop-6px'
       });
       const recentHistory = [...this.qualityHistory].reverse().slice(0, 5);
       for (let i = 0; i < recentHistory.length; i++) {
@@ -1646,7 +1628,7 @@ export class MonitorPanelB extends DraggablePanel {
         const timeStr = new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         historyList.createDiv({
           text: `${getQualityTrendIcon(entry.trend)} ${timeStr} · ${entry.overallScore}分 · ${entry.grade} · ${entry.wordCount}字`,
-          attr: { style: "font-size:10px;color:var(--nw-text-muted, var(--text-faint));margin:2px 0;" }
+          cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-muted-text-fai nw-u-m-2px-0'
         });
       }
     }
@@ -1662,7 +1644,7 @@ export class MonitorPanelB extends DraggablePanel {
       });
       for (const sug of allSuggestions) {
         const sugRow = allSugSection.createDiv({
-          attr: { style: "display:flex;align-items:flex-start;gap:6px;margin:4px 0;padding:4px 6px;border-radius:4px;background:var(--nw-bg-muted, var(--background-modifier-cover));" }
+          cls: 'nw-u-d-flex-2 nw-u-ai-flex-start-2 nw-u-gap-6px-2 nw-u-m-4px-0 nw-u-p-4px-6px nw-u-brd-4px-2 nw-u-bg-nw-bg-muted-background'
         });
         const priorityBadge = sugRow.createSpan({
           attr: {
@@ -1673,12 +1655,12 @@ export class MonitorPanelB extends DraggablePanel {
         void priorityBadge;
         const sugContent = sugRow.createSpan({
           text: sug.content,
-          attr: { style: "font-size:10px;color:var(--nw-text-secondary, var(--text-muted));line-height:1.4;flex:1;" }
+          cls: 'nw-u-fs-10px-2 nw-u-c-nw-text-secondary-text nw-u-lh-1-4-2 nw-u-flex-1-2'
         });
         void sugContent;
         const effortSpan = sugRow.createSpan({
           text: `改动:${sug.estimatedEffort}`,
-          attr: { style: "font-size:9px;color:var(--nw-text-muted, var(--text-faint));flex-shrink:0;" }
+          cls: 'nw-u-fs-9px-2 nw-u-c-nw-text-muted-text-fai nw-u-fsh-0-2'
         });
         void effortSpan;
       }
@@ -1712,7 +1694,7 @@ export class MonitorPanelB extends DraggablePanel {
       for (const tip of tips) {
         linkSection.createDiv({
           text: tip,
-          attr: { style: "font-size:10px;color:var(--nw-warning-text, #856404);margin:3px 0;line-height:1.4;" }
+          cls: 'nw-u-fs-10px-2 nw-u-c-nw-warning-text-856404 nw-u-m-3px-0 nw-u-lh-1-4-2'
         });
       }
     }

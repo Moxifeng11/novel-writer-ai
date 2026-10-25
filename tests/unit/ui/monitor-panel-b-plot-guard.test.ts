@@ -209,7 +209,7 @@ describe('MonitorPanelB — 完成度短正文口径', () => {
 
         expect(ctx.completionDetailPanel).not.toBe(existing);
         expect(ctx.completionContent.contains(ctx.completionDetailPanel!)).toBe(true);
-        expect(ctx.completionDetailPanel!.cls).toBe('nw-completion-detail');
+        expect(ctx.completionDetailPanel!.cls).toContain('nw-completion-detail');
     });
 });
 
@@ -262,6 +262,6 @@ describe('MonitorPanelB — 偏离短正文口径', () => {
 
         expect(ctx.divergenceDetailPanel).not.toBe(existing);
         expect(ctx.divergenceContent.contains(ctx.divergenceDetailPanel!)).toBe(true);
-        expect(ctx.divergenceDetailPanel!.cls).toBe('nw-divergence-detail');
+        expect(ctx.divergenceDetailPanel!.cls).toContain('nw-divergence-detail');
     });
 });

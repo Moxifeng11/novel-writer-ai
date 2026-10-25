@@ -100,7 +100,7 @@ export class WizardStepRenderers {
         
         const addField = (label: string, key: string, type: 'text' | 'textarea' = 'text') => {
             const group = form.createDiv({ attr: { style: type === 'textarea' ? 'grid-column:1/-1;' : '' } });
-            group.createEl('label', { text: label, attr: { style: 'display:block; font-size:0.8em; color:var(--text-muted); margin-bottom:4px;' } });
+            group.createEl('label', { text: label, cls: 'nw-u-d-block nw-u-fs-0-8em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2' });
             const input = type === 'textarea'
                 ? group.createEl('textarea', { cls: 'nw-wizard-textarea' })
                 : group.createEl('input', { attr: { style: 'width:100%; padding:6px 8px; border-radius:6px; border:1px solid var(--background-modifier-border); font-size:0.85em;' } });
@@ -128,7 +128,7 @@ export class WizardStepRenderers {
         // Save button
         const saveBtn = container.createEl('button', { 
             text: '💾 保存同人设定', 
-            attr: { style: 'margin-top:12px; padding:6px 16px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:6px; cursor:pointer;' } 
+            cls: 'nw-u-margintop-12px-2 nw-u-p-6px-16px nw-u-bg-background-secondary-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-cur-pointer-2' 
         });
         saveBtn.addEventListener('click', async () => {
             const values = collectFanficValues();
@@ -150,16 +150,16 @@ export class WizardStepRenderers {
         });
         
         if (saved) {
-            container.createEl('p', { text: '📝 已有暂存设定，修改后请重新保存。', attr: { style: 'color:var(--text-accent); font-size:0.8em; margin-top:8px;' } });
+            container.createEl('p', { text: '📝 已有暂存设定，修改后请重新保存。', cls: 'nw-u-c-text-accent nw-u-fs-0-8em nw-u-margintop-8px-2' });
         }
 
         // 已存在设定文件（手写/拷入/旧项目遗留）时提供绑定入口：此前只能逐字段重填或手改 .project
         const candidates = await this.listFanficCandidates(tab.project);
         if (candidates.length > 0) {
-            const bindBox = container.createDiv({ attr: { style: 'margin-top:14px; padding:8px 10px; border:1px solid var(--background-modifier-border); border-radius:6px;' } });
+            const bindBox = container.createDiv({ cls: 'nw-u-margintop-14px nw-u-p-8px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2' });
             bindBox.createEl('p', {
                 text: '🔗 项目里已有同人设定文件，可直接绑定（会把内容填入上方表单，保存时覆盖该文件）',
-                attr: { style: 'font-size:0.8em; color:var(--text-muted); margin:0 0 6px;' }
+                cls: 'nw-u-fs-0-8em nw-u-c-text-muted-2 nw-u-m-0-0-6px'
             });
             const select = bindBox.createEl('select', { attr: { style: 'width:100%; padding:6px 8px; border-radius:6px; border:1px solid var(--background-modifier-border); font-size:0.85em;' } });
             for (const candidate of candidates) {
@@ -167,7 +167,7 @@ export class WizardStepRenderers {
             }
             const bindBtn = bindBox.createEl('button', {
                 text: '🔗 绑定所选文件',
-                attr: { style: 'margin-top:8px; padding:6px 16px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:6px; cursor:pointer;' }
+                cls: 'nw-u-margintop-8px-2 nw-u-p-6px-16px nw-u-bg-background-secondary-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-cur-pointer-2'
             });
             bindBtn.addEventListener('click', async () => {
                 const path = select.value;
@@ -250,7 +250,7 @@ export class WizardStepRenderers {
             } catch (e) { /* 忽略 */ }
         }
         
-        container.createEl('p', { text: '从已生成的世界观中提炼结构化的设定库，供后续写作快速查阅。', attr: { style: 'color:var(--text-muted);' } });
+        container.createEl('p', { text: '从已生成的世界观中提炼结构化的设定库，供后续写作快速查阅。', cls: 'nw-u-c-text-muted-2' });
         
         // 动态检测设定库文件中的模块：扫描 ## 一、xxx 格式的标题行
         const slFile = this.app.vault.getAbstractFileByPath(getSettingLibPath(tab.project));
@@ -280,17 +280,17 @@ export class WizardStepRenderers {
         if (detectedModules.length > 0) {
             container.createEl('p', { 
                 text: `📚 已生成 ${detectedModules.length} 个模块：${detectedModules.join('、')}`, 
-                attr: { style: 'color:var(--text-muted); font-size:0.85em;' } 
+                cls: 'nw-u-c-text-muted-2 nw-u-fs-0-85em' 
             });
         } else {
             container.createEl('p', { 
                 text: `📚 包含 ${SL_SECTIONS.length} 个模块：${SL_SECTIONS.join('、')}`, 
-                attr: { style: 'color:var(--text-muted); font-size:0.85em;' } 
+                cls: 'nw-u-c-text-muted-2 nw-u-fs-0-85em' 
             });
         }
         
         if (!hasWorldview) {
-            container.createEl('p', { text: '⚠️ 未检测到世界观总览，请先生成世界观再生成设定库。', attr: { style: 'color:var(--text-warning); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '⚠️ 未检测到世界观总览，请先生成世界观再生成设定库。', cls: 'nw-u-c-text-warning nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             return;
         }
         
@@ -309,7 +309,7 @@ export class WizardStepRenderers {
         const makeRegenBtn = () => {
             const regenBtn = container.createEl('button', {
                 text: isExecuting ? '⏳ 生成中...' : '🔄 重新生成',
-                attr: { style: 'margin:8px 0; padding:6px 14px; background:#f59e0b; color:white; border:none; border-radius:6px; cursor:pointer;' }
+                cls: 'nw-u-m-8px-0 nw-u-p-6px-14px nw-u-bg-f59e0b nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2'
             });
             if (isExecuting) {
                 regenBtn.style.opacity = '0.6';
@@ -322,42 +322,42 @@ export class WizardStepRenderers {
         
         // 执行中状态统一处理
         if (isExecuting) {
-            container.createEl('p', { text: '⏳ 设定库正在生成中，请稍候...', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '⏳ 设定库正在生成中，请稍候...', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             // 执行中显示禁用按钮 + 动画进度条
             makeViewBtn();
             const disabledBtn = makeRegenBtn();
             disabledBtn.textContent = '⏳ 生成中...';
             // 添加脉冲动画进度条
-            const barTrack = container.createDiv({ attr: { style: 'margin-top:8px; height:6px; background:var(--background-modifier-border); border-radius:3px; overflow:hidden;' } });
-            barTrack.createDiv({ attr: { style: 'height:100%; width:60%; background:linear-gradient(90deg, var(--text-accent), #f59e0b); animation:nw-progress-anim 1.5s ease-in-out infinite; border-radius:3px;' } });
-            container.createEl('p', { text: `目标项目: ${tab.project}`, attr: { style: 'margin-top:8px; color:var(--text-muted); font-size:0.85em;' } });
+            const barTrack = container.createDiv({ cls: 'nw-u-margintop-8px-2 nw-u-h-6px-2 nw-u-bg-background-modifier-bo-3 nw-u-brd-3px-2 nw-u-ov-hidden-2' });
+            barTrack.createDiv({ cls: 'nw-u-h-100-2 nw-u-w-60 nw-u-bg-linear-gradient-90deg- nw-u-animation-nw-progress-anim-1-5s- nw-u-brd-3px-2' });
+            container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
             return;
         }
         
         if (isDone) {
             if (slFile) {
-                container.createEl('p', { text: '✅ 设定库已生成。', attr: { style: 'color:var(--text-success); font-weight:600; margin-top:12px;' } });
+                container.createEl('p', { text: '✅ 设定库已生成。', cls: 'nw-u-c-text-success nw-u-fwt-600-2 nw-u-margintop-12px-2' });
                 makeViewBtn();
                 makeRegenBtn();
             }
         }
         else if (isRetry) {
-            container.createEl('p', { text: '❌ 设定库生成失败，请检查 API 配置后重试。', attr: { style: 'color:var(--text-error); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '❌ 设定库生成失败，请检查 API 配置后重试。', cls: 'nw-u-c-text-error nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             if (slFile) {
-                container.createEl('p', { text: '📄 检测到设定库文件（可能不完整），可先查看。', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:8px;' } });
+                container.createEl('p', { text: '📄 检测到设定库文件（可能不完整），可先查看。', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-8px-2' });
                 makeViewBtn();
             }
             makeRegenBtn();
         }
         else {
             if (slFile) {
-                container.createEl('p', { text: '📄 检测到设定库文件，内容可能尚未填写完整。', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:12px;' } });
+                container.createEl('p', { text: '📄 检测到设定库文件，内容可能尚未填写完整。', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-12px-2' });
                 makeViewBtn();
                 makeRegenBtn();
             }
         }
         
-        container.createEl('p', { text: `目标项目: ${tab.project}`, attr: { style: 'margin-top:8px; color:var(--text-muted); font-size:0.85em;' } });
+        container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
     }
 
     async renderWizardWritingStyleStep(container: HTMLElement, tab: WizardTab): Promise<void> {
@@ -369,12 +369,12 @@ export class WizardStepRenderers {
         const hasContent = !!wsFile;
         const wsPath = wsFile?.path ?? getWritingStylePath(tab.project);
 
-        container.createEl('p', { text: '定义本项目的文笔风格、叙事特征和语言习惯。此步骤为手动设定，点击按钮后请在弹窗中保存。', attr: { style: 'color:var(--text-muted);' } });
-        container.createEl('p', { text: '✍️ 包含 9 个模块：叙事视角、文笔特征、对话风格、描写风格、叙事节奏、情感表达、禁用/慎用、参考作品、格式要求', attr: { style: 'color:var(--text-muted); font-size:0.85em;' } });
-        container.createEl('p', { text: '⚠️ 此步骤不可跳过，文笔风格是 AI 写作质量的核心保障。', attr: { style: 'color:var(--text-accent); font-size:0.85em;' } });
+        container.createEl('p', { text: '定义本项目的文笔风格、叙事特征和语言习惯。此步骤为手动设定，点击按钮后请在弹窗中保存。', cls: 'nw-u-c-text-muted-2' });
+        container.createEl('p', { text: '✍️ 包含 9 个模块：叙事视角、文笔特征、对话风格、描写风格、叙事节奏、情感表达、禁用/慎用、参考作品、格式要求', cls: 'nw-u-c-text-muted-2 nw-u-fs-0-85em' });
+        container.createEl('p', { text: '⚠️ 此步骤不可跳过，文笔风格是 AI 写作质量的核心保障。', cls: 'nw-u-c-text-accent nw-u-fs-0-85em' });
         
         if (hasContent && isDone) {
-            container.createEl('p', { text: '✅ 文笔风格已设定。', attr: { style: 'color:var(--text-success); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '✅ 文笔风格已设定。', cls: 'nw-u-c-text-success nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             // v3.4.2: 内联查看 + 重新生成按钮
             const viewBtn = container.createEl('button', { 
                 text: '📖 查看文笔风格', 
@@ -385,14 +385,14 @@ export class WizardStepRenderers {
             });
             const regenBtn = container.createEl('button', { 
                 text: '🔄 重新设定', 
-                attr: { style: 'margin:8px 0; padding:6px 14px; background:#f59e0b; color:white; border:none; border-radius:6px; cursor:pointer;' } 
+                cls: 'nw-u-m-8px-0 nw-u-p-6px-14px nw-u-bg-f59e0b nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
         }
         else if (hasContent) {
             // v4.1: 文件已存在但内容未填写完整（仍是模板）。此前按钮被 isDone 门控导致完全不显示，
             // 这里补出「查看 / 编辑」入口，让用户可直接查看现有文件并打开设定窗口填写。
-            container.createEl('p', { text: '📄 检测到文笔风格文件，但内容尚未填写完整。可查看现有内容或点击下方设定。', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '📄 检测到文笔风格文件，但内容尚未填写完整。可查看现有内容或点击下方设定。', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             const viewBtn = container.createEl('button', {
                 text: '📖 查看文笔风格',
                 attr: { style: 'margin:8px 12px 8px 0; padding:6px 14px; border-radius:6px; cursor:pointer; background:var(--background-modifier-border); border:1px solid var(--background-modifier-border);' }
@@ -402,12 +402,12 @@ export class WizardStepRenderers {
             });
             const editBtn = container.createEl('button', {
                 text: '✍️ 设定文笔风格',
-                attr: { style: 'margin:8px 0; padding:6px 14px; background:var(--text-accent); color:white; border:none; border-radius:6px; cursor:pointer;' }
+                cls: 'nw-u-m-8px-0 nw-u-p-6px-14px nw-u-bg-text-accent nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2'
             });
             editBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
         }
         
-        container.createEl('p', { text: `目标项目: ${tab.project}`, attr: { style: 'margin-top:8px; color:var(--text-muted); font-size:0.85em;' } });
+        container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
     }
 
     async renderWizardOutlineStep(container: HTMLElement, tab: WizardTab): Promise<void> {
@@ -417,21 +417,21 @@ export class WizardStepRenderers {
         const isDone = step.status === 'done';
         const isExecuting = this.wizardStepExecuting.has(step.id);
         
-        container.createEl('p', { text: '基于已生成的世界观和实体设定，AI 将生成完整的分卷大纲，包括每卷的核心冲突和章节分配表。', attr: { style: 'color:var(--text-muted);' } });
-        container.createEl('p', { text: '严格按照分卷大纲模板字段格式输出，确保批量建章能正确解析。', attr: { style: 'color:var(--text-muted); font-size:0.85em;' } });
+        container.createEl('p', { text: '基于已生成的世界观和实体设定，AI 将生成完整的分卷大纲，包括每卷的核心冲突和章节分配表。', cls: 'nw-u-c-text-muted-2' });
+        container.createEl('p', { text: '严格按照分卷大纲模板字段格式输出，确保批量建章能正确解析。', cls: 'nw-u-c-text-muted-2 nw-u-fs-0-85em' });
         
         if (isExecuting) {
-            container.createEl('p', { text: '⏳ 正在打开全书规划窗口...', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '⏳ 正在打开全书规划窗口...', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             // 脉冲动画进度条
-            const barTrack = container.createDiv({ attr: { style: 'margin-top:8px; height:6px; background:var(--background-modifier-border); border-radius:3px; overflow:hidden;' } });
-            barTrack.createDiv({ attr: { style: 'height:100%; width:60%; background:linear-gradient(90deg, var(--text-accent), #f59e0b); animation:nw-progress-anim 1.5s ease-in-out infinite; border-radius:3px;' } });
-            container.createEl('p', { text: `目标项目: ${tab.project}`, attr: { style: 'margin-top:8px; color:var(--text-muted); font-size:0.85em;' } });
+            const barTrack = container.createDiv({ cls: 'nw-u-margintop-8px-2 nw-u-h-6px-2 nw-u-bg-background-modifier-bo-3 nw-u-brd-3px-2 nw-u-ov-hidden-2' });
+            barTrack.createDiv({ cls: 'nw-u-h-100-2 nw-u-w-60 nw-u-bg-linear-gradient-90deg- nw-u-animation-nw-progress-anim-1-5s- nw-u-brd-3px-2' });
+            container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
         } else if (isDone) {
-            container.createEl('p', { text: '✅ 全书规划已完成。', attr: { style: 'color:var(--text-success); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '✅ 全书规划已完成。', cls: 'nw-u-c-text-success nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             // v3.4.2: 内联重新生成按钮
             const regenBtn = container.createEl('button', { 
                 text: '🔄 重新规划', 
-                attr: { style: 'margin:8px 12px 8px 0; padding:6px 14px; background:#f59e0b; color:white; border:none; border-radius:6px; cursor:pointer;' } 
+                cls: 'nw-u-m-8px-12px-8px-0 nw-u-p-6px-14px nw-u-bg-f59e0b nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             // v4.1.0: 统一入口 — 大纲树状预览（含全文查看，替代旧的双按钮）
@@ -454,7 +454,7 @@ export class WizardStepRenderers {
             // v4.2: 未判定完成时，若分卷大纲文件已存在也提供树状预览入口。
             const existingOutline = await readMergedVolumeOutline(this.app, tab.project);
             if (existingOutline.trim().length > 0) {
-                container.createEl('p', { text: '📄 检测到分卷大纲文件，内容可能尚未填写完整。', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:12px;' } });
+                container.createEl('p', { text: '📄 检测到分卷大纲文件，内容可能尚未填写完整。', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-12px-2' });
                 const treeBtn = container.createEl('button', {
                     text: '📋 大纲树状预览',
                     attr: { style: 'margin:8px 0; padding:6px 14px; border-radius:6px; cursor:pointer; background:var(--text-accent); color:white; border:none; font-weight:600;' }
@@ -465,7 +465,7 @@ export class WizardStepRenderers {
                     modal.open();
                 });
             } else {
-                container.createEl('p', { text: '点击下方"▶ 执行"按钮打开全书规划窗口。', attr: { style: 'margin-top:12px;' } });
+                container.createEl('p', { text: '点击下方"▶ 执行"按钮打开全书规划窗口。', cls: 'nw-u-margintop-12px-2' });
             }
         }
     }
@@ -477,30 +477,30 @@ export class WizardStepRenderers {
         const isDone = step.status === 'done';
         const isExecuting = this.wizardStepExecuting.has(step.id);
         
-        container.createEl('p', { text: '根据分卷大纲自动批量创建所有章节目录和文件（大纲摘要、正文、信息规划）。', attr: { style: 'color:var(--text-muted);' } });
-        container.createEl('p', { text: '⚠️ 请确保已先完成"全书规划"步骤，否则无法解析卷结构。', attr: { style: 'color:var(--text-accent); font-size:0.85em;' } });
+        container.createEl('p', { text: '根据分卷大纲自动批量创建所有章节目录和文件（大纲摘要、正文、信息规划）。', cls: 'nw-u-c-text-muted-2' });
+        container.createEl('p', { text: '⚠️ 请确保已先完成"全书规划"步骤，否则无法解析卷结构。', cls: 'nw-u-c-text-accent nw-u-fs-0-85em' });
         
         if (isExecuting) {
-            container.createEl('p', { text: '⏳ 正在打开批量建章窗口...', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:12px;' } });
-            const barTrack = container.createDiv({ attr: { style: 'margin-top:8px; height:6px; background:var(--background-modifier-border); border-radius:3px; overflow:hidden;' } });
-            barTrack.createDiv({ attr: { style: 'height:100%; width:60%; background:linear-gradient(90deg, var(--text-accent), #f59e0b); animation:nw-progress-anim 1.5s ease-in-out infinite; border-radius:3px;' } });
-            container.createEl('p', { text: `目标项目: ${tab.project}`, attr: { style: 'margin-top:8px; color:var(--text-muted); font-size:0.85em;' } });
+            container.createEl('p', { text: '⏳ 正在打开批量建章窗口...', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-12px-2' });
+            const barTrack = container.createDiv({ cls: 'nw-u-margintop-8px-2 nw-u-h-6px-2 nw-u-bg-background-modifier-bo-3 nw-u-brd-3px-2 nw-u-ov-hidden-2' });
+            barTrack.createDiv({ cls: 'nw-u-h-100-2 nw-u-w-60 nw-u-bg-linear-gradient-90deg- nw-u-animation-nw-progress-anim-1-5s- nw-u-brd-3px-2' });
+            container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
         } else if (isDone) {
             const bodyRoot = `${tab.project}/${SUBDIR_BODY_ROOT}`;
             const chapterFiles = this.app.vault.getFiles().filter(f =>
                 f.path.startsWith(bodyRoot + '/')
                 && /\/第\d+卷\/第\d+章[^/]*_正文\.md$/.test(f.path)
             );
-            container.createEl('p', { text: `✅ 已创建 ${chapterFiles.length} 个章节文件。`, attr: { style: 'color:var(--text-success); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: `✅ 已创建 ${chapterFiles.length} 个章节文件。`, cls: 'nw-u-c-text-success nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             // v3.4.2: 内联重新生成按钮
             const regenBtn = container.createEl('button', { 
                 text: '🔄 重新建章', 
-                attr: { style: 'margin:8px 12px 8px 0; padding:6px 14px; background:#f59e0b; color:white; border:none; border-radius:6px; cursor:pointer;' } 
+                cls: 'nw-u-m-8px-12px-8px-0 nw-u-p-6px-14px nw-u-bg-f59e0b nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             // v3.4.6: 内联"下一步"按钮已下线 — 保留右下角 nav bar 唯一下一步入口
         } else {
-            container.createEl('p', { text: '点击下方"▶ 执行"按钮打开批量建章窗口。', attr: { style: 'margin-top:12px;' } });
+            container.createEl('p', { text: '点击下方"▶ 执行"按钮打开批量建章窗口。', cls: 'nw-u-margintop-12px-2' });
         }
     }
 
@@ -508,10 +508,10 @@ export class WizardStepRenderers {
         container.empty();
         
         container.createEl('h3', { text: '🎉 项目初始化完成！' });
-        container.createEl('p', { text: `项目名称: ${tab.project}`, attr: { style: 'color:var(--text-muted); font-size:1.1em;' } });
+        container.createEl('p', { text: `项目名称: ${tab.project}`, cls: 'nw-u-c-text-muted-2 nw-u-fs-1-1em' });
         
-        const summary = container.createDiv({ attr: { style: 'margin-top:20px; padding:16px; background:var(--background-primary-alt); border-radius:8px;' } });
-        summary.createEl('h4', { text: '📊 项目统计', attr: { style: 'margin:0 0 12px 0;' } });
+        const summary = container.createDiv({ cls: 'nw-u-margintop-20px-2 nw-u-p-16px-2 nw-u-bg-background-primary-alt nw-u-brd-8px-2' });
+        summary.createEl('h4', { text: '📊 项目统计', cls: 'nw-u-m-0-0-12px-0-2' });
         
         const adapter = this.app.vault.adapter;
         const stats: Array<{ label: string; status: string; detail: string }> = [];
@@ -560,14 +560,14 @@ export class WizardStepRenderers {
         }
         stats.push({ label: '章节', status: chapterCount > 0 ? '✅' : '❌', detail: `${chapterCount} 章` });
         
-        const table = summary.createEl('table', { attr: { style: 'width:100%; border-collapse:collapse;' } });
+        const table = summary.createEl('table', { cls: 'nw-u-w-100-2 nw-u-bordercollapse-collapse-2' });
         for (const s of stats) {
             const row = table.createEl('tr');
-            row.createEl('td', { text: s.label, attr: { style: 'padding:6px 8px; border-bottom:1px solid var(--background-modifier-border); font-weight:600;' } });
-            row.createEl('td', { text: `${s.status} ${s.detail}`, attr: { style: 'padding:6px 8px; border-bottom:1px solid var(--background-modifier-border);' } });
+            row.createEl('td', { text: s.label, cls: 'nw-u-p-6px-8px-2 nw-u-bb-1px-solid-background-m-2 nw-u-fwt-600-2' });
+            row.createEl('td', { text: `${s.status} ${s.detail}`, cls: 'nw-u-p-6px-8px-2 nw-u-bb-1px-solid-background-m-2' });
         }
         
-        container.createEl('p', { text: '点击下方"🎯 进入写作界面"开始写作。', attr: { style: 'margin-top:16px; color:var(--text-accent); font-weight:600;' } });
+        container.createEl('p', { text: '点击下方"🎯 进入写作界面"开始写作。', cls: 'nw-u-margintop-16px-2 nw-u-c-text-accent nw-u-fwt-600-2' });
     }
 
     async renderWizardEntitiesStep(container: HTMLElement, tab: WizardTab): Promise<void> {
@@ -604,14 +604,14 @@ export class WizardStepRenderers {
             }
         }
 
-        container.createEl('p', { text: '此步骤可选。点击下方按钮打开对应的实体生成窗口。', attr: { style: 'color:var(--text-muted);' } });
+        container.createEl('p', { text: '此步骤可选。点击下方按钮打开对应的实体生成窗口。', cls: 'nw-u-c-text-muted-2' });
 
-        const toolBar = container.createDiv({ cls: 'nw-wizard-toolbar', attr: { style: 'display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;' } });
+        const toolBar = container.createDiv({ cls: "nw-wizard-toolbar nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-8px-2 nw-u-marginbottom-12px-2", attr: {} });
 
         // 直接进入统一实体管理界面，不再经过「实体概览」中间层
         const managerBtn = toolBar.createEl('button', {
             text: '📚 实体管理',
-            attr: { style: 'padding:6px 16px; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:6px; cursor:pointer; font-size:0.9em; font-weight:600;' }
+            cls: 'nw-u-p-6px-16px nw-u-bg-interactive-accent-2 nw-u-c-text-on-accent-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2 nw-u-fs-0-9em nw-u-fwt-600-2'
         });
         managerBtn.addEventListener('click', () => {
             new UnifiedEntityManagerModal(this.app, this.plugin, tab.project).open();
@@ -630,18 +630,18 @@ export class WizardStepRenderers {
             
             const row = container.createDiv({ cls: 'nw-wizard-entity-row', attr: { style: isDone ? 'opacity:0.6;' : '' } });
             const info = row.createDiv();
-            info.createSpan({ text: `${cfg.icon} ${cfg.label}`, attr: { style: 'font-weight:600;' } });
-            info.createEl('span', { text: ` — ${cfg.desc}`, attr: { style: 'color:var(--text-muted); font-size:0.8em;' } });
+            info.createSpan({ text: `${cfg.icon} ${cfg.label}`, cls: 'nw-u-fwt-600-2' });
+            info.createEl('span', { text: ` — ${cfg.desc}`, cls: 'nw-u-c-text-muted-2 nw-u-fs-0-8em' });
             
-            const actions = row.createDiv({ attr: { style: 'display:flex; gap:6px;' } });
+            const actions = row.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2' });
             
             if (isDone) {
-                actions.createSpan({ text: subStep?.status === 'done' ? '✅ 已生成' : '⏭ 已跳过', attr: { style: 'color:var(--text-muted); font-size:0.8em; margin-right:6px;' } });
+                actions.createSpan({ text: subStep?.status === 'done' ? '✅ 已生成' : '⏭ 已跳过', cls: 'nw-u-c-text-muted-2 nw-u-fs-0-8em nw-u-marginright-6px' });
                 // v3.4.1: done 后仍可继续生成，不锁按钮
                 const isOpening = this.entitiesExecuting.has(cfg.id);
                 const regenBtn = actions.createEl('button', { 
                     text: isOpening ? '打开中...' : '继续生成', 
-                    attr: { style: 'padding:4px 10px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.8em; opacity:0.8;' } 
+                    cls: 'nw-u-p-4px-10px-2 nw-u-bg-text-accent nw-u-c-white-2 nw-u-b-none nw-u-brd-4px-2 nw-u-cur-pointer-2 nw-u-fs-0-8em nw-u-op-0-8' 
                 });
                 if (isOpening) {
                     regenBtn.disabled = true;
@@ -676,7 +676,7 @@ export class WizardStepRenderers {
                 const isOpening = this.entitiesExecuting.has(cfg.id);
                 const genBtn = actions.createEl('button', { 
                     text: isOpening ? '打开中...' : '生成', 
-                    attr: { style: 'padding:4px 14px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;' } 
+                    cls: 'nw-u-p-4px-14px nw-u-bg-text-accent nw-u-c-white-2 nw-u-b-none nw-u-brd-4px-2 nw-u-cur-pointer-2 nw-u-fs-0-85em' 
                 });
                 if (isOpening) {
                     genBtn.disabled = true;
@@ -709,11 +709,11 @@ export class WizardStepRenderers {
             }
         }
         
-        container.createEl('p', { text: '💡 跳过将影响后续全书规划的质量，建议至少生成人物。', attr: { style: 'color:var(--text-muted); font-size:0.8em; margin-top:12px;' } });
+        container.createEl('p', { text: '💡 跳过将影响后续全书规划的质量，建议至少生成人物。', cls: 'nw-u-c-text-muted-2 nw-u-fs-0-8em nw-u-margintop-12px-2' });
 
         const tip = container.createEl('p', { 
             text: '💡 「管理已生成」可批量改名磁盘上的"未命名_N"文件（联动 YAML名称 + H1标题 + 文件名三处）',
-            attr: { style: 'color:var(--text-muted); font-size:0.78em; margin-top:8px;' }
+            cls: 'nw-u-c-text-muted-2 nw-u-fs-0-78em nw-u-margintop-8px-2'
         });
     }
 
@@ -725,16 +725,16 @@ export class WizardStepRenderers {
         const isExecuting = this.wizardStepExecuting.has(step.id);
         const progress = this.wizardStepResults['_worldviewProgress'] || '';
         
-        container.createEl('p', { text: `AI 将严格按照模板字段格式生成世界观。包含 ${WV_SECTIONS.length} 个模块：${WV_SECTIONS.join('、')}。`, attr: { style: 'color:var(--text-muted);' } });
-        container.createEl('p', { text: '⚠️ 此步骤不可跳过，完整的世界观设定是后续所有步骤的基础。', attr: { style: 'color:var(--text-accent); font-size:0.85em;' } });
+        container.createEl('p', { text: `AI 将严格按照模板字段格式生成世界观。包含 ${WV_SECTIONS.length} 个模块：${WV_SECTIONS.join('、')}。`, cls: 'nw-u-c-text-muted-2' });
+        container.createEl('p', { text: '⚠️ 此步骤不可跳过，完整的世界观设定是后续所有步骤的基础。', cls: 'nw-u-c-text-accent nw-u-fs-0-85em' });
         
-        container.createEl('p', { text: `目标项目: ${tab.project}`, attr: { style: 'margin-top:8px; color:var(--text-muted); font-size:0.85em;' } });
+        container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
         
         if (isExecuting && progress) {
-            const progressEl = container.createDiv({ attr: { style: 'margin-top:16px; padding:12px; background:var(--background-primary-alt); border-radius:8px;' } });
+            const progressEl = container.createDiv({ cls: 'nw-u-margintop-16px-2 nw-u-p-12px-2 nw-u-bg-background-primary-alt nw-u-brd-8px-2' });
             progressEl.createEl('span', { text: `⏳ ${progress}`, attr: { style: 'font-weight:600;', 'data-wv-progress': '' } });
-            const progBar = progressEl.createDiv({ attr: { style: 'margin-top:8px; height:6px; background:var(--background-modifier-border); border-radius:3px; overflow:hidden;' } });
-            progBar.createDiv({ attr: { style: 'height:100%; width:60%; background:var(--text-accent); animation: nw-progress-anim 2s ease-in-out infinite;' } });
+            const progBar = progressEl.createDiv({ cls: 'nw-u-margintop-8px-2 nw-u-h-6px-2 nw-u-bg-background-modifier-bo-3 nw-u-brd-3px-2 nw-u-ov-hidden-2' });
+            progBar.createDiv({ cls: 'nw-u-h-100-2 nw-u-w-60 nw-u-bg-text-accent nw-u-animation-nw-progress-anim-2s-ea' });
         }
         
         if (isDone) {
@@ -748,12 +748,12 @@ export class WizardStepRenderers {
                 } catch (e) { /* 忽略 */ }
             }
             
-            container.createEl('p', { text: '✅ 世界观已生成。', attr: { style: 'color:var(--text-success); font-weight:600; margin-top:12px;' } });
+            container.createEl('p', { text: '✅ 世界观已生成。', cls: 'nw-u-c-text-success nw-u-fwt-600-2 nw-u-margintop-12px-2' });
             
             // v3.4.2: 内联重新生成按钮（不依赖导航栏）
             const regenBtn = container.createEl('button', { 
                 text: '🔄 重新生成世界观', 
-                attr: { style: 'margin:8px 12px 8px 0; padding:6px 14px; background:#f59e0b; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.9em;' } 
+                cls: 'nw-u-m-8px-12px-8px-0 nw-u-p-6px-14px nw-u-bg-f59e0b nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2 nw-u-fs-0-9em' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             
@@ -767,7 +767,7 @@ export class WizardStepRenderers {
             
             // Show module summary (only if we have content)
             if (worldviewContent) {
-                const summaryDiv = container.createDiv({ attr: { style: 'margin-top:8px; font-size:0.8em; color:var(--text-muted);' } });
+                const summaryDiv = container.createDiv({ cls: 'nw-u-margintop-8px-2 nw-u-fs-0-8em nw-u-c-text-muted-2' });
                 summaryDiv.createEl('p', { text: `已生成模块（${WV_SECTIONS.length}个）：` });
                 for (const s of WV_SECTIONS) {
                     const found = worldviewContent.includes(`## ${s}`);
@@ -779,7 +779,7 @@ export class WizardStepRenderers {
             // v4.1: 未判定完成时，若世界观文件已存在也提供查看 / 重新生成入口。
             const wvFile = this.app.vault.getAbstractFileByPath(getWorldviewPath(tab.project));
             if (wvFile) {
-                container.createEl('p', { text: '📄 检测到世界观文件，内容可能尚未填写完整。', attr: { style: 'color:var(--text-accent); font-weight:600; margin-top:12px;' } });
+                container.createEl('p', { text: '📄 检测到世界观文件，内容可能尚未填写完整。', cls: 'nw-u-c-text-accent nw-u-fwt-600-2 nw-u-margintop-12px-2' });
                 const viewBtn = container.createEl('button', {
                     text: '📖 打开世界观文件',
                     attr: { style: 'margin:8px 12px 8px 0; padding:6px 14px; border-radius:6px; cursor:pointer; background:var(--background-modifier-border); border:1px solid var(--background-modifier-border);' }
@@ -789,7 +789,7 @@ export class WizardStepRenderers {
                 });
                 const regenBtn = container.createEl('button', {
                     text: '🔄 重新生成世界观',
-                    attr: { style: 'margin:8px 0; padding:6px 14px; background:#f59e0b; color:white; border:none; border-radius:6px; cursor:pointer;' }
+                    cls: 'nw-u-m-8px-0 nw-u-p-6px-14px nw-u-bg-f59e0b nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2'
                 });
                 regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             }

@@ -191,18 +191,18 @@ export class WritingFingerprintView extends ItemView {
         containerEl.addClass('nw-fingerprint-view');
 
         const mainLayout = containerEl.createDiv({
-            cls: 'nw-fingerprint-main-layout',
-            attr: { style: 'display:flex;height:100%;width:100%;' }
+            cls: "nw-fingerprint-main-layout nw-u-d-flex-2 nw-u-h-100-2 nw-u-w-100-2",
+            attr: {}
         });
 
         this.leftSidebar = mainLayout.createDiv({
-            cls: 'nw-fingerprint-left-sidebar',
-            attr: { style: 'width:300px;min-width:240px;max-width:400px;border-right:1px solid var(--background-modifier-border);display:flex;flex-direction:column;' }
+            cls: "nw-fingerprint-left-sidebar nw-u-w-300px nw-u-minw-240px nw-u-maxw-400px nw-u-brt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fd-column-2",
+            attr: {}
         });
 
         // 界面流转：直达工作台 / 协同写作 / 知识库
         const navBtnStyle = 'padding:4px 10px;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:4px;cursor:pointer;background:var(--background-primary);color:var(--text-muted);';
-        const navRow = this.leftSidebar.createDiv({ attr: { style: 'display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--background-modifier-border);flex-wrap:wrap;' } });
+        const navRow = this.leftSidebar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-p-8px-2 nw-u-bb-1px-solid-background-m-2 nw-u-fwr-wrap-2' });
         const backBtn = navRow.createEl('button', { text: '← 工作台', attr: { style: navBtnStyle, title: '返回完整写作工作台' } });
         backBtn.addEventListener('click', () => void this.plugin.openFullWriterView());
         const coBtn = navRow.createEl('button', { text: '✍️ 协同', attr: { style: navBtnStyle, title: '打开句级协同写作工作台' } });
@@ -211,8 +211,8 @@ export class WritingFingerprintView extends ItemView {
         kbBtn.addEventListener('click', () => void this.plugin.openKnowledgeBaseView());
 
         this.rightPanel = mainLayout.createDiv({
-            cls: 'nw-fingerprint-right-panel',
-            attr: { style: 'flex:1;overflow-y:auto;padding:16px;' }
+            cls: "nw-fingerprint-right-panel nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-16px-2",
+            attr: {}
         });
     }
 
@@ -221,8 +221,8 @@ export class WritingFingerprintView extends ItemView {
             this.scopeTabs.remove();
         }
         this.scopeTabs = this.leftSidebar.createDiv({
-            cls: 'nw-fingerprint-scope-tabs',
-            attr: { style: 'display:flex;border-bottom:1px solid var(--background-modifier-border);' }
+            cls: "nw-fingerprint-scope-tabs nw-u-d-flex-2 nw-u-bb-1px-solid-background-m-2",
+            attr: {}
         });
 
         const scopes: FingerprintScope[] = ['template', 'global', 'project'];
@@ -252,8 +252,8 @@ export class WritingFingerprintView extends ItemView {
             this.toolbar.remove();
         }
         this.toolbar = this.leftSidebar.createDiv({
-            cls: 'nw-fingerprint-toolbar',
-            attr: { style: 'padding:8px;border-bottom:1px solid var(--background-modifier-border);display:flex;flex-wrap:wrap;gap:4px;' }
+            cls: "nw-fingerprint-toolbar nw-u-p-8px-2 nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-4px-2",
+            attr: {}
         });
 
         const addBtn = this.createToolbarButton('➕ 新建', () => this.handleAddFingerprint(), false, '新建一个写作指纹（手动填写特征）');
@@ -300,16 +300,14 @@ export class WritingFingerprintView extends ItemView {
             this.searchInput.parentElement?.remove();
         }
         const searchContainer = this.leftSidebar.createDiv({
-            cls: 'nw-fingerprint-search-container',
-            attr: { style: 'padding:8px;border-bottom:1px solid var(--background-modifier-border);' }
+            cls: "nw-fingerprint-search-container nw-u-p-8px-2 nw-u-bb-1px-solid-background-m-2",
+            attr: {}
         });
 
         this.searchInput = searchContainer.createEl('input', {
             type: 'text',
             placeholder: '🔍 搜索指纹...',
-            attr: {
-                style: 'width:100%;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);box-sizing:border-box;'
-            }
+            cls: 'nw-u-w-100-2 nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-bx-border-box'
         });
         this.searchInput.value = this.filter.searchQuery;
         this.searchInput.addEventListener('input', (e) => {
@@ -318,8 +316,8 @@ export class WritingFingerprintView extends ItemView {
         });
 
         this.tagFilter = searchContainer.createDiv({
-            cls: 'nw-fingerprint-tag-filter',
-            attr: { style: 'margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;' }
+            cls: "nw-fingerprint-tag-filter nw-u-margintop-8px-2 nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-4px-2",
+            attr: {}
         });
 
         const allTags = this.getAllTags();
@@ -367,15 +365,15 @@ export class WritingFingerprintView extends ItemView {
         }
 
         this.fingerprintList = this.leftSidebar.createDiv({
-            cls: 'nw-fingerprint-list',
-            attr: { style: 'flex:1;overflow-y:auto;' }
+            cls: "nw-fingerprint-list nw-u-flex-1-2 nw-u-ovy-auto-2",
+            attr: {}
         });
 
         const fingerprints = this.getCurrentFingerprints();
 
         if (this.isLoading) {
             this.fingerprintList.createDiv({
-                attr: { style: 'padding:40px;text-align:center;color:var(--text-faint);font-size:13px;' },
+                cls: 'nw-u-p-40px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2',
                 text: '加载中...'
             });
             return;
@@ -409,17 +407,17 @@ export class WritingFingerprintView extends ItemView {
             });
 
             const header = item.createDiv({
-                attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;' }
+                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-4px-2'
             });
 
             const nameRow = header.createDiv({
-                attr: { style: 'display:flex;align-items:center;gap:6px;flex:1;min-width:0;' }
+                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-flex-1-2 nw-u-minw-0-2'
             });
 
             if (!fp.enabled) {
                 nameRow.createEl('span', {
                     text: '🔇',
-                    attr: { style: 'font-size:11px;opacity:0.6;' }
+                    cls: 'nw-u-fs-11px-2 nw-u-op-0-6'
                 });
             }
 
@@ -434,24 +432,22 @@ export class WritingFingerprintView extends ItemView {
 
             header.createEl('span', {
                 text: SCOPE_ICONS[fp.scope],
-                attr: { style: 'font-size:11px;flex-shrink:0;' }
+                cls: 'nw-u-fs-11px-2 nw-u-fsh-0-2'
             });
 
             const source = item.createDiv({
-                attr: { style: 'font-size:11px;color:var(--text-muted);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2'
             });
             source.textContent = fp.source || '未知来源';
 
             if (fp.tags.length > 0) {
                 const tagsRow = item.createDiv({
-                    attr: { style: 'display:flex;flex-wrap:wrap;gap:3px;' }
+                    cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-3px'
                 });
                 fp.tags.slice(0, 3).forEach(tag => {
                     tagsRow.createEl('span', {
                         text: tag,
-                        attr: {
-                            style: 'padding:1px 6px;font-size:10px;background:var(--background-secondary);color:var(--text-muted);border-radius:8px;'
-                        }
+                        cls: 'nw-u-p-1px-6px-2 nw-u-fs-10px-2 nw-u-bg-background-secondary-2 nw-u-c-text-muted-2 nw-u-brd-8px-2'
                     });
                 });
             }
@@ -465,8 +461,8 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const countInfo = this.leftSidebar.createDiv({
-            cls: 'nw-fingerprint-count',
-            attr: { style: 'padding:6px 12px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--background-modifier-border);' }
+            cls: "nw-fingerprint-count nw-u-p-6px-12px nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-bt-1px-solid-background-m-2",
+            attr: {}
         });
         countInfo.textContent = `共 ${fingerprints.length} 个指纹`;
     }
@@ -476,7 +472,7 @@ export class WritingFingerprintView extends ItemView {
 
         if (!this.selectedFingerprintId || !this.selectedFingerprintScope) {
             this.rightPanel.createDiv({
-                attr: { style: 'display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-faint);font-size:14px;' },
+                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-center-2 nw-u-h-100-2 nw-u-c-text-faint-2 nw-u-fs-14px-2',
                 text: '👈 请从左侧选择一个指纹查看详情'
             });
             return;
@@ -485,24 +481,24 @@ export class WritingFingerprintView extends ItemView {
         const fp = this.getSelectedFingerprint();
         if (!fp) {
             this.rightPanel.createDiv({
-                attr: { style: 'display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-faint);font-size:14px;' },
+                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-center-2 nw-u-h-100-2 nw-u-c-text-faint-2 nw-u-fs-14px-2',
                 text: '指纹不存在'
             });
             return;
         }
 
         const header = this.rightPanel.createDiv({
-            cls: 'nw-fingerprint-detail-header',
-            attr: { style: 'margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--background-modifier-border);' }
+            cls: "nw-fingerprint-detail-header nw-u-marginbottom-16px-2 nw-u-paddingbottom-12px nw-u-bb-1px-solid-background-m-2",
+            attr: {}
         });
 
         const titleRow = header.createDiv({
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' }
+            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2'
         });
 
         titleRow.createEl('h3', {
             text: fp.name,
-            attr: { style: 'margin:0;font-size:18px;' }
+            cls: 'nw-u-m-0-2 nw-u-fs-18px-2'
         });
 
         const statusBadge = titleRow.createEl('span', {
@@ -517,7 +513,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const metaRow = header.createDiv({
-            attr: { style: 'display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--text-muted);' }
+            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-12px-2 nw-u-fs-12px-2 nw-u-c-text-muted-2'
         });
 
         metaRow.createEl('span', { text: `${SCOPE_LABELS[fp.scope as FingerprintScope]}` });
@@ -527,14 +523,12 @@ export class WritingFingerprintView extends ItemView {
 
         if (fp.tags.length > 0) {
             const tagsSection = header.createDiv({
-                attr: { style: 'margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;' }
+                cls: 'nw-u-margintop-8px-2 nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-6px-2'
             });
             fp.tags.forEach(tag => {
                 tagsSection.createEl('span', {
                     text: tag,
-                    attr: {
-                        style: 'padding:3px 10px;font-size:11px;background:var(--background-secondary);color:var(--text-normal);border-radius:10px;'
-                    }
+                    cls: 'nw-u-p-3px-10px-2 nw-u-fs-11px-2 nw-u-bg-background-secondary-2 nw-u-c-text-normal-2 nw-u-brd-10px-2'
                 });
             });
         }
@@ -561,7 +555,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const statsGrid = section.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-8px-2'
         });
 
         const statsItems = [
@@ -573,17 +567,15 @@ export class WritingFingerprintView extends ItemView {
 
         statsItems.forEach(item => {
             const card = statsGrid.createDiv({
-                attr: {
-                    style: 'padding:12px;background:var(--background-secondary);border-radius:6px;text-align:center;'
-                }
+                cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-ta-center-2'
             });
             card.createEl('div', {
                 text: item.value,
-                attr: { style: 'font-size:16px;font-weight:600;margin-bottom:4px;' }
+                cls: 'nw-u-fs-16px-2 nw-u-fwt-600-2 nw-u-marginbottom-4px-2'
             });
             card.createEl('div', {
                 text: item.label,
-                attr: { style: 'font-size:11px;color:var(--text-muted);' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2'
             });
         });
     }
@@ -613,15 +605,15 @@ export class WritingFingerprintView extends ItemView {
             if (!value) return;
 
             const row = section.createDiv({
-                attr: { style: 'margin-bottom:10px;' }
+                cls: 'nw-u-marginbottom-10px-2'
             });
             row.createEl('div', {
                 text: f.label,
-                attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:4px;' }
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2'
             });
             row.createEl('div', {
                 text: value,
-                attr: { style: 'font-size:13px;line-height:1.5;padding:8px 12px;background:var(--background-secondary);border-radius:4px;' }
+                cls: 'nw-u-fs-13px-2 nw-u-lh-1-5-2 nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2'
             });
         });
     }
@@ -639,32 +631,30 @@ export class WritingFingerprintView extends ItemView {
         if (fp.samples.length === 0) {
             section.createEl('div', {
                 text: '无代表片段',
-                attr: { style: 'font-size:12px;color:var(--text-muted);' }
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2'
             });
             return;
         }
 
         fp.samples.slice(0, 3).forEach((sample, index) => {
             const sampleEl = section.createDiv({
-                attr: {
-                    style: 'margin-bottom:10px;padding:12px;background:var(--background-secondary);border-radius:4px;font-size:12px;line-height:1.6;border-left:3px solid var(--interactive-accent);'
-                }
+                cls: 'nw-u-marginbottom-10px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-lh-1-6-2 nw-u-blt-3px-solid-interactive-'
             });
             sampleEl.createEl('div', {
                 text: `片段 ${index + 1}`,
-                attr: { style: 'font-size:11px;color:var(--text-muted);margin-bottom:6px;' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-6px-2'
             });
             sampleEl.createEl('div', {
                 text: sample,
-                attr: { style: 'color:var(--text-normal);' }
+                cls: 'nw-u-c-text-normal-2'
             });
         });
     }
 
     private renderActionsSection(fp: StyleFingerprint): void {
         const section = this.rightPanel.createDiv({
-            cls: 'nw-fingerprint-actions-section',
-            attr: { style: 'margin-top:20px;padding-top:16px;border-top:1px solid var(--background-modifier-border);' }
+            cls: "nw-fingerprint-actions-section nw-u-margintop-20px-2 nw-u-paddingtop-16px nw-u-bt-1px-solid-background-m-2",
+            attr: {}
         });
 
         section.createEl('h4', {
@@ -673,7 +663,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const actionsGrid = section.createDiv({
-            attr: { style: 'display:flex;flex-wrap:wrap;gap:8px;' }
+            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-8px-2'
         });
 
         const sourceOnly = isSourceOnlyFingerprintScope(fp.scope);
@@ -681,7 +671,7 @@ export class WritingFingerprintView extends ItemView {
         if (sourceOnly) {
             section.createEl('div', {
                 text: '📋 模板层是来源库：复制/同步到项目后才会影响正文，本层的启用状态与强度不参与注入。',
-                attr: { style: 'font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.5;' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2 nw-u-lh-1-5-2'
             });
         } else {
             const toggleBtn = this.createActionButton(
@@ -1303,18 +1293,18 @@ class EditFingerprintModal extends Modal {
                 .onChange(v => this.tagsValue = v));
 
         const btnRow = contentEl.createDiv({
-            attr: { style: 'display:flex;justify-content:flex-end;gap:8px;margin-top:20px;' }
+            cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-margintop-20px-2'
         });
 
         const cancelBtn = btnRow.createEl('button', {
             text: '取消',
-            attr: { style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-6px-16px nw-u-cur-pointer-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-bg-background-secondary-2'
         });
         cancelBtn.addEventListener('click', () => this.close());
 
         const saveBtn = btnRow.createEl('button', {
             text: '💾 保存',
-            attr: { style: 'padding:6px 16px;cursor:pointer;border:none;border-radius:4px;background:var(--interactive-accent);color:var(--text-on-accent);' }
+            cls: 'nw-u-p-6px-16px nw-u-cur-pointer-2 nw-u-b-none nw-u-brd-4px-2 nw-u-bg-interactive-accent-2 nw-u-c-text-on-accent-2'
         });
         saveBtn.addEventListener('click', () => {
             this.fingerprint.name = this.nameValue.trim() || this.fingerprint.name;
@@ -1358,7 +1348,7 @@ export class ExtractFromChaptersModal extends Modal {
 
         const desc = contentEl.createEl('p', {
             text: `共找到 ${this.chapters.length} 个章节，选择要提取的章节：`,
-            attr: { style: 'font-size:13px;color:var(--text-muted);margin:8px 0 16px 0;' }
+            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-m-8px-0-16px-0'
         });
         void desc;
 
@@ -1369,13 +1359,13 @@ export class ExtractFromChaptersModal extends Modal {
                 .onChange(v => this.fingerprintName = v));
 
         const btnRow1 = contentEl.createDiv({
-            attr: { style: 'display:flex;gap:8px;margin:12px 0;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-m-12px-0'
         });
 
         const selectAllBtn = btnRow1.createEl('button', {
             text: '全选',
-            cls: 'nw-btn',
-            attr: { style: 'flex:1;' }
+            cls: "nw-btn nw-u-flex-1-2",
+            attr: {}
         });
         selectAllBtn.addEventListener('click', () => {
             this.chapters.forEach(c => this.selectedChapters.add(c));
@@ -1384,8 +1374,8 @@ export class ExtractFromChaptersModal extends Modal {
 
         const deselectAllBtn = btnRow1.createEl('button', {
             text: '取消全选',
-            cls: 'nw-btn',
-            attr: { style: 'flex:1;' }
+            cls: "nw-btn nw-u-flex-1-2",
+            attr: {}
         });
         deselectAllBtn.addEventListener('click', () => {
             this.selectedChapters.clear();
@@ -1393,7 +1383,7 @@ export class ExtractFromChaptersModal extends Modal {
         });
 
         const chapterListContainer = contentEl.createDiv({
-            attr: { style: 'max-height:300px;overflow-y:auto;border:1px solid var(--background-modifier-border);border-radius:6px;margin:8px 0;' }
+            cls: 'nw-u-maxh-300px-2 nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-m-8px-0'
         });
 
         const renderChapterList = () => {
@@ -1402,7 +1392,7 @@ export class ExtractFromChaptersModal extends Modal {
             if (this.chapters.length === 0) {
                 chapterListContainer.createDiv({
                     text: '未找到章节',
-                    attr: { style: 'padding:20px;text-align:center;color:var(--text-faint);' }
+                    cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-faint-2'
                 });
                 return;
             }
@@ -1410,9 +1400,7 @@ export class ExtractFromChaptersModal extends Modal {
             this.chapters.forEach(chapterPath => {
                 const fileName = chapterPath.split('/').pop() || chapterPath;
                 const item = chapterListContainer.createDiv({
-                    attr: { 
-                        style: 'padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--background-modifier-border);' 
-                    }
+                    cls: 'nw-u-p-6px-12px nw-u-cur-pointer-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-bb-1px-solid-background-m-2'
                 });
 
                 const checkbox = document.createElement('input');
@@ -1447,7 +1435,7 @@ export class ExtractFromChaptersModal extends Modal {
         renderChapterList();
 
         const btnRow = contentEl.createDiv({
-            attr: { style: 'display:flex;justify-content:flex-end;gap:8px;margin-top:20px;' }
+            cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-margintop-20px-2'
         });
 
         const cancelBtn = btnRow.createEl('button', {

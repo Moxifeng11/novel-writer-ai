@@ -89,7 +89,7 @@ export class MiniSettingsModal extends Modal {
         contentEl.empty();
         contentEl.addClass('novel-writer-mini-settings');
 
-        contentEl.createEl('h3', { text: '⚙️ 工作台设置', attr: { style: 'margin-top:0;margin-bottom:8px;' } });
+        contentEl.createEl('h3', { text: '⚙️ 工作台设置', cls: 'nw-u-margintop-0 nw-u-marginbottom-8px-2' });
 
         this.tabBar = contentEl.createDiv({ cls: 'nw-settings-tabbar' });
         const tabs = [
@@ -245,7 +245,7 @@ export class MiniSettingsModal extends Modal {
                 });
             });
 
-        const manageRow = section.createDiv({ attr: { style: 'display:flex;justify-content:flex-end;margin-top:-4px;margin-bottom:8px;' } });
+        const manageRow = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-margintop-4px-2 nw-u-marginbottom-8px-2' });
         const manageBtn = manageRow.createEl('button', {
             cls: 'nw-settings-section-btn',
             text: '🔧 管理全部提供商',
@@ -481,9 +481,9 @@ export class MiniSettingsModal extends Modal {
                     outRow.setDesc(`AI 最大输出长度（token）。${currentModel} 默认: ${modelDefaults.maxOutput.toLocaleString()} tokens${parsed !== modelDefaults.maxOutput ? ' · ⚠️ 已设置自定义值' : ''}`);
                 }));
 
-        const historyContainer = section.createDiv({ attr: { style: 'margin-top:12px;' } });
-        const historyHeader = historyContainer.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;' } });
-        historyHeader.createEl('span', { text: '📜 渠道-模型配置修改历史', attr: { style: 'font-weight:600;font-size:12px;' } });
+        const historyContainer = section.createDiv({ cls: 'nw-u-margintop-12px-2' });
+        const historyHeader = historyContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-4px-2' });
+        historyHeader.createEl('span', { text: '📜 渠道-模型配置修改历史', cls: 'nw-u-fwt-600-2 nw-u-fs-12px-2' });
 
         const showHistoryBtn = historyHeader.createEl('button', {
             text: '查看',
@@ -493,7 +493,7 @@ export class MiniSettingsModal extends Modal {
         const renderHistory = () => {
             const historyEl = historyContainer.querySelector('.history-list');
             if (historyEl) historyEl.remove();
-            const list = historyContainer.createDiv({ cls: 'history-list', attr: { style: 'max-height:200px;overflow-y:auto;font-size:11px;color:var(--text-muted);padding:4px 0;' } });
+            const list = historyContainer.createDiv({ cls: "history-list nw-u-maxh-200px-2 nw-u-ovy-auto-2 nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-p-4px-0-2", attr: {} });
             const history = this.plugin.settings.modelOverrideHistory;
             if (history.length === 0) {
                 list.createEl('span', { text: '暂无修改记录' });
@@ -576,7 +576,7 @@ export class MiniSettingsModal extends Modal {
 
         if (this.fingerprintLoading) {
             section.createDiv({
-                attr: { style: 'padding:40px;text-align:center;color:var(--text-faint);font-size:13px;' },
+                cls: 'nw-u-p-40px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2',
                 text: '加载中...'
             });
             return;
@@ -585,7 +585,7 @@ export class MiniSettingsModal extends Modal {
         const activeProject = this.getActiveProject();
         if (!activeProject) {
             section.createDiv({
-                attr: { style: 'padding:20px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--background-secondary);border-radius:6px;' },
+                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2',
                 text: '请先打开一个项目，以便管理项目指纹。'
             });
         }
@@ -596,10 +596,10 @@ export class MiniSettingsModal extends Modal {
         }
 
         // 模板指纹库
-        const templateGroup = section.createDiv({ attr: { style: 'margin-bottom:20px;' } });
-        const templateHeader = templateGroup.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' } });
-        templateHeader.createEl('span', { text: '📋 模板指纹库', attr: { style: 'font-weight:600;font-size:13px;' } });
-        templateHeader.createEl('span', { text: `共 ${this.templateFingerprints.length} 个`, attr: { style: 'font-size:11px;color:var(--text-muted);' } });
+        const templateGroup = section.createDiv({ cls: 'nw-u-marginbottom-20px-2' });
+        const templateHeader = templateGroup.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2' });
+        templateHeader.createEl('span', { text: '📋 模板指纹库', cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2' });
+        templateHeader.createEl('span', { text: `共 ${this.templateFingerprints.length} 个`, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2' });
 
         const addTemplateBtn = templateGroup.createEl('button', {
             text: '➕ 添加模板指纹',
@@ -639,10 +639,10 @@ export class MiniSettingsModal extends Modal {
         });
 
         // 全局指纹库
-        const globalGroup = section.createDiv({ attr: { style: 'margin-bottom:20px;' } });
-        const globalHeader = globalGroup.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' } });
-        globalHeader.createEl('span', { text: '🌐 全局指纹库', attr: { style: 'font-weight:600;font-size:13px;' } });
-        globalHeader.createEl('span', { text: `共 ${this.globalFingerprints.length} 个`, attr: { style: 'font-size:11px;color:var(--text-muted);' } });
+        const globalGroup = section.createDiv({ cls: 'nw-u-marginbottom-20px-2' });
+        const globalHeader = globalGroup.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2' });
+        globalHeader.createEl('span', { text: '🌐 全局指纹库', cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2' });
+        globalHeader.createEl('span', { text: `共 ${this.globalFingerprints.length} 个`, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2' });
 
         const addGlobalBtn = globalGroup.createEl('button', {
             text: '➕ 添加全局指纹',
@@ -688,11 +688,11 @@ export class MiniSettingsModal extends Modal {
         });
 
         if (activeProject) {
-            const projectGroup = section.createDiv({ attr: { style: 'margin-bottom:12px;' } });
-            const projectHeader = projectGroup.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' } });
-            projectHeader.createEl('span', { text: '📁 项目指纹库', attr: { style: 'font-weight:600;font-size:13px;' } });
-            const projectHeaderRight = projectHeader.createDiv({ attr: { style: 'display:flex;align-items:center;gap:10px;' } });
-            projectHeaderRight.createEl('span', { text: `共 ${this.projectFingerprints.length} 个`, attr: { style: 'font-size:11px;color:var(--text-muted);' } });
+            const projectGroup = section.createDiv({ cls: 'nw-u-marginbottom-12px-2' });
+            const projectHeader = projectGroup.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2' });
+            projectHeader.createEl('span', { text: '📁 项目指纹库', cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2' });
+            const projectHeaderRight = projectHeader.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-10px-2' });
+            projectHeaderRight.createEl('span', { text: `共 ${this.projectFingerprints.length} 个`, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2' });
             const syncBtn = projectHeaderRight.createEl('button', {
                 text: '🔄 从模板同步',
                 attr: {
@@ -880,7 +880,7 @@ export class MiniSettingsModal extends Modal {
 
         if (this.knowledgeLoading) {
             section.createDiv({
-                attr: { style: 'padding:40px;text-align:center;color:var(--text-faint);font-size:13px;' },
+                cls: 'nw-u-p-40px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2',
                 text: '加载中...'
             });
             return;
@@ -898,7 +898,7 @@ export class MiniSettingsModal extends Modal {
 
         if (!this.knowledgeBaseManager || !this.knowledgeTagManager || !this.deconstructionSchedulerInstance) {
             section.createDiv({
-                attr: { style: 'padding:20px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--background-secondary);border-radius:6px;' },
+                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2',
                 text: '知识库管理器尚未初始化，请等待插件加载完成后再试。'
             });
             return;
@@ -908,7 +908,7 @@ export class MiniSettingsModal extends Modal {
             await this.loadKnowledgeBooks();
         }
 
-        const toolbar = section.createDiv({ attr: { style: 'margin-bottom:16px;' } });
+        const toolbar = section.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
 
         new Setting(toolbar)
             .setName('知识库路径')
@@ -929,7 +929,7 @@ export class MiniSettingsModal extends Modal {
                     }
                 }));
 
-        const actionRow = toolbar.createDiv({ attr: { style: 'display:flex;gap:8px;margin-top:8px;margin-bottom:16px;' } });
+        const actionRow = toolbar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-margintop-8px-2 nw-u-marginbottom-16px-2' });
 
         const importBtn = actionRow.createEl('button', {
             text: '📥 批量导入',
@@ -969,10 +969,10 @@ export class MiniSettingsModal extends Modal {
         revectorizeBtn.addEventListener('click', () => rebuildAllVectorsWithConfirm(this.app, this.plugin));
 
         const filterBar = section.createDiv({
-            attr: { style: 'padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
         });
 
-        const searchRow = filterBar.createDiv({ attr: { style: 'display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;' } });
+        const searchRow = filterBar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-marginbottom-10px-2 nw-u-fwr-wrap-2' });
 
         const searchInput = searchRow.createEl('input', {
             attr: {
@@ -988,9 +988,7 @@ export class MiniSettingsModal extends Modal {
         });
 
         const statusSelect = searchRow.createEl('select', {
-            attr: {
-                style: 'padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            cls: 'nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-13px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2'
         });
         const statusOptions: { value: string; label: string }[] = [
             { value: 'all', label: '全部状态' },
@@ -1008,25 +1006,25 @@ export class MiniSettingsModal extends Modal {
             this.renderKnowledgeBooksList();
         });
 
-        const tagFilterRow = filterBar.createDiv({ attr: { style: 'display:flex;gap:12px;flex-wrap:wrap;' } });
+        const tagFilterRow = filterBar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-fwr-wrap-2' });
 
-        const themeFilterDiv = tagFilterRow.createDiv({ attr: { style: 'flex:1;min-width:200px;' } });
-        themeFilterDiv.createEl('span', { text: '📖 题材：全部', attr: { style: 'font-size:12px;color:var(--text-muted);margin-right:8px;' } });
+        const themeFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-200px-2' });
+        themeFilterDiv.createEl('span', { text: '📖 题材：全部', cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginright-8px' });
 
-        const techniqueFilterDiv = tagFilterRow.createDiv({ attr: { style: 'flex:1;min-width:200px;' } });
-        techniqueFilterDiv.createEl('span', { text: '✍️ 技巧：全部', attr: { style: 'font-size:12px;color:var(--text-muted);margin-right:8px;' } });
+        const techniqueFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-200px-2' });
+        techniqueFilterDiv.createEl('span', { text: '✍️ 技巧：全部', cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginright-8px' });
 
         this.renderKnowledgeBooksList(section);
     }
 
     private renderVectorEnhancementSettings(container: HTMLElement): void {
         const vectorSection = container.createDiv({
-            attr: { style: 'padding:12px 16px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
         });
 
         vectorSection.createEl('h4', {
             text: '🧠 向量增强设置',
-            attr: { style: 'margin:0 0 12px 0;font-size:14px;' }
+            cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2'
         });
 
         new Setting(vectorSection)
@@ -1357,17 +1355,17 @@ export class MiniSettingsModal extends Modal {
 
         if (filteredBooks.length === 0) {
             const emptyState = wrap.createDiv({
-                attr: { style: 'padding:40px 16px;text-align:center;border:1px dashed var(--background-modifier-border);border-radius:8px;background:var(--background-secondary);' }
+                cls: 'nw-u-p-40px-16px nw-u-ta-center-2 nw-u-b-1px-dashed-background- nw-u-brd-8px-2 nw-u-bg-background-secondary-2'
             });
             emptyState.createEl('div', {
                 text: '📚',
-                attr: { style: 'font-size:40px;margin-bottom:12px;opacity:0.5;' }
+                cls: 'nw-u-fs-40px nw-u-marginbottom-12px-2 nw-u-op-0-5'
             });
             emptyState.createEl('div', {
                 text: this.knowledgeBooks.length === 0
                     ? '知识库暂无书籍，点击上方「批量导入」开始添加'
                     : '没有符合筛选条件的书籍',
-                attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:8px;' }
+                cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2'
             });
             if (this.knowledgeBooks.length === 0) {
                 const emptyImportBtn = emptyState.createEl('button', {
@@ -1383,17 +1381,15 @@ export class MiniSettingsModal extends Modal {
         }
 
         const countRow = wrap.createDiv({
-            attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;' }
+            cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-marginbottom-8px-2'
         });
         countRow.createEl('span', {
             text: `共 ${filteredBooks.length} 本书籍`,
-            attr: { style: 'font-size:12px;color:var(--text-muted);' }
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2'
         });
 
         const gridContainer = wrap.createDiv({
-            attr: {
-                style: 'display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:10px;max-height:420px;overflow-y:auto;padding:4px;'
-            }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fill-minma-6 nw-u-gap-10px-2 nw-u-maxh-420px nw-u-ovy-auto-2 nw-u-p-4px'
         });
 
         filteredBooks.forEach(book => {
@@ -1403,9 +1399,7 @@ export class MiniSettingsModal extends Modal {
 
     private renderKnowledgeBookCard(container: HTMLElement, book: BookBasicInfo): void {
         const card = container.createDiv({
-            attr: {
-                style: 'padding:12px;border:1px solid var(--background-modifier-border);border-radius:8px;background:var(--background-primary);cursor:pointer;transition:all 0.2s ease;position:relative;overflow:hidden;'
-            }
+            cls: 'nw-u-p-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2 nw-u-bg-background-primary-2 nw-u-cur-pointer-2 nw-u-transition-all-0-2s-ease nw-u-pos-relative nw-u-ov-hidden-2'
         });
 
         card.addEventListener('mouseenter', () => {
@@ -1419,16 +1413,16 @@ export class MiniSettingsModal extends Modal {
 
         card.addEventListener('click', () => this.openKnowledgeBookDetail(book.id));
 
-        const titleRow = card.createDiv({ attr: { style: 'margin-bottom:6px;padding-right:8px;' } });
+        const titleRow = card.createDiv({ cls: 'nw-u-marginbottom-6px-2 nw-u-paddingright-8px' });
         titleRow.createEl('div', {
             text: book.name,
-            attr: { style: 'font-size:14px;font-weight:600;color:var(--text-normal);line-height:1.4;' }
+            cls: 'nw-u-fs-14px-2 nw-u-fwt-600-2 nw-u-c-text-normal-2 nw-u-lh-1-4-2'
         });
 
         if (book.author) {
             titleRow.createEl('div', {
                 text: book.author,
-                attr: { style: 'font-size:11px;color:var(--text-muted);margin-top:2px;' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-margintop-2px-2'
             });
         }
 
@@ -1438,29 +1432,25 @@ export class MiniSettingsModal extends Modal {
         const allTags = [...book.themeTags, ...book.techniqueTags, ...book.customTags];
         if (allTags.length > 0) {
             const tagRow = card.createDiv({
-                attr: { style: 'display:flex;gap:4px;flex-wrap:wrap;margin:8px 0;' }
+                cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-fwr-wrap-2 nw-u-m-8px-0'
             });
             const displayTags = allTags.slice(0, 3);
             displayTags.forEach(tag => {
                 tagRow.createEl('span', {
                     text: tag,
-                    attr: {
-                        style: 'padding:2px 8px;background:var(--background-secondary);border-radius:10px;font-size:10px;color:var(--text-muted);'
-                    }
+                    cls: 'nw-u-p-2px-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-fs-10px-2 nw-u-c-text-muted-2'
                 });
             });
             if (allTags.length > 3) {
                 tagRow.createEl('span', {
                     text: `+${allTags.length - 3}`,
-                    attr: {
-                        style: 'padding:2px 8px;background:var(--background-secondary);border-radius:10px;font-size:10px;color:var(--text-faint);'
-                    }
+                    cls: 'nw-u-p-2px-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-fs-10px-2 nw-u-c-text-faint-2'
                 });
             }
         }
 
         const metaRow = card.createDiv({
-            attr: { style: 'display:flex;gap:10px;font-size:10px;color:var(--text-faint);padding-top:6px;border-top:1px solid var(--background-modifier-border);' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-fs-10px-2 nw-u-c-text-faint-2 nw-u-paddingtop-6px nw-u-bt-1px-solid-background-m-2'
         });
 
         if (book.wordCount) {
@@ -1744,9 +1734,9 @@ export class MiniSettingsModal extends Modal {
         const cfg = this.getDeconstructionEngineSettings();
 
         const qualityCard = section.createDiv({
-            attr: { style: 'padding:12px 16px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
         });
-        qualityCard.createEl('h4', { text: '🎯 增强级别', attr: { style: 'margin:0 0 12px 0;font-size:14px;' } });
+        qualityCard.createEl('h4', { text: '🎯 增强级别', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
 
         new Setting(qualityCard)
             .setName('默认质量级别')
@@ -1772,11 +1762,11 @@ export class MiniSettingsModal extends Modal {
             });
 
         const dimCard = section.createDiv({
-            attr: { style: 'padding:12px 16px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
         });
-        dimCard.createEl('h4', { text: '🧩 拆解维度', attr: { style: 'margin:0 0 12px 0;font-size:14px;' } });
+        dimCard.createEl('h4', { text: '🧩 拆解维度', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
 
-        const dimList = dimCard.createDiv({ attr: { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;' } });
+        const dimList = dimCard.createDiv({ cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fill-minma-5 nw-u-gap-6px-2' });
         const dimSet = new Set(cfg.enabledDimensions);
         ALL_BREAKDOWN_DIMENSIONS.forEach(dim => {
             const item = new Setting(dimList)
@@ -1797,9 +1787,9 @@ export class MiniSettingsModal extends Modal {
         });
 
         const vectorCard = section.createDiv({
-            attr: { style: 'padding:12px 16px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
         });
-        vectorCard.createEl('h4', { text: '🧠 向量增强', attr: { style: 'margin:0 0 12px 0;font-size:14px;' } });
+        vectorCard.createEl('h4', { text: '🧠 向量增强', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
 
         new Setting(vectorCard)
             .setName('启用向量增强')
@@ -1843,11 +1833,11 @@ export class MiniSettingsModal extends Modal {
             });
 
         const llmCard = section.createDiv({
-            attr: { style: 'padding:12px 16px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
         });
         llmCard.createEl('h4', {
             text: '🤖 LLM 增强 · 实验性',
-            attr: { style: 'margin:0 0 12px 0;font-size:14px;' }
+            cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2'
         });
 
         new Setting(llmCard)
@@ -1872,9 +1862,9 @@ export class MiniSettingsModal extends Modal {
             });
 
         const perfCard = section.createDiv({
-            attr: { style: 'padding:12px 16px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
         });
-        perfCard.createEl('h4', { text: '⚙️ 性能', attr: { style: 'margin:0 0 12px 0;font-size:14px;' } });
+        perfCard.createEl('h4', { text: '⚙️ 性能', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
 
         new Setting(perfCard)
             .setName('最大并发拆解数')
@@ -1937,14 +1927,14 @@ export class MiniSettingsModal extends Modal {
         templateManager.renderTemplateList(section);
 
         // 提示词策略配置子分区
-        section.createEl('hr', { attr: { style: 'margin:20px 0;border:none;border-top:1px solid var(--background-modifier-border);' } });
-        section.createEl('h3', { text: '💬 提示词策略', attr: { style: 'margin-top:16px;' } });
+        section.createEl('hr', { cls: 'nw-u-m-20px-0 nw-u-b-none nw-u-bt-1px-solid-background-m-2' });
+        section.createEl('h3', { text: '💬 提示词策略', cls: 'nw-u-margintop-16px-2' });
         if (this.plugin.promptManager) {
             const { PromptManagerSettings } = require('./prompt-manager-settings');
             const manager = new PromptManagerSettings(this.app, this.plugin, section);
             manager.render();
         } else {
-            section.createDiv({ text: '提示词管理器未初始化', attr: { style: 'color:var(--text-error);' } });
+            section.createDiv({ text: '提示词管理器未初始化', cls: 'nw-u-c-text-error' });
         }
     }
 
@@ -2001,17 +1991,15 @@ export class MiniSettingsModal extends Modal {
     private async renderRulesTab(): Promise<void> {
         const section = this.tabContent.createDiv();
 
-        section.createEl('h3', { text: '📜 写作规则版本管理', attr: { style: 'margin-top:0;' } });
+        section.createEl('h3', { text: '📜 写作规则版本管理', cls: 'nw-u-margintop-0' });
 
         section.createEl('p', {
             text: '写作规则是 AI 生成正文时遵循的核心准则。版本不匹配可能导致生成质量下降或出现不一致行为。',
-            attr: { style: 'color:var(--text-muted);font-size:13px;margin-bottom:20px;' }
+            cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-20px-2'
         });
 
         const statusCard = section.createDiv({
-            attr: {
-                style: 'padding:20px;background:var(--background-secondary);border-radius:10px;margin-bottom:20px;'
-            }
+            cls: 'nw-u-p-20px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-marginbottom-20px-2'
         });
 
         try {
@@ -2020,8 +2008,8 @@ export class MiniSettingsModal extends Modal {
             const isPresent = await rulesService.isRulesFilePresent();
             const config = await rulesService.getRulesConfig();
 
-            const statusRow1 = statusCard.createDiv({ attr: { style: 'display:flex;justify-content:space-between;margin-bottom:12px;' } });
-            statusRow1.createDiv({ text: '规则文件状态:', attr: { style: 'font-weight:600;' } });
+            const statusRow1 = statusCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-12px-2' });
+            statusRow1.createDiv({ text: '规则文件状态:', cls: 'nw-u-fwt-600-2' });
             statusRow1.createDiv({
                 text: isPresent ? '✅ 已检测到' : '⚠️ 未找到',
                 attr: {
@@ -2031,34 +2019,34 @@ export class MiniSettingsModal extends Modal {
                 }
             });
 
-            const statusRow2 = statusCard.createDiv({ attr: { style: 'display:flex;justify-content:space-between;margin-bottom:12px;' } });
-            statusRow2.createDiv({ text: '当前规则版本:', attr: { style: 'font-weight:600;' } });
-            statusRow2.createDiv({ text: current === 'unknown' ? '无法检测' : `v${current}`, attr: { style: 'font-family:monospace;' } });
+            const statusRow2 = statusCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-12px-2' });
+            statusRow2.createDiv({ text: '当前规则版本:', cls: 'nw-u-fwt-600-2' });
+            statusRow2.createDiv({ text: current === 'unknown' ? '无法检测' : `v${current}`, cls: 'nw-u-fontfamily-monospace' });
 
-            const statusRow3 = statusCard.createDiv({ attr: { style: 'display:flex;justify-content:space-between;margin-bottom:12px;' } });
-            statusRow3.createDiv({ text: '期望规则版本:', attr: { style: 'font-weight:600;' } });
-            statusRow3.createDiv({ text: `v${expected}`, attr: { style: 'font-family:monospace;' } });
+            const statusRow3 = statusCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-12px-2' });
+            statusRow3.createDiv({ text: '期望规则版本:', cls: 'nw-u-fwt-600-2' });
+            statusRow3.createDiv({ text: `v${expected}`, cls: 'nw-u-fontfamily-monospace' });
 
             if (config.lastModified > 0) {
-                const statusRow4 = statusCard.createDiv({ attr: { style: 'display:flex;justify-content:space-between;margin-bottom:12px;' } });
-                statusRow4.createDiv({ text: '最后修改时间:', attr: { style: 'font-weight:600;' } });
-                statusRow4.createDiv({ text: new Date(config.lastModified).toLocaleString(), attr: { style: 'font-size:12px;color:var(--text-muted);' } });
+                const statusRow4 = statusCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-12px-2' });
+                statusRow4.createDiv({ text: '最后修改时间:', cls: 'nw-u-fwt-600-2' });
+                statusRow4.createDiv({ text: new Date(config.lastModified).toLocaleString(), cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2' });
             }
 
             if (!isPresent) {
                 section.createDiv({
                     text: '❌ 警告：未找到写作规则文件！AI 将使用内置的默认规则。建议在项目根目录创建「00-系统模板/写作规则.md」文件。',
-                    attr: { style: 'padding:12px;background:var(--background-modifier-error);color:var(--text-error);border-radius:6px;margin-bottom:16px;' }
+                    cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-er nw-u-c-text-error nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
                 });
             } else if (current !== expected && current !== 'unknown') {
                 section.createDiv({
                     text: `⚠️ 警告：规则版本不匹配！当前 v${current}，期望 v${expected}。建议更新写作规则文件以确保生成质量。`,
-                    attr: { style: 'padding:12px;background:var(--background-modifier-warning);color:var(--text-warning);border-radius:6px;margin-bottom:16px;' }
+                    cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-wa nw-u-c-text-warning nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
                 });
             } else {
                 section.createDiv({
                     text: '✅ 规则版本正常',
-                    attr: { style: 'padding:12px;background:var(--background-modifier-success);color:var(--text-success);border-radius:6px;margin-bottom:16px;' }
+                    cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-su nw-u-c-text-success nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
                 });
             }
 
@@ -2089,9 +2077,7 @@ export class MiniSettingsModal extends Modal {
                         const { contentEl } = this;
                         contentEl.createEl('h3', { text: '写作规则内容' });
                         const textarea = contentEl.createEl('textarea', {
-                            attr: {
-                                style: 'width:100%;height:400px;padding:12px;font-family:monospace;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-primary);color:var(--text-primary);resize:none;'
-                            }
+                            cls: 'nw-u-w-100-2 nw-u-h-400px nw-u-p-12px-2 nw-u-fontfamily-monospace nw-u-fs-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-bg-background-primary-2 nw-u-c-text-primary nw-u-resize-none'
                         });
                         textarea.value = rules;
                     }
@@ -2102,7 +2088,7 @@ export class MiniSettingsModal extends Modal {
         } catch (e) {
             statusCard.createDiv({
                 text: `❌ 检查失败: ${(e as Error).message}`,
-                attr: { style: 'color:var(--text-error);' }
+                cls: 'nw-u-c-text-error'
             });
         }
     }
@@ -2110,8 +2096,8 @@ export class MiniSettingsModal extends Modal {
     private renderPerformanceTab(): void {
         const section = this.tabContent.createDiv();
 
-        section.createEl('h3', { text: '📊 性能监控', attr: { style: 'margin-top:0;' } });
-        section.createEl('p', { text: '监控插件关键操作的性能，识别性能瓶颈并优化。', attr: { style: 'color:var(--text-muted);font-size:13px;margin-bottom:16px;' } });
+        section.createEl('h3', { text: '📊 性能监控', cls: 'nw-u-margintop-0' });
+        section.createEl('p', { text: '监控插件关键操作的性能，识别性能瓶颈并优化。', cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2' });
 
         const perfEnabled = performanceMonitor.isEnabled();
         new Setting(section)
@@ -2128,8 +2114,8 @@ export class MiniSettingsModal extends Modal {
         if (!performanceMonitor.isEnabled()) {
             section.createEl('div', {
                 text: '⚠️  性能监控已关闭',
-                cls: 'nw-empty-info-card',
-                attr: { style: 'margin-top:16px;' }
+                cls: "nw-empty-info-card nw-u-margintop-16px-2",
+                attr: {}
             });
             return;
         }
@@ -2153,10 +2139,10 @@ export class MiniSettingsModal extends Modal {
         } catch {
         }
 
-        section.createEl('h4', { text: '📈 概览统计', attr: { style: 'margin:16px 0 12px 0;font-size:14px;' } });
+        section.createEl('h4', { text: '📈 概览统计', cls: 'nw-u-m-16px-0-12px-0 nw-u-fs-14px-2' });
 
         const statsGrid = section.createEl('div', {
-            attr: { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-12px-2 nw-u-marginbottom-20px-2'
         });
 
         const totalOps = Object.values(categoryStats).reduce((sum, c) => sum + c.count, 0);
@@ -2177,10 +2163,10 @@ export class MiniSettingsModal extends Modal {
             this.addStatCard(statsGrid, '缓存条目', cacheStats.totalEntries.toString());
         }
 
-        section.createEl('h4', { text: '📂 分类统计', attr: { style: 'margin:16px 0 12px 0;font-size:14px;' } });
+        section.createEl('h4', { text: '📂 分类统计', cls: 'nw-u-m-16px-0-12px-0 nw-u-fs-14px-2' });
 
         const catTable = section.createEl('table', {
-            attr: { style: 'width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;' }
+            cls: 'nw-u-w-100-2 nw-u-bordercollapse-collapse-2 nw-u-marginbottom-20px-2 nw-u-fs-13px-2'
         });
         const thead = catTable.createEl('thead');
         const headRow = thead.createEl('tr');
@@ -2202,62 +2188,62 @@ export class MiniSettingsModal extends Modal {
             });
         }
 
-        section.createEl('h4', { text: '🐢 最近慢操作', attr: { style: 'margin:16px 0 12px 0;font-size:14px;' } });
+        section.createEl('h4', { text: '🐢 最近慢操作', cls: 'nw-u-m-16px-0-12px-0 nw-u-fs-14px-2' });
 
         if (slowOps.length === 0) {
             section.createEl('div', {
                 text: '✅ 暂无慢操作记录',
-                attr: { style: 'padding:20px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--background-secondary);border-radius:6px;' }
+                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
             });
         } else {
             const slowList = section.createEl('div', {
-                attr: { style: 'max-height:240px;overflow-y:auto;border:1px solid var(--background-modifier-border);border-radius:8px;' }
+                cls: 'nw-u-maxh-240px nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2'
             });
             for (const op of slowOps.slice(0, 20)) {
                 const item = slowList.createEl('div', {
-                    attr: { style: 'padding:10px 14px;border-bottom:1px solid var(--background-modifier-border);' }
+                    cls: 'nw-u-p-10px-14px-2 nw-u-bb-1px-solid-background-m-2'
                 });
-                const top = item.createEl('div', { attr: { style: 'display:flex;justify-content:space-between;align-items:center;' } });
-                top.createEl('span', { text: op.name, attr: { style: 'font-weight:600;' } });
+                const top = item.createEl('div', { cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2' });
+                top.createEl('span', { text: op.name, cls: 'nw-u-fwt-600-2' });
                 top.createEl('span', {
                     text: this.formatDuration(op.duration),
-                    attr: { style: 'color:var(--text-error);font-weight:600;' }
+                    cls: 'nw-u-c-text-error nw-u-fwt-600-2'
                 });
                 const bottom = item.createEl('div', {
                     text: `${op.category} · ${new Date(op.timestamp).toLocaleString()} · 阈值: ${this.formatDuration(op.threshold)}`,
-                    attr: { style: 'font-size:12px;color:var(--text-muted);margin-top:4px;' }
+                    cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-4px-3'
                 });
             }
         }
 
-        section.createEl('h4', { text: '📝 最近操作日志', attr: { style: 'margin:16px 0 12px 0;font-size:14px;' } });
+        section.createEl('h4', { text: '📝 最近操作日志', cls: 'nw-u-m-16px-0-12px-0 nw-u-fs-14px-2' });
 
         if (log.length === 0) {
             section.createEl('div', {
                 text: '暂无性能数据，请先使用插件功能',
-                attr: { style: 'padding:20px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--background-secondary);border-radius:6px;' }
+                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
             });
         } else {
             const logContainer = section.createEl('div', {
-                attr: { style: 'max-height:300px;overflow-y:auto;border:1px solid var(--background-modifier-border);border-radius:8px;font-family:var(--font-monospace);font-size:12px;' }
+                cls: 'nw-u-maxh-300px-2 nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2 nw-u-fontfamily-font-monospace nw-u-fs-12px-2'
             });
             for (const entry of log.slice(0, 50)) {
                 const item = logContainer.createEl('div', {
-                    attr: { style: 'padding:6px 12px;border-bottom:1px solid var(--background-modifier-border);display:flex;justify-content:space-between;gap:12px;' }
+                    cls: 'nw-u-p-6px-12px nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-gap-12px-2'
                 });
                 const left = item.createEl('span');
                 left.textContent = `[${entry.category}] ${entry.name}`;
                 const right = item.createEl('span', {
-                    attr: { style: 'color:var(--text-muted);white-space:nowrap;' }
+                    cls: 'nw-u-c-text-muted-2 nw-u-ws-nowrap-2'
                 });
                 right.textContent = this.formatDuration(entry.duration);
             }
         }
 
-        section.createEl('h4', { text: '⚙️ 操作', attr: { style: 'margin:16px 0 12px 0;font-size:14px;' } });
+        section.createEl('h4', { text: '⚙️ 操作', cls: 'nw-u-m-16px-0-12px-0 nw-u-fs-14px-2' });
 
         const btnRow = section.createEl('div', {
-            attr: { style: 'display:flex;gap:10px;flex-wrap:wrap;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-fwr-wrap-2'
         });
 
         const reportBtn = btnRow.createEl('button', {
@@ -2324,23 +2310,21 @@ export class MiniSettingsModal extends Modal {
     private renderAboutTab(): void {
         const section = this.tabContent.createDiv();
 
-        section.createEl('h3', { text: '📖 小说工坊 AI', attr: { style: 'margin-top:0;' } });
+        section.createEl('h3', { text: '📖 小说工坊 AI', cls: 'nw-u-margintop-0' });
 
         const currentVersion = PLUGIN_VERSION;
 
         const versionCard = section.createDiv({
-            attr: {
-                style: 'padding:20px;background:var(--background-secondary);border-radius:10px;margin-bottom:20px;text-align:center;'
-            }
+            cls: 'nw-u-p-20px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-marginbottom-20px-2 nw-u-ta-center-2'
         });
 
         versionCard.createEl('div', {
             text: '当前版本',
-            attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:4px;' }
+            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2'
         });
         versionCard.createEl('div', {
             text: `v${currentVersion}`,
-            attr: { style: 'font-size:32px;font-weight:700;color:var(--text-normal);margin-bottom:8px;' }
+            cls: 'nw-u-fs-32px nw-u-fwt-700-2 nw-u-c-text-normal-2 nw-u-marginbottom-8px-2'
         });
 
         let lastCheckInfo = '从未检查';
@@ -2363,14 +2347,14 @@ export class MiniSettingsModal extends Modal {
         }
 
         const infoGrid = versionCard.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;text-align:left;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-margintop-16px-2 nw-u-ta-left-2'
         });
 
         this.renderInfoItem(infoGrid, '最新版本', latestVersionInfo);
         this.renderInfoItem(infoGrid, '上次检查', lastCheckInfo);
 
         const btnRow = section.createDiv({
-            attr: { style: 'display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-marginbottom-24px-2 nw-u-fwr-wrap-2'
         });
 
         const checkBtn = btnRow.createEl('button', {
@@ -2416,7 +2400,7 @@ export class MiniSettingsModal extends Modal {
             }).open();
         });
 
-        section.createEl('h4', { text: '⚙️ 更新设置', attr: { style: 'margin-bottom:12px;' } });
+        section.createEl('h4', { text: '⚙️ 更新设置', cls: 'nw-u-marginbottom-12px-2' });
 
         new Setting(section)
             .setName('自动检查更新')
@@ -2512,46 +2496,44 @@ export class MiniSettingsModal extends Modal {
 
         renderCollapsibleSection(section, '📌 关于插件', false, (aboutSection) => {
             const aboutCard = aboutSection.createDiv({
-                attr: {
-                    style: 'padding:16px;background:var(--background-secondary);border-radius:8px;font-size:13px;line-height:1.7;color:var(--text-muted);'
-                }
+                cls: 'nw-u-p-16px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2 nw-u-fs-13px-2 nw-u-lh-1-7 nw-u-c-text-muted-2'
             });
 
             aboutCard.createEl('p', {
                 text: '全流程 AI 长篇小说创作系统 — 协同写作工作台 + 多模型智能引擎 + 数据安全架构。',
-                attr: { style: 'margin:0 0 12px 0;' }
+                cls: 'nw-u-m-0-0-12px-0-2'
             });
 
-            aboutCard.createEl('div', { text: '作者：南柯一梦', attr: { style: 'margin-bottom:4px;' } });
-            aboutCard.createEl('div', { text: '许可证：MIT', attr: { style: 'margin-bottom:4px;' } });
+            aboutCard.createEl('div', { text: '作者：南柯一梦', cls: 'nw-u-marginbottom-4px-2' });
+            aboutCard.createEl('div', { text: '许可证：MIT', cls: 'nw-u-marginbottom-4px-2' });
         });
     }
 
     private renderInfoItem(container: HTMLElement, label: string, value: string): void {
         const item = container.createDiv({
-            attr: { style: 'padding:10px 12px;background:var(--background-primary);border-radius:6px;' }
+            cls: 'nw-u-p-10px-12px-2 nw-u-bg-background-primary-2 nw-u-brd-6px-2'
         });
         item.createEl('div', {
             text: label,
-            attr: { style: 'font-size:11px;color:var(--text-muted);margin-bottom:2px;' }
+            cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-2px-2'
         });
         item.createEl('div', {
             text: value,
-            attr: { style: 'font-size:14px;font-weight:600;color:var(--text-normal);' }
+            cls: 'nw-u-fs-14px-2 nw-u-fwt-600-2 nw-u-c-text-normal-2'
         });
     }
 
     private addStatCard(container: HTMLElement, label: string, value: string): void {
         const card = container.createEl('div', {
-            attr: { style: 'padding:14px;background:var(--background-secondary);border-radius:8px;' }
+            cls: 'nw-u-p-14px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2'
         });
         card.createEl('div', {
             text: label,
-            attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:6px;' }
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-6px-2'
         });
         card.createEl('div', {
             text: value,
-            attr: { style: 'font-size:18px;font-weight:700;' }
+            cls: 'nw-u-fs-18px-2 nw-u-fwt-700-2'
         });
     }
 
@@ -2569,7 +2551,7 @@ export class MiniSettingsModal extends Modal {
         });
         textarea.value = report;
         const btnRow = contentEl.createEl('div', {
-            attr: { style: 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-jc-flex-end-2 nw-u-margintop-16px-2'
         });
         const copyBtn = btnRow.createEl('button', {
             text: '📋 复制报告',

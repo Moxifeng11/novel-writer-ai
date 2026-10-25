@@ -169,15 +169,15 @@ export class OutlineExpandModal extends Modal {
         // 切换模式时只重建标题栏，先移除旧的，避免重复堆叠（曾出现 3 层标题栏）
         this.headerEl?.remove();
         const header = container.createDiv({
-            attr: { style: 'padding:16px 20px;border-bottom:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;row-gap:10px;column-gap:12px;' }
+            cls: 'nw-u-p-16px-20px nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2 nw-u-fwr-wrap-2 nw-u-rg-10px nw-u-cg-12px'
         });
         this.headerEl = header;
         container.prepend(header);
 
-        const left = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;row-gap:8px;min-width:0;' } });
-        left.createEl('h2', { text: '✍️ 智能扩写编辑器', attr: { style: 'margin:0;font-size:18px;white-space:nowrap;flex-shrink:0;' } });
+        const left = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-16px-2 nw-u-fwr-wrap-2 nw-u-rg-8px nw-u-minw-0-2' });
+        left.createEl('h2', { text: '✍️ 智能扩写编辑器', cls: 'nw-u-m-0-2 nw-u-fs-18px-2 nw-u-ws-nowrap-2 nw-u-fsh-0-2' });
 
-        const modeSelector = left.createDiv({ attr: { style: 'display:flex;gap:4px;background:var(--background-secondary);border-radius:6px;padding:2px;' } });
+        const modeSelector = left.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-p-2px-2' });
         const modes: Array<{ key: ExpandMode; label: string }> = [
             { key: 'chapter', label: '整章扩写' },
             { key: 'scene', label: '场景扩写' },
@@ -199,9 +199,9 @@ export class OutlineExpandModal extends Modal {
             };
         }
 
-        const right = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:8px;margin-left:auto;' } });
+        const right = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-rg-8px nw-u-marginleft-auto-2' });
 
-        const strategyLabel = right.createSpan({ text: '策略：', cls: 'nw-text-muted', attr: { style: 'white-space:nowrap;flex-shrink:0;' } });
+        const strategyLabel = right.createSpan({ text: '策略：', cls: "nw-text-muted nw-u-ws-nowrap-2 nw-u-fsh-0-2", attr: {} });
         const strategySelect = right.createEl('select', {
             attr: { style: 'padding:4px 8px;border-radius:4px;border:1px solid var(--background-modifier-border);background:var(--background-primary);font-size:13px;' }
         }) as HTMLSelectElement;
@@ -218,8 +218,8 @@ export class OutlineExpandModal extends Modal {
             this.strategy = strategySelect.value as ExpansionStrategy;
         };
 
-        const wordInputWrap = right.createDiv({ attr: { style: 'display:flex;align-items:center;gap:4px;flex-shrink:0;' } });
-        wordInputWrap.createSpan({ text: '目标字数：', cls: 'nw-text-muted', attr: { style: 'white-space:nowrap;flex-shrink:0;' } });
+        const wordInputWrap = right.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-4px-2 nw-u-fsh-0-2' });
+        wordInputWrap.createSpan({ text: '目标字数：', cls: "nw-text-muted nw-u-ws-nowrap-2 nw-u-fsh-0-2", attr: {} });
         const wordInput = wordInputWrap.createEl('input', {
             type: 'number',
             value: String(this.targetWords),
@@ -234,21 +234,21 @@ export class OutlineExpandModal extends Modal {
 
         right.createEl('button', {
             text: '✕',
-            cls: 'nw-btn',
-            attr: { style: 'padding:4px 10px;font-size:16px;border:none;background:transparent;cursor:pointer;color:var(--text-muted);' }
+            cls: "nw-btn nw-u-p-4px-10px-2 nw-u-fs-16px-2 nw-u-b-none nw-u-bg-transparent nw-u-cur-pointer-2 nw-u-c-text-muted-2",
+            attr: {}
         }).onclick = () => this.close();
     }
 
     private renderMainContent(container: HTMLElement): void {
         const main = container.createDiv({
-            attr: { style: 'flex:1;display:flex;overflow:hidden;min-height:0;' }
+            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-ov-hidden-2 nw-u-minh-0-2'
         });
 
         this.leftPanel = main.createDiv({
-            attr: { style: 'width:320px;border-right:1px solid var(--background-modifier-border);display:flex;flex-direction:column;overflow:hidden;' }
+            cls: 'nw-u-w-320px nw-u-brt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-ov-hidden-2'
         });
         this.rightPanel = main.createDiv({
-            attr: { style: 'flex:1;display:flex;flex-direction:column;overflow:hidden;' }
+            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-ov-hidden-2'
         });
 
         this.renderLeftPanel();
@@ -259,38 +259,38 @@ export class OutlineExpandModal extends Modal {
         this.leftPanel.empty();
 
         const leftHeader = this.leftPanel.createDiv({
-            attr: { style: 'padding:12px 16px;border-bottom:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2'
         });
         leftHeader.createSpan({
             text: this.expandMode === 'chapter' ? '📋 章节场景' : this.expandMode === 'scene' ? '📝 场景段落' : '📄 段落列表',
-            attr: { style: 'font-weight:500;font-size:14px;' }
+            cls: 'nw-u-fwt-500-2 nw-u-fs-14px-2'
         });
 
         if (this.expandMode === 'chapter') {
             const expandAllBtn = leftHeader.createEl('button', {
                 text: '全部展开',
-                cls: 'nw-btn',
-                attr: { style: 'font-size:12px;padding:2px 8px;' }
+                cls: "nw-btn nw-u-fs-12px-2 nw-u-p-2px-8px-2",
+                attr: {}
             });
             expandAllBtn.onclick = () => this.expandAllScenes();
         }
 
         const listContainer = this.leftPanel.createDiv({
-            attr: { style: 'flex:1;overflow-y:auto;padding:8px;' }
+            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-8px-2'
         });
 
         if (this.expandMode === 'chapter' || this.expandMode === 'scene') {
-            this.sceneListEl = listContainer.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:4px;' } });
+            this.sceneListEl = listContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-4px-2' });
             this.refreshSceneList();
         } else {
-            this.paragraphListEl = listContainer.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:4px;' } });
+            this.paragraphListEl = listContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-4px-2' });
             this.refreshParagraphList();
         }
 
         const settingsPanel = this.leftPanel.createDiv({
-            attr: { style: 'border-top:1px solid var(--background-modifier-border);padding:12px 16px;flex-shrink:0;' }
+            cls: 'nw-u-bt-1px-solid-background-m-2 nw-u-p-12px-16px-2 nw-u-fsh-0-2'
         });
-        settingsPanel.createEl('h4', { text: '增强选项', attr: { style: 'margin:0 0 8px 0;font-size:13px;color:var(--text-muted);' } });
+        settingsPanel.createEl('h4', { text: '增强选项', cls: 'nw-u-m-0-0-8px-0-2 nw-u-fs-13px-2 nw-u-c-text-muted-2' });
 
         const enhancements: Array<{ key: string; label: string; value: boolean }> = [
             { key: 'coolPoints', label: '🎯 爽点增强', value: this.enhanceCoolPoints },
@@ -300,10 +300,10 @@ export class OutlineExpandModal extends Modal {
         ];
 
         for (const enh of enhancements) {
-            const row = settingsPanel.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;margin-bottom:6px;' } });
+            const row = settingsPanel.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-6px-2' });
             const checkbox = row.createEl('input', {
                 type: 'checkbox',
-                attr: { style: 'cursor:pointer;' }
+                cls: 'nw-u-cur-pointer-2'
             }) as HTMLInputElement;
             checkbox.checked = enh.value;
             checkbox.onchange = () => {
@@ -314,7 +314,7 @@ export class OutlineExpandModal extends Modal {
                     case 'foreshadows': this.plantForeshadows = checkbox.checked; break;
                 }
             };
-            row.createSpan({ text: enh.label, attr: { style: 'font-size:13px;cursor:pointer;' } }).onclick = () => {
+            row.createSpan({ text: enh.label, cls: 'nw-u-fs-13px-2 nw-u-cur-pointer-2' }).onclick = () => {
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event('change'));
             };
@@ -325,10 +325,10 @@ export class OutlineExpandModal extends Modal {
         this.rightPanel.empty();
 
         const rightHeader = this.rightPanel.createDiv({
-            attr: { style: 'padding:12px 16px;border-bottom:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;' }
+            cls: 'nw-u-p-12px-16px-2 nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2'
         });
 
-        const viewTabs = rightHeader.createDiv({ attr: { style: 'display:flex;gap:4px;background:var(--background-secondary);border-radius:6px;padding:2px;' } });
+        const viewTabs = rightHeader.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-p-2px-2' });
         const viewModes: Array<{ key: ViewMode; label: string }> = [
             { key: 'edit', label: '编辑' },
             { key: 'diff', label: '对比' },
@@ -350,15 +350,13 @@ export class OutlineExpandModal extends Modal {
         });
 
         const editorContainer = this.rightPanel.createDiv({
-            attr: { style: 'flex:1;overflow:hidden;position:relative;' }
+            cls: 'nw-u-flex-1-2 nw-u-ov-hidden-2 nw-u-pos-relative'
         });
 
         if (this.viewMode === 'edit') {
             this.editorEl = editorContainer.createEl('textarea', {
                 value: this.expandedText || this.sourceOutline,
-                attr: {
-                    style: 'width:100%;height:100%;border:none;outline:none;resize:none;padding:16px;font-family:var(--font-interface);font-size:14px;line-height:1.8;background:var(--background-primary);color:var(--text-normal);box-sizing:border-box;'
-                }
+                cls: 'nw-u-w-100-2 nw-u-h-100-2 nw-u-b-none nw-u-outline-none nw-u-resize-none nw-u-p-16px-2 nw-u-fontfamily-font-interface nw-u-fs-14px-2 nw-u-lh-1-8 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-bx-border-box'
             }) as HTMLTextAreaElement;
             this.editorEl.oninput = () => {
                 this.expandedText = this.editorEl.value;
@@ -369,29 +367,29 @@ export class OutlineExpandModal extends Modal {
         }
 
         this.progressEl = this.rightPanel.createDiv({
-            attr: { style: 'padding:8px 16px;border-top:1px solid var(--background-modifier-border);font-size:12px;color:var(--text-muted);display:none;flex-shrink:0;' }
+            cls: 'nw-u-p-8px-16px nw-u-bt-1px-solid-background-m-2 nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-d-none nw-u-fsh-0-2'
         });
     }
 
     private renderDiffView(container: HTMLElement): void {
         const diffContainer = container.createDiv({
-            attr: { style: 'display:flex;height:100%;overflow:hidden;' }
+            cls: 'nw-u-d-flex-2 nw-u-h-100-2 nw-u-ov-hidden-2'
         });
 
         const origCol = diffContainer.createDiv({
-            attr: { style: 'flex:1;display:flex;flex-direction:column;border-right:1px solid var(--background-modifier-border);overflow:hidden;' }
+            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-brt-1px-solid-background-m-2 nw-u-ov-hidden-2'
         });
-        origCol.createDiv({ text: '原文', attr: { style: 'padding:8px 12px;background:var(--background-secondary);font-size:12px;color:var(--text-muted);font-weight:500;flex-shrink:0;' } });
+        origCol.createDiv({ text: '原文', cls: 'nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-fwt-500-2 nw-u-fsh-0-2' });
         const origContent = origCol.createDiv({
-            attr: { style: 'flex:1;overflow-y:auto;padding:12px;font-size:14px;line-height:1.8;font-family:var(--font-monospace);' }
+            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-12px-2 nw-u-fs-14px-2 nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
         });
 
         const newCol = diffContainer.createDiv({
-            attr: { style: 'flex:1;display:flex;flex-direction:column;overflow:hidden;' }
+            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-ov-hidden-2'
         });
-        newCol.createDiv({ text: '扩写后', attr: { style: 'padding:8px 12px;background:var(--background-secondary);font-size:12px;color:var(--text-muted);font-weight:500;flex-shrink:0;' } });
+        newCol.createDiv({ text: '扩写后', cls: 'nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-fwt-500-2 nw-u-fsh-0-2' });
         const newContent = newCol.createDiv({
-            attr: { style: 'flex:1;overflow-y:auto;padding:12px;font-size:14px;line-height:1.8;font-family:var(--font-monospace);' }
+            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-12px-2 nw-u-fs-14px-2 nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
         });
 
         const diffs = lineDiff(this.originalText || this.sourceOutline, this.expandedText);
@@ -443,11 +441,11 @@ export class OutlineExpandModal extends Modal {
     private renderFooter(container: HTMLElement): void {
         this.footerEl?.remove();
         const footer = container.createDiv({
-            attr: { style: 'padding:12px 20px;border-top:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;' }
+            cls: 'nw-u-p-12px-20px nw-u-bt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2 nw-u-gap-12px-2'
         });
         this.footerEl = footer;
 
-        const leftActions = footer.createDiv({ attr: { style: 'display:flex;gap:8px;' } });
+        const leftActions = footer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2' });
 
         if (this.expandMode === 'paragraph') {
             leftActions.createEl('button', {
@@ -461,7 +459,7 @@ export class OutlineExpandModal extends Modal {
             cls: 'nw-btn',
         }).onclick = () => this.runExpansion();
 
-        const rightActions = footer.createDiv({ attr: { style: 'display:flex;gap:8px;' } });
+        const rightActions = footer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2' });
 
         rightActions.createEl('button', {
             text: '取消',
@@ -481,13 +479,13 @@ export class OutlineExpandModal extends Modal {
         if (this.scenes.length === 0) {
             this.sceneListEl.createDiv({
                 text: '点击「开始扩写」生成场景列表',
-                attr: { style: 'padding:20px;text-align:center;color:var(--text-muted);font-size:13px;' }
+                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2'
             });
 
             const startBtn = this.sceneListEl.createEl('button', {
                 text: '🚀 开始扩写',
-                cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
-                attr: { style: 'margin:8px auto;display:block;' }
+                cls: "nw-btn nw-btn-primary novel-writer-primary-button nw-u-m-8px-auto nw-u-d-block",
+                attr: {}
             });
             startBtn.onclick = () => this.runChapterExpansion();
             return;
@@ -504,26 +502,26 @@ export class OutlineExpandModal extends Modal {
                 }
             });
 
-            const header = item.createDiv({ attr: { style: 'display:flex;align-items:center;gap:6px;margin-bottom:4px;' } });
+            const header = item.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-marginbottom-4px-2' });
             header.createSpan({
                 text: `${scene.isKeyScene ? '⭐' : '📍'} 场景${scene.index}`,
-                attr: { style: 'font-weight:500;font-size:13px;flex-shrink:0;' }
+                cls: 'nw-u-fwt-500-2 nw-u-fs-13px-2 nw-u-fsh-0-2'
             });
             header.createSpan({
                 text: scene.name,
-                attr: { style: 'font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;' }
+                cls: 'nw-u-fs-13px-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2 nw-u-flex-1-2 nw-u-minw-0-2'
             });
 
             item.createDiv({
                 text: scene.summary?.slice(0, 60) + (scene.summary && scene.summary.length > 60 ? '...' : ''),
-                attr: { style: 'font-size:12px;color:var(--text-muted);line-height:1.5;' }
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-lh-1-5-2'
             });
 
-            const actionRow = item.createDiv({ attr: { style: 'display:flex;gap:4px;margin-top:6px;' } });
+            const actionRow = item.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-margintop-6px' });
             const expandBtn = actionRow.createEl('button', {
                 text: '展开',
-                cls: 'nw-btn',
-                attr: { style: 'font-size:11px;padding:2px 8px;flex:1;' }
+                cls: "nw-btn nw-u-fs-11px-2 nw-u-p-2px-8px-2 nw-u-flex-1-2",
+                attr: {}
             });
             expandBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -547,7 +545,7 @@ export class OutlineExpandModal extends Modal {
         if (this.paragraphs.length === 0) {
             this.paragraphListEl.createDiv({
                 text: '暂无段落，请先进行场景扩写',
-                attr: { style: 'padding:20px;text-align:center;color:var(--text-muted);font-size:13px;' }
+                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2'
             });
             return;
         }
@@ -567,7 +565,7 @@ export class OutlineExpandModal extends Modal {
 
             const checkbox = item.createEl('input', {
                 type: 'checkbox',
-                attr: { style: 'margin-top:3px;flex-shrink:0;cursor:pointer;' }
+                cls: 'nw-u-margintop-3px nw-u-fsh-0-2 nw-u-cur-pointer-2'
             }) as HTMLInputElement;
             checkbox.checked = isSelected;
             checkbox.onclick = (e) => {
@@ -580,14 +578,14 @@ export class OutlineExpandModal extends Modal {
                 this.refreshParagraphList();
             };
 
-            const content = item.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
+            const content = item.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-0-2' });
             content.createDiv({
                 text: `第${para.index}段`,
-                attr: { style: 'font-weight:500;font-size:12px;margin-bottom:2px;color:var(--text-muted);' }
+                cls: 'nw-u-fwt-500-2 nw-u-fs-12px-2 nw-u-marginbottom-2px-2 nw-u-c-text-muted-2'
             });
             content.createDiv({
                 text: para.content.slice(0, 80) + (para.content.length > 80 ? '...' : ''),
-                attr: { style: 'font-size:12px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;' }
+                cls: 'nw-u-fs-12px-2 nw-u-lh-1-5-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-d-webkit-box-2 nw-u-webkitlineclamp-2-2 nw-u-webkitboxorient-vertical-2'
             });
 
             item.onclick = () => {

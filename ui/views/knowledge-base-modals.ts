@@ -51,9 +51,7 @@ export class ImportBookModal extends Modal {
 
         options.forEach(opt => {
             const card = contentEl.createDiv({
-                attr: {
-                    style: 'padding:16px;border:1px solid var(--background-modifier-border);border-radius:8px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all 0.15s;'
-                }
+                cls: 'nw-u-p-16px nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-marginbottom-12px nw-u-cur-pointer nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-transition-all-0-15s'
             });
             card.addEventListener('mouseenter', () => {
                 card.style.borderColor = 'var(--interactive-accent)';
@@ -62,11 +60,11 @@ export class ImportBookModal extends Modal {
                 card.style.borderColor = 'var(--background-modifier-border)';
             });
 
-            card.createSpan({ text: opt.icon, attr: { style: 'font-size:28px;' } });
-            const info = card.createDiv({ attr: { style: 'flex:1;' } });
-            info.createDiv({ text: opt.label, attr: { style: 'font-size:14px;font-weight:500;margin-bottom:4px;' } });
+            card.createSpan({ text: opt.icon, cls: 'nw-u-fs-28px' });
+            const info = card.createDiv({ cls: 'nw-u-flex-1' });
+            info.createDiv({ text: opt.label, cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-marginbottom-4px' });
             info.createDiv({ text: opt.desc, cls: 'nw-text-sm-muted' });
-            card.createSpan({ text: '→', attr: { style: 'color:var(--text-muted);font-size:16px;' } });
+            card.createSpan({ text: '→', cls: 'nw-u-c-text-muted nw-u-fs-16px' });
 
             card.addEventListener('click', opt.action);
         });
@@ -110,7 +108,7 @@ export class ImportBookModal extends Modal {
                     });
 
                     const list = contentEl.createDiv({
-                        attr: { style: 'max-height:300px;overflow-y:auto;border:1px solid var(--background-modifier-border);border-radius:6px;' }
+                        cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-6px'
                     });
 
                     const renderList = (filter: string) => {
@@ -183,7 +181,7 @@ export class ImportBookModal extends Modal {
                 .onChange(v => this.authorValue = v));
 
         const actions = contentEl.createDiv({
-            cls: 'nw-flex-end', attr: { style: 'margin-top:20px;' }
+            cls: "nw-flex-end nw-u-margintop-20px", attr: {}
         });
 
         const backBtn = actions.createEl('button', {
@@ -325,7 +323,7 @@ export class EditBookModal extends Modal {
                 .onChange(v => this.synopsisValue = v)
                 .inputEl.rows = 4);
 
-        contentEl.createEl('h4', { text: '题材分类', attr: { style: 'margin-top:20px;margin-bottom:8px;font-size:14px;' } });
+        contentEl.createEl('h4', { text: '题材分类', cls: 'nw-u-margintop-20px nw-u-marginbottom-8px nw-u-fs-14px' });
 
         const channelSetting = new Setting(contentEl)
             .setName('频道')
@@ -385,15 +383,15 @@ export class EditBookModal extends Modal {
             }
         }
 
-        contentEl.createEl('h4', { text: '自定义标签', attr: { style: 'margin-top:20px;margin-bottom:8px;font-size:14px;' } });
+        contentEl.createEl('h4', { text: '自定义标签', cls: 'nw-u-margintop-20px nw-u-marginbottom-8px nw-u-fs-14px' });
 
         const tagsContainer = contentEl.createDiv({
-            attr: { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:30px;' }
+            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px nw-u-marginbottom-12px nw-u-minh-30px'
         });
         this.renderCustomTags(tagsContainer);
 
         const addTagContainer = contentEl.createDiv({
-            attr: { style: 'display:flex;gap:8px;margin-bottom:12px;' }
+            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-12px'
         });
         const tagInput = addTagContainer.createEl('input', {
             type: 'text',
@@ -420,7 +418,7 @@ export class EditBookModal extends Modal {
         });
 
         const actions = contentEl.createDiv({
-            cls: 'nw-flex-end', attr: { style: 'margin-top:20px;' }
+            cls: "nw-flex-end nw-u-margintop-20px", attr: {}
         });
 
         const cancelBtn = actions.createEl('button', {
@@ -441,21 +439,19 @@ export class EditBookModal extends Modal {
         if (this.customTagsList.length === 0) {
             container.createSpan({
                 text: '暂无标签',
-                attr: { style: 'color:var(--text-muted);font-size:13px;' }
+                cls: 'nw-u-c-text-muted nw-u-fs-13px'
             });
             return;
         }
         this.customTagsList.forEach((tag, idx) => {
             const tagEl = container.createSpan({
-                cls: 'nw-flex-row-sm',
-                attr: {
-                    style: 'padding:4px 10px;font-size:12px;background:var(--background-secondary);border-radius:12px;'
-                }
+                cls: "nw-flex-row-sm nw-u-p-4px-10px nw-u-fs-12px nw-u-bg-background-secondary nw-u-brd-12px",
+                attr: {}
             });
             tagEl.createSpan({ text: tag });
             const delBtn = tagEl.createSpan({
                 text: '×',
-                attr: { style: 'cursor:pointer;color:var(--text-muted);font-size:14px;line-height:1;' }
+                cls: 'nw-u-cur-pointer nw-u-c-text-muted nw-u-fs-14px nw-u-lh-1'
             });
             delBtn.addEventListener('click', () => {
                 this.customTagsList.splice(idx, 1);
@@ -569,35 +565,31 @@ export class GenreEditModal extends Modal {
     }
 
     private renderBasicInfo(container: HTMLElement): void {
-        const section = container.createDiv({ attr: { style: 'margin-bottom:20px;' } });
-        section.createEl('h4', { text: '基本信息', attr: { style: 'margin:0 0 12px 0;font-size:14px;' } });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
+        section.createEl('h4', { text: '基本信息', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
 
-        const form = section.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:12px;' } });
+        const form = section.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-12px' });
 
-        const nameRow = form.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:4px;' } });
+        const nameRow = form.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
         nameRow.createSpan({ text: '名称', cls: 'nw-text-sm-muted' });
         if (this.isEditable()) {
             const input = nameRow.createEl('input', {
                 type: 'text',
                 value: this.tempGenre.name,
-                attr: {
-                    style: 'padding:8px 12px;border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;background:var(--background-primary);color:var(--text-normal);'
-                }
+                cls: 'nw-u-p-8px-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-fs-13px nw-u-bg-background-primary nw-u-c-text-normal'
             });
             input.addEventListener('input', () => {
                 this.tempGenre.name = input.value.trim();
             });
         } else {
-            nameRow.createDiv({ text: this.tempGenre.name, attr: { style: 'font-size:14px;font-weight:500;' } });
+            nameRow.createDiv({ text: this.tempGenre.name, cls: 'nw-u-fs-14px nw-u-fwt-500' });
         }
 
-        const categoryRow = form.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:4px;' } });
+        const categoryRow = form.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
         categoryRow.createSpan({ text: '频道', cls: 'nw-text-sm-muted' });
         if (this.isEditable()) {
             const select = categoryRow.createEl('select', {
-                attr: {
-                    style: 'padding:8px 12px;border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;background:var(--background-primary);color:var(--text-normal);'
-                }
+                cls: 'nw-u-p-8px-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-fs-13px nw-u-bg-background-primary nw-u-c-text-normal'
             });
             const options = [
                 { value: 'male', label: '男频' },
@@ -616,7 +608,7 @@ export class GenreEditModal extends Modal {
             categoryRow.createDiv({ text: labelMap[this.tempGenre.category] || this.tempGenre.category });
         }
 
-        const descRow = form.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:4px;' } });
+        const descRow = form.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
         descRow.createSpan({ text: '描述', cls: 'nw-text-sm-muted' });
         if (this.isEditable()) {
             const textarea = descRow.createEl('textarea', {
@@ -633,31 +625,31 @@ export class GenreEditModal extends Modal {
         } else {
             descRow.createDiv({
                 text: this.tempGenre.description,
-                attr: { style: 'font-size:13px;line-height:1.6;color:var(--text-normal);' }
+                cls: 'nw-u-fs-13px nw-u-lh-1-6 nw-u-c-text-normal'
             });
         }
     }
 
     private renderTagSection(container: HTMLElement, label: string, field: 'personalityTags' | 'abilityTypes' | 'roleTypes' | 'backgroundTypes'): void {
-        const section = container.createDiv({ attr: { style: 'margin-bottom:20px;' } });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
         section.createEl('h4', {
             text: `${label} (${this.tempGenre[field].length})`,
-            attr: { style: 'margin:0 0 8px 0;font-size:14px;' }
+            cls: 'nw-u-m-0-0-8px-0 nw-u-fs-14px'
         });
 
         const tagsWrap = section.createDiv({
-            attr: { style: 'display:flex;flex-wrap:wrap;gap:6px;padding:12px;background:var(--background-secondary);border-radius:6px;min-height:48px;' }
+            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-minh-48px'
         });
 
         this.tempGenre[field].forEach((tag, idx) => {
             const tagEl = tagsWrap.createSpan({
                 text: tag,
-                attr: { style: 'padding:3px 10px;font-size:12px;background:var(--background-primary);border-radius:10px;color:var(--text-normal);display:flex;align-items:center;gap:4px;' }
+                cls: 'nw-u-p-3px-10px nw-u-fs-12px nw-u-bg-background-primary nw-u-brd-10px nw-u-c-text-normal nw-u-d-flex nw-u-ai-center nw-u-gap-4px'
             });
             if (this.isEditable()) {
                 const removeBtn = tagEl.createSpan({
                     text: '×',
-                    attr: { style: 'cursor:pointer;color:var(--text-muted);font-size:14px;line-height:1;' }
+                    cls: 'nw-u-cur-pointer nw-u-c-text-muted nw-u-fs-14px nw-u-lh-1'
                 });
                 removeBtn.addEventListener('click', () => {
                     this.tempGenre[field].splice(idx, 1);
@@ -667,7 +659,7 @@ export class GenreEditModal extends Modal {
         });
 
         if (this.isEditable()) {
-            const inputRow = section.createDiv({ attr: { style: 'display:flex;gap:6px;margin-top:8px;' } });
+            const inputRow = section.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-margintop-8px' });
             const input = inputRow.createEl('input', {
                 type: 'text',
                 attr: {
@@ -697,30 +689,30 @@ export class GenreEditModal extends Modal {
     }
 
     private renderTechniquesSection(container: HTMLElement): void {
-        const section = container.createDiv({ attr: { style: 'margin-bottom:20px;' } });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
         section.createEl('h4', {
             text: `写作技巧 (${this.tempGenre.techniques.length})`,
-            attr: { style: 'margin:0 0 8px 0;font-size:14px;' }
+            cls: 'nw-u-m-0-0-8px-0 nw-u-fs-14px'
         });
 
         if (this.tempGenre.techniques.length < 5 && this.isEditable()) {
             section.createDiv({
                 text: '⚠️ 至少需要 5 个写作技巧',
-                attr: { style: 'font-size:12px;color:#e74c3c;margin-bottom:8px;' }
+                cls: 'nw-u-fs-12px nw-u-c-e74c3c nw-u-marginbottom-8px'
             });
         }
 
         const techniquesList = section.createDiv({
-            attr: { style: 'display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;' }
+            cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px nw-u-maxh-300px nw-u-ovy-auto'
         });
 
         this.tempGenre.techniques.forEach((tech, idx) => {
             const techItem = techniquesList.createDiv({
-                attr: { style: 'padding:10px 12px;background:var(--background-secondary);border-radius:6px;' }
+                cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px'
             });
 
             if (this.isEditable()) {
-                const headerRow = techItem.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;' } });
+                const headerRow = techItem.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
                 const nameInput = headerRow.createEl('input', {
                     type: 'text',
                     value: tech.name,
@@ -734,9 +726,7 @@ export class GenreEditModal extends Modal {
                 });
 
                 const categorySelect = headerRow.createEl('select', {
-                    attr: {
-                        style: 'padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-                    }
+                    cls: 'nw-u-p-4px-8px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-12px nw-u-bg-background-primary nw-u-c-text-normal'
                 });
                 const categories = [
                     { value: 'structure', label: '结构' },
@@ -757,8 +747,8 @@ export class GenreEditModal extends Modal {
 
                 const deleteBtn = headerRow.createEl('button', {
                     text: '🗑️',
-                    cls: 'nw-btn nw-btn-ghost nw-btn-xs',
-                    attr: { style: 'padding:4px 8px;' }
+                    cls: "nw-btn nw-btn-ghost nw-btn-xs nw-u-p-4px-8px",
+                    attr: {}
                 });
                 deleteBtn.addEventListener('click', () => {
                     this.tempGenre.techniques.splice(idx, 1);
@@ -769,11 +759,11 @@ export class GenreEditModal extends Modal {
                     structure: '结构', cool_point: '爽点', emotion: '情感', rhythm: '节奏',
                     genre: '题材', style: '风格', foreshadow: '伏笔'
                 };
-                const headerRow = techItem.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;' } });
-                headerRow.createDiv({ text: tech.name, attr: { style: 'font-size:13px;font-weight:500;' } });
+                const headerRow = techItem.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-4px' });
+                headerRow.createDiv({ text: tech.name, cls: 'nw-u-fs-13px nw-u-fwt-500' });
                 headerRow.createSpan({
                     text: categoryMap[tech.category] || tech.category,
-                    attr: { style: 'font-size:11px;padding:2px 8px;background:var(--background-primary);border-radius:8px;color:var(--text-muted);' }
+                    cls: 'nw-u-fs-11px nw-u-p-2px-8px nw-u-bg-background-primary nw-u-brd-8px nw-u-c-text-muted'
                 });
             }
 
@@ -804,14 +794,14 @@ export class GenreEditModal extends Modal {
             } else {
                 techItem.createDiv({
                     text: tech.description,
-                    attr: { style: 'font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:4px;' }
+                    cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-lh-1-5 nw-u-marginbottom-4px'
                 });
                 if (tech.keywords.length > 0) {
-                    const kwWrap = techItem.createDiv({ attr: { style: 'display:flex;flex-wrap:wrap;gap:4px;' } });
+                    const kwWrap = techItem.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-4px' });
                     tech.keywords.forEach(kw => {
                         kwWrap.createSpan({
                             text: kw,
-                            attr: { style: 'font-size:11px;padding:1px 6px;background:var(--background-primary);border-radius:8px;color:var(--text-muted);' }
+                            cls: 'nw-u-fs-11px nw-u-p-1px-6px nw-u-bg-background-primary nw-u-brd-8px nw-u-c-text-muted'
                         });
                     });
                 }
@@ -821,8 +811,8 @@ export class GenreEditModal extends Modal {
         if (this.isEditable()) {
             const addTechBtn = section.createEl('button', {
                 text: '➕ 添加技巧',
-                cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                attr: { style: 'margin-top:8px;width:100%;' }
+                cls: "nw-btn nw-btn-secondary nw-btn-sm nw-u-margintop-8px nw-u-w-100",
+                attr: {}
             });
             addTechBtn.addEventListener('click', () => {
                 const newTech: TechniqueDef = {
@@ -841,24 +831,24 @@ export class GenreEditModal extends Modal {
     }
 
     private renderSubGenresSection(container: HTMLElement): void {
-        const section = container.createDiv({ attr: { style: 'margin-bottom:20px;' } });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
         const subGenres = this.tempGenre.subGenres || [];
         section.createEl('h4', {
             text: `细分题材 (${subGenres.length}) - 可选`,
-            attr: { style: 'margin:0 0 8px 0;font-size:14px;' }
+            cls: 'nw-u-m-0-0-8px-0 nw-u-fs-14px'
         });
 
         if (subGenres.length > 0) {
             const subList = section.createDiv({
-                attr: { style: 'display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;' }
+                cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px nw-u-maxh-200px nw-u-ovy-auto'
             });
             subGenres.forEach((sub, idx) => {
                 const subItem = subList.createDiv({
-                    attr: { style: 'padding:8px 10px;background:var(--background-secondary);border-radius:6px;' }
+                    cls: 'nw-u-p-8px-10px nw-u-bg-background-secondary nw-u-brd-6px'
                 });
 
                 if (this.isEditable()) {
-                    const row1 = subItem.createDiv({ attr: { style: 'display:flex;gap:6px;margin-bottom:4px;' } });
+                    const row1 = subItem.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-marginbottom-4px' });
                     const nameInput = row1.createEl('input', {
                         type: 'text',
                         value: sub.name,
@@ -895,10 +885,10 @@ export class GenreEditModal extends Modal {
                         }
                     });
                 } else {
-                    subItem.createDiv({ text: sub.name, attr: { style: 'font-size:13px;font-weight:500;margin-bottom:2px;' } });
+                    subItem.createDiv({ text: sub.name, cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-marginbottom-2px' });
                     subItem.createDiv({
                         text: sub.description,
-                        cls: 'nw-text-muted-11', attr: { style: 'font-size:12px;' }
+                        cls: "nw-text-muted-11 nw-u-fs-12px", attr: {}
                     });
                 }
             });
@@ -907,8 +897,8 @@ export class GenreEditModal extends Modal {
         if (this.isEditable()) {
             const addSubBtn = section.createEl('button', {
                 text: '➕ 添加细分题材',
-                cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                attr: { style: 'margin-top:8px;width:100%;' }
+                cls: "nw-btn nw-btn-secondary nw-btn-sm nw-u-margintop-8px nw-u-w-100",
+                attr: {}
             });
             addSubBtn.addEventListener('click', () => {
                 if (!this.tempGenre.subGenres) {
@@ -928,11 +918,11 @@ export class GenreEditModal extends Modal {
     }
 
     private renderWeightsSection(container: HTMLElement): void {
-        const section = container.createDiv({ attr: { style: 'margin-bottom:20px;' } });
-        section.createEl('h4', { text: '权重配置', attr: { style: 'margin:0 0 12px 0;font-size:14px;' } });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
+        section.createEl('h4', { text: '权重配置', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
 
         const weightsGrid = section.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:repeat(2,1fr);gap:12px;' }
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-2-1fr nw-u-gap-12px'
         });
 
         const weightLabels: { key: keyof GenreConfig['weights']; label: string }[] = [
@@ -946,13 +936,13 @@ export class GenreEditModal extends Modal {
 
         weightLabels.forEach(({ key, label }) => {
             const weightItem = weightsGrid.createDiv({
-                attr: { style: 'padding:10px;background:var(--background-secondary);border-radius:6px;' }
+                cls: 'nw-u-p-10px nw-u-bg-background-secondary nw-u-brd-6px'
             });
-            const labelRow = weightItem.createDiv({ attr: { style: 'display:flex;justify-content:space-between;margin-bottom:6px;' } });
-            labelRow.createSpan({ text: label, attr: { style: 'font-size:12px;' } });
+            const labelRow = weightItem.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px' });
+            labelRow.createSpan({ text: label, cls: 'nw-u-fs-12px' });
             labelRow.createSpan({
                 text: (this.tempGenre.weights[key] * 100).toFixed(0) + '%',
-                attr: { style: 'font-size:12px;font-weight:600;color:var(--interactive-accent);' }
+                cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-interactive-accent'
             });
 
             if (this.isEditable()) {
@@ -972,7 +962,7 @@ export class GenreEditModal extends Modal {
                 });
             } else {
                 const barBg = weightItem.createDiv({
-                    attr: { style: 'height:6px;background:var(--background-primary);border-radius:3px;overflow:hidden;' }
+                    cls: 'nw-u-h-6px nw-u-bg-background-primary nw-u-brd-3px nw-u-ov-hidden'
                 });
                 barBg.createDiv({
                     attr: {
@@ -985,8 +975,8 @@ export class GenreEditModal extends Modal {
 
     private renderActions(container: HTMLElement): void {
         const actions = container.createDiv({
-            cls: 'nw-flex-end',
-            attr: { style: 'margin-top:20px;display:flex;gap:8px;position:sticky;bottom:0;background:var(--background-primary);padding-top:12px;border-top:1px solid var(--background-modifier-border);' }
+            cls: "nw-flex-end nw-u-margintop-20px nw-u-d-flex nw-u-gap-8px nw-u-pos-sticky nw-u-bot-0 nw-u-bg-background-primary nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m",
+            attr: {}
         });
 
         if (this.mode === 'view') {
@@ -1142,13 +1132,13 @@ export class BatchOperationsModal extends Modal {
         if (this.loading) {
             contentEl.createDiv({
                 text: '加载中...',
-                attr: { style: 'padding:40px;text-align:center;color:var(--text-muted);font-size:13px;' }
+                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
             });
             return;
         }
 
         const opsRow = contentEl.createDiv({
-            attr: { style: 'display:flex;gap:8px;margin-bottom:16px;' }
+            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-16px'
         });
 
         const operations = [
@@ -1171,14 +1161,14 @@ export class BatchOperationsModal extends Modal {
         const uncategorizedCount = books.filter(b => !b.primaryGenre).length;
 
         const selectRow = contentEl.createDiv({
-            cls: 'nw-flex-between', attr: { style: 'margin-bottom:12px;' }
+            cls: "nw-flex-between nw-u-marginbottom-12px", attr: {}
         });
         selectRow.createSpan({
             text: `共 ${books.length} 本书籍（未分类 ${uncategorizedCount} 本）`,
             cls: 'nw-text-sm-muted'
         });
 
-        const selectBtns = selectRow.createDiv({ attr: { style: 'display:flex;gap:6px;' } });
+        const selectBtns = selectRow.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px' });
 
         const selectAllBtn = selectBtns.createEl('button', {
             text: '全选',
@@ -1209,13 +1199,13 @@ export class BatchOperationsModal extends Modal {
         });
 
         const bookList = contentEl.createDiv({
-            attr: { style: 'max-height:300px;overflow-y:auto;border:1px solid var(--background-modifier-border);border-radius:6px;' }
+            cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-6px'
         });
 
         if (books.length === 0) {
             bookList.createDiv({
                 text: '暂无书籍',
-                attr: { style: 'padding:40px;text-align:center;color:var(--text-muted);font-size:13px;' }
+                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
             });
         } else {
             books.forEach((book, idx) => {
@@ -1236,14 +1226,14 @@ export class BatchOperationsModal extends Modal {
 
                 const checkbox = item.createSpan({
                     text: isSelected ? '☑' : '☐',
-                    cls: 'nw-flex-shrink-0', attr: { style: 'font-size:14px;width:16px;' }
+                    cls: "nw-flex-shrink-0 nw-u-fs-14px nw-u-w-16px", attr: {}
                 });
                 void checkbox;
 
-                const info = item.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
+                const info = item.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
                 info.createDiv({
                     text: book.name,
-                    cls: 'nw-ellipsis', attr: { style: 'font-size:13px;color:var(--text-normal);' }
+                    cls: "nw-ellipsis nw-u-fs-13px nw-u-c-text-normal", attr: {}
                 });
                 info.createDiv({
                     text: book.author || '未知作者',
@@ -1261,7 +1251,7 @@ export class BatchOperationsModal extends Modal {
         }
 
         const actions = contentEl.createDiv({
-            cls: 'nw-flex-between', attr: { style: 'margin-top:16px;padding-top:12px;border-top:1px solid var(--background-modifier-border);' }
+            cls: "nw-flex-between nw-u-margintop-16px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m", attr: {}
         });
 
         actions.createSpan({
@@ -1269,7 +1259,7 @@ export class BatchOperationsModal extends Modal {
             cls: 'nw-text-sm-muted'
         });
 
-        const btnGroup = actions.createDiv({ attr: { style: 'display:flex;gap:8px;' } });
+        const btnGroup = actions.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
 
         const cancelBtn = btnGroup.createEl('button', {
             text: '取消',

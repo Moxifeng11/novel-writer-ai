@@ -62,7 +62,7 @@ export class SceneOutlineController {
         if (!project || chapNum <= 0) {
             container.createDiv({
                 text: '请先选择项目和章节',
-                attr: { style: 'padding: 20px; color: var(--text-muted); text-align: center;' }
+                cls: 'nw-u-p-20px-2 nw-u-c-text-muted-2 nw-u-ta-center-2'
             });
             return;
         }
@@ -70,8 +70,8 @@ export class SceneOutlineController {
         await this.loadScenes();
 
         const wrap = container.createDiv({
-            cls: 'nw-scene-outline-container',
-            attr: { style: 'display: flex; flex-direction: column; height: 100%; min-height: 0;' }
+            cls: "nw-scene-outline-container nw-u-d-flex-2 nw-u-fd-column-2 nw-u-h-100-2 nw-u-minh-0-2",
+            attr: {}
         });
 
         this.renderHeader(wrap);
@@ -83,17 +83,15 @@ export class SceneOutlineController {
     /** 头部工具栏 */
     private renderHeader(container: HTMLElement): void {
         const header = container.createDiv({
-            attr: {
-                style: 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--background-modifier-border); flex-shrink: 0;'
-            }
+            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-p-8px-12px-2 nw-u-bb-1px-solid-background-m-2 nw-u-fsh-0-2'
         });
 
         header.createSpan({
             text: '🎬 场景细纲',
-            attr: { style: 'font-weight: 600; font-size: 0.95em;' }
+            cls: 'nw-u-fwt-600-2 nw-u-fs-0-95em'
         });
 
-        const btnGroup = header.createDiv({ attr: { style: 'display: flex; gap: 4px;' } });
+        const btnGroup = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2' });
 
         const addBtn = btnGroup.createEl('button', {
             text: '➕',
@@ -117,7 +115,7 @@ export class SceneOutlineController {
     /** 主体内容：左列表 + 右编辑器 */
     private renderMainContent(container: HTMLElement): void {
         const main = container.createDiv({
-            attr: { style: 'display: flex; flex: 1; min-height: 0; overflow: hidden;' }
+            cls: 'nw-u-d-flex-2 nw-u-flex-1-2 nw-u-minh-0-2 nw-u-ov-hidden-2'
         });
 
         this.renderSceneList(main);
@@ -127,26 +125,22 @@ export class SceneOutlineController {
     /** 左侧场景列表 */
     private renderSceneList(container: HTMLElement): void {
         const listWrap = container.createDiv({
-            attr: {
-                style: 'width: 180px; flex-shrink: 0; border-right: 1px solid var(--background-modifier-border); display: flex; flex-direction: column; min-height: 0;'
-            }
+            cls: 'nw-u-w-180px nw-u-fsh-0-2 nw-u-brt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-minh-0-2'
         });
 
         const listHeader = listWrap.createDiv({
-            attr: {
-                style: 'padding: 8px 10px; font-size: 0.8em; color: var(--text-muted); border-bottom: 1px solid var(--background-modifier-border);'
-            }
+            cls: 'nw-u-p-8px-10px-2 nw-u-fs-0-8em nw-u-c-text-muted-2 nw-u-bb-1px-solid-background-m-2'
         });
         listHeader.setText(`共 ${this.scenes.length} 个场景`);
 
         const list = listWrap.createDiv({
-            attr: { style: 'flex: 1; overflow-y: auto; padding: 4px;' }
+            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-4px'
         });
 
         if (this.scenes.length === 0) {
             list.createDiv({
                 text: '暂无场景，点击 ➕ 添加',
-                attr: { style: 'padding: 20px 10px; text-align: center; color: var(--text-faint); font-size: 0.85em;' }
+                cls: 'nw-u-p-20px-10px nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-0-85em'
             });
             return;
         }
@@ -164,7 +158,7 @@ export class SceneOutlineController {
                 }
             });
 
-            const topRow = item.createDiv({ attr: { style: 'display: flex; align-items: center; gap: 4px;' } });
+            const topRow = item.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-4px-2' });
 
             const statusDot = topRow.createSpan({
                 attr: {
@@ -174,14 +168,14 @@ export class SceneOutlineController {
 
             topRow.createSpan({
                 text: `场景${scene.index}`,
-                attr: { style: 'font-weight: 600;' }
+                cls: 'nw-u-fwt-600-2'
             });
 
             if (scene.isKeyScene) {
-                topRow.createSpan({ text: '⭐', attr: { style: 'font-size: 0.8em;' } });
+                topRow.createSpan({ text: '⭐', cls: 'nw-u-fs-0-8em' });
             }
             if (isLast && scene.cliffhanger) {
-                topRow.createSpan({ text: '🪝', attr: { style: 'font-size: 0.8em;' } });
+                topRow.createSpan({ text: '🪝', cls: 'nw-u-fs-0-8em' });
             }
 
             const nameRow = item.createDiv({
@@ -241,15 +235,15 @@ export class SceneOutlineController {
     /** 右侧场景编辑器 */
     private renderSceneEditor(container: HTMLElement): void {
         const editorWrap = container.createDiv({
-            cls: 'nw-scene-editor-wrap',
-            attr: { style: 'flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0;' }
+            cls: "nw-scene-editor-wrap nw-u-flex-1-2 nw-u-minw-0-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-minh-0-2",
+            attr: {}
         });
 
         const scene = this.scenes[this.currentSceneIndex];
         if (!scene) {
             editorWrap.createDiv({
                 text: '请选择或创建一个场景',
-                attr: { style: 'padding: 40px 20px; text-align: center; color: var(--text-muted);' }
+                cls: 'nw-u-p-40px-20px nw-u-ta-center-2 nw-u-c-text-muted-2'
             });
             return;
         }
@@ -262,12 +256,10 @@ export class SceneOutlineController {
     /** 编辑器工具栏 */
     private renderEditorToolbar(container: HTMLElement, scene: ExtendedSceneData): void {
         const toolbar = container.createDiv({
-            attr: {
-                style: 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--background-modifier-border); flex-shrink: 0;'
-            }
+            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-p-8px-12px-2 nw-u-bb-1px-solid-background-m-2 nw-u-fsh-0-2'
         });
 
-        const titleArea = toolbar.createDiv({ attr: { style: 'display: flex; align-items: center; gap: 8px;' } });
+        const titleArea = toolbar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2' });
 
         const statusSelect = titleArea.createEl('select', {
             attr: {
@@ -291,10 +283,10 @@ export class SceneOutlineController {
 
         titleArea.createSpan({
             text: `场景${scene.index}：${scene.name || '(未命名)'}`,
-            attr: { style: 'font-weight: 600; font-size: 0.9em;' }
+            cls: 'nw-u-fwt-600-2 nw-u-fs-0-9em'
         });
 
-        const btnGroup = toolbar.createDiv({ attr: { style: 'display: flex; gap: 4px;' } });
+        const btnGroup = toolbar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2' });
 
         const actionBtns = [
             { icon: '⬆️', title: '上移', action: () => this.moveUp() },
@@ -320,9 +312,7 @@ export class SceneOutlineController {
     /** Tab 切换栏 */
     private renderTabBar(container: HTMLElement): void {
         const tabBar = container.createDiv({
-            attr: {
-                style: 'display: flex; border-bottom: 1px solid var(--background-modifier-border); flex-shrink: 0;'
-            }
+            cls: 'nw-u-d-flex-2 nw-u-bb-1px-solid-background-m-2 nw-u-fsh-0-2'
         });
 
         const tabs: { id: 'basic' | 'conflict' | 'foreshadow'; label: string; icon: string }[] = [
@@ -348,7 +338,7 @@ export class SceneOutlineController {
     /** Tab 内容区 */
     private renderTabContent(container: HTMLElement, scene: ExtendedSceneData): void {
         const content = container.createDiv({
-            attr: { style: 'flex: 1; overflow-y: auto; padding: 12px;' }
+            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-12px-2'
         });
 
         switch (this.activeTab) {
@@ -380,7 +370,7 @@ export class SceneOutlineController {
         this.createTextArea(container, '💬 对话功能 (dialogue_function)', 'dialogueFunction', scene);
 
         const keySceneRow = container.createDiv({
-            attr: { style: 'display: flex; align-items: center; gap: 8px; margin: 10px 0;' }
+            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-m-10px-0'
         });
         const keySceneCheckbox = keySceneRow.createEl('input', {
             attr: { type: 'checkbox' }
@@ -394,7 +384,7 @@ export class SceneOutlineController {
         };
         keySceneRow.createSpan({
             text: '⭐ 标记为名场面',
-            attr: { style: 'font-size: 0.85em;' }
+            cls: 'nw-u-fs-0-85em'
         });
 
         if (scene.isKeyScene) {
@@ -412,13 +402,13 @@ export class SceneOutlineController {
         this.createTextArea(container, '⚔️ 核心冲突 (conflict)', 'conflict', scene);
 
         const typeRow = container.createDiv({
-            attr: { style: 'display: flex; gap: 12px; margin: 10px 0;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-m-10px-0'
         });
 
-        const conflictTypeWrap = typeRow.createDiv({ attr: { style: 'flex: 1;' } });
+        const conflictTypeWrap = typeRow.createDiv({ cls: 'nw-u-flex-1-2' });
         conflictTypeWrap.createEl('div', {
             text: '冲突类型',
-            attr: { style: 'font-size: 0.82em; color: var(--text-muted); margin-bottom: 4px; font-weight: 500;' }
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
         });
         const conflictSelect = conflictTypeWrap.createEl('select', {
             attr: {
@@ -440,10 +430,10 @@ export class SceneOutlineController {
             this.markDirty();
         };
 
-        const pleasureWrap = typeRow.createDiv({ attr: { style: 'flex: 1;' } });
+        const pleasureWrap = typeRow.createDiv({ cls: 'nw-u-flex-1-2' });
         pleasureWrap.createEl('div', {
             text: '爽点类型',
-            attr: { style: 'font-size: 0.82em; color: var(--text-muted); margin-bottom: 4px; font-weight: 500;' }
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
         });
         const pleasureSelect = pleasureWrap.createEl('select', {
             attr: {
@@ -474,21 +464,19 @@ export class SceneOutlineController {
         this.createTextArea(container, '🎯 伏笔回收', 'foreshadowRecover', scene);
 
         const statsRow = container.createDiv({
-            attr: {
-                style: 'margin-top: 16px; padding: 12px; background: var(--background-secondary); border-radius: 8px;'
-            }
+            cls: 'nw-u-margintop-16px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2'
         });
         statsRow.createEl('div', {
             text: '📊 场景统计',
-            attr: { style: 'font-weight: 600; margin-bottom: 8px; font-size: 0.9em;' }
+            cls: 'nw-u-fwt-600-2 nw-u-marginbottom-8px-2 nw-u-fs-0-9em'
         });
 
         const wordEstimateWrap = statsRow.createDiv({
-            attr: { style: 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px;' }
+            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-6px-2'
         });
         wordEstimateWrap.createSpan({
             text: '预估字数：',
-            attr: { style: 'font-size: 0.85em; color: var(--text-muted);' }
+            cls: 'nw-u-fs-0-85em nw-u-c-text-muted-2'
         });
         const wordInput = wordEstimateWrap.createEl('input', {
             attr: {
@@ -503,16 +491,16 @@ export class SceneOutlineController {
         };
         wordEstimateWrap.createSpan({
             text: '字',
-            attr: { style: 'font-size: 0.85em; color: var(--text-muted);' }
+            cls: 'nw-u-fs-0-85em nw-u-c-text-muted-2'
         });
     }
 
     /** 创建单行文本输入 */
     private createTextInput(container: HTMLElement, label: string, fieldKey: keyof ExtendedSceneData, scene: ExtendedSceneData): void {
-        const wrap = container.createDiv({ attr: { style: 'margin-bottom: 10px;' } });
+        const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px-2' });
         wrap.createEl('div', {
             text: label,
-            attr: { style: 'font-size: 0.82em; color: var(--text-muted); margin-bottom: 4px; font-weight: 500;' }
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
         });
         const input = wrap.createEl('input', {
             attr: {
@@ -536,10 +524,10 @@ export class SceneOutlineController {
 
     /** 创建多行文本域 */
     private createTextArea(container: HTMLElement, label: string, fieldKey: keyof ExtendedSceneData, scene: ExtendedSceneData): void {
-        const wrap = container.createDiv({ attr: { style: 'margin-bottom: 10px;' } });
+        const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px-2' });
         wrap.createEl('div', {
             text: label,
-            attr: { style: 'font-size: 0.82em; color: var(--text-muted); margin-bottom: 4px; font-weight: 500;' }
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
         });
         const value = String(scene[fieldKey] || '');
         const textarea = wrap.createEl('textarea', {
@@ -557,9 +545,7 @@ export class SceneOutlineController {
     /** 底部状态栏 */
     private renderFooter(container: HTMLElement): void {
         const footer = container.createDiv({
-            attr: {
-                style: 'display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-top: 1px solid var(--background-modifier-border); font-size: 0.78em; color: var(--text-muted); flex-shrink: 0;'
-            }
+            cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-p-8px-12px-2 nw-u-bt-1px-solid-background-m-2 nw-u-fs-0-78em nw-u-c-text-muted-2 nw-u-fsh-0-2'
         });
 
         const totalWords = this.scenes.reduce((sum, s) => sum + (s.wordCountEstimate || 0), 0);
@@ -571,7 +557,7 @@ export class SceneOutlineController {
         if (this.isDirty) {
             const saveIndicator = footer.createSpan({
                 text: '⏳ 自动保存中...',
-                attr: { style: 'color: var(--text-warning);' }
+                cls: 'nw-u-c-text-warning'
             });
         }
     }

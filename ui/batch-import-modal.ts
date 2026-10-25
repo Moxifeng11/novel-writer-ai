@@ -144,7 +144,7 @@ export class BatchImportModal extends Modal {
 
         this.renderStepIndicator();
 
-        const contentDiv = contentEl.createDiv({ attr: { style: 'margin-top:16px;max-height:60vh;overflow-y:auto;' } });
+        const contentDiv = contentEl.createDiv({ cls: 'nw-u-margintop-16px-2 nw-u-maxh-60vh nw-u-ovy-auto-2' });
 
         switch (this.currentStep) {
             case 1:
@@ -169,7 +169,7 @@ export class BatchImportModal extends Modal {
 
     private renderStepIndicator(): void {
         const stepsDiv = this.contentEl.createDiv({
-            attr: { style: 'display:flex;gap:6px;margin-top:12px;align-items:center;flex-wrap:wrap;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-margintop-12px-2 nw-u-ai-center-2 nw-u-fwr-wrap-2'
         });
 
         const steps: ImportStep[] = [1, 2, 3, 4, 5];
@@ -190,7 +190,7 @@ export class BatchImportModal extends Modal {
             if (index < steps.length - 1) {
                 stepsDiv.createEl('span', {
                     text: '→',
-                    attr: { style: 'color:var(--text-muted);font-size:11px;' }
+                    cls: 'nw-u-c-text-muted-2 nw-u-fs-11px-2'
                 });
             }
         });
@@ -199,10 +199,10 @@ export class BatchImportModal extends Modal {
     private renderStep1(container: HTMLElement): void {
         container.createEl('div', {
             text: '选择要导入的小说文件（支持 .txt、.md 格式）',
-            cls: 'nw-text-muted', attr: { style: 'margin-bottom:12px;' }
+            cls: "nw-text-muted nw-u-marginbottom-12px-2", attr: {}
         });
 
-        const btnRow = container.createDiv({ attr: { style: 'display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;' } });
+        const btnRow = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-marginbottom-12px-2 nw-u-fwr-wrap-2' });
 
         const selectFileBtn = btnRow.createEl('button', {
             text: '📁 选择本地文件',
@@ -235,8 +235,8 @@ export class BatchImportModal extends Modal {
 
         const historyBtn = btnRow.createEl('button', {
             text: '📜 导入历史',
-            cls: 'nw-btn nw-btn-ghost nw-btn-sm',
-            attr: { style: 'margin-left:auto;' }
+            cls: "nw-btn nw-btn-ghost nw-btn-sm nw-u-marginleft-auto-2",
+            attr: {}
         });
         historyBtn.addEventListener('click', () => {
             this.currentStep = 5;
@@ -244,17 +244,15 @@ export class BatchImportModal extends Modal {
         });
 
         const dropArea = container.createDiv({
-            attr: {
-                style: 'padding:32px;border:2px dashed var(--background-modifier-border);border-radius:8px;text-align:center;cursor:pointer;background:var(--background-secondary);margin-bottom:12px;transition:all 0.2s;'
-            }
+            cls: 'nw-u-p-32px nw-u-b-2px-dashed-background- nw-u-brd-8px-2 nw-u-ta-center-2 nw-u-cur-pointer-2 nw-u-bg-background-secondary-2 nw-u-marginbottom-12px-2 nw-u-transition-all-0-2s'
         });
         dropArea.createEl('div', {
             text: '📥 拖拽文件到此处',
-            attr: { style: 'font-size:15px;color:var(--text-muted);margin-bottom:6px;' }
+            cls: 'nw-u-fs-15px-2 nw-u-c-text-muted-2 nw-u-marginbottom-6px-2'
         });
         dropArea.createEl('div', {
             text: '支持 .txt、.md、.epub 格式',
-            attr: { style: 'font-size:12px;color:var(--text-faint);' }
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-faint-2'
         });
 
         dropArea.addEventListener('dragover', (e) => {
@@ -277,7 +275,7 @@ export class BatchImportModal extends Modal {
         const previews = this.batchManager.getPreviews();
 
         const listHeader = container.createDiv({
-            cls: 'nw-flex-between', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-flex-between nw-u-marginbottom-8px-2", attr: {}
         });
         listHeader.createEl('span', {
             text: `已选文件 (${previews.length})`,
@@ -306,8 +304,8 @@ export class BatchImportModal extends Modal {
 
         const clearBtn = actionBtns.createEl('button', {
             text: '清空',
-            cls: 'nw-btn nw-btn-ghost nw-btn-xs',
-            attr: { style: 'color:var(--text-error);' }
+            cls: "nw-btn nw-btn-ghost nw-btn-xs nw-u-c-text-error",
+            attr: {}
         });
         clearBtn.addEventListener('click', () => {
             this.batchManager.clearPreviews();
@@ -315,12 +313,12 @@ export class BatchImportModal extends Modal {
         });
 
         const fileListContainer = container.createDiv({
-            cls: 'nw-scroll-box', attr: { style: 'max-height:260px;' }
+            cls: "nw-scroll-box nw-u-maxh-260px", attr: {}
         });
 
         if (previews.length === 0) {
             fileListContainer.createDiv({
-                cls: 'nw-empty-hint', attr: { style: 'font-size:13px;' }
+                cls: "nw-empty-hint nw-u-fs-13px-2", attr: {}
             }).createEl('span', { text: '暂无文件，请添加要导入的小说文件' });
         } else {
             previews.forEach((preview, index) => {
@@ -340,11 +338,11 @@ export class BatchImportModal extends Modal {
                     this.batchManager.updatePreview(preview.id, { selected: (e.target as HTMLInputElement).checked });
                 });
 
-                const infoWrap = row.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
-                const nameRow = infoWrap.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;margin-bottom:2px;' } });
+                const infoWrap = row.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-0-2' });
+                const nameRow = infoWrap.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-2px-2' });
                 nameRow.createEl('span', {
                     text: preview.filename,
-                    attr: { style: 'font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' }
+                    cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2'
                 });
                 const formatBadge = nameRow.createEl('span', {
                     text: preview.recognition.format.toUpperCase(),
@@ -360,15 +358,15 @@ export class BatchImportModal extends Modal {
                 });
                 void formatBadge;
 
-                const metaRow = infoWrap.createDiv({ attr: { style: 'display:flex;gap:12px;font-size:11px;color:var(--text-muted);' } });
+                const metaRow = infoWrap.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-fs-11px-2 nw-u-c-text-muted-2' });
                 metaRow.createEl('span', { text: `📖 ${preview.recognition.chapterCount} 章` });
                 metaRow.createEl('span', { text: `📝 ${this.formatWordCount(preview.recognition.wordCount)}` });
                 metaRow.createEl('span', { text: `🎯 ${Math.round(preview.recognition.confidence * 100)}%` });
 
                 const deleteBtn = row.createEl('button', {
                     text: '✕',
-                    cls: 'nw-btn nw-btn-ghost nw-btn-xs',
-                    attr: { style: 'flex-shrink:0;color:var(--text-muted);' }
+                    cls: "nw-btn nw-btn-ghost nw-btn-xs nw-u-fsh-0-2 nw-u-c-text-muted-2",
+                    attr: {}
                 });
                 deleteBtn.addEventListener('click', () => {
                     this.batchManager.removePreview(preview.id);
@@ -383,7 +381,7 @@ export class BatchImportModal extends Modal {
 
         container.createEl('div', {
             text: `智能识别预览（共 ${previews.length} 本）`,
-            cls: 'nw-text-muted', attr: { style: 'margin-bottom:12px;' }
+            cls: "nw-text-muted nw-u-marginbottom-12px-2", attr: {}
         });
 
         if (previews.length === 0) {
@@ -394,7 +392,7 @@ export class BatchImportModal extends Modal {
         }
 
         const listContainer = container.createDiv({
-            cls: 'nw-scroll-box', attr: { style: 'max-height:400px;' }
+            cls: "nw-scroll-box nw-u-maxh-400px-2", attr: {}
         });
 
         previews.forEach((preview, index) => {
@@ -406,14 +404,12 @@ export class BatchImportModal extends Modal {
                 }
             });
 
-            const header = card.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;' } });
+            const header = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-flex-start-2 nw-u-gap-12px-2 nw-u-marginbottom-10px-2' });
 
             const titleInput = header.createEl('input', {
                 type: 'text',
                 value: preview.overrides.name || preview.recognition.title,
-                attr: {
-                    style: 'flex:1;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;font-weight:500;background:var(--background-primary);color:var(--text-normal);'
-                }
+                cls: 'nw-u-flex-1-2 nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-13px-2 nw-u-fwt-500-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2'
             });
             titleInput.addEventListener('input', (e) => {
                 const name = (e.target as HTMLInputElement).value;
@@ -437,7 +433,7 @@ export class BatchImportModal extends Modal {
             void confBadge;
 
             const metaGrid = card.createDiv({
-                attr: { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px;' }
+                cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-7 nw-u-gap-8px-2 nw-u-marginbottom-10px-2'
             });
 
             this.addMetaItem(metaGrid, '作者', preview.recognition.author || '未识别', true, (val) => {
@@ -451,23 +447,23 @@ export class BatchImportModal extends Modal {
 
             if (preview.recognition.chapters.length > 0) {
                 const chapterPreview = card.createDiv({
-                    attr: { style: 'background:var(--background-secondary);border-radius:4px;padding:8px;' }
+                    cls: 'nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-p-8px-2'
                 });
                 chapterPreview.createEl('div', {
                     text: '章节预览（前3章）',
-                    attr: { style: 'font-size:11px;color:var(--text-muted);margin-bottom:6px;' }
+                    cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-6px-2'
                 });
                 preview.recognition.chapters.slice(0, 3).forEach(ch => {
                     const chRow = chapterPreview.createDiv({
-                        attr: { style: 'font-size:12px;color:var(--text-normal);padding:2px 0;display:flex;justify-content:space-between;' }
+                        cls: 'nw-u-fs-12px-2 nw-u-c-text-normal-2 nw-u-p-2px-0 nw-u-d-flex-2 nw-u-jc-space-between-2'
                     });
-                    chRow.createEl('span', { text: ch.title, attr: { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;' } });
-                    chRow.createEl('span', { text: this.formatWordCount(ch.wordCount), attr: { style: 'color:var(--text-muted);flex-shrink:0;margin-left:8px;' } });
+                    chRow.createEl('span', { text: ch.title, cls: 'nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2 nw-u-flex-1-2' });
+                    chRow.createEl('span', { text: this.formatWordCount(ch.wordCount), cls: 'nw-u-c-text-muted-2 nw-u-fsh-0-2 nw-u-marginleft-8px' });
                 });
                 if (preview.recognition.chapters.length > 3) {
                     chapterPreview.createEl('div', {
                         text: `... 还有 ${preview.recognition.chapters.length - 3} 章`,
-                        attr: { style: 'font-size:11px;color:var(--text-muted);text-align:center;margin-top:4px;' }
+                        cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-ta-center-2 nw-u-margintop-4px-3'
                     });
                 }
             }
@@ -476,31 +472,29 @@ export class BatchImportModal extends Modal {
 
     private addMetaItem(container: HTMLElement, label: string, value: string, editable?: boolean, onChange?: (val: string) => void): void {
         const item = container.createDiv({
-            attr: { style: 'padding:8px;background:var(--background-secondary);border-radius:4px;' }
+            cls: 'nw-u-p-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2'
         });
-        item.createEl('div', { text: label, attr: { style: 'font-size:10px;color:var(--text-muted);margin-bottom:2px;' } });
+        item.createEl('div', { text: label, cls: 'nw-u-fs-10px-2 nw-u-c-text-muted-2 nw-u-marginbottom-2px-2' });
         if (editable && onChange) {
             const input = item.createEl('input', {
                 type: 'text',
                 value: value,
-                attr: {
-                    style: 'width:100%;padding:0;border:none;background:transparent;font-size:12px;color:var(--text-normal);outline:none;'
-                }
+                cls: 'nw-u-w-100-2 nw-u-p-0 nw-u-b-none nw-u-bg-transparent nw-u-fs-12px-2 nw-u-c-text-normal-2 nw-u-outline-none'
             });
             input.addEventListener('input', (e) => onChange((e.target as HTMLInputElement).value));
         } else {
-            item.createEl('div', { text: value, attr: { style: 'font-size:12px;color:var(--text-normal);font-weight:500;' } });
+            item.createEl('div', { text: value, cls: 'nw-u-fs-12px-2 nw-u-c-text-normal-2 nw-u-fwt-500-2' });
         }
     }
 
     private renderStep3(container: HTMLElement): void {
         container.createEl('div', {
             text: '为所有导入的书籍统一设置',
-            cls: 'nw-text-muted', attr: { style: 'margin-bottom:16px;' }
+            cls: "nw-text-muted nw-u-marginbottom-16px-2", attr: {}
         });
 
-        const presetRow = container.createDiv({ cls: 'nw-setting-card', attr: { style: 'margin-bottom:16px;' } });
-        const presetHeader = presetRow.createDiv({ cls: 'nw-flex-between', attr: { style: 'margin-bottom:8px;' } });
+        const presetRow = container.createDiv({ cls: "nw-setting-card nw-u-marginbottom-16px-2", attr: {} });
+        const presetHeader = presetRow.createDiv({ cls: "nw-flex-between nw-u-marginbottom-8px-2", attr: {} });
         presetHeader.createEl('span', { text: '📋 预设方案', cls: 'nw-label-md' });
         const toggleBtn = presetHeader.createEl('button', {
             text: this.showPresets ? '收起' : '展开',
@@ -514,7 +508,7 @@ export class BatchImportModal extends Modal {
         if (this.showPresets) {
             const presets = this.batchManager.getPresets();
             const presetList = presetRow.createDiv({
-                attr: { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;' }
+                cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-fwr-wrap-2 nw-u-marginbottom-8px-2'
             });
             if (presets.length === 0) {
                 presetList.createEl('span', { text: '暂无预设', cls: 'nw-text-sm-muted' });
@@ -541,9 +535,7 @@ export class BatchImportModal extends Modal {
                 type: 'text',
                 placeholder: '预设名称',
                 value: this.presetNameInput,
-                attr: {
-                    style: 'flex:1;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-                }
+                cls: 'nw-u-flex-1-2 nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2'
             });
             presetInput.addEventListener('input', (e) => {
                 this.presetNameInput = (e.target as HTMLInputElement).value;
@@ -557,13 +549,13 @@ export class BatchImportModal extends Modal {
             });
         }
 
-        const dimensionsSection = container.createDiv({ attr: { style: 'margin-bottom:16px;' } });
+        const dimensionsSection = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
         dimensionsSection.createEl('div', {
             text: '🔍 拆解维度',
-            cls: 'nw-label-md', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-label-md nw-u-marginbottom-8px-2", attr: {}
         });
         const dimContainer = dimensionsSection.createDiv({
-            attr: { style: 'display:flex;gap:8px;flex-wrap:wrap;padding:10px;border:1px solid var(--background-modifier-border);border-radius:6px;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-p-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2'
         });
         DIMENSION_OPTIONS.forEach(dim => {
             const isSelected = this.selectedDimensions.includes(dim.key);
@@ -588,13 +580,13 @@ export class BatchImportModal extends Modal {
         });
 
         const optionsGrid = container.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-marginbottom-16px-2'
         });
 
         const concurrencyItem = optionsGrid.createDiv({
             cls: 'nw-setting-card'
         });
-        concurrencyItem.createEl('div', { text: '⚡ 并发数', cls: 'nw-text-sm-muted', attr: { style: 'margin-bottom:6px;' } });
+        concurrencyItem.createEl('div', { text: '⚡ 并发数', cls: "nw-text-sm-muted nw-u-marginbottom-6px-2", attr: {} });
         const concurrencyInput = concurrencyItem.createEl('input', {
             type: 'number',
             value: this.concurrency.toString(),
@@ -611,11 +603,9 @@ export class BatchImportModal extends Modal {
         const priorityItem = optionsGrid.createDiv({
             cls: 'nw-setting-card'
         });
-        priorityItem.createEl('div', { text: '⭐ 优先级', cls: 'nw-text-sm-muted', attr: { style: 'margin-bottom:6px;' } });
+        priorityItem.createEl('div', { text: '⭐ 优先级', cls: "nw-text-sm-muted nw-u-marginbottom-6px-2", attr: {} });
         const prioritySelect = priorityItem.createEl('select', {
-            attr: {
-                style: 'width:100%;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            cls: 'nw-u-w-100-2 nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-13px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2'
         });
         const priorityOptions = [
             { value: '2', label: '高优先级' },
@@ -632,45 +622,45 @@ export class BatchImportModal extends Modal {
             this.priority = parseInt((e.target as HTMLSelectElement).value);
         });
 
-        const togglesSection = container.createDiv({ attr: { style: 'margin-bottom:16px;' } });
+        const togglesSection = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
         togglesSection.createEl('div', {
             text: '⚙️ 其他选项',
-            cls: 'nw-label-md', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-label-md nw-u-marginbottom-8px-2", attr: {}
         });
 
         const toggleList = togglesSection.createDiv({
-            attr: { style: 'display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--background-modifier-border);border-radius:6px;' }
+            cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-8px-2 nw-u-p-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2'
         });
 
-        const autoStartRow = toggleList.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;' } });
-        autoStartRow.createEl('span', { text: '导入后自动开始拆解', attr: { style: 'font-size:13px;' } });
+        const autoStartRow = toggleList.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2' });
+        autoStartRow.createEl('span', { text: '导入后自动开始拆解', cls: 'nw-u-fs-13px-2' });
         const autoStartToggle = autoStartRow.createEl('input', {
             type: 'checkbox',
-            attr: { style: 'cursor:pointer;' }
+            cls: 'nw-u-cur-pointer-2'
         });
         autoStartToggle.checked = this.autoStartDeconstruction;
         autoStartToggle.addEventListener('change', (e) => {
             this.autoStartDeconstruction = (e.target as HTMLInputElement).checked;
         });
 
-        const autoClassifyRow = toggleList.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;' } });
-        autoClassifyRow.createEl('span', { text: '自动识别题材分类', attr: { style: 'font-size:13px;' } });
+        const autoClassifyRow = toggleList.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2' });
+        autoClassifyRow.createEl('span', { text: '自动识别题材分类', cls: 'nw-u-fs-13px-2' });
         const autoClassifyToggle = autoClassifyRow.createEl('input', {
             type: 'checkbox',
-            attr: { style: 'cursor:pointer;' }
+            cls: 'nw-u-cur-pointer-2'
         });
         autoClassifyToggle.checked = this.autoClassify;
         autoClassifyToggle.addEventListener('change', (e) => {
             this.autoClassify = (e.target as HTMLInputElement).checked;
         });
 
-        const tagsSection = container.createDiv({ attr: { style: 'margin-bottom:8px;' } });
+        const tagsSection = container.createDiv({ cls: 'nw-u-marginbottom-8px-2' });
         tagsSection.createEl('div', {
             text: '🏷️ 标签设置',
-            cls: 'nw-label-md', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-label-md nw-u-marginbottom-8px-2", attr: {}
         });
 
-        const themeCategoryRow = tagsSection.createDiv({ attr: { style: 'display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;' } });
+        const themeCategoryRow = tagsSection.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-marginbottom-8px-2 nw-u-fwr-wrap-2' });
         THEME_CATEGORIES.forEach(cat => {
             const btn = themeCategoryRow.createEl('button', {
                 text: cat,
@@ -684,7 +674,7 @@ export class BatchImportModal extends Modal {
 
         const themeTags = this.options.tagManager.getTagsByType(this.themeCategory).filter(t => t.parentId);
         const themeTagContainer = tagsSection.createDiv({
-            cls: 'nw-tag-container', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-tag-container nw-u-marginbottom-8px-2", attr: {}
         });
         if (themeTags.length === 0) {
             themeTagContainer.createEl('span', { text: '暂无题材标签', cls: 'nw-text-sm-muted' });
@@ -713,7 +703,7 @@ export class BatchImportModal extends Modal {
             });
         }
 
-        const techniqueCategoryRow = tagsSection.createDiv({ attr: { style: 'display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;' } });
+        const techniqueCategoryRow = tagsSection.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-marginbottom-8px-2 nw-u-fwr-wrap-2' });
         TECHNIQUE_CATEGORIES.forEach(cat => {
             const btn = techniqueCategoryRow.createEl('button', {
                 text: cat,
@@ -727,7 +717,7 @@ export class BatchImportModal extends Modal {
 
         const techniqueTags = this.options.tagManager.getTagsByType(this.techniqueCategory).filter(t => t.parentId);
         const techniqueTagContainer = tagsSection.createDiv({
-            cls: 'nw-tag-container', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-tag-container nw-u-marginbottom-8px-2", attr: {}
         });
         if (techniqueTags.length === 0) {
             techniqueTagContainer.createEl('span', { text: '暂无技巧标签', cls: 'nw-text-sm-muted' });
@@ -756,14 +746,12 @@ export class BatchImportModal extends Modal {
             });
         }
 
-        const customInputRow = tagsSection.createDiv({ attr: { style: 'display:flex;gap:8px;margin-bottom:8px;' } });
+        const customInputRow = tagsSection.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-marginbottom-8px-2' });
         const customInput = customInputRow.createEl('input', {
             type: 'text',
             placeholder: '输入自定义标签名',
             value: this.customTagInput,
-            attr: {
-                style: 'flex:1;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            cls: 'nw-u-flex-1-2 nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2'
         });
         customInput.addEventListener('input', (e) => {
             this.customTagInput = (e.target as HTMLInputElement).value;
@@ -789,14 +777,12 @@ export class BatchImportModal extends Modal {
             this.customTags.forEach(tag => {
                 const tagEl = customTagsContainer.createEl('span', {
                     text: tag,
-                    cls: 'nw-chip',
-                    attr: {
-                        style: 'background:var(--background-secondary);color:var(--text-normal);display:flex;align-items:center;gap:4px;'
-                    }
+                    cls: "nw-chip nw-u-bg-background-secondary-2 nw-u-c-text-normal-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-4px-2",
+                    attr: {}
                 });
                 const removeBtn = tagEl.createEl('span', {
                     text: '×',
-                    attr: { style: 'cursor:pointer;font-size:13px;line-height:1;' }
+                    cls: 'nw-u-cur-pointer-2 nw-u-fs-13px-2 nw-u-lh-1-2'
                 });
                 removeBtn.addEventListener('click', () => {
                     this.customTags = this.customTags.filter(t => t !== tag);
@@ -812,12 +798,12 @@ export class BatchImportModal extends Modal {
 
         container.createEl('div', {
             text: '正在导入书籍，请稍候...',
-            cls: 'nw-text-muted', attr: { style: 'margin-bottom:16px;' }
+            cls: "nw-text-muted nw-u-marginbottom-16px-2", attr: {}
         });
 
-        this.totalProgressEl = container.createDiv({ attr: { style: 'margin-bottom:16px;' } });
+        this.totalProgressEl = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
         const totalHeader = this.totalProgressEl.createDiv({
-            cls: 'nw-flex-between', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-flex-between nw-u-marginbottom-8px-2", attr: {}
         });
         totalHeader.createEl('span', { text: '总体进度', cls: 'nw-label-md' });
         this.totalProgressTextEl = totalHeader.createEl('span', {
@@ -825,7 +811,7 @@ export class BatchImportModal extends Modal {
             cls: 'nw-text-sm-muted'
         });
         const totalBarBg = this.totalProgressEl.createDiv({
-            attr: { style: 'width:100%;height:12px;background:var(--background-modifier-border);border-radius:6px;overflow:hidden;' }
+            cls: 'nw-u-w-100-2 nw-u-h-12px nw-u-bg-background-modifier-bo-3 nw-u-brd-6px-2 nw-u-ov-hidden-2'
         });
         this.totalProgressBarEl = totalBarBg.createDiv({
             attr: {
@@ -834,7 +820,7 @@ export class BatchImportModal extends Modal {
         });
 
         const statsRow = container.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-4-1fr-2 nw-u-gap-8px-2 nw-u-marginbottom-16px-2'
         });
         this.addStatCard(statsRow, '总计', progress.totalTasks.toString(), 'var(--text-muted)');
         this.addStatCard(statsRow, '进行中', progress.activeTasks.toString(), 'var(--interactive-accent)');
@@ -842,11 +828,11 @@ export class BatchImportModal extends Modal {
         this.addStatCard(statsRow, '失败', progress.failedTasks.toString(), 'var(--text-error)');
 
         const taskListHeader = container.createDiv({
-            cls: 'nw-flex-between', attr: { style: 'margin-bottom:8px;' }
+            cls: "nw-flex-between nw-u-marginbottom-8px-2", attr: {}
         });
         taskListHeader.createEl('span', { text: '任务列表', cls: 'nw-label-md' });
 
-        const actionBtns = taskListHeader.createDiv({ attr: { style: 'display:flex;gap:6px;' } });
+        const actionBtns = taskListHeader.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2' });
         const pauseAllBtn = actionBtns.createEl('button', {
             text: '⏸ 全部暂停',
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -863,13 +849,13 @@ export class BatchImportModal extends Modal {
         });
 
         this.taskListEl = container.createDiv({
-            cls: 'nw-scroll-box', attr: { style: 'max-height:240px;' }
+            cls: "nw-scroll-box nw-u-maxh-240px", attr: {}
         });
 
         this.updateTaskList();
 
         const logHeader = container.createDiv({
-            attr: { style: 'font-size:13px;font-weight:500;margin:16px 0 6px 0;display:flex;justify-content:space-between;align-items:center;' }
+            cls: 'nw-u-fs-13px-2 nw-u-fwt-500-2 nw-u-m-16px-0-6px-0 nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2'
         });
         logHeader.createEl('span', { text: '📋 导入日志' });
         const clearLogBtn = logHeader.createEl('button', {
@@ -881,9 +867,7 @@ export class BatchImportModal extends Modal {
         });
 
         this.logEl = container.createDiv({
-            attr: {
-                style: 'height:120px;overflow-y:auto;padding:8px 12px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-secondary);font-size:12px;font-family:var(--font-interface);line-height:1.6;'
-            }
+            cls: 'nw-u-h-120px nw-u-ovy-auto-2 nw-u-p-8px-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-bg-background-secondary-2 nw-u-fs-12px-2 nw-u-fontfamily-font-interface nw-u-lh-1-6-2'
         });
 
         this.appendLog(`开始导入，共 ${progress.totalTasks} 本书籍`);
@@ -891,10 +875,10 @@ export class BatchImportModal extends Modal {
 
     private addStatCard(container: HTMLElement, label: string, value: string, color: string): void {
         const card = container.createDiv({
-            attr: { style: 'padding:10px;text-align:center;background:var(--background-secondary);border-radius:6px;' }
+            cls: 'nw-u-p-10px-2 nw-u-ta-center-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
         });
         card.createEl('div', { text: value, attr: { style: `font-size:18px;font-weight:bold;color:${color};margin-bottom:2px;` } });
-        card.createEl('div', { text: label, attr: { style: 'font-size:11px;color:var(--text-muted);' } });
+        card.createEl('div', { text: label, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2' });
     }
 
     private updateProgressView(): void {
@@ -925,8 +909,8 @@ export class BatchImportModal extends Modal {
                 }
             });
 
-            const header = row.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' } });
-            const titleWrap = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;min-width:0;flex:1;' } });
+            const header = row.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-marginbottom-6px-2' });
+            const titleWrap = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-minw-0-2 nw-u-flex-1-2' });
 
             const statusDot = titleWrap.createEl('span', {
                 attr: {
@@ -943,7 +927,7 @@ export class BatchImportModal extends Modal {
 
             titleWrap.createEl('span', {
                 text: task.bookName,
-                attr: { style: 'font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' }
+                cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2'
             });
 
             const statusBadge = header.createEl('span', {
@@ -962,7 +946,7 @@ export class BatchImportModal extends Modal {
 
             if (task.status === 'processing' || task.status === 'queued') {
                 const barBg = row.createDiv({
-                    attr: { style: 'height:4px;background:var(--background-modifier-border);border-radius:2px;overflow:hidden;margin-bottom:4px;' }
+                    cls: 'nw-u-h-4px-2 nw-u-bg-background-modifier-bo-3 nw-u-brd-2px-2 nw-u-ov-hidden-2 nw-u-marginbottom-4px-2'
                 });
                 barBg.createDiv({
                     attr: {
@@ -974,17 +958,17 @@ export class BatchImportModal extends Modal {
             if (task.error) {
                 row.createEl('div', {
                     text: task.error,
-                    attr: { style: 'font-size:11px;color:var(--text-error);margin-bottom:4px;' }
+                    cls: 'nw-u-fs-11px-2 nw-u-c-text-error nw-u-marginbottom-4px-2'
                 });
             }
 
-            const metaRow = row.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;' } });
+            const metaRow = row.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2' });
             metaRow.createEl('span', {
                 text: `重试 ${task.retryCount}/${task.maxRetries}`,
-                attr: { style: 'font-size:10px;color:var(--text-muted);' }
+                cls: 'nw-u-fs-10px-2 nw-u-c-text-muted-2'
             });
 
-            const btnRow = metaRow.createDiv({ attr: { style: 'display:flex;gap:4px;' } });
+            const btnRow = metaRow.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2' });
             if (task.status === 'queued') {
                 const pauseBtn = btnRow.createEl('button', {
                     text: '⏸',
@@ -1009,7 +993,7 @@ export class BatchImportModal extends Modal {
             if (task.status !== 'completed') {
                 const cancelBtn = btnRow.createEl('button', {
                     text: '✕',
-                    cls: 'nw-btn nw-btn-ghost nw-btn-xs nw-btn-icon-xs', attr: { style: 'color:var(--text-error);' }
+                    cls: "nw-btn nw-btn-ghost nw-btn-xs nw-btn-icon-xs nw-u-c-text-error", attr: {}
                 });
                 cancelBtn.addEventListener('click', () => this.batchManager.cancelTask(task.id));
             }
@@ -1030,7 +1014,7 @@ export class BatchImportModal extends Modal {
 
     private renderStep5(container: HTMLElement): void {
         const tabs = container.createDiv({
-            attr: { style: 'display:flex;border-bottom:1px solid var(--background-modifier-border);margin-bottom:12px;' }
+            cls: 'nw-u-d-flex-2 nw-u-bb-1px-solid-background-m-2 nw-u-marginbottom-12px-2'
         });
 
         const recentTab = tabs.createEl('button', {
@@ -1078,45 +1062,45 @@ export class BatchImportModal extends Modal {
         }
 
         const statsRow = container.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-3-1fr-2 nw-u-gap-12px-2 nw-u-marginbottom-16px-2'
         });
 
         const successCard = statsRow.createDiv({
-            cls: 'nw-result-card', attr: { style: 'border:1px solid var(--background-modifier-success);' }
+            cls: "nw-result-card nw-u-b-1px-solid-background-m-3", attr: {}
         });
         successCard.createEl('div', {
             text: progress.completedTasks.toString(),
-            cls: 'nw-result-number', attr: { style: 'color:var(--text-success);' }
+            cls: "nw-result-number nw-u-c-text-success", attr: {}
         });
         successCard.createEl('div', { text: '✅ 成功', cls: 'nw-text-sm-muted' });
 
         const failedCard = statsRow.createDiv({
-            cls: 'nw-result-card', attr: { style: 'border:1px solid var(--background-modifier-error);' }
+            cls: "nw-result-card nw-u-b-1px-solid-background-m-4", attr: {}
         });
         failedCard.createEl('div', {
             text: progress.failedTasks.toString(),
-            cls: 'nw-result-number', attr: { style: 'color:var(--text-error);' }
+            cls: "nw-result-number nw-u-c-text-error", attr: {}
         });
         failedCard.createEl('div', { text: '❌ 失败', cls: 'nw-text-sm-muted' });
 
         const totalCard = statsRow.createDiv({
-            cls: 'nw-result-card', attr: { style: 'border:1px solid var(--background-modifier-border);' }
+            cls: "nw-result-card nw-u-b-1px-solid-background-m-2", attr: {}
         });
         totalCard.createEl('div', {
             text: progress.totalTasks.toString(),
-            cls: 'nw-result-number', attr: { style: 'color:var(--text-muted);' }
+            cls: "nw-result-number nw-u-c-text-muted-2", attr: {}
         });
         totalCard.createEl('div', { text: '📚 总计', cls: 'nw-text-sm-muted' });
 
         const successTasks = tasks.filter(t => t.status === 'completed');
         if (successTasks.length > 0) {
-            const successSection = container.createDiv({ attr: { style: 'margin-bottom:16px;' } });
+            const successSection = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
             successSection.createEl('div', {
                 text: '成功列表',
-                cls: 'nw-label-md', attr: { style: 'margin-bottom:8px;' }
+                cls: "nw-label-md nw-u-marginbottom-8px-2", attr: {}
             });
             const successList = successSection.createDiv({
-                attr: { style: 'max-height:160px;overflow-y:auto;border:1px solid var(--background-modifier-border);border-radius:4px;' }
+                cls: 'nw-u-maxh-160px nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2'
             });
             successTasks.forEach((task, index) => {
                 const row = successList.createDiv({
@@ -1126,7 +1110,7 @@ export class BatchImportModal extends Modal {
                         }`
                     }
                 });
-                row.createEl('span', { text: `✅ ${task.bookName}`, attr: { style: 'font-size:12px;' } });
+                row.createEl('span', { text: `✅ ${task.bookName}`, cls: 'nw-u-fs-12px-2' });
                 const detailBtn = row.createEl('button', {
                     text: '查看详情',
                     cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -1142,13 +1126,13 @@ export class BatchImportModal extends Modal {
 
         const failedTasks = tasks.filter(t => t.status === 'failed');
         if (failedTasks.length > 0) {
-            const failedSection = container.createDiv({ attr: { style: 'margin-bottom:8px;' } });
+            const failedSection = container.createDiv({ cls: 'nw-u-marginbottom-8px-2' });
             failedSection.createEl('div', {
                 text: '失败列表',
-                cls: 'nw-label-md', attr: { style: 'margin-bottom:8px;' }
+                cls: "nw-label-md nw-u-marginbottom-8px-2", attr: {}
             });
             const failedList = failedSection.createDiv({
-                attr: { style: 'max-height:160px;overflow-y:auto;border:1px solid var(--background-modifier-error);border-radius:4px;' }
+                cls: 'nw-u-maxh-160px nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-4 nw-u-brd-4px-2'
             });
             failedTasks.forEach((task, index) => {
                 const row = failedList.createDiv({
@@ -1160,11 +1144,11 @@ export class BatchImportModal extends Modal {
                 });
                 row.createEl('div', {
                     text: `❌ ${task.bookName}`,
-                    attr: { style: 'font-size:12px;font-weight:500;margin-bottom:2px;' }
+                    cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-marginbottom-2px-2'
                 });
                 row.createEl('div', {
                     text: task.error || '未知错误',
-                    attr: { style: 'font-size:11px;color:var(--text-error);margin-bottom:4px;' }
+                    cls: 'nw-u-fs-11px-2 nw-u-c-text-error nw-u-marginbottom-4px-2'
                 });
                 const retryBtn = row.createEl('button', {
                     text: '🔄 重新导入',
@@ -1190,7 +1174,7 @@ export class BatchImportModal extends Modal {
         }
 
         const listContainer = container.createDiv({
-            cls: 'nw-scroll-box', attr: { style: 'max-height:400px;' }
+            cls: "nw-scroll-box nw-u-maxh-400px-2", attr: {}
         });
 
         history.forEach((item, index) => {
@@ -1203,24 +1187,24 @@ export class BatchImportModal extends Modal {
             });
 
             const header = card.createDiv({
-                cls: 'nw-flex-between', attr: { style: 'margin-bottom:8px;' }
+                cls: "nw-flex-between nw-u-marginbottom-8px-2", attr: {}
             });
             header.createEl('span', {
                 text: this.formatDateTime(item.importTime),
-                attr: { style: 'font-size:12px;font-weight:500;' }
+                cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2'
             });
             const statsWrap = header.createDiv({ cls: 'nw-flex-row' });
             statsWrap.createEl('span', {
                 text: `✅ ${item.successCount}`,
-                attr: { style: 'font-size:11px;color:var(--text-success);' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-success'
             });
             statsWrap.createEl('span', {
                 text: `❌ ${item.failedCount}`,
-                attr: { style: 'font-size:11px;color:var(--text-error);' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-error'
             });
 
             const metaRow = card.createDiv({
-                attr: { style: 'display:flex;gap:12px;font-size:11px;color:var(--text-muted);' }
+                cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-fs-11px-2 nw-u-c-text-muted-2'
             });
             metaRow.createEl('span', { text: `总计 ${item.totalCount} 本` });
             metaRow.createEl('span', {
@@ -1234,27 +1218,27 @@ export class BatchImportModal extends Modal {
 
             if (this.selectedHistoryId === item.id) {
                 const detail = card.createDiv({
-                    attr: { style: 'margin-top:10px;padding-top:10px;border-top:1px solid var(--background-modifier-border);' }
+                    cls: 'nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-background-m-2'
                 });
 
                 const bookList = detail.createDiv({
-                    attr: { style: 'max-height:150px;overflow-y:auto;margin-bottom:8px;' }
+                    cls: 'nw-u-maxh-150px-2 nw-u-ovy-auto-2 nw-u-marginbottom-8px-2'
                 });
                 item.books.forEach(book => {
                     const bookRow = bookList.createDiv({
-                        attr: { style: 'display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;' }
+                        cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-p-4px-0-2 nw-u-fs-11px-2'
                     });
                     const statusIcon = book.status === 'success' ? '✅' : book.status === 'failed' ? '❌' : '⏭️';
                     bookRow.createEl('span', { text: `${statusIcon} ${book.bookName}` });
                     if (book.status === 'failed') {
                         bookRow.createEl('span', {
                             text: book.error || '失败',
-                            attr: { style: 'color:var(--text-error);' }
+                            cls: 'nw-u-c-text-error'
                         });
                     }
                 });
 
-                const btnRow = detail.createDiv({ attr: { style: 'display:flex;gap:8px;justify-content:flex-end;' } });
+                const btnRow = detail.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-jc-flex-end-2' });
                 if (item.failedCount > 0) {
                     const retryBtn = btnRow.createEl('button', {
                         text: '🔄 重试失败项',
@@ -1273,7 +1257,7 @@ export class BatchImportModal extends Modal {
 
     private renderFooter(): void {
         const btnRow = this.contentEl.createDiv({
-            attr: { style: 'display:flex;gap:8px;margin-top:20px;justify-content:space-between;' }
+            cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-margintop-20px-2 nw-u-jc-space-between-2'
         });
 
         const leftBtns = btnRow.createDiv({ cls: 'nw-flex-row' });
@@ -1466,7 +1450,7 @@ export class BatchImportModal extends Modal {
         });
 
         const fileList = content.createDiv({
-            attr: { style: 'border:1px solid var(--background-modifier-border);border-radius:4px;max-height:300px;overflow-y:auto;' }
+            cls: 'nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-maxh-300px-2 nw-u-ovy-auto-2'
         });
 
         const selectedPaths = new Set<string>();
@@ -1481,21 +1465,19 @@ export class BatchImportModal extends Modal {
             if (filtered.length === 0) {
                 fileList.createDiv({
                     text: '没有找到匹配的文件',
-                    attr: { style: 'padding:20px;text-align:center;color:var(--text-faint);font-size:13px;' }
+                    cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2'
                 });
                 return;
             }
 
             filtered.forEach(file => {
                 const row = fileList.createDiv({
-                    attr: {
-                        style: 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--background-modifier-border);cursor:pointer;'
-                    }
+                    cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-p-8px-10px-2 nw-u-bb-1px-solid-background-m-2 nw-u-cur-pointer-2'
                 });
 
                 const checkbox = row.createEl('input', {
                     type: 'checkbox',
-                    attr: { style: 'cursor:pointer;' }
+                    cls: 'nw-u-cur-pointer-2'
                 });
                 checkbox.checked = selectedPaths.has(file.path);
                 checkbox.addEventListener('change', () => {
@@ -1508,11 +1490,11 @@ export class BatchImportModal extends Modal {
 
                 row.createEl('span', {
                     text: `📄 ${file.name}`,
-                    attr: { style: 'font-size:12px;flex:1;' }
+                    cls: 'nw-u-fs-12px-2 nw-u-flex-1-2'
                 });
                 row.createEl('span', {
                     text: file.parent?.path || '',
-                    attr: { style: 'font-size:10px;color:var(--text-faint);' }
+                    cls: 'nw-u-fs-10px-2 nw-u-c-text-faint-2'
                 });
 
                 row.addEventListener('click', (e) => {
@@ -1534,7 +1516,7 @@ export class BatchImportModal extends Modal {
 
         renderFileList();
 
-        const btnRow = content.createDiv({ attr: { style: 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;' } });
+        const btnRow = content.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-margintop-16px-2' });
 
         const cancelBtn = btnRow.createEl('button', {
             text: '取消',
@@ -1632,7 +1614,7 @@ export class BatchImportModal extends Modal {
         });
 
         const folderList = content.createDiv({
-            attr: { style: 'border:1px solid var(--background-modifier-border);border-radius:4px;max-height:300px;overflow-y:auto;' }
+            cls: 'nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-maxh-300px-2 nw-u-ovy-auto-2'
         });
 
         let selectedFolderPath: string | null = null;
@@ -1647,30 +1629,28 @@ export class BatchImportModal extends Modal {
             if (filtered.length === 0) {
                 folderList.createDiv({
                     text: '没有找到匹配的文件夹',
-                    attr: { style: 'padding:20px;text-align:center;color:var(--text-faint);font-size:13px;' }
+                    cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2'
                 });
                 return;
             }
 
             filtered.forEach(item => {
                 const row = folderList.createDiv({
-                    attr: {
-                        style: 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--background-modifier-border);cursor:pointer;'
-                    }
+                    cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-p-8px-10px-2 nw-u-bb-1px-solid-background-m-2 nw-u-cur-pointer-2'
                 });
 
                 if (selectedFolderPath === item.folder.path) {
                     row.style.backgroundColor = 'var(--background-modifier-hover)';
                 }
 
-                row.createEl('span', { text: '📁', attr: { style: 'font-size:14px;' } });
+                row.createEl('span', { text: '📁', cls: 'nw-u-fs-14px-2' });
                 row.createEl('span', {
                     text: item.folder.path || '(根目录)',
-                    attr: { style: 'font-size:12px;flex:1;' }
+                    cls: 'nw-u-fs-12px-2 nw-u-flex-1-2'
                 });
                 row.createEl('span', {
                     text: `${item.fileCount} 个文件`,
-                    attr: { style: 'font-size:10px;color:var(--text-faint);' }
+                    cls: 'nw-u-fs-10px-2 nw-u-c-text-faint-2'
                 });
 
                 row.addEventListener('click', () => {
@@ -1686,7 +1666,7 @@ export class BatchImportModal extends Modal {
 
         renderFolderList();
 
-        const btnRow = content.createDiv({ attr: { style: 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;' } });
+        const btnRow = content.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-margintop-16px-2' });
 
         const cancelBtn = btnRow.createEl('button', {
             text: '取消',
@@ -1825,7 +1805,7 @@ export class BatchImportModal extends Modal {
         if (!this.logEl) return;
         const logLine = this.logEl.createEl('div', {
             text: `[${new Date().toLocaleTimeString()}] ${message}`,
-            attr: { style: 'margin-bottom:2px;' }
+            cls: 'nw-u-marginbottom-2px-2'
         });
         this.logEl.scrollTop = this.logEl.scrollHeight;
         void logLine;

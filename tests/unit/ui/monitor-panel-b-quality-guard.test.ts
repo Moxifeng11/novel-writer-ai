@@ -197,6 +197,6 @@ describe('MonitorPanelB — 正文不足可评估长度时的展示口径', () =
         // empty() 会清空子节点：详情面板引用必须指向重新挂载的新节点
         expect(ctx.qualityDetailPanel).not.toBeNull();
         expect(ctx.qualityContent.contains(ctx.qualityDetailPanel!)).toBe(true);
-        expect(ctx.qualityDetailPanel!.cls).toBe('nw-quality-detail');
+        expect(ctx.qualityDetailPanel!.cls).toContain('nw-quality-detail');
     });
 });

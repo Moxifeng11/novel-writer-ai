@@ -73,10 +73,10 @@ export class PromptManagerSettings {
     }
 
     private renderTemplatesTab(container: HTMLElement): void {
-        const layout = container.createDiv({ attr: { style: 'display:flex;gap:16px;' } });
+        const layout = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-16px-2' });
 
-        const sidebar = layout.createDiv({ attr: { style: 'width:260px;flex-shrink:0;' } });
-        const main = layout.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
+        const sidebar = layout.createDiv({ cls: 'nw-u-w-260px nw-u-fsh-0-2' });
+        const main = layout.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-0-2' });
 
         this.renderTemplateSidebar(sidebar);
         this.renderTemplateDetail(main);
@@ -94,7 +94,7 @@ export class PromptManagerSettings {
                     });
             });
 
-        const categoryList = container.createDiv({ attr: { style: 'margin-bottom:12px;' } });
+        const categoryList = container.createDiv({ cls: 'nw-u-marginbottom-12px-2' });
         const allBtn = categoryList.createEl('button', {
             text: `📚 全部 (${this.promptManager.getAllTemplates().length})`,
             attr: {
@@ -131,7 +131,7 @@ export class PromptManagerSettings {
         );
 
         const templateList = container.createDiv({
-            attr: { style: 'border-top:1px solid var(--background-modifier-border);padding-top:8px;max-height:400px;overflow-y:auto;' }
+            cls: 'nw-u-bt-1px-solid-background-m-2 nw-u-paddingtop-8px-2 nw-u-maxh-400px-2 nw-u-ovy-auto-2'
         });
 
         for (const t of filtered) {
@@ -142,18 +142,16 @@ export class PromptManagerSettings {
             });
             item.createDiv({
                 text: t.name,
-                attr: { style: 'font-weight:600;font-size:13px;' }
+                cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2'
             });
             item.createDiv({
                 text: t.description.slice(0, 40) + (t.description.length > 40 ? '...' : ''),
-                attr: { style: 'font-size:11px;color:var(--text-muted);margin-top:2px;' }
+                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-margintop-2px-2'
             });
             if (t.isCustom) {
                 item.createEl('span', {
                     text: '自定义',
-                    attr: {
-                        style: 'display:inline-block;padding:1px 6px;font-size:10px;background:var(--background-modifier-success);color:var(--text-on-accent);border-radius:3px;margin-top:4px;'
-                    }
+                    cls: 'nw-u-d-inline-block nw-u-p-1px-6px-2 nw-u-fs-10px-2 nw-u-bg-background-modifier-su nw-u-c-text-on-accent-2 nw-u-brd-3px-2 nw-u-margintop-4px-3'
                 });
             }
             item.onclick = () => {
@@ -183,19 +181,19 @@ export class PromptManagerSettings {
 
         const template = this.promptManager.getTemplateById(this.selectedTemplateId);
         if (!template) {
-            container.createDiv({ text: '模板未找到', attr: { style: 'color:var(--text-error);' } });
+            container.createDiv({ text: '模板未找到', cls: 'nw-u-c-text-error' });
             return;
         }
 
-        const header = container.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;' } });
+        const header = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-flex-start-2 nw-u-marginbottom-16px-2' });
         const titleArea = header.createDiv();
-        titleArea.createEl('h3', { text: template.name, attr: { style: 'margin:0 0 4px 0;' } });
+        titleArea.createEl('h3', { text: template.name, cls: 'nw-u-m-0-0-4px-0' });
         titleArea.createEl('div', {
             text: `${PROMPT_CATEGORY_LABELS[template.category] || template.category} · v${this.promptManager.getActiveVersion(template)?.version || '?'}`,
-            attr: { style: 'font-size:13px;color:var(--text-muted);' }
+            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2'
         });
 
-        const actions = header.createDiv({ attr: { style: 'display:flex;gap:8px;' } });
+        const actions = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2' });
 
         const editBtn = actions.createEl('button', {
             text: template.isCustom ? '✏️ 编辑' : '📝 自定义',
@@ -230,7 +228,7 @@ export class PromptManagerSettings {
 
         const desc = container.createDiv({
             text: template.description,
-            attr: { style: 'padding:12px;background:var(--background-secondary);border-radius:6px;margin-bottom:16px;font-size:13px;color:var(--text-muted);' }
+            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-fs-13px-2 nw-u-c-text-muted-2'
         });
 
         this.renderVersionsList(container, template);
@@ -246,11 +244,11 @@ export class PromptManagerSettings {
     }
 
     private renderVersionsList(container: HTMLElement, template: PromptTemplate): void {
-        const section = container.createDiv({ attr: { style: 'margin-bottom:16px;' } });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
         section.createEl('h4', { text: '📋 版本历史', cls: 'nw-h4-sm' });
 
         const versionList = section.createDiv({
-            attr: { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;' }
+            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-6px-2 nw-u-marginbottom-8px-2'
         });
 
         for (const ver of template.versions) {
@@ -284,21 +282,17 @@ export class PromptManagerSettings {
     }
 
     private renderPromptPreview(container: HTMLElement, version: PromptTemplateVersion): void {
-        const section = container.createDiv({ attr: { style: 'margin-bottom:16px;' } });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
         section.createEl('h4', { text: '🔤 系统提示词', cls: 'nw-h4-sm' });
         const systemBox = section.createEl('pre', {
             text: version.systemPrompt,
-            attr: {
-                style: 'padding:12px;background:var(--background-secondary);border-radius:6px;font-size:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin:0;'
-            }
+            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-fs-12px-2 nw-u-ws-pre-wrap nw-u-maxh-200px-2 nw-u-ovy-auto-2 nw-u-m-0-2'
         });
 
-        section.createEl('h4', { text: '📝 用户提示词模板', attr: { style: 'margin:16px 0 8px 0;' } });
+        section.createEl('h4', { text: '📝 用户提示词模板', cls: 'nw-u-m-16px-0-8px-0' });
         const userBox = section.createEl('pre', {
             text: version.userPrompt,
-            attr: {
-                style: 'padding:12px;background:var(--background-secondary);border-radius:6px;font-size:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin:0;'
-            }
+            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-fs-12px-2 nw-u-ws-pre-wrap nw-u-maxh-200px-2 nw-u-ovy-auto-2 nw-u-m-0-2'
         });
     }
 
@@ -307,41 +301,39 @@ export class PromptManagerSettings {
         section.createEl('h4', { text: '🔧 可用变量', cls: 'nw-h4-sm' });
 
         const varGrid = section.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:1fr 1fr;gap:8px;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-8px-2'
         });
 
         for (const v of template.variables) {
             const item = varGrid.createDiv({
-                attr: { style: 'padding:8px 10px;background:var(--background-secondary);border-radius:4px;font-size:12px;' }
+                cls: 'nw-u-p-8px-10px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-12px-2'
             });
             item.createDiv({
                 text: `\${${v.name}}`,
-                attr: { style: 'font-family:monospace;font-weight:600;color:var(--interactive-accent);' }
+                cls: 'nw-u-fontfamily-monospace nw-u-fwt-600-2 nw-u-c-interactive-accent-2'
             });
             item.createDiv({
                 text: v.description,
-                attr: { style: 'color:var(--text-muted);margin-top:2px;font-size:11px;' }
+                cls: 'nw-u-c-text-muted-2 nw-u-margintop-2px-2 nw-u-fs-11px-2'
             });
             if (v.required) {
                 item.createEl('span', {
                     text: '必填',
-                    attr: {
-                        style: 'display:inline-block;padding:1px 4px;font-size:10px;background:var(--background-modifier-error);color:var(--text-on-accent);border-radius:3px;margin-top:4px;'
-                    }
+                    cls: 'nw-u-d-inline-block nw-u-p-1px-4px nw-u-fs-10px-2 nw-u-bg-background-modifier-er nw-u-c-text-on-accent-2 nw-u-brd-3px-2 nw-u-margintop-4px-3'
                 });
             }
         }
     }
 
     private renderABTestsTab(container: HTMLElement): void {
-        const header = container.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;' } });
-        header.createEl('h3', { text: '🧪 A/B 测试管理', attr: { style: 'margin:0;' } });
+        const header = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-marginbottom-16px-2' });
+        header.createEl('h3', { text: '🧪 A/B 测试管理', cls: 'nw-u-m-0-2' });
 
-        const enableRow = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;' } });
-        enableRow.createSpan({ text: '启用A/B测试', attr: { style: 'font-size:13px;' } });
+        const enableRow = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2' });
+        enableRow.createSpan({ text: '启用A/B测试', cls: 'nw-u-fs-13px-2' });
         const toggle = enableRow.createEl('input', {
             type: 'checkbox',
-            attr: { style: 'cursor:pointer;' }
+            cls: 'nw-u-cur-pointer-2'
         });
         toggle.checked = this.promptManager.isABTestingEnabled();
         toggle.addEventListener('change', async () => {
@@ -358,7 +350,7 @@ export class PromptManagerSettings {
                 cls: 'nw-empty-center-muted'
             });
         } else {
-            const testList = container.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:8px;' } });
+            const testList = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-8px-2' });
             for (const test of tests) {
                 this.renderTestCard(testList, test);
             }
@@ -385,11 +377,11 @@ export class PromptManagerSettings {
             this.render();
         };
 
-        const header = card.createDiv({ attr: { style: 'display:flex;justify-content:space-between;align-items:center;' } });
+        const header = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2' });
         const title = header.createDiv();
         title.createDiv({
             text: test.name,
-            attr: { style: 'font-weight:600;font-size:14px;' }
+            cls: 'nw-u-fwt-600-2 nw-u-fs-14px-2'
         });
         title.createDiv({
             text: `模板: ${test.templateId} · 流量 ${test.trafficSplit.a}/${test.trafficSplit.b}`,
@@ -430,18 +422,18 @@ export class PromptManagerSettings {
 
     private renderTestDetail(container: HTMLElement, test: ABTest): void {
         const detail = container.createDiv({
-            attr: { style: 'margin-top:12px;padding-top:12px;border-top:1px solid var(--background-modifier-border);' }
+            cls: 'nw-u-margintop-12px-2 nw-u-paddingtop-12px-2 nw-u-bt-1px-solid-background-m-2'
         });
 
         if (test.description) {
             detail.createDiv({
                 text: test.description,
-                attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:12px;' }
+                cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-12px-2'
             });
         }
 
         const statsGrid = detail.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;' }
+            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-marginbottom-12px-2'
         });
 
         this.renderVariantStats(statsGrid, 'A 版本', test.variantA, test.trafficSplit.a);
@@ -450,12 +442,12 @@ export class PromptManagerSettings {
         const stats = this.promptManager.getABTestStats(test.id);
         if (stats?.winner) {
             const winnerBox = detail.createDiv({
-                attr: { style: 'padding:10px;background:var(--background-modifier-success);color:var(--text-on-accent);border-radius:6px;text-align:center;font-weight:600;margin-bottom:12px;' }
+                cls: 'nw-u-p-10px-2 nw-u-bg-background-modifier-su nw-u-c-text-on-accent-2 nw-u-brd-6px-2 nw-u-ta-center-2 nw-u-fwt-600-2 nw-u-marginbottom-12px-2'
             });
             winnerBox.setText(`🏆 当前优胜: ${stats.winner.toUpperCase()} 版本`);
         }
 
-        const actions = detail.createDiv({ attr: { style: 'display:flex;gap:8px;flex-wrap:wrap;' } });
+        const actions = detail.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2' });
 
         if (test.status === 'draft') {
             const startBtn = actions.createEl('button', {
@@ -534,15 +526,15 @@ export class PromptManagerSettings {
 
     private renderVariantStats(container: HTMLElement, label: string, variant: { version: string; metrics: any }, traffic: number): void {
         const card = container.createDiv({
-            attr: { style: 'padding:10px;background:var(--background-secondary);border-radius:6px;' }
+            cls: 'nw-u-p-10px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
         });
         card.createDiv({
             text: `${label} (v${variant.version})`,
-            attr: { style: 'font-weight:600;font-size:13px;margin-bottom:8px;' }
+            cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2 nw-u-marginbottom-8px-2'
         });
         card.createDiv({
             text: `调用次数: ${variant.metrics.totalCalls}`,
-            attr: { style: 'font-size:12px;color:var(--text-muted);' }
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2'
         });
         if (variant.metrics.ratingCount > 0) {
             card.createDiv({
@@ -569,7 +561,7 @@ export class PromptManagerSettings {
     }
 
     private renderUsageTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📊 使用记录', attr: { style: 'margin:0 0 16px 0;' } });
+        container.createEl('h3', { text: '📊 使用记录', cls: 'nw-u-m-0-0-16px-0-2' });
 
         const history = this.promptManager.getUsageHistory(undefined, 50);
 
@@ -582,32 +574,30 @@ export class PromptManagerSettings {
         }
 
         const list = container.createDiv({
-            attr: { style: 'display:flex;flex-direction:column;gap:4px;max-height:500px;overflow-y:auto;' }
+            cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-4px-2 nw-u-maxh-500px nw-u-ovy-auto-2'
         });
 
         for (const record of history) {
             const item = list.createDiv({
-                attr: { style: 'padding:8px 12px;background:var(--background-secondary);border-radius:4px;font-size:12px;display:flex;justify-content:space-between;align-items:center;' }
+                cls: 'nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2'
             });
             const left = item.createDiv();
             left.createSpan({
                 text: record.templateId,
-                attr: { style: 'font-weight:600;margin-right:8px;' }
+                cls: 'nw-u-fwt-600-2 nw-u-marginright-8px'
             });
             left.createSpan({
                 text: `v${record.version}`,
-                attr: { style: 'color:var(--text-muted);' }
+                cls: 'nw-u-c-text-muted-2'
             });
             if (record.abTestId) {
                 left.createEl('span', {
                     text: `A/B ${record.abVariant?.toUpperCase()}`,
-                    attr: {
-                        style: 'margin-left:8px;padding:2px 6px;font-size:10px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;'
-                    }
+                    cls: 'nw-u-marginleft-8px nw-u-p-2px-6px-2 nw-u-fs-10px-2 nw-u-bg-interactive-accent-2 nw-u-c-text-on-accent-2 nw-u-brd-3px-2'
                 });
             }
 
-            const right = item.createDiv({ attr: { style: 'color:var(--text-muted);' } });
+            const right = item.createDiv({ cls: 'nw-u-c-text-muted-2' });
             right.setText(new Date(record.timestamp).toLocaleString());
             if (record.rating !== undefined) {
                 right.setText(right.textContent + ` · ⭐${record.rating}`);
@@ -616,15 +606,15 @@ export class PromptManagerSettings {
     }
 
     private renderImportExportTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📦 导入/导出', attr: { style: 'margin:0 0 16px 0;' } });
+        container.createEl('h3', { text: '📦 导入/导出', cls: 'nw-u-m-0-0-16px-0-2' });
 
         const exportSection = container.createDiv({
-            attr: { style: 'padding:16px;background:var(--background-secondary);border-radius:8px;margin-bottom:16px;' }
+            cls: 'nw-u-p-16px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2 nw-u-marginbottom-16px-2'
         });
         exportSection.createEl('h4', { text: '📤 导出配置', cls: 'nw-h4-sm' });
         exportSection.createDiv({
             text: '导出所有自定义提示词模板和A/B测试配置',
-            attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:12px;' }
+            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-12px-2'
         });
         const exportBtn = exportSection.createEl('button', {
             text: '📥 导出 JSON',
@@ -636,12 +626,12 @@ export class PromptManagerSettings {
         exportBtn.onclick = () => { void this.exportConfig(); };
 
         const importSection = container.createDiv({
-            attr: { style: 'padding:16px;background:var(--background-secondary);border-radius:8px;' }
+            cls: 'nw-u-p-16px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2'
         });
         importSection.createEl('h4', { text: '📥 导入配置', cls: 'nw-h4-sm' });
         importSection.createDiv({
             text: '从 JSON 文件导入提示词配置（将覆盖现有自定义配置）',
-            attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:12px;' }
+            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-12px-2'
         });
 
         const input = importSection.createEl('input', {
@@ -809,18 +799,14 @@ export class PromptManagerSettings {
 
         content.createEl('h4', { text: '系统提示词' });
         const sysTextarea = content.createEl('textarea', {
-            attr: {
-                style: 'width:100%;min-height:150px;padding:8px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);font-family:monospace;font-size:12px;resize:vertical;',
-            }
+            cls: 'nw-u-w-100-2 nw-u-minh-150px nw-u-p-8px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-fontfamily-monospace nw-u-fs-12px-2 nw-u-resize-vertical'
         });
         sysTextarea.value = systemPrompt;
         sysTextarea.addEventListener('input', () => systemPrompt = sysTextarea.value);
 
         content.createEl('h4', { text: '用户提示词模板' });
         const userTextarea = content.createEl('textarea', {
-            attr: {
-                style: 'width:100%;min-height:150px;padding:8px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);font-family:monospace;font-size:12px;resize:vertical;',
-            }
+            cls: 'nw-u-w-100-2 nw-u-minh-150px nw-u-p-8px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-fontfamily-monospace nw-u-fs-12px-2 nw-u-resize-vertical'
         });
         userTextarea.value = userPrompt;
         userTextarea.addEventListener('input', () => userPrompt = userTextarea.value);
@@ -1097,7 +1083,7 @@ export class PromptManagerSettings {
         const content = modal.contentEl;
         content.createDiv({
             text: '选择优胜版本，该版本将设为提示词的活跃版本。',
-            attr: { style: 'margin-bottom:16px;color:var(--text-muted);' }
+            cls: 'nw-u-marginbottom-16px-2 nw-u-c-text-muted-2'
         });
 
         const stats = this.promptManager.getABTestStats(test.id);
@@ -1105,7 +1091,7 @@ export class PromptManagerSettings {
         if (stats?.winner && stats.winner !== 'tie') {
             content.createDiv({
                 text: `🏆 推荐优胜: ${stats.winner.toUpperCase()} 版本`,
-                attr: { style: 'padding:10px;background:var(--background-modifier-success);color:var(--text-on-accent);border-radius:6px;text-align:center;font-weight:600;margin-bottom:16px;' }
+                cls: 'nw-u-p-10px-2 nw-u-bg-background-modifier-su nw-u-c-text-on-accent-2 nw-u-brd-6px-2 nw-u-ta-center-2 nw-u-fwt-600-2 nw-u-marginbottom-16px-2'
             });
         }
 

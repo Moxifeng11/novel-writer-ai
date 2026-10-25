@@ -632,30 +632,28 @@ export class KnowledgeBaseView extends ItemView {
         containerEl.addClass('nw-kb-view');
 
         this.mainLayout = containerEl.createDiv({
-            cls: 'nw-kb-main-layout',
-            attr: { style: 'display:flex;height:100%;width:100%;' }
+            cls: "nw-kb-main-layout nw-u-d-flex nw-u-h-100 nw-u-w-100",
+            attr: {}
         });
 
         this.leftSidebar = this.mainLayout.createDiv({
-            cls: 'nw-kb-left-sidebar',
-            attr: { style: 'width:200px;min-width:160px;max-width:280px;border-right:1px solid var(--background-modifier-border);display:flex;flex-direction:column;background:var(--background-secondary);' }
+            cls: "nw-kb-left-sidebar nw-u-w-200px nw-u-minw-160px nw-u-maxw-280px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column nw-u-bg-background-secondary",
+            attr: {}
         });
 
         this.rightPanel = this.mainLayout.createDiv({
-            cls: 'nw-kb-right-panel',
-            attr: { style: 'flex:1;display:flex;flex-direction:column;overflow:hidden;' }
+            cls: "nw-kb-right-panel nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-ov-hidden",
+            attr: {}
         });
 
         this.rightContentEl = this.rightPanel.createDiv({
-            cls: 'nw-kb-right-content',
-            attr: { style: 'flex:1;overflow-y:auto;display:flex;flex-direction:column;min-height:0;' }
+            cls: "nw-kb-right-content nw-u-flex-1 nw-u-ovy-auto nw-u-d-flex nw-u-fd-column nw-u-minh-0",
+            attr: {}
         });
 
         this.monitorBarEl = this.rightPanel.createDiv({
-            cls: 'nw-kb-monitor-bar',
-            attr: {
-                style: 'height:48px;border-top:1px solid var(--background-modifier-border);background:var(--background-secondary);display:flex;align-items:center;padding:0 16px;gap:16px;flex-shrink:0;font-size:12px;'
-            }
+            cls: "nw-kb-monitor-bar nw-u-h-48px nw-u-bt-1px-solid-background-m nw-u-bg-background-secondary nw-u-d-flex nw-u-ai-center nw-u-p-0-16px nw-u-gap-16px nw-u-fsh-0 nw-u-fs-12px",
+            attr: {}
         });
     }
 
@@ -663,17 +661,17 @@ export class KnowledgeBaseView extends ItemView {
         this.leftSidebar.empty();
 
         const header = this.leftSidebar.createDiv({
-            cls: 'nw-kb-sidebar-header',
-            attr: { style: 'padding:16px 12px;border-bottom:1px solid var(--background-modifier-border);' }
+            cls: "nw-kb-sidebar-header nw-u-p-16px-12px nw-u-bb-1px-solid-background-m",
+            attr: {}
         });
         header.createEl('h2', {
             text: '📚 知识库管理',
-            attr: { style: 'margin:0;font-size:16px;' }
+            cls: 'nw-u-m-0 nw-u-fs-16px'
         });
 
         // 界面流转：直达工作台 / 协同写作 / 指纹库
         const navBtnStyle = 'padding:4px 10px;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:4px;cursor:pointer;background:var(--background-primary);color:var(--text-muted);';
-        const navRow = header.createDiv({ attr: { style: 'display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;' } });
+        const navRow = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-margintop-8px nw-u-fwr-wrap' });
         const backBtn = navRow.createEl('button', { text: '← 工作台', attr: { style: navBtnStyle, title: '返回完整写作工作台' } });
         backBtn.addEventListener('click', () => void this.plugin.openFullWriterView());
         const coBtn = navRow.createEl('button', { text: '✍️ 协同写作', attr: { style: navBtnStyle, title: '打开句级协同写作工作台' } });
@@ -682,8 +680,8 @@ export class KnowledgeBaseView extends ItemView {
         fpBtn.addEventListener('click', () => this.plugin.executeCommand('novel-writer-fingerprint-library'));
 
         const nav = this.leftSidebar.createDiv({
-            cls: 'nw-kb-sidebar-nav',
-            attr: { style: 'flex:1;padding:8px 0;' }
+            cls: "nw-kb-sidebar-nav nw-u-flex-1 nw-u-p-8px-0",
+            attr: {}
         });
 
         MAIN_TABS.forEach(tab => {
@@ -697,7 +695,7 @@ export class KnowledgeBaseView extends ItemView {
                     };font-weight:${this.activeMainTab === tab.key ? '500' : '400'};`
                 }
             });
-            item.createSpan({ text: tab.icon, attr: { style: 'font-size:16px;' } });
+            item.createSpan({ text: tab.icon, cls: 'nw-u-fs-16px' });
             item.createSpan({ text: tab.label });
 
             item.addEventListener('click', () => {
@@ -708,7 +706,7 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const footer = this.leftSidebar.createDiv({
-            cls: 'nw-kb-sidebar-footer nw-text-muted-11', attr: { style: 'padding:12px;border-top:1px solid var(--background-modifier-border);' }
+            cls: "nw-kb-sidebar-footer nw-text-muted-11 nw-u-p-12px nw-u-bt-1px-solid-background-m", attr: {}
         });
         footer.createSpan({ text: `共 ${this.allBooks.length} 本书籍` });
     }
@@ -737,23 +735,23 @@ export class KnowledgeBaseView extends ItemView {
     // ============== Tab 1: 参考书籍 ==============
     private renderBooksTab(): void {
         const content = this.rightContentEl.createDiv({
-            cls: 'nw-kb-books-tab',
-            attr: { style: 'display:flex;height:100%;' }
+            cls: "nw-kb-books-tab nw-u-d-flex nw-u-h-100",
+            attr: {}
         });
 
         const genrePanel = content.createDiv({
-            cls: 'nw-kb-genre-panel',
-            attr: { style: 'width:220px;min-width:180px;border-right:1px solid var(--background-modifier-border);display:flex;flex-direction:column;' }
+            cls: "nw-kb-genre-panel nw-u-w-220px nw-u-minw-180px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column",
+            attr: {}
         });
 
         const genreHeader = genrePanel.createDiv({
             cls: 'nw-kb-genre-header nw-section-header'
         });
-        genreHeader.createEl('h3', { text: '题材分类', attr: { style: 'margin:0;font-size:14px;' } });
+        genreHeader.createEl('h3', { text: '题材分类', cls: 'nw-u-m-0 nw-u-fs-14px' });
 
         const channelTabs = genrePanel.createDiv({
-            cls: 'nw-kb-channel-tabs',
-            attr: { style: 'display:flex;border-bottom:1px solid var(--background-modifier-border);' }
+            cls: "nw-kb-channel-tabs nw-u-d-flex nw-u-bb-1px-solid-background-m",
+            attr: {}
         });
 
         const channels: { id: ConfigCategoryKey | 'all'; name: string }[] = [
@@ -782,15 +780,15 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const genreList = genrePanel.createDiv({
-            cls: 'nw-kb-genre-list',
-            attr: { style: 'flex:1;overflow-y:auto;padding:4px 0;' }
+            cls: "nw-kb-genre-list nw-u-flex-1 nw-u-ovy-auto nw-u-p-4px-0",
+            attr: {}
         });
 
         this.renderGenreList(genreList);
 
         const booksPanel = content.createDiv({
-            cls: 'nw-kb-books-panel',
-            attr: { style: 'flex:1;display:flex;flex-direction:column;min-width:0;' }
+            cls: "nw-kb-books-panel nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-minw-0",
+            attr: {}
         });
 
         this.renderBooksToolbar(booksPanel);
@@ -832,7 +830,7 @@ export class KnowledgeBaseView extends ItemView {
         container.appendChild(uncategorizedItem);
 
         const divider = container.createDiv({
-            attr: { style: 'height:1px;background:var(--background-modifier-border);margin:4px 8px;' }
+            cls: 'nw-u-h-1px nw-u-bg-background-modifier-bo nw-u-m-4px-8px'
         });
         void divider;
 
@@ -860,8 +858,8 @@ export class KnowledgeBaseView extends ItemView {
             }
         });
 
-        const left = item.createDiv({ cls: 'nw-flex-row-sm', attr: { style: 'min-width:0;flex:1;' } });
-        left.createSpan({ text: opts.icon, cls: 'nw-flex-shrink-0', attr: { style: 'font-size:12px;' } });
+        const left = item.createDiv({ cls: "nw-flex-row-sm nw-u-minw-0 nw-u-flex-1", attr: {} });
+        left.createSpan({ text: opts.icon, cls: "nw-flex-shrink-0 nw-u-fs-12px", attr: {} });
         left.createSpan({ text: opts.name, cls: 'nw-ellipsis' });
 
         item.createSpan({
@@ -886,12 +884,12 @@ export class KnowledgeBaseView extends ItemView {
             }
         });
 
-        const left = header.createDiv({ cls: 'nw-flex-row-sm', attr: { style: 'min-width:0;flex:1;' } });
+        const left = header.createDiv({ cls: "nw-flex-row-sm nw-u-minw-0 nw-u-flex-1", attr: {} });
         const toggle = left.createSpan({
             text: isExpanded ? '▼' : '▶',
-            cls: 'nw-flex-shrink-0', attr: { style: 'font-size:9px;width:12px;color:var(--text-muted);' }
+            cls: "nw-flex-shrink-0 nw-u-fs-9px nw-u-w-12px nw-u-c-text-muted", attr: {}
         });
-        left.createSpan({ text: '📂', cls: 'nw-flex-shrink-0', attr: { style: 'font-size:12px;' } });
+        left.createSpan({ text: '📂', cls: "nw-flex-shrink-0 nw-u-fs-12px", attr: {} });
         left.createSpan({ text: genre.name, cls: 'nw-ellipsis' });
 
         header.createSpan({
@@ -989,12 +987,12 @@ export class KnowledgeBaseView extends ItemView {
 
     private renderBooksToolbar(container: HTMLElement): void {
         const toolbar = container.createDiv({
-            cls: 'nw-kb-toolbar nw-section-header',
-            attr: { style: 'display:flex;flex-direction:column;gap:8px;' }
+            cls: "nw-kb-toolbar nw-section-header nw-u-d-flex nw-u-fd-column nw-u-gap-8px",
+            attr: {}
         });
 
         const topRow = toolbar.createDiv({
-            attr: { style: 'display:flex;gap:8px;align-items:center;' }
+            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-ai-center'
         });
 
         const searchInput = topRow.createEl('input', {
@@ -1035,14 +1033,14 @@ export class KnowledgeBaseView extends ItemView {
         batchBtn.addEventListener('click', () => this.handleBatchOperations());
 
         const filterRow = toolbar.createDiv({
-            attr: { style: 'display:flex;gap:12px;align-items:center;flex-wrap:wrap;' }
+            cls: 'nw-u-d-flex nw-u-gap-12px nw-u-ai-center nw-u-fwr-wrap'
         });
 
-        const statusWrap = filterRow.createDiv({ attr: { style: 'display:flex;align-items:center;gap:4px;' } });
+        const statusWrap = filterRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
         statusWrap.createSpan({ text: '状态：', cls: 'nw-text-sm-muted' });
         const statusSelect = statusWrap.createEl('select', {
-            cls: 'nw-kb-select',
-            attr: { style: 'padding:4px 8px;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);' }
+            cls: "nw-kb-select nw-u-p-4px-8px nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal",
+            attr: {}
         });
         const statusOptions: { value: BreakdownStatus | 'all'; label: string }[] = [
             { value: 'all', label: '全部' },
@@ -1061,11 +1059,11 @@ export class KnowledgeBaseView extends ItemView {
             this.renderBookListOnly();
         });
 
-        const sortWrap = filterRow.createDiv({ attr: { style: 'display:flex;align-items:center;gap:4px;' } });
+        const sortWrap = filterRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
         sortWrap.createSpan({ text: '排序：', cls: 'nw-text-sm-muted' });
         const sortSelect = sortWrap.createEl('select', {
-            cls: 'nw-kb-select',
-            attr: { style: 'padding:4px 8px;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);' }
+            cls: "nw-kb-select nw-u-p-4px-8px nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal",
+            attr: {}
         });
         const sortOptions: { value: string; label: string }[] = [
             { value: 'createdAt_desc', label: '添加时间 ↓' },
@@ -1092,14 +1090,14 @@ export class KnowledgeBaseView extends ItemView {
 
     private renderBooksListContent(container: HTMLElement): void {
         const listContainer = container.createDiv({
-            cls: 'nw-kb-book-list-container',
-            attr: { style: 'flex:1;overflow-y:auto;padding:12px;' }
+            cls: "nw-kb-book-list-container nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px",
+            attr: {}
         });
 
         const books = this.getFilteredBooks();
 
         const header = listContainer.createDiv({
-            attr: { style: 'margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;' }
+            cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between'
         });
         header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-text-sm-muted' });
 
@@ -1109,8 +1107,8 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const grid = listContainer.createDiv({
-            cls: 'nw-kb-book-grid',
-            attr: { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;' }
+            cls: "nw-kb-book-grid nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-3 nw-u-gap-12px",
+            attr: {}
         });
 
         books.forEach(book => {
@@ -1138,7 +1136,7 @@ export class KnowledgeBaseView extends ItemView {
         const books = this.getFilteredBooks();
 
         const header = containerEl.createDiv({
-            attr: { style: 'margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;' }
+            cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between'
         });
         header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-text-sm-muted' });
 
@@ -1149,8 +1147,8 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const grid = containerEl.createDiv({
-            cls: 'nw-kb-book-grid',
-            attr: { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;' }
+            cls: "nw-kb-book-grid nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-3 nw-u-gap-12px",
+            attr: {}
         });
 
         books.forEach(book => {
@@ -1246,10 +1244,10 @@ export class KnowledgeBaseView extends ItemView {
             }
         });
 
-        const header = card.createDiv({ attr: { style: 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px;' } });
+        const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
         const title = header.createDiv({
             text: book.name,
-            attr: { style: 'font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4;flex:1;' }
+            cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-d-webkit-box nw-u-webkitlineclamp-2 nw-u-webkitboxorient-vertical nw-u-lh-1-4 nw-u-flex-1'
         });
         void title;
 
@@ -1274,19 +1272,19 @@ export class KnowledgeBaseView extends ItemView {
                 text: '⚠️ 向量化失败',
                 attr: {
                     title: book.vectorError || '检索不可用，请到详情页重试向量化',
-                    style: 'padding:2px 8px;font-size:11px;border-radius:10px;background:rgba(231,76,60,0.15);color:#e74c3c;flex-shrink:0;margin-left:4px;'
+                    style: 'padding:2px 8px;font-size:11px;border-radius:10px;background:var(--nw-danger-soft-bg);color:var(--nw-danger-soft);flex-shrink:0;margin-left:4px;'
                 }
             });
         }
 
-        const meta = card.createDiv({ cls: 'nw-text-sm-muted', attr: { style: 'margin-bottom:8px;' } });
+        const meta = card.createDiv({ cls: "nw-text-sm-muted nw-u-marginbottom-8px", attr: {} });
         meta.createSpan({ text: book.author || '未知作者' });
         meta.createSpan({ text: ' · ' + this.formatWordCount(book.wordCount) });
 
         if (book.breakdownStatus === 'processing' && book.breakdownProgress !== undefined) {
-            const progressWrap = card.createDiv({ attr: { style: 'margin-bottom:8px;' } });
+            const progressWrap = card.createDiv({ cls: 'nw-u-marginbottom-8px' });
             const bar = progressWrap.createDiv({
-                attr: { style: 'height:4px;background:var(--background-secondary);border-radius:2px;overflow:hidden;' }
+                cls: 'nw-u-h-4px nw-u-bg-background-secondary nw-u-brd-2px nw-u-ov-hidden'
             });
             bar.createDiv({
                 attr: { style: `height:100%;width:${book.breakdownProgress}%;background:var(--interactive-accent);transition:width 0.3s;` }
@@ -1297,31 +1295,31 @@ export class KnowledgeBaseView extends ItemView {
             });
         }
 
-        const tags = card.createDiv({ cls: 'nw-flex-wrap-sm', attr: { style: 'margin-bottom:8px;' } });
+        const tags = card.createDiv({ cls: "nw-flex-wrap-sm nw-u-marginbottom-8px", attr: {} });
         if (book.primaryGenre && this.kb) {
             const genre = this.kb.getGenre(book.primaryGenre);
             if (genre) {
                 tags.createSpan({
                     text: genre.name,
-                    attr: { style: 'padding:2px 6px;font-size:10px;background:var(--background-secondary);color:var(--text-muted);border-radius:8px;' }
+                    cls: 'nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
                 });
             }
         }
         book.customTags.slice(0, 2).forEach(tag => {
             tags.createSpan({
                 text: tag,
-                attr: { style: 'padding:2px 6px;font-size:10px;background:var(--background-secondary);color:var(--text-muted);border-radius:8px;' }
+                cls: 'nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
             });
         });
 
         const footer = card.createDiv({
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--background-modifier-border);' }
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-paddingtop-8px nw-u-bt-1px-solid-background-m'
         });
 
         if (book.qualityScores) {
             const quality = footer.createSpan({
                 text: `⭐ ${book.qualityScores.overall.toFixed(0)}分`,
-                attr: { style: 'font-size:12px;color:#f59e0b;font-weight:500;' }
+                cls: 'nw-u-fs-12px nw-u-c-f59e0b nw-u-fwt-500'
             });
             void quality;
         } else {
@@ -1355,35 +1353,35 @@ export class KnowledgeBaseView extends ItemView {
         this.renderBooksToolbar(booksPanel as HTMLElement);
 
         const detailContainer = (booksPanel as HTMLElement).createDiv({
-            cls: 'nw-kb-detail-container',
-            attr: { style: 'flex:1;overflow-y:auto;' }
+            cls: "nw-kb-detail-container nw-u-flex-1 nw-u-ovy-auto",
+            attr: {}
         });
 
         const backBtn = detailContainer.createEl('button', {
             text: '← 返回列表',
-            cls: 'nw-btn nw-btn-ghost nw-btn-sm',
-            attr: { style: 'margin-bottom:12px;' }
+            cls: "nw-btn nw-btn-ghost nw-btn-sm nw-u-marginbottom-12px",
+            attr: {}
         });
         backBtn.addEventListener('click', () => this.closeBookDetail());
 
         const titleRow = detailContainer.createDiv({
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;' }
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-16px nw-u-fwr-wrap nw-u-gap-12px'
         });
-        titleRow.createEl('h2', { text: book.name, attr: { style: 'margin:0;font-size:20px;' } });
+        titleRow.createEl('h2', { text: book.name, cls: 'nw-u-m-0 nw-u-fs-20px' });
 
         const actions = titleRow.createDiv({
-            cls: 'nw-kb-detail-actions',
-            attr: { style: 'display:flex;gap:8px;flex-wrap:wrap;' }
+            cls: "nw-kb-detail-actions nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap",
+            attr: {}
         });
         this.renderDetailActionButtons(book, actions);
 
         const tabsWrapper = detailContainer.createDiv({
-            cls: 'nw-kb-detail-tabs-wrapper',
-            attr: { style: 'overflow-x:auto;overflow-y:hidden;border-bottom:1px solid var(--background-modifier-border);margin-bottom:16px;-webkit-overflow-scrolling:touch;' }
+            cls: "nw-kb-detail-tabs-wrapper nw-u-ovx-auto nw-u-ovy-hidden nw-u-bb-1px-solid-background-m nw-u-marginbottom-16px nw-u-webkitoverflowscrolling-touch",
+            attr: {}
         });
         const tabs = tabsWrapper.createDiv({
-            cls: 'nw-kb-detail-tabs',
-            attr: { style: 'display:flex;gap:0;min-width:fit-content;' }
+            cls: "nw-kb-detail-tabs nw-u-d-flex nw-u-gap-0 nw-u-minw-fit-content",
+            attr: {}
         });
         const tabKeys: BookDetailTabKey[] = ['overview', 'style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow', 'commercial', 'readability', 'tags'];
         tabKeys.forEach(key => {
@@ -1404,13 +1402,13 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const tabContent = detailContainer.createDiv({
-            cls: 'nw-kb-detail-tab-content',
-            attr: { style: 'padding-bottom:24px;' }
+            cls: "nw-kb-detail-tab-content nw-u-paddingbottom-24px",
+            attr: {}
         });
 
         const loadingEl = tabContent.createDiv({
             text: '加载中...',
-            attr: { style: 'text-align:center;padding:40px;color:var(--text-muted);font-size:14px;' }
+            cls: 'nw-u-ta-center nw-u-p-40px nw-u-c-text-muted nw-u-fs-14px'
         });
         void loadingEl;
 
@@ -1636,19 +1634,19 @@ export class KnowledgeBaseView extends ItemView {
     // ============== Tab 2: 知识参考库配置 ==============
     private renderConfigTab(): void {
         const content = this.rightContentEl.createDiv({
-            cls: 'nw-kb-config-tab',
-            attr: { style: 'display:flex;height:100%;' }
+            cls: "nw-kb-config-tab nw-u-d-flex nw-u-h-100",
+            attr: {}
         });
 
         const categoryPanel = content.createDiv({
-            cls: 'nw-kb-config-category-panel',
-            attr: { style: 'width:160px;border-right:1px solid var(--background-modifier-border);display:flex;flex-direction:column;' }
+            cls: "nw-kb-config-category-panel nw-u-w-160px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column",
+            attr: {}
         });
 
         const categoryHeader = categoryPanel.createDiv({
             cls: 'nw-section-header'
         });
-        categoryHeader.createEl('h3', { text: '频道分类', attr: { style: 'margin:0;font-size:14px;' } });
+        categoryHeader.createEl('h3', { text: '频道分类', cls: 'nw-u-m-0 nw-u-fs-14px' });
 
         const categories: { key: ConfigCategoryKey; label: string; icon: string }[] = [
             { key: 'male', label: '男频', icon: '♂️' },
@@ -1676,16 +1674,16 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const mainContent = content.createDiv({
-            cls: 'nw-kb-config-main',
-            attr: { style: 'flex:1;display:flex;flex-direction:column;min-width:0;' }
+            cls: "nw-kb-config-main nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-minw-0",
+            attr: {}
         });
 
         const toolbar = mainContent.createDiv({
-            cls: 'nw-section-header', attr: { style: 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' }
+            cls: "nw-section-header nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-gap-12px nw-u-fwr-wrap", attr: {}
         });
-        toolbar.createEl('h3', { text: `${this.getChannelLabel(this.configCategory)}题材配置`, attr: { style: 'margin:0;font-size:15px;' } });
+        toolbar.createEl('h3', { text: `${this.getChannelLabel(this.configCategory)}题材配置`, cls: 'nw-u-m-0 nw-u-fs-15px' });
 
-        const actions = toolbar.createDiv({ attr: { style: 'display:flex;gap:8px;flex-wrap:wrap;' } });
+        const actions = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
         const addGenreBtn = actions.createEl('button', {
             text: '➕ 新增题材',
             cls: 'nw-btn nw-btn-primary nw-btn-sm'
@@ -1712,21 +1710,21 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const configContent = mainContent.createDiv({
-            cls: 'nw-kb-config-content',
-            attr: { style: 'flex:1;overflow-y:auto;padding:16px;' }
+            cls: "nw-kb-config-content nw-u-flex-1 nw-u-ovy-auto nw-u-p-16px",
+            attr: {}
         });
 
         const genres = this.kb?.getGenresByCategory(this.configCategory) || [];
 
         if (genres.length === 0) {
             configContent.createDiv({
-                attr: { style: 'text-align:center;padding:60px;color:var(--text-muted);' }
+                cls: 'nw-u-ta-center nw-u-p-60px nw-u-c-text-muted'
             }).createSpan({ text: '暂无题材配置' });
             return;
         }
 
         const grid = configContent.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;' }
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-2 nw-u-gap-12px'
         });
 
         genres.forEach(genre => {
@@ -1747,22 +1745,22 @@ export class KnowledgeBaseView extends ItemView {
                 }
             });
 
-            const header = card.createDiv({ attr: { style: 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px;' } });
-            const titleWrap = header.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
-            const titleRow = titleWrap.createDiv({ attr: { style: 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;' } });
-            titleRow.createDiv({ text: genre.name, attr: { style: 'font-size:15px;font-weight:600;' } });
+            const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
+            const titleWrap = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
+            const titleRow = titleWrap.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-fwr-wrap' });
+            titleRow.createDiv({ text: genre.name, cls: 'nw-u-fs-15px nw-u-fwt-600' });
             if (isCustom) {
                 titleRow.createSpan({
                     text: '自定义',
-                    attr: { style: 'padding:1px 6px;font-size:10px;background:rgba(46,204,113,0.15);color:#2ecc71;border-radius:8px;flex-shrink:0;' }
+                    cls: 'nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-rgba-46-204-113-0-15 nw-u-c-2ecc71 nw-u-brd-8px nw-u-fsh-0'
                 });
             }
 
-            const actions = header.createDiv({ attr: { style: 'display:flex;gap:4px;flex-shrink:0;' } });
+            const actions = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-fsh-0' });
             if (isCustom) {
                 const deleteIcon = actions.createSpan({
                     text: '🗑️',
-                    attr: { style: 'font-size:14px;color:var(--text-muted);cursor:pointer;padding:2px;' }
+                    cls: 'nw-u-fs-14px nw-u-c-text-muted nw-u-cur-pointer nw-u-p-2px'
                 });
                 deleteIcon.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1774,10 +1772,10 @@ export class KnowledgeBaseView extends ItemView {
 
             card.createDiv({
                 text: genre.description,
-                cls: 'nw-text-sm-muted', attr: { style: 'line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;' }
+                cls: "nw-text-sm-muted nw-u-lh-1-5 nw-u-marginbottom-12px nw-u-d-webkit-box nw-u-webkitlineclamp-2 nw-u-webkitboxorient-vertical nw-u-ov-hidden", attr: {}
             });
 
-            const stats = card.createDiv({ attr: { style: 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;' } });
+            const stats = card.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-repeat-3-1fr nw-u-gap-8px' });
             const statItems = [
                 { label: '性格标签', value: genre.personalityTags.length },
                 { label: '能力类型', value: genre.abilityTypes.length },
@@ -1785,26 +1783,26 @@ export class KnowledgeBaseView extends ItemView {
             ];
             statItems.forEach(s => {
                 const statItem = stats.createDiv({
-                    attr: { style: 'text-align:center;padding:8px;background:var(--background-secondary);border-radius:6px;' }
+                    cls: 'nw-u-ta-center nw-u-p-8px nw-u-bg-background-secondary nw-u-brd-6px'
                 });
-                statItem.createDiv({ text: s.value.toString(), attr: { style: 'font-size:16px;font-weight:600;color:var(--interactive-accent);' } });
-                statItem.createDiv({ text: s.label, attr: { style: 'font-size:10px;color:var(--text-muted);margin-top:2px;' } });
+                statItem.createDiv({ text: s.value.toString(), cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-interactive-accent' });
+                statItem.createDiv({ text: s.label, cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-margintop-2px' });
             });
 
             if (genre.subGenres && genre.subGenres.length > 0) {
-                const subSection = card.createDiv({ attr: { style: 'margin-top:12px;padding-top:12px;border-top:1px solid var(--background-modifier-border);' } });
-                subSection.createDiv({ text: `细分题材 (${genre.subGenres.length})`, cls: 'nw-text-sm-muted', attr: { style: 'margin-bottom:6px;' } });
+                const subSection = card.createDiv({ cls: 'nw-u-margintop-12px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m' });
+                subSection.createDiv({ text: `细分题材 (${genre.subGenres.length})`, cls: "nw-text-sm-muted nw-u-marginbottom-6px", attr: {} });
                 const subTags = subSection.createDiv({ cls: 'nw-flex-wrap-sm' });
                 genre.subGenres.slice(0, 5).forEach(sub => {
                     subTags.createSpan({
                         text: sub.name,
-                        attr: { style: 'padding:2px 8px;font-size:11px;background:var(--background-secondary);border-radius:10px;color:var(--text-muted);' }
+                        cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-brd-10px nw-u-c-text-muted'
                     });
                 });
                 if (genre.subGenres.length > 5) {
                     subTags.createSpan({
                         text: `+${genre.subGenres.length - 5}`,
-                        cls: 'nw-text-muted-11', attr: { style: 'padding:2px 8px;' }
+                        cls: "nw-text-muted-11 nw-u-p-2px-8px", attr: {}
                     });
                 }
             }
@@ -1982,10 +1980,10 @@ export class KnowledgeBaseView extends ItemView {
             contentEl.createEl('h3', { text: '⚠️ 发现重复题材', cls: 'nw-modal-title' });
             contentEl.createDiv({
                 text: `检测到 ${conflictCount} 个题材ID已存在，请选择处理方式：`,
-                attr: { style: 'margin-bottom:16px;font-size:13px;color:var(--text-muted);' }
+                cls: 'nw-u-marginbottom-16px nw-u-fs-13px nw-u-c-text-muted'
             });
 
-            const btnContainer = contentEl.createDiv({ attr: { style: 'display:flex;flex-direction:column;gap:8px;' } });
+            const btnContainer = contentEl.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
 
             const overwriteBtn = btnContainer.createEl('button', {
                 text: '覆盖现有题材',
@@ -2124,20 +2122,20 @@ export class KnowledgeBaseView extends ItemView {
     // ============== Tab 3: 拆解任务 ==============
     private renderTasksTab(): void {
         const content = this.rightContentEl.createDiv({
-            cls: 'nw-kb-tasks-tab',
-            attr: { style: 'padding:16px;overflow-y:auto;height:100%;' }
+            cls: "nw-kb-tasks-tab nw-u-p-16px nw-u-ovy-auto nw-u-h-100",
+            attr: {}
         });
 
         const header = content.createDiv({
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;' }
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-16px nw-u-fwr-wrap nw-u-gap-12px'
         });
-        header.createEl('h2', { text: '拆解任务监控', attr: { style: 'margin:0;font-size:18px;' } });
+        header.createEl('h2', { text: '拆解任务监控', cls: 'nw-u-m-0 nw-u-fs-18px' });
 
-        const filterBar = header.createDiv({ attr: { style: 'display:flex;gap:8px;align-items:center;' } });
+        const filterBar = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-ai-center' });
         filterBar.createSpan({ text: '状态筛选：', cls: 'nw-text-sm-muted' });
         const statusSelect = filterBar.createEl('select', {
-            cls: 'nw-kb-select',
-            attr: { style: 'padding:4px 8px;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);' }
+            cls: "nw-kb-select nw-u-p-4px-8px nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal",
+            attr: {}
         });
         type TaskFilterType = 'all' | 'running' | 'pending' | 'completed' | 'failed' | 'cancelled';
         const filterOptions: { value: TaskFilterType; label: string }[] = [
@@ -2192,7 +2190,7 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const statsRow = content.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px;' }
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-6-1fr nw-u-gap-8px nw-u-marginbottom-16px'
         });
         const allTasks = tasks;
         const statItems = [
@@ -2205,17 +2203,17 @@ export class KnowledgeBaseView extends ItemView {
         ];
         statItems.forEach(item => {
             const card = statsRow.createDiv({
-                attr: { style: 'padding:12px 8px;background:var(--background-secondary);border-radius:6px;text-align:center;' }
+                cls: 'nw-u-p-12px-8px nw-u-bg-background-secondary nw-u-brd-6px nw-u-ta-center'
             });
             card.createDiv({ text: item.value.toString(), attr: { style: `font-size:20px;font-weight:700;color:${item.color};margin-bottom:2px;` } });
-            card.createDiv({ text: item.label, cls: 'nw-text-sm-muted', attr: { style: 'font-size:11px;' } });
+            card.createDiv({ text: item.label, cls: "nw-text-sm-muted nw-u-fs-11px", attr: {} });
         });
 
         const toolbar = content.createDiv({
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:10px 12px;background:var(--background-secondary);border-radius:6px;flex-wrap:wrap;gap:8px;' }
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-12px nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fwr-wrap nw-u-gap-8px'
         });
 
-        const leftTools = toolbar.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;' } });
+        const leftTools = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-fwr-wrap' });
 
         const selectAllBtn = leftTools.createEl('button', {
             text: '☑️ 全选',
@@ -2249,12 +2247,12 @@ export class KnowledgeBaseView extends ItemView {
 
         const selectedCount = leftTools.createSpan({
             text: `已选 ${this.selectedTaskIds.size} / ${filteredTasks.length} 项`,
-            cls: 'nw-text-sm-muted',
-            attr: { style: 'margin-left:4px;' }
+            cls: "nw-text-sm-muted nw-u-marginleft-4px",
+            attr: {}
         });
         void selectedCount;
 
-        const rightTools = toolbar.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;' } });
+        const rightTools = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-fwr-wrap' });
 
         const cancellableSelected = filteredTasks.filter(t =>
             this.selectedTaskIds.has(t.id) && (t.status === 'running' || t.status === 'pending')
@@ -2306,7 +2304,7 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const taskList = content.createDiv({
-            attr: { style: 'display:flex;flex-direction:column;gap:8px;' }
+            cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px'
         });
 
         filteredTasks.forEach(task => {
@@ -2318,14 +2316,14 @@ export class KnowledgeBaseView extends ItemView {
             });
 
             const headerRow = card.createDiv({
-                attr: { style: 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;' }
+                cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-12px nw-u-fwr-wrap nw-u-gap-8px'
             });
 
-            const titleLeft = headerRow.createDiv({ attr: { style: 'display:flex;align-items:center;gap:10px;flex:1;min-width:0;' } });
+            const titleLeft = headerRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-flex-1 nw-u-minw-0' });
 
             const checkbox = titleLeft.createEl('input', {
                 type: 'checkbox',
-                attr: { style: 'width:16px;height:16px;cursor:pointer;flex-shrink:0;' }
+                cls: 'nw-u-w-16px nw-u-h-16px nw-u-cur-pointer nw-u-fsh-0'
             });
             checkbox.checked = isSelected;
             checkbox.addEventListener('click', (e) => {
@@ -2340,14 +2338,14 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderRightPanel();
             });
 
-            const titleInfo = titleLeft.createDiv({ attr: { style: 'display:flex;align-items:center;gap:10px;flex:1;min-width:0;' } });
+            const titleInfo = titleLeft.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-flex-1 nw-u-minw-0' });
             titleInfo.createSpan({
                 text: '📖',
-                attr: { style: 'font-size:20px;flex-shrink:0;' }
+                cls: 'nw-u-fs-20px nw-u-fsh-0'
             });
             titleInfo.createDiv({
                 text: task.bookName,
-                attr: { style: 'font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' }
+                cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
             });
 
             const statusBadge = headerRow.createSpan({
@@ -2365,7 +2363,7 @@ export class KnowledgeBaseView extends ItemView {
             void statusBadge;
 
             const infoRow = card.createDiv({
-                cls: 'nw-text-sm-muted', attr: { style: 'display:flex;gap:20px;margin-bottom:12px;flex-wrap:wrap;' }
+                cls: "nw-text-sm-muted nw-u-d-flex nw-u-gap-20px nw-u-marginbottom-12px nw-u-fwr-wrap", attr: {}
             });
             infoRow.createSpan({ text: `创建时间：${this.formatDateTime(task.createdAt)}` });
             if (task.startedAt) {
@@ -2381,15 +2379,15 @@ export class KnowledgeBaseView extends ItemView {
             const emitterState = emitter?.getState();
 
             if ((task.status === 'running' || task.status === 'pending') && emitterState) {
-                const progressWrap = card.createDiv({ attr: { style: 'margin-bottom:12px;' } });
+                const progressWrap = card.createDiv({ cls: 'nw-u-marginbottom-12px' });
                 const bar = progressWrap.createDiv({
-                    attr: { style: 'height:8px;background:var(--background-secondary);border-radius:4px;overflow:hidden;margin-bottom:6px;' }
+                    cls: 'nw-u-h-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-ov-hidden nw-u-marginbottom-6px'
                 });
                 bar.createDiv({
                     attr: { style: `height:100%;width:${emitterState.progress}%;background:var(--interactive-accent);transition:width 0.3s;` }
                 });
                 const progressInfo = progressWrap.createDiv({
-                    attr: { style: 'display:flex;justify-content:space-between;align-items:center;' }
+                    cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center'
                 });
                 progressInfo.createSpan({
                     text: `${Math.round(emitterState.progress)}%`,
@@ -2398,14 +2396,14 @@ export class KnowledgeBaseView extends ItemView {
                 if (emitterState.currentStep) {
                     progressInfo.createSpan({
                         text: `📍 ${emitterState.currentStep}`,
-                        attr: { style: 'font-size:12px;color:var(--text-normal);font-weight:500;' }
+                        cls: 'nw-u-fs-12px nw-u-c-text-normal nw-u-fwt-500'
                     });
                 }
             }
 
             if (emitterState?.message && (task.status === 'running' || task.status === 'pending')) {
                 const messageEl = card.createDiv({
-                    attr: { style: 'padding:8px 12px;background:var(--background-secondary);border-radius:6px;margin-bottom:12px;font-size:12px;color:var(--text-muted);' }
+                    cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-text-muted'
                 });
                 messageEl.createSpan({ text: '💬 ' });
                 messageEl.createSpan({ text: emitterState.message });
@@ -2413,38 +2411,38 @@ export class KnowledgeBaseView extends ItemView {
 
             if ((task.status === 'running') && emitterState) {
                 const timeRow = card.createDiv({
-                    attr: { style: 'display:flex;gap:20px;margin-bottom:12px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;' }
+                    cls: 'nw-u-d-flex nw-u-gap-20px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-text-muted nw-u-fwr-wrap'
                 });
                 if (emitterState.elapsed !== undefined) {
-                    const elapsedEl = timeRow.createSpan({ attr: { style: 'display:flex;align-items:center;gap:4px;' } });
+                    const elapsedEl = timeRow.createSpan({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
                     elapsedEl.createSpan({ text: '⏱️' });
                     elapsedEl.createSpan({ text: '已用：' });
                     elapsedEl.createSpan({
                         text: this.formatDuration(emitterState.elapsed),
-                        attr: { style: 'font-weight:500;color:var(--text-normal);' }
+                        cls: 'nw-u-fwt-500 nw-u-c-text-normal'
                     });
                 }
                 if (emitterState.eta !== undefined) {
-                    const etaEl = timeRow.createSpan({ attr: { style: 'display:flex;align-items:center;gap:4px;' } });
+                    const etaEl = timeRow.createSpan({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
                     etaEl.createSpan({ text: '⏳' });
                     etaEl.createSpan({ text: '剩余：' });
                     etaEl.createSpan({
                         text: this.formatDuration(emitterState.eta),
-                        attr: { style: 'font-weight:500;color:var(--text-normal);' }
+                        cls: 'nw-u-fwt-500 nw-u-c-text-normal'
                     });
                 }
             }
 
             if (task.status === 'failed' && task.error) {
                 const errorMsg = card.createDiv({
-                    attr: { style: 'padding:10px 12px;background:rgba(231,76,60,0.1);border-radius:6px;margin-bottom:12px;font-size:12px;color:#e74c3c;' }
+                    cls: 'nw-u-p-10px-12px nw-u-bg-rgba-231-76-60-0-1 nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-e74c3c'
                 });
-                errorMsg.createSpan({ text: '错误信息：', attr: { style: 'font-weight:600;' } });
+                errorMsg.createSpan({ text: '错误信息：', cls: 'nw-u-fwt-600' });
                 errorMsg.createSpan({ text: task.error });
             }
 
             const actions = card.createDiv({
-                attr: { style: 'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;' }
+                cls: 'nw-u-d-flex nw-u-gap-8px nw-u-jc-flex-end nw-u-fwr-wrap'
             });
 
             if (task.status === 'failed') {
@@ -2667,16 +2665,16 @@ export class KnowledgeBaseView extends ItemView {
     // ============== Tab 4: 质量统计 ==============
     private renderStatsTab(): void {
         const content = this.rightContentEl.createDiv({
-            cls: 'nw-kb-stats-tab',
-            attr: { style: 'padding:16px;overflow-y:auto;height:100%;' }
+            cls: "nw-kb-stats-tab nw-u-p-16px nw-u-ovy-auto nw-u-h-100",
+            attr: {}
         });
 
-        content.createEl('h2', { text: '质量统计', attr: { style: 'margin:0 0 20px 0;font-size:18px;' } });
+        content.createEl('h2', { text: '质量统计', cls: 'nw-u-m-0-0-20px-0 nw-u-fs-18px' });
 
         const completedBooks = this.allBooks.filter(b => b.breakdownStatus === 'completed' && b.qualityScores);
 
         const overviewGrid = content.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;' }
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-12px nw-u-marginbottom-24px'
         });
         const overviewItems = [
             { label: '书籍总数', value: this.allBooks.length, icon: '📚', color: 'var(--interactive-accent)' },
@@ -2693,18 +2691,18 @@ export class KnowledgeBaseView extends ItemView {
         ];
         overviewItems.forEach(item => {
             const card = overviewGrid.createDiv({
-                attr: { style: 'padding:20px;background:var(--background-secondary);border-radius:8px;text-align:center;' }
+                cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px nw-u-ta-center'
             });
-            card.createDiv({ text: item.icon, attr: { style: 'font-size:28px;margin-bottom:8px;' } });
+            card.createDiv({ text: item.icon, cls: 'nw-u-fs-28px nw-u-marginbottom-8px' });
             card.createDiv({ text: item.value.toString(), attr: { style: `font-size:24px;font-weight:700;color:${item.color};margin-bottom:4px;` } });
             card.createDiv({ text: item.label, cls: 'nw-text-sm-muted' });
         });
 
         if (completedBooks.length > 0) {
             const qualitySection = content.createDiv({
-                attr: { style: 'margin-bottom:24px;padding:20px;background:var(--background-secondary);border-radius:8px;' }
+                cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
             });
-            qualitySection.createEl('h3', { text: '各维度质量分布', attr: { style: 'margin:0 0 16px 0;font-size:15px;' } });
+            qualitySection.createEl('h3', { text: '各维度质量分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
 
             const dimensions: { key: Exclude<keyof QualityScores, 'overall' | 'vectorEnabled'>; label: string }[] = [
                 { key: 'character', label: '人设' },
@@ -2716,25 +2714,25 @@ export class KnowledgeBaseView extends ItemView {
             ];
 
             const chartWrap = qualitySection.createDiv({
-                attr: { style: 'display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:center;' }
+                cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
             });
 
             const radarData = dimensions.map(d => ({
                 label: d.label,
                 value: completedBooks.reduce((sum, b) => sum + (b.qualityScores?.[d.key] as number ?? 0), 0) / completedBooks.length
             }));
-            const radarCard = chartWrap.createDiv({ attr: { style: 'flex:1;min-width:280px;display:flex;justify-content:center;' } });
+            const radarCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-280px nw-u-d-flex nw-u-jc-center' });
             this.renderChart(radarCard, radarChart(radarData, { size: 280, title: '平均质量雷达图' }));
 
-            const avgCard = chartWrap.createDiv({ attr: { style: 'flex:1;min-width:200px;' } });
+            const avgCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
             dimensions.forEach(d => {
                 const avg = completedBooks.reduce((sum, b) => sum + (b.qualityScores?.[d.key] as number ?? 0), 0) / completedBooks.length;
-                const item = avgCard.createDiv({ attr: { style: 'margin-bottom:14px;' } });
-                const top = item.createDiv({ attr: { style: 'display:flex;justify-content:space-between;margin-bottom:6px;' } });
-                top.createSpan({ text: d.label, attr: { style: 'font-size:13px;color:var(--text-normal);' } });
-                top.createSpan({ text: avg.toFixed(1) + '分', attr: { style: 'font-size:13px;color:var(--text-muted);font-weight:500;' } });
+                const item = avgCard.createDiv({ cls: 'nw-u-marginbottom-14px' });
+                const top = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px' });
+                top.createSpan({ text: d.label, cls: 'nw-u-fs-13px nw-u-c-text-normal' });
+                top.createSpan({ text: avg.toFixed(1) + '分', cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-fwt-500' });
                 const bar = item.createDiv({
-                    attr: { style: 'height:8px;background:var(--background-primary);border-radius:4px;overflow:hidden;' }
+                    cls: 'nw-u-h-8px nw-u-bg-background-primary nw-u-brd-4px nw-u-ov-hidden'
                 });
                 bar.createDiv({
                     attr: { style: `height:100%;width:${avg}%;background:var(--interactive-accent);border-radius:4px;` }
@@ -2743,9 +2741,9 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const genreSection = content.createDiv({
-            attr: { style: 'margin-bottom:24px;padding:20px;background:var(--background-secondary);border-radius:8px;' }
+            cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
         });
-        genreSection.createEl('h3', { text: '题材分布', attr: { style: 'margin:0 0 16px 0;font-size:15px;' } });
+        genreSection.createEl('h3', { text: '题材分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
 
         const genreCounts: Record<string, number> = {};
         this.allBooks.forEach(book => {
@@ -2763,19 +2761,19 @@ export class KnowledgeBaseView extends ItemView {
             .slice(0, 10);
 
         if (genreData.length > 0) {
-            const chartCard = genreSection.createDiv({ attr: { style: 'display:flex;justify-content:center;' } });
+            const chartCard = genreSection.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
             this.renderChart(chartCard, barChart(genreData, { width: 500, height: 300, title: 'Top 10 题材分布' }));
         } else {
             genreSection.createDiv({
                 text: '暂无题材数据',
-                attr: { style: 'text-align:center;padding:40px;color:var(--text-muted);' }
+                cls: 'nw-u-ta-center nw-u-p-40px nw-u-c-text-muted'
             });
         }
 
         const statusSection = content.createDiv({
-            attr: { style: 'margin-bottom:24px;padding:20px;background:var(--background-secondary);border-radius:8px;' }
+            cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
         });
-        statusSection.createEl('h3', { text: '拆解状态分布', attr: { style: 'margin:0 0 16px 0;font-size:15px;' } });
+        statusSection.createEl('h3', { text: '拆解状态分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
 
         const statusCounts = {
             pending: this.allBooks.filter(b => b.breakdownStatus === 'pending').length,
@@ -2794,15 +2792,15 @@ export class KnowledgeBaseView extends ItemView {
         ].filter(d => d.value > 0);
 
         const statusWrap = statusSection.createDiv({
-            attr: { style: 'display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:center;' }
+            cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
         });
 
         if (donutData.length > 0) {
-            const donutCard = statusWrap.createDiv({ attr: { style: 'flex:1;min-width:200px;display:flex;justify-content:center;' } });
+            const donutCard = statusWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px nw-u-d-flex nw-u-jc-center' });
             this.renderChart(donutCard, donutChart(donutData, { size: 220, title: '状态分布' }));
         }
 
-        const statusList = statusWrap.createDiv({ attr: { style: 'flex:1;min-width:200px;' } });
+        const statusList = statusWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
         const statusItems = [
             { label: '待拆解', value: statusCounts.pending, color: '#f59e0b' },
             { label: '拆解中', value: statusCounts.processing, color: '#3b82f6' },
@@ -2814,12 +2812,12 @@ export class KnowledgeBaseView extends ItemView {
             const row = statusList.createDiv({
                 attr: { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}' }
             });
-            const left = row.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;' } });
+            const left = row.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px' });
             left.createSpan({
                 attr: { style: `width:10px;height:10px;border-radius:50%;background:${item.color};` }
             });
-            left.createSpan({ text: item.label, attr: { style: 'font-size:13px;color:var(--text-normal);' } });
-            row.createSpan({ text: item.value.toString(), attr: { style: 'font-size:13px;font-weight:600;color:var(--text-normal);' } });
+            left.createSpan({ text: item.label, cls: 'nw-u-fs-13px nw-u-c-text-normal' });
+            row.createSpan({ text: item.value.toString(), cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-c-text-normal' });
         });
     }
 
@@ -2946,7 +2944,7 @@ export class KnowledgeBaseView extends ItemView {
             const forceCancelBtn = actionsEl.createEl('button', {
                 text: '⚠️ 强制取消',
                 cls: 'nw-btn nw-btn-sm',
-                attr: { style: 'margin-left: 8px; font-size: 12px; color: #e74c3c;', title: '中断当前拆解任务（已完成维度保留）' }
+                attr: { style: 'margin-left: 8px; font-size: 12px; color: var(--nw-danger-soft);', title: '中断当前拆解任务（已完成维度保留）' }
             });
             forceCancelBtn.onclick = async () => {
                 try {
@@ -3294,7 +3292,7 @@ export class KnowledgeBaseView extends ItemView {
 
         // 左侧：拆解任务状态
         const taskStatusEl = this.monitorBarEl.createDiv({
-            attr: { style: 'display:flex;align-items:center;gap:8px;flex:1;min-width:0;' }
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-flex-1 nw-u-minw-0'
         });
 
         if (isDeconstructing && this.latestProgress) {
@@ -3302,17 +3300,17 @@ export class KnowledgeBaseView extends ItemView {
             const dimLabel = progress.currentDimension ? DIMENSION_LABELS[progress.currentDimension] : '';
             taskStatusEl.createSpan({
                 text: '🔄',
-                attr: { style: 'font-size:14px;' }
+                cls: 'nw-u-fs-14px'
             });
             const infoEl = taskStatusEl.createDiv({
-                attr: { style: 'display:flex;flex-direction:column;min-width:0;overflow:hidden;' }
+                cls: 'nw-u-d-flex nw-u-fd-column nw-u-minw-0 nw-u-ov-hidden'
             });
             infoEl.createEl('div', {
-                attr: { style: 'font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' },
+                cls: 'nw-u-fwt-500 nw-u-ws-nowrap nw-u-ov-hidden nw-u-textoverflow-ellipsis',
                 text: `${progress.bookName}${dimLabel ? ' · ' + dimLabel : ''}`
             });
             const barContainer = infoEl.createDiv({
-                attr: { style: 'width:120px;height:4px;background:var(--background-modifier-border-hover);border-radius:2px;margin-top:2px;overflow:hidden;' }
+                cls: 'nw-u-w-120px nw-u-h-4px nw-u-bg-background-modifier-bo-2 nw-u-brd-2px nw-u-margintop-2px nw-u-ov-hidden'
             });
             barContainer.createDiv({
                 attr: {
@@ -3321,21 +3319,21 @@ export class KnowledgeBaseView extends ItemView {
             });
             if (pendingCount > 0) {
                 infoEl.createEl('div', {
-                    attr: { style: 'font-size:10px;color:var(--text-muted);margin-top:1px;' },
+                    cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-margintop-1px',
                     text: `排队中 ${pendingCount} 个任务`
                 });
             }
         } else if (hasPaused) {
-            taskStatusEl.createSpan({ text: '⏸️', attr: { style: 'font-size:14px;' } });
-            taskStatusEl.createSpan({ text: '拆解已暂停', attr: { style: 'color:var(--text-muted);' } });
+            taskStatusEl.createSpan({ text: '⏸️', cls: 'nw-u-fs-14px' });
+            taskStatusEl.createSpan({ text: '拆解已暂停', cls: 'nw-u-c-text-muted' });
         } else {
-            taskStatusEl.createSpan({ text: '⏹️', attr: { style: 'font-size:14px;' } });
-            taskStatusEl.createSpan({ text: '暂无拆解任务', attr: { style: 'color:var(--text-muted);' } });
+            taskStatusEl.createSpan({ text: '⏹️', cls: 'nw-u-fs-14px' });
+            taskStatusEl.createSpan({ text: '暂无拆解任务', cls: 'nw-u-c-text-muted' });
         }
 
         // 中间：模型状态
         const modelStatusEl = this.monitorBarEl.createDiv({
-            attr: { style: 'display:flex;align-items:center;gap:8px;' }
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px'
         });
 
         const providerMap: Record<string, string> = {
@@ -3361,7 +3359,7 @@ export class KnowledgeBaseView extends ItemView {
         });
         modelStatusEl.createSpan({
             text: `${providerName} · ${modelName}`,
-            attr: { style: 'color:var(--text-muted);white-space:nowrap;' }
+            cls: 'nw-u-c-text-muted nw-u-ws-nowrap'
         });
 
         // 右侧：设置按钮

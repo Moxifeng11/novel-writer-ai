@@ -99,9 +99,7 @@ export class ContextPanel {
         // ✅ v1.6.0: 显示失败的模块提示
         const failedModules = d['_failedModules'] as string[] | undefined;
         if (failedModules && failedModules.length > 0) {
-            const warnEl = panel.createDiv({ cls: 'novel-writer-fw-warning', attr: {
-                style: 'padding: 6px 10px; margin-bottom: 8px; background: var(--background-modifier-error-rgb, 255, 100, 100, 0.1); border-radius: 4px; font-size: 0.85em; color: var(--text-error);'
-            }});
+            const warnEl = panel.createDiv({ cls: "novel-writer-fw-warning nw-u-p-6px-10px-2 nw-u-marginbottom-8px-2 nw-u-bg-background-modifier-er-2 nw-u-brd-4px-2 nw-u-fs-0-85em nw-u-c-text-error", attr: {}});
             warnEl.createSpan({ text: `⚠️ 以下模块加载失败：${failedModules.join('、')}（已跳过）` });
         }
 
@@ -110,14 +108,12 @@ export class ContextPanel {
         if (compressed?.truncationApplied) {
             let detailsExpanded = false;
 
-            const truncationWarn = panel.createDiv({ cls: 'novel-writer-fw-truncation-warning', attr: {
-                style: 'padding: 8px 12px; margin-bottom: 10px; background: rgba(255, 170, 0, 0.15); border: 1px solid rgba(255, 170, 0, 0.4); border-radius: 6px; cursor: pointer; font-size: 0.85em; color: var(--text-normal); user-select: none;'
-            }});
-            const warnHeader = truncationWarn.createDiv({ attr: { style: 'display: flex; align-items: center; justify-content: space-between;' } });
+            const truncationWarn = panel.createDiv({ cls: "novel-writer-fw-truncation-warning nw-u-p-8px-12px-2 nw-u-marginbottom-10px-2 nw-u-bg-rgba-255-170-0-0-15 nw-u-b-1px-solid-rgba-255-170 nw-u-brd-6px-2 nw-u-cur-pointer-2 nw-u-fs-0-85em nw-u-c-text-normal-2 nw-u-userselect-none", attr: {}});
+            const warnHeader = truncationWarn.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2' });
             warnHeader.createSpan({ text: '⚠️ 上下文过长，已智能压缩（点击查看详情）' });
-            const warnIcon = warnHeader.createSpan({ text: '▶', attr: { style: 'font-size: 0.8em; color: var(--text-muted);' } });
+            const warnIcon = warnHeader.createSpan({ text: '▶', cls: 'nw-u-fs-0-8em nw-u-c-text-muted-2' });
 
-            const detailsPanel = truncationWarn.createDiv({ attr: { style: 'display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 170, 0, 0.3); font-size: 0.9em;' } });
+            const detailsPanel = truncationWarn.createDiv({ cls: 'nw-u-d-none nw-u-margintop-8px-2 nw-u-paddingtop-8px-2 nw-u-bt-1px-solid-rgba-255-170 nw-u-fs-0-9em' });
 
             const wvRaw = (d.world_view as MarkdownContent)?.raw?.length || 0;
             const wvComp = compressed.worldView?.length || 0;
@@ -142,9 +138,9 @@ export class ContextPanel {
             ];
 
             for (const item of detailItems) {
-                const row = detailsPanel.createDiv({ attr: { style: 'display: flex; justify-content: space-between; padding: 3px 0;' } });
-                row.createSpan({ text: item.label, attr: { style: 'color: var(--text-muted);' } });
-                row.createSpan({ text: `${item.raw} → ${item.comp}${item.extra}`, attr: { style: 'font-weight: 500;' } });
+                const row = detailsPanel.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-p-3px-0' });
+                row.createSpan({ text: item.label, cls: 'nw-u-c-text-muted-2' });
+                row.createSpan({ text: `${item.raw} → ${item.comp}${item.extra}`, cls: 'nw-u-fwt-500-2' });
             }
 
             truncationWarn.addEventListener('click', () => {
@@ -208,7 +204,7 @@ export class ContextPanel {
                     body.createEl('p', { text: '智能上下文加载中...', cls: 'novel-writer-fw-muted' });
                     body.createEl('p', { 
                         text: '💡 打开章节后自动生成智能实体推荐', 
-                        attr: { style: 'font-size: 11px; color: var(--text-faint); margin-top: 4px;' }
+                        cls: 'nw-u-fs-11px-2 nw-u-c-text-faint-2 nw-u-margintop-4px-3'
                     });
                     return;
                 }
@@ -216,40 +212,38 @@ export class ContextPanel {
                 const summary = smartCtx.selectionSummary;
                 if (summary) {
                     const statsDiv = body.createDiv({ 
-                        attr: { 
-                            style: 'padding: 6px 8px; background: var(--background-modifier-hover); border-radius: 4px; margin-bottom: 8px; font-size: 11px;' 
-                        } 
+                        cls: 'nw-u-p-6px-8px-2 nw-u-bg-background-modifier-ho nw-u-brd-4px-2 nw-u-marginbottom-8px-2 nw-u-fs-11px-2' 
                     });
                     statsDiv.createSpan({ 
                         text: `已选择 ${summary.selectedCount}/${summary.totalEntities} 个实体`,
-                        attr: { style: 'font-weight: 600;' }
+                        cls: 'nw-u-fwt-600-2'
                     });
                     statsDiv.createEl('br');
                     statsDiv.createSpan({ 
                         text: `人物${summary.byCategory.character} · 地点${summary.byCategory.location} · 势力${summary.byCategory.faction} · 物品${summary.byCategory.item}`,
-                        attr: { style: 'color: var(--text-muted);' }
+                        cls: 'nw-u-c-text-muted-2'
                     });
                     statsDiv.createEl('br');
                     statsDiv.createSpan({ 
                         text: `预估 ~${summary.estimatedTokens.toLocaleString()} tokens`,
-                        attr: { style: 'color: var(--text-muted);' }
+                        cls: 'nw-u-c-text-muted-2'
                     });
                 }
 
                 if (smartCtx.characters && smartCtx.characters.length > 0) {
-                    body.createEl('strong', { text: '🎭 相关人物', attr: { style: 'font-size: 11px; display: block; margin-bottom: 4px;' } });
+                    body.createEl('strong', { text: '🎭 相关人物', cls: 'nw-u-fs-11px-2 nw-u-d-block nw-u-marginbottom-4px-2' });
                     const charList = body.createEl('ul', { 
-                        attr: { style: 'list-style: none; padding: 0; margin: 0 0 8px 0; font-size: 11px;' } 
+                        cls: 'nw-u-lst-none nw-u-p-0 nw-u-m-0-0-8px-0-2 nw-u-fs-11px-2' 
                     });
                     for (const c of smartCtx.characters.slice(0, 8)) {
                         const li = charList.createEl('li', { 
-                            attr: { style: 'padding: 3px 0; border-bottom: 1px solid var(--background-modifier-border);' } 
+                            cls: 'nw-u-p-3px-0 nw-u-bb-1px-solid-background-m-2' 
                         });
-                        const nameRow = li.createDiv({ attr: { style: 'display: flex; align-items: center; gap: 4px;' } });
-                        nameRow.createSpan({ text: c.name, attr: { style: 'font-weight: 600;' } });
+                        const nameRow = li.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-4px-2' });
+                        nameRow.createSpan({ text: c.name, cls: 'nw-u-fwt-600-2' });
                         if (c.importanceLevel) {
                             const impLabel = this.getImportanceBadge(c.importanceLevel);
-                            nameRow.createSpan({ text: impLabel, attr: { style: 'font-size: 10px; padding: 1px 4px; background: var(--background-modifier-hover); border-radius: 3px;' } });
+                            nameRow.createSpan({ text: impLabel, cls: 'nw-u-fs-10px-2 nw-u-p-1px-4px nw-u-bg-background-modifier-ho nw-u-brd-3px-2' });
                         }
                         if (c.detailLevel) {
                             const levelMap: Record<string, string> = {
@@ -260,63 +254,61 @@ export class ContextPanel {
                             };
                             nameRow.createSpan({ 
                                 text: levelMap[c.detailLevel] || c.detailLevel,
-                                attr: { style: 'font-size: 10px; color: var(--text-faint); margin-left: auto;' } 
+                                cls: 'nw-u-fs-10px-2 nw-u-c-text-faint-2 nw-u-marginleft-auto-2' 
                             });
                         }
                         if (c.statusLabel) {
                             li.createDiv({ 
                                 text: `状态：${c.statusLabel}`,
-                                attr: { style: 'color: var(--text-muted); font-size: 10px; margin-top: 2px;' } 
+                                cls: 'nw-u-c-text-muted-2 nw-u-fs-10px-2 nw-u-margintop-2px-2' 
                             });
                         }
                         if (c.lastAppearance) {
                             li.createDiv({ 
                                 text: `最近出场：${c.lastAppearance}`,
-                                attr: { style: 'color: var(--text-faint); font-size: 10px; margin-top: 1px;' } 
+                                cls: 'nw-u-c-text-faint-2 nw-u-fs-10px-2 nw-u-margintop-1px-2' 
                             });
                         }
                     }
                     if (smartCtx.characters.length > 8) {
                         body.createEl('p', { 
                             text: `...还有 ${smartCtx.characters.length - 8} 个相关人物`,
-                            cls: 'novel-writer-fw-muted',
-                            attr: { style: 'font-size: 10px; text-align: center; margin: 4px 0;' }
+                            cls: "novel-writer-fw-muted nw-u-fs-10px-2 nw-u-ta-center-2 nw-u-m-4px-0",
+                            attr: {}
                         });
                     }
                 }
 
                 if (smartCtx.relations && smartCtx.relations.length > 0) {
-                    body.createEl('strong', { text: '💞 人物关系', attr: { style: 'font-size: 11px; display: block; margin: 8px 0 4px 0;' } });
+                    body.createEl('strong', { text: '💞 人物关系', cls: 'nw-u-fs-11px-2 nw-u-d-block nw-u-m-8px-0-4px-0' });
                     const relList = body.createEl('ul', { 
-                        attr: { style: 'list-style: none; padding: 0; margin: 0; font-size: 11px;' } 
+                        cls: 'nw-u-lst-none nw-u-p-0 nw-u-m-0-2 nw-u-fs-11px-2' 
                     });
                     for (const r of smartCtx.relations.slice(0, 6)) {
                         const li = relList.createEl('li', { 
-                            attr: { style: 'padding: 2px 0; color: var(--text-muted);' } 
+                            cls: 'nw-u-p-2px-0 nw-u-c-text-muted-2' 
                         });
-                        li.createSpan({ text: `${r.from} ↔ ${r.to}`, attr: { style: 'color: var(--text-normal);' } });
-                        li.createSpan({ text: `：${r.type}`, attr: { style: 'color: var(--text-faint);' } });
+                        li.createSpan({ text: `${r.from} ↔ ${r.to}`, cls: 'nw-u-c-text-normal-2' });
+                        li.createSpan({ text: `：${r.type}`, cls: 'nw-u-c-text-faint-2' });
                     }
                     if (smartCtx.relations.length > 6) {
                         body.createEl('p', { 
                             text: `...还有 ${smartCtx.relations.length - 6} 条关系`,
-                            cls: 'novel-writer-fw-muted',
-                            attr: { style: 'font-size: 10px; text-align: center; margin: 4px 0;' }
+                            cls: "novel-writer-fw-muted nw-u-fs-10px-2 nw-u-ta-center-2 nw-u-m-4px-0",
+                            attr: {}
                         });
                     }
                 }
 
                 if (smartCtx.missingEntities && smartCtx.missingEntities.length > 0) {
                     body.createDiv({ 
-                        attr: { 
-                            style: 'margin-top: 8px; padding: 6px 8px; background: rgba(255, 170, 0, 0.1); border-radius: 4px; font-size: 11px;' 
-                        } 
+                        cls: 'nw-u-margintop-8px-2 nw-u-p-6px-8px-2 nw-u-bg-rgba-255-170-0-0-1 nw-u-brd-4px-2 nw-u-fs-11px-2' 
                     });
-                    body.createSpan({ text: '⚠️ 未设定人物：', attr: { style: 'color: var(--text-warning); font-weight: 600;' } });
+                    body.createSpan({ text: '⚠️ 未设定人物：', cls: 'nw-u-c-text-warning nw-u-fwt-600-2' });
                     body.createEl('br');
                     body.createSpan({ 
                         text: smartCtx.missingEntities.join('、'),
-                        attr: { style: 'color: var(--text-muted); font-size: 10px;' } 
+                        cls: 'nw-u-c-text-muted-2 nw-u-fs-10px-2' 
                     });
                 }
             } catch (e) {
@@ -435,7 +427,7 @@ export class ContextPanel {
                     body.createEl('p', { text: '暂无场景数据', cls: 'novel-writer-fw-muted' });
                     const tip = body.createEl('p', {
                         text: '💡 在步骤6「Scene展开」中生成场景后可在此查看',
-                        attr: { style: 'font-size: 11px; color: var(--text-faint); margin-top: 4px;' }
+                        cls: 'nw-u-fs-11px-2 nw-u-c-text-faint-2 nw-u-margintop-4px-3'
                     });
                     return;
                 }
@@ -448,39 +440,39 @@ export class ContextPanel {
                 }
 
                 const statsRow = body.createDiv({
-                    attr: { style: 'display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px;' }
+                    cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2 nw-u-fs-12px-2'
                 });
                 statsRow.createSpan({ text: `共 ${sceneInfo.total} 个场景` });
                 statsRow.createSpan({
                     text: sceneInfo.hasKeyScene ? '⭐ 有名场面' : '',
-                    attr: { style: 'color: var(--text-warning);' }
+                    cls: 'nw-u-c-text-warning'
                 });
 
                 const sceneList = body.createEl('ul', {
-                    attr: { style: 'list-style: none; padding: 0; margin: 0; font-size: 11px;' }
+                    cls: 'nw-u-lst-none nw-u-p-0 nw-u-m-0-2 nw-u-fs-11px-2'
                 });
 
                 for (let i = 0; i < Math.min(sceneInfo.scenes.length, 5); i++) {
                     const s = sceneInfo.scenes[i];
                     const li = sceneList.createEl('li', {
-                        attr: { style: 'padding: 3px 0; border-bottom: 1px solid var(--background-modifier-border);' }
+                        cls: 'nw-u-p-3px-0 nw-u-bb-1px-solid-background-m-2'
                     });
-                    const nameRow = li.createDiv({ attr: { style: 'display: flex; gap: 4px; align-items: center;' } });
+                    const nameRow = li.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-ai-center-2' });
                     nameRow.createSpan({
                         text: `场景${s.index}`,
-                        attr: { style: 'font-weight: 600; color: var(--text-accent);' }
+                        cls: 'nw-u-fwt-600-2 nw-u-c-text-accent'
                     });
                     if (s.isKeyScene) {
-                        nameRow.createSpan({ text: '⭐', attr: { style: 'font-size: 10px;' } });
+                        nameRow.createSpan({ text: '⭐', cls: 'nw-u-fs-10px-2' });
                     }
                     nameRow.createSpan({
                         text: s.name,
-                        attr: { style: 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;' }
+                        cls: 'nw-u-ws-nowrap-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-flex-1-2'
                     });
                     if (s.objective) {
                         li.createDiv({
                             text: s.objective.slice(0, 30) + (s.objective.length > 30 ? '...' : ''),
-                            attr: { style: 'color: var(--text-faint); font-size: 10px; margin-top: 2px;' }
+                            cls: 'nw-u-c-text-faint-2 nw-u-fs-10px-2 nw-u-margintop-2px-2'
                         });
                     }
                 }
@@ -488,14 +480,14 @@ export class ContextPanel {
                 if (sceneInfo.total > 5) {
                     body.createEl('p', {
                         text: `...还有 ${sceneInfo.total - 5} 个场景`,
-                        attr: { style: 'text-align: center; color: var(--text-faint); font-size: 11px; margin-top: 6px;' }
+                        cls: 'nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-11px-2 nw-u-margintop-6px'
                     });
                 }
 
                 if (sceneInfo.hasCliffhanger) {
                     body.createDiv({
                         text: '🪝 已设置结尾钩子',
-                        attr: { style: 'margin-top: 8px; padding: 4px 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; font-size: 11px;' }
+                        cls: 'nw-u-margintop-8px-2 nw-u-p-4px-8px-2 nw-u-bg-rgba-245-158-11-0-1 nw-u-brd-4px-2 nw-u-fs-11px-2'
                     });
                 }
             } catch (e) {
@@ -689,16 +681,16 @@ export class ContextPanel {
                     warnBox.style.cssText = 'background:#fff3cd;border:2px solid #ffc107;border-radius:6px;padding:12px;margin-top:8px;';
                     
                     if (rules.mustFollow?.length > 0) {
-                        warnBox.createEl('strong', { text: '必须遵守的原作规则：', attr: { style: 'color:#856404;' } });
-                        const ul = warnBox.createEl('ul', { attr: { style: 'margin:4px 0 8px 16px;color:#856404;font-size:12px;' } });
+                        warnBox.createEl('strong', { text: '必须遵守的原作规则：', cls: 'nw-u-c-856404' });
+                        const ul = warnBox.createEl('ul', { cls: 'nw-u-m-4px-0-8px-16px nw-u-c-856404 nw-u-fs-12px-2' });
                         for (const r of rules.mustFollow) {
                             ul.createEl('li', { text: r });
                         }
                     }
                     
                     if (rules.redlines?.length > 0) {
-                        warnBox.createEl('strong', { text: '🚫 禁止触及的红线：', attr: { style: 'color:#721c24;' } });
-                        const ul = warnBox.createEl('ul', { attr: { style: 'margin:4px 0 4px 16px;color:#721c24;font-size:12px;' } });
+                        warnBox.createEl('strong', { text: '🚫 禁止触及的红线：', cls: 'nw-u-c-721c24' });
+                        const ul = warnBox.createEl('ul', { cls: 'nw-u-m-4px-0-4px-16px nw-u-c-721c24 nw-u-fs-12px-2' });
                         for (const r of rules.redlines) {
                             ul.createEl('li', { text: r });
                         }
@@ -738,16 +730,16 @@ export class ContextPanel {
             }
             // 强制写作规则
             if (wr.mandatory && wr.mandatory.length > 0) {
-                const sectionDiv = body.createDiv({ attr: { style: 'margin-bottom:8px;' } });
-                sectionDiv.createEl('strong', { text: '📜 强制规则:', attr: { style: 'font-size:11px;' } });
+                const sectionDiv = body.createDiv({ cls: 'nw-u-marginbottom-8px-2' });
+                sectionDiv.createEl('strong', { text: '📜 强制规则:', cls: 'nw-u-fs-11px-2' });
                 for (const r of wr.mandatory.slice(0, 5)) {
-                    const ruleDiv = sectionDiv.createDiv({ attr: { style: 'margin:4px 0 4px 8px;padding:4px 6px;background:var(--background-primary);border-radius:4px;font-size:11px;' } });
-                    ruleDiv.createEl('div', { text: `▸ ${r.title}`, attr: { style: 'font-weight:600;color:var(--text-normal);margin-bottom:2px;' } });
+                    const ruleDiv = sectionDiv.createDiv({ cls: 'nw-u-m-4px-0-4px-8px nw-u-p-4px-6px nw-u-bg-background-primary-2 nw-u-brd-4px-2 nw-u-fs-11px-2' });
+                    ruleDiv.createEl('div', { text: `▸ ${r.title}`, cls: 'nw-u-fwt-600-2 nw-u-c-text-normal-2 nw-u-marginbottom-2px-2' });
                     if (r.description && r.description.trim()) {
-                        ruleDiv.createEl('div', { text: r.description.slice(0, 150), attr: { style: 'color:var(--text-muted);font-size:10px;' } });
+                        ruleDiv.createEl('div', { text: r.description.slice(0, 150), cls: 'nw-u-c-text-muted-2 nw-u-fs-10px-2' });
                     }
                     if (r.points && r.points.length > 0) {
-                        const ptsList = ruleDiv.createEl('ul', { attr: { style: 'margin:2px 0 0 12px;padding:0;font-size:10px;color:var(--text-muted);' } });
+                        const ptsList = ruleDiv.createEl('ul', { cls: 'nw-u-m-2px-0-0-12px nw-u-p-0 nw-u-fs-10px-2 nw-u-c-text-muted-2' });
                         for (const pt of r.points.slice(0, 3)) {
                             ptsList.createEl('li', { text: pt });
                         }
@@ -756,24 +748,24 @@ export class ContextPanel {
             }
             // 章节自查清单
             if (wr.checklist && wr.checklist.length > 0) {
-                const chkDiv = body.createDiv({ attr: { style: 'margin-bottom:8px;' } });
-                chkDiv.createEl('strong', { text: '✅ 自查清单:', attr: { style: 'font-size:11px;' } });
-                const chkList = chkDiv.createEl('ul', { attr: { style: 'margin:4px 0 0 8px;padding:0;font-size:11px;color:var(--text-muted);' } });
+                const chkDiv = body.createDiv({ cls: 'nw-u-marginbottom-8px-2' });
+                chkDiv.createEl('strong', { text: '✅ 自查清单:', cls: 'nw-u-fs-11px-2' });
+                const chkList = chkDiv.createEl('ul', { cls: 'nw-u-m-4px-0-0-8px nw-u-p-0 nw-u-fs-11px-2 nw-u-c-text-muted-2' });
                 for (const item of wr.checklist.slice(0, 8)) {
-                    chkList.createEl('li', { text: item, attr: { style: 'margin:2px 0;' } });
+                    chkList.createEl('li', { text: item, cls: 'nw-u-m-2px-0' });
                 }
                 if (wr.checklist.length > 8) {
-                    chkDiv.createEl('span', { text: `...还有${wr.checklist.length - 8}项`, attr: { style: 'font-size:10px;color:var(--text-faint);' } });
+                    chkDiv.createEl('span', { text: `...还有${wr.checklist.length - 8}项`, cls: 'nw-u-fs-10px-2 nw-u-c-text-faint-2' });
                 }
             }
             // 文风参考
             if (wr.style && wr.style.trim()) {
-                const styleDiv = body.createDiv({ attr: { style: 'margin-bottom:4px;' } });
-                styleDiv.createEl('strong', { text: '🖊️ 文风参考:', attr: { style: 'font-size:11px;' } });
+                const styleDiv = body.createDiv({ cls: 'nw-u-marginbottom-4px-2' });
+                styleDiv.createEl('strong', { text: '🖊️ 文风参考:', cls: 'nw-u-fs-11px-2' });
                 styleDiv.createEl('p', {
                     text: wr.style.slice(0, 200),
-                    cls: 'novel-writer-fw-muted',
-                    attr: { style: 'font-size:10px;margin:2px 0 0 8px;white-space:pre-wrap;' }
+                    cls: "novel-writer-fw-muted nw-u-fs-10px-2 nw-u-m-2px-0-0-8px nw-u-ws-pre-wrap",
+                    attr: {}
                 });
             }
             if ((!wr.mandatory || wr.mandatory.length === 0) && (!wr.checklist || wr.checklist.length === 0) && (!wr.style || !wr.style.trim())) {
@@ -797,7 +789,7 @@ export class ContextPanel {
                 );
                 const editLink = body.createEl('a', {
                     text: '编辑文笔风格',
-                    attr: { style: 'font-size: 0.85em; cursor: pointer;' }
+                    cls: 'nw-u-fs-0-85em nw-u-cur-pointer-2'
                 });
                 editLink.addEventListener('click', async () => {
                     const wsFile = await findWritingStyleFile(this.app, project, { allowPlaceholder: true });
@@ -941,7 +933,7 @@ export class ContextPanel {
         // Pre-render body content (hidden by default)
         // v3.4.9 P0-1: 包裹 try-catch 防止任一卡片异常导致整个面板崩溃
         try { renderBody(body); } catch (e) {
-            body.createEl('p', { text: '⚠️ 渲染异常', attr: { style: 'color:var(--text-error);font-size:11px;' } });
+            body.createEl('p', { text: '⚠️ 渲染异常', cls: 'nw-u-c-text-error nw-u-fs-11px-2' });
             log.warn('[ContextPanel] renderCollapsibleCard renderBody 异常:', e);
         }
     }
