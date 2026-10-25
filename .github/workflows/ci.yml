@@ -27,6 +27,9 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 生产依赖安全审计
+        run: npm run audit:deps
+
       - name: 校验内置模板生成物
         run: npm run check:templates
 
@@ -36,8 +39,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: 单元测试
-        run: npm test
+      - name: 单元测试与覆盖率门禁
+        run: npm run test:cov
 
       - name: 构建
         run: npm run build
@@ -48,6 +51,17 @@ jobs:
       - name: 校验构建未产生版本/生成物漂移
         run: git diff --exit-code -- manifest.json shared/template-scaffold-assets.generated.ts
 
+      - name: 校验构建产物未入仓
+        run: |
+          if git ls-files | grep -Eq '^(main\.js|workers/|\.hotreload)'; then
+            echo "构建产物不应被 git 跟踪："
+            git ls-files | grep -E '^(main\.js|workers/|\.hotreload)'
+            exit 1
+          fi
+
+      - name: 校验 E2E 用例可解析
+        run: npx playwright test --list
+
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
@@ -56,4 +70,44 @@ jobs:
             main.js
             manifest.json
             styles.css
+            workers/
           if-no-files-found: error
+
+  e2e-obsidian:
+    name: E2E（Obsidian 真实链路）
+    # 需要仓库变量 OBSIDIAN_PATH 指向已安装的 Obsidian 可执行文件。
+    # 未配置时该 job 明确显示 skipped，不会伪装成通过。
+    if: ${{ vars.OBSIDIAN_PATH != '' }}
+    runs-on: ${{ vars.OBSIDIAN_E2E_RUNNER || 'windows-latest' }}
+    env:
+      OBSIDIAN_PATH: ${{ vars.OBSIDIAN_PATH }}
+      ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建插件
+        run: npm run build
+
+      - name: E2E（创建项目 → 打开工作台）
+        run: npm run test:e2e
+
+      - name: 上传 E2E 报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+

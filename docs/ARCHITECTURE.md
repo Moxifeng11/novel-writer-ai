@@ -680,7 +680,6 @@ processing (恢复)
 - `engine/streaming/stream-parser.ts` — SSE / Ollama 流式解析
 - `engine/streaming/simulated-stream.ts` — 模拟流式
 - `engine/ai-api-client.ts` — `callAIAsyncIterator`（三阶段降级）
-- `engine/co-writer/parallel-suggestions.ts` — 并行建议生成
 
 ### 缓存体系
 - `engine/cache/multi-layer-cache.ts` — 多层缓存（L1 + L2）
@@ -689,8 +688,7 @@ processing (恢复)
 - `engine/repository/lru-cache.ts` — LRU 缓存（L1）
 
 ### 性能监控
-- `engine/performance/performance-monitor.ts` — 性能节点
-- `services/performance-monitor.ts` — 服务层性能监控（旧版）
+- `services/performance-monitor.ts` — 唯一性能监控实现（分层埋点、慢操作、报告）
 
 ### 开发文档
 - `docs/ARCHITECTURE.md` — 本文件

@@ -44,6 +44,14 @@ jobs:
       - name: 发布资产校验（含 tag 版本一致性）
         run: npm run check:release -- --tag "$GITHUB_REF_NAME"
 
+      - name: 打包发布 zip（含 Worker 产物）
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          ZIP="novel-writer-ai-${TAG}.zip"
+          zip -r "$ZIP" main.js manifest.json styles.css workers
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+
       - name: 发布 GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,14 +59,15 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           NOTES="docs/releases/${TAG}.md"
+          ASSETS=(main.js manifest.json styles.css workers/deconstruction-worker.js workers/style-worker.js workers/quality-worker.js "$ZIP")
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG 已存在，覆盖上传资产"
-            gh release upload "$TAG" main.js manifest.json styles.css --clobber
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
           elif [ -f "$NOTES" ]; then
-            gh release create "$TAG" main.js manifest.json styles.css \
+            gh release create "$TAG" "${ASSETS[@]}" \
               --title "$TAG" --notes-file "$NOTES"
           else
-            gh release create "$TAG" main.js manifest.json styles.css \
+            gh release create "$TAG" "${ASSETS[@]}" \
               --title "$TAG" --generate-notes
           fi

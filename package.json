@@ -9,6 +9,8 @@
     "check:templates": "node scripts/generate-template-assets.mjs --check",
     "check:release": "node scripts/check-release.mjs",
     "build": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build.js",
+    "build:release": "npm run preflight && npm run build",
+    "preflight": "npm run typecheck && npm run test && npm run check:templates && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines -- --baseline .arch-baseline.json",
     "dev": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build.js --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -18,7 +20,15 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "check-engines": "node scripts/scan-engine-instances.mjs --check",
+    "check:deps": "node scripts/check-dependencies.mjs",
+    "check:css": "node scripts/check-css.js",
+    "css:cleanup": "node scripts/cleanup-css.js",
+    "css:stats": "node scripts/stats-css.js",
+    "audit:deps": "npm audit --omit=dev --audit-level=high",
     "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=20"
   },
   "keywords": [
     "obsidian",
@@ -35,8 +45,6 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitest/coverage-v8": "^1.6.1",
-    "electron": "^42.5.1",
-    "electron-builder": "^26.15.3",
     "esbuild": "^0.19.0",
     "eslint": "^9.39.5",
     "eslint-plugin-obsidianmd": "^0.4.2",

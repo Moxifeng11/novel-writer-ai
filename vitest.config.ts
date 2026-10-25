@@ -13,20 +13,42 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'text-summary', 'html'],
             reportsDirectory: './coverage',
+            // 覆盖率口径覆盖核心域（FR-E-05），排除类型声明、测试与 Worker 入口
             include: [
-                'engine/character-soul.ts',
-                'engine/emotion-planner.ts',
-                'engine/scene-expander.ts',
+                'engine/**/*.ts',
+                'services/**/*.ts',
+                'core/**/*.ts',
             ],
             exclude: [
                 '**/*.d.ts',
                 'tests/**',
+                'engine/**/*-worker.ts',
             ],
+            // 阈值按核心域分别设定（FR-E-05）：基线取自 v4.11.0 实测值，留出小幅回退空间。
+            // 任一域低于阈值即失败，CI 的 test:cov 步骤因此成为阻断门禁。
             thresholds: {
-                lines: 20,
-                functions: 20,
-                branches: 80,
-                statements: 20,
+                lines: 30,
+                statements: 30,
+                branches: 60,
+                functions: 15,
+                'engine/**/*.ts': {
+                    lines: 52,
+                    statements: 52,
+                    branches: 74,
+                    functions: 40,
+                },
+                'services/**/*.ts': {
+                    lines: 36,
+                    statements: 36,
+                    branches: 67,
+                    functions: 26,
+                },
+                'core/**/*.ts': {
+                    lines: 45,
+                    statements: 45,
+                    branches: 74,
+                    functions: 14,
+                },
             },
         },
         testTimeout: 10_000,

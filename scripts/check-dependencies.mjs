@@ -16,6 +16,7 @@
 import { readdirSync, statSync, readFileSync } from 'fs';
 import { join, relative, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { applySetBaseline, parseBaselineArgs } from './baseline-utils.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -358,6 +359,38 @@ function checkDependencies() {
 
 const result = checkDependencies();
 
-if (result.violations.length > 0 || result.cycles.length > 0) {
+// 无 --baseline 时保持原语义：有任何违规即失败（用于一次性排查）。
+// 传入 --baseline 文件后进入「棘轮」模式：只有新增违规才失败。
+const { baselinePath } = parseBaselineArgs();
+if (!baselinePath) {
+    if (result.violations.length > 0 || result.cycles.length > 0) {
+        process.exit(1);
+    }
+    process.exit(0);
+}
+
+const layerKeys = [...new Set(
+    result.violations.map(v => `${v.file}|${v.import}|${v.importLayer}`)
+)].sort();
+const cycleKeys = [...new Set(
+    result.cycles.map(cycle => cycle
+        .map(file => relative(PROJECT_ROOT, file).replace(/\\/g, '/'))
+        .sort()
+        .join('|'))
+)].sort();
+
+const layerBaseline = applySetBaseline({
+    section: 'dependencyLayerViolations',
+    items: layerKeys,
+    label: '分层违规',
+});
+const cycleBaseline = applySetBaseline({
+    section: 'dependencyCycles',
+    items: cycleKeys,
+    label: '循环依赖',
+});
+
+if (layerBaseline.failed || cycleBaseline.failed) {
     process.exit(1);
 }
+process.exit(0);

@@ -1,9 +1,11 @@
 # Dependencies
 node_modules/
 
-# Build output
+# Build output（产物统一不入仓，由 build 生成）
 main.js
 main.js.map
+workers/
+.hotreload
 
 # Coverage
 coverage/
@@ -26,6 +28,7 @@ Thumbs.db
 # Local config (user-specific)
 data.json
 data/
+.sessions/
 
 # Local workspace artifacts (release hygiene)
 .trae/

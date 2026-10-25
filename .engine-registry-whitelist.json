@@ -47,7 +47,7 @@
     },
     {
       "className": "KnowledgeVectorStore",
-      "reason": "CoWriterEngine 使用独立的 OllamaEmbeddingClient 创建独立实例，与 registry 中实例使用不同 embedding provider，不可合并",
+      "reason": "CoWriterEngine 按当前向量设置（EmbeddingProviderFactory.fromSettings）为协同检索构造独立嵌入实例，与 registry 中实例的 provider 来源和生命周期不同，不可合并",
       "category": "context-isolated",
       "allowedInstances": 1
     },

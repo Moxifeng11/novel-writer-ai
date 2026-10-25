@@ -1,4 +1,4 @@
-﻿---
+---
 ⚠️  **文档需核实 · 可能与当前代码不符** ⚠️
 
 **注意**：本文档最后更新时间较早，部分描述可能与当前代码实现存在差异。
@@ -150,7 +150,7 @@ console.log('鎱㈡搷浣?', stats.slowOperations);
 `PerformanceMonitor` 鏄?engine 灞傜殑鎬ц兘鐩戞帶宸ュ叿锛屼笓涓哄煁鐐硅璁★細
 
 ```typescript
-import { performanceMonitor, PerformanceMonitor } from '../engine/performance';
+import { performanceMonitor, PerformanceMonitor } from '../services/performance-monitor';
 
 // 鑾峰彇鍗曚緥锛堣嚜鍔ㄥ垱寤猴級
 const monitor = PerformanceMonitor.getInstance();
@@ -402,10 +402,6 @@ if (process.env.NODE_ENV === 'development') {
   // 鐢ㄦ埛鐐瑰嚮鍙栨秷鏃?  cancelButton.onclick = () => controller.abort();
   ```
 
-- [ ] **鏄惁浣跨敤骞惰寤鸿**锛氶渶瑕佸涓閫夋椂浣跨敤骞惰娴?  ```typescript
-  // 骞惰鐢熸垚 3 涓柟鍚?  const result = engine.suggestParallel(..., 3);
-  ```
-
 ### 鐘舵€佺鐞嗙浉鍏?
 - [ ] **鏄惁浣跨敤閫夋嫨鍣ㄨ闃?*锛氶伩鍏嶄笉蹇呰鐨勬覆鏌?  ```typescript
   // 鉁?鎺ㄨ崘锛氶€夋嫨鍣ㄨ闃?  store.subscribe(
@@ -502,16 +498,11 @@ cache.adjustForMemoryPressure(0.8);  // 鍐呭瓨 80% 鏃堕┍閫?25%
 - 鏈娇鐢?AbortSignal
 
 **瑙ｅ喅鏂规**锛?```typescript
-// 1. 浣跨敤骞惰寤鸿
-const result = engine.suggestParallel(..., 3, {
-    timeoutMs: 30_000,
-});
-
-// 2. 鎻愪緵鍙栨秷鑳藉姏
+// 1. 鎻愪緵鍙栨秷鑳藉姏
 const controller = new AbortController();
 setTimeout(() => controller.abort(), 30_000);
 
-// 3. 妫€鏌ユ參鎿嶄綔
+// 2. 妫€鏌ユ參鎿嶄綔
 const slowOps = performanceMonitor.getSlowOperations(1000);
 console.log('鎱㈡搷浣?', slowOps);
 ```

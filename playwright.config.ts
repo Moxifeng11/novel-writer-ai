@@ -8,6 +8,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  /* Electron 启动与项目模板复制较慢，单测上限放宽 */
+  timeout: 180_000,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -33,42 +35,19 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
-  /* Configure projects for major browsers */
+  /* 真实链路：Electron 启动 Obsidian；未配置 OBSIDIAN_PATH 时用例内部显式 skip */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'obsidian-electron',
+      testMatch: /obsidian-plugin\.spec\.ts/,
     },
 
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    /* 浏览器模拟链路已停用，保留 skip 的存量用例用于后续迁移 */
+    {
+      name: 'legacy-browser',
+      testMatch: /(project-creation|project-card-interactions)\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 
   /* Run your local dev server before starting the tests */

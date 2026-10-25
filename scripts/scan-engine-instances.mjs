@@ -21,6 +21,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+    parseBaselineArgs,
+    readBaseline,
+    writeBaseline,
+    diffCounts,
+} from './baseline-utils.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -202,6 +208,57 @@ function loadWhitelist() {
 }
 
 /**
+ * 应用引擎守卫基线。
+ * 无 --baseline 时保持原语义（有违规即失败）；传入基线后只有「新增类/实例数增加/超限增加」才失败。
+ */
+function applyEngineBaseline(violations, overLimit) {
+    const { baselinePath, updateBaseline } = parseBaselineArgs();
+    if (!baselinePath) {
+        return violations.length > 0 || overLimit.length > 0 ? 1 : 0;
+    }
+
+    const bypassCounts = Object.fromEntries(violations.map(v => [v.className, v.bypassCount]));
+    const overCounts = Object.fromEntries(overLimit.map(o => [o.className, o.actualBypass]));
+
+    const baseline = readBaseline(baselinePath);
+    // 基线文件可能由 check:deps 先创建：只有引擎 section 不存在时才算首次基线化
+    if (!baseline || !baseline.engineBypass) {
+        writeBaseline(baselinePath, 'engineBypass', bypassCounts);
+        writeBaseline(baselinePath, 'engineOverLimit', overCounts);
+        console.log(`\n[基线] 首次写入引擎守卫基线：${violations.length} 个非白名单类 / ${overLimit.length} 个超限类 → ${baselinePath}`);
+        return 0;
+    }
+
+    const bypassDiff = diffCounts(baseline.engineBypass || {}, bypassCounts);
+    const overDiff = diffCounts(baseline.engineOverLimit || {}, overCounts);
+    const newBypass = [...bypassDiff.added, ...bypassDiff.increased];
+    const newOver = [...overDiff.added, ...overDiff.increased];
+
+    if (newBypass.length > 0 || newOver.length > 0) {
+        console.log('\n❌ [基线] 引擎守卫新增违规（基线只允许减少）：');
+        for (const item of newBypass) {
+            console.log(`  + ${item.key}: ${item.count}（基线 ${item.base ?? 0}）`);
+        }
+        for (const item of newOver) {
+            console.log(`  + ${item.key} 超限: ${item.count}（基线 ${item.base ?? 0}）`);
+        }
+        return 1;
+    }
+
+    const tightenedBypass = bypassDiff.decreased.length + bypassDiff.removed.length;
+    const tightenedOver = overDiff.decreased.length + overDiff.removed.length;
+    if (updateBaseline && (tightenedBypass > 0 || tightenedOver > 0)) {
+        writeBaseline(baselinePath, 'engineBypass', bypassCounts);
+        writeBaseline(baselinePath, 'engineOverLimit', overCounts);
+        console.log(`\n[基线] 已收紧引擎守卫基线：非白名单 ${Object.keys(bypassCounts).length} 个 / 超限 ${Object.keys(overCounts).length} 个。`);
+    } else if (tightenedBypass > 0 || tightenedOver > 0) {
+        console.log(`\n[基线] 引擎守卫已有 ${tightenedBypass + tightenedOver} 处收紧；运行 \`npm run check-engines -- --baseline .arch-baseline.json --update-baseline\` 可写回。`);
+    }
+
+    return 0;
+}
+
+/**
  * 守护检查模式：对比白名单，输出违规列表
  *
  * 违规规则：
@@ -209,7 +266,7 @@ function loadWhitelist() {
  *   2. bypassCount > 0（被直接 new，绕过 registry）
  *   3. 不在白名单中
  *
- * 退出码：0=无违规，1=有违规
+ * 退出码：0=无违规（或仅存在基线内债务），1=有新增违规
  */
 function runCheckMode() {
     console.log('[检查] EngineRegistry 守护检查模式启动...');
@@ -285,7 +342,7 @@ function runCheckMode() {
 
     if (violations.length === 0 && overLimit.length === 0) {
         console.log('[通过] 未发现违规：所有应单例的直接 new 都在白名单中且未超限');
-        process.exit(0);
+        process.exit(applyEngineBaseline(violations, overLimit));
     }
 
     if (violations.length > 0) {
@@ -312,7 +369,7 @@ function runCheckMode() {
         console.log('');
     }
 
-    process.exit(1);
+    process.exit(applyEngineBaseline(violations, overLimit));
 }
 
 // 生成 Markdown 报告

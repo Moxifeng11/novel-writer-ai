@@ -1,0 +1,66 @@
+name: Bug 报告
+description: 报告可复现的问题
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量提供可复现信息；安全漏洞请勿在此提交，见 SECURITY.md。
+  - type: input
+    id: plugin_version
+    attributes:
+      label: 插件版本
+      description: manifest.json 中的 version，或设置页显示的版本
+      placeholder: "4.11.0"
+    validations:
+      required: true
+  - type: input
+    id: obsidian_version
+    attributes:
+      label: Obsidian 版本
+      placeholder: "1.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 平台
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - iOS
+        - Android
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开...
+        2. 点击...
+        3. 出现...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断信息
+      description: 可附上「导出诊断包」生成的 JSON（不含密钥与正文）
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 确认
+      options:
+        - label: 我已搜索过现有 Issue
+          required: true
+        - label: 我未在公开 Issue 中粘贴 API Key、口令或正文
+          required: true

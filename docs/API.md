@@ -722,13 +722,6 @@ import {
     createSimulatedStreamWithSignal,
     splitTextIntoChunks,
 } from '../streaming';
-
-// 并行建议
-import {
-    ParallelSuggestionGenerator,
-    scoreSuggestionQuality,
-    sortSuggestionsByQuality,
-} from '../co-writer';
 ```
 
 ---
@@ -819,59 +812,7 @@ for await (const chunk of stream) {
 
 ---
 
-### 3.3 suggestParallel（并行建议）
-**定义**: `engine/co-writer-engine.ts`
-
-```typescript
-class CoWriterEngine {
-    suggestParallel(
-        precedingText: string,
-        cursorHint: string,
-        mode: string,
-        count?: number,           // 默认 3
-        options?: {
-            timeoutMs?: number;
-            maxRetries?: number;
-        },
-    ): ParallelSuggestionResult;
-}
-```
-
-**ParallelSuggestionResult**:
-```typescript
-export interface ParallelSuggestionResult {
-    handles: SuggestionStreamHandle[];
-    allCompleted: Promise<SuggestionRecord[]>;
-    cancel: () => void;
-}
-
-export interface SuggestionStreamHandle {
-    id: string;
-    direction: SuggestionDirection;
-    style: 'default' | 'creative' | 'conservative';
-    iterator: AsyncGenerator<string, SuggestionRecord | null, unknown>;
-    currentText: string;
-    status: 'pending' | 'streaming' | 'completed' | 'failed';
-    error?: string;
-    qualityScore?: number;
-    completedAt?: number;
-}
-```
-
-**质量评分**:
-```typescript
-import { scoreSuggestionQuality, sortSuggestionsByQuality } from '../engine/co-writer';
-
-const result = scoreSuggestionQuality(text, precedingText);
-// result.score: number (0-100)
-// result.details: { lengthScore, diversityScore, coherenceScore }
-
-const sorted = sortSuggestionsByQuality(suggestions, precedingText);
-```
-
----
-
-### 3.4 模拟流式
+### 3.3 模拟流式
 **定义**: `engine/streaming/simulated-stream.ts`
 
 ```typescript
@@ -897,7 +838,7 @@ export interface SimulatedStreamOptions {
 
 ---
 
-### 3.5 StreamParser（流式格式解析器）
+### 3.4 StreamParser（流式格式解析器）
 **定义**: `engine/streaming/stream-parser.ts`
 
 ```typescript
@@ -1147,38 +1088,44 @@ export interface LruCacheOptions {
 import {
     PerformanceMonitor,
     performanceMonitor,
-} from '../performance';
+} from '../services/performance-monitor';
 ```
 
 ---
 
 ### 5.1 PerformanceMonitor
-**定义**: `engine/performance/performance-monitor.ts`
+**定义**: `services/performance-monitor.ts`（唯一实现；原 `engine/performance/` 重复实现已删除）
 
 ```typescript
 export class PerformanceMonitor {
-    static getInstance(options?: PerformanceMonitorOptions): PerformanceMonitor;
-    static resetInstance(): void;
+    static getInstance(options?: Partial<PerformanceMonitorOptions>): PerformanceMonitor;
 
     updateOptions(options: Partial<PerformanceMonitorOptions>): void;
     getOptions(): PerformanceMonitorOptions;
-    enable(): void;
-    disable(): void;
+    setEnabled(enabled: boolean): void;
     isEnabled(): boolean;
-    setSlowOperationThreshold(thresholdMs: number): void;
 
-    startMark(key: string, metadata?: Record<string, any>): string | null;
-    endMark(markId: string | null, metadata?: Record<string, any>): number | null;
-    wrap<T>(key: string, fn: () => T, metadata?: Record<string, any>): T;
-    wrapAsync<T>(key: string, fn: () => Promise<T>, metadata?: Record<string, any>): Promise<T>;
+    start(name: string, category?: PerformanceCategory, parentId?: string, metadata?: Record<string, unknown>): string | null;
+    end(markId: string | null, metadata?: Record<string, unknown>): number | null;
+    wrap<T>(name: string, fn: () => T, category?: PerformanceCategory, metadata?: Record<string, unknown>): T;
+    wrapAsync<T>(name: string, fn: () => Promise<T>, category?: PerformanceCategory, metadata?: Record<string, unknown>): Promise<T>;
+    /** 以已有 start 的起点结算一次耗时；会消费该 start mark，不会泄漏 activeMarks */
+    measure(name: string, startMarkId: string, category?: PerformanceCategory, metadata?: Record<string, unknown>): number | null;
 
-    getOperationStats(key: string): OperationStats | null;
-    getStats(): PerformanceStats;
-    getSlowestOperations(limit?: number): Array<{ key: string; avgDuration: number; count: number }>;
+    getLog(limit?: number, category?: PerformanceCategory): PerformanceLogEntry[];
+    getStats(operationName: string, category?: PerformanceCategory): PerformanceStats | null;
+    getAllStats(): Record<string, PerformanceStats>;
     getSlowOperations(threshold?: number): SlowOperation[];
+    getCategoryStats(): Record<PerformanceCategory, { count: number; totalDuration: number; avgDuration: number }>;
+    getMemoryInfo(): { current?: number; peak: number; avg?: number };
+    getTrend(operationName: string, category?: PerformanceCategory, windowSize?: number): { recent: number[]; trend: 'improving' | 'degrading' | 'stable' } | null;
 
-    reset(): void;
-    clearSlowOperations(): void;
+    generateReport(cacheStats?: { hitRate: number; totalEntries: number; totalSize: number }): PerformanceReport;
+    generateTextReport(cacheStats?: { hitRate: number; totalEntries: number; totalSize: number }): string;
+
+    clearLog(): void;
+    exportLog(): string;
+    importLog(json: string): void;
 }
 
 export const performanceMonitor: PerformanceMonitor;
@@ -1187,45 +1134,42 @@ export const performanceMonitor: PerformanceMonitor;
 **配置选项**:
 ```typescript
 export interface PerformanceMonitorOptions {
-    enabled?: boolean;                    // 默认 true
-    slowOperationThresholdMs?: number;    // 默认 500
-    maxHistorySize?: number;              // 默认 1000
+    enabled: boolean;                    // 默认 true
+    maxLogEntries: number;               // 默认 1000
+    slowOperationThresholdMs: number;    // 默认 1000
+    enableMemoryTracking: boolean;       // 默认 true
 }
 ```
 
-**标记类型**:
-```typescript
-export interface PerformanceMark {
-    key: string;
-    startTime: number;
-    endTime?: number;
-    duration?: number;
-    metadata?: Record<string, any>;
-}
+**容量上限（长跑不增长）**:
+- 日志条目：`maxLogEntries`（默认 1000）
+- 统计 key：`MAX_STATS_KEYS = 500`，超出淘汰最旧 key
+- 结束/结算埋点会同步从 `activeMarks` 与父节点 `children` 中摘除
 
-export interface OperationStats {
-    key: string;
+**分类与统计类型**:
+```typescript
+export type PerformanceCategory =
+    | 'projectLoad' | 'chapterGeneration' | 'knowledgeDeconstruction'
+    | 'vectorCalculation' | 'viewRender' | 'cacheRead' | 'cacheWrite'
+    | 'apiCall' | 'fileIO' | 'other';
+
+export interface PerformanceStats {
     count: number;
     totalDuration: number;
     avgDuration: number;
     minDuration: number;
     maxDuration: number;
-}
-
-export interface PerformanceStats {
-    totalOperations: number;
-    totalDuration: number;
-    avgDuration: number;
-    operations: Record<string, OperationStats>;
-    slowestTop10: Array<{ key: string; avgDuration: number; count: number }>;
-    recentSlowOperations: SlowOperation[];
+    p50: number;
+    p95: number;
+    p99: number;
 }
 
 export interface SlowOperation {
-    key: string;
+    name: string;
     duration: number;
-    threshold: number;
     timestamp: number;
+    category: PerformanceCategory;
+    threshold: number;
 }
 ```
 
@@ -1272,19 +1216,12 @@ export class CoWriteFacade {
         signal?: AbortSignal,
     ): AsyncGenerator<string, SuggestionRecord | null, unknown>;
 
-    suggestParallel(
-        precedingText: string,
-        cursorHint: string,
-        mode: string,
-        count?: number,
-        options?: { timeoutMs?: number; maxRetries?: number },
-    ): ParallelSuggestionResult;
-
     async iterateSuggestion(
         suggestion: SuggestionRecord,
         instruction: string,
         precedingText: string,
         cursorHint: string,
+        signal?: AbortSignal,
     ): Promise<SuggestionRecord | null>;
 }
 ```

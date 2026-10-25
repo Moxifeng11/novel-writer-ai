@@ -20,6 +20,7 @@ export default [
             'styles.css',
             'scripts/**',
             'tests/**',
+            'coverage/**',
         ],
     },
     {
