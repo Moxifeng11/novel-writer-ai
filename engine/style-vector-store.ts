@@ -5,6 +5,13 @@ import {
     projectFingerprintVectorsDir,
 } from '../shared/paths';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
+import {
+    detectEmbeddingMismatch,
+    getEmbeddingDimensionHint,
+    getEmbeddingFingerprint,
+    getEmbeddingModelName,
+    type EmbeddingMismatchReason,
+} from './embedding/embedding-fingerprint';
 import { cosineSimilarity } from './local-vector-store';
 import type { StyleFingerprint, StyleFingerprintFeatures } from './style-fingerprint-library';
 import { createLogger } from '../shared/logger';
@@ -51,9 +58,21 @@ export interface StyleDimensionVector {
 
 export interface StyleFingerprintVectors {
     fingerprintId: string;
+    /** 生成向量时使用的 embedding 模型指纹；旧文件可能没有（纯模型名） */
+    modelId?: string;
+    /** 向量维度（overallVector 长度），用于识别换模型后的维度变化 */
+    dimensionCount?: number;
     dimensions: Record<StyleDimension, StyleDimensionVector>;
     overallVector: number[];
     updatedAt: number;
+}
+
+/** 因更换 embedding 模型被跳过的 V1 风格向量 */
+export interface StyleVectorStoreModelMismatch {
+    fingerprintId: string;
+    storedModelId: string;
+    currentModelId: string;
+    reason?: EmbeddingMismatchReason;
 }
 
 export interface StyleSimilarityResult {
@@ -80,6 +99,10 @@ export class StyleVectorStore {
     private fs: FileSystemPort | null = null;
     private vectors: Map<string, StyleFingerprintVectors> = new Map();
     private loaded = false;
+    /** B2：加载签名（文件 + embedding 指纹），切模型后同会话即可重载 */
+    private loadedSignature: string | null = null;
+    /** 因 embedding 模型/维度不一致被跳过的 V1 向量 */
+    private modelMismatches: StyleVectorStoreModelMismatch[] = [];
 
     constructor(
         app: App,
@@ -115,14 +138,39 @@ export class StyleVectorStore {
     }
 
     private async ensureLoaded(): Promise<void> {
-        if (this.loaded) return;
+        const signature = await this.computeSignature();
+        if (this.loaded && (signature === null || signature === this.loadedSignature)) return;
         await this.loadAllFromDisk();
         this.loaded = true;
+        this.loadedSignature = signature;
+    }
+
+    /** 签名包含 embedding 指纹，切换模型/端点后同会话也能重新加载 */
+    private async computeSignature(): Promise<string | null> {
+        try {
+            const files = await this.getFS().listFiles(this.getVectorsDir());
+            const fileSignature = files
+                .filter(f => f.name.startsWith('style-') && f.name.endsWith('.json'))
+                .map(f => `${f.path}@${f.stat?.mtime ?? 0}:${f.stat?.size ?? 0}`)
+                .sort()
+                .join('|');
+            return `${getEmbeddingFingerprint(this.embeddingProvider)}::${fileSignature}`;
+        } catch {
+            return null;
+        }
     }
 
     private async loadAllFromDisk(): Promise<void> {
         const fs = this.getFS();
         const dir = this.getVectorsDir();
+        const current = {
+            fingerprint: getEmbeddingFingerprint(this.embeddingProvider),
+            modelName: getEmbeddingModelName(this.embeddingProvider),
+            dimension: getEmbeddingDimensionHint(this.embeddingProvider),
+        };
+        this.modelMismatches = [];
+        // 签名变化后的重载必须丢弃旧内存，避免已跳过的向量继续参与检索
+        this.vectors.clear();
 
         try {
             const files = await fs.listFiles(dir);
@@ -132,6 +180,18 @@ export class StyleVectorStore {
                     const content = await fs.read(file.path);
                     const data = JSON.parse(content) as StyleFingerprintVectors;
                     if (data.fingerprintId && data.dimensions) {
+                        // B1：V1 文件同样要治理。旧文件没有 modelId/dimensionCount，
+                        // 按兼容策略加载，首次重建写入后会补齐。
+                        const mismatchReason = detectEmbeddingMismatch(data, current);
+                        if (mismatchReason) {
+                            this.modelMismatches.push({
+                                fingerprintId: data.fingerprintId,
+                                storedModelId: data.modelId || '',
+                                currentModelId: current.fingerprint,
+                                reason: mismatchReason,
+                            });
+                            continue;
+                        }
                         this.vectors.set(data.fingerprintId, data);
                     }
                 } catch (e) {
@@ -140,6 +200,14 @@ export class StyleVectorStore {
             }
         } catch {
         }
+        if (this.modelMismatches.length > 0) {
+            log.info(`[StyleVectorStore] 跳过 ${this.modelMismatches.length} 个 embedding 模型/维度不一致的 V1 风格向量，重新提取指纹即可按当前模型重建`);
+        }
+    }
+
+    /** 因换 embedding 模型/维度被跳过的 V1 向量（文件保留） */
+    getModelMismatches(): StyleVectorStoreModelMismatch[] {
+        return [...this.modelMismatches];
     }
 
     private async saveToDisk(fingerprintId: string): Promise<void> {
@@ -189,6 +257,11 @@ export class StyleVectorStore {
 
         const result: StyleFingerprintVectors = {
             fingerprintId,
+            // 模型未知时不落 unknown，避免后续可识别时被误判不一致
+            ...(getEmbeddingFingerprint(this.embeddingProvider) !== 'unknown'
+                ? { modelId: getEmbeddingFingerprint(this.embeddingProvider) }
+                : {}),
+            dimensionCount: overallVector.length,
             dimensions,
             overallVector,
             updatedAt: Date.now(),

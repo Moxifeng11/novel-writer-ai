@@ -23,6 +23,13 @@ import {
     projectFingerprintVectorsDir,
 } from '../../shared/paths';
 import type { EmbeddingProvider } from '../embedding/embedding-provider';
+import {
+    detectEmbeddingMismatch,
+    getEmbeddingDimensionHint,
+    getEmbeddingFingerprint,
+    getEmbeddingModelName,
+    type EmbeddingMismatchReason,
+} from '../embedding/embedding-fingerprint';
 import { cosineSimilarity } from '../local-vector-store';
 import { createLogger } from '../../shared/logger';
 
@@ -62,10 +69,25 @@ export interface StyleFingerprintVectorsV2 {
     dimensions: Record<StyleDimensionKeyV2, StyleDimensionVectorV2>;
     /** 整体向量（所有维度拼接后单次 embedding） */
     overallVector: number[];
+    /** 生成向量时使用的 embedding 模型 ID（用于换模型后隔离旧向量） */
+    modelId: string;
+    /** 向量维度（overallVector 长度），用于识别不同 embedding 输出的文件 */
+    dimensionCount: number;
     /** V1 数据备份（迁移时保留，非迁移场景为 undefined） */
     v1Backup?: unknown;
     /** 最后更新时间 */
     updatedAt: number;
+}
+
+/** 换 embedding 模型后被隔离的向量文件 */
+export interface StyleVectorModelMismatch {
+    fingerprintId: string;
+    storedModelId: string;
+    currentModelId: string;
+    /** 不一致原因：模型指纹变化或维度变化 */
+    reason?: EmbeddingMismatchReason;
+    /** 隔离备份文件路径 */
+    backupPath: string;
 }
 
 /** 检索结果 */
@@ -115,8 +137,12 @@ export class StyleVectorStoreV2 {
     private vectors: Map<string, StyleFingerprintVectorsV2> = new Map();
     /** 已加载标记 */
     private loaded = false;
+    /** 加载时使用的签名（文件 + embedding 指纹），用于切换模型后自动重载 */
+    private loadedSignature: string | null = null;
     /** 加载中标记（防止并发加载） */
     private loadingPromise: Promise<void> | null = null;
+    /** 因 embedding 模型不一致被隔离的文件 */
+    private modelMismatches: StyleVectorModelMismatch[] = [];
 
     constructor(
         app: App,
@@ -179,7 +205,8 @@ export class StyleVectorStoreV2 {
     // ----------------------------------------------------------
 
     private async ensureLoaded(): Promise<void> {
-        if (this.loaded) return;
+        const signature = await this.computeSignature();
+        if (this.loaded && (signature === null || signature === this.loadedSignature)) return;
         if (this.loadingPromise) {
             await this.loadingPromise;
             return;
@@ -191,11 +218,37 @@ export class StyleVectorStoreV2 {
             this.loadingPromise = null;
         }
         this.loaded = true;
+        // 加载过程会隔离/删除模型不一致的文件，必须按加载后的磁盘状态重新取签名：
+        // 否则下次 ensureLoaded 因签名不同重复加载，并清空 modelMismatches 报告。
+        this.loadedSignature = (await this.computeSignature()) ?? signature;
+    }
+
+    /** B2：签名包含 embedding 指纹，切换模型/端点后同会话即可重新隔离旧向量 */
+    private async computeSignature(): Promise<string | null> {
+        try {
+            const files = await this.getFS().listFiles(this.getVectorsDir());
+            const fileSignature = files
+                .filter(f => f.name.startsWith('style-') && f.name.endsWith('.json'))
+                .map(f => `${f.path}@${f.stat?.mtime ?? 0}:${f.stat?.size ?? 0}`)
+                .sort()
+                .join('|');
+            return `${this.getCurrentModelId()}::${fileSignature}`;
+        } catch {
+            return null;
+        }
     }
 
     private async loadAllFromDisk(): Promise<void> {
         const fs = this.getFS();
         const dir = this.getVectorsDir();
+        const current = {
+            fingerprint: this.getCurrentModelId(),
+            modelName: getEmbeddingModelName(this.embeddingProvider),
+            dimension: getEmbeddingDimensionHint(this.embeddingProvider),
+        };
+        this.modelMismatches = [];
+        // 签名变化后的重载必须丢弃旧内存，避免已隔离/删除的向量继续参与检索
+        this.vectors.clear();
 
         try {
             const files = await fs.listFiles(dir);
@@ -205,9 +258,35 @@ export class StyleVectorStoreV2 {
                 try {
                     const content = await fs.read(file.path);
                     const data = JSON.parse(content) as StyleFingerprintVectorsV2;
-                    if (data.fingerprintId && data.version === 'v2' && data.dimensions) {
-                        this.vectors.set(data.fingerprintId, data);
+                    if (!data.fingerprintId || data.version !== 'v2' || !data.dimensions) continue;
+
+                    // 维度治理：文件记录的模型/维度与当前 embedding 不一致时隔离，
+                    // 避免把不同模型的向量混算成「高相似度」。
+                    // 旧文件没有 modelId 字段：无法判断，按兼容策略加载（下次重建后补齐）。
+                    const mismatchReason = detectEmbeddingMismatch(data, current);
+                    if (mismatchReason) {
+                        const backupPath = `${file.path}.mismatch.bak`;
+                        try {
+                            await fs.write(backupPath, content);
+                            await fs.delete(file.path);
+                        } catch (e) {
+                            log.warn(`[StyleVectorStoreV2] 隔离模型不一致向量失败: ${file.path}`, e);
+                        }
+                        this.modelMismatches.push({
+                            fingerprintId: data.fingerprintId,
+                            storedModelId: data.modelId,
+                            currentModelId: current.fingerprint,
+                            reason: mismatchReason,
+                            backupPath,
+                        });
+                        log.warn(
+                            `[StyleVectorStoreV2] 向量模型/维度不一致，已隔离并需重建: ${data.fingerprintId}`,
+                            { storedModelId: data.modelId, currentModelId: current.fingerprint, reason: mismatchReason },
+                        );
+                        continue;
                     }
+
+                    this.vectors.set(data.fingerprintId, data);
                 } catch (e) {
                     log.warn(`[StyleVectorStoreV2] 加载 V2 向量文件失败: ${file.path}`, e);
                 }
@@ -215,6 +294,27 @@ export class StyleVectorStoreV2 {
         } catch {
             // 目录不存在是正常情况，不报错
         }
+    }
+
+    /** 当前 embedding 指纹（provider:model@baseUrlHash） */
+    private getCurrentModelId(): string {
+        return getEmbeddingFingerprint(this.embeddingProvider);
+    }
+
+    /** 因换 embedding 模型被隔离、需要重建的向量 */
+    getModelMismatches(): StyleVectorModelMismatch[] {
+        return [...this.modelMismatches];
+    }
+
+    /** 指定指纹是否因模型不一致被隔离 */
+    hasModelMismatch(fingerprintId: string): boolean {
+        return this.modelMismatches.some(m => m.fingerprintId === fingerprintId);
+    }
+
+    /** 触发磁盘加载后返回模型不一致的隔离报告 */
+    async reportModelMismatches(): Promise<StyleVectorModelMismatch[]> {
+        await this.ensureLoaded();
+        return this.getModelMismatches();
     }
 
     private async saveToDisk(fingerprintId: string): Promise<void> {
@@ -225,16 +325,25 @@ export class StyleVectorStoreV2 {
         const data = this.vectors.get(fingerprintId);
         if (!data) {
             try { await fs.delete(filePath); } catch { /* ignore */ }
+            await this.refreshLoadedSignature();
             return;
         }
 
         try {
             await fs.mkdir(dir);
             await fs.write(filePath, JSON.stringify(data, null, 2));
+            // 自身写入后同步签名：否则下一次 ensureLoaded 会把刚写的文件当成外部变更，
+            // 重载后替换内存对象（调用方拿到的引用失效，也存在无谓 IO）。
+            await this.refreshLoadedSignature();
         } catch (e) {
             log.warn(`[StyleVectorStoreV2] 保存 V2 向量文件失败: ${filePath}`, e);
             throw e;
         }
+    }
+
+    private async refreshLoadedSignature(): Promise<void> {
+        const signature = await this.computeSignature();
+        if (signature !== null) this.loadedSignature = signature;
     }
 
     // ----------------------------------------------------------
@@ -336,6 +445,8 @@ export class StyleVectorStoreV2 {
             version: 'v2',
             dimensions,
             overallVector,
+            modelId: this.getCurrentModelId(),
+            dimensionCount: overallVector.length,
             updatedAt: Date.now(),
         };
     }
@@ -491,6 +602,10 @@ export class StyleVectorStoreV2 {
             version: 'v2',
             dimensions,
             overallVector,
+            // V1 迁移数据无法确认原 embedding 模型，留空表示「未知」：
+            // 加载时不做模型一致性隔离，等用户重建后自动补齐。
+            modelId: '',
+            dimensionCount: overallVector.length,
             v1Backup: v1Data,
             updatedAt: Date.now(),
         };
@@ -880,6 +995,7 @@ export class StyleVectorStoreV2 {
         this.vectors.clear();
         this.loaded = false;
         this.loadingPromise = null;
+        this.modelMismatches = [];
         await this.ensureLoaded();
     }
 }

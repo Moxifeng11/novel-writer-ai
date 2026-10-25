@@ -10,6 +10,16 @@
 import type { AIEngine } from './ai-engine';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
+import { fitPromptToContext } from '../shared/prompt-budget';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('SceneExpander');
+
+/** 预算闸门参数（不传时保持旧行为：不裁剪） */
+export interface SceneExpandBudget {
+    maxContext: number;
+    maxOutput: number;
+}
 
 /** 展开后的场景设计 */
 export interface ExpandedScene {
@@ -70,7 +80,11 @@ cliffhanger: （仅最后一个场景填写，钩子内容）
 - subtext 是说vs想的差距——说了什么，心里真正想的是什么
 - key_scene 每章至少1个，要选真正有冲击力的时刻，不要随便选
 - dialogue_function 要具体——不要写"推进剧情"，要写"揭露了反派的真实身份"或"让两人关系从敌对转为合作"
-- cliffhanger 必须让人想立刻翻下一页——不能是平淡的收尾`;
+- cliffhanger 必须让人想立刻翻下一页——不能是平淡的收尾
+- 第1个场景必须承接【上一章结尾】的时间、地点、人物状态与情绪，不得无过渡跳转
+- 本章时间只许前进或原地，不得倒退；与【时间线】冲突时以时间线为准
+- 场景之间切换必须有过渡（时间推移/空间移动/视角转移），不得凭空换场
+- 只演出【信息规划】与【大纲】已确定的事件，不得自行新增情节节点或反转`;
 
 export const SCENE_EXPAND_USER_TEMPLATE = `你是\${protagonistName}本人。现在预演你即将经历的第\${chapNum}章。
 
@@ -88,6 +102,15 @@ export const SCENE_EXPAND_USER_TEMPLATE = `你是\${protagonistName}本人。现
 
 【你要经历的大纲】
 \${outlineContent}
+
+【信息规划——本章必须释放/保留的信息】
+\${infoPlan}
+
+【上一章结尾——本章第一个场景必须从这里接上】
+\${prevChapEnding}
+
+【时间线——本章时间不得倒退】
+\${timelineEvents}
 
 【你的情绪规划】
 \${emotionPlan}
@@ -111,10 +134,14 @@ export async function generateSceneExpansion(
     vars: Record<string, string>,
     model?: string,
     notifier: Notifier = NOOP_NOTIFIER,
+    budget?: SceneExpandBudget,
 ): Promise<string> {
     const systemPrompt = SCENE_EXPAND_SYSTEM_PROMPT
         .replace(/\${protagonistSoul}/g, vars.characterCores || '')
         .replace(/\${triggeredMemories}/g, vars.triggeredMemories || '无。');
+
+    // 知识注入单独作为增强层：超预算时整段丢弃，而不是拼在正文主体里被尾部截断
+    const sceneKnowledge = (vars.sceneKnowledge || '').trim();
 
     const userPrompt = SCENE_EXPAND_USER_TEMPLATE
         .replace(/\${protagonistName}/g, vars.protagonistName || '主角')
@@ -124,13 +151,39 @@ export async function generateSceneExpansion(
         .replace(/\${powerSystem}/g, vars.powerSystem || '暂无力量体系设定。')
         .replace(/\${worldType}/g, vars.worldType || '未知世界类型。')
         .replace(/\${outlineContent}/g, vars.outlineContent || '')
+        .replace(/\${infoPlan}/g, vars.infoPlan || '（未执行信息规划：只演出大纲已确定的事件，不得新增情节节点）')
+        .replace(/\${prevChapEnding}/g, vars.prevChapEnding || '（无上一章结尾信息：不要编造上一章结尾）')
+        .replace(/\${timelineEvents}/g, vars.timelineEvents || '（无时间线信息：本章时间不得倒退，场景顺序必须符合因果）')
         .replace(/\${emotionPlan}/g, vars.emotionPlan || '无情绪规划。')
         .replace(/\${triggeredMemories}/g, vars.triggeredMemories || '无。')
         .replace(/\${allChars}/g, vars.allChars || '')
-        .replace(/\${sceneKnowledge}/g, vars.sceneKnowledge || '');
+        .replace(/\${sceneKnowledge}/g, '');
+
+    let effectiveUser = userPrompt;
+    if (budget && budget.maxContext > 0) {
+        const fit = fitPromptToContext({
+            systemPrompt,
+            userPrompt,
+            extraTail: sceneKnowledge,
+            maxContext: budget.maxContext,
+            maxOutput: budget.maxOutput,
+            modelId: model,
+            sectionAware: true,
+        });
+        effectiveUser = fit.user;
+        if (fit.droppedExtra) {
+            log.warn(`[SceneExpander] 上下文不足，已跳过知识注入: ~${fit.estimatedTokens}t`);
+            notifier.showNotice('⚠️ 上下文不足，已跳过场景展开的知识注入');
+        }
+        if (fit.truncated) {
+            log.warn(`[SceneExpander] prompt 过长，已保留头部+尾部: ~${fit.estimatedTokens}t`);
+        }
+    } else if (sceneKnowledge) {
+        effectiveUser = `${userPrompt}\n\n${sceneKnowledge}`;
+    }
 
     notifier.showNotice('🎬 正在展开场景设计...');
-    const response = await aiEngine.callAI(userPrompt, systemPrompt, model);
+    const response = await aiEngine.callAI(systemPrompt, effectiveUser, model);
     notifier.showNotice('✅ 场景展开完成');
 
     return response.content;
@@ -184,6 +237,55 @@ export function parseChineseNumber(str: string): number | null {
     return total > 0 ? total : null;
 }
 
+/** 场景标题行：兼容 ## / ### / #### 标题、中文「场景N」与英文「sceneN」写法 */
+export const SCENE_HEADING_SOURCE =
+    '^#{2,6}[ \\t]*(?:场景[ \\t]*([一二三四五六七八九十百千万亿零〇两]+|\\d+)|scene[ \\t]*(\\d+))[ \\t]*[：:][ \\t]*(.*)$';
+
+/** 解析出的场景标题 */
+export interface SceneHeading {
+    /** 场景序号；标题中无法解析时按出现顺序兜底 */
+    index: number;
+    /** 场景标题 */
+    name: string;
+    /** 标题行起始偏移 */
+    start: number;
+    /** 标题行结束偏移（场景正文起点） */
+    end: number;
+}
+
+/** 解析 Scene 展开内容中的场景标题位置（所有场景相关解析的唯一入口） */
+export function parseSceneHeadings(content: string): SceneHeading[] {
+    const headings: SceneHeading[] = [];
+    if (!content) return headings;
+
+    const regex = new RegExp(SCENE_HEADING_SOURCE, 'gim');
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(content)) !== null) {
+        let index = headings.length + 1;
+        if (m[1] !== undefined) {
+            index = parseChineseNumber(m[1]) ?? index;
+        } else if (m[2] !== undefined) {
+            index = parseInt(m[2], 10) || index;
+        }
+        headings.push({
+            index,
+            name: m[3].trim(),
+            start: m.index,
+            end: m.index + m[0].length,
+        });
+    }
+    return headings;
+}
+
+/** 按场景标题切分场景正文 */
+export function splitSceneSections(content: string): { heading: SceneHeading; body: string }[] {
+    const headings = parseSceneHeadings(content);
+    return headings.map((heading, i) => ({
+        heading,
+        body: content.slice(heading.end, i + 1 < headings.length ? headings[i + 1].start : content.length),
+    }));
+}
+
 /**
  * 校验 Scene 展开是否包含必要要素
  */
@@ -191,21 +293,7 @@ export function validateSceneExpansion(content: string): { valid: boolean; error
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    const sceneRegex = /^##\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene(\d+))\s*[：:]/gim;
-    const scenes: { index: number; num: number }[] = [];
-    let m: RegExpExecArray | null;
-    while ((m = sceneRegex.exec(content)) !== null) {
-        let num = 0;
-        if (m[1] !== undefined) {
-            const cnNum = parseChineseNumber(m[1]);
-            num = cnNum ?? scenes.length + 1;
-        } else if (m[2] !== undefined) {
-            num = parseInt(m[2], 10);
-        } else {
-            num = scenes.length + 1;
-        }
-        scenes.push({ index: m.index, num });
-    }
+    const scenes = parseSceneHeadings(content).map(heading => ({ index: heading.start, num: heading.index }));
 
     if (scenes.length === 0) {
         errors.push('未找到任何场景展开（缺少 ## 场景N：或 ## sceneN: 格式）');

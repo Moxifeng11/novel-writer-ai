@@ -13,9 +13,11 @@
 
 import { App, TFile } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
+import { BodyWriter } from './body-writer';
 import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
+import { validateStepResult } from './step-validator';
 import { createLogger } from '../shared/logger';
 
 
@@ -173,41 +175,31 @@ export class StepResultSaver {
                     }
                 }
 
-                // 去除 content 中可能已有的 frontmatter
-                let bodyText = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
-
-                // v3.4.7: 提取标题
-                let titleMatch = content.match(/^#{1,2}\s*第\d+章[\s：:]+《?(.+?)》?$/m);
-                if (!titleMatch) {
-                    titleMatch = bodyText.match(/^#{1,2}\s*第\d+章[\s：:]+《?(.+?)》?$/m);
-                }
-                const ct = titleMatch ? titleMatch[1].trim().slice(0, 30) : '';
-
-                // 正文缩进
-                bodyText = bodyText.split('\n').map(line => {
-                    const t = line.trim();
-                    if (!t || t.startsWith('#') || t.startsWith('```') || t.startsWith('|') || t.startsWith('- ') || t.startsWith('* ')) return line;
-                    if (!t.startsWith('  ')) return '  ' + line.trimStart();
-                    return line;
-                }).join('\n');
-
-                // 写入正文
-                await this.getFS().write(actualTargetPath, bodyText);
-
-                // v3.4.7: 提取正文中涉及的实体名称，写入 frontmatter
                 const project = v4Project || chapDir.split('/')[0] || '';
                 const entityNames = project ? await this.extractEntityNames(project) : null;
 
-                const bodyFile = await this.getFS().getFile(actualTargetPath);
-                if (bodyFile instanceof TFile) {
-                    try {
-                        await this.getFrontmatter().processFrontmatter(bodyFile, (fm: Record<string, unknown>) => {
-                            this.updateFrontmatterFields(fm, ct, volume, chapName, entityNames, 'pipeline', bodyText);
-                        });
-                    } catch (fmErr) {
-                        log.warn('[StepResultSaver] bodyGeneration processFrontMatter 失败:', fmErr);
-                    }
+                // 统一落盘入口：保留旧 frontmatter、剥离模型标题、统一缩进与状态
+                const patch: Record<string, unknown> = {};
+                if (entityNames) {
+                    const inBody = (n: string): boolean => content.includes(n);
+                    patch['涉及人物'] = entityNames.chars.filter(inBody);
+                    patch['涉及地点'] = entityNames.locs.filter(inBody);
+                    patch['涉及势力'] = entityNames.factions.filter(inBody);
+                    patch['涉及物品功法'] = entityNames.items.filter(inBody);
                 }
+
+                const chapNum = v4ChapN || this.parseChapterNum(chapterName);
+                const writer = new BodyWriter({ fs: this.getFS(), frontmatter: this.getFrontmatter() });
+                await writer.write({
+                    path: actualTargetPath,
+                    raw: content,
+                    chapterNum: chapNum,
+                    chapterName,
+                    volume,
+                    project,
+                    writingMode: 'pipeline',
+                    frontmatterPatch: patch,
+                });
 
                 return true;
             } else if (stepKey === 'infoPlan') {
@@ -238,9 +230,13 @@ export class StepResultSaver {
             if (stepKey !== 'bodyGeneration') {
                 const targetFile = await this.getFS().getFile(targetPath);
                 if (targetFile instanceof TFile) {
+                    // A4：step_status 必须由内容结构决定，不能无条件写成 generated。
+                    // 否则模板骨架/半成品会被恢复逻辑当成「已完成」，批量续跑也会整步跳过。
+                    const pureContent = content.replace(/^---[\s\S]*?\n---\n?/, '').trim();
+                    const validation = validateStepResult(stepKey, pureContent);
                     try {
                         await this.getFrontmatter().processFrontmatter(targetFile, (fm: Record<string, unknown>) => {
-                            fm['step_status'] = 'generated';
+                            fm['step_status'] = validation.level === 'complete' ? 'generated' : 'partial';
                             fm['step_model'] = plugin?.settings?.defaultModel || '';
                             fm['step_timestamp'] = new Date().toISOString();
                             this.setStepTags(fm, stepKey, chapName);
@@ -275,59 +271,31 @@ export class StepResultSaver {
                 return;
             }
 
-            // 读取现有 frontmatter 并保留
-            let existingContent = await this.getFS().read(foundBody.path);
-            const fmMatch = existingContent.match(/^---\n([\s\S]*?)\n---\n?/);
-            let existingFm = fmMatch ? fmMatch[1] : '';
-
-            // 清洗 fix 输出
-            let cleanBody = fixContent;
-            cleanBody = cleanBody.replace(/^---\n[\s\S]*?\n---\n?/, '');
-            cleanBody = cleanBody.replace(/^#{1,3}\s*第\d+章[^\n]*\n?/, '');
-
-            // 正文缩进
-            cleanBody = cleanBody.split('\n').map(line => {
-                const t = line.trim();
-                if (!t || t.startsWith('#') || t.startsWith('```') || t.startsWith('|') || t.startsWith('- ') || t.startsWith('* ')) return line;
-                if (!t.startsWith('  ')) return '  ' + line.trimStart();
-                return line;
-            }).join('\n');
-
-            // 重新扫描实体名称
             const project = v4Match ? v4Match[1] : (chapDir.split('/')[0] || '');
             const entityNames = project ? await this.extractEntityNames(project) : null;
-            let updatedFm = existingFm;
+            const patch: Record<string, unknown> = {};
             if (entityNames) {
-                const keepFields = ['标题', 'title', 'status', 'tags', '卷', '章', 'source'];
-                const keptLines: string[] = [];
-                for (const line of existingFm.split('\n')) {
-                    const m = line.match(/^(\w[\w\s]*?)\s*:/);
-                    if (m && keepFields.some(kf => m[1].trim() === kf)) {
-                        keptLines.push(line);
-                    }
-                }
-                if (keptLines.length === 0) {
-                    keptLines.push(`status: pending`, `tags: [正文]`, `卷: ${volume}`, `章: ${chapterName}`);
-                }
-                const involvedCharNames = entityNames.chars.filter((n: string) => cleanBody.includes(n));
-                const involvedLocNames = entityNames.locs.filter((n: string) => cleanBody.includes(n));
-                const involvedFactionNames = entityNames.factions.filter((n: string) => cleanBody.includes(n));
-                const involvedItemNames = entityNames.items.filter((n: string) => cleanBody.includes(n));
-                const newFmLines = [
-                    ...keptLines,
-                    `涉及人物: [${involvedCharNames.map(n => `"${n}"`).join(', ')}]`,
-                    `涉及地点: [${involvedLocNames.map(n => `"${n}"`).join(', ')}]`,
-                    `涉及势力: [${involvedFactionNames.map(n => `"${n}"`).join(', ')}]`,
-                    `涉及物品功法: [${involvedItemNames.map(n => `"${n}"`).join(', ')}]`,
-                ];
-                updatedFm = newFmLines.join('\n');
+                const inBody = (n: string): boolean => fixContent.includes(n);
+                patch['涉及人物'] = entityNames.chars.filter(inBody);
+                patch['涉及地点'] = entityNames.locs.filter(inBody);
+                patch['涉及势力'] = entityNames.factions.filter(inBody);
+                patch['涉及物品功法'] = entityNames.items.filter(inBody);
             }
 
-            const newContent = `---\n${updatedFm}\n---\n\n${cleanBody}`;
-            await this.getFS().write(foundBody.path, newContent);
+            // 统一落盘入口：旧 frontmatter 原文保留，实体字段只刷新「本章实际出现」的项
+            const writer = new BodyWriter({ fs: this.getFS(), frontmatter: this.getFrontmatter() });
+            const result = await writer.write({
+                path: foundBody.path,
+                raw: fixContent,
+                chapterNum: v4Match ? parseInt(v4Match[3], 10) : this.parseChapterNum(chapterName),
+                chapterName,
+                volume,
+                project,
+                writingMode: 'pipeline',
+                frontmatterPatch: patch,
+            });
 
-            log.warn(`[StepResultSaver] writeFixToBody: ✅ 修正已写回正文 → ${foundBody.path} (${cleanBody.length} 字)` +
-                (entityNames ? ` 涉及字段已刷新` : ''));
+            log.warn(`[StepResultSaver] writeFixToBody: ✅ 修正已写回正文 → ${foundBody.path} (${result.wordCount} 字)`);
         } catch (e) {
             log.error('[StepResultSaver] writeFixToBody 失败:', e);
             this.deps.showNotice?.('❌ 修正回写失败，正文未更新：' + (e instanceof Error ? e.message : String(e)), 6000);
@@ -382,34 +350,12 @@ export class StepResultSaver {
     // 内部辅助方法
     // ============================================================
 
-    private updateFrontmatterFields(
-        fm: Record<string, unknown>,
-        title: string,
-        volume: string,
-        chapterName: string,
-        entityNames: EntityNames | null,
-        writingMode: string,
-        bodyText?: string,
-    ): void {
-        fm['标题'] = title;
-        fm['status'] = fm['status'] === 'pending' ? 'written' : (fm['status'] || 'written');
-        fm['tags'] = ['正文'];
-        fm['卷'] = volume;
-        fm['章'] = chapterName;
-        if (!fm['writing_mode']) fm['writing_mode'] = writingMode;
-        if (entityNames) {
-            // 仅写入本章正文中实际出现的实体，避免把所有项目实体都塞进每章 frontmatter
-            const inBody = (n: string): boolean => (bodyText ? bodyText.includes(n) : true);
-            fm['涉及人物'] = entityNames.chars.filter(inBody);
-            fm['涉及地点'] = entityNames.locs.filter(inBody);
-            fm['涉及势力'] = entityNames.factions.filter(inBody);
-            fm['涉及物品功法'] = entityNames.items.filter(inBody);
-        } else {
-            if (!fm['涉及人物']) fm['涉及人物'] = [];
-            if (!fm['涉及地点']) fm['涉及地点'] = [];
-            if (!fm['涉及势力']) fm['涉及势力'] = [];
-            if (!fm['涉及物品功法']) fm['涉及物品功法'] = [];
-        }
+    /** 从「第3章」这类章节名解析序号 */
+    private parseChapterNum(chapterName: string): number | undefined {
+        const m = (chapterName || '').match(/第(\d+)章/);
+        if (!m) return undefined;
+        const n = parseInt(m[1], 10);
+        return Number.isFinite(n) ? n : undefined;
     }
 
     private setStepTags(fm: Record<string, unknown>, stepKey: string, chapterName: string): void {

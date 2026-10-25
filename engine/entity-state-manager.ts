@@ -8,7 +8,7 @@ import { AIEngine } from './ai-engine';
 import { getInvolvedEntities } from './chapter-context-builder';
 import { CharacterFrontmatter, Notifier, NOOP_NOTIFIER } from '../shared/types';
 import { NOTICE_ERROR, NOTICE_WARNING } from '../shared/thresholds';
-import { withWriteLock } from './write-lock';
+import { withWriteLock } from '../shared/write-lock';
 import { pjCharsDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { NovelWriterPluginAPI } from '../shared/plugin-api';
@@ -160,6 +160,7 @@ export class EntityStateManager {
      * @param bodyContent 正文内容（纯文本）
      * @param project 当前项目名
      * @param chapterNum 当前章节号
+     * @param options 模型与调用选项覆盖；协同写作传入协同模型，避免绕过本地模型配置
      * @returns 检测到的状态变更列表
      */
     async detectStateChanges(
@@ -167,15 +168,26 @@ export class EntityStateManager {
         project: string,
         chapterNum: number,
         chapterName: string,
+        options?: {
+            model?: string;
+            callOptions?: {
+                signal?: AbortSignal;
+                endpoint?: string;
+                apiKey?: string;
+                disableFallback?: boolean;
+                numCtx?: number;
+            };
+        },
     ): Promise<EntityStateChange[]> {
         const prompt = this.buildDetectPrompt(bodyContent, project);
         try {
             const response = await this.aiEngine.callAI(
                 '',                          // systemPrompt: 不需要，prompt 已包含完整指令
                 prompt,                      // userPrompt
-                this.plugin.settings.flashModel,
+                options?.model || this.plugin.settings.flashModel,
                 0.7,                        // temperature
                 2000,                       // maxTokens
+                options?.callOptions,
             );
             if (response.error) {
                 log.warn('[EntityStateManager] AI 调用失败:', response.error);

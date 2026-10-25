@@ -65,16 +65,4 @@ export type {
     CreateCoWritingSessionStoreOptions,
 } from './create-session-store';
 
-export type {
-    ParallelSuggestionOptions,
-    SuggestionStreamHandle,
-    ParallelSuggestionResult,
-    QualityScoreResult,
-    StreamGeneratorFactory,
-} from './parallel-suggestions';
 
-export {
-    scoreSuggestionQuality,
-    sortSuggestionsByQuality,
-    ParallelSuggestionGenerator,
-} from './parallel-suggestions';

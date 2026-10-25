@@ -22,6 +22,7 @@ import {
     SELF_CHECK_PROMPTS,
 } from './prompt-templates';
 import { RulesService } from '../services/rules-service';
+import { BODY_CHANGE_INVALIDATED_STEPS } from './step-definitions';
 import { createLogger } from '../shared/logger';
 
 
@@ -32,6 +33,8 @@ export interface StepModalDeps {
     saveStepResult: (stepKey: string, content: string, chapDir: string, chapterName: string, volume: string) => Promise<boolean>;
     callbacks: StepRunnerCallbacks;
     fs?: FileSystemPort;
+    /** A7: 正文被改写后的统一失效传播（优先于手动 delete，保证 stepLevels/staleSteps 同步） */
+    invalidateSteps?: (stepKeys: string[]) => void;
 }
 
 export class StepModalController {
@@ -52,6 +55,16 @@ export class StepModalController {
             this.fs = new ObsidianFileSystem(this.app);
         }
         return this.fs;
+    }
+
+    /** A7: 消痕/迭代接受后正文已变，统一失效下游；无注入时退回旧行为 */
+    private invalidateAfterBodyChange(stepCompleted?: Set<string>): void {
+        const keys = [...BODY_CHANGE_INVALIDATED_STEPS];
+        if (this.deps.invalidateSteps) {
+            this.deps.invalidateSteps(keys);
+            return;
+        }
+        for (const key of keys) stepCompleted?.delete(key);
     }
 
     /** 获取 TemplateService 实例（通过 EngineRegistry 获取共享实例） */
@@ -267,11 +280,7 @@ export class StepModalController {
                 log.warn('[StepModalController] AI消痕接受: chapDir=', chapDir, 'len=', finalText.length);
                 stepResults['bodyGeneration'] = finalText;
                 await this.deps.saveStepResult('bodyGeneration', finalText, chapDir, chapterName, volume);
-                stepCompleted.delete('selfCheck');
-                stepCompleted.delete('continuityCheck');
-                stepCompleted.delete('qualityControl');
-                stepCompleted.delete('analysisReport');
-                stepCompleted.delete('settlement');
+                this.invalidateAfterBodyChange(stepCompleted);
                 this.deps.callbacks.showSuccess('已接受改写版本，后续步骤已重置');
                 overlay.remove();
                 await renderInContainer(tabContent);
@@ -450,11 +459,7 @@ export class StepModalController {
                 log.warn('[StepModalController] 迭代精修接受: chapDir=', chapDir, 'len=', finalBody.length);
                 stepResults['bodyGeneration'] = finalBody;
                 await this.deps.saveStepResult('bodyGeneration', finalBody, chapDir ?? '', chapterName ?? '', volume ?? '');
-                stepCompleted?.delete('selfCheck');
-                stepCompleted?.delete('continuityCheck');
-                stepCompleted?.delete('qualityControl');
-                stepCompleted?.delete('analysisReport');
-                stepCompleted?.delete('settlement');
+                this.invalidateAfterBodyChange(stepCompleted);
                 this.deps.callbacks.showSuccess('已接受精修版本，后续步骤已重置');
                 overlay.remove();
                 await renderInContainer(tabContent);
@@ -512,11 +517,7 @@ export class StepModalController {
                 try {
                     stepResults['bodyGeneration'] = result.roundBodies[idx];
                     await this.deps.saveStepResult('bodyGeneration', result.roundBodies[idx], chapDir ?? '', chapterName ?? '', volume ?? '');
-                    stepCompleted?.delete('selfCheck');
-                    stepCompleted?.delete('continuityCheck');
-                    stepCompleted?.delete('qualityControl');
-                    stepCompleted?.delete('analysisReport');
-                    stepCompleted?.delete('settlement');
+                    this.invalidateAfterBodyChange(stepCompleted);
                     this.deps.callbacks.showSuccess(`已使用${labels[idx]}，后续步骤已重置`);
                     overlay.remove();
                     await renderInContainer(tabContent);

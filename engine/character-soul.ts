@@ -69,6 +69,16 @@ function parseCharacterCore(content: string): Partial<CharacterSoul> {
     return soul as Partial<CharacterSoul>;
 }
 
+/** 灵魂字段的占位值（模板骨架常见写法，不能算「已提取」） */
+const PLACEHOLDER_SOUL_VALUE_RE = /^(?:（待补充）|（待定）|>-|—|-{2,}|暂无|无|略|待补充|待定|未设置|未知|n\/a|\.{3,}|…+)$/i;
+
+function isSoulValueMeaningful(value: string): boolean {
+    const v = (value || '').trim().replace(/^["'「」]|["'「」]$/g, '').trim();
+    if (!v) return false;
+    if (PLACEHOLDER_SOUL_VALUE_RE.test(v)) return false;
+    return v.length >= 2;
+}
+
 /**
  * 从角色文件构建完整 CharacterSoul
  */
@@ -87,8 +97,10 @@ function buildSoul(name: string, content: string): CharacterSoul {
         moral_boundary: core.moral_boundary || '',
         hasSoul: false,
     };
-    // 9个字段全部有值才算完整soul
-    soul.hasSoul = CHARACTER_SOUL_FIELDS.every(f => !!soul[f as keyof CharacterSoul] && String(soul[f as keyof CharacterSoul]).length > 0);
+    // 9个字段全部有实质值才算完整soul（Rev 185：旧实现只判 length > 0，「>-」也算有灵魂）
+    soul.hasSoul = CHARACTER_SOUL_FIELDS.every(
+        (f) => isSoulValueMeaningful(String(soul[f as keyof CharacterSoul] ?? '')),
+    );
     return soul;
 }
 
@@ -153,17 +165,41 @@ export function formatSoulForPrompt(soul: CharacterSoul): string {
     ].join('\n');
 }
 
+/** 全量灵魂层注入的默认人数上限：避免几十个角色把正文 prompt 顶爆 */
+export const MAX_SOULS_IN_PROMPT = 8;
+
+export interface CharacterSoulSummaryOptions {
+    /** 本章相关角色名；为空时退回前 N 个角色 */
+    relevantNames?: Set<string>;
+    /** 最多注入几个角色（默认 8） */
+    maxSouls?: number;
+}
+
 /**
- * 构建全量灵魂层压缩文本（含主角标记）
+ * 构建全量灵魂层压缩文本（含主角标记）。
+ * 只注入本章相关角色：全部角色都塞进去会稀释 prompt，并在超预算时把关键约束挤掉。
  */
 export function buildCharacterSoulSummary(
     souls: CharacterSoul[],
     protagonistName: string,
+    options: CharacterSoulSummaryOptions = {},
 ): CharacterSoulSummary {
     const protagonist = souls.find(s => s.name === protagonistName) || null;
+    const relevant = options.relevantNames;
+    const maxSouls = Math.max(1, options.maxSouls ?? MAX_SOULS_IN_PROMPT);
+
+    let selected = souls;
+    if (relevant && relevant.size > 0) {
+        selected = souls.filter(s => s.name === protagonistName || relevant.has(s.name));
+        // 相关角色一个都没命中时不能空手而归：至少保留主角 + 前 N 个
+        if (selected.length === 0) {
+            selected = protagonist ? [protagonist, ...souls.filter(s => s !== protagonist)] : souls;
+        }
+    }
+    selected = selected.slice(0, maxSouls);
 
     const parts: string[] = [];
-    for (const soul of souls) {
+    for (const soul of selected) {
         const mark = soul.name === protagonistName ? '【★主角】' : '';
         const label = mark ? `${mark} ${soul.name}` : soul.name;
         if (soul.hasSoul) {
@@ -180,7 +216,7 @@ export function buildCharacterSoulSummary(
     return {
         protagonist,
         allSouls: parts.join('\n'),
-        hasSoulData: souls.some(s => s.hasSoul),
+        hasSoulData: selected.some(s => s.hasSoul),
     };
 }
 

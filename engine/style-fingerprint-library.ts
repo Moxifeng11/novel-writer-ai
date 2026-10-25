@@ -31,7 +31,13 @@ import {
     migrateFileV1ToV2,
     needsV1ToV2Migration,
 } from './style/fingerprint-migrator';
-import type { V2Fingerprint } from './style/style-dimensions-v2';
+import type { V2Fingerprint, StyleDimensionKeyV2 } from './style/style-dimensions-v2';
+import {
+    StyleVectorStoreV2,
+    type StyleFingerprintVectorsV2,
+    type StyleSimilarityResultV2,
+    type StyleVectorModelMismatch,
+} from './style/style-vector-store-v2';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('StyleFingerprintLibrary');
@@ -93,7 +99,8 @@ export interface StyleFingerprint {
 
 export interface VectorStore {
     add(fingerprintId: string, samples: string[]): Promise<void>;
-    search(query: string, topN?: number): Promise<Array<{ sample: string; score: number }>>;
+    /** fingerprintId 用于上游过滤已禁用指纹、以及按指纹做多样性筛选；旧实现可不返回 */
+    search(query: string, topN?: number): Promise<Array<{ sample: string; score: number; fingerprintId?: string }>>;
     delete(fingerprintId: string): Promise<void>;
 }
 
@@ -131,9 +138,20 @@ export class StyleFingerprintLibrary {
     private globalWriter = new SerializedWriter({ debug: false });
     private projectWriter = new SerializedWriter({ debug: false });
     private globalStateWriter = new SerializedWriter({ debug: false });
+    /** 上次加载的指纹文件签名；用于感知其他实例（指纹库 UI）的新增/删除/启停 */
+    private fingerprintSignature: string | null = null;
 
     private styleVectorStoreGlobal?: StyleVectorStore;
     private styleVectorStoreProject?: StyleVectorStore;
+    /** V2 12 维向量库（生产接线：按 scope 懒加载） */
+    private styleVectorStoreV2Global?: StyleVectorStoreV2;
+    private styleVectorStoreV2Project?: StyleVectorStoreV2;
+    /**
+     * 加载时保留的 V2 12 维指纹。
+     * 旧实现把磁盘上的 V2 文件统一转回 V1（只保留 7 维字符串），
+     * 导致 12 维特征在内存中直接丢失；这里单独保留一份，供 V2 向量/检索使用。
+     */
+    private v2Fingerprints: Map<string, V2Fingerprint> = new Map();
     private embeddingClient?: EmbeddingProvider;
     /** V2 多指纹融合引擎（懒加载） */
     private fingerprintBlenderV2?: FingerprintBlenderV2;
@@ -153,6 +171,43 @@ export class StyleFingerprintLibrary {
         this.embeddingClient = client;
         this.styleVectorStoreGlobal = undefined;
         this.styleVectorStoreProject = undefined;
+        this.styleVectorStoreV2Global = undefined;
+        this.styleVectorStoreV2Project = undefined;
+    }
+
+    private getGlobalStyleVectorStoreV2(): StyleVectorStoreV2 | undefined {
+        if (!this.embeddingClient) return undefined;
+        if (!this.styleVectorStoreV2Global) {
+            this.styleVectorStoreV2Global = new StyleVectorStoreV2(
+                this.app,
+                'global',
+                this.embeddingClient
+            );
+        }
+        return this.styleVectorStoreV2Global;
+    }
+
+    private getProjectStyleVectorStoreV2(): StyleVectorStoreV2 | undefined {
+        if (!this.embeddingClient || !this.project) return undefined;
+        if (!this.styleVectorStoreV2Project) {
+            this.styleVectorStoreV2Project = new StyleVectorStoreV2(
+                this.app,
+                'project',
+                this.embeddingClient,
+                this.project
+            );
+        }
+        return this.styleVectorStoreV2Project;
+    }
+
+    private getStyleVectorStoreV2ForScope(scope: 'template' | 'global' | 'project'): StyleVectorStoreV2 | undefined {
+        switch (scope) {
+            case 'template':
+            case 'global':
+                return this.getGlobalStyleVectorStoreV2();
+            case 'project':
+                return this.getProjectStyleVectorStoreV2();
+        }
     }
 
     private getGlobalStyleVectorStore(): StyleVectorStore | undefined {
@@ -209,6 +264,7 @@ export class StyleFingerprintLibrary {
             const data = await this.getFS().read(templateFingerprintsFile());
             const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
             const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'template'));
+            this.collectV2Fingerprints(parsed);
             this.templateFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
             return Array.from(this.templateFingerprints.values());
         } catch {
@@ -277,6 +333,7 @@ export class StyleFingerprintLibrary {
             const data = await this.getFS().read(globalFingerprintsFile());
             const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
             const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'global'));
+            this.collectV2Fingerprints(parsed);
             this.globalFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
             return Array.from(this.globalFingerprints.values());
         } catch {
@@ -346,6 +403,7 @@ export class StyleFingerprintLibrary {
             const data = await this.getFS().read(projectFingerprintsFile(this.project));
             const parsed = JSON.parse(data) as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
             const migrated = parsed.map(fp => this.migrateFingerprintV1toV2(fp, 'project'));
+            this.collectV2Fingerprints(parsed);
             this.projectFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
             return Array.from(this.projectFingerprints.values());
         } catch {
@@ -490,13 +548,19 @@ export class StyleFingerprintLibrary {
     /**
      * 加载项目级指纹强度配置
      * - 文件不存在时返回空对象（使用默认强度 1.0）
+     * - 每次调用都读盘：强度弹窗与协同引擎持有不同的库实例，
+     *   缓存会让「弹窗里改完、协同 prompt 仍用旧强度」静默发生
      */
     async loadIntensityConfigs(project?: string): Promise<Record<string, StyleIntensityConfig>> {
         const targetProject = project ?? this.project;
         if (!targetProject) return {};
         try {
             const data = await this.getFS().read(projectFingerprintIntensityFile(targetProject));
-            const configs = JSON.parse(data) as Record<string, StyleIntensityConfig>;
+            const parsed = JSON.parse(data) as unknown;
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                throw new Error('强度配置不是对象');
+            }
+            const configs = parsed as Record<string, StyleIntensityConfig>;
             this.intensityConfigs.set(targetProject, configs);
             return configs;
         } catch {
@@ -530,6 +594,9 @@ export class StyleFingerprintLibrary {
     ): Promise<void> {
         const targetProject = project ?? this.project;
         if (!targetProject) return;
+        // 先合并磁盘上已有的配置：新会话里直接改一个指纹时，
+        // 若只写内存里的这一条，会把其他指纹已保存的强度整份覆盖掉
+        await this.loadIntensityConfigs(targetProject);
         let configs = this.intensityConfigs.get(targetProject);
         if (!configs) {
             configs = {};
@@ -545,6 +612,8 @@ export class StyleFingerprintLibrary {
     async removeIntensityConfig(fpId: string, project?: string): Promise<void> {
         const targetProject = project ?? this.project;
         if (!targetProject) return;
+        // 与 setIntensityConfig 同理：先读盘再删，避免把未加载的其他配置一并抹掉
+        await this.loadIntensityConfigs(targetProject);
         const configs = this.intensityConfigs.get(targetProject);
         if (!configs || !(fpId in configs)) return;
         delete configs[fpId];
@@ -562,15 +631,19 @@ export class StyleFingerprintLibrary {
         project: string,
         configs: Record<string, StyleIntensityConfig>
     ): Promise<void> {
-        await this.intensityConfigWriter.enqueueAutoClean(async () => {
-            await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
-            await this.getFS().write(
-                projectFingerprintIntensityFile(project),
-                JSON.stringify(configs, null, 2)
-            );
-        }).catch(e => {
+        try {
+            await this.intensityConfigWriter.enqueueAutoClean(async () => {
+                await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
+                await this.getFS().write(
+                    projectFingerprintIntensityFile(project),
+                    JSON.stringify(configs, null, 2)
+                );
+            });
+        } catch (e) {
+            // 不能吞掉：吞掉后调用方仍会弹「已保存」，用户重启才发现设置丢失
             log.warn('[StyleFingerprintLibrary] 强度配置保存失败:', e);
-        });
+            throw e;
+        }
     }
 
     // ============================================================
@@ -681,6 +754,47 @@ export class StyleFingerprintLibrary {
     // 获取启用的指纹
     // ============================================================
 
+    /**
+     * 指纹文件签名（全局指纹 + 项目指纹 + 项目全局启用状态）
+     * 文件不可读时返回 null：调用方应保留当前内存状态
+     */
+    async computeFingerprintSignature(project?: string): Promise<string | null> {
+        const target = project ?? this.project;
+        const paths = [globalFingerprintsFile()];
+        if (target) {
+            paths.push(projectFingerprintsFile(target));
+            paths.push(projectGlobalFingerprintStateFile(target));
+        }
+        const parts: string[] = [];
+        for (const path of paths) {
+            let file;
+            try {
+                file = await this.getFS().getFile(path);
+            } catch {
+                return null;
+            }
+            parts.push(file ? `${path}@${file.stat?.mtime ?? 0}:${file.stat?.size ?? 0}` : `${path}:missing`);
+        }
+        return parts.join('|');
+    }
+
+    /**
+     * 指纹文件变化时重新加载（新增/删除/启用/禁用）
+     * 指纹库 UI 与协同引擎各持一个实例，后者的内存列表不会自动更新
+     */
+    async reloadIfChanged(project?: string): Promise<boolean> {
+        const target = project ?? this.project;
+        const signature = await this.computeFingerprintSignature(target);
+        if (signature === null || signature === this.fingerprintSignature) return false;
+        await this.loadGlobal();
+        if (target) {
+            await this.loadProject();
+            await this.loadGlobalState(target);
+        }
+        this.fingerprintSignature = signature;
+        return true;
+    }
+
     async getEnabledFingerprints(project?: string): Promise<StyleFingerprint[]> {
         const targetProject = project ?? this.project;
 
@@ -696,6 +810,31 @@ export class StyleFingerprintLibrary {
     // ============================================================
     // v1 → v2 数据迁移
     // ============================================================
+
+    /**
+     * 保留磁盘上的 V2 12 维特征。
+     * `migrateFingerprintV1toV2` 为了兼容 V1 消费方会把内存数据转回 7 维，
+     * 这里额外保留原始 V2 数据，避免「加载即降级」。
+     */
+    private collectV2Fingerprints(items: unknown[]): void {
+        for (const item of items) {
+            const fp = item as Partial<V2Fingerprint>;
+            if (!fp || fp.version !== 'v2' || !fp.id || !fp.features) continue;
+            this.v2Fingerprints.set(fp.id, fp as V2Fingerprint);
+        }
+    }
+
+    /** 获取单个指纹的 V2 12 维特征（不存在时返回 undefined） */
+    getV2Fingerprint(id: string): V2Fingerprint | undefined {
+        return this.v2Fingerprints.get(id);
+    }
+
+    /** 列出已加载的 V2 12 维指纹 */
+    listV2Fingerprints(scope?: 'template' | 'global' | 'project'): V2Fingerprint[] {
+        const all = Array.from(this.v2Fingerprints.values());
+        if (!scope) return all;
+        return all.filter(fp => (fp.scope ?? 'global') === scope);
+    }
 
     /**
      * 将加载的指纹数据统一为 V1 StyleFingerprint 格式
@@ -1042,6 +1181,207 @@ export class StyleFingerprintLibrary {
 
         results.sort((a, b) => b.overallScore - a.overallScore);
         return results.slice(0, options?.topN ?? 10);
+    }
+
+    // ============================================================
+    // V2 12 维检索（生产接线）
+    // ============================================================
+
+    /** 收集指定 scope 下的 V2 候选（只包含有 12 维特征的指纹） */
+    private collectV2Candidates(
+        scopes: Array<'template' | 'global' | 'project'>
+    ): Array<{
+        id: string;
+        name: string;
+        scope: 'template' | 'global' | 'project';
+        features: V2Fingerprint['features'];
+        extractedAt?: number;
+    }> {
+        const candidates: Array<{
+            id: string;
+            name: string;
+            scope: 'template' | 'global' | 'project';
+            features: V2Fingerprint['features'];
+            extractedAt?: number;
+        }> = [];
+        for (const scope of scopes) {
+            for (const fp of this.listV2Fingerprints(scope)) {
+                candidates.push({
+                    id: fp.id,
+                    name: fp.name,
+                    scope,
+                    features: fp.features,
+                    extractedAt: fp.extractedAt,
+                });
+            }
+        }
+        return candidates;
+    }
+
+    /** 按调用方给定的指纹集合收窄候选；不传时保持全量 */
+    private filterV2Candidates<T extends { id: string }>(candidates: T[], fingerprintIds?: string[]): T[] {
+        if (!fingerprintIds) return candidates;
+        const allowed = new Set(fingerprintIds);
+        return candidates.filter(candidate => allowed.has(candidate.id));
+    }
+
+    /** 获取（必要时构建）指定指纹的 V2 12 维向量 */
+    async getFingerprintVectorsV2(
+        fpId: string,
+        scope: 'template' | 'global' | 'project'
+    ): Promise<StyleFingerprintVectorsV2 | undefined> {
+        const store = this.getStyleVectorStoreV2ForScope(scope);
+        if (!store) return undefined;
+        const v2 = this.v2Fingerprints.get(fpId);
+        if (!v2?.features) return store.getVectors(fpId);
+        return store.getOrBuildVectors(fpId, v2.features, v2.extractedAt);
+    }
+
+    /** 强制重建指定指纹的 V2 12 维向量 */
+    async buildV2VectorsForFingerprint(
+        fpId: string,
+        scope: 'template' | 'global' | 'project'
+    ): Promise<StyleFingerprintVectorsV2 | undefined> {
+        const store = this.getStyleVectorStoreV2ForScope(scope);
+        const v2 = this.v2Fingerprints.get(fpId);
+        if (!store || !v2?.features) {
+            log.warn(`[StyleFingerprintLibrary] 无法重建 V2 向量（缺少 12 维特征）: ${fpId}`);
+            return undefined;
+        }
+        return store.addOrUpdateVectors(fpId, v2.features);
+    }
+
+    /** V2 加权整体检索（12 维） */
+    async searchSimilarStylesV2(
+        query: string,
+        options?: {
+            topN?: number;
+            minScore?: number;
+            dimensionWeights?: Partial<Record<StyleDimensionKeyV2, number>>;
+            onlyDimensions?: StyleDimensionKeyV2[];
+            scopes?: Array<'template' | 'global' | 'project'>;
+            /**
+             * 只在这些指纹内排名。
+             * 位置生成只应排名「已启用」的指纹：禁用指纹与 template 来源库也参与排名时，
+             * 会先占满 topN，再与启用集合取交集 → 结果为空后回退全量，注入上限形同虚设。
+             */
+            fingerprintIds?: string[];
+        }
+    ): Promise<StyleSimilarityResultV2[]> {
+        const scopes = options?.scopes ?? ['template', 'global', 'project'];
+        const candidates = this.filterV2Candidates(this.collectV2Candidates(scopes), options?.fingerprintIds);
+        if (candidates.length === 0) return [];
+
+        const globalStore = this.getGlobalStyleVectorStoreV2();
+        const projectStore = this.getProjectStyleVectorStoreV2();
+        const globalCandidates = candidates.filter(c => c.scope !== 'project');
+        const projectCandidates = candidates.filter(c => c.scope === 'project');
+        const searchOptions = {
+            topN: options?.topN,
+            minScore: options?.minScore,
+            dimensionWeights: options?.dimensionWeights,
+            onlyDimensions: options?.onlyDimensions,
+        };
+
+        let results: StyleSimilarityResultV2[] = [];
+        try {
+            if (globalStore && globalCandidates.length > 0) {
+                results = results.concat(await globalStore.searchWeighted(query, globalCandidates, searchOptions));
+            }
+            if (projectStore && projectCandidates.length > 0) {
+                results = results.concat(await projectStore.searchWeighted(query, projectCandidates, searchOptions));
+            }
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] V2 风格检索失败:', e);
+            return [];
+        }
+
+        results.sort((a, b) => b.overallScore - a.overallScore);
+        return results.slice(0, options?.topN ?? 10);
+    }
+
+    /** V2 单维度检索（12 维任选其一） */
+    async searchByDimensionV2(
+        query: string,
+        dimension: StyleDimensionKeyV2,
+        options?: {
+            topN?: number;
+            minScore?: number;
+            scopes?: Array<'template' | 'global' | 'project'>;
+        }
+    ): Promise<StyleSimilarityResultV2[]> {
+        const scopes = options?.scopes ?? ['template', 'global', 'project'];
+        const candidates = this.collectV2Candidates(scopes);
+        if (candidates.length === 0) return [];
+
+        const globalStore = this.getGlobalStyleVectorStoreV2();
+        const projectStore = this.getProjectStyleVectorStoreV2();
+        const globalCandidates = candidates.filter(c => c.scope !== 'project');
+        const projectCandidates = candidates.filter(c => c.scope === 'project');
+        const searchOptions = { topN: options?.topN, minScore: options?.minScore };
+
+        let results: StyleSimilarityResultV2[] = [];
+        try {
+            if (globalStore && globalCandidates.length > 0) {
+                results = results.concat(await globalStore.searchByDimension(query, globalCandidates, dimension, searchOptions));
+            }
+            if (projectStore && projectCandidates.length > 0) {
+                results = results.concat(await projectStore.searchByDimension(query, projectCandidates, dimension, searchOptions));
+            }
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] V2 单维度检索失败:', e);
+            return [];
+        }
+
+        results.sort((a, b) => b.overallScore - a.overallScore);
+        return results.slice(0, options?.topN ?? 10);
+    }
+
+    /**
+     * 换 embedding 模型后被隔离、需要重建的 V2 向量。
+     * 调用方据此提示用户执行 `rebuildAllV2StyleVectors`。
+     */
+    async getVectorModelMismatches(
+        scope?: 'template' | 'global' | 'project'
+    ): Promise<StyleVectorModelMismatch[]> {
+        const scopes: Array<'template' | 'global' | 'project'> = scope ? [scope] : ['global', 'project'];
+        const mismatches: StyleVectorModelMismatch[] = [];
+        for (const s of scopes) {
+            const store = this.getStyleVectorStoreV2ForScope(s);
+            if (!store) continue;
+            try {
+                mismatches.push(...await store.reportModelMismatches());
+            } catch (e) {
+                log.warn('[StyleFingerprintLibrary] 读取 V2 向量模型隔离报告失败:', e);
+            }
+        }
+        return mismatches;
+    }
+
+    /** 重建所有带 12 维特征指纹的 V2 向量 */
+    async rebuildAllV2StyleVectors(
+        onProgress?: (current: number, total: number, fingerprintId: string, scope: string) => void
+    ): Promise<{ rebuilt: string[]; failed: string[] }> {
+        const v2List = this.listV2Fingerprints();
+        const rebuilt: string[] = [];
+        const failed: string[] = [];
+        let current = 0;
+
+        for (const fp of v2List) {
+            current++;
+            const scope = (fp.scope ?? 'global') as 'template' | 'global' | 'project';
+            onProgress?.(current, v2List.length, fp.id, scope);
+            try {
+                const result = await this.buildV2VectorsForFingerprint(fp.id, scope);
+                if (result) rebuilt.push(fp.id);
+                else failed.push(fp.id);
+            } catch (e) {
+                log.warn(`[StyleFingerprintLibrary] V2 向量重建失败: ${fp.id}`, e);
+                failed.push(fp.id);
+            }
+        }
+
+        return { rebuilt, failed };
     }
 
     private buildQueryFromFeatures(features: StyleFingerprintFeatures): string {

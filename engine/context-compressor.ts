@@ -244,24 +244,29 @@ export function compressWorldContext(
 ): CompressedContext {
     const keywords = outlineText ? extractKeywords(outlineText) : [];
 
+    // 上限跟随模型窗口：旧实现固定 2000/1000 字，128k 窗口下设定库仍被砍到 1000 字，
+    // 是「世界观/设定库用不上」的直接原因之一。小窗口仍保持旧下限。
+    const worldCap = Math.max(2000, Math.min(12000, Math.floor(maxContext * 0.12)));
+    const settingCap = Math.max(1000, Math.min(6000, Math.floor(maxContext * 0.06)));
+
     // 1. 世界观压缩
     let wv: string;
     if (!worldView) {
         wv = '';
-    } else if (worldView.length <= 2000) {
+    } else if (worldView.length <= worldCap) {
         wv = worldView;
     } else {
-        wv = compressByKeywords(worldView, keywords, 2000);
+        wv = compressByKeywords(worldView, keywords, worldCap);
     }
 
     // 2. 设定库压缩
     let sl: string;
     if (!settingLib) {
         sl = '';
-    } else if (settingLib.length <= 1000) {
+    } else if (settingLib.length <= settingCap) {
         sl = settingLib;
     } else {
-        sl = compressByKeywords(settingLib, keywords, 1000);
+        sl = compressByKeywords(settingLib, keywords, settingCap);
     }
 
     // 3. 伏笔压缩

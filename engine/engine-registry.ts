@@ -153,6 +153,7 @@ import { WorldviewCacheService } from '../services/worldview-cache-service';
 import { UpdateChecker } from '../services/update-checker';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import { pjFactIndexFile } from '../shared/paths';
+import { resolvePluginWorkerUrl } from '../shared/plugin-worker-url';
 import { TemplateService } from '../services/template-service';
 import { ChapterVersionService } from '../services/chapter-version-service';
 import { TemplateManager } from '../ui/template-manager';
@@ -999,8 +1000,8 @@ export class EngineRegistry {
             openProviderSwitcher: () => plugin.openProviderSwitcher(),
             refreshFullWriterContextPanel: () => plugin.refreshFullWriterContextPanel(),
             populateSettingLib: () => plugin.commandPopulateSettingLib(),
-            getWorkbenchState: () => plugin._workbenchState,
             isWorkbenchContext: () => plugin._isWorkbenchContext,
+            ui: plugin.commandUiPort,
         });
         commandRegistry.registerInternalCommands();
         this.register(ENGINE_NAMES.COMMAND_REGISTRY, commandRegistry);
@@ -1059,7 +1060,10 @@ export class EngineRegistry {
             });
         }
 
-        const knowledgeVectorStore = new KnowledgeVectorStore(plugin.app, embeddingProvider);
+        const knowledgeVectorStore = new KnowledgeVectorStore(plugin.app, embeddingProvider, undefined, {
+            // 按 bookId 判存活：改名只改目录名，用 bookName 拼目录会误判孤儿
+            isBookAlive: (bookId) => knowledgeBaseManager.hasBook(bookId),
+        });
         this.register(ENGINE_NAMES.KNOWLEDGE_VECTOR_STORE, knowledgeVectorStore);
         plugin.knowledgeVectorStore = knowledgeVectorStore;
 
@@ -1086,7 +1090,9 @@ export class EngineRegistry {
         // 通过 getter 延迟获取，避免在初始化阶段触发 AIEngine 的创建。
         deconstructionScheduler.setLlmCaller(() => plugin.aiEngine);
 
-        const heavyTaskWorkerManager = new HeavyTaskWorkerManager();
+        const heavyTaskWorkerManager = new HeavyTaskWorkerManager({
+            workerUrl: resolvePluginWorkerUrl(plugin.app, 'quality-worker.js') ?? undefined,
+        });
         this.register(ENGINE_NAMES.HEAVY_TASK_WORKER_MANAGER, heavyTaskWorkerManager);
 
         const batchImportManager = new BatchImportManager(
@@ -1189,7 +1195,7 @@ export class EngineRegistry {
             {
                 enabled: plugin.settings.autoCheckUpdates ?? false,
                 source: (plugin.settings.updateSource as 'github' | 'custom') || 'github',
-                githubRepo: plugin.settings.updateGithubRepo || 'trae-ai/novel-writer-ai',
+                githubRepo: plugin.settings.updateGithubRepo || 'Moxifeng11/novel-writer-ai',
                 customUrl: plugin.settings.updateCustomUrl || '',
                 checkIntervalHours: plugin.settings.updateCheckIntervalHours || 168,
             }

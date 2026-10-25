@@ -28,11 +28,19 @@ export const INFO_PLAN_PROMPTS = {
 【引导】
 - 从已有的实体中选角，他们足够丰富（见 entityContext）
 - ⚠️ 严格使用已有实体。不在此步骤创造新角色/新势力/新地点。所有人物、势力、地点必须从 entityContext 中选择
-- 情感温度0级=平静日常，10级=生死决战；冲突强度1级=口角，5级=生死存亡`,
+- 情感温度0级=平静日常，10级=生死决战；冲突强度1级=口角，5级=生死存亡
+- 世界观总览与设定库是硬约束：本章冲突、能力、地点、势力不得与之矛盾
+- 上一章结尾是本章的时空起点：核心冲突必须从那里接着往下走，不得凭空另起时空
+- 文笔风格决定叙述视角与情绪基调，信息释放节奏要与之一致`,
     userPrompt: `根据以下素材，为第\${chapNum}章生成「章节信息规划」。
 【分卷规划】\${chapPlan}
+\${fanficRules}
+【世界观总览】\${worldView}
+【设定库（能力/物品/地理/势力硬约束）】\${settingLib}
+【文笔与叙述风格（保持同一叙述视角与情绪基调）】\${writingStyleContent}
 【大纲摘要】\${outlineContent}
 【前文摘要】\${prevChaptersSummary}
+【上一章结尾（本章必须从这里接着写）】\${prevChapEnding}
 【未揭示伏笔】\${unrevealedForeshadow}
 【时间线】\${timelineEvents}
 \${forcedRevealHint}
@@ -70,11 +78,22 @@ export const PLOT_DISTILL_PROMPTS = {
 - 每千字建议≥1个情节节点
 - 相邻节点之间尽量有因果链
 - 每个节点结束时留下一个"然后呢？"的钩子
-- ⚠️ 参与者必须是已有实体（见 entityContext）。不在此步骤创造新角色`,
+- ⚠️ 参与者必须是已有实体（见 entityContext）。不在此步骤创造新角色
+
+【衔接要求】
+- 第一个情节节点必须承接上一章结尾与当前时间线，不允许人物凭空出现在新地点
+- 需要切换场景时，节点里必须写清过渡（时间过去了多久、怎么到的、身上/伤势/情绪有无变化）`,
     userPrompt: `根据以下素材，为第\${chapNum}章进行「情节蒸馏」，提升情节密度。
 【信息规划】\${infoPlan}
 【分卷规划】\${chapPlan}
+\${fanficRules}
+【世界观总览】\${worldView}
+【设定库】（硬约束：能力/物品/地理/势力不得越界）\${settingLib}
 【大纲摘要】\${outlineContent}
+【前文摘要】\${prevChaptersSummary}
+【上一章结尾（情节链从这里开始）】\${prevChapEnding}
+【未揭示伏笔】\${unrevealedForeshadow}
+【时间线（节点时间不得与之矛盾）】\${timelineEvents}
 【人物状态】\${allChars}
 
 请用 Markdown 输出，包含以下部分：
@@ -141,7 +160,12 @@ export const OUTLINE_PROMPTS = {
 - 反转式：颠覆读者预期
 - 预告式：暗示下一章的激烈冲突
 - 前置冲突：直接抛出下一章的第一处冲突
-- 必须输出明确的钩子类型和钩子内容`,
+- 必须输出明确的钩子类型和钩子内容
+
+【场景衔接（硬约束）】
+- 场景顺序就是读者的阅读顺序：第一个场景必须从「上一章结尾」的下一刻开始
+- 场景之间必须有因果或时空衔接；需要跳时间/跳地点时，写清过渡方式与人物状态变化
+- 不允许无过渡的凭空换场（人物突然出现在新地点、伤势/情绪无理由复位、时间无故倒退）`,
     userPrompt: `根据本章信息规划和情节蒸馏结果，生成详细的大纲摘要，包含：全书定位、关键场景（3-5个）、需要呈现的信息、情感基调、结尾钩子。
 
 【信息规划】
@@ -150,8 +174,31 @@ export const OUTLINE_PROMPTS = {
 【情节蒸馏】
 \${distilledContent}
 
+【世界观总览】
+\${worldView}
+
+【设定库（硬约束：场景中的能力/物品/地理/势力只能取自这里）】
+\${settingLib}
+
+【文笔与叙述风格（保持同一叙述视角与情绪基调）】
+\${writingStyleContent}
+
+【前文摘要】
+\${prevChaptersSummary}
+
+【上一章结尾（第一个场景必须从这里长出来）】
+\${prevChapEnding}
+
+【未揭示伏笔】
+\${unrevealedForeshadow}
+
+【时间线（场景先后不得与之矛盾）】
+\${timelineEvents}
+
 【已有实体上下文（人物/势力/地点/物品功法 — 只能从下列实体中选角/选场景）】
 \${entityContext}
+
+\${fanficRules}
 
 【主角信息】主角名：\${protagonistName}（若 V2 灵魂层已生成，还会注入 soul 详情）
 
@@ -194,8 +241,7 @@ export const BODY_GENERATION_SYSTEM_PROMPT = `你是一个活在 \${protagonistN
 - 他只知道他自己经历过的——不知道设定库以外的存在，不知道别人背后的秘密。
 
 📌 输出格式（这是你和外界的通信协议，必须遵守）
-- 标题行：# 第\${chapNum}章 标题（2-15字）
-- 正文从下一行开始，段落开头空两格（全角空格）
+\${bodyFormat}
 - 对话必须加引号""
 - 字数 ≥ \${baseWords} 字
 
@@ -207,31 +253,39 @@ export const BODY_GENERATION_USER_TEMPLATE = `【本章在分卷中的定位】\
 【信息规划——核心冲突与信息释放计划】\${infoPlan}
 【本章大纲——关键场景路线图】\${outlineContent}
 【前文发生了什么】\${prevChaptersSummary}
+【上一章结尾（本章第一段必须从这里往下接）】\${prevChapEnding}
+\${longTermMemory}
 【这个世界】\${worldView}
+【设定库（能力/物品/地理/势力硬约束）】\${settingLib}
 【人物与势力状态】\${allChars}
 \${allFactions}
 \${allLocs}
 \${allItems}
+【角色灵魂层（欲望/恐惧/创伤）】\${characterCores}
+【触发了的记忆碎片（感官细节会让他想起）】\${triggeredMemories}
+【时间线（本章时间不得倒退）】\${timelineEvents}
 【需要处理的伏笔】\${unrevealedForeshadow}
 \${forcedRevealHint}
 \${foreshadowWarnings}
 \${prevReview}
 【文笔风格（请严格遵循）】\${writingStyle}
 \${writingStyleContent}
+\${fanficRules}
 【情绪上下文】\${emotionContext}
+【情绪弧（每个场景的情绪必须变化）】\${emotionPlan}
+【场景展开（按顺序演出，场景间写过渡）】\${sceneExpansion}
 【情节节点设计】\${distilledContent}
 【场景风格参考】\${sceneStyleSnippet}
 【叙事节奏建议】\${suggestedRhythm}
 
 镜头贴着\${protagonistName}。现在，写他刚经历的第\${chapNum}章。
 
-标题行格式：# 第\${chapNum}章 标题（2-15字概括这段经历）
-正文从下一行开始。这是真实发生过的事。
+\${bodyFormat}
+这是真实发生过的事。
 
 【写的时候注意】
 - 从感觉出发：他身体感受到什么？在哪里开始的？
 - 字数 ≥ \${baseWords} 字
-- 每个段落开头空两格（全角空格）
 - 对话加引号""
 - 画面之间直接跳，不填过渡词
 - 他不知道的事不写。不写上帝视角。不写作者旁白。

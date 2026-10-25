@@ -557,35 +557,7 @@ for await (const chunk of stream) {
 }
 ```
 
-### 步骤 4：使用并行建议
-
-```typescript
-// 需要多个备选建议时
-const result = facade.suggestParallel(
-    precedingText,
-    cursorHint,
-    'default',
-    3,  // 生成 3 个并行流
-    { timeoutMs: 30_000 },
-);
-
-// 监听每个流
-for (const handle of result.handles) {
-    (async () => {
-        for await (const chunk of handle.iterator) {
-            console.log(`[${handle.direction}] ${chunk}`);
-        }
-    })();
-}
-
-// 等待全部完成
-const suggestions = await result.allCompleted;
-
-// 取消所有流
-// result.cancel();
-```
-
-### 步骤 5：使用模拟流式（降级或测试）
+### 步骤 4：使用模拟流式（降级或测试）
 
 ```typescript
 import { createSimulatedStream } from '../engine/streaming';

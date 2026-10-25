@@ -462,7 +462,7 @@ export class CrossVolumeOutlineValidator {
 
         for (const tp of blueprint.turningPoints) {
             const volIndex = tp.expectedVolume - 1;
-            if (volIndex < 0 || volIndex >= volumes.length) {
+            if (!Number.isFinite(volIndex) || volIndex < 0 || volIndex >= volumes.length) {
                 criticalIssues.push({
                     type: 'turning_point_missing',
                     severity: 'critical',
@@ -472,8 +472,12 @@ export class CrossVolumeOutlineValidator {
                 continue;
             }
 
-            const vol = volumes[volIndex];
-            const mentioned = smartMatchName(tp.name, vol.rawText);
+            // 转折点只发生一次：只要在预期卷或更早的卷出现过，就不算缺失。
+            // 否则蓝图 expectedVolume 一旦偏差，就会要求后续卷重复写已发生的事件，
+            // 触发整卷重写（耗时）并最终留下「降级生成」标记（质量假象）。
+            const mentioned = volumes
+                .slice(0, volIndex + 1)
+                .some(v => smartMatchName(tp.name, v.rawText));
             if (!mentioned) {
                 criticalIssues.push({
                     type: 'turning_point_missing',

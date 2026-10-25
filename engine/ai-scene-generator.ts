@@ -139,7 +139,7 @@ ${context.foreshadows || '无'}
 4. 场景类型要多样化，避免单一类型重复
 5. 字数分配要合理，总字数符合章节预期`;
 
-        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 4096);
+        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput);
     }
 
     parseScenes(response: APIResponse): SceneNode[] {

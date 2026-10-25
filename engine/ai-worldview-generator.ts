@@ -6,7 +6,8 @@ import {
     WV_PROSE_MAX_LENGTH,
 } from '../shared/format-constants';
 import { validateWorldviewOutput } from '../shared/template-validator';
-import { getWorldviewPath, getSettingLibPath, pjFanficDir } from '../shared/paths';
+import { getWorldviewPath, getSettingLibPath, pjFanficDir, pjProjectMeta } from '../shared/paths';
+import { parseProjectMeta } from '../shared/fanfic-rules';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import { TemplateService } from '../services/template-service';
@@ -22,6 +23,13 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('AiWorldviewGenerator');
+
+/** 世界观生成结果：失败时必须携带原因，供 UI 展示真实错误 */
+export interface WorldviewGenerationResult {
+    content: string;
+    error?: string;
+}
+
 export class WorldviewGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -106,7 +114,7 @@ ${theme ? `【主题】${theme}` : ''}`;
             userPrompt += `\n\n【用户自定义要求】\n${customPrompt}`;
         }
 
-        return this.apiClient.callAI(custom.system, userPrompt, this.plugin.settings.flashModel, 0.8, 4096);
+        return this.apiClient.callAI(custom.system, userPrompt, this.plugin.settings.flashModel, 0.8, this.plugin.settings.maxOutput);
     }
 
     async generateWorldviewModule(
@@ -283,7 +291,7 @@ ${theme ? `【主题】${theme}` : ''}`;
         return this.apiClient.callAI(custom.system, userPrompt, this.plugin.settings.flashModel, 0.8, this.plugin.settings.maxOutput);
     }
 
-    async generateWorldviewForProject(app: App, project: string, genre?: string, onProgress?: (phase: string, module?: string) => void): Promise<string> {
+    async generateWorldviewForProject(app: App, project: string, genre?: string, onProgress?: (phase: string, module?: string) => void): Promise<WorldviewGenerationResult> {
         const fs = this.getFS();
         const vaultMeta = this.getVaultMeta();
         const wvPath = getWorldviewPath(project);
@@ -324,9 +332,16 @@ ${theme ? `【主题】${theme}` : ''}`;
             }
         };
         
-        let result = await this.generateWorldviewFallback(worldName, projectName, genre || '玄幻', '');
-        
-        if (!result.error && result.content) {
+        let result = await this.generateWorldview(
+            worldName, projectName, genre || '玄幻', '', undefined, adaptedProgress
+        );
+
+        if (result.error) {
+            log.error(`[小说工坊] 世界观生成失败: ${result.error}`);
+            return { content: '', error: result.error };
+        }
+
+        if (result.content) {
             let validation = validateWorldviewOutput(result.content);
             let retryCount = 0;
             const maxRetries = 2;
@@ -349,7 +364,12 @@ ${theme ? `【主题】${theme}` : ''}`;
             }
         }
         
-        if (!result.error && result.content) {
+        if (result.error) {
+            log.error(`[小说工坊] 世界观重试失败: ${result.error}`);
+            return { content: '', error: result.error };
+        }
+
+        if (result.content) {
             const genNameMatch = result.content.match(/【项目名称】(.+?)【\/项目名称】/);
             const genProjectName = genNameMatch?.[1]?.trim() || projectName;
             let finalContent = '';
@@ -375,7 +395,7 @@ ${theme ? `【主题】${theme}` : ''}`;
             }
         }
         
-        return result.error ? '' : result.content || '';
+        return { content: result.content || '' };
     }
 
     async generateSettingLibForProject(app: App, project: string, worldview?: string): Promise<string> {
@@ -516,15 +536,36 @@ ${existingContent ? `\n【已有设定库（请保留其中非冲突内容，进
         const fs = this.getFS();
         const vaultMeta = this.getVaultMeta();
         const fanficDir = pjFanficDir(project);
-        const ffFiles = await fs.listFiles(fanficDir);
-        const ffFile = ffFiles.find((f: TFile) => f.name.endsWith('同人设定.md'));
+        // 权威路径来自 .project（向导保存时写入）。向导实际保存的文件名是
+        // 「{作品名}设定.md」，与旧的 endsWith('同人设定.md') 查找规则不一致，
+        // 会让同人世界观步骤必然找不到文件。
+        let fanficPath = '';
+        try {
+            const meta = await fs.read(pjProjectMeta(project));
+            // 复用 parseProjectMeta，避免与 shared/fanfic-rules 的解析规则漂移
+            fanficPath = parseProjectMeta(meta).fanficPath;
+        } catch {
+            fanficPath = '';
+        }
 
         let fanficContent = '';
-        if (ffFile) {
+        if (fanficPath) {
             try {
-                fanficContent = await fs.read(ffFile.path);
+                fanficContent = await fs.read(fanficPath);
             } catch {
                 fanficContent = '';
+            }
+        }
+        if (!fanficContent) {
+            const ffFiles = await fs.listFiles(fanficDir);
+            const ffFile = ffFiles.find((f: TFile) => f.name.endsWith('同人设定.md'))
+                ?? ffFiles.find((f: TFile) => f.name.endsWith('设定.md'));
+            if (ffFile) {
+                try {
+                    fanficContent = await fs.read(ffFile.path);
+                } catch {
+                    fanficContent = '';
+                }
             }
         }
 

@@ -13,6 +13,7 @@ import {
     buildVolumeRepairHint,
     chunkRanges,
     consolidateChapterTable,
+    extractFieldValue,
     findMissingChapterRanges,
     normalizeChapterRanges,
     normalizeOutlineSettings,
@@ -44,6 +45,8 @@ const MAX_CHAPTERS_PER_VOLUME = 100;
 const OUTLINE_VOLUME_SEGMENT_THRESHOLD = 60;
 /** 分段生成时每批输出的章节数 */
 const OUTLINE_SEGMENT_BATCH_SIZE = 25;
+/** 章节批次并发生成上限：压缩长卷的墙钟耗时，同时避免触发 API 并发限流 */
+const OUTLINE_BATCH_CONCURRENCY = 3;
 /** 单卷生成的最大轮数（含首轮）：每轮基于上一轮缺陷做定向补全，耗尽后降级返回而非中断 */
 const OUTLINE_VOLUME_MAX_ATTEMPTS = 3;
 /** 跨卷关键问题定向修复的最大轮数 */
@@ -318,7 +321,6 @@ ${previousSummaries}
         const summaries: VolumeSummary[] = [];
         const volumeResults: string[] = [];
         const volumeRanges: Array<[number, number]> = [];
-        const degradedVolumes: number[] = [];
         for (let v = 1; v <= volumes; v++) {
             const chapterRange = chapterRanges[v - 1];
             const volChapterCount = chapterRange[1] - chapterRange[0] + 1;
@@ -353,7 +355,6 @@ ${previousSummaries}
             }
 
             volumeRanges.push(chapterRange);
-            if (volResult.degraded) degradedVolumes.push(v);
 
             let volContent = volResult.content;
             if (!volContent.trim()) {
@@ -444,6 +445,10 @@ ${previousSummaries}
         const finalContent = this.buildOutlineDocument(norm, totalChapters, volumeResults);
         log.info(`[小说工坊] 递进式大纲完成！共${volumes}卷`);
 
+        // 降级标记必须以「最终落盘内容」为准：跨卷定向修复/全局章节补全可能已经把
+        // 初轮不达标的卷修好，若沿用生成阶段的旧标记，会误报「降级生成」。
+        const finalDegradedVolumes = this.findDegradedVolumes(volumeResults, volumeRanges);
+
         // 降级项与遗留问题以 HTML 注释追加，不阻断输出、不重复调用 AI
         const annotations: string[] = [];
         if (blueprintOutcome.degraded) {
@@ -451,9 +456,9 @@ ${previousSummaries}
                 `- 全局蓝图经 ${OUTLINE_BLUEPRINT_MAX_ATTEMPTS} 轮定向补全后仍未完全满足契约（转折点/伏笔/势力与角色时间线可能不完整），跨卷约束校验能力受限\n` +
                 '\n<!-- 蓝图质量提示结束 -->');
         }
-        if (degradedVolumes.length > 0) {
+        if (finalDegradedVolumes.length > 0) {
             annotations.push('<!-- 降级生成提示 -->\n' +
-                `- 第 ${degradedVolumes.join('、')} 卷在 ${OUTLINE_VOLUME_MAX_ATTEMPTS} 轮内未完全达标，已保留最佳结果\n` +
+                `- 第 ${finalDegradedVolumes.join('、')} 卷在 ${OUTLINE_VOLUME_MAX_ATTEMPTS} 轮内未完全达标，已保留最佳结果\n` +
                 '\n<!-- 降级提示结束 -->');
         }
         if (report && report.warningIssues.length > 0) {
@@ -624,17 +629,16 @@ ${previousSummaries}
             const batches = chunkRanges(missing, OUTLINE_SEGMENT_BATCH_SIZE);
             log.info(`[小说工坊] 第${args.volumeNumber}卷增量补全第${round}轮：缺失 ${missing.length} 个区间，拆为 ${batches.length} 批`);
 
-            const collected: string[] = [];
-            for (const [batchStart, batchEnd] of batches) {
-                const batch = await this.callChapterBatch(content.slice(0, 3000), args.volumeNumber, batchStart, batchEnd);
-                if (!batch || batch.error || !batch.content) {
-                    log.warn(`[小说工坊] 第${args.volumeNumber}卷增量补全 第${batchStart}-${batchEnd} 章未取得有效行（不中断）`);
-                    continue;
-                }
-                collected.push(batch.content);
+            const { rows, failed } = await this.runBatchRanges(
+                batches,
+                args.volumeNumber,
+                this.buildBatchContext(content),
+            );
+            for (const range of failed) {
+                log.warn(`[小说工坊] 第${args.volumeNumber}卷增量补全 ${range} 未取得有效行（不中断）`);
             }
-            if (collected.length === 0) return content;
-            content = consolidateChapterTable(content, start, end, collected.join('\n'));
+            if (rows.length === 0) return content;
+            content = consolidateChapterTable(content, start, end, rows.join('\n'));
         }
         return content;
     }
@@ -758,23 +762,22 @@ ${args.previousSummariesText ? `\n【前序卷关键信息摘要——必须承�
             overviewUser += `\n\n【用户补充要求】\n${args.contextPrompt}`;
         }
 
-        const overview = await this.apiClient.callAI(overviewSystem, overviewUser, model, 0.6, 4096);
+        const overview = await this.apiClient.callAI(overviewSystem, overviewUser, model, 0.6, this.plugin.settings.maxOutput);
         if (overview.error || !overview.content) {
             return overview;
         }
 
-        // 批次输出统一交给契约层归并：越界/重复/空描述行被剔除，章号升序重排
-        const rowSources: string[] = [];
-        const failedBatches: string[] = [];
+        // 批次输出统一交给契约层归并：越界/重复/空描述行被剔除，章号升序重排。
+        // 单卷 100+ 章时逐批串行会成为主要耗时来源，这里用受限并发压缩墙钟时间。
+        const batchRanges: Array<[number, number]> = [];
         for (let s = start; s <= end; s += OUTLINE_SEGMENT_BATCH_SIZE) {
-            const e = Math.min(s + OUTLINE_SEGMENT_BATCH_SIZE - 1, end);
-            const batch = await this.callChapterBatch(overview.content, args.volumeNumber, s, e);
-            if (!batch || batch.error || !batch.content) {
-                failedBatches.push(`第${s}-${e}章`);
-                continue;
-            }
-            rowSources.push(batch.content);
+            batchRanges.push([s, Math.min(s + OUTLINE_SEGMENT_BATCH_SIZE - 1, end)]);
         }
+        const { rows: rowSources, failed: failedBatches } = await this.runBatchRanges(
+            batchRanges,
+            args.volumeNumber,
+            this.buildBatchContext(overview.content),
+        );
         if (failedBatches.length > 0) {
             log.warn(`[小说工坊] 第${args.volumeNumber}卷分段生成有 ${failedBatches.length} 个章节批次未取得有效行（${failedBatches.join('、')}），将由质量校验触发增量补全`);
         }
@@ -790,9 +793,75 @@ ${args.previousSummariesText ? `\n【前序卷关键信息摘要——必须承�
         return { content: consolidateChapterTable(shell, start, end, rowSources.join('\n')) };
     }
 
+    /**
+     * 把卷级概览压缩成批次可用的结构化上下文。
+     * 原实现只截取前 3000 字，长概览的伏笔/势力/反转等后半段字段会丢失，
+     * 导致各批次只按“核心冲突”自由发挥，批次间质量与设定一致性下降。
+     */
+    private buildBatchContext(overviewContent: string): string {
+        const fieldLimits: Record<string, number> = {
+            '核心冲突': 600,
+            '主要事件': 1200,
+            '人物弧光': 800,
+            '本卷高潮': 600,
+            '三幕结构': 600,
+            '爽点节奏': 600,
+            '反转路线': 600,
+            '情绪曲线': 400,
+            '伏笔安排': 600,
+            '势力变动': 600,
+        };
+        const fields = ['卷名', '章节范围', ...Object.keys(fieldLimits)];
+        const lines = fields.map(key => {
+            const value = extractFieldValue(overviewContent, key);
+            if (!value) return '';
+            const limit = fieldLimits[key] ?? 400;
+            const text = value.length > limit ? `${value.slice(0, limit)}…` : value;
+            return `- ${key}：${text}`;
+        }).filter(Boolean);
+        return lines.length > 0 ? lines.join('\n') : overviewContent.slice(0, 3000);
+    }
+
+    /** 受限并发执行章节批次；返回顺序与入参批次一致 */
+    private async runBatchRanges(
+        ranges: Array<[number, number]>,
+        volumeNumber: number,
+        volumeContext: string,
+    ): Promise<{ rows: string[]; failed: string[] }> {
+        const rowSources: Array<string | null> = new Array(ranges.length).fill(null);
+        const failed: Array<string | null> = new Array(ranges.length).fill(null);
+        let cursor = 0;
+
+        const worker = async (): Promise<void> => {
+            while (true) {
+                const index = cursor++;
+                if (index >= ranges.length) return;
+                const [s, e] = ranges[index];
+                let batch: APIResponse | undefined;
+                try {
+                    batch = await this.callChapterBatch(volumeContext, volumeNumber, s, e);
+                } catch (err) {
+                    log.warn(`[小说工坊] 第${volumeNumber}卷第${s}-${e}章批次调用异常（不中断其它批次）: ${err instanceof Error ? err.message : String(err)}`);
+                }
+                if (!batch || batch.error || !batch.content) {
+                    failed[index] = `第${s}-${e}章`;
+                    continue;
+                }
+                rowSources[index] = batch.content;
+            }
+        };
+
+        const workerCount = Math.min(OUTLINE_BATCH_CONCURRENCY, ranges.length);
+        await Promise.all(Array.from({ length: workerCount }, () => worker()));
+        return {
+            rows: rowSources.filter((value): value is string => value !== null),
+            failed: failed.filter((value): value is string => value !== null),
+        };
+    }
+
     /** 分段生成：请求某一批章节的分配表行（仅输出 | 章号 | 核心冲突 | 行） */
     private async callChapterBatch(
-        overviewContent: string,
+        volumeContext: string,
         volumeNumber: number,
         start: number,
         end: number
@@ -802,10 +871,12 @@ ${args.previousSummariesText ? `\n【前序卷关键信息摘要——必须承�
 【铁律】
 - 每行格式严格为：| 章号 | 一句话核心冲突 |
 - 禁止输出表头行、分隔行、解释、序号说明或任何其它文本
-- 章号必须严格覆盖 第${start}章 到 第${end}章，共 ${end - start + 1} 行，不得跳号、不得省略、不得合并`;
+- 章号必须严格覆盖 第${start}章 到 第${end}章，共 ${end - start + 1} 行，不得跳号、不得省略、不得合并
+- 每章必须推进【卷级概览】中的主要事件，并服从其中的伏笔安排与势力变动，不得写成脱离主线的独立桥段
+- 相邻章节之间必须有因果承接：本章冲突应源于上一章结果，并给下一章留下推进点`;
 
         const userPrompt = `【本卷概览（据此保持剧情连贯）】
-${overviewContent.slice(0, 3000)}
+${volumeContext}
 
 【本批任务】
 为第${volumeNumber}卷输出第${start}章 到 第${end}章 的章节分配表格行（共 ${end - start + 1} 行），每行形如：
@@ -1017,6 +1088,22 @@ ${args.existingElements.items || '无'}
         ].join('\n');
     }
 
+    /** 以最终卷内容重新判定降级状态（纯校验，不调用 AI） */
+    private findDegradedVolumes(volumeResults: string[], volumeRanges: Array<[number, number]>): number[] {
+        const degraded: number[] = [];
+        for (let i = 0; i < volumeResults.length; i++) {
+            const range = volumeRanges[i];
+            if (!range) continue;
+            const expectedCount = range[1] - range[0] + 1;
+            const gaps = validateVolumeStructure(volumeResults[i], range, expectedCount);
+            if (gaps.length > 0) {
+                degraded.push(i + 1);
+                log.warn(`[小说工坊] 第${i + 1}卷最终仍有 ${gaps.length} 项结构缺陷：${gaps.slice(0, 3).join('；')}`);
+            }
+        }
+        return degraded;
+    }
+
     /** 集中打印跨卷验证结果（不中断、不调用 AI） */
     private logValidationReport(report: CrossVolumeValidationReport): void {
         if (report.warningIssues.length > 0) {
@@ -1205,7 +1292,7 @@ ${charactersText || '（无）'}
         }
 
         try {
-            const result = await this.apiClient.callAI(systemPrompt, userPrompt, model, 0.3, 4096);
+            const result = await this.apiClient.callAI(systemPrompt, userPrompt, model, 0.3, this.plugin.settings.maxOutput);
             if (result.error) {
                 throw new Error(`AI 调用失败 - ${result.error}`);
             }

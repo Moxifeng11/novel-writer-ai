@@ -22,6 +22,12 @@ import {
     OUTLINE_REQUIRED_KEYS,
     OUTLINE_TABLE_HEADER,
 } from '../shared/format-constants';
+import {
+    extractChapterTableRows,
+    isChapterTableHeaderLine,
+    isTableSeparatorLine,
+    parseChapterRow,
+} from '../shared/chapter-table';
 import { validateOutlineOutput } from '../shared/template-validator';
 import type { GlobalStorylineBlueprint as ValidatorBlueprint } from './cross-volume-outline-validator';
 
@@ -62,8 +68,12 @@ function fieldLineRegex(key: string): RegExp {
     return new RegExp(`^-\\s*\\*\\*${escapeRegExp(key)}\\*\\*\\s*[：:]`);
 }
 
-/** 匹配任意字段起始行（用于判定字段值区域的结束） */
-const ANY_FIELD_LINE = /^-?\s*\*\*[^*]+\*\*\s*[：:]/;
+/**
+ * 匹配任意**顶层**字段起始行（用于判定字段值区域的结束）。
+ * 必须从行首 `-` 开始：缩进子项（如 `  - **沈渊**：…`）属于字段值，
+ * 否则「人物弧光/三幕结构」这类用子项书写的字段会被误判为空。
+ */
+const ANY_FIELD_LINE = /^-\s*\*\*[^*]+\*\*\s*[：:]/;
 
 /**
  * 提取指定字段的值文本（支持「同行内联」与「换行子列表」两种写法）。
@@ -85,7 +95,7 @@ export function extractFieldValue(content: string, key: string): string | null {
     const parts: string[] = [head];
     for (let i = startIdx + 1; i < lines.length; i++) {
         const trimmed = lines[i].trim();
-        if (ANY_FIELD_LINE.test(trimmed)) break;
+        if (ANY_FIELD_LINE.test(lines[i])) break;
         if (/^#{2,6}\s/.test(trimmed)) break;
         if (trimmed.startsWith(OUTLINE_TABLE_HEADER)) break;
         parts.push(trimmed);
@@ -346,29 +356,17 @@ export function buildBlueprintRepairHint(gaps: string[], attempt: number): strin
 // 四、章节分配表解析 / 校验 / 归一化
 // ============================================================
 
-/** 章节分配表数据行：`| 12 | 描述 |` */
-const CHAPTER_ROW_RE = /^\|\s*(\d+)\s*\|\s*(.*?)\s*\|?\s*$/;
-
 /** 从内容中提取全部章节号（**不做范围过滤**，用于发现越界/跨卷重叠等全局问题） */
 export function extractAllChapterNumbers(content: string): number[] {
-    const numbers: number[] = [];
-    for (const raw of content.split('\n')) {
-        const m = raw.trim().match(CHAPTER_ROW_RE);
-        if (!m) continue;
-        const n = parseInt(m[1], 10);
-        if (!isNaN(n)) numbers.push(n);
-    }
-    return numbers;
+    return extractChapterTableRows(content).map(row => row.chapterNumber);
 }
 
 /** 从内容中提取落在 [start, end] 内、去重且描述非空的章节号集合 */
 export function extractCoveredChapters(content: string, start: number, end: number): Set<number> {
     const covered = new Set<number>();
-    for (const raw of content.split('\n')) {
-        const m = raw.trim().match(CHAPTER_ROW_RE);
-        if (!m) continue;
-        const n = parseInt(m[1], 10);
-        if (isNaN(n) || n < start || n > end || covered.has(n)) continue;
+    for (const row of extractChapterTableRows(content)) {
+        const n = row.chapterNumber;
+        if (n < start || n > end || covered.has(n)) continue;
         covered.add(n);
     }
     return covered;
@@ -388,12 +386,9 @@ export function analyzeChapterTable(content: string, start: number, end: number)
     const duplicates = new Set<number>();
     const emptyDescription = new Set<number>();
 
-    for (const raw of content.split('\n')) {
-        const m = raw.trim().match(CHAPTER_ROW_RE);
-        if (!m) continue;
-        const n = parseInt(m[1], 10);
-        if (isNaN(n)) continue;
-        const desc = m[2].trim();
+    for (const row of extractChapterTableRows(content)) {
+        const n = row.chapterNumber;
+        const desc = row.description.trim();
         if (n < start || n > end) {
             // 越界行不算「重复」，单列一类
             outOfRange.add(n);
@@ -450,12 +445,11 @@ export function chunkRanges(
 }
 
 /**
- * 章节分配表归并/净化：解析内容中所有数据行（去重、剔除越界与空描述），
- * 合并 `extraRows` 中的新行，最后按章号升序重排替换原数据行。
+ * 章节分配表归并/净化：解析表头后的连续数据行（去重、剔除越界与空描述），
+ * 合并 `extraRows` 中的新行，最后按章号升序重排。
  *
- * 用途有二：
- *  - 净化（extraRows 为空）：确保越界/重复章号不会进入最终文档；
- *  - 增量补全（extraRows 为补全批次输出）：把缺失章节并回草稿。
+ * 同时把表格规范化为合法 Markdown（表头 + 分隔行 + 数据行）：
+ * 生成端可能省略分隔行，或把分隔行写在数据行之后，直接落盘会导致表格无法渲染。
  * 未找到表头时不改动结构，仅原样返回内容（由校验层报告「缺表格」缺陷）。
  */
 export function consolidateChapterTable(
@@ -464,48 +458,42 @@ export function consolidateChapterTable(
     end: number,
     extraRows = '',
 ): string {
-    const tableHeaderIdx = content.split('\n').findIndex(line => line.trim().startsWith(OUTLINE_TABLE_HEADER));
+    const lines = content.split('\n');
+    const tableHeaderIdx = lines.findIndex(line => isChapterTableHeaderLine(line));
     if (tableHeaderIdx < 0) return content;
+
+    // 只消费表头之后的连续表格块，避免误吞卷内其它表格
+    let blockEnd = tableHeaderIdx + 1;
+    for (; blockEnd < lines.length; blockEnd++) {
+        const trimmed = lines[blockEnd].trim();
+        if (!trimmed || !trimmed.startsWith('|')) break;
+        if (isTableSeparatorLine(trimmed)) continue;
+        if (parseChapterRow(trimmed)) continue;
+        break;
+    }
 
     const rows = new Map<number, string>();
     const collect = (text: string): void => {
         for (const raw of text.split('\n')) {
-            const m = raw.trim().match(CHAPTER_ROW_RE);
-            if (!m) continue;
-            const n = parseInt(m[1], 10);
-            if (isNaN(n) || n < start || n > end || rows.has(n)) continue;
-            const desc = m[2].replace(/\|/g, '／').trim();
+            const row = parseChapterRow(raw);
+            if (!row) continue;
+            const n = row.chapterNumber;
+            if (n < start || n > end || rows.has(n)) continue;
+            const desc = row.description.replace(/\|/g, '／').trim();
             if (desc.length === 0) continue;
             rows.set(n, `| ${n} | ${desc} |`);
         }
     };
-    collect(content);
+    collect(lines.slice(tableHeaderIdx + 1, blockEnd).join('\n'));
     collect(extraRows);
 
     const sortedRows = Array.from(rows.keys()).sort((a, b) => a - b).map(n => rows.get(n) as string);
-
-    const lines = content.split('\n');
-    const out: string[] = [];
-    let inserted = false;
-    for (const line of lines) {
-        if (CHAPTER_ROW_RE.test(line.trim())) {
-            if (!inserted) {
-                out.push(...sortedRows);
-                inserted = true;
-            }
-            continue;
-        }
-        out.push(line);
-    }
-    if (!inserted && sortedRows.length > 0) {
-        // 表头存在但没有数据行：紧跟在表头/分隔行之后插入
-        const headIdx = out.findIndex(line => line.trim().startsWith(OUTLINE_TABLE_HEADER));
-        const insertAt = out.findIndex((line, i) => i > headIdx && /^\|[\s:-]+\|$/.test(line.trim())) >= 0
-            ? out.findIndex((line, i) => i > headIdx && /^\|[\s:-]+\|$/.test(line.trim())) + 1
-            : headIdx + 1;
-        out.splice(insertAt, 0, ...sortedRows);
-    }
-    return out.join('\n');
+    const normalized = [OUTLINE_TABLE_HEADER, '|---|---|', ...sortedRows];
+    return [
+        ...lines.slice(0, tableHeaderIdx),
+        ...normalized,
+        ...lines.slice(blockEnd),
+    ].join('\n');
 }
 
 // ============================================================

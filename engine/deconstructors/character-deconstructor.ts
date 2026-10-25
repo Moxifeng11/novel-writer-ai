@@ -13,6 +13,7 @@ import { yieldToUI } from '../../shared/yield';
 import { EMOTION_WORDS } from '../dimension-keywords';
 import { GenreConfig as AdaptiveGenreConfig, GenreConfigRegistry } from '../genre';
 import { LLMEnhancer } from '../llm-enhancer';
+import { SemanticAnalyzer } from '../semantic-analyzer';
 import { createLogger } from '../../shared/logger';
 
 
@@ -857,7 +858,8 @@ export class CharacterDeconstructor {
             .sort((a, b) => b[1] - a[1])
             .map(([name]) => name);
 
-        return sortedCandidates.slice(0, 50);
+        // 复用语义分析器的噪声词过滤，剔除动词/形容词/虚词伪人名
+        return SemanticAnalyzer.filterNoiseWords(sortedCandidates).slice(0, 50);
     }
 
     private countCharacterMentions(text: string, names: string[]): Map<string, { count: number; positions: number[] }> {
@@ -1488,7 +1490,12 @@ export class CharacterDeconstructor {
             if (setB.has(ch)) intersection++;
         }
         const union = setA.size + setB.size - intersection;
-        return union > 0 ? intersection / union : 0;
+        const jaccard = union > 0 ? intersection / union : 0;
+        // 仅对长度不同的名称启用语义补充，避免同长名字一字之差被误合并
+        const semantic = nameA.length === nameB.length
+            ? 0
+            : SemanticAnalyzer.semanticSimilarity(nameA, nameB);
+        return Math.max(jaccard, semantic);
     }
 
     private calculateSimpleCooccurrence(text: string, nameA: string, nameB: string): number {

@@ -53,6 +53,10 @@ export interface ContextSnapshot {
     foreshadows: unknown;
     relationshipStates: CharacterPairRelation[];
     crossVolumeContext: string;
+    /** 长篇记忆：事实索引中已确认的人物/世界观/剧情事实（空表示无） */
+    longTermMemoryContext?: string;
+    /** 同人约束：原作核心设定 + 三条创作规则（原创项目为空） */
+    fanficRulesContext?: string;
     worldView: string;
     worldType: string;
     writingStyle: string;

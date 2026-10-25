@@ -6,8 +6,7 @@
  *   2. 事件总线：start / complete / failed / cancelled
  *   3. 状态机：idle → evaluating → success/failed/cancelled → idle
  *   4. 并发保护：evaluate 时若状态非 idle，返回 'busy'
- *   5. 评估结果持久化到 QualityHistoryStore
- *   6. 支持取消：AbortSignal 透传到子引擎
+ *   5. 支持取消：AbortSignal 透传到子引擎
  *
  * 降级策略：
  *   - score 失败 → 仅返回 deviations + 标记 partialFailure
@@ -22,7 +21,6 @@
 
 import type { QualityScoreEngine, QualityScore, EvaluationContext } from './quality-score-engine';
 import type { DeviationDetector, DeviationReport, DeviationContext } from './deviation-detector';
-import type { QualityHistoryStore, QualityHistoryRecord } from './quality-history-store';
 import { createLogger } from '../../shared/logger';
 
 
@@ -72,10 +70,6 @@ export interface MonitorContext {
     skipDeviations?: boolean;
     /** 是否跳过质量评分（默认 false） */
     skipQuality?: boolean;
-    /** 是否持久化到历史（默认 true） */
-    persistToHistory?: boolean;
-    /** 备注（写入历史条目） */
-    note?: string;
 }
 
 export interface MonitorResult {
@@ -110,12 +104,16 @@ export interface MonitorResult {
 export class RealtimeMonitor {
     private readonly scoreEngine: QualityScoreEngine;
     private readonly deviationDetector: DeviationDetector;
-    private readonly historyStore?: QualityHistoryStore;
 
     /** 当前状态 */
     private state: MonitorState = 'idle';
     /** 当前评估的 AbortController */
     private currentAbort?: AbortController;
+    /**
+     * 外部 signal 上的 abort 监听。正常结束/取消时必须移除：
+     * 长生命周期 signal（视图级 controller）会跨多次评估复用，不移除会累积闭包。
+     */
+    private externalAbortListener?: { signal: AbortSignal; handler: () => void };
     /** 当前评估 ID */
     private currentEvaluationId?: string;
     /** 事件订阅者 */
@@ -124,11 +122,9 @@ export class RealtimeMonitor {
     constructor(options: {
         scoreEngine: QualityScoreEngine;
         deviationDetector: DeviationDetector;
-        historyStore?: QualityHistoryStore;
     }) {
         this.scoreEngine = options.scoreEngine;
         this.deviationDetector = options.deviationDetector;
-        this.historyStore = options.historyStore;
     }
 
     // ----------------------------------------------------------
@@ -242,10 +238,14 @@ export class RealtimeMonitor {
         // 监听外部 signal
         if (externalSignal) {
             if (externalSignal.aborted) {
+                // 未进入 evaluating，只需清掉内部 controller，避免残留
+                this.currentAbort = undefined;
                 this.handleCancel(evaluationId, context, startTime, wordCount, contentHash);
                 return this.buildCancelledResult(evaluationId, context, startTime, wordCount, contentHash);
             }
-            externalSignal.addEventListener('abort', () => internalAbort.abort(), { once: true });
+            const handler = () => internalAbort.abort();
+            externalSignal.addEventListener('abort', handler, { once: true });
+            this.externalAbortListener = { signal: externalSignal, handler };
         }
 
         // 进入评估状态
@@ -331,24 +331,12 @@ export class RealtimeMonitor {
             wordCount,
             contentHash,
             partialFailure,
-            failures: partialFailure ? failures : undefined,
+            // 全部失败时也要返回原因：否则 UI 只能靠「质量 --」猜，无法区分
+            // 「正文过短、暂不评估」与「评分 + 偏离都挂了」。
+            failures: failures.length > 0 ? failures : undefined,
             cancelled: false,
             fromCache: qualityScore?.fromCache ?? false,
         };
-
-        // 持久化到历史
-        if (context.persistToHistory !== false && this.historyStore && !allFailed) {
-            try {
-                const record: QualityHistoryRecord = {
-                    timestamp: result.timestamp,
-                    overallScore: qualityScore?.overallScore ?? 0,
-                    scoreBreakdown: qualityScore?.dimensions as Record<string, number> | undefined,
-                };
-                this.historyStore.addRecord(context.chapterId, record);
-            } catch (e) {
-                log.warn('[RealtimeMonitor] 持久化历史失败', e);
-            }
-        }
 
         // 完成状态
         if (allFailed) {
@@ -437,8 +425,20 @@ export class RealtimeMonitor {
         };
     }
 
+    /**
+     * 移除外部 signal 上的 abort 监听。
+     * 视图级 controller 会在多次评估间复用，不移除会累积闭包。
+     */
+    private detachExternalAbort(): void {
+        if (!this.externalAbortListener) return;
+        const { signal, handler } = this.externalAbortListener;
+        signal.removeEventListener('abort', handler);
+        this.externalAbortListener = undefined;
+    }
+
     /** 清理内部状态 */
     private cleanup(): void {
+        this.detachExternalAbort();
         this.currentAbort = undefined;
         // 异步回 idle（同步会引起事件顺序问题）
         // 这里直接同步 setState(idle)，但保留 evaluationId 以便最后一个事件可读
@@ -482,27 +482,13 @@ export class RealtimeMonitor {
         return hash.toString(16).padStart(8, '0');
     }
 
-    /** 构建空质量分数（用于部分失败时持久化） */
-    private buildEmptyScore(): QualityScore {
-        return {
-            overallScore: 0,
-            dimensions: {} as any,
-            issues: [],
-            suggestions: [],
-            evaluatedAt: Date.now(),
-            wordCount: 0,
-            evalTimeMs: 0,
-            trend: 'stable',
-            fromCache: false,
-        };
-    }
-
     // ----------------------------------------------------------
     // 配置与重置
     // ----------------------------------------------------------
 
     /** 重置状态（用于异常恢复） */
     reset(): void {
+        this.detachExternalAbort();
         this.currentAbort = undefined;
         this.currentEvaluationId = undefined;
         this.setState('idle');
@@ -510,6 +496,7 @@ export class RealtimeMonitor {
 
     /** 销毁（清理订阅） */
     dispose(): void {
+        this.detachExternalAbort();
         this.subscribers.clear();
         this.currentAbort = undefined;
         this.currentEvaluationId = undefined;

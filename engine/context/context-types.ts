@@ -14,7 +14,8 @@ import type { Notifier, CharacterFrontmatter, LocationFrontmatter, FactionFrontm
 import type { TimelineRow, FanficRules } from '../../shared/template-validator';
 import type { CompressedContext } from '../context-compressor';
 import type { CharacterSoul } from '../character-soul';
-import type { MemoryShard } from '../memory-trigger';
+import type { MemoryShard, TriggeredMemory } from '../memory-trigger';
+import type { StoryLinkage } from '../story-linkage';
 import type {
     CharacterRepository,
     ChapterRepository,
@@ -135,8 +136,12 @@ export interface ContextData {
     character_cores?: CharacterSoul[];
     /** V2 Phase 3: 触发记忆碎片（由 memory-trigger 引擎注入） */
     triggered_memories?: MemoryShard[];
+    /** V2 Phase 3: 本次命中的触发记忆（含匹配分数与原因，供 UI 预览） */
+    triggered_memories_matched?: TriggeredMemory[];
     /** 触发记忆的 prompt 格式化文本 */
     triggered_memories_prompt?: string;
+    /** Rev 186：本章关联索引（伏笔/时间线 ↔ 设定库/世界观 ↔ 全书规划） */
+    story_linkage?: StoryLinkage | null;
     /** v1.6.0: 加载失败的上下文模块名（面板提示用） */
     _failedModules?: string[];
 }

@@ -7,7 +7,7 @@
  
 import { App, TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
-import { extractResponseText } from '../shared/api-response-utils';
+import { extractJsonArray, extractResponseText, stripThinkingBlock } from '../shared/api-response-utils';
 import { pjOutlineDir, pjVolumeOutlineDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { NovelWriterSettingsAPI } from '../shared/plugin-api';
@@ -82,6 +82,14 @@ export class EndingTractionEngine {
              this.vaultMeta = new ObsidianVaultMeta(this.app);
          }
          return this.vaultMeta;
+     }
+     
+     /**
+      * 已解析的情节线数量。
+      * 供 UI 判断首次初始化是否因 AI 瞬时失败而得到空结果（需要重试）。
+      */
+     getThreadCount(): number {
+         return this.threads.size;
      }
      
      /**
@@ -228,19 +236,31 @@ export class EndingTractionEngine {
              ']'
          ].join('\n');
          
+         const model = this.plugin?.settings?.flashModel || this.plugin?.settings?.defaultModel || '';
+         if (!model) {
+             // 之前回退到字面量 'flash'，云端会返回 400「unsupported model」并刷错误日志
+             log.warn('[EndingTractionEngine] 未配置可用模型，跳过 AI 情节线解析');
+             return [];
+         }
+
          const response = await this.aiEngine.callAI(
-             '', 
-             prompt, 
-             this.plugin?.settings?.flashModel || 'flash', 
-             0.3, 
-             500
-         );
+            '', 
+            prompt, 
+            model, 
+            0.3, 
+            500,
+            // 章节打开时的后台解析：密钥未解锁就跳过，不能用口令弹窗打断用户
+            { allowKeyPrompt: false }
+        );
          
          const raw = extractResponseText(response);
-         const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+         // 思考型模型会带 <think> 前缀与尾部解释，直接 JSON.parse 必然失败 → 解析结果恒为空
+         const cleaned = stripThinkingBlock(raw).replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+         const jsonText = extractJsonArray(cleaned);
+         if (!jsonText) return [];
          
          try {
-             const parsed = JSON.parse(cleaned);
+             const parsed = JSON.parse(jsonText);
              return parsed.map((p: any, i: number) => ({
                  id: `ai-${i}`,
                  name: p.name || `情节线${i + 1}`,

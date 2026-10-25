@@ -13,13 +13,14 @@ import {
     NOTICE_SUCCESS,
     getTimeoutForModel,
 } from '../shared/thresholds';
-import { calculateTokenBudget, getModelMaxOutput } from '../shared/token-estimator';
+import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '../shared/token-estimator';
 import { resolveProviderSourceType } from '../shared/model-source';
 import type { APIResponse } from './ai-engine';
 
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { performanceMonitor } from '../services/performance-monitor';
+import { ensureLocalModelCapability } from '../services/local-model-probe';
 import { createLogger } from '../shared/logger';
 
 
@@ -31,9 +32,32 @@ function errorMessage(err: unknown): string {
     return '';
 }
 
+/**
+ * 认证失败（401/403）专用错误。
+ * 单独建模是为了让上层「快速失败」：既不做重试，也不再走模拟流式/完整响应两段降级，
+ * 否则同一个失效密钥会被重复发送多次（实测 3 候选 × 3 阶段 × 3 重试 = 15+ 次 401）。
+ */
+class AIAuthError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'AIAuthError';
+    }
+}
+
+/** 口令未解锁时 crypto.decrypt 会原样返回密文，据此识别「看起来像密钥但其实是密文」 */
+function isEncryptedSecret(secret: string): boolean {
+    return secret.startsWith('aes256v2:') || secret.startsWith('aes256:');
+}
+
+/** 判断错误信息是否属于认证失败（用于降级链短路） */
+function isAuthErrorMessage(message: string | undefined): boolean {
+    if (!message) return false;
+    return /HTTP\s+(401|403)\b/.test(message) || message.includes('密钥未解锁');
+}
+
 /** API JSON 响应结构 */
 interface AIApiJsonResponse {
-    choices?: Array<{ message?: { content?: string } }>;
+    choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
     usage?: {
         prompt_tokens?: number;
         completion_tokens?: number;
@@ -46,6 +70,20 @@ interface AIApiJsonResponse {
     prompt_eval_count?: number;
     eval_count?: number;
     done?: boolean;
+    done_reason?: string;
+}
+
+/**
+ * 端点来源判定：本地端点未登记模型时使用更保守的能力兜底。
+ * 做成模块函数而非类方法，便于在没有完整插件实例的调用场景（测试/工具）复用。
+ */
+function resolveEndpointSource(endpoint?: string): 'local' | 'cloud' {
+    if (!endpoint) return 'cloud';
+    try {
+        return resolveProviderSourceType({ id: '', endpoint }) === 'local' ? 'local' : 'cloud';
+    } catch {
+        return 'cloud';
+    }
 }
 
 export class AIApiClient {
@@ -102,6 +140,39 @@ export class AIApiClient {
         this.plugin = plugin;
     }
 
+    /**
+     * 模型输出上限：优先使用用户在「模型覆盖」里配置的值，再回退静态能力表。
+     * 只查静态表会把「deepseek-flash」这类自定义模型误判为默认 4096，
+     * 导致长实体补全被静默截断。
+     */
+    private resolveMaxOutput(model: string, endpoint?: string): number {
+        try {
+            const limits = this.plugin.resolveModelLimits(model, endpoint);
+            if (limits && Number.isFinite(limits.maxOutput) && limits.maxOutput > 0) {
+                return limits.maxOutput;
+            }
+        } catch {
+            // 插件未初始化时回退静态表
+        }
+        return getModelMaxOutput(model, resolveEndpointSource(endpoint));
+    }
+
+    /**
+     * 上下文窗口同样优先使用用户「模型覆盖」。
+     * 预算检查若只查静态表，未登记模型会被误判为 32K，长上下文请求被直接拒绝。
+     */
+    private resolveMaxContext(model: string, endpoint?: string): number {
+        try {
+            const limits = this.plugin.resolveModelLimits(model, endpoint);
+            if (limits && Number.isFinite(limits.maxContext) && limits.maxContext > 0) {
+                return limits.maxContext;
+            }
+        } catch {
+            // 插件未初始化时回退静态表
+        }
+        return getModelContextWindow(model, resolveEndpointSource(endpoint));
+    }
+
     private isDisconnectionError(error: unknown, statusCode?: number): boolean {
         if (statusCode === 500 || statusCode === 502 || statusCode === 503 || statusCode === 504) return true;
         if (statusCode === 408) return true;
@@ -114,6 +185,18 @@ export class AIApiClient {
             || msg.includes('ssl') || msg.includes('cloudflare')
             || msg.includes('502 bad gateway')) return true;
         return false;
+    }
+
+    /**
+     * 网络层不可达（CORS 被拦、DNS 失败、本地服务未启动）。
+     * 这类错误在同一端点上重试、切换模型都不会自愈；实测 mock 端点缺 CORS 头时，
+     * 3 候选 × 2 模型 × 3 重试 × 降级链会打出 55 次请求，表现就是「一直卡在调用」。
+     */
+    private isUnreachableError(error: unknown): boolean {
+        const msg = errorMessage(error).toLowerCase();
+        return msg.includes('failed to fetch') || msg.includes('fetch failed')
+            || msg.includes('econnrefused') || msg.includes('enotfound')
+            || msg.includes('networkerror');
     }
 
     private getContinuityGuard(fromModel: string, toModel: string): string {
@@ -144,16 +227,26 @@ export class AIApiClient {
         systemPrompt: string,
         temperature: number,
         maxTokens: number,
-        stream: boolean
+        stream: boolean,
+        numCtx?: number | undefined,
+        endpoint?: string
     ): Record<string, unknown> {
         const safeMaxTokens = Math.min(maxTokens, ZAI_MAX_TOKENS);
         if (isOllamaNative) {
+            // 未显式指定时按模型画像下发 num_ctx：不传会退回 Ollama 自身的默认窗口
+            // （常见 2048/4096），超长 prompt 会被静默截断，表现为「设定丢失」。
+            const effectiveNumCtx = numCtx ?? this.resolveMaxContext(model, endpoint);
+            const ollamaOptions: Record<string, unknown> = {
+                temperature,
+                num_predict: safeMaxTokens,
+                num_ctx: effectiveNumCtx,
+            };
             return {
                 model,
                 prompt: userPrompt,
                 system: systemPrompt,
                 stream,
-                options: { temperature, num_predict: safeMaxTokens },
+                options: ollamaOptions,
             };
         }
         const body: Record<string, unknown> = {
@@ -191,6 +284,11 @@ export class AIApiClient {
      * 这一内置配置下所有非流式 AI 调用都返回「API密钥未配置」，流水线无法运行。）
      */
     private isKeylessLocalEndpoint(endpoint: string): boolean {
+        return this.isLocalEndpoint(endpoint);
+    }
+
+    /** 是否本地推理端点（Ollama / LM Studio / vLLM）：本地模型重试代价高，需要单独的容错策略 */
+    private isLocalEndpoint(endpoint: string): boolean {
         const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
         return resolveProviderSourceType({
             id: provider?.id || '',
@@ -199,24 +297,80 @@ export class AIApiClient {
         }) === 'local';
     }
 
+    /**
+     * Ollama 的 OpenAI 兼容层（/v1/chat/completions）会丢弃 num_ctx，
+     * 导致本地模型按自身默认窗口截断 prompt，超长上下文静默丢失。
+     * 内置本地端点统一改写为原生 /api/generate，让 num_ctx 真正生效。
+     * 仅匹配 Ollama 默认端口，避免误伤 LM Studio / vLLM 等其它本地服务。
+     */
+    private normalizeOllamaEndpoint(endpoint: string): string {
+        if (!/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]):11434\//i.test(endpoint)) return endpoint;
+        return endpoint.replace(/\/v1\/chat\/completions\/?$/i, '/api/generate');
+    }
+
+    /**
+     * 请求超时：本地模型（尤其 7B 量化模型 + 长上下文）单次生成常超过 3 分钟，
+     * 沿用云端的 120/180s 会在快完成时被中止并触发重试，反而表现为「一直卡住」。
+     */
+    private resolveTimeout(model: string, endpoint: string): number {
+        const base = getTimeoutForModel(model);
+        return this.isLocalEndpoint(endpoint) ? Math.max(base, 300_000) : base;
+    }
+
+    /** 本地端点只重试 1 次：单次已可能需要数分钟，3 次重试会把等待放大到十几分钟 */
+    private resolveMaxRetries(endpoint: string): number {
+        return this.isLocalEndpoint(endpoint) ? 1 : (this.plugin.settings.maxApiRetries ?? 3);
+    }
+
+    /**
+     * 请求前解析真实密钥。
+     * 口令未输入/取消时 settings 里保留的是 `aes256…` 密文，直接发给服务端只会得到 401，
+     * 并在降级链里重复放大。这里先尝试解密（会复用会话口令，必要时弹一次口令框），
+     * 解密失败则返回可读错误，让调用方立即中止。
+     */
+    private async resolveApiKey(rawKey: string | undefined, allowPrompt = true): Promise<{ key: string; error?: string }> {
+        const key = rawKey || '';
+        if (!key || !isEncryptedSecret(key)) return { key };
+
+        let decrypted = key;
+        try {
+            // 后台分析类调用（如情节线解析）不允许弹口令框，未解锁时直接按失败返回
+            decrypted = allowPrompt
+                ? await this.plugin.decryptKey(key)
+                : await this.plugin.decryptKeyWithoutPrompt(key);
+        } catch (e) {
+            log.warn('[小说工坊] API 密钥解密失败:', e);
+        }
+        if (isEncryptedSecret(decrypted)) {
+            return {
+                key: '',
+                error: 'API 密钥未解锁：请在口令框中输入加密口令后重试（若已取消，请重新生成建议）',
+            };
+        }
+        return { key: decrypted };
+    }
+
     async callAI(
         systemPrompt: string,
         userPrompt: string,
         model?: string,
         temperature: number = 0.7,
         maxTokens: number = 4096,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
     ): Promise<APIResponse> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const apiKey = options?.apiKey || this.plugin.settings.apiKey;
+        let apiKey = options?.apiKey || this.plugin.settings.apiKey;
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
+        // 本地 Ollama 的 /v1 兼容层不接收 num_ctx，请求前统一改写为原生端点
+        const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
         const externalSignal = options?.signal;
         if (externalSignal?.aborted) {
             return { content: '', error: 'aborted' };
         }
 
         // P0-3: prompt 五元组哈希缓存——命中时跳过 AI 调用（spec p0-api-efficiency-optimization §4.1，决策 D-3/D-6）
-        const cacheEnabled = (this.plugin as any).settings?.promptCacheEnabled !== false;
+        // 创意类调用（随机构思 / 文笔预设）必须显式 bypassCache，否则相同提示词会永远返回同一结果。
+        const cacheEnabled = (this.plugin as any).settings?.promptCacheEnabled !== false && options?.bypassCache !== true;
         const promptCache = cacheEnabled ? getPromptCache() : null;
         const cacheKey = promptCache
             ? computePromptHash(systemPrompt, userPrompt, effectiveModel, temperature, maxTokens)
@@ -229,7 +383,12 @@ export class AIApiClient {
             }
         }
 
-        const modelMaxOutput = getModelMaxOutput(effectiveModel);
+        // 本地未登记模型：首次调用前读取 Ollama /api/show 的真实上下文窗口
+        if (endpoint && this.isLocalEndpoint(endpoint)) {
+            await ensureLocalModelCapability(endpoint, effectiveModel);
+        }
+
+        const modelMaxOutput = this.resolveMaxOutput(effectiveModel, endpoint);
         const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
         if (maxTokens > modelMaxOutput) {
             log.debug(`[小说工坊] maxTokens ${maxTokens} > ${effectiveModel} 上限 ${modelMaxOutput}，自动截断为 ${safeMaxTokens}`);
@@ -239,9 +398,21 @@ export class AIApiClient {
             this.notifier.showNotice('❌ 请先配置API端点', NOTICE_ERROR);
             return { content: '', error: 'API端点未配置' };
         }
-        if (!apiKey && !this.isKeylessLocalEndpoint(endpoint)) {
+        // 本地 Ollama 无需密钥：跳过解析，避免误报「密钥解密失败」并触发无谓的口令流程
+        const keylessEndpoint = this.isKeylessLocalEndpoint(endpoint);
+        if (!apiKey && !keylessEndpoint) {
             this.notifier.showNotice('❌ 请先配置API密钥', NOTICE_ERROR);
             return { content: '', error: 'API密钥未配置' };
+        }
+
+        // 密文密钥前置解析：解密失败直接返回可读错误，避免把密文当 Bearer token 发出去
+        if (!keylessEndpoint) {
+            const resolvedKey = await this.resolveApiKey(apiKey, options?.allowKeyPrompt !== false);
+            if (resolvedKey.error) {
+                this.notifier.showNotice(`🔒 ${resolvedKey.error}`, NOTICE_ERROR);
+                return { content: '', error: resolvedKey.error };
+            }
+            apiKey = resolvedKey.key;
         }
 
         let lastError: string | undefined;
@@ -259,12 +430,15 @@ export class AIApiClient {
         const fallbackModels = this.buildFallbackModels(effectiveModel, availableModels, fallbackEnabled);
 
         for (const currentModel of fallbackModels) {
-            const currentMaxOutput = getModelMaxOutput(currentModel);
+            const currentMaxOutput = this.resolveMaxOutput(currentModel, endpoint);
             const currentSafeMaxTokens = Math.min(maxTokens, currentMaxOutput);
             if (maxTokens > currentMaxOutput) {
                 log.debug(`[小说工坊] fallback ${currentModel}: maxTokens ${maxTokens} > 上限 ${currentMaxOutput}，截断为 ${currentSafeMaxTokens}`);
             }
             const finalMaxTokens = currentSafeMaxTokens;
+            // finish_reason=length 时在模型上限内自动扩容重试一次，避免 4096 静态预算白丢一次生成
+            let attemptMaxTokens = finalMaxTokens;
+            let expandedForTruncation = false;
 
             const isSwitch = triedModels.length > 0;
 
@@ -280,7 +454,10 @@ export class AIApiClient {
             triedModels.push(currentModel);
 
             if (triedModels.length === 1) {
-                const budget = calculateTokenBudget(effectiveSystemPrompt, userPrompt, currentModel);
+                const budget = calculateTokenBudget(effectiveSystemPrompt, userPrompt, currentModel, {
+                    maxContext: this.resolveMaxContext(currentModel, endpoint),
+                    maxOutput: currentMaxOutput,
+                });
                 if (!budget.isSafe) {
                     log.warn(`[小说工坊] ⚠️ Token预算 — ${currentModel}: 输入~${budget.input}, 可用${budget.available}/${budget.contextWindow}`);
                     if (budget.available < 512) {
@@ -289,8 +466,10 @@ export class AIApiClient {
                 }
             }
 
-            const maxRetries = this.plugin.settings.maxApiRetries ?? 3;
-            for (let attempt = 0; attempt < maxRetries; attempt++) {
+            const maxRetries = this.resolveMaxRetries(endpoint);
+            // 本地端点只重试 1 次，但截断扩容不应被重试上限吃掉：单独放宽 1 次
+            let truncationExtraAttempts = 0;
+            for (let attempt = 0; attempt < maxRetries + truncationExtraAttempts; attempt++) {
                 let ac: AbortController | null = null;
                 let timer: ReturnType<typeof setTimeout> | null = null;
                 // v6.3: 外部 abort（用户连按 Tab）联动内部 abort，真正中断 fetch。
@@ -302,9 +481,9 @@ export class AIApiClient {
                 }
                 try {
                     ac = new AbortController();
-                    timer = setTimeout(() => ac!.abort(), getTimeoutForModel(currentModel));
+                    timer = setTimeout(() => ac!.abort(), this.resolveTimeout(currentModel, endpoint));
 
-                    const isOllamaNative = endpoint.includes('/api/generate');
+                    const isOllamaNative = requestEndpoint.includes('/api/generate');
 
                     const requestBody = this.buildRequestBody(
                         isOllamaNative,
@@ -312,15 +491,17 @@ export class AIApiClient {
                         userPrompt,
                         effectiveSystemPrompt,
                         temperature,
-                        finalMaxTokens,
-                        false
+                        attemptMaxTokens,
+                        false,
+                        options?.numCtx,
+                        endpoint
                     );
 
                     const perfFetchId = performanceMonitor.start('apiFetch', 'apiCall', undefined, {
                         model: currentModel,
                         endpoint: endpoint.substring(0, 50),
                     });
-                    const response = await fetch(endpoint, {
+                    const response = await fetch(requestEndpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -343,6 +524,13 @@ export class AIApiClient {
                     if (!response.ok) {
                         const errorText = await response.text();
                         log.error(`[小说工坊] API响应错误 - 模型: ${currentModel}, 状态码: ${response.status}, 内容:`, errorText);
+
+                        // 401/403 属于配置问题，重试和切换模型都不会自愈，直接快速失败
+                        if (response.status === 401 || response.status === 403) {
+                            const authError = `API 密钥无效或无权限 (HTTP ${response.status})：${errorText}`;
+                            this.notifier.showNotice('🔒 API 密钥无效或无权限，请检查设置中的密钥', NOTICE_ERROR);
+                            return { content: '', error: authError };
+                        }
 
                         if (this.shouldFallback(null, response.status, fallbackModels.length > triedModels.length)) {
                             lastError = `HTTP ${response.status} (${currentModel}): ${errorText}`;
@@ -369,7 +557,9 @@ export class AIApiClient {
                         return { content: '', error: `API 返回格式异常：${responseText.slice(0, 200)}` };
                     }
                     // Ollama /api/generate 响应格式转换：{ model, response, done }
-                    if (isOllamaNative) {
+                    // 只有携带 response 字段时才走原生化转换，避免把兼容层返回的
+                    // OpenAI 结构误清空。
+                    if (isOllamaNative && data.response !== undefined) {
                         const ollamaContent = data.response;
                         if (data.prompt_eval_count !== undefined || data.eval_count !== undefined) {
                             data.usage = {
@@ -378,9 +568,33 @@ export class AIApiClient {
                                 total_tokens: (data.prompt_eval_count || 0) + (data.eval_count || 0)
                             };
                         }
-                        data.choices = [{ message: { content: ollamaContent || '' } }];
+                        // done_reason=length 是 Ollama 原生唯一可靠的截断信号，
+                        // 丢弃它会让下游把「被截断」误判成「正常结束」。
+                        data.choices = [{
+                            message: { content: ollamaContent || '' },
+                            finish_reason: data.done_reason === 'length' ? 'length' : 'stop',
+                        }];
                     }
                     const content = data.choices?.[0]?.message?.content;
+                    // 截断检测：finish_reason=length 说明本次输出被 max_tokens 截断。
+                    // 思考型模型（deepseek 系 flash/pro）的思考与正文共用同一预算，
+                    // 思考占满时 content 会直接为空——旧实现先判空再判截断，于是
+                    // 「预算不足」被误报成「AI返回为空」，重试/切模型都不会自愈。
+                    const finishReason = data.choices?.[0]?.finish_reason;
+                    const isLengthTruncated = finishReason === 'length' || finishReason === 'max_tokens';
+                    if (isLengthTruncated && !expandedForTruncation && attemptMaxTokens < currentMaxOutput) {
+                        const nextMaxTokens = Math.min(
+                            currentMaxOutput,
+                            Math.max(attemptMaxTokens * 2, 8192)
+                        );
+                        if (nextMaxTokens > attemptMaxTokens) {
+                            expandedForTruncation = true;
+                            truncationExtraAttempts = 1;
+                            log.info(`[小说工坊] ${currentModel} 输出被截断（finish_reason=length${content ? '' : '，正文为空'}），max_tokens ${attemptMaxTokens} → ${nextMaxTokens} 重试`);
+                            attemptMaxTokens = nextMaxTokens;
+                            continue;
+                        }
+                    }
 
                     if (!content) {
                         if (fallbackModels.length > triedModels.length) {
@@ -388,7 +602,16 @@ export class AIApiClient {
                             log.info(`[小说工坊] ${currentModel} 返回空内容，尝试下一个模型`);
                             break;
                         }
-                        return { content: '', error: 'AI返回为空' };
+                        return {
+                            content: '',
+                            error: isLengthTruncated
+                                ? `模型输出被 max_tokens=${attemptMaxTokens} 截断且未产出正文（思考占满预算），请提高模型输出上限`
+                                : 'AI返回为空',
+                        };
+                    }
+
+                    if (isLengthTruncated) {
+                        log.warn(`[小说工坊] ${currentModel} 输出仍被截断（已达 max_tokens=${attemptMaxTokens}），请提高模型上限或精简提示词`);
                     }
 
                     const usage = data.usage ? {
@@ -413,15 +636,20 @@ export class AIApiClient {
 
                     // P0-3: 成功响应写入缓存（error 响应不会走到此分支，天然不污染缓存）
                     if (promptCache) {
-                        promptCache.set(cacheKey, { content, usage }, currentModel);
+                        promptCache.set(cacheKey, { content, usage, finishReason: isLengthTruncated ? 'length' : 'stop' }, currentModel);
                     }
 
-                    return { content, usage };
+                    return { content, usage, finishReason: isLengthTruncated ? 'length' : 'stop' };
                 } catch (error: unknown) {
                     // v6.3: 外部取消优先于断联判定——AbortError 在 isDisconnectionError 中同属
                     // 「断联」特征，若先走回退分支，用户取消会被误判为断联并切换到其他模型继续生成。
                     if (externalSignal?.aborted) {
                         return { content: '', error: 'aborted' };
+                    }
+                    if (this.isUnreachableError(error)) {
+                        const msg = errorMessage(error) || '网络不可达';
+                        log.error(`[小说工坊] ${endpoint} 无法连接，停止重试: ${msg}`);
+                        return { content: '', error: `无法连接模型服务（${endpoint}）：${msg}` };
                     }
                     if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {
                         lastError = errorMessage(error) || '网络错误';
@@ -462,15 +690,21 @@ export class AIApiClient {
         temperature: number = 0.7,
         maxTokens: number = 4096,
         onChunk?: (text: string, done: boolean) => void,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
     ): Promise<APIResponse> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
         const externalSignal = options?.signal;
         if (externalSignal?.aborted) {
             return { content: '', error: 'aborted' };
         }
 
-        const modelMaxOutput = getModelMaxOutput(effectiveModel);
+        // 本地未登记模型：流式调用同样先探测真实上下文窗口
+        if (endpoint && this.isLocalEndpoint(endpoint)) {
+            await ensureLocalModelCapability(endpoint, effectiveModel);
+        }
+
+        const modelMaxOutput = this.resolveMaxOutput(effectiveModel, endpoint);
         const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
         if (maxTokens > modelMaxOutput) {
             log.debug(`[小说工坊] callAIStream: maxTokens ${maxTokens} > ${effectiveModel} 上限 ${modelMaxOutput}，自动截断为 ${safeMaxTokens}`);
@@ -492,7 +726,7 @@ export class AIApiClient {
 
         try {
             const apiKey = options?.apiKey || this.plugin.settings.apiKey;
-            const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
+            const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
 
             if (!endpoint) {
                 this.notifier.showNotice('❌ 请先配置API端点', NOTICE_ERROR);
@@ -502,6 +736,13 @@ export class AIApiClient {
                 this.notifier.showNotice('❌ 请先配置API密钥', NOTICE_ERROR);
                 return { content: '', error: 'API密钥未配置' };
             }
+
+            const resolvedKey = await this.resolveApiKey(apiKey, options?.allowKeyPrompt !== false);
+            if (resolvedKey.error) {
+                this.notifier.showNotice(`🔒 ${resolvedKey.error}`, NOTICE_ERROR);
+                return { content: '', error: resolvedKey.error };
+            }
+            options = { ...(options || {}), apiKey: resolvedKey.key };
 
             const providerName = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint)?.name || '自定义';
             log.debug(`[小说工坊] 🔗 callAIStream → ${providerName} | ${effectiveModel}`);
@@ -516,13 +757,31 @@ export class AIApiClient {
             const triedModels: string[] = [];
             let fullContent = '';
 
+            // 流式路径此前没有输入预算闸门：超长 prompt 会原样发给本地小窗口模型，
+            // 被静默截断后表现为「设定丢失」。与非流式 callAI 保持同一判定口径。
+            const streamBudgetModel = fallbackModels[0];
+            const streamBudget = calculateTokenBudget(systemPrompt, userPrompt, streamBudgetModel, {
+                maxContext: this.resolveMaxContext(streamBudgetModel, endpoint),
+                maxOutput: this.resolveMaxOutput(streamBudgetModel, endpoint),
+            });
+            if (streamBudget.available < 512) {
+                log.warn(`[小说工坊] ⚠️ 流式 Token预算不足 — ${streamBudgetModel}: 输入~${streamBudget.input}, 可用${streamBudget.available}/${streamBudget.contextWindow}`);
+                return {
+                    content: '',
+                    error: `输入过长(~${streamBudget.input}tokens)，超出${streamBudgetModel}窗口，请减少上下文`,
+                };
+            }
+
             for (const currentModel of fallbackModels) {
-                const currentMaxOutput = getModelMaxOutput(currentModel);
+                const currentMaxOutput = this.resolveMaxOutput(currentModel, endpoint);
                 const currentSafeMaxTokens = Math.min(maxTokens, currentMaxOutput);
                 if (maxTokens > currentMaxOutput) {
                     log.debug(`[小说工坊] callAIStream fallback ${currentModel}: maxTokens ${maxTokens} > 上限 ${currentMaxOutput}，截断为 ${currentSafeMaxTokens}`);
                 }
                 const finalMaxTokens = currentSafeMaxTokens;
+                // 同 nativeStreamIterator：思考占满预算时正文为空，需在模型上限内扩容重试
+                let attemptMaxTokens = finalMaxTokens;
+                let expandedForTruncation = false;
 
                 const isSwitch = triedModels.length > 0;
 
@@ -537,7 +796,7 @@ export class AIApiClient {
 
                 triedModels.push(currentModel);
 
-                const maxRetries = this.plugin.settings.maxApiRetries ?? 3;
+                const maxRetries = this.resolveMaxRetries(endpoint);
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                     let ac: AbortController | null = null;
                     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -549,9 +808,9 @@ export class AIApiClient {
                     }
                     try {
                         ac = new AbortController();
-                        timer = setTimeout(() => ac!.abort(), getTimeoutForModel(currentModel));
+                        timer = setTimeout(() => ac!.abort(), this.resolveTimeout(currentModel, endpoint));
 
-                        const isOllamaNative = endpoint.includes('/api/generate');
+                        const isOllamaNative = requestEndpoint.includes('/api/generate');
 
                         const streamRequestBody = this.buildRequestBody(
                             isOllamaNative,
@@ -559,15 +818,17 @@ export class AIApiClient {
                             userPrompt,
                             effectiveSystemPrompt,
                             temperature,
-                            finalMaxTokens,
-                            true
+                            attemptMaxTokens,
+                            true,
+                            options?.numCtx,
+                            endpoint
                         );
 
                         const perfStreamFetchId = performanceMonitor.start('apiFetchStream', 'apiCall', undefined, {
                             model: currentModel,
                             endpoint: endpoint.substring(0, 50),
                         });
-                        const response = await fetch(endpoint, {
+                        const response = await fetch(requestEndpoint, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -579,8 +840,12 @@ export class AIApiClient {
                         });
                         performanceMonitor.end(perfStreamFetchId, { status: response.status });
 
-                        clearTimeout(timer);
-                        timer = null;
+                        // 同 nativeStreamIterator：头部到达后保留空闲超时看门狗，避免读流永久挂起
+                        const armIdleTimer = () => {
+                            if (timer) clearTimeout(timer);
+                            timer = setTimeout(() => ac?.abort(), this.resolveTimeout(currentModel, endpoint));
+                        };
+                        armIdleTimer();
 
                         if (response.status === 429) {
                             const rateLimitResult = await this.handleRateLimit(currentModel, fallbackModels.length > triedModels.length);
@@ -609,12 +874,15 @@ export class AIApiClient {
                         const decoder = new TextDecoder();
                         let buffer = '';
                         let accumulatedContent = '';
+                        // 思考型模型的 reasoning_content 与 nativeStreamIterator 同处理：只统计不并入正文
+                        let accumulatedReasoning = '';
                         let isStreamDone = false;
                         let streamFinishReason: 'stop' | 'length' | undefined;
 
                         while (!isStreamDone) {
                             const { done, value } = await reader.read();
                             if (done) break;
+                            armIdleTimer();
 
                             buffer += decoder.decode(value, { stream: true });
 
@@ -635,7 +903,8 @@ export class AIApiClient {
                                             onChunk?.(accumulatedContent, false);
                                         }
                                         if (parsed?.done === true) {
-                                            streamFinishReason = 'stop';
+                                            // 与 OpenAI 路径对齐：length 必须能传到上层，供续写/扩容判定
+                                            streamFinishReason = parsed?.done_reason === 'length' ? 'length' : 'stop';
                                             isStreamDone = true;
                                             break;
                                         }
@@ -659,10 +928,14 @@ export class AIApiClient {
                                 try {
                                     const parsed = JSON.parse(jsonStr);
 
-                                    const delta = parsed?.choices?.[0]?.delta?.content;
+                                    const deltaObj = parsed?.choices?.[0]?.delta;
+                                    const delta = deltaObj?.content;
                                     if (delta) {
                                         accumulatedContent += delta;
                                         onChunk?.(accumulatedContent, false);
+                                    }
+                                    if (deltaObj?.reasoning_content) {
+                                        accumulatedReasoning += String(deltaObj.reasoning_content);
                                     }
 
                                     const finReason = parsed?.choices?.[0]?.finish_reason;
@@ -686,12 +959,33 @@ export class AIApiClient {
                         onChunk?.(fullContent, true);
 
                         if (!fullContent) {
+                            // 思考占满预算（finish_reason=length + 有思考增量）：同模型扩容重试
+                            if (
+                                streamFinishReason === 'length'
+                                && accumulatedReasoning
+                                && !expandedForTruncation
+                                && attemptMaxTokens < currentMaxOutput
+                            ) {
+                                const nextMaxTokens = Math.min(currentMaxOutput, Math.max(attemptMaxTokens * 2, 8192));
+                                if (nextMaxTokens > attemptMaxTokens) {
+                                    expandedForTruncation = true;
+                                    log.info(`[小说工坊] ${currentModel} 流式正文为空（思考 ${accumulatedReasoning.length} 字占满预算），max_tokens ${attemptMaxTokens} → ${nextMaxTokens} 重试`);
+                                    attemptMaxTokens = nextMaxTokens;
+                                    attempt -= 1;
+                                    continue;
+                                }
+                            }
                             if (fallbackModels.length > triedModels.length) {
                                 lastError = `AI流式返回为空 (${currentModel})`;
                                 log.info(`[小说工坊] ${currentModel} 流式返回空内容，尝试下一个模型`);
                                 break;
                             }
-                            return { content: '', error: 'AI流式返回为空' };
+                            return {
+                                content: '',
+                                error: streamFinishReason === 'length'
+                                    ? `模型思考占满输出上限（max_tokens=${attemptMaxTokens}）未产出正文，请提高模型输出上限`
+                                    : 'AI流式返回为空',
+                            };
                         }
 
                         const data = { content: fullContent, finishReason: streamFinishReason };
@@ -706,6 +1000,11 @@ export class AIApiClient {
                         // v6.3: 外部取消优先于断联判定（同 callAI，避免取消被误判为断联后切模型）
                         if (externalSignal?.aborted) {
                             return { content: '', error: 'aborted' };
+                        }
+                        if (this.isUnreachableError(error)) {
+                            const msg = errorMessage(error) || '网络不可达';
+                            log.error(`[小说工坊] ${endpoint} 无法连接，停止重试(流式): ${msg}`);
+                            return { content: '', error: `无法连接模型服务（${endpoint}）：${msg}` };
                         }
                         if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {
                             lastError = errorMessage(error) || '网络错误(流式)';
@@ -747,16 +1046,33 @@ export class AIApiClient {
         model?: string,
         temperature: number = 0.7,
         maxTokens: number = 4096,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
     ): AsyncGenerator<string, APIResponse, unknown> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
+        const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
         const externalSignal = options?.signal;
 
         if (externalSignal?.aborted) {
             return { content: '', error: 'aborted' };
         }
 
-        const modelMaxOutput = getModelMaxOutput(effectiveModel);
+        // 密文密钥前置解析（同 callAI）：未解锁就不进入流式降级链，避免重复 401。
+        // 本地 Ollama 无需密钥，直接跳过，避免误报解密失败。
+        const keylessEndpoint = !!endpoint && this.isKeylessLocalEndpoint(endpoint);
+        if (!keylessEndpoint) {
+            const rawKey = options?.apiKey || this.plugin.settings.apiKey;
+            const resolvedKey = await this.resolveApiKey(rawKey, options?.allowKeyPrompt !== false);
+            if (resolvedKey.error) {
+                this.notifier.showNotice(`🔒 ${resolvedKey.error}`, NOTICE_ERROR);
+                return { content: '', error: resolvedKey.error };
+            }
+            if (resolvedKey.key !== rawKey) {
+                options = { ...(options || {}), apiKey: resolvedKey.key };
+            }
+        }
+
+        const modelMaxOutput = this.resolveMaxOutput(effectiveModel);
         const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
         const finalMaxTokens = safeMaxTokens;
 
@@ -781,6 +1097,10 @@ export class AIApiClient {
                     }
                     lastError = result.error;
                     log.warn('[小说工坊] 流式降级: 原生 SSE 失败，切换到模拟流式 -', lastError);
+                    // 认证失败换阶段也不会成功，且会重复发送无效密钥，直接终止降级链
+                    if (isAuthErrorMessage(lastError)) {
+                        return { content: '', error: lastError };
+                    }
                     fallbackStage = 'simulated';
                 } else if (fallbackStage === 'simulated') {
                     log.debug('[小说工坊] 流式降级: 尝试模拟流式');
@@ -796,6 +1116,9 @@ export class AIApiClient {
                     }
                     lastError = result.error;
                     log.warn('[小说工坊] 流式降级: 模拟流式失败，切换到完整响应 -', lastError);
+                    if (isAuthErrorMessage(lastError)) {
+                        return { content: '', error: lastError };
+                    }
                     fallbackStage = 'full';
                 } else {
                     log.debug('[小说工坊] 流式降级: 尝试完整响应（非流式）');
@@ -814,6 +1137,10 @@ export class AIApiClient {
                 const errMsg = error instanceof Error ? error.message : String(error);
                 lastError = errMsg;
                 log.warn(`[小说工坊] 流式降级: ${fallbackStage} 阶段异常 -`, errMsg);
+
+                if (error instanceof AIAuthError || isAuthErrorMessage(errMsg)) {
+                    return { content: '', error: errMsg };
+                }
 
                 if (fallbackStage === 'native') {
                     fallbackStage = 'simulated';
@@ -834,24 +1161,42 @@ export class AIApiClient {
         model: string,
         temperature: number,
         maxTokens: number,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; numCtx?: number }
     ): AsyncGenerator<string, APIResponse, unknown> {
         const externalSignal = options?.signal;
         const apiKey = options?.apiKey || this.plugin.settings.apiKey;
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
+        const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
         const availableModels = this.plugin.settings.availableModels || [];
         const fallbackEnabled = this.plugin.settings.enableAutoModelFallback !== false && options?.disableFallback !== true;
         const isWriting = options?.isWritingTask === true;
 
         const fallbackModels = this.buildFallbackModels(model, availableModels, fallbackEnabled, !options?.disableFallback);
 
+        // 与 callAIStream 共用同一输入预算口径，避免本地小窗口被静默截断
+        const iteratorBudgetModel = fallbackModels[0];
+        const iteratorBudget = calculateTokenBudget(systemPrompt, userPrompt, iteratorBudgetModel, {
+            maxContext: this.resolveMaxContext(iteratorBudgetModel, endpoint),
+            maxOutput: this.resolveMaxOutput(iteratorBudgetModel, endpoint),
+        });
+        if (iteratorBudget.available < 512) {
+            log.warn(`[小说工坊] ⚠️ 迭代器 Token预算不足 — ${iteratorBudgetModel}: 输入~${iteratorBudget.input}, 可用${iteratorBudget.available}/${iteratorBudget.contextWindow}`);
+            return {
+                content: '',
+                error: `输入过长(~${iteratorBudget.input}tokens)，超出${iteratorBudgetModel}窗口，请减少上下文`,
+            };
+        }
+
         let lastError: string | undefined;
         const triedModels: string[] = [];
 
         for (const currentModel of fallbackModels) {
-            const currentMaxOutput = getModelMaxOutput(currentModel);
+            const currentMaxOutput = this.resolveMaxOutput(currentModel, endpoint);
             const currentSafeMaxTokens = Math.min(maxTokens, currentMaxOutput);
-            const finalMaxTokens = currentSafeMaxTokens;
+            // finish_reason=length 且正文为空时，在模型上限内扩容重试一次：
+            // 思考型模型（deepseek-flash / r1）的思考与正文共用预算，思考占满时正文为空。
+            let attemptMaxTokens = currentSafeMaxTokens;
+            let expandedForTruncation = false;
 
             const isSwitch = triedModels.length > 0;
 
@@ -865,7 +1210,7 @@ export class AIApiClient {
 
             triedModels.push(currentModel);
 
-            const maxRetries = this.plugin.settings.maxApiRetries ?? 3;
+            const maxRetries = this.resolveMaxRetries(endpoint);
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                 let ac: AbortController | null = null;
                 let timer: ReturnType<typeof setTimeout> | null = null;
@@ -877,9 +1222,9 @@ export class AIApiClient {
                 }
                 try {
                     ac = new AbortController();
-                    timer = setTimeout(() => ac!.abort(), getTimeoutForModel(currentModel));
+                    timer = setTimeout(() => ac!.abort(), this.resolveTimeout(currentModel, endpoint));
 
-                    const isOllamaNative = endpoint.includes('/api/generate');
+                    const isOllamaNative = requestEndpoint.includes('/api/generate');
 
                     const streamRequestBody = this.buildRequestBody(
                         isOllamaNative,
@@ -887,11 +1232,13 @@ export class AIApiClient {
                         userPrompt,
                         effectiveSystemPrompt,
                         temperature,
-                        finalMaxTokens,
-                        true
+                        attemptMaxTokens,
+                        true,
+                        options?.numCtx,
+                        endpoint
                     );
 
-                    const response = await fetch(endpoint, {
+                    const response = await fetch(requestEndpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -902,8 +1249,14 @@ export class AIApiClient {
                         signal: ac.signal
                     });
 
-                    clearTimeout(timer);
-                    timer = null;
+                    // 响应头到达后不清除计时器，改为「空闲超时」看门狗：
+                    // 旧实现头部一到就 clearTimeout，若服务端保持连接却不再产出，
+                    // reader.read() 会永久挂起（本地 Ollama 排队/卡死时表现为一直「生成中」）。
+                    const armIdleTimer = () => {
+                        if (timer) clearTimeout(timer);
+                        timer = setTimeout(() => ac?.abort(), this.resolveTimeout(currentModel, endpoint));
+                    };
+                    armIdleTimer();
 
                     if (response.status === 429) {
                         const rateLimitResult = await this.handleRateLimit(currentModel, fallbackModels.length > triedModels.length);
@@ -913,6 +1266,10 @@ export class AIApiClient {
 
                     if (!response.ok) {
                         const errorText = await response.text();
+                        if (response.status === 401 || response.status === 403) {
+                            // 认证失败：不重试、不换模型、不降级，直接抛给上层显示
+                            throw new AIAuthError(`API 密钥无效或无权限 (HTTP ${response.status})：${errorText}`);
+                        }
                         if (this.shouldFallback(null, response.status, fallbackModels.length > triedModels.length)) {
                             lastError = `HTTP ${response.status} (${currentModel}): ${errorText}`;
                             break;
@@ -928,12 +1285,17 @@ export class AIApiClient {
                     const decoder = new TextDecoder();
                     let buffer = '';
                     let accumulatedContent = '';
+                    // 思考型模型的 reasoning_content：不算正文，但要记录是否发生了思考，
+                    // 用于区分「模型什么都没说」和「思考把预算吃光了」。
+                    let accumulatedReasoning = '';
                     let isStreamDone = false;
                     let streamFinishReason: 'stop' | 'length' | undefined;
 
                     while (!isStreamDone) {
                         const { done, value } = await reader.read();
                         if (done) break;
+                        // 收到分片 → 重置空闲计时，正常流式不会被看门狗误杀
+                        armIdleTimer();
 
                         if (externalSignal?.aborted) {
                             try { reader.releaseLock(); } catch { }
@@ -958,7 +1320,7 @@ export class AIApiClient {
                                         yield delta;
                                     }
                                     if (parsed?.done === true) {
-                                        streamFinishReason = 'stop';
+                                        streamFinishReason = parsed?.done_reason === 'length' ? 'length' : 'stop';
                                         isStreamDone = true;
                                         break;
                                     }
@@ -979,10 +1341,16 @@ export class AIApiClient {
                             const jsonStr = trimmed.slice(6);
                             try {
                                 const parsed = JSON.parse(jsonStr);
-                                const delta = parsed?.choices?.[0]?.delta?.content;
+                                const deltaObj = parsed?.choices?.[0]?.delta;
+                                const delta = deltaObj?.content;
                                 if (delta) {
                                     accumulatedContent += delta;
                                     yield delta;
+                                }
+                                // 思考型模型（deepseek-flash / -pro / reasoner）的思考增量，
+                                // 只用于判断「思考是否吃满预算」，绝不并入正文。
+                                if (deltaObj?.reasoning_content) {
+                                    accumulatedReasoning += String(deltaObj.reasoning_content);
                                 }
                                 const finReason = parsed?.choices?.[0]?.finish_reason;
                                 if (finReason === 'stop') {
@@ -1000,12 +1368,29 @@ export class AIApiClient {
                         }
                     }
 
+                    // 正文为空且被截断 → 在模型上限内扩容重试一次（与 callAI 非流式行为一致）：
+                    // 思考型模型的思考与正文共用预算，思考占满时正文为空；
+                    // 有正文的截断仍按原逻辑直接返回，避免每条候选都多跑一倍时间。
+                    if (!accumulatedContent && streamFinishReason === 'length' && !expandedForTruncation && attemptMaxTokens < currentMaxOutput) {
+                        const nextMaxTokens = Math.min(currentMaxOutput, Math.max(attemptMaxTokens * 2, 8192));
+                        if (nextMaxTokens > attemptMaxTokens) {
+                            expandedForTruncation = true;
+                            log.info(`[小说工坊] ${currentModel} 流式正文为空（思考 ${accumulatedReasoning.length} 字占满预算），max_tokens ${attemptMaxTokens} → ${nextMaxTokens} 重试`);
+                            attemptMaxTokens = nextMaxTokens;
+                            // 扩容重试是同一模型的追加预算，不应消耗正常的重试次数
+                            attempt -= 1;
+                            continue;
+                        }
+                    }
+
                     if (!accumulatedContent) {
                         if (fallbackModels.length > triedModels.length) {
                             lastError = `AI流式返回为空 (${currentModel})`;
                             break;
                         }
-                        throw new Error('AI流式返回为空');
+                        throw new Error(streamFinishReason === 'length'
+                            ? `模型思考占满输出上限（max_tokens=${attemptMaxTokens}）未产出正文，请提高模型输出上限`
+                            : 'AI流式返回为空');
                     }
 
                     return { content: accumulatedContent, finishReason: streamFinishReason };
@@ -1013,6 +1398,17 @@ export class AIApiClient {
                     if (externalSignal?.aborted) {
                         if (timer) { clearTimeout(timer); timer = null; }
                         return { content: '', error: 'aborted' };
+                    }
+
+                    // 认证失败不进入重试（重试只会重复 401）
+                    if (error instanceof AIAuthError) {
+                        throw error;
+                    }
+
+                    if (this.isUnreachableError(error)) {
+                        const msg = errorMessage(error) || '网络不可达';
+                        log.error(`[小说工坊] ${endpoint} 无法连接，停止重试(原生流): ${msg}`);
+                        return { content: '', error: `无法连接模型服务（${endpoint}）：${msg}` };
                     }
 
                     if (this.shouldFallback(error, undefined, fallbackModels.length > triedModels.length)) {

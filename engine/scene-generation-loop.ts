@@ -22,6 +22,7 @@ import { ConflictDetector } from './conflict-detector';
 import type { Conflict } from './conflict-detector';
 import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
 import type { GenerationCheckpoint } from './generation-checkpoint';
+import { SCENE_HEADING_SOURCE } from './scene-expander';
 
 /** 单个场景任务（从 sceneExpand 规划文本解析） */
 export interface SceneTask {
@@ -80,8 +81,8 @@ export interface SceneLoopOptions {
     resumeCheckpoints?: Map<number, GenerationCheckpoint>;
 }
 
-/** 场景标题正则（与 scene-expander.ts validateSceneExpansion 同源） */
-const SCENE_HEADER_RE = /^##\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene(\d+))\s*[：:]\s*(.*)$/im;
+/** 场景标题正则（与 scene-expander.ts 的 SCENE_HEADING_SOURCE 同源，兼容 ### sceneN:） */
+const SCENE_HEADER_RE = new RegExp(SCENE_HEADING_SOURCE, 'im');
 
 /** 解析单个字段行（与 validateSceneExpansion 的 fieldRegex 同源格式） */
 function parseField(block: string, field: string): string {

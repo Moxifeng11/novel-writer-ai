@@ -110,7 +110,7 @@ ${description ? `【参考方向】${description}` : '【参考方向】无具�
             user: defaultUserPrompt,
         });
 
-        return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, 4096);
+        return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput);
     }
 
     async generateLocation(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
@@ -199,7 +199,7 @@ ${description ? `【参考方向】${description}` : '【参考方向】无具�
             user: defaultUserPrompt,
         });
 
-        return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, 4096);
+        return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput);
     }
 
     async generateItem(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
@@ -284,6 +284,6 @@ ${description ? `【参考方向】${description}` : '【参考方向】无具�
             user: defaultUserPrompt,
         });
 
-        return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, 4096);
+        return this.apiClient.callAI(custom.system, custom.user, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput);
     }
 }

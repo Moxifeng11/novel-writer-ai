@@ -7,7 +7,21 @@ import type { ForeshadowManager, ForeshadowItem } from '../services/foreshadow-m
 import type { VectorEnhancer } from './vector-enhancer';
 import type { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
 import type { KnowledgeVectorStore, KnowledgeSearchResult } from './knowledge-vector-store';
+import { assemblePromptWithinBudget } from '../shared/prompt-budget';
+import { formatKnowledgeChunkLabel, dedupeAdjacentChunks } from '../shared/knowledge-position';
+import { StyleIntensityEngine } from './style/style-intensity-engine';
+import {
+    MAX_INJECTED_STYLE_FINGERPRINTS,
+    selectFingerprintsForInjection,
+} from './style/fingerprint-selection';
+import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { createLogger } from '../shared/logger';
+
+/** 强度映射是纯函数，模块级共享一个实例即可 */
+const intensityEngine = new StyleIntensityEngine();
+
+/** 指纹特征单字段字符上限（多个指纹合并后尤其容易膨胀） */
+const FINGERPRINT_FIELD_CHAR_LIMIT = 200;
 
 
 const log = createLogger('KnowledgeInjector');
@@ -87,6 +101,10 @@ export interface LayeredInjectionOptions {
     candidates?: OnDemandCandidate[];
     /** 相关性判断（可注入 mock）；默认：名字出现在 outline/场景目标/出场人物中 */
     relevanceMatcher?: (candidate: OnDemandCandidate, context: InjectionContext) => boolean;
+    /** 知识注入段可用的 token 预算；不传则不做预算裁剪（保持旧行为） */
+    maxInputTokens?: number;
+    /** 预算估算使用的模型（可选，用于 token 估算口径） */
+    modelId?: string;
 }
 
 /** 默认相关性判断：候选名出现在大纲/场景目标/出场人物任一文本中即相关 */
@@ -331,7 +349,11 @@ export class KnowledgeInjector {
 
         try {
             if (this.switches.style) {
-                const content = this.buildStyleInjection(profile, Math.min(strength, 0.5));
+                const content = await this.buildStyleInjection(
+                    profile,
+                    Math.min(strength, 0.5),
+                    this.buildFingerprintQuery(context),
+                );
                 if (content) sections.push({ title: '风格要求', content });
             }
         } catch (e) {
@@ -376,7 +398,11 @@ export class KnowledgeInjector {
 
         try {
             if (this.switches.style) {
-                const content = this.buildStyleInjection(profile, Math.min(strength, 0.4));
+                const content = await this.buildStyleInjection(
+                    profile,
+                    Math.min(strength, 0.4),
+                    this.buildFingerprintQuery(context),
+                );
                 if (content) sections.push({ title: '风格基调', content });
             }
         } catch (e) {
@@ -462,7 +488,7 @@ export class KnowledgeInjector {
         try {
             if (this.switches.kbWorldview && this.dimensionWeights.worldview > 0.2) {
                 const content = await this.buildSceneWorldviewInjection(context, strength * this.dimensionWeights.worldview);
-                if (content) kbSections.push({ title: '参考世界观（场景设定）', content });
+                if (content) kbSections.push({ title: '参考设定（结构拆解）', content });
             }
         } catch (e) {
             log.warn('[KnowledgeInjector] 场景世界观注入失败:', e);
@@ -535,10 +561,13 @@ export class KnowledgeInjector {
         if (!queryText) return '';
 
         try {
+            // 知识库拆解没有 worldview 维度（只有 style/rhythm/technique/structure/
+            // character/foreshadow/original），结构拆解是唯一可用的设定类数据源。
+            // 旧实现按 'worldview' 检索，永远返回空，导致该段静默失效。
             const results = await this.knowledgeVectorStore.search(queryText, {
                 topN: Math.max(2, Math.round(strength * 3)),
                 bookIds,
-                dimensions: ['worldview'],
+                dimensions: ['structure'],
             });
             if (results.length === 0) return '';
 
@@ -744,7 +773,11 @@ export class KnowledgeInjector {
 
         try {
             if (this.switches.style) {
-                const content = this.buildStyleInjection(profile, strength);
+                const content = await this.buildStyleInjection(
+                    profile,
+                    strength,
+                    this.buildFingerprintQuery(context),
+                );
                 if (content) sections.push({ title: '风格要求', content });
             }
         } catch (e) {
@@ -807,7 +840,11 @@ export class KnowledgeInjector {
 
         try {
             if (this.switches.style) {
-                const content = this.buildStyleInjection(profile, strength);
+                const content = await this.buildStyleInjection(
+                    profile,
+                    strength,
+                    this.buildFingerprintQuery(context),
+                );
                 if (content) sections.push({ title: '风格要求', content });
             }
         } catch (e) {
@@ -834,17 +871,65 @@ export class KnowledgeInjector {
      * 与写作指引由调用方分别拼接。低频层（完整世界观/全部档案/大事记等）契约拒绝，不进场景 prompt。
      */
     async injectForSceneBody(context: InjectionContext, options: LayeredInjectionOptions = {}): Promise<string> {
-        if (!this.enabled) return '';
+        const layers = await this.injectForSceneBodyLayers(context, options);
+        const merged = `${layers.system}\n${layers.user}`.trim();
+        return merged ? `${merged}\n` : '';
+    }
 
-        const sections: Array<{ title: string; content: string }> = [];
+    /**
+     * 分层输出：必须层进 system，按需层进 user（可裁剪）。
+     *
+     * 旧实现把两层拼成一个字符串交回调用方，最终整体塞进 user：
+     * 窗口不足时 `callAI` 从尾部截断，最先丢掉的正是必须层里的禁止事项。
+     */
+    async injectForSceneBodyLayers(
+        context: InjectionContext,
+        options: LayeredInjectionOptions = {},
+    ): Promise<{ system: string; user: string }> {
+        if (!this.enabled) return { system: '', user: '' };
 
         const required = this.buildRequiredLayer(context, options);
-        if (required) sections.push({ title: '本章必须遵循', content: required });
-
         const onDemand = this.buildOnDemandLayer(context, options);
-        if (onDemand) sections.push({ title: '相关设定（按需注入）', content: onDemand });
 
-        return this.formatInjection(sections);
+        // 必须层放进 system：不参与裁剪，任务卡/人物状态/禁止事项缺失会直接写错
+        const fixedHeader = required
+            ? `## 写作指引\n\n### 本章必须遵循\n${required}\n`
+            : '## 写作指引\n';
+
+        if (!onDemand) return { system: fixedHeader.trim(), user: '' };
+
+        // 未指定预算时保持旧行为（不裁剪）
+        if (!options.maxInputTokens || options.maxInputTokens <= 0) {
+            return {
+                system: fixedHeader.trim(),
+                user: `### 相关设定（按需注入）\n${onDemand}\n`.trim(),
+            };
+        }
+
+        const result = assemblePromptWithinBudget({
+            systemPrompt: fixedHeader,
+            sections: [{
+                key: 'knowledge.onDemand',
+                text: `### 相关设定（按需注入）\n${onDemand}\n`,
+                priority: 50,
+                shrinkable: true,
+            }],
+            tailParts: [],
+            maxInputTokens: options.maxInputTokens,
+            modelId: options.modelId,
+        });
+
+        if (result.droppedSections.length > 0 || result.trimmedSections.length > 0 || result.overBudget) {
+            log.info('[KnowledgeInjector] 知识注入按预算裁剪', {
+                estimatedTokens: result.estimatedTokens,
+                maxInputTokens: options.maxInputTokens,
+                dropped: result.droppedSections,
+                trimmed: result.trimmedSections,
+                overBudget: result.overBudget,
+            });
+        }
+
+        return { system: result.system.trim(), user: result.user.trim() };
     }
 
     /** 必须层：每次场景生成无条件注入；缺失项静默跳过（不阻塞） */
@@ -911,7 +996,11 @@ export class KnowledgeInjector {
         return lines.join('\n').trim();
     }
 
-    private buildStyleInjection(profile: WritingProfile, strength: number): string {
+    private async buildStyleInjection(
+        profile: WritingProfile,
+        strength: number,
+        fingerprintQuery = '',
+    ): Promise<string> {
         const style = profile.style;
         const lines: string[] = [];
 
@@ -954,79 +1043,117 @@ export class KnowledgeInjector {
                     ? '自然平实、亦庄亦谐'
                     : '正式严谨、书面化';
             lines.push(`用词倾向：${formalityDesc}（正式度 ${Math.round(style.formalityLevel * 100)}%）`);
-
-            if (this.fingerprintLibrary) {
-                const enabledFingerprints = this.getEnabledFingerprintsFromLibrary(profile);
-                if (enabledFingerprints.length > 0) {
-                    lines.push('');
-                    lines.push('【写作指纹风格参考】');
-                    lines.push(`参考 ${enabledFingerprints.length} 个启用的写作指纹，尽量贴合以下风格特征：`);
-                    
-                    const mergedFeatures = this.mergeFingerprintFeatures(enabledFingerprints);
-                    
-                    if (mergedFeatures.sentenceRhythm) {
-                        lines.push(`- 句式节奏：${mergedFeatures.sentenceRhythm}`);
-                    }
-                    if (mergedFeatures.wordPreference) {
-                        lines.push(`- 用词偏好：${mergedFeatures.wordPreference}`);
-                    }
-                    if (mergedFeatures.narrativeStyle) {
-                        lines.push(`- 叙事风格：${mergedFeatures.narrativeStyle}`);
-                    }
-                    if (mergedFeatures.rhetoric) {
-                        lines.push(`- 修辞特点：${mergedFeatures.rhetoric}`);
-                    }
-                    if (mergedFeatures.dialogueStyle) {
-                        lines.push(`- 对话风格：${mergedFeatures.dialogueStyle}`);
-                    }
-                    if (mergedFeatures.paragraphStructure) {
-                        lines.push(`- 段落结构：${mergedFeatures.paragraphStructure}`);
-                    }
-                    if (mergedFeatures.overallTone) {
-                        lines.push(`- 整体基调：${mergedFeatures.overallTone}`);
-                    }
-
-                    if (enabledFingerprints.length <= 2) {
-                        lines.push('');
-                        lines.push('参考指纹来源：');
-                        enabledFingerprints.forEach(fp => {
-                            lines.push(`  · ${fp.name}（${fp.source || '未知来源'}）`);
-                        });
-                    }
-                }
-            }
         }
+
+        // 指纹参考与「风格描述详略」无关：injectionStrength 默认 0.5 落在中间分支，
+        // 旧实现把它写死在 >=0.7 分支里，等于默认配置下永远不注入。
+        lines.push(...await this.buildFingerprintLines(fingerprintQuery));
 
         return lines.join('\n');
     }
 
-    private getEnabledFingerprintsFromLibrary(profile: WritingProfile): StyleFingerprint[] {
+    /** 指纹相关性检索的查询文本：优先当前正文，其次大纲/场景目标 */
+    private buildFingerprintQuery(context: InjectionContext): string {
+        return (context.currentText || context.outline || context.sceneObjective || '').trim();
+    }
+
+    /** 指纹风格参考（独立于风格描述详略；强度 0 已在取列表时过滤） */
+    private async buildFingerprintLines(query: string): Promise<string[]> {
         if (!this.fingerprintLibrary) return [];
-        
-        const result: StyleFingerprint[] = [];
-        
-        const enabledProjectIds = profile.fingerprint.enabledProject || [];
-        enabledProjectIds.forEach(id => {
-            const fp = this.fingerprintLibrary!.getProject(id);
-            if (fp && fp.enabled) {
-                result.push(fp);
-            }
+
+        const enabledFingerprints = await this.getEnabledFingerprintsFromLibrary(query);
+        if (enabledFingerprints.length === 0) return [];
+
+        const lines: string[] = [];
+        lines.push('');
+        lines.push('【写作指纹风格参考】');
+        lines.push(`参考 ${enabledFingerprints.length} 个启用的写作指纹，尽量贴合以下风格特征：`);
+
+        const mergedFeatures = this.mergeFingerprintFeatures(enabledFingerprints);
+
+        if (mergedFeatures.sentenceRhythm) {
+            lines.push(`- 句式节奏：${mergedFeatures.sentenceRhythm}`);
+        }
+        if (mergedFeatures.wordPreference) {
+            lines.push(`- 用词偏好：${mergedFeatures.wordPreference}`);
+        }
+        if (mergedFeatures.narrativeStyle) {
+            lines.push(`- 叙事风格：${mergedFeatures.narrativeStyle}`);
+        }
+        if (mergedFeatures.rhetoric) {
+            lines.push(`- 修辞特点：${mergedFeatures.rhetoric}`);
+        }
+        if (mergedFeatures.dialogueStyle) {
+            lines.push(`- 对话风格：${mergedFeatures.dialogueStyle}`);
+        }
+        if (mergedFeatures.paragraphStructure) {
+            lines.push(`- 段落结构：${mergedFeatures.paragraphStructure}`);
+        }
+        if (mergedFeatures.overallTone) {
+            lines.push(`- 整体基调：${mergedFeatures.overallTone}`);
+        }
+
+        if (enabledFingerprints.length <= 2) {
+            lines.push('');
+            lines.push('参考指纹来源：');
+            enabledFingerprints.forEach(fp => {
+                lines.push(`  · ${fp.name}（${fp.source || '未知来源'}）`);
+            });
+        }
+
+        return lines;
+    }
+
+    /**
+     * 取「当前项目实际生效」的指纹，唯一真相源是指纹库的启用状态。
+     *
+     * 旧实现只读 `profile.fingerprint.enabledProject/enabledGlobal`，而这两个数组
+     * 在全仓没有任何写入方（默认空、只能手改画像文件）：11 步正文生成的
+     * 「写作指纹风格参考」因此永远为空，指纹只对协同写作生效。
+     * 口径与 `PromptBuilder#getFingerprintPromptParts` 对齐：强度 0（界面「完全禁用」）一并跳过。
+     */
+    private async getEnabledFingerprintsFromLibrary(query = ''): Promise<StyleFingerprint[]> {
+        if (!this.fingerprintLibrary) return [];
+
+        // 强度配置必须先读盘：getIntensityConfig 只查内存 map，不 load 一律回落到默认强度
+        await this.fingerprintLibrary.loadIntensityConfigs();
+
+        const candidates = [
+            ...this.fingerprintLibrary.listProject().filter(fp => fp.enabled),
+            ...this.fingerprintLibrary.listGlobal()
+                .filter(fp => this.fingerprintLibrary!.isGlobalEnabledForProject(fp.id)),
+        ];
+
+        const active = candidates.filter(fp => {
+            const config = this.fingerprintLibrary!.getIntensityConfig(fp.id);
+            return !intensityEngine.previewIntensity(config).disabled;
         });
-        
-        const enabledGlobalIds = profile.fingerprint.enabledGlobal || [];
-        enabledGlobalIds.forEach(id => {
-            const fp = this.fingerprintLibrary!.getGlobal(id);
-            if (fp && this.fingerprintLibrary!.isGlobalEnabledForProject(id)) {
-                result.push(fp);
-            }
+
+        // B4：11 步与协同共用同一选择器，避免启用 10 个指纹时 system 线性膨胀。
+        // 检索失败回退「前 N 个」而不是全量：这里没有协同那样的宽松预算。
+        const library = this.fingerprintLibrary;
+        const searcher = library.searchSimilarStylesV2;
+        return selectFingerprintsForInjection(active, {
+            query,
+            searchV2: typeof searcher === 'function'
+                ? (q, opts) => searcher.call(library, q, opts)
+                : undefined,
+            fallback: 'firstN',
+            onFallback: reason => getDegradationNotifier().notify({
+                source: 'vector',
+                dimension: 'style',
+                from: 'v2_ranking',
+                to: 'first_n_enabled',
+                reason: `11 步指纹注入回退前 ${MAX_INJECTED_STYLE_FINGERPRINTS} 个：${reason}`,
+                severity: 'warning',
+                recoverable: true,
+            }),
         });
-        
-        return result;
     }
 
     private mergeFingerprintFeatures(fingerprints: StyleFingerprint[]): Partial<StyleFingerprintFeatures> {
         if (fingerprints.length === 0) return {};
-        if (fingerprints.length === 1) return fingerprints[0].features;
+        if (fingerprints.length === 1) return this.truncateFeatureFields(fingerprints[0].features);
 
         const featureKeys: Array<keyof StyleFingerprintFeatures> = [
             'sentenceRhythm', 'wordPreference', 'narrativeStyle',
@@ -1042,14 +1169,29 @@ export class KnowledgeInjector {
             
             if (values.length > 0) {
                 const uniqueValues = [...new Set(values)];
-                if (uniqueValues.length === 1) {
-                    result[key] = uniqueValues[0];
-                } else {
-                    result[key] = uniqueValues.slice(0, 2).join('；');
-                }
+                const merged = uniqueValues.length === 1
+                    ? uniqueValues[0]
+                    : uniqueValues.slice(0, 2).join('；');
+                // B4：每字段硬上限，避免多个指纹拼接后把 system 撑爆
+                result[key] = merged.length > FINGERPRINT_FIELD_CHAR_LIMIT
+                    ? `${merged.slice(0, FINGERPRINT_FIELD_CHAR_LIMIT)}…（已合并 ${uniqueValues.length} 个指纹）`
+                    : merged;
             }
         });
 
+        return result;
+    }
+
+    /** 单指纹直通也要截断：单个指纹的特征字段本身可能超长 */
+    private truncateFeatureFields(features: StyleFingerprintFeatures): Partial<StyleFingerprintFeatures> {
+        const result: Partial<StyleFingerprintFeatures> = {};
+        for (const [key, value] of Object.entries(features || {})) {
+            if (typeof value !== 'string' || value.length <= FINGERPRINT_FIELD_CHAR_LIMIT) {
+                (result as Record<string, unknown>)[key] = value;
+                continue;
+            }
+            (result as Record<string, unknown>)[key] = `${value.slice(0, FINGERPRINT_FIELD_CHAR_LIMIT)}…`;
+        }
         return result;
     }
 
@@ -1277,7 +1419,7 @@ export class KnowledgeInjector {
         try {
             if (this.switches.kbWorldview && adjustedWeights.worldview > 0.1) {
                 const content = await this.buildKbWorldviewInjection(context, baseStrength * adjustedWeights.worldview);
-                if (content) sections.push({ title: '参考世界观', content });
+                if (content) sections.push({ title: '参考设定（结构拆解）', content });
             }
         } catch (e) {
             log.warn('[KnowledgeInjector] 知识库世界观注入失败:', e);
@@ -1411,7 +1553,7 @@ export class KnowledgeInjector {
             for (const [bookName, bookResults] of Object.entries(byBook)) {
                 const bookConfig = this.referenceBooks.find(rb => rb.bookName === bookName);
                 if (strength >= 0.5) {
-                    lines.push(`【${bookName}】世界观参考：`);
+                    lines.push(`【${bookName}】设定参考（结构拆解）：`);
                     for (let i = 0; i < Math.min(bookResults.length, 2); i++) {
                         const r = bookResults[i];
                         const sample = r.sample.slice(0, 180);
@@ -1445,7 +1587,9 @@ export class KnowledgeInjector {
             const results = await this.knowledgeVectorStore.search(queryText, {
                 topN: Math.max(3, Math.round(strength * 6)),
                 bookIds,
-                dimensions: ['technique', 'structure'],
+                // structure 由「设定」段单独注入：混在这里会以「起/承/转/合」占满
+                // 技巧的 5 个类别名额，并让同一段结构文本重复进入 prompt。
+                dimensions: ['technique'],
             });
 
             if (results.length === 0) return '';
@@ -1456,15 +1600,17 @@ export class KnowledgeInjector {
 
             for (const r of results) {
                 const category = r.category || '通用技巧';
-                if (!uniqueTechniques.has(category) || techniqueExamples.length < 5) {
-                    uniqueTechniques.add(category);
-                    techniqueExamples.push({
-                        name: category,
-                        example: r.sample.slice(0, 120),
-                        book: r.bookName,
-                        score: r.score,
-                    });
-                }
+                // 每个技巧类别只保留最高分示例：旧条件 `|| techniqueExamples.length < 5`
+                // 会让前 5 条即使同类别也全部加入，同一技巧重复占满预算
+                if (uniqueTechniques.has(category)) continue;
+                uniqueTechniques.add(category);
+                techniqueExamples.push({
+                    name: category,
+                    example: r.sample.slice(0, 120),
+                    book: r.bookName,
+                    score: r.score,
+                });
+                if (techniqueExamples.length >= 5) break;
             }
 
             if (techniqueExamples.length === 0) return '';
@@ -1497,11 +1643,37 @@ export class KnowledgeInjector {
         if (!queryText) return '';
 
         try {
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(3, Math.round(strength * 5)),
-                bookIds,
-                dimensions: ['style'],
-            });
+            const topN = Math.max(3, Math.round(strength * 5));
+            // style 每本书约 5 条，原文分块每本最多 120 条：同一次 topN 检索里原文几乎必然把
+            // 风格分析样本挤光（「文风参考」只剩原文片段）。按维度分别检索，给风格留固定配额，
+            // 原文侧仍按 40 字重叠做相邻去重；风格侧不足时用风格剩余结果补齐总条数。
+            // 原文侧不足时不做反向补位：渲染端每本书最多展示 3 条，单本情况下补位不可见。
+            const styleQuota = Math.max(1, Math.round(topN / 3));
+            const originalQuota = Math.max(1, topN - styleQuota);
+            const [styleResults, originalCandidates] = await Promise.all([
+                this.knowledgeVectorStore.search(queryText, {
+                    topN,
+                    bookIds,
+                    dimensions: ['style'],
+                }),
+                this.knowledgeVectorStore.search(queryText, {
+                    // 多取一倍再相邻去重，避免去重后条数不足
+                    topN: originalQuota * 2,
+                    bookIds,
+                    dimensions: ['original'],
+                }),
+            ]);
+
+            const stylePicked = styleResults.slice(0, styleQuota);
+            const originalPicked = dedupeAdjacentChunks(originalCandidates).slice(0, originalQuota);
+            const remaining = Math.max(0, topN - stylePicked.length - originalPicked.length);
+            const results = [
+                ...stylePicked,
+                ...originalPicked,
+                ...styleResults.slice(styleQuota, styleQuota + remaining),
+            ]
+                .sort((a, b) => b.score - a.score)
+                .slice(0, topN);
 
             if (results.length === 0) return '';
 
@@ -1575,7 +1747,9 @@ export class KnowledgeInjector {
                     for (let i = 0; i < Math.min(bookResults.length, 2); i++) {
                         const r = bookResults[i];
                         const sample = r.sample.slice(0, 150);
-                        const position = r.position !== undefined ? `（位置${Math.round(r.position * 100)}%）` : '';
+                        // position 是分块下标，不是比例；交给统一格式化，避免出现「位置4500%」
+                        const chunkLabel = formatKnowledgeChunkLabel(r.position);
+                        const position = chunkLabel ? `（${chunkLabel}）` : '';
                         lines.push(`  ${i + 1}. ${sample}${position}`);
                     }
                 }
@@ -1627,7 +1801,7 @@ export class KnowledgeInjector {
             if (this.switches.kbStyle) { dimensions.push('风格'); baseScore += 10; }
             if (this.switches.kbCharacter) { dimensions.push('人设'); baseScore += 10; }
             if (this.switches.kbTechnique) { dimensions.push('技巧'); baseScore += 10; }
-            if (this.switches.kbWorldview) { dimensions.push('世界观'); baseScore += 5; }
+            if (this.switches.kbWorldview) { dimensions.push('结构设定'); baseScore += 5; }
             if (this.switches.kbRhythm) { dimensions.push('节奏'); baseScore += 5; }
 
             results.push({

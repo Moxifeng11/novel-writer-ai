@@ -31,6 +31,32 @@ export interface ProviderFactoryConfig {
 }
 
 export class EmbeddingProviderFactory {
+    /**
+     * 按插件设置构造 provider（缺省值集中在工厂里，调用方不再各自写死 Ollama）。
+     * 不做可用性探测：切章等高频路径直接构造，失败由 embed 调用侧的降级逻辑处理。
+     */
+    static fromSettings(config?: Partial<ProviderFactoryConfig>): EmbeddingProvider {
+        const c = config ?? {};
+        return this.create({
+            vectorProviderType: c.vectorProviderType ?? 'ollama',
+            vectorMode: c.vectorMode,
+            vectorHybridThreshold: c.vectorHybridThreshold,
+            vectorOllamaBaseUrl: c.vectorOllamaBaseUrl ?? '',
+            vectorOllamaModel: c.vectorOllamaModel ?? '',
+            vectorOpenaiBaseUrl: c.vectorOpenaiBaseUrl ?? '',
+            vectorOpenaiModel: c.vectorOpenaiModel ?? '',
+            vectorOpenaiApiKey: c.vectorOpenaiApiKey ?? '',
+            vectorDoubaoBaseUrl: c.vectorDoubaoBaseUrl,
+            vectorDoubaoModel: c.vectorDoubaoModel,
+            vectorDoubaoApiKey: c.vectorDoubaoApiKey,
+            vectorQwenBaseUrl: c.vectorQwenBaseUrl,
+            vectorQwenModel: c.vectorQwenModel,
+            vectorQwenApiKey: c.vectorQwenApiKey,
+            embeddingEndpoint: c.embeddingEndpoint,
+            embeddingModel: c.embeddingModel,
+        });
+    }
+
     static create(config: ProviderFactoryConfig): EmbeddingProvider {
         const providerType = config.vectorProviderType || this.inferProviderType(config);
 

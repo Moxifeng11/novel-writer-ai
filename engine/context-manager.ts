@@ -16,6 +16,8 @@ import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRI
 import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromContent } from './character-soul';
 import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { buildStoryLinkage, type StoryLinkage } from './story-linkage';
+import { buildForeshadowIndexBlock, buildTimelineIndexBlock, upsertLinkageBlock, LINKAGE_BEGIN, LINKAGE_END } from './story-linkage-writer';
 import { PluginCapabilities } from '../shared/plugin-capabilities';
 import type {
     CharacterRepository,
@@ -1101,10 +1103,11 @@ export class ContextManager {
             }
 
             if (sceneText && presentCharacters && presentCharacters.length > 0 && protagonistName) {
-                const { promptText } = await gatherTriggeredMemories(
+                const { triggered, promptText } = await gatherTriggeredMemories(
                     app, project, sceneText, presentCharacters,
                     protagonistName, chapterNum || 0,
                 );
+                result.triggered_memories_matched = triggered;
                 result.triggered_memories_prompt = promptText;
             }
         } catch (e) {
@@ -1233,13 +1236,26 @@ export class ContextManager {
         return { writing_style: null };
     }
 
+    /**
+     * 去掉回写生成的 NW-LINKAGE 自动块，避免「关联索引」表格被再次解析成伏笔/时间线事件
+     * （二次回写时数据自我污染、块内容不再幂等）。
+     */
+    private stripLinkageBlock(content: string): string {
+        const begin = content.indexOf(LINKAGE_BEGIN);
+        const end = content.indexOf(LINKAGE_END);
+        if (begin >= 0 && end > begin) {
+            return content.slice(0, begin) + content.slice(end + LINKAGE_END.length);
+        }
+        return content;
+    }
+
     async gatherForeshadows(project: string): Promise<ContextData> {
         try {
             const path = pjForeshadowDB(project);
             const file = this.getVaultMeta().getAbstractFileByPath(path);
             if (file instanceof TFile) {
                 const content = await this.app.vault.cachedRead(file);
-                const result = this.parseForeshadowContent(content);
+                const result = this.parseForeshadowContent(this.stripLinkageBlock(content));
                 return { foreshadows: result };
             }
         } catch (e) {
@@ -1255,7 +1271,7 @@ export class ContextManager {
             const file = this.getVaultMeta().getAbstractFileByPath(path);
             if (file instanceof TFile) {
                 const content = await this.app.vault.cachedRead(file);
-                const parsed = this.parseTimelineContent(content);
+                const parsed = this.parseTimelineContent(this.stripLinkageBlock(content));
                 let events = parsed.events;
 
                 if (parsed.eraCount > 1) {
@@ -1300,16 +1316,15 @@ export class ContextManager {
             if (!dotContent) return ctx;
             const strategy = detectTimelineStrategy(dotContent);
             if (strategy.strategy === 'fanfic' && strategy.fanficSettingsPath) {
-                const ffPath = pjFanficFile(project, strategy.fanficSettingsPath.replace('.md', ''));
-                const ffFile = this.getVaultMeta().getAbstractFileByPath(ffPath);
-                if (ffFile instanceof TFile) {
+                const ffFile = this.resolveFanficSettingsFile(project, strategy.fanficSettingsPath);
+                if (ffFile) {
                     try {
                         const ffContent = await this.app.vault.cachedRead(ffFile);
                         ctx.fanfic_canon_timeline = parseCanonTimelineTable(ffContent);
                         ctx.fanfic_fan_timeline = parseFanTimelineTable(ffContent);
                         ctx.fanfic_rules = loadFanficRules(ffContent);
                     } catch (e) {
-                        log.warn('Failed to parse fanfic timeline file:', ffPath, e);
+                        log.warn('Failed to parse fanfic timeline file:', strategy.fanficSettingsPath, e);
                         this._partialFailures.push('同人设定（文件损坏）');
                     }
                 }
@@ -1321,6 +1336,23 @@ export class ContextManager {
         return ctx;
     }
 
+    /**
+     * 定位同人设定文件。
+     *
+     * `.project` 的「## 同人设定路径」由 `attachFanficPathToProject` / 向导写入，
+     * 是完整的 vault 相对路径。早先这里把该值当文件名再拼一次 `05-同人设定库`，
+     * 得到「项目/05-同人设定库/项目_05-同人设定库_名字.md」，永远读不到文件——
+     * 上下文面板的原作时间线与 OOC 规则对同人项目一直静默为空。
+     * 旧数据只写文件名时，回退到项目自己的同人设定库。
+     */
+    private resolveFanficSettingsFile(project: string, recordedPath: string): TFile | null {
+        const direct = this.getVaultMeta().getAbstractFileByPath(recordedPath);
+        if (direct instanceof TFile) return direct;
+        const baseName = recordedPath.split('/').pop()?.replace(/\.md$/i, '') || recordedPath;
+        const legacy = this.getVaultMeta().getAbstractFileByPath(pjFanficFile(project, baseName));
+        return legacy instanceof TFile ? legacy : null;
+    }
+
     /** 加载同人原作剧情时间线表格 */
     async loadFanficCanonTimeline(project: string): Promise<TimelineRow[]> {
         try {
@@ -1329,9 +1361,8 @@ export class ContextManager {
             const strategy = detectTimelineStrategy(dotContent);
             if (!strategy.fanficSettingsPath) return [];
             
-            const ffPath = pjFanficFile(project, strategy.fanficSettingsPath.replace('.md', ''));
-            const ffFile = this.getVaultMeta().getAbstractFileByPath(ffPath);
-            if (!(ffFile instanceof TFile)) return [];
+            const ffFile = this.resolveFanficSettingsFile(project, strategy.fanficSettingsPath);
+            if (!ffFile) return [];
             const ffContent = await this.app.vault.cachedRead(ffFile);
             return parseCanonTimelineTable(ffContent);
         } catch (e) { log.warn('loadFanficCanonTimeline failed:', e); return []; }
@@ -1345,9 +1376,8 @@ export class ContextManager {
             const strategy = detectTimelineStrategy(dotContent);
             if (!strategy.fanficSettingsPath) return [];
             
-            const ffPath = pjFanficFile(project, strategy.fanficSettingsPath.replace('.md', ''));
-            const ffFile = this.getVaultMeta().getAbstractFileByPath(ffPath);
-            if (!(ffFile instanceof TFile)) return [];
+            const ffFile = this.resolveFanficSettingsFile(project, strategy.fanficSettingsPath);
+            if (!ffFile) return [];
             const ffContent = await this.app.vault.cachedRead(ffFile);
             return parseFanTimelineTable(ffContent);
         } catch (e) { log.warn('loadFanficFanTimeline failed:', e); return []; }
@@ -1361,9 +1391,8 @@ export class ContextManager {
             const strategy = detectTimelineStrategy(dotContent);
             if (!strategy.fanficSettingsPath) return { mustFollow: [], adaptScope: '', redlines: [] };
             
-            const ffPath = pjFanficFile(project, strategy.fanficSettingsPath.replace('.md', ''));
-            const ffFile = this.getVaultMeta().getAbstractFileByPath(ffPath);
-            if (!(ffFile instanceof TFile)) return { mustFollow: [], adaptScope: '', redlines: [] };
+            const ffFile = this.resolveFanficSettingsFile(project, strategy.fanficSettingsPath);
+            if (!ffFile) return { mustFollow: [], adaptScope: '', redlines: [] };
             const ffContent = await this.app.vault.cachedRead(ffFile);
             return loadFanficRules(ffContent);
         } catch (e) { log.warn('loadFanficRules failed:', e); return { mustFollow: [], adaptScope: '', redlines: [] }; }
@@ -1705,17 +1734,40 @@ export class ContextManager {
             for (let i = 0; i < tableLines.length; i++) {
                 const line = tableLines[i];
                 const parts = line.split('|').map(s => s.trim());
-                if (parts.length < 8) continue;
-                const idx = parts[1] || '';
-                const eventName = parts[2] || '';
-                const time = parts[3] || '';
-                const location = parts[4] || '';
-                const involved = parts[5] || '';
-                const chapter = parts[6] || '';
-                const type = parts[7] || '';
-                if (!eventName && !time) continue;
-                if (eventName === '事件名称' && time === '时间') continue;
-                if (idx.startsWith('-') && eventName.startsWith('-')) continue;
+                if (parts.length < 6) continue;
+
+                // Rev 186：兼容两种真实表头。
+                // 富表（7 列）：| # | 事件名称 | 时间 | 地点 | 涉及人物 | 章节 | 类型 |
+                // 简表（4 列）：| 时间 | 对应章节 | 事件 | 影响 |（历史项目/模板默认）
+                let idx = '';
+                let eventName = '';
+                let time = '';
+                let location = '';
+                let involved = '';
+                let chapter = '';
+                let type = '';
+                let impact = '';
+
+                if (parts.length >= 8) {
+                    idx = parts[1] || '';
+                    eventName = parts[2] || '';
+                    time = parts[3] || '';
+                    location = parts[4] || '';
+                    involved = parts[5] || '';
+                    chapter = parts[6] || '';
+                    type = parts[7] || '';
+                    if (!eventName && !time) continue;
+                    if (eventName === '事件名称' && time === '时间') continue;
+                    if (idx.startsWith('-') && eventName.startsWith('-')) continue;
+                } else {
+                    time = parts[1] || '';
+                    chapter = parts[2] || '';
+                    eventName = parts[3] || '';
+                    impact = parts[4] || '';
+                    if (time === '时间' && chapter === '对应章节') continue;
+                    if ([time, chapter, eventName].every(v => !v || /^[-:\s]+$/.test(v))) continue;
+                    if (!eventName && !time) continue;
+                }
 
                 const ev: TimelineEvent & { era?: string } = { 
                     time, 
@@ -1725,7 +1777,7 @@ export class ContextManager {
                     location,
                     involvedEntities: involved ? involved.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [],
                     type,
-                    impact: '',
+                    impact,
                     idx
                 };
                 if (eraName) ev.era = eraName;
@@ -2069,6 +2121,126 @@ export class ContextManager {
             log.warn(`Failed to read raw md: ${filePath}`, e);
         }
         return '';
+    }
+
+    /**
+     * Rev 186：生成某章的「关联索引」——伏笔到期/逾期、时间线事件、命中的设定条目、
+     * 全书规划中本章定位。任一数据源缺失都返回 null，调用方回退旧行为，不阻塞写作。
+     */
+    async buildStoryLinkage(project: string, chapterName: string): Promise<StoryLinkage | null> {
+        try {
+            const chapterNum = parseInt(chapterName.match(/第(\d+)章/)?.[1] || '0', 10);
+            if (chapterNum <= 0) return null;
+
+            const [foreshadowData, timelineData, settingLib, worldView, planningText, characterData, locations, factions, items] = await Promise.all([
+                this.gatherForeshadows(project),
+                this.gatherTimeline(project),
+                this.readRawMd(getSettingLibPath(project)),
+                this.readRawMd(getWorldviewPath(project)),
+                readMergedVolumeOutline(this.app, project),
+                this.gatherCharacterState(project),
+                this.gatherEntityRecords(pjLocsDir(project), '地点'),
+                this.gatherEntityRecords(pjFactionsDir(project), '势力'),
+                this.gatherEntityRecords(pjItemsDir(project), '物品功法'),
+            ]);
+
+            const foreshadows = foreshadowData.foreshadows?.unrevealed ?? [];
+            const timeline = timelineData.timeline ?? [];
+            if (foreshadows.length === 0 && timeline.length === 0) return null;
+
+            // 设定条目 = 世界观/设定库的标题 + 项目实体名（人物/地点/势力/物品）。
+            // 真实项目的设定库标题是「一、世界观底层规则」这类分类，不含具体条目，
+            // 只用标题会让关联永远命中不到人/地/物；实体名才是可交叉的设定条目。
+            const entityNames = [
+                ...(characterData.character_state ?? []).map(c => String(c.name || c['姓名'] || '')),
+                ...locations.map(e => String(e.name || '')),
+                ...factions.map(e => String(e.name || '')),
+                ...items.map(e => String(e.name || '')),
+            ];
+            const settingTitles = [
+                ...this.extractSettingTitles(`${settingLib}\n${worldView}`),
+                ...entityNames,
+            ];
+
+            return buildStoryLinkage({
+                chapterName,
+                chapterNum,
+                foreshadows,
+                timeline,
+                settingTitles,
+                planningText,
+            });
+        } catch (e) {
+            log.warn('[ContextManager] buildStoryLinkage failed:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Rev 186：把关联索引回写到 伏笔库.md / 时间线看板.md 的标记块。
+     * 只替换 NW-LINKAGE 标记之间内容，用户表格一行不动；文件缺失则跳过。
+     */
+    async writeStoryLinkageIndex(project: string): Promise<{ foreshadow: boolean; timeline: boolean }> {
+        const result = { foreshadow: false, timeline: false };
+        const referenceChapter = Math.max(1, this.resolveLatestBodyChapterNum(project));
+        const linkage = await this.buildStoryLinkage(project, `第${referenceChapter}章`);
+        if (!linkage) return result;
+
+        const generatedAt = this.formatTimestamp();
+        const foreshadowFile = this.getVaultMeta().getAbstractFileByPath(pjForeshadowDB(project));
+        if (foreshadowFile instanceof TFile) {
+            const original = await this.app.vault.read(foreshadowFile);
+            const block = buildForeshadowIndexBlock(
+                [...linkage.due, ...linkage.overdue, ...linkage.upcoming],
+                linkage.warnings,
+                generatedAt,
+                referenceChapter,
+            );
+            await this.app.vault.modify(foreshadowFile, upsertLinkageBlock(original, block));
+            result.foreshadow = true;
+        }
+
+        const timelineFile = this.getVaultMeta().getAbstractFileByPath(pjTimelineBoard(project));
+        if (timelineFile instanceof TFile) {
+            const original = await this.app.vault.read(timelineFile);
+            const block = buildTimelineIndexBlock(linkage.timelineAll, linkage.warnings, generatedAt);
+            await this.app.vault.modify(timelineFile, upsertLinkageBlock(original, block));
+            result.timeline = true;
+        }
+
+        return result;
+    }
+
+    /** 从设定库 / 世界观原文抽取 2–6 级标题作为设定条目名 */
+    private extractSettingTitles(raw: string): string[] {
+        const titles: string[] = [];
+        for (const line of raw.split('\n')) {
+            const match = line.match(/^#{2,6}\s+(.+)$/);
+            if (!match) continue;
+            const title = match[1].replace(/[#*`]/g, '').trim();
+            if (!title || title.length > 40) continue;
+            if (!titles.includes(title)) titles.push(title);
+        }
+        return titles;
+    }
+
+    /** 项目内已有正文的最大章号（无正文返回 0） */
+    private resolveLatestBodyChapterNum(project: string): number {
+        let max = 0;
+        const prefix = `${project}/${SUBDIR_BODY_ROOT}/`;
+        for (const file of this.getVaultMeta().getFiles()) {
+            if (!file.path.startsWith(prefix)) continue;
+            const match = file.path.match(/第(\d+)章/);
+            if (!match) continue;
+            max = Math.max(max, parseInt(match[1], 10) || 0);
+        }
+        return max;
+    }
+
+    private formatTimestamp(): string {
+        const now = new Date();
+        const pad = (value: number) => String(value).padStart(2, '0');
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
     }
 
     /** 将人物数据格式化为 AI 提示文本（与 Modal 端现有格式一致） */

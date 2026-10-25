@@ -19,8 +19,17 @@
  */
 
 import { LruCache } from '../repository/lru-cache';
-import { WritingQualityEngine } from '../writing-quality-engine';
+import { WritingQualityEngine, type WritingQualityResult } from '../writing-quality-engine';
 import { analyzeCoherence, CoherenceReport } from '../coherence-checker';
+import {
+  QUALITY_MIN_EVALUABLE_CHARS,
+  QSE_CALIBRATION,
+  QSE_DIMENSION_WEIGHTS,
+  QSE_SUB_WEIGHTS,
+} from '../../shared/thresholds';
+import { createLogger } from '../../shared/logger';
+
+const log = createLogger('QualityScoreEngine');
 
 // ============================================================
 // 一、维度定义
@@ -52,15 +61,8 @@ export const DIMENSION_LABELS: Record<QualityDimension, string> = {
   languageTexture: '语言质感',
 };
 
-// 维度权重（用于综合评分）
-export const DIMENSION_WEIGHTS: Record<QualityDimension, number> = {
-  readability: 0.18,
-  rhythm: 0.17,
-  emotion: 0.17,
-  characterConsistency: 0.18,
-  coherence: 0.15,
-  languageTexture: 0.15,
-};
+// 维度权重（用于综合评分；数值统一在 shared/thresholds.ts）
+export const DIMENSION_WEIGHTS: Record<QualityDimension, number> = QSE_DIMENSION_WEIGHTS;
 
 // ============================================================
 // 二、评估结果模型
@@ -125,6 +127,12 @@ export interface QualityScore {
   trend: ScoreTrend;
   /** 评估是否命中缓存 */
   fromCache: boolean;
+  /**
+   * 注入 v1Engine 时的原始 WritingQualityEngine 结果。
+   * 六维映射丢失了 structure（QSE 六维不含该维度），落盘历史/基线需要完整六维时直接读这里，
+   * 避免调用方为了拿 structure 再跑一遍同文本评估。
+   */
+  v1Result?: WritingQualityResult;
 }
 
 // ============================================================
@@ -142,8 +150,6 @@ export interface CharacterContextInfo {
 export interface EvaluationContext {
   chapterId?: string;
   chapterTitle?: string;
-  /** 前一章正文（用于连贯性上下文） */
-  previousChapterText?: string;
   /** 后一章正文（用于连贯性上下文） */
   nextChapterText?: string;
   /** 人物名称列表 */
@@ -191,10 +197,11 @@ export interface IEmotionAnalyzer {
 
 /** 人物一致性检查器接口（对应 CharacterConsistencyChecker） */
 export interface ICharacterChecker {
+  // 只做「当前章 vs 人物档案」。跨章设定一致性由 DeviationDetector 负责，
+  // 不得在此声明 historyTexts 这类无实现承诺的参数（曾声明但从未被使用）。
   check(
     chapterText: string,
     characterInfos: CharacterContextInfo[],
-    historyTexts?: string[]
   ): Promise<{
     overallScore: number;
     characterResults: Record<string, {
@@ -217,13 +224,16 @@ export interface ICharacterChecker {
 // ============================================================
 
 interface QualityScoreEngineOptions {
-  /** 复用 V1 质量引擎（用于可读性维度，若不提供则使用内置规则） */
+  /**
+   * 复用 V1 质量引擎。注入后 V1 是**唯一评分口径**：六维与总分全部来自
+   * `WritingQualityEngine`，下面三个分析器一律不生效。
+   */
   v1Engine?: WritingQualityEngine;
-  /** 节奏分析器（对应 RhythmAnalyzer） */
+  /** 节奏分析器（仅未注入 `v1Engine` 时生效） */
   rhythmAnalyzer?: IRhythmAnalyzer;
-  /** 情绪曲线分析器（对应 EmotionCurveAnalyzer） */
+  /** 情绪曲线分析器（仅未注入 `v1Engine` 时生效） */
   emotionAnalyzer?: IEmotionAnalyzer;
-  /** 人物一致性检查器（对应 CharacterConsistencyChecker） */
+  /** 人物一致性检查器（仅未注入 `v1Engine` 时生效；生产的人物逐条比对由 DeviationDetector 负责） */
   characterChecker?: ICharacterChecker;
   /** 缓存最大条目数 */
   cacheSize?: number;
@@ -265,12 +275,40 @@ export class QualityScoreEngine {
   /** 历史趋势记录 */
   private history: number[] = [];
   private readonly historySize: number;
+  /**
+   * 已同步进 V1 内核的上下文签名（人物名单 / 章节大纲 / 主线关键词）。
+   * V1 是注入后的有效评分路径，同一段正文在不同名单下分数不同，
+   * 签名变化时必须让 textHash 的缓存失效，否则新名单算不出新分。
+   */
+  private v1ContextSignature = '';
+  /**
+   * C4：评估串行队列。
+   * syncV1Context 会直接 updateOptions 修改注入的 V1 内核——这是共享可变实例，
+   * 两次评估交错时 B 的名单/大纲会覆盖 A 正在用的上下文。
+   * 所有公开评估入口统一排队，保证「同步上下文 → 内核评分」不被另一次调用插入。
+   */
+  private evalQueue: Promise<void> = Promise.resolve();
 
   constructor(options: QualityScoreEngineOptions = {}) {
     this.v1Engine = options.v1Engine;
     this.rhythmAnalyzer = options.rhythmAnalyzer;
     this.emotionAnalyzer = options.emotionAnalyzer;
     this.characterChecker = options.characterChecker;
+
+    // C1: 双内核并存会让调用方误以为「注入 checker 就启用逐人物比对」，
+    // 实际 V1 分支整段绕过它们。这里只提示一次，不改变 V1 口径。
+    if (options.v1Engine) {
+      const ignored = [
+        options.rhythmAnalyzer ? 'rhythmAnalyzer' : '',
+        options.emotionAnalyzer ? 'emotionAnalyzer' : '',
+        options.characterChecker ? 'characterChecker' : '',
+      ].filter(Boolean);
+      if (ignored.length > 0) {
+        log.warn(
+          `已注入 v1Engine（统一内核），${ignored.join(' / ')} 不会生效：六维与总分全部取自 WritingQualityEngine`,
+        );
+      }
+    }
 
     const cacheSize = options.cacheSize ?? 50;
     const cacheTtlMs = options.cacheTtlMs ?? 60_000;
@@ -298,10 +336,28 @@ export class QualityScoreEngine {
     context: EvaluationContext = {},
     signal?: AbortSignal
   ): Promise<QualityScore> {
+    return this.enqueueEvaluation(() => this.evaluateInternal(text, context, signal));
+  }
+
+  /** C4：所有评估入口共用的串行队列（见 evalQueue 注释） */
+  private enqueueEvaluation<T>(run: () => Promise<T>): Promise<T> {
+    const task = this.evalQueue.then(run, run);
+    this.evalQueue = task.then(() => undefined, () => undefined);
+    return task;
+  }
+
+  private async evaluateInternal(
+    text: string,
+    context: EvaluationContext,
+    signal?: AbortSignal
+  ): Promise<QualityScore> {
     const startTime = Date.now();
     const cleanText = this.cleanText(text);
     const wordCount = cleanText.length;
     const textHash = this.hashText(cleanText);
+
+    // 上下文进内核必须在读缓存之前：换了人物名单/大纲，同一 textHash 的旧分不成立
+    this.syncV1Context(context);
 
     // 完整结果缓存命中（仅在无变更范围时）
     if (!context.changedRange) {
@@ -311,14 +367,19 @@ export class QualityScoreEngine {
       }
     }
 
-    // 内容不足时返回空结果
-    if (wordCount < 100) {
+    // 内容不足时返回空结果（与 WritingQualityEngine 共用同一门槛）
+    if (wordCount < QUALITY_MIN_EVALUABLE_CHARS) {
       const empty = this.getEmptyScore(wordCount, startTime);
       this.fullCache.set(textHash, empty);
       return empty;
     }
 
     this.throwIfAborted(signal);
+
+    // 统一内核：注入 v1Engine 时，六维与总分全部取自 WritingQualityEngine，
+    // 保证同一段正文在监控面板、协同视图、质量看板得到同一分数。
+    // 上下文已在读缓存前同步进内核（见 syncV1Context）。
+    const v1 = this.v1Engine ? this.v1Engine.evaluate(cleanText) : undefined;
 
     // 逐维评估
     const dimensions: Record<QualityDimension, DimensionScore> = {} as Record<
@@ -328,12 +389,12 @@ export class QualityScoreEngine {
 
     for (const dim of QUALITY_DIMENSIONS) {
       this.throwIfAborted(signal);
-      dimensions[dim] = await this.evaluateDimensionInternal(cleanText, dim, context, signal);
+      dimensions[dim] = await this.evaluateDimensionInternal(cleanText, dim, context, signal, v1);
     }
 
     this.throwIfAborted(signal);
 
-    const overallScore = this.calculateOverallScore(dimensions);
+    const overallScore = v1 ? v1.overallScore : this.calculateOverallScore(dimensions);
     const allIssues = this.collectIssues(dimensions);
     const allSuggestions = this.collectSuggestions(dimensions);
     const trend = this.calculateTrend(overallScore);
@@ -350,6 +411,7 @@ export class QualityScoreEngine {
       evalTimeMs: Date.now() - startTime,
       trend,
       fromCache: false,
+      v1Result: v1,
     };
 
     this.fullCache.set(textHash, result);
@@ -369,8 +431,12 @@ export class QualityScoreEngine {
     context: EvaluationContext = {},
     signal?: AbortSignal
   ): Promise<DimensionScore> {
-    const cleanText = this.cleanText(text);
-    return this.evaluateDimensionInternal(cleanText, dimension, context, signal);
+    return this.enqueueEvaluation(() => {
+      const cleanText = this.cleanText(text);
+      this.syncV1Context(context);
+      const v1 = this.v1Engine ? this.v1Engine.evaluate(cleanText) : undefined;
+      return this.evaluateDimensionInternal(cleanText, dimension, context, signal, v1);
+    });
   }
 
   /** 获取历史趋势记录 */
@@ -402,26 +468,145 @@ export class QualityScoreEngine {
     this.history = [];
   }
 
+  /**
+   * 把本次评估的上下文写进 V1 内核。
+   * 注入 v1Engine 后六维与总分都取自它，但 V1 的 evaluate(text) 只收文本：
+   * 不在这里注入人物名单，人物维度就只能靠「X说 / X道」正则估算，
+   * 协同视图已加载的人物档案与章节大纲等于完全没用上。
+   * 三样上下文都没给时不动内核，避免把调用方构造时配置的名单覆盖成空。
+   */
+  private syncV1Context(context: EvaluationContext): void {
+    const v1 = this.v1Engine;
+    if (!v1) return;
+
+    const names = (context.characterNames ?? context.characterInfos?.map(c => c.name) ?? [])
+      .map(name => name.trim())
+      .filter(Boolean);
+    const outline = (context.chapterOutline ?? '').trim();
+    const keywords = context.mainlineKeywords ?? [];
+    if (names.length === 0 && !outline && keywords.length === 0) return;
+
+    const signature = [names.join('\u0001'), outline, keywords.join('\u0001')].join('\u0002');
+    if (signature === this.v1ContextSignature) return;
+    this.v1ContextSignature = signature;
+
+    v1.updateOptions({
+      ...(names.length > 0 ? { characterNames: names } : {}),
+      ...(outline ? { chapterOutline: outline } : {}),
+      ...(keywords.length > 0 ? { mainlineKeywords: keywords } : {}),
+    });
+    // 上下文变了：同一段正文的旧六维与旧总分不再成立
+    this.dimensionCache.clear();
+    this.fullCache.clear();
+  }
+
   // ── 维度评估实现 ──────────────────────────────────────────
+
+  /**
+   * 把 WritingQualityEngine 的六维映射到本引擎的六维口径。
+   * 映射关系固定，避免两个引擎各算一套：
+   *   readability ← languageQuality / rhythm ← rhythmQuality / emotion ← atmosphereQuality
+   *   characterConsistency ← characterQuality / coherence ← plotQuality
+   *   languageTexture ← languageQuality.details 派生（词汇丰富度 + 修辞密度）
+   *
+   * C2：languageTexture 不再直接复用 languageQuality.score，否则雷达图上
+   * 「可读性」与「语言质感」两轴同源，等于把语言质量算了两遍。
+   */
+  private mapV1Dimension(v1: WritingQualityResult, dimension: QualityDimension): DimensionScore {
+    const source = {
+      readability: v1.languageQuality,
+      rhythm: v1.rhythmQuality,
+      emotion: v1.atmosphereQuality,
+      characterConsistency: v1.characterQuality,
+      coherence: v1.plotQuality,
+      languageTexture: v1.languageQuality,
+    }[dimension];
+
+    let score = source.score;
+    let basis: string[] = ['统一内核：WritingQualityEngine 六维规则评分'];
+    let details = source.details;
+
+    if (dimension === 'languageTexture') {
+      const derived = this.deriveLanguageTextureFromV1(source);
+      if (derived) {
+        score = derived.score;
+        basis = [
+          '统一内核派生：语言质感 = 词汇丰富度 × 0.6 + 修辞密度 × 0.4'
+          + '（取自 WritingQualityEngine.languageQuality.details，不引入第二套文本评分）',
+        ];
+        details = { ...source.details, ...derived.details };
+      } else {
+        basis = ['统一内核：语言质量原值（V1 未产出词汇/修辞子项，无法派生文采口径）'];
+      }
+    }
+
+    return {
+      dimension,
+      score,
+      basis,
+      issues: source.suggestions
+        .filter(s => s.priority === 'high')
+        .map(s => ({ id: s.id, dimension, description: s.content, severity: 'high' as const })),
+      suggestions: source.suggestions.map(s => ({
+        id: s.id,
+        dimension,
+        content: s.content,
+        priority: s.priority,
+        estimatedEffort: s.estimatedEffort,
+      })),
+      details,
+    };
+  }
+
+  /**
+   * 从 V1 已产出的子项派生「语言质感」（文采）分：
+   * 词汇丰富度（vocabRichness）+ 修辞密度（rhetoricCount），系数统一在 thresholds。
+   * 子项缺失（正文不足门槛时 V1 只返回 note）返回 null，由调用方回退原值。
+   */
+  private deriveLanguageTextureFromV1(
+    source: WritingQualityResult['languageQuality'],
+  ): { score: number; details: Record<string, number | string> } | null {
+    const vocabPct = Number.parseFloat(String(source.details.vocabRichness ?? ''));
+    const rhetoricCount = Number(source.details.rhetoricCount);
+    if (!Number.isFinite(vocabPct) || !Number.isFinite(rhetoricCount)) return null;
+
+    const vocabScore = Math.min(100, vocabPct * QSE_CALIBRATION.readability.vocabScale);
+    const rhetoricScore = Math.min(100, rhetoricCount * QSE_CALIBRATION.languageTexture.rhetoricPerHit);
+    const weights = QSE_SUB_WEIGHTS.languageTextureFromV1;
+
+    return {
+      score: Math.round(vocabScore * weights.vocab + rhetoricScore * weights.rhetoric),
+      details: {
+        vocabScore: Math.round(vocabScore),
+        rhetoricScore: Math.round(rhetoricScore),
+        derivation: 'vocabRichness×0.6 + rhetoricCount×0.4',
+      },
+    };
+  }
 
   private async evaluateDimensionInternal(
     text: string,
     dimension: QualityDimension,
     context: EvaluationContext,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    v1?: WritingQualityResult
   ): Promise<DimensionScore> {
+    if (v1) {
+      // 统一内核路径：不再走各自的启发式规则，避免同一文本出现两套分
+      const mapped = this.mapV1Dimension(v1, dimension);
+      const cacheKey = `${dimension}:${this.hashText(text)}`;
+      this.dimensionCache.set(cacheKey, mapped);
+      return mapped;
+    }
+
     const textHash = this.hashText(text);
     const cacheKey = `${dimension}:${textHash}`;
 
-    // 增量评估：若提供了 changedRange 且该维度可跳过，尝试命中缓存
+    // 增量评估：changedRange 不含人物名 → 人物一致性可复用旧缓存；
+    // 变更范围包含人物名时必须绕过缓存重算（旧分对应的是旧正文）。
+    // 其余维度与无 changedRange 时保持一致，照常查缓存。
     const canSkip = this.canSkipDimension(dimension, text, context);
-    if (canSkip) {
-      const cached = this.dimensionCache.get(cacheKey);
-      if (cached) {
-        return cached;
-      }
-    } else {
-      // 普通缓存命中
+    if (!(context.changedRange && !canSkip)) {
       const cached = this.dimensionCache.get(cacheKey);
       if (cached) {
         return cached;
@@ -474,6 +659,8 @@ export class QualityScoreEngine {
     const issues: QualityIssue[] = [];
     const suggestions: ImprovementSuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = QSE_CALIBRATION.readability;
+    const sw = QSE_SUB_WEIGHTS.readability;
 
     const sentences = this.splitSentences(text);
     const totalSentences = sentences.length;
@@ -495,7 +682,7 @@ export class QualityScoreEngine {
     const sentenceStdDev = Math.sqrt(sentenceVariance);
     const sentenceVariety = Math.min(
       100,
-      (sentenceStdDev / Math.max(1, avgSentenceLen)) * 200
+      (sentenceStdDev / Math.max(1, avgSentenceLen)) * cal.sentenceVarietyScale
     );
 
     details.avgSentenceLen = Math.round(avgSentenceLen) + '字';
@@ -507,7 +694,13 @@ export class QualityScoreEngine {
     const punctRatio = text.length > 0 ? punctuationCount / text.length : 0;
     details.punctRatio = (Math.round(punctRatio * 1000) / 10) + '%';
     // 理想标点密度约 5%-12%
-    const punctScore = this.scoreInRange(punctRatio, 0.05, 0.12, 0.02, 0.2);
+    const punctScore = this.scoreInRange(
+      punctRatio,
+      cal.idealPunctMin,
+      cal.idealPunctMax,
+      cal.hardPunctMin,
+      cal.hardPunctMax
+    );
 
     // 词汇丰富度
     const uniqueChars = new Set(
@@ -518,7 +711,7 @@ export class QualityScoreEngine {
       ''
     ).length;
     const vocabRichness =
-      totalChars > 0 ? (uniqueChars / Math.min(totalChars, 500)) * 100 : 0;
+      totalChars > 0 ? (uniqueChars / Math.min(totalChars, cal.vocabSampleCap)) * 100 : 0;
     details.vocabRichness = Math.round(vocabRichness) + '%';
 
     // 用字问题检测
@@ -534,7 +727,7 @@ export class QualityScoreEngine {
       const count = (text.match(pattern) || []).length;
       if (count > 0) {
         typoIssues.push(label);
-        typoPenalty += count * 5;
+        typoPenalty += count * cal.typoPenaltyPerHit;
         // 全局正则无 index，用非全局正则获取首次匹配位置
         const match = new RegExp(pattern.source).exec(text);
         if (match && match.index !== undefined) {
@@ -554,20 +747,26 @@ export class QualityScoreEngine {
     const repeatPattern = /(.{2,})\1{2,}/g;
     const repeatMatches = text.match(repeatPattern) || [];
     details.repetitionCount = repeatMatches.length;
-    const repeatPenalty = repeatMatches.length * 10;
+    const repeatPenalty = repeatMatches.length * cal.repeatPenaltyPerHit;
 
     // 句长适中度评分（15-30 字为佳）
-    const lenScore = this.scoreInRange(avgSentenceLen, 15, 30, 5, 60);
+    const lenScore = this.scoreInRange(
+      avgSentenceLen,
+      cal.idealSentenceMin,
+      cal.idealSentenceMax,
+      cal.hardSentenceMin,
+      cal.hardSentenceMax
+    );
     const varietyScore = sentenceVariety;
-    const vocabScore = Math.min(100, vocabRichness * 1.5);
+    const vocabScore = Math.min(100, vocabRichness * cal.vocabScale);
     const finalTypoScore = Math.max(0, 100 - typoPenalty - repeatPenalty);
 
     const score = Math.round(
-      lenScore * 0.3 +
-        varietyScore * 0.25 +
-        vocabScore * 0.2 +
-        punctScore * 0.1 +
-        finalTypoScore * 0.15
+      lenScore * sw.sentenceLength +
+        varietyScore * sw.variety +
+        vocabScore * sw.vocab +
+        punctScore * sw.punctuation +
+        finalTypoScore * sw.typo
     );
 
     // 生成建议
@@ -655,6 +854,8 @@ export class QualityScoreEngine {
     const issues: QualityIssue[] = [];
     const suggestions: ImprovementSuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = QSE_CALIBRATION.rhythmAnalyzer;
+    const sw = QSE_SUB_WEIGHTS.rhythmAnalyzer;
 
     // 若注入了 RhythmAnalyzer，调用它
     if (this.rhythmAnalyzer) {
@@ -712,10 +913,10 @@ export class QualityScoreEngine {
       // 节奏分数
       const balanceScore = Math.min(100, paceVariety);
       const typeScore = Math.min(100, typeDiversity);
-      const tensionScore = Math.min(100, avgTension * 0.6 + maxTension * 0.4);
+      const tensionScore = Math.min(100, avgTension * cal.tensionAvgWeight + maxTension * cal.tensionMaxWeight);
 
       const score = Math.round(
-        balanceScore * 0.35 + typeScore * 0.35 + tensionScore * 0.3
+        balanceScore * sw.paceVariety + typeScore * sw.typeDiversity + tensionScore * sw.tension
       );
 
       // 生成建议
@@ -727,7 +928,7 @@ export class QualityScoreEngine {
           priority: 'medium',
         });
       }
-      if (paceCounts.slow > total * 0.5 && total > 4) {
+      if (paceCounts.slow > total * cal.dominantPaceRatio && total > cal.minSegments) {
         issues.push({
           id: 'rhythm_too_slow',
           dimension: 'rhythm',
@@ -742,7 +943,7 @@ export class QualityScoreEngine {
           estimatedEffort: '中等',
         });
       }
-      if (paceCounts.fast > total * 0.5 && total > 4) {
+      if (paceCounts.fast > total * cal.dominantPaceRatio && total > cal.minSegments) {
         issues.push({
           id: 'rhythm_too_fast',
           dimension: 'rhythm',
@@ -877,6 +1078,8 @@ export class QualityScoreEngine {
     const issues: QualityIssue[] = [];
     const suggestions: ImprovementSuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = QSE_CALIBRATION.emotionAnalyzer;
+    const sw = QSE_SUB_WEIGHTS.emotionAnalyzer;
 
     // 若注入了 EmotionCurveAnalyzer
     if (this.emotionAnalyzer) {
@@ -903,16 +1106,29 @@ export class QualityScoreEngine {
       details.avgIntensity = Math.round(avgIntensity);
 
       // 情绪分数
-      const varietyScore = Math.min(100, emotionTypes.size * 20);
+      const varietyScore = Math.min(100, emotionTypes.size * cal.varietyPerType);
       const intensityScore = Math.min(100, avgIntensity);
       // 波动度适中为佳（过高=跳跃，过低=平淡）
-      const volatilityScore = this.scoreInRange(curve.volatility, 15, 30, 0, 60);
+      const volatilityScore = this.scoreInRange(
+        curve.volatility,
+        cal.idealVolatilityMin,
+        cal.idealVolatilityMax,
+        cal.hardVolatilityMin,
+        cal.hardVolatilityMax
+      );
       // 弧线类型：wave > rise/fall > flat
       const arcScore =
-        curve.arcType === 'wave' ? 100 : curve.arcType === 'rise' || curve.arcType === 'fall' ? 75 : 50;
+        curve.arcType === 'wave'
+          ? cal.arcWaveScore
+          : curve.arcType === 'rise' || curve.arcType === 'fall'
+            ? cal.arcRiseFallScore
+            : cal.arcFlatScore;
 
       const score = Math.round(
-        varietyScore * 0.3 + intensityScore * 0.3 + volatilityScore * 0.2 + arcScore * 0.2
+        varietyScore * sw.variety +
+          intensityScore * sw.intensity +
+          volatilityScore * sw.volatility +
+          arcScore * sw.arc
       );
 
       if (totalPoints === 0) {
@@ -990,6 +1206,8 @@ export class QualityScoreEngine {
     suggestions: ImprovementSuggestion[],
     details: Record<string, number | string>
   ): DimensionScore {
+    const cal = QSE_CALIBRATION.emotionFallback;
+    const sw = QSE_SUB_WEIGHTS.emotionFallback;
     const POS_EMOTIONS = [
       '喜悦', '开心', '高兴', '快乐', '幸福', '满足', '欣慰', '激动',
       '兴奋', '期待', '希望', '热情', '感激', '感动', '骄傲', '自豪',
@@ -1015,13 +1233,13 @@ export class QualityScoreEngine {
     details.emotionDensity =
       text.length > 0 ? (Math.round((totalEmotion / text.length) * 10000) / 100) + '%' : '0%';
 
-    const emotionScore = Math.min(100, totalEmotion * 8);
+    const emotionScore = Math.min(100, totalEmotion * cal.emotionPerHit);
     const balanceScore =
       totalEmotion > 0
-        ? Math.min(100, 100 - Math.abs(posCount - negCount) * 10)
-        : 50;
+        ? Math.min(100, 100 - Math.abs(posCount - negCount) * cal.balancePenaltyPerHit)
+        : cal.neutralBalanceScore;
 
-    const score = Math.round(emotionScore * 0.6 + balanceScore * 0.4);
+    const score = Math.round(emotionScore * sw.emotion + balanceScore * sw.balance);
 
     if (totalEmotion < 3 && text.length > 1000) {
       issues.push({
@@ -1075,10 +1293,7 @@ export class QualityScoreEngine {
 
     // 若注入了 CharacterConsistencyChecker 且有人物设定
     if (this.characterChecker && characterInfos.length > 0) {
-      const historyTexts = context.previousChapterText
-        ? [context.previousChapterText]
-        : undefined;
-      const result = await this.characterChecker.check(text, characterInfos, historyTexts);
+      const result = await this.characterChecker.check(text, characterInfos);
       this.throwIfAborted(signal);
 
       details.overallScore = result.overallScore;
@@ -1145,6 +1360,8 @@ export class QualityScoreEngine {
     suggestions: ImprovementSuggestion[],
     details: Record<string, number | string>
   ): DimensionScore {
+    const cal = QSE_CALIBRATION.characterFallback;
+    const sw = QSE_SUB_WEIGHTS.characterFallback;
     let charMentionCount = 0;
     const charMentions: Record<string, number> = {};
 
@@ -1175,17 +1392,20 @@ export class QualityScoreEngine {
     details.dialogueCount = dialogues.length;
 
     let dialoguePersonality = 50;
-    if (dialogues.length >= 5) {
+    if (dialogues.length >= cal.minDialogues) {
       const uniqueStarts = new Set(dialogues.map((d) => d.slice(0, 2)));
       const uniqueEnds = new Set(dialogues.map((d) => d.slice(-2)));
       const startVariety = (uniqueStarts.size / dialogues.length) * 100;
       const endVariety = (uniqueEnds.size / dialogues.length) * 100;
-      dialoguePersonality = Math.min(100, startVariety * 0.3 + endVariety * 0.3 + 40);
+      dialoguePersonality = Math.min(
+        100,
+        startVariety * cal.startWeight + endVariety * cal.endWeight + cal.personalityBase
+      );
     }
     details.dialoguePersonality = Math.round(dialoguePersonality) + '%';
 
-    const mentionScore = Math.min(100, charMentionCount * 4);
-    const score = Math.round(mentionScore * 0.4 + dialoguePersonality * 0.6);
+    const mentionScore = Math.min(100, charMentionCount * cal.mentionScale);
+    const score = Math.round(mentionScore * sw.mention + dialoguePersonality * sw.personality);
 
     if (characterNames.length > 0 && charMentionCount === 0) {
       issues.push({
@@ -1244,6 +1464,8 @@ export class QualityScoreEngine {
     const issues: QualityIssue[] = [];
     const suggestions: ImprovementSuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = QSE_CALIBRATION.coherence;
+    const sw = QSE_SUB_WEIGHTS.coherence;
 
     // 复用 CoherenceChecker
     const report: CoherenceReport = analyzeCoherence(text);
@@ -1277,16 +1499,20 @@ export class QualityScoreEngine {
     // 评分：issues 越少分越高
     const issuePenalty = report.issues.reduce((sum, issue) => {
       const base =
-        issue.type === 'duplicate_sentence' ? 15 : issue.type === 'repeated_phrase' ? 10 : 5;
-      return sum + base * Math.min(issue.count, 5);
+        issue.type === 'duplicate_sentence'
+          ? cal.duplicateSentencePenalty
+          : issue.type === 'repeated_phrase'
+            ? cal.repeatedPhrasePenalty
+            : cal.otherPenalty;
+      return sum + base * Math.min(issue.count, cal.countCap);
     }, 0);
 
-    const causalityScore = Math.min(100, 50 + causalityCount * 8);
-    const timelineScore = Math.min(100, 50 + timelineCount * 10);
+    const causalityScore = Math.min(100, cal.causalityBase + causalityCount * cal.causalityPerHit);
+    const timelineScore = Math.min(100, cal.timelineBase + timelineCount * cal.timelinePerHit);
     const coherenceScore = Math.max(0, 100 - issuePenalty);
 
     const score = Math.round(
-      coherenceScore * 0.5 + causalityScore * 0.3 + timelineScore * 0.2
+      coherenceScore * sw.coherence + causalityScore * sw.causality + timelineScore * sw.timeline
     );
 
     // 生成问题
@@ -1354,6 +1580,8 @@ export class QualityScoreEngine {
     const issues: QualityIssue[] = [];
     const suggestions: ImprovementSuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = QSE_CALIBRATION.languageTexture;
+    const sw = QSE_SUB_WEIGHTS.languageTexture;
 
     // 修辞检测
     const RHETORIC_PATTERNS = [
@@ -1376,7 +1604,7 @@ export class QualityScoreEngine {
     details.rhetoricCount = rhetoricCount;
     details.rhetoricTypes = rhetoricTypes.length > 0 ? rhetoricTypes.join('、') : '无';
 
-    const rhetoricScore = Math.min(100, rhetoricCount * 8);
+    const rhetoricScore = Math.min(100, rhetoricCount * cal.rhetoricPerHit);
 
     // 用词精准度：实词比例
     const meaningfulChars = text.replace(
@@ -1386,10 +1614,16 @@ export class QualityScoreEngine {
     const precisionRatio =
       text.length > 0 ? meaningfulChars.length / text.length : 0;
     details.precisionRatio = (Math.round(precisionRatio * 1000) / 10) + '%';
-    const precisionScore = this.scoreInRange(precisionRatio, 0.6, 0.75, 0.3, 0.9);
+    const precisionScore = this.scoreInRange(
+      precisionRatio,
+      cal.idealPrecisionMin,
+      cal.idealPrecisionMax,
+      cal.hardPrecisionMin,
+      cal.hardPrecisionMax
+    );
 
     // 风格统一性：与风格指纹匹配
-    let styleScore = 70; // 默认
+    let styleScore: number = cal.defaultStyleScore; // 默认
     if (context.styleFingerprint && Object.keys(context.styleFingerprint).length > 0) {
       // 计算当前文本的风格特征
       const currentFingerprint = this.extractStyleFeatures(text);
@@ -1400,10 +1634,10 @@ export class QualityScoreEngine {
       for (const [key, target] of Object.entries(context.styleFingerprint)) {
         const current = currentFingerprint[key] || 0;
         const diff = Math.abs(current - target);
-        if (diff < 0.2) matchCount++;
+        if (diff < cal.styleMatchTolerance) matchCount++;
         totalCount++;
       }
-      styleScore = totalCount > 0 ? Math.round((matchCount / totalCount) * 100) : 70;
+      styleScore = totalCount > 0 ? Math.round((matchCount / totalCount) * 100) : cal.defaultStyleScore;
       details.styleMatch = styleScore + '%';
     }
 
@@ -1413,13 +1647,13 @@ export class QualityScoreEngine {
     const rareChars = allChars.filter((c) => !commonChars.has(c) && /[\u4e00-\u9fa5]/.test(c));
     const rareRatio = allChars.length > 0 ? rareChars.length / allChars.length : 0;
     details.rareCharRatio = (Math.round(rareRatio * 1000) / 10) + '%';
-    const uniquenessScore = Math.min(100, rareRatio * 300);
+    const uniquenessScore = Math.min(100, rareRatio * cal.rareCharScale);
 
     const score = Math.round(
-      rhetoricScore * 0.3 +
-        precisionScore * 0.25 +
-        styleScore * 0.25 +
-        uniquenessScore * 0.2
+      rhetoricScore * sw.rhetoric +
+        precisionScore * sw.precision +
+        styleScore * sw.style +
+        uniquenessScore * sw.uniqueness
     );
 
     if (rhetoricCount < 3 && text.length > 1000) {
@@ -1555,16 +1789,17 @@ export class QualityScoreEngine {
     dialogueRatio: number,
     descRatio: number
   ): number {
-    const idealAction = 2.5;
-    const idealDialogue = 2.5;
-    const idealDesc = 12;
+    const cal = QSE_CALIBRATION.rhythmFallback;
+    const idealAction = cal.idealActionRatio;
+    const idealDialogue = cal.idealDialogueRatio;
+    const idealDesc = cal.idealDescRatio;
 
     const actionDeviation = Math.abs(actionRatio - idealAction) / idealAction;
     const dialogueDeviation = Math.abs(dialogueRatio - idealDialogue) / idealDialogue;
     const descDeviation = Math.abs(descRatio - idealDesc) / idealDesc;
 
     const totalDeviation = (actionDeviation + dialogueDeviation + descDeviation) / 3;
-    return Math.max(0, Math.min(100, 100 - totalDeviation * 80));
+    return Math.max(0, Math.min(100, 100 - totalDeviation * cal.deviationScale));
   }
 
   /** 提取风格特征 */

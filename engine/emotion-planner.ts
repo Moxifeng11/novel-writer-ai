@@ -113,8 +113,8 @@ export const EMOTION_PLAN_USER_TEMPLATE = `根据以下素材，为第\${chapNum
 export function validateEmotionPlan(content: string): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    // 解析场景
-    const sceneRegex = /###\s+scene\d+:\s*(.+)/gi;
+    // 解析场景（兼容 ##/###/#### 标题，以及 sceneN / 场景N 两种命名）
+    const sceneRegex = /^#{2,6}\s*(?:scene|场景)\s*\d+\s*[：:]/gim;
     const scenes = [...content.matchAll(sceneRegex)];
 
     if (scenes.length === 0) {
@@ -136,9 +136,9 @@ export function validateEmotionPlan(content: string): { valid: boolean; errors: 
         const startText = starts[i][1]?.trim() || '';
         const endText = ends[i][1]?.trim() || '';
 
-        // 提取等级数字
-        const startLevel = startText.match(/\((\d+)\/10\)/)?.[1];
-        const endLevel = endText.match(/\((\d+)\/10\)/)?.[1];
+        // 提取等级数字（兼容 6/10 与 6.5/10 两种写法）
+        const startLevel = startText.match(/\((\d+(?:\.\d+)?)\/10\)/)?.[1];
+        const endLevel = endText.match(/\((\d+(?:\.\d+)?)\/10\)/)?.[1];
 
         if (!startLevel || !endLevel) {
             errors.push(`scene${i + 1}: 缺少情绪等级（格式：emotion_start: XXX(N/10)）`);
@@ -183,7 +183,8 @@ export async function generateEmotionPlan(
         .replace(/\${emotionKnowledge}/g, vars.emotionKnowledge || '');
 
     notifier.showNotice('🎭 正在生成情绪规划...');
-    const response = await aiEngine.callAI(userPrompt, systemPrompt, model);
+    // callAI 签名是 (systemPrompt, userPrompt)：此前把两者传反，情绪规划从未按 system 约束生成
+    const response = await aiEngine.callAI(systemPrompt, userPrompt, model);
     notifier.showNotice('✅ 情绪规划生成完成');
 
     return response.content;

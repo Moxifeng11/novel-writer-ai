@@ -20,6 +20,7 @@
 import { LruCache } from '../repository/lru-cache';
 import { analyzeCoherence, CoherenceReport } from '../coherence-checker';
 import type { CharacterContextInfo } from './quality-score-engine';
+import { DIVERGENCE_CRITICAL, DIVERGENCE_WARNING, FORESHADOW_APPROACHING_CHAPTERS } from '../../shared/thresholds';
 
 // ============================================================
 // 一、偏离类型与严重度
@@ -115,6 +116,11 @@ export interface DeviationReport {
   overallSeverity: DeviationSeverity;
   /** 各类型偏离分数 */
   typeScores: Record<DeviationType, number>;
+  /**
+   * 因缺少数据源而未评估的类型（分数为 0 不代表无问题）。
+   * 例：没有人物档案时人物 OOC、没有伏笔数据时伏笔遗忘、没有期望节奏时节奏偏离。
+   */
+  unevaluatedTypes: DeviationType[];
   /** 全部问题列表（按严重度倒序） */
   issues: DeviationIssue[];
   /** 改进建议列表（按优先级倒序，最多 10 条） */
@@ -182,8 +188,6 @@ export interface DeviationContext {
   foreshadows?: ForeshadowTracking[];
   /** 期望节奏（用于节奏偏离检测） */
   expectedRhythm?: 'fast' | 'medium' | 'slow';
-  /** 风格指纹（保留扩展位） */
-  styleFingerprint?: Record<string, number>;
   /** 变更范围（用于增量检测，字符偏移） */
   changedRange?: { start: number; end: number };
 }
@@ -210,8 +214,7 @@ export interface IPlotDivergenceEngine {
 export interface ICharacterConsistencyChecker {
   check(
     chapterText: string,
-    characterInfos: CharacterContextInfo[],
-    historyTexts?: string[]
+    characterInfos: CharacterContextInfo[]
   ): Promise<{
     overallScore: number;
     characterResults: Record<
@@ -261,8 +264,8 @@ export interface SeverityThresholds {
 }
 
 export const DEFAULT_SEVERITY_THRESHOLDS: SeverityThresholds = {
-  critical: 60,
-  warning: 30,
+  critical: DIVERGENCE_CRITICAL,
+  warning: DIVERGENCE_WARNING,
   info: 0,
 };
 
@@ -346,7 +349,7 @@ export class DeviationDetector {
   // ── 公开 API ──────────────────────────────────────────────
 
   /**
-   * 检测全部 5 类偏离
+   * 检测全部 6 类偏离
    * @param text 正文文本
    * @param context 检测上下文
    * @param signal 取消信号
@@ -360,10 +363,14 @@ export class DeviationDetector {
     const cleanText = this.cleanText(text);
     const wordCount = cleanText.length;
     const textHash = this.hashText(cleanText);
+    // 缓存键必须带上影响结果的上下文：同一段正文在大纲/人物/前文变化后结论会变，
+    // 只用 textHash 会让「大纲还没加载就评估」的旧结论在 TTL 内固化。
+    const contextKey = this.hashContext(context);
+    const cacheKey = `${textHash}:${contextKey}`;
 
     // 完整结果缓存命中（仅在无变更范围时）
     if (!context.changedRange) {
-      const cached = this.fullCache.get(textHash);
+      const cached = this.fullCache.get(cacheKey);
       if (cached) {
         return { ...cached, fromCache: true, evalTimeMs: Date.now() - startTime };
       }
@@ -372,7 +379,7 @@ export class DeviationDetector {
     // 内容不足时返回空结果
     if (wordCount < 100) {
       const empty = this.getEmptyReport(wordCount, startTime);
-      this.fullCache.set(textHash, empty);
+      this.fullCache.set(cacheKey, empty);
       return empty;
     }
 
@@ -380,22 +387,24 @@ export class DeviationDetector {
 
     const typeScores: Record<DeviationType, number> = {} as Record<DeviationType, number>;
     const allIssues: DeviationIssue[] = [];
+    const unevaluated = new Set<DeviationType>(this.getUnevaluatedTypes(context));
 
     for (const type of DEVIATION_TYPES) {
       this.throwIfAborted(signal);
       // 增量检测：可跳过的类型直接跳过
       if (this.canSkipType(type, cleanText, context)) {
         typeScores[type] = 0;
+        unevaluated.add(type);
         continue;
       }
-      const issues = await this.detectByTypeInternal(cleanText, type, context, signal);
+      const issues = await this.detectByTypeInternal(cleanText, type, context, signal, contextKey);
       allIssues.push(...issues);
       typeScores[type] = this.calculateTypeScore(issues);
     }
 
     this.throwIfAborted(signal);
 
-    const overallScore = this.calculateOverallScore(typeScores);
+    const overallScore = this.calculateOverallScore(allIssues);
     const overallSeverity = this.severityFromDegree(overallScore);
     const suggestions = this.buildSuggestions(allIssues);
     const sortedIssues = this.sortIssues(allIssues);
@@ -404,6 +413,8 @@ export class DeviationDetector {
       overallScore,
       overallSeverity,
       typeScores,
+      // 保持 DEVIATION_TYPES 的稳定顺序，避免 UI 展示顺序随上下文变化
+      unevaluatedTypes: DEVIATION_TYPES.filter(type => unevaluated.has(type)),
       issues: sortedIssues,
       suggestions,
       evaluatedAt: Date.now(),
@@ -413,7 +424,7 @@ export class DeviationDetector {
       incremental: !!context.changedRange,
     };
 
-    this.fullCache.set(textHash, report);
+    this.fullCache.set(cacheKey, report);
     return report;
   }
 
@@ -431,7 +442,7 @@ export class DeviationDetector {
     signal?: AbortSignal
   ): Promise<DeviationIssue[]> {
     const cleanText = this.cleanText(text);
-    return this.detectByTypeInternal(cleanText, type, context, signal);
+    return this.detectByTypeInternal(cleanText, type, context, signal, this.hashContext(context));
   }
 
   /** 清空所有缓存 */
@@ -447,9 +458,10 @@ export class DeviationDetector {
       return;
     }
     const textHash = this.hashText(this.cleanText(text));
-    this.fullCache.delete(textHash);
+    // 键格式为 `${textHash}:${contextKey}`，需按前缀清理所有上下文变体
+    this.fullCache.deleteByPrefix(`${textHash}:`);
     for (const type of DEVIATION_TYPES) {
-      this.typeCache.delete(`${type}:${textHash}`);
+      this.typeCache.deleteByPrefix(`${type}:${textHash}:`);
     }
   }
 
@@ -469,10 +481,11 @@ export class DeviationDetector {
     text: string,
     type: DeviationType,
     context: DeviationContext,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    contextKey?: string
   ): Promise<DeviationIssue[]> {
     const textHash = this.hashText(text);
-    const cacheKey = `${type}:${textHash}`;
+    const cacheKey = `${type}:${textHash}:${contextKey ?? this.hashContext(context)}`;
 
     // 缓存命中（仅无变更范围时）
     if (!context.changedRange) {
@@ -588,7 +601,8 @@ export class DeviationDetector {
           ? Math.round((matched / outlineKeywords.length) * 100)
           : 50;
 
-      if (unmatched.length > 0 && outlineMatchRate < 60) {
+      // 关键词过少时覆盖率没有统计意义，直接不报
+      if (unmatched.length > 0 && outlineKeywords.length >= 5 && outlineMatchRate < 50) {
         issues.push({
           id: 'mainline_outline_unmatched',
           type: 'mainline',
@@ -689,27 +703,34 @@ export class DeviationDetector {
 
     // 优先使用 V1 CharacterConsistencyChecker
     if (this.characterChecker) {
-      const historyTexts = (context.previousChapters || [])
-        .filter((c) => c.text && c.text.length > 0)
-        .map((c) => c.text);
-      const result = await this.characterChecker.check(
-        text,
-        characterInfos,
-        historyTexts.length > 0 ? historyTexts : undefined
-      );
+      const result = await this.characterChecker.check(text, characterInfos);
       this.throwIfAborted(signal);
 
       for (const [name, charResult] of Object.entries(result.characterResults)) {
         const deviationDegree = 100 - charResult.score;
         for (let i = 0; i < charResult.inconsistencies.length; i++) {
           const inc = charResult.inconsistencies[i];
+          // V1 角色分是「按问题数量累计扣分」，单条 high 只扣 15 分，degree 会远低于
+          // critical 阈值；而 mapV1Severity 又按 inc.severity 判为 critical。若不设下限，
+          // 报告会出现「偏离 15 · 严重」的自相矛盾。故 degree 至少达到该严重度阈值。
+          const severityFloor =
+            inc.severity === 'high'
+              ? this.severityThresholds.critical
+              : inc.severity === 'medium'
+                ? this.severityThresholds.warning
+                : 0;
+          const degree = Math.min(100, Math.max(deviationDegree, severityFloor));
           issues.push({
             id: `charOOC_v1_${name}_${i}`,
             type: 'characterOOC',
-            severity: this.mapV1Severity(inc.severity, deviationDegree),
-            degree: deviationDegree,
+            severity: this.mapV1Severity(inc.severity, degree),
+            degree,
             description: `[${name}] ${inc.description}`,
-            location: inc.location ? { character: name } : { character: name },
+            location: { character: name },
+            // checker 已在每条不一致上写入「第N段附近」，此处必须保留：
+            // 此前写成 `inc.location ? { character: name } : { character: name }`
+            // 的恒等三元，位置信息被静默丢弃，报告无法溯源到段落。
+            evidence: inc.location ? [inc.location] : undefined,
             suggestion: inc.suggestion,
             confidence: inc.confidence,
           });
@@ -865,54 +886,58 @@ export class DeviationDetector {
   ): DeviationIssue[] {
     const issues: DeviationIssue[] = [];
 
-    // 时间标记提取
-    const TIME_PATTERN =
-      /第([一二三四五六七八九十百千零〇\d]+)(天|日|年|月|周|个星期)|次日|几日后|几年后|不久|片刻后|与此同时/g;
-    const currentTimeMarks = this.extractTimeMarks(text, TIME_PATTERN);
-    if (currentTimeMarks.length === 0) return issues;
+    const currentMarks = this.extractTimeMarks(text);
+    if (currentMarks.length === 0) return issues;
 
-    // 检测与前文的时间线冲突（简单规则：相同时间标记重复使用即视为潜在矛盾）
-    for (const prev of prevChapters) {
-      const prevTimeMarks = this.extractTimeMarks(prev.text, TIME_PATTERN);
-      // 检测冲突的时间标记（如「第一日」在前文和当前文中都出现且语境不同）
-      for (const curr of currentTimeMarks) {
-        for (const prevMark of prevTimeMarks) {
-          if (curr.normalized === prevMark.normalized && curr.text !== prevMark.text) {
-            // 简单启发式：相同时间标记重复使用
-            issues.push({
-              id: `contradiction_timeline_${prev.chapterId}`,
-              type: 'contradiction',
-              severity: 'warning',
-              degree: 45,
-              description: `时间标记「${curr.text}」与章节 ${prev.chapterId} 重复，可能存在时间线矛盾`,
-              location: { chapterRef: prev.chapterId },
-              suggestion: '请检查时间线顺序是否一致',
-              confidence: 0.5,
-              evidence: [prevMark.text, curr.text],
-            });
-            break;
-          }
-        }
-      }
+    // 只与最近的前一章比较：更早章节的相同时间点属于正常叙事，不是矛盾
+    const latestPrev = [...prevChapters]
+      .filter(prev => Number.isFinite(prev.chapterNum))
+      .sort((a, b) => b.chapterNum - a.chapterNum)[0];
+    if (!latestPrev) return issues;
+
+    const prevMarks = this.extractTimeMarks(latestPrev.text);
+    if (prevMarks.length === 0) return issues;
+
+    // 只有「当前章最早时间点早于前章最晚时间点」才算时间线倒退。
+    // 同一时间标记在相邻章节重复出现（如两章都写「第二天」）是正常写法，不再误报。
+    const prevLatest = new Map<string, TimeMark>();
+    for (const mark of prevMarks) {
+      const existing = prevLatest.get(mark.unit);
+      if (!existing || mark.value > existing.value) prevLatest.set(mark.unit, mark);
+    }
+    const currentEarliest = new Map<string, TimeMark>();
+    for (const mark of currentMarks) {
+      const existing = currentEarliest.get(mark.unit);
+      if (!existing || mark.value < existing.value) currentEarliest.set(mark.unit, mark);
+    }
+
+    for (const [unit, curr] of currentEarliest) {
+      const prev = prevLatest.get(unit);
+      if (!prev || curr.value >= prev.value) continue;
+      issues.push({
+        id: `contradiction_timeline_${latestPrev.chapterId}`,
+        type: 'contradiction',
+        severity: 'warning',
+        degree: 45,
+        description: `时间线可能倒退：「${curr.text}」早于前一章的「${prev.text}」`,
+        location: { chapterRef: latestPrev.chapterId },
+        suggestion: '请检查时间线顺序是否一致',
+        confidence: 0.55,
+        evidence: [prev.text, curr.text],
+      });
     }
 
     return issues;
   }
 
-  private extractTimeMarks(
-    text: string,
-    pattern: RegExp
-  ): Array<{ text: string; normalized: string }> {
-    const marks: Array<{ text: string; normalized: string }> = [];
+  private extractTimeMarks(text: string): TimeMark[] {
+    const marks: TimeMark[] = [];
+    const pattern = new RegExp(TIME_MARK_PATTERN.source, 'g');
     let match: RegExpExecArray | null;
-    const globalPattern = new RegExp(pattern.source, 'g');
-    while ((match = globalPattern.exec(text)) !== null) {
-      const matched = match[0];
-      // 归一化：将中文数字转阿拉伯
-      const normalized = matched
-        .replace(/一二三四五六七八九十/g, (s) => '一二三四五六七八九十'.indexOf(s).toString())
-        .replace(/百|千|零|〇/g, '');
-      marks.push({ text: matched, normalized });
+    while ((match = pattern.exec(text)) !== null) {
+      const value = parseChineseNumber(match[1]);
+      if (value === null) continue;
+      marks.push({ text: match[0], value, unit: normalizeTimeUnit(match[2]) });
     }
     return marks;
   }
@@ -942,43 +967,63 @@ export class DeviationDetector {
 
     for (const char of characterInfos) {
       if (!char.name || !char.appearance) continue;
+
+      // 同一「人物 + 矛盾词」只报一次：当前章优先，其次最近的前文章节。
+      // 前文窗口已扩到 3 章，同一个外貌矛盾常会连续几章重复出现，
+      // 逐章各报一条会把「1 个问题」显示成「3 个严重问题」。
+      // 集合必须建在人物维度（跨矛盾组共用）：设定里同时出现「黑发」「金发」时，
+      // 两个组都会把「白发」当作反义词，组内各自去重会产出 id 相同的重复 issue。
+      const reported = new Set<string>();
+      const contradictionKey = (name: string, word: string) => `${name}\u0001${word}`;
+
       for (const contradiction of APPEARANCE_CONTRADICTIONS) {
         const hasSetting = contradiction.words.some((w) => char.appearance!.includes(w));
         if (!hasSetting) continue;
 
-        // 在当前文本和前文中查找矛盾描述
+        // 在当前文本中查找矛盾描述（必须在同一段落内与人物名共现）
         for (const opp of contradiction.opposite) {
-          if (text.includes(opp) && text.includes(char.name)) {
-            const sentence = this.extractSentence(text, opp);
-            issues.push({
-              id: `contradiction_setting_${char.name}_${opp}`,
-              type: 'contradiction',
-              severity: 'critical',
-              degree: 75,
-              description: `[${char.name}] 外貌描述矛盾：设定为「${contradiction.words[0]}」，文中出现「${opp}」`,
-              location: { character: char.name },
-              suggestion: '请修正外貌描述以保持一致',
-              confidence: 0.85,
-              evidence: sentence ? [sentence] : undefined,
-            });
-          }
+          const key = contradictionKey(char.name, opp);
+          if (reported.has(key)) continue;
+          const sentence = this.findCharacterKeywordSnippet(text, char.name, opp);
+          if (sentence === null) continue;
+          reported.add(key);
+          issues.push({
+            id: `contradiction_setting_${char.name}_${opp}`,
+            type: 'contradiction',
+            severity: 'critical',
+            degree: 75,
+            description: `[${char.name}] 外貌描述矛盾：设定为「${contradiction.words[0]}」，文中出现「${opp}」`,
+            location: { character: char.name },
+            suggestion: '请修正外貌描述以保持一致',
+            confidence: 0.85,
+            evidence: sentence ? [sentence] : undefined,
+          });
         }
 
-        // 检查前文章节中的矛盾
-        for (const prev of prevChapters) {
+        // 检查前文章节中的矛盾（同样要求同段落共现，避免「另一角色金发」误报）；
+        // 按章号降序，保留距离当前章最近的那一条证据。
+        const orderedPrev = [...prevChapters].sort(
+          (a, b) => (Number.isFinite(b.chapterNum) ? b.chapterNum : 0)
+            - (Number.isFinite(a.chapterNum) ? a.chapterNum : 0)
+        );
+        for (const prev of orderedPrev) {
           for (const opp of contradiction.opposite) {
-            if (prev.text.includes(opp) && prev.text.includes(char.name)) {
-              issues.push({
-                id: `contradiction_setting_${char.name}_${opp}_${prev.chapterId}`,
-                type: 'contradiction',
-                severity: 'critical',
-                degree: 80,
-                description: `[${char.name}] 外貌描述与章节 ${prev.chapterId} 矛盾：设定「${contradiction.words[0]}」，前文出现「${opp}」`,
-                location: { character: char.name, chapterRef: prev.chapterId },
-                suggestion: '请统一人物外貌描述',
-                confidence: 0.85,
-              });
-            }
+            const key = contradictionKey(char.name, opp);
+            if (reported.has(key)) continue;
+            const sentence = this.findCharacterKeywordSnippet(prev.text, char.name, opp);
+            if (sentence === null) continue;
+            reported.add(key);
+            issues.push({
+              id: `contradiction_setting_${char.name}_${opp}_${prev.chapterId}`,
+              type: 'contradiction',
+              severity: 'critical',
+              degree: 80,
+              description: `[${char.name}] 外貌描述与章节 ${prev.chapterId} 矛盾：设定「${contradiction.words[0]}」，前文出现「${opp}」`,
+              location: { character: char.name, chapterRef: prev.chapterId },
+              suggestion: '请统一人物外貌描述',
+              confidence: 0.85,
+              evidence: [sentence],
+            });
           }
         }
       }
@@ -1009,6 +1054,8 @@ export class DeviationDetector {
     if (foreshadows.length === 0) return issues;
 
     const currentChapterNum = context.chapterNum ?? 0;
+    const recoverThreshold = this.foreshadowRecoverChapters;
+    const warningLine = Math.max(1, Math.ceil(recoverThreshold / 2));
 
     for (const fs of foreshadows) {
       if (fs.recovered) continue;
@@ -1027,25 +1074,64 @@ export class DeviationDetector {
       const plantedNum = fs.plantedChapterNum ?? 0;
       const distance = currentChapterNum - plantedNum;
 
-      // 若距离超过阈值，标记为遗忘
-      if (distance >= this.foreshadowRecoverChapters) {
+      // 当前章早于埋设章（规划章号回退/跨卷）不判定，避免负距离造成荒谬告警
+      if (distance <= 0) continue;
+
+      // 有明确的计划回收章时以它为准：长期伏笔不该被全局阈值误报，
+      // 计划已过期的伏笔也不该等到全局阈值才提醒。
+      const expected = fs.expectedRecoverChapterNum;
+      const hasExpected = typeof expected === 'number' && Number.isFinite(expected) && expected > plantedNum;
+
+      if (hasExpected) {
+        const overdue = currentChapterNum - expected;
+        if (overdue >= 0) {
+          issues.push({
+            id: `foreshadowForgot_${fs.id}`,
+            type: 'foreshadowForgot',
+            severity: 'critical',
+            degree: Math.min(100, 60 + overdue * 5),
+            description: `伏笔「${fs.description}」计划第 ${expected} 章回收，已逾期 ${overdue} 章`,
+            suggestion: '建议尽快安排伏笔回收，避免读者遗忘',
+            confidence: 0.85,
+            evidence: fs.keywords.slice(0, 3),
+          });
+        } else if (expected - currentChapterNum <= FORESHADOW_APPROACHING_CHAPTERS) {
+          issues.push({
+            id: `foreshadowForgot_${fs.id}_approaching`,
+            type: 'foreshadowForgot',
+            severity: 'warning',
+            degree: Math.min(59, 35 + distance * 3),
+            description: `伏笔「${fs.description}」计划第 ${expected} 章回收，仅剩 ${expected - currentChapterNum} 章`,
+            suggestion: '可考虑在后续章节中安排伏笔回收',
+            confidence: 0.6,
+            evidence: fs.keywords.slice(0, 3),
+          });
+        }
+        continue;
+      }
+
+      // 没有计划回收章：沿用全局阈值。
+      // degree 与 severity 必须单调对应——warning 封顶 59、critical 从 60 起，
+      // 否则会出现「warning 的偏离度高于 critical」这种自相矛盾的展示。
+      if (distance >= recoverThreshold) {
+        const overdue = distance - recoverThreshold;
         issues.push({
           id: `foreshadowForgot_${fs.id}`,
           type: 'foreshadowForgot',
           severity: 'critical',
-          degree: Math.min(100, 60 + (distance - this.foreshadowRecoverChapters) * 5),
-          description: `伏笔「${fs.description}」已埋设 ${distance} 章未回收（阈值 ${this.foreshadowRecoverChapters} 章）`,
+          degree: Math.min(100, 60 + overdue * 5),
+          description: `伏笔「${fs.description}」已埋设 ${distance} 章未回收（阈值 ${recoverThreshold} 章）`,
           suggestion: '建议尽快安排伏笔回收，避免读者遗忘',
           confidence: 0.8,
           evidence: fs.keywords.slice(0, 3),
         });
-      } else if (distance >= this.foreshadowRecoverChapters / 2) {
+      } else if (distance >= warningLine) {
         // 超过阈值一半，预警提示
         issues.push({
           id: `foreshadowForgot_${fs.id}_approaching`,
           type: 'foreshadowForgot',
           severity: 'warning',
-          degree: 35 + distance * 3,
+          degree: Math.min(59, 35 + distance * 3),
           description: `伏笔「${fs.description}」已埋设 ${distance} 章，建议尽快回收`,
           suggestion: '可考虑在后续章节中安排伏笔回收',
           confidence: 0.6,
@@ -1279,7 +1365,9 @@ export class DeviationDetector {
    */
   private detectEmotionBreak(text: string, context: DeviationContext): DeviationIssue[] {
     const issues: DeviationIssue[] = [];
-    const paragraphs = text.split(/\n\n+/).filter((p) => p.trim().length > 10);
+    // 与人物相关检测同口径：中文网文常用单换行分段，只按空行切会把整章当成
+    // 1 段（<3 段直接返回），情绪断层在真实正文里永远不会被检出。
+    const paragraphs = text.split(/\r?\n+/).filter((p) => p.trim().length > 10);
     if (paragraphs.length < 3) return issues;
 
     const psychPatterns = [
@@ -1499,6 +1587,30 @@ export class DeviationDetector {
     return hash.toString(36);
   }
 
+  /**
+   * 计算上下文指纹：大纲、人物设定、前文、伏笔、期望节奏都会改变检测结论。
+   * 前文只取章节号与长度（同章内正文不变，跨章时章节号必变），避免每次评估都哈希两万字。
+   */
+  private hashContext(context: DeviationContext): string {
+    const parts: string[] = [
+      context.chapterId || '',
+      String(context.chapterNum ?? ''),
+      context.chapterOutline || '',
+      context.expectedRhythm || '',
+      (context.mainlineKeywords || []).join(','),
+    ];
+    for (const c of context.characterInfos || []) {
+      parts.push(`${c.name}|${c.personality || ''}|${c.appearance || ''}|${c.abilities || ''}`);
+    }
+    for (const p of context.previousChapters || []) {
+      parts.push(`${p.chapterId}|${p.chapterNum}|${p.text.length}`);
+    }
+    for (const f of context.foreshadows || []) {
+      parts.push(`${f.id}|${f.recovered ? 1 : 0}|${f.keywords.join(',')}`);
+    }
+    return this.hashText(parts.join('\u0001'));
+  }
+
   private splitSentences(text: string): string[] {
     return text.split(/[。！？!?]+/).filter((s) => s.trim().length > 0);
   }
@@ -1507,28 +1619,55 @@ export class DeviationDetector {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  /** 提取文本关键词（2-gram 去重） */
+  /**
+   * 提取大纲关键词（2-gram 去重）
+   *
+   * 旧实现把所有相邻两字都当关键词，正文只要有一处措辞不同就会命中「未覆盖」，
+   * 100 字大纲能产出 50 个 bigram，几乎必然误报。现在过滤虚词 bigram 并限制数量。
+   */
   private extractKeywords(text: string): string[] {
     const clean = text.replace(
       /[，。！？、；：""''（）【】《》…—\s\n\d]/g,
       ''
     );
     const keywords: string[] = [];
+    const seen = new Set<string>();
     for (let i = 0; i < clean.length - 1; i++) {
       const bigram = clean.slice(i, i + 2);
-      if (!keywords.includes(bigram)) {
-        keywords.push(bigram);
-      }
+      if (KEYWORD_STOP_CHARS.has(bigram[0]) || KEYWORD_STOP_CHARS.has(bigram[1])) continue;
+      if (seen.has(bigram)) continue;
+      seen.add(bigram);
+      keywords.push(bigram);
+      if (keywords.length >= 30) break;
     }
-    return keywords.slice(0, 50);
+    return keywords;
   }
 
   /** 提取人物相关段落 */
   private extractCharacterParagraphs(text: string, name: string): string[] {
+    // 中文网文常用单换行分段，只按空行切会把整章当成一段，
+    // 导致 OOC / 外貌矛盾按「全章共现」误报。统一按一个或多个换行切。
     return text
-      .split(/\r?\n\r?\n/)
+      .split(/\r?\n+/)
       .map((p) => p.trim())
       .filter((p) => p.length > 0 && p.includes(name));
+  }
+
+  /**
+   * 在「包含人物名的段落」里查找关键词，返回所在句子。
+   * 用于把设定矛盾从「全章共现」收紧为「同段共现」——同章不同段可能写的是别人。
+   */
+  private findCharacterKeywordSnippet(
+    text: string,
+    name: string,
+    keyword: string
+  ): string | null {
+    for (const paragraph of this.extractCharacterParagraphs(text, name)) {
+      if (!paragraph.includes(keyword)) continue;
+      const sentence = this.extractSentence(paragraph, keyword);
+      return sentence || paragraph.slice(0, 120);
+    }
+    return null;
   }
 
   /** 提取包含关键词的句子 */
@@ -1575,24 +1714,18 @@ export class DeviationDetector {
     return Math.max(...issues.map((i) => i.degree));
   }
 
-  /** 计算总偏离分数 */
-  private calculateOverallScore(
-    typeScores: Record<DeviationType, number>
-  ): number {
-    // 加权：剧情偏离主线最重要，伏笔/节奏次之
-    const weights: Record<DeviationType, number> = {
-      mainline: 0.25,
-      characterOOC: 0.2,
-      contradiction: 0.18,
-      foreshadowForgot: 0.12,
-      rhythm: 0.1,
-      emotionBreak: 0.15,
-    };
-    let total = 0;
-    for (const type of DEVIATION_TYPES) {
-      total += (typeScores[type] || 0) * weights[type];
-    }
-    return Math.min(100, Math.max(0, Math.round(total)));
+  /**
+   * 计算总偏离分数。
+   *
+   * 各类型分数取该类最严重一条 issue 的 degree，因此任何「类型加权平均」都恒 ≤
+   * 最严重单条 degree，再与最严重单条取 max 后加权平均永远不可能生效（恒等变换）。
+   * 这里直接取最严重单条：总评表达「最坏的那一处偏差」，严重度单调可推导。
+   * 「面」（多类型同时偏离）不进入分数，由 `countDeviatedTypes` 在 UI 单独展示，
+   * 避免用一个不透明的加权公式制造虚假精度。
+   */
+  private calculateOverallScore(issues: DeviationIssue[] = []): number {
+    const worstIssue = issues.reduce((max, issue) => Math.max(max, issue.degree), 0);
+    return Math.min(100, Math.max(0, Math.round(worstIssue)));
   }
 
   /** 排序问题（按严重度倒序） */
@@ -1624,6 +1757,32 @@ export class DeviationDetector {
     return suggestions
       .sort((a, b) => SEVERITY_ORDER[b.priority] - SEVERITY_ORDER[a.priority])
       .slice(0, 10);
+  }
+
+  /**
+   * 判断哪些类型因缺少数据源而无法评估。
+   * 这些类型的 `typeScores` 仍为 0，但必须单独标记，否则 UI 会把「没数据」
+   * 显示成「没问题」（与面板 B 空结果显示「--」同一口径）。
+   */
+  private getUnevaluatedTypes(context: DeviationContext): DeviationType[] {
+    const types: DeviationType[] = [];
+
+    const hasOutline = !!context.chapterOutline?.trim();
+    const hasMainlineKeywords = (context.mainlineKeywords?.length ?? 0) > 0;
+    if (!hasOutline && !hasMainlineKeywords) types.push('mainline');
+
+    if ((context.characterInfos?.length ?? 0) === 0) types.push('characterOOC');
+
+    if (!context.expectedRhythm) types.push('rhythm');
+
+    // 伏笔数据有两处来源：显式追踪列表，或前文章节 frontmatter 中的伏笔标记
+    const hasForeshadows =
+      (context.foreshadows?.length ?? 0) > 0 ||
+      this.parseForeshadowsFromFrontmatter(context.previousChapters || []).length > 0;
+    if (!hasForeshadows) types.push('foreshadowForgot');
+
+    // 前后矛盾（内部连贯性）与情绪断层为纯文本分析，不依赖外部数据源
+    return types;
   }
 
   /** 判断类型是否可跳过（增量检测） */
@@ -1705,6 +1864,8 @@ export class DeviationDetector {
       overallScore: 0,
       overallSeverity: 'info',
       typeScores,
+      // 正文过短时整份报告都不成立，由调用方显示「暂不检测」，不逐类型标记
+      unevaluatedTypes: [],
       issues: [],
       suggestions: [
         {
@@ -1732,6 +1893,22 @@ export function getDeviationTypeLabel(type: DeviationType): string {
   return DEVIATION_TYPE_LABELS[type] || type;
 }
 
+/**
+ * 列出「已评估且确实偏离」的类型（按 `DEVIATION_TYPES` 稳定顺序）。
+ *
+ * 总评只表达最严重的一处偏差，多类型同时偏离的「面」由这里给 UI 展示，
+ * 未评估类型（缺数据源）不计入，避免把「没检查」算成「有问题」。
+ */
+export function listDeviatedTypes(
+  typeScores: Record<DeviationType, number>,
+  unevaluatedTypes: readonly DeviationType[] = []
+): DeviationType[] {
+  const unevaluated = new Set(unevaluatedTypes);
+  return DEVIATION_TYPES.filter(
+    type => !unevaluated.has(type) && (typeScores[type] ?? 0) > 0
+  );
+}
+
 /** 获取严重度标签 */
 export function getDeviationSeverityLabel(severity: DeviationSeverity): string {
   return SEVERITY_LABELS[severity] || severity;
@@ -1749,4 +1926,58 @@ export function getDeviationSeverityColor(severity: DeviationSeverity): string {
   if (severity === 'critical') return 'var(--nw-danger, #ef4444)';
   if (severity === 'warning') return 'var(--nw-warning, #f59e0b)';
   return 'var(--nw-success, #22c55e)';
+}
+
+// ============================================================
+// 十、时间线归一化与关键词过滤
+// ============================================================
+
+/** 显式时间点标记（只匹配可比较的「第 N 天/月/年/周」） */
+const TIME_MARK_PATTERN = /第([一二三四五六七八九十百千零〇\d]+)(天|日|年|月|周|个星期)/;
+
+/** 关键词停用字：避免「的了」「他在」这类 2-gram 被当成大纲要点 */
+const KEYWORD_STOP_CHARS = new Set(
+  '的了着过是在和与及或但他她它我你您这那有就都而又也被把让给对于从向以为所之其并且很更最不没要会能可以一个上下里中'.split('')
+);
+
+interface TimeMark {
+  text: string;
+  value: number;
+  unit: 'day' | 'month' | 'year' | 'week';
+}
+
+function normalizeTimeUnit(raw: string): TimeMark['unit'] {
+  if (raw === '天' || raw === '日') return 'day';
+  if (raw === '月') return 'month';
+  if (raw === '年') return 'year';
+  return 'week';
+}
+
+/**
+ * 解析中文/阿拉伯数字（支持 0-9999，如「十二」「二十」「一百零五」「3」）。
+ * 无法解析返回 null。
+ */
+export function parseChineseNumber(raw: string): number | null {
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Number(raw);
+
+  const digits: Record<string, number> = {
+    零: 0, 〇: 0, 一: 1, 二: 2, 三: 3, 四: 4,
+    五: 5, 六: 6, 七: 7, 八: 8, 九: 9,
+  };
+  let total = 0;
+  let current = 0;
+
+  for (const ch of raw) {
+    if (ch in digits) {
+      current = digits[ch];
+    } else if (ch === '十' || ch === '百' || ch === '千') {
+      const multiplier = ch === '十' ? 10 : ch === '百' ? 100 : 1000;
+      total += (current || 1) * multiplier;
+      current = 0;
+    } else {
+      return null;
+    }
+  }
+  return total + current;
 }

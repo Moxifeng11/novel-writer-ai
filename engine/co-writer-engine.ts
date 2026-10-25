@@ -34,7 +34,8 @@ import { StyleLearner } from './style-learner';
 import { PreferenceMemory } from './preference-memory';
 import { PromptBuilder, type PromptSnapshot } from './prompt-builder';
 import { StyleFingerprintLibrary } from './style-fingerprint-library';
-import { OllamaEmbeddingClient } from './ollama-embedding-client';
+import { EmbeddingProviderFactory } from './embedding/provider-factory';
+import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { LocalVectorStore } from './local-vector-store';
 import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
 import { KnowledgeVectorStore } from './knowledge-vector-store';
@@ -44,6 +45,8 @@ import { ENGINE_NAMES } from './engine-registry';
 import { entityStateChangesToFacts } from './co-writer-state-sync';
 import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
 import { CrossVolumeIntegrator } from './cross-volume-integration';
+import { loadLongTermMemory } from './long-term-memory';
+import { formatFanficRulesForPrompt, formatFanficRulesLoadWarning, readFanficRulesFromFS, type FanficRules } from '../shared/fanfic-rules';
 import { analyzeCoherence, CoherenceReport } from './coherence-checker';
 import { analyzePlotRedundancy, loadPreviousChapterBodies, PlotRedundancyReport } from './plot-redundancy-checker';
 import { analyzeLogicConsistency, LogicConsistencyReport } from './logic-consistency-checker';
@@ -54,6 +57,14 @@ import { StyleSimilarityScorer } from './style-similarity-scorer';
 import { VectorEnhancer } from './vector-enhancer';
 import { PRECISION_MODE_SYSTEM_APPEND } from './prompts/co-write-prompts';
 import { pjCharsDir } from '../shared/paths';
+import { splitSceneSections } from './scene-expander';
+import {
+    formatEntityBrief,
+    buildChapterBrief,
+    buildBriefPromptParts,
+    type ChapterBrief,
+    type ChapterBriefInput,
+} from './chapter-brief';
 import { 
      CharacterSoul, 
      CharacterSoulSummary, 
@@ -73,13 +84,18 @@ import {
     SentenceEditRecord,
     CoWritingSession
 } from '../shared/types';
-import { extractResponseText } from '../shared/api-response-utils';
+import { extractJsonObject, extractResponseText, isPlanningOutput, sanitizeStoryText, stripCodeFence, stripThinkingBlock } from '../shared/api-response-utils';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { EngineRegistry } from './engine-registry';
 import type { CharacterRepository, ChapterRepository } from './repository';
 import { FrontmatterSerializer } from './repository/domain/serializers';
 import { createLogger } from '../shared/logger';
+import { deriveBodyFormat, describeBodyFormat } from '../shared/body-format';
 import { resolveProviderSourceType } from '../shared/model-source';
+import { CO_WRITE_MAX_TOKENS_CAP, CO_WRITE_NUM_CTX, EDIT_VALIDATION_PASS_SCORE } from '../shared/thresholds';
+import { countRetainedPromptParts } from '../shared/prompt-budget';
+import { roleIndicatesProtagonist } from '../shared/protagonist';
+import { findModelCapability } from '../shared/model-capabilities';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 
 
@@ -126,8 +142,16 @@ export class CoWriterEngine {
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
     private snapshot: ContextSnapshot | null = null;
+    /** 最近一次读取到的同人设定（含加载失败原因），供视图提示 */
+    private lastFanficRules: FanficRules | null = null;
     private session: CoWritingSession | null = null;
     private interactionHistory: SentenceEditRecord[] = [];
+    /** 章节写作简报：承接规划阶段的成果，供 UI 与提示词消费 */
+    private chapterBrief: ChapterBrief | null = null;
+    /** 简报原始输入（用于随正文进度重建） */
+    private chapterBriefInput: ChapterBriefInput | null = null;
+    /** 用户手动选定的场景（null 表示按字数自动推进） */
+    private manualSceneIndex: number | null = null;
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
      
@@ -152,7 +176,13 @@ export class CoWriterEngine {
     private knowledgeVectorStore: KnowledgeVectorStore | null = null;
     private referenceBookIds: string[] = [];
     public lastKnowledgeCount: number = 0;
+    /** 检索到但因预算裁剪未能完整注入的知识库片段数（B7） */
+    public lastKnowledgeDroppedCount: number = 0;
     public directionKnowledgeCounts: Record<string, number> = {};
+    /** 最近一次建议生成的失败原因（成功或用户取消时为 null），供 UI 展示真实错误 */
+    public lastSuggestError: string | null = null;
+    /** 串行生成进度（第几条 / 共几条），供 UI 展示，避免长时间无反馈被误认为卡死 */
+    public suggestProgress: { current: number; total: number } | null = null;
 
     // E6: 知识注入器（全流程知识一致性）
     private knowledgeInjector: KnowledgeInjector | null = null;
@@ -222,7 +252,7 @@ export class CoWriterEngine {
     ): ReturnType<AIEngine['callAI']> {
         const settings = this.aiEngine.getPlugin()?.settings;
         const temperature = (settings?.coWriteTemperature ?? 0.7) + tempDelta;
-        const maxTokens = settings?.coWriteMaxTokens ?? 600;
+        const maxTokens = Math.min(settings?.coWriteMaxTokens ?? 600, CO_WRITE_MAX_TOKENS_CAP);
         return this.aiEngine.callAI(
             prompt.system,
             prompt.user,
@@ -236,8 +266,8 @@ export class CoWriterEngine {
     /**
      * v6.5: 获取协同写作的 callAI options（本地模型使用 Ollama 端点 + settings 参数）
      */
-    private getCoWriteOptions(base?: { signal?: AbortSignal }): { signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean } {
-        const opts: { signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean } = {};
+    private getCoWriteOptions(base?: { signal?: AbortSignal }): { signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; numCtx?: number } {
+        const opts: { signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; numCtx?: number } = {};
         if (base?.signal) opts.signal = base.signal;
         const settings = this.aiEngine.getPlugin()?.settings;
         if (!settings) return opts;
@@ -272,8 +302,30 @@ export class CoWriterEngine {
                 }
             }
             opts.disableFallback = true;
+            // 本地模型按模型自身上下文（deepseek-r1=131072）分配 KV 会挤占显存、拖慢 prefill，
+            // 协同写作 prompt 约 8k-12k token，收窄到 32768 可显著缩短首包时间。
+            opts.numCtx = CO_WRITE_NUM_CTX;
         }
         return opts;
+    }
+
+    /**
+     * Phase 3.4: 协同写作输入预算（按当前模型窗口推导）。
+     * - 本地未登记模型按 8192 保守窗口（LOCAL_FALLBACK_CAPABILITY）；
+     * - 本地实际 num_ctx 由 CO_WRITE_NUM_CTX 封顶，取两者较小值；
+     * - 预留本次 max_tokens 输出空间 + 20% 估算误差余量。
+     */
+    private getCoWriteInputBudget(): { maxInputTokens: number; modelId: string } {
+        const settings = this.aiEngine.getPlugin()?.settings;
+        const mode: 'local' | 'cloud' = (settings?.coWriteModelMode || 'local') === 'cloud' ? 'cloud' : 'local';
+        const modelId = this.getCoWriteModel() || 'default';
+        const capability = findModelCapability(modelId, mode);
+        const contextWindow = mode === 'local'
+            ? Math.min(capability.maxContext, CO_WRITE_NUM_CTX)
+            : capability.maxContext;
+        const maxOutput = Math.min(settings?.coWriteMaxTokens ?? 600, CO_WRITE_MAX_TOKENS_CAP);
+        const maxInputTokens = Math.max(512, Math.floor(contextWindow - maxOutput * 1.2));
+        return { maxInputTokens, modelId };
     }
 
     private hasCoWriteModel(): boolean {
@@ -360,6 +412,16 @@ export class CoWriterEngine {
     // 初始化
     // ============================================================
 
+    /**
+     * 协同写作的 embedding 客户端必须跟随「向量提供商」设置。
+     * 此前指纹与知识库两处都硬编码 Ollama：用户选 OpenAI/豆包/通义后，协同仍向本地
+     * Ollama 发请求，而拆解/指纹提取写入的是另一模型的向量——维度不一致时检索抛错
+     * （Rev 106/107 之后改为跳过），表现是知识/指纹注入静默消失。
+     */
+    private createEmbeddingProvider(): EmbeddingProvider {
+        return EmbeddingProviderFactory.fromSettings(this.aiEngine.getPlugin()?.settings);
+    }
+
     async init(
         project: string,
         chapterName: string,
@@ -368,6 +430,10 @@ export class CoWriterEngine {
     ): Promise<void> {
         // Task 2.1: 初始化 Repository（优先从 engineRegistry 获取，其次从 plugin 获取）
         this.initializeRepositories(project);
+        // 切换章节：清空上一章的简报，避免旧章场景串到新章
+        this.chapterBrief = null;
+        this.chapterBriefInput = null;
+        this.manualSceneIndex = null;
 
         try {
             // 1. 采集上下文
@@ -400,6 +466,8 @@ export class CoWriterEngine {
                 foreshadows: { unrevealed: [], revealed: [], abandoned: [] },
                 relationshipStates: [],
                 crossVolumeContext: '',
+                longTermMemoryContext: '',
+                fanficRulesContext: '',
                 worldView: '',
                 worldType: '',
                 writingStyle: '',
@@ -487,6 +555,24 @@ export class CoWriterEngine {
         } catch (e) {
             log.warn('[CoWriterEngine] D2: 跨卷状态快照加载失败，继续无跨卷上下文:', e);
         }
+
+        // ===== 长篇记忆：事实索引中已确认的事实（跨章累积） =====
+        try {
+            if (this.snapshot) {
+                const volumeMatch = (volume || '').match(/第(\d+)卷/);
+                const beforeVolume = volumeMatch ? parseInt(volumeMatch[1], 10) : undefined;
+                const longTermMemory = await loadLongTermMemory(this.getFS(), project, { beforeVolume });
+                if (longTermMemory) {
+                    this.snapshot.longTermMemoryContext = longTermMemory;
+                    log.info('[CoWriterEngine] 长篇记忆加载完成，', longTermMemory.length, '字');
+                }
+            }
+        } catch (e) {
+            log.warn('[CoWriterEngine] 长篇记忆加载失败，继续无长篇记忆:', e);
+        }
+
+        // ===== 同人约束：原作核心设定 + 创作规则（原创项目为空） =====
+        await this.syncFanficRules(project);
         
         // ===== D1: 初始化实体状态管理器 =====
         try {
@@ -511,16 +597,12 @@ export class CoWriterEngine {
 
             // ===== E4: 初始化写作指纹库 =====
             try {
-                const settings = plugin?.settings;
-                const embeddingEndpoint = settings?.embeddingEndpoint || 'http://localhost:11434';
-                const embeddingModel = settings?.embeddingModel || 'bge-m3';
-
                 this.fingerprintLibrary = new StyleFingerprintLibrary(this.app, project);
                 await this.fingerprintLibrary.loadGlobal();
                 await this.fingerprintLibrary.loadProject();
                 await this.fingerprintLibrary.loadGlobalState(project);
 
-                const embeddingClient = new OllamaEmbeddingClient(embeddingEndpoint, embeddingModel);
+                const embeddingClient = this.createEmbeddingProvider();
                 this.vectorStore = new LocalVectorStore(this.app, 'project', embeddingClient, project);
 
                 log.info('[CoWriterEngine] E4: 写作指纹库加载完成');
@@ -542,15 +624,14 @@ export class CoWriterEngine {
 
             // ===== E5: 初始化写作知识库 =====
             try {
-                const settings = plugin?.settings;
-                const embeddingEndpoint = settings?.embeddingEndpoint || 'http://localhost:11434';
-                const embeddingModel = settings?.embeddingModel || 'bge-m3';
-
                 // 通过 EngineRegistry 获取共享实例（registry 已在 initialize 阶段调用 init()）
                 this.knowledgeManager = plugin.engineRegistry.get<KnowledgeBaseManager>(ENGINE_NAMES.KNOWLEDGE_BASE_MANAGER);
 
-                const kbEmbeddingClient = new OllamaEmbeddingClient(embeddingEndpoint, embeddingModel);
-                this.knowledgeVectorStore = new KnowledgeVectorStore(this.app, kbEmbeddingClient);
+                const kbEmbeddingClient = this.createEmbeddingProvider();
+                this.knowledgeVectorStore = new KnowledgeVectorStore(this.app, kbEmbeddingClient, undefined, {
+                    // 与 registry 同口径：按 bookId 判存活，改名后仍能检索
+                    isBookAlive: (bookId) => this.knowledgeManager?.hasBook(bookId),
+                });
                 await this.knowledgeVectorStore.init();
 
                 try {
@@ -644,11 +725,16 @@ export class CoWriterEngine {
             return [];
         }
 
+        // 同人设定可能在会话期间被编辑，生成前重读一次，避免继续按旧约束写
+        await this.syncFanficRules(this.snapshot.project, precedingText);
+        await this.syncFingerprints();
+
         // 获取推荐方向（基于完成度动态调整）
         const directions = this.getRecommendDirections(count);
 
         const settings = this.aiEngine.getPlugin()?.settings;
         this.directionKnowledgeCounts = {};
+        this.lastSuggestError = null;
 
         let fingerprintParts: string[] = [];
         try {
@@ -719,20 +805,35 @@ export class CoWriterEngine {
         );
 
         const collected: Array<SuggestionRecord | null> = [];
-        if (settings?.candidateParallel !== false) {
+        // 本地模型（Ollama 单机单槽）并行只会让 3 条候选互相排队直至超时，
+        // 因此本地模式默认串行；云端仍保持并行。显式 candidateParallel=false 时也串行。
+        const localMode = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const parallel = settings?.candidateParallel !== false && !localMode;
+        if (parallel) {
             const results = await Promise.allSettled(makeTasks.map((make) => make()));
             for (const r of results) {
                 collected.push(r.status === 'fulfilled' ? r.value : null);
             }
         } else {
-            for (const make of makeTasks) {
+            this.suggestProgress = { current: 0, total: makeTasks.length };
+            for (let i = 0; i < makeTasks.length; i++) {
+                // 用户取消后立即停止后续候选，否则串行队列会继续发起新请求，
+                // 导致 UI 一直停留在「生成中」且取消看起来无效。
+                if (signal?.aborted) break;
+                this.suggestProgress = { current: i + 1, total: makeTasks.length };
                 try {
-                    collected.push(await make());
+                    collected.push(await makeTasks[i]());
                 } catch (e) {
                     // 单方向失败不影响其余（与原 catch-continue 语义一致）
                     log.warn('[CoWriterEngine] 串行候选生成失败，跳过该方向:', e);
                 }
+                // 认证/解锁类错误对后续候选同样成立：提前终止，避免重复弹口令框或重复 401
+                if (this.lastSuggestError && /(HTTP\s+(401|403)|未解锁|密钥未配置)/.test(this.lastSuggestError)) {
+                    log.warn('[CoWriterEngine] 认证类错误，终止后续候选生成:', this.lastSuggestError);
+                    break;
+                }
             }
+            this.suggestProgress = null;
         }
 
         const suggestions = collected.filter((s): s is SuggestionRecord => s !== null);
@@ -770,11 +871,11 @@ export class CoWriterEngine {
             knowledgeParts = [];
         }
         const kpCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
-        this.lastKnowledgeCount = kpCount;
         this.directionKnowledgeCounts[direction] = kpCount;
 
         const combinedInjection = [shared.knowledgeInjection, shared.kbDeepInjection].filter(Boolean).join('\n\n');
         const prompt = this.buildDirectionalPrompt(shared.precedingText, direction, shared.cursorHint, shared.fingerprintParts, knowledgeParts, combinedInjection);
+        this.recordKnowledgeInjection(kpCount, `${prompt.system}\n${prompt.user}`, knowledgeParts);
 
         if (this.precisionMode) {
             try {
@@ -848,6 +949,13 @@ export class CoWriterEngine {
         // 分片期间被中止时丢弃半成品，避免生成不完整候选
         if (shared.signal?.aborted) return null;
         if (!generatedText) return null;
+        // 与 suggestStream / suggestParaStream 保持一致：模型把「设定库 / 世界观规则 / 写作规划」
+        // 当正文吐出来时丢弃该方向，否则卡片里展示的是分析文本而不是场景建议。
+        if (isPlanningOutput(generatedText)) {
+            this.lastSuggestError = '模型输出的是分析/规划而非正文，请重试或更换模型';
+            log.warn(`[CoWriterEngine] 方向 ${direction} 建议被判定为分析/规划文本，丢弃:`, generatedText.slice(0, 80));
+            return null;
+        }
         return {
             id: `sug_${Date.now()}_${i}`,
             text: generatedText,
@@ -873,6 +981,10 @@ export class CoWriterEngine {
             log.warn('[CoWriterEngine] 协同写作未配置本地模型，跳过建议生成');
             return null;
         }
+
+        // 同人设定可能在会话期间被编辑，生成前重读一次，避免继续按旧约束写
+        await this.syncFanficRules(this.snapshot.project, precedingText);
+        await this.syncFingerprints();
 
         const directions = this.getRecommendDirections(3);
         if (directionIndex >= directions.length) {
@@ -935,9 +1047,14 @@ export class CoWriterEngine {
             log.warn(`[CoWriterEngine] 知识库检索失败 (方向: ${direction}):`, e);
             knowledgeParts = [];
         }
+        // 流式路径同样要写注入条数：视图在生成完成后用 lastKnowledgeCount 提示「已注入 N 条」，
+        // 不写就会显示上一条建议的旧数字（提示与实际 prompt 不同口径）。
+        const knowledgeTotal = knowledgeParts.filter(p => p && p.trim().length > 0).length;
 
         const combinedInjection = [knowledgeInjection, kbDeepInjection].filter(Boolean).join('\n\n');
         const prompt = this.buildDirectionalPrompt(precedingText, direction, cursorHint, fingerprintParts, knowledgeParts, combinedInjection);
+        // B7: 预算可能整段丢弃 knowledge 段，计数以最终 prompt 实际保留为准
+        this.recordKnowledgeInjection(knowledgeTotal, `${prompt.system}\n${prompt.user}`, knowledgeParts);
 
         if (this.precisionMode) {
             try {
@@ -952,9 +1069,15 @@ export class CoWriterEngine {
 
         try {
             const finalResponse = yield* this.callCoWriteAIStream(prompt, tempDelta, signal);
-            generatedText = finalResponse.content;
+            generatedText = sanitizeStoryText(finalResponse.content);
 
             if (!generatedText) {
+                return null;
+            }
+
+            if (isPlanningOutput(generatedText)) {
+                this.lastSuggestError = '模型输出的是分析/规划而非正文，请重试或更换模型';
+                log.warn('[CoWriterEngine] 建议被判定为分析/规划文本，丢弃:', generatedText.slice(0, 80));
                 return null;
             }
 
@@ -985,176 +1108,6 @@ export class CoWriterEngine {
         }
     }
 
-    suggestParallel(
-        precedingText: string,
-        cursorHint: string = '',
-        mode: WritingMode = 'continue',
-        count: number = 3,
-        options?: { timeoutMs?: number; maxRetries?: number }
-    ): import('./co-writer/parallel-suggestions').ParallelSuggestionResult {
-        const { ParallelSuggestionGenerator } = require('./co-writer/parallel-suggestions');
-
-        if (!this.snapshot) {
-            log.warn('[CoWriterEngine] 未初始化，返回空结果');
-            return {
-                handles: [],
-                allCompleted: Promise.resolve([]),
-                cancel: () => {},
-            };
-        }
-        if (!this.hasCoWriteModel()) {
-            log.warn('[CoWriterEngine] 协同写作未配置本地模型，跳过并行建议生成');
-            return {
-                handles: [],
-                allCompleted: Promise.resolve([]),
-                cancel: () => {},
-            };
-        }
-
-        const directions = this.getRecommendDirections(count);
-
-        const factory: import('./co-writer/parallel-suggestions').StreamGeneratorFactory = (
-            direction,
-            directionIndex,
-            signal
-        ) => {
-            return this.suggestStreamInternal(
-                precedingText,
-                cursorHint,
-                mode,
-                direction,
-                directionIndex,
-                signal
-            );
-        };
-
-        const generator = new ParallelSuggestionGenerator(factory, directions, {
-            count,
-            timeoutMs: options?.timeoutMs ?? 30000,
-            maxRetries: options?.maxRetries ?? 1,
-        });
-
-        return generator.generate(precedingText);
-    }
-
-    private async *suggestStreamInternal(
-        precedingText: string,
-        cursorHint: string,
-        mode: WritingMode,
-        direction: SuggestionDirection,
-        directionIndex: number,
-        signal?: AbortSignal
-    ): AsyncGenerator<string, SuggestionRecord | null, unknown> {
-        if (!this.snapshot) {
-            return null;
-        }
-
-        const settings = this.aiEngine.getPlugin()?.settings;
-
-        let fingerprintParts: string[] = [];
-        try {
-            if (this.promptBuilder) {
-                fingerprintParts = await this.promptBuilder.getFingerprintPromptParts(precedingText, direction);
-            }
-        } catch (e) {
-            log.warn('[CoWriterEngine] 指纹 prompt 生成失败，跳过:', e);
-        }
-
-        let knowledgeParts: string[] = [];
-        let knowledgeInjection = '';
-        let kbDeepInjection = '';
-        try {
-            if (this.knowledgeInjector && this.writingProfileManager && this.session) {
-                if (this.fingerprintLibrary) {
-                    (this.knowledgeInjector as any).fingerprintLibrary = this.fingerprintLibrary;
-                }
-                if (this.knowledgeManager && this.knowledgeVectorStore) {
-                    this.knowledgeInjector.setKnowledgeBase(this.knowledgeManager, this.knowledgeVectorStore);
-                }
-                const profile = await this.writingProfileManager.load(this.session.project);
-                if (profile && profile.fingerprint.injectionStrength > 0) {
-                    const chapterMatch = this.session.chapterName.match(/第(\d+)章/);
-                    const chapterIndex = chapterMatch ? parseInt(chapterMatch[1], 10) : undefined;
-                    knowledgeInjection = await this.knowledgeInjector.injectForBodyGeneration(profile, {
-                        projectPath: this.session.project,
-                        chapterIndex,
-                        outline: this.snapshot?.chapPlan || '',
-                        emotionPlan: this.snapshot?.emotionPlan || '',
-                        currentText: precedingText,
-                    });
-
-                    kbDeepInjection = await this.knowledgeInjector.injectKnowledgeBase({
-                        projectPath: this.session.project,
-                        chapterIndex,
-                        sceneType: this.detectSceneType(precedingText),
-                        outline: this.snapshot?.chapPlan || '',
-                        emotionPlan: this.snapshot?.emotionPlan || '',
-                        currentText: precedingText,
-                    }, profile.fingerprint.injectionStrength);
-                }
-            }
-        } catch (e) {
-            log.warn('[CoWriterEngine] E6: 知识注入失败，跳过:', e);
-        }
-
-        try {
-            if (this.promptBuilder && this.referenceBookIds.length > 0) {
-                knowledgeParts = await this.promptBuilder.getKnowledgePromptParts(precedingText, direction);
-            }
-        } catch (e) {
-            log.warn(`[CoWriterEngine] 知识库检索失败 (方向: ${direction}):`, e);
-            knowledgeParts = [];
-        }
-
-        const combinedInjection = [knowledgeInjection, kbDeepInjection].filter(Boolean).join('\n\n');
-        const prompt = this.buildDirectionalPrompt(precedingText, direction, cursorHint, fingerprintParts, knowledgeParts, combinedInjection);
-
-        if (this.precisionMode) {
-            try {
-                const { PRECISION_MODE_SYSTEM_APPEND } = require('./prompts/co-write-prompts');
-                prompt.system += PRECISION_MODE_SYSTEM_APPEND;
-            } catch {
-            }
-        }
-
-        const tempDelta = directionIndex * 0.05;
-        let generatedText = '';
-
-        try {
-            const finalResponse = yield* this.callCoWriteAIStream(prompt, tempDelta, signal);
-            generatedText = finalResponse.content;
-
-            if (!generatedText) {
-                return null;
-            }
-
-            if (this.precisionMode && this.styleScorer) {
-                try {
-                    const scoreResult = await this.styleScorer.score(generatedText, {
-                        position: precedingText.length
-                    });
-                    log.info('[CoWriterEngine] 精准模式: 并行流式生成相似度评分 (', scoreResult.score, ')');
-                } catch (scoreErr) {
-                    log.warn('[CoWriterEngine] 精准模式: 相似度评分失败，跳过评分:', scoreErr);
-                }
-            }
-
-            const suggestion: SuggestionRecord = {
-                id: `sug_para_${Date.now()}_${directionIndex}`,
-                text: generatedText,
-                direction,
-                style: directionIndex === 0 ? 'default' : (directionIndex === 1 ? 'creative' : 'conservative'),
-                temperature: (settings?.coWriteTemperature ?? 0.7) + tempDelta,
-                preview: generatedText.slice(0, 30) + (generatedText.length > 30 ? '...' : '')
-            };
-
-            return this.annotateSuggestionRisk(suggestion);
-        } catch (e) {
-            log.warn(`[CoWriterEngine] 并行流式建议生成失败 (方向: ${direction}):`, e);
-            return null;
-        }
-    }
-
     private async *callCoWriteAIStream(
         prompt: { system: string; user: string },
         tempDelta: number,
@@ -1162,7 +1115,7 @@ export class CoWriterEngine {
     ): AsyncGenerator<string, { content: string; error?: string }, unknown> {
         const settings = this.aiEngine.getPlugin()?.settings;
         const temperature = (settings?.coWriteTemperature ?? 0.7) + tempDelta;
-        const maxTokens = settings?.coWriteMaxTokens ?? 600;
+        const maxTokens = Math.min(settings?.coWriteMaxTokens ?? 600, CO_WRITE_MAX_TOKENS_CAP);
         const model = this.getCoWriteModel();
         const options = this.getCoWriteOptions({ signal });
 
@@ -1189,7 +1142,8 @@ export class CoWriterEngine {
     ): Promise<string> {
         if (!onChunk) {
             const response = await this.callCoWriteAI(prompt, tempDelta, signal);
-            return extractResponseText(response);
+            if (response.error && !response.content) this.lastSuggestError = response.error;
+            return sanitizeStoryText(extractResponseText(response));
         }
 
         let accumulated = '';
@@ -1197,6 +1151,7 @@ export class CoWriterEngine {
         while (true) {
             const step = await iterator.next();
             if (step.done) {
+                if (step.value?.error && !step.value.content) this.lastSuggestError = step.value.error;
                 const finalText = extractResponseText(step.value);
                 // 以最终响应为准：原生流失败后降级重启会重放全文，直接用累计值会重复
                 if (finalText && finalText !== accumulated) {
@@ -1207,9 +1162,11 @@ export class CoWriterEngine {
             }
             if (!step.value) continue;
             accumulated += step.value;
-            onChunk(accumulated);
+            // 思考型模型（deepseek-r1）的流式片段可能带 <think>…</think>，
+            // 展示时只给剥离后的正文
+            onChunk(stripThinkingBlock(accumulated));
         }
-        return accumulated;
+        return sanitizeStoryText(accumulated);
     }
 
     async rewriteSelection(
@@ -1224,6 +1181,10 @@ export class CoWriterEngine {
         if (!this.snapshot || !selectedText.trim() || !this.hasCoWriteModel()) return [];
         // NBI-06: 已中止则不再发起任何模型调用
         if (signal?.aborted) return [];
+
+        // 同人设定可能在会话期间被编辑，改写前重读一次
+        await this.syncFanficRules(this.snapshot.project, selectedText);
+        await this.syncFingerprints();
 
         const directions: SuggestionDirection[] = ['description', 'emotion', 'dialogue'];
         const suggestions: SuggestionRecord[] = [];
@@ -1246,14 +1207,14 @@ export class CoWriterEngine {
         } catch (e) {
             log.warn('[CoWriterEngine] 知识库 prompt 生成失败，跳过:', e);
         }
-        this.lastKnowledgeCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
+        const knowledgeTotal = knowledgeParts.filter(p => p && p.trim().length > 0).length;
 
         for (let i = 0; i < Math.min(count, directions.length); i++) {
             // NBI-06: 中止后停止后续方向，避免继续消耗调用
             if (signal?.aborted) break;
             const direction = directions[i];
             const prompt = this.promptBuilder
-                ? this.promptBuilder.buildRewritePrompt(selectedText, beforeContext, afterContext, cursorHint, direction, fingerprintParts, knowledgeParts)
+                ? this.promptBuilder.buildRewritePrompt(selectedText, beforeContext, afterContext, cursorHint, direction, fingerprintParts, knowledgeParts, this.getCoWriteInputBudget())
                 : [
                     '你是小说协同编辑。请对用户选中的片段给出一个可直接替换的改写版本。',
                     '',
@@ -1268,6 +1229,8 @@ export class CoWriterEngine {
                     '',
                     '请输出 1 个改写版本，保持剧情事实不变，不要解释。'
                 ].filter(Boolean).join('\n');
+            // B7: 预算可能整段丢弃 knowledge 段，计数以最终 prompt 实际保留为准
+            this.recordKnowledgeInjection(knowledgeTotal, prompt, knowledgeParts);
 
             try {
                 // NBI-03: 有分片回调时走流式渲染，无回调保持原非流式路径
@@ -1278,6 +1241,10 @@ export class CoWriterEngine {
                     signal,
                     onChunk ? (cumulative) => onChunk(i, cumulative) : undefined
                 );
+                if (text && isPlanningOutput(text)) {
+                    log.warn('[CoWriterEngine] 改写候选被判定为分析/规划文本，丢弃:', text.slice(0, 80));
+                    continue;
+                }
                 if (text) {
                     suggestions.push({
                         id: `rewrite_${Date.now()}_${i}`,
@@ -1304,9 +1271,16 @@ export class CoWriterEngine {
         originalSuggestion: SuggestionRecord,
         instruction: string,
         precedingContext: string,
-        cursorHint: string = ''
+        cursorHint: string = '',
+        signal?: AbortSignal
     ): Promise<SuggestionRecord | null> {
         if (!this.snapshot || !instruction.trim() || !this.hasCoWriteModel()) return null;
+        // Phase 3.2: 切章/关闭视图即取消，不再发起模型调用
+        if (signal?.aborted) return null;
+
+        // 同人设定可能在会话期间被编辑，迭代前重读一次
+        await this.syncFanficRules(this.snapshot.project, precedingContext);
+        await this.syncFingerprints();
 
         const settings = this.aiEngine.getPlugin()?.settings;
 
@@ -1327,30 +1301,41 @@ export class CoWriterEngine {
         } catch (e) {
             log.warn('[CoWriterEngine] 知识库 prompt 生成失败，跳过:', e);
         }
-        this.lastKnowledgeCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
+        const knowledgeTotal = knowledgeParts.filter(p => p && p.trim().length > 0).length;
 
-        const prompt = [
-            '你是小说句级协同写作助手。用户不想重新生成整组建议，而是要基于当前候选做一次定向迭代。',
-            '',
-            ...this.promptBuilder?.getMemoryPromptParts(fingerprintParts) ?? [],
-            ...(knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []),
-            ...this.promptBuilder?.getNarrativeDriverPromptParts(precedingContext) ?? [],
-            '【已写前文】',
-            precedingContext.slice(-800),
-            '',
-            '【原候选】',
-            originalSuggestion.text,
-            '',
-            '【用户迭代指令】',
-            instruction,
-            cursorHint ? `\n【临时写作方向】\n${cursorHint}` : '',
-            '',
-            '请只输出 1 个新版候选，保持剧情事实连续，不要解释，不要列点。'
-        ].filter(Boolean).join('\n');
+        const prompt = this.promptBuilder
+            ? this.promptBuilder.buildIteratePrompt(
+                originalSuggestion.text,
+                precedingContext,
+                instruction,
+                cursorHint,
+                fingerprintParts,
+                knowledgeParts,
+                this.getCoWriteInputBudget()
+            )
+            : [
+                '你是小说句级协同写作助手。用户不想重新生成整组建议，而是要基于当前候选做一次定向迭代。',
+                '',
+                ...(knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []),
+                '【已写前文】',
+                precedingContext.slice(-800),
+                '',
+                '【原候选】',
+                originalSuggestion.text,
+                '',
+                '【用户迭代指令】',
+                instruction,
+                cursorHint ? `\n【临时写作方向】\n${cursorHint}` : '',
+                '',
+                '请只输出 1 个新版候选，保持剧情事实连续，不要解释，不要列点。'
+            ].filter(Boolean).join('\n');
+        // B7: 预算可能整段丢弃 knowledge 段，计数以最终 prompt 实际保留为准
+        this.recordKnowledgeInjection(knowledgeTotal, prompt, knowledgeParts);
 
         try {
-            const response = await this.callCoWriteAI({ system: '', user: prompt }, 0);
-            const text = extractResponseText(response);
+            const response = await this.callCoWriteAI({ system: '', user: prompt }, 0, signal);
+            if (signal?.aborted) return null;
+            const text = sanitizeStoryText(extractResponseText(response));
             if (!text) return null;
 
             return this.annotateSuggestionRisk({
@@ -1437,6 +1422,23 @@ export class CoWriterEngine {
 
         if (nodeProgress.totalNodes === 0) {
             return this.getEmptyMetrics();
+        }
+
+        // 正文过短时评估没有意义：之前每次打开章节都会发一次 ~9.6k token 的请求，
+        // 空章节要白等 30-60 秒（云端）才显示「内容不足」。直接用节点进度返回。
+        if (currentBody.trim().length < 200) {
+            return {
+                sceneObjectivesMet: nodeProgress.completionPercent,
+                characterArcsAdvanced: 0,
+                foreshadowingSeeded: 0,
+                emotionalArcProgress: 0,
+                overallCompletion: nodeProgress.completionPercent,
+                suggestionAdvice: nodeProgress.nextNode
+                    ? `当前推进到第 ${nodeProgress.currentIndex + 1}/${nodeProgress.totalNodes} 个节点：${nodeProgress.nextNode.goal}`
+                    : '所有剧情节点已完成',
+                nextDirectionHints: ['action', 'emotion', 'dialogue'],
+                evaluatedAt: Date.now(),
+            };
         }
 
         const prompt = this.buildEvaluationPrompt(currentBody, nodeProgress);
@@ -1707,6 +1709,53 @@ export class CoWriterEngine {
         if (this.session) {
             this.session.totalWordCount = confirmedText.length;
         }
+        this.refreshBriefProgress(confirmedText);
+    }
+
+    // ============================================================
+    // 章节简报（承接规划阶段成果）
+    // ============================================================
+
+    /** 设置本章简报输入并立即构建（由视图在读取规划文件后调用） */
+    setChapterBrief(input: ChapterBriefInput): void {
+        this.chapterBriefInput = input;
+        this.manualSceneIndex = null;
+        this.chapterBrief = buildChapterBrief(input);
+    }
+
+    /** 获取当前章节简报（供左栏「本章简报」渲染） */
+    getChapterBrief(): ChapterBrief | null {
+        return this.chapterBrief;
+    }
+
+    /** 正文变化后重算场景进度（尊重手动选定的场景） */
+    private refreshBriefProgress(confirmedText: string): void {
+        if (!this.chapterBriefInput) return;
+        this.chapterBrief = buildChapterBrief({ ...this.chapterBriefInput, bodyText: confirmedText });
+        if (this.manualSceneIndex !== null) {
+            this.applyCurrentScene(this.manualSceneIndex);
+        }
+    }
+
+    /** 手动切换当前场景（点击左栏场景列表），后续正文变化不再自动覆盖 */
+    setCurrentSceneIndex(index: number): void {
+        if (!this.chapterBrief) return;
+        if (index < 0 || index >= this.chapterBrief.scenes.length) return;
+        this.manualSceneIndex = index;
+        this.applyCurrentScene(index);
+    }
+
+    private applyCurrentScene(index: number): void {
+        if (!this.chapterBrief) return;
+        const scenes = this.chapterBrief.scenes;
+        const scene = scenes[index];
+        if (!scene) return;
+        this.chapterBrief = {
+            ...this.chapterBrief,
+            currentIndex: index,
+            currentScene: scene,
+            otherScenes: scenes.filter((_, i) => i !== index),
+        };
     }
 
     setCursorHint(hint: string): void {
@@ -1732,10 +1781,66 @@ export class CoWriterEngine {
                 this.snapshot.project,
                 this.snapshot.chapterName
             );
-            this.snapshot = this.buildSnapshot(ctx, this.snapshot.project, this.snapshot.chapterName);
+            const next = this.buildSnapshot(ctx, this.snapshot.project, this.snapshot.chapterName);
+            // buildSnapshot 只覆盖 gatherAll 的静态字段，以下字段由 init 阶段单独加载。
+            // 直接整体替换会把它们清空：协同写作会静默丢失同人约束/长篇记忆/跨卷上下文/人物关系
+            next.relationshipStates = this.snapshot.relationshipStates;
+            next.crossVolumeContext = this.snapshot.crossVolumeContext;
+            next.longTermMemoryContext = this.snapshot.longTermMemoryContext;
+            next.fanficRulesContext = this.snapshot.fanficRulesContext;
+            this.snapshot = next;
+            // 刷新时重新读取同人约束：设定文件可能刚被编辑过
+            await this.syncFanficRules(next.project);
             log.info('[CoWriterEngine] 静态上下文已刷新');
         } catch (e) {
             log.warn('[CoWriterEngine] 刷新静态上下文失败:', e);
+        }
+    }
+
+    /**
+     * 重新读取同人约束，写回 snapshot。
+     * 每次生成前调用：同人设定可能在协同会话期间被编辑，不重读就会一直按旧规则写。
+     * 只读 `.project` 与设定文件两个小文件，相比本地模型数秒生成可忽略。
+     * 读不到（未绑定同人设定/文件被删）时按「无同人约束」处理，清除旧块，避免沿用已失效的原作规则。
+     */
+    private async syncFanficRules(project: string, focusText?: string): Promise<void> {
+        if (!this.snapshot || !project) return;
+        try {
+            const rules = await readFanficRulesFromFS(this.getFS(), project);
+            this.lastFanficRules = rules;
+            // 人物/势力超过注入上限时按本章上下文挑选：大纲前 600 字 + 已写正文尾部 900 字
+            const plan = (this.snapshot.chapPlan || '').slice(0, 600);
+            const recent = (focusText ?? this.snapshot.precedingText ?? '').trim().slice(-900);
+            const focus = [plan, recent].filter(Boolean).join('\n');
+            const text = formatFanficRulesForPrompt(rules, { focusText: focus });
+            if (text !== this.snapshot.fanficRulesContext) {
+                this.snapshot.fanficRulesContext = text;
+                log.info('[CoWriterEngine] 同人约束已更新，', text.length, '字');
+            }
+        } catch (e) {
+            log.warn('[CoWriterEngine] 同人约束刷新失败，沿用上次结果:', e);
+        }
+    }
+
+    /**
+     * 最近一次同人设定加载的用户可见警告（加载成功 / 原创项目返回 null）。
+     * 供协同视图在初始化后提示一次，避免「同人项目实际无约束」静默继续写作。
+     */
+    getFanficRulesWarning(): string | null {
+        return this.lastFanficRules ? formatFanficRulesLoadWarning(this.lastFanficRules) : null;
+    }
+
+    /**
+     * 指纹库可能在会话期间被指纹库 UI 修改（新增/删除/启用/禁用）。
+     * 内存列表不刷新会让「新指纹不生效」「禁用无效」，生成前按文件签名检测一次。
+     */
+    private async syncFingerprints(): Promise<void> {
+        if (!this.fingerprintLibrary) return;
+        try {
+            const changed = await this.fingerprintLibrary.reloadIfChanged(this.snapshot?.project);
+            if (changed) log.info('[CoWriterEngine] 指纹库已变更，已重新加载');
+        } catch (e) {
+            log.warn('[CoWriterEngine] 指纹库刷新失败，沿用上次结果:', e);
         }
     }
 
@@ -1746,9 +1851,13 @@ export class CoWriterEngine {
     private buildSnapshot(ctx: any, project: string, chapterName: string): ContextSnapshot {
         const data = ctx?.data || {};
         const getRaw = (obj: any) => obj?.raw || '';
-        const getCharSummary = (chars: any[]) => {
-            if (!Array.isArray(chars) || chars.length === 0) return '';
-            return chars.map((c: any) => `${c.name || ''}：${c.description || c.state || ''}`.trim()).join('\n');
+        const getEntitySummary = (list: unknown, maxChars = 3000) => {
+            if (!Array.isArray(list) || list.length === 0) return '';
+            // 实体文件使用中文字段（姓名/名称、人物背景/描述、当前状态），统一走真实字段映射
+            const brief = formatEntityBrief(list, { maxChars });
+            if (brief) return brief;
+            // 字段完全不匹配时保留原始内容，避免提示词里只剩 “：”
+            return JSON.stringify(list).slice(0, 500);
         };
         const worldViewRaw = getRaw(data.world_view);
         let worldType = '';
@@ -1757,13 +1866,15 @@ export class CoWriterEngine {
         return {
             project,
             chapterName,
-            allChars: getCharSummary(data.character_state),
-            allFactions: getCharSummary(data.factions),
-            allLocs: getCharSummary(data.locations),
-            allItems: getCharSummary(data.items),
+            allChars: getEntitySummary(data.character_state, 4000),
+            allFactions: getEntitySummary(data.factions, 2000),
+            allLocs: getEntitySummary(data.locations, 3000),
+            allItems: getEntitySummary(data.items, 2000),
             foreshadows: data.foreshadows || { unrevealed: [], revealed: [], abandoned: [] },
             relationshipStates: [],
             crossVolumeContext: '',
+            longTermMemoryContext: '',
+            fanficRulesContext: '',
             worldView: worldViewRaw,
             worldType,
             writingStyle: getRaw(data.writing_style),
@@ -1935,26 +2046,24 @@ export class CoWriterEngine {
             }
         }
 
-        // 2. 从Scene展开中提取场景（按## 场景N拆分）
+        // 2. 从Scene展开中提取场景（兼容 ##/### 与 场景N/sceneN 标题）
         if (sceneExp) {
-            const sceneSections = sceneExp.split(/##\s*场景\s*\d+/i).slice(1);
-            let sceneIdx = 0;
-            for (const section of sceneSections) {
-                sceneIdx++;
-                const titleMatch = section.match(/^[^\n]+/);
-                const title = titleMatch ? titleMatch[0].trim() : `场景${sceneIdx}`;
-                const locationMatch = section.match(/地点[：:]\s*([^\n]+)/i);
-                const charMatch = section.match(/人物[：:]\s*([^\n]+)/i);
-                const goalMatch = section.match(/(叙事目标|场景目标|核心事件)[：:]\s*([^\n]+)/i);
+            for (const { heading, body } of splitSceneSections(sceneExp)) {
+                const title = heading.name || `场景${heading.index}`;
+                const locationMatch = body.match(/(?:location|场景地点|地点)\s*[：:]\s*([^\n]+)/i);
+                const charMatch = body.match(/(?:characters|出场人物|人物)\s*[：:]\s*([^\n]+)/i);
+                const goalMatch = body.match(/(?:objective|叙事目标|场景目标|核心事件)\s*[：:]\s*([^\n]+)/i);
+                const conflictMatch = body.match(/conflict\s*[：:]\s*([^\n]+)/i);
+                const infoMatch = body.match(/(?:info_increment|信息增量)\s*[：:]\s*([^\n]+)/i);
 
                 nodes.push({
-                    id: `scene_${sceneIdx}`,
+                    id: `scene_${heading.index}`,
                     index: nodes.length + 1,
                     location: locationMatch ? locationMatch[1].trim() : '',
                     characters: charMatch ? charMatch[1].trim() : '',
-                    conflict: '',
-                    goal: goalMatch ? goalMatch[2].trim() : title,
-                    infoIncrement: '',
+                    conflict: conflictMatch ? conflictMatch[1].trim() : '',
+                    goal: goalMatch ? goalMatch[1].trim() : title,
+                    infoIncrement: infoMatch ? infoMatch[1].trim() : '',
                     source: 'scene_expand',
                     completed: false
                 });
@@ -2030,7 +2139,10 @@ export class CoWriterEngine {
                 if (bodyLower.includes(sig)) hitCount++;
             }
 
-            const completed = signals.length > 0 && hitCount >= Math.min(1, Math.ceil(signals.length * 0.3));
+            // 旧实现用 Math.min(1, ...) 把阈值钉死为 1：任一关键词命中即判节点完成。
+            // 改为「至少 30% 信号、且不少于 1 个」才有资格算完成。
+            const requiredHits = Math.max(1, Math.ceil(signals.length * 0.3));
+            const completed = signals.length > 0 && hitCount >= requiredHits;
             node.completed = completed;
             if (completed) {
                 completedCount++;
@@ -2082,6 +2194,24 @@ export class CoWriterEngine {
         return parts.join('\n');
     }
 
+    /**
+     * B7: 记录本次实际注入的知识库片段数。
+     * 检索条数 ≠ 注入条数：knowledge 段可被预算整段丢弃或从尾部截断，
+     * 提示必须按最终 prompt 里完整保留的条数计数，否则提示与事实不符。
+     */
+    private recordKnowledgeInjection(
+        totalCount: number,
+        promptText: string,
+        knowledgeParts: string[]
+    ): void {
+        const retained = countRetainedPromptParts(knowledgeParts, promptText);
+        this.lastKnowledgeCount = retained;
+        this.lastKnowledgeDroppedCount = Math.max(0, totalCount - retained);
+        if (this.lastKnowledgeDroppedCount > 0) {
+            log.info(`[CoWriterEngine] 知识库片段因预算不足未注入 ${this.lastKnowledgeDroppedCount}/${totalCount} 条`);
+        }
+    }
+
     // ============================================================
     // 私有方法：构建 AI 提示词
     // ============================================================
@@ -2099,7 +2229,16 @@ export class CoWriterEngine {
             soulInjection = getProtagonistSoulDetail(this.soulData.protagonist);
         }
 
-        const plotTarget = this.getCurrentPlotTarget(precedingText);
+        const briefParts = buildBriefPromptParts(this.chapterBrief);
+        let plotTarget = this.getCurrentPlotTarget(precedingText);
+        if (!plotTarget && this.chapterBrief?.currentScene) {
+            const s = this.chapterBrief.currentScene;
+            plotTarget = [
+                `当前场景：第${this.chapterBrief.currentIndex + 1}/${this.chapterBrief.scenes.length}场 ${s.name || ''}`.trim(),
+                s.objective ? `场景目标：${s.objective}` : '',
+                s.conflict ? `冲突焦点：${s.conflict}` : '',
+            ].filter(Boolean).join('\n');
+        }
 
         if (this.promptBuilder) {
             return this.promptBuilder.buildSuggestionPrompt(
@@ -2110,12 +2249,16 @@ export class CoWriterEngine {
                 plotTarget,
                 fingerprintParts,
                 knowledgeParts,
-                knowledgeInjection
+                knowledgeInjection,
+                briefParts,
+                this.getCoWriteInputBudget()
             );
         }
 
         const dirPrompt = '请根据当前写作方向自然地续写一段。';
         const snap = this.snapshot;
+        // 兜底 prompt 也必须走同一份格式契约，禁止在这里另写 Tab / 空行规则
+        const bodyFormat = describeBodyFormat(deriveBodyFormat(snap?.writingRules || ''));
         const systemPrompt = [
             '你是一位第三人称限知视角的叙事者。你不是在"写小说"，你是在用镜头紧贴主角，把他/她正在经历的一切原样呈现出来。',
             '',
@@ -2134,16 +2277,15 @@ export class CoWriterEngine {
             '- 不重复。同样的意思不说第二遍。',
             '- 不用"然后""接着""就在这时"这种过渡词。画面直接跳。',
             '',
-            '【番茄小说分段格式】',
+            '【节奏补充】',
             '- 段落极短，大多只有一句话。',
-            '- 一句话就是一段，换行直接切下一个画面。',
-            '- 段落之间只用一个换行，不要留空行，不要用两个回车。',
-            '- 每段首行缩进一个制表符（Tab）。',
-            '- 对话单独成段，前后不要留空行。',
-            '- 感官细节单独成段，一个细节就是一记重锤。',
+            '- 对话单独成段，感官细节单独成段，一个细节就是一记重锤。',
+            '',
+            bodyFormat,
         ].filter(Boolean).join('\n');
 
         const userParts: string[] = [
+            ...(briefParts.length > 0 ? briefParts : []),
             '【已写内容】',
             precedingText.slice(-800),
             '',
@@ -2273,51 +2415,67 @@ export class CoWriterEngine {
 
     private parseValidationResponse(raw: string): EditValidation {
         try {
-            // 清理可能的 markdown 代码块标记
-            const cleaned = raw
-                .replace(/```json\s*/gi, '')
-                .replace(/```\s*/g, '')
-                .trim();
+            // 思考型模型会带 <think> 前缀与围栏解释，必须先剥离再提取 JSON，
+            // 否则必然 parse 失败、落入「默认通过」分支，等于没有校验。
+            const cleaned = stripCodeFence(stripThinkingBlock(raw)).trim();
+            const jsonText = extractJsonObject(cleaned);
+            if (!jsonText) {
+                return this.buildDegradedValidation('AI 返回中找不到校验 JSON');
+            }
 
-            const json = JSON.parse(cleaned);
-
+            const json = JSON.parse(jsonText) as Record<string, unknown>;
             const consistencyScore = Number(json.consistencyScore) || 0;
             const styleScore = Number(json.styleScore) || 0;
             const plotAlignmentScore = Number(json.plotAlignmentScore) || 0;
 
             return {
-                isValid: consistencyScore >= 60 && styleScore >= 60 && plotAlignmentScore >= 60,
+                isValid: consistencyScore >= EDIT_VALIDATION_PASS_SCORE
+                    && styleScore >= EDIT_VALIDATION_PASS_SCORE
+                    && plotAlignmentScore >= EDIT_VALIDATION_PASS_SCORE,
                 consistencyScore,
                 styleScore,
                 plotAlignmentScore,
                 overallScore: Math.round((consistencyScore + styleScore + plotAlignmentScore) / 3),
-                warnings: Array.isArray(json.warnings) ? json.warnings : [],
-                suggestions: Array.isArray(json.suggestions) ? json.suggestions : [],
+                warnings: Array.isArray(json.warnings) ? json.warnings as string[] : [],
+                suggestions: Array.isArray(json.suggestions) ? json.suggestions as string[] : [],
                 validatedAt: Date.now()
             };
         } catch (e) {
-            log.warn('[CoWriterEngine] 验证结果 JSON 解析失败，使用默认值:', e);
-            return {
-                isValid: true,
-                consistencyScore: 70,
-                styleScore: 70,
-                plotAlignmentScore: 70,
-                overallScore: 70,
-                warnings: [],
-                suggestions: ['验证结果解析失败，默认通过'],
-                validatedAt: Date.now()
-            };
+            log.warn('[CoWriterEngine] 验证结果 JSON 解析失败:', e);
+            return this.buildDegradedValidation('校验结果解析失败');
         }
+    }
+
+    /**
+     * 校验未真正完成时的返回值：不拦截用户继续使用，但必须显式标记 degraded，
+     * 由 UI 显示「校验未完成」，不能用 70 分伪装成通过。
+     */
+    private buildDegradedValidation(reason: string): EditValidation {
+        return {
+            isValid: true,
+            consistencyScore: 0,
+            styleScore: 0,
+            plotAlignmentScore: 0,
+            overallScore: 0,
+            warnings: [`${reason}，本次未完成校验`],
+            suggestions: ['可重试验证，或直接检查内容后继续使用'],
+            validatedAt: Date.now(),
+            degraded: true,
+            degradedReason: reason
+        };
     }
 
     private parseEvaluationResponse(raw: string): PlotCompletionMetrics {
         try {
-            const cleaned = raw
-                .replace(/```json\s*/gi, '')
-                .replace(/```\s*/g, '')
-                .trim();
+            // 思考型模型会带 <think> 前缀与尾部解释，直接 parse 必然失败（面板恒 0 并刷警告）
+            const cleaned = stripCodeFence(stripThinkingBlock(raw)).trim();
+            const jsonText = extractJsonObject(cleaned);
+            if (!jsonText) {
+                log.warn('[CoWriterEngine] 完成度响应中找不到 JSON 对象，使用默认值');
+                return this.getEmptyMetrics();
+            }
 
-            const json = JSON.parse(cleaned);
+            const json = JSON.parse(jsonText) as Partial<PlotCompletionMetrics>;
 
             const scores = [
                 Number(json.sceneObjectivesMet) || 0,
@@ -2435,11 +2593,18 @@ export class CoWriterEngine {
         if (!this.entityStateManager || !this.session) return [];
         
         try {
+            // 实体状态检测必须跟随协同写作模型：此前固定用 settings.flashModel，
+            // 用户把协同切到本地 Ollama 后，这一路仍会去调云端 flash（或直接失败）。
+            // 只有协同模型解析成功时才传覆盖，未配置时保持原有 flashModel 行为。
+            const coWriteModel = this.getCoWriteModel();
             const changes = await this.entityStateManager.detectStateChanges(
                 bodyContent,
                 this.session.project,
                 this.session.chapterNum,
-                this.session.chapterName
+                this.session.chapterName,
+                coWriteModel
+                    ? { model: coWriteModel, callOptions: this.getCoWriteOptions() }
+                    : undefined,
             );
             this.pendingStateChanges = changes;
             return changes;
@@ -2536,19 +2701,15 @@ export class CoWriterEngine {
                 if (!f.path.startsWith(charsDir + '/') || !f.path.endsWith('.md')) continue;
                 const cache = this.app.metadataCache.getFileCache(f);
                 const role = cache?.frontmatter?.['身份'];
-                const roleStr = Array.isArray(role) ? role.join('') : String(role || '');
-                if (roleStr.includes('主角') || roleStr.includes('主人公')) {
+                if (roleIndicatesProtagonist(role)) {
                     const name = f.name.replace(/\.md$/, '');
                     if (name) return name;
                 }
             }
         } catch { /* 回退到下方默认逻辑 */ }
 
-        // 回退1：工作台状态（保留向后兼容）
-        const state = this.aiEngine.getPlugin()?._workbenchState;
-        if (state?.protagonistName) return state.protagonistName;
-        if (state?.protagonist) return state.protagonist;
-        return '主角'; // 回退2：默认值
+        // 回退：默认值（不再读 `_workbenchState`，该字段无写入方、恒为 null）
+        return '主角';
     }
  
     // ============================================================
@@ -2561,9 +2722,19 @@ export class CoWriterEngine {
     async suggestAssociation(
         cursorPosition: number,
         fullText: string,
-        trigger: 'space' | 'enter' | 'period' | 'manual' = 'manual'
+        trigger: 'space' | 'enter' | 'period' | 'manual' = 'manual',
+        signal?: AbortSignal
     ): Promise<AssociationSuggestion[]> {
         if (!this.snapshot || !this.hasCoWriteModel()) return [];
+        // Phase 3.2: 联想同样受取消约束（切章/关闭视图/发新请求）
+        if (signal?.aborted) return [];
+
+        // 联想 prompt 也带同人约束，生成前重读一次
+        await this.syncFanficRules(
+            this.snapshot.project,
+            fullText.slice(Math.max(0, cursorPosition - 500), cursorPosition),
+        );
+        await this.syncFingerprints();
         
         // 获取光标前后的上下文
         const beforeCursor = fullText.slice(Math.max(0, cursorPosition - 500), cursorPosition);
@@ -2576,9 +2747,11 @@ export class CoWriterEngine {
         const suggestions: AssociationSuggestion[] = [];
         
         for (let i = 0; i < Math.min(3, hints.length); i++) {
+            if (signal?.aborted) break;
             const hint = hints[i];
             try {
-                const text = await this.generateAssociationText(beforeCursor, hint);
+                const text = await this.generateAssociationText(beforeCursor, hint, signal);
+                if (signal?.aborted) break;
                 suggestions.push({
                     text,
                     type: hint.type,
@@ -2660,7 +2833,8 @@ export class CoWriterEngine {
      */
     private async generateAssociationText(
         context: string, 
-        hint: import('../shared/co-writer-types').AssociationHint
+        hint: import('../shared/co-writer-types').AssociationHint,
+        signal?: AbortSignal
     ): Promise<string> {
         let knowledgeParts: string[] = [];
         try {
@@ -2671,21 +2845,23 @@ export class CoWriterEngine {
             log.warn('[CoWriterEngine] 知识库 prompt 生成失败，跳过:', e);
         }
 
+        const briefParts = buildBriefPromptParts(this.chapterBrief);
         const prompt = this.promptBuilder
-            ? this.promptBuilder.buildAssociationPrompt(context, hint, undefined, knowledgeParts)
+            ? this.promptBuilder.buildAssociationPrompt(context, hint, undefined, knowledgeParts, briefParts, this.getCoWriteInputBudget())
             : [
                 '根据上下文，续写1-2句话（30-80字）。',
                 '',
                 ...(knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []),
+                ...(briefParts.length > 0 ? briefParts : []),
                 '【上下文】',
                 context.slice(-300),
                 '',
                 '直接输出续写内容，不要解释：'
             ].join('\n');
         
-        const response = await this.callCoWriteAI({ system: '', user: prompt }, 0);
+        const response = await this.callCoWriteAI({ system: '', user: prompt }, 0, signal);
         
-        return extractResponseText(response);
+        return sanitizeStoryText(extractResponseText(response));
     }
 }
 

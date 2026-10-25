@@ -1,4 +1,6 @@
 import { createLogger } from '../shared/logger';
+import { DEVIATION_MIN_EVALUABLE_CHARS } from '../shared/thresholds';
+import { isRisingDivergence } from '../shared/divergence-trend';
 
 const log = createLogger('PlotDivergenceEngine');
 /**
@@ -108,6 +110,8 @@ export class PlotDivergenceEngine {
   private ignoredIssues: Set<string>;
 
   private divergenceHistory: number[] = [];
+  /** 与 divergenceHistory 一一对应的时间戳，「持续上升」需要时间跨度 */
+  private divergenceHistoryAt: number[] = [];
   private lastAlertTime: Record<string, number> = {};
   private readonly ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
@@ -142,7 +146,7 @@ export class PlotDivergenceEngine {
     const cleanText = text.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
     const wordCount = cleanText.length;
 
-    if (wordCount < 100) {
+    if (wordCount < DEVIATION_MIN_EVALUABLE_CHARS) {
       return this.getEmptyResult(wordCount);
     }
 
@@ -174,8 +178,10 @@ export class PlotDivergenceEngine {
     const overallLevel = this.getDivergenceLevel(overallDivergence);
 
     this.divergenceHistory.push(overallDivergence);
+    this.divergenceHistoryAt.push(Date.now());
     if (this.divergenceHistory.length > 10) {
       this.divergenceHistory = this.divergenceHistory.slice(-10);
+      this.divergenceHistoryAt = this.divergenceHistoryAt.slice(-10);
     }
 
     const { shouldAlert, alertReason } = this.checkShouldAlert(overallDivergence, overallLevel, {
@@ -685,19 +691,18 @@ export class PlotDivergenceEngine {
       }
     }
 
-    if (this.divergenceHistory.length >= 2) {
-      const recent = this.divergenceHistory.slice(-3);
-      let risingCount = 0;
-      for (let i = 1; i < recent.length; i++) {
-        if (recent[i] > recent[i - 1] + 5) {
-          risingCount++;
-        }
-      }
-      if (risingCount >= 2 && overallDivergence > 40) {
+    if (this.divergenceHistory.length >= 3) {
+      // 历史里存的是「评估次数」而非「章」：只看最近 3 次数值会把几秒内的
+      // 三次编辑误判成「连续多章上升」，因此还必须跨过最小时间窗。
+      const samples = this.divergenceHistory.map((value, index) => ({
+        value,
+        at: this.divergenceHistoryAt[index] ?? 0,
+      }));
+      if (isRisingDivergence(samples, now) && overallDivergence > 40) {
         const alertKey = 'rising_divergence';
         if (!this.isInCooldown(alertKey, now)) {
           this.lastAlertTime[alertKey] = now;
-          return { shouldAlert: true, alertReason: '连续多章偏离度上升，建议及时调整' };
+          return { shouldAlert: true, alertReason: '偏离度持续上升（近 3 次评估），建议及时调整' };
         }
       }
     }
@@ -759,6 +764,7 @@ export class PlotDivergenceEngine {
 
   clearHistory(): void {
     this.divergenceHistory = [];
+    this.divergenceHistoryAt = [];
   }
 
   private getOppositeTraits(traits: string[]): string[] {

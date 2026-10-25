@@ -136,7 +136,6 @@ export class AnalysisReportEngine {
      * 运行人设一致性检测
      * @param chapterText 章节正文
      * @param characterInfos 人物信息列表
-     * @param historyTexts 历史章节文本（可选）
      * @returns 一致性检测结果
      */
     async checkCharacterConsistency(
@@ -147,14 +146,12 @@ export class AnalysisReportEngine {
             appearance?: string;
             abilities?: string;
             background?: string;
-        }>,
-        historyTexts?: string[]
+        }>
     ): Promise<ConsistencyCheckResult> {
         log.info('[AnalysisReportEngine] 开始执行人设一致性检测');
         const result = await this.characterConsistencyChecker.check(
             chapterText,
-            characterInfos,
-            historyTexts
+            characterInfos
         );
         log.info(`[AnalysisReportEngine] 人设一致性检测完成，得分 ${result.overallScore}`);
         return result;

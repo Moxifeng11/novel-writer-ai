@@ -51,7 +51,7 @@ export class ChapterHelpers {
 
 ${context.previousChapter ? `【前章内容】${context.previousChapter.slice(-500)}` : ''}`;
 
-        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.3, 4096);
+        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.3, this.plugin.settings.maxOutput);
     }
 
     async generateChapterPlan(context: ChapterContext): Promise<APIResponse> {
@@ -72,7 +72,7 @@ ${context.previousChapter ? `【前章内容】${context.previousChapter.slice(-
 【时间线】${context.timelineEvents?.slice(0, 500) || '无'}
 【规划原则】核心冲突必须基于已有角色展开，严禁自创主角。`;
 
-        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 4096);
+        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput);
     }
 
     async generateAnalysisReport(bodyText: string): Promise<APIResponse> {
@@ -181,7 +181,7 @@ TIMELINE: 时间点 | 事件描述`;
 
         const userPrompt = `请分析《${novelName}》的文笔风格特征，按指定格式输出分析报告。`;
 
-        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 4096, { signal });
+        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput, { signal });
     }
 
     async deaiRewrite(bodyText: string): Promise<{

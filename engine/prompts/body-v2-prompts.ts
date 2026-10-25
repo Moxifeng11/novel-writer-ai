@@ -1,4 +1,4 @@
-﻿/**
+/**
  * engine/prompts/body-v2-prompts.ts
  * V2 正文生成 — 小说家模式（贴身镜头+研究+演变）。
  * 通过 getStepTemplateAuto 在 vars.useV2 时自动启用。
@@ -39,8 +39,7 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagoni
 - 力量体系遵循 \${powerSystem}。
 
 📌 输出格式
-- 标题行：# 第\${chapNum}章 标题（2-15字）
-- 正文从下一行开始，段落开头空两格（全角空格）
+\${bodyFormat}
 - 对话必须加引号""
 - 字数 ≥ \${baseWords} 字
 
@@ -56,26 +55,43 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 【分卷定位与信息规划】
 \${chapPlan}
 
+【信息规划——核心冲突与信息释放计划】
+\${infoPlan}
+
 【情绪弧——他这章的情绪变化路线】
 \${emotionPlan}
 
 【场景展开——每个场景的感受设计】
 \${sceneExpansion}
 
+【情节节点——本章必须发生的具体事件】
+\${distilledContent}
+
 【前情提要】
 \${prevChaptersSummary}
 
+【上一章结尾——他此刻就在这个情境里，从那里往下写】
+\${prevChapEnding}
+
+\${longTermMemory}
+
 【这个世界】\${worldView}
+
+【设定库（能力/物品/地理/势力硬约束）】\${settingLib}
 
 【人物与势力状态】\${allChars}
 \${allFactions}
 \${allLocs}
 \${allItems}
 
+【时间线（本章时间不得倒退）】\${timelineEvents}
+
 【需要处理的伏笔】\${unrevealedForeshadow}
 \${forcedRevealHint}
 
 【文笔风格（请严格遵循）】\${writingStyleContent}
+
+\${fanficRules}
 
 镜头贴着\${protagonistName}。现在，写他刚经历的第\${chapNum}章。
 从身体第一刻感受到的东西开始。

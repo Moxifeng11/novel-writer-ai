@@ -74,13 +74,14 @@ export function getStepTemplate(key: string): PromptTemplate | null {
 
 /**
  * V2: 获取步骤模板——支持使用 V2 prompt 替换 V1
- * 当 vars 中 characterCores 有数据时自动启用 V2 模式
+ * 只有「主角真实 9 字段灵魂层」存在时才启用 V2；
+ * 旧口径只看 characterCores 长度，多个「（灵魂层未配置）」也能超过 100 字而误开 V2。
  */
 export function getStepTemplateAuto(key: string, vars?: Record<string, string>): PromptTemplate | null {
     if (key === 'bodyGeneration' && vars) {
-        // 如果有灵魂层数据 → 启用 V2 小说家模式
-        const hasSoul = !!(vars.characterCores && vars.characterCores.trim().length > 100);
-        if (hasSoul) {
+        const soulReady = vars.characterSoulReady === '1'
+            || (vars.protagonistSoulDetail || '').trim().length > 0;
+        if (soulReady) {
             return getStepTemplate('bodyGenerationV2');
         }
     }

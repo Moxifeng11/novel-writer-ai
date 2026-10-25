@@ -217,7 +217,7 @@ const log = createLogger('StyleLearner');
              const response = await this.aiEngine.callAI(
                  '', 
                  prompt, 
-                 this.plugin?.settings?.flashModel || 'flash', 
+                 this.plugin?.settings?.flashModel || this.plugin?.settings?.defaultModel || '', 
                  0.3, 
                  50
              );

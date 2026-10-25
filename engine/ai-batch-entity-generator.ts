@@ -7,6 +7,7 @@ import {
 } from '../shared/format-constants';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse, BatchEntityResult } from './ai-engine';
+import { stripCodeFence } from '../shared/api-response-utils';
 import {
     validateFactionOutput,
     validateLocationOutput,
@@ -343,6 +344,28 @@ ${description ? `【补充要求】\n${description}` : ''}
         return results;
     }
 
+    /**
+     * 公开的单条实体补全入口。
+     * 供生成模态在保存前做「校验 → AI 补全 → 复检」闭环使用；
+     * 补全结果仍不完整时返回 null，调用方必须拒绝落盘。
+     */
+    async repairEntity(
+        entityType: '势力' | '地点' | '物品/功法',
+        name: string,
+        content: string,
+        missingFields: string[],
+        worldview = ''
+    ): Promise<string | null> {
+        const frontmatterKeys =
+            entityType === '势力' ? FACTION_FRONTMATTER_KEYS
+                : entityType === '地点' ? LOCATION_FRONTMATTER_KEYS
+                    : ITEM_FRONTMATTER_KEYS;
+        const result = await this._retryFixEntity(
+            entityType, name, content, missingFields, frontmatterKeys, worldview
+        );
+        return result?.content ?? null;
+    }
+
     private _getValidateFn(entityType: string): (content: string) => ValidationResult {
         switch (entityType) {
             case '势力': return validateFactionOutput;
@@ -473,11 +496,12 @@ ${description ? `【补充要求】\n${description}` : ''}
         const systemPrompt = customSystemPrompt || `你是专业的${entityType}设定师。请补全以下不完整的${entityType}卡片。
 
 【补全硬性要求】
-1. 只输出补全后的完整${entityType}卡片，不要额外解释
+1. 只输出补全后的完整${entityType}卡片，不要额外解释、不要代码围栏
 2. 必须保留并补全 YAML frontmatter，且以 --- 开始、以 --- 关闭
 3. 以下 YAML 字段必须全部存在且有具体内容：${frontmatterKeys.join('、')}
 4. 以下缺失字段/分节必须全部补齐，禁止输出"待补充"、"未知"、"无"、省略号或空值
-5. 正文必须包含并补全所有要求分节，分节标题要与缺失项保持一致
+5. 正文必须包含以下 ${ENTITY_BODY_SECTIONS.length} 个二级标题分节，且每节都要有实质内容（不能只有标题）：
+${ENTITY_BODY_SECTIONS.map((s, i) => `${i + 1}. ## ${s}`).join('\n')}
 6. 补全内容需与世界观一致，优先补齐结构完整性，再追求文采
 
 【缺失的字段/分节】
@@ -497,14 +521,14 @@ ${worldview.slice(0, 1800)}
             const response = await this.apiClient.callAI(
                 systemPrompt,
                 userPrompt,
-                this.plugin.settings.flashModel,
+                this.plugin.settings.proModel || this.plugin.settings.defaultModel,
                 0.35,
-                this.plugin.settings.maxOutput
+                Math.max(4096, this.plugin.settings.maxOutput || 0)
             );
 
             if (response.error || !response.content) return null;
 
-            const blocks = this._splitEntityBlocks(response.content);
+            const blocks = this._splitEntityBlocks(stripCodeFence(response.content));
             if (blocks.length === 0) return null;
 
             let content = (blocks.find(block => block.includes(name)) || blocks[0]).trim();
@@ -546,11 +570,12 @@ ${inc.content.slice(0, 800)}`;
         const systemPrompt = customSystemPrompt || `你是专业的${entityType}设定师。请批量补全以下不完整的${entityType}卡片。
 
 【补全硬性要求】
-1. 只输出补全后的完整${entityType}卡片，不要额外解释
+1. 只输出补全后的完整${entityType}卡片，不要额外解释、不要代码围栏
 2. 每个卡片必须以 --- 开始，包含完整的 YAML frontmatter（字段：${frontmatterKeys.join('、')}）
 3. 卡片之间用 "---CARD_SEPARATOR---" 分隔
 4. 所有缺失字段必须全部补齐，禁止输出"待补充"、"未知"、"无"、省略号或空值
-5. 正文必须包含并补全所有要求分节
+5. 正文必须包含以下 ${ENTITY_BODY_SECTIONS.length} 个二级标题分节，且每节都要有实质内容（不能只有标题）：
+${ENTITY_BODY_SECTIONS.map((s, i) => `${i + 1}. ## ${s}`).join('\n')}
 6. 补全内容需与世界观一致`;
 
         const userPrompt = `【批量补全任务】
@@ -569,14 +594,14 @@ ${worldview.slice(0, 1800)}
             const response = await this.apiClient.callAI(
                 systemPrompt,
                 userPrompt,
-                this.plugin.settings.flashModel,
+                this.plugin.settings.proModel || this.plugin.settings.defaultModel,
                 0.35,
-                this.plugin.settings.maxOutput
+                Math.max(4096, this.plugin.settings.maxOutput || 0)
             );
 
             if (response.error || !response.content) return [];
 
-            const cards = response.content.split('---CARD_SEPARATOR---');
+            const cards = stripCodeFence(response.content).split('---CARD_SEPARATOR---');
             const results: BatchEntityResult[] = [];
             for (const card of cards) {
                 let content = card.trim();

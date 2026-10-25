@@ -17,6 +17,11 @@ import type { WritingProfile } from './writing-profile';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { countWords } from '../shared/diff-utils';
+import {
+    BodyFormatContract, BodySeparator, DEFAULT_BODY_FORMAT, describeBodyFormat,
+} from '../shared/body-format';
+import { parseSceneHeadings } from './scene-expander';
+import { fitPromptToContext } from '../shared/prompt-budget';
 
 export type ExpansionLevel = 'chapter-to-scenes' | 'scene-to-paragraphs' | 'paragraph-expand';
 export type ExpansionStrategy = 'conservative' | 'standard' | 'aggressive';
@@ -34,6 +39,8 @@ export interface ExpansionOptions {
     totalChapters?: number;
     sceneType?: string;
     characterNames?: string[];
+    /** 正文格式契约；不传则用默认契约（与项目「写作规则.md」推导结果保持一致） */
+    bodyFormat?: BodyFormatContract;
 }
 
 export interface SceneOutline {
@@ -82,6 +89,37 @@ const STRATEGY_DESCRIPTIONS: Record<ExpansionStrategy, string> = {
     aggressive: '大量扩展，丰富支线情节和人物互动，深化主题，扩写幅度约 3-5 倍',
 };
 
+/**
+ * 按正文格式契约切分段落。
+ * - separator === '\n'：每个非空行就是一段（项目「一句一段」契约）
+ * - separator === '\n\n'：空行分段，段内保留软换行
+ *
+ * 与 prompt 里的 ${bodyFormat} 使用同一契约，避免「提示要一句一段、解析只认空行」。
+ */
+export function splitParagraphsByContract(content: string, separator: BodySeparator): ParagraphOutline[] {
+    const lines = (content || '').replace(/\r\n?/g, '\n').split('\n');
+    const grouped: string[] = [];
+    let current = '';
+
+    for (const line of lines) {
+        if (separator === '\n') {
+            if (line.trim()) grouped.push(line.trim());
+            continue;
+        }
+        if (line.trim() === '') {
+            if (current.trim()) {
+                grouped.push(current.trim());
+                current = '';
+            }
+        } else {
+            current += (current ? '\n' : '') + line;
+        }
+    }
+    if (separator !== '\n' && current.trim()) grouped.push(current.trim());
+
+    return grouped.map((text, i) => ({ index: i + 1, content: text }));
+}
+
 export class OutlineToTextExpander {
     private aiEngine: AIEngine;
     private knowledgeInjector?: KnowledgeInjector;
@@ -114,10 +152,10 @@ export class OutlineToTextExpander {
         this.notifier.showNotice('🎬 正在将章节大纲拆分为场景...');
 
         const systemPrompt = this.buildChapterToScenesSystemPrompt(opts);
-        const userPrompt = await this.buildChapterToScenesUserPrompt(chapterOutline, opts, context);
+        const built = await this.buildChapterToScenesUserPrompt(chapterOutline, opts, context);
 
         try {
-            const response = await this.callAI(systemPrompt, userPrompt, opts);
+            const response = await this.callAI(systemPrompt, built.prompt, opts, built.knowledge);
             if (response.error) {
                 return { success: false, content: '', wordCount: 0, error: response.error };
             }
@@ -154,15 +192,18 @@ export class OutlineToTextExpander {
         this.notifier.showNotice('📝 正在将场景扩展为段落...');
 
         const systemPrompt = this.buildSceneToParagraphsSystemPrompt(opts);
-        const userPrompt = await this.buildSceneToParagraphsUserPrompt(sceneOutline, opts, context);
+        const built = await this.buildSceneToParagraphsUserPrompt(sceneOutline, opts, context);
 
         try {
-            const response = await this.callAI(systemPrompt, userPrompt, opts);
+            const response = await this.callAI(systemPrompt, built.prompt, opts, built.knowledge);
             if (response.error) {
                 return { success: false, content: '', wordCount: 0, error: response.error };
             }
 
-            const paragraphs = this.parseParagraphs(response.content);
+            const paragraphs = splitParagraphsByContract(
+                response.content,
+                opts.bodyFormat?.separator ?? DEFAULT_BODY_FORMAT.separator
+            );
             return {
                 success: true,
                 content: response.content,
@@ -196,10 +237,10 @@ export class OutlineToTextExpander {
         this.notifier.showNotice('✨ 正在扩写段落...');
 
         const systemPrompt = this.buildParagraphExpandSystemPrompt(opts);
-        const userPrompt = await this.buildParagraphExpandUserPrompt(paragraph, opts, context);
+        const built = await this.buildParagraphExpandUserPrompt(paragraph, opts, context);
 
         try {
-            const response = await this.callAI(systemPrompt, userPrompt, opts);
+            const response = await this.callAI(systemPrompt, built.prompt, opts, built.knowledge);
             if (response.error) {
                 return { success: false, content: '', wordCount: 0, error: response.error };
             }
@@ -243,6 +284,8 @@ export class OutlineToTextExpander {
 
         let fullText = '';
         const allParagraphs: ParagraphOutline[] = [];
+        // 场景之间的拼接也必须走同一份契约，否则「一句一段」会被塞进空行
+        const sep = opts.bodyFormat?.separator ?? DEFAULT_BODY_FORMAT.separator;
 
         for (let i = 0; i < sceneResult.scenes.length; i++) {
             const scene = sceneResult.scenes[i];
@@ -263,9 +306,9 @@ export class OutlineToTextExpander {
                     index: allParagraphs.length + idx + 1,
                 }));
                 allParagraphs.push(...sceneParagraphs);
-                fullText += paraResult.content + '\n\n';
+                fullText += paraResult.content + sep;
             } else {
-                fullText += sceneText + '\n\n';
+                fullText += sceneText + sep;
             }
         }
 
@@ -323,7 +366,7 @@ ${opts.enhanceEnvironment ? '- 注重环境描写，营造氛围' : '- 环境描
             writingProfile?: WritingProfile;
             injectionContext?: InjectionContext;
         }
-    ): Promise<string> {
+    ): Promise<{ prompt: string; knowledge: string }> {
         let prompt = `请将以下章节大纲拆分为具体的场景列表。
 
 【目标字数】约 ${opts.targetWords} 字（上下浮动 ${Math.round(opts.wordTolerance * 100)}%）
@@ -339,19 +382,18 @@ ${chapterOutline}`;
             prompt += `\n\n【主要人物】\n${context.characters.slice(0, 1500)}`;
         }
 
+        let knowledge = '';
         if (this.knowledgeInjector && context?.writingProfile && context?.injectionContext) {
-            const knowledge = await this.knowledgeInjector.injectForOutline(
+            const raw = await this.knowledgeInjector.injectForOutline(
                 context.writingProfile,
                 context.injectionContext
             );
-            if (knowledge) {
-                prompt += `\n\n【写作参考】\n${knowledge}`;
-            }
+            if (raw) knowledge = `【写作参考】\n${raw}`;
         }
 
         prompt += `\n\n请直接输出场景列表，不要额外解释。`;
 
-        return prompt;
+        return { prompt, knowledge };
     }
 
     private buildSceneToParagraphsSystemPrompt(opts: ExpansionOptions): string {
@@ -375,7 +417,7 @@ ${opts.enhanceEnvironment ? '- 五感描写（视觉、听觉、嗅觉、味觉�
 ${opts.plantForeshadows ? '- 适当埋设伏笔，为后续剧情铺垫' : '- 不埋设新伏笔'}
 
 【输出格式】
-直接输出正文段落，每个段落之间空一行。不要添加任何标题、标注或解释。`;
+${describeBodyFormat(opts.bodyFormat ?? DEFAULT_BODY_FORMAT)}`;
     }
 
     private async buildSceneToParagraphsUserPrompt(
@@ -387,7 +429,7 @@ ${opts.plantForeshadows ? '- 适当埋设伏笔，为后续剧情铺垫' : '- �
             writingProfile?: WritingProfile;
             injectionContext?: InjectionContext;
         }
-    ): Promise<string> {
+    ): Promise<{ prompt: string; knowledge: string }> {
         let prompt = `请将以下场景大纲扩展为正文段落。
 
 【目标字数】约 ${opts.targetWords} 字（上下浮动 ${Math.round(opts.wordTolerance * 100)}%）
@@ -403,19 +445,19 @@ ${sceneOutline}`;
             prompt += `\n\n【出场人物】\n${context.characters.slice(0, 1000)}`;
         }
 
+        let knowledge = '';
         if (this.knowledgeInjector && context?.writingProfile && context?.injectionContext) {
-            const knowledge = await this.knowledgeInjector.injectForSceneExpand(
+            const raw = await this.knowledgeInjector.injectForSceneExpand(
                 context.writingProfile,
                 context.injectionContext
             );
-            if (knowledge) {
-                prompt += `\n\n【写作参考】\n${knowledge}`;
-            }
+            // 知识注入作为可丢弃的增强层，不拼进正文主体
+            if (raw) knowledge = `【写作参考】\n${raw}`;
         }
 
         prompt += `\n\n请直接输出正文，不要额外解释或添加标题。`;
 
-        return prompt;
+        return { prompt, knowledge };
     }
 
     private buildParagraphExpandSystemPrompt(opts: ExpansionOptions): string {
@@ -438,7 +480,7 @@ ${opts.enhanceDialogue ? '- 丰富对话，增加互动感' : '- 对话从简'}
 ${opts.enhanceEnvironment ? '- 增加五感描写，增强画面感' : '- 环境从简'}
 
 【输出要求】
-直接输出扩写后的段落内容，不要添加任何解释、标注或前后缀。`;
+${describeBodyFormat(opts.bodyFormat ?? DEFAULT_BODY_FORMAT)}`;
     }
 
     private async buildParagraphExpandUserPrompt(
@@ -452,7 +494,7 @@ ${opts.enhanceEnvironment ? '- 增加五感描写，增强画面感' : '- 环境
             writingProfile?: WritingProfile;
             injectionContext?: InjectionContext;
         }
-    ): Promise<string> {
+    ): Promise<{ prompt: string; knowledge: string }> {
         let prompt = `请对以下段落进行扩写。
 
 【目标字数】约 ${opts.targetWords} 字（上下浮动 ${Math.round(opts.wordTolerance * 100)}%）
@@ -472,25 +514,25 @@ ${paragraph}`;
             prompt += `\n\n【世界观设定参考】\n${context.worldview.slice(0, 1000)}`;
         }
 
+        let knowledge = '';
         if (this.knowledgeInjector && context?.writingProfile && context?.injectionContext) {
-            const knowledge = await this.knowledgeInjector.injectForBodyGeneration(
+            const raw = await this.knowledgeInjector.injectForBodyGeneration(
                 context.writingProfile,
                 context.injectionContext
             );
-            if (knowledge) {
-                prompt += `\n\n【写作参考】\n${knowledge}`;
-            }
+            if (raw) knowledge = `【写作参考】\n${raw}`;
         }
 
         prompt += `\n\n请直接输出扩写后的内容，不要额外解释。`;
 
-        return prompt;
+        return { prompt, knowledge };
     }
 
     private async callAI(
         systemPrompt: string,
         userPrompt: string,
-        opts: ExpansionOptions
+        opts: ExpansionOptions,
+        extraTail?: string,
     ): Promise<APIResponse> {
         const maxTokens = Math.min(
             16000,
@@ -501,9 +543,20 @@ ${paragraph}`;
             : opts.strategy === 'aggressive' ? 0.9
             : 0.75;
 
-        return this.aiEngine.callAI(
-            userPrompt,
+        // B6：大纲扩写此前直接拼接、完全不过预算闸门。
+        // 统一按模型窗口裁剪 user（system 必保），避免 Ollama 从尾部静默截断输出约束。
+        const limits = this.aiEngine.getPromptLimits();
+        const fit = fitPromptToContext({
             systemPrompt,
+            userPrompt,
+            extraTail,
+            maxContext: limits.maxContext,
+            maxOutput: maxTokens,
+        });
+
+        return this.aiEngine.callAI(
+            systemPrompt,
+            fit.user,
             undefined,
             temperature,
             maxTokens,
@@ -513,17 +566,9 @@ ${paragraph}`;
 
     private parseScenes(content: string): SceneOutline[] {
         const scenes: SceneOutline[] = [];
-        const sceneRegex = /^##\s*场景\s*(\d+)[：:]\s*(.+)$/gm;
-        let match: RegExpExecArray | null;
 
-        const sceneStarts: Array<{ index: number; num: number; name: string }> = [];
-        while ((match = sceneRegex.exec(content)) !== null) {
-            sceneStarts.push({
-                index: match.index,
-                num: parseInt(match[1], 10),
-                name: match[2].trim(),
-            });
-        }
+        const sceneStarts = parseSceneHeadings(content)
+            .map(h => ({ index: h.start, num: h.index, name: h.name }));
 
         for (let i = 0; i < sceneStarts.length; i++) {
             const start = sceneStarts[i];
@@ -548,38 +593,6 @@ ${paragraph}`;
         }
 
         return scenes;
-    }
-
-    private parseParagraphs(content: string): ParagraphOutline[] {
-        const paragraphs: ParagraphOutline[] = [];
-        const lines = content.split('\n');
-        let paraIndex = 0;
-        let currentPara = '';
-
-        for (const line of lines) {
-            if (line.trim() === '') {
-                if (currentPara.trim()) {
-                    paraIndex++;
-                    paragraphs.push({
-                        index: paraIndex,
-                        content: currentPara.trim(),
-                    });
-                    currentPara = '';
-                }
-            } else {
-                currentPara += (currentPara ? '\n' : '') + line;
-            }
-        }
-
-        if (currentPara.trim()) {
-            paraIndex++;
-            paragraphs.push({
-                index: paraIndex,
-                content: currentPara.trim(),
-            });
-        }
-
-        return paragraphs;
     }
 
     static getStrategyLabel(strategy: ExpansionStrategy): string {

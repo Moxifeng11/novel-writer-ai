@@ -5,32 +5,13 @@
  * 对应优化方向：C2
  */
  
-import { App } from 'obsidian';
-import { AIEngine } from './ai-engine';
 import { RhythmSegment, RhythmAnalysis } from '../shared/co-writer-types';
-import { extractResponseText } from '../shared/api-response-utils';
-import type { NovelWriterSettingsAPI } from '../shared/plugin-api';
 import { createLogger } from '../shared/logger';
- 
+
 
 const log = createLogger('RhythmAnalyzer');
- export interface RhythmAnalyzerOptions {
-    app: App;
-    aiEngine: AIEngine;
-    plugin: NovelWriterSettingsAPI;
-}
 
 export class RhythmAnalyzer {
-    private app: App;
-    private aiEngine: AIEngine;
-    private plugin: NovelWriterSettingsAPI;
-     
-     constructor(opts: RhythmAnalyzerOptions) {
-         this.app = opts.app;
-         this.aiEngine = opts.aiEngine;
-         this.plugin = opts.plugin;
-     }
-     
      /**
       * 分析文本节奏
       */
@@ -49,7 +30,7 @@ export class RhythmAnalyzer {
              if (trimmed.length < 10) continue;
              
              try {
-                 const segment = await this.analyzeParagraph(trimmed, pos);
+                 const segment = this.analyzeParagraph(trimmed, pos);
                  segments.push(segment);
              } catch (e) {
                  log.warn('[RhythmAnalyzer] 段落分析失败:', e);
@@ -71,7 +52,7 @@ export class RhythmAnalyzer {
      /**
       * 分析单个段落
       */
-     private async analyzeParagraph(text: string, pos: number): Promise<RhythmSegment> {
+     private analyzeParagraph(text: string, pos: number): RhythmSegment {
          // 基于规则快速分析
          const type = this.detectType(text);
          const wordCount = text.length;
@@ -87,8 +68,8 @@ export class RhythmAnalyzer {
          // 计算信息密度（关键词密度）
          const density = this.calculateDensity(text);
          
-         // AI 辅助估算紧张度
-         const tensionLevel = await this.estimateTension(text);
+         // 关键词规则估算紧张度（无 AI）
+         const tensionLevel = this.estimateTension(text);
          
          // 检测问题
          const issues = this.detectIssues(text, type, pace, density);
@@ -132,35 +113,16 @@ export class RhythmAnalyzer {
      }
      
      /**
-      * 估算紧张度
-      */
-     private async estimateTension(text: string): Promise<number> {
-         // 快速规则估算
-         const tensionKeywords = /[危险死亡威胁紧张恐惧惊恐愤怒仇恨杀]/
-         const matches = (text.match(tensionKeywords) || []).length;
-         const baseTension = Math.min(100, matches * 15 + 30);
-         
-         // 如果段落较长，可以用 AI 精确估算（可选）
-         if (text.length > 200 && this.plugin?.settings?.enableDetailedAnalysis) {
-             try {
-                 const prompt = [
-                     '估算以下段落的紧张程度（0-100）：',
-                     '',
-                     text.slice(0, 300),
-                     '',
-                     '返回一个数字：'
-                 ].join('\n');
-                 
-                 const response = await this.aiEngine.callAI('', prompt, this.plugin?.settings?.flashModel || 'flash', 0.3, 20);
-                 const num = parseInt(extractResponseText(response).replace(/\D/g, ''));
-                 return isNaN(num) ? baseTension : Math.min(100, Math.max(0, num));
-             } catch {
-                 return baseTension;
-             }
-         }
-         
-         return baseTension;
-     }
+     * 估算紧张度
+     *
+     * 此前的 AI 精确估算分支依赖 `enableDetailedAnalysis`，而该开关没有任何 UI 写入方
+     * （分支不可达）；且一旦接线就是「每个自然段一次 AI」。现统一走关键词规则。
+     */
+    private estimateTension(text: string): number {
+        const tensionKeywords = /[危险死亡威胁紧张恐惧惊恐愤怒仇恨杀]/
+        const matches = (text.match(tensionKeywords) || []).length;
+        return Math.min(100, matches * 15 + 30);
+    }
      
      /**
       * 检测问题

@@ -24,6 +24,8 @@ export interface ChapterContext {
     characters?: string;
     forcedReveal?: string[];
     unrevealedCount?: number;
+    /** Rev 186：时间线/伏笔 ↔ 设定库/规划的关联索引（已格式化，≤1800 字） */
+    storyLinkage?: string;
     model?: string;
 }
 

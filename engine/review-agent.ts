@@ -126,8 +126,8 @@ export class ReviewAgent {
 
         hideProgress?.();
 
-        if (!this.plugin.settings.apiKey) {
-            this.notifier.showNotice('❌ 请先配置API密钥', NOTICE_ERROR);
+        if (!this.plugin.hasAiCredentials) {
+            this.notifier.showNotice('❌ 请先配置 API 密钥或本地模型端点', NOTICE_ERROR);
             return;
         }
 
@@ -320,8 +320,8 @@ ${result.content}
 
         hideProgressVol?.();
 
-        if (!this.plugin.settings.apiKey) {
-            this.notifier.showNotice('❌ 请先配置API密钥', NOTICE_ERROR);
+        if (!this.plugin.hasAiCredentials) {
+            this.notifier.showNotice('❌ 请先配置 API 密钥或本地模型端点', NOTICE_ERROR);
             return;
         }
 

@@ -6,7 +6,20 @@
  * 不依赖 AI 调用，保证实时性（< 100ms / 万字）
  */
 
-export type QualityGrade = 'S' | 'A' | 'B' | 'C' | 'D';
+import {
+  gradeFromScore,
+  qualityGradeColor,
+  qualityGradeLabel,
+  type QualityGrade,
+} from '../shared/quality-grade';
+import {
+  QUALITY_MIN_EVALUABLE_CHARS,
+  WQE_CALIBRATION,
+  WQE_DIMENSION_WEIGHTS,
+  WQE_SUB_WEIGHTS,
+} from '../shared/thresholds';
+
+export type { QualityGrade };
 export type SuggestionPriority = 'high' | 'medium' | 'low';
 export type QualityTrend = 'rising' | 'falling' | 'stable';
 
@@ -142,7 +155,7 @@ export class WritingQualityEngine {
 
   private scoreHistory: number[] = [];
   private lastMilestone = 0;
-  private readonly MILESTONE_INTERVALS = [500, 1000, 2000, 3000, 5000];
+  private readonly MILESTONE_INTERVALS = WQE_CALIBRATION.milestones;
 
   constructor(options: WritingQualityEngineOptions = {}) {
     this.characterNames = options.characterNames || [];
@@ -169,7 +182,7 @@ export class WritingQualityEngine {
     const cleanText = text.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
     const wordCount = cleanText.length;
 
-    if (wordCount < 100) {
+    if (wordCount < QUALITY_MIN_EVALUABLE_CHARS) {
       return this.getEmptyResult(wordCount, startTime);
     }
 
@@ -185,14 +198,7 @@ export class WritingQualityEngine {
     const atmosphereQuality = this.evaluateAtmosphere(cleanText, paragraphs, totalParagraphs);
     const structureQuality = this.evaluateStructure(cleanText, paragraphs, totalParagraphs);
 
-    const weights = {
-      language: 0.20,
-      rhythm: 0.15,
-      character: 0.20,
-      plot: 0.20,
-      atmosphere: 0.10,
-      structure: 0.15,
-    };
+    const weights = WQE_DIMENSION_WEIGHTS;
 
     const overallScore = Math.round(
       languageQuality.score * weights.language +
@@ -207,8 +213,8 @@ export class WritingQualityEngine {
     const trend = this.calculateTrend(overallScore);
 
     this.scoreHistory.push(overallScore);
-    if (this.scoreHistory.length > 20) {
-      this.scoreHistory = this.scoreHistory.slice(-20);
+    if (this.scoreHistory.length > WQE_CALIBRATION.trend.historyMax) {
+      this.scoreHistory = this.scoreHistory.slice(-WQE_CALIBRATION.trend.historyMax);
     }
 
     const comparedToAverage = this.averageScore > 0
@@ -255,10 +261,12 @@ export class WritingQualityEngine {
   private evaluateLanguage(text: string, sentences: string[], totalSentences: number): QualityDimension {
     const suggestions: QualitySuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = WQE_CALIBRATION.language;
+    const sw = WQE_SUB_WEIGHTS.language;
 
     const uniqueChars = new Set(text.replace(/[\s\n，。！？、；：""''（）【】《》…—]/g, '')).size;
     const totalChars = text.replace(/[\s\n，。！？、；：""''（）【】《》…—]/g, '').length;
-    const vocabRichness = totalChars > 0 ? (uniqueChars / Math.min(totalChars, 500)) * 100 : 0;
+    const vocabRichness = totalChars > 0 ? (uniqueChars / Math.min(totalChars, cal.vocabSampleCap)) * 100 : 0;
 
     details.uniqueChars = uniqueChars;
     details.vocabRichness = Math.round(vocabRichness) + '%';
@@ -269,7 +277,7 @@ export class WritingQualityEngine {
       ? sentenceLengths.reduce((sum, len) => sum + Math.pow(len - avgSentenceLen, 2), 0) / totalSentences
       : 0;
     const sentenceStdDev = Math.sqrt(sentenceVariance);
-    const sentenceVariety = Math.min(100, (sentenceStdDev / Math.max(1, avgSentenceLen)) * 200);
+    const sentenceVariety = Math.min(100, (sentenceStdDev / Math.max(1, avgSentenceLen)) * cal.sentenceVarietyScale);
 
     details.avgSentenceLen = Math.round(avgSentenceLen) + '字';
     details.sentenceVariety = Math.round(sentenceVariety) + '%';
@@ -278,7 +286,7 @@ export class WritingQualityEngine {
     for (const pattern of RHETORIC_PATTERNS) {
       rhetoricCount += (text.match(pattern) || []).length;
     }
-    const rhetoricScore = Math.min(100, rhetoricCount * 8);
+    const rhetoricScore = Math.min(100, rhetoricCount * cal.rhetoricPerHit);
     details.rhetoricCount = rhetoricCount;
 
     let typoScore = 100;
@@ -287,7 +295,7 @@ export class WritingQualityEngine {
       const count = (text.match(pattern) || []).length;
       if (count > 0) {
         typoIssues.push(correct);
-        typoScore -= count * 5;
+        typoScore -= count * cal.typoPenaltyPerHit;
       }
     }
     typoScore = Math.max(0, typoScore);
@@ -295,18 +303,18 @@ export class WritingQualityEngine {
 
     const repeatPattern = /(.{2,})\1{2,}/g;
     const repeatMatches = text.match(repeatPattern) || [];
-    const repeatPenalty = repeatMatches.length * 10;
+    const repeatPenalty = repeatMatches.length * cal.repeatPenaltyPerHit;
     details.repetitionCount = repeatMatches.length;
 
-    const vocabScore = Math.min(100, vocabRichness * 1.5);
+    const vocabScore = Math.min(100, vocabRichness * cal.vocabScale);
     const varietyScore = sentenceVariety;
     const finalTypoScore = Math.max(0, typoScore - repeatPenalty);
 
     const languageScore = Math.round(
-      vocabScore * 0.3 +
-      varietyScore * 0.3 +
-      rhetoricScore * 0.25 +
-      finalTypoScore * 0.15
+      vocabScore * sw.vocab +
+      varietyScore * sw.variety +
+      rhetoricScore * sw.rhetoric +
+      finalTypoScore * sw.typo
     );
 
     if (vocabScore < 40) {
@@ -387,6 +395,8 @@ export class WritingQualityEngine {
   ): QualityDimension {
     const suggestions: QualitySuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = WQE_CALIBRATION.rhythm;
+    const sw = WQE_SUB_WEIGHTS.rhythm;
 
     let actionCount = 0;
     for (const word of RHYTHM_VERBS) {
@@ -434,25 +444,25 @@ export class WritingQualityEngine {
       const paceVariance = sectionPaces.length > 1
         ? sectionPaces.reduce((sum, p) => sum + Math.pow(p - this.average(sectionPaces), 2), 0) / sectionPaces.length
         : 0;
-      paceVariety = Math.min(100, paceVariance * 100);
+      paceVariety = Math.min(100, paceVariance * cal.paceVarianceScale);
     }
     details.paceVariety = Math.round(paceVariety) + '%';
 
     const sceneShifts = this.detectSceneShifts(paragraphs);
     details.sceneShifts = sceneShifts;
-    const sceneShiftScore = Math.min(100, sceneShifts * 25);
+    const sceneShiftScore = Math.min(100, sceneShifts * cal.sceneShiftPerHit);
 
-    const dialogueScore = Math.min(100, dialogueRatio * 250);
-    const actionScore = Math.min(100, actionRatio * 20);
+    const dialogueScore = Math.min(100, dialogueRatio * cal.dialogueScale);
+    const actionScore = Math.min(100, actionRatio * cal.actionScale);
 
     const balanceScore = this.calculateBalanceScore(actionRatio, dialogueRatio, descRatio);
 
     const rhythmScore = Math.round(
-      paceVariety * 0.25 +
-      balanceScore * 0.3 +
-      dialogueScore * 0.2 +
-      sceneShiftScore * 0.15 +
-      actionScore * 0.1
+      paceVariety * sw.paceVariety +
+      balanceScore * sw.balance +
+      dialogueScore * sw.dialogue +
+      sceneShiftScore * sw.sceneShift +
+      actionScore * sw.action
     );
 
     if (actionRatio < 1.5 && text.length > 1000) {
@@ -527,6 +537,8 @@ export class WritingQualityEngine {
   private evaluateCharacter(text: string, sentences: string[], totalSentences: number): QualityDimension {
     const suggestions: QualitySuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = WQE_CALIBRATION.character;
+    const sw = WQE_SUB_WEIGHTS.character;
 
     let charMentionCount = 0;
     const charMentions: Record<string, number> = {};
@@ -558,21 +570,21 @@ export class WritingQualityEngine {
     details.actionDescriptions = actionWithChar;
     details.uniqueCharacters = Object.keys(charMentions).length || '未知';
 
-    const mentionScore = Math.min(100, charMentionCount * 4);
-    const dialogScore = Math.min(100, dialogRatio * 200);
-    const actionScore = Math.min(100, actionWithChar * 10);
+    const mentionScore = Math.min(100, charMentionCount * cal.mentionScale);
+    const dialogScore = Math.min(100, dialogRatio * cal.dialogueScale);
+    const actionScore = Math.min(100, actionWithChar * cal.actionScale);
 
     let characterDepth = 50;
     if (this.characterNames.length > 0) {
       const multiAngleChars = Object.entries(charMentions).filter(([name, count]) => {
-        if (count < 3) return false;
+        if (count < cal.depthMinMentions) return false;
         const nearPattern = new RegExp(this.escapeRegex(name) + '.{0,30}(想|觉得|认为|感到|心里|心中|暗想)', 'g');
         const hasThought = (text.match(nearPattern) || []).length > 0;
         const actionPattern2 = new RegExp(this.escapeRegex(name) + '.{0,10}(着|地)', 'g');
         const hasAction = (text.match(actionPattern2) || []).length > 0;
         return hasThought && hasAction;
       }).length;
-      characterDepth = Math.min(100, 40 + multiAngleChars * 20);
+      characterDepth = Math.min(100, cal.depthBase + multiAngleChars * cal.depthPerCharacter);
     }
     details.characterDepth = characterDepth + '%';
 
@@ -580,11 +592,11 @@ export class WritingQualityEngine {
     details.dialoguePersonality = Math.round(dialoguePersonality) + '%';
 
     const charScore = Math.round(
-      mentionScore * 0.25 +
-      dialogScore * 0.25 +
-      actionScore * 0.2 +
-      characterDepth * 0.15 +
-      dialoguePersonality * 0.15
+      mentionScore * sw.mention +
+      dialogScore * sw.dialogue +
+      actionScore * sw.action +
+      characterDepth * sw.depth +
+      dialoguePersonality * sw.personality
     );
 
     if (mentionScore < 30) {
@@ -659,19 +671,21 @@ export class WritingQualityEngine {
   private evaluatePlot(text: string, paragraphs: string[], totalParagraphs: number): QualityDimension {
     const suggestions: QualitySuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = WQE_CALIBRATION.plot;
+    const sw = WQE_SUB_WEIGHTS.plot;
 
     let suspenseCount = 0;
     for (const pattern of SUSPENSE_PATTERNS) {
       suspenseCount += (text.match(pattern) || []).length;
     }
-    const suspenseScore = Math.min(100, suspenseCount * 12);
+    const suspenseScore = Math.min(100, suspenseCount * cal.suspensePerHit);
     details.suspenseIndicators = suspenseCount;
 
     let coolMomentCount = 0;
     for (const pattern of COOL_MOMENT_PATTERNS) {
       coolMomentCount += (text.match(pattern) || []).length;
     }
-    const coolScore = Math.min(100, coolMomentCount * 15);
+    const coolScore = Math.min(100, coolMomentCount * cal.coolPerHit);
     details.coolMoments = coolMomentCount;
 
     const conflictPatterns = [
@@ -684,7 +698,7 @@ export class WritingQualityEngine {
     for (const pattern of conflictPatterns) {
       conflictCount += (text.match(pattern) || []).length;
     }
-    const conflictScore = Math.min(100, conflictCount * 10);
+    const conflictScore = Math.min(100, conflictCount * cal.conflictPerHit);
     details.conflictIndicators = conflictCount;
 
     let logicScore = 70;
@@ -697,7 +711,7 @@ export class WritingQualityEngine {
     for (const pattern of causalityPatterns) {
       causalityCount += (text.match(pattern) || []).length;
     }
-    logicScore = Math.min(100, 50 + causalityCount * 8);
+    logicScore = Math.min(100, cal.logicBase + causalityCount * cal.logicPerHit);
     details.causalityIndicators = causalityCount;
 
     const foreshadowPatterns = [
@@ -713,15 +727,15 @@ export class WritingQualityEngine {
     for (const pattern of foreshadowPatterns) {
       foreshadowCount += (text.match(pattern) || []).length;
     }
-    const foreshadowScore = Math.min(100, foreshadowCount * 15);
+    const foreshadowScore = Math.min(100, foreshadowCount * cal.foreshadowPerHit);
     details.foreshadowCount = foreshadowCount;
 
     const plotScore = Math.round(
-      conflictScore * 0.25 +
-      suspenseScore * 0.2 +
-      coolScore * 0.2 +
-      logicScore * 0.2 +
-      foreshadowScore * 0.15
+      conflictScore * sw.conflict +
+      suspenseScore * sw.suspense +
+      coolScore * sw.cool +
+      logicScore * sw.logic +
+      foreshadowScore * sw.foreshadow
     );
 
     if (conflictScore < 30 && text.length > 1000) {
@@ -796,12 +810,14 @@ export class WritingQualityEngine {
   private evaluateAtmosphere(text: string, paragraphs: string[], totalParagraphs: number): QualityDimension {
     const suggestions: QualitySuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = WQE_CALIBRATION.atmosphere;
+    const sw = WQE_SUB_WEIGHTS.atmosphere;
 
     let envCount = 0;
     for (const word of ENVIRONMENT_WORDS) {
       envCount += (text.match(new RegExp(word, 'g')) || []).length;
     }
-    const envScore = Math.min(100, envCount * 6);
+    const envScore = Math.min(100, envCount * cal.environmentPerHit);
     details.environmentMentions = envCount;
 
     let posEmotionCount = 0;
@@ -813,7 +829,7 @@ export class WritingQualityEngine {
       negEmotionCount += (text.match(new RegExp(word, 'g')) || []).length;
     }
     const totalEmotion = posEmotionCount + negEmotionCount;
-    const emotionScore = Math.min(100, totalEmotion * 8);
+    const emotionScore = Math.min(100, totalEmotion * cal.emotionPerHit);
     details.positiveEmotions = posEmotionCount;
     details.negativeEmotions = negEmotionCount;
 
@@ -826,7 +842,7 @@ export class WritingQualityEngine {
     for (const pattern of sensePatterns) {
       senseCount += (text.match(pattern) || []).length;
     }
-    const senseScore = Math.min(100, senseCount * 12);
+    const senseScore = Math.min(100, senseCount * cal.sensePerHit);
     details.senseDescriptions = senseCount;
 
     let immersionScore = 50;
@@ -834,19 +850,19 @@ export class WritingQualityEngine {
       const firstPerson = (text.match(/我|吾|在下|敝人/g) || []).length;
       const thirdPersonLimited = (text.match(/他|她|它/g) || []).length;
       const perspectiveRatio = firstPerson > 0 ? firstPerson / (firstPerson + thirdPersonLimited) : 0;
-      if (perspectiveRatio > 0.3) {
-        immersionScore = Math.min(100, 60 + firstPerson * 3);
+      if (perspectiveRatio > cal.firstPersonRatioMin) {
+        immersionScore = Math.min(100, cal.firstPersonBase + firstPerson * cal.firstPersonPerHit);
       } else {
-        immersionScore = Math.min(100, 50 + thirdPersonLimited * 0.5);
+        immersionScore = Math.min(100, cal.thirdPersonBase + thirdPersonLimited * cal.thirdPersonPerHit);
       }
     }
     details.immersion = Math.round(immersionScore) + '%';
 
     const atmosphereScore = Math.round(
-      envScore * 0.3 +
-      emotionScore * 0.3 +
-      senseScore * 0.25 +
-      immersionScore * 0.15
+      envScore * sw.environment +
+      emotionScore * sw.emotion +
+      senseScore * sw.sense +
+      immersionScore * sw.immersion
     );
 
     if (envScore < 30) {
@@ -910,6 +926,8 @@ export class WritingQualityEngine {
   private evaluateStructure(text: string, paragraphs: string[], totalParagraphs: number): QualityDimension {
     const suggestions: QualitySuggestion[] = [];
     const details: Record<string, number | string> = {};
+    const cal = WQE_CALIBRATION.structure;
+    const sw = WQE_SUB_WEIGHTS.structure;
 
     let openingScore = 50;
     if (totalParagraphs >= 2) {
@@ -918,11 +936,11 @@ export class WritingQualityEngine {
       for (const pattern of OPENING_HOOK_PATTERNS) {
         hookCount += (firstTwo.match(pattern) || []).length;
       }
-      openingScore = Math.min(100, 30 + hookCount * 20);
+      openingScore = Math.min(100, cal.openingBase + hookCount * cal.openingPerHook);
 
       const firstLen = firstTwo.length;
-      if (firstLen > 50 && firstLen < 500) {
-        openingScore = Math.min(100, openingScore + 10);
+      if (firstLen > cal.openingLengthMin && firstLen < cal.openingLengthMax) {
+        openingScore = Math.min(100, openingScore + cal.openingLengthBonus);
       }
     }
     details.openingAttraction = openingScore + '%';
@@ -938,7 +956,7 @@ export class WritingQualityEngine {
       const dialogCount = (middleText.match(/["「『]/g) || []).length / 2;
       const midDensity = (conflictCount + dialogCount) / Math.max(1, middleSection.length);
 
-      middleScore = Math.min(100, 40 + midDensity * 100);
+      middleScore = Math.min(100, cal.middleBase + midDensity * cal.middleDensityScale);
     }
     details.middleRichness = Math.round(middleScore) + '%';
 
@@ -951,10 +969,10 @@ export class WritingQualityEngine {
       }
 
       const lastLen = lastTwo.length;
-      if (lastLen > 30 && lastLen < 300) {
-        endingScore = Math.min(100, 40 + hookCount * 15 + 10);
+      if (lastLen > cal.endingLengthMin && lastLen < cal.endingLengthMax) {
+        endingScore = Math.min(100, cal.endingBase + hookCount * cal.endingPerHook + cal.endingLengthBonus);
       } else {
-        endingScore = Math.min(100, 40 + hookCount * 15);
+        endingScore = Math.min(100, cal.endingBase + hookCount * cal.endingPerHook);
       }
     }
     details.endingStrength = endingScore + '%';
@@ -970,24 +988,24 @@ export class WritingQualityEngine {
       const midRatio = midPart / totalLen;
       const lastRatio = lastPart / totalLen;
 
-      const idealFirst = 0.2;
-      const idealMid = 0.6;
-      const idealLast = 0.2;
+      const idealFirst = cal.idealFirstRatio;
+      const idealMid = cal.idealMiddleRatio;
+      const idealLast = cal.idealLastRatio;
 
       const deviation =
         Math.abs(firstRatio - idealFirst) +
         Math.abs(midRatio - idealMid) +
         Math.abs(lastRatio - idealLast);
 
-      structureBalance = Math.max(0, Math.min(100, 100 - deviation * 150));
+      structureBalance = Math.max(0, Math.min(100, 100 - deviation * cal.balancePenaltyScale));
     }
     details.structureBalance = Math.round(structureBalance) + '%';
 
     const structureScore = Math.round(
-      openingScore * 0.3 +
-      middleScore * 0.3 +
-      endingScore * 0.25 +
-      structureBalance * 0.15
+      openingScore * sw.opening +
+      middleScore * sw.middle +
+      endingScore * sw.ending +
+      structureBalance * sw.balance
     );
 
     if (openingScore < 40 && totalParagraphs >= 2) {
@@ -1059,7 +1077,9 @@ export class WritingQualityEngine {
       }
     }
 
-    if (dialogues.length < 5) return 50;
+    const cal = WQE_CALIBRATION.dialoguePersonality;
+
+    if (dialogues.length < cal.minDialogues) return 50;
 
     const uniqueStarts = new Set(dialogues.map(d => d.slice(0, 2)));
     const uniqueEnds = new Set(dialogues.map(d => d.slice(-2)));
@@ -1068,28 +1088,30 @@ export class WritingQualityEngine {
     const endVariety = (uniqueEnds.size / dialogues.length) * 100;
 
     const avgDialogLen = dialogues.reduce((sum, d) => sum + d.length, 0) / dialogues.length;
-    const lenVariety = dialogues.filter(d => Math.abs(d.length - avgDialogLen) > avgDialogLen * 0.5).length / dialogues.length;
+    const lenVariety = dialogues.filter(d => Math.abs(d.length - avgDialogLen) > avgDialogLen * cal.lengthDeviationRatio).length / dialogues.length;
 
-    return Math.min(100, startVariety * 0.3 + endVariety * 0.3 + lenVariety * 100 * 0.4);
+    return Math.min(100, startVariety * cal.startWeight + endVariety * cal.endWeight + lenVariety * 100 * cal.lengthWeight);
   }
 
   private calculateBalanceScore(actionRatio: number, dialogueRatio: number, descRatio: number): number {
-    const idealAction = 2.5;
-    const idealDialogue = 0.25;
-    const idealDesc = 12;
+    const cal = WQE_CALIBRATION.balance;
+    const idealAction = cal.idealActionRatio;
+    const idealDialogue = cal.idealDialogueRatio;
+    const idealDesc = cal.idealDescRatio;
 
     const actionDeviation = Math.abs(actionRatio - idealAction) / idealAction;
     const dialogueDeviation = Math.abs(dialogueRatio - idealDialogue) / idealDialogue;
     const descDeviation = Math.abs(descRatio - idealDesc) / idealDesc;
 
     const totalDeviation = (actionDeviation + dialogueDeviation + descDeviation) / 3;
-    return Math.max(0, Math.min(100, 100 - totalDeviation * 80));
+    return Math.max(0, Math.min(100, 100 - totalDeviation * cal.deviationScale));
   }
 
   private calculateTrend(currentScore: number): QualityTrend {
-    if (this.scoreHistory.length < 3) return 'stable';
+    const cal = WQE_CALIBRATION.trend;
+    if (this.scoreHistory.length < cal.minSamples) return 'stable';
 
-    const recent = this.scoreHistory.slice(-5);
+    const recent = this.scoreHistory.slice(-cal.windowSize);
     const midPoint = Math.floor(recent.length / 2);
     const firstHalf = recent.slice(0, midPoint);
     const secondHalf = recent.slice(midPoint);
@@ -1098,8 +1120,8 @@ export class WritingQualityEngine {
     const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
 
     const diff = secondAvg - firstAvg;
-    if (diff > 5) return 'rising';
-    if (diff < -5) return 'falling';
+    if (diff > cal.delta) return 'rising';
+    if (diff < -cal.delta) return 'falling';
     return 'stable';
   }
 
@@ -1114,11 +1136,8 @@ export class WritingQualityEngine {
   }
 
   getGrade(score: number): QualityGrade {
-    if (score >= 90) return 'S';
-    if (score >= 80) return 'A';
-    if (score >= 70) return 'B';
-    if (score >= 60) return 'C';
-    return 'D';
+    // 分界统一在 shared/thresholds.ts，禁止在此另写 90/80/70/60
+    return gradeFromScore(score);
   }
 
   getScoreHistory(): number[] {
@@ -1215,43 +1234,30 @@ export class WritingQualityEngine {
 }
 
 export function getQualityGradeColor(grade: QualityGrade): string {
-  const colors: Record<QualityGrade, string> = {
-    'S': 'var(--nw-accent, #8b5cf6)',
-    'A': 'var(--nw-success, #22c55e)',
-    'B': 'var(--nw-warning, #f59e0b)',
-    'C': 'var(--nw-warning, #f97316)',
-    'D': 'var(--nw-danger, #ef4444)',
-  };
-  return colors[grade];
+  return qualityGradeColor(grade);
 }
 
 export function getQualityGradeLabel(grade: QualityGrade): string {
-  const labels: Record<QualityGrade, string> = {
-    'S': '绝世佳作',
-    'A': '优秀',
-    'B': '良好',
-    'C': '及格',
-    'D': '待提升',
-  };
-  return labels[grade];
+  return qualityGradeLabel(grade);
 }
 
-export function getQualityTrendIcon(trend: QualityTrend): string {
-  const icons: Record<QualityTrend, string> = {
+// 历史记录从磁盘恢复时 trend 是字符串，这里按字符串收口并提供兜底
+export function getQualityTrendIcon(trend: string): string {
+  const icons: Record<string, string> = {
     'rising': '📈',
     'falling': '📉',
     'stable': '➡️',
   };
-  return icons[trend];
+  return icons[trend] || icons['stable'];
 }
 
-export function getQualityTrendLabel(trend: QualityTrend): string {
-  const labels: Record<QualityTrend, string> = {
+export function getQualityTrendLabel(trend: string): string {
+  const labels: Record<string, string> = {
     'rising': '上升',
     'falling': '下降',
     'stable': '平稳',
   };
-  return labels[trend];
+  return labels[trend] || labels['stable'];
 }
 
 export function getPriorityColor(priority: SuggestionPriority): string {

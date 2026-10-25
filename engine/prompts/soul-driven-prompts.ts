@@ -84,6 +84,8 @@ relationship_change: 本场景导致角色间关系如何变化（如有互动�
 【分卷规划】
 \${chapPlan}
 
+\${fanficRules}
+
 【角色灵魂层】
 \${characterSouls}
 
@@ -127,11 +129,19 @@ relationship_shift: ...
 - emotion_arc 的两个情绪必须不同
 - sensory_hook 必须具体——不是"气氛紧张"，是"闻到铁锈味"或"手摸到冰凉的金属"
 - body_reaction 是不自觉的——不是"他决定握紧拳头"，是"拳头自己收紧了，他发现时指甲已掐进掌心"
-- subtext 是说vs想的差距——说了什么，心里真正想的是什么`,
+- subtext 是说vs想的差距——说了什么，心里真正想的是什么
+
+【场景衔接——必须连续】
+- 第一个场景必须从上一章结尾的下一刻开始：时间、地点、人物状态都要接得上
+- 场景之间允许跳时间/跳地点，但要在 objective 或 sensory_hook 里交代过渡（过了多久、怎么到的、衣服/伤口/体力有没有变化）
+- 不允许无过渡换场：不能上一秒还在A地，下一秒就出现在B地且状态完好`,
     userPrompt: `你是\${protagonistName}本人。现在预演你即将经历的第\${chapNum}章。
 
 【你要经历的大纲】
 \${outlineContent}
+
+【上一章结尾——你现在就站在这里】
+\${prevChapEnding}
 
 【你的情绪规划】
 \${emotionPlan}
@@ -141,6 +151,11 @@ relationship_shift: ...
 
 【身边的人】
 \${allChars}
+
+【时间线（场景先后不得与之矛盾）】
+\${timelineEvents}
+
+\${fanficRules}
 
 请按规范格式输出每场景的展开设计。`,
 };

@@ -1,10 +1,15 @@
 import { App } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import type { ChapterContext, ReviewContext, OutlineSettings, WorldElements } from './ai-types';
-import { buildSystemPrompt as buildSystemPromptFn, buildUserPrompt as buildUserPromptFn } from './ai-prompt-builder';
+import { buildChapterPrompts as buildChapterPromptsFn, buildUserPrompt as buildUserPromptFn } from './ai-prompt-builder';
+import { clampBudgetToModelLimits } from '../shared/prompt-budget';
+import { DEFAULT_CONTEXT_WINDOW } from '../shared/thresholds';
+import { BodyWriter } from './body-writer';
+import type { BodyFormatContract } from '../shared/body-format';
 import { AIApiClient } from './ai-api-client';
 import { ChapterHelpers } from './ai-chapter-helpers';
 import { WorldviewGenerator } from './ai-worldview-generator';
+import type { WorldviewGenerationResult } from './ai-worldview-generator';
 import { OutlineGenerator } from './ai-outline-generator';
 import { CharacterGenerator } from './ai-character-generator';
 import { EntityGenerator } from './ai-entity-generator';
@@ -14,7 +19,6 @@ import { NOOP_NOTIFIER } from '../shared/types';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
 import { ENGINE_NAMES } from './engine-registry';
-import { getModelMaxOutput } from '../shared/token-estimator';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
 import { createLogger } from '../shared/logger';
 
@@ -46,6 +50,7 @@ export class AIEngine {
     private characterGen: CharacterGenerator;
     private entityGen: EntityGenerator;
     private batchEntityGen: BatchEntityGenerator;
+    private bodyWriter: BodyWriter | null = null;
 
     static getMaxConcurrent(modelId: string): number {
         return AIApiClient.getMaxConcurrent(modelId);
@@ -78,18 +83,53 @@ export class AIEngine {
         }
     }
 
+    /** 正文 prompt 与落盘共用同一份格式契约（来自项目「写作规则.md」），懒加载以兼容原型实例化 */
+    private getBodyWriter(): BodyWriter {
+        if (!this.bodyWriter) {
+            this.bodyWriter = new BodyWriter({ app: this.plugin?.app });
+        }
+        return this.bodyWriter;
+    }
+
     async callAI(
         systemPrompt: string,
         userPrompt: string,
         model?: string,
         temperature: number = 0.7,
-        maxTokens: number = 4096,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string }
+        maxTokens?: number,
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
     ): Promise<APIResponse> {
-        const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const modelMaxOutput = getModelMaxOutput(effectiveModel);
-        const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
-        return this.apiClient.callAI(systemPrompt, userPrompt, model, temperature, safeMaxTokens, options);
+        // 输出预算交给 AIApiClient#resolveMaxOutput 统一处理：
+        // 优先用户为具体模型配置的 maxOutput，其次静态能力表。
+        // 这里不再用静态表预截断，否则 deepseek-flash 这类未登记模型会被压到 4096。
+        const effectiveMaxTokens = maxTokens ?? this.plugin.settings.maxOutput ?? 4096;
+        return this.apiClient.callAI(systemPrompt, userPrompt, model, temperature, effectiveMaxTokens, options);
+    }
+
+    /**
+     * 实体补全统一入口：人物走 CharacterGenerator，其余走 BatchEntityGenerator。
+     * 返回 null 表示补全失败；调用方必须复检后才允许落盘。
+     */
+    async repairEntity(
+        kind: 'characters' | 'factions' | 'locations' | 'items',
+        name: string,
+        content: string,
+        missingFields: string[],
+        worldview = ''
+    ): Promise<string | null> {
+        try {
+            if (kind === 'characters') {
+                const completed = await this.characterGen.completeCharacter(content, missingFields, undefined, {
+                    worldview,
+                });
+                return completed?.trim() || null;
+            }
+            const entityType = kind === 'factions' ? '势力' : kind === 'locations' ? '地点' : '物品/功法';
+            return await this.batchEntityGen.repairEntity(entityType, name, content, missingFields, worldview);
+        } catch (e) {
+            log.warn('[AiEngine] 实体补全失败:', e instanceof Error ? e.message : e);
+            return null;
+        }
     }
 
     async callAIStream(
@@ -97,14 +137,12 @@ export class AIEngine {
         userPrompt: string,
         model?: string,
         temperature: number = 0.7,
-        maxTokens: number = 4096,
+        maxTokens?: number,
         onChunk?: (text: string, done: boolean) => void,
         options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
     ): Promise<APIResponse> {
-        const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const modelMaxOutput = getModelMaxOutput(effectiveModel);
-        const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
-        return this.apiClient.callAIStream(systemPrompt, userPrompt, model, temperature, safeMaxTokens, onChunk, options);
+        const effectiveMaxTokens = maxTokens ?? this.plugin.settings.maxOutput ?? 4096;
+        return this.apiClient.callAIStream(systemPrompt, userPrompt, model, temperature, effectiveMaxTokens, onChunk, options);
     }
 
     async *callAIAsyncIterator(
@@ -112,13 +150,11 @@ export class AIEngine {
         userPrompt: string,
         model?: string,
         temperature: number = 0.7,
-        maxTokens: number = 4096,
+        maxTokens?: number,
         options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean }
     ): AsyncGenerator<string, APIResponse, unknown> {
-        const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const modelMaxOutput = getModelMaxOutput(effectiveModel);
-        const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
-        return yield* this.apiClient.callAIAsyncIterator(systemPrompt, userPrompt, model, temperature, safeMaxTokens, options);
+        const effectiveMaxTokens = maxTokens ?? this.plugin.settings.maxOutput ?? 4096;
+        return yield* this.apiClient.callAIAsyncIterator(systemPrompt, userPrompt, model, temperature, effectiveMaxTokens, options);
     }
 
     async generateChapter(context: ChapterContext): Promise<APIResponse> {
@@ -139,9 +175,9 @@ export class AIEngine {
             log.warn('[AIEngine] 知识注入失败，跳过:', e);
         }
 
-        const systemPrompt = this.buildSystemPrompt(context, knowledgeInjection);
-        const userPrompt = this.buildUserPrompt(context);
-        return this.callAI(systemPrompt, userPrompt, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput, { isWritingTask: true });
+        const bodyFormat = await this.getBodyWriter().resolveContract(context.project);
+        const prompts = this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
+        return this.callAI(prompts.system, prompts.user, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput, { isWritingTask: true });
     }
 
     async generateChapterStream(
@@ -168,8 +204,10 @@ export class AIEngine {
             log.warn('[AIEngine] 知识注入失败，跳过:', e);
         }
 
-        const systemPrompt = this.buildSystemPrompt(context, knowledgeInjection);
-        const userPrompt = this.buildUserPrompt(context);
+        const bodyFormat = await this.getBodyWriter().resolveContract(context.project);
+        const prompts = this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
+        const systemPrompt = prompts.system;
+        const userPrompt = prompts.user;
 
         let fullContent = '';
         let totalUsage = { prompt: 0, completion: 0, total: 0 };
@@ -264,7 +302,7 @@ export class AIEngine {
         return this.worldviewGen.generateWorldview(worldName, projectName, genre, theme, customPrompt, onProgress);
     }
 
-    async generateWorldviewForProject(app: App, project: string, genre?: string, onProgress?: (phase: string, module?: string) => void): Promise<string> {
+    async generateWorldviewForProject(app: App, project: string, genre?: string, onProgress?: (phase: string, module?: string) => void): Promise<WorldviewGenerationResult> {
         return this.worldviewGen.generateWorldviewForProject(app, project, genre, onProgress);
     }
 
@@ -391,12 +429,40 @@ export class AIEngine {
         return this.chapterHelpers.iterativeRefine(bodyText, contextPrompt, maxRounds, chapNum, onProgress);
     }
 
-    private buildSystemPrompt(context: ChapterContext, knowledgeInjection?: string): string {
-        return buildSystemPromptFn(context, { minWordCount: this.plugin.settings.minWordCount, maxWordCount: this.plugin.settings.maxWordCount }, knowledgeInjection);
+    /** 当前模型可用于输入的窗口（设置值作为成本上限，模型能力作为硬上限） */
+    private resolvePromptLimits(model: string): { maxContext: number; maxOutput: number } {
+        const configured = {
+            maxContext: this.plugin.settings.maxContext || DEFAULT_CONTEXT_WINDOW,
+            maxOutput: this.plugin.settings.maxOutput || 4096,
+        };
+        try {
+            return clampBudgetToModelLimits(configured, this.plugin.resolveModelLimits(model));
+        } catch {
+            return configured;
+        }
     }
 
-    private buildUserPrompt(context: ChapterContext): string {
-        return buildUserPromptFn(context, { minWordCount: this.plugin.settings.minWordCount });
+    /** 供其他生成器复用同一套预算口径（设置值 + 模型能力取小） */
+    getPromptLimits(model?: string): { maxContext: number; maxOutput: number } {
+        return this.resolvePromptLimits(model || this.plugin.settings.proModel);
+    }
+
+    private buildChapterPrompts(
+        context: ChapterContext,
+        knowledgeInjection?: string,
+        bodyFormat?: BodyFormatContract,
+    ) {
+        return buildChapterPromptsFn(
+            context,
+            { minWordCount: this.plugin.settings.minWordCount, maxWordCount: this.plugin.settings.maxWordCount },
+            bodyFormat,
+            knowledgeInjection,
+            this.resolvePromptLimits(this.plugin.settings.proModel),
+        );
+    }
+
+    private buildUserPrompt(context: ChapterContext, bodyFormat?: BodyFormatContract): string {
+        return buildUserPromptFn(context, { minWordCount: this.plugin.settings.minWordCount }, bodyFormat);
     }
 
     async callAIWithTemplate(

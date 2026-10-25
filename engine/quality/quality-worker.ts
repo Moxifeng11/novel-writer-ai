@@ -1,5 +1,6 @@
 import { registerTaskHandler, startWorkerRuntime } from '../../services/worker-runtime';
 import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality-score-engine';
+import { WritingQualityEngine } from '../writing-quality-engine';
 import { DeviationDetector, DeviationReport, DeviationContext } from './deviation-detector';
 import { CharacterConsistencyChecker } from '../character-consistency-checker';
 import { PlotDivergenceEngine } from '../plot-divergence-engine';
@@ -22,24 +23,12 @@ interface DeviationDetectInput {
 
 function ensureEngines(): void {
     if (!qualityScoreEngine) {
-        // ── 注入纯计算分析器 ──
-        // characterChecker（CharacterConsistencyChecker）是纯计算，可在 Worker 内构造。
-        // rhythmAnalyzer / emotionAnalyzer 依赖 Obsidian App + AIEngine，无法在 Worker 内运行，
-        // 保持未注入并由主线程路径处理，此处上报剩余降级维度。
+        // C1: QSE 只保留 V1 统一内核。六维与总分全部来自 WritingQualityEngine，
+        // rhythmAnalyzer / emotionAnalyzer / characterChecker 在注入 v1Engine 后不生效，
+        // 因此这里不再注入 characterChecker（人物逐条比对由 DeviationDetector 负责）。
         qualityScoreEngine = new QualityScoreEngine({
-            characterChecker: new CharacterConsistencyChecker(),
+            v1Engine: new WritingQualityEngine(),
         });
-        const qe = qualityScoreEngine as any;
-        const qeMissing = ['rhythmAnalyzer', 'emotionAnalyzer', 'characterChecker'].filter((k) => !qe[k]);
-        if (qeMissing.length > 0) {
-            log.warn(
-                `[质量引擎] 条件分析器未注入: ${qeMissing.join(', ')}（依赖主线程 AI 能力），相关维度使用内置规则`
-            );
-            self.postMessage({
-                type: 'worker:warning',
-                payload: { code: 'INJECTION_PARTIAL', engine: 'QualityScoreEngine', missing: qeMissing, fallback: 'keyword_stats' },
-            });
-        }
     }
     if (!deviationDetector) {
         // ── 注入纯计算分析器 ──

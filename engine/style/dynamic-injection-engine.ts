@@ -22,7 +22,10 @@
 import type { SuggestionDirection } from '../../shared/types';
 import type { StyleFingerprint } from '../style-fingerprint-library';
 import type { StyleIntensityConfig } from './style-intensity-engine';
-import { DEFAULT_INTENSITY_CONFIG } from './style-intensity-engine';
+import { DEFAULT_INTENSITY_CONFIG, StyleIntensityEngine } from './style-intensity-engine';
+
+/** 强度映射是纯函数，模块级共享一个实例即可 */
+const intensityEngine = new StyleIntensityEngine();
 
 // ============================================================
 // 一、上下文特征类型定义
@@ -365,12 +368,16 @@ export class DynamicSampleSelector {
         scored.sort((a, b) => b.score - a.score);
 
         // 3. 多样性筛选：同一 fingerprintId 最多取 2 条
+        //    fpId 缺失时不计入上限：否则所有未知来源样本会被当成同一指纹，
+        //    topN=3 会静默退化成只能返回 2 条。
         const fpCount: Record<string, number> = {};
         const result: SelectedSample[] = [];
         for (const s of scored) {
-            const fpKey = s.fpId || '__no_fp__';
-            if ((fpCount[fpKey] || 0) >= 2) continue;
-            fpCount[fpKey] = (fpCount[fpKey] || 0) + 1;
+            if (s.fpId) {
+                const used = fpCount[s.fpId] || 0;
+                if (used >= 2) continue;
+                fpCount[s.fpId] = used + 1;
+            }
             result.push({ sample: s.sample, score: s.score, reason: s.reason });
             if (result.length >= topN) break;
         }
@@ -466,7 +473,7 @@ export class TieredInjectionBuilder {
         const globalTier = this.buildGlobalTier(fingerprints, intensityConfigs, budget.globalTier);
 
         // 2. 段落层：示例片段
-        const paragraphTier = this.buildParagraphTier(samples, context, budget.paragraphTier);
+        const paragraphTier = this.buildParagraphTier(samples, context, budget.paragraphTier, intensityConfigs);
 
         // 3. 句子层：特殊提示
         const sentenceTier = this.buildSentenceTier(context, fingerprints, budget.sentenceTier);
@@ -505,7 +512,7 @@ export class TieredInjectionBuilder {
         };
     }
 
-    /** 构建全局层：特征描述 */
+    /** 构建全局层：特征描述（按每个指纹的强度配置截断/禁用） */
     private buildGlobalTier(
         fingerprints: StyleFingerprint[],
         intensityConfigs: Map<string, StyleIntensityConfig> | undefined,
@@ -520,6 +527,19 @@ export class TieredInjectionBuilder {
 
         if (orderedFps.length === 0) return [];
 
+        // 强度配置 → 每个指纹的描述长度上限；强度 0 视为完全禁用
+        const limits = new Map<string, { descriptionLength: number; disabled: boolean }>();
+        for (const fp of orderedFps) {
+            const config = intensityConfigs?.get(fp.id) ?? DEFAULT_INTENSITY_CONFIG;
+            const preview = intensityEngine.previewIntensity(config);
+            limits.set(fp.id, {
+                descriptionLength: preview.global.descriptionLength,
+                disabled: preview.disabled,
+            });
+        }
+        const activeFps = orderedFps.filter(fp => !limits.get(fp.id)!.disabled);
+        if (activeFps.length === 0) return [];
+
         // V1 7 维特征标签与字段
         const featureLabels = [
             '句式节奏', '用词偏好', '叙事手法', '修辞风格',
@@ -533,8 +553,13 @@ export class TieredInjectionBuilder {
         const featureLines: string[] = [];
         for (let i = 0; i < featureLabels.length; i++) {
             const key = featureKeys[i];
-            const values = orderedFps
-                .map(fp => fp.features[key])
+            const values = activeFps
+                .map(fp => {
+                    const raw = fp.features[key];
+                    if (!raw) return '';
+                    const len = limits.get(fp.id)!.descriptionLength;
+                    return len > 0 ? raw.slice(0, len) : '';
+                })
                 .filter(Boolean);
             if (values.length > 0) {
                 featureLines.push(`- ${featureLabels[i]}：${values.join('；')}`);
@@ -546,26 +571,39 @@ export class TieredInjectionBuilder {
             result.push(...featureLines);
         }
 
-        // 应用强度截断
         const truncated = this.truncateTo(result, budget);
         return truncated;
     }
 
-    /** 构建段落层：示例片段 */
+    /** 构建段落层：示例片段（受强度配置的 sampleCount 上限约束） */
     private buildParagraphTier(
         samples: SelectedSample[],
         context: ContextFeatures,
         budget: number,
+        intensityConfigs?: Map<string, StyleIntensityConfig>,
     ): string[] {
         if (samples.length === 0 || budget <= 0) return [];
 
+        let maxSamples = samples.length;
+        if (intensityConfigs && intensityConfigs.size > 0) {
+            let cap = 0;
+            for (const config of intensityConfigs.values()) {
+                const preview = intensityEngine.previewIntensity(config);
+                if (preview.disabled) continue;
+                cap = Math.max(cap, preview.global.sampleCount);
+            }
+            maxSamples = Math.min(samples.length, cap);
+        }
+        if (maxSamples <= 0) return [];
+
+        const used = samples.slice(0, maxSamples);
         const result: string[] = ['', '参考片段：'];
 
         // 每条示例的长度上限 = budget / 样本数，且单条不超过 300 字
-        const perSampleMax = Math.min(300, Math.floor(budget / samples.length));
+        const perSampleMax = Math.min(300, Math.floor(budget / used.length));
 
-        for (let i = 0; i < samples.length; i++) {
-            const s = samples[i];
+        for (let i = 0; i < used.length; i++) {
+            const s = used[i];
             const truncated = s.sample.slice(0, perSampleMax);
             result.push(`${i + 1}. ${truncated}`);
         }

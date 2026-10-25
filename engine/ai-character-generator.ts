@@ -2,11 +2,13 @@ import NovelWriterPlugin from '../main';
 import {
     CHARACTER_MANDATORY_FIELDS,
     CHARACTER_BODY_SECTIONS_V2,
+    CHARACTER_NESTED_FIELD_GROUPS,
 } from '../shared/format-constants';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import { TemplateService } from '../services/template-service';
 import { ENGINE_NAMES } from './engine-registry';
+import { stripCodeFence } from '../shared/api-response-utils';
 
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
@@ -136,12 +138,16 @@ entity_last_changed_at:
 entity_last_changed_reason:
 姓名:
 年龄:
+性别:
 身份:
+首次出场:
 核心动机:
 核心驱动力_软肋:
 习惯性小动作:
 当前状态:
 当前情绪:
+当前位置:
+修为等级:
 性格标签:
 金手指/特殊能力:
 功法/技能树:
@@ -338,28 +344,60 @@ ${customPrompt}`;
     }
 
     /**
-     * 针对性补全不完整的角色卡：接收原始内容和缺失字段列表，调用 API 补全
+     * 针对性补全不完整的角色卡：接收原始内容和缺失字段列表，调用 API 补全。
+     *
+     * 补全必须与生成使用同一套「输出契约」：只补 frontmatter 会通过不了
+     * validateCharacterOutput（它还要求 7 个正文分节与 3 个嵌套组），
+     * 因此这里显式列出全部必需结构，避免「补了但复检依旧失败」。
      */
-    async completeCharacter(rawContent: string, missingFields: string[], signal?: AbortSignal): Promise<string> {
+    async completeCharacter(
+        rawContent: string,
+        missingFields: string[],
+        signal?: AbortSignal,
+        options: { worldview?: string; templateContent?: string } = {}
+    ): Promise<string> {
         const missingList = missingFields.join('、');
-        const systemPrompt = `你是一个人物卡补全专家。用户会给你一个不完整的人物卡，以及缺失的字段列表。请只补全缺失的字段，输出完整的人物卡（包含原始内容和补全的部分）。不要修改已有字段的内容，不要添加多余解释。`;
+        const soulFields = CHARACTER_NESTED_FIELD_GROUPS['character_core']?.join(' / ') ?? '';
+        const threeLayers = CHARACTER_NESTED_FIELD_GROUPS['性格三层']?.join(' / ') ?? '';
+        const arcFields = CHARACTER_NESTED_FIELD_GROUPS['角色弧光']?.join(' / ') ?? '';
 
-        const userPrompt = `以下人物卡缺少这些字段：${missingList}\n\n请补全缺失字段后输出完整的人物卡：\n\n${rawContent}`;
+        const systemPrompt = `你是一个人物卡补全专家。用户会给你一个不完整的人物卡，以及缺失的字段列表。
+请补全缺失的字段/分节，输出完整的人物卡。不要修改已有字段的内容，不要添加多余解释。
+
+【输出契约——不可违反，违反将被判定为无效】
+1. YAML frontmatter 必须用 --- 开始、用 --- 结束，以下 ${CHARACTER_MANDATORY_FIELDS.length} 个字段必须全部存在且有具体内容：
+${CHARACTER_MANDATORY_FIELDS.map((f, i) => `${i + 1}. ${f}`).join('\n')}
+2. 必须包含以下三个 YAML 嵌套组，子字段一个都不能少：
+- character_core: ${soulFields}
+- 性格三层: ${threeLayers}
+- 角色弧光: ${arcFields}
+3. 正文必须包含以下 ${CHARACTER_BODY_SECTIONS_V2.length} 个二级标题分节，且每节都要有实质内容（不能只有标题）：
+${CHARACTER_BODY_SECTIONS_V2.map((s, i) => `${i + 1}. ## ${s}`).join('\n')}
+4. 禁止输出「待补充」「未知」「无」「—」「...」等占位值
+5. 只输出人物卡 Markdown 本体，不要代码围栏，不要任何解释`;
+
+        const userPrompt = `以下人物卡缺少这些字段/分节：${missingList}
+
+【当前人物卡】
+${rawContent}
+
+${options.worldview ? `【世界观参考】\n${options.worldview.slice(0, 1800)}\n` : ''}${options.templateContent ? `【用户人物模板】\n${options.templateContent.slice(0, 1200)}\n` : ''}
+请输出补全后的完整人物卡。`;
 
         const result = await this.apiClient.callAI(
             systemPrompt,
             userPrompt,
-            this.plugin.settings.proModel,
-            0.7,
-            this.plugin.settings.maxOutput,
+            this.plugin.settings.proModel || this.plugin.settings.defaultModel,
+            0.4,
+            Math.max(4096, this.plugin.settings.maxOutput || 0),
             { signal }
         );
 
-        if (result.error) {
+        if (result.error || !result.content.trim()) {
             log.warn('[小说工坊] 角色补全失败:', result.error);
             return rawContent;
         }
 
-        return result.content;
+        return stripCodeFence(result.content);
     }
 }

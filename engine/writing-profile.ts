@@ -33,8 +33,11 @@ export interface TechniquesConfig {
 }
 
 export interface FingerprintConfig {
-    enabledGlobal: string[];
-    enabledProject: string[];
+    /**
+     * 模板层继承的指纹 id。
+     * 注意：指纹启用状态的唯一真相源是指纹库（`StyleFingerprintLibrary#listProject` /
+     * `isGlobalEnabledForProject`），画像里不再保存 enabledProject / enabledGlobal 副本。
+     */
     templateInherited: string[];
     injectionStrength: number;
 }
@@ -238,8 +241,6 @@ export class WritingProfileManager {
                 descriptionRatio: 0.3,
             },
             fingerprint: {
-                enabledGlobal: [],
-                enabledProject: [],
                 templateInherited: [],
                 injectionStrength: 0.5,
             },
@@ -298,8 +299,6 @@ export class WritingProfileManager {
                 descriptionRatio: 0.3,
             },
             fingerprint: {
-                enabledGlobal: [],
-                enabledProject: [],
                 templateInherited: [],
                 injectionStrength: 0.5,
             },
@@ -417,13 +416,8 @@ export class WritingProfileManager {
 
     private normalizeFingerprint(data: any, fallback: FingerprintConfig): FingerprintConfig {
         if (!data || typeof data !== 'object') return fallback;
+        // 旧画像里的 enabledProject / enabledGlobal 直接忽略：启用状态只认指纹库
         return {
-            enabledGlobal: Array.isArray(data.enabledGlobal)
-                ? data.enabledGlobal.filter((x: any) => typeof x === 'string')
-                : fallback.enabledGlobal,
-            enabledProject: Array.isArray(data.enabledProject)
-                ? data.enabledProject.filter((x: any) => typeof x === 'string')
-                : fallback.enabledProject,
             templateInherited: Array.isArray(data.templateInherited)
                 ? data.templateInherited.filter((x: any) => typeof x === 'string')
                 : fallback.templateInherited,

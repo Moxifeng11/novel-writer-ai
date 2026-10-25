@@ -3,6 +3,8 @@ import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER, SceneNode, SCENE_TYPE_LABELS } from '../shared/types';
+import { BodyWriter } from './body-writer';
+import { describeBodyFormat } from '../shared/body-format';
 
 export interface SceneExpandContext {
     projectId: string;
@@ -25,14 +27,18 @@ export class SceneExpander {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
     private apiClient: AIApiClient;
+    private bodyWriter: BodyWriter;
 
     constructor(plugin: NovelWriterPlugin, apiClient: AIApiClient, notifier?: Notifier) {
         this.notifier = notifier || NOOP_NOTIFIER;
         this.plugin = plugin;
         this.apiClient = apiClient;
+        this.bodyWriter = new BodyWriter({ app: plugin.app });
     }
 
     async expandScene(scene: SceneNode, context: SceneExpandContext): Promise<APIResponse> {
+        // 扩写输出与正文落盘共用同一份格式契约
+        const bodyFormat = await this.bodyWriter.resolveContract(context.projectId);
         const systemPrompt = `你是专业的小说作家。根据场景细纲，将其扩写为生动的小说文本。
 
 【写作铁律——不可违反】
@@ -49,8 +55,7 @@ export class SceneExpander {
    - foreshadow（伏笔埋设）：巧妙埋设伏笔，不刻意不突兀
    - resolution（收束）：收束得当，为下一场景铺垫
 
-【输出格式】
-直接输出小说文本，不要输出任何解释性文字、标题或标签。
+${describeBodyFormat(bodyFormat)}
 
 【写作技巧】
 1. 感官描写：调动视觉、听觉、嗅觉、味觉、触觉
@@ -113,10 +118,11 @@ ${scene.keyDialogues?.join('\n') || '无'}
 5. 情绪变化要自然流畅
 6. 结尾要为下一场景铺垫`;
 
-        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 4096);
+        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput);
     }
 
     async expandChapter(scenes: SceneNode[], context: SceneExpandContext): Promise<APIResponse> {
+        const bodyFormat = await this.bodyWriter.resolveContract(context.projectId);
         const systemPrompt = `你是专业的小说作家。根据多个场景细纲，将其扩写为完整的章节内容。
 
 【写作铁律——不可违反】
@@ -127,8 +133,7 @@ ${scene.keyDialogues?.join('\n') || '无'}
 5. 高潮场景要情绪饱满，有冲击力
 6. 结尾要有钩子，让读者想继续阅读
 
-【输出格式】
-直接输出完整的章节小说文本，不要输出任何解释性文字、标题或标签。
+${describeBodyFormat(bodyFormat)}
 
 【写作技巧】
 1. 场景衔接：场景之间要有自然的过渡段落
@@ -190,6 +195,7 @@ ${sceneList}
     }
 
     async expandSceneWithMemory(scene: SceneNode, context: SceneExpandContext): Promise<APIResponse> {
+        const bodyFormat = await this.bodyWriter.resolveContract(context.projectId);
         const systemPrompt = `你就是主角本人。现在你正在经历这个场景——不是在写小说，是在真实地体验。
 
 ${context.protagonistSoul || ''}
@@ -202,8 +208,7 @@ ${context.protagonistSoul || ''}
 5. 身体反应是不自觉的，不是刻意为之
 6. 潜台词要通过内心独白和行动来体现
 
-【输出格式】
-直接输出第一人称视角的小说文本，不要输出任何解释性文字。
+${describeBodyFormat(bodyFormat)}
 
 【写作技巧】
 1. 感官入口：身体第一个感受到的是什么？（气味/温度/声音/触感）
@@ -249,6 +254,6 @@ ${scene.keyDialogues?.join('\n') || '无'}
 4. 身体反应是不自觉的
 5. 潜台词要通过内心独白体现`;
 
-        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 4096);
+        return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput);
     }
 }

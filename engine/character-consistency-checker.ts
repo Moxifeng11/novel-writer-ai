@@ -103,8 +103,7 @@ export class CharacterConsistencyChecker {
 
     async check(
         chapterText: string,
-        characterInfos: CharacterInfo[],
-        historyTexts?: string[]
+        characterInfos: CharacterInfo[]
     ): Promise<ConsistencyCheckResult> {
         const result: ConsistencyCheckResult = {
             overallScore: 100,
@@ -223,12 +222,7 @@ export class CharacterConsistencyChecker {
         const personalityDesc = character.personality || '';
         const charName = character.name;
 
-        const detectedTraits: string[] = [];
-        for (const [trait, keywords] of Object.entries(PERSONALITY_TRAITS)) {
-            if (personalityDesc.includes(trait)) {
-                detectedTraits.push(trait);
-            }
-        }
+        const detectedTraits = this.resolveConfiguredTraits(personalityDesc);
 
         if (detectedTraits.length === 0) {
             return issues;
@@ -275,9 +269,8 @@ export class CharacterConsistencyChecker {
         const charName = character.name;
         const personalityDesc = character.personality;
 
-        const relevantPatterns = BEHAVIOR_PATTERNS.filter(p => 
-            personalityDesc.includes(p.trait)
-        );
+        const configuredTraits = new Set(this.resolveConfiguredTraits(personalityDesc));
+        const relevantPatterns = BEHAVIOR_PATTERNS.filter(p => configuredTraits.has(p.trait));
 
         if (relevantPatterns.length === 0) {
             return issues;
@@ -375,6 +368,11 @@ export class CharacterConsistencyChecker {
             return issues;
         }
 
+        // 同一「人物 + 矛盾词」只报一次：矛盾组之间存在反义词重叠
+        // （设定同时写「黑发」「金发」时，两组都把「白发」列为反义），
+        // 集合必须跨组共用，否则同一问题会被重复计数。
+        const reported = new Set<string>();
+
         for (let i = 0; i < charParagraphs.length; i++) {
             const para = charParagraphs[i];
             
@@ -385,7 +383,9 @@ export class CharacterConsistencyChecker {
                 
                 if (hasAppearanceWord) {
                     for (const opp of contradiction.opposite) {
+                        if (reported.has(opp)) continue;
                         if (para.includes(opp) && para.includes(charName)) {
+                            reported.add(opp);
                             const sentence = this.extractSentence(para, opp);
                             issues.push({
                                 type: 'appearance',
@@ -406,8 +406,10 @@ export class CharacterConsistencyChecker {
     }
 
     private extractCharacterParagraphs(text: string, name: string): string[] {
+        // 中文网文常用单换行分段，只按空行切会把整章当成一段，
+        // 导致「另一个角色金发」被算到主角头上。口径与 DeviationDetector 一致。
         const paragraphs = text
-            .split(/\r?\n\r?\n/)
+            .split(/\r?\n+/)
             .map(p => p.trim())
             .filter(p => p.length > 0 && p.includes(name));
         return paragraphs;
@@ -429,6 +431,21 @@ export class CharacterConsistencyChecker {
         if (end < context.length) end++;
 
         return context.substring(start, end).trim();
+    }
+
+    /**
+     * 把人物设定文案解析为性格标签集合。
+     * 设定常写「冷静」「沉默」「机智」这类关键词，而 PERSONALITY_TRAITS 的键是
+     * 「沉稳」「内向」「聪明」——只匹配键会让这些常见写法完全跳过性格/行为检测。
+     */
+    private resolveConfiguredTraits(personalityDesc: string): string[] {
+        const traits: string[] = [];
+        for (const [trait, keywords] of Object.entries(PERSONALITY_TRAITS)) {
+            if (personalityDesc.includes(trait) || keywords.some(kw => personalityDesc.includes(kw))) {
+                traits.push(trait);
+            }
+        }
+        return traits;
     }
 
     private calculateCharacterScore(inconsistencies: InconsistencyItem[]): number {

@@ -1,4 +1,5 @@
 import { createLogger } from '../shared/logger';
+import { PLOT_COMPLETION_MIN_EVALUABLE_CHARS } from '../shared/thresholds';
 
 const log = createLogger('PlotCompletionEngine');
 /**
@@ -143,7 +144,7 @@ export class PlotCompletionEngine {
     const cleanText = text.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
     const wordCount = cleanText.length;
 
-    if (wordCount < 50) {
+    if (wordCount < PLOT_COMPLETION_MIN_EVALUABLE_CHARS) {
       return this.getEmptyResult(wordCount);
     }
 

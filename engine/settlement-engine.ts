@@ -13,7 +13,7 @@ import { TFile, TFolder } from 'obsidian';
 import { mkdirp } from '../utils/helpers';
 import { getChapterFileName, findChapterFile, getChapterFile } from './chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
-import { withWriteLock } from './write-lock';
+import { withWriteLock } from '../shared/write-lock';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates } from './relationship-engine';
 import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard } from '../shared/paths';
 import type { Notifier } from '../shared/types';

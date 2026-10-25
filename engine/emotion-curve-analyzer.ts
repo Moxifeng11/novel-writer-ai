@@ -5,32 +5,16 @@
  * 对应优化方向：F3
  */
  
-import { App } from 'obsidian';
-import { AIEngine } from './ai-engine';
 import { EmotionPoint, EmotionCurve } from '../shared/co-writer-types';
-import { extractResponseText } from '../shared/api-response-utils';
-import type { NovelWriterSettingsAPI } from '../shared/plugin-api';
 import { createLogger } from '../shared/logger';
- 
+
 
 const log = createLogger('EmotionCurveAnalyzer');
- export interface EmotionCurveAnalyzerOptions {
-    app: App;
-    aiEngine: AIEngine;
-    plugin: NovelWriterSettingsAPI;
-}
 
 export class EmotionCurveAnalyzer {
-    private app: App;
-    private aiEngine: AIEngine;
-    private plugin: NovelWriterSettingsAPI;
-     
-     constructor(opts: EmotionCurveAnalyzerOptions) {
-         this.app = opts.app;
-         this.aiEngine = opts.aiEngine;
-         this.plugin = opts.plugin;
-     }
-     
+    /** 片段内容哈希 → 情绪点：正文只在尾部增长时，前面片段不必重新分析 */
+    private segmentCache = new Map<string, EmotionPoint>();
+
      /**
       * 分析文本的情绪曲线
       */
@@ -58,6 +42,10 @@ export class EmotionCurveAnalyzer {
                  });
              }
          }
+
+         // 片段缓存只服务「正文尾部增长」这一常见场景；超限直接清空，
+         // 避免长章节反复改写时把整本正文的片段都留在内存里。
+         if (this.segmentCache.size > 512) this.segmentCache.clear();
          
          return {
              points,
@@ -97,50 +85,66 @@ export class EmotionCurveAnalyzer {
      }
      
      /**
-      * 分析单个片段的情绪
-      */
-     private async analyzeSegment(text: string, index: number): Promise<EmotionPoint> {
-         const prompt = [
-             '分析以下文本片段的情绪状态。',
-             '',
-             text,
-             '',
-             '请判断：',
-             '1. 主要情绪类型（从以下选择：joy/sadness/anger/fear/surprise/disgust/neutral）',
-             '2. 情绪强度（0-100）',
-             '',
-             '以 JSON 格式返回（不要包含 markdown 代码块）：',
-             '{ "emotion": "情绪类型", "intensity": 50 }'
-         ].join('\n');
-         
-         const response = await this.aiEngine.callAI(
-             '', 
-             prompt, 
-             this.plugin?.settings?.flashModel || 'flash', 
-             0.3, 
-             100
-         );
-         
-         const raw = extractResponseText(response);
-         const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-         
-         try {
-             const json = JSON.parse(cleaned);
-             return {
-                 position: index,
-                 emotion: json.emotion || 'neutral',
-                 intensity: Number(json.intensity) || 50,
-                 text: text.slice(0, 50) + (text.length > 50 ? '...' : '')
-             };
-         } catch {
-             return {
-                 position: index,
-                 emotion: 'neutral',
-                 intensity: 50,
-                 text: text.slice(0, 50)
-             };
-         }
-     }
+     * 分析单个片段的情绪
+     *
+     * 实时面板每次停顿都会重算整条曲线。此前若逐段调用 AI，4000 字正文就是每 2.5 秒
+     * 5 次云端请求——这是监控链路里最大的隐性云端依赖，而入口开关
+     * `enableDetailedAnalysis` 从未有 UI 写入方（AI 分支不可达）。现统一走本地词典规则，
+     * 相同片段命中缓存、不重复计算。
+     */
+    private async analyzeSegment(text: string, index: number): Promise<EmotionPoint> {
+        const cacheKey = this.hashSegment(text);
+        const cached = this.segmentCache.get(cacheKey);
+        if (cached) {
+            return { ...cached, position: index };
+        }
+
+        const point = this.classifyByKeywords(text, index);
+        this.segmentCache.set(cacheKey, point);
+        return point;
+    }
+
+    /** 片段内容哈希（只用于缓存命中判断） */
+    private hashSegment(text: string): string {
+        let hash = 0x811c9dc5;
+        for (let i = 0; i < text.length; i++) {
+            hash ^= text.charCodeAt(i);
+            hash = Math.imul(hash, 0x01000193);
+        }
+        return `${text.length}:${(hash >>> 0).toString(36)}`;
+    }
+
+    /**
+     * 本地情绪分类：按关键词命中数取最高的情绪桶。
+     * 与 AI 版保持同一组 emotion 取值，强度按命中数放大。
+     */
+    private classifyByKeywords(text: string, index: number): EmotionPoint {
+        const buckets: Array<{ emotion: string; pattern: RegExp }> = [
+            { emotion: 'joy', pattern: /喜悦|开心|高兴|快乐|幸福|满足|欣慰|激动|兴奋|期待|希望|热情|感激|感动|骄傲|自豪|轻松|平静|安宁|温馨|浪漫|甜蜜/g },
+            { emotion: 'sadness', pattern: /悲伤|痛苦|绝望|失落|孤独|寂寞|沮丧|气馁|后悔|内疚|羞愧|思念|离别/g },
+            { emotion: 'anger', pattern: /愤怒|生气|憎恨|厌恶|嫉妒|怒火|暴怒|怒吼|咬牙/g },
+            { emotion: 'fear', pattern: /恐惧|害怕|焦虑|紧张|担忧|惊恐|战栗|颤抖|不安/g },
+            { emotion: 'surprise', pattern: /惊讶|震惊|意外|吃惊|错愕|愕然|突然/g },
+        ];
+
+        let bestEmotion = 'neutral';
+        let bestHits = 0;
+        for (const bucket of buckets) {
+            const hits = (text.match(bucket.pattern) || []).length;
+            if (hits > bestHits) {
+                bestHits = hits;
+                bestEmotion = bucket.emotion;
+            }
+        }
+
+        const intensity = bestHits === 0 ? 50 : Math.min(100, 40 + bestHits * 12);
+        return {
+            position: index,
+            emotion: bestEmotion,
+            intensity,
+            text: text.slice(0, 50) + (text.length > 50 ? '...' : ''),
+        };
+    }
      
      /**
       * 找出主导情绪

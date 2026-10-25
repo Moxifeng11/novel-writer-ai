@@ -81,6 +81,10 @@ export interface StepRunnerCallbacks {
     /** 显示逐轮版本选择弹窗 */
     showRoundSelectModal(params: RoundSelectModalParams): void;
 
+    // ── 状态类 ──────────────────────────────────────────────
+    /** A7: 统一失效传播（下游审查/分析/结算）；未提供时回退为调用方自行清理 */
+    invalidateSteps?(stepKeys: string[], markStale?: boolean): void;
+
     // ── 样式注入 ─────────────────────────────────────────────
     /** 注入 DEAI 弹窗样式（幂等） */
     injectDeaiModalStyles(): void;

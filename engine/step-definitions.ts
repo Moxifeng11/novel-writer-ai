@@ -9,41 +9,43 @@
  * 架构说明：StepRunner 与 CoWriterEngine 的关系
  * ============================================================
  *
- * 本插件存在两条正文生成路径，共享同一套数据存储格式：
+ * 本插件存在两条正文生成路径，共享同一套数据存储格式与落盘入口：
  *
- * 【路径 A：StepRunner 驱动的 AI 自动生成（已废弃）
- *   - 入口：full-writer-view.ts 步骤7（bodyGeneration）
- *   - 引擎：StepRunner.executeCurrentStep() → callAIWithRetry()
- *   - 特点：一次性整章生成，用户被动接受结果
- *   - 状态：deprecated，仅作为兼容旧数据的备选路径保留
+ * 【路径 A：StepRunner 驱动的整章生成
+ *   - 入口：full-writer-view.ts 步骤 7（bodyGeneration）
+ *   - 引擎：StepRunner.executeCurrentStep() → AIEngine
+ *   - 特点：一次生成整章草稿，有角色灵魂 / Scene 规划时自动使用 V2 模板
  *
- * 【路径 B：CoWriterEngine 驱动的句级协同写作（推荐）
- *   - 入口：full-writer-view.ts 步骤7 的"进入句级协同写作"按钮
+ * 【路径 B：CoWriterEngine 驱动的句级协同写作
+ *   - 入口：full-writer-view.ts 步骤 7 的「进入句级协同写作」按钮
  *   - 引擎：CoWriterEngine（co-writer-engine.ts）
- *   - 特点：逐句生成 3 条候选，用户接受/编辑/验证后写入
- *   - 状态：当前推荐的正文生成方式
+ *   - 特点：逐句生成候选，用户接受/编辑/验证后写入
  *
- * 两条路径的数据格式一致性：
+ * 两条路径的契约一致性（v4.11.0 起）：
  *   - 正文文件路径：完全一致，均写入同一正文 .md 文件
+ *   - 落盘入口：统一为 engine/body-writer.ts（frontmatter 保留、标题统一、按契约规整）
+ *   - 格式契约：统一来自项目「写作规则.md」（shared/body-format.ts）
  *   - 步骤状态：均更新 stepResults['bodyGeneration'] 和 stepCompleted
- *   - Frontmatter：均遵循同一套 status / entityNames 等元数据字段
  *   - 后续步骤：qualityControl / analysisReport / settlement 均基于同一正文
- *   - 结论：两条路径产出的数据完全兼容，可随时切换
- *
- * 为什么 bodyGeneration（路径 A）被废弃：
- *   1. 一次性整章生成质量不可控，难以中途调整方向
- *   2. 句级协同写作让用户掌握创作主导权，AI 是辅助而非替代
- *   3. 逐句验证降低 AI 痕迹，反检测效果更好
- *   4. 支持多方向候选，增加创作可能性
- *
- * 推荐工作流：
- *   步骤 1-6（规划阶段）→ 步骤 7（进入句级协同写作）→ CoWritingView →
- *   完成正文 → 回到 FullWriterView → 步骤 8-10（质量控制/分析/结算）
+ *   - 结论：两条路径可随时切换，不存在「新旧模式」之分
  * ============================================================
  */
 
 import { validateStepResult } from './step-validator';
 import { getBusinessThreshold } from '../shared/thresholds';
+
+/**
+ * A7: 正文/修正被改写后必须失效的下游步骤。
+ * 所有写正文入口（工作台保存、润色自动保存、消痕/精修/逐轮选择）共用此列表，
+ * 避免各写各的导致 stepLevels / staleSteps 不同步。
+ */
+export const BODY_CHANGE_INVALIDATED_STEPS = [
+    'selfCheck',
+    'continuityCheck',
+    'qualityControl',
+    'analysisReport',
+    'settlement',
+] as const;
 
 // ============================================================
 // 策略类型
@@ -131,19 +133,11 @@ export const ALL_FULL_STEPS: FullStep[] = [
     { index: 5,  key: 'emotionPlan',    label: '🎭 情绪规划',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
     { index: 6,  key: 'sceneExpand',    label: '🎬 Scene展开',      required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
     /**
-     * @deprecated 正文生成已统一迁移至句级协同写作工作台（CoWritingView）
-     * 
-     * 废弃说明：
-     * - 本步骤（AI 一次性整章生成）为 v5.0 之前的旧模式
-     * - 推荐使用「句级协同写作」：逐句生成 3 条候选，用户接受/编辑/验证
-     * - 两条路径数据完全兼容，共享同一正文文件和 stepResults['bodyGeneration']
-     * - 入口：步骤 7 页面顶部的「进入句级协同写作」按钮
-     * 
-     * 保留原因：
-     * - 兼容已保存的旧章节数据
-     * - 作为批量快速生成的备选方案（不推荐用于正式创作）
+     * 正文生成：与句级协同写作共享同一正文文件与 `bodyGeneration` 结果键。
+     * - 有角色灵魂/Scene 规划时自动使用 V2 小说家模板（见 getStepTemplateAuto）
+     * - 落盘统一走 engine/body-writer.ts，格式契约来自项目「写作规则.md」
      */
-    { index: 7,  key: 'bodyGeneration', label: '✍️ 正文生成',       required: true,  canSkip: false, auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: postCheckWordCount, deprecated: true },
+    { index: 7,  key: 'bodyGeneration', label: '✍️ 正文生成',       required: true,  canSkip: false, auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: postCheckWordCount },
     { index: 8,  key: 'qualityControl', label: '🎯 质量控制',       required: false, canSkip: true,  auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: null },
     { index: 9,  key: 'analysisReport', label: '📊 分析报告',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: preCheckBodyGeneration, postValidation: null },
     { index: 10, key: '',               label: '💾 章节结算',       required: true,  canSkip: false, auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
@@ -209,6 +203,8 @@ export type StepRunCtx = {
     renderInContainer: (container: HTMLElement) => Promise<void>;
     setIsLoading: (loading: boolean) => void;
     refreshWorkspace: () => void;
+    /** 统一失效传播：同时维护 stepCompleted / stepLevels / staleSteps */
+    invalidateSteps?: (stepKeys: string[], markStale?: boolean) => void;
     // ✅ v1.6.0 实体状态追踪：步骤完成后回调
     onStepComplete?: (stepKey: string, content: string) => Promise<void>;
     /** 标记哪些 stepKey 在本会话中由 AI 生成（非磁盘恢复） */

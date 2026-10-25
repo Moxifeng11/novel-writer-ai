@@ -221,6 +221,32 @@ export function getChapterFile(folder: TFolder, type: string): TFile | null {
 }
 
 /**
+ * 列出某卷已建骨架的章节号（并集：步骤结果目录 + 正文文件）。
+ *
+ * Rev 184：旧版章节生成工具原先只把「已有正文」当候选章，导致尚未写正文的新章
+ * 永远无法被选中（输入范围后仍得到 0 目标）。章范围必须以骨架为准，
+ * 骨架由「批量建章」创建。
+ */
+export function listChapterNumbers(app: App, project: string, volN: number): number[] {
+    const nums = new Set<number>();
+    const stepVolDir = `${project}/03-大纲与章节/步骤结果/第${volN}卷`;
+    const stepVol = app.vault.getAbstractFileByPath(stepVolDir);
+    if (stepVol instanceof TFolder) {
+        for (const child of stepVol.children) {
+            const m = child.name.match(/^第(\d+)章/);
+            if (m) nums.add(parseInt(m[1], 10));
+        }
+    }
+    const bodyDir = pjBodyDir(project, volN) + '/';
+    for (const f of app.vault.getFiles()) {
+        if (!f.path.startsWith(bodyDir)) continue;
+        const m = f.name.match(/^第(\d+)章.*_正文\.md$/);
+        if (m) nums.add(parseInt(m[1], 10));
+    }
+    return Array.from(nums).sort((a, b) => a - b);
+}
+
+/**
  * 在文件列表中跨目录查找章节文件（读操作）
  * 只匹配标准格式：第X章_类型.md 或 第X章_标题_类型.md
  * 不兼容旧格式——调用前必须先 normalizeChapterFiles()

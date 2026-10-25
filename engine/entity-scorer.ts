@@ -54,6 +54,40 @@ function extractKeywords(text: string): string[] {
         .map(([w]) => w);
 }
 
+/** 各类型实体的独立预算：人物不能被势力/地点/物品挤掉（OOC 的主要来源） */
+export interface EntityTypeBudgets {
+    character: number;
+    faction: number;
+    location: number;
+    item: number;
+}
+
+export const DEFAULT_ENTITY_TYPE_BUDGETS: EntityTypeBudgets = {
+    character: 12,
+    faction: 6,
+    location: 6,
+    item: 6,
+};
+
+/**
+ * 按类型分别打分与截断。
+ * 旧实现把四类实体放在同一个 topN=8 里竞争，人物名额会被势力/地点/物品吃掉。
+ */
+export function scoreAndFilterEntitiesByType(
+    entities: ScoredEntity[],
+    contextText: string,
+    budgets: EntityTypeBudgets = DEFAULT_ENTITY_TYPE_BUDGETS,
+): EntityResult[] {
+    const result: EntityResult[] = [];
+    const types: Array<keyof EntityTypeBudgets> = ['character', 'faction', 'location', 'item'];
+    for (const type of types) {
+        const subset = entities.filter((e) => e.type === type);
+        if (subset.length === 0) continue;
+        result.push(...scoreAndFilterEntities(subset, contextText, Math.max(1, budgets[type])));
+    }
+    return result;
+}
+
 export function scoreAndFilterEntities(
     entities: ScoredEntity[],
     contextText: string,

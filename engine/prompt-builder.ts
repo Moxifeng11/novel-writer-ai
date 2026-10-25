@@ -8,10 +8,21 @@ import type { PreferenceMemory } from './preference-memory';
 import type { SuggestionDirection } from '../shared/types';
 import type { AssociationHint } from '../shared/co-writer-types';
 import type { CharacterSoul } from './character-soul';
-import type { StyleFingerprintLibrary, VectorStore } from './style-fingerprint-library';
+import type { StyleFingerprint, StyleFingerprintLibrary, VectorStore } from './style-fingerprint-library';
 import type { KnowledgeBaseManager } from '../services/knowledge-base-manager';
 import type { KnowledgeSearchResult, KnowledgeVectorStore } from './knowledge-vector-store';
 import { createLogger } from '../shared/logger';
+import {
+    BodyFormatContract,
+    DEFAULT_BODY_FORMAT,
+    deriveBodyFormat,
+    describeBodyFormat,
+} from '../shared/body-format';
+import { assemblePromptWithinBudget, resolvePrecedingCharLimit, type PromptSection } from '../shared/prompt-budget';
+import { dedupeAdjacentChunks } from '../shared/knowledge-position';
+import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { StyleIntensityEngine, type StyleIntensityConfig } from './style/style-intensity-engine';
+import { selectFingerprintsForInjection } from './style/fingerprint-selection';
 
 const log = createLogger('PromptBuilder');
 import {
@@ -19,6 +30,9 @@ import {
     DynamicSampleSelector,
     TieredInjectionBuilder,
 } from './style/dynamic-injection-engine';
+
+/** 强度映射是纯函数，模块级共享一个实例即可 */
+const intensityEngine = new StyleIntensityEngine();
 
 const DIRECTION_PROMPTS: Record<SuggestionDirection, string> = {
     action:       '现在需要一段推进情节的动作描写。写出主角此刻身体在做什么——手的动作、脚步的移动、呼吸的变化。用具体的身体动作把这一幕推向下一个节点。',
@@ -49,6 +63,8 @@ export interface PromptSnapshot {
         };
     }>;
     crossVolumeContext?: string;
+    longTermMemoryContext?: string;
+    fanficRulesContext?: string;
     worldType?: string;
     writingStyle?: string;
     allChars?: string;
@@ -70,12 +86,16 @@ export class PromptBuilder {
     private referenceBookIds: string[] = [];
     private knowledgeCache: Map<string, { result: string[], contentHash: string }> = new Map();
     private cachedSystemPrompt: string | null = null;
+    /** 缓存 system prompt 时使用的格式契约签名（写作规则变化后需重建） */
+    private cachedFormatKey = '';
     private l2ContextCache: Map<string, { parts: string[]; timestamp: number }> = new Map();
     private readonly L2_CACHE_TTL = 5000;
     /** 动态风格注入引擎（懒加载） */
     private contextAnalyzer?: ContextAnalyzer;
     private dynamicSampleSelector?: DynamicSampleSelector;
     private tieredInjectionBuilder?: TieredInjectionBuilder;
+    /** 指纹筛选回退全量的降级事件是否已发过（每实例只报一次，避免逐章刷屏） */
+    private fingerprintFallbackNotified = false;
 
     constructor(
         private getSnapshot: () => PromptSnapshot | null,
@@ -85,9 +105,20 @@ export class PromptBuilder {
         private vectorStore?: VectorStore | null
     ) {}
 
-    private getSystemPrompt(): string {
-        if (!this.cachedSystemPrompt) {
-            this.cachedSystemPrompt = [
+    /** 当前项目的正文格式契约（由写作规则推导；无规则时用默认契约） */
+    getBodyFormat(): BodyFormatContract {
+        const rules = this.getSnapshot()?.writingRules || '';
+        return rules.trim() ? deriveBodyFormat(rules) : { ...DEFAULT_BODY_FORMAT };
+    }
+
+    private getSystemPrompt(writingRules = ''): string {
+        // 格式契约来自项目写作规则：同一 prompt 里不允许再硬编码「Tab / 空两格」两套说法
+        const contract = writingRules.trim() ? deriveBodyFormat(writingRules) : { ...DEFAULT_BODY_FORMAT };
+        const formatKey = `${contract.separator}|${contract.indent}`;
+        if (this.cachedSystemPrompt && this.cachedFormatKey === formatKey) return this.cachedSystemPrompt;
+
+        this.cachedFormatKey = formatKey;
+        this.cachedSystemPrompt = [
                 '你是一位第三人称限知视角的叙事者。你不是在"写小说"，你是在用镜头紧贴主角，把他/她正在经历的一切原样呈现出来。',
                 '',
                 '【叙事视角规则】',
@@ -105,21 +136,18 @@ export class PromptBuilder {
                 '- 不重复。同样的意思不说第二遍。',
                 '- 不用"然后""接着""就在这时"这种过渡词。画面直接跳。',
                 '',
-                '【番茄小说分段格式】',
-                '- 段落极短，大多只有一句话。',
-                '- 一句话就是一段，换行直接切下一个画面。',
-                '- 段落之间只用一个换行，不要留空行，不要用两个回车。',
-                '- 每段首行缩进一个制表符（Tab）。',
-                '- 对话单独成段，前后不要留空行。',
-                '- 感官细节单独成段，一个细节就是一记重锤。',
+                describeBodyFormat(contract),
+                '【节奏补充】',
+                '- 段落极短，大多只有一句话；换行直接切下一个画面。',
+                '- 对话单独成段，感官细节单独成段，一个细节就是一记重锤。',
                 '',
                 '输出语言：简体中文。所有叙事内容必须用纯中文输出，禁止出现任何英文单词或句子。',
             ].join('\n');
-        }
         return this.cachedSystemPrompt;
     }
 
-    private getCachedContextParts(snap: PromptSnapshot | null): string[] {
+    private getCachedContextParts(snap: PromptSnapshot | null, opts?: { skipChapterPlanning?: boolean }): string[] {
+        const skipChapterPlanning = opts?.skipChapterPlanning === true;
         const worldType = snap?.worldType || '';
         const writingStyle = snap?.writingStyle || '';
         const allChars = snap?.allChars || '';
@@ -135,7 +163,7 @@ export class PromptBuilder {
         const triggeredMemories = snap?.triggeredMemories || '';
 
         const cacheKey = this.simpleHash(
-            `${worldType}|${writingStyle}|${allChars}|${allFactions}|${allLocs}|${allItems}|${writingRules}|${chapPlan}|${sceneExpansion}|${prevChaptersSummary}|${settingLib}|${timeline}|${triggeredMemories}`
+            `${skipChapterPlanning ? 'brief' : 'full'}|${worldType}|${writingStyle}|${allChars}|${allFactions}|${allLocs}|${allItems}|${writingRules}|${chapPlan}|${sceneExpansion}|${prevChaptersSummary}|${settingLib}|${timeline}|${triggeredMemories}`
         );
 
         const cached = this.l2ContextCache.get(cacheKey);
@@ -163,12 +191,13 @@ export class PromptBuilder {
             writingRules ? '' : '',
             writingStyle ? '【文笔风格（请严格遵循此文件定义的风格）】' + writingStyle : '',
             '',
-            chapPlan ? '【本章大纲】' : '',
-            chapPlan ? chapPlan.slice(0, 3000) : '',
-            chapPlan ? '' : '',
-            sceneExpansion ? '【场景展开】' : '',
-            sceneExpansion ? sceneExpansion.slice(0, 3000) : '',
-            sceneExpansion ? '' : '',
+            // 有章节简报时，简报已完整承载大纲与当前场景，避免重复注入整段 Scene 展开
+            chapPlan && !skipChapterPlanning ? '【本章大纲】' : '',
+            chapPlan && !skipChapterPlanning ? chapPlan.slice(0, 3000) : '',
+            chapPlan && !skipChapterPlanning ? '' : '',
+            sceneExpansion && !skipChapterPlanning ? '【场景展开】' : '',
+            sceneExpansion && !skipChapterPlanning ? sceneExpansion.slice(0, 3000) : '',
+            sceneExpansion && !skipChapterPlanning ? '' : '',
             prevChaptersSummary ? '【前章摘要】' : '',
             prevChaptersSummary ? prevChaptersSummary.slice(0, 3000) : '',
             prevChaptersSummary ? '' : '',
@@ -232,22 +261,47 @@ export class PromptBuilder {
             const queryTail = (queryText || '').slice(-800);
             const context = this.contextAnalyzer.analyze(queryTail, direction);
 
-            // 2. 向量检索（扩大到 5 条，让 rerank 有空间）
-            const searchResults = await this.vectorStore.search(queryTail.slice(-500), 5);
+            // 2. 强度配置（必须先读盘：getIntensityConfig 只查内存 map，
+            //    不 load 的话重启后一律回落到默认强度，用户设置对 prompt 完全不生效）
+            await this.fingerprintLibrary.loadIntensityConfigs();
+            // 启用指纹过多时按当前正文的 V2 12 维相似度挑选，避免全量特征挤占本地窗口
+            const queryTailForRanking = queryTail.slice(-500);
+            const fingerprintsForInjection = await this.selectFingerprintsForInjection(
+                enabledFingerprints,
+                queryTailForRanking,
+            );
+            const intensityConfigs = new Map<string, StyleIntensityConfig>();
+            const disabledFpIds = new Set<string>();
+            for (const fp of enabledFingerprints) {
+                const config = this.fingerprintLibrary.getIntensityConfig(fp.id);
+                intensityConfigs.set(fp.id, config);
+                // 强度 0 = 完全禁用（与 TieredInjectionBuilder#buildGlobalTier 同口径）。
+                // 只让全局层描述消失、示例样本照旧注入，等于「禁用」对正文无效。
+                if (intensityEngine.previewIntensity(config).disabled) disabledFpIds.add(fp.id);
+            }
 
-            // 3. 动态示例选择（TR-6.2）：对检索结果做基于上下文的 rerank
-            const samplesWithFpId = searchResults.map(r => ({
-                sample: r.sample,
-                score: r.score,
-                fingerprintId: undefined as string | undefined,
-            }));
+            // 3. 向量检索（扩大到 5 条，让 rerank 有空间）
+            const searchResults = await this.vectorStore.search(queryTailForRanking, 5);
+
+            // 4. 动态示例选择（TR-6.2）：对检索结果做基于上下文的 rerank
+            // 必须按启用状态 + 强度过滤：指纹被禁用后向量文件仍在磁盘上，
+            // 不过滤等于禁用无效。fingerprintId 缺失（旧实现/测试桩）时无法判定归属，放行。
+            const injectionIds = new Set(fingerprintsForInjection.map(fp => fp.id));
+            const samplesWithFpId = searchResults
+                .filter(r => !r.fingerprintId || (injectionIds.has(r.fingerprintId) && !disabledFpIds.has(r.fingerprintId)))
+                .map(r => ({
+                    sample: r.sample,
+                    score: r.score,
+                    fingerprintId: r.fingerprintId,
+                }));
             const selectedSamples = this.dynamicSampleSelector.select(samplesWithFpId, context, 3);
 
-            // 4. 分级注入拼装（TR-6.3 + TR-6.5）：全局层 + 段落层 + 句子层
+            // 5. 分级注入拼装（TR-6.3 + TR-6.5）：全局层 + 段落层 + 句子层
             const result = this.tieredInjectionBuilder.build(
-                enabledFingerprints,
+                fingerprintsForInjection,
                 selectedSamples,
                 context,
+                intensityConfigs,
             );
 
             return result;
@@ -255,6 +309,43 @@ export class PromptBuilder {
             log.warn('[PromptBuilder] 指纹 prompt 生成失败:', e);
             return [];
         }
+    }
+
+    /**
+     * 启用指纹超过上限时，用 V2 12 维检索挑出与当前正文最相似的 N 个。
+     * 检索不可用 / 无结果 / 抛错时一律回退全量：风格约束不能因为一次检索失败而丢失，
+     * 但必须发一次降级事件，避免「注入了 20 个指纹却只剩 3 个预算」的静默行为。
+     */
+    private async selectFingerprintsForInjection(
+        enabled: StyleFingerprint[],
+        query: string,
+    ): Promise<StyleFingerprint[]> {
+        const library = this.fingerprintLibrary;
+        const searcher = library?.searchSimilarStylesV2;
+        return selectFingerprintsForInjection(enabled, {
+            query,
+            searchV2: typeof searcher === 'function'
+                ? (q, opts) => searcher.call(library, q, opts)
+                : undefined,
+            // 协同写作宁可回退全量也不能丢风格约束；11 步用 'firstN' 守住预算上限
+            fallback: 'all',
+            onFallback: reason => this.notifyFingerprintFallback(reason),
+        });
+    }
+
+    /** 指纹筛选回退全量时发一次降级事件（每实例一次） */
+    private notifyFingerprintFallback(reason: string): void {
+        if (this.fingerprintFallbackNotified) return;
+        this.fingerprintFallbackNotified = true;
+        getDegradationNotifier().notify({
+            source: 'vector',
+            dimension: 'style',
+            from: 'v2_ranking',
+            to: 'inject_all_enabled',
+            reason: `风格指纹相关性筛选回退全量注入：${reason}`,
+            severity: 'warning',
+            recoverable: true,
+        });
     }
 
     /** 设置参考书籍 ID */
@@ -333,17 +424,30 @@ export class PromptBuilder {
             let styleResults: KnowledgeSearchResult[] = [];
             let rhythmResults: KnowledgeSearchResult[] = [];
             let techniqueResults: KnowledgeSearchResult[] = [];
+            let originalResults: KnowledgeSearchResult[] = [];
 
             try {
                 const allResults = await this.knowledgeVectorStore!.search(searchQuery, {
                     topN: combinedTopN,
                     bookIds: bookIds,
-                    dimensions: ['style', 'rhythm', 'technique', 'structure'],
+                    // structure 的 category 是「起/承/转/合」，混进来会被当成技巧类别渲染
+                    dimensions: ['style', 'rhythm', 'technique'],
+                    // B3：三个维度共用一次检索，必须按维度各自过滤；
+                    // 全局阈值会让 0.45 的 rhythm 被 0.6 的 style × 0.85 整段丢弃
+                    filterScope: 'perDimension',
                 });
 
                 styleResults = allResults.filter(r => r.dimension === 'style');
                 rhythmResults = allResults.filter(r => r.dimension === 'rhythm');
-                techniqueResults = allResults.filter(r => r.dimension === 'technique' || r.dimension === 'structure');
+                techniqueResults = allResults.filter(r => r.dimension === 'technique');
+
+                // 原文分块单独检索：原文样本数量远多于拆解报告，混在同一次 topN 里
+                // 会把风格/节奏/技巧结果挤掉；按 2 倍取再相邻去重，避免 40 字重叠块重复占预算。
+                originalResults = await this.knowledgeVectorStore!.search(searchQuery, {
+                    topN: 6,
+                    bookIds: bookIds,
+                    dimensions: ['original'],
+                });
             } catch (e) {
                 log.warn('[PromptBuilder] 知识库合并检索失败:', e);
                 return parts;
@@ -393,14 +497,11 @@ export class PromptBuilder {
 
             // 【写作知识库 - 节奏参考】
             {
-                let filteredRhythm = rhythmResults;
-                if (direction === 'emotion') {
-                    filteredRhythm = rhythmResults
-                        .sort((a, b) => (b.position ?? 0) - (a.position ?? 0))
-                        .slice(0, rhythmTopN);
-                } else {
-                    filteredRhythm = rhythmResults.slice(0, rhythmTopN);
-                }
+                // B3：节奏参考按相关度取，不按分块位置。position 只是原文里的位置标记，
+                // 用 (b.position - a.position) 排序会把与当前场景最相关的节奏挤出去。
+                const filteredRhythm = [...rhythmResults]
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, rhythmTopN);
 
                 if (filteredRhythm.length > 0) {
                     const rhythmLines: string[] = [];
@@ -410,8 +511,22 @@ export class PromptBuilder {
                         const scorePct = Math.round(r.score * 100);
                         rhythmLines.push(`- 《${r.bookName}》${scorePct}%：${sample}`);
                     }
-                    parts.push('【写作知识库 - 节奏参考】', '参考书籍同位置节奏模式：', ...rhythmLines, '');
+                    parts.push('【写作知识库 - 节奏参考】', '参考书籍相近节奏模式：', ...rhythmLines, '');
                 }
+            }
+
+            // 【写作知识库 - 原文片段】（Phase 4.3：检索对象改为原文分块）
+            if (originalResults.length > 0) {
+                const pickedOriginal = dedupeAdjacentChunks(originalResults).slice(0, 3);
+                const uniqueBooks = [...new Set(pickedOriginal.map(r => r.bookName))];
+                const originalLines: string[] = [
+                    `以下为${uniqueBooks.map(n => `《${n}》`).join('')}原文片段，请模仿其句法与叙事质感，不要照抄情节：`,
+                ];
+                for (let i = 0; i < pickedOriginal.length; i++) {
+                    const r = pickedOriginal[i];
+                    originalLines.push(`${i + 1}. ${r.sample.slice(0, 250)} —— 来源：《${r.bookName}》${Math.round(r.score * 100)}%`);
+                }
+                parts.push('【写作知识库 - 原文片段】', ...originalLines, '');
             }
 
             // 【写作知识库 - 技巧参考】
@@ -533,6 +648,23 @@ export class PromptBuilder {
         return ['【D2 跨卷状态快照（请保持与前面卷的人物/势力/伏笔/时间线一致）】', ctx.slice(0, 1200), ''];
     }
 
+    /** 长篇记忆：事实索引中已确认的人物/世界观/剧情事实（跨章累积） */
+    getLongTermMemoryPromptParts(): string[] {
+        const ctx = (this.getSnapshot()?.longTermMemoryContext || '').trim();
+        if (!ctx) return [];
+        return [ctx, ''];
+    }
+
+    /**
+     * 同人约束：原作的硬性设定与红线（仅同人项目存在）。
+     * 文本由 formatFanficRulesForPrompt 统一格式化，自带标题，此处不再包装。
+     */
+    getFanficRulesPromptParts(): string[] {
+        const ctx = (this.getSnapshot()?.fanficRulesContext || '').trim();
+        if (!ctx) return [];
+        return [ctx, ''];
+    }
+
     /** 统一聚合 A2/A3/A4/D2 注入点 */
     getNarrativeDriverPromptParts(precedingText: string): string[] {
         return [
@@ -552,45 +684,157 @@ export class PromptBuilder {
         plotTarget: string,
         fingerprintParts?: string[],
         knowledgeParts?: string[],
-        knowledgeInjection?: string
+        knowledgeInjection?: string,
+        briefParts?: string[],
+        budget?: { maxInputTokens: number; modelId?: string }
     ): { system: string; user: string } {
         const dirPrompt = DIRECTION_PROMPTS[direction] || DIRECTION_PROMPTS.action;
         const snap = this.getSnapshot();
 
-        let systemPrompt = this.getSystemPrompt();
-        if (knowledgeInjection && knowledgeInjection.trim()) {
-            systemPrompt += '\n' + knowledgeInjection.trim();
-        }
+        // system 只放静态硬规则：知识注入属于增强信息，拼进 system 会绕过预算裁剪，
+        // 把整段 prompt 顶过窗口后由本地模型从尾部截断（正好切掉已写内容与写作方向）
+        const systemPrompt = this.getSystemPrompt(snap?.writingRules || '');
 
-        const userParts: string[] = [
-            ...this.getMemoryPromptParts(fingerprintParts),
-            ...(knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []),
-            ...this.getNarrativeDriverPromptParts(precedingText),
-            soulInjection ? '【主角是谁】' : '',
-            soulInjection,
-            soulInjection ? '' : '',
-            ...this.getCachedContextParts(snap),
-            ...this.getUnrevealedForeshadowReminderPromptParts(),
-            plotTarget ? '【A5 剧情节点推进指引】' : '',
-            plotTarget ? plotTarget : '',
-            plotTarget ? '续写必须朝向下一个剧情节点推进，不得原地踏步或提前跳到后面的节点。' : '',
-            plotTarget ? '' : '',
+        const hasBrief = !!briefParts && briefParts.length > 0;
+        // 片段优先级：节点推进 > 同人约束 > 简报 > 角色状态 > 叙事驱动 > 伏笔提醒 > 缓存上下文 > 知识库 > 指纹/记忆
+        const sections: PromptSection[] = [
+            {
+                key: 'memory',
+                priority: 20,
+                shrinkable: true,
+                text: this.getMemoryPromptParts(fingerprintParts).join('\n'),
+            },
+            {
+                key: 'knowledge',
+                priority: 25,
+                shrinkable: true,
+                text: (knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []).join('\n'),
+            },
+            {
+                key: 'longTermMemory',
+                priority: 30,
+                shrinkable: true,
+                text: this.getLongTermMemoryPromptParts().join('\n'),
+            },
+            {
+                key: 'fanfic',
+                priority: 98,
+                shrinkable: true,
+                text: this.getFanficRulesPromptParts().join('\n'),
+            },
+            {
+                key: 'drivers',
+                priority: 60,
+                shrinkable: true,
+                text: this.getNarrativeDriverPromptParts(precedingText).join('\n'),
+            },
+            {
+                key: 'soul',
+                priority: 90,
+                shrinkable: true,
+                text: soulInjection ? ['【主角是谁】', soulInjection, ''].join('\n') : '',
+            },
+            {
+                key: 'brief',
+                priority: 95,
+                text: hasBrief ? briefParts!.join('\n') : '',
+            },
+            {
+                key: 'knowledgeInjection',
+                priority: 70,
+                shrinkable: true,
+                text: knowledgeInjection && knowledgeInjection.trim() ? knowledgeInjection.trim() : '',
+            },
+            {
+                key: 'context',
+                priority: 40,
+                shrinkable: true,
+                text: this.getCachedContextParts(snap, { skipChapterPlanning: hasBrief }).join('\n'),
+            },
+            {
+                key: 'foreshadow',
+                priority: 55,
+                text: this.getUnrevealedForeshadowReminderPromptParts().join('\n'),
+            },
+            {
+                key: 'plot',
+                priority: 100,
+                text: plotTarget
+                    ? ['【A5 剧情节点推进指引】', plotTarget, '续写必须朝向下一个剧情节点推进，不得原地踏步或提前跳到后面的节点。', ''].join('\n')
+                    : '',
+            },
+        ];
+
+        // 必保片段：上一段正文 + 写作方向 + 收尾指令，任何预算下都不裁剪
+        // 前文长度随输入预算自适应（800~2000 字），不再固定丢掉快照里的后 1200 字
+        const tailParts: string[] = [
             '【已写内容】',
-            precedingText.slice(-800),
+            precedingText.slice(-resolvePrecedingCharLimit(budget?.maxInputTokens)),
             '',
             '【写作方向】',
-            dirPrompt
-        ].filter(Boolean);
-
+            dirPrompt,
+        ];
         if (cursorHint) {
-            userParts.push('', '【特别指令】', cursorHint);
+            tailParts.push('', '【特别指令】', cursorHint);
         }
-
-        userParts.push('', (precedingText || '').trim().length < 10
+        tailParts.push('', (precedingText || '').trim().length < 10
             ? '这是本章的开头。请根据本章大纲和设定，开始写正文。不需要多，但要让人感觉这一瞬间是真实的。只输出正文，不要标注、不要解释、不要写标题。'
             : '请自然地续写一段。不需要多，但要让人感觉这一瞬间是真实的。只输出正文，不要标注、不要解释、不要写标题。');
 
-        return { system: systemPrompt, user: userParts.join('\n') };
+        if (budget) {
+            const result = assemblePromptWithinBudget({
+                systemPrompt,
+                sections,
+                tailParts,
+                maxInputTokens: budget.maxInputTokens,
+                modelId: budget.modelId,
+            });
+            if (result.droppedSections.length > 0 || result.trimmedSections.length > 0 || result.overBudget) {
+                log.info('[PromptBuilder] 协同 prompt 按预算裁剪', {
+                    estimatedTokens: result.estimatedTokens,
+                    maxInputTokens: budget.maxInputTokens,
+                    dropped: result.droppedSections,
+                    trimmed: result.trimmedSections,
+                    overBudget: result.overBudget,
+                });
+            }
+            return { system: result.system, user: result.user };
+        }
+
+        return {
+            system: systemPrompt,
+            user: [...sections.map((s) => s.text), ...tailParts].filter(Boolean).join('\n'),
+        };
+    }
+
+    /**
+     * 按预算裁剪并拼回单一字符串（联想 / 改写 / 迭代这些只接收字符串的入口）。
+     * 无预算时由调用方走未裁剪分支，保证行为可对照。
+     */
+    private assembleWithBudget(
+        label: string,
+        systemPrompt: string,
+        sections: PromptSection[],
+        tailParts: string[],
+        budget: { maxInputTokens: number; modelId?: string }
+    ): string {
+        const result = assemblePromptWithinBudget({
+            systemPrompt,
+            sections,
+            tailParts,
+            maxInputTokens: budget.maxInputTokens,
+            modelId: budget.modelId,
+        });
+        if (result.droppedSections.length > 0 || result.trimmedSections.length > 0 || result.overBudget) {
+            log.info(`[PromptBuilder] ${label} prompt 按预算裁剪`, {
+                estimatedTokens: result.estimatedTokens,
+                maxInputTokens: budget.maxInputTokens,
+                dropped: result.droppedSections,
+                trimmed: result.trimmedSections,
+                overBudget: result.overBudget,
+            });
+        }
+        return [result.system, result.user].filter(Boolean).join('\n');
     }
 
     /** 构建选区改写 prompt */
@@ -601,27 +845,65 @@ export class PromptBuilder {
         cursorHint: string,
         direction: SuggestionDirection,
         fingerprintParts?: string[],
-        knowledgeParts?: string[]
+        knowledgeParts?: string[],
+        budget?: { maxInputTokens: number; modelId?: string }
     ): string {
         const snap = this.getSnapshot();
         const writingStyle = snap?.writingStyle || '';
         const writingRules = snap?.writingRules || '';
 
-        return [
+        const systemPrompt = [
             '你是小说协同编辑。改写内容必须保持第三人称视角（他/她），严禁使用第一人称（我）。',
             '',
             '输出语言：简体中文。所有叙事内容必须用纯中文输出，禁止出现任何英文单词或句子。',
             '',
             '请对用户选中的片段给出一个可直接替换的改写版本。',
             '',
-            ...this.getMemoryPromptParts(fingerprintParts),
-            ...(knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []),
-            ...this.getNarrativeDriverPromptParts(beforeContext),
+            describeBodyFormat(writingRules.trim() ? deriveBodyFormat(writingRules) : { ...DEFAULT_BODY_FORMAT }),
+        ].filter(Boolean).join('\n');
+
+        // 项目规则与文笔风格可能很长，放进 sections 参与预算裁剪（system 不裁剪）
+        const projectStyleText = [
             writingRules ? '【写作规则（必须遵守）】' : '',
             writingRules ? writingRules.slice(0, 3000) : '',
-            writingRules ? '' : '',
             writingStyle ? '【文笔风格（请严格遵循此文件定义的风格）】' + writingStyle : '',
-            writingStyle ? '' : '',
+        ].filter(Boolean).join('\n');
+
+        const sections: PromptSection[] = [
+            {
+                key: 'projectStyle',
+                priority: 85,
+                shrinkable: true,
+                text: projectStyleText,
+            },
+            {
+                key: 'memory',
+                priority: 20,
+                shrinkable: true,
+                text: this.getMemoryPromptParts(fingerprintParts).join('\n'),
+            },
+            {
+                key: 'fanfic',
+                priority: 98,
+                shrinkable: true,
+                text: this.getFanficRulesPromptParts().join('\n'),
+            },
+            {
+                key: 'knowledge',
+                priority: 25,
+                shrinkable: true,
+                text: (knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []).join('\n'),
+            },
+            {
+                key: 'drivers',
+                priority: 60,
+                shrinkable: true,
+                text: this.getNarrativeDriverPromptParts(beforeContext).join('\n'),
+            },
+        ];
+
+        // 必保片段：改写目标、临时指令、前后文、选中文本、输出约束
+        const tailParts: string[] = [
             '【改写目标】',
             DIRECTION_PROMPTS[direction] || DIRECTION_PROMPTS.description,
             cursorHint ? `【特别指令】\n${cursorHint}` : '',
@@ -636,7 +918,13 @@ export class PromptBuilder {
             afterContext.slice(0, 300),
             '',
             '请输出 1 个改写版本，保持剧情事实不变，不要解释。'
-        ].filter(Boolean).join('\n');
+        ];
+
+        if (budget) {
+            return this.assembleWithBudget('选区改写', systemPrompt, sections, tailParts, budget);
+        }
+
+        return [systemPrompt, ...sections.map(s => s.text), ...tailParts].filter(Boolean).join('\n');
     }
 
     /** 构建编辑验证 prompt */
@@ -678,41 +966,143 @@ export class PromptBuilder {
         context: string,
         hint: AssociationHint,
         fingerprintParts?: string[],
-        knowledgeParts?: string[]
+        knowledgeParts?: string[],
+        briefParts?: string[],
+        budget?: { maxInputTokens: number; modelId?: string }
     ): string {
         const snap = this.getSnapshot();
         const writingStyle = snap?.writingStyle || '';
         const writingRules = snap?.writingRules || '';
 
-        const promptParts: string[] = [
+        const systemPrompt = [
             '你是第三人称叙事者。所有续写必须使用第三人称（他/她），严禁使用第一人称（我）。',
             '',
             '输出语言：简体中文。所有叙事内容必须用纯中文输出，禁止出现任何英文单词或句子。',
             '',
-            '根据上下文，续写1-2句话（30-80字）。',
+            describeBodyFormat(writingRules.trim() ? deriveBodyFormat(writingRules) : { ...DEFAULT_BODY_FORMAT }),
             '',
-            ...this.getMemoryPromptParts(fingerprintParts),
-            ...(knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []),
+            '根据上下文，续写1-2句话（30-80字）。',
+        ].filter(Boolean).join('\n');
+
+        // 项目规则与文笔风格可能很长，放进 sections 参与预算裁剪（system 不裁剪）
+        const projectStyleText = [
             writingRules ? '【写作规则（必须遵守）】' : '',
             writingRules ? writingRules.slice(0, 2000) : '',
-            writingRules ? '' : '',
             writingStyle ? '【文笔风格（请严格遵循此文件定义的风格）】' + writingStyle : '',
-            writingStyle ? '' : '',
-            '【上下文】',
-            context.slice(-300)
+        ].filter(Boolean).join('\n');
+
+        const sections: PromptSection[] = [
+            {
+                key: 'projectStyle',
+                priority: 85,
+                shrinkable: true,
+                text: projectStyleText,
+            },
+            {
+                key: 'memory',
+                priority: 20,
+                shrinkable: true,
+                text: this.getMemoryPromptParts(fingerprintParts).join('\n'),
+            },
+            {
+                key: 'knowledge',
+                priority: 25,
+                shrinkable: true,
+                text: (knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []).join('\n'),
+            },
+            {
+                key: 'fanfic',
+                priority: 98,
+                shrinkable: true,
+                text: this.getFanficRulesPromptParts().join('\n'),
+            },
+            {
+                key: 'brief',
+                priority: 95,
+                text: (briefParts && briefParts.length > 0 ? briefParts : []).join('\n'),
+            },
         ];
 
+        // 必保片段：当前上下文 + 联想提示 + 输出约束。本地模型从尾部截断，这几段不能被裁掉
+        const tailParts: string[] = ['【上下文】', context.slice(-300)];
+
         if (hint.type === 'entity-action' && hint.entity) {
-            promptParts.push('', `【提示】${hint.entity}接下来可能做什么动作？`);
+            tailParts.push('', `【提示】${hint.entity}接下来可能做什么动作？`);
         } else if (hint.type === 'escalate' && hint.emotion) {
-            promptParts.push('', `【提示】情绪正在${hint.emotion === 'anger' ? '愤怒' : '恐惧'}中升级。`);
+            tailParts.push('', `【提示】情绪正在${hint.emotion === 'anger' ? '愤怒' : '恐惧'}中升级。`);
         } else if (hint.type === 'dialogue') {
-            promptParts.push('', '【提示】完成这个对话。');
+            tailParts.push('', '【提示】完成这个对话。');
         }
 
-        promptParts.push('', '直接输出续写内容，不要解释：');
+        tailParts.push('', '直接输出续写内容，不要解释：');
 
-        return promptParts.join('\n');
+        if (budget) {
+            return this.assembleWithBudget('联想续写', systemPrompt, sections, tailParts, budget);
+        }
+
+        return [systemPrompt, ...sections.map(s => s.text), ...tailParts].filter(Boolean).join('\n');
+    }
+
+    /** 构建句级建议迭代 prompt（在已有候选上做定向修改） */
+    buildIteratePrompt(
+        originalText: string,
+        precedingContext: string,
+        instruction: string,
+        cursorHint: string,
+        fingerprintParts?: string[],
+        knowledgeParts?: string[],
+        budget?: { maxInputTokens: number; modelId?: string }
+    ): string {
+        const systemPrompt =
+            '你是小说句级协同写作助手。用户不想重新生成整组建议，而是要基于当前候选做一次定向迭代。';
+
+        const sections: PromptSection[] = [
+            {
+                key: 'memory',
+                priority: 20,
+                shrinkable: true,
+                text: this.getMemoryPromptParts(fingerprintParts).join('\n'),
+            },
+            {
+                key: 'knowledge',
+                priority: 25,
+                shrinkable: true,
+                text: (knowledgeParts && knowledgeParts.length > 0 ? knowledgeParts : []).join('\n'),
+            },
+            {
+                key: 'fanfic',
+                priority: 98,
+                shrinkable: true,
+                text: this.getFanficRulesPromptParts().join('\n'),
+            },
+            {
+                key: 'drivers',
+                priority: 60,
+                shrinkable: true,
+                text: this.getNarrativeDriverPromptParts(precedingContext).join('\n'),
+            },
+        ];
+
+        // 必保片段：前文 + 原候选 + 用户指令 + 输出约束（尾部被截断会直接丢失迭代要求）
+        const tailParts: string[] = [
+            '【已写前文】',
+            precedingContext.slice(-resolvePrecedingCharLimit(budget?.maxInputTokens)),
+            '',
+            '【原候选】',
+            originalText,
+            '',
+            '【用户迭代指令】',
+            instruction,
+            cursorHint ? `\n【临时写作方向】\n${cursorHint}` : '',
+            '',
+            '请只输出 1 个新版候选，保持剧情事实连续，不要解释，不要列点。',
+        ];
+
+        if (budget) {
+            return this.assembleWithBudget('建议迭代', systemPrompt, sections, tailParts, budget);
+        }
+
+        return [systemPrompt, ...sections.map(s => s.text), ...tailParts].filter(Boolean).join('\n');
     }
 
     /** 构建 OOC 检测 prompt */
