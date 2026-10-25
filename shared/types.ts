@@ -386,6 +386,8 @@ export interface EditValidation {
     warnings: string[];                      // 警告信息
     suggestions: string[];                   // 改进建议
     validatedAt: number;                     // 验证时间戳
+    degraded?: boolean;                      // true = 校验未真正完成（AI 返回无法解析）
+    degradedReason?: string;                 // 降级原因，供 UI 展示
 }
 
 /** 剧情完成度指标 */

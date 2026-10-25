@@ -27,6 +27,7 @@ import {
     kbBookForeshadowDBFile,
     kbBookCommercialAnalysisFile,
     kbBookReadabilityAnalysisFile,
+    kbVectorsDir,
 } from '../shared/paths';
 import type { BreakdownDimension } from './deconstruction-scheduler';
 import { SerializedWriter } from '../shared/serialized-writer';
@@ -36,6 +37,7 @@ import { GenrePreferenceMemory, type GenrePreferenceData } from './genre-prefere
 import type { EmbeddingProvider } from '../engine/embedding/embedding-provider';
 import { kbConfigDir } from '../shared/paths';
 import { LruCache } from '../engine/repository/lru-cache';
+import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '../shared/write-lock';
 import type { MultiLayerCache } from '../engine/cache';
 import { createLogger } from '../shared/logger';
 
@@ -45,6 +47,9 @@ const MAX_SOURCE_TEXT_LENGTH = 20_000_000; // 2000 万字：仅作内存安全�
 const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export type BreakdownStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'interrupted';
+
+/** 拆解后的向量化状态：拆解完成 ≠ 检索可用（A5） */
+export type VectorStatus = 'pending' | 'done' | 'failed';
 
 export interface QualityScores {
     overall: number;
@@ -73,6 +78,10 @@ export interface BookBasicInfo {
     breakdownStatus: BreakdownStatus;
     breakdownProgress?: number;
     breakdownError?: string;
+    /** 向量化状态；旧数据无此字段视为未知（pending） */
+    vectorStatus?: VectorStatus;
+    /** 向量化失败原因，成功后清空 */
+    vectorError?: string;
     sourcePath?: string;
     primaryGenre?: string;
     secondaryGenres?: string[];
@@ -473,7 +482,106 @@ export class KnowledgeBaseManager {
         const bookDir = kbBookDir(book.name, this.baseDir);
         await fs.delete(bookDir).catch(() => undefined);
 
+        await this.removeVectorArtifacts(bookId);
+
         await this.saveIndex();
+    }
+
+    /**
+     * 删除书籍对应的向量文件与索引条目。
+     * 向量文件存放在独立的向量目录，递归删除书目录不会带走它们；
+     * 不清理会让已删书籍继续出现在检索结果里。
+     */
+    private async removeVectorArtifacts(bookId: string): Promise<void> {
+        const fs = this.getFS();
+        const dir = kbVectorsDir();
+        await fs.delete(`${dir}/${bookId}.json`).catch(() => undefined);
+
+        const indexPath = `${dir}/index.json`;
+        try {
+            const raw = await fs.read(indexPath);
+            const data = JSON.parse(raw) as { version?: number; books?: Array<{ bookId: string }> };
+            if (!Array.isArray(data.books)) return;
+            const books = data.books.filter(item => item.bookId !== bookId);
+            if (books.length === data.books.length) return;
+            await fs.write(indexPath, JSON.stringify({ ...data, version: data.version ?? 1, books }, null, 2));
+        } catch {
+            // 索引不存在或损坏：向量文件已删除，下次重建索引会自动收敛
+        }
+    }
+
+    /**
+     * 书籍改名后同步向量文件与向量索引里的 bookName。
+     * 向量文件名是 bookId，不会随目录 rename；只改目录会让向量文件保留旧书名，
+     * 下一次加载按旧书名拼目录时整本书被判定为孤儿（检索永久为空）。
+     * 与 KnowledgeVectorStore 的加载/写入共用一把状态锁：同书正在拆解或重向量化时，
+     * 改名写入不会与「reload → embed → saveBook → saveIndex」交错；写入用「临时文件 + rename」
+     * 原子替换，避免中断留下半写 JSON。内存同步交给向量存储的文件签名（path@mtime:size）重载。
+     */
+    private async renameVectorArtifacts(bookId: string, newName: string): Promise<void> {
+        await withWriteLock(KNOWLEDGE_VECTOR_STATE_LOCK, async () => {
+            const fs = this.getFS();
+            const dir = kbVectorsDir();
+            const bookPath = `${dir}/${bookId}.json`;
+
+            try {
+                if (await fs.exists(bookPath)) {
+                    const raw = await fs.read(bookPath);
+                    const data = JSON.parse(raw) as {
+                        bookName?: string;
+                        samples?: Array<{ bookName?: string }>;
+                    };
+                    data.bookName = newName;
+                    if (Array.isArray(data.samples)) {
+                        for (const sample of data.samples) {
+                            sample.bookName = newName;
+                        }
+                    }
+                    await this.writeJsonAtomic(bookPath, data);
+                }
+            } catch (e) {
+                log.warn(`[KnowledgeBaseManager] 同步向量文件书名失败: ${bookPath}`, e);
+            }
+
+            const indexPath = `${dir}/index.json`;
+            try {
+                if (!(await fs.exists(indexPath))) return;
+                const raw = await fs.read(indexPath);
+                const data = JSON.parse(raw) as {
+                    books?: Array<{ bookId: string; bookName?: string }>;
+                };
+                if (!Array.isArray(data.books)) return;
+                let changed = false;
+                for (const item of data.books) {
+                    if (item.bookId === bookId && item.bookName !== newName) {
+                        item.bookName = newName;
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    await this.writeJsonAtomic(indexPath, data);
+                }
+            } catch (e) {
+                log.warn(`[KnowledgeBaseManager] 同步向量索引书名失败: ${indexPath}`, e);
+            }
+        });
+    }
+
+    /** 先写临时文件再 rename，失败时清理临时文件，避免留下半写 JSON。 */
+    private async writeJsonAtomic(path: string, data: unknown): Promise<void> {
+        const fs = this.getFS();
+        const tmpPath = `${path}.tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        try {
+            await fs.write(tmpPath, JSON.stringify(data, null, 2));
+            await fs.rename(tmpPath, path);
+        } catch (e) {
+            try {
+                await fs.delete(tmpPath);
+            } catch {
+                // 临时文件不存在时忽略
+            }
+            throw e;
+        }
     }
 
     async updateBook(bookId: string, updates: Partial<BookBasicInfo>): Promise<void> {
@@ -490,6 +598,9 @@ export class KnowledgeBaseManager {
             const newDir = kbBookDir(uniqueNewName, this.baseDir);
 
             await fs.rename(oldDir, newDir);
+            // 向量文件按 bookId 命名，不随目录改名；文件头里的 bookName 必须同步，
+            // 否则下一次启动会按旧书名拼目录、把整本向量判成孤儿。
+            await this.renameVectorArtifacts(bookId, uniqueNewName);
 
             const updated: BookBasicInfo = {
                 ...book,
@@ -525,6 +636,14 @@ export class KnowledgeBaseManager {
             await this.saveBookInfo(updated);
             await this.saveIndex();
         }
+    }
+
+    /**
+     * 书籍是否仍在知识库中（按 bookId）。
+     * 供向量存储做存活判定：书名可改，bookId 不会变。
+     */
+    hasBook(bookId: string): boolean {
+        return this.books.has(bookId);
     }
 
     async getBook(bookId: string): Promise<BookBasicInfo | undefined> {
@@ -619,6 +738,26 @@ export class KnowledgeBaseManager {
 
         if (status === 'completed' && this.breakdownCache) {
             this.breakdownCache.deleteByPrefix(`${bookId}:`);
+        }
+
+        await this.saveBookInfo(book);
+        await this.saveIndex();
+    }
+
+    /**
+     * 记录向量化结果（A5）。
+     * 拆解状态保持 `completed`，向量失败单独落盘，供列表徽标与详情页「重试向量化」使用。
+     */
+    async setVectorStatus(bookId: string, status: VectorStatus, error?: string): Promise<void> {
+        const book = this.books.get(bookId);
+        if (!book) return;
+
+        book.vectorStatus = status;
+        book.vectorError = status === 'failed' ? (error || '未知错误') : undefined;
+        book.updatedAt = Date.now();
+
+        if (this.bookInfoCache) {
+            this.bookInfoCache.set(bookId, { ...book });
         }
 
         await this.saveBookInfo(book);

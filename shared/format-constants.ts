@@ -296,6 +296,28 @@ export const CHARACTER_SOUL_FIELDS = [
     'moral_boundary',
 ] as const;
 
+/**
+ * 人物卡 YAML 嵌套必填组：父键 → 子键列表。
+ * 生成提示词强制要求这些嵌套结构，模板与校验器必须保持一致，
+ * 否则会出现「提示词要求了、模板没写、校验也不查」的信息缺口。
+ */
+export const CHARACTER_NESTED_FIELD_GROUPS: Record<string, readonly string[]> = {
+    character_core: CHARACTER_SOUL_FIELDS,
+    性格三层: ['表层_面具', '中层_真实', '深层_内核'],
+    角色弧光: ['起点状态', '成长触发点', '终点状态', '弧光类型'],
+};
+
+/**
+ * 人物卡中「模板提供但 AI 可按上下文推断」的字段。
+ * 不纳入硬校验（首次出场等系统信息允许留空），但生成提示词应尽量填写。
+ */
+export const CHARACTER_CONTEXTUAL_FIELDS = [
+    '性别',
+    '首次出场',
+    '修为等级',
+    '当前位置',
+] as const;
+
 /** 人物卡正文分节（7个 ## 标题，V2增加「角色灵魂层」） */
 export const CHARACTER_BODY_SECTIONS_V2 = [
     '确定性设定（已揭露，不可违背）',
@@ -333,6 +355,17 @@ export const LOCATION_FRONTMATTER_KEYS = [
     '所在世界/区域',
 ] as const;
 
+/** 地点卡必须有非空值的字段（系统字段不在此列，允许初始为空） */
+export const LOCATION_REQUIRED_VALUE_KEYS = [
+    '名称',
+    '类型',
+    '描述',
+    '重要程度',
+    '地理特征',
+    '主要居民/势力',
+    '所在世界/区域',
+] as const;
+
 // ============================================================
 // 十四、势力 fields（对应 元文件/00-系统模板/势力模板.md）
 // ============================================================
@@ -349,6 +382,15 @@ export const FACTION_FRONTMATTER_KEYS = [
     'entity_created_at',
 ] as const;
 
+/** 势力卡必须有非空值的字段（系统字段不在此列，允许初始为空） */
+export const FACTION_REQUIRED_VALUE_KEYS = [
+    '名称',
+    '类型',
+    '描述',
+    '领袖',
+    '地位/排名',
+] as const;
+
 // ============================================================
 // 十五、物品功法 fields（对应 元文件/00-系统模板/物品功法模板.md）
 // ============================================================
@@ -363,6 +405,16 @@ export const ITEM_FRONTMATTER_KEYS = [
     '所属/归属',
     'entity_status',
     'entity_created_at',
+] as const;
+
+/** 物品功法卡必须有非空值的字段（系统字段不在此列，允许初始为空） */
+export const ITEM_REQUIRED_VALUE_KEYS = [
+    '名称',
+    '类型',
+    '描述',
+    '效果',
+    '品阶/等级',
+    '所属/归属',
 ] as const;
 
 // ============================================================
@@ -392,6 +444,9 @@ export const ENTITY_SHORT_TITLE_ALIASES: Record<string, string[]> = {
  * 人物模板正文使用短标题（如「## 关系网」），生成器要求长标题（如「## 与其他角色的互信息」）。
  */
 export const CHARACTER_SHORT_TITLE_ALIASES: Record<string, string[]> = {
+    '确定性设定（已揭露，不可违背）': ['确定性设定'],
+    '不确定性（未解之谜 / 角色弧光）': ['不确定性'],
+    '自信息事件储备（低概率但合理的惊喜行为）': ['自信息事件储备'],
     '与其他角色的互信息': ['关系网'],
     '功法/技能树': ['功法/技能'],
     '角色灵魂层（欲望/恐惧/创伤/底线）': ['灵魂层'],

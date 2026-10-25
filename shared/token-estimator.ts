@@ -9,7 +9,7 @@
  */
 
 import { TOKEN_ESTIMATE_CN_DIVISOR, TOKEN_ESTIMATE_EN_DIVISOR } from './thresholds';
-import { findModelCapability } from './model-capabilities';
+import { findModelCapability, type ModelSourceKind } from './model-capabilities';
 
 export interface TokenEstimate {
     input: number;
@@ -89,30 +89,46 @@ export function estimateInputTokens(
 
 /**
  * 获取模型上下文窗口大小（从 model-capabilities 查找）
+ * `source` 用于未登记模型的兜底：本地模型按更保守的窗口处理
  */
-export function getModelContextWindow(modelId: string): number {
-    return findModelCapability(modelId).maxContext;
+export function getModelContextWindow(modelId: string, source?: ModelSourceKind): number {
+    return findModelCapability(modelId, source).maxContext;
 }
 
 /**
  * 获取模型最大输出 token 数（从 model-capabilities 查找）
+ * `source` 用于未登记模型的兜底：本地模型按更保守的输出上限处理
  */
-export function getModelMaxOutput(modelId: string): number {
-    return findModelCapability(modelId).maxOutput;
+export function getModelMaxOutput(modelId: string, source?: ModelSourceKind): number {
+    return findModelCapability(modelId, source).maxOutput;
+}
+
+export interface ModelLimitOverrides {
+    maxContext?: number;
+    maxOutput?: number;
 }
 
 /**
  * 计算完整的 token 预算
- * 返回是否安全、可用余量等信息，供调用方决策
+ * 返回是否安全、可用余量等信息，供调用方决策。
+ *
+ * `limits` 传入用户「模型覆盖」中的真实上限；未传时回退静态能力表。
+ * 只查静态表会把未登记模型（如 deepseek-flash）误判为 32K 上下文，
+ * 导致长上下文请求被错误拒绝。
  */
 export function calculateTokenBudget(
     systemPrompt: string,
     userPrompt: string,
     modelId: string = 'default',
+    limits?: ModelLimitOverrides,
 ): TokenEstimate {
     const input = estimateInputTokens(systemPrompt, userPrompt, modelId);
-    const maxOutput = getModelMaxOutput(modelId);
-    const contextWindow = getModelContextWindow(modelId);
+    const maxOutput = limits?.maxOutput && limits.maxOutput > 0
+        ? limits.maxOutput
+        : getModelMaxOutput(modelId);
+    const contextWindow = limits?.maxContext && limits.maxContext > 0
+        ? limits.maxContext
+        : getModelContextWindow(modelId);
     const available = contextWindow - input;
     
     return {

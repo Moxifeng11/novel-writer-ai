@@ -49,6 +49,11 @@ export interface NovelWriterRefreshContextPanelPayload {
     project?: string;
 }
 
+/** 正文写盘完成载荷（协同写作 / 批量 / 续写 / 自动写作统一广播） */
+export interface NovelWriterBodyWrittenPayload {
+    path: string;
+}
+
 declare module 'obsidian' {
     interface Workspace {
         // ─── project 域 ───
@@ -112,6 +117,17 @@ declare module 'obsidian' {
         trigger(
             name: 'novel-writer:refresh-context-panel',
             data: NovelWriterRefreshContextPanelPayload,
+        ): void;
+
+        // ─── body 域 ───
+        on(
+            name: 'novel-writer:body-written',
+            callback: (data: NovelWriterBodyWrittenPayload) => any,
+            ctx?: any,
+        ): EventRef;
+        trigger(
+            name: 'novel-writer:body-written',
+            data: NovelWriterBodyWrittenPayload,
         ): void;
     }
 

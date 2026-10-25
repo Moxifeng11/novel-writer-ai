@@ -34,6 +34,10 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('TemplateService');
+
+/** 已告警过的模板路径，避免每次读取都刷屏 */
+const warnedTemplatePaths = new Set<string>();
+
 export interface TemplateVariables {
     project?: string;
     volume?: string;
@@ -303,6 +307,165 @@ step_timestamp: ""
 
 > 待执行「质量控制」步骤后生成
 `,
+    volumeOutline: `---
+tags: [分卷大纲]
+卷数: ""
+卷名: ""
+状态: draft
+---
+
+# 第X卷 分卷大纲
+
+## 卷概要
+- 本卷核心冲突：
+- 本卷情感弧线：
+- 本卷结局：
+
+## 章节规划
+
+| # | 章节 | 核心冲突 | 一句话概要 | 字数预估 |
+|---|---|---|---|---|
+| 1 | | | | |
+
+## 跨章伏笔
+- 埋设：
+- 揭示：
+`,
+    worldview: `---
+tags: [世界观]
+世界名称: ""
+项目名称: ""
+---
+
+# 世界观总览
+
+## 世界层级体系
+- 层级数量：
+- 各层级概要：
+
+## 力量体系
+- 修炼体系名称：
+- 境界划分：
+- 力量来源：
+
+## 地理格局
+- 地理概要：
+- 重要区域：
+
+## 特殊规则
+- 世界法则：
+- 禁忌/限制：
+`,
+    character: `---
+tags: [人物]
+姓名: ""
+年龄: ""
+身份: ""
+性别: ""
+首次出场: ""
+entity_status: active
+entity_created_at: ""
+entity_last_changed_at: ""
+entity_last_changed_reason: ""
+外貌特征: ""
+性格标签: ""
+核心动机: ""
+当前状态: ""
+当前位置: ""
+---
+
+# {{Name}}
+
+## 确定性设定
+- 外貌：
+- 核心性格：
+- 关键背景：
+
+## 不确定性
+- 内心矛盾：
+- 成长弧光：
+
+## 关系网
+
+## 变更记录
+`,
+    location: `---
+tags: [地点]
+名称: ""
+别称: ""
+类型: ""
+描述: ""
+重要程度: ""
+地理特征: ""
+主要居民/势力: ""
+所在世界/区域: ""
+entity_status: active
+entity_created_at: ""
+entity_last_changed_at: ""
+entity_last_changed_reason: ""
+---
+
+# {{Name}}
+
+## 确定性设定
+- 地理特征：
+- 气候：
+- 主要居民/势力：
+
+## 不确定性
+- 隐藏秘密：
+- 潜在危机：
+`,
+    faction: `---
+tags: [势力]
+名称: ""
+别称: ""
+类型: ""
+描述: ""
+领袖: ""
+地位/排名: ""
+entity_status: active
+entity_created_at: ""
+entity_last_changed_at: ""
+entity_last_changed_reason: ""
+---
+
+# {{Name}}
+
+## 确定性设定
+- 领袖：
+- 核心成员：
+- 层级体系：
+
+## 不确定性
+- 隐藏目的：
+- 潜在冲突：
+`,
+    item: `---
+tags: [物品功法]
+名称: ""
+类型: ""
+描述: ""
+效果: ""
+品阶/等级: ""
+所属/归属: ""
+entity_status: active
+entity_created_at: ""
+entity_last_changed_at: ""
+entity_last_changed_reason: ""
+---
+
+# {{Name}}
+
+## 确定性设定
+- 外观/形态：
+- 特性：
+- 主要用途：
+
+## 不确定性
+- 隐藏能力：
+- 来历：
+`,
 };
 
 const TEMPLATE_PATH_MAP: Record<string, () => string> = {
@@ -346,14 +509,25 @@ export class TemplateService {
                 try {
                     content = await this.app.vault.read(templateFile);
                 } catch (e) {
-                    log.warn('[TemplateService] 读取模板失败，使用默认模板:', path, e);
+                    this.warnOnce(path, '[TemplateService] 读取模板失败，使用默认模板:', e);
                 }
             } else {
-                log.warn('[TemplateService] 模板文件不存在，使用默认模板:', path);
+                this.warnOnce(path, '[TemplateService] 模板文件不存在，使用默认模板:');
             }
         }
 
         return this.replaceVariables(content, vars);
+    }
+
+    /** 同一路径只告警一次，避免缺模板时日志刷屏 */
+    private warnOnce(path: string, message: string, error?: unknown): void {
+        if (warnedTemplatePaths.has(path)) return;
+        warnedTemplatePaths.add(path);
+        if (error !== undefined) {
+            log.warn(message, path, error);
+        } else {
+            log.warn(message, path);
+        }
     }
 
     private replaceVariables(content: string, vars: TemplateVariables): string {

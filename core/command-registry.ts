@@ -5,53 +5,14 @@
  * 从 main.ts 拆分而来
  */
 
-import { App, Editor, ItemView, MarkdownFileInfo, MarkdownView, Notice, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
+import { App, Editor, ItemView, MarkdownFileInfo, MarkdownView, Notice, TFile } from 'obsidian';
 import { InternalRegistry } from '../engine/internal-registry';
-import { CreateProjectModal } from '../ui/create-project-modal';
-import { PlanBookModal } from '../ui/plan-book-modal';
-import { WriteChapterModal } from '../ui/write-chapter-modal';
-import { ReviewChapterModal } from '../ui/review-chapter-modal';
-import { QualityDashboardModal } from '../ui/quality-dashboard-modal';
-import { BatchCreateModal } from '../ui/batch-create-modal';
-import { GenerateWorldviewModal } from '../ui/generate-worldview-modal';
-import { GenerateCharacterModal } from '../ui/generate-character-modal';
-import { GenerateFactionModal } from '../ui/generate-faction-modal';
-import { GenerateLocationModal } from '../ui/generate-location-modal';
-import { GenerateItemModal } from '../ui/generate-item-modal';
-import { CrossVolumeStateModal } from '../ui/cross-volume-state-modal';
-import { StyleDistillerModal } from '../ui/style-distiller-modal';
-import { ContextInjectorModal } from '../ui/context-injector-modal';
-import { ExpandTextModal } from '../ui/expand-text-modal';
-import { OutlineExpandModal } from '../ui/outline-expand-modal';
-import { ChapterSettlementModal } from '../ui/chapter-settlement-modal';
-import { IdeationModal } from '../ui/ideation-modal';
-import { GoldenOpeningModal } from '../ui/golden-opening-modal';
-import { StepResultViewerModal } from '../ui/step-result-viewer-modal';
-import { VolumeIntroModal } from '../ui/volume-intro-modal';
-import { BatchChaptersModal } from '../ui/batch-chapters-modal';
-import { ContinueChaptersModal } from '../ui/continue-chapters-modal';
-import { AutoWriterModal } from '../ui/auto-writer-modal';
-import { DiagnoseWriterModal } from '../ui/diagnose-writer-modal';
-import { TomatoRankModal } from '../ui/tomato-rank-modal';
-import { RebuildChaptersModal } from '../ui/rebuild-chapters-modal';
-import { BackupYuanModal } from '../ui/backup-yuan-modal';
-import { ProtectYuanModal } from '../ui/protect-yuan-modal';
-import { NovelTagsModal } from '../ui/novel-tags-modal';
-import { AiBuilderModal } from '../ui/ai-builder-modal';
-import { AddFanficSettingModal } from '../ui/add-fanfic-setting-modal';
-import { ProviderSwitcherModal } from '../ui/provider-switcher-modal';
-import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from '../ui/full-writer-view';
-import { CoWritingView, VIEW_TYPE_CO_WRITE } from '../ui/co-writing-view';
-import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from '../ui/views/writing-fingerprint-view';
-import { VIEW_TYPE_KNOWLEDGE_BASE } from '../ui/views/knowledge-base-view';
-import { UnifiedEntityManagerModal } from '../ui/unified-entity-manager-modal';
-import { UnifiedEntityGenerateModal } from '../ui/unified-entity-generate-modal';
-import { ChapterVersionModal } from '../ui/chapter-version-modal';
 import { ChapterVersionService } from '../services/chapter-version-service';
+import { importExampleProject } from '../services/example-project-service';
 import { ENGINE_NAMES } from '../engine/engine-registry';
-import { FloatWorkspaceManager } from '../ui/workspace-manager';
 import { pjNarrativeOverview } from '../shared/paths';
 import { createLogger } from '../shared/logger';
+import { NOOP_COMMAND_UI_PORT, type CommandUiPort } from '../shared/command-ui-port';
 
 
 const log = createLogger('CommandRegistry');
@@ -59,74 +20,8 @@ const log = createLogger('CommandRegistry');
  * 命令 ID 常量枚举
  * 避免魔法字符串，提供类型安全的命令 ID 引用
  */
-export const CommandIds = {
-    // ─── 项目管理类 ───
-    CREATE_PROJECT: 'novel-writer-create-project',
-    RENAME_PROJECT: 'novel-writer-rename-project',
-    PLAN_BOOK: 'novel-writer-plan-book',
-    VOLUME_INTRO: 'novel-writer-volume-intro',
-    BATCH_CREATE: 'novel-writer-batch-create',
-    REBUILD_CHAPTERS: 'novel-writer-rebuild',
-    BACKUP_META: 'novel-writer-backup',
-    PROTECT_META: 'novel-writer-protect',
-    NARRATIVE_OVERVIEW: 'novel-writer-narrative-overview',
-
-    // ─── 写作辅助类 ───
-    WRITE_CHAPTER: 'novel-writer-write-chapter',
-    WRITE_CHAPTER_AUTO: 'novel-writer-write-chapter-auto',
-    BATCH_CHAPTERS: 'novel-writer-batch-chapters',
-    CONTINUE_CHAPTERS: 'novel-writer-continue-chapters',
-    AUTO_WRITER: 'novel-writer-auto-writer',
-    REVIEW_CHAPTER: 'novel-writer-review-chapter',
-    QUALITY_DASHBOARD: 'novel-writer-quality-dashboard',
-    CHAPTER_SETTLEMENT: 'novel-writer-chapter-settlement',
-    EXPAND_TEXT: 'novel-writer-expand-text',
-    OUTLINE_EXPAND: 'novel-writer-outline-expand',
-    CROSS_VOLUME_STATE: 'novel-writer-cross-volume-state',
-
-    // ─── 知识库类 ───
-    WORLDVIEW: 'novel-writer-worldview',
-    CHARACTER: 'novel-writer-character',
-    FACTION: 'novel-writer-faction',
-    LOCATION: 'novel-writer-location',
-    ITEM: 'novel-writer-item',
-    ENTITY_MANAGER: 'novel-writer-entity-manager',
-    ENTITY_GENERATE: 'novel-writer-entity-generate',
-    AI_BUILDER: 'novel-writer-ai-builder',
-    ADD_FANFIC: 'novel-writer-add-fanfic',
-    EXTRACT_ELEMENTS: 'novel-writer-extract-elements',
-    POPULATE_SETTING_LIB: 'novel-writer-populate-setting-lib',
-    TAGS_ANALYSIS: 'novel-writer-tags',
-    FINGERPRINT_LIBRARY: 'novel-writer-fingerprint-library',
-    STYLE_DISTILLER: 'novel-writer-style-distiller',
-    CONTEXT_INJECTOR: 'novel-writer-context-injector',
-    OPEN_KNOWLEDGE_BASE: 'novel-writer-open-knowledge-base',
-
-    // ─── 工具类 ───
-    DIAGNOSE: 'novel-writer-diagnose',
-    TOMATO_RANK: 'novel-writer-tomato-rank',
-    REFRESH_INFO_DEBT: 'novel-writer-refresh-info-debt',
-    SWITCH_PROVIDER: 'switch-provider',
-    IDEATION: 'novel-writer-ideation',
-    GOLDEN_OPENING: 'novel-writer-golden-opening',
-    STEP_RESULT_VIEWER: 'novel-writer-step-result-viewer',
-    BATCH_DECONSTRUCT: 'novel-writer-batch-deconstruct',
-
-    // ─── 视图类 ───
-    FULL_WRITER: 'novel-writer-full-writer',
-    CO_WRITING: 'novel-writer-co-writing',
-
-    // ─── 版本管理类 ───
-    VERSION_HISTORY: 'novel-writer-version-history',
-    SAVE_VERSION: 'novel-writer-save-version',
-
-    // ─── 内部调试命令（不暴露到 Obsidian 命令面板） ───
-    CLEAR_WORLDVIEW_CACHE: 'clear-worldview-cache',
-    WORLDVIEW_CACHE_STATS: 'worldview-cache-stats',
-    POPULATE_SETTING_LIB_INTERNAL: 'populate-setting-lib',
-} as const;
-
-export type CommandId = typeof CommandIds[keyof typeof CommandIds];
+import { CommandIds, type CommandId } from '../shared/command-ids';
+export { CommandIds, type CommandId };
 
 /** 命令分组 */
 export enum CommandGroup {
@@ -185,6 +80,7 @@ export interface CommandDefinition {
 const COMMAND_DEFINITIONS: CommandDefinition[] = [
     // ─── 项目管理类 ───
     { id: CommandIds.CREATE_PROJECT, name: '新建项目', group: CommandGroup.ProjectManagement, description: '创建新的小说项目' },
+    { id: CommandIds.IMPORT_EXAMPLE, name: '导入示例项目', group: CommandGroup.ProjectManagement, description: '一键创建含 1 卷 3 章、人物与伏笔的示例项目' },
     { id: CommandIds.RENAME_PROJECT, name: '重命名当前项目', group: CommandGroup.ProjectManagement, description: '重命名当前活动项目' },
     { id: CommandIds.PLAN_BOOK, name: 'AI全书规划', group: CommandGroup.ProjectManagement, description: '使用 AI 进行全书规划' },
     { id: CommandIds.VOLUME_INTRO, name: '全书简介', group: CommandGroup.ProjectManagement, description: '查看和编辑全书简介' },
@@ -199,6 +95,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.WRITE_CHAPTER, name: 'AI写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '使用 AI 撰写章节正文（旧版）', internalOnly: true },
     { id: CommandIds.WRITE_CHAPTER_AUTO, name: '后台AI写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '后台自动撰写章节正文（旧版）', internalOnly: true },
     { id: CommandIds.BATCH_CHAPTERS, name: '批量写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '批量撰写章节正文（旧版）', internalOnly: true },
+    { id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', group: CommandGroup.WritingAssistant, description: '按 11 步流程逐章生成规划、正文与分析报告，并执行结算' },
     { id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', group: CommandGroup.WritingAssistant, description: '规划后续章节内容' },
     { id: CommandIds.AUTO_WRITER, name: '自动写作器〔旧〕', group: CommandGroup.WritingAssistant, description: '自动写作器（旧版）', internalOnly: true },
     { id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', group: CommandGroup.WritingAssistant, description: '审查章节连贯性' },
@@ -206,6 +103,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.CHAPTER_SETTLEMENT, name: '章节结算', group: CommandGroup.WritingAssistant, description: '章节内容结算与分析' },
     { id: CommandIds.EXPAND_TEXT, name: '📝 段落扩写', group: CommandGroup.WritingAssistant, description: '扩写选中的段落', hasEditorCallback: true },
     { id: CommandIds.OUTLINE_EXPAND, name: '✨ 智能大纲扩写', group: CommandGroup.WritingAssistant, description: '智能扩写大纲', hasEditorCallback: true },
+    { id: CommandIds.REWRITE_SUGGESTION, name: '✨ AI 改写建议', group: CommandGroup.WritingAssistant, description: '对选中文本生成 2-3 个改写方案', hasEditorCallback: true },
     { id: CommandIds.CROSS_VOLUME_STATE, name: '跨卷状态继承', group: CommandGroup.WritingAssistant, description: '跨卷状态继承管理' },
 
     // ─── 知识库类 ───
@@ -219,6 +117,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.AI_BUILDER, name: 'AI世界元素生成', group: CommandGroup.KnowledgeBase, description: 'AI 世界元素批量生成' },
     { id: CommandIds.ADD_FANFIC, name: '添加同人设定', group: CommandGroup.KnowledgeBase, description: '添加同人作品设定' },
     { id: CommandIds.EXTRACT_ELEMENTS, name: 'AI 元素提取', group: CommandGroup.KnowledgeBase, description: '从文本中提取元素' },
+    { id: CommandIds.CHARACTER_RECOGNITION, name: '👤 角色识别审核', group: CommandGroup.KnowledgeBase, description: '识别当前章节角色并人工审核建议' },
     { id: CommandIds.POPULATE_SETTING_LIB, name: '从世界观生成设定库', group: CommandGroup.KnowledgeBase, description: '从世界观生成设定库' },
     { id: CommandIds.TAGS_ANALYSIS, name: '作品标签分析', group: CommandGroup.KnowledgeBase, description: '分析作品标签' },
     { id: CommandIds.FINGERPRINT_LIBRARY, name: '🔍 打开写作指纹库', group: CommandGroup.KnowledgeBase, description: '打开写作指纹库视图' },
@@ -234,10 +133,12 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.IDEATION, name: '💡 脑洞构思工坊', group: CommandGroup.Tools, description: '脑洞构思工作坊' },
     { id: CommandIds.GOLDEN_OPENING, name: '🌟 黄金开篇工坊', group: CommandGroup.Tools, description: '黄金开篇设计工作坊' },
     { id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', group: CommandGroup.Tools, description: '查看步骤执行结果' },
+    { id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', group: CommandGroup.Tools, description: '时间线/伏笔 ↔ 设定库/全书规划 的关联视图与回写' },
     { id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', group: CommandGroup.Tools, description: '批量拆解多本书的写作风格' },
+    { id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', group: CommandGroup.Tools, description: '编译全书为 Markdown / TXT / HTML 稿件' },
 
     // ─── 视图类 ───
-    { id: CommandIds.FULL_WRITER, name: '📖 完整写作工作台', group: CommandGroup.Views, description: '打开完整写作工作台' },
+    { id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', group: CommandGroup.Views, description: '打开流程规划工作台的项目与章节页' },
     { id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', group: CommandGroup.Views, description: '打开句级协同写作工作台' },
 
     // ─── 版本管理类 ───
@@ -257,7 +158,8 @@ export interface CommandRegistryDeps {
     aiEngine: { extractElements(content: string): Promise<{ error?: string }> };
     ctxManager: any;
     foreshadowManager: { refreshInfoDebt(): void };
-    workspaceManager?: FloatWorkspaceManager;
+    /** UI 执行端口：Modal / 视图类命令由 ui 层实现，core 只按 id 委托 */
+    ui?: CommandUiPort;
     /** 插件实例引用（实体 Modal 需要 access settings 和回调槽） */
     plugin: import('../main').default;
     /** 获取当前活动项目名 */
@@ -268,17 +170,17 @@ export interface CommandRegistryDeps {
     refreshFullWriterContextPanel(): void;
     /** 执行 populateSettingLib */
     populateSettingLib(): Promise<void>;
-    /** 工作台状态 */
-    getWorkbenchState(): { project?: string; chapterName?: string; chapterNum?: number; volume?: string } | null;
     /** 是否为工作台上下文 */
     isWorkbenchContext(): boolean;
 }
 
 export class CommandRegistry {
     private readonly deps: CommandRegistryDeps;
+    private readonly ui: CommandUiPort;
 
     constructor(deps: CommandRegistryDeps) {
         this.deps = deps;
+        this.ui = deps.ui ?? NOOP_COMMAND_UI_PORT;
     }
 
     // ─── 命令查询方法 ───
@@ -326,66 +228,76 @@ export class CommandRegistry {
     registerInternalCommands(): void {
         const r = this.deps.registry;
 
-        // ── 项目管理类 ──
-        r.register(CommandIds.CREATE_PROJECT, async () => new CreateProjectModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.PLAN_BOOK, async () => new PlanBookModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.VOLUME_INTRO, async () => new VolumeIntroModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.BATCH_CHAPTERS, async () => new BatchChaptersModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.CONTINUE_CHAPTERS, async () => new ContinueChaptersModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.AUTO_WRITER, async () => new AutoWriterModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.DIAGNOSE, async () => new DiagnoseWriterModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.TOMATO_RANK, async () => new TomatoRankModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.REBUILD_CHAPTERS, async () => new RebuildChaptersModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.BACKUP_META, async () => new BackupYuanModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.PROTECT_META, async () => new ProtectYuanModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.TAGS_ANALYSIS, async () => new NovelTagsModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.AI_BUILDER, async () => new AiBuilderModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.ADD_FANFIC, async () => new AddFanficSettingModal(this.deps.app, this.deps.plugin).open());
-        // U1（技术审计）：WRITE_CHAPTER 此前仅有定义未注册，tools-modal 的
-        // 「整章生成（旧）」按钮与 executeCommand 双路由均落空（点击无任何效果）。
-        r.register(CommandIds.WRITE_CHAPTER, async () => new WriteChapterModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.WRITE_CHAPTER_AUTO, async () => { WriteChapterModal.runBackground(this.deps.app, this.deps.plugin); });
-        r.register(CommandIds.REVIEW_CHAPTER, async () => new ReviewChapterModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.QUALITY_DASHBOARD, async () => new QualityDashboardModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.BATCH_CREATE, async () => new BatchCreateModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.WORLDVIEW, async () => new GenerateWorldviewModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.CHARACTER, async () => new GenerateCharacterModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.FACTION, async () => new GenerateFactionModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.LOCATION, async () => new GenerateLocationModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.ITEM, async () => new GenerateItemModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.ENTITY_MANAGER, async () => {
-            const project = this.deps.getActiveProject();
-            if (!project) {
-                new Notice('⚠️ 请先选择或打开一个项目', 3000);
-                return;
-            }
-            new UnifiedEntityManagerModal(this.deps.app, this.deps.plugin, project).open();
-        });
-        r.register(CommandIds.ENTITY_GENERATE, async () => {
-            const project = this.deps.getActiveProject();
-            new UnifiedEntityGenerateModal(this.deps.app, this.deps.plugin, project || undefined).open();
+        // ── UI 类命令：core 只登记 id 与回调，实际执行由 ui 层（CommandUiExecutor）接管 ──
+        const uiCommandIds: string[] = [
+            CommandIds.CREATE_PROJECT,
+            CommandIds.PLAN_BOOK,
+            CommandIds.VOLUME_INTRO,
+            CommandIds.BATCH_CHAPTERS,
+            CommandIds.BATCH_NOVELS,
+            CommandIds.CONTINUE_CHAPTERS,
+            CommandIds.AUTO_WRITER,
+            CommandIds.DIAGNOSE,
+            CommandIds.TOMATO_RANK,
+            CommandIds.REBUILD_CHAPTERS,
+            CommandIds.BACKUP_META,
+            CommandIds.PROTECT_META,
+            CommandIds.TAGS_ANALYSIS,
+            CommandIds.AI_BUILDER,
+            CommandIds.ADD_FANFIC,
+            CommandIds.WRITE_CHAPTER,
+            CommandIds.WRITE_CHAPTER_AUTO,
+            CommandIds.REVIEW_CHAPTER,
+            CommandIds.QUALITY_DASHBOARD,
+            CommandIds.BATCH_CREATE,
+            CommandIds.CROSS_VOLUME_STATE,
+            CommandIds.CHAPTER_SETTLEMENT,
+            CommandIds.EXPAND_TEXT,
+            CommandIds.OUTLINE_EXPAND,
+            CommandIds.REWRITE_SUGGESTION,
+            CommandIds.WORLDVIEW,
+            CommandIds.CHARACTER,
+            CommandIds.FACTION,
+            CommandIds.LOCATION,
+            CommandIds.ITEM,
+            CommandIds.ENTITY_MANAGER,
+            CommandIds.ENTITY_GENERATE,
+            CommandIds.STYLE_DISTILLER,
+            CommandIds.CONTEXT_INJECTOR,
+            CommandIds.BATCH_DECONSTRUCT,
+            CommandIds.CHARACTER_RECOGNITION,
+            CommandIds.FINGERPRINT_LIBRARY,
+            CommandIds.OPEN_KNOWLEDGE_BASE,
+            CommandIds.IDEATION,
+            CommandIds.GOLDEN_OPENING,
+            CommandIds.STEP_RESULT_VIEWER,
+            CommandIds.STORY_LINKAGE_BOARD,
+            CommandIds.EXPORT_MANUSCRIPT,
+            CommandIds.FULL_WRITER,
+            CommandIds.CO_WRITING,
+        ];
+        for (const id of uiCommandIds) {
+            r.register(id, async () => { await this.ui.executeCommand(id); });
+        }
+
+        // ── 非 UI 命令：留在 core（示例项目导入 / 信息债 / 元素提取 / 版本与缓存） ──
+        r.register(CommandIds.IMPORT_EXAMPLE, async () => {
+            const { created, project } = await importExampleProject(this.deps.app);
+            new Notice(
+                created
+                    ? `✅ 示例项目「${project}」已导入（1 卷 3 章 + 1 人物 + 1 伏笔）`
+                    : `ℹ️ 示例项目「${project}」已存在，直接打开`,
+                5000,
+            );
+            await this.ui.executeCommand(CommandIds.FULL_WRITER);
         });
         r.register(CommandIds.REFRESH_INFO_DEBT, async () => { this.deps.foreshadowManager.refreshInfoDebt(); });
-        r.register(CommandIds.CROSS_VOLUME_STATE, async () => new CrossVolumeStateModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.STYLE_DISTILLER, async () => new StyleDistillerModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.CONTEXT_INJECTOR, async () => new ContextInjectorModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.CHAPTER_SETTLEMENT, async () => new ChapterSettlementModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.IDEATION, async () => new IdeationModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.GOLDEN_OPENING, async () => new GoldenOpeningModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.STEP_RESULT_VIEWER, async () => new StepResultViewerModal(this.deps.app, this.deps.plugin).open());
-        r.register(CommandIds.BATCH_DECONSTRUCT, async () => {
-            const { BatchDeconstructModal } = await import('../ui/batch-deconstruct-modal');
-            new BatchDeconstructModal(this.deps.app, this.deps.plugin).open();
-        });
-        r.register(CommandIds.FULL_WRITER, async () => { this.openFullWriterView(); });
+        // 叙事总览此前只在 Obsidian 命令面板注册，快捷工具点击会落到 fallback 并打 warn；
+        // 这里补进 registry，保证 tool-catalog 的每个入口都能命中统一路由。
+        r.register(CommandIds.NARRATIVE_OVERVIEW, async () => { await this.openNarrativeOverview(); });
         r.register(CommandIds.SWITCH_PROVIDER, async () => this.deps.openProviderSwitcher());
         r.register(CommandIds.EXTRACT_ELEMENTS, async () => { this.extractElementsCommand(); });
         r.register(CommandIds.POPULATE_SETTING_LIB_INTERNAL, () => this.deps.populateSettingLib());
-        r.register(CommandIds.CO_WRITING, async () => { await this.openCoWritingFromActiveContext(); });
-        r.register(CommandIds.EXPAND_TEXT, async () => { this.expandTextFromActive(); });
-        r.register(CommandIds.OUTLINE_EXPAND, async () => { this.outlineExpandFromActive(); });
-        r.register(CommandIds.FINGERPRINT_LIBRARY, async () => { await this.openFingerprintLibrary(); });
-        r.register(CommandIds.OPEN_KNOWLEDGE_BASE, async () => { await this.openKnowledgeBase(); });
         r.register(CommandIds.CLEAR_WORLDVIEW_CACHE, async () => {
             const cacheService = (this.deps.plugin as any).worldviewCacheService;
             if (cacheService) {
@@ -413,6 +325,7 @@ export class CommandRegistry {
         };
 
         addCommand({ id: CommandIds.CREATE_PROJECT, name: '新建项目', callback: exec(CommandIds.CREATE_PROJECT) });
+        addCommand({ id: CommandIds.IMPORT_EXAMPLE, name: '导入示例项目', callback: exec(CommandIds.IMPORT_EXAMPLE) });
         addCommand({ id: CommandIds.PLAN_BOOK, name: 'AI全书规划', callback: exec(CommandIds.PLAN_BOOK) });
         addCommand({ id: CommandIds.VOLUME_INTRO, name: '全书简介', callback: exec(CommandIds.VOLUME_INTRO) });
         addCommand({ id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', callback: exec(CommandIds.CONTINUE_CHAPTERS) });
@@ -442,9 +355,12 @@ export class CommandRegistry {
         addCommand({ id: 'novel-writer-ideation', name: '💡 脑洞构思工坊', callback: exec('novel-writer-ideation') });
         addCommand({ id: CommandIds.GOLDEN_OPENING, name: '🌟 黄金开篇工坊', callback: exec(CommandIds.GOLDEN_OPENING) });
         addCommand({ id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', callback: exec(CommandIds.STEP_RESULT_VIEWER) });
+        addCommand({ id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', callback: exec(CommandIds.STORY_LINKAGE_BOARD) });
         addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', callback: exec(CommandIds.BATCH_DECONSTRUCT) });
-        addCommand({ id: CommandIds.FULL_WRITER, name: '📖 完整写作工作台', callback: exec(CommandIds.FULL_WRITER) });
+        addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
+        addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
         addCommand({ id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', callback: exec(CommandIds.CO_WRITING) });
+        addCommand({ id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', callback: exec(CommandIds.BATCH_NOVELS) });
         addCommand({ id: 'novel-writer-fingerprint-library', name: '🔍 打开写作指纹库', callback: exec('novel-writer-fingerprint-library') });
         addCommand({ id: CommandIds.OPEN_KNOWLEDGE_BASE, name: '📚 打开知识库管理界面', callback: exec(CommandIds.OPEN_KNOWLEDGE_BASE) });
         addCommand({ id: CommandIds.SWITCH_PROVIDER, name: '快速切换 AI 提供商', callback: exec(CommandIds.SWITCH_PROVIDER) });
@@ -453,22 +369,21 @@ export class CommandRegistry {
             id: CommandIds.EXPAND_TEXT,
             name: '📝 段落扩写',
             editorCallback: (editor, _view) => {
-                const selectedText = editor.getSelection();
-                new ExpandTextModal(this.deps.app, this.deps.plugin, selectedText, editor).open();
+                void this.ui.executeCommand(CommandIds.EXPAND_TEXT, { editor });
             },
         });
         addCommand({
             id: CommandIds.OUTLINE_EXPAND,
             name: '✨ 智能大纲扩写',
             editorCallback: (editor, _view) => {
-                const selectedText = editor.getSelection();
-                const allText = editor.getValue();
-                const sourceText = selectedText || allText;
-                const modal = new OutlineExpandModal(this.deps.app, this.deps.plugin, sourceText, {
-                    mode: selectedText ? 'paragraph' : 'chapter',
-                    targetWords: 3000,
-                });
-                modal.open();
+                void this.ui.executeCommand(CommandIds.OUTLINE_EXPAND, { editor });
+            },
+        });
+        addCommand({
+            id: CommandIds.REWRITE_SUGGESTION,
+            name: '✨ AI 改写建议',
+            editorCallback: (editor, _view) => {
+                void this.ui.executeCommand(CommandIds.REWRITE_SUGGESTION, { editor });
             },
         });
         addCommand({ id: CommandIds.POPULATE_SETTING_LIB, name: '从世界观生成设定库', callback: exec(CommandIds.POPULATE_SETTING_LIB_INTERNAL) });
@@ -479,83 +394,6 @@ export class CommandRegistry {
 
         addCommand({ id: CommandIds.VERSION_HISTORY, name: '📜 版本历史与回滚', callback: exec(CommandIds.VERSION_HISTORY) });
         addCommand({ id: CommandIds.SAVE_VERSION, name: '💾 保存当前版本', callback: exec(CommandIds.SAVE_VERSION) });
-    }
-
-    // ─── 视图操作 ───
-
-    async openFullWriterView(): Promise<void> {
-        const { workspace } = this.deps.app;
-        const existing = workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE);
-        let leaf: WorkspaceLeaf;
-        if (existing.length > 0) {
-            leaf = existing[0];
-            for (let i = 1; i < existing.length; i++) existing[i].detach();
-        } else {
-            leaf = workspace.getLeaf('tab');
-        }
-        await leaf.setViewState({ type: FULL_WRITER_VIEW_TYPE, active: true });
-        workspace.revealLeaf(leaf);
-    }
-
-    async activateCoWritingView(project?: string, chapterName?: string, volume?: string, chapterNum?: number): Promise<void> {
-        const { workspace } = this.deps.app;
-        let leaf = workspace.getLeavesOfType(VIEW_TYPE_CO_WRITE)[0];
-        if (!leaf) {
-            leaf = workspace.getLeaf('tab');
-            await leaf.setViewState({ type: VIEW_TYPE_CO_WRITE, active: true });
-        }
-        workspace.revealLeaf(leaf);
-        if (project || chapterName) {
-            const view = leaf.view as CoWritingView;
-            if (view) await view.openChapter(project || '', chapterName || '', volume || '第1卷', chapterNum || 1);
-        }
-        await this.deps.workspaceManager?.openAll();
-    }
-
-    async openCoWritingFromActiveContext(): Promise<void> {
-        const wb = this.deps.getWorkbenchState();
-        if (wb?.project && wb?.chapterNum) {
-            await this.activateCoWritingView(wb.project, wb.chapterName || `第${wb.chapterNum}章`, wb.volume || '第1卷', wb.chapterNum);
-            return;
-        }
-        const activeFile = this.deps.app.workspace.getActiveFile();
-        const ctx = activeFile ? parseChapterFromPath(activeFile.path) : null;
-        if (ctx) {
-            await this.activateCoWritingView(ctx.project, ctx.chapterName, ctx.volume, ctx.chapterNum);
-            new Notice(`✍️ 已绑定章节：${ctx.project} · ${ctx.volume} · 第${ctx.chapterNum}章`, 3000);
-            return;
-        }
-        await this.activateCoWritingView();
-        new Notice('已打开句级协同写作工作台。请先打开某章「正文」文件，或从完整写作工作台选择章节后再进入，即可自动绑定。', 6000);
-    }
-
-    async openFingerprintLibrary(): Promise<void> {
-        const { workspace } = this.deps.app;
-        const existing = workspace.getLeavesOfType(VIEW_TYPE_WRITING_FINGERPRINT);
-        let leaf: WorkspaceLeaf;
-        if (existing.length > 0) {
-            leaf = existing[0];
-            for (let i = 1; i < existing.length; i++) existing[i].detach();
-        } else {
-            leaf = workspace.getLeaf('tab');
-        }
-        await leaf.setViewState({ type: VIEW_TYPE_WRITING_FINGERPRINT, active: true });
-        workspace.revealLeaf(leaf);
-        new Notice('🔍 已打开写作指纹库');
-    }
-
-    async openKnowledgeBase(): Promise<void> {
-        const { workspace } = this.deps.app;
-        const existing = workspace.getLeavesOfType(VIEW_TYPE_KNOWLEDGE_BASE);
-        let leaf: WorkspaceLeaf;
-        if (existing.length > 0) {
-            leaf = existing[0];
-            for (let i = 1; i < existing.length; i++) existing[i].detach();
-        } else {
-            leaf = workspace.getLeaf('tab');
-        }
-        await leaf.setViewState({ type: VIEW_TYPE_KNOWLEDGE_BASE, active: true });
-        workspace.revealLeaf(leaf);
     }
 
     // ─── 私有辅助 ───
@@ -574,39 +412,10 @@ export class CommandRegistry {
         }
     }
 
-    private expandTextFromActive(): void {
-        const view = this.deps.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!view) {
-            new Notice('请先打开 Markdown 编辑器并选中需要扩写的段落');
-            return;
-        }
-        const editor = view.editor;
-        const selectedText = editor.getSelection();
-        new ExpandTextModal(this.deps.app, this.deps.plugin, selectedText, editor).open();
-    }
-
-    private outlineExpandFromActive(): void {
-        const view = this.deps.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!view) {
-            new Notice('请先打开 Markdown 编辑器');
-            return;
-        }
-        const editor = view.editor;
-        const selectedText = editor.getSelection();
-        const allText = editor.getValue();
-        const sourceText = selectedText || allText;
-        const modal = new OutlineExpandModal(this.deps.app, this.deps.plugin, sourceText, {
-            mode: selectedText ? 'paragraph' : 'chapter',
-            targetWords: 3000,
-        });
-        modal.open();
-    }
-
     private renameProject(): void {
-        const activeFile = this.deps.app.workspace.getActiveFile();
-        if (!activeFile) { new Notice('请先打开项目中的文件'); return; }
-        const project = activeFile.path.split('/')[0];
-        new Notice(`当前项目: ${project}。请在文件浏览器中右键文件夹重命名，或通过生成世界观自动重命名。`);
+        const project = this.deps.getActiveProject()
+            ?? this.deps.app.workspace.getActiveFile()?.path.split('/')[0];
+        void this.ui.executeCommand(CommandIds.RENAME_PROJECT, { project: project ?? undefined });
     }
 
     private async openNarrativeOverview(): Promise<void> {
@@ -679,32 +488,7 @@ export class CommandRegistry {
     private async openVersionHistory(): Promise<void> {
         const ctx = await this.getCurrentFileContext();
         if (!ctx) return;
-
-        const modal = new ChapterVersionModal(this.deps.app, {
-            project: ctx.project,
-            contentType: ctx.contentType,
-            contentKey: ctx.contentKey,
-            sourcePath: ctx.sourcePath,
-            currentContent: ctx.content,
-            onSaveVersion: async () => {
-                const service = this.deps.plugin.engineRegistry.get<ChapterVersionService>(ENGINE_NAMES.CHAPTER_VERSION_SERVICE);
-                return await service.saveVersion(
-                    ctx.project,
-                    ctx.contentType,
-                    ctx.contentKey,
-                    ctx.sourcePath,
-                    ctx.content,
-                    { type: 'manual' },
-                );
-            },
-            onRollback: async (version) => {
-                const service = this.deps.plugin.engineRegistry.get<ChapterVersionService>(ENGINE_NAMES.CHAPTER_VERSION_SERVICE);
-                const activeFile = this.deps.app.workspace.getActiveFile();
-                const currentContent = activeFile ? await this.deps.app.vault.read(activeFile) : '';
-                await service.rollbackToVersion(version, currentContent);
-            },
-        }, this.deps.plugin.engineRegistry);
-        modal.open();
+        await this.ui.executeCommand(CommandIds.VERSION_HISTORY, { versionContext: ctx });
     }
 
     private async saveCurrentVersion(): Promise<void> {

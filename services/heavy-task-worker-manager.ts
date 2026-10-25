@@ -1,10 +1,12 @@
 import { WorkerManager } from './worker-manager';
 import { createLogger } from '../shared/logger';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
 import { VectorEnhancer } from '../engine/vector-enhancer';
 import { StyleDeconstructor, StyleAnalysisResult } from '../engine/deconstructors/style-deconstructor';
 import { StyleDeconstructorV2, StyleAnalysisResultV2 } from '../engine/style/style-deconstructor-v2';
 import { QualityScoreEngine, QualityScore, EvaluationContext } from '../engine/quality/quality-score-engine';
+import { WritingQualityEngine } from '../engine/writing-quality-engine';
 import { DeviationDetector, DeviationReport, DeviationContext } from '../engine/quality/deviation-detector';
 import { CharacterConsistencyChecker } from '../engine/character-consistency-checker';
 import { PlotDivergenceEngine } from '../engine/plot-divergence-engine';
@@ -14,6 +16,8 @@ const log = createLogger('HeavyTaskWorkerManager');
 export interface HeavyTaskWorkerManagerOptions {
     maxWorkers?: number;
     useWorker?: boolean;
+    /** Worker 脚本绝对 URL；缺省时直接使用主线程模式 */
+    workerUrl?: string;
 }
 
 interface CancelablePromise<T> extends Promise<T> {
@@ -33,14 +37,23 @@ export class HeavyTaskWorkerManager {
     constructor(options?: HeavyTaskWorkerManagerOptions) {
         const useWorker = options?.useWorker ?? true;
         const maxWorkers = options?.maxWorkers ?? 2;
+        const workerUrl = options?.workerUrl;
 
         this.initMainThreadEngines();
 
-        if (useWorker) {
+        if (useWorker && !workerUrl) {
+            this.useWorkerMode = false;
+            log.warn('未解析到 Worker 资源路径，使用主线程模式');
+            notifyWorkerUnavailable('未找到重任务 Worker 资源（workers/quality-worker.js）');
+            return;
+        }
+
+        if (useWorker && workerUrl) {
             try {
                 this.workerManager = new WorkerManager({
                     maxWorkers,
                     fallbackToMain: true,
+                    workerUrl,
                 });
 
                 this.registerFallbackHandlers();
@@ -65,36 +78,17 @@ export class HeavyTaskWorkerManager {
     private initMainThreadEngines(): void {
         this.styleDeconstructor = new StyleDeconstructor();
         this.styleDeconstructorV2 = new StyleDeconstructorV2();
-        // 注入纯计算分析器（characterChecker）。rhythmAnalyzer / emotionAnalyzer
-        // 依赖 AIEngine，会将 AI 调用引入统计快路径，与"快速统计评估"设计相悖，故保持未注入。
+        // C1: QSE 只保留 V1 统一内核，六维与总分全部来自 WritingQualityEngine；
+        // rhythmAnalyzer / emotionAnalyzer / characterChecker 注入后不会生效，这里不再注入。
+        // 人物逐条比对由下面的 DeviationDetector 负责。
         this.qualityScoreEngine = new QualityScoreEngine({
-            characterChecker: new CharacterConsistencyChecker(),
+            v1Engine: new WritingQualityEngine(),
         });
-        this.checkQualityEngineInjection();
         this.deviationDetector = new DeviationDetector({
             plotDivergenceEngine: new PlotDivergenceEngine(),
             characterChecker: new CharacterConsistencyChecker(),
         });
         this.checkDeviationDetectorInjection();
-    }
-
-    /** 检查 QualityScoreEngine 的条件分析器注入状态 */
-    private checkQualityEngineInjection(): void {
-        const qe = this.qualityScoreEngine as any;
-        const qeMissing = ['rhythmAnalyzer', 'emotionAnalyzer', 'characterChecker'].filter((k) => !qe[k]);
-        if (qeMissing.length > 0) {
-            log.warn(
-                `[质量引擎] 条件分析器未注入: ${qeMissing.join(', ')}（依赖主线程 AI 能力），相关维度使用内置规则`
-            );
-            getDegradationNotifier().notify({
-                source: 'injection',
-                from: 'full',
-                to: 'keyword_stats',
-                reason: `QualityScoreEngine 条件分析器未注入: ${qeMissing.join(', ')}`,
-                severity: 'warning',
-                recoverable: false,
-            });
-        }
     }
 
     /** 检查 DeviationDetector 的条件分析器注入状态 */

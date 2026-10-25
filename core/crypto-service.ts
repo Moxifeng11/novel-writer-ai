@@ -48,6 +48,8 @@ export class CryptoService {
     private _legacyKeyPromise: Promise<CryptoKey> | null = null;
     /** 会话口令（仅内存，重启即失）：由 requestPassword / requestNewPassword 设定 */
     private _password: string | null = null;
+    /** 本会话口令询问的并发去重：多个密钥同时解密时只弹一个口令框 */
+    private _askPromise: Promise<string | null> | null = null;
     /** 按 salt 缓存已派生的 v2 密钥，避免同 salt 重复执行 21 万次 PBKDF2 */
     private _derivedKeys = new Map<string, CryptoKey>();
     private readonly deps: CryptoServiceDeps;
@@ -123,14 +125,23 @@ export class CryptoService {
     /** 获取会话口令；无则通过回调询问。返回 null 表示用户取消或无回调可用 */
     private async ensurePassword(isNew: boolean): Promise<string | null> {
         if (this._password != null) return this._password;
+        // 并发去重：启动时多个密文同时解密，只应弹一个口令框
+        if (this._askPromise) return this._askPromise;
         const ask = isNew ? this.callbacks.requestNewPassword : this.callbacks.requestPassword;
         if (!ask) {
             log.warn('[小说工坊] 未注入口令回调，无法进行 v2 加解密');
             return null;
         }
-        const password = await ask();
-        if (password) this._password = password;
-        return password;
+        this._askPromise = (async () => {
+            const password = await ask();
+            if (password) this._password = password;
+            return password;
+        })();
+        try {
+            return await this._askPromise;
+        } finally {
+            this._askPromise = null;
+        }
     }
 
     // ─── 编解码工具 ───
@@ -198,6 +209,17 @@ export class CryptoService {
             new Notice('小说工坊：数据读取异常，部分功能可能受限');
             return stored;
         }
+    }
+
+    /**
+     * 启动期静默解密：仅有会话口令时才解密 v2 密文，否则原样返回。
+     * 用于 loadSettings——插件启动不应弹口令框阻塞 onload（否则视图/命令注册不完成，
+     * 表现为「插件无法正常使用」）。真正调用 AI 时再由 resolveApiKey 按需解锁。
+     */
+    async decryptWithoutPrompt(stored: string): Promise<string> {
+        if (!stored) return '';
+        if (stored.startsWith(V2_PREFIX) && !this.hasSessionPassword()) return stored;
+        return this.decrypt(stored);
     }
 
     /** v2 解密：口令错误时清除会话口令并重问一次，仍失败则原样返回 */

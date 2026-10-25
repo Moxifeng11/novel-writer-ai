@@ -3,7 +3,7 @@ import NovelWriterPlugin from '../main';
 import { getNextRowNum, hasTableSeparator, appendAfterSeparator, moveForeshadowToRevealed, mkdirp, showSuccess, showError } from '../utils/helpers';
 import { detectProjects } from '../engine/context-manager';
 import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
-import { INFO_DEBT_MAX, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_REVEAL_OVER_10, FORCED_REVEAL_OVER_5, FORCED_REVEAL_WINDOW_FORWARD, FORCED_REVEAL_WINDOW_BACKWARD, NOTICE_ERROR, NOTICE_SUCCESS } from '../shared/thresholds';
+import { INFO_DEBT_MAX, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_REVEAL_OVER_10, FORCED_REVEAL_OVER_5, FORCED_REVEAL_WINDOW_FORWARD, FORCED_REVEAL_WINDOW_BACKWARD, FORESHADOW_APPROACHING_CHAPTERS, NOTICE_ERROR, NOTICE_SUCCESS } from '../shared/thresholds';
 import { pjForeshadowDB, pjForeshadowTracker, pjTimelineDir, pjInfoDebtBoard, pjControlDir, pjCharsDir, isInCharsDir } from '../shared/paths';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
@@ -1019,7 +1019,7 @@ export async function getForeshadowWarnings(
                     foreshadowId: item.id,
                     foreshadowName: item.name
                 });
-            } else if (plannedChapter - currentChapter <= 3 && plannedChapter - currentChapter > 0) {
+            } else if (plannedChapter - currentChapter <= FORESHADOW_APPROACHING_CHAPTERS && plannedChapter - currentChapter > 0) {
                 warnings.push({
                     level: 'warning',
                     msg: `${item.name}计划在第${plannedChapter}章揭示，距现在仅剩${plannedChapter - currentChapter}章，当前是否有铺垫？`,

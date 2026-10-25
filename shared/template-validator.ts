@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 模板字段级校验器
  * 
  * 对 AI 生成的文件输出进行程序化字段级校验，
@@ -20,41 +20,150 @@ import {
     CHARACTER_BODY_SECTIONS,
     CHARACTER_SOUL_FIELDS,
     CHARACTER_BODY_SECTIONS_V2,
+    CHARACTER_NESTED_FIELD_GROUPS,
     ENTITY_SHORT_TITLE_ALIASES,
     CHARACTER_SHORT_TITLE_ALIASES,
     FACTION_FRONTMATTER_KEYS,
+    FACTION_REQUIRED_VALUE_KEYS,
     LOCATION_FRONTMATTER_KEYS,
+    LOCATION_REQUIRED_VALUE_KEYS,
     ITEM_FRONTMATTER_KEYS,
+    ITEM_REQUIRED_VALUE_KEYS,
+    SL_SECTIONS,
 } from './format-constants';
+// 同人设定路径解析唯一入口，避免校验侧与读取侧的正则漂移（如 CRLF）
+import { extractFanficRuleValue, parseFanficTimeline, parseFanficTimelineRows, parseProjectMeta } from './fanfic-rules';
 
 // === YAML 字段校验辅助 ===
 // 修正版：支持单行值 + YAML 多行块标量(>) + 多行文字块(|)
 
+const PLACEHOLDER_VALUES = new Set([
+    '待补充', '待填写', '待生成', '待定', '未知', '无', '暂无',
+    'none', 'null', 'n/a', 'na', 'tbd', 'todo',
+    '（无）', '(无)', '（待补充）', '(待补充)', '...', '…', '—', '-',
+]);
+
+function escapeRegex(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * 判断一个 YAML/正文值是否是「实质内容」。
+ * 严格模式：空字符串、引号空串、纯占位词、纯符号都视为未填写。
+ * 这是完整性校验的核心——此前 `姓名: ""` 会被当成已填写。
+ */
+export function isMeaningfulValue(raw: string | undefined | null): boolean {
+    if (raw == null) return false;
+    let value = String(raw).trim();
+    if (!value) return false;
+    // 去掉行尾 YAML 注释
+    value = value.replace(/\s+#.*$/, '').trim();
+    if (!value) return false;
+    // 去掉外层引号
+    const quoted = value.match(/^(["'])([\s\S]*)\1$/);
+    if (quoted) value = quoted[2].trim();
+    if (!value) return false;
+    if (PLACEHOLDER_VALUES.has(value.toLowerCase()) || PLACEHOLDER_VALUES.has(value)) return false;
+    if (/^[—\-_.。·…\s]+$/.test(value)) return false;
+    return true;
+}
+
+/** 读取某个顶层 YAML 字段的原始值（支持块标量） */
+function readYamlFieldValue(yamlContent: string, field: string): string | undefined {
+    const re = new RegExp(`^${escapeRegex(field)}\\s*:\\s*(.*)$`, 'm');
+    const match = re.exec(yamlContent);
+    if (!match) return undefined;
+
+    const inline = match[1].trim();
+    if (inline.startsWith('>') || inline.startsWith('|')) {
+        const startIndex = (match.index ?? 0) + match[0].length;
+        const lines = yamlContent.slice(startIndex).split('\n');
+        const block: string[] = [];
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.trim()) {
+                if (block.length > 0) block.push('');
+                continue;
+            }
+            if (!/^\s+/.test(line)) break;
+            block.push(line.trim());
+        }
+        return block.join(' ').trim();
+    }
+    return inline;
+}
+
 function yamlFieldHasValue(yamlContent: string, field: string): boolean {
-    const escaped = field.replace(/[/]/g, '\\/');
-    // 单行值：字段: 值（.+ 宽容匹配含空格和引号的值）
-    if (new RegExp(`^${escaped}\\s*:\\s*.+`, 'm').test(yamlContent)) return true;
-    // 块标量：字段: >
-    if (new RegExp(`^${escaped}\\s*:\\s*>`, 'm').test(yamlContent)) return true;
-    // 文字块：字段: |
-    if (new RegExp(`^${escaped}\\s*:\\s*\\|`, 'm').test(yamlContent)) return true;
+    return isMeaningfulValue(readYamlFieldValue(yamlContent, field));
+}
+
+/** 字段键是否存在（允许空值，用于 entity_status 等系统字段） */
+function yamlFieldExists(yamlContent: string, field: string): boolean {
+    return readYamlFieldValue(yamlContent, field) !== undefined;
+}
+
+/** 读取嵌套组（如 character_core:）下的子字段值 */
+function yamlNestedFieldHasValue(yamlContent: string, parent: string, child: string): boolean {
+    const parentRe = new RegExp(`^${escapeRegex(parent)}\\s*:\\s*$`, 'm');
+    const parentMatch = parentRe.exec(yamlContent);
+    if (!parentMatch) return false;
+
+    const rest = yamlContent.slice((parentMatch.index ?? 0) + parentMatch[0].length);
+    const lines = rest.split('\n');
+    const childRe = new RegExp(`^\\s+${escapeRegex(child)}\\s*:\\s*(.*)$`);
+    for (const line of lines) {
+        if (line.trim() && !/^\s+/.test(line)) break;
+        const m = line.match(childRe);
+        if (m) return isMeaningfulValue(m[1]);
+    }
     return false;
 }
 
-// === 正文分节校验辅助 ===
-// 修正版：大小写不敏感 + 空格宽松
-
-function bodySectionExists(content: string, section: string): boolean {
-    const escaped = section.replace(/[\/]/g, '\\/');
-    return new RegExp(`##\\s*${escaped}`, 'i').test(content);
+function yamlNestedGroupExists(yamlContent: string, parent: string): boolean {
+    return new RegExp(`^${escapeRegex(parent)}\\s*:\\s*$`, 'm').test(yamlContent);
 }
 
-function bodySectionOrAliasExists(content: string, section: string, aliasesMap?: Record<string, string[]>): boolean {
-    if (bodySectionExists(content, section)) return true;
+// === 正文分节校验辅助 ===
+// 修正版：大小写不敏感 + 空格宽松 + 内容非空
+
+/** 判断一段正文是否包含实质内容（排除「- 外貌：」这类空标签行） */
+function textHasContent(text: string): boolean {
+    return text.split('\n').some(raw => {
+        let line = raw.trim();
+        if (!line) return false;
+        line = line.replace(/^[-*+>]\s*/, '').replace(/^\d+[.、]\s*/, '').trim();
+        if (!line) return false;
+        // 「标签：」或「[[链接]] :」但没有值
+        if (/^[^：:]{1,30}[：:]\s*$/.test(line)) return false;
+        if (/^\[\[[^\]]+\]\]\s*[：:]?\s*$/.test(line)) return false;
+        return isMeaningfulValue(line);
+    });
+}
+
+/** 宽松查找分节正文：允许标题带序号前缀（如「## 一、叙事视角」） */
+function findSectionBody(content: string, section: string): string | null {
+    const re = new RegExp(
+        // 注意：末尾必须用 (?![\\s\\S]) 表示「字符串结束」；若用 $（配合 m 标志）
+        // 会把分节正文截断到标题行的行尾，导致多行内容与子节永远读不到。
+        `^##[^\\n]*${escapeRegex(section)}[^\\n]*\\n([\\s\\S]*?)(?=^##\\s|^#\\s|(?![\\s\\S]))`,
+        'im'
+    );
+    const match = content.match(re);
+    return match ? match[1] : null;
+}
+
+/** 分节不仅要有标题，标题下还必须有实质内容 */
+function bodySectionHasContent(content: string, section: string): boolean {
+    const body = findSectionBody(content, section);
+    return body !== null && textHasContent(body);
+}
+
+function bodySectionOrAliasHasContent(content: string, section: string, aliasesMap?: Record<string, string[]>): boolean {
+    if (bodySectionHasContent(content, section)) return true;
     const map = aliasesMap ?? ENTITY_SHORT_TITLE_ALIASES;
     const aliasList = map[section];
     if (!aliasList) return false;
-    return aliasList.some(alias => bodySectionExists(content, alias));
+    return aliasList.some(alias => bodySectionHasContent(content, alias));
 }
 
 export interface ValidationResult {
@@ -83,46 +192,71 @@ export interface TimelineStrategy {
 // ============================================================
 // 同人设定校验
 // ============================================================
-export function validateFanficSettings(content: string): ValidationResult {
+
+/**
+ * 同人设定的「未填写」判定。
+ *
+ * 生成骨架与 AI 提示词都要求未确定内容写「待补充」；这些值只要能通过校验，
+ * 用户就会看到「✅ 已保存并绑定」，而 prompt 侧 `parseFanficRules` 会把它们全部丢弃，
+ * 实际是零同人约束。与 `isMeaningfulValue` 的区别：这里保留「未知 / 无」为合法值
+ * （作者未知、没有额外红线都是用户可以明确表达的内容）。
+ */
+const FANFIC_EMPTY_VALUES = new Set([
+    '待补充', '待填写', '（待补充）', '(待补充)', '（待填写）', '(待填写)', '...', '…', '—', '-',
+]);
+
+export function isFanficValueFilled(raw: string | undefined | null): boolean {
+    if (raw == null) return false;
+    let value = String(raw).trim();
+    // 去掉行尾 YAML 注释与成对引号：`作品名称: "（待补充）"` 同样是空占位
+    value = value.replace(/\s+#.*$/, '').trim();
+    const quoted = value.match(/^(["'])([\s\S]*)\1$/);
+    if (quoted) value = quoted[2].trim();
+    return value !== '' && !FANFIC_EMPTY_VALUES.has(value);
+}
+
+export interface FanficValidationOptions {
+    /**
+     * 是否要求两张时间线各至少 1 行真实数据（默认 true）。
+     *
+     * 向导表单只收集 9 个字段、不收集时间线，步骤回读必须传 false：
+     * 否则用户保存成功后重启插件，步骤会被自身骨架里的占位行判成未完成。
+     */
+    requireTimelineData?: boolean;
+}
+
+const FANFIC_TIMELINE_SECTIONS: Array<{ title: string; dataMissingLabel: string }> = [
+    { title: '原作剧情时间线', dataMissingLabel: '原作剧情时间线(需要至少1行真实数据)' },
+    { title: '故事背景时间线', dataMissingLabel: '故事背景时间线(需要至少1行真实数据)' },
+];
+
+export function validateFanficSettings(content: string, options: FanficValidationOptions = {}): ValidationResult {
+    const requireTimelineData = options.requireTimelineData !== false;
     const missing: string[] = [];
 
     // Frontmatter
     for (const key of FF_FRONTMATTER_KEYS) {
-        const re = new RegExp(`${key}:\\s*(.+)`);
-        if (!re.test(content)) missing.push(`frontmatter.${key}`);
+        if (!isFanficValueFilled(readYamlFieldValue(content, key))) missing.push(`frontmatter.${key}`);
     }
 
-    // Core settings
-    for (const key of FF_CORE_KEYS) {
-        const re = new RegExp(`- \\*\\*${key}\\*\\*[：:]\\s*(.+)`);
-        if (!re.test(content)) missing.push(key);
+    // Core settings + Rule fields：骨架里未填的字段写「（待补充）」，占位不是内容
+    for (const key of [...FF_CORE_KEYS, ...FF_RULE_KEYS]) {
+        const value = content.match(
+            new RegExp(`^[ \\t]*-[ \\t]*\\*\\*${escapeRegex(key)}\\*\\*[：:][ \\t]*(.*)$`, 'm')
+        )?.[1];
+        if (!isFanficValueFilled(value)) missing.push(key);
     }
 
-    // Rule fields
-    for (const key of FF_RULE_KEYS) {
-        const re = new RegExp(`- \\*\\*${key}\\*\\*[：:]\\s*(.+)`);
-        if (!re.test(content)) missing.push(key);
-    }
-
-    // Canon timeline table must have at least 1 data row
-    const canonSection = content.match(/## 原作剧情时间线[\s\S]*?(?=\n## |$)/);
-    if (!canonSection) {
-        missing.push('原作剧情时间线(表格)');
-    } else {
-        const canonRows = canonSection[0].match(/^\|.+\|.+\|/gm);
-        if (!canonRows || canonRows.length < 3) { // header + separator + at least 1 data
-            missing.push('原作剧情时间线(需要至少1行数据)');
+    // 时间线表格：结构必须存在；真实数据行的口径与 prompt 注入侧一致
+    // （`parseFanficTimeline` 会丢弃表头、分隔行与整行占位）
+    for (const { title, dataMissingLabel } of FANFIC_TIMELINE_SECTIONS) {
+        const section = content.match(new RegExp(`## ${escapeRegex(title)}[\\s\\S]*?(?=\\n## |$)`));
+        if (!section || !/^\|.*\|\s*$/m.test(section[0])) {
+            missing.push(`${title}(表格)`);
+            continue;
         }
-    }
-
-    // Fan timeline table
-    const fanSection = content.match(/## 故事背景时间线[\s\S]*?(?=\n## |$)/);
-    if (!fanSection) {
-        missing.push('故事背景时间线(表格)');
-    } else {
-        const fanRows = fanSection[0].match(/^\|.+\|.+\|/gm);
-        if (!fanRows || fanRows.length < 3) {
-            missing.push('故事背景时间线(需要至少1行数据)');
+        if (requireTimelineData && parseFanficTimeline(content, title).length === 0) {
+            missing.push(dataMissingLabel);
         }
     }
 
@@ -209,6 +343,82 @@ export function validateOutlineOutput(content: string): ValidationResult {
 }
 
 // ============================================================
+// 设定库输出校验
+// ============================================================
+
+export function validateSettingLibOutput(content: string): ValidationResult {
+    const missingFields: string[] = [];
+    if (!content.trim()) {
+        return { valid: false, missingFields: ['内容为空'] };
+    }
+
+    for (const section of SL_SECTIONS) {
+        if (!findSectionBody(content, section)) {
+            missingFields.push(`模块: ${section}`);
+            continue;
+        }
+        if (!bodySectionHasContent(content, section)) {
+            missingFields.push(`模块内容为空: ${section}`);
+        }
+    }
+
+    return { valid: missingFields.length === 0, missingFields };
+}
+
+// ============================================================
+// 文笔风格输出校验
+// ============================================================
+
+/** 文笔风格必填的 9 个一级分节（与写作模态、内置预设保持一致） */
+export const WRITING_STYLE_REQUIRED_SECTIONS = [
+    '一、叙事视角',
+    '二、文笔特征',
+    '三、对话风格',
+    '四、描写风格',
+    '五、叙事节奏',
+    '六、情感表达方式',
+    '七、禁用/慎用',
+    '八、参考作品',
+    '九、番茄小说格式要求',
+] as const;
+
+const WRITING_STYLE_SUB_SECTIONS: Record<string, readonly string[]> = {
+    '二、文笔特征': ['总体风格', '句式特征', '用语习惯'],
+};
+
+export function validateWritingStyleOutput(content: string): ValidationResult {
+    const missingFields: string[] = [];
+    if (!content.trim()) {
+        return { valid: false, missingFields: ['内容为空'] };
+    }
+
+    for (const section of WRITING_STYLE_REQUIRED_SECTIONS) {
+        const body = findSectionBody(content, section);
+        if (body === null) {
+            missingFields.push(`分节: ${section}`);
+            continue;
+        }
+        // 子节结构（如「二、文笔特征」下的 ### 总体风格）
+        const subSections = WRITING_STYLE_SUB_SECTIONS[section];
+        if (subSections) {
+            for (const sub of subSections) {
+                const subRe = new RegExp(`^###[^\\n]*${escapeRegex(sub)}[^\\n]*\\n([\\s\\S]*?)(?=^###\\s|^##\\s|(?![\\s\\S]))`, 'im');
+                const subMatch = body.match(subRe);
+                if (!subMatch || !textHasContent(subMatch[1])) {
+                    missingFields.push(`${section} → ${sub}`);
+                }
+            }
+            continue;
+        }
+        if (!textHasContent(body)) {
+            missingFields.push(`分节内容为空: ${section}`);
+        }
+    }
+
+    return { valid: missingFields.length === 0, missingFields };
+}
+
+// ============================================================
 // 通用要点格式检测
 // ============================================================
 export function validateBulletFormat(content: string): ValidationResult {
@@ -229,18 +439,26 @@ export function validateBulletFormat(content: string): ValidationResult {
 // ============================================================
 // 时间线表格解析
 // ============================================================
-export function parseCanonTimelineTable(content: string): TimelineRow[] {
-    const section = content.match(/## 原作剧情时间线[\s\S]*?(?=\n## |$)/);
-    if (!section) return [];
+/**
+ * 原始单元格 → 列名对象。
+ * 单元格与列一一对应，空单元格保留为空串：旧实现先过滤空单元格再映射，
+ * 中间某列为空时后续列整体左移，面板会把「章节参考」显示在「涉及人物」下。
+ */
+function toTimelineRows(rows: string[][], columns: readonly string[]): TimelineRow[] {
+    return rows.map((cells) => {
+        const row: TimelineRow = {};
+        columns.forEach((col, index) => { row[col] = cells[index] ?? ''; });
+        return row;
+    });
+}
 
-    return parseMarkdownTable(section[0], FF_CANON_TIMELINE_COLS as unknown as string[]);
+export function parseCanonTimelineTable(content: string): TimelineRow[] {
+    // 与 prompt 注入共用 `parseFanficTimelineRows`：面板与 prompt 必须同口径
+    return toTimelineRows(parseFanficTimelineRows(content, '原作剧情时间线'), FF_CANON_TIMELINE_COLS);
 }
 
 export function parseFanTimelineTable(content: string): TimelineRow[] {
-    const section = content.match(/## 故事背景时间线[\s\S]*?(?=\n## |$)/);
-    if (!section) return [];
-
-    return parseMarkdownTable(section[0], FF_FAN_TIMELINE_COLS as unknown as string[]);
+    return toTimelineRows(parseFanficTimelineRows(content, '故事背景时间线'), FF_FAN_TIMELINE_COLS);
 }
 
 export function parseTimelineBoardTable(content: string): TimelineRow[] {
@@ -262,12 +480,11 @@ export function detectTimelineStrategy(projectDotFileContent: string): TimelineS
         /类型[：:]\s*(?:fanfic|同人)/i.test(projectDotFileContent);
 
     if (isFanfic) {
-        const pathMatch = projectDotFileContent.match(/##\s*同人设定路径\s*\n\s*(.+)/);
         return {
             strategy: 'fanfic',
             timelines: ['canon', 'fan', 'board'],
             rules: true,
-            fanficSettingsPath: pathMatch?.[1]?.trim(),
+            fanficSettingsPath: parseProjectMeta(projectDotFileContent).fanficPath || undefined,
         };
     }
 
@@ -302,7 +519,11 @@ function parseMarkdownTable(content: string, columns: string[]): TimelineRow[] {
 
         // Parse data row
         if (line.startsWith('|') && line.endsWith('|')) {
-            const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0);
+            // 只去掉首尾竖线，保留中间空单元格：过滤空单元格会让后续列整体左移
+            const raw = line.split('|');
+            if (raw.length > 0 && raw[0].trim() === '') raw.shift();
+            if (raw.length > 0 && raw[raw.length - 1].trim() === '') raw.pop();
+            const cells = raw.map((c) => c.trim());
             if (cells.length === 0) continue;
 
             const row: TimelineRow = {};
@@ -324,15 +545,21 @@ function parseMarkdownTable(content: string, columns: string[]): TimelineRow[] {
 // 加载 fanfic 规则
 // ============================================================
 export function loadFanficRules(content: string): FanficRules {
-    const mustFollowMatch = content.match(/- \*\*必须遵守的原作规则\*\*[：:](.+)/);
-    const adaptScopeMatch = content.match(/- \*\*允许改编的范围\*\*[：:](.+)/);
-    const redlinesMatch = content.match(/- \*\*禁止触及的红线\*\*[：:](.+)/);
+    // 与 prompt 侧 `parseFanficRules` 共用 `extractFanficRuleValue`：
+    // 旧实现用单行正则 `.+`，用户把规则写成续行时面板会漏掉后半段，prompt 里却带着。
+    const adaptScope = extractFanficRuleValue(content, '允许改编的范围').trim();
 
     return {
-        mustFollow: mustFollowMatch?.[1]?.split(/[；;]/).map(s => s.trim()).filter(Boolean) || [],
-        adaptScope: adaptScopeMatch?.[1]?.trim() || '',
-        redlines: redlinesMatch?.[1]?.split(/[；;]/).map(s => s.trim()).filter(Boolean) || [],
+        mustFollow: splitFanficRules(extractFanficRuleValue(content, '必须遵守的原作规则')),
+        adaptScope: isFanficValueFilled(adaptScope) ? adaptScope : '',
+        redlines: splitFanficRules(extractFanficRuleValue(content, '禁止触及的红线')),
     };
+}
+
+/** 同人规则按分号/换行拆条（面板按条展示），占位与空条目直接丢弃 */
+function splitFanficRules(raw: string | undefined): string[] {
+    if (!raw) return [];
+    return raw.split(/[；;\n]/).map(s => s.trim()).filter(isFanficValueFilled);
 }
 
 /**
@@ -368,9 +595,22 @@ export function validateCharacterOutput(content: string): ValidationResult {
         missingFields.push('tags 缺失 [人物] 标签');
     }
 
-    // 3. 检查正文分节（V2 字段 + 短标题别名回退）
+    // 3. 检查嵌套必填组（character_core / 性格三层 / 角色弧光）
+    for (const [parent, children] of Object.entries(CHARACTER_NESTED_FIELD_GROUPS)) {
+        if (!yamlNestedGroupExists(yamlContent, parent)) {
+            missingFields.push(`${parent}（YAML 嵌套组）`);
+            continue;
+        }
+        for (const child of children) {
+            if (!yamlNestedFieldHasValue(yamlContent, parent, child)) {
+                missingFields.push(`${parent}.${child}`);
+            }
+        }
+    }
+
+    // 4. 检查正文分节（V2 字段 + 短标题别名回退），且分节必须有实际内容
     for (const section of CHARACTER_BODY_SECTIONS_V2) {
-        if (!bodySectionOrAliasExists(content, section, CHARACTER_SHORT_TITLE_ALIASES)) {
+        if (!bodySectionOrAliasHasContent(content, section, CHARACTER_SHORT_TITLE_ALIASES)) {
             missingFields.push(`正文分节: ${section}`);
         }
     }
@@ -394,9 +634,16 @@ export function validateFactionOutput(content: string): ValidationResult {
     }
     const yamlContent = yamlMatch[1];
 
-    // YAML 字段（修正版 helper —— 支持多行值）
+    // YAML 字段：键必须存在；内容字段必须有非空值
+    const requiredValueKeys = new Set<string>([...FACTION_REQUIRED_VALUE_KEYS]);
     for (const field of FACTION_FRONTMATTER_KEYS) {
-        if (!yamlFieldHasValue(yamlContent, field)) missingFields.push(field);
+        if (!yamlFieldExists(yamlContent, field)) {
+            missingFields.push(field);
+            continue;
+        }
+        if (requiredValueKeys.has(field) && !yamlFieldHasValue(yamlContent, field)) {
+            missingFields.push(`${field}（值为空）`);
+        }
     }
 
     // tags 特殊检查（宽容匹配）
@@ -404,9 +651,9 @@ export function validateFactionOutput(content: string): ValidationResult {
         missingFields.push('tags 缺失 [势力] 标签');
     }
 
-    // 正文分节（修正版 helper）
+    // 正文分节必须存在且有实际内容
     for (const section of ENTITY_BODY_SECTIONS) {
-        if (!bodySectionOrAliasExists(content, section)) {
+        if (!bodySectionOrAliasHasContent(content, section)) {
             missingFields.push(`正文分节: ${section}`);
         }
     }
@@ -426,8 +673,15 @@ export function validateLocationOutput(content: string): ValidationResult {
     }
     const yamlContent = yamlMatch[1];
 
+    const requiredValueKeys = new Set<string>([...LOCATION_REQUIRED_VALUE_KEYS]);
     for (const field of LOCATION_FRONTMATTER_KEYS) {
-        if (!yamlFieldHasValue(yamlContent, field)) missingFields.push(field);
+        if (!yamlFieldExists(yamlContent, field)) {
+            missingFields.push(field);
+            continue;
+        }
+        if (requiredValueKeys.has(field) && !yamlFieldHasValue(yamlContent, field)) {
+            missingFields.push(`${field}（值为空）`);
+        }
     }
 
     if (!/tags:\s*\[.*?地点.*?\]/.test(yamlContent) && !missingFields.includes('tags')) {
@@ -435,7 +689,7 @@ export function validateLocationOutput(content: string): ValidationResult {
     }
 
     for (const section of ENTITY_BODY_SECTIONS) {
-        if (!bodySectionOrAliasExists(content, section)) {
+        if (!bodySectionOrAliasHasContent(content, section)) {
             missingFields.push(`正文分节: ${section}`);
         }
     }
@@ -455,8 +709,15 @@ export function validateItemOutput(content: string): ValidationResult {
     }
     const yamlContent = yamlMatch[1];
 
+    const requiredValueKeys = new Set<string>([...ITEM_REQUIRED_VALUE_KEYS]);
     for (const field of ITEM_FRONTMATTER_KEYS) {
-        if (!yamlFieldHasValue(yamlContent, field)) missingFields.push(field);
+        if (!yamlFieldExists(yamlContent, field)) {
+            missingFields.push(field);
+            continue;
+        }
+        if (requiredValueKeys.has(field) && !yamlFieldHasValue(yamlContent, field)) {
+            missingFields.push(`${field}（值为空）`);
+        }
     }
 
     if (!/tags:\s*\[.*?物品功法.*?\]/.test(yamlContent) && !missingFields.includes('tags')) {
@@ -464,7 +725,7 @@ export function validateItemOutput(content: string): ValidationResult {
     }
 
     for (const section of ENTITY_BODY_SECTIONS) {
-        if (!bodySectionOrAliasExists(content, section)) {
+        if (!bodySectionOrAliasHasContent(content, section)) {
             missingFields.push(`正文分节: ${section}`);
         }
     }

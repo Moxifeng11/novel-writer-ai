@@ -79,7 +79,7 @@ export type VolumeConflictResolution =
 /**
  * 扫描项目路径下的卷目录，统计实际卷数量和每卷章节数。
  *
- * @param projectPath 项目根路径（扫描其下 `volumes/` 子目录）
+ * @param projectPath 项目根路径（扫描 `03-大纲与章节/正文/第N卷/`，兼容旧版 `volumes/第N卷/`）
  * @param filePaths 可选：文件路径列表。若提供则基于该列表统计；
  *                  若不提供，则假设目录不存在，返回空结果。
  */
@@ -87,7 +87,8 @@ export function scanExistingVolumes(
     projectPath: string,
     filePaths?: string[]
 ): VolumeScanResult {
-    const volumesDir = `${projectPath}/volumes`;
+    const bodyDir = `${projectPath}/03-大纲与章节/正文`;
+    const legacyVolumesDir = `${projectPath}/volumes`;
 
     if (!filePaths || filePaths.length === 0) {
         return {
@@ -100,9 +101,9 @@ export function scanExistingVolumes(
     const volumeMap = new Map<number, VolumeFileInfo>();
 
     for (const filePath of filePaths) {
-        // 匹配 volumes/第N卷/ 路径下的文件
+        // 匹配 03-大纲与章节/正文/第N卷/ 或旧版 volumes/第N卷/ 路径下的文件
         const volumeMatch = filePath.match(
-            new RegExp(`^${escapeRegex(volumesDir)}/(第\\d+卷)/`)
+            new RegExp(`^(?:${escapeRegex(bodyDir)}|${escapeRegex(legacyVolumesDir)})/(第\\d+卷)/`)
         );
         if (!volumeMatch) continue;
 

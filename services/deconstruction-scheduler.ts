@@ -14,7 +14,7 @@
  */
 
 import { App, Notice } from 'obsidian';
-import { KnowledgeBaseManager } from './knowledge-base-manager';
+import { KnowledgeBaseManager, type VectorStatus } from './knowledge-base-manager';
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { VectorEnhancer } from '../engine/vector-enhancer';
 import { LLMEnhancer, type LLMCaller } from '../engine/llm-enhancer';
@@ -32,11 +32,13 @@ import { SegmentAwareBreakdown } from './segment-aware-breakdown';
 import { countTotalChars } from '../engine/text-segmenter';
 import { ProgressEmitter } from '../shared/progress-emitter';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { resolvePluginWorkerUrl } from '../shared/plugin-worker-url';
 import { TimeEstimator, refineEstimate } from '../shared/time-estimator';
 import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
 import { QualityScorer, QualityScoringInput } from '../engine/quality-scorer';
 import { yieldToUI } from '../shared/yield';
 import { createLogger } from '../shared/logger';
+import { chunkOriginalText } from './knowledge-original-chunker';
 
 const log = createLogger('DeconstructionScheduler');
 import {
@@ -99,7 +101,26 @@ export interface BreakdownTask {
     startedAt?: number;
     completedAt?: number;
     error?: string;
+    /** 向量化状态：拆解完成不等于检索可用（A5） */
+    vectorStatus?: VectorStatus;
+    /** 向量化失败原因 */
+    vectorError?: string;
     preprocessedText?: { cleaned: string; segments: string[]; wordCount: number; paragraphCount: number };
+}
+
+/**
+ * 拆解完成提示（A5）：向量化失败时必须如实告知，并指路到知识库详情重试，
+ * 不能无条件弹「拆解完成」让用户以为检索可用。
+ */
+export function buildBreakdownFinishNotice(
+    bookName: string,
+    vector: { status?: VectorStatus; error?: string },
+): string {
+    if (vector.status === 'failed') {
+        const reason = vector.error ? `（${vector.error}）` : '';
+        return `《${bookName}》拆解完成，但向量化失败${reason}，可在知识库详情重试向量化。`;
+    }
+    return `《${bookName}》拆解完成。可在知识库详情页点击"转为写作指纹"将结果导入指纹库。`;
 }
 
 export interface SchedulerOptions {
@@ -270,6 +291,7 @@ export class DeconstructionScheduler {
         this.workerManager = new DeconstructionWorkerManager(vectorEnhancer, {
             maxWorkers: 2,
             useWorker: true,
+            workerUrl: resolvePluginWorkerUrl(app, 'deconstruction-worker.js') ?? undefined,
         });
         this.segmentIntegration = new SchedulerSegmentIntegration(this.workerManager);
         this.progressDebounceManager = new AdaptiveDebounceManager();
@@ -482,6 +504,14 @@ export class DeconstructionScheduler {
             throw new Error(`书籍不存在: ${bookId}`);
         }
 
+        // 同一本书只允许一个在途任务：并发拆解会各自「读现有 → 逐条 embed → 覆盖」，
+        // 后完成者会丢掉先完成者的样本，embedding 也会重复计费。
+        const active = this.getActiveTasks().find(t => t.bookId === bookId);
+        if (active) {
+            log.info(`[DeconstructionScheduler] 《${book.name}》已有在途任务 ${active.id}，不重复创建`);
+            return active.id;
+        }
+
         const engineSettings = this.getDeconstructionEngineSettings();
         const resolvedDimensions = dimensions?.length
             ? dimensions
@@ -577,6 +607,14 @@ export class DeconstructionScheduler {
                 phase: '已取消',
                 message: '任务已取消',
             });
+        }
+    }
+
+    /** 取消某本书所有在途任务（删书时调用，避免任务继续写已删除的书目录/向量） */
+    async cancelByBook(bookId: string): Promise<void> {
+        const active = this.getActiveTasks().filter(t => t.bookId === bookId);
+        for (const task of active) {
+            await this.cancelTask(task.id);
         }
     }
 
@@ -780,7 +818,7 @@ export class DeconstructionScheduler {
                 message: `⚠️ 向量模型不可用（${vectorCheck.reason}），各维度向量增强将按需局部降级`,
                 totalProgress: 0,
             });
-            await this.appendBreakdownLog(task.bookName, `## ⚠️ 向量模型不可用\n\n档位: ${qualityLevelLabels[qualityLevel]}\n原因: ${vectorCheck.reason}\n策略: 保持档位不变，各维度的向量增强按需局部降级\n\n`);
+            await this.appendBreakdownLog(task.bookName, `## ⚠️ 向量模型不可用\n\n档位: ${qualityLevelLabels[qualityLevel]}\n原因: ${vectorCheck.reason}\n策略: 保持档位不变，各维度的向量增强按需局部降级\n\n`, task.bookId);
         } else if (vectorAvailable) {
             emitter?.setProgress(0, `${qualityLevelLabels[qualityLevel]}已就绪，开始拆解`);
             this.emitProgress(task, {
@@ -807,7 +845,7 @@ export class DeconstructionScheduler {
             ? `覆盖字数: ${wordCount} 字（采样模式，前 ${sampleLimit} 字，原文 ${rawWordCount} 字）`
             : `覆盖字数: ${wordCount} 字（全本，原文 ${rawWordCount} 字）`;
         let logContent = `## ${this.formatDate(new Date())} - 开始拆解\n\n任务ID: ${taskId}\n拆解维度: ${task.dimensions.map(d => DIMENSION_LABELS[d]).join('、')}\n${coverageLine}\n分析模式: ${sampleMode ? '采样模式' : '全本模式'}\n质量档位: ${qualityLevelLabels[qualityLevel]}${effectiveLevel !== qualityLevel ? `（实际: ${qualityLevelLabels[effectiveLevel]}）` : ''}\n向量增强: ${vectorAvailable && qualityLevel !== 'fast' ? '已启用' : '未启用'}\n执行模式: ${modeLabel}\n全文分批: ${isSegmented ? `是（预计 ${estimatedSegments} 段）` : '否'}\n结果聚合: ${isSegmented ? '待完成' : '不适用'}\n\n`;
-        await this.appendBreakdownLog(task.bookName, logContent);
+        await this.appendBreakdownLog(task.bookName, logContent, task.bookId);
 
         try {
             const contentHash = await this.computeContentHash(task.sourceText);
@@ -938,7 +976,7 @@ export class DeconstructionScheduler {
                         dimLog += `⚠️ 建议升级到 ${qualityLevelLabels[suggestedLevel]}（综合评分 < 60，暂不自动重跑，仅标记）\n`;
                     }
                     dimLog += `\n`;
-                    await this.appendBreakdownLog(task.bookName, dimLog);
+                    await this.appendBreakdownLog(task.bookName, dimLog, task.bookId);
 
                     const filePathFn = DIMENSION_FILE_MAP[dimension];
                     if (filePathFn && dimResult !== undefined && dimResult !== null) {
@@ -957,7 +995,7 @@ export class DeconstructionScheduler {
                         return;
                     }
                     log.warn(`[DeconstructionScheduler] 维度 ${dimension} 拆解失败:`, dimError);
-                    await this.appendBreakdownLog(task.bookName, `### ${DIMENSION_LABELS[dimension]} - 失败\n\n错误: ${dimError instanceof Error ? dimError.message : String(dimError)}\n\n`);
+                    await this.appendBreakdownLog(task.bookName, `### ${DIMENSION_LABELS[dimension]} - 失败\n\n错误: ${dimError instanceof Error ? dimError.message : String(dimError)}\n\n`, task.bookId);
                 }
 
                 completedSet.add(dimension);
@@ -1023,14 +1061,14 @@ export class DeconstructionScheduler {
                 finishLog += `### 交叉验证\n\n无可执行的交叉验证规则（缺少必要维度结果）\n\n`;
             }
 
-            await this.appendBreakdownLog(task.bookName, finishLog);
+            await this.appendBreakdownLog(task.bookName, finishLog, task.bookId);
 
             if (degradedDimensions.length > 0) {
                 let summary = `## 降级摘要\n\n| 维度 | 降级原因 |\n|------|----------|\n`;
                 for (const dr of degradationReasons) {
                     summary += `| ${DIMENSION_LABELS[dr.dimension as BreakdownDimension]} | ${dr.reason} |\n`;
                 }
-                await this.appendBreakdownLog(task.bookName, summary);
+                await this.appendBreakdownLog(task.bookName, summary, task.bookId);
             }
 
             try {
@@ -1039,12 +1077,13 @@ export class DeconstructionScheduler {
                     this.startHeartbeat(taskId, 0, 100, '向量化处理中...', true);
                     await this.vectorizeBook(task.bookId, task.bookName);
                     this.stopHeartbeat(taskId);
+                    await this.recordVectorOutcome(task);
                     emitter?.setStepProgress(100, '向量化完成');
                     log.info(`[DeconstructionScheduler] 《${task.bookName}》向量化完成`);
                 }
             } catch (vecError) {
                 this.stopHeartbeat(taskId);
-                log.warn(`[DeconstructionScheduler] 《${task.bookName}》向量化失败:`, vecError);
+                await this.recordVectorOutcome(task, vecError);
             }
 
             for (const cb of this.completeCallbacks) {
@@ -1056,7 +1095,14 @@ export class DeconstructionScheduler {
             }
 
             try {
-                new Notice(`《${task.bookName}》拆解完成。可在知识库详情页点击"转为写作指纹"将结果导入指纹库。`, 6000);
+                // A5: 向量化失败不能再提示「拆解完成」了事，必须说明参考内容不可检索并指路重试
+                new Notice(
+                    buildBreakdownFinishNotice(task.bookName, {
+                        status: task.vectorStatus,
+                        error: task.vectorError,
+                    }),
+                    task.vectorStatus === 'failed' ? 10000 : 6000,
+                );
             } catch {
             }
         } catch (error) {
@@ -1080,7 +1126,7 @@ export class DeconstructionScheduler {
 
                 this.flushProgressPersist(task.bookId);
                 await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'failed', task.progress, task.error);
-                await this.appendBreakdownLog(task.bookName, `## 拆解失败\n\n错误: ${task.error}\n\n`);
+                await this.appendBreakdownLog(task.bookName, `## 拆解失败\n\n错误: ${task.error}\n\n`, task.bookId);
 
                 for (const cb of this.failedCallbacks) {
                     try {
@@ -1213,6 +1259,11 @@ export class DeconstructionScheduler {
     }
 
     private async saveSegmentedDimensionResult(task: BreakdownTask, dimension: BreakdownDimension, result: any): Promise<void> {
+        // 书已删除：不写维度文件，避免把已删除的书目录重新建出来。
+        if (!(await this.knowledgeBaseManager.getBook(task.bookId))) {
+            log.info(`[DeconstructionScheduler] 书籍已删除，跳过保存${DIMENSION_LABELS[dimension]}结果`);
+            return;
+        }
         try {
             switch (dimension) {
                 case 'style':
@@ -2189,7 +2240,11 @@ export class DeconstructionScheduler {
         }
     }
 
-    private async appendBreakdownLog(bookName: string, content: string): Promise<void> {
+    private async appendBreakdownLog(bookName: string, content: string, bookId?: string): Promise<void> {
+        // 书已删除：不写日志，避免 fs.mkdir 把已删除的书目录重新建出来。
+        if (bookId && !(await this.knowledgeBaseManager.getBook(bookId))) {
+            return;
+        }
         try {
             const fs = this.getFS();
             const logPath = kbBookBreakdownLogFile(bookName, this.baseDir);
@@ -2216,43 +2271,135 @@ export class DeconstructionScheduler {
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
 
+    /**
+     * 按当前 embedding 模型重算一本书的向量（不重新拆解、不调用 AI）。
+     * 与拆解流程不同，这里在向量存储缺失时抛错：批量重向量化需要把「没做成」如实报给用户，
+     * 静默跳过会让人以为已经修好。
+     */
+    async revectorizeBook(bookId: string, bookName: string): Promise<void> {
+        if (!this.vectorStore || typeof this.vectorStore.addBookSamples !== 'function') {
+            throw new Error('拆解调度器未配置向量存储');
+        }
+        try {
+            await this.vectorizeBook(bookId, bookName);
+            await this.persistVectorStatus(bookId, 'done');
+        } catch (e) {
+            await this.persistVectorStatus(bookId, 'failed', e instanceof Error ? e.message : String(e));
+            throw e;
+        }
+    }
+
+    /**
+     * 记录向量化结果（A5）：拆解完成不等于检索可用，结果必须写回任务与书籍信息；
+     * 失败时走统一降级通知，避免只写日志。
+     */
+    private async recordVectorOutcome(task: BreakdownTask, error?: unknown): Promise<void> {
+        if (error === undefined) {
+            task.vectorStatus = 'done';
+            task.vectorError = undefined;
+            await this.persistVectorStatus(task.bookId, 'done');
+            return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        task.vectorStatus = 'failed';
+        task.vectorError = message;
+        await this.persistVectorStatus(task.bookId, 'failed', message);
+        getDegradationNotifier().notify({
+            source: 'vector',
+            from: 'vectorized',
+            to: 'not_vectorized',
+            reason: `《${task.bookName}》拆解后向量化失败：${message}`,
+            severity: 'warning',
+            recoverable: true,
+        });
+        log.warn(`[DeconstructionScheduler] 《${task.bookName}》向量化失败:`, error);
+    }
+
+    /** 向量状态落盘；旧测试 mock / 未初始化的 manager 缺少该能力时静默跳过 */
+    private async persistVectorStatus(bookId: string, status: VectorStatus, error?: string): Promise<void> {
+        try {
+            if (typeof this.knowledgeBaseManager.setVectorStatus === 'function') {
+                await this.knowledgeBaseManager.setVectorStatus(bookId, status, error);
+            }
+        } catch (e) {
+            log.warn('[DeconstructionScheduler] 向量状态落盘失败:', e);
+        }
+    }
+
     private async vectorizeBook(bookId: string, bookName: string): Promise<void> {
         if (!this.vectorStore || typeof this.vectorStore.addBookSamples !== 'function') {
             log.info('[DeconstructionScheduler] vectorStore 未配置，跳过向量化');
             return;
         }
 
+        // 拆解过程中书籍可能被删除：此时不要再写向量，否则向量文件会「复活」一本不存在的书。
+        const alive = await this.knowledgeBaseManager.getBook(bookId);
+        if (!alive) {
+            log.info(`[DeconstructionScheduler] 书籍已删除，跳过向量化: ${bookId}`);
+            return;
+        }
+
         const samples: Array<{
-            dimension: 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow';
+            dimension: 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow' | 'original';
             category?: string;
             sample: string;
             position?: number;
         }> = [];
 
-        const styleSamples = await this.extractStyleSamples(bookName);
-        samples.push(...styleSamples);
+        // Phase 4.3：原文分块提供真实的句法/叙事质感。
+        try {
+            const sourceText = await this.knowledgeBaseManager.getSourceText(bookId);
+            const chunks = chunkOriginalText(sourceText);
+            chunks.forEach(chunk => {
+                samples.push({
+                    dimension: 'original',
+                    category: '原文片段',
+                    sample: chunk.sample,
+                    position: chunk.position,
+                });
+            });
+            if (chunks.length > 0) {
+                log.info(`[DeconstructionScheduler] 《${bookName}》原文分块完成：${chunks.length} 段`);
+            }
+        } catch (e) {
+            log.warn('[DeconstructionScheduler] 读取原文失败，仅向量化拆解报告样本:', e);
+        }
 
-        const rhythmSamples = await this.extractRhythmSamples(bookName);
-        samples.push(...rhythmSamples);
+        // 原文分块与拆解报告维度是互补关系，不是替代关系：
+        // 风格/节奏/技巧/结构/人物/伏笔只存在于报告里，原文只提供句法质感。
+        // 二者二选一会让另一类对应的 prompt 段整段消失（有原文时风格/节奏/技巧全空，
+        // 无原文时「原文片段」恒空）。各提取器读不到文件时自行返回空数组。
+        {
+            const styleSamples = await this.extractStyleSamples(bookName);
+            samples.push(...styleSamples);
 
-        const techniqueSamples = await this.extractTechniqueSamples(bookName);
-        samples.push(...techniqueSamples);
+            const rhythmSamples = await this.extractRhythmSamples(bookName);
+            samples.push(...rhythmSamples);
 
-        const structureSamples = await this.extractStructureSamples(bookName);
-        samples.push(...structureSamples);
+            const techniqueSamples = await this.extractTechniqueSamples(bookName);
+            samples.push(...techniqueSamples);
 
-        const characterSamples = await this.extractCharacterSamples(bookName);
-        samples.push(...characterSamples);
+            const structureSamples = await this.extractStructureSamples(bookName);
+            samples.push(...structureSamples);
 
-        const foreshadowSamples = await this.extractForeshadowSamples(bookName);
-        samples.push(...foreshadowSamples);
+            const characterSamples = await this.extractCharacterSamples(bookName);
+            samples.push(...characterSamples);
+
+            const foreshadowSamples = await this.extractForeshadowSamples(bookName);
+            samples.push(...foreshadowSamples);
+        }
 
         if (samples.length === 0) {
             log.info(`[DeconstructionScheduler] 《${bookName}》无可向量化的示例片段`);
             return;
         }
 
-        await this.vectorStore.addBookSamples(bookId, bookName, samples);
+        // 重新拆解时替换整本书向量，避免新旧样本叠加导致索引膨胀
+        if (typeof this.vectorStore.replaceBookSamples === 'function') {
+            await this.vectorStore.replaceBookSamples(bookId, bookName, samples);
+        } else {
+            await this.vectorStore.addBookSamples(bookId, bookName, samples);
+        }
     }
 
     private async extractStyleSamples(bookName: string): Promise<Array<{ dimension: 'style'; category?: string; sample: string; position?: number }>> {

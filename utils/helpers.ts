@@ -300,14 +300,8 @@ export async function readMergedVolumeOutline(app: App, project: string, fs?: Fi
     const meta = vaultMeta || new ObsidianVaultMeta(app);
     const parts: string[] = [];
 
-    // 旧版单文件兜底（v3.x）
-    const legacyPath = `${project}/03-大纲与章节/分卷大纲.md`;
-    const legacy = meta.getAbstractFileByPath(legacyPath);
-    if (legacy instanceof TFile) {
-        try { parts.push(await fileSystem.read(legacyPath)); } catch (e) { log.warn('[小说工坊] 读取旧版分卷大纲失败:', e); }
-    }
-
-    // v4.0 按卷归档
+    // v4.0 按卷归档（优先）：同一项目若同时残留旧版单文件，
+    // 合并两者会产生重复卷号，批量建章的一致性校验会直接阻断。
     const dir = pjVolumeOutlineDir(project);
     const volFiles = meta.getFiles()
         .filter(f => f.path.startsWith(`${dir}/`) && f.name.endsWith('_分卷大纲.md'))
@@ -318,6 +312,15 @@ export async function readMergedVolumeOutline(app: App, project: string, fs?: Fi
         });
     for (const f of volFiles) {
         try { parts.push(await fileSystem.read(f.path)); } catch (e) { log.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }
+    }
+
+    // 旧版单文件兜底（v3.x）：仅在没有任何 v4 卷文件时使用
+    if (volFiles.length === 0) {
+        const legacyPath = `${project}/03-大纲与章节/分卷大纲.md`;
+        const legacy = meta.getAbstractFileByPath(legacyPath);
+        if (legacy instanceof TFile) {
+            try { parts.push(await fileSystem.read(legacyPath)); } catch (e) { log.warn('[小说工坊] 读取旧版分卷大纲失败:', e); }
+        }
     }
 
     return parts.join('\n\n');

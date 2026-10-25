@@ -16,8 +16,8 @@
 
 import { createLogger, type Logger } from './logger';
 
-/** 降级来源：向量增强 / LLM 增强 / 质量档位 / 分析器注入 */
-export type DegradationSource = 'vector' | 'llm' | 'quality' | 'injection';
+/** 降级来源：向量增强 / LLM 增强 / 质量档位 / 分析器注入 / Worker 运行时 */
+export type DegradationSource = 'vector' | 'llm' | 'quality' | 'injection' | 'worker';
 
 /** 降级严重程度 */
 export type DegradationSeverity = 'info' | 'warning' | 'critical';

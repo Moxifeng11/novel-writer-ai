@@ -43,58 +43,11 @@ export class SettingsService {
     async loadSettings(): Promise<void> {
         const rawData = await this.deps.loadData();
         const migratedData = migrateSettings(rawData);
-        const settings = Object.assign({}, getDefaultSettings(), migratedData) as NovelWriterSettings;
+        // D5：统一深合并。旧配置缺失的嵌套字段回落默认值；数组整体替换；undefined 不覆盖。
+        const defaults = getDefaultSettings();
+        const settings = deepMergeSettings(defaults, migratedData) as NovelWriterSettings;
+
         if (migratedData && typeof migratedData === 'object') {
-            const userDe = (migratedData as Record<string, unknown>).deconstructionEngine;
-            if (userDe && typeof userDe === 'object') {
-                settings.deconstructionEngine = {
-                    ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS,
-                    ...(userDe as Partial<typeof DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS>),
-                };
-            }
-
-            const defaults = getDefaultSettings();
-
-            const userRuleLayer = (migratedData as Record<string, unknown>).ruleLayer;
-            if (userRuleLayer && typeof userRuleLayer === 'object') {
-                settings.ruleLayer = {
-                    ...defaults.ruleLayer!,
-                    ...(userRuleLayer as Partial<typeof defaults.ruleLayer>),
-                };
-            }
-
-            const userVectorLayer = (migratedData as Record<string, unknown>).vectorLayer;
-            if (userVectorLayer && typeof userVectorLayer === 'object') {
-                settings.vectorLayer = {
-                    ...defaults.vectorLayer!,
-                    ...(userVectorLayer as Partial<typeof defaults.vectorLayer>),
-                };
-            }
-
-            const userLlmLayer = (migratedData as Record<string, unknown>).llmLayer;
-            if (userLlmLayer && typeof userLlmLayer === 'object') {
-                settings.llmLayer = {
-                    ...defaults.llmLayer!,
-                    ...(userLlmLayer as Partial<typeof defaults.llmLayer>),
-                };
-            }
-
-            const userSuggestions = (migratedData as Record<string, unknown>).suggestions;
-            if (userSuggestions && typeof userSuggestions === 'object') {
-                settings.suggestions = {
-                    ...defaults.suggestions!,
-                    ...(userSuggestions as Partial<typeof defaults.suggestions>),
-                };
-            }
-
-            const userCharts = (migratedData as Record<string, unknown>).charts;
-            if (userCharts && typeof userCharts === 'object') {
-                settings.charts = {
-                    ...defaults.charts!,
-                    ...(userCharts as Partial<typeof defaults.charts>),
-                };
-            }
-
             if (typeof (migratedData as Record<string, unknown>).coWriteLayout === 'string') {
                 settings.coWriteLayout = (migratedData as Record<string, unknown>).coWriteLayout as 'split' | 'stacked';
             }
@@ -111,38 +64,59 @@ export class SettingsService {
         }
         this.deps.setSettings(settings);
 
-        // 解密所有密钥
-        settings.apiKey = await this.deps.crypto.decrypt(settings.apiKey);
+        // 解密所有密钥（启动期静默：未解锁时保留密文，避免弹口令阻塞 onload）
+        settings.apiKey = await this.deps.crypto.decryptWithoutPrompt(settings.apiKey);
         settings.providerKeys = settings.providerKeys || {};
         for (const [k, v] of Object.entries(settings.providerKeys)) {
             if (typeof v === 'string' && v) {
-                settings.providerKeys[k] = await this.deps.crypto.decrypt(v);
+                settings.providerKeys[k] = await this.deps.crypto.decryptWithoutPrompt(v);
             }
         }
         // 解密向量模型 API Key
-        settings.vectorOpenaiApiKey = await this.deps.crypto.decrypt(settings.vectorOpenaiApiKey || '');
-        settings.vectorDoubaoApiKey = await this.deps.crypto.decrypt(settings.vectorDoubaoApiKey || '');
-        settings.vectorQwenApiKey = await this.deps.crypto.decrypt(settings.vectorQwenApiKey || '');
+        settings.vectorOpenaiApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorOpenaiApiKey || '');
+        settings.vectorDoubaoApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorDoubaoApiKey || '');
+        settings.vectorQwenApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorQwenApiKey || '');
 
         // 同步自定义提供商模型列表
         this.deps.providerManager.syncCustomModelsOnRestart();
         // 同步模型限制
         this.deps.providerManager.updateModelLimits(settings.flashModel);
+
+        // D5：迁移结果回写。旧版本或缺少新字段时写回一次：
+        // deepMerge 只补内存，不写回的话下次启动仍要重复迁移，磁盘配置也一直缺字段。
+        const rawVersion = (rawData as Record<string, unknown> | null | undefined)?.schemaVersion;
+        const missingDefaultKeys = Object.keys(defaults).filter(key => !(key in (migratedData ?? {})));
+        if (rawVersion !== CURRENT_SCHEMA_VERSION || missingDefaultKeys.length > 0) {
+            await this.saveSettings();
+        }
+    }
+
+    /**
+     * 已是密文的值原样保存，避免「启动静默保留密文 → 用户改设置触发保存」时二次加密，
+     * 导致下次解密得到另一段密文而无法使用。
+     * 无会话口令时保持明文，不主动弹「设置加密口令」——后台保存（切面板、存布局、
+     * 视图初始化）也会走 saveSettings，弹窗会打断写作并阻塞 onload。
+     */
+    private async encryptIfPlain(value: string): Promise<string> {
+        if (!value) return '';
+        if (value.startsWith('aes256v2:') || value.startsWith('aes256:')) return value;
+        if (!this.deps.crypto.hasSessionPassword()) return value;
+        return this.deps.crypto.encrypt(value);
     }
 
     /** 保存设置：加密 → 版本号包装 → 持久化 */
     async saveSettings(): Promise<void> {
         const settings = this.deps.getSettings();
-        const encryptedApiKey = await this.deps.crypto.encrypt(settings.apiKey);
+        const encryptedApiKey = await this.encryptIfPlain(settings.apiKey);
         const keysToSave: Record<string, string> = {};
         for (const [k, v] of Object.entries(settings.providerKeys || {})) {
             if (typeof v === 'string' && v) {
-                keysToSave[k] = await this.deps.crypto.encrypt(v);
+                keysToSave[k] = await this.encryptIfPlain(v);
             }
         }
-        const encryptedVectorApiKey = await this.deps.crypto.encrypt(settings.vectorOpenaiApiKey || '');
-        const encryptedDoubaoApiKey = await this.deps.crypto.encrypt(settings.vectorDoubaoApiKey || '');
-        const encryptedQwenApiKey = await this.deps.crypto.encrypt(settings.vectorQwenApiKey || '');
+        const encryptedVectorApiKey = await this.encryptIfPlain(settings.vectorOpenaiApiKey || '');
+        const encryptedDoubaoApiKey = await this.encryptIfPlain(settings.vectorDoubaoApiKey || '');
+        const encryptedQwenApiKey = await this.encryptIfPlain(settings.vectorQwenApiKey || '');
         const dataToSave = withCurrentVersion({
             ...settings,
             apiKey: encryptedApiKey,
@@ -157,6 +131,30 @@ export class SettingsService {
         }
         return this.deps.settingsWriter.enqueueAutoClean(() => this.deps.saveData(dataToSave));
     }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * D5：设置深合并。
+ * - 嵌套对象递归合并，旧配置缺失的字段回落默认值
+ * - 数组整体替换（模型列表、自定义提供商等不能按索引合并）
+ * - undefined 不覆盖默认值
+ */
+export function deepMergeSettings<T>(base: T, override: unknown): T {
+    if (!isPlainObject(base) || !isPlainObject(override)) {
+        return (override === undefined ? base : override) as T;
+    }
+    const result: Record<string, unknown> = { ...base };
+    for (const [key, value] of Object.entries(override)) {
+        if (value === undefined) continue;
+        result[key] = isPlainObject(result[key]) && isPlainObject(value)
+            ? deepMergeSettings(result[key], value)
+            : value;
+    }
+    return result as T;
 }
 
 /** 默认设置 */
@@ -174,6 +172,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         coWriteCloudProvider: '',
         coWriteCloudModel: '',
         autoPlotEvaluation: true,
+        autoGhostAssociation: true,
         precisionMode: false,
         refineRounds: 3,
         candidateParallel: true,

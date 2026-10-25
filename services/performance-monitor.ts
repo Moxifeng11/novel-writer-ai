@@ -113,6 +113,9 @@ const DEFAULT_OPTIONS: PerformanceMonitorOptions = {
     enableMemoryTracking: true,
 };
 
+/** statsByOperation 的最大 key 数，防止不同操作名无限累积 */
+const MAX_STATS_KEYS = 500;
+
 const CATEGORY_THRESHOLDS: Partial<Record<PerformanceCategory, number>> = {
     apiCall: 3000,
     vectorCalculation: 2000,
@@ -234,7 +237,7 @@ export class PerformanceMonitor {
         this.addToLog(mark);
         this.updateStats(mark);
 
-        this.activeMarks.delete(markId);
+        this.removeActiveMark(markId);
 
         return mark.duration;
     }
@@ -290,7 +293,32 @@ export class PerformanceMonitor {
         this.addToLog(mark);
         this.updateStats(mark);
 
+        // 与 end() 一致：消费掉起始 mark，否则 activeMarks 会随调用次数无限增长
+        this.removeActiveMark(startMarkId);
+
         return duration;
+    }
+
+    /** 删除 active mark，并从父节点 children 中摘除，避免长跑时引用累积 */
+    private removeActiveMark(markId: string): void {
+        const mark = this.activeMarks.get(markId);
+        this.activeMarks.delete(markId);
+        if (!mark?.parentId) return;
+        const parent = this.activeMarks.get(mark.parentId);
+        if (!parent) return;
+        const index = parent.children.indexOf(markId);
+        if (index >= 0) {
+            parent.children.splice(index, 1);
+        }
+    }
+
+    /** statsByOperation 超过上限时淘汰最旧的 key */
+    private evictStatsIfNeeded(): void {
+        while (this.statsByOperation.size > MAX_STATS_KEYS) {
+            const oldestKey = this.statsByOperation.keys().next().value;
+            if (oldestKey === undefined) break;
+            this.statsByOperation.delete(oldestKey);
+        }
     }
 
     private addToLog(mark: PerformanceMark): void {
@@ -327,6 +355,7 @@ export class PerformanceMonitor {
         if (!stats) {
             stats = { durations: [], total: 0, count: 0, min: Infinity, max: -Infinity };
             this.statsByOperation.set(key, stats);
+            this.evictStatsIfNeeded();
         }
 
         stats.durations.push(mark.duration);
@@ -360,7 +389,9 @@ export class PerformanceMonitor {
 
     getStats(operationName: string, category?: PerformanceCategory): PerformanceStats | null {
         const key = category ? `${category}:${operationName}` : operationName;
-        const stats = this.statsByOperation.get(key);
+        // 统计以 "category:name" 存储；未指定分类时回退到默认分类 other
+        const stats = this.statsByOperation.get(key)
+            ?? (category ? undefined : this.statsByOperation.get(`other:${operationName}`));
 
         if (!stats || stats.count === 0) return null;
 
@@ -600,6 +631,7 @@ export class PerformanceMonitor {
                     stats.count++;
                     if (entry.duration < stats.min) stats.min = entry.duration;
                     if (entry.duration > stats.max) stats.max = entry.duration;
+                    this.evictStatsIfNeeded();
                 }
             }
         } catch (e) {

@@ -21,6 +21,7 @@
 
 import { createLogger } from '../shared/logger';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
 import type {
     WorkerMessage,
     WorkerManagerOptions,
@@ -90,6 +91,7 @@ export class WorkerManager {
             if (typeof Worker === 'undefined') {
                 this.workerAvailable = false;
                 log.warn('当前环境不支持 Web Worker，将使用主线程降级模式');
+                notifyWorkerUnavailable('当前环境不支持 Web Worker');
                 return;
             }
 
@@ -100,6 +102,9 @@ export class WorkerManager {
         } catch (e) {
             this.workerAvailable = false;
             log.warn('Web Worker 初始化检测失败，将使用主线程降级模式:', e);
+            notifyWorkerUnavailable(
+                `Web Worker 初始化失败：${e instanceof Error ? e.message : String(e)}`
+            );
         }
     }
 
@@ -178,6 +183,9 @@ export class WorkerManager {
                     log.error('创建 Worker 失败:', error);
                     if (this.options.fallbackToMain) {
                         this.workerAvailable = false;
+                        notifyWorkerUnavailable(
+                            `Worker 脚本加载失败（${this.options.workerUrl || 'inline'}）：${error instanceof Error ? error.message : String(error)}`
+                        );
                         this.drainQueueWithFallback();
                     } else {
                         const task = this.taskQueue.shift();

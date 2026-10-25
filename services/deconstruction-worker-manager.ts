@@ -15,6 +15,7 @@
 
 import { WorkerManager } from './worker-manager';
 import { createLogger } from '../shared/logger';
+import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
 import { VectorEnhancer } from '../engine/vector-enhancer';
 import { LLMEnhancer } from '../engine/llm-enhancer';
 import { StyleDeconstructor, StyleAnalysisResult } from '../engine/deconstructors/style-deconstructor';
@@ -66,7 +67,7 @@ export class DeconstructionWorkerManager {
         this.options = {
             maxWorkers: options?.maxWorkers ?? 2,
             useWorker: options?.useWorker ?? true,
-            workerUrl: options?.workerUrl ?? 'workers/deconstruction-worker.js',
+            workerUrl: options?.workerUrl,
         };
 
         this.vectorEnhancer = vectorEnhancer || null;
@@ -98,6 +99,13 @@ export class DeconstructionWorkerManager {
             return;
         }
 
+        if (!this.options.workerUrl) {
+            log.warn('未解析到 Worker 资源路径，使用主线程模式');
+            notifyWorkerUnavailable('未找到拆解 Worker 资源（workers/deconstruction-worker.js）');
+            this.useWorkerMode = false;
+            return;
+        }
+
         try {
             this.workerManager = new WorkerManager({
                 maxWorkers: this.options.maxWorkers,
@@ -112,9 +120,13 @@ export class DeconstructionWorkerManager {
                 log.info('Worker 模式初始化成功');
             } else {
                 log.warn('Worker 不可用，自动降级到主线程模式');
+                notifyWorkerUnavailable('拆解 Worker 不可用');
             }
         } catch (e) {
             log.warn('WorkerManager 初始化失败，降级到主线程模式:', e);
+            notifyWorkerUnavailable(
+                `拆解 Worker 初始化失败：${e instanceof Error ? e.message : String(e)}`
+            );
             this.useWorkerMode = false;
             this.workerManager = null;
         }

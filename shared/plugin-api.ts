@@ -19,6 +19,7 @@ import type { ContextManager } from '../engine/context-manager';
 import type { FloatWorkspaceManager } from '../ui/workspace-manager';
 import type { PluginCacheManager } from './plugin-cache';
 import type { EngineRegistry } from '../engine/engine-registry';
+import type { CommandUiPort } from './command-ui-port';
 
 /** 提供商信息 */
 export interface ProviderInfo {
@@ -75,6 +76,8 @@ export interface NovelWriterProviderAPI {
 /** ─── 子接口：视图/工作台控制 ─── */
 export interface NovelWriterWorkspaceAPI {
     readonly app: App;
+    /** 插件清单（用于定位插件数据目录，如分析会话快照） */
+    readonly manifest?: { dir?: string };
     openFullWriterView(): Promise<void>;
     activateCoWritingView(project?: string, chapterName?: string, volume?: string, chapterNum?: number): Promise<void>;
     openCoWritingFromActiveContext(): Promise<void>;
@@ -83,6 +86,8 @@ export interface NovelWriterWorkspaceAPI {
     getActiveProject(): string | null;
     refreshFullWriterContextPanel(): void;
     executeCommand(commandId: string): boolean;
+    /** 命令 UI 执行端口（main 注入；core 只依赖接口，不依赖 ui） */
+    readonly commandUiPort?: CommandUiPort;
 }
 
 /** ─── 子接口：主题/样式 ─── */
@@ -93,14 +98,6 @@ export interface NovelWriterThemeAPI {
 
 /** ─── 子接口：工作台运行时状态（跨模块共享） ─── */
 export interface NovelWriterRuntimeStateAPI {
-    _workbenchState: {
-        project?: string;
-        chapterName?: string;
-        chapterNum?: number;
-        volume?: string;
-        protagonistName?: string;
-        protagonist?: string;
-    } | null;
     _isWorkbenchContext: boolean;
     _involvedChars: Set<string>;
     _involvedLocs: Set<string>;

@@ -218,9 +218,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 - 力量体系遵循 \${powerSystem}。
 
 📌 输出格式
-- 标题行：# 第\${chapNum}章 标题（2-15字）
-- 正文从下一行开始，段落开头空两格（全角空格）
-- 对话必须加引号""
+\${bodyFormat}
 - 字数 ≥ \${baseWords} 字
 
 【永远记住】
@@ -263,6 +261,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
             { name: 'emotionPlan', description: '情绪规划' },
             { name: 'triggeredMemories', description: '触发的记忆' },
             { name: 'writingRules', description: '写作规则' },
+            { name: 'bodyFormat', description: '正文格式硬性约束' },
             { name: 'worldType', description: '世界类型' },
             { name: 'worldEra', description: '时代背景' },
             { name: 'forbiddenElements', description: '禁忌元素' },

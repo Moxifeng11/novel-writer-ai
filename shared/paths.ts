@@ -254,6 +254,13 @@ export function pjFactIndexFile(project: string) { return `${project}/04-项目�
 export function pjCheckpointDir(project: string) { return `${project}/04-项目总控/断点`; }
 
 // ============================================================
+// 12.1 全局分析报告（与作品无关的平台级数据）
+// ============================================================
+/** 平台榜单分析目录：不属于任何作品，统一落在元文件全局层，禁止写 vault 根目录 */
+export const GLOBAL_RANK_DIR = '元文件/06-榜单分析';
+export function globalRankFile(name: string) { return `${GLOBAL_RANK_DIR}/${sanitizeName(name)}.md`; }
+
+// ============================================================
 // 13. 实体目录常量（供 filter / startsWith 判断使用）
 // ============================================================
 export const SUBDIR_BODY_ROOT = '03-大纲与章节/正文';

@@ -15,7 +15,8 @@
  * - 流式读取由 StreamTextReader 提供，但分段是首选（更精确）
  */
 
-import { TextSegmenter, TextSegment } from '../engine/text-segmenter';
+import { TextSegment } from '../engine/text-segmenter';
+import { StreamTextReader } from '../engine/stream-text-reader';
 import { yieldToUI } from '../shared/yield';
 
 export interface SegmentBreakdownOptions {
@@ -44,15 +45,10 @@ function countWords(text: string): number {
 }
 
 export class SegmentAwareBreakdown {
-    private segmenter: TextSegmenter;
     private options: ResolvedSegmentBreakdownOptions;
 
     constructor(options: SegmentBreakdownOptions = {}) {
         this.options = { ...DEFAULT_OPTIONS, ...options };
-        this.segmenter = new TextSegmenter({
-            maxSegmentWords: this.options.maxSegmentWords,
-            minSegmentWords: Math.floor(this.options.maxSegmentWords * 0.4),
-        });
     }
 
     async run<T>(
@@ -84,21 +80,29 @@ export class SegmentAwareBreakdown {
             };
         }
 
-        const segments = await this.segmenter.segment(text);
-        const segmentResults: T[] = [];
+        const reader = new StreamTextReader({
+            bufferSize: Math.max(this.options.maxSegmentWords * 2, 8192),
+            segmentOptions: {
+                maxSegmentWords: this.options.maxSegmentWords,
+                minSegmentWords: Math.floor(this.options.maxSegmentWords * 0.4),
+            },
+        });
+        await reader.fromString(text);
 
-        for (let i = 0; i < segments.length; i++) {
+        const segmentResults: T[] = [];
+        const estimatedTotal = Math.max(1, this.estimateSegments(text));
+        let produced = 0;
+
+        for await (const seg of reader) {
             if (this.isAborted(signal)) {
                 throw new Error('任务已取消');
             }
 
-            const seg = segments[i];
-            this.options.onSegmentProgress?.(i, segments.length, 0);
-
+            this.options.onSegmentProgress?.(produced, estimatedTotal, 0);
             const result = await analyzeSegment(seg);
             segmentResults.push(result);
-
-            this.options.onSegmentProgress?.(i, segments.length, 1);
+            produced++;
+            this.options.onSegmentProgress?.(produced - 1, estimatedTotal, 1);
 
             await yieldToUI();
         }
@@ -108,7 +112,7 @@ export class SegmentAwareBreakdown {
         return {
             segments: segmentResults,
             combinedResult: combined,
-            totalSegments: segments.length,
+            totalSegments: segmentResults.length,
         };
     }
 

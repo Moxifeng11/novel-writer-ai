@@ -26,6 +26,11 @@ export interface ExportFileOptions {
     mime?: string;
     /** 桌面端成功后的提示文案；移动端会用实际落点路径代替 */
     successMessage?: string;
+    /**
+     * 强制写入 vault 的「导出文件」目录。
+     * 用于对“一定能拿到文件”要求高于下载体验的场景（如诊断包）。
+     */
+    preferVault?: boolean;
 }
 
 export interface ExportFileResult {
@@ -50,7 +55,7 @@ export async function exportTextFile(
     // 故此处做窄化断言（同时兼容测试环境下 App mock 无该字段的情形）。
     const isMobile = (app as unknown as { isMobile?: boolean })?.isMobile === true;
 
-    if (isMobile) {
+    if (isMobile || options?.preferVault === true) {
         try {
             if (!(await app.vault.adapter.exists(EXPORT_FALLBACK_DIR))) {
                 await app.vault.adapter.mkdir(EXPORT_FALLBACK_DIR);
@@ -77,8 +82,13 @@ export async function exportTextFile(
     const a = document.createElement('a');
     a.href = url;
     a.download = safeName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    // Electron/Chromium 的下载是异步启动的：立即 revoke 会取消尚未开始的下载。
+    // 延迟释放，确保下载已接管 blob。
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
     if (options?.successMessage) {
         new Notice(options.successMessage, 5000);
     }

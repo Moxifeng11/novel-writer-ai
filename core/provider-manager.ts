@@ -8,7 +8,7 @@
 import { Notice } from 'obsidian';
 import type { NovelWriterSettings, CustomProvider, ModelSourceType } from '../main';
 import { DEFAULT_PROVIDERS, resolveProviderSourceType } from '../main';
-import { findModelCapability } from '../shared/model-capabilities';
+import { findModelCapability, lookupModelCapability, type ModelSourceKind } from '../shared/model-capabilities';
 import { createLogger } from '../shared/logger';
 
 
@@ -92,13 +92,31 @@ export class ProviderManager {
     }
 
     /** 根据 endpoint + 模型名确定 maxContext / maxOutput 生效值 */
-    resolveModelLimits(modelName: string): { maxContext: number; maxOutput: number } {
+    resolveModelLimits(modelName: string, endpoint?: string): { maxContext: number; maxOutput: number } {
         const s = this.cb.getSettings();
-        const override = s.modelOverrides[s.apiEndpoint]?.[modelName];
-        const caps = findModelCapability(modelName);
+        const endpointKey = endpoint || s.apiEndpoint;
+        const override = s.modelOverrides[endpointKey]?.[modelName];
+
+        // 优先级：用户覆盖 → 静态能力表（最长键优先）→ 提供商预设 → 来源兜底
+        const staticCaps = lookupModelCapability(modelName);
+        const provider = (s.customProviders || []).find(p => p.endpoint === endpointKey);
+        const source: ModelSourceKind = resolveProviderSourceType({
+            id: provider?.id || '',
+            endpoint: endpointKey,
+        }) === 'local' ? 'local' : 'cloud';
+        const fallbackCaps = findModelCapability(modelName, source);
+        const providerCaps = provider && provider.maxContext > 0
+            ? {
+                maxContext: provider.maxContext,
+                maxOutput: provider.maxOutput > 0 ? provider.maxOutput : fallbackCaps.maxOutput,
+            }
+            : null;
+        // 本地未登记模型优先用保守兜底：内置 ollama 预设的 32768 只适用于它列出的两个模型
+        const baseCaps = staticCaps ?? (source === 'local' ? fallbackCaps : providerCaps ?? fallbackCaps);
+
         return {
-            maxContext: override?.maxContext ?? caps.maxContext,
-            maxOutput: override?.maxOutput ?? caps.maxOutput,
+            maxContext: override?.maxContext ?? baseCaps.maxContext,
+            maxOutput: override?.maxOutput ?? baseCaps.maxOutput,
         };
     }
 

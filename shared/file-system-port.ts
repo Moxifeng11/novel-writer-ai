@@ -88,10 +88,31 @@ export class ObsidianFileSystem implements FileSystemPort {
         private app: import('obsidian').App,
     ) {}
 
+    /**
+     * 路径是否位于 Obsidian 配置目录（如 `.obsidian/plugins/<id>/data`）。
+     * vault 索引只覆盖用户 vault：配置目录里的文件 getAbstractFileByPath 恒为 null、
+     * getFiles 也列不出来，必须回退到 vault.adapter 才能读写。
+     */
+    private isUnderConfigDir(path: string): boolean {
+        const configDir = this.app.vault.configDir;
+        return path === configDir || path.startsWith(`${configDir}/`);
+    }
+
+    private async adapterExists(path: string): Promise<boolean> {
+        try {
+            return await this.app.vault.adapter.exists(path);
+        } catch {
+            return false;
+        }
+    }
+
     async read(path: string): Promise<string> {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file instanceof TFile) {
             return await this.app.vault.read(file);
+        }
+        if (await this.adapterExists(path)) {
+            return await this.app.vault.adapter.read(path);
         }
         throw new Error(`File not found: ${path}`);
     }
@@ -100,15 +121,20 @@ export class ObsidianFileSystem implements FileSystemPort {
         const existing = this.app.vault.getAbstractFileByPath(path);
         if (existing instanceof TFile) {
             await this.app.vault.modify(existing, content);
-        } else if (!existing) {
-            await this.app.vault.create(path, content);
-        } else {
+        } else if (existing) {
             throw new Error(`Path is a folder, not a file: ${path}`);
+        } else if (this.isUnderConfigDir(path) || await this.adapterExists(path)) {
+            // 配置目录（插件数据）不在索引里，vault.create 建不出来；
+            // 索引外的已存在文件同样只能走 adapter。
+            await this.app.vault.adapter.write(path, content);
+        } else {
+            await this.app.vault.create(path, content);
         }
     }
 
     async exists(path: string): Promise<boolean> {
-        return this.app.vault.getAbstractFileByPath(path) !== null;
+        if (this.app.vault.getAbstractFileByPath(path) !== null) return true;
+        return this.adapterExists(path);
     }
 
     async getFile(path: string): Promise<TFile | null> {
@@ -123,14 +149,66 @@ export class ObsidianFileSystem implements FileSystemPort {
 
     async listFiles(dirPath: string): Promise<TFile[]> {
         const folder = await this.getFolder(dirPath);
-        if (!folder) return [];
+        if (!folder) {
+            // 配置目录不在索引里：用 adapter 递归列文件，构造只含调用方所需字段的 TFile 形状对象。
+            const paths = await this.listAdapterFiles(dirPath);
+            const files: TFile[] = [];
+            for (const path of paths) files.push(await this.toVirtualFile(path));
+            return files;
+        }
         return this.app.vault.getFiles().filter(f => f.path.startsWith(dirPath + '/'));
     }
 
     async listFolders(dirPath: string): Promise<TFolder[]> {
         const folder = await this.getFolder(dirPath);
-        if (!folder) return [];
+        if (!folder) return this.listAdapterFolders(dirPath);
         return this.app.vault.getAllFolders().filter((f: TFolder) => f.path.startsWith(dirPath + '/') && f.path !== dirPath);
+    }
+
+    private async listAdapterFiles(dirPath: string): Promise<string[]> {
+        const entries = await this.app.vault.adapter.list(dirPath).catch(() => null);
+        if (!entries) return [];
+        const result = [...entries.files];
+        for (const sub of entries.folders) {
+            result.push(...(await this.listAdapterFiles(sub)));
+        }
+        return result;
+    }
+
+    private async listAdapterFolders(dirPath: string): Promise<TFolder[]> {
+        const entries = await this.app.vault.adapter.list(dirPath).catch(() => null);
+        if (!entries) return [];
+        const result: TFolder[] = [];
+        for (const sub of entries.folders) {
+            result.push(this.toVirtualFolder(sub));
+            result.push(...(await this.listAdapterFolders(sub)));
+        }
+        return result;
+    }
+
+    private async toVirtualFile(path: string): Promise<TFile> {
+        const stat = await this.app.vault.adapter.stat(path).catch(() => null);
+        const name = path.split('/').pop() ?? path;
+        const dot = name.lastIndexOf('.');
+        return {
+            path,
+            name,
+            basename: dot > 0 ? name.slice(0, dot) : name,
+            extension: dot > 0 ? name.slice(dot + 1) : '',
+            stat: {
+                ctime: stat?.ctime ?? 0,
+                mtime: stat?.mtime ?? 0,
+                size: stat?.size ?? 0,
+            },
+        } as unknown as TFile;
+    }
+
+    private toVirtualFolder(path: string): TFolder {
+        return {
+            path,
+            name: path.split('/').pop() ?? path,
+            children: [],
+        } as unknown as TFolder;
     }
 
     async mkdir(dirPath: string): Promise<void> {
@@ -138,6 +216,13 @@ export class ObsidianFileSystem implements FileSystemPort {
         let currentPath = '';
         for (const folderName of folders) {
             currentPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+            if (this.isUnderConfigDir(currentPath)) {
+                // 配置目录不在索引里，vault.createFolder 建不出来；adapter.mkdir 对已存在目录会抛错，忽略。
+                if (!(await this.adapterExists(currentPath))) {
+                    await this.app.vault.adapter.mkdir(currentPath).catch(() => undefined);
+                }
+                continue;
+            }
             const existing = this.app.vault.getAbstractFileByPath(currentPath);
             if (!existing) {
                 try {
@@ -166,6 +251,15 @@ export class ObsidianFileSystem implements FileSystemPort {
             } else {
                 await this.app.vault.delete(file);
             }
+            return;
+        }
+        // 索引外路径（插件数据目录）：adapter 直接删，不存在则静默返回。
+        const stat = await this.app.vault.adapter.stat(path).catch(() => null);
+        if (!stat) return;
+        if (stat.type === 'folder') {
+            await this.app.vault.adapter.rmdir(path, true);
+        } else {
+            await this.app.vault.adapter.remove(path);
         }
     }
 
