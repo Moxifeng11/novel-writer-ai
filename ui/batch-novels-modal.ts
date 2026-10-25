@@ -40,7 +40,7 @@ export class BatchNovelsModal extends Modal {
         contentEl.empty();
         contentEl.createEl('h2', { text: '📚 批量生成章节（正式流程）' });
         contentEl.createEl('p', {
-            text: '逐章执行：信息规划 → 情节蒸馏 → 大纲摘要 → 情绪规划 → Scene展开 → 正文 → 分析报告 → 结算。已完成的步骤会自动跳过。',
+            text: '逐章执行 7 个步骤：信息规划 → 情节蒸馏 → 大纲摘要 → 情绪规划 → Scene展开 → 正文 → 分析报告；每章结束自动结算。已完成的步骤会自动跳过。',
             cls: 'setting-item-description',
         });
 

@@ -95,7 +95,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.WRITE_CHAPTER, name: 'AI写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '使用 AI 撰写章节正文（旧版）', internalOnly: true },
     { id: CommandIds.WRITE_CHAPTER_AUTO, name: '后台AI写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '后台自动撰写章节正文（旧版）', internalOnly: true },
     { id: CommandIds.BATCH_CHAPTERS, name: '批量写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '批量撰写章节正文（旧版）', internalOnly: true },
-    { id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', group: CommandGroup.WritingAssistant, description: '按 11 步流程逐章生成规划、正文与分析报告，并执行结算' },
+    { id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', group: CommandGroup.WritingAssistant, description: '按 7 步批量流程逐章生成规划、正文与分析报告，并执行结算' },
     { id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', group: CommandGroup.WritingAssistant, description: '规划后续章节内容' },
     { id: CommandIds.AUTO_WRITER, name: '自动写作器〔旧〕', group: CommandGroup.WritingAssistant, description: '自动写作器（旧版）', internalOnly: true },
     { id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', group: CommandGroup.WritingAssistant, description: '审查章节连贯性' },

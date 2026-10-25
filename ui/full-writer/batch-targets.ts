@@ -4,7 +4,11 @@
  * 单独拆出以便单元测试：不引入 main / UI 依赖，避免测试链条触达 main.js。
  */
 
-/** 批量流水线默认执行的步骤（与工作台 11 步对齐，去掉可选的 fix / 质量控制） */
+/**
+ * 批量流水线执行的 7 个 AI 步骤。
+ * 角色灵魂（自动步骤）与质量控制（可选步骤）不在批量链路中；结算由批量 runner 单独执行。
+ * 新增/删除步骤时必须同步更新命令描述、弹窗文案与 batch-targets-contract 测试。
+ */
 export const BATCH_STEP_KEYS = [
     'infoPlan',
     'plotDistill',
