@@ -21,6 +21,7 @@ import {
     computeDiffStats,
     charDiff,
 } from '../shared/diff-utils';
+import { createEmptyState } from './components/empty-state';
 
 type DiffViewMode = 'side-by-side' | 'inline';
 type DiffGranularity = 'line' | 'char';
@@ -485,13 +486,24 @@ export class ChapterVersionModal extends Modal {
 
     private renderEmptyState(): void {
         this.rightPanel.empty();
-        const empty = this.rightPanel.createDiv({ cls: 'nw-version-empty-state' });
-        empty.createDiv({ cls: 'nw-version-empty-icon', text: '📜' });
-        empty.createDiv({ cls: 'nw-version-empty-title', text: '暂无版本对比' });
-        empty.createDiv({
-            cls: 'nw-version-empty-desc',
-            text: '选择左侧的版本查看对比，或保存当前版本开始记录历史。',
-        });
+        this.rightPanel.appendChild(createEmptyState({
+            icon: 'data',
+            title: '暂无版本对比',
+            description: '选择左侧的版本查看对比，或先保存当前版本开始记录历史。',
+            actionText: this.options.onSaveVersion ? '保存当前版本' : undefined,
+            onAction: this.options.onSaveVersion
+                ? async () => {
+                    const newVersion = await this.options.onSaveVersion!();
+                    if (newVersion) {
+                        await this.loadVersions();
+                        this.selectedVersion = newVersion;
+                        this.renderVersionList();
+                        await this.renderDiff();
+                        new Notice(`✅ 已保存 v${newVersion.version}`);
+                    }
+                }
+                : undefined,
+        }));
     }
 
     onClose(): void {

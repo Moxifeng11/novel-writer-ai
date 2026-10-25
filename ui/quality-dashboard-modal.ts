@@ -9,24 +9,33 @@
  */
 
 import { App, Modal, TFile, Notice } from 'obsidian';
+import type { Editor } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import {
     QualityScoreEngine,
     DIMENSION_LABELS,
     QUALITY_DIMENSIONS,
 } from '../engine/quality/quality-score-engine';
-import type { QualityScore } from '../engine/quality/quality-score-engine';
+import type { QualityScore, EvaluationContext } from '../engine/quality/quality-score-engine';
+import { WritingQualityEngine } from '../engine/writing-quality-engine';
 import { exportTextFile } from '../shared/export-file';
 import { radarChart } from './svg-charts';
 import type { RadarDataItem } from './svg-charts';
 import { getChaptersForProject } from './project-utils';
+import { createEmptyState } from './components/empty-state';
+import { toCharacterContextInfos } from '../engine/character-context';
+import { findChapterFile, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { pjStepDir } from '../shared/paths';
+import { DEVIATION_CHARACTER_INFO_TTL_MS } from '../shared/thresholds';
+import { stripFrontmatter } from '../utils/helpers';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('QualityDashboard');
+const CHAPTER_OUTLINE_MAX_CHARS = 1200;
 
 type QualityDimensionKey = (typeof QUALITY_DIMENSIONS)[number];
 type QualityIssueType = QualityScore['issues'][number];
 type ChapterRange = 'current' | 'recent3' | 'recent5' | 'all';
-
-// 避免 import full-writer-view 造成循环依赖，用字符串类型 + 运行时方法探测
-const FULL_WRITER_VIEW_TYPE = 'novel-writer-full-writer';
 
 const RANGE_LABELS: Record<ChapterRange, string> = {
     current: '当前章节',
@@ -62,6 +71,8 @@ export class QualityDashboardModal extends Modal {
     private activeDimension: QualityDimensionKey | null = null;
     private qualityCache = new Map<string, QualityScore>();
     private currentScores: ChapterQualityEntry[] = [];
+    /** 人物名册按项目缓存 60s：看板一次评估多章，逐章读盘没有必要 */
+    private characterNameCache: { project: string; at: number; names: string[] } | null = null;
 
     // UI 引用（联动重渲染用）
     private radarEl?: HTMLElement;
@@ -72,7 +83,7 @@ export class QualityDashboardModal extends Modal {
     constructor(app: App, plugin: NovelWriterPlugin, engine?: QualityScoreEngine) {
         super(app);
         this.plugin = plugin;
-        this.engine = engine ?? new QualityScoreEngine();
+        this.engine = engine ?? new QualityScoreEngine({ v1Engine: new WritingQualityEngine() });
     }
 
     onOpen(): void {
@@ -83,7 +94,13 @@ export class QualityDashboardModal extends Modal {
         // 1. 定位章节：优先活动文件，fallback 工作台当前章节
         const located = this.locateChapter();
         if (!located) {
-            contentEl.createEl('p', { text: '❌ 无法定位章节，请先在工作台打开一个章节，或打开章节正文文件' });
+            contentEl.appendChild(createEmptyState({
+                icon: 'chart',
+                title: '无法定位章节',
+                description: '请先在工作台打开一个章节，或打开章节正文文件；也可以先新建项目与章节。',
+                actionText: '打开写作工作台',
+                onAction: () => { this.close(); this.plugin.openFullWriterView(); },
+            }));
             return;
         }
         this.project = located.project;
@@ -91,7 +108,13 @@ export class QualityDashboardModal extends Modal {
         // 2. 扫描项目章节
         this.chapters = this.scanChapters();
         if (this.chapters.length === 0) {
-            contentEl.createEl('p', { text: '❌ 项目下未找到章节正文' });
+            contentEl.appendChild(createEmptyState({
+                icon: 'book',
+                title: '项目下未找到章节正文',
+                description: '当前项目还没有正文文件。请先在工作台批量建章或导入大纲，再回来查看质量评分。',
+                actionText: '打开写作工作台',
+                onAction: () => { this.close(); this.plugin.openFullWriterView(); },
+            }));
             return;
         }
 
@@ -113,36 +136,28 @@ export class QualityDashboardModal extends Modal {
         void this.refreshData().then(() => this.renderFactPanel(contentEl));
     }
 
-    /** 定位章节：活动文件 → 工作台当前章节 fallback */
+    /** 定位章节：统一走命令层章节目标（工作台上下文 > 正文文件 > 步骤目录），不再自建解析 */
     private locateChapter(): { project: string; chapterNum: number; volume: string } | null {
-        const activeFile = this.app.workspace.getActiveFile();
-        if (activeFile) {
-            const m = activeFile.path.match(/^(.+?)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章_正文\.md$/);
-            if (m) return { project: m[1], volume: `第${m[2]}卷`, chapterNum: parseInt(m[3], 10) };
-            const proj = activeFile.path.split('/')[0];
-            if (proj) return { project: proj, chapterNum: 0, volume: '' };
+        const target = this.plugin.getActiveChapterTarget();
+        if (target) {
+            return { project: target.project, chapterNum: target.chapterNum, volume: target.volume };
         }
-        // fallback：工作台当前章节状态（工作台视图活动时 getActiveFile 为 null）
-        const leaf = this.app.workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE)[0];
-        const st = (leaf?.view as { getCurrentChapterState?: () => { project: string; chapterNum: number; volume: string } } | null)?.getCurrentChapterState?.();
-        if (st?.project && st.chapterNum > 0) {
-            return { project: st.project, chapterNum: st.chapterNum, volume: st.volume };
-        }
-        if (st?.project) {
-            return { project: st.project, chapterNum: 0, volume: '' };
-        }
+        // 非章节文件（世界观/大纲等）：只取所属项目，仪表盘按全书范围展示
+        const project = this.plugin.getActiveProject();
+        if (project) return { project, chapterNum: 0, volume: '' };
         return null;
     }
 
     private scanChapters(): ChapterEntry[] {
         const list = getChaptersForProject(this.app, this.project);
         return list
+            .filter((c) => c.file instanceof TFile)
             .map((c) => ({
                 chapter: c.chapter,
                 volume: c.volume,
                 chapterNum: parseInt(c.chapter.match(/\d+/)?.[0] || '0', 10),
                 title: c.title,
-                file: c.file,
+                file: c.file as TFile,
             }))
             .filter((c) => c.chapterNum > 0)
             .sort((a, b) => a.chapterNum - b.chapterNum);
@@ -179,17 +194,73 @@ export class QualityDashboardModal extends Modal {
         const entries = this.getRangeEntries();
         const scores: ChapterQualityEntry[] = [];
         for (const e of entries) {
-            const cacheKey = e.file.path;
+            const cacheKey = this.qualityCacheKey(e);
             let score = this.qualityCache.get(cacheKey);
             if (!score) {
                 const text = await this.app.vault.read(e.file);
-                score = await this.engine.evaluate(text);
+                // C2：与协同写作同源传上下文，否则同一段正文在看板与顶栏的人物维度不同
+                score = await this.engine.evaluate(text, await this.buildQualityContext(e));
                 this.qualityCache.set(cacheKey, score);
             }
             scores.push({ ...e, score });
         }
         this.currentScores = scores;
         this.renderCharts(scores);
+    }
+
+    /** 缓存键必须带 mtime：同一弹窗内改稿后再次刷新不能命中旧分 */
+    private qualityCacheKey(entry: ChapterEntry): string {
+        return `${entry.file.path}:${entry.file.stat.mtime}`;
+    }
+
+    /**
+     * 构建单章评估上下文：人物名册（按项目 60s 缓存）+ 本章大纲摘要。
+     * QSE 注入 v1Engine 后人物维度只认 characterNames，不传就只能靠「X说」正则估算。
+     */
+    private async buildQualityContext(entry: ChapterEntry): Promise<EvaluationContext> {
+        const [characterNames, chapterOutline] = await Promise.all([
+            this.loadCharacterNames(),
+            this.loadChapterOutline(entry),
+        ]);
+        return { characterNames, chapterOutline };
+    }
+
+    private async loadCharacterNames(): Promise<string[]> {
+        if (!this.project) return [];
+        const now = Date.now();
+        const cached = this.characterNameCache;
+        if (cached && cached.project === this.project && now - cached.at < DEVIATION_CHARACTER_INFO_TTL_MS) {
+            return cached.names;
+        }
+
+        let names: string[] = [];
+        try {
+            const data = await this.plugin.ctxManager.gatherCharacterState(this.project);
+            names = toCharacterContextInfos(
+                (data.character_state || []) as Array<Record<string, unknown>>,
+            ).map(c => c.name);
+        } catch (e) {
+            log.warn('[QualityDashboard] 读取人物设定失败:', e);
+        }
+        this.characterNameCache = { project: this.project, at: now, names };
+        return names;
+    }
+
+    private async loadChapterOutline(entry: ChapterEntry): Promise<string | undefined> {
+        const volN = parseInt(entry.volume.match(/\d+/)?.[0] ?? '0', 10);
+        if (!this.project || volN <= 0 || entry.chapterNum <= 0) return undefined;
+
+        const basePath = pjStepDir(this.project, volN, entry.chapterNum);
+        const outlineFile = findChapterFile(this.app.vault.getFiles(), basePath, CHAPTER_FILE_TYPES.outline);
+        if (!outlineFile) return undefined;
+
+        try {
+            const content = stripFrontmatter(await this.app.vault.read(outlineFile)).trim();
+            return content ? content.slice(0, CHAPTER_OUTLINE_MAX_CHARS) : undefined;
+        } catch (e) {
+            log.warn('[QualityDashboard] 读取章节大纲失败:', e);
+            return undefined;
+        }
     }
 
     private renderCharts(scores: ChapterQualityEntry[]): void {
@@ -200,8 +271,10 @@ export class QualityDashboardModal extends Modal {
                 : 0;
             return { dim, avg: Math.round(avg) };
         });
-        const overall = aggDims.length
-            ? Math.round(aggDims.reduce((s, a) => s + a.avg, 0) / aggDims.length)
+        // C2：总分取各章综合分（V1 加权口径）的均值，而不是六维均值——
+        // 六维雷达里 readability / languageTexture 都源自语言质量，再平均会把语言质量算两遍。
+        const overall = scores.length
+            ? Math.round(scores.reduce((s, e) => s + e.score.overallScore, 0) / scores.length)
             : 0;
 
         // 雷达图（聚合评分）
@@ -252,13 +325,19 @@ export class QualityDashboardModal extends Modal {
                 this.issuesEl.createEl('p', { text: '✅ 该维度/范围内未发现明显问题' });
                 return;
             }
-            for (const { issue, chapter } of filtered) {
+            for (const { issue, chapter, file } of filtered) {
                 const line = issue.location?.line;
                 const pos = line !== undefined ? `（第 ${line} 行）` : '';
                 const sev = issue.severity === 'high' ? '🔴' : issue.severity === 'medium' ? '🟡' : '🟢';
-                const row = this.issuesEl.createEl('div', { cls: 'nw-qd-issue' });
+                const row = this.issuesEl.createEl('div', { cls: 'nw-qd-issue nw-qd-issue-clickable' });
                 row.createEl('span', { text: `${sev} [${DIMENSION_LABELS[issue.dimension]}] ${chapter} ` });
                 row.createEl('span', { text: `${issue.description}${pos}` });
+                row.setAttribute('title', '点击定位到正文');
+                row.addEventListener('click', () => {
+                    void openFileAtLine(this.app, file, line).then((ok) => {
+                        if (ok) this.close();
+                    });
+                });
             }
         }
     }
@@ -275,7 +354,7 @@ export class QualityDashboardModal extends Modal {
             chapterCount: entries.length,
             exportedAt: new Date().toISOString(),
             chapters: entries.map((e) => {
-                const score = this.qualityCache.get(e.file.path);
+                const score = this.qualityCache.get(this.qualityCacheKey(e));
                 return {
                     chapter: e.chapter,
                     volume: e.volume,
@@ -360,5 +439,29 @@ export class QualityDashboardModal extends Modal {
 
     onClose(): void {
         this.contentEl.empty();
+    }
+}
+
+/**
+ * 打开章节文件并定位到指定行（1-based）。
+ * 无行号时仅打开文件；定位失败会给出提示，不抛出异常。
+ */
+export async function openFileAtLine(app: App, file: TFile, line?: number): Promise<boolean> {
+    try {
+        const leaf = app.workspace.getLeaf('tab');
+        await leaf.openFile(file);
+        if (line === undefined || line < 1) return true;
+
+        const editor = (leaf.view as unknown as { editor?: Editor }).editor;
+        if (!editor) return true;
+
+        const target = Math.min(line - 1, Math.max(0, editor.lineCount() - 1));
+        const pos = { line: target, ch: 0 };
+        editor.setCursor(pos);
+        editor.scrollIntoView({ from: pos, to: pos }, true);
+        return true;
+    } catch (e) {
+        new Notice(`❌ 无法打开章节：${e instanceof Error ? e.message : String(e)}`, 4000);
+        return false;
     }
 }

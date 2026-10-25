@@ -8,8 +8,7 @@ import { ENGINE_NAMES } from '../engine/engine-registry';
 import { getOllamaModelsWithFallback } from '../engine/co-writer-engine';
 import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
 import { FingerprintExtractor } from '../engine/fingerprint-extractor';
-import { OllamaEmbeddingClient } from '../engine/ollama-embedding-client';
-import { LocalVectorStore } from '../engine/local-vector-store';
+import { createFingerprintEmbedding } from './fingerprint-embedding';
 import { AddFingerprintModal } from './fingerprint-library-modal';
 import { FingerprintDetailModal } from './fingerprint-detail-modal';
 import { renderFingerprintList } from './fingerprint-utils';
@@ -33,6 +32,8 @@ import { createLogger } from '../shared/logger';
 import { exportTextFile } from '../shared/export-file';
 import { OperationConfirmModal } from './components/progress';
 import { rebuildKnowledgeIndexWithConfirm } from './knowledge-rebuild-action';
+import { rebuildAllVectorsWithConfirm } from './vector-rebuild-action';
+import { renderCollapsibleSection } from './settings-utils';
 
 
 const log = createLogger('MiniSettingsModal');
@@ -783,16 +784,14 @@ export class MiniSettingsModal extends Modal {
         new FingerprintDetailModal(this.app, {
             fingerprint: detailFp,
             canEdit,
-            onToggle: async (fingerprint) => {
+            // 模板层不参与注入：不提供无效的启用开关（三个入口统一）
+            onToggle: isTemplate ? undefined : async (fingerprint) => {
                 if (!this.fingerprintLibrary) return;
                 if (isGlobal) {
                     if (!activeProject) return;
                     const newEnabled = !this.fingerprintLibrary.isGlobalEnabledForProject(fp.id, activeProject);
                     await this.fingerprintLibrary.setGlobalEnabledForProject(fp.id, newEnabled, activeProject);
                     this.globalFpEnabledState[fp.id] = newEnabled;
-                } else if (isTemplate) {
-                    fingerprint.enabled = !fingerprint.enabled;
-                    await this.fingerprintLibrary.updateTemplate(fingerprint);
                 } else {
                     fingerprint.enabled = !fingerprint.enabled;
                     await this.fingerprintLibrary.updateProject(fingerprint);
@@ -807,8 +806,7 @@ export class MiniSettingsModal extends Modal {
                     fingerprint,
                     fingerprintLibrary: this.fingerprintLibrary,
                     aiEngine: this.plugin.aiEngine,
-                    embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-                    embeddingModel: this.plugin.settings.embeddingModel,
+                    embeddingSettings: this.plugin.settings,
                 }).open();
             } : undefined,
             onDelete: async (fingerprint) => {
@@ -834,34 +832,14 @@ export class MiniSettingsModal extends Modal {
             return;
         }
 
-        let extractor: FingerprintExtractor;
-        if (scope === 'template') {
-            const { EmbeddingProviderFactory } = require('../engine/embedding/provider-factory');
-            const embeddingProvider = EmbeddingProviderFactory.create({
-                vectorProviderType: this.plugin.settings.vectorProviderType,
-                vectorOllamaBaseUrl: this.plugin.settings.vectorOllamaBaseUrl,
-                vectorOllamaModel: this.plugin.settings.vectorOllamaModel,
-                vectorOpenaiBaseUrl: this.plugin.settings.vectorOpenaiBaseUrl,
-                vectorOpenaiModel: this.plugin.settings.vectorOpenaiModel,
-                vectorOpenaiApiKey: this.plugin.settings.vectorOpenaiApiKey,
-                vectorDoubaoBaseUrl: this.plugin.settings.vectorDoubaoBaseUrl,
-                vectorDoubaoModel: this.plugin.settings.vectorDoubaoModel,
-                vectorDoubaoApiKey: this.plugin.settings.vectorDoubaoApiKey,
-                vectorQwenBaseUrl: this.plugin.settings.vectorQwenBaseUrl,
-                vectorQwenModel: this.plugin.settings.vectorQwenModel,
-                vectorQwenApiKey: this.plugin.settings.vectorQwenApiKey,
-                embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-                embeddingModel: this.plugin.settings.embeddingModel,
-            });
-            const vectorStore = new LocalVectorStore(this.app, 'global', embeddingProvider);
-            extractor = new FingerprintExtractor(this.plugin.aiEngine, embeddingProvider, vectorStore);
-        } else {
-            const embeddingEndpoint = this.plugin.settings.embeddingEndpoint || 'http://localhost:11434';
-            const embeddingModel = this.plugin.settings.embeddingModel || 'bge-m3';
-            const embeddingClient = new OllamaEmbeddingClient(embeddingEndpoint, embeddingModel);
-            const vectorStore = new LocalVectorStore(this.app, scope, embeddingClient, activeProject || undefined);
-            extractor = new FingerprintExtractor(this.plugin.aiEngine, embeddingClient, vectorStore);
-        }
+        const targetScope: 'global' | 'project' = scope === 'template' ? 'global' : scope;
+        const { provider, vectorStore } = createFingerprintEmbedding(
+            this.app,
+            targetScope,
+            this.plugin.settings,
+            activeProject || undefined,
+        );
+        const extractor = new FingerprintExtractor(this.plugin.aiEngine, provider, vectorStore);
 
         new AddFingerprintModal(this.app, {
             scope,
@@ -979,6 +957,16 @@ export class MiniSettingsModal extends Modal {
             }
         });
         rebuildBtn.addEventListener('click', () => rebuildKnowledgeIndexWithConfirm(this.app, this.plugin));
+
+        const revectorizeBtn = actionRow.createEl('button', {
+            text: '🧠 重向量化',
+            attr: {
+                type: 'button',
+                title: '按当前向量提供商重新计算知识库与指纹向量（不调用 AI、不重新拆解）',
+                style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
+            }
+        });
+        revectorizeBtn.addEventListener('click', () => rebuildAllVectorsWithConfirm(this.app, this.plugin));
 
         const filterBar = section.createDiv({
             attr: { style: 'padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
@@ -1716,6 +1704,15 @@ export class MiniSettingsModal extends Modal {
                     this.plugin.settings.autoPlotEvaluation = value;
                 }));
 
+        new Setting(section)
+            .setName('自动联想（幽灵建议）')
+            .setDesc('输入停顿后自动生成后续联想（每 4 秒最多一次）；关闭可节省 AI 调用')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.autoGhostAssociation ?? true)
+                .onChange(value => {
+                    this.plugin.settings.autoGhostAssociation = value;
+                }));
+
         updateVisibility();
     }
 
@@ -2358,6 +2355,8 @@ export class MiniSettingsModal extends Modal {
                 const lastResult = cacheManager.getUpdateLastResult();
                 if (lastResult?.latestVersion) {
                     latestVersionInfo = `v${lastResult.latestVersion}` + (lastResult.hasUpdate ? ' (有更新)' : ' (已是最新)');
+                } else if (lastResult?.error) {
+                    latestVersionInfo = `检查失败：${lastResult.error}`;
                 }
             }
         } catch {
@@ -2426,6 +2425,7 @@ export class MiniSettingsModal extends Modal {
                 .setValue(this.plugin.settings.autoCheckUpdates ?? false)
                 .onChange((value) => {
                     this.plugin.settings.autoCheckUpdates = value;
+                    void this.plugin.saveSettings();
                     const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
                     if (updateChecker) {
                         updateChecker.updateConfig({ enabled: value });
@@ -2443,6 +2443,7 @@ export class MiniSettingsModal extends Modal {
                 dropdown.setValue(this.plugin.settings.updateSource || 'github');
                 dropdown.onChange((value) => {
                     this.plugin.settings.updateSource = value as 'github' | 'custom';
+                    void this.plugin.saveSettings();
                     const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
                     if (updateChecker) {
                         updateChecker.updateConfig({ source: value as 'github' | 'custom' });
@@ -2456,10 +2457,11 @@ export class MiniSettingsModal extends Modal {
                 .setName('GitHub 仓库')
                 .setDesc('格式：owner/repo')
                 .addText(text => text
-                    .setPlaceholder('trae-ai/novel-writer-ai')
-                    .setValue(this.plugin.settings.updateGithubRepo || 'trae-ai/novel-writer-ai')
+                    .setPlaceholder('Moxifeng11/novel-writer-ai')
+                    .setValue(this.plugin.settings.updateGithubRepo || 'Moxifeng11/novel-writer-ai')
                     .onChange((value) => {
                         this.plugin.settings.updateGithubRepo = value;
+                        void this.plugin.saveSettings();
                         const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
                         if (updateChecker) {
                             updateChecker.updateConfig({ githubRepo: value });
@@ -2475,6 +2477,7 @@ export class MiniSettingsModal extends Modal {
                     .setValue(this.plugin.settings.updateCustomUrl || '')
                     .onChange((value) => {
                         this.plugin.settings.updateCustomUrl = value;
+                        void this.plugin.saveSettings();
                         const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
                         if (updateChecker) {
                             updateChecker.updateConfig({ customUrl: value });
@@ -2499,6 +2502,7 @@ export class MiniSettingsModal extends Modal {
                 dropdown.setValue(String(this.plugin.settings.updateCheckIntervalHours || 168));
                 dropdown.onChange((value) => {
                     this.plugin.settings.updateCheckIntervalHours = parseInt(value, 10);
+                    void this.plugin.saveSettings();
                     const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
                     if (updateChecker) {
                         updateChecker.updateConfig({ checkIntervalHours: parseInt(value, 10) });
@@ -2506,21 +2510,21 @@ export class MiniSettingsModal extends Modal {
                 });
             });
 
-        section.createEl('h4', { text: '📌 关于插件', attr: { style: 'margin:24px 0 12px 0;' } });
+        renderCollapsibleSection(section, '📌 关于插件', false, (aboutSection) => {
+            const aboutCard = aboutSection.createDiv({
+                attr: {
+                    style: 'padding:16px;background:var(--background-secondary);border-radius:8px;font-size:13px;line-height:1.7;color:var(--text-muted);'
+                }
+            });
 
-        const aboutCard = section.createDiv({
-            attr: {
-                style: 'padding:16px;background:var(--background-secondary);border-radius:8px;font-size:13px;line-height:1.7;color:var(--text-muted);'
-            }
+            aboutCard.createEl('p', {
+                text: '全流程 AI 长篇小说创作系统 — 协同写作工作台 + 多模型智能引擎 + 数据安全架构。',
+                attr: { style: 'margin:0 0 12px 0;' }
+            });
+
+            aboutCard.createEl('div', { text: '作者：南柯一梦', attr: { style: 'margin-bottom:4px;' } });
+            aboutCard.createEl('div', { text: '许可证：MIT', attr: { style: 'margin-bottom:4px;' } });
         });
-
-        aboutCard.createEl('p', {
-            text: '全流程 AI 长篇小说创作系统 — 协同写作工作台 + 多模型智能引擎 + 数据安全架构。',
-            attr: { style: 'margin:0 0 12px 0;' }
-        });
-
-        aboutCard.createEl('div', { text: '作者：南柯一梦', attr: { style: 'margin-bottom:4px;' } });
-        aboutCard.createEl('div', { text: '许可证：MIT', attr: { style: 'margin-bottom:4px;' } });
     }
 
     private renderInfoItem(container: HTMLElement, label: string, value: string): void {

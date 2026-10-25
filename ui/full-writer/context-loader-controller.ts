@@ -1,8 +1,12 @@
-import { App, Notice } from 'obsidian';
+import { App, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { ContextManager, GatheredContext } from '../../engine/context-manager';
 import { showProgress, hideProgress, showSuccess, showError } from '../../utils/helpers';
 import { CrossVolumeIntegrator } from '../../engine/cross-volume-integration';
+import { formatSoulForPrompt, type CharacterSoul } from '../../engine/character-soul';
+import { assessContextReadiness } from '../../engine/context-readiness';
+import { getChapterFile, CHAPTER_FILE_TYPES } from '../../engine/chapter-utils';
+import { isTemplateSkeleton, validateStepResult } from '../../engine/step-validator';
 import { FullWriterStore } from './full-writer-store';
 import { ChapterStateManager } from '../states/chapter-state-manager';
 import { EntityStateController } from './entity-state-controller';
@@ -20,6 +24,8 @@ export interface ContextLoaderControllerDeps {
     setContext: (ctx: GatheredContext | null) => void;
     activateTab: (tabId: string) => Promise<void>;
     entityStateController: EntityStateController;
+    /** 步骤结果落盘（角色灵魂自动提取必须写盘，否则重启后完成态被磁盘模板覆盖） */
+    saveStepResult: (stepKey: string, content: string) => Promise<boolean>;
 }
 
 export class ContextLoaderController {
@@ -37,6 +43,8 @@ export class ContextLoaderController {
 
         showProgress('⏳ 加载上下文数据...');
 
+        const cs = this.deps.getChapterStateManager();
+
         try {
             showProgress('⏳ 加载上下文数据...');
             const context = await this.deps.contextManager.gatherAll(this.deps.state.project, this.deps.state.chapterName, (completed, total, taskName) => {
@@ -45,16 +53,39 @@ export class ContextLoaderController {
 
             this.deps.setContext(context);
 
+            // Rev 186：把时间线/伏笔 ↔ 设定库/规划的关联索引挂到上下文，供面板展示与生成复用
+            if (context?.data && this.deps.state.chapterName) {
+                try {
+                    context.data.story_linkage = await this.deps.contextManager.buildStoryLinkage(
+                        this.deps.state.project,
+                        this.deps.state.chapterName,
+                    );
+                } catch (e) {
+                    log.warn('[ContextLoader] 关联索引生成失败（不影响上下文加载）:', e);
+                }
+            }
+
             const failedModules = context?.data?.['_failedModules'] as string[] || [];
             if (failedModules.length > 0) {
                 new Notice(`⚠️ 以下模块加载失败（已跳过）: ${failedModules.join('、')}`, 6000);
             }
 
-            this.deps.getChapterStateManager().stepLevels['context'] = 'complete';
-            this.deps.getChapterStateManager().stepMissing['context'] = [];
-            this.deps.getChapterStateManager().stepCompleted.add('context');
-            hideProgress();
-            showSuccess('上下文加载完成');
+            // Rev 185：完成状态由「必做输入是否齐全」决定，不再无条件 complete。
+            // 必做项见 assessContextReadiness：人物 / 大纲 / 世界观或设定库 / 非首章的前章摘要。
+            const readiness = assessContextReadiness(context, this.deps.state.chapterNum);
+            if (readiness.ready) {
+                cs.stepLevels['context'] = 'complete';
+                cs.stepMissing['context'] = [];
+                cs.stepCompleted.add('context');
+                hideProgress();
+                showSuccess('上下文加载完成');
+            } else {
+                cs.stepLevels['context'] = 'partial';
+                cs.stepMissing['context'] = readiness.requiredMissing;
+                cs.stepCompleted.delete('context');
+                hideProgress();
+                new Notice(`⚠️ 上下文缺少必做输入：${readiness.requiredMissing.join('、')}。请补齐后重新加载`, 8000);
+            }
 
             const infoSummary = this.deps.contextManager.getInfoSummary(context);
             this.deps.state.vars['infoSummary'] = infoSummary;
@@ -80,25 +111,48 @@ export class ContextLoaderController {
 
         this.deps.entityStateController.syncInvolvedEntitiesToPlugin();
 
-        const cs = this.deps.getChapterStateManager();
-        if (!cs.stepCompleted.has('characterSoul')) {
+        // cs 已在加载开始时获取（见上）
+        // 磁盘恢复出的真实内容（即使未达 complete）优先于自动提取，避免手工结果被覆盖
+        const existingSoul = (cs.stepResults['characterSoul'] || '').trim();
+        if (!cs.stepCompleted.has('characterSoul') && !existingSoul && !(await this.hasRealSoulFile())) {
             showProgress('🫀 提取角色灵魂...');
             try {
                 const context = this.deps.getContext();
                 const characterCoresData = context?.data?.character_cores as Array<Record<string, unknown>> | undefined;
                 if (characterCoresData && characterCoresData.length > 0) {
-                    const allSouls = characterCoresData.map((c: Record<string, unknown>) => {
-                        const name = c.name || '未知角色';
-                        const personality = c.personality || '';
-                        const background = c.background || '';
-                        return `【${name}】性格：${personality}\n背景：${background}`;
-                    }).join('\n\n');
-                    cs.stepResults['characterSoul'] = allSouls;
-                    this.deps.state.vars['characterCores'] = allSouls;
-                    cs.stepLevels['characterSoul'] = 'complete';
-                    cs.stepMissing['characterSoul'] = [];
-                    cs.stepCompleted.add('characterSoul');
-                    showSuccess('🫀 角色灵魂提取完成');
+                    // CharacterSoul 的字段是 desire/fear/...，不是 personality/background；
+                    // 旧实现按不存在的字段拼文本，写出的「灵魂层」永远是空的。
+                    const souls = characterCoresData as unknown as CharacterSoul[];
+                    const allSouls = souls
+                        .filter((s) => s.hasSoul)
+                        .map((s) => formatSoulForPrompt(s))
+                        .join("\n\n");
+                    if (allSouls.trim()) {
+                        this.deps.state.vars['characterCores'] = allSouls;
+                        cs.stepResults['characterSoul'] = allSouls;
+                        // 完成性以磁盘为权威：只写内存会让下次 restoreChapterState 读到模板骨架后回退为 ○/◐
+                        const saved = await this.deps.saveStepResult('characterSoul', allSouls);
+                        // Rev 185：保存成功还要过结构校验——占位字段（>- / 暂无）不算已提取
+                        const soulVerdict = validateStepResult('characterSoul', allSouls);
+                        if (saved && soulVerdict.level === 'complete') {
+                            cs.stepLevels['characterSoul'] = 'complete';
+                            cs.stepMissing['characterSoul'] = [];
+                            cs.stepCompleted.add('characterSoul');
+                            showSuccess('🫀 角色灵魂提取完成');
+                        } else if (saved) {
+                            cs.stepLevels['characterSoul'] = 'partial';
+                            cs.stepMissing['characterSoul'] = soulVerdict.missing;
+                            cs.stepCompleted.delete('characterSoul');
+                            new Notice(`⚠️ 角色灵魂已写入但字段不完整：${soulVerdict.missing.join('、')}`, 7000);
+                        } else {
+                            cs.stepLevels['characterSoul'] = 'partial';
+                            cs.stepMissing['characterSoul'] = ['保存失败'];
+                            cs.stepCompleted.delete('characterSoul');
+                            new Notice('⚠️ 角色灵魂已提取但保存失败，重启后需重新提取', 6000);
+                        }
+                    } else {
+                        log.warn('[ContextLoader] 没有完整的 9 字段角色灵魂层，跳过完成标记');
+                    }
                 }
             } catch (e) {
                 log.warn('[ContextLoader] 自动提取角色灵魂失败:', e);
@@ -107,6 +161,27 @@ export class ContextLoaderController {
         }
 
         cs.currentStepIndex = 1;
+    }
+
+    /**
+     * 磁盘上是否已有真实的角色灵魂文件（非模板骨架）。
+     * 自动提取会落盘覆盖同名文件，必须先确认磁盘内容不值得保留。
+     */
+    private async hasRealSoulFile(): Promise<boolean> {
+        const chapDir = this.deps.state.chapDir;
+        if (!chapDir) return false;
+        const folder = this.deps.app.vault.getAbstractFileByPath(chapDir);
+        if (!(folder instanceof TFolder)) return false;
+        const file = getChapterFile(folder, CHAPTER_FILE_TYPES.characterSoul);
+        if (!(file instanceof TFile)) return false;
+        try {
+            const raw = await this.deps.app.vault.read(file);
+            const pure = raw.replace(/^---[\s\S]*?---/, '').trim();
+            return !isTemplateSkeleton(pure, 'characterSoul');
+        } catch (e) {
+            log.warn('[ContextLoader] 读取既有角色灵魂文件失败（按未存在处理）:', e);
+            return false;
+        }
     }
 
     private async ensureCrossVolumeSnapshot(): Promise<void> {

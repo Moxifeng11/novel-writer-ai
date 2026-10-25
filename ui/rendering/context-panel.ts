@@ -7,8 +7,9 @@ import { getWritingStylePath, getLegacyWritingStylePath } from '../../shared/pat
 import { findWritingStyleFile, getWritingStyleCandidatePaths } from '../writing-style-paths';
 import { mkdirp, readMergedVolumeOutline } from '../../utils/helpers';
 import type { NovelWriterPluginAPI } from '../../shared/plugin-api';
-import { parseChineseNumber } from '../../engine/scene-expander';
+import { parseSceneHeadings } from '../../engine/scene-expander';
 import { createLogger } from '../../shared/logger';
+import { MemoryPreview } from '../memory-preview';
 
 
 const log = createLogger('ContextPanel');
@@ -323,6 +324,24 @@ export class ContextPanel {
                 log.warn('[ContextPanel] 智能实体上下文渲染失败:', e);
             }
         }, true);
+
+        // 记忆碎片预览（仅在项目存在记忆碎片时展示）
+        const allMemories = d.triggered_memories ?? [];
+        if (allMemories.length > 0) {
+            const matchedCount = d.triggered_memories_matched?.length ?? 0;
+            this.renderCollapsibleCard(
+                panel,
+                `🧩 记忆碎片 (${allMemories.length}${matchedCount > 0 ? `，触发 ${matchedCount}` : ''})`,
+                (body) => {
+                    new MemoryPreview(body, { app: this.app }).refresh(
+                        d.triggered_memories_matched ?? [],
+                        allMemories,
+                        project,
+                        chapterNum > 0 ? `第${chapterNum}章` : undefined,
+                    );
+                },
+            );
+        }
 
         // 伏笔库
         // ===== 地点 =====
@@ -843,22 +862,7 @@ export class ContextPanel {
         scenes: Array<{ index: number; name: string; objective: string; isKeyScene: boolean }>;
     } {
         const scenes: Array<{ index: number; name: string; objective: string; isKeyScene: boolean }> = [];
-        const sceneRegex = /^##\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene(\d+))\s*[：:]\s*(.+)$/gim;
-        const matches: { index: number; name: string; start: number }[] = [];
-        let m: RegExpExecArray | null;
-
-        while ((m = sceneRegex.exec(content)) !== null) {
-            let num = 0;
-            if (m[1] !== undefined) {
-                const cnNum = parseChineseNumber(m[1]);
-                num = cnNum ?? matches.length + 1;
-            } else if (m[2] !== undefined) {
-                num = parseInt(m[2], 10);
-            } else {
-                num = matches.length + 1;
-            }
-            matches.push({ index: num, name: m[3].trim(), start: m.index });
-        }
+        const matches = parseSceneHeadings(content).map(h => ({ index: h.index, name: h.name, start: h.start }));
 
         let hasKeyScene = false;
         let hasCliffhanger = false;

@@ -12,7 +12,7 @@ import NovelWriterPlugin from '../../main';
 import { ContextManager } from '../../engine/context-manager';
 import { escapeHtml } from '../../utils/helpers';
 import { CoverPickerController } from './cover-picker-controller';
-import { ToolsModal } from './tools-modal';
+import { renderQuickToolsPanel, type ProjectQuickAction } from './quick-tools-panel';
 import { WritingStyleModal } from '../writing-style-modal';
 import { CreateProjectModal } from '../create-project-modal';
 import {
@@ -29,7 +29,8 @@ export type ChapterItem = {
     volume: string;
     title: string;
     status: string;
-    file: TFile;
+    /** 正文文件；仅有骨架时为空 */
+    file: TFile | null;
 };
 
 export interface ProjectSelectorDeps {
@@ -38,7 +39,10 @@ export interface ProjectSelectorDeps {
     onSelectChapter: (project: string, chapter: ChapterItem) => Promise<void>;
     onOpenWizard: (project: string) => Promise<void>;
     onOpenCoWriting: (project: string, chapter: ChapterItem) => Promise<void>;
+    onAddFanficSetting?: (project: string) => void;
     onDeleteProject?: () => void;
+    /** 右侧项目卡片选中变化：用于把「当前项目」同步给命令层（快捷工具无 activeFile） */
+    onProjectSelected?: (project: string | null) => void;
     executeCommand: (commandId: string) => void;
 }
 
@@ -51,8 +55,8 @@ export class ProjectSelectorController {
     private selectedProject: string | null = null;
     private container: HTMLElement | null = null;
     private projectGrid: HTMLElement | null = null;
-    private previewPanel: HTMLElement | null = null;
     private projectArea: HTMLElement | null = null;
+    private rightPanel: HTMLElement | null = null;
     private highlightedProject: string | null = null;
 
     constructor(app: App, plugin: NovelWriterPlugin, deps: ProjectSelectorDeps) {
@@ -93,6 +97,9 @@ export class ProjectSelectorController {
 
     /**
      * 渲染项目选择器到指定容器
+     *
+     * 布局：左侧项目卡片网格（自适应），右侧常驻快捷工具面板。
+     * 工具不再藏在弹窗里，分类功能一屏可见。
      */
     async render(container: HTMLElement): Promise<void> {
         if (this.cleanup) {
@@ -102,30 +109,30 @@ export class ProjectSelectorController {
         this.container = container;
         container.empty();
 
-        const wrapper = container.createDiv({
-            attr: { style: 'display: flex; gap: 0; height: 100%; position: relative;' }
-        });
+        const wrapper = container.createDiv({ cls: 'novel-writer-fw-selector-layout' });
 
-        const previewPanel = wrapper.createDiv({ cls: 'novel-writer-fw-preview-panel hidden' });
-        this.previewPanel = previewPanel;
         const projectArea = wrapper.createDiv({ cls: 'novel-writer-fw-project-area' });
         this.projectArea = projectArea;
 
-        const toolbar = projectArea.createDiv({ cls: 'novel-writer-fw-toolbar' });
-        const newProjectBtn = toolbar.createEl('button', { text: '📂 新建项目', cls: 'novel-writer-fw-new-project-btn' });
-        newProjectBtn.onclick = (e: MouseEvent) => {
-            e.stopPropagation();
-            new CreateProjectModal(this.app, this.plugin).open();
-        };
-        const toolsBtn = toolbar.createEl('button', { text: '⚡️ 工具', cls: 'novel-writer-fw-tools-btn' });
-        toolsBtn.onclick = (e: MouseEvent) => {
-            e.stopPropagation();
-            new ToolsModal(this.app, this.plugin).open();
-        };
-        this.cleanup = null;
+        const rightPanel = wrapper.createDiv({ cls: 'novel-writer-fw-right-panel' });
+        this.rightPanel = rightPanel;
 
         const contextManager = this.deps.getContextManager();
         const projects = await contextManager.detectProjects();
+
+        if (this.selectedProject && !projects.includes(this.selectedProject)) {
+            this.selectedProject = null;
+        }
+        // 首次进入 / 视图重建后默认选中一个项目：
+        // 右侧面板的「项目概览 + 项目级快捷操作」才有意义，避免只显示空提示。
+        if (!this.selectedProject && projects.length > 0) {
+            const preferred = this.highlightedProject && projects.includes(this.highlightedProject)
+                ? this.highlightedProject
+                : this.plugin.getActiveProject();
+            this.selectedProject = preferred && projects.includes(preferred) ? preferred : projects[0];
+        }
+        this.deps.onProjectSelected?.(this.selectedProject);
+        this.renderRightPanel();
 
         if (projects.length === 0) {
             const emptyState = projectArea.createDiv({ cls: 'novel-writer-fw-empty-state' });
@@ -143,96 +150,11 @@ export class ProjectSelectorController {
         const projectGrid = projectArea.createDiv({ cls: 'novel-writer-fw-project-grid' });
         this.projectGrid = projectGrid;
 
-        const renderPreviewFor = async (project: string) => {
-            previewPanel.empty();
-            previewPanel.classList.remove('hidden');
-            this.selectedProject = project;
-
-            const meta = await getProjectMeta(this.app, project);
-            const chapters = getChaptersForProject(this.app, project);
-            const sortedChapters = sortChaptersByNumber(chapters);
-            const writtenChapters = sortedChapters.filter(c => c.status === 'written' || c.status === 'settled');
-            const progressPct = meta.totalChapters > 0
-                ? Math.round((writtenChapters.length / meta.totalChapters) * 100)
-                : 0;
-            const nextChapter = getNextChapter(sortedChapters);
-
-            previewPanel.createEl('h3', { text: `📖 ${project}`, cls: 'novel-writer-fw-preview-title' });
-
-            if (meta.genre) {
-                previewPanel.createSpan({ text: meta.genre, cls: 'novel-writer-fw-preview-genre g0' });
-            }
-
-            if (meta.description) {
-                previewPanel.createEl('p', { text: meta.description, cls: 'novel-writer-fw-preview-desc' });
-            }
-
-            previewPanel.createDiv({ cls: 'novel-writer-fw-preview-divider' });
-
-            const overviewSection = previewPanel.createDiv({ cls: 'novel-writer-fw-preview-section' });
-            overviewSection.createEl('h4', { text: '📊 全书概览' });
-            if (meta.totalWordsTarget) {
-                overviewSection.createDiv({ text: `总字数目标：${meta.totalWordsTarget}`, cls: 'novel-writer-fw-preview-stat' });
-            }
-            overviewSection.createDiv({ text: `总章节数：${meta.totalChapters || sortedChapters.length}`, cls: 'novel-writer-fw-preview-stat' });
-            overviewSection.createDiv({ text: `已完稿：${writtenChapters.length}`, cls: 'novel-writer-fw-preview-stat' });
-            if (nextChapter && nextChapter.status !== 'written' && nextChapter.status !== 'settled') {
-                overviewSection.createDiv({
-                    text: `下一章待写：${nextChapter.chapter} · ${nextChapter.title || '无标题'}`,
-                    cls: 'novel-writer-fw-preview-next-chapter'
-                });
-            }
-
-            const progressBar = overviewSection.createDiv({ cls: 'novel-writer-fw-preview-progress-bar' });
-            progressBar.createDiv({
-                cls: 'novel-writer-fw-preview-progress-fill',
-                attr: { style: `width: ${progressPct}%;` }
-            });
-            overviewSection.createDiv({ text: `${progressPct}% 完成`, cls: 'novel-writer-fw-preview-stat' });
-
-            if (meta.volumes.length > 0) {
-                const volSection = previewPanel.createDiv({ cls: 'novel-writer-fw-preview-section' });
-                volSection.createEl('h4', { text: '📋 分卷结构' });
-                const volList = volSection.createEl('ul', { cls: 'novel-writer-fw-preview-volume-list' });
-                for (const v of meta.volumes) {
-                    volList.createEl('li', { text: `${v.name} · ${v.range}`, cls: 'novel-writer-fw-preview-volume-item' });
-                }
-            }
-
-            const actions = previewPanel.createDiv({ cls: 'novel-writer-fw-preview-actions' });
-            const wizardBtn = actions.createEl('button', { text: '🧙 开始项目向导', cls: 'novel-writer-fw-preview-wizard-btn primary' });
-            wizardBtn.onclick = async () => {
-                await this.deps.onOpenWizard(project);
-            };
-
-            const openBtn = actions.createEl('button', { text: '✍️ 继续写作', cls: 'novel-writer-fw-preview-open-btn' });
-            openBtn.onclick = async () => {
-                if (nextChapter) {
-                    await this.deps.onSelectChapter(project, nextChapter);
-                }
-            };
-
-            const updateWsBtn = actions.createEl('button', { text: '🔄 文笔风格', cls: 'novel-writer-fw-preview-update-ws-btn' });
-            updateWsBtn.onclick = async () => {
-                new WritingStyleModal(this.app, this.plugin, project).open();
-            };
-
-            const deleteBtn = actions.createEl('button', { text: '🗑️ 删除项目', cls: 'novel-writer-fw-preview-delete-btn' });
-            deleteBtn.onclick = () => {
-                this.showDeleteProjectModal(project);
-            };
-        };
-
-        const hidePreview = () => {
-            previewPanel.empty();
-            previewPanel.classList.add('hidden');
-            this.selectedProject = null;
-            projectGrid.querySelectorAll('.novel-writer-fw-project-card.selected').forEach(c => c.classList.remove('selected'));
-        };
-
         for (const project of projects) {
             const card = projectGrid.createDiv({ cls: 'novel-writer-fw-project-card' });
             card.setAttr('data-project', project);
+            // 重渲染后恢复选中态，避免右侧显示详情但卡片无高亮
+            if (project === this.selectedProject) card.classList.add('selected');
 
             const coverArea = card.createDiv({ cls: 'novel-writer-fw-cover-area' });
             const coverUrl = getProjectCover(this.app, project);
@@ -334,45 +256,217 @@ export class ProjectSelectorController {
                 const isSelected = card.classList.contains('selected');
                 projectGrid.querySelectorAll('.novel-writer-fw-project-card.selected').forEach(c => c.classList.remove('selected'));
                 if (isSelected) {
-                    hidePreview();
+                    this.selectedProject = null;
                 } else {
                     card.classList.add('selected');
-                    renderPreviewFor(project);
+                    this.selectedProject = project;
                 }
+                this.deps.onProjectSelected?.(this.selectedProject);
+                this.renderRightPanel();
             };
         }
     }
 
-    /**
-     * 显示所有章选择弹窗
-     */
-    showAllChapters(project: string, chapters: ChapterItem[]): void {
-        const modal = new Modal(this.app);
-        modal.titleEl.setText(`📖 ${project} - 所有章节`);
+    /** 右侧面板 = 选中项目概览 + 常驻分类工具 */
+    private renderRightPanel(): void {
+        const panel = this.rightPanel;
+        if (!panel) return;
+        panel.empty();
 
-        const list = modal.contentEl.createEl('div', { cls: 'novel-writer-chapter-selector' });
-
-        const nextChapter = chapters.find(c => c.status !== 'written' && c.status !== 'settled');
-
-        for (const ch of chapters) {
-            const item = list.createEl('button', { cls: 'novel-writer-chapter-select-btn' });
-            const isCompleted = ch.status === 'written' || ch.status === 'settled';
-            const isNext = nextChapter && ch.chapter === nextChapter.chapter;
-
-            if (isCompleted) item.classList.add('is-completed');
-            if (isNext) item.classList.add('is-next');
-
-            const stIcon = isCompleted ? ' ✅' : (isNext ? ' ✏️ 待写' : ' 📝');
-            // F1：ch.title 来自 frontmatter（AI 生成/导入可写入任意文本），ch.chapter 为解析串，
-            // innerHTML 插值前必须转义，防止章节标题 XSS。
-            item.innerHTML = `<span class="novel-writer-chapter-num">${escapeHtml(ch.chapter)}</span><span class="novel-writer-chapter-title">${escapeHtml(ch.title || '无标题')}${stIcon}</span>`;
-            item.onclick = async () => {
-                await this.deps.onSelectChapter(project, ch);
-                modal.close();
-            };
+        const project = this.selectedProject;
+        if (project) {
+            this.renderProjectDetail(panel, project);
+        } else {
+            const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
+            hint.createDiv({ text: '👈 点击左侧项目卡片', cls: 'nw-qt-empty-title' });
+            hint.createDiv({ text: '可在上方看到项目概览，并在下方直接使用全部快捷工具。', cls: 'nw-qt-empty-desc' });
         }
 
+        renderQuickToolsPanel(panel, {
+            executeCommand: (commandId) => this.deps.executeCommand(commandId),
+            project,
+            projectActions: project ? this.buildProjectActions(project) : undefined,
+        });
+    }
+
+    private buildProjectActions(project: string): ProjectQuickAction[] {
+        const chapters = sortChaptersByNumber(getChaptersForProject(this.app, project));
+        const nextChapter = getNextChapter(chapters);
+
+        return [
+            {
+                label: '项目向导', icon: '🧙', primary: true,
+                desc: '逐步搭建世界观、设定、实体与大纲',
+                onClick: () => { void this.deps.onOpenWizard(project); },
+            },
+            {
+                label: '继续写作', icon: '✍️',
+                desc: '打开下一章写作工作台',
+                onClick: () => {
+                    if (nextChapter) void this.deps.onSelectChapter(project, nextChapter);
+                    else new Notice('该项目还没有章节，请先通过向导或批量建章创建章节。', 4000);
+                },
+            },
+            {
+                label: '全部章节', icon: '📖',
+                desc: '浏览并选择章节',
+                onClick: () => this.showAllChapters(project, chapters),
+            },
+            {
+                label: '文笔风格', icon: '🖋️',
+                desc: '编辑或更换本项目的文笔风格',
+                onClick: () => { new WritingStyleModal(this.app, this.plugin, project).open(); },
+            },
+            {
+                label: '同人设定', icon: '📚',
+                desc: '生成/补充同人设定并保存到本项目',
+                onClick: () => {
+                    if (this.deps.onAddFanficSetting) this.deps.onAddFanficSetting(project);
+                    else this.deps.executeCommand('novel-writer-add-fanfic');
+                },
+            },
+            {
+                label: '删除项目', icon: '🗑️',
+                desc: '删除项目及其全部数据',
+                onClick: () => this.showDeleteProjectModal(project),
+            },
+        ];
+    }
+
+    private async renderProjectDetail(panel: HTMLElement, project: string): Promise<void> {
+        const detail = panel.createDiv({ cls: 'novel-writer-fw-quick-detail' });
+        const meta = await getProjectMeta(this.app, project);
+        const chapters = sortChaptersByNumber(getChaptersForProject(this.app, project));
+        const written = chapters.filter(c => c.status === 'written' || c.status === 'settled');
+        const nextChapter = getNextChapter(chapters);
+
+        const head = detail.createDiv({ cls: 'novel-writer-fw-quick-detail-head' });
+        head.createDiv({ text: `📖 ${project}`, cls: 'novel-writer-fw-preview-title' });
+        if (meta.genre) {
+            head.createSpan({ text: meta.genre, cls: 'novel-writer-fw-preview-genre g0' });
+        }
+        if (meta.description) {
+            detail.createEl('p', { text: meta.description, cls: 'novel-writer-fw-preview-desc' });
+        }
+
+        const stats = detail.createDiv({ cls: 'novel-writer-fw-preview-stats' });
+        stats.createDiv({ text: `总章节：${meta.totalChapters || chapters.length}`, cls: 'novel-writer-fw-preview-stat' });
+        stats.createDiv({ text: `已完稿：${written.length}`, cls: 'novel-writer-fw-preview-stat' });
+        if (nextChapter) {
+            stats.createDiv({
+                text: `下一章：${nextChapter.chapter} · ${nextChapter.title || '无标题'}`,
+                cls: 'novel-writer-fw-preview-next-chapter'
+            });
+        }
+
+        const progressPct = meta.totalChapters > 0
+            ? Math.round((written.length / meta.totalChapters) * 100)
+            : (chapters.length > 0 ? Math.round((written.length / chapters.length) * 100) : 0);
+        const bar = detail.createDiv({ cls: 'novel-writer-fw-preview-progress-bar' });
+        bar.createDiv({ cls: 'novel-writer-fw-preview-progress-fill', attr: { style: `width: ${progressPct}%;` } });
+        detail.createDiv({ text: `${progressPct}% 完成`, cls: 'novel-writer-fw-preview-stat' });
+    }
+
+    /**
+     * 显示所有章选择弹窗
+     * Rev 192：400 章直接平铺会让按钮零散、无法检索。改为「搜索 + 按卷分组 +
+     * 自适应网格 + 限定高度滚动」，并补图例与空态。
+     */
+    showAllChapters(project: string, chapters: ChapterItem[]): void {
+        // Rev 192：章节来源是「正文 ∪ 骨架目录」，顺序不保证；先按全书章号排序再分组
+        const ordered = sortChaptersByNumber(chapters);
+        const modal = new Modal(this.app);
+        modal.titleEl.setText(`📖 ${project} - 所有章节`);
+        modal.modalEl.addClass('novel-writer-chapter-picker-modal');
+
+        const picker = modal.contentEl.createDiv({ cls: 'novel-writer-chapter-picker' });
+
+        const toolbar = picker.createDiv({ cls: 'novel-writer-chapter-picker-toolbar' });
+        const search = toolbar.createEl('input', {
+            cls: 'novel-writer-chapter-search',
+            attr: { type: 'search', placeholder: '搜索章号或标题…' },
+        });
+        const legend = toolbar.createDiv({ cls: 'novel-writer-chapter-legend' });
+        legend.createSpan({ text: '✅ 已写' });
+        legend.createSpan({ text: '✏️ 下一章待写' });
+        legend.createSpan({ text: '📝 未开始' });
+
+        const groupsEl = picker.createDiv({ cls: 'novel-writer-chapter-groups' });
+        const empty = picker.createEl('p', { text: '未匹配到章节', cls: 'novel-writer-chapter-picker-empty' });
+        empty.hidden = true;
+
+        const nextChapter = ordered.find(c => c.status !== 'written' && c.status !== 'settled');
+        const rows: Array<{ el: HTMLElement; groupEl: HTMLElement; text: string }> = [];
+
+        // 按卷分组（保持章节原有顺序；无卷信息的骨架章归入「未分卷」）
+        const volumeOrder: string[] = [];
+        const byVolume = new Map<string, ChapterItem[]>();
+        for (const ch of ordered) {
+            const vol = ch.volume || '未分卷';
+            if (!byVolume.has(vol)) {
+                byVolume.set(vol, []);
+                volumeOrder.push(vol);
+            }
+            byVolume.get(vol)!.push(ch);
+        }
+
+        for (const vol of volumeOrder) {
+            const volChapters = byVolume.get(vol)!;
+            const group = groupsEl.createDiv({ cls: 'novel-writer-chapter-group' });
+            group.createEl('h4', {
+                text: `${vol}（${volChapters.length} 章）`,
+                cls: 'novel-writer-chapter-group-title',
+            });
+            const list = group.createDiv({ cls: 'novel-writer-chapter-selector' });
+
+            for (const ch of volChapters) {
+                const item = list.createEl('button', { cls: 'novel-writer-chapter-select-btn' });
+                const isCompleted = ch.status === 'written' || ch.status === 'settled';
+                const isNext = nextChapter && ch.chapter === nextChapter.chapter;
+
+                if (isCompleted) item.classList.add('is-completed');
+                if (isNext) item.classList.add('is-next');
+
+                const stIcon = isCompleted ? ' ✅' : (isNext ? ' ✏️ 待写' : ' 📝');
+                // F1：ch.title 来自 frontmatter（AI 生成/导入可写入任意文本），ch.chapter 为解析串，
+                // innerHTML 插值前必须转义，防止章节标题 XSS。
+                item.innerHTML = `<span class="novel-writer-chapter-num">${escapeHtml(ch.chapter)}</span><span class="novel-writer-chapter-title">${escapeHtml(ch.title || '无标题')}${stIcon}</span>`;
+                item.onclick = async () => {
+                    await this.deps.onSelectChapter(project, ch);
+                    modal.close();
+                };
+                rows.push({
+                    el: item,
+                    groupEl: group,
+                    text: `${ch.chapter} ${ch.title || '无标题'}`.toLowerCase(),
+                });
+            }
+        }
+
+        const applyFilter = () => {
+            const kw = search.value.trim().toLowerCase();
+            const visibleByGroup = new Map<HTMLElement, number>();
+            for (const row of rows) {
+                const match = !kw || row.text.includes(kw);
+                row.el.hidden = !match;
+                if (match) visibleByGroup.set(row.groupEl, (visibleByGroup.get(row.groupEl) || 0) + 1);
+            }
+            for (const group of Array.from(groupsEl.children) as HTMLElement[]) {
+                group.hidden = (visibleByGroup.get(group) || 0) === 0;
+            }
+            empty.hidden = visibleByGroup.size > 0;
+        };
+        search.oninput = applyFilter;
+        search.onkeydown = (ev: KeyboardEvent) => {
+            if (ev.key === 'Escape') {
+                ev.preventDefault();
+                ev.stopPropagation();
+                modal.close();
+            }
+        };
+
         modal.open();
+        window.setTimeout(() => search.focus(), 0);
     }
 
     /**

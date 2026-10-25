@@ -4,12 +4,14 @@ import { AIEngine, BatchEntityResult } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '../utils/helpers';
 import { validateCharacterOutput } from '../shared/template-validator';
+import { mergeFanficRequirement } from '../shared/fanfic-rules';
+import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { pjCharsDir, pjCharFile, pjWorldview, pjSettingLib, pjFactionsDir, pjLocsDir, pjItemsDir, SUBDIR_CHARS } from '../shared/paths';
+import { pjCharsDir, pjWorldview, pjSettingLib, pjFactionsDir, pjLocsDir, pjItemsDir, SUBDIR_CHARS } from '../shared/paths';
+import { saveEntities, formatSaveOutcome } from '../shared/entity-persistence';
 import { CharacterGenerator } from '../engine/ai-character-generator';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { CharacterRawData as CharacterData } from '../shared/types';
-import { appendMissingFieldPlaceholders } from '../shared/entity-placeholder';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { createLogger } from '../shared/logger';
 
@@ -27,6 +29,7 @@ export class GenerateCharacterModal extends Modal {
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
     private _pendingResults: ManagedEntity[] = [];
+    private _integrityFailures: string[] = [];
     private _currentProject: string = '';
     private _abortController: AbortController | null = null;
 
@@ -43,11 +46,13 @@ export class GenerateCharacterModal extends Modal {
 
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.addClass('nw-modal');
+            wrapper.addClass('nw-modal-form');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
+        contentEl.addClass('nw-entity-scope');
+        contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
         this._pendingResults = [];
@@ -114,7 +119,7 @@ export class GenerateCharacterModal extends Modal {
 
             const countRow = contentEl.createDiv({ cls: 'nw-gen-modal-count-row' });
             countRow.createEl('label', { text: '生成数量：' });
-            const countInput = countRow.createEl('input', { type: 'number', value: '5', cls: 'nw-gen-modal-count-input' });
+            const countInput = countRow.createEl('input', { type: 'number', value: '5', cls: 'nw-input nw-gen-modal-count-input' });
             countInput.setAttr('min', '1'); countInput.setAttr('max', '20');
             const countHint = countRow.createEl('span', { text: '（AI 自动命名，1-20 个）', cls: 'nw-gen-modal-count-hint' });
 
@@ -158,7 +163,7 @@ export class GenerateCharacterModal extends Modal {
                 const count = nameList.length > 0 ? nameList.length : (parseInt(countInput.value, 10) || 5);
                 const prompt = promptInput.value.trim();
 
-                if (!this.plugin.settings.apiKey) { new Notice('❌ 请先配置API密钥', 5000); return; }
+                if (!this.plugin.hasAiCredentials) { new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000); return; }
 
                 const ctx = this.plugin._pendingEntityContext;
                 const isEarlyStage = ctx?.isEarlyStage && ctx.project === project;
@@ -173,12 +178,17 @@ export class GenerateCharacterModal extends Modal {
 5. 背景故事要有足够细节支撑人物行为逻辑
 
 `;
-                const effectivePrompt = isEarlyStage
+                const basePrompt = isEarlyStage
                     ? (prompt ? `${EARLY_STAGE_HINT}${prompt}` : EARLY_STAGE_HINT.trim())
                     : prompt;
+                // 同人项目的人物必须落在原作体系内（性格/力量体系/关系不得与原作冲突），
+                // 否则人物卡会成为后续 OOC 检测的错误基准
+                const fanficBlock = await readFanficPromptBlockWithNotice(this.app, project);
+                const effectivePrompt = mergeFanficRequirement(fanficBlock, basePrompt);
 
                 // 创建取消控制器
                 this._abortController = new AbortController();
+                this._integrityFailures = [];
                 const signal = this._abortController.signal;
 
                 // 立即显示进度反馈，消除黑盒感
@@ -294,6 +304,12 @@ export class GenerateCharacterModal extends Modal {
                     deleted: false, modified: false, validated: true
                 }));
                 this._abortController = null;
+                if (this._integrityFailures.length > 0) {
+                    new Notice(
+                        `⚠️ ${this._integrityFailures.length} 个人物未通过完整性校验，已丢弃（不落盘）：\n${this._integrityFailures.slice(0, 5).join('\n')}${this._integrityFailures.length > 5 ? '\n…' : ''}`,
+                        12000
+                    );
+                }
                 this._renderManagementPanel('人物');
             };
         };
@@ -332,9 +348,9 @@ export class GenerateCharacterModal extends Modal {
                     const inline = card.createDiv({ cls: 'rename-inline' });
                     inline.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:6px;';
                     const input = inline.createEl('input', { type: 'text', value: managed.entity.name });
-                    input.style.cssText = 'flex:1; font-size:0.85em; padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
+                    input.style.cssText = 'flex:1; font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
                     const confirmBtn = inline.createEl('button', { text: '✅ 确认' });
-                    confirmBtn.style.cssText = 'font-size:0.8em; padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
+                    confirmBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
                     confirmBtn.onclick = () => {
                         const nm = input.value;
                         if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText('✏️ 改名'); return; }
@@ -345,7 +361,7 @@ export class GenerateCharacterModal extends Modal {
                         renameBtn.setText('✏️ 改名');
                     };
                     const cancelBtn = inline.createEl('button', { text: '取消' });
-                    cancelBtn.style.cssText = 'font-size:0.8em; padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
+                    cancelBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
                     cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
                     input.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') confirmBtn.click();
@@ -372,11 +388,11 @@ export class GenerateCharacterModal extends Modal {
                     ed.style.cssText = 'margin-top:8px;';
                     const ta = ed.createEl('textarea');
                     ta.value = managed.entity.content;
-                    ta.style.cssText = 'width:100%; min-height:240px; font-size:0.8em; font-family:monospace; box-sizing:border-box;';
+                    ta.style.cssText = 'width:100%; min-height:240px; font-size:var(--nw-font-size-sm, 12px); font-family:monospace; box-sizing:border-box;';
                     const br = ed.createDiv();
                     br.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
                     const sb = br.createEl('button', { text: '💾 暂存修改' });
-                    sb.style.cssText = 'font-size:0.8em; padding:4px 10px; cursor:pointer;';
+                    sb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
                     sb.onclick = () => {
                         managed.entity.content = ta.value;
                         managed.modified = true;
@@ -385,7 +401,7 @@ export class GenerateCharacterModal extends Modal {
                         editBtn.setText('📝 编辑');
                     };
                     const cb = br.createEl('button', { text: '取消' });
-                    cb.style.cssText = 'font-size:0.8em; padding:4px 10px; cursor:pointer;';
+                    cb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
                     cb.onclick = () => { ed.remove(); editBtn.setText('📝 编辑'); };
                 };
                 const delBtn = actionRow.createEl('button', { text: '🗑️ 删除', cls: 'nw-gen-modal-sm-btn nw-gen-modal-del-btn' });
@@ -420,18 +436,15 @@ export class GenerateCharacterModal extends Modal {
         if (toSave.length === 0) { new Notice('⚠️ 没有可保存的实体', 3000); return; }
 
         await mkdirp(this.app, pjCharsDir(this._currentProject));
-        let createdCount = 0;
-        for (const managed of toSave) {
-            try {
-                const charPath = pjCharFile(this._currentProject, managed.entity.name);
-                if (!this.app.vault.getAbstractFileByPath(charPath)) {
-                    await this.app.vault.create(charPath, managed.entity.content);
-                    createdCount++;
-                }
-            } catch (e) { log.warn(`创建人物 ${managed.entity.name} 失败:`, e instanceof Error ? e.message : e); }
-        }
+        const outcome = await saveEntities(
+            this.app,
+            this._currentProject,
+            'characters',
+            toSave.map(managed => ({ name: managed.entity.name, content: managed.entity.content }))
+        );
+        const createdCount = outcome.saved.length + outcome.renamed.length;
 
-        showSuccess(`已保存 ${createdCount} 个${entityLabel}`);
+        showSuccess(formatSaveOutcome(outcome, 'characters'));
         await this.ensureProtagonistMarked(this._currentProject);
 
         // 保存成功后显示引导，不立即关闭
@@ -441,7 +454,7 @@ export class GenerateCharacterModal extends Modal {
         successDiv.style.cssText = 'padding:40px 20px; text-align:center;';
         successDiv.createEl('div', { text: '✅', attr: { style: 'font-size:48px; margin-bottom:16px;' } });
         successDiv.createEl('h3', { text: `已保存 ${createdCount} 个${entityLabel}`, attr: { style: 'color:var(--text-normal); margin-bottom:8px;' } });
-        successDiv.createEl('p', { text: '实体已保存到磁盘，关闭窗口后将在向导中自动标记为已完成。', attr: { style: 'color:var(--text-muted); font-size:0.9em;' } });
+        successDiv.createEl('p', { text: '实体已保存到磁盘，关闭窗口后将在向导中自动标记为已完成。', attr: { style: 'color:var(--text-muted); font-size:var(--nw-font-size-base, 13px);' } });
         
         const btnBar = successDiv.createDiv({ attr: { style: 'display:flex; gap:12px; justify-content:center; margin-top:24px;' } });
         const nextBtn = btnBar.createEl('button', { text: '下一步 →' });
@@ -529,15 +542,15 @@ export class GenerateCharacterModal extends Modal {
                             continue;
                         } else {
                             log.warn(`[小说工坊] 角色卡 ${name} 补全后仍不完整: ${reValidation.missingFields.join('、')}`);
-                            characters.push({ name, rawContent: appendMissingFieldPlaceholders(completed.trim(), reValidation.missingFields) });
-                            new Notice(`⚠️ 角色「${name}」生成不完整，已保留并标注待补充字段`, 5000);
+                            this._integrityFailures.push(`${name}（补全后仍缺：${reValidation.missingFields.slice(0, 4).join('、')}）`);
+                            new Notice(`⚠️ 角色「${name}」补全后仍不完整，已丢弃（不落盘）`, 5000);
                             getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: `角色「${name}」补全后仍缺失字段：${reValidation.missingFields.join('、')}`, severity: 'warning', recoverable: true });
                             continue;
                         }
                     } catch (e) {
                         log.warn(`[小说工坊] 角色卡 ${name} 补全失败:`, e instanceof Error ? e.message : e);
-                        characters.push({ name, rawContent: appendMissingFieldPlaceholders(trimmedBlock, validation.missingFields) });
-                        new Notice(`⚠️ 角色「${name}」生成不完整，已保留并标注待补充字段`, 5000);
+                        this._integrityFailures.push(`${name}（补全失败：${e instanceof Error ? e.message : String(e)}）`);
+                        new Notice(`⚠️ 角色「${name}」补全失败，已丢弃（不落盘）`, 5000);
                         getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: `角色「${name}」补全异常，缺失字段：${validation.missingFields.join('、')}`, severity: 'warning', recoverable: true });
                         continue;
                     }

@@ -84,6 +84,17 @@ export class ChapterSettlementModal extends Modal {
             };
         }
 
+        // 工作台/项目页没有 activeFile：用界面当前章节，避免结算入口点进来无法执行
+        const target = this.plugin.getActiveChapterTarget();
+        if (target) {
+            return {
+                project: target.project,
+                chapDir: target.chapDir,
+                chapName: target.chapterName,
+                bodyPath: target.bodyPath,
+            };
+        }
+
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) return null;
 

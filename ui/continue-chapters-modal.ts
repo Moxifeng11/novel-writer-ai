@@ -7,6 +7,8 @@ import { TemplateService } from '../services/template-service';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { RE_VOLUME_HEADER, RE_RANGE_NUMBERS, RE_OUTLINE_TABLE_ROW } from '../shared/format-constants';
 import { pjBodyDir, pjBodyFile, pjStepDir, pjVolumeOutlineFile, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjVolumeOutlineDir } from '../shared/paths';
+import { BodyWriter } from '../engine/body-writer';
+import { describeBodyFormat } from '../shared/body-format';
 import { createLogger } from '../shared/logger';
 
 
@@ -224,8 +226,8 @@ export class ContinueChaptersModal extends Modal {
      */
     private async autoGenerateContents(project: string, startChapterInput: string): Promise<void> {
         try {
-            if (!this.plugin.settings.apiKey) {
-                showError('请先配置API密钥');
+            if (!this.plugin.hasAiCredentials) {
+                showError('请先配置 API 密钥或本地模型端点');
                 return;
             }
 
@@ -297,6 +299,8 @@ export class ContinueChaptersModal extends Modal {
 
             const notice = new Notice(`⏳ 正在生成续写内容：0/${targetChapters.length}`, 0);
             let done = 0;
+            // 续写输出与正文落盘共用同一份格式契约
+            const bodyFormat = await new BodyWriter({ app: this.app }).resolveContract(project);
 
             for (const chapter of targetChapters) {
                 const volume = this.findVolumeForChapter(project, chapter.num);
@@ -306,7 +310,7 @@ export class ContinueChaptersModal extends Modal {
 
                 notice.setMessage(`⏳ 正在生成 ${chapName}（${done}/${targetChapters.length}）`);
 
-                // 1. 读取前一章正文最后 500 字
+                // 1. 读取前一章正文最后 1500 字（尾部太短会丢失承接所需的人物/场景状态）
                 const prevTail = await this.readPreviousChapterTail(project, chapter.num);
 
                 // 2. 读取本章大纲摘要
@@ -333,15 +337,17 @@ export class ContinueChaptersModal extends Modal {
 1. 连续性：本章首句无缝承接前一章结尾
 2. 字数：≥2500字
 3. 对话和动作推动剧情
-4. 段落开头空两格
+4. 分段与缩进严格按下方【输出格式（硬性约束）】执行
 5. 标题行 '# 第X章' 后面只写标题（2-15字）
 6. 不使用破折号、分号、省略号
 7. 感叹号≤3个
-8. 无排比、无抒情升华、无过度心理描写`;
+8. 无排比、无抒情升华、无过度心理描写
+
+${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
 
                 // 5. 构建用户提示词
                 let userContent = `请撰写第${chapter.num}章正文，输出完整 .md 格式，标题为 # 第${chapter.num}章。\n\n`;
-                if (prevTail) userContent += `【前文最后500字】\n${prevTail}\n\n`;
+                if (prevTail) userContent += `【前文最后1500字】\n${prevTail}\n\n`;
                 userContent += `【本章大纲摘要】\n${outlineSummary}\n\n`;
                 if (worldView) userContent += `【世界观概述】\n${worldView.slice(0, 500)}\n\n`;
                 if (settingLib) userContent += `【设定库】\n${settingLib}\n\n`;
@@ -369,23 +375,17 @@ export class ContinueChaptersModal extends Modal {
                     continue;
                 }
 
-                // 7. 写入正文文件（保留原有 frontmatter）
-                let bodyText = result.content.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
-                bodyText = bodyText.split('\n').map(line => {
-                    const t = line.trim();
-                    if (!t || t.startsWith('#') || t.startsWith('```') || t.startsWith('|') || t.startsWith('- ') || t.startsWith('* ')) return line;
-                    if (!t.startsWith('  ')) return '  ' + line.trimStart();
-                    return line;
-                }).join('\n');
-
-                let fmPart = '';
-                try {
-                    const orig = await this.app.vault.read(bodyFile);
-                    fmPart = orig.match(/^---\n[\s\S]*?\n---\n/)?.[0] || '';
-                } catch (e) { log.warn('[小说工坊] 读取原正文失败:', e); }
-
-                const merged = fmPart + bodyText;
-                await this.app.vault.modify(bodyFile, merged);
+                // 7. 统一落盘入口（保留原有 frontmatter、统一标题与缩进）
+                const writer = new BodyWriter({ app: this.app });
+                await writer.write({
+                    path: bodyFile.path,
+                    raw: result.content,
+                    chapterNum: chapter.num,
+                    chapterName: chapName,
+                    volume,
+                    project,
+                    writingMode: 'continue',
+                });
 
                 done++;
                 notice.setMessage(`⏳ 正在生成续写内容：${done}/${targetChapters.length}`);
@@ -400,7 +400,7 @@ export class ContinueChaptersModal extends Modal {
     }
 
     /**
-     * 读取前一章正文的最后 500 字作为续写上下文
+     * 读取前一章正文的最后 1500 字作为续写上下文
      */
     private async readPreviousChapterTail(project: string, chapterNum: number): Promise<string> {
         if (chapterNum <= 1) return '';
@@ -415,7 +415,7 @@ export class ContinueChaptersModal extends Modal {
                 try {
                     const content = await this.app.vault.read(bodyFile);
                     const clean = content.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
-                    return clean.slice(-500);
+                    return clean.slice(-1500);
                 } catch (e) { log.warn('[小说工坊] 读取前一章正文失败:', e); }
             }
         }

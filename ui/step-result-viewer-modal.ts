@@ -50,42 +50,36 @@ export class StepResultViewerModal extends Modal {
 
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope');
+        // Rev 184：原先强行取全局上限（96vw × 90vh）导致接近全屏，改为专用小尺寸类
+        this.modalEl.addClass('nw-step-viewer');
 
         const { contentEl } = this;
         contentEl.empty();
         contentEl.style.display = 'flex';
         contentEl.style.flexDirection = 'column';
         contentEl.style.height = '100%';
-
-        const modalWrapper = contentEl.parentElement as HTMLElement | null;
-        if (modalWrapper) {
-            modalWrapper.style.setProperty('max-width', 'var(--nw-modal-max-w)', 'important');
-            modalWrapper.style.setProperty('width', 'var(--nw-modal-max-w)', 'important');
-        }
-        contentEl.style.maxWidth = 'var(--nw-modal-max-w)';
-        contentEl.style.maxHeight = 'var(--nw-modal-max-h)';
-        contentEl.style.width = 'var(--nw-modal-max-w)';
+        contentEl.style.width = '100%';
 
         const header = contentEl.createDiv({
             attr: {
-                style: 'padding: 14px 16px; border-bottom: 1px solid var(--background-modifier-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;',
+                style: 'padding: 12px 14px; border-bottom: 1px solid var(--background-modifier-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;',
             },
         });
         header.createSpan({
             text: '📋 步骤结果查看',
-            attr: { style: 'font-weight: 600; font-size: 16px;' },
+            attr: { style: 'font-weight: 600; font-size: 15px;' },
         });
 
         const selectorArea = contentEl.createDiv({
             attr: {
-                style: 'padding: 12px 16px; border-bottom: 1px solid var(--background-modifier-border); display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap;',
+                style: 'padding: 10px 14px; border-bottom: 1px solid var(--background-modifier-border); display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap;',
             },
         });
 
-        const projectWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 140px;' } });
+        const projectWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 130px;' } });
         projectWrap.createDiv({
             text: '项目',
-            attr: { style: 'font-size: 12px; color: var(--text-muted); margin-bottom: 4px;' },
+            attr: { style: 'font-size: 11px; color: var(--text-muted); margin-bottom: 4px;' },
         });
         this.projectSelectEl = projectWrap.createEl('select', {
             cls: 'nw-select',
@@ -96,10 +90,10 @@ export class StepResultViewerModal extends Modal {
             this.loadVolumes();
         });
 
-        const volumeWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 120px;' } });
+        const volumeWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 110px;' } });
         volumeWrap.createDiv({
             text: '卷',
-            attr: { style: 'font-size: 12px; color: var(--text-muted); margin-bottom: 4px;' },
+            attr: { style: 'font-size: 11px; color: var(--text-muted); margin-bottom: 4px;' },
         });
         this.volumeSelectEl = volumeWrap.createEl('select', {
             cls: 'nw-select',
@@ -110,10 +104,10 @@ export class StepResultViewerModal extends Modal {
             this.loadChapters();
         });
 
-        const chapterWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 120px;' } });
+        const chapterWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 110px;' } });
         chapterWrap.createDiv({
             text: '章',
-            attr: { style: 'font-size: 12px; color: var(--text-muted); margin-bottom: 4px;' },
+            attr: { style: 'font-size: 11px; color: var(--text-muted); margin-bottom: 4px;' },
         });
         this.chapterSelectEl = chapterWrap.createEl('select', {
             cls: 'nw-select',
@@ -126,14 +120,14 @@ export class StepResultViewerModal extends Modal {
 
         const listContainer = contentEl.createDiv({
             attr: {
-                style: 'flex: 1; overflow-y: auto; padding: 12px 16px; min-height: 0;',
+                style: 'flex: 1; overflow-y: auto; padding: 10px 14px; min-height: 0;',
             },
         });
         this.fileListEl = listContainer;
 
         this.infoBarEl = contentEl.createDiv({
             attr: {
-                style: 'padding: 10px 16px; border-top: 1px solid var(--background-modifier-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;',
+                style: 'padding: 8px 14px; border-top: 1px solid var(--background-modifier-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;',
             },
         });
 
@@ -155,7 +149,9 @@ export class StepResultViewerModal extends Modal {
                     opt.value = p;
                     opt.text = p;
                 }
-                this.selectedProject = this.projects[0];
+                // 默认定位当前项目（工作台/项目页没有 activeFile 时由插件回退）
+                const preferred = this.plugin.getActiveProject();
+                this.selectedProject = preferred && this.projects.includes(preferred) ? preferred : this.projects[0];
                 this.projectSelectEl.value = this.selectedProject;
             }
         }
@@ -315,7 +311,7 @@ export class StepResultViewerModal extends Modal {
 
         const row = this.fileListEl.createDiv({
             attr: {
-                style: 'display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 6px; border: 1px solid var(--background-modifier-border); transition: background 0.15s;',
+                style: 'display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; border: 1px solid var(--background-modifier-border); transition: background 0.15s;',
             },
         });
 
@@ -359,8 +355,9 @@ export class StepResultViewerModal extends Modal {
         const model = info.frontmatter?.step_model || '未知模型';
         const modelEl = row.createSpan({
             text: model,
+            cls: 'nw-step-viewer-meta',
             attr: {
-                style: 'font-size: 12px; color: var(--text-muted); flex-shrink: 0; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;',
+                style: 'font-size: 11px; color: var(--text-muted); flex-shrink: 0; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;',
             },
         });
 
@@ -368,6 +365,7 @@ export class StepResultViewerModal extends Modal {
         const timeStr = timestamp ? this.formatTimestamp(timestamp) : '未知时间';
         const timeEl = row.createSpan({
             text: timeStr,
+            cls: 'nw-step-viewer-meta',
             attr: {
                 style: 'font-size: 11px; color: var(--text-faint, var(--text-muted)); flex-shrink: 0; white-space: nowrap;',
             },

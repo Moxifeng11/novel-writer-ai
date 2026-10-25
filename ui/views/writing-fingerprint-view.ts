@@ -11,6 +11,7 @@ import { LocalVectorStore } from '../../engine/local-vector-store';
 import { ENGINE_NAMES } from '../../engine/engine-registry';
 import { AIEngine } from '../../engine/ai-engine';
 import { FingerprintDetailModal } from '../fingerprint-detail-modal';
+import { isSourceOnlyFingerprintScope } from '../fingerprint-utils';
 import { FingerprintIntensityModal } from '../fingerprint-intensity-modal';
 import { FingerprintBlendModal } from '../fingerprint-blend-modal';
 import { KnowledgeToFingerprintConverter } from '../../engine/knowledge-to-fingerprint-converter';
@@ -675,13 +676,22 @@ export class WritingFingerprintView extends ItemView {
             attr: { style: 'display:flex;flex-wrap:wrap;gap:8px;' }
         });
 
-        const toggleBtn = this.createActionButton(
-            fp.enabled ? '🔇 禁用' : '✅ 启用',
-            () => this.handleToggleEnabled(),
-            false,
-            '启用或禁用该指纹'
-        );
-        actionsGrid.appendChild(toggleBtn);
+        const sourceOnly = isSourceOnlyFingerprintScope(fp.scope);
+
+        if (sourceOnly) {
+            section.createEl('div', {
+                text: '📋 模板层是来源库：复制/同步到项目后才会影响正文，本层的启用状态与强度不参与注入。',
+                attr: { style: 'font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.5;' }
+            });
+        } else {
+            const toggleBtn = this.createActionButton(
+                fp.enabled ? '🔇 禁用' : '✅ 启用',
+                () => this.handleToggleEnabled(),
+                false,
+                '启用或禁用该指纹'
+            );
+            actionsGrid.appendChild(toggleBtn);
+        }
 
         const editBtn = this.createActionButton('✏️ 编辑', () => this.handleEditFingerprint(fp), false, '编辑指纹内容');
         actionsGrid.appendChild(editBtn);
@@ -690,9 +700,11 @@ export class WritingFingerprintView extends ItemView {
         const detailBtn = this.createActionButton('🔍 V2 详情', () => this.handleOpenDetailModal(fp), false, '查看 V2 12 维详情');
         actionsGrid.appendChild(detailBtn);
 
-        // V2 强度调节入口
-        const intensityBtn = this.createActionButton('🎚 强度调节', () => this.handleOpenIntensity(fp), false, '调节指纹强度');
-        actionsGrid.appendChild(intensityBtn);
+        // V2 强度调节入口（模板层不参与注入，强度无消费方）
+        if (!sourceOnly) {
+            const intensityBtn = this.createActionButton('🎚 强度调节', () => this.handleOpenIntensity(fp), false, '调节指纹强度');
+            actionsGrid.appendChild(intensityBtn);
+        }
 
         if (fp.scope === 'project') {
             const promoteBtn = this.createActionButton('⬆️ 提升为全局', () => this.handlePromoteToGlobal(fp), false, '从项目提升为全局指纹');
@@ -715,16 +727,17 @@ export class WritingFingerprintView extends ItemView {
 
     /** 打开 V2 详情 Modal（12 维完整展示） */
     private handleOpenDetailModal(fp: StyleFingerprint): void {
+        const sourceOnly = isSourceOnlyFingerprintScope(fp.scope);
         new FingerprintDetailModal(this.app, {
             fingerprint: fp,
             library: this.fingerprintLibrary || undefined,
             project: this.plugin.getActiveProject() || undefined,
             canEdit: true,
-            onToggle: async (updated) => {
+            // 模板层不参与注入：不提供无效的启用开关与强度入口
+            onToggle: sourceOnly ? undefined : async (updated) => {
                 if (!this.fingerprintLibrary) return;
                 updated.enabled = !updated.enabled;
                 switch (updated.scope) {
-                    case 'template': await this.fingerprintLibrary.updateTemplate(updated); break;
                     case 'global': await this.fingerprintLibrary.updateGlobal(updated); break;
                     case 'project': await this.fingerprintLibrary.updateProject(updated); break;
                 }
@@ -738,7 +751,7 @@ export class WritingFingerprintView extends ItemView {
             onDelete: async () => {
                 await this.handleDeleteFingerprint();
             },
-            onOpenIntensity: (target) => this.handleOpenIntensity(target),
+            onOpenIntensity: sourceOnly ? undefined : (target) => this.handleOpenIntensity(target),
         }).open();
     }
 
@@ -1030,15 +1043,19 @@ export class WritingFingerprintView extends ItemView {
             return;
         }
 
+        // 模板层仅用于复制/同步到项目，启用状态没有消费方
+        if (isSourceOnlyFingerprintScope(fp.scope)) {
+            new Notice('📋 模板层指纹不参与注入：请先「复制到项目」或「从模板同步到项目」');
+            return;
+        }
+
         if (fp.enabled) {
             switch (this.selectedFingerprintScope) {
-                case 'template': await this.fingerprintLibrary.disableTemplate(fp.id); break;
                 case 'global': await this.fingerprintLibrary.disableGlobal(fp.id); break;
                 case 'project': await this.fingerprintLibrary.disableProject(fp.id); break;
             }
         } else {
             switch (this.selectedFingerprintScope) {
-                case 'template': await this.fingerprintLibrary.enableTemplate(fp.id); break;
                 case 'global': await this.fingerprintLibrary.enableGlobal(fp.id); break;
                 case 'project': await this.fingerprintLibrary.enableProject(fp.id); break;
             }
@@ -1213,12 +1230,14 @@ export class WritingFingerprintView extends ItemView {
     }
 
     /** 打开 V2 强度调节 Modal */
-    private handleOpenIntensity(fp: StyleFingerprint): void {
+    private async handleOpenIntensity(fp: StyleFingerprint): Promise<void> {
         if (!this.fingerprintLibrary) {
             new Notice('指纹库未初始化');
             return;
         }
         const project = this.plugin.getActiveProject() || undefined;
+        // 弹窗构造时同步读取强度配置；不先加载，用户会看到默认值而不是上次保存的设置
+        await this.fingerprintLibrary.loadIntensityConfigs(project);
         new FingerprintIntensityModal(this.app, {
             fingerprint: fp,
             library: this.fingerprintLibrary,

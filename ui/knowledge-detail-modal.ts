@@ -2,6 +2,8 @@ import { App, Modal, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
 import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
 import { DeconstructionScheduler } from '../services/deconstruction-scheduler';
+import { VectorEnhancer } from '../engine/vector-enhancer';
+import { EmbeddingProviderFactory } from '../engine/embedding/provider-factory';
 import { KnowledgeToFingerprintConverter } from '../engine/knowledge-to-fingerprint-converter';
 import { StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
 import {
@@ -480,6 +482,7 @@ export class KnowledgeDetailModal extends Modal {
         this.renderInfoRow(grid, '字数', book.wordCount ? this.formatWordCount(book.wordCount) : '未知');
         this.renderInfoRow(grid, '更新时间', this.formatDateTime(book.updatedAt));
         this.renderInfoRow(grid, '拆解状态', this.getStatusText(book.breakdownStatus));
+        this.renderInfoRow(grid, '向量状态', this.getVectorStatusText(book.vectorStatus, book.vectorError));
 
         const chartSection = container.createDiv({ cls: 'nw-mb-lg' });
         chartSection.createEl('div', { text: '拆解完成度', cls: 'nw-section-heading' });
@@ -506,28 +509,7 @@ export class KnowledgeDetailModal extends Modal {
             cls: 'nw-btn-outline',
         });
         reanalyzeBtn.addEventListener('click', () => {
-            if (!this.deconstructionScheduler) {
-                try {
-                    const VectorEnhancer = require('../engine/vector-enhancer').VectorEnhancer;
-                    const embeddingClient = new (require('../engine/ollama-embedding-client').OllamaEmbeddingClient)(
-                        (this.app.plugins.getPlugin('novel-writer-ai') as any)?.settings?.embeddingEndpoint || 'http://localhost:11434',
-                        (this.app.plugins.getPlugin('novel-writer-ai') as any)?.settings?.embeddingModel || 'bge-m3'
-                    );
-                    const vectorEnhancer = new VectorEnhancer(embeddingClient);
-                    this.deconstructionScheduler = new (require('../engine/deconstruction-scheduler').DeconstructionScheduler)(
-                        this.app,
-                        this.knowledgeManager,
-                        undefined,
-                        undefined,
-                        vectorEnhancer,
-                        () => (this.app.plugins.getPlugin('novel-writer-ai') as any)?.settings || {}
-                    );
-                } catch (e) {
-                    log.warn('[KnowledgeDetailModal] 创建 deconstructionScheduler 失败:', e);
-                    new Notice('无法获取拆解调度器，请在设置中先加载知识库');
-                    return;
-                }
-            }
+            if (!this.ensureScheduler()) return;
             new RefillModal(this.app, {
                     type: 'knowledge',
                     bookId: this.bookId,
@@ -543,6 +525,32 @@ export class KnowledgeDetailModal extends Modal {
             cls: 'nw-btn-outline',
         });
         convertFingerprintBtn.addEventListener('click', () => this.onConvertToFingerprint(convertFingerprintBtn));
+
+        // A5: 向量化失败时给出唯一可恢复入口，复用 revectorizeBook，不必重新拆解
+        if (book.vectorStatus === 'failed') {
+            const retryVectorBtn = btnRow.createEl('button', {
+                text: '🧠 重试向量化',
+                attr: { type: 'button', title: book.vectorError || '按当前 embedding 模型重新生成向量' },
+                cls: 'nw-btn-outline',
+            });
+            retryVectorBtn.addEventListener('click', async () => {
+                const scheduler = this.ensureScheduler();
+                if (!scheduler) return;
+                retryVectorBtn.disabled = true;
+                retryVectorBtn.textContent = '⏳ 向量化中…';
+                try {
+                    await scheduler.revectorizeBook(book.id, book.name);
+                    new Notice(`《${book.name}》重向量化完成`);
+                    this.bookInfo = (await this.knowledgeManager.getBook(this.bookId)) ?? this.bookInfo;
+                    this.render();
+                } catch (e) {
+                    const message = e instanceof Error ? e.message : String(e);
+                    new Notice(`《${book.name}》重向量化失败：${message}`, 8000);
+                    retryVectorBtn.disabled = false;
+                    retryVectorBtn.textContent = '🧠 重试向量化';
+                }
+            });
+        }
 
         const openFolderBtn = btnRow.createEl('button', {
             text: '📁 打开文件夹',
@@ -571,6 +579,8 @@ export class KnowledgeDetailModal extends Modal {
                 cancelText: '取消',
             });
             if (!confirmed) return;
+            // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
+            await this.deconstructionScheduler?.cancelByBook(this.bookId);
             await this.knowledgeManager.deleteBook(this.bookId);
             new Notice('书籍已删除');
             this.close();
@@ -1662,5 +1672,36 @@ export class KnowledgeDetailModal extends Modal {
             failed: '❌ 失败',
         };
         return map[status] || status;
+    }
+
+    /** A5: 向量状态与拆解状态分开显示，失败原因直接挂在值里 */
+    private getVectorStatusText(status?: string, error?: string): string {
+        if (status === 'failed') return `⚠️ 向量化失败${error ? `（${error}）` : ''}`;
+        if (status === 'done') return '✅ 已向量化';
+        if (status === 'pending') return '⏳ 待向量化';
+        return '— 未记录';
+    }
+
+    /** 详情页与「重新拆解」共用同一个调度器实例；缺依赖时提示并返回 null */
+    private ensureScheduler(): DeconstructionScheduler | null {
+        if (this.deconstructionScheduler) return this.deconstructionScheduler;
+        try {
+            const plugin = this.app.plugins.getPlugin('novel-writer-ai') as any;
+            const embeddingProvider = EmbeddingProviderFactory.fromSettings(plugin?.settings);
+            const vectorEnhancer = new VectorEnhancer(embeddingProvider);
+            this.deconstructionScheduler = new DeconstructionScheduler(
+                this.app,
+                this.knowledgeManager,
+                undefined,
+                undefined,
+                vectorEnhancer,
+                () => plugin?.settings || {}
+            );
+            return this.deconstructionScheduler;
+        } catch (e) {
+            log.warn('[KnowledgeDetailModal] 创建 deconstructionScheduler 失败:', e);
+            new Notice('无法获取拆解调度器，请在设置中先加载知识库');
+            return null;
+        }
     }
 }

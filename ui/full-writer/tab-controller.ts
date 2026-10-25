@@ -229,18 +229,33 @@ export class TabController {
         });
     }
 
-    async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile }): Promise<void> {
-        const chapKey = `${project}/${chapter.chapter}`;
-
-        const existingTab = this.deps.state.tabs.find(t => t.chapterKey === chapKey);
-        if (existingTab) {
-            await this.activateTab(existingTab.id);
-            return;
-        }
-
+    async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
+        const volumeKey = chapter.volume || '';
+        const chapKey = `${project}/${volumeKey}/${chapter.chapter}`;
         const chapterNum = parseInt(chapter.chapter.match(/\d+/)?.[0] || '0');
         const selVolN = parseInt(chapter.volume.match(/第(\d+)卷/)?.[1] || '1', 10);
         const chapDir = (chapter.volume && chapterNum > 0) ? pjStepDir(project, selVolN, chapterNum) : '';
+
+        // Rev 185：chapterKey 必须带卷。旧实现只用 `项目/第N章`，跨卷同名章会复用错 tab；
+        // 且复用旧 tab 时不同步 chapter/volume/chapDir，切章后仍用旧章节上下文，表现为「切换没反应」。
+        const existingTab = this.deps.state.tabs.find(t => t.type === 'chapter' && (
+            t.chapterKey === chapKey ||
+            (t.project === project
+                && t.chapterName === chapter.chapter
+                && (!t.volume || !volumeKey || t.volume === volumeKey))
+        ));
+        if (existingTab) {
+            existingTab.chapterKey = chapKey;
+            existingTab.chapterName = chapter.chapter;
+            existingTab.volume = chapter.volume;
+            existingTab.chapterNum = chapterNum;
+            existingTab.chapDir = chapDir || existingTab.chapDir || '';
+            await this.activateTab(existingTab.id);
+            if (this.deps.state.chapterName !== chapter.chapter) {
+                new Notice('⚠️ 章节切换未生效，请重试或点击标题栏 🔄 刷新工作台');
+            }
+            return;
+        }
 
         const newTab = {
             id: `chapter-${Date.now()}`,
@@ -252,11 +267,14 @@ export class TabController {
             volume: chapter.volume,
             chapDir,
             chapterNum,
-            file: chapter.file
+            file: chapter.file ?? undefined
         };
 
         this.deps.state.addTab(newTab, true);
         this.renderTabBar();
         await this.renderTabContent();
+        if (this.deps.state.chapterName !== chapter.chapter) {
+            new Notice('⚠️ 章节切换未生效，请重试或点击标题栏 🔄 刷新工作台');
+        }
     }
 }

@@ -3,8 +3,8 @@ import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-
 import { DeconstructionScheduler, BreakdownDimension, BreakdownProgress } from '../services/deconstruction-scheduler';
 import { StyleFingerprint, StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
 import { FingerprintExtractor } from '../engine/fingerprint-extractor';
-import { OllamaEmbeddingClient } from '../engine/ollama-embedding-client';
-import { LocalVectorStore } from '../engine/local-vector-store';
+import type { ProviderFactoryConfig } from '../engine/embedding/provider-factory';
+import { createFingerprintEmbedding } from './fingerprint-embedding';
 import type { AIEngine } from '../engine/ai-engine';
 import { createLogger } from '../shared/logger';
 import { OperationConfirmModal } from './components/progress';
@@ -40,8 +40,7 @@ export class RefillModal extends Modal {
     private fingerprint?: StyleFingerprint;
     private fingerprintLibrary?: StyleFingerprintLibrary;
     private aiEngine?: AIEngine;
-    private embeddingEndpoint?: string;
-    private embeddingModel?: string;
+    private embeddingSettings?: Partial<ProviderFactoryConfig>;
     
     private mode: RefillMode = 'missing';
     private selectedDimensions: Set<BreakdownDimension> = new Set();
@@ -87,8 +86,8 @@ export class RefillModal extends Modal {
             fingerprint: StyleFingerprint;
             fingerprintLibrary: StyleFingerprintLibrary;
             aiEngine: AIEngine;
-            embeddingEndpoint?: string;
-            embeddingModel?: string;
+            /** 插件设置：用于按「向量提供商」构造 embedding（缺省会明确中止，不回退 Ollama） */
+            embeddingSettings?: Partial<ProviderFactoryConfig>;
         }
     ) {
         super(app);
@@ -103,8 +102,7 @@ export class RefillModal extends Modal {
             this.fingerprint = options.fingerprint;
             this.fingerprintLibrary = options.fingerprintLibrary;
             this.aiEngine = options.aiEngine;
-            this.embeddingEndpoint = options.embeddingEndpoint;
-            this.embeddingModel = options.embeddingModel;
+            this.embeddingSettings = options.embeddingSettings;
         }
     }
 
@@ -658,18 +656,24 @@ export class RefillModal extends Modal {
             return;
         }
 
+        if (!this.embeddingSettings) {
+            new Notice('❌ 缺少向量设置，无法重新提取指纹（请从设置页重新打开）');
+            return;
+        }
+
         this.isRunning = true;
         this.currentProgress = 0;
         this.progressMessage = '准备重新提取...';
         this.render();
 
         try {
-            const endpoint = this.embeddingEndpoint || 'http://localhost:11434';
-            const model = this.embeddingModel || 'bge-m3';
-            const embeddingClient = new OllamaEmbeddingClient(endpoint, model);
             const vectorScope: 'global' | 'project' = this.fingerprint.scope === 'template' ? 'global' : this.fingerprint.scope;
-            const vectorStore = new LocalVectorStore(this.app, vectorScope, embeddingClient);
-            const extractor = new FingerprintExtractor(this.aiEngine, embeddingClient, vectorStore);
+            const { provider, vectorStore } = createFingerprintEmbedding(
+                this.app,
+                vectorScope,
+                this.embeddingSettings,
+            );
+            const extractor = new FingerprintExtractor(this.aiEngine, provider, vectorStore);
 
             const onProgress = (progress: { phase: string; percent: number; message: string }) => {
                 this.currentProgress = progress.percent;

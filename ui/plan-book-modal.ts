@@ -7,6 +7,7 @@ import { pjWorldview, pjForeshadowDB, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS
 import { ChapterOutlineTreeModal } from './chapter-outline-tree-modal';
 import { createLogger } from '../shared/logger';
 import { OperationConfirmModal } from './components/progress';
+import { scanExistingVolumes, detectVolumeConflict } from '../shared/volume-conflict-detector';
 
 
 const log = createLogger('PlanBookModal');
@@ -174,8 +175,8 @@ export class PlanBookModal extends Modal {
     }
 
     private async generatePlan(project: string, totalChars: string, volumes: number, wordsPerChapter: number, customPrompt?: string): Promise<void> {
-        if (!this.plugin.settings.apiKey) {
-            new Notice('❌ 请先配置API密钥', 5000);
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
             return;
         }
 
@@ -232,6 +233,21 @@ ${worldviewResult.content}`;
             } else {
                 return;
             }
+        }
+
+        // 卷冲突检测：已有正文章节与新规划卷数不一致时给出明确提示
+        try {
+            const existingBodyFiles = this.app.vault.getMarkdownFiles()
+                .map(f => f.path)
+                .filter(p => p.startsWith(`${project}/03-大纲与章节/正文/`));
+            const existingVolumes = scanExistingVolumes(project, existingBodyFiles);
+            // 此阶段尚无新规划的每卷章节数，先只比较卷数量，避免误报章节不匹配
+            const conflict = detectVolumeConflict(existingVolumes, volumes, existingVolumes.chaptersPerVolume);
+            if (conflict.conflictType !== 'none') {
+                new Notice(`⚠️ 卷结构冲突：${conflict.message}`, 8000);
+            }
+        } catch (e) {
+            log.warn('[PlanBookModal] 卷冲突检测失败，跳过:', e);
         }
 
         const genNotice = new Notice(`⏳ Phase 1: 正在规划全局结构...`, 0);

@@ -1,13 +1,11 @@
 /**
  * monitor-panel-b.ts — v5.5 监控面板B
- * 结局牵引(D4) + 剧情完成度 + 偏离预警 + 章节结算(G1) + 风格自学习(E1) + 偏好记忆(E3)
+ * 剧情完成度 + 偏离预警 + 章节结算(G1) + 写作质量
+ * （情节牵引由协同写作主视图的「🎯 情节牵引」卡展示，面板不再重复创建引擎）
  */
-import { WorkspaceLeaf } from "obsidian";
+import { WorkspaceLeaf, Notice } from "obsidian";
 import NovelWriterPlugin from "../main";
 import { DraggablePanel } from "./draggable-panel";
-import { EndingTractionEngine } from "../engine/ending-traction-engine";
-import { StyleLearner } from "../engine/style-learner";
-import { PreferenceMemory } from "../engine/preference-memory";
 import {
   PlotCompletionEngine,
   PlotCompletionResult,
@@ -29,8 +27,6 @@ import {
   WritingQualityResult,
   WritingQualityEngineOptions,
   QualitySuggestion,
-  QualityGrade,
-  QualityTrend,
   getQualityGradeColor,
   getQualityGradeLabel,
   getQualityTrendIcon,
@@ -39,6 +35,16 @@ import {
   getPriorityLabel,
 } from "../engine/writing-quality-engine";
 import { AdaptiveDebounceManager } from "../shared/adaptive-debounce-manager";
+import { divergenceLevelFromScore, qualityScoreColor } from "../shared/quality-grade";
+import { loadQualityHistory, appendQualityHistory } from "../services/quality-history-store";
+import { aggregateQualityHistoryByChapter, computeChapterTrend, mergeQualityHistory, normalizeChapterKey, type QualityHistoryRecord } from "../shared/quality-history";
+import {
+  compareToBaseline,
+  computeQualityBaseline,
+  type BaselineComparison,
+} from "../shared/quality-baseline";
+import { DEVIATION_MIN_EVALUABLE_CHARS, PLOT_COMPLETION_MIN_EVALUABLE_CHARS, QUALITY_HISTORY_MAX_RECORDS, QUALITY_MIN_EVALUABLE_CHARS } from '../shared/thresholds';
+import { isQualitySampleUsable } from '../shared/quality-history';
 import { CoWriteFacade } from "./services/co-write-facade";
 import { createLogger } from '../shared/logger';
 
@@ -70,33 +76,16 @@ interface DivergenceHistoryEntry {
   level: DivergenceLevel;
 }
 
-interface QualityHistoryEntry {
-  timestamp: number;
-  wordCount: number;
-  overallScore: number;
-  languageScore: number;
-  rhythmScore: number;
-  characterScore: number;
-  plotScore: number;
-  atmosphereScore: number;
-  structureScore: number;
-  grade: QualityGrade;
-  trend: QualityTrend;
-}
+/** 质量历史条目与落盘记录同构，避免两套结构漂移 */
+type QualityHistoryEntry = QualityHistoryRecord;
 
 export class MonitorPanelB extends DraggablePanel {
-  private tractionEngine: EndingTractionEngine | null = null;
-  private styleLearner: StyleLearner | null = null;
-  private prefMemory: PreferenceMemory | null = null;
   private completionEngine: PlotCompletionEngine | null = null;
   private divergenceEngine: PlotDivergenceEngine | null = null;
   private qualityEngine: WritingQualityEngine | null = null;
   private debounceManager = new AdaptiveDebounceManager({ debug: false });
   protected facade: CoWriteFacade;
 
-  private tractionContent!: HTMLElement;
-  private styleContent!: HTMLElement;
-  private prefContent!: HTMLElement;
   private completionContent!: HTMLElement;
   private completionDetailPanel: HTMLElement | null = null;
   private completionExpanded = false;
@@ -114,25 +103,35 @@ export class MonitorPanelB extends DraggablePanel {
   private history: CompletionHistoryEntry[] = [];
   private divergenceHistory: DivergenceHistoryEntry[] = [];
   private qualityHistory: QualityHistoryEntry[] = [];
+  /** 基线样本：磁盘全量历史 + 本次会话增量；展示用的 qualityHistory 只保留近 20 条 */
+  private baselineHistory: QualityHistoryRecord[] = [];
   private maxHistory = 50;
   private maxDivergenceHistory = 10;
   private maxQualityHistory = 20;
   private currentChapterKey = "";
+  /**
+   * 协同写作显式注入的项目名（同步设置）。
+   *
+   * 协同写作视图不是 Markdown 文件，`getActiveProject()` 依赖 activeFile，切到该视图后
+   * 通常为 null。首次切章时若不做同步注入就会退回空串 → 质量历史不恢复、基线缺失。
+   */
+  private activeProject = "";
+  /** 当前基线样本所属项目；切项目时据此清空 baselineHistory，避免两本书的样本混算 */
+  private currentBaselineProject = "";
   private lastQualityAlertTime = 0;
   private readonly QUALITY_ALERT_COOLDOWN = 10 * 60 * 1000;
+  /** 质量历史落盘节流：编辑期每 500ms 评估一次，不能每次都写盘 */
+  private lastQualityPersistAt = 0;
+  private qualityHistoryLoadToken = 0;
+  private readonly QUALITY_PERSIST_INTERVAL = 30_000;
 
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
-    super(leaf, plugin, "monitor-b", "监控面板B · 结局/完成度/结算/风格/偏好", "layers");
+    super(leaf, plugin, "monitor-b", "监控面板B · 完成度/偏离/质量/结算", "layers");
     this.facade = new CoWriteFacade({ plugin });
   }
 
   protected renderBody(container: HTMLElement): void {
     container.addClass("nw-float-monitor-grid");
-
-    const tractionCard = container.createDiv({ cls: "nw-float-card" });
-    tractionCard.createEl("h5", { text: "🏁 结局牵引(D4)" });
-    this.tractionContent = tractionCard.createDiv({ cls: "nw-float-card-body" });
-    this.tractionContent.createDiv({ cls: "nw-float-empty", text: "打开章节后分析" });
 
     const completionCard = container.createDiv({ cls: "nw-float-card nw-completion-card" });
     const completionHeader = completionCard.createDiv({
@@ -146,16 +145,6 @@ export class MonitorPanelB extends DraggablePanel {
     expandBtn.addEventListener("click", () => this.toggleCompletionDetail());
     this.completionContent = completionCard.createDiv({ cls: "nw-float-card-body" });
     this.completionContent.createDiv({ cls: "nw-float-empty", text: "开始写作后自动评估" });
-
-    const styleCard = container.createDiv({ cls: "nw-float-card" });
-    styleCard.createEl("h5", { text: "🎨 风格自学习(E1)" });
-    this.styleContent = styleCard.createDiv({ cls: "nw-float-card-body" });
-    this.styleContent.createDiv({ cls: "nw-float-empty", text: "写作中自动学习" });
-
-    const prefCard = container.createDiv({ cls: "nw-float-card" });
-    prefCard.createEl("h5", { text: "💾 偏好记忆(E3)" });
-    this.prefContent = prefCard.createDiv({ cls: "nw-float-card-body" });
-    this.prefContent.createDiv({ cls: "nw-float-empty", text: "写作中自动记录" });
 
     const divergenceCard = container.createDiv({ cls: "nw-float-card nw-divergence-card" });
     const divergenceHeader = divergenceCard.createDiv({
@@ -198,27 +187,33 @@ export class MonitorPanelB extends DraggablePanel {
       this.completionEngine = new PlotCompletionEngine();
       this.divergenceEngine = new PlotDivergenceEngine();
       this.qualityEngine = new WritingQualityEngine();
-      const project = this.facade.getActiveProject() || '';
-      this.facade.createEndingTractionEngine(project).then(engine => {
-        this.tractionEngine = engine;
-      }).catch(e => {
-        log.warn("[MonitorPanelB] EndingTractionEngine 初始化失败:", e);
-      });
-      this.facade.getStyleLearner(project).then(learner => {
-        if (learner) {
-          this.styleLearner = learner;
-        }
-      }).catch(e => {
-        log.warn("[MonitorPanelB] StyleLearner 初始化失败:", e);
-      });
-      this.prefMemory = new PreferenceMemory({
-        app: this.app,
-        plugin: this.plugin,
-        project,
-      });
     } catch (e) {
       log.warn("[MonitorPanelB] 引擎初始化失败:", e);
     }
+  }
+
+  /** 同步注入当前项目名（协同写作视图没有 activeFile，必须由调用方显式提供） */
+  setActiveProject(project: string): void {
+    this.activeProject = (project || "").trim();
+  }
+
+  /** 项目名优先级：显式注入 > activeFile 推导 */
+  private resolveProject(): string {
+    return this.activeProject || this.facade.getActiveProject() || '';
+  }
+
+  /**
+   * 面板关闭：先把节流窗口内的最后一条质量记录落盘，再释放防抖资源。
+   * 此前 `dispose()` 没有任何调用方，防抖计时器会带着已脱离 DOM 的引用继续跑；
+   * `persistQualityHistory` 的注释写着「force 用于切章/关闭」，但关闭路径一直缺失。
+   */
+  async onClose(): Promise<void> {
+    // 与切章冲刷同口径：待写记录属于「产生它时的项目」，而不是关闭时的 activeFile。
+    // 用户在 A 书写作后切到 B 书的 Markdown 文件（不经过 updateCompletion 切章），
+    // 直接用 resolveProject() 会把 A 书最后一条记录写进 B 书的 质量历史.json。
+    this.persistQualityHistory(true, this.currentBaselineProject || this.resolveProject());
+    this.dispose();
+    await super.onClose();
   }
 
   /** 实时更新剧情完成度和偏离检测（带防抖） */
@@ -226,6 +221,16 @@ export class MonitorPanelB extends DraggablePanel {
     if (!this.completionEngine || !this.completionContent) return;
 
     if (chapterKey && chapterKey !== this.currentChapterKey) {
+      // 切章前先把当前章的最后一条落盘。记录属于「当前基线项目」而不是刚注入的新书：
+      // 从 A 书切到 B 书时调用方已先 setActiveProject(B)，这里若用 resolveProject()
+      // 会把 A 书的最后一条记录写进 B 书的 质量历史.json。
+      this.persistQualityHistory(true, this.currentBaselineProject || this.resolveProject());
+      const project = this.resolveProject();
+      if (project && project !== this.currentBaselineProject) {
+        // 基线是项目级样本：换书必须清空，否则 restore 合并时会把上一本书的记录算进基线
+        this.currentBaselineProject = project;
+        this.baselineHistory = [];
+      }
       this.currentChapterKey = chapterKey;
       this.history = [];
       this.lastResult = null;
@@ -239,6 +244,8 @@ export class MonitorPanelB extends DraggablePanel {
       if (this.qualityEngine) {
         this.qualityEngine.clearHistory();
       }
+      // 恢复项目级历史，让趋势曲线跨会话存活
+      this.restoreQualityHistory();
     }
 
     this.currentChapterText = text;
@@ -258,6 +265,13 @@ export class MonitorPanelB extends DraggablePanel {
       const result = this.completionEngine.evaluate(this.currentChapterText);
       this.lastResult = result;
 
+      // 正文不足时引擎返回全 0 空结果：这是「无法评估」，不是「完成度 0」。
+      // 写入历史会把完成度趋势打成 0，展示也会把新开空章渲染成「0分 · 待开始」。
+      if (result.wordCount < PLOT_COMPLETION_MIN_EVALUABLE_CHARS) {
+        this.renderCompletionSummary(result);
+        return;
+      }
+
       this.addToHistory(result);
       this.renderCompletionSummary(result);
 
@@ -266,6 +280,25 @@ export class MonitorPanelB extends DraggablePanel {
       }
     } catch (e) {
       log.warn("[MonitorPanelB] 剧情完成度评估失败:", e);
+      if (this.completionContent) {
+        this.renderEvalFailure(
+          this.completionContent,
+          "综合完成度 --",
+          "本次评估失败，结果未更新（原因见开发者日志）",
+          16
+        );
+      }
+      if (this.completionExpanded) {
+        this.ensureCompletionDetailPanel();
+        if (this.completionDetailPanel) {
+          this.renderEvalFailure(
+            this.completionDetailPanel,
+            "完成度详情 --",
+            "本次评估失败，暂无完成度详情",
+            11
+          );
+        }
+      }
     }
   }
 
@@ -276,6 +309,13 @@ export class MonitorPanelB extends DraggablePanel {
     try {
       const result = this.divergenceEngine.evaluate(this.currentChapterText);
       this.lastDivergenceResult = result;
+
+      // 正文不足时引擎返回 0% / normal 空结果：直接渲染会被读成「完全贴合大纲」，
+      // 写入历史还会让后续真实偏离看起来像突刺。按无数据处理，也不触发预警。
+      if (result.wordCount < DEVIATION_MIN_EVALUABLE_CHARS) {
+        this.renderDivergenceSummary(result);
+        return;
+      }
 
       this.addToDivergenceHistory(result);
       this.renderDivergenceSummary(result);
@@ -289,7 +329,51 @@ export class MonitorPanelB extends DraggablePanel {
       }
     } catch (e) {
       log.warn("[MonitorPanelB] 剧情偏离检测失败:", e);
+      // 保留上一次的百分比会让用户把旧章/旧文本的结论当成当前正文：清空并告知
+      if (this.divergenceContent) {
+        this.renderEvalFailure(
+          this.divergenceContent,
+          "整体偏离度 --",
+          "本次评估失败，结果未更新（原因见开发者日志）",
+          16
+        );
+      }
+      if (this.divergenceExpanded) {
+        this.ensureDivergenceDetailPanel();
+        if (this.divergenceDetailPanel) {
+          this.renderEvalFailure(
+            this.divergenceDetailPanel,
+            "偏离详情 --",
+            "本次评估失败，暂无偏离详情",
+            11
+          );
+        }
+      }
     }
+  }
+
+  /**
+   * 评估异常：清掉旧结果并显式告知。
+   * 与 `render*NoData` 的区别是原因不同——「正文过短」是预期内的不评估，
+   * 「引擎抛错」是本次没测成，两者都不能继续显示上一次的分数。
+   */
+  private renderEvalFailure(
+    container: HTMLElement,
+    title: string,
+    reason: string,
+    fontSize: number
+  ): void {
+    container.empty();
+    container.createDiv({
+      text: title,
+      attr: {
+        style: `font-weight:700;font-size:${fontSize}px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;`
+      }
+    });
+    container.createDiv({
+      text: reason,
+      attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+    });
   }
 
   /** 添加偏离历史记录 */
@@ -315,6 +399,11 @@ export class MonitorPanelB extends DraggablePanel {
   /** 渲染偏离摘要 */
   private renderDivergenceSummary(result: DivergenceResult): void {
     if (!this.divergenceContent) return;
+
+    if (result.wordCount < DEVIATION_MIN_EVALUABLE_CHARS) {
+      this.renderDivergenceNoData(result.wordCount);
+      return;
+    }
 
     this.divergenceContent.empty();
 
@@ -410,6 +499,45 @@ export class MonitorPanelB extends DraggablePanel {
       attr: { style: "display:flex;gap:10px;margin-top:6px;font-size:10px;color:var(--nw-text-muted, var(--text-muted));" }
     });
     metaRow.createSpan({ text: `${result.wordCount}字` });
+
+    if (this.divergenceExpanded) this.ensureDivergenceDetailPanel();
+  }
+
+  /** 正文不足可检测长度：显示 -- 与原因，不渲染 0%（0% 会被读成「完全贴合」） */
+  private renderDivergenceNoData(wordCount: number): void {
+    if (this.divergenceContent) {
+      this.divergenceContent.empty();
+      this.divergenceContent.createDiv({
+        text: "整体偏离度 --",
+        attr: { style: "font-weight:700;font-size:16px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;" }
+      });
+      this.divergenceContent.createDiv({
+        text: `正文不足 ${DEVIATION_MIN_EVALUABLE_CHARS} 字，暂不检测（当前 ${wordCount} 字）`,
+        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      });
+    }
+    if (this.divergenceExpanded) {
+      this.ensureDivergenceDetailPanel();
+      if (this.divergenceDetailPanel) {
+        this.divergenceDetailPanel.empty();
+        this.divergenceDetailPanel.createDiv({
+          text: "正文过短，暂无偏离详情",
+          attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        });
+      }
+    }
+  }
+
+  /** 详情面板若已被 divergenceContent.empty() 移除，则重新挂到容器末尾 */
+  private ensureDivergenceDetailPanel(): void {
+    if (!this.divergenceContent) return;
+    if (this.divergenceDetailPanel && this.divergenceContent.contains(this.divergenceDetailPanel)) return;
+    this.divergenceDetailPanel = this.divergenceContent.createDiv({
+      cls: "nw-divergence-detail",
+      attr: {
+        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
+      }
+    });
   }
 
   /** 切换偏离详情面板 */
@@ -427,12 +555,7 @@ export class MonitorPanelB extends DraggablePanel {
   private showDivergenceDetail(): void {
     if (!this.divergenceContent) return;
 
-    this.divergenceDetailPanel = this.divergenceContent.createDiv({
-      cls: "nw-divergence-detail",
-      attr: {
-        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
-      }
-    });
+    this.ensureDivergenceDetailPanel();
 
     if (this.lastDivergenceResult) {
       this.renderDivergenceDetail(this.lastDivergenceResult);
@@ -450,6 +573,16 @@ export class MonitorPanelB extends DraggablePanel {
   /** 渲染偏离详情 */
   private renderDivergenceDetail(result: DivergenceResult): void {
     if (!this.divergenceDetailPanel) return;
+
+    // 空结果各维度 score=0 / level=normal，渲染出来会是「五项均无偏离」的假详情
+    if (result.wordCount < DEVIATION_MIN_EVALUABLE_CHARS) {
+      this.divergenceDetailPanel.empty();
+      this.divergenceDetailPanel.createDiv({
+        text: "正文过短，暂无偏离详情",
+        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      });
+      return;
+    }
 
     this.divergenceDetailPanel.empty();
 
@@ -596,21 +729,14 @@ export class MonitorPanelB extends DraggablePanel {
 
   /** 显示偏离预警提示 */
   private showDivergenceAlert(reason: string): void {
-    if (!this.plugin) return;
-    try {
-      const notice = (this.app as any).notice?.addNotice?.(`⚠️ 剧情偏离预警：${reason}`, 5000);
-      if (!notice) {
-        log.warn('[MonitorPanelB] 偏离预警:', reason);
-      }
-    } catch (e) {
-      log.warn('[MonitorPanelB] 显示预警失败:', reason, e);
-    }
+    // 此前用 (this.app as any).notice?.addNotice?.()：Obsidian 没有该 API，
+    // 可选链让调用恒为 undefined，预警只写进了日志，用户从未看到过提示。
+    new Notice(`⚠️ 剧情偏离预警：${reason}`, 5000);
   }
 
   private getDivergenceLevelFromScore(score: number): DivergenceLevel {
-    if (score >= 60) return 'danger';
-    if (score >= 30) return 'warning';
-    return 'normal';
+    // 分界与 deviation-detector 的 severity 阈值同源
+    return divergenceLevelFromScore(score);
   }
 
   private formatDivergenceDetailKey(key: string): string {
@@ -667,6 +793,11 @@ export class MonitorPanelB extends DraggablePanel {
   /** 渲染完成度摘要 */
   private renderCompletionSummary(result: PlotCompletionResult): void {
     if (!this.completionContent) return;
+
+    if (result.wordCount < PLOT_COMPLETION_MIN_EVALUABLE_CHARS) {
+      this.renderCompletionNoData(result.wordCount);
+      return;
+    }
 
     this.completionContent.empty();
 
@@ -740,6 +871,45 @@ export class MonitorPanelB extends DraggablePanel {
     metaRow.createSpan({ text: `${result.wordCount}字` });
     metaRow.createSpan({ text: `${result.overallCompletion.details.paragraphs || 0}段` });
     metaRow.createSpan({ text: `${Math.round(result.overallCompletion.details.evalTimeMs as number || 0)}ms` });
+
+    if (this.completionExpanded) this.ensureCompletionDetailPanel();
+  }
+
+  /** 正文不足可评估长度：显示 -- 与原因，不渲染 0 分 */
+  private renderCompletionNoData(wordCount: number): void {
+    if (this.completionContent) {
+      this.completionContent.empty();
+      this.completionContent.createDiv({
+        text: "综合完成度 --",
+        attr: { style: "font-weight:700;font-size:16px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;" }
+      });
+      this.completionContent.createDiv({
+        text: `正文不足 ${PLOT_COMPLETION_MIN_EVALUABLE_CHARS} 字，暂不评估（当前 ${wordCount} 字）`,
+        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      });
+    }
+    if (this.completionExpanded) {
+      this.ensureCompletionDetailPanel();
+      if (this.completionDetailPanel) {
+        this.completionDetailPanel.empty();
+        this.completionDetailPanel.createDiv({
+          text: "正文过短，暂无完成度详情",
+          attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        });
+      }
+    }
+  }
+
+  /** 详情面板若已被 completionContent.empty() 移除，则重新挂到容器末尾 */
+  private ensureCompletionDetailPanel(): void {
+    if (!this.completionContent) return;
+    if (this.completionDetailPanel && this.completionContent.contains(this.completionDetailPanel)) return;
+    this.completionDetailPanel = this.completionContent.createDiv({
+      cls: "nw-completion-detail",
+      attr: {
+        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
+      }
+    });
   }
 
   /** 切换详情面板 */
@@ -757,12 +927,7 @@ export class MonitorPanelB extends DraggablePanel {
   private showCompletionDetail(): void {
     if (!this.completionContent) return;
 
-    this.completionDetailPanel = this.completionContent.createDiv({
-      cls: "nw-completion-detail",
-      attr: {
-        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
-      }
-    });
+    this.ensureCompletionDetailPanel();
 
     if (this.lastResult) {
       this.renderCompletionDetail(this.lastResult);
@@ -780,6 +945,16 @@ export class MonitorPanelB extends DraggablePanel {
   /** 渲染完成度详情 */
   private renderCompletionDetail(result: PlotCompletionResult): void {
     if (!this.completionDetailPanel) return;
+
+    // 空结果六维全 0，渲染出来就是「每项 0 分」的假详情
+    if (result.wordCount < PLOT_COMPLETION_MIN_EVALUABLE_CHARS) {
+      this.completionDetailPanel.empty();
+      this.completionDetailPanel.createDiv({
+        text: "正文过短，暂无完成度详情",
+        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      });
+      return;
+    }
 
     this.completionDetailPanel.empty();
 
@@ -931,50 +1106,10 @@ export class MonitorPanelB extends DraggablePanel {
   }
 
   private getScoreColor(score: number): string {
-    if (score >= 70) return 'var(--nw-success, #22c55e)';
-    if (score >= 40) return 'var(--nw-warning, #f59e0b)';
-    return 'var(--nw-danger, #ef4444)';
+    // 与质量分同一套色阶：80 绿 / 60 黄 / 其余红
+    return qualityScoreColor(score);
   }
 
-  /** 刷新结局牵引 */
-  async refreshTraction(volume: number, chapterNum: number): Promise<void> {
-    if (!this.tractionEngine || !this.tractionContent) return;
-    try {
-      this.tractionContent.empty();
-      this.tractionContent.createDiv({ text: "正在分析..." });
-      const state = await this.tractionEngine.checkTraction(volume, chapterNum);
-      this.tractionContent.empty();
-      this.tractionContent.createDiv({
-        cls: "nw-float-progress",
-        text: `整体进度: ${state.overallProgress}%`,
-      });
-      const riskCls = state.divergenceRisk === "high" ? "nw-float-danger" : state.divergenceRisk === "medium" ? "nw-float-warn-text" : "nw-float-ok";
-      this.tractionContent.createDiv({
-        cls: riskCls,
-        text: `偏离风险: ${state.divergenceRisk.toUpperCase()}`,
-      });
-      for (const rec of state.recommendations.slice(0, 3)) {
-        this.tractionContent.createDiv({ cls: "nw-float-rec", text: `💡 ${rec}` });
-      }
-    } catch (e) {
-      this.tractionContent.empty();
-      this.tractionContent.createDiv({ cls: "nw-float-error", text: "分析失败" });
-    }
-  }
-
-  /** 刷新风格学习状态 */
-  refreshStyle(styleInfo: string): void {
-    if (!this.styleContent) return;
-    this.styleContent.empty();
-    this.styleContent.createDiv({ cls: "nw-float-ok", text: styleInfo || "✅ 风格学习中" });
-  }
-
-  /** 刷新偏好记忆状态 */
-  refreshPref(prefInfo: string): void {
-    if (!this.prefContent) return;
-    this.prefContent.empty();
-    this.prefContent.createDiv({ cls: "nw-float-ok", text: prefInfo || "✅ 偏好已记录" });
-  }
 
   /** 更新引擎选项 */
   setCompletionOptions(options: Partial<PlotCompletionEngineOptions>): void {
@@ -1044,12 +1179,38 @@ export class MonitorPanelB extends DraggablePanel {
       }
     } catch (e) {
       log.warn("[MonitorPanelB] 写作质量评估失败:", e);
+      if (this.qualityContent) {
+        this.renderEvalFailure(
+          this.qualityContent,
+          "综合质量 --",
+          "本次评估失败，结果未更新（原因见开发者日志）",
+          20
+        );
+      }
+      if (this.qualityExpanded) {
+        this.ensureQualityDetailPanel();
+        if (this.qualityDetailPanel) {
+          this.renderEvalFailure(
+            this.qualityDetailPanel,
+            "质量详情 --",
+            "本次评估失败，暂无质量详情",
+            11
+          );
+        }
+      }
     }
   }
 
   /** 添加质量历史记录 */
   private addToQualityHistory(result: WritingQualityResult): void {
+    // 正文过短时 WQE 返回 0 分空结果，写入会污染基线与 200 条历史配额；
+    // 与协同实时落盘共用同一门槛
+    if (!isQualitySampleUsable(result.wordCount)) return;
+
+    const chapterKey = normalizeChapterKey(this.currentChapterKey);
     const entry: QualityHistoryEntry = {
+      // 落盘键统一为「第N章」：协同写作写入的也是该形式，否则同一章在基线里会被算两次
+      chapterKey,
       timestamp: result.evaluatedAt,
       wordCount: result.wordCount,
       overallScore: result.overallScore,
@@ -1060,18 +1221,90 @@ export class MonitorPanelB extends DraggablePanel {
       atmosphereScore: result.atmosphereQuality.score,
       structureScore: result.structureQuality.score,
       grade: result.grade,
-      trend: result.trend,
+      // 趋势按「章」比较：引擎的最近 5 次评估只覆盖本章内的打字波动，不能当趋势
+      trend: computeChapterTrend(
+        { chapterKey, timestamp: result.evaluatedAt, overallScore: result.overallScore },
+        this.baselineHistory,
+      ),
     };
 
     this.qualityHistory.push(entry);
     if (this.qualityHistory.length > this.maxQualityHistory) {
       this.qualityHistory = this.qualityHistory.slice(-this.maxQualityHistory);
     }
+    // baselineHistory 的所有消费方（基线比较、章级趋势）单位都是「章」：
+    // 同章多次评估只保留最后一次。只追不合并时，`QUALITY_HISTORY_MAX_RECORDS = 200`
+    // 会被同一章约 200 次打字停顿灌满，其他章样本被挤掉 → 排除当前章后基线没有样本，
+    // 「高于/低于基线」整行消失（磁盘侧已在 appendQualityHistory 收敛，内存侧同一口径）。
+    const existingIndex = chapterKey
+      ? this.baselineHistory.findIndex(e => normalizeChapterKey(e.chapterKey) === chapterKey)
+      : -1;
+    if (existingIndex >= 0) {
+      this.baselineHistory.splice(existingIndex, 1);
+    }
+    this.baselineHistory.push(entry);
+    if (this.baselineHistory.length > QUALITY_HISTORY_MAX_RECORDS) {
+      this.baselineHistory = this.baselineHistory.slice(-QUALITY_HISTORY_MAX_RECORDS);
+    }
+    this.persistQualityHistory();
+  }
+
+  /** 从项目磁盘恢复质量历史（跨会话趋势） */
+  private restoreQualityHistory(): void {
+    const project = this.resolveProject();
+    if (!project) return;
+    this.currentBaselineProject = project;
+    const token = ++this.qualityHistoryLoadToken;
+    loadQualityHistory(this.app, project).then(records => {
+      // 切章/切项目后旧请求作废
+      if (token !== this.qualityHistoryLoadToken) return;
+      // load 期间可能已有新评估写入（切章后 500ms 防抖即触发），
+      // 直接覆盖会把会话内增量从基线与趋势里抹掉；合并而不是覆盖，重复项由 merge 去重
+      this.baselineHistory = mergeQualityHistory(records, this.baselineHistory);
+      if (this.baselineHistory.length === 0) return;
+      // 基线使用磁盘全量样本 + 会话增量；display 仍只保留近 20 条
+      this.qualityHistory = this.baselineHistory.slice(-this.maxQualityHistory);
+      if (this.lastQualityResult) {
+        this.renderQualitySummary(this.lastQualityResult);
+      }
+    }).catch(e => {
+      log.warn('[MonitorPanelB] 质量历史恢复失败:', e);
+    });
+  }
+
+  /**
+   * 质量历史落盘（默认 30s 节流；force 用于切章/关闭）。
+   * `projectOverride` 用于切章冲刷：此时 activeProject 可能已指向新书，而记录仍属于旧书。
+   */
+  private persistQualityHistory(force = false, projectOverride?: string): void {
+    const project = projectOverride || this.resolveProject();
+    if (!project) return;
+    const latest = this.qualityHistory[this.qualityHistory.length - 1];
+    if (!latest) return;
+
+    const now = Date.now();
+    if (!force && now - this.lastQualityPersistAt < this.QUALITY_PERSIST_INTERVAL) return;
+
+    this.lastQualityPersistAt = now;
+    // 不在这里拦截「上一次落盘仍在途」：切章时 force 落盘若被丢弃，
+    // 紧接着 qualityHistory 被清空，这一条记录就永久丢失。
+    // 串行化与去重都由 appendQualityHistory / mergeQualityHistory 保证，重复入队不会写出重复记录。
+    appendQualityHistory(this.app, project, latest)
+      .catch(e => {
+        log.warn('[MonitorPanelB] 质量历史落盘失败:', e);
+      });
   }
 
   /** 渲染质量摘要 */
   private renderQualitySummary(result: WritingQualityResult): void {
     if (!this.qualityContent) return;
+
+    // 正文不足可评估长度时 WQE 返回 0 分 / D 的空结果：这是「无法评估」，
+    // 不是「写得差」。直接渲染会让空章显示 0 分并被基线判为「低于」。
+    if (result.wordCount < QUALITY_MIN_EVALUABLE_CHARS) {
+      this.renderQualityNoData(result.wordCount);
+      return;
+    }
 
     this.qualityContent.empty();
 
@@ -1079,8 +1312,18 @@ export class MonitorPanelB extends DraggablePanel {
     const grade = result.grade;
     const gradeColor = getQualityGradeColor(grade);
     const gradeLabel = getQualityGradeLabel(grade);
-    const trendIcon = getQualityTrendIcon(result.trend);
-    const trendLabel = getQualityTrendLabel(result.trend);
+    // 顶栏趋势同样按「章」比较：result.trend 是本章内最近 5 次评估的方向，
+    // 2.5s 一次的实时评估下它只反映打字波动，与「最近历史」里的箭头口径也会不一致。
+    const chapterTrend = computeChapterTrend(
+      {
+        chapterKey: normalizeChapterKey(this.currentChapterKey),
+        timestamp: result.evaluatedAt,
+        overallScore,
+      },
+      this.baselineHistory,
+    );
+    const trendIcon = getQualityTrendIcon(chapterTrend);
+    const trendLabel = getQualityTrendLabel(chapterTrend);
 
     const scoreRow = this.qualityContent.createDiv({
       attr: { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;" }
@@ -1106,6 +1349,8 @@ export class MonitorPanelB extends DraggablePanel {
       text: gradeLabel,
       attr: { style: `font-size:11px;font-weight:600;color:${gradeColor};` }
     });
+
+    this.renderBaselineComparison(result);
 
     const progressBar = this.qualityContent.createDiv({
       attr: {
@@ -1187,6 +1432,97 @@ export class MonitorPanelB extends DraggablePanel {
         attr: { style: `color:${result.comparedToAverage > 0 ? 'var(--nw-success, #22c55e)' : 'var(--nw-danger, #ef4444)'};` }
       });
     }
+
+    // qualityContent.empty() 会连带移除详情面板：展开状态下必须重建，
+    // 否则每次评估后详情都会被清掉（引用还在，但节点已脱离 DOM）。
+    if (this.qualityExpanded) this.ensureQualityDetailPanel();
+  }
+
+  /** 正文不足最小可评估长度：渲染「无数据」，不得显示 0 分与基线结论 */
+  private renderQualityNoData(wordCount: number): void {
+    if (this.qualityContent) {
+      this.qualityContent.empty();
+      this.qualityContent.createDiv({
+        text: "综合质量 --",
+        attr: { style: "font-weight:700;font-size:20px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;" }
+      });
+      this.qualityContent.createDiv({
+        text: `正文不足 ${QUALITY_MIN_EVALUABLE_CHARS} 字，暂不评估（当前 ${wordCount} 字）`,
+        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      });
+    }
+    if (this.qualityExpanded) {
+      this.ensureQualityDetailPanel();
+      if (this.qualityDetailPanel) {
+        this.qualityDetailPanel.empty();
+        this.qualityDetailPanel.createDiv({
+          text: "正文过短，暂无质量详情",
+          attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+        });
+      }
+    }
+  }
+
+  /** 详情面板若已被 qualityContent.empty() 移除，则重新挂到容器末尾 */
+  private ensureQualityDetailPanel(): void {
+    if (!this.qualityContent) return;
+    if (this.qualityDetailPanel && this.qualityContent.contains(this.qualityDetailPanel)) return;
+    this.qualityDetailPanel = this.qualityContent.createDiv({
+      cls: "nw-quality-detail",
+      attr: {
+        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
+      }
+    });
+  }
+
+  /** 渲染「高于/低于基线」行（基于项目质量历史的均值与标准差） */
+  private renderBaselineComparison(result: WritingQualityResult): void {
+    if (!this.qualityContent) return;
+
+    // addToQualityHistory 已把本次结果写入历史，计算基线时排除当前记录；
+    // 基线样本单位是「章」：当前章不和自己比，同章多次评估只取最后一次
+    const currentKey = normalizeChapterKey(this.currentChapterKey);
+    const history = aggregateQualityHistoryByChapter(
+      this.baselineHistory.filter(entry =>
+        entry.timestamp !== result.evaluatedAt
+        && (!currentKey || normalizeChapterKey(entry.chapterKey) !== currentKey)
+      )
+    );
+    const baseline = computeQualityBaseline(history);
+    if (!baseline) return;
+
+    const comparison = compareToBaseline({
+      overallScore: result.overallScore,
+      dimensions: {
+        language: result.languageQuality.score,
+        rhythm: result.rhythmQuality.score,
+        character: result.characterQuality.score,
+        plot: result.plotQuality.score,
+        atmosphere: result.atmosphereQuality.score,
+        structure: result.structureQuality.score,
+      },
+    }, baseline);
+
+    this.renderBaselineRow(comparison);
+  }
+
+  private renderBaselineRow(comparison: BaselineComparison): void {
+    if (!this.qualityContent) return;
+
+    const { level, overall, sampleCount } = comparison;
+    const label = level === 'above' ? '高于基线' : level === 'below' ? '低于基线' : '与基线持平';
+    const color = level === 'above'
+      ? 'var(--nw-success, #22c55e)'
+      : level === 'below'
+        ? 'var(--nw-warning, #d29922)'
+        : 'var(--nw-text-muted, var(--text-faint))';
+    const deltaText = `${overall.delta > 0 ? '+' : ''}${overall.delta.toFixed(1)}`;
+    const zText = `${overall.zScore > 0 ? '+' : ''}${overall.zScore.toFixed(1)}σ`;
+
+    this.qualityContent.createDiv({
+      text: `📊 ${label} ${deltaText}（${zText}） · 基线 ${overall.baseline.toFixed(1)}（近${sampleCount}章）`,
+      attr: { style: `font-size:10px;color:${color};margin-bottom:8px;` }
+    });
   }
 
   /** 切换质量详情面板 */
@@ -1204,12 +1540,9 @@ export class MonitorPanelB extends DraggablePanel {
   private showQualityDetail(): void {
     if (!this.qualityContent) return;
 
-    this.qualityDetailPanel = this.qualityContent.createDiv({
-      cls: "nw-quality-detail",
-      attr: {
-        style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--nw-divider, var(--background-modifier-border-hover));"
-      }
-    });
+    // 与 renderQualitySummary 末尾共用同一重建逻辑：节点若已挂载则复用，
+    // 避免重复创建两个详情面板（旧引用会指向已被移除的那个）
+    this.ensureQualityDetailPanel();
 
     if (this.lastQualityResult) {
       this.renderQualityDetail(this.lastQualityResult);
@@ -1227,6 +1560,16 @@ export class MonitorPanelB extends DraggablePanel {
   /** 渲染质量详情 */
   private renderQualityDetail(result: WritingQualityResult): void {
     if (!this.qualityDetailPanel) return;
+
+    // 与摘要同源：正文不足可评估长度时六维分数全是 0，渲染出来就是「每项 0 分」的假详情
+    if (result.wordCount < QUALITY_MIN_EVALUABLE_CHARS) {
+      this.qualityDetailPanel.empty();
+      this.qualityDetailPanel.createDiv({
+        text: "正文过短，暂无质量详情",
+        attr: { style: "font-size:11px;color:var(--nw-text-muted, var(--text-faint));" }
+      });
+      return;
+    }
 
     this.qualityDetailPanel.empty();
 
@@ -1449,30 +1792,16 @@ export class MonitorPanelB extends DraggablePanel {
     if (now - this.lastQualityAlertTime < this.QUALITY_ALERT_COOLDOWN) return;
 
     this.lastQualityAlertTime = now;
-    const notice = (this.app as any).notice?.addNotice?.(
-      `💡 当前质量分 ${result.overallScore}（${result.grade}），建议关注 Top 改进建议`,
-      4000
-    );
-    if (!notice) {
-      log.warn('[MonitorPanelB] 质量提醒:', result.overallScore, result.grade);
-    }
+    new Notice(`💡 当前质量分 ${result.overallScore}（${result.grade}），建议关注 Top 改进建议`, 4000);
   }
 
   /** 显示里程碑通知 */
   private showMilestoneNotice(milestone: string, score: number): void {
-    const notice = (this.app as any).notice?.addNotice?.(
-      `🎉 达成${milestone}！当前质量分：${score}分`,
-      3000
-    );
-    if (!notice) {
-      log.info('[MonitorPanelB] 里程碑:', milestone, '质量分:', score);
-    }
+    new Notice(`🎉 达成${milestone}！当前质量分：${score}分`, 3000);
   }
 
   private getQualityScoreColor(score: number): string {
-    if (score >= 80) return 'var(--nw-success, #22c55e)';
-    if (score >= 60) return 'var(--nw-warning, #f59e0b)';
-    return 'var(--nw-danger, #ef4444)';
+    return qualityScoreColor(score);
   }
 
   private formatQualityDetailKey(key: string): string {

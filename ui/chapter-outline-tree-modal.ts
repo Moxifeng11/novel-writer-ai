@@ -284,7 +284,6 @@ export class ChapterOutlineTreeModal extends Modal {
 
     private parseSceneContent(content: string): SceneNode[] {
         const scenes: SceneNode[] = [];
-        const sceneRegex = /^##\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene(\d+))\s*[：:](.+)$/gim;
         const lines = content.split('\n');
         let currentScene: Partial<SceneNode> | null = null;
 
@@ -292,7 +291,7 @@ export class ChapterOutlineTreeModal extends Modal {
             const line = lines[i];
             const trimmed = line.trim();
 
-            const sceneMatch = trimmed.match(/^##\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene(\d+))\s*[：:](.+)$/);
+            const sceneMatch = trimmed.match(/^#{2,6}\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene\s*(\d+))\s*[：:]\s*(.+)$/);
             if (sceneMatch) {
                 if (currentScene) {
                     scenes.push(this.completeScene(currentScene));

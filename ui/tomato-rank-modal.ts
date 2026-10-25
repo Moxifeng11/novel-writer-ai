@@ -1,6 +1,8 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine } from '../engine/ai-engine';
+import { GLOBAL_RANK_DIR, globalRankFile } from '../shared/paths';
+import { mkdirp } from '../utils/helpers';
 
 export class TomatoRankModal extends Modal {
     private plugin: NovelWriterPlugin;
@@ -28,6 +30,10 @@ export class TomatoRankModal extends Modal {
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
         contentEl.createEl('h2', { text: '🍅 番茄榜单分析' });
+        contentEl.createEl('p', {
+            text: `报告保存到 ${GLOBAL_RANK_DIR}/（平台级数据，不写入作品目录）`,
+            cls: 'setting-item-description',
+        });
 
         this.analyzeButton = contentEl.createEl('button', { text: '开始分析热门趋势', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
         this.analyzeButton.onclick = async () => {
@@ -36,8 +42,8 @@ export class TomatoRankModal extends Modal {
     }
 
     private async analyzeRank(): Promise<void> {
-        if (!this.plugin.settings.apiKey) {
-            new Notice('❌ 请先配置API密钥', 5000);
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
             return;
         }
 
@@ -77,7 +83,7 @@ export class TomatoRankModal extends Modal {
 
             const ts = new Date();
             const timestamp = `${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,'0')}${String(ts.getDate()).padStart(2,'0')}_${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
-            const reportPath = `番茄榜单分析_${timestamp}.md`;
+            const reportPath = globalRankFile(`番茄榜单分析_${timestamp}`);
 
             const content = `---
 tags: [榜单分析]
@@ -89,7 +95,13 @@ tags: [榜单分析]
 ${result.content}
 `;
 
-            await this.app.vault.create(reportPath, content);
+            await mkdirp(this.app, GLOBAL_RANK_DIR);
+            const existing = this.app.vault.getAbstractFileByPath(reportPath);
+            if (existing instanceof TFile) {
+                await this.app.vault.modify(existing, content);
+            } else {
+                await this.app.vault.create(reportPath, content);
+            }
             const file = this.app.vault.getAbstractFileByPath(reportPath);
             if (file instanceof TFile) {
                 await this.plugin.safeOpenFile(file);

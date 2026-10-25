@@ -7,7 +7,7 @@ import { TemplateManager } from './template-manager';
 import { getOllamaModelsWithFallback } from '../engine/co-writer-engine';
 import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
 import { FingerprintExtractor } from '../engine/fingerprint-extractor';
-import { LocalVectorStore } from '../engine/local-vector-store';
+import { createFingerprintEmbedding } from './fingerprint-embedding';
 import { AddFingerprintModal } from './fingerprint-library-modal';
 import { FingerprintDetailModal } from './fingerprint-detail-modal';
 import { renderFingerprintList } from './fingerprint-utils';
@@ -33,6 +33,7 @@ import { createLogger } from '../shared/logger';
 import { exportTextFile } from '../shared/export-file';
 import { OperationConfirmModal } from './components/progress';
 import { rebuildKnowledgeIndexWithConfirm } from './knowledge-rebuild-action';
+import { rebuildAllVectorsWithConfirm } from './vector-rebuild-action';
 import { ForeshadowConfigManager, ForeshadowTypeConfig, DEFAULT_FORESHADOW_CONFIG } from '../engine/foreshadow-config-manager';
 import { AntiAIDetector } from '../engine/anti-ai-detector';
 import { setBusinessThresholdOverrides } from '../shared/thresholds';
@@ -745,6 +746,17 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 });
             });
 
+        new Setting(section)
+            .setName('自动联想（幽灵建议）')
+            .setDesc('输入停顿后自动生成后续联想，按 Tab 接受（每 4 秒最多一次；关闭可节省 AI 调用，手动联想仍可用）')
+            .addToggle(toggle => {
+                toggle.setValue(this.plugin.settings.autoGhostAssociation ?? true);
+                toggle.onChange(async (value) => {
+                    this.plugin.settings.autoGhostAssociation = value;
+                    await this.plugin.saveSettings();
+                });
+            });
+
         updateVisibility();
     }
 
@@ -978,11 +990,10 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             showDelete: true,
             onToggle: async (fp) => {
                 if (!this.fingerprintLibrary) return;
+                // 模板层不参与注入，列表已隐藏其开关；这里只处理 global / project
+                if (fp.scope === 'template') return;
                 fp.enabled = !fp.enabled;
-                if (scope === 'template') {
-                    await this.fingerprintLibrary.updateTemplate(fp);
-                    await this.loadTemplateFingerprints();
-                } else if (scope === 'global') {
+                if (scope === 'global') {
                     await this.fingerprintLibrary.updateGlobal(fp);
                     await this.loadGlobalFingerprints();
                 } else {
@@ -1054,8 +1065,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     fingerprint,
                     fingerprintLibrary: this.fingerprintLibrary,
                     aiEngine: this.plugin.aiEngine,
-                    embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-                    embeddingModel: this.plugin.settings.embeddingModel,
+                    embeddingSettings: this.plugin.settings,
                 }).open();
             },
             onDelete: async (fingerprint) => {
@@ -1069,25 +1079,10 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     }
 
     private showAddTemplateFingerprintModal(): void {
-        const { EmbeddingProviderFactory } = require('../engine/embedding/provider-factory');
-        const embeddingProvider = EmbeddingProviderFactory.create({
-            vectorProviderType: this.plugin.settings.vectorProviderType,
-            vectorOllamaBaseUrl: this.plugin.settings.vectorOllamaBaseUrl,
-            vectorOllamaModel: this.plugin.settings.vectorOllamaModel,
-            vectorOpenaiBaseUrl: this.plugin.settings.vectorOpenaiBaseUrl,
-            vectorOpenaiModel: this.plugin.settings.vectorOpenaiModel,
-            vectorOpenaiApiKey: this.plugin.settings.vectorOpenaiApiKey,
-            vectorDoubaoBaseUrl: this.plugin.settings.vectorDoubaoBaseUrl,
-            vectorDoubaoModel: this.plugin.settings.vectorDoubaoModel,
-            vectorDoubaoApiKey: this.plugin.settings.vectorDoubaoApiKey,
-            vectorQwenBaseUrl: this.plugin.settings.vectorQwenBaseUrl,
-            vectorQwenModel: this.plugin.settings.vectorQwenModel,
-            vectorQwenApiKey: this.plugin.settings.vectorQwenApiKey,
-            embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-            embeddingModel: this.plugin.settings.embeddingModel,
-        });
-        const vectorStore = new LocalVectorStore(this.app, 'global', embeddingProvider);
-        const extractor = new FingerprintExtractor(this.plugin.aiEngine, embeddingProvider, vectorStore);
+        const { provider, vectorStore } = createFingerprintEmbedding(
+            this.app, 'global', this.plugin.settings,
+        );
+        const extractor = new FingerprintExtractor(this.plugin.aiEngine, provider, vectorStore);
 
         new AddFingerprintModal(this.app, {
             scope: 'template',
@@ -1140,8 +1135,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     fingerprint,
                     fingerprintLibrary: this.fingerprintLibrary,
                     aiEngine: this.plugin.aiEngine,
-                    embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-                    embeddingModel: this.plugin.settings.embeddingModel,
+                    embeddingSettings: this.plugin.settings,
                 }).open();
             },
             onDelete: async (fingerprint) => {
@@ -1155,25 +1149,10 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     }
 
     private showAddGlobalFingerprintModal(): void {
-        const { EmbeddingProviderFactory } = require('../engine/embedding/provider-factory');
-        const embeddingProvider = EmbeddingProviderFactory.create({
-            vectorProviderType: this.plugin.settings.vectorProviderType,
-            vectorOllamaBaseUrl: this.plugin.settings.vectorOllamaBaseUrl,
-            vectorOllamaModel: this.plugin.settings.vectorOllamaModel,
-            vectorOpenaiBaseUrl: this.plugin.settings.vectorOpenaiBaseUrl,
-            vectorOpenaiModel: this.plugin.settings.vectorOpenaiModel,
-            vectorOpenaiApiKey: this.plugin.settings.vectorOpenaiApiKey,
-            vectorDoubaoBaseUrl: this.plugin.settings.vectorDoubaoBaseUrl,
-            vectorDoubaoModel: this.plugin.settings.vectorDoubaoModel,
-            vectorDoubaoApiKey: this.plugin.settings.vectorDoubaoApiKey,
-            vectorQwenBaseUrl: this.plugin.settings.vectorQwenBaseUrl,
-            vectorQwenModel: this.plugin.settings.vectorQwenModel,
-            vectorQwenApiKey: this.plugin.settings.vectorQwenApiKey,
-            embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-            embeddingModel: this.plugin.settings.embeddingModel,
-        });
-        const vectorStore = new LocalVectorStore(this.app, 'global', embeddingProvider);
-        const extractor = new FingerprintExtractor(this.plugin.aiEngine, embeddingProvider, vectorStore);
+        const { provider, vectorStore } = createFingerprintEmbedding(
+            this.app, 'global', this.plugin.settings,
+        );
+        const extractor = new FingerprintExtractor(this.plugin.aiEngine, provider, vectorStore);
 
         new AddFingerprintModal(this.app, {
             scope: 'global',
@@ -1193,25 +1172,10 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             new Notice('请先打开一个项目');
             return;
         }
-        const { EmbeddingProviderFactory } = require('../engine/embedding/provider-factory');
-        const embeddingProvider = EmbeddingProviderFactory.create({
-            vectorProviderType: this.plugin.settings.vectorProviderType,
-            vectorOllamaBaseUrl: this.plugin.settings.vectorOllamaBaseUrl,
-            vectorOllamaModel: this.plugin.settings.vectorOllamaModel,
-            vectorOpenaiBaseUrl: this.plugin.settings.vectorOpenaiBaseUrl,
-            vectorOpenaiModel: this.plugin.settings.vectorOpenaiModel,
-            vectorOpenaiApiKey: this.plugin.settings.vectorOpenaiApiKey,
-            vectorDoubaoBaseUrl: this.plugin.settings.vectorDoubaoBaseUrl,
-            vectorDoubaoModel: this.plugin.settings.vectorDoubaoModel,
-            vectorDoubaoApiKey: this.plugin.settings.vectorDoubaoApiKey,
-            vectorQwenBaseUrl: this.plugin.settings.vectorQwenBaseUrl,
-            vectorQwenModel: this.plugin.settings.vectorQwenModel,
-            vectorQwenApiKey: this.plugin.settings.vectorQwenApiKey,
-            embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-            embeddingModel: this.plugin.settings.embeddingModel,
-        });
-        const vectorStore = new LocalVectorStore(this.app, 'project', embeddingProvider, activeProject);
-        const extractor = new FingerprintExtractor(this.plugin.aiEngine, embeddingProvider, vectorStore);
+        const { provider, vectorStore } = createFingerprintEmbedding(
+            this.app, 'project', this.plugin.settings, activeProject,
+        );
+        const extractor = new FingerprintExtractor(this.plugin.aiEngine, provider, vectorStore);
 
         new AddFingerprintModal(this.app, {
             scope: 'project',
@@ -1243,8 +1207,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     fingerprint,
                     fingerprintLibrary: this.fingerprintLibrary,
                     aiEngine: this.plugin.aiEngine,
-                    embeddingEndpoint: this.plugin.settings.embeddingEndpoint,
-                    embeddingModel: this.plugin.settings.embeddingModel,
+                    embeddingSettings: this.plugin.settings,
                 }).open();
             },
             onDelete: async (fingerprint) => {
@@ -1338,6 +1301,16 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             }
         });
         rebuildBtn.addEventListener('click', () => rebuildKnowledgeIndexWithConfirm(this.app, this.plugin));
+
+        const revectorizeBtn = actionRow.createEl('button', {
+            text: '🧠 重向量化',
+            attr: {
+                type: 'button',
+                title: '按当前向量提供商重新计算知识库与指纹向量（不调用 AI、不重新拆解）',
+                style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
+            }
+        });
+        revectorizeBtn.addEventListener('click', () => rebuildAllVectorsWithConfirm(this.app, this.plugin));
 
         const filterBar = section.createDiv({
             attr: { style: 'padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;margin-bottom:16px;background:var(--background-secondary);' }
@@ -1834,6 +1807,8 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             });
             if (!confirmed) return;
             if (this.knowledgeBaseManager) {
+                // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
+                await this.plugin.deconstructionScheduler?.cancelByBook(book.id);
                 await this.knowledgeBaseManager.deleteBook(book.id);
                 await this.loadKnowledgeBooks();
                 this.renderActiveTab();
@@ -3251,6 +3226,8 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 const lastResult = cacheManager.getUpdateLastResult();
                 if (lastResult?.latestVersion) {
                     latestVersionInfo = `v${lastResult.latestVersion}` + (lastResult.hasUpdate ? ' (有更新)' : ' (已是最新)');
+                } else if (lastResult?.error) {
+                    latestVersionInfo = `检查失败：${lastResult.error}`;
                 }
             }
         } catch {
@@ -3351,8 +3328,8 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 .setName('GitHub 仓库')
                 .setDesc('格式：owner/repo')
                 .addText(text => text
-                    .setPlaceholder('trae-ai/novel-writer-ai')
-                    .setValue(this.plugin.settings.updateGithubRepo || 'trae-ai/novel-writer-ai')
+                    .setPlaceholder('Moxifeng11/novel-writer-ai')
+                    .setValue(this.plugin.settings.updateGithubRepo || 'Moxifeng11/novel-writer-ai')
                     .onChange(async (value) => {
                         this.plugin.settings.updateGithubRepo = value;
                         await this.plugin.saveSettings();

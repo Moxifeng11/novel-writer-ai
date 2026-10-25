@@ -1,7 +1,6 @@
 import { SidebarComponent } from './sidebar-component';
 import { App, ItemView, WorkspaceLeaf, TFile, TFolder, Modal, Notice } from 'obsidian';
-import { EntityOverviewModal } from './full-writer/entity-overview-modal';
-import { ToolsModal } from './full-writer/tools-modal';
+import { AddFanficSettingModal } from './add-fanfic-setting-modal';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './full-writer/wizard-types';
 import { buildTemplateVars as buildTemplateVarsExternal } from './full-writer/template-vars-builder';
 import { FullWriterStoreImpl } from './full-writer/full-writer-store';
@@ -27,7 +26,7 @@ import { AIEngine, APIResponse } from '../engine/ai-engine';
 import { ContextManager, GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '../engine/context-manager';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { showProgress, hideProgress, showSuccess, showError, mkdirp, stripFrontmatter, applyNwScope } from '../utils/helpers';
-import { getStepTemplate, fillTemplate } from '../engine/prompt-templates';
+import { getStepTemplateAuto, fillTemplate } from '../engine/prompt-templates';
 import { TemplateService } from '../services/template-service';
 import { getForeshadowWarnings } from '../services/foreshadow-manager';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
@@ -41,6 +40,7 @@ import { ENGINE_NAMES } from '../engine/engine-registry';
 import { ChapterStateManager } from './states/chapter-state-manager';
 import { extractWorldviewMeta } from './utils/worldview-utils';
 import { StepRunner, ALL_FULL_STEPS, FullStep, StepRunCtx } from '../engine/step-runner';
+import { BODY_CHANGE_INVALIDATED_STEPS } from '../engine/step-definitions';
 
 import { CrossVolumeIntegrator } from '../engine/cross-volume-integration';
 import { ContextPanel } from './rendering/context-panel';
@@ -57,7 +57,7 @@ import { pjSettingLib, pjWritingStyle, pjStepDir,
     SUBDIR_WORLD_ARCH, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS,
     SUBDIR_WORLDVIEW_FILE, SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE } from '../shared/paths';
 import { getWritingStyleCandidatePaths } from './writing-style-paths';
-import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta } from './project-utils';
+import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta, type ChapterListEntry } from './project-utils';
 import { CHAR_TO_TOKEN_RATIO, INFO_DEBT_MAX, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
 import { ensureTemplateScaffold } from '../shared/template-scaffold';
@@ -139,6 +139,21 @@ export class FullWriterView extends ItemView {
         return { project: this.project, chapterName: this.chapterName, chapterNum: this.chapterNum, volume: this.volume };
     }
 
+    /**
+     * 外部视图（如句级协同写作）保存正文后，重新从磁盘恢复章节步骤状态。
+     * 避免回到工作台后仍显示旧的「正文未完成」状态，导致流程卡在步骤 7。
+     */
+    public async refreshChapterStateFromDisk(): Promise<void> {
+        if (!this.project || !this.chapDir) return;
+        try {
+            await this.chapterStateManager.restoreChapterState(this.chapDir);
+            this.chapterStateManager.currentStepIndex = this._calcResumeStepIndex();
+            if (this.tabContent) await this.renderInContainer(this.tabContent);
+        } catch (e) {
+            log.warn('[FullWriter] 刷新章节状态失败:', e);
+        }
+    }
+
     private tabBar!: HTMLDivElement;
     tabContent!: HTMLDivElement;
 
@@ -181,6 +196,10 @@ export class FullWriterView extends ItemView {
             showWarning: (message: string, duration?: number) => {
                 new Notice(message, duration);
             },
+            // A7: 消痕/迭代弹窗内部改写正文后，走同一套失效传播
+            invalidateSteps: (keys: string[]) => {
+                this.chapterStateManager.invalidateSteps(keys);
+            },
         };
 
         this.stepRunner = new StepRunner(this.app, plugin, stepRunnerCallbacks);
@@ -205,6 +224,14 @@ export class FullWriterView extends ItemView {
             getChapterName: () => this.chapterName,
             getVolume: () => this.volume,
             getVars: () => this.vars,
+            getContext: () => this.context,
+            getChapterNum: () => this.chapterNum,
+            reloadContext: async () => {
+                await this.loadContext();
+                // loadContext 结束会跳到第一步；重新加载后停在上下文步骤，用户才能看到清单结果
+                this.chapterStateManager.currentStepIndex = 0;
+                if (this.tabContent) await this.renderInContainer(this.tabContent);
+            },
             getTabContent: () => this.tabContent,
             renderInContainer: (c) => this.renderInContainer(c),
             renderInterventionBox: (c) => this.interventionController.render(c),
@@ -247,7 +274,24 @@ export class FullWriterView extends ItemView {
                 onSelectChapter: (project, chapter) => this.selectChapter(project, chapter),
                 onOpenWizard: (project) => this.openWizardForProject(project),
                 onOpenCoWriting: (project, chapter) => this.openChapterInCoWriting(project, chapter),
+                onAddFanficSetting: (project) => {
+                    new AddFanficSettingModal(this.app, this.plugin, project).open();
+                },
                 onDeleteProject: () => this.renderProjectSelectorInTab(),
+                // 项目页没有 activeFile：把卡片选中同步给命令层，右侧快捷工具才能拿到项目
+                onProjectSelected: (project) => {
+                    if (project) {
+                        this.plugin.setWorkbenchContext({
+                            project,
+                            volume: '',
+                            chapterName: '',
+                            chapterNum: 0,
+                            chapDir: '',
+                        });
+                    } else {
+                        this.plugin.setWorkbenchContext(null);
+                    }
+                },
                 executeCommand: (cmd) => this.plugin.executeCommand(cmd),
             }
         );
@@ -311,6 +355,7 @@ export class FullWriterView extends ItemView {
             openCurrentChapterInCoWriting: () => this.openCurrentChapterInCoWriting(),
             openKnowledgeBase: () => this.openKnowledgeBase(),
             openFingerprintLibrary: () => this.openFingerprintLibrary(),
+            executeCommand: (commandId) => this.plugin.executeCommand(commandId),
         });
 
         this.statusBarController = new StatusBarController({
@@ -331,6 +376,8 @@ export class FullWriterView extends ItemView {
             setContext: (ctx) => { this.context = ctx; },
             activateTab: (tabId) => this.activateTab(tabId),
             entityStateController: this.entityStateController,
+            saveStepResult: (key, content) =>
+                this.stepRunner.saveStepResult(key, content, this.chapDir, this.chapterName, this.volume),
         });
     }
 
@@ -436,8 +483,10 @@ export class FullWriterView extends ItemView {
             this.activeTabId = this.tabs[this.tabs.length - 1].id;
             this.renderTabBar();
             try {
-                await this.loadContext();
+                // 先恢复磁盘状态再加载上下文：自动提取角色灵魂依赖 stepCompleted，
+                // 旧顺序（loadContext → restore）会让提取结果被磁盘上的模板骨架覆盖回 ○/◐。
                 await this.chapterStateManager.restoreChapterState(this.chapDir);
+                await this.loadContext();
                 await this.renderTabContent();
             } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : String(e);
@@ -490,6 +539,29 @@ export class FullWriterView extends ItemView {
                 this.refreshContextBar();
             })
         );
+
+        // 外部入口（协同写作 / 批量 / 续写）写盘后，刷新本工作台的步骤状态
+        this.registerEvent(
+            this.app.workspace.on('novel-writer:body-written', (data) => {
+                void this.handleBodyWritten(data?.path || '');
+            })
+        );
+    }
+
+    /** 正文被其他入口覆写后：只有「当前章节」才重新恢复状态并重渲染 */
+    private async handleBodyWritten(bodyPath: string): Promise<void> {
+        if (this.isLoading || !this.project || !this.chapterNum || !this.chapDir) return;
+        const activeTab = this.tabs.find(t => t.id === this.activeTabId);
+        if (activeTab && activeTab.type === 'wizard') return;
+
+        const volNum = parseInt(this.volume.match(/第(\d+)卷/)?.[1] || '0', 10);
+        const currentBody = volNum > 0
+            ? findBodyFileV4(this.app, this.project, volNum, this.chapterNum)
+            : null;
+        if (!currentBody || currentBody.path !== bodyPath) return;
+
+        await this.chapterStateManager.restoreChapterState(this.chapDir);
+        await this.renderInContainer(this.tabContent);
     }
 
     async onClose(): Promise<void> {
@@ -511,6 +583,7 @@ export class FullWriterView extends ItemView {
         }
         // 清除工作台上下文标记
         this.plugin._isWorkbenchContext = false;
+        this.plugin.setWorkbenchContext(null);
     }
 
     private async handleFileChange(file: TFile): Promise<void> {
@@ -528,8 +601,9 @@ export class FullWriterView extends ItemView {
             this.chapterStateManager.reset();
             this.context = null;
 
-            await this.loadContext();
+            // 先恢复磁盘状态再加载上下文，避免自动提取的角色灵魂被磁盘模板覆盖
             await this.chapterStateManager.restoreChapterState(this.chapDir);
+            await this.loadContext();
             await this.renderInContainer(this.tabContent);
         }
     }
@@ -553,6 +627,19 @@ export class FullWriterView extends ItemView {
         await this.tabController.activateTab(tabId);
     }
 
+    /**
+     * 命令层「项目与章节」入口：把工作台切回项目选择页。
+     * 已在该页时重新扫描项目列表并提示，避免「点击没有任何反应」。
+     */
+    async showProjectSelector(): Promise<void> {
+        if (this.activeTabId === 'project-selector') {
+            await this.renderProjectSelectorInTab();
+            new Notice('已刷新项目与章节', 2000);
+            return;
+        }
+        await this.activateTab('project-selector');
+    }
+
     closeOutlineTreeModal(): void {
         if (this.outlineTreeModal) {
             this.outlineTreeModal.close();
@@ -569,7 +656,34 @@ export class FullWriterView extends ItemView {
     }
 
     private async renderTabContent(): Promise<void> {
+        this.syncWorkbenchContext();
         await this.tabController.renderTabContent();
+    }
+
+    /**
+     * 把界面当前项目/章节写回插件：快捷工具在工作台/项目页没有 activeFile，
+     * 命令层（getActiveProject / getActiveChapterTarget）依赖这份上下文。
+     */
+    private syncWorkbenchContext(): void {
+        if (this.project && this.chapterNum > 0) {
+            this.plugin.setWorkbenchContext({
+                project: this.project,
+                volume: this.volume,
+                chapterName: this.chapterName,
+                chapterNum: this.chapterNum,
+                chapDir: this.chapDir,
+            });
+        } else if (this.project) {
+            this.plugin.setWorkbenchContext({
+                project: this.project,
+                volume: '',
+                chapterName: '',
+                chapterNum: 0,
+                chapDir: '',
+            });
+        } else {
+            this.plugin.setWorkbenchContext(null);
+        }
     }
 
     private async openCurrentChapterInCoWriting(): Promise<void> {
@@ -592,7 +706,7 @@ export class FullWriterView extends ItemView {
      * v73: 从「项目与章节」卡片一步直达句级协同写作。
      * 接收章节对象（含 chapter/volume/file），解析全书连续章号后带上下文进入协同 view。
      */
-    private async openChapterInCoWriting(project: string, chapter: { chapter: string; volume: string; file: TFile }): Promise<void> {
+    private async openChapterInCoWriting(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
         const chapterNum = parseInt(chapter.chapter.match(/\d+/)?.[0] || '0', 10);
         if (!chapterNum) {
             new Notice('无法解析章号，请检查章节命名。', 4000);
@@ -633,6 +747,7 @@ export class FullWriterView extends ItemView {
                 return this.stepAbortController;
             },
             refreshWorkspace: () => {},
+            invalidateSteps: (keys, markStale) => this.chapterStateManager.invalidateSteps(keys, markStale),
 
             // ✅ v1.6.0 实体状态追踪：步骤完成后回调
             onStepComplete: async (stepKey: string, content: string) => {
@@ -715,15 +830,30 @@ export class FullWriterView extends ItemView {
     }
 
     // v3.4.9 委托: → project-utils.ts
-    private getChaptersForProject(project: string): Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }> {
+    private getChaptersForProject(project: string): ChapterListEntry[] {
         return getChaptersForProject(this.app, project);
     }
 
-    private async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile }): Promise<void> {
+    private async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
         await this.tabController.selectChapter(project, chapter);
     }
 
-    private showAllChapters(project: string, chapters: Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }>): void {
+    /**
+     * 从外部入口（章节列表、命令等）按路径直接定位章节。
+     * 解析路径中的卷名与章名后复用 selectChapter，保证标签页/上下文与手动选择一致。
+     */
+    async openChapterByPath(project: string, chapterPath: string): Promise<void> {
+        const file = this.app.vault.getAbstractFileByPath(chapterPath);
+        if (!(file instanceof TFile)) {
+            new Notice('未找到章节文件，可能已被移动或删除');
+            return;
+        }
+        const volume = chapterPath.match(/正文\/(第\d+卷)\//)?.[1] ?? '';
+        const chapterName = chapterPath.match(/(第\d+章)_正文\.md$/)?.[1] ?? file.basename;
+        await this.selectChapter(project, { chapter: chapterName, volume, file });
+    }
+
+    private showAllChapters(project: string, chapters: ChapterListEntry[]): void {
         this.projectSelectorController.showAllChapters(project, chapters);
     }
 
@@ -750,7 +880,7 @@ export class FullWriterView extends ItemView {
         return sortChaptersByNumber(chapters);
     }
 
-    private getNextChapter(sortedChapters: Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }>): { chapter: string; volume: string; title: string; status: string; file: TFile } | null {
+    private getNextChapter(sortedChapters: ChapterListEntry[]): ChapterListEntry | null {
         return getNextChapter(sortedChapters);
     }
 
@@ -1055,12 +1185,6 @@ export class FullWriterView extends ItemView {
 
         const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
         const customTemplate = await templateService.getStepPrompt(stepKey);
-        const template = customTemplate || getStepTemplate(stepKey);
-        if (!template) {
-            area.createEl('h3', { text: currentStep.label });
-            area.createEl('p', { text: '未知步骤', cls: 'novel-writer-fw-error-text' });
-            return;
-        }
 
         // 检查前置步骤是否完成，未完成则显示提醒
         if (currentStep && currentStep.index >= 2 && currentStep.index <= 9) {
@@ -1076,6 +1200,14 @@ export class FullWriterView extends ItemView {
 
         const vars = await this.buildTemplateVars();
         this.vars = vars;
+
+        // V2：正文步骤在有角色灵魂数据时自动切到小说家模板
+        const template = customTemplate || getStepTemplateAuto(stepKey, vars);
+        if (!template) {
+            area.createEl('h3', { text: currentStep.label });
+            area.createEl('p', { text: '未知步骤', cls: 'novel-writer-fw-error-text' });
+            return;
+        }
 
         // 步骤描述
         const header = area.createDiv({ cls: 'novel-writer-fw-step-header' });
@@ -1127,7 +1259,7 @@ export class FullWriterView extends ItemView {
                 '🎯 逐句精控：每句话都可以选择和调整',
                 '🔄 多向候选：3 条不同方向，拓宽创作思路',
                 '🛡️ 降低 AI 痕迹：人工参与度高，反检测效果更好',
-                '📊 数据兼容：与旧模式共享同一正文文件，可随时切换',
+                '📊 统一落盘：与整章草稿共享同一正文文件与格式契约',
             ];
             features.forEach(f => {
                 cowriteFeatures.createEl('div', { text: f, cls: 'novel-writer-fw-cowrite-entry-feature' });
@@ -1139,9 +1271,9 @@ export class FullWriterView extends ItemView {
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary novel-writer-fw-cowrite-entry-btn'
             });
             cowriteBtn.addEventListener('click', () => this.openCurrentChapterInCoWriting());
-            
+
             const cowriteNote = cowriteCard.createEl('p', { 
-                text: '💡 提示：本页下方的「AI 自动生成」为 v5.0 之前的旧模式，仅作兼容保留。', 
+                text: '💡 提示：下方「整章草稿」与本工作台共用同一正文文件、同一格式契约与同一落盘入口，可随时切换。', 
                 cls: 'novel-writer-fw-cowrite-entry-note' 
             });
         }
@@ -1170,8 +1302,8 @@ export class FullWriterView extends ItemView {
             skipBtn.onclick = () => this.stepRunner.moveToNextStep(this._makeStepRunCtx());
         }
 
-        // bodyGeneration: AI 自动生成按钮标注为次选
-        const sendBtnText = stepKey === 'bodyGeneration' ? '🤖 AI 自动生成（旧）' : '🚀 发送 AI 请求';
+        // bodyGeneration: 主入口是「进入句级协同写作」，整章生成仅作为可选的次级入口
+        const sendBtnText = stepKey === 'bodyGeneration' ? '🤖 整章草稿（可选）' : '🚀 发送 AI 请求';
         const sendBtnCls = stepKey === 'bodyGeneration' ? 'novel-writer-fw-btn novel-writer-fw-btn-secondary' : 'novel-writer-fw-btn novel-writer-fw-btn-primary';
         const sendBtn = btnRow.createEl('button', {
             text: sendBtnText,
@@ -1247,7 +1379,13 @@ export class FullWriterView extends ItemView {
 
     // v3.4.9 委托: renderPolishEditor → PolishEditor 模块
     private async renderPolishEditor(area: HTMLElement): Promise<void> {
-        await this.polishEditor.render(area, this.stepResults, this.project, this.chapDir, this.chapterName, this.volume);
+        await this.polishEditor.render(
+            area, this.stepResults, this.project, this.chapDir, this.chapterName, this.volume,
+            () => {
+                // A7: 润色自动保存写回正文 → 下游审查/分析/结算失效（与手动保存正文口径一致）
+                this.chapterStateManager.invalidateSteps([...BODY_CHANGE_INVALIDATED_STEPS]);
+            },
+        );
     }
 
     private renderResultArea(area: HTMLElement, stepKey: string): void {
@@ -1379,6 +1517,11 @@ export class FullWriterView extends ItemView {
                             onStepError: () => { this.renderInContainer(this.tabContent); },
                         }
                     );
+                }
+                // 阶段完成口径与左侧导航一致：必做 infoPlan 完成即可进入正文，可选步骤不阻塞
+                if (this.stepCompleted.has('infoPlan')) {
+                    this.chapterStateManager.currentStepIndex = 7;
+                    new Notice('✅ 章节规划已具备正文条件（必做步骤完成），已进入正文写作', 3000);
                 }
             } catch (e) {
                 console.error('[Planning] 一键生成失败:', e);

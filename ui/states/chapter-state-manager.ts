@@ -1,6 +1,6 @@
 import { App, Notice, TFolder, TFile } from 'obsidian';
 import { getChapterFile, CHAPTER_FILE_TYPES, normalizeChapterFiles, findBodyFileV4 } from '../../engine/chapter-utils';
-import { ALL_FULL_STEPS, migrateStepIndex } from '../../engine/step-runner';
+import { ALL_FULL_STEPS, migrateStepIndex } from '../../engine/step-definitions';
 import { validateStepResult, isTemplateSkeleton, StepLevel } from '../../engine/step-validator';
 import { createLogger } from '../../shared/logger';
 
@@ -25,6 +25,20 @@ export class ChapterStateManager {
     public staleSteps: Set<string> = new Set();
 
     constructor(private app: App) {}
+
+    /**
+     * 统一失效传播：stepCompleted / stepLevels / staleSteps 三者同步。
+     *
+     * 旧实现只删 stepCompleted，stepLevels 仍是 complete，导致导航仍显示「已完成」，
+     * 与「待重做」的提示自相矛盾。所有「上游变更 → 下游失效」都必须走这里。
+     */
+    invalidateSteps(stepKeys: string[], markStale = true): void {
+        for (const key of stepKeys) {
+            this.stepCompleted.delete(key);
+            if (this.stepLevels[key] === 'complete') this.stepLevels[key] = 'partial';
+            if (markStale) this.staleSteps.add(key);
+        }
+    }
 
     /** 重置所有步骤状态 */
     reset(): void {
@@ -114,6 +128,23 @@ export class ChapterStateManager {
             return getChapterFile(chapFolder, CHAPTER_FILE_TYPES.body);
         };
 
+        // 结算没有独立步骤文件（StepResultSaver 无 settlement 映射），唯一持久证据是
+        // 结算引擎写入正文 frontmatter 的 status=settled / 已完稿。提前读一次供识别使用。
+        const bodyFileForStatus = resolveBodyFile();
+        let bodySettled = false;
+        if (bodyFileForStatus instanceof TFile) {
+            try {
+                let status = this.app.metadataCache.getFileCache(bodyFileForStatus)?.frontmatter?.['status'];
+                if (!status) {
+                    const raw = await this.app.vault.read(bodyFileForStatus);
+                    status = raw.match(/^status:\s*(.+)$/m)?.[1]?.trim();
+                }
+                bodySettled = status === 'settled' || status === '已完稿';
+            } catch (e) {
+                log.warn('[ChapterStateManager] 读取正文 status 失败（结算识别回退为未完成）:', e instanceof Error ? e.message : String(e));
+            }
+        }
+
         // stepKey -> CHAPTER_FILE_TYPES key 的映射
         // 只有持久化到磁盘的类型才需要恢复
         const stepFileMap: Record<string, keyof typeof CHAPTER_FILE_TYPES> = {
@@ -130,6 +161,7 @@ export class ChapterStateManager {
             'emotionPlan': 'emotionPlan',       // V2
             'sceneExpand': 'sceneExpand',       // V2
             'characterSoul': 'characterSoul',   // V2
+            'settlement': 'settlement',
         };
 
         for (const [stepKey, fileTypeKey] of Object.entries(stepFileMap)) {
@@ -138,7 +170,24 @@ export class ChapterStateManager {
             const file = stepKey === 'bodyGeneration'
                 ? resolveBodyFile()
                 : getChapterFile(chapFolder, chineseType);
-            if (!file) continue;
+            if (!file) {
+                // 结算：没有步骤文件，但正文已 settled 就是已完成
+                if (stepKey === 'settlement' && bodySettled) {
+                    this.stepCompleted.add('settlement');
+                    this.stepLevels['settlement'] = 'complete';
+                    this.stepMissing['settlement'] = [];
+                    this.staleSteps.delete('settlement');
+                    continue;
+                }
+                // 磁盘上没有该步骤文件 → 视为未完成，清掉复用视图时可能残留的过期完成态
+                this.stepCompleted.delete(stepKey);
+                this.stepLevels[stepKey] = 'empty';
+                this.stepMissing[stepKey] = [];
+                this.staleSteps.delete(stepKey);
+                // 旧实现只清 completed/level，不删 stepResults：残留结果会让导航继续显示「◐ 部分完成」
+                delete this.stepResults[stepKey];
+                continue;
+            }
 
             let content = '';
             try {
@@ -181,8 +230,10 @@ export class ChapterStateManager {
             let level: StepLevel = validation.level;
             let missing = validation.missing;
 
-            // v4.0: step_status 字段优先（强制标记为 complete）
-            if (stepStatus === 'generated' || stepStatus === 'reviewed') {
+            // v4.0: step_status 字段优先。
+            // A4: generated 只代表「写过盘」，不能作为完成凭据（旧数据/模板骨架也会被写成 generated）；
+            // 仍以结构校验为准，仅人工审阅过的 reviewed 保留强制完成。
+            if (stepStatus === 'reviewed') {
                 level = 'complete';
                 missing = [];
             }
@@ -218,14 +269,19 @@ export class ChapterStateManager {
             this.stepLevels[stepKey] = level;
             this.stepMissing[stepKey] = missing;
 
-            // v6.0: 只有 complete 级别才算 stepCompleted
+            // v6.0: 只有 complete 级别才算 stepCompleted；磁盘状态是权威来源
             if (level === 'complete') {
                 this.stepCompleted.add(stepKey);
+            } else {
+                this.stepCompleted.delete(stepKey);
             }
 
-            // 有内容就存 stepResults（用于提示词注入等），不只是 complete 才存
+            // 有内容就存 stepResults（用于提示词注入等），不只是 complete 才存；
+            // 空/模板骨架必须删除旧值，否则导航会按残留结果误显示「◐ 部分完成」
             if (level !== 'empty' && !isTmplSkeleton) {
                 this.stepResults[stepKey] = pureBody;
+            } else {
+                delete this.stepResults[stepKey];
             }
         }
 
@@ -270,8 +326,7 @@ export class ChapterStateManager {
                                 k => stepFileMap[k] === fileTypeKey
                             );
                             if (stepK) {
-                                this.stepCompleted.delete(stepK);
-                                this.staleSteps.add(stepK);
+                                this.invalidateSteps([stepK]);
                             }
                         }
                     }
@@ -295,8 +350,7 @@ export class ChapterStateManager {
                     if (qcFile instanceof TFile) {
                         const qcMtime = qcFile.stat?.mtime || 0;
                         if (qcMtime > fixMtime) {
-                            this.stepCompleted.delete('fix');
-                            this.staleSteps.add('fix');
+                            this.invalidateSteps(['fix']);
                             log.warn(`[ChapterStateManager] qualityControl(${qcMtime}) > fix(${fixMtime}) → 标脏 fix`);
                         }
                     }
@@ -308,8 +362,7 @@ export class ChapterStateManager {
                     try {
                         const arContent = await this.app.vault.read(arFile);
                         if (arContent.includes('CRITICAL_FAIL')) {
-                            this.stepCompleted.delete('finalFix');
-                            this.staleSteps.add('finalFix');
+                            this.invalidateSteps(['finalFix']);
                             log.warn('[ChapterStateManager] analysisReport 含 CRITICAL_FAIL → 标脏 finalFix');
                         }
                     } catch (e) {
@@ -323,25 +376,11 @@ export class ChapterStateManager {
             this.staleSteps = new Set();
         }
 
-        // v6.0: context 是特殊步骤，恢复时也同步设置 level
-        this.stepLevels['context'] = 'complete';
-        this.stepMissing['context'] = [];
-        this.stepCompleted.add('context');
+        // v6.0: context 是特殊步骤，其状态由 ContextLoaderController.loadContext()
+        // 按「输入完整性」写入（Rev 185）。旧实现在这里无条件标 complete，
+        // 会让加载失败/必做输入缺失的章节也显示「上下文已完成」。
         this.currentStepIndex = this.stepCompleted.size > 0 ? 1 : 0;
         log.warn('[ChapterStateManager] restoreChapterState 完成: stepCompleted=', [...this.stepCompleted], 'staleSteps=', [...this.staleSteps], 'stepLevels=', this.stepLevels);
-    }
-
-    /**
-     * v3.4.8 SOURCE: 检测文件是否为"只有结构、没有实质内容"的模板骨架
-     * 批量建章创建的模板文件有完整的标题结构和空字段，字节数轻松超标，
-     * 但这些文件没有 AI 填充的实际内容，不应被误判为"已完成"。
-     *
-     * 检测策略（infoPlan 专用的强检测 + 其他步骤通用的弱检测）：
-     * - infoPlan: frontmatter 情感温度/冲突强度为空 + body 空字段行占比 > 70%
-     * - 通用: body 中不含任何实值字段行（`- Name：Value` 有实际 Value）→ 骨架
-     */
-    private detectTemplateSkeleton(pureBody: string, fm: Record<string, any>, stepKey: string): boolean {
-        return this.detectTemplateSkeletonImpl(pureBody, fm, stepKey);
     }
 
     /**
@@ -357,71 +396,5 @@ export class ChapterStateManager {
         const volN = parseInt(chapDir.match(/第(\d+)卷/)?.[1] || '0', 10);
         const chapN = parseInt(chapDir.match(/第(\d+)章/)?.[1] || '0', 10);
         return { project, volN, chapN };
-    }
-
-    private detectTemplateSkeletonImpl(pureBody: string, fm: Record<string, any>, stepKey: string): boolean {
-        // --- 步骤特定检测 ---
-        if (stepKey === 'infoPlan') {
-            // infoPlan 模板标志：frontmatter 核心字段为空值
-            const fmTemp = String(fm['情感温度'] || '').trim();
-            const fmConflict = String(fm['冲突强度'] || '').trim();
-            if (!fmTemp && !fmConflict) {
-                // 两个核心字段都为空 → 模板概率极高
-                return true;
-            }
-            // 进一步：数 body 中有实值的行 vs 总行数
-            const lines = pureBody.split('\n').filter(l => l.trim());
-            if (lines.length === 0) return true;
-            let filledLines = 0;
-            for (const line of lines) {
-                const t = line.trim();
-                if (t.startsWith('#')) continue;           // 标题
-                if (t.startsWith('---')) continue;         // 分隔符
-                // 检查 `- 字段名：值` 模式是否有非空值
-                const m = t.match(/^[-*]\s*.+?[:：]\s*(.+)$/);
-                if (m && m[1].trim().length > 0) {
-                    filledLines++;
-                } else if (t.length > 10 && !t.includes('：') && !t.includes(':')) {
-                    // 散文字段（非键值对，通常 AI 生成才有）
-                    filledLines++;
-                }
-            }
-            // 70% 以上的行都是空壳 → 模板
-            return filledLines < Math.max(3, lines.length * 0.3);
-        }
-
-        // --- 通用检测 ---
-        // v6.2: 自由文本步骤（正文/大纲/分析报告等）不再用字数阈值判断骨架
-        // 原因：短但认真写的内容可能<100字但不是模板；长模板也可能>100字但全是占位符
-        // 改为：仅通过模板占位符/标记判断是否为骨架，空内容由 step-validator 判定为 empty
-        const narrativeSteps = ['bodyGeneration', 'outline', 'analysisReport', 'continuityCheck', 'selfCheck', 'fix', 'finalFix', 'plotDistill', 'qualityControl'];
-        if (narrativeSteps.includes(stepKey)) {
-            const templateMarkers = [
-                '（待 auto_writer', '（待定）', '待补充', '暂无',
-                '{{Name}}', '{{name}}', '（由AI生成）', '（填入',
-                '<!-- -->', '（单层/多层',
-            ];
-            const hasTemplateMarker = templateMarkers.some(m => pureBody.includes(m));
-            if (hasTemplateMarker) return true;
-            const cleanText = pureBody.replace(/\s+/g, '').replace(/^#+.*$/gm, '').trim();
-            if (cleanText.length === 0) return true;
-            return false;
-        }
-
-        // 如果 frontmatter 无 source 字段 → 检查 body 是否有实质内容
-        // 统计 `- Name：Value` 中有实值的行
-        const lines = pureBody.split('\n').map(l => l.trim()).filter(Boolean);
-        if (lines.length === 0) return true;
-        let filledCount = 0;
-        for (const line of lines) {
-            if (line.startsWith('#')) continue;
-            const m = line.match(/^[-*]\s*.+?[:：]\s*(.+)$/);
-            if (m && m[1].length > 0) filledCount++;
-        }
-        // 超过 50% 的实值行 → 有内容，不是骨架
-        if (filledCount > lines.length * 0.5) return false;
-        // 超过 3 个实值行 → 有内容
-        if (filledCount >= 3) return false;
-        return true;
     }
 }

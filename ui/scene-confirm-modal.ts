@@ -15,12 +15,21 @@ import type {
     SceneLoopOptions,
     SceneLoopItem,
     SceneLoopResult,
+    SceneTask,
 } from '../engine/scene-generation-loop';
 import { GenerationCheckpointStore } from '../engine/generation-checkpoint';
 import type { GenerationCheckpoint } from '../engine/generation-checkpoint';
 import { ChapterSnapshotBuilder } from '../engine/chapter-snapshot-builder';
 import { StoryBeatExtractor } from '../engine/story-beat-extractor';
 import { createSceneBodyGenerator } from '../engine/scene-body-generator';
+import { BodyWriter, defaultBodyPath } from '../engine/body-writer';
+import { findProtagonistName } from '../shared/protagonist';
+import { findBodyFileV4 } from '../engine/chapter-utils';
+import { mergeSceneBodies } from '../shared/scene-body-merge';
+import { SceneExpander } from '../engine/ai-scene-expander';
+import { AIApiClient } from '../engine/ai-api-client';
+import { ContextManager } from '../engine/context-manager';
+import type { SceneNode } from '../shared/types';
 import { computePromptHash } from '../engine/prompt-hash';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import type NovelWriterPlugin from '../main';
@@ -43,6 +52,14 @@ export interface SceneConfirmWizardOptions {
     expansionText: string;
     /** 章节规划文本（outline/plotDistill），供 StoryBeatExtractor 提取任务卡 */
     chapterPlan: string;
+    /** 形如 `第1卷`；缺省按第 1 卷处理 */
+    volumeName?: string;
+}
+
+/** 场景确认向导的外部落盘钩子（由调用方注入，避免 UI 直接拼路径） */
+export interface SceneConfirmHooks {
+    /** 把整章正文写入 vault，返回实际路径与字数 */
+    writeBody?: (body: string) => Promise<{ path: string; wordCount: number }>;
 }
 
 /**
@@ -55,26 +72,95 @@ export interface SceneConfirmWizardOptions {
 export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): Promise<void> {
     const { plugin, project, chapterName, chapterNumber, expansionText, chapterPlan } = opts;
 
+    const gathered = await plugin.ctxManager.gatherAll(project, chapterName);
     const snapshot = new ChapterSnapshotBuilder().buildFromContext(
         chapterNumber,
-        await plugin.ctxManager.gatherAll(project, chapterName),
+        gathered,
         { chapterPlan },
     );
     const beats = new StoryBeatExtractor().extract(chapterPlan);
 
     const model = plugin.settings.flashModel;
     const injector = plugin.knowledgeInjector;
-    const generateSceneBody = createSceneBodyGenerator({
+    const bodyWriter = new BodyWriter({ app: plugin.app });
+    const bodyFormat = await bodyWriter.resolveContract(project);
+    const primaryGenerator = createSceneBodyGenerator({
         projectPath: project,
         model,
         injectForSceneBody: (ctx, o) => injector ? injector.injectForSceneBody(ctx, o) : Promise.resolve(''),
+        injectForSceneBodyLayers: (ctx, o) => injector
+            ? injector.injectForSceneBodyLayers(ctx, o)
+            : Promise.resolve({ system: '', user: '' }),
         callAI: (sys, usr, m) => plugin.aiEngine.callAI(sys, usr, m),
         snapshot,
         beats,
+        bodyFormat,
     });
+
+    // 兜底：主生成链路失败/空结果时，回退到 SceneExpander 的经典扩写提示词
+    const expander = new SceneExpander(plugin, new AIApiClient(plugin));
+    const data = gathered.data;
+    const generateSceneBody = async (
+        task: SceneTask,
+        prevEnding: string,
+        directive?: string,
+    ): Promise<{ content: string; error?: string | null }> => {
+        const result = await primaryGenerator(task, prevEnding, directive);
+        if (!result.error && result.content.trim()) return result;
+
+        const sceneNode: SceneNode = {
+            id: `scene-${task.num}`,
+            order: task.num,
+            title: task.name,
+            type: 'action',
+            status: 'not_started',
+            summary: task.objective,
+            characters: [],
+            locations: [],
+            factions: [],
+            items: [],
+            foreshadowRefs: [],
+            wordCountPlan: 300,
+            wordCountActual: 0,
+            objective: task.objective,
+            obstacle: task.conflict,
+            outcome: task.cliffhanger,
+            emotionArc: task.emotionArc,
+            keyDialogues: [],
+        };
+        const fallback = await expander.expandScene(sceneNode, {
+            projectId: project,
+            // 向导入参不含卷号，扩写提示词中的卷号仅作展示，固定为 1
+            volumeNumber: 1,
+            chapterNumber,
+            chapterConflict: chapterPlan,
+            chapterSummary: chapterPlan,
+            worldview: data.world_view?.raw ?? '',
+            characters: ContextManager.formatCharacters(data.character_state ?? []),
+            locations: ContextManager.formatEntities(
+                (data.locations ?? []) as unknown as Record<string, string>[], 'location'),
+            factions: ContextManager.formatEntities(
+                (data.factions ?? []) as unknown as Record<string, string>[], 'faction'),
+            items: ContextManager.formatEntities(
+                (data.items ?? []) as unknown as Record<string, string>[], 'item'),
+            powerSystem: data.setting_lib?.raw ?? '',
+            // 主角名只从人物列表解析（frontmatter「身份」字段），
+            // 不要再读 `_workbenchState`：该字段无写入方，只会退化成「主角」占位
+            protagonistName: findProtagonistName(data.character_state as Array<Record<string, unknown>>)
+                || '主角',
+            emotionPlan: data.emotion_plan?.raw ?? '',
+        });
+        if (fallback.error) return result;
+        return { content: fallback.content };
+    };
 
     const loop = plugin.engineRegistry.get<SceneGenerationLoop>(ENGINE_NAMES.SCENE_GENERATION_LOOP);
     const store = plugin.engineRegistry.get<GenerationCheckpointStore>(ENGINE_NAMES.GENERATION_CHECKPOINT_STORE);
+
+    const volumeNum = parseInt((opts.volumeName || '').match(/第(\d+)卷/)?.[1] || '1', 10) || 1;
+    const volumeName = opts.volumeName || `第${volumeNum}卷`;
+    const bodyPath = findBodyFileV4(plugin.app, project, volumeNum, chapterNumber)?.path
+        ?? defaultBodyPath(project, volumeNum, chapterNumber, chapterName);
 
     new SceneConfirmModal(plugin.app, loop, {
         expansionText,
@@ -86,6 +172,19 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
         projectId: project,
         chapter: chapterName,
         promptHash: computePromptHash('scene-confirm', expansionText, model, 0.7, 4096),
+    }, {
+        writeBody: async (body: string) => {
+            const written = await bodyWriter.write({
+                path: bodyPath,
+                raw: body,
+                chapterNum: chapterNumber,
+                chapterName,
+                volume: volumeName,
+                project,
+                writingMode: 'scene',
+            });
+            return { path: written.path, wordCount: written.wordCount };
+        },
     }).open();
 }
 
@@ -93,14 +192,22 @@ export class SceneConfirmModal extends Modal {
     private loop: SceneGenerationLoop;
     private options: SceneLoopOptions;
     private checkpoint: SceneConfirmCheckpointConfig | null;
+    private hooks: SceneConfirmHooks;
     /** 恢复模式：sceneNum → scene_done 断点（从断点继续时填充） */
     private resumeMap: Map<number, GenerationCheckpoint> | null = null;
 
-    constructor(app: App, loop: SceneGenerationLoop, options: SceneLoopOptions, checkpoint?: SceneConfirmCheckpointConfig) {
+    constructor(
+        app: App,
+        loop: SceneGenerationLoop,
+        options: SceneLoopOptions,
+        checkpoint?: SceneConfirmCheckpointConfig,
+        hooks: SceneConfirmHooks = {},
+    ) {
         super(app);
         this.loop = loop;
         this.options = options;
         this.checkpoint = checkpoint ?? null;
+        this.hooks = hooks;
     }
 
     async onOpen(): Promise<void> {
@@ -300,6 +407,27 @@ export class SceneConfirmModal extends Modal {
                     discardBtn.remove();
                 };
             }
+        }
+
+        const mergedBody = mergeSceneBodies(result.scenes);
+        if (mergedBody && this.hooks.writeBody) {
+            const writeBtn = contentEl.createEl('button', {
+                text: '💾 写入正文（覆盖本章正文）',
+                cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
+            });
+            writeBtn.onclick = async () => {
+                writeBtn.disabled = true;
+                writeBtn.setText('写入中…');
+                try {
+                    const written = await this.hooks.writeBody!(mergedBody);
+                    writeBtn.setText('✅ 已写入正文');
+                    new Notice(`已写入正文：${written.path}（${written.wordCount} 字）`);
+                } catch (e) {
+                    writeBtn.disabled = false;
+                    writeBtn.setText('💾 重试写入正文');
+                    new Notice(`写入正文失败：${(e as Error).message}`);
+                }
+            };
         }
 
         const closeBtn = contentEl.createEl('button', { text: '关闭', cls: 'nw-btn novel-writer-button' });

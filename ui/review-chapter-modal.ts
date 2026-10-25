@@ -25,35 +25,24 @@ export class ReviewChapterModal extends Modal {
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
-        const activeFile = this.app.workspace.getActiveFile();
+        // 工作台/项目页没有 activeFile：优先用界面当前章节，避免「请先打开正文文件」
+        const target = this.plugin.getActiveChapterTarget();
 
         contentEl.empty();
         contentEl.createEl('h2', { text: '🔍 连贯性审查' });
 
-        if (!activeFile) {
-            contentEl.createEl('p', { text: '❌ 请先打开要审查的章节正文文件' });
+        if (!target) {
+            contentEl.createEl('p', { text: '❌ 请先在完整写作工作台选择章节，或打开章节正文文件' });
             return;
         }
 
-        const path = activeFile.path;
-        // v4.0：正文位于 03-大纲与章节/正文/第N卷/第M章_正文.md。
-        // 与 ReviewAgent.reviewChapter 的解析保持一致（仅接受标准正文文件）。
-        const chapMatch = path.match(/03-大纲与章节\/正文\/(第\d+卷)\/(第\d+章)_正文\.md$/);
-
-        if (!chapMatch) {
-            contentEl.createEl('p', { text: '❌ 请先打开章节正文文件（03-大纲与章节/正文/第N卷/第M章_正文.md）' });
-            return;
-        }
-        const volumeName = chapMatch[1];
-        const chapterName = chapMatch[2];
-
-        const project = path.split('/')[0];
+        const { project, volume: volumeName, chapterName, bodyPath } = target;
 
         contentEl.createEl('p', { text: `正在审查 ${project} → ${chapterName}` });
 
         const singleButton = contentEl.createEl('button', { text: '审查当前一章', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
         singleButton.onclick = async () => {
-            await this.reviewAgent.reviewChapter(project, path);
+            await this.reviewAgent.reviewChapter(project, bodyPath);
             this.close();
         };
 

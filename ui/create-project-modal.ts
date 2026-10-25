@@ -43,6 +43,81 @@ export class CreateProjectModal extends Modal {
             cls: 'nw-input nw-form-input'
         });
 
+        // AI 随机构思：一次生成书名 / 题材 / 简介，避免用户从空白开始
+        const aiRandomBtn = projectNameGroup.createEl('button', {
+            text: '🎲 AI 随机构思',
+            cls: 'nw-btn nw-btn-secondary nw-random-project-btn',
+            attr: { type: 'button', title: '根据题材随机生成书名、题材与项目简介' }
+        });
+        aiRandomBtn.onclick = async () => {
+            if (aiRandomBtn.disabled) return;
+            aiRandomBtn.disabled = true;
+            const originalText = aiRandomBtn.textContent || '';
+            aiRandomBtn.textContent = '⏳ 构思中...';
+            try {
+                const preferredGenre = genreInput.value.trim();
+                // 每次点击都换一组随机维度与随机种子：仅靠 temperature 无法避免
+                // prompt 缓存命中导致的「每次结果都一样」。
+                const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+                const identity = pick(['落魄宗门弟子', '小城捕快', '退役佣兵', '失忆匠人', '被逐出家门的庶子', '夜市摊主', '边关斥候', '落魄世家小姐', '刚入职的实习生', '守墓人']);
+                const power = pick(['能听见亡者低语', '可回溯三息之前', '以情绪为燃料', '看见他人命线', '把记忆铸成器物', '在梦中预演战斗', '与一只上古异兽共享感官', '借债般预支未来气运']);
+                const conflict = pick(['争夺一座会移动的古城', '揭开师门灭门真相', '阻止一场被写进史书的灾祸', '在两大势力夹缝中保下一条街', '追查一批失踪的觉醒者', '改写自己被定下的死局']);
+                const tone = pick(['冷峻克制', '热血爽利', '诡谲悬疑', '轻松诙谐', '苍凉悲壮', '温柔治愈']);
+                const randomSeed = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+                const systemPrompt = '你是资深网文编辑与起名专家。只输出严格 JSON，不要输出 Markdown 代码块或解释。';
+                const userPrompt = `请随机构思一个适合番茄小说平台的原创网文项目，输出 JSON：
+{
+  "name": "书名（2-10个汉字，有吸引力，不含标点）",
+  "genre": "题材（从 玄幻/仙侠/都市/科幻/悬疑/历史/言情/奇幻/武侠/末世 中选一个）",
+  "description": "一句话简介（40-80字，包含主角、核心冲突、开篇钩子）"
+}
+${preferredGenre
+        ? `题材必须固定为「${preferredGenre}」，不得更改。`
+        : '题材请从上述列表中随机选择，不要总是选同一个。'}
+本次随机种子：${randomSeed}
+灵感维度（可参考，不必逐字照搬）：
+- 主角身份：${identity}
+- 核心能力/金手指：${power}
+- 核心冲突：${conflict}
+- 情绪基调：${tone}
+硬性要求：必须与「少年天才觉醒血脉、退婚打脸、宗门大比」这类最常见套路明显不同；书名不得与近期热门作品重名。`;
+                const result = await this.plugin.aiEngine.callAI(
+                    systemPrompt,
+                    userPrompt,
+                    undefined,
+                    0.95,
+                    1024,
+                    { bypassCache: true }
+                );
+                if (result.error) {
+                    new Notice(`❌ AI 构思失败：${result.error}`, 8000);
+                    return;
+                }
+                const matched = result.content.replace(/```json|```/g, '').match(/\{[\s\S]*\}/);
+                if (!matched) {
+                    new Notice('❌ AI 返回格式异常，请重试', 6000);
+                    return;
+                }
+                const data = JSON.parse(matched[0]) as { name?: string; genre?: string; description?: string };
+                if (data.name) projectNameInput.value = String(data.name).trim();
+                if (data.genre) {
+                    genreInput.value = String(data.genre).trim();
+                    tagContainer.querySelectorAll('.nw-genre-tag').forEach(t => {
+                        t.classList.toggle('selected', t.textContent === genreInput.value);
+                    });
+                }
+                if (data.description) descriptionInput.value = String(data.description).trim();
+                new Notice('✅ 已生成随机项目构思', 3000);
+            } catch (e) {
+                log.warn('[CreateProject] AI 随机构思失败:', e);
+                new Notice('❌ AI 构思失败，请检查网络或模型配置', 8000);
+            } finally {
+                aiRandomBtn.disabled = false;
+                aiRandomBtn.textContent = originalText;
+            }
+        };
+
         const genreGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
         genreGroup.createEl('label', { cls: 'nw-form-label nw-form-label-required', text: '题材' });
         const genreTags = ['玄幻', '仙侠', '都市', '科幻', '悬疑', '历史', '言情', '奇幻', '武侠', '末世'];

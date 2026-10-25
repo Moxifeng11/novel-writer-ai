@@ -7,6 +7,8 @@ import { WizardChecker } from '../wizard-checker';
 import { getWritingStyleCandidatePaths } from '../writing-style-paths';
 import type { WizardViewAccess } from './wizard-view-access';
 import { isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
+import { parseProjectMeta } from '../../shared/fanfic-rules';
+import { validateWizardStepContent } from './wizard-step-validators';
 
 /**
  * WizardController — 向导子系统控制器
@@ -74,7 +76,8 @@ export class WizardController {
 
         // fanfic: 只信任 .project 指向且校验通过的同人设定文件
         if (projectType === 'fanfic') {
-            const fanficPath = projectMetaContent?.match(/##\s*同人设定路径\s*\r?\n\s*(.+)/)?.[1]?.trim();
+            // 复用 parseProjectMeta，避免与 shared/fanfic-rules 的解析规则漂移
+            const fanficPath = projectMetaContent ? parseProjectMeta(projectMetaContent).fanficPath : '';
             if (fanficPath && await adapter.exists(fanficPath)) {
                 const content = await adapter.read(fanficPath);
                 if (isFanficSettingsContentValidEnough(content).valid) {
@@ -280,6 +283,14 @@ export class WizardController {
         if (isLastStep) {
             const enterBtn = rightGroup.createEl('button', { text: '🎯 进入写作', cls: 'nw-wizard-nav-btn-primary' });
             enterBtn.addEventListener('click', async () => {
+                const chaptersStep = tab.steps.find(s => s.id === 'chapters');
+                if (chaptersStep && chaptersStep.status !== 'skipped') {
+                    const validation = await validateWizardStepContent(this.view.app, tab.project, 'chapters');
+                    if (!validation.valid) {
+                        new Notice(`⚠️ 章节内容不完整：${validation.missingFields.slice(0, 5).join('、')}。请先完成批量建章。`, 10000);
+                        return;
+                    }
+                }
                 step.status = 'done';
                 this.view.closeTab(tab.id);
                 await this.view.openFirstUnwrittenChapter(tab.project);
@@ -308,48 +319,65 @@ export class WizardController {
                     && /\/第\d+卷\/第\d+章[^/]*_正文\.md$/.test(f.path)
                 ))
             );
-            if (isStep0 && !hasExistingFile) {
-                rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-disabled', attr: { title: '请先完成当前步骤' } });
-            }
             const execBtn = rightGroup.createEl('button', { text: '▶ 执行', cls: 'nw-wizard-nav-btn-primary' });
             execBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
             if (hasExistingFile) {
-                const forceNextBtn = rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-warning', attr: { title: '文件已存在，强制步进到下一步' } });
-                forceNextBtn.addEventListener('click', () => {
-                    step.status = 'done';
-                    tab.currentStepIdx++;
-                    this.renderTabContent(tab, true);
-                });
+                const nextBtn = rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-warning', attr: { title: '校验内容完整后进入下一步' } });
+                nextBtn.addEventListener('click', () => { void this.tryAdvance(tab, step); });
+            } else if (isStep0) {
+                rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-disabled', attr: { title: '请先完成当前步骤' } });
             }
         } else if (isPending && !isMandatory) {
+            // 实体步骤只保留"跳过"：生成由步骤内的分类按钮打开对应生成窗口，避免两套生成路径。
             const skipBtn = rightGroup.createEl('button', { text: '跳过实体，进入下一步 →', cls: 'nw-wizard-nav-btn-warning' });
-            skipBtn.addEventListener('click', () => {
-                step.status = 'skipped';
-                if (step.subSteps) step.subSteps.forEach(s => s.status = 'skipped');
-                tab.currentStepIdx++;
-                this.renderTabContent(tab, true);
-            });
-            const execBtn = rightGroup.createEl('button', { text: '▶ 执行', cls: 'nw-wizard-nav-btn-primary' });
-            execBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
-        } else if (isDone) {
-            // 已完成（无论必填与否）：统一「下一步」，收敛原先 isDone && isMandatory 与 isDone 两个等价分支
+            skipBtn.addEventListener('click', () => this.skipStep(tab, step));
+        } else if (isDone || step.status === 'skipped') {
+            // 前进前做内容校验：不完整则阻止并提示，必须重新生成或显式跳过
             const nextBtn = rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-primary' });
-            nextBtn.addEventListener('click', () => {
-                tab.currentStepIdx++;
-                this.renderTabContent(tab, true);
-            });
+            nextBtn.addEventListener('click', () => { void this.tryAdvance(tab, step); });
         } else if (step.status === 'retry') {
             const retryBtn = rightGroup.createEl('button', { text: '🔄 重新生成', cls: 'nw-wizard-nav-btn-primary' });
             retryBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
         } else if (step.status === 'complete_with_warnings') {
-            const continueBtn = rightGroup.createEl('button', { text: '⚠ 继续 →', cls: 'nw-wizard-nav-btn-warning', attr: { title: '文件已生成但内容可能不完整，可强制前进' } });
-            continueBtn.addEventListener('click', () => {
-                step.status = 'done';
-                tab.currentStepIdx++;
-                this.renderTabContent(tab, true);
-            });
             const retryBtn = rightGroup.createEl('button', { text: '🔄 重新生成', cls: 'nw-wizard-nav-btn-primary' });
             retryBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
+            const skipBtn = rightGroup.createEl('button', { text: '跳过此步骤 →', cls: 'nw-wizard-nav-btn-warning' });
+            skipBtn.addEventListener('click', () => {
+                const ok = window.confirm(`「${step.label}」内容不完整。跳过后将带着缺失内容进入后续步骤，确定跳过？`);
+                if (ok) this.skipStep(tab, step);
+            });
         }
+    }
+
+    /** 校验当前步骤内容后再前进；不完整时阻止并留在当前步骤 */
+    private async tryAdvance(tab: WizardTab, step: WizardStep): Promise<void> {
+        // 用户已显式跳过的步骤：再次前进时不再重复校验，避免被重新拉回「内容不完整」
+        if (step.status === 'skipped') {
+            tab.currentStepIdx++;
+            this.renderTabContent(tab, true);
+            return;
+        }
+        const validation = await validateWizardStepContent(this.view.app, tab.project, step.id);
+        if (!validation.valid) {
+            step.status = 'complete_with_warnings';
+            new Notice(
+                `⚠️ ${step.label} 内容不完整：${validation.missingFields.slice(0, 5).join('、')}${validation.missingFields.length > 5 ? ' 等' : ''}。请重新生成，或点击「跳过此步骤」。`,
+                12000
+            );
+            this.renderTabContent(tab, true);
+            return;
+        }
+
+        if (step.status !== 'done') step.status = 'done';
+        tab.currentStepIdx++;
+        this.renderTabContent(tab, true);
+    }
+
+    /** 显式跳过（用户确认后调用） */
+    private skipStep(tab: WizardTab, step: WizardStep): void {
+        step.status = 'skipped';
+        if (step.subSteps) step.subSteps.forEach(s => s.status = 'skipped');
+        tab.currentStepIdx++;
+        this.renderTabContent(tab, true);
     }
 }

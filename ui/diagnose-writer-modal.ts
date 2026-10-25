@@ -1,10 +1,13 @@
-import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, Platform, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB } from '../shared/paths';
 import { diagnoseOutline } from '../shared/info-debt';
 import { createLogger } from '../shared/logger';
+import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { exportTextFile } from '../shared/export-file';
+import { ENGINE_NAMES } from '../engine/engine-registry';
 
 
 const log = createLogger('DiagnoseWriterModal');
@@ -33,6 +36,14 @@ export class DiagnoseWriterModal extends Modal {
         contentEl.empty();
         contentEl.createEl('h2', { text: '🔍 流程诊断工具' });
 
+        const bundleRow = contentEl.createDiv({ attr: { style: 'margin-bottom:12px;' } });
+        const bundleBtn = bundleRow.createEl('button', {
+            text: '📦 导出诊断包',
+            cls: 'nw-btn novel-writer-button',
+            attr: { type: 'button' },
+        });
+        bundleBtn.onclick = () => void this.exportDiagnosticBundle();
+
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
         const volSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
         const chapInput = contentEl.createEl('input', {
@@ -51,6 +62,9 @@ export class DiagnoseWriterModal extends Modal {
             projects.forEach(project => {
                 projectSelect.createEl('option', { value: project, text: project });
             });
+            // 默认定位当前项目，避免工作台里点诊断还要手动找项目
+            const preferred = this.plugin.getActiveProject();
+            if (preferred && projects.includes(preferred)) projectSelect.value = preferred;
 
             await this.populateVolumes(projectSelect.value, volSelect);
 
@@ -201,6 +215,91 @@ export class DiagnoseWriterModal extends Modal {
 
         new Notice('✅ 诊断报告已生成', 5000);
         this.close();
+    }
+
+    /**
+     * 导出诊断包（FR-E-08）：版本、平台、能力开关、降级记录、最近错误。
+     * 不包含 API Key、正文或任何文件内容。
+     */
+    private async exportDiagnosticBundle(): Promise<void> {
+        const settings = this.plugin.settings;
+        const degradation = getDegradationNotifier().getEvents().map(event => ({
+            source: event.source,
+            dimension: event.dimension,
+            from: event.from,
+            to: event.to,
+            reason: event.reason,
+            severity: event.severity,
+            recoverable: event.recoverable,
+            timestamp: new Date(event.timestamp).toISOString(),
+        }));
+
+        let updateStatus: Record<string, unknown> | null = null;
+        try {
+            const cacheManager = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.CACHE_MANAGER);
+            if (cacheManager) {
+                updateStatus = {
+                    lastCheck: cacheManager.getUpdateLastCheck?.() ?? null,
+                    lastResult: cacheManager.getUpdateLastResult?.() ?? null,
+                };
+            }
+        } catch {
+            updateStatus = null;
+        }
+
+        const endpointHost = (() => {
+            try {
+                return new URL(settings.apiEndpoint).host;
+            } catch {
+                return 'invalid-endpoint';
+            }
+        })();
+
+        const bundle = {
+            meta: {
+                generatedAt: new Date().toISOString(),
+                pluginVersion: this.plugin.manifest.version,
+                platform: Platform.isDesktop ? 'desktop' : 'mobile',
+                os: typeof process !== 'undefined' ? process.platform : 'unknown',
+            },
+            capabilities: {
+                isDesktop: Platform.isDesktop,
+                isMobile: Platform.isMobile,
+                apiKeyConfigured: Boolean(settings.apiKey)
+                    || Object.values(settings.providerKeys ?? {}).some(Boolean),
+                precisionMode: settings.precisionMode,
+                autoPlotEvaluation: settings.autoPlotEvaluation,
+                autoGhostAssociation: settings.autoGhostAssociation ?? true,
+                autoReview: settings.enableAutoReview,
+                autoCorrect: settings.enableAutoCorrect,
+                models: {
+                    default: settings.defaultModel,
+                    flash: settings.flashModel,
+                    pro: settings.proModel,
+                },
+                maxContext: settings.maxContext,
+                maxOutput: settings.maxOutput,
+            },
+            endpoint: {
+                host: endpointHost,
+                // 仅保留协议与主机，避免泄露路径/查询参数中的凭据
+                updateSource: settings.updateSource,
+            },
+            degradation,
+            updateStatus,
+            notes: '诊断包不含 API Key、正文与文件内容；降级记录最多保留最近 200 条。',
+        };
+
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const result = await exportTextFile(
+            this.app,
+            `novel-writer-diagnostic-${stamp}.json`,
+            JSON.stringify(bundle, null, 2),
+            { mime: 'application/json;charset=utf-8', successMessage: '✅ 诊断包已导出', preferVault: true },
+        );
+        if (!result.ok) {
+            log.warn('[DiagnoseWriterModal] 诊断包导出失败:', result.error);
+        }
     }
 
     onClose(): void {

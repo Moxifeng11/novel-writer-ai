@@ -104,7 +104,11 @@ export class EntityStateController {
             const workspace = this.deps.getWorkspace();
             if (!workspace) return;
             this.syncInvolvedEntitiesToPlugin();
-            workspace.querySelectorAll('.novel-writer-fw-context-card').forEach(el => el.remove());
+            // Rev 189：上下文面板的真实类名是 .novel-writer-fw-context-panel；
+            // 旧代码移除的 .novel-writer-fw-context-card 在全库没有任何创建点，等于空操作。
+            // 旧面板不删就 append 新面板 → workspace grid 多出第 4 个子元素，
+            // grid-template-rows 变成 "0px 692px"，第一章整体塌成一条缝。
+            workspace.querySelectorAll('.novel-writer-fw-context-panel').forEach(el => el.remove());
             this.deps.getContextPanel().render(workspace, this.deps.getContext(), this.deps.state.project, this.deps.state.chapterNum, this.deps.plugin, () => this.deps.estimateTotalChars());
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);

@@ -13,6 +13,10 @@
 import { App } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { StepRunner, ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
+import { downstreamStepsAfterPlanningChange } from '../../engine/planning-step-advance';
+import { BODY_CHANGE_INVALIDATED_STEPS } from '../../engine/step-definitions';
+import { assessContextReadiness } from '../../engine/context-readiness';
+import type { GatheredContext } from '../../engine/context-manager';
 import { ChapterStateManager } from '../states/chapter-state-manager';
 import {
     getStreamlinedPhases,
@@ -21,9 +25,10 @@ import {
     mapStreamlinedPhaseToStepIndex,
     StreamlinedPhase,
 } from './streamlined-nav-presenter';
-import { showError, showSuccess } from '../../utils/helpers';
+import { showError, showSuccess, showWarning } from '../../utils/helpers';
 import { SceneOutlineController } from './scene-outline-controller';
 import { openSceneConfirmWizard } from '../scene-confirm-modal';
+import { AnalysisReportPanel } from '../components/analysis-report-panel';
 import { createLogger } from '../../shared/logger';
 
 
@@ -38,6 +43,10 @@ export interface StepRenderDeps {
     getChapterName: () => string;
     getVolume: () => string;
     getVars: () => Record<string, string>;
+    getContext: () => GatheredContext | null;
+    getChapterNum: () => number;
+    /** 重新加载上下文并重渲染（上下文步骤的清单面板用） */
+    reloadContext: () => Promise<void>;
     getTabContent: () => HTMLElement;
     renderInContainer: (container: HTMLElement) => Promise<void>;
     renderInterventionBox: (container: HTMLElement) => void;
@@ -76,7 +85,8 @@ export class StepRenderController {
             item.createSpan({ text: status.icon, cls: 'novel-writer-fw-step-icon' });
             item.createSpan({ text: phase.label, cls: 'novel-writer-fw-step-label' });
 
-            if (isPhaseClickable(phase, cs.currentStepIndex, cs.stepCompleted)) {
+            const clickable = isPhaseClickable(phase, cs.currentStepIndex, cs.stepCompleted);
+            if (clickable) {
                 item.addClass('novel-writer-fw-step-clickable');
                 item.onclick = async () => {
                     const targetIndex = mapStreamlinedPhaseToStepIndex(phase.key, cs.stepCompleted);
@@ -86,9 +96,83 @@ export class StepRenderController {
                     }
                 };
             }
+
+            // 步骤级状态：阶段只显示必做完成度，具体哪一步做了/跳过了在这里逐项可见
+            phase.steps.forEach((stepKey, i) => {
+                const stepIndex = phase.stepIndexes[i];
+                const def = ALL_FULL_STEPS.find((s) => s.index === stepIndex);
+                const level = cs.stepLevels[stepKey];
+                const done = cs.stepCompleted.has(stepKey) || level === 'complete';
+                const stale = cs.staleSteps.has(stepKey);
+                const partial = !done && (level === 'partial' || Boolean(cs.stepResults[stepKey]));
+                const icon = stale ? '⚠️' : done ? '✅' : partial ? '◐' : '○';
+                const cls = ['novel-writer-fw-substep'];
+                if (stepIndex === cs.currentStepIndex) cls.push('novel-writer-fw-substep-active');
+                if (def?.required) cls.push('novel-writer-fw-substep-required');
+                const sub = list.createDiv({ cls: cls.join(' ') });
+                sub.createSpan({ text: icon, cls: 'novel-writer-fw-substep-icon' });
+                sub.createSpan({ text: def?.label || stepKey, cls: 'novel-writer-fw-substep-label' });
+                if (def?.required) sub.createSpan({ text: '必做', cls: 'novel-writer-fw-substep-mark' });
+                sub.setAttr('title', stale ? '已过期，需重新执行' : done ? '已完成' : partial ? '部分完成' : '未执行');
+                if (clickable) {
+                    sub.onclick = async () => {
+                        if (stepIndex !== cs.currentStepIndex) {
+                            cs.currentStepIndex = stepIndex;
+                            await d.renderInContainer(d.getTabContent());
+                        }
+                    };
+                }
+            });
         }
 
         d.renderInterventionBox(nav);
+    }
+
+    /**
+     * 上下文加载步骤：显示本次实际喂入了什么，并判断对当前章节是否完整（Rev 185）。
+     * 旧实现只有一句「✅ 上下文已加载完成」，用户无法核对输入，也看不到缺失。
+     */
+    private renderContextInputs(area: HTMLElement): void {
+        const d = this.deps;
+        const readiness = assessContextReadiness(d.getContext(), d.getChapterNum());
+
+        const head = area.createDiv({
+            cls: 'novel-writer-fw-context-readiness ' + (readiness.ready ? 'is-ready' : 'is-incomplete'),
+        });
+        head.createSpan({ text: readiness.ready ? '✅' : '⚠️', cls: 'novel-writer-fw-context-readiness-icon' });
+        head.createSpan({ text: readiness.summary, cls: 'novel-writer-fw-context-readiness-text' });
+
+        const list = area.createDiv({ cls: 'novel-writer-fw-context-input-list' });
+        for (const item of readiness.items) {
+            const row = list.createDiv({
+                cls: 'novel-writer-fw-context-input-row'
+                    + (item.required ? ' is-required' : '')
+                    + (item.ok ? ' is-ok' : ' is-missing'),
+            });
+            row.createSpan({ text: item.ok ? '✅' : (item.required ? '⚠️' : '○'), cls: 'novel-writer-fw-context-input-icon' });
+            row.createSpan({ text: item.label, cls: 'novel-writer-fw-context-input-label' });
+            if (item.required) row.createSpan({ text: '必做', cls: 'novel-writer-fw-context-input-badge' });
+            row.createSpan({ text: item.detail, cls: 'novel-writer-fw-context-input-detail' });
+            row.setAttr('title', item.required ? '本章必做输入，缺失会影响写作质量' : '可选输入，缺失不阻塞流程');
+        }
+
+        const actions = area.createDiv({ cls: 'novel-writer-fw-context-actions' });
+        const reloadBtn = actions.createEl('button', { text: '🔄 重新加载上下文', cls: 'novel-writer-fw-btn' });
+        reloadBtn.onclick = async () => {
+            reloadBtn.disabled = true;
+            reloadBtn.setText('⏳ 重新加载中...');
+            try {
+                await d.reloadContext();
+            } finally {
+                reloadBtn.disabled = false;
+                reloadBtn.setText('🔄 重新加载上下文');
+            }
+        };
+
+        area.createEl('p', {
+            text: '清单反映本次加载结果；缺失必做项时，请先补齐项目设定/大纲/上章内容，再重新加载。',
+            cls: 'novel-writer-fw-context-hint',
+        });
     }
 
     renderAutoStep(area: HTMLElement, step: FullStep): void {
@@ -96,12 +180,7 @@ export class StepRenderController {
         const cs = d.chapterState;
         area.createEl('h3', { text: step.label });
         if (step.index === 0) {
-            if (cs.stepCompleted.has('context')) {
-                area.createEl('p', { text: '✅ 上下文已加载完成。', cls: 'novel-writer-fw-success-text' });
-                area.createEl('p', { text: '已自动跳转到第一步。请从左侧步骤导航选择步骤。' });
-            } else {
-                area.createDiv({ text: '⏳ 正在加载上下文...', cls: 'novel-writer-fw-loading' });
-            }
+            this.renderContextInputs(area);
         } else if (step.auto && step.index > 0) {
             if (cs.stepCompleted.has('settlement')) {
                 area.createEl('p', { text: '✅ 章节结算已完成。', cls: 'novel-writer-fw-success-text' });
@@ -133,6 +212,16 @@ export class StepRenderController {
                 );
             }
         }
+    }
+
+    /**
+     * 规划步骤变更后失效已生成的正文与下游；正文未生成时不动，避免把空正文标成待重做。
+     */
+    private invalidateBodyAfterPlanningChange(cs: ChapterStateManager, stepKey: string): void {
+        const hasBody = cs.stepCompleted.has('bodyGeneration')
+            || Boolean((cs.stepResults['bodyGeneration'] || '').trim());
+        const downstream = downstreamStepsAfterPlanningChange(stepKey, hasBody);
+        if (downstream.length > 0) cs.invalidateSteps(downstream);
     }
 
     renderResultArea(area: HTMLElement, stepKey: string): void {
@@ -171,35 +260,81 @@ export class StepRenderController {
                 try {
                     log.warn('[小说工坊] 💾保存按钮: stepKey=', stepKey, 'chapDir=', d.getChapDir(), 'chapterName=', d.getChapterName(), 'len=', newContent.length);
                     await d.stepRunner.saveStepResult(stepKey, newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
-                    // v6.0: 保存后走结构化校验更新状态，不再直接标记完成
-                    // v6.x: 用户手动保存视为确认完成，强制标记为 complete
-                    cs.updateStepState(stepKey, newContent, true);
+                    // A4: 手动保存不等于完成，仍由内容结构决定 level；
+                    // 只保存不推进，避免「敲几个字就变已完成」。
+                    cs.updateStepState(stepKey, newContent);
                     // v3.4.8: fix/finalFix 步骤保存时同步覆写正文文件
                     if (stepKey === 'fix' || stepKey === 'finalFix') {
                         cs.stepResults['bodyGeneration'] = newContent;
-                        cs.updateStepState('bodyGeneration', newContent, true);
+                        cs.updateStepState('bodyGeneration', newContent);
                         await d.stepRunner.writeFixToBody(newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
                     }
-                    // 正文或修正变更 → 清除后续步骤
+                    // 正文或修正变更 → 统一失效后续步骤（completed / levels / stale 同步）
                     if (stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') {
-                        cs.stepCompleted.delete('selfCheck');
-                        cs.stepCompleted.delete('continuityCheck');
-                        cs.stepCompleted.delete('qualityControl');
-                        cs.stepCompleted.delete('analysisReport');
-                        cs.stepCompleted.delete('settlement');
-                        delete cs.stepLevels['selfCheck'];
-                        delete cs.stepLevels['continuityCheck'];
-                        delete cs.stepLevels['qualityControl'];
-                        delete cs.stepLevels['analysisReport'];
-                        delete cs.stepLevels['settlement'];
+                        cs.invalidateSteps([...BODY_CHANGE_INVALIDATED_STEPS]);
                     }
-                    showSuccess(`${stepKey} 已保存`);
+                    // 规划变更 → 已生成正文与下游失效
+                    this.invalidateBodyAfterPlanningChange(cs, stepKey);
+                    const missing = cs.stepMissing[stepKey] || [];
+                    if (missing.length > 0) {
+                        showWarning(`${stepKey} 已保存，但未达到完成标准，缺少：${missing.join('、')}`);
+                    } else {
+                        showSuccess(`${stepKey} 已保存`);
+                    }
                     // v3.4.9 P0-4: 保存后重新渲染当前步骤区，以便"继续下一步"按钮即时出现
                     await d.renderInContainer(d.getTabContent());
                 } catch (e) {
                     showError(`保存失败: ${(e as Error).message}`);
                 }
             };
+
+            // analysisReport：按需运行 v6.0 结构化增强分析（实体/伏笔/时间线/情绪）
+            if (stepKey === 'analysisReport') {
+                const extra = resultContainer.createDiv({ attr: { style: 'margin-top:10px;' } });
+                const btn = extra.createEl('button', {
+                    text: '📊 结构化增强分析',
+                    attr: {
+                        style: 'padding:4px 12px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--background-secondary);'
+                    }
+                });
+                const host = extra.createDiv();
+                btn.onclick = async () => {
+                    const bodyText = cs.stepResults['bodyGeneration'] || '';
+                    if (!bodyText.trim()) {
+                        showError('无正文内容，无法执行结构化分析');
+                        return;
+                    }
+                    btn.disabled = true;
+                    const numMatch = d.getChapterName().match(/\d+/);
+                    const panel = new AnalysisReportPanel(d.app, d.plugin.analysisReportEngine);
+                    try {
+                        await panel.analyzeAndRender(
+                            host,
+                            d.getProject(),
+                            bodyText,
+                            d.getChapterName(),
+                            numMatch ? parseInt(numMatch[0], 10) : 0,
+                            d.getVolume(),
+                        );
+                        const applyBtn = host.createEl('button', {
+                            text: '✅ 应用报告变更',
+                            attr: { style: 'margin-top:8px;padding:4px 12px;font-size:12px;cursor:pointer;' }
+                        });
+                        applyBtn.onclick = async () => {
+                            const result = await panel.applyChanges();
+                            if (result.success) {
+                                showSuccess(`已应用 ${result.applied.length} 项变更` + (result.pending.length > 0 ? `，${result.pending.length} 项待手动处理` : ''));
+                            } else {
+                                showError(result.details);
+                            }
+                        };
+                    } catch (e) {
+                        showError(`结构化分析失败: ${(e as Error).message}`);
+                    } finally {
+                        btn.disabled = false;
+                    }
+                };
+            }
         }
     }
 
@@ -251,6 +386,7 @@ export class StepRenderController {
                     chapterNumber,
                     expansionText,
                     chapterPlan,
+                    volumeName: d.getVolume(),
                 });
             } catch (e) {
                 showError(`打开逐场景生成失败: ${(e as Error).message}`);
@@ -275,6 +411,7 @@ export class StepRenderController {
 
         const sceneController = new SceneOutlineController({
             app: d.app,
+            plugin: d.plugin,
             getProject: () => d.getProject(),
             getChapterNum: () => {
                 const name = d.getChapterName();
@@ -284,6 +421,14 @@ export class StepRenderController {
             getVolume: () => d.getVolume(),
             getChapDir: () => d.getChapDir(),
             onSceneChange: () => {
+                // A7: 自动保存也是规划变更，必须与手动保存走同一条失效传播，
+                // 否则下游（质量/分析/结算）仍显示已完成。
+                const saved = sceneController.getSavedContent();
+                if (saved) {
+                    cs.stepResults['sceneExpand'] = saved;
+                    cs.updateStepState('sceneExpand', saved);
+                }
+                this.invalidateBodyAfterPlanningChange(cs, 'sceneExpand');
                 showSuccess('场景细纲已自动保存');
             }
         });
@@ -319,10 +464,22 @@ export class StepRenderController {
 
         saveBtn.onclick = async () => {
             try {
-                await sceneController.saveScenes();
-                const freshContent = cs.stepResults['sceneExpand'] || '';
-                cs.updateStepState('sceneExpand', freshContent, true);
-                showSuccess('Scene展开 已保存');
+                // 纯文本模式保存的是编辑框内容，不能走场景编辑器（否则改动不会落盘）
+                const saved = rawMode && rawTextarea
+                    ? await sceneController.saveRawContent(rawTextarea.value)
+                    : await sceneController.saveScenes();
+                if (!saved) {
+                    showError('保存未执行：内容为空、未解析到场景或内容未变更，原文件保持不变');
+                    return;
+                }
+                cs.updateStepState('sceneExpand', sceneController.getSavedContent());
+                this.invalidateBodyAfterPlanningChange(cs, 'sceneExpand');
+                const missing = cs.stepMissing['sceneExpand'] || [];
+                if (missing.length > 0) {
+                    showWarning(`Scene展开 已保存，但未达到完成标准，缺少：${missing.join('、')}`);
+                } else {
+                    showSuccess('Scene展开 已保存');
+                }
                 await d.renderInContainer(d.getTabContent());
             } catch (e) {
                 showError(`保存失败: ${(e as Error).message}`);

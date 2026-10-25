@@ -1,5 +1,5 @@
 import { InternalRegistry } from './engine/internal-registry';
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, WorkspaceLeaf, ItemView } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { AIEngine } from './engine/ai-engine';
 import { CoWriterEngine } from './engine/co-writer-engine';
 import { ContextManager } from './engine/context-manager';
@@ -65,6 +65,7 @@ import { SerializedWriter } from './shared/serialized-writer';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
+import { resolveActiveChapterTarget, type ActiveChapterTarget, type WorkbenchChapterContext } from './shared/chapter-target';
 import { ensureTemplateScaffold } from './shared/template-scaffold';
 import { RulesService } from './services/rules-service';
 import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
@@ -75,6 +76,9 @@ import { ThemeManager } from './core/theme-manager';
 import { ProviderManager } from './core/provider-manager';
 import { CommandRegistry, parseChapterFromPath } from './core/command-registry';
 import { SettingsService, getDefaultSettings } from './core/settings-service';
+import { CommandUiExecutor } from './ui/command-ui-executor';
+import type { CommandUiPort } from './shared/command-ui-port';
+import { ChapterVersionService } from './services/chapter-version-service';
 
 
 /** v3.5.0: 用户自定义 API 提供商，可持久化保存 */
@@ -97,6 +101,7 @@ export { resolveProviderSourceType } from './shared/model-source';
 
 // 导入集中化的模型能力映射（避免与 token-estimator.ts 重复硬编码）
 import { MODEL_CAPABILITIES, findModelCapability } from './shared/model-capabilities';
+import { hasUsableAiCredentials } from './shared/ai-credentials';
 import { createLogger } from './shared/logger';
 
 const log = createLogger('Main');
@@ -137,6 +142,11 @@ export interface NovelWriterSettings {
     coWriteCloudModel: string;
     /** v7.1: 是否启用自动剧情完成度评估（输入时自动刷新） */
     autoPlotEvaluation: boolean;
+    /**
+     * v7.x: 是否启用自动联想（幽灵建议）。
+     * 默认 true；关闭后输入不再发起联想 AI 请求（每 4 秒最多一次），可显著减少本地/云端调用。
+     */
+    autoGhostAssociation?: boolean;
     /** v7.5: 是否启用精准模式（逐句检索+风格评分+反AI检测） */
     precisionMode: boolean;
     /** P0 效率: 精修迭代轮数（0-5，默认 3，0=跳过精修；调用点 step-modal-controller） */
@@ -182,7 +192,6 @@ export interface NovelWriterSettings {
     enableAutoReview: boolean;
     enableAutoCorrect: boolean;
     enableAutoModelFallback: boolean;  // P0-13: AI断联时自动切换同端点下其他模型
-    enableDetailedAnalysis?: boolean;  // v4.x: 启用详细节奏分析（AI 辅助估算紧张度）
     contextScope: 'full' | 'compact';  // 上下文范围：compact=仅本章涉及实体，full=遍历全部实体
     infoDebtThreshold: number;
     maxUnrevealedForeshadow: number;
@@ -327,6 +336,8 @@ export const DEFAULT_SETTINGS: NovelWriterSettings = getDefaultSettings();
 
 // 主题 CSS 变量已迁移至 core/theme-manager.ts
 
+export type { WorkbenchChapterContext, ActiveChapterTarget } from './shared/chapter-target';
+
 export default class NovelWriterPlugin extends Plugin {
     settings!: NovelWriterSettings;
     private statusBarItem!: HTMLElement;
@@ -344,6 +355,8 @@ export default class NovelWriterPlugin extends Plugin {
     private _themeManager!: ThemeManager;
     private _providerManager!: ProviderManager;
     private _commandRegistry!: CommandRegistry;
+    /** 命令 UI 执行端口（core 只按 id 委托，不直接依赖 ui） */
+    public commandUiPort?: CommandUiPort;
     private _settingsService!: SettingsService;
     /** 热重载恢复状态 */
     public _pendingReloadState: { project: string; chapterFileName: string; volume?: string; chapDir?: string } | null = null;
@@ -357,15 +370,8 @@ export default class NovelWriterPlugin extends Plugin {
     public _entityModalCloseCallbacks: Array<() => void> = [];
     /** 工作台上下文标记：true=当前工作台视图打开中，Modal 不应在 Obsidian 主窗口打开文件 */
     public _isWorkbenchContext: boolean = false;
-    /** 工作台当前章节上下文（由工作台视图运行时写入，协同视图/引擎读取） */
-    public _workbenchState: {
-        project?: string;
-        chapterName?: string;
-        chapterNum?: number;
-        volume?: string;
-        protagonistName?: string;
-        protagonist?: string;
-    } | null = null;
+    /** 工作台当前章节：由 FullWriterView 每次渲染时写入，关闭时清空 */
+    public _workbenchContext: WorkbenchChapterContext | null = null;
     /** 浮窗管理器（运行时注入，可能未初始化） */
     public workspaceManager?: FloatWorkspaceManager;
 
@@ -406,22 +412,62 @@ export default class NovelWriterPlugin extends Plugin {
     /** 公开访问器 — 供 Modal 层依赖注入使用 */
     public get ctxManager(): ContextManager { return this.contextManager; }
 
+    /**
+     * 是否具备发起 AI 调用的凭据：云端密钥，或本地免密钥推理端点（Ollama 等）。
+     * UI 的「生成前守卫」必须用它，不能直接看 `settings.apiKey`——本地模型用户本来就无需密钥。
+     */
+    get hasAiCredentials(): boolean {
+        return hasUsableAiCredentials(this.settings);
+    }
+
     /** 从当前活动文件检测所属项目名（非项目目录返回 null） */
     getActiveProject(): string | null {
         const activeFile = this.app.workspace.getActiveFile();
-        if (!activeFile) return null;
-        const project = activeFile.path.split('/')[0];
-        // 排除系统目录
-        if (project === '元文件' || project === '文笔风格库' || project.startsWith('.')) return null;
-        // 确认是项目目录。注意：`.project` 是点文件，不入 vault 索引，
-        // getAbstractFileByPath 恒为 null，这里改用被索引的项目文件夹判定。
-        const folder = this.app.vault.getAbstractFileByPath(project);
-        return folder instanceof TFolder ? project : null;
+        if (activeFile) {
+            const project = activeFile.path.split('/')[0];
+            // 排除系统目录
+            if (project !== '元文件' && project !== '文笔风格库' && !project.startsWith('.')) {
+                // 确认是项目目录。注意：`.project` 是点文件，不入 vault 索引，
+                // getAbstractFileByPath 恒为 null，这里改用被索引的项目文件夹判定。
+                const folder = this.app.vault.getAbstractFileByPath(project);
+                if (folder instanceof TFolder) return project;
+            }
+        }
+        // 工作台/项目页激活时没有 activeFile：回退到界面当前选中的项目，
+        // 否则快捷工具里的实体管理、批量生成等会拿不到项目。
+        return this._workbenchContext?.project || null;
+    }
+
+    /** 工作台每次渲染时写入当前章节上下文；关闭工作台时传入 null 清空 */
+    setWorkbenchContext(ctx: WorkbenchChapterContext | null): void {
+        this._workbenchContext = ctx;
+    }
+
+    getWorkbenchContext(): WorkbenchChapterContext | null {
+        return this._workbenchContext;
+    }
+
+    /**
+     * 解析命令层可用的章节目标。
+     * 优先级：工作台上下文 > activeFile 标准正文 > activeFile 步骤结果目录 > null。
+     * 所有从快捷工具/命令面板触发的章节级操作都应走这里，禁止各自读 getActiveFile。
+     */
+    getActiveChapterTarget(): ActiveChapterTarget | null {
+        return resolveActiveChapterTarget({
+            workbench: this._workbenchContext,
+            activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
+        });
     }
 
     async onload() {
         log.info(`[小说工坊] 开始加载插件 v${PLUGIN_VERSION}...`);
         this.engineRegistry = new EngineRegistry();
+        // core 层不依赖 ui：命令的 Modal / 视图执行由本端口注入
+        this.commandUiPort = new CommandUiExecutor({
+            app: this.app,
+            plugin: this,
+            getVersionService: () => this.engineRegistry.get<ChapterVersionService>(ENGINE_NAMES.CHAPTER_VERSION_SERVICE),
+        });
         try {
             // ─── 引擎注册表初始化（Phase 1-8） ───
             await this.engineRegistry.initialize(this, { settingsWriter: this._settingsWriter });
@@ -517,8 +563,8 @@ export default class NovelWriterPlugin extends Plugin {
             this.addSettingTab(new NovelWriterSettingTab(this.app, this));
 
             log.info('[小说工坊] 添加侧边栏图标...');
-            this.addRibbonIcon('book-open', '小说工坊', () => {
-                this.registry.execute('novel-writer-full-writer');
+            this.addRibbonIcon('book-open', '小说工坊 · 项目与章节', () => {
+                this.openFullWriterHome().catch(err => log.error('[小说工坊] 打开项目与章节失败:', err));
             });
 
             // v6.0: 第二个 Ribbon 图标，直达句级协同写作工作台（解决「找不到入口」）
@@ -646,34 +692,12 @@ export default class NovelWriterPlugin extends Plugin {
         }
     }
 
-    private async extractElementsCommand(): Promise<void> {
-        const activeView = this.app.workspace.getActiveViewOfType(ItemView);
-        if (!activeView) {
-            new Notice('请先打开一个 Markdown 文件');
-            return;
-        }
-        // ItemView 实际上有 file 属性，但 Obsidian 官方类型未暴露
-        // 使用接口合并在 obsidian-augment.d.ts 中扩展，或直接使用类型断言
-        const file = (activeView as ItemView & { file?: TFile }).file ?? null;
-        if (!file) {
-            new Notice('未找到当前文件');
-            return;
-        }
-        const content = await this.app.vault.read(file);
-        const result = await this.aiEngine.extractElements(content);
-        if (result.error) {
-            new Notice(`元素提取失败: ${result.error}`);
-        } else {
-            const notice = new Notice(`✅ 元素提取完成`, 5000);
-        }
-    }
-
     async activateView(): Promise<void> {
         // 重定向到完整写作工作台
         this.openFullWriterView();
     }
 
-    public async openFullWriterView() {
+    public async openFullWriterView(): Promise<void> {
         const { workspace } = this.app;
         // 优先复用已有视图，避免每次热重载开新窗口（v3.4.7 P0-7）
         const existing = workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE);
@@ -692,6 +716,33 @@ export default class NovelWriterPlugin extends Plugin {
             active: true
         });
         workspace.revealLeaf(leaf);
+        // 复用已有视图时 Obsidian 不会重新触发 onOpen：主动从磁盘恢复步骤状态，
+        // 确保从协同写作返回后正文步骤/质量控制状态是最新的。
+        if (existing.length > 0) {
+            const view = leaf.view as unknown as { refreshChapterStateFromDisk?: () => Promise<void> };
+            if (typeof view?.refreshChapterStateFromDisk === 'function') {
+                await view.refreshChapterStateFromDisk();
+            }
+        }
+    }
+
+    /**
+     * 「项目与章节」入口（快捷工具「流程规划工作台」/ 左侧 ribbon）：
+     * 打开或聚焦工作台，并确保落在项目与章节页。
+     *
+     * 复用已打开视图时 openFullWriterView 只做静默 refresh，没有章节时直接 return，
+     * 用户点击后看不到任何变化。这里补一次显式路由：不在项目页 → 切页；
+     * 已在项目页 → 重新扫描项目列表并提示，保证点击必有反馈。
+     */
+    public async openFullWriterHome(): Promise<void> {
+        const reused = this.app.workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE).length > 0;
+        await this.openFullWriterView();
+        if (!reused) return; // 首次打开时 onOpen 已默认落在项目与章节
+        const leaf = this.app.workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE)[0];
+        const view = leaf?.view as unknown as { showProjectSelector?: () => Promise<void> } | undefined;
+        if (typeof view?.showProjectSelector === 'function') {
+            await view.showProjectSelector();
+        }
     }
 
     /** v4.0: 打开句级协同写作视图 */
@@ -714,6 +765,12 @@ export default class NovelWriterPlugin extends Plugin {
             if (view) {
                 await view.openChapter(project || '', chapterName || '', volume || '第1卷', chapterNum || 1);
             }
+        } else {
+            // D6：无显式上下文的入口必须回到空态，不能沿用上一个项目/章节
+            const view = leaf.view as CoWritingView;
+            if (view && typeof view.clearChapterBinding === 'function') {
+                await view.clearChapterBinding();
+            }
         }
 
         // v5.5: 协同写作视图打开后，补开分离式监控面板A/B（节奏/情绪/OOC/实体、结局/风格/偏好）。
@@ -723,23 +780,12 @@ export default class NovelWriterPlugin extends Plugin {
 
     /**
      * v6.0: 协同写作直达入口的智能绑定。
-     * 优先级：①工作台已记录的当前章节(_workbenchState) → ②当前打开的正文文件反解出的章节 → ③空态视图。
+     * 优先级：①当前打开的正文文件反解出的章节 → ②空态视图。
      * 这样无论从命令面板、Ribbon 还是快捷键进入，都尽量带着章节上下文，避免打开后一片空白。
+     * 注意：不再读 `_workbenchState`（无写入方，恒为 null），章节上下文只认磁盘路径反解。
      */
     public async openCoWritingFromActiveContext(): Promise<void> {
-        // ① 工作台运行时记录的章节上下文
-        const wb = this._workbenchState;
-        if (wb?.project && wb?.chapterNum) {
-            await this.activateCoWritingView(
-                wb.project,
-                wb.chapterName || `第${wb.chapterNum}章`,
-                wb.volume || '第1卷',
-                wb.chapterNum
-            );
-            return;
-        }
-
-        // ② 从当前打开的正文文件路径反解章节
+        // ① 从当前打开的正文文件路径反解章节
         const activeFile = this.app.workspace.getActiveFile();
         const ctx = activeFile ? this.parseChapterFromPath(activeFile.path) : null;
         if (ctx) {
@@ -748,7 +794,7 @@ export default class NovelWriterPlugin extends Plugin {
             return;
         }
 
-        // ③ 没有可用上下文：打开空态视图并提示如何绑定
+        // ② 没有可用上下文：打开空态视图并提示如何绑定
         await this.activateCoWritingView();
         new Notice('已打开句级协同写作工作台。请先打开某章「正文」文件，或从完整写作工作台选择章节后再进入，即可自动绑定。', 6000);
     }
@@ -809,8 +855,17 @@ export default class NovelWriterPlugin extends Plugin {
     private async encryptKey(plaintext: string): Promise<string> {
         return this._cryptoService.encrypt(plaintext);
     }
-    private async decryptKey(stored: string): Promise<string> {
+    /** 解密单个密钥（供 AIApiClient 在请求前按需解锁） */
+    async decryptKey(stored: string): Promise<string> {
         return this._cryptoService.decrypt(stored);
+    }
+    /**
+     * 静默解密：不弹口令框。未解锁时原样返回密文。
+     * 供章节打开时的后台分析（如情节线 AI 解析）使用——这类调用失败可以跳过，
+     * 不应该用口令弹窗打断用户。
+     */
+    async decryptKeyWithoutPrompt(stored: string): Promise<string> {
+        return this._cryptoService.decryptWithoutPrompt(stored);
     }
 
     async loadSettings() {
@@ -842,7 +897,7 @@ export default class NovelWriterPlugin extends Plugin {
     // ─── 提供商管理（委托至 core/provider-manager）───
     public getCurrentProviderId(): string | null { return this._providerManager.getCurrentProviderId(); }
     public switchProviderByEndpoint(endpoint: string): boolean { return this._providerManager.switchByEndpoint(endpoint); }
-    public resolveModelLimits(modelName: string) { return this._providerManager.resolveModelLimits(modelName); }
+    public resolveModelLimits(modelName: string, endpoint?: string) { return this._providerManager.resolveModelLimits(modelName, endpoint); }
     public updateModelLimitsFromModel(modelName: string): void { this._providerManager.updateModelLimits(modelName); }
     public setCurrentModelOverride(field: 'maxContext' | 'maxOutput', value: number): void {
         this._providerManager.setModelOverride(this.getCurrentProviderId() || 'unknown', this.settings.defaultModel, field, value);
@@ -1007,15 +1062,11 @@ export default class NovelWriterPlugin extends Plugin {
         workspace.revealLeaf(leaf);
         
         if (chapterPath && leaf?.view) {
-            // 方案：通过 _pendingReloadState 传递章节信息
-            // 让 FullWriterView 在 onOpen 中处理章节打开
-            const view = leaf.view as FullWriterView;
-            // selectChapter 是 FullWriterView 的私有方法，仅通过 view 上的 _pendingReloadState 间接触发
-            // TODO: 将章节自动选择改为通过 _pendingReloadState 传递（已有该机制）
-            if (typeof (view as unknown as { selectChapter?: unknown }).selectChapter === 'function') {
-                // 需要通过 chapterPath 解析出 project 和 chapter 对象
-                // 暂时跳过自动选择章节，让用户手动选择
-                log.warn('[小说工坊] 自动选择章节功能待完善，请手动选择章节');
+            const view = leaf.view;
+            if (view instanceof FullWriterView) {
+                await view.openChapterByPath(project, chapterPath);
+            } else {
+                log.warn('[小说工坊] 工作台视图类型不匹配，跳过章节自动定位');
             }
         }
     }

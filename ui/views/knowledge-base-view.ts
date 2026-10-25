@@ -1268,6 +1268,17 @@ export class KnowledgeBaseView extends ItemView {
         });
         void statusBadge;
 
+        // A5: 拆解完成但向量化失败时，检索实际不可用，列表必须能看出来
+        if (book.vectorStatus === 'failed') {
+            header.createSpan({
+                text: '⚠️ 向量化失败',
+                attr: {
+                    title: book.vectorError || '检索不可用，请到详情页重试向量化',
+                    style: 'padding:2px 8px;font-size:11px;border-radius:10px;background:rgba(231,76,60,0.15);color:#e74c3c;flex-shrink:0;margin-left:4px;'
+                }
+            });
+        }
+
         const meta = card.createDiv({ cls: 'nw-text-sm-muted', attr: { style: 'margin-bottom:8px;' } });
         meta.createSpan({ text: book.author || '未知作者' });
         meta.createSpan({ text: ' · ' + this.formatWordCount(book.wordCount) });
@@ -3132,6 +3143,8 @@ export class KnowledgeBaseView extends ItemView {
         if (!confirmed) return;
 
         try {
+            // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
+            await this.deconstructionScheduler?.cancelByBook(book.id);
             await this.kbManager?.deleteBook(book.id);
             new Notice('书籍已删除');
             this.selectedBookId = null;

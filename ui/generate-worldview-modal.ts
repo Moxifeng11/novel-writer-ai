@@ -30,14 +30,16 @@ export class GenerateWorldviewModal extends Modal {
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.addClass('nw-modal');
+            wrapper.addClass('nw-modal-form');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
+        contentEl.addClass('nw-entity-scope');
+        contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
-        contentEl.createEl('h2', { text: '🌍 生成世界观' });
+        contentEl.createEl('h2', { text: '🌍 生成世界观', attr: { style: 'margin:0; font-size:18px;' } });
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
 
@@ -119,8 +121,8 @@ export class GenerateWorldviewModal extends Modal {
     }
 
     private async generateWorldview(project: string, worldName: string, genre: string, theme: string, customPrompt: string): Promise<void> {
-        if (!this.plugin.settings.apiKey) {
-            new Notice('❌ 请先配置API密钥', 5000);
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
             return;
         }
 

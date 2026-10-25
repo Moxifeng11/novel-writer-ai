@@ -70,9 +70,12 @@ export class MonitorPanelA extends DraggablePanel {
   private emotionContent!: HTMLElement;
   private oocContent!: HTMLElement;
   private entityContent!: HTMLElement;
+  /** 分析代次：连续输入会并发触发 refreshWithBody，慢的旧结果不得覆盖新结果 */
+  private analysisSeq = 0;
 
   /** 外部调用：用正文内容刷新所有分析 */
   async refreshWithBody(body: string, modelName?: string): Promise<void> {
+    const token = ++this.analysisSeq;
     if (!body || body.length < 100) {
       this.showEmpty("正文内容不足，无法分析");
       return;
@@ -84,10 +87,12 @@ export class MonitorPanelA extends DraggablePanel {
         this.emotionContent.empty();
         this.emotionContent.createDiv({ text: "正在分析情绪..." });
         const curve = await this.emotionAnalyzer.analyze(body);
+        if (token !== this.analysisSeq) return;
         this.emotionContent.empty();
         const view = new EmotionCurveView();
         this.emotionContent.innerHTML += view.render(curve);
       } catch (e) {
+        if (token !== this.analysisSeq) return;
         this.emotionContent.empty();
         this.emotionContent.createDiv({ cls: "nw-float-error", text: "分析失败" });
       }
@@ -99,6 +104,7 @@ export class MonitorPanelA extends DraggablePanel {
         this.rhythmContent.empty();
         this.rhythmContent.createDiv({ text: "正在分析节奏..." });
         const analysis = await this.rhythmAnalyzer.analyze(body);
+        if (token !== this.analysisSeq) return;
         this.rhythmContent.empty();
         for (const seg of analysis.segments.slice(0, 6)) {
           this.rhythmContent.createDiv({
@@ -115,6 +121,7 @@ export class MonitorPanelA extends DraggablePanel {
           }
         }
       } catch (e) {
+        if (token !== this.analysisSeq) return;
         this.rhythmContent.empty();
         this.rhythmContent.createDiv({ cls: "nw-float-error", text: "分析失败" });
       }

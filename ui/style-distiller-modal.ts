@@ -89,8 +89,8 @@ export class StyleDistillerModal extends Modal {
     }
 
     private async distillStyle(novelName: string): Promise<void> {
-        if (!this.plugin.settings.apiKey) {
-            new Notice('❌ 请先配置API密钥', 5000);
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
             return;
         }
 
@@ -270,14 +270,9 @@ ${result.content}
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    /** 从当前活动文件检测项目名 */
+    /** 从当前活动文件检测项目名（工作台/项目页无 activeFile 时由插件回退到界面当前项目） */
     private getActiveProject(): string | null {
-        const activeFile = this.app.workspace.getActiveFile();
-        if (!activeFile) return null;
-        const project = activeFile.path.split('/')[0];
-        if (project === '元文件' || project === '文笔风格库' || project.startsWith('.')) return null;
-        const folder = this.app.vault.getAbstractFileByPath(project);
-        return folder instanceof TFolder ? project : null;
+        return this.plugin.getActiveProject();
     }
 
     /** 显示保存目标选择弹窗 */

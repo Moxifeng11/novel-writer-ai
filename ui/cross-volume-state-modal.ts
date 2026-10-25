@@ -63,7 +63,10 @@ export class CrossVolumeStateModal extends Modal {
                 await this.generateSnapshot(project, volName);
             };
 
-            await this.populateVolumes(projects[0], volSelect);
+            // 与工作台/项目页保持一致：优先当前项目，避免默认落到列表第一个
+            const active = this.plugin.getActiveProject();
+            const preferred = active && projects.includes(active) ? active : projects[0];
+            await this.populateVolumes(preferred, volSelect);
         };
 
         populateProjects();

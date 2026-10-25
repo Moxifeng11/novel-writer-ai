@@ -15,6 +15,10 @@ import {
 import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { UnifiedEntityManagerModal } from './unified-entity-manager-modal';
 import type { EntityCategory as ModelCategory } from '../shared/entity-models';
+import { saveEntities, formatSaveOutcome, type EntityKind } from '../shared/entity-persistence';
+import { ensureEntityIntegrity } from '../shared/entity-integrity';
+import { mergeFanficRequirement } from '../shared/fanfic-rules';
+import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { createLogger } from '../shared/logger';
 
 
@@ -118,11 +122,14 @@ export class UnifiedEntityGenerateModal extends Modal {
 
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.addClass('nw-modal');
+            // Rev 184：640px 下 5 步向导与两列字段挤压，改用 900px 档并允许小屏收缩
+            wrapper.addClass('nw-modal-lg');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
+        contentEl.addClass('nw-entity-scope');
+        contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
         this._pendingResults = [];
@@ -156,7 +163,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         this._stepIndicatorEl = contentEl.createDiv({
             attr: {
                 style:
-                    'display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding:12px 0; border-bottom:1px solid var(--background-modifier-border);',
+                    'display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; padding:10px 0; border-bottom:1px solid var(--background-modifier-border);',
             },
         });
 
@@ -178,7 +185,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             const stepItem = this._stepIndicatorEl.createDiv({
                 attr: {
                     style:
-                        'display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;',
+                        'display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-width:0;',
                 },
             });
 
@@ -186,13 +193,16 @@ export class UnifiedEntityGenerateModal extends Modal {
                 text: String(step.num),
                 attr: {
                     style:
-                        'width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.85em; font-weight:600;',
+                        'width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:var(--nw-font-size-sm, 12px); font-weight:600; flex-shrink:0;',
                 },
             });
 
             const label = stepItem.createEl('span', {
                 text: step.label,
-                attr: { style: 'font-size:0.75em; white-space:nowrap;' },
+                attr: {
+                    style:
+                        'font-size:var(--nw-font-size-xs, 11px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;',
+                },
             });
 
             if (i < currentIdx) {
@@ -298,7 +308,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         const typeGrid = container.createDiv({
             attr: {
                 style:
-                    'display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:20px;',
+                    'display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;',
             },
         });
 
@@ -355,7 +365,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             });
             const descEl = card.createEl('div', {
                 text: cat.desc,
-                attr: { style: 'font-size:0.85em; color:var(--text-muted);' },
+                attr: { style: 'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted);' },
             });
 
             (card as any)._catKey = cat.key;
@@ -386,7 +396,7 @@ export class UnifiedEntityGenerateModal extends Modal {
 
     private _updateAllTypeCards(categories: { key: ModelCategory }[]): void {
         const grid = this._contentAreaEl.querySelector(
-            'div[style*="grid-template-columns:repeat(2"]',
+            'div[style*="grid-template-columns:repeat(auto-fit"]',
         );
         if (!grid) return;
         const cards = grid.querySelectorAll('button');
@@ -416,7 +426,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         const projectInfo = container.createDiv({
             attr: {
                 style:
-                    'padding:8px 12px; background:var(--background-secondary); border-radius:6px; margin-bottom:16px; font-size:0.9em;',
+                    'padding:8px 12px; background:var(--background-secondary); border-radius:6px; margin-bottom:16px; font-size:var(--nw-font-size-base, 13px);',
             },
         });
         projectInfo.createSpan({
@@ -523,7 +533,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             countInput.value = String(nameList.length);
             const hint = countRow.createEl('span', {
                 text: `（已指定 ${nameList.length} 个名称）`,
-                attr: { style: 'color:var(--text-muted); font-size:0.85em;' },
+                attr: { style: 'color:var(--text-muted); font-size:var(--nw-font-size-sm, 12px);' },
             });
         }
 
@@ -540,7 +550,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         const summaryGrid = summary.createDiv({
             attr: {
                 style:
-                    'display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:0.9em;',
+                    'display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:var(--nw-font-size-base, 13px);',
             },
         });
         summaryGrid.createSpan({
@@ -638,12 +648,16 @@ export class UnifiedEntityGenerateModal extends Modal {
 
             let results: BatchEntityResult[] = [];
 
+            // 同人项目：原作核心设定与创作规则必须进入实体生成要求，否则人物/势力/地点会脱离原作体系
+            const fanficBlock = await readFanficPromptBlockWithNotice(this.app, this._currentProject);
+            const description = mergeFanficRequirement(fanficBlock, this._description);
+
             switch (this._selectedCategory) {
                 case 'character':
                     const charRes = await this.aiEngine.generateCharacters(
                         worldview,
                         this._count,
-                        this._description || undefined,
+                        description || undefined,
                         undefined,
                         false,
                         nameList.length > 0 ? nameList : undefined,
@@ -659,7 +673,7 @@ export class UnifiedEntityGenerateModal extends Modal {
                     results = await this.aiEngine.generateFactionsBatch(
                         worldview,
                         nameList,
-                        this._description,
+                        description,
                         this._count,
                         undefined,
                         settingLib || undefined,
@@ -670,7 +684,7 @@ export class UnifiedEntityGenerateModal extends Modal {
                     results = await this.aiEngine.generateLocationsBatch(
                         worldview,
                         nameList,
-                        this._description,
+                        description,
                         this._count,
                         undefined,
                         settingLib || undefined,
@@ -681,7 +695,7 @@ export class UnifiedEntityGenerateModal extends Modal {
                     results = await this.aiEngine.generateItemsBatch(
                         worldview,
                         nameList,
-                        this._description,
+                        description,
                         this._count,
                         undefined,
                         undefined,
@@ -787,7 +801,7 @@ export class UnifiedEntityGenerateModal extends Modal {
                 text: '✏️ 编辑',
                 attr: {
                     style:
-                        'font-size:0.8em; padding:3px 10px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);',
+                        'font-size:var(--nw-font-size-sm, 12px); padding:3px 10px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);',
                 },
             });
 
@@ -795,14 +809,14 @@ export class UnifiedEntityGenerateModal extends Modal {
                 text: '🗑️ 删除',
                 attr: {
                     style:
-                        'font-size:0.8em; padding:3px 10px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary); color:var(--text-error);',
+                        'font-size:var(--nw-font-size-sm, 12px); padding:3px 10px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary); color:var(--text-error);',
                 },
             });
 
             const previewEl = card.createDiv({
                 attr: {
                     style:
-                        'font-size:0.85em; color:var(--text-muted); max-height:60px; overflow:hidden; line-height:1.4;',
+                        'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted); max-height:60px; overflow:hidden; line-height:1.4;',
                 },
             });
 
@@ -832,7 +846,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         const countInfo = container.createDiv({
             attr: {
                 style:
-                    'text-align:right; color:var(--text-muted); font-size:0.85em; margin-bottom:12px;',
+                    'text-align:right; color:var(--text-muted); font-size:var(--nw-font-size-sm, 12px); margin-bottom:12px;',
             },
         });
         countInfo.setText(`共 ${this._pendingResults.length} 个，将保存 ${remaining} 个`);
@@ -870,7 +884,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         });
         const nameLabel = titleRow.createEl('label', {
             text: '名称：',
-            attr: { style: 'display:block; font-size:0.85em; margin-bottom:4px;' },
+            attr: { style: 'display:block; font-size:var(--nw-font-size-sm, 12px); margin-bottom:4px;' },
         });
         const nameInput = titleRow.createEl('input', {
             type: 'text',
@@ -882,7 +896,7 @@ export class UnifiedEntityGenerateModal extends Modal {
 
         const contentLabel = cardEl.createEl('label', {
             text: '内容：',
-            attr: { style: 'display:block; font-size:0.85em; margin-bottom:4px;' },
+            attr: { style: 'display:block; font-size:var(--nw-font-size-sm, 12px); margin-bottom:4px;' },
         });
         const contentInput = cardEl.createEl('textarea', {
             value: item.entity.content,
@@ -900,7 +914,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             text: '取消',
             attr: {
                 style:
-                    'font-size:0.8em; padding:4px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);',
+                    'font-size:var(--nw-font-size-sm, 12px); padding:4px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);',
             },
         });
         cancelBtn.onclick = () => this._renderCurrentStep();
@@ -931,36 +945,66 @@ export class UnifiedEntityGenerateModal extends Modal {
         showProgress(`正在保存 ${toSave.length} 个${config.label}...`);
 
         try {
-            const subdir = config.subdir;
-            const dirPath = `${this._currentProject}/${subdir}`;
-
+            const dirPath = `${this._currentProject}/${config.subdir}`;
             await mkdirp(this.app, dirPath);
 
-            let savedCount = 0;
-            for (const item of toSave) {
-                try {
-                    const safeName = item.entity.name.replace(/[\\/:*?"<>|]/g, '_');
-                    const filePath = `${dirPath}/${safeName}.md`;
+            const kindByCategory: Record<ModelCategory, EntityKind> = {
+                character: 'characters',
+                faction: 'factions',
+                location: 'locations',
+                item: 'items',
+            };
+            const kind = kindByCategory[this._selectedCategory];
 
-                    let finalContent = item.entity.content;
-                    if (!finalContent.startsWith('---')) {
-                        finalContent = `---\ntags: [${config.label}]\n名称: ${item.entity.name}\n---\n\n${finalContent}`;
-                    }
+            // 保存前完整性闭环：校验 → AI 补全一次 → 复检；不完整的不落盘
+            let worldview = '';
+            try {
+                const wvFile = this.app.vault.getAbstractFileByPath(pjWorldview(this._currentProject));
+                if (wvFile instanceof TFile) worldview = await this.app.vault.read(wvFile);
+            } catch { /* 世界观缺失时补全仍可进行 */ }
 
-                    const existing = this.app.vault.getAbstractFileByPath(filePath);
-                    if (existing instanceof TFile) {
-                        await this.app.vault.modify(existing, finalContent);
-                    } else {
-                        await this.app.vault.create(filePath, finalContent);
-                    }
-                    savedCount++;
-                } catch (e) {
-                    log.error(`保存 ${item.entity.name} 失败:`, e);
+            const ready: Array<{ name: string; content: string }> = [];
+            const integrityFailures: string[] = [];
+            for (let i = 0; i < toSave.length; i++) {
+                const item = toSave[i];
+                showProgress(`正在校验/补全 ${i + 1}/${toSave.length} 个${config.label}...`);
+                const result = await ensureEntityIntegrity(
+                    kind,
+                    item.entity.name,
+                    item.entity.content,
+                    (req) => this.plugin.aiEngine.repairEntity(kind, req.name, req.content, req.missingFields, worldview)
+                );
+                if (!result.valid) {
+                    integrityFailures.push(
+                        `${item.entity.name}（缺少：${result.missingFields.slice(0, 4).join('、')}${result.missingFields.length > 4 ? ' 等' : ''}）`
+                    );
+                    continue;
                 }
+                item.entity.content = result.content;
+                ready.push({ name: item.entity.name, content: result.content });
             }
 
+            if (ready.length === 0) {
+                hideProgress();
+                showError(`❌ 全部 ${config.label} 未通过完整性校验，未保存：\n${integrityFailures.slice(0, 5).join('\n')}`);
+                return;
+            }
+
+            const outcome = await saveEntities(
+                this.app,
+                this._currentProject,
+                kind,
+                ready
+            );
+
             hideProgress();
-            showSuccess(`✅ 成功保存 ${savedCount} 个${config.label}`);
+            if (integrityFailures.length > 0) {
+                outcome.failed.push(...integrityFailures.map(text => ({
+                    name: text.split('（')[0],
+                    error: `完整性校验未通过：${text}`,
+                })));
+            }
+            showSuccess(`✅ ${formatSaveOutcome(outcome, kind)}`);
             this._goToStep('confirm');
         } catch (e: any) {
             hideProgress();
@@ -994,7 +1038,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         });
         resultBox.createEl('div', {
             text: `已保存到：${this._currentProject}/${config.subdir}`,
-            attr: { style: 'font-size:0.9em; color:var(--text-muted);' },
+            attr: { style: 'font-size:var(--nw-font-size-base, 13px); color:var(--text-muted);' },
         });
 
         const btnRow = container.createDiv({

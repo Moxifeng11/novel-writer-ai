@@ -752,7 +752,7 @@ export class GoldenOpeningModal extends Modal {
 
 请生成6种不同类型的开篇钩子。`;
 
-            const result = await this.aiEngine.callAI(systemPrompt, userPrompt, undefined, 0.9, 4096);
+            const result = await this.aiEngine.callAI(systemPrompt, userPrompt, undefined, 0.9, this.plugin.settings.maxOutput);
             notice.hide();
 
             if (result.error) {
@@ -841,7 +841,7 @@ ${this.textInput.slice(0, 1000)}
 
 请检测开篇中的钩子并评分。`;
 
-            const result = await this.aiEngine.callAI(systemPrompt, userPrompt, undefined, 0.7, 4096);
+            const result = await this.aiEngine.callAI(systemPrompt, userPrompt, undefined, 0.7, this.plugin.settings.maxOutput);
             notice.hide();
 
             if (result.error) {

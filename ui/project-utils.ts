@@ -7,7 +7,7 @@
  *   - getProjectCover (L1538)
  */
 
-import { App, TFile, Notice } from 'obsidian';
+import { App, TFile, TFolder, Notice } from 'obsidian';
 import { readTitle, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
 import { readProjectMeta } from '../shared/paths';
@@ -114,9 +114,21 @@ export async function deleteProject(app: App, projectName: string): Promise<void
     new Notice(`✅ 项目「${projectName}」已删除`);
 }
 
-/** 获取项目所有章节列表（含标题、状态、卷信息） */
-export function getChaptersForProject(app: App, project: string): Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }> {
-    const result: Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }> = [];
+/** 章节列表条目：正文 ∪ 步骤结果骨架 */
+export interface ChapterListEntry {
+    chapter: string;
+    volume: string;
+    title: string;
+    status: string;
+    /** 正文文件；仅有骨架目录时为 null */
+    file: TFile | null;
+    /** 是否存在正文文件 */
+    hasBody: boolean;
+}
+
+/** 获取项目所有章节列表（正文 ∪ 步骤结果骨架目录），含标题、状态、卷信息 */
+export function getChaptersForProject(app: App, project: string): ChapterListEntry[] {
+    const result: ChapterListEntry[] = [];
     const seenChapters = new Set<string>();
 
     const candidateFiles = app.vault.getFiles().filter(file =>
@@ -151,9 +163,32 @@ export function getChaptersForProject(app: App, project: string): Array<{ chapte
                 title: d.title,
                 status: d.status,
                 file: d.file,
+                hasBody: true,
             });
         }
     }
+
+    // 骨架章节：只建了 步骤结果/第N卷/第M章 目录、尚未写正文的章
+    // 去重键沿用章名（全书连续章号），正文优先于骨架。
+    const escapedProject = project.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const skeletonRe = new RegExp(`^${escapedProject}/03-大纲与章节/步骤结果/(第\\d+卷)/(第\\d+章)$`);
+    for (const entry of app.vault.getAllLoadedFiles()) {
+        if (!(entry instanceof TFolder)) continue;
+        const match = entry.path.match(skeletonRe);
+        if (!match) continue;
+        const chapter = match[2];
+        if (seenChapters.has(chapter)) continue;
+        seenChapters.add(chapter);
+        result.push({
+            chapter,
+            volume: match[1],
+            title: '',
+            status: '',
+            file: null,
+            hasBody: false,
+        });
+    }
+
     return result;
 }
 

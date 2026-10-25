@@ -3,8 +3,7 @@ import { NovelAnalyzer, NovelAnalysisResult } from '../engine/novel-analyzer';
 import { barChart, donutChart, wordCloud } from './svg-charts';
 import { AddFingerprintModal } from './fingerprint-library-modal';
 import { FingerprintExtractor } from '../engine/fingerprint-extractor';
-import { LocalVectorStore } from '../engine/local-vector-store';
-import { OllamaEmbeddingClient } from '../engine/ollama-embedding-client';
+import { createFingerprintEmbedding } from './fingerprint-embedding';
 import NovelWriterPlugin from '../main';
 import { createLogger } from '../shared/logger';
 
@@ -229,11 +228,13 @@ export class NovelAnalysisModal extends Modal {
         }
 
         const plugin = this.options.plugin;
-        const embeddingEndpoint = plugin.settings.embeddingEndpoint || 'http://localhost:11434';
-        const embeddingModel = plugin.settings.embeddingModel || 'bge-m3';
-        const embeddingClient = new OllamaEmbeddingClient(embeddingEndpoint, embeddingModel);
-        const vectorStore = new LocalVectorStore(this.app, 'project', embeddingClient, projectName);
-        const extractor = new FingerprintExtractor(plugin.aiEngine, embeddingClient, vectorStore);
+        const { provider, vectorStore } = createFingerprintEmbedding(
+            this.app,
+            'project',
+            plugin.settings,
+            projectName,
+        );
+        const extractor = new FingerprintExtractor(plugin.aiEngine, provider, vectorStore);
 
         this.close();
 

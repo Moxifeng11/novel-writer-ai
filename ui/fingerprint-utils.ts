@@ -25,6 +25,18 @@ export interface FingerprintListOptions {
     onDelete?: (fp: StyleFingerprint) => void;
 }
 
+/**
+ * 模板层是「来源库」而非注入层：创建项目/「从模板同步到项目」时才复制进项目，
+ * 注入链（`StyleFingerprintLibrary#getEnabledFingerprints`）与强度配置
+ * （`PromptBuilder#getFingerprintPromptParts`）都只处理 project / global。
+ *
+ * 因此 template 指纹的「启用/禁用」「强度调节」没有任何消费方，三个入口
+ * （指纹库视图、设置页、mini 设置）都必须隐藏这两个控件，否则用户会以为设置生效。
+ */
+export function isSourceOnlyFingerprintScope(scope: StyleFingerprint['scope']): boolean {
+    return scope === 'template';
+}
+
 export function renderFingerprintList(
     container: HTMLElement,
     fingerprints: StyleFingerprint[],
@@ -68,14 +80,25 @@ export function renderFingerprintList(
 
         const actions = item.createDiv({ attr: { style: 'display:flex;gap:6px;flex-shrink:0;align-items:center;' } });
 
-        const toggleWrap = actions.createDiv({ attr: { style: 'display:flex;align-items:center;gap:6px;' } });
-        const toggleInput = toggleWrap.createEl('input', {
-            attr: { type: 'checkbox', style: 'cursor:pointer;' }
-        });
-        toggleInput.checked = fp.enabled;
-        toggleInput.addEventListener('change', () => {
-            onToggle?.(fp);
-        });
+        if (isSourceOnlyFingerprintScope(fp.scope)) {
+            // 模板层不参与注入：给提示而不是给一个无效开关
+            actions.createEl('span', {
+                text: '来源库 · 复制到项目后生效',
+                attr: {
+                    title: '模板层指纹只在创建项目/从模板同步时复制进项目，本身的启用状态不影响正文',
+                    style: 'font-size:11px;color:var(--text-faint);'
+                }
+            });
+        } else {
+            const toggleWrap = actions.createDiv({ attr: { style: 'display:flex;align-items:center;gap:6px;' } });
+            const toggleInput = toggleWrap.createEl('input', {
+                attr: { type: 'checkbox', style: 'cursor:pointer;' }
+            });
+            toggleInput.checked = fp.enabled;
+            toggleInput.addEventListener('change', () => {
+                onToggle?.(fp);
+            });
+        }
 
         const detailBtn = actions.createEl('button', {
             text: '详情',

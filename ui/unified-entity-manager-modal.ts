@@ -9,7 +9,10 @@ import {
 } from '../shared/paths';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
+import { ensureEntityIntegrity } from '../shared/entity-integrity';
+import { auditEntityFiles, overwriteEntityIfComplete, readProjectWorldview } from '../shared/entity-audit';
 import { createLogger } from '../shared/logger';
+import { createEmptyState } from './components/empty-state';
 
 const log = createLogger('UnifiedEntityManagerModal');
 import {
@@ -20,6 +23,7 @@ import {
     type AnyEntityDomainModel,
     type EntityCategory as ModelCategory,
 } from '../shared/entity-models';
+import { ENTITY_FIELD_MAPPINGS } from '../shared/entity-field-mappings';
 
 interface EntityItem {
     file: TFile;
@@ -71,14 +75,16 @@ export class UnifiedEntityManagerModal extends Modal {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
         contentEl.empty();
+        contentEl.addClass('nw-entity-scope');
 
         const modalWrapper = contentEl.parentElement as HTMLElement;
         if (modalWrapper) {
             modalWrapper.addClass('nw-modal-xl');
-            modalWrapper.style.setProperty('height', '75vh', 'important');
+            // Rev 184：固定 75vh 在小屏挤压内容，改为上限约束
+            modalWrapper.style.setProperty('height', 'min(75vh, 860px)', 'important');
         }
         contentEl.style.width = '100%';
-        contentEl.style.height = '75vh';
+        contentEl.style.height = 'min(75vh, 860px)';
         contentEl.style.display = 'flex';
         contentEl.style.flexDirection = 'column';
         contentEl.style.overflow = 'hidden';
@@ -122,7 +128,7 @@ export class UnifiedEntityManagerModal extends Modal {
             text: '✨ 生成实体',
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
         });
-        genBtn.style.cssText = 'font-size:0.85em; padding:6px 14px;';
+        genBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:6px 14px;';
         genBtn.onclick = () => {
             this.close();
             new UnifiedEntityGenerateModal(
@@ -138,7 +144,7 @@ export class UnifiedEntityManagerModal extends Modal {
             cls: 'nw-btn',
         });
         mgrBtn.style.cssText =
-            'font-size:0.85em; padding:6px 14px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
+            'font-size:var(--nw-font-size-sm, 12px); padding:6px 14px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
         mgrBtn.onclick = () => {
             const subdir = this.subdirMap[this.activeCategory];
             const catInfo = this.categoryTabMap[this.activeCategory];
@@ -151,6 +157,91 @@ export class UnifiedEntityManagerModal extends Modal {
                 `${catInfo.icon} ${catInfo.label}`,
             ).open();
         };
+
+        const repairBtn = actionBtns.createEl('button', {
+            text: '🩹 补全不完整实体',
+            cls: 'nw-btn',
+        });
+        repairBtn.style.cssText =
+            'font-size:var(--nw-font-size-sm, 12px); padding:6px 14px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
+        repairBtn.onclick = () => { void this._repairIncompleteEntities(repairBtn); };
+    }
+
+    /**
+     * 审计项目内全部实体，逐条「校验 → AI 补全 → 复检」，通过后原地覆写。
+     * 复检仍不完整的实体保持原样，并在结束提示中列出。
+     */
+    private async _repairIncompleteEntities(btn: HTMLButtonElement): Promise<void> {
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点，再执行补全', 5000);
+            return;
+        }
+
+        btn.disabled = true;
+        btn.setText('⏳ 检查中...');
+        try {
+            const items = await auditEntityFiles(this.app, this.project);
+            if (items.length === 0) {
+                new Notice('✅ 所有实体均通过完整性校验', 4000);
+                return;
+            }
+
+            const preview = items.slice(0, 8)
+                .map(i => `${i.name}（缺 ${i.missingFields.length} 项）`)
+                .join('、');
+            const confirmed = window.confirm(
+                `发现 ${items.length} 个不完整实体：\n${preview}${items.length > 8 ? ' 等' : ''}\n\n` +
+                '将逐条调用 AI 补全，复检通过后原地覆写；仍不完整的保持原文件不变。是否继续？'
+            );
+            if (!confirmed) return;
+
+            const worldview = await readProjectWorldview(this.app, this.project);
+            let repaired = 0;
+            const failed: string[] = [];
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                btn.setText(`⏳ 补全 ${i + 1}/${items.length}...`);
+
+                const result = await ensureEntityIntegrity(
+                    item.kind,
+                    item.name,
+                    item.content,
+                    (req) => this.plugin.aiEngine.repairEntity(
+                        req.kind,
+                        req.name,
+                        req.content,
+                        req.missingFields,
+                        worldview
+                    )
+                );
+
+                if (!result.valid) {
+                    failed.push(`${item.name}（缺 ${result.missingFields.slice(0, 3).join('、')}）`);
+                    continue;
+                }
+
+                const write = await overwriteEntityIfComplete(this.app, item, result.content);
+                if (write.ok) {
+                    repaired++;
+                } else {
+                    failed.push(`${item.name}（复检未通过）`);
+                }
+            }
+
+            await this._loadEntities();
+
+            const failHint = failed.length > 0
+                ? `；未修复 ${failed.length} 个：${failed.slice(0, 5).join('；')}${failed.length > 5 ? ' 等' : ''}`
+                : '';
+            new Notice(`🩹 已补全 ${repaired} 个实体${failHint}`, failed.length > 0 ? 12000 : 6000);
+        } catch (e) {
+            log.error('[实体管理] 批量补全失败:', e);
+            new Notice(`❌ 补全失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+        } finally {
+            btn.disabled = false;
+            btn.setText('🩹 补全不完整实体');
+        }
     }
 
     private _renderToolbar(): void {
@@ -179,7 +270,7 @@ export class UnifiedEntityManagerModal extends Modal {
             cls: 'nw-btn',
         });
         filterBtn.style.cssText =
-            'font-size:0.85em; padding:6px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
+            'font-size:var(--nw-font-size-sm, 12px); padding:6px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
         filterBtn.onclick = () => {
             this.showAdvancedFilter = !this.showAdvancedFilter;
             this._toggleTagFilter();
@@ -190,16 +281,18 @@ export class UnifiedEntityManagerModal extends Modal {
             cls: 'nw-btn',
         });
         addBtn.style.cssText =
-            'font-size:0.85em; padding:6px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
-        addBtn.onclick = () => {
-            this.close();
-            new UnifiedEntityGenerateModal(
-                this.app,
-                this.plugin,
-                this.project,
-                this.activeCategory,
-            ).open();
-        };
+            'font-size:var(--nw-font-size-sm, 12px); padding:6px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
+        addBtn.onclick = () => this.openCreateEntityModal();
+    }
+
+    private openCreateEntityModal(): void {
+        this.close();
+        new UnifiedEntityGenerateModal(
+            this.app,
+            this.plugin,
+            this.project,
+            this.activeCategory,
+        ).open();
     }
 
     private _toggleTagFilter(): void {
@@ -228,14 +321,14 @@ export class UnifiedEntityManagerModal extends Modal {
 
         filterRow.createSpan({
             text: '标签：',
-            attr: { style: 'font-size:0.85em; color:var(--text-muted);' },
+            attr: { style: 'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted);' },
         });
 
         const allTagsArr = Array.from(this.allTags).sort();
         if (allTagsArr.length === 0) {
             filterRow.createSpan({
                 text: '（暂无标签）',
-                attr: { style: 'font-size:0.85em; color:var(--text-muted);' },
+                attr: { style: 'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted);' },
             });
             return;
         }
@@ -243,7 +336,7 @@ export class UnifiedEntityManagerModal extends Modal {
         for (const tag of allTagsArr) {
             const tagBtn = filterRow.createEl('button', {
                 text: tag,
-                attr: { style: 'font-size:0.8em; padding:3px 10px; border-radius:12px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);' },
+                attr: { style: 'font-size:var(--nw-font-size-sm, 12px); padding:3px 10px; border-radius:12px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);' },
             });
             const updateTagStyle = () => {
                 if (this.selectedTags.has(tag)) {
@@ -270,7 +363,7 @@ export class UnifiedEntityManagerModal extends Modal {
 
         const clearBtn = filterRow.createEl('button', {
             text: '清除筛选',
-            attr: { style: 'font-size:0.8em; padding:3px 10px; border-radius:12px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary); margin-left:auto;' },
+            attr: { style: 'font-size:var(--nw-font-size-sm, 12px); padding:3px 10px; border-radius:12px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary); margin-left:auto;' },
         });
         clearBtn.onclick = () => {
             this.selectedTags.clear();
@@ -282,16 +375,9 @@ export class UnifiedEntityManagerModal extends Modal {
     private _renderBody(): void {
         const { contentEl } = this;
 
-        const body = contentEl.createDiv({
-            attr: { style: 'display:flex; flex:1; overflow:hidden; min-height:0;' },
-        });
+        const body = contentEl.createDiv({ cls: 'nw-entity-manager-body' });
 
-        const sidebar = body.createDiv({
-            attr: {
-                style:
-                    'width:240px; min-width:240px; border-right:1px solid var(--background-modifier-border); display:flex; flex-direction:column; background:var(--background-primary-alt);',
-            },
-        });
+        const sidebar = body.createDiv({ cls: 'nw-entity-manager-side' });
 
         const tabBar = sidebar.createDiv({
             attr: {
@@ -307,7 +393,7 @@ export class UnifiedEntityManagerModal extends Modal {
                 attr: {
                     'data-category': cat,
                     style:
-                        'padding:10px 16px; text-align:left; cursor:pointer; border:none; background:transparent; font-size:0.95em; border-bottom:1px solid var(--background-modifier-border);',
+                        'padding:8px 14px; text-align:left; cursor:pointer; border:none; background:transparent; font-size:var(--nw-font-size-sm, 12px); border-bottom:1px solid var(--background-modifier-border);',
                 },
             });
 
@@ -316,12 +402,12 @@ export class UnifiedEntityManagerModal extends Modal {
                     tabBtn.style.background = 'var(--background-primary)';
                     tabBtn.style.fontWeight = '600';
                     tabBtn.style.borderLeft = '3px solid var(--text-accent)';
-                    tabBtn.style.paddingLeft = '13px';
+                    tabBtn.style.paddingLeft = '11px';
                 } else {
                     tabBtn.style.background = 'transparent';
                     tabBtn.style.fontWeight = 'normal';
                     tabBtn.style.borderLeft = '3px solid transparent';
-                    tabBtn.style.paddingLeft = '16px';
+                    tabBtn.style.paddingLeft = '14px';
                 }
             };
             updateTabStyle();
@@ -508,15 +594,16 @@ export class UnifiedEntityManagerModal extends Modal {
         this.listEl.empty();
 
         if (this.filteredEntities.length === 0) {
-            this.listEl.createEl('p', {
-                text: this.searchQuery || this.selectedTags.size > 0
-                    ? '没有匹配的实体'
-                    : '暂无实体',
-                attr: {
-                    style:
-                        'color:var(--text-muted); padding:20px 8px; font-size:0.85em; text-align:center;',
-                },
-            });
+            const isFiltering = Boolean(this.searchQuery) || this.selectedTags.size > 0;
+            this.listEl.appendChild(createEmptyState({
+                icon: isFiltering ? 'search' : 'folder',
+                title: isFiltering ? '没有匹配的实体' : '暂无实体',
+                description: isFiltering
+                    ? '试试清空搜索条件或取消标签筛选。'
+                    : '当前项目还没有人物、地点、势力或物品。可以先生成一个，或让 AI 从正文中识别。',
+                actionText: isFiltering ? undefined : '新建实体',
+                onAction: isFiltering ? undefined : () => this.openCreateEntityModal(),
+            }));
             return;
         }
 
@@ -524,7 +611,7 @@ export class UnifiedEntityManagerModal extends Modal {
             const item = this.listEl.createDiv({
                 attr: {
                     style:
-                        'padding:8px 10px; cursor:pointer; border-radius:6px; font-size:0.9em; margin-bottom:2px; display:flex; align-items:center; gap:6px;',
+                        'padding:8px 10px; cursor:pointer; border-radius:6px; font-size:var(--nw-font-size-base, 13px); margin-bottom:2px; display:flex; align-items:center; gap:6px;',
                 },
             });
 
@@ -565,20 +652,17 @@ export class UnifiedEntityManagerModal extends Modal {
 
     private _renderEmptyDetail(): void {
         this.detailEl.empty();
-        const empty = this.detailEl.createDiv({
+        const wrapper = this.detailEl.createDiv({
             attr: {
                 style:
-                    'display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-muted);',
+                    'display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;',
             },
         });
-        empty.createSpan({
-            text: '📝',
-            attr: { style: 'font-size:48px; margin-bottom:16px; opacity:0.5;' },
-        });
-        empty.createSpan({
-            text: '选择左侧实体查看详情',
-            attr: { style: 'font-size:0.95em;' },
-        });
+        wrapper.appendChild(createEmptyState({
+            icon: 'data',
+            title: '选择左侧实体查看详情',
+            description: '从左侧列表选择一个人物、地点、势力或物品。',
+        }));
     }
 
     private async _renderEntityDetail(entity: EntityItem): Promise<void> {
@@ -607,7 +691,7 @@ export class UnifiedEntityManagerModal extends Modal {
 
         header.createSpan({
             text: `${catInfo.label} · ${entity.file.path}`,
-            attr: { style: 'color:var(--text-muted); font-size:0.8em;' },
+            attr: { style: 'color:var(--text-muted); font-size:var(--nw-font-size-sm, 12px);' },
         });
 
         const actionRow = header.createDiv({
@@ -619,7 +703,7 @@ export class UnifiedEntityManagerModal extends Modal {
             cls: 'nw-btn',
         });
         openBtn.style.cssText =
-            'font-size:0.82em; padding:5px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
+            'font-size:var(--nw-font-size-sm, 12px); padding:5px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
         openBtn.onclick = () => {
             const file = entity.file;
             this.app.workspace.getLeaf().openFile(file);
@@ -630,7 +714,7 @@ export class UnifiedEntityManagerModal extends Modal {
             cls: 'nw-btn',
         });
         editBtn.style.cssText =
-            'font-size:0.82em; padding:5px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
+            'font-size:var(--nw-font-size-sm, 12px); padding:5px 12px; border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
         editBtn.onclick = () => {
             const subdir = this.subdirMap[entity.category];
             this.close();
@@ -649,14 +733,14 @@ export class UnifiedEntityManagerModal extends Modal {
             });
             tagsRow.createSpan({
                 text: '🏷️',
-                attr: { style: 'font-size:0.9em;' },
+                attr: { style: 'font-size:var(--nw-font-size-base, 13px);' },
             });
             for (const tag of entity.model.tags) {
                 tagsRow.createEl('span', {
                     text: tag,
                     attr: {
                         style:
-                            'font-size:0.8em; padding:2px 8px; border-radius:10px; background:var(--background-secondary); color:var(--text-muted);',
+                            'font-size:var(--nw-font-size-sm, 12px); padding:2px 8px; border-radius:10px; background:var(--background-secondary); color:var(--text-muted);',
                     },
                 });
             }
@@ -682,7 +766,7 @@ export class UnifiedEntityManagerModal extends Modal {
                 },
             });
             const bodyDiv = bodySection.createDiv({
-                attr: { style: 'font-size:0.92em; line-height:1.6;' },
+                attr: { style: 'font-size:var(--nw-font-size-base, 13px); line-height:1.6;' },
             });
             await MarkdownRenderer.render(
                 this.app,
@@ -712,7 +796,7 @@ export class UnifiedEntityManagerModal extends Modal {
         const grid = section.createDiv({
             attr: {
                 style:
-                    'display:grid; grid-template-columns:auto 1fr; gap:6px 16px; font-size:0.9em;',
+                    'display:grid; grid-template-columns:auto 1fr; gap:6px 16px; font-size:var(--nw-font-size-base, 13px);',
             },
         });
 
@@ -728,39 +812,22 @@ export class UnifiedEntityManagerModal extends Modal {
             grid.createSpan({ text: value, attr: { style: 'color:var(--text-normal);' } });
         };
 
-        switch (model.category) {
-            case 'character':
-                addField('年龄', model.age);
-                addField('身份', model.identity);
-                addField('性别', model.gender);
-                addField('所属势力', model.faction);
-                addField('当前位置', model.currentLocation);
-                addField('修为等级', model.cultivationLevel);
-                addField('金手指', model.specialAbility);
-                addField('首次出场', model.firstAppearance);
-                addField('核心动机', model.coreMotivation);
-                addField('当前状态', model.currentStatus);
-                break;
-            case 'faction':
-                addField('别称', model.alias);
-                addField('类型', model.type);
-                addField('领袖', model.leader);
-                addField('地位排名', model.rank);
-                break;
-            case 'location':
-                addField('别称', model.alias);
-                addField('类型', model.type);
-                addField('重要程度', model.importance);
-                addField('地理特征', model.geography);
-                addField('主要居民', model.inhabitants);
-                addField('所在区域', model.worldRegion);
-                break;
-            case 'item':
-                addField('类型', model.type);
-                addField('品阶', model.grade);
-                addField('效果', model.effect);
-                addField('持有者', model.owner);
-                break;
+        const mapping = ENTITY_FIELD_MAPPINGS[model.category];
+        const record = model as unknown as Record<string, unknown>;
+        const metaKeys = new Set([
+            'name',
+            'entityStatus',
+            'createdAt',
+            'lastChangedAt',
+            'lastChangedReason',
+        ]);
+
+        for (const field of mapping.fields) {
+            if (metaKeys.has(field.modelKey)) continue;
+            const value = record[field.modelKey];
+            if (typeof value === 'string' || typeof value === 'number') {
+                addField(field.label, String(value));
+            }
         }
 
         addField('创建时间', model.createdAt);
@@ -825,7 +892,7 @@ export class UnifiedEntityManagerModal extends Modal {
             const relRow = section.createDiv({
                 attr: {
                     style:
-                        'display:flex; align-items:center; gap:8px; padding:6px 0; font-size:0.9em;',
+                        'display:flex; align-items:center; gap:8px; padding:6px 0; font-size:var(--nw-font-size-base, 13px);',
                 },
             });
 
@@ -838,7 +905,7 @@ export class UnifiedEntityManagerModal extends Modal {
                 text: `${rel.value} →`,
                 attr: {
                     style:
-                        'cursor:pointer; border:none; background:var(--background-secondary); color:var(--text-accent); padding:2px 10px; border-radius:4px; font-size:0.9em;',
+                        'cursor:pointer; border:none; background:var(--background-secondary); color:var(--text-accent); padding:2px 10px; border-radius:4px; font-size:var(--nw-font-size-base, 13px);',
                 },
             });
 

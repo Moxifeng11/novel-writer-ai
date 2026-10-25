@@ -48,6 +48,10 @@ export class NovelTagsModal extends Modal {
                 projectSelect.createEl('option', { value: project, text: project });
             });
 
+            // 与工作台/项目页保持一致：优先当前项目，避免默认落到列表第一个
+            const active = this.plugin.getActiveProject();
+            projectSelect.value = active && projects.includes(active) ? active : projects[0];
+
             this.analyzeButton = contentEl.createEl('button', { text: '分析作品标签', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
             this.analyzeButton.onclick = async () => {
                 await this.analyzeTags(projectSelect.value);
@@ -80,8 +84,8 @@ export class NovelTagsModal extends Modal {
             if (!confirm) return;
         }
 
-        if (!this.plugin.settings.apiKey) {
-            new Notice('❌ 请先配置API密钥', 5000);
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
             return;
         }
 
@@ -190,7 +194,7 @@ ${fullSummary}
 ## 五、封面文案参考（选做）
 （30-50 字的副标题/广告语，突出标签卖点）`;
 
-            const result = await this.aiEngine.callAI(sysPrompt, userPrompt, undefined, 0.7, 4096);
+            const result = await this.aiEngine.callAI(sysPrompt, userPrompt, undefined, 0.7, this.plugin.settings.maxOutput);
 
             if (result.error) {
                 new Notice(`❌ API 调用失败: ${result.error}`, 8000);

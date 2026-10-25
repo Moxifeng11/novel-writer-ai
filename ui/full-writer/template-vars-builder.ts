@@ -10,12 +10,16 @@ import { GatheredContext, CharacterData } from '../../engine/context-manager';
 import { getForeshadowWarnings } from '../../services/foreshadow-manager';
 import { RulesService } from '../../services/rules-service';
 import { filterForeshadowsByChapter, getInvolvedEntities } from '../../engine/chapter-context-builder';
-import { scoreAndFilterEntities, ScoredEntity } from '../../engine/entity-scorer';
+import { scoreAndFilterEntitiesByType, ScoredEntity } from '../../engine/entity-scorer';
 import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../../engine/character-soul';
 import { extractWorldviewMeta } from '../utils/worldview-utils';
 import { chapterOutlineSection } from '../../shared/format-constants';
 import { stripFrontmatter, readMergedVolumeOutline } from '../../utils/helpers';
 import { findBodyFileV4 } from '../../engine/chapter-utils';
+import { deriveBodyFormat, describeBodyFormat } from '../../shared/body-format';
+import { readFanficPromptBlockWithNotice } from '../fanfic-prompt-notice';
+import { ObsidianFileSystem } from '../../shared/file-system-port';
+import { loadLongTermMemory } from '../../engine/long-term-memory';
 import { findWritingStyleFile } from '../writing-style-paths';
 import { createLogger } from '../../shared/logger';
 
@@ -238,8 +242,22 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
       parts.push(`描述：${i.描述}`);
     allEntities.push({ name, fields, type: "item", formatText: `- ${name}：${parts.join("，")}` });
   }
-  const filtered = scoreAndFilterEntities(allEntities, contextText);
-  vars["allChars"] = filtered.filter((e) => e.type === "character").map((e) => e.text).join("\n");
+  // 四类实体各自独立预算：人物 12 个名额，避免被势力/地点/物品挤掉
+  const filtered = scoreAndFilterEntitiesByType(allEntities, contextText);
+  const characterResults = filtered.filter((e) => e.type === "character");
+  // 主角必须始终在人物列表里：上下文为空时关键词打分可能把它漏掉
+  const protagonistEntity = allEntities.find(
+    (e) => e.type === "character" && /主角|主人公/.test(e.fields["角色定位"] || ""),
+  );
+  if (protagonistEntity && !characterResults.some((e) => e.name === protagonistEntity.name)) {
+    characterResults.unshift({
+      text: protagonistEntity.formatText,
+      score: 0,
+      name: protagonistEntity.name,
+      type: "character",
+    });
+  }
+  vars["allChars"] = characterResults.map((e) => e.text).join("\n");
   vars["allFactions"] = filtered.filter((e) => e.type === "faction").map((e) => e.text).join("\n");
   vars["allLocs"] = filtered.filter((e) => e.type === "location").map((e) => e.text).join("\n");
   vars["allItems"] = filtered.filter((e) => e.type === "item").map((e) => e.text).join("\n");
@@ -471,6 +489,9 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
       vars["prevChaptersSummary"] = "【跨卷状态快照——上卷结束时的人物、势力、伏笔、时间线状态】\n" + deps.viewVars["crossVolumeSnapshot"] + "\n\n" + vars["prevChaptersSummary"];
     }
     vars["prevChapEnding"] = prev.ending || "";
+  } else {
+    // 第一章没有上一章：显式说明，避免模型把空串当成「上一章结尾缺失」而自行编造
+    vars["prevChapEnding"] = "（本章为开篇，无上一章结尾）";
   }
   const outline = d.outline;
   vars["outlineContent"] = outline?.raw || "";
@@ -488,7 +509,19 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
 }
 export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<string, string>> {
   const vars: Record<string, string> = {};
-  vars["writingRules"] = await RulesService.getInstance(deps.plugin.app).getWritingRules();
+  const writingRules = await RulesService.getInstance(deps.plugin.app).getWritingRules();
+  vars["writingRules"] = writingRules;
+  // 同人约束：非同人项目返回空串；设定失效（未绑定/不存在/读取失败/全空）时提示一次
+  vars["fanficRules"] = await readFanficPromptBlockWithNotice(deps.app, deps.project);
+  // 长篇记忆：前序卷摘要 + 已确认事实；无数据时为空串，模板不留痕迹
+  const beforeVolume = parseInt(deps.volume?.match(/第(\d+)卷/)?.[1] || '0', 10) || undefined;
+  vars["longTermMemory"] = await loadLongTermMemory(
+    new ObsidianFileSystem(deps.app),
+    deps.project,
+    { beforeVolume },
+  );
+  // 整章正文模板允许输出标题行；格式契约仍由项目写作规则推导，避免 prompt 内外两套说法
+  vars["bodyFormat"] = describeBodyFormat({ ...deriveBodyFormat(writingRules), allowTitle: true });
   vars["chapNum"] = String(deps.chapterNum || parseInt(deps.chapterName.match(/\d+/)?.[0] || "0", 10));
   vars["chapName"] = deps.chapterName;
   vars["project"] = deps.project;
@@ -524,18 +557,38 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     }
     await buildContextVars(deps, vars, d);
   }
+  // 模板占位符兜底：上下文缺失时填空串，避免 ${worldView} 这类字面量漏进 prompt
+  for (const key of [
+    "worldView",
+    "settingLib",
+    "writingStyleContent",
+    "prevChaptersSummary",
+    "prevChapEnding",
+    "unrevealedForeshadow",
+    "timelineEvents",
+  ]) {
+    if (vars[key] === undefined)
+      vars[key] = "";
+  }
+  if (!vars["prevChapEnding"])
+    vars["prevChapEnding"] = "（本章无上一章结尾信息：不要自行编造上一章结尾）";
   if (deps.stepResults["infoPlan"]) {
     vars["infoPlan"] = deps.stepResults["infoPlan"];
   } else {
-    vars["infoPlan"] = "（未设定，请按分卷大纲自由发挥本章内容）";
+    vars["infoPlan"] = "（未执行信息规划：仅按分卷大纲推进，不得自行新增情节节点、反转或信息释放）";
   }
   if (deps.stepResults["plotDistill"]) {
     vars["distilledContent"] = deps.stepResults["plotDistill"];
+  } else {
+    // 空串会让模型误以为「没有情节设计」，显式标记缺失比静默注入更安全
+    vars["distilledContent"] = "（未执行「情节蒸馏」：请仅依据信息规划与大纲推进，不要自行增加情节节点）";
   }
   if (deps.stepResults["outline"]) {
     vars["outlineContent"] = deps.stepResults["outline"];
+  } else if (vars["chapPlan"]) {
+    vars["outlineContent"] = `（未生成章节大纲：以下为分卷规划节选，请勿补写未规划场景）\n${vars["chapPlan"]}`;
   } else {
-    vars["outlineContent"] = vars["chapPlan"] || "";
+    vars["outlineContent"] = "（未生成章节大纲，也无分卷规划：请严格按信息规划推进，不要新开场景）";
   }
   if (deps.stepResults["bodyGeneration"]) {
     vars["bodyText"] = stripFrontmatter(deps.stepResults["bodyGeneration"] || "");
@@ -605,7 +658,13 @@ ${vars["allItems"]}`);
   await buildSceneStyleHint(deps, vars);
   if (deps.context?.data?.character_cores && deps.context.data.character_cores.length > 0) {
     const souls = deps.context.data.character_cores;
-    const summary = buildCharacterSoulSummary(souls, vars["protagonistName"] || "主角");
+    // 只注入本章相关角色：全量注入会稀释 prompt，并在超预算时把关键约束挤掉
+    const relevantNames = new Set<string>();
+    for (const line of (vars["allChars"] || "").split("\n")) {
+      const nameMatch = line.match(/^-\s*([^：:]+)/);
+      if (nameMatch) relevantNames.add(nameMatch[1].trim());
+    }
+    const summary = buildCharacterSoulSummary(souls, vars["protagonistName"] || "主角", { relevantNames });
     vars["characterCores"] = summary.allSouls;
     if (summary.protagonist) {
       vars["protagonistSoulDetail"] = getProtagonistSoulDetail(summary.protagonist);
@@ -613,15 +672,17 @@ ${vars["allItems"]}`);
     } else {
       vars["protagonistSoulDetail"] = "";
     }
-    vars["characterCores"] = summary.allSouls;
+    // V2 只认真实 soul：仅有「（灵魂层未配置）」文本不算
+    vars["characterSoulReady"] = summary.hasSoulData && Boolean(summary.protagonist?.hasSoul) ? "1" : "";
     log.info("[V2] 角色灵魂层注入完毕:", souls.length, "人, hasSoulData:", summary.hasSoulData);
   } else {
     vars["characterCores"] = "";
     vars["protagonistSoulDetail"] = "";
+    vars["characterSoulReady"] = "";
   }
-  vars["emotionPlan"] = deps.stepResults["emotionPlan"] || deps.viewVars["emotionPlan"] || "";
-  vars["sceneExpansion"] = deps.stepResults["sceneExpand"] || deps.viewVars["sceneExpansion"] || "";
-  vars["triggeredMemories"] = "";
+  vars["emotionPlan"] = deps.stepResults["emotionPlan"] || deps.viewVars["emotionPlan"] || "（未执行情绪规划：按大纲的情绪基调推进，每个场景必须有情绪变化）";
+  vars["sceneExpansion"] = deps.stepResults["sceneExpand"] || deps.viewVars["sceneExpansion"] || "（未执行 Scene 展开：按大纲场景顺序推进，场景之间不要无过渡跳转）";
+  vars["triggeredMemories"] = deps.context?.data?.triggered_memories_prompt || "";
   return vars;
 }
 export async function buildSceneStyleHint(deps: TemplateVarsDeps, vars: Record<string, string>): Promise<void> {

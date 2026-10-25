@@ -6,16 +6,15 @@
  */
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile, Menu } from 'obsidian';
-import { SUBDIR_STEP_ROOT } from '../shared/paths';
+import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
 import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 
 import NovelWriterPlugin from '../main';
 import { CoWriterEngine, resolveCoWriteLocalModel } from '../engine/co-writer-engine';
+import type { ChapterBriefInput } from '../engine/chapter-brief';
 import { CoWriteFacade } from './services/co-write-facade';
 import type { BookBasicInfo } from '../services/knowledge-base-manager';
 import { WebnovelKnowledgeBase } from '../engine/webnovel-knowledge-base';
-import { EmotionCurveAnalyzer } from '../engine/emotion-curve-analyzer';
-import { RhythmAnalyzer } from '../engine/rhythm-analyzer';
 import { EndingTractionEngine } from '../engine/ending-traction-engine';
 import { EmotionCurveView } from './components/emotion-curve-view';
 import { createEmptyState } from './components/empty-state';
@@ -30,8 +29,11 @@ import { MemoryManagerModal } from './cowrite/memory-manager-modal';
 import { RefillModal } from './refill-modal';
 import { OutlineExpandModal } from './outline-expand-modal';
 import { LiveAnalysisController } from './cowrite/live-analysis-controller';
+import { shouldRunPlotEval, type PlotEvalGateState } from '../shared/plot-eval-throttle';
+import { captureScrollSnapshot, resolveRestoredScrollTop } from '../shared/preview-scroll';
 import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
+import { BodySaveController } from './cowrite/body-save-controller';
 import { applyNwScope } from '../utils/helpers';
 import {
     associationTypeToDirection,
@@ -57,7 +59,24 @@ import { AssociationSuggestion } from '../shared/co-writer-types';
 import { ProgressEmitter, type ProgressState } from '../shared/progress-emitter';
 import { StepListComponent } from './components/progress/step-list';
 import { TimeEstimator } from '../shared/time-estimator';
+import { RealtimeMonitor } from '../engine/quality/realtime-monitor';
+import { QualityScoreEngine, type CharacterContextInfo } from '../engine/quality/quality-score-engine';
+import { toCharacterContextInfos } from '../engine/character-context';
+import { toForeshadowTrackings, applyPlannedRevealChapters } from '../engine/foreshadow-context';
+import { WritingQualityEngine } from '../engine/writing-quality-engine';
+import { PlotDivergenceEngine } from '../engine/plot-divergence-engine';
+import { CharacterConsistencyChecker } from '../engine/character-consistency-checker';
+import {
+    DeviationDetector,
+    type ForeshadowTracking,
+} from '../engine/quality/deviation-detector';
 import { createLogger } from '../shared/logger';
+import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '../shared/thresholds';
+import { shouldRequestGhostAssociationByInterval } from '../shared/ghost-trigger';
+import { resolveCursorPosition } from '../shared/cursor-position';
+import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck } from '../shared/prereq-check';
+import { buildQualityChapterKey } from '../shared/quality-history';
+import { RealtimeQualityController } from './cowrite/realtime-quality-controller';
 
 
 const log = createLogger('CoWritingView');
@@ -82,6 +101,8 @@ export class CoWritingView extends ItemView {
   resizerEl!: HTMLElement;
   previewContent!: HTMLElement;
   rightEditor!: HTMLTextAreaElement;
+  /** 编辑器容器（前置规划警告横幅挂在此处，才真正位于编辑器上方） */
+  private editorWrapEl: HTMLElement | null = null;
   hintInput!: HTMLInputElement;
   suggestionContainer!: HTMLElement;
   suggestionContent!: HTMLElement;
@@ -109,8 +130,6 @@ export class CoWritingView extends ItemView {
   monitorContainer!: HTMLElement;
   // D4: 情节牵引
   // v5.1 引擎实例
-  emotionCurveAnalyzer: EmotionCurveAnalyzer | null = null;
-  rhythmAnalyzer: RhythmAnalyzer | null = null;
   tractionEngine: EndingTractionEngine | null = null;
   project = "";
   chapterName = "";
@@ -127,23 +146,41 @@ export class CoWritingView extends ItemView {
   pendingRewriteRange: { start: number; end: number } | null = null;
   lastSuggestAt = 0;
   lastPreviewAt = 0;
-  lastMetricsAt = 0;
+  /** 预览渲染代次：MarkdownRenderer 是异步的，旧渲染不得把内容写进新一章/新一轮 */
+  private previewSeq = 0;
+  /** 预览节流的尾随渲染定时器（窗口内被节流的刷新不能直接丢弃） */
+  private previewTimer: ReturnType<typeof setTimeout> | null = null;
+  /** 上次剧情完成度 AI 评估的章节身份 / 正文签名 / 时间，用于跳过无意义的重复请求 */
+  private lastPlotEval: PlotEvalGateState | null = null;
   lastTractionAt = 0;
   private ghostDebounceManager = new AdaptiveDebounceManager({ debug: false });
   private autoSaveDebouncer = new AdaptiveDebounceManager({ debug: false });
-  private isSaving = false;
+  private bodySaveController: BodySaveController;
   lastGhostSeed = "";
+  /** 上一次自动联想请求的时间（0 = 尚未请求）：慢速打字时限频，避免每次停顿都打 AI */
+  private lastGhostRequestAt = 0;
+  /** 已提示过的同人设定加载失败（项目 + 文案），避免每次打开章节重复弹窗 */
+  private lastFanficWarningKey = "";
   liveAnalysis!: LiveAnalysisController;
   historyStore!: SuggestionHistoryStore;
   private suggestAbortController: AbortController | null = null;  // v6.3: 防重复请求
   private metricsAbortController: AbortController | null = null;
   metricsStatus: 'idle' | 'evaluating' | 'error' = 'idle';
   private suggestBtn: HTMLButtonElement | null = null;  // BUG-K fix: 建议按钮引用，用于禁用态
+  private briefContent: HTMLElement | null = null;  // 本章简报容器（承接规划成果）
+  private briefSummaryEl: HTMLElement | null = null;
   private nextNodeBtn: HTMLButtonElement | null = null;  // v6.4: 推进下一节点按钮引用
   private modelToggleBtn: HTMLButtonElement | null = null;  // v7.2: 模型切换按钮引用
   private precisionModeBtn: HTMLButtonElement | null = null;
   private humanRateDashboard: HTMLElement | null = null;
   private assetStatusBar: HTMLElement | null = null;
+  // D2: 实时质量评估管线（评估编排 / 偏离上下文 / 顶栏 / 落盘节流）
+  private realtimeQuality: RealtimeQualityController;
+  private qualityMonitorBtn: HTMLButtonElement | null = null;
+  /** 偏离检测用的人物设定缓存（按项目 + 60s TTL，避免每次评估都全量读人物文件） */
+  private characterInfoCache: { project: string; at: number; list: CharacterContextInfo[] } | null = null;
+  /** 偏离检测用的伏笔追踪缓存（按项目 + 60s TTL，与人物档案同为项目级静态数据） */
+  private foreshadowCache: { project: string; at: number; list: ForeshadowTracking[] } | null = null;
 
   // v7.3: 进度增强相关
   private suggestProgressEmitter: ProgressEmitter | null = null;
@@ -192,6 +229,64 @@ export class CoWritingView extends ItemView {
     this.liveAnalysis = new LiveAnalysisController(this);
     this.historyStore = new SuggestionHistoryStore(this);
     this.timeEstimator = new TimeEstimator();
+    // D2：保存管线收敛到独立 controller（身份快照 / 串行 / 切章冲刷）
+    this.bodySaveController = new BodySaveController({
+      app: this.app,
+      getBodyText: () => this.rightEditor?.value,
+      getIdentity: () => ({
+        project: this.project,
+        volume: this.volume,
+        chapterNum: this.chapterNum,
+        chapterName: this.chapterName,
+        bodyPath: this.getBodyPath(),
+      }),
+      updateControlState: (state) => this.updateControlState(state),
+      getChapterTitle: (identity) => this.getChapterTitle(identity),
+      isSameChapterIdentity: (identity) => this.isSameChapterIdentity(identity),
+      onSaved: () => {
+        this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics());
+        this.liveAnalysis.scheduleRefresh("save");
+        // P1-4: 保存后检查是否需要结算
+        this.checkSettlementDue();
+      },
+      takePendingAutoSave: () => {
+        const hasPending = this.autoSaveDebouncer.hasPending("auto-save");
+        this.autoSaveDebouncer.cancel("auto-save");
+        return hasPending;
+      },
+    });
+    // D2：评估管线收敛到 controller；视图只提供数据与 DOM 句柄
+    this.realtimeQuality = new RealtimeQualityController({
+      app: this.app,
+      getText: () => this.rightEditor?.value ?? "",
+      getProject: () => this.project,
+      getVolume: () => this.volume,
+      getChapterNum: () => this.chapterNum,
+      getChapterName: () => this.chapterName,
+      getBodyPath: () => this.getBodyPath(),
+      getChapterBrief: () => this.facade.getChapterBrief(),
+      getChapPlan: () => this.facade.engine?.getSnapshot?.()?.chapPlan,
+      loadCharacterInfos: () => this.loadCharacterInfosForDeviation(),
+      loadForeshadows: () => this.loadForeshadowsForDeviation(),
+      createMonitor: () => this.createRealtimeQualityMonitor(),
+    });
+  }
+
+  /**
+   * 装配实时质量监控内核（composition root 留在视图，controller 只管生命周期）。
+   * 质量分与协同顶栏共用同一个 WQE 内核，避免同一文本两套分。
+   */
+  private createRealtimeQualityMonitor(): RealtimeMonitor {
+    const kernel = new WritingQualityEngine();
+    return new RealtimeMonitor({
+      scoreEngine: new QualityScoreEngine({ v1Engine: kernel }),
+      // 与 quality-worker / heavy-task 对齐：两者都是纯计算引擎，注入后协同实时
+      // 偏离才走 V1 人物一致性检测，而不是简化版关键词回退。
+      deviationDetector: new DeviationDetector({
+        plotDivergenceEngine: new PlotDivergenceEngine(),
+        characterChecker: new CharacterConsistencyChecker(),
+      }),
+    });
   }
   getViewType() {
     return VIEW_TYPE_CO_WRITE;
@@ -206,13 +301,6 @@ export class CoWritingView extends ItemView {
     const { contentEl } = this;
     contentEl.empty();
     applyNwScope(this);
-    const wb = this.plugin._workbenchState;
-    if (wb) {
-      this.project = wb.project || "";
-      this.chapterName = wb.chapterName || "";
-      this.chapterNum = wb.chapterNum || 1;
-      this.volume = wb.volume || "\u7B2C1\u5377";
-    }
     this.renderLayout();
     this.applyLayoutFromSettings();
     this.bindEvents();
@@ -240,6 +328,7 @@ export class CoWritingView extends ItemView {
     }
   }
   async onClose() {
+    this.clearPreviewTimer();
     if (this.suggestAbortController) {
       this.suggestAbortController.abort();
       this.suggestAbortController = null;
@@ -257,6 +346,7 @@ export class CoWritingView extends ItemView {
       this.timeEstimator = null;
     }
     this.ghostDebounceManager.dispose();
+    this.realtimeQuality.dispose();
     if (this.liveAnalysis && typeof this.liveAnalysis.clearTimers === 'function') {
       this.liveAnalysis.clearTimers();
     }
@@ -265,20 +355,74 @@ export class CoWritingView extends ItemView {
     await this.saveBody(false);
     this.autoSaveDebouncer.dispose();
   }
+  /**
+   * D6：清空章节绑定，回到「未绑定章节」空态。
+   * 视图是单例：无显式上下文的入口若只 revealLeaf，上一本书/上一章的
+   * project/chapterNum 会继续被保存、建议与面板使用（跨书串数据）。
+   */
+  async clearChapterBinding(): Promise<void> {
+    if (!this.project && !this.chapterName) {
+      this.statusBar?.setText("未绑定章节");
+      return;
+    }
+    // 未落盘的旧正文先按旧身份保存；失败则中止清空，避免丢字
+    const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
+    if (!flushed) {
+      new Notice("⚠️ 上一章正文未能保存，已取消清空章节绑定", 4e3);
+      return;
+    }
+    this.clearPreviewTimer();
+    this.beginSuggestionEpoch();
+    this.abortActiveSuggestion();
+    this.clearStaleSuggestions();
+    this.isAssociating = false;
+    this.lastGhostSeed = "";
+    this.lastGhostRequestAt = 0;
+    this.renderEmptySuggestions("尚未绑定章节：请先打开某章「正文」文件，或从完整写作工作台选择章节后再进入。");
+    this.project = "";
+    this.chapterName = "";
+    this.volume = "第1卷";
+    this.chapterNum = 1;
+    this.tractionEngine = null;
+    this.historyLoaded = false;
+    this.resetQualityMonitorForChapterSwitch();
+    this.resetPlotMetricsForChapterSwitch();
+    this.liveAnalysis.resetForChapterSwitch();
+    if (this.rightEditor) this.rightEditor.value = "";
+    this.renderMetrics(emptyMetrics());
+    this.statusBar?.setText("未绑定章节");
+  }
   /** 打开指定章节的协同写作视图 */
   async openChapter(project: string, chapterName2: string, volume2 = "\u7B2C1\u5377", chapterNum = 1) {
+    // 上一章排队中的自动保存必须先用「旧身份」落盘：下面一旦改写 project/chapterNum，
+    // 2s 防抖里的保存就会用新章路径写入旧章正文（静默串章）。
+    const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
+    if (!flushed) {
+      new Notice("⚠️ 上一章正文未能保存，已取消切章", 4e3);
+      return;
+    }
+    // 切章先取消上一章排队的尾随渲染，避免旧正文在新章加载期间被补渲染一次
+    this.clearPreviewTimer();
     // NBI-05: 切换章节即作废旧建议上下文，避免在途生成/联想的旧章结果写回新章
     this.beginSuggestionEpoch();
     this.abortActiveSuggestion();
     this.clearStaleSuggestions();
     this.isAssociating = false;
     this.lastGhostSeed = "";
+    this.lastGhostRequestAt = 0;
     this.renderEmptySuggestions();
 
     this.project = project;
     this.chapterName = chapterName2;
     this.volume = volume2;
     this.chapterNum = chapterNum;
+    // 顶栏的质量/偏离属于上一章：切章先清空，避免新章加载期间（或新章正文过短、
+    // 不会触发评估时）长期显示上一章的分数。
+    this.resetQualityMonitorForChapterSwitch();
+    // 完成度评估同理：在途的旧章结果不能写进新章，状态机也不能停在 evaluating
+    this.resetPlotMetricsForChapterSwitch();
+    // 设定守卫同理：旧章在途的 OOC/实体结果不得写进新章，跨章长度基准也要清零
+    this.liveAnalysis.resetForChapterSwitch();
     this.historyLoaded = false; // B3: 章节切换后重新加载历史
 
     // P0: 前置规划完整性检查 — 确保 AI 建议生成时有充分上下文
@@ -286,6 +430,8 @@ export class CoWritingView extends ItemView {
 
     if (!this.rightEditor)
       return;
+    // 切换章节先清空编辑器，避免未写入的新章节沿用上一章内容（关闭视图时会把旧内容误存）
+    this.rightEditor.value = '';
     let bodyOnly = '';
     try {
       const bodyPath = this.getBodyPath();
@@ -304,17 +450,24 @@ export class CoWritingView extends ItemView {
     this.facade.syncChapterLoaded(project, volumeNum, chapterNum, chapterName2, bodyOnly, bodyOnly.trim().length);
     this.updateControlState("\u5DF2\u52A0\u8F7D");
     this.refreshStatusBar();
-    this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics());
+    // initEngine 之前 facade 仍是上一章的会话：用旧 metrics 会先渲染一遍旧章完成度
+    this.renderMetrics(emptyMetrics());
+    if (this.realtimeQuality.isEnabled()) this.scheduleQualityMonitor();
     await this.historyStore.loadSuggestionHistory();
     await this.refreshPreview(true);
     try {
       await this.facade.initEngine(project, chapterName2, volume2, chapterNum);
+      // 同人设定缺失/损坏时协同会以「空规则」继续写作：必须让用户看见，而不是只写日志
+      this.warnFanficRulesOnce();
+      // 承接规划成果：从磁盘读取本章 6 个规划文件 → ChapterBrief
+      this.facade.setChapterBrief(await this.loadChapterBriefInput(bodyOnly));
       this.facade.updateSnapshot(this.rightEditor.value);
-      this.emotionCurveAnalyzer = this.facade.createEmotionCurveAnalyzer();
-      this.rhythmAnalyzer = this.facade.createRhythmAnalyzer();
       this.tractionEngine = await this.facade.createEndingTractionEngine(project);
       await this.renderAllPanels();
+      // 切章已清空牵引区（旧章进度不能停留），引擎就绪后立即补一次新章数据
+      await this.liveAnalysis.renderTractionPanel();
       this.updatePlotCompletion();
+      this.updateStartButtonState();
     } catch (e) {
       log.warn("[CoWritingView] \u4E0A\u4E0B\u6587\u521D\u59CB\u5316\u5931\u8D25:", e);
       new Notice("\u26A0\uFE0F \u4E0A\u4E0B\u6587\u52A0\u8F7D\u5931\u8D25\uFF0C\u53E5\u7EA7\u5EFA\u8BAE\u53EF\u80FD\u53D7\u9650", 4e3);
@@ -326,40 +479,85 @@ export class CoWritingView extends ItemView {
     // v4.5.1 fix: 用 "第N章" 前缀，与 pjStepDir/pjStepFile 规范一致
     const chapterPrefix = `第${this.chapterNum}章`;
     const stepDir = `${project}/${SUBDIR_STEP_ROOT}/${volume}/${chapterPrefix}`;
-    const missing: string[] = [];
 
-    // 检查关键前置步骤文件是否存在
-    const checks = [
+    // 同一视图内可能多次切换章节：先无条件移除旧横幅。
+    // 只在「有缺口」分支里移除的话，规划补齐后旧横幅会一直残留。
+    this.contentEl.querySelectorAll('.nw-cowrite-prereq-warning').forEach(el => el.remove());
+
+    // 检查关键前置步骤文件是否存在 / 是否只是空模板
+    const files = [
       { name: '信息规划', file: `${stepDir}/${chapterPrefix}_信息规划.md` },
       { name: '大纲摘要', file: `${stepDir}/${chapterPrefix}_大纲摘要.md` },
     ];
-
-    for (const check of checks) {
-      const f = this.app.vault.getAbstractFileByPath(check.file);
+    const checks: PrerequisiteCheck[] = [];
+    for (const item of files) {
+      const f = this.app.vault.getAbstractFileByPath(item.file);
       if (!(f instanceof TFile)) {
-        missing.push(check.name);
-      } else {
-        // 文件存在但检查是否是空模板（内容过短）
-        try {
-          const content = await this.app.vault.read(f);
-          const body = content.replace(/^---[\s\S]*?---/, '').trim();
-          if (body.length < 100) missing.push(check.name + '（内容过短）');
-        } catch { missing.push(check.name + '（读取失败）'); }
+        checks.push({ name: item.name, exists: false });
+        continue;
+      }
+      try {
+        const content = await this.app.vault.read(f);
+        const body = content.replace(/^---[\s\S]*?---/, '').trim();
+        checks.push({ name: item.name, exists: true, bodyLength: body.length });
+      } catch {
+        checks.push({ name: item.name, exists: true, readFailed: true });
       }
     }
 
-    if (missing.length > 0) {
-      // 在编辑器上方显示黄色警告横幅
-      const banner = this.contentEl.createDiv({
-        cls: 'nw-cowrite-prereq-warning',
-        attr: { style: 'background: var(--text-warning-bg, #fff3cd); color: var(--text-warning); padding: 8px 12px; margin: 4px 0; border-radius: 4px; font-size: 0.82em; border-left: 3px solid var(--text-warning, #f59e0b);' },
-      });
-      banner.createEl('strong', { text: '⚠️ 前置规划未完成：' });
-      banner.createEl('span', { text: ` 缺少 ${missing.join('、')}。建议先在「全本写作工作台」中运行前置规划步骤，否则 AI 建议可能缺乏章节上下文和世界观设定信息。` });
-      // 5 秒后自动淡出
-      setTimeout(() => { banner.style.opacity = '0'; banner.style.transition = 'opacity 1s'; }, 8000);
-      log.warn(`[CoWritingView] 前置规划检查 — 缺失: ${missing.join(', ')}`);
-    }
+    const missing = describePrerequisiteGaps(checks, PREREQ_MIN_BODY_CHARS);
+    if (missing.length === 0) return;
+
+    // 挂在编辑器容器顶部：此前挂在 contentEl 末尾，实际位于三栏布局下方（多半在视口外）
+    const host = this.editorWrapEl ?? this.contentEl;
+    const banner = host.createDiv({
+      cls: 'nw-cowrite-prereq-warning',
+      attr: { style: 'flex:0 0 auto; background: var(--text-warning-bg, #fff3cd); color: var(--text-warning); padding: 8px 12px; margin: 0 0 4px; border-radius: 4px; font-size: 0.82em; border-left: 3px solid var(--text-warning, #f59e0b);' },
+    });
+    host.insertBefore(banner, host.firstChild);
+    banner.createEl('strong', { text: '⚠️ 前置规划未完成：' });
+    banner.createEl('span', { text: ` 缺少 ${missing.join('、')}。建议先在「全本写作工作台」中运行前置规划步骤，否则 AI 建议可能缺乏章节上下文和世界观设定信息。` });
+    // 8 秒后淡出并移除节点（只把 opacity 设 0 会留下不可见但仍占位的元素）
+    setTimeout(() => {
+      banner.style.transition = 'opacity 1s';
+      banner.style.opacity = '0';
+      setTimeout(() => banner.remove(), 1100);
+    }, 8000);
+    log.warn(`[CoWritingView] 前置规划检查 — 缺失: ${missing.join(', ')}`);
+  }
+
+  /**
+   * 读取本章规划文件，作为协同写作的输入（磁盘为准，不依赖工作台内存状态）。
+   * 对应：信息规划 / 情节蒸馏 / 大纲摘要 / 情绪规划 / Scene展开。
+   */
+  private async loadChapterBriefInput(bodyText: string): Promise<ChapterBriefInput> {
+    const chapterPrefix = `第${this.chapterNum}章`;
+    const stepDir = `${this.project}/${SUBDIR_STEP_ROOT}/${this.volume}/${chapterPrefix}`;
+    const read = async (stepType: string): Promise<string> => {
+      const f = this.app.vault.getAbstractFileByPath(`${stepDir}/${chapterPrefix}_${stepType}.md`);
+      if (!(f instanceof TFile)) return '';
+      try {
+        const raw = await this.app.vault.read(f);
+        // 去掉 YAML frontmatter：大纲与情节蒸馏拼接后，第二份 fm 会落在文本中间
+        return raw.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+      } catch {
+        return '';
+      }
+    };
+    const [sceneExpansion, emotionPlan, infoPlan, outline, plotCore] = await Promise.all([
+      read(CHAPTER_FILE_TYPES.sceneExpand),
+      read(CHAPTER_FILE_TYPES.emotionPlan),
+      read(CHAPTER_FILE_TYPES.infoPlan),
+      read(CHAPTER_FILE_TYPES.outline),
+      read(CHAPTER_FILE_TYPES.plotDistill),
+    ]);
+    return {
+      sceneExpansion,
+      emotionPlan,
+      infoPlan,
+      outline: [outline, plotCore].filter(Boolean).join('\n\n'),
+      bodyText,
+    };
   }
 
   renderLayout() {
@@ -408,10 +606,24 @@ export class CoWritingView extends ItemView {
     this.assetStatusBar = headerRight.createDiv({ cls: "nw-asset-status-bar" });
     void this.renderAssetStatusBar();
 
+    const qualityStatus = headerRight.createDiv({ cls: "nw-cowrite-status nw-quality-live" });
+    this.realtimeQuality.attachStatus(qualityStatus);
+    const qualityBtn = headerRight.createEl("button", { text: "📊 实时质量", cls: "nw-float-monitor-toggle" });
+    qualityBtn.setAttribute("title", "开启/关闭实时质量评估");
+    qualityBtn.addEventListener("click", () => this.toggleQualityMonitor());
+    this.qualityMonitorBtn = qualityBtn;
+
     const mainArea = this.mainContainer.createDiv({ cls: "nw-cowrite-main" });
 
     // 左侧：预览区（可折叠，默认窄）
     const leftPanel = mainArea.createDiv({ cls: "nw-cowrite-left" });
+    // 本章简报：把上一步（Scene 展开/大纲/情绪/信息规划）的成果直接摆出来
+    const briefSection = leftPanel.createDiv({ cls: "nw-cowrite-brief" });
+    const briefHead = briefSection.createDiv({ cls: "nw-cowrite-brief-head" });
+    briefHead.createSpan({ cls: "nw-cowrite-brief-title", text: "📋 本章简报" });
+    briefSection.createDiv({ cls: "nw-cowrite-brief-summary", text: "等待章节规划…" });
+    this.briefSummaryEl = briefSection.querySelector(".nw-cowrite-brief-summary") as HTMLElement | null;
+    this.briefContent = briefSection.createDiv({ cls: "nw-cowrite-brief-body" });
     const previewSection = leftPanel.createDiv({ cls: "nw-cowrite-preview" });
     previewSection.createDiv({ cls: "nw-cowrite-preview-label", text: "预览" });
     this.previewContent = previewSection.createDiv({ cls: "nw-cowrite-preview-content" });
@@ -426,6 +638,7 @@ export class CoWritingView extends ItemView {
     const centerPanel = mainArea.createDiv({ cls: "nw-cowrite-center" });
     this.centerPanel = centerPanel;
     const editorWrap = centerPanel.createDiv({ cls: "nw-cowrite-editor-wrap" });
+    this.editorWrapEl = editorWrap;
     this.rightEditor = editorWrap.createEl("textarea", { cls: "nw-cowrite-editor" });
     this.rightEditor.spellcheck = false;
     this.rightEditor.placeholder = "在此写作……按 Tab 生成 AI 建议";
@@ -678,8 +891,11 @@ export class CoWritingView extends ItemView {
       this.updateControlState("编辑中");
       void this.refreshPreview(false);
       this.liveAnalysis.scheduleRefresh("input");
+      this.scheduleQualityMonitor();
       this.scheduleGhostAssociationRefresh();
       this.updatePlotCompletion();
+      this.updateStartButtonState();
+      this.autoSaveDebouncer.debounceFixed("brief-panel", () => this.renderBriefPanel(), 800);
       this.autoSaveDebouncer.debounceFixed("auto-save", () => {
         void this.saveBody(false);
       }, 2000);
@@ -690,6 +906,115 @@ export class CoWritingView extends ItemView {
     });
     // NBI-04: 输入框内容与已应用指令不一致时，标识即时失效
     this.hintInput.addEventListener("input", () => this.refreshHintState());
+  }
+
+  /** P0-2: 开启/关闭实时质量评估（状态与评估在 controller，视图只同步按钮样式） */
+  private toggleQualityMonitor(): void {
+    const enabled = this.realtimeQuality.toggle();
+    this.qualityMonitorBtn?.toggleClass("is-active", enabled);
+  }
+
+  /** P0-2: 输入后延迟触发实时质量评估 */
+  private scheduleQualityMonitor(): void {
+    this.realtimeQuality.schedule();
+  }
+
+  /**
+   * 切章时清空实时质量顶栏并中止在途评估。
+   * 行为与文档见 `RealtimeQualityController#resetForChapterSwitch`。
+   */
+  private resetQualityMonitorForChapterSwitch(): void {
+    this.realtimeQuality.resetForChapterSwitch();
+  }
+
+  /**
+   * 切章时中止在途的剧情完成度评估并复位状态机。
+   * `refreshMetrics` 的返回只校验 `signal.aborted`，切章若不 abort，
+   * 旧章结果会 `syncPlotCompletion` 并渲染进新章；状态停在 evaluating
+   * 还会让新章顶部一直显示「评估中」。
+   */
+  private resetPlotMetricsForChapterSwitch(): void {
+    if (this.metricsAbortController) {
+      this.metricsAbortController.abort();
+      this.metricsAbortController = null;
+    }
+    this.metricsStatus = 'idle';
+  }
+
+  /**
+   * 读取人物设定供 OOC / 设定矛盾检测使用。
+   * 此前协同实时监控不传 characterInfos，导致这两类检测恒返回空。
+   * 人物档案不随打字变化，按项目缓存 60s，避免每次评估都全量读盘。
+   */
+  private async loadCharacterInfosForDeviation(): Promise<CharacterContextInfo[]> {
+    if (!this.project) return [];
+    const now = Date.now();
+    const cached = this.characterInfoCache;
+    if (cached && cached.project === this.project && now - cached.at < DEVIATION_CHARACTER_INFO_TTL_MS) {
+      return cached.list;
+    }
+
+    let list: CharacterContextInfo[] = [];
+    try {
+      const data = await this.plugin.ctxManager.gatherCharacterState(this.project);
+      list = toCharacterContextInfos((data.character_state || []) as Array<Record<string, unknown>>);
+    } catch (e) {
+      log.warn("[CoWritingView] 读取人物设定失败:", e);
+    }
+
+    this.characterInfoCache = { project: this.project, at: now, list };
+    return list;
+  }
+
+  /**
+   * 读取伏笔追踪供「伏笔遗忘」检测使用。
+   * 此前协同实时监控不传 foreshadows，且上一章上下文没有 frontmatter，
+   * 检测器两条数据来源都为空，该类偏离恒返回空。
+   * 伏笔档案不随打字变化，按项目缓存 60s。
+   */
+  private async loadForeshadowsForDeviation(): Promise<ForeshadowTracking[]> {
+    if (!this.project) return [];
+    const now = Date.now();
+    const cached = this.foreshadowCache;
+    if (cached && cached.project === this.project && now - cached.at < DEVIATION_CHARACTER_INFO_TTL_MS) {
+      return cached.list;
+    }
+
+    let list: ForeshadowTracking[] = [];
+    try {
+      const tracker = await this.plugin.foreshadowManager.loadTracker(this.project);
+      list = toForeshadowTrackings(tracker.items);
+      // 追踪器只有埋设章号；计划回收章在伏笔库表格里。补齐后偏离检测才能按
+      // 「计划第 N 章回收」分层，而不是所有伏笔都等全局阈值。
+      try {
+        const { items } = await this.plugin.foreshadowManager.getUnrevealedForeshadows(this.project);
+        list = applyPlannedRevealChapters(list, items);
+      } catch (e) {
+        log.warn("[CoWritingView] 读取伏笔库计划回收章失败:", e);
+      }
+    } catch (e) {
+      log.warn("[CoWritingView] 读取伏笔追踪失败:", e);
+    }
+
+    this.foreshadowCache = { project: this.project, at: now, list };
+    return list;
+  }
+
+  /**
+   * 同人设定加载失败时提示一次（同项目同文案不重复），避免无原作约束静默写作。
+   * 每次生成收口/联想完成都会复查：设定文件可能在会话中被删除或移动。
+   * 警告消失（设定恢复）时清空去重键，否则同一文案再次失效将不再提示。
+   */
+  private warnFanficRulesOnce(): void {
+    const warning = this.engine?.getFanficRulesWarning?.() ?? null;
+    if (!warning) {
+      this.lastFanficWarningKey = "";
+      return;
+    }
+    const key = `${this.project}|${warning}`;
+    if (key === this.lastFanficWarningKey) return;
+    this.lastFanficWarningKey = key;
+    new Notice(warning, 8000);
   }
 
   /** NBI-04: 根据输入框与已应用指令的一致性刷新「指令已应用」标识 */
@@ -780,8 +1105,8 @@ export class CoWritingView extends ItemView {
       new Notice("⚠️ 未绑定章节，请先在左侧选择卷/章后再生成建议", 3e3);
       return;
     }
-    if (!this.rightEditor?.value?.trim()) {
-      new Notice("⚠️ 正文为空，请先写一句再生成建议", 3e3);
+    if (!this.rightEditor?.value?.trim() && !this.canColdStart()) {
+      new Notice("⚠️ 本章还没有 Scene 展开/大纲，请先完成步骤 6「Scene 展开」，或直接手写一句再生成建议", 6000);
       return;
     }
     const now = Date.now();
@@ -813,7 +1138,7 @@ export class CoWritingView extends ItemView {
       this.suggestBtn.textContent = "⏳ 生成中...";
     }
 
-    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
     const precedingText = this.rightEditor.value.slice(0, cursor);
 
     this.lastSuggestParams = {
@@ -837,8 +1162,21 @@ export class CoWritingView extends ItemView {
 
     const startTime = Date.now();
     const wordCount = precedingText.length;
+    // 本地模型（Ollama）耗时高度不确定，统计 ETA 会给出「预估剩余 1 秒」这类误导信息，直接跳过
+    const isLocalModelMode = (this.facade.settings?.coWriteModelMode || 'local') !== 'cloud';
+    // 串行生成时展示「第 N/M 条」，避免单条耗时较长被误认为卡死
+    let suggestProgressTimer: number | null = null;
+    if (isLocalModelMode && this.suggestEtaDisplay) {
+      this.suggestEtaDisplay.setText("本地模型生成需要一些时间，请耐心等待…");
+      suggestProgressTimer = window.setInterval(() => {
+        const progress = this.facade.getSuggestProgress();
+        if (progress && progress.total > 0 && this.suggestEtaDisplay) {
+          this.suggestEtaDisplay.setText(`正在生成第 ${progress.current}/${progress.total} 条建议…`);
+        }
+      }, 1000);
+    }
 
-    if (this.timeEstimator) {
+    if (this.timeEstimator && !isLocalModelMode) {
       const est = this.timeEstimator.estimate({
         operationType: 'co_write_suggest',
         wordCount,
@@ -920,8 +1258,15 @@ export class CoWritingView extends ItemView {
       this.facade.syncSuggestionsReady(suggestions, 'action');
       success = true;
       if (suggestions.length === 0) {
-        if (this.suggestionStatusText) this.suggestionStatusText.textContent = "无建议";
+        const engineError = this.facade.getLastSuggestError();
+        if (this.suggestionStatusText) this.suggestionStatusText.textContent = engineError ? "生成失败" : "无建议";
         this.suggestionContent.empty();
+
+        // 引擎已捕获到具体失败原因（密钥未解锁/401/超时等）时直接展示，不再误报成「知识库未拆解」
+        if (engineError) {
+          this.showSuggestError(this.getFriendlyErrorMessage(engineError));
+          return;
+        }
 
         const dirCounts = this.facade.directionKnowledgeCounts || {};
         const directions = ['action', 'emotion', 'dialogue'];
@@ -982,6 +1327,10 @@ export class CoWritingView extends ItemView {
         this.suggestProgressEmitter.fail(this.getFriendlyErrorMessage(errorMsg));
       }
     } finally {
+      if (suggestProgressTimer !== null) {
+        window.clearInterval(suggestProgressTimer);
+        suggestProgressTimer = null;
+      }
       // v6.3: 仅当本次请求仍是当前 controller 时才清除状态，避免被后续请求的 abort 干扰
       if (this.suggestAbortController?.signal === signal) {
         this.isSuggesting = false;
@@ -989,7 +1338,7 @@ export class CoWritingView extends ItemView {
         // BUG-K fix: 恢复建议按钮可用态
         if (this.suggestBtn) {
           this.suggestBtn.disabled = false;
-          this.suggestBtn.textContent = "⇥ 建议";
+          this.updateStartButtonState();
         }
       }
     }
@@ -1007,6 +1356,10 @@ export class CoWritingView extends ItemView {
 
   private getFriendlyErrorMessage(error: string): string {
     const lower = error.toLowerCase();
+    // 必须先于 abort 判断：解锁提示里含有「已取消」，否则会被误判成「生成已取消」
+    if (lower.includes('未解锁')) {
+      return 'API 密钥未解锁：请输入加密口令后重试';
+    }
     if (lower.includes('abort') || lower.includes('取消')) {
       return '生成已取消';
     }
@@ -1159,15 +1512,12 @@ export class CoWritingView extends ItemView {
     }
     aiWords = Math.max(40, Math.min(100, Math.round(100 - aiWordCount * 12)));
 
-    let style = 75;
-    const engine = this.engine;
-    if (engine && engine.getPrecisionMode()) {
-      style = 75;
-    }
+    // 风格分只能由指纹比对/AI 评估得出，输入时同步计算会阻塞编辑，
+    // 因此这里返回 -1 表示「未评估」，并从总分权重中剔除，避免用常数 75 冒充真实分。
+    const style = -1;
 
-    const overall = Math.round(
-      style * 0.40 + sentenceLength * 0.20 + opening * 0.15 + punctuation * 0.15 + aiWords * 0.10
-    );
+    const measured = sentenceLength * 0.20 + opening * 0.15 + punctuation * 0.15 + aiWords * 0.10;
+    const overall = Math.round(measured / 0.60);
 
     return { overall, style, sentenceLength, opening, punctuation, aiWords };
   }
@@ -1187,7 +1537,7 @@ export class CoWritingView extends ItemView {
     bar.createDiv({ cls: `nw-hr-bar-fill ${colorClass}`, attr: { style: `width: ${scores.overall}%` } });
 
     const details = this.humanRateDashboard.createDiv({ cls: 'nw-hr-details' });
-    details.createSpan({ text: `风格 ${scores.style}%` });
+    details.createSpan({ text: scores.style < 0 ? '风格 未评估' : `风格 ${scores.style}%` });
     details.createSpan({ text: `句长 ${scores.sentenceLength}%` });
     details.createSpan({ text: `开头 ${scores.opening}%` });
     details.createSpan({ text: `标点 ${scores.punctuation}%` });
@@ -1369,13 +1719,20 @@ export class CoWritingView extends ItemView {
     if (this.isSuggesting)
       return;
     this.isSuggesting = true;
+    // Phase 3.2: 迭代与建议共用中止控制器，切章/关闭视图/新请求都会取消在途迭代
+    if (this.suggestAbortController) {
+      this.suggestAbortController.abort();
+      this.suggestAbortController = null;
+    }
+    this.suggestAbortController = new AbortController();
+    const signal = this.suggestAbortController.signal;
     // NBI-05: 迭代结果受代次约束，切章或新请求开始后不再写回
     const epoch = this.beginSuggestionEpoch();
     try {
-      const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+      const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
       const precedingText = this.rightEditor.value.slice(0, cursor);
-      const iterated = await this.facade.iterateSuggestion(suggestion, instruction, precedingText, this.cursorHint);
-      if (!this.isCurrentSuggestionEpoch(epoch)) return;
+      const iterated = await this.facade.iterateSuggestion(suggestion, instruction, precedingText, this.cursorHint, signal);
+      if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) return;
       if (!iterated) {
         new Notice("\u8FED\u4EE3\u672A\u8FD4\u56DE\u65B0\u5019\u9009\uFF0C\u8BF7\u8C03\u6574\u6307\u4EE4\u540E\u91CD\u8BD5\u3002", 2500);
         return;
@@ -1390,9 +1747,13 @@ export class CoWritingView extends ItemView {
       this.renderSuggestionCards(this.currentSuggestions);
       this.showKnowledgeInjectionNotice();
     } catch (e) {
-      if (!this.isCurrentSuggestionEpoch(epoch)) return;
+      if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) return;
       new Notice("\u8FED\u4EE3\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002", 2500);
     } finally {
+      // 仅当控制器仍归本次迭代时复位，避免覆盖接管后的新请求状态
+      if (this.suggestAbortController?.signal === signal) {
+        this.suggestAbortController = null;
+      }
       // NBI-05: 旧代次迭代不得清掉接管请求的进行态
       if (this.isCurrentSuggestionEpoch(epoch)) this.isSuggesting = false;
     }
@@ -1504,6 +1865,12 @@ export class CoWritingView extends ItemView {
     const modal = new OutlineExpandModal(this.app, this.plugin, sourceText, {
       mode: selectedText ? 'paragraph' : 'chapter',
       targetWords: selectedText ? Math.max(500, Math.floor(selectedText.length * 2)) : 3000,
+      // 正文为空时，弹窗回退读取本章 Scene 展开，避免左栏空白无法扩写
+      chapterContext: {
+        project: this.project,
+        volumeNum: parseInt(this.volume.replace(/[^\d]/g, '')) || 1,
+        chapterNum: this.chapterNum,
+      },
     });
     modal.open();
   }
@@ -1515,20 +1882,29 @@ export class CoWritingView extends ItemView {
       new Notice("⚠️ 未绑定章节，请先在左侧选择卷/章后再联想", 3e3);
       return;
     }
-    if (!this.rightEditor.value.trim()) {
-      new Notice("⚠️ 正文为空，请先写一句再联想", 3e3);
+    if (!this.rightEditor.value.trim() && !this.canColdStart()) {
+      new Notice("⚠️ 正文为空且没有章节规划，请先完成 Scene 展开或手写一句再联想", 5000);
       return;
     }
     this.isAssociating = true;
+    // Phase 3.2: 联想与建议共用中止控制器，切章/关闭视图/新请求都会取消在途联想
+    if (this.suggestAbortController) {
+      this.suggestAbortController.abort();
+      this.suggestAbortController = null;
+    }
+    this.suggestAbortController = new AbortController();
+    const signal = this.suggestAbortController.signal;
     // NBI-05: 联想结果受代次约束，切章后不再写回
     const epoch = this.beginSuggestionEpoch();
     // RG-02: 联想开始即作废旧候选，避免联想期间 Ctrl+1~3 插入上一轮建议
     this.clearStaleSuggestions();
     this.renderAssociationLoading();
-    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
     try {
-      const associations = await this.facade.suggestAssociation(cursor, this.rightEditor.value, "manual");
-      if (!this.isCurrentSuggestionEpoch(epoch)) return;
+      const associations = await this.facade.suggestAssociation(cursor, this.rightEditor.value, "manual", signal);
+      if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) return;
+      // 联想不经过知识注入收口，这里同样要复查同人设定是否已失效
+      this.warnFanficRulesOnce();
       if (associations.length === 0) {
         this.renderEmptySuggestions("\u6682\u65F6\u6CA1\u6709\u8054\u60F3\u5230\u5408\u9002\u7EED\u5199\u3002\u53EF\u4EE5\u591A\u5199\u4E00\u53E5\uFF0C\u6216\u7528 Tab \u751F\u6210\u65B9\u5411\u5EFA\u8BAE\u3002");
         return;
@@ -1546,13 +1922,17 @@ export class CoWritingView extends ItemView {
       this.setGhostSuggestion(this.currentSuggestions[0] || null);
       this.renderAssociationCards(associations, this.currentSuggestions);
     } catch (e) {
-      if (!this.isCurrentSuggestionEpoch(epoch)) return;
+      if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) return;
       log.warn("[CoWritingView] \u8054\u60F3\u8F93\u5165\u5931\u8D25:", e);
       this.showSuggestionPanel();
       if (this.suggestionStatusText) this.suggestionStatusText.textContent = "联想失败";
       this.suggestionContent.empty();
       this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-error", text: "\u8054\u60F3\u8F93\u5165\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002" });
     } finally {
+      // 仅当控制器仍归本次联想时复位，避免覆盖接管后的新请求状态
+      if (this.suggestAbortController?.signal === signal) {
+        this.suggestAbortController = null;
+      }
       // NBI-05: 旧代次联想不得清掉切章后新联想的进行态
       if (this.isCurrentSuggestionEpoch(epoch)) this.isAssociating = false;
     }
@@ -1623,15 +2003,23 @@ export class CoWritingView extends ItemView {
   }
   renderValidationResult(validation: EditValidation, modifiedText: string, suggestion: SuggestionRecord, editDurationMs: number) {
     this.showSuggestionPanel();
-    if (this.suggestionStatusText) this.suggestionStatusText.textContent = validation.isValid ? "验证通过" : "存在风险";
+    const degraded = validation.degraded === true;
+    if (this.suggestionStatusText) {
+      this.suggestionStatusText.textContent = degraded ? "校验未完成" : (validation.isValid ? "验证通过" : "存在风险");
+    }
     this.suggestionContent.empty();
     const panel = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-validation-panel" });
-    const statusClass = validation.isValid ? "is-valid" : "is-warning";
-    panel.createDiv({ cls: `novel-writer-cowrite-validation-title ${statusClass}`, text: `${validation.isValid ? "\u2705" : "\u26A0\uFE0F"} ${validation.isValid ? "\u9A8C\u8BC1\u901A\u8FC7" : "\u5B58\u5728\u98CE\u9669"}` });
-    const scores = panel.createDiv({ cls: "novel-writer-cowrite-score-grid" });
-    scores.appendChild(this.createScoreCard("\u8BBE\u5B9A\u4E00\u81F4\u6027", validation.consistencyScore));
-    scores.appendChild(this.createScoreCard("\u6587\u98CE\u5BF9\u9F50", validation.styleScore));
-    scores.appendChild(this.createScoreCard("\u5267\u60C5\u5BF9\u9F50", validation.plotAlignmentScore));
+    const statusClass = !degraded && validation.isValid ? "is-valid" : "is-warning";
+    const titleText = degraded
+      ? "\u26A0\uFE0F \u6821\u9A8C\u672A\u5B8C\u6210\uFF08\u7ED3\u679C\u65E0\u6CD5\u89E3\u6790\uFF09"
+      : (validation.isValid ? "\u2705 \u9A8C\u8BC1\u901A\u8FC7" : "\u26A0\uFE0F \u5B58\u5728\u98CE\u9669");
+    panel.createDiv({ cls: `novel-writer-cowrite-validation-title ${statusClass}`, text: titleText });
+    if (!degraded) {
+      const scores = panel.createDiv({ cls: "novel-writer-cowrite-score-grid" });
+      scores.appendChild(this.createScoreCard("\u8BBE\u5B9A\u4E00\u81F4\u6027", validation.consistencyScore));
+      scores.appendChild(this.createScoreCard("\u6587\u98CE\u5BF9\u9F50", validation.styleScore));
+      scores.appendChild(this.createScoreCard("\u5267\u60C5\u5BF9\u9F50", validation.plotAlignmentScore));
+    }
     if (validation.warnings.length > 0) {
       const warnings = panel.createDiv({ cls: "novel-writer-cowrite-validation-list" });
       warnings.createEl("strong", { text: "\u26A0\uFE0F \u8B66\u544A" });
@@ -1652,8 +2040,8 @@ export class CoWritingView extends ItemView {
     // NBI-05: 记录接受时的代次，收尾时若已开始新一轮生成则不得覆盖其面板
     const epoch = this.suggestionEpoch;
     const editor = this.rightEditor;
-    const selectionStart = editor.selectionStart || editor.value.length;
-    const selectionEnd = editor.selectionEnd || selectionStart;
+    const selectionStart = resolveCursorPosition(editor.selectionStart, editor.value.length);
+    const selectionEnd = Math.max(selectionStart, resolveCursorPosition(editor.selectionEnd, editor.value.length, 'start'));
     const before = editor.value.slice(0, selectionStart);
     const after = editor.value.slice(selectionEnd);
     const replacesSelection = selectionEnd > selectionStart;
@@ -1686,6 +2074,7 @@ ${text}`;
     await this.historyStore.persistSuggestionHistory();
     this.facade.updateSnapshot(editor.value);
     this.updateControlState("\u7F16\u8F91\u4E2D");
+    this.updateStartButtonState();
     await this.refreshPreview(true);
     await this.refreshMetrics(false);
     this.liveAnalysis.scheduleRefresh("insert");
@@ -1701,19 +2090,59 @@ ${text}`;
     this.renderEmptySuggestions("\u5DF2\u63D2\u5165\u3002\u7EE7\u7EED\u5199\u4F5C\u540E\u6309 Tab \u751F\u6210\u4E0B\u4E00\u8F6E\u4E3B\u5EFA\u8BAE\uFF1B\u6709\u5EFA\u8BAE\u65F6 Tab \u4F1A\u76F4\u63A5\u63A5\u53D7\u7B2C\u4E00\u6761\u3002");
     this.updateHumanRateDashboard();
   }
+  /** 取消已排队的尾随渲染（强制刷新会立即渲染，视图关闭时也不能留定时器） */
+  private clearPreviewTimer(): void {
+    if (this.previewTimer !== null) {
+      clearTimeout(this.previewTimer);
+      this.previewTimer = null;
+    }
+  }
+  /** 在节流窗口剩余时间后补一次渲染（连续输入只保留最后一次） */
+  private schedulePreviewFlush(delay: number): void {
+    this.clearPreviewTimer();
+    this.previewTimer = setTimeout(() => {
+      this.previewTimer = null;
+      void this.refreshPreview(false);
+    }, delay);
+  }
   async refreshPreview(force: boolean) {
     const now = Date.now();
-    if (!force && now - this.lastPreviewAt < 500)
+    if (!force && now - this.lastPreviewAt < 500) {
+      // 节流窗口内不能直接丢弃：最后一次输入往往就落在这里，丢了下一次输入前预览会一直落后
+      this.schedulePreviewFlush(500 - (now - this.lastPreviewAt));
       return;
+    }
+    this.clearPreviewTimer();
     this.lastPreviewAt = now;
-    this.previewContent.empty();
+    const token = ++this.previewSeq;
+    // 全量重渲染会重建 DOM 并把 scrollTop 归零：先记锚点，渲染后恢复
+    const scrollSnapshot = this.previewContent
+      ? captureScrollSnapshot(this.previewContent.scrollTop, this.previewContent.scrollHeight, this.previewContent.clientHeight)
+      : null;
     const content = this.rightEditor?.value?.trim() || '';
     if (!content) {
+      this.previewContent.empty();
       this.previewContent.createDiv({ cls: "novel-writer-cowrite-empty", text: "\u6B63\u6587\u9884\u89C8\u4F1A\u5728\u8FD9\u91CC\u5B9E\u65F6\u540C\u6B65\u3002" });
       return;
     }
-    await MarkdownRenderer.renderMarkdown(content, this.previewContent, this.getBodyPath(), this);
+    // renderMarkdown 是异步的：直接写常驻 previewContent 时，旧一轮（或切章前）的
+    // 渲染结果会追加到已清空/已重建的容器里，与新内容混在一起。先渲染到 detached
+    // 容器，代次仍匹配才整体搬运。
+    const staging = this.previewContent.ownerDocument.createElement('div');
+    await MarkdownRenderer.renderMarkdown(content, staging, this.getBodyPath(), this);
+    if (token !== this.previewSeq) return;
+    this.previewContent.empty();
+    while (staging.firstChild) {
+      this.previewContent.appendChild(staging.firstChild);
+    }
     this.applyHighlightsToDOM();
+    if (scrollSnapshot) {
+      this.previewContent.scrollTop = resolveRestoredScrollTop(
+        scrollSnapshot,
+        this.previewContent.scrollHeight,
+        this.previewContent.clientHeight,
+      );
+    }
   }
   /** v6.4: 在已渲染的预览 DOM 中搜索质量问题文字并高亮 */
   private applyHighlightsToDOM() {
@@ -1771,22 +2200,34 @@ ${text}`;
   async refreshMetrics(force: boolean) {
     this.updateNextNodeButton();
     const now = Date.now();
-    if (!force && now - this.lastMetricsAt < 1e4)
-      return;
+    // `evaluatePlotComplete` 会把整章正文拼成约 9.6k token 的 prompt 发给 AI。
+    // 此前只按 10 秒节流，开着自动评估时打字期间每分钟最多 6 次请求，
+    // 而正文往往只多了几十字；这里要求「正文变过 + 新增达标或冷却到期」才评估。
+    const gate = shouldRunPlotEval({
+      chapterKey: `${this.project}|${this.chapterNum}`,
+      text: this.rightEditor?.value || '',
+      last: this.lastPlotEval,
+      now,
+      force,
+    });
+    if (!gate.run) return;
+    this.lastPlotEval = gate.next;
     if (this.metricsAbortController) {
       this.metricsAbortController.abort();
       this.metricsAbortController = null;
     }
     this.metricsAbortController = new AbortController();
     const signal = this.metricsAbortController.signal;
-    this.lastMetricsAt = now;
     this.metricsStatus = 'evaluating';
     const currentMetrics = this.facade.getSession()?.currentMetrics || emptyMetrics();
     this.renderMetrics(currentMetrics);
     this.renderFloatingMetrics();
+    // 完成度是异步 AI 评估：先记发起时的章节身份，返回后若已切章则丢弃
+    const evalTarget = `${this.project}|${this.chapterNum}`;
     try {
       const metrics = await this.facade.evaluatePlotComplete(this.rightEditor.value, signal);
       if (signal.aborted) return;
+      if (evalTarget !== `${this.project}|${this.chapterNum}`) return;
       const nextDirections = this.facade.adjustDirection(metrics);
       metrics.nextDirectionHints = nextDirections;
       this.metricsStatus = 'idle';
@@ -1795,6 +2236,7 @@ ${text}`;
       this.renderFloatingMetrics();
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
+      if (evalTarget !== `${this.project}|${this.chapterNum}`) return;
       log.warn("[CoWritingView] \u5B8C\u6210\u5EA6\u5237\u65B0\u5931\u8D25:", e);
       this.metricsStatus = 'error';
       const errorMetrics = this.facade.getSession()?.currentMetrics || emptyMetrics();
@@ -1925,7 +2367,7 @@ ${text}`;
     this.isSuggesting = false;
     if (this.suggestBtn) {
       this.suggestBtn.disabled = false;
-      this.suggestBtn.textContent = "⇥ 建议";
+      this.updateStartButtonState();
     }
     this.clearStreamingPreview();
   }
@@ -2051,7 +2493,7 @@ ${text}`;
   private updateSuggestProgressUI(state: ProgressState): void {
     if (!this.suggestEtaDisplay) return;
 
-    if (state.status === 'running' && state.eta !== undefined && state.eta > 0) {
+    if (state.status === 'running' && state.eta !== undefined && state.eta >= 3000) {
       const seconds = Math.ceil(state.eta / 1000);
       if (seconds > 0) {
         this.suggestEtaDisplay.setText(`预估剩余: ${seconds} 秒`);
@@ -2146,7 +2588,7 @@ ${text}`;
       this.suggestBtn.textContent = "⏳ 生成中...";
     }
 
-    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
     const precedingText = this.rightEditor.value.slice(0, cursor);
 
     try {
@@ -2251,16 +2693,23 @@ ${text}`;
         this.suggestAbortController = null;
         if (this.suggestBtn) {
           this.suggestBtn.disabled = false;
-          this.suggestBtn.textContent = "⇥ 建议";
+          this.updateStartButtonState();
         }
         this.facade.syncSuggestionsGenerating(false);
       }
     }
   }
   showKnowledgeInjectionNotice() {
+    // 生成完成后的统一收口：同人设定可能在会话中被删除/移动，这里补一次失效复查
+    this.warnFanficRulesOnce();
     const count = this.facade.lastKnowledgeCount || 0;
+    const dropped = this.facade.lastKnowledgeDroppedCount || 0;
     if (count > 0) {
-      new Notice(`📚 已注入 ${count} 条知识库片段`);
+      new Notice(dropped > 0
+        ? `📚 已注入 ${count} 条知识库片段（另 ${dropped} 条因预算不足未注入）`
+        : `📚 已注入 ${count} 条知识库片段`);
+    } else if (dropped > 0) {
+      new Notice(`⚠️ 知识库片段因预算不足未注入（${dropped} 条）`);
     }
   }
   renderValidationLoading() {
@@ -2807,8 +3256,8 @@ ${text}`;
   quickInsertText(text: string) {
     const editor = this.rightEditor;
     if (!editor) return;
-    const start = editor.selectionStart || editor.value.length;
-    const end = editor.selectionEnd || start;
+    const start = resolveCursorPosition(editor.selectionStart, editor.value.length);
+    const end = Math.max(start, resolveCursorPosition(editor.selectionEnd, editor.value.length, 'start'));
     const before = editor.value.slice(0, start);
     const after = editor.value.slice(end);
     const insert = before.endsWith('\n') || before.length === 0 ? text : text;
@@ -3015,30 +3464,53 @@ ${text}`;
     this.ghostSuggestionContainer.createSpan({ cls: "nw-cowrite-ghost-prefix", text: "Tab \u63A5\u53D7\u8054\u60F3\uFF1A" });
     this.ghostSuggestionContainer.createSpan({ cls: "nw-cowrite-ghost-text", text: suggestion.text });
   }
+  private isGhostAssociationEnabled(): boolean {
+    return this.plugin.settings.autoGhostAssociation !== false;
+  }
   scheduleGhostAssociationRefresh() {
     this.setGhostSuggestion(null);
+    if (!this.isGhostAssociationEnabled())
+      return;
     this.ghostDebounceManager.debounceFixed('ghost-association', () => {
       void this.refreshGhostAssociation();
     }, 1500);
   }
   async refreshGhostAssociation() {
+    if (!this.isGhostAssociationEnabled()) {
+      this.setGhostSuggestion(null);
+      return;
+    }
     if (this.isAssociating || this.isSuggesting || this.currentSuggestions.length > 0)
       return;
     const text = this.rightEditor?.value || "";
-    const cursor = this.rightEditor?.selectionStart || text.length;
+    const cursor = resolveCursorPosition(this.rightEditor?.selectionStart, text.length);
     if (text.trim().length < 40 || cursor < text.length - 3)
       return;
     const seed = text.slice(Math.max(0, cursor - 160), cursor);
     if (!seed.trim() || seed === this.lastGhostSeed)
       return;
+    // 慢速打字时尾部种子每次只多一个字，1.5s 防抖后仍会连续请求：按最小间隔限频
+    const now = Date.now();
+    if (!shouldRequestGhostAssociationByInterval(now, this.lastGhostRequestAt, GHOST_ASSOCIATION_MIN_INTERVAL_MS))
+      return;
     this.lastGhostSeed = seed;
+    this.lastGhostRequestAt = now;
     // NBI-05: 自动联想结果只在建议上下文未变化时写回
     const epoch = this.suggestionEpoch;
+    // Phase 3.2: 自动联想同样可取消（关视图/切章/被新请求接管）
+    if (this.suggestAbortController) this.suggestAbortController.abort();
+    this.suggestAbortController = new AbortController();
+    const signal = this.suggestAbortController.signal;
     try {
       this.isAssociating = true;
-      const associations = await this.facade.suggestAssociation(cursor, text, "manual");
-      if (!this.isCurrentSuggestionEpoch(epoch) || this.isSuggesting || this.currentSuggestions.length > 0)
+      const associations = await this.facade.suggestAssociation(cursor, text, "manual", signal);
+      if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch) || this.isSuggesting || this.currentSuggestions.length > 0)
         return;
+      // 设置可能在请求在途时被关闭：关闭后不得把结果写回界面
+      if (!this.isGhostAssociationEnabled())
+        return;
+      // 自动联想是高频后台生成，同样要复查同人设定是否已失效
+      this.warnFanficRulesOnce();
       this.currentSuggestions = associations.map((association, index) => associationToSuggestion(association, index));
       this.currentRecord = {
         id: `ghost_${Date.now()}`,
@@ -3052,8 +3524,12 @@ ${text}`;
       this.setGhostSuggestion(this.currentSuggestions[0] || null);
       this.renderAssociationCards(associations, this.currentSuggestions);
     } catch (e) {
+      if (signal.aborted) return;
       log.warn("[CoWritingView] B1: \u81EA\u52A8\u8054\u60F3\u5931\u8D25:", e);
     } finally {
+      if (this.suggestAbortController?.signal === signal) {
+        this.suggestAbortController = null;
+      }
       // NBI-05: 自动联想结束即释放联想进行态（结果写回已由代次守卫拦截）
       this.isAssociating = false;
     }
@@ -3088,7 +3564,7 @@ ${text}`;
     new Notice(this.cursorHint ? `\u5DF2\u5E94\u7528\u4E34\u65F6\u6307\u4EE4\uFF1A${this.cursorHint}` : "\u5DF2\u6E05\u7A7A\u4E34\u65F6\u6307\u4EE4", 2500);
   }
   getContextBeforeCursor(limit: number) {
-    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
     return this.rightEditor.value.slice(0, cursor).slice(-limit);
   }
   getBodyPath() {
@@ -3108,16 +3584,28 @@ ${text}`;
       `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/${this.volume}/${chapterPrefix}`
     ];
   }
-  private getStepFilePath(stepType: string): string {
-    // v4.5.1 fix: 用 "第N章" 前缀，与 pjStepDir/pjStepFile 规范一致
-    const chapterPrefix = `第${this.chapterNum}章`;
-    const stepDir = `${this.project}/${SUBDIR_STEP_ROOT}/${this.volume}/${chapterPrefix}`;
-    return `${stepDir}/${stepType}.md`;
+  private getStepFilePath(
+    stepType: string,
+    identity?: { project: string; volume: string; chapterNum: number }
+  ): string {
+    // 与 pjStepFile 规范一致：目录和文件名都要带「第N章」前缀。
+    // 之前文件名漏了前缀（.../第1章/信息规划.md），而磁盘上永远是 .../第1章/第1章_信息规划.md，
+    // 导致 getChapterTitle 恒为空、保存后 H1 丢标题。
+    const project = identity?.project ?? this.project;
+    const volume = identity?.volume ?? this.volume;
+    const chapterNum = identity?.chapterNum ?? this.chapterNum;
+    const chapterPrefix = `第${chapterNum}章`;
+    const stepDir = `${project}/${SUBDIR_STEP_ROOT}/${volume}/${chapterPrefix}`;
+    return `${stepDir}/${chapterPrefix}_${stepType}.md`;
   }
-  async getChapterTitle(): Promise<string> {
-    if (!this.project || !this.volume) return '';
+  async getChapterTitle(
+    identity?: { project: string; volume: string; chapterNum: number }
+  ): Promise<string> {
+    const project = identity?.project ?? this.project;
+    const volume = identity?.volume ?? this.volume;
+    if (!project || !volume) return '';
     try {
-      const infoPlanPath = this.getStepFilePath('\u4FE1\u606F\u89C4\u5212');
+      const infoPlanPath = this.getStepFilePath('\u4FE1\u606F\u89C4\u5212', identity);
       const infoPlanFile = this.app.vault.getAbstractFileByPath(infoPlanPath);
       if (infoPlanFile instanceof TFile) {
         const content = await this.app.vault.read(infoPlanFile);
@@ -3126,8 +3614,14 @@ ${text}`;
         if (chapterNameMatch && chapterNameMatch[1].trim()) {
           return chapterNameMatch[1].trim();
         }
+        // 步骤生成器实际写的是「**章名**：九脉逆行」，不匹配上面的 ## 标题格式，
+        // 结果保存时 H1 丢标题（只剩「# 第1章」）。
+        const boldChapterName = body.match(/^\*\*\u7AE0\u540D\*\*\s*[：:]\s*(.+)$/m);
+        if (boldChapterName && boldChapterName[1].trim()) {
+          return boldChapterName[1].trim();
+        }
       }
-      const outlinePath = this.getStepFilePath('\u5927\u7EB2\u6458\u8981');
+      const outlinePath = this.getStepFilePath('\u5927\u7EB2\u6458\u8981', identity);
       const outlineFile = this.app.vault.getAbstractFileByPath(outlinePath);
       if (outlineFile instanceof TFile) {
         const content = await this.app.vault.read(outlineFile);
@@ -3159,102 +3653,28 @@ ${text}`;
       }
     }
   }
-  async saveBody(showNotice: boolean) {
-    if (this.isSaving) return;
-    const body = this.rightEditor?.value?.trim();
-    if (!body || !this.project || !this.volume || !this.chapterNum) {
-      // UX 修复：未绑定章节或正文为空时静默返回会让用户误以为按钮失效
-      if (showNotice) {
-        new Notice(
-          !body ? "⚠️ 正文为空，无需保存" : "⚠️ 未绑定章节，请先在左侧选择卷/章",
-          3e3
-        );
-      }
-      return;
-    }
-    this.autoSaveDebouncer.cancel("auto-save");
-    this.isSaving = true;
-    this.updateControlState("保存中...");
-    try {
-      const chapterTitle = await this.getChapterTitle();
-      const titleLine = chapterTitle
-        ? `# 第${this.chapterNum}章 ${chapterTitle}\n\n`
-        : `# 第${this.chapterNum}章\n\n`;
-      const bodyPath = this.getBodyPath();
-      await this.ensureVaultFolder(this.getBodyDir());
-      const file = this.app.vault.getAbstractFileByPath(bodyPath);
-      // v4.5.1 fix: 保存前备份原 frontmatter，避免 modify 覆盖丢失涉及人物/地点等字段
-      let preservedFm: Record<string, any> = {};
-      if (file instanceof TFile) {
-        try {
-          const oldContent = await this.app.vault.read(file);
-          const fmMatch = oldContent.match(/^---\n([\s\S]*?)\n---/);
-          if (fmMatch) {
-            const fmLines = fmMatch[1].split('\n');
-            fmLines.forEach(line => {
-              const m = line.match(/^([^:]+):\s*(.*)$/);
-              if (m) {
-                const key = m[1].trim();
-                const val = m[2].trim();
-                // 解析列表字段
-                if (val.startsWith('[') && val.endsWith(']')) {
-                  try { preservedFm[key] = JSON.parse(val); } catch { preservedFm[key] = val; }
-                } else if (val.startsWith('"') && val.endsWith('"')) {
-                  // YAML 双引号包裹的字符串，用 JSON.parse 反序列化
-                  try { preservedFm[key] = JSON.parse(val); } catch { preservedFm[key] = val.slice(1, -1); }
-                } else if (val.startsWith("'") && val.endsWith("'")) {
-                  // YAML 单引号包裹的字符串，直接去除外层引号（YAML 单引号不处理转义）
-                  preservedFm[key] = val.slice(1, -1);
-                } else {
-                  preservedFm[key] = val;
-                }
-              }
-            });
-          }
-        } catch (e) {
-          log.warn("[CoWritingView] 读取原 frontmatter 失败:", e);
-        }
-        await this.app.vault.modify(file, titleLine + body);
-      } else {
-        await this.app.vault.create(bodyPath, titleLine + body);
-      }
-      const savedFile = this.app.vault.getAbstractFileByPath(bodyPath);
-      if (savedFile instanceof TFile) {
-        await this.app.fileManager.processFrontMatter(savedFile, (fm) => {
-          // v4.5.1 fix: 恢复保存前备份的涉及人物/地点/势力/物品功法等字段
-          const preserveKeys = ['涉及人物', '涉及地点', '涉及势力', '涉及物品功法', 'chapter', 'volume', 'title', '标题', 'word_count', '涉及伏笔'];
-          preserveKeys.forEach(k => {
-            if (preservedFm[k] != null && fm[k] == null) {
-              fm[k] = preservedFm[k];
-            }
-          });
-          const currentStatus = fm["status"];
-          if (!currentStatus || currentStatus === "pending" || currentStatus === "") {
-            fm["status"] = "draft";
-          }
-          fm["tags"] = Array.isArray(fm["tags"]) ? Array.from(new Set([...fm["tags"], "正文"])) : ["正文"];
-          fm["卷"] = this.volume;
-          fm["章"] = this.chapterName || `第${this.chapterNum}章`;
-          fm["writing_mode"] = "co-writer";
-          // BUG-J fix: 计算 word_count（正文 body 字符数，去除 # 第X章 标题行）
-          const bodyText = body.replace(/^#\s+第\d+章[^\n]*\n+/, '').trim();
-          fm["word_count"] = bodyText.length;
-        });
-      }
-      this.updateControlState("\u5DF2\u4FDD\u5B58");
-      this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics());
-      this.liveAnalysis.scheduleRefresh("save");
-      // P1-4: 保存后检查是否需要结算
-      this.checkSettlementDue();
-      if (showNotice)
-        new Notice("\u2705 \u6B63\u6587\u5DF2\u4FDD\u5B58", 3e3);
-    } catch (e) {
-      log.warn("[CoWritingView] 保存失败:", e);
-      if (showNotice)
-        new Notice("⚠️ 保存失败，请检查章节路径或文件权限", 4e3);
-    } finally {
-      this.isSaving = false;
-    }
+  async saveBody(showNotice: boolean): Promise<boolean> {
+    // D2：保存管线已抽到 body-save-controller，方法签名保持不变
+    return this.bodySaveController.save(showNotice);
+  }
+
+  /** 当前视图是否仍绑定快照里的章节（用于丢弃切章后的旧保存结果） */
+  private isSameChapterIdentity(identity: {
+    project: string;
+    chapterNum: number;
+    bodyPath: string;
+  }): boolean {
+    return identity.project === this.project
+      && identity.chapterNum === this.chapterNum
+      && identity.bodyPath === this.getBodyPath();
+  }
+
+  /**
+   * 切章前冲刷上一章排队中的自动保存。
+   * 行为与文档见 `BodySaveController#flushBeforeChapterSwitch`。
+   */
+  private async flushPendingBodySaveBeforeChapterSwitch(): Promise<boolean> {
+    return this.bodySaveController.flushBeforeChapterSwitch();
   }
 
   /** P1-4: 检查章节是否需要结算，在状态栏显示提醒 */
@@ -3391,7 +3811,7 @@ ${text}`;
   getCursorRelativePosition(): number {
     const editor = this.rightEditor;
     if (!editor || !editor.value) return 0;
-    const cursor = editor.selectionStart || 0;
+    const cursor = resolveCursorPosition(editor.selectionStart, editor.value.length, 'start');
     const total = editor.value.length || 1;
     return Math.min(1, Math.max(0, cursor / total));
   }
@@ -3400,7 +3820,7 @@ ${text}`;
   getPrecedingText(maxLen: number = 500): string {
     const editor = this.rightEditor;
     if (!editor) return '';
-    const cursor = editor.selectionStart || 0;
+    const cursor = resolveCursorPosition(editor.selectionStart, editor.value.length, 'start');
     const start = Math.max(0, cursor - maxLen);
     return editor.value.slice(start, cursor);
   }
@@ -3730,8 +4150,116 @@ ${text}`;
 
   // ---- 基础 UI 方法 ----
 
+  /** 渲染左栏「本章简报」：大纲 + 场景列表 + 当前场景卡 + 信息释放 */
+  private renderBriefPanel(): void {
+    if (!this.briefContent) return;
+    const brief = this.facade.getChapterBrief();
+    this.briefContent.empty();
+
+    if (!brief || (brief.scenes.length === 0 && !brief.outlineSummary)) {
+      this.briefSummaryEl?.setText("未找到章节规划");
+      const empty = this.briefContent.createDiv({ cls: "nw-cowrite-brief-empty" });
+      empty.createDiv({ text: "未找到 Scene 展开，无法从规划直接开头。可先回工作台完成步骤 6，或直接手写第一句。" });
+      const btn = empty.createEl("button", { text: "去工作台", cls: "nw-btn nw-btn-ghost" });
+      btn.addEventListener("click", () => { void this.plugin.openFullWriterView(); });
+      return;
+    }
+
+    const total = brief.scenes.length;
+    const currentNo = total > 0 ? Math.min(brief.currentIndex + 1, total) : 0;
+    this.briefSummaryEl?.setText(
+      total > 0 ? `场景 ${currentNo}/${total} · 已写 ${brief.writtenWords} 字` : `已写 ${brief.writtenWords} 字`
+    );
+
+    if (brief.outlineSummary) {
+      const outline = this.briefContent.createDiv({ cls: "nw-cowrite-brief-outline" });
+      outline.createDiv({ cls: "nw-cowrite-brief-label", text: "本章大纲" });
+      outline.createDiv({ cls: "nw-cowrite-brief-text", text: brief.outlineSummary.slice(0, 240) });
+    }
+
+    if (total > 0) {
+      const list = this.briefContent.createDiv({ cls: "nw-cowrite-brief-scenes" });
+      brief.scenes.forEach((s, i) => {
+        const done = i < brief.currentIndex;
+        const active = i === brief.currentIndex;
+        const item = list.createDiv({
+          cls: `nw-cowrite-brief-scene${active ? " is-active" : ""}${done ? " is-done" : ""}`,
+          attr: { title: s.objective || s.name || "" },
+        });
+        item.createSpan({
+          cls: "nw-cowrite-brief-scene-name",
+          text: `${done ? "✅" : active ? "▶" : "·"} 第${s.index}场 ${s.name || "未命名"}`,
+        });
+        item.addEventListener("click", () => {
+          this.facade.setCurrentSceneIndex(i);
+          this.renderBriefPanel();
+          this.updatePlotCompletion();
+          new Notice(`已切换当前场景：第${s.index}场 ${s.name || ""}`, 2000);
+        });
+      });
+    }
+
+    const cur = brief.currentScene;
+    if (cur) {
+      const card = this.briefContent.createDiv({ cls: "nw-cowrite-brief-card" });
+      card.createDiv({ cls: "nw-cowrite-brief-label", text: `当前场景：${cur.name || "未命名"}` });
+      const rows: Array<[string, string]> = [
+        ["目标", cur.objective],
+        ["冲突", cur.conflict],
+        ["感官", cur.sensoryHook],
+        ["记忆", cur.memoryTrigger],
+        ["身体", cur.bodyReaction],
+        ["潜台词", cur.subtext],
+        ["关系", cur.relationshipShift],
+        ["名场面", cur.keyScene],
+      ];
+      for (const [label, value] of rows) {
+        if (!value) continue;
+        const row = card.createDiv({ cls: "nw-cowrite-brief-row" });
+        row.createSpan({ cls: "nw-cowrite-brief-row-label", text: label });
+        row.createSpan({ cls: "nw-cowrite-brief-row-value", text: value });
+      }
+      if (cur.emotionStart || cur.emotionEnd) {
+        card.createDiv({
+          cls: "nw-cowrite-brief-emotion",
+          text: `情绪：${cur.emotionStart || "—"} → ${cur.emotionEnd || "—"}${cur.emotionDelta ? `（${cur.emotionDelta}）` : ""}`,
+        });
+      }
+      if (cur.cliffhanger) {
+        card.createDiv({ cls: "nw-cowrite-brief-hook", text: `钩子：${cur.cliffhanger}` });
+      }
+    }
+
+    if (brief.infoRelease) {
+      const info = this.briefContent.createDiv({ cls: "nw-cowrite-brief-info" });
+      info.createDiv({ cls: "nw-cowrite-brief-label", text: "信息释放" });
+      info.createDiv({ cls: "nw-cowrite-brief-text", text: brief.infoRelease.slice(0, 220) });
+    }
+  }
+
+  /** 空正文是否可以从章节规划冷启动 */
+  private canColdStart(): boolean {
+    const brief = this.facade.getChapterBrief();
+    return !!brief && (brief.scenes.length > 0 || !!brief.outlineSummary);
+  }
+
+  /** 空正文时把主按钮改为「生成开头」，避免用户找不到冷启动入口 */
+  private updateStartButtonState(): void {
+    if (!this.suggestBtn) return;
+    // 生成期间按钮文案由 handleTabSuggest 维护为「⏳ 生成中...」，
+    // 重渲染（保存、切章预览等）不能把它覆盖回「✍️ 生成开头 / ⇥ 建议」。
+    if (this.isSuggesting) return;
+    const empty = !this.rightEditor?.value?.trim();
+    this.suggestBtn.textContent = empty ? "✍️ 生成开头" : "⇥ 建议";
+    this.suggestBtn.setAttribute(
+      "title",
+      empty ? "由本章 Scene 展开生成开头候选（不自动写入正文）" : "基于上文生成续写建议（方向可在上方临时指令填写）"
+    );
+  }
+
   async renderAllPanels() {
     const jobs: Array<() => Promise<void> | void> = [
+      () => this.renderBriefPanel(),
       () => this.refreshPreview(true),
       () => this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics()),
       () => this.refreshMetrics(false),
@@ -3781,7 +4309,14 @@ ${text}`;
       if (!panelB) return;
 
       const text = this.rightEditor?.value || '';
-      const chapterKey = this.project ? `${this.project}-${this.chapterName}` : '';
+      // 与实时质量落盘共用同一章键构造：本章名可能不含章号（如「初始之痕」），
+      // 直接用章节名会让同一章在质量历史里出现两种 key，基线把一章算成两章
+      const chapterKey = buildQualityChapterKey(this.project, this.chapterNum, this.chapterName);
+      // 协同写作视图不是 Markdown 文件，activeFile 推导不出项目；这里主动注入项目名，
+      // 否则面板 B 的质量历史/基线拿不到项目，整章不恢复历史。
+      if (this.project) {
+        panelB.setActiveProject(this.project);
+      }
       panelB.updateCompletion(text, chapterKey);
     } catch (e) {
       log.warn('[CoWritingView] 更新剧情完成度失败:', e);

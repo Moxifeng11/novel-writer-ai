@@ -61,8 +61,8 @@ export class VolumeIntroModal extends Modal {
     }
 
     private async generateIntro(project: string): Promise<void> {
-        if (!this.plugin.settings.apiKey) {
-            showError('请先配置API密钥');
+        if (!this.plugin.hasAiCredentials) {
+            showError('请先配置 API 密钥或本地模型端点');
             return;
         }
 

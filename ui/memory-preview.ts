@@ -8,16 +8,21 @@
  * 嵌入点：FullWriterView 的右侧监控区（与关系状态并列）
  */
 
-import type NovelWriterPlugin from '../main';
+import type { App } from 'obsidian';
 import { TriggeredMemory, MemoryShard, getCharacterMemoryPath, loadCharacterMemories, markMemoryRevealed } from '../engine/memory-trigger';
+
+/** 记忆预览宿主：仅需 app 即可标记已揭示 */
+export interface MemoryPreviewHost {
+    app: App;
+}
 
 export class MemoryPreview {
     private container: HTMLElement;
-    private plugin: NovelWriterPlugin;
+    private host: MemoryPreviewHost;
 
-    constructor(container: HTMLElement, plugin: NovelWriterPlugin) {
+    constructor(container: HTMLElement, host: MemoryPreviewHost) {
         this.container = container;
-        this.plugin = plugin;
+        this.host = host;
     }
 
     /**
@@ -134,7 +139,7 @@ export class MemoryPreview {
             });
             btn.addEventListener('click', async () => {
                 await markMemoryRevealed(
-                    this.plugin.app, project, shard.characterName,
+                    this.host.app, project, shard.characterName,
                     shard.id, currentChapter,
                 );
                 btn.disabled = true;

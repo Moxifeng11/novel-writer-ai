@@ -1,10 +1,11 @@
 import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { ContextManager } from '../../engine/context-manager';
+import type { ChapterListEntry } from '../project-utils';
 import { MiniSettingsModal } from '../mini-settings-modal';
 import { FullWriterStore } from './full-writer-store';
-import { UnifiedEntityManagerModal } from '../unified-entity-manager-modal';
-import { UnifiedEntityGenerateModal } from '../unified-entity-generate-modal';
+import { renderQuickToolsPanel } from './quick-tools-panel';
+import { CHAPTER_QUICK_TOOL_IDS, findToolByCommandId } from './tool-catalog';
 
 export interface TitleBarControllerDeps {
     app: App;
@@ -13,12 +14,13 @@ export interface TitleBarControllerDeps {
     contextManager: ContextManager;
     activateTab: (tabId: string) => Promise<void>;
     switchProjectQuick: () => Promise<void>;
-    getChaptersForProject: (project: string) => Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }>;
-    sortChaptersByNumber: (chapters: Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }>) => Array<{ chapter: string; volume: string; title: string; status: string; file: TFile }>;
-    selectChapter: (project: string, chapter: { chapter: string; volume: string; file: TFile }) => Promise<void>;
+    getChaptersForProject: (project: string) => ChapterListEntry[];
+    sortChaptersByNumber: (chapters: ChapterListEntry[]) => ChapterListEntry[];
+    selectChapter: (project: string, chapter: { chapter: string; volume: string; file: TFile | null }) => Promise<void>;
     openCurrentChapterInCoWriting: () => void;
     openKnowledgeBase: () => void;
     openFingerprintLibrary: () => void;
+    executeCommand: (commandId: string) => void;
 }
 
 export class TitleBarController {
@@ -79,10 +81,12 @@ export class TitleBarController {
             const chapters = this.deps.getChaptersForProject(this.deps.state.project);
             const sortedChapters = this.deps.sortChaptersByNumber(chapters);
             for (const ch of sortedChapters) {
-                const statusIcon = ch.status === 'written' || ch.status === 'settled' ? ' ✅' : ' 📝';
+                const isDone = ch.hasBody && (ch.status === 'written' || ch.status === 'settled');
+                const statusIcon = isDone ? ' ✅' : ' 📝';
+                const label = `${ch.chapter} ${ch.title || ''}${statusIcon}`.replace(/\s+/g, ' ').trim();
                 const option = chapterSelectEl.createEl('option', {
-                    text: `${ch.chapter} ${ch.title || ''}${statusIcon}`,
-                    value: `${ch.chapter}|${ch.volume}|${ch.file.path}`
+                    text: label,
+                    value: `${ch.chapter}|${ch.volume}|${ch.file?.path ?? ''}`
                 });
                 if (ch.chapter === this.deps.state.chapterName && (!ch.volume || ch.volume === this.deps.state.volume)) {
                     option.selected = true;
@@ -91,12 +95,11 @@ export class TitleBarController {
 
             chapterSelectEl.onchange = async () => {
                 const [chapterName, volume, filePath] = chapterSelectEl.value.split('|');
-                if (!filePath) return;
-
-                const file = this.deps.app.vault.getAbstractFileByPath(filePath);
-                if (file && file instanceof TFile) {
-                    await this.deps.selectChapter(this.deps.state.project, { chapter: chapterName, volume, file });
-                }
+                const abstract = filePath ? this.deps.app.vault.getAbstractFileByPath(filePath) : null;
+                const file = abstract instanceof TFile ? abstract : null;
+                // 正文路径存在但解析失败时保持旧行为（不切换），避免打开已被移动的章
+                if (filePath && !file) return;
+                await this.deps.selectChapter(this.deps.state.project, { chapter: chapterName, volume, file });
             };
 
             titleRow.createSpan({ text: ' 正文写作', cls: 'novel-writer-fw-title-suffix' });
@@ -119,17 +122,23 @@ export class TitleBarController {
         fpBtn.setAttribute('title', '打开写作指纹库');
         fpBtn.onclick = () => this.deps.openFingerprintLibrary();
 
-        if (this.deps.state.project) {
-            const entityBtn = secondaryRow.createEl('button', { text: '👥 实体管理', cls: 'novel-writer-settings-btn' });
-            entityBtn.setAttribute('title', '打开统一实体管理（人物/地点/势力/物品）');
-            entityBtn.onclick = () => {
-                new UnifiedEntityManagerModal(this.deps.app, this.deps.plugin, this.deps.state.project).open();
-            };
-        }
-
         const settingsBtn = secondaryRow.createEl('button', { text: '⚙️ 设置', cls: 'novel-writer-settings-btn' });
         settingsBtn.onclick = () => {
             new MiniSettingsModal(this.deps.app, this.deps.plugin).open();
         };
+
+        // 常驻快捷工具条：章节相关高频工具直接可见，不再藏进弹窗
+        if (this.deps.state.project) {
+            const toolsRow = bar.createDiv({ cls: 'novel-writer-fw-quick-tools-row' });
+            const tools = CHAPTER_QUICK_TOOL_IDS
+                .map(findToolByCommandId)
+                .filter((t): t is NonNullable<typeof t> => !!t);
+            renderQuickToolsPanel(toolsRow, {
+                compact: true,
+                tools,
+                project: this.deps.state.project,
+                executeCommand: (commandId) => this.deps.executeCommand(commandId),
+            });
+        }
     }
 }

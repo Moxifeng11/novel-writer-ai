@@ -8,7 +8,7 @@
  * - 扩写前后对比（diff 视图）
  */
 
-import { App, Modal, Notice } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import {
     OutlineToTextExpander,
@@ -19,11 +19,22 @@ import {
 } from '../engine/outline-to-text-expander';
 import { lineDiff, countWords } from '../shared/diff-utils';
 import { createLogger } from '../shared/logger';
+import { pjStepFile } from '../shared/paths';
+import { BodyWriter } from '../engine/body-writer';
+import { DEFAULT_BODY_FORMAT, type BodyFormatContract } from '../shared/body-format';
+import { splitSceneSections } from '../engine/scene-expander';
 
 
 const log = createLogger('OutlineExpandModal');
 type ExpandMode = 'chapter' | 'scene' | 'paragraph';
 type ViewMode = 'edit' | 'diff';
+
+/** 章节上下文：正文为空时用于回退读取 Scene 展开 */
+export interface OutlineExpandChapterContext {
+    project: string;
+    volumeNum: number;
+    chapterNum: number;
+}
 
 export class OutlineExpandModal extends Modal {
     private plugin: NovelWriterPlugin;
@@ -52,11 +63,15 @@ export class OutlineExpandModal extends Modal {
 
     private leftPanel!: HTMLElement;
     private rightPanel!: HTMLElement;
+    private headerEl: HTMLElement | null = null;
+    private footerEl: HTMLElement | null = null;
     private sceneListEl!: HTMLElement;
     private paragraphListEl!: HTMLElement;
     private editorEl!: HTMLTextAreaElement;
     private statusEl!: HTMLElement;
     private progressEl!: HTMLElement;
+    private chapterContext: OutlineExpandChapterContext | null = null;
+    private bodyFormat: BodyFormatContract | null = null;
 
     constructor(
         app: App,
@@ -65,6 +80,7 @@ export class OutlineExpandModal extends Modal {
         options?: {
             mode?: ExpandMode;
             targetWords?: number;
+            chapterContext?: OutlineExpandChapterContext;
         }
     ) {
         super(app);
@@ -72,6 +88,7 @@ export class OutlineExpandModal extends Modal {
         this.sourceOutline = sourceOutline;
         if (options?.mode) this.expandMode = options.mode;
         if (options?.targetWords) this.targetWords = options.targetWords;
+        if (options?.chapterContext) this.chapterContext = options.chapterContext;
 
         this.expander = new OutlineToTextExpander(
             plugin.aiEngine,
@@ -102,12 +119,60 @@ export class OutlineExpandModal extends Modal {
         this.renderHeader(contentEl);
         this.renderMainContent(contentEl);
         this.renderFooter(contentEl);
+
+        if (!this.sourceOutline.trim() && this.chapterContext) {
+            void this.loadFallbackSource();
+        }
+    }
+
+    /** 正文/选区为空时，以本章 Scene 展开作为扩写来源，避免左栏空白无法联想 */
+    private async loadFallbackSource(): Promise<void> {
+        const ctx = this.chapterContext;
+        if (!ctx) return;
+        const path = pjStepFile(ctx.project, ctx.volumeNum, ctx.chapterNum, 'Scene展开');
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) {
+            new Notice(`⚠️ 未找到「第${ctx.chapterNum}章_Scene展开.md」，请先完成 Scene 展开步骤`, 6000);
+            return;
+        }
+        try {
+            const raw = await this.app.vault.read(file);
+            const body = raw.replace(/^---[\s\S]*?---\s*/, '').replace(/^#\s+[^\n]*\n+/, '').trim();
+            if (!body) {
+                new Notice('⚠️ Scene 展开内容为空，请先在步骤 6 重新生成', 6000);
+                return;
+            }
+            this.sourceOutline = body;
+            if (this.editorEl && !this.editorEl.value.trim()) {
+                this.editorEl.value = body;
+            }
+            // 本地解析 Scene 展开结构，直接填充左栏场景列表（无需先调 AI 拆分）
+            const sections = splitSceneSections(body);
+            if (sections.length > 0) {
+                this.scenes = sections.map(({ heading, body: block }) => ({
+                    index: heading.index,
+                    name: heading.name,
+                    summary: block.trim(),
+                    isKeyScene: /key_scene|名场面/.test(block),
+                }));
+                this.refreshSceneList();
+            }
+            this.updateStatus();
+            new Notice('📋 已载入本章 Scene 展开作为扩写来源', 3000);
+        } catch (e) {
+            log.warn('[OutlineExpand] 读取 Scene 展开失败:', e);
+            new Notice('⚠️ 读取 Scene 展开失败，请检查文件权限');
+        }
     }
 
     private renderHeader(container: HTMLElement): void {
+        // 切换模式时只重建标题栏，先移除旧的，避免重复堆叠（曾出现 3 层标题栏）
+        this.headerEl?.remove();
         const header = container.createDiv({
             attr: { style: 'padding:16px 20px;border-bottom:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;row-gap:10px;column-gap:12px;' }
         });
+        this.headerEl = header;
+        container.prepend(header);
 
         const left = header.createDiv({ attr: { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;row-gap:8px;min-width:0;' } });
         left.createEl('h2', { text: '✍️ 智能扩写编辑器', attr: { style: 'margin:0;font-size:18px;white-space:nowrap;flex-shrink:0;' } });
@@ -124,8 +189,12 @@ export class OutlineExpandModal extends Modal {
                 attr: { style: 'padding:4px 12px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-size:13px;' + (this.expandMode === mode.key ? 'background:var(--interactive-accent);color:white;' : 'color:var(--text-muted);') }
             });
             btn.onclick = () => {
+                if (this.expandMode === mode.key) return;
                 this.expandMode = mode.key;
                 this.renderHeader(container);
+                // 左栏与底部按钮随模式变化，必须同步重建（否则切到段落模式仍是场景列表）
+                this.renderLeftPanel();
+                this.renderFooter(container);
                 this.refreshSceneList();
             };
         }
@@ -372,9 +441,11 @@ export class OutlineExpandModal extends Modal {
     }
 
     private renderFooter(container: HTMLElement): void {
+        this.footerEl?.remove();
         const footer = container.createDiv({
             attr: { style: 'padding:12px 20px;border-top:1px solid var(--background-modifier-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;' }
         });
+        this.footerEl = footer;
 
         const leftActions = footer.createDiv({ attr: { style: 'display:flex;gap:8px;' } });
 
@@ -525,6 +596,19 @@ export class OutlineExpandModal extends Modal {
         }
     }
 
+    /** 扩写输出与正文落盘共用同一份格式契约（来自项目「写作规则.md」） */
+    private async getBodyFormat(): Promise<BodyFormatContract | undefined> {
+        if (this.bodyFormat) return this.bodyFormat;
+        if (!this.chapterContext?.project) return undefined;
+        try {
+            this.bodyFormat = await new BodyWriter({ app: this.app }).resolveContract(this.chapterContext.project);
+            return this.bodyFormat;
+        } catch (e) {
+            log.warn('读取正文格式契约失败，使用默认契约:', e);
+            return undefined;
+        }
+    }
+
     private async runChapterExpansion(): Promise<void> {
         if (this.isExpanding) return;
         this.isExpanding = true;
@@ -573,6 +657,7 @@ export class OutlineExpandModal extends Modal {
         try {
             const sceneText = `## 场景${scene.index}：${scene.name}\n${scene.summary}`;
             const sceneWords = Math.max(500, Math.floor(this.targetWords / this.scenes.length));
+            const bodyFormat = await this.getBodyFormat();
 
             const result = await this.expander.expandSceneToParagraphs(
                 sceneText,
@@ -584,6 +669,7 @@ export class OutlineExpandModal extends Modal {
                     enhanceDialogue: this.enhanceDialogue,
                     enhanceEnvironment: this.enhanceEnvironment,
                     plantForeshadows: this.plantForeshadows,
+                    bodyFormat,
                 }
             );
 
@@ -611,6 +697,8 @@ export class OutlineExpandModal extends Modal {
 
         let fullText = '';
         const allParagraphs: ParagraphOutline[] = [];
+        const bodyFormat = await this.getBodyFormat();
+        const sep = bodyFormat?.separator ?? DEFAULT_BODY_FORMAT.separator;
 
         for (let i = 0; i < this.scenes.length; i++) {
             const scene = this.scenes[i];
@@ -630,6 +718,7 @@ export class OutlineExpandModal extends Modal {
                         enhanceDialogue: this.enhanceDialogue,
                         enhanceEnvironment: this.enhanceEnvironment,
                         plantForeshadows: this.plantForeshadows,
+                        bodyFormat,
                     }
                 );
 
@@ -639,13 +728,13 @@ export class OutlineExpandModal extends Modal {
                         index: allParagraphs.length + p.index,
                     }));
                     allParagraphs.push(...adjustedParas);
-                    fullText += result.content + '\n\n';
+                    fullText += result.content + sep;
                 } else {
-                    fullText += sceneText + '\n\n';
+                    fullText += sceneText + sep;
                 }
             } catch (e) {
                 log.warn(`场景${scene.index}扩写失败:`, e);
-                fullText += `## 场景${scene.index}：${scene.name}\n${scene.summary}\n\n`;
+                fullText += `## 场景${scene.index}：${scene.name}\n${scene.summary}${sep}`;
             }
         }
 
@@ -670,6 +759,8 @@ export class OutlineExpandModal extends Modal {
 
         this.isExpanding = true;
         const selectedIndices = Array.from(this.selectedParagraphIndices).sort((a, b) => a - b);
+        const bodyFormat = await this.getBodyFormat();
+        const sep = bodyFormat?.separator ?? DEFAULT_BODY_FORMAT.separator;
 
         for (let i = 0; i < selectedIndices.length; i++) {
             const idx = selectedIndices[i];
@@ -689,6 +780,7 @@ export class OutlineExpandModal extends Modal {
                         enhanceCoolPoints: this.enhanceCoolPoints,
                         enhanceDialogue: this.enhanceDialogue,
                         enhanceEnvironment: this.enhanceEnvironment,
+                        bodyFormat,
                     }
                 );
 
@@ -700,7 +792,7 @@ export class OutlineExpandModal extends Modal {
             }
         }
 
-        const fullText = this.paragraphs.map(p => p.content).join('\n\n');
+        const fullText = this.paragraphs.map(p => p.content).join(sep);
         this.expandedText = fullText;
         this.originalText = this.sourceOutline;
         this.updateEditorContent();

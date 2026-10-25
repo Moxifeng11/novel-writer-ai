@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile, TFolder, TAbstractFile } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { AIEngine } from '../engine/ai-engine';
@@ -13,8 +13,14 @@ import { createLogger } from '../shared/logger';
 const log = createLogger('AiBuilderModal');
 import {
     pjWorldview, pjSettingLib,
+    pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir,
     SUBDIR_CHARS, SUBDIR_FACTIONS, SUBDIR_LOCS, SUBDIR_ITEMS,
 } from '../shared/paths';
+import { saveEntities, type EntityKind } from '../shared/entity-persistence';
+import { ensureEntityIntegrity } from '../shared/entity-integrity';
+import { countProjectEntities } from '../shared/entity-stats';
+import { mergeFanficRequirement } from '../shared/fanfic-rules';
+import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 
 // ── 实体类型配置 ──
 interface EntityTypeConfig {
@@ -65,6 +71,21 @@ const ENTITY_TYPES: EntityTypeConfig[] = [
     },
 ];
 
+// ── 实体保存映射：统一走 shared/entity-persistence ──
+const ENTITY_KIND_BY_ID: Record<string, EntityKind | undefined> = {
+    character: 'characters',
+    faction: 'factions',
+    location: 'locations',
+    item: 'items',
+};
+
+const ENTITY_DIR_BY_KIND: Record<EntityKind, (project: string) => string> = {
+    characters: pjCharsDir,
+    factions: pjFactionsDir,
+    locations: pjLocsDir,
+    items: pjItemsDir,
+};
+
 // ── 视图状态 ──
 type ViewMode = 'dashboard' | 'generation';
 
@@ -85,6 +106,8 @@ export class AiBuilderModal extends Modal {
     private worldContent: string = '';
     private settingLibContent: string = '';
     private existingCounts: Record<string, number> = {};
+    /** 项目数量：仅多项目时展示「← 切换项目」入口 */
+    private projectCount = 0;
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -107,19 +130,21 @@ export class AiBuilderModal extends Modal {
         contentEl.empty();
         contentEl.addClass('novel-writer-modal');
         contentEl.addClass('novel-writer-ai-builder-modal');
+        contentEl.addClass('nw-entity-scope');
         modalEl.addClass('novel-writer-ai-builder-modal-root');
 
-        // 强制设置外层 modal 尺寸（内联 style 优先级最高，覆盖主题/插件冲突）
-        modalEl.style.width = '96vw';
+        // Rev 184：原 96vw × 96vh 近乎全屏，改为带上限的自适应尺寸
+        modalEl.style.width = 'min(1300px, 94vw)';
         modalEl.addClass('nw-modal-xl');
-        modalEl.style.height = '96vh';
-        modalEl.style.maxHeight = '96vh';
+        modalEl.style.height = 'min(90vh, 900px)';
+        modalEl.style.maxHeight = 'min(90vh, 900px)';
         modalEl.style.margin = '0 auto';
         modalEl.style.position = 'relative';
 
         // 异步初始化：检测项目数量决定入口
         (async () => {
             const projects = await this.contextManager.detectProjects();
+            this.projectCount = projects.length;
             if (projects.length === 0) {
                 this.renderEmptyState();
             } else if (projects.length === 1) {
@@ -253,28 +278,8 @@ export class AiBuilderModal extends Modal {
     private async getProjectEntityStats(project: string): Promise<{
         worldview: number; characters: number; factions: number; locations: number; items: number;
     }> {
-        const stats = { worldview: 0, characters: 0, factions: 0, locations: 0, items: 0 };
-        try {
-            if (this.app.vault.getAbstractFileByPath(pjWorldview(project))) stats.worldview = 1;
-
-            const countFiles = async (subDir: string): Promise<number> => {
-                try {
-                    const f = this.app.vault.getAbstractFileByPath(`${project}/${subDir}`);
-                    if (f && 'children' in f) {
-                        // 使用类型断言明确表示这是一个 TFolder
-                        const folder = f as TFolder;
-                        return folder.children.filter((c: TAbstractFile) => c.name.endsWith('.md')).length;
-                    }
-                } catch (e) { /* ignore */ }
-                return 0;
-            };
-
-            stats.characters = await countFiles(SUBDIR_CHARS);
-            stats.factions = await countFiles(SUBDIR_FACTIONS);
-            stats.locations = await countFiles(SUBDIR_LOCS);
-            stats.items = await countFiles(SUBDIR_ITEMS);
-        } catch (e) { /* ignore */ }
-        return stats;
+        // Rev 192：统计口径统一到 shared/entity-stats，避免与实体管理/向导各自数文件
+        return countProjectEntities(this.app, project);
     }
 
     // ─────── 加载世界观内容 ───────
@@ -312,19 +317,22 @@ export class AiBuilderModal extends Modal {
 
         // 顶部面包屑
         const breadcrumb = contentEl.createDiv({ cls: 'novel-writer-ai-builder-breadcrumb' });
-        const backBtn = breadcrumb.createEl('button', {
-            text: '← 切换项目',
-            cls: 'novel-writer-ai-builder-back-btn',
-        });
-        backBtn.onclick = async () => {
-            const projects = await this.contextManager.detectProjects();
-            if (projects.length <= 1) {
-                // 单项目时返回没有矩阵，直接回到当前项目仪表盘即可
-                this.renderDashboard();
-            } else {
-                this.renderProjectMatrix(projects);
-            }
-        };
+        // Rev 192：只有多项目时「切换项目」才可达；单项目下该按钮点了等于没反应
+        if (this.projectCount > 1) {
+            const backBtn = breadcrumb.createEl('button', {
+                text: '← 切换项目',
+                cls: 'novel-writer-ai-builder-back-btn',
+            });
+            backBtn.onclick = async () => {
+                const projects = await this.contextManager.detectProjects();
+                this.projectCount = projects.length;
+                if (projects.length > 1) {
+                    this.renderProjectMatrix(projects);
+                } else {
+                    new Notice('当前只有一个项目', 3000);
+                }
+            };
+        }
 
         breadcrumb.createSpan({ text: `▸ ${this.selectedProject}`, cls: 'novel-writer-ai-builder-current' });
 
@@ -509,8 +517,8 @@ export class AiBuilderModal extends Modal {
             const theme = themeInput.value.trim();
             const custom = customInput.value.trim();
 
-            if (!this.plugin.settings.apiKey) {
-                new Notice('❌ 请先配置API密钥', 5000);
+            if (!this.plugin.hasAiCredentials) {
+                new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
                 return;
             }
 
@@ -733,8 +741,8 @@ export class AiBuilderModal extends Modal {
     // ═══════════════════════════════════════════
 
     private async doGenerateEntities(cfg: EntityTypeConfig, params: GenerateParams): Promise<void> {
-        if (!this.plugin.settings.apiKey) {
-            new Notice('❌ 请先配置API密钥', 5000);
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
             return;
         }
 
@@ -773,27 +781,32 @@ export class AiBuilderModal extends Modal {
             settingLib = this.settingLibContent || '';
         }
 
+        // 同人项目：原作核心设定与创作规则必须进入实体生成要求，
+        // 否则人物/势力/地点会脱离原作体系，成为后续 OOC 检测的错误基准
+        const fanficBlock = await readFanficPromptBlockWithNotice(this.app, this.selectedProject);
+        const requirement = (extra?: string): string => mergeFanficRequirement(fanficBlock, extra);
+
         switch (cfg.engineMethod) {
             case 'generateCharacters': {
-                const result = await this.aiEngine.generateCharacters(worldView, params.count || 1, params.prompt || undefined, undefined, undefined, undefined, settingLib);
+                const result = await this.aiEngine.generateCharacters(worldView, params.count || 1, requirement(params.prompt) || undefined, undefined, undefined, undefined, settingLib);
                 if (result.error) throw new Error(result.error);
                 await this.saveGeneratedContent(cfg, result.content, true);
                 break;
             }
             case 'generateFaction': {
-                const result = await this.aiEngine.generateFaction(worldView, params.name, params.prompt || '');
+                const result = await this.aiEngine.generateFaction(worldView, params.name, requirement(params.prompt));
                 if (result.error) throw new Error(result.error);
                 await this.saveSingleContent(cfg, params.name, result.content);
                 break;
             }
             case 'generateLocation': {
-                const result = await this.aiEngine.generateLocation(worldView, params.name, params.prompt || '');
+                const result = await this.aiEngine.generateLocation(worldView, params.name, requirement(params.prompt));
                 if (result.error) throw new Error(result.error);
                 await this.saveSingleContent(cfg, params.name, result.content);
                 break;
             }
             case 'generateItem': {
-                const result = await this.aiEngine.generateItem(worldView, params.name, params.prompt || '');
+                const result = await this.aiEngine.generateItem(worldView, params.name, requirement(params.prompt));
                 if (result.error) throw new Error(result.error);
                 await this.saveSingleContent(cfg, params.name, result.content);
                 break;
@@ -806,23 +819,36 @@ export class AiBuilderModal extends Modal {
         let worldView = this.worldContent || '';
         let settingLib = this.settingLibContent || '';
 
+        // 同人项目：批量与单个走同一套约束注入，避免两条入口生成标准不一致
+        const fanficBlock = await readFanficPromptBlockWithNotice(this.app, this.selectedProject);
+        const requirement = (extra?: string): string => mergeFanficRequirement(fanficBlock, extra);
+
         // 人物批量：分批调用，每次最多2个，避免一次性生成太多导致截断/压缩
         if (cfg.engineMethod === 'generateCharacters') {
             let allContent = '';
             let generated = 0;
+            let failedBatches = 0;
             while (generated < n) {
                 const batchSize = Math.min(2, n - generated);
                 genNotice.setMessage(`⏳ 正在生成角色 (${generated + 1}-${generated + batchSize}/${n})...`);
-                const result = await this.aiEngine.generateCharacters(worldView, batchSize, params.prompt || undefined, undefined, undefined, undefined, settingLib);
+                const result = await this.aiEngine.generateCharacters(worldView, batchSize, requirement(params.prompt) || undefined, undefined, undefined, undefined, settingLib);
                 if (result.error) {
                     log.warn(`[小说工坊] 第${generated + 1}批角色生成失败:`, result.error);
+                    failedBatches += 1;
                     generated += batchSize;
                     continue;
                 }
                 allContent += (allContent ? '\n\n' : '') + result.content;
                 generated += batchSize;
             }
+            if (!allContent.trim()) {
+                new Notice(`❌ ${cfg.label}生成失败：${failedBatches} 个批次均未返回内容，详见控制台`, 6000);
+                return;
+            }
             await this.saveGeneratedContent(cfg, allContent, true);
+            if (failedBatches > 0) {
+                new Notice(`⚠️ ${failedBatches} 个批次生成失败，其余结果已保存`, 6000);
+            }
             return;
         }
 
@@ -833,6 +859,14 @@ export class AiBuilderModal extends Modal {
         // U7（技术审计）：批量单项失败（生成/保存）此前仅写日志用户不可见，收集清单供结束汇总
         const failures: string[] = [];
 
+        const kind = ENTITY_KIND_BY_ID[cfg.id];
+        if (!kind) {
+            genNotice.hide();
+            new Notice(`❌ 不支持的实体类型：${cfg.label}`, 6000);
+            return;
+        }
+        await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
+
         for (let i = 0; i < n; i++) {
             genNotice.setMessage(`⏳ 正在生成${cfg.label} (${i + 1}/${n})...`);
 
@@ -842,13 +876,13 @@ export class AiBuilderModal extends Modal {
 
             switch (cfg.engineMethod) {
                 case 'generateFaction':
-                    result = await this.aiEngine.generateFaction(worldView, seedName, params.prompt || '');
+                    result = await this.aiEngine.generateFaction(worldView, seedName, requirement(params.prompt));
                     break;
                 case 'generateLocation':
-                    result = await this.aiEngine.generateLocation(worldView, seedName, params.prompt || '');
+                    result = await this.aiEngine.generateLocation(worldView, seedName, requirement(params.prompt));
                     break;
                 case 'generateItem':
-                    result = await this.aiEngine.generateItem(worldView, seedName, params.prompt || '');
+                    result = await this.aiEngine.generateItem(worldView, seedName, requirement(params.prompt));
                     break;
                 default:
                     throw new Error(`不支持的批量类型: ${cfg.engineMethod}`);
@@ -863,23 +897,17 @@ export class AiBuilderModal extends Modal {
             // 从 AI 输出中提取实际名称
             const realName = this.extractName(result.content, cfg.label);
 
-            const savePath = `${this.selectedProject}/${cfg.folder}/${realName}.md`;
-            const parentDir = savePath.substring(0, savePath.lastIndexOf('/'));
-            if (!this.app.vault.getAbstractFileByPath(parentDir)) await mkdirp(this.app, parentDir);
-
-            // 避免与已有文件冲突
-            const existingFile = this.app.vault.getAbstractFileByPath(savePath);
-            if (existingFile) {
-                try { await this.app.vault.delete(existingFile); } catch (e) { log.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }
-            }
-
-            try {
-                await this.app.vault.create(savePath, result.content);
+            // 统一落盘：同名不同内容另存副本，不覆盖已有实体
+            const outcome = await saveEntities(this.app, this.selectedProject, kind, [
+                { name: realName, content: result.content },
+            ]);
+            const savedAs = outcome.renamed[0]?.savedAs ?? realName;
+            if (outcome.failed.length > 0) {
+                log.warn(`[小说工坊] 保存${cfg.label}失败:`, outcome.failed[0].error);
+                failures.push(`第${i + 1}个（${outcome.failed[0].error}）`);
+            } else {
                 saved++;
-                savedNames.push(realName);
-            } catch (e) {
-                log.warn(`[小说工坊] 保存${cfg.label}失败:`, e);
-                failures.push(`第${i + 1}个（保存失败）`);
+                savedNames.push(savedAs);
             }
         }
 
@@ -897,18 +925,37 @@ export class AiBuilderModal extends Modal {
 
     // ─────── 保存单个实体 ───────
     private async saveSingleContent(cfg: EntityTypeConfig, name: string, content: string): Promise<void> {
-        const savePath = `${this.selectedProject}/${cfg.folder}/${name}.md`;
-        const existingFile = this.app.vault.getAbstractFileByPath(savePath);
-        if (existingFile) {
-            const ok = window.confirm(`「${name}」已存在，是否覆盖？`);
-            if (!ok) return;
-            await this.app.vault.delete(existingFile);
+        const kind = ENTITY_KIND_BY_ID[cfg.id];
+        if (!kind) {
+            new Notice(`❌ 不支持的实体类型：${cfg.label}`, 6000);
+            return;
         }
-        await this.app.vault.create(savePath, content);
-        new Notice(`✅ 「${name}」已保存到 ${this.selectedProject}`);
+        await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
+
+        // 保存前完整性闭环：校验 → AI 补全一次 → 复检；不完整的不落盘
+        const integrity = await ensureEntityIntegrity(kind, name, content, (req) =>
+            this.aiEngine.repairEntity(kind, req.name, req.content, req.missingFields, this.worldContent || '')
+        );
+        if (!integrity.valid) {
+            new Notice(
+                `❌ 「${name}」未通过完整性校验，未保存。缺少：${integrity.missingFields.slice(0, 5).join('、')}`,
+                8000
+            );
+            return;
+        }
+
+        const outcome = await saveEntities(this.app, this.selectedProject, kind, [{ name, content: integrity.content }]);
+        if (outcome.failed.length > 0) {
+            new Notice(`❌ 「${name}」保存失败：${outcome.failed[0].error}`, 6000);
+            return;
+        }
+
+        const savedAs = outcome.renamed[0]?.savedAs ?? name;
+        const renamedHint = outcome.renamed.length > 0 ? `（同名已另存为「${savedAs}」）` : '';
+        new Notice(`✅ 「${savedAs}」已保存到 ${this.selectedProject}${renamedHint}`);
 
         // 自动打开文件
-        const file = this.app.vault.getAbstractFileByPath(savePath);
+        const file = this.app.vault.getAbstractFileByPath(`${this.selectedProject}/${cfg.folder}/${savedAs}.md`);
         if (file) {
             await this.plugin.safeOpenFile(file as TFile);
         }
@@ -917,8 +964,16 @@ export class AiBuilderModal extends Modal {
     // ─────── 保存批量实体（人物批量） ───────
     private async saveGeneratedContent(cfg: EntityTypeConfig, content: string, isBatch: boolean): Promise<void> {
         if (isBatch && cfg.id === 'character') {
+            const kind = ENTITY_KIND_BY_ID[cfg.id];
+            if (!kind) return;
+            await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
+
             // 人物批量：按 frontmatter 分割
             const blocks = content.split(/^(?=---\s*$)/m).filter(b => b.trim());
+            if (blocks.length === 0) {
+                new Notice('❌ 未解析到任何角色卡（生成结果为空或不完整），未保存', 6000);
+                return;
+            }
             let saved = 0;
             let skipped = 0;
             for (const block of blocks) {
@@ -943,12 +998,14 @@ export class AiBuilderModal extends Modal {
                     }
                 }
 
-                const savePath = `${this.selectedProject}/${cfg.folder}/${name}.md`;
-                if (!this.app.vault.getAbstractFileByPath(savePath)) {
-                    try {
-                        await this.app.vault.create(savePath, finalBlock);
-                        saved++;
-                    } catch (e) { log.warn('保存角色失败:', e); }
+                const outcome = await saveEntities(this.app, this.selectedProject, kind, [
+                    { name, content: finalBlock },
+                ]);
+                if (outcome.failed.length > 0) {
+                    log.warn(`保存角色「${name}」失败:`, outcome.failed[0].error);
+                    skipped++;
+                } else {
+                    saved++;
                 }
             }
             let msg = `✅ 人物已保存：${saved} 个 → ${this.selectedProject}`;

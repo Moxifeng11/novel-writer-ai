@@ -20,12 +20,14 @@ import { RhythmAnalyzer } from '../engine/rhythm-analyzer';
 import { StyleLearner } from '../engine/style-learner';
 import type { RhythmAnalysis } from '../shared/co-writer-types';
 import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
-import { WritingProfileManager } from '../engine/writing-profile';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { StyleIntensityEngine } from '../engine/style/style-intensity-engine';
 import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('PolishEditor');
+
+/** 强度映射是纯函数，模块级共享一个实例即可 */
+const intensityEngine = new StyleIntensityEngine();
 // ============================================================
 // 工具函数 (纯函数，无 this 依赖)
 // ============================================================
@@ -123,6 +125,7 @@ export class PolishEditor {
      * @param chapDir 章节目录
      * @param chapterName 章节名
      * @param volume 卷名
+     * @param onSaved 自动保存成功后的回调（A7：用于失效下游审查/分析/结算）
      */
     async render(
         area: HTMLElement,
@@ -131,6 +134,7 @@ export class PolishEditor {
         chapDir: string,
         chapterName: string,
         volume: string,
+        onSaved?: () => void,
     ): Promise<void> {
         const bodyText = stepResults['bodyGeneration'];
         if (!bodyText || !project) {
@@ -239,6 +243,8 @@ export class PolishEditor {
                     stepResults['bodyGeneration'] = plainText;
                     await this.stepRunner.writeFixToBody(plainText, chapDir, chapterName, volume);
                     statusSpan.setText('💾 已保存 ' + new Date().toLocaleTimeString());
+                    // A7: 正文已实际改动 → 下游审查/分析/结算必须失效（落盘成功后再失效，失败不误伤）
+                    onSaved?.();
                     log.warn('[小说工坊] 润色编辑器自动保存:', plainText.length, '字');
                 } catch (e) {
                     statusSpan.setText('❌ 保存失败');
@@ -283,6 +289,8 @@ export class PolishEditor {
                         editorDiv.innerHTML = newMarkedHtml;
                         triggerAutoSave();
                     },
+                    // D6: 指纹风格必须跟随当前章节所属项目，不能由弹窗再猜 activeFile
+                    project,
                 ).open();
             } catch (e) {
                 log.error('[小说工坊] AI润色按钮点击失败:', e);
@@ -302,11 +310,7 @@ export class PolishEditor {
                 rhythmBtn.setText('⏳ 分析中...');
                 rhythmBtn.disabled = true;
 
-                const analyzer = new RhythmAnalyzer({
-                    app: this.plugin.app,
-                    aiEngine: this.plugin.aiEngine,
-                    plugin: this.plugin,
-                });
+                const analyzer = new RhythmAnalyzer();
                 const result = await analyzer.analyze(fullText);
 
                 rhythmBtn.setText('📊 节奏分析');
@@ -467,14 +471,16 @@ export class PolishAIPolishModal extends Modal {
         fullText: string,
         selection: string,
         onApply: (polishedText: string) => void,
-        projectPath?: string,
+        // D6: 项目由调用方显式传入（当前章节所属项目）。协同/工作台视图没有 activeFile，
+        // 在这里回落到 getActiveProject() 会把别的书的指纹套到本章正文上。
+        projectPath: string,
     ) {
         super(app);
         this.plugin = plugin;
         this.fullText = fullText;
         this.selection = selection;
         this.onApply = onApply;
-        this.projectPath = projectPath || plugin.getActiveProject() || '';
+        this.projectPath = projectPath;
     }
 
     onOpen(): void {
@@ -661,29 +667,14 @@ ${targetText}
             await fingerprintLibrary.loadGlobal();
             await fingerprintLibrary.loadProject();
             await fingerprintLibrary.loadGlobalState(this.projectPath);
+            await fingerprintLibrary.loadIntensityConfigs();
 
-            // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const profile = await profileManager.load(this.projectPath);
-
-            const enabledProjectIds = profile.fingerprint.enabledProject || [];
-            const enabledGlobalIds = profile.fingerprint.enabledGlobal || [];
-
-            const enabledFingerprints: StyleFingerprint[] = [];
-
-            enabledProjectIds.forEach(id => {
-                const fp = fingerprintLibrary.getProject(id);
-                if (fp && fp.enabled) {
-                    enabledFingerprints.push(fp);
-                }
-            });
-
-            enabledGlobalIds.forEach(id => {
-                const fp = fingerprintLibrary.getGlobal(id);
-                if (fp && fingerprintLibrary.isGlobalEnabledForProject(id, this.projectPath)) {
-                    enabledFingerprints.push(fp);
-                }
-            });
+            // 唯一真相源是指纹库的启用状态：`profile.fingerprint.enabledProject/enabledGlobal`
+            // 在全仓没有写入方，只读它等于永远拿不到指纹（润色从未用过指纹）。
+            // 强度 0（界面「完全禁用」）一并跳过，口径与协同/正文生成一致。
+            const enabledFingerprints = (await fingerprintLibrary.getEnabledFingerprints())
+                .filter(fp => !intensityEngine
+                    .previewIntensity(fingerprintLibrary.getIntensityConfig(fp.id)).disabled);
 
             if (enabledFingerprints.length === 0) {
                 return '';

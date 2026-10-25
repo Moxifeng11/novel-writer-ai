@@ -9,15 +9,16 @@
 import { App, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { WizardTab, WizardStep } from './wizard-types';
-import { getWorldviewPath, getSettingLibPath, getWritingStylePath, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '../../shared/paths';
+import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjProjectMeta, pjFanficDir, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '../../shared/paths';
 import { findWritingStyleFile } from '../writing-style-paths';
 import { ChapterOutlineTreeModal } from '../chapter-outline-tree-modal';
 import { openPlotCanvas } from '../plot-canvas-modal';
-import { EntityOverviewModal } from './entity-overview-modal';
-import { ExistingEntityManagerModal } from '../existing-entity-manager';
+import { UnifiedEntityManagerModal } from '../unified-entity-manager-modal';
 import { readMergedVolumeOutline } from '../../utils/helpers';
 import { WV_SECTIONS, SL_SECTIONS } from '../../shared/format-constants';
-import { buildFanficSettingsContent, getFanficSettingsPath, missingFanficValueLabels, type FanficSettingsValues } from './fanfic-settings-utils';
+import { attachFanficPathToProject, buildFanficSettingsContent, getFanficSettingsPath, isFanficSettingsContentValidEnough, missingFanficValueLabels, type FanficSettingsValues } from './fanfic-settings-utils';
+import { extractFanficRuleValue, parseProjectMeta } from '../../shared/fanfic-rules';
+import { listFanficSettingCandidates } from '../../shared/fanfic-binding';
 
 export class WizardStepRenderers {
     private wizardStepResults: Record<string, string>;
@@ -28,8 +29,8 @@ export class WizardStepRenderers {
     private executeWizardStep: (tab: WizardTab, step: WizardStep) => Promise<void>;
     private renderTab: (tab: WizardTab, skipAutoAdvance?: boolean) => void;
     private registerOutlineTreeModal: (modal: ChapterOutlineTreeModal) => void;
-    // 实体子步骤执行中标记（不走 wizardStepExecuting，因为 entities 不经过 executeWizardStep 调度器）
-    private entitiesExecuting: boolean = false;
+    // 实体子步骤执行中标记（按分类隔离，避免打开一个人物窗口就禁用全部按钮）
+    private entitiesExecuting: Set<string> = new Set();
 
     constructor(
         wizardStepResults: Record<string, string>,
@@ -56,13 +57,24 @@ export class WizardStepRenderers {
         
         // 如果已执行过，恢复表单数据
         const fanficResultKey = `fanfic:${tab.project}`;
-        const saved = this.wizardStepResults[fanficResultKey] || '';
+        let saved = this.wizardStepResults[fanficResultKey] || '';
+        // 通过「同人设定库」工具生成后，内存里没有暂存，改从 .project 记录路径回读
+        if (!saved.trim()) {
+            const metaFile = this.app.vault.getAbstractFileByPath(pjProjectMeta(tab.project));
+            if (metaFile instanceof TFile) {
+                try {
+                    const meta = await this.app.vault.read(metaFile);
+                    const path = parseProjectMeta(meta).fanficPath;
+                    const fanficFile = path ? this.app.vault.getAbstractFileByPath(path) : null;
+                    if (fanficFile instanceof TFile) {
+                        saved = await this.app.vault.read(fanficFile);
+                        this.wizardStepResults[fanficResultKey] = saved;
+                    }
+                } catch { /* 读取失败时保持空表单 */ }
+            }
+        }
         const getSaved = (key: string): string => {
             const m = saved.match(new RegExp(`${key}:\\s*(.+)`));
-            return m ? m[1].trim() : '';
-        };
-        const getRuleSaved = (key: string): string => {
-            const m = saved.match(new RegExp(`\\*\\*${key}\\*\\*[：:]\\s*(.+)`));
             return m ? m[1].trim() : '';
         };
         
@@ -93,11 +105,11 @@ export class WizardStepRenderers {
                 ? group.createEl('textarea', { cls: 'nw-wizard-textarea' })
                 : group.createEl('input', { attr: { style: 'width:100%; padding:6px 8px; border-radius:6px; border:1px solid var(--background-modifier-border); font-size:0.85em;' } });
             
-            if (type === 'textarea') {
-                (input as HTMLTextAreaElement).value = getSaved(key);
-            } else {
-                (input as HTMLInputElement).value = getSaved(key);
-            }
+            // 三条创作规则只写在正文（`- **字段**：…`），frontmatter 里没有，
+            // 必须走正文解析，否则绑定/生成后再进向导时规则框永远为空，保存会覆盖成空。
+            (input as HTMLTextAreaElement).value = type === 'textarea'
+                ? extractFanficRuleValue(saved, key) || getSaved(key)
+                : getSaved(key);
             // 任何输入变动自动暂存，确保"执行"按钮能拿到最新数据
             input.addEventListener('input', () => { this.wizardStepResults[fanficResultKey] = collectFanficContent(); });
             return input;
@@ -131,6 +143,7 @@ export class WizardStepRenderers {
             const adapter = this.app.vault.adapter;
             if (!(await adapter.exists(dir))) await adapter.mkdir(dir);
             await adapter.write(path, content);
+            await attachFanficPathToProject(this.app, tab.project, path);
             this.wizardStepResults[fanficResultKey] = content;
             new Notice(`✅ 同人设定已保存: ${path}`, 3000);
             this.renderTab(tab, true);
@@ -139,6 +152,69 @@ export class WizardStepRenderers {
         if (saved) {
             container.createEl('p', { text: '📝 已有暂存设定，修改后请重新保存。', attr: { style: 'color:var(--text-accent); font-size:0.8em; margin-top:8px;' } });
         }
+
+        // 已存在设定文件（手写/拷入/旧项目遗留）时提供绑定入口：此前只能逐字段重填或手改 .project
+        const candidates = await this.listFanficCandidates(tab.project);
+        if (candidates.length > 0) {
+            const bindBox = container.createDiv({ attr: { style: 'margin-top:14px; padding:8px 10px; border:1px solid var(--background-modifier-border); border-radius:6px;' } });
+            bindBox.createEl('p', {
+                text: '🔗 项目里已有同人设定文件，可直接绑定（会把内容填入上方表单，保存时覆盖该文件）',
+                attr: { style: 'font-size:0.8em; color:var(--text-muted); margin:0 0 6px;' }
+            });
+            const select = bindBox.createEl('select', { attr: { style: 'width:100%; padding:6px 8px; border-radius:6px; border:1px solid var(--background-modifier-border); font-size:0.85em;' } });
+            for (const candidate of candidates) {
+                select.createEl('option', { text: `${candidate.name}（${candidate.path}）`, value: candidate.path });
+            }
+            const bindBtn = bindBox.createEl('button', {
+                text: '🔗 绑定所选文件',
+                attr: { style: 'margin-top:8px; padding:6px 16px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:6px; cursor:pointer;' }
+            });
+            bindBtn.addEventListener('click', async () => {
+                const path = select.value;
+                const file = this.app.vault.getAbstractFileByPath(path);
+                if (!(file instanceof TFile)) {
+                    new Notice('❌ 文件不存在，可能已被移动或删除', 6000);
+                    return;
+                }
+                let content = '';
+                try {
+                    content = await this.app.vault.read(file);
+                } catch {
+                    new Notice('❌ 读取失败，请检查文件权限后重试', 6000);
+                    return;
+                }
+                if (!content.trim()) {
+                    new Notice('❌ 该同人设定文件为空，无法绑定', 6000);
+                    return;
+                }
+                await attachFanficPathToProject(this.app, tab.project, path);
+                this.wizardStepResults[fanficResultKey] = content;
+                const check = isFanficSettingsContentValidEnough(content);
+                new Notice(
+                    check.valid
+                        ? `✅ 已绑定：${path}`
+                        : `⚠️ 已绑定 ${path}，但仍缺少：${check.missingFields.slice(0, 5).join('、')}。请补全后点「保存同人设定」。`,
+                    8000
+                );
+                this.renderTab(tab, true);
+            });
+        }
+    }
+
+    /** 本项目同人设定库 + 全局同人设定库下的 Markdown 候选（排除当前已绑定文件） */
+    private async listFanficCandidates(project: string): Promise<{ path: string; name: string }[]> {
+        let currentPath = '';
+        const metaFile = this.app.vault.getAbstractFileByPath(pjProjectMeta(project));
+        if (metaFile instanceof TFile) {
+            try {
+                currentPath = parseProjectMeta(await this.app.vault.read(metaFile)).fanficPath;
+            } catch { /* 元信息读取失败时按「未绑定」处理 */ }
+        }
+        return listFanficSettingCandidates(
+            this.app.vault.getMarkdownFiles().map(file => file.path),
+            [pjFanficDir(project), '元文件/05-同人设定库'],
+            currentPath,
+        );
     }
 
     async renderWizardSettingLibStep(container: HTMLElement, tab: WizardTab): Promise<void> {
@@ -499,7 +575,7 @@ export class WizardStepRenderers {
 
         if (this.plugin._entityModalJustClosed) {
             this.plugin._entityModalJustClosed = false;
-            this.entitiesExecuting = false;
+            this.entitiesExecuting.clear();
         }
 
         const step = tab.steps[tab.currentStepIdx];
@@ -532,27 +608,14 @@ export class WizardStepRenderers {
 
         const toolBar = container.createDiv({ cls: 'nw-wizard-toolbar', attr: { style: 'display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;' } });
 
-        const overviewBtn = toolBar.createEl('button', {
-            text: '📖 查看实体概览',
-            attr: { style: 'padding:6px 16px; background:var(--background-modifier-border); border:1px solid var(--background-modifier-border); border-radius:6px; cursor:pointer; font-size:0.9em;' }
+        // 直接进入统一实体管理界面，不再经过「实体概览」中间层
+        const managerBtn = toolBar.createEl('button', {
+            text: '📚 实体管理',
+            attr: { style: 'padding:6px 16px; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:6px; cursor:pointer; font-size:0.9em; font-weight:600;' }
         });
-        overviewBtn.addEventListener('click', () => {
-            new EntityOverviewModal(this.app, this.plugin, tab.project).open();
+        managerBtn.addEventListener('click', () => {
+            new UnifiedEntityManagerModal(this.app, this.plugin, tab.project).open();
         });
-
-        const mkMgrBtn = (label: string, folder: string, displayLabel: string) => {
-            const b = toolBar.createEl('button', {
-                text: label,
-                attr: { style: 'padding:6px 12px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:6px; cursor:pointer; font-size:0.85em;' }
-            });
-            b.addEventListener('click', () => {
-                new ExistingEntityManagerModal(this.app, this.plugin, tab.project, folder, displayLabel).open();
-            });
-        };
-        mkMgrBtn('📂 管理人物', SUBDIR_CHARS, '👤 人物');
-        mkMgrBtn('📂 管理地点', SUBDIR_LOCS, '📍 地点');
-        mkMgrBtn('📂 管理势力', SUBDIR_FACTIONS, '🏰 势力');
-        mkMgrBtn('📂 管理物品', SUBDIR_ITEMS, '⚔️ 物品功法');
         
         const entityConfig = [
             { id: 'characters', label: '人物', desc: '生成主要角色卡（含 frontmatter 字段和设定章节）', icon: '👤', commandId: 'novel-writer-character', dir: SUBDIR_CHARS },
@@ -575,17 +638,18 @@ export class WizardStepRenderers {
             if (isDone) {
                 actions.createSpan({ text: subStep?.status === 'done' ? '✅ 已生成' : '⏭ 已跳过', attr: { style: 'color:var(--text-muted); font-size:0.8em; margin-right:6px;' } });
                 // v3.4.1: done 后仍可继续生成，不锁按钮
+                const isOpening = this.entitiesExecuting.has(cfg.id);
                 const regenBtn = actions.createEl('button', { 
-                    text: this.entitiesExecuting ? '打开中...' : '继续生成', 
+                    text: isOpening ? '打开中...' : '继续生成', 
                     attr: { style: 'padding:4px 10px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.8em; opacity:0.8;' } 
                 });
-                if (this.entitiesExecuting) {
+                if (isOpening) {
                     regenBtn.disabled = true;
                     regenBtn.style.opacity = '0.6';
                     regenBtn.style.cursor = 'not-allowed';
                 }
                 regenBtn.addEventListener('click', () => {
-                    this.entitiesExecuting = true;
+                    this.entitiesExecuting.add(cfg.id);
                     this.plugin._pendingEntityProject = tab.project;
                     this.plugin._pendingEntityContext = { project: tab.project, isEarlyStage: true };
                     this.plugin.executeCommand(cfg.commandId);
@@ -593,7 +657,7 @@ export class WizardStepRenderers {
                     if (subStep && subStep.status === 'done') subStep.status = 'pending';
                     this.renderTab(tab, true);
                     this.plugin._entityModalCloseCallbacks.push(async () => {
-                        this.entitiesExecuting = false;
+                        this.entitiesExecuting.delete(cfg.id);
                         // 检测磁盘文件是否已生成
                         if (subStep) {
                             const dirPath = `${tab.project}/${cfg.dir}`;
@@ -609,24 +673,25 @@ export class WizardStepRenderers {
                     });
                 });
             } else {
+                const isOpening = this.entitiesExecuting.has(cfg.id);
                 const genBtn = actions.createEl('button', { 
-                    text: this.entitiesExecuting ? '打开中...' : '生成', 
+                    text: isOpening ? '打开中...' : '生成', 
                     attr: { style: 'padding:4px 14px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;' } 
                 });
-                if (this.entitiesExecuting) {
+                if (isOpening) {
                     genBtn.disabled = true;
                     genBtn.style.opacity = '0.6';
                     genBtn.style.cursor = 'not-allowed';
                 }
                 genBtn.addEventListener('click', () => {
-                    this.entitiesExecuting = true;
+                    this.entitiesExecuting.add(cfg.id);
                     this.plugin._pendingEntityProject = tab.project;
                     this.plugin._pendingEntityContext = { project: tab.project, isEarlyStage: true };
                     this.plugin.executeCommand(cfg.commandId);
                     new Notice(`${cfg.label}生成窗口已打开`, 2000);
                     this.renderTab(tab, true);
                     this.plugin._entityModalCloseCallbacks.push(async () => {
-                        this.entitiesExecuting = false;
+                        this.entitiesExecuting.delete(cfg.id);
                         // 检测磁盘文件是否已生成
                         if (subStep) {
                             const dirPath = `${tab.project}/${cfg.dir}`;
@@ -640,18 +705,6 @@ export class WizardStepRenderers {
                         }
                         this.renderTab(tab, true);
                     });
-                });
-                
-                const skipBtn = actions.createEl('button', { 
-                    text: '跳过', 
-                    attr: { style: 'padding:4px 10px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:4px; cursor:pointer; font-size:0.85em;' } 
-                });
-                skipBtn.addEventListener('click', () => {
-                    if (subStep) subStep.status = 'skipped';
-                    const allDone = (step.subSteps || []).every(s => s.status === 'done' || s.status === 'skipped');
-                    if (allDone) step.status = 'done';
-                    // v3.4.3: 跳过 auto-advance — 用户显式跳过实体子步骤
-                    this.renderTab(tab, true);
                 });
             }
         }

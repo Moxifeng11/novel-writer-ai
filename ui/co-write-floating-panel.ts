@@ -14,10 +14,13 @@ import { SuggestionRecord, SentenceEditRecord } from "../shared/types";
 import { AssociationSuggestion } from "../shared/co-writer-types";
 import { associationToSuggestion, getDirectionLabel, getStyleLabel } from "./cowrite/cowrite-mappers";
 import { CharacterConsistencyChecker, ConsistencyCheckResult } from "../engine/character-consistency-checker";
+import { toCharacterContextInfos } from "../engine/character-context";
 import { ProgressEmitter, type ProgressState } from "../shared/progress-emitter";
 import { StepListComponent } from "./components/progress/step-list";
 import { TimeEstimator } from "../shared/time-estimator";
 import { createLogger } from '../shared/logger';
+import { resolveCursorPosition } from '../shared/cursor-position';
+import { BodyWriter } from '../engine/body-writer';
 
 
 const log = createLogger('CoWriteFloatingPanel');
@@ -224,16 +227,22 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     const content = this.rightEditor.value;
     if (!content.trim()) return;
     const path = this.getBodyPath();
-    const existing = this.app.vault.getAbstractFileByPath(path);
     try {
-      if (existing instanceof TFile) {
-        await this.app.vault.modify(existing, content);
-      } else {
-        await this.app.vault.create(path, content);
-      }
+      // 与主视图共用同一落盘入口：保留 frontmatter 原文、统一标题、按格式契约规整。
+      // 旧实现直接 vault.modify，会把 YAML 一起写回并绕过契约。
+      await new BodyWriter({ app: this.app }).write({
+        path,
+        raw: content,
+        chapterNum: this.chapterNum,
+        chapterName: this.chapterName,
+        volume: this.volume,
+        project: this.project,
+        writingMode: 'co-writer',
+      });
       this.updateSaveState("\u5DF2\u4FDD\u5B58");
       await this.renderFlowPanel();
     } catch (e) {
+      log.warn("[CoWriteFloating] \u4FDD\u5B58\u5931\u8D25:", e);
       new Notice("\u26A0\uFE0F \u4FDD\u5B58\u5931\u8D25");
     }
   }
@@ -260,7 +269,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       this.suggestBtn.setText("⏳ 生成中...");
     }
 
-    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
     const precedingText = this.rightEditor.value.slice(0, cursor);
 
     this.lastSuggestParams = {
@@ -608,9 +617,17 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   async handleAssociationSuggest(): Promise<void> {
     if (this.isSuggesting) return;
     this.isSuggesting = true;
-    const cursor = this.rightEditor.selectionStart || this.rightEditor.value.length;
+    // Phase 3.2: 联想与建议共用中止控制器，关闭浮窗/新请求都会取消在途联想
+    if (this.suggestAbortController) {
+      this.suggestAbortController.abort();
+      this.suggestAbortController = null;
+    }
+    this.suggestAbortController = new AbortController();
+    const signal = this.suggestAbortController.signal;
+    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
     try {
-      const associations = await this.engine.suggestAssociation(cursor, this.rightEditor.value, "manual");
+      const associations = await this.engine.suggestAssociation(cursor, this.rightEditor.value, "manual", signal);
+      if (signal.aborted) return;
       if (associations.length === 0) {
         new Notice("暂时没有联想到合适续写");
         return;
@@ -619,9 +636,13 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       this.pendingRewriteRange = null;
       this.renderSuggestions(this.currentSuggestions);
     } catch (e) {
+      if (signal.aborted) return;
       log.warn("[CoWriteFloating] 联想输入失败:", e);
       new Notice("联想输入失败，请稍后重试");
     } finally {
+      if (this.suggestAbortController?.signal === signal) {
+        this.suggestAbortController = null;
+      }
       this.isSuggesting = false;
     }
   }
@@ -689,17 +710,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
         return;
       }
 
-      const characterInfos = rawCharacters.map((c) => {
-        const name = (c.name as string) || (c["\u59D3\u540D"] as string) || (c.fileName as string) || "\u672A\u77E5";
-        const personality = (c["\u6027\u683C\u6807\u7B7E"] as string) || "";
-        const appearance = (c["\u5916\u8C8C\u7279\u5F81"] as string) || "";
-        const abilities =
-          (c["\u529F\u6CD5/\u6280\u80FD\u6811"] as string) ||
-          (c["\u91D1\u624B\u6307/\u7279\u6B8A\u80FD\u529B"] as string) ||
-          "";
-        const background = (c["\u4EBA\u7269\u80CC\u666F"] as string) || "";
-        return { name, personality, appearance, abilities, background };
-      }).filter((c) => c.name && c.name !== "\u672A\u77E5");
+      const characterInfos = toCharacterContextInfos(rawCharacters);
 
       if (characterInfos.length === 0) {
         new Notice("\u26A0\uFE0F \u672A\u627E\u5230\u6709\u6548\u4EBA\u7269\u4FE1\u606F");

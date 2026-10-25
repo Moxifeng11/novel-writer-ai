@@ -22,6 +22,7 @@ import { scoreAndFilterEntities, ScoredEntity } from '../engine/entity-scorer';
 import { stripFrontmatter, showProgress, hideProgress, showSuccess, showError, showWarning } from '../utils/helpers';
 import { extractWorldviewMeta } from './utils/worldview-utils';
 import { getChapterFileName, findChapterFile, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { ActiveChapterTarget } from '../shared/chapter-target';
 import { isInfoPlanComplete, isOutlineComplete } from '../shared/info-debt';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
 import { FIX_PROMPTS, fillTemplate } from '../engine/prompt-templates';
@@ -30,6 +31,7 @@ import { ENGINE_NAMES } from '../engine/engine-registry';
 import { pjBodyDir, pjBodyFile, pjForeshadowDB, pjStepDir, pjVolumeOutlineFile, SUBDIR_STEP_ROOT } from '../shared/paths';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { buildStepFrontmatter } from '../shared/step-frontmatter';
+import { BodyWriter } from '../engine/body-writer';
 import { createLogger } from '../shared/logger';
 
 
@@ -53,90 +55,92 @@ export class WriteChapterModal extends Modal {
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
-        const activeFile = this.app.workspace.getActiveFile();
 
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.addClass('nw-modal');
+            wrapper.addClass('nw-modal-form');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
-        contentEl.createEl('h2', { text: '✍️ AI写正文' });
+        contentEl.addClass('nw-form-stack');
 
-        if (!activeFile) {
-            contentEl.createEl('p', { text: '❌ 请先打开章节正文文件' });
+        contentEl.createEl('h2', {
+            text: '✍️ AI写正文〔旧〕',
+            attr: { style: 'margin:0; font-size:18px;' },
+        });
+
+        // Rev 184：上下文统一走「工作台上下文 > activeFile 正文 > activeFile 步骤目录」
+        const target: ActiveChapterTarget | null = this.plugin.getActiveChapterTarget();
+        if (!target) {
+            contentEl.createEl('p', {
+                text: '❌ 未定位到章节。请在「项目与章节」工作台选中章节，或打开本章正文 / 步骤结果文件后重试。',
+                attr: { style: 'color:var(--text-error); margin:0; line-height:1.6;' },
+            });
             return;
         }
 
-        const path = activeFile.path;
-        const parsed = WriteChapterModal.parseChapterPath(path);
-        if (!parsed) {
-            contentEl.createEl('p', { text: '❌ 当前文件不在 v4.0 章节路径中（需位于 正文/ 或 步骤结果/ 下）' });
-            return;
-        }
-        const { project, volN, chapN, volName, chapName } = parsed;
-        const chapDir = pjStepDir(project, volN, chapN);
-        contentEl.createEl('p', { text: `正在为 ${project} → ${volName} → ${chapName} 生成正文...` });
-        this.writeChapter(project, volName, chapName, chapN, chapDir, true);
+        const summary = contentEl.createDiv({ cls: 'nw-form-summary' });
+        summary.createDiv({ text: `项目：${target.project}` });
+        summary.createDiv({ text: `章节：${target.volume} · ${target.chapterName}` });
+
+        contentEl.createEl('p', {
+            text: '将依次执行：信息规划 → 大纲摘要 → 正文（流式续写）→ 分析报告 → 结算表 → 连贯性审查。已有且完整的步骤会自动跳过。',
+            attr: { style: 'color:var(--text-muted); font-size:12px; line-height:1.6; margin:0;' },
+        });
+
+        const actions = contentEl.createDiv({ cls: 'nw-form-actions' });
+        const cancelBtn = actions.createEl('button', { text: '取消', cls: 'nw-btn' });
+        cancelBtn.onclick = () => this.close();
+        const startBtn = actions.createEl('button', { text: '开始生成整章', cls: 'nw-btn nw-btn-primary' });
+        startBtn.onclick = async () => {
+            startBtn.disabled = true;
+            startBtn.setText('生成中…');
+            const volN = parseInt(target.volume.match(/第(\d+)卷/)?.[1] || '0', 10) || 1;
+            await WriteChapterModal.doWriteChapter(
+                this.app, this.plugin, this.aiEngine, this.reviewAgent,
+                target.project, target.volume, target.chapterName, target.chapterNum,
+                pjStepDir(target.project, volN, target.chapterNum), true
+            );
+            this.close();
+        };
     }
 
     static async runBackground(app: App, plugin: NovelWriterPlugin): Promise<void> {
-        const activeFile = app.workspace.getActiveFile();
-        if (!activeFile) {
-            showError('请先打开章节正文文件');
+        const target = plugin.getActiveChapterTarget();
+        if (!target) {
+            showError('未定位到章节：请在「项目与章节」选中章节，或打开本章正文 / 步骤结果文件');
             return;
         }
 
-        const path = activeFile.path;
-        const parsed = WriteChapterModal.parseChapterPath(path);
-        if (!parsed) {
-            showError('当前文件不在 v4.0 章节路径中');
-            return;
-        }
-        const { project, volN, chapN, volName, chapName } = parsed;
-        const chapDir = pjStepDir(project, volN, chapN);
-
+        const volN = parseInt(target.volume.match(/第(\d+)卷/)?.[1] || '0', 10) || 1;
         const aiEngine = plugin.aiEngine;
         const reviewAgent = plugin.reviewAgent;
 
         await WriteChapterModal.doWriteChapter(
             app, plugin, aiEngine, reviewAgent,
-            project, volName, chapName, chapN, chapDir, false
+            target.project, target.volume, target.chapterName, target.chapterNum,
+            pjStepDir(target.project, volN, target.chapterNum), false
         );
     }
 
     /**
-     * v4.0: 从活动文件路径中解析出 project / 卷号 / 章号
-     * 支持两类路径：
-     *  - 正文：{project}/03-大纲与章节/正文/第V卷/第C章[_标题]_正文.md
-     *  - 步骤：{project}/03-大纲与章节/步骤结果/第V卷/第C章/xxx.md
+     * 统一的整章生成流水线。Rev 184 起被三个旧版章节生成工具共用，
+     * 保证 prompt 装配（buildChapterPrompts）、正文落盘（BodyWriter）与步骤产物完全一致。
+     * @param opts.signal 中止信号：批量入口关闭弹窗时传入，已落盘章节保留
      */
-    static parseChapterPath(path: string): { project: string; volN: number; chapN: number; volName: string; chapName: string } | null {
-        const bodyMatch = path.match(/^(.+?)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章[^/]*\.md$/);
-        if (bodyMatch) {
-            const volN = parseInt(bodyMatch[2], 10);
-            const chapN = parseInt(bodyMatch[3], 10);
-            return { project: bodyMatch[1], volN, chapN, volName: `第${volN}卷`, chapName: `第${chapN}章` };
-        }
-        const stepMatch = path.match(/^(.+?)\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章\//);
-        if (stepMatch) {
-            const volN = parseInt(stepMatch[2], 10);
-            const chapN = parseInt(stepMatch[3], 10);
-            return { project: stepMatch[1], volN, chapN, volName: `第${volN}卷`, chapName: `第${chapN}章` };
-        }
-        return null;
-    }
-
-    private static async doWriteChapter(
+    public static async doWriteChapter(
         app: App, plugin: NovelWriterPlugin, aiEngine: AIEngine, reviewAgent: ReviewAgent,
         project: string, volName: string, chapName: string, chapNum: number, chapDir: string,
-        showStepProgress: boolean
+        showStepProgress: boolean,
+        opts?: { signal?: AbortSignal }
     ): Promise<void> {
-        if (!plugin.settings.apiKey) {
-            showError('请先配置API密钥');
+        const aborted = () => opts?.signal?.aborted === true;
+        if (aborted()) return;
+        if (!plugin.hasAiCredentials) {
+            showError('请先配置 API 密钥或本地模型端点');
             return;
         }
 
@@ -275,6 +279,13 @@ export class WriteChapterModal extends Modal {
         const infoFile = findChapterFile(app.vault.getFiles(), chapDir, '信息规划');
         if (infoFile) infoPlan = stripFrontmatter(await app.vault.read(infoFile));
 
+        // Rev 186：关联索引（时间线/伏笔 ↔ 设定库/全书规划）。有值时替代平铺注入，避免重复占用预算。
+        let storyLinkageText = '';
+        try {
+            const linkage = await cm.buildStoryLinkage(project, `第${chapNum}章`);
+            storyLinkageText = linkage?.promptText ?? '';
+        } catch (e) { log.warn('[小说工坊] 关联索引生成失败:', e); }
+
         if (showStepProgress) showProgress('📖 读取人物状态...');
 
         // v4.0：正文文件位于 正文/第V卷/，与 chapDir（步骤结果）分离
@@ -346,12 +357,13 @@ export class WriteChapterModal extends Modal {
 
         if (!bodyFile) {
             hideProgress();
-            showError('未找到正文文件');
+            showError(`未找到 ${chapName}_正文.md：请先用「批量建章」创建章节骨架`);
             return;
         }
 
         hideProgress();
 
+        if (aborted()) return;
         showProgress(`⏳ 正在生成第${chapNum}章信息规划...`);
 
         let planResult = { content: infoPlan };
@@ -396,6 +408,7 @@ ${planResult.content}
         }
 
         infoPlan = planResult.content ? stripFrontmatter(planResult.content) : infoPlan;
+        if (aborted()) return;
         if (!isOutlineComplete(outlineContent) && infoPlan.length > 50 && outlineFile) {
             showProgress(`⏳ 正在生成 ${chapName} 大纲摘要...`);
             const olResult = await aiEngine.callAI(
@@ -406,7 +419,7 @@ ${planResult.content}
 ${infoPlan.slice(0, 800)}
 
 输出 Markdown。`,
-                undefined, 0.7, 4096
+                undefined, 0.7, plugin.settings.maxOutput
             );
             hideProgress();
             if (olResult.content) {
@@ -430,6 +443,7 @@ ${olResult.content.trim()}
             }
         }
 
+        if (aborted()) return;
         showProgress(`⏳ 正在撰写第${chapNum}章（衔接前文）...`);
 
         let forcedRevealHint = '';
@@ -482,7 +496,8 @@ ${olResult.content.trim()}
             writingStyle: writingStyle,
             characters: allChars,
             forcedReveal: selectedToReveal,
-            unrevealedCount: unrevealedCount
+            unrevealedCount: unrevealedCount,
+            storyLinkage: storyLinkageText
         };
 
         const result = await aiEngine.generateChapterStream(
@@ -491,10 +506,14 @@ ${olResult.content.trim()}
                 if (!done) {
                     showProgress(`⏳ 正在撰写第${chapNum}章（${text.length} 字）...`);
                 }
-            }
+            },
+            opts?.signal
         );
 
         hideProgress();
+
+        // 被取消时丢弃本次结果，不落盘
+        if (aborted()) return;
 
         if (result.error) {
             showError(result.error);
@@ -506,31 +525,21 @@ ${olResult.content.trim()}
             showWarning(`${violations.slice(0, 3).join('；')}${violations.length > 3 ? `…等${violations.length}项` : ''}`);
         }
 
-        let fmPart = (await app.vault.read(bodyFile)).match(/^---\n[\s\S]*?\n---\n/)?.[0] || '';
-        let bodyText = result.content.replace(/^---\n[\s\S]*?\n---\n?/, '');
-
-        bodyText = WriteChapterModal.fixQuotes(bodyText);
-
-        bodyText = bodyText.split('\n').map(line => {
-            const t = line.trim();
-            if (!t || t.startsWith('#') || t.startsWith('```') || t.startsWith('|') || t.startsWith('- ') || t.startsWith('* ')) return line;
-            if (!t.startsWith('  ')) return '  ' + line.trimStart();
-            return line;
-        }).join('\n');
-
-        const titleMatch = result.content.match(/^#\s*第\d+章[\s：:]+(.+)/m);
-        if (titleMatch) {
-            const ct = titleMatch[1].trim();
-            fmPart = fmPart.includes('标题:')
-                ? fmPart.replace(/标题:.*/, `标题: ${ct}`)
-                : fmPart.replace(/^---\n/, `---\n标题: ${ct}\n`);
-            bodyText = bodyText.replace(/^#\s+第\d+章\s+.*/m, `# 第${chapNum}章 ${ct}`);
-        }
-
-        const merged = fmPart + bodyText;
-        await app.vault.modify(bodyFile, merged);
+        // 统一落盘入口：保留旧 frontmatter、统一标题与缩进、状态不降级
+        const writer = new BodyWriter({ app });
+        const writeResult = await writer.write({
+            path: bodyFile.path,
+            raw: WriteChapterModal.fixQuotes(result.content),
+            chapterNum: chapNum,
+            chapterName: chapName,
+            volume: volName,
+            project,
+            writingMode: 'pipeline',
+        });
+        let bodyText = writeResult.body;
         showSuccess(`第${chapNum}章正文已生成`);
 
+        if (aborted()) return;
         showProgress('⏳ 正在生成分析报告...');
         const reportResult = await aiEngine.generateAnalysisReport(bodyText);
         hideProgress();
@@ -555,6 +564,7 @@ ${reportResult.content}
             await app.vault.create(reportPath, reportFull);
             showSuccess(`分析报告已生成：${getChapterFileName(chapName, '分析报告')}`);
 
+            if (aborted()) return;
             showProgress('⏳ 正在执行章节结算...');
             const settleResult = await WriteChapterModal.executeSettlement(plugin, project, chapDir, chapName, reportResult.content, bodyText, selectedToReveal);
             hideProgress();
@@ -655,11 +665,10 @@ ${reportResult.content}
                 }
             } catch (e) { log.warn('frontmatter更新失败:', e); }
 
-            if (titleMatch) {
+            if (writeResult.title) {
                 try {
-                    const ct = titleMatch[1].trim().slice(0, 15);
                     const baseName = getChapterFileName(chapName, '正文');
-                    const newName = baseName.replace(`_${CHAPTER_FILE_TYPES.body}.md`, `_${ct}_${CHAPTER_FILE_TYPES.body}.md`);
+                    const newName = baseName.replace(`_${CHAPTER_FILE_TYPES.body}.md`, `_${writeResult.title.slice(0, 15)}_${CHAPTER_FILE_TYPES.body}.md`);
                     const oldPath = bodyFile.path;
                     const newPath = oldPath.replace(/\/[^/]+$/, '/' + newName);
                     if (oldPath !== newPath && !app.vault.getAbstractFileByPath(newPath)) {
@@ -668,6 +677,7 @@ ${reportResult.content}
                 } catch (e) { log.warn('正文文件重命名失败:', e); }
             }
 
+            if (aborted()) return;
             showProgress('⏳ 正在执行连贯性审查...');
             await reviewAgent.reviewChapter(project, bodyFile.path);
             hideProgress();
@@ -701,30 +711,22 @@ ${reportResult.content}
                         hideProgress();
 
                         if (fixResult.content) {
-                            let fixedBody = fixResult.content.replace(/^---[\s\S]*?\n---\n?/, '');
-                            fixedBody = fixedBody.split('\n').map(line => {
-                                const t = line.trim();
-                                if (!t || t.startsWith('#') || t.startsWith('```') || t.startsWith('|') || t.startsWith('- ') || t.startsWith('* ')) return line;
-                                if (!t.startsWith('  ')) return '  ' + line.trimStart();
-                                return line;
-                            }).join('\n');
-
-                            const merged = fmPart + fixedBody;
-                            await app.vault.modify(bodyFile, merged);
+                            const fixWrite = await writer.write({
+                                path: bodyFile.path,
+                                raw: fixResult.content,
+                                chapterNum: chapNum,
+                                chapterName: chapName,
+                                volume: volName,
+                                project,
+                                writingMode: 'pipeline',
+                            });
+                            bodyText = fixWrite.body;
                             showSuccess('审查问题已自动修正');
                         }
                     }
                 } catch (e) { log.warn('[小说工坊] 审查修正失败:', e); }
             }
         }
-    }
-
-    private async writeChapter(project: string, volName: string, chapName: string, chapNum: number, chapDir: string, showStepProgress: boolean): Promise<void> {
-        await WriteChapterModal.doWriteChapter(
-            this.app, this.plugin, this.aiEngine, this.reviewAgent,
-            project, volName, chapName, chapNum, chapDir, showStepProgress
-        );
-        this.close();
     }
 
     private static checkWritingRules(content: string, chapterNum: number, minWordCount: number): string[] {

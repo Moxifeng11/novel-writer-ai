@@ -4,8 +4,11 @@ import { AIEngine, BatchEntityResult } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '../utils/helpers';
 import { validateLocationOutput } from '../shared/template-validator';
+import { mergeFanficRequirement } from '../shared/fanfic-rules';
+import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { pjLocsDir, pjLocFile, pjWorldview, pjSettingLib, SUBDIR_LOCS } from '../shared/paths';
+import { pjLocsDir, pjWorldview, pjSettingLib, SUBDIR_LOCS } from '../shared/paths';
+import { saveEntities, formatSaveOutcome } from '../shared/entity-persistence';
 import { createLogger } from '../shared/logger';
 
 
@@ -37,11 +40,13 @@ export class GenerateLocationModal extends Modal {
 
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
-            wrapper.addClass('nw-modal');
+            wrapper.addClass('nw-modal-form');
             wrapper.style.setProperty('margin', 'auto', 'important');
         }
         contentEl.style.width = '100%';
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
+        contentEl.addClass('nw-entity-scope');
+        contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
         this._pendingResults = [];
@@ -146,7 +151,7 @@ export class GenerateLocationModal extends Modal {
                 const count = nameList.length > 0 ? nameList.length : (parseInt(countInput.value, 10) || 3);
                 const prompt = promptInput.value.trim();
 
-                if (!this.plugin.settings.apiKey) { new Notice('❌ 请先配置API密钥', 5000); return; }
+                if (!this.plugin.hasAiCredentials) { new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000); return; }
 
                 const ctx = this.plugin._pendingEntityContext;
                 const isEarlyStage = ctx?.isEarlyStage && ctx.project === project;
@@ -161,9 +166,12 @@ export class GenerateLocationModal extends Modal {
 5. 地点的危险等级和资源分布要合理
 
 `;
-                const effectivePrompt = isEarlyStage
+                const basePrompt = isEarlyStage
                     ? (prompt ? `${EARLY_STAGE_HINT}${prompt}` : EARLY_STAGE_HINT.trim())
                     : prompt;
+                // 同人项目的地点必须落在原作体系内：把原作核心设定与创作规则前置到生成要求里
+                const fanficBlock = await readFanficPromptBlockWithNotice(this.app, project);
+                const effectivePrompt = mergeFanficRequirement(fanficBlock, basePrompt);
 
                 // 立即显示进度反馈，消除黑盒感
                 const originalButtonText = generateButton.textContent || '🚀 批量生成地点';
@@ -255,9 +263,9 @@ export class GenerateLocationModal extends Modal {
                     const inline = card.createDiv({ cls: 'rename-inline' });
                     inline.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:6px;';
                     const input = inline.createEl('input', { type: 'text', value: managed.entity.name });
-                    input.style.cssText = 'flex:1; font-size:0.85em; padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
+                    input.style.cssText = 'flex:1; font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
                     const confirmBtn = inline.createEl('button', { text: '✅ 确认' });
-                    confirmBtn.style.cssText = 'font-size:0.8em; padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
+                    confirmBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
                     confirmBtn.onclick = () => {
                         const nm = input.value;
                         if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText('✏️ 改名'); return; }
@@ -268,7 +276,7 @@ export class GenerateLocationModal extends Modal {
                         renameBtn.setText('✏️ 改名');
                     };
                     const cancelBtn = inline.createEl('button', { text: '取消' });
-                    cancelBtn.style.cssText = 'font-size:0.8em; padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
+                    cancelBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
                     cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
                     input.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') confirmBtn.click();
@@ -295,11 +303,11 @@ export class GenerateLocationModal extends Modal {
                     ed.style.cssText = 'margin-top:8px;';
                     const ta = ed.createEl('textarea');
                     ta.value = managed.entity.content;
-                    ta.style.cssText = 'width:100%; min-height:240px; font-size:0.8em; font-family:monospace; box-sizing:border-box;';
+                    ta.style.cssText = 'width:100%; min-height:240px; font-size:var(--nw-font-size-sm, 12px); font-family:monospace; box-sizing:border-box;';
                     const br = ed.createDiv();
                     br.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
                     const sb = br.createEl('button', { text: '💾 暂存修改' });
-                    sb.style.cssText = 'font-size:0.8em; padding:4px 10px; cursor:pointer;';
+                    sb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
                     sb.onclick = () => {
                         managed.entity.content = ta.value;
                         managed.modified = true;
@@ -308,7 +316,7 @@ export class GenerateLocationModal extends Modal {
                         editBtn.setText('📝 编辑');
                     };
                     const cb = br.createEl('button', { text: '取消' });
-                    cb.style.cssText = 'font-size:0.8em; padding:4px 10px; cursor:pointer;';
+                    cb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
                     cb.onclick = () => { ed.remove(); editBtn.setText('📝 编辑'); };
                 };
                 const delBtn = actionRow.createEl('button', { text: '🗑️ 删除', cls: 'nw-gen-modal-sm-btn nw-gen-modal-del-btn' });
@@ -330,7 +338,7 @@ export class GenerateLocationModal extends Modal {
             text: `💾 保存 ${activeCount} 个${entityLabel}`,
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button'
         });
-        saveBtn.onclick = async () => this._saveAllEntities(entityLabel);
+        saveBtn.onclick = async () => this._saveAllEntities();
 
         const backBtn = footer.createEl('button', {
             text: '← 返回继续生成', cls: 'nw-btn'
@@ -338,23 +346,19 @@ export class GenerateLocationModal extends Modal {
         backBtn.onclick = () => this._renderInputForm();
     }
 
-    private async _saveAllEntities(entityLabel: string): Promise<void> {
+    private async _saveAllEntities(): Promise<void> {
         const toSave = this._pendingResults.filter(r => !r.deleted);
         if (toSave.length === 0) { new Notice('⚠️ 没有可保存的实体', 3000); return; }
 
         await mkdirp(this.app, pjLocsDir(this._currentProject));
-        let createdCount = 0;
-        for (const managed of toSave) {
-            try {
-                const locPath = pjLocFile(this._currentProject, managed.entity.name);
-                if (!this.app.vault.getAbstractFileByPath(locPath)) {
-                    await this.app.vault.create(locPath, managed.entity.content);
-                    createdCount++;
-                }
-            } catch (e) { log.warn(`创建地点 ${managed.entity.name} 失败:`, e instanceof Error ? e.message : e); }
-        }
+        const outcome = await saveEntities(
+            this.app,
+            this._currentProject,
+            'locations',
+            toSave.map(managed => ({ name: managed.entity.name, content: managed.entity.content }))
+        );
 
-        showSuccess(`已保存 ${createdCount} 个${entityLabel}`);
+        showSuccess(formatSaveOutcome(outcome, 'locations'));
         this.close();
     }
 }

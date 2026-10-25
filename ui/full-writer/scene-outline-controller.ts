@@ -14,15 +14,22 @@
 import { App, TFile, Notice } from 'obsidian';
 import { ExtendedSceneData, createDefaultScene, SceneStatus } from '../../shared/types';
 import { pjStepDir, pjStepFile } from '../../shared/paths';
-import { parseChineseNumber } from '../../engine/scene-expander';
+import { parseSceneHeadings } from '../../engine/scene-expander';
 import { createLogger } from '../../shared/logger';
 import { OperationConfirmModal } from '../components/progress';
+import type NovelWriterPlugin from '../../main';
+import { SceneGenerator } from '../../engine/ai-scene-generator';
+import { AIApiClient } from '../../engine/ai-api-client';
+import { ContextManager } from '../../engine/context-manager';
+import { stripFrontmatter } from '../../utils/helpers';
 
 
 const log = createLogger('SceneOutlineController');
 /** 场景细纲控制器依赖 */
 export interface SceneOutlineControllerDeps {
     app: App;
+    /** 插件实例（用于 AI 场景生成；未提供时禁用一键生成） */
+    plugin?: NovelWriterPlugin;
     getProject: () => string | undefined;
     getChapterNum: () => number;
     getVolume: () => string;
@@ -712,9 +719,87 @@ export class SceneOutlineController {
         });
     }
 
-    /** 一键生成场景（占位实现，实际调用 AI） */
-    private generateScenes(): void {
-        new Notice('✨ 场景生成功能需调用 AI 引擎，可在 Scene展开 步骤中生成', 3000);
+    /** 一键生成场景：调用 AI 生成场景细纲并写入当前章节 */
+    private async generateScenes(): Promise<void> {
+        const plugin = this.deps.plugin;
+        const project = this.deps.getProject();
+        const chapNum = this.deps.getChapterNum();
+        if (!plugin || !project || chapNum <= 0) {
+            new Notice('⚠️ 请先选择项目和章节后再生成场景', 3000);
+            return;
+        }
+
+        const volume = this.deps.getVolume();
+        const volMatch = volume.match(/第(\d+)卷/);
+        const volNum = volMatch ? parseInt(volMatch[1], 10) : 1;
+        const chapterName = `第${chapNum}章`;
+
+        new Notice('✨ 正在生成场景细纲...', 3000);
+        try {
+            const gathered = await plugin.ctxManager.gatherAll(project, chapterName);
+            const data = gathered.data;
+            const readStep = async (step: string): Promise<string> => {
+                const file = this.app.vault.getAbstractFileByPath(pjStepFile(project, volNum, chapNum, step));
+                if (!(file instanceof TFile)) return '';
+                try {
+                    return stripFrontmatter(await this.app.vault.read(file));
+                } catch {
+                    return '';
+                }
+            };
+            const chapterSummary = await readStep('大纲摘要');
+            const chapterConflict = await readStep('情节蒸馏');
+
+            const generator = new SceneGenerator(plugin, new AIApiClient(plugin));
+            const response = await generator.generateScenes({
+                projectId: project,
+                volumeNumber: volNum,
+                chapterNumber: chapNum,
+                chapterConflict: chapterConflict.slice(0, 2000),
+                chapterSummary: chapterSummary.slice(0, 4000),
+                worldview: data.world_view?.raw ?? '',
+                characters: ContextManager.formatCharacters(data.character_state ?? []),
+                locations: ContextManager.formatEntities(
+                    (data.locations ?? []) as unknown as Record<string, string>[], 'location'),
+                factions: ContextManager.formatEntities(
+                    (data.factions ?? []) as unknown as Record<string, string>[], 'faction'),
+                items: ContextManager.formatEntities(
+                    (data.items ?? []) as unknown as Record<string, string>[], 'item'),
+            });
+            if (response.error) {
+                new Notice(`❌ 场景生成失败：${response.error}`, 5000);
+                return;
+            }
+
+            const generated = generator.parseScenes(response);
+            if (generated.length === 0) {
+                new Notice('⚠️ 未解析到有效场景，请重试', 4000);
+                return;
+            }
+
+            this.scenes = generated.map((scene) => {
+                const item = createDefaultScene(scene.order);
+                item.name = scene.title;
+                item.objective = scene.objective ?? '';
+                item.emotionArc = scene.emotionArc ?? '';
+                item.conflict = scene.obstacle ?? '';
+                item.characters = scene.characters.join('、');
+                item.location = scene.locations.join('、');
+                item.infoIncrement = scene.summary;
+                item.foreshadowPlant = scene.foreshadowRefs.join('、');
+                item.wordCountEstimate = scene.wordCountPlan;
+                item.status = scene.status;
+                return item;
+            });
+            this.currentSceneIndex = 0;
+            this.markDirty();
+            await this.saveScenes();
+            this.refreshAll();
+            new Notice(`✨ 已生成 ${this.scenes.length} 个场景`, 3000);
+        } catch (e) {
+            log.warn('[SceneOutline] 场景生成失败:', e);
+            new Notice(`❌ 场景生成失败：${(e as Error).message}`, 5000);
+        }
     }
 
     // ============================================================
@@ -754,30 +839,15 @@ export class SceneOutlineController {
     /** 解析场景内容 */
     private parseScenes(content: string): ExtendedSceneData[] {
         const scenes: ExtendedSceneData[] = [];
-        const sceneRegex = /^##\s*(?:场景\s*([一二三四五六七八九十百千万亿零〇两]+|\d+)|scene(\d+))\s*[：:]\s*(.+)$/gim;
-        const matches: { index: number; name: string; start: number }[] = [];
-        let m: RegExpExecArray | null;
+        const headings = parseSceneHeadings(content);
 
-        while ((m = sceneRegex.exec(content)) !== null) {
-            let num = 0;
-            if (m[1] !== undefined) {
-                const cnNum = parseChineseNumber(m[1]);
-                num = cnNum ?? matches.length + 1;
-            } else if (m[2] !== undefined) {
-                num = parseInt(m[2], 10);
-            } else {
-                num = matches.length + 1;
-            }
-            matches.push({ index: num, name: m[3].trim(), start: m.index });
-        }
-
-        for (let i = 0; i < matches.length; i++) {
-            const start = matches[i].start;
-            const end = i + 1 < matches.length ? matches[i + 1].start : content.length;
+        for (let i = 0; i < headings.length; i++) {
+            const start = headings[i].start;
+            const end = i + 1 < headings.length ? headings[i + 1].start : content.length;
             const sceneContent = content.slice(start, end);
 
-            const scene = createDefaultScene(matches[i].index);
-            scene.name = matches[i].name;
+            const scene = createDefaultScene(headings[i].index);
+            scene.name = headings[i].name;
             scene.objective = this.extractField(sceneContent, 'objective');
             scene.emotionArc = this.extractField(sceneContent, 'emotion_arc');
             scene.conflict = this.extractField(sceneContent, 'conflict');
@@ -841,11 +911,18 @@ export class SceneOutlineController {
         }, 1000);
     }
 
-    /** 保存场景数据 */
-    async saveScenes(): Promise<void> {
+    /** 保存场景数据；返回是否真正写入 */
+    async saveScenes(): Promise<boolean> {
         const project = this.deps.getProject();
         const chapNum = this.deps.getChapterNum();
-        if (!project || chapNum <= 0 || !this.isDirty) return;
+        if (!project || chapNum <= 0 || !this.isDirty) return false;
+
+        // 防止解析失败时用空内容覆盖已有文件
+        if (this.scenes.length === 0 && stripFrontmatter(this.originalContent).trim().length > 0) {
+            this.isDirty = false;
+            new Notice('⚠️ 未解析到任何场景，已阻止空内容覆盖原文件', 5000);
+            return false;
+        }
 
         const volume = this.deps.getVolume();
         const volMatch = volume.match(/第(\d+)卷/);
@@ -920,8 +997,54 @@ export class SceneOutlineController {
             if (this.deps.onSceneChange) {
                 this.deps.onSceneChange();
             }
+            return true;
         } catch (e) {
             log.error('[SceneOutline] 保存失败:', e);
+            return false;
+        }
+    }
+
+    /** 最近一次成功写入/读取的内容（供调用方同步步骤状态） */
+    getSavedContent(): string {
+        return this.originalContent;
+    }
+
+    /** 纯文本模式保存：原样写入，不做场景解析 */
+    async saveRawContent(content: string): Promise<boolean> {
+        const project = this.deps.getProject();
+        const chapNum = this.deps.getChapterNum();
+        if (!project || chapNum <= 0) return false;
+
+        if (!content.trim()) {
+            new Notice('⚠️ 内容为空，已阻止覆盖原文件', 5000);
+            return false;
+        }
+
+        const volume = this.deps.getVolume();
+        const volMatch = volume.match(/第(\d+)卷/);
+        const volNum = volMatch ? parseInt(volMatch[1]) : 1;
+
+        const filePath = pjStepFile(project, volNum, chapNum, 'Scene展开');
+        const file = this.app.vault.getAbstractFileByPath(filePath);
+
+        try {
+            if (file instanceof TFile) {
+                await this.app.vault.modify(file, content);
+            } else {
+                const dir = pjStepDir(project, volNum, chapNum);
+                await this.app.vault.createFolder(dir).catch(() => { });
+                await this.app.vault.create(filePath, content);
+            }
+            this.originalContent = content;
+            this.scenes = this.parseScenes(content);
+            this.isDirty = false;
+            if (this.deps.onSceneChange) {
+                this.deps.onSceneChange();
+            }
+            return true;
+        } catch (e) {
+            log.error('[SceneOutline] 纯文本保存失败:', e);
+            return false;
         }
     }
 

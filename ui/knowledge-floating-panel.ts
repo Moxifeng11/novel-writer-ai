@@ -15,6 +15,7 @@ import { DraggablePanel } from "./draggable-panel";
 import { KnowledgeBaseManager, BookBasicInfo } from "../services/knowledge-base-manager";
 import { KnowledgeSearchResult } from "../engine/knowledge-vector-store";
 import { kbBookRhythmAnalysisFile } from "../shared/paths";
+import { formatKnowledgeChunkLabel } from "../shared/knowledge-position";
 import { VIEW_TYPE_CO_WRITE } from "./co-writing-view";
 import { createLogger } from '../shared/logger';
 
@@ -750,7 +751,8 @@ export class KnowledgeFloatingPanel extends DraggablePanel {
     const sourceRow = card.createDiv({
       cls: "nw-float-knowledge-tech-source",
     });
-    const positionText = result.position !== undefined ? ` · ${Math.round(result.position * 100)}%` : "";
+    const chunkLabel = formatKnowledgeChunkLabel(result.position);
+    const positionText = chunkLabel ? ` · ${chunkLabel}` : "";
     sourceRow.createSpan({
       cls: "nw-float-knowledge-tech-source-text",
       text: `《${result.bookName}》${positionText}`,
@@ -1022,7 +1024,8 @@ export class KnowledgeFloatingPanel extends DraggablePanel {
       cls: "nw-float-knowledge-similar-book",
       text: result.bookName,
     });
-    const positionText = result.position !== undefined ? ` · ${Math.round(result.position * 100)}%` : "";
+    const chunkLabel = formatKnowledgeChunkLabel(result.position);
+    const positionText = chunkLabel ? ` · ${chunkLabel}` : "";
     sourceInfo.createSpan({
       cls: "nw-float-knowledge-similar-position",
       text: positionText,

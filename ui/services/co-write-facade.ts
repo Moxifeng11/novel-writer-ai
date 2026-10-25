@@ -14,6 +14,7 @@ import type NovelWriterPlugin from '../../main';
 import type { EngineRegistry } from '../../engine/engine-registry';
 import { ENGINE_NAMES } from '../../engine/engine-registry';
 import type { CoWriterEngine } from '../../engine/co-writer-engine';
+import type { ChapterBrief, ChapterBriefInput } from '../../engine/chapter-brief';
 import type {
     SuggestionRecord,
     SuggestionDirection,
@@ -139,6 +140,21 @@ export class CoWriteFacade {
         this.engine.updateSnapshot(confirmedText);
     }
 
+    /** 设置本章简报（承接规划阶段成果） */
+    setChapterBrief(input: ChapterBriefInput): void {
+        this.engine.setChapterBrief(input);
+    }
+
+    /** 获取本章简报 */
+    getChapterBrief(): ChapterBrief | null {
+        return this.engine.getChapterBrief();
+    }
+
+    /** 手动切换当前场景 */
+    setCurrentSceneIndex(index: number): void {
+        this.engine.setCurrentSceneIndex(index);
+    }
+
     setCursorHint(hint: string): void {
         this.engine.setCursorHint(hint);
     }
@@ -174,6 +190,16 @@ export class CoWriteFacade {
         return this.engine.suggestNext(precedingText, cursorHint, mode as any, count, signal, onChunk);
     }
 
+    /** 最近一次建议生成的失败原因（null 表示无错误或已成功） */
+    getLastSuggestError(): string | null {
+        return this.engine.lastSuggestError;
+    }
+
+    /** 当前串行候选进度（第几条 / 共几条）；并行模式或未生成时为 null */
+    getSuggestProgress(): { current: number; total: number } | null {
+        return this.engine.suggestProgress;
+    }
+
     async *suggestStream(
         precedingText: string,
         cursorHint: string,
@@ -184,23 +210,14 @@ export class CoWriteFacade {
         return yield* this.engine.suggestStream(precedingText, cursorHint, mode as any, directionIndex, signal);
     }
 
-    suggestParallel(
-        precedingText: string,
-        cursorHint: string,
-        mode: string,
-        count: number = 3,
-        options?: { timeoutMs?: number; maxRetries?: number }
-    ) {
-        return this.engine.suggestParallel(precedingText, cursorHint, mode as any, count, options);
-    }
-
     async iterateSuggestion(
         suggestion: SuggestionRecord,
         instruction: string,
         precedingText: string,
-        cursorHint: string
+        cursorHint: string,
+        signal?: AbortSignal
     ): Promise<SuggestionRecord | null> {
-        return this.engine.iterateSuggestion(suggestion, instruction, precedingText, cursorHint);
+        return this.engine.iterateSuggestion(suggestion, instruction, precedingText, cursorHint, signal);
     }
 
     async rewriteSelection(
@@ -218,9 +235,10 @@ export class CoWriteFacade {
     async suggestAssociation(
         cursor: number,
         text: string,
-        trigger: string
+        trigger: string,
+        signal?: AbortSignal
     ): Promise<AssociationSuggestion[]> {
-        return this.engine.suggestAssociation(cursor, text, trigger as any);
+        return this.engine.suggestAssociation(cursor, text, trigger as any, signal);
     }
 
     async validateEdit(
@@ -264,6 +282,10 @@ export class CoWriteFacade {
 
     get lastKnowledgeCount(): number {
         return this.engine.lastKnowledgeCount || 0;
+    }
+
+    get lastKnowledgeDroppedCount(): number {
+        return this.engine.lastKnowledgeDroppedCount || 0;
     }
 
     getReferenceBooks(): string[] {
@@ -353,19 +375,11 @@ export class CoWriteFacade {
     // ============================================================
 
     createEmotionCurveAnalyzer(): EmotionCurveAnalyzer {
-        return new EmotionCurveAnalyzer({
-            app: this.plugin.app,
-            aiEngine: this.plugin.aiEngine,
-            plugin: this.plugin,
-        });
+        return new EmotionCurveAnalyzer();
     }
 
     createRhythmAnalyzer(): RhythmAnalyzer {
-        return new RhythmAnalyzer({
-            app: this.plugin.app,
-            aiEngine: this.plugin.aiEngine,
-            plugin: this.plugin,
-        });
+        return new RhythmAnalyzer();
     }
 
     async createEndingTractionEngine(project: string): Promise<EndingTractionEngine> {

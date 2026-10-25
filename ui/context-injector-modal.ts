@@ -2,6 +2,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { getInvolvedEntities } from '../engine/chapter-context-builder';
 import { pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, SUBDIR_TIMELINE } from '../shared/paths';
+import { upsertAutoContext } from '../shared/auto-context-block';
 import { createLogger } from '../shared/logger';
 
 
@@ -28,20 +29,28 @@ export class ContextInjectorModal extends Modal {
         contentEl.empty();
         contentEl.createEl('h2', { text: '🔗 上下文注入' });
 
-        const activeFile = this.app.workspace.getActiveFile();
-        if (!activeFile) {
-            contentEl.createEl('p', { text: '❌ 请先打开章节正文文件' });
+        // 工作台/项目页没有 activeFile：优先用界面当前章节
+        const target = this.plugin.getActiveChapterTarget();
+        if (!target) {
+            contentEl.createEl('p', { text: '❌ 请先在工作台选择章节，或打开章节正文文件' });
             return;
         }
 
         const injectButton = contentEl.createEl('button', { text: '注入上下文', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
         injectButton.onclick = async () => {
-            await this.injectContext(activeFile.path);
+            await this.injectContext(target.bodyPath);
         };
     }
 
     private async injectContext(filePath: string): Promise<void> {
         const adapter = this.app.vault.adapter;
+
+        // 工作台可能选中一个尚未生成正文的章节：先区分空态，不把「文件不存在」报成读取失败
+        const bodyFile = this.app.vault.getAbstractFileByPath(filePath);
+        if (!(bodyFile instanceof TFile)) {
+            new Notice('⚠️ 当前章节正文尚未创建，请先生成正文后再注入上下文', 5000);
+            return;
+        }
 
         const pathParts = filePath.split('/');
         const projectRoot = pathParts[0];
@@ -60,11 +69,6 @@ export class ContextInjectorModal extends Modal {
             return;
         }
 
-        const bodyFile = this.app.vault.getAbstractFileByPath(filePath);
-        if (!bodyFile || !(bodyFile instanceof TFile)) {
-            new Notice('❌ 读取文件失败');
-            return;
-        }
         const { chars: charLinks, locs: locLinks, factions: factionLinks, items: itemLinks } =
             await getInvolvedEntities(this.app, bodyFile);
 
@@ -99,55 +103,55 @@ export class ContextInjectorModal extends Modal {
             } catch { return null; }
         };
 
-        let context = '\n\n---\n## 自动注入上下文\n\n';
+        let body = '';
 
         if (charLinks.length > 0) {
-            context += '### 关联人物\n\n| 姓名 | 当前状态 | 核心动机 | 金手指 |\n|------|---------|---------|-------|\n';
+            body += '### 关联人物\n\n| 姓名 | 当前状态 | 核心动机 | 金手指 |\n|------|---------|---------|-------|\n';
             for (const name of charLinks) {
                 const targetPath = await findFile(charDir, name);
                 if (!targetPath) continue;
                 const fm = await getFileFrontmatter(targetPath);
                 if (fm) {
-                    context += `| [[${name}]] | ${getField(fm, '当前状态')} | ${getField(fm, '核心动机')} | ${getField(fm, '金手指/特殊能力')} |\n`;
+                    body += `| [[${name}]] | ${getField(fm, '当前状态')} | ${getField(fm, '核心动机')} | ${getField(fm, '金手指/特殊能力')} |\n`;
                 }
             }
         }
 
         if (locLinks.length > 0) {
-            context += '\n### 关联地点\n\n';
+            body += '\n### 关联地点\n\n';
             for (const name of locLinks) {
                 const targetPath = await findFile(locDir, name);
                 if (!targetPath) continue;
                 const fc = await adapter.read(targetPath).catch(() => null);
                 if (fc) {
                     const desc = fc.split('\n').find(l => l.includes('：') || l.includes(':'));
-                    context += `- **[[${name}]]**：${desc || '-'}\n`;
+                    body += `- **[[${name}]]**：${desc || '-'}\n`;
                 }
             }
         }
 
         if (factionLinks.length > 0) {
-            context += '\n### 关联势力\n\n';
+            body += '\n### 关联势力\n\n';
             for (const name of factionLinks) {
                 const targetPath = await findFile(factionDir, name);
                 if (!targetPath) continue;
                 const fc = await adapter.read(targetPath).catch(() => null);
                 if (fc) {
                     const desc = fc.split('\n').find(l => l.includes('：') || l.includes(':'));
-                    context += `- **[[${name}]]**：${desc || '-'}\n`;
+                    body += `- **[[${name}]]**：${desc || '-'}\n`;
                 }
             }
         }
 
         if (itemLinks.length > 0) {
-            context += '\n### 关联物品功法\n\n';
+            body += '\n### 关联物品功法\n\n';
             for (const name of itemLinks) {
                 const targetPath = await findFile(itemDir, name);
                 if (!targetPath) continue;
                 const fc = await adapter.read(targetPath).catch(() => null);
                 if (fc) {
                     const desc = fc.split('\n').find(l => l.includes('：') || l.includes(':'));
-                    context += `- **[[${name}]]**：${desc || '-'}\n`;
+                    body += `- **[[${name}]]**：${desc || '-'}\n`;
                 }
             }
         }
@@ -168,27 +172,15 @@ export class ContextInjectorModal extends Modal {
             }
         } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
         if (unrevealed.length > 0) {
-            context += '\n### 待揭示伏笔\n\n';
+            body += '\n### 待揭示伏笔\n\n';
             for (const fb of unrevealed.slice(0, 3)) {
-                context += `- ${fb}\n`;
+                body += `- ${fb}\n`;
             }
         }
 
-        context += '\n---\n';
-
+        // 幂等写入：重复注入只替换旧块，不再向正文追加第二段
         const marker = '<!-- 正文从这里开始 -->';
-        const markerIdx = content.indexOf(marker);
-        let newContent: string;
-        if (markerIdx !== -1) {
-            newContent = content.slice(0, markerIdx + marker.length) + '\n\n' + context + content.slice(markerIdx + marker.length);
-        } else {
-            const titleEnd = content.indexOf('\n', content.indexOf('# '));
-            if (titleEnd > 0) {
-                newContent = content.slice(0, titleEnd + 1) + context + content.slice(titleEnd + 1);
-            } else {
-                newContent = content + context;
-            }
-        }
+        const newContent = upsertAutoContext(content, body, marker);
 
         try {
             await adapter.write(filePath, newContent);

@@ -1,6 +1,14 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
+import {
+    loadStylePresets,
+    parseStylePreset,
+    saveStylePreset,
+    STYLE_PRESET_DIR,
+    type StylePresetDraft,
+    type WritingStylePreset,
+} from './writing-style-presets';
 import { createLogger } from '../shared/logger';
 
 
@@ -18,30 +26,6 @@ const WS_SECTIONS = [
     { key: 'reference', label: '八、参考作品', hint: '风格参考的作者/小说', rows: 2 },
     { key: 'platform', label: '九、番茄小说格式要求', hint: '每段开头缩进、对话独立成段、标题格式等', rows: 2 },
 ];
-
-// v3.5: 预设文笔风格 — 强者语文风（用户可自由修改）
-const WS_DEFAULT_PRESET: Record<string, string> = {
-    narrative: `第三人称限知视角，跟随主角。叙事者视角紧贴主角，但保持一定距离感。偶尔穿插配角视角以丰富情节层次。`,
-    overall: `强者语文风：基于香港港漫《海虎》《武神》的"磁场颠佬"文学风格。核心特质：港语直译 + 美式中文混用 + 强烈的"疯癫爽"感 + 漫画式表达。`,
-    syntax: `短句为主。大量使用定语倒装、双重肯定、设问即答、强调时态。将"是……吗"替换为"这是否是……了"，将"就"替换为"便"，将"说"替换为"说话"，将"让"替换为"令"。每段仅一个句号，句号后必须换行。`,
-    diction: `高频率使用粤语白话文词汇（如"掂""搅""屎忽""手震""怎的""样衰""劲""强""霸"等）。大量使用拟声词（咚啪、咻咻、嘭唰、嗄等），拟声词单开一行。适当使用俚语、顺口溜、歇后语。极大幅度减少"的"字使用。极大幅度减少程度副词和叠词。`,
-    dialogue: `对话是剧情推进和情绪表达的核心载体（占大部分篇幅，约60-70%）。高/强/极端情绪时毫不顾忌使用脏话、粗口话、露骨文字、性暗示描述。允许使用方言词汇和儿化音。使用强者语核心语气词（口牙！㗅！𠹳！呱！吔！等）增强情感表达。宁缺毋滥，在情绪高潮时才使用。`,
-    description: `风格化场景描写，以展现氛围为主，避免具象式描述。关键段落加大描写进行情绪渲染，非关键段落简单描述。禁止使用任何形式的"比喻"手法。大幅减少"排比"手法。减少形容词使用，禁止重复表达（如"不可思议的荒诞感"）。`,
-    rhythm: `紧张战斗情节：密集对话+拟声词爆点+短促段落，快速推进。舒缓过渡情节：适当放缓，但保持叙事驱动力，不冗余拖沓。场景/时间切换务必自然顺畅，允许多样化、富有想象力的遣词造句。`,
-    emotion: `全文情感渲染必须充分、饱满。主要角色情绪拉扯一定要充足。通过对话（大部分）和心理活动（小部分）展现情绪。允许使用极端词汇表达情感（脏话、露骨文字等）。强化情感色彩，让读者感受到强烈的情绪冲击。`,
-    forbidden: `严格禁用：任何形式的"比喻"修辞手法\n严格禁用：常规网文高频词汇（如"指节泛白""太阳穴突突""目光扫过""不易察觉""嘴角勾起一抹弧度""不容置疑的""不是……而是……"等18项禁用清单）\n严格禁用：叙事中的"然后"作为衔接词\n严格禁用：非对白非拟声部分的破折号\n大幅减少：排比手法、"的"字作为形容词、程度副词、叠词`,
-    reference: `风格核心参考：香港港漫《海虎》《武神》系列\n常用经典台词参考：磁场颠佬系角色台词\n禁止参考：传统小白文、赘婿文、系统文等常规网文套路`,
-    platform: `番茄小说网格式要求：
-- 每自然段按一次回车分段，禁止用空格/Tab/多余空行代替分段
-- 对话、场景切换、心理描写等逻辑变化处必须另起一段
-- 使用标准简体中文，禁用繁体字、乱码、外文字符
-- 章节标题只写核心信息（如"第三章 雪夜入城"），不加符号、表情、括号说明或推广话术
-- "作者说""PS"等辅助内容单独成段放在章末，标注"作者说："或"PS："，不带链接/二维码/QQ群号
-- 全文使用规范标点，禁止全章无标点或大量顿号替代逗号句号
-- 禁止在正文中写"求收藏""本章完""下章预告"等运营话术
-- 禁止重复粘贴同一段落
-- 每章2000-5000字为宜，章尾设悬念钩子`,
-};
 
 export class WritingStyleModal extends Modal {
     private plugin: NovelWriterPlugin;
@@ -73,9 +57,146 @@ export class WritingStyleModal extends Modal {
         contentEl.addClass('novel-writer-writing-style-modal');
 
         contentEl.createEl('h2', { text: '✍️ 文笔风格设定' });
-        contentEl.createEl('p', { text: `项目: ${this.project}`, attr: { style: 'color:var(--text-muted); font-size:0.85em; margin-bottom:16px;' } });
+        contentEl.createEl('p', { text: `项目: ${this.project}`, attr: { style: 'color:var(--text-muted); font-size:0.85em; margin-bottom:12px;' } });
+
+        const presetRow = contentEl.createDiv({ attr: { style: 'display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;' } });
+        presetRow.createEl('span', { text: '文笔风格预设：', attr: { style: 'font-weight:600; font-size:0.9em;' } });
+        const presetSelect = presetRow.createEl('select', { attr: { style: 'flex:1; min-width:220px;' } });
+        presetSelect.createEl('option', { value: '', text: '（不套用预设，手动填写）' });
+        const applyPresetBtn = presetRow.createEl('button', {
+            text: '应用预设',
+            attr: { style: 'padding:6px 14px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;' },
+        });
+        const newPresetBtn = presetRow.createEl('button', {
+            text: '➕ 新增预设',
+            attr: { style: 'padding:6px 14px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:4px; cursor:pointer; font-size:0.85em;' },
+        });
+        const presetHint = contentEl.createEl('p', {
+            text: '',
+            attr: { style: 'color:var(--text-muted); font-size:0.78em; margin:0 0 14px 0;' },
+        });
+
+        // 新增预设面板：填名称 → AI 生成 9 节内容 → 保存为预设文件
+        const newPresetPanel = contentEl.createDiv({
+            attr: { style: 'display:none; gap:8px; flex-direction:column; padding:12px; margin-bottom:12px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:6px;' },
+        });
+        newPresetPanel.createEl('div', { text: '新建文笔风格预设', attr: { style: 'font-weight:600; font-size:0.9em;' } });
+        const presetNameInput = newPresetPanel.createEl('input', {
+            type: 'text',
+            attr: { placeholder: '预设名称（必填，如：冷硬派刑侦）', style: 'width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--background-modifier-border);' },
+        });
+        const presetDescInput = newPresetPanel.createEl('input', {
+            type: 'text',
+            attr: { placeholder: '一句话风格描述（可选，AI 会参考）', style: 'width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--background-modifier-border);' },
+        });
+        const presetActionRow = newPresetPanel.createDiv({ attr: { style: 'display:flex; gap:8px; flex-wrap:wrap;' } });
+        const aiGenerateBtn = presetActionRow.createEl('button', {
+            text: '🪄 AI 生成内容',
+            attr: { style: 'padding:6px 14px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;' },
+        });
+        const saveAsPresetBtn = presetActionRow.createEl('button', {
+            text: '💾 保存为新预设',
+            attr: { style: 'padding:6px 14px; background:var(--background-primary); border:1px solid var(--text-accent); color:var(--text-accent); border-radius:4px; cursor:pointer; font-size:0.85em;' },
+        });
+        const presetStatus = newPresetPanel.createEl('span', {
+            text: '填写名称后点击「AI 生成内容」，生成结果会填入下方表单，可继续修改。',
+            attr: { style: 'color:var(--text-muted); font-size:0.78em;' },
+        });
+
+        newPresetBtn.addEventListener('click', () => {
+            const visible = newPresetPanel.style.display !== 'none';
+            newPresetPanel.style.display = visible ? 'none' : 'flex';
+        });
+
+        let presets: WritingStylePreset[] = [];
+        void loadStylePresets(this.app).then(list => {
+            presets = list;
+            if (list.length === 0) {
+                presetHint.setText(`未找到预设文件；可在「${STYLE_PRESET_DIR}」中新增 .md 预设。`);
+                return;
+            }
+            for (const preset of list) {
+                presetSelect.createEl('option', {
+                    value: preset.id,
+                    text: `${preset.name}${preset.description ? ` — ${preset.description}` : ''}`,
+                });
+            }
+            presetHint.setText(`共 ${list.length} 套预设；应用后仍可继续手工修改。也可在「${STYLE_PRESET_DIR}」新增自定义预设。`);
+        });
+
+        applyPresetBtn.addEventListener('click', () => {
+            const preset = presets.find(p => p.id === presetSelect.value);
+            if (!preset) {
+                new Notice('⚠️ 请先选择一个预设', 3000);
+                return;
+            }
+            this.applyPreset(preset);
+        });
+
+        aiGenerateBtn.addEventListener('click', async () => {
+            const name = presetNameInput.value.trim();
+            if (!name) {
+                new Notice('⚠️ 请先填写预设名称', 3000);
+                presetNameInput.focus();
+                return;
+            }
+            aiGenerateBtn.disabled = true;
+            aiGenerateBtn.setText('⏳ 生成中...');
+            presetStatus.setText(`AI 正在生成「${name}」的文笔设定...`);
+            try {
+                const generated = await this.generatePresetWithAI(name, presetDescInput.value.trim());
+                if (!generated) {
+                    presetStatus.setText('❌ 生成失败：请检查模型配置，或稍后重试');
+                    return;
+                }
+                this.fillFromGenerated(generated);
+                presetStatus.setText('✅ 已填入下方表单；可直接保存到项目，或点「保存为新预设」沉淀为预设');
+            } catch (e) {
+                presetStatus.setText(`❌ 生成失败：${e instanceof Error ? e.message : String(e)}`);
+            } finally {
+                aiGenerateBtn.disabled = false;
+                aiGenerateBtn.setText('🪄 AI 生成内容');
+            }
+        });
+
+        saveAsPresetBtn.addEventListener('click', async () => {
+            const name = presetNameInput.value.trim();
+            if (!name) {
+                new Notice('⚠️ 请先填写预设名称', 3000);
+                presetNameInput.focus();
+                return;
+            }
+            try {
+                const draft: StylePresetDraft = {
+                    name,
+                    description: presetDescInput.value.trim(),
+                    sections: this.collectPresetSections(),
+                    sample: this.inputs.get('sample')?.value || '',
+                };
+                const path = await saveStylePreset(this.app, draft);
+                const id = path.split('/').pop()!.replace(/\.md$/, '');
+                const raw = await this.app.vault.adapter.read(path);
+                presets.push(parseStylePreset(id, raw));
+                presetSelect.createEl('option', { value: id, text: name });
+                presetHint.setText(`共 ${presets.length} 套预设；新增预设已写入「${STYLE_PRESET_DIR}」。`);
+                new Notice(`✅ 预设「${name}」已保存：${path}`, 5000);
+            } catch (e) {
+                new Notice(`❌ ${e instanceof Error ? e.message : String(e)}`, 6000);
+            }
+        });
 
         const formEl = contentEl.createDiv({ attr: { style: 'max-height: 60vh; overflow-y: auto; padding-right: 8px;' } });
+
+        const sampleGroup = formEl.createDiv({ attr: { style: 'margin-bottom: 14px;' } });
+        sampleGroup.createEl('label', { text: '零、参考样本（可直接粘贴想模仿的原文片段）', attr: { style: 'display:block; font-weight:600; margin-bottom:4px; font-size:0.9em;' } });
+        sampleGroup.createEl('span', { text: '样本是 AI 的"语音教练"；请使用你拥有合法使用权的文本。', attr: { style: 'display:block; color:var(--text-muted); font-size:0.75em; margin-bottom:4px;' } });
+        const sampleArea = sampleGroup.createEl('textarea', {
+            attr: {
+                placeholder: '### 战斗/冲突场景样本\n（在此粘贴样本）\n\n### 日常/对话场景样本\n（在此粘贴样本）\n\n### 情绪/心理场景样本\n（在此粘贴样本）',
+                style: 'width:100%; min-height:160px; resize:vertical; font-size:0.85em; border-radius:4px;',
+            },
+        });
+        this.inputs.set('sample', sampleArea);
 
         for (const sec of WS_SECTIONS) {
             const group = formEl.createDiv({ attr: { style: 'margin-bottom: 14px;' } });
@@ -88,8 +209,6 @@ export class WritingStyleModal extends Modal {
                     style: `width:100%; min-height:${sec.rows * 28}px; resize:vertical; font-size:0.85em; border-radius:4px;`,
                 },
             });
-            // v3.5: 预填强者语文风预设，用户可自由修改
-            textarea.value = WS_DEFAULT_PRESET[sec.key] || '';
             this.inputs.set(sec.key, textarea);
         }
 
@@ -116,6 +235,157 @@ export class WritingStyleModal extends Modal {
         });
     }
 
+    private applyPreset(preset: WritingStylePreset): void {
+        const mapping: Record<string, string | undefined> = {
+            narrative: preset.sections['一、叙事视角'],
+            overall: preset.sections['总体风格'],
+            syntax: preset.sections['句式特征'],
+            diction: preset.sections['用语习惯'],
+            dialogue: preset.sections['三、对话风格'],
+            description: preset.sections['四、描写风格'],
+            rhythm: preset.sections['五、叙事节奏'],
+            emotion: preset.sections['六、情感表达方式'],
+            forbidden: preset.sections['七、禁用/慎用'],
+            reference: preset.sections['八、参考作品'],
+            platform: preset.sections['九、番茄小说格式要求'],
+        };
+
+        for (const [key, value] of Object.entries(mapping)) {
+            if (!value) continue;
+            const input = this.inputs.get(key);
+            if (input) input.value = value;
+        }
+
+        const sample = this.inputs.get('sample');
+        if (sample && preset.reference) sample.value = preset.reference;
+
+        new Notice(`✅ 已应用预设「${preset.name}」，可继续修改后保存`, 4000);
+    }
+
+    /** 表单字段 → 预设章节标题 */
+    private static readonly PRESET_SECTION_MAP: Record<string, string> = {
+        narrative: '一、叙事视角',
+        overall: '总体风格',
+        syntax: '句式特征',
+        diction: '用语习惯',
+        dialogue: '三、对话风格',
+        description: '四、描写风格',
+        rhythm: '五、叙事节奏',
+        emotion: '六、情感表达方式',
+        forbidden: '七、禁用/慎用',
+        reference: '八、参考作品',
+        platform: '九、番茄小说格式要求',
+    };
+
+    private collectPresetSections(): Record<string, string> {
+        const sections: Record<string, string> = {};
+        for (const [key, heading] of Object.entries(WritingStyleModal.PRESET_SECTION_MAP)) {
+            sections[heading] = this.inputs.get(key)?.value.trim() || '';
+        }
+        return sections;
+    }
+
+    private fillFromGenerated(generated: { sections: Record<string, string>; sample?: string }): void {
+        for (const [key, heading] of Object.entries(WritingStyleModal.PRESET_SECTION_MAP)) {
+            const value = generated.sections[heading];
+            if (!value) continue;
+            const input = this.inputs.get(key);
+            if (input) input.value = value;
+        }
+        if (generated.sample) {
+            const sample = this.inputs.get('sample');
+            if (sample) sample.value = generated.sample;
+        }
+    }
+
+    private parseJsonObject(raw: string): Record<string, unknown> | null {
+        const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const start = cleaned.indexOf('{');
+        const end = cleaned.lastIndexOf('}');
+        if (start < 0 || end <= start) return null;
+        try {
+            return JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * 用 AI 根据预设名称生成 9 节文笔设定与一段参考样本。
+     * 输出约定为 JSON；解析失败时返回 null，由调用方提示重试。
+     */
+    private async generatePresetWithAI(
+        name: string,
+        description: string
+    ): Promise<{ sections: Record<string, string>; sample?: string } | null> {
+        const systemPrompt = `你是资深网文文笔风格设计师。请根据用户给出的风格名称，设计一套可直接执行的写作风格规范。
+只输出 JSON 对象，不要输出 Markdown 代码块、不要解释。JSON 结构：
+{
+  "一、叙事视角": "……",
+  "总体风格": "……",
+  "句式特征": "……",
+  "用语习惯": "……",
+  "三、对话风格": "……",
+  "四、描写风格": "……",
+  "五、叙事节奏": "……",
+  "六、情感表达方式": "……",
+  "七、禁用/慎用": "……",
+  "八、参考作品": "……",
+  "九、番茄小说格式要求": "……",
+  "sample": "一段 300-500 字的示例文本，完整体现该风格"
+}
+要求：
+1. 每个字段都必须有具体、可执行的内容，禁止写"待补充""无"或空值。
+2. 风格描述要能直接约束 AI 写作，而不是空泛形容词。
+3. sample 必须是原创示例，不得抄袭现有作品原文。`;
+
+        // 同一风格名重复生成时必须得到不同结果，因此加入随机种子并绕过 prompt 缓存
+        const randomSeed = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const userPrompt = `风格名称：${name}
+${description ? `风格补充说明：${description}` : ''}
+本次随机种子：${randomSeed}
+
+请生成这套文笔风格规范。要求每次生成在句式、意象、节奏上都有可感知的差异，不要复用上一版模板化表述。`;
+
+        const response = await this.plugin.aiEngine.callAI(
+            systemPrompt,
+            userPrompt,
+            undefined,
+            0.8,
+            this.plugin.settings.maxOutput,
+            { bypassCache: true }
+        );
+        if (response.error || !response.content) {
+            log.warn('[小说工坊] AI 生成文笔预设失败:', response.error);
+            return null;
+        }
+
+        const parsed = this.parseJsonObject(response.content);
+        if (!parsed) {
+            log.warn('[小说工坊] 文笔预设 JSON 解析失败，原始输出:', response.content.slice(0, 300));
+            return null;
+        }
+
+        const sections: Record<string, string> = {};
+        for (const heading of Object.values(WritingStyleModal.PRESET_SECTION_MAP)) {
+            const value = parsed[heading];
+            if (typeof value === 'string' && value.trim()) {
+                sections[heading] = value.trim();
+            }
+        }
+
+        const missing = Object.values(WritingStyleModal.PRESET_SECTION_MAP).filter(h => !sections[h]);
+        if (missing.length > 0) {
+            log.warn('[小说工坊] 文笔预设缺少分节:', missing.join('、'));
+            return null;
+        }
+
+        return {
+            sections,
+            sample: typeof parsed.sample === 'string' ? parsed.sample.trim() : undefined,
+        };
+    }
+
     private async loadExistingContent(): Promise<void> {
         const wsPath = getWritingStyleWritePath(this.project);
         const wsFile = await findWritingStyleFile(this.app, this.project);
@@ -123,6 +393,12 @@ export class WritingStyleModal extends Modal {
 
         try {
             const content = await this.app.vault.read(wsFile);
+
+            const sampleInput = this.inputs.get('sample');
+            if (sampleInput) {
+                const sample = this.extractHeadingSection(content, '## 零、参考样本');
+                if (sample) sampleInput.value = sample;
+            }
 
             // 解析各 section 的内容（## 标题后的内容直到下一个 ##）
             const sectionPatterns: [string, string][] = [
@@ -191,6 +467,15 @@ export class WritingStyleModal extends Modal {
         return text.substring(after, end).trim();
     }
 
+    private extractHeadingSection(content: string, heading: string): string {
+        const idx = content.indexOf(heading);
+        if (idx === -1) return '';
+        const after = content.indexOf('\n', idx);
+        if (after === -1) return '';
+        const next = content.indexOf('\n## ', after);
+        return content.slice(after + 1, next === -1 ? content.length : next).trim();
+    }
+
     private async save(): Promise<void> {
         const values: Record<string, string> = {};
         for (const sec of WS_SECTIONS) {
@@ -248,6 +533,9 @@ source: manual
 > 写作时自动加载此文件到 AI System Prompt。
 
 ---
+
+## 零、参考样本
+${nl(values['sample'])}
 
 ## 一、叙事视角
 ${nl(values['narrative'])}
