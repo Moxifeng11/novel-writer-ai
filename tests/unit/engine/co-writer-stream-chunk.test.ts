@@ -45,6 +45,8 @@ const BASE_SETTINGS = {
     coWriteTemperature: 0.7,
     coWriteMaxTokens: 600,
     candidateParallel: true,
+    coWriteCandidateBatching: false,
+    customProviders: [{ id: 'ollama', endpoint: 'http://localhost:11434', sourceType: 'local', models: ['qwen2.5:7b'], maxContext: 32768 }],
 };
 
 type StreamFactory = (callIndex: number) => AsyncGenerator<string, { content: string; error?: string }, unknown>;

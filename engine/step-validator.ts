@@ -251,7 +251,16 @@ function validateInfoPlan(content: string): StepValidationResult {
     const required = [
         { key: '章名与核心冲突', check: () => sectionContentValid(content, /##\s*(章名与核心冲突|核心冲突)/, 20) || /核心冲突[：:].{10,}/.test(content) },
         { key: '情感温度', check: () => sectionContentValid(content, /##\s*(情感温度|情感与冲突量化)/, 15) || /情感温度[：:].{5,}/.test(content) },
-        { key: '冲突强度', check: () => /冲突强度[：:].{5,}/.test(content) || /冲突强度阶梯[：:].{5,}/.test(content) },
+        {
+            key: '冲突强度',
+            check: () =>
+                /冲突强度[：:].{5,}/.test(content)
+                || /冲突强度阶梯[：:].{5,}/.test(content)
+                // AI 常用「冲突强度 4/5」「冲突强度：4 级」或把强度单独写成小节，
+                // 旧实现只认「冲突强度：长文本」，会把这些合法输出误判为缺失。
+                || /(?:冲突强度|冲突等级)[^\n]{0,24}?(?:[1-5１-５]\s*(?:级|\/\s*5|分)|(?:为|是|达到)\s*[1-5１-５])/.test(content)
+                || sectionContentValid(content, /##\s*冲突强度/, 5),
+        },
         { key: '熵预算与自信息', check: () => sectionContentValid(content, /##\s*(熵预算|熵预算与自信息|自信息)/, 20) || /(熵预算|自信息)[：:].{10,}/.test(content) || sectionContentValid(content, /##\s*信息释放计划/, 30) },
         { key: '伏笔操作', check: () => sectionContentValid(content, /##\s*伏笔操作/, 15) || /伏笔操作[^：:\n]{0,12}[：:].{5,}/.test(content) },
     ];

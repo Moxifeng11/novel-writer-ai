@@ -27,6 +27,8 @@ import {
 import { SerializedWriter } from '../shared/serialized-writer';
 import { StyleVectorStore, type StyleSimilarityResult, type StyleBlendOptions, type StyleInterpolationOptions, type StyleDimension, STYLE_DIMENSIONS } from './style-vector-store';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
+import { getSharedEmbeddingProvider } from './embedding/embedding-service';
+import { vectorizeFingerprintSamples, vectorizeFingerprintSamplesBatch } from './style/style-sample-service';
 import {
     migrateFileV1ToV2,
     needsV1ToV2Migration,
@@ -39,6 +41,7 @@ import {
     type StyleVectorModelMismatch,
 } from './style/style-vector-store-v2';
 import { createLogger } from '../shared/logger';
+import { extractKeywordTokens } from '../shared/keyword-tokens';
 
 const log = createLogger('StyleFingerprintLibrary');
 import {
@@ -61,6 +64,18 @@ export interface StyleFingerprintStats {
     dialogueRatio: number;
     descriptionRatio: number;
     wordCount: number;
+    /** 句长标准差；旧数据可能缺失 */
+    sentenceLengthStdDev?: number;
+    /** 短句（<=12 字）占比；旧数据可能缺失 */
+    shortSentenceRatio?: number;
+    /** 长句（>=30 字）占比；旧数据可能缺失 */
+    longSentenceRatio?: number;
+    /** 含引号的对话段占比；旧数据可能缺失 */
+    dialogueTurnRatio?: number;
+    /** 段长标准差；旧数据可能缺失 */
+    paragraphLengthStdDev?: number;
+    /** 去重字符数 / 总字符数；旧数据可能缺失 */
+    lexicalDiversity?: number;
 }
 
 /**
@@ -165,6 +180,9 @@ export class StyleFingerprintLibrary {
     constructor(app: App, project?: string) {
         this.app = app;
         this.project = project;
+        // V2 向量检索依赖 embedding；生产入口不再需要逐个手动 setEmbeddingClient
+        const shared = getSharedEmbeddingProvider();
+        if (shared) this.setEmbeddingClient(shared);
     }
 
     setEmbeddingClient(client: EmbeddingProvider): void {
@@ -276,12 +294,14 @@ export class StyleFingerprintLibrary {
     async addTemplate(fp: StyleFingerprint): Promise<void> {
         this.templateFingerprints.set(fp.id, fp);
         await this.saveTemplate();
+        await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
     async updateTemplate(fp: StyleFingerprint): Promise<void> {
         if (!this.templateFingerprints.has(fp.id)) return;
         this.templateFingerprints.set(fp.id, fp);
         await this.saveTemplate();
+        await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
     async deleteTemplate(id: string): Promise<void> {
@@ -345,12 +365,14 @@ export class StyleFingerprintLibrary {
     async addGlobal(fp: StyleFingerprint): Promise<void> {
         this.globalFingerprints.set(fp.id, fp);
         await this.saveGlobal();
+        await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
     async updateGlobal(fp: StyleFingerprint): Promise<void> {
         if (!this.globalFingerprints.has(fp.id)) return;
         this.globalFingerprints.set(fp.id, fp);
         await this.saveGlobal();
+        await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
     async deleteGlobal(id: string): Promise<void> {
@@ -416,6 +438,7 @@ export class StyleFingerprintLibrary {
         if (!this.project) return;
         this.projectFingerprints.set(fp.id, fp);
         await this.saveProject();
+        await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
     /**
@@ -430,6 +453,7 @@ export class StyleFingerprintLibrary {
         if (!this.project || !this.projectFingerprints.has(fp.id)) return;
         this.projectFingerprints.set(fp.id, fp);
         await this.saveProject();
+        await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
     async deleteProject(id: string): Promise<void> {
@@ -669,7 +693,7 @@ export class StyleFingerprintLibrary {
             tags: [...sourceFp.tags],
             stats: { ...sourceFp.stats },
             features: { ...sourceFp.features },
-            samples: [],
+            samples: [...(sourceFp.samples || [])],
             extractedAt: Date.now(),
             sourceText: sourceFp.sourceText,
         };
@@ -691,6 +715,8 @@ export class StyleFingerprintLibrary {
                 await this.saveProject();
                 break;
         }
+
+        await vectorizeFingerprintSamples(this.app, newFp, effectiveTargetProject);
 
         return newFp;
     }
@@ -1179,6 +1205,35 @@ export class StyleFingerprintLibrary {
             log.warn('[StyleFingerprintLibrary] 风格相似度搜索失败:', e);
         }
 
+        // Hybrid rerank: vector score + tag/keyword overlap. Pure vector search
+        // misses exact style names/tags (e.g. "冷峻克制"), which users expect to
+        // rank first.
+        const fpById = new Map(allFingerprints.map(fp => [fp.id, fp]));
+        const queryText = typeof query === 'string'
+            ? query
+            : (() => {
+                const sourceFp = allFingerprints.find(fp => fp.id === query.fingerprintId);
+                return sourceFp ? this.buildQueryFromFeatures(sourceFp.features) : '';
+            })();
+        const tokens = extractKeywordTokens(queryText, 80);
+        const boosted = results.map(result => {
+            const fp = fpById.get(result.fingerprintId);
+            let boost = 0;
+            if (fp && tokens.length > 0) {
+                const haystack = `${fp.name} ${fp.source} ${fp.tags.join(' ')} ${this.buildQueryFromFeatures(fp.features)}`.toLowerCase();
+                const hits = tokens.filter(token => haystack.includes(token)).length;
+                boost += Math.min(0.08, (hits / tokens.length) * 0.08);
+                const tagHits = fp.tags.filter(tag => queryText.toLowerCase().includes(tag.toLowerCase())).length;
+                boost += Math.min(0.06, tagHits * 0.03);
+            }
+            return { ...result, overallScore: Math.min(1, result.overallScore + boost) };
+        });
+        const deduped = new Map<string, StyleSimilarityResult>();
+        for (const result of boosted) {
+            const existing = deduped.get(result.fingerprintId);
+            if (!existing || result.overallScore > existing.overallScore) deduped.set(result.fingerprintId, result);
+        }
+        results = [...deduped.values()];
         results.sort((a, b) => b.overallScore - a.overallScore);
         return results.slice(0, options?.topN ?? 10);
     }
@@ -1646,6 +1701,13 @@ export class StyleFingerprintLibrary {
                 }
             }
         }
+
+        // 样章向量与特征向量是两套索引：正文 few-shot 依赖样章索引，必须一起重建
+        await vectorizeFingerprintSamplesBatch(
+            this.app,
+            [...templateFps, ...globalFps, ...projectFps],
+            this.project,
+        );
     }
 
     // ============================================================

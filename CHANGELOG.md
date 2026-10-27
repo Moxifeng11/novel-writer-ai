@@ -1,5 +1,188 @@
 # Changelog
 
+## 4.19.0 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.19.0.md` · 上一版本 v4.18.0
+
+### 🧭 动因
+- 原插件只有长篇小说模式；短篇与短剧是两套不同的商业内容形态，不能直接复用长篇节奏。
+- 需要把番茄短篇分类、红果短剧规格、项目/章节/导出分支做成独立模式体系，同时保证长篇零回归。
+
+### ✨ 改动
+- **创作模式领域层**：新增 `shared/creation-mode.ts`，定义长篇/短篇/剧本的单元、字数（短篇/剧本 5–10 万）、目标数量、24 个番茄短篇分类、12 个红果短剧类型与平台规格。
+- **项目创建**：长篇、短篇、剧本使用独立创建入口；通用「新建项目」收敛为长篇/同人，短篇/剧本入口先进入「前期调研」。
+- **前期调研**：新增短篇/剧本独立调研模块，输出 `00-前期调研/调研数据.json`、`调研报告.md` 与 `五维分类.md`/`剧本定位.md`，不混入长篇 11 步。
+- **写作配置**：`WritingProfile` 增加 `creationMode/shortCategory/scriptGenre/targetWords/targetUnits`，旧配置按长篇兼容。
+- **提示词分支**：`template-vars-builder` 读取模式并生成 `creationModePrompt`；`getStepTemplateAuto` 仅对短篇/剧本追加模式硬约束，长篇提示词完全不变。
+- **协同写作**：`CoWriterEngine` 初始化时读取 `.project`，把模式约束注入续写/联想/改写/迭代 prompt；长篇为空块，原协同行为不变。
+- **内容隔离**：新增左侧「长篇小说 / 短篇小说 / 剧本」分类导航；三类项目按 `.project` 模式过滤，列表与右侧工具互不混入。
+- **独立目录**：短篇写入 `短篇创作/`（故事核/分节大纲/正文/质检/导出），剧本写入 `剧本创作/`（人物与场景/分集大纲/剧本/分镜/质检/导出）；新项目不再创建长篇 `03-大纲与章节`。
+- **专属卡片**：短篇/剧本卡片改为「前期调研 / 写作 / 全部节/集」等专属操作，移除长篇向导/句级协同等不适用按钮，并显示节/集进度。
+- **模板骨架**：短篇/剧本正文模板使用「第N节/第N集」显示与场景/节目标结构；新项目文件名使用 `第NN节.md` / `第NN集.md`。
+- **章节管理**：`BatchCreateModal` 在短篇/剧本模式下只在模式正文目录创建单元骨架，不写长篇步骤文件，并默认当前选中项目。
+- **快捷工具**：项目卡片选中后自动读取项目类型，右侧切换为长篇/短篇/剧本专属工具与项目操作；短篇/剧本不再显示全书规划、批量建章、章节结算等长篇动作，并补充故事核/分节大纲/场景圣经/分集大纲/分镜表入口。
+- **导出适配**：短篇按「节」、剧本按「集」导出；导出与列表均读取模式独立目录，不触长篇章节；长篇导出逻辑不变。
+- **API 连通性**：设置页新增「测试连通性」，最小请求验证端点/鉴权/模型/延迟；401/404/429/5xx/超时/空响应分级告警，不记录密钥。
+- **思考强度**：新增极速/标准/深度/极限四级与 0–100% 拖拽滑杆；按强度缩放思考预算，任务级可覆盖，旧 `thinkingMode/thinkingBudget` 兼容。
+- **流程规范**：新增三类流程细化、短篇三步快速流程、剧本分镜场全流程文档，包含输入/输出/交付标准/校验节点。
+- **三域隔离**：新增 `domains/` 命名空间与 `长篇小说/短篇小说/剧本` 模式库；长篇工具/创建弹窗移除短篇剧本逻辑，短篇剧本创建独立成域；项目定位、导出与迁移支持三库。
+- **项目迁移**：新增 legacy 项目迁移服务与设置页「项目库迁移」，支持 dry-run、备份清单、冲突检测。
+- **Harness MVP**：新增规则引擎、上下文聚合器、结构化输出契约、单次调用 Runner 与调用账本。
+- **长篇单调用**：AI 消痕、迭代精修、定向修订改为一次逻辑调用完成；调用账本区分逻辑调用与网络调用。
+- **AI 前期调研**：短篇/剧本调研弹窗新增「AI 前期调研」与「随机灵感」；结合热点素材、固化创作框架与多层真随机因子生成 3 个候选方向。
+- **随机种子卡片**：随机灵感升级为统一种子卡片，支持查看/复制/重置；短篇与剧本共用同一视觉组件与交互。
+- **真随机机制**：新增 CSPRNG 随机源与四层随机因子（前提/结构/质感/差异化），每次生成非重复；随机因子与禁用套路写入调研产物。
+- **调研产物**：`00-前期调研/` 新增 AI 调研章节，记录实时来源/未核实标记、固化框架、随机种子与因子；保存前自动备份旧报告。
+- **Harness M1**：新增 PromptArtifact、ContextPack（required 保护）、RetrievalPlan/RagCitation、MemoryStore（pending→confirmed）、ToolRegistry 与三域 HarnessProfile；SingleCallRunner 支持编译产物接入。
+- **指纹/知识库布局**：两个视图改为容器查询响应式布局，窄面板自动纵向排列；修复指纹列表计数重复累积，统计卡片段长单位改为“字”。
+- **指纹统计口径**：新增 `engine/fingerprint-stats.ts`；分号不再算句末、网文单行按段统计、修复英文引号重复计数，并补齐弯引号。
+- **自动分类**：新增 `shared/content-classifier.ts`，按节奏/语言/情绪/对话/结构/题材/技法/商业/受众九维规则归类；指纹与书籍均显示分类徽章，支持单条“自动归类/维度归类”与知识库“批量归类”，标签统一 `分类:` 前缀并按 30 条上限去重。
+- **混合检索**：新增统一关键词分词 `shared/keyword-tokens.ts`；指纹相似度叠加关键词/标签重排并去重；知识检索按 90% 向量 + 10% 关键词覆盖率打分后再去重截断。
+- **错误态**：指纹库与知识库的列表/详情加载失败均显示原因与重试入口，不再空白或卡在加载中；重载后清理失效选中项。
+- **执行流程交互**：新增主区域“执行流程”时间线，按时间展示上下文加载、步骤开始/完成/失败、警告与 AI 进度；移除一键完成/逐步完成过程中的浮动 Notice。
+- **统一错误模型**：新增 `shared/execution-events.ts`；两种执行模式共用同一套失败分类、缺失项、处理建议与“重试本步”入口，错误卡直接显示在对应步骤位置。
+- **固定日志窗口**：新增可展开/收起的执行日志面板，支持按级别筛选、滚动查看、复制与堆栈展开；日志/事件均有上限，长时间运行不无限增长。
+- **提示词与结果展示**：系统/用户提示词改为默认折叠并显示字数；执行结果移到提示词之前，以预览优先、原文折叠编辑的方式展示；模板骨架不再伪装成结果。
+- **步骤排版**：新增置顶操作栏（状态徽章 + 重新生成/生成此步 + 跳过 + 温度），无需滚过提示词即可执行；按钮改为紧凑胶囊样式，移除整行长条按钮与正文页的大块协同营销卡。
+- **信息规划模板**：系统提示词改为逐项 Markdown 标签格式，明确要求独立的“冲突强度：N/5”行；用户提示词同步量化指标格式，降低重新生成后仍缺字段的概率。
+- **错误误判修复**：信息规划校验接受“冲突强度 4/5”“四星/五级”等写法；合并规划提示词补齐 `INFO_PLAN` 的结构标签，减少一键模式因格式差异反复中断。
+- **测试**：新增创作模式、分类、红果规格、元数据、提示词注入、导出单元标签、前期调研、模式工具目录、独立内容结构、API 连通性、思考强度、三域隔离、项目定位、harness MVP、AI 辅助创作、Harness M1 契约、内容自动分类、关键词分词、指纹统计、执行事件/日志账本与分类压力测试。
+
+### ✅ 验证
+- `typecheck` / `lint` / `test` / `preflight` / `build` / `check:release` 全绿。
+- **393 个测试文件 / 4564 个用例全部通过**。
+- 运行时验证：三模式库创建、分类切换、批量建节/建集、导出、迁移 dry-run、长篇单调用入口均通过；长篇回归正常。
+- 压力基线：5000 指纹分类 19.0ms、2000 书籍分类 6.1ms、30 万字符分词 7.2ms。
+- 未做真实 Obsidian GUI 点击验收（需退出当前 Obsidian 才能启动 E2E），详见 `docs/audits/v4.19-fingerprint-knowledge-optimization-verification.md`。
+
+## 4.18.0 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.18.0.md` · 上一版本 v4.17.0
+
+### 🧭 动因
+- 脑洞构思、黄金开篇的“导出为项目”只建了一个空目录，没有 `.project`、模板和写作配置；项目名来自 `slice(0,10)`，可能为空或不可读。
+- 项目重命名入口藏在命令面板；顶层项目重命名还会把父目录算成自身，生成 `旧名/新名`。
+- 全书简介每次删除旧文件再创建，失败即丢稿；只保留一版，无法比较。
+- 同人设定可以凭模型记忆生成并直接绑定，没有来源分级、没有人工审核门禁，也不区分原著与衍生作品。
+- 文笔风格蒸馏只输入书名，不能基于真实样本分析。
+
+### ✨ 改动
+- **同人考据来源分级**：新增 `shared/canon-source.ts`；官方/官方 Wiki/参考资料/衍生/未知五级；同人、改编、外传、动画影视游戏等默认排除；无官方来源时禁止生成事实内容。
+- **联网考据**：新增 `services/canon-research-service.ts`；支持手动官方 URL/摘录与 Bing/Brave/Serper/Tavily 搜索 API；来源缓存到 `05-同人设定库/_资料/{作品}/sources.json`；只保存引用元数据与短摘录。
+- **生成草稿**：同人设定生成改为先检索/导入官方来源；无依据字段写“待核实”；草稿写入 `_待审核/`，`审核状态: pending`，不自动绑定项目。
+- **人工审核硬门禁**：新增 `ui/fanfic-review-modal.ts`；逐字段展示来源、未核实字段、衍生来源告警；四项检查全部勾选且无阻断错误才能通过；通过后写审核记录、来源哈希并绑定项目。
+- **读取侧拒绝未审核**：`shared/fanfic-rules.ts` 增加 `reviewStatus`；`pending/rejected` 返回 `unreviewed`，协同写作不注入同人约束；旧文件无状态按 legacy 兼容并提示重新审核。
+- **补全与审核工具**：规则审核 0 次 AI；AI 审核/补全必须只引用已选官方来源；补全后回到 `pending`，必须重新人工审核；衍生来源直接阻断。
+- **项目重命名**：新增 `services/project-rename-service.ts`，同步 `.project`、世界观 frontmatter、写作配置、`data/{old}-preferences.json`、`data/{old}-style-patterns.json`；修复顶层项目父路径 bug；项目卡片与右侧操作区露出入口。
+- **脑洞/黄金开篇**：不再自建空项目；统一走 `CreateProjectModal` 预填真实创建；脑洞增加 `titleCandidates` 书名候选，可保存到当前项目；黄金开篇输出到 `04-项目总控/黄金开篇.md`；脑洞“换一批”保留关键词/类型/额外要求，单批改为 10 条降低 JSON 截断。
+- **全书简介多版本**：新增 `shared/synopsis-spec.ts`、`services/synopsis-store.ts`；一次生成悬念/爽点/人物/世界观四版；目录 `04-项目总控/全书简介/` + `index.json` + 草稿；切换项目自动保存草稿；生成永不覆盖；采用版本同步 `全书简介.md`；旧单文件自动导入。
+- **文笔风格蒸馏**：支持粘贴样本、当前项目章节、当前文件、书名四种来源；样本模式强制原文证据，书名模式标注模型记忆不可靠；预览后再保存；使用任务级模型预算与 abort。
+- **GitHub 参数统一**：新增 `shared/github-repo.ts` 作为 owner/repo/branch/API/Web 地址单一真相源；package/manifest/更新检查/User-Agent/设置占位全部对齐 `Moxifeng11/novel-writer-ai`（分支 `master`）。
+- **私有仓库更新检查**：新增 GitHub Token 设置（加密保存）；Release API 支持 `Authorization: Bearer`；无 Token 时对 Private 仓库仍会 404。
+- **自动重命名统一**：世界观生成/AI 世界元素生成的项目自动重命名改走 `ProjectRenameService`，同步 `.project`、世界观 frontmatter、写作配置与插件偏好；项目名先经过统一校验。
+- **旧仓库名迁移**：默认 GitHub 仓库统一为 `Moxifeng11/novel-writer-ai`；启动时把旧 `trae-ai/novel-writer-ai` 迁移并清空旧 404 缓存。
+- **覆盖写保护**：世界观、跨卷快照、信息债看板、诊断报告等从 delete+create 改为 modify 优先，写盘失败不再先删旧文件。
+- **分卷大纲备份**：AI 全书规划重新生成前先备份旧分卷大纲；备份失败则保留旧文件，不再先清空。
+- **同人考据 URL 安全**：只允许 http/https，拒绝 file://、本机与内网地址。
+- **更新缓存版本对齐**：`UpdateChecker.getLastCheckResult()` 在插件升级后会按当前 `PLUGIN_VERSION` 纠正旧缓存的 `currentVersion` 并重算 `hasUpdate`；只有错误结果且无 `latestVersion` 时才触发新检查。
+- **指纹 embedding 设置优先级**：`createFingerprintEmbedding()` 有显式向量设置时优先按当前设置构造，避免共享 provider 仍是旧模型时写入旧 modelId/维度，导致指纹检索被治理逻辑跳过。
+- **设置页任务参数布局**：任务级参数从 Obsidian `setting-item-control` 的 5 控件横排改为卡片 + `nw-form-grid` 分栏；修复 688px 宽度下控件换行、右侧截断和“看起来多出全局思考模式”的问题；任务级思考改名为“思考覆盖（跟随全局）”。
+- **数据安全回归**：全书简介改为原地修改 + 备份，不再 delete 后 create；分析报告无结构化指令时回退 AI；逐步执行在每步前检查 abort；本地 AI 队列增加等待超时。
+- **快捷工具审计**：新增 `docs/audits/v4.18-quick-tools-health.md`，区分可用/已修/待审计/旧版，并列出后续 P2。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint` / `npm test` / `npm run preflight` / `npm run build` / `npm run check:release` 全绿；构建版本 v4.18.0。
+- `npm test`：**367 个测试文件 / 4416 个用例全部通过**。
+- 新增来源分级、同人审核门禁、AI 报告回退、项目重命名迁移、简介多版本、项目名校验等回归测试。
+
+## 4.17.0 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.17.0.md` · 上一版本 v4.16.0
+
+### 🧭 动因
+- 11 步中 8 步调用 AI，典型一章 8 次逻辑调用；5 个规划步骤重复注入同一批上下文。
+- 部分步骤产出没有下游消费者：情节蒸馏不进 V1/sceneExpand，质量控制是死胡同。
+- 分析报告已经产出结算指令，`AnalysisReportEngine` 又用 2 次 AI 重复抽取实体/时间线。
+- 整章需要 9–19 次点击，没有“一次跑完剩余步骤、但每步仍可见”的入口。
+- 协同写作本地模式一次建议串行 3 次、一次改写串行 3 次；幽灵、守卫、验证同抢一个 Ollama 槽。
+
+### ✨ 改动
+- **单章一键编排**：新增 `ChapterOrchestrator`、标题栏“🚀 一键完成本章（剩余 N 步）”、运行条暂停/继续/取消；每步仍可见、可编辑、可单独重生成；失败停在失败步骤，断点续跑。
+- **推荐模式 4 次调用**：5 个规划步骤全部未完成时走 `executePlanningCombined`（1 次产出 5 份结果），随后正文/质量控制/分析报告各 1 次，结算 0 次；逐步模式仍 8 次。合并规划补 `signal`/`force`/逐模块 `StepRunMeta`，失败按缺失模块回退。
+- **规划完整性**：5 步缺任意一步即停在规划，不再带残缺规划进入正文。
+- **结算幂等**：`status: settled` 时默认拒绝重复追加；仅“重新结算”传 `force`；结算前检查分析报告是否含有效指令。
+- **信息流补齐**：`plotDistill` 注入 V1 与 sceneExpand；`qualityControl` 的 ❌/⚠️ 行注入分析报告；`infoPlan` 注入大纲；保存的 `characterSoul` 可回填 V2 主角详情。
+- **分析去重**：新增 `AnalysisReportEngine.analyzeFromReport()`，已有步骤 9 报告时 0 次 AI；缺报告才走 AI。
+- **任务预算**：emotionPlan / sceneExpand 补任务 `maxTokens` 与 abort；SceneGenerationLoop 改用 body 任务模型。
+- **协同候选批量**：本地模式一次调用返回 3 个方向候选；解析失败/不足 2 条自动回退原 3 次串行；云端可并行或关闭批量。
+- **协同改写批量**：`rewriteSelection` 一次返回 3 个方向改写，失败回退。
+- **幽灵节流**：只取 1 个最强 hint，句末/段末触发，间隔 8 秒。
+- **守卫节流**：输入/插入/保存共用“增长 300 字或冷却 5 分钟”闸门；手动检查不受限。
+- **本地串行队列**：新增 `shared/local-ai-queue.ts`，建议/幽灵/守卫/验证串行排队，避免抢 Ollama 单槽。
+- **本地参数与路由**：首次调用探测 `num_ctx`；批量 JSON 用更高 maxTokens；UI 质量修复走协同模型；编辑验证/OOC 支持 abort。
+- **可视化**：新增 `docs/analysis/v4.17-pipeline-efficiency.html`，含流水线、调用/点击账单、协同审计、验证与边界。
+- **本地评估**：新增 `npm run eval:cowrite-local`，无 Ollama 时跳过，有模型时验证 3 候选/3 改写 JSON 与耗时。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint` / `npm test` / `npm run preflight` / `npm run build` / `npm run check:release` 全绿。
+- `npm test`：**354 个测试文件 / 4371 个用例全部通过**；构建版本 v4.17.0。
+- 本地 Ollama（`deepseek-r1:7b`）实测：3 候选 1 次调用约 16.3s、3 改写 1 次调用约 31.6s，JSON 均合法，失败 0/2。
+- 新增编排器、协同批量、分析复用等回归测试。
+
+## 4.16.0 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.16.0.md` · 上一版本 v4.15.0
+
+### 🧭 动因
+- 能生成完整章节，但达不到精品要求：场景没有可执行契约，正文生成期缺少工艺硬约束，AI 味只在事后检测。
+- 设定/伏笔/关系已有数据，但人物“在哪、知道什么、关系如何”没有逐章快照，下一章仍靠叙事摘要漂移。
+- 11 步正文只拿到指纹特征文本，没有真实 prose 样章；知识库导入指纹的样章也未向量化。
+- 质量报告是自由 Markdown，旧 fix 是泛化重写；没有按维度、按片段的修订。
+- 承诺与角色弧线没有账本，规划/分析/结算无法形成义务闭环。
+- 没有 good/bad 基准样章评估，“改完是否更好”无法回答。
+
+### ✨ 改动
+- **场景卡**：sceneExpand 新增 `pov/time/location/entry_state/turn/exit_state/craft_notes`；解析、编辑器、逐场景正文任务卡、组合规划/模板管理器同步；保留旧文件兼容（缺字段告警不阻断）。
+- **工艺约束**：新增 `engine/craft-constraints.ts`；正文 V1/V2、场景展开、逐场景正文的 system prompt 注入具体性配额、情绪行为化、对话纪律、场景转折、POV 纪律、负面清单。
+- **正文样章 few-shot**：新增 `engine/style/style-sample-service.ts`；指纹新增/复制/融合/重建自动向量化样章；11 步正文通过 `systemTail` 注入真实样章，不被预算裁掉；V2 补回 `sceneStyleSnippet/suggestedRhythm`；知识库导入只接受真实原文样章，不再把拆解报告段落当 prose。
+- **强弱对照**：新增 `00-系统模板/写作对照库.md` 与 `shared/contrast-library.ts`；按场景类型注入最多一对 weak/strong。
+- **世界状态快照**：新增每章 `04-项目总控/章节状态快照/第N章_状态快照.md`，含人物状态/关系/时间地点/未兑现承诺/未回收伏笔；结算链路（工作台/批量/协同）写入，下一章 V1/V2 system prompt 以硬约束注入；修复 `SettlementService` 传空分析报告的问题。
+- **定向修订**：新增 `engine/revision/*`：质量报告 → 结构化 issues → 按维度选择最多 3 个 pass → 定位段落/场景局部替换；评分下降/返回空/说明文本自动回滚；正文步骤新增“🎯 定向修订”按钮；旧 `iterativeRefine` 的字面占位符已清理。
+- **承诺账本**：新增 `02-时间线与伏笔/承诺账本.md`；分析报告支持 `PROMISE_OPEN/ADVANCE/RESOLVE/DROP`；信息规划注入未兑现/逾期承诺；结算更新账本。
+- **角色弧线**：新增 `01-世界架构/角色弧线.md`；首次从角色 frontmatter 建骨架；分析报告支持 `ARC: 角色 | 阶段前 | 阶段后 | 触发 | 可见`；信息规划/质量控制注入弧线。
+- **基准评估**：新增 `shared/quality-benchmark.ts`、`tests/benchmark/quality-benchmark.test.ts`、`vitest.benchmark.config.ts`、`npm run eval:quality`、`benchmarks/quality/README.md/schema.json`；无 fixture 时自动跳过，不阻塞日常测试。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint` / `npm test` / `npm run preflight` / `npm run build` / `npm run check:release` 全绿。
+- `npm test`：**351 个测试文件 / 4356 个用例全部通过**；`eval:quality` 在无 fixture 时退出 0。
+- 新增场景卡、工艺约束、样章回退、对照库、世界快照、定向修订、承诺/弧线、基准指标等回归测试。
+
+## 4.15.0 — 2026-10-26
+
+> 发布说明：`docs/releases/v4.15.0.md` · 上一版本 v4.14.0
+
+### 🧭 动因
+- 全局 `maxOutput` 会被「最后选择的模型」覆盖，Flash 的 4K 上限会截断正文，Pro 的 131K 上限又会被规划步骤继承。
+- `finishReason=length` 只弹提示，半成品仍会落盘/继续结算；重新生成被截断的正文还会覆盖已有完整稿。
+- 「继续生成剩余」用空 prompt 早退，调用方却把步骤计入成功；批量续跑只在步骤目录找正文，读不到 v4 正文。
+- 分析报告结构化提取把 `'flash'` 当模型名、只给 2000 tokens，失败后被 catch 吞掉，实体状态/时间线为空。
+- 设置里没有任务级思考模式/输入上限/输出上限；端点 URL 不能识别供应商；本地 Ollama 链路存在静默回退云端和向量未接线。
+
+### ✨ 改动
+- **任务级模型/预算**：新增 `shared/task-model.ts`，规划用 Flash、正文/质量用 Pro，输出上限按模型能力解析；`resolveModelLimits` 优先用户覆盖 → 本地探测 → 自定义供应商上限 → 静态表。
+- **截断状态机**：`finishReason=length` 不再标记完成；步骤写入 `step_truncated/step_finish_reason/step_model/step_usage`；正文截断时保留旧完整稿，新内容落为 `_截断草稿.md`；批量不再把截断/半成品送入结算。
+- **继续生成剩余**：复用模板变量装配真实 prompt；空内容或未达完成标准的步骤不再计入成功；合并规划变更后失效正文/质量/分析/结算。
+- **数据读写**：批量续跑按 `pjBodyFile` 读取 v4 正文；分析报告剥离完整 frontmatter；`step_model` 记录实际执行模型；角色灵魂优先使用步骤结果，手动编辑可进入下游。
+- **设置升级**：保留现有 API 设置窗口，新增「任务级模型参数」表（模型 / 最大输入 / 最大输出 / 思考模式 / 思考预算）与全局思考设置。
+- **URL 自动识别**：新增 `shared/provider-detection.ts`，识别火山/DeepSeek/SenseNova/CatCat/OpenAI/DashScope/Gemini/OpenRouter/SiliconFlow/Moonshot/Groq 等及 localhost/私有网段/Ollama 原生端点；自定义供应商编辑保留 `sourceType/apiStyle`。
+- **思考参数**：Ollama 原生 `think`、OpenAI o 系列 `reasoning_effort`、火山/DeepSeek/SenseNova `thinking`；未知供应商不下发未验证字段。
+- **Ollama 本地链路**：协同写作按模型所属本地 provider 路由，找不到时明确报错而非回退云端；`num_ctx` 按探测窗口/用户配置；共享 `EmbeddingService` 自动注入指纹库/知识库/协同；`local-only` 回退策略禁止静默云端 embedding；Ollama embedding 输入截断；向量任务/LLM 增强在 Worker 不可用时切主线程；拆解 LLM、分析报告、指纹提取支持本地端点与任务预算。
+
+### ✅ 验证
+- `npm run typecheck` / `npm run lint` / `npm test` / `npm run preflight` / `npm run build` 全绿。
+- `npm test`：**344 个测试文件 / 4314 个用例全部通过**。
+- 新增回归：任务预算、截断保护、继续生成、批量 v4 续跑、分析报告模型、URL 识别、思考参数、embedding 回退策略、协同本地路由。
+
 ## 4.14.0 — 2026-10-26
 
 > 发布说明：`docs/releases/v4.14.0.md` · 上一版本 v4.13.0

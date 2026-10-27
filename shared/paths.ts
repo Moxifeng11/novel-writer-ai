@@ -69,6 +69,10 @@ export function pjSettingLib(project: string) { return `${project}/${SUBDIR_SETT
 export function pjWritingStyle(project: string) { return `${project}/${SUBDIR_WRITING_STYLE_FILE}`; }
 /** 写作规则在 00-系统模板/，项目创建时复制 */
 export function pjWritingRules(project: string) { return `${project}/00-系统模板/写作规则.md`; }
+/** 弱/强写作对照库 */
+export function pjContrastLibrary(project: string) { return `${project}/00-系统模板/写作对照库.md`; }
+/** 角色弧线表 */
+export function pjCharacterArcTable(project: string) { return `${project}/${SUBDIR_WORLD_ARCH}/角色弧线.md`; }
 
 // ============================================================
 // 3. 实体
@@ -139,6 +143,8 @@ export function pjVolumeDir(project: string, n: number) { return `${project}/03-
 // ============================================================
 export function pjTimelineDir(project: string) { return `${project}/02-时间线与伏笔`; }
 export function pjForeshadowDB(project: string) { return `${project}/02-时间线与伏笔/伏笔库.md`; }
+/** 承诺/谜团账本 */
+export function pjPromiseLedger(project: string) { return `${project}/02-时间线与伏笔/承诺账本.md`; }
 export function pjForeshadowTracker(project: string) { return `${project}/04-项目总控/伏笔追踪.md`; }
 export function pjTimelineBoard(project: string) { return `${project}/02-时间线与伏笔/时间线看板.md`; }
 export function pjMemoryShardsDir(project: string) { return `${project}/02-时间线与伏笔/记忆碎片`; }
@@ -219,6 +225,14 @@ export function pjWritingRulesPromptTemplate() { return `${PJ_PROMPT_TEMPLATE_DI
 /** v4.0: 99- → 05- */
 export function pjFanficDir(project: string) { return `${project}/05-同人设定库`; }
 export function pjFanficFile(project: string, name: string) { return `${project}/05-同人设定库/${sanitizeName(name)}.md`; }
+/** 同人设定草稿（未通过人工审核，不得绑定到项目） */
+export function pjFanficPendingDir(project: string) { return `${project}/05-同人设定库/_待审核`; }
+/** 同人考据资料缓存（来源、摘录、哈希） */
+export function pjFanficResearchDir(project: string, workName: string) { return `${project}/05-同人设定库/_资料/${sanitizeName(workName)}`; }
+/** 人工审核记录 sidecar */
+export function pjFanficAuditDir(project: string) { return `${project}/05-同人设定库/_审核`; }
+/** 审核通过的正式同人设定路径 */
+export function pjFanficApprovedFile(project: string, workName: string) { return `${pjFanficDir(project)}/${sanitizeName(workName)}设定.md`; }
 
 // ============================================================
 // 9. 项目总控
@@ -246,8 +260,21 @@ export function getVolumeOutlinePath(project: string): string { return pjVolumeO
 // ============================================================
 /** 信息债看板 */
 export function pjInfoDebtBoard(project: string) { return `${project}/04-项目总控/信息债看板.md`; }
+/** 全书简介多版本目录（v4.18） */
+export function pjSynopsisDir(project: string) { return `${pjControlDir(project)}/全书简介`; }
+export function pjSynopsisIndexFile(project: string) { return `${pjSynopsisDir(project)}/index.json`; }
+export function pjSynopsisDraftFile(project: string) { return `${pjSynopsisDir(project)}/草稿.md`; }
+export function pjSynopsisVersionFile(project: string, id: string) { return `${pjSynopsisDir(project)}/${sanitizeName(id)}.md`; }
+/** 兼容文件：当前采用版本 */
+export function pjSynopsisAdoptedFile(project: string) { return `${pjControlDir(project)}/全书简介.md`; }
 /** 叙事总览 */
 export function pjNarrativeOverview(project: string) { return `${project}/04-项目总控/叙事总览.md`; }
+/** 每章世界状态快照目录 */
+export function pjChapterStateSnapshotDir(project: string) { return `${project}/04-项目总控/章节状态快照`; }
+/** 第 N 章结束状态快照 */
+export function pjChapterStateSnapshot(project: string, chapterNum: number) {
+    return `${pjChapterStateSnapshotDir(project)}/第${chapterNum}章_状态快照.md`;
+}
 /** 事实索引（故事质量闭环 Task 11 待确认队列落盘） */
 export function pjFactIndexFile(project: string) { return `${project}/04-项目总控/事实索引.json`; }
 /** 生成断点目录（故事质量闭环 Task 7/10 断点落盘） */

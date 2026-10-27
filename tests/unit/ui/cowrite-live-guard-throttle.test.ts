@@ -102,14 +102,16 @@ describe('LiveAnalysisController — 输入触发的设定守卫节流', () => {
         expect(ctx.view.engine.inspectSettingGuard).toHaveBeenCalledTimes(2);
     });
 
-    it('插入 / 保存 / 手动检查不受节流限制', async () => {
+    it('插入 / 保存 走同一节流；手动检查不受限', async () => {
         const ctx = makeCtx('字'.repeat(1000));
         await run(ctx, 'input');
 
         await run(ctx, 'insert');
         await run(ctx, 'save');
+        expect(ctx.view.engine.inspectSettingGuard).toHaveBeenCalledTimes(1);
+
         await run(ctx, 'manual');
-        expect(ctx.view.engine.inspectSettingGuard).toHaveBeenCalledTimes(4);
+        expect(ctx.view.engine.inspectSettingGuard).toHaveBeenCalledTimes(2);
     });
 
     it('检查失败也记录时间，避免每次停顿重试全量检测', async () => {

@@ -106,6 +106,33 @@ describe('buildUserPrompt — prompt 组装', () => {
         expect(prompt).toContain('【本章必须遵循】');
     });
 
+    it('包含完整场景卡：POV/时间/地点/入场/转折/离场', () => {
+        const prompt = buildUserPrompt(
+            makeTask({
+                pov: '林晚',
+                time: '亥时',
+                location: '书房外',
+                entryState: '警惕，左手握刀',
+                turn: '听见咳血',
+                exitState: '决定破门',
+                relationshipShift: '对父亲从怨恨转为担忧',
+                dialogueFunction: '揭露父亲隐瞒病情',
+            }),
+            '',
+            undefined,
+            '',
+        );
+
+        expect(prompt).toContain('- POV：林晚');
+        expect(prompt).toContain('- 时间：亥时');
+        expect(prompt).toContain('- 地点：书房外');
+        expect(prompt).toContain('- 入场状态：警惕，左手握刀');
+        expect(prompt).toContain('- 场景转折：听见咳血');
+        expect(prompt).toContain('- 离场状态：决定破门');
+        expect(prompt).toContain('- 关系变化：对父亲从怨恨转为担忧');
+        expect(prompt).toContain('- 对话功能：揭露父亲隐瞒病情');
+    });
+
     it('无修正方向与注入时仍可组装（不出现空标题）', () => {
         const prompt = buildUserPrompt(makeTask(), '', undefined, '');
         expect(prompt).toContain('【场景任务卡】');

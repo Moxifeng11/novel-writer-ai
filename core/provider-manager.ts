@@ -8,7 +8,12 @@
 import { Notice } from 'obsidian';
 import type { NovelWriterSettings, CustomProvider, ModelSourceType } from '../main';
 import { DEFAULT_PROVIDERS, resolveProviderSourceType } from '../main';
-import { findModelCapability, lookupModelCapability, type ModelSourceKind } from '../shared/model-capabilities';
+import {
+    findModelCapability,
+    getDetectedModelCapability,
+    lookupModelCapability,
+    type ModelSourceKind,
+} from '../shared/model-capabilities';
 import { createLogger } from '../shared/logger';
 
 
@@ -97,12 +102,15 @@ export class ProviderManager {
         const endpointKey = endpoint || s.apiEndpoint;
         const override = s.modelOverrides[endpointKey]?.[modelName];
 
-        // 优先级：用户覆盖 → 静态能力表（最长键优先）→ 提供商预设 → 来源兜底
+        // 优先级：用户覆盖 → 本地探测值 → 自定义供应商显式上限
+        //         → 静态能力表（最长键优先）→ 来源兜底
         const staticCaps = lookupModelCapability(modelName);
+        const detectedCaps = getDetectedModelCapability(modelName);
         const provider = (s.customProviders || []).find(p => p.endpoint === endpointKey);
         const source: ModelSourceKind = resolveProviderSourceType({
             id: provider?.id || '',
             endpoint: endpointKey,
+            sourceType: provider?.sourceType,
         }) === 'local' ? 'local' : 'cloud';
         const fallbackCaps = findModelCapability(modelName, source);
         const providerCaps = provider && provider.maxContext > 0
@@ -111,8 +119,14 @@ export class ProviderManager {
                 maxOutput: provider.maxOutput > 0 ? provider.maxOutput : fallbackCaps.maxOutput,
             }
             : null;
-        // 本地未登记模型优先用保守兜底：内置 ollama 预设的 32768 只适用于它列出的两个模型
-        const baseCaps = staticCaps ?? (source === 'local' ? fallbackCaps : providerCaps ?? fallbackCaps);
+        // 自定义供应商的显式上限优先于静态表：用户可能用同一模型名指向不同规格的代理。
+        // 预设供应商仍以静态表为准，避免内置预设的保守值覆盖官方文档能力。
+        const customProviderCaps = provider && !provider.isDefault ? providerCaps : null;
+        const baseCaps = detectedCaps
+            ?? customProviderCaps
+            ?? staticCaps
+            ?? providerCaps
+            ?? fallbackCaps;
 
         return {
             maxContext: override?.maxContext ?? baseCaps.maxContext,
@@ -124,14 +138,18 @@ export class ProviderManager {
     setModelOverride(providerId: string, model: string, field: 'maxContext' | 'maxOutput', newValue: number): void {
         if (!Number.isFinite(newValue) || newValue <= 0) return;
         const s = this.cb.getSettings();
-        const endpoint = s.apiEndpoint;
+        // 覆盖值必须写回模型所属供应商的 endpoint；旧实现固定用当前 apiEndpoint，
+        // 在给 Flash/Pro/协同模型分别配置时会写错层级。
+        const provider = (s.customProviders || []).find(p => p.id === providerId);
+        const endpoint = provider?.endpoint || s.apiEndpoint;
         const overrides = s.modelOverrides;
         if (!overrides[endpoint]) overrides[endpoint] = {};
         if (!overrides[endpoint][model]) overrides[endpoint][model] = {};
-        const oldValue = overrides[endpoint][model][field] ?? s[field];
+        const oldValue = overrides[endpoint][model][field] ?? this.resolveModelLimits(model, endpoint)[field];
         if (oldValue === newValue) return;
         overrides[endpoint][model][field] = newValue;
-        s[field] = newValue;
+        // 不再同步改写全局 maxContext/maxOutput：全局值只作为旧版兼容默认，
+        // 真正的预算由任务级解析读取 modelOverrides。
         const entry = {
             timestamp: new Date().toISOString(),
             providerId,

@@ -32,6 +32,12 @@ const log = createLogger('LlmEnhancer');
 /** 降级标记 Symbol：enhanceResult 降级时附加在结果对象上，调用方可检查感知 */
 export const LLM_DEGRADED = Symbol('llm_degraded');
 
+export interface LLMCallOptions {
+    endpoint?: string;
+    apiKey?: string;
+    disableFallback?: boolean;
+}
+
 /**
  * LLM 调用器接口。
  * AIEngine 天然实现该接口（callAI 方法签名兼容），测试时可注入 mock。
@@ -42,7 +48,8 @@ export interface LLMCaller {
         userPrompt: string,
         model?: string,
         temperature?: number,
-        maxTokens?: number
+        maxTokens?: number,
+        options?: LLMCallOptions,
     ): Promise<{ content: string; error?: string }>;
 }
 
@@ -82,6 +89,8 @@ export interface LLMEnhancerOptions {
     temperature?: number;
     /** 最大 tokens（默认 2048） */
     maxTokens?: number;
+    /** 供应商路由选项：本地模型拆解时传 endpoint/apiKey，禁止回退云端 */
+    callOptions?: LLMCallOptions;
 }
 
 /** 默认温度：低温度保证结构化输出稳定 */
@@ -151,7 +160,8 @@ export class LLMEnhancer {
                 userPrompt,
                 this.options.llmModel,
                 this.options.temperature ?? DEFAULT_TEMPERATURE,
-                this.options.maxTokens ?? DEFAULT_MAX_TOKENS
+                this.options.maxTokens ?? DEFAULT_MAX_TOKENS,
+                this.options.callOptions,
             );
 
             if (response.error) {
@@ -364,7 +374,8 @@ export class LLMEnhancer {
                     userPrompt,
                     this.options.llmModel,
                     this.options.temperature ?? DEFAULT_TEMPERATURE,
-                    this.options.maxTokens ?? DEFAULT_MAX_TOKENS
+                    this.options.maxTokens ?? DEFAULT_MAX_TOKENS,
+                    this.options.callOptions,
                 );
 
                 if (response.error) {
@@ -465,7 +476,8 @@ export class LLMEnhancer {
                     userPrompt,
                     this.options.llmModel,
                     this.options.temperature ?? DEFAULT_TEMPERATURE,
-                    this.options.maxTokens ?? DEFAULT_MAX_TOKENS
+                    this.options.maxTokens ?? DEFAULT_MAX_TOKENS,
+                    this.options.callOptions,
                 );
 
                 if (response.error) {

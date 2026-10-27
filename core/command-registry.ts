@@ -79,7 +79,16 @@ export interface CommandDefinition {
 /** 所有命令的定义列表 */
 const COMMAND_DEFINITIONS: CommandDefinition[] = [
     // ─── 项目管理类 ───
-    { id: CommandIds.CREATE_PROJECT, name: '新建项目', group: CommandGroup.ProjectManagement, description: '创建新的小说项目' },
+    { id: CommandIds.CREATE_PROJECT, name: '新建项目', group: CommandGroup.ProjectManagement, description: '新建长篇小说/同人项目（短篇与剧本使用独立入口）' },
+    { id: CommandIds.CREATE_SHORT, name: '新建短篇项目', group: CommandGroup.ProjectManagement, description: '先完成短篇前期调研，再创建番茄短篇项目' },
+    { id: CommandIds.CREATE_SCRIPT, name: '新建剧本项目', group: CommandGroup.ProjectManagement, description: '先完成剧本前期调研，再创建红果短剧项目' },
+        { id: CommandIds.SHORT_RESEARCH, name: '短篇前期调研', group: CommandGroup.ProjectManagement, description: '编辑当前短篇项目的前期调研与五维分类' },
+    { id: CommandIds.SCRIPT_RESEARCH, name: '剧本前期调研', group: CommandGroup.ProjectManagement, description: '编辑当前剧本项目的前期调研与商业定位' },
+    { id: CommandIds.SHORT_STORY_CORE, name: '短篇故事核', group: CommandGroup.ProjectManagement, description: '编辑当前短篇的故事核' },
+    { id: CommandIds.SHORT_OUTLINE, name: '短篇分节大纲', group: CommandGroup.ProjectManagement, description: '编辑当前短篇的分节大纲' },
+    { id: CommandIds.SCRIPT_SCENE_BIBLE, name: '剧本场景圣经', group: CommandGroup.ProjectManagement, description: '编辑当前剧本的场景圣经' },
+    { id: CommandIds.SCRIPT_OUTLINE, name: '剧本分集大纲', group: CommandGroup.ProjectManagement, description: '编辑当前剧本的分集大纲' },
+    { id: CommandIds.SCRIPT_STORYBOARD, name: '剧本分镜表', group: CommandGroup.ProjectManagement, description: '编辑当前剧本的分镜表' },
     { id: CommandIds.IMPORT_EXAMPLE, name: '导入示例项目', group: CommandGroup.ProjectManagement, description: '一键创建含 1 卷 3 章、人物与伏笔的示例项目' },
     { id: CommandIds.RENAME_PROJECT, name: '重命名当前项目', group: CommandGroup.ProjectManagement, description: '重命名当前活动项目' },
     { id: CommandIds.PLAN_BOOK, name: 'AI全书规划', group: CommandGroup.ProjectManagement, description: '使用 AI 进行全书规划' },
@@ -231,6 +240,15 @@ export class CommandRegistry {
         // ── UI 类命令：core 只登记 id 与回调，实际执行由 ui 层（CommandUiExecutor）接管 ──
         const uiCommandIds: string[] = [
             CommandIds.CREATE_PROJECT,
+            CommandIds.CREATE_SHORT,
+            CommandIds.CREATE_SCRIPT,
+            CommandIds.SHORT_RESEARCH,
+            CommandIds.SCRIPT_RESEARCH,
+            CommandIds.SHORT_STORY_CORE,
+            CommandIds.SHORT_OUTLINE,
+            CommandIds.SCRIPT_SCENE_BIBLE,
+            CommandIds.SCRIPT_OUTLINE,
+            CommandIds.SCRIPT_STORYBOARD,
             CommandIds.PLAN_BOOK,
             CommandIds.VOLUME_INTRO,
             CommandIds.BATCH_CHAPTERS,
@@ -325,6 +343,15 @@ export class CommandRegistry {
         };
 
         addCommand({ id: CommandIds.CREATE_PROJECT, name: '新建项目', callback: exec(CommandIds.CREATE_PROJECT) });
+        addCommand({ id: CommandIds.CREATE_SHORT, name: '新建短篇项目（前期调研）', callback: exec(CommandIds.CREATE_SHORT) });
+        addCommand({ id: CommandIds.CREATE_SCRIPT, name: '新建剧本项目（前期调研）', callback: exec(CommandIds.CREATE_SCRIPT) });
+        addCommand({ id: CommandIds.SHORT_RESEARCH, name: '编辑短篇前期调研', callback: exec(CommandIds.SHORT_RESEARCH) });
+        addCommand({ id: CommandIds.SCRIPT_RESEARCH, name: '编辑剧本前期调研', callback: exec(CommandIds.SCRIPT_RESEARCH) });
+        addCommand({ id: CommandIds.SHORT_STORY_CORE, name: '编辑短篇故事核', callback: exec(CommandIds.SHORT_STORY_CORE) });
+        addCommand({ id: CommandIds.SHORT_OUTLINE, name: '编辑短篇分节大纲', callback: exec(CommandIds.SHORT_OUTLINE) });
+        addCommand({ id: CommandIds.SCRIPT_SCENE_BIBLE, name: '编辑剧本场景圣经', callback: exec(CommandIds.SCRIPT_SCENE_BIBLE) });
+        addCommand({ id: CommandIds.SCRIPT_OUTLINE, name: '编辑剧本分集大纲', callback: exec(CommandIds.SCRIPT_OUTLINE) });
+        addCommand({ id: CommandIds.SCRIPT_STORYBOARD, name: '编辑剧本分镜表', callback: exec(CommandIds.SCRIPT_STORYBOARD) });
         addCommand({ id: CommandIds.IMPORT_EXAMPLE, name: '导入示例项目', callback: exec(CommandIds.IMPORT_EXAMPLE) });
         addCommand({ id: CommandIds.PLAN_BOOK, name: 'AI全书规划', callback: exec(CommandIds.PLAN_BOOK) });
         addCommand({ id: CommandIds.VOLUME_INTRO, name: '全书简介', callback: exec(CommandIds.VOLUME_INTRO) });

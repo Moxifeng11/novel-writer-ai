@@ -11,6 +11,8 @@ import type { AIEngine } from './ai-engine';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { fitPromptToContext } from '../shared/prompt-budget';
+import { buildCraftSystemBlock } from './craft-constraints';
+import { fillTemplate } from './prompts/template-utils';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('SceneExpander');
@@ -43,27 +45,38 @@ export const SCENE_EXPAND_SYSTEM_PROMPT = `你就是主角本人。现在你需�
 
 \${triggeredMemories}
 
-【预演要求——每场景必须有这8个核心要素】
-1. objective: 你走进这个场景是为了什么？
-2. emotion_arc: 进来时什么感觉 → 出去时变成什么感觉（必须变化）
-3. conflict: 什么在挡你的路？
-4. sensory_hook: 你身体第一个感受到的是什么？（气味/温度/声音/触感）
-5. memory_trigger: 这个场景有没有让你想起什么？如果某个感官元素触发了你的创伤记忆——写出来。
-6. body_reaction: 你的身体怎么反应的？（不自觉的——手指/呼吸/肩膀/胃）
-7. subtext: 你说的话和你想说的话之间差了多少？
-8. relationship_shift: 和在场的人之间——关系有变化吗？
-
-【进阶要求——场景质量升级】
-9. key_scene: 本章至少选一个场景作为【名场面】，标记为 ⭐ 名场面，并说明为什么这个场景会让读者印象深刻（如：极致反差/情绪爆发/重大转折/经典台词）
-10. dialogue_function: 每段对话必须完成至少一件事——要么推进剧情、要么揭露信息、要么塑造人物、要么改变关系。在场景末尾用一句话说明本段对话的功能性。
-11. cliffhanger: 【本章最后一个场景】必须设置结尾钩子——一个让读者迫切想看下一章的悬念。可以是：新危机出现/重要信息揭露一半/关键人物登场/反转发生在最后一刻。
+【预演要求——每场景必须有完整场景卡】
+1. pov: 视角人物（默认主角，只写他能感知到的信息）
+2. time: 场景内时间（如：黄昏/三日后/子时）
+3. location: 具体地点
+4. objective: 你走进这个场景是为了什么？
+5. entry_state: 入场状态（位置/情绪/已知信息）
+6. conflict: 什么在挡你的路？
+7. turn: 场景转折（必须发生一次可指认的变化）
+8. exit_state: 离场状态（必须与入场不同）
+9. emotion_arc: 进来时什么感觉 → 出去时变成什么感觉（必须变化）
+10. sensory_hook: 至少2个具体感官细节（气味/温度/声音/触感/画面）
+11. memory_trigger: 这个场景有没有让你想起什么？如果某个感官元素触发了你的创伤记忆——写出来。
+12. body_reaction: 你的身体怎么反应的？（不自觉的——手指/呼吸/肩膀/胃）
+13. subtext: 你说的话和你想说的话之间差了多少？
+14. relationship_shift: 和在场的人之间——关系有变化吗？
+15. key_scene: 本章至少选一个场景作为【名场面】，标记为 ⭐ 名场面，并说明为什么这个场景会让读者印象深刻
+16. dialogue_function: 每段对话必须完成至少一件事——推进剧情/揭露信息/塑造人物/改变关系
+17. cliffhanger: 【本章最后一个场景】必须设置结尾钩子
+18. craft_notes: 可选，本场景必须避免/必须做到的写作细节
 
 【输出格式——严格遵循】
 ## 场景N：场景名
-objective: ...
+pov: 视角人物（默认主角，不得进入其他人物内心）
+time: 场景内时间（如：黄昏/三日后/子时）
+location: 具体地点
+objective: 本场景目标
+entry_state: 入场状态（人物位置/情绪/已知信息）
+conflict: 核心冲突
+turn: 场景转折（必须发生一次可指认的变化）
+exit_state: 离场状态（必须与入场不同）
 emotion_arc: XXX(N) → XXX(N) — 原因
-conflict: ...
-sensory_hook: ...
+sensory_hook: 至少2个具体感官细节（气味/温度/声音/触感/画面）
 memory_trigger: 无 / 触发 m00X — 什么触发的
 body_reaction: ...
 subtext: ...
@@ -71,9 +84,14 @@ relationship_shift: ...
 key_scene: ⭐ 名场面 — 原因（非名场面写"否"）
 dialogue_function: 本段对话完成了什么（推进剧情/揭露XX信息/塑造XX性格/改变XX关系）
 cliffhanger: （仅最后一个场景填写，钩子内容）
+craft_notes: 可选，本场景必须避免/必须做到的写作细节
 
 【约束】
+- POV 必须是视角人物；只写他能感知到的信息，不进入其他人物内心
+- time/location 必须具体；场景之间切换必须写出时间推移或空间移动
 - objective 必须是主角的——不是作者给角色分配的任务
+- entry_state 与 exit_state 必须不同；如果人物状态没有变化，这个场景不成立
+- turn 必须是可指认的事件/信息/决定，不是“情绪变得更复杂”
 - emotion_arc 的两个情绪必须不同
 - sensory_hook 必须具体——不是"气氛紧张"，是"闻到铁锈味"或"手摸到冰凉的金属"
 - body_reaction 是不自觉的——不是"他决定握紧拳头"，是"拳头自己收紧了，他发现时指甲已掐进掌心"
@@ -102,6 +120,9 @@ export const SCENE_EXPAND_USER_TEMPLATE = `你是\${protagonistName}本人。现
 
 【你要经历的大纲】
 \${outlineContent}
+
+【情节节点——本章必须发生的具体事件】
+\${distilledContent}
 
 【信息规划——本章必须释放/保留的信息】
 \${infoPlan}
@@ -135,15 +156,23 @@ export async function generateSceneExpansion(
     model?: string,
     notifier: Notifier = NOOP_NOTIFIER,
     budget?: SceneExpandBudget,
+    customPrompt?: { systemPrompt?: string; userPrompt?: string },
+    options?: { maxTokens?: number; signal?: AbortSignal },
 ): Promise<string> {
-    const systemPrompt = SCENE_EXPAND_SYSTEM_PROMPT
+    const sceneKnowledgeForTemplate = (vars.sceneKnowledge || '').trim();
+    const defaultSystemPrompt = `${SCENE_EXPAND_SYSTEM_PROMPT
         .replace(/\${protagonistSoul}/g, vars.characterCores || '')
-        .replace(/\${triggeredMemories}/g, vars.triggeredMemories || '无。');
+        .replace(/\${triggeredMemories}/g, vars.triggeredMemories || '无。')}
+
+${buildCraftSystemBlock()}`;
+    const systemPrompt = customPrompt?.systemPrompt
+        ? `${fillTemplate(customPrompt.systemPrompt, { ...vars, sceneKnowledge: sceneKnowledgeForTemplate })}\n\n${buildCraftSystemBlock()}`
+        : defaultSystemPrompt;
 
     // 知识注入单独作为增强层：超预算时整段丢弃，而不是拼在正文主体里被尾部截断
-    const sceneKnowledge = (vars.sceneKnowledge || '').trim();
+    const sceneKnowledge = sceneKnowledgeForTemplate;
 
-    const userPrompt = SCENE_EXPAND_USER_TEMPLATE
+    const defaultUserPrompt = SCENE_EXPAND_USER_TEMPLATE
         .replace(/\${protagonistName}/g, vars.protagonistName || '主角')
         .replace(/\${chapNum}/g, vars.chapNum || '?')
         .replace(/\${worldView}/g, vars.worldView || '暂无世界观设定。')
@@ -152,12 +181,16 @@ export async function generateSceneExpansion(
         .replace(/\${worldType}/g, vars.worldType || '未知世界类型。')
         .replace(/\${outlineContent}/g, vars.outlineContent || '')
         .replace(/\${infoPlan}/g, vars.infoPlan || '（未执行信息规划：只演出大纲已确定的事件，不得新增情节节点）')
+        .replace(/\${distilledContent}/g, vars.distilledContent || '（未执行情节蒸馏：只按大纲事件展开，不要新增情节节点）')
         .replace(/\${prevChapEnding}/g, vars.prevChapEnding || '（无上一章结尾信息：不要编造上一章结尾）')
         .replace(/\${timelineEvents}/g, vars.timelineEvents || '（无时间线信息：本章时间不得倒退，场景顺序必须符合因果）')
         .replace(/\${emotionPlan}/g, vars.emotionPlan || '无情绪规划。')
         .replace(/\${triggeredMemories}/g, vars.triggeredMemories || '无。')
         .replace(/\${allChars}/g, vars.allChars || '')
         .replace(/\${sceneKnowledge}/g, '');
+    const userPrompt = customPrompt?.userPrompt
+        ? fillTemplate(customPrompt.userPrompt, { ...vars, sceneKnowledge: sceneKnowledgeForTemplate })
+        : defaultUserPrompt;
 
     let effectiveUser = userPrompt;
     if (budget && budget.maxContext > 0) {
@@ -183,7 +216,14 @@ export async function generateSceneExpansion(
     }
 
     notifier.showNotice('🎬 正在展开场景设计...');
-    const response = await aiEngine.callAI(systemPrompt, effectiveUser, model);
+    const response = await aiEngine.callAI(
+        systemPrompt,
+        effectiveUser,
+        model,
+        0.7,
+        options?.maxTokens ?? budget?.maxOutput,
+        options?.signal ? { signal: options.signal } : undefined,
+    );
     notifier.showNotice('✅ 场景展开完成');
 
     return response.content;
@@ -315,6 +355,21 @@ export function validateSceneExpansion(content: string): { valid: boolean; error
             if (!fieldRegex.test(sceneContent)) {
                 errors.push(`场景${sceneNum}: 缺少 ${field} 字段`);
             }
+        }
+
+        // 场景卡新字段：旧文件缺失只告警，不阻断；新生成提示词会强制要求
+        const sceneCardFields = ['pov', 'time', 'location', 'entry_state', 'turn', 'exit_state'];
+        for (const field of sceneCardFields) {
+            const fieldRegex = new RegExp(`^\\s*\\*?\\*?${field}\\s*[：:]\\s*`, 'im');
+            if (!fieldRegex.test(sceneContent)) {
+                warnings.push(`场景${sceneNum}: 缺少 ${field} 字段（场景卡不完整，建议重新生成或补填）`);
+            }
+        }
+
+        const entry = sceneContent.match(/^\s*\*?\*?entry_state\s*[：:]\s*(.+)$/im)?.[1]?.trim();
+        const exit = sceneContent.match(/^\s*\*?\*?exit_state\s*[：:]\s*(.+)$/im)?.[1]?.trim();
+        if (entry && exit && entry === exit) {
+            warnings.push(`场景${sceneNum}: entry_state 与 exit_state 相同，场景没有发生状态变化`);
         }
 
         const arcMatch = sceneContent.match(/^\s*\*?\*?emotion_arc\s*[：:]\s*(.+)$/im);

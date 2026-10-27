@@ -15,7 +15,19 @@ export const COMBINED_PLANNING_SYSTEM_PROMPT = `你是一位资深小说编辑�
 【输出格式——严格遵循，用分隔符划分5个模块】
 
 ========== INFO_PLAN ==========
-（信息规划内容：章名与核心冲突、情感与冲突量化、信息释放计划、伏笔操作、关系推进）
+## 章名与核心冲突
+章名：第N章 章节名
+核心冲突：一句话说明本章最大矛盾
+## 情感与冲突量化
+情感温度：从X级到Y级（9-10 级量表，附说明）
+冲突强度：N/5（1-5 级，附阶段描述）
+## 信息释放计划
+- 新信息点1：出现在哪个场景/用什么方式释放
+- 新信息点2：同上
+## 伏笔操作
+- 埋入/推进/揭示：具体伏笔名称与位置
+## 关系推进
+- 本章明确推进的一对关系及变化
 
 ========== PLOT_DISTILL ==========
 （情节蒸馏内容：场景节奏设计、情节节点规划、爽点设计、冲突升级路径、信息密度指标）
@@ -35,17 +47,27 @@ body_reaction: 身体反应
 relationship_change: 关系变化
 
 ========== SCENE_EXPAND ==========
-（Scene展开内容：每个场景的8要素）
+（Scene展开内容：每个场景的完整场景卡）
 每个场景格式：
-## sceneN: 场景名
+## 场景N：场景名
+pov: 视角人物
+time: 场景内时间
+location: 具体地点
 objective: ...
-emotion_arc: XXX(N) → XXX(N) — 原因
+entry_state: 入场状态
 conflict: ...
-sensory_hook: ...
+turn: 场景转折（必须发生）
+exit_state: 离场状态（必须与入场不同）
+emotion_arc: XXX(N) → XXX(N) — 原因
+sensory_hook: 至少2个具体感官细节
 memory_trigger: 无 / 触发描述
 body_reaction: ...
 subtext: ...
 relationship_shift: ...
+key_scene: ⭐ 名场面 — 原因 / 否
+dialogue_function: 本段对话完成了什么
+cliffhanger: （仅最后一个场景）
+craft_notes: 可选
 
 【约束】
 - 人物、地点、势力必须从「已有实体上下文」中选取，不得新创

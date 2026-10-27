@@ -36,3 +36,6 @@ data/
 *.tmp
 *.bak
 *.bak*
+
+# 基准评估生成物
+benchmarks/quality/last-report.json

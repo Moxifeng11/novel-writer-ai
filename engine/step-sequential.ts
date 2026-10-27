@@ -16,6 +16,8 @@ export interface SequentialStepInputs {
 
 export interface SequentialStepHost {
     executeStep(ctx: StepRunCtx): Promise<void>;
+    /** 为当前步骤装配真实 system/user prompt；不提供时沿用宿主输入区。 */
+    prepareStepInputs?(stepKey: string, ctx: StepRunCtx): Promise<void> | void;
     createStepInputs(): SequentialStepInputs;
 }
 
@@ -46,6 +48,15 @@ export async function executeStepsSequential(
             continue;
         }
 
+        // 取消后不再启动下一步：旧实现只在当前 AI 调用内部检查 signal，
+        // 逐步模式一次传入 5 个规划步骤时，取消后仍会继续跑后续步骤。
+        if (baseCtx.getAbortController?.()?.signal.aborted) {
+            failed = stepKey;
+            failedAt = i;
+            options?.onStepError?.(stepKey, '已取消');
+            break;
+        }
+
         const step = ALL_FULL_STEPS.find(s => s.key === stepKey);
         if (!step) continue;
 
@@ -63,8 +74,16 @@ export async function executeStepsSequential(
         };
 
         try {
+            await host.prepareStepInputs?.(stepKey, stepCtx);
             await host.executeStep(stepCtx);
             const content = baseCtx.stepResults[stepKey] || '';
+            // 空内容/未达完成标准不能算成功：旧实现只看“没抛异常”，
+            // 因此空 prompt 早退、截断草稿都会被计入 successful，调用方以为已补齐。
+            if (!content.trim() || !baseCtx.stepCompleted.has(stepKey)) {
+                const meta = stepCtx.stepMeta?.[stepKey];
+                const reason = meta?.truncated ? '输出被截断' : '未产出完整内容';
+                throw new Error(`${step.label} ${reason}`);
+            }
             successful.push(stepKey);
             options?.onStepComplete?.(stepKey, content);
         } catch (e) {

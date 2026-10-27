@@ -37,6 +37,7 @@
     "services/deconstruction-worker-manager.ts|../engine/vector-enhancer|engine",
     "services/foreshadow-manager.ts|../engine/chapter-utils|engine",
     "services/foreshadow-manager.ts|../engine/context-manager|engine",
+    "services/project-migration-service.ts|../engine/context-manager|engine",
     "services/foreshadow-manager.ts|../engine/vector-enhancer|engine",
     "services/genre-classifier.ts|../engine/embedding/embedding-provider|engine",
     "services/genre-classifier.ts|../engine/webnovel-knowledge-base|engine",

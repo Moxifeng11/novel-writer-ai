@@ -103,38 +103,57 @@ export const SCENE_EXPAND_PROMPTS = {
 
 \${triggeredMemories}
 
-【预演要求——每场景必须有这8个要素】
-1. objective: 你走进这个场景是为了什么？
-2. emotion_arc: 进来时什么感觉 → 出去时变成什么感觉（必须变化）
-3. conflict: 什么在挡你的路？
-4. sensory_hook: 你身体第一个感受到的是什么？（气味/温度/声音/触感）
-5. memory_trigger: 这个场景有没有让你想起什么？如果某个感官元素触发了你的创伤记忆——写出来。
-6. body_reaction: 你的身体怎么反应的？（不自觉的——手指/呼吸/肩膀/胃）
-7. subtext: 你说的话和你想说的话之间差了多少？
-8. relationship_shift: 和在场的人之间——关系有变化吗？
+【预演要求——每场景必须有完整场景卡】
+1. pov: 视角人物（默认主角，只写他能感知到的信息）
+2. time: 场景内时间
+3. location: 具体地点
+4. objective: 你走进这个场景是为了什么？
+5. entry_state: 入场状态（位置/情绪/已知信息）
+6. conflict: 什么在挡你的路？
+7. turn: 场景转折（必须发生一次可指认的变化）
+8. exit_state: 离场状态（必须与入场不同）
+9. emotion_arc: 进来时什么感觉 → 出去时变成什么感觉（必须变化）
+10. sensory_hook: 至少2个具体感官细节
+11. memory_trigger: 这个场景有没有让你想起什么？
+12. body_reaction: 你的身体怎么反应的？（不自觉的）
+13. subtext: 你说的话和你想说的话之间差了多少？
+14. relationship_shift: 和在场的人之间关系有变化吗？
+15. key_scene: 本章至少一个名场面
+16. dialogue_function: 每段对话完成了什么
+17. cliffhanger: 最后一个场景的结尾钩子
+18. craft_notes: 可选工艺备注
 
 【输出格式——严格遵循】
-## sceneN: 场景名
+## 场景N：场景名
+pov: ...
+time: ...
+location: ...
 objective: ...
-emotion_arc: XXX(N) → XXX(N) — 原因
+entry_state: ...
 conflict: ...
-sensory_hook: ...
+turn: ...
+exit_state: ...
+emotion_arc: XXX(N) → XXX(N) — 原因
+sensory_hook: 至少2个具体感官细节
 memory_trigger: 无 / 触发 m00X — 什么触发的
 body_reaction: ...
 subtext: ...
 relationship_shift: ...
+key_scene: ⭐ 名场面 — 原因（非名场面写"否"）
+dialogue_function: 本段对话完成了什么
+cliffhanger: （仅最后一个场景填写）
+craft_notes: 可选
 
 【约束】
+- entry_state 与 exit_state 必须不同；turn 必须是可指认的事件/信息/决定
 - objective 必须是主角的——不是作者给角色分配的任务
 - emotion_arc 的两个情绪必须不同
 - sensory_hook 必须具体——不是"气氛紧张"，是"闻到铁锈味"或"手摸到冰凉的金属"
 - body_reaction 是不自觉的——不是"他决定握紧拳头"，是"拳头自己收紧了，他发现时指甲已掐进掌心"
 - subtext 是说vs想的差距——说了什么，心里真正想的是什么
-
-【场景衔接——必须连续】
-- 第一个场景必须从上一章结尾的下一刻开始：时间、地点、人物状态都要接得上
-- 场景之间允许跳时间/跳地点，但要在 objective 或 sensory_hook 里交代过渡（过了多久、怎么到的、衣服/伤口/体力有没有变化）
-- 不允许无过渡换场：不能上一秒还在A地，下一秒就出现在B地且状态完好`,
+- dialogue_function 要具体——不要写"推进剧情"，要写"揭露了反派的真实身份"
+- 第1个场景必须承接【上一章结尾】的时间、地点、人物状态与情绪
+- 场景之间切换必须写明时间推移或空间移动，不得凭空换场`,
     userPrompt: `你是\${protagonistName}本人。现在预演你即将经历的第\${chapNum}章。
 
 【你要经历的大纲】

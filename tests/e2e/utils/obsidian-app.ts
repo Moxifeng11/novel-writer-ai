@@ -1,6 +1,10 @@
-import { _electron as electron } from 'playwright';
-import type { ElectronApplication, Page } from 'playwright';
+import { chromium } from 'playwright';
+import type { Browser, Page } from 'playwright';
+import { spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
+import * as net from 'node:net';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -17,9 +21,10 @@ export interface TestVault {
 }
 
 export interface ObsidianSession {
-    app: ElectronApplication;
     page: Page;
     vault: TestVault;
+    /** 关闭测试实例并清理由本测试创建的 userData 目录 */
+    close: () => Promise<void>;
 }
 
 /** 读取并校验 OBSIDIAN_PATH；未配置或路径不存在时返回空 */
@@ -79,6 +84,14 @@ export function createTestVault(): TestVault {
         JSON.stringify([PLUGIN_ID], null, 2),
     );
     fs.writeFileSync(
+        path.join(vaultPath, '.obsidian', 'core-plugins.json'),
+        JSON.stringify([]),
+    );
+    fs.writeFileSync(
+        path.join(vaultPath, '.obsidian', 'workspace.json'),
+        JSON.stringify({}),
+    );
+    fs.writeFileSync(
         path.join(vaultPath, '.obsidian', 'app.json'),
         JSON.stringify({ promptDelete: false }, null, 2),
     );
@@ -86,39 +99,145 @@ export function createTestVault(): TestVault {
     return { path: vaultPath };
 }
 
-/** 启动 Obsidian 并返回已就绪的工作区页面 */
+async function findFreePort(): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const server = net.createServer();
+        server.unref();
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', () => {
+            const address = server.address();
+            const port = typeof address === 'object' && address ? address.port : 0;
+            server.close(() => (port ? resolve(port) : reject(new Error('无法分配调试端口'))));
+        });
+    });
+}
+
+/**
+ * 启动 Obsidian 并返回已就绪的工作区页面。
+ *
+ * 不使用 Playwright 的 `_electron.launch`：Obsidian 的启动器会让该握手超时。
+ * 改用 `--remote-debugging-port` + CDP 连接，并通过独立的 `--user-data-dir`
+ * 隔离配置，这样即使用户的 Obsidian 正在运行也不会触发单实例锁。
+ */
 export async function launchObsidian(vault: TestVault): Promise<ObsidianSession> {
     const executablePath = getObsidianExecutable();
     if (!executablePath) throw new Error('OBSIDIAN_PATH 未配置或无效');
 
-    const args = [vault.path];
+    const userDataPath = fs.mkdtempSync(path.join(os.tmpdir(), 'nw-e2e-userdata-'));
+    const vaultId = crypto.randomBytes(8).toString('hex');
+    fs.writeFileSync(
+        path.join(userDataPath, 'obsidian.json'),
+        JSON.stringify({
+            vaults: { [vaultId]: { path: vault.path, ts: Date.now(), open: true } },
+            cli: true,
+            frame: 'custom',
+        }),
+    );
+    fs.writeFileSync(path.join(userDataPath, `${vaultId}.json`), '{}');
+
+    const port = await findFreePort();
+    const args = [
+        `--user-data-dir=${userDataPath}`,
+        `--remote-debugging-port=${port}`,
+        vault.path,
+    ];
     if (process.platform === 'linux') args.push('--no-sandbox');
 
-    const app = await electron.launch({
-        executablePath,
-        args,
+    const child: ChildProcess = spawn(executablePath, args, {
         env: { ...process.env, NODE_ENV: 'test' },
-        timeout: 120_000,
+        stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stderr = '';
+    child.stderr?.on('data', (chunk) => {
+        stderr += String(chunk);
     });
 
-    const page = await waitForWorkspacePage(app);
-    return { app, page, vault };
+    let browser: Browser | null = null;
+    try {
+        browser = await connectWithRetry(port, child, 60_000);
+        const page = await waitForWorkspacePage(browser, 60_000);
+        let closed = false;
+        const close = async () => {
+            if (closed) return;
+            closed = true;
+            await browser?.close().catch(() => undefined);
+            if (child.exitCode === null) {
+                child.kill();
+                await waitForExit(child, 10_000);
+            }
+            removeWithRetry(userDataPath);
+        };
+        return { page, vault, close };
+    } catch (e) {
+        child.kill();
+        await waitForExit(child, 5_000);
+        await browser?.close().catch(() => undefined);
+        removeWithRetry(userDataPath);
+        const detail = stderr.trim() ? `\nObsidian stderr:\n${stderr.trim()}` : '';
+        throw new Error(`无法启动 Obsidian 测试实例：${e instanceof Error ? e.message : String(e)}${detail}`);
+    }
 }
 
-async function waitForWorkspacePage(app: ElectronApplication, timeout = 60_000): Promise<Page> {
+async function connectWithRetry(
+    port: number,
+    child: ChildProcess,
+    timeout: number,
+): Promise<Browser> {
+    const deadline = Date.now() + timeout;
+    let lastError = '';
+    while (Date.now() < deadline) {
+        if (child.exitCode !== null) {
+            throw new Error(`Obsidian 进程提前退出（code=${child.exitCode}）`);
+        }
+        try {
+            return await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+        } catch (e) {
+            lastError = e instanceof Error ? e.message : String(e);
+            await delay(500);
+        }
+    }
+    throw new Error(`CDP 连接超时（${lastError}）`);
+}
+
+async function waitForWorkspacePage(browser: Browser, timeout = 60_000): Promise<Page> {
     const deadline = Date.now() + timeout;
     while (Date.now() < deadline) {
-        for (const page of app.windows()) {
-            try {
-                const ready = await page.evaluate(() => Boolean(document.querySelector('.workspace')));
-                if (ready) return page;
-            } catch {
-                // 窗口尚未完成加载，继续等待
+        for (const context of browser.contexts()) {
+            for (const page of context.pages()) {
+                try {
+                    const ready = await page.evaluate(() => Boolean(document.querySelector('.workspace')));
+                    if (ready) return page;
+                } catch {
+                    // 窗口尚未完成加载，继续等待
+                }
             }
         }
         await delay(500);
     }
-    throw new Error('未找到 Obsidian 工作区窗口：请确认 OBSIDIAN_PATH 有效，且启动时没有阻塞式弹窗。');
+    throw new Error('未找到 Obsidian 工作区窗口：请确认测试 vault 能被正常打开。');
+}
+
+function waitForExit(child: ChildProcess, timeout: number): Promise<void> {
+    if (child.exitCode !== null) return Promise.resolve();
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            child.off('exit', onExit);
+            resolve();
+        }, timeout);
+        const onExit = () => {
+            clearTimeout(timer);
+            resolve();
+        };
+        child.once('exit', onExit);
+    });
+}
+
+function removeWithRetry(target: string): void {
+    try {
+        fs.rmSync(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+    } catch {
+        // Windows 上 Obsidian 退出后仍可能短暂占用缓存文件；测试结束不因此失败
+    }
 }
 
 /**
@@ -131,27 +250,59 @@ export async function clickTrustPromptIfPresent(page: Page): Promise<boolean> {
 
     const buttons = modal.locator('button');
     const count = await buttons.count();
+    let candidate: { index: number; text: string } | null = null;
     for (let i = 0; i < count; i++) {
         const button = buttons.nth(i);
         const text = (await button.textContent().catch(() => '')) ?? '';
         if (/信任|启用社区插件|Trust author|Turn on community plugins/i.test(text)) {
-            await button.click();
-            return true;
+            candidate = { index: i, text };
+            break;
+        }
+        // 信任按钮在部分版本里渲染期间文本为空：排除“安全模式”后取最后一个可用按钮。
+        if (!/安全模式|safe mode/i.test(text) && !(await button.isDisabled().catch(() => true))) {
+            candidate = { index: i, text };
         }
     }
-    return false;
+    if (!candidate) return false;
+    await buttons.nth(candidate.index).click({ timeout: 5_000 }).catch(() => undefined);
+    await delay(1_000);
+    return true;
 }
 
-/** 等待插件完成 onload；期间自动处理信任弹窗 */
-export async function waitForPluginLoaded(page: Page, timeout = 60_000): Promise<void> {
+/**
+ * 找到承载 Modal 的窗口。
+ * Obsidian 1.14 会把 Modal 渲染到独立的 about:blank 窗口，而不是主工作区页面。
+ */
+export async function waitForModalPage(anchor: Page, timeout = 10_000): Promise<Page> {
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+        for (const page of anchor.context().pages()) {
+            const count = await page
+                .evaluate(() => document.querySelectorAll('.modal-container').length)
+                .catch(() => 0);
+            if (count > 0) return page;
+        }
+        await delay(200);
+    }
+    throw new Error('未找到 Obsidian Modal 窗口：命令可能没有打开弹窗。');
+}
+
+/** 等待插件完成 onload；期间自动处理信任弹窗 */export async function waitForPluginLoaded(page: Page, timeout = 60_000): Promise<void> {
     const deadline = Date.now() + timeout;
     while (Date.now() < deadline) {
         const loaded = await page
             .evaluate((id) => {
                 const host = window as unknown as {
-                    app?: { plugins?: { plugins?: Record<string, unknown> } };
+                    app?: {
+                        plugins?: { plugins?: Record<string, { _loaded?: boolean }> };
+                        commands?: { commands?: Record<string, unknown> };
+                    };
                 };
-                return Boolean(host.app?.plugins?.plugins?.[id]);
+                const plugin = host.app?.plugins?.plugins?.[id];
+                const commands = host.app?.commands?.commands || {};
+                const hasCommand = Object.keys(commands).some(key => key.startsWith(`${id}:`));
+                // 仅存在插件对象不代表 onload 完成：未信任仓库时对象可能已注册但命令为空。
+                return Boolean(hasCommand || (plugin && plugin._loaded === true));
             }, PLUGIN_ID)
             .catch(() => false);
         if (loaded) return;

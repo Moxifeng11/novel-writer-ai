@@ -53,6 +53,8 @@ export interface BodyWriteRequest {
     contract?: BodyFormatContract;
     /** 调用方计算的额外元数据（如「涉及人物」），由本模块统一写入 */
     frontmatterPatch?: Record<string, unknown>;
+    /** 本次输出是否被模型截断：true 时不得标记 generated/written */
+    truncated?: boolean;
 }
 
 export interface BodyWriteResult {
@@ -192,6 +194,7 @@ export class BodyWriter {
                         writingMode: req.writingMode, body,
                         // 校验必须带标题行：validateBodyGeneration 的「章节开头」规则要求 `^#`
                         contentForValidation: `${titleLine}${body}`,
+                        truncated: req.truncated === true,
                     });
                     if (req.frontmatterPatch) {
                         Object.assign(fm, req.frontmatterPatch);
@@ -227,6 +230,7 @@ export class BodyWriter {
         ctx: {
             title: string; chapterName: string; volume?: string;
             writingMode: BodyWritingMode; body: string; contentForValidation: string;
+            truncated?: boolean;
         },
     ): void {
         const prevStatus = typeof fm['status'] === 'string' ? fm['status'] : '';
@@ -242,14 +246,24 @@ export class BodyWriter {
         fm['word_count'] = ctx.body.length;
 
         const level = validateStepResult('bodyGeneration', ctx.contentForValidation).level;
-        if (level === 'complete') {
+        if (ctx.truncated) {
+            // 截断内容即使字数/结尾恰好过关，也不能当完整正文：
+            // 保住旧 status（settled 不降级），但正文只能是 draft。
+            if (!settled) fm['status'] = 'draft';
+            delete fm['step_status'];
+            fm['step_truncated'] = true;
+        } else if (level === 'complete') {
+            delete fm['step_truncated'];
             fm['step_status'] = 'generated';
             if (!settled) fm['status'] = 'written';
         } else if (!settled) {
+            delete fm['step_truncated'];
             if (!prevStatus || prevStatus === 'pending' || prevStatus === 'draft') {
                 fm['status'] = 'draft';
             }
             if (fm['step_status'] === 'generated') delete fm['step_status'];
+        } else {
+            delete fm['step_truncated'];
         }
     }
 

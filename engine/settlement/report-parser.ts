@@ -16,6 +16,7 @@ export function parseReport(report: string): Instructions {
         uc: [], uf: [], ufa: [], uloc: [], uitem: [],
         nc: [], nl: [], nf: [], ni: [], nfs: [], nt: [],
         rel: [], growth: [], emotion: [], del: [],
+        promise: [], arc: [],
     };
     for (const line of report.split('\n')) {
         const t = line.trim();
@@ -86,6 +87,48 @@ export function parseReport(report: string): Instructions {
         // DELETE_ENTITY: 实体类型|实体名称（v1.4.0 新增，对齐 shared_utils.js）
         m = t.match(/DELETE_ENTITY:\s*(.+?)\s*\|\s*(.+)/);
         if (m) { instr.del.push({ entityType: m[1].trim(), entityName: m[2].trim() }); continue; }
+
+        // PROMISE_OPEN: 名称 | 类型 | 预期章 | 备注
+        m = t.match(/PROMISE_OPEN:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)(?:\s*\|\s*(.*))?$/);
+        if (m) {
+            instr.promise.push({
+                action: 'open', name: m[1].trim(), type: m[2].trim(),
+                expected: m[3].trim(), note: (m[4] || '').trim(),
+            });
+            continue;
+        }
+        // PROMISE_ADVANCE: 名称 | 本章 | 备注
+        m = t.match(/PROMISE_ADVANCE:\s*(.*?)\s*\|\s*(.*?)(?:\s*\|\s*(.*))?$/);
+        if (m) {
+            instr.promise.push({
+                action: 'advance', name: m[1].trim(), chapter: m[2].trim(), note: (m[3] || '').trim(),
+            });
+            continue;
+        }
+        // PROMISE_RESOLVE: 名称 | 本章 | 兑现方式
+        m = t.match(/PROMISE_RESOLVE:\s*(.*?)\s*\|\s*(.*?)(?:\s*\|\s*(.*))?$/);
+        if (m) {
+            instr.promise.push({
+                action: 'resolve', name: m[1].trim(), chapter: m[2].trim(), note: (m[3] || '').trim(),
+            });
+            continue;
+        }
+        // PROMISE_DROP: 名称 | 原因
+        m = t.match(/PROMISE_DROP:\s*(.*?)\s*\|\s*(.*)/);
+        if (m) {
+            instr.promise.push({ action: 'drop', name: m[1].trim(), note: m[2].trim() });
+            continue;
+        }
+
+        // ARC: 角色 | 阶段前 | 阶段后 | 触发事件 | 是否可见
+        m = t.match(/ARC:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*)/);
+        if (m) {
+            instr.arc.push({
+                name: m[1].trim(), from: m[2].trim(), to: m[3].trim(),
+                trigger: m[4].trim(), visible: m[5].trim(),
+            });
+            continue;
+        }
     }
     return instr;
 }

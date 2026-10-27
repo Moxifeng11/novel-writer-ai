@@ -47,6 +47,13 @@ export function listFanficSettingCandidates(
         const path = normalizePath(raw);
         if (!path || !path.toLowerCase().endsWith('.md') || path === current) continue;
         if (!prefixes.some(prefix => path.startsWith(prefix))) continue;
+        // 模板/示例不是可绑定设定，避免把模板当原作绑定
+        const displayName = basenameWithoutExt(path);
+        if (/(模板|template|示例|sample)/i.test(displayName)) continue;
+        // 元文件内置的两份示例设定不是用户资料，避免误绑定
+        if (displayName === '斗罗大陆设定' || displayName === '哈利波特设定') continue;
+        // _待审核 / _资料 / _审核 是工作目录，不是可绑定设定
+        if (path.split('/').some(part => part.startsWith('_'))) continue;
         if (seen.has(path)) continue;
         seen.add(path);
         candidates.push({ path, name: basenameWithoutExt(path) });

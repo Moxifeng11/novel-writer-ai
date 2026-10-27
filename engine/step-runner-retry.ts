@@ -8,6 +8,7 @@
 import type { AIEngine, APIResponse } from './ai-engine';
 import { NOTICE_CRITICAL } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
+import type { ThinkingMode } from '../shared/task-model';
 
 const log = createLogger('StepRunnerRetry');
 
@@ -35,7 +36,8 @@ export async function callAIWithRetry(
     temperature: number,
     maxTokens: number,
     stepLabel: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    options?: { thinkingMode?: ThinkingMode; thinkingBudget?: number; endpoint?: string; apiKey?: string; disableFallback?: boolean }
 ): Promise<APIResponse> {
     let lastError: Error | undefined;
     const maxRetries = STEP_RUNNER_MAX_RETRIES;
@@ -60,7 +62,7 @@ export async function callAIWithRetry(
                 model,
                 temperature,
                 maxTokens,
-                signal ? { signal } : undefined
+                { ...options, ...(signal ? { signal } : {}) }
             );
 
             if (!result.error) {
@@ -97,7 +99,8 @@ export async function callAIStreamWithRetry(
     maxTokens: number,
     stepLabel: string,
     onChunk: (text: string, done: boolean) => void,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    options?: { thinkingMode?: ThinkingMode; thinkingBudget?: number; endpoint?: string; apiKey?: string; disableFallback?: boolean }
 ): Promise<APIResponse> {
     const MAX_CONTINUATIONS = 3;
     const CONTINUE_PROMPT = '\n\n[继续无缝衔接上述内容，保持相同的风格、语气和叙事视角，不要重复已写内容，直接从中断处接续：]\n\n';
@@ -126,7 +129,7 @@ export async function callAIStreamWithRetry(
                     onChunk(fullContent + chunkText, false);
                 }
             },
-            { isWritingTask: true, signal }
+            { isWritingTask: true, ...options, signal }
         );
 
         // A6: 取消时返回 aborted 语义，由调用方决定不落盘

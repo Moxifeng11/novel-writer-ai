@@ -193,7 +193,8 @@ TIMELINE: 时间点 | 事件描述`;
         const checkUserPrompt = DEAI_CHECK_USER_TEMPLATE.replace('${bodyText}', bodyText);
         const checkResult = await this.apiClient.callAI(checkSysPrompt, checkUserPrompt, this.plugin.settings.flashModel, 0.3, 2048);
         
-        const rewriteSysPrompt = DEAI_REWRITE_SYSTEM_PROMPT;
+        const rewriteSysPrompt = DEAI_REWRITE_SYSTEM_PROMPT
+            .replace(/\$\{writingRules\}/g, '（见项目写作规则与上下文设定）');
         const rewriteUserPrompt = DEAI_REWRITE_USER_TEMPLATE
             .replace('${deaiReport}', checkResult.content)
             .replace('${bodyText}', bodyText);
@@ -250,8 +251,13 @@ TIMELINE: 时间点 | 事件描述`;
             const fixPrompt = FIX_PROMPTS.userPrompt
                 .replace('${issues}', checkResult.content)
                 .replace('${bodyText}', currentBody) + ctxBlock;
+            // 旧实现把 ${writingRules}/${writingStyleContent} 原样发给模型；
+            // 这里用上下文块兜底，至少不再泄漏字面占位符。
+            const fixSystem = FIX_PROMPTS.systemPrompt
+                .replace(/\$\{writingRules\}/g, '（见上下文/设定中的写作规则）')
+                .replace(/\$\{writingStyleContent\}/g, '（见上下文/设定中的文笔风格）');
             const fixResult = await this.apiClient.callAI(
-                FIX_PROMPTS.systemPrompt,
+                fixSystem,
                 fixPrompt,
                 this.plugin.settings.proModel,
                 0.7,

@@ -84,6 +84,36 @@ describe('parseSceneBlocks — 场景拆分（TR-5.1 前置）', () => {
         expect(blocks[2].cliffhanger).toContain('一半');
     });
 
+    it('提取完整场景卡字段（POV/时间/地点/入场/转折/离场）', () => {
+        const blocks = parseSceneBlocks(`## 场景1：夜探
+pov: 林晚
+time: 亥时
+location: 书房外
+objective: 找到密信
+entry_state: 警惕，左手握刀
+conflict: 父亲在门内
+turn: 听见咳血
+exit_state: 决定破门
+emotion_arc: 警惕(5) → 恐惧(8)
+sensory_hook: 血腥味
+memory_trigger: 无
+body_reaction: 手指发凉
+subtext: 不敢推门
+relationship_shift: 怨恨 → 担忧
+key_scene: 否
+dialogue_function: 揭露病情
+cliffhanger: 门后有人
+`);
+        const scene = blocks[0];
+        expect(scene.pov).toBe('林晚');
+        expect(scene.time).toBe('亥时');
+        expect(scene.location).toBe('书房外');
+        expect(scene.entryState).toContain('左手握刀');
+        expect(scene.turn).toContain('咳血');
+        expect(scene.exitState).toContain('破门');
+        expect(scene.relationshipShift).toContain('担忧');
+    });
+
     it('无场景格式时返回空数组，不抛异常', () => {
         expect(parseSceneBlocks('')).toEqual([]);
         expect(parseSceneBlocks('没有场景的普通文本')).toEqual([]);

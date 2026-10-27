@@ -202,6 +202,8 @@ export interface PreviousChapterData {
     continuityReview: string | null;
     infoPlan: string | null;
     bodySummary: string | null;
+    /** 上一章结束状态快照（04-项目总控/章节状态快照/） */
+    stateSnapshot?: string | null;
 }
 
 export interface WritingRules {

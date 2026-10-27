@@ -7,16 +7,39 @@ import { ENGINE_NAMES } from '../engine/engine-registry';
 import { SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE, SUBDIR_WORLD_ARCH, PJ_FANFIC_DIR, PJ_WORLD_ARCH_DIR, PJ_TEMPLATE_DIR, PJ_OUTLINE_DIR, pjFanficDir, pjProjectMeta, templateFingerprintsFile, projectFingerprintsFile, projectFingerprintLibraryDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { ensureTemplateScaffold } from '../shared/template-scaffold';
+import { newProjectPath } from '../domains/kernel/project-locator';
+import { fanficSettingsFileName, isFanficApproved } from './full-writer/fanfic-settings-utils';
+import { suggestProjectName, validateProjectName } from '../shared/project-name';
+import {
+    CREATION_MODE_SPECS,
+    buildCreationModeGuide,
+    buildCreationModeMetaSection,
+    type CreationMode,
+    type CreationModeMeta,
+} from '../shared/creation-mode';
 
 
 const log = createLogger('CreateProjectModal');
+
+export interface CreateProjectPrefill {
+    name?: string;
+    genre?: string;
+    description?: string;
+    projectType?: 'original' | 'fanfic';
+    sourceWork?: string;
+    sourceWorldview?: string;
+    /** 兼容旧调用；本弹窗只会创建长篇 */
+    creationMode?: CreationMode;
+    onCreated?: (projectName: string) => void | Promise<void>;
+}
+
 export class CreateProjectModal extends Modal {
     private plugin: NovelWriterPlugin;
     private adapter: DataAdapter;
     private selectedFanficSettingPath = '';
     private fanficSettingsOutsideClickHandler?: (ev: MouseEvent) => void;
 
-    constructor(app: App, plugin: NovelWriterPlugin) {
+    constructor(app: App, plugin: NovelWriterPlugin, private readonly prefill?: CreateProjectPrefill) {
         super(app);
         this.plugin = plugin;
         this.adapter = app.vault.adapter;
@@ -29,9 +52,9 @@ export class CreateProjectModal extends Modal {
         contentEl.empty();
 
         const headerEl = contentEl.createDiv({ cls: 'nw-modal-header' });
-        headerEl.createEl('span', { cls: 'nw-modal-icon', text: '📁' });
+        headerEl.createEl('span', { cls: 'nw-modal-icon', text: '📖' });
         const titleWrap = headerEl.createDiv({ cls: 'nw-modal-title-wrap' });
-        titleWrap.createEl('h2', { cls: 'nw-modal-title', text: '新建项目' });
+        titleWrap.createEl('h2', { cls: 'nw-modal-title', text: '新建长篇小说项目' });
 
         const bodyEl = contentEl.createDiv({ cls: 'nw-modal-body' });
 
@@ -137,6 +160,16 @@ ${preferredGenre
             type: 'text',
             placeholder: '输入题材（或点击上方标签）',
             cls: 'nw-input nw-form-input'
+        });
+
+        const modeGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
+        modeGroup.createEl('label', {
+            cls: 'nw-form-label nw-form-label-required',
+            text: '创作类型',
+        });
+        modeGroup.createEl('p', {
+            cls: 'nw-text-12-muted',
+            text: '本入口仅创建长篇小说。短篇与剧本请使用各自的独立入口。',
         });
 
         const typeGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
@@ -318,10 +351,28 @@ ${preferredGenre
             cls: 'nw-textarea nw-form-textarea'
         });
 
+        if (this.prefill) {
+            projectNameInput.value = suggestProjectName(this.prefill.name || '');
+            genreInput.value = this.prefill.genre || '';
+            descriptionInput.value = this.prefill.description || '';
+            tagContainer.querySelectorAll('.nw-genre-tag').forEach(tag => {
+                tag.classList.toggle('selected', tag.textContent === genreInput.value);
+            });
+            if (this.prefill.projectType === 'fanfic') {
+                fanficBtn.click();
+                sourceInput.value = this.prefill.sourceWork || '';
+                sourceWorldInput.value = this.prefill.sourceWorldview || '';
+            }
+        }
+
         const footerEl = contentEl.createDiv({ cls: 'nw-modal-footer' });
         const cancelBtn = footerEl.createEl('button', { text: '取消', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button', title: '取消创建项目' } });
         cancelBtn.onclick = () => this.close();
-        const createButton = footerEl.createEl('button', { text: '创建项目', cls: 'nw-btn nw-btn-primary', attr: { type: 'button', title: '创建项目并复制元文件模板' } });
+        const createButton = footerEl.createEl('button', {
+            text: '创建项目',
+            cls: 'nw-btn nw-btn-primary',
+            attr: { type: 'button', title: '创建项目并复制元文件模板' },
+        });
         createButton.onclick = async () => {
             const projectName = projectNameInput.value.trim();
             const genre = genreInput.value.trim();
@@ -341,8 +392,16 @@ ${preferredGenre
                 return;
             }
 
+            const creationMeta: CreationModeMeta = {
+                mode: 'long',
+                shortCategory: '',
+                scriptGenre: '',
+                targetWords: CREATION_MODE_SPECS.long.targetWords.default,
+                targetUnits: CREATION_MODE_SPECS.long.targetUnits.default,
+            };
+            void creationMeta;
             try {
-                await this.createProject(projectName, genre, descriptionInput.value.trim(), projectType, sourceInput.value.trim(), sourceWorldInput.value.trim());
+                await this.createProject(projectName, genre, descriptionInput.value.trim(), projectType, sourceInput.value.trim(), sourceWorldInput.value.trim(), creationMeta);
             } catch (e) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[小说工坊] 创建项目失败:', e);
@@ -351,8 +410,29 @@ ${preferredGenre
         };
     }
 
-    private async createProject(projectName: string, genre: string, description: string, projectType: 'original' | 'fanfic', sourceWork: string, sourceWorldview: string): Promise<void> {
-        const exists = await this.adapter.exists(projectName);
+    private async createProject(projectName: string, genre: string, description: string, projectType: 'original' | 'fanfic', sourceWork: string, sourceWorldview: string, creationMeta: CreationModeMeta): Promise<void> {
+        if (projectType === 'fanfic' && this.selectedFanficSettingPath) {
+            try {
+                const selected = this.app.vault.getAbstractFileByPath(this.selectedFanficSettingPath);
+                if (selected instanceof TFile) {
+                    const content = await this.app.vault.read(selected);
+                    if (!isFanficApproved(content)) {
+                        new Notice('❌ 所选同人设定尚未通过人工审核，不能用于创建项目', 8000);
+                        return;
+                    }
+                }
+            } catch (e) {
+                log.warn('[小说工坊] 校验同人设定审核状态失败:', e);
+                new Notice('❌ 无法读取所选同人设定，未创建项目', 8000);
+                return;
+            }
+        }
+        const selectedFanficFileName = this.selectedFanficSettingPath
+            ? this.selectedFanficSettingPath.split('/').pop() || ''
+            : '';
+        const fanficTargetFileName = selectedFanficFileName || fanficSettingsFileName(sourceWork);
+        const projectId = newProjectPath(projectName, 'long');
+        const exists = await this.adapter.exists(projectId);
         if (exists) {
             const overwrite = await OperationConfirmModal.confirm(this.app, {
                 title: '覆盖项目',
@@ -368,11 +448,12 @@ ${preferredGenre
                 for (const d of list.folders) await removeDir(d);
                 await this.adapter.rmdir(dirPath, true);
             };
-            try { await removeDir(projectName); } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
+            try { await removeDir(projectId); } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
             await new Promise(r => setTimeout(r, 300));
         }
 
         const notice = new Notice(`正在创建项目「${projectName}」...`, 0);
+        const projectRootId = projectId;
 
         const shouldCopyTemplatePath = (path: string): boolean => {
             if (path.startsWith(`${PJ_OUTLINE_DIR}/步骤结果`)) return false;
@@ -415,12 +496,12 @@ ${preferredGenre
 
         const dirsToCreate = new Set<string>();
         for (const f of source.files) {
-            const newPath = f.replace('元文件', projectName);
+            const newPath = f.replace('元文件', projectRootId);
             const parent = newPath.substring(0, newPath.lastIndexOf('/'));
             dirsToCreate.add(parent);
         }
         for (const d of source.dirs) {
-            const newDir = d.replace('元文件', projectName);
+            const newDir = d.replace('元文件', projectRootId);
             dirsToCreate.add(newDir);
         }
 
@@ -437,7 +518,7 @@ ${preferredGenre
 
         let count = 0;
         for (const srcPath of source.files) {
-            const destPath = srcPath.replace('元文件', projectName);
+            const destPath = srcPath.replace('元文件', projectRootId);
             try {
                 const content = await this.adapter.read(srcPath);
                 await this.adapter.write(destPath, content);
@@ -454,10 +535,10 @@ ${preferredGenre
                     `${PJ_WORLD_ARCH_DIR}/设定库模板.md`,
                     `${PJ_WORLD_ARCH_DIR}/设定库.md`,
                 ],
-                dst: `${projectName}/${SUBDIR_SETTING_LIB_FILE}`,
+                dst: `${projectRootId}/${SUBDIR_SETTING_LIB_FILE}`,
                 existing: [
-                    `${projectName}/${SUBDIR_SETTING_LIB_FILE}`,
-                    `${projectName}/${SUBDIR_WORLD_ARCH}/设定库模板.md`,
+                    `${projectRootId}/${SUBDIR_SETTING_LIB_FILE}`,
+                    `${projectRootId}/${SUBDIR_WORLD_ARCH}/设定库模板.md`,
                 ],
             },
             {
@@ -465,10 +546,10 @@ ${preferredGenre
                     `${PJ_WORLD_ARCH_DIR}/文笔风格模板.md`,
                     `${PJ_TEMPLATE_DIR}/文笔风格模板.md`,
                 ],
-                dst: `${projectName}/${SUBDIR_WRITING_STYLE_FILE}`,
+                dst: `${projectRootId}/${SUBDIR_WRITING_STYLE_FILE}`,
                 existing: [
-                    `${projectName}/${SUBDIR_WRITING_STYLE_FILE}`,
-                    `${projectName}/${SUBDIR_WORLD_ARCH}/文笔风格模板.md`,
+                    `${projectRootId}/${SUBDIR_WRITING_STYLE_FILE}`,
+                    `${projectRootId}/${SUBDIR_WORLD_ARCH}/文笔风格模板.md`,
                 ],
             },
         ];
@@ -535,12 +616,12 @@ ${preferredGenre
                         samples: [],
                     }));
 
-                    const projFpDir = projectFingerprintLibraryDir(projectName);
+                    const projFpDir = projectFingerprintLibraryDir(projectRootId);
                     if (!(await this.adapter.exists(projFpDir))) {
                         await this.adapter.mkdir(projFpDir);
                     }
 
-                    const projFpPath = projectFingerprintsFile(projectName);
+                    const projFpPath = projectFingerprintsFile(projectRootId);
                     await this.adapter.write(projFpPath, JSON.stringify(projectFps, null, 2));
                     count += enabledFps.length;
                 }
@@ -550,7 +631,7 @@ ${preferredGenre
         }
 
         try {
-            const projectFile = pjProjectMeta(projectName);
+            const projectFile = pjProjectMeta(projectRootId);
             let projectContent = `# ${projectName}
 
 ## 题材
@@ -559,10 +640,10 @@ ${genre}
 ## 类型
 ${projectType}
 
-${description ? `## 描述\n${description}\n\n` : ''}`;
+${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSection(creationMeta)}\n\n`;
 
             if (projectType === 'fanfic') {
-                projectContent += `## 同人设定路径\n${pjFanficDir(projectName)}/${sourceWork}设定.md\n\n`;
+                projectContent += `## 同人设定路径\n${pjFanficDir(projectRootId)}/${fanficTargetFileName}\n\n`;
                 if (sourceWork) {
                     projectContent += `## 原作名称\n${sourceWork}\n\n`;
                 }
@@ -582,7 +663,7 @@ ${description ? `## 描述\n${description}\n\n` : ''}`;
         if (projectType === 'fanfic' && this.selectedFanficSettingPath) {
             const srcPath = this.selectedFanficSettingPath;
             const srcName = srcPath.split('/').pop() || '';
-            const dstPath = `${pjFanficDir(projectName)}/${srcName}`;
+            const dstPath = `${pjFanficDir(projectRootId)}/${fanficTargetFileName}`;
             try {
                 const content = await this.adapter.read(srcPath);
                 const dstDir = dstPath.substring(0, dstPath.lastIndexOf('/'));
@@ -596,6 +677,7 @@ ${description ? `## 描述\n${description}\n\n` : ''}`;
             }
         }
 
+        await this.writeCreationModeGuide(projectName, creationMeta);
         notice.hide();
         new Notice(`✅ 项目「${projectName}」创建完成（${count} 个文件）`, 5000);
 
@@ -609,6 +691,11 @@ ${description ? `## 描述\n${description}\n\n` : ''}`;
                     writingProfile = await profileManager.load('元文件');
                     writingProfile.projectName = projectName;
                     writingProfile.projectType = projectType;
+                    writingProfile.creationMode = creationMeta.mode;
+                    writingProfile.shortCategory = creationMeta.shortCategory;
+                    writingProfile.scriptGenre = creationMeta.scriptGenre;
+                    writingProfile.targetWords = creationMeta.targetWords;
+                    writingProfile.targetUnits = creationMeta.targetUnits;
                     writingProfile.createdAt = new Date().toISOString();
                     writingProfile.updatedAt = new Date().toISOString();
                     if (writingProfile.genre && genre) {
@@ -625,10 +712,15 @@ ${description ? `## 描述\n${description}\n\n` : ''}`;
 
             if (!writingProfile) {
                 writingProfile = profileManager.generateDefault(genre, projectName, projectType);
+                writingProfile.creationMode = creationMeta.mode;
+                writingProfile.shortCategory = creationMeta.shortCategory;
+                writingProfile.scriptGenre = creationMeta.scriptGenre;
+                writingProfile.targetWords = creationMeta.targetWords;
+                writingProfile.targetUnits = creationMeta.targetUnits;
                 log.info('[CreateProject] 生成默认写作配置');
             }
 
-            await profileManager.save(projectName, writingProfile);
+            await profileManager.save(projectRootId, writingProfile);
         } catch (e) {
             log.warn('[CreateProject] 初始化写作配置失败（不影响项目创建）:', e);
         }
@@ -642,11 +734,29 @@ ${description ? `## 描述\n${description}\n\n` : ''}`;
         }
 
         this.app.workspace.trigger('novel-writer:project-created', {
-            projectName,
+            projectName: projectRootId,
             projectType,
         });
 
+        try {
+            await this.prefill?.onCreated?.(projectRootId);
+        } catch (e) {
+            log.warn('[小说工坊] 预填项目创建后回调失败:', e);
+            new Notice('项目已创建，但后续写入创意资料失败；请手动保存', 8000);
+        }
+
         this.close();
+    }
+
+    private async writeCreationModeGuide(project: string, meta: CreationModeMeta): Promise<void> {
+        const dir = `${project}/00-系统模板`;
+        const path = `${dir}/创作模式指南.md`;
+        try {
+            if (!(await this.adapter.exists(dir))) await this.adapter.mkdir(dir);
+            await this.adapter.write(path, buildCreationModeGuide(meta));
+        } catch (e) {
+            log.warn('[CreateProject] 写创作模式指南失败:', e);
+        }
     }
 
     onClose(): void {

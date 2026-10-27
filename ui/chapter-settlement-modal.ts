@@ -5,6 +5,7 @@ import NovelWriterPlugin from '../main';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './full-writer-view';
 import { SettlementEngine } from '../engine/settlement-engine';
+import { writeChapterStateSnapshot } from '../engine/chapter-state-snapshot-service';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { createLogger } from '../shared/logger';
 
@@ -149,6 +150,7 @@ export class ChapterSettlementModal extends Modal {
         const summary = this.buildSettlementSummary(target, result, false);
 
         await this.writeSettlementFile(target, summary);
+        await this.writeStateSnapshot(target, bodyText, result.chars);
         new Notice(`✅ 结算完成：更新${totalUpdated}项，新建${totalCreated}项`, 8000);
         await this.refreshWorkspaceAndClose();
     }
@@ -167,6 +169,7 @@ export class ChapterSettlementModal extends Modal {
 
         const summary = this.buildLightSummary(target, wordCount, excerpt, trimmed.length > 240, lightResult);
         await this.writeSettlementFile(target, summary);
+        await this.writeStateSnapshot(target, bodyText, lightResult.chars);
 
         const totalUpdated = lightResult.updated;
         new Notice(`✅ 轻量结算完成：基于正文 frontmatter 更新${totalUpdated}项实体状态；补跑分析报告后可执行完整结算`, 8000);
@@ -193,6 +196,26 @@ export class ChapterSettlementModal extends Modal {
         const factionList = result?.factions?.length ? result.factions.join('、') : '无';
         const itemList = result?.items?.length ? result.items.join('、') : '无';
         return `${fm}# ${target.chapName} 轻量结算表\n\n## 结算状态\n- 类型：协同写作轻量结算（基于正文 frontmatter）\n- 正文字数：${wordCount}\n- 分析报告：未找到，执行轻量结算\n\n## 实体状态更新\n- 人物状态更新：${result?.updatedChars || 0} 人（${charList}）\n- 地点状态更新：${result?.updatedLocations || 0} 个（${locList}）\n- 势力状态更新：${result?.updatedFactions || 0} 个（${factionList}）\n- 物品功法更新：${result?.updatedItems || 0} 个（${itemList}）\n- 伏笔状态更新：${result?.updatedForeshadows || 0} 个\n\n## 本章摘要草稿\n${excerpt}${truncated ? '……' : ''}\n\n## 说明\n- 轻量结算基于正文 frontmatter 的「涉及人物/地点/势力/物品功法」字段更新实体状态\n- 补跑「分析报告」后可执行完整章节结算（含详细字段更新、新实体创建、关系更新等）\n- 可结合设定检查面板确认人物状态变更\n`;
+    }
+
+    private async writeStateSnapshot(
+        target: SettlementTargetChapter,
+        bodyText: string,
+        updatedChars: string[],
+    ): Promise<void> {
+        const chapterNum = parseInt(target.chapName.match(/第(\d+)章/)?.[1] || '0', 10);
+        const sceneFile = this.app.vault.getFiles().find(f =>
+            f.path.startsWith(target.chapDir) && f.name.includes('Scene展开'),
+        );
+        const sceneExpansion = sceneFile instanceof TFile ? await this.app.vault.read(sceneFile) : '';
+        await writeChapterStateSnapshot(this.app, {
+            project: target.project,
+            chapterNum,
+            chapterName: target.chapName,
+            bodyText,
+            sceneExpansion,
+            updatedChars,
+        });
     }
 
     private async writeSettlementFile(target: SettlementTargetChapter, content: string): Promise<void> {

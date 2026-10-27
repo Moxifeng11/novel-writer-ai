@@ -14,6 +14,10 @@ import {
 } from '../engine/export/manuscript-compiler';
 import { exportTextFile } from '../shared/export-file';
 import { createLogger } from '../shared/logger';
+import { getProjectMeta } from './project-utils';
+import type { CreationMode } from '../shared/creation-mode';
+import { collectModeManuscript, listModeUnits } from '../shared/mode-content';
+import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
 
 const log = createLogger('ExportManuscriptModal');
 
@@ -29,6 +33,8 @@ export class ExportManuscriptModal extends Modal {
     private format: ManuscriptFormat = 'markdown';
     private includeVolumeHeadings = true;
     private includeChapterTitles = true;
+    private unitLabel = '章';
+    private creationMode: CreationMode = 'long';
 
     private summaryEl!: HTMLElement;
     private hintEl!: HTMLElement;
@@ -59,7 +65,7 @@ export class ExportManuscriptModal extends Modal {
                 dropdown.setValue(this.project);
                 dropdown.onChange((value) => {
                     this.project = value;
-                    this.refreshSummary();
+                    void this.refreshSummary();
                 });
             });
 
@@ -120,7 +126,7 @@ export class ExportManuscriptModal extends Modal {
             }
         };
 
-        this.refreshSummary();
+        void this.refreshSummary();
         this.refreshHint();
     }
 
@@ -130,15 +136,54 @@ export class ExportManuscriptModal extends Modal {
 
     private refreshHint(): void {
         const option = FORMAT_OPTIONS[this.format];
+        const modeHint = this.creationMode === 'short'
+            ? '短篇按「节」输出，适合番茄短篇投稿。'
+            : this.creationMode === 'script'
+                ? '剧本按「集」输出，保留场次/人物/动作/对白格式。'
+                : '';
         this.hintEl.setText(
-            this.format === 'html'
+            `${this.format === 'html'
                 ? `将导出 .${option.ext}；用浏览器打开后选择「打印 → 另存为 PDF」。`
-                : `将导出 .${option.ext}（${option.mime.split(';')[0]}）。`
+                : `将导出 .${option.ext}（${option.mime.split(';')[0]}）。`}${modeHint ? ` ${modeHint}` : ''}`
         );
     }
 
-    private refreshSummary(): void {
-        const files = listChapterFiles(this.app, this.project);
+    /**
+     * 短篇/剧本没有「卷」的概念，隐藏卷标题开关；章标题按模式改称节/集标题。
+     */
+    private syncHeadingOptions(): void {
+        const isLong = this.creationMode === 'long';
+        const chapterHeading = this.creationMode === 'short'
+            ? '包含节标题'
+            : this.creationMode === 'script'
+                ? '包含集标题'
+                : '包含章标题';
+        // 直接操作 Setting 行 DOM：不同 Obsidian 版本 Setting.addToggle 的返回值不稳定，
+        // 保存实例再 setName 会静默失效。
+        for (const row of Array.from(this.contentEl.querySelectorAll<HTMLElement>('.setting-item'))) {
+            const nameEl = row.querySelector('.setting-item-name');
+            const name = nameEl?.textContent?.trim();
+            if (name === '包含卷标题') row.style.display = isLong ? '' : 'none';
+            if (name === '包含章标题' || name === '包含节标题' || name === '包含集标题') {
+                nameEl!.textContent = chapterHeading;
+            }
+        }
+    }
+
+    private async refreshSummary(): Promise<void> {
+        try {
+            const meta = await getProjectMeta(this.app, this.project);
+            this.creationMode = meta.creationMode;
+            this.unitLabel = meta.unitLabel;
+        } catch {
+            this.creationMode = 'long';
+            this.unitLabel = '章';
+        }
+        this.refreshHint();
+        this.syncHeadingOptions();
+        const files = this.creationMode === 'long'
+            ? listChapterFiles(this.app, this.project)
+            : listModeUnits(this.app, this.project, this.creationMode).map(unit => unit.file);
         const words = files.reduce((sum, file) => {
             const cache = this.app.metadataCache.getFileCache(file);
             const count = cache?.frontmatter?.['word_count'];
@@ -147,12 +192,14 @@ export class ExportManuscriptModal extends Modal {
         this.summaryEl.setText(
             files.length === 0
                 ? '⚠️ 该项目下未找到正文文件。'
-                : `📄 共 ${files.length} 章${words > 0 ? ` · 约 ${words} 字（frontmatter 统计）` : ''}`
+                : `📄 共 ${files.length} ${this.unitLabel}${words > 0 ? ` · 约 ${words} 字（frontmatter 统计）` : ''}`
         );
     }
 
     private async exportManuscript(): Promise<void> {
-        const chapters = await collectChapters(this.app, this.project);
+        const chapters = this.creationMode === 'long'
+            ? await collectChapters(this.app, this.project)
+            : await collectModeManuscript(this.app, this.project, this.creationMode);
         if (chapters.length === 0) {
             new Notice('⚠️ 未找到可导出的正文');
             return;
@@ -160,16 +207,17 @@ export class ExportManuscriptModal extends Modal {
 
         const compiled = compileManuscript(chapters, {
             format: this.format,
-            includeVolumeHeadings: this.includeVolumeHeadings,
+            includeVolumeHeadings: this.creationMode === 'long' ? this.includeVolumeHeadings : false,
             includeChapterTitles: this.includeChapterTitles,
             bookTitle: this.project,
+            unitLabel: this.unitLabel,
         });
 
         const option = FORMAT_OPTIONS[this.format];
         const date = new Date().toISOString().slice(0, 10);
         const result = await exportTextFile(
             this.app,
-            `${this.project}-全稿-${date}.${option.ext}`,
+            `${this.project}-${this.creationMode === 'short' ? '短篇' : this.creationMode === 'script' ? '剧本' : '全稿'}-${date}.${option.ext}`,
             compiled.content,
             { mime: option.mime }
         );
@@ -178,7 +226,7 @@ export class ExportManuscriptModal extends Modal {
 
         const emptyNote = compiled.emptyChapters > 0 ? `，其中 ${compiled.emptyChapters} 章为空` : '';
         new Notice(
-            `✅ 已导出 ${compiled.chapterCount} 章 / ${compiled.wordCount} 字${emptyNote}`,
+            `✅ 已导出 ${compiled.chapterCount} ${this.unitLabel} / ${compiled.wordCount} 字${emptyNote}`,
             6000
         );
         log.info('[ExportManuscript] 导出完成:', {
@@ -192,14 +240,25 @@ export class ExportManuscriptModal extends Modal {
     }
 }
 
-/** 列出含 `03-大纲与章节` 的项目目录 */
+/** 列出长篇/短篇/剧本三库中的项目目录 */
 export function listProjects(app: App): string[] {
     const root = app.vault.getRoot();
-    return root.children
-        .filter((child): child is TFolder => child instanceof TFolder)
-        .filter((folder) => app.vault.getAbstractFileByPath(`${folder.path}/03-大纲与章节`) != null)
-        .map((folder) => folder.path)
-        .sort();
+    const projects: string[] = [];
+    for (const folder of root.children) {
+        if (!(folder instanceof TFolder)) continue;
+        if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
+            for (const child of folder.children) {
+                if (child instanceof TFolder) projects.push(child.path);
+            }
+            continue;
+        }
+        if (app.vault.getAbstractFileByPath(`${folder.path}/03-大纲与章节`) != null
+            || app.vault.getAbstractFileByPath(`${folder.path}/短篇创作`) != null
+            || app.vault.getAbstractFileByPath(`${folder.path}/剧本创作`) != null) {
+            projects.push(folder.path);
+        }
+    }
+    return projects.sort();
 }
 
 /** 列出项目正文文件（正文/第N卷/第N章_正文.md） */

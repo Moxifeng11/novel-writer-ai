@@ -15,8 +15,9 @@ import type { StepRunCtx } from '../../engine/step-definitions';
 import { getStepTemplateAuto, fillTemplate } from '../../engine/prompts/template-utils';
 import { CHAPTER_FILE_TYPES, findChapterFile } from '../../engine/chapter-utils';
 import { SettlementEngine } from '../../engine/settlement-engine';
+import { writeChapterStateSnapshot } from '../../engine/chapter-state-snapshot-service';
 import { ENGINE_NAMES } from '../../engine/engine-registry';
-import { pjStepDir, pjNarrativeOverview } from '../../shared/paths';
+import { pjStepDir, pjNarrativeOverview, pjBodyFile } from '../../shared/paths';
 import { stripFrontmatter } from '../../utils/helpers';
 import { isTemplateSkeleton, isStepResultComplete } from '../../engine/step-validator';
 import { createLogger } from '../../shared/logger';
@@ -209,12 +210,20 @@ export class BatchPipelineRunner {
         // A6: abort 后本次调用可能仍残留部分输出（流式半章），必须在保存前判定取消，
         // 否则会被当成正常结果，后续 chapter 也会基于错误状态继续。
         if (ctx.getAbortController?.()?.signal.aborted) return { ok: false, error: '已取消' };
+        const meta = ctx.stepMeta?.[stepKey];
+        if (meta?.truncated) {
+            return { ok: false, error: `${stepKey} 输出被截断（${meta.model || '模型'} 上限 ${meta.maxTokens || '?'} tokens）` };
+        }
         const content = (ctx.stepResults[stepKey] || '').trim();
         if (!content) return { ok: false, error: this.lastError || `${stepKey} 未产出内容` };
         // A4: 非空不等于已生成，模板骨架必须视为未产出并重试
         const pure = stripFrontmatter(content);
         if (isTemplateSkeleton(pure, stepKey)) {
             return { ok: false, error: `${stepKey} 仍是模板骨架` };
+        }
+        // 截断/半成品即使有内容也不能进入下一步或结算；StepRunner 只在 complete 时标记。
+        if (!ctx.stepCompleted.has(stepKey)) {
+            return { ok: false, error: `${stepKey} 未达到完成标准` };
         }
         return { ok: true };
     }
@@ -241,7 +250,13 @@ export class BatchPipelineRunner {
     ): Promise<StepRunCtx> {
         const chapDir = pjStepDir(project, target.volumeNum, target.chapterNum);
         const context = await this.plugin.ctxManager.gatherAll(project, target.chapterName);
-        const stepResults = await this.loadStepResults(chapDir, target.chapterName);
+        const stepResults = await this.loadStepResults(
+            chapDir,
+            target.chapterName,
+            project,
+            target.volumeNum,
+            target.chapterNum,
+        );
         // A4: 续跑跳过必须由内容结构决定，不能只看「文件非空」——
         // 批量预生成的模板文件非空但没有实质内容，旧逻辑会整步跳过。
         const stepCompleted = new Set(
@@ -264,6 +279,7 @@ export class BatchPipelineRunner {
         const ctx: StepRunCtx = {
             stepResults,
             stepCompleted,
+            stepMeta: {},
             currentStepIndex: 0,
             setCurrentStepIndex: (v) => { ctx.currentStepIndex = v; },
             tabContent,
@@ -289,8 +305,8 @@ export class BatchPipelineRunner {
                 viewVars: {},
                 stepResults,
             }),
-            saveStepResult: async (key, content) => {
-                await this.stepRunner.saveStepResult(key, content, chapDir, target.chapterName, target.volume);
+            saveStepResult: async (key, content, meta) => {
+                await this.stepRunner.saveStepResult(key, content, chapDir, target.chapterName, target.volume, meta);
             },
             renderInContainer: async () => {},
             setIsLoading: (v) => { ctx.isLoading = v; },
@@ -303,7 +319,13 @@ export class BatchPipelineRunner {
     }
 
     /** 从磁盘恢复已有步骤结果，用于断点续跑 */
-    private async loadStepResults(chapDir: string, chapterName: string): Promise<Record<string, string>> {
+    private async loadStepResults(
+        chapDir: string,
+        chapterName: string,
+        project: string,
+        volumeNum: number,
+        chapterNum: number,
+    ): Promise<Record<string, string>> {
         const results: Record<string, string> = {};
         const folder = this.app.vault.getAbstractFileByPath(chapDir);
         if (!folder) return results;
@@ -321,9 +343,18 @@ export class BatchPipelineRunner {
             }
         }
 
-        // 正文：stepKey 使用 bodyGeneration，文件名类型为「正文」
-        const bodyFile = findChapterFile(files, chapDir, CHAPTER_FILE_TYPES.body, this.app);
-        if (bodyFile instanceof TFile) {
+        // 正文：v4 路径由卷号+章号唯一确定，不在 chapDir 下。
+        // 旧实现只在 chapDir 里找，导致续跑读不到正文并重新生成/结算失败。
+        let bodyFile: TFile | null = null;
+        if (project && volumeNum > 0 && chapterNum > 0) {
+            const v4File = this.app.vault.getAbstractFileByPath(pjBodyFile(project, volumeNum, chapterNum));
+            if (v4File instanceof TFile) bodyFile = v4File;
+        }
+        if (!bodyFile) {
+            // 兼容 v3/旧项目：正文仍与步骤结果同目录
+            bodyFile = findChapterFile(files, chapDir, CHAPTER_FILE_TYPES.body, this.app) || null;
+        }
+        if (bodyFile) {
             try {
                 results['bodyGeneration'] = await this.app.vault.read(bodyFile);
             } catch {
@@ -341,7 +372,16 @@ export class BatchPipelineRunner {
         }
 
         const engine = this.plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
-        await engine.settle(project, ctx.chapDir, target.chapterName, analysisReport, bodyText);
+        const result = await engine.settle(project, ctx.chapDir, target.chapterName, analysisReport, bodyText);
+
+        await writeChapterStateSnapshot(this.app, {
+            project,
+            chapterNum: target.chapterNum,
+            chapterName: target.chapterName,
+            bodyText: ctx.stepResults['bodyGeneration'] || '',
+            sceneExpansion: ctx.stepResults['sceneExpand'] || '',
+            updatedChars: result.chars,
+        });
 
         try {
             const overview = await engine.generateNarrativeOverview(project);

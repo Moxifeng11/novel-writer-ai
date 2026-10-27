@@ -1,5 +1,8 @@
 import { App, TFile } from 'obsidian';
 import { isFanficValueFilled, validateFanficSettings } from '../../shared/template-validator';
+import { parseFanficReviewStatus } from '../../shared/fanfic-rules';
+import { applyFanficReviewMeta } from '../../shared/fanfic-audit';
+import { ensureTemplateScaffold } from '../../shared/template-scaffold';
 import { pjFanficDir, pjProjectMeta } from '../../shared/paths';
 
 export interface FanficSettingsValues {
@@ -58,6 +61,94 @@ export function buildFanficSettingsContent(values: FanficSettingsValues): string
 `;
 }
 
+/** 同一套文件名规则：创建项目、生成设定、绑定/补全都用它，避免 .project 指向不存在的路径。 */
+export function fanficSettingsFileName(workName: string): string {
+  return `${sanitizeFilePart(workName)}设定.md`;
+}
+
+const FANFIC_TEMPLATE_NAME = '同人设定模板.md';
+const FANFIC_TEMPLATE_SOURCE = `元文件/05-同人设定库/${FANFIC_TEMPLATE_NAME}`;
+
+/** 项目内模板路径；模板丢失时可从元文件/内置骨架恢复。 */
+export function projectFanficTemplatePath(project: string): string {
+  return `${pjFanficDir(project)}/${FANFIC_TEMPLATE_NAME}`;
+}
+
+/**
+ * 确保项目内有一份可复用的同人设定模板。
+ * 优先复制元文件模板；元文件模板也丢失时，用内置骨架重建，避免“模板丢了就再也建不了”。
+ */
+export async function ensureFanficTemplate(app: App, project: string): Promise<string> {
+  const target = projectFanficTemplatePath(project);
+  const existing = app.vault.getAbstractFileByPath(target);
+  if (existing instanceof TFile) return target;
+
+  const dir = pjFanficDir(project);
+  if (!app.vault.getAbstractFileByPath(dir)) {
+    await app.vault.createFolder(dir);
+  }
+
+  let content = '';
+  const source = app.vault.getAbstractFileByPath(FANFIC_TEMPLATE_SOURCE);
+  if (!(source instanceof TFile)) {
+    try {
+      await ensureTemplateScaffold(app);
+    } catch {
+      // 忽略：下面用内置骨架兜底
+    }
+  }
+  const restored = app.vault.getAbstractFileByPath(FANFIC_TEMPLATE_SOURCE);
+  if (restored instanceof TFile) {
+    content = await app.vault.read(restored);
+  }
+  if (!content.trim()) {
+    content = buildFanficSettingsContent({
+      workName: '（待填写作品名）',
+      workType: '（待填写类型）',
+      author: '（待填写作者）',
+      worldviewType: '（待核实：未找到可靠原作来源）',
+      powerSystem: '（待核实：未找到可靠原作来源）',
+      coreRules: '（待核实：未找到可靠原作来源）',
+      mustFollow: '（待核实：未找到可靠原作来源）',
+      adaptScope: '（待核实：未找到可靠原作来源）',
+      redlines: '（待核实：未找到可靠原作来源）',
+    });
+  }
+  const targetFile = app.vault.getAbstractFileByPath(target);
+  if (targetFile instanceof TFile) await app.vault.modify(targetFile, content);
+  else await app.vault.create(target, content);
+  return target;
+}
+
+/** 从项目模板复制一份待审核草稿；模板丢失会自动恢复。 */
+export async function createFanficDraftFromTemplate(
+  app: App,
+  project: string,
+  workName: string,
+): Promise<string> {
+  const templatePath = await ensureFanficTemplate(app, project);
+  const templateFile = app.vault.getAbstractFileByPath(templatePath);
+  if (!(templateFile instanceof TFile)) throw new Error('同人设定模板不存在');
+  const template = await app.vault.read(templateFile);
+  const pending = applyFanficReviewMeta(template, {
+    '审核状态': 'pending',
+    '生成时间': new Date().toISOString(),
+    '来源数量': '0',
+  });
+  const dir = `${pjFanficDir(project)}/_待审核`;
+  if (!app.vault.getAbstractFileByPath(dir)) await app.vault.createFolder(dir);
+  const path = `${dir}/${fanficSettingsFileName(workName || '新同人设定')}`;
+  const existing = app.vault.getAbstractFileByPath(path);
+  if (existing instanceof TFile) await app.vault.modify(existing, pending);
+  else await app.vault.create(path, pending);
+  return path;
+}
+
+export function isFanficApproved(content: string): boolean {
+  const status = parseFanficReviewStatus(content);
+  return status === 'approved' || status === 'legacy';
+}
+
 export function extractFanficWorkName(content: string, fallbackProject: string): string {
   const fm = content.match(/^作品名称:\s*(.+)$/m)?.[1]?.trim();
   const heading = content.match(/^#\s*(.+?)\s*同人设定\s*$/m)?.[1]?.trim();
@@ -65,7 +156,7 @@ export function extractFanficWorkName(content: string, fallbackProject: string):
 }
 
 export function getFanficSettingsPath(project: string, content: string, fallbackProject: string): string {
-  return `${pjFanficDir(project)}/${extractFanficWorkName(content, fallbackProject)}设定.md`;
+  return `${pjFanficDir(project)}/${fanficSettingsFileName(extractFanficWorkName(content, fallbackProject))}`;
 }
 
 export function isFanficSettingsContentValidEnough(content: string) {
@@ -90,6 +181,14 @@ export function isFanficSettingsContentValidEnough(content: string) {
  * 向导内保存同人设定时调用，保证重新进入向导后能按同一路径恢复。
  */
 export async function attachFanficPathToProject(app: App, project: string, filePath: string): Promise<void> {
+  const target = app.vault.getAbstractFileByPath(filePath);
+  if (!(target instanceof TFile)) {
+    throw new Error(`同人设定文件不存在：${filePath}`);
+  }
+  const content = await app.vault.read(target);
+  if (!isFanficApproved(content)) {
+    throw new Error('同人设定尚未通过人工审核，不能绑定到项目');
+  }
   const dotPath = pjProjectMeta(project);
   const section = `## 同人设定路径\n${filePath}`;
   const file = app.vault.getAbstractFileByPath(dotPath);

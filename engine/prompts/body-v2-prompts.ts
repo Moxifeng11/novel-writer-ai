@@ -38,10 +38,18 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagoni
 - \${forbiddenElements} 这些东西不存在于主角的世界里，也不会进入他的视野。
 - 力量体系遵循 \${powerSystem}。
 
+【上一章结束状态（硬约束）】
+\${prevChapterStateSnapshot}
+本章开头必须与此状态一致；人物位置、状态、已知信息如要改变，正文必须写出过渡。
+
 📌 输出格式
 \${bodyFormat}
 - 对话必须加引号""
 - 字数 ≥ \${baseWords} 字
+
+\${craftConstraints}
+
+\${negativeList}
 
 【永远记住】
 你的镜头贴着 \${protagonistName}。你不是在写小说。
@@ -63,6 +71,15 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 
 【场景展开——每个场景的感受设计】
 \${sceneExpansion}
+
+【场景卡（硬约束：POV/时间/地点/入场→转折→离场）】
+\${sceneCardDigest}
+
+【场景风格参考（同类型场景的句法/质感样本）】
+\${sceneStyleSnippet}
+
+【叙事节奏建议】
+\${suggestedRhythm}
 
 【情节节点——本章必须发生的具体事件】
 \${distilledContent}

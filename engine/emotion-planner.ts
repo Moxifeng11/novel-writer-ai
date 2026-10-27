@@ -167,6 +167,7 @@ export async function generateEmotionPlan(
     vars: Record<string, string>,
     model?: string,
     notifier: Notifier = NOOP_NOTIFIER,
+    options?: { maxTokens?: number; signal?: AbortSignal },
 ): Promise<string> {
     const systemPrompt = EMOTION_PLAN_SYSTEM_PROMPT.replace(/\${characterSouls}/g, vars.characterCores || '无角色灵魂层数据。');
     const userPrompt = EMOTION_PLAN_USER_TEMPLATE
@@ -184,7 +185,14 @@ export async function generateEmotionPlan(
 
     notifier.showNotice('🎭 正在生成情绪规划...');
     // callAI 签名是 (systemPrompt, userPrompt)：此前把两者传反，情绪规划从未按 system 约束生成
-    const response = await aiEngine.callAI(systemPrompt, userPrompt, model);
+    const response = await aiEngine.callAI(
+        systemPrompt,
+        userPrompt,
+        model,
+        0.7,
+        options?.maxTokens,
+        options?.signal ? { signal: options.signal } : undefined,
+    );
     notifier.showNotice('✅ 情绪规划生成完成');
 
     return response.content;

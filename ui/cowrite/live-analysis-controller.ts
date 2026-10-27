@@ -149,8 +149,10 @@ export class LiveAnalysisController {
     }
     // 「输入」路径每停顿 8 秒触发一次，而实体状态检测每次都会把正文前 6000 字
     // 发给 AI。既没有写够新内容、又没过冷却时跳过，避免连续写作变成全量重扫。
-    // 插入建议 / 保存 / 手动检查是用户主动动作，保持每次都检测。
-    if (trigger === "input") {
+    // 自动路径（input / insert / save）共用同一个增长+冷却闸门；
+    // 旧实现只拦 input，自动保存每 2 秒触发一次 guard，等于持续全量重扫。
+    // 手动检查保持每次都执行。
+    if (trigger !== "manual") {
       const last = this.lastGuardCheck;
       if (last) {
         const bodyLength = view.rightEditor.value.length;

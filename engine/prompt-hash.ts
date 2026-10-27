@@ -27,9 +27,11 @@ export function computePromptHash(
     userPrompt: string,
     model: string,
     temperature: number,
-    maxTokens: number
+    maxTokens: number,
+    /** 供应商/端点/思考参数等附加作用域，避免同模型名跨渠道命中同一缓存 */
+    scope: string = ''
 ): string {
     // JSON 数组编码消除分隔符碰撞歧义
-    const payload = JSON.stringify([model, temperature, maxTokens, systemPrompt, userPrompt]);
+    const payload = JSON.stringify([model, temperature, maxTokens, scope, systemPrompt, userPrompt]);
     return fnv1a32(payload, 0x811c9dc5) + fnv1a32(payload, 0x9e3779b9);
 }

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-25T17:54:08.979Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
-  "bytes": 323909,
+  "generatedAt": "2026-10-27T10:23:59.807Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因。2026-10-25：新增指纹库/知识库响应式与自动分类；执行时间线/错误卡/日志窗口；步骤置顶操作栏、紧凑按钮与折叠提示词。",
+  "bytes": 348529,
   "important": 190,
   "hardcodedHex": 156,
-  "rgbHsl": 182,
-  "uniqueClasses": 1780,
-  "otherClasses": 78,
+  "rgbHsl": 184,
+  "uniqueClasses": 1910,
+  "otherClasses": 79,
   "maxSelectorDepth": 4
 }

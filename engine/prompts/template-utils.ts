@@ -78,14 +78,26 @@ export function getStepTemplate(key: string): PromptTemplate | null {
  * 旧口径只看 characterCores 长度，多个「（灵魂层未配置）」也能超过 100 字而误开 V2。
  */
 export function getStepTemplateAuto(key: string, vars?: Record<string, string>): PromptTemplate | null {
+    let template: PromptTemplate | null = null;
     if (key === 'bodyGeneration' && vars) {
         const soulReady = vars.characterSoulReady === '1'
             || (vars.protagonistSoulDetail || '').trim().length > 0;
         if (soulReady) {
-            return getStepTemplate('bodyGenerationV2');
+            template = getStepTemplate('bodyGenerationV2');
         }
     }
-    return getStepTemplate(key);
+    if (!template) template = getStepTemplate(key);
+    if (!template) return null;
+
+    // 短篇/剧本：在既有模板末尾追加模式硬约束；长篇没有 creationModePrompt，保持原样。
+    const modeBlock = (vars?.creationModePrompt || '').trim();
+    if (!modeBlock) return template;
+    return {
+        ...template,
+        systemPrompt: `${template.systemPrompt}
+
+${modeBlock}`,
+    };
 }
 
 /**

@@ -3739,7 +3739,7 @@ ${text}`;
       return;
     this.ghostDebounceManager.debounceFixed('ghost-association', () => {
       void this.refreshGhostAssociation();
-    }, 1500);
+    }, 2500);
   }
   async refreshGhostAssociation() {
     if (!this.isGhostAssociationEnabled()) {
@@ -3755,6 +3755,11 @@ ${text}`;
     const seed = text.slice(Math.max(0, cursor - 160), cursor);
     if (!seed.trim() || seed === this.lastGhostSeed)
       return;
+    // 只在句末/段末触发：句中的每次停顿都请求会让本地模型持续排队
+    const beforeCursor = text.slice(0, cursor).trimEnd();
+    const lastChar = beforeCursor.slice(-1);
+    if (!/[。！？…]/.test(lastChar) && !beforeCursor.endsWith(String.fromCharCode(10)))
+      return;
     // 慢速打字时尾部种子每次只多一个字，1.5s 防抖后仍会连续请求：按最小间隔限频
     const now = Date.now();
     if (!shouldRequestGhostAssociationByInterval(now, this.lastGhostRequestAt, GHOST_ASSOCIATION_MIN_INTERVAL_MS))
@@ -3769,7 +3774,7 @@ ${text}`;
     const signal = this.suggestAbortController.signal;
     try {
       this.isAssociating = true;
-      const associations = await this.facade.suggestAssociation(cursor, text, "manual", signal);
+      const associations = await this.facade.suggestAssociation(cursor, text, "space", signal);
       if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch) || this.isSuggesting || this.currentSuggestions.length > 0)
         return;
       // 设置可能在请求在途时被关闭：关闭后不得把结果写回界面
@@ -4393,7 +4398,7 @@ ${text}`;
         '\u8BF7\u76F4\u63A5\u8F93\u51FA\u4FEE\u6539\u540E\u7684\u6587\u672C\u7247\u6BB5\u3002\u53EA\u8F93\u51FA\u6B63\u6587\uFF0C\u4E0D\u52A0\u89E3\u91CA\u3002',
       ].filter(Boolean).join('\n');
 
-      const response = await this.facade.aiEngine.callAI('', prompt, void 0, 0.3, 500);
+      const response = await this.engine.callCoWriteForUi('', prompt, 0.3, 1200);
       const fixedText = response?.content || '';
 
       if (fixedText && targetStart >= 0 && targetEnd > targetStart) {

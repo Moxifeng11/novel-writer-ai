@@ -182,9 +182,21 @@ export function migrateStepIndex(oldIndex: number): number {
 }
 
 /** 步骤执行需要的运行时上下文（由 FullWriterView 提供） */
+/** 单步执行的落盘元数据（模型/截断/token），用于状态机与诊断。 */
+export interface StepRunMeta {
+    model?: string;
+    providerId?: string;
+    finishReason?: string;
+    truncated?: boolean;
+    usage?: { prompt: number; completion: number; total: number };
+    maxTokens?: number;
+}
+
 export type StepRunCtx = {
     stepResults: Record<string, string>;
     stepCompleted: Set<string>;
+    /** 最近一次执行各步骤的元数据；截断判定不依赖内容长度猜测。 */
+    stepMeta?: Record<string, StepRunMeta>;
     currentStepIndex: number;
     setCurrentStepIndex: (v: number) => void;
     tabContent: HTMLElement;
@@ -199,7 +211,7 @@ export type StepRunCtx = {
     vars: Record<string, string>;
     isLoading: boolean;
     buildTemplateVars: () => Promise<Record<string, string>>;
-    saveStepResult: (stepKey: string, content: string) => Promise<void>;
+    saveStepResult: (stepKey: string, content: string, meta?: StepRunMeta) => Promise<void>;
     renderInContainer: (container: HTMLElement) => Promise<void>;
     setIsLoading: (loading: boolean) => void;
     refreshWorkspace: () => void;

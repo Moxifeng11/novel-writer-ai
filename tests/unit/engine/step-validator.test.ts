@@ -91,6 +91,21 @@ describe('validateStepResult — infoPlan 信息规划', () => {
         expect(r.valid).toBe(false);
         expect(r.missing.length).toBeGreaterThan(0);
     });
+
+    it('冲突强度用「4/5」或独立小节表达时不再误判缺失', () => {
+        const inline = VALID_INFO_PLAN.replace('冲突强度：从中等逐步升级到极限高压', '冲突强度 4/5，逐步升级');
+        const inlineResult = validateStepResult('infoPlan', inline);
+        expect(inlineResult.missing).not.toContain('冲突强度');
+        expect(inlineResult.valid).toBe(true);
+
+        const section = VALID_INFO_PLAN.replace(
+            '冲突强度：从中等逐步升级到极限高压',
+            '## 冲突强度\n4/5，从中等逐步升级',
+        );
+        const sectionResult = validateStepResult('infoPlan', section);
+        expect(sectionResult.missing).not.toContain('冲突强度');
+        expect(sectionResult.valid).toBe(true);
+    });
 });
 
 describe('validateStepResult — outline 大纲摘要', () => {

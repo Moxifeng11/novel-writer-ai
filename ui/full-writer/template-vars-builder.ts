@@ -22,6 +22,13 @@ import { ObsidianFileSystem } from '../../shared/file-system-port';
 import { loadLongTermMemory } from '../../engine/long-term-memory';
 import { findWritingStyleFile } from '../writing-style-paths';
 import { createLogger } from '../../shared/logger';
+import { parseSceneBlocks } from '../../engine/scene-generation-loop';
+import { formatSceneCardDigest } from '../../shared/scene-card';
+import { buildCraftConstraintBlock, buildNegativeConstraintBlock } from '../../engine/craft-constraints';
+import { pjPromiseLedger, pjCharacterArcTable, readProjectMeta } from '../../shared/paths';
+import { parsePromiseLedger, formatOpenPromisesForPrompt } from '../../engine/promise-ledger';
+import { parseCharacterArcTable, formatArcsForPrompt } from '../../engine/character-arc';
+import { getCreationModeLabel, getCreationModePromptBlock, getCreationUnitLabel, parseCreationModeMeta } from '../../shared/creation-mode';
 
 const log = createLogger('TemplateVarsBuilder');
 import {
@@ -489,9 +496,11 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
       vars["prevChaptersSummary"] = "【跨卷状态快照——上卷结束时的人物、势力、伏笔、时间线状态】\n" + deps.viewVars["crossVolumeSnapshot"] + "\n\n" + vars["prevChaptersSummary"];
     }
     vars["prevChapEnding"] = prev.ending || "";
+    vars["prevChapterStateSnapshot"] = prev.stateSnapshot || "";
   } else {
     // 第一章没有上一章：显式说明，避免模型把空串当成「上一章结尾缺失」而自行编造
     vars["prevChapEnding"] = "（本章为开篇，无上一章结尾）";
+    vars["prevChapterStateSnapshot"] = "";
   }
   const outline = d.outline;
   vars["outlineContent"] = outline?.raw || "";
@@ -509,6 +518,23 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
 }
 export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<string, string>> {
   const vars: Record<string, string> = {};
+  // v4.18：模式硬约束只追加到 system prompt；长篇 block 为空，行为不变。
+  try {
+    const rawMeta = await readProjectMeta(deps.app, deps.project);
+    const modeMeta = parseCreationModeMeta(rawMeta || '');
+    vars["creationMode"] = modeMeta.mode;
+    vars["creationModeLabel"] = getCreationModeLabel(modeMeta.mode);
+    vars["creationUnitLabel"] = getCreationUnitLabel(modeMeta.mode);
+    vars["shortCategory"] = modeMeta.shortCategory;
+    vars["scriptGenre"] = modeMeta.scriptGenre;
+    vars["modeTargetWords"] = String(modeMeta.targetWords);
+    vars["modeTargetUnits"] = String(modeMeta.targetUnits);
+    vars["creationModePrompt"] = getCreationModePromptBlock(modeMeta.mode, modeMeta);
+  } catch (e) {
+    log.warn('[TemplateVarsBuilder] 读取创作模式失败，按长篇处理:', e);
+    vars["creationMode"] = 'long';
+    vars["creationModePrompt"] = '';
+  }
   const writingRules = await RulesService.getInstance(deps.plugin.app).getWritingRules();
   vars["writingRules"] = writingRules;
   // 同人约束：非同人项目返回空串；设定失效（未绑定/不存在/读取失败/全空）时提示一次
@@ -564,8 +590,25 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     "writingStyleContent",
     "prevChaptersSummary",
     "prevChapEnding",
+    "prevChapterStateSnapshot",
     "unrevealedForeshadow",
     "timelineEvents",
+    "sceneCardDigest",
+    "craftConstraints",
+    "negativeList",
+    "sceneStyleSnippet",
+    "suggestedRhythm",
+    "openPromises",
+    "characterArcs",
+    "qualityIssues",
+    "creationMode",
+    "creationModeLabel",
+    "creationUnitLabel",
+    "shortCategory",
+    "scriptGenre",
+    "modeTargetWords",
+    "modeTargetUnits",
+    "creationModePrompt",
   ]) {
     if (vars[key] === undefined)
       vars[key] = "";
@@ -652,10 +695,46 @@ ${vars["allItems"]}`);
     }
   }
   vars["issues"] = vars["issues"] || "";
+  const qualityReport = deps.stepResults["qualityControl"] || "";
+  vars["qualityIssues"] = qualityReport
+    ? qualityReport.split('\n').filter(line => /^\s*[❌⚠️]/.test(line)).slice(0, 20).join('\n').slice(0, 2500)
+    : "";
   vars["foreshadows"] = vars["unrevealedForeshadow"] || "";
+  try {
+    const ledgerFile = deps.app.vault.getAbstractFileByPath(pjPromiseLedger(deps.project));
+    if (ledgerFile instanceof TFile) {
+      const raw = await deps.app.vault.read(ledgerFile);
+      vars["openPromises"] = formatOpenPromisesForPrompt(parsePromiseLedger(raw), deps.chapterNum);
+    } else {
+      vars["openPromises"] = "";
+    }
+  } catch (e) {
+    log.warn('[小说工坊] 读取承诺账本失败，跳过:', e);
+    vars["openPromises"] = "";
+  }
+  try {
+    const arcFile = deps.app.vault.getAbstractFileByPath(pjCharacterArcTable(deps.project));
+    if (arcFile instanceof TFile) {
+      const raw = await deps.app.vault.read(arcFile);
+      const relevantNames = new Set<string>();
+      for (const line of (vars["allChars"] || "").split("\n")) {
+        const name = line.match(/^-\s*([^：:]+)/)?.[1]?.trim();
+        if (name) relevantNames.add(name);
+      }
+      vars["characterArcs"] = formatArcsForPrompt(parseCharacterArcTable(raw), relevantNames);
+    } else {
+      vars["characterArcs"] = "";
+    }
+  } catch (e) {
+    log.warn('[小说工坊] 读取角色弧线表失败，跳过:', e);
+    vars["characterArcs"] = "";
+  }
   vars["prevReview"] = vars["prevReview"] || "";
   vars["userIntervention"] = deps.viewVars["userIntervention"] || "";
   await buildSceneStyleHint(deps, vars);
+  // 用户可能在「角色灵魂」步骤里手动修改过内容。该文件是下游情绪/正文的直接输入，
+  // 必须优先于 context 里的旧快照；否则编辑保存后重新生成仍按旧灵魂写。
+  const savedSoul = (deps.stepResults["characterSoul"] || "").trim();
   if (deps.context?.data?.character_cores && deps.context.data.character_cores.length > 0) {
     const souls = deps.context.data.character_cores;
     // 只注入本章相关角色：全量注入会稀释 prompt，并在超预算时把关键约束挤掉
@@ -665,16 +744,23 @@ ${vars["allItems"]}`);
       if (nameMatch) relevantNames.add(nameMatch[1].trim());
     }
     const summary = buildCharacterSoulSummary(souls, vars["protagonistName"] || "主角", { relevantNames });
-    vars["characterCores"] = summary.allSouls;
+    vars["characterCores"] = savedSoul || summary.allSouls;
     if (summary.protagonist) {
       vars["protagonistSoulDetail"] = getProtagonistSoulDetail(summary.protagonist);
       log.info("[V2] 主角灵魂层已注入:", summary.protagonist.name, "9字段完整:", summary.protagonist.hasSoul);
     } else {
-      vars["protagonistSoulDetail"] = "";
+      // 手工编辑的角色灵魂步骤结果优先于空的主角详情，避免 V2 丢失编辑
+      vars["protagonistSoulDetail"] = savedSoul;
     }
-    // V2 只认真实 soul：仅有「（灵魂层未配置）」文本不算
-    vars["characterSoulReady"] = summary.hasSoulData && Boolean(summary.protagonist?.hasSoul) ? "1" : "";
-    log.info("[V2] 角色灵魂层注入完毕:", souls.length, "人, hasSoulData:", summary.hasSoulData);
+    // V2 只认真实 soul：仅有「（灵魂层未配置）」文本不算；手动保存的灵魂文件视为已就绪
+    vars["characterSoulReady"] = savedSoul || (summary.hasSoulData && Boolean(summary.protagonist?.hasSoul)) ? "1" : "";
+    log.info("[V2] 角色灵魂层注入完毕:", souls.length, "人, hasSoulData:", summary.hasSoulData, "saved:", Boolean(savedSoul));
+  } else if (savedSoul) {
+    vars["characterCores"] = savedSoul;
+    // 没有 context 灵魂时，用步骤结果作为 V2 主角详情兜底
+    vars["protagonistSoulDetail"] = savedSoul;
+    vars["characterSoulReady"] = "1";
+    log.info("[V2] 使用步骤结果中的角色灵魂层（context 无 character_cores）");
   } else {
     vars["characterCores"] = "";
     vars["protagonistSoulDetail"] = "";
@@ -682,6 +768,15 @@ ${vars["allItems"]}`);
   }
   vars["emotionPlan"] = deps.stepResults["emotionPlan"] || deps.viewVars["emotionPlan"] || "（未执行情绪规划：按大纲的情绪基调推进，每个场景必须有情绪变化）";
   vars["sceneExpansion"] = deps.stepResults["sceneExpand"] || deps.viewVars["sceneExpansion"] || "（未执行 Scene 展开：按大纲场景顺序推进，场景之间不要无过渡跳转）";
+  try {
+    const cards = parseSceneBlocks(deps.stepResults["sceneExpand"] || '');
+    vars["sceneCardDigest"] = formatSceneCardDigest(cards);
+  } catch (e) {
+    log.warn('[小说工坊] 场景卡解析失败，跳过硬约束摘要:', e);
+    vars["sceneCardDigest"] = '';
+  }
+  vars["craftConstraints"] = buildCraftConstraintBlock();
+  vars["negativeList"] = buildNegativeConstraintBlock();
   vars["triggeredMemories"] = deps.context?.data?.triggered_memories_prompt || "";
   return vars;
 }

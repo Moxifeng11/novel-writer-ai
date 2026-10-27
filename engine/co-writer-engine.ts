@@ -35,6 +35,8 @@ import { PreferenceMemory } from './preference-memory';
 import { PromptBuilder, type PromptSnapshot } from './prompt-builder';
 import { StyleFingerprintLibrary } from './style-fingerprint-library';
 import { EmbeddingProviderFactory } from './embedding/provider-factory';
+import { getSharedEmbeddingProvider } from './embedding/embedding-service';
+import { ensureLocalModelCapability } from '../services/local-model-probe';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { LocalVectorStore } from './local-vector-store';
 import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
@@ -56,7 +58,8 @@ import { SentenceDiversityEngine } from './sentence-diversity-engine';
 import { StyleSimilarityScorer } from './style-similarity-scorer';
 import { VectorEnhancer } from './vector-enhancer';
 import { PRECISION_MODE_SYSTEM_APPEND } from './prompts/co-write-prompts';
-import { pjCharsDir } from '../shared/paths';
+import { pjCharsDir, readProjectMeta } from '../shared/paths';
+import { getCreationModePromptBlock, parseCreationModeMeta } from '../shared/creation-mode';
 import { splitSceneSections } from './scene-expander';
 import {
     formatEntityBrief,
@@ -84,7 +87,7 @@ import {
     SentenceEditRecord,
     CoWritingSession
 } from '../shared/types';
-import { extractJsonObject, extractResponseText, isPlanningOutput, sanitizeStoryText, stripCodeFence, stripThinkingBlock } from '../shared/api-response-utils';
+import { extractJsonArray, extractJsonObject, extractResponseText, isPlanningOutput, sanitizeStoryText, stripCodeFence, stripThinkingBlock } from '../shared/api-response-utils';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { EngineRegistry } from './engine-registry';
 import type { CharacterRepository, ChapterRepository } from './repository';
@@ -92,11 +95,12 @@ import { FrontmatterSerializer } from './repository/domain/serializers';
 import { createLogger } from '../shared/logger';
 import { deriveBodyFormat, describeBodyFormat } from '../shared/body-format';
 import { resolveProviderSourceType } from '../shared/model-source';
-import { CO_WRITE_MAX_TOKENS_CAP, CO_WRITE_NUM_CTX, EDIT_VALIDATION_PASS_SCORE } from '../shared/thresholds';
+import { CO_WRITE_MAX_TOKENS_CAP, EDIT_VALIDATION_PASS_SCORE } from '../shared/thresholds';
 import { countRetainedPromptParts } from '../shared/prompt-budget';
 import { roleIndicatesProtagonist } from '../shared/protagonist';
 import { findModelCapability } from '../shared/model-capabilities';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { acquireLocalAiSlot } from '../shared/local-ai-queue';
 
 
 const log = createLogger('CoWriterEngine');
@@ -248,26 +252,101 @@ export class CoWriterEngine {
     private async callCoWriteAI(
         prompt: { system: string; user: string },
         tempDelta: number,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        maxTokensOverride?: number,
     ): ReturnType<AIEngine['callAI']> {
         const settings = this.aiEngine.getPlugin()?.settings;
         const temperature = (settings?.coWriteTemperature ?? 0.7) + tempDelta;
-        const maxTokens = Math.min(settings?.coWriteMaxTokens ?? 600, CO_WRITE_MAX_TOKENS_CAP);
-        return this.aiEngine.callAI(
-            prompt.system,
-            prompt.user,
-            this.getCoWriteModel(),
-            temperature,
-            maxTokens,
-            this.getCoWriteOptions({ signal })
+        const maxTokens = Math.min(
+            maxTokensOverride ?? settings?.coWriteMaxTokens ?? 600,
+            CO_WRITE_MAX_TOKENS_CAP,
         );
+        // 首次本地调用前探测真实窗口，避免 num_ctx 先被 8192 兜底钉死
+        const isLocal = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const model = isLocal ? this.getCoWriteModel() : undefined;
+        const local = isLocal ? this.resolveLocalProvider(model) : null;
+        // 本地单槽串行：并发建议/幽灵/守卫同时进来时排队，而不是互相超时。
+        const release = isLocal && local ? await acquireLocalAiSlot(signal) : null;
+        try {
+            if (local && model) {
+                await ensureLocalModelCapability(local.endpoint, model);
+            }
+            const options = this.getCoWriteOptions({ signal });
+            if (options.localRouteError) {
+                return { content: '', error: options.localRouteError };
+            }
+            return await this.aiEngine.callAI(
+                prompt.system,
+                prompt.user,
+                this.getCoWriteModel(),
+                temperature,
+                maxTokens,
+                options,
+            );
+        } finally {
+            release?.();
+        }
+    }
+
+    /**
+     * 解析协同写作本地模型所属的 provider。
+     * 旧实现只认 id === 'ollama'：用户重命名/新增本地 provider 后 opts.endpoint 为空，
+     * callAI 会回退到全局 apiEndpoint（通常是云端），造成「本地模式静默打云端」。
+     */
+    private resolveLocalProvider(model?: string): {
+        providerId: string;
+        endpoint: string;
+        apiKey: string;
+        maxContext: number;
+    } | null {
+        const plugin = this.aiEngine.getPlugin();
+        const settings = plugin?.settings;
+        if (!settings) return null;
+        const providers = (settings.customProviders || []).filter(
+            p => p?.endpoint && resolveProviderSourceType({ id: p.id, endpoint: p.endpoint, sourceType: p.sourceType }) === 'local',
+        );
+        const chosen = (model ? providers.find(p => p.models?.includes(model)) : undefined)
+            || providers.find(p => p.id === 'ollama')
+            || providers[0];
+        if (!chosen) return null;
+
+        const modelName = model || chosen.models?.[0] || '';
+        let maxContext = Number.isFinite(chosen.maxContext) && chosen.maxContext > 0
+            ? chosen.maxContext
+            : findModelCapability(modelName, 'local').maxContext;
+        try {
+            const resolved = plugin.resolveModelLimits(modelName, chosen.endpoint)?.maxContext;
+            if (Number.isFinite(resolved) && resolved > 0) maxContext = resolved;
+        } catch {
+            // 保留 provider 配置值
+        }
+        return {
+            providerId: chosen.id,
+            endpoint: chosen.endpoint,
+            apiKey: settings.providerKeys?.[chosen.id] || 'ollama',
+            maxContext,
+        };
     }
 
     /**
      * v6.5: 获取协同写作的 callAI options（本地模型使用 Ollama 端点 + settings 参数）
      */
-    private getCoWriteOptions(base?: { signal?: AbortSignal }): { signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; numCtx?: number } {
-        const opts: { signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; numCtx?: number } = {};
+    private getCoWriteOptions(base?: { signal?: AbortSignal }): {
+        signal?: AbortSignal;
+        endpoint?: string;
+        apiKey?: string;
+        disableFallback?: boolean;
+        numCtx?: number;
+        localRouteError?: string;
+    } {
+        const opts: {
+            signal?: AbortSignal;
+            endpoint?: string;
+            apiKey?: string;
+            disableFallback?: boolean;
+            numCtx?: number;
+            localRouteError?: string;
+        } = {};
         if (base?.signal) opts.signal = base.signal;
         const settings = this.aiEngine.getPlugin()?.settings;
         if (!settings) return opts;
@@ -292,37 +371,44 @@ export class CoWriterEngine {
             // 云端模式允许 fallback
             opts.disableFallback = false;
         } else {
-            // 本地模式：使用 Ollama 端点
-            const model = settings.coWriteModel;
-            if (model) {
-                const ollamaProvider = settings.customProviders?.find(p => p.id === 'ollama');
-                if (ollamaProvider?.endpoint) {
-                    opts.endpoint = ollamaProvider.endpoint;
-                    opts.apiKey = 'ollama';
-                }
-            }
+            // 本地模式：按模型所属本地 provider 解析端点；找不到就阻断，绝不回退云端
+            const model = this.getCoWriteModel();
+            const local = this.resolveLocalProvider(model);
             opts.disableFallback = true;
-            // 本地模型按模型自身上下文（deepseek-r1=131072）分配 KV 会挤占显存、拖慢 prefill，
-            // 协同写作 prompt 约 8k-12k token，收窄到 32768 可显著缩短首包时间。
-            opts.numCtx = CO_WRITE_NUM_CTX;
+            if (!local) {
+                opts.localRouteError = '未找到可用的本地模型供应商：请在设置中配置 Ollama/本地端点，或切换为云端模式';
+                // 兜底端点仅用于让调用失败而不是把本地内容发到云端
+                opts.endpoint = 'http://127.0.0.1:1/v1/chat/completions';
+                opts.apiKey = 'ollama';
+            } else {
+                opts.endpoint = local.endpoint;
+                opts.apiKey = local.apiKey;
+                const configured = settings.coWriteNumCtx && settings.coWriteNumCtx > 0
+                    ? Math.min(settings.coWriteNumCtx, local.maxContext)
+                    : local.maxContext;
+                opts.numCtx = Math.max(2048, configured);
+            }
         }
         return opts;
     }
 
     /**
      * Phase 3.4: 协同写作输入预算（按当前模型窗口推导）。
-     * - 本地未登记模型按 8192 保守窗口（LOCAL_FALLBACK_CAPABILITY）；
-     * - 本地实际 num_ctx 由 CO_WRITE_NUM_CTX 封顶，取两者较小值；
+     * - 本地窗口优先取模型探测值/用户配置，不再固定 32768；
      * - 预留本次 max_tokens 输出空间 + 20% 估算误差余量。
      */
     private getCoWriteInputBudget(): { maxInputTokens: number; modelId: string } {
         const settings = this.aiEngine.getPlugin()?.settings;
         const mode: 'local' | 'cloud' = (settings?.coWriteModelMode || 'local') === 'cloud' ? 'cloud' : 'local';
         const modelId = this.getCoWriteModel() || 'default';
-        const capability = findModelCapability(modelId, mode);
-        const contextWindow = mode === 'local'
-            ? Math.min(capability.maxContext, CO_WRITE_NUM_CTX)
-            : capability.maxContext;
+        let contextWindow: number;
+        if (mode === 'local') {
+            const local = this.resolveLocalProvider(modelId);
+            contextWindow = local?.maxContext
+                ?? findModelCapability(modelId, 'local').maxContext;
+        } else {
+            contextWindow = findModelCapability(modelId, 'cloud').maxContext;
+        }
         const maxOutput = Math.min(settings?.coWriteMaxTokens ?? 600, CO_WRITE_MAX_TOKENS_CAP);
         const maxInputTokens = Math.max(512, Math.floor(contextWindow - maxOutput * 1.2));
         return { maxInputTokens, modelId };
@@ -419,7 +505,8 @@ export class CoWriterEngine {
      * （Rev 106/107 之后改为跳过），表现是知识/指纹注入静默消失。
      */
     private createEmbeddingProvider(): EmbeddingProvider {
-        return EmbeddingProviderFactory.fromSettings(this.aiEngine.getPlugin()?.settings);
+        return getSharedEmbeddingProvider()
+            ?? EmbeddingProviderFactory.fromSettings(this.aiEngine.getPlugin()?.settings);
     }
 
     async init(
@@ -439,6 +526,7 @@ export class CoWriterEngine {
             // 1. 采集上下文
             const ctx = await this.contextManager.gatherAll(project, chapterName);
             this.snapshot = this.buildSnapshot(ctx, project, chapterName);
+            await this.syncCreationModeContext(project);
 
             // 2. 初始化会话
             this.session = {
@@ -468,6 +556,7 @@ export class CoWriterEngine {
                 crossVolumeContext: '',
                 longTermMemoryContext: '',
                 fanficRulesContext: '',
+                creationModeContext: '',
                 worldView: '',
                 worldType: '',
                 writingStyle: '',
@@ -603,6 +692,7 @@ export class CoWriterEngine {
                 await this.fingerprintLibrary.loadGlobalState(project);
 
                 const embeddingClient = this.createEmbeddingProvider();
+                this.fingerprintLibrary.setEmbeddingClient(embeddingClient);
                 this.vectorStore = new LocalVectorStore(this.app, 'project', embeddingClient, project);
 
                 log.info('[CoWriterEngine] E4: 写作指纹库加载完成');
@@ -790,24 +880,38 @@ export class CoWriterEngine {
         // 原为 for 循环串行逐方向 await 完整 AI 调用；现抽为独立任务并行执行。
         // candidateParallel=false 时回退串行（本地小模型并发能力弱时可关闭）。
         // 注意：工厂函数惰性启动，避免 map 阶段就把所有任务并发跑出去。
-        const makeTasks = directions.slice(0, Math.min(count, directions.length)).map((direction, i) => () =>
-            this.generateDirectionalCandidate(i, direction, {
-                precedingText,
-                cursorHint,
-                fingerprintParts,
-                knowledgeInjection,
-                kbDeepInjection,
-                recentSentences,
-                signal,
-                settings,
-                onChunk,
-            })
-        );
-
-        const collected: Array<SuggestionRecord | null> = [];
+        const shared = {
+            precedingText,
+            cursorHint,
+            fingerprintParts,
+            knowledgeInjection,
+            kbDeepInjection,
+            recentSentences,
+            signal,
+            settings,
+            onChunk,
+        };
         // 本地模型（Ollama 单机单槽）并行只会让 3 条候选互相排队直至超时，
         // 因此本地模式默认串行；云端仍保持并行。显式 candidateParallel=false 时也串行。
         const localMode = (settings?.coWriteModelMode || 'local') !== 'cloud';
+
+        // 本地模式优先把 3 个方向合并成 1 次调用；解析失败自动回退到原有逐方向路径。
+        // 精准模式保留逐方向验证，避免批量输出绕过风格评分。
+        if (localMode
+            && !this.precisionMode
+            && settings?.coWriteCandidateBatching !== false
+            && directions.length > 1) {
+            const batched = await this.tryBatchedCandidates(directions.slice(0, Math.min(count, directions.length)), shared);
+            if (batched && batched.length >= Math.min(2, directions.length)) {
+                return batched.map(s => this.annotateSuggestionRisk(s));
+            }
+        }
+
+        const makeTasks = directions.slice(0, Math.min(count, directions.length)).map((direction, i) => () =>
+            this.generateDirectionalCandidate(i, direction, shared)
+        );
+
+        const collected: Array<SuggestionRecord | null> = [];
         const parallel = settings?.candidateParallel !== false && !localMode;
         if (parallel) {
             const results = await Promise.allSettled(makeTasks.map((make) => make()));
@@ -840,6 +944,192 @@ export class CoWriterEngine {
 
         // C1: 提前剧透检测——为每条建议标注剧透/越界风险
         return suggestions.map(s => this.annotateSuggestionRisk(s));
+    }
+
+    /**
+     * 本地模型批量候选：一次调用返回多个方向的候选，减少串行等待。
+     * 解析失败/候选不足时返回 null，由调用方回退原有逐方向路径。
+     */
+    private async tryBatchedCandidates(
+        directions: SuggestionDirection[],
+        shared: {
+            precedingText: string;
+            cursorHint: string;
+            fingerprintParts: string[];
+            knowledgeInjection: string;
+            kbDeepInjection: string;
+            recentSentences: string[];
+            signal?: AbortSignal;
+            settings?: { coWriteTemperature?: number; coWriteMaxTokens?: number };
+            onChunk?: (index: number, cumulativeText: string) => void;
+        },
+    ): Promise<SuggestionRecord[] | null> {
+        const base = this.buildDirectionalPrompt(
+            shared.precedingText,
+            directions[0],
+            shared.cursorHint,
+            shared.fingerprintParts,
+            [],
+            [shared.knowledgeInjection, shared.kbDeepInjection].filter(Boolean).join('\n\n'),
+        );
+        const directionLabels = directions.map((d, i) => `${i + 1}. ${d}`).join('\n');
+        const prompt = {
+            system: `${base.system}
+
+【批量候选模式】
+一次生成 ${directions.length} 个不同方向的候选。只输出 JSON 数组，不要 Markdown 代码块，不要解释。
+每个元素格式：{"direction":"方向名","text":"候选正文"}。
+要求：
+- 每个 text 是可直接插入正文的连续段落，不写标题/分析/解释。
+- 三个方向必须真正不同：动作推进 / 情绪变化 / 对话潜台词。
+- 每个候选 1-3 句，总长度控制在 ${Math.max(120, (shared.settings?.coWriteMaxTokens ?? 600) * directions.length)} 字以内。
+- 不使用 AI 套话，不总结。`,
+            user: `${base.user}
+
+【本次需要生成的方向】
+${directionLabels}
+
+只输出 JSON 数组。`,
+        };
+
+        const maxTokens = Math.min(
+            8192,
+            Math.max(1200, (shared.settings?.coWriteMaxTokens ?? 600) * directions.length),
+        );
+        try {
+            const response = await this.callCoWriteAI(prompt, 0, shared.signal, maxTokens);
+            if (response.error || shared.signal?.aborted) return null;
+            const raw = extractJsonArray(extractResponseText(response));
+            if (!raw) return null;
+            const parsed = JSON.parse(raw) as Array<{ direction?: string; text?: string } | string>;
+            const records: SuggestionRecord[] = [];
+            for (let i = 0; i < parsed.length && records.length < directions.length; i++) {
+                const item = parsed[i];
+                const text = sanitizeStoryText(String(typeof item === 'string' ? item : item?.text || ''));
+                if (!text || text.length < 8 || isPlanningOutput(text)) continue;
+                const direction = (typeof item === 'object' && item?.direction
+                    ? String(item.direction)
+                    : directions[records.length]) as SuggestionDirection;
+                const index = records.length;
+                shared.onChunk?.(index, text);
+                records.push({
+                    id: `sug_${Date.now()}_${index}`,
+                    text,
+                    direction,
+                    style: index === 0 ? 'default' : (index === 1 ? 'creative' : 'conservative'),
+                    temperature: (shared.settings?.coWriteTemperature ?? 0.7) + index * 0.05,
+                    preview: text.slice(0, 30) + (text.length > 30 ? '...' : ''),
+                });
+            }
+            return records.length >= Math.min(2, directions.length) ? records : null;
+        } catch (e) {
+            log.warn('[CoWriterEngine] 批量候选解析失败，回退逐方向生成:', e);
+            return null;
+        }
+    }
+
+    /**
+     * 本地模型批量改写：一次调用返回多个方向的改写版本。
+     * 解析失败/候选不足时返回 null，由调用方回退逐方向路径。
+     */
+    private async tryBatchedRewrite(
+        selectedText: string,
+        beforeContext: string,
+        afterContext: string,
+        cursorHint: string,
+        directions: SuggestionDirection[],
+        fingerprintParts: string[],
+        knowledgeParts: string[],
+        knowledgeTotal: number,
+        signal?: AbortSignal,
+    ): Promise<SuggestionRecord[] | null> {
+        const base = this.promptBuilder
+            ? this.promptBuilder.buildRewritePrompt(
+                selectedText,
+                beforeContext,
+                afterContext,
+                cursorHint,
+                directions[0],
+                fingerprintParts,
+                knowledgeParts,
+                this.getCoWriteInputBudget(),
+            )
+            : [
+                '你是小说协同编辑。请对用户选中的片段给出可直接替换的改写版本。',
+                '',
+                '【前文】',
+                beforeContext.slice(-500),
+                '',
+                '【选中文本】',
+                selectedText,
+                '',
+                '【后文】',
+                afterContext.slice(0, 300),
+            ].join('\n');
+
+        const prompt = {
+            system: `你是小说协同编辑。一次给出多个方向的改写版本。
+只输出 JSON 数组，不要 Markdown 代码块，不要解释。
+每个元素格式：{"direction":"方向名","text":"改写正文"}。
+要求：
+- text 是可直接替换选中片段的连续段落，不写标题/分析/解释。
+- 各方向必须真正不同：描写强化 / 情绪深化 / 对话潜台词。
+- 保持剧情事实、人物关系、时间地点不变，长度与原文接近。
+- 不使用 AI 套话，不总结。`,
+            user: `${base}
+
+【本次需要输出的改写方向】
+${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
+
+只输出 JSON 数组。`,
+        };
+        this.recordKnowledgeInjection(knowledgeTotal, `${prompt.system}\n${prompt.user}`, knowledgeParts);
+
+        const settings = this.aiEngine.getPlugin()?.settings;
+        const maxTokens = Math.min(
+            8192,
+            Math.max(1800, (settings?.coWriteMaxTokens ?? 600) * directions.length),
+        );
+        try {
+            const response = await this.callCoWriteAI(prompt, 0.1, signal, maxTokens);
+            if (response.error || signal?.aborted) return null;
+            const raw = extractJsonArray(extractResponseText(response));
+            if (!raw) return null;
+            const parsed = JSON.parse(raw) as Array<{ direction?: string; text?: string } | string>;
+            const byDirection = new Map<string, string>();
+            const ordered: string[] = [];
+            for (const item of parsed) {
+                const text = sanitizeStoryText(String(typeof item === 'string' ? item : item?.text || ''));
+                if (!text || text.length < 8 || isPlanningOutput(text)) continue;
+                const direction = typeof item === 'object' && item?.direction
+                    ? String(item.direction)
+                    : directions[ordered.length] || directions[0];
+                if (byDirection.has(direction)) continue;
+                byDirection.set(direction, text);
+                ordered.push(direction);
+            }
+
+            const records: SuggestionRecord[] = [];
+            for (let i = 0; i < directions.length; i++) {
+                const direction = directions[i];
+                const text = byDirection.get(direction) || byDirection.get(ordered[i]);
+                if (!text) continue;
+                const index = records.length;
+                records.push({
+                    id: `rewrite_${Date.now()}_${index}`,
+                    text,
+                    direction,
+                    style: index === 0 ? 'default' : (index === 1 ? 'creative' : 'conservative'),
+                    temperature: (settings?.coWriteTemperature ?? 0.7) + index * 0.1,
+                    reasoning: '选区改写候选（批量）',
+                    preview: text.slice(0, 30) + (text.length > 30 ? '...' : ''),
+                });
+            }
+            return records.length >= Math.min(2, directions.length) ? records : null;
+        } catch (e) {
+            log.warn('[CoWriterEngine] 批量改写解析失败，回退逐方向生成:', e);
+            return null;
+        }
     }
 
     /**
@@ -1117,16 +1407,29 @@ export class CoWriterEngine {
         const temperature = (settings?.coWriteTemperature ?? 0.7) + tempDelta;
         const maxTokens = Math.min(settings?.coWriteMaxTokens ?? 600, CO_WRITE_MAX_TOKENS_CAP);
         const model = this.getCoWriteModel();
-        const options = this.getCoWriteOptions({ signal });
+        const isLocal = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const local = isLocal ? this.resolveLocalProvider(model) : null;
+        const release = isLocal && local ? await acquireLocalAiSlot(signal) : null;
+        try {
+            if (local && model) {
+                await ensureLocalModelCapability(local.endpoint, model);
+            }
+            const options = this.getCoWriteOptions({ signal });
+            if (options.localRouteError) {
+                return { content: '', error: options.localRouteError };
+            }
 
-        return yield* this.aiEngine.callAIAsyncIterator(
-            prompt.system,
-            prompt.user,
-            model,
-            temperature,
-            maxTokens,
-            { isWritingTask: true, ...options }
-        );
+            return yield* this.aiEngine.callAIAsyncIterator(
+                prompt.system,
+                prompt.user,
+                model,
+                temperature,
+                maxTokens,
+                { isWritingTask: true, ...options }
+            );
+        } finally {
+            release?.();
+        }
     }
 
     /**
@@ -1208,6 +1511,31 @@ export class CoWriterEngine {
             log.warn('[CoWriterEngine] 知识库 prompt 生成失败，跳过:', e);
         }
         const knowledgeTotal = knowledgeParts.filter(p => p && p.trim().length > 0).length;
+
+        // 本地模型默认一次返回 3 个方向的改写，避免串行 3 次往返。
+        // 解析失败/候选不足时返回 null，继续走原有逐方向路径。
+        const localMode = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        if (localMode
+            && !this.precisionMode
+            && (settings as { coWriteCandidateBatching?: boolean } | undefined)?.coWriteCandidateBatching !== false
+            && directions.length > 1
+            && !signal?.aborted) {
+            const batched = await this.tryBatchedRewrite(
+                selectedText,
+                beforeContext,
+                afterContext,
+                cursorHint,
+                directions.slice(0, Math.min(count, directions.length)),
+                fingerprintParts,
+                knowledgeParts,
+                knowledgeTotal,
+                signal,
+            );
+            if (batched && batched.length >= 2) {
+                if (onChunk) batched.forEach((sg, i) => onChunk(i, sg.text));
+                return signal?.aborted ? [] : batched.map(sg => this.annotateSuggestionRisk(sg));
+            }
+        }
 
         for (let i = 0; i < Math.min(count, directions.length); i++) {
             // NBI-06: 中止后停止后续方向，避免继续消耗调用
@@ -1359,8 +1687,12 @@ export class CoWriterEngine {
     async validateEdit(
         modifiedText: string,
         originalSuggestion: SuggestionRecord,
-        precedingContext: string
+        precedingContext: string,
+        signal?: AbortSignal,
     ): Promise<EditValidation> {
+        if (signal?.aborted) {
+            return this.buildDegradedValidation('验证已取消');
+        }
         if (!this.hasCoWriteModel()) {
             return {
                 isValid: false,
@@ -1377,14 +1709,14 @@ export class CoWriterEngine {
         const prompt = this.buildValidationPrompt(modifiedText, originalSuggestion, precedingContext);
 
         try {
-            const response = await this.callCoWriteAI({ system: '', user: prompt }, 0);
+            const response = await this.callCoWriteAI({ system: '', user: prompt }, 0, signal);
 
             const raw = extractResponseText(response);
             const baseValidation = this.parseValidationResponse(raw);
             
             // A1: OOC 检测
             if (this.soulData?.protagonist?.hasSoul) {
-                const oocResult = await this.checkOOC(modifiedText, this.soulData.protagonist);
+                const oocResult = await this.checkOOC(modifiedText, this.soulData.protagonist, signal);
                 if (oocResult.hasOOC) {
                     baseValidation.warnings.push(...oocResult.warnings);
                     baseValidation.consistencyScore = Math.min(baseValidation.consistencyScore, oocResult.score);
@@ -1788,9 +2120,11 @@ export class CoWriterEngine {
             next.crossVolumeContext = this.snapshot.crossVolumeContext;
             next.longTermMemoryContext = this.snapshot.longTermMemoryContext;
             next.fanficRulesContext = this.snapshot.fanficRulesContext;
+            next.creationModeContext = this.snapshot.creationModeContext;
             this.snapshot = next;
             // 刷新时重新读取同人约束：设定文件可能刚被编辑过
             await this.syncFanficRules(next.project);
+            await this.syncCreationModeContext(next.project);
             log.info('[CoWriterEngine] 静态上下文已刷新');
         } catch (e) {
             log.warn('[CoWriterEngine] 刷新静态上下文失败:', e);
@@ -1819,6 +2153,26 @@ export class CoWriterEngine {
             }
         } catch (e) {
             log.warn('[CoWriterEngine] 同人约束刷新失败，沿用上次结果:', e);
+        }
+    }
+
+    /**
+     * 重新读取创作模式，写回 snapshot。
+     * 短篇/剧本的番茄、红果硬约束必须进入协同 prompt，否则续写仍是长篇散文。
+     * 读不到 `.project` 时按长篇处理（空块），保持原有协同行为。
+     */
+    private async syncCreationModeContext(project: string): Promise<void> {
+        if (!this.snapshot || !project) return;
+        try {
+            const dot = await readProjectMeta(this.app, project);
+            const meta = parseCreationModeMeta(dot || '');
+            const text = meta.mode === 'long' ? '' : getCreationModePromptBlock(meta.mode, meta);
+            if (text !== this.snapshot.creationModeContext) {
+                this.snapshot.creationModeContext = text;
+                if (text) log.info('[CoWriterEngine] 创作模式约束已加载:', meta.mode);
+            }
+        } catch (e) {
+            log.warn('[CoWriterEngine] 创作模式刷新失败，沿用上次结果:', e);
         }
     }
 
@@ -1875,6 +2229,7 @@ export class CoWriterEngine {
             crossVolumeContext: '',
             longTermMemoryContext: '',
             fanficRulesContext: '',
+            creationModeContext: '',
             worldView: worldViewRaw,
             worldType,
             writingStyle: getRaw(data.writing_style),
@@ -2530,7 +2885,7 @@ export class CoWriterEngine {
     /**
      * 检测文本是否违背角色灵魂层设定
      */
-    private async checkOOC(text: string, soul: CharacterSoul): Promise<OOCCheckResult> {
+    private async checkOOC(text: string, soul: CharacterSoul, signal?: AbortSignal): Promise<OOCCheckResult> {
         if (!soul.hasSoul || !this.hasCoWriteModel()) {
             return { hasOOC: false, warnings: [], score: 100, violatedFields: [], checkedAt: Date.now() };
         }
@@ -2564,7 +2919,7 @@ export class CoWriterEngine {
             ].join('\n');
         
         try {
-            const response = await this.callCoWriteAI({ system: '', user: prompt }, 0);
+            const response = await this.callCoWriteAI({ system: '', user: prompt }, 0, signal);
             const raw = extractResponseText(response);
             const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
             const json = JSON.parse(cleaned);
@@ -2582,6 +2937,41 @@ export class CoWriterEngine {
         }
     }
     
+    /**
+     * 供协同 UI 的“质量报告修复”使用的统一调用入口。
+     * 旧实现直接 aiEngine.callAI(..., undefined)，会落到全局 default 模型/端点，
+     * 本地协同模式下可能静默打云端。
+     */
+    async callCoWriteForUi(
+        systemPrompt: string,
+        userPrompt: string,
+        temperature = 0.3,
+        maxTokens = 1200,
+    ): Promise<{ content: string; error?: string }> {
+        const settings = this.aiEngine.getPlugin()?.settings;
+        const model = this.getCoWriteModel();
+        const isLocal = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const local = isLocal ? this.resolveLocalProvider(model) : null;
+        const release = isLocal && local ? await acquireLocalAiSlot() : null;
+        try {
+            if (local && model) {
+                await ensureLocalModelCapability(local.endpoint, model);
+            }
+            const options = this.getCoWriteOptions();
+            if (options.localRouteError) return { content: '', error: options.localRouteError };
+            return await this.aiEngine.callAI(
+                systemPrompt,
+                userPrompt,
+                model,
+                temperature,
+                Math.min(maxTokens, CO_WRITE_MAX_TOKENS_CAP),
+                options,
+            );
+        } finally {
+            release?.();
+        }
+    }
+
     // ============================================================
     // D1: 实体状态追踪方法
     // ============================================================
@@ -2743,10 +3133,11 @@ export class CoWriterEngine {
         // 分析可能的联想方向
         const hints = await this.analyzeAssociationContext(beforeCursor);
         
-        // 生成联想建议
+        // 生成联想建议：手动联想保留 3 个方向；幽灵/自动联想只取最强 1 条，
+        // 避免每次停顿都串行发 3 次本地请求。
         const suggestions: AssociationSuggestion[] = [];
-        
-        for (let i = 0; i < Math.min(3, hints.length); i++) {
+        const maxHints = trigger === 'manual' ? 3 : 1;
+        for (let i = 0; i < Math.min(maxHints, hints.length); i++) {
             if (signal?.aborted) break;
             const hint = hints[i];
             try {
@@ -2879,51 +3270,46 @@ export function isLocalProviderEndpoint(endpoint: string): boolean {
 }
 
 /**
- * 判断当前 settings 中是否存在本地 provider（sourceType=local 或 endpoint 指向本地）
- * 用于在本地模式下放宽模型名识别：只要存在本地 provider，所有候选模型都视为本地模型
- */
-function hasLocalProvider(settings: any): boolean {
-    if (!settings) return false;
-    const providers = settings.customProviders;
-    if (!Array.isArray(providers)) return false;
-    return providers.some((p: any) => p && resolveProviderSourceType(p) === 'local');
-}
-
-/**
  * 判断模型是否为本地模型
  * 判断规则：
- *   1. 模型名包含 ':' 或 'local'（不区分大小写）—— 原有规则
- *   2. 若传入 settings 且存在 endpoint 指向本地的 provider，则视为本地模型
- *      （Ollama /api/tags 返回的模型名如 deepseek-r1、qwen25 可能不带 ':' 或 'local' 特征）
+ *   1. 若模型在某 provider 的 models 列表中，按该 provider 的 sourceType 判定
+ *   2. 否则按模型名特征兜底（本地模型常带 ':' 或 'local'）
  *
  * @param modelName 模型名
- * @param settings 可选，插件 settings，用于检查当前 provider 的 endpoint
+ * @param settings 可选，插件 settings，用于检查模型所属 provider
  */
 export function isLocalModel(modelName: string, settings?: any): boolean {
     if (!modelName) return false;
+    const providers = settings?.customProviders || [];
+    const owner = providers.find((p: any) => Array.isArray(p.models) && p.models.includes(modelName));
+    if (owner) {
+        return resolveProviderSourceType({ id: owner.id, endpoint: owner.endpoint, sourceType: owner.sourceType }) === 'local';
+    }
     const lower = modelName.toLowerCase();
-    if (lower.includes(':') || lower.includes('local')) return true;
-    if (settings && hasLocalProvider(settings)) return true;
-    return false;
+    return lower.includes(':') || lower.includes('local');
 }
 
 /**
  * 解析协同写作本地模型（含回退逻辑）
  *
- * 信任用户显式配置：
- *   - 如果用户显式配置了 coWriteModel（非空），直接返回该模型，不再经过 isLocalModel 判断。
- *     用户在本地模式下显式选择某个模型，意味着已确认该模型可用，无需重复校验。
+ * 本地模式必须落在本地 provider 上：显式 coWriteModel 如果属于云端 provider，
+ * 返回 undefined，由调用方报错并阻断，绝不把本地内容发到云端。
  *
- * 回退选择（用户未配置 coWriteModel 时）：
- *   - 从 proModel / defaultModel / flashModel 中按优先级取第一个被 isLocalModel 识别为本地的模型。
- *
- * 回退优先级：coWriteModel（用户显式） > proModel（本地） > defaultModel（本地） > flashModel（本地）
+ * 回退优先级：coWriteModel（本地） > proModel（本地） > defaultModel（本地） > flashModel（本地）
  */
 export function resolveCoWriteLocalModel(settings: any): string | undefined {
     if (!settings) return undefined;
-    // 用户显式配置了 coWriteModel，直接信任
+    const providers = settings.customProviders || [];
+    const isLocalProvider = (model: string): boolean => {
+        const owner = providers.find((p: any) => Array.isArray(p.models) && p.models.includes(model));
+        if (owner) {
+            return resolveProviderSourceType({ id: owner.id, endpoint: owner.endpoint, sourceType: owner.sourceType }) === 'local';
+        }
+        return isLocalModel(model, settings);
+    };
+
     if (settings.coWriteModel && String(settings.coWriteModel).trim()) {
-        return settings.coWriteModel;
+        return isLocalProvider(settings.coWriteModel) ? settings.coWriteModel : undefined;
     }
     // 回退：从候选模型中找本地模型
     const candidates = [
@@ -2932,7 +3318,7 @@ export function resolveCoWriteLocalModel(settings: any): string | undefined {
         settings.flashModel,
     ];
     for (const model of candidates) {
-        if (model && isLocalModel(model, settings)) {
+        if (model && isLocalProvider(model)) {
             return model;
         }
     }

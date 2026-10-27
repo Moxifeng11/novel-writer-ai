@@ -220,10 +220,11 @@ ${worldviewResult.content}`;
 
                 try {
                     const existingWorldview = this.app.vault.getAbstractFileByPath(worldviewPath);
-                    if (existingWorldview) {
-                        await this.app.vault.delete(existingWorldview);
+                    if (existingWorldview instanceof TFile) {
+                        await this.app.vault.modify(existingWorldview, worldviewContent);
+                    } else {
+                        await this.app.vault.create(worldviewPath, worldviewContent);
                     }
-                    await this.app.vault.create(worldviewPath, worldviewContent);
                     worldView = worldviewResult.content;
                     new Notice('✅ 世界观已生成', 3000);
                 } catch (e) {

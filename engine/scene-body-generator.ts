@@ -23,6 +23,7 @@ import {
     BodyFormatContract, DEFAULT_BODY_FORMAT, describeBodyFormat,
 } from '../shared/body-format';
 import { getModelContextWindow } from '../shared/token-estimator';
+import { buildCraftSystemBlock } from './craft-constraints';
 
 /** 知识注入段可占模型窗口的比例：其余留给任务卡、正文与输出 */
 const KNOWLEDGE_BUDGET_RATIO = 0.3;
@@ -65,9 +66,13 @@ export function buildSceneBodySystemPrompt(bodyFormat: BodyFormatContract = DEFA
 1. 严格围绕场景目标推进，不偏离任务卡设定的冲突与情绪弧线
 2. 保持上一场景结尾的叙事衔接，不重复已写内容
 3. 遵循注入的世界观、人物状态与禁止事项，不自创矛盾设定
-4. 结尾落到任务卡指定的钩子或余韵，为下一场景留悬念
+4. 从 entry_state 开始，写到 exit_state 停止；不要在场景中途解决下一场景的问题
+5. 只写视角人物能感知到的信息；不进入其他人物内心
+6. 结尾落到任务卡指定的钩子或余韵，为下一场景留悬念
 
-${describeBodyFormat(bodyFormat)}`;
+${describeBodyFormat(bodyFormat)}
+
+${buildCraftSystemBlock()}`;
 }
 
 /**
@@ -132,13 +137,24 @@ export function buildUserPrompt(
     lines.push('');
     lines.push('【场景任务卡】');
     lines.push(`场景 ${task.num}${task.name ? `：${task.name}` : ''}`);
+    if (task.pov) lines.push(`- POV：${task.pov}`);
+    if (task.time) lines.push(`- 时间：${task.time}`);
+    if (task.location) lines.push(`- 地点：${task.location}`);
     if (task.objective) lines.push(`- 场景目标：${task.objective}`);
-    if (task.emotionArc) lines.push(`- 情绪弧线：${task.emotionArc}`);
+    if (task.entryState) lines.push(`- 入场状态：${task.entryState}`);
     if (task.conflict) lines.push(`- 冲突：${task.conflict}`);
+    if (task.turn) lines.push(`- 场景转折：${task.turn}`);
+    if (task.exitState) lines.push(`- 离场状态：${task.exitState}`);
+    if (task.emotionArc) lines.push(`- 情绪弧线：${task.emotionArc}`);
     if (task.sensoryHook) lines.push(`- 感官钩子：${task.sensoryHook}`);
     if (task.memoryTrigger) lines.push(`- 记忆触发：${task.memoryTrigger}`);
     if (task.bodyReaction) lines.push(`- 身体反应：${task.bodyReaction}`);
     if (task.subtext) lines.push(`- 潜台词：${task.subtext}`);
+    if (task.relationshipShift) lines.push(`- 关系变化：${task.relationshipShift}`);
+    if (task.characters) lines.push(`- 出场人物：${task.characters}`);
+    if (task.keyScene) lines.push(`- 关键场景：${task.keyScene}`);
+    if (task.dialogueFunction) lines.push(`- 对话功能：${task.dialogueFunction}`);
+    if (task.craftNotes) lines.push(`- 工艺备注：${task.craftNotes}`);
     if (task.cliffhanger) lines.push(`- 结尾钩子：${task.cliffhanger}`);
 
     if (prevEnding) {

@@ -10,7 +10,7 @@
  *   await svc.settleChapter(project, chapDir, chapterName, bodyText);
  */
 
-import { App } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { SettlementEngine, SettlementResult } from '../engine/settlement-engine';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
@@ -47,9 +47,15 @@ export class SettlementService {
     const { project, chapDir, chapterName, bodyText } = ctx;
 
     try {
+      const reportPath = `${chapDir}/${chapterName}_分析报告.md`;
+      const reportFile = this.plugin.app.vault.getAbstractFileByPath(reportPath);
+      if (!(reportFile instanceof TFile)) {
+        throw new Error(`缺少分析报告：${reportPath}`);
+      }
+      const report = await this.plugin.app.vault.read(reportFile);
       const result = await this.settlementEngine.settle(
         project, chapDir, chapterName,
-        '' /* report 由 settlement engine 从分析报告文件读取 */,
+        report,
         bodyText,
       );
 

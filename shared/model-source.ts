@@ -25,9 +25,16 @@ export function resolveProviderSourceType(provider: ModelSourceLike): ModelSourc
         return provider.sourceType;
     }
     const endpoint = (provider.endpoint || '').toLowerCase();
-    const isLocal =
-        provider.id === 'ollama' ||
-        endpoint.includes('localhost') ||
-        endpoint.includes('127.0.0.1');
-    return isLocal ? 'local' : 'cloud';
+    const host = endpoint.replace(/^https?:\/\//, '').split('/')[0].replace(/:\d+$/, '');
+    const isPrivateHost =
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '0.0.0.0' ||
+        host === '::1' ||
+        host === '[::1]' ||
+        host.endsWith('.local') ||
+        /^10\./.test(host) ||
+        /^192\.168\./.test(host) ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+    return provider.id === 'ollama' || isPrivateHost ? 'local' : 'cloud';
 }

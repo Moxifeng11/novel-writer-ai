@@ -59,7 +59,7 @@ export interface NovelWriterEngineAPI {
 export interface NovelWriterProviderAPI {
     getCurrentProviderId(): string | null;
     switchProviderByEndpoint(endpoint: string): boolean;
-    resolveModelLimits(modelName: string): ModelLimits;
+    resolveModelLimits(modelName: string, endpoint?: string): ModelLimits;
     updateModelLimitsFromModel(modelName: string): void;
     setCurrentModelOverride(field: 'maxContext' | 'maxOutput', value: number): void;
     addCustomProvider(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string): string | null;

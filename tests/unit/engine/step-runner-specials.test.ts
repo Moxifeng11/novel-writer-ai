@@ -246,7 +246,9 @@ describe('StepRunner.executeCurrentStep — sceneExpand 特例', () => {
             expect.any(Object),
             'flash-model',
             undefined,
-            { maxContext: 8000, maxOutput: 2000 }
+            { maxContext: 8000, maxOutput: 2000 },
+            undefined,
+            expect.objectContaining({ maxTokens: 2000 }),
         );
     });
 

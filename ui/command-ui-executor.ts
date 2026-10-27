@@ -16,6 +16,8 @@ import type { ChapterVersionService } from '../services/chapter-version-service'
 import { ChapterVersionModal } from './chapter-version-modal';
 import { RenameProjectModal } from './rename-project-modal';
 import { CreateProjectModal } from './create-project-modal';
+import { PreResearchModal } from './pre-research-modal';
+import { ModeDocumentModal } from './mode-document-modal';
 import { PlanBookModal } from './plan-book-modal';
 import { WriteChapterModal } from './write-chapter-modal';
 import { ReviewChapterModal } from './review-chapter-modal';
@@ -76,17 +78,68 @@ export class CommandUiExecutor implements CommandUiPort {
      */
     async executeCommand(id: string, payload?: CommandUiPayload): Promise<boolean> {
         const { app, plugin } = this.deps;
+        const resolveProject = (): string | undefined =>
+            payload?.project
+            ?? this.deps.plugin.getWorkbenchContext()?.project
+            ?? this.deps.plugin.getActiveProject()
+            ?? undefined;
 
         switch (id) {
             // ── 项目管理类 ──
             case CommandIds.CREATE_PROJECT:
                 new CreateProjectModal(app, plugin).open();
                 return true;
+            case CommandIds.CREATE_SHORT:
+                new PreResearchModal(app, plugin, 'short').open();
+                return true;
+            case CommandIds.CREATE_SCRIPT:
+                new PreResearchModal(app, plugin, 'script').open();
+                return true;
+            case CommandIds.SHORT_RESEARCH: {
+                const project = resolveProject();
+                if (!project) {
+                    new Notice('请先选择一个短篇项目');
+                    return true;
+                }
+                new PreResearchModal(app, plugin, 'short', { project }).open();
+                return true;
+            }
+            case CommandIds.SCRIPT_RESEARCH: {
+                const project = resolveProject();
+                if (!project) {
+                    new Notice('请先选择一个剧本项目');
+                    return true;
+                }
+                new PreResearchModal(app, plugin, 'script', { project }).open();
+                return true;
+            }
+            case CommandIds.SHORT_STORY_CORE:
+            case CommandIds.SHORT_OUTLINE:
+            case CommandIds.SCRIPT_SCENE_BIBLE:
+            case CommandIds.SCRIPT_OUTLINE:
+            case CommandIds.SCRIPT_STORYBOARD: {
+                const project = resolveProject();
+                if (!project) {
+                    new Notice('请先选择一个项目');
+                    return true;
+                }
+                const config = id === CommandIds.SHORT_STORY_CORE
+                    ? { mode: 'short' as const, kind: 'storyCore' as const }
+                    : id === CommandIds.SHORT_OUTLINE
+                        ? { mode: 'short' as const, kind: 'outline' as const }
+                        : id === CommandIds.SCRIPT_SCENE_BIBLE
+                            ? { mode: 'script' as const, kind: 'bible' as const }
+                            : id === CommandIds.SCRIPT_OUTLINE
+                                ? { mode: 'script' as const, kind: 'outline' as const }
+                                : { mode: 'script' as const, kind: 'storyboard' as const };
+                new ModeDocumentModal(app, plugin, config.mode, config.kind, project).open();
+                return true;
+            }
             case CommandIds.PLAN_BOOK:
                 new PlanBookModal(app, plugin).open();
                 return true;
             case CommandIds.VOLUME_INTRO:
-                new VolumeIntroModal(app, plugin).open();
+                new VolumeIntroModal(app, plugin, plugin.getActiveProject() || undefined).open();
                 return true;
             case CommandIds.BATCH_CHAPTERS:
                 this.warnLegacyCommand('批量写正文〔旧〕');
@@ -145,7 +198,7 @@ export class CommandUiExecutor implements CommandUiPort {
                 new QualityDashboardModal(app, plugin).open();
                 return true;
             case CommandIds.BATCH_CREATE:
-                new BatchCreateModal(app, plugin).open();
+                new BatchCreateModal(app, plugin, resolveProject()).open();
                 return true;
             case CommandIds.CROSS_VOLUME_STATE:
                 new CrossVolumeStateModal(app, plugin).open();
@@ -230,12 +283,13 @@ export class CommandUiExecutor implements CommandUiPort {
                 new StoryLinkageModal(app, plugin).open();
                 return true;
             case CommandIds.EXPORT_MANUSCRIPT:
-                new ExportManuscriptModal(app, plugin, plugin.getActiveProject() ?? '').open();
+                new ExportManuscriptModal(app, plugin, resolveProject() ?? '').open();
                 return true;
 
             // ── 版本与项目 ──
             case CommandIds.RENAME_PROJECT: {
                 const project = payload?.project
+                    ?? this.deps.plugin.getWorkbenchContext()?.project
                     ?? this.deps.plugin.getActiveProject()
                     ?? this.deps.app.workspace.getActiveFile()?.path.split('/')[0];
                 if (!project) {

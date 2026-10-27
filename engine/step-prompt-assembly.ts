@@ -17,11 +17,15 @@ export interface StepPromptAssemblyHost {
     loadOutlineKnowledge(ctx: StepRunCtx): Promise<string>;
     /** 正文生成步骤的知识注入（文笔指纹；宿主内部完成画像读取与失败降级） */
     loadBodyKnowledge(ctx: StepRunCtx): Promise<string>;
+    /** 正文步骤的硬约束尾部（样章/对照），不允许被 extraTail 预算裁剪 */
+    loadBodyKnowledgeParts?(ctx: StepRunCtx): Promise<{ extra: string; system: string }>;
     /** 本步实际模型的窗口/输出上限 */
     resolveStepBudgetLimits(model: string): { maxContext: number; maxOutput: number };
 }
 
 export interface StepPromptAssemblyResult {
+    /** 经预算闸门处理后实际发送给模型的 system prompt */
+    effectiveSystemPrompt: string;
     /** 经预算闸门处理后实际发送给模型的 user prompt */
     effectiveUserPrompt: string;
     /** 是否发生头尾截断（调用方负责给用户可见提示） */
@@ -40,17 +44,27 @@ export async function assembleStepPrompt(
     stepModel: string
 ): Promise<StepPromptAssemblyResult> {
     let extraTail = '';
+    let systemTail = '';
     if (stepKey === 'outline') {
         extraTail = await host.loadOutlineKnowledge(ctx);
     } else if (stepKey === 'bodyGeneration') {
-        extraTail = await host.loadBodyKnowledge(ctx);
+        if (host.loadBodyKnowledgeParts) {
+            const parts = await host.loadBodyKnowledgeParts(ctx);
+            extraTail = parts.extra;
+            systemTail = parts.system;
+        } else {
+            extraTail = await host.loadBodyKnowledge(ctx);
+        }
     }
     const stepLimits = host.resolveStepBudgetLimits(stepModel);
+    const effectiveSystemPrompt = systemTail
+        ? `${systemPrompt}\n\n${systemTail}`
+        : systemPrompt;
 
     // prompt 长度校验：system + user + 知识注入一起算，超窗口时先丢注入再截断主体
     // 窗口必须按「本步实际模型」取：settings 是全局单值，本地小窗口模型下永不触发裁剪
     const fit = fitPromptToContext({
-        systemPrompt,
+        systemPrompt: effectiveSystemPrompt,
         userPrompt,
         extraTail,
         maxContext: stepLimits.maxContext,
@@ -69,6 +83,7 @@ export async function assembleStepPrompt(
     }
 
     return {
+        effectiveSystemPrompt,
         effectiveUserPrompt: fit.user,
         truncated: fit.truncated,
         droppedExtra: fit.droppedExtra,

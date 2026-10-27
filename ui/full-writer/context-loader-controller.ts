@@ -26,6 +26,10 @@ export interface ContextLoaderControllerDeps {
     entityStateController: EntityStateController;
     /** 步骤结果落盘（角色灵魂自动提取必须写盘，否则重启后完成态被磁盘模板覆盖） */
     saveStepResult: (stepKey: string, content: string) => Promise<boolean>;
+    /** 把加载进度接到主区域时间线；未提供时沿用全局 Notice */
+    reportProgress?: (message: string | null) => void;
+    /** 把加载结果接到主区域时间线与错误卡 */
+    reportNotice?: (level: 'success' | 'warning' | 'error', message: string) => void;
 }
 
 export class ContextLoaderController {
@@ -41,14 +45,32 @@ export class ContextLoaderController {
             return;
         }
 
-        showProgress('⏳ 加载上下文数据...');
+        const progress = (message: string) => {
+            if (this.deps.reportProgress) this.deps.reportProgress(message);
+            else showProgress(message);
+        };
+        const stopProgress = () => {
+            if (this.deps.reportProgress) this.deps.reportProgress(null);
+            else hideProgress();
+        };
+        const notice = (level: 'success' | 'warning' | 'error', message: string) => {
+            if (this.deps.reportNotice) {
+                this.deps.reportNotice(level, message);
+                return;
+            }
+            if (level === 'success') showSuccess(message);
+            else if (level === 'error') showError(message);
+            else new Notice(`⚠️ ${message}`, 6000);
+        };
+
+        progress('⏳ 加载上下文数据...');
 
         const cs = this.deps.getChapterStateManager();
 
         try {
-            showProgress('⏳ 加载上下文数据...');
+            progress('⏳ 加载上下文数据...');
             const context = await this.deps.contextManager.gatherAll(this.deps.state.project, this.deps.state.chapterName, (completed, total, taskName) => {
-                showProgress(`⏳ 加载 ${taskName}... (${completed}/${total})`);
+                progress(`⏳ 加载 ${taskName}... (${completed}/${total})`);
             });
 
             this.deps.setContext(context);
@@ -67,7 +89,7 @@ export class ContextLoaderController {
 
             const failedModules = context?.data?.['_failedModules'] as string[] || [];
             if (failedModules.length > 0) {
-                new Notice(`⚠️ 以下模块加载失败（已跳过）: ${failedModules.join('、')}`, 6000);
+                notice('warning', `以下模块加载失败（已跳过）: ${failedModules.join('、')}`);
             }
 
             // Rev 185：完成状态由「必做输入是否齐全」决定，不再无条件 complete。
@@ -77,14 +99,14 @@ export class ContextLoaderController {
                 cs.stepLevels['context'] = 'complete';
                 cs.stepMissing['context'] = [];
                 cs.stepCompleted.add('context');
-                hideProgress();
-                showSuccess('上下文加载完成');
+                stopProgress();
+                notice('success', '上下文加载完成');
             } else {
                 cs.stepLevels['context'] = 'partial';
                 cs.stepMissing['context'] = readiness.requiredMissing;
                 cs.stepCompleted.delete('context');
-                hideProgress();
-                new Notice(`⚠️ 上下文缺少必做输入：${readiness.requiredMissing.join('、')}。请补齐后重新加载`, 8000);
+                stopProgress();
+                notice('warning', `上下文缺少必做输入：${readiness.requiredMissing.join('、')}。请补齐后重新加载`);
             }
 
             const infoSummary = this.deps.contextManager.getInfoSummary(context);
@@ -98,12 +120,12 @@ export class ContextLoaderController {
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('[小说工坊] 上下文加载异常:', errMsg);
-            hideProgress();
+            stopProgress();
             if (!this.deps.getContext()) {
-                showError(`上下文加载失败: ${errMsg}`);
+                notice('error', `上下文加载失败: ${errMsg}`);
                 return;
             } else {
-                new Notice(`⚠️ 上下文部分加载失败: ${errMsg}`, 6000);
+                notice('warning', `上下文部分加载失败: ${errMsg}`);
             }
         }
 
@@ -115,7 +137,7 @@ export class ContextLoaderController {
         // 磁盘恢复出的真实内容（即使未达 complete）优先于自动提取，避免手工结果被覆盖
         const existingSoul = (cs.stepResults['characterSoul'] || '').trim();
         if (!cs.stepCompleted.has('characterSoul') && !existingSoul && !(await this.hasRealSoulFile())) {
-            showProgress('🫀 提取角色灵魂...');
+            progress('🫀 提取角色灵魂...');
             try {
                 const context = this.deps.getContext();
                 const characterCoresData = context?.data?.character_cores as Array<Record<string, unknown>> | undefined;
@@ -138,17 +160,17 @@ export class ContextLoaderController {
                             cs.stepLevels['characterSoul'] = 'complete';
                             cs.stepMissing['characterSoul'] = [];
                             cs.stepCompleted.add('characterSoul');
-                            showSuccess('🫀 角色灵魂提取完成');
+                            notice('success', '🫀 角色灵魂提取完成');
                         } else if (saved) {
                             cs.stepLevels['characterSoul'] = 'partial';
                             cs.stepMissing['characterSoul'] = soulVerdict.missing;
                             cs.stepCompleted.delete('characterSoul');
-                            new Notice(`⚠️ 角色灵魂已写入但字段不完整：${soulVerdict.missing.join('、')}`, 7000);
+                            notice('warning', `角色灵魂已写入但字段不完整：${soulVerdict.missing.join('、')}`);
                         } else {
                             cs.stepLevels['characterSoul'] = 'partial';
                             cs.stepMissing['characterSoul'] = ['保存失败'];
                             cs.stepCompleted.delete('characterSoul');
-                            new Notice('⚠️ 角色灵魂已提取但保存失败，重启后需重新提取', 6000);
+                            notice('warning', '角色灵魂已提取但保存失败，重启后需重新提取');
                         }
                     } else {
                         log.warn('[ContextLoader] 没有完整的 9 字段角色灵魂层，跳过完成标记');
@@ -157,7 +179,7 @@ export class ContextLoaderController {
             } catch (e) {
                 log.warn('[ContextLoader] 自动提取角色灵魂失败:', e);
             }
-            hideProgress();
+            stopProgress();
         }
 
         cs.currentStepIndex = 1;
@@ -192,7 +214,9 @@ export class ContextLoaderController {
             const volName = this.deps.state.volume || `第${Math.ceil(this.deps.state.chapterNum / 10)}卷`;
             const snapshot = await integrator.generateSnapshot(this.deps.state.project, volName, `${this.deps.state.project}/04-项目总控`);
             this.deps.state.vars['crossVolumeSnapshot'] = snapshot.slice(0, 3000);
-            new Notice(`📸 已为「${volName}」生成状态快照`, 4000);
+            const message = `📸 已为「${volName}」生成状态快照`;
+            if (this.deps.reportNotice) this.deps.reportNotice('success', message);
+            else new Notice(message, 4000);
         }
     }
 }

@@ -35,6 +35,8 @@ export interface Instructions {
     growth: { name: string; type: string; value: string; desc: string }[];       // GROWTH
     emotion: { name: string; emotion: string; desc: string }[];                  // EMOTION
     del: { entityType: string; entityName: string }[];                           // DELETE_ENTITY (v1.4.0)
+    promise: { action: 'open' | 'advance' | 'resolve' | 'drop'; name: string; type?: string; chapter?: string; expected?: string; note?: string }[]; // PROMISE_*
+    arc: { name: string; from: string; to: string; trigger: string; visible: string }[]; // ARC
 }
 
 /** frontmatter 通用类型（settlement 内部使用） */

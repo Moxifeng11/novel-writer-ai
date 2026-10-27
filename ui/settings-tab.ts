@@ -8,6 +8,21 @@ import { getOllamaModelsWithFallback } from '../engine/co-writer-engine';
 import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
 import { FingerprintExtractor } from '../engine/fingerprint-extractor';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
+import { detectProviderFromEndpoint } from '../shared/provider-detection';
+import { testProviderConnectivity, type ApiConnectivityResult } from '../services/api-connectivity-service';
+import { ProjectMigrationService } from '../services/project-migration-service';
+import {
+    resolveTaskModelConfig,
+    THINKING_LEVELS,
+    thinkingIntensityFromMode,
+    thinkingLevelFromMode,
+    thinkingLevelSpec,
+    clampThinkingIntensity,
+    nearestThinkingLevel,
+    type AiTask,
+    type TaskBudgetOverride,
+    type ThinkingLevel,
+} from '../shared/task-model';
 import { AddFingerprintModal } from './fingerprint-library-modal';
 import { FingerprintDetailModal } from './fingerprint-detail-modal';
 import { renderFingerprintList } from './fingerprint-utils';
@@ -30,6 +45,7 @@ import { BUILTIN_CHANGELOG } from '../shared/changelog-data';
 import { PromptManagerSettings } from './prompt-manager-settings';
 import { RulesService } from '../services/rules-service';
 import { createLogger } from '../shared/logger';
+import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '../shared/github-repo';
 import { exportTextFile } from '../shared/export-file';
 import { OperationConfirmModal } from './components/progress';
 import { rebuildKnowledgeIndexWithConfirm } from './knowledge-rebuild-action';
@@ -98,6 +114,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             { id: 'rules', label: '📜 规则版本' },
             { id: 'appearance', label: '🎨 外观设置' },
             { id: 'layout', label: '🧩 工作台布局' },
+            { id: 'projects', label: '🗂 项目库迁移' },
             { id: 'performance', label: '📈 性能监控' },
             { id: 'about', label: 'ℹ️ 关于' },
         ];
@@ -159,6 +176,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'rules': this.renderRulesSection(); break;
             case 'appearance': this.renderAppearanceSection(); break;
             case 'layout': this.renderWorkspaceLayoutSection(); break;
+            case 'projects': this.renderProjectLibrarySection(); break;
             case 'performance': this.renderPerformanceSection(); break;
             case 'about': this.renderAboutSection(); break;
         }
@@ -281,6 +299,69 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         const providerLabel = isCustom
             ? (this.plugin.settings.customProviderName || '自定义')
             : (currentProvider ? currentProvider.name : (currentProviderId || 'API'));
+
+        const connectivityRow = section.createDiv({
+            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-8px-2',
+        });
+        const testBtn = connectivityRow.createEl('button', {
+            text: '🔌 测试连通性',
+            cls: 'nw-btn nw-btn-secondary',
+            attr: { type: 'button', title: '发送一次最小请求，验证端点、密钥与模型是否可用' },
+        });
+        const statusEl = connectivityRow.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2', text: '未测试' });
+        const renderConnectivityStatus = (result: ApiConnectivityResult): void => {
+            const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
+            statusEl.setText(`${icon} ${result.message}`);
+            statusEl.className = `nw-u-fs-12px-2 ${result.level === 'ok'
+                ? 'nw-u-c-text-success'
+                : result.level === 'warn'
+                    ? 'nw-u-c-text-warning'
+                    : 'nw-u-c-text-error'}`;
+        };
+        testBtn.onclick = async () => {
+            if (testBtn.disabled) return;
+            testBtn.disabled = true;
+            testBtn.setText('⏳ 测试中…');
+            statusEl.setText('正在检测端点、鉴权与模型…');
+            statusEl.className = 'nw-u-fs-12px-2 nw-u-c-text-muted-2';
+            try {
+                const endpoint = activeCustom?.endpoint || currentProvider?.endpoint || this.plugin.settings.apiEndpoint;
+                const model = this.plugin.settings.defaultModel
+                    || activeCustom?.models?.[0]
+                    || currentProvider?.models?.[0]
+                    || '';
+                const detection = detectProviderFromEndpoint(endpoint);
+                const sourceType = activeCustom?.sourceType
+                    || currentProvider?.sourceType
+                    || (detection.valid ? detection.sourceType : undefined);
+                const apiKey = (currentProviderId ? this.plugin.settings.providerKeys?.[currentProviderId] : '')
+                    || this.plugin.settings.apiKey;
+                const result = await testProviderConnectivity({
+                    providerName: providerLabel,
+                    endpoint,
+                    model,
+                    apiKey,
+                    sourceType,
+                });
+                renderConnectivityStatus(result);
+                if (result.level === 'ok') {
+                    new Notice(`✅ ${providerLabel}：${result.message}`, 4000);
+                } else if (result.level === 'warn') {
+                    new Notice(`⚠️ ${providerLabel}：${result.message}`, 8000);
+                } else {
+                    new Notice(`❌ ${providerLabel}：${result.message}`, 10000);
+                }
+            } catch (e) {
+                const message = e instanceof Error ? e.message : String(e);
+                statusEl.setText(`❌ 测试异常：${message}`);
+                statusEl.className = 'nw-u-fs-12px-2 nw-u-c-text-error';
+                new Notice(`❌ 连通性测试异常：${message}`, 8000);
+            } finally {
+                testBtn.disabled = false;
+                testBtn.setText('🔌 测试连通性');
+            }
+        };
+
         new Setting(section)
             .setName(`${providerLabel} 密钥`)
             .setDesc(isCustom ? '自定义提供商的 API 密钥' : `仅用于 ${providerLabel}`)
@@ -531,6 +612,9 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         showHistoryBtn.addEventListener('click', () => renderHistory());
 
+        this.renderTaskBudgetRows(section);
+        this.renderCanonResearchRows(section);
+
         const saveBtnContainer = section.createDiv({ cls: 'nw-u-margintop-16px-2 nw-u-d-flex-2 nw-u-gap-8px-2' });
         const saveBtn = saveBtnContainer.createEl('button', {
             text: '💾 保存设置',
@@ -580,6 +664,314 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         resetBtn.addEventListener('click', () => {
             this.renderActiveTab();
         });
+    }
+
+    private updateTaskBudget(task: AiTask, patch: TaskBudgetOverride): void {
+        const settings = this.plugin.settings;
+        settings.taskBudgets = settings.taskBudgets || {};
+        const next: TaskBudgetOverride = { ...(settings.taskBudgets[task] || {}), ...patch };
+        for (const key of Object.keys(next) as Array<keyof TaskBudgetOverride>) {
+            const value = next[key];
+            if (value === undefined || value === '' || (typeof value === 'number' && !Number.isFinite(value))) {
+                delete next[key];
+            }
+        }
+        if (Object.keys(next).length > 0) settings.taskBudgets[task] = next;
+        else delete settings.taskBudgets[task];
+    }
+
+    /** v4.18: 同人考据来源设置。没有 API Key 时只允许手动官方来源。 */
+    private renderCanonResearchRows(section: HTMLElement): void {
+        const card = section.createDiv({ cls: 'nw-u-margintop-20px-2' });
+        card.createEl('h4', { text: '📚 同人考据来源', cls: 'nw-u-m-0-0-6px-0-2 nw-u-fs-14px-2' });
+        card.createEl('div', {
+            text: '同人设定只允许参考原著/官方资料，不参考同人、改编、外传等衍生作品。未配置搜索 API 时只能手动添加官方 URL/摘录。',
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
+        });
+        const cfg = this.plugin.settings.canonResearch || {
+            provider: 'manual' as const,
+            apiKey: '',
+            allowedDomains: [],
+            blockedDomains: [],
+            maxSources: 6,
+            excerptChars: 1200,
+        };
+        this.plugin.settings.canonResearch = cfg;
+
+        new Setting(card)
+            .setName('检索方式')
+            .setDesc('manual=只手动导入；其他选项需要对应搜索 API Key')
+            .addDropdown(dropdown => {
+                dropdown.addOption('manual', '手动官方来源（默认）');
+                dropdown.addOption('bing', 'Bing Web Search');
+                dropdown.addOption('brave', 'Brave Search');
+                dropdown.addOption('serper', 'Serper.dev');
+                dropdown.addOption('tavily', 'Tavily');
+                dropdown.setValue(cfg.provider || 'manual');
+                dropdown.onChange(async (value) => {
+                    cfg.provider = value as typeof cfg.provider;
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        new Setting(card)
+            .setName('搜索 API Key')
+            .setDesc('仅用于同人考据检索；保存在插件设置中')
+            .addText(text => {
+                text.inputEl.type = 'password';
+                text.setPlaceholder('留空则只能手动添加来源')
+                    .setValue(cfg.apiKey || '')
+                    .onChange(async (value) => {
+                        cfg.apiKey = value.trim();
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(card)
+            .setName('允许域名')
+            .setDesc('逗号分隔；留空表示不限制。示例：qidian.com, fanqienovel.com')
+            .addText(text => text
+                .setPlaceholder('qidian.com, fanqienovel.com')
+                .setValue((cfg.allowedDomains || []).join(', '))
+                .onChange(async (value) => {
+                    cfg.allowedDomains = value.split(/[,，]/).map(v => v.trim()).filter(Boolean);
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(card)
+            .setName('排除域名')
+            .setDesc('逗号分隔；同人/衍生站点建议加入这里')
+            .addText(text => text
+                .setPlaceholder('lofter.com, ao3.org')
+                .setValue((cfg.blockedDomains || []).join(', '))
+                .onChange(async (value) => {
+                    cfg.blockedDomains = value.split(/[,，]/).map(v => v.trim()).filter(Boolean);
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(card)
+            .setName('最大来源数 / 单源摘录长度')
+            .setDesc('来源越多越容易交叉验证，但也会增加审核成本。摘录只保存审计所需短文本。')
+            .addText(text => text
+                .setPlaceholder('6')
+                .setValue(String(cfg.maxSources ?? 6))
+                .onChange(async (value) => {
+                    const n = parseInt(value, 10);
+                    cfg.maxSources = Number.isFinite(n) && n > 0 ? n : 6;
+                    await this.plugin.saveSettings();
+                }))
+            .addText(text => text
+                .setPlaceholder('1200')
+                .setValue(String(cfg.excerptChars ?? 1200))
+                .onChange(async (value) => {
+                    const n = parseInt(value, 10);
+                    cfg.excerptChars = Number.isFinite(n) && n >= 200 ? n : 1200;
+                    await this.plugin.saveSettings();
+                }));
+    }
+
+    /**
+     * 任务级模型参数。
+     *
+     * 保留原有 API 设置窗口，只追加一张高级表：
+     * 模型 / 最大输入 / 最大输出 / 思考模式 / 思考预算。
+     * 不填即继承该任务的默认模型与能力值。
+     */
+    private renderTaskBudgetRows(section: HTMLElement): void {
+        const card = section.createDiv({ cls: 'nw-u-margintop-20px-2' });
+        card.createEl('h4', { text: '🧠 任务级模型参数', cls: 'nw-u-m-0-0-6px-0-2 nw-u-fs-14px-2' });
+        card.createEl('div', {
+            text: '每个任务可单独覆盖模型/输入/输出/思考参数；留空即继承默认值。输出上限不会自动超过模型能力。',
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
+        });
+
+        const globalCard = card.createDiv({ cls: 'nw-card' });
+        globalCard.addClass('nw-form-stack');
+        globalCard.createDiv({ cls: 'nw-form-label', text: '全局思考强度' });
+        globalCard.createDiv({
+            cls: 'nw-text-12-muted',
+            text: '四级预设 + 0–100% 拖拽强度。等级决定默认语义，滑杆可微调实际思考预算；任务级设置优先。',
+        });
+
+        const initialLevel = this.plugin.settings.thinkingLevel
+            ?? thinkingLevelFromMode(this.plugin.settings.thinkingMode);
+        const initialIntensity = this.plugin.settings.thinkingIntensity
+            ?? thinkingIntensityFromMode(this.plugin.settings.thinkingMode);
+        let currentLevel: ThinkingLevel = initialLevel;
+
+        const levelRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-margintop-8px-2' });
+        const levelButtons = new Map<ThinkingLevel, HTMLButtonElement>();
+        const levelDesc = globalCard.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-6px-2' });
+        const sliderRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-margintop-8px-2' });
+        const range = sliderRow.createEl('input', {
+            type: 'range',
+            attr: { min: '0', max: '100', step: '5' },
+        }) as HTMLInputElement;
+        const percentEl = sliderRow.createSpan({ cls: 'nw-u-fs-12px-2 nw-u-c-text-normal-2' });
+
+        const refreshLevelUi = (level: ThinkingLevel, intensity: number): void => {
+            currentLevel = level;
+            for (const [key, button] of levelButtons) {
+                const active = key === level;
+                button.classList.toggle('nw-btn-primary', active);
+                button.classList.toggle('nw-btn-secondary', !active);
+            }
+            range.value = String(intensity);
+            percentEl.setText(`${intensity}%`);
+            const spec = thinkingLevelSpec(level);
+            levelDesc.setText(`${spec.label} · ${intensity}% — ${spec.description}`);
+        };
+
+        const persistThinking = async (level: ThinkingLevel, intensity: number): Promise<void> => {
+            this.plugin.settings.thinkingLevel = level;
+            this.plugin.settings.thinkingIntensity = intensity;
+            this.plugin.settings.thinkingMode = thinkingLevelSpec(level).mode;
+            await this.plugin.saveSettings();
+        };
+
+        for (const spec of THINKING_LEVELS) {
+            const button = levelRow.createEl('button', {
+                text: `${spec.label} ${spec.percent}%`,
+                cls: 'nw-btn nw-btn-secondary',
+                attr: { type: 'button', title: spec.description },
+            });
+            levelButtons.set(spec.level, button);
+            button.onclick = () => {
+                refreshLevelUi(spec.level, spec.percent);
+                void persistThinking(spec.level, spec.percent);
+            };
+        }
+
+        range.oninput = () => {
+            const intensity = clampThinkingIntensity(parseInt(range.value, 10));
+            refreshLevelUi(nearestThinkingLevel(intensity), intensity);
+        };
+        range.onchange = () => {
+            const intensity = clampThinkingIntensity(parseInt(range.value, 10));
+            const level = nearestThinkingLevel(intensity);
+            refreshLevelUi(level, intensity);
+            void persistThinking(level, intensity);
+        };
+        refreshLevelUi(initialLevel, initialIntensity);
+
+        const globalGrid = globalCard.createDiv({ cls: 'nw-form-grid' });
+        const globalBudgetField = globalGrid.createDiv({ cls: 'nw-form-field' });
+        globalBudgetField.createEl('label', { cls: 'nw-form-label', text: '思考预算上限（0=按强度自动）' });
+        const globalBudget = globalBudgetField.createEl('input', {
+            type: 'text',
+            cls: 'nw-input',
+            attr: { placeholder: '0' },
+        });
+        globalBudget.value = String(this.plugin.settings.thinkingBudget || 0);
+        globalBudget.onchange = async () => {
+            const n = parseInt(globalBudget.value, 10);
+            this.plugin.settings.thinkingBudget = Number.isFinite(n) && n > 0 ? n : 0;
+            await this.plugin.saveSettings();
+        };
+
+        const models = Array.from(new Set(
+            this.plugin.getAllProviders().flatMap(p => p.models || []),
+        )).filter(Boolean);
+
+        const tasks: Array<{ task: AiTask; label: string; desc: string }> = [
+            { task: 'planning', label: '规划（Flash）', desc: '信息规划/情节蒸馏/大纲/情绪/Scene' },
+            { task: 'body', label: '正文（Pro）', desc: '正文生成与修正' },
+            { task: 'analysis', label: '分析报告', desc: '分析报告结构化提取与报告生成' },
+            { task: 'quality', label: '质量控制', desc: '质量检查/连贯性/去 AI 味' },
+            { task: 'deconstruction', label: '拆解 LLM', desc: '知识库深度拆解的 LLM 增强' },
+            { task: 'fingerprint', label: '指纹提取', desc: '写作指纹特征提取' },
+        ];
+
+        for (const item of tasks) {
+            const cfg = this.plugin.settings.taskBudgets?.[item.task] || {};
+            const effective = resolveTaskModelConfig(
+                this.plugin.settings,
+                item.task,
+                (model, endpoint) => this.plugin.resolveModelLimits(model, endpoint),
+            );
+            const block = card.createDiv({ cls: 'nw-card' });
+            block.addClass('nw-form-stack');
+            block.createDiv({ cls: 'nw-form-label', text: item.label });
+            block.createDiv({
+                cls: 'nw-text-12-muted',
+                text: `${item.desc} · 当前默认：${effective.model}（输入 ${effective.maxInput.toLocaleString()} / 输出 ${effective.maxOutput.toLocaleString()} · 思考 ${thinkingLevelSpec(effective.thinkingLevel).label} ${effective.thinkingIntensity}%）`,
+            });
+            const grid = block.createDiv({ cls: 'nw-form-grid' });
+            const addField = (label: string): HTMLElement => {
+                const field = grid.createDiv({ cls: 'nw-form-field' });
+                field.createEl('label', { cls: 'nw-form-label', text: label });
+                return field;
+            };
+
+            const modelField = addField('模型');
+            const modelSelect = modelField.createEl('select', { cls: 'nw-select' });
+            modelSelect.createEl('option', { value: '', text: `默认（${effective.model}）` });
+            for (const model of models) modelSelect.createEl('option', { value: model, text: model });
+            if (cfg.model && !models.includes(cfg.model)) {
+                modelSelect.createEl('option', { value: cfg.model, text: cfg.model });
+            }
+            modelSelect.value = cfg.model || '';
+            modelSelect.onchange = async () => {
+                this.updateTaskBudget(item.task, { model: modelSelect.value || undefined });
+                await this.plugin.saveSettings();
+            };
+
+            const inputField = addField('最大输入（留空继承）');
+            const inputEl = inputField.createEl('input', {
+                type: 'text',
+                cls: 'nw-input',
+                attr: { placeholder: `默认 ${effective.maxInput}` },
+            });
+            inputEl.value = cfg.maxInputTokens ? String(cfg.maxInputTokens) : '';
+            inputEl.onchange = async () => {
+                const n = parseInt(inputEl.value, 10);
+                this.updateTaskBudget(item.task, { maxInputTokens: Number.isFinite(n) && n > 0 ? n : undefined });
+                await this.plugin.saveSettings();
+            };
+
+            const outputField = addField('最大输出（留空继承）');
+            const outputEl = outputField.createEl('input', {
+                type: 'text',
+                cls: 'nw-input',
+                attr: { placeholder: `默认 ${effective.maxOutput}` },
+            });
+            outputEl.value = cfg.maxOutputTokens ? String(cfg.maxOutputTokens) : '';
+            outputEl.onchange = async () => {
+                const n = parseInt(outputEl.value, 10);
+                this.updateTaskBudget(item.task, { maxOutputTokens: Number.isFinite(n) && n > 0 ? n : undefined });
+                await this.plugin.saveSettings();
+            };
+
+            const thinkingField = addField('思考等级覆盖');
+            const thinkingSelect = thinkingField.createEl('select', { cls: 'nw-select' });
+            thinkingSelect.createEl('option', { value: '', text: '跟随全局' });
+            for (const spec of THINKING_LEVELS) {
+                thinkingSelect.createEl('option', { value: spec.level, text: `${spec.label} ${spec.percent}%` });
+            }
+            thinkingSelect.value = cfg.thinkingLevel
+                || (cfg.thinkingMode ? thinkingLevelFromMode(cfg.thinkingMode) : '');
+            thinkingSelect.onchange = async () => {
+                this.updateTaskBudget(item.task, {
+                    thinkingLevel: thinkingSelect.value ? thinkingSelect.value as ThinkingLevel : undefined,
+                    thinkingMode: undefined,
+                });
+                await this.plugin.saveSettings();
+                this.renderActiveTab();
+            };
+
+            const budgetField = addField('思考预算（留空跟随全局）');
+            const budgetEl = budgetField.createEl('input', {
+                type: 'text',
+                cls: 'nw-input',
+                attr: { placeholder: `默认 ${effective.thinkingBudget || 0}` },
+            });
+            budgetEl.value = cfg.thinkingBudget ? String(cfg.thinkingBudget) : '';
+            budgetEl.onchange = async () => {
+                const n = parseInt(budgetEl.value, 10);
+                this.updateTaskBudget(item.task, { thinkingBudget: Number.isFinite(n) && n > 0 ? n : undefined });
+                await this.plugin.saveSettings();
+            };
+        }
     }
 
     private renderCoWriteSection(): void {
@@ -734,6 +1126,29 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     }
                 });
             });
+
+        new Setting(section)
+            .setName('本地上下文窗口 num_ctx')
+            .setDesc('0=按模型探测窗口自动；显存不足时可下调（如 16384/32768）')
+            .addText(text => {
+                text.setPlaceholder('0（自动）');
+                text.setValue(String(this.plugin.settings.coWriteNumCtx ?? 0));
+                text.onChange(async (value) => {
+                    const num = parseInt(value, 10);
+                    this.plugin.settings.coWriteNumCtx = Number.isFinite(num) && num > 0 ? num : 0;
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        new Setting(section)
+            .setName('本地候选批量化')
+            .setDesc('本地模型一次调用生成多个方向的候选，减少串行等待；解析失败自动回退逐方向生成')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.coWriteCandidateBatching !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.coWriteCandidateBatching = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(section)
             .setName('自动剧情评估')
@@ -1977,6 +2392,20 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 });
             });
 
+        new Setting(vectorSection)
+            .setName('向量服务不可用时的回退')
+            .setDesc('local-only=只允许回退到本地 Ollama；never=直接失败；allow-cloud=允许回退到云端（可能把本地文本发到云端）')
+            .addDropdown(dropdown => {
+                dropdown.addOption('local-only', '仅本地（推荐）');
+                dropdown.addOption('never', '不回退');
+                dropdown.addOption('allow-cloud', '允许云端（谨慎）');
+                dropdown.setValue(this.plugin.settings.embeddingFallbackPolicy || 'local-only');
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.embeddingFallbackPolicy = value as 'never' | 'local-only' | 'allow-cloud';
+                    await this.plugin.saveSettings();
+                });
+            });
+
         const providerType = this.plugin.settings.vectorProviderType || 'ollama';
 
         if (providerType === 'ollama') {
@@ -2535,6 +2964,102 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         });
     }
 
+    private renderProjectLibrarySection(): void {
+        const section = this.tabContent.createEl('section');
+        section.createEl('h3', { text: '🗂 项目库迁移' });
+        section.createEl('p', {
+            text: '将根目录旧项目迁移到 长篇小说/、短篇小说/、剧本/ 三个独立模式库。默认 dry-run，只有点击迁移才会移动目录。',
+            cls: 'setting-item-description',
+        });
+
+        const actions = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-marginbottom-8px-2' });
+        const planBtn = actions.createEl('button', {
+            text: '📋 生成迁移计划',
+            cls: 'nw-btn nw-btn-secondary',
+            attr: { type: 'button' },
+        });
+        const migrateBtn = actions.createEl('button', {
+            text: '🚚 执行迁移（含备份清单）',
+            cls: 'nw-btn nw-btn-primary',
+            attr: { type: 'button' },
+        });
+        const resultEl = section.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2' });
+
+        const renderPlan = (planText: string): void => {
+            resultEl.empty();
+            resultEl.createEl('pre', { text: planText, cls: 'nw-u-fs-12px-2' });
+        };
+
+        planBtn.onclick = async () => {
+            if (planBtn.disabled) return;
+            planBtn.disabled = true;
+            planBtn.setText('⏳ 扫描中…');
+            try {
+                const service = new ProjectMigrationService(this.app);
+                const plan = await service.plan();
+                if (plan.candidates.length === 0 && plan.conflicts.length === 0) {
+                    renderPlan('没有需要迁移的 legacy 项目。');
+                } else {
+                    const lines: string[] = [];
+                    if (plan.candidates.length > 0) {
+                        lines.push('待迁移：');
+                        for (const item of plan.candidates) {
+                            lines.push(`- [${item.mode}] ${item.projectId} → ${item.targetPath}`);
+                        }
+                    }
+                    if (plan.conflicts.length > 0) {
+                        lines.push('冲突：');
+                        for (const item of plan.conflicts) lines.push(`- ${item.projectId}：${item.reason}`);
+                    }
+                    if (plan.skipped.length > 0) {
+                        lines.push('跳过：');
+                        for (const item of plan.skipped) lines.push(`- ${item.projectId}：${item.reason}`);
+                    }
+                    renderPlan(lines.join('\n'));
+                }
+            } catch (e) {
+                renderPlan(`生成迁移计划失败：${e instanceof Error ? e.message : String(e)}`);
+            } finally {
+                planBtn.disabled = false;
+                planBtn.setText('📋 生成迁移计划');
+            }
+        };
+
+        migrateBtn.onclick = async () => {
+            if (migrateBtn.disabled) return;
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '迁移项目库',
+                description: '将把根目录 legacy 项目移动到对应模式库；迁移前会写入备份清单。',
+                confirmText: '开始迁移',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
+            migrateBtn.disabled = true;
+            migrateBtn.setText('⏳ 迁移中…');
+            try {
+                const service = new ProjectMigrationService(this.app);
+                const result = await service.migrateWithNotice({ backup: true });
+                const lines = [
+                    `已迁移 ${result.moved.length} 个项目`,
+                    ...result.moved.map(item => `- ${item.projectId} → ${item.targetPath}`),
+                ];
+                if (result.failed.length > 0) {
+                    lines.push('', '失败：');
+                    for (const item of result.failed) lines.push(`- ${item.projectId}：${item.error}`);
+                }
+                if (result.warnings.length > 0) lines.push('', ...result.warnings);
+                renderPlan(lines.join('\n'));
+                this.plugin.ctxManager.invalidateContextCache();
+                this.plugin.updateStatusBarText();
+            } catch (e) {
+                renderPlan(`迁移失败：${e instanceof Error ? e.message : String(e)}`);
+            } finally {
+                migrateBtn.disabled = false;
+                migrateBtn.setText('🚚 执行迁移（含备份清单）');
+            }
+        };
+    }
+
     private renderWorkspaceLayoutSection(): void {
         const section = this.tabContent.createEl('section');
         section.createEl('h3', { text: '🧩 工作台布局' });
@@ -2596,13 +3121,91 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 let maxCtxV = this.cp.maxContext;
                 let maxOutV = this.cp.maxOutput;
                 let apiKeyV = this.plugin.settings.providerKeys[this.cp.id] || '';
+                let sourceTypeV = this.cp.sourceType;
+                let apiStyleV = this.cp.apiStyle;
+                let providerIdHintV = this.cp.providerIdHint || '';
+                let manualOverride = false;
+                let endpointText: any = null;
+                let nameText: any = null;
+                let modelsText: any = null;
+                let maxCtxText: any = null;
+                let maxOutText: any = null;
 
-                new Setting(formDiv).setName('提供商名称').addText(t => t.setValue(nameV).onChange(v => nameV = v));
-                new Setting(formDiv).setName('API 端点').addText(t => t.setValue(endpointV).onChange(v => endpointV = v.trim()));
-                new Setting(formDiv).setName('模型列表').addText(t => t.setValue(modelsStr).onChange(v => modelsStr = v));
-                new Setting(formDiv).setName('上下文上限').addText(t => t.setValue(String(maxCtxV)).onChange(v => maxCtxV = parseInt(v) || 128000));
-                new Setting(formDiv).setName('输出上限').addText(t => t.setValue(String(maxOutV)).onChange(v => maxOutV = parseInt(v) || 32768));
+                new Setting(formDiv).setName('提供商名称').addText(t => {
+                    nameText = t;
+                    t.setValue(nameV).onChange(v => nameV = v);
+                });
+                const endpointSetting = new Setting(formDiv).setName('API 端点').addText(t => {
+                    endpointText = t;
+                    t.setValue(endpointV).onChange(v => endpointV = v.trim());
+                });
+                const detectionEl = formDiv.createDiv({
+                    cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-4px-2',
+                });
+                const applyDetection = (force = false) => {
+                    const d = detectProviderFromEndpoint(endpointV);
+                    detectionEl.empty();
+                    if (!d.valid) {
+                        detectionEl.setText(`⚠️ ${d.warning || '无法识别端点'}`);
+                        return;
+                    }
+                    const sourceLabel = d.sourceType === 'local' ? '本地' : '云端';
+                    const styleLabel = d.apiStyle === 'ollama' ? 'Ollama 原生' : d.apiStyle === 'openai' ? 'OpenAI 兼容' : '自定义';
+                    detectionEl.setText(`识别为：${d.name} · ${sourceLabel} · ${styleLabel}${d.warning ? ` · ${d.warning}` : ''}`);
+                    if (manualOverride && !force) return;
+
+                    endpointV = d.normalizedEndpoint;
+                    endpointText?.setValue(endpointV);
+                    sourceTypeV = d.sourceType;
+                    apiStyleV = d.apiStyle;
+                    providerIdHintV = d.providerId || '';
+                    if (!nameV.trim() && d.name) {
+                        nameV = d.name;
+                        nameText?.setValue(nameV);
+                    }
+                    if (!modelsStr.trim() && d.providerId) {
+                        const preset = this.plugin.getAllProviders().find(p => p.id === d.providerId);
+                        if (preset?.models?.length) {
+                            modelsStr = preset.models.join(', ');
+                            modelsText?.setValue(modelsStr);
+                        }
+                    }
+                    if (d.providerId) {
+                        const preset = this.plugin.getAllProviders().find(p => p.id === d.providerId);
+                        if (preset) {
+                            maxCtxV = preset.maxContext;
+                            maxOutV = preset.maxOutput;
+                            maxCtxText?.setValue(String(maxCtxV));
+                            maxOutText?.setValue(String(maxOutV));
+                        }
+                    }
+                };
+                endpointSetting.addButton(btn => btn
+                    .setButtonText('识别')
+                    .setTooltip('根据 URL 自动识别供应商与协议')
+                    .onClick(() => applyDetection(true)));
+                endpointSetting.settingEl.addClass('nw-provider-endpoint-setting');
+                // 失焦时只展示识别结果；用户点“识别”才强制应用，避免覆盖手填配置
+                const endpointInput = endpointSetting.settingEl.querySelector('input');
+                endpointInput?.addEventListener('blur', () => applyDetection(false));
+
+                new Setting(formDiv).setName('模型列表').addText(t => {
+                    modelsText = t;
+                    t.setValue(modelsStr).onChange(v => modelsStr = v);
+                });
+                new Setting(formDiv).setName('上下文上限').addText(t => {
+                    maxCtxText = t;
+                    t.setValue(String(maxCtxV)).onChange(v => maxCtxV = parseInt(v) || 128000);
+                });
+                new Setting(formDiv).setName('输出上限').addText(t => {
+                    maxOutText = t;
+                    t.setValue(String(maxOutV)).onChange(v => maxOutV = parseInt(v) || 32768);
+                });
                 new Setting(formDiv).setName('API 密钥').addText(t => { t.inputEl.type = 'password'; t.setValue(apiKeyV).onChange(v => apiKeyV = v); });
+                new Setting(formDiv)
+                    .setName('手动指定')
+                    .setDesc('开启后只显示识别结果，不自动覆盖名称/模型/上限；端点仍按手填值保存')
+                    .addToggle(t => t.setValue(false).onChange(v => manualOverride = v));
 
                 const btnRow = contentEl.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-margintop-16px-2 nw-u-jc-flex-end-2' });
                 btnRow.createEl('button', { text: '取消' }).onclick = () => this.close();
@@ -2610,9 +3213,26 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     if (!nameV.trim() || !endpointV.trim()) { new Notice('名称和端点不能为空'); return; }
                     const models = modelsStr.split(/[,，]/).map((m: string) => m.trim()).filter((m: string) => m);
                     if (models.length === 0) { new Notice('请至少输入一个模型名'); return; }
+                    const detection = detectProviderFromEndpoint(endpointV);
+                    const finalEndpoint = !manualOverride && detection.valid ? detection.normalizedEndpoint : endpointV.trim();
+                    const finalSourceType = !manualOverride && detection.valid ? detection.sourceType : sourceTypeV;
+                    const finalApiStyle = !manualOverride && detection.valid ? detection.apiStyle : apiStyleV;
+                    const finalProviderHint = !manualOverride && detection.valid
+                        ? (detection.providerId || '')
+                        : providerIdHintV;
                     const idx = this.plugin.settings.customProviders.findIndex((c: CustomProvider) => c.id === this.cp.id);
                     if (idx >= 0) {
-                        this.plugin.settings.customProviders[idx] = { id: this.cp.id, name: nameV.trim(), endpoint: endpointV.trim(), models, maxContext: maxCtxV, maxOutput: maxOutV };
+                        this.plugin.settings.customProviders[idx] = {
+                            id: this.cp.id,
+                            name: nameV.trim(),
+                            endpoint: finalEndpoint,
+                            models,
+                            maxContext: maxCtxV,
+                            maxOutput: maxOutV,
+                            sourceType: finalSourceType,
+                            apiStyle: finalApiStyle,
+                            providerIdHint: finalProviderHint || undefined,
+                        };
                     }
                     this.plugin.settings.providerKeys[this.cp.id] = apiKeyV;
                     await this.plugin.saveSettings();
@@ -2662,33 +3282,111 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 let maxCtxValue = 128000;
                 let maxOutValue = 32768;
                 let apiKeyValue = '';
+                let sourceTypeValue: 'cloud' | 'local' | undefined;
+                let apiStyleValue: 'openai' | 'ollama' | 'custom' | undefined;
+                let providerIdHintValue = '';
+                let manualOverride = false;
+                let endpointText: any = null;
+                let nameText: any = null;
+                let modelsText: any = null;
+                let maxCtxText: any = null;
+                let maxOutText: any = null;
 
                 new Setting(formDiv)
                     .setName('提供商名称')
                     .setDesc('用于下拉列表和状态栏显示')
-                    .addText(text => text.setPlaceholder('例如：我的私有代理').onChange(v => nameValue = v));
+                    .addText(text => {
+                        nameText = text;
+                        text.setPlaceholder('例如：我的私有代理').onChange(v => nameValue = v);
+                    });
 
-                new Setting(formDiv)
+                const endpointSetting = new Setting(formDiv)
                     .setName('API 端点')
-                    .setDesc('OpenAI 兼容 API 的基础 URL')
-                    .addText(text => text.setPlaceholder('https://api.example.com/v1/chat/completions').onChange(v => endpointValue = v.trim()));
+                    .setDesc('OpenAI 兼容 API 的完整 URL；也可只填 base URL')
+                    .addText(text => {
+                        endpointText = text;
+                        text.setPlaceholder('https://api.example.com/v1/chat/completions').onChange(v => endpointValue = v.trim());
+                    });
+                const detectionEl = formDiv.createDiv({
+                    cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-4px-2',
+                });
+                detectionEl.setText('填写端点后可点击「识别」自动判断供应商与协议');
+                const applyDetection = (force = false) => {
+                    const d = detectProviderFromEndpoint(endpointValue);
+                    detectionEl.empty();
+                    if (!d.valid) {
+                        detectionEl.setText(`⚠️ ${d.warning || '无法识别端点'}`);
+                        return;
+                    }
+                    const sourceLabel = d.sourceType === 'local' ? '本地' : '云端';
+                    const styleLabel = d.apiStyle === 'ollama' ? 'Ollama 原生' : d.apiStyle === 'openai' ? 'OpenAI 兼容' : '自定义';
+                    detectionEl.setText(`识别为：${d.name} · ${sourceLabel} · ${styleLabel}${d.warning ? ` · ${d.warning}` : ''}`);
+                    if (manualOverride && !force) return;
+
+                    endpointValue = d.normalizedEndpoint;
+                    endpointText?.setValue(endpointValue);
+                    sourceTypeValue = d.sourceType;
+                    apiStyleValue = d.apiStyle;
+                    providerIdHintValue = d.providerId || '';
+                    if (!nameValue.trim() && d.name) {
+                        nameValue = d.name;
+                        nameText?.setValue(nameValue);
+                    }
+                    if (!modelsStr.trim() && d.providerId) {
+                        const preset = this.plugin.getAllProviders().find(p => p.id === d.providerId);
+                        if (preset?.models?.length) {
+                            modelsStr = preset.models.join(', ');
+                            modelsText?.setValue(modelsStr);
+                        }
+                    }
+                    if (d.providerId) {
+                        const preset = this.plugin.getAllProviders().find(p => p.id === d.providerId);
+                        if (preset) {
+                            maxCtxValue = preset.maxContext;
+                            maxOutValue = preset.maxOutput;
+                            maxCtxText?.setValue(String(maxCtxValue));
+                            maxOutText?.setValue(String(maxOutValue));
+                        }
+                    }
+                };
+                endpointSetting.addButton(btn => btn
+                    .setButtonText('识别')
+                    .setTooltip('根据 URL 自动识别供应商与协议')
+                    .onClick(() => applyDetection(true)));
+                endpointSetting.settingEl.addClass('nw-provider-endpoint-setting');
+                const endpointInput = endpointSetting.settingEl.querySelector('input');
+                endpointInput?.addEventListener('blur', () => applyDetection(false));
 
                 new Setting(formDiv)
                     .setName('模型列表')
                     .setDesc('逗号分隔，第一个为默认模型')
-                    .addText(text => text.setPlaceholder('model-a, model-b').onChange(v => modelsStr = v));
+                    .addText(text => {
+                        modelsText = text;
+                        text.setPlaceholder('model-a, model-b').onChange(v => modelsStr = v);
+                    });
 
                 new Setting(formDiv)
                     .setName('上下文上限 (tokens)')
-                    .addText(text => text.setValue('128000').onChange(v => maxCtxValue = parseInt(v) || 128000));
+                    .addText(text => {
+                        maxCtxText = text;
+                        text.setValue('128000').onChange(v => maxCtxValue = parseInt(v) || 128000);
+                    });
 
                 new Setting(formDiv)
                     .setName('输出上限 (tokens)')
-                    .addText(text => text.setValue('32768').onChange(v => maxOutValue = parseInt(v) || 32768));
+                    .addText(text => {
+                        maxOutText = text;
+                        text.setValue('32768').onChange(v => maxOutValue = parseInt(v) || 32768);
+                    });
 
                 new Setting(formDiv)
                     .setName('API 密钥')
                     .addText(text => { text.inputEl.type = 'password'; text.setPlaceholder('sk-...').onChange(v => apiKeyValue = v); });
+
+                new Setting(formDiv)
+                    .setName('手动指定')
+                    .setDesc('开启后只显示识别结果，不自动覆盖名称/模型/上限；端点仍按手填值保存')
+                    .addToggle(t => t.setValue(false).onChange(v => manualOverride = v));
 
                 const btnRow = contentEl.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-margintop-16px-2 nw-u-jc-flex-end-2' });
                 btnRow.createEl('button', { text: '取消', cls: 'nw-u-p-6px-16px' }).onclick = () => this.close();
@@ -2702,7 +3400,24 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     const models = modelsStr.split(/[,，]/).map((m: string) => m.trim()).filter((m: string) => m);
                     if (models.length === 0) { new Notice('❌ 请至少输入一个模型名'); return; }
 
-                    this.plugin.addCustomProvider(nameValue.trim(), endpointValue.trim(), models, maxCtxValue, maxOutValue, apiKeyValue);
+                    const detection = detectProviderFromEndpoint(endpointValue);
+                    const finalEndpoint = !manualOverride && detection.valid ? detection.normalizedEndpoint : endpointValue.trim();
+                    const id = this.plugin.addCustomProvider(
+                        nameValue.trim(),
+                        finalEndpoint,
+                        models,
+                        maxCtxValue,
+                        maxOutValue,
+                        apiKeyValue,
+                    );
+                    if (id) {
+                        const created = this.plugin.settings.customProviders.find(c => c.id === id);
+                        if (created) {
+                            created.sourceType = sourceTypeValue || detection.sourceType;
+                            created.apiStyle = apiStyleValue || detection.apiStyle;
+                            created.providerIdHint = providerIdHintValue || detection.providerId || undefined;
+                        }
+                    }
                     await this.plugin.saveSettings();
                     this.plugin.updateStatusBarText();
                     this.close();
@@ -3306,19 +4021,38 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         if (this.plugin.settings.updateSource === 'github') {
             new Setting(section)
                 .setName('GitHub 仓库')
-                .setDesc('格式：owner/repo')
+                .setDesc('格式：owner/repo · 默认分支：' + GITHUB_BRANCH)
                 .addText(text => text
-                    .setPlaceholder('Moxifeng11/novel-writer-ai')
-                    .setValue(this.plugin.settings.updateGithubRepo || 'Moxifeng11/novel-writer-ai')
+                    .setPlaceholder(GITHUB_REPO_SLUG)
+                    .setValue(this.plugin.settings.updateGithubRepo || GITHUB_REPO_SLUG)
                     .onChange(async (value) => {
                         this.plugin.settings.updateGithubRepo = value;
                         await this.plugin.saveSettings();
                         const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
                         if (updateChecker) {
                             updateChecker.updateConfig({ githubRepo: value });
+                            updateChecker.clearCache?.();
                         }
                     })
                 );
+            new Setting(section)
+                .setName('GitHub Token（私有仓库必填）')
+                .setDesc('公开仓库留空；私有仓库需要 repo 读取权限。Token 只保存在本地设置中。')
+                .addText(text => {
+                    text.inputEl.type = 'password';
+                    text.setPlaceholder('github_pat_... 或 ghp_...')
+                        .setValue(this.plugin.settings.updateGithubToken || '')
+                        .onChange(async (value) => {
+                            this.plugin.settings.updateGithubToken = value.trim();
+                            await this.plugin.saveSettings();
+                            const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                            if (updateChecker) {
+                                updateChecker.updateConfig({ githubToken: value.trim() });
+                                updateChecker.clearCache?.();
+                            }
+                        });
+                });
+
         } else {
             new Setting(section)
                 .setName('自定义更新 URL')

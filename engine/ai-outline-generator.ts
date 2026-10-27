@@ -1,12 +1,12 @@
 
-import { TFolder } from 'obsidian';
+import { TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { OUTLINE_TABLE_HEADER } from '../shared/format-constants';
 import { WORLDVIEW_SLICE } from '../shared/thresholds';
 import type { OutlineSettings, WorldElements } from './ai-types';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
-import { pjVolumeOutlineDir } from '../shared/paths';
+import { pjControlDir, pjVolumeOutlineDir } from '../shared/paths';
 import {
     OUTLINE_VOLUME_REQUIRED_KEYS,
     buildBlueprintRepairHint,
@@ -266,9 +266,34 @@ ${previousSummaries}
                 const volumesPath = pjVolumeOutlineDir(project);
                 const volumesDir = this.plugin.app.vault.getAbstractFileByPath(volumesPath);
                 if (volumesDir instanceof TFolder) {
-                    log.info('[小说工坊] 递进式大纲 - Phase -1: 清除旧卷数据');
-                    for (const child of volumesDir.children) {
-                        await this.plugin.app.vault.delete(child, true);
+                    const volumeFiles = volumesDir.children.filter(
+                        (child): child is TFile => child instanceof TFile && child.name.endsWith('_分卷大纲.md'),
+                    );
+                    // 重新生成前先备份旧大纲；备份失败时保留旧文件，避免 AI 失败后旧规划直接消失。
+                    // writeVolumeOutlines 会在新内容成功生成后清理残留旧卷，因此保留文件不会污染最终结果。
+                    let backupOk = true;
+                    if (volumeFiles.length > 0) {
+                        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+                        const backupPath = `${pjControlDir(project)}/分卷大纲备份_${stamp}.md`;
+                        try {
+                            const parts: string[] = [];
+                            for (const file of volumeFiles) {
+                                parts.push(`# ${file.basename}
+
+${await this.plugin.app.vault.read(file)}`);
+                            }
+                            await this.plugin.app.vault.create(backupPath, parts.join('\n\n---\n\n'));
+                            this.notifier.showNotice(`已备份旧分卷大纲：${backupPath}`, 5000);
+                        } catch (backupError) {
+                            backupOk = false;
+                            log.warn('[小说工坊] 旧分卷大纲备份失败，保留旧文件不删除:', backupError);
+                        }
+                    }
+                    if (backupOk) {
+                        log.info('[小说工坊] 递进式大纲 - Phase -1: 清除旧卷数据');
+                        for (const child of volumesDir.children) {
+                            await this.plugin.app.vault.delete(child, true);
+                        }
                     }
                 }
             } catch (e) {

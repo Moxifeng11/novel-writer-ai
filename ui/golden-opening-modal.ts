@@ -2,6 +2,8 @@ import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine } from '../engine/ai-engine';
 import { createLogger } from '../shared/logger';
+import { CreateProjectModal } from './create-project-modal';
+import { pjControlDir } from '../shared/paths';
 
 
 const log = createLogger('GoldenOpeningModal');
@@ -1277,13 +1279,58 @@ ${this.textInput}
     }
 
     private async exportThreeChapters(): Promise<void> {
-        try {
-            const projectName = this.premiseInput.slice(0, 10).replace(/[\\/:*?"<>|]/g, '') || '黄金开篇';
-            const folderPath = `${projectName}/03-大纲与章节`;
+        const active = this.plugin.getActiveProject();
+        if (active) {
+            this.showExportChoice(active);
+            return;
+        }
+        this.openCreateProject();
+    }
 
-            await this.ensureFolder(folderPath);
+    private showExportChoice(activeProject: string): void {
+        const modal = new Modal(this.app);
+        modal.titleEl.setText('📁 保存黄金开篇');
+        const content = modal.contentEl.createDiv({ cls: 'nw-form-stack' });
+        content.createEl('p', {
+            text: `当前项目：${activeProject}。可以保存到当前项目，或基于这份黄金三章创建新项目。`,
+            cls: 'setting-item-description',
+        });
+        const saveCurrent = content.createEl('button', {
+            text: `保存到当前项目「${activeProject}」`,
+            cls: 'nw-btn nw-btn-primary',
+        });
+        saveCurrent.onclick = async () => {
+            modal.close();
+            await this.saveGoldenToProject(activeProject);
+        };
+        const createNew = content.createEl('button', {
+            text: '创建新项目',
+            cls: 'nw-btn nw-btn-secondary',
+        });
+        createNew.onclick = () => {
+            modal.close();
+            this.openCreateProject();
+        };
+        const cancel = content.createEl('button', { text: '取消', cls: 'nw-btn' });
+        cancel.onclick = () => modal.close();
+        modal.open();
+    }
 
-            let content = `---
+    private openCreateProject(): void {
+        const name = this.threeChapters[0]?.title || this.premiseInput || '黄金开篇';
+        new CreateProjectModal(this.app, this.plugin, {
+            name,
+            genre: Array.from(this.selectedGenres)[0] || '',
+            description: this.premiseInput,
+            projectType: 'original',
+                        onCreated: async (projectName) => {
+                await this.saveGoldenToProject(projectName);
+            },
+        }).open();
+    }
+
+    private buildGoldenContent(): string {
+        let content = `---
 tags: [黄金开篇, 大纲]
 生成时间: ${new Date().toISOString()}
 ---
@@ -1291,34 +1338,40 @@ tags: [黄金开篇, 大纲]
 # 黄金三章大纲
 
 `;
-
-            this.threeChapters.forEach(chapter => {
-                content += `## 第${chapter.chapterNum}章：${chapter.title}\n\n`;
-                content += `### 结构要点\n\n`;
-                chapter.structure.forEach((s, i) => {
-                    content += `${i + 1}. ${s}\n`;
-                });
-                content += `\n### 本章大纲\n\n${chapter.outline}\n\n---\n\n`;
+        this.threeChapters.forEach(chapter => {
+            content += `## 第${chapter.chapterNum}章：${chapter.title}\n\n`;
+            content += '### 结构要点\n\n';
+            chapter.structure.forEach((item, index) => {
+                content += `${index + 1}. ${item}\n`;
             });
+            content += `\n### 本章大纲\n\n${chapter.outline}\n\n---\n\n`;
+        });
+        return content;
+    }
 
-            const filePath = `${folderPath}/黄金三章大纲.md`;
+    private async saveGoldenToProject(project: string): Promise<void> {
+        try {
+            const dir = pjControlDir(project);
+            await this.ensureFolder(dir);
+            const filePath = `${dir}/黄金开篇.md`;
+            const content = this.buildGoldenContent();
             const existing = this.app.vault.getAbstractFileByPath(filePath);
             if (existing instanceof TFile) {
-                await this.app.vault.modify(existing, content);
+                const old = await this.app.vault.read(existing);
+                await this.app.vault.modify(existing, `${old.trimEnd()}\n\n---\n\n${content}`);
             } else {
                 await this.app.vault.create(filePath, content);
             }
-
-            new Notice(`✅ 已导出到「${projectName}」项目`, 3000);
-
+            new Notice(`✅ 已保存到「${project}/04-项目总控/黄金开篇.md」`, 5000);
             const file = this.app.vault.getAbstractFileByPath(filePath);
             if (file instanceof TFile) {
                 const leaf = this.app.workspace.getLeaf('tab');
                 await leaf.openFile(file);
             }
+            this.close();
         } catch (e) {
-            log.error('[GoldenOpeningModal] 导出失败:', e);
-            new Notice('❌ 导出失败，请检查权限', 5000);
+            log.error('[GoldenOpeningModal] 保存黄金开篇失败:', e);
+            new Notice('❌ 保存失败，请检查权限', 5000);
         }
     }
 

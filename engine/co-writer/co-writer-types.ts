@@ -57,6 +57,8 @@ export interface ContextSnapshot {
     longTermMemoryContext?: string;
     /** 同人约束：原作核心设定 + 三条创作规则（原创项目为空） */
     fanficRulesContext?: string;
+    /** 创作模式硬约束：短篇/剧本的平台规格与输出格式（长篇为空） */
+    creationModeContext?: string;
     worldView: string;
     worldType: string;
     writingStyle: string;

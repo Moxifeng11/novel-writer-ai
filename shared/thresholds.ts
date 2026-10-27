@@ -266,7 +266,7 @@ export const DIVERGENCE_RISING_MIN_WINDOW_MS = 2 * 60 * 1000;
  * 慢速打字（每 2 秒一个字）会变成每分钟约 30 次 AI 请求，本地模型会被持续占满。
  * 两次自动联想至少间隔这么久；切章 / 首次输入不受限（`lastAt = 0`）。
  */
-export const GHOST_ASSOCIATION_MIN_INTERVAL_MS = 4 * 1000;
+export const GHOST_ASSOCIATION_MIN_INTERVAL_MS = 8 * 1000;
 
 /**
  * 协同写作偏离检测的人物设定缓存时长。

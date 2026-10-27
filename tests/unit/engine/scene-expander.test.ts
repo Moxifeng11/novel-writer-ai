@@ -156,13 +156,23 @@ cliffhanger: 碑后站着天阙的人
 });
 
 describe('SCENE_EXPAND prompts 契约', () => {
-    it('system prompt 含 8 要素关键词与占位符', () => {
+    it('system prompt 含完整场景卡关键词与占位符', () => {
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('pov');
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('entry_state');
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('turn');
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('exit_state');
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('objective');
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('emotion_arc');
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('sensory_hook');
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('memory_trigger');
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('subtext');
         expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('${protagonistSoul}');
+    });
+
+    it('system prompt 要求入场/离场不同、转折可指认、POV 纪律', () => {
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('entry_state 与 exit_state 必须不同');
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('turn 必须是可指认的');
+        expect(SCENE_EXPAND_SYSTEM_PROMPT).toContain('POV');
     });
 
     it('user template 含核心占位符与跨章承接占位符', () => {
@@ -200,6 +210,7 @@ describe('generateSceneExpansion — 跨章信息注入', () => {
         const system = String(callAI.mock.calls[0][0]);
         const user = String(callAI.mock.calls[0][1]);
         expect(system).toContain('上一章结尾');
+        expect(system).toContain('生成期工艺硬约束');
         expect(user).toContain('林晚在门外听见父亲咳血。');
         expect(user).toContain('只揭示半封密信');
         expect(user).toContain('父亲病倒');

@@ -28,6 +28,7 @@ import { findBodyFileV4 } from '../engine/chapter-utils';
 import { mergeSceneBodies } from '../shared/scene-body-merge';
 import { SceneExpander } from '../engine/ai-scene-expander';
 import { AIApiClient } from '../engine/ai-api-client';
+import { resolveTaskModelConfig } from '../shared/task-model';
 import { ContextManager } from '../engine/context-manager';
 import type { SceneNode } from '../shared/types';
 import { computePromptHash } from '../engine/prompt-hash';
@@ -80,7 +81,21 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
     );
     const beats = new StoryBeatExtractor().extract(chapterPlan);
 
-    const model = plugin.settings.flashModel;
+    // 场景正文属于 body 任务：本地/云端路由、输出上限、思考参数都按 body 解析，
+    // 不再误用 flash 模型。
+    const bodyConfig = resolveTaskModelConfig(
+        plugin.settings,
+        'body',
+        (modelName, endpoint) => plugin.resolveModelLimits(modelName, endpoint),
+    );
+    const model = bodyConfig.model;
+    const bodyCallOptions = {
+        endpoint: bodyConfig.endpoint,
+        apiKey: bodyConfig.apiKey,
+        disableFallback: bodyConfig.sourceType === 'local',
+        thinkingMode: bodyConfig.thinkingMode,
+        thinkingBudget: bodyConfig.thinkingBudget,
+    };
     const injector = plugin.knowledgeInjector;
     const bodyWriter = new BodyWriter({ app: plugin.app });
     const bodyFormat = await bodyWriter.resolveContract(project);
@@ -91,7 +106,7 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
         injectForSceneBodyLayers: (ctx, o) => injector
             ? injector.injectForSceneBodyLayers(ctx, o)
             : Promise.resolve({ system: '', user: '' }),
-        callAI: (sys, usr, m) => plugin.aiEngine.callAI(sys, usr, m),
+        callAI: (sys, usr, m) => plugin.aiEngine.callAI(sys, usr, m, 0.7, Math.min(bodyConfig.maxOutput, 8192), bodyCallOptions),
         snapshot,
         beats,
         bodyFormat,

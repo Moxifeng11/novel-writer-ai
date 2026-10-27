@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小说工坊 v4.17.0 — 章节流水线与协同写作调用审计</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b1020;
+    --bg-2: #111830;
+    --panel: rgba(20, 28, 52, 0.78);
+    --panel-strong: #161f3b;
+    --line: rgba(124, 146, 196, 0.22);
+    --line-strong: rgba(124, 146, 196, 0.42);
+    --text: #e8edff;
+    --muted: #9aa8c7;
+    --faint: #6f7d9e;
+    --blue: #6ea8fe;
+    --cyan: #4fd1c5;
+    --violet: #a78bfa;
+    --amber: #f6c177;
+    --red: #f38ba8;
+    --green: #7ee2a8;
+    --shadow: 0 22px 70px rgba(0, 0, 0, 0.38);
+    --radius: 18px;
+    --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    --sans: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(1100px 600px at 12% -8%, rgba(110, 168, 254, 0.16), transparent 60%),
+      radial-gradient(900px 520px at 92% 4%, rgba(167, 139, 250, 0.14), transparent 62%),
+      linear-gradient(180deg, #0a0f1f 0%, #0b1020 44%, #080d1a 100%);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.65;
+    letter-spacing: 0.01em;
+  }
+  a { color: var(--blue); }
+  .wrap { width: min(1240px, calc(100% - 40px)); margin: 0 auto; padding: 44px 0 72px; }
+  header.hero { position: relative; padding: 8px 0 26px; }
+  .eyebrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid rgba(110, 168, 254, 0.34);
+    background: rgba(110, 168, 254, 0.10);
+    color: #cfe0ff; border-radius: 999px; padding: 5px 11px;
+    font-size: 12px; letter-spacing: 0.08em;
+  }
+  .badge.green { border-color: rgba(126, 226, 168, 0.32); background: rgba(126, 226, 168, 0.09); color: #c7f5d9; }
+  .badge.amber { border-color: rgba(246, 193, 119, 0.34); background: rgba(246, 193, 119, 0.09); color: #ffe4b8; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
+  h1 { font-size: clamp(30px, 4vw, 48px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.025em; }
+  h1 .accent { background: linear-gradient(92deg, #9cc4ff 0%, #7ee2d0 48%, #c0b2ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { max-width: 900px; color: var(--muted); font-size: 15.5px; margin: 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 16px; color: var(--faint); font-size: 12.5px; }
+  .meta code { font-family: var(--mono); color: #b9c8ea; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 26px 0 24px; }
+  .kpi {
+    position: relative; overflow: hidden; padding: 18px 18px 16px;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: linear-gradient(160deg, rgba(26, 37, 68, 0.88), rgba(14, 20, 40, 0.72));
+    box-shadow: var(--shadow);
+  }
+  .kpi::after { content: ""; position: absolute; inset: auto -20% -60% 40%; height: 120px; background: radial-gradient(circle, rgba(110,168,254,0.16), transparent 68%); }
+  .kpi .label { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .kpi .value { display: flex; align-items: baseline; gap: 7px; margin: 7px 0 3px; font-weight: 700; font-size: 30px; letter-spacing: -0.03em; }
+  .kpi .value small { font-size: 12px; font-weight: 500; color: var(--faint); letter-spacing: 0; }
+  .kpi .note { color: var(--faint); font-size: 12px; }
+  .kpi.blue { border-color: rgba(110,168,254,0.28); }
+  .kpi.cyan { border-color: rgba(79,209,197,0.26); }
+  .kpi.violet { border-color: rgba(167,139,250,0.26); }
+  .kpi.amber { border-color: rgba(246,193,119,0.26); }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 7px; border: 1px solid var(--line); border-radius: 16px; background: rgba(12, 18, 35, 0.72); margin-bottom: 18px; }
+  .tab {
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    padding: 10px 15px; border-radius: 11px; font: inherit; font-size: 13.5px;
+    cursor: pointer; transition: 160ms ease; white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,0.045); }
+  .tab[aria-selected="true"] { color: #0a1020; background: linear-gradient(135deg, #9cc4ff, #7ee2d0); font-weight: 650; }
+  .panel { display: none; animation: fade 220ms ease; }
+  .panel.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 24px 0 14px; }
+  .section-head h2 { margin: 0; font-size: 21px; letter-spacing: -0.01em; }
+  .section-head p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--faint); font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sq { width: 9px; height: 9px; border-radius: 3px; }
+
+  .mode-switch { display: inline-flex; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: rgba(10,15,30,0.6); }
+  .mode-switch button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12.5px; padding: 6px 11px; border-radius: 8px; cursor: pointer; }
+  .mode-switch button.active { background: rgba(110,168,254,0.18); color: #dbe8ff; }
+
+  .pipeline-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(310px, 0.85fr); gap: 16px; align-items: start; }
+  .pipeline { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: rgba(11,17,33,0.62); box-shadow: var(--shadow); }
+  .pipe-row {
+    display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center;
+    padding: 13px 15px; border-bottom: 1px solid rgba(124,146,196,0.13);
+    cursor: pointer; transition: 150ms ease; position: relative;
+  }
+  .pipe-row:last-child { border-bottom: 0; }
+  .pipe-row:hover { background: rgba(110,168,254,0.055); }
+  .pipe-row.selected { background: linear-gradient(90deg, rgba(110,168,254,0.15), rgba(110,168,254,0.03)); }
+  .pipe-row.selected::before { content: ""; position: absolute; left: 0; top: 10%; bottom: 10%; width: 3px; border-radius: 3px; background: linear-gradient(180deg, var(--blue), var(--cyan)); }
+  .pipe-num { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--line); color: var(--faint); font: 600 12px var(--mono); background: rgba(255,255,255,0.025); }
+  .pipe-row.ai .pipe-num { color: #cfe0ff; border-color: rgba(110,168,254,0.34); background: rgba(110,168,254,0.10); }
+  .pipe-main { min-width: 0; }
+  .pipe-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 14px; }
+  .pipe-sub { color: var(--faint); font-size: 12px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tag { display: inline-flex; align-items: center; border-radius: 999px; padding: 1px 7px; font-size: 10.5px; font-weight: 500; border: 1px solid transparent; letter-spacing: 0.02em; }
+  .tag.ai { color: #cfe0ff; background: rgba(110,168,254,0.12); border-color: rgba(110,168,254,0.3); }
+  .tag.noai { color: var(--faint); background: rgba(255,255,255,0.04); border-color: var(--line); }
+  .tag.fix { color: #c7f5d9; background: rgba(126,226,168,0.10); border-color: rgba(126,226,168,0.28); }
+  .tag.waste { color: #ffd9e1; background: rgba(243,139,168,0.10); border-color: rgba(243,139,168,0.28); }
+  .pipe-call { font: 12px var(--mono); color: var(--faint); text-align: right; white-space: nowrap; }
+  .pipe-row.ai .pipe-call { color: var(--blue); }
+  .group-bracket {
+    margin: 9px 14px 9px 14px; border: 1px dashed rgba(110,168,254,0.35);
+    border-radius: 12px; padding: 7px 11px; color: #b7cdf4; font-size: 11.5px;
+    background: rgba(110,168,254,0.055); display: none;
+  }
+  body.mode-recommended .group-bracket { display: block; }
+  body.mode-recommended .pipe-row.combined { border-bottom-color: transparent; }
+  body.mode-recommended .pipe-row.combined .pipe-call { color: var(--faint); }
+  body.mode-recommended .pipe-row.combined .pipe-call::after { content: "合并"; }
+  body.mode-recommended .pipe-row.combined .pipe-call .raw { display: none; }
+
+  .detail {
+    position: sticky; top: 18px; border: 1px solid var(--line-strong); border-radius: var(--radius);
+    background: linear-gradient(165deg, rgba(26, 37, 68, 0.96), rgba(12, 18, 36, 0.94));
+    box-shadow: var(--shadow); padding: 20px;
+  }
+  .detail .kicker { color: var(--faint); font: 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+  .detail h3 { margin: 5px 0 3px; font-size: 19px; }
+  .detail .badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 14px; }
+  .detail dl { margin: 0; display: grid; gap: 11px; }
+  .detail dt { color: var(--faint); font-size: 11.5px; letter-spacing: 0.06em; }
+  .detail dd { margin: 2px 0 0; color: #d4def4; font-size: 12.8px; }
+  .detail dd code { font-family: var(--mono); color: #b9d2ff; font-size: 11.5px; }
+  .detail .delta { margin-top: 14px; padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(126,226,168,0.24); background: rgba(126,226,168,0.07); color: #cdf4dd; font-size: 12.2px; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 19px; box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 4px; font-size: 16px; }
+  .card .hint { color: var(--faint); font-size: 12.5px; margin: 0 0 16px; }
+  .card.wide { grid-column: 1 / -1; }
+
+  .bar-row { display: grid; grid-template-columns: 150px 1fr 78px; align-items: center; gap: 12px; margin: 11px 0; }
+  .bar-label { color: var(--muted); font-size: 12.5px; }
+  .bar-track { height: 11px; border-radius: 999px; background: rgba(255,255,255,0.055); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6ea8fe, #4fd1c5); transition: width 500ms cubic-bezier(.2,.8,.2,1); }
+  .bar-fill.violet { background: linear-gradient(90deg, #a78bfa, #6ea8fe); }
+  .bar-fill.amber { background: linear-gradient(90deg, #f6c177, #f38ba8); }
+  .bar-fill.green { background: linear-gradient(90deg, #7ee2a8, #4fd1c5); }
+  .bar-value { font: 12px var(--mono); color: #cddcff; text-align: right; }
+
+  .compare { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .compare-item { border: 1px solid var(--line); border-radius: 14px; padding: 13px; background: rgba(255,255,255,0.022); }
+  .compare-item.good { border-color: rgba(126,226,168,0.3); background: rgba(126,226,168,0.055); }
+  .compare-item .big { font-size: 25px; font-weight: 700; letter-spacing: -0.03em; }
+  .compare-item .small { color: var(--faint); font-size: 11.5px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+  th, td { text-align: left; padding: 10px 9px; border-bottom: 1px solid rgba(124,146,196,0.14); vertical-align: top; }
+  th { color: var(--faint); font-size: 11px; letter-spacing: 0.07em; font-weight: 600; text-transform: uppercase; }
+  td { color: #d6e0f5; }
+  td.num { font-family: var(--mono); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  .before { color: var(--red); font-family: var(--mono); }
+  .after { color: var(--green); font-family: var(--mono); }
+  .muted { color: var(--faint); }
+
+  .pill-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+  .pill { border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; color: var(--muted); font-size: 11.5px; background: rgba(255,255,255,0.025); }
+  .callout { border-left: 3px solid var(--amber); background: rgba(246,193,119,0.07); padding: 12px 14px; border-radius: 0 12px 12px 0; color: #f6e2bf; font-size: 12.8px; margin-top: 14px; }
+  .callout.green { border-left-color: var(--green); background: rgba(126,226,168,0.07); color: #cdf4dd; }
+  .callout.blue { border-left-color: var(--blue); background: rgba(110,168,254,0.07); color: #d4e4ff; }
+
+  pre { margin: 12px 0 0; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line); background: #070c18; overflow: auto; font: 11.5px/1.65 var(--mono); color: #c5d4f2; }
+  .kbd { font: 11px var(--mono); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 5px; padding: 1px 5px; color: #c7d6f3; background: rgba(255,255,255,0.04); }
+  footer { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12px; display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+
+  @media (max-width: 940px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .pipeline-layout { grid-template-columns: 1fr; }
+    .detail { position: static; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .compare { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .wrap { width: min(100% - 24px, 1240px); padding-top: 26px; }
+    .kpis { grid-template-columns: 1fr; }
+    .bar-row { grid-template-columns: 104px 1fr 66px; gap: 8px; }
+    .pipe-row { grid-template-columns: 36px 1fr; }
+    .pipe-call { grid-column: 2; text-align: left; }
+  }
+</style>
+</head>
+<body class="mode-recommended">
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">
+      <span class="badge"><span class="dot"></span>v4.17.0 · 工作树</span>
+      <span class="badge amber">效率审计</span>
+      <span class="badge green">354 测试文件 / 4371 用例通过</span>
+    </div>
+    <h1>11 步不变，<span class="accent">调用与点击降下来</span></h1>
+    <p class="sub">这一版不删步骤、不合并质量控制与分析报告。改的是三件事：单章一键编排、规划合并成一次调用、把每一步的产出真正交给下游；协同写作则把本地模型的三次串行候选压成一次批量 JSON。</p>
+    <div class="meta">
+      <span>基准：v4.16.0 → v4.17.0</span>
+      <span>实测本地模型：<code>deepseek-r1:7b</code> @ Ollama</span>
+      <span>文档：<code>docs/analysis/v4.17-pipeline-efficiency.html</code></span>
+    </div>
+  </header>
+
+  <section class="kpis" aria-label="关键指标">
+    <div class="kpi blue"><div class="label">整章 AI 调用</div><div class="value">8 → 4 <small>推荐模式</small></div><div class="note">逐步模式仍为 8 次，步骤全部可见</div></div>
+    <div class="kpi cyan"><div class="label">整章点击</div><div class="value">9–19 → 1</div><div class="note">一键跑完剩余步骤，可暂停 / 取消 / 断点续跑</div></div>
+    <div class="kpi violet"><div class="label">一次建议</div><div class="value">3 → 1 <small>本地</small></div><div class="note">3 方向批量 JSON；失败自动回退 3 次</div></div>
+    <div class="kpi amber"><div class="label">一章协同调用</div><div class="value">115–170 → 45–70</div><div class="note">按 20 次建议估算，取决于节流</div></div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="视图">
+    <button class="tab" role="tab" aria-selected="true" data-panel="pipeline">① 章节流水线</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="calls">② 调用与点击账单</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="cowrite">③ 协同写作</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="evidence">④ 验证与边界</button>
+  </nav>
+
+  <main>
+    <section class="panel active" id="panel-pipeline" role="tabpanel">
+      <div class="section-head">
+        <div>
+          <h2>11 步信息流</h2>
+          <p>点任意步骤查看输入、输出、下游消费者与本轮修复点。</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="legend">
+            <span><i class="sq" style="background:#6ea8fe"></i>调用 AI</span>
+            <span><i class="sq" style="background:#6f7d9e"></i>不调用 AI</span>
+            <span><i class="sq" style="background:#7ee2a8"></i>本轮补齐消费</span>
+          </div>
+          <div class="mode-switch" role="group" aria-label="运行模式">
+            <button type="button" data-mode="recommended" class="active">推荐模式</button>
+            <button type="button" data-mode="step">逐步模式</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-layout">
+        <div>
+          <div class="pipeline" id="pipeline"></div>
+          <div class="callout blue" style="margin-top:14px">
+            <strong>推荐模式</strong>：5 个规划步骤全部未完成时，用 <code>executePlanningCombined</code> 一次产出 5 份步骤结果；随后正文、质量控制、分析报告各 1 次。结算不调用 AI，且只在正文未结算、分析报告含有效指令时执行。
+          </div>
+        </div>
+        <aside class="detail" id="detail" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-calls" role="tabpanel">
+      <div class="section-head">
+        <div><h2>调用与点击账单</h2><p>同一章、同一质量门槛下的三种操作方式。</p></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>整章 AI 调用次数</h3>
+          <p class="hint">正文若触发续写，旧版最多再加 3 次；推荐模式把规划压成 1 次。</p>
+          <div class="bar-row"><div class="bar-label">全手动逐步</div><div class="bar-track"><div class="bar-fill amber" style="width:100%"></div></div><div class="bar-value">8</div></div>
+          <div class="bar-row"><div class="bar-label">一键 · 逐步模式</div><div class="bar-track"><div class="bar-fill violet" style="width:100%"></div></div><div class="bar-value">8</div></div>
+          <div class="bar-row"><div class="bar-label">一键 · 推荐模式</div><div class="bar-track"><div class="bar-fill green" style="width:50%"></div></div><div class="bar-value">4</div></div>
+          <div class="callout green">省下的 4 次全部来自规划重复注入：infoPlan / plotDistill / outline / emotionPlan / sceneExpand 共用同一批上下文，没有理由各发一次。</div>
+        </div>
+
+        <div class="card">
+          <h3>整章用户点击次数</h3>
+          <p class="hint">按钮没有减少，只是多了一个“一次跑完剩余步骤”的入口。</p>
+          <div class="bar-row"><div class="bar-label">全手动</div><div class="bar-track"><div class="bar-fill amber" style="width:100%"></div></div><div class="bar-value">9–19</div></div>
+          <div class="bar-row"><div class="bar-label">一键完成本章</div><div class="bar-track"><div class="bar-fill green" style="width:8%"></div></div><div class="bar-value">1</div></div>
+          <div class="compare">
+            <div class="compare-item"><div class="big">1</div><div class="small">点击启动</div></div>
+            <div class="compare-item"><div class="big">11</div><div class="small">步骤仍可见</div></div>
+            <div class="compare-item good"><div class="big">4</div><div class="small">推荐模式调用</div></div>
+          </div>
+          <div class="pill-list">
+            <span class="pill">⏸ 当前步结束后暂停</span>
+            <span class="pill">✖ aborted 即停止</span>
+            <span class="pill">↻ 从失败步骤续跑</span>
+            <span class="pill">✎ 每步仍可单独重生成</span>
+          </div>
+        </div>
+
+        <div class="card wide">
+          <h3>每一步的调用归属</h3>
+          <p class="hint">“调用”是逻辑调用数，不含底层 HTTP 重试。推荐模式的规划 5 步共用 1 次。</p>
+          <table>
+            <thead><tr><th>步骤</th><th>AI</th><th>旧调用</th><th>推荐模式</th><th>主要下游</th></tr></thead>
+            <tbody>
+              <tr><td>0 上下文</td><td>否</td><td class="num">0</td><td class="num">0</td><td>全部步骤</td></tr>
+              <tr><td>1 信息规划</td><td>是</td><td class="num">1</td><td class="num after">合并 1</td><td>情节蒸馏 / 大纲 / 正文</td></tr>
+              <tr><td>2 情节蒸馏</td><td>是</td><td class="num">1</td><td class="num after">合并 1</td><td>大纲 / 正文 V1·V2 / 场景展开</td></tr>
+              <tr><td>3 角色灵魂</td><td>否</td><td class="num">0</td><td class="num">0</td><td>情绪 / 场景 / 正文</td></tr>
+              <tr><td>4 大纲摘要</td><td>是</td><td class="num">1</td><td class="num after">合并 1</td><td>情绪 / 正文 / 场景</td></tr>
+              <tr><td>5 情绪规划</td><td>是</td><td class="num">1</td><td class="num after">合并 1</td><td>场景 / 正文节奏</td></tr>
+              <tr><td>6 场景展开</td><td>是</td><td class="num">1</td><td class="num after">合并 1</td><td>正文 / 逐场景生成</td></tr>
+              <tr><td>7 正文生成</td><td>是</td><td class="num">1+续写</td><td class="num">1</td><td>质量 / 分析 / 结算</td></tr>
+              <tr><td>8 质量控制</td><td>是</td><td class="num">1</td><td class="num">1</td><td>定向修订 / 分析报告</td></tr>
+              <tr><td>9 分析报告</td><td>是</td><td class="num">1</td><td class="num">1</td><td>结算 / 快照 / 承诺 / 弧线</td></tr>
+              <tr><td>10 结算</td><td>否</td><td class="num">0</td><td class="num">0</td><td>实体 / 伏笔 / 时间线文件</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-cowrite" role="tabpanel">
+      <div class="section-head">
+        <div><h2>协同写作调用审计</h2><p>重点：本地 Ollama 单槽下，串行 3 次是最主要的等待来源。</p></div>
+        <span class="badge green">本地实测通过</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>单个动作的调用数</h3>
+          <p class="hint">“后”是本地模式默认值；云端仍可并行，也可关闭批量。</p>
+          <table>
+            <thead><tr><th>动作</th><th>前</th><th>后</th><th>机制</th></tr></thead>
+            <tbody>
+              <tr><td>一次建议</td><td class="before">3</td><td class="after">1</td><td>3 方向批量 JSON；失败回退 3 次</td></tr>
+              <tr><td>一次改写</td><td class="before">3</td><td class="after">1</td><td>3 方向批量 JSON；失败回退</td></tr>
+              <tr><td>幽灵联想</td><td class="before">3</td><td class="after">1</td><td>只取 1 个最强 hint；句末/段末触发</td></tr>
+              <tr><td>设定守卫</td><td class="before">1–2</td><td class="after">1–2</td><td>增长 300 字 / 冷却 5 分钟；手动不受限</td></tr>
+              <tr><td>编辑验证</td><td class="before">1–2</td><td class="after">1–2</td><td>可中止；OOC 复用协同模型</td></tr>
+              <tr><td>质量报告修复</td><td class="before">1（可能云端）</td><td class="after">1（本地）</td><td>走 coWrite 路由，禁止 default 泄漏</td></tr>
+            </tbody>
+          </table>
+          <div class="callout">守卫与验证仍是两次独立检查：OOC 看人物灵魂，实体检查看状态表，合并会牺牲可解释性。本轮只做节流与路由修正。</div>
+        </div>
+
+        <div class="card">
+          <h3>一章协同调用估算</h3>
+          <p class="hint">按 20 次建议 + 若干改写/守卫/验证，本地串行。</p>
+          <div class="bar-row"><div class="bar-label">v4.16 估算</div><div class="bar-track"><div class="bar-fill amber" style="width:100%"></div></div><div class="bar-value">115–170</div></div>
+          <div class="bar-row"><div class="bar-label">v4.17 估算</div><div class="bar-track"><div class="bar-fill green" style="width:40%"></div></div><div class="bar-value">45–70</div></div>
+          <div class="bar-row"><div class="bar-label">单次建议延迟</div><div class="bar-track"><div class="bar-fill violet" style="width:35%"></div></div><div class="bar-value">1 次往返</div></div>
+          <div class="callout green">本地信号量保证建议、幽灵、守卫不会同时抢一个 Ollama 槽；后到请求排队，而不是各自等到超时。</div>
+        </div>
+
+        <div class="card wide">
+          <h3>本轮协同链路改动</h3>
+          <div class="grid-2" style="margin-top:12px">
+            <div>
+              <h3 style="font-size:14px">调用组织</h3>
+              <div class="pill-list">
+                <span class="pill">3 候选批量</span>
+                <span class="pill">3 改写批量</span>
+                <span class="pill">幽灵单 hint</span>
+                <span class="pill">8 秒冷却</span>
+                <span class="pill">句末触发门槛</span>
+                <span class="pill">本地全局串行</span>
+                <span class="pill">num_ctx 真实探测</span>
+                <span class="pill">UI 修复走协同路由</span>
+                <span class="pill">验证/OOC 可中止</span>
+              </div>
+            </div>
+            <div>
+              <h3 style="font-size:14px">质量护栏</h3>
+              <div class="pill-list">
+                <span class="pill">严格 JSON schema</span>
+                <span class="pill">批量不足 2 条即回退</span>
+                <span class="pill">解析失败回退原路径</span>
+                <span class="pill">本地无云端回退</span>
+                <span class="pill">maxTokens 按操作分配</span>
+                <span class="pill">abort 不返回半成品</span>
+              </div>
+            </div>
+          </div>
+          <div class="callout blue">批量不是“少写几个候选”：prompt 仍要求动作 / 情绪 / 对话三个真正不同的方向，候选数量与长度要求不变，只把三次往返合成一次。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-evidence" role="tabpanel">
+      <div class="section-head">
+        <div><h2>验证与边界</h2><p>这一版哪些已经实测，哪些仍是已知边界。</p></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>自动化门禁</h3>
+          <p class="hint">完整测试在本地工作树执行。</p>
+          <table>
+            <tbody>
+              <tr><td>测试文件</td><td class="num after">354 passed</td></tr>
+              <tr><td>测试用例</td><td class="num after">4371 passed</td></tr>
+              <tr><td>新增协同批量测试</td><td class="num">5</td></tr>
+              <tr><td>新增分析复用测试</td><td class="num">2</td></tr>
+              <tr><td>编排器测试</td><td class="num">8</td></tr>
+              <tr><td>本地 Ollama 评估</td><td class="num after">2 / 2 PASS</td></tr>
+            </tbody>
+          </table>
+          <pre>npm run eval:cowrite-local
+endpoint=http://localhost:11434 model=deepseek-r1:7b
+suggest-3-candidates: PASS · 16287ms · candidates=3
+rewrite-3-candidates: PASS · 31581ms · candidates=3
+调用 2 次（批量前为 6 次）；失败 0/2</pre>
+        </div>
+
+        <div class="card">
+          <h3>推荐模式验收口径</h3>
+          <p class="hint">不是“跑完就算”，每一步都要有文件与结构校验。</p>
+          <table>
+            <tbody>
+              <tr><td>规划完整性</td><td>5 步缺 1 步即停在规划，不跳正文</td></tr>
+              <tr><td>截断</td><td><code>finishReason=length</code> → partial，不标记完成</td></tr>
+              <tr><td>正文保护</td><td>截断不覆盖已有完整稿，写 <code>_截断草稿.md</code></td></tr>
+              <tr><td>结算幂等</td><td><code>status: settled</code> 时需显式“重新结算”</td></tr>
+              <tr><td>分析去重</td><td>已有步骤 9 报告 → 0 次 AI 结构化提取</td></tr>
+              <tr><td>失败停留</td><td>停在失败步骤，可从该步续跑</td></tr>
+            </tbody>
+          </table>
+          <div class="callout amber"><strong>已知边界</strong>：批量候选在本地模型输出非法 JSON 时会回退为 3 次串行；此时耗时回到旧水平，但候选数量不受影响。守卫与验证未合并，仍可能各发 1 次。</div>
+        </div>
+
+        <div class="card wide">
+          <h3>为什么不做这些</h3>
+          <div class="grid-2" style="margin-top:10px">
+            <div>
+              <p><strong>不减少 / 隐藏 11 步。</strong>步骤是用户可检查、可编辑、可单独重生成的契约；一键编排只是驱动它们。</p>
+              <p><strong>不把质量控制和分折报告合成一次调用。</strong>两个 prompt 都很大，硬合并会挤掉正文与问题清单，属于用质量换次数。</p>
+            </div>
+            <div>
+              <p><strong>不改候选内容标准。</strong>只改调用组织方式：方向数、长度、禁止分析文本、插入即用，全部保留。</p>
+              <p><strong>不自动加定向修订。</strong>修订是显式按钮；本轮只让分析报告消费质量问题，避免重复检测。</p>
+            </div>
+          </div>
+          <div class="callout green">下一步若还要降调用，优先级应是“守卫与验证按正文 hash 去重”和“相同上下文 in-flight 合并”，而不是继续合并步骤。</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>小说工坊 AI · v4.17.0 效率审计</span>
+    <span>静态文档 · 无外部依赖 · 数据来自本地测试与 Ollama 实测</span>
+  </footer>
+</div>
+
+<script>
+  const steps = [
+    {
+      key: 'context', name: '上下文加载', ai: false, combined: false,
+      sub: '项目文件 / 人物 / 上一章快照 / 承诺 / 弧线',
+      input: 'Vault 项目目录、上一章状态快照、未回收伏笔、承诺账本、角色弧线',
+      output: 'GatheredContext + template vars',
+      downstream: '全部后续步骤',
+      delta: '上一章 stateSnapshot 作为硬约束进入 V1/V2；快照失效会触发上下文重建。'
+    },
+    {
+      key: 'infoPlan', name: '信息规划', ai: true, combined: true,
+      sub: '核心冲突 / 信息释放 / 伏笔 / 承诺 / 弧线',
+      input: '分卷规划、世界观、设定库、角色、未兑现承诺、角色弧线',
+      output: '本章冲突、信息释放节奏、伏笔操作、承诺推进、弧线阶段',
+      downstream: '情节蒸馏、大纲、正文',
+      delta: '推荐模式与其余 4 个规划步骤合并为 1 次调用；模板新增承诺/弧线硬输入。'
+    },
+    {
+      key: 'plotDistill', name: '情节蒸馏', ai: true, combined: true,
+      sub: '把本章压缩成可执行情节节点',
+      input: '信息规划、分卷规划、实体上下文',
+      output: '情节节点清单（必须发生 / 禁止发生）',
+      downstream: '大纲、正文 V1、正文 V2、场景展开',
+      delta: '此前 sceneExpand 不消费情节节点；现在 user prompt 增加 ${distilledContent}，缺失时显式标记而不是静默留空。'
+    },
+    {
+      key: 'characterSoul', name: '角色灵魂', ai: false, combined: false,
+      sub: '欲望 / 恐惧 / 创伤 / 底线 / 暴走红线',
+      input: '人物卡、已有灵魂文件、主角详情',
+      output: 'characterSoul 步骤结果与灵魂上下文',
+      downstream: '情绪规划、场景展开、正文',
+      delta: '手工编辑后的 characterSoul 现在可回填 V2 主角详情，不再只读 context 旧值。'
+    },
+    {
+      key: 'outline', name: '大纲摘要', ai: true, combined: true,
+      sub: '章内场景顺序与事件骨架',
+      input: '信息规划、情节节点、分卷规划',
+      output: '章节大纲 / 场景骨架',
+      downstream: '情绪规划、正文、场景展开',
+      delta: '大纲 user prompt 增加 ${infoPlan}，减少“规划写了但大纲看不到”的信息折损。'
+    },
+    {
+      key: 'emotionPlan', name: '情绪规划', ai: true, combined: true,
+      sub: '情绪曲线 / 节奏 / 场景情绪目标',
+      input: '大纲、角色灵魂、上一章情绪落点',
+      output: '逐场景情绪曲线与节奏建议',
+      downstream: '场景展开、正文节奏',
+      delta: '补传任务 maxTokens 与 abort signal；不再固定小预算导致情绪规划截断。'
+    },
+    {
+      key: 'sceneExpand', name: '场景展开', ai: true, combined: true,
+      sub: 'POV / 入离场状态 / 转折 / 感官钩子 / 潜台词',
+      input: '大纲、情节节点、信息规划、情绪规划、上一章结尾、时间线',
+      output: '完整场景卡（17 字段）',
+      downstream: '正文、逐场景正文生成',
+      delta: '新增 ${distilledContent} 消费；场景卡字段进入逐场景正文任务卡；缺失字段告警不阻断。'
+    },
+    {
+      key: 'bodyGeneration', name: '正文生成', ai: true, combined: false,
+      sub: 'V1 / V2 提示词 + 工艺约束 + 样章 + 状态快照',
+      input: '全部规划、场景卡、风格样章、强弱对照、上一章状态快照、负面清单',
+      output: '章节正文（截断时写 _截断草稿.md）',
+      downstream: '质量控制、分析报告、结算',
+      delta: '8 个 AI 步骤中唯一保留流式；任务级 maxOutput 与 thinking 分离；截断绝不标记完成。'
+    },
+    {
+      key: 'qualityControl', name: '质量控制', ai: true, combined: false,
+      sub: '❌ / ⚠️ 问题清单与维度评分',
+      input: '正文、场景卡、工艺约束、角色弧线',
+      output: '结构化质量问题（对话 / 节奏 / 描写 / 钩子 / 连续性 / 文风）',
+      downstream: '定向修订、分析报告',
+      delta: '此前是死胡同；现在 template vars 提取 ❌/⚠️ 行注入分析报告，定向修订仍由用户显式触发。'
+    },
+    {
+      key: 'analysisReport', name: '分析报告', ai: true, combined: false,
+      sub: 'UPDATE / NEW / RELATION / GROWTH / EMOTION / PROMISE / ARC',
+      input: '正文、质量控制问题、实体上下文、承诺账本、弧线表',
+      output: '结算指令 + 结构化分析；AnalysisReportEngine 直接解析',
+      downstream: '结算、章节状态快照、承诺账本、角色弧线',
+      delta: '已有报告时 analyzeFromReport 走 0 次 AI；只有缺报告才回到 AI 抽取，消除重复的 2 次调用。'
+    },
+    {
+      key: 'settlement', name: '章节结算', ai: false, combined: false,
+      sub: '写实体 / 伏笔 / 时间线 / 承诺 / 弧线 / 快照',
+      input: '分析报告指令、正文、现有实体文件',
+      output: '更新后的项目文件与第 N 章状态快照',
+      downstream: '下一章上下文',
+      delta: 'status: settled 时默认拒绝重复追加；只有“重新结算”传 force。'
+    }
+  ];
+
+  const pipelineEl = document.getElementById('pipeline');
+  const detailEl = document.getElementById('detail');
+  let selectedKey = 'plotDistill';
+
+  function callLabel(step) {
+    if (!step.ai) return '0';
+    if (step.combined) return '<span class="raw">1</span>';
+    return '1';
+  }
+
+  function renderPipeline() {
+    pipelineEl.innerHTML = '';
+    steps.forEach((step, index) => {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'pipe-row' + (step.ai ? ' ai' : '') + (step.combined ? ' combined' : '') + (step.key === selectedKey ? ' selected' : '');
+      row.dataset.key = step.key;
+      row.setAttribute('aria-label', `${index} ${step.name}`);
+      row.innerHTML = `
+        <span class="pipe-num">${String(index).padStart(2, '0')}</span>
+        <span class="pipe-main">
+          <span class="pipe-title">${step.name}
+            <span class="tag ${step.ai ? 'ai' : 'noai'}">${step.ai ? 'AI' : '无 AI'}</span>
+            ${step.delta.includes('此前') || step.delta.includes('死胡同') ? '<span class="tag fix">已补齐</span>' : ''}
+          </span>
+          <span class="pipe-sub">${step.sub}</span>
+        </span>
+        <span class="pipe-call">${callLabel(step)}</span>
+      `;
+      row.addEventListener('click', () => {
+        selectedKey = step.key;
+        renderPipeline();
+        renderDetail();
+      });
+      pipelineEl.appendChild(row);
+      if (step.key === 'sceneExpand') {
+        const bracket = document.createElement('div');
+        bracket.className = 'group-bracket';
+        bracket.textContent = '↑ 以上 5 个规划步骤在推荐模式下合并为 1 次 AI 调用，结果仍分别写入 5 个步骤文件';
+        pipelineEl.appendChild(bracket);
+      }
+    });
+  }
+
+  function renderDetail() {
+    const step = steps.find(item => item.key === selectedKey) || steps[0];
+    const index = steps.indexOf(step);
+    detailEl.innerHTML = `
+      <div class="kicker">STEP ${String(index).padStart(2, '0')}</div>
+      <h3>${step.name}</h3>
+      <div class="badges">
+        <span class="tag ${step.ai ? 'ai' : 'noai'}">${step.ai ? '调用 AI' : '不调用 AI'}</span>
+        ${step.combined ? '<span class="tag ai">推荐模式可合并</span>' : ''}
+      </div>
+      <dl>
+        <div><dt>输入</dt><dd>${step.input}</dd></div>
+        <div><dt>输出</dt><dd>${step.output}</dd></div>
+        <div><dt>下游消费者</dt><dd>${step.downstream}</dd></div>
+      </dl>
+      <div class="delta"><strong>本轮改动：</strong>${step.delta}</div>
+    `;
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(item => item.setAttribute('aria-selected', String(item === tab)));
+      document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tab.dataset.panel));
+    });
+  });
+
+  document.querySelectorAll('.mode-switch button').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.mode-switch button').forEach(item => item.classList.toggle('active', item === button));
+      document.body.classList.toggle('mode-recommended', button.dataset.mode === 'recommended');
+    });
+  });
+
+  renderPipeline();
+  renderDetail();
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@
  */
 
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
-import type { SettlementEngine } from './settlement-engine';
+import type { SettlementEngine, SettlementResult } from './settlement-engine';
 import { pjNarrativeOverview } from '../shared/paths';
 import { NOTICE_ERROR } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
@@ -41,8 +41,9 @@ export async function executeSettlement(
     vars: Record<string, string>,
     renderInContainer: (container: HTMLElement) => Promise<void>,
     tabContent: HTMLElement,
-): Promise<void> {
-    if (!chapDir) return;
+    options: { force?: boolean } = {},
+): Promise<SettlementResult | null> {
+    if (!chapDir) return null;
 
     // v1.3.0: 从内存读取分析报告，如果为空则尝试从磁盘文件恢复（P0修复）
     let reportContent = stepResults['analysisReport'] || '';
@@ -67,13 +68,23 @@ export async function executeSettlement(
     if (!reportContent.match(/(UPDATE_|NEW_|RELATION:|GROWTH:|EMOTION:)/)) {
         host.hideProgress();
         host.showError('⚠️ 分析报告为空或不含有效更新指令。请先执行「📊 分析报告」步骤，确保 AI 提取了元素变化后再执行结算。');
-        return; // 不标记 settlement 完成，允许用户补跑分析报告后重新触发
+        return null; // 不标记 settlement 完成，允许用户补跑分析报告后重新触发
     }
 
     host.showProgress('⏳ 执行章节结算...');
 
     const bodyText = stepResults['bodyGeneration'] || '';
     const chapName = chapterName;
+
+    // 结算写入是追加语义（伏笔/关系/时间线），重复结算会产生重复行。
+    // 自动链路默认拦截；用户点“重新结算”时显式 force。
+    const alreadySettled = /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m
+        .test(bodyText.slice(0, 4000));
+    if (alreadySettled && !options.force) {
+        host.hideProgress();
+        host.showNotice('ℹ️ 本章已结算；如需重新写入，请使用“重新结算”', 6000);
+        return null;
+    }
 
     // 解析强制揭示
     const forcedRevealHint = vars?.['forcedRevealHint'] || '';
@@ -93,11 +104,13 @@ export async function executeSettlement(
         }
     }
 
+    let settlementResult: SettlementResult | null = null;
     try {
         const result = await host.settlementEngine.settle(
             project, chapDir, chapName, reportContent, bodyText,
             { forceReveal: forceReveal.length > 0 ? forceReveal : undefined }
         );
+        settlementResult = result;
 
         stepCompleted.add('settlement');
         host.hideProgress();
@@ -129,4 +142,5 @@ export async function executeSettlement(
     }
 
     await renderInContainer(tabContent);
+    return settlementResult;
 }

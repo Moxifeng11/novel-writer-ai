@@ -2,6 +2,8 @@ import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine } from '../engine/ai-engine';
 import { createLogger } from '../shared/logger';
+import { CreateProjectModal } from './create-project-modal';
+import { pjControlDir } from '../shared/paths';
 
 
 const log = createLogger('IdeationModal');
@@ -18,6 +20,7 @@ interface IdeationIdea {
         satisfactionDensity: number;
     };
     elevatorPitch: string;
+    titleCandidates: string[];
     genreMatch: { genre: string; match: number }[];
     differentiation: string;
     coreCompetitive: string;
@@ -46,6 +49,8 @@ export class IdeationModal extends Modal {
     private savedIdeas: SavedIdea[] = [];
     private showHistory: boolean = false;
     private isGenerating: boolean = false;
+    private keywords: string = '';
+    private extraRequirements: string = '';
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -139,6 +144,8 @@ export class IdeationModal extends Modal {
             placeholder: '输入核心题材关键词，如：重生、修仙、系统、末世...',
             cls: 'nw-input nw-ideation-input'
         });
+        keywordInput.value = this.keywords;
+        keywordInput.oninput = () => { this.keywords = keywordInput.value; };
 
         section.createEl('h3', { text: '🏷️ 类型标签（可多选）', cls: 'nw-ideation-section-title' });
         const tagContainer = section.createDiv({ cls: 'nw-ideation-tags' });
@@ -162,10 +169,12 @@ export class IdeationModal extends Modal {
             cls: 'nw-textarea nw-ideation-textarea',
             attr: { rows: '3', placeholder: '补充创意方向、风格偏好、避免元素等...' }
         });
+        extraInput.value = this.extraRequirements;
+        extraInput.oninput = () => { this.extraRequirements = extraInput.value; };
 
         const btnContainer = container.createDiv({ cls: 'nw-ideation-btn-row' });
         const generateBtn = btnContainer.createEl('button', {
-            text: '🚀 生成20个创意',
+            text: '🚀 生成10个创意',
             cls: 'nw-btn nw-btn-primary'
         });
         generateBtn.onclick = async () => {
@@ -191,8 +200,9 @@ export class IdeationModal extends Modal {
         });
         refreshBtn.onclick = async () => {
             await this.generateIdeas(
-                this.ideas.length > 0 ? '' : '',
-                Array.from(this.selectedGenres)
+                this.keywords,
+                Array.from(this.selectedGenres),
+                this.extraRequirements,
             );
         };
 
@@ -270,6 +280,11 @@ export class IdeationModal extends Modal {
         section.createEl('h3', { text: '🎯 核心概念', cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.coreConcept, cls: 'nw-ideation-detail-text' });
 
+        if ((idea.titleCandidates || []).length > 0) {
+            section.createEl('h3', { text: '📚 建议项目名', cls: 'nw-ideation-section-title' });
+            section.createEl('p', { text: (idea.titleCandidates || []).join(' / '), cls: 'nw-ideation-detail-text' });
+        }
+
         section.createEl('h3', { text: '⚡ 一句话梗概 (Elevator Pitch)', cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.elevatorPitch, cls: 'nw-ideation-elevator-pitch' });
 
@@ -325,7 +340,7 @@ export class IdeationModal extends Modal {
         section.createEl('p', { text: idea.coreCompetitive, cls: 'nw-ideation-detail-text' });
 
         const exportBtn = section.createEl('button', {
-            text: '📝 导出为项目设定',
+            text: '📝 保存为项目资料',
             cls: 'nw-btn nw-btn-primary nw-ideation-export-btn'
         });
         exportBtn.onclick = () => this.exportAsProject(idea);
@@ -470,12 +485,14 @@ export class IdeationModal extends Modal {
     private async generateIdeas(keywords: string, genres: string[], extra?: string): Promise<void> {
         if (this.isGenerating) return;
         this.isGenerating = true;
+        this.keywords = keywords;
+        this.extraRequirements = extra || '';
 
         const notice = new Notice('⏳ 正在生成创意...', 0);
 
         try {
             const systemPrompt = `你是专业的网文创意策划师，擅长生成具有市场潜力的小说创意。
-请根据用户提供的题材关键词和类型标签，生成20个不同方向的小说创意。
+请根据用户提供的题材关键词和类型标签，生成10个不同方向的小说创意。
 
 每个创意必须包含以下内容，严格使用JSON数组格式输出：
 - coreConcept: 核心概念（一句话）
@@ -488,12 +505,13 @@ export class IdeationModal extends Modal {
   - writability: 可写性（0-100）
   - satisfactionDensity: 爽点密度（0-100）
 - elevatorPitch: 一句话梗概（elevator pitch，30字以内）
+- titleCandidates: 2-3 个可作项目名的书名候选（每个 2-10 个汉字，不含标点）
 - genreMatch: 题材匹配度数组，每项包含 genre 和 match(0-100)
 - differentiation: 与同类热门作品的差异化分析
 - coreCompetitive: 核心竞争力
 
 要求：
-1. 20个创意方向要有明显差异，覆盖不同切入点
+1. 10个创意方向要有明显差异，覆盖不同切入点
 2. 结合当前网文市场热点，确保创意有商业价值
 3. 冲突点要明确，有足够的戏剧张力
 4. 评分要客观合理，不能全部高分
@@ -503,7 +521,7 @@ export class IdeationModal extends Modal {
 类型标签：${genres.length > 0 ? genres.join('、') : '不限'}
 额外要求：${extra || '无'}
 
-请生成20个不同方向的创意。`;
+请生成10个不同方向的创意。`;
 
             const result = await this.aiEngine.callAI(systemPrompt, userPrompt, undefined, 0.8, 8192);
             notice.hide();
@@ -555,6 +573,9 @@ export class IdeationModal extends Modal {
                     satisfactionDensity: item.scores?.satisfactionDensity || 70
                 },
                 elevatorPitch: item.elevatorPitch || '',
+                titleCandidates: Array.isArray(item.titleCandidates)
+                    ? item.titleCandidates.map((value: unknown) => String(value).trim()).filter(Boolean).slice(0, 3)
+                    : [],
                 genreMatch: Array.isArray(item.genreMatch) ? item.genreMatch : [],
                 differentiation: item.differentiation || '',
                 coreCompetitive: item.coreCompetitive || ''
@@ -586,7 +607,7 @@ export class IdeationModal extends Modal {
         const saved: SavedIdea = {
             ...idea,
             savedAt: Date.now(),
-            keywords: '',
+            keywords: this.keywords,
             selectedGenres: Array.from(this.selectedGenres)
         };
         this.savedIdeas.unshift(saved);
@@ -621,13 +642,85 @@ export class IdeationModal extends Modal {
     }
 
     private async exportAsProject(idea: IdeationIdea): Promise<void> {
+        const active = this.plugin.getActiveProject();
+        if (active) {
+            this.showExportChoice(idea, active);
+            return;
+        }
+        this.openCreateProject(idea);
+    }
+
+    private showExportChoice(idea: IdeationIdea, activeProject: string): void {
+        const modal = new Modal(this.app);
+        modal.titleEl.setText('📁 保存脑洞');
+        const content = modal.contentEl.createDiv({ cls: 'nw-form-stack' });
+        content.createEl('p', {
+            text: `当前项目：${activeProject}。可以保存到当前项目，或基于这个脑洞创建新项目。`,
+            cls: 'setting-item-description',
+        });
+        const saveCurrent = content.createEl('button', {
+            text: `保存到当前项目「${activeProject}」`,
+            cls: 'nw-btn nw-btn-primary',
+        });
+        saveCurrent.onclick = async () => {
+            modal.close();
+            await this.saveIdeaToProject(activeProject, idea);
+        };
+        const createNew = content.createEl('button', {
+            text: '基于脑洞创建新项目',
+            cls: 'nw-btn nw-btn-secondary',
+        });
+        createNew.onclick = () => {
+            modal.close();
+            this.openCreateProject(idea);
+        };
+        const cancel = content.createEl('button', { text: '取消', cls: 'nw-btn' });
+        cancel.onclick = () => modal.close();
+        modal.open();
+    }
+
+    private openCreateProject(idea: IdeationIdea): void {
+        const name = (idea.titleCandidates || [])[0] || idea.coreConcept;
+        const genre = idea.suitableGenres[0] || Array.from(this.selectedGenres)[0] || '玄幻';
+        new CreateProjectModal(this.app, this.plugin, {
+            name,
+            genre,
+            description: idea.elevatorPitch || idea.conflictPoint,
+            projectType: 'original',
+                        onCreated: async (projectName) => {
+                await this.saveIdeaToProject(projectName, idea);
+            },
+        }).open();
+    }
+
+    private async saveIdeaToProject(project: string, idea: IdeationIdea): Promise<void> {
         try {
-            const projectName = idea.coreConcept.slice(0, 10).replace(/[\\/:*?"<>|]/g, '');
-            const folderPath = `${projectName}/01-世界架构`;
+            const dir = pjControlDir(project);
+            await this.ensureFolder(dir);
+            const filePath = `${dir}/脑洞构思.md`;
+            const content = this.buildIdeaContent(idea);
+            const existing = this.app.vault.getAbstractFileByPath(filePath);
+            if (existing instanceof TFile) {
+                const old = await this.app.vault.read(existing);
+                await this.app.vault.modify(existing, `${old.trimEnd()}\n\n---\n\n${content}`);
+            } else {
+                await this.app.vault.create(filePath, content);
+            }
+            new Notice(`✅ 已保存到「${project}/04-项目总控/脑洞构思.md」`, 5000);
+            const file = this.app.vault.getAbstractFileByPath(filePath);
+            if (file instanceof TFile) {
+                const leaf = this.app.workspace.getLeaf('tab');
+                await leaf.openFile(file);
+            }
+            this.close();
+        } catch (e) {
+            log.error('[IdeationModal] 保存脑洞失败:', e);
+            new Notice('❌ 保存失败，请检查权限', 5000);
+        }
+    }
 
-            await this.ensureFolder(folderPath);
-
-            const content = `---
+    private buildIdeaContent(idea: IdeationIdea): string {
+        return `---
 tags: [脑洞创意, 项目设定]
 创意来源: 脑洞构思工坊
 生成时间: ${new Date().toISOString()}
@@ -638,6 +731,10 @@ tags: [脑洞创意, 项目设定]
 ## 🎯 一句话梗概
 
 ${idea.elevatorPitch}
+
+## 📚 建议项目名
+
+${(idea.titleCandidates || []).length > 0 ? (idea.titleCandidates || []).join(' / ') : '（无）'}
 
 ## ⚔️ 核心冲突
 
@@ -673,26 +770,6 @@ ${idea.coreCompetitive}
 
 ${idea.suitableGenres.join('、')}
 `;
-
-            const filePath = `${folderPath}/创意核心概念.md`;
-            const existing = this.app.vault.getAbstractFileByPath(filePath);
-            if (existing instanceof TFile) {
-                await this.app.vault.modify(existing, content);
-            } else {
-                await this.app.vault.create(filePath, content);
-            }
-
-            new Notice(`✅ 已导出到「${projectName}」项目`, 3000);
-
-            const file = this.app.vault.getAbstractFileByPath(filePath);
-            if (file instanceof TFile) {
-                const leaf = this.app.workspace.getLeaf('tab');
-                await leaf.openFile(file);
-            }
-        } catch (e) {
-            log.error('[IdeationModal] 导出失败:', e);
-            new Notice('❌ 导出失败，请检查权限', 5000);
-        }
     }
 
     private async ensureFolder(path: string): Promise<void> {

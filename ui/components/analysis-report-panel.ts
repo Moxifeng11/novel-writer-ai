@@ -29,7 +29,8 @@ export class AnalysisReportPanel {
         chapterText: string,
         chapterName: string,
         chapterNum: number,
-        volume: string
+        volume: string,
+        existingReport?: string,
     ): Promise<FullAnalysisReport> {
         this.container = container;
 
@@ -39,7 +40,7 @@ export class AnalysisReportPanel {
         try {
             // 执行分析
             const report = await this.engine.executeFullAnalysis(
-                project, chapterText, chapterName, chapterNum, volume
+                project, chapterText, chapterName, chapterNum, volume, existingReport
             );
             this.currentReport = report;
 

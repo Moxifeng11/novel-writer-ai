@@ -41,6 +41,12 @@ export interface FanficRules {
      * 与上者分开注入：一个是原作事件顺序，一个是本书自己的进度，混排会让模型对不上号。
      */
     fanficTimeline?: string[];
+    /** 人工审核状态；旧文件没有该字段时为 legacy */
+    reviewStatus?: FanficReviewStatus;
+    reviewedBy?: string;
+    reviewedAt?: string;
+    /** 审核通过时的来源集合哈希；文件被修改后应重新审核 */
+    sourceHash?: string;
     /**
      * 加载失败原因（成功时不存在）。
      * 同人项目在「路径未绑定 / 文件不存在 / 读取异常」时都会退化为空规则，
@@ -57,7 +63,9 @@ export interface FanficCharacter {
     change: string;
 }
 
-export type FanficRulesLoadError = 'missing-path' | 'missing-file' | 'read-failed';
+export type FanficReviewStatus = 'approved' | 'pending' | 'rejected' | 'legacy';
+
+export type FanficRulesLoadError = 'missing-path' | 'missing-file' | 'read-failed' | 'unreviewed';
 
 const EMPTY_RULES: FanficRules = {
     isFanfic: false,
@@ -70,6 +78,7 @@ const EMPTY_RULES: FanficRules = {
     adaptScope: '',
     redlines: '',
     characters: [],
+    reviewStatus: 'legacy',
 };
 
 /** 注入 prompt 时单项上限，避免用户粘贴长文挤占本地小窗口预算 */
@@ -256,6 +265,30 @@ export function parseFanficTimelineRows(content: string, sectionTitle: string): 
     return result;
 }
 
+/** 解析人工审核状态；没有该字段的旧文件按 legacy 兼容。 */
+export function parseFanficReviewStatus(content: string): FanficReviewStatus {
+    const raw = content.match(/^审核状态:\s*(.+)$/m)?.[1]?.trim().toLowerCase() || '';
+    if (!raw) return 'legacy';
+    if (/^(approved|通过|已通过|审核通过)$/.test(raw)) return 'approved';
+    if (/^(pending|待审核|审核中|draft|草稿)$/.test(raw)) return 'pending';
+    if (/^(rejected|拒绝|已拒绝|退回)$/.test(raw)) return 'rejected';
+    return 'legacy';
+}
+
+export function parseFanficReviewMeta(content: string): {
+    reviewStatus: FanficReviewStatus;
+    reviewedBy?: string;
+    reviewedAt?: string;
+    sourceHash?: string;
+} {
+    return {
+        reviewStatus: parseFanficReviewStatus(content),
+        reviewedBy: content.match(/^审核人:\s*(.+)$/m)?.[1]?.trim() || undefined,
+        reviewedAt: content.match(/^审核时间:\s*(.+)$/m)?.[1]?.trim() || undefined,
+        sourceHash: content.match(/^来源哈希:\s*(.+)$/m)?.[1]?.trim() || undefined,
+    };
+}
+
 /** 从同人设定正文中解析「作品名称 + 原作核心设定 + 三条创作规则」 */
 export function parseFanficRules(content: string, path: string): FanficRules {
     const workName = content.match(/^作品名称:\s*(.+)$/m)?.[1]?.trim()
@@ -282,6 +315,7 @@ export function parseFanficRules(content: string, path: string): FanficRules {
         factions: parseFanficFactions(content),
         originalTimeline: parseFanficTimeline(content, '原作剧情时间线'),
         fanficTimeline: parseFanficTimeline(content, '故事背景时间线'),
+        ...parseFanficReviewMeta(content),
     };
 }
 
@@ -306,7 +340,11 @@ export async function readFanficRules(app: App, project: string): Promise<Fanfic
 
     try {
         const content = await app.vault.read(file);
-        return parseFanficRules(content, fanficPath);
+        const rules = parseFanficRules(content, fanficPath);
+        if (rules.reviewStatus === 'pending' || rules.reviewStatus === 'rejected') {
+            return { ...rules, loadError: 'unreviewed' };
+        }
+        return rules;
     } catch {
         return { ...EMPTY_RULES, isFanfic: true, path: fanficPath, loadError: 'read-failed' };
     }
@@ -448,6 +486,8 @@ function selectEntriesForInjection(
  */
 export function formatFanficRulesForPrompt(rules: FanficRules, options: FanficPromptOptions = {}): string {
     if (!rules.isFanfic) return '';
+    // 未通过人工审核的设定不得进入任何写作提示词
+    if (rules.reviewStatus === 'pending' || rules.reviewStatus === 'rejected') return '';
     const clip = (value: string): string =>
         value.length > FANFIC_RULE_ITEM_MAX_CHARS
             ? `${value.slice(0, FANFIC_RULE_ITEM_MAX_CHARS)}…`
@@ -561,6 +601,15 @@ export function mergeFanficRequirement(fanficBlock: string, extra?: string): str
     return base ? `${fanficBlock}\n\n${base}` : fanficBlock;
 }
 
+/** 旧文件没有审核记录时的提醒（用于管理面板，不用于每次写作注入）。 */
+export function formatFanficReviewWarning(rules: FanficRules): string | null {
+    if (!rules.isFanfic) return null;
+    if (rules.reviewStatus === 'legacy' && rules.path) {
+        return 'ℹ️ 该同人设定没有人工审核记录（旧文件）。建议在同人设定库中重新审核，确认只参考了原著/官方资料。';
+    }
+    return null;
+}
+
 /**
  * 同人设定加载失败或内容为空时给用户的提示文案；正常返回 null。
  * 空规则会让协同在「无原作约束」下继续写作，必须让用户看见，而不是只写日志。
@@ -584,6 +633,9 @@ export function formatFanficRulesLoadWarning(rules: FanficRules): string | null 
         );
         if (hasContent) return null;
         return `⚠️ 同人设定里没有可用内容：${target}。协同写作不会带原作约束，请补全核心设定或创作规则（「待补充」占位不算填写）。`;
+    }
+    if (rules.loadError === 'unreviewed') {
+        return `⚠️ 同人设定尚未通过人工审核：${target}。协同写作不会使用该设定；请先在同人设定库中完成人工审核。`;
     }
     if (rules.loadError === 'missing-path') {
         return '⚠️ 同人项目尚未绑定设定文件：协同写作不会带原作约束。请在向导「同人设定」步骤填写，或运行命令「添加同人设定」。';

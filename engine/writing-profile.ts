@@ -3,6 +3,8 @@ import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { createLogger } from '../shared/logger';
 
 
+import type { CreationMode } from '../shared/creation-mode';
+
 const log = createLogger('WritingProfile');
 export interface GenreConfig {
     primary: string;
@@ -51,6 +53,12 @@ export interface ConsistencyConfig {
 export interface WritingProfile {
     projectName: string;
     projectType: 'original' | 'fanfic';
+    /** v4.18: 创作模式；旧配置缺失时按 long 兼容 */
+    creationMode?: CreationMode;
+    shortCategory?: string;
+    scriptGenre?: string;
+    targetWords?: number;
+    targetUnits?: number;
     createdAt: string;
     updatedAt: string;
     genre: GenreConfig;
@@ -337,6 +345,11 @@ export class WritingProfileManager {
         return {
             projectName: typeof data.projectName === 'string' ? data.projectName : empty.projectName,
             projectType: data.projectType === 'fanfic' ? 'fanfic' : 'original',
+            creationMode: data.creationMode === 'short' || data.creationMode === 'script' ? data.creationMode : 'long',
+            shortCategory: typeof data.shortCategory === 'string' ? data.shortCategory : '',
+            scriptGenre: typeof data.scriptGenre === 'string' ? data.scriptGenre : '',
+            targetWords: typeof data.targetWords === 'number' && data.targetWords > 0 ? data.targetWords : undefined,
+            targetUnits: typeof data.targetUnits === 'number' && data.targetUnits > 0 ? data.targetUnits : undefined,
             createdAt: typeof data.createdAt === 'string' ? data.createdAt : empty.createdAt,
             updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : empty.updatedAt,
             genre: this.normalizeGenre(data.genre, empty.genre),

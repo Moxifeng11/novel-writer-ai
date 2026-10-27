@@ -38,6 +38,9 @@ function makeRunner() {
         showNotice: vi.fn(),
         hideProgress: vi.fn(),
         showProgress: vi.fn(),
+        onExecutionEvent: vi.fn(),
+        onStepFailure: vi.fn(),
+        onDiagnostic: vi.fn(),
     };
     const engines: Record<string, unknown> = {
         [ENGINE_NAMES.WRITING_PROFILE_MANAGER]: {
@@ -120,6 +123,13 @@ describe('executeCurrentStep — preValidation 失败', () => {
         expect(ctx.stepCompleted.has('analysisReport')).toBe(false);
         expect(ctx.setIsLoading).toHaveBeenLastCalledWith(false);
         expect((tabContent.button as FakeButton).disabled).toBe(false);
+
+        const failure = callbacks.onStepFailure.mock.calls.at(-1)?.[0];
+        expect(failure).toMatchObject({ stepKey: 'analysisReport', kind: 'validation' });
+        expect(failure.suggestion).toContain('重试本步');
+        expect(callbacks.onExecutionEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'step-start', stepKey: 'analysisReport' })
+        );
     });
 });
 
@@ -142,13 +152,20 @@ describe('executeCurrentStep — postValidation 失败', () => {
             '太短',
             '书甲/03-大纲与章节/正文/第1卷',
             '第2章',
-            '第1卷'
+            '第1卷',
+            expect.objectContaining({ model: 'pro-model', finishReason: 'stop', truncated: false }),
         );
         // 保存成功 ≠ 完成：结构校验未达标时不得标完成，否则导航会显示 ✅
         expect(ctx.stepCompleted.has('bodyGeneration')).toBe(false);
         expect(callbacks.showNotice).toHaveBeenCalledWith(
             expect.stringContaining('已保存但内容不完整'),
             expect.anything()
+        );
+        const failure = callbacks.onStepFailure.mock.calls.at(-1)?.[0];
+        expect(failure).toMatchObject({ stepKey: 'bodyGeneration', kind: 'incomplete' });
+        expect(failure.missing.length).toBeGreaterThan(0);
+        expect(callbacks.onDiagnostic).toHaveBeenCalledWith(
+            expect.objectContaining({ scope: 'step', level: 'debug' })
         );
     });
 });
@@ -199,7 +216,8 @@ describe('executeCurrentStep — 截断提示', () => {
             '被截断的大纲',
             '书甲/03-大纲与章节/正文/第1卷',
             '第2章',
-            '第1卷'
+            '第1卷',
+            expect.objectContaining({ model: 'flash-model', finishReason: 'length', truncated: true }),
         );
         expect(ctx.stepCompleted.has('outline')).toBe(false);
     });

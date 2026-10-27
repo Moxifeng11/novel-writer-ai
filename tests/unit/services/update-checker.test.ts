@@ -146,3 +146,109 @@ describe('UpdateChecker — 自定义源', () => {
         expect(result.latestVersion).toBe('4.12.0');
     });
 });
+
+describe('UpdateChecker — 缓存版本对齐', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('升级后旧缓存 currentVersion 会被当前版本纠正', () => {
+        const cache = makeCache();
+        cache.setUpdateLastCheck(new Date().toISOString());
+        cache.setUpdateLastResult({
+            hasUpdate: false,
+            currentVersion: '4.12.4',
+            latestVersion: '4.14.0',
+        });
+        const checker = new UpdateChecker('4.18.0', cache);
+
+        const result = checker.getLastCheckResult();
+
+        expect(result?.currentVersion).toBe('4.18.0');
+        expect(result?.hasUpdate).toBe(false);
+    });
+
+    it('旧缓存只有错误、没有 latestVersion 时触发新检查', async () => {
+        const cache = makeCache();
+        cache.setUpdateLastCheck(new Date().toISOString());
+        cache.setUpdateLastResult({
+            hasUpdate: false,
+            currentVersion: '4.12.4',
+            error: 'old 404',
+            errorKind: 'http',
+        });
+        const fetchSpy = vi.fn(async () => jsonResponse({
+            tag_name: 'v4.18.0',
+            published_at: '2026-10-26T00:00:00Z',
+            body: '',
+            html_url: 'https://github.com/Moxifeng11/novel-writer-ai/releases/tag/v4.18.0',
+        }));
+        vi.stubGlobal('fetch', fetchSpy);
+        const checker = new UpdateChecker('4.18.0', cache);
+
+        expect(checker.getLastCheckResult()).toBeNull();
+        expect((cache.getUpdateLastResult() as { currentVersion: string }).currentVersion).toBe('4.18.0');
+        const result = await checker.checkForUpdates(false);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(result.currentVersion).toBe('4.18.0');
+        expect(result.error).toBeUndefined();
+    });
+});
+
+describe('UpdateChecker — 清空旧仓库缓存', () => {
+    it('clearCache 后旧结果消失且立即可重新检查', () => {
+        const cache = makeCache();
+        cache.setUpdateLastCheck('not-a-date');
+        cache.setUpdateLastResult({
+            hasUpdate: false,
+            currentVersion: '4.18.0',
+            error: 'old repo 404',
+            errorKind: 'http',
+        });
+        const checker = new UpdateChecker('4.18.0', cache, { enabled: true });
+
+        expect(checker.getLastCheckTime()).toBeNull();
+        checker.clearCache();
+        expect(checker.getLastCheckResult()).toBeNull();
+        expect(checker.shouldCheck()).toBe(true);
+    });
+});
+
+describe('UpdateChecker — GitHub 仓库与 Token', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('私有仓库 Token 会写入 Authorization 头', async () => {
+        const fetchSpy = vi.fn(async (_url: string, init?: RequestInit) => jsonResponse({
+            tag_name: 'v4.18.0',
+            published_at: '2026-10-26T00:00:00Z',
+            body: '',
+            html_url: 'https://github.com/Moxifeng11/novel-writer-ai/releases/tag/v4.18.0',
+        }));
+        vi.stubGlobal('fetch', fetchSpy);
+        const checker = new UpdateChecker('4.18.0', makeCache(), {
+            enabled: true,
+            githubRepo: 'Moxifeng11/novel-writer-ai',
+            githubToken: 'secret-token',
+        });
+
+        await checker.checkForUpdates(true);
+
+        const [, init] = fetchSpy.mock.calls[0];
+        expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer secret-token');
+    });
+
+    it('非法仓库格式返回 config 错误且不请求 GitHub', async () => {
+        const fetchSpy = vi.fn();
+        vi.stubGlobal('fetch', fetchSpy);
+        const checker = new UpdateChecker('4.18.0', makeCache(), {
+            enabled: true,
+            githubRepo: 'not a repo',
+        });
+
+        const result = await checker.checkForUpdates(true);
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(result.errorKind).toBe('config');
+    });
+});

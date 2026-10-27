@@ -12,6 +12,7 @@ import { MiniSettingsModal } from '../mini-settings-modal';
 import { OperationConfirmModal, TaskCardComponent } from '../components/progress';
 import { createEmptyState } from '../components/empty-state';
 import { createLogger } from '../../shared/logger';
+import { classifyBook, isClassificationTag, mergeClassificationTags, type ClassificationResult } from '../../shared/content-classifier';
 import { exportTextFile } from '../../shared/export-file';
 import { ImportBookModal, EditBookModal, GenreEditModal, BatchOperationsModal } from './knowledge-base-modals';
 import { BookDetailRenderer } from './book-detail-renderer';
@@ -432,6 +433,8 @@ export class KnowledgeBaseView extends ItemView {
 
     private loadToken = 0;
     private viewClosed = false;
+    private booksLoadError: string | null = null;
+    private detailLoadError: string | null = null;
 
     private completeRefreshPending = false;
     private completeRefreshTimer?: ReturnType<typeof setTimeout>;
@@ -621,9 +624,17 @@ export class KnowledgeBaseView extends ItemView {
     private async loadBooks(): Promise<void> {
         if (!this.kbManager) {
             this.allBooks = [];
+            this.booksLoadError = null;
             return;
         }
-        this.allBooks = await this.kbManager.getAllBooks();
+        try {
+            this.allBooks = await this.kbManager.getAllBooks();
+            this.booksLoadError = null;
+        } catch (e) {
+            this.allBooks = [];
+            this.booksLoadError = e instanceof Error ? e.message : String(e);
+            log.error('[KnowledgeBaseView] 加载书籍列表失败:', e);
+        }
     }
 
     private renderLayout(): void {
@@ -1032,6 +1043,13 @@ export class KnowledgeBaseView extends ItemView {
         });
         batchBtn.addEventListener('click', () => this.handleBatchOperations());
 
+        const classifyBtn = topRow.createEl('button', {
+            text: '🏷️ 批量归类',
+            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-flex-shrink-0',
+            attr: { title: '按本地规则为全部书籍生成维度标签并写入自定义标签（已有标签不重复）' }
+        });
+        classifyBtn.addEventListener('click', () => void this.handleBatchClassify());
+
         const filterRow = toolbar.createDiv({
             cls: 'nw-u-d-flex nw-u-gap-12px nw-u-ai-center nw-u-fwr-wrap'
         });
@@ -1088,6 +1106,21 @@ export class KnowledgeBaseView extends ItemView {
         });
     }
 
+    private renderBooksLoadError(container: HTMLElement): boolean {
+        if (!this.booksLoadError) return false;
+        const box = container.createDiv({ cls: 'nw-kb-error' });
+        box.createDiv({ text: '⚠️ 书籍列表加载失败', cls: 'nw-kb-error-title' });
+        box.createDiv({ text: this.booksLoadError, cls: 'nw-kb-error-detail' });
+        const retry = box.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
+        retry.addEventListener('click', () => {
+            void this.loadBooks().then(() => {
+                if (this.viewClosed) return;
+                this.renderBookListOnly();
+            });
+        });
+        return true;
+    }
+
     private renderBooksListContent(container: HTMLElement): void {
         const listContainer = container.createDiv({
             cls: "nw-kb-book-list-container nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px",
@@ -1095,6 +1128,8 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const books = this.getFilteredBooks();
+
+        if (this.renderBooksLoadError(listContainer)) return;
 
         const header = listContainer.createDiv({
             cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between'
@@ -1134,6 +1169,11 @@ export class KnowledgeBaseView extends ItemView {
         containerEl.empty();
 
         const books = this.getFilteredBooks();
+
+        if (this.renderBooksLoadError(containerEl)) {
+            containerEl.scrollTop = scrollTop;
+            return;
+        }
 
         const header = containerEl.createDiv({
             cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between'
@@ -1296,6 +1336,22 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const tags = card.createDiv({ cls: "nw-flex-wrap-sm nw-u-marginbottom-8px", attr: {} });
+        const classification = this.classifyBookInfo(book);
+        if (classification.tags.length > 0) {
+            const classRow = card.createDiv({ cls: 'nw-kb-class-row' });
+            classRow.createSpan({
+                text: `🏷️ ${classification.primary}`,
+                cls: 'nw-kb-class-primary',
+                attr: { title: classification.summary }
+            });
+            classification.tags.slice(0, 3).forEach(tag => {
+                classRow.createSpan({
+                    text: tag.label,
+                    cls: 'nw-kb-class-tag',
+                    attr: { title: `${tag.dimension} · ${tag.reason}（置信度 ${(tag.confidence * 100).toFixed(0)}%）` }
+                });
+            });
+        }
         if (book.primaryGenre && this.kb) {
             const genre = this.kb.getGenre(book.primaryGenre);
             if (genre) {
@@ -1305,7 +1361,7 @@ export class KnowledgeBaseView extends ItemView {
                 });
             }
         }
-        book.customTags.slice(0, 2).forEach(tag => {
+        book.customTags.filter(tag => !isClassificationTag(tag)).slice(0, 2).forEach(tag => {
             tags.createSpan({
                 text: tag,
                 cls: 'nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
@@ -1334,6 +1390,21 @@ export class KnowledgeBaseView extends ItemView {
         card.addEventListener('click', () => this.openBookDetail(book));
 
         return card;
+    }
+
+    private classifyBookInfo(book: BookBasicInfo): ClassificationResult {
+        return classifyBook({
+            name: book.name,
+            author: book.author,
+            themeTags: book.themeTags,
+            techniqueTags: book.techniqueTags,
+            customTags: book.customTags,
+            primaryGenre: book.primaryGenre,
+            genreChannel: book.genreChannel,
+            wordCount: book.wordCount,
+            synopsis: book.synopsis,
+            qualityScores: book.qualityScores,
+        });
     }
 
     private async openBookDetail(book: BookBasicInfo): Promise<void> {
@@ -1375,6 +1446,30 @@ export class KnowledgeBaseView extends ItemView {
         });
         this.renderDetailActionButtons(book, actions);
 
+        const classification = this.classifyBookInfo(book);
+        if (classification.tags.length > 0) {
+            const strip = detailContainer.createDiv({ cls: 'nw-kb-class-strip' });
+            const stripHead = strip.createDiv({ cls: 'nw-kb-class-strip-head' });
+            stripHead.createSpan({ text: `🏷️ 自动分类：${classification.primary}`, cls: 'nw-kb-class-primary' });
+            stripHead.createSpan({ text: classification.summary, cls: 'nw-kb-class-summary' });
+            const applyBtn = stripHead.createEl('button', {
+                text: '写入标签',
+                cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-class-apply',
+                attr: { title: '将自动分类结果写入本书自定义标签（分类: 前缀）' }
+            });
+            applyBtn.addEventListener('click', () => {
+                void this.handleApplyDimensionTags(book);
+            });
+            const chipWrap = strip.createDiv({ cls: 'nw-kb-class-chips' });
+            classification.tags.forEach(tag => {
+                chipWrap.createSpan({
+                    text: `${tag.dimension}·${tag.label}`,
+                    cls: 'nw-kb-class-tag',
+                    attr: { title: `${tag.reason}（置信度 ${(tag.confidence * 100).toFixed(0)}%）` }
+                });
+            });
+        }
+
         const tabsWrapper = detailContainer.createDiv({
             cls: "nw-kb-detail-tabs-wrapper nw-u-ovx-auto nw-u-ovy-hidden nw-u-bb-1px-solid-background-m nw-u-marginbottom-16px nw-u-webkitoverflowscrolling-touch",
             attr: {}
@@ -1414,6 +1509,21 @@ export class KnowledgeBaseView extends ItemView {
 
         await this.loadBookDetailData(book.id);
         if (this.loadToken !== myToken || this.viewClosed) return;
+        if (this.detailLoadError) {
+            tabContent.empty();
+            const errorBox = tabContent.createDiv({ cls: 'nw-kb-error' });
+            errorBox.createDiv({ text: '⚠️ 书籍详情加载失败', cls: 'nw-kb-error-title' });
+            errorBox.createDiv({ text: this.detailLoadError, cls: 'nw-kb-error-detail' });
+            const retry = errorBox.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
+            retry.addEventListener('click', () => {
+                if (!this.selectedBookId) return;
+                void this.loadBookDetailData(this.selectedBookId).then(() => {
+                    if (this.viewClosed) return;
+                    this.renderBookDetail();
+                });
+            });
+            return;
+        }
         this.renderBookDetail();
     }
 
@@ -1472,7 +1582,15 @@ export class KnowledgeBaseView extends ItemView {
     private async loadBookDetailData(bookId: string): Promise<void> {
         if (!this.kbManager) return;
 
-        const book = await this.kbManager.getBook(bookId);
+        let book: BookBasicInfo | undefined;
+        try {
+            book = await this.kbManager.getBook(bookId);
+            this.detailLoadError = null;
+        } catch (e) {
+            this.detailLoadError = e instanceof Error ? e.message : String(e);
+            log.error('[KnowledgeBaseView] 读取书籍详情失败:', e);
+            return;
+        }
         if (this.viewClosed) return;
         if (!book) return;
 
@@ -1601,6 +1719,93 @@ export class KnowledgeBaseView extends ItemView {
             log.error('自动分类失败:', e);
             new Notice('自动分类失败');
         }
+    }
+
+    private async handleApplyDimensionTags(book: BookBasicInfo): Promise<void> {
+        if (!this.kbManager) {
+            new Notice('知识库未初始化');
+            return;
+        }
+        const result = this.classifyBookInfo(book);
+        if (result.tags.length === 0) {
+            new Notice('当前书籍信息不足以规则归类，请先补充主题标签或完成拆解');
+            return;
+        }
+        const existing = book.customTags || [];
+        const merged = mergeClassificationTags(existing, result);
+        if (merged.length === existing.length) {
+            new Notice('维度标签已是最新，无需重复写入');
+            return;
+        }
+        try {
+            await this.kbManager.updateBook(book.id, { customTags: merged });
+            await this.loadBooks();
+            await this.refreshBookInfo();
+            if (!this.viewClosed) {
+                this.renderLeftSidebar();
+                this.renderBookListOnly();
+                this.renderBookDetail();
+            }
+            new Notice(`✅ 已写入 ${result.tags.length} 个维度标签：${result.summary}`, 4000);
+        } catch (e) {
+            log.error('[KnowledgeBaseView] 写入维度标签失败:', e);
+            new Notice(`写入维度标签失败：${e instanceof Error ? e.message : String(e)}`);
+        }
+    }
+
+    private async handleBatchClassify(): Promise<void> {
+        if (!this.kbManager || this.allBooks.length === 0) {
+            new Notice('暂无可归类的书籍');
+            return;
+        }
+        const total = this.allBooks.length;
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '批量归类',
+            description: `将按本地规则为 ${total} 本书生成维度标签并写入自定义标签。已有标签不会重复，可随时手动删除。`,
+            confirmText: '开始归类',
+            cancelText: '取消',
+        });
+        if (!confirmed || this.viewClosed) return;
+
+        let updated = 0;
+        let skipped = 0;
+        let processed = 0;
+        const progress = new Notice(`🏷️ 批量归类 0/${total}`, 0);
+        try {
+            for (const book of [...this.allBooks]) {
+                if (this.viewClosed) break;
+                const result = this.classifyBookInfo(book);
+                processed++;
+                if (result.tags.length === 0) {
+                    skipped++;
+                } else {
+                    const existing = book.customTags || [];
+                    const merged = mergeClassificationTags(existing, result);
+                    if (merged.length === existing.length) {
+                        skipped++;
+                    } else {
+                        try {
+                            await this.kbManager.updateBook(book.id, { customTags: merged });
+                            updated++;
+                        } catch (e) {
+                            skipped++;
+                            log.warn(`[KnowledgeBaseView] 批量归类失败: ${book.name}`, e);
+                        }
+                    }
+                }
+                if (processed % 20 === 0) {
+                    progress.setMessage(`🏷️ 批量归类 ${processed}/${total}`);
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+            }
+        } finally {
+            progress.hide();
+        }
+        await this.loadBooks();
+        if (this.viewClosed) return;
+        this.renderLeftSidebar();
+        this.renderBookListOnly();
+        new Notice(`🏷️ 批量归类完成：更新 ${updated} 本，跳过 ${skipped} 本`, 4000);
     }
 
     private async applyGenreRecommendation(book: BookBasicInfo, rec: { genreId: string; subGenreId?: string; confidence: number }): Promise<void> {
@@ -3013,11 +3218,20 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const editBtn = actionsEl.createEl('button', {
+            text: '🏷️ 维度归类',
+            cls: 'nw-btn nw-btn-secondary nw-btn-sm',
+            attr: { title: '按本地规则生成题材/节奏/情绪等维度标签并写入自定义标签' }
+        });
+        editBtn.addEventListener('click', () => {
+            void this.handleApplyDimensionTags(book);
+        });
+
+        const editInfoBtn = actionsEl.createEl('button', {
             text: '✏️ 编辑',
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
             attr: { title: '编辑书籍信息' }
         });
-        editBtn.addEventListener('click', () => this.openEditModal(book));
+        editInfoBtn.addEventListener('click', () => this.openEditModal(book));
         const deleteBtn = actionsEl.createEl('button', {
             text: '🗑️ 删除',
             cls: 'nw-btn nw-btn-danger nw-btn-sm',

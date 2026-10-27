@@ -66,6 +66,8 @@ export interface PromptSnapshot {
     crossVolumeContext?: string;
     longTermMemoryContext?: string;
     fanficRulesContext?: string;
+    /** 创作模式硬约束（短篇/剧本）；长篇为空 */
+    creationModeContext?: string;
     worldType?: string;
     writingStyle?: string;
     allChars?: string;
@@ -666,6 +668,16 @@ export class PromptBuilder {
         return [ctx, ''];
     }
 
+    /**
+     * 创作模式硬约束：短篇/剧本的平台规格、节奏与输出格式。
+     * 块文本自带标题；长篇为空，原有协同 prompt 不受影响。
+     */
+    getCreationModePromptParts(): string[] {
+        const ctx = (this.getSnapshot()?.creationModeContext || '').trim();
+        if (!ctx) return [];
+        return [ctx, ''];
+    }
+
     /** 统一聚合 A2/A3/A4/D2 注入点 */
     getNarrativeDriverPromptParts(precedingText: string): string[] {
         return [
@@ -722,6 +734,12 @@ export class PromptBuilder {
                 priority: 98,
                 shrinkable: true,
                 text: this.getFanficRulesPromptParts().join('\n'),
+            },
+            {
+                key: 'creationMode',
+                priority: 97,
+                shrinkable: true,
+                text: this.getCreationModePromptParts().join('\n'),
             },
             {
                 key: 'drivers',
@@ -908,6 +926,12 @@ export class PromptBuilder {
                 text: this.getFanficRulesPromptParts().join('\n'),
             },
             {
+                key: 'creationMode',
+                priority: 97,
+                shrinkable: true,
+                text: this.getCreationModePromptParts().join('\n'),
+            },
+            {
                 key: 'knowledge',
                 priority: 25,
                 shrinkable: true,
@@ -1036,6 +1060,12 @@ export class PromptBuilder {
                 text: this.getFanficRulesPromptParts().join('\n'),
             },
             {
+                key: 'creationMode',
+                priority: 97,
+                shrinkable: true,
+                text: this.getCreationModePromptParts().join('\n'),
+            },
+            {
                 key: 'brief',
                 priority: 95,
                 text: (briefParts && briefParts.length > 0 ? briefParts : []).join('\n'),
@@ -1093,6 +1123,12 @@ export class PromptBuilder {
                 priority: 98,
                 shrinkable: true,
                 text: this.getFanficRulesPromptParts().join('\n'),
+            },
+            {
+                key: 'creationMode',
+                priority: 97,
+                shrinkable: true,
+                text: this.getCreationModePromptParts().join('\n'),
             },
             {
                 key: 'drivers',

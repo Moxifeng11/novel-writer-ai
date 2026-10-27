@@ -14,9 +14,11 @@ import { performanceMonitor } from '../services/performance-monitor';
 import { filterRetrievalResults, filterRetrievalResultsByScope, type RetrievalFilterScope } from '../shared/retrieval-filter';
 import { createLogger } from '../shared/logger';
 import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '../shared/write-lock';
+import { extractKeywordTokens, keywordOverlapRatio } from '../shared/keyword-tokens';
 
 
 const log = createLogger('KnowledgeVectorStore');
+
 export interface KnowledgeVectorSample {
     id: string;
     bookId: string;
@@ -454,6 +456,7 @@ export class KnowledgeVectorStore {
 
         const topN = options?.topN ?? 10;
         const queryVector = await this.embeddingProvider.embed(query);
+        const queryTokens = extractKeywordTokens(query, 120);
         const results: KnowledgeSearchResult[] = [];
         let skippedByDimension = 0;
 
@@ -471,7 +474,11 @@ export class KnowledgeVectorStore {
                     continue;
                 }
 
-                const score = cosineSimilarity(queryVector, item.vector);
+                const semanticScore = cosineSimilarity(queryVector, item.vector);
+                // 语义为主、关键词为辅：专有名词/标签命中时明显提分，
+                // 同时避免纯关键词把语义无关的样本顶上来。
+                const lexicalScore = keywordOverlapRatio(queryTokens, item.sample);
+                const score = Math.min(1, semanticScore * 0.9 + lexicalScore * 0.1);
 
                 if (options?.minScore !== undefined && score < options.minScore) continue;
 
@@ -487,15 +494,22 @@ export class KnowledgeVectorStore {
             }
         }
 
-        results.sort((a, b) => b.score - a.score);
+        const deduped = new Map<string, KnowledgeSearchResult>();
+        for (const result of results) {
+            const key = `${result.bookId}|${result.dimension}|${result.sample.slice(0, 80)}`;
+            const existing = deduped.get(key);
+            if (!existing || result.score > existing.score) deduped.set(key, result);
+        }
+        const ranked = [...deduped.values()];
+        ranked.sort((a, b) => b.score - a.score);
         if (skippedByDimension > 0) {
             log.warn(`[KnowledgeVectorStore] 跳过 ${skippedByDimension} 个维度与当前 embedding 模型不一致的样本，请重新拆解对应书籍`);
         }
         // 只保留明显相关的样本：低分尾部在本地 8K 窗口下纯粹挤占预算。
         // 合并检索按维度过滤：单一全局阈值会让 rhythm/technique 被 style 的最高分挤压掉。
         const finalResults = (options?.filterScope === 'perDimension'
-            ? filterRetrievalResultsByScope(results, 'perDimension')
-            : filterRetrievalResults(results)
+            ? filterRetrievalResultsByScope(ranked, 'perDimension')
+            : filterRetrievalResults(ranked)
         ).slice(0, topN);
         performanceMonitor.end(perfId, { resultCount: finalResults.length });
         return finalResults;

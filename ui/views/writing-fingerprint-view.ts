@@ -15,6 +15,7 @@ import { isSourceOnlyFingerprintScope } from '../fingerprint-utils';
 import { FingerprintIntensityModal } from '../fingerprint-intensity-modal';
 import { FingerprintBlendModal } from '../fingerprint-blend-modal';
 import { KnowledgeToFingerprintConverter } from '../../engine/knowledge-to-fingerprint-converter';
+import { classifyFingerprint, mergeClassificationTags } from '../../shared/content-classifier';
 import type { BookBasicInfo } from '../../services/knowledge-base-manager';
 import { createLogger } from '../../shared/logger';
 
@@ -69,8 +70,10 @@ export class WritingFingerprintView extends ItemView {
     private tagFilter!: HTMLElement;
     private toolbar!: HTMLElement;
     private detailPanel!: HTMLElement;
+    private countEl: HTMLElement | null = null;
 
     private isLoading = false;
+    private loadError: string | null = null;
 
     get currentProjectPath(): string | null {
         return this.plugin.getActiveProject();
@@ -135,12 +138,18 @@ export class WritingFingerprintView extends ItemView {
     private async loadAllFingerprints(): Promise<void> {
         if (!this.fingerprintLibrary) return;
         this.isLoading = true;
+        this.loadError = null;
 
         try {
             this.templateFingerprints = await this.fingerprintLibrary.loadTemplate();
             this.globalFingerprints = await this.fingerprintLibrary.loadGlobal();
             this.projectFingerprints = await this.fingerprintLibrary.loadProject();
+            if (this.selectedFingerprintId && !this.getSelectedFingerprint()) {
+                this.selectedFingerprintId = null;
+                this.selectedFingerprintScope = null;
+            }
         } catch (e) {
+            this.loadError = e instanceof Error ? e.message : String(e);
             log.warn('[WritingFingerprintView] 加载指纹失败:', e);
         } finally {
             this.isLoading = false;
@@ -264,6 +273,7 @@ export class WritingFingerprintView extends ItemView {
         const migrateBtn = this.createToolbarButton('⬆ 批量升级 V2', () => this.handleMigrateToV2(), false, '批量升级指纹到 V2 12 维维度');
         const deleteBtn = this.createToolbarButton('🗑️ 删除', () => this.handleDeleteFingerprint(), true, '删除选中指纹（不可恢复）');
         const toggleBtn = this.createToolbarButton('🔌 启用/禁用', () => this.handleToggleEnabled(), false, '启用或禁用选中指纹');
+        const classifyBtn = this.createToolbarButton('🏷️ 自动归类', () => void this.handleAutoClassify(), false, '按本地规则为选中指纹归类并写入标签');
 
         this.toolbar.appendChild(addBtn);
         this.toolbar.appendChild(extractBtn);
@@ -271,6 +281,7 @@ export class WritingFingerprintView extends ItemView {
         this.toolbar.appendChild(importBtn);
         this.toolbar.appendChild(blendBtn);
         this.toolbar.appendChild(migrateBtn);
+        this.toolbar.appendChild(classifyBtn);
         this.toolbar.appendChild(deleteBtn);
         this.toolbar.appendChild(toggleBtn);
     }
@@ -372,6 +383,7 @@ export class WritingFingerprintView extends ItemView {
         const fingerprints = this.getCurrentFingerprints();
 
         if (this.isLoading) {
+            this.updateCountLabel(null);
             this.fingerprintList.createDiv({
                 cls: 'nw-u-p-40px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2',
                 text: '加载中...'
@@ -379,7 +391,18 @@ export class WritingFingerprintView extends ItemView {
             return;
         }
 
+        if (this.loadError) {
+            this.updateCountLabel(null);
+            const errorBox = this.fingerprintList.createDiv({ cls: 'nw-fingerprint-error' });
+            errorBox.createDiv({ text: '⚠️ 指纹加载失败', cls: 'nw-fingerprint-error-title' });
+            errorBox.createDiv({ text: this.loadError, cls: 'nw-fingerprint-error-detail' });
+            const retry = errorBox.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
+            retry.onclick = () => { void this.loadAllFingerprints().then(() => this.renderFingerprintList()); };
+            return;
+        }
+
         if (fingerprints.length === 0) {
+            this.updateCountLabel(0);
             // NBI-01: 当前层为空时给出可执行引导，优先指向已有数据的其它层
             const otherScopes = (['template', 'global', 'project'] as FingerprintScope[])
                 .filter(scope => scope !== this.filter.activeScope && this.getScopeFingerprints(scope).length > 0);
@@ -440,6 +463,13 @@ export class WritingFingerprintView extends ItemView {
             });
             source.textContent = fp.source || '未知来源';
 
+            const classification = classifyFingerprint(fp);
+            if (classification.tags.length > 0) {
+                const classRow = item.createDiv({ cls: 'nw-fingerprint-class-row' });
+                classRow.createSpan({ text: classification.primary, cls: 'nw-fingerprint-class-primary' });
+                classRow.createSpan({ text: `${classification.tags.length} 项`, cls: 'nw-fingerprint-class-count' });
+            }
+
             if (fp.tags.length > 0) {
                 const tagsRow = item.createDiv({
                     cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-3px'
@@ -460,11 +490,18 @@ export class WritingFingerprintView extends ItemView {
             });
         });
 
-        const countInfo = this.leftSidebar.createDiv({
+        this.updateCountLabel(fingerprints.length);
+    }
+
+    private updateCountLabel(count: number | null): void {
+        this.countEl?.remove();
+        this.countEl = null;
+        if (count === null) return;
+        this.countEl = this.leftSidebar.createDiv({
             cls: "nw-fingerprint-count nw-u-p-6px-12px nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-bt-1px-solid-background-m-2",
             attr: {}
         });
-        countInfo.textContent = `共 ${fingerprints.length} 个指纹`;
+        this.countEl.textContent = `共 ${count} 个指纹`;
     }
 
     private renderDetailPanel(): void {
@@ -533,6 +570,7 @@ export class WritingFingerprintView extends ItemView {
             });
         }
 
+        this.renderClassificationSection(fp);
         this.renderStatsSection(fp);
         this.renderFeaturesSection(fp);
         this.renderSamplesSection(fp);
@@ -542,6 +580,50 @@ export class WritingFingerprintView extends ItemView {
     private getSelectedFingerprint(): StyleFingerprint | undefined {
         if (!this.selectedFingerprintId || !this.selectedFingerprintScope) return undefined;
         return this.fingerprintLibrary?.getFingerprint(this.selectedFingerprintId, this.selectedFingerprintScope);
+    }
+
+    private renderClassificationSection(fp: StyleFingerprint): void {
+        const classification = classifyFingerprint(fp);
+        const section = this.rightPanel.createDiv({
+            cls: 'nw-fingerprint-class-section nw-mb-lg'
+        });
+
+        const titleRow = section.createDiv({
+            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2'
+        });
+        titleRow.createEl('h4', {
+            text: '🏷️ 自动分类',
+            cls: 'nw-fp-section-h4 nw-u-m-0-2'
+        });
+        titleRow.createEl('span', {
+            text: classification.primary,
+            cls: 'nw-fingerprint-class-primary nw-u-fs-12px-2'
+        });
+
+        section.createDiv({
+            text: classification.summary,
+            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2'
+        });
+
+        if (classification.tags.length === 0) {
+            section.createDiv({
+                text: '当前统计特征不足以规则归类，可先用 AI 提取特征后重新归类。',
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-faint-2'
+            });
+            return;
+        }
+
+        const tagWrap = section.createDiv({
+            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-6px-2'
+        });
+        classification.tags.forEach(tag => {
+            const chip = tagWrap.createSpan({
+                cls: 'nw-fingerprint-class-chip',
+                attr: { title: `${tag.dimension} · ${tag.reason}（置信度 ${(tag.confidence * 100).toFixed(0)}%）` }
+            });
+            chip.createSpan({ text: tag.dimension, cls: 'nw-fingerprint-class-dim' });
+            chip.createSpan({ text: tag.label, cls: 'nw-fingerprint-class-label' });
+        });
     }
 
     private renderStatsSection(fp: StyleFingerprint): void {
@@ -560,7 +642,7 @@ export class WritingFingerprintView extends ItemView {
 
         const statsItems = [
             { label: '平均句长', value: fp.stats.avgSentenceLength.toFixed(1) + ' 字' },
-            { label: '平均段长', value: fp.stats.avgParagraphLength.toFixed(1) + ' 句' },
+            { label: '平均段长', value: fp.stats.avgParagraphLength.toFixed(0) + ' 字' },
             { label: '对话占比', value: (fp.stats.dialogueRatio * 100).toFixed(1) + '%' },
             { label: '描写占比', value: (fp.stats.descriptionRatio * 100).toFixed(1) + '%' },
         ];
@@ -1055,6 +1137,36 @@ export class WritingFingerprintView extends ItemView {
         this.renderFingerprintList();
         this.renderDetailPanel();
         new Notice(fp.enabled ? '🔇 已禁用' : '✅ 已启用');
+    }
+
+    private async handleAutoClassify(): Promise<void> {
+        const fp = this.getSelectedFingerprint();
+        if (!fp || !this.fingerprintLibrary) {
+            new Notice('⚠️ 请先在左侧选择一个指纹');
+            return;
+        }
+        const result = classifyFingerprint(fp);
+        const nextTags = mergeClassificationTags(fp.tags || [], result);
+        if (nextTags.length === (fp.tags || []).length && nextTags.every((tag, index) => tag === fp.tags[index])) {
+            new Notice(`🏷️ 分类未变化：${result.summary}`);
+            return;
+        }
+        const updated: StyleFingerprint = { ...fp, tags: nextTags };
+        try {
+            switch (fp.scope) {
+                case 'template': await this.fingerprintLibrary.updateTemplate(updated); break;
+                case 'global': await this.fingerprintLibrary.updateGlobal(updated); break;
+                case 'project': await this.fingerprintLibrary.updateProject(updated); break;
+            }
+            await this.loadAllFingerprints();
+            this.renderSearchAndFilter();
+            this.renderFingerprintList();
+            this.renderDetailPanel();
+            new Notice(`🏷️ 已归类：${result.summary}`, 4000);
+        } catch (e) {
+            log.error('[WritingFingerprintView] 自动归类写入失败:', e);
+            new Notice(`自动归类失败：${e instanceof Error ? e.message : String(e)}`);
+        }
     }
 
     private async handleDeleteFingerprint(): Promise<void> {

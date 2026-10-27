@@ -245,3 +245,16 @@ describe('SettingsMigrator', () => {
         });
     });
 });
+
+describe('normalizeUpdateGithubRepo — 旧仓库名迁移', () => {
+    it('把 trae-ai/novel-writer-ai 迁移到官方仓库', async () => {
+        const { normalizeUpdateGithubRepo, DEFAULT_UPDATE_GITHUB_REPO } = await import('../../../shared/settings-migrator');
+        expect(normalizeUpdateGithubRepo('trae-ai/novel-writer-ai')).toBe(DEFAULT_UPDATE_GITHUB_REPO);
+        expect(DEFAULT_UPDATE_GITHUB_REPO).toBe('Moxifeng11/novel-writer-ai');
+    });
+
+    it('保留用户自定义仓库', async () => {
+        const { normalizeUpdateGithubRepo } = await import('../../../shared/settings-migrator');
+        expect(normalizeUpdateGithubRepo('someone/fork')).toBe('someone/fork');
+    });
+});

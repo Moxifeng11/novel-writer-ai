@@ -50,6 +50,12 @@ describe('computePromptHash — TR-1.2 维度敏感性', () => {
     const h = computePromptHash(BASE.systemPrompt, BASE.userPrompt, BASE.model, BASE.temperature, 8192);
     expect(h).not.toBe(base);
   });
+
+  it('端点/思考作用域变化 → hash 变化，避免跨渠道缓存串味', () => {
+    const a = computePromptHash('s', 'u', 'm', 0.7, 1024, 'https://a/v1|on|4096');
+    const b = computePromptHash('s', 'u', 'm', 0.7, 1024, 'https://b/v1|on|4096');
+    expect(a).not.toBe(b);
+  });
 });
 
 describe('computePromptHash — TR-1.3 边界', () => {

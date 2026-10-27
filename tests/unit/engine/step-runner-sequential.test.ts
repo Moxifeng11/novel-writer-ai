@@ -51,6 +51,7 @@ function makeCtx(overrides?: {
     return {
         stepResults: overrides?.stepResults ?? ({} as Record<string, string>),
         stepCompleted: overrides?.stepCompleted ?? new Set<string>(),
+        stepMeta: {},
         currentStepIndex: overrides?.currentStepIndex ?? 2,
         setCurrentStepIndex: vi.fn(),
         tabContent: {} as never,
@@ -72,6 +73,26 @@ function makeCtx(overrides?: {
     };
 }
 
+const KEY_BY_INDEX: Record<number, string> = {
+    1: 'infoPlan',
+    2: 'plotDistill',
+    3: 'characterSoul',
+    4: 'outline',
+    5: 'emotionPlan',
+    6: 'sceneExpand',
+};
+
+function markStepComplete(stepCtx: {
+    currentStepIndex: number;
+    stepCompleted: Set<string>;
+    stepResults: Record<string, string>;
+}): void {
+    const key = KEY_BY_INDEX[stepCtx.currentStepIndex];
+    if (!key) return;
+    stepCtx.stepCompleted.add(key);
+    if (!stepCtx.stepResults[key]) stepCtx.stepResults[key] = `${key} content`;
+}
+
 describe('StepRunner.executeStepsSequential — 顺序编排', () => {
     beforeEach(() => {
         stubDocument();
@@ -83,7 +104,9 @@ describe('StepRunner.executeStepsSequential — 顺序编排', () => {
 
     it('已完成步骤计入成功但不重复执行；未知步骤静默跳过', async () => {
         const runner = makeRunner();
-        const execute = vi.spyOn(runner, 'executeCurrentStep').mockResolvedValue(undefined);
+        const execute = vi.spyOn(runner, 'executeCurrentStep').mockImplementation(async (stepCtx) => {
+            markStepComplete(stepCtx as never);
+        });
         const ctx = makeCtx({ stepCompleted: new Set(['infoPlan']) });
 
         const result = await runner.executeStepsSequential(['infoPlan', 'notAStep', 'plotDistill'], ctx as never);
@@ -100,6 +123,7 @@ describe('StepRunner.executeStepsSequential — 顺序编排', () => {
         const ctx = makeCtx({ stepResults: { infoPlan: '信息规划', plotDistill: '情节蒸馏' } });
         const order: string[] = [];
         vi.spyOn(runner, 'executeCurrentStep').mockImplementation(async (stepCtx) => {
+            markStepComplete(stepCtx as never);
             order.push(`run:${stepCtx.currentStepIndex}`);
         });
         const onStepStart = vi.fn((key: string) => order.push(`start:${key}`));
@@ -122,6 +146,7 @@ describe('StepRunner.executeStepsSequential — 顺序编排', () => {
         const ctx = makeCtx();
         vi.spyOn(runner, 'executeCurrentStep').mockImplementation(async (stepCtx) => {
             if (stepCtx.currentStepIndex === 2) throw new Error('第二步失败');
+            markStepComplete(stepCtx as never);
         });
         const onStepError = vi.fn();
         const onStepComplete = vi.fn();
@@ -143,6 +168,7 @@ describe('StepRunner.executeStepsSequential — 顺序编排', () => {
         const runner = makeRunner();
         const ctx = makeCtx({ currentStepIndex: 2 });
         vi.spyOn(runner, 'executeCurrentStep').mockImplementation(async (stepCtx) => {
+            markStepComplete(stepCtx as never);
             stepCtx.currentStepIndex = 7;
         });
 
@@ -156,6 +182,7 @@ describe('StepRunner.executeStepsSequential — 顺序编排', () => {
         const ctx = makeCtx();
         const seen: unknown[] = [];
         vi.spyOn(runner, 'executeCurrentStep').mockImplementation(async (stepCtx) => {
+            markStepComplete(stepCtx as never);
             seen.push(stepCtx.systemPromptEl, stepCtx.userPromptEl, stepCtx.temperatureSlider);
         });
 
@@ -164,5 +191,23 @@ describe('StepRunner.executeStepsSequential — 顺序编排', () => {
         expect(seen[0]).toBe(seen[3]);
         expect(seen[1]).toBe(seen[4]);
         expect(seen[2]).toBe(seen[5]);
+    });
+
+    it('空内容或未达完成标准的步骤不算成功', async () => {
+        const runner = makeRunner();
+        const ctx = makeCtx();
+        vi.spyOn(runner, 'executeCurrentStep').mockResolvedValue(undefined);
+        const onStepError = vi.fn();
+
+        const result = await runner.executeStepsSequential(
+            ['infoPlan', 'plotDistill'],
+            ctx as never,
+            { onStepError }
+        );
+
+        expect(result.successful).toEqual([]);
+        expect(result.failed).toBe('infoPlan');
+        expect(result.failedAt).toBe(0);
+        expect(onStepError).toHaveBeenCalledWith('infoPlan', expect.stringContaining('未产出完整内容'));
     });
 });

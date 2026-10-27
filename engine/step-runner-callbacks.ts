@@ -11,6 +11,7 @@
  *
  * v4.1.1: 从 step-runner.ts 外迁 DOM/Notice 逻辑
  */
+import type { DiagnosticInput, ExecutionEventInput, StepFailure } from '../shared/execution-events';
 
 /** DEAI 消痕改写弹窗参数 */
 export interface DeaiModalParams {
@@ -72,6 +73,14 @@ export interface StepRunnerCallbacks {
     showProgress(message: string): void;
     /** 隐藏进度通知 */
     hideProgress(): void;
+
+    // ── 结构化执行事件（可选；未提供时保持旧 Notice 行为） ──
+    /** 步骤开始/完成/取消等流程节点，供主区域时间线展示 */
+    onExecutionEvent?(event: ExecutionEventInput): void;
+    /** 结构化的步骤失败：包含节点、原因、缺失项与处理建议 */
+    onStepFailure?(failure: StepFailure): void;
+    /** 调试日志（模型、prompt 长度、耗时、堆栈），只进固定日志窗口 */
+    onDiagnostic?(entry: DiagnosticInput): void;
 
     // ── 弹窗类 ──────────────────────────────────────────────
     /** 显示 DEAI 消痕改写两阶段弹窗 */

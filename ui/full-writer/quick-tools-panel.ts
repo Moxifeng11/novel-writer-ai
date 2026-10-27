@@ -22,6 +22,8 @@ export interface QuickToolsPanelOptions {
     projectActions?: ProjectQuickAction[];
     /** 只展示指定工具（章节页高频工具条）；为空则展示全部分组 */
     tools?: ToolButton[];
+    /** 按项目类型切换的工具目录；为空时使用长篇全量目录 */
+    toolGroups?: ToolGroup[];
     /** 面板标题，默认「⚡ 快捷工具」 */
     title?: string;
     subtitle?: string;
@@ -104,7 +106,7 @@ export function renderQuickToolsPanel(container: HTMLElement, opts: QuickToolsPa
         return;
     }
 
-    const groups: ToolGroup[] = TOOL_GROUPS;
+    const groups: ToolGroup[] = opts.toolGroups ?? TOOL_GROUPS;
     for (const group of groups) {
         const collapsed = Boolean(group.defaultCollapsed);
         const groupEl = panel.createDiv({ cls: `nw-qt-group${collapsed ? ' is-collapsed' : ''}` });

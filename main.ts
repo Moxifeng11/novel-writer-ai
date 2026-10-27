@@ -91,6 +91,10 @@ export interface CustomProvider {
     maxOutput: number;
     /** v4.11: 模型源类型，区分云端与本地（Ollama / LM Studio / vLLM 等 OpenAI 兼容端点） */
     sourceType?: 'cloud' | 'local';
+    /** v4.15: 端点协议类型（由 URL 识别或用户手动指定） */
+    apiStyle?: 'openai' | 'ollama' | 'custom';
+    /** v4.15: URL 自动识别出的预设供应商 ID；仅用于提示，不覆盖用户设置 */
+    providerIdHint?: string;
     isDefault?: boolean; // 标记是否为初始默认供应商
     isHidden?: boolean;  // 标记是否被隐藏
 }
@@ -101,7 +105,10 @@ export { resolveProviderSourceType } from './shared/model-source';
 
 // 导入集中化的模型能力映射（避免与 token-estimator.ts 重复硬编码）
 import { MODEL_CAPABILITIES, findModelCapability } from './shared/model-capabilities';
+import type { AiTask, TaskBudgetOverride, ThinkingMode, ThinkingLevel } from './shared/task-model';
+export type { AiTask, TaskBudgetOverride, ThinkingMode, ThinkingLevel } from './shared/task-model';
 import { hasUsableAiCredentials } from './shared/ai-credentials';
+import { MODE_LIBRARY_ROOT_LIST, projectFromFilePath } from './domains/kernel/project-locator';
 import { createLogger } from './shared/logger';
 
 const log = createLogger('Main');
@@ -122,6 +129,15 @@ export const DEFAULT_PROVIDERS: Record<string, CustomProvider> = {
 // v3.4.7: 模型能力表已迁移至 shared/model-capabilities.ts，此处 re-export 仅用于向后兼容
 // 新代码应直接从 './shared/model-capabilities' 导入
 
+export interface CanonResearchSettings {
+    provider: 'manual' | 'bing' | 'brave' | 'serper' | 'tavily';
+    apiKey?: string;
+    allowedDomains?: string[];
+    blockedDomains?: string[];
+    maxSources?: number;
+    excerptChars?: number;
+}
+
 export interface NovelWriterSettings {
     apiKey: string;
     apiEndpoint: string;
@@ -134,6 +150,10 @@ export interface NovelWriterSettings {
     coWriteTemperature: number;
     /** v6.5: 协同写作本地模型 max_tokens（默认 600） */
     coWriteMaxTokens: number;
+    /** v4.15: 协同写作本地 num_ctx；0=按模型探测窗口自动 */
+    coWriteNumCtx?: number;
+    /** v4.17: 本地协同候选批量化；true=一次调用返回多方向候选 */
+    coWriteCandidateBatching?: boolean;
     /** v7.2: 协同写作模型模式：'local'(本地Ollama) | 'cloud'(云端API) */
     coWriteModelMode: 'local' | 'cloud';
     /** v7.2: 云端模型所属供应商 ID（如 'volc'、'deepseek'、'openai'） */
@@ -174,6 +194,18 @@ export interface NovelWriterSettings {
      * 切换供应商时自动按 endpoint 索引，不会丢失旧供应商下的覆盖值
      */
     modelOverrides: Record<string, Record<string, { maxContext?: number; maxOutput?: number }>>;
+    /**
+     * v4.15: 任务级模型/预算覆盖。
+     * 不覆盖时按 planning=flash、body/quality/fingerprint=pro 等策略回退。
+     */
+    taskBudgets?: Partial<Record<AiTask, TaskBudgetOverride>>;
+    /** v4.15: 全局思考模式；任务级配置优先。 */
+    thinkingMode?: ThinkingMode;
+    /** v4.20: 全局四级思考等级与 0–100 强度；未设置时兼容 thinkingMode */
+    thinkingLevel?: ThinkingLevel;
+    thinkingIntensity?: number;
+    /** v4.15: 全局思考预算（token），0 表示不单独预留。 */
+    thinkingBudget?: number;
     /**
      * v6.2: 覆盖值修改历史（每次用户手动修改时追加）
      * 用于查看/追溯每次渠道-模型配置变更
@@ -238,6 +270,8 @@ export interface NovelWriterSettings {
     vectorDeconstructionThreshold: number;
     /** v7.6: 向量模型提供商类型 */
     vectorProviderType: 'ollama' | 'openai' | 'doubao' | 'qwen';
+    /** v4.15: embedding 不可用时的回退策略。默认 local-only，禁止静默把本地文本发到云端。 */
+    embeddingFallbackPolicy?: 'never' | 'local-only' | 'allow-cloud';
     /** v7.6: Ollama 向量模型 baseUrl */
     vectorOllamaBaseUrl: string;
     /** v7.6: Ollama 向量模型名称 */
@@ -268,6 +302,8 @@ export interface NovelWriterSettings {
     updateSource?: 'github' | 'custom';
     /** v7.8: GitHub 仓库地址（owner/repo） */
     updateGithubRepo?: string;
+    /** 私有 GitHub 仓库更新检查 Token（可留空） */
+    updateGithubToken?: string;
     /** v7.8: 自定义更新检查 URL */
     updateCustomUrl?: string;
     /** v7.8: 更新检查间隔（小时） */
@@ -276,6 +312,8 @@ export interface NovelWriterSettings {
     promptManagerConfig?: PromptManagerConfig;
     /** v8.0: 拆解引擎配置（增强级别、维度、向量、LLM、性能） */
     deconstructionEngine?: DeconstructionEngineSettings;
+    /** v4.18: 同人考据来源检索（默认手动官方来源；可选第三方搜索 API） */
+    canonResearch?: CanonResearchSettings;
 
     /** v8.1: 角色识别 - 启用的识别层 */
     characterRecognitionLayers?: ('rule' | 'vector' | 'llm')[];
@@ -424,13 +462,21 @@ export default class NovelWriterPlugin extends Plugin {
     getActiveProject(): string | null {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
-            const project = activeFile.path.split('/')[0];
-            // 排除系统目录
-            if (project !== '元文件' && project !== '文笔风格库' && !project.startsWith('.')) {
-                // 确认是项目目录。注意：`.project` 是点文件，不入 vault 索引，
-                // getAbstractFileByPath 恒为 null，这里改用被索引的项目文件夹判定。
-                const folder = this.app.vault.getAbstractFileByPath(project);
-                if (folder instanceof TFolder) return project;
+            const candidates = this.app.vault
+                .getRoot()
+                .children
+                .filter((child): child is TFolder => child instanceof TFolder)
+                .flatMap(folder => {
+                    if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
+                        return folder.children
+                            .filter((child): child is TFolder => child instanceof TFolder)
+                            .map(child => `${folder.name}/${child.name}`);
+                    }
+                    return [folder.path];
+                });
+            const project = projectFromFilePath(activeFile.path, candidates);
+            if (project && project !== '元文件' && project !== '文笔风格库' && !project.startsWith('.')) {
+                return project;
             }
         }
         // 工作台/项目页激活时没有 activeFile：回退到界面当前选中的项目，
@@ -1106,6 +1152,13 @@ export default class NovelWriterPlugin extends Plugin {
 
         // 更新上次运行版本
         cacheManager.setLastRunVersion(currentVersion);
+        // 升级后旧 updateLastResult 可能仍记录旧 currentVersion；读取一次会按当前版本纠正并回写。
+        try {
+            const updateChecker = this.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+            updateChecker?.getLastCheckResult?.();
+        } catch (e) {
+            log.warn('[版本管理] 更新缓存版本纠正失败:', e);
+        }
 
         // 首次安装：显示欢迎模态框
         if (isFirstInstall) {

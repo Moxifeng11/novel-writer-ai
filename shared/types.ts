@@ -609,6 +609,16 @@ export interface ExtendedSceneData {
     // 基础信息
     index: number;
     name: string;
+    /** 视角人物（默认主角） */
+    pov: string;
+    /** 场景内时间（非章节时间线位置） */
+    time: string;
+    /** 入场状态：人物位置/情绪/已知信息 */
+    entryState: string;
+    /** 场景转折：必须发生一次可指认的变化 */
+    turn: string;
+    /** 离场状态：必须与入场不同 */
+    exitState: string;
     objective: string;
     emotionArc: string;
     conflict: string;
@@ -620,6 +630,8 @@ export interface ExtendedSceneData {
     keyScene: string;
     dialogueFunction: string;
     cliffhanger: string;
+    /** 可选工艺备注：本场景必须避免/必须做到的写作细节 */
+    craftNotes: string;
     isKeyScene: boolean;
 
     // 网文特有扩展字段
@@ -642,6 +654,11 @@ export function createDefaultScene(index: number): ExtendedSceneData {
     return {
         index,
         name: '',
+        pov: '',
+        time: '',
+        entryState: '',
+        turn: '',
+        exitState: '',
         objective: '',
         emotionArc: '',
         conflict: '',
@@ -653,6 +670,7 @@ export function createDefaultScene(index: number): ExtendedSceneData {
         keyScene: '否',
         dialogueFunction: '',
         cliffhanger: '',
+        craftNotes: '',
         isKeyScene: false,
         characters: '',
         location: '',

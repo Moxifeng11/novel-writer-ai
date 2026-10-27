@@ -243,8 +243,11 @@ export class DiagnoseWriterModal extends Modal {
         const rp = `${chapDir}/${chapName}_诊断报告.md`;
         try {
             const existingDiag = this.app.vault.getAbstractFileByPath(rp);
-            if (existingDiag) await this.app.vault.delete(existingDiag);
-            await this.app.vault.create(rp, report.join('\n'));
+            if (existingDiag instanceof TFile) {
+                await this.app.vault.modify(existingDiag, report.join('\n'));
+            } else {
+                await this.app.vault.create(rp, report.join('\n'));
+            }
         } catch (e) {
             log.warn('[小说工坊] 操作失败:', e);
         }

@@ -52,6 +52,24 @@ describe('getStepTemplateAuto — 整章草稿的新流程选择', () => {
         expect(v2.systemPrompt).toContain('${protagonistSoulDetail}');
     });
 
+    it('V1 / V2 都必须消费场景卡、工艺约束和负面清单', () => {
+        const v1 = getStepTemplateAuto('bodyGeneration', {})!;
+        const v2 = getStepTemplateAuto('bodyGeneration', {
+            characterSoulReady: '1',
+            protagonistSoulDetail: '他/她最恐惧的是：被抛弃',
+        })!;
+
+        for (const tpl of [v1, v2]) {
+            expect(tpl.systemPrompt).toContain('${craftConstraints}');
+            expect(tpl.systemPrompt).toContain('${negativeList}');
+            expect(tpl.systemPrompt).toContain('${prevChapterStateSnapshot}');
+            expect(tpl.userPrompt).toContain('${sceneCardDigest}');
+        }
+        // V2 不再丢失场景类型样本与节奏建议
+        expect(v2.userPrompt).toContain('${sceneStyleSnippet}');
+        expect(v2.userPrompt).toContain('${suggestedRhythm}');
+    });
+
     it('V1 / V2 都必须使用 ${bodyFormat} 契约变量，不得再硬编码缩进', () => {
         const v1 = getStepTemplateAuto('bodyGeneration', {});
         const v2 = getStepTemplateAuto('bodyGeneration', {

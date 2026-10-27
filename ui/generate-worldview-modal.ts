@@ -7,6 +7,8 @@ import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '../u
 import { validateWorldviewOutput } from '../shared/template-validator';
 import { pjWorldview, pjSettingLib, SUBDIR_WORLD_ARCH } from '../shared/paths';
 import { createLogger } from '../shared/logger';
+import { ProjectRenameService } from '../services/project-rename-service';
+import { validateProjectName } from '../shared/project-name';
 
 
 const log = createLogger('GenerateWorldviewModal');
@@ -102,7 +104,7 @@ export class GenerateWorldviewModal extends Modal {
 
             const generateButton = contentEl.createEl('button', { text: '生成世界观', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
             generateButton.onclick = async () => {
-                const project = projectSelect.value;
+                let project = projectSelect.value;
                 const worldName = worldNameInput.value.trim() || project;
                 const genre = genreInput.value.trim();
                 const theme = themeInput.value.trim();
@@ -190,10 +192,11 @@ ${result.content}`;
 
             try {
                 const existingWorldview = this.app.vault.getAbstractFileByPath(worldviewPath);
-                if (existingWorldview) {
-                    await this.app.vault.delete(existingWorldview);
+                if (existingWorldview instanceof TFile) {
+                    await this.app.vault.modify(existingWorldview, worldviewContent);
+                } else {
+                    await this.app.vault.create(worldviewPath, worldviewContent);
                 }
-                await this.app.vault.create(worldviewPath, worldviewContent);
                 showSuccess('世界观已生成');
             } catch (e) {
                 showError('世界观写入失败');
@@ -202,48 +205,39 @@ ${result.content}`;
 
             // 自动重命名项目文件夹为AI生成的小说名称
             if (generatedProjectName !== project) {
-                try {
-                    const projectFolder = this.app.vault.getAbstractFileByPath(project);
-                    if (projectFolder) {
-                        const newPath = generatedProjectName;
-                        // 检查目标名称是否已被占用
-                        if (!this.app.vault.getAbstractFileByPath(newPath)) {
-                            // P0-1 修复: 重命名前需用户确认，避免静默改名导致项目名与 .project 不一致
-                            const confirmed = await OperationConfirmModal.confirm(this.app, {
-                                title: '重命名项目',
-                                description: `AI 建议将项目重命名为「${generatedProjectName}」，是否重命名？\n\n点击「取消」保留原项目名「${project}」`,
-                                confirmText: '确认重命名',
-                                cancelText: '取消',
-                            });
-                            if (!confirmed) {
-                                new Notice(`已保留项目名「${project}」，可在文件浏览器中手动重命名`, 5000);
+                const validation = validateProjectName(generatedProjectName, [project]);
+                if (!validation.valid) {
+                    new Notice(`⚠️ AI 建议的项目名不可用：${validation.error}。保留原项目名「${project}」`, 6000);
+                } else {
+                    const confirmed = await OperationConfirmModal.confirm(this.app, {
+                        title: '重命名项目',
+                        description: `AI 建议将项目重命名为「${validation.normalized}」，是否重命名？
+
+点击「取消」保留原项目名「${project}」`,
+                        confirmText: '确认重命名',
+                        cancelText: '取消',
+                    });
+                    if (!confirmed) {
+                        new Notice(`已保留项目名「${project}」，可在文件浏览器中手动重命名`, 5000);
+                    } else {
+                        try {
+                            const result = await new ProjectRenameService(this.app).rename(project, validation.normalized);
+                            if (result.warnings.length > 0) {
+                                new Notice(`✅ 项目已重命名；${result.warnings.join('；')}`, 10000);
                             } else {
-                                // renameFile 会自动更新所有子文件路径和内部链接
-                                await this.app.fileManager.renameFile(projectFolder, newPath);
-                                showSuccess(`项目已重命名为「${generatedProjectName}」`);
-                                // 同步更新 .project 内容中的项目名（重命名后路径已变）
-                                try {
-                                    const metaFile = this.app.vault.getAbstractFileByPath(`${newPath}/.project`);
-                                    if (metaFile instanceof TFile) {
-                                        const content = await this.app.vault.read(metaFile);
-                                        const updated = content.replace(/^#\s+.+$/m, `# ${generatedProjectName}`);
-                                        await this.app.vault.modify(metaFile, updated);
-                                    }
-                                } catch (e) { log.warn('[小说工坊] 同步 .project 项目名失败:', e); }
-                                // 更新后续使用的 project 变量
-                                project = generatedProjectName;
+                                showSuccess(`项目已重命名为「${validation.normalized}」`);
                             }
-                        } else {
-                            new Notice(`⚠️ 文件夹「${generatedProjectName}」已存在，项目名保留为「${project}」`, 5000);
+                            project = result.newProject;
+                        } catch (renameErr) {
+                            log.warn('[小说工坊] 项目文件夹重命名失败:', renameErr);
+                            new Notice(`⚠️ 自动重命名失败，项目名保留为「${project}」`, 5000);
                         }
                     }
-                } catch (renameErr) {
-                    log.warn('项目文件夹重命名失败：', renameErr);
-                    new Notice(`⚠️ 自动重命名失败，项目名保留为「${project}」`, 4000);
                 }
             }
 
-            const worldviewFile = this.app.vault.getAbstractFileByPath(worldviewPath);
+            const worldviewFile = this.app.vault.getAbstractFileByPath(pjWorldview(project));
+
             if (worldviewFile instanceof TFile) {
                 await this.plugin.safeOpenFile(worldviewFile);
             }

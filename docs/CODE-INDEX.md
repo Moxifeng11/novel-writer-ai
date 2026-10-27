@@ -1,6 +1,6 @@
 # 代码索引（Code Index）
 
-> 版本：v4.14.0 · 更新：2026-10-26 · 源文件：846 个 .ts（含 335 个 .test.ts）
+> 版本：v4.19.0 · 更新：2026-10-26 · 源文件：880 个 .ts（含 352 个 .test.ts）
 
 ---
 
@@ -536,7 +536,18 @@
 | `ui/full-writer/context-loader-controller.ts` | `ContextLoaderController`：上下文加载 + 角色灵魂自动提取；提取结果必须经 `saveStepResult('characterSoul', …)` 落盘且保存成功才标 complete（失败降 partial）；磁盘已有真实灵魂文件或内存已有恢复内容时跳过提取，不得覆盖 |
 | `ui/full-writer/quick-tools-panel.ts` | 常驻快捷工具面板渲染：非 compact 模式下分组标题为可点击折叠头（组名 + 数量 + 箭头），compact 模式渲染章节页单行 chip 条 |
 | `ui/full-writer/tool-catalog.ts` | 快捷工具目录单一事实源（6 组 37 项 + `CHAPTER_QUICK_TOOL_IDS` 高频条）；`ToolGroup.defaultCollapsed` 控制项目页右侧面板默认收起哪些低频组 |
-| `ui/full-writer/title-bar-controller.ts` | 章节页标题栏：项目/章节选择 + 资源入口 + 常驻快捷工具条（⚙️ 设置 打开 `MiniSettingsModal`） |
+| `ui/full-writer/title-bar-controller.ts` | 章节页标题栏：项目/章节选择 + 资源入口 + 常驻快捷工具条（⚙️ 设置 打开 `MiniSettingsModal`）；v4.17 增加“🚀 一键完成本章 / 🐢 逐步完成”，模式类型取自 `shared/chapter-run.ts` 以避免与编排器形成 UI 环 |
+| `ui/full-writer/chapter-orchestrator.ts` | v4.17 单章一键编排：按 `ChapterStateManager` 完成态推导剩余动作；推荐模式合并 5 个规划步骤，逐步模式逐项执行；支持暂停/继续/取消、失败停留、结算幂等；不重写 StepRunner |
+| `shared/local-ai-queue.ts` | v4.17 本地 AI 进程级串行队列：建议/幽灵/守卫/验证共用 1 个槽，abort 时从等待队列移除；云端调用不经过此队列 |
+| `shared/chapter-run.ts` | v4.17 单章运行模式（`recommended` / `step`）的共享类型，供视图、标题栏与编排器共同引用 |
+| `shared/canon-source.ts` | v4.18 同人考据来源分级：官方/官方 Wiki/参考资料/衍生/未知，衍生来源过滤与来源哈希 |
+| `services/canon-research-service.ts` | v4.18 官方来源检索与缓存：手动 URL/摘录 + 可选搜索 API；只保存短摘录 |
+| `shared/fanfic-audit.ts` | v4.18 同人设定规则审核、来源覆盖、衍生来源阻断与补全/审核提示词 |
+| `ui/fanfic-review-modal.ts` | v4.18 同人设定人工审核：来源逐字段展示、必选检查项、通过后绑定 |
+| `services/project-rename-service.ts` | v4.18 项目重命名：目录 + `.project` + 世界观 + 写作配置 + 插件偏好迁移 |
+| `shared/project-name.ts` | v4.18 项目名校验：空名/标点/系统目录/Windows 保留名/重名 |
+| `shared/synopsis-spec.ts` | v4.18 全书简介四风格规格、评分与解析 |
+| `services/synopsis-store.ts` | v4.18 全书简介多版本、草稿、采用版本兼容副本 |
 | `ui/full-writer/entity-state-controller.ts` | `EntityStateController`：涉及实体同步、结算后实体状态检测、上下文面板刷新；`refreshContextBar()` 必须先移除 `.novel-writer-fw-context-panel` 再 `ContextPanel.render`，不得用不存在的 `.novel-writer-fw-context-card`，否则旧面板残留使 workspace grid 变两行、章节页塌陷 |
 | `ui/full-writer/wizard-step-validators.ts` | 向导步骤「内容级」完整性校验（同人设定 / 世界观 / 设定库 / 文笔风格 / 大纲 / 章节）；同人分支统一走 `isFanficSettingsContentValidEnough`，与保存侧同口径（向导表单不收集时间线） |
 | `ui/full-writer/wizard-controller.ts` | 向导导航门禁：内容不完整阻止进入下一步，提供「重新生成 / 跳过此步骤 →」 |

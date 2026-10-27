@@ -192,10 +192,11 @@ ${timeline || '（无时间线事件）'}
         let writeFailed = false;
         try {
             const existingSnapshot = this.app.vault.getAbstractFileByPath(snapshotPath);
-            if (existingSnapshot) {
-                await this.app.vault.delete(existingSnapshot);
+            if (existingSnapshot instanceof TFile) {
+                await this.app.vault.modify(existingSnapshot, snapshotContent);
+            } else {
+                await this.app.vault.create(snapshotPath, snapshotContent);
             }
-            await this.app.vault.create(snapshotPath, snapshotContent);
         } catch (e) {
             writeFailed = true;
             log.warn('[小说工坊] 状态快照写入失败:', e);

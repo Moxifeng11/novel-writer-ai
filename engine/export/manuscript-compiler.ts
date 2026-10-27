@@ -36,6 +36,8 @@ export interface CompileOptions {
     includeChapterTitles: boolean;
     /** 书名（用于 HTML title 与 Markdown 首行） */
     bookTitle?: string;
+    /** 输出单元：长篇=章，短篇=节，剧本=集。仅影响标题显示，不改文件名。 */
+    unitLabel?: string;
 }
 
 export interface CompiledManuscript {
@@ -77,9 +79,13 @@ export function sortManuscriptChapters(chapters: ManuscriptChapter[]): Manuscrip
     });
 }
 
-function formatChapterLabel(chapter: ManuscriptChapter): string {
-    if (!chapter.title || chapter.title === chapter.chapter) return chapter.chapter;
-    return `${chapter.chapter} ${chapter.title}`;
+function formatChapterLabel(chapter: ManuscriptChapter, options?: CompileOptions): string {
+    let label = chapter.chapter;
+    if (options?.unitLabel && options.unitLabel !== '章') {
+        label = label.replace(/^第(\d+)章/, (_match, num) => `第${num}${options.unitLabel}`);
+    }
+    if (!chapter.title || chapter.title === chapter.chapter) return label;
+    return `${label} ${chapter.title}`;
 }
 
 function escapeHtml(text: string): string {
@@ -111,7 +117,7 @@ function buildMarkdown(sorted: ManuscriptChapter[], options: CompileOptions): st
             currentVolume = chapter.volume;
         }
         if (options.includeChapterTitles) {
-            blocks.push(`## ${formatChapterLabel(chapter)}`);
+            blocks.push(`## ${formatChapterLabel(chapter, options)}`);
         }
         blocks.push(normalizeChapterBody(chapter.content));
     }
@@ -130,7 +136,7 @@ function buildText(sorted: ManuscriptChapter[], options: CompileOptions): string
             currentVolume = chapter.volume;
         }
         if (options.includeChapterTitles) {
-            blocks.push(formatChapterLabel(chapter));
+            blocks.push(formatChapterLabel(chapter, options));
         }
         blocks.push(normalizeChapterBody(chapter.content));
     }
@@ -149,7 +155,7 @@ function buildHtml(sorted: ManuscriptChapter[], options: CompileOptions): string
             currentVolume = chapter.volume;
         }
         if (options.includeChapterTitles) {
-            parts.push(`<h2>${escapeHtml(formatChapterLabel(chapter))}</h2>`);
+            parts.push(`<h2>${escapeHtml(formatChapterLabel(chapter, options))}</h2>`);
         }
         parts.push(bodyToHtml(normalizeChapterBody(chapter.content)));
     }

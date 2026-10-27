@@ -17,7 +17,8 @@ import { App, Notice } from 'obsidian';
 import { KnowledgeBaseManager, type VectorStatus } from './knowledge-base-manager';
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { VectorEnhancer } from '../engine/vector-enhancer';
-import { LLMEnhancer, type LLMCaller } from '../engine/llm-enhancer';
+import { LLMEnhancer, type LLMCaller, type LLMCallOptions } from '../engine/llm-enhancer';
+import { resolveProviderSourceType } from '../shared/model-source';
 import { StyleDeconstructor, StyleAnalysisResult } from '../engine/deconstructors/style-deconstructor';
 import { RhythmDeconstructor, RhythmAnalysisResult } from '../engine/deconstructors/rhythm-deconstructor';
 import { TechniqueDeconstructor, TechniqueAnalysisResult } from '../engine/deconstructors/technique-deconstructor';
@@ -173,6 +174,9 @@ export interface DeconstructionSchedulerSettings {
     segmentedBreakdownMaxWords?: number;
     qualityLevel?: DeconstructionQualityLevel;
     deconstructionEngine?: DeconstructionEngineSettings;
+    /** 以下字段由插件 settings 透传，用于把拆解 LLM 路由到本地 provider */
+    customProviders?: Array<{ id: string; endpoint: string; models?: string[]; sourceType?: 'cloud' | 'local' }>;
+    providerKeys?: Record<string, string>;
 }
 
 export interface DeconstructionEngineSettings {
@@ -236,6 +240,8 @@ export class DeconstructionScheduler {
     private llmEnhancer?: LLMEnhancer;
     private llmCallerGetter?: () => LLMCaller | undefined;
     private settingsGetter?: () => DeconstructionSchedulerSettings;
+    /** 由 EngineRegistry 注入：返回当前共享 embedding 模型名（避免 services→engine 依赖） */
+    private vectorModelResolver?: () => string | undefined;
 
     private styleDeconstructor?: StyleDeconstructor;
     private rhythmDeconstructor?: RhythmDeconstructor;
@@ -350,6 +356,11 @@ export class DeconstructionScheduler {
         this.settingsGetter = settingsGetter;
     }
 
+    /** EngineRegistry 注入共享 embedding 模型名解析器。 */
+    setVectorModelResolver(resolver: () => string | undefined): void {
+        this.vectorModelResolver = resolver;
+    }
+
     /** 设置 LLM 调用器获取器。AIEngine 是懒加载的，通过 getter 延迟获取避免在初始化阶段触发创建。 */
     setLlmCaller(getter: () => LLMCaller | undefined): void {
         this.llmCallerGetter = getter;
@@ -459,6 +470,10 @@ export class DeconstructionScheduler {
     }
 
     getVectorModel(): string {
+        // 实际向量由共享 EmbeddingService 生成；拆解设置里的 vectorModel 可能是旧值。
+        // 优先返回真实模型，避免 UI/缓存 key 与实际向量模型不一致。
+        const sharedModel = this.vectorModelResolver?.();
+        if (sharedModel) return sharedModel;
         return this.getDeconstructionEngineSettings().vectorModel || DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS.vectorModel;
     }
 
@@ -1191,7 +1206,11 @@ export class DeconstructionScheduler {
         const llmCaller = this.llmCallerGetter?.();
         const llmModel = this.getDeconstructionEngineSettings().llmModel;
         const llmEnhancer = (llmEnabled && llmCaller && llmModel)
-            ? new LLMEnhancer(llmCaller, { llmModel })
+            ? new LLMEnhancer(llmCaller, {
+                llmModel,
+                maxTokens: 4096,
+                callOptions: this.resolveLlmCallOptions(llmModel),
+            })
             : undefined;
         const text = this.getEffectiveSourceText(task);
 
@@ -1327,6 +1346,36 @@ export class DeconstructionScheduler {
         ));
     }
 
+    private resolveLlmCallOptions(model: string): LLMCallOptions | undefined {
+        const settings = this.settingsGetter?.();
+        if (!settings || !model) return undefined;
+        const providers = settings.customProviders || [];
+        const local = providers.find(p =>
+            Array.isArray(p.models)
+            && p.models.includes(model)
+            && resolveProviderSourceType({ id: p.id, endpoint: p.endpoint, sourceType: p.sourceType }) === 'local',
+        );
+        if (!local) return undefined;
+        return {
+            endpoint: local.endpoint,
+            apiKey: settings.providerKeys?.[local.id] || 'ollama',
+            disableFallback: true,
+        };
+    }
+
+    private ensureLlmEnhancer(): void {
+        if (this.llmEnhancer) return;
+        if (!this.isLlmEnhancementEnabled()) return;
+        const caller = this.llmCallerGetter?.();
+        const model = this.getDeconstructionEngineSettings().llmModel;
+        if (!caller || !model) return;
+        this.setLlmEnhancer(new LLMEnhancer(caller, {
+            llmModel: model,
+            maxTokens: 4096,
+            callOptions: this.resolveLlmCallOptions(model),
+        }));
+    }
+
     private async breakdownDimension(
         task: BreakdownTask,
         dimension: BreakdownDimension,
@@ -1336,6 +1385,9 @@ export class DeconstructionScheduler {
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
     ): Promise<{ usedVector: boolean; result: any }> {
+        // 非分块路径此前从未创建 LLMEnhancer：设置里打开“LLM 增强”后，
+        // initDeconstructors 的 this.llmEnhancer 永远是 undefined，增强静默不生效。
+        this.ensureLlmEnhancer();
         if (this.shouldUseSegmentedDimension(task)) {
             return await this.breakdownDimensionWithSegments(task, dimension, onProgress, signal, vectorAvailable, degradedDimensions, degradationReasons);
         }

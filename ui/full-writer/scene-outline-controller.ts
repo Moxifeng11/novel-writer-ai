@@ -357,9 +357,14 @@ export class SceneOutlineController {
     /** 基本信息 Tab */
     private renderBasicTab(container: HTMLElement, scene: ExtendedSceneData): void {
         this.createTextInput(container, '场景名称', 'name', scene);
-        this.createTextArea(container, '🎯 场景目标 (objective)', 'objective', scene);
-        this.createTextInput(container, '👥 出场人物', 'characters', scene);
+        this.createTextInput(container, '👁️ 视角人物 (pov)', 'pov', scene);
+        this.createTextInput(container, '⏰ 场景时间 (time)', 'time', scene);
         this.createTextInput(container, '📍 场景地点', 'location', scene);
+        this.createTextInput(container, '👥 出场人物', 'characters', scene);
+        this.createTextArea(container, '🚪 入场状态 (entry_state)', 'entryState', scene);
+        this.createTextArea(container, '🎯 场景目标 (objective)', 'objective', scene);
+        this.createTextArea(container, '⚡ 场景转折 (turn)', 'turn', scene);
+        this.createTextArea(container, '🏁 离场状态 (exit_state)', 'exitState', scene);
         this.createTextInput(container, '⏱️ 时间线位置', 'timelinePosition', scene);
         this.createTextArea(container, '🎭 情绪弧线 (emotion_arc)', 'emotionArc', scene);
         this.createTextArea(container, '👁️ 感官入口 (sensory_hook)', 'sensoryHook', scene);
@@ -368,6 +373,7 @@ export class SceneOutlineController {
         this.createTextArea(container, '🤐 潜台词 (subtext)', 'subtext', scene);
         this.createTextArea(container, '🔗 关系变化 (relationship_shift)', 'relationshipShift', scene);
         this.createTextArea(container, '💬 对话功能 (dialogue_function)', 'dialogueFunction', scene);
+        this.createTextArea(container, '🧭 工艺备注 (craft_notes)', 'craftNotes', scene);
 
         const keySceneRow = container.createDiv({
             cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-m-10px-0'
@@ -834,6 +840,12 @@ export class SceneOutlineController {
 
             const scene = createDefaultScene(headings[i].index);
             scene.name = headings[i].name;
+            scene.pov = this.extractField(sceneContent, 'pov') || this.extractField(sceneContent, '视角');
+            scene.time = this.extractField(sceneContent, 'time') || this.extractField(sceneContent, '场景时间');
+            scene.entryState = this.extractField(sceneContent, 'entry_state') || this.extractField(sceneContent, '入场状态');
+            scene.turn = this.extractField(sceneContent, 'turn') || this.extractField(sceneContent, '场景转折');
+            scene.exitState = this.extractField(sceneContent, 'exit_state') || this.extractField(sceneContent, '离场状态');
+            scene.craftNotes = this.extractField(sceneContent, 'craft_notes') || this.extractField(sceneContent, '工艺备注');
             scene.objective = this.extractField(sceneContent, 'objective');
             scene.emotionArc = this.extractField(sceneContent, 'emotion_arc');
             scene.conflict = this.extractField(sceneContent, 'conflict');
@@ -920,9 +932,15 @@ export class SceneOutlineController {
         let output = '';
         for (const scene of this.scenes) {
             output += `## 场景${scene.index}：${scene.name || '(未命名)'}\n`;
+            if (scene.pov) output += `pov: ${scene.pov}\n`;
+            if (scene.time) output += `time: ${scene.time}\n`;
+            if (scene.location) output += `location: ${scene.location}\n`;
+            if (scene.entryState) output += `entry_state: ${scene.entryState}\n`;
             output += `objective: ${scene.objective}\n`;
-            output += `emotion_arc: ${scene.emotionArc}\n`;
             output += `conflict: ${scene.conflict}\n`;
+            if (scene.turn) output += `turn: ${scene.turn}\n`;
+            if (scene.exitState) output += `exit_state: ${scene.exitState}\n`;
+            output += `emotion_arc: ${scene.emotionArc}\n`;
             output += `sensory_hook: ${scene.sensoryHook}\n`;
             output += `memory_trigger: ${scene.memoryTrigger}\n`;
             output += `body_reaction: ${scene.bodyReaction}\n`;
@@ -930,9 +948,9 @@ export class SceneOutlineController {
             output += `relationship_shift: ${scene.relationshipShift}\n`;
             output += `key_scene: ${scene.keyScene || (scene.isKeyScene ? '⭐ 名场面' : '否')}\n`;
             output += `dialogue_function: ${scene.dialogueFunction}\n`;
+            if (scene.craftNotes) output += `craft_notes: ${scene.craftNotes}\n`;
 
             if (scene.characters) output += `characters: ${scene.characters}\n`;
-            if (scene.location) output += `location: ${scene.location}\n`;
             if (scene.timelinePosition) output += `timeline: ${scene.timelinePosition}\n`;
             if (scene.conflictType) {
                 const typeMap: Record<string, string> = {

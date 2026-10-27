@@ -49,7 +49,7 @@ function makeCtx(autoGhostAssociation?: boolean): GhostCtx {
         isAssociating: false,
         isSuggesting: false,
         currentSuggestions: [],
-        rightEditor: { value: 'a'.repeat(60), selectionStart: 60 },
+        rightEditor: { value: 'a'.repeat(59) + '。', selectionStart: 60 },
         lastGhostSeed: '',
         lastGhostRequestAt: 0,
         suggestionEpoch: 0,
@@ -90,7 +90,7 @@ describe('CoWritingView — 自动联想开关', () => {
         await ctx.refreshGhostAssociation();
 
         expect(ctx.facade.suggestAssociation).toHaveBeenCalledTimes(1);
-        expect(ctx.lastGhostSeed).toBe('a'.repeat(60));
+        expect(ctx.lastGhostSeed).toBe('a'.repeat(59) + '。');
         expect(ctx.isAssociating).toBe(false);
     });
 
@@ -119,7 +119,7 @@ describe('CoWritingView — 自动联想开关', () => {
         expect(ctx.ghostSuggestionContainer.empty).toHaveBeenCalled();
     });
 
-    it('开启时 schedule 仍按 1.5 秒防抖排队（回归）', () => {
+    it('开启时 schedule 仍按 2.5 秒防抖排队（回归）', () => {
         const ctx = makeCtx(true);
 
         ctx.scheduleGhostAssociationRefresh();
@@ -127,7 +127,7 @@ describe('CoWritingView — 自动联想开关', () => {
         expect(ctx.ghostDebounceManager.debounceFixed).toHaveBeenCalledWith(
             'ghost-association',
             expect.any(Function),
-            1500,
+            2500,
         );
     });
 });

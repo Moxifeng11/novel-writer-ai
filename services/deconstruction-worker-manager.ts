@@ -59,6 +59,7 @@ export class DeconstructionWorkerManager {
     private llmEnhancer: LLMEnhancer | null = null;
     private useWorkerMode: boolean = false;
     private destroyed: boolean = false;
+    private enhancementBypassLogged = false;
 
     constructor(
         vectorEnhancer?: VectorEnhancer,
@@ -276,7 +277,8 @@ export class DeconstructionWorkerManager {
     }
 
     isWorkerAvailable(): boolean {
-        return this.useWorkerMode && this.workerManager?.isWorkerAvailable() === true;
+        // LLM 增强会强制主线程；向量任务在 executeTask 内部按 taskType 单独绕过 Worker。
+        return !this.llmEnhancer && this.useWorkerMode && this.workerManager?.isWorkerAvailable() === true;
     }
 
     setVectorEnhancer(vectorEnhancer?: VectorEnhancer): void {
@@ -428,7 +430,17 @@ export class DeconstructionWorkerManager {
             return promise;
         }
 
-        if (this.useWorkerMode && this.workerManager) {
+        // Worker 是独立 bundle：vectorEnhancer / LLMEnhancer 无法随主线程实例进入。
+        // - 向量任务（*:vector）需要主线程的 VectorEnhancer
+        // - 启用 LLM 增强时所有任务都需要主线程
+        const needsEnhancement = Boolean(this.llmEnhancer)
+            || (taskType.endsWith(':vector') && Boolean(this.vectorEnhancer));
+        if (needsEnhancement && this.useWorkerMode && !this.enhancementBypassLogged) {
+            this.enhancementBypassLogged = true;
+            log.info('[DeconstructionWorkerManager] 向量/LLM 增强已启用，Worker 降级为主线程执行以保留增强结果');
+        }
+
+        if (this.useWorkerMode && this.workerManager && !needsEnhancement) {
             // R2: Worker 是独立 bundle，主线程设置的扩充词无法自动抵达，
             // 因此随任务载荷下发（空数组时不带该字段，载荷与改造前一致）。
             const extraAiWords = AntiAIDetector.getExtraHighFreqWords();

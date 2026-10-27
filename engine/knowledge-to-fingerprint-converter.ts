@@ -20,6 +20,7 @@ import {
     kbBookForeshadowDBFile,
 } from '../shared/paths';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
+import { getSharedEmbeddingProvider } from './embedding/embedding-service';
 import { StyleVectorStore, STYLE_DIMENSIONS, STYLE_DIMENSION_LABELS } from './style-vector-store';
 import { createLogger } from '../shared/logger';
 
@@ -36,7 +37,7 @@ export class KnowledgeToFingerprintConverter {
 
     constructor(app: App, embeddingClient?: EmbeddingProvider) {
         this.app = app;
-        this.embeddingClient = embeddingClient;
+        this.embeddingClient = embeddingClient ?? getSharedEmbeddingProvider() ?? undefined;
     }
 
     setEmbeddingClient(client: EmbeddingProvider): void {
@@ -50,7 +51,7 @@ export class KnowledgeToFingerprintConverter {
      * @param bookName 书名（用于定位知识库目录）
      * @param baseDir 知识库根目录，可选
      */
-    async convert(bookId: string, bookName: string, baseDir?: string): Promise<StyleFingerprint> {
+    async convert(bookId: string, bookName: string, baseDir?: string, originalSamples?: string[]): Promise<StyleFingerprint> {
         const styleFilePath = kbBookStyleFingerprintFile(bookName, baseDir);
         const styleContent = await this.readFileSafely(styleFilePath);
         if (styleContent === null) {
@@ -60,7 +61,12 @@ export class KnowledgeToFingerprintConverter {
         const frontmatter = this.parseFrontmatter(styleContent);
         const stats = this.buildStats(frontmatter);
         const features = this.buildFeatures(styleContent);
-        const samples = await this.collectSamples(bookName, baseDir, styleContent);
+        // 只接受真实原文片段。知识库拆解报告里的段落不是 prose，
+        // 注入正文 few-shot 会让模型模仿“分析报告腔”。
+        const samples = (originalSamples || [])
+            .map(s => (s || '').trim())
+            .filter(Boolean)
+            .slice(0, 20);
 
         const fingerprint: StyleFingerprint = {
             id: 'fp_kb_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10),
@@ -86,11 +92,12 @@ export class KnowledgeToFingerprintConverter {
         bookId: string,
         bookName: string,
         baseDir?: string,
-        onProgress?: (phase: string, percent: number, message: string) => void
+        onProgress?: (phase: string, percent: number, message: string) => void,
+        originalSamples?: string[],
     ): Promise<{ fingerprint: StyleFingerprint; vectorized: boolean }> {
         onProgress?.('parsing', 10, '正在解析知识库数据...');
 
-        const fingerprint = await this.convert(bookId, bookName, baseDir);
+        const fingerprint = await this.convert(bookId, bookName, baseDir, originalSamples);
 
         onProgress?.('vectorizing', 60, '正在生成风格向量...');
 

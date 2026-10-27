@@ -11,11 +11,14 @@ import { getWorldviewPath, getSettingLibPath, getWritingStylePath, getLegacyWrit
     pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir,
     pjForeshadowDB, pjTimelineBoard, pjMemoryShardsDir,
     pjFanficFile, pjBodyFile, pjStepDir, pjStepFile, pjWritingRules, pjWritingRulesTemplate,
+    pjChapterStateSnapshot,
+    pjChapterStateSnapshotDir,
     isInOutlineDir, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
 import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRITICAL } from '../shared/thresholds';
 import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromContent } from './character-soul';
 import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
 import { buildStoryLinkage, type StoryLinkage } from './story-linkage';
 import { buildForeshadowIndexBlock, buildTimelineIndexBlock, upsertLinkageBlock, LINKAGE_BEGIN, LINKAGE_END } from './story-linkage-writer';
 import { PluginCapabilities } from '../shared/plugin-capabilities';
@@ -121,30 +124,50 @@ export function detectProjects(app: App): string[] {
     const projects: string[] = [];
     const visited = new Set<string>();
     const vaultMeta = new ObsidianVaultMeta(app);
-    
+
+    const isProjectMarker = (projectId: string, path: string): boolean =>
+        path === `${projectId}/.project` ||
+        path === `${projectId}/作品信息.md` ||
+        path === `${projectId}/世界观总览.md` ||
+        path.startsWith(`${projectId}/${SUBDIR_WORLD_ARCH}/`) ||
+        path.startsWith(`${projectId}/短篇创作/`) ||
+        path.startsWith(`${projectId}/剧本创作/`);
+
     for (const file of vaultMeta.getFiles()) {
         const path = file.path;
         if (path.startsWith('元文件')) continue;
         if (path.startsWith('.')) continue;
-        
+
         const parts = path.split('/');
+        // 模式库项目：`长篇小说/项目名/...`；项目 ID 使用前两段
+        for (const libraryRoot of MODE_LIBRARY_ROOT_LIST) {
+            if (!path.startsWith(`${libraryRoot}/`)) continue;
+            const relative = path.slice(libraryRoot.length + 1);
+            const name = relative.split('/')[0];
+            if (!name) continue;
+            const projectId = `${libraryRoot}/${name}`;
+            if (visited.has(projectId)) break;
+            if (isProjectMarker(projectId, path)) {
+                projects.push(projectId);
+                visited.add(projectId);
+            }
+            break;
+        }
+        if (MODE_LIBRARY_ROOT_LIST.includes(parts[0])) continue;
+
         const projectName = parts[0];
-        
-        // 小说项目的标志：存在 .project 文件、世界观总览.md 或 01-世界架构 子目录
-        // 刚创建的项目只有 .project 和空目录，也必须能被检测到
+
+        // 小说项目的标志：存在 .project、作品信息.md、世界观总览.md、01-世界架构，
+// 或短篇/剧本独立内容目录。刚创建的模式项目只有 .project 和空目录，也必须能被检测到。
         if (projectName && !visited.has(projectName)) {
-            if (
-                path === `${projectName}/.project` ||
-                path === `${projectName}/世界观总览.md` ||
-                path.startsWith(`${projectName}/${SUBDIR_WORLD_ARCH}/`)
-            ) {
+            if (isProjectMarker(projectName, path)) {
                 // 确认为小说项目
                 projects.push(projectName);
                 visited.add(projectName);
             }
         }
     }
-    
+
     return projects.sort();
 }
 
@@ -566,6 +589,7 @@ export class ContextManager {
         const writingStylePath = getWritingStylePath(project);
         const legacyWritingStylePath = getLegacyWritingStylePath(project);
         const fanficPath = pjFanficFile(project, '');
+        const chapterStateSnapshotDir = `${pjChapterStateSnapshotDir(project)}/`;
 
         if (filePath === worldViewPath) return true;
         if (filePath === settingLibPath) return true;
@@ -578,6 +602,7 @@ export class ContextManager {
         if (filePath.startsWith(outlineDir)) return true;
         if (filePath.startsWith(stepDir)) return true;
         if (filePath.startsWith(bodyDir)) return true;
+        if (filePath.startsWith(chapterStateSnapshotDir)) return true;
         if (filePath.startsWith(fanficPath.replace(/\/[^\/]*$/, '/'))) return true;
 
         return false;
@@ -1421,8 +1446,19 @@ export class ContextManager {
                 analysisReport: null,
                 continuityReview: null,
                 infoPlan: null,
-                bodySummary: null
+                bodySummary: null,
+                stateSnapshot: null
             };
+
+            const snapshotPath = pjChapterStateSnapshot(project, prevNum);
+            const snapshotFile = this.getVaultMeta().getAbstractFileByPath(snapshotPath);
+            if (snapshotFile instanceof TFile) {
+                try {
+                    result.stateSnapshot = await this.app.vault.cachedRead(snapshotFile);
+                } catch {
+                    result.stateSnapshot = null;
+                }
+            }
 
             for (const volume of volumes) {
                 const volN = parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);

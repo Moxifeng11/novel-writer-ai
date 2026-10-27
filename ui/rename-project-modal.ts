@@ -6,8 +6,10 @@
  */
 
 import { App, Modal, Notice, Setting, TFolder } from 'obsidian';
-import { pjProjectMeta, sanitizeName } from '../shared/paths';
 import { createLogger } from '../shared/logger';
+import { validateProjectName } from '../shared/project-name';
+import { ProjectRenameService } from '../services/project-rename-service';
+import { MODE_LIBRARY_ROOT_LIST, projectDisplayName } from '../domains/kernel/project-locator';
 
 const log = createLogger('RenameProjectModal');
 
@@ -54,54 +56,45 @@ export class RenameProjectModal extends Modal {
 
     private async submit(): Promise<void> {
         if (this.submitting) return;
-        const newName = sanitizeName(this.value.trim());
-        if (!newName || newName === this.project) {
+        const oldDisplayName = projectDisplayName(this.project);
+        const existing = this.app.vault.getRoot().children
+            .filter((child): child is TFolder => child instanceof TFolder)
+            .flatMap(folder => {
+                if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
+                    return folder.children
+                        .filter((child): child is TFolder => child instanceof TFolder)
+                        .map(child => child.name);
+                }
+                return [folder.name];
+            })
+            .filter(name => name !== oldDisplayName);
+        const validation = validateProjectName(this.value, existing);
+        if (!validation.valid) {
+            new Notice(`⚠️ ${validation.error}`, 6000);
+            return;
+        }
+        const newName = validation.normalized;
+        if (newName === oldDisplayName) {
             new Notice('项目名未变化');
             this.close();
             return;
         }
 
-        const parent = this.project.replace(/\/[^/]+$/, '');
-        const newPath = parent ? `${parent}/${newName}` : newName;
-        if (this.app.vault.getAbstractFileByPath(newPath)) {
-            new Notice(`⚠️ 文件夹「${newName}」已存在，请换一个名称`);
-            return;
-        }
-
-        const folder = this.app.vault.getAbstractFileByPath(this.project);
-        if (!(folder instanceof TFolder)) {
-            new Notice('未找到当前项目文件夹，无法重命名');
-            return;
-        }
-
         this.submitting = true;
         try {
-            await this.app.fileManager.renameFile(folder, newPath);
-            await this.syncProjectMeta(newPath, newName);
-            new Notice(`✅ 项目已重命名为「${newName}」`);
+            const result = await new ProjectRenameService(this.app).rename(this.project, newName);
+            if (result.warnings.length > 0) {
+                new Notice(`✅ 目录已重命名；${result.warnings.join('；')}`, 12000);
+            } else {
+                new Notice(`✅ 项目已重命名为「${newName}」`);
+            }
             this.close();
             this.onRenamed?.(newName);
         } catch (e) {
             log.error('[RenameProjectModal] 重命名失败:', e);
-            new Notice(`⚠️ 重命名失败：${e instanceof Error ? e.message : String(e)}`);
+            new Notice(`⚠️ 重命名失败：${e instanceof Error ? e.message : String(e)}`, 8000);
         } finally {
             this.submitting = false;
-        }
-    }
-
-    /** .project 是点文件，Obsidian 索引不到，需走 adapter */
-    private async syncProjectMeta(newProject: string, newName: string): Promise<void> {
-        const path = pjProjectMeta(newProject);
-        try {
-            const adapter = this.app.vault.adapter;
-            if (!(await adapter.exists(path))) return;
-            const content = await adapter.read(path);
-            const updated = content.replace(/^#\s+.+$/m, `# ${newName}`);
-            if (updated !== content) {
-                await adapter.write(path, updated);
-            }
-        } catch (e) {
-            log.warn('[RenameProjectModal] 同步 .project 失败:', e);
         }
     }
 }

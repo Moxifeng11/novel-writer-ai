@@ -16,6 +16,7 @@ import { StepRunner, ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
 import { downstreamStepsAfterPlanningChange } from '../../engine/planning-step-advance';
 import { BODY_CHANGE_INVALIDATED_STEPS } from '../../engine/step-definitions';
 import { assessContextReadiness } from '../../engine/context-readiness';
+import { isTemplateSkeleton } from '../../engine/step-validator';
 import type { GatheredContext } from '../../engine/context-manager';
 import { ChapterStateManager } from '../states/chapter-state-manager';
 import {
@@ -51,6 +52,8 @@ export interface StepRenderDeps {
     renderInContainer: (container: HTMLElement) => Promise<void>;
     renderInterventionBox: (container: HTMLElement) => void;
     renderPolishEditor: (area: HTMLElement) => void | Promise<void>;
+    /** 把本步的手动操作错误并入统一错误卡（未提供时沿用 Notice） */
+    reportStepError?: (stepKey: string, message: string) => void;
 }
 
 export class StepRenderController {
@@ -197,6 +200,7 @@ export class StepRenderController {
                         d.plugin,
                         (c) => d.renderInContainer(c),
                         d.getTabContent(),
+                        { force: true },
                     );
                 };
                 // v3.4.9: 结算完成后渲染润色编辑器
@@ -229,10 +233,20 @@ export class StepRenderController {
         const cs = d.chapterState;
         // v3.4.8 SOURCE: 仅当本会话AI生成 或 磁盘恢复的已完成步骤 才显示"上次结果"
         // 模板骨架（无 source 字段且未达到 complete 阈值）不进入此分支
-        const showResult = cs.stepResults[stepKey] && (
+        const rawResult = cs.stepResults[stepKey] || '';
+        const hasResult = rawResult.trim().length > 0;
+        const skeleton = hasResult && isTemplateSkeleton(rawResult, stepKey);
+        const showResult = hasResult && !skeleton && (
             cs.generatedThisSession.has(stepKey) ||
             cs.stepCompleted.has(stepKey)
         );
+
+        if (hasResult && skeleton && (cs.generatedThisSession.has(stepKey) || cs.stepCompleted.has(stepKey))) {
+            area.createDiv({
+                text: '⚠️ 本步只有模板骨架，未产出有效内容；请按上方错误卡的提示重试本步。',
+                cls: 'novel-writer-fw-warning',
+            });
+        }
 
         // sceneExpand 步骤特殊处理：显示场景细纲编辑器
         if (stepKey === 'sceneExpand' && showResult) {
@@ -242,17 +256,28 @@ export class StepRenderController {
 
         if (showResult) {
             const resultContainer = area.createDiv({ cls: 'novel-writer-fw-result-section' });
-            const titleRow = resultContainer.createDiv({ attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;' } });
-            titleRow.createEl('h4', { text: '📄 现有内容/上次结果（可直接编辑）', cls: 'novel-writer-fw-result-title', attr: { style: 'margin:0;' } });
-            const saveBtn = titleRow.createEl('button', {
-                text: '💾 保存',
-                attr: { style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);' }
+            const titleRow = resultContainer.createDiv({ cls: 'nw-result-title-row' });
+            const title = cs.stepCompleted.has(stepKey) ? '✅ 本步执行结果' : '📄 本步结果（未达完成标准）';
+            titleRow.createEl('h4', { text: title, cls: 'novel-writer-fw-result-title' });
+            titleRow.createSpan({
+                text: `${rawResult.trim().length} 字${cs.stepCompleted.has(stepKey) ? ' · 已通过结构校验' : ' · 已保存草稿'}`,
+                cls: 'nw-result-meta',
             });
-            const resultCard = resultContainer.createDiv({ cls: 'novel-writer-fw-result-card' });
-            const textarea = resultCard.createEl('textarea', {
-                attr: { style: 'width:100%;min-height:180px;font-size:12px;padding:8px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;white-space:pre-wrap;' }
+            const saveBtn = titleRow.createEl('button', {
+                text: '💾 保存修改',
+                cls: 'nw-result-save-btn',
+            });
+
+            // 先给结果预览，编辑原文折叠，避免大段 textarea 把成果挤到看不见。
+            const preview = resultContainer.createDiv({ cls: 'nw-result-preview' });
+            preview.textContent = rawResult.length > 2400 ? `${rawResult.slice(0, 2400)}\n…（已截断预览，展开编辑可查看全文）` : rawResult;
+
+            const editor = resultContainer.createEl('details', { cls: 'nw-result-editor' });
+            editor.createEl('summary', { text: `展开编辑原文（${rawResult.length} 字）` });
+            const textarea = editor.createEl('textarea', {
+                cls: 'nw-result-textarea',
             }) as HTMLTextAreaElement;
-            textarea.value = cs.stepResults[stepKey];
+            textarea.value = rawResult;
 
             saveBtn.onclick = async () => {
                 const newContent = textarea.value;
@@ -284,7 +309,9 @@ export class StepRenderController {
                     // v3.4.9 P0-4: 保存后重新渲染当前步骤区，以便"继续下一步"按钮即时出现
                     await d.renderInContainer(d.getTabContent());
                 } catch (e) {
-                    showError(`保存失败: ${(e as Error).message}`);
+                    const message = `保存失败: ${(e as Error).message}`;
+                    if (d.reportStepError) d.reportStepError(stepKey, message);
+                    else showError(message);
                 }
             };
 
@@ -315,6 +342,7 @@ export class StepRenderController {
                             d.getChapterName(),
                             numMatch ? parseInt(numMatch[0], 10) : 0,
                             d.getVolume(),
+                            cs.stepResults['analysisReport'] || '',
                         );
                         const applyBtn = host.createEl('button', {
                             text: '✅ 应用报告变更',

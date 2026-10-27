@@ -15,6 +15,16 @@ const log = createLogger('SettingsMigrator');
 
 export const CURRENT_SCHEMA_VERSION = 4;
 
+export { GITHUB_REPO_SLUG as DEFAULT_UPDATE_GITHUB_REPO } from './github-repo';
+
+import { GITHUB_REPO_SLUG, normalizeGitHubRepo } from './github-repo';
+
+export function normalizeUpdateGithubRepo(value?: string): string {
+    const repo = normalizeGitHubRepo(value);
+    if (!repo || repo === 'trae-ai/novel-writer-ai') return GITHUB_REPO_SLUG;
+    return repo;
+}
+
 interface MigrationCustomProvider {
     id: string;
     name: string;

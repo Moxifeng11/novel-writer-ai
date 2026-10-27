@@ -182,6 +182,24 @@ describe('BodyWriter', () => {
         expect(content).not.toContain('step_status');
     });
 
+    it('截断正文即使结构达标也不得标记 generated/written', async () => {
+        await writer.write({
+            path: PATH,
+            raw: longCompleteBody(),
+            chapterNum: 3,
+            chapterName: '第3章',
+            volume: '第1卷',
+            writingMode: 'pipeline',
+            contract: DEFAULT_BODY_FORMAT,
+            truncated: true,
+        });
+
+        const fm = frontmatter.states.get(PATH)!;
+        expect(fm['status']).toBe('draft');
+        expect(fm['step_status']).toBeUndefined();
+        expect(fm['step_truncated']).toBe(true);
+    });
+
     it('frontmatterPatch 由调用方计算后统一写入', async () => {
         await writer.write({
             path: PATH,

@@ -5,7 +5,8 @@ import type { ChapterListEntry } from '../project-utils';
 import { MiniSettingsModal } from '../mini-settings-modal';
 import { FullWriterStore } from './full-writer-store';
 import { renderQuickToolsPanel } from './quick-tools-panel';
-import { CHAPTER_QUICK_TOOL_IDS, findToolByCommandId } from './tool-catalog';
+import type { ChapterRunMode } from '../../shared/chapter-run';
+import { CHAPTER_QUICK_TOOL_IDS, findLongToolByCommandId } from './tool-catalog';
 
 export interface TitleBarControllerDeps {
     app: App;
@@ -21,6 +22,8 @@ export interface TitleBarControllerDeps {
     openKnowledgeBase: () => void;
     openFingerprintLibrary: () => void;
     executeCommand: (commandId: string) => void;
+    runChapterOneClick: (mode?: ChapterRunMode) => void;
+    getRemainingChapterActions: () => number;
 }
 
 export class TitleBarController {
@@ -109,6 +112,22 @@ export class TitleBarController {
         const secondaryRow = titleRow.createDiv({ cls: 'novel-writer-fw-title-secondary' });
 
         if (this.deps.state.project && this.deps.state.chapterName) {
+            const remaining = this.deps.getRemainingChapterActions();
+            const runBtn = secondaryRow.createEl('button', {
+                text: remaining > 0 ? `🚀 一键完成本章（剩余 ${remaining} 步）` : '✅ 本章已完成',
+                cls: 'novel-writer-settings-btn',
+            });
+            runBtn.setAttribute('title', '一次点击跑完剩余步骤；步骤仍可见、可编辑、可单独重生成');
+            runBtn.disabled = remaining === 0;
+            runBtn.onclick = () => this.deps.runChapterOneClick('recommended');
+
+            const stepBtn = secondaryRow.createEl('button', {
+                text: '🐢 逐步完成',
+                cls: 'novel-writer-settings-btn',
+            });
+            stepBtn.setAttribute('title', '一次点击启动，但逐步执行、每步可见');
+            stepBtn.onclick = () => this.deps.runChapterOneClick('step');
+
             const coBtn = secondaryRow.createEl('button', { text: '✍️ 句级协同', cls: 'novel-writer-settings-btn' });
             coBtn.setAttribute('title', '进入句级协同写作工作台（当前章节）');
             coBtn.onclick = () => this.deps.openCurrentChapterInCoWriting();
@@ -131,7 +150,7 @@ export class TitleBarController {
         if (this.deps.state.project) {
             const toolsRow = bar.createDiv({ cls: 'novel-writer-fw-quick-tools-row' });
             const tools = CHAPTER_QUICK_TOOL_IDS
-                .map(findToolByCommandId)
+                .map(findLongToolByCommandId)
                 .filter((t): t is NonNullable<typeof t> => !!t);
             renderQuickToolsPanel(toolsRow, {
                 compact: true,

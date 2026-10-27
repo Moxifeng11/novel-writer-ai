@@ -15,6 +15,7 @@ import {
 } from '../shared/thresholds';
 import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '../shared/token-estimator';
 import { resolveProviderSourceType } from '../shared/model-source';
+import type { ThinkingMode } from '../shared/task-model';
 import type { APIResponse } from './ai-engine';
 
 import type { Notifier } from '../shared/types';
@@ -230,7 +231,9 @@ export class AIApiClient {
         maxTokens: number,
         stream: boolean,
         numCtx?: number | undefined,
-        endpoint?: string
+        endpoint?: string,
+        thinkingMode?: ThinkingMode,
+        thinkingBudget?: number,
     ): Record<string, unknown> {
         const safeMaxTokens = Math.min(maxTokens, ZAI_MAX_TOKENS);
         if (isOllamaNative) {
@@ -242,13 +245,18 @@ export class AIApiClient {
                 num_predict: safeMaxTokens,
                 num_ctx: effectiveNumCtx,
             };
-            return {
+            const body: Record<string, unknown> = {
                 model,
                 prompt: userPrompt,
                 system: systemPrompt,
                 stream,
                 options: ollamaOptions,
             };
+            // Ollama 新版原生 API 支持 think；auto 时不发，交给服务端默认
+            if (thinkingMode === 'on' || thinkingMode === 'off') {
+                body.think = thinkingMode === 'on';
+            }
+            return body;
         }
         const body: Record<string, unknown> = {
             model,
@@ -260,7 +268,44 @@ export class AIApiClient {
             temperature,
         };
         if (stream) body.stream = true;
+
+        // 思考参数只在用户显式开启时下发；auto 交给供应商默认，避免未知端点收到不支持的字段。
+        if (thinkingMode === 'on') {
+            const thinking = this.buildThinkingPayload(model, endpoint, thinkingBudget);
+            if (thinking) Object.assign(body, thinking);
+        }
         return body;
+    }
+
+    /**
+     * 按供应商协议生成思考参数。
+     * - OpenAI o 系列：reasoning_effort
+     * - 火山/DeepSeek/SenseNova：thinking.type=enabled
+     * - 未知供应商：不下发，避免 400
+     */
+    private buildThinkingPayload(
+        model: string,
+        endpoint: string | undefined,
+        budget: number | undefined,
+    ): Record<string, unknown> | null {
+        const lowerModel = (model || '').toLowerCase();
+        const lowerEndpoint = (endpoint || '').toLowerCase();
+
+        if (/^(o1|o3|o4|gpt-5)/.test(lowerModel)) {
+            const amount = budget && budget > 0 ? budget : 0;
+            const effort = amount > 8192 ? 'high' : amount > 2048 ? 'medium' : 'low';
+            return { reasoning_effort: effort };
+        }
+
+        if (lowerEndpoint.includes('volces.com')
+            || lowerEndpoint.includes('deepseek.com')
+            || lowerEndpoint.includes('sensenova.cn')) {
+            const thinking: Record<string, unknown> = { type: 'enabled' };
+            if (budget && budget > 0) thinking.budget_tokens = budget;
+            return { thinking };
+        }
+
+        return null;
     }
 
     private async handleRateLimit(currentModel: string, hasMoreModels: boolean): Promise<'break' | 'continue'> {
@@ -305,8 +350,23 @@ export class AIApiClient {
      * 仅匹配 Ollama 默认端口，避免误伤 LM Studio / vLLM 等其它本地服务。
      */
     private normalizeOllamaEndpoint(endpoint: string): string {
-        // 只改写本机端点，端口不限定 11434：自定义端口/LAN 转发同样需要原生 /api/generate 才能透传 num_ctx。
-        if (!/^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?\//i.test(endpoint)) return endpoint;
+        // 只改写 Ollama：LM Studio/vLLM 等本地 OpenAI 兼容服务没有 /api/generate。
+        // 识别依据：provider 标记 apiStyle=ollama / id=ollama，或本地 11434 端口。
+        // 无 provider 记录的旧配置（直接填 localhost 端点）保留历史改写行为。
+        const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
+        let isOllama = provider?.apiStyle === 'ollama' || provider?.id === 'ollama';
+        if (!isOllama) {
+            try {
+                const url = new URL(endpoint);
+                isOllama = url.port === '11434' && this.isLocalEndpoint(endpoint);
+                if (!provider && this.isLocalEndpoint(endpoint)) {
+                    isOllama = true;
+                }
+            } catch {
+                isOllama = false;
+            }
+        }
+        if (!isOllama) return endpoint;
         return endpoint.replace(/\/v1\/chat\/completions\/?$/i, '/api/generate');
     }
 
@@ -358,7 +418,7 @@ export class AIApiClient {
         model?: string,
         temperature: number = 0.7,
         maxTokens: number = 4096,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): Promise<APIResponse> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
         let apiKey = options?.apiKey || this.plugin.settings.apiKey;
@@ -374,8 +434,9 @@ export class AIApiClient {
         // 创意类调用（随机构思 / 文笔预设）必须显式 bypassCache，否则相同提示词会永远返回同一结果。
         const cacheEnabled = (this.plugin as any).settings?.promptCacheEnabled !== false && options?.bypassCache !== true;
         const promptCache = cacheEnabled ? getPromptCache() : null;
+        const cacheScope = `${endpoint}|${options?.thinkingMode || ''}|${options?.thinkingBudget || 0}`;
         const cacheKey = promptCache
-            ? computePromptHash(systemPrompt, userPrompt, effectiveModel, temperature, maxTokens)
+            ? computePromptHash(systemPrompt, userPrompt, effectiveModel, temperature, maxTokens, cacheScope)
             : '';
         if (promptCache) {
             const cached = promptCache.get(cacheKey);
@@ -505,7 +566,9 @@ export class AIApiClient {
                         attemptMaxTokens,
                         false,
                         options?.numCtx,
-                        endpoint
+                        endpoint,
+                        options?.thinkingMode,
+                        options?.thinkingBudget,
                     );
 
                     const perfFetchId = performanceMonitor.start('apiFetch', 'apiCall', undefined, {
@@ -701,7 +764,7 @@ export class AIApiClient {
         temperature: number = 0.7,
         maxTokens: number = 4096,
         onChunk?: (text: string, done: boolean) => void,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): Promise<APIResponse> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
@@ -841,7 +904,9 @@ export class AIApiClient {
                             attemptMaxTokens,
                             true,
                             options?.numCtx,
-                            endpoint
+                            endpoint,
+                            options?.thinkingMode,
+                            options?.thinkingBudget,
                         );
 
                         const perfStreamFetchId = performanceMonitor.start('apiFetchStream', 'apiCall', undefined, {
@@ -1066,7 +1131,7 @@ export class AIApiClient {
         model?: string,
         temperature: number = 0.7,
         maxTokens: number = 4096,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): AsyncGenerator<string, APIResponse, unknown> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
@@ -1181,7 +1246,7 @@ export class AIApiClient {
         model: string,
         temperature: number,
         maxTokens: number,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; numCtx?: number }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): AsyncGenerator<string, APIResponse, unknown> {
         const externalSignal = options?.signal;
         const apiKey = options?.apiKey || this.plugin.settings.apiKey;
@@ -1264,7 +1329,9 @@ export class AIApiClient {
                         attemptMaxTokens,
                         true,
                         options?.numCtx,
-                        endpoint
+                        endpoint,
+                        options?.thinkingMode,
+                        options?.thinkingBudget,
                     );
 
                     const response = await fetch(requestEndpoint, {

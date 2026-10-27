@@ -303,8 +303,11 @@ ${charMiss > 0 ? `- ⚠️ ${charMiss}个人物未填写当前状态` : ''}
             const dir = pjControlDir(project);
             if (!this.app.vault.getAbstractFileByPath(dir)) await this.app.vault.createFolder(dir);
             const existingDebtBoard = this.app.vault.getAbstractFileByPath(debtP);
-            if (existingDebtBoard) await this.app.vault.delete(existingDebtBoard);
-            await this.app.vault.create(debtP, debtContent);
+            if (existingDebtBoard instanceof TFile) {
+                await this.app.vault.modify(existingDebtBoard, debtContent);
+            } else {
+                await this.app.vault.create(debtP, debtContent);
+            }
         } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
     }
 

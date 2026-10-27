@@ -9,6 +9,8 @@ import {
 } from '../shared/format-constants';
 import { validateCharacterOutput } from '../shared/template-validator';
 import { createLogger } from '../shared/logger';
+import { ProjectRenameService } from '../services/project-rename-service';
+import { validateProjectName } from '../shared/project-name';
 
 const log = createLogger('AiBuilderModal');
 import {
@@ -541,51 +543,41 @@ export class AiBuilderModal extends Modal {
                 if (existingFile) {
                     const ok = window.confirm('世界观总览已存在，是否覆盖？');
                     if (!ok) { genNotice.hide(); return; }
-                    await this.app.vault.delete(existingFile);
                 }
 
                 const parentDir = savePath.substring(0, savePath.lastIndexOf('/'));
                 if (!this.app.vault.getAbstractFileByPath(parentDir)) {
                     await mkdirp(this.app, parentDir);
                 }
-                await this.app.vault.create(savePath, content);
+                if (existingFile instanceof TFile) {
+                    await this.app.vault.modify(existingFile, content);
+                } else {
+                    await this.app.vault.create(savePath, content);
+                }
                 genNotice.hide();
 
                 // ★ 从世界观内容中提取小说名称并自动重命名项目
                 const nameMatch = content.match(/【项目名称】(.+?)【\/项目名称】/);
                 if (nameMatch && nameMatch[1]?.trim()) {
                     const novelName = nameMatch[1].trim()
-                        .replace(/[\\/:*?"<>|]/g, '')  // v1.3.3: 清理非法字符
+                        .replace(/[\\/:*?"<>|]/g, '')
                         .slice(0, 50);
-                    const newProjectPath = `${novelName}`;
                     const oldProjectPath = this.selectedProject;
-                    if (newProjectPath !== oldProjectPath) {
+                    const validation = validateProjectName(novelName, [oldProjectPath]);
+                    if (!validation.valid) {
+                        new Notice(`⚠️ AI 建议的项目名不可用：${validation.error}。保留原项目名「${oldProjectPath}」`, 6000);
+                    } else if (validation.normalized !== oldProjectPath) {
                         try {
-                            // 检查目标路径是否已存在
-                            if (!this.app.vault.getAbstractFileByPath(newProjectPath)) {
-                                const projectFolder = this.app.vault.getAbstractFileByPath(oldProjectPath);
-                                if (projectFolder) {
-                                    // v1.3.3: 使用 fileManager.renameFile 自动更新内部 wiki 链接
-                                    await this.app.fileManager.renameFile(projectFolder, newProjectPath);
-                                }
-                                // 更新 .project 元文件中的名称
-                                const metaPath = `${newProjectPath}/.project`;
-                                if (this.app.vault.getAbstractFileByPath(metaPath)) {
-                                    let metaContent = await this.app.vault.read(
-                                        this.app.vault.getAbstractFileByPath(metaPath) as TFile
-                                    );
-                                    metaContent = metaContent.replace(/^项目名称:\s*.*/m, `项目名称: ${novelName}`);
-                                    await this.app.vault.adapter.write(metaPath, metaContent);
-                                }
-                                // 更新当前选中项目
-                                this.selectedProject = newProjectPath;
-                                new Notice(`✅ 世界观已生成！项目已自动命名为「${novelName}」`, 5000);
+                            const result = await new ProjectRenameService(this.app).rename(oldProjectPath, validation.normalized);
+                            if (result.warnings.length > 0) {
+                                new Notice(`✅ 世界观已生成！项目已重命名；${result.warnings.join('；')}`, 10000);
                             } else {
-                                new Notice(`✅ 世界观已生成！目标「${novelName}」已存在，未重命名`, 5000);
+                                new Notice(`✅ 世界观已生成！项目已自动命名为「${validation.normalized}」`, 5000);
                             }
+                            this.selectedProject = result.newProject;
                         } catch (renameErr) {
                             log.warn('[小说工坊] 项目重命名失败:', renameErr);
-                            new Notice('✅ 世界观已生成！', 5000);
+                            new Notice('✅ 世界观已生成！项目名保持不变', 5000);
                         }
                     } else {
                         new Notice('✅ 世界观已生成！', 5000);

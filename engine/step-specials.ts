@@ -35,6 +35,8 @@ export interface StepSpecialsHost {
     injectEmotionPlanKnowledge(ctx: StepRunCtx): Promise<string>;
     /** Scene 展开知识注入（宿主内部完成画像读取、强度判断与失败降级） */
     injectSceneExpandKnowledge(ctx: StepRunCtx): Promise<string>;
+    /** 项目自定义 sceneExpand prompt；不存在时返回 null */
+    getSceneExpandCustomPrompt?(): Promise<{ systemPrompt: string; userPrompt: string } | null>;
 }
 
 /** 恢复发送按钮的 UI 动作（由 StepRunner 提供的闭包） */
@@ -90,7 +92,18 @@ export async function runEmotionPlanStep(
         varsWithInjection.emotionKnowledge = emotionKnowledgeInjection;
     }
 
-    const emoContent = await generateEmotionPlan(host.aiEngine, host.app, varsWithInjection, stepModel);
+    const emotionLimits = host.resolveStepBudgetLimits(stepModel);
+    const emoContent = await generateEmotionPlan(
+        host.aiEngine,
+        host.app,
+        varsWithInjection,
+        stepModel,
+        undefined,
+        {
+            maxTokens: emotionLimits.maxOutput,
+            signal: ctx.getAbortController?.()?.signal,
+        },
+    );
     const validation = validateEmotionPlan(emoContent);
     if (!validation.valid) {
         host.showNotice(`⚠️ 情绪规划校验异常：${validation.errors.join('；')}`, NOTICE_CRITICAL);
@@ -133,12 +146,18 @@ export async function runSceneExpandStep(
 
     // B6：sceneExpand 此前直接 return，完全绕过 prompt 预算闸门；
     // 这里按本步实际模型传入窗口，知识注入作为可丢弃的增强层。
+    const customPrompt = await host.getSceneExpandCustomPrompt?.();
     const sceneContent = await generateSceneExpansion(
         host.aiEngine,
         varsWithInjection,
         stepModel,
         undefined,
         host.resolveStepBudgetLimits(stepModel),
+        customPrompt ?? undefined,
+        {
+            maxTokens: host.resolveStepBudgetLimits(stepModel).maxOutput,
+            signal: ctx.getAbortController?.()?.signal,
+        },
     );
     const validation = validateSceneExpansion(sceneContent);
     if (!validation.valid) {

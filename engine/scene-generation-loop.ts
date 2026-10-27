@@ -23,19 +23,31 @@ import type { Conflict } from './conflict-detector';
 import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
 import type { GenerationCheckpoint } from './generation-checkpoint';
 import { SCENE_HEADING_SOURCE } from './scene-expander';
+import { parseSceneCardFields } from '../shared/scene-card';
 
 /** 单个场景任务（从 sceneExpand 规划文本解析） */
 export interface SceneTask {
     num: number;
     name: string;
+    pov?: string;
+    time?: string;
+    location?: string;
     objective: string;
-    emotionArc: string;
+    entryState?: string;
     conflict: string;
+    turn?: string;
+    exitState?: string;
+    emotionArc: string;
     sensoryHook: string;
     memoryTrigger: string;
     bodyReaction: string;
     subtext: string;
+    relationshipShift?: string;
+    keyScene?: string;
+    dialogueFunction?: string;
     cliffhanger: string;
+    craftNotes?: string;
+    characters?: string;
     rawBlock: string;
 }
 
@@ -85,11 +97,6 @@ export interface SceneLoopOptions {
 const SCENE_HEADER_RE = new RegExp(SCENE_HEADING_SOURCE, 'im');
 
 /** 解析单个字段行（与 validateSceneExpansion 的 fieldRegex 同源格式） */
-function parseField(block: string, field: string): string {
-    const m = block.match(new RegExp(`^\\s*\\*?\\*?${field}\\s*[：:]\\s*(.+)$`, 'im'));
-    return m ? m[1].trim() : '';
-}
-
 /** 中文数字解析（与 scene-expander 保持一致的容错：失败时按序号兜底） */
 function parseChineseNum(raw: string): number | null {
     const map: Record<string, number> = {
@@ -128,17 +135,17 @@ export function parseSceneBlocks(content: string): SceneTask[] {
 
     return blocks.map((b) => {
         const rawBlock = b.lines.join('\n');
+        const card = parseSceneCardFields(rawBlock, { num: b.num, name: b.name });
         return {
-            num: b.num,
-            name: b.name,
-            objective: parseField(rawBlock, 'objective'),
-            emotionArc: parseField(rawBlock, 'emotion_arc'),
-            conflict: parseField(rawBlock, 'conflict'),
-            sensoryHook: parseField(rawBlock, 'sensory_hook'),
-            memoryTrigger: parseField(rawBlock, 'memory_trigger'),
-            bodyReaction: parseField(rawBlock, 'body_reaction'),
-            subtext: parseField(rawBlock, 'subtext'),
-            cliffhanger: parseField(rawBlock, 'cliffhanger'),
+            ...card,
+            objective: card.objective || '',
+            conflict: card.conflict || '',
+            emotionArc: card.emotionArc || '',
+            sensoryHook: card.sensoryHook || '',
+            memoryTrigger: card.memoryTrigger || '',
+            bodyReaction: card.bodyReaction || '',
+            subtext: card.subtext || '',
+            cliffhanger: card.cliffhanger || '',
             rawBlock,
         };
     });

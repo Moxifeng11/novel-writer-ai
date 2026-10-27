@@ -15,7 +15,9 @@ import { getChapterFileName, findChapterFile, getChapterFile } from './chapter-u
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { withWriteLock } from '../shared/write-lock';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates } from './relationship-engine';
-import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard } from '../shared/paths';
+import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '../shared/paths';
+import { DEFAULT_PROMISE_LEDGER, applyPromiseInstruction, formatPromiseLedger, parsePromiseLedger } from './promise-ledger';
+import { applyArcInstruction, buildArcRowsFromCharacters, formatCharacterArcTable, parseCharacterArcTable } from './character-arc';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
@@ -117,6 +119,79 @@ export class SettlementEngine {
             this.vaultMeta = new ObsidianVaultMeta(this.app);
         }
         return this.vaultMeta;
+    }
+
+    /** 更新承诺账本：PROMISE_* 指令 -> 固定表。 */
+    private async settleStep_updatePromiseLedger(ctx: SettleContext): Promise<void> {
+        if (!ctx.instr.promise?.length) return;
+        const path = pjPromiseLedger(ctx.project);
+        const fs = this.getFS();
+        try {
+            let content = DEFAULT_PROMISE_LEDGER;
+            if (await fs.exists(path)) content = await fs.read(path);
+            let items = parsePromiseLedger(content);
+            for (const instruction of ctx.instr.promise) {
+                items = applyPromiseInstruction(items, {
+                    ...instruction,
+                    chapter: instruction.chapter || ctx.chapName,
+                });
+            }
+            const dir = path.slice(0, path.lastIndexOf('/'));
+            await fs.mkdir(dir);
+            await fs.write(path, formatPromiseLedger(items));
+            log.info(`[SettlementEngine] 承诺账本更新 ${ctx.instr.promise.length} 条`);
+        } catch (e) {
+            log.warn('[SettlementEngine] 承诺账本更新失败（不影响结算）:', e);
+        }
+    }
+
+    /** 更新角色弧线表：ARC 指令 -> 固定表；首次用角色 frontmatter 建骨架。 */
+    private async settleStep_updateCharacterArcs(ctx: SettleContext): Promise<void> {
+        const path = pjCharacterArcTable(ctx.project);
+        const fs = this.getFS();
+        try {
+            let content = '';
+            if (await fs.exists(path)) content = await fs.read(path);
+            let rows = content ? parseCharacterArcTable(content) : [];
+            if (rows.length === 0) {
+                rows = buildArcRowsFromCharacters(this.readCharacterArcSeeds(ctx.project));
+            }
+            for (const arc of ctx.instr.arc || []) {
+                rows = applyArcInstruction(rows, arc, ctx.chapName);
+            }
+            if (rows.length === 0) return;
+            const dir = path.slice(0, path.lastIndexOf('/'));
+            await fs.mkdir(dir);
+            await fs.write(path, formatCharacterArcTable(rows));
+            if (ctx.instr.arc?.length) {
+                log.info(`[SettlementEngine] 角色弧线更新 ${ctx.instr.arc.length} 条`);
+            }
+        } catch (e) {
+            log.warn('[SettlementEngine] 角色弧线更新失败（不影响结算）:', e);
+        }
+    }
+
+    private readCharacterArcSeeds(project: string): Array<{
+        name: string; motivation?: string; fear?: string; weakness?: string; stage?: string;
+    }> {
+        try {
+            const dir = `${pjCharsDir(project)}/`;
+            return this.app.vault.getFiles()
+                .filter(f => f.path.startsWith(dir) && f.extension === 'md')
+                .map(file => {
+                    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter || {};
+                    return {
+                        name: String(fm['姓名'] || fm['name'] || file.basename || ''),
+                        motivation: String(fm['核心动机'] || ''),
+                        fear: String(fm['恐惧'] || fm['性格弱点'] || ''),
+                        weakness: String(fm['弱点'] || ''),
+                        stage: String(fm['弧线阶段'] || ''),
+                    };
+                })
+                .filter(c => c.name);
+        } catch {
+            return [];
+        }
     }
 
     async settleLight(
@@ -376,6 +451,8 @@ export class SettlementEngine {
         // 异步部分（回滚 / V2 关系）放到独立方法，避免上面同步汇总后再 await
         await this.settleStep_finalizeRollback(ctx);
         await this.settleStep_updateV2Relations(ctx);
+        await this.settleStep_updatePromiseLedger(ctx);
+        await this.settleStep_updateCharacterArcs(ctx);
 
         return ctx.result;
     }

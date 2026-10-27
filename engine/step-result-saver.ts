@@ -11,7 +11,7 @@
  * - 内部逻辑保持不变，只是对文件系统访问进行抽象
  */
 
-import { App, TFile } from 'obsidian';
+import { App } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { BodyWriter } from './body-writer';
 import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
@@ -32,6 +32,16 @@ export interface EntityNames {
 export interface StepResultSaverDeps {
     getPlugin?: () => { settings?: { defaultModel?: string } };
     showNotice?: (msg: string, duration?: number) => void;
+}
+
+/** 步骤落盘元数据：让文件能回答「哪个模型生成的、是否截断、用了多少 token」。 */
+export interface StepSaveMeta {
+    model?: string;
+    providerId?: string;
+    finishReason?: string;
+    truncated?: boolean;
+    usage?: { prompt: number; completion: number; total: number };
+    maxTokens?: number;
 }
 
 /**
@@ -79,10 +89,14 @@ export class StepResultSaver {
     /** 获取 VaultMetaPort 实例（懒加载） */
     private getVaultMeta(): VaultMetaPort {
         if (!this.vaultMeta) {
-            if (!this.app) {
+            // 解耦模式下 MockFileSystem 同时实现 VaultMetaPort；直接复用，避免测试/无 app 场景抛错
+            if (this.fs && 'getFiles' in this.fs && 'getAbstractFileByPath' in this.fs) {
+                this.vaultMeta = this.fs as unknown as VaultMetaPort;
+            } else if (this.app) {
+                this.vaultMeta = new ObsidianVaultMeta(this.app);
+            } else {
                 throw new Error('[StepResultSaver] 未提供 app 或 vaultMeta，无法进行 vault 元数据操作');
             }
-            this.vaultMeta = new ObsidianVaultMeta(this.app);
         }
         return this.vaultMeta;
     }
@@ -107,6 +121,7 @@ export class StepResultSaver {
         chapDir: string,
         chapterName: string,
         volume: string,
+        meta?: StepSaveMeta,
     ): Promise<boolean> {
         if (!chapDir) {
             log.warn('[StepResultSaver] saveStepResult: chapDir 为空，跳过保存 stepKey=', stepKey);
@@ -177,9 +192,37 @@ export class StepResultSaver {
 
                 const project = v4Project || chapDir.split('/')[0] || '';
                 const entityNames = project ? await this.extractEntityNames(project) : null;
+                const truncated = meta?.truncated === true;
+
+                // 截断保护：本次若是半章，而磁盘上已有完整正文，绝不能覆盖完整稿。
+                // 把本次内容落为独立草稿，正文保持原样，由用户决定是否续写/覆盖。
+                if (truncated && await fs.exists(actualTargetPath)) {
+                    try {
+                        const existing = await fs.read(actualTargetPath);
+                        if (validateStepResult('bodyGeneration', existing).level === 'complete') {
+                            const draftPath = actualTargetPath.replace(/\.md$/i, '_截断草稿.md');
+                            await fs.write(draftPath, content);
+                            log.warn(`[StepResultSaver] 正文截断，已保留完整正文并写入草稿 → ${draftPath}`);
+                            this.deps.showNotice?.(
+                                `⚠️ 本次正文输出被截断，已保留原完整正文；截断内容保存为 ${draftPath}`,
+                                8000,
+                            );
+                            return true;
+                        }
+                    } catch (e) {
+                        // 读取失败时按「没有完整旧稿」处理，继续走正常落盘，避免阻断主流程
+                        log.warn('[StepResultSaver] 截断保护读取旧正文失败，按正常覆盖处理:', e);
+                    }
+                }
 
                 // 统一落盘入口：保留旧 frontmatter、剥离模型标题、统一缩进与状态
-                const patch: Record<string, unknown> = {};
+                const patch: Record<string, unknown> = {
+                    step_model: meta?.model || plugin?.settings?.defaultModel || '',
+                    step_finish_reason: meta?.finishReason || '',
+                    step_truncated: truncated,
+                };
+                if (meta?.usage) patch['step_usage'] = meta.usage;
+                if (meta?.maxTokens) patch['step_max_tokens'] = meta.maxTokens;
                 if (entityNames) {
                     const inBody = (n: string): boolean => content.includes(n);
                     patch['涉及人物'] = entityNames.chars.filter(inBody);
@@ -199,6 +242,7 @@ export class StepResultSaver {
                     project,
                     writingMode: 'pipeline',
                     frontmatterPatch: patch,
+                    truncated,
                 });
 
                 return true;
@@ -207,7 +251,9 @@ export class StepResultSaver {
             } else if (stepKey === 'outline') {
                 fileContent = content;
             } else if (stepKey === 'analysisReport') {
-                fileContent = content.replace(/^---[\t ]*\n/, '');
+                // 模型可能自带完整 YAML frontmatter。旧实现只删开头 `---`，
+                // 会把 `key: value` 和结尾 `---` 留在报告正文里。
+                fileContent = content.replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '');
             } else if (stepKey === 'continuityCheck') {
                 fileContent = `# ${chapName}_连贯性审查\n\n${content}`;
             } else if (stepKey === 'selfCheck') {
@@ -229,15 +275,21 @@ export class StepResultSaver {
             // 通过 processFrontMatter 设置元数据（非正文步骤）
             if (stepKey !== 'bodyGeneration') {
                 const targetFile = await this.getFS().getFile(targetPath);
-                if (targetFile instanceof TFile) {
+                if (targetFile) {
                     // A4：step_status 必须由内容结构决定，不能无条件写成 generated。
                     // 否则模板骨架/半成品会被恢复逻辑当成「已完成」，批量续跑也会整步跳过。
                     const pureContent = content.replace(/^---[\s\S]*?\n---\n?/, '').trim();
                     const validation = validateStepResult(stepKey, pureContent);
+                    const truncated = meta?.truncated === true;
                     try {
                         await this.getFrontmatter().processFrontmatter(targetFile, (fm: Record<string, unknown>) => {
-                            fm['step_status'] = validation.level === 'complete' ? 'generated' : 'partial';
-                            fm['step_model'] = plugin?.settings?.defaultModel || '';
+                            fm['step_status'] = !truncated && validation.level === 'complete' ? 'generated' : 'partial';
+                            fm['step_model'] = meta?.model || plugin?.settings?.defaultModel || '';
+                            fm['step_finish_reason'] = meta?.finishReason || '';
+                            fm['step_truncated'] = truncated;
+                            if (meta?.usage) fm['step_usage'] = meta.usage;
+                            else delete fm['step_usage'];
+                            if (meta?.maxTokens) fm['step_max_tokens'] = meta.maxTokens;
                             fm['step_timestamp'] = new Date().toISOString();
                             this.setStepTags(fm, stepKey, chapName);
                         });

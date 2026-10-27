@@ -7,7 +7,7 @@ function makePlugin(settingsOverrides: Record<string, any> = {}) {
     const settings = {
         defaultModel: 'test-model',
         apiKey: 'test-key',
-        apiEndpoint: 'https://api.test.local/v1/chat/completions',
+        apiEndpoint: 'https://api.test.example/v1/chat/completions',
         availableModels: ['test-model'],
         enableAutoModelFallback: false,
         promptCacheEnabled: true,

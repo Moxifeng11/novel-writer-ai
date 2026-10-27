@@ -29,6 +29,7 @@ import { KnowledgeDetailModal } from './knowledge-detail-modal';
 import { kbKnowledgeBaseDir } from '../shared/paths';
 import { openKnowledgeFolder } from './knowledge-folder-navigation';
 import { createLogger } from '../shared/logger';
+import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '../shared/github-repo';
 import { exportTextFile } from '../shared/export-file';
 import { OperationConfirmModal } from './components/progress';
 import { rebuildKnowledgeIndexWithConfirm } from './knowledge-rebuild-action';
@@ -2439,19 +2440,38 @@ export class MiniSettingsModal extends Modal {
         if (this.plugin.settings.updateSource === 'github') {
             new Setting(section)
                 .setName('GitHub 仓库')
-                .setDesc('格式：owner/repo')
+                .setDesc('格式：owner/repo · 默认分支：' + GITHUB_BRANCH)
                 .addText(text => text
-                    .setPlaceholder('Moxifeng11/novel-writer-ai')
-                    .setValue(this.plugin.settings.updateGithubRepo || 'Moxifeng11/novel-writer-ai')
+                    .setPlaceholder(GITHUB_REPO_SLUG)
+                    .setValue(this.plugin.settings.updateGithubRepo || GITHUB_REPO_SLUG)
                     .onChange((value) => {
                         this.plugin.settings.updateGithubRepo = value;
                         void this.plugin.saveSettings();
                         const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
                         if (updateChecker) {
                             updateChecker.updateConfig({ githubRepo: value });
+                            updateChecker.clearCache?.();
                         }
                     })
                 );
+            new Setting(section)
+                .setName('GitHub Token（私有仓库必填）')
+                .setDesc('公开仓库留空；私有仓库需要 repo 读取权限。Token 只保存在本地设置中。')
+                .addText(text => {
+                    text.inputEl.type = 'password';
+                    text.setPlaceholder('github_pat_... 或 ghp_...')
+                        .setValue(this.plugin.settings.updateGithubToken || '')
+                        .onChange(async (value) => {
+                            this.plugin.settings.updateGithubToken = value.trim();
+                            await this.plugin.saveSettings();
+                            const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                            if (updateChecker) {
+                                updateChecker.updateConfig({ githubToken: value.trim() });
+                                updateChecker.clearCache?.();
+                            }
+                        });
+                });
+
         } else {
             new Setting(section)
                 .setName('自定义更新 URL')
@@ -2678,6 +2698,7 @@ export class MiniSettingsModal extends Modal {
                 enabled: this.plugin.settings.autoCheckUpdates,
                 source: this.plugin.settings.updateSource,
                 githubRepo: this.plugin.settings.updateGithubRepo,
+                githubToken: this.plugin.settings.updateGithubToken || '',
                 customUrl: this.plugin.settings.updateCustomUrl,
                 checkIntervalHours: this.plugin.settings.updateCheckIntervalHours,
             });

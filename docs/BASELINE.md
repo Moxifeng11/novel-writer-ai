@@ -1,10 +1,7 @@
 ---
-⚠️  **文档需核实 · 可能与当前代码不符** ⚠️
-
-**注意**：本文档最后更新时间较早，部分描述可能与当前代码实现存在差异。
-**建议**：引用前请先对照源代码核实，以实际代码为准。
-**最新审计**：.trae/specs/project-audit-2026q3/spec.md
-**核实状态**：待更新 · 2026-07-15
+> **文档状态**：2026-10-27 已对照 v4.19.0 核实
+> **对应版本**：4.19.0（三模式创作体系 + Harness MVP + 执行流程重构）
+> **维护要求**：目录结构、构建命令或门禁口径变化时同步更新本文档
 ---
 
 # 小说工坊插件基线
@@ -12,10 +9,11 @@
 ## 当前基线
 
 - 项目位置：`.obsidian/plugins/novel-writer-ai`
-- 管理方式：通过 Git/GitHub 管理，当前远端为 `git@github.com:Moxifeng11/novel-workshop.git`
+- 管理方式：通过 Git/GitHub 管理，当前远端为 `git@github.com:Moxifeng11/novel-writer-ai.git`
 - 运行平台：Obsidian 插件
-- 主要源码目录：`core/`、`engine/`、`services/`、`shared/`、`ui/`、`types/`
-- 测试目录：`tests/`
+- 主要源码目录：`core/`、`engine/`、`services/`、`shared/`、`ui/`、`domains/`、`types/`
+- 领域目录：`domains/kernel`（共享内核）、`domains/long`、`domains/short`、`domains/script`
+- 测试目录：`tests/`（单元、E2E、基准）
 
 ## 保留内容
 

@@ -23,9 +23,20 @@ function readMeta(vault: Vault): Promise<string> {
     return vault.adapter.read(META);
 }
 
+async function seedSetting(vault: Vault, status: 'approved' | 'pending'): Promise<void> {
+    await vault.adapter.write(NEW_PATH, `---
+审核状态: ${status}
+---
+
+# 遮天 同人设定
+`);
+    await vault.create(NEW_PATH, await vault.adapter.read(NEW_PATH));
+}
+
 describe('attachFanficPathToProject — 绑定已有设定文件', () => {
     it('.project 不存在时创建并写入 fanfic 类型与路径', async () => {
         const { app, vault } = makeApp();
+        await seedSetting(vault, 'approved');
         await attachFanficPathToProject(app, PROJECT, NEW_PATH);
 
         const raw = await readMeta(vault);
@@ -37,6 +48,7 @@ describe('attachFanficPathToProject — 绑定已有设定文件', () => {
 
     it('已有同人设定路径时原地替换，不重复追加段落', async () => {
         const { app, vault } = makeApp();
+        await seedSetting(vault, 'approved');
         await vault.create(META, `# 遮天\n\n## 类型\nfanfic\n\n## 同人设定路径\n${OLD_PATH}\n`);
 
         await attachFanficPathToProject(app, PROJECT, NEW_PATH);
@@ -50,6 +62,7 @@ describe('attachFanficPathToProject — 绑定已有设定文件', () => {
 
     it('有 .project 但没有该段落时追加，保留原有内容', async () => {
         const { app, vault } = makeApp();
+        await seedSetting(vault, 'approved');
         await vault.create(META, '# 遮天\n\n## 类型\nfanfic\n');
 
         await attachFanficPathToProject(app, PROJECT, NEW_PATH);
@@ -61,6 +74,7 @@ describe('attachFanficPathToProject — 绑定已有设定文件', () => {
 
     it('重复绑定同一路径是幂等的', async () => {
         const { app, vault } = makeApp();
+        await seedSetting(vault, 'approved');
         await attachFanficPathToProject(app, PROJECT, NEW_PATH);
         const first = await readMeta(vault);
 
@@ -69,5 +83,11 @@ describe('attachFanficPathToProject — 绑定已有设定文件', () => {
         const second = await readMeta(vault);
         expect(second).toBe(first);
         expect(second.match(/## 同人设定路径/g)?.length).toBe(1);
+    });
+
+    it('未通过人工审核的设定拒绝绑定', async () => {
+        const { app, vault } = makeApp();
+        await seedSetting(vault, 'pending');
+        await expect(attachFanficPathToProject(app, PROJECT, NEW_PATH)).rejects.toThrow('人工审核');
     });
 });

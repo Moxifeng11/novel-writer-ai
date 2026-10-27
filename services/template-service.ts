@@ -44,6 +44,9 @@ export interface TemplateVariables {
     chapterName?: string;
     chapterNumber?: number;
     title?: string;
+    /** v4.18：创作模式；缺省按 long 兼容 */
+    creationMode?: 'long' | 'short' | 'script';
+    unitLabel?: string;
 }
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
@@ -550,6 +553,71 @@ export class TemplateService {
     }
 
     async getBodyTemplate(vars: TemplateVariables): Promise<string> {
+        const mode = vars.creationMode || 'long';
+        if (mode === 'short' || mode === 'script') {
+            const unit = mode === 'script' ? '集' : '节';
+            const displayName = (vars.chapterName || `第${vars.chapterNumber || 'X'}章`)
+                .replace(/第(\d+)章/, (_m, n) => `第${n}${unit}`);
+            if (mode === 'script') {
+                return `---
+tags: [剧本]
+卷: "${vars.volume || '第1卷'}"
+章: "${vars.chapterName || ''}"
+标题: ""
+status: pending
+word_count: 0
+writing_mode: pipeline
+涉及人物: []
+涉及地点: []
+涉及势力: []
+涉及物品功法: []
+---
+
+# ${displayName}
+
+## 基本信息
+- 类型：
+- 单集时长：
+- 本集核心冲突：
+- 本集爽点/反转：
+- 结尾钩子：
+
+## 场次
+
+### 1-1 日/内 场景名
+人物：
+△动作/画面：
+
+角色：（情绪）对白
+
+（VO/字幕：）
+`;
+            }
+            return `---
+tags: [短篇正文]
+卷: "${vars.volume || '第1卷'}"
+章: "${vars.chapterName || ''}"
+标题: ""
+status: pending
+word_count: 0
+writing_mode: pipeline
+涉及人物: []
+涉及地点: []
+涉及势力: []
+涉及物品功法: []
+---
+
+# ${displayName}
+
+## 本节目标
+- 核心冲突：
+- 信息推进：
+- 情绪转折：
+- 结尾钩子：
+
+正文：
+`;
+        }
         return this.getTemplate('body', vars);
     }
 

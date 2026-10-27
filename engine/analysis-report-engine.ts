@@ -27,6 +27,9 @@ import {
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
 import { createLogger } from '../shared/logger';
+import { resolveTaskModelConfig } from '../shared/task-model';
+import { resolveProviderSourceType } from '../shared/model-source';
+import { parseReport } from './settlement/report-parser';
 
 
 const log = createLogger('AnalysisReportEngine');
@@ -88,10 +91,22 @@ export class AnalysisReportEngine {
         chapterText: string,
         chapterName: string,
         chapterNum: number,
-        volume: string
+        volume: string,
+        existingReport?: string,
     ): Promise<FullAnalysisReport> {
         const startTime = Date.now();
         const wordCount = chapterText.length;
+
+        // 步骤 9 已经产出分析报告时，优先解析已有指令，避免再用 2 次 AI 重复抽取实体/时间线。
+        // 只有“确实含结构化指令”才跳过 AI：旧报告/叙述型报告没有 UPDATE_ 等指令，
+        // 直接解析会得到全空实体/时间线，属于静默数据丢失，必须回退 AI 抽取。
+        if (existingReport && existingReport.trim()) {
+            const instructions = parseReport(existingReport);
+            if (this.hasStructuredInstructions(instructions)) {
+                return this.analyzeFromReport(project, existingReport, chapterName, chapterNum, volume, wordCount, startTime);
+            }
+            log.info('[AnalysisReportEngine] 已有报告不含结构化指令，回退 AI 抽取', { chapterNum });
+        }
 
         log.info(`[AnalysisReportEngine] 开始分析第${chapterNum}章: ${chapterName}`);
 
@@ -138,6 +153,109 @@ export class AnalysisReportEngine {
      * @param characterInfos 人物信息列表
      * @returns 一致性检测结果
      */
+    /** 从步骤 9 的报告文本构建结构化结果（无 AI 调用）。 */
+    analyzeFromReport(
+        project: string,
+        reportText: string,
+        chapterName: string,
+        chapterNum: number,
+        volume: string,
+        wordCount: number,
+        startTime: number,
+    ): FullAnalysisReport {
+        const instr = parseReport(reportText);
+        const toEntity = (
+            name: string,
+            category: 'character' | 'location' | 'faction' | 'item',
+            changeType: 'status_updated' | 'created',
+            newValue?: string,
+        ): EntityChange => ({
+            name,
+            category,
+            changeType,
+            newValue: newValue || '',
+            isMajor: /死亡|陨落|牺牲|重伤|突破|觉醒|飞升|重生/.test(newValue || ''),
+        });
+        const characters = [
+            ...instr.uc.map(u => toEntity(u.name, 'character', 'status_updated', u.value)),
+            ...instr.nc.map(n => toEntity(n.name, 'character', 'created', n.description)),
+            ...instr.emotion.map(e => toEntity(e.name, 'character', 'status_updated', e.emotion)),
+        ];
+        const locations = [
+            ...instr.uloc.map(u => toEntity(u.name, 'location', 'status_updated', u.value)),
+            ...instr.nl.map(n => toEntity(n.name, 'location', 'created', n.description)),
+        ];
+        const factions = [
+            ...instr.ufa.map(u => toEntity(u.name, 'faction', 'status_updated', u.value)),
+            ...instr.nf.map(n => toEntity(n.name, 'faction', 'created', n.description)),
+        ];
+        const items = [
+            ...instr.uitem.map(u => toEntity(u.name, 'item', 'status_updated', u.value)),
+            ...instr.ni.map(n => toEntity(n.name, 'item', 'created', n.description)),
+        ];
+        const planted = instr.nfs.map(n => ({
+            name: n.name, changeType: 'planted' as const, plantedChapter: n.chapter, context: n.reveal,
+        }));
+        const recovered = instr.uf
+            .filter(u => /已揭示|回收|revealed/i.test(u.value))
+            .map(u => ({ name: u.name, changeType: 'recovered' as const, context: u.value }));
+        const mentioned = instr.uf
+            .filter(u => !/已揭示|回收|revealed/i.test(u.value))
+            .map(u => ({ name: u.name, changeType: 'mentioned' as const, context: u.value }));
+        const timeline = instr.nt.map((n, idx) => ({
+            chapter: chapterNum,
+            order: idx + 1,
+            time: n.desc,
+            event: n.event,
+            involvedEntities: [],
+            importance: 'medium' as const,
+        }));
+        const entitySummary = `人物 ${characters.length} / 地点 ${locations.length} / 势力 ${factions.length} / 物品 ${items.length}`;
+        const foreshadowSummary = `新埋 ${planted.length} / 回收 ${recovered.length} / 提及 ${mentioned.length}`;
+        return {
+            meta: {
+                project,
+                chapterName,
+                chapterNum,
+                volume,
+                wordCount,
+                timestamp: new Date().toISOString(),
+                aiModel: 'parsed-step-report',
+                processingTimeMs: Date.now() - startTime,
+            },
+            entities: {
+                characters, locations, factions, items,
+                summary: entitySummary,
+            },
+            foreshadows: {
+                planted, recovered, mentioned,
+                summary: foreshadowSummary,
+            },
+            timeline: {
+                events: timeline,
+                summary: `解析到 ${timeline.length} 个时间线事件`,
+            },
+            emotionCurve: {
+                points: [],
+                avgIntensity: 0,
+                peakIntensity: 0,
+                valleyIntensity: 0,
+                inflectionPoints: 0,
+                summary: '已有分析报告未包含情绪曲线，跳过重复 AI 抽取',
+            },
+            summary: `${entitySummary}；${foreshadowSummary}；时间线 ${timeline.length} 条（来自步骤 9 报告）`,
+            majorChanges: [...characters, ...locations, ...factions, ...items]
+                .filter(e => e.isMajor)
+                .map(e => `${e.name}：${e.newValue || '状态重大变化'}`),
+            warnings: [],
+            suggestions: [],
+        };
+    }
+
+    private hasStructuredInstructions(instructions: ReturnType<typeof parseReport>): boolean {
+        return Object.values(instructions).some(value => Array.isArray(value) && value.length > 0);
+    }
+
     async checkCharacterConsistency(
         chapterText: string,
         characterInfos: Array<{
@@ -350,6 +468,46 @@ export class AnalysisReportEngine {
         return changes;
     }
 
+    /**
+     * 结构化提取（角色状态/时间线）的任务级调用。
+     *
+     * 旧实现把 'flash' 当模型名传给 API：它不是任何供应商的真实模型，
+     * 4xx 不会触发模型回退，结果被 catch 吞掉后返回空数组。
+     * 这里统一走 analysis 任务的真实模型，并把输出限制在结构化提取的合理上限。
+     */
+    private async callAnalysisExtraction(prompt: string, temperature: number) {
+        const plugin = this.aiEngine.getPlugin();
+        const config = resolveTaskModelConfig(
+            plugin.settings,
+            'analysis',
+            (model, endpoint) => plugin.resolveModelLimits(model, endpoint),
+        );
+        const provider = (plugin.settings.customProviders || []).find(p =>
+            Array.isArray(p.models)
+            && p.models.includes(config.model)
+            && resolveProviderSourceType({ id: p.id, endpoint: p.endpoint, sourceType: p.sourceType }) === 'local',
+        );
+        const route = provider
+            ? {
+                endpoint: provider.endpoint,
+                apiKey: plugin.settings.providerKeys?.[provider.id] || 'ollama',
+                disableFallback: true,
+            }
+            : {};
+        return this.aiEngine.callAI(
+            '',
+            prompt,
+            config.model,
+            temperature,
+            Math.min(config.maxOutput, 8192),
+            {
+                ...route,
+                thinkingMode: config.thinkingMode,
+                thinkingBudget: config.thinkingBudget,
+            },
+        );
+    }
+
     private async detectCharacterStateChanges(
         chapterText: string,
         charNames: string[]
@@ -377,8 +535,11 @@ ${chapterText.slice(0, 5000)}
 【输出】仅输出 JSON 数组：`;
 
         try {
-            const response = await this.aiEngine.callAI('', prompt, 'flash', 0.7, 2000);
-            if (response.error) return [];
+            const response = await this.callAnalysisExtraction(prompt, 0.7);
+            if (response.error) {
+                log.warn(`[AnalysisReportEngine] 角色状态提取失败: ${response.error}`);
+                return [];
+            }
             const text = (response.content || '').trim();
             const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([\[{][\s\S]*)/);
             const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
@@ -725,8 +886,11 @@ ${chapterText.slice(0, 5000)}
 【输出】仅输出 JSON 数组：`;
 
         try {
-            const response = await this.aiEngine.callAI('', prompt, 'flash', 0.6, 2000);
-            if (response.error) return [];
+            const response = await this.callAnalysisExtraction(prompt, 0.6);
+            if (response.error) {
+                log.warn(`[AnalysisReportEngine] 时间线提取失败: ${response.error}`);
+                return this.extractTimelineByRule(chapterText, chapterNum);
+            }
             const text = (response.content || '').trim();
             const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([\[{][\s\S]*)/);
             const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;

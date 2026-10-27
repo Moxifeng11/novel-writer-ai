@@ -8,6 +8,15 @@
 export const CommandIds = {
     // ─── 项目管理类 ───
     CREATE_PROJECT: 'novel-writer-create-project',
+    CREATE_SHORT: 'novel-writer-create-short',
+    CREATE_SCRIPT: 'novel-writer-create-script',
+    SHORT_RESEARCH: 'novel-writer-short-research',
+    SCRIPT_RESEARCH: 'novel-writer-script-research',
+    SHORT_STORY_CORE: 'novel-writer-short-story-core',
+    SHORT_OUTLINE: 'novel-writer-short-outline',
+    SCRIPT_SCENE_BIBLE: 'novel-writer-script-scene-bible',
+    SCRIPT_OUTLINE: 'novel-writer-script-outline',
+    SCRIPT_STORYBOARD: 'novel-writer-script-storyboard',
     IMPORT_EXAMPLE: 'novel-writer-import-example',
     RENAME_PROJECT: 'novel-writer-rename-project',
     PLAN_BOOK: 'novel-writer-plan-book',

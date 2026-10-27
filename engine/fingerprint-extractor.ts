@@ -11,10 +11,14 @@ import type { VectorStore, StyleFingerprint, StyleFingerprintStats, StyleFingerp
 import { calculateRhythmStats, calculatePerspectiveStats } from './style/v2-quantitative-extractor';
 import type { RhythmStats, PerspectiveStats } from './style/style-dimensions-v2';
 import { extractResponseText } from '../shared/api-response-utils';
+import { resolveTaskModelConfig } from '../shared/task-model';
+import { resolveProviderSourceType } from '../shared/model-source';
 import { createLogger } from '../shared/logger';
+import { computeFingerprintStats } from './fingerprint-stats';
 
 
 const log = createLogger('FingerprintExtractor');
+
 export type ExtractionPhase = 'preprocessing' | 'feature-extraction' | 'sample-selection' | 'vectorization' | 'complete';
 
 export interface ExtractionProgress {
@@ -125,7 +129,7 @@ export class FingerprintExtractor {
 
         this.checkAbort(signal);
 
-        const stats = this.calculateStats(cleaned);
+        const stats = computeFingerprintStats(cleaned);
 
         onProgress?.({
             phase: 'preprocessing',
@@ -144,56 +148,6 @@ export class FingerprintExtractor {
             .trim();
     }
 
-    private calculateStats(text: string): StyleFingerprintStats {
-        const wordCount = text.replace(/\s/g, '').length;
-
-        const sentenceEndings = /[。！？；]/g;
-        const sentences = text.split(sentenceEndings).filter(s => s.trim().length > 0);
-        const avgSentenceLength = sentences.length > 0
-            ? Math.round(wordCount / sentences.length * 10) / 10
-            : 0;
-
-        const paragraphs = text.split(/\n{2,}/).filter(p => p.trim().length > 0);
-        const avgParagraphLength = paragraphs.length > 0
-            ? Math.round(wordCount / paragraphs.length)
-            : 0;
-
-        const dialogueChars = this.countDialogueChars(text);
-        const dialogueRatio = wordCount > 0
-            ? Math.round((dialogueChars / wordCount) * 1000) / 1000
-            : 0;
-
-        const descriptionRatio = Math.max(0, Math.round((1 - dialogueRatio - 0.2) * 1000) / 1000);
-
-        return {
-            wordCount,
-            avgSentenceLength,
-            avgParagraphLength,
-            dialogueRatio,
-            descriptionRatio,
-        };
-    }
-
-    private countDialogueChars(text: string): number {
-        let count = 0;
-        const patterns = [
-            /「([^」]+)」/g,
-            /『([^』]+)』/g,
-            /"([^"]+)"/g,
-            /"([^"]+)"/g,
-        ];
-
-        for (const pattern of patterns) {
-            const matches = text.match(pattern);
-            if (matches) {
-                for (const match of matches) {
-                    count += match.replace(/[「」『』""]/g, '').length;
-                }
-            }
-        }
-
-        return count;
-    }
 
     private async extractFeatures(
         text: string,
@@ -214,7 +168,24 @@ export class FingerprintExtractor {
         const userPrompt = this.buildFeatureUserPrompt(truncatedText);
 
         const plugin = this.aiEngine.getPlugin();
-        const model = plugin.settings.proModel;
+        const config = resolveTaskModelConfig(
+            plugin.settings,
+            'fingerprint',
+            (model, endpoint) => plugin.resolveModelLimits(model, endpoint),
+        );
+        const model = config.model;
+        const provider = (plugin.settings.customProviders || []).find(p =>
+            Array.isArray(p.models)
+            && p.models.includes(model)
+            && resolveProviderSourceType({ id: p.id, endpoint: p.endpoint, sourceType: p.sourceType }) === 'local',
+        );
+        const localOptions = provider
+            ? {
+                endpoint: provider.endpoint,
+                apiKey: plugin.settings.providerKeys?.[provider.id] || 'ollama',
+                disableFallback: true,
+            }
+            : {};
 
         onProgress?.({
             phase: 'feature-extraction',
@@ -229,8 +200,13 @@ export class FingerprintExtractor {
             userPrompt,
             model,
             0.3,
-            2048,
-            { signal }
+            Math.min(config.maxOutput, 8192),
+            {
+                signal,
+                ...localOptions,
+                thinkingMode: config.thinkingMode,
+                thinkingBudget: config.thinkingBudget,
+            },
         );
 
         onProgress?.({
@@ -242,6 +218,10 @@ export class FingerprintExtractor {
         this.checkAbort(signal);
 
         const features = this.parseFeatureResponse(response);
+        if (!Object.values(features).some(value => value && value.trim())) {
+            log.warn('[FingerprintExtractor] AI 特征为空，使用本地统计生成兜底描述');
+            return this.buildLocalFeatureFallback(computeFingerprintStats(this.cleanText(text)));
+        }
 
         onProgress?.({
             phase: 'feature-extraction',
@@ -285,15 +265,53 @@ export class FingerprintExtractor {
     }
 
     private buildFeatureUserPrompt(text: string): string {
+        const stats = computeFingerprintStats(this.cleanText(text));
         return [
             '请分析以下小说文本的写作风格：',
+            '',
+            '【本地统计（必须作为判断依据之一，与文本证据交叉验证）】',
+            `- 字数：${stats.wordCount}`,
+            `- 平均句长：${stats.avgSentenceLength} 字；句长标准差：${stats.sentenceLengthStdDev ?? 0}`,
+            `- 短句占比：${((stats.shortSentenceRatio ?? 0) * 100).toFixed(1)}%；长句占比：${((stats.longSentenceRatio ?? 0) * 100).toFixed(1)}%`,
+            `- 平均段长：${stats.avgParagraphLength} 字；段长标准差：${stats.paragraphLengthStdDev ?? 0}`,
+            `- 对话占比：${(stats.dialogueRatio * 100).toFixed(1)}%；对话段占比：${((stats.dialogueTurnRatio ?? 0) * 100).toFixed(1)}%`,
+            `- 词汇多样性：${((stats.lexicalDiversity ?? 0) * 100).toFixed(1)}%`,
             '',
             '---文本开始---',
             text,
             '---文本结束---',
             '',
+            '要求：每个维度必须引用至少一个本地统计或原文特征，禁止空泛评价；',
+            '无法判断的维度填写“无法判断”，不要编造。',
             '请按要求返回 JSON 格式的风格分析结果：',
         ].join('\n');
+    }
+
+    private buildLocalFeatureFallback(stats: StyleFingerprintStats): StyleFingerprintFeatures {
+        const sentence = stats.avgSentenceLength <= 12
+            ? '短句为主，推进快'
+            : stats.avgSentenceLength >= 28
+                ? '长句为主，铺陈舒展'
+                : '长短句相对均衡';
+        const dialogue = stats.dialogueRatio >= 0.35
+            ? '对话驱动，人物互动密集'
+            : stats.dialogueRatio <= 0.12
+                ? '叙述为主，对话稀少'
+                : '叙述与对话比例适中';
+        const paragraph = stats.avgParagraphLength >= 180
+            ? '长段落叙事，信息密度高'
+            : stats.avgParagraphLength <= 60
+                ? '短段落快切，节奏明快'
+                : '段落长度适中';
+        return {
+            sentenceRhythm: `${sentence}；平均句长 ${stats.avgSentenceLength} 字，短句占比 ${((stats.shortSentenceRatio ?? 0) * 100).toFixed(0)}%。`,
+            wordPreference: `词汇多样性 ${((stats.lexicalDiversity ?? 0) * 100).toFixed(0)}%；以原文高频用词为准，AI 分析不可用。`,
+            narrativeStyle: `${dialogue}；对话占比 ${(stats.dialogueRatio * 100).toFixed(0)}%。`,
+            rhetoric: '基于本地统计无法判断具体修辞，建议重新提取。',
+            dialogueStyle: `对话段占比 ${((stats.dialogueTurnRatio ?? 0) * 100).toFixed(0)}%；对话占比 ${(stats.dialogueRatio * 100).toFixed(0)}%。`,
+            paragraphStructure: `${paragraph}；平均段长 ${stats.avgParagraphLength} 字。`,
+            overallTone: 'AI 特征提取为空，当前为本地统计兜底；请人工复核后使用。',
+        };
     }
 
     private parseFeatureResponse(response: any): StyleFingerprintFeatures {

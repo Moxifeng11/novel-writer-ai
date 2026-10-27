@@ -244,9 +244,10 @@ export class CoWriteFacade {
     async validateEdit(
         modifiedText: string,
         suggestion: SuggestionRecord,
-        context: string
+        context: string,
+        signal?: AbortSignal,
     ): Promise<EditValidation> {
-        return this.engine.validateEdit(modifiedText, suggestion, context);
+        return this.engine.validateEdit(modifiedText, suggestion, context, signal);
     }
 
     async evaluatePlotComplete(

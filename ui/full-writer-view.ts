@@ -14,6 +14,12 @@ import { OutlineTreeController } from './full-writer/outline-tree-controller';
 import { CoverPickerController } from './full-writer/cover-picker-controller';
 import { SettingLibController } from './full-writer/setting-lib-controller';
 import { StepRenderController } from './full-writer/step-render-controller';
+import { ChapterOrchestrator, countRemainingChapterActions } from './full-writer/chapter-orchestrator';
+import { ExecutionRunStore } from './full-writer/execution-run-store';
+import { ExecutionLogPanel, ExecutionTimelinePanel, renderStepFailureCard } from './full-writer/execution-panels';
+import { createStepFailure } from '../shared/execution-events';
+import type { DiagnosticInput, ExecutionEventInput, StepFailure } from '../shared/execution-events';
+import type { ChapterRunMode } from '../shared/chapter-run';
 import { WizardController } from './full-writer/wizard-controller';
 import { ProjectSelectorController } from './full-writer/project-selector-controller';
 import { InterventionController } from './full-writer/intervention-controller';
@@ -83,7 +89,6 @@ export class FullWriterView extends ItemView {
     private chapterStateManager: ChapterStateManager;
     private stepRunner: StepRunner;
     private contextPanel: ContextPanel;
-    private _progressNotice: Notice | null = null;
     private stepAbortController: AbortController | null = null;
     private settlementEngine: SettlementEngine;
     private polishEditor: PolishEditor;
@@ -98,6 +103,13 @@ export class FullWriterView extends ItemView {
     private wizardController: WizardController;
     private projectSelectorController: ProjectSelectorController;
     private interventionController: InterventionController;
+    private chapterOrchestrator: ChapterOrchestrator | null = null;
+    private chapterRunStrip: HTMLElement | null = null;
+    private readonly executionStore = new ExecutionRunStore();
+    private timelinePanel: ExecutionTimelinePanel | null = null;
+    private logPanel: ExecutionLogPanel | null = null;
+    private lastRunProgressMessage = '';
+    private failureRenderTimer: ReturnType<typeof setTimeout> | null = null;
 
     private mainContainer: HTMLElement | null = null;
     private workspace: HTMLElement | null = null;
@@ -154,6 +166,228 @@ export class FullWriterView extends ItemView {
         }
     }
 
+    private recordUiStepError(message: string): void {
+        const step = ALL_FULL_STEPS.find(s => s.index === this.currentStepIndex);
+        this.executionStore.recordFailure(createStepFailure({
+            stepKey: step?.key || 'current-step',
+            stepLabel: step?.label || '当前步骤',
+            message,
+        }));
+        if (step?.key) this.scheduleFailureRender(step.key);
+    }
+
+    private recordContextNotice(level: 'success' | 'warning' | 'error', message: string): void {
+        this.executionStore.addEvent({
+            type: 'context',
+            level,
+            message,
+            stepKey: 'context',
+            stepLabel: '上下文加载',
+        });
+        if (level === 'success') {
+            if (message.includes('上下文加载完成')) this.executionStore.clearFailure('context');
+            return;
+        }
+        this.executionStore.recordFailure(createStepFailure({
+            stepKey: 'context',
+            stepLabel: '上下文加载',
+            message,
+            kind: level === 'error' ? 'exception' : 'validation',
+        }));
+        this.scheduleFailureRender('context');
+    }
+
+    private scheduleFailureRender(stepKey: string): void {
+        const current = ALL_FULL_STEPS.find(s => s.index === this.currentStepIndex);
+        const currentKey = current?.index === 0 ? 'context' : current?.index === 10 ? 'settlement' : current?.key;
+        if (currentKey !== stepKey) return;
+        if (this.failureRenderTimer) clearTimeout(this.failureRenderTimer);
+        this.failureRenderTimer = setTimeout(() => {
+            this.failureRenderTimer = null;
+            if (this.tabContent) void this.renderInContainer(this.tabContent);
+        }, 30);
+    }
+
+    private async retryFailedStep(stepKey: string): Promise<void> {
+        if (stepKey === 'context') {
+            this.executionStore.clearFailure('context');
+            await this.loadContext();
+            if (this.tabContent) await this.renderInContainer(this.tabContent);
+            return;
+        }
+        const step = ALL_FULL_STEPS.find(s => s.key === stepKey);
+        if (!step) return;
+        if (this.chapterOrchestrator?.isRunning) {
+            this.executionStore.addEvent({
+                type: 'notice',
+                level: 'warning',
+                message: '章节任务仍在运行，请等待当前动作结束再重试',
+                stepKey,
+                stepLabel: step.label,
+            });
+            return;
+        }
+        this.executionStore.clearFailure(stepKey);
+        this.currentStepIndex = step.index;
+        if (this.tabContent) await this.renderInContainer(this.tabContent);
+        await this.stepRunner.executeCurrentStep(this._makeStepRunCtx());
+    }
+
+    private openExecutionLog(): void {
+        if (!this.logPanel) {
+            this.logPanel = new ExecutionLogPanel(this.executionStore);
+            if (this.mainContainer) this.logPanel.mount(this.mainContainer);
+        }
+        this.logPanel.setExpanded(true);
+    }
+
+    private mountExecutionPanels(host: HTMLElement): void {
+        if (!this.logPanel) this.logPanel = new ExecutionLogPanel(this.executionStore);
+        this.logPanel.mount(host);
+    }
+
+    private getChapterOrchestrator(): ChapterOrchestrator {
+        if (this.chapterOrchestrator) return this.chapterOrchestrator;
+        this.chapterOrchestrator = new ChapterOrchestrator({
+            stepRunner: this.stepRunner,
+            state: this.chapterStateManager,
+            makeCtx: () => this._makeStepRunCtx(),
+            loadContext: () => this.loadContext(),
+            render: (container) => this.renderInContainer(container),
+            getTabContent: () => this.tabContent,
+            settle: async () => {
+                await this.stepRunner.executeSettlement(
+                    this.project,
+                    this.chapDir,
+                    this.chapterName,
+                    this.stepResults,
+                    this.stepCompleted,
+                    this.vars,
+                    this.plugin,
+                    (c) => this.renderInContainer(c),
+                    this.tabContent,
+                );
+            },
+            showNotice: (message) => {
+                this.executionStore.addEvent({ type: 'run-notice', level: 'warning', message });
+            },
+            showError: (message) => {
+                this.executionStore.addEvent({ type: 'run-error', level: 'error', message });
+                this.openExecutionLog();
+            },
+            showSuccess: (message) => {
+                this.executionStore.addEvent({ type: 'run-complete', level: 'success', message });
+            },
+            onProgress: (p) => {
+                const message = `${p.message}（${p.current}/${p.total} 步，预计 ${p.aiCalls} 次 AI）`;
+                this.executionStore.setStatus(p.message, p.current, p.total, p.aiCalls);
+                const status = this.chapterRunStrip?.querySelector('.nw-chapter-run-status') as HTMLElement | null;
+                if (status) status.setText(message);
+                if (message !== this.lastRunProgressMessage) {
+                    this.lastRunProgressMessage = message;
+                    this.executionStore.addEvent({
+                        type: 'run-progress',
+                        level: 'info',
+                        message: p.message,
+                        detail: `进度 ${p.current}/${p.total}，已用 AI ${p.aiCalls} 次`,
+                    });
+                }
+            },
+        });
+        return this.chapterOrchestrator;
+    }
+
+    /** 一键完成本章：步骤仍可见、可编辑、可单独重生成。 */
+    public async runChapterOneClick(mode: ChapterRunMode = 'recommended'): Promise<void> {
+        if (!this.project || !this.chapterName || !this.chapDir) {
+            this.executionStore.addEvent({ type: 'run-error', level: 'error', message: '请先打开一个章节' });
+            return;
+        }
+        const orchestrator = this.getChapterOrchestrator();
+        if (orchestrator.isRunning) {
+            this.executionStore.addEvent({ type: 'run-error', level: 'warning', message: '章节生成任务已在运行' });
+            return;
+        }
+        this.executionStore.clearAllFailures();
+        this.lastRunProgressMessage = '';
+        this.executionStore.addEvent({
+            type: 'run-start',
+            level: 'info',
+            message: mode === 'recommended' ? '开始一键完成本章（合并规划）' : '开始逐步完成本章',
+        });
+        this.showChapterRunStrip(orchestrator, mode);
+        try {
+            const result = await orchestrator.run({ mode, pauseBetweenSteps: false });
+            if (result.status === 'failed') {
+                const failedStep = result.failedStep ? this.executionStore.getFailure(result.failedStep) : undefined;
+                if (!failedStep) {
+                    this.executionStore.addEvent({
+                        type: 'run-error',
+                        level: 'error',
+                        message: `章节生成中断：${result.message || result.failedStep || '未知错误'}`,
+                        stepKey: result.failedStep,
+                        detail: '已保留已完成步骤；可在对应步骤的错误卡中重试。',
+                    });
+                } else {
+                    this.executionStore.addEvent({
+                        type: 'run-aborted',
+                        level: 'warning',
+                        message: `流程已停止在「${failedStep.stepLabel}」，请按错误卡处理后重试`,
+                    });
+                }
+                this.openExecutionLog();
+            } else if (result.status === 'cancelled') {
+                this.executionStore.addEvent({ type: 'run-cancelled', level: 'warning', message: '已取消章节生成' });
+            } else if (result.status === 'completed') {
+                this.executionStore.addEvent({
+                    type: 'run-complete',
+                    level: 'success',
+                    message: `本章完成（${result.aiCalls} 次 AI 调用）`,
+                });
+            }
+        } finally {
+            this.hideChapterRunStrip();
+            this.executionStore.clearStatus();
+            if (this.tabContent) await this.renderInContainer(this.tabContent);
+        }
+    }
+
+    private showChapterRunStrip(orchestrator: ChapterOrchestrator, mode: ChapterRunMode): void {
+        this.hideChapterRunStrip();
+        const host = this.mainContainer;
+        if (!host) return;
+        const strip = host.createDiv({ cls: 'novel-writer-fw-btn-row' });
+        strip.style.cssText = 'position:sticky;top:0;z-index:20;background:var(--background-secondary);padding:6px 10px;border-bottom:1px solid var(--background-modifier-border);align-items:center;gap:8px;';
+        strip.createSpan({
+            text: mode === 'recommended' ? '🚀 一键完成本章（推荐：合并规划）' : '🐢 逐步完成本章',
+            cls: 'novel-writer-fw-warning',
+        });
+        const status = strip.createSpan({ text: '准备中...', cls: 'nw-chapter-run-status' });
+        status.style.cssText = 'font-size:12px;color:var(--text-muted);flex:1;';
+        const pauseBtn = strip.createEl('button', { text: '⏸ 暂停', cls: 'novel-writer-settings-btn' });
+        pauseBtn.onclick = () => {
+            if (pauseBtn.textContent === '▶ 继续') {
+                orchestrator.resume();
+                pauseBtn.setText('⏸ 暂停');
+            } else {
+                orchestrator.pause();
+                pauseBtn.setText('▶ 继续');
+            }
+        };
+        const cancelBtn = strip.createEl('button', { text: '✖ 取消', cls: 'novel-writer-settings-btn' });
+        cancelBtn.onclick = () => orchestrator.cancel();
+        // 放在标题栏之后、三栏工作区之前，避免被 tabContent.empty() 清掉
+        const titleBar = host.querySelector('.novel-writer-fw-titlebar');
+        if (titleBar && titleBar.nextSibling) host.insertBefore(strip, titleBar.nextSibling);
+        else host.prepend(strip);
+        this.chapterRunStrip = strip;
+    }
+
+    private hideChapterRunStrip(): void {
+        this.chapterRunStrip?.remove();
+        this.chapterRunStrip = null;
+    }
+
     private tabBar!: HTMLDivElement;
     tabContent!: HTMLDivElement;
 
@@ -173,28 +407,42 @@ export class FullWriterView extends ItemView {
 
         const stepRunnerCallbacks = {
             showProgress: (message: string) => {
-                if (this._progressNotice) {
-                    this._progressNotice.hide();
-                }
-                this._progressNotice = new Notice(message, 0);
+                this.executionStore.setStatus(message);
             },
             hideProgress: () => {
-                if (this._progressNotice) {
-                    this._progressNotice.hide();
-                    this._progressNotice = null;
+                this.executionStore.clearStatus();
+            },
+            showSuccess: (message: string) => {
+                this.executionStore.addEvent({ type: 'notice', level: 'success', message });
+            },
+            showError: (message: string) => {
+                this.recordUiStepError(message);
+            },
+            showNotice: (message: string) => {
+                this.executionStore.addEvent({ type: 'notice', level: 'warning', message });
+            },
+            showWarning: (message: string) => {
+                this.executionStore.addEvent({ type: 'notice', level: 'warning', message });
+            },
+            onExecutionEvent: (event: ExecutionEventInput) => {
+                this.executionStore.addEvent(event);
+                if (event.type === 'step-complete' && event.stepKey) {
+                    this.executionStore.clearFailure(event.stepKey);
+                } else if (event.type === 'step-start' && event.stepKey) {
+                    this.executionStore.clearFailure(event.stepKey);
                 }
             },
-            showSuccess: (message: string, duration?: number) => {
-                new Notice(message, duration);
+            onStepFailure: (failure: StepFailure) => {
+                this.executionStore.recordFailure(failure);
+                const failedStep = ALL_FULL_STEPS.find(s => s.key === failure.stepKey);
+                if (failedStep) {
+                    this.currentStepIndex = failedStep.index;
+                    this.chapterStateManager.currentStepIndex = failedStep.index;
+                }
+                this.scheduleFailureRender(failure.stepKey);
             },
-            showError: (message: string, duration?: number) => {
-                new Notice(message, duration);
-            },
-            showNotice: (message: string, duration?: number) => {
-                new Notice(message, duration);
-            },
-            showWarning: (message: string, duration?: number) => {
-                new Notice(message, duration);
+            onDiagnostic: (entry: DiagnosticInput) => {
+                this.executionStore.addLog(entry);
             },
             // A7: 消痕/迭代弹窗内部改写正文后，走同一套失效传播
             invalidateSteps: (keys: string[]) => {
@@ -236,6 +484,16 @@ export class FullWriterView extends ItemView {
             renderInContainer: (c) => this.renderInContainer(c),
             renderInterventionBox: (c) => this.interventionController.render(c),
             renderPolishEditor: (area) => this.renderPolishEditor(area),
+            reportStepError: (stepKey, message) => {
+                const step = ALL_FULL_STEPS.find(s => s.key === stepKey);
+                this.executionStore.recordFailure(createStepFailure({
+                    stepKey,
+                    stepLabel: step?.label || stepKey,
+                    message,
+                    kind: 'save',
+                }));
+                this.scheduleFailureRender(stepKey);
+            },
         });
         this.wizardStepRenderers = new WizardStepRenderers(
             this.wizardStepResults,
@@ -356,6 +614,12 @@ export class FullWriterView extends ItemView {
             openKnowledgeBase: () => this.openKnowledgeBase(),
             openFingerprintLibrary: () => this.openFingerprintLibrary(),
             executeCommand: (commandId) => this.plugin.executeCommand(commandId),
+            runChapterOneClick: (mode) => { void this.runChapterOneClick(mode); },
+            getRemainingChapterActions: () => countRemainingChapterActions(
+                this.stepCompleted,
+                this.stepResults['bodyGeneration'] || '',
+                this.stepResults['analysisReport'] || '',
+            ),
         });
 
         this.statusBarController = new StatusBarController({
@@ -378,6 +642,11 @@ export class FullWriterView extends ItemView {
             entityStateController: this.entityStateController,
             saveStepResult: (key, content) =>
                 this.stepRunner.saveStepResult(key, content, this.chapDir, this.chapterName, this.volume),
+            reportProgress: (message) => {
+                if (message) this.executionStore.setStatus(message);
+                else this.executionStore.clearStatus();
+            },
+            reportNotice: (level, message) => this.recordContextNotice(level, message),
         });
     }
 
@@ -567,6 +836,14 @@ export class FullWriterView extends ItemView {
     async onClose(): Promise<void> {
         this.stepAbortController?.abort();
         this.stepAbortController = null;
+        this.timelinePanel?.destroy();
+        this.timelinePanel = null;
+        this.logPanel?.destroy();
+        this.logPanel = null;
+        if (this.failureRenderTimer) {
+            clearTimeout(this.failureRenderTimer);
+            this.failureRenderTimer = null;
+        }
         await super.onClose();
         const { contentEl } = this;
         contentEl.empty();
@@ -722,6 +999,7 @@ export class FullWriterView extends ItemView {
         return {
             stepResults: this.stepResults,
             stepCompleted: this.chapterStateManager.stepCompleted,
+            stepMeta: {},
             currentStepIndex: this.chapterStateManager.currentStepIndex,
             setCurrentStepIndex: (v: number) => { this.chapterStateManager.currentStepIndex = v; },
             tabContent: this.tabContent,
@@ -736,7 +1014,7 @@ export class FullWriterView extends ItemView {
             vars: this.vars,
             isLoading: this.isLoading,
             buildTemplateVars: () => this.buildTemplateVars(),
-            saveStepResult: async (key, content) => { await this.stepRunner.saveStepResult(key, content, this.chapDir, this.chapterName, this.volume); },
+            saveStepResult: async (key, content, meta) => { await this.stepRunner.saveStepResult(key, content, this.chapDir, this.chapterName, this.volume, meta); },
             renderInContainer: (c) => this.renderInContainer(c),
             setIsLoading: (v) => {
                 this.isLoading = v;
@@ -835,6 +1113,10 @@ export class FullWriterView extends ItemView {
     }
 
     private async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
+        if (project !== this.project || chapter.chapter !== this.chapterName) {
+            this.executionStore.reset();
+            this.lastRunProgressMessage = '';
+        }
         await this.tabController.selectChapter(project, chapter);
     }
 
@@ -1096,8 +1378,9 @@ export class FullWriterView extends ItemView {
             return;
         }
 
-        // 上下文未加载时自动加载，防止渲染死态
-        if (!this.stepCompleted.has('context') && this.chapterName) {
+        // 上下文未加载时自动加载；若刚失败过则等待用户点错误卡的「重试」，
+        // 避免失败 → 重渲染 → 再加载的死循环。
+        if (!this.stepCompleted.has('context') && this.chapterName && !this.executionStore.getFailure('context')) {
             await this.loadContext();
         }
         // 上下文加载失败（仍无 context），且没有章节可选，回退到项目选择器
@@ -1112,6 +1395,7 @@ export class FullWriterView extends ItemView {
 
             // 标题栏
             await this.renderTitleBar(mainContainer);
+            this.mountExecutionPanels(mainContainer);
 
             // 三栏布局：步骤导航(grid-col:1) | 正文写作(grid-col:2) | 上下文监控(grid-col:3)
             const workspace = mainContainer.createDiv({ cls: 'novel-writer-fw-workspace' });
@@ -1178,13 +1462,18 @@ export class FullWriterView extends ItemView {
         const stepKey = currentStep.key;
 
         if (!stepKey) {
-            // 自动步骤
+            // 自动步骤（上下文加载 / 结算）同样展示时间线与错误卡，
+            // 否则上下文缺项只能在浮层里一闪而过。
+            this.renderExecutionStatus(area, currentStep.index === 0 ? 'context' : 'settlement');
             this.renderAutoStep(area, currentStep);
             return;
         }
 
         const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
-        const customTemplate = await templateService.getStepPrompt(stepKey);
+        // 只有项目确实存在自定义 prompt 时才覆盖默认模板；
+        // 旧实现 getStepPrompt 总会返回内置模板，导致正文 V2 模板永远不可达。
+        const hasCustomTemplate = await templateService.hasCustomPrompt(stepKey);
+        const customTemplate = hasCustomTemplate ? await templateService.getStepPrompt(stepKey) : null;
 
         // 检查前置步骤是否完成，未完成则显示提醒
         if (currentStep && currentStep.index >= 2 && currentStep.index <= 9) {
@@ -1218,6 +1507,10 @@ export class FullWriterView extends ItemView {
         }
         header.createEl('p', { text: template.description, cls: 'novel-writer-fw-step-desc' });
 
+        // 操作栏紧跟标题，避免用户每次滚过整段提示词才能点到生成按钮。
+        this.renderStepActionBar(area, currentStep, stepKey);
+        this.renderExecutionStatus(area, stepKey);
+
         if (stepKey === 'infoPlan') {
             this.renderPlanningQuickStart(area);
         }
@@ -1226,93 +1519,13 @@ export class FullWriterView extends ItemView {
             this.renderReviewPhaseTabs(area, stepKey);
         }
 
-        // 系统提示词
-        const sysSection = area.createDiv({ cls: 'novel-writer-fw-prompt-section' });
-        sysSection.createEl('label', { text: '系统提示词', cls: 'novel-writer-fw-label' });
-        this.systemPromptEl = sysSection.createEl('textarea', {
-            cls: 'nw-textarea novel-writer-fw-textarea',
-            attr: { rows: '12' }
-        }) as HTMLTextAreaElement;
-        // 对系统提示词也做变量替换
-        this.systemPromptEl.value = fillTemplate(template.systemPrompt, vars);
-
-        // 用户提示词
-        const userSection = area.createDiv({ cls: 'novel-writer-fw-prompt-section' });
-        userSection.createEl('label', { text: '用户提示词', cls: 'novel-writer-fw-label' });
-        this.userPromptEl = userSection.createEl('textarea', {
-            cls: 'nw-textarea novel-writer-fw-textarea',
-            attr: { rows: '15' }
-        }) as HTMLTextAreaElement;
-        this.userPromptEl.value = fillTemplate(template.userPrompt, vars);
-
-        if (stepKey === 'bodyGeneration') {
-            const cowriteCard = area.createDiv({ cls: 'novel-writer-fw-cowrite-entry' });
-            const cowriteHeader = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-header' });
-            cowriteHeader.createEl('h4', { text: '✨ 推荐方式：句级协同写作', cls: 'novel-writer-fw-cowrite-entry-title' });
-            cowriteHeader.createEl('span', { text: '当前主流', cls: 'novel-writer-fw-cowrite-entry-badge' });
-            
-            const cowriteDesc = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-desc' });
-            cowriteDesc.createEl('p', { text: '正文生成阶段建议使用句级协同写作工作台：AI 逐句生成 3 条不同方向的候选，你可以选择接受、编辑或重新生成，完全掌握创作主导权。' });
-            
-            const cowriteFeatures = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-features' });
-            const features = [
-                '🎯 逐句精控：每句话都可以选择和调整',
-                '🔄 多向候选：3 条不同方向，拓宽创作思路',
-                '🛡️ 降低 AI 痕迹：人工参与度高，反检测效果更好',
-                '📊 统一落盘：与整章草稿共享同一正文文件与格式契约',
-            ];
-            features.forEach(f => {
-                cowriteFeatures.createEl('div', { text: f, cls: 'novel-writer-fw-cowrite-entry-feature' });
-            });
-            
-            const cowriteBtnRow = cowriteCard.createDiv({ cls: 'novel-writer-fw-cowrite-entry-btn-row' });
-            const cowriteBtn = cowriteBtnRow.createEl('button', {
-                text: '🚀 进入句级协同写作',
-                cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary novel-writer-fw-cowrite-entry-btn'
-            });
-            cowriteBtn.addEventListener('click', () => this.openCurrentChapterInCoWriting());
-
-            const cowriteNote = cowriteCard.createEl('p', { 
-                text: '💡 提示：下方「整章草稿」与本工作台共用同一正文文件、同一格式契约与同一落盘入口，可随时切换。', 
-                cls: 'novel-writer-fw-cowrite-entry-note' 
-            });
-        }
-
-        // Temperature 滑块
-        const tempRow = area.createDiv({ cls: 'novel-writer-fw-temp-row' });
-        tempRow.createSpan({ text: 'Temperature:', cls: 'novel-writer-fw-temp-label' });
-        this.temperatureSlider = tempRow.createEl('input', {
-            type: 'range',
-            cls: 'novel-writer-fw-temp-slider',
-            attr: { min: '0.1', max: '2.0', step: '0.1', value: '1.4' }
-        }) as HTMLInputElement;
-        this.temperatureValueEl = tempRow.createSpan({ text: '1.4', cls: 'novel-writer-fw-temp-value' });
-        this.temperatureSlider.oninput = () => {
-            this.temperatureValueEl.setText(String(parseFloat(this.temperatureSlider.value).toFixed(1)));
-        };
-
-        // 按钮行
-        const btnRow = area.createDiv({ cls: 'novel-writer-fw-btn-row' });
-
-        if (currentStep.canSkip) {
-            const skipBtn = btnRow.createEl('button', {
-                text: '⏭️ 跳过',
-                cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary'
-            });
-            skipBtn.onclick = () => this.stepRunner.moveToNextStep(this._makeStepRunCtx());
-        }
-
-        // bodyGeneration: 主入口是「进入句级协同写作」，整章生成仅作为可选的次级入口
-        const sendBtnText = stepKey === 'bodyGeneration' ? '🤖 整章草稿（可选）' : '🚀 发送 AI 请求';
-        const sendBtnCls = stepKey === 'bodyGeneration' ? 'novel-writer-fw-btn novel-writer-fw-btn-secondary' : 'novel-writer-fw-btn novel-writer-fw-btn-primary';
-        const sendBtn = btnRow.createEl('button', {
-            text: sendBtnText,
-            cls: sendBtnCls
-        });
-        sendBtn.onclick = () => this.stepRunner.executeCurrentStep(this._makeStepRunCtx());
-
-        // AI 结果区
+        // 结果优先展示：先让用户看到本步实际产出，再决定是否展开提示词编辑。
         this.renderResultArea(area, stepKey);
+
+        const systemPromptValue = fillTemplate(template.systemPrompt, vars);
+        const userPromptValue = fillTemplate(template.userPrompt, vars);
+        this.systemPromptEl = this.renderPromptEditor(area, '系统提示词', systemPromptValue, 12);
+        this.userPromptEl = this.renderPromptEditor(area, '用户提示词', userPromptValue, 15);
 
         // v6.0: outline 步骤额外显示分卷大纲树状预览（辅助视图，不替代结果编辑器）
         // 已禁用：写作工作台（单章）的 outline 步骤不应显示全书分卷大纲树，那是全书规划向导的功能
@@ -1358,6 +1571,28 @@ export class FullWriterView extends ItemView {
                 undefined,
                 this.stepCompleted,
             );
+
+            const targetedBtn = deaiBtnRow.createEl('button', {
+                text: '🎯 定向修订',
+                cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary'
+            });
+            targetedBtn.onclick = async () => {
+                targetedBtn.disabled = true;
+                targetedBtn.setText('修订中...');
+                try {
+                    await this.stepRunner.executeTargetedRevision(
+                        this.stepResults,
+                        this.chapDir,
+                        this.chapterName,
+                        this.volume,
+                        this.stepCompleted,
+                    );
+                } finally {
+                    targetedBtn.disabled = false;
+                    targetedBtn.setText('🎯 定向修订');
+                    await this.renderInContainer(this.tabContent);
+                }
+            };
         }
 
         // 如果该步骤已执行过，显示「继续下一步」按钮
@@ -1386,6 +1621,111 @@ export class FullWriterView extends ItemView {
                 this.chapterStateManager.invalidateSteps([...BODY_CHANGE_INVALIDATED_STEPS]);
             },
         );
+    }
+
+    private renderExecutionStatus(area: HTMLElement, stepKey: string): void {
+        this.timelinePanel?.destroy();
+        this.timelinePanel = new ExecutionTimelinePanel(this.executionStore, {
+            onRetry: (key) => void this.retryFailedStep(key),
+            onOpenLog: () => this.openExecutionLog(),
+        });
+        this.timelinePanel.mount(area);
+
+        const currentFailure = this.executionStore.getFailure(stepKey);
+        if (currentFailure) {
+            renderStepFailureCard(area, currentFailure, {
+                onRetry: (key) => void this.retryFailedStep(key),
+                onOpenLog: () => this.openExecutionLog(),
+            });
+        }
+    }
+
+    private renderStepActionBar(area: HTMLElement, currentStep: FullStep, stepKey: string): void {
+        const bar = area.createDiv({ cls: 'nw-step-actionbar' });
+        const status = bar.createDiv({ cls: 'nw-step-actionbar-status' });
+        const failure = this.executionStore.getFailure(stepKey);
+        const done = this.stepCompleted.has(stepKey);
+        const hasResult = (this.stepResults[stepKey] || '').trim().length > 0;
+
+        status.createSpan({ text: currentStep.label, cls: 'nw-step-actionbar-title' });
+        const chip = status.createSpan({
+            text: failure ? '执行失败' : done ? '已完成' : '未完成',
+            cls: 'nw-step-status-chip',
+        });
+        chip.addClass(failure ? 'nw-step-status-error' : done ? 'nw-step-status-done' : 'nw-step-status-pending');
+
+        const actions = bar.createDiv({ cls: 'nw-step-actions' });
+        const runStep = () => {
+            void this.stepRunner.executeCurrentStep(this._makeStepRunCtx());
+        };
+
+        if (stepKey === 'bodyGeneration') {
+            const cowriteBtn = actions.createEl('button', {
+                text: '✨ 进入句级协同写作',
+                cls: 'nw-step-action nw-step-action-cowrite',
+                attr: { title: '逐句生成候选并确认，推荐用于正文' },
+            });
+            cowriteBtn.addEventListener('click', () => this.openCurrentChapterInCoWriting());
+
+            const draftBtn = actions.createEl('button', {
+                text: done ? '🔄 重新生成整章' : '🤖 整章草稿（可选）',
+                cls: 'nw-step-action nw-step-action-primary',
+                attr: { title: '一次生成整章草稿；出现错误时结果与错误卡会显示在下方' },
+            });
+            draftBtn.addEventListener('click', runStep);
+        } else {
+            const label = failure
+                ? '🔄 重新生成本步'
+                : done
+                    ? '🔄 重新生成'
+                    : hasResult
+                        ? '🚀 继续生成'
+                        : '🚀 生成此步';
+            const runBtn = actions.createEl('button', {
+                text: label,
+                cls: 'nw-step-action nw-step-action-primary',
+                attr: { title: '使用下方提示词执行本步；错误会直接显示在本步位置' },
+            });
+            runBtn.addEventListener('click', runStep);
+        }
+
+        if (currentStep.canSkip) {
+            const skipBtn = actions.createEl('button', {
+                text: '跳过',
+                cls: 'nw-step-action nw-step-action-ghost',
+                attr: { title: '跳过本步' },
+            });
+            skipBtn.addEventListener('click', () => this.stepRunner.moveToNextStep(this._makeStepRunCtx()));
+        }
+
+        const params = bar.createDiv({ cls: 'nw-step-params' });
+        params.createSpan({ text: '温度', cls: 'nw-step-params-label' });
+        this.temperatureSlider = params.createEl('input', {
+            type: 'range',
+            cls: 'nw-step-temp-slider',
+            attr: { min: '0.1', max: '2.0', step: '0.1', value: '1.4' },
+        }) as HTMLInputElement;
+        this.temperatureValueEl = params.createSpan({ text: '1.4', cls: 'nw-step-temp-value' });
+        this.temperatureSlider.oninput = () => {
+            this.temperatureValueEl.setText(String(parseFloat(this.temperatureSlider.value).toFixed(1)));
+        };
+    }
+
+    private renderPromptEditor(area: HTMLElement, label: string, value: string, rows: number): HTMLTextAreaElement {
+        const effective = value.trim();
+        const details = area.createEl('details', { cls: 'novel-writer-fw-prompt-section nw-prompt-collapsible' });
+        const summary = details.createEl('summary', { cls: 'novel-writer-fw-label' });
+        summary.createSpan({ text: label });
+        summary.createSpan({
+            text: effective.length > 0 ? `${effective.length} 字 · 点击展开编辑` : '模板为空 · 点击展开查看',
+            cls: 'nw-prompt-summary-meta',
+        });
+        const textarea = details.createEl('textarea', {
+            cls: 'nw-textarea novel-writer-fw-textarea',
+            attr: { rows: String(rows) },
+        }) as HTMLTextAreaElement;
+        textarea.value = value;
+        return textarea;
     }
 
     private renderResultArea(area: HTMLElement, stepKey: string): void {
@@ -1504,7 +1844,8 @@ export class FullWriterView extends ItemView {
 
             try {
                 if (noneDone || allDone) {
-                    await this.stepRunner.executePlanningCombined(this._makeStepRunCtx());
+                    // 全部完成时 force=true 才是真正的“重新生成全部”
+                    await this.stepRunner.executePlanningCombined(this._makeStepRunCtx(), { force: allDone });
                 } else {
                     const remaining = planningSteps.filter(s => !this.stepCompleted.has(s.key));
                     const stepKeys = remaining.map(s => s.key);
@@ -1518,10 +1859,21 @@ export class FullWriterView extends ItemView {
                         }
                     );
                 }
-                // 阶段完成口径与左侧导航一致：必做 infoPlan 完成即可进入正文，可选步骤不阻塞
-                if (this.stepCompleted.has('infoPlan')) {
+                // 5 个规划步骤齐全才进入正文；缺任何一步都停在第一个缺失步骤，避免残缺规划写正文
+                const missing = planningSteps.filter(s => !this.stepCompleted.has(s.key));
+                if (missing.length === 0) {
                     this.chapterStateManager.currentStepIndex = 7;
-                    new Notice('✅ 章节规划已具备正文条件（必做步骤完成），已进入正文写作', 3000);
+                    this.executionStore.addEvent({ type: 'run-complete', level: 'success', message: '全章规划完成，已进入正文写作' });
+                } else {
+                    const first = ALL_FULL_STEPS.find(s => s.key === missing[0].key);
+                    if (first) this.chapterStateManager.currentStepIndex = first.index;
+                    this.executionStore.addEvent({
+                        type: 'run-warning',
+                        level: 'warning',
+                        message: `规划仍缺少：${missing.map(s => s.label).join('、')}，已停在缺失步骤`,
+                        stepKey: missing[0].key,
+                        stepLabel: missing[0].label,
+                    });
                 }
             } catch (e) {
                 console.error('[Planning] 一键生成失败:', e);

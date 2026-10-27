@@ -46,6 +46,7 @@ const BASE_SETTINGS = {
     coWriteTemperature: 0.7,
     coWriteMaxTokens: 600,
     candidateParallel: true,
+    customProviders: [{ id: 'ollama', endpoint: 'http://localhost:11434', sourceType: 'local', models: ['qwen2.5:7b'], maxContext: 32768 }],
 };
 
 /** 构造带可控 callAI 的引擎；delayMs 控制每次调用的模拟耗时（默认 0） */

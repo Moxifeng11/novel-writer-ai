@@ -7,21 +7,31 @@ export interface OllamaProviderOptions {
     baseUrl?: string;
     model?: string;
     dimensions?: number;
+    /** 单次 embedding 最大字符数；超长文本在本地模型上会被服务端静默截断或报错。 */
+    maxInputChars?: number;
 }
 
 export class OllamaEmbeddingProvider implements EmbeddingProvider {
     private baseUrl: string;
     private model: string;
     private cachedDimensions: number | null = null;
+    private maxInputChars: number;
 
     constructor(options: OllamaProviderOptions = {}) {
         this.baseUrl = (options.baseUrl || 'http://localhost:11434').replace(/\/$/, '');
         this.model = options.model || 'bge-m3';
         this.cachedDimensions = options.dimensions || null;
+        this.maxInputChars = options.maxInputChars && options.maxInputChars > 0
+            ? options.maxInputChars
+            : 6000;
     }
 
     async embed(text: string, options?: EmbeddingOptions): Promise<number[]> {
         const endpoint = `${this.baseUrl}/api/embeddings`;
+        const safeText = text.length > this.maxInputChars ? text.slice(0, this.maxInputChars) : text;
+        if (safeText.length !== text.length) {
+            log.debug(`[OllamaProvider] embedding 输入截断 ${text.length} → ${safeText.length} 字符（模型 ${this.model}）`);
+        }
 
         // 创建超时 AbortController
         const timeoutController = new AbortController();
@@ -44,7 +54,7 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
                 },
                 body: JSON.stringify({
                     model: this.model,
-                    prompt: text,
+                    prompt: safeText,
                 }),
                 signal: timeoutController.signal,
             });

@@ -21,6 +21,7 @@ import { WritingProfileManager } from './writing-profile';
 import { ENGINE_NAMES } from './engine-registry';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
 import { createLogger } from '../shared/logger';
+import type { ThinkingMode } from '../shared/task-model';
 
 
 const log = createLogger('AiEngine');
@@ -97,7 +98,7 @@ export class AIEngine {
         model?: string,
         temperature: number = 0.7,
         maxTokens?: number,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number; disableFallback?: boolean; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): Promise<APIResponse> {
         // 输出预算交给 AIApiClient#resolveMaxOutput 统一处理：
         // 优先用户为具体模型配置的 maxOutput，其次静态能力表。
@@ -139,7 +140,7 @@ export class AIEngine {
         temperature: number = 0.7,
         maxTokens?: number,
         onChunk?: (text: string, done: boolean) => void,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): Promise<APIResponse> {
         const effectiveMaxTokens = maxTokens ?? this.plugin.settings.maxOutput ?? 4096;
         return this.apiClient.callAIStream(systemPrompt, userPrompt, model, temperature, effectiveMaxTokens, onChunk, options);
@@ -151,7 +152,7 @@ export class AIEngine {
         model?: string,
         temperature: number = 0.7,
         maxTokens?: number,
-        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean }
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): AsyncGenerator<string, APIResponse, unknown> {
         const effectiveMaxTokens = maxTokens ?? this.plugin.settings.maxOutput ?? 4096;
         return yield* this.apiClient.callAIAsyncIterator(systemPrompt, userPrompt, model, temperature, effectiveMaxTokens, options);

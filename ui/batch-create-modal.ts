@@ -9,6 +9,15 @@ import { TemplateService } from '../services/template-service';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { countPlannedChapters, hasBlockingIssues, parseVolumePlan, VolumePlan, VolumePlanParseResult } from '../shared/volume-plan';
 import { createLogger } from '../shared/logger';
+import { getProjectMeta } from './project-utils';
+import { getCreationModeLabel, type CreationMode } from '../shared/creation-mode';
+import {
+    buildScriptUnitSkeleton,
+    buildShortUnitSkeleton,
+    ensureModeContentStructure,
+    modeBodyDir,
+    modeUnitFileName,
+} from '../shared/mode-content';
 
 
 const log = createLogger('BatchCreateModal');
@@ -34,11 +43,16 @@ export class BatchCreateModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
     private _plan: VolumePlanParseResult | null = null;
+    private creationMode: CreationMode = 'long';
+    private modeUnitCount = 20;
+    private modeUnitLabel = '章';
+    private preferredProject?: string;
 
-    constructor(app: App, plugin: NovelWriterPlugin) {
+    constructor(app: App, plugin: NovelWriterPlugin, preferredProject?: string) {
         super(app);
         this.plugin = plugin;
         this.contextManager = plugin.ctxManager;
+        this.preferredProject = preferredProject;
     }
 
     onOpen(): void {
@@ -55,13 +69,19 @@ export class BatchCreateModal extends Modal {
         contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
         contentEl.empty();
-        contentEl.createEl('h2', { text: '📦 批量建章（按全书规划）' });
-        contentEl.createEl('p', {
+        const titleEl = contentEl.createEl('h2', { text: '📦 批量建章（按全书规划）' });
+        const descEl = contentEl.createEl('p', {
             text: '读取上一步「AI 全书规划」产出的分卷大纲，一次性为全部卷创建章节骨架；建章前会校验大纲一致性，建章后会校验落盘完整性。',
             attr: { style: 'font-size:0.85em;color:var(--text-muted);margin-top:-6px;' },
         });
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
+        const modeBox = contentEl.createDiv({ cls: 'nw-batch-plan-box' });
+        modeBox.hidden = true;
+        const modeLabel = modeBox.createEl('label', { text: '创建数量' });
+        modeLabel.addClass('nw-form-label');
+        const modeCountInput = modeBox.createEl('input', { type: 'number', cls: 'nw-input' });
+        const modeHint = modeBox.createEl('p', { cls: 'nw-text-12-muted' });
         const planBox = contentEl.createEl('div', {
             cls: 'nw-batch-plan-box',
             attr: { style: 'margin:12px 0;padding:10px 12px;border-radius:8px;background:var(--background-secondary);font-size:0.9em;line-height:1.7;' },
@@ -79,6 +99,27 @@ export class BatchCreateModal extends Modal {
                 return;
             }
 
+            const meta = await getProjectMeta(this.app, project);
+            this.creationMode = meta.creationMode;
+            this.modeUnitLabel = meta.unitLabel;
+            modeBox.hidden = this.creationMode === 'long';
+            if (this.creationMode !== 'long') {
+                titleEl.setText(this.creationMode === 'script' ? '📦 批量建集（剧本模式）' : '📦 批量建节（短篇模式）');
+                descEl.setText(
+                    `${meta.creationModeLabel}不依赖分卷大纲，按设定数量一次性创建${this.modeUnitLabel}骨架；已存在的文件会自动跳过。`
+                );
+                this.modeUnitCount = Math.max(1, meta.modeTargetUnits || (this.creationMode === 'script' ? 80 : 20));
+                modeCountInput.min = '1';
+                modeCountInput.max = String(this.creationMode === 'script' ? 120 : 40);
+                modeCountInput.value = String(this.modeUnitCount);
+                modeHint.setText(`${meta.creationModeLabel}：将创建 ${this.modeUnitCount} ${this.modeUnitLabel}骨架，不依赖分卷大纲。`);
+                createButton.textContent = `创建 ${this.modeUnitCount} ${this.modeUnitLabel}骨架`;
+                createButton.disabled = false;
+                return;
+            }
+            createButton.textContent = '批量创建全部卷章节';
+            titleEl.setText('📦 批量建章（按全书规划）');
+            descEl.setText('读取上一步「AI 全书规划」产出的分卷大纲，一次性为全部卷创建章节骨架；建章前会校验大纲一致性，建章后会校验落盘完整性。');
             planBox.setText('⏳ 正在读取全书规划...');
             const content = await readMergedVolumeOutline(this.app, project);
             if (!content || content.trim().length === 0) {
@@ -142,18 +183,44 @@ export class BatchCreateModal extends Modal {
             for (const project of projects) {
                 projectSelect.createEl('option', { value: project, text: project });
             }
+            if (this.preferredProject && projects.includes(this.preferredProject)) {
+                projectSelect.value = this.preferredProject;
+            }
             projectSelect.onchange = () => { void loadPlan(); };
             await loadPlan();
         };
 
+        modeCountInput.onchange = () => {
+            const n = parseInt(modeCountInput.value, 10);
+            if (Number.isFinite(n) && n > 0) {
+                this.modeUnitCount = n;
+                createButton.textContent = `创建 ${n} ${this.modeUnitLabel}骨架`;
+                modeHint.setText(`${getCreationModeLabel(this.creationMode)}：将创建 ${n} ${this.modeUnitLabel}骨架，不依赖分卷大纲。`);
+            }
+        };
+
         createButton.onclick = async () => {
             const project = projectSelect.value;
-            const plan = this._plan;
-            if (!project || !plan) {
+            if (!project) return;
+            const plan: VolumePlanParseResult = this.creationMode === 'long'
+                ? (this._plan as VolumePlanParseResult)
+                : {
+                    volumes: [{
+                        volumeNumber: 1,
+                        volumeLabel: '第1卷',
+                        volumeName: '主体',
+                        startChapter: 1,
+                        endChapter: this.modeUnitCount,
+                        chapterNumbers: Array.from({ length: this.modeUnitCount }, (_, i) => i + 1),
+                        rawSection: '',
+                    }],
+                    issues: [],
+                };
+            if (!plan) {
                 new Notice('❌ 全书规划尚未就绪，无法建章', 5000);
                 return;
             }
-            if (hasBlockingIssues(plan)) {
+            if (this.creationMode === 'long' && hasBlockingIssues(plan)) {
                 new Notice('❌ 大纲校验未通过，请先修复分卷大纲', 8000);
                 return;
             }
@@ -169,10 +236,78 @@ export class BatchCreateModal extends Modal {
         void populateProjects();
     }
 
+    /** 短篇/剧本：只在模式内容根目录创建正文单元，不建长篇步骤文件 */
+    private async batchCreateModeUnits(project: string, planBox: HTMLElement): Promise<void> {
+        const mode = this.creationMode;
+        const unit = this.modeUnitLabel;
+        const total = Math.max(1, this.modeUnitCount);
+        const progress = new Notice(`⏳ 正在创建 ${total} ${unit}骨架...`, 0);
+        const written: WrittenFile[] = [];
+        let created = 0;
+        const failures: string[] = [];
+
+        try {
+            await ensureModeContentStructure(this.app.vault.adapter, project, mode);
+            const dir = modeBodyDir(project, mode);
+            if (!(await this.app.vault.adapter.exists(dir))) await this.app.vault.adapter.mkdir(dir);
+
+            for (let n = 1; n <= total; n++) {
+                const path = `${dir}/${modeUnitFileName(mode, n)}`;
+                try {
+                    if (await this.app.vault.adapter.exists(path)) {
+                        written.push({ label: `第${n}${unit}`, path });
+                        continue;
+                    }
+                    const content = mode === 'short'
+                        ? buildShortUnitSkeleton(n)
+                        : buildScriptUnitSkeleton(n);
+                    await this.app.vault.adapter.write(path, content);
+                    written.push({ label: `第${n}${unit}`, path });
+                    created++;
+                } catch (e) {
+                    failures.push(`第${n}${unit}：${e instanceof Error ? e.message : String(e)}`);
+                }
+                if (n % 10 === 0) progress.setMessage(`⏳ 批量建${unit} ${n}/${total} ${unit}...`);
+            }
+        } finally {
+            progress.hide();
+        }
+
+        const invalid = await this.verifyWrittenFiles(written);
+        this.renderResult(planBox, {
+            volumes: 0,
+            totalChapters: total,
+            createdChapters: total - failures.length,
+            createdFiles: created,
+            failures,
+            invalidFiles: invalid,
+            unitLabel: unit,
+            isLong: false,
+        });
+
+        if (failures.length === 0 && invalid.length === 0) {
+            new Notice(`✅ 已创建 ${total - failures.length} ${unit}骨架（${created} 个新文件），落盘校验通过`, 6000);
+            this.close();
+            return;
+        }
+        new Notice(`⚠️ 建${unit}完成但存在问题：失败 ${failures.length} ${unit}，落盘异常 ${invalid.length} 项。详见弹窗清单`, 12000);
+    }
+
     private async batchCreateAll(project: string, volumes: VolumePlan[], planBox: HTMLElement): Promise<void> {
+        if (this.creationMode !== 'long') {
+            await this.batchCreateModeUnits(project, planBox);
+            return;
+        }
         const sortedVolumes = [...volumes].sort((a, b) => a.volumeNumber - b.volumeNumber);
         const totalChapters = countPlannedChapters({ volumes, issues: [] });
-        const progressNotice = new Notice(`⏳ 正在按全书规划创建 ${sortedVolumes.length} 卷 / ${totalChapters} 章...`, 0);
+        const isLong = this.creationMode === 'long';
+        const unit = this.modeUnitLabel;
+        const progressNotice = new Notice(
+            isLong
+                ? `⏳ 正在按全书规划创建 ${sortedVolumes.length} 卷 / ${totalChapters} 章...`
+                : `⏳ 正在创建 ${totalChapters} ${unit}骨架...`,
+            0
+        );
 
         const failures: string[] = [];
         const writtenFiles: WrittenFile[] = [];
@@ -205,7 +340,7 @@ export class BatchCreateModal extends Modal {
                         await normalizeChapterFiles(this.app, stepFolder, chapterName);
                     }
 
-                    const vars = { project, volume: volume.volumeLabel, chapterName, chapterNumber };
+                    const vars = { project, volume: volume.volumeLabel, chapterName, chapterNumber, creationMode: this.creationMode, unitLabel: this.modeUnitLabel };
 
                     for (const { type, templateKey } of STEP_FILE_TYPES) {
                         const existing = findChapterFile(allFiles, stepDir, type);
@@ -239,7 +374,11 @@ export class BatchCreateModal extends Modal {
 
                 processedChapters++;
                 if (processedChapters % 10 === 0) {
-                    progressNotice.setMessage(`⏳ 批量建章 ${processedChapters}/${totalChapters} 章...`);
+                    progressNotice.setMessage(
+                        isLong
+                            ? `⏳ 批量建章 ${processedChapters}/${totalChapters} 章...`
+                            : `⏳ 批量建${unit} ${processedChapters}/${totalChapters} ${unit}...`
+                    );
                 }
             }
         }
@@ -255,16 +394,28 @@ export class BatchCreateModal extends Modal {
             createdFiles,
             failures,
             invalidFiles,
+            unitLabel: unit,
+            isLong,
         });
 
         if (!hasProblem) {
-            new Notice(`✅ 已按全书规划创建 ${sortedVolumes.length} 卷 / ${createdChapters} 章（${createdFiles} 个新文件），落盘校验通过`, 6000);
+            new Notice(
+                isLong
+                    ? `✅ 已按全书规划创建 ${sortedVolumes.length} 卷 / ${createdChapters} 章（${createdFiles} 个新文件），落盘校验通过`
+                    : `✅ 已创建 ${createdChapters} ${unit}骨架（${createdFiles} 个新文件），落盘校验通过`,
+                6000
+            );
             this.close();
             return;
         }
 
         // 有失败/校验异常时不关闭弹窗，保留清单供用户修复后重试（重试会跳过已存在文件）
-        new Notice(`⚠️ 建章完成但存在问题：成功 ${createdChapters}/${totalChapters} 章，失败 ${failures.length} 章，落盘异常 ${invalidFiles.length} 项。详见弹窗清单`, 12000);
+        new Notice(
+            isLong
+                ? `⚠️ 建章完成但存在问题：成功 ${createdChapters}/${totalChapters} 章，失败 ${failures.length} 章，落盘异常 ${invalidFiles.length} 项。详见弹窗清单`
+                : `⚠️ 建${unit}完成但存在问题：成功 ${createdChapters}/${totalChapters} ${unit}，失败 ${failures.length} ${unit}，落盘异常 ${invalidFiles.length} 项。详见弹窗清单`,
+            12000
+        );
     }
 
     /** 落盘校验：每个应存在的骨架文件必须真实存在且非空 */
@@ -292,12 +443,18 @@ export class BatchCreateModal extends Modal {
             createdFiles: number;
             failures: string[];
             invalidFiles: string[];
+            unitLabel: string;
+            isLong: boolean;
         }
     ): void {
         planBox.empty();
         const ok = result.failures.length === 0 && result.invalidFiles.length === 0;
         planBox.createEl('div', {
-            text: `${ok ? '✅' : '⚠️'} 结果：${result.volumes} 卷 / ${result.createdChapters}/${result.totalChapters} 章，新建 ${result.createdFiles} 个文件`,
+            text: `${ok ? '✅' : '⚠️'} 结果：${
+                result.isLong
+                    ? `${result.volumes} 卷 / ${result.createdChapters}/${result.totalChapters} 章`
+                    : `${result.createdChapters}/${result.totalChapters} ${result.unitLabel}`
+            }，新建 ${result.createdFiles} 个文件`,
             attr: { style: `font-weight:600;color:${ok ? 'var(--text-success)' : '#b8860b'};` },
         });
 

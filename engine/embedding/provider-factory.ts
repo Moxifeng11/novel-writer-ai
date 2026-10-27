@@ -28,6 +28,8 @@ export interface ProviderFactoryConfig {
     vectorQwenApiKey?: string;
     embeddingEndpoint?: string;
     embeddingModel?: string;
+    /** embedding 不可用时的回退策略；默认 local-only，避免本地文本静默发到云端。 */
+    embeddingFallbackPolicy?: 'never' | 'local-only' | 'allow-cloud';
 }
 
 export class EmbeddingProviderFactory {
@@ -54,6 +56,7 @@ export class EmbeddingProviderFactory {
             vectorQwenApiKey: c.vectorQwenApiKey,
             embeddingEndpoint: c.embeddingEndpoint,
             embeddingModel: c.embeddingModel,
+            embeddingFallbackPolicy: c.embeddingFallbackPolicy,
         });
     }
 
@@ -118,7 +121,15 @@ export class EmbeddingProviderFactory {
 
         log.warn(`[EmbeddingProviderFactory] 主 provider (${config.vectorProviderType}) 不可用: ${primaryAvailable.reason}`);
 
-        const fallbackOrder = this.getFallbackOrder(config.vectorProviderType);
+        const policy = config.embeddingFallbackPolicy ?? 'local-only';
+        if (policy === 'never') {
+            throw new Error(
+                `主向量 provider 不可用，且回退策略为 never。主 provider (${config.vectorProviderType}): ${primaryAvailable.reason || '未知错误'}`
+            );
+        }
+        // local-only：只允许尝试本地 Ollama，绝不把文本静默发到云端。
+        const fallbackOrder = this.getFallbackOrder(config.vectorProviderType)
+            .filter(t => policy === 'allow-cloud' || t === 'ollama');
 
         for (const fallbackType of fallbackOrder) {
             try {
@@ -130,7 +141,7 @@ export class EmbeddingProviderFactory {
                 const fallbackAvailable = await fallbackProvider.isAvailable();
 
                 if (fallbackAvailable.available) {
-                    log.warn(`[EmbeddingProviderFactory] 已降级到 ${fallbackType}`);
+                    log.warn(`[EmbeddingProviderFactory] 已按策略 ${policy} 降级到 ${fallbackType}`);
                     return fallbackProvider;
                 }
             } catch (e) {
@@ -139,7 +150,7 @@ export class EmbeddingProviderFactory {
         }
 
         throw new Error(
-            `所有向量 provider 均不可用。主 provider (${config.vectorProviderType}): ${primaryAvailable.reason || '未知错误'}`
+            `所有可用的向量 provider 均不可用（策略 ${policy}）。主 provider (${config.vectorProviderType}): ${primaryAvailable.reason || '未知错误'}`
         );
     }
 

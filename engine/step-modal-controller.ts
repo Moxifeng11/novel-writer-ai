@@ -8,6 +8,7 @@
 
 import { TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
+import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
 import { injectDeaiModalStyles as _injectDeai, injectRefineModalStyles as _injectRefine, injectRoundSelectStyles as _injectRound } from '../ui/full-writer/step-modal-styles';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
@@ -208,44 +209,47 @@ export class StepModalController {
             attr: { style: 'display:none;' }
         });
 
+        detectBtn.setText('✨ 单次完成消痕');
         detectBtn.onclick = async () => {
             detectBtn.disabled = true;
-            detectBtn.setText('⏳ 检测中...');
+            detectBtn.setText('⏳ 单次消痕中...');
             try {
-                const checkResult = await this.deps.getAIEngine().callAI(
-                    detectSysTA.value,
-                    detectUserTA.value,
-                    this.deps.getPlugin().settings.flashModel,
-                    0.3,
-                    8192
-                );
-                if (checkResult.error) { this.deps.callbacks.showError(`检测失败: ${checkResult.error}`); detectBtn.disabled = false; detectBtn.setText('🔍 执行AI痕迹检测'); return; }
+                const tasks = new LongNovelSingleCallTasks(this.deps.getAIEngine());
+                const writingRules = await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules();
+                const result = await tasks.deai(bodyText, { writingRules });
 
-                reportEl.setText(checkResult.content);
+                reportEl.setText([
+                    result.ok ? '✅ 单次消痕完成' : '❌ 单次消痕失败',
+                    `网络调用 ${result.networkCalls} 次 · 耗时 ${result.durationMs}ms`,
+                    ...result.violations.map(v => `${v.ruleId}: ${v.message}`),
+                ].join('\n'));
                 resultSection.style.display = 'block';
                 origTextEl.setText(bodyText);
 
-                try {
-                    const deaiReportPath = `${chapDir}/AI消痕检测报告.md`;
-                    const deaiReportContent = `# AI消痕检测报告\n\n> 检测时间: ${new Date().toLocaleString()}\n\n${checkResult.content}`;
-                    await this.getFS().write(deaiReportPath, deaiReportContent);
-                    log.warn('[StepModalController] AI消痕检测报告已保存:', deaiReportPath);
-                } catch (e) { log.warn('[StepModalController] AI消痕检测报告保存失败:', e); this.deps.callbacks.showError('⚠️ AI消痕检测报告保存失败'); }
+                if (!result.ok) {
+                    detectBtn.disabled = false;
+                    detectBtn.setText('✨ 重试单次消痕');
+                    return;
+                }
 
-                rewriteUserTA.value = deaiRewriteUserTemplate
-                    .replace('${deaiReport}', checkResult.content)
-                    .replace('${bodyText}', detectUserTA.value.replace(/^【正文】\n/, ''));
+                const value = result.value;
+                rewriteUserTA.value = value?.issues?.length
+                    ? value.issues.map(issue => `- ${issue}`).join('\n')
+                    : '自检未发现明显 AI 痕迹';
+                rewriteResultTA.value = value?.rewritten || result.raw;
 
                 detectBtn.style.display = 'none';
-                rewriteBtn.style.display = '';
-                rewriteSection.style.display = 'block';
+                rewriteBtn.style.display = 'none';
+                acceptBtn.style.display = '';
+                rejectBtn.style.display = '';
             } catch (e) {
-                this.deps.callbacks.showError(`检测异常: ${(e as Error).message}`);
+                this.deps.callbacks.showError(`消痕异常: ${(e as Error).message}`);
                 detectBtn.disabled = false;
-                detectBtn.setText('🔍 执行AI痕迹检测');
+                detectBtn.setText('✨ 单次完成消痕');
             }
         };
 
+        void rewriteBtn;
         rewriteBtn.onclick = async () => {
             rewriteBtn.disabled = true;
             rewriteBtn.setText('⏳ 改写中...');
@@ -426,29 +430,38 @@ export class StepModalController {
 
         execBtn.onclick = async () => {
             execBtn.disabled = true;
-            execBtn.setText('⏳ 迭代中...');
+            execBtn.setText('⏳ 单次精修中...');
             try {
-                // P0-4: 精修轮数参数化——原硬编码 3，现从 settings 读取（默认 3 保持兼容）
-                const refineRounds = this.deps.getPlugin()?.settings?.refineRounds ?? 3;
-                const result = await this.deps.getAIEngine().iterativeRefine(
-                    bodyText, contextPrompt, refineRounds, chapNum,
-                    (msg) => { execBtn.setText(msg); }
-                );
+                const tasks = new LongNovelSingleCallTasks(this.deps.getAIEngine());
+                const result = await tasks.refine(bodyText, contextPrompt, {
+                    chapNum,
+                });
                 summaryEl.empty();
-                summaryEl.createEl('p', { text: `共完成 ${result.rounds} 轮迭代${result.rounds === 0 ? '（未发现严重问题）' : ''}` });
-                if (result.diffs.length > 0) {
-                    const dl = summaryEl.createEl('ul', { cls: 'novel-writer-fw-refine-diff-list' });
-                    for (const d of result.diffs) dl.createEl('li', { text: d });
+                if (!result.ok) {
+                    summaryEl.createEl('p', { text: `单次精修失败：${result.error}` });
+                    if (result.violations.length > 0) {
+                        const ul = summaryEl.createEl('ul');
+                        for (const v of result.violations) ul.createEl('li', { text: `${v.ruleId}: ${v.message}` });
+                    }
+                    execBtn.disabled = false;
+                    execBtn.setText('🔁 重试单次精修');
+                    return;
                 }
-                resultBodyTA.value = result.finalBody;
+                const value = result.value;
+                summaryEl.createEl('p', { text: `单次精修完成（网络调用 ${result.networkCalls} 次，耗时 ${result.durationMs}ms）` });
+                if (value?.issues?.length) {
+                    const ul = summaryEl.createEl('ul', { cls: 'novel-writer-fw-refine-diff-list' });
+                    for (const issue of value.issues) ul.createEl('li', { text: issue });
+                }
+                resultBodyTA.value = value?.polished || result.raw;
                 resultSection.style.display = 'block';
                 execBtn.style.display = 'none';
                 acceptBtn.style.display = '';
                 rejectBtn.style.display = '';
             } catch (e) {
-                this.deps.callbacks.showError(`迭代精修失败: ${(e as Error).message}`);
+                this.deps.callbacks.showError(`单次精修失败: ${(e as Error).message}`);
                 execBtn.disabled = false;
-                execBtn.setText('🔁 执行迭代精修');
+                execBtn.setText('🔁 执行单次精修');
             }
         };
 

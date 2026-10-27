@@ -8,6 +8,7 @@ import {
     isObsidianE2EEnabled,
     launchObsidian,
     toObsidianCommandId,
+    waitForModalPage,
     waitForPluginLoaded,
     type ObsidianSession,
 } from './utils/obsidian-app';
@@ -31,14 +32,23 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
     test.beforeAll(async () => {
         const vault = createTestVault();
         session = await launchObsidian(vault);
+        // E2E 失败时把渲染进程异常带回终端，避免只剩一个“modal 不可见”。
+        session.page.on('pageerror', (error) => {
+            console.error('[E2E pageerror]', error.message);
+        });
+        session.page.on('console', (message) => {
+            if (message.type() === 'error') console.error('[E2E console]', message.text());
+        });
         await waitForPluginLoaded(session.page);
+        // 插件 onload 会异步自举模板目录；等布局与命令回调稳定后再执行用户旅程。
+        await session.page.waitForTimeout(3_000);
     });
 
     test.afterAll(async () => {
         if (!session) return;
-        await session.app.close().catch(() => undefined);
+        await session.close().catch(() => undefined);
         if (process.env.KEEP_E2E_VAULT !== '1') {
-            fs.rmSync(session.vault.path, { recursive: true, force: true });
+            fs.rmSync(session.vault.path, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
         }
     });
 
@@ -68,7 +78,9 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
 
         expect(await executeCommand(page, CREATE_PROJECT_COMMAND)).toBe(true);
 
-        const modal = page.locator('.modal-container').last();
+        // Obsidian 1.14 会把 Modal 挂到单独的 about:blank 窗口，不能只在主工作区页面里找。
+        const modalPage = await waitForModalPage(page, 15_000);
+        const modal = modalPage.locator('.modal-container').last();
         await expect(modal).toBeVisible();
         await modal.locator('input[placeholder*="项目名称"]').fill(projectName);
         await modal.locator('input[placeholder*="题材"]').fill('玄幻');
@@ -77,11 +89,41 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const view = page.locator(`.workspace-leaf-content[data-type="${FULL_WRITER_VIEW_TYPE}"]`);
         await expect(view).toBeVisible({ timeout: 90_000 });
 
-        const projectCard = view.locator(`.novel-writer-fw-project-card[data-project="${projectName}"]`);
+        const projectCard = page.locator(`.novel-writer-fw-project-card[data-project="长篇小说/${projectName}"]`);
         await expect(projectCard).toBeVisible({ timeout: 30_000 });
 
-        expect(fs.existsSync(path.join(vault.path, projectName))).toBe(true);
-        expect(fs.existsSync(path.join(vault.path, projectName, '03-大纲与章节'))).toBe(true);
+        const projectRoot = path.join(vault.path, '长篇小说', projectName);
+        expect(fs.existsSync(projectRoot)).toBe(true);
+        expect(fs.existsSync(path.join(projectRoot, '03-大纲与章节'))).toBe(true);
         expect(fs.existsSync(path.join(vault.path, '元文件', '00-系统模板'))).toBe(true);
+
+        // 无需 AI：写入一个最小正文，进入章节步骤页验证本轮交互改版。
+        const projectId = `长篇小说/${projectName}`;
+        const bodyPath = `${projectId}/03-大纲与章节/正文/第1卷/第1章_正文.md`;
+        await page.evaluate(async ({ projectId: pid, bodyPath: target }) => {
+            const host = window as unknown as {
+                app?: {
+                    vault?: {
+                        adapter?: { mkdir?: (path: string) => Promise<void> };
+                        create?: (path: string, content: string) => Promise<unknown>;
+                    };
+                    plugins?: { plugins?: Record<string, { openChapterInFullWriter?: (project: string, path: string) => void }> };
+                };
+            };
+            const vault = host.app?.vault;
+            const folder = target.split('/').slice(0, -1).join('/');
+            for (const dir of [folder]) {
+                await vault?.adapter?.mkdir?.(dir).catch(() => undefined);
+            }
+            await vault?.create?.(target, '---\nstatus: drafting\n---\n\n# 第1章\n\nE2E 正文占位。\n');
+            host.app?.plugins?.plugins?.['novel-writer-ai']?.openChapterInFullWriter?.(pid, target);
+        }, { projectId, bodyPath });
+
+        const stepArea = page.locator('.novel-writer-fw-prompt-area');
+        await expect(stepArea).toBeVisible({ timeout: 30_000 });
+        await expect(page.locator('.nw-step-actionbar')).toBeVisible();
+        await expect(page.locator('.nw-exec-timeline')).toBeVisible();
+        await expect(page.locator('details.nw-prompt-collapsible')).toHaveCount(2);
+        expect(await page.locator('details.nw-prompt-collapsible[open]').count()).toBe(0);
     });
 });

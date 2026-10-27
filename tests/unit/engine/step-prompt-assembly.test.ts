@@ -91,6 +91,29 @@ describe('assembleStepPrompt', () => {
         expect(result.droppedExtra).toBe(false);
     });
 
+    it('bodyGeneration 的样章硬约束进 system，不被 extraTail 预算裁掉', async () => {
+        const host = makeHost({
+            loadBodyKnowledgeParts: vi.fn(async () => ({
+                extra: '【知识注入】可裁剪',
+                system: '【参考片段（只模仿句法/质感）】\n1. 他推开门，风灌进来。',
+            })),
+        });
+
+        const result = await assembleStepPrompt(
+            host,
+            makeCtx(),
+            'bodyGeneration',
+            '系统约束',
+            '用户任务正文',
+            'flash-model',
+        );
+
+        expect(result.effectiveSystemPrompt).toContain('【参考片段');
+        expect(result.effectiveSystemPrompt).toContain('系统约束');
+        expect(result.effectiveUserPrompt).toContain('【知识注入】可裁剪');
+        expect(host.loadBodyKnowledge).not.toHaveBeenCalled();
+    });
+
     it('超预算时先丢知识注入，再头尾截断主体，并记录两条降级日志', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const userPrompt = '正'.repeat(2000);

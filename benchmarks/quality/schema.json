@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Quality benchmark fixture",
+  "type": "object",
+  "required": ["samples"],
+  "properties": {
+    "minGap": { "type": "number", "minimum": 0, "default": 5 },
+    "maxMisclassified": { "type": "integer", "minimum": 0 },
+    "samples": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "text"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "enum": ["good", "bad"] },
+          "genre": { "type": "string" },
+          "text": { "type": "string", "minLength": 100 }
+        }
+      }
+    }
+  }
+}

@@ -622,3 +622,38 @@ describe('callAI — Ollama 上下文窗口 numCtx', () => {
         }
     });
 });
+
+describe('normalizeOllamaEndpoint — 只改写 Ollama', () => {
+    function make(endpoint: string, providers: Array<Record<string, unknown>>) {
+        const client = new AIApiClient({
+            settings: {
+                apiEndpoint: endpoint,
+                customProviders: providers,
+                defaultModel: 'qwen2.5:7b',
+                availableModels: ['qwen2.5:7b'],
+                maxApiRetries: 1,
+            },
+        } as never);
+        return (client as unknown as {
+            normalizeOllamaEndpoint: (url: string) => string;
+        }).normalizeOllamaEndpoint(endpoint);
+    }
+
+    it('Ollama 11434 改写为原生 /api/generate', () => {
+        expect(make('http://localhost:11434/v1/chat/completions', [
+            { id: 'ollama', endpoint: 'http://localhost:11434/v1/chat/completions', models: ['qwen2.5:7b'], sourceType: 'local' },
+        ])).toBe('http://localhost:11434/api/generate');
+    });
+
+    it('局域网 Ollama 11434 同样改写', () => {
+        expect(make('http://192.168.1.8:11434/v1/chat/completions', [
+            { id: 'custom-1', endpoint: 'http://192.168.1.8:11434/v1/chat/completions', models: ['qwen2.5:7b'], sourceType: 'local' },
+        ])).toBe('http://192.168.1.8:11434/api/generate');
+    });
+
+    it('LM Studio 1234 不误改写', () => {
+        expect(make('http://localhost:1234/v1/chat/completions', [
+            { id: 'custom-2', endpoint: 'http://localhost:1234/v1/chat/completions', models: ['qwen2.5:7b'], sourceType: 'local' },
+        ])).toBe('http://localhost:1234/v1/chat/completions');
+    });
+});

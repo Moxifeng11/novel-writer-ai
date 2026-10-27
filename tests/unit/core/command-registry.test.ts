@@ -14,9 +14,18 @@ import { CommandRegistry, CommandIds } from '../../../core/command-registry';
  * 非 UI 命令仍留在 core 执行」，避免搬迁时漏注册或把业务命令一起搬走。
  */
 
-/** 重构前 registerInternalCommands 注册的全部命令 id（53 项） */
+/** 重构前 registerInternalCommands 注册的全部命令 id（64 项） */
 const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.CREATE_PROJECT,
+    CommandIds.CREATE_SHORT,
+    CommandIds.CREATE_SCRIPT,
+    CommandIds.SHORT_RESEARCH,
+    CommandIds.SCRIPT_RESEARCH,
+    CommandIds.SHORT_STORY_CORE,
+    CommandIds.SHORT_OUTLINE,
+    CommandIds.SCRIPT_SCENE_BIBLE,
+    CommandIds.SCRIPT_OUTLINE,
+    CommandIds.SCRIPT_STORYBOARD,
     CommandIds.IMPORT_EXAMPLE,
     CommandIds.PLAN_BOOK,
     CommandIds.VOLUME_INTRO,

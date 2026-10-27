@@ -127,6 +127,8 @@ import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { VectorEnhancer } from './vector-enhancer';
 import { TokenBucketRateLimiter } from './token-bucket-rate-limiter';
 import { EmbeddingProviderFactory } from './embedding/provider-factory';
+import { setSharedEmbeddingProvider, getSharedEmbeddingProvider } from './embedding/embedding-service';
+import { GITHUB_REPO_SLUG } from '../shared/github-repo';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { DeconstructionScheduler } from '../services/deconstruction-scheduler';
 import { BatchImportManager } from '../services/batch-import-manager';
@@ -1039,6 +1041,7 @@ export class EngineRegistry {
                 vectorQwenApiKey: plugin.settings.vectorQwenApiKey,
                 embeddingEndpoint: plugin.settings.embeddingEndpoint,
                 embeddingModel: plugin.settings.embeddingModel,
+                embeddingFallbackPolicy: plugin.settings.embeddingFallbackPolicy,
             });
         } catch (e) {
             log.warn('[EngineRegistry] 所有向量提供商均不可用，使用 Ollama 默认配置:', e);
@@ -1057,8 +1060,12 @@ export class EngineRegistry {
                 vectorQwenApiKey: plugin.settings.vectorQwenApiKey,
                 embeddingEndpoint: plugin.settings.embeddingEndpoint,
                 embeddingModel: plugin.settings.embeddingModel,
+                embeddingFallbackPolicy: plugin.settings.embeddingFallbackPolicy,
             });
         }
+
+        // 全插件共享同一 embedding provider：指纹库/协同/知识库必须同模型同维度
+        setSharedEmbeddingProvider(embeddingProvider);
 
         const knowledgeVectorStore = new KnowledgeVectorStore(plugin.app, embeddingProvider, undefined, {
             // 按 bookId 判存活：改名只改目录名，用 bookName 拼目录会误判孤儿
@@ -1089,6 +1096,13 @@ export class EngineRegistry {
         // 将 AIEngine 作为 LLMCaller 注入调度器。AIEngine 是懒加载的，
         // 通过 getter 延迟获取，避免在初始化阶段触发 AIEngine 的创建。
         deconstructionScheduler.setLlmCaller(() => plugin.aiEngine);
+        deconstructionScheduler.setVectorModelResolver(() => {
+            try {
+                return getSharedEmbeddingProvider()?.getModelName();
+            } catch {
+                return undefined;
+            }
+        });
 
         const heavyTaskWorkerManager = new HeavyTaskWorkerManager({
             workerUrl: resolvePluginWorkerUrl(plugin.app, 'quality-worker.js') ?? undefined,
@@ -1195,7 +1209,8 @@ export class EngineRegistry {
             {
                 enabled: plugin.settings.autoCheckUpdates ?? false,
                 source: (plugin.settings.updateSource as 'github' | 'custom') || 'github',
-                githubRepo: plugin.settings.updateGithubRepo || 'Moxifeng11/novel-writer-ai',
+                githubRepo: plugin.settings.updateGithubRepo || GITHUB_REPO_SLUG,
+                githubToken: plugin.settings.updateGithubToken || '',
                 customUrl: plugin.settings.updateCustomUrl || '',
                 checkIntervalHours: plugin.settings.updateCheckIntervalHours || 168,
             }
