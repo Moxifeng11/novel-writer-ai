@@ -45,6 +45,15 @@ export class ContextLoaderController {
             return;
         }
 
+        // 采集期间用户可能切章/切项目：所有写入前都要确认目标没变，
+        // 否则慢的 A 章结果会覆盖 B 章的上下文与统计（界面显示 B 的标题 + A 的数据）。
+        const targetProject = this.deps.state.project;
+        const targetChapter = this.deps.state.chapterName;
+        const targetChapterNum = this.deps.state.chapterNum;
+        const stillCurrent = (): boolean => this.deps.state.project === targetProject
+            && this.deps.state.chapterName === targetChapter
+            && this.deps.state.chapterNum === targetChapterNum;
+
         const progress = (message: string) => {
             if (this.deps.reportProgress) this.deps.reportProgress(message);
             else showProgress(message);
@@ -69,9 +78,13 @@ export class ContextLoaderController {
 
         try {
             progress('⏳ 加载上下文数据...');
-            const context = await this.deps.contextManager.gatherAll(this.deps.state.project, this.deps.state.chapterName, (completed, total, taskName) => {
+            const context = await this.deps.contextManager.gatherAll(targetProject, targetChapter, (completed, total, taskName) => {
                 progress(`⏳ 加载 ${taskName}... (${completed}/${total})`);
             });
+            if (!stillCurrent()) {
+                stopProgress();
+                return;
+            }
 
             this.deps.setContext(context);
 
@@ -79,11 +92,15 @@ export class ContextLoaderController {
             if (context?.data && this.deps.state.chapterName) {
                 try {
                     context.data.story_linkage = await this.deps.contextManager.buildStoryLinkage(
-                        this.deps.state.project,
-                        this.deps.state.chapterName,
+                        targetProject,
+                        targetChapter,
                     );
                 } catch (e) {
                     log.warn('[ContextLoader] 关联索引生成失败（不影响上下文加载）:', e);
+                }
+                if (!stillCurrent()) {
+                    stopProgress();
+                    return;
                 }
             }
 
@@ -129,7 +146,14 @@ export class ContextLoaderController {
             }
         }
 
-        await this.ensureCrossVolumeSnapshot();
+        // 跨卷快照可能失败（目录缺失/权限）：不能让它把整个 loadContext 抛出去，
+        // 调用方（renderInContainer）已经把容器清空，会留下永久空白页。
+        try {
+            await this.ensureCrossVolumeSnapshot();
+        } catch (e) {
+            log.warn('[ContextLoader] 跨卷状态快照加载失败（继续渲染）:', e);
+        }
+        if (!stillCurrent()) return;
 
         this.deps.entityStateController.syncInvolvedEntitiesToPlugin();
 

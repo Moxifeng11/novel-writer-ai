@@ -44,6 +44,14 @@ import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
 import { ENGINE_NAMES } from './engine-registry';
+import {
+    attachStoryContextToSnapshot,
+    buildStoryContext,
+    logStoryContextSummary,
+    resolveStoryContextTier,
+} from './context/story-context-service';
+import type { GatheredContext } from './context/context-types';
+import type { SceneCardFields } from '../shared/scene-card';
 import { entityStateChangesToFacts } from './co-writer-state-sync';
 import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
 import { CrossVolumeIntegrator } from './cross-volume-integration';
@@ -146,9 +154,18 @@ export class CoWriterEngine {
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
     private snapshot: ContextSnapshot | null = null;
+    /** 最近一次 gatherAll 的原始上下文：故事上下文总线按当前场景重新检索时使用 */
+    private lastGatheredContext: GatheredContext | null = null;
+    /** 上一次构建信息包时的场景键，避免每次自动保存都重建图 */
+    private lastStoryContextSceneKey = '';
     /** 最近一次读取到的同人设定（含加载失败原因），供视图提示 */
     private lastFanficRules: FanficRules | null = null;
     private session: CoWritingSession | null = null;
+    /**
+     * init 代次。gatherAll / 关系 / 跨卷都是异步的，连续打开两章时
+     * 先发起的 init 可能后完成，把状态写回上一章。
+     */
+    private initSeq = 0;
     private interactionHistory: SentenceEditRecord[] = [];
     /** 章节写作简报：承接规划阶段的成果，供 UI 与提示词消费 */
     private chapterBrief: ChapterBrief | null = null;
@@ -515,18 +532,31 @@ export class CoWriterEngine {
         volume: string = '第1卷',
         chapterNum: number = 1
     ): Promise<void> {
+        // 切换章节：本代次令牌让「先发起、后完成」的旧 init 不再写回任何状态
+        const seq = ++this.initSeq;
         // Task 2.1: 初始化 Repository（优先从 engineRegistry 获取，其次从 plugin 获取）
         this.initializeRepositories(project);
         // 切换章节：清空上一章的简报，避免旧章场景串到新章
         this.chapterBrief = null;
         this.chapterBriefInput = null;
         this.manualSceneIndex = null;
+        // 上一章的待确认实体变更不能带进新章（确认时用的是当前 session 的身份）
+        this.pendingStateChanges = [];
+        // 章节级缓存：上一章的原始上下文与灵魂层不得沿用到新章
+        this.lastGatheredContext = null;
+        this.soulData = null;
+        this.lastStoryContextSceneKey = '';
 
         try {
             // 1. 采集上下文
             const ctx = await this.contextManager.gatherAll(project, chapterName);
+            if (!this.isInitCurrent(seq)) return;
+            this.lastGatheredContext = ctx;
             this.snapshot = this.buildSnapshot(ctx, project, chapterName);
+            // 故事上下文总线：初始化时先按整章建包，后续切场景时再按当前场景细化
+            this.maybeRefreshStoryContextPack(true);
             await this.syncCreationModeContext(project);
+            if (!this.isInitCurrent(seq)) return;
 
             // 2. 初始化会话
             this.session = {
@@ -543,6 +573,7 @@ export class CoWriterEngine {
             log.info('[CoWriterEngine] 初始化完成:', project, chapterName);
         } catch (e) {
             log.warn('[CoWriterEngine] 初始化失败，使用降级模式:', e);
+            if (!this.isInitCurrent(seq)) return;
             // 降级：创建一个最小 snapshot
             this.snapshot = {
                 project,
@@ -575,6 +606,18 @@ export class CoWriterEngine {
                 currentMode: 'continue',
                 gatheredAt: Date.now(),
                 dirtyFields: new Set()
+            };
+            // 会话也必须重建：旧实现只在 try 里赋值，降级后 session 仍指向上一章，
+            // 后续 trackEntityStates / confirmStateChanges / 知识检索会按旧章身份执行。
+            this.session = {
+                project,
+                chapterName,
+                volume,
+                chapterNum,
+                startedAt: Date.now(),
+                interactions: [],
+                currentMetrics: this.getEmptyMetrics(),
+                totalWordCount: 0
             };
         }
         
@@ -613,6 +656,7 @@ export class CoWriterEngine {
             }
 
             if (souls.length > 0) {
+                if (!this.isInitCurrent(seq)) return;
                 const protagonistName = this.getProtagonistName(project);
                 this.soulData = buildCharacterSoulSummary(souls, protagonistName);
                 log.info('[CoWriterEngine] A1: 角色灵魂层采集完成:', souls.length, '个角色');
@@ -624,7 +668,10 @@ export class CoWriterEngine {
         // ===== A4: 加载角色关系状态 =====
         try {
             if (this.snapshot) {
-                this.snapshot.relationshipStates = await loadRelationshipStates(this.app, project);
+                const relationshipStates = await loadRelationshipStates(this.app, project);
+                // 慢的旧 init 不能把上一章的关系统计写进当前 snapshot
+                if (!this.isInitCurrent(seq)) return;
+                this.snapshot.relationshipStates = relationshipStates;
                 log.info('[CoWriterEngine] A4: 关系状态加载完成:', this.snapshot.relationshipStates.length, '组关系');
             }
         } catch (e) {
@@ -636,6 +683,7 @@ export class CoWriterEngine {
             if (this.snapshot && volume && volume !== '第1卷') {
                 const integrator = new CrossVolumeIntegrator(this.app);
                 const ctx = await integrator.getSnapshotContext(project, volume);
+                if (!this.isInitCurrent(seq)) return;
                 if (ctx && ctx.trim()) {
                     this.snapshot.crossVolumeContext = ctx.trim();
                     log.info('[CoWriterEngine] D2: 跨卷状态快照加载完成，', this.snapshot.crossVolumeContext.length, '字');
@@ -651,6 +699,7 @@ export class CoWriterEngine {
                 const volumeMatch = (volume || '').match(/第(\d+)卷/);
                 const beforeVolume = volumeMatch ? parseInt(volumeMatch[1], 10) : undefined;
                 const longTermMemory = await loadLongTermMemory(this.getFS(), project, { beforeVolume });
+                if (!this.isInitCurrent(seq)) return;
                 if (longTermMemory) {
                     this.snapshot.longTermMemoryContext = longTermMemory;
                     log.info('[CoWriterEngine] 长篇记忆加载完成，', longTermMemory.length, '字');
@@ -661,7 +710,9 @@ export class CoWriterEngine {
         }
 
         // ===== 同人约束：原作核心设定 + 创作规则（原创项目为空） =====
+        if (!this.isInitCurrent(seq)) return;
         await this.syncFanficRules(project);
+        if (!this.isInitCurrent(seq)) return;
         
         // ===== D1: 初始化实体状态管理器 =====
         try {
@@ -680,9 +731,12 @@ export class CoWriterEngine {
         try {
             const plugin = this.aiEngine.getPlugin();
             this.styleLearner = await plugin.engineRegistry.getStyleLearner(project);
+            // 旧 init 迟到：不能把上一本书的 styleLearner / preferenceMemory 装回当前会话
+            if (!this.isInitCurrent(seq)) return;
 
             this.preferenceMemory = new PreferenceMemory({ app: this.app, plugin, project });
             await this.preferenceMemory.loadPreferences();
+            if (!this.isInitCurrent(seq)) return;
 
             // ===== E4: 初始化写作指纹库 =====
             try {
@@ -772,6 +826,11 @@ export class CoWriterEngine {
                 // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
                 this.writingProfileManager = plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
                 this.knowledgeInjector = plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+                // E5 阶段注入器还没就位，恢复出来的参考书籍只同步到了 promptBuilder；
+                // 这里补一次，否则重启后知识库参考书籍注入静默为空，直到用户重新勾选。
+                if (this.referenceBookIds.length > 0) {
+                    await this.syncReferenceBooksToInjector();
+                }
                 log.info('[CoWriterEngine] E6: 知识注入器初始化完成');
             } catch (kiErr) {
                 log.warn('[CoWriterEngine] E6: 知识注入器初始化失败，继续无注入模式:', kiErr);
@@ -792,6 +851,11 @@ export class CoWriterEngine {
             log.warn('[CoWriterEngine] v6.4: 剧情节点提取失败:', e);
             this.plotNodes = [];
         }
+    }
+
+    /** 该次 init 是否仍是最新一次（更晚的 init 已开始则旧结果一律丢弃） */
+    private isInitCurrent(seq: number): boolean {
+        return seq === this.initSeq;
     }
 
     // ============================================================
@@ -964,12 +1028,31 @@ export class CoWriterEngine {
             onChunk?: (index: number, cumulativeText: string) => void;
         },
     ): Promise<SuggestionRecord[] | null> {
+        // 参考书检索：串行路径在 generateDirectionalCandidate 里逐方向做，
+        // 批量路径此前直接跳过了这一步 —— 本地模式默认走批量，
+        // 于是参考书的风格/节奏/技巧注入在默认路径里静默缺失，注入计数还停留在上一轮。
+        let knowledgeParts: string[] = [];
+        try {
+            if (this.promptBuilder && this.referenceBookIds.length > 0) {
+                knowledgeParts = await this.promptBuilder.getKnowledgePromptParts(shared.precedingText);
+            }
+        } catch (e) {
+            log.warn('[CoWriterEngine] 批量候选的知识库检索失败，本次不注入参考书片段:', e);
+            knowledgeParts = [];
+        }
+        if (shared.signal?.aborted) return null;
+        const kpCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
+        // 三个方向共用同一份检索结果：计数按方向逐个写入，供 UI 的注入提示与调试统计使用
+        for (const direction of directions) {
+            this.directionKnowledgeCounts[direction] = kpCount;
+        }
+
         const base = this.buildDirectionalPrompt(
             shared.precedingText,
             directions[0],
             shared.cursorHint,
             shared.fingerprintParts,
-            [],
+            knowledgeParts,
             [shared.knowledgeInjection, shared.kbDeepInjection].filter(Boolean).join('\n\n'),
         );
         const directionLabels = directions.map((d, i) => `${i + 1}. ${d}`).join('\n');
@@ -996,6 +1079,7 @@ ${directionLabels}
             8192,
             Math.max(1200, (shared.settings?.coWriteMaxTokens ?? 600) * directions.length),
         );
+        this.recordKnowledgeInjection(kpCount, `${prompt.system}\n${prompt.user}`, knowledgeParts);
         try {
             const response = await this.callCoWriteAI(prompt, 0, shared.signal, maxTokens);
             if (response.error || shared.signal?.aborted) return null;
@@ -1961,6 +2045,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     private async syncReferenceBooksToInjector(): Promise<void> {
         if (!this.knowledgeInjector || !this.knowledgeManager) return;
         try {
+            // 权重来自设置（滑杆写入）；缺省 0.5，主参考固定 1.0
+            const weights = this.aiEngine.getPlugin()?.settings?.referenceBookWeights ?? {};
             const refConfigs = [];
             for (let i = 0; i < this.referenceBookIds.length; i++) {
                 const bookId = this.referenceBookIds[i];
@@ -1969,7 +2055,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                     refConfigs.push({
                         bookId,
                         bookName: bookInfo.name,
-                        weight: i === 0 ? 1.0 : 0.5,
+                        weight: i === 0 ? 1.0 : (weights[bookId] ?? 0.5),
                         isPrimary: i === 0,
                     });
                 }
@@ -2053,6 +2139,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         this.chapterBriefInput = input;
         this.manualSceneIndex = null;
         this.chapterBrief = buildChapterBrief(input);
+        this.maybeRefreshStoryContextPack(true);
     }
 
     /** 获取当前章节简报（供左栏「本章简报」渲染） */
@@ -2067,6 +2154,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         if (this.manualSceneIndex !== null) {
             this.applyCurrentScene(this.manualSceneIndex);
         }
+        this.maybeRefreshStoryContextPack();
     }
 
     /** 手动切换当前场景（点击左栏场景列表），后续正文变化不再自动覆盖 */
@@ -2075,6 +2163,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         if (index < 0 || index >= this.chapterBrief.scenes.length) return;
         this.manualSceneIndex = index;
         this.applyCurrentScene(index);
+        this.maybeRefreshStoryContextPack(true);
     }
 
     private applyCurrentScene(index: number): void {
@@ -2092,6 +2181,82 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
     setCursorHint(hint: string): void {
         if (this.snapshot) this.snapshot.cursorHint = hint;
+    }
+
+    /**
+     * 只有当前场景变化时才重建信息包，避免每次自动保存都重跑图构建。
+     * force=true 用于上下文刷新/初始化/用户手动切场景。
+     */
+    private maybeRefreshStoryContextPack(force = false): void {
+        if (!this.snapshot || !this.lastGatheredContext) return;
+        const scene = this.chapterBrief?.currentScene;
+        const key = scene
+            ? `${this.chapterBrief?.currentIndex ?? -1}:${scene.name || ''}`
+            : 'whole-chapter';
+        if (!force && key === this.lastStoryContextSceneKey) return;
+        this.lastStoryContextSceneKey = key;
+        this.refreshStoryContextPack();
+    }
+
+    /**
+     * 按当前章节/场景重建故事上下文包。
+     * 同一张图同时供协同续写、改写、联想、迭代使用；旧的实体/设定/时间线/伏笔分段
+     * 由 PromptBuilder 在检测到信息包后自动停用，避免重复注入。
+     */
+    private refreshStoryContextPack(): void {
+        if (!this.snapshot || !this.lastGatheredContext) return;
+        try {
+            const pluginSettings = this.aiEngine.getPlugin()?.settings;
+            const tier = resolveStoryContextTier(pluginSettings, 'co-write');
+            const budget = this.getCoWriteInputBudget();
+            const chapterNum = this.session?.chapterNum
+                || parseInt(String(this.snapshot.chapterName || '').match(/第\s*(\d+)\s*章/)?.[1] || '0', 10)
+                || 0;
+            const result = buildStoryContext({
+                context: this.lastGatheredContext,
+                chapterName: this.snapshot.chapterName || '',
+                chapterNum,
+                volume: this.session?.volume || '',
+                mode: 'co-write',
+                tier,
+                maxInputTokens: budget.maxInputTokens,
+                modelId: budget.modelId,
+                scene: this.toSceneCardForContext(),
+                precedingText: this.snapshot.precedingText || '',
+                sceneExpansionText: this.snapshot.sceneExpansion || '',
+                emotionPlanText: this.snapshot.emotionPlan || '',
+                storyLinkage: this.lastGatheredContext.data.story_linkage || null,
+            });
+            attachStoryContextToSnapshot(
+                this.snapshot as unknown as Record<string, unknown>,
+                result,
+            );
+            logStoryContextSummary(result, `co-write ${this.snapshot.chapterName}`);
+        } catch (e) {
+            log.warn('[CoWriterEngine] 故事上下文包构建失败，保留旧上下文:', e);
+        }
+    }
+
+    private toSceneCardForContext(): SceneCardFields | undefined {
+        const scene = this.chapterBrief?.currentScene;
+        if (!scene) return undefined;
+        return {
+            num: scene.index + 1,
+            name: scene.name,
+            objective: scene.objective,
+            conflict: scene.conflict,
+            sensoryHook: scene.sensoryHook,
+            memoryTrigger: scene.memoryTrigger,
+            bodyReaction: scene.bodyReaction,
+            subtext: scene.subtext,
+            relationshipShift: scene.relationshipShift,
+            keyScene: scene.keyScene,
+            dialogueFunction: scene.dialogueFunction,
+            cliffhanger: scene.cliffhanger,
+            emotionArc: [scene.emotionStart, scene.emotionEnd, scene.emotionDelta]
+                .filter(Boolean)
+                .join('→'),
+        };
     }
 
     getSnapshot(): ContextSnapshot | null {
@@ -2113,6 +2278,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                 this.snapshot.project,
                 this.snapshot.chapterName
             );
+            this.lastGatheredContext = ctx;
             const next = this.buildSnapshot(ctx, this.snapshot.project, this.snapshot.chapterName);
             // buildSnapshot 只覆盖 gatherAll 的静态字段，以下字段由 init 阶段单独加载。
             // 直接整体替换会把它们清空：协同写作会静默丢失同人约束/长篇记忆/跨卷上下文/人物关系
@@ -2122,6 +2288,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             next.fanficRulesContext = this.snapshot.fanficRulesContext;
             next.creationModeContext = this.snapshot.creationModeContext;
             this.snapshot = next;
+            // 静态上下文刷新后重建信息包（设定/伏笔/时间线可能刚被编辑）
+            this.maybeRefreshStoryContextPack(true);
             // 刷新时重新读取同人约束：设定文件可能刚被编辑过
             await this.syncFanficRules(next.project);
             await this.syncCreationModeContext(next.project);
@@ -2621,20 +2789,21 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             '- 严格第三人称限知：只写主角能看到、听到、摸到、感受到的东西。',
             '- 不跳其他角色的内心，不写上帝视角的全局解释。',
             '- 严禁使用第一人称「我」叙事。所有描写必须是第三人称（他/她/它），这是硬性规则，不可违反。',
-            '- 心理活动用自由间接引语，不用"他心想""他觉得"这种标签。',
-            '- 所有认知都从主角的感官出发，有温度、有重量、有气味。',
+            '- 心理活动优先用自由间接引语；需要写清楚时可以用“他心想”“他觉得”，不要每段都用。',
+            '- 认知从主角的感官和处境出发；叙述者可以有人格，但不要跳到别人的脑子里。',
             '',
-            '【怎么写才像活人经历的】',
-            '- 不说教，不总结，不解释。事情在发生，不是在被讲述。',
-            '- 情绪不说出口。不讲"他很难过"，讲"他指尖无意识掐进掌心"。',
+            '【怎么写才像活人写的】',
+            '- 事情在发生，不是在被讲述；但允许解释、交代和过渡，不要把必要的来龙去脉都藏掉。',
+            '- 情绪可以直接写，也可以藏在动作里；不要每段都逼着自己“藏”。',
             '- 不用排比，不用华丽辞藻堆砌。活人眼里的世界没那么多修辞。',
-            '- 每句只讲一件事。一句话就是一个画面。',
-            '- 不重复。同样的意思不说第二遍。',
-            '- 不用"然后""接着""就在这时"这种过渡词。画面直接跳。',
+            '- 一个自然段 2–6 句，80–220 字；不要一句一段，不要把同一个动作拆成好几行。',
+            '- 对话和说话人的动作、神态放在同一段；连续对话按说话人分段。',
+            '- 允许口语、停顿、打断、答非所问和一点废话。',
+            '- “然后”“接着”“就在这时”不是禁词；该过渡时用一句带过，比硬跳更自然。',
             '',
             '【节奏补充】',
-            '- 段落极短，大多只有一句话。',
-            '- 对话单独成段，感官细节单独成段，一个细节就是一记重锤。',
+            '- 句长平均 20–30 字，长句和短句交替；短句是调味，不是主菜。',
+            '- 每个场景 2–3 处关键身体感觉即可，不要逐段打卡。',
             '',
             bodyFormat,
         ].filter(Boolean).join('\n');
@@ -2653,8 +2822,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         }
 
         userParts.push('', (precedingText || '').trim().length < 10
-            ? '这是本章的开头。请根据本章大纲和设定，开始写正文。不需要多，但要让人感觉这一瞬间是真实的。只输出正文，不要标注、不要解释、不要写标题。'
-            : '请自然地续写一段。不需要多，但要让人感觉这一瞬间是真实的。只输出正文，不要标注、不要解释、不要写标题。');
+            ? '这是本章的开头。请根据本章大纲和设定，开始写一个自然段（80–220 字，2–6 句）。只输出正文，不要标注、不要解释、不要写标题。'
+            : '请自然地续写一个自然段（80–220 字，2–6 句），不要一句一段。只输出正文，不要标注、不要解释、不要写标题。');
         return { system: systemPrompt, user: userParts.join('\n') };
     }
     // D2: 跨卷一致性——注入前面卷的状态快照（人物/势力/伏笔/时间线）

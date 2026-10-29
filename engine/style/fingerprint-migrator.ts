@@ -425,8 +425,15 @@ export async function migrateFileV1ToV2(
         let migrated: V2Fingerprint | V2Fingerprint[];
         try {
             if (Array.isArray(parsed)) {
-                const arr = parsed as V1StyleFingerprint[];
-                migrated = arr.map(fp => migrateV1ToV2(fp, scope));
+                // 逐条判定：混装文件（已有 V2 + 新 V1）里已迁移的条目必须原样保留。
+                // 旧实现无条件 map，把 V2 条目当 V1 再迁一次 —— 它的 features 没有
+                // sentenceRhythm，于是 12 维结构被覆盖成「全部 pending」的空壳。
+                const arr = parsed as unknown[];
+                migrated = arr.map(item =>
+                    needsV1ToV2Migration(item)
+                        ? migrateV1ToV2(item as V1StyleFingerprint, scope)
+                        : item as V2Fingerprint
+                );
             } else {
                 migrated = migrateV1ToV2(parsed as V1StyleFingerprint, scope);
             }

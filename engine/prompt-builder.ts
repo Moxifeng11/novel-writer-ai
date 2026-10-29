@@ -81,6 +81,12 @@ export interface PromptSnapshot {
     settingLib?: string;
     timeline?: string;
     triggeredMemories?: string;
+    /** 故事上下文总线：完整信息包（协同续写/改写） */
+    storyContextPack?: string;
+    /** 故事上下文总线：关联摘要（联想/迭代，避免挤占小窗口） */
+    storyContextPackCompact?: string;
+    /** 故事上下文总线遥测（只读，供日志/诊断） */
+    storyContextTelemetry?: unknown;
 }
 
 export class PromptBuilder {
@@ -128,29 +134,35 @@ export class PromptBuilder {
                 '- 严格第三人称限知：只写主角能看到、听到、摸到、感受到的东西。',
                 '- 不跳其他角色的内心，不写上帝视角的全局解释。',
                 '- 严禁使用第一人称「我」叙事。所有描写必须是第三人称（他/她/它），这是硬性规则，不可违反。',
-                '- 心理活动用自由间接引语，不用"他心想""他觉得"这种标签。',
-                '- 所有认知都从主角的感官出发，有温度、有重量、有气味。',
+                '- 心理活动优先用自由间接引语；需要写清楚时可以用“他心想”“他觉得”，不要每段都用。',
+                '- 认知从主角的感官和处境出发；叙述者可以有人格，但不要跳到别人的脑子里。',
                 '',
-                '【怎么写才像活人经历的】',
-                '- 不说教，不总结，不解释。事情在发生，不是在被讲述。',
-                '- 情绪不说出口。不讲"他很难过"，讲"他指尖无意识掐进掌心"。',
+                '【怎么写才像活人写的】',
+                '- 事情在发生，不是在被讲述；但允许解释、交代和过渡，不要把必要的来龙去脉都藏掉。',
+                '- 情绪可以直接写，也可以藏在动作里；不要每段都逼着自己“藏”。',
                 '- 不用排比，不用华丽辞藻堆砌。活人眼里的世界没那么多修辞。',
-                '- 每句只讲一件事。一句话就是一个画面。',
-                '- 不重复。同样的意思不说第二遍。',
-                '- 不用"然后""接着""就在这时"这种过渡词。画面直接跳。',
+                '- 一个自然段 2–6 句，80–220 字；不要一句一段，不要把同一个动作拆成好几行。',
+                '- 对话和说话人的动作、神态放在同一段；连续对话按说话人分段。',
+                '- 允许口语、停顿、打断、答非所问和一点废话。',
+                '- “然后”“接着”“就在这时”不是禁词；该过渡时用一句带过，比硬跳更自然。',
                 '',
                 describeBodyFormat(contract),
                 '【节奏补充】',
-                '- 段落极短，大多只有一句话；换行直接切下一个画面。',
-                '- 对话单独成段，感官细节单独成段，一个细节就是一记重锤。',
+                '- 句长平均 20–30 字，长句和短句交替；短句是调味，不是主菜。',
+                '- 每个场景 2–3 处关键身体感觉即可，不要逐段打卡。',
                 '',
                 '输出语言：简体中文。所有叙事内容必须用纯中文输出，禁止出现任何英文单词或句子。',
             ].join('\n');
         return this.cachedSystemPrompt;
     }
 
-    private getCachedContextParts(snap: PromptSnapshot | null, opts?: { skipChapterPlanning?: boolean }): string[] {
+    private getCachedContextParts(
+        snap: PromptSnapshot | null,
+        opts?: { skipChapterPlanning?: boolean; skipCoreInfo?: boolean },
+    ): string[] {
         const skipChapterPlanning = opts?.skipChapterPlanning === true;
+        // 故事上下文总线已提供实体/设定/时间线时，旧的核心信息块不再重复注入
+        const skipCoreInfo = opts?.skipCoreInfo === true;
         const worldType = snap?.worldType || '';
         const writingStyle = snap?.writingStyle || '';
         const allChars = snap?.allChars || '';
@@ -166,7 +178,7 @@ export class PromptBuilder {
         const triggeredMemories = snap?.triggeredMemories || '';
 
         const cacheKey = this.simpleHash(
-            `${skipChapterPlanning ? 'brief' : 'full'}|${worldType}|${writingStyle}|${allChars}|${allFactions}|${allLocs}|${allItems}|${writingRules}|${chapPlan}|${sceneExpansion}|${prevChaptersSummary}|${settingLib}|${timeline}|${triggeredMemories}`
+            `${skipChapterPlanning ? 'brief' : 'full'}|${skipCoreInfo ? 'pack' : 'core'}|${worldType}|${writingStyle}|${allChars}|${allFactions}|${allLocs}|${allItems}|${writingRules}|${chapPlan}|${sceneExpansion}|${prevChaptersSummary}|${settingLib}|${timeline}|${triggeredMemories}`
         );
 
         const cached = this.l2ContextCache.get(cacheKey);
@@ -177,18 +189,18 @@ export class PromptBuilder {
         const parts: string[] = [
             worldType ? `【世界背景】你活在${worldType}题材的世界。` : '',
             '',
-            allChars ? '【人物总览】' : '',
-            allChars ? allChars.slice(0, 3000) : '',
-            allChars ? '' : '',
-            allFactions ? '【势力总览】' : '',
-            allFactions ? allFactions.slice(0, 2000) : '',
-            allFactions ? '' : '',
-            allLocs ? '【地点总览】' : '',
-            allLocs ? allLocs.slice(0, 2000) : '',
-            allLocs ? '' : '',
-            allItems ? '【物品功法总览】' : '',
-            allItems ? allItems.slice(0, 2000) : '',
-            allItems ? '' : '',
+            !skipCoreInfo && allChars ? '【人物总览】' : '',
+            !skipCoreInfo && allChars ? allChars.slice(0, 3000) : '',
+            !skipCoreInfo && allChars ? '' : '',
+            !skipCoreInfo && allFactions ? '【势力总览】' : '',
+            !skipCoreInfo && allFactions ? allFactions.slice(0, 2000) : '',
+            !skipCoreInfo && allFactions ? '' : '',
+            !skipCoreInfo && allLocs ? '【地点总览】' : '',
+            !skipCoreInfo && allLocs ? allLocs.slice(0, 2000) : '',
+            !skipCoreInfo && allLocs ? '' : '',
+            !skipCoreInfo && allItems ? '【物品功法总览】' : '',
+            !skipCoreInfo && allItems ? allItems.slice(0, 2000) : '',
+            !skipCoreInfo && allItems ? '' : '',
             writingRules ? '【写作规则（必须遵守）】' : '',
             writingRules ? writingRules.slice(0, 3000) : '',
             writingRules ? '' : '',
@@ -207,12 +219,12 @@ export class PromptBuilder {
             triggeredMemories ? '【触发的记忆碎片】' : '',
             triggeredMemories ? triggeredMemories.slice(0, 2000) : '',
             triggeredMemories ? '' : '',
-            settingLib ? '【设定库】' : '',
-            settingLib ? settingLib.slice(0, 3000) : '',
-            settingLib ? '' : '',
-            timeline ? '【时间线】' : '',
-            timeline ? timeline.slice(0, 2000) : '',
-            timeline ? '' : '',
+            !skipCoreInfo && settingLib ? '【设定库】' : '',
+            !skipCoreInfo && settingLib ? settingLib.slice(0, 3000) : '',
+            !skipCoreInfo && settingLib ? '' : '',
+            !skipCoreInfo && timeline ? '【时间线】' : '',
+            !skipCoreInfo && timeline ? timeline.slice(0, 2000) : '',
+            !skipCoreInfo && timeline ? '' : '',
         ];
 
         this.l2ContextCache.set(cacheKey, { parts, timestamp: Date.now() });
@@ -361,8 +373,23 @@ export class PromptBuilder {
         knowledgeManager?: KnowledgeBaseManager | null,
         knowledgeVectorStore?: KnowledgeVectorStore | null
     ): void {
+        const changed = this.knowledgeManager !== knowledgeManager
+            || this.knowledgeVectorStore !== knowledgeVectorStore;
         this.knowledgeManager = knowledgeManager;
         this.knowledgeVectorStore = knowledgeVectorStore;
+        // 换了数据源（切项目 / 重新初始化）：旧片段一律作废
+        if (changed) this.knowledgeCache.clear();
+    }
+
+    /**
+     * 知识库内容指纹：书目版本 + 换模型后跳过的书数 + 当前 embedding 指纹。
+     * 旧实现的缓存只认 query+bookIds，重新拆解/切换 embedding 后
+     * 同一会话里会一直返回旧片段，直到插件重启。
+     */
+    private getKnowledgeContentSignature(): string {
+        const managerVersion = this.knowledgeManager?.version ?? 0;
+        const mismatches = this.knowledgeVectorStore?.getModelMismatches?.().length ?? 0;
+        return `${managerVersion}:${mismatches}`;
     }
 
     private simpleHash(str: string): string {
@@ -408,7 +435,11 @@ export class PromptBuilder {
 
             const cacheKey = `${direction ?? 'default'}:${this.simpleHash(searchQuery)}`;
             const cached = this.knowledgeCache.get(cacheKey);
-            const contentHash = this.simpleHash(searchQuery + (bookIds || []).join(','));
+            // 内容哈希必须包含知识库版本：重新拆解 / 改名 / 换 embedding 后
+            // 文件签名变了但 query 与 bookIds 不变，旧缓存会把过期片段一直喂给模型
+            const contentHash = this.simpleHash(
+                `${searchQuery}|${(bookIds || []).join(',')}|${this.getKnowledgeContentSignature()}`
+            );
             if (cached && cached.contentHash === contentHash) {
                 return cached.result;
             }
@@ -688,6 +719,25 @@ export class PromptBuilder {
         ];
     }
 
+    /**
+     * 故事上下文总线提供的完整/压缩信息包。
+     * 有信息包时，实体/设定/时间线/伏笔/情绪走这一条，旧的分段注入只保留关系与跨卷。
+     */
+    getStoryContextPackParts(compact = false): string[] {
+        const snap = this.getSnapshot();
+        const pack = ((compact ? snap?.storyContextPackCompact : snap?.storyContextPack) || '').trim();
+        // 只有标题、没有任何分类内容时不注入，避免空包把旧上下文挤掉
+        return pack && pack.includes('■') ? [pack, ''] : [];
+    }
+
+    /** 有信息包时仍需保留的驱动：关系状态 + 跨卷快照（信息包不含这两类动态状态） */
+    getRelationshipOnlyDriverParts(precedingText: string): string[] {
+        return [
+            ...this.getRelationshipDriverPromptParts(precedingText),
+            ...this.getCrossVolumePromptParts(),
+        ];
+    }
+
     /** 构建续写建议 prompt（system 仅含静态指令，用户内容全部在 user prompt） */
     buildSuggestionPrompt(
         precedingText: string,
@@ -709,7 +759,8 @@ export class PromptBuilder {
         const systemPrompt = this.getSystemPrompt(snap?.writingRules || '');
 
         const hasBrief = !!briefParts && briefParts.length > 0;
-        // 片段优先级：节点推进 > 同人约束 > 简报 > 角色状态 > 叙事驱动 > 伏笔提醒 > 缓存上下文 > 知识库 > 指纹/记忆
+        const hasStoryContext = this.getStoryContextPackParts(false).length > 0;
+        // 片段优先级：节点推进 > 同人约束 > 简报 > 角色状态 > 故事上下文 > 叙事驱动 > 伏笔提醒 > 缓存上下文 > 知识库 > 指纹/记忆
         const sections: PromptSection[] = [
             {
                 key: 'memory',
@@ -745,7 +796,9 @@ export class PromptBuilder {
                 key: 'drivers',
                 priority: 60,
                 shrinkable: true,
-                text: this.getNarrativeDriverPromptParts(precedingText).join('\n'),
+                text: (hasStoryContext
+                    ? this.getRelationshipOnlyDriverParts(precedingText)
+                    : this.getNarrativeDriverPromptParts(precedingText)).join('\n'),
             },
             {
                 key: 'soul',
@@ -765,15 +818,24 @@ export class PromptBuilder {
                 text: knowledgeInjection && knowledgeInjection.trim() ? knowledgeInjection.trim() : '',
             },
             {
+                key: 'storyContext',
+                priority: 72,
+                shrinkable: true,
+                text: this.getStoryContextPackParts(false).join('\n'),
+            },
+            {
                 key: 'context',
                 priority: 40,
                 shrinkable: true,
-                text: this.getCachedContextParts(snap, { skipChapterPlanning: hasBrief }).join('\n'),
+                text: this.getCachedContextParts(snap, {
+                    skipChapterPlanning: hasBrief,
+                    skipCoreInfo: hasStoryContext,
+                }).join('\n'),
             },
             {
                 key: 'foreshadow',
                 priority: 55,
-                text: this.getUnrevealedForeshadowReminderPromptParts().join('\n'),
+                text: hasStoryContext ? '' : this.getUnrevealedForeshadowReminderPromptParts().join('\n'),
             },
             {
                 key: 'plot',
@@ -797,8 +859,8 @@ export class PromptBuilder {
             tailParts.push('', '【特别指令】', cursorHint);
         }
         tailParts.push('', (precedingText || '').trim().length < 10
-            ? '这是本章的开头。请根据本章大纲和设定，开始写正文。不需要多，但要让人感觉这一瞬间是真实的。只输出正文，不要标注、不要解释、不要写标题。'
-            : '请自然地续写一段。不需要多，但要让人感觉这一瞬间是真实的。只输出正文，不要标注、不要解释、不要写标题。');
+            ? '这是本章的开头。请根据本章大纲和设定，开始写一个自然段（80–220 字，2–6 句）。只输出正文，不要标注、不要解释、不要写标题。'
+            : '请自然地续写一个自然段（80–220 字，2–6 句），不要一句一段。只输出正文，不要标注、不要解释、不要写标题。');
 
         if (budget) {
             const result = assemblePromptWithinBudget({
@@ -932,6 +994,12 @@ export class PromptBuilder {
                 text: this.getCreationModePromptParts().join('\n'),
             },
             {
+                key: 'storyContext',
+                priority: 72,
+                shrinkable: true,
+                text: this.getStoryContextPackParts(false).join('\n'),
+            },
+            {
                 key: 'knowledge',
                 priority: 25,
                 shrinkable: true,
@@ -941,7 +1009,9 @@ export class PromptBuilder {
                 key: 'drivers',
                 priority: 60,
                 shrinkable: true,
-                text: this.getNarrativeDriverPromptParts(beforeContext).join('\n'),
+                text: (this.getStoryContextPackParts(false).length > 0
+                    ? this.getRelationshipOnlyDriverParts(beforeContext)
+                    : this.getNarrativeDriverPromptParts(beforeContext)).join('\n'),
             },
         ];
 
@@ -1066,6 +1136,12 @@ export class PromptBuilder {
                 text: this.getCreationModePromptParts().join('\n'),
             },
             {
+                key: 'storyContext',
+                priority: 62,
+                shrinkable: true,
+                text: this.getStoryContextPackParts(true).join('\n'),
+            },
+            {
                 key: 'brief',
                 priority: 95,
                 text: (briefParts && briefParts.length > 0 ? briefParts : []).join('\n'),
@@ -1131,10 +1207,18 @@ export class PromptBuilder {
                 text: this.getCreationModePromptParts().join('\n'),
             },
             {
+                key: 'storyContext',
+                priority: 62,
+                shrinkable: true,
+                text: this.getStoryContextPackParts(true).join('\n'),
+            },
+            {
                 key: 'drivers',
                 priority: 60,
                 shrinkable: true,
-                text: this.getNarrativeDriverPromptParts(precedingContext).join('\n'),
+                text: (this.getStoryContextPackParts(true).length > 0
+                    ? this.getRelationshipOnlyDriverParts(precedingContext)
+                    : this.getNarrativeDriverPromptParts(precedingContext)).join('\n'),
             },
         ];
 

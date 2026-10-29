@@ -33,10 +33,19 @@ export interface BodySaveHost {
     onSaved(): void;
     /** 取消防抖中的自动保存，返回是否存在待保存 */
     takePendingAutoSave(): boolean;
+    /** 排一次自动保存（视图负责 2s 防抖） */
+    scheduleAutoSave(): void;
 }
 
 export class BodySaveController {
     private saving = false;
+    /**
+     * 串行链：所有保存按调用顺序排队。
+     * 旧实现用 `if (this.saving) return false` 直接丢弃并发请求，
+     * 调用方（切章冲刷 / Ctrl+S / 关闭视图）会把「被丢弃」当成「写盘失败」，
+     * 而冲刷路径在调用前已经取消了防抖定时器 → 这段输入永久不落盘。
+     */
+    private chain: Promise<unknown> = Promise.resolve();
 
     constructor(private readonly host: BodySaveHost) {}
 
@@ -44,12 +53,33 @@ export class BodySaveController {
         return this.saving;
     }
 
+    /**
+     * 程序化改写正文后调用（采纳建议 / 知识标签 / 历史回填 / AI 修复）。
+     * 这些写入不派发 input 事件，旧实现的自动保存只挂在 input 上，
+     * 于是「采纳后立刻切章」会把刚插入的文字丢掉。
+     */
+    markDirty(): void {
+        this.host.scheduleAutoSave();
+    }
+
     async save(showNotice: boolean): Promise<boolean> {
-        if (this.saving) return false;
-        const body = this.host.getBodyText()?.trim();
-        // 入口即快照身份：await 期间可能切章，后续一律用快照写盘与校验，
-        // 不能再读视图当前身份（否则旧章正文会用新章路径落盘）。
-        const identity = this.host.getIdentity();
+        // 入口即快照：排队执行与 await 期间可能切章、也可能继续输入。
+        // 正文与身份都必须在这一刻定下来，否则排队的保存会把新章正文写到旧章路径。
+        const snapshot = {
+            body: this.host.getBodyText()?.trim(),
+            identity: this.host.getIdentity(),
+        };
+        const run = this.chain.then(() => this.performSave(snapshot, showNotice));
+        // 链上吞掉错误，单次失败不能卡死后续保存
+        this.chain = run.catch(() => undefined);
+        return run;
+    }
+
+    private async performSave(
+        snapshot: { body?: string; identity: ChapterSaveIdentity },
+        showNotice: boolean,
+    ): Promise<boolean> {
+        const { body, identity } = snapshot;
         if (!body || !identity.project || !identity.volume || !identity.chapterNum) {
             // UX：未绑定章节或正文为空时静默返回会让用户误以为按钮失效
             if (showNotice) {
@@ -98,12 +128,17 @@ export class BodySaveController {
      * 一旦视图先改 project/chapterNum，防抖里排队的保存就会用新章路径
      * 写入旧章正文；必须在改身份之前用旧身份落盘。
      * 返回 false 表示上一章未能保存，调用方应中止切章（避免丢字）。
+     *
+     * 先等在途保存结束再判断：旧实现先取消防抖定时器、再遇到 `saving` 直接返回 false，
+     * 用户重试一次切章（此时已无 pending）就会真的把这段文字丢掉。
      */
     async flushBeforeChapterSwitch(): Promise<boolean> {
         const hasPending = this.host.takePendingAutoSave();
-        if (!hasPending) return true;
+        const inFlight = this.chain;
+        await inFlight;
         const identity = this.host.getIdentity();
         if (!identity.project || !identity.volume || !identity.chapterNum) return true;
+        if (!hasPending) return true;
         return this.save(false);
     }
 }

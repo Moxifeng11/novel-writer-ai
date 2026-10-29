@@ -134,3 +134,124 @@ describe('CoWritingView — NBI-05 异步结果归属', () => {
         expect(ctx.updateHumanRateDashboard).not.toHaveBeenCalled();
     });
 });
+
+type AcceptGuardCtx = {
+    acceptInFlight: boolean;
+    currentSuggestions: Suggestion[];
+    insertTextAndRecord: ReturnType<typeof vi.fn>;
+    handleAcceptSuggestion: (suggestion: any) => Promise<void>;
+};
+
+function makeAcceptGuardCtx(): AcceptGuardCtx {
+    const ctx = {
+        acceptInFlight: false,
+        currentSuggestions: [{ id: 's1', text: '第一条' }, { id: 's2', text: '第二条' }],
+        insertTextAndRecord: vi.fn(async () => undefined),
+    } as unknown as AcceptGuardCtx;
+    ctx.handleAcceptSuggestion = CoWritingView.prototype['handleAcceptSuggestion'];
+    return ctx;
+}
+
+describe('CoWritingView — 采纳互斥（重复 Tab / 双击接受）', () => {
+    it('采纳进行中的第二次调用直接被忽略，不会重复插入', async () => {
+        const ctx = makeAcceptGuardCtx();
+        let release: () => void = () => undefined;
+        ctx.insertTextAndRecord.mockImplementation(() => new Promise<void>(resolve => { release = resolve; }));
+
+        const first = ctx.handleAcceptSuggestion({ id: 's1', text: '第一条' });
+        // 异步窗口期内（历史落盘 / 预览 / 指标评估）再次点击或按 Ctrl+1
+        await ctx.handleAcceptSuggestion({ id: 's1', text: '第一条' });
+        await ctx.handleAcceptSuggestion({ id: 's2', text: '第二条' });
+
+        expect(ctx.insertTextAndRecord).toHaveBeenCalledTimes(1);
+        expect(ctx.acceptInFlight).toBe(true);
+
+        release();
+        await first;
+        expect(ctx.acceptInFlight).toBe(false);
+    });
+
+    it('插入失败后互斥位会释放，不会把采纳永久锁死', async () => {
+        const ctx = makeAcceptGuardCtx();
+        ctx.insertTextAndRecord.mockRejectedValueOnce(new Error('write failed'));
+
+        await expect(ctx.handleAcceptSuggestion({ id: 's1', text: '第一条' })).rejects.toThrow('write failed');
+        expect(ctx.acceptInFlight).toBe(false);
+
+        await ctx.handleAcceptSuggestion({ id: 's2', text: '第二条' });
+        expect(ctx.insertTextAndRecord).toHaveBeenCalledTimes(2);
+    });
+});
+
+type AssociationCtx = {
+    isAssociating: boolean;
+    isSuggesting: boolean;
+    associationSeq: number;
+    project: string;
+    volume: string;
+    chapterNum: number;
+    suggestAbortController: AbortController | null;
+    beginSuggestionEpoch: () => number;
+    isCurrentSuggestionEpoch: (epoch: number) => boolean;
+    clearStaleSuggestions: ReturnType<typeof vi.fn>;
+    renderAssociationLoading: ReturnType<typeof vi.fn>;
+    resolveCursorPosition?: unknown;
+    suggestAssociation: ReturnType<typeof vi.fn>;
+    warnFanficRulesOnce: ReturnType<typeof vi.fn>;
+    setGhostSuggestion: ReturnType<typeof vi.fn>;
+    renderAssociationCards: ReturnType<typeof vi.fn>;
+    renderEmptySuggestions: ReturnType<typeof vi.fn>;
+    showSuggestionPanel: ReturnType<typeof vi.fn>;
+    currentSuggestions: Suggestion[];
+    currentRecord: object | null;
+    rightEditor: { value: string; selectionStart: number };
+    handleAssociationSuggest: () => Promise<void>;
+};
+
+function makeAssociationCtx(suggestAssociation: ReturnType<typeof vi.fn>): AssociationCtx {
+    const ctx = {
+        isAssociating: false,
+        isSuggesting: false,
+        associationSeq: 0,
+        project: '测试书',
+        volume: '第1卷',
+        chapterNum: 1,
+        suggestAbortController: null,
+        suggestionEpoch: 0,
+        clearStaleSuggestions: vi.fn(),
+        renderAssociationLoading: vi.fn(),
+        suggestAssociation,
+        warnFanficRulesOnce: vi.fn(),
+        setGhostSuggestion: vi.fn(),
+        renderAssociationCards: vi.fn(),
+        renderEmptySuggestions: vi.fn(),
+        showSuggestionPanel: vi.fn(),
+        currentSuggestions: [],
+        currentRecord: null,
+        rightEditor: { value: '他抬手，风从袖口灌进来。', selectionStart: 12 },
+        facade: { suggestAssociation },
+    } as unknown as AssociationCtx & { facade: unknown; suggestionEpoch: number };
+    ctx.beginSuggestionEpoch = CoWritingView.prototype['beginSuggestionEpoch'];
+    ctx.isCurrentSuggestionEpoch = CoWritingView.prototype['isCurrentSuggestionEpoch'];
+    ctx.handleAssociationSuggest = CoWritingView.prototype['handleAssociationSuggest'];
+    return ctx;
+}
+
+describe('CoWritingView — 联想进行态不因其它流程递增代次而卡死', () => {
+    it('联想在途时开始新一轮生成，联想结束后 isAssociating 仍会复位', async () => {
+        let release: (value: unknown) => void = () => undefined;
+        const pending = new Promise(resolve => { release = resolve; });
+        const ctx = makeAssociationCtx(vi.fn(() => pending) as never);
+
+        const association = ctx.handleAssociationSuggest();
+        expect(ctx.isAssociating).toBe(true);
+
+        // 用户在联想未返回时按 Tab：其它流程递增 suggestionEpoch
+        ctx.beginSuggestionEpoch();
+        release([]);
+        await association;
+
+        // 旧实现挂在 suggestionEpoch 上判断，这里会一直是 true，联想/幽灵建议永久失效
+        expect(ctx.isAssociating).toBe(false);
+    });
+});

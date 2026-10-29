@@ -10,6 +10,9 @@ import { App } from 'obsidian';
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { kbConfigDir, kbConfigFile } from '../shared/paths';
 import { GenreConfig, TechniqueDef, SubGenreConfig } from './webnovel-knowledge-base';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('KnowledgeBaseConfig');
 
 export type CustomGenre = GenreConfig & { isCustom: boolean };
 
@@ -110,13 +113,27 @@ export class KnowledgeBaseConfigManager {
         const fs = this.getFS();
         const configPath = kbConfigFile(this.baseDir);
 
+        let content: string | null = null;
         try {
-            const content = await fs.read(configPath);
-            const parsed = JSON.parse(content) as Partial<KnowledgeBaseConfig>;
-            this.config = this.mergeConfig(DEFAULT_CONFIG, parsed);
+            content = await fs.read(configPath);
         } catch {
+            content = null;
+        }
+
+        if (content === null) {
+            // 文件确实不存在：写一份默认配置作为起点
             this.config = { ...DEFAULT_CONFIG };
             await this.save();
+        } else {
+            try {
+                const parsed = JSON.parse(content) as Partial<KnowledgeBaseConfig>;
+                this.config = this.mergeConfig(DEFAULT_CONFIG, parsed);
+            } catch (e) {
+                // 读到了但解析失败（同步冲突/半写）：只在内存用默认值，
+                // 绝不覆盖磁盘——旧实现会立刻 save()，把用户自定义分类永久抹掉。
+                log.warn('[KnowledgeBaseConfig] 配置解析失败，本次会话使用默认值，磁盘文件保留原样:', e);
+                this.config = { ...DEFAULT_CONFIG };
+            }
         }
 
         this.loaded = true;

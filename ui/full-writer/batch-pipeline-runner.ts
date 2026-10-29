@@ -62,6 +62,8 @@ export class BatchPipelineRunner {
     private lastError = '';
     /** 当前章的取消器：外部 signal 只在 run() 里绑定一次，避免按章累积监听器 */
     private currentChapterAbort: AbortController | null = null;
+    /** 本章读取失败的步骤文件（读不出来 ≠ 没有结果，不能覆盖） */
+    private stepReadFailures: string[] = [];
 
     constructor(
         private readonly app: App,
@@ -121,6 +123,17 @@ export class BatchPipelineRunner {
     ): Promise<BatchChapterResult> {
         const ctx = await this.buildCtx(project, target, options);
         const completed: string[] = [];
+
+        // 步骤文件存在却读不出来（同步冲突/权限）：继续跑会用「空结果」重新生成并覆盖原文，
+        // 直接中止本章并把路径报给用户是最安全的选择。
+        if (this.stepReadFailures.length > 0) {
+            return {
+                target,
+                status: 'failed',
+                completedSteps: [],
+                error: `读取步骤文件失败（已中止以避免覆盖）：${this.stepReadFailures.slice(0, 3).join('、')}`,
+            };
+        }
 
         // 已结算章节：结算的伏笔/关系/时间线写入都是追加语义，重跑会写出重复行。
         // 断点续跑时整章跳过；resume=false（用户显式强制重跑）才允许再走一遍。
@@ -250,6 +263,7 @@ export class BatchPipelineRunner {
     ): Promise<StepRunCtx> {
         const chapDir = pjStepDir(project, target.volumeNum, target.chapterNum);
         const context = await this.plugin.ctxManager.gatherAll(project, target.chapterName);
+        this.stepReadFailures = [];
         const stepResults = await this.loadStepResults(
             chapDir,
             target.chapterName,
@@ -259,9 +273,13 @@ export class BatchPipelineRunner {
         );
         // A4: 续跑跳过必须由内容结构决定，不能只看「文件非空」——
         // 批量预生成的模板文件非空但没有实质内容，旧逻辑会整步跳过。
-        const stepCompleted = new Set(
-            Object.keys(stepResults).filter(key => isStepResultComplete(key, stepResults[key]))
-        );
+        // resume=false（显式强制重跑）时不能用磁盘上的完成态：
+        // 一旦本次 AI 调用失败，旧内容仍满足「非空 + 未截断」，会被判定为成功。
+        const stepCompleted = options.resume === false
+            ? new Set<string>()
+            : new Set(
+                Object.keys(stepResults).filter(key => isStepResultComplete(key, stepResults[key]))
+            );
 
         const tabContent = document.createElement('div');
         const systemPromptEl = document.createElement('textarea');
@@ -312,7 +330,16 @@ export class BatchPipelineRunner {
             setIsLoading: (v) => { ctx.isLoading = v; },
             getAbortController: () => abortController,
             refreshWorkspace: () => {},
-            invalidateSteps: () => {},
+            // 空实现会让「正文/规划变更 → 下游失效」在批量模式下静默失效：
+            // 断点续跑时旧的 analysisReport 仍算完成，回环会跳过它，
+            // 最终用旧分析报告结算新正文。这里与工作台保持同一语义。
+            invalidateSteps: (stepKeys: string[]) => {
+                for (const key of stepKeys) {
+                    ctx.stepCompleted.delete(key);
+                    delete ctx.stepResults[key];
+                    if (ctx.stepMeta) delete ctx.stepMeta[key];
+                }
+            },
             generatedThisSession: new Set<string>(),
         };
         return ctx;
@@ -337,8 +364,11 @@ export class BatchPipelineRunner {
             if (file instanceof TFile) {
                 try {
                     results[stepKey] = await this.app.vault.read(file);
-                } catch {
-                    // 单个文件读取失败不影响其它步骤
+                } catch (e) {
+                    // 文件存在但读不出来（同步冲突/权限）：不能当成「没有结果」，
+                    // 否则续跑会重新生成并覆盖这份读不到的原文。
+                    this.stepReadFailures.push(file.path);
+                    log.warn('[BatchPipeline] 读取步骤文件失败:', file.path, e);
                 }
             }
         }
@@ -357,8 +387,9 @@ export class BatchPipelineRunner {
         if (bodyFile) {
             try {
                 results['bodyGeneration'] = await this.app.vault.read(bodyFile);
-            } catch {
-                // 忽略
+            } catch (e) {
+                this.stepReadFailures.push(bodyFile.path);
+                log.warn('[BatchPipeline] 读取正文失败:', bodyFile.path, e);
             }
         }
         return results;

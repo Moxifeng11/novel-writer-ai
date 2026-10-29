@@ -2,10 +2,11 @@ import { TFile } from 'obsidian';
 import { WizardStep } from './wizard-types';
 import { createPersistentWizardResults } from './wizard-results-store';
 import { createLogger } from '../../shared/logger';
+import type { CreationMode } from '../../shared/creation-mode';
 
 
 const log = createLogger('FullWriterStore');
-export type TabType = 'selector' | 'chapter' | 'wizard';
+export type TabType = 'selector' | 'chapter' | 'wizard' | 'flow' | 'unit';
 
 export interface WriterTab {
     id: string;
@@ -21,6 +22,11 @@ export interface WriterTab {
     projectType?: 'original' | 'fanfic';
     currentStepIdx?: number;
     steps?: WizardStep[];
+    /** flow / unit 页签：所属模式 */
+    mode?: CreationMode;
+    /** unit 页签：单元编号与显示名（第N节/第N集） */
+    unitNumber?: number;
+    unitName?: string;
 }
 
 export interface FullWriterStateSnapshot {

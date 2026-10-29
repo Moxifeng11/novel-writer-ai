@@ -140,6 +140,12 @@ export class KnowledgeBaseManager {
     private breakdownCache: LruCache<string, string> | null = null;
     private multiLayerCache: MultiLayerCache | null = null;
     private indexCacheKey = '__index__';
+    /**
+     * 知识库数据版本号（每次增删改 +1）。
+     * 协同写作的参考书检索缓存用它判断「知识库变了没」：
+     * 只要版本没变，检索结果就可以复用；重新拆解/改名/改状态都会让缓存失效。
+     */
+    private mutationSeq = 0;
     private cacheOptions: Required<KnowledgeBaseCacheOptions>;
 
     constructor(app: App, baseDir?: string, embeddingProvider?: EmbeddingProvider, options?: KnowledgeBaseCacheOptions) {
@@ -271,7 +277,9 @@ export class KnowledgeBaseManager {
                         return [migrated.id, migrated];
                     }));
                 } else {
-                    this.books = new Map();
+                    // 索引存在但没有 books 数组：要么是空库，要么是结构不认识。
+                    // 不能直接当空库——后续任何一次 saveIndex 都会把「读不懂」写成「一本书都没有」。
+                    throw new Error('索引缺少 books 数组');
                 }
             } catch (e) {
                 log.warn('[KnowledgeBaseManager] 索引文件解析失败，正在从书籍目录重建:', e);
@@ -280,6 +288,8 @@ export class KnowledgeBaseManager {
         }
 
         this.adjustCacheCapacity(this.books.size);
+        // 整表被替换：下游检索缓存必须失效
+        this.mutationSeq++;
 
         if (this.bookInfoCache) {
             for (const [id, book] of this.books) {
@@ -370,7 +380,9 @@ export class KnowledgeBaseManager {
     }
 
     private parseFrontmatter(content: string): Record<string, unknown> {
-        const match = content.match(/^---\n([\s\S]*?)\n---/);
+        // 兼容 CRLF：索引是用户可见的 .md，用外部编辑器保存后换行会变 \r\n。
+        // 旧正则只认 `\n---`，CRLF 文件直接匹配失败 → 被当成「没有 books」→ 空库。
+        const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
         if (!match) return {};
         try {
             return JSON.parse(match[1]);
@@ -469,6 +481,7 @@ export class KnowledgeBaseManager {
         const book = this.books.get(bookId);
         if (!book) return;
 
+        this.mutationSeq++;
         this.books.delete(bookId);
         if (this.bookInfoCache) {
             this.bookInfoCache.delete(bookId);
@@ -642,6 +655,14 @@ export class KnowledgeBaseManager {
      * 书籍是否仍在知识库中（按 bookId）。
      * 供向量存储做存活判定：书名可改，bookId 不会变。
      */
+    /**
+     * 知识库数据版本号：任何一次增删改都会递增。
+     * 供检索缓存做键的一部分（同步读取，不触发 IO）。
+     */
+    get version(): number {
+        return this.mutationSeq;
+    }
+
     hasBook(bookId: string): boolean {
         return this.books.has(bookId);
     }
@@ -798,6 +819,8 @@ export class KnowledgeBaseManager {
     }
 
     private async saveBookInfo(book: BookBasicInfo): Promise<void> {
+        // 所有「改书」的路径最终都会走到这里：先递增版本号，让下游检索缓存立即失效
+        this.mutationSeq++;
         await this.bookWriter.enqueueAutoClean(async () => {
             const fs = this.getFS();
             await this.ensureBookDir(book.name);
@@ -810,11 +833,16 @@ export class KnowledgeBaseManager {
                 themeTags: book.themeTags,
                 techniqueTags: book.techniqueTags,
                 customTags: book.customTags,
+                // synopsis 以前只写在正文里，索引损坏后从书籍目录重建时整段丢失。
+                synopsis: book.synopsis,
                 createdAt: book.createdAt,
                 updatedAt: book.updatedAt,
                 breakdownStatus: book.breakdownStatus,
                 breakdownProgress: book.breakdownProgress,
                 breakdownError: book.breakdownError,
+                // 向量化状态与失败原因必须落盘：重建索引后列表徽标要能还原
+                vectorStatus: book.vectorStatus,
+                vectorError: book.vectorError,
                 sourcePath: book.sourcePath,
                 primaryGenre: book.primaryGenre,
                 secondaryGenres: book.secondaryGenres,
@@ -825,6 +853,7 @@ export class KnowledgeBaseManager {
                 primarySubGenre: book.primarySubGenre,
                 secondarySubGenres: book.secondarySubGenres,
                 primarySubGenreConfidence: book.primarySubGenreConfidence,
+                genreRecommendations: book.genreRecommendations,
                 qualityScores: book.qualityScores,
             }, null, 2);
 
@@ -1302,10 +1331,11 @@ export class KnowledgeBaseManager {
     async flush(): Promise<void> {
         await this.indexWriter.flush();
         await this.bookWriter.flush();
+        await this.preferenceWriter.flush();
         await this.preferenceMemory.flush();
     }
 
     get hasPendingWrites(): boolean {
-        return this.indexWriter.isDirty || this.bookWriter.isDirty;
+        return this.indexWriter.isDirty || this.bookWriter.isDirty || this.preferenceWriter.isDirty;
     }
 }

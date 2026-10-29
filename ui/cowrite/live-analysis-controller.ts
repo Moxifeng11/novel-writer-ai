@@ -18,6 +18,14 @@ const log = createLogger('LiveAnalysisController');
 type RefreshTrigger = 'input' | 'insert' | 'save';
 type GuardTrigger = RefreshTrigger | 'manual';
 
+/** 最近一次设定守卫的真实结果，供右侧「设定守卫」监控卡展示 */
+export interface GuardSummary {
+  oocWarnings: string[];
+  consistencyScore: number | null;
+  entityChanges: Array<{ entityName: string; newStatus: string }>;
+  checkedAt: number;
+}
+
 export class LiveAnalysisController {
   view: CoWritingView;
   private debounceManager = new AdaptiveDebounceManager({ debug: false });
@@ -28,6 +36,13 @@ export class LiveAnalysisController {
   private tractionSeq = 0;
   /** 上一次「输入触发」守卫检查的正文长度与时间，用于增量门槛与冷却 */
   private lastGuardCheck: { length: number; at: number } | null = null;
+  /** 最近一次守卫结果（监控卡数据源）。旧实现读 `liveAnalysis.issues`，该字段从不存在。 */
+  private lastGuardSummary: GuardSummary | null = null;
+
+  /** 最近一次守卫结果（null = 本章还没检查过） */
+  getGuardSummary(): GuardSummary | null {
+    return this.lastGuardSummary;
+  }
 
   constructor(view: CoWritingView) {
     this.view = view;
@@ -52,6 +67,8 @@ export class LiveAnalysisController {
     this.tractionSeq++;
     this.isInspectingGuard = false;
     this.lastGuardCheck = null;
+    // 上一章的守卫结果不能显示在新章
+    this.lastGuardSummary = null;
     // 旧章的进度/风险会一直停留到下一次输入：切章先清空，等新章引擎就绪后重渲染
     this.view.tractionContainer?.empty();
   }
@@ -172,6 +189,18 @@ export class LiveAnalysisController {
       if (token !== this.guardSeq) return;
       const hasOOC = !!report.oocResult?.hasOOC;
       const hasEntityChanges = report.entityChanges.length > 0;
+      // 监控卡的数据源：真实守卫结果（旧卡片读的是不存在的 liveAnalysis.issues）
+      this.lastGuardSummary = {
+        oocWarnings: hasOOC && report.oocResult ? [...report.oocResult.warnings] : [],
+        consistencyScore: report.oocResult ? report.oocResult.score : null,
+        entityChanges: report.entityChanges.map(change => ({
+          entityName: change.entityName,
+          newStatus: change.newStatus,
+        })),
+        checkedAt: Date.now(),
+      };
+      // 守卫结果变了：右侧「设定守卫」卡片跟随刷新（旧实现只在布局时渲染过一次）
+      view.refreshMonitorPanel();
       if (monitorPanelA) {
         if (hasOOC && report.oocResult) monitorPanelA.showOOCWarnings(report.oocResult.warnings, report.oocResult.score);
         if (hasEntityChanges) monitorPanelA.showEntityChanges(report.entityChanges);

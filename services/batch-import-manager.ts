@@ -268,6 +268,14 @@ export class BatchImportManager {
         const selected = this.getSelectedPreviews();
         const historyId = generateId();
 
+        // 进度与「本次结果」都是按 tasks 全量统计的。不清掉上一批的终态任务，
+        // 第二批会显示成 5/8、成功数翻倍，onComplete 也把历史批次算成本次。
+        for (const [taskId, task] of Array.from(this.tasks)) {
+            if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
+                this.tasks.delete(taskId);
+            }
+        }
+
         const historyItem: ImportHistoryItem = {
             id: historyId,
             importTime: Date.now(),
@@ -361,18 +369,23 @@ export class BatchImportManager {
             const author = preview.overrides.author || preview.recognition.author;
             const wordCount = preview.recognition.wordCount;
 
-            const book = await this.kbManager.addBook({
-                name: bookName,
-                author,
-                wordCount,
-                themeTags: [...this.settings.themeTags],
-                techniqueTags: [...this.settings.techniqueTags],
-                customTags: [...this.settings.customTags],
-                synopsis: '',
-                sourcePath: preview.sourcePath || preview.filename,
-            }, { autoClassify: this.settings.autoClassify });
-
-            task.bookId = book.id;
+            // 幂等：自动重试与手动「重新导入」都会再次进到这里。
+            // 旧实现无条件 addBook，失败发生在建书之后（写源文件/建拆解任务失败）时，
+            // 每重试一次就多出一本「书名 (2)」「书名 (3)」，用户完全看不出原因。
+            let book = task.bookId ? await this.kbManager.getBook(task.bookId) : undefined;
+            if (!book) {
+                book = await this.kbManager.addBook({
+                    name: bookName,
+                    author,
+                    wordCount,
+                    themeTags: [...this.settings.themeTags],
+                    techniqueTags: [...this.settings.techniqueTags],
+                    customTags: [...this.settings.customTags],
+                    synopsis: '',
+                    sourcePath: preview.sourcePath || preview.filename,
+                }, { autoClassify: this.settings.autoClassify });
+                task.bookId = book.id;
+            }
             task.progress = 50;
             this.emitTask(task);
 

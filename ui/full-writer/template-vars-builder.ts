@@ -29,6 +29,14 @@ import { pjPromiseLedger, pjCharacterArcTable, readProjectMeta } from '../../sha
 import { parsePromiseLedger, formatOpenPromisesForPrompt } from '../../engine/promise-ledger';
 import { parseCharacterArcTable, formatArcsForPrompt } from '../../engine/character-arc';
 import { getCreationModeLabel, getCreationModePromptBlock, getCreationUnitLabel, parseCreationModeMeta } from '../../shared/creation-mode';
+import { getStoryStructure, getStructureStageSummary } from '../../shared/story-structure';
+import { HUMAN_VOICE_BLOCK } from '../../engine/prompts/human-voice';
+import {
+  applyStoryContextToVars,
+  buildStoryContext,
+  logStoryContextSummary,
+  resolveStoryContextTier,
+} from '../../engine/context/story-context-service';
 
 const log = createLogger('TemplateVarsBuilder');
 import {
@@ -516,6 +524,97 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
   }
   vars["chapPosition"] = `第${deps.chapterNum}章（${deps.volume}）`;
 }
+
+/**
+ * 一键生成的故事上下文总线适配：
+ * - 用同一张图重新选取世界观/设定/实体/时间线/伏笔；
+ * - 覆盖既有模板变量，但保留原有变量名与格式；
+ * - 额外注入 storyContextPack（关联摘要）与遥测。
+ */
+export async function applyStoryContextBus(
+  deps: TemplateVarsDeps,
+  vars: Record<string, string>,
+  d: ContextData,
+): Promise<void> {
+  if (!deps.context) return;
+  try {
+    const tier = resolveStoryContextTier(deps.plugin.settings, 'one-click');
+    const settings = deps.plugin.settings;
+    const maxInputTokens = Math.max(
+      2048,
+      (settings.maxContext || 0) - (settings.maxOutput || 0) - 1024,
+    );
+    const result = buildStoryContext({
+      context: deps.context,
+      chapterName: deps.chapterName,
+      chapterNum: deps.chapterNum,
+      volume: deps.volume,
+      mode: 'one-click',
+      tier,
+      maxInputTokens,
+      modelId: settings.defaultModel,
+      sceneExpansionText: deps.stepResults['sceneExpand'] || deps.viewVars['sceneExpansion'] || d.scene_expansion?.raw || '',
+      emotionPlanText: deps.stepResults['emotionPlan'] || deps.viewVars['emotionPlan'] || d.emotion_plan?.raw || '',
+      storyLinkage: d.story_linkage || null,
+      precedingText: d.previous_chapter?.ending || '',
+      queryText: [
+        d.outline?.raw || '',
+        deps.stepResults['infoPlan'] || '',
+        deps.stepResults['plotDistill'] || '',
+      ].filter(Boolean).join('\n').slice(0, 6000),
+    });
+    applyStoryContextToVars(vars, result.bundle, { ...vars });
+    logStoryContextSummary(result, `one-click ${deps.chapterName}`);
+  } catch (e) {
+    log.warn('[TemplateVarsBuilder] 故事上下文总线失败，保留旧变量:', e);
+  }
+}
+
+/**
+ * 上下文缺失时必须补空串的模板变量。
+ * 这些键只在 `deps.context` 存在时由 buildEntityVars / buildContextVars 写入；
+ * 漏掉任意一个，fillTemplate 就不会替换，`${allChars}` 这类占位符会原样发给模型。
+ * 导出供静态契约测试锁定（见 full-writer-view-contracts.test.ts）。
+ */
+export const TEMPLATE_VAR_FALLBACK_KEYS = [
+  "worldView",
+  "settingLib",
+  "writingStyleContent",
+  "prevChaptersSummary",
+  "prevChapEnding",
+  "prevChapterStateSnapshot",
+  "unrevealedForeshadow",
+  "timelineEvents",
+  "sceneCardDigest",
+  "craftConstraints",
+  "negativeList",
+  "sceneStyleSnippet",
+  "suggestedRhythm",
+  "openPromises",
+  "characterArcs",
+  "qualityIssues",
+  "creationMode",
+  "creationModeLabel",
+  "creationUnitLabel",
+  "shortCategory",
+  "scriptGenre",
+  "modeTargetWords",
+  "modeTargetUnits",
+  "creationModePrompt",
+  "storyContextPack",
+  "allChars",
+  "allFactions",
+  "allLocs",
+  "allItems",
+  "worldType",
+  "worldEra",
+  "forbiddenElements",
+  "powerSystem",
+  "characterCores",
+  "timeline",
+  "protagonistName",
+] as const;
+
 export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<string, string>> {
   const vars: Record<string, string> = {};
   // v4.18：模式硬约束只追加到 system prompt；长篇 block 为空，行为不变。
@@ -530,10 +629,17 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     vars["modeTargetWords"] = String(modeMeta.targetWords);
     vars["modeTargetUnits"] = String(modeMeta.targetUnits);
     vars["creationModePrompt"] = getCreationModePromptBlock(modeMeta.mode, modeMeta);
+    const narrative = modeMeta.storySettings ? getStoryStructure(modeMeta.storySettings.structureId) : getStoryStructure('qichengzhuanhe');
+    vars["narrativeStructure"] = narrative.id;
+    vars["narrativeStructureName"] = narrative.name;
+    vars["narrativeStructureStages"] = getStructureStageSummary(narrative.id);
   } catch (e) {
     log.warn('[TemplateVarsBuilder] 读取创作模式失败，按长篇处理:', e);
     vars["creationMode"] = 'long';
     vars["creationModePrompt"] = '';
+    vars["narrativeStructure"] = '';
+    vars["narrativeStructureName"] = '未设置';
+    vars["narrativeStructureStages"] = '';
   }
   const writingRules = await RulesService.getInstance(deps.plugin.app).getWritingRules();
   vars["writingRules"] = writingRules;
@@ -584,35 +690,13 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     await buildContextVars(deps, vars, d);
   }
   // 模板占位符兜底：上下文缺失时填空串，避免 ${worldView} 这类字面量漏进 prompt
-  for (const key of [
-    "worldView",
-    "settingLib",
-    "writingStyleContent",
-    "prevChaptersSummary",
-    "prevChapEnding",
-    "prevChapterStateSnapshot",
-    "unrevealedForeshadow",
-    "timelineEvents",
-    "sceneCardDigest",
-    "craftConstraints",
-    "negativeList",
-    "sceneStyleSnippet",
-    "suggestedRhythm",
-    "openPromises",
-    "characterArcs",
-    "qualityIssues",
-    "creationMode",
-    "creationModeLabel",
-    "creationUnitLabel",
-    "shortCategory",
-    "scriptGenre",
-    "modeTargetWords",
-    "modeTargetUnits",
-    "creationModePrompt",
-  ]) {
+  for (const key of TEMPLATE_VAR_FALLBACK_KEYS) {
     if (vars[key] === undefined)
       vars[key] = "";
   }
+  // 主角名缺失时用「主角」兜底（模板大量使用 ${protagonistName}）
+  if (!vars["protagonistName"])
+    vars["protagonistName"] = "主角";
   if (!vars["prevChapEnding"])
     vars["prevChapEnding"] = "（本章无上一章结尾信息：不要自行编造上一章结尾）";
   if (deps.stepResults["infoPlan"]) {
@@ -777,7 +861,11 @@ ${vars["allItems"]}`);
   }
   vars["craftConstraints"] = buildCraftConstraintBlock();
   vars["negativeList"] = buildNegativeConstraintBlock();
+  vars["humanVoice"] = HUMAN_VOICE_BLOCK;
   vars["triggeredMemories"] = deps.context?.data?.triggered_memories_prompt || "";
+  if (deps.context) {
+    await applyStoryContextBus(deps, vars, deps.context.data);
+  }
   return vars;
 }
 export async function buildSceneStyleHint(deps: TemplateVarsDeps, vars: Record<string, string>): Promise<void> {
@@ -818,7 +906,7 @@ export async function buildSceneStyleHint(deps: TemplateVarsDeps, vars: Record<s
     const rhythmMap: Record<string, string> = {
       battle: "急起急落 — 直接切入冲突→快速升级→高潮→戛然而止",
       emotional: "倒叙切入 — 先呈现结果/悬念→回溯原因→揭示真相→新悬念",
-      dialogue: "起承转合 — 铺垫→发展→转折→收尾"
+      dialogue: "对话推进 — 铺垫→发展→转折→收尾"
     };
     vars["suggestedRhythm"] = rhythmMap[sceneType] || rhythmMap.dialogue;
     vars["_sceneType"] = vars["_sceneType"] || sceneType;

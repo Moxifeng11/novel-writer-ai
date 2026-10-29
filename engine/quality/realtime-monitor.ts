@@ -494,8 +494,10 @@ export class RealtimeMonitor {
         this.setState('idle');
     }
 
-    /** 销毁（清理订阅） */
+    /** 销毁（中止在途评估并清理订阅） */
     dispose(): void {
+        // 只清引用会让引擎继续算完并把结果推给已分离的 UI
+        this.currentAbort?.abort();
         this.detachExternalAbort();
         this.subscribers.clear();
         this.currentAbort = undefined;

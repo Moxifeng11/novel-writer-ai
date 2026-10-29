@@ -67,7 +67,7 @@ describe('SettingsMigrator', () => {
         it('v2→v3 无 modelOverrides 时安全处理', () => {
             const data = { schemaVersion: 2 };
             const result = migrateSettings(data) as any;
-            expect(result.schemaVersion).toBe(4);
+            expect(result.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
             expect(result.modelOverrides).toEqual({});
         });
 
@@ -78,7 +78,7 @@ describe('SettingsMigrator', () => {
                 hiddenPresets: [],
             };
             const result = migrateSettings(data) as any;
-            expect(result.schemaVersion).toBe(4);
+            expect(result.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
             expect(result.customProviders.length).toBeGreaterThan(0);
             expect(result.customProviders.find((p: any) => p.id === 'volc')).toBeDefined();
             expect(result.customProviders.find((p: any) => p.id === 'volc').isDefault).toBe(true);
@@ -141,7 +141,7 @@ describe('SettingsMigrator', () => {
         it('v3→v4 无 customProviders 和 hiddenPresets 时安全处理', () => {
             const data = { schemaVersion: 3 };
             const result = migrateSettings(data) as any;
-            expect(result.schemaVersion).toBe(4);
+            expect(result.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
             expect(result.customProviders.length).toBeGreaterThan(0);
             expect(result.hiddenPresets).toBeUndefined();
         });
@@ -240,9 +240,84 @@ describe('SettingsMigrator', () => {
     });
 
     describe('CURRENT_SCHEMA_VERSION', () => {
-        it('值为 4', () => {
-            expect(CURRENT_SCHEMA_VERSION).toBe(4);
+        it('值为 5', () => {
+            expect(CURRENT_SCHEMA_VERSION).toBe(5);
         });
+    });
+});
+
+describe('v4→v5：五层配色收敛为三层', () => {
+    /** 用户真实 data.json 的旧结构（脱敏） */
+    const legacyV4 = {
+        schemaVersion: 4,
+        theme: 'auto',
+        themeColors: {
+            accent: '#24ffe5',
+            appBg: '#251818',
+            appearancePreset: 'paper',
+            enableCustomCardBg: true,
+            cardBg: '#cb522a',
+            panelBg: '#110d09',
+            textPrimary: '#4af28a',
+        },
+    };
+
+    it('把旧观感冻结成一套方案，再删除五层字段', () => {
+        const result = migrateSettings({ ...legacyV4 });
+        const colors = result.themeColors as Record<string, unknown>;
+
+        // 五层旧字段全部清除
+        expect(colors.panelBg).toBeUndefined();
+        expect(colors.textPrimary).toBeUndefined();
+        expect(colors.enableCustomCardBg).toBeUndefined();
+        // 三层保留
+        expect(colors.appBg).toBe('#251818');
+        expect(colors.cardBg).toBe('#cb522a');
+        expect(colors.accent).toBe('#24ffe5');
+        expect(colors.appearancePreset).toBe('paper');
+    });
+
+    it('旧值被冻结进 themePresets，可随时切回', () => {
+        const result = migrateSettings({ ...legacyV4 });
+        const presets = result.themePresets as Array<Record<string, unknown>>;
+        expect(presets).toHaveLength(1);
+        const frozen = presets[0];
+        expect(frozen.name).toBe('旧配色（v4.21）');
+        expect(frozen.base).toBe('#251818');
+        expect(frozen.card).toBe('#cb522a');
+        expect(frozen.accent).toBe('#24ffe5');
+        expect(frozen.legacyPanel).toBe('#110d09');
+        expect(frozen.text).toBe('#4af28a');
+        expect(frozen.preset).toBe('paper');
+    });
+
+    it('迁移幂等：重复执行不会堆叠方案', () => {
+        const once = migrateSettings({ ...legacyV4 });
+        const twice = migrateSettings({ ...once });
+        expect(twice.themePresets).toHaveLength(1);
+    });
+
+    it('无旧字段时不生成方案', () => {
+        const result = migrateSettings({
+            schemaVersion: 4,
+            themeColors: { appBg: '#101010', accent: '#ff0000', appearancePreset: 'soft' },
+        });
+        expect(result.themePresets).toEqual([]);
+        expect((result.themeColors as Record<string, unknown>).appBg).toBe('#101010');
+    });
+
+    it('themeColors 缺失时原样升版', () => {
+        const result = migrateSettings({ schemaVersion: 4, foo: 'bar' });
+        expect(result.schemaVersion).toBe(5);
+        expect(result.foo).toBe('bar');
+    });
+
+    it('清掉指向已不存在方案的 activePresetId', () => {
+        const result = migrateSettings({
+            schemaVersion: 4,
+            themeColors: { appBg: '#101010', activePresetId: 'gone' },
+        });
+        expect((result.themeColors as Record<string, unknown>).activePresetId).toBeUndefined();
     });
 });
 

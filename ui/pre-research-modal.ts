@@ -34,7 +34,7 @@ export interface PreResearchModalOptions {
     project?: string;
     /** 新建时预填项目名 */
     name?: string;
-    onCreated?: (project: string) => void;
+    onCreated?: (project: string) => void | Promise<void>;
 }
 
 export class PreResearchModal extends Modal {
@@ -666,8 +666,16 @@ export class PreResearchModal extends Modal {
             onCreated: async (project) => {
                 try {
                     await writePreResearchFiles(this.app.vault.adapter, project, data);
-                    new Notice('✅ 项目与前期调研已创建', 5000);
-                    this.options.onCreated?.(project);
+                    new Notice(`✅ 项目已创建：${project}。下一步在「创作流程」里写大纲与正文`, 6000);
+                    await this.options.onCreated?.(project);
+                    // 创建即断头是旧流程最大的问题：写完调研必须把用户送到下一步。
+                    // 导航失败只降级为提示，不能反过来把「项目已创建」报成失败。
+                    try {
+                        await this.plugin.openCreationFlow(project);
+                    } catch (navError) {
+                        console.warn('[前期调研] 打开创作流程失败:', navError);
+                        new Notice('项目已创建，可手动打开「创作流程」继续', 6000);
+                    }
                 } catch (e) {
                     new Notice(`项目已创建，但调研写入失败：${e instanceof Error ? e.message : String(e)}`, 8000);
                 } finally {

@@ -16,6 +16,7 @@ import { classifyBook, isClassificationTag, mergeClassificationTags, type Classi
 import { exportTextFile } from '../../shared/export-file';
 import { ImportBookModal, EditBookModal, GenreEditModal, BatchOperationsModal } from './knowledge-base-modals';
 import { BookDetailRenderer } from './book-detail-renderer';
+import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
 
 const log = createLogger('KnowledgeBaseView');
 import {
@@ -421,6 +422,8 @@ export class KnowledgeBaseView extends ItemView {
     private readabilityData: ReadabilityData | null = null;
 
     private bookDetailRenderer!: BookDetailRenderer;
+    /** 侧栏模型快速切换器（原右下角状态栏浮窗的替代入口） */
+    private modelSwitcher: ModelQuickSwitcherHandle | null = null;
 
     private configCategory: ConfigCategoryKey = 'male';
     private selectedGenreId: string | null = null;
@@ -432,6 +435,8 @@ export class KnowledgeBaseView extends ItemView {
     private debounceManager = new AdaptiveDebounceManager({ debug: false });
 
     private loadToken = 0;
+    /** 详情数据加载序号：切换书籍时让旧的异步加载作废 */
+    private detailLoadSeq = 0;
     private viewClosed = false;
     private booksLoadError: string | null = null;
     private detailLoadError: string | null = null;
@@ -513,6 +518,8 @@ export class KnowledgeBaseView extends ItemView {
 
     async onClose() {
         this.viewClosed = true;
+        this.modelSwitcher?.destroy();
+        this.modelSwitcher = null;
         if (this.progressUnsubscribe) {
             this.progressUnsubscribe();
             this.progressUnsubscribe = undefined;
@@ -689,6 +696,11 @@ export class KnowledgeBaseView extends ItemView {
         coBtn.addEventListener('click', () => void this.plugin.openCoWritingFromActiveContext());
         const fpBtn = navRow.createEl('button', { text: '🔍 指纹库', attr: { style: navBtnStyle, title: '打开写作指纹库' } });
         fpBtn.addEventListener('click', () => this.plugin.executeCommand('novel-writer-fingerprint-library'));
+
+        // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到知识库侧栏（四个主界面之一）。
+        // 侧栏会因页签切换被反复重建：先销毁旧句柄，否则每次切页签都多留一个订阅回调。
+        this.modelSwitcher?.destroy();
+        this.modelSwitcher = renderModelQuickSwitcher(header, this.plugin);
 
         const nav = this.leftSidebar.createDiv({
             cls: "nw-kb-sidebar-nav nw-u-flex-1 nw-u-p-8px-0",
@@ -1582,6 +1594,11 @@ export class KnowledgeBaseView extends ItemView {
     private async loadBookDetailData(bookId: string): Promise<void> {
         if (!this.kbManager) return;
 
+        // 并发保护：打开 A 的详情后立刻点 B，A 的后半段 await 会晚于 B 完成并覆盖 B 的数据。
+        // 每次调用发一个序号，任何一步 await 回来后发现序号已过期就整体放弃。
+        const seq = ++this.detailLoadSeq;
+        const stale = () => this.viewClosed || seq !== this.detailLoadSeq || this.selectedBookId !== bookId;
+
         let book: BookBasicInfo | undefined;
         try {
             book = await this.kbManager.getBook(bookId);
@@ -1591,7 +1608,7 @@ export class KnowledgeBaseView extends ItemView {
             log.error('[KnowledgeBaseView] 读取书籍详情失败:', e);
             return;
         }
-        if (this.viewClosed) return;
+        if (stale()) return;
         if (!book) return;
 
         const idx = this.allBooks.findIndex(b => b.id === bookId);
@@ -1605,9 +1622,9 @@ export class KnowledgeBaseView extends ItemView {
         try {
             const stylePath = kbBookStyleFingerprintFile(book.name, baseDir);
             if (await fs.exists(stylePath)) {
-                if (this.viewClosed) return;
+                if (stale()) return;
                 const content = await fs.read(stylePath);
-                if (this.viewClosed) return;
+                if (stale()) return;
                 try {
                     // 风格指纹文件是 Markdown frontmatter 格式，需要提取 frontmatter
                     const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -1628,37 +1645,37 @@ export class KnowledgeBaseView extends ItemView {
             this.styleData = null;
         }
 
-        if (this.viewClosed) return;
+        if (stale()) return;
         this.rhythmData = await this.loadMarkdownFrontmatter(
             kbBookRhythmAnalysisFile(book.name, baseDir)
         ) as RhythmData | null;
 
-        if (this.viewClosed) return;
+        if (stale()) return;
         this.techniqueData = await this.loadMarkdownFrontmatter(
             kbBookWritingTechniquesFile(book.name, baseDir)
         ) as TechniqueData | null;
 
-        if (this.viewClosed) return;
+        if (stale()) return;
         this.structureData = await this.loadMarkdownFrontmatter(
             kbBookStructureBreakdownFile(book.name, baseDir)
         ) as StructureData | null;
 
-        if (this.viewClosed) return;
+        if (stale()) return;
         this.characterData = await this.loadMarkdownFrontmatter(
             kbBookCharacterExtractionFile(book.name, baseDir)
         ) as CharacterKnowledgeData | null;
 
-        if (this.viewClosed) return;
+        if (stale()) return;
         this.foreshadowData = await this.loadMarkdownFrontmatter(
             kbBookForeshadowDBFile(book.name, baseDir)
         ) as ForeshadowData | null;
 
-        if (this.viewClosed) return;
+        if (stale()) return;
         this.commercialData = await this.loadMarkdownFrontmatter(
             kbBookCommercialAnalysisFile(book.name, baseDir)
         ) as CommercialData | null;
 
-        if (this.viewClosed) return;
+        if (stale()) return;
         this.readabilityData = await this.loadMarkdownFrontmatter(
             kbBookReadabilityAnalysisFile(book.name, baseDir)
         ) as ReadabilityData | null;
@@ -2326,6 +2343,9 @@ export class KnowledgeBaseView extends ItemView {
 
     // ============== Tab 3: 拆解任务 ==============
     private renderTasksTab(): void {
+        // 进度回调与完成回调会直接调用本方法做增量刷新（不走 renderRightPanel），
+        // 不先清空就会每个进度事件都追加一整套任务页。
+        this.rightContentEl.empty();
         const content = this.rightContentEl.createDiv({
             cls: "nw-kb-tasks-tab nw-u-p-16px nw-u-ovy-auto nw-u-h-100",
             attr: {}
@@ -2869,6 +2889,8 @@ export class KnowledgeBaseView extends ItemView {
 
     // ============== Tab 4: 质量统计 ==============
     private renderStatsTab(): void {
+        // 同 renderTasksTab：任务完成回调会直接调用它，必须先清空再重建
+        this.rightContentEl.empty();
         const content = this.rightContentEl.createDiv({
             cls: "nw-kb-stats-tab nw-u-p-16px nw-u-ovy-auto nw-u-h-100",
             attr: {}
@@ -3069,11 +3091,33 @@ export class KnowledgeBaseView extends ItemView {
                 }
             },
             onViewDetail: (bookId, bookName) => {
-                const book = this.allBooks.find(b => b.id === bookId);
-                if (book) {
-                    this.selectedBookId = bookId;
-                    this.renderBookDetail();
-                }
+                // 旧实现只设 selectedBookId 就 renderBookDetail()：
+                // 列表态下没有 .nw-kb-detail-tab-content（直接 return），
+                // 而 selectedBookId 非空又会让 renderBookListOnly() 永久跳过刷新。
+                // 这里改走正常入口：先刷列表拿到刚导入的书，再挂载详情容器。
+                void (async () => {
+                    try {
+                        await this.loadBooks();
+                        if (this.viewClosed) return;
+                        if (this.activeMainTab !== 'books') {
+                            this.activeMainTab = 'books';
+                            this.renderLeftSidebar();
+                            this.renderRightPanel();
+                        } else {
+                            this.renderBookListOnly();
+                        }
+                        const book = this.allBooks.find(b => b.id === bookId)
+                            ?? this.allBooks.find(b => b.name === bookName);
+                        if (!book) {
+                            new Notice('未找到该书，请刷新知识库后重试');
+                            return;
+                        }
+                        await this.openBookDetail(book);
+                    } catch (e) {
+                        log.error('[KnowledgeBaseView] 查看导入详情失败:', e);
+                        new Notice('打开详情失败，请查看控制台');
+                    }
+                })();
             },
         });
         modal.open();

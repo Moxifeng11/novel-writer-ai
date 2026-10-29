@@ -343,7 +343,12 @@ export class WizardChecker {
             }
         }
         if (missingSections.length > 0) {
-            log.warn(`[checkSettingLibComplete] 设定库缺少 ${missingSections.length} 个模块: ${missingSections.join(', ')}（非阻塞，仍允许步进）`);
+            // 与 validateSettingLibOutput 同一口径：缺模块就是「不完整」。
+            // 旧实现只 warn 仍返回 true，导致「下一步」校验失败置 complete_with_warnings，
+            // 紧接着 restoreWizardStepStatus 又把状态翻回 done —— 用户被永久卡在这一步
+            // （complete_with_warnings 才会渲染「跳过此步骤」按钮）。
+            log.warn(`[checkSettingLibComplete] 设定库缺少 ${missingSections.length} 个模块: ${missingSections.join(', ')}`);
+            return false;
         }
         if (content.includes('> ⚠️ 填充完此文件后删除本行')) return false;
         return true;

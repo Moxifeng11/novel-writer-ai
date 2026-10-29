@@ -100,6 +100,13 @@ describe('describeBodyFormat', () => {
         expect(text).not.toContain('Tab');
     });
 
+    it('单换行契约要求自然段，而不是一句一段', () => {
+        const text = describeBodyFormat(DEFAULT_BODY_FORMAT);
+        expect(text).toContain('一个自然段写成一行');
+        expect(text).toContain('2–6 句');
+        expect(text).toContain('不要留空行');
+    });
+
     it('空行契约时说明里要求段间空行', () => {
         const text = describeBodyFormat({
             separator: '\n\n',

@@ -13,6 +13,9 @@ import { ENGINE_NAMES } from '../engine/engine-registry';
 import { pjNarrativeOverview } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { NOOP_COMMAND_UI_PORT, type CommandUiPort } from '../shared/command-ui-port';
+import type { CreationMode } from '../shared/creation-mode';
+import { getProjectModeSync } from '../shared/project-mode';
+import { LONG_ONLY, SCRIPT_ONLY, SHORT_ONLY } from '../shared/command-mode-rules';
 
 
 const log = createLogger('CommandRegistry');
@@ -80,6 +83,7 @@ export interface CommandDefinition {
 const COMMAND_DEFINITIONS: CommandDefinition[] = [
     // ─── 项目管理类 ───
     { id: CommandIds.CREATE_PROJECT, name: '新建项目', group: CommandGroup.ProjectManagement, description: '新建长篇小说/同人项目（短篇与剧本使用独立入口）' },
+    { id: CommandIds.AGENT_GUIDE, name: '🤖 对话引导（新建/继续项目）', group: CommandGroup.ProjectManagement, description: '通过多轮对话完成项目创建、故事结构与流程引导，无需手动跳转或填表单' },
     { id: CommandIds.CREATE_SHORT, name: '新建短篇项目', group: CommandGroup.ProjectManagement, description: '先完成短篇前期调研，再创建番茄短篇项目' },
     { id: CommandIds.CREATE_SCRIPT, name: '新建剧本项目', group: CommandGroup.ProjectManagement, description: '先完成剧本前期调研，再创建红果短剧项目' },
         { id: CommandIds.SHORT_RESEARCH, name: '短篇前期调研', group: CommandGroup.ProjectManagement, description: '编辑当前短篇项目的前期调研与五维分类' },
@@ -148,11 +152,15 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
 
     // ─── 视图类 ───
     { id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', group: CommandGroup.Views, description: '打开流程规划工作台的项目与章节页' },
+    { id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', group: CommandGroup.Views, description: '打开当前项目的创作流程：阶段进度与下一步动作' },
     { id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', group: CommandGroup.Views, description: '打开句级协同写作工作台' },
 
     // ─── 版本管理类 ───
     { id: CommandIds.VERSION_HISTORY, name: '📜 版本历史与回滚', group: CommandGroup.Version, description: '查看版本历史与回滚' },
     { id: CommandIds.SAVE_VERSION, name: '💾 保存当前版本', group: CommandGroup.Version, description: '保存当前版本' },
+
+    // ─── 设置 ───
+    { id: CommandIds.OPEN_SETTINGS, name: '⚙️ 打开插件设置', group: CommandGroup.Tools, description: '打开「小说工坊 AI」插件设置页' },
 
     // ─── 内部调试命令 ───
     { id: CommandIds.CLEAR_WORLDVIEW_CACHE, name: '清空世界观缓存', group: CommandGroup.Internal, description: '清空世界观缓存', internalOnly: true },
@@ -240,6 +248,7 @@ export class CommandRegistry {
         // ── UI 类命令：core 只登记 id 与回调，实际执行由 ui 层（CommandUiExecutor）接管 ──
         const uiCommandIds: string[] = [
             CommandIds.CREATE_PROJECT,
+            CommandIds.AGENT_GUIDE,
             CommandIds.CREATE_SHORT,
             CommandIds.CREATE_SCRIPT,
             CommandIds.SHORT_RESEARCH,
@@ -293,6 +302,7 @@ export class CommandRegistry {
             CommandIds.EXPORT_MANUSCRIPT,
             CommandIds.FULL_WRITER,
             CommandIds.CO_WRITING,
+            CommandIds.OPEN_SETTINGS,
         ];
         for (const id of uiCommandIds) {
             r.register(id, async () => { await this.ui.executeCommand(id); });
@@ -337,61 +347,83 @@ export class CommandRegistry {
     }
 
     /** 注册 Obsidian 命令面板命令 */
-    registerObsidianCommands(addCommand: (cmd: { id: string; name: string; callback?: () => void; editorCallback?: (editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => any }) => void): void {
+    registerObsidianCommands(addCommand: (cmd: {
+        id: string;
+        name: string;
+        callback?: () => void;
+        checkCallback?: (checking: boolean) => boolean | void;
+        editorCallback?: (editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => any;
+    }) => void): void {
         const exec = (id: string) => () => {
             this.deps.registry.execute(id).catch(err => log.error('[小说工坊]', err));
         };
+        /**
+         * 模式守卫版命令：当前项目模式不匹配时直接从命令面板隐藏。
+         * 同步判断（路径前缀 + 缓存）避免 checkCallback 里做异步读盘。
+         */
+        const execGuarded = (id: string, allowed: CreationMode[]) => (checking: boolean): boolean => {
+            const project = this.deps.plugin.getActiveProject();
+            const mode = getProjectModeSync(project);
+            if (project && !allowed.includes(mode)) return false;
+            if (!checking) {
+                this.deps.registry.execute(id).catch(err => log.error('[小说工坊]', err));
+            }
+            return true;
+        };
 
         addCommand({ id: CommandIds.CREATE_PROJECT, name: '新建项目', callback: exec(CommandIds.CREATE_PROJECT) });
+        addCommand({ id: CommandIds.AGENT_GUIDE, name: '🤖 对话引导（新建/继续项目）', callback: exec(CommandIds.AGENT_GUIDE) });
         addCommand({ id: CommandIds.CREATE_SHORT, name: '新建短篇项目（前期调研）', callback: exec(CommandIds.CREATE_SHORT) });
         addCommand({ id: CommandIds.CREATE_SCRIPT, name: '新建剧本项目（前期调研）', callback: exec(CommandIds.CREATE_SCRIPT) });
-        addCommand({ id: CommandIds.SHORT_RESEARCH, name: '编辑短篇前期调研', callback: exec(CommandIds.SHORT_RESEARCH) });
-        addCommand({ id: CommandIds.SCRIPT_RESEARCH, name: '编辑剧本前期调研', callback: exec(CommandIds.SCRIPT_RESEARCH) });
-        addCommand({ id: CommandIds.SHORT_STORY_CORE, name: '编辑短篇故事核', callback: exec(CommandIds.SHORT_STORY_CORE) });
-        addCommand({ id: CommandIds.SHORT_OUTLINE, name: '编辑短篇分节大纲', callback: exec(CommandIds.SHORT_OUTLINE) });
-        addCommand({ id: CommandIds.SCRIPT_SCENE_BIBLE, name: '编辑剧本场景圣经', callback: exec(CommandIds.SCRIPT_SCENE_BIBLE) });
-        addCommand({ id: CommandIds.SCRIPT_OUTLINE, name: '编辑剧本分集大纲', callback: exec(CommandIds.SCRIPT_OUTLINE) });
-        addCommand({ id: CommandIds.SCRIPT_STORYBOARD, name: '编辑剧本分镜表', callback: exec(CommandIds.SCRIPT_STORYBOARD) });
+        addCommand({ id: CommandIds.SHORT_RESEARCH, name: '编辑短篇前期调研', checkCallback: execGuarded(CommandIds.SHORT_RESEARCH, SHORT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_RESEARCH, name: '编辑剧本前期调研', checkCallback: execGuarded(CommandIds.SCRIPT_RESEARCH, SCRIPT_ONLY) });
+        addCommand({ id: CommandIds.SHORT_STORY_CORE, name: '编辑短篇故事核', checkCallback: execGuarded(CommandIds.SHORT_STORY_CORE, SHORT_ONLY) });
+        addCommand({ id: CommandIds.SHORT_OUTLINE, name: '编辑短篇分节大纲', checkCallback: execGuarded(CommandIds.SHORT_OUTLINE, SHORT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_SCENE_BIBLE, name: '编辑剧本场景圣经', checkCallback: execGuarded(CommandIds.SCRIPT_SCENE_BIBLE, SCRIPT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_OUTLINE, name: '编辑剧本分集大纲', checkCallback: execGuarded(CommandIds.SCRIPT_OUTLINE, SCRIPT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_STORYBOARD, name: '编辑剧本分镜表', checkCallback: execGuarded(CommandIds.SCRIPT_STORYBOARD, SCRIPT_ONLY) });
         addCommand({ id: CommandIds.IMPORT_EXAMPLE, name: '导入示例项目', callback: exec(CommandIds.IMPORT_EXAMPLE) });
-        addCommand({ id: CommandIds.PLAN_BOOK, name: 'AI全书规划', callback: exec(CommandIds.PLAN_BOOK) });
-        addCommand({ id: CommandIds.VOLUME_INTRO, name: '全书简介', callback: exec(CommandIds.VOLUME_INTRO) });
-        addCommand({ id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', callback: exec(CommandIds.CONTINUE_CHAPTERS) });
+        addCommand({ id: CommandIds.PLAN_BOOK, name: 'AI全书规划', checkCallback: execGuarded(CommandIds.PLAN_BOOK, LONG_ONLY) });
+        addCommand({ id: CommandIds.VOLUME_INTRO, name: '全书简介', checkCallback: execGuarded(CommandIds.VOLUME_INTRO, LONG_ONLY) });
+        addCommand({ id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', checkCallback: execGuarded(CommandIds.CONTINUE_CHAPTERS, LONG_ONLY) });
         addCommand({ id: 'novel-writer-diagnose', name: '流程诊断', callback: exec('novel-writer-diagnose') });
         addCommand({ id: CommandIds.TOMATO_RANK, name: '番茄榜单分析', callback: exec(CommandIds.TOMATO_RANK) });
-        addCommand({ id: CommandIds.REBUILD_CHAPTERS, name: '重建章节', callback: exec(CommandIds.REBUILD_CHAPTERS) });
+        addCommand({ id: CommandIds.REBUILD_CHAPTERS, name: '重建章节', checkCallback: execGuarded(CommandIds.REBUILD_CHAPTERS, LONG_ONLY) });
         addCommand({ id: CommandIds.BACKUP_META, name: '备份元文件', callback: exec(CommandIds.BACKUP_META) });
         addCommand({ id: CommandIds.PROTECT_META, name: '保护元文件', callback: exec(CommandIds.PROTECT_META) });
-        addCommand({ id: CommandIds.TAGS_ANALYSIS, name: '作品标签分析', callback: exec(CommandIds.TAGS_ANALYSIS) });
-        addCommand({ id: CommandIds.AI_BUILDER, name: 'AI世界元素生成', callback: exec(CommandIds.AI_BUILDER) });
-        addCommand({ id: CommandIds.ADD_FANFIC, name: '添加同人设定', callback: exec(CommandIds.ADD_FANFIC) });
-        addCommand({ id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', callback: exec(CommandIds.REVIEW_CHAPTER) });
-        addCommand({ id: CommandIds.QUALITY_DASHBOARD, name: '📊 质量仪表盘', callback: exec(CommandIds.QUALITY_DASHBOARD) });
-        addCommand({ id: CommandIds.BATCH_CREATE, name: '批量建章', callback: exec(CommandIds.BATCH_CREATE) });
-        addCommand({ id: 'novel-writer-worldview', name: '生成世界观', callback: exec('novel-writer-worldview') });
-        addCommand({ id: CommandIds.CHARACTER, name: '生成人物', callback: exec(CommandIds.CHARACTER) });
-        addCommand({ id: CommandIds.FACTION, name: '生成势力', callback: exec(CommandIds.FACTION) });
-        addCommand({ id: CommandIds.LOCATION, name: '生成地点', callback: exec(CommandIds.LOCATION) });
-        addCommand({ id: CommandIds.ITEM, name: '生成物品功法', callback: exec(CommandIds.ITEM) });
-        addCommand({ id: CommandIds.ENTITY_MANAGER, name: '📚 实体管理', callback: exec(CommandIds.ENTITY_MANAGER) });
-        addCommand({ id: CommandIds.ENTITY_GENERATE, name: '✨ 统一生成实体', callback: exec(CommandIds.ENTITY_GENERATE) });
+        addCommand({ id: CommandIds.TAGS_ANALYSIS, name: '作品标签分析', checkCallback: execGuarded(CommandIds.TAGS_ANALYSIS, LONG_ONLY) });
+        addCommand({ id: CommandIds.AI_BUILDER, name: 'AI世界元素生成', checkCallback: execGuarded(CommandIds.AI_BUILDER, LONG_ONLY) });
+        addCommand({ id: CommandIds.ADD_FANFIC, name: '添加同人设定', checkCallback: execGuarded(CommandIds.ADD_FANFIC, LONG_ONLY) });
+        addCommand({ id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', checkCallback: execGuarded(CommandIds.REVIEW_CHAPTER, LONG_ONLY) });
+        addCommand({ id: CommandIds.QUALITY_DASHBOARD, name: '📊 质量仪表盘', checkCallback: execGuarded(CommandIds.QUALITY_DASHBOARD, LONG_ONLY) });
+        addCommand({ id: CommandIds.BATCH_CREATE, name: '批量建章', checkCallback: execGuarded(CommandIds.BATCH_CREATE, LONG_ONLY) });
+        addCommand({ id: CommandIds.WORLDVIEW, name: '生成世界观', checkCallback: execGuarded(CommandIds.WORLDVIEW, LONG_ONLY) });
+        addCommand({ id: CommandIds.CHARACTER, name: '生成人物', checkCallback: execGuarded(CommandIds.CHARACTER, LONG_ONLY) });
+        addCommand({ id: CommandIds.FACTION, name: '生成势力', checkCallback: execGuarded(CommandIds.FACTION, LONG_ONLY) });
+        addCommand({ id: CommandIds.LOCATION, name: '生成地点', checkCallback: execGuarded(CommandIds.LOCATION, LONG_ONLY) });
+        addCommand({ id: CommandIds.ITEM, name: '生成物品功法', checkCallback: execGuarded(CommandIds.ITEM, LONG_ONLY) });
+        addCommand({ id: CommandIds.ENTITY_MANAGER, name: '📚 实体管理', checkCallback: execGuarded(CommandIds.ENTITY_MANAGER, LONG_ONLY) });
+        addCommand({ id: CommandIds.ENTITY_GENERATE, name: '✨ 统一生成实体', checkCallback: execGuarded(CommandIds.ENTITY_GENERATE, LONG_ONLY) });
         addCommand({ id: CommandIds.REFRESH_INFO_DEBT, name: '刷新信息债看板', callback: exec(CommandIds.REFRESH_INFO_DEBT) });
-        addCommand({ id: CommandIds.CROSS_VOLUME_STATE, name: '跨卷状态继承', callback: exec(CommandIds.CROSS_VOLUME_STATE) });
-        addCommand({ id: CommandIds.STYLE_DISTILLER, name: '文笔风格蒸馏', callback: exec(CommandIds.STYLE_DISTILLER) });
-        addCommand({ id: CommandIds.CONTEXT_INJECTOR, name: '上下文注入', callback: exec(CommandIds.CONTEXT_INJECTOR) });
-        addCommand({ id: CommandIds.CHAPTER_SETTLEMENT, name: '章节结算', callback: exec(CommandIds.CHAPTER_SETTLEMENT) });
+        addCommand({ id: CommandIds.CROSS_VOLUME_STATE, name: '跨卷状态继承', checkCallback: execGuarded(CommandIds.CROSS_VOLUME_STATE, LONG_ONLY) });
+        addCommand({ id: CommandIds.STYLE_DISTILLER, name: '文笔风格蒸馏', checkCallback: execGuarded(CommandIds.STYLE_DISTILLER, LONG_ONLY) });
+        addCommand({ id: CommandIds.CONTEXT_INJECTOR, name: '上下文注入', checkCallback: execGuarded(CommandIds.CONTEXT_INJECTOR, LONG_ONLY) });
+        addCommand({ id: CommandIds.CHAPTER_SETTLEMENT, name: '章节结算', checkCallback: execGuarded(CommandIds.CHAPTER_SETTLEMENT, LONG_ONLY) });
         addCommand({ id: 'novel-writer-ideation', name: '💡 脑洞构思工坊', callback: exec('novel-writer-ideation') });
         addCommand({ id: CommandIds.GOLDEN_OPENING, name: '🌟 黄金开篇工坊', callback: exec(CommandIds.GOLDEN_OPENING) });
-        addCommand({ id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', callback: exec(CommandIds.STEP_RESULT_VIEWER) });
-        addCommand({ id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', callback: exec(CommandIds.STORY_LINKAGE_BOARD) });
-        addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', callback: exec(CommandIds.BATCH_DECONSTRUCT) });
+        addCommand({ id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', checkCallback: execGuarded(CommandIds.STEP_RESULT_VIEWER, LONG_ONLY) });
+        addCommand({ id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', checkCallback: execGuarded(CommandIds.STORY_LINKAGE_BOARD, LONG_ONLY) });
+        addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', checkCallback: execGuarded(CommandIds.BATCH_DECONSTRUCT, LONG_ONLY) });
         addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
         addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
-        addCommand({ id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', callback: exec(CommandIds.CO_WRITING) });
-        addCommand({ id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', callback: exec(CommandIds.BATCH_NOVELS) });
+        addCommand({ id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', callback: exec(CommandIds.CREATION_FLOW) });
+        addCommand({ id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', checkCallback: execGuarded(CommandIds.CO_WRITING, LONG_ONLY) });
+        addCommand({ id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', checkCallback: execGuarded(CommandIds.BATCH_NOVELS, LONG_ONLY) });
         addCommand({ id: 'novel-writer-fingerprint-library', name: '🔍 打开写作指纹库', callback: exec('novel-writer-fingerprint-library') });
         addCommand({ id: CommandIds.OPEN_KNOWLEDGE_BASE, name: '📚 打开知识库管理界面', callback: exec(CommandIds.OPEN_KNOWLEDGE_BASE) });
         addCommand({ id: CommandIds.SWITCH_PROVIDER, name: '快速切换 AI 提供商', callback: exec(CommandIds.SWITCH_PROVIDER) });
-        addCommand({ id: CommandIds.EXTRACT_ELEMENTS, name: 'AI 元素提取', callback: exec(CommandIds.EXTRACT_ELEMENTS) });
+        addCommand({ id: CommandIds.OPEN_SETTINGS, name: '⚙️ 打开插件设置', callback: exec(CommandIds.OPEN_SETTINGS) });
+        addCommand({ id: CommandIds.EXTRACT_ELEMENTS, name: 'AI 元素提取', checkCallback: execGuarded(CommandIds.EXTRACT_ELEMENTS, LONG_ONLY) });
         addCommand({
             id: CommandIds.EXPAND_TEXT,
             name: '📝 段落扩写',
@@ -413,11 +445,11 @@ export class CommandRegistry {
                 void this.ui.executeCommand(CommandIds.REWRITE_SUGGESTION, { editor });
             },
         });
-        addCommand({ id: CommandIds.POPULATE_SETTING_LIB, name: '从世界观生成设定库', callback: exec(CommandIds.POPULATE_SETTING_LIB_INTERNAL) });
+        addCommand({ id: CommandIds.POPULATE_SETTING_LIB, name: '从世界观生成设定库', checkCallback: execGuarded(CommandIds.POPULATE_SETTING_LIB_INTERNAL, LONG_ONLY) });
         addCommand({ id: CommandIds.RENAME_PROJECT, name: '重命名当前项目', callback: () => this.renameProject() });
 
         // 叙事总览（直接执行，不走 registry）
-        addCommand({ id: CommandIds.NARRATIVE_OVERVIEW, name: '叙事总览', callback: () => this.openNarrativeOverview() });
+        addCommand({ id: CommandIds.NARRATIVE_OVERVIEW, name: '叙事总览', checkCallback: execGuarded(CommandIds.NARRATIVE_OVERVIEW, LONG_ONLY) });
 
         addCommand({ id: CommandIds.VERSION_HISTORY, name: '📜 版本历史与回滚', callback: exec(CommandIds.VERSION_HISTORY) });
         addCommand({ id: CommandIds.SAVE_VERSION, name: '💾 保存当前版本', callback: exec(CommandIds.SAVE_VERSION) });

@@ -23,6 +23,16 @@ import { NOOP_NOTIFIER } from '../shared/types';
 import { performanceMonitor } from '../services/performance-monitor';
 import { ensureLocalModelCapability } from '../services/local-model-probe';
 import { recordBudgetSnapshot } from '../shared/budget-telemetry';
+import {
+    buildAuthHeaders,
+    buildChatRequestBody,
+    normalizeApiFormat,
+    parseChatResponse,
+    parseSseFrame,
+    resolveRequestUrl,
+    usesDoneSentinel,
+    type ApiFormat,
+} from '../shared/api-format';
 import { createLogger } from '../shared/logger';
 
 
@@ -221,7 +231,7 @@ export class AIApiClient {
         return models.concat(others);
     }
 
-    /** 构造请求体（统一 Ollama 原生 / OpenAI 兼容两种格式，消除三份重复实现） */
+    /** 构造请求体（统一 Ollama 原生 / OpenAI 兼容 / Anthropic Messages / Responses 四种格式） */
     private buildRequestBody(
         isOllamaNative: boolean,
         model: string,
@@ -234,6 +244,7 @@ export class AIApiClient {
         endpoint?: string,
         thinkingMode?: ThinkingMode,
         thinkingBudget?: number,
+        format: ApiFormat = 'openai-chat',
     ): Record<string, unknown> {
         const safeMaxTokens = Math.min(maxTokens, ZAI_MAX_TOKENS);
         if (isOllamaNative) {
@@ -258,19 +269,21 @@ export class AIApiClient {
             }
             return body;
         }
-        const body: Record<string, unknown> = {
+
+        const thinkingOn = thinkingMode === 'on';
+        const body = buildChatRequestBody(format, {
             model,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt },
-            ],
-            max_tokens: safeMaxTokens,
+            systemPrompt,
+            userPrompt,
             temperature,
-        };
-        if (stream) body.stream = true;
+            maxTokens: safeMaxTokens,
+            stream,
+            thinkingBudget: thinkingOn ? thinkingBudget : undefined,
+        });
 
         // 思考参数只在用户显式开启时下发；auto 交给供应商默认，避免未知端点收到不支持的字段。
-        if (thinkingMode === 'on') {
+        // Anthropic 的 thinking 已由 buildChatRequestBody 按 budget_tokens 规则构造。
+        if (thinkingOn && format === 'openai-chat') {
             const thinking = this.buildThinkingPayload(model, endpoint, thinkingBudget);
             if (thinking) Object.assign(body, thinking);
         }
@@ -344,6 +357,17 @@ export class AIApiClient {
     }
 
     /**
+     * 解析端点对应的 API 协议格式。
+     * 显式配置优先；旧配置（无 apiFormat）按 openai-chat 处理，保持既有行为。
+     */
+    private resolveApiFormat(endpoint: string): ApiFormat {
+        const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
+        if (provider?.apiFormat) return normalizeApiFormat(provider.apiFormat);
+        // 未登记格式的 Ollama 原生端点仍走 /api/generate，由 normalizeOllamaEndpoint 处理
+        return 'openai-chat';
+    }
+
+    /**
      * Ollama 的 OpenAI 兼容层（/v1/chat/completions）会丢弃 num_ctx，
      * 导致本地模型按自身默认窗口截断 prompt，超长上下文静默丢失。
      * 内置本地端点统一改写为原生 /api/generate，让 num_ctx 真正生效。
@@ -368,6 +392,17 @@ export class AIApiClient {
         }
         if (!isOllama) return endpoint;
         return endpoint.replace(/\/v1\/chat\/completions\/?$/i, '/api/generate');
+    }
+
+    /**
+     * 解析实际请求地址。
+     * Ollama 原生端点优先改写（需要 num_ctx）；其余按协议格式推导，
+     * 兼容历史配置里已写全路径（…/chat/completions）的情况。
+     */
+    private resolveRequestEndpoint(endpoint: string, format: ApiFormat): string {
+        const ollama = this.normalizeOllamaEndpoint(endpoint);
+        if (ollama !== endpoint) return ollama;
+        return resolveRequestUrl(endpoint, format);
     }
 
     /**
@@ -423,8 +458,10 @@ export class AIApiClient {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
         let apiKey = options?.apiKey || this.plugin.settings.apiKey;
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
+        // 协议格式决定请求路径/头/解析；Ollama 原生端点由 normalizeOllamaEndpoint 单独改写
+        const apiFormat = this.resolveApiFormat(endpoint);
         // 本地 Ollama 的 /v1 兼容层不接收 num_ctx，请求前统一改写为原生端点
-        const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
+        const requestEndpoint = this.resolveRequestEndpoint(endpoint, apiFormat);
         const externalSignal = options?.signal;
         if (externalSignal?.aborted) {
             return { content: '', error: 'aborted' };
@@ -569,6 +606,7 @@ export class AIApiClient {
                         endpoint,
                         options?.thinkingMode,
                         options?.thinkingBudget,
+                        apiFormat,
                     );
 
                     const perfFetchId = performanceMonitor.start('apiFetch', 'apiCall', undefined, {
@@ -579,7 +617,7 @@ export class AIApiClient {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
+                            ...buildAuthHeaders(apiFormat, apiKey),
                         },
                         body: JSON.stringify(requestBody),
                         signal: ac.signal
@@ -647,6 +685,26 @@ export class AIApiClient {
                         data.choices = [{
                             message: { content: ollamaContent || '' },
                             finish_reason: data.done_reason === 'length' ? 'length' : 'stop',
+                        }];
+                    } else if (apiFormat !== 'openai-chat') {
+                        // Anthropic Messages / Responses 的结构与 Chat Completions 完全不同，
+                        // 统一归一到 choices[0].message.content，下游截断/用量逻辑无需分叉。
+                        const parsed = parseChatResponse(apiFormat, data);
+                        const usage = (data as { usage?: Record<string, unknown> }).usage;
+                        if (usage) {
+                            const inputTokens = Number(usage['input_tokens'] ?? usage['input_tokens_count'] ?? 0) || 0;
+                            const outputTokens = Number(usage['output_tokens'] ?? 0) || 0;
+                            if (inputTokens || outputTokens) {
+                                data.usage = {
+                                    prompt_tokens: inputTokens,
+                                    completion_tokens: outputTokens,
+                                    total_tokens: inputTokens + outputTokens,
+                                };
+                            }
+                        }
+                        data.choices = [{
+                            message: { content: parsed.content },
+                            finish_reason: parsed.finishReason === 'length' ? 'length' : 'stop',
                         }];
                     }
                     const content = data.choices?.[0]?.message?.content;
@@ -800,7 +858,8 @@ export class AIApiClient {
 
         try {
             const apiKey = options?.apiKey || this.plugin.settings.apiKey;
-            const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
+            const apiFormat = this.resolveApiFormat(endpoint);
+            const requestEndpoint = this.resolveRequestEndpoint(endpoint, apiFormat);
 
             if (!endpoint) {
                 this.notifier.showNotice('❌ 请先配置API端点', NOTICE_ERROR);
@@ -907,6 +966,7 @@ export class AIApiClient {
                             endpoint,
                             options?.thinkingMode,
                             options?.thinkingBudget,
+                            apiFormat,
                         );
 
                         const perfStreamFetchId = performanceMonitor.start('apiFetchStream', 'apiCall', undefined, {
@@ -917,7 +977,7 @@ export class AIApiClient {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`,
+                                ...buildAuthHeaders(apiFormat, apiKey),
                                 'Accept': 'text/event-stream',
                             },
                             body: JSON.stringify(streamRequestBody),
@@ -999,8 +1059,8 @@ export class AIApiClient {
                                     continue;
                                 }
 
-                                // OpenAI SSE 格式
-                                if (trimmed === 'data: [DONE]') {
+                                // OpenAI SSE 格式（兜底分支，协议解析见下方通用路径）
+                                if (usesDoneSentinel(apiFormat) && trimmed === 'data: [DONE]') {
                                     isStreamDone = true;
                                     break;
                                 }
@@ -1012,25 +1072,18 @@ export class AIApiClient {
                                 const jsonStr = trimmed.slice(6);
                                 try {
                                     const parsed = JSON.parse(jsonStr);
+                                    const update = parseSseFrame(apiFormat, parsed);
+                                    if (update === null) continue;
 
-                                    const deltaObj = parsed?.choices?.[0]?.delta;
-                                    const delta = deltaObj?.content;
-                                    if (delta) {
-                                        accumulatedContent += delta;
+                                    if (update.delta) {
+                                        accumulatedContent += update.delta;
                                         onChunk?.(accumulatedContent, false);
                                     }
-                                    if (deltaObj?.reasoning_content) {
-                                        accumulatedReasoning += String(deltaObj.reasoning_content);
+                                    if (update.reasoning) {
+                                        accumulatedReasoning += update.reasoning;
                                     }
-
-                                    const finReason = parsed?.choices?.[0]?.finish_reason;
-                                    if (finReason === 'stop') {
-                                        streamFinishReason = 'stop';
-                                        isStreamDone = true;
-                                        break;
-                                    }
-                                    if (finReason === 'length') {
-                                        streamFinishReason = 'length';
+                                    if (update.done) {
+                                        streamFinishReason = update.finishReason ?? 'stop';
                                         isStreamDone = true;
                                         break;
                                     }
@@ -1135,7 +1188,8 @@ export class AIApiClient {
     ): AsyncGenerator<string, APIResponse, unknown> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
-        const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
+        const apiFormat = this.resolveApiFormat(endpoint);
+        const requestEndpoint = this.resolveRequestEndpoint(endpoint, apiFormat);
         const externalSignal = options?.signal;
 
         if (externalSignal?.aborted) {
@@ -1251,7 +1305,8 @@ export class AIApiClient {
         const externalSignal = options?.signal;
         const apiKey = options?.apiKey || this.plugin.settings.apiKey;
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
-        const requestEndpoint = this.normalizeOllamaEndpoint(endpoint);
+        const apiFormat = this.resolveApiFormat(endpoint);
+        const requestEndpoint = this.resolveRequestEndpoint(endpoint, apiFormat);
         const availableModels = this.plugin.settings.availableModels || [];
         const fallbackEnabled = this.plugin.settings.enableAutoModelFallback !== false && options?.disableFallback !== true;
         const isWriting = options?.isWritingTask === true;
@@ -1332,13 +1387,14 @@ export class AIApiClient {
                         endpoint,
                         options?.thinkingMode,
                         options?.thinkingBudget,
+                        apiFormat,
                     );
 
                     const response = await fetch(requestEndpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`,
+                            ...buildAuthHeaders(apiFormat, apiKey),
                             'Accept': 'text/event-stream',
                         },
                         body: JSON.stringify(streamRequestBody),
@@ -1425,7 +1481,7 @@ export class AIApiClient {
                                 continue;
                             }
 
-                            if (trimmed === 'data: [DONE]') {
+                            if (usesDoneSentinel(apiFormat) && trimmed === 'data: [DONE]') {
                                 isStreamDone = true;
                                 break;
                             }
@@ -1437,25 +1493,20 @@ export class AIApiClient {
                             const jsonStr = trimmed.slice(6);
                             try {
                                 const parsed = JSON.parse(jsonStr);
-                                const deltaObj = parsed?.choices?.[0]?.delta;
-                                const delta = deltaObj?.content;
-                                if (delta) {
-                                    accumulatedContent += delta;
-                                    yield delta;
+                                const update = parseSseFrame(apiFormat, parsed);
+                                if (update === null) continue;
+
+                                if (update.delta) {
+                                    accumulatedContent += update.delta;
+                                    yield update.delta;
                                 }
                                 // 思考型模型（deepseek-flash / -pro / reasoner）的思考增量，
                                 // 只用于判断「思考是否吃满预算」，绝不并入正文。
-                                if (deltaObj?.reasoning_content) {
-                                    accumulatedReasoning += String(deltaObj.reasoning_content);
+                                if (update.reasoning) {
+                                    accumulatedReasoning += update.reasoning;
                                 }
-                                const finReason = parsed?.choices?.[0]?.finish_reason;
-                                if (finReason === 'stop') {
-                                    streamFinishReason = 'stop';
-                                    isStreamDone = true;
-                                    break;
-                                }
-                                if (finReason === 'length') {
-                                    streamFinishReason = 'length';
+                                if (update.done) {
+                                    streamFinishReason = update.finishReason ?? 'stop';
                                     isStreamDone = true;
                                     break;
                                 }

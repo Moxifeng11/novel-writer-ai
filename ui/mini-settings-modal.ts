@@ -1,6 +1,7 @@
 import { App, Modal, Setting, DropdownComponent, Notice, TFolder } from 'obsidian';
 import NovelWriterPlugin, { CustomProvider, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from '../main';
 import type { DeconstructionEngineSettings } from '../main';
+import { describeSecretForInput } from '../shared/secret-display';
 import { renderAppearanceSettings } from './appearance-settings';
 import { ManageProvidersModal } from './manage-providers-modal';
 import { TemplateManager } from './template-manager';
@@ -284,8 +285,11 @@ export class MiniSettingsModal extends Modal {
             .setDesc(isCustom ? '自定义提供商的 API 密钥' : `仅用于 ${providerLabel}`)
             .addText(text => {
                 text.inputEl.type = 'password';
-                text.setPlaceholder('请输入 API 密钥')
-                    .setValue(this.plugin.settings.apiKey);
+                // 未解锁时内存里是密文：留空 + 提示语，不把密文塞进输入框
+                const secretDisplay = describeSecretForInput(this.plugin.settings.apiKey);
+                text.setPlaceholder(secretDisplay.placeholder)
+                    .setValue(secretDisplay.value);
+                text.inputEl.title = secretDisplay.title;
                 const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                     text: '👁',
                     cls: 'novel-writer-key-toggle',

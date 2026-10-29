@@ -709,3 +709,42 @@ describe('fingerprint-migrator', () => {
         });
     });
 });
+
+// ============================================================
+// 混装文件迁移：已迁移的 V2 条目必须原样保留
+// ============================================================
+describe('migrateFileV1ToV2 — 混装数组', () => {
+    it('只迁移 V1 条目，V2 条目的 12 维结构不变', async () => {
+        const fs = new MockFileSystem();
+        const filePath = 'test/mixed.json';
+
+        // 先由 V1 生成一个真实 V2，再手工把它的结构改得「可识别」
+        const v2Item = migrateV1ToV2(makeV1Fingerprint({ id: 'fp_v2' }), 'global');
+        v2Item.features.rhythm.description = '已是 V2 的节奏描述';
+        v2Item.features.emotion = {
+            ...v2Item.features.emotion,
+            description: '已是 V2 的情绪描述',
+            status: 'complete',
+        };
+
+        const v1Item = makeV1Fingerprint({ id: 'fp_v1' });
+        fs.setFile(filePath, JSON.stringify([v1Item, v2Item]));
+
+        const result = await migrateFileV1ToV2(fs, filePath, 'global');
+        expect(result.success).toBe(true);
+
+        const migrated = JSON.parse(await fs.read(filePath)) as V2Fingerprint[];
+        const kept = migrated.find(fp => fp.id === 'fp_v2')!;
+        const converted = migrated.find(fp => fp.id === 'fp_v1')!;
+
+        // 已迁移条目：结构化数据与状态原样保留，不被「再迁一次」清空
+        expect(kept.features.rhythm.description).toBe('已是 V2 的节奏描述');
+        expect(kept.features.emotion.description).toBe('已是 V2 的情绪描述');
+        expect(kept.features.emotion.status).toBe('complete');
+        expect(kept.v1Backup?.features.sentenceRhythm).toBe(makeV1Features().sentenceRhythm);
+
+        // 新条目：正常走 V1 → V2
+        expect(converted.version).toBe('v2');
+        expect(converted.features.rhythm.description).toBe(makeV1Features().sentenceRhythm);
+    });
+});

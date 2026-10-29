@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
   "description": "EngineRegistry 治理白名单 — 列出允许直接 new 实例化的类（多实例或合理 fallback 或延迟迁移）",
-  "lastUpdated": "2026-10-25",
+  "lastUpdated": "2026-10-28",
   "whitelist": [
     {
       "className": "AbortController",
@@ -175,6 +175,18 @@
       "className": "ExecutionRunStore",
       "reason": "每个完整写作工作台视图持有独立的执行时间线/日志账本；跨视图共享会串章节执行上下文",
       "category": "context-isolated",
+      "allowedInstances": -1
+    },
+    {
+      "className": "GuideAgentEngine",
+      "reason": "每个对话引导 Modal 持有独立会话槽位与阶段状态；跨会话共享会串对话上下文",
+      "category": "context-isolated",
+      "allowedInstances": -1
+    },
+    {
+      "className": "AgentHarnessEngine",
+      "reason": "对话引导 AI Harness：每次打开 Agent 弹窗对应一个独立会话（记忆/日志/工具注册表），必须新实例；关闭弹窗即销毁",
+      "category": "session-isolated",
       "allowedInstances": -1
     }
   ],

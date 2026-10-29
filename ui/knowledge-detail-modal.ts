@@ -195,21 +195,12 @@ export class KnowledgeDetailModal extends Modal {
         this.bookInfo = (await this.knowledgeManager.getBook(this.bookId)) ?? null;
         if (!this.bookInfo) return;
 
-        const fs = (this.app.vault.adapter as { exists(p: string): Promise<boolean>; read(p: string): Promise<string> });
-
-        try {
-            const stylePath = kbBookStyleFingerprintFile(this.bookInfo.name, this.baseDir);
-            if (await fs.exists(stylePath)) {
-                const content = await fs.read(stylePath);
-                try {
-                    this.styleData = JSON.parse(content);
-                } catch {
-                    this.styleData = {};
-                }
-            }
-        } catch {
-            this.styleData = null;
-        }
+        // 风格指纹文件是 Markdown frontmatter 格式（---\n<JSON>\n---\n\n正文），
+        // 直接 JSON.parse 必失败并被吞成 {}，风格维度永远显示空。
+        // 与其余维度统一走 loadMarkdownFrontmatter。
+        this.styleData = await this.loadMarkdownFrontmatter(
+            kbBookStyleFingerprintFile(this.bookInfo.name, this.baseDir)
+        ) as StyleData | null;
 
         this.rhythmData = await this.loadMarkdownFrontmatter(
             kbBookRhythmAnalysisFile(this.bookInfo.name, this.baseDir)
@@ -577,11 +568,16 @@ export class KnowledgeDetailModal extends Modal {
                 cancelText: '取消',
             });
             if (!confirmed) return;
-            // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
-            await this.deconstructionScheduler?.cancelByBook(this.bookId);
-            await this.knowledgeManager.deleteBook(this.bookId);
-            new Notice('书籍已删除');
-            this.close();
+            try {
+                // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
+                await this.deconstructionScheduler?.cancelByBook(this.bookId);
+                await this.knowledgeManager.deleteBook(this.bookId);
+                new Notice('书籍已删除');
+                this.close();
+            } catch (e) {
+                log.error('[KnowledgeDetailModal] 删除书籍失败:', e);
+                new Notice(`删除失败：${e instanceof Error ? e.message : String(e)}`);
+            }
         });
 
         const descSection = container.createDiv({
@@ -592,7 +588,9 @@ export class KnowledgeDetailModal extends Modal {
 
     private getDimensionProgress(index: number): number {
         const dataList = [this.styleData, this.rhythmData, this.techniqueData, this.structureData, this.characterData, this.foreshadowData];
-        return dataList[index] ? 100 : 0;
+        const data = dataList[index] as Record<string, unknown> | null | undefined;
+        // 空对象不能算「已完成」：解析失败时会得到 {}，旧实现会报 100% 与空数据矛盾
+        return data && Object.keys(data).length > 0 ? 100 : 0;
     }
 
     // ============== Tab 2: 风格 ==============
@@ -985,7 +983,8 @@ export class KnowledgeDetailModal extends Modal {
         if (data.structureType) {
             typeCard.createEl('div', { text: data.structureType, cls: 'nw-u-fwt-600-2 nw-u-marginbottom-8px-2 nw-u-c-interactive-accent-2' });
         }
-        typeCard.textContent = data.structureDescription || '暂无结构类型说明';
+        // 不能给 typeCard 赋 textContent：那会清空上面刚创建的 structureType 节点
+        typeCard.createEl('div', { text: data.structureDescription || '暂无结构类型说明' });
     }
 
     // ============== Tab 6: 人设 ==============
@@ -1054,10 +1053,6 @@ export class KnowledgeDetailModal extends Modal {
             cls: 'nw-u-w-100-2 nw-u-p-8px-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-fs-13px-2 nw-u-bg-background-secondary-2'
         });
         searchInput.value = this.characterFilter;
-        searchInput.addEventListener('input', (e) => {
-            this.characterFilter = (e.target as HTMLInputElement).value;
-            this.render();
-        });
 
         const allSection = container.createDiv({ cls: 'nw-mb-lg' });
         allSection.createEl('div', { text: '全部人物', cls: 'nw-section-heading' });
@@ -1066,20 +1061,29 @@ export class KnowledgeDetailModal extends Modal {
             cls: 'nw-scroll-card-300'
         });
 
-        const allChars = data.allCharacters;
-        if (allChars && allChars.length > 0) {
+        // 只重绘「全部人物」列表：整体 this.render() 会 empty 重建整个弹窗，
+        // 搜索框随之销毁 → 每输入一个字就丢焦点，实际只能打一个字。
+        const renderCharacterList = () => {
+            allCard.empty();
+            const allChars = data.allCharacters;
+            if (!allChars || allChars.length === 0) {
+                allCard.createDiv({ text: '暂无全部人物数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+                return;
+            }
 
-        const filtered = allChars.filter(c =>
-            c.name.toLowerCase().includes(this.characterFilter.toLowerCase()) ||
-            c.role.toLowerCase().includes(this.characterFilter.toLowerCase())
-        );
+            const filtered = allChars.filter(c =>
+                c.name.toLowerCase().includes(this.characterFilter.toLowerCase()) ||
+                c.role.toLowerCase().includes(this.characterFilter.toLowerCase())
+            );
 
-        if (filtered.length === 0) {
-            allCard.createDiv({
-                text: '没有找到匹配的人物',
-                cls: 'nw-empty-text-mini'
-            });
-        } else {
+            if (filtered.length === 0) {
+                allCard.createDiv({
+                    text: '没有找到匹配的人物',
+                    cls: 'nw-empty-text-mini'
+                });
+                return;
+            }
+
             for (const char of filtered) {
                 const item = allCard.createDiv({
                     cls: "nw-item-border-b nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-12px-2 nw-u-p-10px-16px", attr: {}
@@ -1102,10 +1106,14 @@ export class KnowledgeDetailModal extends Modal {
                     });
                 }
             }
-        }
-        } else {
-            allCard.createDiv({ text: '暂无全部人物数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
-        }
+        };
+
+        searchInput.addEventListener('input', (e) => {
+            this.characterFilter = (e.target as HTMLInputElement).value;
+            renderCharacterList();
+        });
+
+        renderCharacterList();
     }
 
     private renderRelationshipGraph(relationships: Array<{ from: string; to: string; type: string }>, mainChars: Array<{ name: string }>): string {
@@ -1611,12 +1619,18 @@ export class KnowledgeDetailModal extends Modal {
                 style: 'margin-top:16px;padding:8px 20px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:6px;font-size:13px;'
             }
         });
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             if (this.deconstructionScheduler) {
-                this.deconstructionScheduler.rerunBook(this.bookId);
-                new Notice('已开始拆解，正在跳转到监控面板...');
-                this.close();
-                new KnowledgeMonitorModal(this.app, this.deconstructionScheduler, this.knowledgeManager).open();
+                try {
+                    await this.deconstructionScheduler.rerunBook(this.bookId);
+                    new Notice('已开始拆解，正在跳转到监控面板...');
+                    this.close();
+                    new KnowledgeMonitorModal(this.app, this.deconstructionScheduler, this.knowledgeManager).open();
+                } catch (e) {
+                    // 源文本缺失/调度器拒绝时旧实现照样提示「已开始」并关窗
+                    log.error('[KnowledgeDetailModal] 启动拆解失败:', e);
+                    new Notice(`开始拆解失败：${e instanceof Error ? e.message : String(e)}`);
+                }
             } else {
                 new Notice('拆解功能请在知识库监控面板中使用');
             }

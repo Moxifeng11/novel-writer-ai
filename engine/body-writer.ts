@@ -23,6 +23,7 @@ import {
 import {
     BodyFormatContract, DEFAULT_BODY_FORMAT, deriveBodyFormat, normalizeBodyText,
 } from '../shared/body-format';
+import { naturalizeBodyText } from '../shared/prose-naturalizer';
 import { pjBodyFile, pjWritingRules } from '../shared/paths';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { validateStepResult } from './step-validator';
@@ -55,6 +56,12 @@ export interface BodyWriteRequest {
     frontmatterPatch?: Record<string, unknown>;
     /** 本次输出是否被模型截断：true 时不得标记 generated/written */
     truncated?: boolean;
+    /**
+     * 是否把相邻短段合并成自然段。
+     * 默认：AI 写入（pipeline/batch/auto/continue/scene）为 true；
+     * manual 与 co-writer 为 false（协同写作是逐段插入，整篇自动合并会打断用户排版）。
+     */
+    naturalize?: boolean;
 }
 
 export interface BodyWriteResult {
@@ -174,7 +181,21 @@ export class BodyWriter {
         }
 
         // 3. 规整正文（先剥离模型自带的 frontmatter，避免 status/step_status 行落进正文）
-        const body = normalizeBodyText(stripFrontmatterBlock(req.raw).body, contract, { stripTitle: true });
+        let body = normalizeBodyText(stripFrontmatterBlock(req.raw).body, contract, { stripTitle: true });
+
+        // 3.1 碎片化后处理：把“一句一段”合并成自然段。只改段落边界，不改句子。
+        const shouldNaturalize = req.naturalize
+            ?? (req.writingMode !== 'manual' && req.writingMode !== 'co-writer');
+        if (shouldNaturalize) {
+            const naturalized = naturalizeBodyText(body, {
+                indent: contract.indent,
+                separator: contract.separator,
+            });
+            if (naturalized.mergedParagraphs > 0) {
+                log.info(`[BodyWriter] 自然段重排：${naturalized.changes.join('；')}`);
+            }
+            body = naturalized.text;
+        }
 
         // 4. 拼装：旧 frontmatter 原文 + 统一标题行 + 规整正文
         const titleLine = chapterNum ? `# 第${chapterNum}章${title ? ` ${title}` : ''}\n\n` : '';

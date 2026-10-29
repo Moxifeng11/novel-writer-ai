@@ -74,6 +74,16 @@ export class ProviderManager {
         const currentId = this.getCurrentProviderId();
         if (currentId) {
             s.providerKeys[currentId] = s.apiKey;
+        } else if (s.apiEndpoint && s.apiKey) {
+            // 当前端点未登记为供应商（旧配置 / 手动改过 endpoint）时，
+            // 直接覆盖 apiKey 会把上一个端点的密钥弄丢。先挂到该端点对应的
+            // 现有供应商名下；找不到就记录到旧端点 key，保留证据不静默丢弃。
+            const previous = (s.customProviders || []).find(c => c.endpoint === s.apiEndpoint);
+            if (previous) {
+                s.providerKeys[previous.id] = s.apiKey;
+            } else {
+                log.warn(`[ProviderManager] 当前端点未登记，切换前无法归档密钥：${s.apiEndpoint}`);
+            }
         }
         s.apiEndpoint = provider.endpoint;
         s.availableModels = [...provider.models];
@@ -167,7 +177,7 @@ export class ProviderManager {
     }
 
     /** 添加自定义提供商 */
-    addCustom(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string): string | null {
+    addCustom(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string, apiFormat?: CustomProvider['apiFormat']): string | null {
         const s = this.cb.getSettings();
         s.customProviders = s.customProviders || [];
         const trimmedEndpoint = endpoint.trim();
@@ -197,6 +207,7 @@ export class ProviderManager {
             models: validModels.length > 0 ? validModels : ['gpt-4o-mini'],
             maxContext: safeMaxContext, maxOutput: safeMaxOutput,
             sourceType: resolveProviderSourceType({ id, endpoint: trimmedEndpoint }),
+            ...(apiFormat ? { apiFormat } : {}),
             isDefault: false, isHidden: false,
         });
         if (apiKey) s.providerKeys[id] = apiKey;
@@ -219,7 +230,7 @@ export class ProviderManager {
     }
 
     /** 获取所有可用提供商（过滤掉 isHidden 为 true 的） */
-    getAllProviders(): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
+    getAllProviders(): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; apiFormat?: string; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
         const s = this.cb.getSettings();
         const customProviders = s.customProviders || [];
         return customProviders
@@ -232,6 +243,7 @@ export class ProviderManager {
                 maxContext: c.maxContext,
                 maxOutput: c.maxOutput,
                 sourceType: resolveProviderSourceType(c),
+                apiFormat: c.apiFormat,
                 isPreset: !!c.isDefault,
                 isDefault: c.isDefault,
                 isHidden: c.isHidden,
@@ -239,7 +251,7 @@ export class ProviderManager {
     }
 
     /** 获取指定源类型（cloud/local）的提供商 */
-    getProvidersBySourceType(type: ModelSourceType): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
+    getProvidersBySourceType(type: ModelSourceType): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; apiFormat?: string; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
         return this.getAllProviders().filter(p => p.sourceType === type);
     }
 

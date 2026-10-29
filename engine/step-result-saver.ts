@@ -30,7 +30,7 @@ export interface EntityNames {
 }
 
 export interface StepResultSaverDeps {
-    getPlugin?: () => { settings?: { defaultModel?: string } };
+    getPlugin?: () => { settings?: { defaultModel?: string; naturalParagraphMode?: boolean } };
     showNotice?: (msg: string, duration?: number) => void;
 }
 
@@ -243,6 +243,7 @@ export class StepResultSaver {
                     writingMode: 'pipeline',
                     frontmatterPatch: patch,
                     truncated,
+                    naturalize: plugin?.settings?.naturalParagraphMode !== false,
                 });
 
                 return true;
@@ -314,16 +315,27 @@ export class StepResultSaver {
     async writeFixToBody(fixContent: string, chapDir: string, chapterName: string, volume: string): Promise<void> {
         try {
             const v4Match = chapDir.match(/^(.+?)\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
-            const bodyLookupDir = v4Match
-                ? pjBodyDir(v4Match[1], parseInt(v4Match[2], 10))
-                : chapDir;
-            const foundBody = findChapterFile(this.getVaultMeta().getFiles(), bodyLookupDir, '正文', this.app);
-            if (!foundBody) {
-                log.warn('[StepResultSaver] writeFixToBody: 未找到正文文件，跳过覆写', bodyLookupDir);
-                return;
+            const project = v4Match ? v4Match[1] : (chapDir.split('/')[0] || '');
+            let targetPath: string;
+            let chapterNum: number | undefined;
+            if (v4Match) {
+                // v4：正文路径必须由「项目 + 卷号 + 章号」精确推出。
+                // 旧实现把「卷目录」交给 findChapterFile，而它的标准文件名匹配需要的是章名，
+                // 于是必然落入 frontmatter 回退分支，返回该卷里**第一个**正文文件——
+                // 第 3 章的修正稿会被写进第 1 章，整章原稿被静默覆盖。
+                const volNum = parseInt(v4Match[2], 10);
+                chapterNum = parseInt(v4Match[3], 10);
+                targetPath = pjBodyFile(project, volNum, chapterNum);
+            } else {
+                const foundBody = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
+                if (!foundBody) {
+                    log.warn('[StepResultSaver] writeFixToBody: 未找到正文文件，跳过覆写', chapDir);
+                    return;
+                }
+                targetPath = foundBody.path;
+                chapterNum = this.parseChapterNum(chapterName);
             }
 
-            const project = v4Match ? v4Match[1] : (chapDir.split('/')[0] || '');
             const entityNames = project ? await this.extractEntityNames(project) : null;
             const patch: Record<string, unknown> = {};
             if (entityNames) {
@@ -337,9 +349,9 @@ export class StepResultSaver {
             // 统一落盘入口：旧 frontmatter 原文保留，实体字段只刷新「本章实际出现」的项
             const writer = new BodyWriter({ fs: this.getFS(), frontmatter: this.getFrontmatter() });
             const result = await writer.write({
-                path: foundBody.path,
+                path: targetPath,
                 raw: fixContent,
-                chapterNum: v4Match ? parseInt(v4Match[3], 10) : this.parseChapterNum(chapterName),
+                chapterNum,
                 chapterName,
                 volume,
                 project,
@@ -347,7 +359,7 @@ export class StepResultSaver {
                 frontmatterPatch: patch,
             });
 
-            log.warn(`[StepResultSaver] writeFixToBody: ✅ 修正已写回正文 → ${foundBody.path} (${result.wordCount} 字)`);
+            log.warn(`[StepResultSaver] writeFixToBody: ✅ 修正已写回正文 → ${targetPath} (${result.wordCount} 字)`);
         } catch (e) {
             log.error('[StepResultSaver] writeFixToBody 失败:', e);
             this.deps.showNotice?.('❌ 修正回写失败，正文未更新：' + (e instanceof Error ? e.message : String(e)), 6000);

@@ -38,6 +38,8 @@ const log = createLogger('PreferenceMemory');
     private preferences: Map<string, UserPreference> = new Map();
     private dataPath: string;
     private fs: FileSystemPort | null = null;
+    /** 上次加载时读/解析失败：首次保存前必须留档原文件，避免整体覆盖历史偏好 */
+    private loadFailed = false;
 
     /** 串行写入器，保证写入顺序和原子性 */
     private writer = new SerializedWriter({ debug: false });
@@ -163,16 +165,34 @@ const log = createLogger('PreferenceMemory');
      }
      
      /**
-      * 加载已保存的偏好
+      * 加载已保存的偏好。
+      *
+      * 「文件不存在」与「读取/解析失败」必须区分：旧实现把两者都当成「没有偏好」，
+      * 读失败后用户采纳一条建议就会用只含新偏好的对象整体覆盖原文件，
+      * 长期积累的偏好一次性丢失。
       */
      async loadPreferences(): Promise<void> {
+         const fs = this.getFS();
+         let exists = true;
          try {
-             const data = await this.getFS().read(this.dataPath);
+             exists = await fs.exists(this.dataPath);
+         } catch {
+             // 探测失败按「存在」处理，走保守路径
+             exists = true;
+         }
+         if (!exists) {
+             log.info('[PreferenceMemory] E3: 无已保存的偏好');
+             return;
+         }
+         try {
+             const data = await fs.read(this.dataPath);
              const parsed = JSON.parse(data);
              this.preferences = new Map(Object.entries(parsed));
+             this.loadFailed = false;
              log.info('[PreferenceMemory] E3: 加载了', this.preferences.size, '个偏好');
          } catch (e) {
-             log.info('[PreferenceMemory] E3: 无已保存的偏好');
+             this.loadFailed = true;
+             log.warn('[PreferenceMemory] E3: 偏好文件读取失败，本次不覆盖磁盘:', e);
          }
      }
      
@@ -182,9 +202,21 @@ const log = createLogger('PreferenceMemory');
     private async savePreferences(): Promise<void> {
         // 使用 enqueueAutoClean，自动在成功后清除脏标记
         await this.writer.enqueueAutoClean(async () => {
+            const fs = this.getFS();
+            if (this.loadFailed) {
+                // 读失败后的第一次保存：先把原文件改名留档，
+                // 否则下面的整体覆盖会抹掉读不到的历史偏好
+                try {
+                    await fs.rename(this.dataPath, `${this.dataPath}.corrupt-${Date.now()}.bak`);
+                    log.warn('[PreferenceMemory] E3: 原偏好文件已留档，后续保存写入新文件');
+                } catch (e) {
+                    log.warn('[PreferenceMemory] E3: 留档失败，继续写入:', e);
+                }
+                this.loadFailed = false;
+            }
             const data = Object.fromEntries(this.preferences);
-            await this.getFS().mkdir(pluginDataDir()).catch(() => undefined);
-            await this.getFS().write(this.dataPath, JSON.stringify(data, null, 2));
+            await fs.mkdir(pluginDataDir()).catch(() => undefined);
+            await fs.write(this.dataPath, JSON.stringify(data, null, 2));
         }).catch(e => {
             log.warn('[PreferenceMemory] E3: 保存失败:', e);
         });

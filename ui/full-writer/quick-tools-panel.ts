@@ -56,8 +56,20 @@ function renderToolButton(
 
     btn.onclick = (e) => {
         e.stopPropagation();
-        opts.executeCommand(tool.commandId);
-        opts.onCommandExecuted?.(tool.commandId);
+        // 防重入：连点会并发执行同一条命令（打开多个弹窗 / 重复发起 AI 请求）
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.addClass('is-executing');
+        try {
+            opts.executeCommand(tool.commandId);
+            opts.onCommandExecuted?.(tool.commandId);
+        } finally {
+            // 命令是 fire-and-forget（异步打开弹窗）：短暂冷却即可挡住双击/连点
+            window.setTimeout(() => {
+                btn.disabled = false;
+                btn.removeClass('is-executing');
+            }, 400);
+        }
     };
 }
 

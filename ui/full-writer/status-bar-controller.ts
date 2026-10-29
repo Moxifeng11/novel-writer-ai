@@ -4,6 +4,7 @@ import { ALL_FULL_STEPS } from '../../engine/step-runner';
 import { findStepByIndex } from './full-writer-utils';
 import { FullWriterStore } from './full-writer-store';
 import { ChapterStateManager } from '../states/chapter-state-manager';
+import { STORY_STRUCTURES, type StoryStructureId } from '../../shared/story-structure';
 
 export interface StatusBarControllerDeps {
     app: App;
@@ -11,6 +12,8 @@ export interface StatusBarControllerDeps {
     state: FullWriterStore;
     getChapterStateManager: () => ChapterStateManager;
     estimateTotalChars: () => number;
+    getNarrativeStructure?: () => StoryStructureId | '';
+    onChangeNarrativeStructure?: (id: StoryStructureId) => void;
 }
 
 export class StatusBarController {
@@ -51,7 +54,26 @@ export class StatusBarController {
 
         const sceneType = this.deps.state.vars['_sceneType'] || '';
         const sceneLabel = sceneType === 'battle' ? '⚔️ 战斗' : sceneType === 'emotional' ? '💭 情感' : '💬 对话';
-        const rhythm = this.deps.state.vars['suggestedRhythm']?.split(' — ')[0] || '起承转合';
-        sb.createSpan({ text: `${sceneLabel} · ${rhythm}`, cls: 'novel-writer-fw-status-item', attr: { title: `推荐节奏: ${this.deps.state.vars['suggestedRhythm'] || '起承转合'}` } });
+        const rhythm = this.deps.state.vars['suggestedRhythm']?.split(' — ')[0] || '自然节奏';
+        sb.createSpan({ text: `${sceneLabel} · ${rhythm}`, cls: 'novel-writer-fw-status-item', attr: { title: `场景节奏建议: ${this.deps.state.vars['suggestedRhythm'] || '按当前内容自然推进'}` } });
+        sb.createSpan({ text: ' | ', cls: 'novel-writer-fw-status-sep' });
+
+        const structureValue = this.deps.getNarrativeStructure?.()
+            || (this.deps.state.vars['narrativeStructure'] as StoryStructureId | '')
+            || '';
+        sb.createSpan({ text: '🧬 叙事结构', cls: 'novel-writer-fw-status-item' });
+        const select = sb.createEl('select', {
+            cls: 'nw-narrative-select',
+            attr: { title: '切换本章后续生成使用的叙事结构；已生成内容不会自动改写' },
+        });
+        if (!structureValue) select.createEl('option', { value: '', text: '未设置' });
+        for (const structure of STORY_STRUCTURES) {
+            select.createEl('option', { value: structure.id, text: `${structure.icon} ${structure.name}` });
+        }
+        select.value = structureValue;
+        select.onchange = () => {
+            const id = select.value as StoryStructureId;
+            if (id) this.deps.onChangeNarrativeStructure?.(id);
+        };
     }
 }

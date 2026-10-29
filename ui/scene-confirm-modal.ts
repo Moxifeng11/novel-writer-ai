@@ -197,6 +197,7 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
                 volume: volumeName,
                 project,
                 writingMode: 'scene',
+                naturalize: plugin.settings.naturalParagraphMode !== false,
             });
             return { path: written.path, wordCount: written.wordCount };
         },

@@ -408,6 +408,13 @@ export class FingerprintIntensityModal extends Modal {
             }
         });
         saveBtn.addEventListener('click', async () => {
+            // 强度配置按项目落盘（projectFingerprintIntensityFile）。
+            // 没有项目时引擎会静默返回，这里必须先拦住，
+            // 否则会弹「已保存」，重启后配置却不存在。
+            if (!this.options.project) {
+                new Notice('未打开项目：指纹强度按项目保存，请先打开一个项目');
+                return;
+            }
             try {
                 await this.options.library.setIntensityConfig(
                     this.options.fingerprint.id,

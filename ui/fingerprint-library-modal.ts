@@ -69,6 +69,7 @@ export class AddFingerprintModal extends Modal {
             .setDesc('用于识别这个写作指纹')
             .addText(t => t
                 .setPlaceholder('例如：金庸武侠风格')
+                .setValue(this.nameValue)
                 .onChange(v => this.nameValue = v));
 
         new Setting(formDiv)
@@ -76,6 +77,7 @@ export class AddFingerprintModal extends Modal {
             .setDesc('文本的来源（作者/作品名）')
             .addText(t => t
                 .setPlaceholder('例如：金庸《射雕英雄传》')
+                .setValue(this.sourceValue)
                 .onChange(v => this.sourceValue = v));
 
         const modeDiv = formDiv.createDiv({ attr: { style: 'margin:12px 0 8px;display:flex;gap:8px;' } });

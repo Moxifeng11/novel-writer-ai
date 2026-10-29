@@ -15,6 +15,8 @@ import { readMergedVolumeOutline, extractVolumeFromPath } from '../utils/helpers
 import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS } from '../shared/format-constants';
 import { createLogger } from '../shared/logger';
 import { CREATION_MODE_SPECS, getCreationModeLabel, parseCreationModeMeta, type CreationMode } from '../shared/creation-mode';
+import { isChapterWritten } from '../shared/chapter-progress';
+import { getStoryStructure } from '../shared/story-structure';
 
 
 const log = createLogger('ProjectUtils');
@@ -123,8 +125,12 @@ export interface ChapterListEntry {
     status: string;
     /** 正文文件；仅有骨架目录时为 null */
     file: TFile | null;
-    /** 是否存在正文文件 */
+    /** 是否存在正文文件（骨架占位文件也算存在） */
     hasBody: boolean;
+    /** 是否已写（status=written/settled，或旧文件按体量判定）；骨架 false */
+    written: boolean;
+    /** 正文文件字节数；无文件时 0 */
+    size: number;
 }
 
 /** 获取项目所有章节列表（正文 ∪ 步骤结果骨架目录），含标题、状态、卷信息 */
@@ -158,6 +164,7 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
     for (const d of chaptersData) {
         if (d && !seenChapters.has(d.chapMatch)) {
             seenChapters.add(d.chapMatch);
+            const size = d.file.stat?.size ?? 0;
             result.push({
                 chapter: d.chapMatch,
                 volume: d.volName || '',
@@ -165,6 +172,8 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
                 status: d.status,
                 file: d.file,
                 hasBody: true,
+                written: isChapterWritten(d.status, true, size),
+                size,
             });
         }
     }
@@ -187,6 +196,8 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
             status: '',
             file: null,
             hasBody: false,
+            written: false,
+            size: 0,
         });
     }
 
@@ -194,8 +205,8 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
 }
 
 /** 读取项目元信息（题材/描述 来自 .project；字数/章节/分卷 来自合并分卷大纲） */
-export async function getProjectMeta(app: App, project: string): Promise<{ genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string }> {
-    const result: { genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string } = { genre: '', description: '', volumes: [], totalWordsTarget: '', totalChapters: 0, creationMode: 'long', creationModeLabel: '长篇小说', shortCategory: '', scriptGenre: '', modeTargetWords: CREATION_MODE_SPECS.long.targetWords.default, modeTargetUnits: CREATION_MODE_SPECS.long.targetUnits.default, unitLabel: '章' };
+export async function getProjectMeta(app: App, project: string): Promise<{ genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string; storyStructure: string; storyStructureName: string }> {
+    const result: { genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string; storyStructure: string; storyStructureName: string } = { genre: '', description: '', volumes: [], totalWordsTarget: '', totalChapters: 0, creationMode: 'long', creationModeLabel: '长篇小说', shortCategory: '', scriptGenre: '', modeTargetWords: CREATION_MODE_SPECS.long.targetWords.default, modeTargetUnits: CREATION_MODE_SPECS.long.targetUnits.default, unitLabel: '章', storyStructure: '', storyStructureName: '' };
     const dotContent = await readProjectMeta(app, project);
     if (dotContent) {
         const genreMatch = dotContent.match(/##\s*题材\s*\n(.+)/);
@@ -210,6 +221,8 @@ export async function getProjectMeta(app: App, project: string): Promise<{ genre
         result.modeTargetWords = mode.targetWords;
         result.modeTargetUnits = mode.targetUnits;
         result.unitLabel = CREATION_MODE_SPECS[mode.mode].unitLabel;
+        result.storyStructure = mode.storyStructure || '';
+        result.storyStructureName = mode.storySettings ? getStoryStructure(mode.storySettings.structureId).name : '';
     }
     const content = await readMergedVolumeOutline(app, project);
     if (content) {

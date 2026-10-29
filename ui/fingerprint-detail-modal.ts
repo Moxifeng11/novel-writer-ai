@@ -13,7 +13,12 @@ interface FingerprintDetailModalOptions {
     /** 项目路径（用于强度配置入口） */
     project?: string;
     canEdit?: boolean;
-    onToggle?: (fp: StyleFingerprint) => void;
+    onToggle?: (fp: StyleFingerprint) => void | Promise<void>;
+    /**
+     * 真实生效状态解析。全局层生效状态是「项目级覆盖优先」，
+     * 直接读 fp.enabled 会显示成全局默认值，与列表里的开关不一致。
+     */
+    resolveEffectiveEnabled?: (fp: StyleFingerprint) => boolean;
     onReextract?: (fp: StyleFingerprint) => void;
     onDelete?: (fp: StyleFingerprint) => void;
     /** 打开强度调节 Modal 回调 */
@@ -29,7 +34,12 @@ export class FingerprintDetailModal extends Modal {
     constructor(app: App, options: FingerprintDetailModalOptions) {
         super(app);
         this.options = options;
+        // V1 与 V2 的维度 key 不同（sentenceRhythm vs rhythm），两套都要初始化，
+        // 否则 V2 的 12 个区块会全部默认折叠。
         for (const dim of FEATURE_DIMENSIONS) {
+            this.expandedFeatures[dim.key] = true;
+        }
+        for (const dim of FEATURE_DIMENSIONS_V2) {
             this.expandedFeatures[dim.key] = true;
         }
     }
@@ -46,10 +56,36 @@ export class FingerprintDetailModal extends Modal {
     /** 懒加载 V2 转换（migrateV1ToV2 是纯函数，无副作用） */
     private getV2(): V2Fingerprint {
         if (!this.v2Fingerprint) {
-            const scope = this.options.fingerprint.scope;
-            this.v2Fingerprint = migrateV1ToV2(this.options.fingerprint, scope);
+            // 优先读库里已存在的 V2（含逐维样本与量化值）；没有才从 V1 七维推导。
+            // 旧实现一律重新推导，导致已落盘的 V2 数据在详情页永远看不到。
+            const stored = this.options.library?.getV2Fingerprint?.(this.options.fingerprint.id);
+            this.v2Fingerprint = stored
+                ?? migrateV1ToV2(this.options.fingerprint, this.options.fingerprint.scope);
         }
         return this.v2Fingerprint;
+    }
+
+    /** 该指纹当前是否真的生效（优先用调用方的项目级覆盖解析） */
+    private isEnabled(fp: StyleFingerprint): boolean {
+        return this.options.resolveEffectiveEnabled?.(fp) ?? fp.enabled;
+    }
+
+    /**
+     * 开关落盘后从库里取回最新对象再重渲染。
+     * 只重渲染不刷新的话，options.fingerprint 还是 Modal 打开时捕获的旧对象，
+     * 徽标与按钮文案会停在上一次的状态。
+     */
+    private refreshFromLibrary(): void {
+        const lib = this.options.library;
+        const { id, scope } = this.options.fingerprint;
+        const next = scope === 'template'
+            ? lib?.getTemplate(id)
+            : scope === 'project'
+                ? lib?.getProject(id)
+                : lib?.getGlobal(id);
+        if (!next || next === this.options.fingerprint) return;
+        this.options.fingerprint = next;
+        this.v2Fingerprint = null;
     }
 
     private render(): void {
@@ -57,7 +93,6 @@ export class FingerprintDetailModal extends Modal {
         contentEl.empty();
 
         const fp = this.options.fingerprint;
-
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
             wrapper.addClass('nw-modal');
@@ -85,8 +120,9 @@ export class FingerprintDetailModal extends Modal {
         this.renderInfoRow(grid, '来源', fp.source);
         this.renderInfoRow(grid, '字数', formatWordCount(fp.stats.wordCount));
         this.renderInfoRow(grid, '提取时间', formatDateTime(fp.extractedAt));
-        this.renderInfoRow(grid, '作用域', fp.scope === 'global' ? '全局' : '项目');
-        this.renderInfoRow(grid, '状态', fp.enabled ? '✅ 已启用' : '⏸ 已禁用');
+        const scopeLabel = fp.scope === 'global' ? '全局' : fp.scope === 'template' ? '模板' : '项目';
+        this.renderInfoRow(grid, '作用域', scopeLabel);
+        this.renderInfoRow(grid, '状态', this.isEnabled(fp) ? '✅ 已启用' : '⏸ 已禁用');
     }
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
@@ -466,16 +502,25 @@ export class FingerprintDetailModal extends Modal {
 
         if (this.options.onToggle) {
             const toggleBtn = btnRow.createEl('button', {
-                text: fp.enabled ? '⏸ 禁用' : '✅ 启用',
+                text: this.isEnabled(fp) ? '⏸ 禁用' : '✅ 启用',
                 attr: {
                     type: 'button',
                     style: 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;'
                 }
             });
-            toggleBtn.addEventListener('click', () => {
-                this.options.onToggle?.(fp);
-                this.options.fingerprint.enabled = !fp.enabled;
-                this.render();
+            toggleBtn.addEventListener('click', async () => {
+                if (toggleBtn.disabled) return;
+                toggleBtn.disabled = true;
+                try {
+                    // 只把对象交给调用方翻转并持久化，回来后按持久化结果重渲染。
+                    // 曾经在这里又手动 `enabled = !enabled` 翻一次：调用方同步翻一次、
+                    // 这里再翻回去，落盘的仍是翻转前的值 → 开关看起来点了没反应。
+                    await this.options.onToggle?.(fp);
+                    this.refreshFromLibrary();
+                    this.render();
+                } finally {
+                    toggleBtn.disabled = false;
+                }
             });
         }
 

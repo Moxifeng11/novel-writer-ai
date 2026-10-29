@@ -49,6 +49,7 @@ type GuardCtx = {
         engine: { inspectSettingGuard: any; confirmStateChanges: any };
         warningContainer: any;
         plugin: { workspaceManager: { getMonitorPanelA: () => any } };
+        refreshMonitorPanel: () => void;
     };
     isInspectingGuard: boolean;
     guardSeq: number;
@@ -69,6 +70,8 @@ function makeCtx(
         },
         warningContainer: createFakeEl(),
         plugin: { workspaceManager: { getMonitorPanelA: () => panelA } },
+        // 守卫完成后视图会重绘右侧监控卡（旧实现只在布局时渲染一次）
+        refreshMonitorPanel: vi.fn(),
     };
     ctx.isInspectingGuard = false;
     ctx.guardSeq = 0;

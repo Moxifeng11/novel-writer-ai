@@ -17,6 +17,7 @@ import { CommandRegistry, CommandIds } from '../../../core/command-registry';
 /** 重构前 registerInternalCommands 注册的全部命令 id（64 项） */
 const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.CREATE_PROJECT,
+    CommandIds.AGENT_GUIDE,
     CommandIds.CREATE_SHORT,
     CommandIds.CREATE_SCRIPT,
     CommandIds.SHORT_RESEARCH,
@@ -82,6 +83,8 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.SAVE_VERSION,
     // Rev 180：叙事总览补进 registry，快捷工具点击不再 fallback 到 Obsidian 命令面板
     CommandIds.NARRATIVE_OVERVIEW,
+    // 2026-10-29：Agent 工作台「设置」入口此前指向不存在的命令，补真实注册
+    CommandIds.OPEN_SETTINGS,
 ];
 
 interface Harness {

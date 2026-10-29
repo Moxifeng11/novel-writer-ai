@@ -245,28 +245,45 @@ function removeWithRetry(target: string): void {
  * 这里只点击可见的信任按钮；不存在时静默跳过。
  */
 export async function clickTrustPromptIfPresent(page: Page): Promise<boolean> {
-    const modal = page.locator('.modal-container').last();
-    if (!(await modal.isVisible().catch(() => false))) return false;
+    // 信任弹窗可能被 Obsidian 1.14 渲染到独立的 about:blank 窗口。
+    for (const candidatePage of page.context().pages()) {
+        const modal = candidatePage
+            .locator('.modal-container, .modal')
+            .filter({ hasText: /你是否信任这个仓库的作者|Trust the author/i })
+            .last();
+        if (!(await modal.isVisible().catch(() => false))) continue;
 
-    const buttons = modal.locator('button');
-    const count = await buttons.count();
-    let candidate: { index: number; text: string } | null = null;
-    for (let i = 0; i < count; i++) {
-        const button = buttons.nth(i);
-        const text = (await button.textContent().catch(() => '')) ?? '';
-        if (/信任|启用社区插件|Trust author|Turn on community plugins/i.test(text)) {
-            candidate = { index: i, text };
-            break;
-        }
-        // 信任按钮在部分版本里渲染期间文本为空：排除“安全模式”后取最后一个可用按钮。
-        if (!/安全模式|safe mode/i.test(text) && !(await button.isDisabled().catch(() => true))) {
-            candidate = { index: i, text };
+        for (let attempt = 0; attempt < 8; attempt++) {
+            const buttons = modal.locator('button');
+            const count = await buttons.count();
+            let candidate: { index: number; text: string } | null = null;
+            for (let i = 0; i < count; i++) {
+                const button = buttons.nth(i);
+                const text = (await button.textContent().catch(() => '')) ?? '';
+                if (/信任|启用社区插件|Trust author|Turn on community plugins/i.test(text)) {
+                    candidate = { index: i, text };
+                    break;
+                }
+                // 信任按钮在部分版本里渲染期间文本为空：排除“安全模式”后取最后一个可用按钮。
+                if (!/安全模式|safe mode/i.test(text) && !(await button.isDisabled().catch(() => true))) {
+                    candidate = { index: i, text };
+                }
+            }
+            if (!candidate) {
+                await delay(300);
+                continue;
+            }
+            const target = buttons.nth(candidate.index);
+            if (await target.isDisabled().catch(() => true)) {
+                await delay(300);
+                continue;
+            }
+            await target.click({ timeout: 5_000 }).catch(() => undefined);
+            await delay(1_000);
+            return true;
         }
     }
-    if (!candidate) return false;
-    await buttons.nth(candidate.index).click({ timeout: 5_000 }).catch(() => undefined);
-    await delay(1_000);
-    return true;
+    return false;
 }
 
 /**
@@ -301,8 +318,9 @@ export async function waitForModalPage(anchor: Page, timeout = 10_000): Promise<
                 const plugin = host.app?.plugins?.plugins?.[id];
                 const commands = host.app?.commands?.commands || {};
                 const hasCommand = Object.keys(commands).some(key => key.startsWith(`${id}:`));
-                // 仅存在插件对象不代表 onload 完成：未信任仓库时对象可能已注册但命令为空。
-                return Boolean(hasCommand || (plugin && plugin._loaded === true));
+                // 仅存在插件对象或 _loaded 标记不代表命令已注册：未信任仓库时插件实例可能已创建。
+                // 以命令注册为唯一完成信号，确保 waitForPluginLoaded 会持续处理信任弹窗。
+                return Boolean(hasCommand && plugin);
             }, PLUGIN_ID)
             .catch(() => false);
         if (loaded) return;

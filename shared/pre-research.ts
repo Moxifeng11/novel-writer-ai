@@ -353,3 +353,25 @@ export async function readPreResearchData(
         return null;
     }
 }
+
+/**
+ * 前期调研是否已经填到「可开工」的程度。
+ *
+ * 只要求每类最关键的四项：分类/类型、一句话故事(logline/premise)、
+ * 核心冲突、情绪承诺(hook/promise)。目标字数与参考资料不参与判定，
+ * 否则默认值会把新项目直接判成已完成。
+ */
+export function isPreResearchComplete(data: PreResearchData | null): boolean {
+    if (!data) return false;
+    const filled = (value: unknown): boolean => String(value ?? '').trim().length > 0;
+    if (data.mode === 'script') {
+        return filled(data.genre)
+            && filled(data.logline)
+            && filled(data.hook3s)
+            && filled(data.coreConflict);
+    }
+    return filled(data.primaryCategory)
+        && filled(data.premise)
+        && filled(data.coreConflict)
+        && filled(data.emotionalPromise);
+}

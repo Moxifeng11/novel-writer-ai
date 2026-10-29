@@ -657,3 +657,145 @@ describe('normalizeOllamaEndpoint — 只改写 Ollama', () => {
         ])).toBe('http://localhost:1234/v1/chat/completions');
     });
 });
+
+describe('API 协议分派（Anthropic Messages / Responses）', () => {
+    function makeClient(format: string, overrides: Record<string, unknown> = {}) {
+        const endpoint = 'https://gw.example/anthropic';
+        const plugin = {
+            settings: {
+                apiKey: 'test-key',
+                apiEndpoint: endpoint,
+                defaultModel: 'test-model',
+                availableModels: ['test-model'],
+                enableAutoModelFallback: false,
+                maxApiRetries: 1,
+                promptCacheEnabled: false,
+                maxContext: 128000,
+                maxOutput: 4096,
+                customProviders: [{ id: 'custom-1', name: 'GW', endpoint, models: ['test-model'], apiFormat: format }],
+                ...overrides,
+            },
+        };
+        return new AIApiClient(plugin as never);
+    }
+
+    it('Anthropic 请求打到 /v1/messages 并带 x-api-key，响应按 content 块解析', async () => {
+        let capturedUrl = '';
+        let capturedInit: { headers?: Record<string, string>; body?: string } = {};
+        vi.stubGlobal('fetch', async (url: string, init: { headers?: Record<string, string>; body?: string }) => {
+            capturedUrl = url;
+            capturedInit = init;
+            return new Response(JSON.stringify({
+                content: [{ type: 'text', text: '安式正文' }],
+                stop_reason: 'end_turn',
+                usage: { input_tokens: 12, output_tokens: 34 },
+            }), { status: 200 });
+        });
+        try {
+            const client = makeClient('anthropic-messages');
+            const result = await client.callAI('sys', 'user', 'test-model', 0.5, 64);
+
+            expect(capturedUrl).toBe('https://gw.example/anthropic/v1/messages');
+            expect(capturedInit.headers?.['x-api-key']).toBe('test-key');
+            expect(capturedInit.headers?.Authorization).toBeUndefined();
+            const body = JSON.parse(capturedInit.body ?? '{}');
+            expect(body.system).toBe('sys');
+            expect(body.messages).toEqual([{ role: 'user', content: 'user' }]);
+            expect(result.content).toBe('安式正文');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it('Anthropic stop_reason=max_tokens 触发扩容重试而不是当作正常结束', async () => {
+        let calls = 0;
+        vi.stubGlobal('fetch', async () => {
+            calls++;
+            if (calls === 1) {
+                return new Response(JSON.stringify({
+                    content: [{ type: 'text', text: '' }],
+                    stop_reason: 'max_tokens',
+                }), { status: 200 });
+            }
+            return new Response(JSON.stringify({
+                content: [{ type: 'text', text: '扩容后正文' }],
+                stop_reason: 'end_turn',
+            }), { status: 200 });
+        });
+        try {
+            const client = makeClient('anthropic-messages', { maxOutput: 16384 });
+            const result = await client.callAI('sys', 'user', 'test-model', 0.5, 2048);
+
+            expect(calls).toBeGreaterThan(1);
+            expect(result.content).toBe('扩容后正文');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it('Responses 请求打到 /v1/responses 并用 input/instructions', async () => {
+        let capturedUrl = '';
+        let capturedBody: { instructions?: string; input?: string; messages?: unknown } = {};
+        vi.stubGlobal('fetch', async (url: string, init: { body?: string }) => {
+            capturedUrl = url;
+            capturedBody = JSON.parse(init.body ?? '{}');
+            return new Response(JSON.stringify({
+                status: 'completed',
+                output_text: '响应式正文',
+            }), { status: 200 });
+        });
+        try {
+            const client = makeClient('openai-responses', {} as never);
+            // 端点换为 OpenAI 风格，验证 /v1/responses 推导
+            (client as unknown as { plugin: { settings: { apiEndpoint: string; customProviders: unknown[] } } }).plugin.settings.apiEndpoint = 'https://api.openai.com/v1';
+            (client as unknown as { plugin: { settings: { apiEndpoint: string; customProviders: unknown[] } } }).plugin.settings.customProviders = [
+                { id: 'custom-1', name: 'OAI', endpoint: 'https://api.openai.com/v1', models: ['test-model'], apiFormat: 'openai-responses' },
+            ];
+            const result = await client.callAI('sys', 'user', 'test-model', 0.5, 64);
+
+            expect(capturedUrl).toBe('https://api.openai.com/v1/responses');
+            expect(capturedBody.instructions).toBe('sys');
+            expect(capturedBody.input).toBe('user');
+            expect(capturedBody.messages).toBeUndefined();
+            expect(result.content).toBe('响应式正文');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it('未登记 apiFormat 的端点保持 Chat Completions 行为（旧配置零回归）', async () => {
+        let capturedUrl = '';
+        let capturedBody: { messages?: Array<{ role: string }> } = {};
+        vi.stubGlobal('fetch', async (url: string, init: { body?: string }) => {
+            capturedUrl = url;
+            capturedBody = JSON.parse(init.body ?? '{}');
+            return new Response(JSON.stringify({
+                choices: [{ message: { content: '旧配置正文' }, finish_reason: 'stop' }],
+            }), { status: 200 });
+        });
+        try {
+            const plugin = {
+                settings: {
+                    apiKey: 'k',
+                    apiEndpoint: 'https://api.example.test/v1/chat/completions',
+                    defaultModel: 'm',
+                    availableModels: ['m'],
+                    enableAutoModelFallback: false,
+                    maxApiRetries: 1,
+                    promptCacheEnabled: false,
+                    maxContext: 128000,
+                    maxOutput: 4096,
+                    customProviders: [],
+                },
+            };
+            const client = new AIApiClient(plugin as never);
+            const result = await client.callAI('sys', 'user', 'm', 0.5, 64);
+
+            expect(capturedUrl).toBe('https://api.example.test/v1/chat/completions');
+            expect(capturedBody.messages?.[0].role).toBe('system');
+            expect(result.content).toBe('旧配置正文');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+});

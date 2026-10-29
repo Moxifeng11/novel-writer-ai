@@ -15,6 +15,11 @@ import type { SerializedWriter } from '../shared/serialized-writer';
 import { DEFAULT_PROMPT_MANAGER_CONFIG } from '../services/prompt-manager-types';
 import { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '../services/deconstruction-scheduler';
 import { DEFAULT_FORESHADOW_CONFIG } from '../engine/foreshadow-config-manager';
+import { createLogger } from '../shared/logger';
+
+const log = createLogger('SettingsService');
+/** v2 密文前缀（与 crypto-service 保持一致） */
+const V2_PREFIX_LOCAL = 'aes256v2:';
 
 /** SettingsService 依赖 */
 export interface SettingsServiceDeps {
@@ -34,9 +39,39 @@ export interface SettingsServiceDeps {
 
 export class SettingsService {
     private readonly deps: SettingsServiceDeps;
+    /**
+     * 磁盘上密钥字段的原始值快照（解密前）。
+     *
+     * 用途：保存时如果拿不到口令，就保留这里记下的旧密文，
+     * 绝不把已解密的明文（或新输入的明文）写回磁盘——那会把受保护的值降级，
+     * 并造成「部分加密、部分明文」的混合状态。
+     */
+    private rawSecrets: Record<string, string> = {};
 
     constructor(deps: SettingsServiceDeps) {
         this.deps = deps;
+    }
+
+    /** 是否已存在任何 v2 密文（决定能不能走「设定新口令」） */
+    hasEncryptedSecrets(): boolean {
+        return Object.values(this.rawSecrets).some(
+            v => typeof v === 'string' && v.startsWith('aes256v2:'),
+        );
+    }
+
+    /** 任意一条已存在的 v2 密文（供 CryptoService 校验候选口令） */
+    findExistingCiphertext(): string | null {
+        for (const v of Object.values(this.rawSecrets)) {
+            if (typeof v === 'string' && v.startsWith('aes256v2:')) return v;
+        }
+        return null;
+    }
+
+    /** 磁盘上仍处于密文状态、且本次会话未能解开的条目数（UI 用） */
+    lockedSecretCount(): number {
+        return Object.values(this.rawSecrets).filter(
+            v => typeof v === 'string' && v.startsWith('aes256v2:'),
+        ).length;
     }
 
     /** 加载设置：迁移 → 解密 → 同步自定义模型 */
@@ -73,6 +108,9 @@ export class SettingsService {
         }
         this.deps.setSettings(settings);
 
+        // 记录磁盘原始值（解密前），保存时用于「拿不到口令就保留旧密文」
+        this.rawSecrets = this.collectRawSecrets(migratedData);
+
         // 解密所有密钥（启动期静默：未解锁时保留密文，避免弹口令阻塞 onload）
         settings.apiKey = await this.deps.crypto.decryptWithoutPrompt(settings.apiKey);
         settings.providerKeys = settings.providerKeys || {};
@@ -101,33 +139,76 @@ export class SettingsService {
         }
     }
 
+    /** 从迁移后的原始数据里取出各密钥字段的磁盘值（未解密） */
+    private collectRawSecrets(raw: unknown): Record<string, string> {
+        const data = (raw && typeof raw === 'object') ? raw as Record<string, unknown> : {};
+        const out: Record<string, string> = {
+            apiKey: typeof data.apiKey === 'string' ? data.apiKey : '',
+            vectorOpenaiApiKey: typeof data.vectorOpenaiApiKey === 'string' ? data.vectorOpenaiApiKey : '',
+            vectorDoubaoApiKey: typeof data.vectorDoubaoApiKey === 'string' ? data.vectorDoubaoApiKey : '',
+            vectorQwenApiKey: typeof data.vectorQwenApiKey === 'string' ? data.vectorQwenApiKey : '',
+            updateGithubToken: typeof data.updateGithubToken === 'string' ? data.updateGithubToken : '',
+        };
+        const providerKeys = (data.providerKeys && typeof data.providerKeys === 'object' && !Array.isArray(data.providerKeys))
+            ? data.providerKeys as Record<string, unknown>
+            : {};
+        for (const [k, v] of Object.entries(providerKeys)) {
+            if (typeof v === 'string') out[`providerKeys.${k}`] = v;
+        }
+        return out;
+    }
+
     /**
-     * 已是密文的值原样保存，避免「启动静默保留密文 → 用户改设置触发保存」时二次加密，
-     * 导致下次解密得到另一段密文而无法使用。
-     * 无会话口令时保持明文，不主动弹「设置加密口令」——后台保存（切面板、存布局、
-     * 视图初始化）也会走 saveSettings，弹窗会打断写作并阻塞 onload。
+     * 决定某个密钥字段最终写到磁盘上的值。
+     *
+     * 规则（按优先级）：
+     * 1. 空值 → 空；
+     * 2. 已是密文 → 原样保留（避免二次加密）；
+     * 3. 有会话口令 → 加密；
+     * 4. 无会话口令，但磁盘上该字段原本是密文 → 尝试用**已有口令**加密
+     *    （`encryptStrict` 会问口令并校验）；拿不到口令就**保留旧密文**。
+     *    绝不写明文——那等于把加密过的密钥降级，还会造成混合状态；
+     * 5. 从未用过口令（磁盘上没有任何该字段密文）→ 沿用「明文保存」的旧行为。
      */
-    private async encryptIfPlain(value: string): Promise<string> {
+    private async resolveSecret(field: string, value: string): Promise<string> {
         if (!value) return '';
-        if (value.startsWith('aes256v2:') || value.startsWith('aes256:')) return value;
-        if (!this.deps.crypto.hasSessionPassword()) return value;
-        return this.deps.crypto.encrypt(value);
+        if (value.startsWith(V2_PREFIX_LOCAL) || value.startsWith('aes256:')) return value;
+        if (this.deps.crypto.hasSessionPassword()) {
+            const encrypted = await this.deps.crypto.encryptStrict(value);
+            return encrypted ?? this.previousCipherOf(field, value);
+        }
+        const previous = this.rawSecrets[field];
+        if (typeof previous === 'string' && previous.startsWith(V2_PREFIX_LOCAL)) {
+            // 磁盘上原本有密文：必须加密后才能落盘
+            const encrypted = await this.deps.crypto.encryptStrict(value);
+            if (encrypted) return encrypted;
+            log.warn(`[小说工坊] 未能解锁口令，${field} 保留原密文不写明文`);
+            return previous;
+        }
+        return value;
+    }
+
+    /** 拿不到口令时的兜底：有旧密文就用旧密文，否则返回空串（不泄露明文） */
+    private previousCipherOf(field: string, plaintext: string): string {
+        const previous = this.rawSecrets[field];
+        if (typeof previous === 'string' && previous.startsWith(V2_PREFIX_LOCAL)) return previous;
+        return plaintext;
     }
 
     /** 保存设置：加密 → 版本号包装 → 持久化 */
     async saveSettings(): Promise<void> {
         const settings = this.deps.getSettings();
-        const encryptedApiKey = await this.encryptIfPlain(settings.apiKey);
+        const encryptedApiKey = await this.resolveSecret('apiKey', settings.apiKey);
         const keysToSave: Record<string, string> = {};
         for (const [k, v] of Object.entries(settings.providerKeys || {})) {
             if (typeof v === 'string' && v) {
-                keysToSave[k] = await this.encryptIfPlain(v);
+                keysToSave[k] = await this.resolveSecret(`providerKeys.${k}`, v);
             }
         }
-        const encryptedVectorApiKey = await this.encryptIfPlain(settings.vectorOpenaiApiKey || '');
-        const encryptedDoubaoApiKey = await this.encryptIfPlain(settings.vectorDoubaoApiKey || '');
-        const encryptedQwenApiKey = await this.encryptIfPlain(settings.vectorQwenApiKey || '');
-        const encryptedGithubToken = await this.encryptIfPlain(settings.updateGithubToken || '');
+        const encryptedVectorApiKey = await this.resolveSecret('vectorOpenaiApiKey', settings.vectorOpenaiApiKey || '');
+        const encryptedDoubaoApiKey = await this.resolveSecret('vectorDoubaoApiKey', settings.vectorDoubaoApiKey || '');
+        const encryptedQwenApiKey = await this.resolveSecret('vectorQwenApiKey', settings.vectorQwenApiKey || '');
+        const encryptedGithubToken = await this.resolveSecret('updateGithubToken', settings.updateGithubToken || '');
         const dataToSave = withCurrentVersion({
             ...settings,
             apiKey: encryptedApiKey,
@@ -185,6 +266,8 @@ export function getDefaultSettings(): NovelWriterSettings {
         coWriteModelMode: 'local',
         coWriteCloudProvider: '',
         coWriteCloudModel: '',
+        referenceBookIds: [],
+        referenceBookWeights: {},
         autoPlotEvaluation: true,
         autoGhostAssociation: true,
         precisionMode: false,
@@ -194,6 +277,14 @@ export function getDefaultSettings(): NovelWriterSettings {
         antiAiExtraWords: [],
         wordMinRatio: 0.7,
         promptSplitRatio: 0.67,
+        naturalParagraphMode: true,
+        customFonts: [],
+        coWriteEditorFont: '',
+        agentWorkbenchLeftWidth: 210,
+        agentWorkbenchRightWidth: 360,
+        agentWorkbenchLeftCollapsed: false,
+        agentWorkbenchRightCollapsed: false,
+        storyContextTier: 'auto',
         availableModels: DEFAULT_PROVIDERS.volc.models,
         maxContext: 128000,
         maxOutput: 32768,

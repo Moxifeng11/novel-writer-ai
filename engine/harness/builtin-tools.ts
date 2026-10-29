@@ -156,8 +156,9 @@ export function createBuiltinHarnessTools(): HarnessTool[] {
             permission: 'read',
             async run(input: AnyInput) {
                 const episode = Math.max(1, Math.floor(num(input, 'episode', 1)));
-                const scenes = Math.max(1, Math.floor(num(input, 'scenes', 1)));
-                const shots = Math.max(1, Math.floor(num(input, 'shots', 1)));
+                // 上限保护：scenes × shots 是直接双重循环，模型传 1e9 会冻结渲染进程。
+                const scenes = Math.min(200, Math.max(1, Math.floor(num(input, 'scenes', 1))));
+                const shots = Math.min(200, Math.max(1, Math.floor(num(input, 'shots', 1))));
                 const ids: string[] = [];
                 for (let scene = 1; scene <= scenes; scene++) {
                     for (let shot = 1; shot <= shots; shot++) {

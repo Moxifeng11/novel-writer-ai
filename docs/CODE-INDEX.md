@@ -1,6 +1,6 @@
 # 代码索引（Code Index）
 
-> 版本：v4.19.0 · 更新：2026-10-26 · 源文件：880 个 .ts（含 352 个 .test.ts）
+> 版本：v4.20.0 · 更新：2026-10-27 · 源文件：1072 个 .ts（含 434 个 .test.ts）
 
 ---
 
@@ -8,14 +8,14 @@
 
 | 层级 | 目录 | 文件数 | 核心职责 |
 |------|------|--------|----------|
-| 入口 | `main.ts` 等根级 | 3 | 插件注册、生命周期、命令绑定 |
-| UI 层 | `ui/` | 156 | 视图、Modal、组件、设置面板 |
-| Facade 层 | `ui/cowrite/` | 7 | 协同写作 UI 与引擎的中间层 |
-| 引擎层 | `engine/` | 217 | 业务逻辑、AI 引擎、质量检测、Repository |
-| 服务层 | `services/` | 31 | 跨引擎协调、Worker 管理、外部服务 |
+| 入口 | `main.ts` 等根级 | 4 | 插件注册、生命周期、命令绑定 |
+| UI 层 | `ui/` | 179 | 视图、Modal、组件、设置面板 |
+| Facade 层 | `ui/cowrite/` | 10 | 协同写作 UI 与引擎的中间层 |
+| 引擎层 | `engine/` | 268 | 业务逻辑、AI 引擎、质量检测、Repository |
+| 服务层 | `services/` | 38 | 跨引擎协调、Worker 管理、外部服务 |
 | 核心服务 | `core/` | 6 | 插件级核心服务（加密、设置、主题、Provider） |
-| 共享层 | `shared/` | 77 | 工具函数、状态管理、类型定义、文件系统抽象 |
-| 测试 | `tests/` | 342 | 单元测试、集成测试、E2E 测试（327 个 `.test.ts`） |
+| 共享层 | `shared/` | 113 | 工具函数、状态管理、类型定义、文件系统抽象 |
+| 测试 | `tests/` | 449 | 单元测试、集成测试、E2E 测试（434 个 `.test.ts`） |
 
 ---
 
@@ -258,6 +258,9 @@
 | `engine/context-compressor.ts` | `ContextCompressor` | 上下文压缩器；世界观/设定库字符上限随模型窗口缩放（世界观 `max(2000, min(12000, 12% 窗口))`、设定库 `max(1000, min(6000, 6% 窗口))`），小窗口保持旧下限，128K 窗口不再被固定 1000 字砍半 |
 | `engine/context/context-diff-detector.ts` | — | 上下文差异检测 |
 | `engine/context/incremental-updater.ts` | — | 增量更新器 |
+| `engine/context/story-context-types.ts` | `StoryContextNode` / `StoryContextGraph` / `StoryContextBundle` | 故事上下文总线类型：十类信息节点、自动关联边、请求、信息包与覆盖度遥测 |
+| `engine/context/story-context-graph.ts` | `buildStoryContextGraph` / `assembleStoryContextBundle` | 把世界观/设定库/人物/势力/地点/物品/时间线/伏笔/场景卡/情绪弧标准化成图；名称/别名自动关联、时间线与同名伏笔去重、场景级检索、本地/云端预算装配、完整/关联摘要格式化 |
+| `engine/context/story-context-service.ts` | `buildStoryContext` / `applyStoryContextToVars` / `attachStoryContextToSnapshot` | 一键生成变量适配、协同写作快照适配、本地/云文档位解析与遥测日志 |
 | `engine/story-linkage.ts` | `buildStoryLinkage` 等 | 关联索引引擎（Rev 186）：`parsePlannedRange` 把「计划回收」解析成章号区间（支持 `第6章` / `第6-8章` / `第6章前后` / 待定），`classifyForeshadow` 输出 due/overdue/upcoming/later/unknown；按伏笔名与时间线事件去重、与设定条目（设定库/世界观标题 + 人物/地点/势力/物品名）互链、裁剪分卷大纲本章段落，产出 `due/overdue/upcoming/timeline/timelineAll/settingHits/planningRefs/warnings` 与 ≤1800 字 `promptText`。通用标题（如「与主线关联」）不计入关联命中 |
 | `engine/story-linkage-writer.ts` | `upsertLinkageBlock` 等 | 关联索引回写（Rev 186）：只替换 `<!-- NW-LINKAGE:BEGIN -->…<!-- NW-LINKAGE:END -->` 标记块，无标记则追加；`buildForeshadowIndexBlock` / `buildTimelineIndexBlock` 生成到期/逾期/即将到期与去重时间线表格；重复回写字节级一致 |
 

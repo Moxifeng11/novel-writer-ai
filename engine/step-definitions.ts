@@ -211,7 +211,8 @@ export type StepRunCtx = {
     vars: Record<string, string>;
     isLoading: boolean;
     buildTemplateVars: () => Promise<Record<string, string>>;
-    saveStepResult: (stepKey: string, content: string, meta?: StepRunMeta) => Promise<void>;
+    /** 返回 false 表示根本没落盘（chapDir 为空 / 无文件映射 / 写盘失败） */
+    saveStepResult: (stepKey: string, content: string, meta?: StepRunMeta) => Promise<boolean | void>;
     renderInContainer: (container: HTMLElement) => Promise<void>;
     setIsLoading: (loading: boolean) => void;
     refreshWorkspace: () => void;

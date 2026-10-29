@@ -6,18 +6,31 @@
  */
 
 import type { NovelWriterSettings } from '../main';
+import { derivePalette, paletteToCssVars, resolveActivePresetInput } from '../shared/theme-colors';
 
 /** ThemeManager 所需的最小设置接口 */
 export interface ThemeSettings {
     theme: 'light' | 'dark' | 'auto';
     themeColors?: NovelWriterSettings['themeColors'];
+    themePresets?: NovelWriterSettings['themePresets'];
+}
+
+export interface LayoutSizeSettings {
+    fwStepNav?: number;
+    fwRightPanel?: number;
+    coWriteLeft?: number;
+    coWriteRight?: number;
+    kbSidebar?: number;
+    entitySide?: number;
 }
 
 export class ThemeManager {
     private getSettings: () => ThemeSettings;
+    private getLayoutSizes?: () => LayoutSizeSettings;
 
-    constructor(getSettings: () => ThemeSettings) {
+    constructor(getSettings: () => ThemeSettings, getLayoutSizes?: () => LayoutSizeSettings) {
         this.getSettings = getSettings;
+        this.getLayoutSizes = getLayoutSizes;
     }
 
     /** 注入主题 CSS 变量（暗色/亮色 + 用户自定义覆盖） */
@@ -32,39 +45,25 @@ export class ThemeManager {
         const isDark = settings.theme === 'dark' ||
             (settings.theme === 'auto' && document.body.classList.contains('theme-dark'));
 
-        let vars = isDark ? DARK_THEME_VARS : LIGHT_THEME_VARS;
+        const baseVars = isDark ? DARK_THEME_VARS : LIGHT_THEME_VARS;
 
         const tc = settings.themeColors || {};
-        const preset: 'soft' | 'clear' | 'paper' = tc.appearancePreset || 'soft';
+        // 三层模型：基底 / 卡片 / 强调。文字按基底亮度自动派生，
+        // 面板与卡片默认由基底按氛围预设派生。
+        // 旧观感（文字色 / 独立面板色）不再放在 themeColors 里，而是由
+        // 「旧配色」方案按 activePresetId 反查后临时叠加。
+        const palette = derivePalette(
+            resolveActivePresetInput(tc, settings.themePresets || []),
+            {
+                appBg: isDark ? '#1c1a1e' : '#f0ebe4',
+                accent: '#C2410C',
+            },
+        );
+        const overrides = paletteToCssVars(palette);
+        const gradient = `--nw-accent-gradient: linear-gradient(90deg, ${palette.accent}, ${palette.accentHover});`;
+        const muted = `--nw-text-accent: ${palette.accent};`;
 
-        const PRESET_STEPS: Record<'soft' | 'clear' | 'paper', { panel: number; card: number; lift: string }> = {
-            soft: { panel: 8, card: 16, lift: '#ffffff' },
-            clear: { panel: 14, card: 26, lift: '#ffffff' },
-            paper: { panel: 6, card: 12, lift: '#fff3df' },
-        };
-        const step = PRESET_STEPS[preset] ?? PRESET_STEPS.soft;
-
-        if (tc.appBg) {
-            vars += `--nw-app-bg: ${tc.appBg};`;
-        }
-        if (tc.panelBg) {
-            vars += `--nw-panel-bg: ${tc.panelBg};`;
-        } else {
-            vars += `--nw-panel-bg: color-mix(in srgb, var(--nw-app-bg), ${step.lift} ${step.panel}%);`;
-        }
-        if (tc.enableCustomCardBg && tc.cardBg) {
-            vars += `--nw-card-bg: ${tc.cardBg};`;
-        } else {
-            vars += `--nw-card-bg: color-mix(in srgb, var(--nw-app-bg), ${step.lift} ${step.card}%);`;
-        }
-        if (tc.accent) {
-            vars += `--nw-accent: ${tc.accent}; --nw-accent-hover: ${tc.accent}; --nw-accent-gradient: linear-gradient(90deg, ${tc.accent}, ${tc.accent});`;
-        }
-        if (tc.textPrimary) {
-            vars += `--nw-text-primary: ${tc.textPrimary};`;
-        }
-
-        style.textContent = `:root { ${vars} }`;
+        style.textContent = `:root { ${baseVars} ${overrides} ${gradient} ${muted} }`;
         document.head.appendChild(style);
     }
 
@@ -82,7 +81,15 @@ export class ThemeManager {
         root.style.setProperty('--nw-scroll-md-h', 'max(240px, 30vh)');
         root.style.setProperty('--nw-grid-3col', 'minmax(120px, 160px) 1fr minmax(180px, 240px)');
         root.style.setProperty('--nw-grid-2col-fm', 'auto 1fr');
-        root.style.setProperty('--nw-grid-workspace', 'minmax(100px, 140px) 1fr minmax(160px, 220px)');
+        // 工作台三栏：左右宽度来自设置（可在「工作台布局」页调），中栏自适应。
+        // 旧实现这里与 full-writer-view 各注入一套不同值（140/220 vs 160/240），
+        // 谁后执行谁生效，导致宽度「看起来随机」。
+        // 三栏工作区已改为 flex，宽度直接由两个面板变量驱动（可拖拽）
+        const sizes = this.getLayoutSizes?.() ?? {};
+        const left = Math.max(100, Math.min(400, sizes.fwStepNav ?? 140));
+        const right = Math.max(160, Math.min(560, sizes.fwRightPanel ?? 220));
+        root.style.setProperty('--nw-panel-nav', `${left}px`);
+        root.style.setProperty('--nw-panel-context', `${right}px`);
         root.style.setProperty('--nw-panel-pad', '16px');
         root.style.setProperty('--nw-card-pad', '12px');
     }
@@ -104,8 +111,6 @@ const DARK_THEME_VARS = `
     --nw-card-shadow: 0 2px 8px rgba(0,0,0,0.2);
     --nw-card-shadow-hover: 0 8px 20px rgba(0,0,0,0.35);
     --nw-card-selected-ring: 0 0 0 3px rgba(194, 65, 12, 0.35);
-    --nw-cover-bg: linear-gradient(135deg, #2a2030 0%, #252228 40%, #1e2530 100%);
-    --nw-cover-bg-hover: brightness(1.12);
     --nw-text-primary: #f0ece4;
     --nw-text-secondary: #b0a8a0;
     --nw-text-muted: #7e7870;
@@ -155,8 +160,6 @@ const LIGHT_THEME_VARS = `
     --nw-card-shadow: 0 2px 8px rgba(150, 120, 100, 0.06);
     --nw-card-shadow-hover: 0 8px 20px rgba(150, 120, 100, 0.12);
     --nw-card-selected-ring: 0 0 0 3px rgba(194, 65, 12, 0.25);
-    --nw-cover-bg: linear-gradient(135deg, #e8d5c8 0%, #d5d0e8 40%, #d0e8e0 100%);
-    --nw-cover-bg-hover: brightness(1.05);
     --nw-text-primary: #3d3530;
     --nw-text-secondary: #8b7e70;
     --nw-text-muted: #a09890;

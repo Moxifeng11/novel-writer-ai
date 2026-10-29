@@ -385,6 +385,7 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
                     volume,
                     project,
                     writingMode: 'continue',
+                    naturalize: this.plugin.settings.naturalParagraphMode !== false,
                 });
 
                 done++;

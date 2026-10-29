@@ -108,6 +108,18 @@ export async function runEmotionPlanStep(
     if (!validation.valid) {
         host.showNotice(`⚠️ 情绪规划校验异常：${validation.errors.join('；')}`, NOTICE_CRITICAL);
     }
+    // 取消/失败时生成器返回空串：旧实现照样落盘并标记完成，
+    // 既用空文件覆盖了原有规划，又让后续一键成文以为该步已完成而跳过。
+    if (!emoContent.trim()) {
+        ctx.setIsLoading(false);
+        host.hideProgress();
+        restoreButtons();
+        const aborted = ctx.getAbortController?.()?.signal?.aborted;
+        log.warn('[StepRunner] emotionPlan 产出为空，未落盘:', aborted ? '已取消' : '模型未返回内容');
+        host.showError(aborted ? '情绪规划已取消，未写入文件' : '❌ 情绪规划未生成任何内容，请重试');
+        await ctx.renderInContainer(ctx.tabContent);
+        return;
+    }
     ctx.stepResults['emotionPlan'] = emoContent;
     const saved = await host.saveStepResult('emotionPlan', emoContent, ctx.chapDir, ctx.chapterName, ctx.volume);
     ctx.vars.emotionPlan = emoContent;
@@ -162,6 +174,17 @@ export async function runSceneExpandStep(
     const validation = validateSceneExpansion(sceneContent);
     if (!validation.valid) {
         host.showNotice(`⚠️ Scene展开校验异常：${validation.errors.join('；')}`, NOTICE_CRITICAL);
+    }
+    // 与情绪规划同源：空产出（取消/报错）不能落盘，也不能标记完成
+    if (!sceneContent.trim()) {
+        ctx.setIsLoading(false);
+        host.hideProgress();
+        restoreButtons();
+        const aborted = ctx.getAbortController?.()?.signal?.aborted;
+        log.warn('[StepRunner] sceneExpand 产出为空，未落盘:', aborted ? '已取消' : '模型未返回内容');
+        host.showError(aborted ? 'Scene展开已取消，未写入文件' : '❌ Scene展开未生成任何内容，请重试');
+        await ctx.renderInContainer(ctx.tabContent);
+        return;
     }
     ctx.stepResults['sceneExpand'] = sceneContent;
     const saved = await host.saveStepResult('sceneExpand', sceneContent, ctx.chapDir, ctx.chapterName, ctx.volume);

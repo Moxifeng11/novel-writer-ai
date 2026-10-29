@@ -53,7 +53,13 @@ export function resolveProjectRoot(
 
 /** 新建项目目标路径；同名冲突由调用方检查 */
 export function newProjectPath(name: string, mode: CreationMode): string {
-    const safeName = String(name || '').replace(/[\\/]+/g, '');
+    // 只去掉斜杠是不够的：`..` 归一化后等于「模式库根目录」甚至 Vault 根，
+    // Agent 传入 ".."/"." 时会删除整库/整个 Vault（项目名来自模型输出，必须按不可信输入处理）。
+    const raw = String(name || '').trim();
+    const safeName = raw.replace(/[\\/]+/g, '').trim();
+    if (!safeName || safeName === '.' || /^\.+$/.test(safeName)) {
+        throw new Error(`非法项目名：「${raw || '(空)'}」不能用作项目目录`);
+    }
     return `${MODE_LIBRARY_ROOTS[mode]}/${safeName}`;
 }
 

@@ -79,13 +79,42 @@ export function sortManuscriptChapters(chapters: ManuscriptChapter[]): Manuscrip
     });
 }
 
-function formatChapterLabel(chapter: ManuscriptChapter, options?: CompileOptions): string {
+/** 供 EPUB/DOCX 等二进制格式复用同一套标题规则 */
+export function formatChapterLabel(chapter: ManuscriptChapter, options?: { unitLabel?: string }): string {
     let label = chapter.chapter;
     if (options?.unitLabel && options.unitLabel !== '章') {
         label = label.replace(/^第(\d+)章/, (_match, num) => `第${num}${options.unitLabel}`);
     }
     if (!chapter.title || chapter.title === chapter.chapter) return label;
     return `${label} ${chapter.title}`;
+}
+
+export interface ManuscriptStats {
+    sorted: ManuscriptChapter[];
+    chapterCount: number;
+    volumeCount: number;
+    wordCount: number;
+    emptyChapters: number;
+}
+
+/** 统一统计口径：各格式共用，避免 Markdown 与 EPUB 的「章数/字数」对不上 */
+export function summarizeManuscriptChapters(chapters: ManuscriptChapter[]): ManuscriptStats {
+    const sorted = sortManuscriptChapters(chapters);
+    const volumes = new Set(sorted.map((chapter) => chapter.volume).filter(Boolean));
+    const emptyChapters = sorted.filter(
+        (chapter) => normalizeChapterBody(chapter.content).trim().length === 0
+    ).length;
+    const wordCount = sorted.reduce(
+        (sum, chapter) => sum + countWords(normalizeChapterBody(chapter.content)),
+        0
+    );
+    return {
+        sorted,
+        chapterCount: sorted.length,
+        volumeCount: volumes.size,
+        wordCount,
+        emptyChapters,
+    };
 }
 
 function escapeHtml(text: string): string {
@@ -186,15 +215,7 @@ export function compileManuscript(
     chapters: ManuscriptChapter[],
     options: CompileOptions
 ): CompiledManuscript {
-    const sorted = sortManuscriptChapters(chapters);
-    const volumes = new Set(sorted.map((chapter) => chapter.volume).filter(Boolean));
-    const emptyChapters = sorted.filter(
-        (chapter) => normalizeChapterBody(chapter.content).trim().length === 0
-    ).length;
-    const wordCount = sorted.reduce(
-        (sum, chapter) => sum + countWords(normalizeChapterBody(chapter.content)),
-        0
-    );
+    const { sorted, chapterCount, volumeCount, wordCount, emptyChapters } = summarizeManuscriptChapters(chapters);
 
     const content =
         options.format === 'markdown'
@@ -206,8 +227,8 @@ export function compileManuscript(
     return {
         content,
         format: options.format,
-        chapterCount: sorted.length,
-        volumeCount: volumes.size,
+        chapterCount,
+        volumeCount,
         wordCount,
         emptyChapters,
     };

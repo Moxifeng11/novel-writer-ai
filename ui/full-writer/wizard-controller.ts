@@ -9,6 +9,7 @@ import type { WizardViewAccess } from './wizard-view-access';
 import { isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
 import { parseProjectMeta } from '../../shared/fanfic-rules';
 import { validateWizardStepContent } from './wizard-step-validators';
+import { parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
 
 /**
  * WizardController — 向导子系统控制器
@@ -73,6 +74,11 @@ export class WizardController {
 
         let projectMetaContent: string | null = null;
         try { projectMetaContent = await readProjectMeta(this.view.app, project); } catch (e) { /* ignore */ }
+
+        const storyStructureStep = steps.find(s => s.id === 'story_structure');
+        if (storyStructureStep && projectMetaContent && parseStorySettingsFromProjectMeta(projectMetaContent)) {
+            storyStructureStep.status = 'done';
+        }
 
         // fanfic: 只信任 .project 指向且校验通过的同人设定文件
         if (projectType === 'fanfic') {
@@ -222,6 +228,9 @@ export class WizardController {
         switch (step.id) {
             case 'fanfic':
                 await this.stepRenderers.renderWizardFanficStep(stepContent, tab);
+                break;
+            case 'story_structure':
+                await this.stepRenderers.renderWizardStoryStructureStep(stepContent, tab);
                 break;
             case 'entities':
                 await this.stepRenderers.renderWizardEntitiesStep(stepContent, tab);

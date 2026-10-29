@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice, Modal } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, Modal, Menu } from 'obsidian';
 import NovelWriterPlugin, { NovelWriterSettings, DEFAULT_SETTINGS, CustomProvider, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from '../main';
 import type { DeconstructionEngineSettings } from '../main';
 import { renderAppearanceSettings } from './appearance-settings';
@@ -10,6 +10,16 @@ import { FingerprintExtractor } from '../engine/fingerprint-extractor';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
 import { detectProviderFromEndpoint } from '../shared/provider-detection';
 import { testProviderConnectivity, type ApiConnectivityResult } from '../services/api-connectivity-service';
+import {
+    API_FORMAT_OPTIONS,
+    normalizeApiFormat,
+    type ApiFormat,
+} from '../shared/api-format';
+import { discoverModels, type DiscoveredModel } from '../services/model-discovery';
+import { ModelPickerModal } from './model-picker-modal';
+import { PasswordModal } from './password-modal';
+import { describeSecretForInput, isStoredCiphertext } from '../shared/secret-display';
+import { lookupModelCapability } from '../shared/model-capabilities';
 import { ProjectMigrationService } from '../services/project-migration-service';
 import {
     resolveTaskModelConfig,
@@ -23,6 +33,13 @@ import {
     type TaskBudgetOverride,
     type ThinkingLevel,
 } from '../shared/task-model';
+import {
+    BUDGET_TIERS,
+    budgetTierSpec,
+    normalizeBudgetTier,
+    TASK_CATEGORY,
+    type BudgetTier,
+} from '../shared/task-budget-engine';
 import { AddFingerprintModal } from './fingerprint-library-modal';
 import { FingerprintDetailModal } from './fingerprint-detail-modal';
 import { renderFingerprintList } from './fingerprint-utils';
@@ -182,488 +199,822 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         }
     }
 
+    /** 当前在 API 设置里选中的供应商（纯 UI 状态，不持久化） */
+    private apiSelectedProviderId: string | null = null;
+
+    /** 容量显示：1050000 → 1M，204800 → 205K */
+    private formatCapacity(value: number | undefined): string {
+        if (!value || value <= 0) return '';
+        if (value >= 1_000_000) {
+            const scaled = value / 1_000_000;
+            return `${Number.isInteger(scaled) ? scaled : scaled.toFixed(1)}M`;
+        }
+        if (value >= 1000) return `${Math.round(value / 1000)}K`;
+        return String(value);
+    }
+
+    /** 取供应商原始配置（含 apiFormat / disabledModels / modelMeta 等未透出字段） */
+    private getRawProvider(id: string): CustomProvider | undefined {
+        return (this.plugin.settings.customProviders || []).find(provider => provider.id === id);
+    }
+
     private renderApiSection(): void {
         const section = this.tabContent.createEl('section');
+        const providers = this.plugin.getAllProviders();
+        const currentId = this.plugin.getCurrentProviderId();
 
-        const currentProviderId = this.plugin.getCurrentProviderId();
-        const customProviders = this.plugin.settings.customProviders || [];
-        const currentProvider = customProviders.find(c => c.id === currentProviderId);
-        const isPreset = currentProvider ? !!currentProvider.isDefault : false;
-        const isCustom = !isPreset;
-        const isLegacyCustom = isCustom && !currentProvider;
+        const remembered = this.apiSelectedProviderId;
+        const selectedId = remembered && providers.some(p => p.id === remembered)
+            ? remembered
+            : (currentId && providers.some(p => p.id === currentId) ? currentId : (providers[0]?.id ?? ''));
+        this.apiSelectedProviderId = selectedId || null;
 
-        const dirtyState = {
-            endpoint: false,
-            name: false,
-            models: false,
-            context: false,
-            output: false
+        this.renderApiHeader(section);
+
+        const layout = section.createDiv({ cls: 'nw-api-layout' });
+        this.renderProviderSidebar(layout.createDiv({ cls: 'nw-api-sidebar' }), providers, selectedId, currentId);
+
+        const detail = layout.createDiv({ cls: 'nw-api-detail' });
+        if (!selectedId) {
+            detail.createDiv({
+                cls: 'nw-api-empty',
+                text: '还没有供应商。点击右上角「＋ 添加供应商」创建第一个。',
+            });
+            this.renderApiGlobalSettings(detail);
+            return;
+        }
+        this.renderProviderDetail(detail, selectedId);
+        this.renderApiGlobalSettings(detail);
+    }
+
+    /** 顶部标题与操作 */
+    private renderApiHeader(section: HTMLElement): void {
+        const header = section.createDiv({ cls: 'nw-api-header' });
+        const titleWrap = header.createDiv({ cls: 'nw-api-header-title' });
+        titleWrap.createEl('h2', { text: '模型设置' });
+        titleWrap.createEl('p', {
+            text: '管理自定义模型供应商，配置后可在写作任务中选择使用。',
+        });
+
+        const actions = header.createDiv({ cls: 'nw-api-header-actions' });
+
+        const restoreBtn = actions.createEl('button', {
+            cls: 'nw-api-icon-btn',
+            attr: { type: 'button', title: '恢复默认供应商', 'aria-label': '恢复默认供应商' },
+        });
+        restoreBtn.setText('🔄');
+        restoreBtn.onclick = async () => {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '恢复默认供应商',
+                description: '确定要恢复默认供应商吗？已删除的默认供应商会重新加回来，已有的不会被覆盖。',
+                confirmText: '确认恢复',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
+            this.plugin.restoreDefaultProviders();
+            await this.plugin.saveSettings();
+            new Notice('✅ 已恢复默认供应商');
+            this.renderActiveTab();
         };
 
-        let providerDropdown: any;
-        new Setting(section)
-            .setName('API 提供商')
-            .setDesc('选择 AI API 提供商，或添加自定义提供商')
-            .addDropdown(dropdown => {
-                providerDropdown = dropdown;
-                const allProviders = this.plugin.getAllProviders();
-                allProviders.forEach(p => {
-                    const sourceIcon = p.sourceType === 'local' ? '💻' : '☁️';
-                    const label = `${sourceIcon} ${p.name}`;
-                    dropdown.addOption(p.id, label);
-                });
-                dropdown.addOption('__manage__', '⚙️ 管理全部提供商...');
-                dropdown.setValue(currentProviderId || '__manage__');
-                dropdown.onChange(async (value) => {
-                    if (value === '__manage__') {
-                        dropdown.setValue(currentProviderId || '__manage__');
-                        this.showManageProvidersModal();
-                        return;
-                    }
-                    const all = this.plugin.getAllProviders();
-                    const match = all.find(p => p.id === value);
-                    if (match && this.plugin.switchProviderByEndpoint(match.endpoint)) {
-                        await this.plugin.saveSettings();
-                        this.plugin.updateStatusBarText();
-                        this.renderActiveTab();
-                    }
-                });
-            });
-
-        const manageRow = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-margintop-4px-2 nw-u-marginbottom-8px-2' });
-        const manageBtn = manageRow.createEl('button', {
-            text: '🔧 管理全部提供商',
-            attr: { type: 'button', title: '添加/编辑/删除/恢复 API 提供商', style: 'padding:4px 12px;font-size:12px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-secondary);color:var(--text-normal);' }
+        const addBtn = actions.createEl('button', {
+            cls: 'nw-api-primary-btn',
+            attr: { type: 'button' },
         });
-        manageBtn.onclick = () => this.showManageProvidersModal();
+        addBtn.setText('＋ 添加供应商');
+        addBtn.onclick = () => this.openNewProviderModal();
+    }
 
-        if (isLegacyCustom) {
-            new Setting(section)
-                .setName('提供商名称')
-                .setDesc('用于状态栏和工作台显示')
-                .addText(text => text
-                    .setPlaceholder('我的代理')
-                    .setValue(this.plugin.settings.customProviderName)
-                    .onChange(value => {
-                        this.plugin.settings.customProviderName = value;
-                    }));
+    /** 左栏：预设 / 自定义分组列表 */
+    private renderProviderSidebar(
+        container: HTMLElement,
+        providers: Array<{ id: string; name: string; sourceType: string; isDefault?: boolean }>,
+        selectedId: string,
+        currentId: string | null,
+    ): void {
+        const groups: Array<{ title: string; items: typeof providers }> = [
+            { title: '预设供应商', items: providers.filter(p => p.isDefault) },
+            { title: '自定义供应商', items: providers.filter(p => !p.isDefault) },
+        ];
 
-            new Setting(section)
-                .setName('API 端点')
-                .setDesc('OpenAI 兼容 API 基础 URL')
-                .addText(text => text
-                    .setPlaceholder('https://api.example.com/v1/chat/completions')
-                    .setValue(this.plugin.settings.apiEndpoint)
-                    .onChange(value => {
-                        this.plugin.settings.apiEndpoint = value.trim();
-                    }));
-        }
-
-        const activeCustom = currentProviderId ? (this.plugin.settings.customProviders || []).find(c => c.id === currentProviderId) : null;
-        if (isCustom || activeCustom) {
-            if (activeCustom) {
-                section.createDiv({ cls: 'nw-u-p-8px-12px-2 nw-u-m-8px-0 nw-u-bg-background-modifier-ho nw-u-brd-6px-2 nw-u-fs-12px-2' })
-                    .createEl('span', { text: `🔧 ${activeCustom.name} · ${activeCustom.endpoint} · ${activeCustom.models.length} 个模型` });
-
-                const mgmtRow = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-marginbottom-8px-2' });
-                const editBtn = mgmtRow.createEl('button', {
-                    text: '✏️ 编辑',
-                    cls: 'nw-u-p-4px-12px-2 nw-u-fs-12px-2 nw-u-cur-pointer-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2'
+        for (const group of groups) {
+            if (group.items.length === 0) continue;
+            container.createDiv({ cls: 'nw-api-sidebar-group', text: group.title });
+            for (const provider of group.items) {
+                const row = container.createDiv({
+                    cls: 'nw-api-sidebar-row' + (provider.id === selectedId ? ' nw-api-sidebar-row-selected' : ''),
                 });
-                const deleteBtn = mgmtRow.createEl('button', {
-                    text: '🗑 删除',
-                    cls: 'nw-u-p-4px-12px-2 nw-u-fs-12px-2 nw-u-cur-pointer-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-c-text-error'
+                row.createSpan({
+                    cls: 'nw-api-sidebar-icon',
+                    text: provider.sourceType === 'local' ? '💻' : '☁️',
                 });
-                editBtn.onclick = () => this.showEditCustomProviderForm(activeCustom);
-                deleteBtn.onclick = async () => {
-                    const confirmed = await OperationConfirmModal.confirm(this.app, {
-                        title: '删除自定义提供商',
-                        description: `确定要删除自定义提供商 "${activeCustom.name}" 吗？`,
-                        warning: '此操作不可恢复',
-                        confirmText: '确认删除',
-                        cancelText: '取消',
-                    });
-                    if (!confirmed) return;
-                    this.plugin.deleteCustomProvider(activeCustom.id);
-                    await this.plugin.saveSettings();
-                    this.plugin.updateStatusBarText();
+                row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name });
+                const isCurrent = provider.id === currentId;
+                row.createSpan({
+                    cls: 'nw-api-sidebar-dot' + (isCurrent ? ' nw-api-sidebar-dot-current' : ''),
+                    attr: { title: isCurrent ? '当前使用中' : '未启用' },
+                });
+                row.onclick = () => {
+                    this.apiSelectedProviderId = provider.id;
                     this.renderActiveTab();
-                    new Notice(`已删除 "${activeCustom.name}"`);
                 };
-            } else {
-                section.createDiv({ cls: 'nw-u-p-8px-12px-2 nw-u-m-8px-0 nw-u-bg-background-modifier-wa nw-u-brd-6px-2 nw-u-fs-12px-2' })
-                    .createEl('span', { text: '⚠️ 当前使用未保存的自定义配置。建议点击"⚙️ 管理全部提供商..."保存。' });
             }
         }
+    }
 
-        const providerLabel = isCustom
-            ? (this.plugin.settings.customProviderName || '自定义')
-            : (currentProvider ? currentProvider.name : (currentProviderId || 'API'));
+    /** 右栏：单个供应商的完整配置 */
+    private renderProviderDetail(container: HTMLElement, providerId: string): void {
+        const raw = this.getRawProvider(providerId);
+        const provider = this.plugin.getAllProviders().find(p => p.id === providerId);
+        if (!raw || !provider) {
+            container.createDiv({ cls: 'nw-api-empty', text: '该供应商已不可用。' });
+            return;
+        }
+        const format = normalizeApiFormat(raw.apiFormat);
+        const rerender = () => this.renderActiveTab();
 
-        const connectivityRow = section.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-8px-2',
+        // ── 标题行：名称 + 启用开关 + 更多操作 ──
+        const head = container.createDiv({ cls: 'nw-api-provider-head' });
+        head.createSpan({ cls: 'nw-api-provider-icon', text: '🗂' });
+        const nameInput = head.createEl('input', {
+            cls: 'nw-api-provider-name',
+            type: 'text',
+            value: raw.name,
+            attr: { 'aria-label': '供应商名称' },
         });
-        const testBtn = connectivityRow.createEl('button', {
-            text: '🔌 测试连通性',
-            cls: 'nw-btn nw-btn-secondary',
-            attr: { type: 'button', title: '发送一次最小请求，验证端点、密钥与模型是否可用' },
+        nameInput.addEventListener('change', async () => {
+            const next = nameInput.value.trim();
+            if (!next || next === raw.name) {
+                nameInput.value = raw.name;
+                return;
+            }
+            this.plugin.updateProvider(raw.id, { name: next });
+            await this.plugin.saveSettings();
+            rerender();
         });
-        const statusEl = connectivityRow.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2', text: '未测试' });
-        const renderConnectivityStatus = (result: ApiConnectivityResult): void => {
-            const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
-            statusEl.setText(`${icon} ${result.message}`);
-            statusEl.className = `nw-u-fs-12px-2 ${result.level === 'ok'
-                ? 'nw-u-c-text-success'
-                : result.level === 'warn'
-                    ? 'nw-u-c-text-warning'
-                    : 'nw-u-c-text-error'}`;
+
+        const isCurrent = providerId === this.plugin.getCurrentProviderId();
+        const toggleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该供应商' } });
+        const toggle = toggleLabel.createEl('input', { type: 'checkbox' });
+        toggle.checked = isCurrent;
+        toggle.addEventListener('change', async () => {
+            if (toggle.checked) {
+                this.plugin.switchProviderByEndpoint(raw.endpoint);
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                new Notice(`✅ 已切换到「${raw.name}」`);
+                this.apiSelectedProviderId = providerId;
+                rerender();
+                return;
+            }
+            // 关闭当前供应商会让写作任务失去端点，必须明确拒绝
+            toggle.checked = true;
+            new Notice('不能用开关停用当前正在使用的供应商，请改为切换到其他供应商', 5000);
+        });
+
+        const moreBtn = head.createEl('button', {
+            cls: 'nw-api-icon-btn',
+            attr: { type: 'button', title: '更多操作', 'aria-label': '更多操作' },
+        });
+        moreBtn.setText('⋯');
+        moreBtn.onclick = (event) => {
+            const menu = new Menu();
+            menu.addItem(item => item.setTitle('切换到该供应商').setDisabled(isCurrent).onClick(async () => {
+                this.plugin.switchProviderByEndpoint(raw.endpoint);
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                rerender();
+            }));
+            menu.addSeparator();
+            menu.addItem(item => item.setTitle('删除供应商').onClick(async () => {
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '删除供应商',
+                    description: `确定要删除供应商「${raw.name}」吗？可以在「恢复默认供应商」中找回默认项。`,
+                    confirmText: '确认删除',
+                    cancelText: '取消',
+                });
+                if (!confirmed) return;
+                this.plugin.setHidden(raw.id, true);
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                this.apiSelectedProviderId = null;
+                rerender();
+                new Notice(`已删除「${raw.name}」`);
+            }));
+            menu.showAtMouseEvent(event);
         };
+
+        // ── Base URL ──
+        this.renderField(container, 'Base URL', (field) => {
+            // 用可换行的 textarea：长 URL（如火山 …/api/v3/chat/completions）在窄面板里
+            // 单行 input 一定被截断，多行显示才能一眼看全。
+            const input = field.createEl('textarea', {
+                cls: 'nw-api-text-input nw-api-text-area',
+                attr: {
+                    placeholder: 'https://api.example.com/v1',
+                    spellcheck: 'false',
+                    rows: '1',
+                    wrap: 'soft',
+                },
+            });
+            input.value = raw.endpoint;
+            const autosize = () => {
+                input.style.height = 'auto';
+                input.style.height = `${Math.max(34, input.scrollHeight)}px`;
+            };
+            window.setTimeout(autosize, 0);
+            input.addEventListener('change', async () => {
+                const next = input.value.trim();
+                if (!next) {
+                    input.value = raw.endpoint;
+                    new Notice('Base URL 不能为空');
+                    return;
+                }
+                input.value = next;
+                autosize();
+                this.plugin.updateProvider(raw.id, { endpoint: next });
+                await this.plugin.saveSettings();
+                if (raw.id === this.plugin.getCurrentProviderId()) this.plugin.updateStatusBarText();
+                rerender();
+            });
+        }, '可带也可不带 /v1，实际请求路径由下方「API 格式」推导');
+
+        // ── API 格式 ──
+        this.renderField(container, 'API 格式', (field) => {
+            const select = field.createEl('select', { cls: 'nw-api-select' });
+            for (const option of API_FORMAT_OPTIONS) {
+                select.createEl('option', {
+                    value: option.value,
+                    // 下拉里只放短名；路径放 title，避免窄面板截断（旧版把
+                    // 路径塞进 label，36 字符在 240px 面板下溢出 38px）
+                    text: option.label,
+                    attr: { title: `${option.label}（${option.path}）` },
+                });
+            }
+            select.value = format;
+            const syncTitle = () => {
+                const active = API_FORMAT_OPTIONS.find(o => o.value === select.value);
+                select.setAttr('title', active ? `${active.label}${active.path}` : '');
+            };
+            syncTitle();
+            select.addEventListener('change', async () => {
+                syncTitle();
+                this.plugin.updateProvider(raw.id, { apiFormat: normalizeApiFormat(select.value) });
+                await this.plugin.saveSettings();
+                new Notice(`已切换为 ${API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value}`);
+            });
+        }, `请求路径：${API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('；')}`);
+
+        // ── API Key ──
+        this.renderField(container, 'API Key', (field) => {
+            const row = field.createDiv({ cls: 'nw-api-key-row' });
+            // 未解锁时内存里是密文：不能把它塞进输入框（用户会看到乱码，
+            // 误编辑还会把密文当新密钥存回去）。密文一律显示为空 + 提示语。
+            const storedKey = this.plugin.settings.providerKeys?.[raw.id] || '';
+            const display = describeSecretForInput(storedKey);
+            const input = row.createEl('input', {
+                cls: 'nw-api-text-input',
+                type: 'password',
+                value: display.value,
+                attr: { placeholder: display.placeholder, spellcheck: 'false', title: display.title },
+            });
+            input.addEventListener('change', async () => {
+                const typed = input.value.trim();
+                // 密文未解锁时输入框是空的：留空失焦不写回，避免把密文清掉
+                if (!typed && isStoredCiphertext(storedKey)) return;
+                this.plugin.settings.providerKeys = this.plugin.settings.providerKeys || {};
+                this.plugin.settings.providerKeys[raw.id] = typed;
+                // 当前供应商的密钥同时写回全局字段，避免两条读取路径不一致
+                if (raw.id === this.plugin.getCurrentProviderId()) {
+                    this.plugin.settings.apiKey = typed;
+                }
+                await this.plugin.saveSettings();
+                new Notice('✅ 密钥已保存');
+            });
+            const eye = row.createEl('button', {
+                cls: 'nw-api-icon-btn',
+                attr: { type: 'button', title: '显示/隐藏密钥' },
+            });
+            eye.setText('👁');
+            eye.onclick = () => {
+                input.type = input.type === 'password' ? 'text' : 'password';
+                eye.setText(input.type === 'password' ? '👁' : '🙈');
+            };
+        });
+
+        // ── 模型列表 ──
+        const modelsBlock = container.createDiv({ cls: 'nw-api-field' });
+        const modelsHead = modelsBlock.createDiv({ cls: 'nw-api-models-head' });
+        modelsHead.createEl('span', { cls: 'nw-api-label', text: '模型列表' });
+        const modelsActions = modelsHead.createDiv({ cls: 'nw-api-models-actions' });
+
+        const fetchBtn = modelsActions.createEl('button', {
+            cls: 'nw-api-ghost-btn',
+            attr: { type: 'button', title: '请求端点模型列表接口，勾选后写入' },
+        });
+        fetchBtn.setText('🔄 从 URL 获取');
+        fetchBtn.onclick = async () => {
+            if (fetchBtn.disabled) return;
+            fetchBtn.disabled = true;
+            fetchBtn.setText('⏳ 获取中…');
+            try {
+                const key = this.plugin.settings.providerKeys?.[raw.id] || '';
+                const result = await discoverModels(raw.endpoint, format, key);
+                if (result.kind === 'error') {
+                    new Notice(`❌ 获取模型失败：${result.message}`, 10000);
+                    return;
+                }
+                new ModelPickerModal(this.app, result.models, raw.models, async ({ models, capacities }) => {
+                    const meta = { ...(this.getRawProvider(raw.id)?.modelMeta || {}) };
+                    for (const item of capacities) {
+                        meta[item.id] = {
+                            ...meta[item.id],
+                            ...(item.contextWindow ? { contextWindow: item.contextWindow } : {}),
+                            ...(item.maxTokens ? { maxTokens: item.maxTokens } : {}),
+                        };
+                    }
+                    this.plugin.updateProvider(raw.id, { models, modelMeta: meta });
+                    this.syncAvailableModels(raw.id);
+                    await this.plugin.saveSettings();
+                    this.plugin.updateStatusBarText();
+                    new Notice(`✅ 已更新模型列表（${models.length} 个）`, 4000);
+                    rerender();
+                }).open();
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.setText('🔄 从 URL 获取');
+            }
+        };
+
+        const addModelBtn = modelsActions.createEl('button', {
+            cls: 'nw-api-ghost-btn',
+            attr: { type: 'button' },
+        });
+        addModelBtn.setText('＋ 添加模型');
+        addModelBtn.onclick = () => this.openModelEditor(raw.id, '');
+
+        const list = modelsBlock.createDiv({ cls: 'nw-api-model-list' });
+        const disabled = new Set(raw.disabledModels || []);
+        if (raw.models.length === 0) {
+            list.createDiv({ cls: 'nw-api-model-empty', text: '还没有模型。点「从 URL 获取」自动导入，或手动添加。' });
+        }
+        for (const modelId of raw.models) {
+            const meta = raw.modelMeta?.[modelId];
+            const fallback = lookupModelCapability(modelId);
+            const contextWindow = meta?.contextWindow ?? fallback?.maxContext;
+
+            const row = list.createDiv({ cls: 'nw-api-model-row' + (disabled.has(modelId) ? ' nw-api-model-row-disabled' : '') });
+            const main = row.createDiv({ cls: 'nw-api-model-main' });
+            main.createSpan({ cls: 'nw-api-model-id', text: modelId });
+            const capacity = this.formatCapacity(contextWindow);
+            if (capacity) main.createSpan({ cls: 'nw-api-model-badge', text: capacity });
+            if (meta?.vision) main.createSpan({ cls: 'nw-api-model-badge', text: '视觉' });
+
+            const rowActions = row.createDiv({ cls: 'nw-api-model-actions' });
+
+            const enableLabel = rowActions.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该模型' } });
+            const enable = enableLabel.createEl('input', { type: 'checkbox' });
+            enable.checked = !disabled.has(modelId);
+            enable.addEventListener('change', async () => {
+                const next = new Set(this.getRawProvider(raw.id)?.disabledModels || []);
+                if (enable.checked) next.delete(modelId);
+                else next.add(modelId);
+                this.plugin.updateProvider(raw.id, { disabledModels: [...next] });
+                this.syncAvailableModels(raw.id);
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                rerender();
+            });
+
+            const editBtn = rowActions.createEl('button', {
+                cls: 'nw-api-icon-btn',
+                attr: { type: 'button', title: '编辑模型' },
+            });
+            editBtn.setText('✏️');
+            editBtn.onclick = () => this.openModelEditor(raw.id, modelId);
+
+            const delBtn = rowActions.createEl('button', {
+                cls: 'nw-api-icon-btn',
+                attr: { type: 'button', title: '从列表移除' },
+            });
+            delBtn.setText('🗑');
+            delBtn.onclick = async () => {
+                const next = (this.getRawProvider(raw.id)?.models || []).filter(model => model !== modelId);
+                this.plugin.updateProvider(raw.id, { models: next });
+                this.syncAvailableModels(raw.id);
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                rerender();
+            };
+        }
+
+        // ── 连通性测试 ──
+        const testRow = container.createDiv({ cls: 'nw-api-test-row' });
+        const testBtn = testRow.createEl('button', {
+            cls: 'nw-api-ghost-btn',
+            attr: { type: 'button', title: '发送一次最小请求，验证端点、密钥与模型' },
+        });
+        testBtn.setText('🔌 测试连通性');
+        const statusEl = testRow.createSpan({ cls: 'nw-api-test-status', text: '未测试' });
         testBtn.onclick = async () => {
             if (testBtn.disabled) return;
             testBtn.disabled = true;
             testBtn.setText('⏳ 测试中…');
-            statusEl.setText('正在检测端点、鉴权与模型…');
-            statusEl.className = 'nw-u-fs-12px-2 nw-u-c-text-muted-2';
+            statusEl.setText('正在检测…');
+            statusEl.className = 'nw-api-test-status';
             try {
-                const endpoint = activeCustom?.endpoint || currentProvider?.endpoint || this.plugin.settings.apiEndpoint;
-                const model = this.plugin.settings.defaultModel
-                    || activeCustom?.models?.[0]
-                    || currentProvider?.models?.[0]
+                const enabledModels = raw.models.filter(model => !disabled.has(model));
+                const model = (raw.id === this.plugin.getCurrentProviderId() ? this.plugin.settings.defaultModel : '')
+                    || enabledModels[0]
+                    || raw.models[0]
                     || '';
-                const detection = detectProviderFromEndpoint(endpoint);
-                const sourceType = activeCustom?.sourceType
-                    || currentProvider?.sourceType
-                    || (detection.valid ? detection.sourceType : undefined);
-                const apiKey = (currentProviderId ? this.plugin.settings.providerKeys?.[currentProviderId] : '')
-                    || this.plugin.settings.apiKey;
                 const result = await testProviderConnectivity({
-                    providerName: providerLabel,
-                    endpoint,
+                    providerName: raw.name,
+                    endpoint: raw.endpoint,
                     model,
-                    apiKey,
-                    sourceType,
+                    apiKey: this.plugin.settings.providerKeys?.[raw.id] || '',
+                    sourceType: provider.sourceType === 'local' ? 'local' : 'cloud',
+                    apiFormat: format,
                 });
-                renderConnectivityStatus(result);
-                if (result.level === 'ok') {
-                    new Notice(`✅ ${providerLabel}：${result.message}`, 4000);
-                } else if (result.level === 'warn') {
-                    new Notice(`⚠️ ${providerLabel}：${result.message}`, 8000);
-                } else {
-                    new Notice(`❌ ${providerLabel}：${result.message}`, 10000);
-                }
-            } catch (e) {
-                const message = e instanceof Error ? e.message : String(e);
-                statusEl.setText(`❌ 测试异常：${message}`);
-                statusEl.className = 'nw-u-fs-12px-2 nw-u-c-text-error';
-                new Notice(`❌ 连通性测试异常：${message}`, 8000);
+                const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
+                statusEl.setText(`${icon} ${result.message}`);
+                statusEl.className = `nw-api-test-status nw-api-test-status-${result.level}`;
             } finally {
                 testBtn.disabled = false;
                 testBtn.setText('🔌 测试连通性');
             }
         };
+    }
 
-        new Setting(section)
-            .setName(`${providerLabel} 密钥`)
-            .setDesc(isCustom ? '自定义提供商的 API 密钥' : `仅用于 ${providerLabel}`)
-            .addText(text => {
-                text.inputEl.type = 'password';
-                text.setPlaceholder('请输入 API 密钥')
-                    .setValue(this.plugin.settings.apiKey)
-                    .onChange(value => {
-                        this.plugin.settings.apiKey = value;
-                        if (currentProviderId) {
-                            this.plugin.settings.providerKeys[currentProviderId] = value;
+    /** 「标签 + 控件 + 说明」的统一排版 */
+    private renderField(
+        container: HTMLElement,
+        label: string,
+        build: (field: HTMLElement) => void,
+        hint?: string,
+    ): void {
+        const field = container.createDiv({ cls: 'nw-api-field' });
+        field.createEl('span', { cls: 'nw-api-label', text: label });
+        build(field);
+        if (hint) field.createEl('span', { cls: 'nw-api-hint', text: hint });
+    }
+
+    /** 把供应商的启用模型同步到全局 availableModels，并修正失效的默认/规划/正文模型 */
+    private syncAvailableModels(providerId: string): void {
+        const settings = this.plugin.settings;
+        if (providerId !== this.plugin.getCurrentProviderId()) return;
+        const raw = this.getRawProvider(providerId);
+        if (!raw) return;
+        const disabled = new Set(raw.disabledModels || []);
+        const enabled = raw.models.filter(model => !disabled.has(model));
+        settings.availableModels = enabled.length > 0 ? [...enabled] : [...raw.models];
+        for (const key of ['defaultModel', 'flashModel', 'proModel'] as const) {
+            if (!settings.availableModels.includes(settings[key])) {
+                settings[key] = settings.availableModels[0];
+            }
+        }
+    }
+
+    /** 模型编辑弹窗：改 id / 上下文 / 输出 / 是否支持图片 */
+    private openModelEditor(providerId: string, modelId: string): void {
+        const raw = this.getRawProvider(providerId);
+        if (!raw) return;
+        const plugin = this.plugin;
+        const app = this.app;
+        const rerender = () => this.renderActiveTab();
+        const sync = (id: string) => this.syncAvailableModels(id);
+        const isNew = modelId === '';
+        const initialMeta = raw.modelMeta?.[modelId] || {};
+        const fallback = lookupModelCapability(modelId);
+
+        new (class extends Modal {
+            onOpen(): void {
+                this.modalEl.addClass('nw-scope');
+                const { contentEl } = this;
+                contentEl.createEl('h3', { text: isNew ? '＋ 添加模型' : '✏️ 编辑模型' });
+
+                let idValue = modelId;
+                let contextValue = String(initialMeta.contextWindow ?? fallback?.maxContext ?? '');
+                let outputValue = String(initialMeta.maxTokens ?? fallback?.maxOutput ?? '');
+                let visionValue = !!initialMeta.vision;
+
+                new Setting(contentEl)
+                    .setName('模型 ID')
+                    .setDesc('请求时使用的模型名，需与端点完全一致')
+                    .addText(text => text
+                        .setValue(idValue)
+                        .setPlaceholder('deepseek-v4.1-flash')
+                        .onChange(value => { idValue = value.trim(); }));
+
+                new Setting(contentEl)
+                    .setName('上下文窗口 (tokens)')
+                    .setDesc('留空则按内置能力表推断')
+                    .addText(text => text
+                        .setValue(contextValue)
+                        .onChange(value => { contextValue = value.trim(); }));
+
+                new Setting(contentEl)
+                    .setName('输出上限 (tokens)')
+                    .setDesc('留空则按内置能力表推断')
+                    .addText(text => text
+                        .setValue(outputValue)
+                        .onChange(value => { outputValue = value.trim(); }));
+
+                new Setting(contentEl)
+                    .setName('支持图片输入')
+                    .addToggle(toggle => toggle
+                        .setValue(visionValue)
+                        .onChange(value => { visionValue = value; }));
+
+                const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
+                footer.createEl('button', { text: '取消', attr: { type: 'button' } }).onclick = () => this.close();
+                const save = footer.createEl('button', {
+                    cls: 'nw-api-primary-btn',
+                    text: isNew ? '添加' : '保存',
+                    attr: { type: 'button' },
+                });
+                save.onclick = async () => {
+                    if (!idValue) { new Notice('模型 ID 不能为空'); return; }
+                    const current = (plugin.settings.customProviders || []).find(p => p.id === providerId);
+                    if (!current) { new Notice('该供应商已不存在'); return; }
+
+                    const models = [...current.models];
+                    if (isNew) {
+                        if (models.includes(idValue)) { new Notice('该模型已在列表中'); return; }
+                        models.push(idValue);
+                    } else if (idValue !== modelId) {
+                        const at = models.indexOf(modelId);
+                        if (at >= 0) {
+                            if (models.includes(idValue)) { new Notice('该模型已在列表中'); return; }
+                            models[at] = idValue;
                         }
-                    });
-                const toggleBtn = text.inputEl.parentElement?.createEl('button', {
-                    text: '👁',
-                    cls: 'novel-writer-key-toggle',
-                    attr: { type: 'button', title: '显示/隐藏密钥' }
-                });
-                if (toggleBtn) {
-                    toggleBtn.style.cssText = 'margin-left:4px;padding:2px 6px;cursor:pointer;border:none;background:var(--background-modifier-border);border-radius:3px;font-size:12px;';
-                    toggleBtn.addEventListener('click', () => {
-                        text.inputEl.type = text.inputEl.type === 'password' ? 'text' : 'password';
-                        toggleBtn.textContent = text.inputEl.type === 'password' ? '👁' : '🙈';
-                    });
+                    }
+
+                    const meta = { ...(current.modelMeta || {}) };
+                    if (!isNew && idValue !== modelId) delete meta[modelId];
+                    const nextMeta: { contextWindow?: number; maxTokens?: number; vision?: boolean } = {};
+                    const context = parseInt(contextValue, 10);
+                    const output = parseInt(outputValue, 10);
+                    if (Number.isFinite(context) && context > 0) nextMeta.contextWindow = context;
+                    if (Number.isFinite(output) && output > 0) nextMeta.maxTokens = output;
+                    if (visionValue) nextMeta.vision = true;
+                    if (Object.keys(nextMeta).length > 0) meta[idValue] = nextMeta;
+                    else delete meta[idValue];
+
+                    // 重命名时同步禁用列表，避免旧名残留在 disabledModels 里
+                    const disabled = (current.disabledModels || []).map(model => (model === modelId ? idValue : model));
+
+                    plugin.updateProvider(providerId, { models, modelMeta: meta, disabledModels: disabled });
+                    sync(providerId);
+                    await plugin.saveSettings();
+                    plugin.updateStatusBarText();
+                    new Notice(isNew ? `✅ 已添加模型 ${idValue}` : `✅ 已保存 ${idValue}`);
+                    this.close();
+                    rerender();
+                };
+            }
+            onClose(): void { this.contentEl.empty(); }
+        })(app).open();
+    }
+
+    /**
+     * 密钥加密状态 + 口令重置（2026-10-29）。
+     *
+     * 状态：磁盘上还有多少项密钥处于加密状态。
+     * 解锁：输入已有口令（修复后不会再让你「重设」口令）。
+     * 重置：设定新口令后，能读到的明文会重新加密；解不开的旧密文会被清空
+     * 并在 Notice 里列出，提示重新填写——而不是让它们以「看起来配好了但
+     * 其实无效」的状态一直存在。
+     */
+    private renderKeyEncryptionRows(container: HTMLElement): void {
+        const service = this.plugin.getSettingsService?.();
+        const locked = service?.lockedSecretCount?.() ?? 0;
+
+        const row = new Setting(container)
+            .setName('密钥加密')
+            .setDesc(locked > 0
+                ? `磁盘上有 ${locked} 项密钥处于加密状态。重启或更新后需要输入口令才能读取（修复后不会再让你「重设」口令）。`
+                : '磁盘上没有加密的密钥条目。设定口令后，保存的密钥会用口令加密。');
+
+        row.addButton(btn => btn
+            .setButtonText(locked > 0 ? '🔓 输入口令解锁' : '🔐 设定口令')
+            .onClick(async () => {
+                if (locked > 0) {
+                    const password = await PasswordModal.ask(this.app);
+                    if (!password) return;
+                    this.plugin.setSessionPassword?.(password);
+                    await this.plugin.loadSettings();
+                    this.renderActiveTab();
+                    new Notice('✅ 已解锁，密钥可正常读取');
+                    return;
                 }
-            });
+                const password = await PasswordModal.setup(this.app);
+                if (!password) return;
+                this.plugin.setSessionPassword?.(password);
+                await this.plugin.saveSettings();
+                this.renderActiveTab();
+                new Notice('✅ 已启用密钥加密');
+            }));
 
-        const modelsContainer = section.createDiv({ cls: 'nw-u-m-8px-0' });
-        const modelsHeader = modelsContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-4px-2' });
-        modelsHeader.createEl('span', { text: '🤖 可用模型', cls: 'nw-u-fwt-600-2' });
-
-        const addModelBtn = modelsHeader.createEl('button', {
-            text: '＋ 添加',
-            cls: 'novel-writer-add-model-btn',
-            attr: { type: 'button' }
-        });
-        addModelBtn.style.cssText = 'padding:2px 8px;cursor:pointer;border:1px solid var(--interactive-accent);background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:11px;';
-
-        const modelListEl = modelsContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-4px-2 nw-u-minh-28px nw-u-p-4px nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2' });
-
-        const inputRow = modelsContainer.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-margintop-6px nw-u-ai-center-2'
-        });
-        const modelInput = inputRow.createEl('input', {
-            type: 'text',
-            attr: { placeholder: '输入新模型名称（如 gpt-4o），按 Enter 或点击 ✓', style: 'flex:1;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);font-size:12px;' }
-        });
-        const confirmBtn = inputRow.createEl('button', {
-            text: '✓ 确认',
-            attr: { type: 'button', style: 'padding:4px 10px;cursor:pointer;border:1px solid var(--interactive-accent);background:var(--interactive-accent);color:var(--text-on-accent);border-radius:4px;font-size:12px;' }
-        });
-
-        const renderModelChips = () => {
-            modelListEl.empty();
-            const models = this.getCurrentProviderModels();
-            models.forEach((model, idx) => {
-                const chip = modelListEl.createDiv({ cls: 'nw-u-d-inline-flex nw-u-ai-center-2 nw-u-gap-2px-2 nw-u-p-2px-6px-2 nw-u-bg-background-modifier-ho nw-u-brd-3px-2 nw-u-fs-12px-2' });
-                chip.createSpan({ text: model });
-                const delBtn = chip.createEl('button', { text: '✕', attr: { type: 'button', title: '删除此模型' } });
-                delBtn.style.cssText = 'border:none;background:none;cursor:pointer;font-size:10px;padding:0 2px;color:var(--text-muted);';
-                delBtn.addEventListener('click', async () => {
-                    const currProviderId = this.plugin.getCurrentProviderId();
-                    const customProviders = this.plugin.settings.customProviders || [];
-                    const currentModels = this.getCurrentProviderModels();
-                    currentModels.splice(idx, 1);
-                    if (currentModels.length === 0) {
-                        currentModels.push('default-model');
-                    }
-                    if (currProviderId && customProviders.find(c => c.id === currProviderId)) {
-                        const cp = customProviders.find(c => c.id === currProviderId)!;
-                        cp.models = [...currentModels];
-                    }
-                    this.plugin.settings.availableModels = [...currentModels];
-                    if (!this.plugin.settings.availableModels.includes(this.plugin.settings.defaultModel)) {
-                        this.plugin.settings.defaultModel = this.plugin.settings.availableModels[0];
-                    }
-                    if (!this.plugin.settings.availableModels.includes(this.plugin.settings.flashModel)) {
-                        this.plugin.settings.flashModel = this.plugin.settings.availableModels[0];
-                    }
-                    if (!this.plugin.settings.availableModels.includes(this.plugin.settings.proModel)) {
-                        this.plugin.settings.proModel = this.plugin.settings.availableModels[0];
-                    }
-                    await this.plugin.saveSettings();
-                    dirtyState.models = true;
-                    renderModelChips();
-                    this.renderActiveTab();
+        row.addButton(btn => btn
+            .setButtonText('♻️ 重置口令')
+            .setWarning()
+            .onClick(async () => {
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: '重置密钥加密口令',
+                    description: '将用新口令重新加密所有密钥。用旧口令加密且无法解开的条目会被清空，需要重新填写。',
+                    warning: '请先确认已备份 API Key',
+                    confirmText: '继续重置',
+                    cancelText: '取消',
                 });
-            });
-        };
-        renderModelChips();
+                if (!confirmed) return;
 
-        addModelBtn.addEventListener('click', () => {
-            modelInput.focus();
-        });
-
-        const handleAddModel = async () => {
-            const modelName = modelInput.value.trim();
-            if (!modelName) {
-                new Notice('请输入模型名称');
-                modelInput.focus();
-                return;
-            }
-            const currentModels = this.getCurrentProviderModels();
-            if (currentModels.includes(modelName)) {
-                new Notice('模型已存在');
-                return;
-            }
-            currentModels.push(modelName);
-            const currProviderId = this.plugin.getCurrentProviderId();
-            const customProviders = this.plugin.settings.customProviders || [];
-            if (currProviderId && customProviders.find(c => c.id === currProviderId)) {
-                const cp = customProviders.find(c => c.id === currProviderId)!;
-                cp.models = [...currentModels];
-            }
-            this.plugin.settings.availableModels = [...currentModels];
-            await this.plugin.saveSettings();
-            dirtyState.models = true;
-            modelInput.value = '';
-            new Notice(`✅ 已添加模型：${modelName}`);
-            renderModelChips();
-            this.renderActiveTab();
-        };
-
-        confirmBtn.addEventListener('click', handleAddModel);
-        modelInput.addEventListener('keydown', (e: KeyboardEvent) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddModel();
-            }
-        });
-
-        new Setting(section)
-            .setName('默认模型')
-            .setDesc('默认使用的 AI 模型')
-            .addDropdown(dropdown => {
-                const models = this.getCurrentProviderModels();
-                models.forEach(model => {
-                    dropdown.addOption(model, model);
-                });
-                dropdown.setValue(this.plugin.settings.defaultModel);
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.defaultModel = value;
-                    this.plugin.updateModelLimitsFromModel(value);
-                    await this.plugin.saveSettings();
-                    this.renderActiveTab();
-                });
-            });
-
-        new Setting(section)
-            .setName('Flash 模型（大纲/分析/规划）')
-            .setDesc('大纲骨架、分析报告、元素提取、规划类任务使用')
-            .addDropdown(dropdown => {
-                const models = this.getCurrentProviderModels();
-                models.forEach(model => {
-                    dropdown.addOption(model, model);
-                });
-                dropdown.setValue(this.plugin.settings.flashModel);
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.flashModel = value;
-                    this.plugin.updateModelLimitsFromModel(value);
-                    await this.plugin.saveSettings();
-                    this.renderActiveTab();
-                });
-            });
-
-        new Setting(section)
-            .setName('Pro 模型（正文/角色/实体）')
-            .setDesc('正文创作、角色生成、势力/地点/物品设定任务使用')
-            .addDropdown(dropdown => {
-                const models = this.getCurrentProviderModels();
-                models.forEach(model => {
-                    dropdown.addOption(model, model);
-                });
-                dropdown.setValue(this.plugin.settings.proModel);
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.proModel = value;
-                    this.plugin.updateModelLimitsFromModel(value);
-                    await this.plugin.saveSettings();
-                    this.renderActiveTab();
-                });
-            });
-
-        const currentModel = this.plugin.settings.defaultModel;
-        const endpoint = this.plugin.settings.apiEndpoint;
-        const override = this.plugin.settings.modelOverrides[endpoint]?.[currentModel];
-        const caps = this.plugin.settings.maxContext > 0
-            ? { maxContext: this.plugin.settings.maxContext, maxOutput: this.plugin.settings.maxOutput }
-            : this.plugin.resolveModelLimits(currentModel);
-        const modelDefaults = this.plugin.resolveModelLimits(currentModel);
-        const hasCtxOverride = override?.maxContext !== undefined;
-        const hasOutOverride = override?.maxOutput !== undefined;
-
-        const ctxRow = new Setting(section)
-            .setName('最大上下文')
-            .setDesc(`AI 模型的最大上下文长度（token）。${currentModel} 默认: ${modelDefaults.maxContext.toLocaleString()} tokens${hasCtxOverride ? ' · ⚠️ 已设置自定义值' : ''}`)
-            .addText(text => text
-                .setPlaceholder(modelDefaults.maxContext.toString())
-                .setValue(override?.maxContext !== undefined ? String(override.maxContext) : modelDefaults.maxContext.toString())
-                .onChange(value => {
-                    const parsed = parseInt(value) || modelDefaults.maxContext;
-                    this.plugin.setCurrentModelOverride('maxContext', parsed);
-                    dirtyState.context = true;
-                    ctxRow.setDesc(`AI 模型的最大上下文长度（token）。${currentModel} 默认: ${modelDefaults.maxContext.toLocaleString()} tokens${parsed !== modelDefaults.maxContext ? ' · ⚠️ 已设置自定义值' : ''}`);
-                }));
-
-        const outRow = new Setting(section)
-            .setName('最大输出')
-            .setDesc(`AI 最大输出长度（token）。${currentModel} 默认: ${modelDefaults.maxOutput.toLocaleString()} tokens${hasOutOverride ? ' · ⚠️ 已设置自定义值' : ''}`)
-            .addText(text => text
-                .setPlaceholder(modelDefaults.maxOutput.toString())
-                .setValue(override?.maxOutput !== undefined ? String(override.maxOutput) : modelDefaults.maxOutput.toString())
-                .onChange(value => {
-                    const parsed = parseInt(value) || modelDefaults.maxOutput;
-                    this.plugin.setCurrentModelOverride('maxOutput', parsed);
-                    dirtyState.output = true;
-                    outRow.setDesc(`AI 最大输出长度（token）。${currentModel} 默认: ${modelDefaults.maxOutput.toLocaleString()} tokens${parsed !== modelDefaults.maxOutput ? ' · ⚠️ 已设置自定义值' : ''}`);
-                }));
-
-        const historyContainer = section.createDiv({ cls: 'nw-u-margintop-12px-2' });
-        const historyHeader = historyContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-4px-2' });
-        historyHeader.createEl('span', { text: '📜 渠道-模型配置修改历史', cls: 'nw-u-fwt-600-2 nw-u-fs-12px-2' });
-
-        const showHistoryBtn = historyHeader.createEl('button', {
-            text: '查看',
-            attr: { type: 'button', style: 'padding:2px 8px;font-size:11px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:3px;' }
-        });
-
-        const renderHistory = () => {
-            const historyEl = historyContainer.querySelector('.history-list');
-            if (historyEl) historyEl.remove();
-            const list = historyContainer.createDiv({ cls: "history-list nw-u-maxh-200px-2 nw-u-ovy-auto-2 nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-p-4px-0-2", attr: {} });
-            const history = this.plugin.settings.modelOverrideHistory;
-            if (history.length === 0) {
-                list.createEl('span', { text: '暂无修改记录' });
-                return;
-            }
-            const recent = [...history].reverse().slice(0, 20);
-            for (const h of recent) {
-                const time = new Date(h.timestamp).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                const change = h.oldValue === 0 ? '设置' : `${h.oldValue.toLocaleString()} → ${h.newValue.toLocaleString()}`;
-                const color = h.newValue < h.oldValue ? 'var(--text-muted)' : (h.newValue > h.oldValue ? 'var(--text-accent)' : 'var(--text-normal)');
-                list.createEl('div', {
-                    text: `${time} · ${h.providerId}/${h.model} · ${h.field} = ${change}`,
-                    attr: { style: `padding:2px 0;color:${color};` }
-                });
-            }
-        };
-
-        showHistoryBtn.addEventListener('click', () => renderHistory());
-
-        this.renderTaskBudgetRows(section);
-        this.renderCanonResearchRows(section);
-
-        const saveBtnContainer = section.createDiv({ cls: 'nw-u-margintop-16px-2 nw-u-d-flex-2 nw-u-gap-8px-2' });
-        const saveBtn = saveBtnContainer.createEl('button', {
-            text: '💾 保存设置',
-            attr: { type: 'button' }
-        });
-        saveBtn.style.cssText = 'padding:8px 20px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:6px;font-size:13px;font-weight:600;';
-        saveBtn.addEventListener('click', async () => {
-            if (currentProviderId) {
-                this.plugin.settings.providerKeys[currentProviderId] = this.plugin.settings.apiKey;
-            }
-            const endpoint = this.plugin.settings.apiEndpoint;
-            const customProviders = this.plugin.settings.customProviders || [];
-            const isPresetEndpoint = customProviders.some(c => c.isDefault && c.endpoint === endpoint);
-            const isRegisteredCustom = customProviders.some(c => c.endpoint === endpoint);
-            if (endpoint && !isPresetEndpoint && !isRegisteredCustom) {
-                const name = this.plugin.settings.customProviderName || '自定义';
-                const models = this.plugin.settings.availableModels?.length
-                    ? [...this.plugin.settings.availableModels]
-                    : ['default-model'];
-                this.plugin.addCustomProvider(
-                    name,
-                    endpoint,
-                    models,
-                    this.plugin.settings.maxContext || 128000,
-                    this.plugin.settings.maxOutput || 32768,
-                    this.plugin.settings.apiKey
+                const password = await PasswordModal.setup(this.app);
+                if (!password) return;
+                const result = await this.plugin.resetKeyPassword?.(password)
+                    ?? { reencrypted: 0, cleared: [] };
+                this.renderActiveTab();
+                new Notice(
+                    result.cleared.length > 0
+                        ? `⚠️ 已重设口令：重新加密 ${result.reencrypted} 项；${result.cleared.join('、')} 需要重新填写`
+                        : `✅ 已重设口令：重新加密 ${result.reencrypted} 项`,
+                    10000,
                 );
-                new Notice('✅ 已自动保存为自定义提供商', 3000);
-            }
-            if (currentProviderId && customProviders.find(c => c.id === currentProviderId)) {
-                const cp = customProviders.find(c => c.id === currentProviderId)!;
-                cp.models = [...this.plugin.settings.availableModels];
-                cp.maxContext = this.plugin.settings.maxContext || cp.maxContext;
-                cp.maxOutput = this.plugin.settings.maxOutput || cp.maxOutput;
+            }));
+    }
+
+    /** 全局模型分配与上限：作用于当前使用的供应商 */
+    private renderApiGlobalSettings(container: HTMLElement): void {
+        const settings = this.plugin.settings;
+        const currentId = this.plugin.getCurrentProviderId();
+        const currentName = this.plugin.getAllProviders().find(p => p.id === currentId)?.name || '未选择';
+        const models = this.getCurrentProviderModels();
+
+        const wrap = container.createDiv({ cls: 'nw-api-global' });
+        wrap.createEl('h3', { text: '全局模型分配' });
+        wrap.createEl('p', {
+            cls: 'nw-api-global-hint',
+            text: `以下设置作用于当前使用的供应商：${currentName}`,
+        });
+
+        const addModelSelect = (
+            label: string,
+            desc: string,
+            value: string,
+            onChange: (next: string) => void,
+        ): void => {
+            new Setting(wrap)
+                .setName(label)
+                .setDesc(desc)
+                .addDropdown(dropdown => {
+                    for (const model of models) dropdown.addOption(model, model);
+                    if (value && !models.includes(value)) dropdown.addOption(value, `${value}（已失效）`);
+                    dropdown.setValue(value);
+                    dropdown.onChange(onChange);
+                });
+        };
+
+        addModelSelect('默认模型', '未单独指定的任务使用', settings.defaultModel, async (value) => {
+            settings.defaultModel = value;
+            this.plugin.updateModelLimitsFromModel(value);
+            await this.plugin.saveSettings();
+            this.renderActiveTab();
+        });
+        addModelSelect('Flash 模型（大纲/分析/规划）', '大纲骨架、分析报告、元素提取', settings.flashModel, async (value) => {
+            settings.flashModel = value;
+            this.plugin.updateModelLimitsFromModel(value);
+            await this.plugin.saveSettings();
+            this.renderActiveTab();
+        });
+        addModelSelect('Pro 模型（正文/角色/实体）', '正文创作、角色生成、设定任务', settings.proModel, async (value) => {
+            settings.proModel = value;
+            this.plugin.updateModelLimitsFromModel(value);
+            await this.plugin.saveSettings();
+            this.renderActiveTab();
+        });
+
+        const currentModel = settings.defaultModel;
+        const endpoint = settings.apiEndpoint;
+        const override = settings.modelOverrides[endpoint]?.[currentModel];
+        const defaults = this.plugin.resolveModelLimits(currentModel);
+
+        new Setting(wrap)
+            .setName('最大上下文')
+            .setDesc(`${currentModel} 默认 ${defaults.maxContext.toLocaleString()} tokens${override?.maxContext !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
+            .addText(text => text
+                .setPlaceholder(String(defaults.maxContext))
+                .setValue(override?.maxContext !== undefined ? String(override.maxContext) : '')
+                .onChange(value => {
+                    const parsed = parseInt(value, 10);
+                    this.plugin.setCurrentModelOverride('maxContext', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxContext);
+                }));
+
+        new Setting(wrap)
+            .setName('最大输出')
+            .setDesc(`${currentModel} 默认 ${defaults.maxOutput.toLocaleString()} tokens${override?.maxOutput !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
+            .addText(text => text
+                .setPlaceholder(String(defaults.maxOutput))
+                .setValue(override?.maxOutput !== undefined ? String(override.maxOutput) : '')
+                .onChange(value => {
+                    const parsed = parseInt(value, 10);
+                    this.plugin.setCurrentModelOverride('maxOutput', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxOutput);
+                }));
+
+        this.renderTaskBudgetRows(wrap);
+        this.renderCanonResearchRows(wrap);
+
+        // ── 加密口令状态与恢复 ────────────────────────────────
+        // 历史 bug：重启后保存任意密钥都会让用户「设定新口令」，新口令覆盖
+        // 会话口令 → 旧密文永久解不开（表现为 API Key 失效）。修复后不再
+        // 重设；这里再给已经踩坑的用户一条恢复路径。
+        this.renderKeyEncryptionRows(wrap);
+        const footer = wrap.createDiv({ cls: 'nw-api-footer' });
+        const saveBtn = footer.createEl('button', {
+            cls: 'nw-api-primary-btn',
+            text: '💾 保存设置',
+            attr: { type: 'button' },
+        });
+        saveBtn.onclick = async () => {
+            if (currentId) {
+                settings.providerKeys[currentId] = settings.apiKey;
             }
             await this.plugin.saveSettings();
             this.plugin.updateStatusBarText();
             new Notice('✅ API 设置已保存');
             this.renderActiveTab();
-        });
-
-        const resetBtn = saveBtnContainer.createEl('button', {
+        };
+        footer.createEl('button', {
+            cls: 'nw-api-ghost-btn',
             text: '🔄 重置',
-            attr: { type: 'button' }
-        });
-        resetBtn.style.cssText = 'padding:8px 16px;cursor:pointer;background:var(--background-modifier-border);color:var(--text-normal);border:none;border-radius:6px;font-size:13px;';
-        resetBtn.addEventListener('click', () => {
-            this.renderActiveTab();
-        });
+            attr: { type: 'button' },
+        }).onclick = () => this.renderActiveTab();
+    }
+
+    /** 添加供应商弹窗（名称/Base URL/格式/密钥，模型可稍后拉取） */
+    private openNewProviderModal(): void {
+        const plugin = this.plugin;
+        const app = this.app;
+        const rerender = () => this.renderActiveTab();
+
+        new (class extends Modal {
+            onOpen(): void {
+                this.modalEl.addClass('nw-scope');
+                const { contentEl } = this;
+                contentEl.createEl('h3', { text: '＋ 添加供应商' });
+
+                let nameValue = '';
+                let endpointValue = '';
+                let formatValue: ApiFormat = 'openai-chat';
+                let keyValue = '';
+
+                new Setting(contentEl).setName('名称').setDesc('用于列表与状态显示')
+                    .addText(text => text.setPlaceholder('我的代理').onChange(value => { nameValue = value; }));
+
+                new Setting(contentEl).setName('Base URL').setDesc('可带也可不带 /v1')
+                    .addText(text => text.setPlaceholder('https://api.example.com').onChange(value => { endpointValue = value.trim(); }));
+
+                new Setting(contentEl).setName('API 格式')
+                    .addDropdown(dropdown => {
+                        for (const option of API_FORMAT_OPTIONS) dropdown.addOption(option.value, option.label);
+                        dropdown.setValue(formatValue);
+                        dropdown.onChange(value => { formatValue = normalizeApiFormat(value); });
+                    });
+
+                new Setting(contentEl).setName('API Key')
+                    .addText(text => {
+                        text.inputEl.type = 'password';
+                        text.setPlaceholder('sk-...').onChange(value => { keyValue = value.trim(); });
+                    });
+
+                const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
+                footer.createEl('button', { text: '取消', attr: { type: 'button' } }).onclick = () => this.close();
+                const save = footer.createEl('button', {
+                    cls: 'nw-api-primary-btn',
+                    text: '添加',
+                    attr: { type: 'button' },
+                });
+                save.onclick = async () => {
+                    if (!nameValue.trim()) { new Notice('请输入名称'); return; }
+                    if (!endpointValue) { new Notice('请输入 Base URL'); return; }
+                    const id = plugin.addCustomProvider(
+                        nameValue.trim(),
+                        endpointValue,
+                        ['default-model'],
+                        128000,
+                        32768,
+                        keyValue,
+                        formatValue,
+                    );
+                    if (!id) return;
+                    await plugin.saveSettings();
+                    plugin.updateStatusBarText();
+                    this.close();
+                    new Notice('✅ 已添加供应商，可点「从 URL 获取」导入模型', 5000);
+                    rerender();
+                };
+            }
+            onClose(): void { this.contentEl.empty(); }
+        })(app).open();
     }
 
     private updateTaskBudget(task: AiTask, patch: TaskBudgetOverride): void {
@@ -749,9 +1100,12 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        // 拆成两条：合并标签「最大来源数 / 单源摘录长度」在设置行里会被
+        // 右侧两个输入框挤成一列竖排单字（Obsidian 的 .setting-item-info
+        // 是 min-width:0 的 flex 子项，中文可在任意字符处断行）。
         new Setting(card)
-            .setName('最大来源数 / 单源摘录长度')
-            .setDesc('来源越多越容易交叉验证，但也会增加审核成本。摘录只保存审计所需短文本。')
+            .setName('最大来源数')
+            .setDesc('来源越多越容易交叉验证，但也会增加审核成本。')
             .addText(text => text
                 .setPlaceholder('6')
                 .setValue(String(cfg.maxSources ?? 6))
@@ -759,7 +1113,11 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     const n = parseInt(value, 10);
                     cfg.maxSources = Number.isFinite(n) && n > 0 ? n : 6;
                     await this.plugin.saveSettings();
-                }))
+                }));
+
+        new Setting(card)
+            .setName('单源摘录长度')
+            .setDesc('每个来源只保存审计所需的短文本（字符数）。')
             .addText(text => text
                 .setPlaceholder('1200')
                 .setValue(String(cfg.excerptChars ?? 1200))
@@ -827,6 +1185,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             this.plugin.settings.thinkingIntensity = intensity;
             this.plugin.settings.thinkingMode = thinkingLevelSpec(level).mode;
             await this.plugin.saveSettings();
+            this.refreshTaskBudgetPreview?.();
         };
 
         for (const spec of THINKING_LEVELS) {
@@ -854,7 +1213,31 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         };
         refreshLevelUi(initialLevel, initialIntensity);
 
+        // ── 预算档位（唯一的输入/输出调节入口）──────────────────
+        // 用户只选一个档位，引擎按任务类别分发输入/输出预算。
+        // 旧的 6 张任务卡片各带输入/输出/思考 3 个数字框，共 18 个；
+        // 现在这 18 个控件收敛成这一处。
         const globalGrid = globalCard.createDiv({ cls: 'nw-form-grid' });
+
+        const tierField = globalGrid.createDiv({ cls: 'nw-form-field' });
+        tierField.createEl('label', { cls: 'nw-form-label', text: '预算档位' });
+        const tierSelect = tierField.createEl('select', { cls: 'nw-select' });
+        for (const spec of BUDGET_TIERS) {
+            tierSelect.createEl('option', {
+                value: spec.value,
+                text: spec.label,
+                attr: { title: spec.description },
+            });
+        }
+        tierSelect.value = normalizeBudgetTier(this.plugin.settings.budgetTier);
+        const tierDesc = tierField.createDiv({ cls: 'nw-text-12-muted' });
+        const syncTierDesc = (): void => {
+            const spec = budgetTierSpec(tierSelect.value as BudgetTier);
+            tierDesc.setText(spec.description);
+            tierSelect.setAttr('title', spec.description);
+        };
+        syncTierDesc();
+
         const globalBudgetField = globalGrid.createDiv({ cls: 'nw-form-field' });
         globalBudgetField.createEl('label', { cls: 'nw-form-label', text: '思考预算上限（0=按强度自动）' });
         const globalBudget = globalBudgetField.createEl('input', {
@@ -863,116 +1246,122 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             attr: { placeholder: '0' },
         });
         globalBudget.value = String(this.plugin.settings.thinkingBudget || 0);
+
+        tierSelect.onchange = async () => {
+            this.plugin.settings.budgetTier = normalizeBudgetTier(tierSelect.value);
+            syncTierDesc();
+            await this.plugin.saveSettings();
+            this.refreshTaskBudgetPreview?.();
+        };
+
         globalBudget.onchange = async () => {
             const n = parseInt(globalBudget.value, 10);
             this.plugin.settings.thinkingBudget = Number.isFinite(n) && n > 0 ? n : 0;
             await this.plugin.saveSettings();
+            this.refreshTaskBudgetPreview?.();
         };
 
-        const models = Array.from(new Set(
-            this.plugin.getAllProviders().flatMap(p => p.models || []),
-        )).filter(Boolean);
+        // ── 预算分发表（只读）────────────────────────────────────
+        // 旧版给 6 个任务各渲染一张卡片（模型/输入/输出/思考等级/思考预算），
+        // 共 30 个控件，用户要保证它们彼此一致。现在统一由
+        // shared/task-budget-engine.ts 分发，这里只展示推导结果。
+        const previewCard = card.createDiv({ cls: 'nw-card' });
+        previewCard.addClass('nw-form-stack');
+        previewCard.createDiv({ cls: 'nw-form-label', text: '预算分发结果（只读）' });
+        previewCard.createDiv({
+            cls: 'nw-text-12-muted',
+            text: '引擎按任务类别把上面的档位与强度分发到每个任务。数字会随档位、强度、模型切换实时变化。',
+        });
 
-        const tasks: Array<{ task: AiTask; label: string; desc: string }> = [
-            { task: 'planning', label: '规划（Flash）', desc: '信息规划/情节蒸馏/大纲/情绪/Scene' },
-            { task: 'body', label: '正文（Pro）', desc: '正文生成与修正' },
-            { task: 'analysis', label: '分析报告', desc: '分析报告结构化提取与报告生成' },
-            { task: 'quality', label: '质量控制', desc: '质量检查/连贯性/去 AI 味' },
-            { task: 'deconstruction', label: '拆解 LLM', desc: '知识库深度拆解的 LLM 增强' },
-            { task: 'fingerprint', label: '指纹提取', desc: '写作指纹特征提取' },
-        ];
+        const previewList = previewCard.createDiv({ cls: 'nw-budget-preview' });
 
-        for (const item of tasks) {
-            const cfg = this.plugin.settings.taskBudgets?.[item.task] || {};
-            const effective = resolveTaskModelConfig(
-                this.plugin.settings,
-                item.task,
-                (model, endpoint) => this.plugin.resolveModelLimits(model, endpoint),
-            );
-            const block = card.createDiv({ cls: 'nw-card' });
-            block.addClass('nw-form-stack');
-            block.createDiv({ cls: 'nw-form-label', text: item.label });
-            block.createDiv({
-                cls: 'nw-text-12-muted',
-                text: `${item.desc} · 当前默认：${effective.model}（输入 ${effective.maxInput.toLocaleString()} / 输出 ${effective.maxOutput.toLocaleString()} · 思考 ${thinkingLevelSpec(effective.thinkingLevel).label} ${effective.thinkingIntensity}%）`,
-            });
-            const grid = block.createDiv({ cls: 'nw-form-grid' });
-            const addField = (label: string): HTMLElement => {
-                const field = grid.createDiv({ cls: 'nw-form-field' });
-                field.createEl('label', { cls: 'nw-form-label', text: label });
-                return field;
-            };
+        const categoryLabel: Record<string, string> = {
+            planning: '规划',
+            writing: '正文',
+            analysis: '分析',
+        };
+        const previewTasks: AiTask[] = ['planning', 'body', 'analysis', 'quality', 'deconstruction', 'fingerprint'];
+        const previewTaskLabels: Record<string, string> = {
+            planning: '规划',
+            body: '正文',
+            analysis: '分析报告',
+            quality: '质量控制',
+            deconstruction: '拆解 LLM',
+            fingerprint: '指纹提取',
+        };
 
-            const modelField = addField('模型');
-            const modelSelect = modelField.createEl('select', { cls: 'nw-select' });
-            modelSelect.createEl('option', { value: '', text: `默认（${effective.model}）` });
-            for (const model of models) modelSelect.createEl('option', { value: model, text: model });
-            if (cfg.model && !models.includes(cfg.model)) {
-                modelSelect.createEl('option', { value: cfg.model, text: cfg.model });
-            }
-            modelSelect.value = cfg.model || '';
-            modelSelect.onchange = async () => {
-                this.updateTaskBudget(item.task, { model: modelSelect.value || undefined });
-                await this.plugin.saveSettings();
-            };
-
-            const inputField = addField('最大输入（留空继承）');
-            const inputEl = inputField.createEl('input', {
-                type: 'text',
-                cls: 'nw-input',
-                attr: { placeholder: `默认 ${effective.maxInput}` },
-            });
-            inputEl.value = cfg.maxInputTokens ? String(cfg.maxInputTokens) : '';
-            inputEl.onchange = async () => {
-                const n = parseInt(inputEl.value, 10);
-                this.updateTaskBudget(item.task, { maxInputTokens: Number.isFinite(n) && n > 0 ? n : undefined });
-                await this.plugin.saveSettings();
-            };
-
-            const outputField = addField('最大输出（留空继承）');
-            const outputEl = outputField.createEl('input', {
-                type: 'text',
-                cls: 'nw-input',
-                attr: { placeholder: `默认 ${effective.maxOutput}` },
-            });
-            outputEl.value = cfg.maxOutputTokens ? String(cfg.maxOutputTokens) : '';
-            outputEl.onchange = async () => {
-                const n = parseInt(outputEl.value, 10);
-                this.updateTaskBudget(item.task, { maxOutputTokens: Number.isFinite(n) && n > 0 ? n : undefined });
-                await this.plugin.saveSettings();
-            };
-
-            const thinkingField = addField('思考等级覆盖');
-            const thinkingSelect = thinkingField.createEl('select', { cls: 'nw-select' });
-            thinkingSelect.createEl('option', { value: '', text: '跟随全局' });
-            for (const spec of THINKING_LEVELS) {
-                thinkingSelect.createEl('option', { value: spec.level, text: `${spec.label} ${spec.percent}%` });
-            }
-            thinkingSelect.value = cfg.thinkingLevel
-                || (cfg.thinkingMode ? thinkingLevelFromMode(cfg.thinkingMode) : '');
-            thinkingSelect.onchange = async () => {
-                this.updateTaskBudget(item.task, {
-                    thinkingLevel: thinkingSelect.value ? thinkingSelect.value as ThinkingLevel : undefined,
-                    thinkingMode: undefined,
+        // 用卡片列表而不是表格：设置面板通常只有 300–400px 宽，
+        // 6 列表格必然横向滚动，把「输入/输出/思考」三列挤到视野外。
+        const renderPreview = (): void => {
+            previewList.empty();
+            for (const task of previewTasks) {
+                const effective = resolveTaskModelConfig(
+                    this.plugin.settings,
+                    task,
+                    (model, endpoint) => this.plugin.resolveModelLimits(model, endpoint),
+                );
+                const row = previewList.createDiv({ cls: 'nw-budget-row' });
+                const head = row.createDiv({ cls: 'nw-budget-row-head' });
+                head.createSpan({ cls: 'nw-budget-task', text: previewTaskLabels[task] || task });
+                head.createSpan({
+                    cls: 'nw-budget-cat',
+                    text: categoryLabel[TASK_CATEGORY[task]] || TASK_CATEGORY[task],
                 });
-                await this.plugin.saveSettings();
-                this.renderActiveTab();
-            };
+                row.createDiv({
+                    cls: 'nw-budget-row-model',
+                    text: effective.model,
+                    attr: { title: effective.model },
+                });
+                const thinking = effective.thinkingBudget > 0
+                    ? effective.thinkingBudget.toLocaleString()
+                    : '—';
+                row.createDiv({
+                    cls: 'nw-budget-row-numbers',
+                    text: '输入 ' + effective.maxInput.toLocaleString()
+                        + ' · 输出 ' + effective.maxOutput.toLocaleString()
+                        + ' · 思考 ' + thinking,
+                });
+            }
+        };
+        renderPreview();
 
-            const budgetField = addField('思考预算（留空跟随全局）');
-            const budgetEl = budgetField.createEl('input', {
-                type: 'text',
-                cls: 'nw-input',
-                attr: { placeholder: `默认 ${effective.thinkingBudget || 0}` },
-            });
-            budgetEl.value = cfg.thinkingBudget ? String(cfg.thinkingBudget) : '';
-            budgetEl.onchange = async () => {
-                const n = parseInt(budgetEl.value, 10);
-                this.updateTaskBudget(item.task, { thinkingBudget: Number.isFinite(n) && n > 0 ? n : undefined });
-                await this.plugin.saveSettings();
-            };
-        }
+        // 档位变化后刷新预览（不必重建整个设置页）
+        const refreshPreview = () => renderPreview();
+        this.refreshTaskBudgetPreview = refreshPreview;
+
+        // ── 已保存的任务级覆盖 ──────────────────────────────────
+        const overrides = this.plugin.settings.taskBudgets || {};
+        const overrideKeys = Object.keys(overrides).filter(key => {
+            const entry = overrides[key as AiTask];
+            return entry && (
+                entry.model !== undefined
+                || entry.maxInputTokens !== undefined
+                || entry.maxOutputTokens !== undefined
+                || entry.thinkingLevel !== undefined
+                || entry.thinkingIntensity !== undefined
+                || entry.thinkingBudget !== undefined
+                || entry.thinkingMode !== undefined
+            );
+        });
+
+        new Setting(previewCard)
+            .setName('任务级覆盖')
+            .setDesc(overrideKeys.length > 0
+                ? `检测到 ${overrideKeys.length} 个任务存在旧的手工覆盖（${overrideKeys.join('、')}）。这些值仍优先于引擎，可一键清除交由引擎接管。`
+                : '没有手工覆盖，全部由引擎分发。')
+            .addButton(btn => btn
+                .setButtonText(overrideKeys.length > 0 ? '清除全部覆盖' : '已由引擎接管')
+                .setDisabled(overrideKeys.length === 0)
+                .onClick(async () => {
+                    this.plugin.settings.taskBudgets = {};
+                    await this.plugin.saveSettings();
+                    this.renderActiveTab();
+                    new Notice('✅ 已清除任务级覆盖，改由引擎分发');
+                }));
     }
+
+    /** 由 renderTaskBudgetRows 注册，档位/强度变化后刷新只读分发表 */
+    private refreshTaskBudgetPreview: (() => void) | null = null;
 
     private renderCoWriteSection(): void {
         const section = this.tabContent.createEl('section');
@@ -1208,6 +1597,29 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 .setValue(String(this.plugin.settings.maxWordCount))
                 .onChange(async (value) => {
                     this.plugin.settings.maxWordCount = parseInt(value) || 5000;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('自然段模式')
+            .setDesc('正文写入时，把相邻的“一句一段”合并成 2–6 句的自然段，并合并对话与说话人的动作。只影响一键生成/续写/批量/场景，不影响手工编辑和协同写作逐段插入。')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.naturalParagraphMode !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.naturalParagraphMode = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('故事上下文档位')
+            .setDesc('自动：协同按本地/云端模式，一键按默认模型推断。本地档位使用压缩文本与更少条目，云端档位使用完整文本与更多条目。')
+            .addDropdown(dropdown => dropdown
+                .addOption('auto', '自动')
+                .addOption('local', '本地 Ollama / 小窗口')
+                .addOption('cloud', '云端 API / 大窗口')
+                .setValue(this.plugin.settings.storyContextTier || 'auto')
+                .onChange(async (value) => {
+                    this.plugin.settings.storyContextTier = value as 'auto' | 'local' | 'cloud';
                     await this.plugin.saveSettings();
                 }));
 
@@ -3101,6 +3513,92 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     this.renderActiveTab();
                     new Notice('✅ 已清除浮窗布局记忆');
                 }));
+
+        this.renderPanelSizeRows(section);
+    }
+
+    /**
+     * 面板尺寸（2026-10-29 第 4 轮）。
+     *
+     * 工作台左右栏可以直接拖，但拖出来的值没有数字入口查看/精确设定；
+     * 完整写作工作台的三栏此前写死在 grid 变量里，只能改代码。
+     * 这里给每一项一个数字输入 + 恢复默认，并在文案里说明也可拖拽。
+     */
+    private renderPanelSizeRows(section: HTMLElement): void {
+        section.createEl('h4', { text: '📐 面板尺寸' });
+        section.createEl('p', {
+            text: '可直接在界面上拖拽分隔条调整，也可在此精确输入。双击分隔条恢复默认。',
+            cls: 'setting-item-description',
+        });
+
+        const sizes = () => {
+            if (!this.plugin.settings.panelSizes) this.plugin.settings.panelSizes = {};
+            return this.plugin.settings.panelSizes;
+        };
+
+        const persist = async (apply: () => void) => {
+            apply();
+            await this.plugin.saveSettings();
+            // 尺寸通过 CSS 变量生效，重注入即可，不必重建整个设置页
+            this.plugin.injectLayoutVariables();
+            this.plugin.injectThemeVariables();
+        };
+
+        const rows: Array<{
+            key: 'fwStepNav' | 'fwRightPanel';
+            label: string;
+            desc: string;
+            min: number;
+            max: number;
+            fallback: number;
+        }> = [
+            { key: 'fwStepNav', label: '写作工作台 · 左栏', desc: '步骤导航宽度', min: 100, max: 400, fallback: 140 },
+            { key: 'fwRightPanel', label: '写作工作台 · 右栏', desc: '上下文/预览栏宽度', min: 160, max: 560, fallback: 220 },
+        ];
+
+        for (const row of rows) {
+            new Setting(section)
+                .setName(row.label)
+                .setDesc(`${row.desc}（${row.min}–${row.max}px，默认 ${row.fallback}px）`)
+                .addText(text => {
+                    text.inputEl.type = 'number';
+                    text.inputEl.min = String(row.min);
+                    text.inputEl.max = String(row.max);
+                    text
+                        .setPlaceholder(String(row.fallback))
+                        .setValue(String(sizes()[row.key] ?? row.fallback))
+                        .onChange(async (value) => {
+                            const parsed = parseInt(value, 10);
+                            if (!Number.isFinite(parsed)) return;
+                            const clamped = Math.max(row.min, Math.min(row.max, parsed));
+                            await persist(() => { sizes()[row.key] = clamped; });
+                        });
+                })
+                .addExtraButton(btn => btn
+                    .setIcon('rotate-ccw')
+                    .setTooltip('恢复默认宽度')
+                    .onClick(async () => {
+                        await persist(() => { delete sizes()[row.key]; });
+                        this.renderActiveTab();
+                    }));
+        }
+
+        new Setting(section)
+            .setName('恢复全部面板尺寸')
+            .setDesc('把所有面板宽高恢复为默认值（不影响浮窗位置记录）')
+            .addButton(btn => btn
+                .setButtonText('全部恢复默认')
+                .setWarning()
+                .onClick(async () => {
+                    await persist(() => {
+                        this.plugin.settings.panelSizes = {};
+                        delete this.plugin.settings.agentWorkbenchLeftWidth;
+                        delete this.plugin.settings.agentWorkbenchRightWidth;
+                        delete this.plugin.settings.coWriteEditorWidthRatio;
+                    });
+                    this.renderActiveTab();
+                    new Notice('✅ 已恢复全部面板尺寸');
+                }));
     }
 
     private showEditCustomProviderForm(cp: { id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number }): void {
@@ -3786,7 +4284,18 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
     private async renderRulesSection(): Promise<void> {
         const section = this.tabContent.createEl('section');
+        await this.mountRulesSection(section);
+    }
 
+    /**
+     * 渲染规则版本检查内容到指定容器。
+     *
+     * 「重新检查」必须只重绘本容器：旧实现直接调用 renderRulesSection()，
+     * 而该方法每次都会往 tabContent 追加一个新的 section，导致每点一次
+     * 就多出一整块重复模块。
+     */
+    private async mountRulesSection(section: HTMLElement): Promise<void> {
+        section.empty();
         section.createEl('h3', { text: '📜 写作规则版本管理', cls: 'nw-u-margintop-0' });
 
         section.createEl('p', {
@@ -3806,7 +4315,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
             const statusRow1 = statusCard.createDiv({ cls: 'nw-status-row' });
             statusRow1.createDiv({ text: '规则文件状态:', cls: 'nw-status-label' });
-            const statusBadge = statusRow1.createDiv({
+            statusRow1.createDiv({
                 text: isPresent ? '✅ 已检测到' : '⚠️ 未找到',
                 attr: {
                     style: `padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;${
@@ -3846,24 +4355,26 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 });
             }
 
-            const refreshBtn = section.createEl('button', {
+            const actions = section.createDiv({ cls: 'nw-settings-actions' });
+
+            const refreshBtn = actions.createEl('button', {
                 text: '🔄 重新检查',
-                attr: {
-                    type: 'button',
-                    style: 'padding:8px 20px;cursor:pointer;background:var(--background-secondary);color:var(--text-primary);border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;margin-right:10px;'
-                }
+                cls: 'nw-btn nw-btn-secondary',
+                attr: { type: 'button' },
             });
-            refreshBtn.addEventListener('click', () => {
+            refreshBtn.addEventListener('click', async () => {
+                if (refreshBtn.disabled) return;
+                refreshBtn.disabled = true;
+                refreshBtn.setText('⏳ 检查中…');
                 rulesService.invalidateCache();
-                this.renderRulesSection();
+                // 只重绘本容器，不追加新模块
+                await this.mountRulesSection(section);
             });
 
-            const viewBtn = section.createEl('button', {
+            const viewBtn = actions.createEl('button', {
                 text: '📝 查看规则内容',
-                attr: {
-                    type: 'button',
-                    style: 'padding:8px 20px;cursor:pointer;background:var(--text-accent);color:var(--background-primary);border:none;border-radius:6px;font-size:13px;font-weight:600;'
-                }
+                cls: 'nw-btn nw-btn-primary',
+                attr: { type: 'button' },
             });
             viewBtn.addEventListener('click', async () => {
                 const rules = await rulesService.getWritingRules();

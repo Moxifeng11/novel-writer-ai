@@ -23,6 +23,7 @@ import { isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
 import { findWritingStyleFile } from '../writing-style-paths';
 import { parseProjectMeta } from '../../shared/fanfic-rules';
 import { readMergedVolumeOutline } from '../../utils/helpers';
+import { parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
 
 export interface WizardStepValidation {
     valid: boolean;
@@ -73,6 +74,12 @@ export async function validateWizardStepContent(
     stepId: string
 ): Promise<WizardStepValidation> {
     switch (stepId) {
+        case 'story_structure': {
+            const meta = await readFileIfExists(app, pjProjectMeta(project));
+            const settings = parseStorySettingsFromProjectMeta(meta);
+            if (!settings) return { valid: false, missingFields: ['尚未配置故事结构与创作设定'] };
+            return { valid: true, missingFields: [] };
+        }
         case 'fanfic': {
             // 同人步骤的权威来源是 .project 记录的同人设定路径
             const meta = await readFileIfExists(app, pjProjectMeta(project));

@@ -1,7 +1,7 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.19.0
-> **最后更新**: 2026-10-26  
+> **版本**: v4.20.0
+> **最后更新**: 2026-10-27  
 > **状态**: 活跃可信 · 与代码同步
 
 本文档描述 Novel Writer AI Obsidian 插件的分层架构、依赖关系、数据流和关键设计决策，帮助开发者快速理解整体结构。
@@ -498,6 +498,21 @@ export interface FileSystemPort {
 | editor | 编辑器状态、光标位置 | 否 |
 | metrics | 质量指标、风格评分 | 是 |
 | ui | UI 布局、面板状态 | 是 |
+
+### 4.5 故事上下文总线（engine/context/）
+
+长篇创作的信息不再由各入口各自拼字符串，而是先标准化成一张图，再由同一套检索/预算逻辑服务一键生成与协同写作。
+
+| 组件 | 文件 | 职责 |
+|------|------|------|
+| StoryContextTypes | `engine/context/story-context-types.ts` | 节点、图、请求、信息包、遥测类型 |
+| StoryContextGraph | `engine/context/story-context-graph.ts` | 标准化、自动关联、去重、检索、本地/云端预算装配、格式化 |
+| StoryContextService | `engine/context/story-context-service.ts` | 一键生成变量适配、协同快照适配、档位解析、遥测日志 |
+
+信息类型：`worldview / setting / character / faction / location / item / timeline / foreshadow / scene / emotion`。
+自动关联：场景卡 → 人物/地点/POV/伏笔/情绪；伏笔 → 人物/主线/设定；时间线 → 实体；设定条目 → 实体。
+两套预算：本地 4200 tokens + 压缩文本 + 较少条目；云端 24000 tokens + 完整文本 + 更多条目。必含项永不静默丢弃。
+接入：`template-vars-builder` 覆盖一键生成变量；`CoWriterEngine` + `PromptBuilder` 注入协同信息包；上下文步骤显示覆盖度。
 
 ### 5. 知识库系统（services/ + engine/）
 

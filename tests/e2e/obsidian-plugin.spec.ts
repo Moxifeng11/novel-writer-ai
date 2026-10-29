@@ -21,6 +21,8 @@ import {
  */
 
 const CREATE_PROJECT_COMMAND = toObsidianCommandId('novel-writer-create-project');
+const AGENT_GUIDE_COMMAND = toObsidianCommandId('novel-writer-agent-guide');
+const SETTINGS_COMMAND = toObsidianCommandId('novel-writer-open-settings');
 const FULL_WRITER_VIEW_TYPE = 'novel-writer-full-writer';
 
 test.describe('Novel Writer AI · 真实 Electron 链路', () => {
@@ -82,6 +84,9 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const modalPage = await waitForModalPage(page, 15_000);
         const modal = modalPage.locator('.modal-container').last();
         await expect(modal).toBeVisible();
+        await expect(modal.locator('.nw-story-structure-card')).toHaveCount(5);
+        await modal.getByRole('button', { name: /智能随机/ }).click();
+        await expect(modal.locator('.nw-story-warning-ok')).toBeVisible();
         await modal.locator('input[placeholder*="项目名称"]').fill(projectName);
         await modal.locator('input[placeholder*="题材"]').fill('玄幻');
         await modal.getByRole('button', { name: '创建项目', exact: true }).click();
@@ -97,6 +102,19 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(fs.existsSync(path.join(projectRoot, '03-大纲与章节'))).toBe(true);
         expect(fs.existsSync(path.join(vault.path, '元文件', '00-系统模板'))).toBe(true);
 
+        const projectMeta = fs.readFileSync(path.join(projectRoot, '.project'), 'utf8');
+        expect(projectMeta).toContain('## 故事结构');
+        expect(projectMeta).toContain('## 故事创作设置');
+        expect(fs.existsSync(path.join(projectRoot, '00-系统模板', '故事结构指南.md'))).toBe(true);
+
+        // 向导应把故事结构纳入步骤，并能从项目卡片进入。
+        await page.waitForTimeout(1_000);
+        await projectCard.getByRole('button', { name: /向导/ }).click();
+        await expect(page.locator('.nw-wizard-container')).toBeVisible({ timeout: 15_000 });
+        const wizardSidebar = page.locator('.nw-wizard-sidebar');
+        await expect(wizardSidebar).toBeVisible({ timeout: 15_000 });
+        await expect(wizardSidebar.locator('.nw-wizard-step-item', { hasText: '故事结构' })).toBeVisible();
+
         // 无需 AI：写入一个最小正文，进入章节步骤页验证本轮交互改版。
         const projectId = `长篇小说/${projectName}`;
         const bodyPath = `${projectId}/03-大纲与章节/正文/第1卷/第1章_正文.md`;
@@ -106,6 +124,8 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
                     vault?: {
                         adapter?: { mkdir?: (path: string) => Promise<void> };
                         create?: (path: string, content: string) => Promise<unknown>;
+                        getAbstractFileByPath?: (path: string) => unknown;
+                        delete?: (file: unknown) => Promise<void>;
                     };
                     plugins?: { plugins?: Record<string, { openChapterInFullWriter?: (project: string, path: string) => void }> };
                 };
@@ -125,5 +145,1502 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         await expect(page.locator('.nw-exec-timeline')).toBeVisible();
         await expect(page.locator('details.nw-prompt-collapsible')).toHaveCount(2);
         expect(await page.locator('details.nw-prompt-collapsible[open]').count()).toBe(0);
+
+        // 章节页可直接切换叙事结构；写入 .project 后重渲染保持选中。
+        const narrativeSelect = page.locator('.nw-narrative-select');
+        await expect(narrativeSelect).toBeVisible();
+        await narrativeSelect.selectOption('five_act');
+        await expect(page.locator('.nw-narrative-select')).toHaveValue('five_act');
+        await expect.poll(
+            () => fs.readFileSync(path.join(projectRoot, '.project'), 'utf8'),
+            { timeout: 10_000 },
+        ).toContain('five_act');
+    });
+
+    test('Agent 工作台「设置」入口可打开插件设置页', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
+
+        const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+        await expect(workbench).toBeVisible({ timeout: 15_000 });
+
+        // 回归：这个按钮曾指向不存在的命令 id，点击后毫无反应
+        const settingsButton = workbench.getByRole('button', { name: /⚙️ 设置/ });
+        await expect(settingsButton).toBeVisible();
+        await settingsButton.click();
+
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { id?: string } } };
+            };
+            return host.app?.setting?.activeTab?.id ?? '';
+        }), { timeout: 10_000 }).toBe('novel-writer-ai');
+
+        // 设置页可能在独立窗口渲染，只校验插件 tab 已挂载
+        const tabMounted = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const el = host.app?.setting?.activeTab?.containerEl;
+            return Boolean(el && el.isConnected);
+        });
+        expect(tabMounted).toBe(true);
+
+        // 关闭设置，避免影响后续用例
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: { setting?: { close?(): void } } };
+            host.app?.setting?.close?.();
+        });
+    });
+
+    test('模型设置是两栏布局，长 URL 完整可见', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+
+        // 等两栏渲染
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            return root?.querySelectorAll('.nw-api-layout').length ?? 0;
+        }), { timeout: 15_000 }).toBeGreaterThan(0);
+
+        const metrics = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return null;
+            const sidebar = root.querySelector<HTMLElement>('.nw-api-sidebar');
+            const detail = root.querySelector<HTMLElement>('.nw-api-detail');
+            const urlInput = root.querySelector<HTMLInputElement>('.nw-api-text-input');
+            const select = root.querySelector<HTMLSelectElement>('.nw-api-select');
+            return {
+                sidebarW: sidebar ? Math.round(sidebar.getBoundingClientRect().width) : 0,
+                detailW: detail ? Math.round(detail.getBoundingClientRect().width) : 0,
+                urlInputW: urlInput ? Math.round(urlInput.getBoundingClientRect().width) : 0,
+                selectW: select ? Math.round(select.getBoundingClientRect().width) : 0,
+                formatOptions: select ? Array.from(select.options).map(o => o.value) : [],
+                sidebarRows: root.querySelectorAll('.nw-api-sidebar-row').length,
+                switches: root.querySelectorAll('.nw-api-switch').length,
+                hasFetchButton: Array.from(root.querySelectorAll('button'))
+                    .some(button => (button.textContent || '').includes('从 URL 获取')),
+            };
+        });
+
+        console.log('API_SETTINGS_METRICS ' + JSON.stringify(metrics));
+        expect(metrics).not.toBeNull();
+        if (!metrics) return;
+
+        // 左栏定宽、右栏占满剩余
+        expect(metrics.sidebarW).toBeGreaterThan(200);
+        expect(metrics.sidebarW).toBeLessThan(300);
+        expect(metrics.detailW).toBeGreaterThan(metrics.sidebarW + 100);
+
+        // 核心回归：输入框必须接近详情区宽度，长 URL 不能被截在窄框里
+        expect(metrics.urlInputW).toBeGreaterThan(metrics.detailW * 0.85);
+        expect(metrics.selectW).toBeGreaterThan(metrics.detailW * 0.85);
+
+        expect(metrics.formatOptions).toEqual(
+            expect.arrayContaining(['openai-chat', 'anthropic-messages', 'openai-responses']),
+        );
+        expect(metrics.sidebarRows).toBeGreaterThan(0);
+        expect(metrics.switches).toBeGreaterThan(0);
+        expect(metrics.hasFetchButton).toBe(true);
+
+        // 设置页在独立窗口渲染：按「哪个页面里有 .nw-api-layout」挑页面截图
+        let settingsPage = page;
+        for (const candidate of page.context().pages()) {
+            const found = await candidate
+                .evaluate(() => document.querySelectorAll('.nw-api-layout').length)
+                .catch(() => 0);
+            if (found > 0) { settingsPage = candidate; break; }
+        }
+        const outDir = path.resolve(__dirname, '../../test-results');
+        fs.mkdirSync(outDir, { recursive: true });
+        await settingsPage.screenshot({ path: path.join(outDir, 'api-settings-layout.png') });
+
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: { setting?: { close?(): void } } };
+            host.app?.setting?.close?.();
+        });
+    });
+
+    test('规则版本「重新检查」不重复渲染模块', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+
+        const switchTab = async (label: string): Promise<boolean> => {
+            const ok = await page.evaluate((name) => {
+                const host = window as unknown as {
+                    app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+                };
+                const root = host.app?.setting?.activeTab?.containerEl;
+                if (!root) return false;
+                const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
+                    .find(el => ((el as HTMLElement).textContent || '').includes(name));
+                if (!tab) return false;
+                (tab as HTMLElement).click();
+                return true;
+            }, label);
+            return ok;
+        };
+
+        await expect.poll(() => switchTab('规则版本'), { timeout: 15_000 }).toBe(true);
+
+        const countSections = () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return -1;
+            return root.querySelectorAll('.nw-settings-tab-content > section').length;
+        });
+
+        await expect.poll(async () => countSections(), { timeout: 15_000 }).toBe(1);
+        const before = await countSections();
+        expect(before).toBe(1);
+
+        for (let i = 0; i < 3; i++) {
+            const clicked = await page.evaluate(() => {
+                const host = window as unknown as {
+                    app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+                };
+                const root = host.app?.setting?.activeTab?.containerEl;
+                const btn = Array.from(root?.querySelectorAll('button') ?? [])
+                    .find(el => ((el as HTMLElement).textContent || '').includes('重新检查'));
+                if (!btn) return false;
+                (btn as HTMLElement).click();
+                return true;
+            });
+            expect(clicked).toBe(true);
+            await page.waitForTimeout(400);
+        }
+
+        const after = await countSections();
+        console.log('RULES_SECTION_COUNT ' + JSON.stringify({ before, after }));
+        expect(after).toBe(1);
+    });
+
+    test('外观设置是三层结构且配色方案可保存', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+
+        const switched = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return false;
+            const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
+                .find(el => ((el as HTMLElement).textContent || '').includes('外观'));
+            if (!tab) return false;
+            (tab as HTMLElement).click();
+            return true;
+        });
+        expect(switched).toBe(true);
+
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            return root?.querySelectorAll('.nw-preset-toolbar').length ?? 0;
+        }), { timeout: 15_000 }).toBeGreaterThan(0);
+
+        const facts = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return null;
+            const names = Array.from(root.querySelectorAll('.setting-item-name'))
+                .map(el => ((el as HTMLElement).textContent || '').trim());
+            return {
+                hasBase: names.includes('基底色'),
+                hasCard: names.includes('卡片色'),
+                hasAccent: names.includes('强调色'),
+                hasPanel: names.includes('面板色'),
+                hasCardToggle: names.includes('启用自定义卡片背景'),
+                hasSavePreset: Array.from(root.querySelectorAll('button'))
+                    .some(b => ((b as HTMLElement).textContent || '').includes('保存当前配色')),
+                swatchCount: root.querySelectorAll('.nw-theme-preview-swatch').length,
+            };
+        });
+
+        console.log('APPEARANCE_FACTS ' + JSON.stringify(facts));
+        expect(facts).not.toBeNull();
+        if (!facts) return;
+
+        expect(facts.hasBase).toBe(true);
+        expect(facts.hasCard).toBe(true);
+        expect(facts.hasAccent).toBe(true);
+        expect(facts.hasPanel).toBe(false);
+        expect(facts.hasCardToggle).toBe(false);
+        expect(facts.swatchCount).toBe(3);
+        expect(facts.hasSavePreset).toBe(true);
+
+        // 严格三层：取色器必须恰好 3 个（基底/卡片/强调），
+        // 「覆盖文字色」第 4 个已在 v4.22 移除
+        const pickerCount = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return -1;
+            return root.querySelectorAll('input[type="color"]').length;
+        });
+        console.log('COLOR_PICKER_COUNT ' + pickerCount);
+        expect(pickerCount).toBe(3);
+
+        // 结构验证：五层旧字段不应该存在于设置类型里。
+        // 注意：E2E 用全新 vault，没有历史数据可迁移，所以这里断言的是
+        // 「新库不会产生旧字段」，迁移本身由 settings-migrator 单测覆盖。
+        const migrated = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, { settings?: Record<string, any> }> } };
+            };
+            const settings = host.app?.plugins?.plugins?.['novel-writer-ai']?.settings;
+            const colors = settings?.themeColors ?? {};
+            return {
+                hasPanelBg: 'panelBg' in colors,
+                hasTextPrimary: 'textPrimary' in colors,
+                hasCardToggle: 'enableCustomCardBg' in colors,
+            };
+        });
+        console.log('MIGRATION_STATE ' + JSON.stringify(migrated));
+        expect(migrated.hasPanelBg).toBe(false);
+        expect(migrated.hasTextPrimary).toBe(false);
+        expect(migrated.hasCardToggle).toBe(false);
+
+        // 截图留档：外观设置三层 + 配色方案
+        let shotPage = page;
+        for (const candidate of page.context().pages()) {
+            const found = await candidate
+                .evaluate(() => document.querySelectorAll('.nw-preset-toolbar').length)
+                .catch(() => 0);
+            if (found > 0) { shotPage = candidate; break; }
+        }
+        const outDir = path.resolve(__dirname, '../../test-results');
+        fs.mkdirSync(outDir, { recursive: true });
+        await shotPage.screenshot({ path: path.join(outDir, 'appearance-three-layer.png') });
+
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: { setting?: { close?(): void } } };
+            host.app?.setting?.close?.();
+        });
+    });
+
+    test('工作台分隔条可拖拽并持久化宽度', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
+
+        const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+        await expect(workbench).toBeVisible({ timeout: 15_000 });
+
+        // 分隔条必须存在，且用统一原语（含 role=separator 与 CSS 变量）
+        const resizerInfo = await page.evaluate(() => {
+            const root = document.querySelector('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+            if (!root) return null;
+            const resizers = root.querySelectorAll('.nw-panel-resizer');
+            const left = root.querySelector<HTMLElement>('.nw-awb-left');
+            const right = root.querySelector<HTMLElement>('.nw-awb-right');
+            return {
+                count: resizers.length,
+                hasRole: Array.from(resizers).every(el => el.getAttribute('role') === 'separator'),
+                hasTabindex: Array.from(resizers).every(el => el.getAttribute('tabindex') !== null),
+                leftVar: left?.style.getPropertyValue('--nw-panel-size') ?? '',
+                rightVar: right?.style.getPropertyValue('--nw-panel-size') ?? '',
+                leftWidth: Math.round(left?.getBoundingClientRect().width ?? 0),
+                rightWidth: Math.round(right?.getBoundingClientRect().width ?? 0),
+            };
+        });
+
+        console.log('RESIZER_STATE ' + JSON.stringify(resizerInfo));
+        expect(resizerInfo).not.toBeNull();
+        if (!resizerInfo) return;
+
+        expect(resizerInfo.count).toBeGreaterThanOrEqual(2);
+        expect(resizerInfo.hasRole).toBe(true);
+        expect(resizerInfo.hasTabindex).toBe(true);
+        // 宽度由 CSS 变量驱动，而不是 inline width
+        expect(resizerInfo.leftVar).toContain('px');
+        expect(resizerInfo.rightVar).toContain('px');
+
+        // 拖拽左分隔条 +60px
+        const leftResizer = workbench.locator('.nw-awb-resizer-left').first();
+        const box = await leftResizer.boundingBox();
+        expect(box).not.toBeNull();
+        if (box) {
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2, { steps: 8 });
+            await page.mouse.up();
+            await page.waitForTimeout(400);
+        }
+
+        const afterDrag = await page.evaluate(() => {
+            const root = document.querySelector('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+            const left = root?.querySelector<HTMLElement>('.nw-awb-left');
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, { settings?: Record<string, any> }> } };
+            };
+            const settings = host.app?.plugins?.plugins?.['novel-writer-ai']?.settings;
+            return {
+                width: Math.round(left?.getBoundingClientRect().width ?? 0),
+                persisted: settings?.agentWorkbenchLeftWidth ?? null,
+            };
+        });
+
+        console.log('RESIZER_AFTER_DRAG ' + JSON.stringify(afterDrag));
+        // 拖拽后变宽，且写入设置
+        expect(afterDrag.width).toBeGreaterThan(resizerInfo.leftWidth + 20);
+        expect(afterDrag.persisted).toBeGreaterThan(resizerInfo.leftWidth + 20);
+
+        // 双击复位
+        if (box) {
+            await leftResizer.dblclick();
+            await page.waitForTimeout(400);
+        }
+        const afterReset = await page.evaluate(() => {
+            const root = document.querySelector('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+            const left = root?.querySelector<HTMLElement>('.nw-awb-left');
+            return Math.round(left?.getBoundingClientRect().width ?? 0);
+        });
+        console.log('RESIZER_AFTER_RESET ' + afterReset);
+        expect(afterReset).toBe(210);
+    });
+
+    test('自定义下拉都有可见箭头且文字不被截断', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+
+        // 设置页会记住上次停留的标签，先切回「API 配置」
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return false;
+            const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
+                .find(el => ((el as HTMLElement).textContent || '').includes('API 配置'));
+            if (!tab) return false;
+            (tab as HTMLElement).click();
+            return true;
+        }), { timeout: 15_000 }).toBe(true);
+
+        // 与其它设置页用例一致：通过 app.setting.activeTab.containerEl 取节点
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            return root?.querySelectorAll('.nw-api-select').length ?? 0;
+        }), { timeout: 15_000 }).toBeGreaterThan(0);
+
+        const facts = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return null;
+
+            const describe = (el: HTMLSelectElement) => {
+                const cs = getComputedStyle(el);
+                const rect = el.getBoundingClientRect();
+                const inner = rect.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (ctx) ctx.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+                const widest = Math.max(
+                    ...Array.from(el.options).map(o => (ctx ? ctx.measureText(o.text).width : 0)),
+                );
+                return {
+                    cls: el.className,
+                    hasArrowImage: cs.backgroundImage !== 'none',
+                    blend: cs.backgroundBlendMode,
+                    overflowPx: Math.round(widest - inner),
+                    textOverflow: cs.textOverflow,
+                    optionCount: el.options.length,
+                };
+            };
+
+            const all = Array.from(
+                root.querySelectorAll<HTMLSelectElement>('.nw-api-select, .nw-select'),
+            );
+            return {
+                count: all.length,
+                items: all.map(describe),
+                apiLabels: Array.from(root.querySelectorAll<HTMLSelectElement>('.nw-api-select'))
+                    .flatMap(el => Array.from(el.options).map(o => o.text)),
+            };
+        });
+
+        console.log('SELECT_FACTS ' + JSON.stringify(facts));
+        expect(facts).not.toBeNull();
+        if (!facts) return;
+
+        expect(facts.count).toBeGreaterThan(0);
+        for (const item of facts.items) {
+            // 箭头必须真实可见：有背景图，且没被 Obsidian 的 hard-light 混掉
+            expect(item.hasArrowImage).toBe(true);
+            expect(item.blend).toBe('normal');
+            // 要么文字放得下，要么用省略号优雅降级——不能硬切在笔画中间
+            if (item.overflowPx > 2) {
+                expect(item.textOverflow).toBe('ellipsis');
+            }
+        }
+
+        // 协议短名不含路径括号，避免窄面板截断
+        for (const label of facts.apiLabels) {
+            expect(label).not.toContain('(');
+        }
+
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: { setting?: { close?(): void } } };
+            host.app?.setting?.close?.();
+        });
+    });
+
+    test('写作工作台三栏可拖拽且布局正常', async () => {
+        const { page } = session;
+
+        // 复用前一个用例已创建的项目（不再走一遍向导）
+        const opened = await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: {
+                    vault?: {
+                        getAllLoadedFiles?: () => Array<{ path?: string; children?: unknown[] }>;
+                        adapter?: { mkdir?: (path: string) => Promise<void> };
+                        create?: (path: string, content: string) => Promise<unknown>;
+                        getAbstractFileByPath?: (path: string) => unknown;
+                        delete?: (file: unknown) => Promise<void>;
+                    };
+                    plugins?: { plugins?: Record<string, { openChapterInFullWriter?: (project: string, path: string) => void }> };
+                };
+            };
+            const vault = host.app?.vault;
+            const files = vault?.getAllLoadedFiles?.() ?? [];
+            const root = files.find(f => f.path === '长篇小说');
+            const children = (root?.children ?? []) as Array<{ path?: string }>;
+            const projectId = children.map(c => c.path).find(p => typeof p === 'string' && p.includes('/E2E项目'));
+            if (!projectId) return { ok: false, reason: 'no project' };
+
+            const bodyPath = `${projectId}/03-大纲与章节/正文/第1卷/第1章_正文.md`;
+            const folder = bodyPath.split('/').slice(0, -1).join('/');
+            await vault?.adapter?.mkdir?.(folder).catch(() => undefined);
+            // 文件可能已由上一条用例创建，先删再写（vault.create 遇已存在会抛错）
+            const existing = vault?.getAbstractFileByPath?.(bodyPath);
+            if (existing) await vault?.delete?.(existing).catch(() => undefined);
+            await vault?.create?.(bodyPath, '---\nstatus: drafting\n---\n\n# 第1章\n\nE2E 正文占位。\n')
+            host.app?.plugins?.plugins?.['novel-writer-ai']?.openChapterInFullWriter?.(projectId, bodyPath);
+            return { ok: true, projectId };
+        });
+
+        console.log('FW_OPEN2 ' + JSON.stringify(opened));
+        expect(opened.ok).toBe(true);
+
+        const ws = page.locator('.novel-writer-fw-workspace');
+        await expect(ws).toBeVisible({ timeout: 30_000 });
+
+        // 三栏横排只在宽视口成立（≤1100px 是刻意的纵向堆叠断点），
+        // 这里把窗口拉宽再验证拖拽。
+        await page.setViewportSize({ width: 1600, height: 950 }).catch(() => undefined);
+        await page.waitForTimeout(600);
+
+        const layout = await page.evaluate(() => {
+            const el = document.querySelector<HTMLElement>('.novel-writer-fw-workspace');
+            if (!el) return null;
+            const cs = getComputedStyle(el);
+            const nav = el.querySelector<HTMLElement>('.novel-writer-fw-step-nav');
+            const prompt = el.querySelector<HTMLElement>('.novel-writer-fw-prompt-area');
+            const ctx = el.querySelector<HTMLElement>('.novel-writer-fw-context-panel');
+            const resizers = el.querySelectorAll('.nw-fw-resizer');
+            return {
+                display: cs.display,
+                flexDirection: cs.flexDirection,
+                navW: Math.round(nav?.getBoundingClientRect().width ?? 0),
+                promptW: Math.round(prompt?.getBoundingClientRect().width ?? 0),
+                ctxW: Math.round(ctx?.getBoundingClientRect().width ?? 0),
+                resizerCount: resizers.length,
+                roles: Array.from(resizers).map(x => x.getAttribute('role')),
+                navVar: nav?.style.getPropertyValue('--nw-panel-nav') ?? '',
+                ctxVar: ctx?.style.getPropertyValue('--nw-panel-context') ?? '',
+            };
+        });
+
+        console.log('FW_LAYOUT ' + JSON.stringify(layout));
+        expect(layout).not.toBeNull();
+        if (!layout) return;
+
+        expect(layout.display).toBe('flex');
+        expect(layout.flexDirection).toBe('row');
+        expect(layout.resizerCount).toBe(2);
+        expect(layout.roles).toEqual(['separator', 'separator']);
+        expect(layout.navW).toBeGreaterThan(80);
+        expect(layout.ctxW).toBeGreaterThan(120);
+        expect(layout.promptW).toBeGreaterThan(layout.navW);
+        expect(layout.promptW).toBeGreaterThan(layout.ctxW);
+        expect(layout.navVar).toContain('px');
+        expect(layout.ctxVar).toContain('px');
+
+        // 拖左分隔条 +50px
+        const left = page.locator('.nw-fw-resizer-left').first();
+        const rbox = await left.boundingBox();
+        if (rbox) {
+            await page.mouse.move(rbox.x + rbox.width / 2, rbox.y + rbox.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(rbox.x + rbox.width / 2 + 50, rbox.y + rbox.height / 2, { steps: 6 });
+            await page.mouse.up();
+            await page.waitForTimeout(500);
+        }
+
+        const after = await page.evaluate(() => {
+            const el = document.querySelector<HTMLElement>('.novel-writer-fw-workspace');
+            const nav = el?.querySelector<HTMLElement>('.novel-writer-fw-step-nav');
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, { settings?: Record<string, any> }> } };
+            };
+            const settings = host.app?.plugins?.plugins?.['novel-writer-ai']?.settings;
+            return {
+                navW: Math.round(nav?.getBoundingClientRect().width ?? 0),
+                persisted: settings?.panelSizes?.fwStepNav ?? null,
+            };
+        });
+        console.log('FW_AFTER_DRAG ' + JSON.stringify(after));
+        expect(after.navW).toBeGreaterThan(layout.navW + 20);
+        expect(after.persisted).toBe(after.navW);
+    });
+
+    test('设置行不被压成竖排单字，且任务参数由引擎统一分发', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            return host.app?.setting?.activeTab?.containerEl ? 1 : 0;
+        }), { timeout: 15_000 }).toBe(1);
+
+        // 切到 API 配置标签（任务参数区在这里）
+        await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            const tab = Array.from(root?.querySelectorAll('.nw-settings-tab') ?? [])
+                .find(el => ((el as HTMLElement).textContent || '').includes('API 配置'));
+            (tab as HTMLElement | undefined)?.click();
+        });
+        await page.waitForTimeout(800);
+
+        const facts = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return null;
+
+            // 检查所有设置行：名称列不能被压到一行只有一个字
+            const squeezed: Array<{ name: string; width: number }> = [];
+            for (const nameEl of Array.from(root.querySelectorAll<HTMLElement>('.setting-item-name'))) {
+                const text = (nameEl.textContent || '').trim();
+                if (text.length < 2) continue;
+                const rect = nameEl.getBoundingClientRect();
+                // 高度远超一行 → 说明被压成竖排
+                const lineHeight = parseFloat(getComputedStyle(nameEl).lineHeight) || 18;
+                if (rect.height > lineHeight * 2.5) {
+                    squeezed.push({ name: text.slice(0, 20), width: Math.round(rect.width) });
+                }
+            }
+
+            return {
+                squeezed,
+                hasBudgetPreview: root.querySelectorAll('.nw-budget-preview').length,
+                previewRows: root.querySelectorAll('.nw-budget-row').length,
+                hasTierSelect: Array.from(root.querySelectorAll<HTMLSelectElement>('select'))
+                    .some(el => Array.from(el.options).some(o => o.value === 'lean')),
+                taskCardCount: root.querySelectorAll('.nw-form-grid').length,
+            };
+        });
+
+        console.log('SETTINGS_LAYOUT ' + JSON.stringify(facts));
+
+        // 截图留档：任务参数全局面板 + 只读分发表
+        let shotPage = page;
+        for (const candidate of page.context().pages()) {
+            const found = await candidate
+                .evaluate(() => document.querySelectorAll('.nw-budget-preview').length)
+                .catch(() => 0);
+            if (found > 0) { shotPage = candidate; break; }
+        }
+        await shotPage.evaluate(() => {
+            document.querySelector<HTMLElement>('.nw-budget-preview')?.scrollIntoView({ block: 'center' });
+        });
+        await shotPage.waitForTimeout(400);
+        await shotPage.screenshot({ path: 'test-results/budget-engine-panel.png' });
+
+        expect(facts).not.toBeNull();
+        if (!facts) return;
+
+        // 核心回归：没有任何设置行被压成竖排单字
+        expect(facts.squeezed).toEqual([]);
+        // 任务参数改成「一张全局面板 + 只读分发表」
+        expect(facts.hasTierSelect).toBe(true);
+        expect(facts.hasBudgetPreview).toBe(1);
+        expect(facts.previewRows).toBe(6);
+
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: { setting?: { close?(): void } } };
+            host.app?.setting?.close?.();
+        });
+    });
+
+    test('知识库侧栏的模型切换器不溢出侧栏', async () => {
+        const { page } = session;
+
+        // 宽视口才不触发 @container (max-width: 860px) 的堆叠布局，
+        // 侧栏才保持 200px 固定宽度——用户截图就是这个状态。
+        await page.setViewportSize({ width: 1600, height: 950 }).catch(() => undefined);
+        await page.waitForTimeout(500);
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-open-knowledge-base'))).toBe(true);
+
+        const view = page.locator('.nw-kb-left-sidebar');
+        await expect(view).toBeVisible({ timeout: 20_000 });
+
+        // 等切换器真正完成布局：renderLeftSidebar 会 empty 重建，
+        // 过早测量会拿到 0 宽度，断言就变成空过。
+        await expect.poll(async () => page.evaluate(() => {
+            const btn = document.querySelector<HTMLElement>('.nw-kb-left-sidebar .nw-model-switch');
+            return btn ? Math.round(btn.getBoundingClientRect().width) : 0;
+        }), { timeout: 15_000 }).toBeGreaterThan(40);
+
+        const facts = await page.evaluate(() => {
+            const sidebar = document.querySelector<HTMLElement>('.nw-kb-left-sidebar');
+            const header = document.querySelector<HTMLElement>('.nw-kb-sidebar-header');
+            const btn = sidebar?.querySelector<HTMLElement>('.nw-model-switch') ?? null;
+            const label = btn?.querySelector<HTMLElement>('.nw-model-switch-label');
+            if (!sidebar || !btn) return null;
+            const s = sidebar.getBoundingClientRect();
+            const b = btn.getBoundingClientRect();
+            const h = header?.getBoundingClientRect();
+            const cs = label ? getComputedStyle(label) : null;
+            return {
+                sidebarW: Math.round(s.width),
+                sidebarRight: Math.round(s.right),
+                buttonRight: Math.round(b.right),
+                buttonW: Math.round(b.width),
+                overflowRight: Math.round(b.right - s.right),
+                headerContentW: h
+                    ? Math.round(h.width - parseFloat(getComputedStyle(header!).paddingLeft)
+                        - parseFloat(getComputedStyle(header!).paddingRight))
+                    : null,
+                labelEllipsis: cs?.textOverflow ?? null,
+                buttonMaxWidth: getComputedStyle(btn).maxWidth,
+            };
+        });
+
+        console.log('KB_SWITCHER ' + JSON.stringify(facts));
+        expect(facts).not.toBeNull();
+        if (!facts) return;
+
+        // 先确保真的量到了按钮（否则下面的断言会因为 0 宽度而空过）
+        expect(facts.buttonW).toBeGreaterThan(40);
+        // 核心回归：切换器必须完全落在侧栏内（旧值溢出 48px）
+        expect(facts.overflowRight).toBeLessThanOrEqual(0);
+        // 宽度不得超过 header 内容区
+        expect(facts.buttonW).toBeLessThanOrEqual((facts.headerContentW ?? 0) + 1);
+        // 放不下时用省略号，而不是硬切
+        expect(facts.labelEllipsis).toBe('ellipsis');
+        // max-width 必须跟容器走，不能是固定 280px
+        expect(facts.buttonMaxWidth).not.toBe('280px');
+
+        // 指纹库侧栏挂的是同一个组件（300px 侧栏），一并校验不溢出
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-fingerprint-library'))).toBe(true);
+        await expect.poll(async () => page.evaluate(() => {
+            const btn = document.querySelector<HTMLElement>('.nw-fingerprint-left-sidebar .nw-model-switch');
+            return btn ? Math.round(btn.getBoundingClientRect().width) : 0;
+        }), { timeout: 15_000 }).toBeGreaterThan(40);
+
+        const fpFacts = await page.evaluate(() => {
+            const sidebar = document.querySelector<HTMLElement>('.nw-fingerprint-left-sidebar');
+            const btn = sidebar?.querySelector<HTMLElement>('.nw-model-switch') ?? null;
+            if (!sidebar || !btn) return null;
+            const s = sidebar.getBoundingClientRect();
+            const b = btn.getBoundingClientRect();
+            return {
+                sidebarW: Math.round(s.width),
+                buttonW: Math.round(b.width),
+                overflowRight: Math.round(b.right - s.right),
+            };
+        });
+
+        console.log('FP_SWITCHER ' + JSON.stringify(fpFacts));
+        expect(fpFacts).not.toBeNull();
+        if (fpFacts) {
+            expect(fpFacts.buttonW).toBeGreaterThan(40);
+            expect(fpFacts.overflowRight).toBeLessThanOrEqual(0);
+        }
+    });
+
+    test('指纹库作用域页签不乱序、搜索框不被挤到列表下方、启停开关真的翻转', async () => {
+        const { page } = session;
+
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-fingerprint-library'))).toBe(true);
+        await expect(page.locator('.nw-fingerprint-left-sidebar')).toBeVisible({ timeout: 20_000 });
+
+        // 直接调视图方法注入一条指纹：E2E 不依赖 embedding/AI 是否可用
+        const injected = await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: { workspace?: { getLeavesOfType(type: string): Array<{ view: unknown }> } };
+            };
+            const leaves = host.app?.workspace?.getLeavesOfType('novel-writer-writing-fingerprint') ?? [];
+            const view = leaves[0]?.view as unknown as {
+                fingerprintLibrary?: { addGlobal(fp: unknown): Promise<void> };
+                loadAllFingerprints(): Promise<void>;
+                renderSearchAndFilter(): void;
+                renderFingerprintList(): void;
+                renderDetailPanel(): void;
+            };
+            if (!view?.fingerprintLibrary) return false;
+
+            await view.fingerprintLibrary.addGlobal({
+                id: 'e2e-fp-1',
+                name: 'E2E 测试指纹',
+                source: 'E2E',
+                scope: 'global',
+                enabled: true,
+                tags: ['e2e'],
+                stats: {
+                    avgSentenceLength: 12,
+                    avgParagraphLength: 40,
+                    dialogueRatio: 0.3,
+                    descriptionRatio: 0.2,
+                    wordCount: 1000,
+                },
+                features: {
+                    sentenceRhythm: '短句为主，节奏紧凑',
+                    wordPreference: '口语化用词',
+                    narrativeStyle: '第三人称限制视角',
+                    rhetoric: '少用修辞',
+                    dialogueStyle: '短句对白',
+                    paragraphStructure: '段落短小',
+                    overallTone: '清冷克制',
+                },
+                samples: ['示例片段一。'],
+                extractedAt: Date.now(),
+            });
+            await view.loadAllFingerprints();
+            // 单独重渲染搜索区（旧实现会把它追加到列表下方）
+            view.renderSearchAndFilter();
+            view.renderFingerprintList();
+            view.renderDetailPanel();
+            return true;
+        });
+        expect(injected).toBe(true);
+
+        // 切到全局层，确认注入的指纹可见
+        await page.locator('.nw-fingerprint-scope-tab', { hasText: '全局层' }).click();
+        await expect(page.locator('.nw-fingerprint-list-item')).toHaveCount(1);
+
+        const order = await page.evaluate(() => {
+            const following = (a: Element | null, b: Element | null): boolean => {
+                if (!a || !b) return false;
+                // DOCUMENT_POSITION_FOLLOWING = 4
+                return (a.compareDocumentPosition(b) & 4) === 4;
+            };
+            const sidebar = document.querySelector('.nw-fingerprint-left-sidebar');
+            const tabs = sidebar?.querySelector('.nw-fingerprint-scope-tabs') ?? null;
+            const toolbar = sidebar?.querySelector('.nw-fingerprint-toolbar') ?? null;
+            const search = sidebar?.querySelector('.nw-fingerprint-search-container') ?? null;
+            const list = sidebar?.querySelector('.nw-fingerprint-list') ?? null;
+            const modelSwitch = sidebar?.querySelector('.nw-model-switch') ?? null;
+            return {
+                tabCount: document.querySelectorAll('.nw-fingerprint-scope-tab').length,
+                tabsBeforeToolbar: following(tabs, toolbar),
+                searchBeforeList: following(search, list),
+                modelSwitchBeforeTabs: following(modelSwitch, tabs),
+            };
+        });
+
+        console.log('FP_ORDER ' + JSON.stringify(order));
+        expect(order.tabCount).toBe(3);
+        expect(order.tabsBeforeToolbar).toBe(true);
+        expect(order.searchBeforeList).toBe(true);
+        expect(order.modelSwitchBeforeTabs).toBe(true);
+
+        // 选中并点工具栏「启用/禁用」：落盘状态必须真的翻转
+        await page.locator('.nw-fingerprint-list-item').first().click();
+        await expect(page.locator('.nw-fingerprint-right-panel')).toContainText('E2E 测试指纹');
+
+        await page.locator('.nw-fingerprint-toolbar-btn', { hasText: '启用/禁用' }).click();
+
+        const stateAfter = await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: { workspace?: { getLeavesOfType(type: string): Array<{ view: unknown }> } };
+            };
+            const view = host.app?.workspace?.getLeavesOfType('novel-writer-writing-fingerprint')[0]?.view as unknown as {
+                fingerprintLibrary?: { activeProject?: string; getGlobal(id: string): { enabled: boolean } | undefined };
+                effectiveGlobalEnabled?: Map<string, boolean>;
+                loadAllFingerprints(): Promise<void>;
+            };
+            if (!view?.fingerprintLibrary) return null;
+            await view.loadAllFingerprints();
+            return {
+                // 有活动项目时开关写的是「项目级覆盖」，只有生效状态一定会翻转
+                effective: view.effectiveGlobalEnabled?.get('e2e-fp-1') ?? null,
+                rawGlobal: view.fingerprintLibrary.getGlobal('e2e-fp-1')?.enabled ?? null,
+                project: view.fingerprintLibrary.activeProject ?? null,
+            };
+        });
+
+        console.log('FP_TOGGLE ' + JSON.stringify(stateAfter));
+        expect(stateAfter).not.toBeNull();
+        expect(stateAfter?.effective).toBe(false);
+        // 没有项目时才允许改全局默认值
+        if (stateAfter && !stateAfter.project) {
+            expect(stateAfter.rawGlobal).toBe(false);
+        } else {
+            expect(stateAfter?.rawGlobal).toBe(true);
+        }
+    });
+
+    test('知识库「拆解任务 / 质量统计」增量刷新不会重复追加整块 UI', async () => {
+        const { page } = session;
+
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-open-knowledge-base'))).toBe(true);
+        await expect(page.locator('.nw-kb-left-sidebar')).toBeVisible({ timeout: 20_000 });
+
+        // 直接调用视图的渲染方法，模拟进度/完成回调走的「增量刷新」路径
+        // （正常点页签会先 renderRightPanel → empty，掩盖了这个缺陷）
+        const result = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { workspace?: { getLeavesOfType(type: string): Array<{ view: unknown }> } };
+            };
+            const leaves = host.app?.workspace?.getLeavesOfType('novel-writer-knowledge-base') ?? [];
+            const view = leaves[0]?.view as unknown as {
+                activeMainTab?: string;
+                renderRightPanel(): void;
+                renderTasksTab(): void;
+                renderStatsTab(): void;
+            };
+            if (!view) return null;
+
+            view.activeMainTab = 'tasks';
+            view.renderRightPanel();
+            // 进度回调每秒可能触发几十次，这里连打三次
+            view.renderTasksTab();
+            view.renderTasksTab();
+            view.renderTasksTab();
+            const taskBlocks = document.querySelectorAll('.nw-kb-tasks-tab').length;
+
+            view.activeMainTab = 'stats';
+            view.renderRightPanel();
+            view.renderStatsTab();
+            view.renderStatsTab();
+            const statsBlocks = document.querySelectorAll('.nw-kb-stats-tab').length;
+
+            return { taskBlocks, statsBlocks };
+        });
+
+        console.log('KB_TABS ' + JSON.stringify(result));
+        expect(result).not.toBeNull();
+        // 旧实现在每次增量刷新时 createDiv 追加：3 次 → 4 块、2 次 → 3 块
+        expect(result?.taskBlocks).toBe(1);
+        expect(result?.statsBlocks).toBe(1);
+    });
+
+    test('协同写作：程序化插入会排自动保存并真正落盘，字体设置重开仍生效', async () => {
+        const { page } = session;
+
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-co-writing'))).toBe(true);
+        await expect(page.locator('.nw-cowrite-editor')).toBeVisible({ timeout: 20_000 });
+
+        // 直接在视图上执行「程序化写入 → 排自动保存 → 保存」，不依赖 AI/绑定流程
+        const result = await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: {
+                    workspace?: { getLeavesOfType(type: string): Array<{ view: unknown }> };
+                    vault?: {
+                        getAbstractFileByPath(path: string): { children?: Array<{ path: string; name: string }> } | null;
+                        adapter?: { read(path: string): Promise<string> };
+                    };
+                };
+                localStorage?: Storage;
+            };
+            const leaves = host.app?.workspace?.getLeavesOfType('novel-writer-co-writing') ?? [];
+            const view = leaves[0]?.view as unknown as {
+                project: string;
+                volume: string;
+                chapterName: string;
+                chapterNum: number;
+                rightEditor: HTMLTextAreaElement | null;
+                autoSaveDebouncer?: { hasPending(key: string): boolean };
+                applyProgrammaticEdit(text: string, cursor: number, reason: string): void;
+                saveBody(showNotice: boolean): Promise<boolean>;
+                getBodyPath(): string;
+            };
+            if (!view?.rightEditor) return null;
+
+            // 找到 E2E 创建的项目；单独跑本用例时可能还没有，就建一个最小项目目录
+            const novelRoot = host.app?.vault?.getAbstractFileByPath('长篇小说');
+            let projectPath = novelRoot?.children?.find(child => child.name.startsWith('E2E项目'))?.path;
+            if (!projectPath) {
+                const vault = host.app?.vault as unknown as {
+                    getAbstractFileByPath(path: string): unknown;
+                    createFolder(path: string): Promise<unknown>;
+                };
+                for (const path of ['长篇小说', '长篇小说/E2E协同写作项目']) {
+                    if (!vault.getAbstractFileByPath(path)) {
+                        await vault.createFolder(path).catch(() => undefined);
+                    }
+                }
+                projectPath = '长篇小说/E2E协同写作项目';
+            }
+
+            view.project = projectPath;
+            view.volume = '第1卷';
+            view.chapterName = '第1章';
+            view.chapterNum = 1;
+
+            const inserted = `E2E 程序化写入的正文 ${Date.now()}。`;
+            view.applyProgrammaticEdit(`${view.rightEditor.value}${inserted}`, 0, 'e2e-programmatic-edit');
+            // P0 回归：程序化写入必须自己排自动保存（旧实现只认 input 事件）
+            const pending = view.autoSaveDebouncer?.hasPending('auto-save') ?? false;
+            const saved = await view.saveBody(false);
+
+            const bodyPath = view.getBodyPath();
+            const content = await host.app?.vault?.adapter?.read(bodyPath).catch(() => '') ?? '';
+            return { pending, saved, bodyPath, hasText: content.includes(inserted), inserted };
+        });
+
+        console.log('COWRITE_PROGRAMMATIC ' + JSON.stringify({ ...result, inserted: undefined }));
+        expect(result).not.toBeNull();
+        expect(result?.pending).toBe(true);
+        expect(result?.saved).toBe(true);
+        expect(result?.hasText).toBe(true);
+
+        // 字体恢复：设置后重开视图，编辑器必须直接带上该字体（旧实现只在下拉 change 时应用）
+        await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: {
+                    plugins?: { plugins?: Record<string, { settings: Record<string, unknown>; saveSettings(): Promise<void> }> };
+                    workspace?: { getLeavesOfType(type: string): Array<{ detach(): Promise<void> }> };
+                };
+            };
+            const plugin = host.app?.plugins?.plugins?.['novel-writer-ai'];
+            if (!plugin) return;
+            plugin.settings.coWriteEditorFont = 'serif';
+            await plugin.saveSettings();
+            const leaf = host.app?.workspace?.getLeavesOfType('novel-writer-co-writing')[0];
+            await leaf?.detach();
+        });
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-co-writing'))).toBe(true);
+        await expect(page.locator('.nw-cowrite-editor')).toBeVisible({ timeout: 20_000 });
+        await expect.poll(async () => page.evaluate(() => {
+            const el = document.querySelector<HTMLTextAreaElement>('.nw-cowrite-editor');
+            return el?.style.fontFamily ?? '';
+        }), { timeout: 10_000 }).toBe('serif');
+    });
+
+    test('短篇：创建后落在创作流程页，单元工作台可写正文并回写状态', async () => {
+        const { page } = session;
+        const projectPath = '短篇小说/E2E短篇项目';
+        const bodyPath = `${projectPath}/短篇创作/03-正文/第01节.md`;
+        const outlinePath = `${projectPath}/短篇创作/02-分节大纲/分节大纲.md`;
+
+        const prepared = await page.evaluate(async ({ project, body, outline }) => {
+            const host = window as unknown as {
+                app?: {
+                    vault?: {
+                        getAbstractFileByPath(path: string): unknown;
+                        createFolder(path: string): Promise<unknown>;
+                        create(path: string, content: string): Promise<unknown>;
+                        adapter?: {
+                            write(path: string, content: string): Promise<void>;
+                            read(path: string): Promise<string>;
+                        };
+                    };
+                };
+            };
+            const vault = host.app?.vault;
+            if (!vault?.adapter) return { ok: false, reason: 'no vault' };
+
+            const folders = [
+                project,
+                `${project}/00-前期调研`,
+                `${project}/短篇创作`,
+                `${project}/短篇创作/01-故事核`,
+                `${project}/短篇创作/02-分节大纲`,
+                `${project}/短篇创作/03-正文`,
+            ];
+            for (const folder of folders) {
+                if (!vault.getAbstractFileByPath(folder)) await vault.createFolder(folder).catch(() => undefined);
+            }
+
+            await vault.adapter.write(`${project}/.project`, [
+                '## 创作模式', 'short',
+                '', '## 短篇分类', '都市情感',
+                '', '## 目标字数', '80000',
+                '', '## 目标节数', '2',
+            ].join('\n'));
+
+            await vault.adapter.write(`${project}/00-前期调研/调研数据.json`, JSON.stringify({
+                mode: 'short',
+                name: 'E2E短篇项目',
+                primaryCategory: '都市情感',
+                targetWords: 80000,
+                targetSections: 2,
+                premise: '失忆的档案员找回身份',
+                coreConflict: '记忆被人为篡改',
+                emotionalPromise: '揭开真相的爽感',
+                reversals: '两次反转',
+                endingPayoff: '完成自证',
+                plotTags: '',
+                characterCore: '主角：失忆的档案员',
+                emotionCurve: '',
+                background: '',
+                audience: '',
+                references: '',
+                notes: '',
+            }, null, 2));
+
+            const outlineText = [
+                '# 分节大纲',
+                '',
+                '## 第1节 失忆',
+                '- 目标：交代主角失忆',
+                '- 冲突：档案被销毁',
+                '- 反转：档案里出现自己的名字',
+                '- 结尾钩子：陌生来电',
+                '',
+                '## 第2节 追查',
+                '- 目标：追查档案来源',
+                '',
+            ].join('\n');
+            if (!vault.getAbstractFileByPath(outline)) await vault.create(outline, outlineText);
+
+            const skeleton = [
+                '---',
+                '节: "第1节"',
+                'status: pending',
+                'word_count: 0',
+                '---',
+                '',
+                '# 第1节',
+                '',
+                '## 本节目标',
+                '- 核心冲突：',
+                '',
+            ].join('\n');
+            if (!vault.getAbstractFileByPath(body)) await vault.create(body, skeleton);
+
+            const storyCore = `${project}/短篇创作/01-故事核/故事核.md`;
+            if (!vault.getAbstractFileByPath(storyCore)) {
+                await vault.create(storyCore, '# 故事核\n\n一句话故事：失忆档案员找回身份。\n核心冲突：记忆被篡改。\n');
+            }
+            return { ok: true };
+        }, { project: projectPath, body: bodyPath, outline: outlinePath });
+        expect(prepared.ok).toBe(true);
+
+        // 与「前期调研创建完成」同一个入口：打开工作台并落在该项目的创作流程页
+        await page.evaluate(async (project) => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, { openCreationFlow(project?: string): Promise<void> }> } };
+            };
+            await host.app?.plugins?.plugins?.['novel-writer-ai']?.openCreationFlow(project);
+        }, projectPath);
+
+        await expect(page.locator('.nw-flow-panel')).toBeVisible({ timeout: 20_000 });
+        await expect(page.locator('.nw-flow-stage')).toHaveCount(4);
+        await expect(page.locator('.nw-flow-stage-title').filter({ hasText: '前期调研' })).toHaveCount(1);
+        // 调研与大纲都已就绪 → 下一步必须是分节写作，而不是「打开项目与章节」这类空提示
+        await expect(page.locator('.nw-flow-next-title')).toHaveText('分节写作');
+
+        await page.locator('.nw-flow-next-actions button').first().click();
+        await expect(page.locator('.nw-unit-panel')).toBeVisible({ timeout: 20_000 });
+        await expect(page.locator('.nw-unit-editor')).toBeVisible();
+
+        const text = '失忆后的第七天，我在档案室的最后一排找到了自己的名字。'.repeat(4);
+        await page.locator('.nw-unit-editor').fill(text);
+        await page.getByRole('button', { name: /完成本节/ }).click();
+
+        await expect.poll(async () => {
+            return page.evaluate(async (path) => {
+                const host = window as unknown as {
+                    app?: { vault?: { adapter?: { read(p: string): Promise<string> } } };
+                };
+                return host.app?.vault?.adapter?.read(path).catch(() => '') ?? '';
+            }, bodyPath);
+        }, { timeout: 15_000 }).toContain('status: written');
+
+        const finalContent = await page.evaluate(async (path) => {
+            const host = window as unknown as {
+                app?: { vault?: { adapter?: { read(p: string): Promise<string> } } };
+            };
+            return host.app?.vault?.adapter?.read(path).catch(() => '') ?? '';
+        }, bodyPath);
+        expect(finalContent).toContain('失忆后的第七天');
+        expect(finalContent).toMatch(/word_count:\s*[1-9]\d*/);
+
+        // 完成唯一的节之后，下一步应是导出；格式下拉必须提供 TXT / EPUB / DOCX
+        await expect(page.locator('.nw-flow-next-title')).toHaveText('导出成稿');
+        await page.locator('.nw-flow-next-actions button').first().click();
+
+        const exportModalPage = await waitForModalPage(page, 15_000);
+        const exportModal = exportModalPage.locator('.modal-container').last();
+        await expect(exportModal).toBeVisible();
+
+        const formatSelect = await (async () => {
+            const selects = exportModal.locator('select');
+            const count = await selects.count();
+            for (let index = 0; index < count; index++) {
+                const labels = await selects.nth(index).locator('option').allTextContents();
+                if (labels.some(label => label.includes('EPUB'))) return selects.nth(index);
+            }
+            return null;
+        })();
+        expect(formatSelect).not.toBeNull();
+        const formatLabels = (await formatSelect!.locator('option').allTextContents()).join('|');
+        expect(formatLabels).toContain('TXT');
+        expect(formatLabels).toContain('EPUB');
+        expect(formatLabels).toMatch(/docx/i);
+
+        // 桌面下载无法在测试里落盘：临时把 app.isMobile 置真，让导出走
+        // vault 的「导出文件」目录，再按 ZIP 头校验 EPUB 真的生成了。
+        const mobileOverridden = await page.evaluate(() => {
+            const host = window as unknown as { app?: object };
+            try {
+                Object.defineProperty(host.app as object, 'isMobile', { value: true, configurable: true });
+                return true;
+            } catch {
+                return false;
+            }
+        });
+        expect(mobileOverridden).toBe(true);
+
+        await formatSelect!.selectOption('epub');
+        await exportModal.getByRole('button', { name: '导出', exact: true }).click();
+
+        await expect.poll(() => {
+            const dir = path.join(session.vault.path, '导出文件');
+            return fs.existsSync(dir)
+                ? fs.readdirSync(dir).filter(name => name.endsWith('.epub'))
+                : [];
+        }, { timeout: 20_000 }).not.toHaveLength(0);
+
+        const epubDir = path.join(session.vault.path, '导出文件');
+        const epubName = fs.readdirSync(epubDir).find(name => name.endsWith('.epub'))!;
+        const epubBytes = fs.readFileSync(path.join(epubDir, epubName));
+        expect([...epubBytes.subarray(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04]);
+        expect(epubBytes.includes(Buffer.from('application/epub+zip'))).toBe(true);
+
+        // 恢复真实端标识，避免后续用例的导出都改走 vault 分支
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: object };
+            try {
+                Object.defineProperty(host.app as object, 'isMobile', { value: false, configurable: true });
+            } catch {
+                // 忽略：仅测试环境需要
+            }
+        });
+    });
+
+    test('完整写作工作台：运行进度条不会被步骤重渲染清掉', async () => {
+        const { page } = session;
+
+        // 复用已打开的工作台（串行链路里前面的用例可能已开过），没有再新建
+        const opened = await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: {
+                    workspace?: {
+                        getLeaf(dir: string): any;
+                        getLeavesOfType(type: string): Array<{ view: unknown }>;
+                        revealLeaf(leaf: unknown): Promise<void>;
+                    };
+                };
+            };
+            const ws = host.app?.workspace;
+            if (!ws) return false;
+            const existing = ws.getLeavesOfType('novel-writer-full-writer');
+            if (existing.length > 0) {
+                await ws.revealLeaf(existing[0]);
+                return true;
+            }
+            const leaf = ws.getLeaf('tab');
+            await leaf.setViewState({ type: 'novel-writer-full-writer', active: true });
+            return true;
+        });
+        expect(opened).toBe(true);
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { workspace?: { getLeavesOfType(type: string): unknown[] } };
+            };
+            return host.app?.workspace?.getLeavesOfType('novel-writer-full-writer').length ?? 0;
+        }), { timeout: 20_000 }).toBeGreaterThan(0);
+
+        const result = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { workspace?: { getLeavesOfType(type: string): Array<{ view: unknown }> } };
+            };
+            const leaves = host.app?.workspace?.getLeavesOfType('novel-writer-full-writer') ?? [];
+            // 取最后一个：串行链路里可能是前一个用例留下的旧实例
+            const view = leaves[leaves.length - 1]?.view as unknown as {
+                tabContent: HTMLElement;
+                showChapterRunStrip(orchestrator: unknown, mode: string): void;
+                hideChapterRunStrip(): void;
+            };
+            if (!view?.tabContent) return null;
+
+            const fakeOrchestrator = { isRunning: true, pause() {}, resume() {}, cancel() {} };
+            view.showChapterRunStrip(fakeOrchestrator, 'recommended');
+            const before = !!document.querySelector('.nw-chapter-run-status');
+
+            // 模拟编排器每一步的 renderInContainer：第一行就是 container.empty()
+            view.tabContent.empty();
+            const after = !!document.querySelector('.nw-chapter-run-status');
+            view.hideChapterRunStrip();
+            return { before, after };
+        });
+
+        console.log('FW_RUN_STRIP ' + JSON.stringify(result));
+        expect(result).not.toBeNull();
+        // 旧实现把运行条挂在 tabContent 里的 mainContainer 上，第一步渲染后就消失
+        expect(result?.before).toBe(true);
+        expect(result?.after).toBe(true);
+    });
+
+    test('自定义下拉的文字不被垂直裁切', async () => {
+        const { page } = session;
+
+        // 关掉可能遮挡的欢迎弹窗
+        for (const candidate of page.context().pages()) {
+            await candidate.evaluate(() => {
+                document.querySelectorAll<HTMLElement>('.modal-container .modal-close-button')
+                    .forEach(el => el.click());
+            }).catch(() => undefined);
+        }
+        await page.waitForTimeout(300);
+
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return false;
+            const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
+                .find(el => ((el as HTMLElement).textContent || '').includes('API 配置'));
+            (tab as HTMLElement | undefined)?.click();
+            return root.querySelectorAll('.nw-api-select').length > 0;
+        }), { timeout: 15_000 }).toBe(true);
+
+        const measure = () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl ?? document.body;
+
+            // 只测我们自定义过样式的 select：它们才可能撞上
+            // Obsidian 固定的 select height + 自定义上下内边距。
+            const custom = Array.from(root.querySelectorAll<HTMLSelectElement>(
+                '.nw-select, .nw-api-select, .nw-exec-log-filter, .nw-cowrite-font-select,'
+                + ' .novel-writer-fw-title, .novel-writer-fw-chapter-select',
+            ));
+            return custom.map(el => {
+                const cs = getComputedStyle(el);
+                const rect = el.getBoundingClientRect();
+                const contentBox = rect.height
+                    - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+                    - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0);
+                const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+                return {
+                    cls: el.className,
+                    // 负数 = 内容盒装不下行高 → 文字被垂直裁切
+                    slack: Math.round((contentBox - lineHeight) * 100) / 100,
+                    text: el.selectedOptions[0]?.text ?? '',
+                };
+            });
+        });
+
+        const settingsSelects = await measure();
+        console.log('SELECT_FIT_SETTINGS ' + JSON.stringify(settingsSelects));
+        expect(settingsSelects.length).toBeGreaterThan(0);
+
+        const all = [...settingsSelects];
+
+        // 完整写作工作台里还有两个自定义下拉（项目标题 / 章节选择）
+        await page.setViewportSize({ width: 1600, height: 950 }).catch(() => undefined);
+        const hasProject = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { vault?: { getAllLoadedFiles?: () => Array<{ path?: string; children?: unknown[] }> } };
+            };
+            const root = host.app?.vault?.getAllLoadedFiles?.().find(f => f.path === '长篇小说');
+            return ((root?.children ?? []) as Array<{ path?: string }>)
+                .some(c => typeof c.path === 'string' && c.path.includes('/E2E项目'));
+        });
+        if (hasProject) {
+            await page.evaluate(async () => {
+                const host = window as unknown as {
+                    app?: {
+                        vault?: {
+                            getAllLoadedFiles?: () => Array<{ path?: string; children?: unknown[] }>;
+                            adapter?: { mkdir?: (p: string) => Promise<void> };
+                            create?: (p: string, c: string) => Promise<unknown>;
+                            getAbstractFileByPath?: (p: string) => unknown;
+                            delete?: (f: unknown) => Promise<void>;
+                        };
+                        plugins?: { plugins?: Record<string, { openChapterInFullWriter?: (a: string, b: string) => void }> };
+                    };
+                };
+                const vault = host.app?.vault;
+                const files = vault?.getAllLoadedFiles?.() ?? [];
+                const nl = '长篇小说';
+                const rootNode = files.find(f => f.path === nl);
+                const projectId = ((rootNode?.children ?? []) as Array<{ path?: string }>)
+                    .map(c => c.path).find(p => typeof p === 'string' && p.includes('/E2E项目'));
+                if (!projectId) return;
+                const bodyPath = projectId + '/03-大纲与章节/正文/第1卷/第1章_正文.md';
+                await vault?.adapter?.mkdir?.(bodyPath.split('/').slice(0, -1).join('/')).catch(() => undefined);
+                const existing = vault?.getAbstractFileByPath?.(bodyPath);
+                if (existing) await vault?.delete?.(existing).catch(() => undefined);
+                await vault?.create?.(bodyPath, '---' + String.fromCharCode(10) + 'status: drafting'
+                    + String.fromCharCode(10) + '---' + String.fromCharCode(10)).catch(() => undefined);
+                host.app?.plugins?.plugins?.['novel-writer-ai']?.openChapterInFullWriter?.(projectId, bodyPath);
+            });
+            await page.waitForTimeout(1800);
+
+            const fwSelects = await page.evaluate(() => {
+                const custom = Array.from(document.querySelectorAll<HTMLSelectElement>(
+                    '.novel-writer-fw-title, .novel-writer-fw-chapter-select',
+                ));
+                return custom.map(el => {
+                    const cs = getComputedStyle(el);
+                    const rect = el.getBoundingClientRect();
+                    const contentBox = rect.height
+                        - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+                        - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0);
+                    const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+                    return {
+                        cls: el.className,
+                        slack: Math.round((contentBox - lineHeight) * 100) / 100,
+                        text: el.selectedOptions[0]?.text ?? '',
+                    };
+                });
+            });
+            console.log('SELECT_FIT_FULLWRITER ' + JSON.stringify(fwSelects));
+            all.push(...fwSelects);
+        }
+
+        // 核心断言：每个自定义下拉的内容盒都必须装得下行高
+        for (const item of all) {
+            expect(item.slack, item.cls + ' 被垂直裁切（内容盒比行高少 ' + (-item.slack) + 'px）')
+                .toBeGreaterThanOrEqual(0);
+        }
+
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: { setting?: { close?(): void } } };
+            host.app?.setting?.close?.();
+        });
+    });
+
+    test('Agent 工作台可通过多轮对话完成项目创建', async () => {
+        const { page, vault } = session;
+        const agentProject = `E2E对话${Date.now()}`;
+        expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
+
+        // Agent 工作台是全 leaf 视图（不再是小弹窗）：等叶子出现并渲染对话区
+        const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+        await expect(workbench).toBeVisible({ timeout: 15_000 });
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('对话引导助手', { timeout: 15_000 });
+
+        const say = async (text: string) => {
+            await workbench.locator('.nw-awb-input').fill(text);
+            await workbench.locator('.nw-awb-send').click();
+        };
+
+        await workbench.getByRole('button', { name: /长篇小说/ }).click();
+        await expect(workbench.getByRole('button', { name: /🎨 原创/ })).toBeVisible();
+        await workbench.getByRole('button', { name: /🎨 原创/ }).click();
+        await expect(workbench.getByRole('button', { name: /引导模式/ })).toBeVisible();
+        await workbench.getByRole('button', { name: /引导模式/ }).click();
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('项目名');
+
+        await say(agentProject);
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('频道');
+        await workbench.getByRole('button', { name: /男频/ }).click();
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('题材');
+        await say('玄幻');
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('故事结构');
+        await workbench.getByRole('button', { name: /起承转合/ }).click();
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('叙事基调');
+        await workbench.getByRole('button', { name: /跳过（默认）/ }).first().click();
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('金手指');
+        await workbench.getByRole('button', { name: /跳过（默认）/ }).first().click();
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('信息收集完毕');
+
+        await workbench.getByRole('button', { name: /确认创建/ }).click();
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('创建完成', { timeout: 60_000 });
+        expect(fs.existsSync(path.join(vault.path, '长篇小说', agentProject))).toBe(true);
+        expect(fs.existsSync(path.join(vault.path, '长篇小说', agentProject, '00-系统模板', '故事结构指南.md'))).toBe(true);
+    });
+
+    test('Agent 工作台：chip 不清输入草稿、Shift+Enter 不发送、控制令牌不上屏', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
+
+        const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+        await expect(workbench).toBeVisible({ timeout: 15_000 });
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('对话引导助手', { timeout: 15_000 });
+
+        const input = workbench.locator('.nw-awb-input');
+        // 1) 输入草稿后点 chip：草稿必须保留（旧实现无条件清空）
+        await input.fill('未发送的草稿一句');
+        await workbench.getByRole('button', { name: /长篇小说/ }).click();
+        await expect(input).toHaveValue('未发送的草稿一句');
+        await expect(workbench.getByRole('button', { name: /🎨 原创/ })).toBeVisible();
+
+        // 2) Shift+Enter 不发送
+        const userBubblesBefore = await workbench.locator('.nw-awb-row-user').count();
+        await input.focus();
+        await page.keyboard.press('Shift+Enter');
+        await expect(input).toHaveValue('未发送的草稿一句');
+        expect(await workbench.locator('.nw-awb-row-user').count()).toBe(userBubblesBefore);
+
+        // 3) 控制令牌（__retry__ / __fallback_rule__）不得出现在消息气泡里
+        const tokenBubbles = await page.evaluate(() => {
+            const bubbles = [...document.querySelectorAll('.nw-awb-bubble')];
+            return bubbles
+                .map(b => (b.textContent || '').trim())
+                .filter(text => text === '__retry__' || text === '__fallback_rule__');
+        });
+        console.log('AGENT_TOKEN_BUBBLES ' + JSON.stringify(tokenBubbles));
+        expect(tokenBubbles).toEqual([]);
+
+        // 清理草稿，避免影响后续用例
+        await input.fill('');
+    });
+
+    test('Agent 工作台自动模式无需逐步输入即可完成创建', async () => {
+        const { page, vault } = session;
+        expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
+
+        const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+        await expect(workbench).toBeVisible({ timeout: 15_000 });
+        // restart() 应重置为全新会话：欢迎语与类型选择 chips 重新出现
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('对话引导助手', { timeout: 15_000 });
+        await expect(workbench.getByRole('button', { name: /长篇小说/ })).toBeVisible({ timeout: 15_000 });
+        await workbench.getByRole('button', { name: /长篇小说/ }).click();
+        await workbench.getByRole('button', { name: /🎨 原创/ }).click();
+        await workbench.getByRole('button', { name: /自动模式/ }).click();
+
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('自动模式', { timeout: 10_000 });
+        await expect(workbench.locator('.nw-awb-messages')).toContainText('创建完成', { timeout: 60_000 });
+        const text = await workbench.locator('.nw-awb-messages').innerText();
+        const nameMatch = text.match(/projectName = ([^\s·]+)/);
+        expect(nameMatch?.[1]).toBeTruthy();
+        expect(fs.existsSync(path.join(vault.path, '长篇小说', nameMatch![1]))).toBe(true);
     });
 });

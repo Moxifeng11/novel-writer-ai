@@ -1,5 +1,243 @@
 # Changelog
 
+## 4.20.0 — 2026-10-27
+
+> 本版主线：三模式创作流程从「右上角提示」变成可走完的流程页；短篇/剧本有了真正的单元写作工作台；成稿导出补齐 EPUB/DOCX；六个既有板块完成一轮审计修复。完整说明见 `docs/releases/v4.20.0.md`。
+
+- **三模式创作流程**：工作台新增「创作流程」页签与项目页摘要，创建短篇/剧本后自动落位；阶段状态由 `shared/creation-flow.ts` 纯函数从磁盘事实推导，老项目不会被拉回第一步。
+- **短篇/剧本单元写作工作台**：三栏界面 + AI 生成本节/续写/改写 + 本地语感质检 + `status/word_count` 回写；修复 `chapterNumber` 只认「第N章」。
+- **成稿导出五格式**：Markdown / TXT（UTF-8 BOM 可选）/ HTML / EPUB 3 / DOCX，全部本地生成、无运行时依赖；导出不再导错项目。
+- **模式守卫**：长篇/短篇/剧本专属命令按项目模式隐藏与拦截，Agent 工具、chips、`run_command`、`get_project_status` 同步对齐。
+- **既有板块审计**：写作指纹库、知识库、协同写作、完整写作工作台、Agent 工作台各修一轮；吸收 dsh harness 的工具裁剪/超时/重复分级/steering/危险命令确认。
+- **设置与写作体验**：三层配色与 CSS 全量重构、API 两栏设置与模型自动发现、字体管理、人味写作提示词与自然段重排。
+- **流程口径修复**：结算阶段改按全书规划章数计算，只写一章并结算不再被判成「结算完成」。
+
+### 📦 成稿导出格式扩展：TXT / EPUB / DOCX（2026-10-27）
+- **新增 EPUB 3（.epub）**：用本地构建器生成完整 OCF 结构（mimetype 首条且不压缩、container.xml、content.opf、nav.xhtml、toc.ncx、逐章 XHTML、打印样式）。卷/章标题、短篇「节」、剧本「集」沿用同一套标题规则；frontmatter 与模板 H1 自动剔除；XML 特殊字符与控制字符安全转义。适合手机阅读器、微信读书导入，Kindle 可用「发送到 Kindle」自动转换。
+- **新增 Word（.docx）**：最小但合规的 OOXML（[Content_Types].xml、_rels、document.xml、styles.xml、core/app 属性）。标题层级（Title/Heading1/Heading2）、正文首行缩进两字符、1.5 倍行距、每章分页已排好；作者写入 docProps 元数据。适合投稿平台与编辑改稿。
+- **TXT 补强**：保留纯文本导出，新增「TXT 带 UTF-8 BOM」开关（兼容旧版 Windows 记事本）；文件名与卷/章分隔规则不变，仍是平台投稿最稳的格式。
+- **无运行时依赖的 ZIP 打包器**：新增 `engine/export/zip-writer.ts`（store 模式 + CRC32，纯 ASCII 路径不置 UTF-8 标志），EPUB/DOCX 共用；新增 `exportBinaryFile`，桌面走下载、移动端/`preferVault` 走 `vault.createBinary/modifyBinary`。整套二进制生成可在 Node 单测与 PowerShell/Python 解包校验。
+- **导出入口修复**：`ExportManuscriptModal` 不再把外部传入的项目静默替换成项目列表第一个；列表缺失时也保留调用方项目，避免「从短篇流程点导出却导出长篇」。格式/作者/BOM 选项按当前选择动态显隐，短篇/剧本仍隐藏「卷标题」。
+- **验证**：新增 12 条单测（ZIP/CRC32 往返、EPUB OCF 结构与章节内容、DOCX OOXML 结构与转义、二进制落盘），真实 Obsidian E2E 在短篇流程里选择 EPUB 导出并读盘校验 ZIP 头与 `application/epub+zip`；全量 433 文件 / 5068 用例、20 条 E2E 通过。
+
+### 🧭 三模式创作流程与单元写作工作台（2026-10-27）
+- **创作流程页签**：`FullWriterView` 新增 `flow` 页签与 `FlowPanelController`——按项目模式展示 4–5 个阶段（长篇：初始化 → 章节写作 → 章节结算 → 导出；短篇：前期调研 → 分节大纲 → 分节写作 → 导出；剧本：调研 → 分集大纲 → 分镜表 → 分集写作 → 导出），每阶段带进度、状态与唯一的「下一步」按钮。阶段状态由 `shared/creation-flow.ts` 的纯函数从磁盘事实推导（`listModeUnits` / `getChaptersForProject` / `summarizeChapterProgress`），不再只靠右上角 Notice 口头指路；已有正文的老项目会把前置设定阶段标为「已按既有正文跳过」，不会被拉回第一步。
+- **创建即断头修复**：`PreResearchModal` 创建短篇/剧本后自动打开该项目的创作流程页；导航失败只降级提示，不会把「项目已创建」误报为失败。项目页右侧新增流程摘要卡（总进度、阶段圆点、下一步、查看完整流程），并新增 Ribbon 与命令「🧭 创作流程」。
+- **短篇/剧本单元写作工作台**：新增 `TabType: 'unit'` 与 `UnitWriterController` 三栏界面（单元列表 / 编辑器 + AI 工具条 / 大纲与设定）。此前「继续写作」直接打开裸 Markdown，没有 AI、没有状态回写；现在支持 AI 生成本节、续写、改写选区（区间校验）、本地语感质检、人味体检、完成本节并自动跳下一单元。
+- **状态回写闭环**：新增 `engine/mode-unit-writer.ts`（上下文读取、提示词、frontmatter 合并、字数统计、保存、改写守卫，全部通过注入的 `UnitFilePort` 可单测）；保存即更新 `word_count`，「完成本节」写 `status: written`，流程页/项目页/Agent 进度立即一致。同时修复 `chapterNumber` 只认「第N章」：现在支持章/节/集/回/幕，`summarizeChapterProgress` 支持 `unitLabel`，短篇/剧本的「最新已写 / 建议下一节」不再恒为空。
+- **模式守卫**：新增 `shared/command-mode-rules.ts`（命令 → 允许模式）与 `shared/project-mode.ts`（路径前缀 + `.project`，同步缓存供命令面板使用）。长篇专属命令（全书规划、批量建章、章节结算、世界架构实体生成、句级协同…）在短篇/剧本项目下从命令面板隐藏，执行时给出明确替代入口；短篇/剧本专属命令同样只在对应项目可用；`ModeDocumentModal` 增加项目真实模式校验，杜绝「短篇命令写进剧本目录」。桌面导出成功后回调流程页标记导出完成，取消导出不再误判。
+- **Agent 模式对齐**：新增 `open_flow` 工具；`open_wizard` 在非长篇项目下拒绝并指路；`open_chapter` 接受节/集并映射到单元工作台；`run_command` 执行前按命令模式表复核；`get_project_status` 按模式输出「章/节/集」；对话 chips 按项目模式分叉，短篇/剧本不再出现「打开项目与章节」这类长篇语义。
+- **CSS**：新增 `nw-flow-*` / `nw-unit-*` 区块（三模式阶段面板、进度条、单元列表、质检卡），状态类统一 `nw-is-*` 前缀；CSS 基线已按新增 UI 显式更新。
+- **修复「只写一章却显示结算完成」**：结算阶段原来按「已结算 / 已写」计算，写完第 1 章顺手结算就变成 1/1，流程直接判「结算完成」并把总进度抬到 40%。现在按全书规划章数计算（已结算 / 总章数），只有全部章节都结算完才算完成；进度文案同时标出「已写 N」，项目页摘要与流程页同步修正。顺带给流程摘要的阶段圆点加 1px 描边，避免主题的 secondary 背景与卡片同色时「未完成阶段」看不见。
+
+### ✨ 改动
+- **吸收 dsh harness 的计划/压缩/工具呈现**：对照本地 dsh 源码（`plan/plan-mode`、`compaction/`、`client/ui-tool`）新增三项能力——① `update_plan` 工具 + 左栏「创作计划」卡片（多步任务自动建计划、状态实时更新、进行中步骤闪烁）；② 会话压缩（30 轮触发、保留最近 12 轮，按 **tool-pairing 平衡**找安全切割点，把旧历史范围替换为单个摘要节点，摘要由一次独立 AI 调用生成）；③ 工具调用行改为 dsh ToolRow 风格：折叠为「图标 + 摘要」，点击展开完整参数/结果。
+- **工作台视觉与层级优化**：消息行/工具行/chips/模型弹层加入入场与状态动画（fade-up、三点打字指示、计划步骤脉冲）；AI 气泡加左侧强调线、用户气泡实底、系统行虚线胶囊，头部毛玻璃吸顶；头部可折叠左右栏并持久化；工具参数类型新增 `array` 支持（`update_plan` 依赖）。
+- **对话输入区按比例加宽**：中栏会话列上限 900→1200px，输入/工具条/chips 的左右内边距改为 `clamp(12px, 2.4vw, 44px)` 自适应；输入框加高至 40px、字号 13.5px、聚焦描边；发送按钮改 40×40 方形。1800px 窗口实测：左 210 / 中 856 / 右 360，输入框 772px。
+- **右栏文件面板自适应**：改用容器查询（右栏窄于 460px 时文件树与预览上下堆叠），并在 900px 以下才隐藏右栏；修正旧 `max-width: 1100px` 规则导致的「右栏直接消失」问题。
+- **项目识别修正**：`listProjects` 排除「元文件/导出文件/协同文件/写作知识库/指纹资料库」等基础设施目录（模板骨架带有章节目录会被误判成项目），也不再收录 `.`/`_` 开头的隐藏目录。
+- **工作台三栏可拖拽调比例**：Agent 创作工作台左右两条分隔条支持拖拽调整宽度（左 160–600px、右 280–760px），松开即持久化到设置，重开恢复；拖拽期间禁用文本选择。
+- **文件预览自适应内容**：工作台文件预览按内容类型自动选渲染——图片（png/jpg/webp/svg/gif/avif）以 `<img>` 经 `vault.getResourcePath` 直接展示；音频/视频（mp3/mp4/webm 等）以 `<audio>/<video controls>` 播放；Markdown 走 `MarkdownRenderer` 完整渲染（标题/列表/表格/代码块/引用/图片）；其余文本 pre 展示；未知二进制占位提示。新增 `shared/preview-kind.ts` 分类器。
+- **协同写作编辑器字体选项**：编辑器工具栏新增「字体」下拉——跟随主题正文/界面/等宽（Obsidian CSS 变量）+ 常见中文系统字体预设（微软雅黑/苹方/宋体/楷体/黑体/仿宋/思源黑宋）+ 自定义载入字体；选择即时生效并持久化，幽灵建议层同步字体。
+- **自定义字体载入模块**：新增 `services/font-manager.ts`（字体格式调研落地：TTF/OTF 原始格式兼容性最好，WOFF2 Brotli 压缩体积最小且 Electron 完整支持，中文字体 5–20MB 本地全量载入即可；运行时载入用 **FontFace API**——`vault.readBinary` → `new FontFace(family, buffer)` → `document.fonts.add`，卸载 `document.fonts.delete`）。字体文件放 vault「元文件/字体/」，插件启动自动恢复注册；新增「🔤 字体管理」弹窗（扫描并载入/列表预览/移除，协同编辑器字体下拉与设置均可进入）。
+- **Agent 工作台对齐 dsh 参考界面**：下载 DeepSeek Harness 源码二次参考（`ui-model-selection` ModelSelect 两级钻取菜单、`ui-sidebar-files` 文件树+预览）——左栏改为三个类型分组（长篇/短篇/剧本）可折叠 → 类型下项目卡两级分类；中栏输入条新增「📋 项目 chip」（原生分组菜单切换项目）与「🔌 模型徽章」（`ui/model-picker-popover.ts` 两级钻取弹层：供应商头+模型列表+思考强度四档滑杆，第二级全部供应商+管理模型）；右栏改为**文件树 + 文件预览**双列（目录展开折叠、文件 cachedRead 预览、根路径跟随当前项目），遥测与记忆折叠到底部。
+- **Agent 创作工作台（交互革命）**：对话引导从主界面小弹窗升级为全 leaf 三栏工作台（`ui/agent-workbench-view.ts`，参照协同写作布局）——左栏创作导航（项目列表/八阶段创作链/界面直达）、中栏对话区（固定高度内滚，不再随对话变长；工具调用时间线内嵌；chips+输入框固定底部）、右栏监控面板。旧 `agent-guide-modal` 移除；命令面板「对话引导」、项目页「🤖 Agent 工作台」按钮与新增 Ribbon「bot」图标全部指向工作台；复用已打开叶子时自动重启会话。
+- **Agent 全功能操作**：宿主端口扩展（`ui/services/agent-port.ts`）+ 新增 6 个 Harness 工具——`list_chapters`（章节与状态）、`open_chapter`、`get_project_status`（模式/结构/章节统计）、`open_co_writing`、`run_command`（执行插件任意命令：批量建章/一键成文/质检/结算/导出）、`list_commands`；系统提示词升级为「创作生命周期导航」（新建→调研→设定→大纲→正文→质检→结算→导出），Agent 主动判断进度并引导下一步。引擎新增 `updateContext`（左栏切换项目实时生效）与会话遥测。
+- **对话 Agent 接入 AI Harness**：下载 DeepSeek Harness 源码研究后，把对话引导从纯规则脚本升级为真 AI 对话——新增 `engine/agent/harness/`（会话日志、受守卫工具注册表、提示词分段组装、「调模型→执行工具→回填→再调模型」循环、JSON 协议适配器），宿主工具集（记忆/项目目录/随机设定/三类项目创建/界面打开/章节/命令）；模型自主收集信息、展示摘要、创建项目并打开向导。有凭据时默认 AI 驱动（顶栏徽标），无凭据/失败时一键降级回原离线逐步引导；单回合 6 步预算防循环。真实 DeepSeek 端到端验证通过（记忆→摘要→创建→向导全链路）。详见 `docs/audits/v4.19-agent-ai-harness-verification.md`。
+- **模型快速切换改版**：移除 Obsidian 右下角全局状态栏浮窗（「🔌 提供商 | Flash | Pro」）；新增 `ui/model-quick-switcher.ts` 两级选择器——第一级选 API 供应商（本地/云端图标、当前项勾选、模型数量），第二级选该供应商的模型 ID；选中的模型统一用于规划（flash）与正文（pro）全部任务并自动刷新窗口上限。装配到四个主界面：完整写作工作台 Tab 栏、协同写作顶栏、知识库侧栏、写作指纹库侧栏；命令面板「切换 AI 提供商」与项目页「切换 AI 提供商」按钮复用同一菜单。`updateStatusBarText()` 保留为统一刷新入口，模型/供应商变化时同步所有已装配的切换器。
+- **人味提示词 v2**：重写 `human-voice`，从“配额式短句/单句成段”改为自然段 2–6 句、80–220 字；平均句长 20–30 字，长句 10%–20%，对话 25%–45%；明确优先于写作规则里的“一句一段/一段一个句号”。
+- **正文与协同提示词**：删除 prompt-builder / co-writer-engine 的“段落极短、每句一个画面、不用过渡”；协同续写从 1–3 句改为 1 个自然段；V1/V2 正文从“每段必须身体感觉+情绪变化”改为“每个场景 2–3 处”，允许过渡段和解释。
+- **DEAI 检测与改写**：检测项从“一段多句号违规”改为“段落碎片化/长句缺失/对话干燥/标点单一”；改写提示改为恢复自然段、补足对话和过渡，不再继续切碎。
+- **写作规则模板**：内置写作规则去掉“一句一段”“一段一个句号”，改为自然段；`describeBodyFormat` 同步改为“一个自然段写成一行”。
+- **正文统计**：新增 `shared/prose-metrics.ts`，统计段长、句长、单句段、短句/长句、对话、标点熵、句首多样性，并输出 0–100 碎片化风险与可解释问题。
+- **自然段重排**：新增 `shared/prose-naturalizer.ts`，合并相邻叙述短段、对话与说话人动作并段，保留空行/场景转换/连续对话边界；只改段落边界，不改句子。
+- **写入接入**：`BodyWriter` 对 pipeline/batch/auto/continue/scene 默认自然化；manual 与 co-writer 不自动合并；设置页新增「自然段模式」。
+- **人味体检**：正文步骤新增「📊 人味体检」，展示风险分、8 项指标、问题列表，并提供自然段重排预览与写回正文。
+- **朱雀实测**：完成 6 组对照；人类基线《孔乙己》100% 人工，第一章原文/自然段重排/DeepSeek 网文重写/Gemini 网文重写/新版提示词小样分别为 100% AI、93.95% AI、100% AI、100% AI、100% AI。结论：只靠提示词、分段、换模型无法稳定达到 70% 人工率；详见 `docs/audits/v4.19-agent-entry-humanization-audit.md` 第六节。
+
+### 🧠 长篇故事上下文总线
+- **统一信息模型**：新增 `engine/context/story-context-types.ts`，把世界观、设定库、人物/势力/地点/物品、时间线、伏笔、场景卡、情绪弧统一成 `StoryContextNode / StoryContextGraph`。
+- **自动关联**：新增 `engine/context/story-context-graph.ts`；场景卡自动关联出场人物/地点/POV/伏笔/情绪，伏笔关联人物与主线，时间线关联实体，设定条目关联被提到的实体；支持名称/别名索引与双向边。
+- **去重**：时间线按 `时间|章节|事件|影响` 去重，伏笔按规范化名称去重；真实项目 `九霄逆脉行` 的 24 行时间线 → 6 条、42 行伏笔 → 6 条，只影响装配，不改用户文件。
+- **本地/云端双策略**：新增 `engine/context/story-context-service.ts`；本地 4200 tokens 上限、压缩文本、人物 8/设定 6/时间线 8/伏笔 6；云端 24000 tokens 上限、完整文本、人物 24/设定 20/时间线 40/伏笔 24；设置页新增「故事上下文档位」。
+- **一键生成接入**：`buildTemplateVars` 用同一张图覆盖 `worldView/settingLib/allChars/allFactions/allLocs/allItems/timelineEvents/unrevealedForeshadow/emotionPlan/sceneCardDigest`，并新增 `${storyContextPack}` 关联摘要。
+- **协同写作接入**：`CoWriterEngine` 在初始化、切场景、静态上下文刷新时重建信息包；`PromptBuilder` 在有信息包时停用旧的实体/设定/时间线/伏笔分段，只保留关系状态、跨卷快照、人物灵魂、章节简报、剧情节点与知识注入，避免重复注入。
+- **覆盖度面板**：上下文步骤新增「故事上下文包」一行，显示档位、条目数、tokens、必含覆盖、分类覆盖与丢弃数量。
+- **真实项目验证**：四种组合（协同/一键 × 本地/云端）必含覆盖均为 100%，缺失 0；本地保留当前场景核心信息并压缩可选项，云端拿到全部 8 人物/11 节设定/6 时间线/6 伏笔/4 场景/4 情绪。详见 `docs/audits/v4.19-story-context-bus-verification.md`。
+
+### 🔌 API 格式与模型自动获取
+- **API 设置页重做为两栏「模型设置」界面**（参照 dsh 界面）：左侧按「预设供应商 / 自定义供应商」分组列出全部供应商（图标 + 名称 + 当前启用状态点，选中高亮），右侧是选中供应商的完整配置——可编辑名称、启用开关、`⋯` 更多菜单（切换/删除）、Base URL、API 格式下拉、API Key（带显示/隐藏）、模型列表。底部单独一区是「全局模型分配」（默认/Flash/Pro 模型、上下文与输出上限）。工作台模型弹层、迷你设置、设置页三处入口共用同一套弹窗，界面与行为完全一致。
+- **长 URL 完整可见**：Base URL 从单行 `input` 改为自动增高的可换行 `textarea`。旧界面里火山引擎那类 `…/api/v3/chat/completions` 会被窄输入框截掉后半段，现在换行显示全。实测详情区 378px、URL 框 340px。
+- **模型列表逐项管理**：每个模型一行——ID + 容量徽标（`1M` / `205K`）+ 视觉标记 + 启用开关 + 编辑 + 删除。关闭的模型保留在列表里但置灰并加删除线，不参与默认/回退候选；「＋ 添加模型」与「🔄 从 URL 获取」并排。模型编辑弹窗可改 ID、上下文窗口、输出上限与是否支持图片。
+- **修复一个布局 bug**：初版用 `@container (max-width: 720px)` 做窄屏堆叠，但 Obsidian 设置面板没有为容器建立 `container-type`，容器查询匹配到了外层任意窄容器，导致宽窗口下两栏也被压成上下堆叠（左栏被拉到 602px 全宽）。改为媒体查询并把左栏锁成 `flex: 0 0 208px`。
+- **API 格式改为下拉选择**：设置页把原来单一的「OpenAI 兼容端点」输入框拆成 **Base URL** + **API 格式** 两个控件，格式可选 `Anthropic Messages (/v1/messages)`、`Chat Completions (/chat/completions)`、`Responses (/responses)`。Base URL 可带也可不带 `/v1`，实际请求路径由格式推导；历史配置里已写全 `…/chat/completions` 的端点原样复用，旧数据零迁移。
+- **协议真的能用（不是只加了个下拉）**：新增 `shared/api-format.ts` 作为协议适配层——请求体、鉴权头、非流式响应、SSE 增量四段全部按格式分派。Anthropic 用 `system` 字段而非 system 消息、鉴权走 `x-api-key` + `anthropic-version`、思考预算按 `budget_tokens < max_tokens` 约束；Responses 用 `instructions` + `input` + `max_output_tokens`，输出从 `output_text`/`output[].content` 读取。`AIApiClient` 的三条调用路径（`callAI`、`callAIStream`、`callAIAsyncIterator`/`nativeStreamIterator`）与连通性测试统一走这套适配。
+- **从 URL 自动获取模型**（参照 dsh `llm-pi-ai/discovery.ts`）：模型列表区新增「🔄 从 URL 获取模型」——按当前 Base URL、API 格式与密钥请求 `{root}/models`（Anthropic 为 `{root}/v1/models?limit=1000`），解析 `data[]` 与中转站常见的 `models{}` 富化映射，顺手带回端点披露的上下文窗口与输出上限。结果进入勾选弹窗（`ui/model-picker-modal.ts`）：已配置项默认勾选、支持搜索与全选、**已配置但本次未列出的模型原样保留**、拒绝把列表清空。
+- **错误可读**：401/403 提示检查密钥、404 提示该端点可能不提供模型列表、响应非 JSON 与超 2MB 都有明确原因，不会静默返回空数组让人以为端点没模型。
+- **添加/编辑提供商表单同步升级**：Base URL、API 格式下拉、以及「🔄 获取」按钮（直接用表单里刚填的地址与密钥探测，不必先保存）。提供商列表接口新增 `apiFormat` 字段。
+
+### 🎨 外观：三层配色重构 + 配色方案
+- **颜色配置从 5 层精简到 3 层**：旧版暴露「底色 / 面板色 / 卡片背景色 / 强调色 / 主文字色」五个独立配置，外加 `enableCustomCardBg` 开关又引入一层条件判断；CSS 里 `--nw-surface` 与 `--nw-cover-bg` 还是两套平行背景 token。现在收敛为 **L1 基底**（`--nw-app-bg`）、**L2 卡片**（`--nw-card-bg`）、**L3 强调**（`--nw-accent`）：面板由基底按氛围预设自动派生，文字色按基底亮度自动取深浅，`--nw-surface` 与面板同值。新增 `shared/theme-colors.ts` 承载全部纯函数（hex 校验、WCAG 亮度、文字派生、hover 派生、palette → CSS 变量）。
+- **文字色不再需要用户配置**：`deriveTextColors` 按基底相对亮度自动选深/浅两套文字，深色底用亮字、浅色底用暗字；不想要自动结果时仍可展开「覆盖文字色」高级项。
+- **主题配色方案（保存 / 一键切换 / 导入导出）**：调好三层颜色后可「💾 保存当前配色」存成命名方案，列表里显示三色色板 + 主题模式，点「应用」一键切换（同时写回 theme 与 themeColors，并清掉旧字段残留）。支持 `📤 导出` 为 JSON、`📥 导入`（单套或数组，非法颜色值丢弃、id 冲突自动换新、同名覆盖、上限 20 套）。新增 `themePresets` 设置字段。
+- **性能：取色不再触发全量重渲染**：旧实现每次 `onChange` 都 `await saveSettings()` + `rerender()`，拖动取色器时连续写盘并重建整块 DOM。改为立即注入 CSS 变量、落盘防抖 300ms、不重建 DOM。
+- **兼容旧配置**：旧版独立 `panelBg` 继续生效（`legacyPanel` 传入派生逻辑），`cardBg` 直接映射到 L2，升级后外观不回退。
+
+### 🎨 CSS 层级重构 / 面板可拖拽 / 动效统一（2026-10-29 四轮迭代）
+- **三层配色真正收尾（第 1 轮）**：上一轮改了代码但没清数据——`data.json` 里残留的 `panelBg`、`textPrimary`、`enableCustomCardBg` 仍在覆盖三层派生结果，所以界面看起来还是 5 层。新增 `schemaVersion 4→5` 迁移：先把旧观感**冻结成一套命名方案「旧配色（v4.21）」**存进 `themePresets`（可一键切回），再删除这三个字段；同时移除设置页第 4 个取色器「覆盖文字色」。现在严格 3 个取色器。`textPrimary` / `legacyPanel` 只存在于方案对象里，由 `resolveActivePresetInput()` 按 `activePresetId` 反查叠加，不再进 `themeColors`。
+- **CSS 安全删除（第 2 轮）**：删除工作台整段重复定义（与后一份逐字节相同的 434 行块，仅保留前段独有的 6 条规则）、93 个零引用死类（59 条整规则）、修复被注释截断的畸形选择器列表（`.nw-wizard-root` 误吃 `.novel-writer-modal` 的 padding）、重写 4 处 GBK/UTF-8 损坏注释。**体积 426735 → 410493 字节（-16.2KB），行数 15363 → 14624**，CSS 基线同步收紧。
+- **`!important` 层级合并（第 3 轮）**：**192 → 166**。重点是「后来的修复被更早 `!important` 架空」的真实 Bug：`.nw-btn-primary` 的硬编码渐变 + `!important` 抢赢，导致用户改「强调色」后主按钮纹丝不动（`--nw-btn-primary-bg` 现跟随 `--nw-accent` 注入）；`.novel-writer-fw-prompt-area` 的 `padding !important` 让下游 `padding: 14px 18px 24px` 永不生效；`.nw-cowrite-center` 的 `padding !important` 压掉权威定义的 `8px`；`step-nav` 在两个断点重复设 `max-height`（200 vs 190）互相打架。另合并 `.nw-cowrite-header`（6 份）与 `.nw-cowrite-flow-panel`（2 份）重复定义。
+- **统一拖拽原语（第 4 轮）**：新增 `ui/panel-resizer.ts`，把原本三套各自为政的实现（工作台 mousedown、协同写作写 ratio、浮窗 pointer）合并为一份：**Pointer Events**（触摸/手写笔 + `setPointerCapture`）、**键盘可达**（`role="separator"` + 方向键微调 + Home 复位）、**双击复位**、尺寸写入 `--nw-panel-size` 作为唯一真源。Agent 工作台已接入，`onClose` 释放监听。
+- **面板尺寸可精确调节**：「工作台布局」页新增「📐 面板尺寸」区——写作工作台左右栏宽度数字输入（100–400 / 160–560）＋ 单项恢复默认 ＋ 全部恢复默认。此前这些值只能拖、无法查看；完整写作工作台三栏更写死在 grid 变量里。`--nw-grid-workspace` 改为读 `panelSizes`，并移除 `full-writer-view.ts` 里冲突的重复注入（两处各写一套值，谁后执行谁生效）。
+- **动效统一为桌面软件手感**：新增三档时长 token `--nw-dur-fast/base/slow`（120/180/240ms）与统一缓动 `cubic-bezier(0.2, 0.7, 0.3, 1)`。把 >300ms 的一次性动效压缩（2s 脉冲 → 800ms 单次、1s 描线 → 600ms）；**45 处 `transition: all` 全改为具名属性**（background/border/color/shadow/opacity/transform），消除拖拽与布局抖动；常驻 `infinite` 仅保留进度条/打字点/流式光标/计划脉冲。新增 `.nw-list-enter` 错峰入场（40ms 步进）与 `.nw-popover-enter` 浮起；`reduced-motion` 补齐拖拽态与 `backdrop-filter` 降级。
+- **补齐上轮遗留盲点（2026-10-29 收尾）**：① **写作工作台三栏改为可拖拽**——原先是 grid + `--nw-grid-workspace`（minmax 区间），宽度只能靠设置页填数字；现改 flex + 左右两条分隔条，拖动即改并写入 `panelSizes`，中栏 `flex:1` 自适应，≤1100px 仍回落纵向堆叠（此时隐藏分隔条并重置两翼宽度）；同时删掉与基础规则冲突的第二处 `display: grid !important`。② **协同写作分隔条接入统一原语**——旧实现是独立的 `mousedown` + 手写文档监听，只支持鼠标且无法键盘操作；现在复用 `createPanelResizer` 的 `percent` 模式（比例仍存 `coWriteEditorWidthRatio`），获得触摸/手写笔、方向键微调、双击复位与 `--nw-cowrite-editor-percent` 单一真源；`.nw-cowrite-resizer` 的重复交互样式收敛为只保留布局差异。③ 全仓反向校验「TS 使用但 CSS 未定义」的类：上轮删除的 31 个类定义中**零个**仍被引用，删除是安全的；剩余未定义类都是结构性容器（如 `.nw-awb-telemetry`），HEAD 版本同样没有，非本轮引入。
+
+### ⚙️ 任务参数调节引擎
+- **30 个输入框收敛成 1 个档位**：设置页原本给 6 个任务（规划/正文/分析/质量控制/拆解/指纹）各渲染一张卡片，每张含模型、最大输入、最大输出、思考等级、思考预算 5 个控件，共 30 个，且需要用户自己保证彼此一致（比如输出别超模型能力）。新增 `shared/task-budget-engine.ts`：用户只选一个**预算档位**（省 token / 均衡 / 一般 / 极限）+ 一个思考强度，引擎按任务类别（规划 / 正文 / 分析）乘以各自系数，从模型能力推导出每个任务的输入预算、输出上限与思考预算。
+- **默认档与旧行为逐值一致**：`balanced` 档的三个类别系数全为 1，输入 = `context - output × 1.15`（连取整顺序都对齐，避免差 1）。升级不会静默改变生成质量或成本。旧的 `taskBudgets` 手工覆盖仍然优先，设置页会检测并提示「检测到 N 个旧覆盖」，可一键清除交给引擎。
+- **只读分发表取代可编辑卡片**：设置页现在用卡片列表展示每个任务的实际模型与三个数字，随档位、强度、模型切换实时刷新；用列表而非表格是因为设置面板通常只有 300–400px 宽，6 列表格必然横向滚动把数字列挤出视野。
+- **保留的历史分支**：旧实现里「只有 `thinkingMode` + `thinkingBudget`、没有显式等级/强度」时，预算是直取不缩放、也不自动预留；这个分支在引擎接入后原样保留，避免把「设了 300」悄悄变成「自动分配」。
+- **依赖方向**：`task-model → task-budget-engine` 单向。引擎刻意不 import `task-model`（只有类型依赖也会被循环依赖门禁算成环），改用本地 `BudgetLimits` 结构类型。
+
+### 🧬 写作指纹库：V2 持久化 / 作用域 / 向量清理（2026-10-30）
+- **融合指纹保存后特征为空（P0）**：`extractV1FeaturesFromV2` 的反向映射解构写反（`[v1Key, v2Key]`），拿 V1 字段名（`features.sentenceRhythm`）去 12 维 V2 对象上查，恒为 `undefined` → 函数永远返回 `{}`。融合出的指纹保存下来只有统计数字、七维风格特征全空。改为 `[v2Key, v1Key]`，并补了「映射写反时必然失败」的回归用例。
+- **融合指纹落盘只剩 7 维字符串**：`saveBlendedFingerprint` 先把融合结果投影成 V1 再入库，12 维结构、逐维样本与 `blendSource` 全丢。现在把融合指纹注册进 V2 缓存按 V2 落盘，并用投影合成 `v1Backup` 供 V1 消费方还原。
+- **启停一次就降级一次**：三处 `save*` 直接写内存里的 7 维投影，于是每次点「启用/禁用」都把磁盘上的 12 维结构覆盖成 7 维。新增 `toPersistedFingerprint()`：仅当 V1 特征仍与 V2 的投影一致时写回原 V2（只用 name/enabled/tags 等可变字段覆盖），特征被重新提取过则写 V1、等下次加载重新迁移。
+- **删除/重载后 V2 缓存不清理**：`v2Fingerprints` 只增不减，已删除的指纹仍会被 12 维检索命中，切换项目后还会读到上一个项目的条目。`collectV2Fingerprints(items, scope)` 先清同作用域条目，三个 `delete*` 同步删除。
+- **切换项目后仍读写上一个项目**：视图从不重新绑定项目（`refreshForProject` 没有调用方，旧代码靠 `(lib as any).project = x` 硬改字段）。新增 `StyleFingerprintLibrary.setProject()`（清项目层指纹表 + 项目层 V2 缓存 + 重建项目向量库），视图每次 `loadAllFingerprints` 比对 `activeProject` 后同步，并重建提取器与样章向量库。
+- **跨项目复制写错文件**：`copyFingerprint(..., targetProject)` 把副本塞进当前项目的内存表，`saveProject()` 于是写到**当前**项目文件。现在目标项目与绑定项目不同时交给目标项目的实例读盘后写入；复制同时携带 V2 结构。
+- **指纹文件签名恒为 `:missing`**：全局/项目指纹都在配置目录，`getAbstractFileByPath` 恒为 null，`computeFingerprintSignature` 永远返回 `:missing`，新增/删除/启停都触发不了 `reloadIfChanged`（协同引擎持另一个实例，内存列表不更新）。`FileSystemPort` 新增可选 `getFileStamp()`（回退 `vault.adapter.stat`），签名改用 mtime + size。
+- **一次读失败就把整库抹掉**：`load*` 的 catch 直接清空内存映射，之后任何一次保存都会把空数组写盘。现在区分「文件不存在」（真空库）与「读取/解析失败」（保留内存，损坏文件改名 `.corrupt-<ts>.bak` 留档）。
+- **混装文件里已迁移的 V2 被二次迁移成空壳**：`migrateFileV1ToV2` 对数组无条件 `map(migrateV1ToV2)`，V2 条目没有 `sentenceRhythm` → 12 维被覆盖成「全部 pending」。改为逐条 `needsV1ToV2Migration` 判定。
+- **详情弹窗开关点了没反应**：Modal 里 `onToggle` 之后又手动 `enabled = !enabled` 翻回去，落盘值仍是翻转前的；重渲染用的还是打开时捕获的旧对象。现在只让调用方翻转，回来后从库里取回最新对象再渲染并重读 V2。
+- **全局指纹的开关在项目里不生效**：注入侧读的是「项目级覆盖优先」（`isGlobalEnabledForProject`），列表与详情却直接渲染 `fp.enabled`。列表、详情徽标、工具栏开关统一走生效状态，写入走 `setGlobalEnabledForProject`（无项目时才改全局默认）。
+- **界面元素越用越往下掉**：`renderScopeTabs` / `renderSearchAndFilter` / `renderFingerprintList` 都是「删掉再 append」，单独重渲染搜索区会把搜索框挤到指纹列表下方。改为按原位置 `insertBefore`。
+- **章节勾选框点不动**：点击复选框时 `change` 记一次选中、`click` 冒泡到行容器又翻回去。行容器点击现在忽略来自复选框的冒泡。
+- **融合描述退化成只剩「。」**：单句超过 100 字时 `replace(/[^。！？]*$/,'')` 把整句都当残句删掉。改为优先在最后一个句末标点处截断，没有标点则硬截并补句号。
+- **强度配置在无项目时「保存成功」但没落盘**：引擎没有项目时静默 return，弹窗照样提示已保存。弹窗先拦截并提示需要打开项目；`flush()` / `hasPendingWrites` 补上 `intensityConfigWriter`。
+- **删除指纹留下孤儿向量文件**：三个 `delete*` 只删库条目，V1/V2 维度向量与样章向量仍在磁盘上、仍可被检索命中。删除时一并清理对应作用域的向量（新增 `deleteFingerprintSamples()`）。
+
+### 🗂️ 知识库：数据面加固 + 导入/监控/详情修复（2026-10-30）
+- **索引损坏会清空整个知识库（P0）**：`parseFrontmatter` 把 JSON 解析失败吞成 `{}`，`loadIndex` 只看到「没有 books 数组」→ 内存置空，下一次任何保存都把「0 本书」写盘。现在解析失败或缺少 `books` 字段都会走已有的「从书籍目录重建」路径（坏索引先改名 `.bak-<ts>` 留档）；同时 frontmatter 兼容 CRLF——索引是用户可见的 `.md`，用外部编辑器保存后换行会变 `\r\n`，旧正则直接匹配失败。
+- **重建索引后向量化状态/简介/分类推荐全丢**：`saveBookInfo` 用字段白名单写 `基本信息.md`，漏了 `vectorStatus`/`vectorError`/`synopsis`/`genreRecommendations`。索引一旦重建，列表就显示「未向量化」、简介变空、分类推荐消失。已补进白名单。
+- **知识库配置读失败就被默认值覆盖**：`KnowledgeBaseConfigManager.load` 的 catch 里直接 `save()`，把用户自定义分类/技法/标签永久抹掉。改为只在「文件确实不存在」时写默认值；解析失败只在内存用默认值，磁盘原文件保留。
+- **标签体系读失败会让知识库初始化中断**：`KnowledgeTagManager.init` 不捕获 `load()` 异常。现在读失败退回默认标签继续工作，并把读不到的文件改名 `.corrupt-<ts>.bak` 留档，避免下一次保存覆盖成默认。
+- **向量库「全部读失败」被当成空库**：`loadIndex` 先清内存再逐个读，只要有一个成功就返回 true。磁盘占用/同步冲突导致全读失败时，签名被更新成「最新」→ 整段会话的知识检索静默为空且不再重试。改为读进临时表，全部失败时回滚内存并返回 false。
+- **批量导入重试会重复建书**：`runTask` 无条件 `addBook`，而自动重试与「重新导入」都会重跑整个任务；失败点在建书之后（写源文件失败等）时，每重试一次就多一本「书名 (2)」。改为复用 `task.bookId`——注入一次写失败实测：旧代码 `addBook` 2 次，新代码 1 次。
+- **第二批导入的进度/结果混入上一批**：`startImport` 从不清 `tasks`，进度与 `onComplete` 的数量都按全量统计（第二批显示成 5/8、成功数翻倍）。新批次开始时清掉上一批的终态任务。
+- **批次弹窗提前关闭后主视图不刷新**：只有点「完成」才回调 `onComplete`，ESC/✕ 关闭则书籍列表与计数停在导入前。改为 `onClose` 兜底上报一次（幂等）；「查看详情」路径标记已上报，避免刚挂好的详情页被 `onComplete` 的重建抢掉。
+- **「选择本地文件」按钮栈溢出**：隐藏的 `input[type=file]` 挂在该按钮内部，`input.click()` 的事件又冒泡回按钮 → 同步递归。input 改挂同级容器。
+- **「拆解任务 / 质量统计」每来一次进度就追加一整套 UI**：`handleProgressUpdate` / `handleCompleteRefresh` 直接调 `renderTasksTab()` / `renderStatsTab()`，而它们只 `createDiv` 不清空（最高 60 次/秒）。改为方法内部先 `empty()`；真实 Obsidian E2E 连打三次断言块数恒为 1。
+- **拆解监控弹窗的实时刷新完全失效**：tab 容器缺 `data-tab-content`，`updateCurrentTab()` / 无参 `renderHistoryTab()` 的 `querySelector` 恒为 null → 进度条停在打开瞬间，历史页还会在旧列表下面再追加一份。
+- **书籍详情：风格页永远为空**：风格指纹文件是 Markdown frontmatter，`KnowledgeDetailModal` 直接 `JSON.parse(content)` 必失败并被吞成 `{}`。改为与其余维度统一走 `loadMarkdownFrontmatter`；顺带修 `getDimensionProgress()` 把 `{}` 算成 100%（完成度图与空数据矛盾）。
+- **结构页「结构类型」不显示**：先 `createEl('div', { text: structureType })`，下一行又 `typeCard.textContent = ...` 把子节点清空。改为第二个子节点承载描述。
+- **人设搜索框只能输入一个字**：`input` 回调直接 `render()`，整框 `empty()` 重建 → 每敲一个字丢焦点。改为只重绘「全部人物」列表。
+- **详情数据被旧请求覆盖**：打开书 A 立刻点 B 时，A 的后半段 `await` 会晚于 B 完成并覆盖 B 的维度数据。新增 `detailLoadSeq` 序号，每步 `await` 后校验过期即放弃。
+- **批量「查看详情」点了没反应且锁死列表**：旧实现只设 `selectedBookId` 再调 `renderBookDetail()`（列表态没有详情容器 → 直接 return），而 `selectedBookId` 非空又让列表刷新永久跳过。改为 `loadBooks()` 后走正常入口 `openBookDetail()`。
+- **删除书籍 / 重新拆解失败无提示**：两处 `await` 无 `try/catch`，失败留下未处理的 rejection，却仍提示「已开始拆解」并关窗。
+- **参考书籍选择重启后丢失**：`referenceBookIds` 只存在插件实例字段，`saveSettings()` 从不落盘；权重滑杆 `adjustReferenceWeight` 是只打日志的空实现。新增设置字段 `referenceBookIds` / `referenceBookWeights`（默认空，深合并兼容旧配置），勾选/设主参考/调权重统一写设置并立即推给引擎与知识注入器；引擎初始化在注入器就位后补一次同步（否则重启后参考书籍注入静默为空），注入器权重改读设置。
+
+### ✍️ 协同写作工作台：丢稿 / 状态串章 / 监控与失败恢复（2026-10-30）
+- **采纳建议后切章会丢字（P0）**：`insertTextAndRecord` 直接给 textarea 赋值，不会派发 `input`，而自动保存只挂在 `input` 监听上；`flushBeforeChapterSwitch` 在「没有 pending」时直接放行 → 刚插入的整段文字被新章正文覆盖。新增 `applyProgrammaticEdit()` 统一写入入口（写 value + 光标 + `updateSnapshot` + `markDirty`），改造采纳、知识标签插入、历史回填、AI 修复四处；`BodySaveController.markDirty()` 负责排一次自动保存。
+- **采纳建议可重复插入（P0）**：正文同步写入后还有历史落盘 / 预览 / 指标评估多个 `await`，窗口期内再按 Ctrl+1 或双击「接受」会用同一条候选再插一遍。新增 `acceptInFlight` 互斥，并在第一个 `await` 之前清空候选；「✓ 接受」「继续使用」「Tab 幽灵建议」三条入口共用。
+- **保存并发被静默丢弃（P0）**：`save()` 遇到在途保存直接返回 false，而切章冲刷在调用前已取消了防抖定时器 → 第一次切章提示失败，用户重试一次就真的丢稿。改为串行链排队（并发请求会补写一次并带上最新正文），`flushBeforeChapterSwitch` 先等在途保存结束再判断；正文与章节身份在 `save()` 入口即快照，排队执行也不会串章。
+- **AI 修复用旧全文覆盖正文（P0）**：`handleQualityFix` 请求前保存整篇快照，返回后整篇重建 → 请求期间的输入被抹掉。改为只在「目标区间原文未变」时替换该区间，否则提示未应用；未定位到原文时只追加建议，不覆盖正文。
+- **init 失败残留上一章/上一本书的上下文**：`session`、`lastGatheredContext`、`soulData` 只在 try 内赋值，降级后仍指向旧项目 → 实体变更按旧身份入队、主角灵魂串书。现在降级分支同样重建空 session 并清空灵魂层/原始上下文/场景键。
+- **并发 init 互相覆盖**：连续打开两章时，先发起的慢 `gatherAll` 会晚到并把 snapshot/session 改回上一章。新增 `initSeq`：每个 `await` 回来后校验代次，过期即整体放弃。
+- **待确认实体变更跨章污染**：`pendingStateChanges` 不随 init 清空，切章后上一章的「送入确认队列」按钮仍可点，会用新章身份入队。init 开头清空，切章/清空绑定时同时清空 `warningContainer`。
+- **手动联想永久卡死**：`isAssociating` 的复位挂在 `suggestionEpoch` 上，联想在途时按 Tab 会递增代次 → 永远不复位，联想与幽灵建议一起失效。改用独立的 `associationSeq`。
+- **本地批量候选漏参考书检索**：本地模式默认走 `tryBatchedCandidates`，该路径既不调用 `getKnowledgePromptParts` 也不记账 → 参考书的风格/节奏/技巧注入在默认路径里静默缺失，UI 还显示上一轮的注入条数。现在批量路径先检索一次（三方向共用），写 `directionKnowledgeCounts` 并 `recordKnowledgeInjection`，检索失败归零不阻塞。
+- **改写候选插到错误位置**：视图声明了 `pendingRewriteRange` 却从未写入，采纳一律读当前光标。新增纯函数 `resolveInsertRange()`（`ui/cowrite/insert-range.ts`）：优先用改写区间且校验原文未变，失效则回退当前选区并提示；采纳/取消/重新生成/切章都清空。
+- **偏好文件读失败被当空**：解析失败后「采纳一条建议」会用只含新偏好的对象整体覆盖历史。现在区分「文件不存在」与「读取失败」，读失败后首次保存先把原文件改名 `.corrupt-<ts>.bak` 再写新文件。
+- **指纹强度配置读失败被清空**：读失败会缓存空对象，随后保存以空对象为基线整体覆盖。现在有内存值时沿用，无值时拒绝保存并提示；文件不存在仍按首次配置正常写入。
+- **知识库检索缓存不随数据变化**：缓存签名只有 query + bookIds，重新拆解/改名/换 embedding 后同一会话一直返回旧片段。`KnowledgeBaseManager` 新增 `version`（增删改递增），签名纳入版本与模型不一致数，`setKnowledgeBase` 换源时清空缓存。
+- **右侧监控面板四张卡长期空白**：`renderMonitorPanel()` 只在布局时调用一次；实体卡把正文路径拼成 `${project}/${volume}/${chapterName}_正文.md`（真实路径由 `getBodyPath()` 给出）；守卫卡读取从未存在的 `liveAnalysis.issues`。现在实体卡用真实路径，守卫卡改读 `LiveAnalysisController.getGuardSummary()`（OOC 条数/一致性分/实体变更），并在切章、保存、守卫完成后重绘。
+- **生成失败看不到原因与重试**：0 建议 + 引擎报错时先 `empty()` 摘掉了错误容器，`showSuggestError` 把内容写进已脱离文档的节点。改为在可见区域重建错误卡（含「重试」）。
+- **验证失败永久「验证中…」**：编辑建议后的校验请求没有 catch，失败后原卡片已清空、面板停在加载态。补 `try/catch`，失败渲染可重试的错误卡。
+- **标记完稿 / 结算忽略保存结果**：保存失败仍提示成功并打开结算，结算基于磁盘旧正文执行。现在保存失败即中止并提示。
+- **字体设置重开不生效**：字体只在下拉 `change` 时应用，`onOpen`/`openChapter` 都不调用。现在两处都恢复，并同步预览层。
+- **关闭视图不中止指标评估**：`onClose` 未 abort `metricsAbortController`、未推进 `previewSeq`；`RealtimeQualityController.dispose()` 不关开关，`RealtimeMonitor.dispose()` 不中止在途评估。三处补齐。
+- **浮窗切章不清理**：切章后旧章候选卡片仍可点、旧改写区间仍在 → 旧建议会被插进新章。切章时清空候选/幽灵/改写区间并中止在途请求；普通建议生成时清空改写区间。
+
+### 🖥️ 完整写作工作台：写错章节 / 重复结算 / 状态串章（2026-10-30）
+- **修正稿写进同卷别的章（P0）**：`writeFixToBody` 把「卷目录」交给 `findChapterFile`，而该函数的标准文件名匹配需要章名，必然失败 → 回退到 frontmatter 扫描，返回该卷**第一个**正文文件。第 3 章的修正稿会整篇覆盖第 1 章。现在按 `项目 + 卷号 + 章号` 精确拼正文路径；回归用例实测旧代码写入 `第1章_正文.md`、新代码写入 `第3章_正文.md`。
+- **章节结算重复执行且失败后无限重试（P0）**：结算有两条触发路径（编排器显式 `settle()` + 步骤 10 渲染时自动触发），并发时都会通过「正文未 settled」检查，重复追加伏笔/关系/时间线；而失败会触发重渲染 → 再次自动结算 → 再失败的死循环。现在按「项目+章节目录」合并并发触发、直接读**磁盘**正文 frontmatter 判断已结算、同一章只自动触发一次（失败改为显式「重新结算」按钮）。
+- **场景细纲写进切章后的新章（P0）**：`markDirty` 的 1 秒防抖在触发时才读当前章节，用户切章后旧章的场景会覆盖新章的 `Scene展开.md`。现在在 `markDirty` 时捕获所属章节，保存写回它；`loadScenes` 切章前先冲刷未落盘编辑。
+- **向导的「全书规划 / 批量建章」可能操作错误项目（P0）**：两个弹窗都没传 `tab.project`，默认选中「检测到的第一个项目」。现在 `PlanBookModal` 支持 `preferredProject`（不在列表时明确提示），`BatchCreateModal` 传入向导项目。
+- **取消/失败时用空内容覆盖情绪规划与 Scene 展开**：两个特例步骤不检查空产出，取消后仍落盘并标记完成（空文件覆盖原规划 + 后续误判已完成）。现在空产出不落盘、不标记完成，并提示已取消/重试。
+- **批量重跑把旧内容当成功**：`resume=false` 时仍用磁盘上的完成态，某步 AI 失败会沿用旧内容并通过「非空+未截断+已完成」判定。现在强制重跑时从空完成集开始；步骤文件**存在但读不出来**时直接中止本章并报告路径，避免重新生成覆盖原文。
+- **一键完成本章的运行条第一步就消失**：进度/暂停/取消条挂在 `tabContent` 内的 `mainContainer` 上，而每一步都会 `empty()` 该容器。现在挂到 Tab 栏与内容区之间（`contentEl`），并新增真实 Obsidian E2E 断言。
+- **切换章节/关闭视图不取消一键任务**：编排器持有自己的 AbortController，`onClose` 只 abort 了步骤控制器。现在切章（页签目标变化）、回项目选择、关闭视图都会 `cancel()`，避免用新章 vars 生成、写进旧章目录，或关掉视图后继续烧 AI。
+- **运行中重渲染把 `stepResults` 换成新对象**：编排器在 `run()` 开始时捕获了引用，页签重渲染后它的写入落到孤儿对象，界面永远看不到已完成。改为就地清空（引用不变）。
+- **上下文加载竞态**：切换 A→B 时 A 的 `gatherAll` 晚到会覆盖 B 的上下文与统计。现在入口快照目标章节，每个 `await` 后校验，过期即丢弃；跨卷快照失败不再让 `loadContext` 抛出。
+- **上下文加载失败留下永久空白页**：`renderInContainer` 在 try 之外 `await loadContext()`。现在包进 try，失败渲染错误卡（含重试）。
+- **向导结果缓存跨项目串扰且重启不恢复**：Proxy 只在构造时读一次（项目还是空 → global），之后写当前项目 key。现在每次读写按当前项目分桶，切换项目自动换桶、同项目可恢复。
+- **设定库「完成检测」与「内容校验」口径不一致 → 永久卡步**：检测器缺模块只 warn 仍返回 true，于是「下一步」校验失败置 `complete_with_warnings`，紧接着状态恢复又翻回 `done`（跳过按钮永远不出现）。现在缺模块返回 false，与 `validateSettingLibOutput` 同口径。
+- **模板变量漏兜底**：`context` 为空时 `allChars/allFactions/allLocs/allItems/worldType/worldEra/forbiddenElements/powerSystem/characterCores/timeline/protagonistName` 没有兜底，`${allChars}` 等占位符会原样发给模型。兜底清单已补齐并导出为 `TEMPLATE_VAR_FALLBACK_KEYS` 供契约测试锁定。
+- **手动保存步骤结果忽略落盘结果**：`saveStepResult` 返回 false（chapDir 为空/无文件映射/写盘失败）时仍更新内存并提示「已保存」。现在先判返回值，失败直接报错不更新状态。
+- **批量流水线的失效传播是空实现**：`invalidateSteps: () => {}` 让「正文变更 → 下游失效」在批量模式静默失效，断点续跑会拿旧分析报告结算新正文。现与工作台同语义。
+- **合并规划缺模块时直接失败**：合并只要 infoPlan+outline 完整就返回 success，缺其它模块时不会走单步回退，下一行又硬性判失败。现在无论 success 与否都会补齐缺失规划模块；合并规划保存失败也会从完成集中移除并报错。
+- **温度滑杆每次重渲染重置为 1.4**：`renderStepActionBar` 写死 `value`，用户调到 0.8 后任何重渲染都会回到 1.4，下一次生成风格被静默改变。现在记住 `stepTemperature` 并回填。
+- **干预可能落到错误步骤且可重复执行**：理解报告基于步骤 N 生成，确认前切到 M 仍会重跑 M；连点确认会并发两次。现在记录报告所属步骤、不一致即拦截，并有执行互斥。
+- **实体生成按钮失败后永久禁用**：命令未分发或弹窗没打开时，只挂在「弹窗关闭回调」里的清理永远不执行。现在检查命令返回值 + 5 秒看门狗恢复按钮。
+- **快捷工具无防重入**：连点会并发执行同一命令（多个弹窗/多路 AI）。现在 400ms 冷却 + 禁用态。
+- **页签标题不更新、跨卷同名章复用错页签、导航栈残留已关闭页签**：复用章节页签时同步 `label`；只有卷一致才复用；`closeTab` 同步清理 `navStack`，`popNav` 跳过已删除页签（否则「返回」后界面空白）。
+
+### 🤖 Agent 创作工作台：项目越界 / 任意命令 / 回合失控（2026-10-30）
+- **项目名 `..` 会删掉整库，甚至整个 Vault（P0）**：`newProjectPath` 只剥斜杠，`create_long_project` 又只校验非空；项目名传 `".."` 归一化后等于模式库根、传 `"."` 等于库目录，叠加「同名覆盖」会递归删除旧目录。现在项目名按不可信输入校验（空/`.`/`..`/纯点号一律拒绝并报错），回归用例实测旧实现直接放行。
+- **Agent 会静默覆盖已有项目（P0）**：端口把 `confirmOverwrite` 硬编码为 `true`，模型重复调用一次 `create_long_project` 就会删除刚建好的项目（含已写正文）再重建。现在 Agent 永远不覆盖：同名返回「已存在」，让模型换名或先问用户。
+- **`run_command` 可执行任意 Obsidian/第三方命令（P0）**：旧实现只要求 `commandId` 非空，registry 未命中还会回退到 `app.commands.executeCommandById`（如 `app:delete-file`）。现在只接受 `novel-writer-*`，且必须命中插件自己的注册表。
+- **项目参数可越界读写（P0）**：`resolveProject` 对未命中的显式 project 原样透传，`open_story_settings` 会往 `${project}/.project` 写文件、`list_chapters` 会读任意目录。现在显式参数必须是项目列表里真实存在的条目；记忆里的 `pickedProject` 只接受「库/项目」形状且不含 `.`/`..` 的路径；解析为空时工具直接返回「项目不存在」。
+- **关闭/重启工作台不停止回合（P0）**：引擎支持 `signal` 但从未接线，`onClose` 只丢引用 → 关闭后模型调用与工具继续跑、继续建项目/跑命令。现在每个会话一个 `AbortController`，关闭/重启即中止；loop 在每步与每次工具执行前检查。
+- **同一工具可在一回合内重复执行**：模型重试/抖动时会连续 `create_*`/`run_command`，副作用被放大（`maxSteps` 最多 6 次）。现在同回合内「同名同参」只执行一次，重复调用返回明确的阻止说明。
+- **最后一步工具失败被当成成功**：maxSteps 边界上优先返回模型「动手前」的回复，失败原因被掩盖。现在最后一步工具失败即标记回合失败并带上失败内容。
+- **协议解析取全文第一个 `{`**：前言里的花括号会被当成协议（空回复），或把截断的 JSON 原文直接显示给用户；字符串化的 `arguments` 被吞成 `{}`。现在优先代码围栏、逐个候选只认含 `reply/tool/chips` 的对象、支持 JSON 字符串参数；适配器与 loop 共用同一套解析。
+- **压缩摘要保留最旧 24k**：会话压缩时 `slice(0, 24000)` 保留的是被删范围的最早部分，最新的已确认决定反而没进摘要就被删除。改为保留最近 24k。
+- **「重试」把 `__retry__` 发给模型**：chip 值被当用户消息写入历史，重放实际不生效；chip/项目卡点击还会清空输入草稿。现在控制令牌不上屏、不写历史，「重试」重放上一条用户消息；非键盘提交不清草稿；Shift+Enter 不再发送。
+- **会话重启后旧回合写进新会话**：A 的问候/回复/工具行会被渲染进 B 的列表，A 启动失败还会把 B 的引擎置空。现在用 `sessionSeq` 丢弃过期回调。
+- **降级到离线引导时项目错误**：`switchToRuleEngine` 用插件活动项目重建上下文，与工作台左栏选中的项目不一致。现在沿用工作台当前项目。
+- **Agent 新建项目后视图不同步**：项目 chip/文件树/高亮仍停在旧项目，要手动点一次项目卡（还会多发一条消息）。现在每回合结束后把 `pickedProject` 同步为当前项目。
+- **切项目后右栏仍显示上一个项目的文件**：`setActiveProject` 不清预览。现在跨项目时清空预览并停下在途渲染（预览加了代次 token，快速连点两个文件不再互相覆盖）。
+- **左栏每回合被重置**：类型分组折叠态存在闭包 class 上、滚动位置也不保留。现在折叠态与滚动位置都随重渲染恢复。
+- **短篇/剧本缺前期调研仍「创建成功」**：参数级 `required: true` 只用于展示，工具用空记忆回填后写入空栏并回报成功。现在创建前校验各项，缺项时返回「还缺哪些字段」并引导模型追问。
+- **`open_full_writer` 丢弃项目参数**：实际打开的是当前活动项目，工具却回报成功。现在端口接收项目并定位到该项目的第一个未写章节，打开失败会返回 false。
+- **`list_chapters` 把读失败当空项目**：模型看到「还没有任何章节」后会继续批量建章。现在抛错由工具层转成失败结果。
+- **规则引擎把「不是这个」当确认**：确认词含「是/好/可以」且是子串匹配，否定句会直接创建/覆盖项目。现在确认阶段先排除否定词。
+- **结构优先级写反**：记忆里的旧结构覆盖随机设定，落盘的 `structureId` 与随机生成的阶段/基调自相矛盾。现在显式参数 > 随机设定 > 记忆 > 默认。
+- **`script.episode-ids` 无上限**：`scenes × shots` 直接双重循环，模型传 1e9 会冻结渲染进程。现在两者都限制在 200。
+
+### 🧩 深度吸收 dsh harness：上下文裁剪 / 超时 / 重复提醒 / 回合内补充 / 危险命令确认（2026-10-30）
+- **工具结果确定性裁剪（dsh `compaction-tool-result-pruner`）**：`list_chapters` / `list_commands` / `run_command` 的结果动辄几 KB，每回合都整段发给模型；旧的会话压缩只在 30 轮时做一次整体摘要，中间这些超长结果一直占满上下文。新增 `tool-result-pruner.ts`：超过 6000 字符时保留头 1200 + 尾 1200、中段替换为固定标记。**原事件不改写**，只在 `derive()` 投影时生效（可重放、可审计），并按 Unicode 码点裁剪避免切开 emoji。
+- **每回合的裁剪统计进入遥测**：右栏新增「省字符 / 压缩」两格，直接显示这轮省下多少上下文。
+- **工具超时策略（dsh `guard/timeout-policy`）**：工具可声明 `timeoutMs`，注册表派生 deadline 并在超时时 abort 派生信号、返回结构化 `TOOL_TIMEOUT` 失败（`create_*` 20s、`list_*` 10–15s、`run_command` 30s）。旧实现里一次挂起的端口调用会把整个回合拖死。
+- **重复调用按副作用分级（dsh `guard/repeat-tool-reminder`）**：不再对所有工具「第二次就拦截」——只读工具允许重跑，但在连续 3/5/8 次相同参数时注入一条上下文提醒让模型自己换策略；`write`/`dangerous` 工具仍在第二次拦截。工具元数据（`sideEffect`）同时写进系统提示词，让模型提前知道哪些调用会改数据。
+- **回合内补充（dsh agent-loop inbox / steering）**：回合进行中用户再发的话不再被丢弃/阻塞，而是进入收件箱，loop 在下一步调模型前写入会话日志（带「用户在你执行过程中补充」前缀）。回合结束仍未被消费的消息会作为普通用户消息保留到下一轮，不丢失。
+- **压力触发的会话压缩（dsh `compaction-basic`）**：压缩不再只看轮次，投影字符数超过 32000（可配 `thresholdChars`）也会触发；摘要调用本身已改为保留最近 24k 内容。
+- **危险命令用户确认（dsh `interaction/user-approval`）**：`run_command` 命中批量生成/重建/结算/导出/备份等模式时，必须由用户在弹出的确认框里看到「命令 + 原因」后允许；拒绝即返回失败且不执行；宿主没有确认能力时直接拒绝而不是静默执行。
+- **协议与工具目录的可读性**：工具目录新增副作用说明；确认被拒绝、超时、重复拦截都有面向模型的明确文案，避免模型原地重试。
+
+### 🐞 修复
+- **API Key 每次重启/更新后失效（2026-10-29，已确认为真 Bug）**：根因是口令派生加密的**重新设定口令**路径。`CryptoService.encrypt()` 走 `ensurePassword(true)` → `requestNewPassword` → 「设定新口令」（两次输入），**不管磁盘上是否已有密文**。于是每次重启后（会话口令只在内存）保存任意密钥，都会让用户再设一个新口令；新口令覆盖会话口令后，此前用旧口令加密的密钥就永久解不开——表现为「更新后 API Key 失效」，而且每重启一次可能再坏一批。真实 `data.json` 里正是混合状态：`deepseek`/`custom-1` 是明文，`catcat`/`volc`/`custom-2`/`custom-3` 是密文。修复：新增 `findExistingCiphertext()` 回调（由 `SettingsService` 从磁盘原始值提供），**只要已有密文，`encrypt` 就必须问「已有口令」而不是「设定新口令」**，并且候选口令必须能通过 GCM 校验解开一条既有密文才被接受（错口令重问一次，不会被设为会话口令）。
+- **保存设置会把加密密钥降级成明文（同源问题）**：`encryptIfPlain` 在「没有会话口令」时直接把内存值写回磁盘，而内存值此时已被解密成明文 → 加密配置被静默降级。修复：改为 `resolveSecret()`——密文原样保留；有会话口令则加密；无口令但磁盘原本是密文时，用**已有口令**加密（`encryptStrict`，拿不到就保留旧密文并记日志），**绝不写明文**；只有从未用过口令的字段才沿用旧的明文保存行为。
+- **密钥输入框直接把密文显示出来**：未解锁时 `settings.providerKeys[id]` 是 `aes256v2:...`，设置页/统一提供商弹窗/迷你设置三处都把它塞进输入框，用户看到一长串乱码，误编辑还会把密文当新密钥存回去。新增 `shared/secret-display.ts`：密文一律显示为空 + 「已加密 · 输入口令解锁后可修改」，并在留空失焦时不写回（避免把密文清掉）。三处入口统一。
+- **「是否已配置 AI」漏判供应商级密钥**：`hasUsableAiCredentials` 只看 `settings.apiKey`。若密钥只存在于 `providerKeys[当前供应商]`（apiKey 被清空或从未同步），会被判成「未配置」，生成入口直接拦截。已补 `providerKeys` 兜底。
+- **切换供应商可能丢密钥**：当前端点未登记为供应商时（旧配置/手动改过 endpoint），`switchByEndpoint` 既没有归档旧 `apiKey`，又立刻用新供应商的密钥覆盖它 → 上一个端点的密钥丢失。现在会先尝试按端点找到对应供应商并归档，找不到则记 warn 日志而不是静默覆盖。
+- **配套恢复入口**：设置页「API 参数」区新增「密钥加密」一行——显示磁盘上还有几项处于加密状态，提供「输入口令解锁」与「重置口令」两个动作。重置会用新口令重新加密所有可读明文，**解不开的旧密文会被清空并在提示里列出**，让用户知道哪些供应商需要重新填写，而不是让它们停留在「看起来配好了但实际无效」的状态。
+- **自定义下拉的文字被垂直裁切（2026-10-29）**：API 格式下拉里「Anthropic Messages」下半截被切掉。实测 `.nw-api-select` 高度 30px（Obsidian 给 `select` 钉死的值）、上下内边距各 8px、边框 0.8px → **内容盒只剩 12.4px**，而 13px 字号的行高是 16.9px，**verticalSlack = -4.5px**，字形底部被裁。修法：给自定义下拉统一 `height: auto`（高度改由「行高 + 内边距 + 边框」自然撑开，随字号自适应）并补 `line-height`。
+- **同类排查**：把插件里所有自定义过样式的 `select` 都过了一遍——`.nw-select`（12+15 处）、`.nw-api-select`、`.nw-exec-log-filter`、`.nw-cowrite-font-select`、`.novel-writer-fw-title`、`.novel-writer-fw-chapter-select`。其中 `.nw-select` 原本 `height:32px + line-height:30px`（slack +0.4，勉强）、`.novel-writer-fw-title` 是 16px 字号 + 4px 内距（临界），都已纳入统一的 `height: auto; min-height: 30px` 兜底规则。修复后四条实测 slack：`nw-api-select 0`、`nw-select 0`、`novel-writer-fw-title +2.4`、`novel-writer-fw-chapter-select 0`。新增 E2E 断言「每个自定义下拉的内容盒必须装得下行高」（`slack >= 0`），覆盖设置页与写作工作台两处。
+- **知识库侧栏的模型切换器溢出（2026-10-29）**：左栏「🔌 供应商 · 模型」胶囊按钮右半截压到相邻栏目上、图标看着像被切。实测：侧栏固定 200px、header 左右各 12px 内距 → 内容区仅 **175px**，而切换器宽 **236px**，右侧溢出 **48px**。根因是 `.nw-model-switch` 的 `max-width: 280px` 是硬上限、不随容器收缩；同时 `flex-shrink: 0` 在普通块级容器里本就不生效，而 label 作为 flex 子项默认 `min-width: auto` 会撑住父元素，导致 `text-overflow: ellipsis` 也失效。修复：`max-width` 改为 `min(280px, 100%)`、`flex-shrink` 改为允许收缩、label 补 `min-width: 0`。修复后知识库侧栏切换器收敛到 175px（-13px 内收）、指纹库 280px（-20px 内收），超长模型名用省略号。
+- **设置行被压成竖排单字（2026-10-29）**：同人考据来源的「最大来源数 / 单源摘录长度」标签渲染成一列竖排单字。根因是 Obsidian 的 `.setting-item-info` 是 `min-width: 0` 的 flex 子项，右侧两个输入框把信息列压到极窄，中文又能在任意字符处断行，于是每个字占一行。修复：① 把该合并标签拆成「最大来源数」「单源摘录长度」两条设置；② 加防御性 CSS——给 `.setting-item-info` 一个 200px 的可读下限并允许整行 wrap，控件放不下时落到下一行，不再压扁标签。**这条守卫必须同时覆盖 `.nw-settings-tab-content`**：设置页容器本身没有 `.nw-scope`（只有各弹窗有），第一版只写 `.nw-scope` 导致守卫完全没生效，E2E 立刻在「Flash 模型（大纲/分析/规划）」（70px）与「Pro 模型（正文/角色/实体）」（25px）两处抓到同样的竖排。
+- **下拉菜单文字显示不全 / 没有三角（2026-10-29）**：这是**类级缺陷，不是单个下拉的问题**。三层根因：① Obsidian 全局对 `select` 设了 `appearance: none`，箭头靠 `.dropdown` 类上的 data-URI 背景图画，而插件的自定义类 `.nw-select` / `.nw-api-select` 没有那个类，**根本没有箭头**，文字一路顶到右边缘；② `.nw-select` 的 `padding: 0 12px` 右侧只留 12px，不足以让出箭头位置，且缺 `text-overflow`，长选项（实测「默认（doubao-seed-2-0-pro-260215）」溢出 3px）被切在笔画中间；③ Obsidian 给 select 设了 **`background-blend-mode: hard-light`**，自绘的灰色箭头与背景色混合后完全不可见（这也是上一版两个渐变三角形混成畸形「↖」的原因）。修复：两个下拉类各自内联一个 URL 编码的 SVG chevron，显式 `background-blend-mode: normal`，右侧统一留 30px 并加省略号；`.nw-api-select` 的两个重复定义块合并为一份；API 格式选项 label 从「Chat Completions (/chat/completions)」（36 字符）改为短名「Chat Completions」，路径移到提示行与 `title`，在 240px 窄面板下从溢出 38px 变为零溢出。另修 `.novel-writer-fw-title`（`background` 简写重置箭头图）与 `.novel-writer-fw-chapter-select`（`padding: 0 10px` 覆盖了 30px 右内边距），并用 `select.nw-select` 提升一格特异性统一兜住各业务变体的 padding 覆盖。新增 E2E 断言：全部自定义下拉都必须有可见箭头、`blend-mode: normal`、且文字要么放得下要么用省略号。
+- **规则版本「重新检查」重复生成模块（2026-10-29）**：`renderRulesSection()` 每次执行都 `tabContent.createEl('section')` 追加新节点，而「🔄 重新检查」按钮的回调正是调用它本身——每点一次就多出一整块重复的规则模块。拆成 `renderRulesSection()`（只建一个 section 并委托）与 `mountRulesSection(section)`（先 `section.empty()` 再渲染内容），按钮改为重绘本容器。同时全仓排查了同类写法：设置页 18 个 `render*Section` 中只有这一处自调用，另加静态测试锁定「事件回调不得调用 render*Section」与「每个 section 渲染方法都必须从 tabContent 起容器」。真实 Obsidian E2E 连点 3 次验证 section 数恒为 1。
+- **Agent 工作台「设置」入口点不动（2026-10-29）**：左栏「界面直达 → ⚙️ 设置」调用的是 `novel-writer-open-settings`，但该 id 从未注册过任何命令，`executeCommand` 静默回退到 Obsidian 路由并返回 false，表现为点击无反应。现在补成真实命令：`CommandIds.OPEN_SETTINGS` 进命令定义表、内部 Registry、Obsidian 命令面板与 UI 执行器，新增 `plugin.openPluginSettings()`（走 `app.setting.open()/openTabById(manifest.id)`，不可用时提示手动进入），工作台按钮与欢迎弹窗共用同一实现；Agent 的 `list_commands` / `run_command` 也因此可以打开设置页。新增真实 Obsidian E2E 用例回归该入口。
+- **Agent 章节进度误识别（2026-10-29）**：`批量建章` 会为规划中的每一章创建正文骨架（`status: pending`、`word_count: 0`、约 300 字节），旧逻辑把「存在正文文件」等同于「已写」，于是只写了 1 章的项目被读成「共 400 章、最新第400章」，Agent 还会直接打开第399章续写。新增 `shared/chapter-progress.ts` 统一判定口径：只有 `status` 为 `written/settled` 才算已写；`pending/draft` 或体量低于 1500 字节一律视为待写骨架；无 `status` 的旧文件按体量兜底；「最新已写章 / 建议续写章」只在已写章节中计算。`ChapterListEntry` 增加 `written/size`，`list_chapters` 与 `get_project_status` 改为输出「规划 N 章；已写 X 章；待写骨架 Y 章；最新已写：…；建议接下来写：…」，系统提示词新增【进度判定（重要，别数错）】。真实项目 `九霄逆脉行` 验证：400 个正文文件中 399 个骨架不计入，结果为已写 1 章 / 待写骨架 399 / 最新第1章 / 建议第2章。
+
+### ✅ 验证
+- `typecheck` / `lint` / `test` / `preflight` / `build` / `check:release` 全绿。
+- **425 个测试文件 / 4995 个用例全部通过**。
+- 真实 Obsidian E2E 19 passed（隔离 userData + CDP；新增覆盖设置入口、API 格式下拉、外观三层、规则不重复渲染、下拉箭头与不截断、两处面板拖拽、指纹库页签顺序与启停翻转、知识库任务/统计页不重复追加、协同写作程序化写入落盘与字体恢复、完整写作工作台运行进度条不被重渲染清掉、Agent 工作台 chip 不清草稿与令牌不上屏）。
+- 新增 `prose-metrics.test.ts`、`prose-naturalizer.test.ts`、`story-context.test.ts`、`story-context-prompt.test.ts`、`template-vars-story-context.test.ts`、`model-quick-switcher.test.ts`、`agent-harness.test.ts`、`chapter-progress.test.ts`、`harness-plan-compaction.test.ts`、`preview-and-font.test.ts`、`fingerprint-library-persist-guard.test.ts`（13 条）、`knowledge-base-integrity.test.ts`（9 条）、`full-writer-data-safety.test.ts`（7 条）、`full-writer-view-contracts.test.ts`（9 条）、`agent-harness-safety.test.ts`（24 条）、`dsh-absorption.test.ts`（11 条）、`co-writer-init-and-batch.test.ts`（6 条）、`cowrite-persistence-guards.test.ts`（8 条）、`cowrite-insert-range.test.ts`（6 条）、`api-format.test.ts`（35 条）、`model-discovery.test.ts`（17 条）、`api-format-wiring.test.ts`（9 条）、`theme-colors.test.ts`（30 条）、`settings-no-duplicate-render.test.ts`（11 条）、`panel-resizer-and-motion.test.ts`（15 条）、`task-budget-engine.test.ts`（24 条）、`secret-display.test.ts`（5 条）与 BodyWriter 自然化测试；CSS 新增 `nw-humanize-*`、`nw-model-switch`、`nw-agent-mode-badge`、`nw-model-fetch-*`、`nw-api-*`（模型设置两栏）类并显式更新基线。
+
 ## 4.19.0 — 2026-10-26
 
 > 发布说明：`docs/releases/v4.19.0.md` · 上一版本 v4.18.0
@@ -46,11 +284,29 @@
 - **步骤排版**：新增置顶操作栏（状态徽章 + 重新生成/生成此步 + 跳过 + 温度），无需滚过提示词即可执行；按钮改为紧凑胶囊样式，移除整行长条按钮与正文页的大块协同营销卡。
 - **信息规划模板**：系统提示词改为逐项 Markdown 标签格式，明确要求独立的“冲突强度：N/5”行；用户提示词同步量化指标格式，降低重新生成后仍缺字段的概率。
 - **错误误判修复**：信息规划校验接受“冲突强度 4/5”“四星/五级”等写法；合并规划提示词补齐 `INFO_PLAN` 的结构标签，减少一键模式因格式差异反复中断。
-- **测试**：新增创作模式、分类、红果规格、元数据、提示词注入、导出单元标签、前期调研、模式工具目录、独立内容结构、API 连通性、思考强度、三域隔离、项目定位、harness MVP、AI 辅助创作、Harness M1 契约、内容自动分类、关键词分词、指纹统计、执行事件/日志账本与分类压力测试。
+- **长篇故事结构**：新增起承转合、三幕式、五幕式、英雄之旅、序破急五套结构模板；每套包含阶段比例、关键节点与不可违反的结构规则。
+- **故事创作设置**：项目创建新增主角起点、核心冲突、力量体系、金手指、人物原型、主角性格、叙事基调、感情线、推进节奏九组选项与一句话故事；组合冲突实时提示。
+- **智能随机选配**：新增 CSPRNG 随机组合器，按结构/题材权重抽样，并逐项校验科技+血脉、系统流+非系统等矛盾；随机锁定结构时可只换设定。
+- **创建与向导整合**：故事结构写入 `.project`、`00-系统模板/故事结构指南.md` 与创作模式指南，并通过 `creationModePrompt` 注入后续全部步骤；长篇向导第一步新增「故事结构」，项目卡片显示结构徽章。
+- **CSS 设计系统 v2**：新增统一表面/输入/焦点/触控令牌；通用按钮、输入框、选择器补齐 focus-visible、tactile 与 reduced-motion 规则；故事结构面板改为双栏分组 + 阶段比例轨道，适配 960/760/520 三档宽度。
+- **叙事模式切换**：移除章节状态栏固定的“起承转合”默认值，改为五套结构下拉选择；切换写入 `.project` 并同步故事结构指南/创作模式指南，生成中禁止切换，后续步骤立即使用新提示词。
+- **场景描写融合**：整章正文模板新增场景描写硬约束（地点/时间/感官钩子/身体反应/场景过渡）；协同写作新增「🎬 场景描写」动作，description 方向强制使用当前 Scene 卡，不推进剧情。
+- **对话引导 Agent**：新增 `engine/agent/`（类型、会话引擎）与 `ui/agent-guide-modal.ts`；命令面板与项目与章节页均可进入；最前端先选长篇/短篇/剧本，长篇再分原创/同人两条专属路径。
+- **四类专属引导**：长篇原创（频道/题材/结构/基调/金手指）、长篇同人（原作/同人类型/改动边界/结构/基调）、短篇（平台分类/一句话故事/冲突/情绪承诺/反转/结尾/角色核心）、剧本（类型/logline/3 秒钩子/冲突/兑现/角色/场景/集数/付费卡点）。
+- **短篇/剧本闭环**：Agent 直接调用 DomainProjectFactory 创建项目并写入 `00-前期调研`，不再要求用户打开长表单；创建后可继续编辑前期调研或进入工作台。
+- **引导式选择**：关键节点（类型、原创/同人、频道、结构、短篇分类、剧本类型等）改为选择卡，展示预期效果、适用场景、风险与操作预览；支持逐项选择。
+- **双执行模式**：新增引导模式/自动模式；引导模式每步确认，自动模式用 CSPRNG 自洽随机与默认值填完剩余参数并直接创建；可随时输入「自动完成」或「切换模式」无缝切换。
+- **自动链路**：自动模式覆盖类型→路径→参数→创建→打开工作区，无需逐步输入；长篇创建后仍进入原有项目向导，短篇/剧本写入前期调研并打开工作台。
+- **Agent 入口**：项目与章节页顶部新增固定工具栏「🤖 对话引导」；空态、命令面板、项目页三处入口，现有项目也可直接进入。
+- **人类写作节奏**：新增 human-voice 约束块，注入 V1/V2 正文、协同写作句级 system 与 DEAI 单次改写；强调句长/段长起伏、具体细节、情绪行为化、去总结/排比/比喻链。
+- **测试**：新增人类写作节奏注入测试，Agent 单测/ E2E 覆盖引导与自动双模式。
+- **NLU 与回退**：新增 `ui/services/agent-nlu.ts`，自由文本优先走一次 AI 槽位解析；失败时回退 chips/序号/关键词，不阻断流程；`__random__`/`__skip__` 哨兵值直接生效。
+- **创建服务复用**：新增 `ui/services/project-create-service.ts`，表单弹窗与对话 Agent 共用项目创建、模板复制、`.project`/指南写入、写作配置与工作台打开；覆盖确认由调用方注入，避免 UI service 反向依赖。
+- **测试**：新增创作模式、分类、红果规格、元数据、提示词注入、导出单元标签、前期调研、模式工具目录、独立内容结构、API 连通性、思考强度、三域隔离、项目定位、harness MVP、AI 辅助创作、Harness M1 契约、内容自动分类、关键词分词、指纹统计、执行事件/日志账本、故事结构、场景描写注入与对话引导测试。
 
 ### ✅ 验证
 - `typecheck` / `lint` / `test` / `preflight` / `build` / `check:release` 全绿。
-- **393 个测试文件 / 4564 个用例全部通过**。
+- **397 个测试文件 / 4604 个用例全部通过**。
 - 运行时验证：三模式库创建、分类切换、批量建节/建集、导出、迁移 dry-run、长篇单调用入口均通过；长篇回归正常。
 - 压力基线：5000 指纹分类 19.0ms、2000 书籍分类 6.1ms、30 万字符分词 7.2ms。
 - 未做真实 Obsidian GUI 点击验收（需退出当前 Obsidian 才能启动 E2E），详见 `docs/audits/v4.19-fingerprint-knowledge-optimization-verification.md`。

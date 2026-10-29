@@ -535,6 +535,7 @@ ${olResult.content.trim()}
             volume: volName,
             project,
             writingMode: 'pipeline',
+            naturalize: plugin.settings.naturalParagraphMode !== false,
         });
         let bodyText = writeResult.body;
         showSuccess(`第${chapNum}章正文已生成`);
@@ -719,6 +720,7 @@ ${reportResult.content}
                                 volume: volName,
                                 project,
                                 writingMode: 'pipeline',
+                                naturalize: plugin.settings.naturalParagraphMode !== false,
                             });
                             bodyText = fixWrite.body;
                             showSuccess('审查问题已自动修正');

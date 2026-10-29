@@ -187,6 +187,23 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
   /** 打开章节 */
   async openChapter(project: string, chapterName: string, volume: string, chapterNum: number): Promise<void> {
+    // 切章先把上一章的候选/幽灵/改写范围与在途请求全部作废：
+    // 旧实现只换身份读文件，残留卡片仍可点击，旧章建议会被插进新章；
+    // 若上一轮是改写候选，还会叠加 pendingRewriteRange 的错误区间替换。
+    if (this.suggestAbortController) {
+      this.suggestAbortController.abort();
+      this.suggestAbortController = null;
+    }
+    if (this.suggestProgressEmitter) {
+      this.suggestProgressEmitter.cancel();
+      this.suggestProgressEmitter = null;
+    }
+    this.currentSuggestions = [];
+    this.pendingRewriteRange = null;
+    this.ghostSuggestion = null;
+    this.isSuggesting = false;
+    this.suggestionContainer?.empty();
+
     this.project = project;
     this.chapterName = chapterName;
     this.volume = volume;
@@ -250,6 +267,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   // === 建议生成（进度增强版） ===
   async handleTabSuggest(): Promise<void> {
     if (this.isSuggesting) return;
+
+    // 普通续写建议与改写候选是两种语义：上一轮的改写区间必须作废，
+    // 否则 acceptByIndex 会拿它去替换一段与本轮建议无关的正文。
+    this.pendingRewriteRange = null;
 
     if (this.suggestAbortController) {
       this.suggestAbortController.abort();

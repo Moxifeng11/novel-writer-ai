@@ -44,6 +44,7 @@ function makeHarness() {
         host.hasPending = false;
         return pending;
     });
+    const scheduleAutoSave = vi.fn(() => { host.hasPending = true; });
     const adapter: BodySaveHost = {
         app: {} as never,
         getBodyText: () => host.body,
@@ -66,6 +67,7 @@ function makeHarness() {
             && identity.bodyPath === host.bodyPath,
         onSaved,
         takePendingAutoSave,
+        scheduleAutoSave,
     };
     return {
         host,
@@ -73,6 +75,7 @@ function makeHarness() {
         updateControlState,
         onSaved,
         takePendingAutoSave,
+        scheduleAutoSave,
     };
 }
 
@@ -121,14 +124,79 @@ describe('BodySaveController — 保存身份快照', () => {
         expect(onSaved).toHaveBeenCalledTimes(1);
     });
 
-    it('保存进行中再次调用直接返回 false（不并发写盘）', async () => {
+    it('保存进行中再次调用会排队补写一次，而不是静默返回 false', async () => {
         const { host, controller } = makeHarness();
         host.titleDelayMs = 20;
 
         const first = controller.save(false);
-        await expect(controller.save(false)).resolves.toBe(false);
-        await expect(first).resolves.toBe(true);
+        // 旧实现这里直接返回 false：调用方（Ctrl+S / 切章冲刷）会以为写盘失败，
+        // 而冲刷路径已经取消了防抖定时器 —— 这段输入永久丢失。
+        const second = controller.save(false);
 
+        await expect(first).resolves.toBe(true);
+        await expect(second).resolves.toBe(true);
+
+        expect(writes).toHaveLength(2);
+        // 第二次写盘必须带上排队期间的最新正文
+        host.body = '排队期间又写了一句。';
+        await expect(controller.save(false)).resolves.toBe(true);
+        expect((writes[writes.length - 1] as { raw: string }).raw).toContain('排队期间又写了一句');
+    });
+});
+
+describe('BodySaveController — 程序化写入与并发冲刷', () => {
+    let writes: Array<Record<string, unknown>>;
+
+    beforeEach(() => {
+        writes = [];
+        vi.spyOn(BodyWriter.prototype, 'write').mockImplementation(async (req: any) => {
+            writes.push(req);
+            return { path: req.path, created: false, body: '', wordCount: 0, title: '' };
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('markDirty 会排一次自动保存（程序化写入不再依赖 input 事件）', () => {
+        const { controller, scheduleAutoSave } = makeHarness();
+
+        controller.markDirty();
+
+        expect(scheduleAutoSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('切章冲刷先等在途保存结束，再补写排队中的正文', async () => {
+        const { host, controller, takePendingAutoSave } = makeHarness();
+        host.titleDelayMs = 20;
+
+        // 在途保存（快照是旧正文）
+        const inFlight = controller.save(false);
+        // 用户在保存期间继续输入 → 排了一次自动保存
+        host.body = '旧正文加新句子。';
+        controller.markDirty();
+        expect(takePendingAutoSave).not.toHaveBeenCalled();
+
+        const flushed = await controller.flushBeforeChapterSwitch();
+
+        await expect(inFlight).resolves.toBe(true);
+        expect(flushed).toBe(true);
+        expect(takePendingAutoSave).toHaveBeenCalledTimes(1);
+        // 第一笔是旧快照，第二笔必须包含排队期间的输入
+        expect(writes.length).toBeGreaterThanOrEqual(2);
+        expect((writes[writes.length - 1] as { raw: string }).raw).toContain('旧正文加新句子');
+    });
+
+    it('在途保存期间无新输入时，冲刷等待完成后不重复写盘', async () => {
+        const { host, controller } = makeHarness();
+        host.titleDelayMs = 20;
+
+        const inFlight = controller.save(false);
+        const flushed = await controller.flushBeforeChapterSwitch();
+
+        await expect(inFlight).resolves.toBe(true);
+        expect(flushed).toBe(true);
         expect(writes).toHaveLength(1);
     });
 });

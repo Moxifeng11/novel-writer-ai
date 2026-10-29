@@ -80,6 +80,10 @@ export class BatchImportModal extends Modal {
     private selectedHistoryId: string | null = null;
 
     private isImporting = false;
+    /** 是否已经开过批次（关闭兜底刷新只在导入后触发） */
+    private batchStarted = false;
+    /** onComplete 是否已上报（「完成」与关闭兜底只允许一次） */
+    private completionReported = false;
     private progressUnsubscribe?: () => void;
     private taskUnsubscribe?: () => void;
 
@@ -133,7 +137,38 @@ export class BatchImportModal extends Modal {
         if (this.taskUnsubscribe) {
             this.taskUnsubscribe();
         }
+        // 用户按 ESC/✕ 直接关闭时不会走「完成」按钮，主视图的书籍列表与计数
+        // 就永远停在导入前。已经开过批次的，关闭时补一次回调（回调本身幂等）。
+        if (this.batchStarted && !this.completionReported) {
+            this.completionReported = true;
+            void this.reportCompletion();
+        }
         this.contentEl.empty();
+    }
+
+    /** 把当前批次的终态任务汇总成 ImportResult 并回调（「完成」按钮与关闭兜底共用） */
+    private async reportCompletion(): Promise<void> {
+        const progress = this.batchManager.getProgress();
+        const tasks = this.batchManager.getAllTasks();
+        const result: ImportResult = {
+            success: progress.completedTasks,
+            failed: progress.failedTasks,
+            skipped: 0,
+            successItems: tasks.filter(t => t.status === 'completed' && t.bookId).map(t => ({
+                bookId: t.bookId!,
+                bookName: t.bookName,
+            })),
+            failedItems: tasks.filter(t => t.status === 'failed').map(t => ({
+                filename: t.bookName,
+                error: t.error || '未知错误',
+            })),
+        };
+        if (!this.options.onComplete) return;
+        try {
+            await this.options.onComplete(result);
+        } catch (error) {
+            log.error('[BatchImportModal] onComplete callback failed:', error);
+        }
     }
 
     private render(): void {
@@ -208,7 +243,9 @@ export class BatchImportModal extends Modal {
             text: '📁 选择本地文件',
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
         });
-        const fileInput = selectFileBtn.createEl('input', {
+        // 隐藏 input 必须挂在容器上，不能挂在按钮里：
+        // input.click() 派发的事件会冒泡回父按钮，再次进入本监听 → 同步递归（栈溢出）。
+        const fileInput = btnRow.createEl('input', {
             attr: { type: 'file', multiple: '', accept: '.txt,.md,.epub', style: 'display:none;' }
         });
         selectFileBtn.addEventListener('click', () => fileInput.click());
@@ -1117,6 +1154,9 @@ export class BatchImportModal extends Modal {
                 });
                 detailBtn.addEventListener('click', () => {
                     if (task.bookId && this.options.onViewDetail) {
+                        // 跳详情由视图自己 loadBooks + 挂详情容器；
+                        // 这里若再让 onClose 走 onComplete，会把刚建好的详情面板重建回列表。
+                        this.completionReported = true;
                         this.options.onViewDetail(task.bookId, task.bookName);
                         this.close();
                     }
@@ -1349,28 +1389,8 @@ export class BatchImportModal extends Modal {
                 cls: 'nw-btn nw-btn-primary',
             });
             doneBtn.addEventListener('click', async () => {
-                const progress = this.batchManager.getProgress();
-                const tasks = this.batchManager.getAllTasks();
-                const result: ImportResult = {
-                    success: progress.completedTasks,
-                    failed: progress.failedTasks,
-                    skipped: 0,
-                    successItems: tasks.filter(t => t.status === 'completed' && t.bookId).map(t => ({
-                        bookId: t.bookId!,
-                        bookName: t.bookName,
-                    })),
-                    failedItems: tasks.filter(t => t.status === 'failed').map(t => ({
-                        filename: t.bookName,
-                        error: t.error || '未知错误',
-                    })),
-                };
-                if (this.options.onComplete) {
-                    try {
-                        await this.options.onComplete(result);
-                    } catch (error) {
-                        log.error('[BatchImportModal] onComplete callback failed:', error);
-                    }
-                }
+                this.completionReported = true;
+                await this.reportCompletion();
                 this.close();
             });
         }
@@ -1798,6 +1818,8 @@ export class BatchImportModal extends Modal {
         this.batchManager.startImport();
         this.currentStep = 4;
         this.isImporting = true;
+        this.batchStarted = true;
+        this.completionReported = false;
         this.render();
     }
 

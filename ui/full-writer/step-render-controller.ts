@@ -16,6 +16,8 @@ import { StepRunner, ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
 import { downstreamStepsAfterPlanningChange } from '../../engine/planning-step-advance';
 import { BODY_CHANGE_INVALIDATED_STEPS } from '../../engine/step-definitions';
 import { assessContextReadiness } from '../../engine/context-readiness';
+import { buildStoryContext, resolveStoryContextTier } from '../../engine/context/story-context-service';
+import { STORY_CONTEXT_KIND_LABELS } from '../../engine/context/story-context-graph';
 import { isTemplateSkeleton } from '../../engine/step-validator';
 import type { GatheredContext } from '../../engine/context-manager';
 import { ChapterStateManager } from '../states/chapter-state-manager';
@@ -58,6 +60,8 @@ export interface StepRenderDeps {
 
 export class StepRenderController {
     private deps: StepRenderDeps;
+    /** 已自动触发过结算的章节键（失败后不自动重试，避免「失败→重渲染→再失败」死循环） */
+    private autoSettlementAttempted = new Set<string>();
 
     constructor(deps: StepRenderDeps) {
         this.deps = deps;
@@ -159,6 +163,8 @@ export class StepRenderController {
             row.setAttr('title', item.required ? '本章必做输入，缺失会影响写作质量' : '可选输入，缺失不阻塞流程');
         }
 
+        this.renderStoryContextCoverage(area);
+
         const actions = area.createDiv({ cls: 'novel-writer-fw-context-actions' });
         const reloadBtn = actions.createEl('button', { text: '🔄 重新加载上下文', cls: 'novel-writer-fw-btn' });
         reloadBtn.onclick = async () => {
@@ -178,6 +184,64 @@ export class StepRenderController {
         });
     }
 
+    /**
+     * 故事上下文包覆盖度：让用户看到本章实际选中了哪些核心信息、丢了多少。
+     * 与 buildTemplateVars 使用同一套图/预算，避免面板与 prompt 两套口径。
+     */
+    private renderStoryContextCoverage(area: HTMLElement): void {
+        const d = this.deps;
+        const context = d.getContext();
+        if (!context) return;
+        try {
+            const settings = d.plugin.settings;
+            const tier = resolveStoryContextTier(settings, 'one-click');
+            const maxInputTokens = Math.max(
+                2048,
+                (settings.maxContext || 0) - (settings.maxOutput || 0) - 1024,
+            );
+            const result = buildStoryContext({
+                context,
+                chapterName: d.getChapterName(),
+                chapterNum: d.getChapterNum(),
+                volume: d.getVolume(),
+                mode: 'one-click',
+                tier,
+                maxInputTokens,
+                modelId: settings.defaultModel,
+                sceneExpansionText: d.chapterState.stepResults['sceneExpand'] || '',
+                emotionPlanText: d.chapterState.stepResults['emotionPlan'] || '',
+                precedingText: context.data.previous_chapter?.ending || '',
+            });
+            const t = result.bundle.telemetry;
+            const ok = t.missingRequired.length === 0;
+            const row = area.createDiv({
+                cls: 'novel-writer-fw-context-input-row is-required ' + (ok ? 'is-ok' : 'is-missing'),
+            });
+            row.createSpan({ text: ok ? '✅' : '⚠️', cls: 'novel-writer-fw-context-input-icon' });
+            row.createSpan({ text: '故事上下文包', cls: 'novel-writer-fw-context-input-label' });
+            row.createSpan({ text: '自动检索', cls: 'novel-writer-fw-context-input-badge' });
+            row.createSpan({
+                text: `${t.tier === 'local' ? '本地' : '云端'} · ${t.included} 项 · ${t.estimatedTokens}/${t.budgetTokens} tokens · 必含 ${t.requiredIncluded}/${t.requiredTotal}`,
+                cls: 'novel-writer-fw-context-input-detail',
+            });
+            const kindText = Object.entries(t.byKind)
+                .filter(([, v]) => v.total > 0)
+                .map(([kind, v]) => `${STORY_CONTEXT_KIND_LABELS[kind as keyof typeof STORY_CONTEXT_KIND_LABELS]} ${v.included}/${v.total}`)
+                .join(' · ');
+            const detail = area.createDiv({ cls: 'novel-writer-fw-context-hint' });
+            detail.setText(kindText + (t.dropped > 0 ? ` · 丢弃 ${t.dropped} 项低优先级信息` : ''));
+            if (t.missingRequired.length > 0) {
+                detail.setText(`缺少必含项：${t.missingRequired.slice(0, 5).join('、')}；${detail.textContent || ''}`);
+            }
+            if (t.warnings.length > 0) {
+                const warn = area.createDiv({ cls: 'novel-writer-fw-context-hint' });
+                warn.setText(`⚠️ ${t.warnings.slice(0, 2).join('；')}`);
+            }
+        } catch (e) {
+            log.warn('[StepRenderController] 故事上下文包覆盖度计算失败:', e);
+        }
+    }
+
     renderAutoStep(area: HTMLElement, step: FullStep): void {
         const d = this.deps;
         const cs = d.chapterState;
@@ -186,6 +250,7 @@ export class StepRenderController {
             this.renderContextInputs(area);
         } else if (step.auto && step.index > 0) {
             if (cs.stepCompleted.has('settlement')) {
+                this.autoSettlementAttempted.delete(`${d.getProject()}|${d.getChapDir()}`);
                 area.createEl('p', { text: '✅ 章节结算已完成。', cls: 'novel-writer-fw-success-text' });
                 // v1.3.0: 添加「重新结算」按钮，允许用户在补跑分析报告后重新触发
                 const reBtn = area.createEl('button', {
@@ -194,7 +259,7 @@ export class StepRenderController {
                 reBtn.style.marginTop = '8px';
                 reBtn.onclick = () => {
                     cs.stepCompleted.delete('settlement');
-                    d.stepRunner.executeSettlement(
+                    void d.stepRunner.executeSettlement(
                         d.getProject(), d.getChapDir(), d.getChapterName(),
                         cs.stepResults, cs.stepCompleted, d.getVars(),
                         d.plugin,
@@ -206,14 +271,41 @@ export class StepRenderController {
                 // v3.4.9: 结算完成后渲染润色编辑器
                 d.renderPolishEditor(area);
             } else {
-                area.createEl('p', { text: '触发自动结算...' });
-                d.stepRunner.executeSettlement(
-                    d.getProject(), d.getChapDir(), d.getChapterName(),
-                    cs.stepResults, cs.stepCompleted, d.getVars(),
-                    d.plugin,
-                    (c) => d.renderInContainer(c),
-                    d.getTabContent(),
-                );
+                // 结算成功后会 add('settlement') 并重渲染；失败时也会重渲染。
+                // 若每次渲染都自动触发，失败 → 重渲染 → 再失败会变成无限循环，
+                // 所以同一章只自动触发一次，失败后改为显式按钮交给用户重试。
+                const chapterKey = `${d.getProject()}|${d.getChapDir()}`;
+                if (this.autoSettlementAttempted.has(chapterKey)) {
+                    area.createEl('p', {
+                        text: '⚠️ 自动结算未完成，请检查分析报告后重试。',
+                        cls: 'novel-writer-fw-context-hint',
+                    });
+                    const retryBtn = area.createEl('button', {
+                        text: '⚙️ 重新结算', cls: 'novel-writer-fw-btn',
+                    });
+                    retryBtn.style.marginTop = '8px';
+                    retryBtn.onclick = () => {
+                        retryBtn.disabled = true;
+                        this.autoSettlementAttempted.add(chapterKey);
+                        void d.stepRunner.executeSettlement(
+                            d.getProject(), d.getChapDir(), d.getChapterName(),
+                            cs.stepResults, cs.stepCompleted, d.getVars(),
+                            d.plugin,
+                            (c) => d.renderInContainer(c),
+                            d.getTabContent(),
+                        ).finally(() => { retryBtn.disabled = false; });
+                    };
+                } else {
+                    this.autoSettlementAttempted.add(chapterKey);
+                    area.createEl('p', { text: '触发自动结算...' });
+                    void d.stepRunner.executeSettlement(
+                        d.getProject(), d.getChapDir(), d.getChapterName(),
+                        cs.stepResults, cs.stepCompleted, d.getVars(),
+                        d.plugin,
+                        (c) => d.renderInContainer(c),
+                        d.getTabContent(),
+                    );
+                }
             }
         }
     }
@@ -284,7 +376,14 @@ export class StepRenderController {
                 if (!newContent.trim()) { showError('内容不能为空'); return; }
                 try {
                     log.warn('[小说工坊] 💾保存按钮: stepKey=', stepKey, 'chapDir=', d.getChapDir(), 'chapterName=', d.getChapterName(), 'len=', newContent.length);
-                    await d.stepRunner.saveStepResult(stepKey, newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
+                    const saved = await d.stepRunner.saveStepResult(stepKey, newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
+                    if (!saved) {
+                        // saveStepResult 返回 false 表示根本没落盘（chapDir 为空/无文件映射/写盘异常），
+                        // 旧实现继续更新内存并提示「已保存」，用户切章后才发现内容丢了。
+                        showError(`${stepKey} 保存失败：未写入任何文件（请检查章节绑定与磁盘权限）`);
+                        if (d.reportStepError) d.reportStepError(stepKey, '保存失败：未写入文件');
+                        return;
+                    }
                     // A4: 手动保存不等于完成，仍由内容结构决定 level；
                     // 只保存不推进，避免「敲几个字就变已完成」。
                     cs.updateStepState(stepKey, newContent);

@@ -19,12 +19,19 @@ export class PlanBookModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
+    /**
+     * 调用方指定的项目（工作台向导传入当前项目）。
+     * 不传时才回落到「检测到的第一个项目」——否则从项目 B 的向导打开本弹窗，
+     * 默认可能选中项目 A，生成后会写进 A 的分卷大纲。
+     */
+    private preferredProject?: string;
 
-    constructor(app: App, plugin: NovelWriterPlugin) {
+    constructor(app: App, plugin: NovelWriterPlugin, preferredProject?: string) {
         super(app);
         this.plugin = plugin;
         this.aiEngine = plugin.aiEngine;
         this.contextManager = plugin.ctxManager;
+        this.preferredProject = preferredProject;
     }
 
     onOpen(): void {
@@ -66,6 +73,12 @@ export class PlanBookModal extends Modal {
             projects.forEach(project => {
                 projectSelect.createEl('option', { value: project, text: project });
             });
+            // 优先选中调用方指定的项目；不在列表里时保留第一个（并提示，避免静默写错项目）
+            if (this.preferredProject && projects.includes(this.preferredProject)) {
+                projectSelect.value = this.preferredProject;
+            } else if (this.preferredProject) {
+                new Notice(`⚠️ 未在项目列表中检测到「${this.preferredProject}」，请确认下方目标项目后再生成`, 6000);
+            }
 
             // 基本参数区域
             const paramsSection = contentEl.createDiv({ cls: 'novel-writer-plan-section' });

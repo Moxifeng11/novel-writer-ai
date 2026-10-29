@@ -35,8 +35,11 @@ import { AddFanficSettingModal } from './ui/add-fanfic-setting-modal';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './ui/full-writer-view';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
 import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
+import { AgentWorkbenchView } from './ui/agent-workbench-view';
+import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
-import { ProviderSwitcherModal } from './ui/provider-switcher-modal';
+import { openModelSwitcherMenu, refreshAllModelSwitchers } from './ui/model-quick-switcher';
+import { registerAllCustomFonts } from './services/font-manager';
 import { WelcomeModal } from './ui/welcome-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
@@ -93,6 +96,18 @@ export interface CustomProvider {
     sourceType?: 'cloud' | 'local';
     /** v4.15: 端点协议类型（由 URL 识别或用户手动指定） */
     apiStyle?: 'openai' | 'ollama' | 'custom';
+    /** v4.21: API 协议格式，决定请求路径、请求体与响应解析；缺省按 openai-chat 兼容旧配置 */
+    apiFormat?: 'openai-chat' | 'anthropic-messages' | 'openai-responses';
+    /**
+     * v4.21: 被用户关闭的模型。
+     * 仍显示在模型列表中（可随时重新启用），但不参与默认/回退候选。
+     */
+    disabledModels?: string[];
+    /**
+     * v4.21: 端点披露的模型元数据（上下文窗口/输出上限/是否支持图片）。
+     * 只作为展示与默认值，不覆盖用户手填的全局上限。
+     */
+    modelMeta?: Record<string, { contextWindow?: number; maxTokens?: number; vision?: boolean }>;
     /** v4.15: URL 自动识别出的预设供应商 ID；仅用于提示，不覆盖用户设置 */
     providerIdHint?: string;
     isDefault?: boolean; // 标记是否为初始默认供应商
@@ -185,6 +200,52 @@ export interface NovelWriterSettings {
     wordMinRatio?: number;
     /** R1: 超长提示词保留头部的比例（默认 0.67，见 shared/thresholds.ts） */
     promptSplitRatio?: number;
+    /**
+     * 2026-10-27: 自然段模式。
+     * true（默认）：AI 写入时把相邻的“一句一段”合并成 2–6 句的自然段；
+     * false：保留模型原始分行。只影响 pipeline/batch/auto/continue/scene，不影响 manual/co-writer。
+     */
+    naturalParagraphMode?: boolean;
+    /**
+     * 2026-10-28: 自定义字体清单（FontFace API 载入自 vault `元文件/字体/`）。
+     * family = FontFace family 名；path = vault 内字体文件路径（ttf/otf/woff/woff2）。
+     */
+    customFonts?: Array<{ family: string; path: string }>;
+    /** 2026-10-28: 协同写作编辑器字体（CSS font-family 值；空 = 跟随主题） */
+    coWriteEditorFont?: string;
+    /** 2026-10-28: Agent 创作工作台左栏宽度（px，可拖拽调整，160–600） */
+    agentWorkbenchLeftWidth?: number;
+    /** 2026-10-28: Agent 创作工作台右栏宽度（px，可拖拽调整，280–760） */
+    agentWorkbenchRightWidth?: number;
+    /** 2026-10-28: Agent 工作台左栏折叠状态 */
+    agentWorkbenchLeftCollapsed?: boolean;
+    /** 2026-10-28: Agent 工作台右栏折叠状态 */
+    agentWorkbenchRightCollapsed?: boolean;
+    /**
+     * 2026-10-29 第 4 轮：其余面板的可拖拽尺寸（px）。
+     * 统一放在 panelSizes 下，避免再加一堆散落字段。
+     */
+    panelSizes?: {
+        /** 完整写作工作台：左侧步骤导航 */
+        fwStepNav?: number;
+        /** 完整写作工作台：右侧预览/上下文栏 */
+        fwRightPanel?: number;
+        /** 协同写作：左栏素材区 */
+        coWriteLeft?: number;
+        /** 协同写作：右栏建议区 */
+        coWriteRight?: number;
+        /** 知识库 / 指纹库侧栏 */
+        kbSidebar?: number;
+        /** 实体管理侧栏 */
+        entitySide?: number;
+    };
+    /**
+     * 2026-10-27: 故事上下文总线的档位。
+     * auto：协同按 coWriteModelMode，一键按默认模型/端点推断；
+     * local：强制本地小窗口策略（压缩文本、较少条目）；
+     * cloud：强制云端大窗口策略（完整文本、更多条目）。
+     */
+    storyContextTier?: 'auto' | 'local' | 'cloud';
     availableModels: string[];
     maxContext: number;   // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
     maxOutput: number;    // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
@@ -199,6 +260,14 @@ export interface NovelWriterSettings {
      * 不覆盖时按 planning=flash、body/quality/fingerprint=pro 等策略回退。
      */
     taskBudgets?: Partial<Record<AiTask, TaskBudgetOverride>>;
+    /**
+     * v4.22: 全局预算档位。
+     *
+     * 任务级参数不再逐个配置——用户只选一个档位，输入/输出/思考预算
+     * 由 `shared/task-budget-engine.ts` 按任务类别分发。
+     * 缺省 balanced 与旧行为逐值一致；`taskBudgets` 里的手工覆盖仍优先。
+     */
+    budgetTier?: 'lean' | 'balanced' | 'generous' | 'extreme';
     /** v4.15: 全局思考模式；任务级配置优先。 */
     thinkingMode?: ThinkingMode;
     /** v4.20: 全局四级思考等级与 0–100 强度；未设置时兼容 thinkingMode */
@@ -236,19 +305,46 @@ export interface NovelWriterSettings {
     /** v3.5.0: 用户自定义 API 提供商列表，可持久化保存、切换、删除 */
     customProviders: CustomProvider[];
     theme: 'light' | 'dark' | 'auto';
+    /**
+     * 三层配色（v4.22 重构）。
+     *
+     * 只有 基底 / 卡片 / 强调 三项 + 氛围预设。面板由基底按氛围派生，
+     * 文字按基底亮度自动取深浅——这两项不再作为配置项存在。
+     * 旧版的 panelBg / enableCustomCardBg 已由 schemaVersion 5 迁移清除；
+     * textPrimary 仅用于「旧配色」方案的冻结值，不再从 UI 写入。
+     */
     themeColors?: {
         accent?: string;
         cardBg?: string;
         textPrimary?: string;
-        /** v6.1: 应用底色独立自定义 */
+        /** 应用底色（L1 基底） */
         appBg?: string;
-        /** v6.1: 面板底色独立自定义 */
-        panelBg?: string;
         /** 界面氛围预设 */
         appearancePreset?: 'soft' | 'clear' | 'paper';
-        /** 是否启用自定义卡片背景色 */
-        enableCustomCardBg?: boolean;
+        /** 当前选中的配色方案 ID（仅用于 UI 回显） */
+        activePresetId?: string;
     };
+    /** v4.22: 保存的主题配色方案，可一键切换 */
+    themePresets?: Array<{
+        id: string;
+        name: string;
+        createdAt: number;
+        base?: string;
+        card?: string;
+        accent?: string;
+        text?: string;
+        preset?: 'soft' | 'clear' | 'paper';
+        theme?: 'auto' | 'light' | 'dark';
+        /** 仅「旧配色」这类迁移冻结的方案会带面板直通值 */
+        legacyPanel?: string;
+    }>;
+    /**
+     * 协同写作参考书籍（知识库的消费方）。
+     * 以前只存在插件实例字段里、从不落盘：重启后选择与主参考全部丢失。
+     */
+    referenceBookIds?: string[];
+    /** 参考书籍权重（bookId → 0.1~1），缺省 0.5；主参考固定按 1 处理 */
+    referenceBookWeights?: Record<string, number>;
     /** 浮窗工作台布局（位置/折叠状态/自动恢复） */
     panelLayout?: {
         panels: Array<{
@@ -378,8 +474,6 @@ export type { WorkbenchChapterContext, ActiveChapterTarget } from './shared/chap
 
 export default class NovelWriterPlugin extends Plugin {
     settings!: NovelWriterSettings;
-    private statusBarItem!: HTMLElement;
-    private _statusBarClickHandler: (() => void) | null = null;
     private _degradationSinkUnregister: (() => void) | null = null;
     private contextManager!: ContextManager;
     private _foreshadowManager!: ForeshadowManager;
@@ -586,14 +680,9 @@ export default class NovelWriterPlugin extends Plugin {
                 })
             );
 
-            log.info('[小说工坊] 创建状态栏...');
-            this.statusBarItem = this.addStatusBarItem();
-            this.statusBarItem.addClass('novel-writer-status-bar');
-            this.updateStatusBarText();
-            this._statusBarClickHandler = () => {
-                this.openProviderSwitcher();
-            };
-            this.statusBarItem.addEventListener('click', this._statusBarClickHandler);
+            // 2026-10-28: 移除 Obsidian 全局状态栏浮窗（右下角「提供商 | Flash | Pro」）。
+            // 快速切换入口改为装配在四个主界面的两级选择器（ui/model-quick-switcher.ts），
+            // 模型/供应商变化时由 updateStatusBarText() 统一刷新各处切换器。
 
             this._degradationSinkUnregister = getDegradationNotifier().registerSink((event) => {
                 if (event.severity === 'info') return;
@@ -608,9 +697,17 @@ export default class NovelWriterPlugin extends Plugin {
             log.info('[小说工坊] 添加设置面板...');
             this.addSettingTab(new NovelWriterSettingTab(this.app, this));
 
+            // 2026-10-28: 恢复自定义字体（FontFace API，vault 元文件/字体/）
+            void registerAllCustomFonts(this).catch(err => log.warn('[小说工坊] 自定义字体恢复失败:', err));
+
             log.info('[小说工坊] 添加侧边栏图标...');
             this.addRibbonIcon('book-open', '小说工坊 · 项目与章节', () => {
                 this.openFullWriterHome().catch(err => log.error('[小说工坊] 打开项目与章节失败:', err));
+            });
+
+            // 创作流程：当前项目「进行到哪、下一步做什么」的总入口
+            this.addRibbonIcon('list-checks', '小说工坊 · 创作流程', () => {
+                this.openCreationFlow().catch(err => log.error('[小说工坊] 打开创作流程失败:', err));
             });
 
             // v6.0: 第二个 Ribbon 图标，直达句级协同写作工作台（解决「找不到入口」）
@@ -626,6 +723,11 @@ export default class NovelWriterPlugin extends Plugin {
             // 第四个 Ribbon 图标，写作指纹库
             this.addRibbonIcon('fingerprint', '小说工坊 · 写作指纹库', () => {
                 this.registry.execute('novel-writer-fingerprint-library');
+            });
+
+            // 第五个 Ribbon 图标，Agent 创作工作台（交互革命主入口）
+            this.addRibbonIcon('bot', '小说工坊 · Agent 创作工作台', () => {
+                void this.openAgentWorkbench();
             });
 
             log.info('[小说工坊] 注册视图...');
@@ -644,6 +746,12 @@ export default class NovelWriterPlugin extends Plugin {
             this.registerView(
                 VIEW_TYPE_KNOWLEDGE_BASE,
                 (leaf) => new KnowledgeBaseView(leaf, this)
+            );
+
+            // 2026-10-28: 注册 Agent 创作工作台（交互革命主载体，取代旧对话引导弹窗）
+            this.registerView(
+                VIEW_TYPE_AGENT_WORKBENCH,
+                (leaf) => new AgentWorkbenchView(leaf, this)
             );
 
             // 注册写作指纹库视图
@@ -791,6 +899,20 @@ export default class NovelWriterPlugin extends Plugin {
         }
     }
 
+    /**
+     * 「创作流程」入口：打开工作台并停在指定项目的流程页签。
+     * 创建短篇/剧本、Agent 引导、命令面板都走这里，避免各自重复实现跳转。
+     */
+    public async openCreationFlow(project?: string): Promise<void> {
+        await this.openFullWriterView();
+        const leaf = this.app.workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE)[0];
+        if (!leaf) return;
+        const view = leaf.view as unknown as { openFlowTab?: (p?: string) => Promise<void> } | undefined;
+        if (typeof view?.openFlowTab === 'function') {
+            await view.openFlowTab(project);
+        }
+    }
+
     /** v4.0: 打开句级协同写作视图 */
     public async activateCoWritingView(project?: string, chapterName?: string, volume?: string, chapterNum?: number): Promise<void> {
         const { workspace } = this.app;
@@ -867,6 +989,33 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     /**
+     * 2026-10-28: 打开 Agent 创作工作台（取代旧的对话引导小弹窗）。
+     * 全 leaf 三栏布局：左创作导航 / 中对话 / 右监控，Agent 可操作插件全部功能。
+     */
+    public async openAgentWorkbench(): Promise<void> {
+        const { workspace } = this.app;
+        const existing = workspace.getLeavesOfType(VIEW_TYPE_AGENT_WORKBENCH);
+        if (existing.length > 0) {
+            for (let i = 1; i < existing.length; i++) {
+                existing[i].detach();
+            }
+            workspace.revealLeaf(existing[0]);
+            // 复用视图不会重新触发 onOpen：重启会话，保证每次入口都是全新引导
+            const view = existing[0].view;
+            if (view instanceof AgentWorkbenchView) {
+                await view.restart();
+            }
+            return;
+        }
+        const leaf = workspace.getLeaf('tab');
+        await leaf.setViewState({
+            type: VIEW_TYPE_AGENT_WORKBENCH,
+            active: true
+        });
+        workspace.revealLeaf(leaf);
+    }
+
+    /**
      * v6.0: 从文件路径反解出协同写作所需的章节上下文。
      * 仅识别标准正文路径：<项目>/03-大纲与章节/正文/第X卷/第Y章_正文.md
      * 反解失败返回 null（交由调用方回退到空态）。
@@ -914,30 +1063,75 @@ export default class NovelWriterPlugin extends Plugin {
         return this._cryptoService.decryptWithoutPrompt(stored);
     }
 
+    /** 设置页读取加密状态用（未初始化时返回 null） */
+    getSettingsService(): { lockedSecretCount(): number; hasEncryptedSecrets(): boolean } | null {
+        const service = this.engineRegistry.getOrNull<{
+            lockedSecretCount(): number;
+            hasEncryptedSecrets(): boolean;
+        }>(ENGINE_NAMES.SETTINGS_SERVICE);
+        return service ?? null;
+    }
+
+    /** 设置会话口令（解锁 / 首次设定口令后调用） */
+    setSessionPassword(password: string): void {
+        this._cryptoService.setSessionPassword(password);
+    }
+
+    /**
+     * 重置密钥加密口令（2026-10-29 恢复路径）。
+     *
+     * 用新口令重新加密所有可读的明文；解不开的旧密文会被清空并列名，
+     * 让用户重新填写——避免它们停留在「看起来配好但实际无效」的状态。
+     */
+    async resetKeyPassword(password: string): Promise<{ reencrypted: number; cleared: string[] }> {
+        this._cryptoService.setSessionPassword(password);
+        const settings = this.settings;
+        let reencrypted = 0;
+        const cleared: string[] = [];
+
+        const handle = async (label: string, value: string): Promise<string> => {
+            if (!value) return '';
+            if (!value.startsWith('aes256v2:') && !value.startsWith('aes256:')) {
+                reencrypted += 1;
+                return value;
+            }
+            const ok = await this._cryptoService.canDecryptWith(password, value);
+            if (ok) return value;
+            cleared.push(label);
+            return '';
+        };
+
+        settings.apiKey = await handle('当前供应商密钥', settings.apiKey);
+        settings.providerKeys = settings.providerKeys || {};
+        for (const key of Object.keys(settings.providerKeys)) {
+            settings.providerKeys[key] = await handle(key, settings.providerKeys[key]);
+        }
+        settings.vectorOpenaiApiKey = await handle('向量-OpenAI', settings.vectorOpenaiApiKey || '');
+        settings.vectorDoubaoApiKey = await handle('向量-豆包', settings.vectorDoubaoApiKey || '');
+        settings.vectorQwenApiKey = await handle('向量-千问', settings.vectorQwenApiKey || '');
+        settings.updateGithubToken = await handle('更新令牌', settings.updateGithubToken || '');
+
+        await this.saveSettings();
+        return { reencrypted, cleared };
+    }
+
     async loadSettings() {
         await this._settingsService.loadSettings();
+        // 参考书籍既存在设置里（落盘），也镜像到实例字段（旧调用方读这里）。
+        // 旧版本两者都没落盘，重启后协同写作的参考书籍与主参考会全部丢失。
+        this.referenceBookIds = [...(this.settings.referenceBookIds ?? [])];
     }
 
     async saveSettings() {
         await this._settingsService.saveSettings();
     }
 
+    /**
+     * 模型/供应商变化后的统一刷新入口（保留旧方法名，调用方遍布设置/弹窗/引擎层）。
+     * 旧版更新 Obsidian 状态栏浮窗；浮窗已移除，现在刷新四个主界面装配的快速切换器。
+     */
     public updateStatusBarText(): void {
-        const providerId = this.getCurrentProviderId();
-        let providerName = '';
-        const custom = this.settings.customProviders?.find(c => c.id === providerId);
-        if (custom) {
-            providerName = custom.name;
-        } else if (providerId) {
-            providerName = this.settings.customProviderName || '自定义';
-        } else {
-            providerName = this.settings.customProviderName || '自定义';
-        }
-        const flashModelShort = this.settings.flashModel.substring(0, 20);
-        const proModelShort = this.settings.proModel.substring(0, 20);
-        this.statusBarItem.setText(
-            `🔌 ${providerName} | Flash: ${flashModelShort} | Pro: ${proModelShort}`
-        );
+        refreshAllModelSwitchers();
     }
 
     // ─── 提供商管理（委托至 core/provider-manager）───
@@ -948,8 +1142,8 @@ export default class NovelWriterPlugin extends Plugin {
     public setCurrentModelOverride(field: 'maxContext' | 'maxOutput', value: number): void {
         this._providerManager.setModelOverride(this.getCurrentProviderId() || 'unknown', this.settings.defaultModel, field, value);
     }
-    public addCustomProvider(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string): string | null {
-        return this._providerManager.addCustom(name, endpoint, models, maxContext, maxOutput, apiKey);
+    public addCustomProvider(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string, apiFormat?: CustomProvider['apiFormat']): string | null {
+        return this._providerManager.addCustom(name, endpoint, models, maxContext, maxOutput, apiKey, apiFormat);
     }
     public deleteCustomProvider(id: string): boolean { return this._providerManager.deleteCustom(id); }
     public getAllProviders() { return this._providerManager.getAllProviders(); }
@@ -963,8 +1157,12 @@ export default class NovelWriterPlugin extends Plugin {
         return this._providerManager.savePresetOverride(presetId, name, endpoint, models, maxContext, maxOutput);
     }
 
+    /**
+     * 快速切换入口（命令面板 + 快捷工具「切换 AI 提供商」共用）：
+     * 两级菜单 —— 第一级选 API 供应商，第二级选该供应商下的模型 ID。
+     */
     public openProviderSwitcher(): void {
-        new ProviderSwitcherModal(this.app, this).open();
+        openModelSwitcherMenu(this);
     }
 
     public refreshFullWriterContextPanel(): void {
@@ -993,6 +1191,27 @@ export default class NovelWriterPlugin extends Plugin {
             throw new Error('cacheManager not initialized');
         }
         return this._cacheManager;
+    }
+
+    /**
+     * 打开本插件的设置页。
+     * Obsidian 未提供公开 API，只能用内部的 `app.setting`；不可用时退回提示用户手动进入。
+     */
+    openPluginSettings(): boolean {
+        const appSetting = (this.app as unknown as {
+            setting?: { open(): void; openTabById(id: string): void };
+        }).setting;
+        try {
+            if (appSetting?.openTabById) {
+                appSetting.open();
+                appSetting.openTabById(this.manifest.id);
+                return true;
+            }
+        } catch (e) {
+            log.warn('[小说工坊] 打开设置页失败:', e);
+        }
+        new Notice('请在「设置 → 第三方插件 → 小说工坊 AI」中打开插件设置', 6000);
+        return false;
     }
 
     executeCommand(commandId: string): boolean {
@@ -1218,11 +1437,7 @@ export default class NovelWriterPlugin extends Plugin {
             currentVersion: PLUGIN_VERSION || '4.5.1',
             isNewInstall,
             onOpenSettings: () => {
-                const appAny = this.app as any;
-                if (appAny.setting) {
-                    appAny.setting.open();
-                    appAny.setting.openTabById('novel-writer-ai');
-                }
+                this.openPluginSettings();
             },
             onStartWriting: () => {
                 this.openFullWriterView();
@@ -1265,11 +1480,7 @@ export default class NovelWriterPlugin extends Plugin {
         localStorage.removeItem('novel-writer-user-reload');
         // v5.5: 卸载时关闭分离式浮窗（监控面板A/B + 协同写作视图叶子），避免残留空叶子。
         this.workspaceManager?.closeAll();
-        // 清理状态栏点击事件监听器
-        if (this._statusBarClickHandler && this.statusBarItem) {
-            this.statusBarItem.removeEventListener('click', this._statusBarClickHandler);
-            this._statusBarClickHandler = null;
-        }
+        // 2026-10-28: 状态栏浮窗已移除，其点击监听清理随之删除；快速切换器由各视图自行销毁。
         // 注销降级事件 sink
         if (this._degradationSinkUnregister) {
             this._degradationSinkUnregister();

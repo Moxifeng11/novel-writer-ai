@@ -7,6 +7,7 @@ import { AddFingerprintModal } from '../fingerprint-library-modal';
 import { createEmptyState } from '../components/empty-state';
 import { OperationConfirmModal } from '../components/progress';
 import { EmbeddingProviderFactory } from '../../engine/embedding/provider-factory';
+import type { EmbeddingProvider } from '../../engine/embedding/embedding-provider';
 import { LocalVectorStore } from '../../engine/local-vector-store';
 import { ENGINE_NAMES } from '../../engine/engine-registry';
 import { AIEngine } from '../../engine/ai-engine';
@@ -18,6 +19,7 @@ import { KnowledgeToFingerprintConverter } from '../../engine/knowledge-to-finge
 import { classifyFingerprint, mergeClassificationTags } from '../../shared/content-classifier';
 import type { BookBasicInfo } from '../../services/knowledge-base-manager';
 import { createLogger } from '../../shared/logger';
+import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
 
 
 const log = createLogger('WritingFingerprintView');
@@ -48,6 +50,9 @@ export class WritingFingerprintView extends ItemView {
     fingerprintLibrary: StyleFingerprintLibrary | null = null;
     extractor: FingerprintExtractor | null = null;
     vectorStore: LocalVectorStore | null = null;
+    /** 项目切换后重建向量库/提取器要用（两者都绑定项目路径） */
+    private extractionProvider: EmbeddingProvider | null = null;
+    private extractionEngine: AIEngine | null = null;
 
     private filter: FilterState = {
         searchQuery: '',
@@ -58,6 +63,9 @@ export class WritingFingerprintView extends ItemView {
     private templateFingerprints: StyleFingerprint[] = [];
     private globalFingerprints: StyleFingerprint[] = [];
     private projectFingerprints: StyleFingerprint[] = [];
+
+    /** 全局指纹在本项目下的生效启用状态（项目级覆盖优先于全局默认） */
+    private effectiveGlobalEnabled = new Map<string, boolean>();
 
     private selectedFingerprintId: string | null = null;
     private selectedFingerprintScope: FingerprintScope | null = null;
@@ -71,6 +79,8 @@ export class WritingFingerprintView extends ItemView {
     private toolbar!: HTMLElement;
     private detailPanel!: HTMLElement;
     private countEl: HTMLElement | null = null;
+    /** 侧栏模型快速切换器（原右下角状态栏浮窗的替代入口） */
+    private modelSwitcher: ModelQuickSwitcherHandle | null = null;
 
     private isLoading = false;
     private loadError: string | null = null;
@@ -109,6 +119,8 @@ export class WritingFingerprintView extends ItemView {
     }
 
     async onClose() {
+        this.modelSwitcher?.destroy();
+        this.modelSwitcher = null;
         await this.fingerprintLibrary?.flush();
     }
 
@@ -128,10 +140,28 @@ export class WritingFingerprintView extends ItemView {
         try {
             const aiEngine = this.plugin.engineRegistry.get<AIEngine>(ENGINE_NAMES.AI_ENGINE);
             const embeddingProvider = EmbeddingProviderFactory.create(this.plugin.settings);
+            this.extractionEngine = aiEngine;
+            this.extractionProvider = embeddingProvider;
             this.vectorStore = new LocalVectorStore(this.app, project ? 'project' : 'global', embeddingProvider, project || 'default');
             this.extractor = new FingerprintExtractor(aiEngine, embeddingProvider, this.vectorStore);
         } catch (e) {
             log.warn('[WritingFingerprintView] 提取器初始化失败:', e);
+        }
+    }
+
+    /** 活动项目变化后重建向量库与提取器（它们构造时就把项目路径固化进去了） */
+    private rebindExtractionTarget(project?: string): void {
+        if (!this.extractionProvider || !this.extractionEngine) return;
+        try {
+            this.vectorStore = new LocalVectorStore(
+                this.app,
+                project ? 'project' : 'global',
+                this.extractionProvider,
+                project || 'default',
+            );
+            this.extractor = new FingerprintExtractor(this.extractionEngine, this.extractionProvider, this.vectorStore);
+        } catch (e) {
+            log.warn('[WritingFingerprintView] 项目切换后重建提取器失败:', e);
         }
     }
 
@@ -141,9 +171,30 @@ export class WritingFingerprintView extends ItemView {
         this.loadError = null;
 
         try {
+            // 活动项目跟着当前文件走：每次重载先把库绑定的项目同步过来，
+            // 否则切换项目后仍会读写上一个项目的指纹文件（提取、导入、删除全错位）。
+            const activeProject = this.plugin.getActiveProject() || undefined;
+            if (activeProject !== this.fingerprintLibrary.activeProject) {
+                this.fingerprintLibrary.setProject(activeProject);
+                this.rebindExtractionTarget(activeProject);
+            }
+
             this.templateFingerprints = await this.fingerprintLibrary.loadTemplate();
             this.globalFingerprints = await this.fingerprintLibrary.loadGlobal();
             this.projectFingerprints = await this.fingerprintLibrary.loadProject();
+
+            // 全局指纹的真实生效状态是「项目级覆盖优先」（注入侧用
+            // isGlobalEnabledForProject）。旧实现直接渲染 fp.enabled（全局默认），
+            // 项目里改过覆盖时视图显示错、点开关也改不到当前项目在用的状态。
+            const projectForState = activeProject;
+            await this.fingerprintLibrary.loadGlobalState(projectForState);
+            this.effectiveGlobalEnabled.clear();
+            for (const fp of this.globalFingerprints) {
+                this.effectiveGlobalEnabled.set(
+                    fp.id,
+                    this.fingerprintLibrary.isGlobalEnabledForProject(fp.id, projectForState),
+                );
+            }
             if (this.selectedFingerprintId && !this.getSelectedFingerprint()) {
                 this.selectedFingerprintId = null;
                 this.selectedFingerprintScope = null;
@@ -154,6 +205,46 @@ export class WritingFingerprintView extends ItemView {
         } finally {
             this.isLoading = false;
         }
+    }
+
+    /**
+     * 翻转并持久化启用状态。
+     *
+     * 全局层在有项目时写「项目级覆盖」——注入侧读的就是 isGlobalEnabledForProject，
+     * 直接改全局默认不会影响当前项目，表现为开关点了没反应。
+     * 没有打开项目时才退回修改全局默认。
+     */
+    private async persistEnabledToggle(fp: StyleFingerprint): Promise<void> {
+        if (!this.fingerprintLibrary) return;
+        const next = !this.isEffectivelyEnabled(fp);
+        const project = this.plugin.getActiveProject() || undefined;
+
+        if (fp.scope === 'global') {
+            if (project) {
+                await this.fingerprintLibrary.setGlobalEnabledForProject(fp.id, next, project);
+            } else if (next) {
+                await this.fingerprintLibrary.enableGlobal(fp.id);
+            } else {
+                await this.fingerprintLibrary.disableGlobal(fp.id);
+            }
+            return;
+        }
+        if (fp.scope === 'project') {
+            if (next) await this.fingerprintLibrary.enableProject(fp.id);
+            else await this.fingerprintLibrary.disableProject(fp.id);
+        }
+    }
+
+    /** 该指纹在当前项目下是否真的生效（全局层看项目覆盖，其它层看自身） */
+    private isEffectivelyEnabled(fp: StyleFingerprint): boolean {
+        if (fp.scope !== 'global') return fp.enabled;
+        return this.effectiveGlobalEnabled.get(fp.id) ?? fp.enabled;
+    }
+
+    /** 渲染用投影：把项目级覆盖写进 enabled，不改动库内对象 */
+    private withEffectiveEnabled(fp: StyleFingerprint): StyleFingerprint {
+        const enabled = this.isEffectivelyEnabled(fp);
+        return enabled === fp.enabled ? fp : { ...fp, enabled };
     }
 
     private getScopeFingerprints(scope: FingerprintScope): StyleFingerprint[] {
@@ -219,6 +310,9 @@ export class WritingFingerprintView extends ItemView {
         const kbBtn = navRow.createEl('button', { text: '📚 知识库管理', attr: { style: navBtnStyle, title: '打开知识库管理视图' } });
         kbBtn.addEventListener('click', () => void this.plugin.openKnowledgeBaseView());
 
+        // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到指纹库侧栏（四个主界面之一）。
+        this.modelSwitcher = renderModelQuickSwitcher(this.leftSidebar, this.plugin);
+
         this.rightPanel = mainLayout.createDiv({
             cls: "nw-fingerprint-right-panel nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-16px-2",
             attr: {}
@@ -226,17 +320,24 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private renderScopeTabs(): void {
-        if (this.scopeTabs) {
-            this.scopeTabs.remove();
-        }
-        this.scopeTabs = this.leftSidebar.createDiv({
+        // 记住原位置：createDiv 会追加到侧栏末尾，重渲染后标签会掉到工具栏下面。
+        const previous = this.scopeTabs;
+        const nextSibling = previous?.nextSibling ?? null;
+        if (previous) previous.remove();
+
+        const container = this.leftSidebar.createDiv({
             cls: "nw-fingerprint-scope-tabs nw-u-d-flex-2 nw-u-bb-1px-solid-background-m-2",
             attr: {}
         });
 
+        this.scopeTabs = container;
+        if (nextSibling && nextSibling.parentElement === this.leftSidebar) {
+            this.leftSidebar.insertBefore(container, nextSibling);
+        }
+
         const scopes: FingerprintScope[] = ['template', 'global', 'project'];
         scopes.forEach(scope => {
-            const tab = this.scopeTabs.createDiv({
+            const tab = container.createDiv({
                 cls: 'nw-fingerprint-scope-tab',
                 text: SCOPE_LABELS[scope],
                 attr: {
@@ -307,13 +408,19 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private renderSearchAndFilter(): void {
-        if (this.searchInput) {
-            this.searchInput.parentElement?.remove();
-        }
+        const previous = this.searchInput?.parentElement ?? null;
+        if (previous) previous.remove();
+        const anchor = this.fingerprintList ?? null;
+
         const searchContainer = this.leftSidebar.createDiv({
             cls: "nw-fingerprint-search-container nw-u-p-8px-2 nw-u-bb-1px-solid-background-m-2",
             attr: {}
         });
+
+        // 重渲染要插回指纹列表之前：直接 append 会把搜索框挤到列表下面。
+        if (anchor && anchor.parentElement === this.leftSidebar) {
+            this.leftSidebar.insertBefore(searchContainer, anchor);
+        }
 
         this.searchInput = searchContainer.createEl('input', {
             type: 'text',
@@ -418,7 +525,9 @@ export class WritingFingerprintView extends ItemView {
             return;
         }
 
-        fingerprints.forEach(fp => {
+        fingerprints.forEach(rawFp => {
+            // 全局层按项目级覆盖显示生效状态（渲染用投影，不改库内对象）
+            const fp = this.withEffectiveEnabled(rawFp);
             const isSelected = this.selectedFingerprintId === fp.id;
             const item = this.fingerprintList.createDiv({
                 cls: 'nw-fingerprint-list-item',
@@ -538,11 +647,12 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-u-m-0-2 nw-u-fs-18px-2'
         });
 
+        const effectiveEnabled = this.isEffectivelyEnabled(fp);
         const statusBadge = titleRow.createEl('span', {
-            text: fp.enabled ? '✅ 已启用' : '🔇 已禁用',
+            text: effectiveEnabled ? '✅ 已启用' : '🔇 已禁用',
             attr: {
                 style: `padding:4px 10px;font-size:12px;border-radius:12px;${
-                    fp.enabled
+                    effectiveEnabled
                         ? 'background:rgba(46,204,113,0.15);color:#2ecc71;'
                         : 'background:rgba(0,0,0,0.1);color:var(--text-muted);'
                 }`
@@ -805,14 +915,12 @@ export class WritingFingerprintView extends ItemView {
             library: this.fingerprintLibrary || undefined,
             project: this.plugin.getActiveProject() || undefined,
             canEdit: true,
+            // 全局层的生效状态以项目覆盖为准，详情页徽标必须与列表同源
+            resolveEffectiveEnabled: (target) => this.isEffectivelyEnabled(target),
             // 模板层不参与注入：不提供无效的启用开关与强度入口
             onToggle: sourceOnly ? undefined : async (updated) => {
                 if (!this.fingerprintLibrary) return;
-                updated.enabled = !updated.enabled;
-                switch (updated.scope) {
-                    case 'global': await this.fingerprintLibrary.updateGlobal(updated); break;
-                    case 'project': await this.fingerprintLibrary.updateProject(updated); break;
-                }
+                await this.persistEnabledToggle(updated);
                 await this.loadAllFingerprints();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
@@ -1121,22 +1229,13 @@ export class WritingFingerprintView extends ItemView {
             return;
         }
 
-        if (fp.enabled) {
-            switch (this.selectedFingerprintScope) {
-                case 'global': await this.fingerprintLibrary.disableGlobal(fp.id); break;
-                case 'project': await this.fingerprintLibrary.disableProject(fp.id); break;
-            }
-        } else {
-            switch (this.selectedFingerprintScope) {
-                case 'global': await this.fingerprintLibrary.enableGlobal(fp.id); break;
-                case 'project': await this.fingerprintLibrary.enableProject(fp.id); break;
-            }
-        }
+        const wasEnabled = this.isEffectivelyEnabled(fp);
+        await this.persistEnabledToggle(fp);
 
         await this.loadAllFingerprints();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        new Notice(fp.enabled ? '🔇 已禁用' : '✅ 已启用');
+        new Notice(wasEnabled ? '🔇 已禁用' : '✅ 已启用');
     }
 
     private async handleAutoClassify(): Promise<void> {
@@ -1349,7 +1448,7 @@ export class WritingFingerprintView extends ItemView {
 
     public async refreshForProject(project: string): Promise<void> {
         if (this.fingerprintLibrary) {
-            (this.fingerprintLibrary as any).project = project;
+            this.fingerprintLibrary.setProject(project);
         } else {
             this.fingerprintLibrary = new StyleFingerprintLibrary(this.app, project);
         }
@@ -1518,13 +1617,16 @@ export class ExtractFromChaptersModal extends Modal {
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = this.selectedChapters.has(chapterPath);
-                checkbox.addEventListener('change', () => {
-                    if (checkbox.checked) {
+
+                const setSelected = (checked: boolean) => {
+                    checkbox.checked = checked;
+                    if (checked) {
                         this.selectedChapters.add(chapterPath);
                     } else {
                         this.selectedChapters.delete(chapterPath);
                     }
-                });
+                };
+                checkbox.addEventListener('change', () => setSelected(checkbox.checked));
                 item.appendChild(checkbox);
 
                 const nameEl = document.createElement('span');
@@ -1532,13 +1634,11 @@ export class ExtractFromChaptersModal extends Modal {
                 nameEl.style.cssText = 'font-size:13px;flex:1;';
                 item.appendChild(nameEl);
 
-                item.addEventListener('click', () => {
-                    checkbox.checked = !checkbox.checked;
-                    if (checkbox.checked) {
-                        this.selectedChapters.add(chapterPath);
-                    } else {
-                        this.selectedChapters.delete(chapterPath);
-                    }
+                item.addEventListener('click', (event) => {
+                    // 直接点到复选框时，click 会冒泡上来再翻一次：
+                    // 勾选被 change 加成 selected，冒泡又翻回去 → 看起来完全没反应。
+                    if (event.target === checkbox) return;
+                    setSelected(!checkbox.checked);
                 });
             });
         };

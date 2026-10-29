@@ -24,6 +24,7 @@ import { BatchCreateModal } from '../batch-create-modal';
 import { attachFanficPathToProject, getFanficSettingsPath, isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
 import { parseProjectMeta } from '../../shared/fanfic-rules';
 import { readProjectMeta, pjFanficDir, SUBDIR_BODY_ROOT } from '../../shared/paths';
+import { StorySettingsModal } from '../story-settings-modal';
 import { createLogger } from '../../shared/logger';
 
 
@@ -64,7 +65,7 @@ export class WizardStepExecutors {
     async executeWizardStep(tab: WizardTab, step: WizardStep): Promise<void> {
         // writing_style/outline/chapters 均为"打开弹窗"步骤：AI 生成由弹窗内部按钮触发，
         // 需用户在弹窗内二次确认，不能进入 executing 状态，否则 nav bar 会误导性显示"生成中...请等待 AI 返回"。
-        const isModalStep = step.id === 'writing_style' || step.id === 'outline' || step.id === 'chapters';
+        const isModalStep = step.id === 'writing_style' || step.id === 'outline' || step.id === 'chapters' || step.id === 'story_structure';
         if (!isModalStep) {
             this.wizardStepExecuting.add(step.id);
             step.status = 'executing';
@@ -79,6 +80,9 @@ export class WizardStepExecutors {
             switch (step.id) {
                 case 'fanfic':
                     await this.executeFanficStep(tab, step);
+                    break;
+                case 'story_structure':
+                    this.executeStoryStructureStep(tab, step);
                     break;
                 case 'worldview':
                     await this.executeWorldviewStep(tab, step);
@@ -106,6 +110,14 @@ export class WizardStepExecutors {
             // 执行完成后一律停留在当前步骤，由用户手动点击「下一步 →」步进，不再自动跳转
             this.renderTab(tab, true);
         }
+    }
+
+    private executeStoryStructureStep(tab: WizardTab, step: WizardStep): void {
+        const modal = new StorySettingsModal(this.app, this.plugin, tab.project, () => {
+            step.status = 'done';
+            this.renderTab(tab, true);
+        });
+        modal.open();
     }
 
     private async executeFanficStep(tab: WizardTab, step: WizardStep): Promise<void> {
@@ -263,7 +275,9 @@ export class WizardStepExecutors {
 
     private async executeOutlineStep(tab: WizardTab, step: WizardStep): Promise<void> {
         return new Promise<void>((resolve) => {
-            const modal = new PlanBookModal(this.app, this.plugin);
+            // 必须把向导绑定的项目传进去：旧实现不传，弹窗默认选中「检测到的第一个项目」，
+            // 从项目 B 的向导点执行时可能给项目 A 生成并覆盖分卷大纲。
+            const modal = new PlanBookModal(this.app, this.plugin, tab.project);
             modal.onClose = async () => {
                 // v4.0：分卷大纲按卷归档，合并读取后判断是否非空
                 const outlineContent = await readMergedVolumeOutline(this.app, tab.project);
@@ -288,7 +302,8 @@ export class WizardStepExecutors {
 
     private async executeChaptersStep(tab: WizardTab, step: WizardStep): Promise<void> {
         return new Promise<void>((resolve) => {
-            const modal = new BatchCreateModal(this.app, this.plugin);
+            // 同上：批量建章弹窗支持 preferredProject，必须传向导项目
+            const modal = new BatchCreateModal(this.app, this.plugin, tab.project);
             modal.onClose = async () => {
                 // v4.0：章节正文位于 03-大纲与章节/正文/第N卷/，步骤结果分离在 步骤结果/
                 const ok = await this.checkChaptersComplete(tab.project);

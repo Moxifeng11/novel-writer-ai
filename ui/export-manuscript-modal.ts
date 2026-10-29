@@ -1,8 +1,8 @@
 /**
  * export-manuscript-modal.ts — 成稿导出（P0-1）
  *
- * 选择项目与格式，编译为 Markdown / TXT / HTML 稿件。
- * HTML 带打印样式，可在浏览器中打印为 PDF。
+ * 选择项目与格式，编译为 Markdown / TXT / HTML / EPUB / DOCX 稿件。
+ * HTML 带打印样式，可在浏览器中打印为 PDF；EPUB/DOCX 由本地构建器生成二进制。
  */
 
 import { App, Modal, Notice, Setting, TFolder, TFile } from 'obsidian';
@@ -12,7 +12,10 @@ import {
     type ManuscriptChapter,
     type ManuscriptFormat,
 } from '../engine/export/manuscript-compiler';
-import { exportTextFile } from '../shared/export-file';
+import { buildEpub } from '../engine/export/epub-builder';
+import { buildDocx } from '../engine/export/docx-builder';
+import type { BuiltBook, BookBuildOptions } from '../engine/export/epub-builder';
+import { exportBinaryFile, exportTextFile } from '../shared/export-file';
 import { createLogger } from '../shared/logger';
 import { getProjectMeta } from './project-utils';
 import type { CreationMode } from '../shared/creation-mode';
@@ -21,25 +24,73 @@ import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
 
 const log = createLogger('ExportManuscriptModal');
 
-const FORMAT_OPTIONS: Record<ManuscriptFormat, { label: string; ext: string; mime: string }> = {
-    markdown: { label: 'Markdown（.md）', ext: 'md', mime: 'text/markdown;charset=utf-8' },
-    text: { label: '纯文本（.txt）', ext: 'txt', mime: 'text/plain;charset=utf-8' },
-    html: { label: 'HTML（可打印为 PDF）', ext: 'html', mime: 'text/html;charset=utf-8' },
+type ExportFormat = ManuscriptFormat | 'epub' | 'docx';
+
+const FORMAT_OPTIONS: Record<ExportFormat, {
+    label: string;
+    ext: string;
+    mime: string;
+    hint: string;
+    binary?: boolean;
+}> = {
+    markdown: {
+        label: 'Markdown（.md）',
+        ext: 'md',
+        mime: 'text/markdown;charset=utf-8',
+        hint: '保留标题层级，适合二次编辑或导入其他写作工具。',
+    },
+    text: {
+        label: '纯文本 TXT（.txt）',
+        ext: 'txt',
+        mime: 'text/plain;charset=utf-8',
+        hint: '通用纯文本，适合番茄/起点等平台的 TXT 投稿。',
+    },
+    html: {
+        label: 'HTML（可打印为 PDF）',
+        ext: 'html',
+        mime: 'text/html;charset=utf-8',
+        hint: '用浏览器打开后选择「打印 → 另存为 PDF」。',
+    },
+    epub: {
+        label: 'EPUB 电子书（.epub）',
+        ext: 'epub',
+        mime: 'application/epub+zip',
+        hint: '手机/阅读器/微信读书导入；Kindle 可用「发送到 Kindle」自动转换。',
+        binary: true,
+    },
+    docx: {
+        label: 'Word 文档（.docx）',
+        ext: 'docx',
+        mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        hint: '编辑与出版社常用格式；标题层级、首行缩进与分页已排好。',
+        binary: true,
+    },
 };
 
 export class ExportManuscriptModal extends Modal {
     private plugin: NovelWriterPlugin;
     private project: string;
-    private format: ManuscriptFormat = 'markdown';
+    private format: ExportFormat = 'markdown';
     private includeVolumeHeadings = true;
     private includeChapterTitles = true;
     private unitLabel = '章';
     private creationMode: CreationMode = 'long';
+    /** EPUB/DOCX 的元数据作者；留空则不写 creator */
+    private author = '';
+    /** TXT 是否加 UTF-8 BOM（旧版记事本兼容） */
+    private textBom = false;
 
     private summaryEl!: HTMLElement;
     private hintEl!: HTMLElement;
+    private authorRowEl: HTMLElement | null = null;
+    private bomRowEl: HTMLElement | null = null;
 
-    constructor(app: App, plugin: NovelWriterPlugin, project: string) {
+    constructor(
+        app: App,
+        plugin: NovelWriterPlugin,
+        project: string,
+        private readonly options: { onExported?: () => void } = {},
+    ) {
         super(app);
         this.plugin = plugin;
         this.project = project;
@@ -52,11 +103,14 @@ export class ExportManuscriptModal extends Modal {
         contentEl.empty();
 
         const projects = listProjects(this.app);
-        if (projects.length === 0) {
-            contentEl.createEl('p', { text: '⚠️ 未找到含「03-大纲与章节」的项目目录。' });
+        if (projects.length === 0 && !this.project) {
+            contentEl.createEl('p', { text: '⚠️ 未找到可导出的项目目录。' });
             return;
         }
-        if (!projects.includes(this.project)) this.project = projects[0];
+        // 外部入口（创作流程/命令）传进来的项目可能不在 listProjects 的识别范围内
+        // （例如旧版根目录项目），不能静默切换到别的项目去导出。
+        if (this.project && !projects.includes(this.project)) projects.unshift(this.project);
+        if (!this.project) this.project = projects[0];
 
         new Setting(contentEl)
             .setName('项目')
@@ -71,17 +125,35 @@ export class ExportManuscriptModal extends Modal {
 
         new Setting(contentEl)
             .setName('格式')
-            .setDesc('HTML 可在浏览器中打开后打印为 PDF')
+            .setDesc('EPUB 适合阅读器；DOCX 适合编辑/投稿；HTML 可打印为 PDF')
             .addDropdown((dropdown) => {
                 for (const [value, option] of Object.entries(FORMAT_OPTIONS)) {
                     dropdown.addOption(value, option.label);
                 }
                 dropdown.setValue(this.format);
                 dropdown.onChange((value) => {
-                    this.format = value as ManuscriptFormat;
+                    this.format = value as ExportFormat;
+                    this.syncFormatRows();
                     this.refreshHint();
                 });
             });
+
+        const authorSetting = new Setting(contentEl)
+            .setName('作者（EPUB/DOCX 元数据）')
+            .setDesc('可留空；只影响电子书/Word 的作者字段，不写进正文')
+            .addText((text) => text
+                .setPlaceholder('笔名或真名')
+                .setValue(this.author)
+                .onChange((value) => { this.author = value.trim(); }));
+        this.authorRowEl = authorSetting.settingEl;
+
+        const bomSetting = new Setting(contentEl)
+            .setName('TXT 带 UTF-8 BOM')
+            .setDesc('旧版 Windows 记事本识别中文更稳；多数投稿平台不需要')
+            .addToggle((toggle) => toggle
+                .setValue(this.textBom)
+                .onChange((value) => { this.textBom = value; }));
+        this.bomRowEl = bomSetting.settingEl;
 
         new Setting(contentEl)
             .setName('包含卷标题')
@@ -126,6 +198,7 @@ export class ExportManuscriptModal extends Modal {
             }
         };
 
+        this.syncFormatRows();
         void this.refreshSummary();
         this.refreshHint();
     }
@@ -142,22 +215,27 @@ export class ExportManuscriptModal extends Modal {
                 ? '剧本按「集」输出，保留场次/人物/动作/对白格式。'
                 : '';
         this.hintEl.setText(
-            `${this.format === 'html'
-                ? `将导出 .${option.ext}；用浏览器打开后选择「打印 → 另存为 PDF」。`
-                : `将导出 .${option.ext}（${option.mime.split(';')[0]}）。`}${modeHint ? ` ${modeHint}` : ''}`
+            `将导出 .${option.ext}。${option.hint}${modeHint ? ` ${modeHint}` : ''}`
         );
     }
 
     /**
      * 短篇/剧本没有「卷」的概念，隐藏卷标题开关；章标题按模式改称节/集标题。
+     * 作者与 BOM 选项只在对应格式下出现。
      */
-    private syncHeadingOptions(): void {
+    private syncFormatRows(): void {
         const isLong = this.creationMode === 'long';
         const chapterHeading = this.creationMode === 'short'
             ? '包含节标题'
             : this.creationMode === 'script'
                 ? '包含集标题'
                 : '包含章标题';
+        if (this.authorRowEl) {
+            this.authorRowEl.style.display = this.format === 'epub' || this.format === 'docx' ? '' : 'none';
+        }
+        if (this.bomRowEl) {
+            this.bomRowEl.style.display = this.format === 'text' ? '' : 'none';
+        }
         // 直接操作 Setting 行 DOM：不同 Obsidian 版本 Setting.addToggle 的返回值不稳定，
         // 保存实例再 setName 会静默失效。
         for (const row of Array.from(this.contentEl.querySelectorAll<HTMLElement>('.setting-item'))) {
@@ -180,7 +258,7 @@ export class ExportManuscriptModal extends Modal {
             this.unitLabel = '章';
         }
         this.refreshHint();
-        this.syncHeadingOptions();
+        this.syncFormatRows();
         const files = this.creationMode === 'long'
             ? listChapterFiles(this.app, this.project)
             : listModeUnits(this.app, this.project, this.creationMode).map(unit => unit.file);
@@ -205,50 +283,95 @@ export class ExportManuscriptModal extends Modal {
             return;
         }
 
-        const compiled = compileManuscript(chapters, {
-            format: this.format,
-            includeVolumeHeadings: this.creationMode === 'long' ? this.includeVolumeHeadings : false,
+        const bookTitle = this.project.split('/').pop() || this.project;
+        const includeVolumeHeadings = this.creationMode === 'long' ? this.includeVolumeHeadings : false;
+        const bookOptions: BookBuildOptions = {
+            includeVolumeHeadings,
             includeChapterTitles: this.includeChapterTitles,
-            bookTitle: this.project,
             unitLabel: this.unitLabel,
-        });
+            metadata: {
+                title: bookTitle,
+                author: this.author || undefined,
+                language: 'zh-CN',
+            },
+        };
 
         const option = FORMAT_OPTIONS[this.format];
         const date = new Date().toISOString().slice(0, 10);
-        const result = await exportTextFile(
-            this.app,
-            `${this.project}-${this.creationMode === 'short' ? '短篇' : this.creationMode === 'script' ? '剧本' : '全稿'}-${date}.${option.ext}`,
-            compiled.content,
-            { mime: option.mime }
-        );
+        const modeSuffix = this.creationMode === 'short' ? '短篇' : this.creationMode === 'script' ? '剧本' : '全稿';
+        const filename = `${this.project}-${modeSuffix}-${date}.${option.ext}`;
+
+        let chapterCount = 0;
+        let wordCount = 0;
+        let emptyChapters = 0;
+        let result;
+
+        if (this.format === 'epub' || this.format === 'docx') {
+            const built = this.format === 'epub'
+                ? buildEpub(chapters, bookOptions)
+                : buildDocx(chapters, bookOptions);
+            chapterCount = built.chapterCount;
+            wordCount = built.wordCount;
+            emptyChapters = built.emptyChapters;
+            result = await exportBinaryFile(this.app, filename, built.data, { mime: option.mime });
+        } else {
+            const compiled = compileManuscript(chapters, {
+                format: this.format,
+                includeVolumeHeadings,
+                includeChapterTitles: this.includeChapterTitles,
+                bookTitle,
+                unitLabel: this.unitLabel,
+            });
+            chapterCount = compiled.chapterCount;
+            wordCount = compiled.wordCount;
+            emptyChapters = compiled.emptyChapters;
+            const content = this.format === 'text' && this.textBom
+                ? `\uFEFF${compiled.content}`
+                : compiled.content;
+            result = await exportTextFile(this.app, filename, content, { mime: option.mime });
+        }
 
         if (!result.ok) return;
 
-        const emptyNote = compiled.emptyChapters > 0 ? `，其中 ${compiled.emptyChapters} 章为空` : '';
+        const emptyNote = emptyChapters > 0 ? `，其中 ${emptyChapters} ${this.unitLabel}为空` : '';
         new Notice(
-            `✅ 已导出 ${compiled.chapterCount} ${this.unitLabel} / ${compiled.wordCount} 字${emptyNote}`,
+            `✅ 已导出 ${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}`,
             6000
         );
         log.info('[ExportManuscript] 导出完成:', {
             project: this.project,
             format: this.format,
-            chapters: compiled.chapterCount,
-            words: compiled.wordCount,
+            chapters: chapterCount,
+            words: wordCount,
             mode: result.mode,
         });
+        // 流程页用它标记「导出阶段完成」；只在真正成功时回调，取消/失败不算
+        this.options.onExported?.();
         this.close();
     }
 }
 
 /** 列出长篇/短篇/剧本三库中的项目目录 */
+/**
+ * 非项目根目录：模板、导出产物、协同草稿、资料库等。
+ * 它们可能带上「03-大纲与章节」之类的子目录（模板骨架会被复制进去），
+ * 不能按「有章节目录就是项目」的旧判据识别，否则会出现在项目卡里。
+ */
+const NON_PROJECT_ROOTS = new Set([
+    '元文件', '导出文件', '协同文件', '写作知识库', '指纹资料库',
+    'deepseek-harness', 'node_modules', 'apps',
+]);
+
 export function listProjects(app: App): string[] {
     const root = app.vault.getRoot();
     const projects: string[] = [];
     for (const folder of root.children) {
         if (!(folder instanceof TFolder)) continue;
+        if (NON_PROJECT_ROOTS.has(folder.name)) continue;
+        if (folder.name.startsWith('.') || folder.name.startsWith('_')) continue;
         if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
             for (const child of folder.children) {
-                if (child instanceof TFolder) projects.push(child.path);
+                if (child instanceof TFolder && !NON_PROJECT_ROOTS.has(child.name)) projects.push(child.path);
             }
             continue;
         }

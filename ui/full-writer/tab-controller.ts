@@ -4,6 +4,7 @@ import { WizardTab } from './wizard-types';
 import NovelWriterPlugin from '../../main';
 import { pjStepDir } from '../../shared/paths';
 import { createLogger } from '../../shared/logger';
+import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
 
 
 const log = createLogger('TabController');
@@ -16,15 +17,26 @@ export interface TabControllerDeps {
     closeOutlineTreeModal: () => void;
     renderProjectSelector: () => Promise<void>;
     renderWizardTabContent: (tab: WizardTab, skipAutoAdvance?: boolean) => Promise<void>;
+    /** 创作流程页签 */
+    renderFlowTabContent?: (tab: WriterTab) => Promise<void>;
+    /** 短篇/剧本单元写作页签 */
+    renderUnitTabContent?: (tab: WriterTab) => Promise<void>;
     renderInContainer: (container: HTMLElement) => Promise<void>;
     loadContext: () => Promise<void>;
     getChapterStateManager: () => any;
     calcResumeStepIndex: () => number;
     rebuildChapDirIfNeeded: (project: string, chapterName: string, volume: string, chapterNum?: number) => string;
+    /**
+     * 离开当前章节（切章/回项目选择/向导）时取消在跑的一键任务。
+     * 不取消的话，后续步骤会用新章节的 vars 生成、却按旧 ctx 写盘，关掉视图也还在烧 AI。
+     */
+    cancelActiveRun?: () => void;
 }
 
 export class TabController {
     private deps: TabControllerDeps;
+    /** 模型快速切换器（Tab 栏右端）；重渲染时销毁旧实例避免刷新回调泄漏 */
+    private modelSwitcher: ModelQuickSwitcherHandle | null = null;
 
     constructor(deps: TabControllerDeps) {
         this.deps = deps;
@@ -48,7 +60,12 @@ export class TabController {
     }
 
     popNav(): void {
-        const prevTabId = this.deps.state.popNav();
+        // 导航栈里可能留着已关闭的页签：先跳过，否则 activateTab 到已删除的 id
+        // 会让 renderTabContent 在 empty() 之后 findTab 失败直接 return —— 界面空白。
+        let prevTabId = this.deps.state.popNav();
+        while (prevTabId && !this.deps.state.findTab(prevTabId)) {
+            prevTabId = this.deps.state.popNav();
+        }
         if (prevTabId) {
             this.activateTab(prevTabId);
         } else {
@@ -84,6 +101,10 @@ export class TabController {
         const newTabs = [...this.deps.state.tabs];
         newTabs.splice(idx, 1);
         this.deps.state.tabs = newTabs;
+        // 导航栈同步移除：留着已关闭的 id，之后「返回」会跳到不存在的页签
+        if (this.deps.state.navStack.includes(tabId)) {
+            this.deps.state.navStack = this.deps.state.navStack.filter(id => id !== tabId);
+        }
 
         if (this.deps.state.activeTabId === tabId) {
             const targetIdx = Math.min(idx, newTabs.length - 1);
@@ -103,8 +124,23 @@ export class TabController {
         const activeTab = this.deps.state.findTab(this.deps.state.activeTabId);
         if (!activeTab) return;
 
+        // 离开当前章节前先取消在跑的一键任务：编排器在 run() 开始时快照了 ctx，
+        // 切章后继续跑会用新章节的 vars 生成、却写进旧章节目录（或反过来）。
+        const leavingCurrentChapter = activeTab.type !== 'chapter'
+            || activeTab.project !== this.deps.state.project
+            || activeTab.chapterName !== this.deps.state.chapterName;
+        if (leavingCurrentChapter) {
+            this.deps.cancelActiveRun?.();
+        }
+
         if (activeTab.type === 'selector') {
             await this.deps.renderProjectSelector();
+        } else if (activeTab.type === 'flow' && activeTab.project) {
+            await this.deps.renderFlowTabContent?.(activeTab);
+            return;
+        } else if (activeTab.type === 'unit' && activeTab.project) {
+            await this.deps.renderUnitTabContent?.(activeTab);
+            return;
         } else if (activeTab.type === 'wizard' && activeTab.project) {
             this.deps.state.setNavigationState({
                 project: activeTab.project,
@@ -114,7 +150,10 @@ export class TabController {
                 chapterNum: 0,
             });
             this.deps.getChapterStateManager().stepCompleted.clear();
-            this.deps.getChapterStateManager().stepResults = {};
+            // 就地清空：编排器/步骤执行器在 run() 开始时捕获了 stepResults 引用，
+            // 换新对象会让它们的写入落到孤儿对象，界面看不到已完成状态。
+            const wizardCs = this.deps.getChapterStateManager();
+            for (const key of Object.keys(wizardCs.stepResults)) delete wizardCs.stepResults[key];
             await this.deps.renderWizardTabContent(activeTab as WizardTab, true);
             return;
         } else if (activeTab.type === 'chapter' && activeTab.project && activeTab.chapterName) {
@@ -142,7 +181,10 @@ export class TabController {
 
             this.deps.getChapterStateManager().currentStepIndex = 0;
             this.deps.getChapterStateManager().stepCompleted.clear();
-            this.deps.getChapterStateManager().stepResults = {};
+            // 就地清空（原因同上）：运行中重渲染不能把编排器手里的引用换掉
+            for (const key of Object.keys(this.deps.getChapterStateManager().stepResults)) {
+                delete this.deps.getChapterStateManager().stepResults[key];
+            }
 
             await this.deps.loadContext();
             await this.deps.getChapterStateManager().restoreChapterState(this.deps.state.chapDir);
@@ -155,6 +197,8 @@ export class TabController {
         const tabBar = this.deps.getTabBar();
         if (!tabBar) return;
         tabBar.empty();
+        this.modelSwitcher?.destroy();
+        this.modelSwitcher = null;
 
         const navStack = this.deps.state.navStack;
         if (navStack.length > 0) {
@@ -197,6 +241,9 @@ export class TabController {
         }
 
         const spacer = tabBar.createDiv({ cls: 'novel-writer-fw-tab-spacer' });
+
+        // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到 Tab 栏（四个主界面之一）。
+        this.modelSwitcher = renderModelQuickSwitcher(tabBar, this.deps.plugin);
 
         const addBtn = tabBar.createEl('button', {
             text: '+',
@@ -242,7 +289,8 @@ export class TabController {
             t.chapterKey === chapKey ||
             (t.project === project
                 && t.chapterName === chapter.chapter
-                && (!t.volume || !volumeKey || t.volume === volumeKey))
+                // 只有「两边都没有卷信息」或「卷一致」才复用；跨卷同名章不能复用同一页签
+                && (volumeKey ? t.volume === volumeKey : !t.volume))
         ));
         if (existingTab) {
             existingTab.chapterKey = chapKey;
@@ -250,6 +298,8 @@ export class TabController {
             existingTab.volume = chapter.volume;
             existingTab.chapterNum = chapterNum;
             existingTab.chapDir = chapDir || existingTab.chapDir || '';
+            // 页签标题必须跟着章节走（旧实现只改内部字段，标题仍是上一章）
+            existingTab.label = `✍️ ${chapter.chapter}`;
             await this.activateTab(existingTab.id);
             if (this.deps.state.chapterName !== chapter.chapter) {
                 new Notice('⚠️ 章节切换未生效，请重试或点击标题栏 🔄 刷新工作台');

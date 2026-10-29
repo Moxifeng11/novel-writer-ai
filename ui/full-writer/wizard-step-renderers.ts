@@ -19,6 +19,8 @@ import { WV_SECTIONS, SL_SECTIONS } from '../../shared/format-constants';
 import { attachFanficPathToProject, buildFanficSettingsContent, getFanficSettingsPath, isFanficSettingsContentValidEnough, missingFanficValueLabels, type FanficSettingsValues } from './fanfic-settings-utils';
 import { extractFanficRuleValue, parseProjectMeta } from '../../shared/fanfic-rules';
 import { listFanficSettingCandidates } from '../../shared/fanfic-binding';
+import { getStoryStructure, getStructureStageSummary, getStoryOptionLabel, parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
+import { StorySettingsModal } from '../story-settings-modal';
 
 export class WizardStepRenderers {
     private wizardStepResults: Record<string, string>;
@@ -50,6 +52,65 @@ export class WizardStepRenderers {
         this.executeWizardStep = executeWizardStep;
         this.renderTab = renderTab;
         this.registerOutlineTreeModal = registerOutlineTreeModal;
+    }
+
+    async renderWizardStoryStructureStep(container: HTMLElement, tab: WizardTab): Promise<void> {
+        container.empty();
+        let settings = null;
+        try {
+            const metaFile = this.app.vault.getAbstractFileByPath(pjProjectMeta(tab.project));
+            if (metaFile instanceof TFile) {
+                settings = parseStorySettingsFromProjectMeta(await this.app.vault.read(metaFile));
+            }
+        } catch { /* 读取失败时按未配置处理 */ }
+
+        const card = container.createDiv({ cls: 'nw-wizard-story-structure' });
+        if (!settings) {
+            card.createEl('h4', { text: '🧬 先确定故事结构' });
+            card.createEl('p', {
+                text: '选择起承转合、三幕式、五幕式、英雄之旅或序破急，并配置主角、冲突、力量体系；结构会作为硬约束注入后续每一步提示词。',
+                cls: 'nw-text-12-muted',
+            });
+        } else {
+            const structure = getStoryStructure(settings.structureId);
+            const head = card.createDiv({ cls: 'nw-wizard-story-head' });
+            head.createEl('h4', { text: `${structure.icon} ${structure.name}` });
+            head.createEl('span', { text: getStructureStageSummary(structure.id), cls: 'nw-wizard-story-stages' });
+            card.createEl('p', { text: structure.description, cls: 'nw-text-12-muted' });
+            const grid = card.createDiv({ cls: 'nw-wizard-story-settings' });
+            const fields: Array<[string, string]> = [
+                ['主角起点', getStoryOptionLabel('protagonistStart', settings.protagonistStart)],
+                ['核心冲突', getStoryOptionLabel('coreConflict', settings.coreConflict)],
+                ['力量体系', getStoryOptionLabel('powerSystem', settings.powerSystem)],
+                ['金手指', getStoryOptionLabel('goldenFinger', settings.goldenFinger)],
+                ['人物原型', getStoryOptionLabel('archetype', settings.archetype)],
+                ['主角性格', getStoryOptionLabel('temperament', settings.temperament)],
+                ['叙事基调', getStoryOptionLabel('tone', settings.tone)],
+                ['推进节奏', getStoryOptionLabel('pacing', settings.pacing)],
+            ];
+            for (const [label, value] of fields) {
+                const item = grid.createDiv({ cls: 'nw-wizard-story-setting' });
+                item.createSpan({ text: label, cls: 'nw-wizard-story-setting-label' });
+                item.createSpan({ text: value, cls: 'nw-wizard-story-setting-value' });
+            }
+            if (settings.oneLineStory) {
+                card.createDiv({ text: settings.oneLineStory, cls: 'nw-wizard-story-oneline' });
+            }
+        }
+
+        const editBtn = card.createEl('button', {
+            text: settings ? '✏️ 编辑故事结构' : '🧬 配置故事结构',
+            cls: 'nw-btn nw-btn-primary',
+            attr: { type: 'button' },
+        });
+        editBtn.onclick = () => {
+            const modal = new StorySettingsModal(this.app, this.plugin, tab.project, () => {
+                const step = tab.steps.find(s => s.id === 'story_structure');
+                if (step) step.status = 'done';
+                this.renderTab(tab, true);
+            });
+            modal.open();
+        };
     }
 
     async renderWizardFanficStep(container: HTMLElement, tab: WizardTab): Promise<void> {
@@ -649,13 +710,26 @@ export class WizardStepRenderers {
                     regenBtn.style.cursor = 'not-allowed';
                 }
                 regenBtn.addEventListener('click', () => {
+                    if (this.entitiesExecuting.has(cfg.id)) return;
                     this.entitiesExecuting.add(cfg.id);
                     this.plugin._pendingEntityProject = tab.project;
                     this.plugin._pendingEntityContext = { project: tab.project, isEarlyStage: true };
-                    this.plugin.executeCommand(cfg.commandId);
+                    const dispatched = this.plugin.executeCommand(cfg.commandId);
+                    if (!dispatched) {
+                        this.entitiesExecuting.delete(cfg.id);
+                        new Notice(`❌ ${cfg.label}生成入口不可用（命令未注册）`, 5000);
+                        this.renderTab(tab, true);
+                        return;
+                    }
                     new Notice(`${cfg.label}生成窗口已打开`, 2000);
                     if (subStep && subStep.status === 'done') subStep.status = 'pending';
                     this.renderTab(tab, true);
+                    // 看门狗：弹窗未打开时关闭回调不会来，避免按钮永久禁用
+                    window.setTimeout(() => {
+                        if (!this.entitiesExecuting.has(cfg.id)) return;
+                        this.entitiesExecuting.delete(cfg.id);
+                        this.renderTab(tab, true);
+                    }, 5000);
                     this.plugin._entityModalCloseCallbacks.push(async () => {
                         this.entitiesExecuting.delete(cfg.id);
                         // 检测磁盘文件是否已生成
@@ -684,12 +758,27 @@ export class WizardStepRenderers {
                     genBtn.style.cursor = 'not-allowed';
                 }
                 genBtn.addEventListener('click', () => {
+                    if (this.entitiesExecuting.has(cfg.id)) return;
                     this.entitiesExecuting.add(cfg.id);
                     this.plugin._pendingEntityProject = tab.project;
                     this.plugin._pendingEntityContext = { project: tab.project, isEarlyStage: true };
-                    this.plugin.executeCommand(cfg.commandId);
+                    const dispatched = this.plugin.executeCommand(cfg.commandId);
+                    if (!dispatched) {
+                        // 命令未注册/路由失败：不会打开任何弹窗，关闭回调永远不来
+                        this.entitiesExecuting.delete(cfg.id);
+                        new Notice(`❌ ${cfg.label}生成入口不可用（命令未注册）`, 5000);
+                        this.renderTab(tab, true);
+                        return;
+                    }
                     new Notice(`${cfg.label}生成窗口已打开`, 2000);
                     this.renderTab(tab, true);
+                    // 看门狗：命令被分发但前置条件不满足时可能什么都没打开，
+                    // 5 秒后若没等到弹窗关闭回调就恢复按钮，避免永久禁用。
+                    window.setTimeout(() => {
+                        if (!this.entitiesExecuting.has(cfg.id)) return;
+                        this.entitiesExecuting.delete(cfg.id);
+                        this.renderTab(tab, true);
+                    }, 5000);
                     this.plugin._entityModalCloseCallbacks.push(async () => {
                         this.entitiesExecuting.delete(cfg.id);
                         // 检测磁盘文件是否已生成

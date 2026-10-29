@@ -17,7 +17,7 @@
  */
 import { stripModelMeta, stripThinkingBlock } from './api-response-utils';
 
-/** 段落分隔符：单换行（一句一段）或空行（传统排版） */
+/** 段落分隔符：单换行（一个自然段一行）或空行（传统排版） */
 export type BodySeparator = '\n' | '\n\n';
 /** 段首缩进：无 / 两个全角空格 / 制表符 */
 export type BodyIndent = '' | '\u3000\u3000' | '\t';
@@ -34,7 +34,7 @@ export interface BodyFormatContract {
 export const INDENT_TWO_FULL_WIDTH = '\u3000\u3000';
 
 /**
- * 默认契约与项目模板保持一致：一句一段 + 空两格 + 不留空行。
+ * 默认契约与项目模板保持一致：一个自然段一行 + 空两格 + 不留空行。
  * 无写作规则文件时用它，保证至少有一种稳定形态。
  */
 export const DEFAULT_BODY_FORMAT: BodyFormatContract = {
@@ -157,7 +157,7 @@ export function normalizeBodyText(
     // 按契约重组段落
     let out: string[];
     if (contract.separator === '\n') {
-        // 一句一段：空行全部压掉，每个非空行独立成段
+        // 自然段一行：空行全部压掉，每个非空行独立成段
         out = body.filter((l) => l !== '');
     } else {
         // 空行分段：把连续 2 个以上空行压成 1 个
@@ -186,7 +186,8 @@ export function normalizeBodyText(
 export function describeBodyFormat(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): string {
     const parts: string[] = ['【输出格式（硬性约束）】'];
     if (contract.separator === '\n') {
-        parts.push('- 一句话就是一段。每段之间只用一个换行，不要留空行，不要用两个回车。');
+        parts.push('- 一个自然段写成一行。每段 2–6 句、80–220 字，段内不要换行；只有强调、转折或对话交锋时才一句话独立成段。');
+        parts.push('- 段与段之间只用一个换行，不要留空行，不要用两个回车。');
     } else {
         parts.push('- 每个段落之间空一行。');
     }

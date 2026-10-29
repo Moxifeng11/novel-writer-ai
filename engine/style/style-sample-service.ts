@@ -59,6 +59,31 @@ export async function vectorizeFingerprintSamples(
     }
 }
 
+/**
+ * 删除某个指纹的样章向量。
+ * 指纹被删除时必须调用：否则样章向量文件留在磁盘上成为孤儿，
+ * 检索侧仍可能命中一个已经不在库里的指纹。
+ */
+export async function deleteFingerprintSamples(
+    app: App,
+    fingerprint: Pick<StyleSampleFingerprint, 'id'> & { scope?: string },
+    project?: string,
+): Promise<boolean> {
+    const provider = getSharedEmbeddingProvider();
+    if (!provider) return false;
+    const scope: 'global' | 'project' = fingerprint.scope === 'project' ? 'project' : 'global';
+    if (scope === 'project' && !project) return false;
+
+    try {
+        const store = new LocalVectorStore(app, scope, provider, project);
+        await store.delete(fingerprint.id);
+        return true;
+    } catch (e) {
+        log.warn(`[StyleSampleService] 样章向量删除失败: ${fingerprint.id}`, e);
+        return false;
+    }
+}
+
 /** 重建一批指纹的样章向量（供“重向量化全部”使用）。 */
 export async function vectorizeFingerprintSamplesBatch(
     app: App,

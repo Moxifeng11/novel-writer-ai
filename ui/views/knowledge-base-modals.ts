@@ -14,6 +14,8 @@ export class ImportBookModal extends Modal {
     private authorValue: string = '';
     private sourcePath: string = '';
     private step: 'select' | 'form' = 'select';
+    /** 导入进行中：确认按钮不禁用的话，双击会建出「书名 (2)」 */
+    private importInFlight = false;
 
     constructor(app: App, kbManager: KnowledgeBaseManager | null, onImported: (book: any) => void) {
         super(app);
@@ -211,6 +213,9 @@ export class ImportBookModal extends Modal {
             new Notice('知识库管理器未初始化');
             return;
         }
+        // addBook 在第一个 await 之前就同步写入内存表，重复点击会生成同名副本
+        if (this.importInFlight) return;
+        this.importInFlight = true;
 
         try {
             const wordCount = content.length;
@@ -228,9 +233,12 @@ export class ImportBookModal extends Modal {
             if (content) {
                 const fs = (this.app.vault.adapter as any);
                 const baseDir = this.kbManager.getBaseDir();
-                const bookDir = kbBookDir(name, baseDir);
+                // 必须用 book.name：addBook 遇到同名会自动加「(2)」后缀，
+                // 沿用入参 name 会把源文本写进另一个目录，
+                // 之后 getSourceText 按 book.name 拼路径 → 永远「源文本文件不存在」。
+                const bookDir = kbBookDir(book.name, baseDir);
                 await fs.mkdir(bookDir).catch(() => { });
-                await fs.write(`${bookDir}/${name}.txt`, content);
+                await fs.write(`${bookDir}/${book.name}.txt`, content);
             }
 
             try {
@@ -244,6 +252,8 @@ export class ImportBookModal extends Modal {
         } catch (e) {
             log.error('导入失败:', e);
             new Notice(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
+        } finally {
+            this.importInFlight = false;
         }
     }
 

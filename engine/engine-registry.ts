@@ -923,9 +923,17 @@ export class EngineRegistry {
         // F4（技术审计）：注入口令交互回调，启用 v2 口令派生（PBKDF2-SHA256）。
         // 旧版 seed 为公开常量可被任何人推导；v2 口令仅存于 CryptoService 内存（会话级），
         // v1 密文永久兼容读取，用户下次保存密钥时自然升级为 v2。
+        // 延迟绑定：SettingsService 在本函数稍后才创建，而「是否已有密文」
+        // 必须问它，所以用占位变量在回调里惰性读取。
+        let settingsServiceRef: { findExistingCiphertext(): string | null } | null = null;
+
         const cryptoService = new CryptoService(plugin.app, {
             requestPassword: () => PasswordModal.ask(plugin.app),
             requestNewPassword: () => PasswordModal.setup(plugin.app),
+            // 只要磁盘上已有 v2 密文，本次会话就禁止「设定新口令」。
+            // 否则新口令会覆盖会话口令，旧密文永久解不开
+            // —— 这正是「API Key 每次重启/更新后失效」的根因。
+            findExistingCiphertext: () => settingsServiceRef?.findExistingCiphertext() ?? null,
         });
         this.register(ENGINE_NAMES.CRYPTO_SERVICE, cryptoService);
 
@@ -938,7 +946,11 @@ export class EngineRegistry {
         });
         this.register(ENGINE_NAMES.PROVIDER_MANAGER, providerManager);
 
-        const themeManager = new ThemeManager(() => plugin.settings);
+        // 第二个回调提供面板尺寸（工作台三栏宽度等），由「工作台布局」页写入
+        const themeManager = new ThemeManager(
+            () => plugin.settings,
+            () => plugin.settings.panelSizes ?? {},
+        );
         this.register(ENGINE_NAMES.THEME_MANAGER, themeManager);
 
         const settingsService = new SettingsService({
@@ -952,6 +964,8 @@ export class EngineRegistry {
             saveData: (d) => plugin.saveData(d),
         });
         this.register(ENGINE_NAMES.SETTINGS_SERVICE, settingsService);
+        // 回填给 CryptoService 的延迟绑定回调
+        settingsServiceRef = settingsService;
         log.info('[EngineRegistry] Phase 2 完成');
 
         // ─── Phase 3: 基础引擎 ───

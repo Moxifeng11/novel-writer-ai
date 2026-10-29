@@ -231,3 +231,25 @@ describe('RealtimeQualityController — 评估在途重评', () => {
         expect(status.removeAttribute).toHaveBeenCalledWith('title');
     });
 });
+
+describe('Co-writer 实时质量 — 关闭视图后的生命周期（dispose）', () => {
+    it('dispose 关闭开关并中止在途评估，之后调度不再触发 evaluate', async () => {
+        const evaluate = vi.fn().mockResolvedValue(okResult());
+        const cancel = vi.fn();
+        const dispose = vi.fn();
+        const { controller } = makeController({ isEvaluating: () => false, evaluate, cancel, dispose } as never);
+        const monitor = (controller as unknown as { monitor: QualityMonitorStub }).monitor;
+
+        controller.dispose();
+
+        expect((controller as unknown as { enabled: boolean }).enabled).toBe(false);
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(dispose).toHaveBeenCalledTimes(1);
+
+        // dispose 之后再来的调度/评估请求不能继续写历史
+        controller.schedule();
+        await controller.evaluate();
+        expect(evaluate).not.toHaveBeenCalled();
+        expect(monitor.evaluate).not.toHaveBeenCalled();
+    });
+});

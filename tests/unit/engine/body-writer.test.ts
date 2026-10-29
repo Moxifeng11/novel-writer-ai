@@ -213,4 +213,35 @@ describe('BodyWriter', () => {
 
         expect(frontmatter.states.get(PATH)!['涉及人物']).toEqual(['沈砚']);
     });
+
+    it('pipeline 写入默认把相邻短段合并成自然段，并合并对话与说话人动作', async () => {
+        const res = await writer.write({
+            path: PATH,
+            raw: '他抬手。\n风从袖口灌进来。\n“走。”\n沈铁山没回头。\n沈砚把背挺了挺。',
+            chapterNum: 3,
+            chapterName: '第3章',
+            writingMode: 'pipeline',
+            contract: DEFAULT_BODY_FORMAT,
+        });
+
+        expect(res.body).toContain('他抬手。风从袖口灌进来。');
+        expect(res.body).toContain('“走。”沈铁山没回头。沈砚把背挺了挺。');
+    });
+
+    it('naturalize=false 时保留模型原始分行', async () => {
+        const res = await writer.write({
+            path: PATH,
+            raw: '他抬手。\n风从袖口灌进来。',
+            chapterNum: 3,
+            chapterName: '第3章',
+            writingMode: 'pipeline',
+            contract: DEFAULT_BODY_FORMAT,
+            naturalize: false,
+        });
+
+        expect(res.body).toBe([
+            `${INDENT_TWO_FULL_WIDTH}他抬手。`,
+            `${INDENT_TWO_FULL_WIDTH}风从袖口灌进来。`,
+        ].join('\n'));
+    });
 });

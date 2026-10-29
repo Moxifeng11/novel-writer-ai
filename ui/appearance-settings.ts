@@ -1,26 +1,41 @@
-import { Setting, Notice } from 'obsidian';
+import { Setting, Notice, Modal } from 'obsidian';
 import NovelWriterPlugin from '../main';
+import {
+    capturePreset,
+    normalizePreset,
+    parsePresetImport,
+    presetToSettings,
+    sanitizePresetName,
+    upsertPreset,
+    type AppearancePreset,
+    type ThemePreset,
+} from '../shared/theme-colors';
 
-export const DEFAULT_APPEARANCE_PRESET: 'soft' | 'clear' | 'paper' = 'soft';
+export const DEFAULT_APPEARANCE_PRESET: AppearancePreset = 'soft';
 
 export interface AppearanceSectionOptions {
     compact?: boolean;
     rerender: () => void;
 }
 
+/**
+ * 三层配色预览：基底 → 卡片 → 强调。
+ * 旧版预览画了「底色/面板/卡片」三块色板，让人误以为要配三个背景色；
+ * 三层模型下只需看基底、卡片与强调，面板由基底派生。
+ */
 function renderThemePreview(parent: HTMLElement, compact: boolean): void {
     const cls = compact ? 'nw-theme-preview nw-theme-preview-mini' : 'nw-theme-preview';
     const preview = parent.createDiv({ cls });
     const swatches = preview.createDiv({ cls: 'nw-theme-preview-swatches' });
-    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-app' }).createSpan({ text: '底色' });
-    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-panel' }).createSpan({ text: '面板' });
+    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-app' }).createSpan({ text: '基底' });
     swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-card' }).createSpan({ text: '卡片' });
+    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-accent' }).createSpan({ text: '强调' });
     if (!compact) {
         const sample = preview.createDiv({ cls: 'nw-theme-preview-sample' });
         sample.createDiv({ cls: 'nw-theme-preview-cover' });
         const body = sample.createDiv({ cls: 'nw-theme-preview-body' });
         body.createEl('strong', { text: '示例项目卡片' });
-        body.createEl('span', { text: '底色、面板、卡片需要一眼分开。' });
+        body.createEl('span', { text: '基底定调，卡片自动抬起一层，面板跟随基底。' });
     }
 }
 
@@ -35,23 +50,46 @@ export function renderAppearanceSettings(
         if (!plugin.settings.themeColors) plugin.settings.themeColors = {};
         return plugin.settings.themeColors;
     };
+    // 取色是高频交互：只重注入 CSS 变量并防抖落盘。
+    // 旧实现每次 onChange 都 await saveSettings() + rerender()，
+    // 拖动取色器时会连续触发磁盘写入与整块 DOM 重建。
+    let saveTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleSave = () => {
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+            saveTimer = null;
+            void plugin.saveSettings();
+        }, 300);
+    };
+    /** 颜色变化：立即改视觉，防抖落盘，不重建 DOM */
+    const applyLive = () => {
+        plugin.injectThemeVariables();
+        scheduleSave();
+    };
+    /** 需要同步刷新控件状态（如重置）时使用 */
     const apply = async () => {
+        if (saveTimer) {
+            clearTimeout(saveTimer);
+            saveTimer = null;
+        }
         await plugin.saveSettings();
         plugin.injectThemeVariables();
     };
+
     const section = container.createDiv({ cls: compact ? 'novel-writer-mini-appearance' : 'novel-writer-appearance' });
     section.createEl(compact ? 'h4' : 'h3', { text: '🎨 外观设置' });
     section.createEl('p', {
-        text: '“界面氛围”自动调节底色—面板—卡片三层明度，保证一眼分层；颜色项为可选微调。',
+        text: '三层配色：基底决定整体明度，卡片自动抬起一层，强调色用于按钮与选中态。文字色按基底自动取深浅，无需单独配置。',
         cls: 'setting-item-description',
     });
-    renderThemePreview(section, compact);
 
-    // 主题（仅完整版：跟随系统/浅色/深色）
+    if (!compact) renderThemePreview(section, false);
+
+    // ── 第一层：基底 ──
     if (!compact) {
         new Setting(section)
-            .setName('主题')
-            .setDesc('插件界面主题（跟随系统 / 浅色 / 深色）')
+            .setName('主题模式')
+            .setDesc('跟随系统 / 浅色 / 深色。它决定基底与文字的默认取值')
             .addDropdown(dropdown => {
                 dropdown.addOption('auto', '跟随系统');
                 dropdown.addOption('light', '浅色');
@@ -65,74 +103,72 @@ export function renderAppearanceSettings(
             });
     }
 
-    // 界面氛围（核心：驱动三层对比）
     new Setting(section)
         .setName('界面氛围')
-        .setDesc('Soft=柔和、Clear=清晰、Paper=纸质感')
+        .setDesc('决定卡片相对基底抬起的幅度：柔和 < 纸质感 < 清晰')
         .addDropdown(dropdown => dropdown
             .addOption('soft', '柔和（推荐）')
             .addOption('clear', '清晰')
             .addOption('paper', '纸质感')
-            .setValue(plugin.settings.themeColors?.appearancePreset || DEFAULT_APPEARANCE_PRESET)
+            .setValue(normalizePreset(plugin.settings.themeColors?.appearancePreset))
             .onChange(async (value) => {
-                ensureThemeColors().appearancePreset = value as 'soft' | 'clear' | 'paper';
+                ensureThemeColors().appearancePreset = normalizePreset(value);
                 await apply();
                 rerender();
             }));
 
-    // 底色 / 面板色（仅完整版提供独立微调）
-    if (!compact) {
-        new Setting(section)
-            .setName('底色')
-            .setDesc('页面最底层背景色（留空则由氛围预设自动决定）')
-            .addColorPicker(picker => {
-                if (plugin.settings.themeColors?.appBg) picker.setValue(plugin.settings.themeColors.appBg);
-                picker.onChange(async (val) => {
-                    ensureThemeColors().appBg = val;
-                    await apply();
-                    rerender();
-                });
-            })
-            .addExtraButton(btn => btn
-                .setIcon('rotate-ccw')
-                .setTooltip('恢复底色为氛围预设自动值')
-                .onClick(async () => {
-                    if (plugin.settings.themeColors) delete plugin.settings.themeColors.appBg;
-                    await apply();
-                    rerender();
-                }));
-
-        new Setting(section)
-            .setName('面板色')
-            .setDesc('卡片/面板的底色（留空则由氛围预设自动决定）')
-            .addColorPicker(picker => {
-                if (plugin.settings.themeColors?.panelBg) picker.setValue(plugin.settings.themeColors.panelBg);
-                picker.onChange(async (val) => {
-                    ensureThemeColors().panelBg = val;
-                    await apply();
-                    rerender();
-                });
-            })
-            .addExtraButton(btn => btn
-                .setIcon('rotate-ccw')
-                .setTooltip('恢复面板色为氛围预设自动值')
-                .onClick(async () => {
-                    if (plugin.settings.themeColors) delete plugin.settings.themeColors.panelBg;
-                    await apply();
-                    rerender();
-                }));
-    }
-
-    // 强调色
-    new Setting(section)
-        .setName('强调色')
-        .setDesc('按钮、进度条、选中态的颜色')
+    const baseSetting = new Setting(section)
+        .setName('基底色')
+        .setDesc('页面最底层背景。留空则由主题模式决定；面板与卡片会从它自动派生')
         .addColorPicker(picker => {
-            if (plugin.settings.themeColors?.accent) picker.setValue(plugin.settings.themeColors.accent);
-            picker.onChange(async (val) => {
-                ensureThemeColors().accent = val;
+            if (plugin.settings.themeColors?.appBg) picker.setValue(plugin.settings.themeColors.appBg);
+            picker.onChange((val) => {
+                ensureThemeColors().appBg = val;
+                ensureThemeColors().activePresetId = undefined;
+                applyLive();
+            });
+        })
+        .addExtraButton(btn => btn
+            .setIcon('rotate-ccw')
+            .setTooltip('恢复基底为主题默认')
+            .onClick(async () => {
+                if (plugin.settings.themeColors) delete plugin.settings.themeColors.appBg;
                 await apply();
                 rerender();
+            }));
+    void baseSetting;
+
+    // ── 第二层：卡片 ──
+    new Setting(section)
+        .setName('卡片色')
+        .setDesc('卡片/面板的底色。留空则按氛围预设从基底自动抬起一层')
+        .addColorPicker(picker => {
+            if (plugin.settings.themeColors?.cardBg) picker.setValue(plugin.settings.themeColors.cardBg);
+            picker.onChange((val) => {
+                ensureThemeColors().cardBg = val;
+                ensureThemeColors().activePresetId = undefined;
+                applyLive();
+            });
+        })
+        .addExtraButton(btn => btn
+            .setIcon('rotate-ccw')
+            .setTooltip('恢复卡片色为自动派生值')
+            .onClick(async () => {
+                if (plugin.settings.themeColors) delete plugin.settings.themeColors.cardBg;
+                await apply();
+                rerender();
+            }));
+
+    // ── 第三层：强调 ──
+    new Setting(section)
+        .setName('强调色')
+        .setDesc('按钮、进度条、选中态的颜色。悬停色按基底明暗自动加深或提亮')
+        .addColorPicker(picker => {
+            if (plugin.settings.themeColors?.accent) picker.setValue(plugin.settings.themeColors.accent);
+            picker.onChange((val) => {
+                ensureThemeColors().accent = val;
+                ensureThemeColors().activePresetId = undefined;
+                applyLive();
             });
         })
         .addExtraButton(btn => btn
@@ -144,69 +180,10 @@ export function renderAppearanceSettings(
                 rerender();
             }));
 
-    // 自定义卡片背景（高级，默认关闭）
-    new Setting(section)
-        .setName('启用自定义卡片背景')
-        .setDesc('高级选项：默认关闭，由氛围预设自动保证底色、面板、卡片的层级距离')
-        .addToggle(toggle => toggle
-            .setValue(plugin.settings.themeColors?.enableCustomCardBg === true)
-            .onChange(async (val) => {
-                ensureThemeColors().enableCustomCardBg = val;
-                await apply();
-                rerender();
-            }));
-
-    if (plugin.settings.themeColors?.enableCustomCardBg) {
-        new Setting(section)
-            .setName('卡片背景色')
-            .setDesc('仅覆盖卡片背景；如果层级变平，建议关闭上方开关')
-            .addColorPicker(picker => {
-                if (plugin.settings.themeColors?.cardBg) picker.setValue(plugin.settings.themeColors.cardBg);
-                picker.onChange(async (val) => {
-                    ensureThemeColors().cardBg = val;
-                    await apply();
-                    rerender();
-                });
-            })
-            .addExtraButton(btn => btn
-                .setIcon('rotate-ccw')
-                .setTooltip('删除自定义卡片背景色并关闭开关')
-                .onClick(async () => {
-                    const tc = plugin.settings.themeColors;
-                    if (tc) {
-                        delete tc.cardBg;
-                        tc.enableCustomCardBg = false;
-                    }
-                    await apply();
-                    rerender();
-                    new Notice('已恢复卡片背景自动值');
-                }));
-    }
-
-    // 主文字色（仅完整版）
     if (!compact) {
-        new Setting(section)
-            .setName('主文字色')
-            .setDesc('标题和主要文字的颜色（留空则由主题决定）')
-            .addColorPicker(picker => {
-                if (plugin.settings.themeColors?.textPrimary) picker.setValue(plugin.settings.themeColors.textPrimary);
-                picker.onChange(async (val) => {
-                    ensureThemeColors().textPrimary = val;
-                    await apply();
-                    rerender();
-                });
-            })
-            .addExtraButton(btn => btn
-                .setIcon('rotate-ccw')
-                .setTooltip('恢复文字色为主题默认')
-                .onClick(async () => {
-                    if (plugin.settings.themeColors) delete plugin.settings.themeColors.textPrimary;
-                    await apply();
-                    rerender();
-                }));
+        renderPresetManager(section, plugin, rerender);
     }
 
-    // 恢复默认配色（清空所有自定义，回到纯预设派生）
     new Setting(section)
         .addButton(btn => {
             btn.setButtonText('恢复默认配色').onClick(async () => {
@@ -217,4 +194,208 @@ export function renderAppearanceSettings(
             });
             if (!compact) btn.setWarning();
         });
+}
+
+/** 配色方案管理：保存 / 一键切换 / 删除 / 导入导出 */
+function renderPresetManager(
+    section: HTMLElement,
+    plugin: NovelWriterPlugin,
+    rerender: () => void,
+): void {
+    const presets = plugin.settings.themePresets || [];
+    const activeId = plugin.settings.themeColors?.activePresetId || '';
+
+    section.createEl('h4', { text: '💾 配色方案', cls: 'nw-appearance-presets-title' });
+
+    if (presets.length === 0) {
+        section.createEl('p', {
+            text: '还没有保存的方案。调好三层颜色后点「保存当前配色」，之后可一键切换。',
+            cls: 'setting-item-description',
+        });
+    }
+
+    const list = section.createDiv({ cls: 'nw-preset-list' });
+    for (const preset of presets) {
+        const row = list.createDiv({
+            cls: 'nw-preset-row' + (preset.id === activeId ? ' nw-preset-row-active' : ''),
+        });
+
+        const swatch = row.createDiv({ cls: 'nw-preset-swatch' });
+        if (preset.base) swatch.createDiv({ cls: 'nw-preset-chip' }).style.background = preset.base;
+        if (preset.card) swatch.createDiv({ cls: 'nw-preset-chip' }).style.background = preset.card;
+        if (preset.accent) swatch.createDiv({ cls: 'nw-preset-chip' }).style.background = preset.accent;
+
+        const nameEl = row.createDiv({ cls: 'nw-preset-name' });
+        nameEl.createSpan({ text: preset.name });
+        nameEl.createSpan({
+            cls: 'nw-preset-meta',
+            text: preset.theme === 'light' ? '浅色' : preset.theme === 'dark' ? '深色' : '跟随系统',
+        });
+
+        const actions = row.createDiv({ cls: 'nw-preset-actions' });
+
+        const applyBtn = actions.createEl('button', {
+            cls: 'nw-preset-apply',
+            text: preset.id === activeId ? '✓ 使用中' : '应用',
+            attr: { type: 'button' },
+        });
+        applyBtn.addEventListener('click', async () => {
+            const { theme, themeColors } = presetToSettings(preset);
+            plugin.settings.theme = theme;
+            // presetToSettings 已带 activePresetId，且不含 textPrimary/panelBg，
+            // 整体替换即可保证「切了方案就用该方案的三层值」
+            plugin.settings.themeColors = themeColors;
+            await plugin.saveSettings();
+            plugin.injectThemeVariables();
+            new Notice(`✅ 已切换到「${preset.name}」`);
+            rerender();
+        });
+
+        const delBtn = actions.createEl('button', {
+            cls: 'nw-preset-delete',
+            text: '删除',
+            attr: { type: 'button', title: '删除该方案' },
+        });
+        delBtn.addEventListener('click', async () => {
+            plugin.settings.themePresets = (plugin.settings.themePresets || []).filter(item => item.id !== preset.id);
+            if (plugin.settings.themeColors?.activePresetId === preset.id) {
+                delete plugin.settings.themeColors.activePresetId;
+            }
+            await plugin.saveSettings();
+            new Notice(`已删除「${preset.name}」`);
+            rerender();
+        });
+    }
+
+    const actionsRow = section.createDiv({ cls: 'nw-preset-toolbar' });
+
+    const saveBtn = actionsRow.createEl('button', {
+        cls: 'nw-btn nw-btn-primary',
+        text: '💾 保存当前配色',
+        attr: { type: 'button' },
+    });
+    saveBtn.addEventListener('click', () => {
+        const modal = new (class extends Modal {
+            onOpen(): void {
+                this.modalEl.addClass('nw-scope');
+                const { contentEl } = this;
+                contentEl.createEl('h3', { text: '保存配色方案' });
+
+                let nameValue = sanitizePresetName('', (plugin.settings.themePresets || []).length + 1);
+                new Setting(contentEl)
+                    .setName('方案名称')
+                    .setDesc('同名方案会被覆盖')
+                    .addText(text => text
+                        .setValue(nameValue)
+                        .setPlaceholder('例如：暖夜')
+                        .onChange(value => { nameValue = value; }));
+
+                const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
+                footer.createEl('button', { text: '取消', attr: { type: 'button' } })
+                    .onclick = () => this.close();
+                const confirm = footer.createEl('button', {
+                    cls: 'nw-btn nw-btn-primary',
+                    text: '保存',
+                    attr: { type: 'button' },
+                });
+                confirm.onclick = async () => {
+                    const next = capturePreset(
+                        plugin.settings.themeColors,
+                        plugin.settings.theme,
+                        nameValue,
+                        plugin.settings.themePresets || [],
+                    );
+                    plugin.settings.themePresets = upsertPreset(plugin.settings.themePresets || [], next);
+                    if (!plugin.settings.themeColors) plugin.settings.themeColors = {};
+                    plugin.settings.themeColors.activePresetId = next.id;
+                    await plugin.saveSettings();
+                    new Notice(`✅ 已保存方案「${next.name}」`);
+                    this.close();
+                    rerender();
+                };
+            }
+            onClose(): void { this.contentEl.empty(); }
+        })(plugin.app);
+        modal.open();
+    });
+
+    const exportBtn = actionsRow.createEl('button', {
+        cls: 'nw-btn nw-btn-secondary',
+        text: '📤 导出',
+        attr: { type: 'button', title: '导出全部方案为 JSON' },
+    });
+    exportBtn.addEventListener('click', async () => {
+        const data: ThemePreset[] = plugin.settings.themePresets || [];
+        if (data.length === 0) {
+            new Notice('还没有可导出的方案');
+            return;
+        }
+        const modal = new (class extends Modal {
+            onOpen(): void {
+                this.modalEl.addClass('nw-scope');
+                const { contentEl } = this;
+                contentEl.createEl('h3', { text: '导出配色方案' });
+                contentEl.createEl('p', {
+                    text: '复制下面的 JSON 保存到任意位置，可在其他库导入。',
+                    cls: 'setting-item-description',
+                });
+                const area = contentEl.createEl('textarea', {
+                    cls: 'nw-preset-io',
+                    attr: { rows: '12', readonly: 'true', spellcheck: 'false' },
+                });
+                area.value = JSON.stringify(data, null, 2);
+                area.select();
+            }
+            onClose(): void { this.contentEl.empty(); }
+        })(plugin.app);
+        modal.open();
+    });
+
+    const importBtn = actionsRow.createEl('button', {
+        cls: 'nw-btn nw-btn-secondary',
+        text: '📥 导入',
+        attr: { type: 'button', title: '粘贴 JSON 导入方案' },
+    });
+    importBtn.addEventListener('click', () => {
+        const modal = new (class extends Modal {
+            onOpen(): void {
+                this.modalEl.addClass('nw-scope');
+                const { contentEl } = this;
+                contentEl.createEl('h3', { text: '导入配色方案' });
+                contentEl.createEl('p', {
+                    text: '粘贴导出的 JSON（单套或数组均可）。非法颜色值会被丢弃。',
+                    cls: 'setting-item-description',
+                });
+                const area = contentEl.createEl('textarea', {
+                    cls: 'nw-preset-io',
+                    attr: { rows: '12', placeholder: '[{"name":"暖夜","base":"#1c1a1e",...}]', spellcheck: 'false' },
+                });
+
+                const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
+                footer.createEl('button', { text: '取消', attr: { type: 'button' } })
+                    .onclick = () => this.close();
+                const confirm = footer.createEl('button', {
+                    cls: 'nw-btn nw-btn-primary',
+                    text: '导入',
+                    attr: { type: 'button' },
+                });
+                confirm.onclick = async () => {
+                    const imported = parsePresetImport(area.value, plugin.settings.themePresets || []);
+                    if (imported.length === 0) {
+                        new Notice('❌ 没有解析到有效方案，请检查 JSON 格式与颜色值');
+                        return;
+                    }
+                    let merged = plugin.settings.themePresets || [];
+                    for (const preset of imported) merged = upsertPreset(merged, preset);
+                    plugin.settings.themePresets = merged;
+                    await plugin.saveSettings();
+                    new Notice(`✅ 已导入 ${imported.length} 套方案`);
+                    this.close();
+                    rerender();
+                };
+            }
+            onClose(): void { this.contentEl.empty(); }
+        })(plugin.app);
+        modal.open();
+    });
 }

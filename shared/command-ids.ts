@@ -8,6 +8,7 @@
 export const CommandIds = {
     // ─── 项目管理类 ───
     CREATE_PROJECT: 'novel-writer-create-project',
+    AGENT_GUIDE: 'novel-writer-agent-guide',
     CREATE_SHORT: 'novel-writer-create-short',
     CREATE_SCRIPT: 'novel-writer-create-script',
     SHORT_RESEARCH: 'novel-writer-short-research',
@@ -75,11 +76,15 @@ export const CommandIds = {
 
     // ─── 视图类 ───
     FULL_WRITER: 'novel-writer-full-writer',
+    CREATION_FLOW: 'novel-writer-open-flow',
     CO_WRITING: 'novel-writer-co-writing',
 
     // ─── 版本管理类 ───
     VERSION_HISTORY: 'novel-writer-version-history',
     SAVE_VERSION: 'novel-writer-save-version',
+
+    // ─── 设置 ───
+    OPEN_SETTINGS: 'novel-writer-open-settings',
 
     // ─── 内部调试命令（不暴露到 Obsidian 命令面板） ───
     CLEAR_WORLDVIEW_CACHE: 'clear-worldview-cache',

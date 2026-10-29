@@ -480,7 +480,15 @@ export class FingerprintBlenderV2 {
         const maxChars = 100;
         let result = selected.join('。');
         if (result.length > maxChars) {
-            result = result.slice(0, maxChars).replace(/[^。！？]*$/, '') + '。';
+            const cut = result.slice(0, maxChars);
+            const lastStop = Math.max(
+                cut.lastIndexOf('。'),
+                cut.lastIndexOf('！'),
+                cut.lastIndexOf('？'),
+            );
+            // 单句超过 100 字时 cut 里没有任何句末标点：
+            // 旧实现用 /[^。！？]*$/ 把整句都当「残句」删掉，最后只剩一个「。」
+            result = lastStop >= 0 ? cut.slice(0, lastStop + 1) : `${cut}。`;
         }
 
         return result || descriptions[0]; // 兜底：返回第一个描述

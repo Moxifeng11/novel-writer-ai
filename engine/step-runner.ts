@@ -84,6 +84,10 @@ export class StepRunner {
     private modalController: StepModalController;
     private fs: FileSystemPort | null = null;
     private vaultMeta: VaultMetaPort | null = null;
+    /** 在途结算（按 项目+章节目录 合并并发触发） */
+    private settlementInFlight = new Map<string, Promise<void>>();
+    /** 结算原语（测试可注入） */
+    private settlementPrimitive: typeof executeSettlementPrimitive;
 
     /**
      * 业务级重试与流式续写已迁至 step-runner-retry.ts：
@@ -335,9 +339,12 @@ export class StepRunner {
         private app: App,
         private plugin: NovelWriterPluginAPI,
         callbacks?: Partial<StepRunnerCallbacks>,
+        deps?: { settlementPrimitive?: typeof executeSettlementPrimitive },
     ) {
         this.aiEngine = plugin.aiEngine;
         this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        // 允许测试注入结算原语（默认即真实实现）
+        this.settlementPrimitive = deps?.settlementPrimitive ?? executeSettlementPrimitive;
         // 合并默认空实现与传入的回调
         this.callbacks = { ...NOOP_CALLBACKS, ...callbacks };
         // 初始化结果持久化模块
@@ -1141,7 +1148,12 @@ export class StepRunner {
     }
 
     /**
-     * 执行章节结算
+     * 执行章节结算。
+     *
+     * 结算写入是追加语义（伏笔/关系/时间线），触发点却有两个：
+     * ① 一键完成本章的编排器；② 步骤 10 渲染时的自动触发。
+     * 旧实现两条路径各跑一次，重复追加；渲染路径失败后还会因为错误重渲染而无限重试。
+     * 这里按「项目 + 章节目录」合并并发触发，并在落盘正文已是 settled 时直接跳过。
      */
     async executeSettlement(
         project: string,
@@ -1155,7 +1167,44 @@ export class StepRunner {
         tabContent: HTMLElement,
         options: { force?: boolean } = {},
     ): Promise<void> {
-        const result = await executeSettlementPrimitive(
+        const lockKey = `${project}|${chapDir}`;
+        const running = this.settlementInFlight.get(lockKey);
+        if (running) {
+            await running;
+            return;
+        }
+        const run = this.runSettlement(
+            project, chapDir, chapterName, stepResults, stepCompleted,
+            vars, plugin, renderInContainer, tabContent, options,
+        );
+        this.settlementInFlight.set(lockKey, run);
+        try {
+            await run;
+        } finally {
+            this.settlementInFlight.delete(lockKey);
+        }
+    }
+
+    private async runSettlement(
+        project: string,
+        chapDir: string,
+        chapterName: string,
+        stepResults: Record<string, string>,
+        stepCompleted: Set<string>,
+        vars: Record<string, string>,
+        plugin: NovelWriterPluginAPI,
+        renderInContainer: (container: HTMLElement) => Promise<void>,
+        tabContent: HTMLElement,
+        options: { force?: boolean },
+    ): Promise<void> {
+        // 内存里的 stepResults['bodyGeneration'] 是剥掉 frontmatter 的纯正文，
+        // 因此 step-settlement 里那条「status: settled」守卫永远不成立。
+        // 这里直接读磁盘正文的 frontmatter 判断，避免对已结算章节重复追加。
+        if (!options.force && await this.isChapterSettledOnDisk(project, chapDir, chapterName)) {
+            stepCompleted.add('settlement');
+            return;
+        }
+        const result = await this.settlementPrimitive(
             this.settlementHost(plugin),
             project,
             chapDir,
@@ -1177,6 +1226,29 @@ export class StepRunner {
                 sceneExpansion: stepResults['sceneExpand'] || '',
                 updatedChars: result.chars,
             });
+        }
+    }
+
+    /** 磁盘正文是否已标记 settled（读失败按「未结算」处理，交给后续流程重试） */
+    private async isChapterSettledOnDisk(project: string, chapDir: string, chapterName: string): Promise<boolean> {
+        try {
+            const v4 = chapDir.match(/\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
+            const chapterNum = v4 ? parseInt(v4[2], 10) : parseInt(chapterName.match(/第(\d+)章/)?.[1] || '0', 10) || undefined;
+            if (!chapterNum) return false;
+            let bodyPath: string;
+            if (v4) {
+                bodyPath = pjBodyFile(project, parseInt(v4[1], 10), chapterNum);
+            } else {
+                const found = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
+                if (!found) return false;
+                bodyPath = found.path;
+            }
+            const raw = await this.getFS().read(bodyPath);
+            const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+            if (!fm) return false;
+            return /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m.test(fm[1]);
+        } catch {
+            return false;
         }
     }
 
@@ -1337,17 +1409,28 @@ export class StepRunner {
                 usage: result.usage,
                 maxTokens: flashLimits.maxOutput,
             };
+            const failedSaves: string[] = [];
             for (const stepKey of evaluation.generated) {
                 const stepContent = parsed[stepKey];
                 ctx.stepResults[stepKey] = stepContent;
-                ctx.stepCompleted.add(stepKey);
                 if (!ctx.stepMeta) ctx.stepMeta = {};
                 ctx.stepMeta[stepKey] = combinedMeta;
                 try {
-                    await ctx.saveStepResult(stepKey, stepContent, combinedMeta);
+                    // saveStepResult 内部吞异常并返回 false：只 try/catch 捕不到写盘失败，
+                    // 会导致「内存里已完成、磁盘上还是旧文件或没有文件」。
+                    const saved = await ctx.saveStepResult(stepKey, stepContent, combinedMeta);
+                    if (saved === false) {
+                        failedSaves.push(stepKey);
+                        delete ctx.stepResults[stepKey];
+                    } else {
+                        ctx.stepCompleted.add(stepKey);
+                    }
                 } catch (e) {
+                    failedSaves.push(stepKey);
+                    delete ctx.stepResults[stepKey];
                     log.warn(`[PlanningCombined] 保存 ${stepKey} 失败:`, e);
                 }
+                if (failedSaves.includes(stepKey)) continue;
                 if (ctx.onStepComplete) {
                     try {
                         await ctx.onStepComplete(stepKey, stepContent);
@@ -1355,6 +1438,9 @@ export class StepRunner {
                         log.warn(`[PlanningCombined] onStepComplete ${stepKey} 异常:`, e);
                     }
                 }
+            }
+            if (failedSaves.length > 0) {
+                this.callbacks.showError(`以下规划模块保存失败：${failedSaves.join('、')}。请检查磁盘权限后重试`);
             }
 
             if (result.finishReason === 'length') {

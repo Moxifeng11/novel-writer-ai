@@ -10,6 +10,10 @@
 import { App, Editor, MarkdownView, Notice } from 'obsidian';
 import type NovelWriterPlugin from '../main';
 import { CommandIds } from '../shared/command-ids';
+import type { CreationMode } from '../shared/creation-mode';
+import { getCreationModeLabel } from '../shared/creation-mode';
+import { COMMAND_MODE_LABELS, commandAllowedModes } from '../shared/command-mode-rules';
+import { resolveProjectMode } from '../shared/project-mode';
 import type { CommandUiPayload, CommandUiPort, VersionFileContext } from '../shared/command-ui-port';
 import { createLogger } from '../shared/logger';
 import type { ChapterVersionService } from '../services/chapter-version-service';
@@ -60,6 +64,8 @@ import { VIEW_TYPE_KNOWLEDGE_BASE } from './views/knowledge-base-view';
 
 const log = createLogger('CommandUiExecutor');
 
+
+
 export interface CommandUiExecutorDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -73,6 +79,26 @@ export class CommandUiExecutor implements CommandUiPort {
     constructor(private readonly deps: CommandUiExecutorDeps) {}
 
     /**
+     * 模式守卫：命令只允许在对应项目类型下执行。
+     * 返回 true 表示已拦截（调用方直接 return）。
+     */
+    private async isBlockedByMode(id: string, project: string | undefined): Promise<boolean> {
+        const allowed = commandAllowedModes(id);
+        if (!allowed || !project) return false;
+        const mode = await resolveProjectMode(this.deps.app, project);
+        if (allowed.includes(mode)) return false;
+
+        const label = COMMAND_MODE_LABELS[id] || id;
+        const expected = allowed.map(item => getCreationModeLabel(item)).join(' / ');
+        new Notice(
+            `「${label}」仅适用于${expected}项目；当前项目是${getCreationModeLabel(mode)}。`
+            + `请切换到对应项目，或从「创作流程」进入。`,
+            8000,
+        );
+        return true;
+    }
+
+    /**
      * 执行 UI 类命令。
      * 返回 false 表示该 id 不属于 UI 执行器，由调用方维持原有处理。
      */
@@ -84,16 +110,24 @@ export class CommandUiExecutor implements CommandUiPort {
             ?? this.deps.plugin.getActiveProject()
             ?? undefined;
 
+        if (await this.isBlockedByMode(id, resolveProject())) return true;
+
         switch (id) {
             // ── 项目管理类 ──
             case CommandIds.CREATE_PROJECT:
                 new CreateProjectModal(app, plugin).open();
+                return true;
+            case CommandIds.AGENT_GUIDE:
+                void plugin.openAgentWorkbench();
                 return true;
             case CommandIds.CREATE_SHORT:
                 new PreResearchModal(app, plugin, 'short').open();
                 return true;
             case CommandIds.CREATE_SCRIPT:
                 new PreResearchModal(app, plugin, 'script').open();
+                return true;
+            case CommandIds.CREATION_FLOW:
+                void plugin.openCreationFlow(resolveProject());
                 return true;
             case CommandIds.SHORT_RESEARCH: {
                 const project = resolveProject();
@@ -309,6 +343,11 @@ export class CommandUiExecutor implements CommandUiPort {
                 return true;
             case CommandIds.CO_WRITING:
                 await plugin.openCoWritingFromActiveContext();
+                return true;
+
+            // ── 设置 ──
+            case CommandIds.OPEN_SETTINGS:
+                plugin.openPluginSettings();
                 return true;
 
             default:

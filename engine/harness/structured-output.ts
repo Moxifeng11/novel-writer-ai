@@ -8,7 +8,8 @@
 
 export interface OutputField {
     key: string;
-    type: 'string' | 'string[]' | 'object' | 'number';
+    /** array = 任意元素类型的数组（结构化列表，如逐维度修订说明） */
+    type: 'string' | 'string[]' | 'object' | 'number' | 'array';
     required: boolean;
     description: string;
 }
@@ -80,6 +81,9 @@ export function validateFields<T extends Record<string, unknown>>(value: T, fiel
         }
         if (field.type === 'object' && (typeof actual !== 'object' || Array.isArray(actual))) {
             issues.push(`${field.key} 应为对象`);
+        }
+        if (field.type === 'array' && !Array.isArray(actual)) {
+            issues.push(`${field.key} 应为数组`);
         }
     }
     return issues;

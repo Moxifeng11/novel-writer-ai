@@ -224,17 +224,21 @@ export class ChapterOrchestrator {
                     await this.render(tabContent);
                     await this.afterAction();
                     if (signal.aborted) return this.finish('cancelled', aiCalls);
-                    // 合并失败/缺模块时回退到缺失模块单步，避免整章停在规划
-                    if (!result.success) {
-                        const missing = CHAPTER_PLANNING_KEYS.filter(k => !state.stepCompleted.has(k));
-                        for (const key of missing) {
-                            currentStepKey = key;
-                            await beforeAction('planning', `补生成 ${key}（1 次 AI）...`);
-                            aiCalls += 1;
-                            await this.runOneStep(key, ctx, tabContent);
-                            await this.afterAction();
-                            if (signal.aborted) return this.finish('cancelled', aiCalls);
-                        }
+                    // 合并成功但缺模块（输出被截断/结构校验未过）时同样要补：
+                    // 旧实现只在 !success 时回退，但合并规划只要 infoPlan+outline 完整就返回 success，
+                    // 于是「提示缺少 X 可继续」后紧接着在这里硬失败，缺失模块永远不会被补齐。
+                    const missingAfterCombined = CHAPTER_PLANNING_KEYS.filter(k => !state.stepCompleted.has(k));
+                    for (const key of missingAfterCombined) {
+                        currentStepKey = key;
+                        await beforeAction('planning', `补生成 ${key}（1 次 AI）...`);
+                        aiCalls += 1;
+                        await this.runOneStep(key, ctx, tabContent);
+                        await this.afterAction();
+                        if (signal.aborted) return this.finish('cancelled', aiCalls);
+                    }
+                    if (!result.success && missingAfterCombined.length === 0) {
+                        // 合并接口报失败但模块齐全（例如只是尾部解析告警）：继续后续流程
+                        this.deps.showNotice?.('合并规划有告警，但必要的规划模块已齐全，继续生成');
                     }
                 } else {
                     for (const key of [...plan.missingPlanning]) {

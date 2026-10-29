@@ -39,3 +39,33 @@ describe('ai-credentials — 生成前守卫（云端密钥或本地免密钥端
         expect(hasUsableAiCredentials(settings)).toBe(false);
     });
 });
+
+describe('hasUsableAiCredentials — 供应商级密钥（2026-10-29）', () => {
+    const provider = { id: 'deepseek', endpoint: 'https://api.deepseek.com/v1', sourceType: 'cloud' as const };
+
+    it('apiKey 为空但 providerKeys 有该供应商密钥 → 视为已配置', () => {
+        expect(hasUsableAiCredentials({
+            apiKey: '',
+            apiEndpoint: provider.endpoint,
+            providerKeys: { deepseek: 'sk-per-provider' },
+            customProviders: [provider],
+        })).toBe(true);
+    });
+
+    it('两者都为空且非本地端点 → 未配置', () => {
+        expect(hasUsableAiCredentials({
+            apiKey: '',
+            apiEndpoint: provider.endpoint,
+            providerKeys: {},
+            customProviders: [provider],
+        })).toBe(false);
+    });
+
+    it('本地端点无需密钥', () => {
+        expect(hasUsableAiCredentials({
+            apiKey: '',
+            apiEndpoint: 'http://localhost:11434/v1',
+            customProviders: [{ id: 'ollama', endpoint: 'http://localhost:11434/v1', sourceType: 'local' }],
+        })).toBe(true);
+    });
+});

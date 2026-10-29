@@ -13,6 +13,17 @@
 export type CreationMode = 'long' | 'short' | 'script';
 export type GenderChannel = '女频' | '男频' | '通用';
 
+import {
+    buildLongStoryPromptBlock,
+    buildStorySettingsMetaSection,
+    getStoryStructure,
+    getStructureStageSummary,
+    getStoryOptionLabel,
+    parseStorySettingsFromProjectMeta,
+    type LongStorySettings,
+    type StoryStructureId,
+} from './story-structure';
+
 export interface CreationModeSpec {
     mode: CreationMode;
     label: string;
@@ -132,6 +143,10 @@ export interface CreationModeMeta {
     scriptGenre: string;
     targetWords: number;
     targetUnits: number;
+    /** 长篇小说故事结构；旧项目为空 */
+    storyStructure?: StoryStructureId;
+    /** 长篇小说创作前设定；旧项目为空 */
+    storySettings?: LongStorySettings;
 }
 
 export function parseCreationMode(value: unknown): CreationMode {
@@ -167,12 +182,15 @@ export function parseCreationModeMeta(meta: string): CreationModeMeta {
     const spec = CREATION_MODE_SPECS[mode];
     const words = parseInt(read('目标字数'), 10);
     const units = parseInt(read('目标集数') || read('目标节数'), 10);
+    const storySettings = mode === 'long' ? parseStorySettingsFromProjectMeta(meta) : null;
     return {
         mode,
         shortCategory: read('短篇分类'),
         scriptGenre: read('剧本类型'),
         targetWords: Number.isFinite(words) && words > 0 ? words : spec.targetWords.default,
         targetUnits: Number.isFinite(units) && units > 0 ? units : spec.targetUnits.default,
+        storyStructure: storySettings?.structureId,
+        storySettings: storySettings || undefined,
     };
 }
 
@@ -183,6 +201,9 @@ export function buildCreationModeMetaSection(meta: CreationModeMeta): string {
     lines.push('', '## 目标字数', String(meta.targetWords));
     if (meta.mode === 'script') lines.push('', '## 目标集数', String(meta.targetUnits));
     if (meta.mode === 'short') lines.push('', '## 目标节数', String(meta.targetUnits));
+    if (meta.mode === 'long' && meta.storySettings) {
+        lines.push('', buildStorySettingsMetaSection(meta.storySettings));
+    }
     return lines.join('\n');
 }
 
@@ -273,6 +294,25 @@ N-1 日/内 场景名
 `;
     }
 
+    if (meta.mode === 'long' && meta.storySettings) {
+        const structure = getStoryStructure(meta.storySettings.structureId);
+        return `# 长篇小说创作模式
+
+本项目使用长篇小说模式：分卷、多章、11 步流水线与既有导出规范保持不变。
+
+## 故事结构
+- 模板：${structure.name}（${structure.english}）
+- 阶段：${getStructureStageSummary(structure.id)}
+- 主角起点：${getStoryOptionLabel('protagonistStart', meta.storySettings.protagonistStart)}
+- 核心冲突：${getStoryOptionLabel('coreConflict', meta.storySettings.coreConflict)}
+- 力量体系：${getStoryOptionLabel('powerSystem', meta.storySettings.powerSystem)}
+- 金手指：${getStoryOptionLabel('goldenFinger', meta.storySettings.goldenFinger)}
+- 一句话故事：${meta.storySettings.oneLineStory || '未填写'}
+
+> 写作时该结构会作为硬约束注入；可在「故事结构」向导或项目 .project 文件中修改。
+`;
+    }
+
     return `# 长篇小说创作模式
 
 本项目使用长篇小说模式：分卷、多章、11 步流水线与既有导出规范保持不变。
@@ -302,6 +342,9 @@ export function getCreationModePromptBlock(mode: CreationMode, meta: Partial<Cre
 - ${SCRIPT_SPEC.episodeRule}
 - ${SCRIPT_SPEC.formatRule}
 - 剧本必须可拍：场景、人物、动作、对白、必要 VO/字幕；禁止小说式大段心理描写。`;
+    }
+    if (meta.storySettings) {
+        return buildLongStoryPromptBlock(meta.storySettings);
     }
     return '';
 }

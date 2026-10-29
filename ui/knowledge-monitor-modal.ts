@@ -169,7 +169,12 @@ export class KnowledgeMonitorModal extends Modal {
             this.render();
         });
 
-        const tabContent = contentEl.createDiv({ attr: { style: 'min-height:300px;' } });
+        // data-tab-content 是刷新入口的锚点：updateCurrentTab / 无参 renderHistoryTab
+        // 都靠 querySelector('[data-tab-content]') 定位。缺了它，进度条永远停在打开瞬间，
+        // 历史页还会在旧列表下面再追加一份。
+        const tabContent = contentEl.createDiv({
+            attr: { 'data-tab-content': '', style: 'min-height:300px;' }
+        });
 
         if (this.activeTab === 'current') {
             this.renderCurrentTab(tabContent);

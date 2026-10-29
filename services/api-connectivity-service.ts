@@ -6,6 +6,13 @@
  */
 import { requestUrl } from 'obsidian';
 import { createLogger } from '../shared/logger';
+import {
+    buildAuthHeaders,
+    buildChatRequestBody,
+    normalizeApiFormat,
+    resolveRequestUrl,
+    type ApiFormat,
+} from '../shared/api-format';
 
 const log = createLogger('ApiConnectivity');
 
@@ -30,6 +37,8 @@ export interface ApiConnectivityConfig {
     apiKey?: string;
     model: string;
     sourceType?: 'cloud' | 'local';
+    /** API 协议格式；缺省按 openai-chat，与运行时保持一致 */
+    apiFormat?: ApiFormat;
 }
 
 export interface ApiConnectivityResult {
@@ -103,7 +112,7 @@ function classifyStatus(status: number): { level: ApiConnectivityLevel; status: 
     return { level: 'error', status: 'unknown_error' };
 }
 
-function buildProbeBody(config: ApiConnectivityConfig, endpoint: string): string {
+function buildProbeBody(config: ApiConnectivityConfig, endpoint: string, format: ApiFormat): string {
     if (/\/api\/chat$/i.test(endpoint)) {
         return JSON.stringify({
             model: config.model,
@@ -112,20 +121,23 @@ function buildProbeBody(config: ApiConnectivityConfig, endpoint: string): string
             options: { num_predict: 8, temperature: 0 },
         });
     }
-    return JSON.stringify({
+    // Anthropic / Responses 的字段与 Chat Completions 不同，直接复用协议构造器，
+    // 避免「格式选对了但连通性测试仍按 OpenAI 发」这种自相矛盾的失败。
+    return JSON.stringify(buildChatRequestBody(format, {
         model: config.model,
-        messages: [{ role: 'user', content: 'Reply with OK.' }],
-        stream: false,
-        max_tokens: 8,
+        systemPrompt: 'You are a connectivity probe.',
+        userPrompt: 'Reply with OK.',
         temperature: 0,
-    });
+        maxTokens: 8,
+        stream: false,
+    }));
 }
 
-function buildHeaders(config: ApiConnectivityConfig): Record<string, string> {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    const key = String(config.apiKey || '').trim();
-    if (key) headers.Authorization = `Bearer ${key}`;
-    return headers;
+function buildHeaders(config: ApiConnectivityConfig, format: ApiFormat): Record<string, string> {
+    return {
+        'Content-Type': 'application/json',
+        ...buildAuthHeaders(format, String(config.apiKey || '')),
+    };
 }
 
 export async function testProviderConnectivity(
@@ -134,7 +146,12 @@ export async function testProviderConnectivity(
 ): Promise<ApiConnectivityResult> {
     const started = Date.now();
     const testedAt = started;
-    const endpoint = normalizeChatEndpoint(config.endpoint);
+    const format = normalizeApiFormat(config.apiFormat);
+    // Anthropic / Responses 的请求地址与 OpenAI 不同：统一按格式推导，
+    // 已写全路径的历史端点由 resolveRequestUrl 原样复用。
+    const endpoint = format === 'openai-chat'
+        ? normalizeChatEndpoint(config.endpoint)
+        : resolveRequestUrl(config.endpoint, format);
     const model = String(config.model || '').trim();
     const base = { endpoint: endpoint || config.endpoint || '', model, testedAt };
 
@@ -163,8 +180,8 @@ export async function testProviderConnectivity(
             request({
                 url: endpoint,
                 method: 'POST',
-                headers: buildHeaders(config),
-                body: buildProbeBody(config, endpoint),
+                headers: buildHeaders(config, format),
+                body: buildProbeBody(config, endpoint, format),
                 throw: false,
             }),
             timeout,

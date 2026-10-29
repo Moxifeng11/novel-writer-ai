@@ -19,7 +19,8 @@ import { PreResearchModal } from '../pre-research-modal';
 import { ModeDocumentModal } from '../mode-document-modal';
 import { getToolGroupsForMode, getModeToolTitle } from '../../domains/kernel/tool-catalog-aggregator';
 import type { CreationMode } from '../../shared/creation-mode';
-import { findNextModeUnit, listModeUnits } from '../../shared/mode-content';
+import { collectCreationFlowState } from './creation-flow-state';
+import { findNextModeUnit, listModeUnits, modeUnitLabel } from '../../shared/mode-content';
 import { projectDisplayName } from '../../domains/kernel/project-locator';
 import { RenameProjectModal } from '../rename-project-modal';
 import {
@@ -52,6 +53,10 @@ export interface ProjectSelectorDeps {
     onSelectChapter: (project: string, chapter: ChapterItem) => Promise<void>;
     onOpenWizard: (project: string) => Promise<void>;
     onOpenCoWriting: (project: string, chapter: ChapterItem) => Promise<void>;
+    /** 短篇/剧本：打开单元写作工作台（优先于直接打开 Markdown 文件） */
+    onOpenUnit?: (project: string, mode: CreationMode, unitNumber: number) => void | Promise<void>;
+    /** 右侧流程摘要的「查看完整流程」 */
+    onOpenFlow?: (project: string) => void | Promise<void>;
     onAddFanficSetting?: (project: string) => void;
     onDeleteProject?: () => void;
     /** 右侧项目卡片选中变化：用于把「当前项目」同步给命令层（快捷工具无 activeFile） */
@@ -162,11 +167,22 @@ export class ProjectSelectorController {
 
     private async openUnit(project: string, mode: CreationMode, unit: ChapterItem | null): Promise<void> {
         if (!unit) {
-            new Notice(`该项目还没有可写作单元，请先通过前期调研或批量创建。`, 4000);
+            new Notice(
+                mode === 'long'
+                    ? '该项目还没有章节，请先完成初始化向导的「批量建章」。'
+                    : `该项目还没有${modeUnitLabel(mode)}骨架，请先在创作流程里创建。`,
+                5000,
+            );
+            if (mode !== 'long' && this.deps.onOpenFlow) await this.deps.onOpenFlow(project);
             return;
         }
         if (mode === 'long') {
             await this.deps.onSelectChapter(project, unit);
+            return;
+        }
+        const unitNumber = parseInt(unit.chapter.match(/第\s*(\d+)/)?.[1] || '0', 10);
+        if (this.deps.onOpenUnit && unitNumber > 0) {
+            await this.deps.onOpenUnit(project, mode, unitNumber);
             return;
         }
         if (unit.file) {
@@ -226,6 +242,33 @@ export class ProjectSelectorController {
         this.deps.onProjectSelected?.(this.selectedProject);
         await this.renderRightPanel();
 
+        const modeLabel = this.selectedMode === 'long' ? '长篇小说' : this.selectedMode === 'short' ? '短篇小说' : '剧本';
+        const toolbar = projectArea.createDiv({ cls: 'novel-writer-fw-project-toolbar' });
+        const toolbarInfo = toolbar.createDiv({ cls: 'novel-writer-fw-project-toolbar-info' });
+        toolbarInfo.createSpan({ text: modeLabel, cls: 'novel-writer-fw-project-toolbar-title' });
+        toolbarInfo.createSpan({ text: `${projects.length} 个项目`, cls: 'novel-writer-fw-project-toolbar-count' });
+        const toolbarActions = toolbar.createDiv({ cls: 'novel-writer-fw-project-toolbar-actions' });
+
+        const agentBtn = toolbarActions.createEl('button', {
+            text: '🤖 Agent 工作台',
+            cls: 'novel-writer-fw-toolbar-btn is-primary',
+            attr: { type: 'button', title: '通过多轮对话创建/继续项目：先选长篇/短篇/剧本，再选原创/同人或自动模式' },
+        });
+        agentBtn.onclick = () => {
+            void this.plugin.openAgentWorkbench();
+        };
+
+        const createBtn = toolbarActions.createEl('button', {
+            text: `＋ 新建${modeLabel}`,
+            cls: 'novel-writer-fw-toolbar-btn',
+            attr: { type: 'button', title: this.selectedMode === 'long' ? '打开长篇项目表单' : '打开前期调研' },
+        });
+        createBtn.onclick = () => {
+            if (this.selectedMode === 'short') new PreResearchModal(this.app, this.plugin, 'short').open();
+            else if (this.selectedMode === 'script') new PreResearchModal(this.app, this.plugin, 'script').open();
+            else new CreateProjectModal(this.app, this.plugin).open();
+        };
+
         if (projects.length === 0) {
             const emptyState = projectArea.createDiv({ cls: 'novel-writer-fw-empty-state' });
             const heroCard = emptyState.createDiv({ cls: 'novel-writer-fw-hero-card' });
@@ -250,6 +293,16 @@ export class ProjectSelectorController {
                 else if (this.selectedMode === 'script') new PreResearchModal(this.app, this.plugin, 'script').open();
                 else new CreateProjectModal(this.app, this.plugin).open();
             };
+            if (this.selectedMode === 'long') {
+                const agentBtn = heroCard.createEl('button', {
+                    text: '🤖 Agent 工作台创作（推荐）',
+                    cls: 'novel-writer-fw-hero-btn novel-writer-fw-hero-btn-secondary',
+                    attr: { title: '通过多轮对话完成项目创建与故事结构配置，无需填表单' },
+                });
+                agentBtn.onclick = () => {
+                    void this.plugin.openAgentWorkbench();
+                };
+            }
             return;
         }
 
@@ -290,6 +343,9 @@ export class ProjectSelectorController {
             const modeText = meta.creationMode === 'long' ? '' : `${meta.creationModeLabel} · `;
             const categoryText = meta.shortCategory || meta.scriptGenre;
             metaRow.createSpan({ text: `${modeText}${categoryText || meta.genre}`.trim(), cls: 'novel-writer-fw-card-genre g0' });
+            if (meta.storyStructureName) {
+                metaRow.createSpan({ text: `🧬 ${meta.storyStructureName}`, cls: 'novel-writer-fw-card-structure' });
+            }
 
             const sortedChapters = this.getUnitsForProject(project, meta.creationMode);
             const writtenChapters = sortedChapters.filter(c => c.status === 'written' || c.status === 'settled');
@@ -405,6 +461,7 @@ export class ProjectSelectorController {
             mode = meta.creationMode;
             this.selectedMode = mode;
             await this.renderProjectDetail(panel, project, meta);
+            await this.renderFlowSummary(panel, project, mode);
         } else {
             const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
             hint.createDiv({ text: '👈 点击左侧项目卡片', cls: 'nw-qt-empty-title' });
@@ -418,6 +475,49 @@ export class ProjectSelectorController {
             toolGroups: getToolGroupsForMode(mode),
             title: getModeToolTitle(mode),
         });
+    }
+
+    /**
+     * 右侧流程摘要：让用户不用先点开页签就知道「进行到哪、下一步做什么」。
+     * 详情仍以「创作流程」页签为准，这里只做摘要与入口。
+     */
+    private async renderFlowSummary(panel: HTMLElement, project: string, mode: CreationMode): Promise<void> {
+        let snapshot;
+        try {
+            snapshot = (await collectCreationFlowState(this.app, project, { mode })).snapshot;
+        } catch {
+            return;
+        }
+        if (snapshot.stages.length === 0) return;
+
+        const card = panel.createDiv({ cls: 'nw-flow-summary' });
+        const head = card.createDiv({ cls: 'nw-flow-summary-head' });
+        head.createSpan({ cls: 'nw-flow-summary-title', text: '创作流程' });
+        head.createSpan({ cls: 'nw-flow-summary-percent', text: `${Math.round(snapshot.overallRatio * 100)}%` });
+
+        const bar = card.createDiv({ cls: 'nw-flow-bar' });
+        const fill = bar.createDiv({ cls: 'nw-flow-bar-fill' });
+        fill.style.setProperty('width', `${Math.round(snapshot.overallRatio * 100)}%`);
+
+        const dots = card.createDiv({ cls: 'nw-flow-summary-stages' });
+        for (const stage of snapshot.stages) {
+            const dot = dots.createSpan({
+                cls: `nw-flow-dot nw-is-${stage.state}`,
+                attr: { title: `${stage.label} · ${stage.progressText}` },
+            });
+            dot.setText(stage.state === 'done' ? '✓' : '');
+        }
+
+        const next = snapshot.stages.find(stage => stage.id === snapshot.nextStageId);
+        card.createDiv({
+            cls: 'nw-flow-summary-next',
+            text: next
+                ? `下一步：${next.label} · ${next.ctaLabel}`
+                : `全部阶段已完成 · ${snapshot.unitLabel}与导出均已就绪`,
+        });
+
+        const button = card.createEl('button', { cls: 'nw-btn nw-btn-secondary nw-flow-summary-btn', text: '查看完整流程' });
+        button.onclick = () => { void this.deps.onOpenFlow?.(project); };
     }
 
     private buildProjectActions(

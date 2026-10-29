@@ -50,6 +50,10 @@ export class InterventionController {
     private inputEl!: HTMLTextAreaElement;
     private reportEl!: HTMLElement;
     private currentReport: InterventionReport | null = null;
+    /** 理解报告对应的步骤（确认执行前校验步骤没变） */
+    private reportStepKey = '';
+    /** 干预执行中：确认按钮不禁用会并发执行两次同一步 */
+    private executing = false;
 
     constructor(app: App, plugin: NovelWriterPlugin, deps: InterventionDeps) {
         this.app = app;
@@ -128,6 +132,7 @@ export class InterventionController {
         try {
             const report = await this.callUnderstandingAPI(input);
             this.currentReport = report;
+            this.reportStepKey = this.getCurrentStepKey();
             this.renderReport(report);
             new Notice('✅ AI 理解完成，请确认报告');
         } catch (e: any) {
@@ -274,21 +279,37 @@ ${userInput}
      */
     private async executeIntervention(): Promise<void> {
         if (!this.currentReport) return;
+        if (this.executing) return;
+        // 报告是针对「理解时那一步」的输出生成的：确认前用户可能已切到别的步骤，
+        // 直接跑当前步骤会把 A 步的修改意见注入 B 步。
+        const currentKey = this.getCurrentStepKey();
+        if (this.reportStepKey && currentKey !== this.reportStepKey) {
+            new Notice(`⚠️ 当前步骤已从「${this.reportStepKey}」切换到「${currentKey}」，请重新点击「AI 理解」后再执行`, 6000);
+            return;
+        }
+        this.executing = true;
 
         const interventionText = this.currentReport.actions.map((a: any) =>
             `[${a.type}] ${a.target}: ${a.content}`
         ).join('\n');
 
-        this.deps.setVar('userIntervention', `【用户介入意见】\n${interventionText}`);
-        this.deps.setStepResult('_intervention', JSON.stringify(this.currentReport));
+        try {
+            this.deps.setVar('userIntervention', `【用户介入意见】\n${interventionText}`);
+            this.deps.setStepResult('_intervention', JSON.stringify(this.currentReport));
 
-        await this.deps.getStepRunner().executeCurrentStep(this.deps.makeStepRunCtx());
+            await this.deps.getStepRunner().executeCurrentStep(this.deps.makeStepRunCtx());
 
-        this.deps.deleteVar('userIntervention');
+            this.deps.deleteVar('userIntervention');
 
-        await this.deps.onRenderNeeded();
+            await this.deps.onRenderNeeded();
 
-        new Notice('✅ 干预已执行');
+            new Notice('✅ 干预已执行');
+        } catch (e) {
+            this.deps.deleteVar('userIntervention');
+            new Notice(`❌ 干预执行失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+        } finally {
+            this.executing = false;
+        }
     }
 
     /**

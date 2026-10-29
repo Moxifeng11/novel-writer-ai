@@ -45,6 +45,8 @@ export class SceneOutlineController {
     private originalContent: string = '';
     private saveTimer: number | null = null;
     private isDirty: boolean = false;
+    /** 脏数据所属章节（markDirty 时捕获，防止切章后写错文件） */
+    private pendingSaveTarget: { project: string; volNum: number; chapNum: number } | null = null;
     private dragIndex: number | null = null;
 
     constructor(deps: SceneOutlineControllerDeps) {
@@ -800,6 +802,17 @@ export class SceneOutlineController {
 
     /** 加载场景数据 */
     async loadScenes(): Promise<void> {
+        // 切章前先把上一章未落盘的编辑写回它自己的文件：
+        // 定时器可能还没触发，直接清空会让这次编辑丢失；而继续等定时器则会写错章。
+        if (this.saveTimer) {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = null;
+        }
+        if (this.isDirty) {
+            await this.saveScenes();
+        }
+        this.pendingSaveTarget = null;
+
         const project = this.deps.getProject();
         const chapNum = this.deps.getChapterNum();
         if (!project || chapNum <= 0) return;
@@ -901,30 +914,45 @@ export class SceneOutlineController {
     /** 标记脏数据，触发防抖保存 */
     private markDirty(): void {
         this.isDirty = true;
+        // 记下这次编辑属于哪一章：1 秒后定时器触发时用户可能已经切章，
+        // 旧实现用「当前」project/chapter 拼路径，会把旧章的场景写进新章文件。
+        this.pendingSaveTarget = this.resolveSaveTarget();
         if (this.saveTimer) {
             clearTimeout(this.saveTimer);
         }
         this.saveTimer = window.setTimeout(() => {
+            this.saveTimer = null;
             this.saveScenes();
         }, 1000);
     }
 
-    /** 保存场景数据；返回是否真正写入 */
-    async saveScenes(): Promise<boolean> {
+    /** 当前章节对应的保存目标（项目 + 卷号 + 章号） */
+    private resolveSaveTarget(): { project: string; volNum: number; chapNum: number } | null {
         const project = this.deps.getProject();
         const chapNum = this.deps.getChapterNum();
+        if (!project || chapNum <= 0) return null;
+        const volume = this.deps.getVolume();
+        const volMatch = volume.match(/第(\d+)卷/);
+        return { project, volNum: volMatch ? parseInt(volMatch[1]) : 1, chapNum };
+    }
+
+    /** 保存场景数据；返回是否真正写入 */
+    async saveScenes(): Promise<boolean> {
+        // 优先用「编辑发生时」捕获的目标，避免切章后写进新章；手动保存时目标就是当前章
+        const target = this.pendingSaveTarget ?? this.resolveSaveTarget();
+        const project = target?.project ?? '';
+        const chapNum = target?.chapNum ?? 0;
         if (!project || chapNum <= 0 || !this.isDirty) return false;
 
         // 防止解析失败时用空内容覆盖已有文件
         if (this.scenes.length === 0 && stripFrontmatter(this.originalContent).trim().length > 0) {
             this.isDirty = false;
+            this.pendingSaveTarget = null;
             new Notice('⚠️ 未解析到任何场景，已阻止空内容覆盖原文件', 5000);
             return false;
         }
 
-        const volume = this.deps.getVolume();
-        const volMatch = volume.match(/第(\d+)卷/);
-        const volNum = volMatch ? parseInt(volMatch[1]) : 1;
+        const volNum = target?.volNum ?? 1;
 
         const filePath = pjStepFile(project, volNum, chapNum, 'Scene展开');
         const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -998,12 +1026,15 @@ export class SceneOutlineController {
             }
             this.originalContent = output;
             this.isDirty = false;
+            this.pendingSaveTarget = null;
             if (this.deps.onSceneChange) {
                 this.deps.onSceneChange();
             }
             return true;
         } catch (e) {
             log.error('[SceneOutline] 保存失败:', e);
+            // 保存失败保留脏标记，允许下一次编辑/手动保存重试
+            new Notice('⚠️ 场景细纲自动保存失败，请手动保存重试', 4000);
             return false;
         }
     }

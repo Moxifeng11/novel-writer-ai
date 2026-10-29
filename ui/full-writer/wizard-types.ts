@@ -33,6 +33,7 @@ export function buildWizardSteps(projectType: 'original' | 'fanfic'): WizardStep
     if (projectType === 'fanfic') {
         return [
             { id: 'fanfic', label: '原作设定导入', icon: '📖', status: 'active' },
+            { id: 'story_structure', label: '故事结构', icon: '🧬', status: 'pending' },
             { id: 'entities', label: '实体生成', icon: '👥', status: 'pending',
               subSteps: [
                   { id: 'characters', label: '人物', status: 'pending' },
@@ -49,7 +50,8 @@ export function buildWizardSteps(projectType: 'original' | 'fanfic'): WizardStep
         ];
     }
     return [
-        { id: 'worldview', label: '世界观设定', icon: '🌍', status: 'active' },
+        { id: 'story_structure', label: '故事结构', icon: '🧬', status: 'active' },
+        { id: 'worldview', label: '世界观设定', icon: '🌍', status: 'pending' },
         { id: 'setting_lib', label: '设定库', icon: '📚', status: 'pending' },
         { id: 'writing_style', label: '文笔风格', icon: '✍️', status: 'pending' },
         { id: 'entities', label: '实体生成', icon: '👥', status: 'pending',

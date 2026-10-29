@@ -108,3 +108,105 @@ describe('SettingsService.loadSettings — D5 迁移回写', () => {
         expect(saved).toHaveLength(0);
     });
 });
+
+describe('SettingsService — 密钥不降级（2026-10-29 修复 API Key 失效）', () => {
+    const CIPHER = 'aes256v2:210000:c2FsdA==:aXY=:Y3Q=';
+
+    function harness(raw: Record<string, unknown>, crypto: Record<string, unknown>) {
+        const saved: Array<Record<string, unknown>> = [];
+        let current: Record<string, unknown> | undefined;
+        const service = new SettingsService({
+            crypto: crypto as never,
+            providerManager: {
+                syncCustomModelsOnRestart: () => undefined,
+                updateModelLimits: () => undefined,
+            } as never,
+            cacheManager: null,
+            settingsWriter: {
+                enqueueAutoClean: (op: () => Promise<unknown>) => op(),
+            } as never,
+            getSettings: () => current as never,
+            setSettings: (v) => { current = v as unknown as Record<string, unknown>; },
+            loadData: async () => raw,
+            saveData: async (d: unknown) => { saved.push(d as Record<string, unknown>); },
+        });
+        return { service, saved, current: () => current };
+    }
+
+    it('磁盘上原本是密文、本次未解锁 → 保存时保留旧密文，绝不写明文', async () => {
+        const { service, saved, current } = harness(
+            { schemaVersion: CURRENT_SCHEMA_VERSION, apiKey: CIPHER, providerKeys: { volc: CIPHER } },
+            {
+                // 未解锁：静默解密原样返回密文
+                decryptWithoutPrompt: async (v: string) => v,
+                hasSessionPassword: () => false,
+                // 拿不到口令 → strict 返回 null
+                encryptStrict: async () => null,
+                encrypt: async (v: string) => v,
+            },
+        );
+
+        await service.loadSettings();
+        // 用户在界面上把密钥改成了明文（模拟编辑后保存）
+        (current() as Record<string, unknown>).apiKey = 'sk-brand-new';
+        (current() as Record<string, unknown>).providerKeys = { volc: 'sk-brand-new' };
+        await service.saveSettings();
+
+        const written = saved[saved.length - 1];
+        // 关键：不能把明文写回磁盘（否则加密值被降级）
+        expect(written.apiKey).toBe(CIPHER);
+        expect((written.providerKeys as Record<string, string>).volc).toBe(CIPHER);
+    });
+
+    it('磁盘上原本是明文（从没用过口令）→ 仍按明文保存（兼容旧行为）', async () => {
+        const { service, saved, current } = harness(
+            { schemaVersion: CURRENT_SCHEMA_VERSION, apiKey: 'sk-plain' },
+            {
+                decryptWithoutPrompt: async (v: string) => v,
+                hasSessionPassword: () => false,
+                encryptStrict: async () => null,
+                encrypt: async (v: string) => v,
+            },
+        );
+
+        await service.loadSettings();
+        (current() as Record<string, unknown>).apiKey = 'sk-plain-2';
+        await service.saveSettings();
+
+        expect(saved[saved.length - 1].apiKey).toBe('sk-plain-2');
+    });
+
+    it('有会话口令 → 明文会被加密后落盘', async () => {
+        const { service, saved, current } = harness(
+            { schemaVersion: CURRENT_SCHEMA_VERSION, apiKey: CIPHER },
+            {
+                decryptWithoutPrompt: async () => 'sk-decrypted',
+                hasSessionPassword: () => true,
+                encryptStrict: async (v: string) => 'enc:' + v,
+                encrypt: async (v: string) => 'enc:' + v,
+            },
+        );
+
+        await service.loadSettings();
+        (current() as Record<string, unknown>).apiKey = 'sk-typed';
+        await service.saveSettings();
+
+        expect(saved[saved.length - 1].apiKey).toBe('enc:sk-typed');
+    });
+
+    it('hasEncryptedSecrets / lockedSecretCount 反映磁盘密文', async () => {
+        const { service } = harness(
+            { schemaVersion: CURRENT_SCHEMA_VERSION, apiKey: CIPHER, providerKeys: { volc: 'sk-plain' } },
+            {
+                decryptWithoutPrompt: async (v: string) => v,
+                hasSessionPassword: () => false,
+                encryptStrict: async () => null,
+                encrypt: async (v: string) => v,
+            },
+        );
+        await service.loadSettings();
+        expect(service.hasEncryptedSecrets()).toBe(true);
+        expect(service.lockedSecretCount()).toBe(1);
+        expect(service.findExistingCiphertext()).toBe(CIPHER);
+    });
+});

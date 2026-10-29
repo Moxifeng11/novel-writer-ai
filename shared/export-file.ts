@@ -78,6 +78,52 @@ export async function exportTextFile(
     }
 
     const blob = new Blob([content], { type: options?.mime || 'text/plain;charset=utf-8' });
+    return downloadBlob(blob, safeName, options);
+}
+
+/**
+ * 导出二进制内容（EPUB / DOCX）。与文本导出同源：
+ * 桌面走下载，移动端/`preferVault` 写入 vault 的「导出文件」目录。
+ */
+export async function exportBinaryFile(
+    app: App,
+    filename: string,
+    data: Uint8Array,
+    options?: ExportFileOptions
+): Promise<ExportFileResult> {
+    const safeName = sanitizeFileName(filename);
+    const mime = options?.mime || 'application/octet-stream';
+    const isMobile = (app as unknown as { isMobile?: boolean })?.isMobile === true;
+    // 只取视图本身，避免把底层 buffer 的多余字节一起写出
+    const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+
+    if (isMobile || options?.preferVault === true) {
+        try {
+            if (!(await app.vault.adapter.exists(EXPORT_FALLBACK_DIR))) {
+                await app.vault.adapter.mkdir(EXPORT_FALLBACK_DIR);
+            }
+            const path = `${EXPORT_FALLBACK_DIR}/${safeName}`;
+            const existing = app.vault.getAbstractFileByPath(path);
+            if (existing instanceof TFile) {
+                await app.vault.modifyBinary(existing, buffer);
+            } else {
+                await app.vault.createBinary(path, buffer);
+            }
+            new Notice(`✅ 已导出到「${path}」`, 5000);
+            return { ok: true, mode: 'vault', path };
+        } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            log.warn('[小说工坊] 二进制导出失败:', message);
+            new Notice(`❌ 导出失败：${message}`, 5000);
+            return { ok: false, mode: 'vault', error: message };
+        }
+    }
+
+    return downloadBlob(new Blob([buffer], { type: mime }), safeName, options);
+}
+
+/** 桌面端下载：Electron 下载异步启动，blob URL 必须延迟释放 */
+function downloadBlob(blob: Blob, safeName: string, options?: ExportFileOptions): ExportFileResult {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -86,8 +132,6 @@ export async function exportTextFile(
     document.body.appendChild(a);
     a.click();
     a.remove();
-    // Electron/Chromium 的下载是异步启动的：立即 revoke 会取消尚未开始的下载。
-    // 延迟释放，确保下载已接管 blob。
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
     if (options?.successMessage) {
         new Notice(options.successMessage, 5000);

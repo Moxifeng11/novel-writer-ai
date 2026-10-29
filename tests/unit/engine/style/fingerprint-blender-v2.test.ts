@@ -442,6 +442,31 @@ describe('FingerprintBlenderV2', () => {
             const result = blender.blend([{ fingerprint: fp, weight: 1 }]);
             expect(result.fingerprint.features.rhythm.description).toBe(desc);
         });
+
+        it('单句超长的描述不会被截断成只剩一个句号', () => {
+            // 中间没有任何句末标点：截断逻辑必须保留正文，而不是把整句删光
+            const longSentence = '这是一句非常长的描述'.repeat(10) + '用来验证截断不会把整句都丢掉';
+            const fpA = makeV2Fingerprint('fp_a', 'A', {
+                features: makeFeatures({
+                    rhythm: { ...makeFeatures().rhythm, description: longSentence },
+                }),
+            });
+            const fpB = makeV2Fingerprint('fp_b', 'B', {
+                features: makeFeatures({
+                    rhythm: { ...makeFeatures().rhythm, description: `${longSentence}之外的另一段` },
+                }),
+            });
+
+            const result = blender.blend([
+                { fingerprint: fpA, weight: 0.5 },
+                { fingerprint: fpB, weight: 0.5 },
+            ]);
+
+            const blendedDesc = result.fingerprint.features.rhythm.description;
+            expect(blendedDesc).not.toBe('。');
+            expect(blendedDesc.length).toBeGreaterThan(50);
+            expect(blendedDesc.replace(/[。！？]/g, '').trim().length).toBeGreaterThan(0);
+        });
     });
 
     // ── TR-4.4: 向量空间正确加权平均 ─────────────────────────

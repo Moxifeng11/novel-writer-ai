@@ -212,7 +212,11 @@ export class KnowledgeVectorStore {
         const files = await fs.listFiles(dir).catch(() => null);
         if (!files) return false;
 
-        this.samples.clear();
+        // 读进临时表再整体替换：全部文件读失败时要把内存里的旧向量原样留下
+        const previousSamples = this.samples;
+        const previousMismatches = this.modelMismatches;
+        const nextSamples = new Map<string, KnowledgeVectorSample[]>();
+        this.samples = nextSamples;
         this.modelMismatches = [];
         const current = this.getCurrentEmbeddingContext();
         // 只有知识库根目录存在时才做"书还在不在"的校验：
@@ -220,6 +224,8 @@ export class KnowledgeVectorStore {
         const kbRootExists = await fs.exists(kbKnowledgeBaseDir(this.baseDir)).catch(() => false);
         let skippedOrphans = 0;
         let skippedModelMismatches = 0;
+        let readableFiles = 0;
+        let failedFiles = 0;
         for (const file of files) {
             if (!file.name.endsWith('.json') || file.name === 'index.json') continue;
             try {
@@ -257,8 +263,10 @@ export class KnowledgeVectorStore {
                         continue;
                     }
                     this.samples.set(data.bookId, data.samples);
+                    readableFiles++;
                 }
             } catch (e) {
+                failedFiles++;
                 log.warn(`[KnowledgeVectorStore] 加载向量文件失败: ${file.path}`, e);
             }
         }
@@ -267,6 +275,15 @@ export class KnowledgeVectorStore {
         }
         if (skippedModelMismatches > 0) {
             log.info(`[KnowledgeVectorStore] 跳过 ${skippedModelMismatches} 个 embedding 模型/维度不一致的书籍向量，重新拆解即可按当前模型重建`);
+        }
+        // 一个有内容的文件都没读到、却有一堆读失败（磁盘被占用/同步冲突/权限）：
+        // 不能把「这次没读到」当成「向量库是空的」——旧实现返回 true 会把签名更新到最新，
+        // 之后再也不重试，整个会话的知识检索静默为空。
+        if (failedFiles > 0 && readableFiles === 0) {
+            log.warn(`[KnowledgeVectorStore] ${failedFiles} 个向量文件全部读取失败，保留内存中的旧向量并在下次重试`);
+            this.samples = previousSamples;
+            this.modelMismatches = previousMismatches;
+            return false;
         }
         return true;
     }

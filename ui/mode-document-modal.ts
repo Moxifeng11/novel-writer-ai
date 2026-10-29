@@ -7,7 +7,9 @@
 import { App, Modal, Notice } from 'obsidian';
 import type NovelWriterPlugin from '../main';
 import type { CreationMode } from '../shared/creation-mode';
+import { getCreationModeLabel } from '../shared/creation-mode';
 import { modeDocPath, modeDocStarter } from '../shared/mode-content';
+import { resolveProjectMode } from '../shared/project-mode';
 
 export type ModeDocumentKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
 
@@ -42,7 +44,7 @@ export class ModeDocumentModal extends Modal {
         super(app);
     }
 
-    onOpen(): void {
+    async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope', 'nw-modal');
         this.titleEl.setText(TITLES[this.mode]?.[this.kind] || '模式文档');
         const { contentEl } = this;
@@ -50,6 +52,15 @@ export class ModeDocumentModal extends Modal {
 
         if (this.mode === 'long' || !this.project) {
             contentEl.createEl('p', { text: '该文档仅适用于短篇或剧本项目。' });
+            return;
+        }
+
+        // 命令入口可能带着「短篇」参数落到剧本项目上；写入前必须核对项目真实模式
+        const projectMode = await resolveProjectMode(this.app, this.project);
+        if (projectMode !== this.mode) {
+            contentEl.createEl('p', {
+                text: `该项目是${getCreationModeLabel(projectMode)}项目，不能保存${getCreationModeLabel(this.mode)}文档。请从项目的「创作流程」重新进入。`,
+            });
             return;
         }
 

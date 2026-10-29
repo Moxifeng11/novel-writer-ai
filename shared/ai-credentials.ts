@@ -14,6 +14,8 @@ import { resolveProviderSourceType } from './model-source';
 export interface AiCredentialSettingsLike {
     apiKey?: string;
     apiEndpoint?: string;
+    /** 各供应商独立的密钥（切换供应商时 apiKey 与它同步，但可能只有这边有值） */
+    providerKeys?: Record<string, string>;
     customProviders?: Array<{
         id?: string;
         endpoint?: string;
@@ -30,6 +32,12 @@ export function hasUsableAiCredentials(settings: AiCredentialSettingsLike | unde
     if (!endpoint) return false;
 
     const provider = settings.customProviders?.find(p => (p.endpoint || '').trim() === endpoint);
+
+    // 只看 apiKey 会漏掉「密钥只存在供应商名下」的情况：
+    // 例如用户从未在当前会话切换过供应商，或 apiKey 被清空但 providerKeys 仍在。
+    const providerKey = provider?.id ? settings.providerKeys?.[provider.id] : undefined;
+    if ((providerKey || '').trim()) return true;
+
     return resolveProviderSourceType({
         id: provider?.id || '',
         endpoint,

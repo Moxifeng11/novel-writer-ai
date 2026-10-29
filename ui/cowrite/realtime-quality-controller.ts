@@ -121,7 +121,12 @@ export class RealtimeQualityController {
     }
 
     dispose(): void {
+        // 关闭视图后不得再调度/渲染/落盘：旧实现只释放了 debouncer，
+        // enabled 仍为 true，在途评估返回后照样写顶栏 DIV 与质量历史。
+        this.enabled = false;
+        this.pending = false;
         this.debouncer.dispose();
+        this.monitor?.cancel();
         this.monitor?.dispose();
         this.monitor = null;
     }

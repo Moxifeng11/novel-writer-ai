@@ -11,6 +11,8 @@
 
 import { resolveProviderSourceType } from './model-source';
 
+import { planTaskBudget, TASK_CATEGORY, type BudgetTier } from './task-budget-engine';
+
 export type AiTask =
     | 'default'
     | 'planning'
@@ -104,6 +106,12 @@ export interface TaskModelSettings {
     thinkingLevel?: ThinkingLevel;
     /** 全局思考强度 0–100 */
     thinkingIntensity?: number;
+    /**
+     * 全局预算档位（2026-10-29）。
+     * 用户只设这一个档位 + 思考强度，输入/输出/思考预算由
+     * `task-budget-engine` 按任务类别分发；缺省为 balanced（与旧行为一致）。
+     */
+    budgetTier?: BudgetTier;
 }
 
 export interface ModelLimits {
@@ -218,20 +226,7 @@ export function resolveTaskModelConfig(
         ? Math.floor(limits.maxContext)
         : 32768;
 
-    const requestedOutput = Number.isFinite(override?.maxOutputTokens) && (override?.maxOutputTokens || 0) > 0
-        ? Math.floor(override!.maxOutputTokens!)
-        : limits.maxOutput;
-    const maxOutput = Math.max(1, Math.min(
-        Number.isFinite(requestedOutput) && requestedOutput > 0 ? Math.floor(requestedOutput) : 8192,
-        context,
-    ));
-
-    const derivedInput = Math.max(512, Math.floor(context - maxOutput * 1.15));
-    const requestedInput = Number.isFinite(override?.maxInputTokens) && (override?.maxInputTokens || 0) > 0
-        ? Math.floor(override!.maxInputTokens!)
-        : derivedInput;
-    const maxInput = Math.max(512, Math.min(requestedInput, Math.max(512, context - maxOutput)));
-
+    // 显式思考设置先取出来：它决定走「引擎自动分配」还是「旧版直取预算」。
     const legacyThinkingMode: ThinkingMode = override?.thinkingMode
         ?? settings.thinkingMode
         ?? 'auto';
@@ -240,14 +235,39 @@ export function resolveTaskModelConfig(
     const explicitIntensity = override?.thinkingIntensity ?? settings.thinkingIntensity;
     const hasExplicitThinking = explicitLevel !== undefined || explicitIntensity !== undefined;
 
+    // 输入 / 输出预算统一交给调节引擎：用户只设一个全局档位，
+    // 引擎按任务类别分发。`balanced` 档系数全为 1，逐值与重构前一致。
+    //
+    // 思考预算有一个历史分支必须保留：旧实现里只有 `thinkingMode` +
+    // `thinkingBudget`、没有显式等级/强度时，预算是**直取不缩放、也不自动**；
+    // 只有存在显式等级/强度时才走自动或按强度缩放。这里用「是否有显式思考」
+    // 来决定是否把强度交给引擎，避免升级后静默改变成本。
+    const plan = planTaskBudget({
+        category: TASK_CATEGORY[task],
+        limits: { maxContext: context, maxOutput: limits.maxOutput },
+        tier: settings.budgetTier,
+        intensity: hasExplicitThinking
+            ? (explicitIntensity !== undefined
+                ? explicitIntensity
+                : thinkingLevelSpec(explicitLevel).percent)
+            : 0,
+        explicitThinkingBudget: hasExplicitThinking ? requestedThinkingBudget : 0,
+        override: {
+            maxInputTokens: override?.maxInputTokens,
+            maxOutputTokens: override?.maxOutputTokens,
+            // 只在显式思考路径下让引擎处理任务级思考预算
+            thinkingBudget: hasExplicitThinking ? override?.thinkingBudget : undefined,
+        },
+    });
+    const maxOutput = plan.maxOutput;
+    const maxInput = plan.maxInput;
+
     let thinkingMode: ThinkingMode = legacyThinkingMode;
     let thinkingLevel: ThinkingLevel = explicitLevel ?? thinkingLevelFromMode(legacyThinkingMode);
     let thinkingIntensity = explicitIntensity !== undefined
         ? clampThinkingIntensity(explicitIntensity)
         : thinkingIntensityFromMode(legacyThinkingMode);
-    let thinkingBudget = Number.isFinite(requestedThinkingBudget) && requestedThinkingBudget > 0
-        ? Math.min(Math.floor(requestedThinkingBudget), maxOutput)
-        : 0;
+    let thinkingBudget: number;
 
     if (hasExplicitThinking) {
         thinkingIntensity = explicitIntensity !== undefined
@@ -256,15 +276,14 @@ export function resolveTaskModelConfig(
         thinkingLevel = explicitLevel ?? nearestThinkingLevel(thinkingIntensity);
         thinkingMode = override?.thinkingMode
             ?? (thinkingIntensity <= 0 ? 'off' : thinkingIntensity >= 70 ? 'on' : 'auto');
-        // 强度为 0 或显式关闭时不预留思考预算；否则按强度缩放显式预算或自动预算。
-        if (thinkingIntensity <= 0 || thinkingMode === 'off') {
-            thinkingBudget = 0;
-        } else {
-            const autoBudget = Math.floor(maxOutput * 0.3 * (thinkingIntensity / 100));
-            thinkingBudget = Number.isFinite(requestedThinkingBudget) && requestedThinkingBudget > 0
-                ? Math.min(Math.floor(requestedThinkingBudget * (thinkingIntensity / 100)), maxOutput)
-                : Math.min(autoBudget, maxOutput);
-        }
+        thinkingBudget = (thinkingIntensity <= 0 || thinkingMode === 'off')
+            ? 0
+            : plan.thinkingBudget;
+    } else {
+        // 旧版行为：显式给了预算就直取（不乘强度），没给就是 0（不自动预留）。
+        thinkingBudget = Number.isFinite(requestedThinkingBudget) && requestedThinkingBudget > 0
+            ? Math.min(Math.floor(requestedThinkingBudget), maxOutput)
+            : 0;
     }
 
     return {

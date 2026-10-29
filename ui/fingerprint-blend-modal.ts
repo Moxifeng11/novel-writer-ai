@@ -280,12 +280,13 @@ export class FingerprintBlendModal extends Modal {
         const parent = previewEl.parentElement;
         if (!parent) return;
         const oldEl = previewEl as HTMLElement;
-        const newEl = parent.createDiv({ attr: { style: 'display:none;' } });
-        parent.replaceChild(newEl, oldEl);
-        this.renderRadarPreview(parent as HTMLElement);
-        // 移除原占位
-        const placeholder = parent.querySelector('.nw-blend-radar-preview[style*="display:none"]');
-        if (placeholder) placeholder.remove();
+
+        // 旧实现往 parent 末尾追加一个隐藏占位再整段重渲染，留下空 div 并把
+        // 雷达区块挪到按钮下面。改成在游离容器里渲染，再原位替换。
+        const staging = document.createElement('div');
+        this.renderRadarPreview(staging);
+        const nextEl = staging.querySelector<HTMLElement>('.nw-blend-radar-preview');
+        if (nextEl) parent.replaceChild(nextEl, oldEl);
     }
 
     /** 计算融合后的雷达图数据 */
@@ -456,6 +457,9 @@ export class FingerprintBlendModal extends Modal {
                 text: `${INTENSITY_PRESET_LABELS[preset]}`,
                 attr: {
                     type: 'button',
+                    // 拖滑杆时 updatePresetButtons 靠 data-preset 找回这些按钮，
+                    // 缺了它高亮就永远停在初始状态。
+                    'data-preset': preset,
                     style: this.getPresetButtonStyle(this.intensityConfig.preset === preset)
                 }
             });

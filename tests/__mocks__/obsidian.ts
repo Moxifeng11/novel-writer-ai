@@ -197,6 +197,14 @@ export class DataAdapter {
         this._store.delete(path);
     }
 
+    /** 模拟改名/移动：损坏文件留档等逻辑依赖 */
+    async rename(oldPath: string, newPath: string): Promise<void> {
+        const content = this._store.get(oldPath);
+        if (content === undefined) return;
+        this._store.delete(oldPath);
+        this._store.set(newPath, content);
+    }
+
     /** 模拟 stat：落盘校验依赖 size 判断文件是否真实写入 */
     async stat(path: string): Promise<{ type: string; ctime: number; mtime: number; size: number } | null> {
         const content = this._store.get(path);
@@ -256,6 +264,62 @@ export const Platform = {
     isDesktopApp: true,
     isMobileApp: false,
 };
+
+/** Menu mock：记录 addItem 构建的条目，供模型快速切换器等组件的单测断言 */
+export interface MockMenuItemState {
+    title: string;
+    icon?: string;
+    checked?: boolean;
+    onClick?: (evt?: MouseEvent) => void;
+}
+
+export class Menu {
+    /** 最近一次实例，便于测试直接读取（多级菜单依次弹出时取最新） */
+    static lastInstance: Menu | null = null;
+    items: MockMenuItemState[] = [];
+    shownAtMouseEvent: MouseEvent | null = null;
+    shownAtPosition: { x: number; y: number } | null = null;
+
+    constructor() {
+        Menu.lastInstance = this;
+    }
+
+    addItem(build: (item: {
+        setTitle(title: string): unknown;
+        setIcon(icon: string): unknown;
+        setChecked(checked: boolean): unknown;
+        onClick(cb: (evt?: MouseEvent) => void): unknown;
+    }) => void): this {
+        const state: MockMenuItemState = { title: '' };
+        const builder = {
+            setTitle(title: string) { state.title = title; return builder; },
+            setIcon(icon: string) { state.icon = icon; return builder; },
+            setChecked(checked: boolean) { state.checked = checked; return builder; },
+            onClick(cb: (evt?: MouseEvent) => void) { state.onClick = cb; return builder; },
+        };
+        build(builder as Parameters<typeof build>[0]);
+        this.items.push(state);
+        return this;
+    }
+
+    addSeparator(): this {
+        return this;
+    }
+
+    showAtMouseEvent(evt: MouseEvent): this {
+        this.shownAtMouseEvent = evt;
+        return this;
+    }
+
+    showAtPosition(pos: { x: number; y: number }): this {
+        this.shownAtPosition = pos;
+        return this;
+    }
+
+    hide(): this {
+        return this;
+    }
+}
 
 export class Notice {
     message: string | DocumentFragment;

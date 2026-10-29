@@ -321,7 +321,22 @@ export class KnowledgeTagManager {
         const exists = await this.app.vault.adapter.exists(filePath);
 
         if (exists) {
-            await this.load();
+            try {
+                await this.load();
+            } catch (e) {
+                // 读取失败（权限/同步冲突）时旧实现让 init 直接抛出，知识库整体初始化中断；
+                // 这里退回默认标签继续工作，并把读不到的原文件改名留档，
+                // 避免「一读失败，下一次 save 就把整份自定义标签覆盖成默认」。
+                console.warn('[KnowledgeTagManager] 标签体系读取失败，本次使用默认标签:', e);
+                try {
+                    await (this.app.vault.adapter as unknown as {
+                        rename(oldPath: string, newPath: string): Promise<void>;
+                    }).rename(filePath, `${filePath}.corrupt-${Date.now()}.bak`);
+                } catch {
+                    // 改名失败不阻塞：仍用默认标签继续
+                }
+                this.tags = buildDefaultTags();
+            }
         } else {
             this.tags = buildDefaultTags();
             await this.save();

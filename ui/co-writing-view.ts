@@ -32,8 +32,12 @@ import { LiveAnalysisController } from './cowrite/live-analysis-controller';
 import { shouldRunPlotEval, type PlotEvalGateState } from '../shared/plot-eval-throttle';
 import { captureScrollSnapshot, resolveRestoredScrollTop } from '../shared/preview-scroll';
 import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
+import { getCustomFontFamilies, registerAllCustomFonts, SYSTEM_FONT_PRESETS } from '../services/font-manager';
+import { FontManagerModal } from './font-manager-modal';
+import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from './model-quick-switcher';
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
 import { BodySaveController } from './cowrite/body-save-controller';
+import { resolveInsertRange, type PendingRewriteRange } from './cowrite/insert-range';
 import { BodyWriter } from '../engine/body-writer';
 import {
     DEFAULT_BODY_FORMAT,
@@ -91,6 +95,7 @@ import {
     type ForeshadowTracking,
 } from '../engine/quality/deviation-detector';
 import { createLogger } from '../shared/logger';
+import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
 import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '../shared/thresholds';
 import { shouldRequestGhostAssociationByInterval } from '../shared/ghost-trigger';
 import { resolveCursorPosition } from '../shared/cursor-position';
@@ -119,6 +124,8 @@ export class CoWritingView extends ItemView {
   mainContainer!: HTMLElement;
   centerPanel!: HTMLElement;
   resizerEl!: HTMLElement;
+  /** 统一拖拽原语句柄（第 4 轮迁移） */
+  private layoutResizer: PanelResizerHandle | null = null;
   previewContent!: HTMLElement;
   rightEditor!: HTMLTextAreaElement;
   /** 编辑器容器（前置规划警告横幅挂在此处，才真正位于编辑器上方） */
@@ -163,7 +170,21 @@ export class CoWritingView extends ItemView {
   currentRecord: SentenceEditRecord | null = null;
   suggestionHistory: SentenceEditRecord[] = [];
   historyLoaded = false;
-  pendingRewriteRange: { start: number; end: number } | null = null;
+  /**
+   * 改写候选对应的原选区。
+   * 旧实现声明了同名字段却从未写入，采纳改写结果时一律读当前光标：
+   * 用户在候选生成后点过别处，候选就被插到错误位置、原文留在原地。
+   */
+  pendingRewriteRange: PendingRewriteRange | null = null;
+  /** 采纳进行中：防止双击「接受」/ 连按 Ctrl+1 重复插入同一段文本 */
+  acceptInFlight = false;
+  /**
+   * 联想代次（独立于 suggestionEpoch）。
+   * 旧实现用 suggestionEpoch 判断是否复位 isAssociating：
+   * 联想在途时按 Tab 生成建议会递增该代次，于是 finally 永远不复位，
+   * 之后手动联想与幽灵建议一起失效，直到切章。
+   */
+  private associationSeq = 0;
   lastSuggestAt = 0;
   lastPreviewAt = 0;
   /** 预览渲染代次：MarkdownRenderer 是异步的，旧渲染不得把内容写进新一章/新一轮 */
@@ -201,6 +222,8 @@ export class CoWritingView extends ItemView {
   private nextNodeBtn: HTMLButtonElement | null = null;  // v6.4: 推进下一节点按钮引用
   private modelToggleBtn: HTMLButtonElement | null = null;  // v7.2: 模型切换按钮引用
   private precisionModeBtn: HTMLButtonElement | null = null;
+  /** 顶栏模型快速切换器（原右下角状态栏浮窗的替代入口） */
+  private modelSwitcher: ModelQuickSwitcherHandle | null = null;
   private humanRateDashboard: HTMLElement | null = null;
   private assetStatusBar: HTMLElement | null = null;
   // D2: 实时质量评估管线（评估编排 / 偏离上下文 / 顶栏 / 落盘节流）
@@ -275,6 +298,8 @@ export class CoWritingView extends ItemView {
       onSaved: () => {
         this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics());
         this.liveAnalysis.scheduleRefresh("save");
+        // 实体卡片读的就是当前正文的 frontmatter：保存后必须重绘，否则一直显示保存前的统计
+        this.renderMonitorPanel();
         // P1-4: 保存后检查是否需要结算
         this.checkSettlementDue();
       },
@@ -283,6 +308,7 @@ export class CoWritingView extends ItemView {
         this.autoSaveDebouncer.cancel("auto-save");
         return hasPending;
       },
+      scheduleAutoSave: () => this.scheduleAutoSave(),
     });
     // D2：评估管线收敛到 controller；视图只提供数据与 DOM 句柄
     this.realtimeQuality = new RealtimeQualityController({
@@ -333,6 +359,8 @@ export class CoWritingView extends ItemView {
     this.renderLayout();
     this.applyLayoutFromSettings();
     this.bindEvents();
+    // 字体只在下拉 change 时应用过：重开视图后下拉显示已选字体，正文仍是默认字体
+    this.applyEditorFont(this.facade.settings.coWriteEditorFont || '');
     this.renderEmptySuggestions();
     this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics());
     if (this.project && this.chapterName) {
@@ -357,7 +385,16 @@ export class CoWritingView extends ItemView {
     }
   }
   async onClose() {
+    this.modelSwitcher?.destroy();
+    this.modelSwitcher = null;
     this.clearPreviewTimer();
+    // 关闭后仍在途的完成度评估与预览渲染都要作废：
+    // 旧实现只 abort 了建议请求，指标请求会继续烧额度并把结果写进已分离的 DOM
+    if (this.metricsAbortController) {
+      this.metricsAbortController.abort();
+      this.metricsAbortController = null;
+    }
+    this.previewSeq++;
     if (this.suggestAbortController) {
       this.suggestAbortController.abort();
       this.suggestAbortController = null;
@@ -417,6 +454,7 @@ export class CoWritingView extends ItemView {
     this.resetQualityMonitorForChapterSwitch();
     this.resetPlotMetricsForChapterSwitch();
     this.liveAnalysis.resetForChapterSwitch();
+    this.warningContainer?.empty();
     if (this.rightEditor) this.rightEditor.value = "";
     this.renderMetrics(emptyMetrics());
     this.statusBar?.setText("未绑定章节");
@@ -452,6 +490,9 @@ export class CoWritingView extends ItemView {
     this.resetPlotMetricsForChapterSwitch();
     // 设定守卫同理：旧章在途的 OOC/实体结果不得写进新章，跨章长度基准也要清零
     this.liveAnalysis.resetForChapterSwitch();
+    // 上一章的「送入确认队列」按钮必须一起清掉：
+    // 引擎侧 init 已清空待确认变更，留着按钮只会把旧章的变更按新章身份入队。
+    this.warningContainer?.empty();
     this.historyLoaded = false; // B3: 章节切换后重新加载历史
 
     // P0: 前置规划完整性检查 — 确保 AI 建议生成时有充分上下文
@@ -477,6 +518,8 @@ export class CoWritingView extends ItemView {
     }
     const volumeNum = parseInt(volume2.replace(/[^\d]/g, '')) || 1;
     this.facade.syncChapterLoaded(project, volumeNum, chapterNum, chapterName2, bodyOnly, bodyOnly.trim().length);
+    // 切章会重建/覆写正文容器：字体设置在这里补一次，保证与下拉显示一致
+    this.applyEditorFont(this.facade.settings.coWriteEditorFont || '');
     this.updateControlState("\u5DF2\u52A0\u8F7D");
     this.refreshStatusBar();
     this.updateMarkdownStatus();
@@ -627,6 +670,8 @@ export class CoWritingView extends ItemView {
     // v8.4: 取消原「⋯ 更多」下拉（与右侧「⚙ 更多工具」功能重复，且其全局 click 监听未随视图卸载）
     //       将「监控 / 分析」并入右侧工具面板，顶栏只保留导航、资源与模式三类入口
     const headerRight = header.createDiv({ cls: "nw-cowrite-header-right" });
+    // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到协同顶栏（四个主界面之一）。
+    this.modelSwitcher = renderModelQuickSwitcher(headerRight, this.plugin);
     const monBtn = headerRight.createEl("button", { text: "\u{1F4C8} \u5267\u60C5", cls: "nw-float-monitor-toggle nw-btn-monitor" });
     monBtn.setAttribute("title", "打开/关闭剧情监控浮窗");
     monBtn.addEventListener("click", () => { this.toggleFloatingPanel(); });
@@ -779,6 +824,14 @@ export class CoWritingView extends ItemView {
     const suggestBtn = coreRow.createEl("button", { text: "\u21E5 建议", cls: "nw-btn nw-btn-primary", attr: { title: "基于上文生成续写建议（方向可在上方临时指令填写）" } });
     suggestBtn.addEventListener("click", () => this.handleTabSuggest(true));
     this.suggestBtn = suggestBtn;
+    const sceneBtn = coreRow.createEl("button", { text: "🎬 场景描写", cls: "nw-btn nw-btn-ghost", attr: { title: "用当前 Scene 卡的地点/时间/感官钩子生成环境描写，不推进剧情" } });
+    sceneBtn.addEventListener("click", () => {
+      const hint = "场景描写：必须使用当前场景卡的地点、时间、sensory_hook 与 body_reaction；只写环境与身体感受，不推进剧情、不写对白、不引入新地点。";
+      this.hintInput.value = hint;
+      this.cursorHint = hint;
+      this.facade.setCursorHint(hint);
+      void this.handleTabSuggest(true);
+    });
     const completeBtn = coreRow.createEl("button", { text: "📊 结算", cls: "nw-btn nw-btn-primary", attr: { title: "结算本章：更新事实/伏笔/时间线" } });
     completeBtn.addEventListener("click", () => this.handleComplete());
 
@@ -930,9 +983,7 @@ export class CoWritingView extends ItemView {
       this.updatePlotCompletion();
       this.updateStartButtonState();
       this.autoSaveDebouncer.debounceFixed("brief-panel", () => this.renderBriefPanel(), 800);
-      this.autoSaveDebouncer.debounceFixed("auto-save", () => {
-        void this.saveBody(false);
-      }, 2000);
+      this.scheduleAutoSave();
     });
     this.hintInput.addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.key === "Enter")
@@ -1059,7 +1110,51 @@ export class CoWritingView extends ItemView {
     this.hintStateDisplay.style.display = visible ? "" : "none";
   }
   /** 编辑器顶部：Markdown / 段落 / 一键排版工具条 */
+  /** 2026-10-28: 编辑器字体选择下拉 —— 主题变量 + 常见系统字体预设 + 自定义载入字体 */
+  private buildFontPicker(wrap: HTMLElement): void {
+    const saved = this.facade.settings.coWriteEditorFont || '';
+    const group = wrap.createDiv({ cls: 'nw-cowrite-md-group nw-cowrite-font-group' });
+    group.createSpan({ cls: 'nw-cowrite-font-label', text: '字体' });
+    const select = group.createEl('select', { cls: 'nw-cowrite-font-select' });
+    select.createEl('option', { value: '', text: '默认（跟随主题）' });
+    for (const preset of SYSTEM_FONT_PRESETS) {
+      select.createEl('option', { value: preset.value, text: preset.label });
+    }
+    const customFamilies = getCustomFontFamilies(this.plugin);
+    for (const family of customFamilies) {
+      select.createEl('option', {
+        value: `"${family}", sans-serif`,
+        text: `★ ${family}`,
+      });
+    }
+    select.createEl('option', { value: '__manage__', text: '⚙️ 管理自定义字体…' });
+    select.value = saved;
+    if (select.value !== saved) select.value = '';
+    select.addEventListener('change', () => {
+      const value = select.value;
+      if (value === '__manage__') {
+        select.value = this.facade.settings.coWriteEditorFont || '';
+        new FontManagerModal(this.app, this.plugin).open();
+        return;
+      }
+      this.facade.settings.coWriteEditorFont = value;
+      void this.facade.settings;
+      void this.plugin.saveSettings();
+      this.applyEditorFont(value);
+    });
+  }
+
+  /** 应用编辑器字体（空串=恢复主题默认） */
+  private applyEditorFont(fontFamily: string): void {
+    const family = fontFamily || '';
+    if (this.rightEditor) this.rightEditor.style.fontFamily = family;
+    // 幽灵建议层与预览层同步，保持视觉一致
+    if (this.ghostSuggestionContainer) this.ghostSuggestionContainer.style.fontFamily = family;
+    if (this.previewContent) this.previewContent.style.fontFamily = family;
+  }
+
   private buildMarkdownToolbar(wrap: HTMLElement): void {
+    this.buildFontPicker(wrap);
     const toolbar = wrap.createDiv({ cls: 'nw-cowrite-md-toolbar' });
     let group = toolbar.createDiv({ cls: 'nw-cowrite-md-group' });
     const addSeparator = () => {
@@ -1530,7 +1625,17 @@ export class CoWritingView extends ItemView {
 
         // 引擎已捕获到具体失败原因（密钥未解锁/401/超时等）时直接展示，不再误报成「知识库未拆解」
         if (engineError) {
-          this.showSuggestError(this.getFriendlyErrorMessage(engineError));
+          // 注意：上面的 empty() 已经把进度容器（含错误区与重试按钮）摘掉，
+          // 旧实现继续调用 showSuggestError 会写进脱离文档的节点：
+          // 用户只看到「生成失败」，既没有原因也没有重试入口。
+          const message = this.getFriendlyErrorMessage(engineError);
+          const box = this.suggestionContent.createDiv({ cls: "nw-cowrite-error-card" });
+          box.createDiv({ cls: "nw-cowrite-error-card__text", text: `生成失败：${message}` });
+          const actions = box.createDiv({ cls: "nw-cowrite-error-card__actions" });
+          const notNow = actions.createEl("button", { text: "知道了", cls: "nw-btn nw-btn-ghost" });
+          notNow.addEventListener("click", () => this.renderEmptySuggestions());
+          const retry = actions.createEl("button", { text: "↻ 重试", cls: "nw-btn nw-btn-primary" });
+          retry.addEventListener("click", () => this.retrySuggestion());
           return;
         }
 
@@ -1889,60 +1994,40 @@ export class CoWritingView extends ItemView {
     this.centerPanel.toggleClass('is-panel-collapsed', !panelVisible);
   }
 
+  /**
+   * 编辑区 / 建议区 分隔条。
+   *
+   * 2026-10-29：改用统一原语 createPanelResizer（Pointer Events +
+   * 键盘可达 + 双击复位），并复用已就位的节点以保持 DOM 顺序。
+   * 比例仍存 coWriteEditorWidthRatio，写入 --nw-cowrite-editor-percent。
+   */
   private initResizer() {
     if (!this.resizerEl || !this.centerPanel) return;
 
-    let isDragging = false;
-    let startX = 0;
-    let startRatio = 0.65;
-    const centerPanel = this.centerPanel;
-    const resizerEl = this.resizerEl;
-
-    const onMouseDown = (e: MouseEvent) => {
-      isDragging = true;
-      startX = e.clientX;
-      const settings = this.facade.settings;
-      startRatio = settings.coWriteEditorWidthRatio || 0.65;
-      resizerEl.addClass('is-dragging');
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-      e.preventDefault();
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const rect = centerPanel.getBoundingClientRect();
-      const deltaX = e.clientX - startX;
-      const deltaRatio = deltaX / rect.width;
-      let newRatio = startRatio + deltaRatio;
-      newRatio = Math.max(0.4, Math.min(0.85, newRatio));
-      centerPanel.style.setProperty('--nw-cowrite-editor-percent', `${newRatio * 100}%`);
-    };
-
-    const onMouseUp = () => {
-      if (!isDragging) return;
-      isDragging = false;
-      resizerEl.removeClass('is-dragging');
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      const style = centerPanel.style.getPropertyValue('--nw-cowrite-editor-percent');
-      const match = style.match(/([\d.]+)%/);
-      if (match) {
-        const ratio = parseFloat(match[1]) / 100;
-        const settings = this.facade.settings;
-        settings.coWriteEditorWidthRatio = ratio;
+    const ratio = this.facade.settings.coWriteEditorWidthRatio || 0.65;
+    this.layoutResizer = createPanelResizer({
+      container: this.centerPanel,
+      element: this.resizerEl,
+      target: this.centerPanel,
+      orientation: 'horizontal',
+      side: 'before',
+      unit: 'percent',
+      cssVar: '--nw-cowrite-editor-percent',
+      min: 40,
+      max: 85,
+      step: 2,
+      value: Math.round(ratio * 100),
+      defaultValue: 65,
+      ariaLabel: '拖动调整编辑区宽度（方向键微调，双击复位）',
+      onCommit: (percent) => {
+        this.facade.settings.coWriteEditorWidthRatio = percent / 100;
         void this.plugin.saveSettings();
-      }
-    };
-
-    resizerEl.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+      },
+    });
 
     this.register(() => {
-      resizerEl.removeEventListener('mousedown', onMouseDown);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
+      this.layoutResizer?.destroy();
+      this.layoutResizer = null;
     });
   }
 
@@ -2064,6 +2149,8 @@ export class CoWritingView extends ItemView {
     const selectedText = this.rightEditor.value.slice(start, end);
     const beforeContext = this.rightEditor.value.slice(0, start);
     const afterContext = this.rightEditor.value.slice(end);
+    // 记下改写区间：候选生成后用户可能点/移动到别处，采纳时必须替换这里
+    this.pendingRewriteRange = { start, end, originalText: selectedText };
     this.currentRecord = {
       id: `rewrite_${Date.now()}`,
       triggerText: beforeContext.slice(-200),
@@ -2087,6 +2174,8 @@ export class CoWritingView extends ItemView {
         signal
       );
       if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) {
+        // 改写未产出：区间作废，避免后续普通建议误用
+        this.pendingRewriteRange = null;
         if (this.isSuggestRequestOwner(signal)) {
           this.clearStreamingPreview();
           if (this.suggestionStatusText) this.suggestionStatusText.textContent = "已取消";
@@ -2096,12 +2185,14 @@ export class CoWritingView extends ItemView {
       this.currentSuggestions = suggestions;
       this.currentRecord.suggestions = suggestions;
       if (suggestions.length === 0) {
+        this.pendingRewriteRange = null;
         this.renderEmptySuggestions("\u6CA1\u6709\u751F\u6210\u6539\u5199\u5019\u9009\u3002\u53EF\u4EE5\u8C03\u6574\u9009\u533A\u6216\u4E34\u65F6\u6307\u4EE4\u540E\u91CD\u8BD5\u3002");
         return;
       }
       this.renderSuggestionCards(suggestions);
       this.showKnowledgeInjectionNotice();
     } catch (e) {
+      this.pendingRewriteRange = null;
       if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) {
         if (this.isSuggestRequestOwner(signal)) {
           this.clearStreamingPreview();
@@ -2153,6 +2244,8 @@ export class CoWritingView extends ItemView {
       return;
     }
     this.isAssociating = true;
+    // 联想归属用独立令牌：其它流程递增 suggestionEpoch 不应让本次 finally 跳过复位
+    const associationToken = ++this.associationSeq;
     // Phase 3.2: 联想与建议共用中止控制器，切章/关闭视图/新请求都会取消在途联想
     if (this.suggestAbortController) {
       this.suggestAbortController.abort();
@@ -2199,8 +2292,9 @@ export class CoWritingView extends ItemView {
       if (this.suggestAbortController?.signal === signal) {
         this.suggestAbortController = null;
       }
-      // NBI-05: 旧代次联想不得清掉切章后新联想的进行态
-      if (this.isCurrentSuggestionEpoch(epoch)) this.isAssociating = false;
+      // 只要没有更晚的联想接管，就必须复位；旧实现挂在 suggestionEpoch 上，
+      // 联想期间按一次 Tab 就永久卡住联想与幽灵建议
+      if (associationToken === this.associationSeq) this.isAssociating = false;
     }
   }
   renderAssociationCards(associations: AssociationSuggestion[], suggestions: SuggestionRecord[]) {
@@ -2245,12 +2339,21 @@ export class CoWritingView extends ItemView {
   async acceptByIndex(index: number) {
     // RG-02: 生成/改写进行中时 currentSuggestions 可能仍是上一轮残留，禁止按索引接受
     if (this.isSuggesting) return;
+    // 采纳进行中：Tab/Ctrl+1 连发时第二次不能把同一段文本再插一遍
+    if (this.acceptInFlight) return;
     const suggestion = this.currentSuggestions[index];
     if (suggestion)
       await this.handleAcceptSuggestion(suggestion);
   }
   async handleAcceptSuggestion(suggestion: SuggestionRecord) {
-    await this.insertTextAndRecord(suggestion.text, suggestion, void 0, 0);
+    // 双击「接受」与连按 Tab 都走这里：异步窗口期（历史落盘/预览/指标评估）内必须互斥
+    if (this.acceptInFlight) return;
+    this.acceptInFlight = true;
+    try {
+      await this.insertTextAndRecord(suggestion.text, suggestion, void 0, 0);
+    } finally {
+      this.acceptInFlight = false;
+    }
   }
   handleEditSuggestion(suggestion: SuggestionRecord, initialText?: string) {
     const startedAt = Date.now();
@@ -2261,8 +2364,24 @@ export class CoWritingView extends ItemView {
       async (modifiedText) => {
         const context = this.getContextBeforeCursor(500);
         this.renderValidationLoading();
-        const validation = await this.facade.validateEdit(modifiedText, suggestion, context);
-        this.renderValidationResult(validation, modifiedText, suggestion, Date.now() - startedAt);
+        try {
+          const validation = await this.facade.validateEdit(modifiedText, suggestion, context);
+          this.renderValidationResult(validation, modifiedText, suggestion, Date.now() - startedAt);
+        } catch (e) {
+          // 旧实现没有 catch：验证请求失败后建议面板永远停在「验证中…」，
+          // 原候选卡片也已被 renderValidationLoading 清空，只能重新生成才能恢复。
+          log.warn("[CoWritingView] 建议验证失败:", e);
+          this.showSuggestionPanel();
+          if (this.suggestionStatusText) this.suggestionStatusText.textContent = "验证失败";
+          this.suggestionContent.empty();
+          const box = this.suggestionContent.createDiv({ cls: "nw-cowrite-error-card novel-writer-cowrite-error" });
+          box.createDiv({ cls: "nw-cowrite-error-card__text", text: "验证请求失败，请检查网络或模型配置后重试。" });
+          const actions = box.createDiv({ cls: "nw-cowrite-error-card__actions" });
+          const retry = actions.createEl("button", { text: "↻ 重新验证", cls: "nw-btn nw-btn-primary" });
+          retry.addEventListener("click", () => this.handleEditSuggestion(suggestion, modifiedText));
+          const dismiss = actions.createEl("button", { text: "返回建议", cls: "nw-btn nw-btn-ghost" });
+          dismiss.addEventListener("click", () => this.renderSuggestionCards(this.currentSuggestions));
+        }
       }
     );
     modal.open();
@@ -2298,7 +2417,16 @@ export class CoWritingView extends ItemView {
     }
     const actions = panel.createDiv({ cls: "novel-writer-cowrite-card-actions" });
     const useBtn = actions.createEl("button", { text: "\u7EE7\u7EED\u4F7F\u7528", cls: "novel-writer-cowrite-primary-btn" });
-    useBtn.addEventListener("click", () => this.insertTextAndRecord(modifiedText, suggestion, validation, editDurationMs));
+    // 与「✓ 接受」同一把采纳互斥锁：连点两次不能重复插入同一段校验后的文本
+    useBtn.addEventListener("click", async () => {
+      if (this.acceptInFlight) return;
+      this.acceptInFlight = true;
+      try {
+        await this.insertTextAndRecord(modifiedText, suggestion, validation, editDurationMs);
+      } finally {
+        this.acceptInFlight = false;
+      }
+    });
     const editBtn = actions.createEl("button", { text: "\u4FEE\u6539\u540E\u518D\u9A8C\u8BC1", cls: "novel-writer-cowrite-secondary-btn" });
     editBtn.addEventListener("click", () => this.handleEditSuggestion(suggestion, modifiedText));
   }
@@ -2306,22 +2434,33 @@ export class CoWritingView extends ItemView {
     // NBI-05: 记录接受时的代次，收尾时若已开始新一轮生成则不得覆盖其面板
     const epoch = this.suggestionEpoch;
     const editor = this.rightEditor;
-    const selectionStart = resolveCursorPosition(editor.selectionStart, editor.value.length);
-    const selectionEnd = Math.max(selectionStart, resolveCursorPosition(editor.selectionEnd, editor.value.length, 'start'));
-    const before = editor.value.slice(0, selectionStart);
-    const after = editor.value.slice(selectionEnd);
-    const replacesSelection = selectionEnd > selectionStart;
+    // 改写候选优先替换发起改写时的那段选区；普通建议用当前光标/选区
+    const resolved = resolveInsertRange({
+      text: editor.value,
+      selectionStart: editor.selectionStart,
+      selectionEnd: editor.selectionEnd,
+      pendingRewrite: this.pendingRewriteRange,
+    });
+    if (resolved.staleRewrite) {
+      // 原文在候选生成后被改动：宁可不应用，也不能覆盖用户新写的内容
+      this.pendingRewriteRange = null;
+      new Notice("\u26A0\uFE0F 原文已改动，改写结果未应用。请重新选中文本后再改写。", 4e3);
+      this.finalizeAcceptedInsert(epoch);
+      return;
+    }
+    const before = editor.value.slice(0, resolved.start);
+    const after = editor.value.slice(resolved.end);
+    const replacesSelection = resolved.end > resolved.start;
     const insertText = replacesSelection || text.startsWith("\n") || before.endsWith("\n") || before.length === 0 ? text : `
 ${text}`;
-    editor.value = before + insertText + after;
-    const newCursor = selectionStart + insertText.length;
-    editor.selectionStart = editor.selectionEnd = newCursor;
-    editor.focus();
+    const nextText = before + insertText + after;
+    const newCursor = resolved.start + insertText.length;
+    // 先取快照再清空候选：历史记录里的 suggestions 需要生成时那一轮
     const record = {
       ...this.currentRecord || {
         id: `rec_${Date.now()}`,
         triggerText: before.slice(-200),
-        cursorPosition: selectionStart,
+        cursorPosition: resolved.start,
         suggestions: this.currentSuggestions,
         createdAt: Date.now()
       },
@@ -2331,15 +2470,19 @@ ${text}`;
       editDurationMs,
       acceptedAt: Date.now()
     };
+    this.pendingRewriteRange = null;
+    // 同步清空候选：后面的 await（历史落盘 / 预览 / 指标评估）窗口期内
+    // 不能再按 Ctrl+1 或点「接受」拿到同一条
+    this.currentSuggestions = [];
+    this.setGhostSuggestion(null);
+    this.applyProgrammaticEdit(nextText, newCursor, resolved.fromPendingRewrite ? '改写采纳' : '建议采纳');
     this.facade.recordInteraction(record);
     this.facade.syncEditRecord(record);
     this.facade.syncEditorCursor(newCursor);
-    this.facade.syncChapterContent(editor.value, editor.value.trim().length);
+    this.facade.syncChapterContent(nextText, nextText.trim().length);
     this.suggestionHistory.push(record);
     if (this.suggestionHistory.length > 20) this.suggestionHistory.shift();
     await this.historyStore.persistSuggestionHistory();
-    this.facade.updateSnapshot(editor.value);
-    this.updateControlState("\u7F16\u8F91\u4E2D");
     this.updateStartButtonState();
     await this.refreshPreview(true);
     await this.refreshMetrics(false);
@@ -2603,6 +2746,9 @@ ${text}`;
   private clearStaleSuggestions(): void {
     this.currentSuggestions = [];
     this.setGhostSuggestion(null);
+    // 新一轮生成（Tab / 联想 / 改写 / 切章）都会先走到这里：
+    // 上一轮的改写区间必须随之作废，否则普通建议会拿它去替换一段无关正文。
+    this.pendingRewriteRange = null;
   }
 
   /** RG-02: 清理动作是否仍归属最新一次生成请求，避免旧请求误清新请求的流式骨架与进度 */
@@ -3258,17 +3404,11 @@ ${text}`;
         return;
       }
       const newRefs = [...currentRefs, bookId];
-      this.facade.setReferenceBooks(newRefs);
-      if (this.plugin.referenceBookIds) {
-        this.plugin.referenceBookIds = newRefs;
-      }
+      this.persistReferenceBookIds(newRefs);
       new Notice(`已启用《${bookName}》作为参考`, 2000);
     } else {
       const newRefs = currentRefs.filter(id => id !== bookId);
-      this.facade.setReferenceBooks(newRefs);
-      if (this.plugin.referenceBookIds) {
-        this.plugin.referenceBookIds = newRefs;
-      }
+      this.persistReferenceBookIds(newRefs);
       new Notice(`已停用《${bookName}》的参考`, 2000);
     }
     this.renderKbBookList();
@@ -3276,23 +3416,51 @@ ${text}`;
     this.refreshWritingAdvice();
   }
 
+  /**
+   * 参考书籍的唯一写入点：设置（落盘）+ 插件镜像 + 引擎/注入器（带权重）。
+   * 旧实现只改实例字段且从不 saveSettings，重启后选择全丢。
+   */
+  private persistReferenceBookIds(newRefs: string[]): void {
+    this.plugin.referenceBookIds = newRefs;
+    this.plugin.settings.referenceBookIds = newRefs;
+    void this.plugin.saveSettings();
+    this.applyReferenceBookConfig(newRefs);
+  }
+
+  /** 把「顺序 + 权重」推给引擎与知识注入器；首位即主参考，权重固定 1 */
+  private applyReferenceBookConfig(ids: string[]): void {
+    const weights = this.plugin.settings.referenceBookWeights ?? {};
+    void this.facade.setReferenceBooksWithWeight(
+      ids.map((id, index) => ({
+        bookId: id,
+        weight: index === 0 ? 1 : (weights[id] ?? 0.5),
+        isPrimary: index === 0,
+      }))
+    ).catch(e => log.warn('[CoWritingView] 应用参考书籍权重失败:', e));
+  }
+
   setPrimaryReference(bookId: string): void {
     const currentRefs = this.facade.getReferenceBooks();
     const index = currentRefs.indexOf(bookId);
     if (index <= 0) return;
-    
+
     const newRefs = [bookId, ...currentRefs.filter(id => id !== bookId)];
-    this.facade.setReferenceBooks(newRefs);
-    if (this.plugin.referenceBookIds) {
-      this.plugin.referenceBookIds = newRefs;
-    }
+    this.persistReferenceBookIds(newRefs);
     new Notice('已设为主参考书籍', 2000);
     this.renderKbBookList();
     this.refreshWritingAdvice();
   }
 
+  /** 权重滑杆：以前只打日志，滑了等于没滑；现在写进设置并立即作用到注入器 */
   adjustReferenceWeight(bookId: string, weight: number): void {
-    log.info('[CoWritingView] 调整参考权重:', bookId, weight);
+    const clamped = Math.max(0.1, Math.min(1, Math.round(weight * 100) / 100));
+    this.plugin.settings.referenceBookWeights = {
+      ...(this.plugin.settings.referenceBookWeights ?? {}),
+      [bookId]: clamped,
+    };
+    void this.plugin.saveSettings();
+    this.applyReferenceBookConfig(this.facade.getReferenceBooks());
+    this.refreshWritingAdvice();
   }
 
   getBookTopCharacters(book: BookBasicInfo): string[] {
@@ -3527,12 +3695,8 @@ ${text}`;
     const before = editor.value.slice(0, start);
     const after = editor.value.slice(end);
     const insert = before.endsWith('\n') || before.length === 0 ? text : text;
-    editor.value = before + insert + after;
-    const newPos = start + insert.length;
-    editor.selectionStart = editor.selectionEnd = newPos;
-    editor.focus();
-    this.facade.updateSnapshot(editor.value);
-    this.updateControlState("编辑中");
+    const nextText = before + insert + after;
+    this.applyProgrammaticEdit(nextText, start + insert.length, '知识库标签插入');
     void this.refreshPreview(false);
   }
 
@@ -3929,6 +4093,33 @@ ${text}`;
     return this.bodySaveController.save(showNotice);
   }
 
+  /** 排一次自动保存（输入与程序化写入共用同一入口） */
+  private scheduleAutoSave(): void {
+    this.autoSaveDebouncer.debounceFixed("auto-save", () => {
+      void this.saveBody(false);
+    }, 2000);
+  }
+
+  /**
+   * 程序化改写正文的唯一入口。
+   *
+   * 直接给 textarea 赋值不会派发 input，旧实现的自动保存只挂在 input 上，
+   * 于是「采纳建议后立刻切章」时 `flushBeforeChapterSwitch` 看到没有 pending
+   * 直接放行 → 刚插入的整段文字被新章正文覆盖掉。
+   */
+  applyProgrammaticEdit(nextText: string, cursorPos: number, reason: string): void {
+    if (!this.rightEditor) return;
+    this.rightEditor.value = nextText;
+    const pos = Math.max(0, Math.min(cursorPos, nextText.length));
+    this.rightEditor.selectionStart = this.rightEditor.selectionEnd = pos;
+    this.rightEditor.focus();
+    this.facade.updateSnapshot(nextText);
+    // 快照已更新，但落盘必须显式排程
+    this.bodySaveController.markDirty();
+    this.updateControlState("编辑中");
+    log.info(`[CoWritingView] 程序化写入（${reason}）: ${nextText.length} 字`);
+  }
+
   /** 当前视图是否仍绑定快照里的章节（用于丢弃切章后的旧保存结果） */
   private isSameChapterIdentity(identity: {
     project: string;
@@ -3976,7 +4167,13 @@ ${text}`;
       return;
     }
     try {
-      await this.saveBody(false);
+      // 保存失败时旧实现照样把 status 改成 written 并提示成功，
+      // 结算会基于磁盘上的旧正文执行，事实/伏笔被按错误内容更新
+      const saved = await this.saveBody(false);
+      if (!saved) {
+        new Notice("⚠️ 正文未能保存（可能为空或写入失败），未标记为完稿", 4e3);
+        return;
+      }
       const bodyPath = this.getBodyPath();
       const file = this.app.vault.getAbstractFileByPath(bodyPath);
       if (file instanceof TFile) {
@@ -3995,7 +4192,12 @@ ${text}`;
     }
   }
   async handleComplete() {
-    await this.saveBody(true);
+    // 保存失败仍弹结算：结算读的是磁盘正文，会和编辑器里看到的不一致
+    const saved = await this.saveBody(true);
+    if (!saved) {
+      new Notice("⚠️ 正文未能保存，已取消结算", 4e3);
+      return;
+    }
     await this.refreshMetrics(true);
     await this.runSettlementConflictCheck();
     new ChapterSettlementModal(this.app, this.plugin, {
@@ -4402,13 +4604,24 @@ ${text}`;
       const fixedText = response?.content || '';
 
       if (fixedText && targetStart >= 0 && targetEnd > targetStart) {
-        const newText = fullText.slice(0, targetStart) + fixedText + fullText.slice(targetEnd);
-        this.rightEditor.value = newText;
-        this.facade.updateSnapshot(newText);
-        this.refreshPreview(true);
+        // 请求期间用户可能继续输入：旧实现用请求前的全文快照重建整篇，
+        // 把这段时间的输入全部抹掉。这里只在目标区间原文未变时替换该区间。
+        const current = this.rightEditor.value;
+        const currentSlice = current.slice(targetStart, targetEnd);
+        if (currentSlice !== targetText) {
+          new Notice("\u26A0\uFE0F \u6B63\u6587\u5DF2\u6539\u52A8\uFF0C\u672C\u6B21\u4FEE\u590D\u672A\u5E94\u7528\uFF0C\u8BF7\u91CD\u65B0\u68C0\u6D4B\u540E\u518D\u8BD5", 4e3);
+          return;
+        }
+        const newText = current.slice(0, targetStart) + fixedText + current.slice(targetEnd);
+        this.applyProgrammaticEdit(newText, targetStart + fixedText.length, 'AI 质量修复');
+        void this.refreshPreview(true);
         new Notice("\u2705 \u4FEE\u590D\u5B8C\u6210", 2000);
       } else if (fixedText) {
-        this.rightEditor.value = fullText + '\n\n\u3010AI\u4FEE\u590D\u5EFA\u8BAE\u3011\n' + fixedText;
+        // 未定位到原文时只追加建议，绝不覆盖用户正文
+        const current = this.rightEditor.value;
+        const appended = current + '\n\n\u3010AI\u4FEE\u590D\u5EFA\u8BAE\u3011\n' + fixedText;
+        this.applyProgrammaticEdit(appended, appended.length, 'AI 修复建议追加');
+        void this.refreshPreview(true);
         new Notice("\u26A0\uFE0F \u672A\u5B9A\u4F4D\u5230\u7CBE\u786E\u4F4D\u7F6E\uFF0C\u5EFA\u8BAE\u5DF2\u8FFD\u52A0\u5728\u672B\u5C3E", 3000);
       }
     } catch (e) {
@@ -4534,6 +4747,8 @@ ${text}`;
       () => this.refreshPreview(true),
       () => this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics()),
       () => this.refreshMetrics(false),
+      // 右侧监控卡的数据随章节/守卫变化：旧实现只在 renderLayout 时渲染过一次
+      () => this.renderMonitorPanel(),
       () => {
         if (this.suggestionContent && !this.suggestionContent.children.length) this.renderEmptySuggestions();
       },
@@ -4555,12 +4770,8 @@ ${text}`;
       if (!this.rightEditor) return;
       const start = this.rightEditor.selectionStart ?? this.rightEditor.value.length;
       const end = this.rightEditor.selectionEnd ?? start;
-      this.rightEditor.value = this.rightEditor.value.slice(0, start) + text + this.rightEditor.value.slice(end);
-      const next = start + text.length;
-      this.rightEditor.focus();
-      this.rightEditor.setSelectionRange(next, next);
-      this.updateControlState("编辑中");
-      this.facade.updateSnapshot(this.rightEditor.value);
+      const nextText = this.rightEditor.value.slice(0, start) + text + this.rightEditor.value.slice(end);
+      this.applyProgrammaticEdit(nextText, start + text.length, '历史回填');
       void this.refreshPreview(true);
     }).open();
   }
@@ -4595,12 +4806,18 @@ ${text}`;
   }
 
   private renderMonitorPanel() {
+    if (!this.monitorContainer) return;
     this.monitorContainer.empty();
 
     this.renderForeshadowCard();
     this.renderEntityCard();
     this.renderGuardCard();
     this.renderStatusCard();
+  }
+
+  /** 供实时分析控制器在守卫/保存后刷新监控卡（旧实现只在布局时渲染一次） */
+  refreshMonitorPanel(): void {
+    this.renderMonitorPanel();
   }
 
   private renderForeshadowCard() {
@@ -4647,7 +4864,10 @@ ${text}`;
     const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
     const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
 
-    const abstractFile = this.app.vault.getAbstractFileByPath(`${this.project}/${this.volume}/${this.chapterName}_正文.md`);
+    // 正文路径必须走 getBodyPath()：旧实现拼的是 `${project}/${volume}/${chapterName}_正文.md`，
+    // 真实落盘路径是 03-大纲与章节/正文/...，拼接结果永远不存在 → 卡片恒为全 0。
+    const bodyPath = this.project && this.chapterNum ? this.getBodyPath() : '';
+    const abstractFile = bodyPath ? this.app.vault.getAbstractFileByPath(bodyPath) : null;
     const file = abstractFile instanceof TFile ? abstractFile : null;
     const fm = file ? this.app.metadataCache.getFileCache(file)?.frontmatter || {} : {};
     const chars = (fm['涉及人物'] || []) as string[];
@@ -4701,26 +4921,40 @@ ${text}`;
     const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
     const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
 
-    const issues = (this.liveAnalysis as unknown as { issues?: any[] })?.issues || [];
-    const highCount = issues.filter((i: any) => i.priority === 'high').length;
-    const midCount = issues.filter((i: any) => i.priority === 'medium').length;
-    const lowCount = issues.filter((i: any) => i.priority === 'low').length;
+    // 数据源是 LiveAnalysisController 的真实守卫结果。
+    // 旧实现读 `liveAnalysis.issues` —— 该字段从来没有存在过，卡片恒显示「高 0 · 中 0 · 低 0」。
+    const summary = this.liveAnalysis?.getGuardSummary?.() ?? null;
+    const oocCount = summary?.oocWarnings.length ?? 0;
+    const changeCount = summary?.entityChanges.length ?? 0;
+    const scoreText = summary?.consistencyScore != null ? `一致性 ${summary.consistencyScore}% · ` : '';
 
-    body.createDiv({ cls: "nw-cowrite-monitor-summary", text: `高 ${highCount} · 中 ${midCount} · 低 ${lowCount}` });
+    if (!summary) {
+      body.createDiv({ cls: "nw-cowrite-monitor-summary", text: "本章尚未检查（输入停顿或点「设定检查」后自动执行）" });
+      return;
+    }
+
+    body.createDiv({
+      cls: "nw-cowrite-monitor-summary",
+      text: `${scoreText}OOC ${oocCount} · 实体变更 ${changeCount}`
+    });
 
     const detail = body.createDiv({ cls: "nw-cowrite-monitor-detail" });
     detail.setCssStyles({ display: 'none' });
 
-    if (issues.length > 0) {
+    if (oocCount > 0 || changeCount > 0) {
       const ul = detail.createEl("ul", { cls: "nw-cowrite-monitor-list" });
-      issues.slice(0, 5).forEach((issue: any) => {
-        const priorityColor = issue.priority === 'high' ? '#ef4444' : issue.priority === 'medium' ? '#f59e0b' : '#3b82f6';
+      summary.oocWarnings.slice(0, 5).forEach(warning => {
         const li = ul.createEl("li");
-        const prioritySpan = li.createSpan({ cls: "nw-cowrite-monitor-priority", text: issue.priority.toUpperCase() });
-        prioritySpan.setCssStyles({ color: priorityColor });
-        li.createSpan({ text: ` ${issue.message || issue}` });
+        const tag = li.createSpan({ cls: "nw-cowrite-monitor-priority", text: "OOC" });
+        tag.setCssStyles({ color: '#ef4444' });
+        li.createSpan({ text: ` ${warning}` });
       });
-      if (issues.length > 5) ul.createEl("li", { cls: "nw-cowrite-monitor-more", text: `...还有 ${issues.length - 5} 条` });
+      summary.entityChanges.slice(0, 5).forEach(change => {
+        const li = ul.createEl("li");
+        const tag = li.createSpan({ cls: "nw-cowrite-monitor-priority", text: "变更" });
+        tag.setCssStyles({ color: '#3b82f6' });
+        li.createSpan({ text: ` ${change.entityName} → ${change.newStatus}` });
+      });
     }
 
     header.addEventListener("click", () => {

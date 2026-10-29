@@ -105,3 +105,76 @@ describe('CryptoService v2（F4 口令派生）', () => {
         expect(await svc.decrypt('aes256v2:bad')).toBe('aes256v2:bad');
     });
 });
+
+describe('CryptoService 口令一致性（2026-10-29 修复 API Key 失效）', () => {
+    it('已有密文时，即使调用方请求「新口令」也必须问已有口令', async () => {
+        // 种子密文必须用「原口令」加密，才能模拟「磁盘上已有旧密文」
+        const seed = new CryptoService(deps, { requestNewPassword: async () => 'original-pw' });
+        const stored = await seed.encrypt('sk-original');
+
+        // 模拟重启：会话口令清空，但磁盘上仍有密文
+        const askNew = vi.fn(async () => 'brand-new-pw');
+        const askOld = vi.fn(async () => 'original-pw');
+        const restarted = new CryptoService(deps, {
+            requestNewPassword: askNew,
+            requestPassword: askOld,
+            findExistingCiphertext: () => stored,
+        });
+
+        // 重启后加密第二个密钥：不得走「设定新口令」
+        const second = await restarted.encrypt('sk-second');
+        expect(askNew).not.toHaveBeenCalled();
+        expect(askOld).toHaveBeenCalled();
+        expect(second.startsWith('aes256v2:')).toBe(true);
+
+        // 关键：旧密文仍然可解（会话口令是原来那个）
+        expect(await restarted.decrypt(stored)).toBe('sk-original');
+    });
+
+    it('候选口令解不开既有密文时重问，不会把错口令设为会话口令', async () => {
+        const seed = new CryptoService(deps, { requestNewPassword: async () => 'real-pw' });
+        const stored = await seed.encrypt('sk-real');
+
+        let attempt = 0;
+        const svc = new CryptoService(deps, {
+            requestPassword: async () => (attempt++ === 0 ? 'wrong-pw' : 'real-pw'),
+            findExistingCiphertext: () => stored,
+        });
+        const second = await svc.encrypt('sk-second');
+        expect(second.startsWith('aes256v2:')).toBe(true);
+        expect(await svc.decrypt(stored)).toBe('sk-real');
+    });
+
+    it('两次都解不开 → 返回 null（encryptStrict），不落明文', async () => {
+        const seed = new CryptoService(deps, { requestNewPassword: async () => 'real-pw' });
+        const stored = await seed.encrypt('sk-real');
+
+        const svc = new CryptoService(deps, {
+            requestPassword: async () => 'always-wrong',
+            findExistingCiphertext: () => stored,
+        });
+        expect(await svc.encryptStrict('sk-new')).toBeNull();
+        // 兼容入口 encrypt 退回明文，但调用方是 settings-service 的 strict 路径
+        expect(await svc.encrypt('sk-new')).toBe('sk-new');
+    });
+
+    it('没有既有密文时仍可设定新口令', async () => {
+        const askNew = vi.fn(async () => 'first-pw');
+        const svc = new CryptoService(deps, {
+            requestNewPassword: askNew,
+            findExistingCiphertext: () => null,
+        });
+        const stored = await svc.encrypt('sk-first');
+        expect(askNew).toHaveBeenCalledTimes(1);
+        expect(stored.startsWith('aes256v2:')).toBe(true);
+    });
+
+    it('canDecryptWith 能区分正确与错误口令', async () => {
+        const svc = new CryptoService(deps, { requestNewPassword: async () => 'pw-ok' });
+        const stored = await svc.encrypt('sk-x');
+        expect(await svc.canDecryptWith('pw-ok', stored)).toBe(true);
+        expect(await svc.canDecryptWith('pw-no', stored)).toBe(false);
+        // 明文不参与口令校验
+        expect(await svc.canDecryptWith('anything', 'plaintext')).toBe(true);
+    });
+});

@@ -17,6 +17,9 @@ import {
     type CreationMode,
     type CreationModeMeta,
 } from '../shared/creation-mode';
+import { buildStoryStructureGuide } from '../shared/story-structure';
+import { StorySettingsEditor } from './story-settings-form';
+import { createLongNovelProject } from './services/project-create-service';
 
 
 const log = createLogger('CreateProjectModal');
@@ -129,6 +132,7 @@ ${preferredGenre
                     tagContainer.querySelectorAll('.nw-genre-tag').forEach(t => {
                         t.classList.toggle('selected', t.textContent === genreInput.value);
                     });
+                    storyEditor.setGenre(genreInput.value);
                 }
                 if (data.description) descriptionInput.value = String(data.description).trim();
                 new Notice('✅ 已生成随机项目构思', 3000);
@@ -160,6 +164,11 @@ ${preferredGenre
             type: 'text',
             placeholder: '输入题材（或点击上方标签）',
             cls: 'nw-input nw-form-input'
+        });
+
+        const storySettingsHost = bodyEl.createDiv({ cls: 'nw-story-settings-host' });
+        const storyEditor = new StorySettingsEditor(storySettingsHost, null, {
+            getGenre: () => genreInput.value,
         });
 
         const modeGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
@@ -392,12 +401,15 @@ ${preferredGenre
                 return;
             }
 
+            const storySettings = storyEditor.getValue();
             const creationMeta: CreationModeMeta = {
                 mode: 'long',
                 shortCategory: '',
                 scriptGenre: '',
                 targetWords: CREATION_MODE_SPECS.long.targetWords.default,
                 targetUnits: CREATION_MODE_SPECS.long.targetUnits.default,
+                storyStructure: storySettings.structureId,
+                storySettings,
             };
             void creationMeta;
             try {
@@ -411,353 +423,35 @@ ${preferredGenre
     }
 
     private async createProject(projectName: string, genre: string, description: string, projectType: 'original' | 'fanfic', sourceWork: string, sourceWorldview: string, creationMeta: CreationModeMeta): Promise<void> {
-        if (projectType === 'fanfic' && this.selectedFanficSettingPath) {
-            try {
-                const selected = this.app.vault.getAbstractFileByPath(this.selectedFanficSettingPath);
-                if (selected instanceof TFile) {
-                    const content = await this.app.vault.read(selected);
-                    if (!isFanficApproved(content)) {
-                        new Notice('❌ 所选同人设定尚未通过人工审核，不能用于创建项目', 8000);
-                        return;
-                    }
-                }
-            } catch (e) {
-                log.warn('[小说工坊] 校验同人设定审核状态失败:', e);
-                new Notice('❌ 无法读取所选同人设定，未创建项目', 8000);
-                return;
-            }
-        }
-        const selectedFanficFileName = this.selectedFanficSettingPath
-            ? this.selectedFanficSettingPath.split('/').pop() || ''
-            : '';
-        const fanficTargetFileName = selectedFanficFileName || fanficSettingsFileName(sourceWork);
-        const projectId = newProjectPath(projectName, 'long');
-        const exists = await this.adapter.exists(projectId);
-        if (exists) {
-            const overwrite = await OperationConfirmModal.confirm(this.app, {
+        const result = await createLongNovelProject(this.app, this.plugin, {
+            projectName,
+            genre,
+            description,
+            projectType,
+            sourceWork,
+            sourceWorldview,
+            fanficSettingPath: this.selectedFanficSettingPath || undefined,
+            creationMeta,
+            confirmOverwrite: () => OperationConfirmModal.confirm(this.app, {
                 title: '覆盖项目',
                 description: `「${projectName}」已存在，覆盖？`,
                 confirmText: '确认覆盖',
                 cancelText: '取消',
-            });
-            if (!overwrite) return;
-
-            const removeDir = async (dirPath: string) => {
-                const list = await this.adapter.list(dirPath);
-                for (const f of list.files) await this.adapter.remove(f);
-                for (const d of list.folders) await removeDir(d);
-                await this.adapter.rmdir(dirPath, true);
-            };
-            try { await removeDir(projectId); } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
-            await new Promise(r => setTimeout(r, 300));
-        }
-
-        const notice = new Notice(`正在创建项目「${projectName}」...`, 0);
-        const projectRootId = projectId;
-
-        const shouldCopyTemplatePath = (path: string): boolean => {
-            if (path.startsWith(`${PJ_OUTLINE_DIR}/步骤结果`)) return false;
-            if (path.startsWith(`${PJ_OUTLINE_DIR}/正文`)) return false;
-            if (projectType === 'original' && path.startsWith(PJ_FANFIC_DIR)) return false;
-            if (projectType === 'fanfic' && new RegExp(`^${PJ_FANFIC_DIR.replace(/[/\\]/g, '\\/')}/(斗罗大陆设定|哈利波特设定)\\.md$`).test(path)) return false;
-            return true;
-        };
-
-        const scanDir = async (dirPath: string): Promise<{ files: string[], dirs: string[] }> => {
-            const result: { files: string[]; dirs: string[] } = { files: [], dirs: [] };
-            const list = await this.adapter.list(dirPath);
-            for (const dir of list.folders) {
-                const dirName = dir.substring(dir.lastIndexOf('/') + 1);
-                if (dirName.startsWith('_') || dirName.startsWith('.')) continue;
-                if (!shouldCopyTemplatePath(dir)) continue;
-                result.dirs.push(dir);
-                const sub = await scanDir(dir);
-                result.files.push(...sub.files);
-                result.dirs.push(...sub.dirs);
-            }
-            for (const file of list.files) {
-                if (!shouldCopyTemplatePath(file)) continue;
-                result.files.push(file);
-            }
-            return result;
-        };
-
-        const scaffold = await ensureTemplateScaffold(this.app);
-        if (scaffold.failed > 0) {
-            log.warn('[小说工坊] 模板自举存在失败项:', scaffold);
-        }
-
-        const source = await scanDir('元文件');
-        if (source.files.length === 0) {
-            notice.hide();
-            new Notice('❌ 未找到「元文件」下的模板文件，请确认插件安装完整或重装插件', 8000);
+            }),
+        });
+        if (!result.created) {
+            if (result.reason) new Notice(`❌ 未创建项目：${result.reason}`, 6000);
             return;
         }
-
-        const dirsToCreate = new Set<string>();
-        for (const f of source.files) {
-            const newPath = f.replace('元文件', projectRootId);
-            const parent = newPath.substring(0, newPath.lastIndexOf('/'));
-            dirsToCreate.add(parent);
-        }
-        for (const d of source.dirs) {
-            const newDir = d.replace('元文件', projectRootId);
-            dirsToCreate.add(newDir);
-        }
-
-        const sortedDirs = [...dirsToCreate].sort((a, b) => a.split('/').length - b.split('/').length);
-        for (const dir of sortedDirs) {
-            try {
-                if (!(await this.adapter.exists(dir))) {
-                    await this.adapter.mkdir(dir);
-                }
-            } catch (e) {
-                log.warn('创建目录失败:', dir, e);
-            }
-        }
-
-        let count = 0;
-        for (const srcPath of source.files) {
-            const destPath = srcPath.replace('元文件', projectRootId);
-            try {
-                const content = await this.adapter.read(srcPath);
-                await this.adapter.write(destPath, content);
-                count++;
-            } catch (fileErr) {
-                log.warn(`复制失败: ${srcPath}`, fileErr);
-            }
-        }
-
-        const rootCopies: Array<{ srcs: string[]; dst: string; existing: string[] }> = [
-            {
-                srcs: [
-                    `${PJ_TEMPLATE_DIR}/设定库模板.md`,
-                    `${PJ_WORLD_ARCH_DIR}/设定库模板.md`,
-                    `${PJ_WORLD_ARCH_DIR}/设定库.md`,
-                ],
-                dst: `${projectRootId}/${SUBDIR_SETTING_LIB_FILE}`,
-                existing: [
-                    `${projectRootId}/${SUBDIR_SETTING_LIB_FILE}`,
-                    `${projectRootId}/${SUBDIR_WORLD_ARCH}/设定库模板.md`,
-                ],
-            },
-            {
-                srcs: [
-                    `${PJ_WORLD_ARCH_DIR}/文笔风格模板.md`,
-                    `${PJ_TEMPLATE_DIR}/文笔风格模板.md`,
-                ],
-                dst: `${projectRootId}/${SUBDIR_WRITING_STYLE_FILE}`,
-                existing: [
-                    `${projectRootId}/${SUBDIR_WRITING_STYLE_FILE}`,
-                    `${projectRootId}/${SUBDIR_WORLD_ARCH}/文笔风格模板.md`,
-                ],
-            },
-        ];
-        for (const { srcs, dst, existing } of rootCopies) { 
-            try {
-                const dstNameExists = await this.adapter.exists(dst);
-
-                if (dstNameExists) continue;
-
-                let templateFileExists = false;
-                let templateFilePath = '';
-                for (const p of existing) {
-                    if (p === dst) continue;
-                    if (await this.adapter.exists(p)) { 
-                        templateFileExists = true;
-                        templateFilePath = p;
-                        break;
-                    }
-                }
-
-                if (templateFileExists && templateFilePath) {
-                    const content = await this.adapter.read(templateFilePath);
-                    await this.adapter.write(dst, content);
-                    count++;
-                    continue;
-                }
-                let srcContent: string | null = null;
-                for (const s of srcs) {
-                    if (await this.adapter.exists(s)) { srcContent = await this.adapter.read(s); break; }
-                }
-                if (srcContent === null) {
-                    log.warn('[小说工坊] 跳过根级文件复制：未找到任何模板源', { dst, srcs });
-                    continue;
-                }
-                await this.adapter.write(dst, srcContent);
-                count++;
-            } catch (e) { log.warn('复制根级文件失败:', dst, e); }
-        }
-
         try {
-            const tplFpPath = templateFingerprintsFile();
-            if (await this.adapter.exists(tplFpPath)) {
-                const tplFpContent = await this.adapter.read(tplFpPath);
-                const tplFingerprints = JSON.parse(tplFpContent) as Array<{
-                    id: string;
-                    name: string;
-                    source: string;
-                    scope: string;
-                    enabled: boolean;
-                    tags: string[];
-                    stats: unknown;
-                    features: unknown;
-                    samples: string[];
-                    extractedAt: number;
-                    sourceText?: string;
-                }>;
-
-                const enabledFps = tplFingerprints.filter(fp => fp.enabled);
-                if (enabledFps.length > 0) {
-                    const projectFps = enabledFps.map(fp => ({
-                        ...fp,
-                        id: fp.id,
-                        scope: 'project' as const,
-                        samples: [],
-                    }));
-
-                    const projFpDir = projectFingerprintLibraryDir(projectRootId);
-                    if (!(await this.adapter.exists(projFpDir))) {
-                        await this.adapter.mkdir(projFpDir);
-                    }
-
-                    const projFpPath = projectFingerprintsFile(projectRootId);
-                    await this.adapter.write(projFpPath, JSON.stringify(projectFps, null, 2));
-                    count += enabledFps.length;
-                }
-            }
-        } catch (e) {
-            log.warn('[小说工坊] 模板指纹复制失败:', e);
-        }
-
-        try {
-            const projectFile = pjProjectMeta(projectRootId);
-            let projectContent = `# ${projectName}
-
-## 题材
-${genre}
-
-## 类型
-${projectType}
-
-${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSection(creationMeta)}\n\n`;
-
-            if (projectType === 'fanfic') {
-                projectContent += `## 同人设定路径\n${pjFanficDir(projectRootId)}/${fanficTargetFileName}\n\n`;
-                if (sourceWork) {
-                    projectContent += `## 原作名称\n${sourceWork}\n\n`;
-                }
-                if (sourceWorldview) {
-                    projectContent += `## 原作世界观简述\n${sourceWorldview}\n\n`;
-                }
-            }
-
-            const existingProjectFile = this.app.vault.getAbstractFileByPath(projectFile);
-            if (existingProjectFile instanceof TFile) {
-                await this.app.vault.modify(existingProjectFile, projectContent);
-            } else {
-                await this.app.vault.create(projectFile, projectContent);
-            }
-        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
-
-        if (projectType === 'fanfic' && this.selectedFanficSettingPath) {
-            const srcPath = this.selectedFanficSettingPath;
-            const srcName = srcPath.split('/').pop() || '';
-            const dstPath = `${pjFanficDir(projectRootId)}/${fanficTargetFileName}`;
-            try {
-                const content = await this.adapter.read(srcPath);
-                const dstDir = dstPath.substring(0, dstPath.lastIndexOf('/'));
-                if (!(await this.adapter.exists(dstDir))) {
-                    await this.adapter.mkdir(dstDir);
-                }
-                await this.adapter.write(dstPath, content);
-                count++;
-            } catch (e) {
-                log.warn('Failed to copy fanfic settings:', e);
-            }
-        }
-
-        await this.writeCreationModeGuide(projectName, creationMeta);
-        notice.hide();
-        new Notice(`✅ 项目「${projectName}」创建完成（${count} 个文件）`, 5000);
-
-        try {
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const templateProfilePath = WritingProfileManager.getConfigFilePath('元文件');
-            let writingProfile;
-
-            try {
-                if (await this.adapter.exists(templateProfilePath)) {
-                    writingProfile = await profileManager.load('元文件');
-                    writingProfile.projectName = projectName;
-                    writingProfile.projectType = projectType;
-                    writingProfile.creationMode = creationMeta.mode;
-                    writingProfile.shortCategory = creationMeta.shortCategory;
-                    writingProfile.scriptGenre = creationMeta.scriptGenre;
-                    writingProfile.targetWords = creationMeta.targetWords;
-                    writingProfile.targetUnits = creationMeta.targetUnits;
-                    writingProfile.createdAt = new Date().toISOString();
-                    writingProfile.updatedAt = new Date().toISOString();
-                    if (writingProfile.genre && genre) {
-                        writingProfile.genre.primary = genre;
-                        if (!writingProfile.genre.tags.includes(genre)) {
-                            writingProfile.genre.tags.push(genre);
-                        }
-                    }
-                    log.info('[CreateProject] 从模板继承写作配置');
-                }
-            } catch (e) {
-                log.warn('[CreateProject] 从模板继承写作配置失败，生成默认配置:', e);
-            }
-
-            if (!writingProfile) {
-                writingProfile = profileManager.generateDefault(genre, projectName, projectType);
-                writingProfile.creationMode = creationMeta.mode;
-                writingProfile.shortCategory = creationMeta.shortCategory;
-                writingProfile.scriptGenre = creationMeta.scriptGenre;
-                writingProfile.targetWords = creationMeta.targetWords;
-                writingProfile.targetUnits = creationMeta.targetUnits;
-                log.info('[CreateProject] 生成默认写作配置');
-            }
-
-            await profileManager.save(projectRootId, writingProfile);
-        } catch (e) {
-            log.warn('[CreateProject] 初始化写作配置失败（不影响项目创建）:', e);
-        }
-
-        try {
-            if (typeof this.plugin.openFullWriterView === 'function') {
-                await this.plugin.openFullWriterView();
-            }
-        } catch (e) {
-            log.warn('[CreateProject] 打开 FullWriterView 失败:', e);
-        }
-
-        this.app.workspace.trigger('novel-writer:project-created', {
-            projectName: projectRootId,
-            projectType,
-        });
-
-        try {
-            await this.prefill?.onCreated?.(projectRootId);
+            await this.prefill?.onCreated?.(result.projectId);
         } catch (e) {
             log.warn('[小说工坊] 预填项目创建后回调失败:', e);
             new Notice('项目已创建，但后续写入创意资料失败；请手动保存', 8000);
         }
-
         this.close();
     }
 
-    private async writeCreationModeGuide(project: string, meta: CreationModeMeta): Promise<void> {
-        const dir = `${project}/00-系统模板`;
-        const path = `${dir}/创作模式指南.md`;
-        try {
-            if (!(await this.adapter.exists(dir))) await this.adapter.mkdir(dir);
-            await this.adapter.write(path, buildCreationModeGuide(meta));
-        } catch (e) {
-            log.warn('[CreateProject] 写创作模式指南失败:', e);
-        }
-    }
 
     onClose(): void {
         if (this.fanficSettingsOutsideClickHandler) {

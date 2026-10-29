@@ -41,6 +41,14 @@ export interface FileSystemPort {
     exists(path: string): Promise<boolean>;
     /** 获取文件元数据（不存在返回 null） */
     getFile(path: string): Promise<TFile | null>;
+    /**
+     * 文件的时间戳与大小（不存在返回 null）。
+     *
+     * 与 getFile 分开是必要的：配置目录（.obsidian/plugins/...）里的文件
+     * 不在 vault 索引中，getAbstractFileByPath 恒为 null，但 adapter.stat
+     * 能拿到真实的 mtime/size。变更检测只关心这两个数字，不需要 TFile。
+     */
+    getFileStamp?(path: string): Promise<{ mtime: number; size: number } | null>;
     /** 获取文件夹元数据（不存在返回 null） */
     getFolder(path: string): Promise<TFolder | null>;
     /** 列出目录下的所有文件（递归） */
@@ -140,6 +148,21 @@ export class ObsidianFileSystem implements FileSystemPort {
     async getFile(path: string): Promise<TFile | null> {
         const file = this.app.vault.getAbstractFileByPath(path);
         return file instanceof TFile ? file : null;
+    }
+
+    async getFileStamp(path: string): Promise<{ mtime: number; size: number } | null> {
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (file instanceof TFile) {
+            return { mtime: file.stat?.mtime ?? 0, size: file.stat?.size ?? 0 };
+        }
+        // 配置目录 / 索引外文件：回退 adapter.stat
+        try {
+            const stat = await this.app.vault.adapter.stat(path);
+            if (!stat) return null;
+            return { mtime: stat.mtime ?? 0, size: stat.size ?? 0 };
+        } catch {
+            return null;
+        }
     }
 
     async getFolder(path: string): Promise<TFolder | null> {

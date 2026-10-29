@@ -4,6 +4,7 @@
  * Each task uses exactly one logical AI call. Local validators may reject the
  * result, but the runner never makes a hidden second AI call.
  */
+import { HUMAN_VOICE_BLOCK } from '../prompts/human-voice';
 import { singleCallRunner, type SingleCallResult } from './single-call-runner';
 import { parseJsonObject, validateFields, type OutputContract } from './structured-output';
 import type { AIEngine } from '../ai-engine';
@@ -56,7 +57,9 @@ const revisionContract: OutputContract<RevisionSingleCallResult> = {
     fields: [
         {
             key: 'dimensions',
-            type: 'object',
+            // 逐维度修订说明是数组；旧声明写成 object，而 validateFields 明确拒绝数组，
+            // 导致定向修订无论模型怎么输出都必然失败。
+            type: 'array',
             required: true,
             description: '每个质量维度的修订说明，形如 [{"dimension":"...","changed":true,"note":"..."}]',
         },
@@ -93,7 +96,8 @@ function validateRefine(value: RefineSingleCallResult): string[] {
     return issues;
 }
 
-function validateRevision(value: RevisionSingleCallResult): string[] {
+/** 定向修订结果校验（导出供单测锁定「dimensions 必须是数组」） */
+export function validateRevision(value: RevisionSingleCallResult): string[] {
     const issues = validateFields(value as unknown as Record<string, unknown>, revisionContract.fields as never || []);
     if (!Array.isArray(value.dimensions)) issues.push('dimensions 必须是数组');
     if (!value.body || value.body.replace(/\s/g, '').length < 100) issues.push('修订正文过短或为空');
@@ -114,6 +118,8 @@ ${options?.writingRules ? `\n【写作规则】\n${options.writingRules}` : ''}
 1. 先内部检查原文的 AI 痕迹（排比、升华段、连续“然后/于是”、情绪直述等）。
 2. 直接基于检查结果重写完整正文：情节、人物、章节结构不变，只改表达。
 3. 输出 JSON，不解释。
+
+${HUMAN_VOICE_BLOCK}
 
 ${describeContract(deaiContract)}`;
 

@@ -13,7 +13,7 @@ const log = createLogger('SettingsMigrator');
  * 4. 新安装用户直接使用最新版本，不执行迁移
  */
 
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export { GITHUB_REPO_SLUG as DEFAULT_UPDATE_GITHUB_REPO } from './github-repo';
 
@@ -52,8 +52,10 @@ export interface VersionedData {
 
 type MigrationFn = (data: Record<string, unknown>) => Record<string, unknown>;
 
-const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [
-    {
+/** v4→v5 迁移时冻结旧观感所用的方案名（幂等判据） */
+const LEGACY_PRESET_NAME = '旧配色（v4.21）';
+
+const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [    {
         from: 0,
         to: 1,
         migrate: (data) => {
@@ -137,6 +139,75 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [
             };
             delete newData.hiddenPresets;
             return newData;
+        },
+    },
+    {
+        from: 4,
+        to: 5,
+        migrate: (data) => {
+            // v4.22 外观重构：颜色配置从 5 层（基底/面板/卡片/强调/文字 + 卡片开关）
+            // 收敛为 3 层（基底/卡片/强调）。旧的 panelBg / textPrimary /
+            // enableCustomCardBg 会把三层派生结果覆盖掉，表现为「改了还是老样子」。
+            //
+            // 处理策略：先把旧值冻结成一套命名方案存进 themePresets（用户可随时切回），
+            // 再删除这三个字段。这样既彻底收敛结构，又不丢用户现有观感。
+            const themeColors = (data.themeColors
+                && typeof data.themeColors === 'object'
+                && !Array.isArray(data.themeColors))
+                ? { ...(data.themeColors as Record<string, unknown>) }
+                : null;
+
+            if (!themeColors) {
+                return { ...data, schemaVersion: 5 };
+            }
+
+            const legacyKeys = ['panelBg', 'textPrimary', 'enableCustomCardBg'] as const;
+            const hasLegacy = legacyKeys.some(key => themeColors[key] !== undefined);
+
+            let themePresets = Array.isArray(data.themePresets)
+                ? [...(data.themePresets as unknown[])]
+                : [];
+
+            if (hasLegacy) {
+                const alreadyFrozen = themePresets.some(
+                    preset => preset
+                        && typeof preset === 'object'
+                        && (preset as { name?: unknown }).name === LEGACY_PRESET_NAME,
+                );
+                if (!alreadyFrozen) {
+                    // 冻结的是「旧观感」：把当时的实际生效值全部记下来
+                    const frozen: Record<string, unknown> = {
+                        id: `theme-legacy-${Date.now()}`,
+                        name: LEGACY_PRESET_NAME,
+                        createdAt: Date.now(),
+                    };
+                    if (typeof themeColors.appBg === 'string') frozen.base = themeColors.appBg;
+                    if (typeof themeColors.cardBg === 'string') frozen.card = themeColors.cardBg;
+                    if (typeof themeColors.panelBg === 'string') frozen.legacyPanel = themeColors.panelBg;
+                    if (typeof themeColors.accent === 'string') frozen.accent = themeColors.accent;
+                    if (typeof themeColors.textPrimary === 'string') frozen.text = themeColors.textPrimary;
+                    if (typeof themeColors.appearancePreset === 'string') frozen.preset = themeColors.appearancePreset;
+                    if (typeof data.theme === 'string') frozen.theme = data.theme;
+                    themePresets.push(frozen);
+                }
+            }
+
+            for (const key of legacyKeys) delete themeColors[key];
+            // 旧字段清掉后，activePresetId 若指向已不存在的方案则一并清掉
+            const stillValid = typeof themeColors.activePresetId === 'string'
+                && themePresets.some(
+                    preset => preset
+                        && typeof preset === 'object'
+                        && (preset as { id?: unknown }).id === themeColors.activePresetId,
+                );
+            if (!stillValid) delete themeColors.activePresetId;
+
+            return {
+                ...data,
+                schemaVersion: 5,
+                themeColors,
+                themePresets,
+            };
         },
     },
 ];

@@ -172,7 +172,7 @@ describe('PromptBuilder — 场景知识注入参与预算裁剪', () => {
         expect(user).not.toContain('【注入尾部标记】');
         expect(user).toContain('【已写内容】');
         expect(user).toContain('【写作方向】');
-        expect(user).toContain('请自然地续写一段');
+        expect(user).toContain('请自然地续写一个自然段');
     });
 
     it('不传预算时注入仍完整出现在 user', () => {
