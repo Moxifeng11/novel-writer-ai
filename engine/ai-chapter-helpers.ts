@@ -89,6 +89,9 @@ ${context.previousChapter ? `【前章内容】${context.previousChapter.slice(-
 
 【输出格式——严格遵循，不要额外解释】
 UPDATE_CHARACTER: [[角色]] | 当前状态 | 新值
+UPDATE_CHARACTER: [[角色]] | 修为等级 | 新值
+UPDATE_CHARACTER: [[角色]] | 当前位置 | 新值
+UPDATE_CHARACTER: [[角色]] | 所属势力 | 新值
 UPDATE_FORESHADOW: [[伏笔]] | 状态 | 已揭示
 NEW_CHARACTER: 角色名 | 角色描述
 NEW_LOCATION: 地名 | 地点描述

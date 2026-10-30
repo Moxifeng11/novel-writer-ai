@@ -213,12 +213,11 @@ export async function writeProjectBases(app: App, project: string): Promise<stri
     const written: string[] = [];
     for (const spec of buildProjectBases(project)) {
         const path = baseFilePath(project, spec.relativePath);
-        const existing = app.vault.getAbstractFileByPath(path);
-        if (existing instanceof TFile) {
-            await app.vault.modify(existing, spec.content);
-        } else {
-            await app.vault.create(path, spec.content);
-        }
+        // 必须走 adapter.write：`.看板/` 是以点开头的隐藏目录，Obsidian 的 vault 索引
+        // 不收录它，`getAbstractFileByPath` 永远返回 null → 第二次生成会走 vault.create
+        // 并以「File already exists」失败（实测：同一项目连跑两次必挂）。
+        // adapter 层不受 vault 索引限制，且 write 自带覆盖语义，天然幂等。
+        await adapter.write(path, spec.content);
         written.push(path);
     }
     return written;

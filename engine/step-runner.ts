@@ -54,6 +54,7 @@ import {
     parseCombinedPlanning,
 } from './planning-combined';
 import { createLogger } from '../shared/logger';
+import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
 import { createStepFailure, type StepFailureKind } from '../shared/execution-events';
 import { validateStepResult } from './step-validator';
 
@@ -826,6 +827,8 @@ export class StepRunner {
                 const extras: InjectionLedgerEntry[] = [];
                 const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
                 const meta = injector?.lastInjectionMeta;
+                // v4.21 成本观测：检索遥测在 if(meta) 之外也要用（本步成本行）
+                const ragTelemetry = meta?.retrieval;
                 if (meta) {
                     // v4.20 RAG 遥测并入账本：能看出检索了多少次、命中/邻块/去重/丢弃/缓存
                     const rag = meta.retrieval;
@@ -851,10 +854,20 @@ export class StepRunner {
                 const ledger = buildInjectionLedger(ctx.vars, {
                     extra: [...(baseLedger?.entries || []) as InjectionLedgerEntry[], ...extras],
                 });
+                // 本步成本（v4.21 成本观测）：模型 1 次调用 + 实际发生的嵌入调用（缓存未命中数）
+                // + 输入 token 估算。嵌入是长记忆维护之外的第二大隐性成本，必须可见。
+                const embeddingCalls = ragTelemetry ? Math.max(0, ragTelemetry.cacheMisses) : 0;
+                const costLine = [
+                    '模型调用 1 次（本步）',
+                    ragTelemetry && ragTelemetry.calls > 0
+                        ? `检索 ${ragTelemetry.queries} 次 · 嵌入 ${embeddingCalls} 次（缓存命中 ${ragTelemetry.cacheHits}/${ragTelemetry.cacheHits + ragTelemetry.cacheMisses}）`
+                        : '未触发知识检索',
+                    `输入 ~${ledger.totalEstTokens} token`,
+                ].filter(Boolean).join(' · ');
                 this.callbacks.onExecutionEvent?.({
                     type: 'prompt-ledger',
                     level: ledger.truncatedCount > 0 ? 'warning' : 'info',
-                    message: formatInjectionLedger(ledger),
+                    message: `${formatInjectionLedger(ledger)}\n【本步成本】${costLine}`,
                     stepKey,
                     stepLabel: currentStep.label,
                     debug: {
@@ -863,6 +876,11 @@ export class StepRunner {
                         truncatedCount: ledger.truncatedCount,
                         assemblyTruncated: promptAssembly.truncated,
                         droppedExtra: promptAssembly.droppedExtra,
+                        // 成本字段随事件走：时间线/日志可直接展示
+                        embeddingCalls,
+                        retrievalQueries: ragTelemetry?.queries ?? 0,
+                        cacheHits: ragTelemetry?.cacheHits ?? 0,
+                        cacheMisses: ragTelemetry?.cacheMisses ?? 0,
                         // 完整账本随事件走：时间线面板直接渲染表格
                         ledgerEntries: JSON.stringify(ledger.entries),
                     },
@@ -1254,22 +1272,43 @@ export class StepRunner {
         // 内存里的 stepResults['bodyGeneration'] 是剥掉 frontmatter 的纯正文，
         // 因此 step-settlement 里那条「status: settled」守卫永远不成立。
         // 这里直接读磁盘正文的 frontmatter 判断，避免对已结算章节重复追加。
+        const ledger = getExecutionLedger();
+        const runId = ledger.begin({
+            commandId: 'novel-writer-chapter-settlement',
+            project,
+            source: 'ui',
+            label: `${chapterName} 结算`,
+        });
         if (!options.force && await this.isChapterSettledOnDisk(project, chapDir, chapterName)) {
+            // 幂等跳过也要留痕：Agent 问「结算跑了吗」时能答「已结算过、本次跳过」
+            ledger.finish(runId, { status: 'done', detail: `${chapterName} 已是 settled，本次跳过` });
             stepCompleted.add('settlement');
             return;
         }
-        const result = await this.settlementPrimitive(
-            this.settlementHost(plugin),
-            project,
-            chapDir,
-            chapterName,
-            stepResults,
-            stepCompleted,
-            vars,
-            renderInContainer,
-            tabContent,
-            options,
-        );
+        let result: Awaited<ReturnType<StepRunner['settlementPrimitive']>> = null;
+        try {
+            result = await this.settlementPrimitive(
+                this.settlementHost(plugin),
+                project,
+                chapDir,
+                chapterName,
+                stepResults,
+                stepCompleted,
+                vars,
+                renderInContainer,
+                tabContent,
+                options,
+            );
+        } catch (e) {
+            ledger.finish(runId, {
+                status: 'failed',
+                failure: e instanceof Error ? e.message : String(e),
+            });
+            throw e;
+        }
+        ledger.finish(runId, result
+            ? { status: 'done', detail: `${chapterName} 回写完成`, settlement: summarizeSettlement(result) }
+            : { status: 'failed', failure: `${chapterName} 结算未产出结果（缺分析报告或已中断）` });
         if (result) {
             const chapterNum = parseInt(chapterName.match(/第(\d+)章/)?.[1] || '0', 10);
             await writeChapterStateSnapshot(this.app, {

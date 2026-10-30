@@ -14,6 +14,15 @@
 import { validateEmotionPlan } from './emotion-planner';
 import { validateSceneExpansion } from './scene-expander';
 
+/**
+ * 对话描写引号集合：中文弯引号“”/单引号‘’/直角引号「」『』/ASCII 双引号。
+ * 实测缺陷：写作规范产出中文弯引号，旧正则只认 ASCII " 与「」，
+ * 含 18 对对话的正文被判「缺少 对话描写」，一键成文在正文步直接中断。
+ */
+const DIALOGUE_QUOTE_CLASS = '[“”‘’「」『』"]';
+const DIALOGUE_PATTERN = new RegExp(`${DIALOGUE_QUOTE_CLASS}.+${DIALOGUE_QUOTE_CLASS}`);
+const DIALOGUE_TEST = new RegExp(DIALOGUE_QUOTE_CLASS);
+
 export type StepLevel = 'empty' | 'skeleton' | 'partial' | 'complete';
 
 export type StepValidationResult = {
@@ -62,7 +71,7 @@ export function normalizeStepMarkup(content: string): string {
 
 /** 标题编号前缀：一、 / （一） / 1. / 1、 / 第一节 / 第一部分（不匹配「第1章」） */
 const HEADING_NUMBER_PREFIX_RE =
-    /^(?:[（(]?[一二三四五六七八九十百]+[）)]?[、.．]\s*|\d+[、.．]\s*|第[一二三四五六七八九十百\d]+[节部分]\s*)/;
+    /^(?:[（(][一二三四五六七八九十百\d]+[）)]\s*|[（(]?[一二三四五六七八九十百]+[）)]?[、.．]\s*|\d+[、.．]\s*|第[一二三四五六七八九十百\d]+[节部分]\s*)/;
 
 function stripNumberingPrefix(text: string): string {
     return text.replace(HEADING_NUMBER_PREFIX_RE, '');
@@ -87,8 +96,16 @@ function isStructuralLabel(label: string): boolean {
 
 function stripHeadingNumbering(line: string): string {
     const heading = line.match(/^(#{1,6}\s*)(.*)$/);
-    if (heading) return heading[1] + stripNumberingPrefix(heading[2]);
+    if (heading) return heading[1] + stripHeadingDecoration(heading[2]);
     return line;
+}
+
+/** 去掉标题序号前缀与包裹符（`一、`/`【修改建议汇总】`/`（三）质量评估`） */
+function stripHeadingDecoration(text: string): string {
+    return stripNumberingPrefix(text)
+        .replace(/^[\s【\[（(]+/, '')
+        .replace(/[\s】\]）)]+$/, '')
+        .trim();
 }
 
 /**
@@ -487,7 +504,9 @@ function validateBodyGeneration(content: string, minWords = 2100): StepValidatio
     const required = [
         { key: '字数达标', pattern: wordCount >= minWords ? /./ : /^$/, desc: `${wordCount}/${minWords}字` },
         { key: '章节开头', pattern: /^#|^第.+章|^\s*第.+节/ },
-        { key: '对话描写', pattern: /[""「」].+[""」」]/ },
+        // 实测缺陷：写作规范输出中文弯引号“”，旧正则只认 ASCII " 与「」，
+        // 于是含 18 对对话的正文被判「缺少 对话描写」，一键成文中断在本步。
+        { key: '对话描写', pattern: DIALOGUE_PATTERN },
         { key: '完整结尾', pattern: /。\s*$|…\s*$|！\s*$|？\s*$/ },
     ];
 
@@ -566,7 +585,14 @@ function validateQualityControlMerged(content: string): StepValidationResult {
     }
 
     const extra = (hasSuggestions ? 10 : 0) + (hasCheckmarks ? 10 : 0);
-    return makeResult(found, sections.length, missing, extra);
+    const result = makeResult(found, sections.length, missing, extra);
+    // 三项必填模块齐全即视为完成：✅/建议 只是加分项，不应让「在、但没写建议」的
+    // 完整质控永远卡在 partial（实测：7013 字质控因缺一个【修改建议汇总】被判不完整，
+    // 且 missing 为空、用户看不到原因）。
+    if (found === sections.length && missing.length === 0) {
+        return { valid: true, missing: [], score: Math.max(85, result.score), level: 'complete' };
+    }
+    return result;
 }
 
 /**
@@ -579,7 +605,7 @@ function validateFixStep(content: string): StepValidationResult {
 
     const required = [
         { key: '字数达标（>=2000）', check: () => wordCount >= 2000 },
-        { key: '对话描写', check: () => /[""「」]/.test(pureText) },
+        { key: '对话描写', check: () => DIALOGUE_TEST.test(pureText) },
         { key: '叙事完整', check: () => /。/.test(pureText) && pureText.length > 500 },
     ];
 

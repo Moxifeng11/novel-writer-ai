@@ -18,6 +18,42 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.21.1',
+        date: '2026-10-31',
+        title: '执行登记表、RAG 评估基准与真实 AI 链路实测',
+        sections: [
+            {
+                type: 'added',
+                label: '🔁 Agent 长流程闭环',
+                items: [
+                    '新增执行登记表：成文/结算/导出/看板完成后记录状态、耗时与结算回写量',
+                    '新增 get_execution_status 工具：Agent 跑完长流程后主动核对结果再汇报',
+                    'run_command 改为可等待执行，派发即报错不再被吞',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🔎 RAG 评估',
+                items: [
+                    '新增 npm run eval:rag：hit@k / MRR / 近重复占比，可对检索结果做回归',
+                    '近重复用重叠系数判定，能识别「一段包住另一段」的分块重复',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🧪 真实链路实测修复',
+                items: [
+                    '中文弯引号对话被判「缺少对话描写」，一键成文每章都会中断在正文步',
+                    '质量控制标题带「一、」「【】」时结构校验误判，且缺失项为空看不到原因',
+                    '思考型模型返回空正文时整章中断：现同模型关闭思考重试一次',
+                    '后台整章异常被吞、跑满 15 分钟无反馈：现记录失败并提示',
+                    '一键成文与后台整章重复结算同一章：现磁盘已结算则跳过',
+                    '正文按标题重命名后无法再定位章节（提示「请先打开一个章节」）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.21.0',
         date: '2026-10-31',
         title: 'RAG 检索管线、Agent 会话运行时与 Obsidian 原生能力',

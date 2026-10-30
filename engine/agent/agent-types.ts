@@ -230,8 +230,8 @@ export interface GuideAgentPort {
     openChapter?(project: string, chapterName: string): boolean;
     /** 项目状态摘要（模式/结构/章节统计/最新章） */
     getProjectStatus?(project: string): Promise<AgentProjectStatus | null>;
-    /** 执行任意插件命令（命令面板全集） */
-    runCommand?(commandId: string): boolean;
+    /** 执行任意插件命令（命令面板全集）；长流程命令可返回 Promise（Agent 可等待派发结果） */
+    runCommand?(commandId: string): boolean | Promise<boolean>;
     /**
      * 高成本/破坏性命令的用户确认（吸收 dsh user-approval）。
      * 未提供时，这类命令会被直接拒绝，而不是静默执行。
@@ -244,4 +244,30 @@ export interface GuideAgentPort {
     readFile?(path: string, options?: { offset?: number; limit?: number }): Promise<AgentFileReadResult | null>;
     /** 在库内做关键词检索（只搜文本文件），返回命中的行 */
     searchVault?(query: string, options?: { limit?: number; folder?: string }): Promise<AgentVaultSearchHit[]>;
+    // ─── 长流程执行登记表（v4.21）───
+    /** 最近的命令执行记录（新→旧），供 Agent 汇报「刚才那次跑得怎么样」 */
+    getExecutionLedger?(limit?: number): AgentCommandRunRecord[];
+}
+
+/** 长流程执行记录（services/execution-ledger 的只读投影） */
+export interface AgentCommandRunRecord {
+    commandId: string;
+    label?: string;
+    project: string;
+    source: 'agent' | 'ui';
+    status: 'running' | 'done' | 'failed';
+    startedAt: number;
+    finishedAt?: number;
+    detail?: string;
+    failure?: string;
+    settlement?: {
+        updated: number;
+        created: number;
+        updatedForeshadows: number;
+        rejected: number;
+        missingEntities: number;
+        linkFieldWrites: number;
+        recordedBehaviors: number;
+        foreshadowLoop?: { pass: boolean; summary: string };
+    };
 }

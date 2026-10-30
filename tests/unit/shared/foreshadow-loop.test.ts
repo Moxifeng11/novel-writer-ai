@@ -73,3 +73,50 @@ describe('foreshadow-loop — 每章伏笔闭环核对', () => {
         expect(result.recycledCount).toBe(2);
     });
 });
+
+describe('verifyForeshadowLoop — 名字归一（真实项目回放发现）', () => {
+    it('中文弯引号被归一：「裴无极“记下名字”」能被「…记下名字…」覆盖', () => {
+        const result = verifyForeshadowLoop({
+            updates: [{ name: '锁脉环裂纹', value: '已埋设' }],
+            newForeshadows: ['裴无极让姜晚"记下名字"并远喊"三个月"'],
+            plan: { recycle: [], plant: ['裴无极“记下名字”'] },
+        });
+        expect(result.missingPlant).toEqual([]);
+    });
+
+    it('人工简写与模型描述差异被容忍：「姜晚的断口」vs「姜晚剑柄缠绳断口」', () => {
+        const result = verifyForeshadowLoop({
+            updates: [{ name: 'A', value: '推进' }],
+            newForeshadows: ['姜晚剑柄缠绳断口磨得起毛，拇指反复摩挲'],
+            plan: { recycle: [], plant: ['姜晚的断口'] },
+        });
+        expect(result.missingPlant).toEqual([]);
+    });
+
+    it('短名不做覆盖率放宽：「三个月」不会误配含「个月」的无关名称', () => {
+        const result = verifyForeshadowLoop({
+            updates: [{ name: 'A', value: '推进' }],
+            newForeshadows: ['三个月后矿道塌方的隐患'],
+            plan: { recycle: [], plant: ['“三个月”'] },
+        });
+        // 名称里确实含「三个月」，属于包含匹配，算覆盖
+        expect(result.missingPlant).toEqual([]);
+
+        const unrelated = verifyForeshadowLoop({
+            updates: [{ name: 'A', value: '推进' }],
+            newForeshadows: ['每个月的账册都要重抄一遍'],
+            plan: { recycle: [], plant: ['“三个月”'] },
+        });
+        expect(unrelated.missingPlant).toEqual(['“三个月”']);
+    });
+
+    it('真正缺失仍然报出（陆昭案关联：章纲要求埋设但报告没有）', () => {
+        const result = verifyForeshadowLoop({
+            updates: [{ name: '锁脉环裂纹', value: '已埋设' }],
+            newForeshadows: ['姜晚剑柄缠绳断口磨得起毛'],
+            plan: { recycle: [], plant: ['陆昭案关联'] },
+        });
+        expect(result.missingPlant).toEqual(['陆昭案关联']);
+        expect(result.pass).toBe(false);
+    });
+});

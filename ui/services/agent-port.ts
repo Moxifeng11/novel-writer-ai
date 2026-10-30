@@ -9,6 +9,7 @@ import { App, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import type {
     AgentChapterSummary,
+    AgentCommandRunRecord,
     AgentCommandSummary,
     AgentContext,
     AgentFileReadResult,
@@ -17,6 +18,7 @@ import type {
     GuideAgentPort,
 } from '../../engine/agent/agent-types';
 import { extractLineWindow, sanitizeVaultPath, summarizeHitLine } from '../../shared/file-path-guard';
+import { getExecutionLedger } from '../../services/execution-ledger';
 import { createLongNovelProject } from './project-create-service';
 import { StorySettingsModal } from '../story-settings-modal';
 import { OperationConfirmModal } from '../components/progress';
@@ -372,17 +374,36 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 return false;
             }
         },
-        runCommand: (commandId) => {
+        runCommand: async (commandId) => {
+            const ledger = getExecutionLedger();
+            const project = plugin.getActiveProject() || '';
             try {
                 // 只走插件自己的注册表：plugin.executeCommand 在未命中时会回退到
                 // Obsidian 命令系统，等于允许 Agent 执行任意第三方命令。
                 if (!plugin.registry.has(commandId)) {
                     log.warn('[AgentPort] 命令未在插件注册表:', commandId);
+                    ledger.recordFailed({
+                        commandId, project, source: 'agent', label: 'Agent 派发',
+                        failure: '命令未在插件注册表（可能 id 写错）',
+                    });
                     return false;
                 }
-                return plugin.executeCommand(commandId);
+                // 可等待版本：长流程命令的真实完成点会自己登记结果，
+                // 这里只捕获「派发即抛错」的情况。
+                const ok = await plugin.executeCommandAsync(commandId);
+                if (!ok) {
+                    ledger.recordFailed({
+                        commandId, project, source: 'agent', label: 'Agent 派发',
+                        failure: '命令执行抛错，详见开发者控制台',
+                    });
+                }
+                return ok;
             } catch (e) {
                 log.warn('[AgentPort] 执行命令失败:', commandId, e);
+                ledger.recordFailed({
+                    commandId, project, source: 'agent', label: 'Agent 派发',
+                    failure: e instanceof Error ? e.message : String(e),
+                });
                 new Notice(`执行命令 ${commandId} 失败`, 4000);
                 return false;
             }
@@ -430,6 +451,25 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 truncated: window.truncated,
                 size: file.stat.size,
             };
+        },
+        getExecutionLedger: (limit): AgentCommandRunRecord[] => {
+            try {
+                return getExecutionLedger().getRecent(limit).map(record => ({
+                    commandId: record.commandId,
+                    label: record.label,
+                    project: record.project,
+                    source: record.source,
+                    status: record.status,
+                    startedAt: record.startedAt,
+                    finishedAt: record.finishedAt,
+                    detail: record.detail,
+                    failure: record.failure,
+                    settlement: record.settlement,
+                }));
+            } catch (e) {
+                log.warn('[AgentPort] 读取执行登记表失败:', e);
+                return [];
+            }
         },
         searchVault: async (query, options): Promise<AgentVaultSearchHit[]> => {
             const needle = String(query || '').trim().toLowerCase();

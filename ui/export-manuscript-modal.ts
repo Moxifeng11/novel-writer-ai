@@ -21,6 +21,7 @@ import { getProjectMeta, findProjectCoverFile, loadProjectCover } from './projec
 import type { CreationMode } from '../shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '../shared/mode-content';
 import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
+import { getExecutionLedger } from '../services/execution-ledger';
 
 const log = createLogger('ExportManuscriptModal');
 
@@ -377,6 +378,14 @@ export class ExportManuscriptModal extends Modal {
             chapters: chapterCount,
             words: wordCount,
             mode: result.mode,
+        });
+        // 执行登记表：导出结果可被 Agent 的 get_execution_status 读到
+        getExecutionLedger().recordCompleted({
+            commandId: 'novel-writer-export-manuscript',
+            project: this.project,
+            source: 'ui',
+            label: `导出 ${this.format.toUpperCase()}`,
+            detail: `${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}`,
         });
         // 流程页用它标记「导出阶段完成」；只在真正成功时回调，取消/失败不算
         this.options.onExported?.();

@@ -1,6 +1,6 @@
 {
   "name": "novel-writer-ai",
-  "version": "4.21.0",
+  "version": "4.21.1",
   "description": "Obsidian plugin for AI-powered novel writing",
   "main": "main.js",
   "scripts": {
@@ -26,6 +26,7 @@
     "css:baseline": "node scripts/check-css.js --update-baseline",
     "inline:baseline": "node scripts/check-inline-styles.mjs --update-baseline",
     "eval:fingerprint": "node scripts/eval-fingerprint-retrieval.mjs",
+    "eval:rag": "node scripts/eval-rag-retrieval.mjs",
     "css:cleanup": "node scripts/cleanup-css.js",
     "css:stats": "node scripts/stats-css.js",
     "audit:deps": "npm audit --omit=dev --audit-level=high",

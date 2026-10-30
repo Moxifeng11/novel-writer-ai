@@ -1275,6 +1275,53 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(baseContent).toContain('name: "章节进度"');
     });
 
+    test('长流程执行登记表：命令跑完后 Agent 可读到结果', async () => {
+        const { page } = session;
+        // 复用面板用例已建好的项目（章节文件齐全，看板能生成）
+        const projectPath = '长篇小说/E2E面板项目';
+
+        const readRecords = () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, {
+                    getExecutionLedgerRecords(limit?: number): Array<Record<string, unknown>>;
+                }> } };
+            };
+            const plugin = host.app?.plugins?.plugins?.['novel-writer-ai'];
+            return plugin?.getExecutionLedgerRecords?.(10) ?? [];
+        });
+
+        const matching = (records: Array<Record<string, unknown>>) => records
+            .filter(record => record.commandId === 'novel-writer-generate-bases');
+
+        // 面板用例可能已经跑过一次同名命令：以「本次新增的记录」为准
+        const before = matching(await readRecords() as Array<Record<string, unknown>>).length;
+
+        await page.evaluate((project) => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, {
+                    setWorkbenchContext(ctx: unknown): void;
+                    registry?: { execute(id: string): unknown };
+                }> } };
+            };
+            const plugin = host.app?.plugins?.plugins?.['novel-writer-ai'];
+            plugin?.setWorkbenchContext({ project, volume: '', chapterName: '', chapterNum: 0, chapDir: '' });
+            plugin?.registry?.execute('novel-writer-generate-bases');
+        }, projectPath);
+
+        // 等到「本次新增的那条」进入完成态（写盘异步，先出现的是 running）
+        await expect.poll(async () => {
+            const records = matching(await readRecords() as Array<Record<string, unknown>>);
+            if (records.length <= before) return 'none';
+            return String(records[0]?.status ?? '');
+        }, { timeout: 20_000 }).toBe('done');
+
+        const records = matching(await readRecords() as Array<Record<string, unknown>>);
+        // 幂等回归：同一项目连跑两次都必须成功（.看板 是隐藏目录，走 vault API 会 File already exists）
+        expect(records.length).toBeGreaterThan(before);
+        expect(String(records[0]?.detail ?? '')).toContain('看板');
+        expect(records.every(record => record.status === 'done')).toBe(true);
+    });
+
     test('短篇：创建后落在创作流程页，单元工作台可写正文并回写状态', async () => {
         const { page } = session;
         const projectPath = '短篇小说/E2E短篇项目';

@@ -39,16 +39,49 @@ export interface ForeshadowLoopCheck {
 const RECYCLE_VALUE_RE = /揭示|推进|回收|触发|兑现/;
 
 function normalizeName(name: string): string {
-    return String(name || '').replace(/[\s【】\[\]«»《》"]/g, '').toLowerCase();
+    // 中文弯引号/直角引号必须一起去掉：真实章纲写「裴无极“记下名字”」，
+    // 只剥 ASCII 引号会让计划名与结算指令永远对不上（实测误报 missing）。
+    // 用 \u 转义写引号，避免源码编码差异把正则里的引号吃掉。
+    return String(name || '')
+        .replace(/[\s【】\[\]«»《》“”‘’「」『』"]/g, '')
+        .replace(/[\u201c\u201d\u2018\u2019\u300c\u300d\u300e\u300f"']/g, '')
+        .toLowerCase();
 }
 
-/** 计划名是否被结算侧覆盖（双向包含，容忍「黑色石头」vs「石头」这类差异） */
+/** 比较用名称：去掉「的/之/了」这类虚词，容忍「姜晚的断口」vs「姜晚剑柄缠绳断口」 */
+function compareForm(normalized: string): string {
+    return normalized.replace(/[的之了个着]/g, '');
+}
+
+/** 计划名的 2-gram 被实际名覆盖的比例（容忍「姜晚的断口」vs「姜晚剑柄缠绳断口」） */
+function bigramCoverage(plan: string, actual: string): number {
+    if (plan.length < 2) return actual.includes(plan) ? 1 : 0;
+    let hit = 0;
+    let total = 0;
+    for (let i = 0; i + 1 < plan.length; i++) {
+        total += 1;
+        if (actual.includes(plan.slice(i, i + 2))) hit += 1;
+    }
+    return total === 0 ? 0 : hit / total;
+}
+
+/** 相似名覆盖阈值：章纲名是人工简写，结算名是模型描述，允许一定差异 */
+const NAME_COVERAGE_THRESHOLD = 0.6;
+
+/** 计划名是否被结算侧覆盖（双向包含 + 2-gram 覆盖，容忍人工简写与模型描述的差异） */
 function nameCovered(planName: string, actualNames: string[]): boolean {
     const plan = normalizeName(planName);
     if (!plan) return true;
+    const planCmp = compareForm(plan);
     return actualNames.some((actual) => {
         const value = normalizeName(actual);
-        return value.includes(plan) || plan.includes(value);
+        if (!value) return false;
+        if (value.includes(plan) || plan.includes(value)) return true;
+        const valueCmp = compareForm(value);
+        if (valueCmp.includes(planCmp) || planCmp.includes(valueCmp)) return true;
+        // 短名（≤2 字）不做覆盖率判断，避免「三个月」误配任意含「个月」的名称
+        if (planCmp.length <= 2) return false;
+        return bigramCoverage(planCmp, valueCmp) >= NAME_COVERAGE_THRESHOLD;
     });
 }
 

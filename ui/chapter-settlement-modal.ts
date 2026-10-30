@@ -8,6 +8,7 @@ import { SettlementEngine } from '../engine/settlement-engine';
 import { writeChapterStateSnapshot } from '../engine/chapter-state-snapshot-service';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { createLogger } from '../shared/logger';
+import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
 
 
 const log = createLogger('ChapterSettlementModal');
@@ -143,7 +144,26 @@ export class ChapterSettlementModal extends Modal {
         }
 
         const report = await this.app.vault.read(reportFile);
-        const result = await this.settlementEngine.settle(target.project, target.chapDir, target.chapName, report, bodyText);
+        const ledger = getExecutionLedger();
+        const runId = ledger.begin({
+            commandId: 'novel-writer-chapter-settlement',
+            project: target.project,
+            source: 'ui',
+            label: `${target.chapName} 结算`,
+        });
+        let result;
+        try {
+            result = await this.settlementEngine.settle(target.project, target.chapDir, target.chapName, report, bodyText);
+        } catch (e) {
+            ledger.finish(runId, { status: 'failed', failure: e instanceof Error ? e.message : String(e) });
+            throw e;
+        }
+        // 执行登记表：Agent 通过 get_execution_status 读取本次结算回写量
+        ledger.finish(runId, {
+            status: 'done',
+            detail: `${target.chapName} 结算表已写入`,
+            settlement: summarizeSettlement(result),
+        });
 
         const totalUpdated = result.updated;
         const totalCreated = result.createdChars + result.createdLocs + result.createdFactions + result.createdItems + result.createdForeshadows + result.createdTimelines;
@@ -166,6 +186,14 @@ export class ChapterSettlementModal extends Modal {
             target.chapName,
             bodyText
         );
+        getExecutionLedger().recordCompleted({
+            commandId: 'novel-writer-chapter-settlement-light',
+            project: target.project,
+            source: 'ui',
+            label: `${target.chapName} 轻量结算`,
+            detail: '无分析报告，基于正文 frontmatter 的轻量结算',
+            settlement: summarizeSettlement(lightResult),
+        });
 
         const summary = this.buildLightSummary(target, wordCount, excerpt, trimmed.length > 240, lightResult);
         await this.writeSettlementFile(target, summary);

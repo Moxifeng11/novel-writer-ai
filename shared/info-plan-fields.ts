@@ -32,13 +32,17 @@ const EMPTY_FIELDS: InfoPlanFields = {
     foreshadowPlant: [],
 };
 
-/** 取 `## 标题` 小节正文（到下一个 `##` 或文件尾）；行扫描实现，避免多行模式下 $ 语义陷阱 */
+/**
+ * 取小节正文（到下一个同级小节或文件尾）。
+ * 兼容两种存量写法：`## 伏笔操作` 标题，以及 `**伏笔操作（本章埋设）**：` 加粗行。
+ * 旧版信息规划模板用的是加粗行，只认 `##` 会让这些项目解析出空字段（章纲约束静默失效）。
+ */
 function extractSection(content: string, title: string): string {
     const lines = String(content || '').replace(/\r\n/g, '\n').split('\n');
-    const titlePattern = new RegExp(`^##\\s*${title}`);
+    const titlePattern = new RegExp(`^(?:#{2,4}\\s*|\\*\\*)\\s*${title}`);
     const start = lines.findIndex((line) => titlePattern.test(line));
     if (start < 0) return '';
-    const end = lines.findIndex((line, index) => index > start && /^##\s/.test(line));
+    const end = lines.findIndex((line, index) => index > start && /^(?:#{2,4}\s|\*\*)/.test(line));
     return (end < 0 ? lines.slice(start) : lines.slice(start, end)).join('\n');
 }
 
@@ -64,6 +68,24 @@ function splitNames(raw: string): string[] {
     return names;
 }
 
+/** 表格兜底：取 markdown 表格第一列（跳过表头与分隔行）；旧版伏笔操作是表格写法 */
+function readTableFirstColumn(section: string): string[] {
+    const names: string[] = [];
+    for (const line of section.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('|')) continue;
+        // 分隔行（|---|:--:|）没有内容
+        if (/^\|[\s:|-]+\|?$/.test(trimmed)) continue;
+        const cells = trimmed.split('|').map((cell) => cell.trim());
+        // cells[0] 是首个竖线之前的空串
+        const first = (cells[1] || '').replace(/^[*_`]+|[*_`]+$/g, '').trim();
+        if (!first) continue;
+        if (/^(伏笔|名称|字段|项目)$/.test(first)) continue;
+        names.push(first);
+    }
+    return names;
+}
+
 /**
  * 从信息规划正文解析结构化字段。
  * 旧版信息规划没有这几个小节时全部返回空串——调用方按「字段缺失」处理，
@@ -79,14 +101,16 @@ export function parseInfoPlanFields(content: string): InfoPlanFields {
 
     const recycleRaw = readListItem(foreshadowSection, '需回收的旧伏笔');
     const plantRaw = readListItem(foreshadowSection, '需埋下的新伏笔');
+    const tableNames = readTableFirstColumn(foreshadowSection);
 
+    // 列表写法优先；旧版表格写法兜底（表格里只有「本章埋设」，即 plant 侧）
     return {
         prevTail: readListItem(carrySection, '上一章末句'),
         carryElement: readListItem(carrySection, '本章首句承接方式'),
         hookType: readListItem(hookSection, '钩子类型'),
         hookContent: readListItem(hookSection, '钩子内容'),
-        foreshadowRecycle: splitNames(recycleRaw),
-        foreshadowPlant: splitNames(plantRaw),
+        foreshadowRecycle: recycleRaw ? splitNames(recycleRaw) : [],
+        foreshadowPlant: plantRaw ? splitNames(plantRaw) : tableNames,
     };
 }
 

@@ -1,6 +1,6 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.21.0
+> **版本**: v4.21.1
 > **最后更新**: 2026-10-27  
 > **状态**: 活跃可信 · 与代码同步
 
@@ -548,6 +548,20 @@ export interface FileSystemPort {
 | token 计量 | `harness-engine.ts` | `derive()` 字符 ÷1.5 估算上下文 token + 按模型 `maxContext` 算窗口占用，工作台遥测显示「上下文 / 窗口 / 落盘」 |
 
 路径守卫（`shared/file-path-guard.ts`）是纯函数：拒绝绝对路径、盘符、`..`、隐藏目录（`.sessions/` 除外）、控制字符；行窗口同时受行数与字符数约束，翻页越界返回空窗口而不是重复末行。
+
+### 4.8 执行登记表（services/execution-ledger.ts）
+
+`run_command` 派发长流程后，旧实现只有 boolean 出口（`main.ts` 的 `executeCommand` fire-and-forget），结算的 `SettlementResult` 三条路径用完即弃。登记表是**插件级内存表**（上限 20 条），与 `FullWriterView` 私有的 `ExecutionRunStore` 解耦——后者只服务单视图 UI，engine/Agent 触达不到。
+
+| 组件 | 位置 | 职责 |
+|------|------|------|
+| `ExecutionLedger` | `services/execution-ledger.ts` | `begin/finish/recordCompleted/recordFailed`；`getRecent/getRunning` 返回副本 |
+| `summarizeSettlement()` | 同上 | `SettlementResult` → 8 个计数 + 伏笔闭环结论 |
+| 完成点埋点 | 写章弹窗 / 结算弹窗（完整+轻量）/ `step-runner` 步骤式结算 / 导出 / 看板生成 | 成功与失败都留痕；已 settled 的幂等跳过也登记 |
+| `getExecutionLedger()` | `ui/services/agent-port.ts` | 端口读取，供 `get_execution_status` 工具 |
+| `executeCommandAsync()` | `main.ts` | 可等待的命令执行，Agent 能区分「派发成功」与「立刻抛错」 |
+
+**RAG 检索质量评估**：`shared/rag/eval-score.ts`（hit@k / MRR / 近重复占比）+ `scripts/eval-rag-retrieval.mjs`（`npm run eval:rag`）。近重复用重叠系数而非 Jaccard，因为重叠分块的重复是「一段包住另一段」。
 
 ### 5. 知识库系统（services/ + engine/）
 

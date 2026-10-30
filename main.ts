@@ -4,6 +4,7 @@ import { AIEngine } from './engine/ai-engine';
 import { CoWriterEngine } from './engine/co-writer-engine';
 import { ContextManager } from './engine/context-manager';
 import { ForeshadowManager } from './services/foreshadow-manager';
+import { getExecutionLedger } from './services/execution-ledger';
 import { ReviewAgent } from './engine/review-agent';
 import { NovelWriterSettingTab } from './ui/settings-tab';
 import { CreateProjectModal } from './ui/create-project-modal';
@@ -1066,7 +1067,9 @@ export default class NovelWriterPlugin extends Plugin {
      */
     private parseChapterFromPath(path: string): { project: string; volume: string; chapterNum: number; chapterName: string } | null {
         if (!path) return null;
-        const m = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第(\d+)卷)\/第(\d+)章_正文\.md$/);
+        // 正文文件名可能被 BodyWriter 按标题重命名（第Y章_标题_正文.md），
+        // 旧正则只认「第Y章_正文.md」，导致重命名后协同写作拿不到章节上下文。
+        const m = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第(\d+)卷)\/第(\d+)章(?:_[^/]*)?_正文\.md$/);
         if (!m) return null;
         const project = m[1];
         const volume = m[2];
@@ -1267,6 +1270,32 @@ export default class NovelWriterPlugin extends Plugin {
         // 临时兼容桥：registry 中不存在时 fallback 到 Obsidian 命令系统
         log.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
         return this.app.commands.executeCommandById(commandId);
+    }
+
+    /** 最近的长流程执行记录（诊断/E2E/Agent 端口共用；新→旧） */
+    getExecutionLedgerRecords(limit = 20): Array<Record<string, unknown>> {
+        return getExecutionLedger().getRecent(limit) as unknown as Array<Record<string, unknown>>;
+    }
+
+    /**
+     * 可等待的命令执行（Agent 长流程用）。
+     *
+     * executeCommand 是 fire-and-forget（UI 点击不需要等），Agent 却必须知道
+     * 「派发成功还是立刻抛错」。这里对 registry 命令 await 真实完成，
+     * 未注册的命令仍走 Obsidian 路由（同步派发，无法等待）。
+     */
+    async executeCommandAsync(commandId: string): Promise<boolean> {
+        if (this.registry.has(commandId)) {
+            try {
+                await this.registry.execute(commandId);
+                return true;
+            } catch (err) {
+                log.error('[小说工坊] Registry 执行失败:', err);
+                return false;
+            }
+        }
+        log.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
+        return this.app.commands.executeCommandById(commandId) === true;
     }
 
 

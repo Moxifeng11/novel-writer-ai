@@ -42,6 +42,13 @@ export default defineConfig({
       testMatch: /obsidian-plugin\.spec\.ts/,
     },
 
+    /* 真实 AI 链路：打开真实 vault、消耗 API 额度，默认跳过（需 E2E_REAL_AI=1） */
+    {
+      name: 'real-ai',
+      testMatch: /real-ai\.spec\.ts/,
+      timeout: 55 * 60_000,
+    },
+
     /* 浏览器模拟链路已停用，保留 skip 的存量用例用于后续迁移 */
     {
       name: 'legacy-browser',

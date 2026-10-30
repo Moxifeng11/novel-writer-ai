@@ -1,5 +1,39 @@
 # Changelog
 
+## v4.21.1（2026-10-31）
+
+### 🔁 执行登记表（Agent 长流程闭环）+ RAG 评估基准 + 真实数据校准
+- **执行登记表**（`services/execution-ledger.ts`）：插件级内存登记表（最多 20 条），记录长流程的「命令/项目/状态/耗时/失败原因/结算回写量」。此前 `run_command` 只有 boolean 出口（`main.ts` fire-and-forget），结算的 `SettlementResult` 三条路径用完即弃，Agent 只能回「请去界面看」。
+- **完成点埋点**：一键成文（写章弹窗结算后）、章节结算弹窗（完整 + 轻量）、步骤式结算（`step-runner`，含幂等跳过的留痕）、导出成稿、生成看板——各自记录结构化结果；失败路径同样留痕。
+- **Agent 可读**：新增工具 `get_execution_status`（状态/耗时/失败原因/更新·新建·搁置·拒绝字段·链接化·出场记录·伏笔闭环），端口新增 `getExecutionLedger`；`run_command` 改为 `await plugin.executeCommandAsync()`，派发即抛错的情况能被捕获并登记；引导策略补一条「长流程完成后主动查结果再汇报」。
+- **RAG 评估基准**：新增 `npm run eval:rag`（hit@k / MRR / **近重复占比**），评分逻辑下沉到 `shared/rag/eval-score.ts` 纯函数并进单测。近重复用**重叠系数**而非 Jaccard——重叠分块产生的重复是「一段包住另一段」，Jaccard 会因长度差把 0.95 压到 0.7。
+- **真实项目校准（九霄逆脉行，只读盘）暴露并修复 3 个真实缺陷**：
+  1. **存量信息规划解析为空**：旧模板用 `**伏笔操作（本章埋设）**：` 加粗行 + 表格，`parseInfoPlanFields` 只认 `## 标题`，导致章纲硬要求注入块为空、伏笔计划恒为 `[]`——数据级反 AI 约束在存量项目上**静默失效**。现兼容加粗小节与表格第一列。
+  2. **伏笔闭环误报**：字段恢复后 5 条计划伏笔里 4 条被判「未埋设」，实际报告里都有，只是名字不同（`裴无极“记下名字”` vs `裴无极让姜晚"记下名字"并远喊"三个月"`）。根因是中文弯引号未归一 + 人工简写与模型描述不匹配。现归一中文引号、去虚词、2-gram 覆盖率 ≥0.6 视为覆盖；真实缺失（`陆昭案关联`，项目自己的质检也标了 `CRITICAL_FAIL`）仍正确报出。
+  3. **看板生成不幂等**：`.看板/` 是点开头隐藏目录，Obsidian vault 索引不收录 → `getAbstractFileByPath` 恒为 null，第二次生成走 `vault.create` 报 `File already exists`。改用 `adapter.write` 覆盖写。
+- **分析报告协议补字段**：`UPDATE_CHARACTER` 增加 `修为等级`/`当前位置`/`所属势力`、`UPDATE_ITEM` 增加 `当前状态` 的显式示例与强制规则——真实项目 8 个人物 **0 个**有这些字段，实体图谱因此长期为空（v4.20 只补了白名单，上游协议没产出）。
+- **成本观测**：注入溯源的 `prompt-ledger` 增加「本步成本」行（模型 1 次调用 + 嵌入实际调用数/缓存命中 + 输入 token），事件 `debug` 同步带 `embeddingCalls`/`retrievalQueries`/`cacheHits`/`cacheMisses`。
+- **验证**：单测 **455 文件 / 5314 用例**（+43：execution-ledger 14、get_execution_status 6、eval-score 14、存量为旧解析/引号归一 9）；真实 Obsidian E2E **23 passed / 11 skipped**（新增执行登记表 1 条，且**同一项目连跑两次看板**验证幂等）；lint / check:templates / check:css / check:inline-styles / check:deps / check-engines / build / check:release 全绿。
+
+### 🧪 真实 AI 链路实测（第2章一键成文，发现并修复 6 个缺陷）
+用真实项目 `九霄逆脉行` 第2章跑通一键成文，产物全部读盘核对：
+- **正文**：`第2章_锁痕_正文.md` 2904 字（`word_count: 2894`），标题由模型自拟并回写文件名。
+- **规划链**：信息规划/大纲摘要/情绪规划/Scene 展开全部产出真实内容（情绪规划 7300 字、Scene 展开 16574 字）。
+- **结算**：更新 13 项、新建 16 项、出场记录 6 条、归属链接化 4 条，伏笔闭环 **通过**（回收 2、埋设 5）；`出场记录.md`、`结算表.md`、`叙事总览.md`、`章节状态快照`、伏笔库（+923 字）全部落盘。
+- **实体字段**：`当前位置` 写入 3 个人物、`修为等级` 写入沈砚（此前 8 个人物 0 个有这些字段）——v4.21 补的「分析报告字段示例」在真实模型上生效。
+- **注入溯源**：单步 62–63 段 / 87,230 字符 / ~58,166 token（信息规划）、84,151 字符 / ~56,116 token（大纲摘要），无截断段。
+- **成本**：`embeddingCalls=0`——该项目的写作知识库没有拆解参考书，RAG 管线在真实链路中未被触发（已记入遗留）。
+
+实测暴露并修复的 6 个缺陷：
+1. **正文对话校验误判（每章必中）**：写作规范输出中文弯引号“”，`validateBodyGeneration` 只认 ASCII `"` 与「」，含 18 对对话的 2682 字正文被判「缺少 对话描写」，一键成文中断在正文步。改为统一 `DIALOGUE_PATTERN`（弯引号/单引号/直角引号/ASCII）。
+2. **质量控制校验误判**：真实输出用 `## 一、写作技法检查`、`## 【修改建议汇总】`，校验器只认 `## 关键词`；且三项必填齐全但缺一个加分项时 85 分阈值永远达不到，`missing` 还是空的（用户看不到原因）。现规范化中文序号与包裹符，并在三项必填齐全时判完成（加分项只影响分数）。
+3. **模型空返回导致整章中断**：思考型模型偶尔把预算全花在 reasoning、正文为空且 `finish_reason=stop`，旧实现直接判「AI返回为空」→ 步骤报错 → 章节中断。现对同模型**关闭思考重试一次**（流式与非流式都有）。
+4. **后台整章异常被吞**：`runBackground` 由命令层 fire-and-forget 触发，异常不会上报，实测「跑满 15 分钟毫无反应」。现 try/catch → 执行登记表记 failed + 界面提示。
+5. **同一章重复结算**：一键成文（StepRunner）与后台整章会先后跑到同一章，各自无条件 `settle` → 实体更新重复、`status` 在 settled/written 之间来回翻。现后台整章加「磁盘已 settled 则跳过」幂等守卫。
+6. **按标题重命名后章节反解失败**：正文被重命名为 `第2章_锁痕_正文.md` 后，`openChapterByPath` 与 `parseChapterFromPath` 的正则要求「第N章_正文.md」紧贴，导致「请先打开一个章节」。现按 `第N章` 前缀反解，兼容 `第N章_标题_正文.md`。
+- **新增真实链路专用用例** `tests/e2e/real-ai.spec.ts`（playwright project `real-ai`）：默认 skip，需 `E2E_REAL_AI=1` 才打开真实 vault；自动跑一键成文→轮询终态→读盘核对→输出 `test-results/real-ai-observations.json`；卡在规划步会降级到后台整章，正文已达标则不重复生成。
+- **验证**：单测 **456 文件 / 5319 用例**（+5：真实输出格式兼容）；常规 E2E 23 条；lint / check:templates / check:css / check:inline-styles / check:deps / check-engines / build / check:release 全绿。
+
 ## v4.21.0（2026-10-31）
 
 ### 🔎 RAG 检索管线 + Agent 会话运行时（dsh 能力补齐）

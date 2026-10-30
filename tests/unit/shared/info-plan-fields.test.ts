@@ -83,3 +83,51 @@ describe('info-plan-fields — 提示词块格式化', () => {
         expect(block).not.toContain('开头承接');
     });
 });
+
+describe('parseInfoPlanFields — 存量信息规划的兼容解析（真实项目回放发现）', () => {
+    // 真实项目 九霄逆脉行 的信息规划用的是加粗小节 + markdown 表格，
+    // 只认 `## 标题` 会让章纲硬要求整段解析为空、约束静默失效。
+    const LEGACY = [
+        '**伏笔操作（本章埋设）**：',
+        '| 伏笔 | 埋设方式 | 后续激活点预估 |',
+        '|---|---|---|',
+        '| 锁脉环裂纹 | 场景3扣环时暗示结构缺陷 | 第3-5章 |',
+        '| “三个月” | 场景4裴无极突然出声 | 第2章 |',
+        '',
+        '**关系推进**：',
+        '- **沈砚→沈铁山**：从隐忍到受辱。',
+    ].join('\n');
+
+    it('加粗小节标题也能取到正文（不再返回空）', () => {
+        const fields = parseInfoPlanFields(LEGACY);
+        expect(fields.foreshadowPlant).toEqual(['锁脉环裂纹', '“三个月”']);
+    });
+
+    it('表格第一列作为埋设伏笔；表头与分隔行被跳过', () => {
+        const fields = parseInfoPlanFields(LEGACY);
+        expect(fields.foreshadowPlant).not.toContain('伏笔');
+        expect(fields.foreshadowRecycle).toEqual([]);
+    });
+
+    it('加粗小节在下一个加粗小节处结束（不把关系推进算进伏笔）', () => {
+        const fields = parseInfoPlanFields(LEGACY);
+        expect(fields.foreshadowPlant.some((name) => name.includes('沈砚'))).toBe(false);
+    });
+
+    it('列表写法仍然优先于表格兜底', () => {
+        const mixed = [
+            '## 伏笔操作',
+            '- 需埋下的新伏笔：守卫的徽记、断刃',
+            '| 表格 | 不该 | 生效 |',
+            '|---|---|---|',
+            '| 表格名 | x | y |',
+        ].join('\n');
+        expect(parseInfoPlanFields(mixed).foreshadowPlant).toEqual(['守卫的徽记', '断刃']);
+    });
+
+    it('加粗标题能生成章纲硬要求块（存量项目恢复约束）', () => {
+        const block = formatInfoPlanPromptBlock(parseInfoPlanFields(LEGACY));
+        expect(block).not.toBe('');
+        expect(block).toContain('锁脉环裂纹');
+    });
+});

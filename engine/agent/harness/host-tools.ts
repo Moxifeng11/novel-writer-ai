@@ -664,6 +664,61 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         },
     });
 
+    // ─── 长流程执行结果（v4.21：run_command 之后的闭环）───
+    tools.push({
+        name: 'get_execution_status',
+        description: '查询最近的长流程执行结果（一键成文/章节结算/导出/看板等）：状态、耗时、失败原因、结算回写量（更新/新建/搁置/伏笔闭环）。用 run_command 触发过长流程后必须调用它核对结果，再向用户汇报进展，不要只说「请去界面查看」。',
+        parameters: {
+            limit: { type: 'number', description: '返回条数（默认 5，最多 20）' },
+            project: { type: 'string', description: '只看某个项目（可留空看全部）' },
+        },
+        required: [],
+        sideEffect: 'none', timeoutMs: 5_000,
+        execute: async (args, toolCtx) => {
+            if (!port.getExecutionLedger) return { ok: false, content: '当前环境不支持读取执行记录' };
+            const limit = clampInt(args.limit, 1, 20, 5);
+            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const project = typeof args.project === 'string' && args.project.trim()
+                ? resolveProject(args, mem, ctx)
+                : '';
+            const records = port.getExecutionLedger(limit).filter(record => !project || record.project === project);
+            if (records.length === 0) {
+                return {
+                    ok: true,
+                    content: project
+                        ? `「${project}」还没有长流程执行记录。若刚用 run_command 触发过，可能仍在运行或该命令不需要登记（如纯界面跳转）。`
+                        : '还没有长流程执行记录。批量生成/结算/导出完成后会自动登记。',
+                };
+            }
+            const lines = records.map((record, index) => {
+                const statusText = record.status === 'running' ? '进行中' : record.status === 'done' ? '完成' : '失败';
+                const duration = typeof record.finishedAt === 'number'
+                    ? `，耗时 ${Math.max(1, Math.round((record.finishedAt - record.startedAt) / 1000))}s`
+                    : '';
+                const head = `${index + 1}. [${statusText}] ${record.label || record.commandId}${record.project ? ` · ${record.project}` : ''}${duration}`;
+                const extras: string[] = [];
+                if (record.detail) extras.push(record.detail);
+                if (record.failure) extras.push(`失败原因：${record.failure}`);
+                if (record.settlement) {
+                    const s = record.settlement;
+                    const parts = [`更新 ${s.updated}`, `新建 ${s.created}`, `伏笔推进 ${s.updatedForeshadows}`];
+                    if (s.missingEntities > 0) parts.push(`搁置 ${s.missingEntities}`);
+                    if (s.rejected > 0) parts.push(`拒绝字段 ${s.rejected}`);
+                    if (s.linkFieldWrites > 0) parts.push(`链接化 ${s.linkFieldWrites}`);
+                    if (s.recordedBehaviors > 0) parts.push(`出场记录 ${s.recordedBehaviors}`);
+                    if (s.foreshadowLoop) parts.push(`伏笔闭环${s.foreshadowLoop.pass ? '通过' : '未通过：' + s.foreshadowLoop.summary}`);
+                    extras.push(`结算：${parts.join('、')}`);
+                }
+                return extras.length > 0 ? `${head}\n   ${extras.join('；')}` : head;
+            });
+            return {
+                ok: true,
+                content: `最近 ${records.length} 条长流程记录：\n${lines.join('\n')}`,
+                data: { count: records.length },
+            };
+        },
+    });
+
     // ─── 全功能命令 ───
     tools.push({
         name: 'list_commands',
@@ -742,11 +797,11 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
                     };
                 }
             }
-            const ok = port.runCommand(commandId);
+            const ok = await Promise.resolve(port.runCommand(commandId));
             return {
                 ok,
                 content: ok
-                    ? `已执行命令 ${commandId}${args.reason ? `（${String(args.reason)}）` : ''}；如命令打开了弹窗或开始生成交互，请提示用户在对应界面继续操作。`
+                    ? `已执行命令 ${commandId}${args.reason ? `（${String(args.reason)}）` : ''}；长流程（成文/结算/导出）的真实结果稍后用 get_execution_status 查询，不要只说「请去界面看」。`
                     : `命令 ${commandId} 执行失败；请用 list_commands 确认 ID 后重试`,
             };
         },

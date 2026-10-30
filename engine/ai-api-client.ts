@@ -539,6 +539,11 @@ export class AIApiClient {
             // finish_reason=length 时在模型上限内自动扩容重试一次，避免 4096 静态预算白丢一次生成
             let attemptMaxTokens = finalMaxTokens;
             let expandedForTruncation = false;
+            // 思考型模型偶尔把预算全花在 reasoning 上、正文为空但 finish_reason=stop；
+            // 这种请求重试同模型（关闭思考）比直接切模型更可能救回来（真实链路实测）。
+            let thinkingRetryUsed = false;
+            let thinkingExtraAttempts = 0;
+            let attemptThinkingMode = options?.thinkingMode;
 
             const isSwitch = triedModels.length > 0;
 
@@ -578,7 +583,7 @@ export class AIApiClient {
             const maxRetries = this.resolveMaxRetries(endpoint);
             // 本地端点只重试 1 次，但截断扩容不应被重试上限吃掉：单独放宽 1 次
             let truncationExtraAttempts = 0;
-            for (let attempt = 0; attempt < maxRetries + truncationExtraAttempts; attempt++) {
+            for (let attempt = 0; attempt < maxRetries + truncationExtraAttempts + thinkingExtraAttempts; attempt++) {
                 let ac: AbortController | null = null;
                 let timer: ReturnType<typeof setTimeout> | null = null;
                 // v6.3: 外部 abort（用户连按 Tab）联动内部 abort，真正中断 fetch。
@@ -604,7 +609,7 @@ export class AIApiClient {
                         false,
                         options?.numCtx,
                         endpoint,
-                        options?.thinkingMode,
+                        attemptThinkingMode,
                         options?.thinkingBudget,
                         apiFormat,
                     );
@@ -729,6 +734,14 @@ export class AIApiClient {
                     }
 
                     if (!content) {
+                        // 空正文 + 正常结束 + 思考开启：先关思考重试一次（不占用模型切换名额）
+                        if (!isLengthTruncated && !thinkingRetryUsed && attemptThinkingMode === 'on') {
+                            thinkingRetryUsed = true;
+                            thinkingExtraAttempts = 1;
+                            attemptThinkingMode = 'off';
+                            log.info(`[小说工坊] ${currentModel} 返回空正文（finish_reason=stop，疑似思考占满预算），关闭思考重试一次`);
+                            continue;
+                        }
                         if (fallbackModels.length > triedModels.length) {
                             lastError = `AI返回为空 (${currentModel})`;
                             log.info(`[小说工坊] ${currentModel} 返回空内容，尝试下一个模型`);
@@ -924,6 +937,9 @@ export class AIApiClient {
                 // 同 nativeStreamIterator：思考占满预算时正文为空，需在模型上限内扩容重试
                 let attemptMaxTokens = finalMaxTokens;
                 let expandedForTruncation = false;
+                // 与非流式同源：空正文 + 正常结束 → 关思考重试一次
+                let streamThinkingRetryUsed = false;
+                let streamAttemptThinkingMode = options?.thinkingMode;
 
                 const isSwitch = triedModels.length > 0;
 
@@ -964,7 +980,7 @@ export class AIApiClient {
                             true,
                             options?.numCtx,
                             endpoint,
-                            options?.thinkingMode,
+                            streamAttemptThinkingMode,
                             options?.thinkingBudget,
                             apiFormat,
                         );
@@ -1112,6 +1128,17 @@ export class AIApiClient {
                                     attempt -= 1;
                                     continue;
                                 }
+                            }
+                            if (
+                                streamFinishReason !== 'length'
+                                && !streamThinkingRetryUsed
+                                && streamAttemptThinkingMode === 'on'
+                            ) {
+                                streamThinkingRetryUsed = true;
+                                streamAttemptThinkingMode = 'off';
+                                attempt -= 1;
+                                log.info(`[小说工坊] ${currentModel} 流式空正文（finish_reason=${streamFinishReason || 'stop'}，疑似思考占满预算），关闭思考重试一次`);
+                                continue;
                             }
                             if (fallbackModels.length > triedModels.length) {
                                 lastError = `AI流式返回为空 (${currentModel})`;

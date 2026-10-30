@@ -33,6 +33,7 @@ import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { buildStepFrontmatter } from '../shared/step-frontmatter';
 import { BodyWriter } from '../engine/body-writer';
 import { createLogger } from '../shared/logger';
+import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
 
 
 const log = createLogger('WriteChapterModal');
@@ -119,11 +120,36 @@ export class WriteChapterModal extends Modal {
         const aiEngine = plugin.aiEngine;
         const reviewAgent = plugin.reviewAgent;
 
-        await WriteChapterModal.doWriteChapter(
-            app, plugin, aiEngine, reviewAgent,
-            target.project, target.volume, target.chapterName, target.chapterNum,
-            pjStepDir(target.project, volN, target.chapterNum), false
-        );
+        // 后台整章由命令层 fire-and-forget 触发，异常若不上报就会「跑满 15 分钟毫无反应」
+        // （实测：模型返回空内容时正是如此）。这里兜住并把失败写进执行登记表 + 提示。
+        const ledger = getExecutionLedger();
+        const runId = ledger.begin({
+            commandId: 'novel-writer-write-chapter',
+            project: target.project,
+            source: 'agent',
+            label: `${target.chapterName} 后台整章`,
+        });
+        try {
+            await WriteChapterModal.doWriteChapter(
+                app, plugin, aiEngine, reviewAgent,
+                target.project, target.volume, target.chapterName, target.chapterNum,
+                pjStepDir(target.project, volN, target.chapterNum), false
+            );
+            // 成功时由 doWriteChapter 内部登记「已生成正文并完成结算」；
+            // 这里只在没有结算记录时补一条完成态，避免重复。
+            const already = ledger.getRecent(5).some(record =>
+                record.commandId === 'novel-writer-write-chapter' && record.status === 'done');
+            if (!already) {
+                ledger.finish(runId, { status: 'done', detail: `${target.chapterName} 后台整章完成` });
+            } else {
+                ledger.finish(runId, { status: 'done', detail: `${target.chapterName} 后台整章完成（结算已单独登记）` });
+            }
+        } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            log.error('[写章] 后台整章失败:', e);
+            ledger.finish(runId, { status: 'failed', failure: message });
+            showError(`后台整章失败：${message.slice(0, 120)}`);
+        }
     }
 
     /**
@@ -566,10 +592,26 @@ ${reportResult.content}
             showSuccess(`分析报告已生成：${getChapterFileName(chapName, '分析报告')}`);
 
             if (aborted()) return;
+            // 幂等守卫：本章已 settled 就不重复回写（一键成文可能已经结算过这一章）
+            if (await WriteChapterModal.isBodySettledOnDisk(app, { project, volume: volName, chapterName: chapName })) {
+                log.info('[写章] 本章正文已是 settled，跳过重复结算:', chapName);
+                hideProgress();
+                showSuccess('本章已结算过，跳过重复回写');
+                return;
+            }
             showProgress('⏳ 正在执行章节结算...');
             const settleResult = await WriteChapterModal.executeSettlement(plugin, project, chapDir, chapName, reportResult.content, bodyText, selectedToReveal);
             hideProgress();
             showSuccess(`结算：更新${settleResult.updated}项 / 新建${settleResult.created}项`, 8000);
+            // 执行登记表：Agent 事后可通过 get_execution_status 读取本次成文+结算结果
+            getExecutionLedger().recordCompleted({
+                commandId: 'novel-writer-write-chapter',
+                project,
+                source: 'ui',
+                label: `${chapName} 一键成文`,
+                detail: '已生成正文并完成结算',
+                settlement: summarizeSettlement(settleResult),
+            });
 
             // v4.0: 结算表带 frontmatter（与 元文件/00-系统模板/结算表模板.md 对齐）
             const settleNow = new Date().toISOString();
@@ -766,6 +808,25 @@ ${reportResult.content}
         return engine.settle(project, chapDir, chapName, report, bodyText,
             { forceReveal: forceReveal.length > 0 ? forceReveal : undefined }
         );
+    }
+
+    /**
+     * 正文磁盘上是否已 settled（幂等守卫用）。
+     * 一键成文（StepRunner）与后台整章会先后跑到同一章；旧实现各自无条件 settle，
+     * 实测同一章被结算两次（实体更新重复、status 在 settled/written 之间来回翻）。
+     */
+    private static async isBodySettledOnDisk(app: App, chapterTarget: { project: string; volume: string; chapterName: string }): Promise<boolean> {
+        try {
+            const volN = parseInt(chapterTarget.volume.match(/第(\d+)卷/)?.[1] || '0', 10) || 1;
+            const bodyPath = pjBodyFile(chapterTarget.project, volN, parseInt(chapterTarget.chapterName.match(/第(\d+)章/)?.[1] || '0', 10));
+            const file = app.vault.getAbstractFileByPath(bodyPath);
+            if (!(file instanceof TFile)) return false;
+            const raw = await app.vault.read(file);
+            const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+            return Boolean(fm && /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m.test(fm[1]));
+        } catch {
+            return false;
+        }
     }
 
     onClose(): void {

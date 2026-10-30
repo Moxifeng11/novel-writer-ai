@@ -16,6 +16,7 @@ import { COMMAND_MODE_LABELS, commandAllowedModes } from '../shared/command-mode
 import { resolveProjectMode } from '../shared/project-mode';
 import type { CommandUiPayload, CommandUiPort, VersionFileContext } from '../shared/command-ui-port';
 import { createLogger } from '../shared/logger';
+import { getExecutionLedger } from '../services/execution-ledger';
 import type { ChapterVersionService } from '../services/chapter-version-service';
 import { ChapterVersionModal } from './chapter-version-modal';
 import { RenameProjectModal } from './rename-project-modal';
@@ -119,12 +120,17 @@ export class CommandUiExecutor implements CommandUiPort {
             new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
             return;
         }
+        const ledger = getExecutionLedger();
+        const runId = ledger.begin({ commandId: 'novel-writer-generate-bases', project, source: 'ui', label: '生成项目看板' });
         try {
             const { writeProjectBases } = await import('../engine/note-properties-service');
             const written = await writeProjectBases(app, project);
+            ledger.finish(runId, { status: 'done', detail: `已生成 ${written.length} 个看板` });
             new Notice(`✅ 已生成 ${written.length} 个看板到「${project}/.看板/」；可拖到右侧栏使用`, 7000);
         } catch (e) {
-            new Notice(`生成看板失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            const message = e instanceof Error ? e.message : String(e);
+            ledger.finish(runId, { status: 'failed', failure: message });
+            new Notice(`生成看板失败：${message}`, 6000);
         }
     }
 

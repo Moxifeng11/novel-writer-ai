@@ -1369,7 +1369,8 @@ export class FullWriterView extends ItemView {
             return;
         }
         const volume = chapterPath.match(/正文\/(第\d+卷)\//)?.[1] ?? '';
-        const chapterName = chapterPath.match(/(第\d+章)_正文\.md$/)?.[1] ?? file.basename;
+        // 正文可能被按标题重命名（第2章_锁痕_正文.md）：按「第N章」前缀反解，而不是要求紧贴 _正文
+        const chapterName = file.basename.match(/^(第\d+章)/)?.[1] ?? file.basename;
         await this.selectChapter(project, { chapter: chapterName, volume, file });
     }
 

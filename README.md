@@ -2,7 +2,7 @@
 
 > 全流程 AI 长篇小说创作系统 —— 在 Obsidian 内完成从构思、大纲、设定管理到正文生成与质量复盘的全链路。
 
-**当前版本**：4.21.0 · **最低 Obsidian**：1.5.0 · **平台**：桌面端 / 移动端（界面仅中文；系统级文件保护仅桌面端）
+**当前版本**：4.21.1 · **最低 Obsidian**：1.5.0 · **平台**：桌面端 / 移动端（界面仅中文；系统级文件保护仅桌面端）
 
 ---
 
@@ -265,7 +265,7 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 | [CODE-INDEX.md](docs/CODE-INDEX.md) | 文件与模块索引 |
 | [PERFORMANCE.md](docs/PERFORMANCE.md) | 性能基线与优化记录 |
 | [CHANGELOG.md](CHANGELOG.md) | 完整变更历史 |
-| [v4.21.0 发布说明](docs/releases/v4.21.0.md) | 当前版本发布说明（历史版本见 CHANGELOG） |
+| [v4.21.1 发布说明](docs/releases/v4.21.1.md) | 当前版本发布说明（历史版本见 CHANGELOG） |
 | [v4.17.0 效率审计](docs/analysis/v4.17-pipeline-efficiency.html) | 11 步调用流、点击账单、协同写作调用审计（交互式 HTML） |
 | [v4.18 快捷工具健康度](docs/audits/v4.18-quick-tools-health.md) | 工具可用性、假项目/丢稿修复与待审计清单 |
 | [v4.18.0 验证报告](docs/audits/v4.18.0-verification-report.md) | 版本一致性、功能验证、高危问题与修改清单 |
@@ -285,7 +285,7 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 - 旧项目数据、旧版报告与既有设置键名保持向后兼容。
 - 旧版正文生成命令保留至 **v5.0.0**，之后移除；当前仅从公开命令面板收敛并给出弃用提示。
 - 版本号遵循语义化版本：`manifest.json` 与 `package.json` 由 `scripts/sync-version.js` 保持同步。
-- 变更记录见 [CHANGELOG.md](CHANGELOG.md)，最新发布说明见 [v4.21.0](docs/releases/v4.21.0.md)。
+- 变更记录见 [CHANGELOG.md](CHANGELOG.md)，最新发布说明见 [v4.21.1](docs/releases/v4.21.1.md)。
 
 ---
 

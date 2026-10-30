@@ -442,9 +442,13 @@ export const ANALYSIS_REPORT_PROMPTS = {
 
 【输出格式——必须放在报告最前面】
 UPDATE_CHARACTER: [[角色]] | 当前状态 | 新值
+UPDATE_CHARACTER: [[角色]] | 修为等级 | 新值
+UPDATE_CHARACTER: [[角色]] | 当前位置 | 新值
+UPDATE_CHARACTER: [[角色]] | 所属势力 | 新值
 UPDATE_FACTION: [[势力]] | 地位/排名 | 新值
 UPDATE_LOCATION: [[地点]] | 主要居民/势力 | 新值
 UPDATE_ITEM: [[物品功法]] | 所属/归属 | 新值
+UPDATE_ITEM: [[物品功法]] | 当前状态 | 新值
 UPDATE_FORESHADOW: [[伏笔]] | 状态 | 已揭示
 NEW_CHARACTER: 角色名 | 角色描述
 NEW_LOCATION: 地名 | 地点描述
@@ -470,6 +474,8 @@ ARC: 角色 | 阶段前 | 阶段后 | 触发事件 | 是否可见
    - 第一章开篇之后的剧情事件 → 时间点用"纪元XXXX年"格式。
    - 格式: NEW_TIMELINE: 背景纪元_500年 | 事件 或 NEW_TIMELINE: 纪元2024年 | 事件
 3. **角色状态更新**：如果正文中任何已有角色的状态、情绪、关系发生了变化，必须输出相应的 UPDATE_CHARACTER 或 EMOTION 指令。
+   - **修为/境界、当前位置、所属势力**发生变化时必须单独输出 UPDATE_CHARACTER（字段名写「修为等级」「当前位置」「所属势力」）。这些字段是实体关系图谱与「谁在哪、谁拥有什么」的唯一数据源；只写「当前状态」会让图谱永远是空的。
+   - UPDATE_ITEM 的「所属/归属」「当前状态」同理：物品易手、被封印、损毁时必须输出。
 4. **新实体创建**：如果正文中首次出现新的人物、地点、势力或物品功法，必须输出对应的 NEW_ 指令。
 5. **承诺/谜团**：本章角色许下承诺、抛出谜团、形成约定或威胁时，输出 PROMISE_OPEN；已有承诺被推进/兑现/放弃时，输出 PROMISE_ADVANCE/RESOLVE/DROP。
 6. **角色弧线**：本章主角或重要配角发生可见的信念/阶段变化时，输出 ARC 指令；没有变化则不输出，不要硬凑。
