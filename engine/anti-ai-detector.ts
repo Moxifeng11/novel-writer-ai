@@ -60,6 +60,8 @@ const AI_SCORE_WEIGHTS = {
         opening: 6,
         punctuation: 6,
         dialogue: 4,
+        /** 硬伤标点（分号/省略号/破折号）密度：2026-10-30 依据「去AI味」实战规则新增 */
+        hardPunct: 10,
     },
     /** 总分上限 */
     totalCap: 100,
@@ -219,7 +221,7 @@ export class AntiAIDetector {
 
         const periodRatio = periodCount / totalEndCount;
         if (periodRatio > 0.6) {
-            return '每5句中至少包含1个感叹号或省略号或破折号，句号占比不超过60%';
+            return '每5句中至少1句以问号或感叹号收尾，句号占比不超过60%；变化靠对话和疑问句制造，不要用省略号或破折号凑';
         }
         return '';
     }
@@ -362,6 +364,19 @@ export class AntiAIDetector {
             features.push({ key: 'dialogue', displayName: '对话密度低', value, score: value * AI_SCORE_WEIGHTS.statWeights.dialogue });
         }
 
+        // 5. 硬伤标点密度（2026-10-30）：分号/省略号/破折号是检测器最敏感的 AI 标点组合。
+        //    真人网文几乎不用分号，省略号/破折号一章至多一两处。
+        if (sentences.length >= 8) {
+            const semicolons = (text.match(/[；;]/g) || []).length;
+            const ellipses = (text.match(/…/g) || []).length;
+            const dashes = (text.match(/[—－]/g) || []).length;
+            const hardCount = semicolons * 2 + ellipses + dashes;
+            const value = Math.max(0, Math.min(1, hardCount / 8));
+            if (value > 0) {
+                features.push({ key: 'hardPunct', displayName: '硬伤标点', value, score: value * AI_SCORE_WEIGHTS.statWeights.hardPunct });
+            }
+        }
+
         return features;
     }
 
@@ -379,8 +394,9 @@ export class AntiAIDetector {
         const hintMap: Record<string, string> = {
             sentenceLength: '连续句长过于均匀，建议长短句交替',
             opening: '连续句开头词重复，建议变换主语',
-            punctuation: '句号占比过高，建议加入感叹号/省略号/破折号',
+            punctuation: '句号占比过高，建议让角色开口说话或加入感叹/疑问句',
             dialogue: '对话密度偏低，建议增加对话或内心独白',
+            hardPunct: '分号/省略号/破折号是检测器最敏感的 AI 标点，建议改成句号、逗号或直接断句',
         };
         for (const s of stats) {
             if (s.value > 0.7 && hintMap[s.key]) suggestions.push(hintMap[s.key]);

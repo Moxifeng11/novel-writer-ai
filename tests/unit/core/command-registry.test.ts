@@ -85,6 +85,11 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.NARRATIVE_OVERVIEW,
     // 2026-10-29：Agent 工作台「设置」入口此前指向不存在的命令，补真实注册
     CommandIds.OPEN_SETTINGS,
+    CommandIds.MIGRATE_ENTITY_LINKS,
+    CommandIds.PROJECT_SIDE_PANEL,
+    CommandIds.GENERATE_BASES,
+    CommandIds.MIGRATE_NAMESPACE_TAGS,
+    CommandIds.COMPLETE_PROPERTIES,
 ];
 
 interface Harness {

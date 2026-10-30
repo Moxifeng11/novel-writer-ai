@@ -38,6 +38,7 @@ import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledg
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
+import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project-side-panel-view';
 import { openModelSwitcherMenu, refreshAllModelSwitchers } from './ui/model-quick-switcher';
 import { registerAllCustomFonts } from './services/font-manager';
 import { WelcomeModal } from './ui/welcome-modal';
@@ -246,6 +247,8 @@ export interface NovelWriterSettings {
      * cloud：强制云端大窗口策略（完整文本、更多条目）。
      */
     storyContextTier?: 'auto' | 'local' | 'cloud';
+    /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */
+    fingerprintInjectionBudget?: number;
     availableModels: string[];
     maxContext: number;   // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
     maxOutput: number;    // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
@@ -730,6 +733,11 @@ export default class NovelWriterPlugin extends Plugin {
                 void this.openAgentWorkbench();
             });
 
+            // 右侧「项目速览」面板：属性 / 标签 / 快捷动作（可折叠侧栏）
+            this.addRibbonIcon('sidebar-right', '小说工坊 · 项目速览面板', () => {
+                void this.openProjectSidePanel();
+            });
+
             log.info('[小说工坊] 注册视图...');
             this.registerView(
                 FULL_WRITER_VIEW_TYPE,
@@ -758,6 +766,12 @@ export default class NovelWriterPlugin extends Plugin {
             this.registerView(
                 VIEW_TYPE_WRITING_FINGERPRINT,
                 (leaf) => new WritingFingerprintView(leaf, this)
+            );
+
+            // 右侧「项目速览」面板（属性 + 标签 + 快捷动作；接入原生属性/标签能力）
+            this.registerView(
+                VIEW_TYPE_PROJECT_SIDE_PANEL,
+                (leaf) => new ProjectSidePanelView(leaf, this)
             );
 
             // v5.5: 实例化浮窗管理器并注册监控面板A/B视图
@@ -897,6 +911,36 @@ export default class NovelWriterPlugin extends Plugin {
         if (typeof view?.showProjectSelector === 'function') {
             await view.showProjectSelector();
         }
+    }
+
+    /**
+     * 右侧「项目速览」面板：挂在右侧 dock（可折叠界面）。
+     * 已打开则聚焦；右栏折叠时先展开，保证点击必有反馈。
+     */
+    public async openProjectSidePanel(): Promise<void> {
+        const { workspace } = this.app;
+        const existing = workspace.getLeavesOfType(VIEW_TYPE_PROJECT_SIDE_PANEL);
+        if (existing.length > 0) {
+            for (let i = 1; i < existing.length; i++) {
+                existing[i].detach();
+            }
+            workspace.revealLeaf(existing[0]);
+            return;
+        }
+
+        const leaf = workspace.getRightLeaf(false);
+        if (!leaf) {
+            new Notice('当前布局没有右侧栏，可先打开右侧栏再试', 5000);
+            return;
+        }
+        await leaf.setViewState({ type: VIEW_TYPE_PROJECT_SIDE_PANEL, active: true });
+        // 右栏若处于折叠状态，展开后用户才能看到
+        try {
+            (workspace.rightSplit as unknown as { expand?: () => void }).expand?.();
+        } catch {
+            // 某些布局没有 rightSplit.expand，忽略
+        }
+        workspace.revealLeaf(leaf);
     }
 
     /**

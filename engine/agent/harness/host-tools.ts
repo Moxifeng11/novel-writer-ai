@@ -17,6 +17,7 @@ import {
 } from '../../../shared/story-structure';
 import { SCRIPT_GENRES, SHORT_STORY_CATEGORIES, getCreationModeLabel } from '../../../shared/creation-mode';
 import { commandAllowedModes } from '../../../shared/command-mode-rules';
+import { DEFAULT_READ_LINES } from '../../../shared/file-path-guard';
 
 /** 记忆槽位白名单：update_memory 只能写这些键 */
 const MEMORY_KEYS = [
@@ -587,6 +588,78 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
                     `（状态明细：${statusText}。注意：status=pending 的是批量建${unitLabel}生成的空骨架，不算已完成。）`,
                 ].join('\n'),
                 data: status as unknown as Record<string, unknown>,
+            };
+        },
+    });
+
+    // ─── 文件检索（吸收 dsh context/file-reference：按需读，不整库塞上下文）───
+    tools.push({
+        name: 'read_file',
+        description: '读取库里某个文件的一段内容（按行分页）。用于查看章节正文、大纲、设定、结算表、spill 存档等。只支持文本文件；单次最多 200 行/8192 字符，返回里若提示还有后续，用 offset 继续读。',
+        parameters: {
+            path: { type: 'string', description: '库内相对路径（如「项目名/03-大纲与章节/正文/第1章.md」）', required: true },
+            offset: { type: 'number', description: '起始行（1-based，默认 1）' },
+            limit: { type: 'number', description: '读取行数（默认 200，最多 2000）' },
+        },
+        required: ['path'],
+        sideEffect: 'none', timeoutMs: 10_000,
+        execute: async (args) => {
+            if (!port.readFile) return { ok: false, content: '当前环境不支持读取文件' };
+            const path = String(args.path || '').trim();
+            const result = await port.readFile(path, {
+                offset: clampInt(args.offset, 1, 10_000_000, 1),
+                limit: clampInt(args.limit, 1, 2000, DEFAULT_READ_LINES),
+            });
+            if (!result) {
+                return {
+                    ok: false,
+                    content: `未找到文件「${path}」。请先用 list_projects / list_chapters 或 search_vault 确认路径，不要臆造路径。`,
+                };
+            }
+            const head = `【${result.path}】第 ${result.startLine}-${result.endLine} 行，共 ${result.totalLines} 行`;
+            const tail = result.truncated ? `\n……（后面还有内容，用 offset=${result.endLine + 1} 继续读）` : '';
+            return {
+                ok: true,
+                content: `${head}\n${result.content}${tail}`,
+                data: {
+                    path: result.path,
+                    startLine: result.startLine,
+                    endLine: result.endLine,
+                    totalLines: result.totalLines,
+                    truncated: result.truncated,
+                },
+            };
+        },
+    });
+    tools.push({
+        name: 'search_vault',
+        description: '在库中按关键词检索文本文件，返回「路径:行号:摘要」（默认最多 20 条）。用于定位人名/物品/伏笔/设定出现的位置，然后再用 read_file 精读那一段。只读，不改动任何文件。',
+        parameters: {
+            query: { type: 'string', description: '关键词（中文不需要分词，按原文子串匹配；大小写不敏感）', required: true },
+            folder: { type: 'string', description: '限定检索目录（库内相对路径，如「项目名/05-设定库」）' },
+            limit: { type: 'number', description: '最多返回条数（默认 20，最多 50）' },
+        },
+        required: ['query'],
+        sideEffect: 'none', timeoutMs: 20_000,
+        execute: async (args) => {
+            if (!port.searchVault) return { ok: false, content: '当前环境不支持库内检索' };
+            const query = String(args.query || '').trim();
+            if (!query) return { ok: false, content: '缺少关键词' };
+            const hits = await port.searchVault(query, {
+                limit: clampInt(args.limit, 1, 50, 20),
+                folder: typeof args.folder === 'string' ? args.folder : undefined,
+            });
+            if (hits.length === 0) {
+                return {
+                    ok: true,
+                    content: `没有找到「${query}」。可以换同义词/更短的关键词，或先 list_chapters 看目录结构。`,
+                };
+            }
+            const lines = hits.map(hit => `${hit.path}:${hit.line}: ${hit.text}`);
+            return {
+                ok: true,
+                content: `「${query}」命中 ${hits.length} 处：\n${lines.join('\n')}`,
+                data: { count: hits.length },
             };
         },
     });

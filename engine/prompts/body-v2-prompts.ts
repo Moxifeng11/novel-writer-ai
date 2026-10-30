@@ -69,6 +69,8 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 【信息规划——核心冲突与信息释放计划】
 \${infoPlan}
 
+\${entityRelations}
+
 【情绪弧——他这章的情绪变化路线】
 \${emotionPlan}
 

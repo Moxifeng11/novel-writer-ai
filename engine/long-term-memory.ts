@@ -13,6 +13,7 @@ import { pjVolumeOutlineDir } from '../shared/paths';
 import { projectFactIndexPath, VaultFactStorage } from './fact-index-vault';
 import type { ConfirmedFact, FactCategory } from './fact-index-manager';
 import { VolumeOutlineSummarizer, type VolumeSummary } from './volume-outline-summarizer';
+import { dedupeFacts, rankFacts } from '../shared/memory-rank';
 
 /** 每个类别默认最多注入的事实条数（控制本地小窗口预算） */
 export const LONG_TERM_MEMORY_MAX_PER_CATEGORY = 12;
@@ -34,14 +35,19 @@ const CATEGORY_LABELS: Record<FactCategory, string> = {
 export function formatConfirmedFacts(
     facts: readonly ConfirmedFact[],
     maxPerCategory: number = LONG_TERM_MEMORY_MAX_PER_CATEGORY,
+    query = '',
 ): string {
     if (facts.length === 0) return '';
 
     const lines: string[] = ['【长篇记忆：已确认事实（来自早期章节，续写不得与之矛盾）】'];
     const limit = Math.max(1, maxPerCategory);
+    // v4.20：同一条事实跨章反复确认会产生多条近似记录，先合并；
+    // 再按「与当前章纲的相关度 + 新近度」排序，最后才截前 N 条。
+    const deduped = dedupeFacts([...facts]);
+    const ranked = rankFacts(deduped, { query });
 
     for (const category of CATEGORY_ORDER) {
-        const items = facts.filter((fact) => fact.category === category).slice(0, limit);
+        const items = ranked.filter((fact) => fact.category === category).slice(0, limit);
         if (items.length === 0) continue;
         lines.push(`### ${CATEGORY_LABELS[category]}`);
         for (const fact of items) {
@@ -111,12 +117,12 @@ export async function loadVolumeSummaries(
 export async function loadLongTermMemory(
     fs: FileSystemPort,
     project: string,
-    options?: { maxPerCategory?: number; beforeVolume?: number },
+    options?: { maxPerCategory?: number; beforeVolume?: number; query?: string },
 ): Promise<string> {
     const storage = new VaultFactStorage(fs, projectFactIndexPath(project));
     const data = await storage.load();
     const factsText = data && Array.isArray(data.confirmed)
-        ? formatConfirmedFacts(data.confirmed, options?.maxPerCategory)
+        ? formatConfirmedFacts(data.confirmed, options?.maxPerCategory, options?.query)
         : '';
 
     const volumeText = options?.beforeVolume && options.beforeVolume > 1

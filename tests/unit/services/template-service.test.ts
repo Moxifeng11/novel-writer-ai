@@ -21,7 +21,7 @@ describe('TemplateService', () => {
     describe('默认模板', () => {
         it('正文模板包含 frontmatter 和标题', async () => {
             const result = await service.getBodyTemplate({ chapterName: '第1章', volume: '第1卷' });
-            expect(result).toContain('tags: [正文]');
+            expect(result).toContain('tags: [正文, nw/正文]');
             expect(result).toContain('卷: "第1卷"');
             expect(result).toContain('章: "第1章"');
             expect(result).toContain('status: pending');
@@ -29,7 +29,7 @@ describe('TemplateService', () => {
 
         it('信息规划模板包含 step_status 等 v4.0 字段', async () => {
             const result = await service.getInfoPlanTemplate({ chapterName: '第1章', volume: '第1卷' });
-            expect(result).toContain('tags: [信息规划]');
+            expect(result).toContain('tags: [信息规划, nw/步骤/信息规划]');
             expect(result).toContain('step_status: pending');
             expect(result).toContain('step_model:');
             expect(result).toContain('step_timestamp:');
@@ -39,7 +39,7 @@ describe('TemplateService', () => {
 
         it('情节蒸馏模板结构完整', async () => {
             const result = await service.getPlotDistillTemplate({ chapterName: '第1章' });
-            expect(result).toContain('tags: [情节蒸馏]');
+            expect(result).toContain('tags: [情节蒸馏, nw/步骤/情节蒸馏]');
             expect(result).toContain('场景节奏设计');
             expect(result).toContain('情节节点规划');
             expect(result).toContain('爽点设计');
@@ -47,7 +47,7 @@ describe('TemplateService', () => {
 
         it('大纲摘要模板包含关键场景表格', async () => {
             const result = await service.getOutlineTemplate({ chapterName: '第1章' });
-            expect(result).toContain('tags: [大纲摘要]');
+            expect(result).toContain('tags: [大纲摘要, nw/步骤/大纲摘要]');
             expect(result).toContain('关键场景');
             expect(result).toContain('结尾钩子');
         });
@@ -103,7 +103,7 @@ describe('TemplateService', () => {
         it('模板文件不存在时使用默认模板', async () => {
             const result = await service.getBodyTemplate({ chapterName: '第1章' });
             expect(result.length).toBeGreaterThan(0);
-            expect(result).toContain('tags: [正文]');
+            expect(result).toContain('tags: [正文, nw/正文]');
         });
     });
 

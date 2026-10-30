@@ -96,7 +96,8 @@ function parseRelationshipFile(content: string): CharacterPairRelation[] {
 function extractNumber(text: string, key: string): number {
     const re = new RegExp(`${key}:\\s*(\\d+)`);
     const m = text.match(re);
-    return m ? parseInt(m[1]) : 50;
+    // v4.20：读取即 clamp——文件被手改出 999/异常值时不污染后续计算
+    return m ? Math.max(0, Math.min(100, parseInt(m[1], 10) || 0)) : 50;
 }
 
 function extractString(text: string, key: string): string {

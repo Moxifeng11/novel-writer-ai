@@ -49,7 +49,7 @@ ${ENTITY_BODY_SECTIONS.map((s, i) => `${i + 1}. ## ${s}`).join('\n')}
 必须按照以下Markdown格式输出：
 
 ---
-tags: [势力]
+tags: [势力, nw/实体/势力]
 entity_status: active
 entity_created_at:
 entity_last_changed_at:
@@ -137,7 +137,7 @@ ${ENTITY_BODY_SECTIONS.map((s, i) => `${i + 1}. ## ${s}`).join('\n')}
 必须按照以下Markdown格式输出：
 
 ---
-tags: [地点]
+tags: [地点, nw/实体/地点]
 entity_status: active
 entity_created_at:
 entity_last_changed_at:
@@ -226,7 +226,7 @@ ${ENTITY_BODY_SECTIONS.map((s, i) => `${i + 1}. ## ${s}`).join('\n')}
 必须按照以下Markdown格式输出：
 
 ---
-tags: [物品功法]
+tags: [物品功法, nw/实体/物品]
 entity_status: active
 entity_created_at:
 entity_last_changed_at:

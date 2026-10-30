@@ -194,6 +194,7 @@ export interface ItemFrontmatter extends EntityMeta {
     描述?: string;
     效果?: string;
     '所属/归属'?: string;
+    当前状态?: string;
     [key: string]: any;
 }
 

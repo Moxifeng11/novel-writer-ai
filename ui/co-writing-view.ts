@@ -4809,10 +4809,43 @@ ${text}`;
     if (!this.monitorContainer) return;
     this.monitorContainer.empty();
 
+    this.renderLedgerCard();
     this.renderForeshadowCard();
     this.renderEntityCard();
     this.renderGuardCard();
     this.renderStatusCard();
+  }
+
+  /** v4.20 注入溯源卡：本次会话各注入段的字符/预算/截断情况（结算回写 + 指纹分层） */
+  private renderLedgerCard() {
+    // Facade 有 engine getter（CoWriterEngine）；getInjectionLedgerText 定义在引擎上
+    const text = this.facade.engine.getInjectionLedgerText();
+    const card = this.monitorContainer.createDiv({ cls: "nw-cowrite-monitor-card" });
+    const header = card.createDiv({ cls: "nw-cowrite-monitor-card-header" });
+    header.createSpan({ cls: "nw-cowrite-monitor-card-icon", text: "🧾" });
+    header.createSpan({ cls: "nw-cowrite-monitor-card-title", text: "注入溯源" });
+    const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
+    const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
+
+    if (!text) {
+      body.createDiv({ cls: "nw-cowrite-monitor-summary", text: "注入账本尚未生成" });
+      return;
+    }
+    const lines = text.split("\n");
+    body.createDiv({ cls: "nw-cowrite-monitor-summary", text: lines[0] || "" });
+    const detail = body.createDiv({ cls: "nw-cowrite-monitor-detail" });
+    detail.setCssStyles({ display: 'none' });
+    const list = detail.createEl("ul", { cls: "nw-cowrite-monitor-list" });
+    for (const line of lines.slice(1)) {
+      if (line.trim()) list.createEl("li", { text: line.replace(/^- /, "") });
+    }
+
+    header.addEventListener("click", () => {
+      const isExpanded = detail.style.display === "block";
+      detail.style.display = isExpanded ? "none" : "block";
+      toggle.textContent = isExpanded ? "▶" : "▼";
+      card.toggleClass("nw-cowrite-monitor-card-expanded", !isExpanded);
+    });
   }
 
   /** 供实时分析控制器在守卫/保存后刷新监控卡（旧实现只在布局时渲染一次） */

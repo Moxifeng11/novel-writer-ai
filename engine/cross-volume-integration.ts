@@ -432,7 +432,7 @@ export class CrossVolumeIntegrator {
         const now = new Date().toLocaleString();
 
         let md = `---
-tags: [状态快照]
+tags: [状态快照, nw/设定/状态快照]
 卷: ${volumeName}
 生成时间: ${now}
 ---

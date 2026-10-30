@@ -11,9 +11,12 @@ import type {
     AgentChapterSummary,
     AgentCommandSummary,
     AgentContext,
+    AgentFileReadResult,
     AgentProjectStatus,
+    AgentVaultSearchHit,
     GuideAgentPort,
 } from '../../engine/agent/agent-types';
+import { extractLineWindow, sanitizeVaultPath, summarizeHitLine } from '../../shared/file-path-guard';
 import { createLongNovelProject } from './project-create-service';
 import { StorySettingsModal } from '../story-settings-modal';
 import { OperationConfirmModal } from '../components/progress';
@@ -403,5 +406,75 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 return [];
             }
         },
+        readFile: async (path, options): Promise<AgentFileReadResult | null> => {
+            // 吸收 dsh context/file-reference：模型按需读物，路径先过守卫。
+            // `.sessions/` 是插件自己落的 spill 大结果，必须允许回读。
+            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: ['.sessions/'] });
+            if (!guard.ok) throw new Error(guard.reason);
+            if (!isTextPath(guard.path)) {
+                throw new Error(`只支持读取文本文件（md/txt/json/yaml 等）：${guard.path}`);
+            }
+            const file = app.vault.getAbstractFileByPath(guard.path);
+            if (!(file instanceof TFile)) return null;
+            if (file.stat.size > MAX_READ_FILE_BYTES) {
+                throw new Error(`文件过大（${Math.round(file.stat.size / 1024)}KB）；请改用 search_vault 定位，或读大纲/摘要类文件`);
+            }
+            const raw = await app.vault.cachedRead(file);
+            const window = extractLineWindow(raw, { offset: options?.offset, limit: options?.limit });
+            return {
+                path: guard.path,
+                content: window.text,
+                startLine: window.startLine,
+                endLine: window.endLine,
+                totalLines: window.totalLines,
+                truncated: window.truncated,
+                size: file.stat.size,
+            };
+        },
+        searchVault: async (query, options): Promise<AgentVaultSearchHit[]> => {
+            const needle = String(query || '').trim().toLowerCase();
+            if (!needle) return [];
+            const limit = Math.max(1, Math.min(50, Math.round(options?.limit ?? SEARCH_DEFAULT_LIMIT)));
+            const folderGuard = options?.folder ? sanitizeVaultPath(options.folder) : null;
+            if (folderGuard && !folderGuard.ok) throw new Error(folderGuard.reason);
+            const folder = folderGuard && folderGuard.ok ? folderGuard.path : '';
+            const hits: AgentVaultSearchHit[] = [];
+            let scanned = 0;
+            for (const file of app.vault.getFiles()) {
+                if (hits.length >= limit || scanned >= SEARCH_MAX_FILES) break;
+                if (!isTextPath(file.path)) continue;
+                if (file.path.split('/').some(segment => segment.startsWith('.'))) continue;
+                if (folder && file.path !== folder && !file.path.startsWith(`${folder}/`)) continue;
+                if (file.stat.size > SEARCH_MAX_FILE_BYTES) continue;
+                scanned++;
+                let content: string;
+                try {
+                    content = await app.vault.cachedRead(file);
+                } catch {
+                    continue;
+                }
+                if (!content.toLowerCase().includes(needle)) continue;
+                const lines = content.split(/\r?\n/);
+                for (let i = 0; i < lines.length && hits.length < limit; i++) {
+                    if (!lines[i].toLowerCase().includes(needle)) continue;
+                    hits.push({ path: file.path, line: i + 1, text: summarizeHitLine(lines[i]) });
+                }
+            }
+            return hits;
+        },
     };
 }
+
+/** 可被 read_file/search_vault 处理的文本扩展名（二进制一律拒绝） */
+const TEXT_EXTENSIONS = new Set(['md', 'markdown', 'txt', 'json', 'jsonl', 'yaml', 'yml', 'base', 'csv', 'tsv', 'tex', 'html']);
+
+function isTextPath(path: string): boolean {
+    const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
+    return TEXT_EXTENSIONS.has(ext);
+}
+
+/** 单文件读取上限：超过就要求改用检索（避免一次把整本书塞进上下文） */
+const MAX_READ_FILE_BYTES = 512 * 1024;
+const SEARCH_MAX_FILE_BYTES = 512 * 1024;
+const SEARCH_MAX_FILES = 3000;
+const SEARCH_DEFAULT_LIMIT = 20;

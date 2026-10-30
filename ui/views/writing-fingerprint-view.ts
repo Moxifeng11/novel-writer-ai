@@ -16,6 +16,7 @@ import { isSourceOnlyFingerprintScope } from '../fingerprint-utils';
 import { FingerprintIntensityModal } from '../fingerprint-intensity-modal';
 import { FingerprintBlendModal } from '../fingerprint-blend-modal';
 import { KnowledgeToFingerprintConverter } from '../../engine/knowledge-to-fingerprint-converter';
+import { chunkOriginalText } from '../../services/knowledge-original-chunker';
 import { classifyFingerprint, mergeClassificationTags } from '../../shared/content-classifier';
 import type { BookBasicInfo } from '../../services/knowledge-base-manager';
 import { createLogger } from '../../shared/logger';
@@ -371,6 +372,7 @@ export class WritingFingerprintView extends ItemView {
         const extractChapterBtn = this.createToolbarButton('📖 从章节提取', () => this.handleExtractFromChapters(), false, '从已有章节正文提取写作指纹');
         const importBtn = this.createToolbarButton('📚 从知识库导入', () => this.handleImportFromKnowledge(), false, '从知识库书籍拆解结果导入为写作指纹');
         const blendBtn = this.createToolbarButton('🎨 融合预览', () => this.handleBlendFingerprints(), false, '预览多个指纹融合后的效果');
+        const fillSamplesBtn = this.createToolbarButton('🩹 批量补样本', () => { void this.handleBatchFillSamples(); }, false, '为「知识库导入且无原文样本」的指纹批量补 few-shot 样本（需向量化，消耗额度）');
         const migrateBtn = this.createToolbarButton('⬆ 批量升级 V2', () => this.handleMigrateToV2(), false, '批量升级指纹到 V2 12 维维度');
         const deleteBtn = this.createToolbarButton('🗑️ 删除', () => this.handleDeleteFingerprint(), true, '删除选中指纹（不可恢复）');
         const toggleBtn = this.createToolbarButton('🔌 启用/禁用', () => this.handleToggleEnabled(), false, '启用或禁用选中指纹');
@@ -667,6 +669,7 @@ export class WritingFingerprintView extends ItemView {
         metaRow.createEl('span', { text: `来源: ${fp.source || '未知'}` });
         metaRow.createEl('span', { text: `提取时间: ${new Date(fp.extractedAt).toLocaleString()}` });
         metaRow.createEl('span', { text: `字数: ${fp.stats.wordCount.toLocaleString()}` });
+        metaRow.createEl('span', { text: `原文样本: ${(fp.samples || []).length} 段` });
 
         if (fp.tags.length > 0) {
             const tagsSection = header.createDiv({
@@ -680,11 +683,45 @@ export class WritingFingerprintView extends ItemView {
             });
         }
 
+        this.renderInjectionCard(fp);
         this.renderClassificationSection(fp);
         this.renderStatsSection(fp);
         this.renderFeaturesSection(fp);
         this.renderSamplesSection(fp);
         this.renderActionsSection(fp);
+    }
+
+    /**
+     * v4.20 注入影响卡：让「这条指纹对生成的指引有多强」可见。
+     * - 无原文样本 → 段落层 few-shot 不会注入（只剩特征描述），黄条提示 + 一键从知识库补样本；
+     * - 注入预算：默认 2000 字符（可在设置改 fingerprintInjectionBudget），指纹多时按相似度挑选。
+     */
+    private renderInjectionCard(fp: StyleFingerprint): void {
+        const card = this.rightPanel.createDiv({ cls: 'nw-fingerprint-inject-card nw-mb-lg' });
+        card.createEl('h4', { text: '🎯 注入影响', cls: 'nw-u-m-0-2 nw-u-margintop-8px-2 nw-u-marginbottom-6px-2 nw-u-fs-14px-2' });
+
+        const sampleCount = (fp.samples || []).length;
+        const rows = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-12px-2 nw-u-fs-12px-2' });
+        rows.createEl('span', { text: `原文样本: ${sampleCount} 段（段落层 few-shot）` });
+        rows.createEl('span', { text: '注入层: 全局特征 + 段落样本 + 句子提示' });
+        rows.createEl('span', { text: '总预算: 2000 字符（设置可调 fingerprintInjectionBudget）' });
+
+        if (sampleCount === 0) {
+            const warn = card.createDiv({
+                cls: 'nw-fingerprint-sample-warn nw-u-margintop-6px-2 nw-u-p-6px-10px-2 nw-u-fs-12px-2 nw-u-brd-8px-2'
+            });
+            warn.setText('⚠️ 该指纹没有原文样本：注入只剩特征描述，段落层（真实文风 few-shot）不会生效，指引力大减。');
+            const fixBtn = card.createEl('button', {
+                text: '📚 从知识库补样本',
+                cls: 'nw-btn nw-btn-secondary nw-u-margintop-6px-2',
+            });
+            fixBtn.onclick = () => { void this.handleImportFromKnowledge(); };
+        }
+
+        card.createDiv({
+            cls: 'nw-u-margintop-6px-2 nw-u-fs-11px-2 nw-u-c-text-muted-2',
+            text: '指纹塑造文风（跨章节持续生效的风格记忆）；长篇记忆防 OOC（事实清单）。两条线独立注入、预算叠加——每次 AI 调用的注入明细见工作台执行日志「prompt-ledger」。',
+        });
     }
 
     private getSelectedFingerprint(): StyleFingerprint | undefined {
@@ -1196,18 +1233,95 @@ export class WritingFingerprintView extends ItemView {
         const library = this.fingerprintLibrary;
         new KnowledgeBookPickerModal(this.app, books, async (book) => {
             try {
+                // v4.20 补样本断链：从知识库原文取真实 prose 分块作为 few-shot 样本。
+                // 没有样本的指纹只剩特征描述，段落层（真实文风 few-shot）不会注入。
+                let originalSamples: string[] = [];
+                try {
+                    const sourceText = await knowledgeManager.getSourceText(book.id);
+                    originalSamples = chunkOriginalText(sourceText)
+                        .map((chunk) => chunk.sample.trim())
+                        .filter((sample) => sample.length >= 80)
+                        .slice(0, 12);
+                } catch (sampleError) {
+                    log.warn('读取知识库原文失败，指纹将不含样本:', sampleError);
+                }
+
                 const converter = new KnowledgeToFingerprintConverter(this.app);
-                const fingerprint = await converter.convert(book.id, book.name);
+                const fingerprint = await converter.convert(book.id, book.name, undefined, originalSamples);
                 await library.addFromKnowledge(fingerprint);
                 await this.loadAllFingerprints();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
-                new Notice(`✅ 已将《${book.name}》拆解结果转为项目写作指纹`);
+                new Notice(`✅ 已将《${book.name}》拆解结果转为项目写作指纹（原文样本 ${originalSamples.length} 段）`);
             } catch (e) {
                 log.error('从知识库导入指纹失败:', e);
                 new Notice(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
             }
         }).open();
+    }
+
+    /**
+     * v4.20 批量补样本：为「知识库导入且样本为空」的指纹从原文补 few-shot 样本。
+     * 涉及向量化（embedding 额度），先确认再执行；逐条更新并汇总结果。
+     */
+    private async handleBatchFillSamples(): Promise<void> {
+        const knowledgeManager = this.plugin.knowledgeBaseManager;
+        if (!knowledgeManager) {
+            new Notice('知识库未初始化');
+            return;
+        }
+        if (!this.fingerprintLibrary) {
+            new Notice('指纹库未初始化');
+            return;
+        }
+
+        const targets = this.fingerprintLibrary.listProject().filter(
+            (fp) => (fp.samples || []).length === 0 && (fp.source || '').startsWith('knowledge-base:'),
+        );
+        if (targets.length === 0) {
+            new Notice('没有需要补样本的指纹（知识库导入且样本为空）');
+            return;
+        }
+
+        const books = await knowledgeManager.getAllBooks().catch(() => []);
+        const bookIdByName = new Map(books.map((book) => [book.name, book.id] as const));
+
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '批量补指纹样本',
+            description: `共 ${targets.length} 个知识库导入指纹没有原文样本：` +
+                targets.slice(0, 5).map((fp) => fp.name).join('、') + (targets.length > 5 ? ' 等' : '') +
+                '。将从知识库原文分块提取 few-shot 样本并向量化。',
+            warning: '向量化会消耗 embedding 额度',
+            confirmText: '开始补样本',
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
+
+        let filled = 0;
+        let skipped = 0;
+        for (const fp of targets) {
+            const bookName = (fp.source || '').slice('knowledge-base:'.length);
+            const bookId = bookIdByName.get(bookName);
+            if (!bookId) { skipped++; continue; }
+            try {
+                const sourceText = await knowledgeManager.getSourceText(bookId);
+                const samples = chunkOriginalText(sourceText)
+                    .map((chunk) => chunk.sample.trim())
+                    .filter((sample) => sample.length >= 80)
+                    .slice(0, 12);
+                if (samples.length === 0) { skipped++; continue; }
+                fp.samples = samples;
+                await this.fingerprintLibrary.updateProject(fp);
+                filled++;
+            } catch (e) {
+                log.warn(`[指纹库] 补样本失败: ${fp.name}`, e);
+                skipped++;
+            }
+        }
+        await this.loadAllFingerprints();
+        this.renderFingerprintList();
+        this.renderDetailPanel();
+        new Notice(`🩹 补样本完成：成功 ${filled}，跳过 ${skipped}`, 6000);
     }
 
     private async handleToggleEnabled(): Promise<void> {

@@ -70,6 +70,19 @@ EMOTION: [[张三]] | 喜悦 | 突破后心情大好`;
         expect(r.del[0]).toEqual({ entityType: '人物', entityName: '路人甲' });
     });
 
+    it('解析 CHARACTER_BEHAVIOR 指令（v4.20 角色行为摘要）', () => {
+        const report = [
+            'CHARACTER_BEHAVIOR: 武昭 | 擦刀时认出守卫的徽记。',
+            'CHARACTER_BEHAVIOR: 沈青 | 拒绝死神的交易，锁上第一扇门。',
+            '不是指令的行',
+        ].join('\n');
+        const instr = parseReport(report);
+        expect(instr.behavior).toEqual([
+            { name: '武昭', summary: '擦刀时认出守卫的徽记。' },
+            { name: '沈青', summary: '拒绝死神的交易，锁上第一扇门。' },
+        ]);
+    });
+
     it('忽略不匹配的行', () => {
         const r = parseReport('这是一段说明文字\n\n# 报告标题\nUPDATE_CHARACTER: [[张三]] | 修为 | 金丹');
         expect(r.uc).toHaveLength(1);

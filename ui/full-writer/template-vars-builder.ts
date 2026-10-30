@@ -12,6 +12,9 @@ import { RulesService } from '../../services/rules-service';
 import { filterForeshadowsByChapter, getInvolvedEntities } from '../../engine/chapter-context-builder';
 import { scoreAndFilterEntitiesByType, ScoredEntity } from '../../engine/entity-scorer';
 import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../../engine/character-soul';
+import { parseInfoPlanFields, formatInfoPlanPromptBlock } from '../../shared/info-plan-fields';
+import { buildEntityRelationsBlock } from '../../engine/entity-graph';
+import { buildInjectionLedger } from '../../shared/injection-ledger';
 import { extractWorldviewMeta } from '../utils/worldview-utils';
 import { chapterOutlineSection } from '../../shared/format-constants';
 import { stripFrontmatter, readMergedVolumeOutline } from '../../utils/helpers';
@@ -613,6 +616,9 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "characterCores",
   "timeline",
   "protagonistName",
+  "chapterHook",
+  "entityRelations",
+  "_injectionLedger",
 ] as const;
 
 export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<string, string>> {
@@ -701,8 +707,26 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     vars["prevChapEnding"] = "（本章无上一章结尾信息：不要自行编造上一章结尾）";
   if (deps.stepResults["infoPlan"]) {
     vars["infoPlan"] = deps.stepResults["infoPlan"];
+    // v4.20 章纲数据字段：开头承接/章末钩子/伏笔操作 解析成硬要求块，
+    // 随 ${infoPlan} 一路进入正文与结算提示词（数据级反 AI，见 shared/info-plan-fields）。
+    const planFields = parseInfoPlanFields(deps.stepResults["infoPlan"]);
+    const planBlock = formatInfoPlanPromptBlock(planFields);
+    if (planBlock) vars["infoPlan"] = `${vars["infoPlan"]}\n\n${planBlock}`;
+    vars["chapterHook"] = planFields.hookContent || "";
   } else {
     vars["infoPlan"] = "（未执行信息规划：仅按分卷大纲推进，不得自行新增情节节点、反转或信息释放）";
+    vars["chapterHook"] = "";
+  }
+  // v4.20 实体状态速览：出场角色的境界/位置/所有权/近况（结算回写 + 图谱反查，零 AI）。
+  // 数据缺失时为空串，正文模板里的 ${entityRelations} 占位自然消失。
+  try {
+    const charNames = ((deps.context?.data as { character_state?: Array<Record<string, unknown>> })?.character_state || [])
+      .map((c) => String(c?.name ?? c?.["姓名"] ?? c?.fileName ?? "").trim())
+      .filter(Boolean);
+    vars["entityRelations"] = (await buildEntityRelationsBlock(deps.app, deps.project, charNames, { maxChars: 8 })).trim();
+  } catch (e) {
+    console.warn("[TemplateVars] 实体状态速览生成失败:", e);
+    vars["entityRelations"] = "";
   }
   if (deps.stepResults["plotDistill"]) {
     vars["distilledContent"] = deps.stepResults["plotDistill"];
@@ -865,6 +889,14 @@ ${vars["allItems"]}`);
   vars["triggeredMemories"] = deps.context?.data?.triggered_memories_prompt || "";
   if (deps.context) {
     await applyStoryContextBus(deps, vars, deps.context.data);
+  }
+  // v4.20 注入溯源账本：对全部模板段统计字符/token/影响面，供步骤日志与成本评估。
+  // 纯遥测变量（模板无 ${_injectionLedger} 占位，不会进 prompt）。
+  try {
+    vars["_injectionLedger"] = JSON.stringify(buildInjectionLedger(vars));
+  } catch (e) {
+    log.warn("[小说工坊] 注入溯源账本生成失败:", e);
+    vars["_injectionLedger"] = "";
   }
   return vars;
 }

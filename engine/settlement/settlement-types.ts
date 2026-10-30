@@ -14,6 +14,7 @@
  * - NEW_CHARACTER / NEW_LOCATION / NEW_FACTION / NEW_ITEM: 名 | 描述
  * - NEW_FORESHADOW: 内容 | 埋设章节 | 预期揭示 | 相关人物 | 关联主线 (v1.3.0 起 5 字段，兼容旧 3 字段)
  * - NEW_TIMELINE: 时间点 | 事件
+ * - CHARACTER_BEHAVIOR: 角色名 | 本章行为摘要（一句话，进「出场记录」）
  * - RELATION: 实体A | 实体B | 关系类型 | 描述
  * - GROWTH: 人物 | 成长类型 | 新值 | 描述
  * - EMOTION: [[角色]] | 当前情绪 | 描述
@@ -37,6 +38,7 @@ export interface Instructions {
     del: { entityType: string; entityName: string }[];                           // DELETE_ENTITY (v1.4.0)
     promise: { action: 'open' | 'advance' | 'resolve' | 'drop'; name: string; type?: string; chapter?: string; expected?: string; note?: string }[]; // PROMISE_*
     arc: { name: string; from: string; to: string; trigger: string; visible: string }[]; // ARC
+    behavior: { name: string; summary: string }[];               // CHARACTER_BEHAVIOR（角色按章行为摘要，v4.20）
 }
 
 /** frontmatter 通用类型（settlement 内部使用） */

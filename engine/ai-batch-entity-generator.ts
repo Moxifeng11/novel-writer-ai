@@ -44,7 +44,7 @@ export class BatchEntityGenerator {
         return this._generateEntitiesBatchInternal(
             '势力', FACTION_FRONTMATTER_KEYS, '名称、类型、领袖',
             `---
-tags: [势力]
+tags: [势力, nw/实体/势力]
 entity_status: active
 entity_created_at:
 entity_last_changed_at:
@@ -95,7 +95,7 @@ entity_last_changed_reason:
         return this._generateEntitiesBatchInternal(
             '地点', LOCATION_FRONTMATTER_KEYS, '名称、类型、地理位置',
             `---
-tags: [地点]
+tags: [地点, nw/实体/地点]
 名称:
 别称:
 类型:
@@ -143,10 +143,12 @@ tags: [地点]
     ): Promise<BatchEntityResult[]> {
         const typeLabel = itemType || '物品/功法';
         const typeKey = itemType === '功法' ? '功法' : '物品';
+        // 双标签并存：旧扁平标签 + nw/ 层级标签（Bases 看板按层级标签筛选）
+        const namespaceTag = 'nw/实体/物品';
         return this._generateEntitiesBatchInternal(
             typeLabel, ITEM_FRONTMATTER_KEYS, '名称、类型、品级',
             `---
-tags: [${typeKey}]
+tags: [${typeKey}, ${namespaceTag}]
 entity_status: active
 entity_created_at:
 entity_last_changed_at:

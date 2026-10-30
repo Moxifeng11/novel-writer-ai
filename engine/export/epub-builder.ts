@@ -23,6 +23,29 @@ export interface BookMetadata {
     date?: Date;
     /** 不传则按书名+作者+时间生成稳定 urn */
     identifier?: string;
+    /** 封面图；存在时生成 cover.xhtml、properties="cover-image" 与 EPUB2 兼容 meta */
+    cover?: BookCover;
+}
+
+export interface BookCover {
+    data: Uint8Array;
+    /** 如 image/png / image/jpeg / image/webp */
+    mediaType: string;
+    /** 不带点：png / jpg / jpeg / webp */
+    fileExt: string;
+}
+
+/** EPUB 支持的封面扩展名 → media type（png/jpg 为核心类型，webp 各大阅读器已普遍支持） */
+const COVER_MEDIA_TYPES: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+};
+
+export function coverMediaTypeForExt(ext: string): string | null {
+    return COVER_MEDIA_TYPES[ext.toLowerCase()] ?? null;
 }
 
 export interface BookBuildOptions {
@@ -139,6 +162,16 @@ function buildContentOpf(
     const creator = metadata.author?.trim()
         ? `    <dc:creator>${escapeXml(metadata.author.trim())}</dc:creator>\n`
         : '';
+    // 封面：EPUB3 用 properties="cover-image"，EPUB2 老阅读器只认 <meta name="cover">
+    const cover = metadata.cover;
+    const coverManifest = cover
+        ? `\n    <item id="cover-image" href="images/cover.${cover.fileExt}" media-type="${cover.mediaType}" properties="cover-image"/>` +
+          `\n    <item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>`
+        : '';
+    const coverMeta = cover
+        ? `    <meta name="cover" content="cover-image"/>\n`
+        : '';
+    const coverSpine = cover ? `    <itemref idref="cover-page"/>\n` : '';
 
     return `<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid" xml:lang="${escapeXml(metadata.language || 'zh-CN')}">
@@ -146,16 +179,16 @@ function buildContentOpf(
     <dc:identifier id="bookid">${escapeXml(identifier)}</dc:identifier>
     <dc:title>${escapeXml(metadata.title)}</dc:title>
     <dc:language>${escapeXml(metadata.language || 'zh-CN')}</dc:language>
-${creator}    <meta property="dcterms:modified">${modified}</meta>
+${creator}${coverMeta}    <meta property="dcterms:modified">${modified}</meta>
   </metadata>
   <manifest>
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="style" href="style.css" media-type="text/css"/>
+    <item id="style" href="style.css" media-type="text/css"/>${coverManifest}
 ${manifest}
   </manifest>
   <spine toc="ncx">
-${spine}
+${coverSpine}${spine}
   </spine>
 </package>
 `;
@@ -213,6 +246,28 @@ ${points}
 `;
 }
 
+function buildCoverXhtml(imageHref: string): string {
+    return `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>封面</title>
+  <style type="text/css">
+    body { margin: 0; padding: 0; text-align: center; background: #ffffff; }
+    img { max-width: 100%; max-height: 100%; }
+  </style>
+</head>
+<body>
+  <div>
+    <img src="${imageHref}" alt="cover"/>
+  </div>
+</body>
+</html>
+`;
+}
+
 function buildStyleCss(): string {
     return `body {
   margin: 1em;
@@ -247,11 +302,13 @@ export function buildEpub(chapters: ManuscriptChapter[], options: BookBuildOptio
         author: options.metadata.author,
         language: options.metadata.language || 'zh-CN',
         date: options.metadata.date,
+        cover: options.metadata.cover,
     };
     const date = metadata.date ?? new Date();
     const modified = isoModified(date);
     const identifier = metadata.identifier
         || `urn:novel-writer-ai:${fnv1a(`${metadata.title}|${metadata.author || ''}|${modified}`)}`;
+    const cover = metadata.cover && metadata.cover.data.length > 0 ? metadata.cover : undefined;
 
     const entries: Array<{ id: string; href: string; label: string }> = [];
     const chapterFiles: ZipEntry[] = [];
@@ -273,6 +330,11 @@ export function buildEpub(chapters: ManuscriptChapter[], options: BookBuildOptio
         });
     });
 
+    // nav/ncx 的第一项是封面页（如有），正文目录随后
+    const navEntries: Array<{ href: string; label: string }> = cover
+        ? [{ href: 'cover.xhtml', label: '封面' }, ...entries]
+        : entries;
+
     const zipEntries: ZipEntry[] = [
         // OCF 要求 mimetype 是 ZIP 的第一个条目且不压缩
         { path: 'mimetype', data: EPUB_MIMETYPE },
@@ -280,12 +342,19 @@ export function buildEpub(chapters: ManuscriptChapter[], options: BookBuildOptio
         { path: 'OEBPS/content.opf', data: buildContentOpf(entries, metadata, identifier, modified) },
         {
             path: 'OEBPS/nav.xhtml',
-            data: buildNavXhtml(entries, metadata.title, metadata.language || 'zh-CN'),
+            data: buildNavXhtml(navEntries, metadata.title, metadata.language || 'zh-CN'),
         },
-        { path: 'OEBPS/toc.ncx', data: buildTocNcx(entries, metadata.title, identifier) },
+        { path: 'OEBPS/toc.ncx', data: buildTocNcx(navEntries, metadata.title, identifier) },
         { path: 'OEBPS/style.css', data: buildStyleCss() },
         ...chapterFiles,
     ];
+    if (cover) {
+        const imageHref = `images/cover.${cover.fileExt}`;
+        zipEntries.push(
+            { path: `OEBPS/${imageHref}`, data: cover.data },
+            { path: 'OEBPS/cover.xhtml', data: buildCoverXhtml(imageHref) },
+        );
+    }
 
     return {
         data: createZip(zipEntries, { date: options.zipDate ?? date }),

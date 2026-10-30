@@ -30,7 +30,9 @@ import {
     ContextAnalyzer,
     DynamicSampleSelector,
     TieredInjectionBuilder,
+    TieredBuildStats,
 } from './style/dynamic-injection-engine';
+import type { InjectionLedger, InjectionLedgerEntry, InjectionCategory, InjectionInfluence } from '../shared/injection-ledger';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
 const intensityEngine = new StyleIntensityEngine();
@@ -65,6 +67,8 @@ export interface PromptSnapshot {
     }>;
     crossVolumeContext?: string;
     longTermMemoryContext?: string;
+    /** 实体状态速览（结算回写的修为/位置/所有权/近况；v4.20 图谱反查） */
+    entityRelationsContext?: string;
     fanficRulesContext?: string;
     /** 创作模式硬约束（短篇/剧本）；长篇为空 */
     creationModeContext?: string;
@@ -101,6 +105,10 @@ export class PromptBuilder {
     private readonly L2_CACHE_TTL = 5000;
     /** 动态风格注入引擎（懒加载） */
     private contextAnalyzer?: ContextAnalyzer;
+    /** v4.20 注入溯源：最近一次指纹分层拼装统计（prompt-ledger 消费） */
+    lastFingerprintStats?: TieredBuildStats;
+    /** v4.20 指纹注入总预算（字符）；未设置时用 TieredInjectionBuilder 默认 2000 */
+    fingerprintBudget?: number;
     private dynamicSampleSelector?: DynamicSampleSelector;
     private tieredInjectionBuilder?: TieredInjectionBuilder;
     /** 指纹筛选回退全量的降级事件是否已发过（每实例只报一次，避免逐章刷屏） */
@@ -312,12 +320,20 @@ export class PromptBuilder {
             const selectedSamples = this.dynamicSampleSelector.select(samplesWithFpId, context, 3);
 
             // 5. 分级注入拼装（TR-6.3 + TR-6.5）：全局层 + 段落层 + 句子层
+            const stats: TieredBuildStats = {
+                budget: 0, fingerprintCount: 0, sampleCount: 0,
+                globalChars: 0, paragraphChars: 0, sentenceChars: 0,
+                totalChars: 0, droppedSentence: false, truncatedParagraph: false,
+            };
             const result = this.tieredInjectionBuilder.build(
                 fingerprintsForInjection,
                 selectedSamples,
                 context,
                 intensityConfigs,
+                this.fingerprintBudget,
+                stats,
             );
+            this.lastFingerprintStats = stats;
 
             return result;
         } catch (e) {
@@ -675,6 +691,13 @@ export class PromptBuilder {
         return ['【A4 角色关系状态（请让对话/互动符合这些关系数值）】', ...lines, ''];
     }
 
+    /** v4.20: 实体状态速览——境界/位置/所有权/近况（结算回写，零 AI） */
+    getEntityRelationsPromptParts(): string[] {
+        const ctx = (this.getSnapshot()?.entityRelationsContext || '').trim();
+        if (!ctx) return [];
+        return [ctx, ''];
+    }
+
     /** D2: 跨卷一致性——注入前面卷的状态快照 */
     getCrossVolumePromptParts(): string[] {
         const ctx = (this.getSnapshot()?.crossVolumeContext || '').trim();
@@ -709,13 +732,62 @@ export class PromptBuilder {
         return [ctx, ''];
     }
 
+    /**
+     * v4.20 协同写作侧注入账本：把快照里已生效的记忆/风格/流程段聚合成可渲染账本。
+     * 指纹分层用最近一次拼装统计（lastFingerprintStats）；未调用过时标注「未调用」。
+     */
+    buildCoWriterInjectionLedger(): InjectionLedger {
+        const snap = this.getSnapshot();
+        const entries: InjectionLedgerEntry[] = [];
+        const push = (key: string, label: string, category: InjectionCategory, influence: InjectionInfluence, source: string, text: string | undefined, placement: 'system' | 'user' | 'both' = 'system'): void => {
+            const chars = (text || '').trim().length;
+            entries.push({ key, label, category, influence, source, chars, estTokens: Math.ceil(chars / 1.5), placement });
+        };
+
+        push('writingRules', '写作规则', '流程', '流程约束', '项目 写作规则.md', snap?.writingRules);
+        push('storyContextPack', '故事上下文包', '长篇记忆', '事实记忆', '故事上下文总线（4200/24000 token 预算）', snap?.storyContextPack);
+        push('longTermMemory', '长篇记忆', '长篇记忆', '事实记忆', '事实索引 confirmed + 前情提要', snap?.longTermMemoryContext);
+        push('entityRelations', '实体状态速览', '实体速览', '事实记忆', '结算回写 + 图谱反查', snap?.entityRelationsContext);
+        push('crossVolume', '跨卷状态快照', '长篇记忆', '事实记忆', '跨卷整合器', snap?.crossVolumeContext);
+        push('allChars', '人物状态', '实体', '事实记忆', '结算回写实体状态', snap?.allChars);
+        push('allFactions', '势力状态', '实体', '事实记忆', '结算回写势力状态', snap?.allFactions);
+        push('allLocs', '地点', '实体', '事实记忆', '结算回写地点状态', snap?.allLocs);
+        push('allItems', '物品功法', '实体', '事实记忆', '结算回写物品归属与状态', snap?.allItems);
+
+        const fp = this.lastFingerprintStats;
+        entries.push({
+            key: 'fingerprintTiers',
+            label: '写作指纹分层',
+            category: '写作指纹',
+            influence: '风格指引',
+            source: 'TieredInjectionBuilder（全局/段落/句子三层）',
+            chars: fp?.totalChars ?? 0,
+            estTokens: Math.ceil((fp?.totalChars ?? 0) / 1.5),
+            budget: fp?.budget ?? 2000,
+            truncated: fp?.truncatedParagraph || fp?.droppedSentence || false,
+            strength: fp ? `${fp.fingerprintCount} 个指纹 / ${fp.sampleCount} 个样本` : '本次会话未调用',
+            placement: 'system',
+        });
+
+        const totalChars = entries.reduce((sum, entry) => sum + entry.chars, 0);
+        const totalEstTokens = entries.reduce((sum, entry) => sum + entry.estTokens, 0);
+        return {
+            entries,
+            totalChars,
+            totalEstTokens,
+            truncatedCount: entries.filter((entry) => entry.truncated).length,
+            generatedAt: Date.now(),
+        };
+    }
+
     /** 统一聚合 A2/A3/A4/D2 注入点 */
     getNarrativeDriverPromptParts(precedingText: string): string[] {
         return [
             ...this.getEmotionAnchorPromptParts(),
             ...this.getForeshadowTriggerPromptParts(precedingText),
             ...this.getRelationshipDriverPromptParts(precedingText),
-            ...this.getCrossVolumePromptParts()
+            ...this.getCrossVolumePromptParts(),
+            ...this.getEntityRelationsPromptParts()
         ];
     }
 

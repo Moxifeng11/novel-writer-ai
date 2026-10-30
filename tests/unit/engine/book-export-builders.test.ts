@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { createZip, crc32 } from '../../../engine/export/zip-writer';
-import { buildEpub, EPUB_MIMETYPE } from '../../../engine/export/epub-builder';
+import { buildEpub, coverMediaTypeForExt, EPUB_MIMETYPE, type BookBuildOptions } from '../../../engine/export/epub-builder';
 import { buildDocx } from '../../../engine/export/docx-builder';
 import type { ManuscriptChapter } from '../../../engine/export/manuscript-compiler';
 
 const FIXED_DATE = new Date('2026-10-27T08:00:00Z');
+/** 1×1 PNG 的文件头（不需要可解码，只验证字节原样进入 ZIP） */
+const COVER_PNG = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+    0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+    0x42, 0x60, 0x82,
+]);
 
 function chapter(overrides: Partial<ManuscriptChapter> = {}): ManuscriptChapter {
     return {
@@ -181,6 +189,86 @@ describe('buildEpub', () => {
         });
         const entries = readZip(built.data);
         expect(text(entries, 'OEBPS/text/chapter-0001.xhtml')).toContain('<h2>第1节 开局</h2>');
+    });
+});
+
+describe('buildEpub — 封面图', () => {
+    const chapters = [chapter(), chapter({ chapter: '第2章', chapterNum: 2, title: '', content: '# 第2章\n\n第二章正文。' })];
+    const baseOptions: BookBuildOptions = {
+        includeVolumeHeadings: true,
+        includeChapterTitles: true,
+        unitLabel: '章',
+        metadata: { title: '测试书', author: '作者甲', date: FIXED_DATE },
+        zipDate: FIXED_DATE,
+    };
+
+    it('无封面：不产生 cover 相关条目，spine 从第一章开始', () => {
+        const built = buildEpub(chapters, baseOptions);
+        const entries = readZip(built.data);
+        expect([...entries.keys()].some(name => name.includes('cover'))).toBe(false);
+        const opf = text(entries, 'OEBPS/content.opf');
+        expect(opf).not.toContain('properties="cover-image"');
+        expect(opf).not.toContain('<meta name="cover"');
+        const nav = text(entries, 'OEBPS/nav.xhtml');
+        expect(nav.indexOf('chapter-0001.xhtml')).toBeLessThan(nav.indexOf('chapter-0002.xhtml'));
+        expect(nav).not.toContain('封面');
+    });
+
+    it('带封面：图片字节原样入包，OPF 声明 cover-image，封面页在 spine 首位', () => {
+        const built = buildEpub(chapters, {
+            ...baseOptions,
+            metadata: { ...baseOptions.metadata, cover: { data: COVER_PNG, mediaType: 'image/png', fileExt: 'png' } },
+        });
+        const entries = readZip(built.data);
+        const names = [...entries.keys()];
+        expect(names).toContain('OEBPS/images/cover.png');
+        expect(names).toContain('OEBPS/cover.xhtml');
+        expect([...entries.get('OEBPS/images/cover.png')!]).toEqual([...COVER_PNG]);
+
+        const opf = text(entries, 'OEBPS/content.opf');
+        expect(opf).toContain('<item id="cover-image" href="images/cover.png" media-type="image/png" properties="cover-image"/>');
+        expect(opf).toContain('<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>');
+        expect(opf).toContain('<meta name="cover" content="cover-image"/>');
+        // spine 顺序：封面页在最前
+        expect(opf.indexOf('idref="cover-page"')).toBeGreaterThan(-1);
+        expect(opf.indexOf('idref="cover-page"')).toBeLessThan(opf.indexOf('idref="chapter-1"'));
+
+        const coverPage = text(entries, 'OEBPS/cover.xhtml');
+        expect(coverPage).toContain('<img src="images/cover.png" alt="cover"/>');
+
+        // nav/ncx 首项为封面
+        const nav = text(entries, 'OEBPS/nav.xhtml');
+        expect(nav.indexOf('>封面</a>')).toBeLessThan(nav.indexOf('chapter-0001.xhtml'));
+        const ncx = text(entries, 'OEBPS/toc.ncx');
+        expect(ncx.indexOf('<text>封面</text>')).toBeLessThan(ncx.indexOf('<text>第1章'));
+    });
+
+    it('封面不影响章节统计', () => {
+        const built = buildEpub(chapters, {
+            ...baseOptions,
+            metadata: { ...baseOptions.metadata, cover: { data: COVER_PNG, mediaType: 'image/png', fileExt: 'png' } },
+        });
+        expect(built.chapterCount).toBe(2);
+        expect(built.wordCount).toBeGreaterThan(0);
+    });
+
+    it('空封面数据按无封面处理', () => {
+        const built = buildEpub(chapters, {
+            ...baseOptions,
+            metadata: { ...baseOptions.metadata, cover: { data: new Uint8Array(0), mediaType: 'image/png', fileExt: 'png' } },
+        });
+        const entries = readZip(built.data);
+        expect([...entries.keys()].some(name => name.includes('cover'))).toBe(false);
+    });
+
+    it('扩展名 → media type 映射', () => {
+        expect(coverMediaTypeForExt('png')).toBe('image/png');
+        expect(coverMediaTypeForExt('jpg')).toBe('image/jpeg');
+        expect(coverMediaTypeForExt('jpeg')).toBe('image/jpeg');
+        expect(coverMediaTypeForExt('webp')).toBe('image/webp');
+        expect(coverMediaTypeForExt('gif')).toBe('image/gif');
+        expect(coverMediaTypeForExt('PNG')).toBe('image/png');
+        expect(coverMediaTypeForExt('bmp')).toBeNull();
     });
 });
 

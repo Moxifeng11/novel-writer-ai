@@ -131,7 +131,7 @@ ${nameList.length > 0 ? `\n【指定人物名称——严格匹配】\n${nameLis
 每个人物必须按照以下Markdown格式输出：
 
 ---
-tags: [人物]
+tags: [人物, nw/实体/人物]
 entity_status: active
 entity_created_at:
 entity_last_changed_at:

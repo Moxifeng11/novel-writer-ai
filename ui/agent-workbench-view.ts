@@ -27,6 +27,18 @@ import { resolveProjectMode as resolveModeFromShared } from '../shared/project-m
 import { openModelPickerPopover, formatWorkbenchModelBadge, closeExistingPopovers } from './model-picker-popover';
 import { VIEW_TYPE_AGENT_WORKBENCH } from '../shared/view-types';
 import { classifyPreviewKind } from '../shared/preview-kind';
+import { createVaultSpillSink, pruneSpillArchive } from './services/agent-spill-store';
+import { createAgentSessionStore, type AgentSessionStore } from './services/agent-session-store';
+import { findModelCapability } from '../shared/model-capabilities';
+import {
+    activeAtToken,
+    buildMentionBlock,
+    extractMentionPaths,
+    filterVaultPaths,
+    formatFileMention,
+    stripMentionMarkers,
+    type MentionToken,
+} from '../shared/file-mention';
 
 const STAGES: Array<{ key: string; label: string; hint: string }> = [
     { key: 'create', label: '① 新建项目', hint: '长篇/短篇/剧本' },
@@ -74,7 +86,21 @@ export class AgentWorkbenchView extends ItemView {
 
     private messagesEl: HTMLElement | null = null;
     private chipsEl: HTMLElement | null = null;
-    private inputEl: HTMLInputElement | null = null;
+    /** 输入框（textarea：支持 Shift+Enter 换行与 @ 引用） */
+    private inputEl: HTMLTextAreaElement | null = null;
+    /** 引用条（「引用」某条回复后显示在输入框上方） */
+    private quoteBarEl: HTMLElement | null = null;
+    private quote: { text: string } | null = null;
+    /** @ 引用候选弹层 */
+    private mentionEl: HTMLElement | null = null;
+    private mentionItems: string[] = [];
+    private mentionIndex = 0;
+    private mentionToken: MentionToken | null = null;
+    /** 库内路径缓存（@ 候选；随文件树刷新重建） */
+    private vaultPathCache: string[] = [];
+    /** 会话存档（.sessions/agent/<项目>.jsonl） */
+    private sessionStore: AgentSessionStore | null = null;
+    private sessionTitleEl: HTMLElement | null = null;
     private projectListEl: HTMLElement | null = null;
     private projectChipEl: HTMLElement | null = null;
     private modelBadgeEl: HTMLButtonElement | null = null;
@@ -210,6 +236,9 @@ export class AgentWorkbenchView extends ItemView {
         this.harnessEngine = null;
         this.ruleEngine = null;
         this.busy = false;
+        // 关视图前把节流中的快照写完（最多 1s 未落盘）
+        void this.sessionStore?.flush();
+        this.sessionStore = null;
         this.contentEl.empty();
     }
 
@@ -235,8 +264,16 @@ export class AgentWorkbenchView extends ItemView {
         const title = header.createDiv({ cls: 'nw-awb-header-title' });
         title.createSpan({ text: '🤖 Agent 创作工作台' });
         this.modeBadgeEl = title.createSpan({ cls: 'nw-awb-mode-badge', text: '启动中…' });
+        // 会话标题（首条用户消息前 30 字；恢复的旧会话也能看出在聊什么）
+        this.sessionTitleEl = title.createSpan({ cls: 'nw-awb-session-title' });
 
         const nav = header.createDiv({ cls: 'nw-awb-header-nav' });
+        const newSessionBtn = nav.createEl('button', {
+            text: '🆕 新会话',
+            cls: 'nw-awb-nav-btn',
+            attr: { title: '清空当前项目的会话存档，重新开始（spill 存档保留 7 天）' },
+        });
+        newSessionBtn.addEventListener('click', () => void this.startNewSession());
         const collapseLeft = nav.createEl('button', { text: '⇤', cls: 'nw-awb-nav-btn nw-awb-collapse-btn', attr: { title: '折叠/展开左栏（项目导航）' } });
         collapseLeft.addEventListener('click', () => {
             const collapsed = this.layoutEl?.hasClass('nw-awb-left-collapsed');
@@ -445,21 +482,159 @@ export class AgentWorkbenchView extends ItemView {
         this.refreshProjectChip();
         this.refreshModelBadge();
 
+        // 引用条 + @ 候选弹层 + 多行输入框（Enter 发送 / Shift+Enter 换行 / 输入法不误发）
+        this.quoteBarEl = container.createDiv({ cls: 'nw-awb-quote-bar nw-awb-quote-bar-hidden' });
+        this.mentionEl = container.createDiv({ cls: 'nw-awb-mention-pop nw-awb-mention-pop-hidden' });
         const inputRow = container.createDiv({ cls: 'nw-awb-input-row' });
-        this.inputEl = inputRow.createEl('input', {
-            type: 'text',
+        this.inputEl = inputRow.createEl('textarea', {
             cls: 'nw-awb-input',
-            attr: { placeholder: '对 Agent 说点什么…（Enter 发送，例如「新建长篇」或「看看我的进度」）' },
+            attr: {
+                rows: '1',
+                placeholder: '对 Agent 说点什么…（@ 引用文件，Enter 发送，Shift+Enter 换行）',
+            },
+        });
+        this.inputEl.addEventListener('input', () => {
+            this.autoGrowInput();
+            this.updateMentionPopup();
         });
         this.inputEl.addEventListener('keydown', (ev: KeyboardEvent) => {
-            // Shift+Enter 不发送（单行输入框没有换行语义，但用户按 Shift 时不应误发）
-            if (ev.key === 'Enter' && !ev.isComposing && !ev.shiftKey) {
-                ev.preventDefault();
-                void this.submit(this.inputEl?.value || '');
-            }
+            if (this.onComposerKeydown(ev)) return;
+        });
+        this.inputEl.addEventListener('blur', () => {
+            // 延迟关闭：点击候选时 blur 先于 click，立即关会吞掉选择
+            window.setTimeout(() => this.closeMentionPopup(), 120);
         });
         const sendBtn = inputRow.createEl('button', { text: '↑', cls: 'nw-awb-send', attr: { title: '发送' } });
         sendBtn.addEventListener('click', () => void this.submit(this.inputEl?.value || ''));
+    }
+
+    /** textarea 自适应高度（1–6 行），空值时复位 */
+    private autoGrowInput(): void {
+        if (!this.inputEl) return;
+        this.inputEl.style.height = 'auto';
+        this.inputEl.style.height = `${Math.min(132, this.inputEl.scrollHeight)}px`;
+    }
+
+    /**
+     * 输入框键盘处理。
+     * @returns 是否已消费该按键（true 时调用方不再处理）
+     */
+    private onComposerKeydown(ev: KeyboardEvent): boolean {
+        if (this.mentionItems.length > 0) {
+            if (ev.key === 'ArrowDown') {
+                ev.preventDefault();
+                this.mentionIndex = (this.mentionIndex + 1) % this.mentionItems.length;
+                this.renderMentionPopup();
+                return true;
+            }
+            if (ev.key === 'ArrowUp') {
+                ev.preventDefault();
+                this.mentionIndex = (this.mentionIndex - 1 + this.mentionItems.length) % this.mentionItems.length;
+                this.renderMentionPopup();
+                return true;
+            }
+            if (ev.key === 'Enter' || ev.key === 'Tab') {
+                if (!ev.isComposing) {
+                    ev.preventDefault();
+                    this.acceptMention(this.mentionItems[this.mentionIndex]);
+                    return true;
+                }
+            }
+            if (ev.key === 'Escape') {
+                ev.preventDefault();
+                this.closeMentionPopup();
+                return true;
+            }
+        }
+        if (ev.key === 'Enter' && !ev.isComposing && !ev.shiftKey) {
+            ev.preventDefault();
+            void this.submit(this.inputEl?.value || '');
+            return true;
+        }
+        return false;
+    }
+
+    /** 重新计算 @ 候选（光标前处于 `@` 引用中时打开弹层） */
+    private updateMentionPopup(): void {
+        if (!this.inputEl) return;
+        const token = activeAtToken(this.inputEl.value, this.inputEl.selectionStart ?? 0);
+        if (!token) {
+            this.closeMentionPopup();
+            return;
+        }
+        if (this.vaultPathCache.length === 0) {
+            this.vaultPathCache = this.app.vault.getMarkdownFiles().map(file => file.path);
+        }
+        const items = filterVaultPaths(this.vaultPathCache, token.query, 20);
+        if (items.length === 0) {
+            this.closeMentionPopup();
+            return;
+        }
+        this.mentionToken = token;
+        this.mentionItems = items;
+        this.mentionIndex = 0;
+        this.renderMentionPopup();
+    }
+
+    private renderMentionPopup(): void {
+        if (!this.mentionEl) return;
+        this.mentionEl.empty();
+        this.mentionEl.toggleClass('nw-awb-mention-pop-hidden', this.mentionItems.length === 0);
+        this.mentionItems.forEach((path, index) => {
+            const item = this.mentionEl!.createDiv({
+                cls: `nw-awb-mention-item${index === this.mentionIndex ? ' is-active' : ''}`,
+            });
+            const slash = path.lastIndexOf('/');
+            if (slash > 0) item.createSpan({ cls: 'nw-awb-mention-dir', text: path.slice(0, slash + 1) });
+            item.createSpan({ cls: 'nw-awb-mention-name', text: path.slice(slash + 1) });
+            // mousedown 阻止 blur，click 才拿得到输入框焦点
+            item.addEventListener('mousedown', (event) => event.preventDefault());
+            item.addEventListener('click', () => this.acceptMention(path));
+        });
+    }
+
+    private closeMentionPopup(): void {
+        this.mentionItems = [];
+        this.mentionToken = null;
+        this.mentionIndex = 0;
+        this.mentionEl?.empty();
+        this.mentionEl?.addClass('nw-awb-mention-pop-hidden');
+    }
+
+    /** 用完整路径替换光标前的 `@片段` */
+    private acceptMention(path: string): void {
+        if (!path) return;
+        const token = this.mentionToken;
+        const input = this.inputEl;
+        this.closeMentionPopup();
+        if (!input) return;
+        const mention = `${formatFileMention(path)} `;
+        if (token) {
+            const before = input.value.slice(0, token.start);
+            const after = input.value.slice(token.end);
+            input.value = `${before}${mention}${after}`;
+            const pos = before.length + mention.length;
+            input.setSelectionRange(pos, pos);
+        } else {
+            input.value = `${input.value}${mention}`;
+        }
+        this.autoGrowInput();
+        input.focus();
+    }
+
+    /** 设置/清除引用（发送时以「> 原话」前置） */
+    private setQuote(text: string | null): void {
+        this.quote = text ? { text: text.trim() } : null;
+        if (!this.quoteBarEl) return;
+        this.quoteBarEl.empty();
+        this.quoteBarEl.toggleClass('nw-awb-quote-bar-hidden', !this.quote);
+        if (!this.quote) return;
+        const preview = this.quote.text.length > 160 ? `${this.quote.text.slice(0, 160)}…` : this.quote.text;
+        this.quoteBarEl.createSpan({ cls: 'nw-awb-quote-mark', text: '❝' });
+        this.quoteBarEl.createSpan({ cls: 'nw-awb-quote-text', text: preview });
+        const clear = this.quoteBarEl.createEl('button', { text: '×', cls: 'nw-awb-quote-clear', attr: { title: '取消引用' } });
+        clear.addEventListener('click', () => this.setQuote(null));
+        this.inputEl?.focus();
     }
 
     /** 项目切换 chip：显示当前项目，点击弹出原生分组菜单 */
@@ -548,6 +723,8 @@ export class AgentWorkbenchView extends ItemView {
     /** 刷新文件树：根 = 当前聚焦项目；无项目时显示模式库根目录 */
     private refreshFileTree(): void {
         if (!this.fileTreeEl || !this.previewPathEl) return;
+        // 新文件/新项目会让 @ 候选过期：下次输入时重建
+        this.vaultPathCache = [];
         // 每回合都会重建文件树：保留滚动位置（长树里点一个文件就跳回顶部）
         const scrollTop = this.fileTreeEl.scrollTop;
         this.fileTreeEl.empty();
@@ -694,9 +871,13 @@ export class AgentWorkbenchView extends ItemView {
 
     private async boot(): Promise<void> {
         const session = this.sessionSeq;
+        // 清理过期 spill 存档（只动 .sessions/spill/agent 下超过 7 天的自己的文件）
+        void pruneSpillArchive(this.app);
         const ctx = getAgentContext(this.app, this.plugin);
         this.activeProject = ctx.activeProject || this.activeProject;
         this.setModeBadge(this.plugin.hasAiCredentials);
+        // 会话存档按项目分文件；切换项目后重启会话会读/写各自的档
+        this.sessionStore = createAgentSessionStore(this.app, () => this.resolveActiveProject());
 
         if (this.plugin.hasAiCredentials) {
             // 每次装配一个新会话就换一个中止器：关闭/重启时能真正停掉在途回合与工具
@@ -714,14 +895,35 @@ export class AgentWorkbenchView extends ItemView {
                 portDeps: { port: this.port, ctx },
                 // 会话压缩（dsh compaction 思路）：30 轮触发，保留最近 12 轮
                 compaction: { thresholdTurns: 30, keepTurns: 12 },
+                // 大结果落盘（dsh spill）：超过 6000 字符写 .sessions/spill，日志只留定位符
+                spill: createVaultSpillSink(this.app, () => this.resolveActiveProject()),
+                // 窗口占用用当前模型的能力表估算（无 tokenizer，按投影字符 ÷1.5 近似）
+                contextWindowTokens: findModelCapability(this.plugin.settings.defaultModel || '').maxContext,
+                // 会话持久化（dsh session-persistence-jsonl）：每回合结束落盘快照
+                onSessionChange: (snapshot) => this.sessionStore?.save(snapshot),
                 signal: abort.signal,
             });
             try {
                 this.harnessEngine = harness;
+                // 有存档就先恢复历史，不再重放开场白（dsh session restore）
+                const snapshot = await this.sessionStore?.load();
+                if (session !== this.sessionSeq) return;
+                if (snapshot && snapshot.events.length > 0) {
+                    harness.restore(snapshot);
+                    const history = harness.getHistory();
+                    if (history.length > 0) {
+                        this.renderRestoredHistory(history);
+                        this.renderTelemetry();
+                        this.renderPlan();
+                        this.refreshSessionTitle();
+                        return;
+                    }
+                }
                 const outcome = await harness.start();
                 // 启动期间会话已被重启/关闭：旧问候不得写进新会话
                 if (session !== this.sessionSeq) return;
                 this.renderOutcome(outcome);
+                this.refreshSessionTitle();
                 return;
             } catch (e) {
                 if (session !== this.sessionSeq) return;
@@ -756,18 +958,58 @@ export class AgentWorkbenchView extends ItemView {
         this.modeBadgeEl.toggleClass('is-ai', aiMode);
     }
 
+    /** 会话标题（首条用户消息前 30 字） */
+    private refreshSessionTitle(): void {
+        if (!this.sessionTitleEl) return;
+        const title = this.harnessEngine?.getSessionTitle() || '';
+        this.sessionTitleEl.setText(title ? `· ${title}` : '');
+        this.sessionTitleEl.toggleClass('nw-awb-session-title-empty', !title);
+    }
+
+    /** 回填存档里的历史（dsh session restore）：只重放用户/助手气泡，工具行省略 */
+    private renderRestoredHistory(history: Array<{ role: 'user' | 'agent'; text: string }>): void {
+        if (!this.messagesEl) return;
+        this.messagesEl.empty();
+        for (const item of history) {
+            if (item.role === 'user') this.renderUserBubble(item.text);
+            else this.renderMessage({ role: 'agent', text: item.text });
+        }
+        this.appendSystemNote(`已恢复上次会话（${history.length} 条消息）。点「🆕 新会话」可清空重来。`);
+        this.scrollToEnd();
+    }
+
+    /** 「新会话」：清空本项目存档并重建引擎（spill 存档不在此列） */
+    private async startNewSession(): Promise<void> {
+        if (this.busy) {
+            new Notice('当前回合仍在执行，请稍后再开新会话', 3000);
+            return;
+        }
+        await this.sessionStore?.clear();
+        this.setQuote(null);
+        this.resetComposer();
+        this.lastUserText = '';
+        await this.restart();
+    }
+
     /**
      * 提交一次用户输入。
      * source='input' 表示键盘/发送按钮（可清空草稿）；chip/项目卡点击不清草稿，
      * 否则用户正在写的半句话会被静默丢弃。
      */
     private async submit(raw: string, source: 'input' | 'chip' | 'project' = 'input'): Promise<void> {
-        const text = raw.trim();
+        let text = raw.trim();
         if (!text) return;
+
+        // 引用消息：以「> 原话」前置（只作用于手输，chip/项目卡点击不带上旧引用）
+        const isCommandToken = text === '__retry__' || text === '__fallback_rule__';
+        if (this.quote && source === 'input' && !isCommandToken) {
+            text = `> ${this.quote.text.slice(0, 600)}\n\n${text}`;
+            this.setQuote(null);
+        }
 
         // 控制令牌不上屏、不写进会话历史（旧实现把 __retry__/__fallback_rule__ 当用户消息）
         if (text === '__fallback_rule__') {
-            if (this.inputEl) this.inputEl.value = '';
+            if (this.inputEl) this.resetComposer();
             // 回合进行中切离线：先中止 harness 回合，否则它会继续跑完剩余步骤
             this.turnAbort?.abort();
             await this.switchToRuleEngine();
@@ -775,7 +1017,7 @@ export class AgentWorkbenchView extends ItemView {
         }
         if (text === '__retry__') {
             if (this.busy) return;
-            if (this.inputEl) this.inputEl.value = '';
+            if (this.inputEl) this.resetComposer();
             await this.retryLastTurn();
             return;
         }
@@ -783,10 +1025,12 @@ export class AgentWorkbenchView extends ItemView {
         if (this.busy) {
             // 回合进行中：补充消息进入收件箱（吸收 dsh steering），
             // 模型下一步就能看到，不必等整轮结束，也不打断当前工具链。
-            const accepted = this.harnessEngine?.steer(text) ?? false;
+            // 补充消息同样带上 @ 引用清单，否则模型看不到用户刚引用的文件。
+            const steerBlock = buildMentionBlock(extractMentionPaths(text));
+            const accepted = this.harnessEngine?.steer(steerBlock ? `${text}\n\n${steerBlock}` : text) ?? false;
             if (accepted) {
-                if (source === 'input' && this.inputEl) this.inputEl.value = '';
-                this.pushUser(text);
+                if (source === 'input' && this.inputEl) this.resetComposer();
+                this.pushUser(stripMentionMarkers(text));
                 this.appendSystemNote('已插入当前回合，模型下一步会看到');
             } else {
                 new Notice('当前回合仍在执行，请稍后再发', 2500);
@@ -794,10 +1038,21 @@ export class AgentWorkbenchView extends ItemView {
             return;
         }
 
-        if (source === 'input' && this.inputEl) this.inputEl.value = '';
-        this.pushUser(text);
-        this.lastUserText = text;
-        await this.runTurn(text);
+        if (source === 'input' && this.inputEl) this.resetComposer();
+        // @ 引用：气泡只显示用户输入，引擎收到「输入 + 引用文件清单」（内容仍按需 read_file）
+        const mentionBlock = buildMentionBlock(extractMentionPaths(text));
+        const payload = mentionBlock ? `${text}\n\n${mentionBlock}` : text;
+        this.pushUser(stripMentionMarkers(text));
+        this.lastUserText = payload;
+        await this.runTurn(payload);
+    }
+
+    /** 清空输入框并复位高度/候选弹层 */
+    private resetComposer(): void {
+        if (!this.inputEl) return;
+        this.inputEl.value = '';
+        this.closeMentionPopup();
+        this.autoGrowInput();
     }
 
     /** 「重试」：重放上一条用户消息，不重复渲染用户气泡 */
@@ -917,6 +1172,7 @@ export class AgentWorkbenchView extends ItemView {
         this.renderChips((last?.chips as AgentChip[] | undefined) || outcome.chips.map(chip => ({ ...chip })));
         this.renderTelemetry();
         this.renderPlan();
+        this.refreshSessionTitle();
         // Agent 新建项目后会把 pickedProject 写进记忆：视图必须跟着切过去，
         // 否则项目 chip/文件树/高亮仍停在旧项目（旧实现只在用户手点项目卡时同步）。
         const picked = this.harnessEngine?.getSlots()?.pickedProject;
@@ -988,15 +1244,26 @@ export class AgentWorkbenchView extends ItemView {
                 bubble.createDiv({ text: line, cls: 'nw-awb-line' });
             }
         }
-        void row;
+        // 引用这条消息（dsh message-quotes）：悬停出现，点击后输入框上方显示引用条
+        const quoteBtn = row.createEl('button', {
+            text: '❝',
+            cls: 'nw-awb-quote-btn',
+            attr: { title: '引用这条消息（发送时作为引文前置）' },
+        });
+        quoteBtn.addEventListener('click', () => this.setQuote(message.text));
     }
 
     private pushUser(text: string): void {
+        this.renderUserBubble(text);
+        this.renderChips([]);
+        this.scrollToEnd();
+    }
+
+    /** 用户气泡（新消息与恢复历史共用） */
+    private renderUserBubble(text: string): void {
         if (!this.messagesEl) return;
         const row = this.messagesEl.createDiv({ cls: 'nw-awb-row nw-awb-row-user' });
         row.createDiv({ cls: 'nw-awb-bubble', text });
-        this.renderChips([]);
-        this.scrollToEnd();
     }
 
     private renderChips(chips: AgentChip[]): void {
@@ -1064,6 +1331,7 @@ export class AgentWorkbenchView extends ItemView {
         const telemetry: HarnessTelemetry = this.harnessEngine?.getTelemetry() || {
             turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [],
             prunedChars: 0, prunedResults: 0, compactions: 0, compactedEvents: 0, steers: 0,
+            contextTokens: 0, windowUsage: 0, spilledResults: 0, spilledChars: 0,
         };
 
         // 遥测网格：复用既有的 grid 容器
@@ -1078,6 +1346,10 @@ export class AgentWorkbenchView extends ItemView {
                 // dsh token-meter / pruner 的可观测化：裁剪与压缩省下的上下文
                 ['省字符', telemetry.prunedChars > 0 ? `${Math.round(telemetry.prunedChars / 1000)}k` : '0'],
                 ['压缩', String(telemetry.compactions)],
+                // v4.20 dsh token-meter：会话上下文规模与窗口占用
+                ['上下文', telemetry.contextTokens > 0 ? `~${Math.round(telemetry.contextTokens / 1000)}k` : '0'],
+                ['窗口', telemetry.windowUsage > 0 ? `${Math.round(telemetry.windowUsage * 100)}%` : '—'],
+                ['落盘', telemetry.spilledResults > 0 ? `${telemetry.spilledResults} 条 / 省 ${Math.round(telemetry.spilledChars / 1000)}k` : '0'],
             ];
             for (const [label, value] of cells) {
                 const cell = grid.createDiv({ cls: 'nw-awb-telemetry-cell' });

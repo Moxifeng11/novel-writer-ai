@@ -283,6 +283,7 @@ export const BODY_GENERATION_USER_TEMPLATE = `【本章在分卷中的定位】\
 【本章大纲——关键场景路线图】\${outlineContent}
 【前文发生了什么】\${prevChaptersSummary}
 【上一章结尾（本章第一段必须从这里往下接）】\${prevChapEnding}
+\${entityRelations}
 \${longTermMemory}
 【这个世界】\${worldView}
 【设定库（能力/物品/地理/势力硬约束）】\${settingLib}
@@ -451,6 +452,7 @@ NEW_FACTION: 势力名 | 势力描述
 NEW_ITEM: 物品/功法/法宝名 | 简要描述
 NEW_FORESHADOW: 伏笔内容 | 埋入章节 | 预计揭示章节 | 相关人物 | 关联主线
 NEW_TIMELINE: 时间点 | 事件
+CHARACTER_BEHAVIOR: 角色名 | 本章行为摘要（一句话，写他/她本章做了什么）
 RELATION: 实体A|实体B|关系类型|关系描述
 GROWTH: 人物名|成长类型|新值|描述
 EMOTION: [[角色]] | 当前情绪 | 情绪描述
@@ -459,6 +461,7 @@ PROMISE_ADVANCE: 承诺/谜团 | 本章 | 推进方式
 PROMISE_RESOLVE: 承诺/谜团 | 本章 | 兑现方式
 PROMISE_DROP: 承诺/谜团 | 放弃原因
 ARC: 角色 | 阶段前 | 阶段后 | 触发事件 | 是否可见
+（归属类字段——UPDATE_CHARACTER 的 所属势力/当前位置、UPDATE_ITEM 的 所属/归属——只需填实体名，结算会自动转成 wiki-link 进关系图谱）
 
 ## ⚠️ 强制提取规则（必须执行，不执行视为分析失败）
 1. **伏笔提取**：逐段扫描正文，找出所有隐含伏笔线索（未解之谜、暗示的威胁、角色秘密、隐藏关系等），必须输出至少 1 条 NEW_FORESHADOW 指令。
@@ -470,6 +473,7 @@ ARC: 角色 | 阶段前 | 阶段后 | 触发事件 | 是否可见
 4. **新实体创建**：如果正文中首次出现新的人物、地点、势力或物品功法，必须输出对应的 NEW_ 指令。
 5. **承诺/谜团**：本章角色许下承诺、抛出谜团、形成约定或威胁时，输出 PROMISE_OPEN；已有承诺被推进/兑现/放弃时，输出 PROMISE_ADVANCE/RESOLVE/DROP。
 6. **角色弧线**：本章主角或重要配角发生可见的信念/阶段变化时，输出 ARC 指令；没有变化则不输出，不要硬凑。
+7. **角色行为摘要**：本章每个有显著行动/对话/状态变化的角色，输出 1 条 CHARACTER_BEHAVIOR（一句话、≤40 字，写"谁在什么处境下做了什么"）；主角必填。
 
 【大纲上下文——用于对照检测】
 【卷计划中的本章任务】\${chapPlan}

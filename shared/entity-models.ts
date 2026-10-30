@@ -164,6 +164,8 @@ export interface ItemDomainModel extends BaseEntity {
     description?: string;
     effect?: string;
     owner?: string;
+    /** 物品当前状态（在谁手里/封印/损毁等；v4.20 结算回写） */
+    currentStatus?: string;
 }
 
 // ============================================================
@@ -477,6 +479,7 @@ export function itemFromFrontmatter(
         description: fm['描述'],
         effect: fm['效果'],
         owner: fm['所属/归属'],
+        currentStatus: fm['当前状态'],
     };
 }
 
@@ -491,6 +494,7 @@ export function itemToFrontmatter(model: ItemDomainModel): ItemFrontmatter {
         描述: model.description,
         效果: model.effect,
         '所属/归属': model.owner,
+        当前状态: model.currentStatus,
         entity_status: model.entityStatus,
         entity_created_at: model.createdAt,
         entity_last_changed_at: model.lastChangedAt,

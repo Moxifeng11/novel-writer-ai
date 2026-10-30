@@ -54,6 +54,8 @@ import type { GatheredContext } from './context/context-types';
 import type { SceneCardFields } from '../shared/scene-card';
 import { entityStateChangesToFacts } from './co-writer-state-sync';
 import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
+import { buildEntityRelationsBlock } from './entity-graph';
+import { formatInjectionLedger } from '../shared/injection-ledger';
 import { CrossVolumeIntegrator } from './cross-volume-integration';
 import { loadLongTermMemory } from './long-term-memory';
 import { formatFanficRulesForPrompt, formatFanficRulesLoadWarning, readFanficRulesFromFS, type FanficRules } from '../shared/fanfic-rules';
@@ -678,6 +680,25 @@ export class CoWriterEngine {
             log.warn('[CoWriterEngine] A4: 关系状态加载失败，继续无关系驱动:', e);
         }
 
+        // ===== A5: 实体状态速览（结算回写的境界/位置/所有权/近况；v4.20 图谱反查，零 AI） =====
+        try {
+            if (this.snapshot) {
+                const names = new Set<string>();
+                for (const rel of this.snapshot.relationshipStates || []) {
+                    if (rel.charA) names.add(rel.charA);
+                    if (rel.charB) names.add(rel.charB);
+                }
+                const block = await buildEntityRelationsBlock(this.app, project, [...names].slice(0, 6));
+                if (!this.isInitCurrent(seq)) return;
+                if (block.trim()) {
+                    this.snapshot.entityRelationsContext = block.trim();
+                    log.info('[CoWriterEngine] A5: 实体状态速览生成完成，', block.length, '字');
+                }
+            }
+        } catch (e) {
+            log.warn('[CoWriterEngine] A5: 实体状态速览失败，继续无速览模式:', e);
+        }
+
         // ===== D2: 加载跨卷状态快照上下文（仅非首卷需要） =====
         try {
             if (this.snapshot && volume && volume !== '第1卷') {
@@ -698,7 +719,12 @@ export class CoWriterEngine {
             if (this.snapshot) {
                 const volumeMatch = (volume || '').match(/第(\d+)卷/);
                 const beforeVolume = volumeMatch ? parseInt(volumeMatch[1], 10) : undefined;
-                const longTermMemory = await loadLongTermMemory(this.getFS(), project, { beforeVolume });
+                // v4.20：把当前分卷定位/前情提要作为相关度查询，优先带出与本章相关的事实
+                const memoryQuery = [
+                    this.snapshot?.chapPlan || '',
+                    this.snapshot?.prevChaptersSummary || '',
+                ].filter(Boolean).join('\n').slice(0, 1500);
+                const longTermMemory = await loadLongTermMemory(this.getFS(), project, { beforeVolume, query: memoryQuery });
                 if (!this.isInitCurrent(seq)) return;
                 if (longTermMemory) {
                     this.snapshot.longTermMemoryContext = longTermMemory;
@@ -707,6 +733,14 @@ export class CoWriterEngine {
             }
         } catch (e) {
             log.warn('[CoWriterEngine] 长篇记忆加载失败，继续无长篇记忆:', e);
+        }
+
+        // ===== v4.20 注入溯源：init 完成后输出一次注入账本（监控面板可重复读取） =====
+        try {
+            const ledgerText = this.getInjectionLedgerText();
+            if (ledgerText) log.info('[CoWriterEngine] 注入账本:\n' + ledgerText);
+        } catch (e) {
+            log.warn('[CoWriterEngine] 注入账本生成失败:', e);
         }
 
         // ===== 同人约束：原作核心设定 + 创作规则（原创项目为空） =====
@@ -765,6 +799,11 @@ export class CoWriterEngine {
                 this.fingerprintLibrary,
                 this.vectorStore
             );
+            // v4.20：指纹注入预算可配置（0 = 不限制；未设置走引擎默认 2000）
+            const fpBudget = Number(plugin.settings.fingerprintInjectionBudget);
+            if (Number.isFinite(fpBudget) && fpBudget > 0) {
+                this.promptBuilder.fingerprintBudget = fpBudget;
+            }
 
             // ===== E5: 初始化写作知识库 =====
             try {
@@ -2257,6 +2296,20 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                 .filter(Boolean)
                 .join('→'),
         };
+    }
+
+    /**
+     * v4.20 注入溯源：协同写作侧注入账本文本（PromptBuilder 聚合快照各段 + 指纹分层统计）。
+     * 供监控面板与调试日志消费；PromptBuilder 未装配时返回空串。
+     */
+    getInjectionLedgerText(): string {
+        if (!this.promptBuilder) return '';
+        try {
+            return formatInjectionLedger(this.promptBuilder.buildCoWriterInjectionLedger());
+        } catch (e) {
+            log.warn('[CoWriterEngine] 注入账本生成失败:', e);
+            return '';
+        }
     }
 
     getSnapshot(): ContextSnapshot | null {

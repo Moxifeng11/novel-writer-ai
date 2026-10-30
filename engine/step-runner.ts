@@ -10,6 +10,7 @@ import { fitPromptToContext } from '../shared/prompt-budget';
 import { resolveTaskForStep, resolveTaskModelConfig, type ThinkingMode } from '../shared/task-model';
 import { auditEmotions } from './emotion-auditor';
 import { KnowledgeInjector } from './knowledge-injector';
+import { buildInjectionLedger, formatInjectionLedger, type InjectionLedgerEntry } from '../shared/injection-ledger';
 import { WritingProfileManager } from './writing-profile';
 import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
@@ -816,6 +817,59 @@ export class StepRunner {
             );
             const effectiveUserPrompt = promptAssembly.effectiveUserPrompt;
             const effectiveSystemPrompt = promptAssembly.effectiveSystemPrompt;
+
+            // v4.20 注入溯源账本：模板段（vars）+ 知识注入（injector meta）+ 组装期截断，一次性进执行时间线
+            try {
+                const baseLedger = ctx.vars['_injectionLedger']
+                    ? (JSON.parse(ctx.vars['_injectionLedger']) as { entries: InjectionLedgerEntry[]; generatedAt: number })
+                    : null;
+                const extras: InjectionLedgerEntry[] = [];
+                const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+                const meta = injector?.lastInjectionMeta;
+                if (meta) {
+                    // v4.20 RAG 遥测并入账本：能看出检索了多少次、命中/邻块/去重/丢弃/缓存
+                    const rag = meta.retrieval;
+                    const ragText = rag && rag.calls > 0
+                        ? `RAG ${rag.queries} 查询 · 命中 ${rag.hits} · 邻块 ${rag.neighborMerged} · 去重 ${rag.deduped} · 丢 ${rag.dropped} · 缓存 ${rag.cacheHits}/${rag.cacheHits + rag.cacheMisses}`
+                        : '';
+                    extras.push({
+                        key: 'knowledgeTail', label: '知识注入（风格/节奏/技巧/伏笔）', category: '知识注入',
+                        influence: '风格指引', source: 'KnowledgeInjector + RAG（多查询/邻块/MMR/预算）',
+                        chars: meta.totalChars, estTokens: Math.ceil(meta.totalChars / 1.5),
+                        truncated: promptAssembly.droppedExtra || Boolean(rag && rag.dropped > 0),
+                        strength: [meta.strength !== undefined ? `强度 ${meta.strength}` : '', ragText].filter(Boolean).join('；') || undefined,
+                        placement: 'user',
+                    });
+                }
+                if (promptAssembly.droppedExtra) {
+                    extras.push({
+                        key: 'droppedExtra', label: '知识注入被预算整段丢弃', category: '知识注入',
+                        influence: '风格指引', source: 'prompt 预算闸门',
+                        chars: 0, estTokens: 0, truncated: true, placement: 'user',
+                    });
+                }
+                const ledger = buildInjectionLedger(ctx.vars, {
+                    extra: [...(baseLedger?.entries || []) as InjectionLedgerEntry[], ...extras],
+                });
+                this.callbacks.onExecutionEvent?.({
+                    type: 'prompt-ledger',
+                    level: ledger.truncatedCount > 0 ? 'warning' : 'info',
+                    message: formatInjectionLedger(ledger),
+                    stepKey,
+                    stepLabel: currentStep.label,
+                    debug: {
+                        totalChars: ledger.totalChars,
+                        totalEstTokens: ledger.totalEstTokens,
+                        truncatedCount: ledger.truncatedCount,
+                        assemblyTruncated: promptAssembly.truncated,
+                        droppedExtra: promptAssembly.droppedExtra,
+                        // 完整账本随事件走：时间线面板直接渲染表格
+                        ledgerEntries: JSON.stringify(ledger.entries),
+                    },
+                });
+            } catch (e) {
+                log.warn('[StepRunner] 注入溯源账本失败:', e);
+            }
 
             const abortCtrl = ctx.getAbortController?.() ?? null;
             const aiStartedAt = Date.now();

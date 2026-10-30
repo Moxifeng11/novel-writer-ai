@@ -17,6 +17,7 @@ import { createLogger } from '../shared/logger';
 import { CREATION_MODE_SPECS, getCreationModeLabel, parseCreationModeMeta, type CreationMode } from '../shared/creation-mode';
 import { isChapterWritten } from '../shared/chapter-progress';
 import { getStoryStructure } from '../shared/story-structure';
+import { coverMediaTypeForExt, type BookCover } from '../engine/export/epub-builder';
 
 
 const log = createLogger('ProjectUtils');
@@ -48,6 +49,33 @@ export function getProjectCover(app: App, project: string): string | null {
         }
     }
     return null;
+}
+
+/** 找到项目封面文件本体（getProjectCover 只给资源 URL，读二进制需要 TFile） */
+export function findProjectCoverFile(app: App, project: string): { file: TFile; ext: string } | null {
+    for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
+        const file = app.vault.getAbstractFileByPath(`${project}/封面/cover.${ext}`);
+        if (file instanceof TFile) return { file, ext };
+    }
+    return null;
+}
+
+/**
+ * 读取项目封面为 EPUB 封面数据；无封面或读取失败返回 undefined（导出降级为无封面）。
+ * webp 不是 EPUB 核心媒体类型，但主流阅读器（Apple Books / Calibre / 微信读书）均已支持。
+ */
+export async function loadProjectCover(app: App, project: string): Promise<BookCover | undefined> {
+    const found = findProjectCoverFile(app, project);
+    if (!found) return undefined;
+    const mediaType = coverMediaTypeForExt(found.ext);
+    if (!mediaType) return undefined;
+    try {
+        const buffer = await app.vault.readBinary(found.file);
+        return { data: new Uint8Array(buffer), mediaType, fileExt: found.ext };
+    } catch (e) {
+        log.warn('[project-utils] 读取封面失败，EPUB 将不含封面:', e);
+        return undefined;
+    }
 }
 
 /** 更新项目的文笔风格模板——从最新模板合并缺失的"零、参考样本"章节 */

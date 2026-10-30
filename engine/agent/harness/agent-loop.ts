@@ -20,6 +20,14 @@ import type {
     HarnessMemoryState,
     HarnessToolContext,
 } from './harness-types';
+import {
+    buildSpillBody,
+    buildSpillReplacement,
+    shouldSpill,
+    DEFAULT_SPILL_POLICY,
+    type SpillPolicy,
+    type SpillSink,
+} from './spill-store';
 
 export interface HarnessLoopOptions {
     adapter: HarnessAdapter;
@@ -41,6 +49,12 @@ export interface HarnessLoopOptions {
      * 模型下一次调用就能看到，不必等整轮结束。
      */
     takeInbox?: () => string[];
+    /**
+     * 大结果落盘（吸收 dsh spill）：结果超过阈值时写盘并只留定位符。
+     * 未提供时退化为投影裁剪（pruner），行为与旧版一致。
+     */
+    spill?: SpillSink;
+    spillPolicy?: SpillPolicy;
 }
 
 export interface HarnessLoopTurnResult {
@@ -54,6 +68,9 @@ export interface HarnessLoopTurnResult {
     /** 模型/网络层失败（宿主应考虑降级） */
     failed: boolean;
     failReason?: string;
+    /** 本回合落盘的大结果条数与节省下的字符数 */
+    spilledResults: number;
+    spilledChars: number;
 }
 
 const DEFAULT_MAX_STEPS = 6;
@@ -236,7 +253,11 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
         signal,
     } = options;
 
-    const result: HarnessLoopTurnResult = { reply: '', chips: [], toolCalls: [], usedAi: false, failed: false };
+    const result: HarnessLoopTurnResult = {
+        reply: '', chips: [], toolCalls: [], usedAi: false, failed: false,
+        spilledResults: 0, spilledChars: 0,
+    };
+    const spillPolicy = options.spillPolicy || DEFAULT_SPILL_POLICY;
     let lastToolContent = '';
     let lastToolFailed = false;
     /** 连续重复调用链：同一「工具 + 规范化参数」连续出现的次数 */
@@ -342,14 +363,31 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
             const toolCtx: HarnessToolContext = { memory: { slots: { ...memory.slots } }, plan, signal };
             toolResult = await registry.execute(tool.name, tool.args, toolCtx);
         }
-        lastToolContent = toolResult.content;
+        // 大结果落盘（dsh spill）：原文进 .sessions，日志只留定位符 + 头尾摘要。
+        // 写盘失败时保留原文（宁可多花 token，也不能丢结果）。
+        let resultContent = toolResult.content;
+        if (options.spill && shouldSpill(resultContent, spillPolicy)) {
+            try {
+                const original = resultContent;
+                const locator = await options.spill.write(`${tool.name}-${callId}`, buildSpillBody(tool.name, original));
+                if (locator) {
+                    const replacement = buildSpillReplacement(original, locator, spillPolicy);
+                    result.spilledResults += 1;
+                    result.spilledChars += Math.max(0, original.length - replacement.length);
+                    resultContent = replacement;
+                }
+            } catch (e) {
+                console.warn('[AgentHarness] 大结果落盘失败，保留原文:', e);
+            }
+        }
+        lastToolContent = resultContent;
         lastToolFailed = !toolResult.ok;
         log.append({
             type: 'tool_result',
             callId,
             tool: tool.name,
             ok: toolResult.ok,
-            content: toolResult.content,
+            content: resultContent,
         });
         result.toolCalls.push({
             tool: tool.name,

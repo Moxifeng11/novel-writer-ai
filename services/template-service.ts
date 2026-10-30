@@ -51,7 +51,7 @@ export interface TemplateVariables {
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
     body: `---
-tags: [正文]
+tags: [正文, nw/正文]
 卷: ""
 章: ""
 标题: ""
@@ -68,7 +68,7 @@ writing_mode: pipeline
 
 `,
     infoPlan: `---
-tags: [信息规划]
+tags: [信息规划, nw/步骤/信息规划]
 卷: ""
 章: ""
 step_status: pending
@@ -109,7 +109,7 @@ step_timestamp: ""
 - 需埋下的新伏笔：
 `,
     plotDistill: `---
-tags: [情节蒸馏]
+tags: [情节蒸馏, nw/步骤/情节蒸馏]
 卷: ""
 章: ""
 step_status: pending
@@ -150,7 +150,7 @@ step_timestamp: ""
 - 信息增量：高/中/低
 `,
     outline: `---
-tags: [大纲摘要]
+tags: [大纲摘要, nw/步骤/大纲摘要]
 卷: ""
 章: ""
 step_status: pending
@@ -179,7 +179,7 @@ step_timestamp: ""
 - 钩子内容：
 `,
     continuityReview: `---
-tags: [审查报告]
+tags: [审查报告, nw/步骤/审查报告]
 卷: ""
 章: ""
 step_status: pending
@@ -194,7 +194,7 @@ step_timestamp: ""
 > 待执行「连贯性审查」步骤后生成
 `,
     analysisReport: `---
-tags: [分析报告]
+tags: [分析报告, nw/步骤/分析报告]
 卷: ""
 章: ""
 step_status: pending
@@ -207,7 +207,7 @@ step_timestamp: ""
 > 待执行「分析报告」步骤后生成
 `,
     settlement: `---
-tags: [结算表]
+tags: [结算表, nw/步骤/结算表]
 卷: ""
 章: ""
 step_status: pending
@@ -220,7 +220,7 @@ step_timestamp: ""
 > 待执行「结算」步骤后生成
 `,
     selfCheck: `---
-tags: [自检报告]
+tags: [自检报告, nw/步骤/自检报告]
 卷: ""
 章: ""
 step_status: pending
@@ -233,7 +233,7 @@ step_timestamp: ""
 > 待执行「自检」步骤后生成
 `,
     fix: `---
-tags: [修正记录]
+tags: [修正记录, nw/步骤/修正记录]
 卷: ""
 章: ""
 step_status: pending
@@ -246,7 +246,7 @@ step_timestamp: ""
 > 待执行「修正」步骤后生成
 `,
     finalFix: `---
-tags: [最终修正]
+tags: [最终修正, nw/步骤/最终修正]
 卷: ""
 章: ""
 step_status: pending
@@ -259,7 +259,7 @@ step_timestamp: ""
 > 待执行「最终修正」步骤后生成
 `,
     emotionPlan: `---
-tags: [情绪规划]
+tags: [情绪规划, nw/步骤/情绪规划]
 卷: ""
 章: ""
 step_status: pending
@@ -272,7 +272,7 @@ step_timestamp: ""
 > 待执行「情绪规划」步骤后生成
 `,
     sceneExpand: `---
-tags: [Scene展开]
+tags: [Scene展开, nw/步骤/Scene展开]
 卷: ""
 章: ""
 step_status: pending
@@ -285,7 +285,7 @@ step_timestamp: ""
 > 待执行「Scene展开」步骤后生成
 `,
     characterSoul: `---
-tags: [角色灵魂]
+tags: [角色灵魂, nw/步骤/角色灵魂]
 卷: ""
 章: ""
 step_status: pending
@@ -298,7 +298,7 @@ step_timestamp: ""
 > 待执行「角色灵魂」步骤后生成
 `,
     qualityControl: `---
-tags: [质量控制]
+tags: [质量控制, nw/步骤/质量控制]
 卷: ""
 章: ""
 step_status: pending
@@ -311,7 +311,7 @@ step_timestamp: ""
 > 待执行「质量控制」步骤后生成
 `,
     volumeOutline: `---
-tags: [分卷大纲]
+tags: [分卷大纲, nw/步骤/分卷大纲]
 卷数: ""
 卷名: ""
 状态: draft
@@ -335,7 +335,7 @@ tags: [分卷大纲]
 - 揭示：
 `,
     worldview: `---
-tags: [世界观]
+tags: [世界观, nw/设定/世界观]
 世界名称: ""
 项目名称: ""
 ---
@@ -360,7 +360,7 @@ tags: [世界观]
 - 禁忌/限制：
 `,
     character: `---
-tags: [人物]
+tags: [人物, nw/实体/人物]
 姓名: ""
 年龄: ""
 身份: ""
@@ -393,7 +393,7 @@ entity_last_changed_reason: ""
 ## 变更记录
 `,
     location: `---
-tags: [地点]
+tags: [地点, nw/实体/地点]
 名称: ""
 别称: ""
 类型: ""
@@ -420,7 +420,7 @@ entity_last_changed_reason: ""
 - 潜在危机：
 `,
     faction: `---
-tags: [势力]
+tags: [势力, nw/实体/势力]
 名称: ""
 别称: ""
 类型: ""
@@ -445,7 +445,7 @@ entity_last_changed_reason: ""
 - 潜在冲突：
 `,
     item: `---
-tags: [物品功法]
+tags: [物品功法, nw/实体/物品]
 名称: ""
 类型: ""
 描述: ""
@@ -560,7 +560,7 @@ export class TemplateService {
                 .replace(/第(\d+)章/, (_m, n) => `第${n}${unit}`);
             if (mode === 'script') {
                 return `---
-tags: [剧本]
+tags: [剧本, nw/正文]
 卷: "${vars.volume || '第1卷'}"
 章: "${vars.chapterName || ''}"
 标题: ""
@@ -594,7 +594,7 @@ writing_mode: pipeline
 `;
             }
             return `---
-tags: [短篇正文]
+tags: [短篇正文, nw/正文]
 卷: "${vars.volume || '第1卷'}"
 章: "${vars.chapterName || ''}"
 标题: ""

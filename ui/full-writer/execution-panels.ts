@@ -4,7 +4,7 @@
  * 三块 UI 共用 ExecutionRunStore，不读写执行逻辑，也不影响步骤完成判定。
  */
 import type { StepFailure } from '../../shared/execution-events';
-import type { ExecutionLogEntry, ExecutionRunStore } from './execution-run-store';
+import type { ExecutionEvent, ExecutionLogEntry, ExecutionRunStore } from './execution-run-store';
 import { formatTime } from './execution-run-store';
 
 export interface ExecutionPanelHandlers {
@@ -92,8 +92,48 @@ export class ExecutionTimelinePanel {
                     if (event.stepKey) this.handlers.onRetry(event.stepKey);
                 });
             }
+            // v4.20 注入溯源：prompt-ledger 事件渲染成分段表格（谁影响了本次调用、谁被截断）
+            if (event.type === 'prompt-ledger') {
+                this.renderLedgerDetails(row, event);
+            }
         }
         if (atBottom) list.scrollTop = list.scrollHeight;
+    }
+
+    /** 注入溯源账本表格：解析事件 debug.ledgerEntries，无解析结果时退回纯文本 */
+    private renderLedgerDetails(row: HTMLElement, event: ExecutionEvent): void {
+        let entries: Array<{ label: string; influence: string; chars: number; estTokens: number; source?: string; truncated?: boolean }> = [];
+        try {
+            const parsed = event.debug?.ledgerEntries;
+            if (typeof parsed === 'string') entries = JSON.parse(parsed);
+        } catch {
+            entries = [];
+        }
+        const nonEmpty = entries.filter((entry) => entry.chars > 0);
+        if (nonEmpty.length === 0) return;
+
+        const details = row.createEl('details', { cls: 'nw-exec-ledger' });
+        details.createEl('summary', {
+            text: `注入溯源 · ${nonEmpty.length} 段 / ${event.debug?.totalChars ?? 0} 字符 / ~${event.debug?.totalEstTokens ?? 0} token`,
+            cls: 'nw-exec-ledger-summary',
+        });
+
+        const table = details.createEl('table', { cls: 'nw-exec-ledger-table' });
+        const head = table.createEl('thead');
+        const headRow = head.createEl('tr');
+        for (const label of ['注入段', '影响面', '字符', '~token', '来源']) {
+            headRow.createEl('th', { text: label });
+        }
+        const body = table.createEl('tbody');
+        for (const entry of nonEmpty) {
+            const tr = body.createEl('tr');
+            if (entry.truncated) tr.addClass('nw-exec-ledger-truncated');
+            tr.createEl('td', { text: `${entry.label}${entry.truncated ? ' ⚠' : ''}` });
+            tr.createEl('td', { text: entry.influence });
+            tr.createEl('td', { text: String(entry.chars) });
+            tr.createEl('td', { text: String(entry.estTokens) });
+            tr.createEl('td', { text: entry.source || '' });
+        }
     }
 
     private renderStatus(): void {

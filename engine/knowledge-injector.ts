@@ -17,6 +17,7 @@ import {
 } from './style/fingerprint-selection';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { createLogger } from '../shared/logger';
+import { retrieve, type RetrievalTelemetry } from './rag/retrieval-service';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
 const intensityEngine = new StyleIntensityEngine();
@@ -216,6 +217,21 @@ export class KnowledgeInjector {
     private vectorEnhancer?: VectorEnhancer;
     private profileManager: WritingProfileManager;
     private fingerprintLibrary?: StyleFingerprintLibrary;
+    /** v4.20 RAG 检索遥测：本次调用累计（查询/命中/去重/邻块/丢弃/缓存） */
+    private retrievalTelemetry: {
+        calls: number; queries: number; hits: number; deduped: number; neighborMerged: number;
+        dropped: number; chars: number; cacheHits: number; cacheMisses: number; errors: number;
+    } = { calls: 0, queries: 0, hits: 0, deduped: 0, neighborMerged: 0, dropped: 0, chars: 0, cacheHits: 0, cacheMisses: 0, errors: 0 };
+    /** v4.20 注入溯源：最近一次 formatInjection 的分段字符统计（prompt-ledger 消费） */
+    lastInjectionMeta?: {
+        sections: Array<{ title: string; chars: number }>;
+        totalChars: number;
+        strength?: number;
+        retrieval?: {
+            calls: number; queries: number; hits: number; deduped: number; neighborMerged: number;
+            dropped: number; chars: number; cacheHits: number; cacheMisses: number; errors: number;
+        };
+    };
     private foreshadowManager?: ForeshadowManager;
     private enabled: boolean;
     private switches: InjectionSwitches;
@@ -379,7 +395,7 @@ export class KnowledgeInjector {
             log.warn('[KnowledgeInjector] 技巧注入失败:', e);
         }
 
-        return this.formatInjection(sections);
+        return this.formatInjection(sections, strength);
     }
 
     async injectForEmotionPlan(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -410,7 +426,7 @@ export class KnowledgeInjector {
             log.warn('[KnowledgeInjector] 风格注入失败:', e);
         }
 
-        return this.formatInjection(sections);
+        return this.formatInjection(sections, strength);
     }
 
     async injectForSceneExpand(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -521,20 +537,54 @@ export class KnowledgeInjector {
         return this.formatSceneInjection(header, kbSections);
     }
 
+    /**
+     * v4.20 统一 RAG 检索：多查询计划 → 邻块扩展 → MMR → 预算打包。
+     * 9 处注入点共用，遥测累计到 retrievalTelemetry，随 lastInjectionMeta 进注入账本。
+     */
+    private async retrieveKb(
+        context: InjectionContext,
+        dimensions: string[],
+        topN: number,
+        maxChars: number,
+    ): Promise<{ hits: Array<{ sample: string; bookId: string; bookName: string; dimension: string; category?: string; score: number; position?: number }>; error?: string }> {
+        const outcome = await retrieve(this.knowledgeVectorStore, {
+            dimensions,
+            bookIds: this.getReferenceBookIds(),
+            topN,
+            maxChars,
+            source: {
+                outline: context.outline,
+                emotionPlan: context.emotionPlan,
+                sceneObjective: context.sceneObjective,
+                previousSceneEnding: context.previousSceneEnding,
+                characterNames: context.characterNames,
+                currentText: context.currentText,
+            },
+        });
+        const telemetry: RetrievalTelemetry = outcome.telemetry;
+        this.retrievalTelemetry.calls++;
+        this.retrievalTelemetry.queries += telemetry.queries;
+        this.retrievalTelemetry.hits += telemetry.hits;
+        this.retrievalTelemetry.deduped += telemetry.deduped;
+        this.retrievalTelemetry.neighborMerged += telemetry.neighborMerged;
+        this.retrievalTelemetry.dropped += telemetry.dropped;
+        this.retrievalTelemetry.chars += telemetry.chars;
+        this.retrievalTelemetry.cacheHits += telemetry.cacheHits;
+        this.retrievalTelemetry.cacheMisses += telemetry.cacheMisses;
+        if (outcome.error) {
+            this.retrievalTelemetry.errors++;
+            log.warn('[KnowledgeInjector] 知识检索降级:', outcome.error);
+        }
+        return { hits: outcome.hits, error: outcome.error };
+    }
+
     private async buildSceneCharacterInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
         const bookIds = this.getReferenceBookIds();
         if (bookIds.length === 0) return '';
 
-        const queryText = context.outline || context.emotionPlan || '';
-        if (!queryText) return '';
-
         try {
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(3, Math.round(strength * 5)),
-                bookIds,
-                dimensions: ['character'],
-            });
+            const results = (await this.retrieveKb(context, ['character'], Math.max(3, Math.round(strength * 5)), 900)).hits;
             if (results.length === 0) return '';
 
             const lines: string[] = [];
@@ -558,18 +608,11 @@ export class KnowledgeInjector {
         const bookIds = this.getReferenceBookIds();
         if (bookIds.length === 0) return '';
 
-        const queryText = context.outline || '';
-        if (!queryText) return '';
-
         try {
             // 知识库拆解没有 worldview 维度（只有 style/rhythm/technique/structure/
             // character/foreshadow/original），结构拆解是唯一可用的设定类数据源。
             // 旧实现按 'worldview' 检索，永远返回空，导致该段静默失效。
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(2, Math.round(strength * 3)),
-                bookIds,
-                dimensions: ['structure'],
-            });
+            const results = (await this.retrieveKb(context, ['structure'], Math.max(2, Math.round(strength * 3)), 700)).hits;
             if (results.length === 0) return '';
 
             const lines: string[] = [];
@@ -593,15 +636,8 @@ export class KnowledgeInjector {
         const bookIds = this.getReferenceBookIds();
         if (bookIds.length === 0) return '';
 
-        const queryText = context.outline || context.emotionPlan || '';
-        if (!queryText) return '';
-
         try {
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(3, Math.round(strength * 4)),
-                bookIds,
-                dimensions: ['technique'],
-            });
+            const results = (await this.retrieveKb(context, ['technique'], Math.max(3, Math.round(strength * 4)), 800)).hits;
 
             const lines: string[] = [];
             const sceneLabel = this.getSceneCategoryLabel(sceneCategory);
@@ -652,13 +688,8 @@ export class KnowledgeInjector {
 
             // 此前 knowledgeVectorStore / bookIds 只用于早退，节奏维度（拆解产物）从未被消费。
             // 这里补上 rhythm 检索，硬编码模式保留为兜底，避免无向量数据时行为回退。
-            const queryText = (context.outline || context.emotionPlan || context.sceneObjective || context.currentText || '').slice(0, 500);
-            if (queryText) {
-                const results = await this.knowledgeVectorStore.search(queryText, {
-                    topN: Math.max(2, Math.round(strength * 4)),
-                    bookIds,
-                    dimensions: ['rhythm'],
-                });
+            {
+                const results = (await this.retrieveKb(context, ['rhythm'], Math.max(2, Math.round(strength * 4)), 700)).hits;
                 const samples: string[] = [];
                 const seen = new Set<string>();
                 for (const result of results) {
@@ -857,7 +888,7 @@ export class KnowledgeInjector {
             log.warn('[KnowledgeInjector] 规则注入失败:', e);
         }
 
-        return this.formatInjection(sections);
+        return this.formatInjection(sections, strength);
     }
 
     async injectForPolish(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -888,7 +919,7 @@ export class KnowledgeInjector {
             log.warn('[KnowledgeInjector] 规则注入失败:', e);
         }
 
-        return this.formatInjection(sections);
+        return this.formatInjection(sections, strength);
     }
 
     /**
@@ -1516,15 +1547,8 @@ export class KnowledgeInjector {
         const bookIds = this.getReferenceBookIds();
         if (bookIds.length === 0) return '';
 
-        const queryText = context.currentText || context.outline || context.sceneType || '';
-        if (!queryText) return '';
-
         try {
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(2, Math.round(strength * 5)),
-                bookIds,
-                dimensions: ['character'],
-            });
+            const results = (await this.retrieveKb(context, ['character'], Math.max(2, Math.round(strength * 5)), 900)).hits;
 
             if (results.length === 0) return '';
 
@@ -1572,15 +1596,8 @@ export class KnowledgeInjector {
         const bookIds = this.getReferenceBookIds();
         if (bookIds.length === 0) return '';
 
-        const queryText = context.outline || context.currentText || context.sceneType || '';
-        if (!queryText) return '';
-
         try {
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(2, Math.round(strength * 4)),
-                bookIds,
-                dimensions: ['structure'],
-            });
+            const results = (await this.retrieveKb(context, ['structure'], Math.max(2, Math.round(strength * 4)), 700)).hits;
 
             if (results.length === 0) return '';
 
@@ -1617,17 +1634,10 @@ export class KnowledgeInjector {
         const bookIds = this.getReferenceBookIds();
         if (bookIds.length === 0) return '';
 
-        const queryText = context.currentText || context.outline || context.sceneType || '';
-        if (!queryText) return '';
-
         try {
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(3, Math.round(strength * 6)),
-                bookIds,
-                // structure 由「设定」段单独注入：混在这里会以「起/承/转/合」占满
-                // 技巧的 5 个类别名额，并让同一段结构文本重复进入 prompt。
-                dimensions: ['technique'],
-            });
+            // structure 由「设定」段单独注入：混在这里会以「起/承/转/合」占满
+            // 技巧的 5 个类别名额，并让同一段结构文本重复进入 prompt。
+            const results = (await this.retrieveKb(context, ['technique'], Math.max(3, Math.round(strength * 6)), 800)).hits;
 
             if (results.length === 0) return '';
 
@@ -1687,6 +1697,9 @@ export class KnowledgeInjector {
             // 原文侧不足时不做反向补位：渲染端每本书最多展示 3 条，单本情况下补位不可见。
             const styleQuota = Math.max(1, Math.round(topN / 3));
             const originalQuota = Math.max(1, topN - styleQuota);
+            // style 与 original 两维度配额不同（风格分析 vs 原文片段），
+            // 走统一检索会共用一份预算、互相挤占；这里保留分开检索，
+            // 但仍复用向量库的查询向量缓存（同一 queryText 只 embed 一次）。
             const [styleResults, originalCandidates] = await Promise.all([
                 this.knowledgeVectorStore.search(queryText, {
                     topN,
@@ -1761,15 +1774,8 @@ export class KnowledgeInjector {
         const bookIds = this.getReferenceBookIds();
         if (bookIds.length === 0) return '';
 
-        const queryText = context.currentText || context.outline || context.sceneType || '';
-        if (!queryText) return '';
-
         try {
-            const results = await this.knowledgeVectorStore.search(queryText, {
-                topN: Math.max(2, Math.round(strength * 4)),
-                bookIds,
-                dimensions: ['rhythm'],
-            });
+            const results = (await this.retrieveKb(context, ['rhythm'], Math.max(2, Math.round(strength * 4)), 600)).hits;
 
             if (results.length === 0) return '';
 
@@ -1878,7 +1884,17 @@ export class KnowledgeInjector {
         }
     }
 
-    private formatInjection(sections: Array<{ title: string; content: string }>): string {
+    private formatInjection(sections: Array<{ title: string; content: string }>, strength?: number): string {
+        // v4.20 注入溯源：即使为空也记录（空 = 该指引线本次未生效）
+        this.lastInjectionMeta = {
+            sections: sections.map((section) => ({ title: section.title, chars: section.content.trim().length })),
+            totalChars: sections.reduce((sum, section) => sum + section.content.trim().length, 0),
+            strength,
+            // v4.20 RAG 遥测：随注入账本展示「知识注入」段到底检索到什么
+            retrieval: { ...this.retrievalTelemetry },
+        };
+        // 每次注入完成后清零，下一次注入拿到的是本轮自己的数字
+        this.retrievalTelemetry = { calls: 0, queries: 0, hits: 0, deduped: 0, neighborMerged: 0, dropped: 0, chars: 0, cacheHits: 0, cacheMisses: 0, errors: 0 };
         if (sections.length === 0) return '';
 
         const parts: string[] = ['## 写作指引', ''];

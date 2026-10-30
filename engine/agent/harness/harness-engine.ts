@@ -18,6 +18,15 @@ import type {
 } from './harness-types';
 import type { AgentContext, AgentIntent } from '../agent-types';
 import { formatPlanForPrompt, type PlanStep } from './creation-plan';
+import type { SpillPolicy, SpillSink } from './spill-store';
+import {
+    buildSessionSnapshot,
+    deriveCallSeq,
+    sessionTitleOf,
+    type HarnessSessionSnapshot,
+} from './session-snapshot';
+import { buildTimeContextMessage, timeContextKey } from '../../../shared/time-context';
+import type { DerivedTurn } from './harness-types';
 
 /** 会话压缩配置（吸收 dsh compaction：压力触发 → 范围替换为单个摘要节点） */
 export interface HarnessCompactionOptions {
@@ -33,6 +42,8 @@ export interface HarnessCompactionOptions {
 }
 
 export interface AgentHarnessEngineOptions {
+    /** 模型上下文窗口（token）；缺省从插件设置 maxContext 读取 */
+    contextWindowTokens?: number;
     ctx: AgentContext;
     adapter: HarnessAdapter;
     portDeps: Omit<HostToolDeps, 'memory'>;
@@ -42,6 +53,16 @@ export interface AgentHarnessEngineOptions {
     signal?: AbortSignal;
     /** 会话压缩；不传则不压缩 */
     compaction?: HarnessCompactionOptions;
+    /** 大结果落盘（dsh spill）：宿主提供写盘能力，超过阈值的结果只留定位符 */
+    spill?: SpillSink;
+    spillPolicy?: SpillPolicy;
+    /**
+     * 会话变化回调（dsh session-persistence-jsonl）：
+     * 每次回合结束后把快照交给宿主落盘；宿主负责节流与文件管理。
+     */
+    onSessionChange?: (snapshot: HarnessSessionSnapshot) => void;
+    /** 注入当前时间用的时钟（测试可注入固定时间） */
+    now?: () => Date;
 }
 
 export interface HarnessTelemetry {
@@ -61,6 +82,13 @@ export interface HarnessTelemetry {
     compactedEvents: number;
     /** 回合内被插入的用户补充条数 */
     steers: number;
+    /** 当前会话投影的上下文估算 token（derive 结果字符 ÷ 1.5，v4.20） */
+    contextTokens: number;
+    /** 模型窗口占用比例（0–1；窗口未知时为 0） */
+    windowUsage: number;
+    /** 落盘的大结果条数与因此节省的字符数（dsh spill） */
+    spilledResults: number;
+    spilledChars: number;
 }
 
 export class AgentHarnessEngine {
@@ -74,10 +102,15 @@ export class AgentHarnessEngine {
     private telemetry: HarnessTelemetry = {
         turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [],
         prunedChars: 0, prunedResults: 0, compactions: 0, compactedEvents: 0, steers: 0,
+        contextTokens: 0, windowUsage: 0, spilledResults: 0, spilledChars: 0,
     };
     /** 回合内收件箱（dsh steering）：用户在一回合进行中补充的话 */
     private inbox: string[] = [];
     private turnRunning = false;
+    /** 上次注入时间上下文的分钟键（同一分钟不重复注入） */
+    private lastTimeKey = '';
+    /** 是否已从存档恢复（恢复后不再重发开场白） */
+    private restored = false;
 
     constructor(private readonly options: AgentHarnessEngineOptions) {
         this.ctx = options.ctx;
@@ -136,6 +169,7 @@ export class AgentHarnessEngine {
     start(): Promise<HarnessTurnOutcome> {
         this.log.reset();
         this.done = false;
+        this.lastTimeKey = '';
         const hasProjects = this.ctx.projects.length > 0;
         this.log.append({
             type: 'user_message',
@@ -148,6 +182,7 @@ export class AgentHarnessEngine {
 
     async handle(text: string): Promise<HarnessTurnOutcome> {
         const raw = String(text || '').trim();
+        this.maybeAppendTimeContext();
         if (!raw) {
             return {
                 messages: [{ role: 'agent', text: '没有收到内容，请再输入一次，或点下面的选项。' }],
@@ -248,6 +283,8 @@ export class AgentHarnessEngine {
                 maxTokens: this.options.maxTokens,
                 signal: this.options.signal,
                 takeInbox: () => this.inbox.splice(0, this.inbox.length),
+                spill: this.options.spill,
+                spillPolicy: this.options.spillPolicy,
             });
             return this.finishTurn(outcome);
         } finally {
@@ -259,12 +296,88 @@ export class AgentHarnessEngine {
                     this.log.append({ type: 'user_message', text });
                 }
             }
+            this.emitSessionChange();
         }
     }
 
-    private finishTurn(outcome: { usedAi: boolean; failed: boolean; failReason?: string; reply: string; chips: HarnessChip[]; toolCalls: Array<{ tool: string; ok: boolean; summary: string }> }): HarnessTurnOutcome {
+    /** 时间上下文（dsh context/time-context）：分钟级去重，注入一条 context_message */
+    private maybeAppendTimeContext(): void {
+        try {
+            const now = this.options.now ? this.options.now() : new Date();
+            const key = timeContextKey(now);
+            if (key === this.lastTimeKey) return;
+            this.lastTimeKey = key;
+            this.log.append({ type: 'context_message', text: buildTimeContextMessage(now) });
+        } catch {
+            // 时钟异常不影响对话
+        }
+    }
+
+    /** 会话快照（宿主落盘 / 测试断言用） */
+    serialize(): HarnessSessionSnapshot {
+        return buildSessionSnapshot({
+            events: this.log.allEvents(),
+            callSeq: this.log.callCounter,
+            memory: this.memory.slots,
+            plan: this.plan.steps,
+        });
+    }
+
+    /**
+     * 从存档恢复会话（工作台重新打开时）。
+     * 恢复后  不应再被调用，否则会把开场白追加到历史后面。
+     */
+    restore(snapshot: HarnessSessionSnapshot): void {
+        const callSeq = snapshot.callSeq > 0 ? snapshot.callSeq : deriveCallSeq(snapshot.events);
+        this.log.restore(snapshot.events, callSeq);
+        this.memory.slots = { ...snapshot.memory };
+        this.plan.steps = snapshot.plan.map(step => ({ ...step }));
+        this.restored = true;
+        this.done = false;
+        this.lastTimeKey = '';
+        // 恢复后把最近一轮的时间上下文重新注入（跨越会话重启后时间可能已变）
+        this.maybeAppendTimeContext();
+    }
+
+    /** 是否恢复自存档（宿主据此决定是否重放开场白） */
+    get isRestored(): boolean {
+        return this.restored;
+    }
+
+    /** 会话标题（首条用户消息前 30 字；工作台头部展示） */
+    getSessionTitle(): string {
+        const events = this.log.allEvents();
+        const title = sessionTitleOf(events);
+        return title === '新会话' ? '' : title;
+    }
+
+    /** 供工作台回填历史气泡（只含用户/助手两条角色，工具行省略） */
+    getHistory(): Array<{ role: 'user' | 'agent'; text: string }> {
+        return this.log.derive(200)
+            .filter((turn: DerivedTurn) => turn.role === 'user' || turn.role === 'assistant')
+            // 时间上下文与压缩摘要都是系统注入，不是用户说过的话
+            .filter((turn: DerivedTurn) => !turn.text.startsWith('【当前时间】') && !turn.text.startsWith('【历史摘要】'))
+            .map((turn: DerivedTurn) => ({
+                role: turn.role === 'user' ? 'user' as const : 'agent' as const,
+                text: turn.role === 'user' ? turn.text.replace(/^【当前时间】.*?\n?/, '') : turn.text,
+            }))
+            .filter(turn => turn.text.trim().length > 0);
+    }
+
+    private emitSessionChange(): void {
+        if (!this.options.onSessionChange) return;
+        try {
+            this.options.onSessionChange(this.serialize());
+        } catch (e) {
+            console.warn('[AgentHarness] 会话快照回调失败:', e);
+        }
+    }
+
+    private finishTurn(outcome: { usedAi: boolean; failed: boolean; failReason?: string; reply: string; chips: HarnessChip[]; toolCalls: Array<{ tool: string; ok: boolean; summary: string }>; spilledResults?: number; spilledChars?: number }): HarnessTurnOutcome {
         // 遥测累积（工作台右栏监控）
         this.telemetry.turns++;
+        this.telemetry.spilledResults += outcome.spilledResults || 0;
+        this.telemetry.spilledChars += outcome.spilledChars || 0;
         if (outcome.usedAi) this.telemetry.modelCalls++;
         const prune = this.log.pruneStats;
         this.telemetry.prunedChars += prune.chars;
@@ -279,6 +392,17 @@ export class AgentHarnessEngine {
             this.telemetry.lastToolCalls.unshift({ tool: call.tool, ok: call.ok, summary: call.summary, at: Date.now() });
         }
         this.telemetry.lastToolCalls = this.telemetry.lastToolCalls.slice(0, 12);
+
+        // v4.20 dsh token-meter：投影字符 ÷ 1.5 估算上下文 token 与窗口占用。
+        // 没有独立 tokenizer（避免引入依赖），但足以让用户看到「会话在变长」。
+        try {
+            const projectedChars = this.log.derive().reduce((sum, turn) => sum + (turn.text || '').length, 0);
+            this.telemetry.contextTokens = Math.ceil(projectedChars / 1.5);
+            const window = this.options.contextWindowTokens || 0;
+            this.telemetry.windowUsage = window > 0 ? Math.min(1, this.telemetry.contextTokens / window) : 0;
+        } catch {
+            // 计量失败不影响回合
+        }
 
         if (outcome.failed && !outcome.usedAi) {
             return {

@@ -77,6 +77,11 @@ export const CommandIds = {
     // ─── 视图类 ───
     FULL_WRITER: 'novel-writer-full-writer',
     CREATION_FLOW: 'novel-writer-open-flow',
+    MIGRATE_ENTITY_LINKS: 'novel-writer-migrate-entity-links',
+    PROJECT_SIDE_PANEL: 'novel-writer-project-side-panel',
+    GENERATE_BASES: 'novel-writer-generate-bases',
+    MIGRATE_NAMESPACE_TAGS: 'novel-writer-migrate-namespace-tags',
+    COMPLETE_PROPERTIES: 'novel-writer-complete-properties',
     CO_WRITING: 'novel-writer-co-writing',
 
     // ─── 版本管理类 ───

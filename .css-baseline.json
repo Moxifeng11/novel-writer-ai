@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-29T14:36:13.746Z",
-  "note": "棘轮基线（2026-10-27 三模式流程 + 导出格式）：新增创作流程页签（nw-flow-*）、单元写作工作台（nw-unit-*）与导出格式选项；流程摘要圆点加 1px 描边，避免主题 secondary 背景与卡片同色时「未完成阶段」不可见；状态类统一 nw-is-* 前缀。",
-  "bytes": 443272,
+  "generatedAt": "2026-10-29T22:05:50.370Z",
+  "note": "棘轮基线（v4.20 dsh 对话能力）：新增 Agent 输入增强样式（引用条/引用按钮/@ 候选弹层/会话标题）与 textarea 自适应；唯一类 +13、体积 +2824、rgb/hsl +1（阴影），其余指标不变。",
+  "bytes": 450911,
   "important": 164,
   "hardcodedHex": 154,
-  "rgbHsl": 178,
-  "uniqueClasses": 2303,
-  "otherClasses": 86,
+  "rgbHsl": 181,
+  "uniqueClasses": 2346,
+  "otherClasses": 87,
   "maxSelectorDepth": 4
 }

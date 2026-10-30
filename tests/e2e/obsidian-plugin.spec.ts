@@ -193,6 +193,39 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         });
     });
 
+    test('Agent 输入框支持 @ 文件引用与「新会话」入口', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
+
+        const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+        await expect(workbench).toBeVisible({ timeout: 15_000 });
+
+        // v4.20：输入框由单行 input 改为 textarea（Shift+Enter 换行、引用/候选需要多行锚点）
+        const composer = workbench.locator('textarea.nw-awb-input');
+        await expect(composer).toBeVisible({ timeout: 10_000 });
+        expect(await composer.evaluate(el => el.tagName)).toBe('TEXTAREA');
+
+        // 会话持久化入口：清空当前项目的 .sessions/agent 存档
+        await expect(workbench.getByRole('button', { name: /新会话/ })).toBeVisible();
+
+        // 输入 @ 弹出库内文件候选（只索引路径，不读正文）
+        await composer.click();
+        await composer.fill('@');
+        await expect(workbench.locator('.nw-awb-mention-item').first()).toBeVisible({ timeout: 10_000 });
+        expect(await workbench.locator('.nw-awb-mention-item').count()).toBeGreaterThan(0);
+
+        // 选中候选 → 输入框写入 `@路径 `（含空格时用引号）
+        await workbench.locator('.nw-awb-mention-item').first().click();
+        await expect.poll(async () => composer.inputValue(), { timeout: 5_000 }).toContain('@');
+        const value = await composer.inputValue();
+        expect(value.trim().startsWith('@')).toBe(true);
+
+        // 不发送（会真实调用模型），清空并关闭候选
+        await composer.fill('');
+        await composer.press('Escape');
+        await expect(workbench.locator('.nw-awb-mention-pop-hidden')).toHaveCount(1);
+    });
+
     test('模型设置是两栏布局，长 URL 完整可见', async () => {
         const { page } = session;
         expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
@@ -1145,6 +1178,103 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         }), { timeout: 10_000 }).toBe('serif');
     });
 
+    test('右侧项目速览面板：属性可写回、标签可见、Bases 看板可生成', async () => {
+        const { page, vault } = session;
+        const projectPath = '长篇小说/E2E面板项目';
+        const chapterPath = `${projectPath}/03-大纲与章节/正文/第1卷/第1章_正文.md`;
+
+        // 准备一个最小章节文件（带旧扁平标签，验证层级标签识别与属性面板）
+        const prepared = await page.evaluate(async ({ project, chapter }) => {
+            const host = window as unknown as {
+                app?: {
+                    vault?: {
+                        getAbstractFileByPath(path: string): unknown;
+                        createFolder(path: string): Promise<unknown>;
+                        create(path: string, content: string): Promise<unknown>;
+                        adapter?: { write(path: string, content: string): Promise<void> };
+                    };
+                };
+            };
+            const vault = host.app?.vault;
+            if (!vault?.adapter) return false;
+            for (const folder of [
+                project,
+                `${project}/03-大纲与章节`,
+                `${project}/03-大纲与章节/正文`,
+                `${project}/03-大纲与章节/正文/第1卷`,
+            ]) {
+                if (!vault.getAbstractFileByPath(folder)) await vault.createFolder(folder).catch(() => undefined);
+            }
+            const body = ['---', 'tags: [正文, nw/正文]', '卷: "第1卷"', '章: "第1章"', '标题: ""', 'status: pending', 'word_count: 0', '---', '', '# 第1章', '', '正文。'].join('\n');
+            if (!vault.getAbstractFileByPath(chapter)) await vault.create(chapter, body);
+            return true;
+        }, { project: projectPath, chapter: chapterPath });
+        expect(prepared).toBe(true);
+
+        // 打开章节文件（面板跟随活动文件）
+        await page.evaluate(async (path) => {
+            const host = window as unknown as {
+                app?: {
+                    vault?: { getAbstractFileByPath(p: string): unknown };
+                    workspace?: { getLeaf(arg?: unknown): { openFile(file: unknown): Promise<void> } };
+                };
+            };
+            const file = host.app?.vault?.getAbstractFileByPath(path);
+            if (file) await host.app?.workspace?.getLeaf('tab')?.openFile(file);
+        }, chapterPath);
+        await page.waitForTimeout(800);
+
+        // 打开右侧面板
+        await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, { openProjectSidePanel(): Promise<void> }> } };
+            };
+            await host.app?.plugins?.plugins?.['novel-writer-ai']?.openProjectSidePanel();
+        });
+
+        await expect(page.locator('.nw-side-panel')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.nw-side-panel-file-kind')).toHaveText('章节正文');
+        await expect(page.locator('.nw-side-panel-section-title').filter({ hasText: '本文件属性' })).toHaveCount(1);
+        await expect(page.locator('.nw-side-panel-section-title').filter({ hasText: '快捷动作' })).toHaveCount(1);
+        await expect(page.locator('.nw-side-panel-tag.is-ns')).toHaveCount(1);
+
+        // 改 status → 读盘断言 frontmatter 变更
+        const statusSelect = page.locator('.nw-side-panel-prop').filter({ hasText: '状态' }).locator('select');
+        await statusSelect.selectOption('written');
+        await expect.poll(async () => page.evaluate(async (path) => {
+            const host = window as unknown as { app?: { vault?: { adapter?: { read(p: string): Promise<string> } } } };
+            return host.app?.vault?.adapter?.read(path).catch(() => '') ?? '';
+        }, chapterPath), { timeout: 15_000 }).toContain('status: written');
+
+        // 生成项目看板：先写入工作台上下文，再执行命令，最后严格断言文件落盘
+        await page.evaluate((project) => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, {
+                    setWorkbenchContext(ctx: unknown): void;
+                    registry?: { execute(id: string): unknown };
+                }> } };
+            };
+            const plugin = host.app?.plugins?.plugins?.['novel-writer-ai'];
+            plugin?.setWorkbenchContext({ project, volume: '', chapterName: '', chapterNum: 0, chapDir: '' });
+            plugin?.registry?.execute('novel-writer-generate-bases');
+        }, projectPath);
+
+        const basePath = `${projectPath}/.看板/章节进度.base`;
+        await expect.poll(async () => page.evaluate(async (path) => {
+            const host = window as unknown as { app?: { vault?: { adapter?: { exists(p: string): Promise<boolean> } } } };
+            const adapter = host.app?.vault?.adapter;
+            return adapter ? await adapter.exists(path).catch(() => false) : false;
+        }, basePath), { timeout: 15_000 }).toBe(true);
+
+        const baseContent = await page.evaluate(async (path) => {
+            const host = window as unknown as { app?: { vault?: { adapter?: { read(p: string): Promise<string> } } } };
+            return host.app?.vault?.adapter?.read(path).catch(() => '') ?? '';
+        }, basePath);
+        expect(baseContent).toContain('file.hasTag("nw/正文")');
+        expect(baseContent).toContain(`file.inFolder("${projectPath}")`);
+        expect(baseContent).toContain('name: "章节进度"');
+    });
+
     test('短篇：创建后落在创作流程页，单元工作台可写正文并回写状态', async () => {
         const { page } = session;
         const projectPath = '短篇小说/E2E短篇项目';
@@ -1287,6 +1417,37 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
 
         // 完成唯一的节之后，下一步应是导出；格式下拉必须提供 TXT / EPUB / DOCX
         await expect(page.locator('.nw-flow-next-title')).toHaveText('导出成稿');
+
+        // 在项目内放一张 1×1 PNG 封面（约定：封面/cover.png），导出 EPUB 时应被嵌入
+        const coverPng = [
+            0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+            0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+            0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+            0x42, 0x60, 0x82,
+        ];
+        const coverCreated = await page.evaluate(async ({ project, png }) => {
+            const host = window as unknown as {
+                app?: {
+                    vault?: {
+                        getAbstractFileByPath(path: string): unknown;
+                        createFolder(path: string): Promise<unknown>;
+                        createBinary(path: string, data: ArrayBuffer): Promise<unknown>;
+                    };
+                };
+            };
+            const vault = host.app?.vault;
+            if (!vault) return false;
+            const coverDir = `${project}/封面`;
+            if (!vault.getAbstractFileByPath(coverDir)) await vault.createFolder(coverDir).catch(() => undefined);
+            if (!vault.getAbstractFileByPath(`${coverDir}/cover.png`)) {
+                const buffer = new Uint8Array(png).buffer;
+                await vault.createBinary(`${coverDir}/cover.png`, buffer);
+            }
+            return vault.getAbstractFileByPath(`${coverDir}/cover.png`) != null;
+        }, { project: projectPath, png: coverPng });
+        expect(coverCreated).toBe(true);
+
         await page.locator('.nw-flow-next-actions button').first().click();
 
         const exportModalPage = await waitForModalPage(page, 15_000);
@@ -1336,6 +1497,10 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const epubBytes = fs.readFileSync(path.join(epubDir, epubName));
         expect([...epubBytes.subarray(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04]);
         expect(epubBytes.includes(Buffer.from('application/epub+zip'))).toBe(true);
+        // 封面：ZIP 是 store 模式，PNG 字节与 OPF 声明都应原样出现在文件里
+        expect(epubBytes.includes(Buffer.from(coverPng))).toBe(true);
+        expect(epubBytes.includes(Buffer.from('properties="cover-image"'))).toBe(true);
+        expect(epubBytes.includes(Buffer.from('images/cover.png'))).toBe(true);
 
         // 恢复真实端标识，避免后续用例的导出都改走 vault 分支
         await page.evaluate(() => {
@@ -1602,11 +1767,11 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         await expect(input).toHaveValue('未发送的草稿一句');
         await expect(workbench.getByRole('button', { name: /🎨 原创/ })).toBeVisible();
 
-        // 2) Shift+Enter 不发送
+        // 2) Shift+Enter 只换行、不发送（v4.20 起输入框改为 textarea）
         const userBubblesBefore = await workbench.locator('.nw-awb-row-user').count();
         await input.focus();
         await page.keyboard.press('Shift+Enter');
-        await expect(input).toHaveValue('未发送的草稿一句');
+        await expect(input).toHaveValue('未发送的草稿一句\n');
         expect(await workbench.locator('.nw-awb-row-user').count()).toBe(userBubblesBefore);
 
         // 3) 控制令牌（__retry__ / __fallback_rule__）不得出现在消息气泡里

@@ -153,6 +153,11 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     // ─── 视图类 ───
     { id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', group: CommandGroup.Views, description: '打开流程规划工作台的项目与章节页' },
     { id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', group: CommandGroup.Views, description: '打开当前项目的创作流程：阶段进度与下一步动作' },
+    { id: CommandIds.MIGRATE_ENTITY_LINKS, name: '🔗 实体链接迁移（存量关系图谱化）', group: CommandGroup.Tools, description: '把存量实体的归属类字段（所属势力/当前位置/所属归属）转为 wiki-link（先预览再执行）' },
+    { id: CommandIds.PROJECT_SIDE_PANEL, name: '🧭 项目速览面板（右侧栏）', group: CommandGroup.Views, description: '在右侧栏打开项目速览：当前笔记属性、标签与快捷动作' },
+    { id: CommandIds.GENERATE_BASES, name: '📊 生成/刷新项目看板（Bases）', group: CommandGroup.Tools, description: '在项目内生成章节进度/人物状态/物品归属/地点与势力四个 Bases 看板' },
+    { id: CommandIds.MIGRATE_NAMESPACE_TAGS, name: '🏷️ 补齐分层标签（先预览）', group: CommandGroup.Tools, description: '给存量笔记追加 nw/ 层级标签（保留原标签，只加不删）' },
+    { id: CommandIds.COMPLETE_PROPERTIES, name: '🧩 补齐笔记属性（先预览）', group: CommandGroup.Tools, description: '按插件属性模板补上缺失的必填属性（只补空值，不覆盖已有内容）' },
     { id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', group: CommandGroup.Views, description: '打开句级协同写作工作台' },
 
     // ─── 版本管理类 ───
@@ -303,6 +308,11 @@ export class CommandRegistry {
             CommandIds.FULL_WRITER,
             CommandIds.CO_WRITING,
             CommandIds.OPEN_SETTINGS,
+            CommandIds.MIGRATE_ENTITY_LINKS,
+            CommandIds.PROJECT_SIDE_PANEL,
+            CommandIds.GENERATE_BASES,
+            CommandIds.MIGRATE_NAMESPACE_TAGS,
+            CommandIds.COMPLETE_PROPERTIES,
         ];
         for (const id of uiCommandIds) {
             r.register(id, async () => { await this.ui.executeCommand(id); });
@@ -417,6 +427,11 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
         addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
         addCommand({ id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', callback: exec(CommandIds.CREATION_FLOW) });
+        addCommand({ id: CommandIds.MIGRATE_ENTITY_LINKS, name: '🔗 实体链接迁移（存量关系图谱化）', callback: exec(CommandIds.MIGRATE_ENTITY_LINKS) });
+        addCommand({ id: CommandIds.PROJECT_SIDE_PANEL, name: '🧭 项目速览面板（右侧栏）', callback: exec(CommandIds.PROJECT_SIDE_PANEL) });
+        addCommand({ id: CommandIds.GENERATE_BASES, name: '📊 生成/刷新项目看板（Bases）', callback: exec(CommandIds.GENERATE_BASES) });
+        addCommand({ id: CommandIds.MIGRATE_NAMESPACE_TAGS, name: '🏷️ 补齐分层标签（先预览）', callback: exec(CommandIds.MIGRATE_NAMESPACE_TAGS) });
+        addCommand({ id: CommandIds.COMPLETE_PROPERTIES, name: '🧩 补齐笔记属性（先预览）', callback: exec(CommandIds.COMPLETE_PROPERTIES) });
         addCommand({ id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', checkCallback: execGuarded(CommandIds.CO_WRITING, LONG_ONLY) });
         addCommand({ id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', checkCallback: execGuarded(CommandIds.BATCH_NOVELS, LONG_ONLY) });
         addCommand({ id: 'novel-writer-fingerprint-library', name: '🔍 打开写作指纹库', callback: exec('novel-writer-fingerprint-library') });

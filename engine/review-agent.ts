@@ -167,7 +167,7 @@ export class ReviewAgent {
 
         const reportPath = pjStepFile(proj, volN, chapN, CHAPTER_FILE_TYPES.continuityReview);
         const reportContent = `---
-tags: [审查报告]
+tags: [审查报告, nw/步骤/审查报告]
 审查时间: ${new Date().toLocaleString()}
 审查范围: 单章
 ---
@@ -375,7 +375,7 @@ ${selectedChapters.map((c, i) => {
             catch (e) { log.warn('[小说工坊] 创建卷正文目录失败:', volBodyRoot, e); }
         }
         const reportContent = `---
-tags: [审查报告]
+tags: [审查报告, nw/步骤/审查报告]
 审查时间: ${new Date().toLocaleString()}
 审查范围: ${volume}（${selectedChapters.length}/${chapterContents.length} 章${chapterSampled ? '，分层抽样' : '，全量'}）
 ---

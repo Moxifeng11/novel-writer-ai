@@ -22,6 +22,7 @@ import {
 import { extractUnitOutlineSection } from '../shared/mode-unit-outline';
 import { readPreResearchData } from '../shared/pre-research';
 import { readProjectMeta } from '../shared/paths';
+import { HUMAN_VOICE_SHORT } from './prompts/human-voice';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('ModeUnitWriter');
@@ -163,8 +164,14 @@ export function buildUnitPrompt(
         '写作要求：',
         '- 只输出正文，不要解释创作思路，不要复述大纲；',
         '- 严格遵守已给设定与人物关系，不新增关键设定；',
-        '- 本节结尾必须留下推动下一节的钩子；',
+        ctx.previousTail
+            ? '- 本章第一句必须承接【上一单元结尾】给出的人物/动作/对话，不要另起炉灶；'
+            : '',
+        ctx.mode === 'script'
+            ? '- 本单元结尾留下推动下一集的钩子；'
+            : '- 本单元结尾留下推动下一节的钩子；',
         formatRule,
+        HUMAN_VOICE_SHORT,
         options.instruction ? `本次额外要求：${options.instruction}` : '',
     ].filter(Boolean).join('\n');
 

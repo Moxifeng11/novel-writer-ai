@@ -55,6 +55,8 @@ export interface ContextSnapshot {
     crossVolumeContext: string;
     /** 长篇记忆：事实索引中已确认的人物/世界观/剧情事实（空表示无） */
     longTermMemoryContext?: string;
+    /** 实体状态速览：结算回写的境界/位置/所有权/近况（v4.20 图谱反查，空表示无） */
+    entityRelationsContext?: string;
     /** 同人约束：原作核心设定 + 三条创作规则（原创项目为空） */
     fanficRulesContext?: string;
     /** 创作模式硬约束：短篇/剧本的平台规格与输出格式（长篇为空） */

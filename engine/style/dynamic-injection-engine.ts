@@ -449,6 +449,21 @@ const TIER_LENGTH_BUDGET = {
  *   - 本引擎的输出也由 getMemoryPromptParts 注入，两者**串联**而非冲突
  *   - 全局层仅包含指纹特征描述，不包含 styleLearner 的内容
  */
+/** v4.20 注入溯源：单次分层拼装的统计（prompt-ledger 消费） */
+export interface TieredBuildStats {
+    budget: number;
+    fingerprintCount: number;
+    sampleCount: number;
+    globalChars: number;
+    paragraphChars: number;
+    sentenceChars: number;
+    totalChars: number;
+    /** 句子层因超限被整体丢弃 */
+    droppedSentence: boolean;
+    /** 段落层因超限被截断 */
+    truncatedParagraph: boolean;
+}
+
 export class TieredInjectionBuilder {
     /**
      * 构建分级注入片段
@@ -456,7 +471,8 @@ export class TieredInjectionBuilder {
      * @param samples 动态选择的示例
      * @param context 上下文特征
      * @param intensityConfigs 可选的强度配置（按 fpId 索引）
-     * @param maxTotalLength 总长度上限（默认 2000）
+     * @param maxTotalLength 总长度上限（默认 2000；v4.20 起可由设置 fingerprintInjectionBudget 调整）
+     * @param statsOut 可选：填充注入统计（prompt-ledger 消费）
      */
     build(
         fingerprints: StyleFingerprint[],
@@ -464,8 +480,22 @@ export class TieredInjectionBuilder {
         context: ContextFeatures,
         intensityConfigs?: Map<string, StyleIntensityConfig>,
         maxTotalLength: number = DEFAULT_MAX_TOTAL_LENGTH,
+        statsOut?: TieredBuildStats,
     ): string[] {
-        if (fingerprints.length === 0 && samples.length === 0) return [];
+        if (fingerprints.length === 0 && samples.length === 0) {
+            if (statsOut) {
+                statsOut.budget = maxTotalLength;
+                statsOut.fingerprintCount = 0;
+                statsOut.sampleCount = 0;
+                statsOut.globalChars = 0;
+                statsOut.paragraphChars = 0;
+                statsOut.sentenceChars = 0;
+                statsOut.totalChars = 0;
+                statsOut.droppedSentence = false;
+                statsOut.truncatedParagraph = false;
+            }
+            return [];
+        }
 
         const budget = this.distributeBudget(maxTotalLength, samples.length === 0);
 
@@ -482,7 +512,22 @@ export class TieredInjectionBuilder {
         const allParts = [...globalTier, ...paragraphTier, ...sentenceTier];
         const totalLen = allParts.reduce((sum, s) => sum + s.length, 0);
 
+        const fillStats = (g: string[], p: string[], c: string[], droppedSentence: boolean, truncatedParagraph: boolean): void => {
+            if (!statsOut) return;
+            const total = (list: string[]) => list.reduce((sum, item) => sum + item.length, 0);
+            statsOut.budget = maxTotalLength;
+            statsOut.fingerprintCount = fingerprints.length;
+            statsOut.sampleCount = samples.length;
+            statsOut.globalChars = total(g);
+            statsOut.paragraphChars = total(p);
+            statsOut.sentenceChars = total(c);
+            statsOut.totalChars = total(g) + total(p) + total(c);
+            statsOut.droppedSentence = droppedSentence;
+            statsOut.truncatedParagraph = truncatedParagraph;
+        };
+
         if (totalLen <= maxTotalLength) {
+            fillStats(globalTier, paragraphTier, sentenceTier, false, false);
             return this.assembleOutput(globalTier, paragraphTier, sentenceTier);
         }
 
@@ -490,11 +535,13 @@ export class TieredInjectionBuilder {
         const withoutSentence = [...globalTier, ...paragraphTier];
         const lenWithoutSentence = withoutSentence.reduce((sum, s) => sum + s.length, 0);
         if (lenWithoutSentence <= maxTotalLength) {
+            fillStats(globalTier, paragraphTier, [], true, false);
             return this.assembleOutput(globalTier, paragraphTier, []);
         }
 
         // 仍超限：截断段落层尾部
         const truncatedParagraph = this.truncateTo(paragraphTier, maxTotalLength - this.calcTotalLength(globalTier));
+        fillStats(globalTier, truncatedParagraph, [], true, true);
         return this.assembleOutput(globalTier, truncatedParagraph, []);
     }
 

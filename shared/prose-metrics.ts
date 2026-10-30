@@ -40,6 +40,19 @@ export interface ProseMetrics {
     semicolonPer1000: number;
     ellipsisPer1000: number;
 
+    /** 硬伤计数（2026-10-30 依据「去AI味」实战规则新增）：分号在中文小说里几乎只出现在 AI 文本 */
+    semicolonCount: number;
+    /** 省略号（…）总个数 */
+    ellipsisCount: number;
+    /** 破折号（—）总个数 */
+    dashCount: number;
+    /** 「不是A，(而)是B」先否定再肯定句式出现次数；真人偶尔用，堆叠即 AI 痕迹 */
+    reversalPairCount: number;
+    /** 「他不知道……只知道……」排比式感慨出现次数 */
+    unknowingPatternCount: number;
+    /** 末段是短句升华/总结（如「这是关于……的故事」「有些人注定……」） */
+    elevatedEnding: boolean;
+
     longestSentence: string;
     shortestSentence: string;
 }
@@ -70,6 +83,33 @@ const CHAPTER_TITLE_RE = /^第[0-9一二三四五六七八九十百千]+章(?:[\
 
 const SHORT_SENTENCE_LIMIT = 10;
 const LONG_SENTENCE_LIMIT = 35;
+
+/** 「不是A，(而)是B」先否定再肯定：逗号或句号分隔都算；真人偶尔用，同一章堆 3 次以上就是典型 AI 痕迹 */
+const REVERSAL_PAIR_RE = /不是[^。！？\n]{1,16}[，。,][^。！？\n]{0,10}(而是|是)[^。！？\n]{0,12}/g;
+/** 「不知道……只知道……」排比式感慨（意识流腔的标志） */
+const UNKNOWING_RE = /不知道[^。！？\n]{0,30}[。！？]{1,2}\s*(她|他|它)?\s*只知道/g;
+/** 末段升华词：总结、点题、命运感词汇；只标记窄特征，避免误伤正常的动作收尾 */
+const ELEVATED_ENDING_RE = /这(才|就)是|这是关于|而这一切|这一次,?(他|她|他们|她们)?|注定|终将|再无|不复存在|所有的一切|一切都(结束了|不同了)|属于(他|她|他们)的时代/;
+
+function countMatches(text: string, re: RegExp): number {
+    return (text.match(re) || []).length;
+}
+
+/**
+ * 末段是否为「升华/点题」短段。
+ * 判据（窄，防误伤）：末段无对话、可读字数 ≤ 42、命中升华词表、
+ * 且全文足够长（≥ 150 字）——更短的文本末段本来就允许收束句。
+ */
+function detectElevatedEnding(paragraphs: string[], text: string): boolean {
+    if (countReadableChars(text) < 150) return false;
+    const last = [...paragraphs].reverse().find((p) => p.length > 0);
+    if (!last) return false;
+    if (dialogueChars(last) > 0) return false;
+    const chars = countReadableChars(last);
+    if (chars === 0 || chars > 42) return false;
+    if (!/[。！？]$/.test(last.trim())) return false;
+    return ELEVATED_ENDING_RE.test(last);
+}
 
 function normalizeText(raw: string): string {
     return (raw || '')
@@ -261,6 +301,13 @@ export function analyzeProse(raw: string): ProseMetrics {
 
         longestSentence: longestSentence.slice(0, 120),
         shortestSentence: shortestSentence.slice(0, 120),
+
+        semicolonCount: (text.match(/[；;]/g) || []).length,
+        ellipsisCount: (text.match(/…/g) || []).length,
+        dashCount: (text.match(/[—－]/g) || []).length,
+        reversalPairCount: countMatches(text, REVERSAL_PAIR_RE),
+        unknowingPatternCount: countMatches(text, UNKNOWING_RE),
+        elevatedEnding: detectElevatedEnding(paragraphs, text),
     };
 }
 
@@ -362,8 +409,8 @@ export function scoreProseRisk(metrics: ProseMetrics): ProseRiskReport {
             'punctuation-monotony',
             metrics.punctuationEntropy < 0.9 ? 'medium' : 'low',
             '标点单一',
-            `标点熵 ${metrics.punctuationEntropy}，问号/冒号/省略号/分号使用偏少。`,
-            '该用问号、感叹号、冒号、省略号的地方就用；破折号每千字不超过 2 处。',
+            `标点熵 ${metrics.punctuationEntropy}，问号/冒号/感叹号使用偏少。`,
+            '该用问号、感叹号、冒号的地方就让人物开口或反问；分号和省略号能不用就不用。',
             metrics.punctuationEntropy < 0.9 ? 10 : 5,
         ));
     }
@@ -386,8 +433,70 @@ export function scoreProseRisk(metrics: ProseMetrics): ProseRiskReport {
             'medium',
             '破折号过多',
             `每千字 ${metrics.dashPer1000} 处破折号。`,
-            '把破折号改成逗号、冒号或直接断句；每千字控制在 2 处以内。',
+            '把破折号改成逗号、冒号或直接断句；全章控制在 2 处以内。',
             6,
+        ));
+    }
+
+    // ── 2026-10-30 新增：来自「去AI味」实战规则的硬伤检测 ──
+    // 朱雀类检测器对这几类标点/句式极其敏感；真人网文作者的分布明显更低。
+
+    if (metrics.semicolonCount > 0) {
+        issues.push(issue(
+            'semicolon-ban',
+            metrics.semicolonCount >= 3 ? 'high' : 'medium',
+            '分号是 AI 高频标点',
+            `全文出现 ${metrics.semicolonCount} 处分号。真人写中文小说几乎不用分号。`,
+            '把分号改成句号断句，或用逗号连接；改完全文分号应为 0。',
+            metrics.semicolonCount >= 3 ? 12 : 8,
+        ));
+    }
+
+    if (metrics.ellipsisCount >= 3) {
+        issues.push(issue(
+            'ellipsis-ban',
+            metrics.ellipsisCount >= 6 ? 'high' : 'medium',
+            '省略号过多',
+            `全文出现 ${metrics.ellipsisCount} 处省略号。`,
+            '省略的语气用「话没说完就……的动作」写出来，或直接断句；全章不超过 2 处。',
+            metrics.ellipsisCount >= 6 ? 10 : 6,
+        ));
+    }
+
+    if (metrics.dashCount >= 3) {
+        issues.push(issue(
+            'dash-cap',
+            metrics.dashCount >= 6 ? 'high' : 'medium',
+            '破折号超过硬上限',
+            `全文出现 ${metrics.dashCount} 处破折号（上限 2 处）。`,
+            '解释改用冒号，声音延长改用「话拖长」的描写，插入语改成逗号从句。',
+            metrics.dashCount >= 6 ? 10 : 6,
+        ));
+    }
+
+    // 「不知道…只知道…」排比感慨出现 1 次就报（实战规则：一段都不要有）；
+    // 「不是…(而)是…」真人偶尔用，堆叠到 3 次才报。
+    const reversalTriggered = metrics.reversalPairCount >= 3 || metrics.unknowingPatternCount >= 1;
+    if (reversalTriggered) {
+        const severe = metrics.reversalPairCount >= 5 || metrics.unknowingPatternCount >= 2;
+        issues.push(issue(
+            'reversal-stacking',
+            severe ? 'high' : 'medium',
+            '「不是A而是B」堆叠',
+            `先否定再肯定句式出现 ${metrics.reversalPairCount} 次，排比式感慨（不知道…只知道…）${metrics.unknowingPatternCount} 次。`,
+            '每章这类句式最多留 1 处；其余改成直接陈述事实，或让人物用对话说出来。',
+            severe ? 15 : 10,
+        ));
+    }
+
+    if (metrics.elevatedEnding) {
+        issues.push(issue(
+            'elevated-ending',
+            'medium',
+            '末段升华/点题',
+            '最后一段是独立的短句总结或命运感慨（如「这是关于……的故事」）。',
+            '章节结尾落在动作、对话或悬念上；感想让读者自己得出，不要替读者总结。',
+            8,
         ));
     }
 
@@ -403,7 +512,8 @@ export function formatProseMetrics(metrics: ProseMetrics): string {
         `平均叙述段长 ${metrics.avgNarrativeParagraphLength} 字｜单句叙述段 ${Math.round(metrics.singleSentenceNarrativeParagraphRatio * 100)}%`,
         `短句 ${Math.round(metrics.shortSentenceRatio * 100)}%｜长句 ${Math.round(metrics.longSentenceRatio * 100)}%`,
         `对话 ${Math.round(metrics.dialogueCharsRatio * 100)}%｜对话段 ${Math.round(metrics.dialogueParagraphRatio * 100)}%`,
-        `标点熵 ${metrics.punctuationEntropy}｜破折号 ${metrics.dashPer1000}/千字`,
+        `标点熵 ${metrics.punctuationEntropy}｜破折号 ${metrics.dashCount}｜分号 ${metrics.semicolonCount}｜省略号 ${metrics.ellipsisCount}`,
+        `「不是…是…」${metrics.reversalPairCount} 次｜末段升华 ${metrics.elevatedEnding ? '有' : '无'}`,
         `句首多样性 ${Math.round(metrics.sentenceStartDiversity * 100)}%`,
     ];
     return lines.join('\n');

@@ -184,6 +184,30 @@ export interface AgentCommandSummary {
     group: string;
 }
 
+/** read_file 的结果（吸收 dsh context/file-reference：按需读取，不整库进上下文） */
+export interface AgentFileReadResult {
+    path: string;
+    content: string;
+    /** 本次返回的起止行（1-based） */
+    startLine: number;
+    endLine: number;
+    /** 文件总行数 */
+    totalLines: number;
+    /** 是否还有未返回的内容（用 offset 继续读） */
+    truncated: boolean;
+    /** 文件字节数 */
+    size: number;
+}
+
+/** search_vault 的一条命中 */
+export interface AgentVaultSearchHit {
+    path: string;
+    /** 1-based 行号 */
+    line: number;
+    /** 该行摘要（已压空白/截断） */
+    text: string;
+}
+
 export interface GuideAgentPort {
     createProject(params: CreateLongIntentParams): Promise<{ created: boolean; projectId: string; fileCount: number; reason?: string }>;
     createShortProject?(params: CreateShortIntentParams): Promise<{ created: boolean; projectId: string; fileCount: number; reason?: string }>;
@@ -215,4 +239,9 @@ export interface GuideAgentPort {
     confirmDangerousAction?(request: { title: string; detail: string }): Promise<boolean>;
     /** 可用命令清单（按分组） */
     listCommands?(): AgentCommandSummary[];
+    // ─── 文件检索（吸收 dsh context/file-reference 与 search）───
+    /** 读取库内文本文件的指定行窗口；路径校验与截断由实现负责 */
+    readFile?(path: string, options?: { offset?: number; limit?: number }): Promise<AgentFileReadResult | null>;
+    /** 在库内做关键词检索（只搜文本文件），返回命中的行 */
+    searchVault?(query: string, options?: { limit?: number; folder?: string }): Promise<AgentVaultSearchHit[]>;
 }

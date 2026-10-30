@@ -48,6 +48,24 @@ export class AgentSessionLog {
         return `call_${this.callSeq}_${tool}`;
     }
 
+    /** 当前事件序列（会话持久化用；命名避开内部字段 events） */
+    allEvents(): readonly AgentSessionEvent[] {
+        return [...this.events];
+    }
+
+    /** 当前工具调用序号（会话持久化用） */
+    get callCounter(): number {
+        return this.callSeq;
+    }
+
+    /** 从存档恢复（替换全部事件；callSeq 由调用方提供或按 callId 反推） */
+    restore(events: readonly AgentSessionEvent[], callSeq: number): void {
+        this.events = events.map(event => ({ ...event }));
+        this.callSeq = Math.max(0, Math.floor(callSeq) || 0);
+        this.lastPrunedChars = 0;
+        this.lastPrunedResults = 0;
+    }
+
     /** 清空（重新开始会话） */
     reset(): void {
         this.events = [];

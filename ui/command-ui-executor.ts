@@ -22,6 +22,7 @@ import { RenameProjectModal } from './rename-project-modal';
 import { CreateProjectModal } from './create-project-modal';
 import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
+import { OperationConfirmModal } from './components/progress';
 import { PlanBookModal } from './plan-book-modal';
 import { WriteChapterModal } from './write-chapter-modal';
 import { ReviewChapterModal } from './review-chapter-modal';
@@ -79,6 +80,117 @@ export class CommandUiExecutor implements CommandUiPort {
     constructor(private readonly deps: CommandUiExecutorDeps) {}
 
     /**
+     * v4.20 实体链接迁移：扫描 → dry-run 预览 → 确认后写回。
+     * 项目无关命令；未选项目时提示。
+     */
+    private async runEntityLinkMigration(project: string | undefined): Promise<void> {
+        const { app } = this.deps;
+        if (!project) {
+            new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
+            return;
+        }
+        const { scanEntityLinkMigration, applyEntityLinkMigration } = await import('../engine/entity-link-migrator');
+        const plan = scanEntityLinkMigration(app, project);
+        if (plan.changes.length === 0) {
+            new Notice(`✅ 「${project}」共扫描 ${plan.scanned} 个实体，归属字段已是 wiki-link，无需迁移`, 6000);
+            return;
+        }
+        const sample = plan.changes.slice(0, 6)
+            .map((change: { entity: string; field: string; from: string; to: string | string[] }) => `${change.entity}·${change.field}: ${change.from} → ${Array.isArray(change.to) ? change.to.join('、') : change.to}`)
+            .join('\n');
+        const confirmed = await OperationConfirmModal.confirm(app, {
+            title: '实体链接迁移（存量关系图谱化）',
+            description: `扫描 ${plan.scanned} 个实体，发现 ${plan.changes.length} 处归属字段是纯字符串。\n\n${sample}
+
+执行后这些字段将变为 wiki-link，出现在 Obsidian 关系图谱中。`,
+            warning: '会直接修改实体文件 frontmatter（仅改动列出的字段）',
+            confirmText: `执行迁移（${plan.changes.length} 处）`,
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
+        const written = await applyEntityLinkMigration(app, project, plan);
+        new Notice(`✅ 链接迁移完成：写入 ${written} 个实体文件，共 ${plan.changes.length} 处`, 8000);
+    }
+
+    /** 生成/刷新项目 Bases 看板 */
+    private async runGenerateBases(project: string | undefined): Promise<void> {
+        const { app } = this.deps;
+        if (!project) {
+            new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
+            return;
+        }
+        try {
+            const { writeProjectBases } = await import('../engine/note-properties-service');
+            const written = await writeProjectBases(app, project);
+            new Notice(`✅ 已生成 ${written.length} 个看板到「${project}/.看板/」；可拖到右侧栏使用`, 7000);
+        } catch (e) {
+            new Notice(`生成看板失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+        }
+    }
+
+    /** 补齐分层标签（dry-run 预览 → 执行） */
+    private async runTagMigration(project: string | undefined): Promise<void> {
+        const { app } = this.deps;
+        if (!project) {
+            new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
+            return;
+        }
+        const { scanTagMigration, applyTagMigration } = await import('../engine/note-properties-service');
+        const changes = scanTagMigration(app, project);
+        if (changes.length === 0) {
+            new Notice(`✅ 「${project}」的笔记已含层级标签，无需迁移`, 5000);
+            return;
+        }
+        const totalTags = changes.reduce((sum, change) => sum + change.add.length, 0);
+        const sample = changes.slice(0, 8)
+            .map((change) => `${change.path.split('/').pop()}：+${change.add.join('、')}`)
+            .join('\n');
+        const confirmed = await OperationConfirmModal.confirm(app, {
+            title: '补齐分层标签（保留原标签）',
+            description: `共 ${changes.length} 个文件、${totalTags} 个标签待追加。\n\n${sample}
+
+层级标签让 Obsidian 标签面板折叠成组，并供 Bases 看板筛选。`,
+            warning: '只追加 nw/* 标签，不会删除或改名任何现有标签',
+            confirmText: `执行（${changes.length} 个文件）`,
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
+        const result = await applyTagMigration(app, changes);
+        new Notice(`✅ 标签迁移完成：写入 ${result.written} 个文件，追加 ${result.added} 个标签`, 7000);
+    }
+
+    /** 补齐笔记属性（dry-run 预览 → 执行，只补空值） */
+    private async runPropertyCompletion(project: string | undefined): Promise<void> {
+        const { app } = this.deps;
+        if (!project) {
+            new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
+            return;
+        }
+        const { scanPropertyCompletion, applyPropertyCompletion } = await import('../engine/note-properties-service');
+        const changes = scanPropertyCompletion(app, project);
+        if (changes.length === 0) {
+            new Notice(`✅ 「${project}」的笔记属性已完整`, 5000);
+            return;
+        }
+        const totalProps = changes.reduce((sum, change) => sum + change.fill.length, 0);
+        const sample = changes.slice(0, 8)
+            .map((change) => `${change.path.split('/').pop()}：+${change.fill.map((item) => item.key).join('、')}`)
+            .join('\n');
+        const confirmed = await OperationConfirmModal.confirm(app, {
+            title: '补齐笔记属性',
+            description: `共 ${changes.length} 个文件、${totalProps} 个属性缺失。\n\n${sample}
+
+补齐后原生属性面板与 Bases 看板才能完整显示。`,
+            warning: '只补缺失的空属性，已有值一律不覆盖',
+            confirmText: `执行（${changes.length} 个文件）`,
+            cancelText: '取消',
+        });
+        if (!confirmed) return;
+        const result = await applyPropertyCompletion(app, changes);
+        new Notice(`✅ 属性补齐完成：写入 ${result.written} 个文件，补 ${result.filled} 个属性`, 7000);
+    }
+
+    /**
      * 模式守卫：命令只允许在对应项目类型下执行。
      * 返回 true 表示已拦截（调用方直接 return）。
      */
@@ -128,6 +240,21 @@ export class CommandUiExecutor implements CommandUiPort {
                 return true;
             case CommandIds.CREATION_FLOW:
                 void plugin.openCreationFlow(resolveProject());
+                return true;
+            case CommandIds.MIGRATE_ENTITY_LINKS:
+                void this.runEntityLinkMigration(resolveProject());
+                return true;
+            case CommandIds.PROJECT_SIDE_PANEL:
+                void plugin.openProjectSidePanel();
+                return true;
+            case CommandIds.GENERATE_BASES:
+                void this.runGenerateBases(resolveProject());
+                return true;
+            case CommandIds.MIGRATE_NAMESPACE_TAGS:
+                void this.runTagMigration(resolveProject());
+                return true;
+            case CommandIds.COMPLETE_PROPERTIES:
+                void this.runPropertyCompletion(resolveProject());
                 return true;
             case CommandIds.SHORT_RESEARCH: {
                 const project = resolveProject();

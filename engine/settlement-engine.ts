@@ -33,6 +33,19 @@ import {
     getNextRowNumInSection,
 } from './settlement/markdown-table-utils';
 import { createSettleContext, type SettleContext } from './settlement/settle-context';
+import { parseInfoPlanFields } from '../shared/info-plan-fields';
+import { getValidFrontmatterKeys } from '../shared/entity-field-mappings';
+import { getLinkPolicy, formatSingleLinkValue, formatListLinkValue, parseLinkValue } from '../shared/entity-links';
+import type { EntityCategory } from '../shared/entity-models';
+import { verifyForeshadowLoop, type ForeshadowLoopCheck } from '../shared/foreshadow-loop';
+import {
+    parseBehaviorLog,
+    mergeBehaviorRows,
+    formatBehaviorLog,
+    buildChapterBehaviorRows,
+    type BehaviorRow,
+} from '../shared/behavior-log';
+import { CHAPTER_FILE_TYPES } from './chapter-utils';
 import { createLogger } from '../shared/logger';
 
 
@@ -50,6 +63,16 @@ export interface SettlementResult {
     created: number;
     updatedChars: number;
     updatedForeshadows: number;
+    /** 伏笔闭环核对结果（章纲计划 vs 结算指令，v4.20） */
+    foreshadowLoop?: ForeshadowLoopCheck;
+    /** 被字段白名单拒绝的更新（v4.20 结算守卫） */
+    rejectedFields: Array<{ category: string; name: string; field: string; value: string }>;
+    /** 目标实体文件不存在而被搁置的更新（v4.20 结算守卫） */
+    missingEntities: Array<{ category: string; name: string; field: string }>;
+    /** 链接化字段写入数（v4.20 实体链接化） */
+    linkFieldWrites: number;
+    /** 本次写入「出场记录」的行为摘要条数（v4.20） */
+    recordedBehaviors?: number;
     updatedFactions: number;
     updatedLocations: number;
     updatedItems: number;
@@ -222,6 +245,9 @@ export class SettlementEngine {
             locs: [],
             factions: [],
             items: [],
+            rejectedFields: [],
+            missingEntities: [],
+            linkFieldWrites: 0,
         };
 
         const fm = parseFrontmatterFromText(bodyText);
@@ -432,6 +458,10 @@ export class SettlementEngine {
         await this.settleStep_createForeshadows(ctx);
         await this.settleStep_createTimelines(ctx);
 
+        // ─── 11.5: 伏笔闭环核对 + 角色行为摘要（v4.20 数据级反 AI）───
+        await this.settleStep_verifyForeshadowLoop(ctx);
+        await this.settleStep_recordBehaviors(ctx);
+
         // ─── 12-14: 关系 / 成长 / 情绪 ───
         await this.settleStep_updateRelations(ctx);
         await this.settleStep_updateGrowth(ctx);
@@ -445,6 +475,9 @@ export class SettlementEngine {
 
         // ─── 17: 刷新信息债看板（v1.3.0）───
         await this.refreshInfoDebt(ctx.project);
+
+        // ─── 18: 结算守卫汇总（v4.20：拒绝/搁置一次性告知）───
+        this.settleStep_reportGuards(ctx);
 
         // ─── 汇总 + 回滚（hasPartialFailure 时）───
         this.settleStep_aggregateAndMaybeRollback(ctx);
@@ -496,84 +529,125 @@ export class SettlementEngine {
     // 共用模式：snapshot → withWriteLock → processFrontmatter → 计数++ / 失败时 hasPartialFailure=true
     // ================================================================
 
-    /** §1 更新人物 frontmatter — v1.5.0: 字段名校验 */
+    /**
+     * §1-4 共用的实体字段回写（v4.20 结算守卫）：
+     * - 字段白名单：人物 = 旧 CHARACTER_DISPLAY_KEYS 超集 + 映射表全集；势力/地点/物品 = 映射表全集；
+     *   非法字段记入 rejectedFields 聚合提示，不再静默丢弃；
+     * - 目标实体文件不存在记入 missingEntities，结算结束统一提示；
+     * - 链接字段（所属势力/当前位置/所属归属等）自动把实体名转 [[wiki-link]]（单侧写入，反查靠图谱）。
+     */
+    private async applyEntityFieldUpdate(
+        ctx: SettleContext,
+        category: EntityCategory,
+        name: string,
+        field: string,
+        rawValue: string,
+        resolvePath: (project: string, name: string) => string,
+    ): Promise<'applied' | 'rejected' | 'missing' | 'error'> {
+        const validFields = getValidFrontmatterKeys(category);
+        if (!validFields.has(field)) {
+            ctx.result.rejectedFields.push({ category, name, field, value: rawValue });
+            return 'rejected';
+        }
+        const fp = resolvePath(ctx.project, name);
+        const file = this.getVaultMeta().getAbstractFileByPath(fp);
+        if (!(file instanceof TFile)) {
+            ctx.result.missingEntities.push({ category, name, field });
+            return 'missing';
+        }
+
+        // 链接字段：实体名 → [[wiki-link]]（single 取第一个；list 全量去重）
+        let value: string | string[] = rawValue;
+        const policy = getLinkPolicy(category, field);
+        if (policy) {
+            const names = parseLinkValue(rawValue);
+            if (policy.cardinality === 'list') value = formatListLinkValue(names);
+            else value = formatSingleLinkValue(names);
+            ctx.result.linkFieldWrites++;
+        }
+
+        try {
+            await this.snapshotField(ctx, file as TFile, field);
+            await withWriteLock(fp, () =>
+                this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+                    fm[field] = value;
+                })
+            );
+            return 'applied';
+        } catch (e) {
+            const errMsg = e instanceof Error ? e.message : String(e);
+            log.warn(`[SettlementEngine] 更新${category}失败:`, name, field, e);
+            this.notifier.showNotice(`❌ 更新${category}「${name}」的 ${field} 失败：${errMsg}`, NOTICE_ERROR);
+            ctx.hasPartialFailure = true;
+            return 'error';
+        }
+    }
+
+    /** §1 更新人物 frontmatter（v4.20：白名单超集 + 链接化 + 守卫） */
     private async settleStep_updateCharacters(ctx: SettleContext): Promise<void> {
-        const validCharFields = new Set<string>(CHARACTER_DISPLAY_KEYS);
         for (const u of ctx.instr.uc) {
-            if (!validCharFields.has(u.field)) {
-                log.warn(`[SettlementEngine] 跳过无效字段: ${u.field} (人物: ${u.name})`);
-                continue;
-            }
-            const fp = pjCharFile(ctx.project, u.name);
-            const file = this.getVaultMeta().getAbstractFileByPath(fp);
-            if (!file) continue;
-            try {
-                await this.snapshotField(ctx, file as TFile, u.field);
-                await withWriteLock(fp, () =>
-                    this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
-                        fm[u.field] = u.value;
-                    })
-                );
+            const outcome = await this.applyEntityFieldUpdate(ctx, 'character', u.name, u.field, u.value, pjCharFile);
+            if (outcome === 'applied') {
                 ctx.result.updatedChars++;
                 ctx.result.chars.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新人物失败:', u.name, e); this.notifier.showNotice(`❌ 更新人物「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            }
         }
     }
 
-    /** §2 更新势力 frontmatter（v1.3.0） */
+    /** §2 更新势力 frontmatter（v4.20：接入守卫 + 领袖字段链接化） */
     private async settleStep_updateFactions(ctx: SettleContext): Promise<void> {
         for (const u of ctx.instr.ufa) {
-            const fp = pjFactionFile(ctx.project, u.name);
-            const file = this.getVaultMeta().getAbstractFileByPath(fp);
-            if (!file) continue;
-            try {
-                await this.snapshotField(ctx, file as TFile, u.field);
-                await withWriteLock(fp, () =>
-                    this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
-                        fm[u.field] = u.value;
-                    })
-                );
+            const outcome = await this.applyEntityFieldUpdate(ctx, 'faction', u.name, u.field, u.value, pjFactionFile);
+            if (outcome === 'applied') {
                 ctx.result.updatedFactions++;
                 ctx.result.factions.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新势力失败:', u.name, e); this.notifier.showNotice(`❌ 更新势力「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            }
         }
     }
 
-    /** §3 更新地点 frontmatter（v1.3.0） */
+    /** §3 更新地点 frontmatter（v4.20：接入守卫 + 区域字段链接化） */
     private async settleStep_updateLocations(ctx: SettleContext): Promise<void> {
         for (const u of ctx.instr.uloc) {
-            const fp = pjLocFile(ctx.project, u.name);
-            const file = this.getVaultMeta().getAbstractFileByPath(fp);
-            if (!file) continue;
-            try {
-                await this.snapshotField(ctx, file as TFile, u.field);
-                await withWriteLock(fp, () =>
-                    this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
-                        fm[u.field] = u.value;
-                    })
-                );
+            const outcome = await this.applyEntityFieldUpdate(ctx, 'location', u.name, u.field, u.value, pjLocFile);
+            if (outcome === 'applied') {
                 ctx.result.updatedLocations++;
                 ctx.result.locs.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新地点失败:', u.name, e); this.notifier.showNotice(`❌ 更新地点「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            }
         }
     }
 
-    /** §4 更新物品功法 frontmatter（v1.3.0） */
+    /** §4 更新物品功法 frontmatter（v4.20：接入守卫 + 所属/归属链接化，所有权单侧写入） */
     private async settleStep_updateItems(ctx: SettleContext): Promise<void> {
         for (const u of ctx.instr.uitem) {
-            const fp = pjItemFile(ctx.project, u.name);
-            const file = this.getVaultMeta().getAbstractFileByPath(fp);
-            if (!file) continue;
-            try {
-                await this.snapshotField(ctx, file as TFile, u.field);
-                await withWriteLock(fp, () =>
-                    this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
-                        fm[u.field] = u.value;
-                    })
-                );
+            const outcome = await this.applyEntityFieldUpdate(ctx, 'item', u.name, u.field, u.value, pjItemFile);
+            if (outcome === 'applied') {
                 ctx.result.updatedItems++;
                 ctx.result.items.push(u.name);
-            } catch (e) { const errMsg = e instanceof Error ? e.message : String(e); log.warn('[SettlementEngine] 更新物品功法失败:', u.name, e); this.notifier.showNotice(`❌ 更新物品功法「${u.name}」失败：${errMsg}`, NOTICE_ERROR); ctx.hasPartialFailure = true; }
+            }
+        }
+    }
+
+    /** 结算守卫汇总提示（v4.20）：被拒绝/被搁置的更新一次性告知，不再静默 */
+    private settleStep_reportGuards(ctx: SettleContext): void {
+        if (ctx.result.rejectedFields.length > 0) {
+            const samples = ctx.result.rejectedFields
+                .slice(0, 3)
+                .map((item) => `${item.name}·${item.field}`)
+                .join('、');
+            log.warn('[SettlementEngine] 字段白名单拒绝:', JSON.stringify(ctx.result.rejectedFields));
+            this.notifier.showNotice(
+                `⚠️ ${ctx.result.rejectedFields.length} 条更新的字段不在设定模板内被拒绝（如 ${samples}）；已计入结算结果，不写入文件`,
+                NOTICE_WARNING,
+            );
+        }
+        if (ctx.result.missingEntities.length > 0) {
+            const uniqueNames = [...new Set(ctx.result.missingEntities.map((item) => `${item.category}:${item.name}`))];
+            const samples = uniqueNames.slice(0, 5).join('、');
+            log.warn('[SettlementEngine] 目标实体不存在:', JSON.stringify(ctx.result.missingEntities));
+            this.notifier.showNotice(
+                `⚠️ ${uniqueNames.length} 个实体文件不存在，${ctx.result.missingEntities.length} 条更新被搁置：${samples}。请确认实体卡是否被移动/重命名，或先由 NEW_ 指令创建`,
+                NOTICE_WARNING,
+            );
         }
     }
 
@@ -630,6 +704,60 @@ export class SettlementEngine {
     // §6-9: NEW_* 系列实体创建（完整模板写入 + createdFiles 记录用于回滚）
     // ================================================================
 
+    /**
+     * 伏笔闭环核对（v4.20）：章纲「伏笔操作」计划 vs 结算指令。
+     * 数据级反 AI——回收/埋设不达标直接进结算提示，不靠模型自觉。
+     * 核对失败不阻塞结算（旧项目没有章纲计划时只查数量）。
+     */
+    private async settleStep_verifyForeshadowLoop(ctx: SettleContext): Promise<void> {
+        try {
+            let plan: { recycle: string[]; plant: string[] } | undefined;
+            const infoPlanPath = `${ctx.chapDir}/${getChapterFileName(ctx.chapName, CHAPTER_FILE_TYPES.infoPlan)}`;
+            if (this.getVaultMeta().getAbstractFileByPath(infoPlanPath) instanceof TFile) {
+                const raw = await this.getFS().read(infoPlanPath);
+                const fields = parseInfoPlanFields(raw);
+                plan = { recycle: fields.foreshadowRecycle, plant: fields.foreshadowPlant };
+            }
+            const check = verifyForeshadowLoop({
+                updates: ctx.instr.uf,
+                newForeshadows: ctx.instr.nfs.map((item) => item.name),
+                plan,
+            });
+            ctx.result.foreshadowLoop = check;
+            if (!check.pass) {
+                this.notifier.showNotice(`⚠️ ${check.summary}`, NOTICE_WARNING);
+            }
+            log.info('[SettlementEngine]', check.summary);
+        } catch (e) {
+            log.warn('[SettlementEngine] 伏笔闭环核对失败:', e);
+        }
+    }
+
+    /**
+     * 角色按章行为摘要（v4.20）：把分析报告的 CHARACTER_BEHAVIOR 指令
+     * 合并进 01-世界架构/人物/出场记录.md（按 章节+角色 去重，重跑结算覆盖旧摘要）。
+     */
+    private async settleStep_recordBehaviors(ctx: SettleContext): Promise<void> {
+        const incoming: BehaviorRow[] = buildChapterBehaviorRows(ctx.chapName, ctx.instr.behavior || []);
+        if (incoming.length === 0) return;
+        const dir = pjCharsDir(ctx.project);
+        const path = `${dir}/出场记录.md`;
+        try {
+            await this.getFS().mkdir(dir);
+            await withWriteLock(path, async () => {
+                let rows: BehaviorRow[] = [];
+                if (this.getVaultMeta().getAbstractFileByPath(path) instanceof TFile) {
+                    rows = parseBehaviorLog(await this.getFS().read(path));
+                }
+                const merged = mergeBehaviorRows(rows, incoming);
+                await this.getFS().write(path, formatBehaviorLog(merged));
+            });
+            ctx.result.recordedBehaviors = incoming.length;
+        } catch (e) {
+            log.warn('[SettlementEngine] 记录角色行为摘要失败:', e);
+        }
+    }
+
     /** §6 创建新人物 — v1.3.2 完整模板 */
     private async settleStep_createCharacters(ctx: SettleContext): Promise<void> {
         for (const nc of ctx.instr.nc) {
@@ -638,7 +766,7 @@ export class SettlementEngine {
             try {
                 await this.getFS().mkdir(pjCharsDir(ctx.project));
                 const content = `---
-tags: [人物]
+tags: [人物, nw/实体/人物]
 姓名: ${nc.name}
 年龄: 
 身份: 
@@ -700,7 +828,7 @@ ${nc.description || '暂无描述'}
             try {
                 await this.getFS().mkdir(pjLocsDir(ctx.project));
                 const content = `---
-tags: [地点]
+tags: [地点, nw/实体/地点]
 名称: ${nl.name}
 别称: 
 类型: 
@@ -742,7 +870,7 @@ ${nl.description || '暂无描述'}
             try {
                 await this.getFS().mkdir(pjFactionsDir(ctx.project));
                 const content = `---
-tags: [势力]
+tags: [势力, nw/实体/势力]
 名称: ${nf.name}
 别称: 
 类型: 
@@ -782,13 +910,14 @@ ${nf.description || '暂无描述'}
             try {
                 await this.getFS().mkdir(pjItemsDir(ctx.project));
                 const content = `---
-tags: [物品功法]
+tags: [物品功法, nw/实体/物品]
 名称: ${ni.name}
 类型: 
 品阶/等级: 
 描述: 
 效果: 
 所属/归属: 
+当前状态: 
 ---
 
 # ${ni.name}
@@ -814,6 +943,13 @@ ${ni.description || '暂无描述'}
         }
     }
 
+    /** v4.20 幂等：伏笔名是否已在伏笔库任意表格的行中出现（引擎层不依赖 services，本地实现） */
+    private foreshadowNameExistsInDb(content: string, name: string): boolean {
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const rowPattern = new RegExp(`^\\|\\s*\\d+\\s*\\|\\s*${escaped}\\s*\\|`, 'm');
+        return rowPattern.test(content);
+    }
+
     /** §10 新增伏笔到伏笔库「未回收伏笔」表格 — v1.4.0 8列表头 */
     private async settleStep_createForeshadows(ctx: SettleContext): Promise<void> {
         for (const nf of ctx.instr.nfs) {
@@ -821,6 +957,11 @@ ${ni.description || '暂无描述'}
                 const fp = pjForeshadowDB(ctx.project);
                 const ff = this.getVaultMeta().getAbstractFileByPath(fp);
                 let c = ff instanceof TFile ? await this.getFS().read(fp) : '';
+                // v4.20 幂等守卫：同名伏笔已在库（未回收/已回收任一表）则跳过
+                if (this.foreshadowNameExistsInDb(c, nf.name)) {
+                    log.info('[SettlementEngine] 伏笔已存在，跳过:', nf.name);
+                    continue;
+                }
                 const newRow = `| ${getNextRowNum(c)} | ${nf.name} | 中 | ${nf.chapter || ctx.chapName} | ${nf.reveal || '待定'} | ${nf.relatedChars || ''} | ${nf.relatedPlotline || ''} | 未揭示 |`;
                 if (c.includes('未回收伏笔')) {
                     c = appendAfterSectionHeader(c, '未回收伏笔', newRow);
@@ -846,6 +987,12 @@ ${ni.description || '暂无描述'}
                 if (tlF instanceof TFile) tlC = await this.getFS().read(tlPath);
 
                 const newRow = `| ${nt.desc} | ${ctx.chapName} | ${nt.event} | |`;
+
+                // v4.20 幂等守卫：同「时间+章节+事件」的行已存在则跳过（重复结算不再翻倍）
+                if (tlC.includes(`| ${nt.desc} | ${ctx.chapName} | ${nt.event}`)) {
+                    log.info('[SettlementEngine] 时间线事件已存在，跳过:', nt.desc, nt.event);
+                    continue;
+                }
 
                 // 判断应该写入哪个纪元
                 const isBackground = nt.desc.match(/背景纪元|纪元前|年前|上古|远古|传说|肇始/);

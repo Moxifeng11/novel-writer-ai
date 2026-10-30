@@ -386,7 +386,7 @@ ${theme ? `【主题】${theme}` : ''}`;
                 finalContent = `---\n${fmLines}---\n\n${result.content}`;
                 await fs.write(wvPath, finalContent);
             } else {
-                finalContent = `---\n世界名称: "${worldName}"\n项目名称: "${genProjectName}"\ntags: [世界观]\n世界类型:\n创作阶段: 世界观设定\n---\n\n${result.content}`;
+                finalContent = `---\n世界名称: "${worldName}"\n项目名称: "${genProjectName}"\ntags: [世界观, nw/设定/世界观]\n世界类型:\n创作阶段: 世界观设定\n---\n\n${result.content}`;
                 await fs.write(wvPath, finalContent);
             }
 
@@ -444,7 +444,7 @@ ${theme ? `【主题】${theme}` : ''}`;
 
 【输出格式——严格遵循以下 8 大模块名称，不得修改】
 ---
-tags: [设定库]
+tags: [设定库, nw/设定/设定库]
 ---
 
 # 设定库
@@ -597,7 +597,7 @@ ${existingContent ? `\n【已有设定库（请保留其中非冲突内容，进
 【输出格式——严格遵循】（保留模板中的 YAML frontmatter 不变）
 请按照以下格式输出：
 ---
-tags: [世界观]
+tags: [世界观, nw/设定/世界观]
 世界名称:
 项目名称:
 世界类型:

@@ -16,7 +16,7 @@ export function parseReport(report: string): Instructions {
         uc: [], uf: [], ufa: [], uloc: [], uitem: [],
         nc: [], nl: [], nf: [], ni: [], nfs: [], nt: [],
         rel: [], growth: [], emotion: [], del: [],
-        promise: [], arc: [],
+        promise: [], arc: [], behavior: [],
     };
     for (const line of report.split('\n')) {
         const t = line.trim();
@@ -71,6 +71,10 @@ export function parseReport(report: string): Instructions {
         // NEW_TIMELINE: 时间点 | 事件描述
         m = t.match(/NEW_TIMELINE:\s*(.*?)\s*\|\s*(.*)/);
         if (m) { instr.nt.push({ desc: m[1].trim(), event: m[2].trim() }); continue; }
+
+        // CHARACTER_BEHAVIOR: 角色名 | 本章行为摘要（v4.20：出场记录）
+        m = t.match(/CHARACTER_BEHAVIOR:\s*(.*?)\s*\|\s*(.*)/);
+        if (m) { instr.behavior.push({ name: m[1].trim(), summary: m[2].trim() }); continue; }
 
         // RELATION: 实体A|实体B|关系类型|关系描述（v1.3.0 新增）
         m = t.match(/RELATION:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*)/);

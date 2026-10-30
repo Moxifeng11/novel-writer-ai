@@ -17,7 +17,7 @@ import { buildDocx } from '../engine/export/docx-builder';
 import type { BuiltBook, BookBuildOptions } from '../engine/export/epub-builder';
 import { exportBinaryFile, exportTextFile } from '../shared/export-file';
 import { createLogger } from '../shared/logger';
-import { getProjectMeta } from './project-utils';
+import { getProjectMeta, findProjectCoverFile, loadProjectCover } from './project-utils';
 import type { CreationMode } from '../shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '../shared/mode-content';
 import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
@@ -79,11 +79,15 @@ export class ExportManuscriptModal extends Modal {
     private author = '';
     /** TXT 是否加 UTF-8 BOM（旧版记事本兼容） */
     private textBom = false;
+    /** EPUB 是否带封面（读取项目内 封面/cover.png|jpg|jpeg|webp） */
+    private includeCover = true;
 
     private summaryEl!: HTMLElement;
     private hintEl!: HTMLElement;
     private authorRowEl: HTMLElement | null = null;
     private bomRowEl: HTMLElement | null = null;
+    private coverRowEl: HTMLElement | null = null;
+    private coverSettingRef: Setting | null = null;
 
     constructor(
         app: App,
@@ -154,6 +158,15 @@ export class ExportManuscriptModal extends Modal {
                 .setValue(this.textBom)
                 .onChange((value) => { this.textBom = value; }));
         this.bomRowEl = bomSetting.settingEl;
+
+        const coverSetting = new Setting(contentEl)
+            .setName('包含封面图')
+            .setDesc('读取项目内「封面/cover.png」等文件')
+            .addToggle((toggle) => toggle
+                .setValue(this.includeCover)
+                .onChange((value) => { this.includeCover = value; }));
+        this.coverRowEl = coverSetting.settingEl;
+        this.coverSettingRef = coverSetting;
 
         new Setting(contentEl)
             .setName('包含卷标题')
@@ -236,6 +249,10 @@ export class ExportManuscriptModal extends Modal {
         if (this.bomRowEl) {
             this.bomRowEl.style.display = this.format === 'text' ? '' : 'none';
         }
+        if (this.coverRowEl) {
+            this.coverRowEl.style.display = this.format === 'epub' ? '' : 'none';
+        }
+        if (this.format === 'epub') void this.refreshCoverHint();
         // 直接操作 Setting 行 DOM：不同 Obsidian 版本 Setting.addToggle 的返回值不稳定，
         // 保存实例再 setName 会静默失效。
         for (const row of Array.from(this.contentEl.querySelectorAll<HTMLElement>('.setting-item'))) {
@@ -246,6 +263,15 @@ export class ExportManuscriptModal extends Modal {
                 nameEl!.textContent = chapterHeading;
             }
         }
+    }
+
+    /** EPUB 封面提示：找到哪个文件 / 项目里还没有封面 */
+    private async refreshCoverHint(): Promise<void> {
+        if (!this.coverSettingRef || !this.coverRowEl || this.coverRowEl.style.display === 'none') return;
+        const found = findProjectCoverFile(this.app, this.project);
+        this.coverSettingRef.setDesc(found
+            ? `已找到封面：${found.file.path}（导出时嵌入 EPUB）`
+            : '未找到封面：在项目内建「封面/cover.png」（或 .jpg / .jpeg / .webp）后重新导出');
     }
 
     private async refreshSummary(): Promise<void> {
@@ -307,6 +333,13 @@ export class ExportManuscriptModal extends Modal {
         let result;
 
         if (this.format === 'epub' || this.format === 'docx') {
+            if (this.format === 'epub') {
+                const cover = this.includeCover ? await loadProjectCover(this.app, this.project) : undefined;
+                if (this.includeCover && !cover) {
+                    new Notice('未找到项目封面（封面/cover.png 等），已生成无封面 EPUB', 4000);
+                }
+                bookOptions.metadata.cover = cover;
+            }
             const built = this.format === 'epub'
                 ? buildEpub(chapters, bookOptions)
                 : buildDocx(chapters, bookOptions);

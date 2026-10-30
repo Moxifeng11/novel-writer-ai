@@ -90,6 +90,7 @@ export const ENTITY_FIELD_MAPPINGS: Record<EntityCategory, CategoryMapping> = {
             { frontmatterKey: '描述', modelKey: 'description', label: '描述', type: 'string' },
             { frontmatterKey: '效果', modelKey: 'effect', label: '效果', type: 'string' },
             { frontmatterKey: '所属/归属', modelKey: 'owner', label: '所属/归属', type: 'string' },
+            { frontmatterKey: '当前状态', modelKey: 'currentStatus', label: '当前状态', type: 'string' },
             { frontmatterKey: 'entity_status', modelKey: 'entityStatus', label: '实体状态', type: 'string' },
             { frontmatterKey: 'entity_created_at', modelKey: 'createdAt', label: '创建时间', type: 'string' },
             { frontmatterKey: 'entity_last_changed_at', modelKey: 'lastChangedAt', label: '最后变更时间', type: 'string' },
@@ -148,4 +149,24 @@ export function mapModelToFrontmatter(
     }
     
     return result;
+}
+/**
+ * 结算回写用的字段白名单（v4.20）。
+ * 四类实体统一从映射表派生；人物额外并入 CHARACTER_DISPLAY_KEYS（旧白名单超集），
+ * 保证旧报告里合法的字段继续可用、新字段（修为等级/当前位置）不再被静默丢弃。
+ */
+export function getValidFrontmatterKeys(category: EntityCategory): Set<string> {
+    const keys = new Set(ENTITY_FIELD_MAPPINGS[category].fields.map((f) => f.frontmatterKey));
+    if (category === 'character') {
+        // 与 format-constants.CHARACTER_DISPLAY_KEYS 保持超集兼容（避免循环 import，直接列出）
+        for (const key of [
+            '年龄', '身份', '性格标签', '核心动机', '核心驱动力_软肋',
+            '习惯性小动作', '当前状态', '当前情绪', '金手指/特殊能力',
+            '功法/技能树', '所属势力', '性别', '外貌特征', '当前目标',
+        ]) {
+            keys.add(key);
+        }
+        keys.add('存续状态'); // 站点语义对齐：人物生死/在世状态
+    }
+    return keys;
 }

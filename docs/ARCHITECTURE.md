@@ -1,6 +1,6 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.20.0
+> **版本**: v4.21.0
 > **最后更新**: 2026-10-27  
 > **状态**: 活跃可信 · 与代码同步
 
@@ -513,6 +513,41 @@ export interface FileSystemPort {
 自动关联：场景卡 → 人物/地点/POV/伏笔/情绪；伏笔 → 人物/主线/设定；时间线 → 实体；设定条目 → 实体。
 两套预算：本地 4200 tokens + 压缩文本 + 较少条目；云端 24000 tokens + 完整文本 + 更多条目。必含项永不静默丢弃。
 接入：`template-vars-builder` 覆盖一键生成变量；`CoWriterEngine` + `PromptBuilder` 注入协同信息包；上下文步骤显示覆盖度。
+
+**注入影响溯源账本（v4.20）**：`shared/injection-ledger.ts` 把正文模板 31 个注入段登记成影响矩阵——每段标注影响面（**事实记忆** = 防 OOC 的实体/时间线/伏笔/长篇记忆；**风格指引** = 写作指纹/文风预设/人味约束，跨章节持续生效的"风格记忆"；**流程约束** = 大纲/信息规划/工艺约束）。`template-vars-builder` 生成 `_injectionLedger` JSON；`step-runner` 每步 AI 调用后合并知识注入 meta（`KnowledgeInjector.lastInjectionMeta`）与组装期截断，发 `prompt-ledger` 执行事件（执行时间线可查）。指纹分层预算可配置（`fingerprintInjectionBudget`，默认 2000 字符），截断/丢层在账本中显式标记，不再静默。
+
+### 4.6 统一 RAG 检索管线（engine/rag/ + shared/rag/）
+
+9 个知识注入点（正文/协同两套 × 人物/世界观/技巧/节奏 + 风格双维度）不再各自 `search()` 后硬截断，而是共用一条管线：
+
+```
+查询计划（多来源） → 并行检索 → 合并去重 → 邻块扩展 → 阈值 → MMR 多样性 → 预算打包 → citation
+```
+
+| 组件 | 文件 | 职责 |
+|------|------|------|
+| 查询计划 | `shared/rag/query-plan.ts` | 场景目标/上一场结尾/情绪弧/章纲/正文/出场人物拆成带权重的多条查询（同一段文本保留最高权重） |
+| 邻块合并 | `shared/rag/neighbors.ts` | 同书同维度 position ±1 的命中拼回完整场景，最小重叠 4 字符裁剪 |
+| MMR 多样性 | `shared/rag/diversity.ts` | 2-gram Jaccard 相似度，`λ×score − (1−λ)×maxSim`，避免三条近重复占满预算 |
+| 预算打包 | `shared/rag/budget-pack.ts` | 按「分数/长度」性价比装预算，最高分必保、尾条可截断，返回被丢弃条数 |
+| 检索服务 | `engine/rag/retrieval-service.ts` | 组装以上四件 + `Promise.allSettled` 并行 + 失败收敛为 `{hits, telemetry, error}` + `formatRetrievalHits()` 统一 citation |
+
+向量库侧配套：查询向量 LRU 缓存（模型指纹 + query 为键，上限 100，避免同一句 query 在 9 个注入点重复计费）、`getNeighbors()` 直接读内存 samples（零 I/O）。遥测（查询数/命中/去重/邻块/丢弃/缓存命中）累计进 `KnowledgeInjector.lastInjectionMeta.retrieval`，再并入 `prompt-ledger`，执行时间线可见「这次生成检索了什么、丢了什么」。失败不再静默返回空串。
+
+### 4.7 Agent 会话运行时（dsh 吸收：engine/agent/harness/）
+
+| 能力 | 文件 | 说明 |
+|------|------|------|
+| 会话日志 | `session-log.ts` | append-only 事件日志 + `derive()` 投影；`allEvents()/restore()` 支撑持久化 |
+| 会话快照 | `session-snapshot.ts` | 快照 ↔ JSONL 纯转换（标题取首条用户消息前 30 字；坏行/坏字段宽容丢弃；callSeq 由 callId 反推） |
+| 会话存档 | `ui/services/agent-session-store.ts` | `.sessions/agent/<项目>.jsonl`，1s 节流追加；超过 512KB 只留最新一行；工作台重开自动恢复，头部「🆕 新会话」清空 |
+| 大结果落盘 | `engine/agent/harness/spill-store.ts` + `ui/services/agent-spill-store.ts` | 超过 6000 字符的工具结果原文写 `.sessions/spill/agent/<项目>/`，日志只留定位符 + 头尾摘要，模型可用 `read_file` 取回；7 天自动清理 |
+| 文件引用 | `shared/file-mention.ts` | `@路径` / `@"带 空格"` 语法、候选过滤、`【用户引用的文件】` 注入块（只给路径不读正文） |
+| 文件工具 | `host-tools.ts` + `ui/services/agent-port.ts` | `read_file`（行窗口 200 行/8192 字符、路径守卫、`.sessions/` 白名单回读）、`search_vault`（关键词 grep，`path:line:摘要`，最多 50 条） |
+| 时间上下文 | `shared/time-context.ts` | 每回合按分钟去重注入「当前时间 …（周X）」 |
+| token 计量 | `harness-engine.ts` | `derive()` 字符 ÷1.5 估算上下文 token + 按模型 `maxContext` 算窗口占用，工作台遥测显示「上下文 / 窗口 / 落盘」 |
+
+路径守卫（`shared/file-path-guard.ts`）是纯函数：拒绝绝对路径、盘符、`..`、隐藏目录（`.sessions/` 除外）、控制字符；行窗口同时受行数与字符数约束，翻页越界返回空窗口而不是重复末行。
 
 ### 5. 知识库系统（services/ + engine/）
 
