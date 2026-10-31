@@ -294,6 +294,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         activeBodyTemplate: 'auto',
         countableHumanHints: false,
         contextHygieneAutoFix: true,
+        firstRunComplete: false,
         autoRevisionAfterQC: true,
         autoRecheckAfterRevision: true,
         experimentGroup: '',

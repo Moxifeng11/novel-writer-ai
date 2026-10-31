@@ -159,5 +159,23 @@ export class TitleBarController {
                 executeCommand: (commandId) => this.deps.executeCommand(commandId),
             });
         }
+
+        // P0-4（v4.27）：版本历史入口——覆盖前自动备份已有，但用户需要一键查看/回滚
+        if (this.deps.state.project && this.deps.state.chapterName) {
+            const verBtn = secondaryRow.createEl('button', { text: '📜 版本', cls: 'novel-writer-settings-btn' });
+            verBtn.setAttribute('title', '查看当前章节的正文版本历史（含覆盖前自动备份），可回滚');
+            verBtn.onclick = async () => {
+                const { ChapterVersionModal } = await import('../chapter-version-modal');
+                new ChapterVersionModal(this.deps.app, {
+                    project: this.deps.state.project,
+                    contentType: 'chapter' as const,
+                    contentKey: this.deps.state.chapterName,
+                    sourcePath: this.deps.state.chapDir || '',
+                    currentContent: '',
+                    onSaveVersion: async () => null,
+                    onRollback: async () => {},
+                }).open();
+            };
+        }
     }
 }

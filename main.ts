@@ -212,6 +212,8 @@ export interface NovelWriterSettings {
     countableHumanHints?: boolean;
     /** 上下文体检自动清空重复段（保留权威版本）；默认开，串章只告警不改 */
     contextHygieneAutoFix?: boolean;
+    /** 首次启动引导已完成（创建第一个项目后置 true） */
+    firstRunComplete?: boolean;
     /** 质量控制完成后自动跑一次定向修订（消耗 1 次正文调用）；默认开，闸门拒绝则保留原稿 */
     autoRevisionAfterQC?: boolean;
     /** 定向修订采纳后自动复检（AI味/对话占比对照，不耗调用）；默认开 */
