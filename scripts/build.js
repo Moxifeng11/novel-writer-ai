@@ -7,7 +7,6 @@
  * 支持多入口打包：
  * - main.ts → main.js (主插件入口)
  * - engine/deconstructors/deconstruction-worker.ts → workers/deconstruction-worker.js
- * - engine/style/style-worker.ts → workers/style-worker.js
  * - engine/quality/quality-worker.ts → workers/quality-worker.js
  */
 
@@ -30,7 +29,6 @@ const buildOptions = {
     entryPoints: {
         'main': 'main.ts',
         'workers/deconstruction-worker': 'engine/deconstructors/deconstruction-worker.ts',
-        'workers/style-worker': 'engine/style/style-worker.ts',
         'workers/quality-worker': 'engine/quality/quality-worker.ts',
     },
     bundle: true,

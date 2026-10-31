@@ -79,12 +79,41 @@ const assets = {
 // 4. Worker 构建产物（运行时可达性由 FR-F-03 负责，发布前先保证产物存在）
 const workerFiles = [
     'workers/deconstruction-worker.js',
-    'workers/style-worker.js',
     'workers/quality-worker.js',
 ];
 for (const rel of workerFiles) {
     const info = requireFile(rel, 1_000);
     if (info) notes.push(`${rel}: ${info.size} bytes`);
+}
+
+// 4.1 发布工作流资产必须与本地产物一致（v4.27：曾出现 release.yml 仍列已删的 style-worker，
+//     导致打 tag 时 gh release create 因缺文件失败；本地 check:release 完全看不出）
+try {
+    const workflowPath = path.join(rootDir, '.github', 'workflows', 'release.yml');
+    if (fs.existsSync(workflowPath)) {
+        const workflow = fs.readFileSync(workflowPath, 'utf8');
+        const assetsMatch = workflow.match(/ASSETS=\(([^)]*)\)/);
+        if (assetsMatch) {
+            const declared = assetsMatch[1]
+                .split(/\s+/)
+                .map((token) => token.replace(/["']/g, '').trim())
+                .filter((token) => token.startsWith('workers/'))
+                .sort();
+            const built = [...workerFiles].sort();
+            const missingInBuild = declared.filter((rel) => !built.includes(rel));
+            const missingInRelease = built.filter((rel) => !declared.includes(rel));
+            if (missingInBuild.length > 0 || missingInRelease.length > 0) {
+                errors.push(
+                    `release.yml 的 worker 资产与构建产物不一致：`
+                    + `工作流多出 [${missingInBuild.join(', ')}]，构建多出 [${missingInRelease.join(', ')}]`
+                );
+            } else {
+                notes.push(`release.yml worker 资产一致（${declared.length} 个）`);
+            }
+        }
+    }
+} catch (e) {
+    notes.push(`release.yml 资产校验跳过：${e instanceof Error ? e.message : String(e)}`);
 }
 
 // 5. 内置模板资源完整性
