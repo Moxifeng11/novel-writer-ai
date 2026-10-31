@@ -136,9 +136,9 @@ export function validateEmotionPlan(content: string): { valid: boolean; errors: 
         const startText = starts[i][1]?.trim() || '';
         const endText = ends[i][1]?.trim() || '';
 
-        // 提取等级数字（兼容 6/10 与 6.5/10 两种写法）
-        const startLevel = startText.match(/\((\d+(?:\.\d+)?)\/10\)/)?.[1];
-        const endLevel = endText.match(/\((\d+(?:\.\d+)?)\/10\)/)?.[1];
+        // 提取等级数字（兼容 6/10 与 6.5/10；括号兼容半角 () 与全角 （）——实测模型两种都写）
+        const startLevel = startText.match(/[（(](\d+(?:\.\d+)?)\s*\/10[）)]/)?.[1];
+        const endLevel = endText.match(/[（(](\d+(?:\.\d+)?)\s*\/10[）)]/)?.[1];
 
         if (!startLevel || !endLevel) {
             errors.push(`scene${i + 1}: 缺少情绪等级（格式：emotion_start: XXX(N/10)）`);

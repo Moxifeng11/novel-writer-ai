@@ -1,7 +1,7 @@
 import { App, TFile } from 'obsidian';
 import { AIEngine, APIResponse } from './ai-engine';
 import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
-import { findChapterFile } from './chapter-utils';
+import { findChapterFile, findBodyFileByChapterNum } from './chapter-utils';
 import { mkdirp, stripFrontmatter } from '../utils/helpers';
 import { SettlementEngine } from './settlement-engine';
 import { ENGINE_NAMES } from './engine-registry';
@@ -23,6 +23,8 @@ import { parseContrastLibrary, selectContrastPair, formatContrastPairForPrompt }
 import { writeChapterStateSnapshot } from './chapter-state-snapshot-service';
 import { parseQualityControlReport } from './revision/quality-issue-parser';
 import { runTargetedRevision } from './revision/targeted-revision';
+import { evaluateRevision, extractCharacterNames, recheckRevision } from './revision/revision-guard';
+import { ChapterVersionService } from '../services/chapter-version-service';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
 import { pjContrastLibrary } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
@@ -55,8 +57,11 @@ import {
 } from './planning-combined';
 import { createLogger } from '../shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
+import { QualityGate } from './quality-gate';
+import { buildGateSnapshotFromVars } from './quality/gate-snapshot';
 import { createStepFailure, type StepFailureKind } from '../shared/execution-events';
 import { validateStepResult } from './step-validator';
+import { promptVariantOf } from './prompts/prompt-registry';
 
 
 const log = createLogger('StepRunner');
@@ -514,7 +519,29 @@ export class StepRunner {
         volume: string,
         meta?: StepSaveMeta,
     ): Promise<boolean> {
-        return this.resultSaver.saveStepResult(stepKey, content, chapDir, chapterName, volume, meta);
+        // v4.23：所有保存路径统一带上版本归因（模板/规则/人味/实验组），
+        // 否则事后无法判断「这段结果是用哪版规则生成的」。
+        const enriched: StepSaveMeta = {
+            ...meta,
+            ...this.versionMetaForStep(stepKey),
+        };
+        return this.resultSaver.saveStepResult(stepKey, content, chapDir, chapterName, volume, enriched);
+    }
+
+    /** 当前生效的模板/规则/人味版本（保存与账本共用） */
+    private versionMetaForStep(stepKey: string): StepSaveMeta {
+        const settings = this.plugin.settings;
+        const stepTemplateKey = stepKey === 'bodyGeneration' ? 'bodyGeneration' : stepKey;
+        const variant = promptVariantOf(stepTemplateKey);
+        const voiceMode = settings.humanVoiceMode === 'quota' ? 'quota' : 'exemplar';
+        return {
+            templateId: variant?.id || '',
+            templateVersion: variant?.version || '',
+            rulesVersion: String(settings.activeRulesVersion || '') || 'auto',
+            rulesHash: '',
+            voiceMode: stepKey === 'bodyGeneration' ? voiceMode : '',
+            experimentGroup: String(settings.experimentGroup || ''),
+        };
     }
 
     async writeFixToBody(fixContent: string, chapDir: string, chapterName: string, volume: string): Promise<void> {
@@ -569,8 +596,11 @@ export class StepRunner {
     }
 
     /**
-     * 定向修订：用 qualityControl 的结构化问题驱动维度化 pass。
-     * 只替换命中片段，失败/评分下降自动回滚，不会整章重写。
+     * 定向修订（闭环 v2）：
+     * - 只取高/中优先级问题，最多 8 条，避免一次改太多；
+     * - 把「锁定人物」写进 prompt，并要求不得删改；
+     * - 修订稿必须通过 revision-guard（长度 ±10%、锁定人物不丢、对话占比不塌、非 JSON）才落盘；
+     * - 采纳前先存一份章节版本，失败保留原稿。
      */
     async executeTargetedRevision(
         stepResults: Record<string, string>,
@@ -578,16 +608,23 @@ export class StepRunner {
         chapterName: string,
         volume: string,
         stepCompleted: Set<string>,
+        lockedNames?: string[],
     ): Promise<void> {
         const body = stepResults['bodyGeneration'] || '';
         if (!body.trim()) {
             this.callbacks.showError('没有正文可修订');
             return;
         }
-        const issues = parseQualityControlReport(stepResults['qualityControl'] || '');
-        if (issues.length === 0) {
+        const allIssues = parseQualityControlReport(stepResults['qualityControl'] || '');
+        if (allIssues.length === 0) {
             this.callbacks.showError('没有可执行的结构化质量问题：请先完成「质量控制」步骤');
             return;
+        }
+        const issues = [...allIssues]
+            .sort((a, b) => (a.severity === 'high' ? 0 : 1) - (b.severity === 'high' ? 0 : 1))
+            .slice(0, 8);
+        if (allIssues.length > issues.length) {
+            this.callbacks.showNotice(`定向修订只处理前 ${issues.length} 条（共 ${allIssues.length} 条，优先高优先级）`, NOTICE_WARNING);
         }
 
         const config = resolveTaskModelConfig(
@@ -595,7 +632,10 @@ export class StepRunner {
             'body',
             (model, endpoint) => this.plugin.resolveModelLimits(model, endpoint),
         );
-        const tasks = new LongNovelSingleCallTasks(this.aiEngine);
+        const tasks = new LongNovelSingleCallTasks(
+            this.aiEngine,
+            () => (this.plugin.settings.humanVoiceMode === 'quota' ? 'quota' : 'exemplar'),
+        );
         const issueLines = issues.map(issue => [
             `维度: ${issue.dimension}`,
             `严重级: ${issue.severity}`,
@@ -603,8 +643,12 @@ export class StepRunner {
             issue.location ? `位置: ${issue.location}` : '',
             issue.suggestion ? `建议: ${issue.suggestion}` : '',
         ].filter(Boolean).join('；'));
+        const locked = (lockedNames || []).filter(name => body.includes(name));
+        // v4.25：修订期间给执行时间线一个可见状态（此前 40-60 秒无任何进度更新）
+        this.callbacks.showProgress?.(`🎯 定向修订中：处理 ${issues.length} 条质控问题（1 次调用）...`);
         const result = await tasks.targetedRevision(body, issueLines, {
             projectId: chapDir ? chapDir.split('/')[0] : undefined,
+            lockedFacts: locked.length > 0 ? [`以下人物必须保留且行为一致：${locked.join('、')}`] : [],
         });
 
         if (!result.ok) {
@@ -616,11 +660,30 @@ export class StepRunner {
             return;
         }
 
+        const nextBody = result.value?.body || result.raw;
+        const gate = evaluateRevision(body, nextBody, { lockedNames: locked });
+        if (!gate.accept) {
+            this.callbacks.showNotice(`定向修订未采纳（保留原稿）：${gate.reasons.join('；')}`, NOTICE_WARNING);
+            return;
+        }
+
+        // 采纳前备份原稿，保证可回滚
+        const project = chapDir ? chapDir.split('/')[0] : '';
+        if (project) {
+            try {
+                await new ChapterVersionService(this.plugin.app).saveVersion(
+                    project, 'chapter', chapterName, chapDir, body,
+                    { type: 'manual', note: '定向修订前自动备份' },
+                );
+            } catch (e) {
+                log.warn('[StepRunner] 定向修订前版本备份失败（继续修订）:', e);
+            }
+        }
+
         const changed = (result.value?.dimensions || [])
             .filter(item => item.changed)
             .map(item => item.dimension)
             .join('、');
-        const nextBody = result.value?.body || result.raw;
         stepResults['bodyGeneration'] = nextBody;
         await this.saveStepResult('bodyGeneration', nextBody, chapDir, chapterName, volume, {
             model: config.model,
@@ -630,7 +693,28 @@ export class StepRunner {
         const invalidated = ['qualityControl', 'analysisReport', 'settlement'];
         for (const key of invalidated) stepCompleted.delete(key);
         this.callbacks.invalidateSteps?.(invalidated, true);
-        this.callbacks.showSuccess(`定向修订完成：${changed || '已更新正文'}（单次调用，${result.durationMs}ms）`);
+
+        // v4.25 修订复检：量化对照（AI味/对话占比/未消化问题线索），不耗额外调用
+        let recheckSummary = '';
+        if (this.plugin.settings.autoRecheckAfterRevision !== false) {
+            const recheck = recheckRevision(body, nextBody, issues, { lockedNames: locked });
+            recheckSummary = recheck.summary;
+            this.callbacks.showNotice(`📊 修订复检：${recheck.summary}`, NOTICE_WARNING);
+        }
+
+        // v4.25 修订结果进执行登记表，Agent 经 get_execution_status 可读
+        try {
+            getExecutionLedger().recordCompleted({
+                commandId: 'novel-writer-targeted-revision',
+                project: project || chapDir,
+                source: 'ui',
+                detail: `${issues.length} 条问题；${changed || '已更新正文'}；${recheckSummary || '复检未开启'}`,
+            });
+        } catch (e) {
+            log.warn('[StepRunner] 修订登记失败（不影响结果）:', e);
+        }
+
+        this.callbacks.showSuccess(`定向修订完成：${changed || '已更新正文'}（${issues.length} 条问题，单次调用，${result.durationMs}ms）`);
     }
 
     injectDeaiModalStyles(): void {
@@ -652,15 +736,28 @@ export class StepRunner {
      * 导致 Flash 的 4K 上限截断正文，或 Pro 的 131K 上限被规划步骤继承。
      * 这里直接取该模型自己的能力值（用户覆盖/本地探测/静态表由 resolveModelLimits 统一）。
      */
-    private resolveStepBudgetLimits(model: string): { maxContext: number; maxOutput: number } {
+    private resolveStepBudgetLimits(
+        model: string,
+        budget?: { maxInput?: number; maxContext?: number; maxOutput?: number },
+    ): { maxContext: number; maxOutput: number; maxInputTokens?: number } {
         try {
-            const resolved = this.plugin.resolveModelLimits(model);
-            return {
-                maxContext: resolved.maxContext,
-                maxOutput: resolved.maxOutput,
-            };
+            // endpoint 必须传：不传就会按 settings.apiEndpoint 做严格匹配，
+            // 设置里是 `.../v1`、供应商里是 `.../`，匹配失败后回退成 32768/8192，
+            // 正文步骤的闸门因此只给 24K token（实测日志 ~24174t），与真实窗口差 40 倍。
+            const resolved = this.plugin.resolveModelLimits(model, this.plugin.settings.apiEndpoint);
+            const maxContext = budget?.maxContext ?? resolved.maxContext;
+            const maxOutput = budget?.maxOutput ?? resolved.maxOutput;
+            // 输入预算优先用任务层算好的 maxInput（已按窗口与输出预留分配）
+            const rawInput = budget?.maxInput && budget.maxInput > 0
+                ? budget.maxInput
+                : Math.max(2048, maxContext - maxOutput - 1024);
+            // 成本护栏：用户可设硬上限（0=不限），并统一夹到 200K，避免一次调用烧穿额度
+            const userCap = Number(this.plugin.settings.contextTokenCap) || 0;
+            const hardCap = 200_000;
+            const maxInputTokens = Math.max(2048, Math.min(rawInput, userCap > 0 ? userCap : hardCap, hardCap));
+            return { maxContext, maxOutput, maxInputTokens };
         } catch {
-            return { maxContext: 32768, maxOutput: 8192 };
+            return { maxContext: 32768, maxOutput: 8192, maxInputTokens: 24076 };
         }
     }
 
@@ -815,6 +912,7 @@ export class StepRunner {
                 systemPrompt,
                 userPrompt,
                 stepModel,
+                { maxInput: taskConfig.maxInput, maxOutput: taskConfig.maxOutput },
             );
             const effectiveUserPrompt = promptAssembly.effectiveUserPrompt;
             const effectiveSystemPrompt = promptAssembly.effectiveSystemPrompt;
@@ -839,7 +937,8 @@ export class StepRunner {
                         key: 'knowledgeTail', label: '知识注入（风格/节奏/技巧/伏笔）', category: '知识注入',
                         influence: '风格指引', source: 'KnowledgeInjector + RAG（多查询/邻块/MMR/预算）',
                         chars: meta.totalChars, estTokens: Math.ceil(meta.totalChars / 1.5),
-                        truncated: promptAssembly.droppedExtra || Boolean(rag && rag.dropped > 0),
+                        truncated: promptAssembly.droppedExtra || Boolean(rag && rag.dropped > 0)
+                            || promptAssembly.droppedSections.length > 0 || promptAssembly.trimmedSections.length > 0,
                         strength: [meta.strength !== undefined ? `强度 ${meta.strength}` : '', ragText].filter(Boolean).join('；') || undefined,
                         placement: 'user',
                     });
@@ -857,6 +956,22 @@ export class StepRunner {
                 // 本步成本（v4.21 成本观测）：模型 1 次调用 + 实际发生的嵌入调用（缓存未命中数）
                 // + 输入 token 估算。嵌入是长记忆维护之外的第二大隐性成本，必须可见。
                 const embeddingCalls = ragTelemetry ? Math.max(0, ragTelemetry.cacheMisses) : 0;
+                // 版本归因（v4.23）：这条账本用的是哪版规则、哪种人味块、哪个实验组
+                const versions = ledger.versions;
+                const versionLine = versions
+                    ? [
+                        versions.rulesVersion ? `规则 ${versions.rulesId || versions.rulesVersion}` : '',
+                        versions.voiceVersion ? `人味 ${versions.voiceId || versions.voiceVersion}` : '',
+                        versions.experimentGroup ? `实验组 ${versions.experimentGroup}` : '',
+                    ].filter(Boolean).join(' · ')
+                    : '';
+                // 预算明细（v4.22）：把「实际发出多少 / 丢了哪些段」摆到账本里。
+                // 旧账本统计的是 ctx.vars 原文，用户看到字符很多，实际发出去的却少了一半。
+                const budgetLine = [
+                    `输入 ~${promptAssembly.estimatedTokens}/${promptAssembly.maxInputTokens} token`,
+                    promptAssembly.droppedSections.length > 0 ? `丢弃 ${promptAssembly.droppedSections.length} 段（${promptAssembly.droppedSections.join('、')}）` : '',
+                    promptAssembly.trimmedSections.length > 0 ? `截断 ${promptAssembly.trimmedSections.length} 段（${promptAssembly.trimmedSections.join('、')}）` : '',
+                ].filter(Boolean).join(' · ');
                 const costLine = [
                     '模型调用 1 次（本步）',
                     ragTelemetry && ragTelemetry.calls > 0
@@ -867,7 +982,7 @@ export class StepRunner {
                 this.callbacks.onExecutionEvent?.({
                     type: 'prompt-ledger',
                     level: ledger.truncatedCount > 0 ? 'warning' : 'info',
-                    message: `${formatInjectionLedger(ledger)}\n【本步成本】${costLine}`,
+                    message: `${formatInjectionLedger(ledger)}\n【本步成本】${costLine}\n【本步预算】${budgetLine}${versionLine ? `\n【版本归因】${versionLine}` : ''}`,
                     stepKey,
                     stepLabel: currentStep.label,
                     debug: {
@@ -876,6 +991,13 @@ export class StepRunner {
                         truncatedCount: ledger.truncatedCount,
                         assemblyTruncated: promptAssembly.truncated,
                         droppedExtra: promptAssembly.droppedExtra,
+                        // 段落级丢弃/截断明细：执行时间线可列出具体段名
+                        droppedSections: promptAssembly.droppedSections.join('、'),
+                        trimmedSections: promptAssembly.trimmedSections.join('、'),
+                        droppedSectionCount: promptAssembly.droppedSections.length,
+                        trimmedSectionCount: promptAssembly.trimmedSections.length,
+                        maxInputTokens: promptAssembly.maxInputTokens,
+                        overBudget: promptAssembly.overBudget,
                         // 成本字段随事件走：时间线/日志可直接展示
                         embeddingCalls,
                         retrievalQueries: ragTelemetry?.queries ?? 0,
@@ -923,9 +1045,29 @@ export class StepRunner {
                 detail: result.usage ? JSON.stringify(result.usage) : undefined,
             });
 
-            if (promptAssembly.truncated) {
-                this.emitEvent('step-warning', 'warning', `上下文过长，已截断中间资料（~${promptAssembly.estimatedTokens} tokens）`, stepKey, stepLabel);
-                this.callbacks.showNotice(`⚠️ 上下文过长（~${promptAssembly.estimatedTokens} tokens），已自动保留头部+尾部，中间资料已截断。建议在设置中增加上下文上限（maxContext）或精简前文内容。`, NOTICE_CRITICAL);
+            if (promptAssembly.droppedSections.length > 0 || promptAssembly.trimmedSections.length > 0) {
+                // 旧提示只说「已截断」并且建议「增加 maxContext」——闸门根本不读它，属于误导。
+                // 现在列出具体段名与实际预算，用户能判断该精简什么。
+                const dropped = promptAssembly.droppedSections;
+                const trimmed = promptAssembly.trimmedSections;
+                const detail = [
+                    dropped.length > 0 ? `整段丢弃：${dropped.join('、')}` : '',
+                    trimmed.length > 0 ? `段内截断：${trimmed.join('、')}` : '',
+                ].filter(Boolean).join('；');
+                this.emitEvent(
+                    'step-warning',
+                    'warning',
+                    `prompt 超预算（~${promptAssembly.estimatedTokens} / ${promptAssembly.maxInputTokens} tokens）：${detail}`,
+                    stepKey,
+                    stepLabel,
+                );
+                this.callbacks.showNotice(
+                    `⚠️ 本步输入超预算（~${promptAssembly.estimatedTokens} / ${promptAssembly.maxInputTokens} tokens）。${detail}。`
+                    + '关键段（世界观/人物/本章规划/上一章结尾）不会被整段丢弃；如需完整保留，可在设置里调高「单步输入 token 上限」或精简该段内容。',
+                    NOTICE_CRITICAL,
+                );
+            } else if (promptAssembly.truncated) {
+                this.emitEvent('step-warning', 'warning', `上下文过长，已按段截断（~${promptAssembly.estimatedTokens} tokens）`, stepKey, stepLabel);
             }
 
             ctx.setIsLoading(false);
@@ -1048,8 +1190,75 @@ export class StepRunner {
                     verdict.valid = false;
                     if (!verdict.missing.includes('输出被截断')) verdict.missing.push('输出被截断');
                 }
+                // v4.25：正文保存后跑三层质量验收（第一/二层零 AI）。此前 QualityGate
+                // 注册后全仓零调用；结果只进时间线与登记表，不阻断流程。
+                if (stepKey === 'bodyGeneration' && verdict.level === 'complete') {
+                    try {
+                        const gate = new QualityGate();
+                        const report = await gate.run(finalContent, buildGateSnapshotFromVars({
+                            chapterNum: ctx.chapterNum,
+                            vars: ctx.vars,
+                        }));
+                        const summary = report.summary || (report.passed ? '质量验收通过' : '质量验收未通过');
+                        this.emitEvent('step', report.passed ? 'success' : 'warning', summary, stepKey, currentStep.label);
+                        this.emitDiagnostic(report.passed ? 'info' : 'warning', 'step', summary, stepKey, currentStep.label);
+                        getExecutionLedger().recordCompleted({
+                            commandId: 'novel-writer-quality-gate',
+                            project: ctx.project,
+                            source: 'ui',
+                            detail: summary.slice(0, 200),
+                        });
+                    } catch (e) {
+                        log.warn('[StepRunner] 质量门禁运行失败（不影响正文）:', e);
+                    }
+                }
                 if (verdict.level === 'complete') {
                     ctx.stepCompleted.add(stepKey);
+                    // v4.25 记忆写侧自动化：分析报告完成后，把报告里的实体事实
+                    // （[[人名]]/《地名》/【剧情节点】）程序性提取进待确认队列——
+                    // 确认仍由用户在质量面板点击（读侧只读 confirmed，防污染不变）。
+                    if (stepKey === 'analysisReport') {
+                        try {
+                            const registry = (this.plugin as unknown as {
+                                engineRegistry?: {
+                                    getFactIndexManager(project: string): Promise<{
+                                        extractNewFacts(body: string, source?: string): unknown[];
+                                        listPending(): Array<{ id: string }>;
+                                        enqueue(facts: unknown[]): Promise<void>;
+                                    }>;
+                                };
+                            }).engineRegistry;
+                            if (registry) {
+                                const manager = await registry.getFactIndexManager(ctx.project);
+                                const existing = new Set(manager.listPending().map((f) => f.id));
+                                const facts = (manager.extractNewFacts(finalContent, `analysis:${ctx.chapterName}`) as Array<{ id: string }>)
+                                    .filter((fact) => !existing.has(fact.id));
+                                await manager.enqueue(facts as never);
+                                if (facts.length > 0) {
+                                    log.info(`[StepRunner] 分析报告新增 ${facts.length} 条待确认事实`);
+                                }
+                            }
+                        } catch (e) {
+                            log.warn('[StepRunner] 事实入队失败（不影响分析报告）:', e);
+                        }
+                    }
+
+                    // v4.25 修订闭环：质量控制完成后可按设置自动跑一次定向修订。
+                    // 只有 QC 结构完整才触发；修订失败/未采纳会保留原稿，不影响后续步骤。
+                    if (stepKey === 'qualityControl' && this.plugin.settings.autoRevisionAfterQC) {
+                        try {
+                            await this.executeTargetedRevision(
+                                ctx.stepResults,
+                                ctx.chapDir,
+                                ctx.chapterName,
+                                ctx.volume,
+                                ctx.stepCompleted,
+                                extractCharacterNames(ctx.vars.allChars),
+                            );
+                        } catch (e) {
+                            log.warn('[StepRunner] 自动定向修订失败（不影响质量控制结果）:', e);
+                        }
+                    }
                 } else {
                     ctx.stepCompleted.delete(stepKey);
                     // 让工作台的 stepLevels 同步降级，避免导航仍显示“已完成”。
@@ -1330,7 +1539,16 @@ export class StepRunner {
             if (!chapterNum) return false;
             let bodyPath: string;
             if (v4) {
-                bodyPath = pjBodyFile(project, parseInt(v4[1], 10), chapterNum);
+                // v4.25：与落盘一致——优先命中「带章名」的现有章文件。
+                // 旧遗留的无章名文件 status 若为 settled，会让幂等守卫误判整章已结算。
+                const volN = parseInt(v4[1], 10);
+                const existing = findBodyFileByChapterNum(
+                    this.getVaultMeta().getFiles(),
+                    `${pjBodyDir(project, volN)}/`,
+                    chapterNum,
+                    chapterName,
+                );
+                bodyPath = existing?.path ?? pjBodyFile(project, volN, chapterNum);
             } else {
                 const found = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
                 if (!found) return false;

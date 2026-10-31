@@ -4,6 +4,7 @@ import { App, ItemView, WorkspaceLeaf, TFile, TFolder, Modal, Notice } from 'obs
 import { AddFanficSettingModal } from './add-fanfic-setting-modal';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './full-writer/wizard-types';
 import { buildTemplateVars as buildTemplateVarsExternal } from './full-writer/template-vars-builder';
+import { extractCharacterNames } from '../engine/revision/revision-guard';
 import { FullWriterStoreImpl, type WriterTab } from './full-writer/full-writer-store';
 import { TabController } from './full-writer/tab-controller';
 import { EntityStateController } from './full-writer/entity-state-controller';
@@ -86,7 +87,7 @@ import { pjSettingLib, pjWritingStyle, pjStepDir,
     SUBDIR_WORLDVIEW_FILE, SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE } from '../shared/paths';
 import { getWritingStyleCandidatePaths } from './writing-style-paths';
 import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta, type ChapterListEntry } from './project-utils';
-import { CHAR_TO_TOKEN_RATIO, INFO_DEBT_MAX, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '../shared/thresholds';
+import { CHAR_TO_TOKEN_RATIO, getInfoDebtMax, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
 import { ensureTemplateScaffold } from '../shared/template-scaffold';
 
@@ -340,6 +341,9 @@ export class FullWriterView extends ItemView {
                 );
             },
             showNotice: (message) => {
+                this.executionStore.addEvent({ type: 'run-notice', level: 'warning', message });
+            },
+            showWarning: (message) => {
                 this.executionStore.addEvent({ type: 'run-notice', level: 'warning', message });
             },
             showError: (message) => {
@@ -950,6 +954,31 @@ export class FullWriterView extends ItemView {
                 void this.handleBodyWritten(data?.path || '');
             })
         );
+
+        // v4.25：命令面板/Agent 触发当前章的定向修订
+        this.registerEvent(
+            this.app.workspace.on('novel-writer:run-targeted-revision', () => {
+                void (async () => {
+                    if (!this.chapDir) {
+                        new Notice('请先在工作台打开一个章节', 4000);
+                        return;
+                    }
+                    try {
+                        await this.stepRunner.executeTargetedRevision(
+                            this.stepResults,
+                            this.chapDir,
+                            this.chapterName,
+                            this.volume,
+                            this.stepCompleted,
+                            extractCharacterNames(this.vars?.allChars),
+                        );
+                        await this.renderInContainer(this.tabContent);
+                    } catch (e) {
+                        new Notice(`定向修订失败：${(e as Error).message}`, 6000);
+                    }
+                })();
+            })
+        );
     }
 
     /** 正文被其他入口覆写后：只有「当前章节」才重新恢复状态并重渲染 */
@@ -1363,7 +1392,10 @@ export class FullWriterView extends ItemView {
      * 解析路径中的卷名与章名后复用 selectChapter，保证标签页/上下文与手动选择一致。
      */
     async openChapterByPath(project: string, chapterPath: string): Promise<void> {
-        const file = this.app.vault.getAbstractFileByPath(chapterPath);
+        // v4.25：外部调用方（Node/E2E/插件 API）可能传 Windows 反斜杠路径；
+        // vault 内部路径永远是正斜杠，不归一化会「文件存在却找不到」且静默返回
+        const normalized = String(chapterPath || '').split('\\').join('/');
+        const file = this.app.vault.getAbstractFileByPath(normalized);
         if (!(file instanceof TFile)) {
             new Notice('未找到章节文件，可能已被移动或删除');
             return;
@@ -1922,6 +1954,7 @@ export class FullWriterView extends ItemView {
                         this.chapterName,
                         this.volume,
                         this.stepCompleted,
+                        extractCharacterNames(this.vars?.allChars),
                     );
                 } finally {
                     targetedBtn.disabled = false;

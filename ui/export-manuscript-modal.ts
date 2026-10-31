@@ -17,6 +17,8 @@ import { buildDocx } from '../engine/export/docx-builder';
 import type { BuiltBook, BookBuildOptions } from '../engine/export/epub-builder';
 import { exportBinaryFile, exportTextFile } from '../shared/export-file';
 import { createLogger } from '../shared/logger';
+import { pjStepDir } from '../shared/paths';
+import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { getProjectMeta, findProjectCoverFile, loadProjectCover } from './project-utils';
 import type { CreationMode } from '../shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '../shared/mode-content';
@@ -308,6 +310,30 @@ export class ExportManuscriptModal extends Modal {
         if (chapters.length === 0) {
             new Notice('⚠️ 未找到可导出的正文');
             return;
+        }
+
+        // v4.25 导出前质量门槛（只告警不阻断）：列出未结算/未过质控的章，
+        // 让「导出」成为一次显式的质量确认点，而不是静默打包半成品。
+        if (this.creationMode === 'long') {
+            // 逐章从正文 frontmatter 读 status；QC 完成与否用章节状态快照？——用步骤结果文件存在性。
+            const unsettled: string[] = [];
+            const unreviewed: string[] = [];
+            for (const chapter of chapters.slice(0, 400)) {
+                const label = `${chapter.chapter}${chapter.title ? ` ${chapter.title}` : ''}`;
+                const fm = chapter.content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+                const settled = Boolean(fm && /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m.test(fm[1]));
+                if (!settled) unsettled.push(label);
+                const volN = chapter.volume.match(/第(\d+)卷/)?.[1] || '1';
+                const stepDir = pjStepDir(this.project, parseInt(volN, 10), chapter.chapterNum);
+                const qcFile = this.app.vault.getAbstractFileByPath(`${stepDir}/${getChapterFileName(chapter.chapter, CHAPTER_FILE_TYPES.qualityControl)}`);
+                if (!(qcFile instanceof TFile)) unreviewed.push(label);
+            }
+            const parts: string[] = [];
+            if (unsettled.length > 0) parts.push(`未结算 ${unsettled.length} 章（${unsettled.slice(0, 5).join('、')}${unsettled.length > 5 ? '…' : ''}）`);
+            if (unreviewed.length > 0) parts.push(`未过质控 ${unreviewed.length} 章（${unreviewed.slice(0, 5).join('、')}${unreviewed.length > 5 ? '…' : ''}）`);
+            if (parts.length > 0) {
+                new Notice(`📋 导出前检查：${parts.join('；')}。已按当前内容导出，建议结算/质控后重新导出成稿。`, 8000);
+            }
         }
 
         const bookTitle = this.project.split('/').pop() || this.project;

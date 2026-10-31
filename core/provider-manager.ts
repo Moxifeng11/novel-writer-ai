@@ -48,6 +48,34 @@ export interface ProviderManagerCallbacks {
     addOverrideHistory?(entry: NovelWriterSettings['modelOverrideHistory'][number]): void;
 }
 
+/** 端点归一：忽略协议尾部斜杠、`/v1`、`/chat/completions`，用于供应商与覆盖表匹配 */
+export function normalizeEndpointKey(endpoint?: string): string {
+    return String(endpoint || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\/+$/, '')
+        .replace(/\/(chat\/completions|completions|v1)$/, '')
+        .replace(/\/+$/, '');
+}
+
+/** 覆盖表按「精确 key → 归一化 key」两级查找 */
+function findOverrideByEndpoint(
+    overrides: Record<string, Record<string, { maxContext?: number; maxOutput?: number }>> | undefined,
+    endpointKey: string,
+    normalized: string,
+    modelName: string,
+): { maxContext?: number; maxOutput?: number } | undefined {
+    if (!overrides) return undefined;
+    const exact = overrides[endpointKey]?.[modelName];
+    if (exact) return exact;
+    for (const [key, models] of Object.entries(overrides)) {
+        if (normalizeEndpointKey(key) !== normalized) continue;
+        const hit = models?.[modelName];
+        if (hit) return hit;
+    }
+    return undefined;
+}
+
 export class ProviderManager {
     private readonly cb: ProviderManagerCallbacks;
 
@@ -110,13 +138,16 @@ export class ProviderManager {
     resolveModelLimits(modelName: string, endpoint?: string): { maxContext: number; maxOutput: number } {
         const s = this.cb.getSettings();
         const endpointKey = endpoint || s.apiEndpoint;
-        const override = s.modelOverrides[endpointKey]?.[modelName];
-
-        // 优先级：用户覆盖 → 本地探测值 → 自定义供应商显式上限
-        //         → 静态能力表（最长键优先）→ 来源兜底
+        // 端点写法不一致是实测事故源：设置里是 `.../v1`，供应商里是 `.../`、
+        // 覆盖表里可能是 `.../v1/chat/completions`。旧实现严格相等比较，
+        // 于是 1M 窗口的供应商被当成未知端点，回落到 32768/8192，
+        // 正文步骤的 prompt 闸门只给 24K token（真实链路实测日志 `~24174t`）。
+        const normalized = normalizeEndpointKey(endpointKey);
+        const override = findOverrideByEndpoint(s.modelOverrides, endpointKey, normalized, modelName);
         const staticCaps = lookupModelCapability(modelName);
         const detectedCaps = getDetectedModelCapability(modelName);
-        const provider = (s.customProviders || []).find(p => p.endpoint === endpointKey);
+        const provider = (s.customProviders || []).find(p =>
+            p.endpoint === endpointKey || normalizeEndpointKey(p.endpoint) === normalized);
         const source: ModelSourceKind = resolveProviderSourceType({
             id: provider?.id || '',
             endpoint: endpointKey,

@@ -10,6 +10,7 @@ import { truncateTextToTokens } from '../../shared/prompt-budget';
 import { parseSceneCardFields, parseSceneField, type SceneCardFields } from '../../shared/scene-card';
 import type { StoryLinkage } from '../story-linkage';
 import type { GatheredContext } from './context-types';
+import { activeContextQuotas } from '../../shared/context-budget-policy';
 import type {
     StoryContextBundle,
     StoryContextGraph,
@@ -308,7 +309,10 @@ function formatCharacter(record: Record<string, unknown>, compact: boolean): { t
     const parts: string[] = [];
     const push = (label: string, value: unknown) => {
         const text = String(value || '').trim();
-        if (text) parts.push(`${label}：${clip(text, compact ? 60 : 240)}`);
+        // v4.22：人物字段上限跟预算走（旧值紧凑 60 / 完整 240 字，
+        // 会把「人物背景/软肋/功法」这类长字段砍到只剩一句 → 续写 OOC）
+        const fullCap = activeContextQuotas().entityFieldChars;
+        if (text) parts.push(`${label}：${clip(text, compact ? Math.round(fullCap * 0.2) : fullCap)}`);
     };
     push('角色定位', record.角色定位);
     push('身份', record.身份);
@@ -1492,8 +1496,10 @@ export function formatStoryContextLegacyVars(bundle: StoryContextBundle): Record
         const lines = bundle.byKind[kind].map(entityLine).filter(Boolean);
         return [...new Set(lines)].join('\n');
     };
+    // v4.24：只把「现在就该处理 / 状态未知」的伏笔写回模板变量。
+    // 旧实现把 upcoming/later（+1..+N 章才揭示）也整条注入，连同「计划 第N章」一起剧透。
     const unrevealed = bundle.byKind.foreshadow
-        .filter(node => !['revealed', 'abandoned'].includes(String(node.metadata.state || '')))
+        .filter(node => ['due', 'overdue', 'unknown'].includes(String(node.metadata.state || '')))
         .map(node => String(node.metadata.legacyLine || '').trim())
         .filter(Boolean);
     const sceneLines = bundle.byKind.scene.map(node => node.compactText).filter(Boolean);

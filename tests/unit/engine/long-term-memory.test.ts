@@ -65,9 +65,10 @@ describe('formatConfirmedFacts', () => {
 
     it('超过整体上限时截断并标注', () => {
         const facts = Array.from({ length: 12 }, (_, i) => fact('plot', `节点${i}`, '细'.repeat(200)));
-        const text = formatConfirmedFacts(facts);
-        expect(text.length).toBeLessThanOrEqual(LONG_TERM_MEMORY_MAX_CHARS + 8);
-        expect(text.endsWith('（已截断）')).toBe(true);
+        // v4.22：默认上限随预算放大（旧 1500 字），显式 maxChars 时按传参走
+        const text = formatConfirmedFacts(facts, undefined, '', { maxChars: LONG_TERM_MEMORY_MAX_CHARS });
+        expect(text.length).toBeLessThanOrEqual(LONG_TERM_MEMORY_MAX_CHARS + 40);
+        expect(text).toContain('（已截断');
     });
 });
 

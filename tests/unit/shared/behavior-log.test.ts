@@ -37,14 +37,14 @@ describe('behavior-log — 解析与序列化', () => {
 });
 
 describe('behavior-log — 按章合并', () => {
-    it('同章同角色去重，保留更长摘要', () => {
+    it('同章同角色去重，本章新摘要直接覆盖（最新优先，不比长短）', () => {
         const incoming: BehaviorRow[] = [
             { chapter: '第2章', chapterNum: 2, name: '武昭', summary: '重跑结算的短摘要。' },
             { chapter: '第3章', chapterNum: 3, name: '沈青', summary: '接过死神的 hundred 词长摘要，描述她在死域门口的抉择与代价。' },
         ];
         const merged = mergeBehaviorRows(existing, incoming);
-        const chapter2 = merged.find((row) => row.chapter === '第2章' && row.name === '武昭');
-        expect(chapter2?.summary).toBe('进塔问心，看到三百年前的自己。');
+        const chapter2 = merged.find((row) => row.chapterNum === 2 && row.name === '武昭');
+        expect(chapter2?.summary).toBe('重跑结算的短摘要。');
         expect(merged).toHaveLength(4);
     });
 

@@ -49,6 +49,13 @@ export default defineConfig({
       timeout: 55 * 60_000,
     },
 
+    /* 真实重写章节：重置并重写真实章节，默认跳过（需 E2E_REWRITE=1） */
+    {
+      name: 'rewrite-chapters',
+      testMatch: /rewrite-chapters\.spec\.ts/,
+      timeout: 70 * 60_000,
+    },
+
     /* 浏览器模拟链路已停用，保留 skip 的存量用例用于后续迁移 */
     {
       name: 'legacy-browser',

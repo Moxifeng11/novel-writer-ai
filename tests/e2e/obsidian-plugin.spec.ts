@@ -336,7 +336,9 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(before).toBe(1);
 
         for (let i = 0; i < 3; i++) {
-            const clicked = await page.evaluate(() => {
+            // 点击后 mountRulesSection 会先置为「检查中…」再异步重绘；固定等待 400ms 在
+            // 磁盘慢时会点空（规则版本现在要扫 vault/项目两个目录 + 读文件），改为轮询按钮回到可点状态。
+            await expect.poll(async () => page.evaluate(() => {
                 const host = window as unknown as {
                     app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
                 };
@@ -346,9 +348,9 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
                 if (!btn) return false;
                 (btn as HTMLElement).click();
                 return true;
-            });
-            expect(clicked).toBe(true);
-            await page.waitForTimeout(400);
+            }), { timeout: 15_000 }).toBe(true);
+            // 每次重绘完成后都必须仍然只有一块模块
+            await expect.poll(async () => countSections(), { timeout: 15_000 }).toBe(1);
         }
 
         const after = await countSections();

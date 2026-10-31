@@ -54,22 +54,19 @@ export function parseBehaviorLog(content: string): BehaviorRow[] {
 
 /**
  * 合并现有记录与本章新记录。
- * 去重键 = (章节, 角色名)：重跑结算时旧摘要被替换（保留更长的一条），
- * 新角色/新章节追加；结果按章号升序、同章内按角色名稳定排序。
+ * 去重键 = (章号, 角色名)（v4.25：改用数字章号，不再用「章节」字符串——章名带标题/格式
+ * 变化就会重复一行）；本章新摘要**直接覆盖**旧摘要（最新优先，不比长短——旧实现会
+ * 用被改短的旧摘要压制新的短摘要，矛盾长期存在）。
  */
 export function mergeBehaviorRows(existing: BehaviorRow[], incoming: BehaviorRow[]): BehaviorRow[] {
     const byKey = new Map<string, BehaviorRow>();
     for (const row of existing) {
         if (!row.name || !row.summary) continue;
-        byKey.set(`${row.chapter}\u0000${row.name}`, row);
+        byKey.set(`${row.chapterNum}\u0000${row.name}`, row);
     }
     for (const row of incoming) {
         if (!row.name || !row.summary) continue;
-        const key = `${row.chapter}\u0000${row.name}`;
-        const current = byKey.get(key);
-        if (!current || row.summary.length > current.summary.length) {
-            byKey.set(key, row);
-        }
+        byKey.set(`${row.chapterNum}\u0000${row.name}`, row);
     }
     return [...byKey.values()].sort((a, b) => {
         if (a.chapterNum !== b.chapterNum) return a.chapterNum - b.chapterNum;

@@ -40,6 +40,15 @@ export interface BodySaveHost {
 export class BodySaveController {
     private saving = false;
     /**
+     * 每个正文路径「本视图最后一次成功写入的正文」。用于识别外部写入：
+     * P0-6（v4.27）——协同视图按整篇编辑器内容自动保存，若工作台一键成文/续写
+     * 已把新正文写进同一文件，协同的 2s 自动保存会把新稿整章覆盖（数据丢失）。
+     * 规则：磁盘正文既不是本视图上次写的、也不是当前要写的 → 判定外部修改，拒绝覆盖。
+     */
+    private lastWritten = new Map<string, string>();
+    /** 已提示过冲突的路径，避免自动保存反复弹窗 */
+    private conflictNotified = new Set<string>();
+    /**
      * 串行链：所有保存按调用顺序排队。
      * 旧实现用 `if (this.saving) return false` 直接丢弃并发请求，
      * 调用方（切章冲刷 / Ctrl+S / 关闭视图）会把「被丢弃」当成「写盘失败」，
@@ -94,6 +103,20 @@ export class BodySaveController {
         this.host.updateControlState("保存中...");
         try {
             const chapterTitle = await this.host.getChapterTitle(identity);
+            // 外部写入检测（P0-6）：只在本视图写过的路径上生效，首次保存不拦截
+            const conflict = await this.detectExternalOverwrite(identity.bodyPath, body);
+            if (conflict) {
+                this.host.updateControlState("外部已修改");
+                if (!this.conflictNotified.has(identity.bodyPath)) {
+                    this.conflictNotified.add(identity.bodyPath);
+                    new Notice(
+                        "⚠️ 该章正文刚被其他入口（一键成文/续写）改写，已跳过本次自动保存以免覆盖新稿；"
+                        + "请重新打开本章后再编辑。",
+                        8000,
+                    );
+                }
+                return false;
+            }
             // 统一落盘入口：保留旧 frontmatter、统一标题与缩进、status 不降级
             const writer = new BodyWriter({ app: this.host.app });
             await writer.write({
@@ -106,6 +129,8 @@ export class BodySaveController {
                 project: identity.project,
                 writingMode: "co-writer",
             });
+            this.lastWritten.set(identity.bodyPath, body);
+            this.conflictNotified.delete(identity.bodyPath);
             // 写盘期间已切章：不要把「已保存」与结算提醒写到新章界面
             if (!this.host.isSameChapterIdentity(identity)) return true;
             this.host.updateControlState("已保存");
@@ -120,6 +145,30 @@ export class BodySaveController {
             return false;
         } finally {
             this.saving = false;
+        }
+    }
+
+    /**
+     * 磁盘正文是否被本视图之外的入口改过。
+     * - 该路径没有本视图的写入记录（首次保存）→ 不拦截（用户可能刚编辑过）
+     * - 磁盘正文 == 本视图上次写入 → 无外部修改
+     * - 磁盘正文 == 本次要写的正文 → 无实质变化
+     * - 否则 → 判定外部覆盖
+     */
+    private async detectExternalOverwrite(bodyPath: string, nextBody: string): Promise<boolean> {
+        const baseline = this.lastWritten.get(bodyPath);
+        if (baseline === undefined) return false;
+        try {
+            const adapter = this.host.app.vault.adapter;
+            if (!(await adapter.exists(bodyPath))) return false;
+            const raw = await adapter.read(bodyPath);
+            const diskBody = stripBodyForCompare(raw);
+            if (diskBody === stripBodyForCompare(baseline)) return false;
+            if (diskBody === stripBodyForCompare(nextBody)) return false;
+            return true;
+        } catch (e) {
+            log.warn('[BodySaveController] 外部写入检测失败，按无冲突处理:', e);
+            return false;
         }
     }
 
@@ -141,4 +190,18 @@ export class BodySaveController {
         if (!hasPending) return true;
         return this.save(false);
     }
+}
+
+/** 比较用：剥离 frontmatter 与大小写无关的空白差异（只用于冲突判定） */
+/**
+ * 比较用：剥离 frontmatter、标题行与空白差异（只用于冲突判定）。
+ * 标题行必须剥：编辑器内容是「正文」，磁盘文件是「# 第N章 标题 + 正文」，
+ * 不剥离会把每次正常保存都判成外部修改。
+ */
+function stripBodyForCompare(raw: string): string {
+    return String(raw || '')
+        .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+        .replace(/^\s*#\s*第[^\n]*\n+/, '')
+        .replace(/\s+/g, '')
+        .trim();
 }

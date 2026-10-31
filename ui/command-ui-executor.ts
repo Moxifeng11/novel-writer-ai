@@ -361,6 +361,11 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.REVIEW_CHAPTER:
                 new ReviewChapterModal(app, plugin).open();
                 return true;
+            case CommandIds.TARGETED_REVISION:
+                // v4.25：通过工作台事件触发当前章的定向修订（闸门+备份+复检在 StepRunner 内）
+                app.workspace.trigger('novel-writer:run-targeted-revision', {} as Record<string, never>);
+                new Notice('已请求定向修订：请在写作工作台查看进度', 4000);
+                return true;
             case CommandIds.QUALITY_DASHBOARD:
                 new QualityDashboardModal(app, plugin).open();
                 return true;

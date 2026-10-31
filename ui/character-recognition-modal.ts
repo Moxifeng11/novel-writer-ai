@@ -91,10 +91,17 @@ export class CharacterRecognitionModal extends Modal {
                 vectorEnhancer,
             );
 
+            // v4.25：设置页「角色识别设置」此前零消费方（空转 UI）——这里最小接线：
+            // 层开关来自 characterRecognitionLayers；向量阈值/LLM 批大小/候选上限来自对应分组。
+            const layers = new Set(this.plugin.settings.characterRecognitionLayers ?? ['rule', 'vector']);
+            const vectorLayerCfg = this.plugin.settings.vectorLayer;
+            const llmLayerCfg = this.plugin.settings.llmLayer;
             const result = await pipeline.analyze(text, {
-                enableRuleLayer: true,
-                enableVectorLayer: !!vectorEnhancer,
-                enableLLMLayer: false,
+                enableRuleLayer: layers.has('rule'),
+                enableVectorLayer: layers.has('vector') && !!vectorEnhancer && vectorLayerCfg?.enabled !== false,
+                enableLLMLayer: layers.has('llm') && llmLayerCfg?.enabled === true,
+                vectorThreshold: vectorLayerCfg?.semanticFilterThreshold,
+                llmBatchSize: llmLayerCfg?.verifyBatchSize,
                 maxCandidates: 60,
             });
 

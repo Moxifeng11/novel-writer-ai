@@ -45,7 +45,7 @@ describe('assembleStepPrompt', () => {
 
         expect(host.loadOutlineKnowledge).not.toHaveBeenCalled();
         expect(host.loadBodyKnowledge).not.toHaveBeenCalled();
-        expect(host.resolveStepBudgetLimits).toHaveBeenCalledWith('flash-model');
+        expect(host.resolveStepBudgetLimits).toHaveBeenCalledWith('flash-model', undefined);
         expect(result.effectiveUserPrompt).toBe('用户任务正文');
         expect(result.truncated).toBe(false);
         expect(result.droppedExtra).toBe(false);

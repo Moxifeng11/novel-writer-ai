@@ -163,3 +163,21 @@ describe('EMOTION_PLAN prompts 契约', () => {
         expect(EMOTION_PLAN_USER_TEMPLATE).toContain('${characterSouls}');
     });
 });
+
+describe('validateEmotionPlan — 全角括号等级（实测回归）', () => {
+    it('模型输出用全角（）标注等级时不再误判「缺少情绪等级」', () => {
+        const plan = [
+            '## 总体情绪曲线',
+            '开篇情绪: 紧张（4/10）',
+            '',
+            '### scene1: 复测',
+            'emotion_start: 强压的紧张与侥幸（4/10） — 原因甲',
+            'emotion_end: 茫然与寒意（6/10） — 原因乙',
+            'emotion_delta: +2',
+            'body_reaction: 后背发痒、手心出汗',
+            'relationship_change: 无',
+        ].join('\n');
+        const result = validateEmotionPlan(plan);
+        expect(result.errors.filter(e => e.includes('缺少情绪等级'))).toEqual([]);
+    });
+});

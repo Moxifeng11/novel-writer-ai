@@ -4,7 +4,8 @@
  * Each task uses exactly one logical AI call. Local validators may reject the
  * result, but the runner never makes a hidden second AI call.
  */
-import { HUMAN_VOICE_BLOCK } from '../prompts/human-voice';
+import { buildHumanVoiceBlock } from '../prompts/human-voice';
+import { formatExemplarBlock, selectExemplars, type ExemplarSample } from '../prompts/style-exemplars';
 import { singleCallRunner, type SingleCallResult } from './single-call-runner';
 import { parseJsonObject, validateFields, type OutputContract } from './structured-output';
 import type { AIEngine } from '../ai-engine';
@@ -105,25 +106,43 @@ export function validateRevision(value: RevisionSingleCallResult): string[] {
 }
 
 export class LongNovelSingleCallTasks {
-    constructor(private readonly ai: AIEngine) {}
+    constructor(
+        private readonly ai: AIEngine,
+        /** 人味约束模式（样文优先 / 旧配额）；由宿主注入，默认样文优先 */
+        private readonly voiceMode: () => 'exemplar' | 'quota' = () => 'exemplar',
+    ) {}
+
+    /**
+     * 人味约束块：样文优先（默认）或旧配额。
+     * 样文按场景类型挑 3 段，注入「照着写」，取代旧版 23 条数值配额。
+     */
+    private voiceBlock(): string {
+        if (this.voiceMode() === 'quota') return buildHumanVoiceBlock({ mode: 'quota' });
+        const samples: ExemplarSample[] = selectExemplars({ limit: 3 });
+        return buildHumanVoiceBlock({
+            mode: 'exemplar',
+            exemplarBlock: formatExemplarBlock(samples),
+        });
+    }
 
     async deai(
         bodyText: string,
         options?: { mode?: CreationMode; projectId?: string; writingRules?: string; signal?: AbortSignal }
     ): Promise<SingleCallResult<DeaiSingleCallResult>> {
-        const systemPrompt = `你是一位小说编辑，负责一次性完成「AI 痕迹检查 + 重写」。
+        const systemPrompt = `你是一位小说编辑，负责把一篇有 AI 腔的稿子改回人写的语感。
 ${options?.writingRules ? `\n【写作规则】\n${options.writingRules}` : ''}
 
-流程要求：
-1. 先内部检查原文的 AI 痕迹（排比、升华段、连续“然后/于是”、情绪直述等）。
-2. 直接基于检查结果重写完整正文：情节、人物、章节结构不变，只改表达。
-3. 输出 JSON，不解释。
+要求（按顺序做，不要跳步）：
+1. 先找出**最多 3 处**最像 AI 的地方（总结式升华、排比感慨、情绪直述、每段长短整齐、对话像念台词）。只列具体句子，不要列抽象指标。
+2. 对照下面的真人样文重写全文：句子长短、段落疏密、用词轻重都向样文靠；允许句子不完整、允许重复用词。
+3. 情节、人物、章节结构不变；字数 ±10%。
+4. 输出 JSON，不解释。
 
-${HUMAN_VOICE_BLOCK}
+${this.voiceBlock()}
 
 ${describeContract(deaiContract)}`;
 
-        const userPrompt = `【原文】\n${bodyText}`;
+        const userPrompt = `【原文（需要改回人味）】\n${bodyText}`;
 
         return singleCallRunner.run<DeaiSingleCallResult>({
             taskId: 'long.deai',
@@ -146,13 +165,28 @@ ${describeContract(deaiContract)}`;
     async refine(
         bodyText: string,
         contextPrompt: string,
-        options?: { mode?: CreationMode; projectId?: string; writingRules?: string; chapNum?: string; signal?: AbortSignal }
+        options?: {
+            mode?: CreationMode;
+            projectId?: string;
+            writingRules?: string;
+            chapNum?: string;
+            signal?: AbortSignal;
+            /** 定向补修指令（如「把 3 处叙述改成对话」），追加在精修要求之后 */
+            extraInstruction?: string;
+        }
     ): Promise<SingleCallResult<RefineSingleCallResult>> {
         const systemPrompt = `你是一位小说编辑，负责一次性完成「自检 + 精修」。
 ${options?.writingRules ? `\n【写作规则】\n${options.writingRules}` : ''}
 
+${options?.extraInstruction ? `
+【本轮额外要求】
+${options.extraInstruction}
+` : ''}
 自检维度：开篇钩子、冲突推进、情绪身体化、AI 痕迹、分段节奏、形容词控制、结尾情绪。
-精修要求：只改表达与节奏，不改剧情、人物与设定；保持字数不减少；输出完整正文。
+精修要求：只改表达与节奏，不改剧情、人物与设定；字数 ±10%；输出完整正文。
+改写时以「真人样文」的语感为准，不要为了达标把句子写得更整齐。
+
+${this.voiceBlock()}
 
 ${describeContract(refineContract)}`;
 
@@ -179,13 +213,15 @@ ${describeContract(refineContract)}`;
     async targetedRevision(
         bodyText: string,
         issues: string[],
-        options?: { mode?: CreationMode; projectId?: string; signal?: AbortSignal }
+        options?: { mode?: CreationMode; projectId?: string; signal?: AbortSignal; lockedFacts?: string[] }
     ): Promise<SingleCallResult<RevisionSingleCallResult>> {
+        const locked = (options?.lockedFacts || []).map(f => String(f || '').trim()).filter(Boolean);
         const systemPrompt = `你是一位小说修订编辑。一次调用完成所有质量维度的定向修订。
 要求：
 - 每个维度只修改相关段落，不改剧情走向与人物设定。
 - 输出完整正文，不减少字数。
 - 输出 JSON，不解释。
+${locked.length > 0 ? `- 以下事实不得改动，也不得删掉对应内容：${locked.join('；')}` : ''}
 
 ${describeContract(revisionContract)}`;
 

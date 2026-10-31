@@ -10,9 +10,6 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagoni
 【他的灵魂——他不是角色卡，他是活人】
 \${protagonistSoulDetail}
 
-【他这一章要经历的情绪弧】
-\${emotionPlan}
-
 【他身体里的记忆——如果场景中出现相似元素，他会想起】
 \${triggeredMemories}
 
@@ -39,6 +36,8 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagoni
 故事发生在 \${worldType} 题材的世界，时代背景是 \${worldEra}。
 - \${forbiddenElements} 这些东西不存在于主角的世界里，也不会进入他的视野。
 - 力量体系遵循 \${powerSystem}。
+
+【当前时间】\${timeContext}
 
 【上一章结束状态（硬约束）】
 \${prevChapterStateSnapshot}
@@ -119,10 +118,13 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 【需要处理的伏笔】\${unrevealedForeshadow}
 \${forcedRevealHint}
 
+\${dialogueSkeleton}
+
 【文笔风格（请严格遵循）】\${writingStyleContent}
 
 \${fanficRules}
 
+【最终写作指令（必须逐条执行，不可忽略）】
 镜头贴着\${protagonistName}。现在，写他刚经历的第\${chapNum}章。
 从身体第一刻感受到的东西开始。
 字数 ≥ \${baseWords} 字。`;

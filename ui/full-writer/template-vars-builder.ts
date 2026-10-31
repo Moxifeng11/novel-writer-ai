@@ -15,8 +15,10 @@ import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../../engin
 import { parseInfoPlanFields, formatInfoPlanPromptBlock } from '../../shared/info-plan-fields';
 import { buildEntityRelationsBlock } from '../../engine/entity-graph';
 import { buildInjectionLedger } from '../../shared/injection-ledger';
+import { auditContextBlocks, resolveStyleConflicts } from '../../shared/context-hygiene';
+import { buildTimeContextMessage } from '../../shared/time-context';
 import { extractWorldviewMeta } from '../utils/worldview-utils';
-import { chapterOutlineSection } from '../../shared/format-constants';
+import { chapterOutlineSection, volumeSectionSlice } from '../../shared/format-constants';
 import { stripFrontmatter, readMergedVolumeOutline } from '../../utils/helpers';
 import { findBodyFileV4 } from '../../engine/chapter-utils';
 import { deriveBodyFormat, describeBodyFormat } from '../../shared/body-format';
@@ -26,14 +28,16 @@ import { loadLongTermMemory } from '../../engine/long-term-memory';
 import { findWritingStyleFile } from '../writing-style-paths';
 import { createLogger } from '../../shared/logger';
 import { parseSceneBlocks } from '../../engine/scene-generation-loop';
-import { formatSceneCardDigest } from '../../shared/scene-card';
+import { formatDialogueSkeleton, formatSceneCardDigest } from '../../shared/scene-card';
 import { buildCraftConstraintBlock, buildNegativeConstraintBlock } from '../../engine/craft-constraints';
 import { pjPromiseLedger, pjCharacterArcTable, readProjectMeta } from '../../shared/paths';
 import { parsePromiseLedger, formatOpenPromisesForPrompt } from '../../engine/promise-ledger';
 import { parseCharacterArcTable, formatArcsForPrompt } from '../../engine/character-arc';
 import { getCreationModeLabel, getCreationModePromptBlock, getCreationUnitLabel, parseCreationModeMeta } from '../../shared/creation-mode';
 import { getStoryStructure, getStructureStageSummary } from '../../shared/story-structure';
-import { HUMAN_VOICE_BLOCK } from '../../engine/prompts/human-voice';
+import { buildHumanVoiceBlock } from '../../engine/prompts/human-voice';
+import { formatExemplarBlock, selectExemplars } from '../../engine/prompts/style-exemplars';
+import { voiceVariantMeta } from '../../engine/prompts/prompt-registry';
 import {
   applyStoryContextToVars,
   buildStoryContext,
@@ -42,9 +46,10 @@ import {
 } from '../../engine/context/story-context-service';
 
 const log = createLogger('TemplateVarsBuilder');
+import { setActiveInputBudget } from '../../shared/context-budget-policy';
 import {
     CHAR_TO_TOKEN_RATIO,
-    INFO_DEBT_MAX,
+    getInfoDebtMax,
     INFO_DEBT_WARN_CRITICAL,
     INFO_DEBT_WARN_HIGH,
     FORCED_REVEAL_OVER_20,
@@ -56,6 +61,18 @@ import {
 } from '../../shared/thresholds';
 
 /** buildTemplateVars 所需依赖（由 full-writer-view 注入）。 */
+/**
+ * 判断 `writing_rules.style` 是否其实是「规则编号章」的副本。
+ * 规则解析器会把 16 个编号章塞进 style；用来决定是否在「文笔风格」里再次注入。
+ */
+function looksLikeWritingRules(style: string): boolean {
+    const text = String(style || '').trim();
+    if (text.length < 400) return false;
+    const rulesSignals = ['写作规则', '角色活着', '写作自检', '写作前默念', '唯一禁止事项', '格式参考'];
+    const hits = rulesSignals.filter((signal) => text.includes(signal)).length;
+    return hits >= 2;
+}
+
 export interface TemplateVarsDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -320,11 +337,18 @@ export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<stri
     }
   }
   const wr = d.writing_rules;
+  const dedupeStyle = deps.plugin.settings.dedupeRulesInStyle !== false;
   if (wr) {
     const style = typeof wr.style === "string" ? wr.style : "";
-    vars["writingStyle"] = style || "";
+    // v4.23：规则已在 system 的 ${writingRules} 注入一次；旧实现又把解析出的规则编号章
+    // 塞进「文笔风格」再注入 user，导致规则权重翻倍（约 7k vs 人味 1.2k）。
+    // 默认去重（dedupeRulesInStyle=true），需要旧行为可在设置里关掉。
+    vars["writingStyle"] = dedupeStyle && looksLikeWritingRules(style) ? "" : (style || "");
   }
-  vars["writingStyleContent"] = d.writing_style?.raw || "";
+  // v4.24 修正：正文模板实际用的是 ${writingStyleContent}（文笔风格.md 原文），
+  // 旧实现只对没人用的 writingStyle 去重，导致「规则重复注入」在正文链路依然存在。
+  const styleContent = d.writing_style?.raw || "";
+  vars["writingStyleContent"] = dedupeStyle && looksLikeWritingRules(styleContent) ? "" : styleContent;
   const fs = d.foreshadows;
   if (fs) {
     const tableStr = "| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 当前状态 |\n|---|---------|---------|---------|---------|---------|\n" + fs.unrevealed.map(
@@ -384,7 +408,7 @@ export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<stri
     const count = fs.unrevealed.length;
     let maxReveal = 0;
     if (count > 20) maxReveal = FORCED_REVEAL_OVER_20;
-    else if (count > INFO_DEBT_MAX) maxReveal = FORCED_REVEAL_OVER_15;
+    else if (count > getInfoDebtMax()) maxReveal = FORCED_REVEAL_OVER_15;
     else if (count > INFO_DEBT_WARN_CRITICAL) maxReveal = FORCED_REVEAL_OVER_10;
     else if (count > INFO_DEBT_WARN_HIGH) maxReveal = FORCED_REVEAL_OVER_5;
 
@@ -395,7 +419,7 @@ export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<stri
       vars["forcedRevealHint"] = revealCount > 0 ? `⚠️ 信息债严重（${count}个未揭示），本章优先揭示以下临近伏笔：
 ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.plannedReveal || "?"}）`).join("\n")}` : `⚠️ 信息债严重（${count}个未揭示），但当前无临近揭示窗口内的伏笔，请检查伏笔计划`;
       vars["revealInstruction"] = revealCount > 0 ? `信息债严重：本章优先揭示 ${toShow.map((f) => f.name).join("、")}，控制新伏笔数量` : `信息债严重：但当前无临近揭示窗口内的伏笔，建议检查伏笔计划是否合理`;
-    } else if (count > INFO_DEBT_MAX) {
+    } else if (count > getInfoDebtMax()) {
       vars["forcedRevealHint"] = revealCount > 0 ? `⚠️ 信息债过高（${count}个未揭示），本章优先揭示以下临近伏笔：
 ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.plannedReveal || "?"}）`).join("\n")}` : `⚠️ 信息债过高（${count}个未揭示），但当前无临近揭示窗口内的伏笔`;
       vars["revealInstruction"] = revealCount > 0 ? `信息债过高：本章优先揭示 ${toShow.map((f) => f.name).join("、")}，尽量少埋新伏笔` : `信息债过高：但当前无临近揭示窗口内的伏笔，建议回顾伏笔计划`;
@@ -519,7 +543,9 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
   try {
     const viContent = await readMergedVolumeOutline(deps.app, deps.project);
     if (viContent) {
-      const chapMatch = viContent.match(chapterOutlineSection(deps.chapterNum));
+      // v4.25：先切出当前卷段落再按章号匹配，避免同号章（残留旧卷/重编号）取到别卷规划
+      const volSlice = volumeSectionSlice(viContent, deps.volume);
+      const chapMatch = volSlice.match(chapterOutlineSection(deps.chapterNum));
       vars["chapPlan"] = chapMatch?.[0]?.trim() || "";
     }
   } catch (e) {
@@ -543,10 +569,20 @@ export async function applyStoryContextBus(
   try {
     const tier = resolveStoryContextTier(deps.plugin.settings, 'one-click');
     const settings = deps.plugin.settings;
-    const maxInputTokens = Math.max(
-      2048,
-      (settings.maxContext || 0) - (settings.maxOutput || 0) - 1024,
-    );
+    // v4.22：总线预算必须按真实模型窗口算。旧实现用 settings.maxContext（实测 32768），
+    // 而模型实际 1M，于是包预算只有 12953 token，故事上下文一超预算就被当 P2 整段丢弃。
+    let maxInputTokens: number;
+    try {
+        const limits = deps.plugin.resolveModelLimits(settings.defaultModel || '', settings.apiEndpoint);
+        maxInputTokens = Math.max(2048, Math.min(
+            limits.maxContext - limits.maxOutput - 1024,
+            200_000,
+        ));
+    } catch {
+        maxInputTokens = Math.max(2048, (settings.maxContext || 0) - (settings.maxOutput || 0) - 1024);
+    }
+    // 同步给上下文配额（上一章结尾/长篇记忆/场景卡/实体速览/知识注入都读它）
+    setActiveInputBudget(maxInputTokens);
     const result = buildStoryContext({
       context: deps.context,
       chapterName: deps.chapterName,
@@ -572,6 +608,29 @@ export async function applyStoryContextBus(
     log.warn('[TemplateVarsBuilder] 故事上下文总线失败，保留旧变量:', e);
   }
 }
+
+/**
+ * 上下文体检参与段（key + 中文标签）。
+ * 只把这些「长文本、可能互相重复」的段送检；短段与结构化摘要不参与，避免误报。
+ */
+const HYGIENE_BLOCKS: Array<[string, string]> = [
+  ['writingRules', '写作规则'],
+  ['writingStyle', '文笔风格(解析)'],
+  ['writingStyleContent', '文笔风格'],
+  ['humanVoice', '人味约束'],
+  ['worldView', '世界观'],
+  ['settingLib', '设定库'],
+  ['prevChapEnding', '上一章结尾'],
+  ['prevChaptersSummary', '前情提要'],
+  ['sceneExpansion', '场景展开'],
+  ['sceneCardDigest', '场景卡'],
+  ['infoPlan', '信息规划'],
+  ['outlineContent', '大纲摘要'],
+  ['distilledContent', '情节蒸馏'],
+  ['emotionPlan', '情绪规划'],
+  ['longTermMemory', '长篇记忆'],
+  ['storyContextPack', '故事上下文包'],
+];
 
 /**
  * 上下文缺失时必须补空串的模板变量。
@@ -647,8 +706,20 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     vars["narrativeStructureName"] = '未设置';
     vars["narrativeStructureStages"] = '';
   }
-  const writingRules = await RulesService.getInstance(deps.plugin.app).getWritingRules();
+  // v4.23：规则按版本载入——项目内规则优先、设置里可切换生效版本（旧的硬读 vault 路径已废弃）
+  const rulesService = RulesService.getInstance(deps.plugin.app);
+  rulesService.setProject(deps.project);
+  rulesService.setActiveVersion(deps.plugin.settings.activeRulesVersion);
+  const writingRules = await rulesService.getWritingRules();
   vars["writingRules"] = writingRules;
+  const rulesConfig = await rulesService.getRulesConfig();
+  vars["_rulesMeta"] = JSON.stringify({
+    id: rulesConfig.id || '',
+    version: rulesConfig.version || '',
+    hash: rulesConfig.hash || '',
+    path: rulesConfig.path || '',
+    warnings: rulesConfig.warnings || [],
+  });
   // 同人约束：非同人项目返回空串；设定失效（未绑定/不存在/读取失败/全空）时提示一次
   vars["fanficRules"] = await readFanficPromptBlockWithNotice(deps.app, deps.project);
   // 长篇记忆：前序卷摘要 + 已确认事实；无数据时为空串，模板不留痕迹
@@ -712,7 +783,11 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     const planFields = parseInfoPlanFields(deps.stepResults["infoPlan"]);
     const planBlock = formatInfoPlanPromptBlock(planFields);
     if (planBlock) vars["infoPlan"] = `${vars["infoPlan"]}\n\n${planBlock}`;
-    vars["chapterHook"] = planFields.hookContent || "";
+    // v4.25：章末钩子从「裸字段」升级为可注入块——V3/V4 模板直接引用；
+    // 钩子缺失时保持空串（模板里 ${chapterHook} 行由 fillTemplate 后仍会留下空行，无碍）
+    vars["chapterHook"] = planFields.hookContent
+      ? `【章末钩子（最后 1–2 段必须落在这个钩子上，不要写总结升华）】类型：${planFields.hookType || "未标注"}；内容：${planFields.hookContent}`
+      : "";
   } else {
     vars["infoPlan"] = "（未执行信息规划：仅按分卷大纲推进，不得自行新增情节节点、反转或信息释放）";
     vars["chapterHook"] = "";
@@ -879,16 +954,76 @@ ${vars["allItems"]}`);
   try {
     const cards = parseSceneBlocks(deps.stepResults["sceneExpand"] || '');
     vars["sceneCardDigest"] = formatSceneCardDigest(cards);
+    // v4.23：对话骨架（Scene 展开的 dialogue_beats）——对话密度来自数据，不靠提示词数比例
+    // v4.25：骨架为空时给兜底文案，避免 V3/V4 的【台词清单】只剩空标题（模型会当成可以不写对话）
+    vars["dialogueSkeleton"] = formatDialogueSkeleton(cards)
+      || "（本章没有台词骨架：请按场景卡与信息规划自然生成对话，信息由角色说出来，不要用叙述转述；每场至少 4 个来回）";
   } catch (e) {
     log.warn('[小说工坊] 场景卡解析失败，跳过硬约束摘要:', e);
     vars["sceneCardDigest"] = '';
+    vars["dialogueSkeleton"] = "（本章没有台词骨架：请按场景卡与信息规划自然生成对话，信息由角色说出来，不要用叙述转述；每场至少 4 个来回）";
   }
   vars["craftConstraints"] = buildCraftConstraintBlock();
   vars["negativeList"] = buildNegativeConstraintBlock();
-  vars["humanVoice"] = HUMAN_VOICE_BLOCK;
+  // v4.23：主链路此前硬编码 quota 版，设置里的 humanVoiceMode 完全不生效。
+  // 现在按设置组装：exemplar（样文 + 6 条弱约束）为默认，quota 为对照版本。
+  const voiceMode = deps.plugin.settings.humanVoiceMode === 'quota' ? 'quota' : 'exemplar';
+  vars["humanVoice"] = buildHumanVoiceBlock({
+    mode: voiceMode,
+    exemplarBlock: voiceMode === 'exemplar' ? formatExemplarBlock(selectExemplars({ limit: 3 })) : '',
+  });
+  vars["_voiceMeta"] = JSON.stringify(voiceVariantMeta(voiceMode));
+  // 正文模板变体：auto 交给灵魂层判断；v1/v2/v3/v4 为实验与设置的强制指定
+  const bodyVariant = String(deps.plugin.settings.activeBodyTemplate || 'auto').toLowerCase();
+  vars["_bodyVariant"] = bodyVariant === 'auto' ? '' : bodyVariant;
+  // 可数硬指标（实验 C9）：默认关闭，开启后在正文 system 末尾追加
+  vars["_countableHints"] = deps.plugin.settings.countableHumanHints ? '1' : '';
+  // 实验分组标签：便于把「哪一组实验产生的正文」与账本/步骤结果对上
+  vars["_experimentGroup"] = String(deps.plugin.settings.experimentGroup || '');
   vars["triggeredMemories"] = deps.context?.data?.triggered_memories_prompt || "";
+  // v4.25：时间上下文（此前只有 Agent harness 注入）。正文/规划现在同样知道「今天是哪天」，
+  // 避免期限/季节/年龄推算与真实时间线漂移。
+  vars["timeContext"] = buildTimeContextMessage();
   if (deps.context) {
     await applyStoryContextBus(deps, vars, deps.context.data);
+  }
+  // v4.24 上下文体检：重复段自动清空（保留权威版本）+ 规则/文笔风格格式冲突 + 串章告警。
+  // 放在账本之前，保证账本统计的是「真正发出去的段」。
+  try {
+    const autoFix = deps.plugin.settings.contextHygieneAutoFix !== false;
+    const styleConflict = resolveStyleConflicts(vars["writingStyleContent"] || "", vars["writingRules"] || "");
+    let conflictIssue: { type: string; severity: string; blocks: string[]; message: string } | null = null;
+    if (styleConflict.conflicts.length > 0) {
+      const fixed = autoFix && !styleConflict.tooMuchTrimmed && !styleConflict.rulesLackAnchor;
+      if (fixed) vars["writingStyleContent"] = styleConflict.cleaned;
+      const detail = styleConflict.rulesLackAnchor
+        ? '（生效规则没有「自然段 2–6 句」锚点，建议切到 3.7.0-anchor 或更新规则文件；本次未改风格文本）'
+        : styleConflict.tooMuchTrimmed
+          ? '（冲突行占比过高，仅告警）'
+          : fixed
+            ? '（已剔除冲突行）'
+            : '（体检自动修复已关闭，仅告警）';
+      conflictIssue = {
+        type: 'conflict',
+        severity: styleConflict.rulesLackAnchor ? 'medium' : 'high',
+        blocks: ['writingStyleContent', 'writingRules'],
+        message: `「文笔风格」要求「${styleConflict.conflicts.join('、')}」，与自然段规则冲突${detail}`,
+      };
+    }
+    const hygieneBlocks = HYGIENE_BLOCKS
+      .map(([key, label]) => ({ key, label, text: vars[key] || '' }))
+      .filter((block) => block.text.length > 0);
+    const hygiene = auditContextBlocks(hygieneBlocks, { chapterNum: deps.chapterNum });
+    if (conflictIssue) hygiene.issues.push(conflictIssue as never);
+    if (autoFix) {
+      for (const key of hygiene.dropKeys) vars[key] = "";
+    }
+    vars["_contextHygiene"] = hygiene.issues.length > 0
+      ? JSON.stringify({ issues: hygiene.issues, dropped: autoFix ? hygiene.dropKeys : [] })
+      : "";
+  } catch (e) {
+    log.warn("[小说工坊] 上下文体检失败（不影响生成）:", e);
+    vars["_contextHygiene"] = "";
   }
   // v4.20 注入溯源账本：对全部模板段统计字符/token/影响面，供步骤日志与成本评估。
   // 纯遥测变量（模板无 ${_injectionLedger} 占位，不会进 prompt）。

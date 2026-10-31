@@ -53,6 +53,28 @@ export const RE_VOLUME_RANGE = /章节范围[：:]\s*(.+?)(?:\n\|$)/;
 export const chapterOutlineSection = (chapterNum: number) =>
     new RegExp(`###?\\s*第${chapterNum}章[\\s\\S]*?(?=\\n###|$)|\\|\\s*${chapterNum}\\s*\\|[\\s\\S]*?(?=\\n\\|\\s*\\d+\\s*\\||$)`);
 
+/**
+ * 从「合并后的分卷大纲」里截出指定卷的段落。
+ * chapPlan 若在全部卷拼接内容里按章号取段，同号章（重编号/残留旧卷）会取到别卷的规划；
+ * 先按 `### 第N卷` 切出当前卷，再在其中按章号匹配。找不到卷头时返回全文（行为不变）。
+ */
+export function volumeSectionSlice(content: string, volume: string | undefined): string {
+    const text = String(content || '');
+    const volName = String(volume || '').trim();
+    if (!volName) return text;
+    // 注意：\b 对 CJK 无效（「卷」不是 \w），用 (?![0-9]) 防止「第1卷」匹配到「第11卷」
+    const start = text.search(new RegExp(`^###?[ \\t]*${volName}(?![0-9])`, 'm'));
+    if (start < 0) return text;
+    const rest = text.slice(start);
+    // 逐行找下一个卷头（跳过当前行，避免 slice 偏移把当前卷头错配成下一卷）
+    const lines = rest.split('\n');
+    let end = lines.length;
+    for (let i = 1; i < lines.length; i++) {
+        if (/^###?[ \t]*第[0-9]+卷(?![0-9])/.test(lines[i])) { end = i; break; }
+    }
+    return lines.slice(0, end).join('\n');
+}
+
 // ============================================================
 // 二、人物（Characters）
 // ============================================================

@@ -119,6 +119,16 @@ declare module 'obsidian' {
             data: NovelWriterRefreshContextPanelPayload,
         ): void;
 
+        on(
+            name: 'novel-writer:run-targeted-revision',
+            callback: (data: Record<string, never>) => any,
+            ctx?: any,
+        ): EventRef;
+        trigger(
+            name: 'novel-writer:run-targeted-revision',
+            data: Record<string, never>,
+        ): void;
+
         // ─── body 域 ───
         on(
             name: 'novel-writer:body-written',

@@ -123,10 +123,16 @@ export function applyStoryContextToVars(
         'worldView', 'settingLib', 'allChars', 'allFactions', 'allLocs', 'allItems',
         'timelineEvents', 'unrevealedForeshadow', 'emotionPlan', 'sceneCardDigest',
     ];
+    /** 世界观/设定库在模板链路里有更长的压缩版本；节点版是 3200/6000 字节选，覆盖即静默截断 */
+    const NO_SHRINK = new Set(['worldView', 'settingLib']);
+    /** 伏笔列表已在模板链路按当前章过滤；节点版包含后续章节伏笔，不能反向覆盖 */
+    const KEEP_EXISTING = new Set(['unrevealedForeshadow']);
     for (const key of keys) {
         const next = (legacy[key] || '').trim();
         const previous = (fallback?.[key] || vars[key] || '').trim();
+        if (KEEP_EXISTING.has(key) && previous) continue;
         if (next) {
+            if (NO_SHRINK.has(key) && previous && next.length < previous.length) continue;
             vars[key] = legacy[key];
         } else if (!previous && fallback?.[key]) {
             vars[key] = fallback[key];

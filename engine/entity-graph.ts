@@ -12,6 +12,7 @@
 import type { App, TFile } from 'obsidian';
 import { parseLinkValue } from '../shared/entity-links';
 import { parseBehaviorLog } from '../shared/behavior-log';
+import { activeContextQuotas } from '../shared/context-budget-policy';
 
 export interface OwnedItemSummary {
     name: string;
@@ -104,7 +105,8 @@ export async function buildEntityRelationsBlock(
     charNames: string[],
     options: { behaviorLimit?: number; maxChars?: number } = {},
 ): Promise<string> {
-    const maxChars = options.maxChars ?? 8;
+    // v4.22：速览人数跟预算走（旧值固定 8 人，群像章后面的人物整段消失 → OOC）
+    const maxChars = options.maxChars ?? activeContextQuotas().entityGraphMaxChars;
     const names = (charNames || []).map((name) => String(name || '').trim()).filter(Boolean).slice(0, maxChars);
     if (names.length === 0) return '';
 

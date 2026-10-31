@@ -44,6 +44,7 @@ import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
 import { ENGINE_NAMES } from './engine-registry';
+import { formatWritingRulesForPrompt } from './prompts/writing-rules-format';
 import {
     attachStoryContextToSnapshot,
     buildStoryContext,
@@ -150,6 +151,9 @@ import type {
  * 与 UI 侧 suggestionHistory（限 20）保持同一量级思路，同时保留足够的回溯上下文。
  */
 const MAX_INTERACTION_HISTORY = 200;
+
+/** 把结构化写作规则渲染成可读文本（实现见 `prompts/writing-rules-format.ts`） */
+export { formatWritingRulesForPrompt } from './prompts/writing-rules-format';
 
 export class CoWriterEngine {
     private app: App;
@@ -2454,7 +2458,9 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             worldView: worldViewRaw,
             worldType,
             writingStyle: getRaw(data.writing_style),
-            writingRules: data.writing_rules?.mandatory?.join('\n') || '',
+            // v4.23 修复：mandatory 是 RuleItem[]（{title,description,points}），
+            // 旧实现直接 join 会得到 `[object Object]`，协同写作的项目规则实际是垃圾串。
+            writingRules: formatWritingRulesForPrompt(data.writing_rules),
             protagonistSoulDetail: '',
             emotionPlan: getRaw(data.emotion_plan),
             sceneExpansion: getRaw(data.scene_expansion),

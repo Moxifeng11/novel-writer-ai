@@ -18,6 +18,7 @@ import {
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { createLogger } from '../shared/logger';
 import { retrieve, type RetrievalTelemetry } from './rag/retrieval-service';
+import { activeContextQuotas } from '../shared/context-budget-policy';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
 const intensityEngine = new StyleIntensityEngine();
@@ -541,6 +542,16 @@ export class KnowledgeInjector {
      * v4.20 统一 RAG 检索：多查询计划 → 邻块扩展 → MMR → 预算打包。
      * 9 处注入点共用，遥测累计到 retrievalTelemetry，随 lastInjectionMeta 进注入账本。
      */
+    /**
+     * 单维度知识注入的字符预算（v4.22）。
+     * 旧值是固定 900/700/800/600 字符（约 400-600 token），只够两句参考；
+     * 现在按当前输入预算的配额派生，`ratio` 用于维度间分配（人物/技巧多给一点）。
+     */
+    private budgetChars(ratio: number): number {
+        const base = activeContextQuotas().knowledgePerDimensionChars;
+        return Math.max(600, Math.round(base * ratio));
+    }
+
     private async retrieveKb(
         context: InjectionContext,
         dimensions: string[],
@@ -584,7 +595,7 @@ export class KnowledgeInjector {
         if (bookIds.length === 0) return '';
 
         try {
-            const results = (await this.retrieveKb(context, ['character'], Math.max(3, Math.round(strength * 5)), 900)).hits;
+            const results = (await this.retrieveKb(context, ['character'], Math.max(3, Math.round(strength * 5)), this.budgetChars(1.0))).hits;
             if (results.length === 0) return '';
 
             const lines: string[] = [];
@@ -612,7 +623,7 @@ export class KnowledgeInjector {
             // 知识库拆解没有 worldview 维度（只有 style/rhythm/technique/structure/
             // character/foreshadow/original），结构拆解是唯一可用的设定类数据源。
             // 旧实现按 'worldview' 检索，永远返回空，导致该段静默失效。
-            const results = (await this.retrieveKb(context, ['structure'], Math.max(2, Math.round(strength * 3)), 700)).hits;
+            const results = (await this.retrieveKb(context, ['structure'], Math.max(2, Math.round(strength * 3)), this.budgetChars(0.8))).hits;
             if (results.length === 0) return '';
 
             const lines: string[] = [];
@@ -637,7 +648,7 @@ export class KnowledgeInjector {
         if (bookIds.length === 0) return '';
 
         try {
-            const results = (await this.retrieveKb(context, ['technique'], Math.max(3, Math.round(strength * 4)), 800)).hits;
+            const results = (await this.retrieveKb(context, ['technique'], Math.max(3, Math.round(strength * 4)), this.budgetChars(0.9))).hits;
 
             const lines: string[] = [];
             const sceneLabel = this.getSceneCategoryLabel(sceneCategory);
@@ -689,7 +700,7 @@ export class KnowledgeInjector {
             // 此前 knowledgeVectorStore / bookIds 只用于早退，节奏维度（拆解产物）从未被消费。
             // 这里补上 rhythm 检索，硬编码模式保留为兜底，避免无向量数据时行为回退。
             {
-                const results = (await this.retrieveKb(context, ['rhythm'], Math.max(2, Math.round(strength * 4)), 700)).hits;
+                const results = (await this.retrieveKb(context, ['rhythm'], Math.max(2, Math.round(strength * 4)), this.budgetChars(0.8))).hits;
                 const samples: string[] = [];
                 const seen = new Set<string>();
                 for (const result of results) {
@@ -1548,7 +1559,7 @@ export class KnowledgeInjector {
         if (bookIds.length === 0) return '';
 
         try {
-            const results = (await this.retrieveKb(context, ['character'], Math.max(2, Math.round(strength * 5)), 900)).hits;
+            const results = (await this.retrieveKb(context, ['character'], Math.max(2, Math.round(strength * 5)), this.budgetChars(1.0))).hits;
 
             if (results.length === 0) return '';
 
@@ -1637,7 +1648,7 @@ export class KnowledgeInjector {
         try {
             // structure 由「设定」段单独注入：混在这里会以「起/承/转/合」占满
             // 技巧的 5 个类别名额，并让同一段结构文本重复进入 prompt。
-            const results = (await this.retrieveKb(context, ['technique'], Math.max(3, Math.round(strength * 6)), 800)).hits;
+            const results = (await this.retrieveKb(context, ['technique'], Math.max(3, Math.round(strength * 6)), this.budgetChars(0.9))).hits;
 
             if (results.length === 0) return '';
 
@@ -1775,7 +1786,7 @@ export class KnowledgeInjector {
         if (bookIds.length === 0) return '';
 
         try {
-            const results = (await this.retrieveKb(context, ['rhythm'], Math.max(2, Math.round(strength * 4)), 600)).hits;
+            const results = (await this.retrieveKb(context, ['rhythm'], Math.max(2, Math.round(strength * 4)), this.budgetChars(0.7))).hits;
 
             if (results.length === 0) return '';
 

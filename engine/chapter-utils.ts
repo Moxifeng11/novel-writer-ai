@@ -247,6 +247,31 @@ export function listChapterNumbers(app: App, project: string, volN: number): num
 }
 
 /**
+ * 在「卷正文目录」里按章号定位正文文件。
+ *
+ * 与 findChapterFile 的区别：后者的 chapDir 语义是「章目录」（最后一段是章名），
+ * 传卷目录时标准名匹配必然失败，frontmatter 兜底会返回该卷第一个正文——
+ * 实测会把新章写进旧章文件（数据损坏）。卷目录请用本函数：按 `第N章` 前缀匹配。
+ */
+export function findBodyFileByChapterNum(files: TFile[], bodyDir: string, chapterNum: number, chapterName?: string): TFile | undefined {
+    const prefix = `第${chapterNum}章`;
+    const bare = `第${chapterNum}章_正文.md`;
+    // 同章可能同时存在「带章名」与「历史无章名」两个文件（旧版落盘缺陷的遗留物）。
+    // 命中优先级：带章名 > 裸文件名。注意 chapterName 恰为「第N章」时，
+    // `${chapterName}_正文.md` 就是裸文件名——不能当作更高优先级的精确匹配，
+    // 否则幂等守卫会读到遗留文件的 settled，把整章结算永远跳过。
+    const candidates = files.filter(f => f.path.startsWith(bodyDir)
+        && f.name.endsWith('.md')
+        && f.name.startsWith(prefix));
+    if (candidates.length === 0) return undefined;
+    if (chapterName && chapterName !== `第${chapterNum}章`) {
+        const exact = candidates.find(f => f.name === `${chapterName}_正文.md`);
+        if (exact) return exact;
+    }
+    return candidates.find(f => f.name !== bare) ?? candidates[0];
+}
+
+/**
  * 在文件列表中跨目录查找章节文件（读操作）
  * 只匹配标准格式：第X章_类型.md 或 第X章_标题_类型.md
  * 不兼容旧格式——调用前必须先 normalizeChapterFiles()

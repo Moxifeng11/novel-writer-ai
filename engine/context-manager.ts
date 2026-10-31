@@ -1,5 +1,5 @@
 import { App, TFile, TFolder } from 'obsidian';
-import { getChapterFile, getChapterFileName, CHAPTER_FILE_TYPES, findBodyFileV4 } from './chapter-utils';
+import { getChapterFile, getChapterFileName, CHAPTER_FILE_TYPES, findBodyFileV4, findBodyFileByChapterNum } from './chapter-utils';
 import NovelWriterPlugin from '../main';
 import { extractVolumeFromPath, showProgress, showError, readMergedVolumeOutline } from '../utils/helpers';
 import { compressWorldContext, CompressedContext } from './context-compressor';
@@ -13,7 +13,7 @@ import { getWorldviewPath, getSettingLibPath, getWritingStylePath, getLegacyWrit
     pjFanficFile, pjBodyFile, pjStepDir, pjStepFile, pjWritingRules, pjWritingRulesTemplate,
     pjChapterStateSnapshot,
     pjChapterStateSnapshotDir,
-    isInOutlineDir, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
+    isInOutlineDir, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyDir } from '../shared/paths';
 import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRITICAL } from '../shared/thresholds';
 import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromContent } from './character-soul';
 import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
@@ -93,6 +93,7 @@ import { ContextDiffDetector } from './context/context-diff-detector';
 import type { ContextChangeSet } from './context/context-diff-detector';
 import { IncrementalUpdater } from './context/incremental-updater';
 import { createLogger } from '../shared/logger';
+import { activeContextQuotas } from '../shared/context-budget-policy';
 
 const log = createLogger('ContextManager');
 import type {
@@ -760,7 +761,7 @@ export class ContextManager {
             timelineStr,
             outlineText,
             chapterNum,
-            this.getSettings().maxContext
+            this.resolveEffectiveContextWindow()
         );
 
         if (context.data.compressed.truncationApplied) {
@@ -1460,7 +1461,12 @@ export class ContextManager {
                 }
             }
 
-            for (const volume of volumes) {
+            // 上一章正文所在卷优先（残卷/重编号时避免拿到别卷的同号章数据）
+            const { ordered: prevOrdered, preferred: prevPreferred } = this.orderVolumesByBody(volumes, project, prevNum);
+            for (const volume of prevOrdered) {
+                if (prevPreferred && volume !== prevPreferred) {
+                    log.warn(`[ContextManager] 第${prevNum}章 在首选卷 ${prevPreferred} 未命中，跨卷回退到 ${volume}`);
+                }
                 const volN = parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
                 const bodyPath = volN > 0 ? pjBodyFile(project, volN, prevNum) : `${project}/${SUBDIR_BODY_ROOT}/${volume}/第${prevNum}章_正文.md`;
                 const stepBase = volN > 0 ? pjStepDir(project, volN, prevNum) : `${project}/${SUBDIR_STEP_ROOT}/${volume}/第${prevNum}章`;
@@ -1503,6 +1509,18 @@ export class ContextManager {
                 }
 
                 if (result.content || result.outline) {
+                    // v4.25 快照过期检测：上一章正文在结算（快照写入）之后被改过，
+                    // 旧快照与「上一章结尾」会互相矛盾 → 不注入旧快照，改给提示文案。
+                    if (result.stateSnapshot && contentFile instanceof TFile && snapshotFile instanceof TFile) {
+                        const bodyMtime = contentFile.stat?.mtime ?? 0;
+                        const snapshotMtime = snapshotFile.stat?.mtime ?? 0;
+                        if (bodyMtime > snapshotMtime) {
+                            log.warn('[ContextManager] 上一章状态快照过期（正文在结算后被修改），本轮不注入旧快照');
+                            result.stateSnapshot =
+                                '（⚠️ 上一章状态快照已过期：上一章正文在结算后被修改过。'
+                                + '本章开头请只依据【上一章结尾】衔接，不要引用快照里的旧状态。）';
+                        }
+                    }
                     break;
                 }
             }
@@ -1534,6 +1552,29 @@ export class ContextManager {
         return { writing_rules: null };
     }
 
+    /**
+     * 找出「第N章正文」实际所在的卷（正文位置是章节归属的最强信号）。
+     * 大纲/情绪/场景展开的分卷遍历用它在最前优先查找，避免残留旧卷里的同号章被命中。
+     */
+    private findBodyVolumeForChapter(project: string, chapterNum: number): string | null {
+        try {
+            for (const volume of this.findVolumes(project)) {
+                const volN = parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
+                if (volN <= 0) continue;
+                const hit = findBodyFileByChapterNum(this.getVaultMeta().getFiles(), `${pjBodyDir(project, volN)}/`, chapterNum);
+                if (hit) return volume;
+            }
+        } catch { /* 目录不可读时退化为原顺序 */ }
+        return null;
+    }
+
+    /** 卷优先级排序：正文所在卷最前；跨卷命中时由调用方告警 */
+    private orderVolumesByBody(volumes: string[], project: string, chapterNum: number): { ordered: string[]; preferred: string | null } {
+        const preferred = this.findBodyVolumeForChapter(project, chapterNum);
+        const ordered = preferred ? [preferred, ...volumes.filter(v => v !== preferred)] : volumes;
+        return { ordered, preferred };
+    }
+
     async gatherOutline(project: string, currentChapter: string): Promise<ContextData> {
         try {
             const match = currentChapter.match(/第(\d+)章/);
@@ -1544,8 +1585,12 @@ export class ContextManager {
             if (volumes.length === 0) {
                 volumes.push('第1卷');
             }
+            const { ordered, preferred } = this.orderVolumesByBody(volumes, project, chapterNum);
 
-            for (const volume of volumes) {
+            for (const volume of ordered) {
+                if (preferred && volume !== preferred) {
+                    log.warn(`[ContextManager] ${currentChapter} 在首选卷 ${preferred} 未命中，跨卷回退到 ${volume}（疑似残留旧卷数据）`);
+                }
                 const volN = parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
                 const stepDir = volN > 0
                     ? pjStepDir(project, volN, chapterNum)
@@ -1580,8 +1625,12 @@ export class ContextManager {
             const chapterNum = parseInt(match[1]);
             const volumes = this.findVolumes(project);
             if (volumes.length === 0) volumes.push('第1卷');
+            const { ordered, preferred } = this.orderVolumesByBody(volumes, project, chapterNum);
 
-            for (const volume of volumes) {
+            for (const volume of ordered) {
+                if (preferred && volume !== preferred) {
+                    log.warn(`[ContextManager] ${currentChapter} 在首选卷 ${preferred} 未命中，跨卷回退到 ${volume}（疑似残留旧卷数据）`);
+                }
                 const volN = parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
                 const stepDir = volN > 0
                     ? pjStepDir(project, volN, chapterNum)
@@ -1606,8 +1655,12 @@ export class ContextManager {
             const chapterNum = parseInt(match[1]);
             const volumes = this.findVolumes(project);
             if (volumes.length === 0) volumes.push('第1卷');
+            const { ordered, preferred } = this.orderVolumesByBody(volumes, project, chapterNum);
 
-            for (const volume of volumes) {
+            for (const volume of ordered) {
+                if (preferred && volume !== preferred) {
+                    log.warn(`[ContextManager] ${currentChapter} 在首选卷 ${preferred} 未命中，跨卷回退到 ${volume}（疑似残留旧卷数据）`);
+                }
                 const volN = parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
                 const stepDir = volN > 0
                     ? pjStepDir(project, volN, chapterNum)
@@ -1896,7 +1949,26 @@ export class ContextManager {
         return rules;
     }
 
-    private getChapterEnding(content: string, length: number = 500): string {
+    /**
+     * 世界观/设定库压缩用的窗口：优先真实模型能力，其次设置值。
+     * 旧实现直接用 settings.maxContext（实测 32768），而模型 1M，
+     * 于是世界观被压到 3932 字、设定库 1966 字——设定库原文 5000+ 字直接砍掉六成。
+     */
+    private resolveEffectiveContextWindow(): number {
+        try {
+            const plugin = this.plugin;
+            if (plugin) {
+                const model = plugin.settings.defaultModel || '';
+                const resolved = plugin.resolveModelLimits(model, plugin.settings.apiEndpoint);
+                if (resolved && resolved.maxContext > 0) return resolved.maxContext;
+            }
+        } catch {
+            // 取不到就用设置值
+        }
+        return this.getSettings().maxContext || 32768;
+    }
+
+    private getChapterEnding(content: string, length: number = activeContextQuotas().prevChapterEndingChars): string {
         const cleanContent = content.replace(/---[\s\S]*?---/, '').trim();
         if (cleanContent.length <= length) return cleanContent;
         return cleanContent.slice(-length);
@@ -2084,7 +2156,10 @@ export class ContextManager {
             tasks.push(this.readRawMd(getWorldviewPath(project)).then(v => worldView = v));
         }
         if (opts.includeWritingStyle) {
-            tasks.push(this.readRawMdFirst([getWritingStylePath(project), getLegacyWritingStylePath(project)]).then(v => writingStyle = v));
+            tasks.push(this.readRawMdFirst(
+                [getWritingStylePath(project), getLegacyWritingStylePath(project)],
+                `${project}/01-世界架构/文笔风格模板.md`,
+            ).then(v => writingStyle = v));
         }
         if (opts.includeSetLib) {
             tasks.push(this.readRawMd(getSettingLibPath(project)).then(v => settingLib = v));
@@ -2128,15 +2203,60 @@ export class ContextManager {
         };
     }
 
-    private async readRawMdFirst(filePaths: string[]): Promise<string> {
+    private async readRawMdFirst(filePaths: string[], sampleFallbackPath?: string): Promise<string> {
         let placeholderContent = '';
         for (const filePath of filePaths) {
             const content = await this.readRawMd(filePath);
             if (!content) continue;
-            if (!this.isPlaceholderWritingStyle(content)) return content;
+            if (!this.isPlaceholderWritingStyle(content)) {
+                return sampleFallbackPath
+                    ? await this.augmentWritingStyleSamples(content, sampleFallbackPath)
+                    : content;
+            }
             placeholderContent = placeholderContent || content;
         }
         return placeholderContent;
+    }
+
+    /**
+     * 双文件陷阱（实测）：项目里 `文笔风格.md`（被主路径读取）没有样文，
+     * 而 `文笔风格模板.md` 里有 3 段真人样文（《雪中悍刀行》），于是 few-shot 永远为空。
+     * 这里在主文件缺样文时，把模板文件里的「零、参考样本」补进正文（只补样文，不覆盖别的）。
+     */
+    private async augmentWritingStyleSamples(content: string, samplePath: string): Promise<string> {
+        if (this.hasUsableStyleSamples(content)) return content;
+        try {
+            const template = await this.readRawMd(samplePath);
+            if (!template) return content;
+            const section = this.extractTopSection(template, '零、参考样本');
+            if (!section || section.trim().length < 120) return content;
+            const usable = section.replace(/（在此粘贴样本）/g, '').trim();
+            if (usable.length < 120) return content;
+            log.info('[ContextManager] 文笔风格.md 无样文，已从 文笔风格模板.md 补入参考样本');
+            return `${content.trim()}
+
+## 零、参考样本（来自项目模板文件）
+${usable}`;
+        } catch {
+            return content;
+        }
+    }
+
+    /** 主文件里是否有可用的样文段落（非占位） */
+    private hasUsableStyleSamples(content: string): boolean {
+        const section = this.extractTopSection(content, '零、参考样本');
+        if (!section) return false;
+        const usable = section.replace(/（在此粘贴样本）/g, '').trim();
+        return usable.length >= 120;
+    }
+
+    /** 取 `## 标题` 小节正文（到下一个 ## 或文件尾） */
+    private extractTopSection(content: string, title: string): string {
+        const lines = String(content || '').split('\n');
+        const start = lines.findIndex((line) => new RegExp(`^##\s*${title}`).test(line));
+        if (start < 0) return '';
+        const end = lines.findIndex((line, index) => index > start && /^##\s/.test(line));
+        return (end < 0 ? lines.slice(start + 1) : lines.slice(start + 1, end)).join('\n');
     }
 
     private isPlaceholderWritingStyle(content: string): boolean {

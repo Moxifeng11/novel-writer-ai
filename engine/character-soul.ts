@@ -203,10 +203,13 @@ export function buildCharacterSoulSummary(
         const mark = soul.name === protagonistName ? '【★主角】' : '';
         const label = mark ? `${mark} ${soul.name}` : soul.name;
         if (soul.hasSoul) {
+            // v4.25：9 字段全带。旧版只给 6 字段，情绪规划却要求按 soft_spot/obsession/shame
+            // 反应——模型被要求使用它看不见的字段。配角也该有完整灵魂层。
             parts.push(
                 `【${label}】欲>${soul.desire} | 惧>${soul.fear} | ` +
+                `执>${soul.obsession} | 耻>${soul.shame} | ` +
                 `创>${soul.trauma} | 弱>${soul.weakness} | ` +
-                `怒>${soul.rage_trigger} | 底>${soul.moral_boundary}`
+                `软>${soul.soft_spot} | 怒>${soul.rage_trigger} | 底>${soul.moral_boundary}`
             );
         } else {
             parts.push(`【${label}】（灵魂层未配置）`);

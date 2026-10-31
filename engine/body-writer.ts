@@ -28,9 +28,14 @@ import { pjBodyFile, pjWritingRules } from '../shared/paths';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { validateStepResult } from './step-validator';
 import { withWriteLock } from '../shared/write-lock';
+import { ChapterVersionService } from '../services/chapter-version-service';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('BodyWriter');
+
+/** 覆盖前备份节流：同一路径 5 分钟内只备份一次（协同 2s 自动保存） */
+const BACKUP_THROTTLE_MS = 5 * 60_000;
+const backupStamp = new Map<string, number>();
 
 export type BodyWritingMode = 'co-writer' | 'pipeline' | 'batch' | 'auto' | 'continue' | 'manual' | 'scene';
 
@@ -62,6 +67,11 @@ export interface BodyWriteRequest {
      * manual 与 co-writer 为 false（协同写作是逐段插入，整篇自动合并会打断用户排版）。
      */
     naturalize?: boolean;
+    /**
+     * 覆盖前是否自动备份正文版本（P0-3，默认 true）。
+     * 导入/迁移这类「明确要全量替换」的入口可显式关闭。
+     */
+    backupBeforeOverwrite?: boolean;
 }
 
 export interface BodyWriteResult {
@@ -174,7 +184,13 @@ export class BodyWriter {
         let fmRaw = '';
         if (existed) {
             try {
-                fmRaw = stripFrontmatterBlock(await fs.read(req.path)).fmRaw;
+                const oldRaw = await fs.read(req.path);
+                fmRaw = stripFrontmatterBlock(oldRaw).fmRaw;
+                // P0-3（v4.27）：覆盖前自动备份正文版本。
+                // 旧实现只有「定向修订」会存版本，pipeline/batch/auto/cowriter/manual
+                // 全部入口直接整篇覆盖——重新生成一章即永久丢原稿。
+                // 节流：同一路径 5 分钟内只备份一次（协同 2s 自动保存否则会刷爆版本库）。
+                await this.backupBeforeOverwrite(req, oldRaw);
             } catch (e) {
                 log.warn('[BodyWriter] 读取旧正文失败，将按新建处理:', e);
             }
@@ -199,6 +215,12 @@ export class BodyWriter {
 
         // 4. 拼装：旧 frontmatter 原文 + 统一标题行 + 规整正文
         const titleLine = chapterNum ? `# 第${chapterNum}章${title ? ` ${title}` : ''}\n\n` : '';
+        // v4.25 修复：patch（step_template_*/归因字段）改为写前合成。写后靠 vault
+        // 索引 getFile 再 processFrontmatter 的旧方案，刚写入的文件常拿不到 TFile，
+        // patch 与 invariants 整体静默丢失。
+        if (req.frontmatterPatch) {
+            fmRaw = mergeFrontmatterRaw(fmRaw, req.frontmatterPatch);
+        }
         const fmBlock = fmRaw.trim() ? `---\n${fmRaw.trim()}\n---\n\n` : '';
         const content = `${fmBlock}${titleLine}${body}\n`;
 
@@ -288,6 +310,34 @@ export class BodyWriter {
         }
     }
 
+    /**
+     * 覆盖前备份正文（P0-3）。只在「Obsidian 模式 + 旧文件非空 + 内容确有变化」时执行，
+     * 且同一路径 5 分钟内最多一次（协同写作 2s 自动保存会反复进入这里）。
+     * 备份失败只记录，不阻断正文写入——正文写入本身的可用性优先。
+     */
+    private async backupBeforeOverwrite(req: BodyWriteRequest, oldRaw: string): Promise<void> {
+        if (!this.app) return;
+        if (!req.backupBeforeOverwrite) return;
+        const oldBody = stripFrontmatterBlock(oldRaw).body.trim();
+        if (!oldBody) return;
+        const previous = backupStamp.get(req.path) || 0;
+        if (Date.now() - previous < BACKUP_THROTTLE_MS) return;
+        const project = String(req.project || '').trim();
+        const chapterName = req.chapterName || (this.parseChapterNum(req.path) ? `第${this.parseChapterNum(req.path)}章` : '');
+        if (!project || !chapterName) return;
+        backupStamp.set(req.path, Date.now());
+        try {
+            const service = new ChapterVersionService(this.app);
+            await service.saveVersion(project, 'chapter', chapterName, req.path, await this.getFS().read(req.path), {
+                type: 'manual',
+                note: `覆盖前自动备份（${req.writingMode}）`,
+            });
+            log.info(`[BodyWriter] 覆盖前已备份正文版本: ${chapterName}`);
+        } catch (e) {
+            log.warn('[BodyWriter] 覆盖前备份失败（继续写入）:', e);
+        }
+    }
+
     private parseChapterNum(chapterName?: string): number | undefined {
         if (!chapterName) return undefined;
         const m = chapterName.match(CHAPTER_NUM_FROM_NAME);
@@ -306,6 +356,30 @@ export class BodyWriter {
  * 生成正文文件的默认路径（与 v4 目录结构一致）。
  * 供批量/自动写作等没有现成路径的入口使用。
  */
+/**
+ * 把 patch 合并进 frontmatter 原文（纯文本级）：已有键覆盖、新键按行追加。
+ * 值统一 JSON 序列化后去引号——字符串不带引号、数组为内联、布尔/数字原样。
+ */
+export function mergeFrontmatterRaw(fmRaw: string, patch: Record<string, unknown>): string {
+    const lines = String(fmRaw || '').split('\n');
+    const remaining = new Map(Object.entries(patch));
+    const out: string[] = [];
+    for (const line of lines) {
+        const key = line.match(/^([A-Za-z_][\w/]*)\s*:/)?.[1];
+        if (key && remaining.has(key)) {
+            const value = remaining.get(key);
+            remaining.delete(key);
+            out.push(`${key}: ${JSON.stringify(value).replace(/^"|"$/g, '')}`);
+            continue;
+        }
+        out.push(line);
+    }
+    for (const [key, value] of remaining) {
+        out.push(`${key}: ${JSON.stringify(value).replace(/^"|"$/g, '')}`);
+    }
+    return out.join('\n');
+}
+
 export function defaultBodyPath(project: string, volumeNum: number, chapterNum: number, chapterName?: string): string {
     if (volumeNum > 0) return pjBodyFile(project, volumeNum, chapterNum);
     return `${project}/${getChapterFileName(chapterName || `第${chapterNum}章`, CHAPTER_FILE_TYPES.body)}`;

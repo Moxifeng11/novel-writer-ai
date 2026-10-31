@@ -64,6 +64,7 @@ export const SCENE_EXPAND_SYSTEM_PROMPT = `你就是主角本人。现在你需�
 16. dialogue_function: 每段对话必须完成至少一件事——推进剧情/揭露信息/塑造人物/改变关系
 17. cliffhanger: 【本章最后一个场景】必须设置结尾钩子
 18. craft_notes: 可选，本场景必须避免/必须做到的写作细节
+19. dialogue_beats: 本场 6–10 条对话骨架（每行一条：「谁 → 谁｜台词或说话意图（≤20字）｜完成什么信息/情绪动作」）。对话必须承担信息与冲突，不许让人物只寒暄。
 
 【输出格式——严格遵循】
 ## 场景N：场景名
@@ -85,6 +86,10 @@ key_scene: ⭐ 名场面 — 原因（非名场面写"否"）
 dialogue_function: 本段对话完成了什么（推进剧情/揭露XX信息/塑造XX性格/改变XX关系）
 cliffhanger: （仅最后一个场景填写，钩子内容）
 craft_notes: 可选，本场景必须避免/必须做到的写作细节
+dialogue_beats:
+- 角色A → 角色B｜台词或说话意图｜完成什么
+- 角色B → 角色A｜台词或说话意图｜完成什么
+（6–10 条，覆盖本场所有关键信息）
 
 【约束】
 - POV 必须是视角人物；只写他能感知到的信息，不进入其他人物内心
@@ -99,6 +104,7 @@ craft_notes: 可选，本场景必须避免/必须做到的写作细节
 - key_scene 每章至少1个，要选真正有冲击力的时刻，不要随便选
 - dialogue_function 要具体——不要写"推进剧情"，要写"揭露了反派的真实身份"或"让两人关系从敌对转为合作"
 - cliffhanger 必须让人想立刻翻下一页——不能是平淡的收尾
+- dialogue_beats 是正文的台词底稿：每条都要能被正文直接用上，不要写「两人讨论战术」这种概述
 - 第1个场景必须承接【上一章结尾】的时间、地点、人物状态与情绪，不得无过渡跳转
 - 本章时间只许前进或原地，不得倒退；与【时间线】冲突时以时间线为准
 - 场景之间切换必须有过渡（时间推移/空间移动/视角转移），不得凭空换场
@@ -394,6 +400,18 @@ export function validateSceneExpansion(content: string): { valid: boolean; error
         const dialogueFuncRegex = /^\s*\*?\*?dialogue_function\s*[：:]\s*(.+)$/im;
         if (!dialogueFuncRegex.test(sceneContent)) {
             warnings.push(`场景${sceneNum}: 缺少 dialogue_function 字段（建议说明对话功能性）`);
+        }
+
+        // v4.25：对话骨架条数校验——骨架是正文对话密度的唯一数据源，
+        // 少于 4 条时对话占比几乎必然掉下去（实测模型不执行比例指令，只执行清单）
+        const beatsMatch = sceneContent.match(/^\s*\*?\*?dialogue_beats\s*[：:]\s*[\s\S]*?(?=^\s*\*?\*?\w+:|$)/im);
+        const beatLines = beatsMatch
+            ? beatsMatch[0].split('\n').slice(1).filter((line) => /^\s*[-*\d]/.test(line)).length
+            : 0;
+        if (beatLines === 0) {
+            warnings.push(`场景${sceneNum}: 缺少 dialogue_beats 对话骨架（正文对话密度依赖它，请补 6–10 条「谁→谁｜台词要点｜完成什么」）`);
+        } else if (beatLines < 4) {
+            warnings.push(`场景${sceneNum}: dialogue_beats 只有 ${beatLines} 条（建议 6–10 条）`);
         }
 
         if (isLastScene) {

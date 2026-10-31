@@ -246,7 +246,8 @@ describe('StepRunner.executeCurrentStep — sceneExpand 特例', () => {
             expect.any(Object),
             'flash-model',
             undefined,
-            { maxContext: 8000, maxOutput: 2000 },
+            // v4.22：预算对象新增 maxInputTokens（闸门按真实输入预算裁，而不是 maxContext-maxOutput）
+            expect.objectContaining({ maxContext: 8000, maxOutput: 2000, maxInputTokens: expect.any(Number) }),
             undefined,
             expect.objectContaining({ maxTokens: 2000 }),
         );

@@ -2,7 +2,7 @@ import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showError, stripFrontmatter } from '../utils/helpers';
-import { getChapterFileName, getChapterFile, findChapterFile, normalizeChapterFiles, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { getChapterFileName, getChapterFile, findChapterFile, findBodyFileByChapterNum, normalizeChapterFiles, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { TemplateService } from '../services/template-service';
 import { ENGINE_NAMES } from '../engine/engine-registry';
 import { RE_VOLUME_HEADER, RE_RANGE_NUMBERS, RE_OUTLINE_TABLE_ROW } from '../shared/format-constants';
@@ -13,6 +13,7 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('ContinueChaptersModal');
+
 export class ContinueChaptersModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -195,7 +196,7 @@ export class ContinueChaptersModal extends Modal {
                 chapterNumber: chapter.num,
             };
 
-            const existingBody = findChapterFile(this.app.vault.getFiles(), bodyDir, '正文', this.app);
+            const existingBody = findBodyFileByChapterNum(this.app.vault.getFiles(), bodyDir, chapter.num, chapName);
             if (!existingBody) {
                 const bodyContent = await templateService.getBodyTemplate(vars);
                 await this.app.vault.create(bodyPath, bodyContent);
@@ -321,7 +322,7 @@ export class ContinueChaptersModal extends Modal {
                     ? pjBodyDir(project, volN)
                     : `${project}/${SUBDIR_BODY_ROOT}/${volume}`;
                 const bodyPath = volN > 0 ? pjBodyFile(project, volN, chapter.num) : `${bodyDir}/${chapName}_正文.md`;
-                let bodyFile = findChapterFile(this.app.vault.getFiles(), bodyDir, '正文', this.app);
+                let bodyFile = findBodyFileByChapterNum(this.app.vault.getFiles(), bodyDir, chapter.num, chapName);
                 if (!bodyFile) {
                     await mkdirp(this.app, bodyDir);
                     const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);

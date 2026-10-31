@@ -243,6 +243,12 @@ export class FullWriterStoreImpl implements FullWriterStore {
         volume: string;
         chapDir: string;
     }>): void {
+        // v4.25：跨卷快照属于「上一章会话」，切章必须清掉——
+        // 否则先打开卷首章再切普通章节，旧卷快照会残留进下一章的 prevChaptersSummary。
+        const chapterChanged = (partial.project !== undefined && partial.project !== this._project)
+            || (partial.chapterNum !== undefined && partial.chapterNum !== this._chapterNum)
+            || (partial.chapDir !== undefined && partial.chapDir !== this._chapDir);
+        if (chapterChanged) delete this._vars['crossVolumeSnapshot'];
         if (partial.project !== undefined) this._project = partial.project;
         if (partial.chapterName !== undefined) this._chapterName = partial.chapterName;
         if (partial.chapterNum !== undefined) this._chapterNum = partial.chapterNum;

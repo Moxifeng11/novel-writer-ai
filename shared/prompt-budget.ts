@@ -22,6 +22,8 @@ export interface PromptSection {
     priority: number;
     /** 超预算时允许截断保留（默认整段丢弃） */
     shrinkable?: boolean;
+    /** 关键段：绝不整段丢弃（可在段内按段落边界截断） */
+    mustKeep?: boolean;
 }
 
 export interface PromptBudgetInput {
@@ -64,6 +66,49 @@ export function truncateTextToTokens(
         }
     }
     return text.slice(0, lo);
+}
+
+/**
+ * 按 token 预算「保留头 + 尾、缩掉中段」，边界落在段落上（不切句子）。
+ *
+ * 旧实现只保留前缀，正文模板把最终写指令放在段尾，于是最先被吃掉；
+ * 改为头尾双保，并在中段插入可读的省略标记。
+ */
+export function truncateTextToTokensHeadTail(
+    text: string,
+    maxTokens: number,
+    modelId: string = 'default',
+): string {
+    if (!text || maxTokens <= 0) return '';
+    if (estimateTokens(text, modelId) <= maxTokens) return text;
+
+    const paragraphs = text.split(/\n{2,}/).filter((p) => p.length > 0);
+    if (paragraphs.length <= 2) return truncateTextToTokens(text, maxTokens, modelId);
+
+    let headCount = Math.max(1, Math.floor(paragraphs.length * 0.6));
+    let tailCount = 1;
+    const marker = (dropped: number) => `〔此处省略 ${dropped} 段〕`;
+
+    const build = (): string => {
+        const head = paragraphs.slice(0, headCount).join('\n\n');
+        const tail = paragraphs.slice(paragraphs.length - tailCount).join('\n\n');
+        return `${head}\n\n${marker(paragraphs.length - headCount - tailCount)}\n\n${tail}`;
+    };
+
+    let result = build();
+    // 先缩头（保住结尾的写指令/动作），再扩尾
+    while (estimateTokens(result, modelId) > maxTokens && headCount > 1) {
+        headCount -= 1;
+        result = build();
+    }
+    while (estimateTokens(result, modelId) > maxTokens && tailCount < paragraphs.length - headCount) {
+        tailCount += 1;
+        result = build();
+    }
+    if (estimateTokens(result, modelId) > maxTokens) {
+        return truncateTextToTokens(text, maxTokens, modelId);
+    }
+    return result;
 }
 
 /**
@@ -177,8 +222,10 @@ export function assemblePromptWithinBudget(input: PromptBudgetInput): PromptBudg
         const over = total - input.maxInputTokens;
         const sectionTokens = estimateTokens(section.text, modelId);
 
-        if (section.shrinkable && sectionTokens > over) {
-            const next = truncateTextToTokens(section.text, sectionTokens - over, modelId);
+        // 关键段永不整段丢弃：即使 shrinkable 未显式声明，也按头尾截断处理
+        const canShrink = section.shrinkable || section.mustKeep;
+        if (canShrink && sectionTokens > over) {
+            const next = truncateTextToTokensHeadTail(section.text, sectionTokens - over, modelId);
             if (next && next.trim().length > 0 && next.length < section.text.length) {
                 section.text = next;
                 if (!trimmedSections.includes(section.key)) trimmedSections.push(section.key);
@@ -187,6 +234,10 @@ export function assemblePromptWithinBudget(input: PromptBudgetInput): PromptBudg
             }
         }
 
+        if (section.mustKeep) {
+            // 只剩关键段且缩不动：停止裁剪，交给 overBudget 让上层提示
+            break;
+        }
         droppedSections.push(section.key);
         alive.splice(index, 1);
         total = totalTokens(input.systemPrompt, alive, tailText, modelId);
@@ -213,6 +264,11 @@ export interface PromptFitInput {
     extraTail?: string;
     maxContext: number;
     maxOutput: number;
+    /**
+     * 直接给定输入 token 预算（任务预算 maxInput）。给了就优先于
+     * `maxContext - maxOutput - safeBuffer`，避免闸门与真实模型窗口不一致。
+     */
+    maxInputTokens?: number;
     modelId?: string;
     /** 安全余量，默认 `TOKEN_SAFE_BUFFER` */
     safeBuffer?: number;
@@ -235,6 +291,14 @@ export interface PromptFitResult {
     truncated: boolean;
     /** `extraTail` 因超预算被整体丢弃 */
     droppedExtra: boolean;
+    /** 被整段丢弃的段名（分段裁剪时） */
+    droppedSections: string[];
+    /** 被段内截断的段名（分段裁剪时） */
+    trimmedSections: string[];
+    /** 本次实际生效的输入 token 预算 */
+    maxInputTokens: number;
+    /** 关键段缩完仍超预算 */
+    overBudget: boolean;
 }
 
 /** 章节模板里的分段标题：行首的【……】 */
@@ -246,6 +310,20 @@ const CRITICAL_SECTION_KEYWORDS = [
     '角色灵魂层', '同人', '约束',
 ];
 const LOW_SECTION_KEYWORDS = ['场景风格参考', '叙事节奏建议', '关系推进'];
+
+/**
+ * 关键段：绝不整段丢弃（只允许段内按段落边界缩）。
+ * 实测事故：旧实现先丢 P1/P2，再按前缀截 P3，正文的「最终写指令」在段尾先被吃掉，
+ * 世界观/人物/本章规划也会整段消失 → 剧情跳步、人物 OOC。
+ */
+const MUST_KEEP_SECTION_KEYWORDS = [
+    '写作指令', '输出格式', '写作规则', '世界观', '设定库', '人物', '大纲', '信息规划',
+    '情绪弧', '情绪规划', '场景展开', '场景卡', '伏笔', '上一章结尾', '故事上下文', '对话骨架',
+];
+
+function isMustKeepSection(title: string): boolean {
+    return MUST_KEEP_SECTION_KEYWORDS.some((k) => title.includes(k));
+}
 
 function classifySectionPriority(title: string): number {
     if (CRITICAL_SECTION_KEYWORDS.some((k) => title.includes(k))) return 4;
@@ -284,6 +362,8 @@ export function splitPromptIntoSections(prompt: string): PromptSection[] {
                 priority,
                 // 低优先段整段丢弃；高优先段才允许截断保留
                 shrinkable: priority > 1,
+                // 关键段永不整段丢弃（只允许段内头尾缩）
+                mustKeep: section.title !== '__preamble__' && isMustKeepSection(section.title),
             };
         })
         .filter((section) => section.text.length > 0);
@@ -293,12 +373,23 @@ export function splitPromptIntoSections(prompt: string): PromptSection[] {
  * 分段裁剪：丢弃/缩短低优先段，关键段最后才动。
  * 返回 null 表示无法在预算内完成（调用方回退头尾截断）。
  */
+export interface SectionFitDetail {
+    user: string;
+    truncated: boolean;
+    /** 被整段丢弃的段名（去重、去序号） */
+    droppedSections: string[];
+    /** 被段内截断的段名（去重、去序号） */
+    trimmedSections: string[];
+    /** 关键段缩完仍超预算 */
+    overBudget: boolean;
+}
+
 function fitBySectionPriority(
     systemPrompt: string,
     userPrompt: string,
     maxInputTokens: number,
     modelId: string,
-): { user: string; truncated: boolean } | null {
+): SectionFitDetail | null {
     const sections = splitPromptIntoSections(userPrompt);
     if (sections.length < 2) return null;
 
@@ -311,17 +402,19 @@ function fitBySectionPriority(
     });
     if (result.overBudget) return null;
 
-    const omitted = sections
-        .map((s) => s.key)
-        .filter((key) => result.droppedSections.includes(key))
-        .map((key) => key.split('#')[0]);
+    const namesOf = (keys: string[]): string[] => [...new Set(keys.map((key) => key.split("#")[0]))];
+    const omitted = namesOf(result.droppedSections);
+    const trimmed = namesOf(result.trimmedSections);
     let user = result.user;
     if (omitted.length > 0) {
-        user += `\n\n〔预算不足，已省略以下段落：${omitted.join('、')}〕`;
+        user += `\n\n〔预算不足，已省略以下段落：${omitted.join("、")}〕`;
     }
     return {
         user,
-        truncated: result.droppedSections.length > 0 || result.trimmedSections.length > 0,
+        truncated: omitted.length > 0 || trimmed.length > 0,
+        droppedSections: omitted,
+        trimmedSections: trimmed,
+        overBudget: false,
     };
 }
 
@@ -338,19 +431,28 @@ export function fitPromptToContext(input: PromptFitInput): PromptFitResult {
     const safeBuffer = input.safeBuffer ?? TOKEN_SAFE_BUFFER;
     const headRatio = input.headRatio ?? PROMPT_SPLIT_RATIO;
     const tailKeepChars = input.tailKeepChars ?? 2500;
-    const safeThreshold = input.maxContext - input.maxOutput - safeBuffer;
+    // 输入预算：任务层给的 maxInput 优先（按真实模型窗口算），否则回退窗口差
+    const safeThreshold = input.maxInputTokens && input.maxInputTokens > 0
+        ? input.maxInputTokens
+        : input.maxContext - input.maxOutput - safeBuffer;
     const extra = (input.extraTail || '').trim();
     const full = extra ? `${input.userPrompt}\n\n${extra}` : input.userPrompt;
 
     const fullTokens = estimateInputTokens(input.systemPrompt, full, modelId);
     if (fullTokens <= safeThreshold) {
-        return { user: full, estimatedTokens: fullTokens, truncated: false, droppedExtra: false };
+        return {
+            user: full, estimatedTokens: fullTokens, truncated: false, droppedExtra: false,
+            droppedSections: [], trimmedSections: [], maxInputTokens: safeThreshold, overBudget: false,
+        };
     }
 
     // 先让增强层让路：主体本身放得下就不截断主体
     const baseTokens = estimateInputTokens(input.systemPrompt, input.userPrompt, modelId);
     if (extra && baseTokens <= safeThreshold) {
-        return { user: input.userPrompt, estimatedTokens: baseTokens, truncated: false, droppedExtra: true };
+        return {
+            user: input.userPrompt, estimatedTokens: baseTokens, truncated: false, droppedExtra: true,
+            droppedSections: [], trimmedSections: [], maxInputTokens: safeThreshold, overBudget: false,
+        };
     }
 
     // 分段优先级裁剪：不再按字符腰斩中间，避免世界观/设定库/人物/大纲被切掉
@@ -362,6 +464,10 @@ export function fitPromptToContext(input: PromptFitInput): PromptFitResult {
                 estimatedTokens: estimateInputTokens(input.systemPrompt, sectionFit.user, modelId),
                 truncated: sectionFit.truncated,
                 droppedExtra: Boolean(extra),
+                droppedSections: sectionFit.droppedSections,
+                trimmedSections: sectionFit.trimmedSections,
+                maxInputTokens: safeThreshold,
+                overBudget: sectionFit.overBudget,
             };
         }
     }
@@ -379,5 +485,9 @@ export function fitPromptToContext(input: PromptFitInput): PromptFitResult {
         estimatedTokens: estimateInputTokens(input.systemPrompt, user, modelId),
         truncated: true,
         droppedExtra: Boolean(extra),
+        droppedSections: [],
+        trimmedSections: [],
+        maxInputTokens: safeThreshold,
+        overBudget: false,
     };
 }

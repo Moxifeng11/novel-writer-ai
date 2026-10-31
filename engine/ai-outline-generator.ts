@@ -291,8 +291,13 @@ ${await this.plugin.app.vault.read(file)}`);
                     }
                     if (backupOk) {
                         log.info('[小说工坊] 递进式大纲 - Phase -1: 清除旧卷数据');
+                        // v4.27 修复：只删本插件生成的 `*_分卷大纲.md`。
+                        // 旧实现删除该目录**全部** children（含用户自建笔记），
+                        // 而备份只含大纲文件——非大纲文件会被永久删除且无备份。
                         for (const child of volumesDir.children) {
-                            await this.plugin.app.vault.delete(child, true);
+                            if (child instanceof TFile && child.name.endsWith('_分卷大纲.md')) {
+                                await this.plugin.app.vault.delete(child, true);
+                            }
                         }
                     }
                 }

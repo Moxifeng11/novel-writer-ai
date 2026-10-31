@@ -14,6 +14,7 @@ import { projectFactIndexPath, VaultFactStorage } from './fact-index-vault';
 import type { ConfirmedFact, FactCategory } from './fact-index-manager';
 import { VolumeOutlineSummarizer, type VolumeSummary } from './volume-outline-summarizer';
 import { dedupeFacts, rankFacts } from '../shared/memory-rank';
+import { activeContextQuotas } from '../shared/context-budget-policy';
 
 /** 每个类别默认最多注入的事实条数（控制本地小窗口预算） */
 export const LONG_TERM_MEMORY_MAX_PER_CATEGORY = 12;
@@ -34,13 +35,17 @@ const CATEGORY_LABELS: Record<FactCategory, string> = {
  */
 export function formatConfirmedFacts(
     facts: readonly ConfirmedFact[],
-    maxPerCategory: number = LONG_TERM_MEMORY_MAX_PER_CATEGORY,
+    maxPerCategory?: number,
     query = '',
+    options?: { maxChars?: number },
 ): string {
     if (facts.length === 0) return '';
 
     const lines: string[] = ['【长篇记忆：已确认事实（来自早期章节，续写不得与之矛盾）】'];
-    const limit = Math.max(1, maxPerCategory);
+    // v4.22：条数上限同样跟预算走（旧值 12 条/类）
+    const quotas = activeContextQuotas();
+    // 显式传参优先（测试/特殊调用），否则按当前预算配额
+    const limit = Math.max(1, maxPerCategory ?? quotas.longTermMemoryPerCategory);
     // v4.20：同一条事实跨章反复确认会产生多条近似记录，先合并；
     // 再按「与当前章纲的相关度 + 新近度」排序，最后才截前 N 条。
     const deduped = dedupeFacts([...facts]);
@@ -59,8 +64,10 @@ export function formatConfirmedFacts(
 
     if (lines.length <= 1) return '';
     const text = lines.join('\n');
-    return text.length > LONG_TERM_MEMORY_MAX_CHARS
-        ? `${text.slice(0, LONG_TERM_MEMORY_MAX_CHARS)}\n（已截断）`
+    // v4.22：上限随真实输入预算放大（旧值 1500 字是 32K 窗口时代的常量）
+    const maxChars = options?.maxChars ?? Math.max(LONG_TERM_MEMORY_MAX_CHARS, quotas.longTermMemoryChars);
+    return text.length > maxChars
+        ? `${text.slice(0, maxChars)}\n（已截断，可调高单步输入上限以保留全部事实）`
         : text;
 }
 

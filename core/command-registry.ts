@@ -112,6 +112,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', group: CommandGroup.WritingAssistant, description: '规划后续章节内容' },
     { id: CommandIds.AUTO_WRITER, name: '自动写作器〔旧〕', group: CommandGroup.WritingAssistant, description: '自动写作器（旧版）', internalOnly: true },
     { id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', group: CommandGroup.WritingAssistant, description: '审查章节连贯性' },
+    { id: CommandIds.TARGETED_REVISION, name: '定向修订（当前章）', group: CommandGroup.WritingAssistant, description: '按质控报告定向修订当前章正文（闸门+自动备份+复检）' },
     { id: CommandIds.QUALITY_DASHBOARD, name: '📊 质量仪表盘', group: CommandGroup.WritingAssistant, description: '六维质量评分 + 问题定位 + 事实确认' },
     { id: CommandIds.CHAPTER_SETTLEMENT, name: '章节结算', group: CommandGroup.WritingAssistant, description: '章节内容结算与分析' },
     { id: CommandIds.EXPAND_TEXT, name: '📝 段落扩写', group: CommandGroup.WritingAssistant, description: '扩写选中的段落', hasEditorCallback: true },
@@ -280,6 +281,7 @@ export class CommandRegistry {
             CommandIds.WRITE_CHAPTER,
             CommandIds.WRITE_CHAPTER_AUTO,
             CommandIds.REVIEW_CHAPTER,
+            CommandIds.TARGETED_REVISION,
             CommandIds.QUALITY_DASHBOARD,
             CommandIds.BATCH_CREATE,
             CommandIds.CROSS_VOLUME_STATE,
@@ -405,6 +407,7 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.AI_BUILDER, name: 'AI世界元素生成', checkCallback: execGuarded(CommandIds.AI_BUILDER, LONG_ONLY) });
         addCommand({ id: CommandIds.ADD_FANFIC, name: '添加同人设定', checkCallback: execGuarded(CommandIds.ADD_FANFIC, LONG_ONLY) });
         addCommand({ id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', checkCallback: execGuarded(CommandIds.REVIEW_CHAPTER, LONG_ONLY) });
+        addCommand({ id: CommandIds.TARGETED_REVISION, name: '定向修订（当前章）', checkCallback: execGuarded(CommandIds.TARGETED_REVISION, LONG_ONLY) });
         addCommand({ id: CommandIds.QUALITY_DASHBOARD, name: '📊 质量仪表盘', checkCallback: execGuarded(CommandIds.QUALITY_DASHBOARD, LONG_ONLY) });
         addCommand({ id: CommandIds.BATCH_CREATE, name: '批量建章', checkCallback: execGuarded(CommandIds.BATCH_CREATE, LONG_ONLY) });
         addCommand({ id: CommandIds.WORLDVIEW, name: '生成世界观', checkCallback: execGuarded(CommandIds.WORLDVIEW, LONG_ONLY) });

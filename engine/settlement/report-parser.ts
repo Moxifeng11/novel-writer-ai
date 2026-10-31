@@ -138,6 +138,28 @@ export function parseReport(report: string): Instructions {
 }
 
 /**
+ * 从结算指令里挑出「确实要求揭示」的伏笔名。
+ *
+ * v4.24：旧实现对所有 UPDATE_FORESHADOW 都执行「移入已回收」，
+ * 于是 `[[X]] | 计划回收 | 第9章` 这类只改字段的指令也会把伏笔标成已回收（不可回滚）。
+ * 只有「新值表示已揭示/揭示」或显式 forceReveal 才移动。
+ */
+export function resolveForceRevealNames(
+    updates: readonly { name: string; field: string; value: string }[],
+    forceReveal?: readonly string[],
+): Set<string> {
+    const names = new Set<string>();
+    for (const update of updates) {
+        const value = String(update.value || '').trim();
+        if (value.includes('已揭示') || value === '揭示') names.add(update.name);
+    }
+    for (const name of forceReveal || []) {
+        if (name) names.add(name);
+    }
+    return names;
+}
+
+/**
  * 从纯文本中解析 frontmatter 段（不依赖 Obsidian metadataCache）。
  * 用于 settleLight 等需要在文件读取后立即解析的场景。
  */

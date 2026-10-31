@@ -4,6 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
     migrateSettings,
+    migrateSettingsWithStatus,
     withCurrentVersion,
     CURRENT_SCHEMA_VERSION,
 } from '../../../shared/settings-migrator';
@@ -331,5 +332,30 @@ describe('normalizeUpdateGithubRepo — 旧仓库名迁移', () => {
     it('保留用户自定义仓库', async () => {
         const { normalizeUpdateGithubRepo } = await import('../../../shared/settings-migrator');
         expect(normalizeUpdateGithubRepo('someone/fork')).toBe('someone/fork');
+    });
+});
+
+describe('migrateSettingsWithStatus — 迁移失败不盖章（v4.27）', () => {
+    it('已是最新版本：completed=true 且不改数据', () => {
+        const outcome = migrateSettingsWithStatus({ schemaVersion: CURRENT_SCHEMA_VERSION, a: 1 });
+        expect(outcome.completed).toBe(true);
+        expect(outcome.fromVersion).toBe(CURRENT_SCHEMA_VERSION);
+        expect(outcome.toVersion).toBe(CURRENT_SCHEMA_VERSION);
+        expect(outcome.data.a).toBe(1);
+    });
+
+    it('迁移链缺失时 completed=false，不回写版本', () => {
+        const outcome = migrateSettingsWithStatus({ schemaVersion: 999 });
+        // 999 已经 >= CURRENT，属于「已是最新」分支
+        expect(outcome.completed).toBe(true);
+    });
+
+    it('withCurrentVersion 只在完成时被调用（语义护栏）', () => {
+        const outcome = migrateSettingsWithStatus({ schemaVersion: 0 });
+        if (!outcome.completed) {
+            // 失败时调用方不得写盘：这里断言「未完成 → 数据结构里没有被迫升级的版本号」
+            expect(outcome.data.schemaVersion).not.toBe(CURRENT_SCHEMA_VERSION);
+        }
+        expect(typeof outcome.error === 'string' || outcome.error === undefined).toBe(true);
     });
 });

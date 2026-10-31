@@ -561,13 +561,21 @@ export class StyleFingerprintLibrary {
         await this.saveProject();
     }
 
+    /**
+     * 保存当前项目的指纹库。
+     *
+     * P0-5（v4.27）：project 与数据快照在**入队时**捕获，不能在闭包里读
+     * `this.project / this.projectFingerprints`——`setProject()` 会立即清空 Map，
+     * 若保存任务在切项目后才执行，就会把空表写进新项目文件（旧项目改动同时丢失）。
+     */
     private async saveProject(): Promise<void> {
-        if (!this.project) return;
+        const project = this.project;
+        if (!project) return;
+        const snapshot = Array.from(this.projectFingerprints.values())
+            .map(fp => this.toPersistedFingerprint(fp, 'project'));
         await this.projectWriter.enqueueAutoClean(async () => {
-            const data = Array.from(this.projectFingerprints.values())
-                .map(fp => this.toPersistedFingerprint(fp, 'project'));
-            await this.getFS().mkdir(projectFingerprintLibraryDir(this.project!)).catch(() => undefined);
-            await this.getFS().write(projectFingerprintsFile(this.project!), JSON.stringify(data, null, 2));
+            await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
+            await this.getFS().write(projectFingerprintsFile(project), JSON.stringify(snapshot, null, 2));
         }).catch(e => {
             log.warn('[StyleFingerprintLibrary] 项目指纹保存失败:', e);
         });

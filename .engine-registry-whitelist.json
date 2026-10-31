@@ -41,9 +41,9 @@
     },
     {
       "className": "ChapterVersionService",
-      "reason": "ChapterVersionModal 中 ?? new ChapterVersionService(app) 为向后兼容 fallback，正常路径已通过 EngineRegistry.get 获取",
+      "reason": "ChapterVersionModal 中 ?? new ChapterVersionService(app) 为向后兼容 fallback；v4.25 起 step-runner 定向修订采纳前也会构造一次做自动备份（无状态封装 vault 读写），放开通用",
       "category": "backward-compat-fallback",
-      "allowedInstances": 1
+      "allowedInstances": -1
     },
     {
       "className": "KnowledgeVectorStore",

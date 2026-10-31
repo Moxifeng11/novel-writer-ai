@@ -197,14 +197,24 @@ export function extractRelationshipChanges(reportContent: string): Array<{
 
 /**
  * 应用关系变化到关系状态列表
+ *
+ * 幂等（v4.25）：history 以「章名: 原因」为行。重跑同一章结算时，原因相同的变更
+ * 直接跳过——旧实现会二次累加 delta 并堆叠重复历史行，数值随重跑次数漂移。
  */
 export function applyRelationshipChanges(
     relations: CharacterPairRelation[],
     changes: Array<{ charA: string; charB: string; dimension: string; delta: number; reason: string }>,
     chapterName: string,
-): CharacterPairRelation[] {
+): { relations: CharacterPairRelation[]; applied: number; skipped: number } {
+    let applied = 0;
+    let skipped = 0;
     for (const change of changes) {
         const rel = getOrCreateRelation(relations, change.charA, change.charB);
+        const marker = `${chapterName}: ${change.reason}`;
+        if (rel.state.history.includes(marker)) {
+            skipped++;
+            continue;
+        }
 
         switch (change.dimension) {
             case 'trust': rel.state.trust = applyDelta(rel.state.trust, change.delta); break;
@@ -214,8 +224,9 @@ export function applyRelationshipChanges(
             case 'dependence': rel.state.dependence = applyDelta(rel.state.dependence, change.delta); break;
         }
 
+        applied++;
         rel.lastUpdatedChapter = chapterName;
-        rel.state.history += `\n${chapterName}: ${change.reason}`;
+        rel.state.history += `\n${marker}`;
         if (rel.state.history.length > 2000) {
             rel.state.history = rel.state.history.slice(-1500); // 截断旧历史
         }
@@ -223,7 +234,7 @@ export function applyRelationshipChanges(
         // 更新状态文字
         rel.state.status = describeRelationshipStatus(rel.state);
     }
-    return relations;
+    return { relations, applied, skipped };
 }
 
 /**

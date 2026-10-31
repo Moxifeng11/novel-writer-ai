@@ -138,6 +138,20 @@ export const STEP_SKELETON_BYTES = 100;
 
 // ===== 伏笔与信息债阈值 =====
 export const INFO_DEBT_MAX = 15;
+
+/**
+ * 信息债阈值运行时覆盖（v4.25）：设置项 `infoDebtThreshold` 此前零消费方，
+ * 信息债实际用的是这个常量。默认不变；设置非法值时回落内置。
+ */
+let infoDebtMaxRuntime = INFO_DEBT_MAX;
+export function setInfoDebtMax(value: number | undefined): void {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 1 || n > 200) return;
+    infoDebtMaxRuntime = Math.round(n);
+}
+export function getInfoDebtMax(): number {
+    return infoDebtMaxRuntime;
+}
 export const INFO_DEBT_WARN_HIGH = 5;
 export const INFO_DEBT_WARN_CRITICAL = 10;
 export const FORCED_REVEAL_OVER_20 = 4;

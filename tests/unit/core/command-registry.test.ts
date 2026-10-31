@@ -45,6 +45,7 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.WRITE_CHAPTER,
     CommandIds.WRITE_CHAPTER_AUTO,
     CommandIds.REVIEW_CHAPTER,
+    CommandIds.TARGETED_REVISION,
     CommandIds.QUALITY_DASHBOARD,
     CommandIds.BATCH_CREATE,
     CommandIds.WORLDVIEW,

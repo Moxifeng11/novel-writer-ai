@@ -65,7 +65,7 @@ import { EntityStateManager } from './engine/entity-state-manager';
 import { AdaptiveDebounceManager } from './shared/adaptive-debounce-manager';
 import { getDegradationNotifier } from './shared/degradation-notifier';
 import { AntiAIDetector } from './engine/anti-ai-detector';
-import { setBusinessThresholdOverrides } from './shared/thresholds';
+import { setBusinessThresholdOverrides, setInfoDebtMax } from './shared/thresholds';
 import { SerializedWriter } from './shared/serialized-writer';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
@@ -84,6 +84,7 @@ import { SettingsService, getDefaultSettings } from './core/settings-service';
 import { CommandUiExecutor } from './ui/command-ui-executor';
 import type { CommandUiPort } from './shared/command-ui-port';
 import { ChapterVersionService } from './services/chapter-version-service';
+import { loadHumanSamples } from './ui/services/human-sample-loader';
 
 
 /** v3.5.0: 用户自定义 API 提供商，可持久化保存 */
@@ -188,6 +189,36 @@ export interface NovelWriterSettings {
     precisionMode: boolean;
     /** P0 效率: 精修迭代轮数（0-5，默认 3，0=跳过精修；调用点 step-modal-controller） */
     refineRounds?: number;
+    /**
+     * 单步 prompt 输入 token 上限（0 = 按模型真实窗口自动分配）。
+     * 实测事故：闸门曾回退到 32768/8192，正文只拿到 24K token，与模型 1M 窗口差 40 倍。
+     * 现在默认按模型能力走；只有用户想控成本时才在此夹一个硬上限（硬上限最大 200K）。
+     */
+    contextTokenCap?: number;
+    /** 人味约束模式：'exemplar'（样文优先，默认）| 'quota'（旧版数值配额，回退用） */
+    humanVoiceMode?: 'exemplar' | 'quota';
+    /**
+     * 生效的写作规则版本（id 或版本号；空 = 按「项目 → vault → 内置」优先级）。
+     * 支持多版本并存、同一时刻只生效一个，便于做规则消融实验。
+     */
+    activeRulesVersion?: string;
+    /** 正文模板变体：'auto'（有灵魂层用 V2）| 'v1' | 'v2' | 'v3'（节拍先行）| 'v4'（对话主干） */
+    activeBodyTemplate?: 'auto' | 'v1' | 'v2' | 'v3' | 'v4';
+    /** 追加「可数硬指标」（时间锚点/口语/对话段数）；实验 C9 的组成部分，默认关 */
+    countableHumanHints?: boolean;
+    /** 上下文体检自动清空重复段（保留权威版本）；默认开，串章只告警不改 */
+    contextHygieneAutoFix?: boolean;
+    /** 质量控制完成后自动跑一次定向修订（消耗 1 次正文调用）；默认开，闸门拒绝则保留原稿 */
+    autoRevisionAfterQC?: boolean;
+    /** 定向修订采纳后自动复检（AI味/对话占比对照，不耗调用）；默认开 */
+    autoRecheckAfterRevision?: boolean;
+    /** 实验分组标签（写进注入账本与步骤 frontmatter，便于归因） */
+    experimentGroup?: string;
+    /**
+     * 是否去掉「文笔风格」里的规则副本（默认 true）。
+     * 旧实现把规则编号章再注入 user 一次，规则权重翻倍、且绕过版本管理。
+     */
+    dedupeRulesInStyle?: boolean;
     /** P0 效率: 句级候选并行生成（默认 true，本地小模型用户可关闭退回串行） */
     candidateParallel?: boolean;
     /** P0 效率: prompt 哈希缓存开关（默认 true，命中相同五元组时跳过 AI 调用） */
@@ -449,14 +480,6 @@ export interface NovelWriterSettings {
         batchAdoptThreshold: number;
     };
 
-    /** v8.1: 图表可视化相关配置 */
-    charts?: {
-        defaultDensity: 'compact' | 'normal' | 'spacious';
-        enableAnimations: boolean;
-        defaultChartType: string;
-        labelRotationThreshold: number;
-    };
-
     /** v8.2: 协同写作界面布局配置 */
     coWriteLayout?: 'split' | 'stacked';
     /** v8.2: 协同写作编辑器宽度比例（0.4-0.85，默认 0.65） */
@@ -606,6 +629,8 @@ export default class NovelWriterPlugin extends Plugin {
     async onload() {
         log.info(`[小说工坊] 开始加载插件 v${PLUGIN_VERSION}...`);
         this.engineRegistry = new EngineRegistry();
+        // 本地真人样文（仅本机 data 目录）：失败静默，提示词自动退化为弱约束模式
+        void loadHumanSamples(this.app);
         // core 层不依赖 ui：命令的 Modal / 视图执行由本端口注入
         this.commandUiPort = new CommandUiExecutor({
             app: this.app,
@@ -625,6 +650,8 @@ export default class NovelWriterPlugin extends Plugin {
                 wordMinRatio: this.settings.wordMinRatio,
                 promptSplitRatio: this.settings.promptSplitRatio,
             });
+            // v4.25：信息债阈值此前零消费方；接上运行时覆盖（非法值回落内置 15）
+            setInfoDebtMax(this.settings.infoDebtThreshold);
 
             // 恢复中断的拆解状态（插件重载时，磁盘上仍为 processing 的书籍需重置为 interrupted）
             if (this.knowledgeBaseManager) {
@@ -839,21 +866,35 @@ export default class NovelWriterPlugin extends Plugin {
         this._commandRegistry = this.engineRegistry.get<CommandRegistry>(ENGINE_NAMES.COMMAND_REGISTRY);
     }
 
+    /**
+     * 启动时检查生效的写作规则版本。
+     * v4.23：从「只比版本号」升级为「版本号 + 内容哈希」——实测事故正是
+     * 版本号同为 3.6.0、正文却是旧版（一句一段），旧检查一路通过、无人发现。
+     */
     private async _checkRulesVersion(): Promise<void> {
         try {
             const rulesService = RulesService.getInstance(this.app);
-            const { current, expected } = await rulesService.checkRulesVersion();
+            rulesService.setActiveVersion(this.settings.activeRulesVersion);
+            const info = await rulesService.checkRulesVersion();
             const isPresent = await rulesService.isRulesFilePresent();
 
             if (!isPresent) {
                 new Notice('⚠️ 未检测到写作规则文件，将使用内置默认规则', 5000);
                 log.warn('[小说工坊] 写作规则文件不存在，使用内置默认规则');
-            } else if (current !== expected && current !== 'unknown') {
-                new Notice(`⚠️ 写作规则版本不匹配（当前: v${current}, 期望: v${expected}）`, 5000);
-                log.warn(`[小说工坊] 写作规则版本不匹配: 当前 v${current}, 期望 v${expected}`);
-            } else if (current === 'unknown') {
-                new Notice('⚠️ 无法检测写作规则版本', 5000);
-                log.warn('[小说工坊] 无法检测写作规则版本');
+                return;
+            }
+            if (info.warnings.length > 0) {
+                new Notice(`⚠️ 写作规则版本异常：${info.warnings[0]}`, 9000);
+                log.warn('[小说工坊] 写作规则版本异常:', info.warnings.join('；'));
+                return;
+            }
+            if (info.current !== info.expected && info.current !== 'unknown') {
+                new Notice(
+                    `⚠️ 写作规则版本不匹配（当前 ${info.current}，内置 ${info.expected}）。`
+                    + '可在设置里切换生效版本，或核对文件内容。',
+                    7000,
+                );
+                log.warn(`[小说工坊] 写作规则版本不匹配: 当前 ${info.current}，内置 ${info.expected}`);
             }
         } catch (e) {
             log.warn('[小说工坊] 规则版本检查失败:', e);

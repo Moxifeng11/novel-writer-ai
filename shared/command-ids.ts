@@ -36,6 +36,7 @@ export const CommandIds = {
     CONTINUE_CHAPTERS: 'novel-writer-continue-chapters',
     AUTO_WRITER: 'novel-writer-auto-writer',
     REVIEW_CHAPTER: 'novel-writer-review-chapter',
+    TARGETED_REVISION: 'novel-writer-targeted-revision',
     QUALITY_DASHBOARD: 'novel-writer-quality-dashboard',
     CHAPTER_SETTLEMENT: 'novel-writer-chapter-settlement',
     EXPAND_TEXT: 'novel-writer-expand-text',

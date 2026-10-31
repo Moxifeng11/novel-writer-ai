@@ -12,6 +12,7 @@ import { generateSceneExpansion, validateSceneExpansion } from './scene-expander
 import { NOTICE_CRITICAL } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
 import type { StepRunCtx } from './step-definitions';
+import { ensureProtagonistMemoryShards } from './memory/memory-shard-writer';
 
 const log = createLogger('StepSpecials');
 
@@ -72,6 +73,18 @@ export async function runCharacterSoulStep(
             }
         }
         host.showSuccess('🫀 角色灵魂提取完成');
+        // v4.25：记忆碎片自动生成（fire-and-forget）。读侧/提示词早已存在但无调用方，
+        // ${triggeredMemories} 一直为空；失败只记日志，不阻塞章节流程。
+        void ensureProtagonistMemoryShards(host.app, {
+            project: ctx.project,
+            characterName: ctx.vars.protagonistName || '',
+            soulDetail: ctx.vars.protagonistSoulDetail || '',
+            relationships: ctx.vars.allChars || '',
+            callAI: async (system, user) => {
+                const res = await host.aiEngine.callAI(system, user, undefined, 0.7, 4096);
+                return String(res?.content || '');
+            },
+        }).catch((e) => log.warn('[StepSpecials] 记忆碎片自动生成失败:', e));
     } else {
         log.warn('[StepRunner] characterSoul 文件写入失败，stepCompleted 未标记');
         host.showError('❌ 角色灵魂提取保存失败，请重试');

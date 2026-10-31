@@ -212,42 +212,63 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [ 
     },
 ];
 
-export function migrateSettings(rawData: Record<string, unknown>): Record<string, unknown> {
+export interface MigrationOutcome {
+    data: Record<string, unknown>;
+    /** 是否已完整升级到 CURRENT_SCHEMA_VERSION */
+    completed: boolean;
+    /** 迁移起点版本 */
+    fromVersion: number;
+    /** 实际到达的版本 */
+    toVersion: number;
+    /** 失败原因（completed=false 时非空） */
+    error?: string;
+}
+
+/**
+ * 带状态的迁移（v4.27）：调用方据此决定是否回写 settings。
+ *
+ * 旧实现里迁移失败只 `break`，而 `saveSettings()` 会无条件写入
+ * `schemaVersion: CURRENT`——失败被「盖章完成」，以后不再重试。
+ */
+export function migrateSettingsWithStatus(rawData: Record<string, unknown>): MigrationOutcome {
     let data = { ...rawData };
-    let currentVersion = typeof data.schemaVersion === 'number' ? data.schemaVersion : 0;
+    const fromVersion = typeof data.schemaVersion === 'number' ? data.schemaVersion : 0;
+    let currentVersion = fromVersion;
 
     if (currentVersion >= CURRENT_SCHEMA_VERSION) {
-        return data;
+        return { data, completed: true, fromVersion, toVersion: currentVersion };
     }
 
+    let error: string | undefined;
     // 链式迁移：从当前版本一路升级到最新版本
     while (currentVersion < CURRENT_SCHEMA_VERSION) {
         const migration = migrations.find(m => m.from === currentVersion);
         if (!migration) {
-            log.warn(
-                `[SettingsMigrator] 警告：找不到从 v${currentVersion} 开始的迁移，停止升级`
-            );
+            error = `找不到从 v${currentVersion} 开始的迁移`;
+            log.warn(`[SettingsMigrator] 警告：${error}，停止升级`);
             break;
         }
         try {
             data = migration.migrate(data);
             currentVersion = migration.to;
         } catch (e) {
-            log.warn(
-                `[SettingsMigrator] 迁移 v${migration.from}→v${migration.to} 失败:`,
-                e instanceof Error ? e.message : String(e)
-            );
+            error = `迁移 v${migration.from}→v${migration.to} 失败：${e instanceof Error ? e.message : String(e)}`;
+            log.warn('[SettingsMigrator]', error);
             break;
         }
     }
 
-    if ((data as VersionedData).schemaVersion !== CURRENT_SCHEMA_VERSION) {
+    const completed = currentVersion >= CURRENT_SCHEMA_VERSION;
+    if (!completed) {
         log.warn(
-            `[SettingsMigrator] 警告：数据版本 ${(data as VersionedData).schemaVersion} 与最新版本 ${CURRENT_SCHEMA_VERSION} 不一致`
+            `[SettingsMigrator] 警告：数据版本 ${currentVersion} 未升级到 ${CURRENT_SCHEMA_VERSION}（不会回写 schemaVersion）`
         );
     }
+    return { data, completed, fromVersion, toVersion: currentVersion, error };
+}
 
-    return data;
+export function migrateSettings(rawData: Record<string, unknown>): Record<string, unknown> {
+    return migrateSettingsWithStatus(rawData).data;
 }
 
 export function withCurrentVersion(data: Record<string, unknown>): Record<string, unknown> {

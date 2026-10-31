@@ -118,7 +118,8 @@ describe('applyStoryContextBus — 一键生成适配', () => {
             allChars: '旧人物',
             allLocs: '旧地点',
             timelineEvents: '旧时间线',
-            unrevealedForeshadow: '旧伏笔',
+            // v4.24：伏笔列表已有值（模板链路按章过滤的结果）时总线不再覆盖；留空才由节点版补
+            unrevealedForeshadow: '',
             emotionPlan: '旧情绪',
             sceneCardDigest: '旧场景卡',
         };

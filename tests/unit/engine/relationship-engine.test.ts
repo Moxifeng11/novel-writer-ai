@@ -54,7 +54,7 @@ RELATION: 墨渊|守御者联盟|敌对|resentment +5`;
 
 describe('applyRelationshipChanges', () => {
     it('创建新关系并应用变化（初始值50）', () => {
-        const relations = applyRelationshipChanges([], [{
+        const { relations } = applyRelationshipChanges([], [{
             charA: 'A', charB: 'B', dimension: 'trust', delta: 10, reason: '初次相遇'
         }], '第1章');
         expect(relations.length).toBe(1);
@@ -63,24 +63,24 @@ describe('applyRelationshipChanges', () => {
     });
 
     it('累加同一维度的变化', () => {
-        let relations = applyRelationshipChanges([], [{
+        let { relations } = applyRelationshipChanges([], [{
             charA: 'A', charB: 'B', dimension: 'trust', delta: 10, reason: 'first'
         }], '第1章');
         relations = applyRelationshipChanges(relations, [{
             charA: 'A', charB: 'B', dimension: 'trust', delta: 20, reason: 'second'
-        }], '第2章');
+        }], '第2章').relations;
         expect(relations[0].state.trust).toBe(80);
     });
 
     it('限制在 0-100 范围内', () => {
-        const relations = applyRelationshipChanges([], [{
+        const { relations } = applyRelationshipChanges([], [{
             charA: 'A', charB: 'B', dimension: 'trust', delta: 100, reason: 'max'
         }], '第1章');
         expect(relations[0].state.trust).toBe(100);
     });
 
     it('支持负向变化', () => {
-        const relations = applyRelationshipChanges([], [{
+        const { relations } = applyRelationshipChanges([], [{
             charA: 'A', charB: 'B', dimension: 'trust', delta: -60, reason: 'betrayal'
         }], '第1章');
         expect(relations[0].state.trust).toBe(0);
@@ -89,7 +89,7 @@ describe('applyRelationshipChanges', () => {
 
 describe('formatRelationshipFile', () => {
     it('格式化关系文件为 Markdown 格式', () => {
-        const relations = applyRelationshipChanges([], [{
+        const { relations } = applyRelationshipChanges([], [{
             charA: '林砚', charB: '苏晴', dimension: 'trust', delta: 20, reason: '信任: 共同经历冒险'
         }], '第3章');
         const content = formatRelationshipFile(relations, '第3章');

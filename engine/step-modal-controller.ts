@@ -49,6 +49,15 @@ export class StepModalController {
         this.deps = deps;
     }
 
+    /** 单次调用任务工厂：把人味约束模式（样文优先/旧配额）从设置透传进去 */
+    private createTasks(): LongNovelSingleCallTasks {
+        const plugin = this.deps.getPlugin();
+        const mode = (): 'exemplar' | 'quota' => (
+            plugin?.settings?.humanVoiceMode === 'quota' ? 'quota' : 'exemplar'
+        );
+        return new LongNovelSingleCallTasks(this.deps.getAIEngine(), mode);
+    }
+
     /** 获取 FileSystemPort 实例（懒加载，优先使用 deps.fs） */
     private getFS(): FileSystemPort {
         if (this.deps.fs) return this.deps.fs;
@@ -214,7 +223,7 @@ export class StepModalController {
             detectBtn.disabled = true;
             detectBtn.setText('⏳ 单次消痕中...');
             try {
-                const tasks = new LongNovelSingleCallTasks(this.deps.getAIEngine());
+                const tasks = this.createTasks();
                 const writingRules = await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules();
                 const result = await tasks.deai(bodyText, { writingRules });
 
@@ -430,25 +439,89 @@ export class StepModalController {
 
         execBtn.onclick = async () => {
             execBtn.disabled = true;
-            execBtn.setText('⏳ 单次精修中...');
+            const maxRounds = Math.max(0, Math.min(5, this.deps.getPlugin()?.settings?.refineRounds ?? 3));
+            execBtn.setText(maxRounds > 1 ? `⏳ 迭代精修中（最多 ${maxRounds} 轮）...` : '⏳ 单次精修中...');
             try {
-                const tasks = new LongNovelSingleCallTasks(this.deps.getAIEngine());
-                const result = await tasks.refine(bodyText, contextPrompt, {
-                    chapNum,
+                const tasks = this.createTasks();
+                // v4.22 真迭代：多轮改写 + 每轮打分（AI 味/人味相似度/保真），只接受更优版本。
+                // 旧实现只调一次，refineRounds 是死配置，且没有任何「变好了」的判定。
+                const { createHumannessScorer } = await import('../ui/services/humanness-scorer');
+                const { runIterativeRefine, formatRefineRounds } = await import('../shared/iterative-refine');
+                const scorer = await createHumannessScorer(this.deps.getPlugin().app);
+                const roundLines: string[] = [];
+                const iterative = await runIterativeRefine({
+                    original: bodyText,
+                    rounds: Math.max(1, maxRounds),
+                    refine: async (current) => {
+                        const r = await tasks.refine(current, contextPrompt, { chapNum });
+                        const content = r.ok ? (r.value?.polished || r.raw || '') : '';
+                        return { content, networkCalls: r.networkCalls || 1 };
+                    },
+                    score: (candidate, original) => scorer.score(candidate, original),
+                    onRound: (record) => {
+                        const line = `R${record.round}: 综合 ${(record.composite * 100).toFixed(1)}`
+                            + `（AI味 ${record.antiAI} · 人味 ${record.humanSim.toFixed(2)}）`
+                            + (record.accepted ? ' ✅接受' : ` ⛔${record.rejectedReason}`);
+                        roundLines.push(line);
+                        summaryEl.empty();
+                        summaryEl.createEl('p', { text: `迭代进度（${roundLines.length}/${maxRounds}）${scorer.hasBaseline() ? '' : '（无本地样文基线，仅按 AI 味+保真评分）'}` });
+                        const list = summaryEl.createEl('ul', { cls: 'novel-writer-fw-refine-diff-list' });
+                        for (const item of roundLines) list.createEl('li', { text: item });
+                    },
                 });
-                summaryEl.empty();
-                if (!result.ok) {
-                    summaryEl.createEl('p', { text: `单次精修失败：${result.error}` });
-                    if (result.violations.length > 0) {
-                        const ul = summaryEl.createEl('ul');
-                        for (const v of result.violations) ul.createEl('li', { text: `${v.ruleId}: ${v.message}` });
+
+                // 对话补修（实测驱动的定向迭代）：模型不会自己数「对话占比」，
+                // 六组真实对照（original/v1-quota/v2-exemplar/v3-weak/v4-dialogue/v5-scene）
+                // 的对话占比都停在 9%–17%（真人长篇约 26%），而写的比例要求被无视。
+                // 这里改成「先测占比 → 只把 3 处叙述转成对话」的定向一轮，最多 1 次调用。
+                let best = iterative.best;
+                const beforeDialogue = scorer.dialogueRatio(best);
+                if (beforeDialogue < 0.25 && maxRounds > 0) {
+                    const repair = await tasks.refine(best, contextPrompt, {
+                        chapNum,
+                        extraInstruction: '只做一件事：把本章里「叙述者在解释」的段落改成人物对话——谁问、谁答、谁打断、谁不接话，'
+                            + '目标是把对话占比提到三成以上（人工写作的常态）。叙述只保留动作与位置；情节、人物、字数不变。',
+                    });
+                    const repaired = repair.ok ? (repair.value?.polished || '').trim() : '';
+                    if (repaired) {
+                        const afterScore = scorer.score(repaired, bodyText);
+                        const afterDialogue = scorer.dialogueRatio(repaired);
+                        const accepted = afterScore.fidelityOk && afterDialogue > beforeDialogue;
+                        roundLines.push(
+                            `对话补修：${(beforeDialogue * 100).toFixed(1)}% → ${(afterDialogue * 100).toFixed(1)}%`
+                            + (accepted ? ' ✅接受' : ' ⛔未采纳'),
+                        );
+                        if (accepted) best = repaired;
                     }
+                }
+
+                // 统一成旧代码期望的 result 形状
+                const result = {
+                    ok: true,
+                    value: {
+                        issues: roundLines,
+                        polished: best,
+                    },
+                    raw: best,
+                    networkCalls: iterative.totalNetworkCalls,
+                    durationMs: 0,
+                    violations: [] as Array<{ ruleId: string; message: string }>,
+                };
+                summaryEl.empty();
+                // 迭代调度本身不会「失败」（改写抛错时保留 best 并标记 stoppedReason），
+                // 这里只需处理「一轮都没产出内容」的情况。
+                if (!result.value.polished.trim()) {
+                    summaryEl.createEl('p', { text: `迭代精修未产出可用正文（停止原因：${iterative.stoppedReason}）` });
                     execBtn.disabled = false;
-                    execBtn.setText('🔁 重试单次精修');
+                    execBtn.setText('🔁 重试迭代精修');
                     return;
                 }
                 const value = result.value;
-                summaryEl.createEl('p', { text: `单次精修完成（网络调用 ${result.networkCalls} 次，耗时 ${result.durationMs}ms）` });
+                summaryEl.createEl('p', {
+                    text: `迭代精修完成（${iterative.rounds.length} 轮 / 网络调用 ${iterative.totalNetworkCalls} 次；`
+                        + `结果=${iterative.improved ? '接受改进版' : '保留原稿'}；停止=${iterative.stoppedReason}）`,
+                });
+                summaryEl.createEl('p', { text: formatRefineRounds(iterative.rounds) });
                 if (value?.issues?.length) {
                     const ul = summaryEl.createEl('ul', { cls: 'novel-writer-fw-refine-diff-list' });
                     for (const issue of value.issues) ul.createEl('li', { text: issue });

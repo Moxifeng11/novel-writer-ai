@@ -3,7 +3,7 @@ import NovelWriterPlugin from '../main';
 import { getNextRowNum, hasTableSeparator, appendAfterSeparator, moveForeshadowToRevealed, mkdirp, showSuccess, showError } from '../utils/helpers';
 import { detectProjects } from '../engine/context-manager';
 import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
-import { INFO_DEBT_MAX, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_REVEAL_OVER_10, FORCED_REVEAL_OVER_5, FORCED_REVEAL_WINDOW_FORWARD, FORCED_REVEAL_WINDOW_BACKWARD, FORESHADOW_APPROACHING_CHAPTERS, NOTICE_ERROR, NOTICE_SUCCESS } from '../shared/thresholds';
+import { getInfoDebtMax, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_REVEAL_OVER_10, FORCED_REVEAL_OVER_5, FORCED_REVEAL_WINDOW_FORWARD, FORCED_REVEAL_WINDOW_BACKWARD, FORESHADOW_APPROACHING_CHAPTERS, NOTICE_ERROR, NOTICE_SUCCESS } from '../shared/thresholds';
 import { pjForeshadowDB, pjForeshadowTracker, pjTimelineDir, pjInfoDebtBoard, pjControlDir, pjCharsDir, isInCharsDir } from '../shared/paths';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
@@ -131,7 +131,7 @@ export class ForeshadowManager {
             }
         }
 
-        const debtRatio = Math.min(INFO_DEBT_MAX, unrevealed);
+        const debtRatio = Math.min(getInfoDebtMax(), unrevealed);
 
         const debtContent = `---
 tags: [看板]

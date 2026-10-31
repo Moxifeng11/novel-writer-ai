@@ -23,7 +23,18 @@ import {
     BODY_GENERATION_USER_TEMPLATE_V2,
     BODY_GENERATION_V2_DESC,
 } from './body-v2-prompts';
+import {
+    BODY_GENERATION_SYSTEM_PROMPT_V3,
+    BODY_GENERATION_USER_TEMPLATE_V3,
+    BODY_GENERATION_V3_DESC,
+} from './body-v3-prompts';
+import {
+    BODY_GENERATION_SYSTEM_PROMPT_V4,
+    BODY_GENERATION_USER_TEMPLATE_V4,
+    BODY_GENERATION_V4_DESC,
+} from './body-v4-prompts';
 import { MEMORY_GENERATION_PROMPTS } from './memory-prompts';
+import { COUNTABLE_HUMAN_HINTS } from './human-countable-hints';
 import {
     CHARACTER_SOUL_PROMPTS,
     EMOTION_PLAN_PROMPTS,
@@ -59,6 +70,16 @@ export function getStepTemplate(key: string): PromptTemplate | null {
             systemPrompt: BODY_GENERATION_SYSTEM_PROMPT_V2,
             userPrompt: BODY_GENERATION_USER_TEMPLATE_V2,
         },
+        bodyGenerationV3: {
+            description: BODY_GENERATION_V3_DESC,
+            systemPrompt: BODY_GENERATION_SYSTEM_PROMPT_V3,
+            userPrompt: BODY_GENERATION_USER_TEMPLATE_V3,
+        },
+        bodyGenerationV4: {
+            description: BODY_GENERATION_V4_DESC,
+            systemPrompt: BODY_GENERATION_SYSTEM_PROMPT_V4,
+            userPrompt: BODY_GENERATION_USER_TEMPLATE_V4,
+        },
         // @deprecated 旧版步骤（selfCheck / fix / finalFix / continuityCheck）已合并入
         // qualityControl，以下四条仅为打开旧项目时的只读兼容路由，新流水线不再调用。
         selfCheck: SELF_CHECK_PROMPTS,
@@ -80,14 +101,30 @@ export function getStepTemplate(key: string): PromptTemplate | null {
 export function getStepTemplateAuto(key: string, vars?: Record<string, string>): PromptTemplate | null {
     let template: PromptTemplate | null = null;
     if (key === 'bodyGeneration' && vars) {
-        const soulReady = vars.characterSoulReady === '1'
-            || (vars.protagonistSoulDetail || '').trim().length > 0;
-        if (soulReady) {
-            template = getStepTemplate('bodyGenerationV2');
+        // 实验/设置可强制正文变体（v1/v2/v3/v4）；留空按灵魂层自动路由。
+        const forced = (vars._bodyVariant || '').trim().toLowerCase();
+        const forcedKey = forced === 'v1' ? 'bodyGeneration'
+            : forced === 'v2' ? 'bodyGenerationV2'
+            : forced === 'v3' ? 'bodyGenerationV3'
+            : forced === 'v4' ? 'bodyGenerationV4'
+            : '';
+        if (forcedKey) {
+            template = getStepTemplate(forcedKey);
+        } else {
+            const soulReady = vars.characterSoulReady === '1'
+                || (vars.protagonistSoulDetail || '').trim().length > 0;
+            if (soulReady) {
+                template = getStepTemplate('bodyGenerationV2');
+            }
         }
     }
     if (!template) template = getStepTemplate(key);
     if (!template) return null;
+
+    // 可数硬指标（实验 C9 的组成部分，默认关闭）：只在正文步骤追加，且放在 system 末尾。
+    if (key === 'bodyGeneration' && vars?._countableHints === '1') {
+        template = { ...template, systemPrompt: `${template.systemPrompt}\n\n${COUNTABLE_HUMAN_HINTS}` };
+    }
 
     // 短篇/剧本：在既有模板末尾追加模式硬约束；长篇没有 creationModePrompt，保持原样。
     const modeBlock = (vars?.creationModePrompt || '').trim();

@@ -77,10 +77,11 @@ export function parseLinkValue(value: unknown): string[] {
     // 先抽出所有 [[...]]（含别名），保留书写顺序
     const bracketed = [...text.matchAll(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g)].map((m) => m[1].trim());
     if (bracketed.length > 0) return bracketed;
-    // 无链接：按分隔符拆纯文本
+    // 无链接：按分隔符拆纯文本；「名称（说明）」只留名称——
+    // 实测结算把「获得锁脉环（扣于左腕）」整体包进 [[ ]]，生成破损链接
     return text
         .split(/[、，,；;]+/)
-        .map((part) => part.trim())
+        .map((part) => part.trim().replace(/[（(][^（)）]*[）)]\s*$/, '').trim())
         .filter((part) => part.length > 0 && part.length <= 60);
 }
 

@@ -15,6 +15,7 @@ import { App } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { BodyWriter } from './body-writer';
 import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
+import { findBodyFileByChapterNum } from './chapter-utils';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { validateStepResult } from './step-validator';
@@ -42,6 +43,13 @@ export interface StepSaveMeta {
     truncated?: boolean;
     usage?: { prompt: number; completion: number; total: number };
     maxTokens?: number;
+    /** v4.23 归因：模板/规则/人味版本与实验分组（写入步骤 frontmatter） */
+    templateId?: string;
+    templateVersion?: string;
+    rulesVersion?: string;
+    rulesHash?: string;
+    voiceMode?: string;
+    experimentGroup?: string;
 }
 
 /**
@@ -135,9 +143,23 @@ export class StepResultSaver {
         const v4Project = v4Match ? v4Match[1] : '';
         const v4VolN = v4Match ? parseInt(v4Match[2], 10) : 0;
         const v4ChapN = v4Match ? parseInt(v4Match[3], 10) : 0;
-        const bodyDefaultPath = v4Match
-            ? pjBodyFile(v4Project, v4VolN, v4ChapN)
-            : `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.body)}`;
+        // v4.25：正文目标优先用「已存在的章文件」（第N章_章名_正文.md 可能带章名）。
+        // 旧实现固定写 pjBodyFile 的无章名路径，会把新稿写进另一个文件、原章还是骨架
+        //（实测：同一章出现 第1章_正文.md 与 第1章_九脉逆行_正文.md 两个文件）。
+        const existingBodyFile = v4Match
+            ? findBodyFileByChapterNum(
+                this.getVaultMeta().getFiles(),
+                `${pjBodyDir(v4Project, v4VolN)}/`,
+                v4ChapN,
+                chapterName,
+            )
+            : undefined;
+
+        const bodyDefaultPath = existingBodyFile
+            ? existingBodyFile.path
+            : v4Match
+                ? pjBodyFile(v4Project, v4VolN, v4ChapN)
+                : `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.body)}`;
 
         const fileMap: Record<string, string> = {
             'infoPlan': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.infoPlan)}`,
@@ -223,6 +245,7 @@ export class StepResultSaver {
                 };
                 if (meta?.usage) patch['step_usage'] = meta.usage;
                 if (meta?.maxTokens) patch['step_max_tokens'] = meta.maxTokens;
+                this.appendVersionFields(patch, stepKey, meta);
                 if (entityNames) {
                     const inBody = (n: string): boolean => content.includes(n);
                     patch['涉及人物'] = entityNames.chars.filter(inBody);
@@ -291,6 +314,7 @@ export class StepResultSaver {
                             if (meta?.usage) fm['step_usage'] = meta.usage;
                             else delete fm['step_usage'];
                             if (meta?.maxTokens) fm['step_max_tokens'] = meta.maxTokens;
+                            this.appendVersionFields(fm as Record<string, unknown>, stepKey, meta);
                             fm['step_timestamp'] = new Date().toISOString();
                             this.setStepTags(fm, stepKey, chapName);
                         });
@@ -319,13 +343,17 @@ export class StepResultSaver {
             let targetPath: string;
             let chapterNum: number | undefined;
             if (v4Match) {
-                // v4：正文路径必须由「项目 + 卷号 + 章号」精确推出。
-                // 旧实现把「卷目录」交给 findChapterFile，而它的标准文件名匹配需要的是章名，
-                // 于是必然落入 frontmatter 回退分支，返回该卷里**第一个**正文文件——
-                // 第 3 章的修正稿会被写进第 1 章，整章原稿被静默覆盖。
+                // v4：正文路径优先命中「带章名」的现有章文件（v4.25，同 saveStepResult）。
+                // 旧实现固定用 pjBodyFile 的无章名路径，修正稿会写进另一个文件。
                 const volNum = parseInt(v4Match[2], 10);
                 chapterNum = parseInt(v4Match[3], 10);
-                targetPath = pjBodyFile(project, volNum, chapterNum);
+                const existing = findBodyFileByChapterNum(
+                    this.getVaultMeta().getFiles(),
+                    `${pjBodyDir(project, volNum)}/`,
+                    chapterNum,
+                    chapterName,
+                );
+                targetPath = existing?.path ?? pjBodyFile(project, volNum, chapterNum);
             } else {
                 const foundBody = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
                 if (!foundBody) {
@@ -420,6 +448,27 @@ export class StepResultSaver {
         if (!m) return undefined;
         const n = parseInt(m[1], 10);
         return Number.isFinite(n) ? n : undefined;
+    }
+
+    /**
+     * 版本归因字段（v4.23）：步骤结果里记录「用哪套模板/哪版规则/哪种人味模式/哪个实验组」。
+     * 缺省值不写，避免把老数据刷成一片空字段。
+     */
+    private appendVersionFields(fm: Record<string, unknown>, stepKey: string, meta?: StepSaveMeta): void {
+        const fields: Array<[string, string | undefined]> = [
+            ['step_template_id', meta?.templateId],
+            ['step_template_version', meta?.templateVersion],
+            ['step_rules_version', meta?.rulesVersion],
+            ['step_rules_hash', meta?.rulesHash],
+            ['step_voice_mode', meta?.voiceMode],
+            ['step_experiment_group', meta?.experimentGroup],
+        ];
+        for (const [key, value] of fields) {
+            const text = String(value || '').trim();
+            if (text) fm[key] = text;
+            else delete fm[key];
+        }
+        void stepKey;
     }
 
     private setStepTags(fm: Record<string, unknown>, stepKey: string, chapterName: string): void {

@@ -65,6 +65,8 @@ export interface ChapterOrchestratorDeps {
     settle: () => Promise<void>;
     showNotice: (message: string, duration?: number) => void;
     showError: (message: string, duration?: number) => void;
+    /** 可选；缺省回落 showError（v4.25 修订闭环新增的软警告出口） */
+    showWarning?: (message: string, duration?: number) => void;
     showSuccess: (message: string, duration?: number) => void;
     onProgress?: (progress: ChapterRunProgress) => void;
 }
@@ -355,7 +357,15 @@ export class ChapterOrchestrator {
         await this.deps.stepRunner.executeStepsSequential([stepKey], ctx);
         await this.deps.render(tabContent);
         if (!this.deps.state.stepCompleted.has(stepKey)) {
-            throw new Error(`${stepKey} 未达到完成标准`);
+            // v4.25 流程缺陷修复：只有「必须步骤」（正文）不完整才中止一键成文。
+            // 实测 QC 少一个小节就把整条链打断，正文/结算全不落盘——
+            // 可选步骤（质量控制/分析报告）保存 partial 内容后应继续，让结算与修订闭环照常走。
+            const stepDef = ALL_FULL_STEPS.find(s => s.key === stepKey);
+            if (stepDef?.required) {
+                throw new Error(`${stepKey} 未达到完成标准`);
+            }
+            const warn = this.deps.showWarning ?? this.deps.showError;
+            warn(`⚠️ ${stepKey} 已保存但未达完成标准（部分小节缺失），已继续后续步骤；可单独重跑本步补齐`, 8000);
         }
     }
 

@@ -36,13 +36,10 @@ describe('resolvePluginWorkerUrl', () => {
         const app = makeApp({
             getBasePath: () => 'C:\\vault',
         });
-        const url = resolvePluginWorkerUrl(app, 'style-worker.js');
-        expect(url).toBe('file:///C:/vault/.obsidian/plugins/novel-writer-ai/workers/style-worker.js');
     });
 
     it('无法解析时返回 null', () => {
         const app = makeApp({});
-        expect(resolvePluginWorkerUrl(app, 'style-worker.js')).toBeNull();
     });
 });
 

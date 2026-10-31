@@ -71,6 +71,7 @@ function makeHarness() {
     };
     return {
         host,
+        hostAdapter: adapter,
         controller: new BodySaveController(adapter),
         updateControlState,
         onSaved,
@@ -246,5 +247,53 @@ describe('BodySaveController — 切章前冲刷排队保存', () => {
         vi.spyOn(BodyWriter.prototype, 'write').mockRejectedValue(new Error('EACCES'));
 
         await expect(controller.flushBeforeChapterSwitch()).resolves.toBe(false);
+    });
+});
+
+describe('BodySaveController — 外部写入冲突保护（P0-6）', () => {
+    function makeDiskHarness(initial: string) {
+        const h = makeHarness();
+        let disk = initial;
+        const app = {
+            vault: {
+                adapter: {
+                    exists: async () => true,
+                    read: async () => disk,
+                },
+            },
+        } as never;
+        const controller = new BodySaveController({ ...h.controller['host'], app } as BodySaveHost);
+        return {
+            h,
+            app,
+            controller,
+            setDisk: (v: string) => { disk = v; },
+            getDisk: () => disk,
+        };
+    }
+
+    it('磁盘被外部改写时拒绝自动保存，不覆盖新稿', async () => {
+        const { h, controller, setDisk, getDisk } = makeDiskHarness('旧正文内容');
+        // 首次保存建立基线
+        await controller.save(false);
+        // 外部（工作台一键成文）写入新稿
+        setDisk('---\nstatus: written\n---\n\n# 第1章 新稿\n\n外部生成的全新正文。');
+        h.host.body = '协同编辑器里的旧内容';
+        const ok = await controller.save(false);
+        expect(ok).toBe(false);
+        expect(getDisk()).toContain('外部生成的全新正文');
+    });
+
+    it('磁盘内容与上次写入一致时判定无冲突', async () => {
+        const { controller, setDisk } = makeDiskHarness('旧正文内容');
+        const detect = (controller as unknown as {
+            detectExternalOverwrite(p: string, next: string): Promise<boolean>;
+            lastWritten: Map<string, string>;
+        });
+        detect.lastWritten.set('/A书/正文/第1章.md', '旧正文内容');
+        setDisk(['---', 'status: written', '---', '', '# 第1章', '', '旧正文内容'].join('\n'));
+        expect(await detect.detectExternalOverwrite('/A书/正文/第1章.md', '协同编辑后的新内容')).toBe(false);
+        setDisk('外部生成的全新正文');
+        expect(await detect.detectExternalOverwrite('/A书/正文/第1章.md', '协同编辑后的新内容')).toBe(true);
     });
 });

@@ -122,7 +122,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             { id: 'writing', label: '✍️ 写作配置' },
             { id: 'recognition', label: '🎭 角色识别' },
             { id: 'suggestions', label: '💡 建议设置' },
-            { id: 'charts', label: '📊 图表设置' },
             { id: 'template', label: '📋 模板管理' },
             { id: 'fingerprint', label: '🔍 写作指纹库' },
             { id: 'knowledge', label: '📚 写作知识库' },
@@ -184,7 +183,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'writing': this.renderWritingSection(); break;
             case 'recognition': this.renderRecognitionSection(); break;
             case 'suggestions': this.renderSuggestionsSection(); break;
-            case 'charts': this.renderChartsSection(); break;
             case 'fingerprint': this.renderFingerprintSection(); break;
             case 'knowledge': this.renderKnowledgeSection(); break;
             case 'deconstruction': this.renderDeconstructionSection(); break;
@@ -1643,6 +1641,124 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     const n = Math.max(0, Math.min(5, parseInt(value) || 0));
                     this.plugin.settings.refineRounds = n;
+                    await this.plugin.saveSettings();
+                }));
+
+        // v4.23: 版本治理（写作规则多版本 + 人味模式 + 实验分组 + 规则去重）
+        new Setting(section)
+            .setName('写作规则版本')
+            .setDesc('多版本并存，同一时刻只生效一个。空的「auto」按「项目 → vault → 内置」优先级；版本号相同但内容不同会在这里提示漂移。')
+            .addDropdown(async (dropdown) => {
+                dropdown.addOption('', 'auto（项目 → vault → 内置）');
+                try {
+                    const { listRulesVersions } = await import('../services/rules-registry');
+                    const listing = await listRulesVersions(this.plugin.app, {
+                        activeVersion: this.plugin.settings.activeRulesVersion,
+                        project: this.plugin.getActiveProject() || undefined,
+                    });
+                    for (const doc of listing.docs) {
+                        dropdown.addOption(doc.id, `${doc.id}（${doc.source}${doc.path ? ` ${doc.path}` : ''}）`);
+                    }
+                } catch (e) {
+                    console.warn('[设置] 读取规则版本失败:', e);
+                }
+                dropdown.setValue(this.plugin.settings.activeRulesVersion || '');
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.activeRulesVersion = value;
+                    await this.plugin.saveSettings();
+                    const { RulesService } = await import('../services/rules-service');
+                    RulesService.getInstance(this.plugin.app).invalidateCache();
+                });
+            });
+
+        new Setting(section)
+            .setName('正文模板变体')
+            .setDesc('auto：有灵魂层走 V2。V3 节拍先行（台词清单前置、不注入禁用清单）；V4 对话主干（按台词编号写成连续对话）。V1/V2 可做对照。')
+            .addDropdown((dropdown) => dropdown
+                .addOption('auto', 'auto（有灵魂层 → V2）')
+                .addOption('v1', 'V1 流水线正文')
+                .addOption('v2', 'V2 小说家模式')
+                .addOption('v3', 'V3 节拍先行')
+                .addOption('v4', 'V4 对话主干')
+                .setValue((this.plugin.settings.activeBodyTemplate || 'auto') as string)
+                .onChange(async (value) => {
+                    this.plugin.settings.activeBodyTemplate = (value || 'auto') as 'auto' | 'v1' | 'v2' | 'v3' | 'v4';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('可数硬指标（实验 C9）')
+            .setDesc('在正文 system 末尾追加四项可数要求：≥6 个时间锚点、≥8 处口语标记、对话三成以上、段落仍 2–6 句。实测配 V4 对话主干可把对话占比推到 24%、锚点从 0 到 2；配 V3 会把节奏压塌。默认关闭。')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.countableHumanHints === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.countableHumanHints = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('质量控制后自动定向修订')
+            .setDesc('质量控制步骤完成后自动跑一次「按报告定向修订」：只改报告列出的问题（最多 8 条），锁定人物与情节，修订稿通过长度/人物/对话占比校验才落盘，采纳前自动存章节版本并做量化复检。每次消耗 1 次正文调用。默认开。')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.autoRevisionAfterQC !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoRevisionAfterQC = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('上下文体检（重复段自动清空）')
+            .setDesc('发 prompt 前比较各注入段：内容重复 ≥85% 的保留权威版本、清空另一份（如「文笔风格」里的规则副本、世界观与设定库重复段）；步骤结果引用了别的章节号时在注入账本里告警（不自动改）。默认开。')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.contextHygieneAutoFix !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.contextHygieneAutoFix = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('人味约束模式')
+            .setDesc('样文优先（默认）：3 段真人样文 + 6 条弱约束；旧配额：23 条数值配额（对照用）。此项在正文/消痕/精修链路都生效。')
+            .addDropdown((dropdown) => dropdown
+                .addOption('exemplar', '样文优先（默认）')
+                .addOption('quota', '旧版数值配额（对照）')
+                .setValue(this.plugin.settings.humanVoiceMode === 'quota' ? 'quota' : 'exemplar')
+                .onChange(async (value) => {
+                    this.plugin.settings.humanVoiceMode = value === 'quota' ? 'quota' : 'exemplar';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('规则去重（文笔风格里不再重复注入规则）')
+            .setDesc('开启后，「文笔风格」段不再包含写作规则的编号章副本，避免规则权重翻倍并绕过版本管理。关掉可恢复旧行为。')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.dedupeRulesInStyle !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.dedupeRulesInStyle = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('实验分组标签')
+            .setDesc('写进注入账本与步骤结果 frontmatter，便于把「哪一组实验产生的正文」与实际模板/规则版本对上。留空则不记录。')
+            .addText((text) => text
+                .setPlaceholder('例如 G2-新规则+样文')
+                .setValue(this.plugin.settings.experimentGroup || '')
+                .onChange(async (value) => {
+                    this.plugin.settings.experimentGroup = value.trim().slice(0, 60);
+                    await this.plugin.saveSettings();
+                }));
+
+        // v4.22: 单步输入 token 上限（0=按模型真实窗口自动分配）
+        new Setting(section)
+            .setName('单步输入上限（token）')
+            .setDesc('0 = 按当前模型的真实上下文窗口自动分配（推荐）。实测旧闸门回退到 32768 窗口，正文只拿到 24K token，与 1M 窗口差 40 倍，导致世界观/人物/上一章结尾被大量丢弃。仅在想控制成本时填一个上限（最大 200000）。')
+            .addText(text => text
+                .setPlaceholder('0')
+                .setValue(String(this.plugin.settings.contextTokenCap ?? 0))
+                .onChange(async (value) => {
+                    const n = Math.max(0, Math.min(200_000, parseInt(value) || 0));
+                    this.plugin.settings.contextTokenCap = n;
                     await this.plugin.saveSettings();
                 }));
 
@@ -4977,87 +5093,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
-    }
-
-    private renderChartsSection(): void {
-        const section = this.tabContent.createEl('section');
-
-        section.createEl('h3', { text: '📊 图表可视化设置' });
-        section.createEl('p', {
-            text: '配置数据可视化图表的显示方式和交互效果。',
-            cls: 'setting-item-description'
-        });
-
-        const charts = this.plugin.settings.charts || {
-            defaultDensity: 'normal',
-            enableAnimations: true,
-            defaultChartType: 'scatter',
-            labelRotationThreshold: 8,
-        };
-
-        new Setting(section)
-            .setName('默认密度模式')
-            .setDesc('图表元素的疏密程度')
-            .addDropdown(dropdown => {
-                dropdown.addOption('compact', '紧凑');
-                dropdown.addOption('normal', '正常');
-                dropdown.addOption('spacious', '宽松');
-                dropdown.setValue(charts.defaultDensity);
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.charts = {
-                        ...this.plugin.settings.charts!,
-                        defaultDensity: value as 'compact' | 'normal' | 'spacious',
-                    };
-                    await this.plugin.saveSettings();
-                });
-            });
-
-        new Setting(section)
-            .setName('启用动画')
-            .setDesc('图表加载和交互时显示动画效果（关闭可提升性能）')
-            .addToggle(toggle => toggle
-                .setValue(charts.enableAnimations)
-                .onChange(async (value) => {
-                    this.plugin.settings.charts = {
-                        ...this.plugin.settings.charts!,
-                        enableAnimations: value,
-                    };
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(section)
-            .setName('默认图表类型')
-            .setDesc('散点图等可切换图表的默认显示类型')
-            .addDropdown(dropdown => {
-                dropdown.addOption('scatter', '散点图');
-                dropdown.addOption('bubble', '气泡图');
-                dropdown.addOption('heatmap', '热力图');
-                dropdown.setValue(charts.defaultChartType);
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.charts = {
-                        ...this.plugin.settings.charts!,
-                        defaultChartType: value,
-                    };
-                    await this.plugin.saveSettings();
-                });
-            });
-
-        new Setting(section)
-            .setName('标签旋转阈值')
-            .setDesc('当数据标签数量超过此值时自动旋转标签以避免重叠')
-            .addText(text => text
-                .setPlaceholder('8')
-                .setValue(String(charts.labelRotationThreshold))
-                .onChange(async (value) => {
-                    const num = parseInt(value, 10);
-                    if (!isNaN(num) && num > 0) {
-                        this.plugin.settings.charts = {
-                            ...this.plugin.settings.charts!,
-                            labelRotationThreshold: num,
-                        };
-                        await this.plugin.saveSettings();
-                    }
-                }));
     }
 
     private renderInfoItem(container: HTMLElement, label: string, value: string): void {

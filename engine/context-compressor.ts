@@ -289,11 +289,13 @@ export function compressWorldContext(
     const maxAllowed = Math.floor(maxContext * 0.6);
     const hardResult = applyHardTruncation(wv, sl, fs, tl, maxAllowed);
 
+    // keyword 压缩（世界观/设定库）也算截断：否则用户与日志都看不到设定库被砍
+    const keywordCompressed = worldView.length > worldCap || settingLib.length > settingCap;
     return {
         worldView: hardResult.worldView,
         settingLib: hardResult.settingLib,
         foreshadows: hardResult.foreshadows,
         timeline: hardResult.timeline,
-        truncationApplied: hardResult.truncationApplied
+        truncationApplied: hardResult.truncationApplied || keywordCompressed
     };
 }

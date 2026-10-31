@@ -3,7 +3,7 @@
  * 验证 AI 分析报告指令解析 — 纯函数测试（P1-2 拆分后新增）。
  */
 import { describe, it, expect } from 'vitest';
-import { parseReport, parseFrontmatterFromText, parseFmList } from '../../../../engine/settlement/report-parser';
+import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealNames } from '../../../../engine/settlement/report-parser';
 
 describe('parseReport', () => {
     it('解析 UPDATE_CHARACTER 指令', () => {
@@ -128,5 +128,30 @@ describe('parseFmList', () => {
 
     it('JSON 解析失败回退到分隔符', () => {
         expect(parseFmList('[不合法的JSON')).toEqual(['[不合法的JSON']);
+    });
+});
+
+describe('resolveForceRevealNames — 只有真揭示才移动伏笔', () => {
+    it('只改字段的 UPDATE_FORESHADOW 不进入揭示集合', () => {
+        const names = resolveForceRevealNames([
+            { name: '月牙疤', field: '计划回收', value: '第9章' },
+            { name: '断魂桥', field: '当前状态', value: '未揭示' },
+        ]);
+        expect([...names]).toEqual([]);
+    });
+
+    it('新值含「已揭示」或等于「揭示」才移动', () => {
+        const names = resolveForceRevealNames([
+            { name: '月牙疤', field: '状态', value: '已揭示' },
+            { name: '断魂桥', field: '状态', value: '揭示' },
+            { name: '旧印', field: '计划回收', value: '第12章' },
+        ]);
+        expect(names.has('月牙疤')).toBe(true);
+        expect(names.has('断魂桥')).toBe(true);
+        expect(names.has('旧印')).toBe(false);
+    });
+
+    it('显式 forceReveal 始终生效', () => {
+        expect(resolveForceRevealNames([], ['旧印']).has('旧印')).toBe(true);
     });
 });

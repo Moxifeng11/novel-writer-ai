@@ -65,6 +65,37 @@ export interface InjectionLedger {
     truncatedCount: number;
     /** 生成时间 */
     generatedAt: number;
+    /**
+     * 版本归因（v4.23）：这次生成到底用了哪套模板、哪版规则、哪种人味模式。
+     * 旧账本只有段字符数，改动模板/规则后无法区分效果来自哪一层。
+     */
+    versions?: InjectionVersions;
+    /**
+     * 上下文体检（v4.24）：重复段（已清空哪些）与疑似串章。
+     * 只记录问题，不记录全文——账本是给日志看的。
+     */
+    hygiene?: InjectionHygiene;
+}
+
+export interface InjectionHygiene {
+    issues: Array<{ type: string; severity: string; blocks: string[]; message: string }>;
+    /** 被自动清空的变量 */
+    dropped?: string[];
+}
+
+export interface InjectionVersions {
+    /** 写作规则 id / 版本 / 内容哈希 / 来源路径 */
+    rulesId?: string;
+    rulesVersion?: string;
+    rulesHash?: string;
+    rulesPath?: string;
+    /** 人味块 id / 版本（voice.quota@3 / voice.exemplar@5） */
+    voiceId?: string;
+    voiceVersion?: string;
+    /** 实验分组标签 */
+    experimentGroup?: string;
+    /** 规则版本告警（版本号相同但内容不同等） */
+    warnings?: string[];
 }
 
 /** token 估算比率（与 shared/thresholds.CHAR_TO_TOKEN_RATIO 一致；此处复制避免 shared→shared 反向依赖环） */
@@ -90,6 +121,7 @@ export const BODY_INJECTION_SEGMENTS: InjectionSegmentSpec[] = [
     { key: 'infoPlan', label: '信息规划（含章纲硬要求）', category: '章纲', influence: '流程约束', source: '信息规划步骤 + 开头承接/钩子/伏笔字段', placement: 'user' },
     { key: 'entityRelations', label: '实体状态速览', category: '实体速览', influence: '事实记忆', source: '结算回写 + 图谱反查（零 AI）', placement: 'user' },
     { key: 'sceneExpansion', label: '场景展开', category: '流程', influence: '流程约束', source: 'Scene 展开步骤', placement: 'user' },
+    { key: 'dialogueSkeleton', label: '对话骨架', category: '流程', influence: '流程约束', source: 'Scene 展开 dialogue_beats（对话密度来自数据）', placement: 'user' },
     { key: 'sceneCardDigest', label: '场景卡', category: '流程', influence: '流程约束', source: '场景卡（POV/地点/入场转折离场）', placement: 'user' },
     { key: 'storyContextPack', label: '故事上下文包', category: '长篇记忆', influence: '事实记忆', source: '故事上下文总线（预算 4200/24000 token）', placement: 'user' },
     { key: 'sceneStyleSnippet', label: '场景风格参考', category: '写作指纹', influence: '风格指引', source: '同类型场景句法样本', placement: 'user' },
@@ -132,6 +164,8 @@ export function buildInjectionLedger(
 ): InjectionLedger {
     const segments = options.segments ?? BODY_INJECTION_SEGMENTS;
     const entries: InjectionLedgerEntry[] = [];
+    // 版本元数据由 template-vars-builder 以 `_xxxMeta` 形式塞进 vars（不参与模板占位）
+    const versions = readInjectionVersions(vars);
 
     for (const segment of segments) {
         const raw = vars[segment.key];
@@ -166,7 +200,65 @@ export function buildInjectionLedger(
         totalEstTokens,
         truncatedCount,
         generatedAt: Date.now(),
+        versions: Object.keys(versions).length > 0 ? versions : undefined,
+        hygiene: readInjectionHygiene(vars),
     };
+}
+
+/** 从 vars 的 `_contextHygiene`（template-vars-builder 写入）读取体检结果 */
+function readInjectionHygiene(vars: Record<string, string>): InjectionHygiene | undefined {
+    const raw = vars['_contextHygiene'];
+    if (!raw) return undefined;
+    try {
+        const data = JSON.parse(raw) as { issues?: unknown; dropped?: unknown };
+        const issues = Array.isArray(data.issues)
+            ? data.issues.map((item) => {
+                const issue = (item || {}) as Record<string, unknown>;
+                return {
+                    type: String(issue.type || ''),
+                    severity: String(issue.severity || ''),
+                    blocks: Array.isArray(issue.blocks) ? issue.blocks.map(String) : [],
+                    message: String(issue.message || ''),
+                };
+            }).filter((issue) => issue.message)
+            : [];
+        if (issues.length === 0) return undefined;
+        const dropped = Array.isArray(data.dropped) ? data.dropped.map(String) : [];
+        return { issues, dropped };
+    } catch {
+        return undefined;
+    }
+}
+
+/** 从 vars 的 `_rulesMeta` / `_voiceMeta` / `_experimentGroup` 读取版本归因 */
+function readInjectionVersions(vars: Record<string, string>): InjectionVersions {
+    const versions: InjectionVersions = {};
+    const parse = (raw: string | undefined): Record<string, unknown> | null => {
+        if (!raw) return null;
+        try {
+            const data = JSON.parse(raw) as Record<string, unknown>;
+            return data && typeof data === 'object' ? data : null;
+        } catch {
+            return null;
+        }
+    };
+    const rules = parse(vars['_rulesMeta']);
+    if (rules) {
+        versions.rulesId = String(rules.id || '') || undefined;
+        versions.rulesVersion = String(rules.version || '') || undefined;
+        versions.rulesHash = String(rules.hash || '') || undefined;
+        versions.rulesPath = String(rules.path || '') || undefined;
+        const warnings = Array.isArray(rules.warnings) ? rules.warnings.map(String).filter(Boolean) : [];
+        if (warnings.length > 0) versions.warnings = warnings;
+    }
+    const voice = parse(vars['_voiceMeta']);
+    if (voice) {
+        versions.voiceId = String(voice.id || '') || undefined;
+        versions.voiceVersion = String(voice.version || '') || undefined;
+    }
+    const group = String(vars['_experimentGroup'] || '').trim();
+    if (group) versions.experimentGroup = group;
+    return versions;
 }
 
 /** 渲染为可读文本（执行日志 / 调试窗口用） */
@@ -175,6 +267,30 @@ export function formatInjectionLedger(ledger: InjectionLedger): string {
         `【注入溯源】共 ${ledger.entries.length} 段 / ${ledger.totalChars} 字符 / ~${ledger.totalEstTokens} token` +
             (ledger.truncatedCount > 0 ? ` / ⚠ ${ledger.truncatedCount} 段被截断` : ''),
     ];
+    if (ledger.versions) {
+        const v = ledger.versions;
+        const parts = [
+            v.rulesVersion ? `规则 ${v.rulesId || v.rulesVersion}${v.rulesHash ? `#${v.rulesHash}` : ''}` : '',
+            v.voiceVersion ? `人味 ${v.voiceId || v.voiceVersion}` : '',
+            v.experimentGroup ? `实验组 ${v.experimentGroup}` : '',
+        ].filter(Boolean);
+        if (parts.length > 0) lines.push(`【版本】${parts.join(' · ')}`);
+        if (v.warnings && v.warnings.length > 0) lines.push(`⚠ ${v.warnings.join('；')}`);
+    }
+    if (ledger.hygiene) {
+        const dup = ledger.hygiene.issues.filter((issue) => issue.type === 'duplicate');
+        const stale = ledger.hygiene.issues.filter((issue) => issue.type === 'staleChapter');
+        const conflict = ledger.hygiene.issues.filter((issue) => issue.type === 'conflict');
+        const parts = [
+            dup.length > 0
+                ? `${dup.length} 处重复${ledger.hygiene.dropped && ledger.hygiene.dropped.length > 0 ? `（已清空 ${ledger.hygiene.dropped.join('、')}）` : ''}`
+                : '',
+            conflict.length > 0 ? `${conflict.length} 处规则冲突` : '',
+            stale.length > 0 ? `${stale.length} 处疑似串章` : '',
+        ].filter(Boolean);
+        if (parts.length > 0) lines.push(`【上下文体检】${parts.join(' / ')}`);
+        for (const issue of [...conflict, ...stale]) lines.push(`⚠ ${issue.message}`);
+    }
     for (const entry of ledger.entries) {
         if (entry.chars === 0) continue;
         const flags: string[] = [];

@@ -7,7 +7,7 @@
 
 import type { NovelWriterSettings, CustomProvider } from '../main';
 import { DEFAULT_PROVIDERS } from '../main';
-import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION, DEFAULT_UPDATE_GITHUB_REPO, normalizeUpdateGithubRepo } from '../shared/settings-migrator';
+import { migrateSettingsWithStatus, withCurrentVersion, CURRENT_SCHEMA_VERSION, DEFAULT_UPDATE_GITHUB_REPO, normalizeUpdateGithubRepo } from '../shared/settings-migrator';
 import type { CryptoService } from './crypto-service';
 import type { ProviderManager } from './provider-manager';
 import type { PluginCacheManager } from '../shared/plugin-cache';
@@ -67,6 +67,9 @@ export class SettingsService {
         return null;
     }
 
+    /** v4.27：最近一次启动时未完成的设置迁移（null = 正常） */
+    private migrationIncomplete: { fromVersion: number; toVersion: number; error?: string } | null = null;
+
     /** 磁盘上仍处于密文状态、且本次会话未能解开的条目数（UI 用） */
     lockedSecretCount(): number {
         return Object.values(this.rawSecrets).filter(
@@ -77,7 +80,10 @@ export class SettingsService {
     /** 加载设置：迁移 → 解密 → 同步自定义模型 */
     async loadSettings(): Promise<void> {
         const rawData = await this.deps.loadData();
-        const migratedData = migrateSettings(rawData);
+        const outcome = migrateSettingsWithStatus(rawData);
+        const migratedData = outcome.data;
+        // v4.27：迁移未完成时不回写 schemaVersion（旧实现会把失败盖章为已完成，永不重试）
+        this.migrationIncomplete = outcome.completed ? null : { ...outcome };
         // D5：统一深合并。旧配置缺失的嵌套字段回落默认值；数组整体替换；undefined 不覆盖。
         const defaults = getDefaultSettings();
         const settings = deepMergeSettings(defaults, migratedData) as NovelWriterSettings;
@@ -134,9 +140,19 @@ export class SettingsService {
         // deepMerge 只补内存，不写回的话下次启动仍要重复迁移，磁盘配置也一直缺字段。
         const rawVersion = (rawData as Record<string, unknown> | null | undefined)?.schemaVersion;
         const missingDefaultKeys = Object.keys(defaults).filter(key => !(key in (migratedData ?? {})));
+        if (!outcome.completed) {
+            // 迁移失败：保留磁盘原文件（不写 schemaVersion），交给下次启动重试
+            log.warn('[SettingsService] 设置迁移未完成，跳过回写以保留原始数据:', outcome.error || `停在 v${outcome.toVersion}`);
+            return;
+        }
         if (rawVersion !== CURRENT_SCHEMA_VERSION || missingDefaultKeys.length > 0 || updateRepoChanged) {
             await this.saveSettings();
         }
+    }
+
+    /** 最近一次启动时未完成的迁移（UI 可据此提示用户） */
+    getMigrationIncomplete(): { fromVersion: number; toVersion: number; error?: string } | null {
+        return this.migrationIncomplete;
     }
 
     /** 从迁移后的原始数据里取出各密钥字段的磁盘值（未解密） */
@@ -272,6 +288,16 @@ export function getDefaultSettings(): NovelWriterSettings {
         autoGhostAssociation: true,
         precisionMode: false,
         refineRounds: 3,
+        contextTokenCap: 0,
+        humanVoiceMode: 'exemplar',
+        activeRulesVersion: '',
+        activeBodyTemplate: 'auto',
+        countableHumanHints: false,
+        contextHygieneAutoFix: true,
+        autoRevisionAfterQC: true,
+        autoRecheckAfterRevision: true,
+        experimentGroup: '',
+        dedupeRulesInStyle: true,
         candidateParallel: true,
         promptCacheEnabled: true,
         antiAiExtraWords: [],
@@ -368,12 +394,6 @@ export function getDefaultSettings(): NovelWriterSettings {
             autoAdoptThreshold: 0.9,
             showEvidenceByDefault: false,
             batchAdoptThreshold: 0.7,
-        },
-        charts: {
-            defaultDensity: 'normal',
-            enableAnimations: true,
-            defaultChartType: 'scatter',
-            labelRotationThreshold: 8,
         },
         coWriteLayout: 'split',
         coWriteEditorWidthRatio: 0.65,

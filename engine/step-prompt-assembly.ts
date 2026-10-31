@@ -19,8 +19,22 @@ export interface StepPromptAssemblyHost {
     loadBodyKnowledge(ctx: StepRunCtx): Promise<string>;
     /** 正文步骤的硬约束尾部（样章/对照），不允许被 extraTail 预算裁剪 */
     loadBodyKnowledgeParts?(ctx: StepRunCtx): Promise<{ extra: string; system: string }>;
-    /** 本步实际模型的窗口/输出上限 */
-    resolveStepBudgetLimits(model: string): { maxContext: number; maxOutput: number };
+    /** 本步实际模型的窗口/输出上限（budget 由任务层给出时优先采用其 maxInput） */
+    resolveStepBudgetLimits(model: string, budget?: StepBudgetHint): StepBudgetLimits;
+}
+
+/** 任务层已经算好的预算（按真实模型窗口 + 任务输出预留） */
+export interface StepBudgetHint {
+    maxInput?: number;
+    maxContext?: number;
+    maxOutput?: number;
+}
+
+export interface StepBudgetLimits {
+    maxContext: number;
+    maxOutput: number;
+    /** 输入 token 预算：闸门用它，而不是 maxContext-maxOutput */
+    maxInputTokens?: number;
 }
 
 export interface StepPromptAssemblyResult {
@@ -33,6 +47,13 @@ export interface StepPromptAssemblyResult {
     /** 知识注入是否因预算不足被整段丢弃 */
     droppedExtra: boolean;
     estimatedTokens: number;
+    /** 分段裁剪时被整段丢弃/段内截断的段名（写进注入账本，用户可见） */
+    droppedSections: string[];
+    trimmedSections: string[];
+    /** 本次实际生效的输入 token 预算 */
+    maxInputTokens: number;
+    /** 关键段缩完仍超预算 */
+    overBudget: boolean;
 }
 
 export async function assembleStepPrompt(
@@ -41,7 +62,8 @@ export async function assembleStepPrompt(
     stepKey: string,
     systemPrompt: string,
     userPrompt: string,
-    stepModel: string
+    stepModel: string,
+    budget?: StepBudgetHint,
 ): Promise<StepPromptAssemblyResult> {
     let extraTail = '';
     let systemTail = '';
@@ -56,7 +78,7 @@ export async function assembleStepPrompt(
             extraTail = await host.loadBodyKnowledge(ctx);
         }
     }
-    const stepLimits = host.resolveStepBudgetLimits(stepModel);
+    const stepLimits = host.resolveStepBudgetLimits(stepModel, budget);
     const effectiveSystemPrompt = systemTail
         ? `${systemPrompt}\n\n${systemTail}`
         : systemPrompt;
@@ -69,6 +91,7 @@ export async function assembleStepPrompt(
         extraTail,
         maxContext: stepLimits.maxContext,
         maxOutput: stepLimits.maxOutput,
+        maxInputTokens: stepLimits.maxInputTokens,
         modelId: stepModel,
         headRatio: getBusinessThreshold('promptSplitRatio'),
         // 章节模板按【标题】分段：先丢低优先段，保住世界观/设定库/人物/大纲/Scene
@@ -78,7 +101,12 @@ export async function assembleStepPrompt(
     if (fit.droppedExtra) {
         log.warn(`[StepRunner] 上下文不足，已跳过知识注入（风格/节奏/题材）: ~${fit.estimatedTokens}t`);
     }
-    if (fit.truncated) {
+    if (fit.droppedSections.length > 0 || fit.trimmedSections.length > 0) {
+        log.warn(
+            `[StepRunner] prompt 超预算（~${fit.estimatedTokens}t / 预算 ${fit.maxInputTokens}t）：`
+            + `丢弃 ${fit.droppedSections.join('、') || '无'}；截断 ${fit.trimmedSections.join('、') || '无'}`,
+        );
+    } else if (fit.truncated) {
         log.warn(`[StepRunner] prompt 过长，已保留头部+尾部，中间资料截断: ~${fit.estimatedTokens}t`);
     }
 
@@ -88,5 +116,9 @@ export async function assembleStepPrompt(
         truncated: fit.truncated,
         droppedExtra: fit.droppedExtra,
         estimatedTokens: fit.estimatedTokens,
+        droppedSections: fit.droppedSections,
+        trimmedSections: fit.trimmedSections,
+        maxInputTokens: fit.maxInputTokens,
+        overBudget: fit.overBudget,
     };
 }

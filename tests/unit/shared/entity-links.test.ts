@@ -63,3 +63,15 @@ describe('entity-links — 旧格式值解析（读取兼容）', () => {
         expect(parseLinkValue(long)).toEqual([]);
     });
 });
+
+describe('parseLinkValue — 括号说明剥离（实测回归）', () => {
+    it('「名称（说明）」只留名称，不再整体包进链接', () => {
+        expect(parseLinkValue('获得锁脉环（扣于左腕）')).toEqual(['获得锁脉环']);
+        expect(parseLinkValue('破军剑（已封印）、环面裂纹（极细）')).toEqual(['破军剑', '环面裂纹']);
+    });
+
+    it('纯名称与已有链接不受影响', () => {
+        expect(parseLinkValue('沈砚')).toEqual(['沈砚']);
+        expect(parseLinkValue('[[沈砚|主角]]')).toEqual(['沈砚']);
+    });
+});

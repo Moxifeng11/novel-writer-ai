@@ -11,7 +11,7 @@
 
 import { TFile, TFolder } from 'obsidian';
 import { mkdirp } from '../utils/helpers';
-import { getChapterFileName, findChapterFile, getChapterFile } from './chapter-utils';
+import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { withWriteLock } from '../shared/write-lock';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates } from './relationship-engine';
@@ -23,7 +23,7 @@ import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '../shared/thresholds';
 import type { Instructions, FrontMatter } from './settlement/settlement-types';
-import { parseReport, parseFrontmatterFromText, parseFmList } from './settlement/report-parser';
+import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealNames } from './settlement/report-parser';
 import {
     getNextRowNum,
     hasTableSeparator,
@@ -47,9 +47,19 @@ import {
 } from '../shared/behavior-log';
 import { CHAPTER_FILE_TYPES } from './chapter-utils';
 import { createLogger } from '../shared/logger';
+import { evaluateHumanFeatures } from '../shared/human-feature-rubric';
 
 
 const log = createLogger('SettlementEngine');
+
+/** 连续性账本字段（v4.25）：结算写入用「追加 + 来源章」语义，不用覆盖 */
+const CONTINUITY_APPEND_FIELDS = new Set(['已知信息', '伤势', '持有物品']);
+
+function chapterNameOf(ctx: SettleContext): string {
+    const num = ctx.chapDir.match(/第(\d+)章$/)?.[1] || '';
+    return ctx.chapName || (num ? `第${num}章` : '');
+}
+
 export interface SettlementOptions {
     forceReveal?: string[];
     involvedChars?: string[];
@@ -570,7 +580,18 @@ export class SettlementEngine {
             await this.snapshotField(ctx, file as TFile, field);
             await withWriteLock(fp, () =>
                 this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
-                    fm[field] = value;
+                    if (CONTINUITY_APPEND_FIELDS.has(field)) {
+                        // v4.25 连续性账本：已知信息/伤势/持有物品 追加语义 + 来源章，
+                        // 覆盖语义会丢历史（上一章知道的事不会因为本章更新而消失）
+                        const prev = String(fm[field] || '').trim();
+                        const addition = `${value}（${ctx.chapName}）`;
+                        fm[field] = prev ? `${prev}；${addition}` : addition;
+                    } else {
+                        fm[field] = value;
+                    }
+                    // v4.25 溯源：任何字段都带「最后结算时间 + 来源章」，供最新优先判断
+                    fm['entity_last_changed_at'] = new Date().toISOString();
+                    fm['entity_last_changed_chapter'] = ctx.chapName;
                 })
             );
             return 'applied';
@@ -653,17 +674,7 @@ export class SettlementEngine {
 
     /** §5 处理伏笔库：UPDATE_FORESHADOW + options.forceReveal 强制揭示 */
     private async settleStep_updateForeshadows(ctx: SettleContext): Promise<void> {
-        const forceRevealSet = new Set<string>();
-        for (const u of ctx.instr.uf) {
-            if (u.value.includes('已揭示') || u.value === '揭示') {
-                forceRevealSet.add(u.name);
-            }
-        }
-        if (ctx.options?.forceReveal) {
-            for (const name of ctx.options.forceReveal) {
-                forceRevealSet.add(name);
-            }
-        }
+        const forceRevealSet = resolveForceRevealNames(ctx.instr.uf, ctx.options?.forceReveal);
 
         if (ctx.instr.uf.length === 0 && forceRevealSet.size === 0) return;
 
@@ -677,15 +688,9 @@ export class SettlementEngine {
                 let content = await this.getFS().read(fp);
                 let changed = false;
 
-                for (const u of ctx.instr.uf) {
-                    const newContent = this.moveForeshadowToRevealed(content, u.name, ctx.chapName);
-                    if (newContent) {
-                        content = newContent;
-                        changed = true;
-                        ctx.result.updatedForeshadows++;
-                    }
-                }
-
+                // v4.24 修复：旧实现遍历所有 UPDATE_FORESHADOW 并一律 move，
+                // 于是「计划回收/状态」这类只改字段的指令也会把伏笔标成已回收（且不可回滚）。
+                // 只对「确实要求揭示」的名字（forceRevealSet）执行移动；其余仅留日志。
                 for (const name of forceRevealSet) {
                     const newContent = this.moveForeshadowToRevealed(content, name, ctx.chapName);
                     if (newContent) {
@@ -693,6 +698,12 @@ export class SettlementEngine {
                         changed = true;
                         ctx.result.updatedForeshadows++;
                     }
+                }
+
+                const skipped = ctx.instr.uf.filter(u => !forceRevealSet.has(u.name));
+                if (skipped.length > 0) {
+                    log.info('[SettlementEngine] 伏笔字段更新未做回收（仅记录，不改状态）:',
+                        skipped.map(u => `${u.name}:${u.field}=${u.value}`).join('；'));
                 }
 
                 if (changed) { await this.getFS().write(fp, content); }
@@ -988,8 +999,19 @@ ${ni.description || '暂无描述'}
 
                 const newRow = `| ${nt.desc} | ${ctx.chapName} | ${nt.event} | |`;
 
-                // v4.20 幂等守卫：同「时间+章节+事件」的行已存在则跳过（重复结算不再翻倍）
-                if (tlC.includes(`| ${nt.desc} | ${ctx.chapName} | ${nt.event}`)) {
+                // v4.25 幂等守卫：按「时间+章节+事件」三列结构化比对（去空白）。
+                // 旧实现用子串 includes，章名/描述多一个空格就匹配失败 → 重复结算翻倍。
+                const norm = (s: string) => String(s || '').replace(/\s+/g, '');
+                const rowExists = tlC.split('\n').some((line) => {
+                    const trimmed = line.trim();
+                    if (!trimmed.startsWith('|')) return false;
+                    const cells = trimmed.split('|').slice(1, -1).map((c) => norm(c));
+                    if (cells.length < 3) return false;
+                    return cells[0] === norm(nt.desc)
+                        && cells[1] === norm(ctx.chapName)
+                        && cells[2] === norm(nt.event);
+                });
+                if (rowExists) {
                     log.info('[SettlementEngine] 时间线事件已存在，跳过:', nt.desc, nt.event);
                     continue;
                 }
@@ -1077,8 +1099,16 @@ ${ni.description || '暂无描述'}
             const v4Proj = v4Match[1];
             const v4VolN = parseInt(v4Match[2], 10);
             const v4ChapN = parseInt(v4Match[3], 10);
-            const targetPath = pjBodyFile(v4Proj, v4VolN, v4ChapN);
-            const tf = this.getVaultMeta().getAbstractFileByPath(targetPath);
+            // v4.25：与落盘一致——优先命中「带章名」的现有章文件。
+            // 旧实现固定 pjBodyFile 无章名路径：同章存在遗留裸文件时，
+            // settled/涉及人物会写到裸文件，真章文件永远停在 pending。
+            const existingBody = findBodyFileByChapterNum(
+                this.getVaultMeta().getFiles(),
+                `${pjBodyDir(v4Proj, v4VolN)}/`,
+                v4ChapN,
+                chapterNameOf(ctx),
+            );
+            const tf = existingBody ?? this.getVaultMeta().getAbstractFileByPath(pjBodyFile(v4Proj, v4VolN, v4ChapN));
             if (tf instanceof TFile) {
                 bodyFile = tf;
             } else {
@@ -1122,6 +1152,18 @@ ${ni.description || '暂无描述'}
                 const allItemNames = ctx.instr.ni.map(i => i.name);
                 if (allItemNames.length > 0) {
                     fm['涉及物品功法'] = allItemNames;
+                }
+
+                // v4.23：人味指标回写（对话占比/口语密度/时间锚点/人味分），
+                // 让「这一章像不像人写」变成可追踪的数据，而不是每次凭感觉。
+                if (ctx.bodyText || ctx.result.chars?.length) {
+                    const human = evaluateHumanFeatures(ctx.bodyText || '');
+                    if (human.metrics.chars >= 500) {
+                        fm['对话占比'] = Math.round(human.metrics.dialogueRatio * 1000) / 1000;
+                        fm['口语密度'] = Math.round(human.metrics.colloquialPerKilo * 10) / 10;
+                        fm['时间锚点'] = human.metrics.timeAnchors;
+                        fm['人味分'] = Math.round(human.score * 100);
+                    }
                 }
             });
         } catch (e) {
@@ -1192,10 +1234,13 @@ ${ni.description || '暂无描述'}
             const changes = extractRelationshipChanges(ctx.report);
             if (changes.length > 0) {
                 const relations = await loadRelationshipStates(this.app, ctx.project);
-                applyRelationshipChanges(relations, changes, ctx.chapName);
-                await saveRelationshipStates(this.app, ctx.project, relations, ctx.chapName);
-                v2RelationCount = changes.length;
-                log.info(`[SettlementEngine] V2 关系更新: ${changes.length} 条变更已写入关系状态.md`);
+                const outcome = applyRelationshipChanges(relations, changes, ctx.chapName);
+                await saveRelationshipStates(this.app, ctx.project, outcome.relations, ctx.chapName);
+                v2RelationCount = outcome.applied;
+                if (outcome.skipped > 0) {
+                    log.info(`[SettlementEngine] V2 关系幂等跳过 ${outcome.skipped} 条（同章同原因，重跑结算不二次累加）`);
+                }
+                log.info(`[SettlementEngine] V2 关系更新: ${outcome.applied}/${changes.length} 条变更已写入关系状态.md`);
             }
         } catch (e) {
             log.warn('[SettlementEngine] V2 关系状态更新失败（已跳过）:', e);
@@ -1231,8 +1276,10 @@ ${ni.description || '暂无描述'}
                 }
             }
             if (revealedSepIdx === -1 && l.match(/^\|.*\|/)) {
-                const cols = l.split('|').map(s => s.trim()).filter(Boolean);
-                if (cols.length >= 2 && cols[1] === name) { foundRow = i; foundCols = cols; }
+                // v4.25：不 filter(Boolean)——空单元格（如「计划回收」为空）会让后续列整体左移，
+                // 把关联主线写进相关人物。保留空位按下标取列。
+                const cells = l.split('|').slice(1, -1).map(s => s.trim());
+                if (cells.length >= 2 && cells[1] === name) { foundRow = i; foundCols = cells; }
             }
         }
         if (foundRow === -1 || !foundCols) return null;

@@ -120,8 +120,9 @@ export const SCENE_EXPAND_PROMPTS = {
 14. relationship_shift: 和在场的人之间关系有变化吗？
 15. key_scene: 本章至少一个名场面
 16. dialogue_function: 每段对话完成了什么
-17. cliffhanger: 最后一个场景的结尾钩子
-18. craft_notes: 可选工艺备注
+17. dialogue_beats: 对话骨架，6–10 条，格式「谁→谁｜台词要点｜这场对话完成什么」
+18. cliffhanger: 最后一个场景的结尾钩子
+19. craft_notes: 可选工艺备注
 
 【输出格式——严格遵循】
 ## 场景N：场景名
@@ -141,6 +142,7 @@ subtext: ...
 relationship_shift: ...
 key_scene: ⭐ 名场面 — 原因（非名场面写"否"）
 dialogue_function: 本段对话完成了什么
+dialogue_beats: 谁→谁｜台词要点｜完成什么（6–10 条；这是正文对话的唯一清单，正文必须逐条用上）
 cliffhanger: （仅最后一个场景填写）
 craft_notes: 可选
 

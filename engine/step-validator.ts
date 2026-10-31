@@ -569,10 +569,13 @@ function validateAuditStep(content: string): StepValidationResult {
  * v6.1: 从标题存在校验升级为内容实质校验
  */
 function validateQualityControlMerged(content: string): StepValidationResult {
+    // v4.25：标题允许「## 【一、写作技法检查】」这类带全角括号+序号的装饰
+    // （实测模型按提示词的【一、…】输出，旧正则判整节缺失 → QC 永远 partial）。
+    const deco = '(?:\\s*(?:【[^】]*】|[一二三四五六七八九十]+、))?\\s*';
     const sections = [
-        { key: '写作技法检查', check: () => sectionContentValid(content, /##\s*(写作技法|AI自检|技法检查)/, 40) },
-        { key: '连贯性审查', check: () => sectionContentValid(content, /##\s*(连贯性审查|连贯性|设定冲突|人物OOC)/, 40) },
-        { key: '质量评估', check: () => sectionContentValid(content, /##\s*(质量评估|质量控制|大纲偏离|信息密度)/, 40) },
+        { key: '写作技法检查', check: () => sectionContentValid(content, new RegExp('##' + deco + '(写作技法|AI自检|技法检查)'), 40) },
+        { key: '连贯性审查', check: () => sectionContentValid(content, new RegExp('##' + deco + '(连贯性审查|连贯性|设定冲突|人物OOC)'), 40) },
+        { key: '质量评估', check: () => sectionContentValid(content, new RegExp('##' + deco + '(质量评估|质量控制|大纲偏离|信息密度)'), 40) },
     ];
     const hasSuggestions = /(修改建议|建议汇总|改进建议)[：:].{10,}/.test(content) || sectionContentValid(content, /##\s*(修改建议|改进建议)/, 20);
     const hasCheckmarks = /[✅❌⚠️]/.test(content) || /(通过|问题|待改进)[：:]/.test(content);
