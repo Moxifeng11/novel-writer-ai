@@ -1076,50 +1076,63 @@ export class EngineRegistry {
         this.register(ENGINE_NAMES.KNOWLEDGE_BASE_MANAGER, knowledgeBaseManager);
         plugin.knowledgeBaseManager = knowledgeBaseManager;
 
-        let embeddingProvider: EmbeddingProvider;
-        try {
-            embeddingProvider = await EmbeddingProviderFactory.createWithFallback({
-                vectorProviderType: plugin.settings.vectorProviderType,
-                vectorOllamaBaseUrl: plugin.settings.vectorOllamaBaseUrl,
-                vectorOllamaModel: plugin.settings.vectorOllamaModel,
-                vectorOpenaiBaseUrl: plugin.settings.vectorOpenaiBaseUrl,
-                vectorOpenaiModel: plugin.settings.vectorOpenaiModel,
-                vectorOpenaiApiKey: plugin.settings.vectorOpenaiApiKey,
-                vectorDoubaoBaseUrl: plugin.settings.vectorDoubaoBaseUrl,
-                vectorDoubaoModel: plugin.settings.vectorDoubaoModel,
-                vectorDoubaoApiKey: plugin.settings.vectorDoubaoApiKey,
-                vectorQwenBaseUrl: plugin.settings.vectorQwenBaseUrl,
-                vectorQwenModel: plugin.settings.vectorQwenModel,
-                vectorQwenApiKey: plugin.settings.vectorQwenApiKey,
-                embeddingEndpoint: plugin.settings.embeddingEndpoint,
-                embeddingModel: plugin.settings.embeddingModel,
-                embeddingFallbackPolicy: plugin.settings.embeddingFallbackPolicy,
-            });
-        } catch (e) {
-            log.warn('[EngineRegistry] 所有向量提供商均不可用，使用 Ollama 默认配置:', e);
-            embeddingProvider = EmbeddingProviderFactory.create({
-                vectorProviderType: 'ollama',
-                vectorOllamaBaseUrl: plugin.settings.vectorOllamaBaseUrl,
-                vectorOllamaModel: plugin.settings.vectorOllamaModel,
-                vectorOpenaiBaseUrl: plugin.settings.vectorOpenaiBaseUrl,
-                vectorOpenaiModel: plugin.settings.vectorOpenaiModel,
-                vectorOpenaiApiKey: plugin.settings.vectorOpenaiApiKey,
-                vectorDoubaoBaseUrl: plugin.settings.vectorDoubaoBaseUrl,
-                vectorDoubaoModel: plugin.settings.vectorDoubaoModel,
-                vectorDoubaoApiKey: plugin.settings.vectorDoubaoApiKey,
-                vectorQwenBaseUrl: plugin.settings.vectorQwenBaseUrl,
-                vectorQwenModel: plugin.settings.vectorQwenModel,
-                vectorQwenApiKey: plugin.settings.vectorQwenApiKey,
-                embeddingEndpoint: plugin.settings.embeddingEndpoint,
-                embeddingModel: plugin.settings.embeddingModel,
-                embeddingFallbackPolicy: plugin.settings.embeddingFallbackPolicy,
-            });
-        }
-
+        // v4.27 性能修复：embedding 探测从 onload 关键路径移除。
+        // 旧实现 `await createWithFallback()` 逐个探测 provider（每个 30s 超时），
+        // Ollama 未启动/网络悬空时 onload 被阻塞 30-60 秒，期间用户看不到任何入口。
+        // 现改为：立即注册 Ollama 默认 provider（不探测），后台异步探测并按需替换。
+        // 首次实际 embed 调用时若探测未完成，会走 Ollama 的自然超时路径。
+        const defaultEmbeddingProvider = EmbeddingProviderFactory.create({
+            vectorProviderType: 'ollama',
+            vectorOllamaBaseUrl: plugin.settings.vectorOllamaBaseUrl,
+            vectorOllamaModel: plugin.settings.vectorOllamaModel,
+            vectorOpenaiBaseUrl: plugin.settings.vectorOpenaiBaseUrl,
+            vectorOpenaiModel: plugin.settings.vectorOpenaiModel,
+            vectorOpenaiApiKey: plugin.settings.vectorOpenaiApiKey,
+            vectorDoubaoBaseUrl: plugin.settings.vectorDoubaoBaseUrl,
+            vectorDoubaoModel: plugin.settings.vectorDoubaoModel,
+            vectorDoubaoApiKey: plugin.settings.vectorDoubaoApiKey,
+            vectorQwenBaseUrl: plugin.settings.vectorQwenBaseUrl,
+            vectorQwenModel: plugin.settings.vectorQwenModel,
+            vectorQwenApiKey: plugin.settings.vectorQwenApiKey,
+            embeddingEndpoint: plugin.settings.embeddingEndpoint,
+            embeddingModel: plugin.settings.embeddingModel,
+            embeddingFallbackPolicy: plugin.settings.embeddingFallbackPolicy,
+        });
         // 全插件共享同一 embedding provider：指纹库/协同/知识库必须同模型同维度
-        setSharedEmbeddingProvider(embeddingProvider);
+        setSharedEmbeddingProvider(defaultEmbeddingProvider);
 
-        const knowledgeVectorStore = new KnowledgeVectorStore(plugin.app, embeddingProvider, undefined, {
+        // 后台探测：完成后如果主 provider 可用则替换（Ollama → 云端优先）
+        void (async () => {
+            try {
+                const best = await EmbeddingProviderFactory.createWithFallback({
+                    vectorProviderType: plugin.settings.vectorProviderType,
+                    vectorOllamaBaseUrl: plugin.settings.vectorOllamaBaseUrl,
+                    vectorOllamaModel: plugin.settings.vectorOllamaModel,
+                    vectorOpenaiBaseUrl: plugin.settings.vectorOpenaiBaseUrl,
+                    vectorOpenaiModel: plugin.settings.vectorOpenaiModel,
+                    vectorOpenaiApiKey: plugin.settings.vectorOpenaiApiKey,
+                    vectorDoubaoBaseUrl: plugin.settings.vectorDoubaoBaseUrl,
+                    vectorDoubaoModel: plugin.settings.vectorDoubaoModel,
+                    vectorDoubaoApiKey: plugin.settings.vectorDoubaoApiKey,
+                    vectorQwenBaseUrl: plugin.settings.vectorQwenBaseUrl,
+                    vectorQwenModel: plugin.settings.vectorQwenModel,
+                    vectorQwenApiKey: plugin.settings.vectorQwenApiKey,
+                    embeddingEndpoint: plugin.settings.embeddingEndpoint,
+                    embeddingModel: plugin.settings.embeddingModel,
+                    embeddingFallbackPolicy: plugin.settings.embeddingFallbackPolicy,
+                });
+                // 只在与当前不同时替换（避免无意义覆盖）
+                if (best !== defaultEmbeddingProvider) {
+                    setSharedEmbeddingProvider(best);
+                    log.info('[EngineRegistry] embedding provider 已在后台探测后替换');
+                }
+            } catch (e) {
+                // 探测失败保持默认 Ollama；首次实际 embed 时会自然降级
+                log.info('[EngineRegistry] embedding 后台探测完成（保留默认 provider）');
+            }
+        })();
+
+        const knowledgeVectorStore = new KnowledgeVectorStore(plugin.app, defaultEmbeddingProvider, undefined, {
             // 按 bookId 判存活：改名只改目录名，用 bookName 拼目录会误判孤儿
             isBookAlive: (bookId) => knowledgeBaseManager.hasBook(bookId),
         });
@@ -1130,7 +1143,7 @@ export class EngineRegistry {
             tokensPerSecond: 5,
             maxTokens: 10,
         });
-        const vectorEnhancer = new VectorEnhancer(embeddingProvider, { rateLimiter });
+        const vectorEnhancer = new VectorEnhancer(defaultEmbeddingProvider, { rateLimiter });
         this.register(ENGINE_NAMES.VECTOR_ENHANCER, vectorEnhancer);
 
         foreshadowManager.vectorEnhancer = vectorEnhancer;

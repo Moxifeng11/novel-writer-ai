@@ -134,6 +134,7 @@ export class FullWriterView extends ItemView {
     private interventionController: InterventionController;
     private chapterOrchestrator: ChapterOrchestrator | null = null;
     private chapterRunStrip: HTMLElement | null = null;
+    private _statusInfoEl: HTMLElement | null = null;
     private readonly executionStore = new ExecutionRunStore();
     private timelinePanel: ExecutionTimelinePanel | null = null;
     private logPanel: ExecutionLogPanel | null = null;
@@ -442,6 +443,15 @@ export class FullWriterView extends ItemView {
         });
         const status = strip.createSpan({ text: '准备中...', cls: 'nw-chapter-run-status' });
         status.style.cssText = 'font-size:12px;color:var(--text-muted);flex:1;';
+        // P0-5（v4.27）：常驻状态信息——当前模型 / 规则版本 / token 消耗
+        const infoSpan = strip.createSpan({ cls: 'nw-chapter-run-info' });
+        infoSpan.style.cssText = 'font-size:11px;color:var(--text-faint);white-space:nowrap;';
+        const rulesVersion = this.plugin.settings.activeRulesVersion || '内置 3.6.0';
+        const voiceMode = this.plugin.settings.humanVoiceMode === 'quota' ? '配额' : '样文';
+        const bodyVariant = (this.plugin.settings.activeBodyTemplate || 'auto').toUpperCase();
+        infoSpan.setText(`📐 ${bodyVariant} | 📜 ${rulesVersion} | 🗣 ${voiceMode}`);
+        // token 消耗在步骤事件中由 prompt-ledger 更新
+        this._statusInfoEl = infoSpan;
         const pauseBtn = strip.createEl('button', { text: '⏸ 暂停', cls: 'novel-writer-settings-btn' });
         pauseBtn.onclick = () => {
             if (pauseBtn.textContent === '▶ 继续') {

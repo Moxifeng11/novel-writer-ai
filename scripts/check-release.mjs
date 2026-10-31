@@ -48,6 +48,21 @@ if (pkg.version !== manifest.version) {
     errors.push(`版本不一致: package.json=${pkg.version} manifest.json=${manifest.version}`);
 }
 
+// 1.1 versions.json 校验（v4.27：Obsidian 社区/BRAT 升级兼容元数据）
+const versionsPath = path.join(rootDir, 'versions.json');
+if (!fs.existsSync(versionsPath)) {
+    errors.push('缺少 versions.json（Obsidian 社区/BRAT 升级兼容元数据）');
+} else {
+    try {
+        const versions = JSON.parse(fs.readFileSync(versionsPath, 'utf8'));
+        if (versions[pkg.version] !== manifest.minAppVersion) {
+            errors.push(`versions.json 中 ${pkg.version} 的 minAppVersion 与 manifest.json 不一致`);
+        }
+    } catch (e) {
+        errors.push(`versions.json 解析失败: ${e instanceof Error ? e.message : String(e)}`);
+    }
+}
+
 const tagIndex = process.argv.indexOf('--tag');
 if (tagIndex !== -1) {
     const tag = process.argv[tagIndex + 1];
@@ -94,21 +109,22 @@ try {
         const workflow = fs.readFileSync(workflowPath, 'utf8');
         const assetsMatch = workflow.match(/ASSETS=\(([^)]*)\)/);
         if (assetsMatch) {
+            // 只校验 worker 和 versions.json：main.js/manifest.json/styles.css/$ZIP 由 requireFile 独立检查
             const declared = assetsMatch[1]
                 .split(/\s+/)
                 .map((token) => token.replace(/["']/g, '').trim())
-                .filter((token) => token.startsWith('workers/'))
+                .filter((token) => token.startsWith('workers/') || token === 'versions.json')
                 .sort();
-            const built = [...workerFiles].sort();
+            const built = [...workerFiles, 'versions.json'].sort();
             const missingInBuild = declared.filter((rel) => !built.includes(rel));
             const missingInRelease = built.filter((rel) => !declared.includes(rel));
             if (missingInBuild.length > 0 || missingInRelease.length > 0) {
                 errors.push(
-                    `release.yml 的 worker 资产与构建产物不一致：`
+                    `release.yml 资产与构建产物不一致：`
                     + `工作流多出 [${missingInBuild.join(', ')}]，构建多出 [${missingInRelease.join(', ')}]`
                 );
             } else {
-                notes.push(`release.yml worker 资产一致（${declared.length} 个）`);
+                notes.push(`release.yml 资产一致（${declared.length} 个 worker/versions）`);
             }
         }
     }

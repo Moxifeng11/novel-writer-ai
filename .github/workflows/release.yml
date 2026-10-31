@@ -65,7 +65,7 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           NOTES="docs/releases/${TAG}.md"
-          ASSETS=(main.js manifest.json styles.css workers/deconstruction-worker.js workers/quality-worker.js "$ZIP")
+          ASSETS=(main.js manifest.json styles.css versions.json workers/deconstruction-worker.js workers/quality-worker.js "$ZIP")
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG 已存在，覆盖上传资产"

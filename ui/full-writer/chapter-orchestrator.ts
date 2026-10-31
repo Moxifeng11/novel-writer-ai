@@ -147,6 +147,7 @@ export class ChapterOrchestrator {
     private pauseRequested = false;
     private resumeResolver: (() => void) | null = null;
     private running = false;
+    private _retriedThisRun = false;
 
     constructor(private readonly deps: ChapterOrchestratorDeps) {}
 
@@ -336,6 +337,22 @@ export class ChapterOrchestrator {
         } catch (e) {
             if (signal.aborted) return this.finish('cancelled', aiCalls);
             const message = e instanceof Error ? e.message : String(e);
+            // P0-3（v4.27）：对可重试错误自动重试一次（网络超时/5xx/空响应）
+            const retryable = /timeout|ECONNREFUSED|5\d{2}|socket hang up|network|fetch failed/i.test(message)
+                && !this._retriedThisRun;
+            if (retryable) {
+                this._retriedThisRun = true;
+                this.deps.showNotice?.(`⚠️ ${message}，3 秒后自动重试…`, 6000);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                if (signal.aborted) return this.finish('cancelled', aiCalls);
+                try {
+                    return await this.run(options);
+                } catch (retryError) {
+                    const retryMsg = retryError instanceof Error ? retryError.message : String(retryError);
+                    this.deps.showError(`重试后仍失败：${retryMsg}`, 8000);
+                    return this.finish('failed', aiCalls, currentStepKey || undefined, retryMsg);
+                }
+            }
             this.deps.showError(`章节生成中断：${message}`, 8000);
             return this.finish('failed', aiCalls, currentStepKey || undefined, message);
         } finally {
@@ -393,6 +410,7 @@ export class ChapterOrchestrator {
     ): ChapterRunResult {
         this.running = false;
         this.abortController = null;
+        this._retriedThisRun = false;
         return { status, aiCalls, failedStep, message };
     }
 }
