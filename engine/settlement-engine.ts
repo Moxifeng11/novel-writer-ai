@@ -1064,7 +1064,7 @@ ${ni.description || '暂无描述'}
                 }
                 await this.getFS().write(fp, content);
                 ctx.result.updatedGrowth++;
-            } catch (e) { log.warn('[SettlementEngine] 更新成长失败:', g.name, e); }
+            } catch (e) { log.warn('[SettlementEngine] 更新成长失败:', g.name, e); ctx.hasPartialFailure = true; }
         }
     }
 
