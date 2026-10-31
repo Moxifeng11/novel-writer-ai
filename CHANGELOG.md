@@ -1,5 +1,173 @@
 # Changelog
 
+## v4.22.0（2026-10-31）
+
+### 🛡️ 全插件排查 Batch 1：六条 P0 数据安全修复（2026-10-31）
+首次全插件系统排查（三路只读审计：数据持久化 / UI 事件 / 工程质量），报告见 `docs/audits/v4.27-full-plugin-audit.md`。Batch 1 修掉 6 条 P0。
+
+- **迁移失败不再「盖章」**：新增 `migrateSettingsWithStatus`（completed/from/to/error）；未完成时不回写 `schemaVersion`，磁盘原文件保留、下次启动重试；`SettingsService.getMigrationIncomplete()` 供 UI 提示。旧实现失败后 `saveSettings()` 无条件写最新版本号 → 迁移永久标记完成。
+- **分卷大纲清理只删自己的文件**：`ai-outline-generator` 原先把 `03-大纲与章节/分卷大纲/` 下**全部** children 递归删除（备份只含 `*_分卷大纲.md`），用户自建笔记会永久丢失；现在只删该后缀文件。
+- **正文覆盖前自动备份**：`BodyWriter` 在覆盖已存在正文前调用 `ChapterVersionService.saveVersion`（5 分钟节流，`backupBeforeOverwrite` 可关）；此前只有定向修订会存版本，重新生成一章即永久丢原稿。
+- **发布资产对齐**：`release.yml` 移除已删除的 `workers/style-worker.js`；`check-release.mjs` 新增「release.yml worker 资产 == 构建产物」交叉校验——此前本地 check 通过但打 tag 必然失败。
+- **指纹库串项目**：`saveProject` 的 project 与数据快照改为**入队时**捕获；旧闭包在出队时读 `this.project/projectFingerprints`，切项目瞬间会把空表写到新项目文件。
+- **协同保存防覆盖**：`BodySaveController` 记录本视图上次写入的正文；保存前比对磁盘，若磁盘既非上次写入也非本次内容 → 判定外部（一键成文/续写）改写，拒绝本次保存并提示，避免协同 2s 自动保存覆盖新稿。
+- **验证**：474 文件 / 5462 用例（+11：迁移状态 3、正文备份 2、协同冲突 2，另含既有用例更新）；lint / deps / engines / templates / build / release / E2E 23 passed。
+
+
+### 🔥 真实链路验收：E2E_REWRITE 实测暴露并修复 4 个流程缺陷（2026-10-31）
+用真实管线重写第 1 章（生成→合并规划→正文→质控→修订→分析→结算）做四波改动的验收，暴露 4 个开发期未发现的缺陷，全部修复：
+
+1. **一键成文静默失败**：E2E 用 Node `path.join` 传**反斜杠绝对路径**给 `openChapterByPath`，`getAbstractFileByPath` 找不到 → 只有 Notice、状态为空 → runChapterOneClick 报「请先打开一个章节」。插件侧修复：路径归一化 `\` → `/`（vault 路径约定）；spec 改传 vault 相对路径。
+2. **正文写错文件**：`第1章_九脉逆行_正文.md` 被重置为骨架后，新稿写到了无章名的 `第1章_正文.md`——`saveStepResult` 固定用 `pjBodyFile` 的无章名路径。修复：正文目标优先用 `findBodyFileByChapterNum` 命中**已存在的章文件**，不存在才落默认路径。
+3. **QC 输出一节缺装饰就整链中止**：模型输出 `## 【一、写作技法检查】`（全角括号+序号装饰），validator 判「缺写作技法检查」→ optional 步骤未完成 → 一键成文 run-error 且正文/结算全不落盘。修复：① QC 三节标题正则允许「【序号】/中文序号」装饰；② **可选步骤（QC/分析报告）partial 不再中止一键成文**，warn 后继续（正文 required 才中止）。
+4. **情绪规划等级全被误判**：模型按全角括号 `（4/10）` 输出等级，校验器只认半角 `(4/10)` → 每个场景都报「缺少情绪等级」→ 规划完整性门中断。修复：括号两种全收；回归测试覆盖全角样本。
+
+**验证链**（同轮完成）：合并规划→正文 4380 字（修订后 13839 字节落**正确章名文件**，status: written）→ 质控→分析报告→连续性账本真实回写（沈砚.md 的 已知信息/伤势/持有物品 带「（第1章）」来源标记）→ 信息规划新契约字段（开头承接/章末钩子/需回收的旧伏笔）真实产出。全门禁：473 文件 / 5449 用例（+1 情绪全角回归）、E2E 23 passed（EPUB 头字节一例偶发，复跑通过）。
+
+### 🔍 真实链路排查第二轮：结算链三处断点修复（2026-10-31）
+针对上轮遗留观察逐项排查，全部定位为**同一根因的连锁**——同章同时存在「带章名」与「历史无章名」两个正文文件时，各读写点各自选择目标，互不一致：
+
+- **`findBodyFileByChapterNum` 语义修正**：`chapterName` 恰为「第N章」时，`${chapterName}_正文.md` 就是裸文件名，不能当精确匹配压过带章名文件——旧逻辑让幂等守卫读到遗留文件的 `settled`，**整章结算永远被跳过**（实测 ledger：「已是 settled，本次跳过」）。现在：带章名 > 裸文件，exact 只在真章名时启用。
+- **统一三处读写点**：`isChapterSettledOnDisk`（幂等守卫）、`writeFixToBody`（修正稿回写）、`settleStep_updateBodyFrontmatter`（结算 settled/涉及人物写入）全部改走同一 finder——修复后实测 ledger「回写完成」（updated 18/created 0/behaviors 7），正文 status → **settled**，快照/出场记录 07:06 更新，已知信息追加带来源章。
+- **持有物品链接化破损**：「获得锁脉环（扣于左腕）」被整体包进 `[[]]` → `parseLinkValue` 剥离尾部括号说明（回归测试 2 条）。
+- **修订进度可见性**：定向修订期间向执行时间线输出「🎯 定向修订中：处理 N 条…」，不再 40-60 秒静默。
+- **spec 加固**：重置时删除无章名遗留文件（内容已备份）；新增 SETTLE_ONLY 模式（只跑结算探针，不烧 AI）；SETTLE_ONLY 下全量重写 test 跳过。
+- **验证**：473 文件 / 5451 用例（+2 链接回归）；全部门禁 + E2E 23 passed。
+
+### 🧪 真实链路排查第三轮：归因字段静默丢失修复（2026-10-31）
+抽读第 1 章正文 frontmatter 发现 `step_template_id/version`、`step_rules_version/hash`、`step_voice_mode`、`step_experiment_group` **全部缺失**——v4.23 的归因链在真实落盘上没生效。
+
+- **根因**：BodyWriter 写正文后靠 `vault.getFile(path)` 再 `processFrontmatter` 应用 patch；刚写入的文件在 vault 索引里常拿不到 TFile → `if (file)` 静默跳过 → 归因字段与 invariants 整体丢失（且无任何日志）。
+- **修复**：patch 改为**写前合成**——新增 `mergeFrontmatterRaw`（纯文本级合并：已有键覆盖、新键追加，值 JSON 序列化），写入时直接进 frontmatter；写后 processFrontmatter 保留作兜底。4 条单测。
+- **验证**：474 文件 / 5455 用例（+4）；全门禁 + E2E 23 passed。下轮全链重跑后可直接 `grep step_template_id` 验证。
+
+**遗留观察（下轮）**：① `word_count: 0` 停留在骨架重置值（SETTLE_ONLY 路径特有，全链由 BodyWriter 写入正常）；② 修订进度已进 showProgress 但时间线事件仍缺一条独立的 run-notice。
+
+### 🧹 板块收尾 Wave 4：死代码/死设置清理，Agent 与导出接入修订闭环（2026-10-31）
+全板块优化第四波。删除前逐一 `grep` 复核零引用；分层基线随之收紧（消除 2 条分层 + 1 条循环）。
+
+- **删除死代码（13 文件）**：`services/settlement-service.ts` + `services/index.ts`（零实例化）、`engine/harness/{retrieval-plan,memory-store,builtin-tools}.ts`（被 agent/harness 取代；前两者的测试随删）、`engine/style/style-worker.ts` + `workers/style-worker.js`（无 loader；build/check-release/worker-url 测试同步清理）、`domains/kernel/domain-registry.ts`、`ui/full-writer/{full-writer-state,step-nav-presenter}.ts`、`ui/services/agent-nlu.ts`、`engine/streaming/index.ts`、`styles.css.bak`（182KB）。
+- **死设置清理**：图表可视化设置区整区删除（含 `charts` 默认值与接口，零消费方）；角色识别设置区最小接线——`characterRecognitionLayers/vectorLayer/llmLayer` 首次被 `character-recognition-modal` 消费（层开关 + 阈值 + 批大小），不再是空转 UI。
+- **修订闭环接入命令与 Agent**：新命令 `novel-writer-targeted-revision`（长篇模式守卫，命令面板可用），经工作台事件触发当前章「定向修订→闸门→备份→复检」；Agent 可用 `run_command` 触发并用 `get_execution_status` 读到修订与复检结果（执行登记表已记录）。
+- **时间上下文进正文路径**：`buildTimeContextMessage` 此前只有 Agent harness 注入；现在 V1–V4 正文模板同样带【当前时间】，期限/季节推算不再与真实时间漂移。
+- **导出前质量门槛**：导出弹窗对长篇逐章检查「未结算 / 未过质控」，Notice 列出清单（只告警不阻断）。
+- **验证**：473 文件 / 5448 用例（删 2 个死测试文件）；tsc / lint / deps（基线收紧）/ engines / templates / build / release / E2E 23 passed。
+
+### 🔄 反馈闭环 Wave 3：修订/复检默认自动，QualityGate 首次接线（2026-10-31）
+用户决策「自动化默认全开（1 轮修订+复检）」落地；此前注册后零调用的三层质量验收（`engine/quality-gate.ts`）首次接入 11 步正文路径。
+
+- **自动化默认开**：`autoRevisionAfterQC` 默认 true（质控完成 → 自动定向修订，闸门拒绝保留原稿）；新增 `autoRecheckAfterRevision`（默认 true）。
+- **修订复检**（`engine/revision/revision-guard.ts::recheckRevision`）：采纳后零调用对照——AI 味分前后、对话占比、短叙述占比、「未消化问题线索」条数；AI 味上升 >10 或对话下滑 >5 个百分点时提示人工复核。结果随修订记录进执行登记表（`novel-writer-targeted-revision`），Agent 经 `get_execution_status` 可读。
+- **QualityGate 接线**：bodyGeneration 保存后运行三层验收的第一/二层（BeatVerifier + ConflictDetector + AI 味，零 AI）；快照从模板变量装配（`engine/quality/gate-snapshot.ts`，纯函数）；结果进执行时间线与登记表（`novel-writer-quality-gate`），不阻断流程。
+- **`infoDebtThreshold` 接上消费方**：`shared/thresholds.ts` 新增运行时覆盖 `setInfoDebtMax/getInfoDebtMax`（默认仍 15，非法值回落），三处消费方切换到 getter——设置项不再是空转 UI。
+- **验证**：475 文件 / 5455 用例；lint / deps / engines / build / release / E2E 23 passed。
+
+### 🧩 规划链数据契约 Wave 2：规划产物真正进正文（2026-10-31）
+审计实锤「规划白跑」的三条断链全部接上——这一波之后，规划步骤的产出才第一次完整进入正文 prompt。
+
+- **infoPlan 提示词对齐解析器**（v4.22 引入解析器时提示词没跟上）：输出格式补「## 开头承接 / ## 章末钩子」两节；伏笔操作从「埋入/揭示/升级」改为解析器认识的「需回收的旧伏笔 / 需埋下的新伏笔」；「节奏模式」统一为消费方读取的「节奏节拍」；合并规划版（planning-combined）同步。章纲硬要求块与 `${chapterHook}` 从恒为空变为有数据。
+- **场景卡补感官三字段**：`formatSceneCardDigest` 增加 `感官/身体/情绪弧`——V3/V4 不注入整段场景展开，这三项是场景描写硬约束在那两条路径上的唯一来源。
+- **对话骨架补断点**：V1 正文模板补 `${dialogueSkeleton}`（无灵魂层走 V1 时骨架不再白生成）；soul-driven 版 Scene 展开底稿补 `dialogue_beats` 节（自定义模板路径不再断供）；骨架为空时给兜底文案（不再留空标题）；`validateSceneExpansion` 新增骨架条数校验（0 条警告、<4 条建议补）。
+- **配角灵魂 9 字段**：`buildCharacterSoulSummary` 补回 obsession/shame/soft_spot——情绪规划要求模型按 soft_spot 反应，但模型此前看不见这三个字段。
+- **注入去重与死变量**：V2 system 的 `${emotionPlan}` 移除（user 保留，修双注入）；`${chapterHook}` 从裸字段升级为「章末钩子块」，V3/V4 最终指令前注入。
+- **记忆写侧自动化**：新增 `engine/memory/memory-shard-writer.ts`——角色灵魂步骤完成后为主角自动生成 `_记忆碎片.md`（已存在则跳过，4 条单测；读侧/提示词早已存在但此前零调用）；分析报告完成后把实体事实程序性提取进事实索引待确认队列（确认仍人工，读侧只读 confirmed 不变）。
+- **验证**：475 文件 / 5455 用例（+4）；lint / templates / deps / build / release / E2E 23 passed。
+
+### 🩹 数据正确性 Wave 1：结算幂等、连续性账本进人物卡、状态快照过期检测（2026-10-31）
+全板块优化第一波（方案见 docs/audits/v4.25/v4.26 与本条）。核心：让结算可重跑、状态可溯源、上一章衔接不再自相矛盾。
+
+- **结算幂等**：关系值按「章名+原因」幂等——重跑同一章结算不再二次累加 delta/堆叠历史（`applyRelationshipChanges` 返回 applied/skipped）；时间线去重改「时间+章节+事件」三列结构化比对（旧子串匹配遇空格/格式变化就翻倍）；出场记录去重键改数字章号、新摘要直接覆盖（旧实现按章名字符串 + 保留更长摘要，矛盾长期存在）。
+- **字段溯源**：任何实体字段结算写入都带 `entity_last_changed_at` + `entity_last_changed_chapter`；伏笔移表解析不再 `filter(Boolean)`——空单元格不再导致相关人物/关联主线错位。
+- **连续性账本（人物卡承载）**：人物模板实时状态区新增 `已知信息 / 伤势 / 持有物品`；白名单放行；结算写入用「追加 +（第N章）」语义；分析报告提示词新增三条对应指令；章节状态快照的「已知信息/伤势/物品」三列从结构性为空变为有数据。
+- **快照过期检测**：读上一章状态快照时比对正文 mtime，正文在结算后被改过 → 不注入旧快照，改为提示文案，只依据【上一章结尾】衔接。
+- **分卷查找**：大纲/情绪/场景展开/上一章查找按「正文实际所在卷」优先排序，跨卷命中打警告；`chapPlan` 先切当前卷段落再按章号匹配（新增 `volumeSectionSlice`，注意 `\b` 对 CJK 无效用 `(?![0-9])`）；切章时清除 `crossVolumeSnapshot` 残留。
+- **验证**：474 文件 / 5451 用例（+9：关系幂等 2、出场合并 3、卷切片 3、既有断言更新）；lint / tsc / deps（无新增）/ engines（ChapterVersionService 白名单放开为 -1：定向修订备份会短暂构造）/ templates / build / release / E2E 23 passed。
+
+### 🔁 修订闭环：质控报告 → 定向修订 → 闸门 → 可回滚（2026-10-31）
+流程 10 步里 7 步是前置规划，正文生成后只有质控报告、`fix/finalFix` 已废弃，改稿全交给人。本轮把「按报告定向修订」接回主流程。
+
+- **闭环**：正文 → 质量控制（14 项）→ 解析高/中优先级问题（最多 8 条）→ 定向修订（单次调用，prompt 明确锁定人物与情节）→ **接受闸门** → 采纳前存章节版本并写回，拒绝则保留原稿。
+- **闸门**（`engine/revision/revision-guard.ts`，8 条单测）：字数 ±10%、锁定人物（`allChars` 中且原稿出现过的名字）一个不丢、对话占比跌幅 ≤5 个百分点、非空/非原样/非 JSON。失败 Notice 列出具体原因。
+- **入口**：写章面板「🎯 定向修订」走闸门；新增设置「质量控制后自动定向修订」（`autoRevisionAfterQC`，默认关，每次 1 次正文调用），仅在 QC 结构完整时触发。
+- **可回滚**：采纳前 `ChapterVersionService.saveVersion` 备份原稿，失败只告警不阻塞。
+- **顺带修提示词矛盾**：质量控制提示词原要求「每段仅 1 个句号 + 换行」，与写作规则「自然段 2–6 句」对冲，已改为自然段口径。
+- **文档**：`docs/audits/v4.26-revision-loop.md`。
+
+### 🧹 上下文体检：重复段自动清空、规则×文笔风格冲突可检出（2026-10-31）
+从「过检测」转回「写好小说」：先修上下文污染。实测发现项目的《文笔风格》仍写着「每段仅一个句号，句号后必须换行」，与写作规则的「自然段 2–6 句」正面冲突，且上一轮的规则去重开关对正文链路根本没生效。
+
+- **规则×文笔风格冲突**（`shared/context-hygiene.ts` 的 `resolveStyleConflicts`）：检出「一句一段/每段一个句号/句号后换行」等碎段指令；规则有自然段锚点时**只剔除冲突行**（真实项目 1520→1420 字符），规则本身缺锚点则只告警并提示切到 `3.7.0-anchor`。
+- **重复段检测**：2-gram Dice ≥0.85 且两段均 ≥200 字时，保留权威版本（规则 > 世界观 > 设定库 > 规划 > 场景 > 风格 > 上下文包），清空另一份；覆盖场景展开×场景卡、世界观×设定库、信息规划×情节蒸馏、上一章结尾×状态快照等长期重叠。
+- **串章告警**：步骤结果里的章节号都不等于当前章且提及 ≥2 次时告警（不自动改，避免误伤合法引用）。
+- **规则去重修正**：`writingStyle` 与正文实际使用的 `writingStyleContent` 同时走 `looksLikeWritingRules`，开关终于对正文生效。
+- **可观测**：`InjectionLedger.hygiene` + 执行时间线「【上下文体检】1 处重复（已清空 settingLib） / 1 处规则冲突 / 1 处疑似串章」，冲突与串章逐条打印原因；设置页新增「上下文体检（重复段自动清空）」，默认开，可关成只报告。
+- **高危险修复（端到端审计驱动）**：
+  - **续写写错章**：`continue-chapters-modal` 对卷目录调用 `findChapterFile(..., '正文')`，标准名匹配失败后 frontmatter 兜底会返回该卷**第一个**正文——既导致本章正文不再创建，又可能把新章内容写进旧章文件。新增 `findBodyFileByChapterNum`（按 `第N章` 前缀在卷内匹配），4 条回归测试含「第10章不误匹配第1章」。
+  - **伏笔被误标已回收**：结算对所有 `UPDATE_FORESHADOW` 一律执行 `moveForeshadowToRevealed`，只想改「计划回收/状态」的指令也会把伏笔移入已回收（且无反向路径）。现在只对「确实要求揭示」的名字移动，其余只记日志。
+  - **后续章伏笔剧透**：故事上下文总线把 `upcoming/later` 伏笔连同「计划 第N章」注入当前章；legacy 变量改为只保留 `due/overdue/unknown`，且已有按章过滤结果时不再被节点版覆盖。
+  - **世界观被静默截断**：节点版 `worldView`（3200 字）会覆盖模板链路更长的压缩版；改为「不缩短才覆盖」，设定库同理。
+- **文档**：`docs/audits/v4.25-context-hygiene.md`（流程 10 步与注入面、污染源取证、端到端审计清单、治理机制、方法论建议：单一事实源/章节契约/补修订闭环/连续性账本/按边际信息分配预算）。
+
+### 🧪 规则思路 × 正文模板组合实验：三个新规则版本 + V3/V4 正文模板（2026-10-31）
+结论（**按重复采样修正**）：11 组单样本产生的「最优组合」被复测推翻——同一提示词重跑 rubric 可从 60 掉到 20；n=3 均值 C0 基线 33 / C4（场景节拍+V3）**40（三次全 40，最稳定）** / C9 27（60 是离群值），三组短叙述均值都是 0.39–0.40、对话 18–20%。朱雀对 C9、C4 均判「未发现明显的人工创作特征」。**没有组合稳定跨过 rubric 的对话/口语/锚点三项**。
+
+- **三个不同思路的规则版本**（`shared/writing-rules-variants.ts`，设置页「写作规则版本」可直接切）：
+  - `3.7.0-anchor` 正向锚点：只给正例，段落只留「自然段 2–6 句、80–220 字」一条硬规则；
+  - `3.8.0-scene-beat` 场景节拍：一场戏 = 一次交换（目标/阻碍/交换/变化），叙述只写镜头能拍到的；
+  - `3.9.0-voiceprint` 真人特征：只描述真人文本长什么样（八条可观察特征），不列禁止清单。
+- **两套新正文模板**：`bodyGeneration.v3@3.0.0`（节拍先行：台词清单前置、不注入禁用清单/工艺块）、`bodyGeneration.v4@4.0.0`（对话主干：system 压到 1.4k、按台词编号写连续对话、每场用时间/序数落地）。`getStepTemplateAuto` 支持 `_bodyVariant` 强制路由；设置页新增「正文模板变体」（auto/v1/v2/v3/v4）与「可数硬指标」开关（`countableHumanHints`，默认关，块在 `engine/prompts/human-countable-hints.ts`）。
+- **组合实验脚本** `scripts/humanness-combo.mjs`：用 esbuild 打包 `scripts/fixtures/prompt-exports.ts`，实验与插件运行时共用同一份模板/规则文本（不手抄 prompt）；支持 `--tag` 重复采样；产物落在 `data/experiments/combo/`（`test-results/` 会被 Playwright 每轮清空）。
+- **实测（详见 `docs/audits/v4.24-rule-template-combos.md`）**：
+  - 单样本里看似清晰的因果（锚点规则把短叙述压到 0.27、V3 把短叙述做到 0.63、可数硬指标把锚点推到 2）在 n=3 后都落回噪声，只能作为后续假设；
+  - 对话占比在 11 组里始终 13–24%（复测均值 18–20%），由台词骨架决定；模板只能上浮 2–5 个点；
+  - C4（场景节拍 + V3 + 样文）是唯一三次同分的稳定配置（40），可作为「不塌节奏」的对照基线。
+  - 对话占比在 11 组单样本里 13–24%、复测均值 18–20%（骨架来自原章对话行），**要破 25% 只能改骨架数据结构，不是改提示词**。
+- **验证**：新增单测（规则版本注册 5 版/切换/哈希、模板 V3/V4 路由、`_bodyVariant` 优先级、V3/V4 不引用禁用清单与工艺块、可数硬指标开关、设置默认值）。
+
+### 🧬 版本化治理：写作规则/提示词模板可并存、可归因、可复现（2026-10-31）
+一句话结论：**写作规则确实有可测权重（短叙述占比 0.47→0.29、段落 78→64），但它不是外部检测判定的决定因素**——消融 6 组里连「完全不给规则」都仍在 AI 档。真正被这轮修掉的是「规则以 6:1 权重、在两处、用与人味相反的指令覆盖人味块」这条隐式链路。
+
+- **事故根因（取证）**：vault 的 `元文件/00-系统模板/写作规则.md` 是旧版（「一句一段」「一段一个句号」），与仓库新版只差 9 行、**版本号都是 3.6.0**，于是版本检查一路通过；且 `RulesService` 读的是 vault 根而非项目路径，规则又被 system `${writingRules}` + user「文笔风格」**注入两次**（约 7k 字符 vs 人味 1.2k）；`humanVoiceMode='exemplar'` 在主链根本没有接线。
+- **通用版本注册表**（`shared/versioned-registry.ts`）：`hashContent`（FNV-1a，无依赖）、`selectActive`（多版本并存、只生效一个；精确 id → 版本号 → project>vault>custom>builtin 回退）、`detectDrift`（**版本号相同但哈希不同**→告警，正是本次事故的形态）、`extractVersion`（兼容 `3.6.0-中文后缀`）。13 条单测。
+- **写作规则多版本**（`services/rules-registry.ts`）：内置两版——`builtin:3.6.0`（自然段 2–6 句，默认生效）与 `builtin:3.6.0-legacy`（旧版快照，仅对照/消融）；同时扫描 `元文件/00-系统模板/写作规则*.md` 与 `<项目>/00-系统模板/写作规则*.md`。新增设置「写作规则版本」（`activeRulesVersion`）；`RulesService` 改为读项目级路径并做版本 + 哈希双校验；启动时漂移告警可操作（指出路径与两个哈希）。
+- **提示词模板多版本**（`engine/prompts/prompt-registry.ts`）：每步登记 `id@version` + 内容哈希（`bodyGeneration.v1@1.4.0` / `bodyGeneration.v2@2.1.0` / `deai.rewrite@2.0.0`…），人味块作为独立版本维度（`voice.quota@3.0.0` / `voice.exemplar@5.0.0`），正文归因用 `compositeId`；`activeBodyTemplate` 可强制 V1/V2 做对比。
+- **主链修复**：`template-vars-builder` 按 `humanVoiceMode` 组装人味块（不再硬编码 quota）；`writingStyle` 不再重复注入规则编号章（`dedupeRulesInStyle` 默认开，可回退）；`co-writer-engine` 的 `mandatory.join('\n')` 产生 `[object Object]` 改为 `formatWritingRulesForPrompt`（抽到 `engine/prompts/writing-rules-format.ts`）。
+- **可观测/可归因**：注入账本新增 `versions`（规则 id/版本/哈希/路径、人味版本、实验组、告警），执行时间线出「【版本】」与「【版本归因】」行；步骤结果 frontmatter 新增 `step_template_id/version`、`step_rules_version/hash`、`step_voice_mode`、`step_experiment_group`。
+- **规则消融实验**（`scripts/humanness-ablation.mjs`，R1 六组）：固定同一章上下文 + 同一份台词骨架 + 同模型同温度 + 关闭 thinking + 无后处理，只改规则与人味。结果：规则占比 24.7%→0% 使短叙述占比 0.61→0.29、段落 83→64、对话块基本不变（由骨架决定）；**旧版 vs 新版规则几乎不改变输出**（G0→G1 短叙述 −0.03），换人味块的影响远大于换规则版本；**6 组朱雀判定全部「未发现明显的人工创作特征」**，对照真人样文为「人工创作特征显著」。据此定量：我们能控制的两个最大变量合计只解释短期指标波动，不改变外部判定；规则版本治理的价值是**可归因、可回退、可复现**。
+- **分层修复**：规则正文下沉到 `shared/writing-rules.ts` / `shared/writing-rules-legacy.ts`（services 层只能依赖 shared），`engine/prompts/*` 保留兼容 re-export；分层基线收紧 1 条。
+- **验证**：单测 **466 文件 / 5398 用例**（+38：版本注册表 13、规则注册 12、模板注册 11、账本版本 6、步骤 frontmatter 3、设置默认值 2、协作规则渲染 4）；lint / tsc / templates / css / inline / deps / engines / build / check:release 全绿。交付 `docs/audits/v4.23-impact-matrix.md`（影响因子矩阵、12 条规则×人味冲突、额度消耗与迭代判据）。
+
+### 🎭 人味写作重建：样文校准 + 上下文放开 + 真迭代精修（2026-10-31）
+实测结论先行：**「消痕后更像 AI」不是模型问题，是提示词结构问题**——真正发出去的消痕提示词是 23 条数值配额 + 20 个禁用词，模型逐条达标，产出「每项都刚好合格」的均匀文本；全链路没有一段正例样文（10 套文风预设的 30 个样文槽位全是占位）。
+
+- **上下文丢截修复（OOC 的直接原因）**
+  - 闸门回退到 32K 的根因：`resolveStepBudgetLimits` 不传 endpoint，供应商 endpoint（`.../`）与设置（`.../v1`）严格比较失败 → 回退 32768/8192 → 正文只拿到 **24076 token**，而模型窗口 1M。现端点归一化 + 闸门改用任务预算 `maxInput`，新增设置「单步输入上限（0=按模型真实窗口）」，硬上限 200K。
+  - 关键段不再整段丢弃：`fitBySectionPriority` 新增 mustKeep（世界观/人物/本章信息规划/情绪弧/场景展开/场景卡/大纲/伏笔/上一章结尾/最终写作指令/故事上下文），段内截断从「只留前缀」改为**按段落边界保留头+尾**（旧实现会先吃掉段尾的写指令）。
+  - 最终写作指令从「文笔风格」段尾拆成独立 `【最终写作指令】` 段并列入 mustKeep。
+  - 丢弃可见：`fitPromptToContext` 返回 `droppedSections/trimmedSections/maxInputTokens`，写进 `prompt-ledger` 的 `【本步预算】` 行与事件 debug；提示文案改为列出具体段名，删掉「建议增加 maxContext」的错误建议（闸门根本不读它）。
+  - 固定切片改动态配额（新增 `shared/context-budget-policy.ts`）：上一章结尾 500→1200–4000 字、长篇记忆 1500 字/12 条→3000+/20+、场景卡 12 场/3000 字→全场景、实体速览 8 人→20+、人物字段 clip 240/60→600/120、知识注入 900/700/…字符→按窗口比例、记忆碎片 3×200→6×400；世界观/设定库压缩改用真实窗口，且 keyword 压缩也置 `truncationApplied`（此前完全不可见）。
+- **真人样文地基**
+  - 新增 `scripts/sample-human-corpus.mjs`（`npm run sample:human`）：从本机《指纹资料库》7 本（4 本 GBK 用 `gb18030` 解码）按 400 字切分，各抽 3 段（战斗/日常/心理），写 `data/human-samples/`（**仅本机，不入仓库不入包**），并生成真人分布基线 `baseline.json`。
+  - 新增 `shared/human-similarity.ts`：句长/段长/标点/对话占比分布相似度 + 保真校验（长度 ±15%、原文 2-gram 覆盖、数字保留）+ 综合分。
+  - 新增 `npm run eval:humanness`：真人样文自查 + 单文件评估 + 改写前后对比。
+- **提示词重写（样文优先）**
+  - 新增 `engine/prompts/style-exemplars.ts`：按场景挑 2–3 段真人样文注入，`【真人写作样文（照这个语感写…）】`。
+  - `human-voice.ts` v4：新增 `HUMAN_VOICE_WEAK_RULES`（6 条可观察弱约束）与 `buildHumanVoiceBlock()`；旧 23 条配额保留为 `HUMAN_VOICE_BLOCK`，设置 `humanVoiceMode='quota'` 可回退对比。
+  - 消痕/精修提示词重写：`long-novel-tasks.ts` 的 deai/refine 改为「最多 3 处具体问题 + 照真人样文重写 + 情节/人设不变 + 字数 ±10%」，不再以禁用词为主约束。
+  - 冲突规则统一：删掉「是否每段只有一个句号」这类与自然段冲突的检查；精准模式里「适当使用省略号/破折号」改为「服从语气，全文各≤2 处」。
+  - `ai-lexicon`：把「点了点头/摇了摇头/沉默良久/深吸一口气/过了许久」从 L2/L3 降级为弱提示（真人高频词不该单独定罪）。
+  - 双文件陷阱：`文笔风格.md` 没有样文而 `文笔风格模板.md` 有真人样文时，自动把「零、参考样本」补进正文（实测项目里已有《雪中悍刀行》3 段，此前从未被读到）。
+- **真迭代精修**
+  - 新增 `shared/iterative-refine.ts`：多轮改写 + 每轮打分（AI 味/人味/保真）+ 只接受严格更优版本 + 保真不过直接拒收 + 连续 2 轮无提升提前停。
+  - 新增 `ui/services/humanness-scorer.ts`：组装 AntiAIDetector + 真人基线 + 保真；无基线时退化为「AI 味 + 保真」评分。
+  - 面板：`refineRounds` 不再死配置，逐轮显示「R1: 62.0（综合分未提升）⛔ / R2: 68.0 ✅接受」与停止原因。
+- **朱雀真实 A/B（6 组，外部检测器）**：同一章正文跑 6 套提示词（原稿 / 旧配额 / 只给样文 / 样文+弱约束 / 加对话占比 / 场景稿 / 台词骨架），逐份上传腾讯朱雀（模型 2026-07-21）——**六组全部同一档「未发现明显的人工创作特征」**。局部指标确实变了（段数 2→96、平均句长 19.4→13.5、对话占比 9%→17.2%），但判定不变；模型也不执行「对话≥40%」这类比例指令（实测 11.1%）。结论：提示词层面已到天花板，继续加禁令/配额收益趋零。
+- **场景卡对话骨架（数据级人味）**：`SceneCardFields.dialogueBeats` + Scene 展开新增 `dialogue_beats`（6–10 条「谁→谁｜台词｜完成什么」）+ 正文模板 `${dialogueSkeleton}` must-keep 注入 + 注入账本登记；结算回写正文 frontmatter 新增 `对话占比/口语密度/时间锚点/人味分`。重写第1/2章验证：对话占比 9%→26%、人味分 20→60，但朱雀判定仍是「未发现明显的人工创作特征」——差距在模型 token 分布层面，提示词与数据骨架都改不到。
+- **人工样本特征分析**：用一份朱雀判「人工创作特征显著」的 2306 字样文做同口径统计，差距集中在四处——对话占比 38% vs 我们 9–17%、对话块 27.7/千字 vs 11–23、**短叙述只占 63% 而我们 82–95%（碎过头）**、口语标记 2.2/千字 vs 0–2、时间锚点 12 处 vs 0–2。新增 `shared/human-feature-rubric.ts` 把这五项做成 0–100 评分卡（章级才评），与朱雀判定同向（人工 100 vs 我们 20–40）；弱约束改写成特征驱动的六条，章级对话下限 12%→20%，补修触发 15%→25%。
+- **据 A/B 结果新增「定向对话补修」**：精修时若对话占比 <15%，只跑一轮「把最重要的 3 处叙述改成对话」，新版占比更高且保真通过才采纳（最多 1 次额外调用）；不再让模型自己数比例。
+- **校准发现（重要）**：用第2章真实 AI 正文测，`humanSim=0.64` 反而高于真人样文均值 `0.58`——句长/段长/标点这些表层分布早被提示词优化过，**它们不能当 AI 检测器**。真正拉开差距的是对话占比（真人约 25%，该章 9%），因此把「章级对话 <12%」设为硬性不保真条件，并在文档中明确 `humanSim` 只作参考、判据是 `antiAI + 对话下限 + 保真`。
+- **验证**：单测 **458 文件 / 5341 用例**（+22：human-similarity 14、iterative-refine 8，另更新 prompt-budget/step-prompt-assembly/long-term-memory 断言）；`sample:human` 实跑 7 本 → 21 段样文、真人 antiAI 均值 6.3；常规 E2E 23 passed；lint / templates / css / inline / deps / engines / build / check:release 全绿。
+
 ## v4.21.1（2026-10-31）
 
 ### 🔁 执行登记表（Agent 长流程闭环）+ RAG 评估基准 + 真实数据校准

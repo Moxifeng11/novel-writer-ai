@@ -1,6 +1,6 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.21.1
+> **版本**: v4.22.0
 > **最后更新**: 2026-10-27  
 > **状态**: 活跃可信 · 与代码同步
 
@@ -562,6 +562,12 @@ export interface FileSystemPort {
 | `executeCommandAsync()` | `main.ts` | 可等待的命令执行，Agent 能区分「派发成功」与「立刻抛错」 |
 
 **RAG 检索质量评估**：`shared/rag/eval-score.ts`（hit@k / MRR / 近重复占比）+ `scripts/eval-rag-retrieval.mjs`（`npm run eval:rag`）。近重复用重叠系数而非 Jaccard，因为重叠分块的重复是「一段包住另一段」。
+
+### 4.9 上下文预算与人味校准（v4.22）
+
+**上下文预算**：`shared/context-budget-policy.ts`（纯函数）按真实输入预算推导各段配额（上一章结尾、长篇记忆、场景卡、实体速览、知识注入、记忆碎片），由 `ui/full-writer/template-vars-builder.ts` 在生成前 `setActiveInputBudget()` 设置一次。闸门 `shared/prompt-budget.ts` 优先用任务预算 `maxInput`，并支持 `mustKeep` 段（只允许段内头尾截断，不允许整段丢弃），返回 `droppedSections/trimmedSections` 写进 `prompt-ledger`。端点匹配统一走 `normalizeEndpointKey`（忽略 `/v1`、`/chat/completions`、尾斜杠）——这是「1M 窗口被当成 32K」的根因修复。
+
+**人味校准**：`shared/human-similarity.ts` 用真人语料分布（句长/段长/标点/对话占比）算 `humanSim`，并做保真校验（长度 ±15%、2-gram 覆盖、数字保留）。样文来自 `npm run sample:human`（本机《指纹资料库》，仅落 `data/`，不入包）。**已知局限**：`humanSim` 不能当 AI 检测器——第2章 AI 正文 0.636 高于真人样文均值 0.578，因为表层分布早被提示词优化；判据是 `antiAI + 章级对话下限（<12% 判不保真）+ 保真`。`shared/iterative-refine.ts` 用这三项做「接受/回滚」的迭代精修调度。
 
 ### 5. 知识库系统（services/ + engine/）
 
