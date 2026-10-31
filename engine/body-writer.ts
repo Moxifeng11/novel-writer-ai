@@ -158,6 +158,12 @@ export class BodyWriter {
         return contract;
     }
 
+    /** P1-6（v4.27）：写作规则变更后清除格式契约缓存 */
+    invalidateContractCache(project?: string): void {
+        if (project) this.contractCache.delete(project);
+        else this.contractCache.clear();
+    }
+
     /**
      * 写入正文。所有正文入口都应调用它。
      */

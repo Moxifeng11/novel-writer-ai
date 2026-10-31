@@ -17,6 +17,7 @@ import {
     pjTimelineBoard
 } from '../shared/paths';
 import { CharacterConsistencyChecker, ConsistencyCheckResult } from './character-consistency-checker';
+import { withWriteLock } from '../shared/write-lock';
 import { VectorEnhancer } from './vector-enhancer';
 import { 
     hasTableSeparator, 
@@ -1234,37 +1235,42 @@ ${chapterText.slice(0, 5000)}
                 return { applied: false, pending: true, count };
             }
 
-            let content = await this.getFS().read(fp);
-            let changed = false;
+            // P1-1（v4.27）：伏笔库读-改-写整段进锁，防止与结算/协同互相覆盖
+            let appliedCount2 = 0;
+            await withWriteLock(fp, async () => {
+                let content = await this.getFS().read(fp);
+                let changed = false;
 
-            const chapterName = `第${chapterNum}章`;
+                const chapterName = `第${chapterNum}章`;
 
-            if (foreshadows.recovered && foreshadows.recovered.length > 0) {
-                for (const f of foreshadows.recovered) {
-                    const newContent = this.moveForeshadowToRevealed(content, f.name, chapterName);
-                    if (newContent !== content) {
-                        content = newContent;
-                        changed = true;
-                        appliedCount++;
+                if (foreshadows.recovered && foreshadows.recovered.length > 0) {
+                    for (const f of foreshadows.recovered) {
+                        const newContent = this.moveForeshadowToRevealed(content, f.name, chapterName);
+                        if (newContent !== content) {
+                            content = newContent;
+                            changed = true;
+                            appliedCount2++;
+                        }
                     }
                 }
-            }
 
-            if (foreshadows.planted && foreshadows.planted.length > 0) {
-                for (const f of foreshadows.planted) {
-                    const newRow = `| ${getNextRowNum(content)} | ${f.name} | 中 | 第${chapterNum}章 | 待定 | 未揭示 |`;
-                    if (hasTableSeparator(content)) {
-                        content = appendAfterSeparator(content, newRow);
-                        changed = true;
-                        appliedCount++;
+                if (foreshadows.planted && foreshadows.planted.length > 0) {
+                    for (const f of foreshadows.planted) {
+                        const newRow = `| ${getNextRowNum(content)} | ${f.name} | 中 | 第${chapterNum}章 | 待定 | 未揭示 |`;
+                        if (hasTableSeparator(content)) {
+                            content = appendAfterSeparator(content, newRow);
+                            changed = true;
+                            appliedCount2++;
+                        }
                     }
                 }
-            }
 
-            if (changed) {
-                await this.getFS().write(fp, content);
-                log.info('[AnalysisReportEngine] 伏笔库更新完成:', appliedCount, '项');
-            }
+                if (changed) {
+                    await this.getFS().write(fp, content);
+                    log.info('[AnalysisReportEngine] 伏笔库更新完成:', appliedCount2, '项');
+                }
+            });
+            appliedCount += appliedCount2;
 
             return {
                 applied: appliedCount > 0,
