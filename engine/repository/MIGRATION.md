@@ -785,8 +785,8 @@ console.log('慢操作:', stats.slowestTop10);
 - `engine/co-writer/create-session-store.ts` — 会话 Store 工厂
 - `engine/streaming/stream-parser.ts` — 流式解析器
 - `engine/streaming/simulated-stream.ts` — 模拟流式
-- `engine/cache/multi-layer-cache.ts` — 多层缓存
-- `engine/cache/file-cache.ts` — 文件缓存
+- `shared/multi-layer-cache.ts` — 多层缓存（批次 5 从 `engine/cache/` 下沉）
+- `shared/file-cache.ts` — 文件缓存（批次 5 同步下沉）
 - `engine/cache/preload-manager.ts` — 预加载管理器
 - `engine/performance/performance-monitor.ts` — 性能监控
 - `ui/services/co-write-facade.ts` — UI 数据访问门面

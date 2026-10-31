@@ -102,7 +102,7 @@ ${meta.shortCategory ? `- 短篇分类：${meta.shortCategory}\n` : ''}${meta.sc
         await this.writeModeGuide(projectId, meta);
 
         try {
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
             const profile = profileManager.generateDefault(input.genre, input.name, input.projectType || 'original');
             profile.creationMode = input.mode;
             profile.shortCategory = meta.shortCategory;

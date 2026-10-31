@@ -13,13 +13,13 @@
  */
 
 import type { App, TFile } from 'obsidian';
-import type { NovelWriterSettings } from '../main';
-import type { AIEngine } from '../engine/ai-engine';
-import type { ContextManager } from '../engine/context-manager';
-import type { FloatWorkspaceManager } from '../ui/workspace-manager';
-import type { PluginCacheManager } from './plugin-cache';
-import type { EngineRegistry } from '../engine/engine-registry';
-import type { CommandUiPort } from './command-ui-port';
+import type { NovelWriterSettings } from './main';
+import type { AIEngine } from './engine/ai-engine';
+import type { ContextManager } from './engine/context-manager';
+import type { FloatWorkspaceManager } from './ui/workspace-manager';
+import type { PluginCacheManager } from './shared/plugin-cache';
+import type { EngineRegistry } from './engine/engine-registry';
+import type { CommandUiPort } from './shared/command-ui-port';
 
 /** 提供商信息 */
 export interface ProviderInfo {

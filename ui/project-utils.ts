@@ -161,12 +161,16 @@ export interface ChapterListEntry {
     size: number;
 }
 
-/** 获取项目所有章节列表（正文 ∪ 步骤结果骨架目录），含标题、状态、卷信息 */
-export function getChaptersForProject(app: App, project: string): ChapterListEntry[] {
+/**
+ * 章节列表构建的唯一实现：正文 ∪ 步骤结果骨架目录。
+ * files/folders 由调用方提供（单项目传全集，批量扫描传按项目分桶后的子集），
+ * 保证「单项目查询」与「多项目一次扫描」口径完全一致。
+ */
+function buildChapterEntries(app: App, project: string, files: TFile[], folders: TFolder[]): ChapterListEntry[] {
     const result: ChapterListEntry[] = [];
     const seenChapters = new Set<string>();
 
-    const candidateFiles = app.vault.getFiles().filter(file =>
+    const candidateFiles = files.filter(file =>
         file.path.startsWith(project + '/03-大纲与章节/') &&
         file.name.includes(CHAPTER_FILE_TYPES.body) &&
         file.name.endsWith('.md')
@@ -210,8 +214,7 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
     // 去重键沿用章名（全书连续章号），正文优先于骨架。
     const escapedProject = project.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const skeletonRe = new RegExp(`^${escapedProject}/03-大纲与章节/步骤结果/(第\\d+卷)/(第\\d+章)$`);
-    for (const entry of app.vault.getAllLoadedFiles()) {
-        if (!(entry instanceof TFolder)) continue;
+    for (const entry of folders) {
         const match = entry.path.match(skeletonRe);
         if (!match) continue;
         const chapter = match[2];
@@ -229,6 +232,52 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
         });
     }
 
+    // 出口统一排序：调用方不再各自 sort（正文扫描序 + 骨架遍历序都不可靠）
+    return sortChaptersByNumber(result);
+}
+
+/** 获取项目所有章节列表（正文 ∪ 步骤结果骨架目录），含标题、状态、卷信息 */
+export function getChaptersForProject(app: App, project: string): ChapterListEntry[] {
+    return buildChapterEntries(
+        app,
+        project,
+        app.vault.getFiles(),
+        app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder),
+    );
+}
+
+/**
+ * 一次扫描产出多个项目的章节列表（项目选择页批量渲染用）。
+ *
+ * 旧实现每个项目各调一次 getChaptersForProject，等于对全库文件/目录遍历 N 次；
+ * 这里只遍历一次，按 `项目/03-大纲与章节/` 前缀分桶后交给同一个构建函数。
+ * 仅影响"遍历轮次"，章节口径与 getChaptersForProject 逐项一致。
+ */
+export function scanProjectChapters(app: App, projects: string[]): Map<string, ChapterListEntry[]> {
+    const result = new Map<string, ChapterListEntry[]>();
+    if (projects.length === 0) return result;
+
+    const prefixes = projects.map(project => [`${project}/03-大纲与章节/`, project] as const);
+    const buckets = new Map<string, { files: TFile[]; folders: TFolder[] }>();
+    for (const project of projects) buckets.set(project, { files: [], folders: [] });
+
+    const bucketOf = (path: string) => {
+        const hit = prefixes.find(([prefix]) => path.startsWith(prefix));
+        return hit ? buckets.get(hit[1]) : undefined;
+    };
+
+    for (const file of app.vault.getFiles()) {
+        bucketOf(file.path)?.files.push(file);
+    }
+    for (const entry of app.vault.getAllLoadedFiles()) {
+        if (!(entry instanceof TFolder)) continue;
+        bucketOf(entry.path)?.folders.push(entry);
+    }
+
+    for (const project of projects) {
+        const bucket = buckets.get(project)!;
+        result.set(project, buildChapterEntries(app, project, bucket.files, bucket.folders));
+    }
     return result;
 }
 

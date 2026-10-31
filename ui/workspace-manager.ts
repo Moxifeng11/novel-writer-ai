@@ -78,8 +78,10 @@ export class FloatWorkspaceManager {
     }
 
     // 监控面板B（另一个右侧边栏）
+    // P1-17（v4.27）：getRightLeaf(false) 会复用刚被 A 占用的同一个 leaf，
+    // B 设置后 A 立刻消失。必须 split 出新的右侧 leaf。
     if (!openTypes.has(VIEW_TYPE_MONITOR_B)) {
-      const leafB = workspace.getRightLeaf(false);
+      const leafB = workspace.getRightLeaf(true);
       if (leafB) {
         await leafB.setViewState({ type: VIEW_TYPE_MONITOR_B, active: false });
       }

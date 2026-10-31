@@ -28,6 +28,7 @@ import { isChapterWritten } from '../../shared/chapter-progress';
 import { EXPORT_FALLBACK_DIR } from '../../shared/export-file';
 import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '../project-utils';
 import { rememberProjectMode, resolveProjectMode } from '../../shared/project-mode';
+import { STORAGE_KEY_PREFIXES, projectScopedKey } from '../../shared/storage-keys';
 
 export interface CreationFlowStateOptions {
     /** 向导页签当前内存里的步骤结果；不传时读 localStorage 的项目分桶 */
@@ -49,13 +50,11 @@ export interface CreationFlowState {
  */
 const REQUIRED_WIZARD_KEYS = ['worldview', 'setting_lib'];
 
-const EXPORT_FLAG_PREFIX = 'novel-writer-flow-export-';
-
 /** 桌面端导出走浏览器下载，磁盘上看不到；调用导出后记一个项目级标记 */
 export function markFlowExported(project: string): void {
     if (!project) return;
     try {
-        localStorage.setItem(`${EXPORT_FLAG_PREFIX}${project}`, String(Date.now()));
+        localStorage.setItem(`${STORAGE_KEY_PREFIXES.flowExport}${project}`, String(Date.now()));
     } catch {
         // localStorage 不可用时只是无法标记导出完成，不影响导出本身
     }
@@ -63,7 +62,7 @@ export function markFlowExported(project: string): void {
 
 function readExportFlag(project: string): boolean {
     try {
-        return !!localStorage.getItem(`${EXPORT_FLAG_PREFIX}${project}`);
+        return !!localStorage.getItem(`${STORAGE_KEY_PREFIXES.flowExport}${project}`);
     } catch {
         return false;
     }
@@ -71,7 +70,7 @@ function readExportFlag(project: string): boolean {
 
 function readWizardResultsFromStorage(project: string): Record<string, string> {
     try {
-        const raw = localStorage.getItem(`novel-writer-wizard-${project || 'global'}`);
+        const raw = localStorage.getItem(projectScopedKey(STORAGE_KEY_PREFIXES.wizardResults, project));
         if (!raw) return {};
         const parsed = JSON.parse(raw) as unknown;
         return parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {};

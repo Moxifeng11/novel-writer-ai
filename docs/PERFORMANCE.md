@@ -25,7 +25,7 @@
 - 瓒呰繃 maxSize 鏃舵寜 LRU 绛栫暐娣樻卑
 - 鍐呭瓨鍘嬪姏澶ф椂涓诲姩椹遍€愶紙`adjustForMemoryPressure`锛?
 **鍏抽敭 API**锛?```typescript
-import { LruCache } from '../engine/repository/lru-cache';
+import { LruCache } from '../shared/lru-cache';
 
 const cache = new LruCache<string, MyData>({
     maxSize: 100,

@@ -1,15 +1,15 @@
-import { WorkerManager } from './worker-manager';
+import { WorkerManager } from '../services/worker-manager';
 import { createLogger } from '../shared/logger';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
-import { VectorEnhancer } from '../engine/vector-enhancer';
-import { StyleDeconstructor, StyleAnalysisResult } from '../engine/deconstructors/style-deconstructor';
-import { StyleDeconstructorV2, StyleAnalysisResultV2 } from '../engine/style/style-deconstructor-v2';
-import { QualityScoreEngine, QualityScore, EvaluationContext } from '../engine/quality/quality-score-engine';
-import { WritingQualityEngine } from '../engine/writing-quality-engine';
-import { DeviationDetector, DeviationReport, DeviationContext } from '../engine/quality/deviation-detector';
-import { CharacterConsistencyChecker } from '../engine/character-consistency-checker';
-import { PlotDivergenceEngine } from '../engine/plot-divergence-engine';
+import { VectorEnhancer } from './vector-enhancer';
+import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';
+import { StyleDeconstructorV2, StyleAnalysisResultV2 } from './style/style-deconstructor-v2';
+import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality/quality-score-engine';
+import { WritingQualityEngine } from './writing-quality-engine';
+import { DeviationDetector, DeviationReport, DeviationContext } from './quality/deviation-detector';
+import { CharacterConsistencyChecker } from './character-consistency-checker';
+import { PlotDivergenceEngine } from './plot-divergence-engine';
 
 const log = createLogger('HeavyTaskWorkerManager');
 

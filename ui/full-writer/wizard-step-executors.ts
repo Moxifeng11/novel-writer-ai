@@ -26,6 +26,7 @@ import { parseProjectMeta } from '../../shared/fanfic-rules';
 import { readProjectMeta, pjFanficDir, SUBDIR_BODY_ROOT } from '../../shared/paths';
 import { StorySettingsModal } from '../story-settings-modal';
 import { createLogger } from '../../shared/logger';
+import { nextFrame } from '../../shared/yield';
 
 
 const log = createLogger('WizardStepExecutors');
@@ -72,8 +73,7 @@ export class WizardStepExecutors {
             // 立即重新渲染 UI，让用户"看到"执行中状态，而不是黑盒（outline/chapters 打开 Modal 后用户才能看到变化）
             this.renderTab(tab, true);
             // 让出执行权，让浏览器有机会渲染进度条（否则后续 modal.open / await 会阻塞绘制）
-            // P0-2 修复: 后台窗口 rAF 不触发会导致永久挂起，改用 setTimeout 让出执行权
-            await new Promise(r => setTimeout(r, 16));
+            await nextFrame();
         }
 
         try {

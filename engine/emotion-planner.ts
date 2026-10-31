@@ -8,7 +8,7 @@
  */
 
 import { App } from 'obsidian';
-import { AIEngine } from './ai-engine';
+import type { AIEngine } from './ai-engine';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 

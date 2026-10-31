@@ -345,7 +345,7 @@ export class CoWriteFacade {
 
     getProjectRepository(): ProjectRepository | null {
         if (this.registry) {
-            return this.registry.getOrNull<ProjectRepository>(ENGINE_NAMES.PROJECT_REPOSITORY);
+            return this.registry.getOrNull(ENGINE_NAMES.PROJECT_REPOSITORY);
         }
         return null;
     }

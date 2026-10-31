@@ -3,7 +3,7 @@ import { OperationConfirmModal } from './components/progress';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { WritingProfileManager } from '../engine/writing-profile';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE, SUBDIR_WORLD_ARCH, PJ_FANFIC_DIR, PJ_WORLD_ARCH_DIR, PJ_TEMPLATE_DIR, PJ_OUTLINE_DIR, pjFanficDir, pjProjectMeta, templateFingerprintsFile, projectFingerprintsFile, projectFingerprintLibraryDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { ensureTemplateScaffold } from '../shared/template-scaffold';
@@ -386,18 +386,22 @@ ${preferredGenre
             const projectName = projectNameInput.value.trim();
             const genre = genreInput.value.trim();
 
-            if (!projectName) {
-                new Notice('❌ 请输入项目名称', 3000);
-                return;
-            }
+            // P1-14（v4.27）：防重复提交 + 复用共享校验（长度/保留名/重名）
+            if (createButton.disabled) return;
 
             if (!genre) {
                 new Notice('❌ 请输入或选择题材', 3000);
                 return;
             }
 
-            if (!/^[\u4e00-\u9fa5a-zA-Z0-9_\-]+$/.test(projectName)) {
-                new Notice('❌ 项目名只能包含中文、字母、数字、下划线、连字符（不含空格、标点）', 6000);
+            let existingNames: string[] = [];
+            try {
+                const projects = await this.plugin.ctxManager.detectProjects();
+                existingNames = projects.map((p) => String(p).split('/').pop() || p);
+            } catch { /* 扫描失败不阻断创建，交给后续重名检查 */ }
+            const validation = validateProjectName(projectName, existingNames);
+            if (!validation.valid) {
+                new Notice(`❌ ${validation.error}`, 6000);
                 return;
             }
 
@@ -412,12 +416,17 @@ ${preferredGenre
                 storySettings,
             };
             void creationMeta;
+            createButton.disabled = true;
+            createButton.setText('创建中…');
             try {
-                await this.createProject(projectName, genre, descriptionInput.value.trim(), projectType, sourceInput.value.trim(), sourceWorldInput.value.trim(), creationMeta);
+                await this.createProject(validation.normalized, genre, descriptionInput.value.trim(), projectType, sourceInput.value.trim(), sourceWorldInput.value.trim(), creationMeta);
             } catch (e) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[小说工坊] 创建项目失败:', e);
                 new Notice(`❌ 创建项目失败: ${errMsg}`, 8000);
+            } finally {
+                createButton.disabled = false;
+                createButton.setText('创建项目');
             }
         };
     }

@@ -9,11 +9,11 @@
 import { TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
-import { injectDeaiModalStyles as _injectDeai, injectRefineModalStyles as _injectRefine, injectRoundSelectStyles as _injectRound } from '../ui/full-writer/step-modal-styles';
+import { injectDeaiModalStyles as _injectDeai, injectRefineModalStyles as _injectRefine, injectRoundSelectStyles as _injectRound } from '../shared/step-modal-styles';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
-import { TemplateService } from '../services/template-service';
-import { ENGINE_NAMES } from './engine-registry';
+import { TemplateService } from './template-service';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { NOTICE_ERROR } from '../shared/thresholds';
 import {
     DEAI_CHECK_SYSTEM_PROMPT,

@@ -6,8 +6,8 @@ import {
 } from '../shared/format-constants';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
-import { TemplateService } from '../services/template-service';
-import { ENGINE_NAMES } from './engine-registry';
+import { TemplateService } from './template-service';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { stripCodeFence } from '../shared/api-response-utils';
 
 import type { Notifier } from '../shared/types';
@@ -25,7 +25,7 @@ export class CharacterGenerator {
         this.notifier = notifier || NOOP_NOTIFIER;
         this.plugin = plugin;
         this.apiClient = apiClient;
-        this.templateService = plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+        this.templateService = plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
     }
 
     /**

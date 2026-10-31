@@ -10,6 +10,7 @@ import type { CreationMode } from '../shared/creation-mode';
 import { getCreationModeLabel } from '../shared/creation-mode';
 import { modeDocPath, modeDocStarter } from '../shared/mode-content';
 import { resolveProjectMode } from '../shared/project-mode';
+import { writeVaultText } from '../shared/file-system-port';
 
 export type ModeDocumentKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
 
@@ -103,9 +104,7 @@ export class ModeDocumentModal extends Modal {
         if (!this.project) return;
         try {
             const path = modeDocPath(this.project, this.mode, this.kind);
-            const dir = path.substring(0, path.lastIndexOf('/'));
-            if (!(await this.app.vault.adapter.exists(dir))) await this.app.vault.adapter.mkdir(dir);
-            await this.app.vault.adapter.write(path, content);
+            await writeVaultText(this.app, path, content);
             new Notice('✅ 已保存', 3000);
             this.close();
         } catch (e) {

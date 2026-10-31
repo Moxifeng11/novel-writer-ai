@@ -21,6 +21,7 @@ import { pjStepDir, pjNarrativeOverview, pjBodyFile } from '../../shared/paths';
 import { stripFrontmatter } from '../../utils/helpers';
 import { isTemplateSkeleton, isStepResultComplete } from '../../engine/step-validator';
 import { createLogger } from '../../shared/logger';
+import { writeVaultText } from '../../shared/file-system-port';
 import { buildTemplateVars } from './template-vars-builder';
 import {
     BATCH_STEP_KEYS,
@@ -402,7 +403,7 @@ export class BatchPipelineRunner {
             throw new Error('结算缺少分析报告或正文');
         }
 
-        const engine = this.plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        const engine = this.plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
         const result = await engine.settle(project, ctx.chapDir, target.chapterName, analysisReport, bodyText);
 
         await writeChapterStateSnapshot(this.app, {
@@ -417,7 +418,7 @@ export class BatchPipelineRunner {
         try {
             const overview = await engine.generateNarrativeOverview(project);
             if (overview.trim()) {
-                await this.app.vault.adapter.write(pjNarrativeOverview(project), overview);
+                await writeVaultText(this.app, pjNarrativeOverview(project), overview);
             }
         } catch (e) {
             log.warn('[BatchPipeline] 叙事总览生成失败（不影响结算）:', e);

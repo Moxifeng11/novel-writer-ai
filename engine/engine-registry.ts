@@ -9,7 +9,7 @@
  * 使用方式：
  *   const registry = new EngineRegistry();
  *   await registry.initialize(plugin, { settingsWriter });
- *   const aiEngine = registry.get<AIEngine>(ENGINE_NAMES.AI_ENGINE);
+ *   const aiEngine = registry.get(ENGINE_NAMES.AI_ENGINE); // 类型由 EngineServiceMap 推导
  *
  * 增强能力（Task 2）：
  * - 作用域系统：Singleton / ProjectScoped / Transient
@@ -110,15 +110,14 @@ export interface DependencyCheckResult {
 }
 
 // 引擎类导入（用于实例化）
-import { InternalRegistry } from './internal-registry';
+import { InternalRegistry } from '../shared/internal-registry';
 import { PluginCacheManager } from '../shared/plugin-cache';
 import { CryptoService } from '../core/crypto-service';
-import { PasswordModal } from '../ui/password-modal';
 import { ProviderManager } from '../core/provider-manager';
 import { ThemeManager } from '../core/theme-manager';
 import { SettingsService } from '../core/settings-service';
 import { ContextManager } from './context-manager';
-import { ForeshadowManager } from '../services/foreshadow-manager';
+import { ForeshadowManager } from './foreshadow-manager';
 import { ReviewAgent } from './review-agent';
 import { CommandRegistry } from '../core/command-registry';
 import { KnowledgeTagManager } from './knowledge-tags';
@@ -130,9 +129,9 @@ import { EmbeddingProviderFactory } from './embedding/provider-factory';
 import { setSharedEmbeddingProvider, getSharedEmbeddingProvider } from './embedding/embedding-service';
 import { GITHUB_REPO_SLUG } from '../shared/github-repo';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
-import { DeconstructionScheduler } from '../services/deconstruction-scheduler';
-import { BatchImportManager } from '../services/batch-import-manager';
-import { HeavyTaskWorkerManager } from '../services/heavy-task-worker-manager';
+import { DeconstructionScheduler } from './deconstruction-scheduler';
+import { BatchImportManager } from './batch-import-manager';
+import { HeavyTaskWorkerManager } from './heavy-task-worker-manager';
 import { WritingProfileManager } from './writing-profile';
 import { KnowledgeInjector } from './knowledge-injector';
 import { CharacterConsistencyChecker } from './character-consistency-checker';
@@ -156,10 +155,10 @@ import { UpdateChecker } from '../services/update-checker';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import { pjFactIndexFile } from '../shared/paths';
 import { resolvePluginWorkerUrl } from '../shared/plugin-worker-url';
-import { TemplateService } from '../services/template-service';
+import { TemplateService } from './template-service';
 import { ChapterVersionService } from '../services/chapter-version-service';
-import { TemplateManager } from '../ui/template-manager';
 import { createLogger } from '../shared/logger';
+import { ENGINE_NAMES } from '../shared/engine-names';
 
 const log = createLogger('EngineRegistry');
 import {
@@ -171,55 +170,73 @@ import {
     ItemRepository,
 } from './repository';
 
-/** 引擎名称常量，避免拼写错误 */
-export const ENGINE_NAMES = {
-    CACHE_MANAGER: 'cacheManager',
-    INTERNAL_REGISTRY: 'internalRegistry',
-    CRYPTO_SERVICE: 'cryptoService',
-    PROVIDER_MANAGER: 'providerManager',
-    THEME_MANAGER: 'themeManager',
-    SETTINGS_SERVICE: 'settingsService',
-    CONTEXT_MANAGER: 'contextManager',
-    FORESHADOW_MANAGER: 'foreshadowManager',
-    REVIEW_AGENT: 'reviewAgent',
-    COMMAND_REGISTRY: 'commandRegistry',
-    KNOWLEDGE_TAG_MANAGER: 'knowledgeTagManager',
-    KNOWLEDGE_BASE_MANAGER: 'knowledgeBaseManager',
-    KNOWLEDGE_VECTOR_STORE: 'knowledgeVectorStore',
-    VECTOR_ENHANCER: 'vectorEnhancer',
-    DECONSTRUCTION_SCHEDULER: 'deconstructionScheduler',
-    HEAVY_TASK_WORKER_MANAGER: 'heavyTaskWorkerManager',
-    BATCH_IMPORT_MANAGER: 'batchImportManager',
-    WRITING_PROFILE_MANAGER: 'writingProfileManager',
-    KNOWLEDGE_INJECTOR: 'knowledgeInjector',
-    CHARACTER_CONSISTENCY_CHECKER: 'characterConsistencyChecker',
-    AI_ENGINE: 'aiEngine',
-    CO_WRITER_ENGINE: 'coWriterEngine',
-    CO_WRITING_SESSION_STORE: 'coWritingSessionStore',
-    ANALYSIS_REPORT_ENGINE: 'analysisReportEngine',
-    CHAPTER_SNAPSHOT_BUILDER: 'chapterSnapshotBuilder',
-    SCENE_GENERATION_LOOP: 'sceneGenerationLoop',
-    QUALITY_GATE: 'qualityGate',
-    GENERATION_CHECKPOINT_STORE: 'generationCheckpointStore',
-    PROMPT_CACHE: 'promptCache',
-    SETTLEMENT_ENGINE: 'settlementEngine',
-    CHARACTER_GENERATOR: 'characterGenerator',
-    WORLDVIEW_CACHE_SERVICE: 'worldviewCacheService',
-    UPDATE_CHECKER: 'updateChecker',
-    TEMPLATE_SERVICE: 'templateService',
-    CHAPTER_VERSION_SERVICE: 'chapterVersionService',
-    TEMPLATE_MANAGER: 'templateManager',
-    CHARACTER_REPOSITORY: 'characterRepository',
-    CHAPTER_REPOSITORY: 'chapterRepository',
-    PROJECT_REPOSITORY: 'projectRepository',
-    FACTION_REPOSITORY: 'factionRepository',
-    LOCATION_REPOSITORY: 'locationRepository',
-    ITEM_REPOSITORY: 'itemRepository',
-} as const;
+/** 引擎名称常量已下沉到 shared/engine-names.ts，此处仅再导出以兼容既有引用 */
+export { ENGINE_NAMES };
+
+/**
+ * 引擎名 → 实例类型映射
+ *
+ * 仅收录本注册表以具体类实例化的 token（复用文件已有的运行时 import，零新增耦合）；
+ * 未收录的 token（如由组合根注入的 `TEMPLATE_MANAGER` / `CO_WRITING_SESSION_STORE`）
+ * 继续走 `get<T>(string)` 宽泛重载，行为与旧版一致。
+ */
+export interface EngineServiceMap {
+    [ENGINE_NAMES.CACHE_MANAGER]: PluginCacheManager;
+    [ENGINE_NAMES.INTERNAL_REGISTRY]: InternalRegistry;
+    [ENGINE_NAMES.CRYPTO_SERVICE]: CryptoService;
+    [ENGINE_NAMES.PROVIDER_MANAGER]: ProviderManager;
+    [ENGINE_NAMES.THEME_MANAGER]: ThemeManager;
+    [ENGINE_NAMES.SETTINGS_SERVICE]: SettingsService;
+    [ENGINE_NAMES.CONTEXT_MANAGER]: ContextManager;
+    [ENGINE_NAMES.FORESHADOW_MANAGER]: ForeshadowManager;
+    [ENGINE_NAMES.REVIEW_AGENT]: ReviewAgent;
+    [ENGINE_NAMES.COMMAND_REGISTRY]: CommandRegistry;
+    [ENGINE_NAMES.KNOWLEDGE_TAG_MANAGER]: KnowledgeTagManager;
+    [ENGINE_NAMES.KNOWLEDGE_BASE_MANAGER]: KnowledgeBaseManager;
+    [ENGINE_NAMES.KNOWLEDGE_VECTOR_STORE]: KnowledgeVectorStore;
+    [ENGINE_NAMES.VECTOR_ENHANCER]: VectorEnhancer;
+    [ENGINE_NAMES.DECONSTRUCTION_SCHEDULER]: DeconstructionScheduler;
+    [ENGINE_NAMES.HEAVY_TASK_WORKER_MANAGER]: HeavyTaskWorkerManager;
+    [ENGINE_NAMES.BATCH_IMPORT_MANAGER]: BatchImportManager;
+    [ENGINE_NAMES.WRITING_PROFILE_MANAGER]: WritingProfileManager;
+    [ENGINE_NAMES.KNOWLEDGE_INJECTOR]: KnowledgeInjector;
+    [ENGINE_NAMES.CHARACTER_CONSISTENCY_CHECKER]: CharacterConsistencyChecker;
+    [ENGINE_NAMES.AI_ENGINE]: AIEngine;
+    [ENGINE_NAMES.CO_WRITER_ENGINE]: CoWriterEngine;
+    [ENGINE_NAMES.ANALYSIS_REPORT_ENGINE]: AnalysisReportEngine;
+    [ENGINE_NAMES.CHAPTER_SNAPSHOT_BUILDER]: ChapterSnapshotBuilder;
+    [ENGINE_NAMES.SCENE_GENERATION_LOOP]: SceneGenerationLoop;
+    [ENGINE_NAMES.QUALITY_GATE]: QualityGate;
+    [ENGINE_NAMES.GENERATION_CHECKPOINT_STORE]: GenerationCheckpointStore;
+    [ENGINE_NAMES.PROMPT_CACHE]: ReturnType<typeof getPromptCache>;
+    [ENGINE_NAMES.SETTLEMENT_ENGINE]: SettlementEngine;
+    [ENGINE_NAMES.CHARACTER_GENERATOR]: CharacterGenerator;
+    [ENGINE_NAMES.WORLDVIEW_CACHE_SERVICE]: WorldviewCacheService;
+    [ENGINE_NAMES.UPDATE_CHECKER]: UpdateChecker;
+    [ENGINE_NAMES.TEMPLATE_SERVICE]: TemplateService;
+    [ENGINE_NAMES.CHAPTER_VERSION_SERVICE]: ChapterVersionService;
+    [ENGINE_NAMES.PROJECT_REPOSITORY]: ProjectRepository;
+}
+
+/** 可静态推导实例类型的引擎名（`EngineServiceMap` 的键） */
+export type EngineToken = keyof EngineServiceMap;
 
 export interface InitializeOptions {
     /** Plugin 的序列化写入器（私有字段，需显式传入） */
     settingsWriter: SerializedWriter;
+    /**
+     * 口令交互端口 — 由组合根（main.ts）注入。
+     * engine 层不得 import ui/ 的 Modal，否则形成 engine → ui 反向依赖。
+     */
+    passwordPort: PasswordPort;
+    /** 模板管理器工厂 — 纯 UI 服务，由组合根注入实例，engine 层只负责注册 */
+    createTemplateManager: () => unknown;
+}
+
+/** 口令交互端口：询问已有口令 / 设定新口令，取消返回 null */
+export interface PasswordPort {
+    requestPassword: () => Promise<string | null>;
+    requestNewPassword: () => Promise<string | null>;
 }
 
 /**
@@ -263,7 +280,10 @@ export class EngineRegistry {
      *
      * 向后兼容：register(name, instance) 行为不变，默认 Singleton 作用域。
      * 增强：register(name, instance, { scope, dependencies, ... }) 支持元数据。
+     * 类型约束：已知 token 的实例类型须与 EngineServiceMap 一致（未知 token 走宽泛重载）。
      */
+    register<K extends EngineToken>(name: K, instance: EngineServiceMap[K], options?: EngineRegisterOptions): void;
+    register<T>(name: string, instance: T, options?: EngineRegisterOptions): void;
     register<T>(name: string, instance: T, options?: EngineRegisterOptions): void {
         if (this.instances.has(name)) {
             log.warn(`[EngineRegistry] 引擎 "${name}" 已注册，跳过重复注册`);
@@ -288,6 +308,16 @@ export class EngineRegistry {
      * 增强：options.scope=Transient 时，每次 getTransient 创建新实例。
      * 增强：options.onInit 在实例创建后调用。
      */
+    registerLazy<K extends EngineToken>(
+        name: K,
+        factory: () => EngineServiceMap[K] | Promise<EngineServiceMap[K]>,
+        options?: EngineRegisterOptions,
+    ): void;
+    registerLazy<T>(
+        name: string,
+        factory: () => T | Promise<T>,
+        options?: EngineRegisterOptions,
+    ): void;
     registerLazy<T>(
         name: string,
         factory: () => T | Promise<T>,
@@ -340,7 +370,10 @@ export class EngineRegistry {
      *
      * 注意：仅支持同步工厂。异步工厂请使用 getAsync。
      * 已 dispose 的引擎：返回旧实例（运行时兼容），调用方应优先使用 getAsync 获取 destroyed 状态。
+     * 已知 token 由 EngineServiceMap 推导返回类型；未知 token 可继续显式传泛型。
      */
+    get<K extends EngineToken>(name: K): EngineServiceMap[K];
+    get<T>(name: string): T;
     get<T>(name: string): T {
         if (this.instances.has(name)) {
             return this.instances.get(name) as T;
@@ -396,7 +429,12 @@ export class EngineRegistry {
         throw new Error(`[EngineRegistry] 引擎 "${name}" 未注册`);
     }
 
-    /** 获取引擎实例，不存在返回 null（不抛错） */
+    /** 获取引擎实例，不存在返回 null（不抛错）
+     *
+     * 已知 token 由 EngineServiceMap 推导返回类型；未知 token 可继续显式传泛型。
+     */
+    getOrNull<K extends EngineToken>(name: K): EngineServiceMap[K] | null;
+    getOrNull<T>(name: string): T | null;
     getOrNull<T>(name: string): T | null {
         try {
             return this.get<T>(name);
@@ -787,7 +825,7 @@ export class EngineRegistry {
         if (!learner) {
             learner = new StyleLearner({
                 app: this.plugin.app,
-                aiEngine: this.get<AIEngine>(ENGINE_NAMES.AI_ENGINE),
+                aiEngine: this.get(ENGINE_NAMES.AI_ENGINE),
                 plugin: this.plugin,
                 project,
             });
@@ -928,8 +966,8 @@ export class EngineRegistry {
         let settingsServiceRef: { findExistingCiphertext(): string | null } | null = null;
 
         const cryptoService = new CryptoService(plugin.app, {
-            requestPassword: () => PasswordModal.ask(plugin.app),
-            requestNewPassword: () => PasswordModal.setup(plugin.app),
+            requestPassword: opts.passwordPort.requestPassword,
+            requestNewPassword: opts.passwordPort.requestNewPassword,
             // 只要磁盘上已有 v2 密文，本次会话就禁止「设定新口令」。
             // 否则新口令会覆盖会话口令，旧密文永久解不开
             // —— 这正是「API Key 每次重启/更新后失效」的根因。
@@ -997,8 +1035,8 @@ export class EngineRegistry {
         const chapterVersionService = new ChapterVersionService(plugin.app);
         this.register(ENGINE_NAMES.CHAPTER_VERSION_SERVICE, chapterVersionService);
 
-        // TemplateManager: 模板管理器（UI 服务，无状态，可单例共享）
-        const templateManager = new TemplateManager(plugin.app);
+        // TemplateManager: 模板管理器（纯 UI 服务，无状态，可单例共享；实例由组合根创建）
+        const templateManager = opts.createTemplateManager();
         this.register(ENGINE_NAMES.TEMPLATE_MANAGER, templateManager);
 
         log.info('[小说工坊] 引擎初始化完成');

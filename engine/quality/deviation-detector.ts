@@ -17,7 +17,7 @@
  *   - 结果缓存（复用 LruCache）
  */
 
-import { LruCache } from '../repository/lru-cache';
+import { LruCache } from '../../shared/lru-cache';
 import { analyzeCoherence, CoherenceReport } from '../coherence-checker';
 import type { CharacterContextInfo } from './quality-score-engine';
 import { DIVERGENCE_CRITICAL, DIVERGENCE_WARNING, FORESHADOW_APPROACHING_CHAPTERS } from '../../shared/thresholds';

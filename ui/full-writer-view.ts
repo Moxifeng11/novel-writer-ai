@@ -19,6 +19,7 @@ import { StepRenderController } from './full-writer/step-render-controller';
 import { ChapterOrchestrator, countRemainingChapterActions } from './full-writer/chapter-orchestrator';
 import { ExecutionRunStore } from './full-writer/execution-run-store';
 import { ExecutionLogPanel, ExecutionTimelinePanel, renderStepFailureCard } from './full-writer/execution-panels';
+import { writeVaultText } from '../shared/file-system-port';
 import { createStepFailure } from '../shared/execution-events';
 import type { DiagnosticInput, ExecutionEventInput, StepFailure } from '../shared/execution-events';
 import type { ChapterRunMode } from '../shared/chapter-run';
@@ -30,6 +31,7 @@ import { ensureFlowTab, flowTabId } from './full-writer/flow-tab';
 import { ensureUnitTab, unitTabId } from './full-writer/unit-tab';
 import { markFlowExported } from './full-writer/creation-flow-state';
 import { resolveProjectMode, rememberProjectMode } from '../shared/project-mode';
+import { isChapterBodyPath } from '../shared/body-path';
 import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { ExportManuscriptModal } from './export-manuscript-modal';
@@ -46,8 +48,8 @@ import { ContextManager, GatheredContext, CharacterData, ForeshadowData, Timelin
 import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { showProgress, hideProgress, showSuccess, showError, mkdirp, stripFrontmatter, applyNwScope } from '../utils/helpers';
 import { getStepTemplateAuto, fillTemplate } from '../engine/prompt-templates';
-import { TemplateService } from '../services/template-service';
-import { getForeshadowWarnings } from '../services/foreshadow-manager';
+import { TemplateService } from '../engine/template-service';
+import { getForeshadowWarnings } from '../engine/foreshadow-manager';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
 import { scoreAndFilterEntities, ScoredEntity } from '../engine/entity-scorer';
 import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../engine/character-soul';  // V2 P0-1
@@ -55,7 +57,7 @@ import { getChapterFile, getChapterFileName, findBodyFileV4 } from '../engine/ch
 import { MiniSettingsModal } from './mini-settings-modal';
 import { EntityStateManager } from '../engine/entity-state-manager';
 import { SettlementEngine } from '../engine/settlement-engine';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { ChapterStateManager } from './states/chapter-state-manager';
 import { extractWorldviewMeta } from './utils/worldview-utils';
 import { StepRunner, ALL_FULL_STEPS, FullStep, StepRunCtx } from '../engine/step-runner';
@@ -293,11 +295,9 @@ export class FullWriterView extends ItemView {
             await this.app.vault.adapter.write(`${this.project}/.project`, nextMeta);
 
             const guideDir = `${this.project}/00-系统模板`;
-            if (!(await this.app.vault.adapter.exists(guideDir))) {
-                await this.app.vault.adapter.mkdir(guideDir);
-            }
-            await this.app.vault.adapter.write(`${guideDir}/故事结构指南.md`, buildStoryStructureGuide(settings));
-            await this.app.vault.adapter.write(
+            await writeVaultText(this.app, `${guideDir}/故事结构指南.md`, buildStoryStructureGuide(settings));
+            await writeVaultText(
+                this.app,
                 `${guideDir}/创作模式指南.md`,
                 buildCreationModeGuide(parseCreationModeMeta(nextMeta)),
             );
@@ -480,7 +480,7 @@ export class FullWriterView extends ItemView {
         this.plugin = plugin;
         this.aiEngine = plugin.aiEngine;
         this.contextManager = plugin.ctxManager;
-        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        this.settlementEngine = plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
         this.chapterStateManager = new ChapterStateManager(this.app);
         this.state = new FullWriterStoreImpl();
 
@@ -915,7 +915,13 @@ export class FullWriterView extends ItemView {
         }
 
         this.registerEvent(this.app.workspace.on('file-open', (file) => {
-            if (file) this.handleFileChange(file);
+            // P1-13（v4.27）：打开任意笔记（设定/大纲/旁注）也会触发 file-open，
+            // 旧实现无差别 parseActiveFile → project 被解析成笔记名并 reset/render，
+            // 当前章节状态被冲掉。只有「章节正文」才切换工作台上下文。
+            if (!file || !this.isChapterBodyPath(file.path)) return;
+            void this.handleFileChange(file).catch((error) => {
+                console.error('[FullWriter] 处理章节切换失败:', error);
+            });
         }));
 
         // 监听项目创建事件（Obsidian Workspace 内置事件系统）
@@ -1033,6 +1039,11 @@ export class FullWriterView extends ItemView {
         this.plugin.setWorkbenchContext(null);
     }
 
+    /** 只认章节正文路径（P1-13；长篇 + 短篇/剧本单元），实现在 shared/body-path */
+    private isChapterBodyPath(path: string): boolean {
+        return isChapterBodyPath(path);
+    }
+
     private async handleFileChange(file: TFile): Promise<void> {
         if (this.isLoading) return;
         // v73: wizard tab 期间跳过文件变更处理，防止 AI 写文件触发 renderInContainer 产生幽灵 UI
@@ -1041,6 +1052,16 @@ export class FullWriterView extends ItemView {
 
         const oldProject = this.project;
         const oldChapter = this.chapterName;
+
+        // P1-13：切章前取消在跑的一键任务，避免旧任务继续按旧章目录写入
+        if (this.chapterOrchestrator?.isRunning) {
+            this.chapterOrchestrator.cancel();
+            this.executionStore.addEvent({
+                type: 'run-cancelled',
+                level: 'warning',
+                message: '检测到切换章节，已取消在跑的生成任务',
+            });
+        }
 
         await this.parseActiveFile();
 
@@ -1837,7 +1858,7 @@ export class FullWriterView extends ItemView {
             return;
         }
 
-        const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+        const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
         // 只有项目确实存在自定义 prompt 时才覆盖默认模板；
         // 旧实现 getStepPrompt 总会返回内置模板，导致正文 V2 模板永远不可达。
         const hasCustomTemplate = await templateService.hasCustomPrompt(stepKey);
@@ -2284,9 +2305,24 @@ export class FullWriterView extends ItemView {
                     });
                 }
             } catch (e) {
+                // P1-18（v4.27）：失败必须可见——旧实现只 console.error，
+                // 渲染再抛错时按钮会永久停在「生成中」，用户看不到原因。
+                const message = e instanceof Error ? e.message : String(e);
                 console.error('[Planning] 一键生成失败:', e);
+                this.executionStore.addEvent({
+                    type: 'run-error',
+                    level: 'error',
+                    message: `全章规划失败：${message}`,
+                });
+                new Notice(`❌ 全章规划失败：${message}`, 8000);
             } finally {
-                this.renderInContainer(this.tabContent);
+                generateBtn.disabled = false;
+                generateBtn.setText('⚡ 重新生成全章规划');
+                try {
+                    await this.renderInContainer(this.tabContent);
+                } catch (renderError) {
+                    console.error('[Planning] 失败后重渲染异常:', renderError);
+                }
             }
         });
     }

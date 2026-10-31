@@ -8,7 +8,7 @@
 
 import { kbBookCharacterExtractionFile } from '../../shared/paths';
 import { VectorEnhancer } from '../vector-enhancer';
-import { WebnovelKnowledgeBase, GenreConfig } from '../webnovel-knowledge-base';
+import { WebnovelKnowledgeBase, GenreConfig } from '../../shared/webnovel-knowledge-base';
 import { yieldToUI } from '../../shared/yield';
 import { EMOTION_WORDS } from '../dimension-keywords';
 import { GenreConfig as AdaptiveGenreConfig, GenreConfigRegistry } from '../genre';

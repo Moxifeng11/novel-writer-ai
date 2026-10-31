@@ -170,9 +170,14 @@ export class WritingProfileManager {
     private cache: WritingProfile | null;
     private fs: FileSystemPort | null = null;
 
-    constructor(app: App) {
+    /** 读盘解析失败标记：为 true 时首次保存先留档，避免用默认值覆盖用户配置 */
+    private loadFailed = false;
+    private loadFailedPath = '';
+
+    constructor(app: App, fs?: FileSystemPort) {
         this.app = app;
         this.cache = null;
+        this.fs = fs ?? null;
     }
 
     private getFS(): FileSystemPort {
@@ -186,22 +191,53 @@ export class WritingProfileManager {
         return `${projectPath}/${CONFIG_FILE_NAME}`;
     }
 
+    /**
+     * 读取写作配置。
+     * P1-10（v4.27）：旧实现把「文件不存在」与「解析失败」都吞成默认值，随后任何 save
+     * 都会用默认值覆盖用户配置。现在区分两者：解析失败置 loadFailed，保存前先留档。
+     */
     async load(projectPath: string): Promise<WritingProfile> {
         const filePath = WritingProfileManager.getConfigFilePath(projectPath);
+        let content: string;
         try {
-            const content = await this.getFS().read(filePath);
-            const profile = this.parseProfile(content);
-            this.cache = profile;
-            return profile;
+            content = await this.getFS().read(filePath);
         } catch {
+            // 文件不存在属正常（首次使用），不标记失败
+            this.loadFailed = false;
+            this.loadFailedPath = '';
             const defaultProfile = this.getEmptyProfile();
             this.cache = defaultProfile;
             return defaultProfile;
         }
+        const profile = this.parseProfile(content);
+        if (profile) {
+            this.cache = profile;
+            this.loadFailed = false;
+            this.loadFailedPath = '';
+            return profile;
+        }
+        this.loadFailed = true;
+        this.loadFailedPath = filePath;
+        log.warn('[WritingProfileManager] 配置解析失败，已标记待留档（保存前会备份原文件）:', filePath);
+        const defaultProfile = this.getEmptyProfile();
+        this.cache = defaultProfile;
+        return defaultProfile;
     }
 
     async save(projectPath: string, profile: WritingProfile): Promise<void> {
         const filePath = WritingProfileManager.getConfigFilePath(projectPath);
+        if (this.loadFailed && this.loadFailedPath === filePath) {
+            // 解析失败后的首次保存：先留档原文件，再写新配置
+            try {
+                const existing = await this.getFS().read(filePath);
+                await this.getFS().write(`${filePath}.bak-${Date.now()}`, existing);
+                log.warn('[WritingProfileManager] 原配置解析失败，已留档备份:', filePath);
+            } catch (e) {
+                log.warn('[WritingProfileManager] 原配置留档失败（继续保存）:', e);
+            }
+            this.loadFailed = false;
+            this.loadFailedPath = '';
+        }
         try {
             profile.updatedAt = new Date().toISOString();
             const content = this.serializeProfile(profile);
@@ -320,17 +356,21 @@ export class WritingProfileManager {
         };
     }
 
-    private parseProfile(content: string): WritingProfile {
+    /**
+     * 解析配置；结构非法返回 null（v4.27，P1-10）。
+     * 旧实现把解析失败也返回空配置，调用方无法区分「文件不存在」与「文件坏了」，
+     * 于是 save 会用默认值覆盖用户配置。
+     */
+    private parseProfile(content: string): WritingProfile | null {
         const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-        if (!fmMatch) {
-            return this.getEmptyProfile();
-        }
+        if (!fmMatch) return null;
 
         try {
             const fmData = parseYaml(fmMatch[1]) as Record<string, any>;
+            if (!fmData || typeof fmData !== 'object') return null;
             return this.normalizeProfile(fmData);
         } catch {
-            return this.getEmptyProfile();
+            return null;
         }
     }
 

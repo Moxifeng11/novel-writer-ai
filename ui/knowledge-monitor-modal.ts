@@ -1,5 +1,5 @@
 import { App, Modal, Notice } from 'obsidian';
-import { DeconstructionScheduler, BreakdownProgress, BreakdownTask, BreakdownDimension } from '../services/deconstruction-scheduler';
+import { DeconstructionScheduler, BreakdownProgress, BreakdownTask, BreakdownDimension } from '../engine/deconstruction-scheduler';
 import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
 import { createLogger } from '../shared/logger';
 

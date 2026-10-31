@@ -23,6 +23,7 @@ import {
 } from '../../shared/paths';
 import { createLogger } from '../../shared/logger';
 import { ensureTemplateScaffold } from '../../shared/template-scaffold';
+import { writeVaultText } from '../../shared/file-system-port';
 import { newProjectPath } from '../../domains/kernel/project-locator';
 import { fanficSettingsFileName, isFanficApproved } from '../full-writer/fanfic-settings-utils';
 import { buildCreationModeMetaSection, type CreationModeMeta } from '../../shared/creation-mode';
@@ -58,24 +59,20 @@ export interface CreateLongProjectResult {
 }
 
 export async function writeCreationModeGuideFile(app: App, project: string, meta: CreationModeMeta): Promise<void> {
-    const dir = `${project}/00-系统模板`;
-    const path = `${dir}/创作模式指南.md`;
+    const path = `${project}/00-系统模板/创作模式指南.md`;
     const { buildCreationModeGuide } = await import('../../shared/creation-mode');
     try {
-        if (!(await app.vault.adapter.exists(dir))) await app.vault.adapter.mkdir(dir);
-        await app.vault.adapter.write(path, buildCreationModeGuide(meta));
+        await writeVaultText(app, path, buildCreationModeGuide(meta));
     } catch (e) {
         log.warn('[ProjectCreate] 写创作模式指南失败:', e);
     }
 }
 
 export async function writeStoryStructureGuideFile(app: App, project: string, settings: LongStorySettings): Promise<void> {
-    const dir = `${project}/00-系统模板`;
-    const path = `${dir}/故事结构指南.md`;
+    const path = `${project}/00-系统模板/故事结构指南.md`;
     const { buildStoryStructureGuide } = await import('../../shared/story-structure');
     try {
-        if (!(await app.vault.adapter.exists(dir))) await app.vault.adapter.mkdir(dir);
-        await app.vault.adapter.write(path, buildStoryStructureGuide(settings));
+        await writeVaultText(app, path, buildStoryStructureGuide(settings));
     } catch (e) {
         log.warn('[ProjectCreate] 写故事结构指南失败:', e);
     }

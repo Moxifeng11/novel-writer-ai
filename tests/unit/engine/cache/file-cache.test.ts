@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FileCache } from '../../../../engine/cache/file-cache';
+import { FileCache } from '../../../../shared/file-cache';
 import { MockFileSystem } from '../../../../shared/file-system-port';
 
 describe('FileCache', () => {

@@ -14,6 +14,7 @@
 import type { App } from 'obsidian';
 import { TEMPLATE_SCAFFOLD_FILES } from './template-scaffold-assets.generated';
 import { createLogger } from './logger';
+import { writeVaultText } from './file-system-port';
 
 const log = createLogger('TemplateScaffold');
 
@@ -90,7 +91,9 @@ export async function ensureTemplateScaffold(app: App): Promise<TemplateScaffold
         const relative = fullPath.slice(TEMPLATE_ROOT.length + 1);
         const content = TEMPLATE_SCAFFOLD_FILES[relative];
         try {
-            await adapter.write(fullPath, content);
+            // 走 vault 索引写入：新建的模板文件立即出现在文件浏览器/双链，
+            // 移动端（无外部文件监听）也能同步。
+            await writeVaultText(app, fullPath, content);
             result.created++;
         } catch (e) {
             result.failed++;

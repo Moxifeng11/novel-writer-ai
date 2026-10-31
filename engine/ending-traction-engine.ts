@@ -10,7 +10,7 @@ import { AIEngine } from './ai-engine';
 import { extractJsonArray, extractResponseText, stripThinkingBlock } from '../shared/api-response-utils';
 import { pjOutlineDir, pjVolumeOutlineDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import type { NovelWriterSettingsAPI } from '../shared/plugin-api';
+import type { NovelWriterSettingsAPI } from '../plugin-api';
 import { createLogger } from '../shared/logger';
  
 

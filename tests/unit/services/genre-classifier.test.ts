@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GenreClassifier } from '../../../services/genre-classifier';
-import { WebnovelKnowledgeBase } from '../../../engine/webnovel-knowledge-base';
+import { WebnovelKnowledgeBase } from '../../../shared/webnovel-knowledge-base';
 
 describe('GenreClassifier — 构造', () => {
   it('使用知识库构造不报错', () => {

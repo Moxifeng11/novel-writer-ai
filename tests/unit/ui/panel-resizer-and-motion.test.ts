@@ -74,7 +74,7 @@ describe('面板尺寸可调', () => {
     });
 
     it('设置页提供面板尺寸数字输入与恢复默认', () => {
-        const src = read('ui/settings-tab.ts');
+        const src = read('ui/settings/writing-sections.ts');
         expect(src).toContain('renderPanelSizeRows');
         expect(src).toContain('写作工作台 · 左栏');
         expect(src).toContain('写作工作台 · 右栏');

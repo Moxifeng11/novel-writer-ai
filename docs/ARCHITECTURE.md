@@ -60,7 +60,8 @@ graph TD
 
 **职责**: 渲染界面、响应用户操作、调用 Facade 获取数据。
 
-- 不直接访问 `plugin.engine.*` 或 `app.vault`
+- **目标边界**：不直接访问 `plugin.engine.*` 或 `app.vault`，数据查询统一走 `CoWriteFacade`
+- **现状（2026-10-31 批次 13 口径）**：**写入侧已收口**——vault 内 `.md` 一律走 `shared/file-system-port.ts#writeVaultText`（9 个 UI / 共享模块 13 处改写，模板自举 56 文件同步进入索引）；只有 `.project` 隐藏文件、`plugin-cache` JSON、agent 会话数据等**索引外路径**，与 engine 层 `写作知识库/` 批量后台写入保留 `vault.adapter`（理由见 `docs/DEVELOPMENT.md`「写 vault 内 `.md` 必须走 `writeVaultText`」）。**读取侧未收口**：`ui/` 内仍直接读 `app.vault`（`getAbstractFileByPath` / `read` / `getFiles` 等，全库 `vault.adapter.*` 实测 141 调用点 / 136 行）；引擎实例通过 `plugin.engine.` 直取 1 处。C2 只闭环了写入子集，读取侧收敛未做，不要按「已经全部走 Facade」理解代码
 - 通过 `CoWriteFacade` 获取数据
 - 包含视图（Views）、模态框（Modals）、面板（Panels）、完整写作器（Full Writer）
 
@@ -70,6 +71,14 @@ graph TD
 - `ui/views/knowledge-base-view.ts` — 知识库管理视图
 - `ui/views/knowledge-base-modals.ts` — 知识库 Modal（导入/编辑书籍、题材编辑、批量操作）
 - `ui/views/writing-fingerprint-view.ts` — 写作指纹库视图
+
+**`ui/settings/` 子目录** — 设置页分区（`settings-tab.ts` 只保留 tab 栏、分区调度与 DOM 缓存）：
+
+- `section-base.ts` — `SettingsSectionHost` / `SettingsSection`，分区经它访问 `app` / `plugin` / `refresh` / `reopen`
+- `api-section.ts` / `knowledge-section.ts` / `fingerprint-section.ts` / `deconstruction-section.ts` / `foreshadow-section.ts` — 单 tab 分区
+- `writing-sections.ts` — 协同写作 / 写作配置 / 模板 / 外观 / 项目库 / 工作台布局 6 个分区
+- `general-sections.ts` — 性能监控 / 提示词 / 规则版本 / 关于 / 角色识别 / 建议 6 个分区
+- `provider-modals.ts` — 供应商编辑 / 管理 / 新增弹窗（当前无调用点）
 
 **`ui/full-writer/` 子目录** — 工作台控制器集合：
 | 文件 | 功能 |
@@ -115,7 +124,7 @@ graph TD
 - `engine/co-writer/session-state.ts` — 会话状态接口（5 个切片）
 - `engine/co-writer/create-session-store.ts` — Store 工厂
 - `engine/streaming/stream-parser.ts` — 流式解析器
-- `engine/cache/multi-layer-cache.ts` — 多层缓存
+- `shared/multi-layer-cache.ts` — 多层缓存（批次 5 从 `engine/cache/` 下沉，engine 侧仅保留 `cache/preload-manager.ts`）
 - `engine/quality/quality-score-engine.ts` — 核心质量评分引擎
 - `engine/quality/deviation-detector.ts` — 偏离检测引擎
 
@@ -169,6 +178,7 @@ export interface IBulkRepository<T, TId> extends IRepository<T, TId> {
 - `shared/paths.ts` — 标准化路径工具函数（`pjCharFile` / `pjBodyFile` 等）
 - `shared/frontmatter.ts` — Frontmatter 解析
 - `shared/entity-models.ts` — 实体领域模型类型
+- `shared/http-request.ts` — 统一网络出口策略（`requestWithPolicy`：单次尝试超时 + 可选重试；Obsidian `requestUrl` 不支持 AbortSignal，超时语义为「拒绝等待并丢弃迟到结果」）
 - `services/` — 应用服务（KnowledgeBaseManager / PerformanceMonitor 等）
 
 ---
@@ -196,6 +206,8 @@ UI Layer → Facade Layer → Engine Layer → Repository Layer → Infrastructu
 | Repository Layer | Infrastructure (FileSystemPort) | Engine 业务逻辑 |
 | Infrastructure | 自身 | 任何上层 |
 
+> 口径说明（2026-10-31）：上表是**目标边界**。门禁 `npm run check:deps` 的棘轮只对「层间内部 import」生效（运行时违规 0 / 循环 0，基线见 `.arch-baseline.json`）；UI 层对 `app.vault` 的直连、Engine 层对 `obsidian` 的直接 import 属于尚未收口的运行时现状，不计入门禁，也不代表规则已达成。**批次 13 已把「写 vault 内 `.md`」收口到 `writeVaultText`**，其余 `app.vault` / `vault.adapter` 直连（读取、目录操作、索引外路径、engine 批量知识库写入）仍未收口。
+
 ### 跨层访问的合法方式
 
 1. **UI 通过 Facade 查询**: UI → Facade → Engine
@@ -204,7 +216,7 @@ UI Layer → Facade Layer → Engine Layer → Repository Layer → Infrastructu
 
 ### 违反规则的标志
 
-- 在 `engine/` 中 `import 'obsidian'` ❌（应通过 `FileSystemPort`）
+- 在 `engine/` 中 `import 'obsidian'` ❌（目标：通过 `FileSystemPort`；**现状偏差**：引擎层仍有多个文件直接 import `obsidian` 的 `Notice` / `App` / `TFile` / `Platform` 等，`FileSystemPort` 目前只覆盖仓储层的数据读写）
 - 在 `ui/` 中直接 `new CharacterRepository(...)` ❌（应通过 Facade）
 - 在 `repository/` 中调用 `engine/` 的业务逻辑 ❌（Repository 只负责数据查询）
 
@@ -227,49 +239,27 @@ UI Layer → Facade Layer → Engine Layer → Repository Layer → Infrastructu
 
 ### 引擎名称常量
 
-所有引擎通过 `ENGINE_NAMES` 常量注册，避免拼写错误：
+所有引擎通过 `ENGINE_NAMES` 常量注册，避免拼写错误。
+
+**定义位置：`shared/engine-names.ts`**（v4.22.0 批次 3 从 `engine/engine-registry.ts` 下沉，`engine-registry.ts` 仅保留 `export { ENGINE_NAMES }` 再导出）。
+
+为什么放在 shared 层：`core`（命令注册）、`engine`（AIEngine / CoWriterEngine / StepRunner）、`ui`（20+ 弹窗）都要按 key 取引擎实例。若常量定义在 `engine-registry.ts`，每个消费方都会被拉出一条指向注册表的运行时依赖；而注册表本身又要 `new AIEngine / new CoWriterEngine / new CommandRegistry`，于是闭合成循环（批次 3 实测 3 条）。常量本身零 import，下沉后既消除循环，也让 `core → engine`、`ui → engine` 这类仅因常量产生的依赖消失。
 
 ```typescript
-export const ENGINE_NAMES = {
-    CACHE_MANAGER: 'cacheManager',
-    INTERNAL_REGISTRY: 'internalRegistry',
-    CRYPTO_SERVICE: 'cryptoService',
-    PROVIDER_MANAGER: 'providerManager',
-    THEME_MANAGER: 'themeManager',
-    SETTINGS_SERVICE: 'settingsService',
-    CONTEXT_MANAGER: 'contextManager',
-    FORESHADOW_MANAGER: 'foreshadowManager',
-    REVIEW_AGENT: 'reviewAgent',
-    COMMAND_REGISTRY: 'commandRegistry',
-    KNOWLEDGE_TAG_MANAGER: 'knowledgeTagManager',
-    KNOWLEDGE_BASE_MANAGER: 'knowledgeBaseManager',
-    KNOWLEDGE_VECTOR_STORE: 'knowledgeVectorStore',
-    VECTOR_ENHANCER: 'vectorEnhancer',
-    DECONSTRUCTION_SCHEDULER: 'deconstructionScheduler',
-    HEAVY_TASK_WORKER_MANAGER: 'heavyTaskWorkerManager',
-    BATCH_IMPORT_MANAGER: 'batchImportManager',
-    WRITING_PROFILE_MANAGER: 'writingProfileManager',
-    KNOWLEDGE_INJECTOR: 'knowledgeInjector',
-    CHARACTER_CONSISTENCY_CHECKER: 'characterConsistencyChecker',
-    AI_ENGINE: 'aiEngine',
-    CO_WRITER_ENGINE: 'coWriterEngine',
-    CO_WRITING_SESSION_STORE: 'coWritingSessionStore',
-    ANALYSIS_REPORT_ENGINE: 'analysisReportEngine',
-    SETTLEMENT_ENGINE: 'settlementEngine',
-    CHARACTER_GENERATOR: 'characterGenerator',
-    WORLDVIEW_CACHE_SERVICE: 'worldviewCacheService',
-    UPDATE_CHECKER: 'updateChecker',
-    TEMPLATE_SERVICE: 'templateService',
-    CHAPTER_VERSION_SERVICE: 'chapterVersionService',
-    TEMPLATE_MANAGER: 'templateManager',
-    CHARACTER_REPOSITORY: 'characterRepository',
-    CHAPTER_REPOSITORY: 'chapterRepository',
-    PROJECT_REPOSITORY: 'projectRepository',
-    FACTION_REPOSITORY: 'factionRepository',
-    LOCATION_REPOSITORY: 'locationRepository',
-    ITEM_REPOSITORY: 'itemRepository',
-} as const;
+// shared/engine-names.ts（42 个 key，完整清单以源文件为准）
+import { ENGINE_NAMES } from '../shared/engine-names';  // core / ui / engine 一律从这里取
 ```
+
+### 类型化取用（批次 6）
+
+`get` / `getOrNull` / `register` / `registerLazy` 对 `EngineServiceMap` 内登记的 35 个 token 直接推导实例类型，调用点不再手写泛型：
+
+```typescript
+const aiEngine = registry.get(ENGINE_NAMES.AI_ENGINE);        // AIEngine
+const cache = registry.getOrNull(ENGINE_NAMES.CACHE_MANAGER);  // PluginCacheManager | null
+```
+
+未登记的 token（组合根注入的 `TEMPLATE_MANAGER`、UI 层注入的 `CO_WRITING_SESSION_STORE`）继续使用 `get<T>(name: string)` 宽泛重载，保持向后兼容。
 
 ### 9 阶段初始化顺序
 
@@ -482,10 +472,10 @@ export interface FileSystemPort {
 | L2 | MultiLayerCache | 文件系统 | 可配置 | 无限制 |
 
 **核心文件**:
-- `engine/cache/multi-layer-cache.ts` — 多层缓存
-- `engine/cache/file-cache.ts` — 文件级缓存（L2）
+- `shared/multi-layer-cache.ts` — 多层缓存（批次 5 从 `engine/cache/` 下沉）
+- `shared/file-cache.ts` — 文件级缓存（L2，批次 5 同步下沉）
 - `engine/cache/preload-manager.ts` — 智能预加载
-- `engine/repository/lru-cache.ts` — LRU 缓存（L1）
+- `shared/lru-cache.ts` — LRU 缓存（L1，批次 3 从 `engine/repository/` 下沉）
 
 ### 4. 协同写作会话状态（engine/co-writer/）
 
@@ -578,14 +568,14 @@ export interface FileSystemPort {
 | 组件 | 文件 | 职责 |
 |------|------|------|
 | KnowledgeBaseManager | `services/knowledge-base-manager.ts` | 书籍 CRUD、索引管理、状态管理 |
-| DeconstructionScheduler | `services/deconstruction-scheduler.ts` | 拆解任务调度、并发控制、进度管理；v8.0 起读取 `NovelWriterSettings.deconstructionEngine`（增强级别/维度/向量/LLM/性能），通过 `getDeconstructionEngineSettings()` 系列方法暴露给运行时 |
+| DeconstructionScheduler | `engine/deconstruction-scheduler.ts` | 拆解任务调度、并发控制、进度管理；v8.0 起读取 `NovelWriterSettings.deconstructionEngine`（增强级别/维度/向量/LLM/性能），通过 `getDeconstructionEngineSettings()` 系列方法暴露给运行时（批次 3 第二步由 `services/` 上移，因其编排的是 engine 原语） |
 | QualityScorer | `engine/quality-scorer.ts` | 三维质量评分（完整性·一致性·置信度）、9 条跨维度交叉验证、shouldUpgrade 升级建议 |
-| KnowledgeVectorStore | `services/knowledge-vector-store.ts` | 向量索引构建与相似性检索 |
+| KnowledgeVectorStore | `engine/knowledge-vector-store.ts` | 向量索引构建与相似性检索 |
 | VectorEnhancer | `engine/vector-enhancer.ts` | 向量增强与维度融合 |
 | KnowledgeInjector | `engine/knowledge-injector.ts` | 写作时知识注入与上下文扩充 |
 | KnowledgeTagManager | `services/knowledge-tag-manager.ts` | 题材标签管理与分类 |
-| BatchImportManager | `services/batch-import-manager.ts` | 批量导入管理 |
-| HeavyTaskWorkerManager | `services/heavy-task-worker-manager.ts` | 重量级任务 Worker 池 |
+| BatchImportManager | `engine/batch-import-manager.ts` | 批量导入管理 |
+| HeavyTaskWorkerManager | `engine/heavy-task-worker-manager.ts` | 重量级任务 Worker 池 |
 
 **存储结构**:
 ```
@@ -752,10 +742,10 @@ processing (恢复)
 - `engine/ai-api-client.ts` — `callAIAsyncIterator`（三阶段降级）
 
 ### 缓存体系
-- `engine/cache/multi-layer-cache.ts` — 多层缓存（L1 + L2）
-- `engine/cache/file-cache.ts` — 文件级缓存（L2）
+- `shared/multi-layer-cache.ts` — 多层缓存（L1 + L2，批次 5 从 `engine/cache/` 下沉）
+- `shared/file-cache.ts` — 文件级缓存（L2，批次 5 同步下沉）
 - `engine/cache/preload-manager.ts` — 智能预加载
-- `engine/repository/lru-cache.ts` — LRU 缓存（L1）
+- `shared/lru-cache.ts` — LRU 缓存（L1，批次 3 从 `engine/repository/` 下沉）
 
 ### 性能监控
 - `services/performance-monitor.ts` — 唯一性能监控实现（分层埋点、慢操作、报告）

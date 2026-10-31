@@ -1,12 +1,12 @@
 import type { App } from 'obsidian';
 import type { KnowledgeBaseManager, BookBasicInfo, BreakdownStatus } from '../../services/knowledge-base-manager';
-import type { WebnovelKnowledgeBase } from '../../engine/webnovel-knowledge-base';
+import type { WebnovelKnowledgeBase } from '../../shared/webnovel-knowledge-base';
 import { radarChart, barChart, donutChart, wordCloud, lineChart, timelineChart, attachChartInteractions } from '../svg-charts';
 import { SmartChart } from '../components/smart-chart';
 import { createEmptyState } from '../components/empty-state';
 import { createLogger } from '../../shared/logger';
 import { formatDetailNumber } from '../knowledge-detail-format';
-import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '../../services/deconstruction-scheduler';
+import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '../../engine/deconstruction-scheduler';
 import type {
     StyleData,
     RhythmData,

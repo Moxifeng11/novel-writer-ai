@@ -17,7 +17,7 @@ import type { VolumePlan } from '../../../shared/volume-plan';
 // 避开重型依赖链：main（含 obsidian 编译产物）、context-manager、template-service
 vi.mock('../../../main', () => ({ default: class {} }));
 vi.mock('../../../engine/context-manager', () => ({ ContextManager: class {} }));
-vi.mock('../../../services/template-service', () => ({ TemplateService: class {} }));
+vi.mock('../../../engine/template-service', () => ({ TemplateService: class {} }));
 
 import { BatchCreateModal } from '../../../ui/batch-create-modal';
 

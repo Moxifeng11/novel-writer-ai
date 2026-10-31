@@ -1,9 +1,9 @@
-import { InternalRegistry } from './engine/internal-registry';
+import { InternalRegistry } from './shared/internal-registry';
 import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { AIEngine } from './engine/ai-engine';
 import { CoWriterEngine } from './engine/co-writer-engine';
 import { ContextManager } from './engine/context-manager';
-import { ForeshadowManager } from './services/foreshadow-manager';
+import { ForeshadowManager } from './engine/foreshadow-manager';
 import { getExecutionLedger } from './services/execution-ledger';
 import { ReviewAgent } from './engine/review-agent';
 import { NovelWriterSettingTab } from './ui/settings-tab';
@@ -32,6 +32,7 @@ import { BackupYuanModal } from './ui/backup-yuan-modal';
 import { ProtectYuanModal } from './ui/protect-yuan-modal';
 import { NovelTagsModal } from './ui/novel-tags-modal';
 import { AiBuilderModal } from './ui/ai-builder-modal';
+import { UnifiedEntityManagerModal } from './ui/unified-entity-manager-modal';
 import { AddFanficSettingModal } from './ui/add-fanfic-setting-modal';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './ui/full-writer-view';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
@@ -46,15 +47,15 @@ import { WelcomeModal } from './ui/welcome-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
 import { PromptManager } from './services/prompt-manager';
-import type { PromptManagerConfig } from './services/prompt-manager-types';
-import { DEFAULT_PROMPT_MANAGER_CONFIG } from './services/prompt-manager-types';
+import type { PromptManagerConfig } from './shared/prompt-manager-types';
+import { DEFAULT_PROMPT_MANAGER_CONFIG } from './shared/prompt-manager-types';
 
 import { FloatWorkspaceManager } from './ui/workspace-manager';
 import { KnowledgeBaseManager } from './services/knowledge-base-manager';
 import { KnowledgeVectorStore } from './engine/knowledge-vector-store';
 import { KnowledgeTagManager } from './engine/knowledge-tags';
-import { DeconstructionScheduler, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from './services/deconstruction-scheduler';
-import type { DeconstructionEngineSettings } from './services/deconstruction-scheduler';
+import { DeconstructionScheduler, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from './engine/deconstruction-scheduler';
+import type { DeconstructionEngineSettings } from './engine/deconstruction-scheduler';
 import { WorldviewCacheService } from './services/worldview-cache-service';
 import { WritingProfileManager } from './engine/writing-profile';
 import { EngineRegistry, ENGINE_NAMES } from './engine/engine-registry';
@@ -71,6 +72,7 @@ import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './s
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
 import { resolveActiveChapterTarget, type ActiveChapterTarget, type WorkbenchChapterContext } from './shared/chapter-target';
+import { LEGACY_STORAGE_KEYS } from './shared/storage-keys';
 import { ensureTemplateScaffold } from './shared/template-scaffold';
 import { RulesService } from './services/rules-service';
 import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
@@ -82,6 +84,8 @@ import { ProviderManager } from './core/provider-manager';
 import { CommandRegistry, parseChapterFromPath } from './core/command-registry';
 import { SettingsService, getDefaultSettings } from './core/settings-service';
 import { CommandUiExecutor } from './ui/command-ui-executor';
+import { PasswordModal } from './ui/password-modal';
+import { TemplateManager } from './ui/template-manager';
 import type { CommandUiPort } from './shared/command-ui-port';
 import { ChapterVersionService } from './services/chapter-version-service';
 import { loadHumanSamples } from './ui/services/human-sample-loader';
@@ -490,8 +494,8 @@ export interface NovelWriterSettings {
     coWriteShowAdvanced?: boolean;
 }
 
-export type { DeconstructionEngineSettings } from './services/deconstruction-scheduler';
-export { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from './services/deconstruction-scheduler';
+export type { DeconstructionEngineSettings } from './engine/deconstruction-scheduler';
+export { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from './engine/deconstruction-scheduler';
 
 export const DEFAULT_SETTINGS: NovelWriterSettings = getDefaultSettings();
 
@@ -538,7 +542,7 @@ export default class NovelWriterPlugin extends Plugin {
     public knowledgeVectorStore?: KnowledgeVectorStore;
     public knowledgeTagManager?: KnowledgeTagManager;
     public deconstructionScheduler?: DeconstructionScheduler;
-    public batchImportManager?: import('./services/batch-import-manager').BatchImportManager;
+    public batchImportManager?: import('./engine/batch-import-manager').BatchImportManager;
     public writingProfileManager?: WritingProfileManager;
     public knowledgeInjector?: KnowledgeInjector;
     public characterConsistencyChecker?: CharacterConsistencyChecker;
@@ -635,11 +639,19 @@ export default class NovelWriterPlugin extends Plugin {
         this.commandUiPort = new CommandUiExecutor({
             app: this.app,
             plugin: this,
-            getVersionService: () => this.engineRegistry.get<ChapterVersionService>(ENGINE_NAMES.CHAPTER_VERSION_SERVICE),
+            getVersionService: () => this.engineRegistry.get(ENGINE_NAMES.CHAPTER_VERSION_SERVICE),
         });
         try {
             // ─── 引擎注册表初始化（Phase 1-8） ───
-            await this.engineRegistry.initialize(this, { settingsWriter: this._settingsWriter });
+            await this.engineRegistry.initialize(this, {
+                settingsWriter: this._settingsWriter,
+                // engine 层不 import ui/：口令弹窗与模板管理器由组合根注入
+                passwordPort: {
+                    requestPassword: () => PasswordModal.ask(this.app),
+                    requestNewPassword: () => PasswordModal.setup(this.app),
+                },
+                createTemplateManager: () => new TemplateManager(this.app),
+            });
             this._assignEngineFields();
 
             // R2: 应用用户扩充的 AI 味词表（默认空数组 → 与内置词表行为一致）
@@ -694,7 +706,7 @@ export default class NovelWriterPlugin extends Plugin {
             });
 
             // 注册 Obsidian 命令（CommandRegistry 已在 initialize 中创建并 registerInternalCommands）
-            const commandRegistry = this.engineRegistry.get<CommandRegistry>(ENGINE_NAMES.COMMAND_REGISTRY);
+            const commandRegistry = this.engineRegistry.get(ENGINE_NAMES.COMMAND_REGISTRY);
             commandRegistry.registerObsidianCommands((cmd) => this.addCommand(cmd));
 
             log.info('[小说工坊] 注册命令...');
@@ -814,7 +826,7 @@ export default class NovelWriterPlugin extends Plugin {
                     if (file.path.includes('/02-时间线与伏笔/')) {
                         this._foreshadowManager.refreshInfoDebt();
                     }
-                    if (file instanceof TFile && /\/03-大纲与章节\/正文\/.*第\d+卷\/第\d+章_正文\.md$/.test(file.path)) {
+                    if (file instanceof TFile && /\/03-大纲与章节\/正文\/[^/]+\/第\d+章[^/]*_正文\.md$/.test(file.path)) {
                         this.handleBodyFileModify(file);
                     }
                     this.contextManager.invalidateCacheByPath(file.path);
@@ -827,8 +839,7 @@ export default class NovelWriterPlugin extends Plugin {
             // — 用户点 ribbon 图标：_pendingReloadState 为 null → 打开工作台至「项目与章节」
             //
             // 彻底清理所有可能的 localStorage 残留（旧实现遗留），防止跨会话污染
-            localStorage.removeItem('novel-writer-reload-state');
-            localStorage.removeItem('novel-writer-user-reload');
+            for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
             if (this._pendingReloadState?.project) {
                 const saved = this._pendingReloadState;
                 setTimeout(() => {
@@ -855,15 +866,15 @@ export default class NovelWriterPlugin extends Plugin {
      * （私有字段无法从 EngineRegistry 直接赋值，需在 Plugin 内部完成）
      */
     private _assignEngineFields(): void {
-        this._cacheManager = this.engineRegistry.get<PluginCacheManager>(ENGINE_NAMES.CACHE_MANAGER);
-        this._cryptoService = this.engineRegistry.get<CryptoService>(ENGINE_NAMES.CRYPTO_SERVICE);
-        this._providerManager = this.engineRegistry.get<ProviderManager>(ENGINE_NAMES.PROVIDER_MANAGER);
-        this._themeManager = this.engineRegistry.get<ThemeManager>(ENGINE_NAMES.THEME_MANAGER);
-        this._settingsService = this.engineRegistry.get<SettingsService>(ENGINE_NAMES.SETTINGS_SERVICE);
-        this.contextManager = this.engineRegistry.get<ContextManager>(ENGINE_NAMES.CONTEXT_MANAGER);
-        this._foreshadowManager = this.engineRegistry.get<ForeshadowManager>(ENGINE_NAMES.FORESHADOW_MANAGER);
-        this._reviewAgent = this.engineRegistry.get<ReviewAgent>(ENGINE_NAMES.REVIEW_AGENT);
-        this._commandRegistry = this.engineRegistry.get<CommandRegistry>(ENGINE_NAMES.COMMAND_REGISTRY);
+        this._cacheManager = this.engineRegistry.get(ENGINE_NAMES.CACHE_MANAGER);
+        this._cryptoService = this.engineRegistry.get(ENGINE_NAMES.CRYPTO_SERVICE);
+        this._providerManager = this.engineRegistry.get(ENGINE_NAMES.PROVIDER_MANAGER);
+        this._themeManager = this.engineRegistry.get(ENGINE_NAMES.THEME_MANAGER);
+        this._settingsService = this.engineRegistry.get(ENGINE_NAMES.SETTINGS_SERVICE);
+        this.contextManager = this.engineRegistry.get(ENGINE_NAMES.CONTEXT_MANAGER);
+        this._foreshadowManager = this.engineRegistry.get(ENGINE_NAMES.FORESHADOW_MANAGER);
+        this._reviewAgent = this.engineRegistry.get(ENGINE_NAMES.REVIEW_AGENT);
+        this._commandRegistry = this.engineRegistry.get(ENGINE_NAMES.COMMAND_REGISTRY);
     }
 
     /**
@@ -953,6 +964,15 @@ export default class NovelWriterPlugin extends Plugin {
         if (typeof view?.showProjectSelector === 'function') {
             await view.showProjectSelector();
         }
+    }
+
+    /**
+     * 打开统一实体管理弹窗（组合根入口）。
+     * 供 `ui/unified-entity-generate-modal` 反向跳转时调用：弹窗只依赖插件实例，
+     * 不再 import 管理弹窗，从而断开两个兄弟模态的运行时循环依赖。
+     */
+    openEntityManagerModal(project: string): void {
+        new UnifiedEntityManagerModal(this.app, this, project).open();
     }
 
     /**
@@ -1258,11 +1278,11 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     get aiEngine(): AIEngine {
-        return this.engineRegistry.get<AIEngine>(ENGINE_NAMES.AI_ENGINE);
+        return this.engineRegistry.get(ENGINE_NAMES.AI_ENGINE);
     }
 
     get coWriterEngine(): CoWriterEngine {
-        return this.engineRegistry.get<CoWriterEngine>(ENGINE_NAMES.CO_WRITER_ENGINE);
+        return this.engineRegistry.get(ENGINE_NAMES.CO_WRITER_ENGINE);
     }
 
     /** 公开访问器 — 供 Modal / UI 组件依赖注入使用 */
@@ -1271,7 +1291,7 @@ export default class NovelWriterPlugin extends Plugin {
 
     /** 分析报告引擎（懒加载，首次访问时由注册表创建） */
     get analysisReportEngine(): AnalysisReportEngine {
-        return this.engineRegistry.get<AnalysisReportEngine>(ENGINE_NAMES.ANALYSIS_REPORT_ENGINE);
+        return this.engineRegistry.get(ENGINE_NAMES.ANALYSIS_REPORT_ENGINE);
     }
 
     get cacheManager(): PluginCacheManager {
@@ -1356,6 +1376,11 @@ export default class NovelWriterPlugin extends Plugin {
 
     // ─── 正文文件变更监听与实体状态重检 ───
 
+    /** 正文重检去重：同一路径 + 同一内容哈希只跑一次（协同 2s 自动保存会反复触发） */
+    private _recheckHashes = new Map<string, string>();
+    /** 实体检测失败提示只弹一次（离线时避免每个文件一条 Notice） */
+    private _entityRecheckNoticeShown = false;
+
     private handleBodyFileModify(file: TFile): void {
         const path = file.path;
         this._debounceManager.debounceFixed(`body-modify:${path}`, () => {
@@ -1376,6 +1401,15 @@ export default class NovelWriterPlugin extends Plugin {
 
             const content = await this.app.vault.read(file);
             if (!content || content.length < 50) return;
+
+            // P1-16：内容没变就跳过（自动保存会以 2s 节奏重复触发 AI 调用，白烧额度）
+            const hash = `${content.length}:${content.slice(-120)}`;
+            if (this._recheckHashes.get(file.path) === hash) return;
+            this._recheckHashes.set(file.path, hash);
+            if (this._recheckHashes.size > 200) {
+                const firstKey = this._recheckHashes.keys().next().value;
+                if (firstKey) this._recheckHashes.delete(firstKey);
+            }
 
             const manager = new EntityStateManager({
                 app: this.app,
@@ -1487,7 +1521,7 @@ export default class NovelWriterPlugin extends Plugin {
         cacheManager.setLastRunVersion(currentVersion);
         // 升级后旧 updateLastResult 可能仍记录旧 currentVersion；读取一次会按当前版本纠正并回写。
         try {
-            const updateChecker = this.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+            const updateChecker = this.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
             updateChecker?.getLastCheckResult?.();
         } catch (e) {
             log.warn('[版本管理] 更新缓存版本纠正失败:', e);
@@ -1522,7 +1556,7 @@ export default class NovelWriterPlugin extends Plugin {
     /** 静默检查更新（后台运行，不打扰用户） */
     private async silentCheckForUpdates(): Promise<void> {
         try {
-            const updateChecker = this.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+            const updateChecker = this.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
             if (!updateChecker) return;
 
             if (!updateChecker.shouldCheck()) return;
@@ -1590,8 +1624,7 @@ export default class NovelWriterPlugin extends Plugin {
         // P0-14/16: 不再向 localStorage 保存恢复状态。
         // 热重载恢复完全通过内存态 _pendingReloadState 传递（按钮 handler 在 disable 前设置）。
         // 这样 Obsidian 正常关闭→启动时不会有任何残留，工作台默认不打开。
-        localStorage.removeItem('novel-writer-reload-state');
-        localStorage.removeItem('novel-writer-user-reload');
+        for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
         // v5.5: 卸载时关闭分离式浮窗（监控面板A/B + 协同写作视图叶子），避免残留空叶子。
         this.workspaceManager?.closeAll();
         // 2026-10-28: 状态栏浮窗已移除，其点击监听清理随之删除；快速切换器由各视图自行销毁。

@@ -16,7 +16,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { AIEngine, ChapterContext } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
-import { ForeshadowManager } from '../services/foreshadow-manager';
+import { ForeshadowManager } from '../engine/foreshadow-manager';
 import { ReviewAgent } from '../engine/review-agent';
 import { scoreAndFilterEntities, ScoredEntity } from '../engine/entity-scorer';
 import { stripFrontmatter, showProgress, hideProgress, showSuccess, showError, showWarning } from '../utils/helpers';
@@ -27,7 +27,7 @@ import { isInfoPlanComplete, isOutlineComplete } from '../shared/info-debt';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
 import { FIX_PROMPTS, fillTemplate } from '../engine/prompt-templates';
 import { SettlementEngine, SettlementResult } from '../engine/settlement-engine';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { pjBodyDir, pjBodyFile, pjForeshadowDB, pjStepDir, pjVolumeOutlineFile, SUBDIR_STEP_ROOT } from '../shared/paths';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { buildStepFrontmatter } from '../shared/step-frontmatter';
@@ -804,7 +804,7 @@ ${reportResult.content}
 
 
     private static async executeSettlement(plugin: NovelWriterPlugin, project: string, chapDir: string, chapName: string, report: string, bodyText: string, forceReveal: string[] = []): Promise<SettlementResult> {
-        const engine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        const engine = plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
         return engine.settle(project, chapDir, chapName, report, bodyText,
             { forceReveal: forceReveal.length > 0 ? forceReveal : undefined }
         );

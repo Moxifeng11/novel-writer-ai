@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { SchedulerSegmentIntegration } from '../../../services/scheduler-segment-integration';
-import type { DeconstructDimension } from '../../../services/deconstruction-worker-manager';
+import { SchedulerSegmentIntegration } from '../../../engine/scheduler-segment-integration';
+import type { DeconstructDimension } from '../../../engine/deconstruction-worker-manager';
 
 function createMockWorkerManager() {
     return {

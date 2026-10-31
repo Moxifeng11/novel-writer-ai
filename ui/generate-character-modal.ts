@@ -10,10 +10,11 @@ import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { pjCharsDir, pjWorldview, pjSettingLib, pjFactionsDir, pjLocsDir, pjItemsDir, SUBDIR_CHARS } from '../shared/paths';
 import { saveEntities, formatSaveOutcome } from '../shared/entity-persistence';
 import { CharacterGenerator } from '../engine/ai-character-generator';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { CharacterRawData as CharacterData } from '../shared/types';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { createLogger } from '../shared/logger';
+import { nextFrame } from '../shared/yield';
 
 
 const log = createLogger('GenerateCharacterModal');
@@ -199,8 +200,8 @@ export class GenerateCharacterModal extends Modal {
                 progressLabel.setText(`⏳ 准备中...（模型：${modelName}）`);
                 progressBarTrack.style.display = 'block';
                 progressBarFill.addClass('nw-progress-anim');
-                // P0-2 修复: 后台窗口 rAF 不触发会导致永久挂起，改用 setTimeout 让出执行权
-                await new Promise(r => setTimeout(r, 16));
+                // 等一帧让进度条先渲染（后台窗口由 nextFrame 内部超时兜底，见 P0-2）
+                await nextFrame();
 
                 let worldView = '';
                 try {
@@ -533,7 +534,7 @@ export class GenerateCharacterModal extends Modal {
                 if (name) {
                     log.info(`[小说工坊] 角色卡 ${name} 缺失字段: ${validation.missingFields.join('、')}，尝试补全`);
                     try {
-                        const generator = this.plugin.engineRegistry.get<CharacterGenerator>(ENGINE_NAMES.CHARACTER_GENERATOR);
+                        const generator = this.plugin.engineRegistry.get(ENGINE_NAMES.CHARACTER_GENERATOR);
                         const completed = await generator.completeCharacter(trimmedBlock, validation.missingFields, signal);
                         const reValidation = validateCharacterOutput(completed.trim());
                         if (reValidation.valid) {

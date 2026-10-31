@@ -29,16 +29,16 @@ import {
     kbBookReadabilityAnalysisFile,
     kbVectorsDir,
 } from '../shared/paths';
-import type { BreakdownDimension } from './deconstruction-scheduler';
+import type { BreakdownDimension } from '../shared/deconstruction-settings';
 import { SerializedWriter } from '../shared/serialized-writer';
-import { WebnovelKnowledgeBase } from '../engine/webnovel-knowledge-base';
+import { WebnovelKnowledgeBase } from '../shared/webnovel-knowledge-base';
 import { GenreClassifier, type GenreClassificationResult } from './genre-classifier';
 import { GenrePreferenceMemory, type GenrePreferenceData } from './genre-preference-memory';
-import type { EmbeddingProvider } from '../engine/embedding/embedding-provider';
+import type { EmbeddingProvider } from '../shared/embedding-provider';
 import { kbConfigDir } from '../shared/paths';
-import { LruCache } from '../engine/repository/lru-cache';
+import { LruCache } from '../shared/lru-cache';
 import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '../shared/write-lock';
-import type { MultiLayerCache } from '../engine/cache';
+import type { MultiLayerCache } from '../shared/multi-layer-cache';
 import { createLogger } from '../shared/logger';
 
 

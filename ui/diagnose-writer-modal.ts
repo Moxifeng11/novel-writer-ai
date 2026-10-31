@@ -8,7 +8,7 @@ import { createLogger } from '../shared/logger';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { exportTextFile } from '../shared/export-file';
 import { getBudgetSnapshots } from '../shared/budget-telemetry';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 
 
 const log = createLogger('DiagnoseWriterModal');

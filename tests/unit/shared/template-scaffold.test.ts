@@ -35,8 +35,32 @@ class FakeAdapter {
     }
 }
 
+/**
+ * 模板自举写入走 `writeVaultText`（vault 索引写入，新装用户才能在文件浏览器看到模板），
+ * 因此 App 替身需要覆盖 ObsidianFileSystem.write 用到的 vault 方法，而不只是 adapter。
+ *
+ * `getAbstractFileByPath` 恒返回 null：本用例只对「缺失文件」走写分支，新建文件在
+ * 真实 Obsidian 里同样落到 `vault.create`；已存在文件在 exists 阶段就被 skipped。
+ */
 function makeApp(adapter: FakeAdapter) {
-    return { vault: { adapter } } as unknown as Parameters<typeof ensureTemplateScaffold>[0];
+    return {
+        vault: {
+            adapter,
+            configDir: '.obsidian',
+            getAbstractFileByPath: () => null,
+            createFolder: async (path: string): Promise<void> => {
+                adapter.dirs.add(path);
+            },
+            create: async (path: string, data: string): Promise<void> => {
+                // failWrites 命中时抛错，用于覆盖「单文件失败不阻断其余文件」
+                if (adapter.failWrites.has(path)) throw new Error('simulated write failure');
+                adapter.files.set(path, data);
+            },
+            modify: async (): Promise<void> => {
+                throw new Error('unexpected vault.modify: 缺失文件不应走 modify 分支');
+            },
+        },
+    } as unknown as Parameters<typeof ensureTemplateScaffold>[0];
 }
 
 describe('ensureTemplateScaffold（P0 模板自举）', () => {

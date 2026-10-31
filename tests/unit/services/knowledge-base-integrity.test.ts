@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { KnowledgeBaseManager } from '../../../services/knowledge-base-manager';
 import { KnowledgeBaseConfigManager } from '../../../engine/knowledge-base-config';
-import { BatchImportManager } from '../../../services/batch-import-manager';
+import { BatchImportManager } from '../../../engine/batch-import-manager';
 import { kbBookBasicInfoFile, kbIndexFile, kbKnowledgeBaseDir } from '../../../shared/paths';
 
 class FakeFileSystem {

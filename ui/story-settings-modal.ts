@@ -16,6 +16,7 @@ import {
 import { buildCreationModeGuide, parseCreationModeMeta } from '../shared/creation-mode';
 import { StorySettingsEditor } from './story-settings-form';
 import { createLogger } from '../shared/logger';
+import { writeVaultText } from '../shared/file-system-port';
 
 const log = createLogger('StorySettingsModal');
 
@@ -85,13 +86,10 @@ export class StorySettingsModal extends Modal {
             await this.app.vault.adapter.write(`${this.project}/.project`, nextMeta);
 
             const guideDir = `${this.project}/00-系统模板`;
-            if (!(await this.app.vault.adapter.exists(guideDir))) {
-                await this.app.vault.adapter.mkdir(guideDir);
-            }
-            await this.app.vault.adapter.write(`${guideDir}/故事结构指南.md`, buildStoryStructureGuide(settings));
+            await writeVaultText(this.app, `${guideDir}/故事结构指南.md`, buildStoryStructureGuide(settings));
 
             const modeMeta = parseCreationModeMeta(nextMeta);
-            await this.app.vault.adapter.write(`${guideDir}/创作模式指南.md`, buildCreationModeGuide(modeMeta));
+            await writeVaultText(this.app, `${guideDir}/创作模式指南.md`, buildCreationModeGuide(modeMeta));
 
             new Notice(`✅ 故事结构已保存：${settings.structureId}`, 4000);
             this.onSaved?.(settings);

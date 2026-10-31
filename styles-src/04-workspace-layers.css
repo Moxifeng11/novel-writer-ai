@@ -1,0 +1,1291 @@
+/* ============================================================
+ * v5.2 拆窗：正文区信息密度提升
+ * ============================================================ */
+.novel-writer-fw-step-nav { padding: 8px; }
+.novel-writer-fw-step-icon { font-size: 10px; margin-right: 4px; }
+.novel-writer-fw-step-label { font-size: 12px; }
+.novel-writer-fw-nav-title { font-size: 12px; margin: 0 0 6px 0; }
+.novel-writer-fw-step-list { gap: 1px; }
+.novel-writer-fw-prompt-area { padding: 10px; }
+.novel-writer-fw-prompt-area textarea { font-size: 13px; padding: 8px; }
+.novel-writer-fw-status-bar { padding: 4px 12px; font-size: 11px; }
+.novel-writer-fw-status-item { font-size: 11px; }
+.novel-writer-fw-status-sep { font-size: 11px; margin: 0 2px; }
+
+/* ==========================================================================
+   8. v5.3 三视图统一重构终层 (Unified Workspace Final)
+   目标：主工作台只保留「步骤导航 + 生成控制」，正文控制台独立标签，监控集中在侧栏
+   核心：.novel-writer-fw-workspace grid 布局、面板卡片化
+   ========================================================================== */
+
+.novel-writer-fw-container {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 10px;
+    background: transparent !important;
+}
+
+/* 标题栏卡片化。
+   .nw-cowrite-header 的完整定义在下方（含 flex 布局），此处只保留
+   工作台标题栏共用的卡片外观，避免同一选择器两处各带一份 !important。 */
+.novel-writer-fw-titlebar {
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-lg, 12px);
+    background: color-mix(in srgb, var(--nw-panel-bg, var(--background-secondary)) 92%, transparent);
+    box-shadow: var(--nw-card-shadow, none);
+    flex-shrink: 0;
+    padding: 8px 10px;
+}
+
+.novel-writer-fw-title-row { gap: 8px !important; min-height: 34px; }
+.novel-writer-fw-title-sep,
+.novel-writer-fw-title-suffix { color: var(--nw-text-secondary, var(--text-muted)); font-size: 12px; }
+
+/* Task 8.1: 标题栏次要控件容器基础样式 */
+.novel-writer-fw-title-secondary {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Task 8.1: 标题栏响应式 - 窄屏次要控件换行 */
+@media (max-width: 1100px) {
+    .novel-writer-fw-titlebar .novel-writer-fw-title-row {
+        flex-wrap: wrap;
+    }
+    .novel-writer-fw-title-secondary {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 4px;
+    }
+}
+
+/* 原先是 grid + 三个 !important 的重复定义（与 L903 的基础规则冲突）。
+   三栏已改为 flex（见基础规则），此处不再重复声明 display/grid-template，
+   只保留必要的间距与对齐。 */
+.novel-writer-fw-workspace {
+    min-height: 0;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.novel-writer-fw-step-nav,
+.novel-writer-fw-prompt-area,
+.novel-writer-monitor-body .novel-writer-fw-context-panel,
+.nw-cowrite-left,
+.nw-cowrite-right,
+.nw-cowrite-preview,
+.nw-cowrite-center,
+.nw-card,
+.nw-suggestions,
+.nw-warnings,
+.novel-writer-cowrite-suggestion-card,
+.novel-writer-cowrite-validation-panel {
+    background: var(--nw-panel-bg, var(--background-secondary)) !important;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border)) !important;
+    border-radius: var(--nw-radius-lg, 12px) !important;
+    box-shadow: var(--nw-card-shadow, none) !important;
+}
+
+.novel-writer-fw-step-nav {
+    min-height: 0;
+    overflow: auto;
+    padding: 8px !important;
+}
+
+.novel-writer-fw-nav-title {
+    margin: 0 0 8px !important;
+    padding: 0 2px 6px;
+    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    color: var(--nw-text-secondary, var(--text-muted));
+    letter-spacing: .04em;
+}
+
+.novel-writer-fw-step-list { gap: 3px !important; }
+.novel-writer-fw-step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    margin: 1px 0;
+    padding: 5px 7px !important;
+    border-radius: 10px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    font-size: 12px;
+    color: var(--nw-text-secondary);
+    transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s ease;
+}
+.novel-writer-fw-step-item:hover,
+.novel-writer-fw-step-item.active {
+    background: var(--nw-card-bg, var(--background-primary)) !important;
+    border-color: var(--nw-card-border, var(--background-modifier-border)) !important;
+    transform: translateY(-1px);
+}
+.novel-writer-fw-step-item.active { box-shadow: inset 3px 0 0 var(--nw-accent, var(--interactive-accent)); }
+.novel-writer-fw-step-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 阶段内的步骤级状态：只显示必做/已完成/部分完成/未执行，避免阶段级「全部完成才算」看不出进度 */
+.novel-writer-fw-substep {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 20px;
+    margin: 0 0 0 18px;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    font-size: 11px;
+    color: var(--nw-text-secondary, var(--text-muted));
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+.novel-writer-fw-substep:hover { background: var(--background-modifier-hover) !important; }
+.novel-writer-fw-substep-active {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover) !important;
+    box-shadow: inset 2px 0 0 var(--nw-accent, var(--interactive-accent));
+}
+.novel-writer-fw-substep-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.novel-writer-fw-substep-mark {
+    margin-left: auto;
+    font-size: 9px;
+    opacity: .55;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    padding: 0 3px;
+}
+
+.novel-writer-fw-prompt-area {
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    /* 不再用 !important：它会架空下游（步骤操作栏区）对 padding 的调整，
+       使得那条 padding: 14px 18px 24px 永远不生效。 */
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.novel-writer-fw-prompt-area textarea,
+
+.novel-writer-fw-preview-section,
+.novel-writer-inline-preview,
+.nw-context-bar__collapsible-card {
+    background: var(--nw-card-bg, var(--background-primary)) !important;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border)) !important;
+    border-radius: var(--nw-radius-md, 8px) !important;
+    box-shadow: none !important;
+}
+
+.novel-writer-fw-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 10px !important;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border)) !important;
+    border-radius: var(--nw-radius-lg, 12px) !important;
+    background: var(--nw-panel-bg, var(--background-secondary)) !important;
+    background: color-mix(in srgb, var(--nw-panel-bg, var(--background-secondary)) 90%, transparent) !important;
+}
+.novel-writer-fw-status-sep { display: none; }
+.novel-writer-fw-status-item {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--nw-card-bg, var(--background-primary));
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+}
+.novel-writer-monitor-body .novel-writer-fw-context-panel { padding: 8px !important; }
+.novel-writer-monitor-body .nw-context-bar__collapsible-card,
+.novel-writer-monitor-body .novel-writer-fw-context-card {
+    margin: 6px 0 !important;
+    padding: 8px !important;
+    font-size: 12px !important;
+}
+
+.nw-cowrite-title h2 { margin: 0 !important; font-size: 18px !important; font-family: var(--nw-font-display); letter-spacing: .01em; }
+.nw-cowrite-status {
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--nw-card-bg, var(--background-primary));
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    color: var(--nw-text-secondary, var(--text-muted));
+    font-size: 12px;
+}
+/* 中/右栏容器：合并原先相邻的两条规则——第二条只是给 .nw-cowrite-center
+   又把同样的 padding 重复了一遍，属历史叠加残留。
+
+   padding 不再带 !important：`.nw-cowrite-center` 的权威定义在下方
+   （含 flex 布局，padding: 8px），这个 !important 会把它架空，
+   使得协同写作中栏的实际内边距永远停在 10px。 */
+.nw-cowrite-center,
+.nw-cowrite-right {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 10px;
+}
+.nw-cowrite-left {
+    overflow-y: auto;
+    gap: 10px;
+}
+.nw-cowrite-preview {
+    min-height: 0;
+    overflow: auto;
+    padding: 10px;
+}
+.novel-writer-cowrite-suggestion-card { padding: 10px !important; }
+.novel-writer-cowrite-card-row { gap: 8px !important; }
+/* 主按钮统一走主题强调色 token。
+   历史上这里用硬编码渐变 + !important 抢赢，导致用户在设置里改「强调色」
+   后主按钮纹丝不动（主题契约被 !important 废掉）。改为 token 后，
+   --nw-accent 由三层配色注入，改色立即生效。 */
+.novel-writer-cowrite-primary-btn,
+.nw-btn-primary {
+    background: var(--nw-btn-primary-bg, var(--nw-accent, var(--interactive-accent)));
+    color: var(--nw-btn-primary-text, var(--text-on-accent));
+    border-color: transparent;
+}
+.novel-writer-cowrite-secondary-btn,
+.nw-btn-secondary,
+.novel-writer-settings-btn,
+.novel-writer-fw-tab-action {
+    border-radius: var(--nw-radius-md, 8px) !important;
+    transition: background-color, border-color, color, box-shadow, opacity, transform 0.2s ease;
+}
+.novel-writer-cowrite-secondary-btn:hover,
+.nw-btn-secondary:hover,
+.novel-writer-settings-btn:hover,
+.novel-writer-fw-tab-action:hover { transform: translateY(-1px); }
+
+.nw-theme-preview {
+    background: linear-gradient(145deg, var(--nw-app-bg, var(--background-primary)), var(--nw-surface, var(--background-secondary))) !important;
+    border-color: var(--nw-card-border, var(--background-modifier-border)) !important;
+}
+.nw-theme-preview-swatch-app { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nw-card-border) 80%, transparent); }
+.nw-theme-preview-swatch-card { box-shadow: var(--nw-card-shadow, none) !important; }
+
+@media (max-width: 1100px) {
+    /* 窄屏单列：工作区改为纵向 flex，作为唯一滚动面，三段按内容高度顺序堆叠。
+       旧的 `grid-template-columns: 1fr !important` 与紧随其后的
+       `display: flex !important` 互相矛盾（display 已是 flex，grid 列无效），
+       故删掉那条无效声明。 */
+    .novel-writer-fw-workspace,
+    .nw-cowrite-main {
+        display: flex !important;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        align-items: stretch;
+    }
+    /* 步骤导航固定一段高度并内部滚动；其余段按内容高度展开，交给外层滚动条。
+       max-height 交给 900px 断点统一给值（200px），此处只负责 flex 行为，
+       避免同一属性在两个断点互相覆盖。 */
+    .novel-writer-fw-step-nav {
+        flex: 0 0 auto;
+        overflow-y: auto;
+    }
+    .novel-writer-fw-prompt-area,
+    .novel-writer-fw-context-panel {
+        flex: 0 0 auto;
+        min-width: 0;
+        min-height: 0;
+        overflow: visible;
+    }
+    /* 纵向堆叠时宽度必须撑满：基础规则里两翼写死了
+       width: var(--nw-panel-nav/context)，不清掉会留下一条窄栏。 */
+    .novel-writer-fw-workspace > .novel-writer-fw-step-nav,
+    .novel-writer-fw-workspace > .novel-writer-fw-context-panel {
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* 纵向堆叠没有左右分栏，分隔条一并隐藏 */
+    .nw-fw-resizer {
+        display: none;
+    }
+    .nw-cowrite-left,
+    .nw-cowrite-center,
+    .nw-cowrite-right {
+        flex: 0 0 auto;
+        min-width: 0;
+        min-height: 0;
+        overflow: visible !important;
+    }
+}
+
+/* ==========================================================================
+   9. v5.4 协同写作终层收敛 (Co-write Final Layer)
+   三栏布局终版：左预览 / 中编辑 / 右控制台
+   核心：.nw-cowrite-root container-type、三列 grid、@container 响应式降级
+   注意：此为最终生效层，覆盖前面所有协同写作布局样式
+   ========================================================================== */
+
+.nw-cowrite-root {
+    height: 100%;
+    min-height: 0;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 10px;
+    /* 基于面板自身宽度做响应式：协同视图若被放进窄面板/分屏，
+       窗口级 @media 测不到（窗口仍很宽），需用容器查询兜底降级为单列。 */
+    container-type: inline-size;
+    container-name: nw-cowrite;
+    background:
+        radial-gradient(circle at 8% -8%, color-mix(in srgb, var(--nw-accent) 14%, transparent), transparent 28%),
+        linear-gradient(180deg, color-mix(in srgb, var(--nw-app-bg, var(--background-primary)) 92%, var(--nw-accent) 8%), var(--nw-app-bg, var(--background-primary))) !important;
+    color: var(--nw-text-primary, var(--text-normal));
+}
+
+.nw-cowrite-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 12px;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-lg, 12px);
+    background: color-mix(in srgb, var(--nw-panel-bg, var(--background-secondary)) 92%, transparent);
+    box-shadow: var(--nw-card-shadow, none);
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* v8.4: 「⋯ 更多」下拉已移除（功能并入右栏「⚙ 更多工具」），相关样式一并清理 */
+
+.nw-cowrite-main {
+    min-height: 0;
+    display: grid !important;
+    grid-template-columns: minmax(150px, 200px) minmax(420px, 1fr) minmax(320px, 380px);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 10px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.nw-cowrite-left {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nw-cowrite-left-collapsed { width: 0; padding: 0; overflow: hidden; border: none; min-width: 0; }
+
+/* 本章简报：承接规划阶段成果（大纲/场景/情绪/信息释放） */
+.nw-cowrite-brief {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 0 1 auto;
+    max-height: 62%;
+    overflow-y: auto;
+}
+.nw-cowrite-brief-head { display: flex; align-items: center; justify-content: space-between; }
+.nw-cowrite-brief-title { font-size: 12px; font-weight: 600; color: var(--text-normal); }
+.nw-cowrite-brief-summary { font-size: 11px; color: var(--text-muted); }
+.nw-cowrite-brief-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 2px; }
+.nw-cowrite-brief-text { font-size: 11px; line-height: 1.5; color: var(--text-normal); word-break: break-word; }
+.nw-cowrite-brief-scenes { display: flex; flex-direction: column; gap: 2px; }
+.nw-cowrite-brief-scene { padding: 4px 6px; border-radius: 4px; cursor: pointer; border: 1px solid transparent; }
+.nw-cowrite-brief-scene:hover { background: var(--background-modifier-hover); }
+.nw-cowrite-brief-scene.is-active { border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
+.nw-cowrite-brief-scene.is-done { opacity: 0.65; }
+.nw-cowrite-brief-scene-name { font-size: 11px; line-height: 1.4; word-break: break-word; }
+.nw-cowrite-brief-card { border-top: 1px dashed var(--background-modifier-border); padding-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+.nw-cowrite-brief-row { font-size: 11px; line-height: 1.45; display: flex; gap: 4px; }
+.nw-cowrite-brief-row-label { color: var(--text-muted); flex: 0 0 auto; }
+.nw-cowrite-brief-row-value { color: var(--text-normal); word-break: break-word; }
+.nw-cowrite-brief-emotion,
+.nw-cowrite-brief-hook { font-size: 11px; line-height: 1.45; color: var(--text-accent); word-break: break-word; }
+.nw-cowrite-brief-info { border-top: 1px dashed var(--background-modifier-border); padding-top: 6px; }
+.nw-cowrite-brief-empty { font-size: 11px; line-height: 1.5; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px; }
+
+.nw-cowrite-center {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px;
+    display: flex !important;
+    flex-direction: row;
+    gap: 0;
+    --nw-cowrite-editor-percent: 65%;
+}
+
+.nw-cowrite-center.is-stacked {
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nw-cowrite-editor-wrap {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    flex: 0 0 var(--nw-cowrite-editor-percent, 65%);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.nw-cowrite-center.is-stacked .nw-cowrite-editor-wrap {
+    flex: 1 1 auto;
+    width: 100%;
+}
+
+/* 协同写作分隔条：交互与外观已由通用原语 .nw-panel-resizer 提供
+   （宽度/光标/hover/命中区/键盘焦点）。这里只保留该视图特有的布局差异：
+   视觉更细（4px）、两侧留一点间距、层级高于编辑器。 */
+.nw-cowrite-resizer {
+    width: 4px;
+    min-width: 4px;
+    flex: 0 0 4px;
+    z-index: 10;
+    margin: 0 4px;
+}
+.nw-cowrite-center.is-stacked .nw-cowrite-resizer {
+    display: none;
+}
+
+.nw-cowrite-suggestions-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nw-cowrite-center.is-panel-collapsed .nw-cowrite-editor-wrap {
+    flex: 1 1 auto;
+    width: 100%;
+}
+.nw-cowrite-center.is-panel-collapsed .nw-cowrite-suggestions-panel,
+.nw-cowrite-center.is-panel-collapsed .nw-cowrite-resizer {
+    display: none !important;
+}
+
+.nw-cowrite-right {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: var(--nw-space-2, 8px);
+    display: flex !important;
+    flex-direction: column;
+    gap: var(--nw-space-2, 8px);
+}
+
+.nw-cowrite-cards {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+    gap: var(--nw-space-1, 6px);
+    min-height: 0;
+    overflow: visible;
+    align-content: start;
+}
+.nw-cowrite-cards > .nw-card:first-child {
+    grid-row: span 2;
+}
+
+/* 窄面板下卡片改为单列布局 */
+@container nw-cowrite (max-width: 450px) {
+    .nw-cowrite-cards {
+        grid-template-columns: 1fr;
+    }
+    .nw-cowrite-cards > .nw-card:first-child {
+        grid-row: auto;
+    }
+}
+
+.nw-cowrite-editor-wrap {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.nw-cowrite-editor-wrap > .nw-cowrite-editor { min-height: 0; }
+
+/* 预览区 */
+.nw-cowrite-preview { min-height: 0; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.nw-cowrite-preview-label { font-size: 11px; font-weight: 600; color: var(--nw-text-muted, var(--text-faint)); text-transform: uppercase; letter-spacing: 0.5px; }
+.nw-cowrite-preview-content { flex: 1; min-height: 0; overflow-y: auto; font-size: 12px; line-height: 1.55; color: var(--nw-text-primary, var(--text-normal)); white-space: pre-wrap; }
+.nw-cowrite-preview-toggle { text-align: right; font-size: 11px; color: var(--nw-text-muted, var(--text-faint)); cursor: pointer; }
+
+/* 容器查询兜底：当协同面板自身宽度 < 900px（窄面板/左右 dock 占用/分屏）时，
+   三栏 grid 会把中间「编辑」栏挤瘦（实测 731px 时仅 ~170px 不可用），
+   故降级为单列纵向 flex：编辑区全宽，预览/控制台上下堆叠，整体可滚。
+   这是对窗口级 @media 的补充——后者在「窄面板 + 宽窗口」场景无效。 */
+@container nw-cowrite (max-width: 900px) {
+    .nw-cowrite-main {
+        display: flex !important;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .nw-cowrite-left,
+    .nw-cowrite-center,
+    .nw-cowrite-right {
+        flex: 0 0 auto;
+        min-width: 0;
+        min-height: 0;
+        overflow: visible;
+    }
+    .nw-cowrite-center {
+        min-height: 360px;
+    }
+    .nw-cowrite-editor-wrap > .nw-cowrite-editor {
+        min-height: 200px;
+    }
+}
+
+@media (max-width: 900px) {
+    .nw-cowrite-main { grid-template-columns: 1fr; overflow-y: auto; }
+    .nw-cowrite-left { min-height: 160px; }
+    .nw-cowrite-center { min-height: 400px; }
+    .nw-cowrite-right { min-height: 360px; }
+}
+
+@media (max-height: 760px) {
+    .nw-cowrite-right { gap: 8px !important; }
+    .nw-cowrite-cards { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+    .nw-cowrite-editor-wrap > .nw-cowrite-editor { min-height: 130px; }
+    .nw-suggestions { min-height: 80px; }
+}
+
+.nw-cowrite-editor {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    resize: none;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--background-primary) 92%, var(--nw-accent) 8%);
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 15px;
+    line-height: 1.8;
+    padding: 14px 16px;
+    outline: none;
+    font-family: inherit;
+    overflow: auto;
+}
+.nw-cowrite-editor:focus { outline: none; }
+
+.nw-cowrite-ghost-suggestion {
+    display: none;
+    padding: 8px 12px;
+    border-top: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    color: var(--nw-text-muted, var(--text-faint));
+    font-size: 13px;
+    cursor: pointer;
+}
+.nw-cowrite-ghost-suggestion.is-visible { display: flex; gap: 6px; align-items: center; }
+.nw-cowrite-ghost-prefix { color: var(--nw-accent, var(--interactive-accent)); font-weight: 500; white-space: nowrap; }
+.nw-cowrite-ghost-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 流程控制面板 - 章节流程 */
+/* 控制面板 */
+.nw-cowrite-right .nw-cowrite-control-panel {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--nw-space-2, 8px);
+    overflow: hidden;
+    padding: var(--nw-space-2, 8px);
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-md, 8px);
+    background: var(--background-secondary);
+}
+.nw-cowrite-control-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--nw-space-2, 8px);
+    flex-shrink: 0;
+}
+.nw-cowrite-control-title { font-size: 12px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); }
+.nw-cowrite-control-state { font-size: 10px; color: var(--nw-text-muted, var(--text-faint)); white-space: nowrap; }
+/* NBI-04: 临时指令「已应用」状态标识（与保存状态同排，默认隐藏） */
+.nw-hint-state {
+    margin-left: auto;
+    font-size: 11px;
+    line-height: 1.2;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.nw-hint-input { flex-shrink: 0; }
+.nw-cowrite-control-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: center;
+}
+.nw-cowrite-control-actions .nw-btn { min-width: 70px; justify-content: center; padding-inline: 6px; }
+
+.nw-cowrite-tools-panel {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    min-width: 240px;
+}
+.nw-cowrite-tools-panel .nw-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+}
+.nw-warnings { flex-shrink: 0; }
+
+/* v7.x: 控制台竖向 3 分组（核心创作 / 辅助润色 / 更多工具） */
+.nw-cowrite-actions-area {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.nw-cowrite-action-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.nw-cowrite-action-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--nw-text-muted, var(--text-faint));
+    letter-spacing: 0.5px;
+}
+.nw-cowrite-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.nw-cowrite-action-row .nw-btn {
+    min-width: 0;
+    flex: 1 1 auto;
+    justify-content: center;
+}
+.nw-cowrite-tools-panel-inline {
+    position: static;
+    box-shadow: none;
+    border: 1px solid var(--background-modifier-border);
+    min-width: 0;
+    margin-top: 0;
+}
+
+/* v8.2: 更多工具面板显隐改由 class 驱动（替代不稳定的内联 style 切换） */
+.nw-cowrite-tools-panel-inline {
+    display: none;
+}
+
+.nw-cowrite-tools-panel-inline.is-open {
+    display: flex;
+}
+
+/* 监控面板 */
+.nw-cowrite-monitor-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: var(--nw-space-2, 8px);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.nw-cowrite-monitor-card { border: 1px solid var(--nw-card-border, var(--background-modifier-border)); border-radius: var(--nw-radius-md, 8px); overflow: hidden; }
+.nw-cowrite-monitor-card-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--nw-card-bg, var(--background-secondary)); cursor: pointer; }
+.nw-cowrite-monitor-card-header:hover { background: var(--nw-card-hover, var(--background-modifier-hover)); }
+.nw-cowrite-monitor-card-icon { font-size: 12px; margin-right: 6px; }
+.nw-cowrite-monitor-card-title { font-size: 12px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); flex: 1; }
+.nw-cowrite-monitor-card-toggle { font-size: 10px; color: var(--nw-text-muted, var(--text-faint)); padding: 0 4px; }
+.nw-cowrite-monitor-card-body { padding: 6px 8px; }
+.nw-cowrite-monitor-summary { font-size: 11px; color: var(--nw-text-secondary, var(--text-muted)); line-height: 1.4; }
+.nw-cowrite-monitor-detail { font-size: 11px; color: var(--nw-text-secondary, var(--text-muted)); margin-top: 4px; }
+.nw-cowrite-monitor-detail-title { font-weight: 600; margin-bottom: 3px; }
+.nw-cowrite-monitor-list { margin: 0; padding-left: 16px; list-style: disc; }
+.nw-cowrite-monitor-list li { margin-bottom: 2px; }
+.nw-cowrite-monitor-more { color: var(--nw-text-muted, var(--text-faint)) !important; }
+.nw-cowrite-monitor-tags { display: flex; flex-wrap: wrap; gap: 3px; font-size: 10px; }
+.nw-cowrite-monitor-stat { display: flex; justify-content: space-between; padding: 2px 0; font-size: 11px; }
+
+/* 右栏 Tab 容器 */
+.nw-cowrite-right-tabs { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.nw-cowrite-tab-headers { display: flex; gap: 2px; padding: 4px 6px; border-bottom: 1px solid var(--nw-card-border, var(--background-modifier-border)); flex-shrink: 0; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; }
+.nw-cowrite-tab-header { padding: 6px 10px; font-size: 12px; color: var(--nw-text-secondary, var(--text-muted)); cursor: pointer; border-radius: 6px; white-space: nowrap; transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s; font-weight: 500; flex-shrink: 0; }
+.nw-cowrite-tab-header:hover { background: var(--nw-card-hover, var(--background-modifier-hover)); color: var(--nw-text-primary, var(--text-normal)); }
+.nw-cowrite-tab-header.is-active { background: var(--nw-accent-muted, rgba(194, 65, 12, 0.12)); color: var(--nw-accent, var(--interactive-accent)); font-weight: 600; }
+.nw-cowrite-tab-contents { flex: 1; min-height: 0; overflow: hidden; }
+.nw-cowrite-tab-content { display: none; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.nw-cowrite-tab-content.is-active { display: flex; }
+
+/* 概览 Tab 子区域空间分配 */
+.nw-cowrite-tab-content[data-tab="overview"] > .nw-cowrite-cards {
+    flex-shrink: 0;
+    overflow: visible;
+    margin-bottom: var(--nw-space-2, 8px);
+}
+.nw-cowrite-tab-content[data-tab="overview"] > .nw-cowrite-control-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 知识库子 Tab */
+.nw-kb-subtab-headers { display: flex; gap: 2px; padding: 4px 6px; border-bottom: 1px solid var(--nw-card-border, var(--background-modifier-border)); margin-bottom: 8px; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; }
+.nw-kb-subtab-header { padding: 4px 8px; font-size: 11px; color: var(--nw-text-secondary, var(--text-muted)); cursor: pointer; border-radius: 6px; white-space: nowrap; transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s; flex-shrink: 0; }
+.nw-kb-subtab-header:hover { background: var(--nw-card-hover, var(--background-modifier-hover)); color: var(--nw-text-primary, var(--text-normal)); }
+.nw-kb-subtab-header.is-active { background: var(--nw-accent-muted, rgba(194, 65, 12, 0.12)); color: var(--nw-accent, var(--interactive-accent)); font-weight: 600; }
+.nw-kb-subtab-contents { flex: 1; min-height: 0; overflow: hidden; }
+.nw-kb-subtab-content { display: none; flex-direction: column; gap: 8px; height: 100%; overflow-y: auto; padding: 0 6px 6px; }
+.nw-kb-subtab-content.is-active { display: flex; }
+
+/* 搜索框 */
+.nw-kb-search-wrap { margin-bottom: 6px; }
+.nw-kb-search-input { width: 100%; padding: 6px 10px; border: 1px solid var(--nw-card-border, var(--background-modifier-border)); border-radius: 6px; font-size: 12px; background: var(--nw-input-bg, var(--background-primary)); color: var(--nw-text-primary, var(--text-normal)); box-sizing: border-box; }
+.nw-kb-search-input:focus { outline: none; border-color: var(--nw-accent, var(--interactive-accent)); }
+.nw-kb-search-input::placeholder { color: var(--nw-text-muted, var(--text-faint)); }
+
+/* 书籍列表 */
+.nw-kb-book-list-panel { flex: 1; min-height: 0; overflow-y: auto; }
+.nw-kb-open-full { align-self: flex-start; margin-top: 4px; }
+
+/* 分区头部 */
+.nw-kb-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.nw-kb-section-header > span:first-child { font-size: 12px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); }
+.nw-kb-section-desc { font-size: 10px; color: var(--nw-text-muted, var(--text-faint)); }
+
+/* 空状态 */
+.nw-kb-empty { padding: 16px 8px; text-align: center; font-size: 11px; color: var(--nw-text-muted, var(--text-faint)); }
+
+/* 引用标签 */
+.nw-kb-quote-section { display: flex; flex-direction: column; gap: 4px; }
+.nw-kb-quote-section-title { font-size: 11px; font-weight: 600; color: var(--nw-text-secondary, var(--text-muted)); margin-bottom: 2px; }
+.nw-kb-quote-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.nw-kb-tag { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 11px; border-radius: 999px; background: var(--nw-tag-bg, var(--background-secondary)); color: var(--nw-text-secondary, var(--text-muted)); border: 1px solid var(--nw-card-border, var(--background-modifier-border)); line-height: 1.4; }
+.nw-kb-tag-character { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: var(--nw-info, #3b82f6); }
+.nw-kb-tag-technique { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.2); color: var(--nw-accent, #a855f7); }
+.nw-kb-tag-clickable { cursor: pointer; transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s; }
+.nw-kb-tag-clickable:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+.nw-kb-quote-hint { padding: 6px 8px; font-size: 10px; color: var(--nw-text-muted, var(--text-faint)); background: var(--nw-card-bg, var(--background-secondary)); border-radius: 6px; margin-top: 4px; }
+
+/* 建议列表 */
+.nw-kb-advice-list { display: flex; flex-direction: column; gap: 6px; }
+.nw-kb-advice-item { display: flex; gap: 8px; padding: 8px 10px; background: var(--nw-card-bg, var(--background-secondary)); border: 1px solid var(--nw-card-border, var(--background-modifier-border)); border-radius: 8px; }
+.nw-kb-advice-icon { font-size: 16px; flex-shrink: 0; line-height: 1.2; }
+.nw-kb-advice-content { flex: 1; min-width: 0; }
+.nw-kb-advice-title { font-size: 12px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); margin-bottom: 2px; }
+.nw-kb-advice-desc { font-size: 11px; color: var(--nw-text-secondary, var(--text-muted)); line-height: 1.4; }
+
+/* 建议区 */
+.nw-suggestions { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; padding: 10px; min-height: 80px; }
+.novel-writer-cowrite-empty { font-size: 12px; color: var(--nw-text-muted, var(--text-faint)); text-align: center; padding: 12px; }
+
+/* 卡片 */
+.nw-card-value { font-size: 24px; line-height: 1.1; font-weight: 800; color: var(--nw-text-primary, var(--text-normal)); }
+.nw-card-sub { font-size: 11px; line-height: 1.35; color: var(--nw-text-primary, var(--text-normal)); }
+
+.nw-progress { height: 4px; background: var(--nw-card-border, var(--background-modifier-border)); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.nw-progress-fill { height: 100%; background: var(--nw-accent-gradient, linear-gradient(90deg, var(--interactive-accent), #a78bfa)); border-radius: 2px; transition: width 0.3s; }
+.nw-progress-fill.low { background: var(--nw-danger, #ef4444); }
+.nw-progress-fill.mid { background: var(--nw-warning, #f59e0b); }
+.nw-progress-fill.high { background: var(--nw-accent-gradient, linear-gradient(90deg, var(--interactive-accent), #a78bfa)); }
+
+/* v6.0: 剧情完成度卡片 - 2列网格布局 */
+.nw-cowrite-metrics-title { margin: 0 0 6px 0; font-size: 13px; line-height: 1.2; font-weight: 750; color: var(--nw-text-primary, var(--text-normal)); }
+.nw-cowrite-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+    margin-bottom: 6px;
+}
+.nw-cowrite-metrics-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nw-cowrite-metrics-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; }
+.nw-cowrite-metrics-label { font-size: 11px; line-height: 1.25; color: var(--nw-text-primary, var(--text-normal)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nw-cowrite-metrics-value { font-size: 11px; font-weight: 750; color: var(--nw-text-primary, var(--text-normal)); }
+.nw-cowrite-metrics-bar { margin-top: 2px; height: 3px; }
+.nw-cowrite-metrics-overall { margin-top: 5px; padding-top: 6px; border-top: 1px solid var(--nw-card-border, var(--background-modifier-border)); }
+.nw-cowrite-metrics-overall-value { font-size: 15px !important; font-weight: 800 !important; color: var(--nw-text-primary, var(--text-normal)) !important; }
+.novel-writer-cowrite-advice,
+.novel-writer-cowrite-next-directions {
+    margin-top: 5px;
+    padding: 4px 6px;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: 999px;
+    color: var(--nw-text-primary, var(--text-normal));
+    background: color-mix(in srgb, var(--background-primary) 88%, var(--nw-accent) 12%);
+    font-size: 11px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 按钮 */
+.nw-btn:hover { background: var(--nw-accent-muted, rgba(194, 65, 12, 0.08)); color: var(--nw-accent, var(--interactive-accent)); }
+.nw-btn-primary { background: var(--nw-btn-primary-bg, var(--interactive-accent)); color: var(--nw-btn-primary-text, var(--text-on-accent)); border: none; }
+.nw-btn-ghost { background: transparent; border-color: transparent; }
+.nw-btn-ghost:hover { background: var(--nw-accent-muted, rgba(194, 65, 12, 0.08)); }
+
+/* 警告区 */
+.nw-warnings { padding: 8px 10px; font-size: 12px; }
+
+/* ── 加载/错误/成功提示 ── */
+.novel-writer-fw-workspace .novel-writer-fw-loading {
+    color: var(--nw-text-secondary, var(--text-muted));
+    text-align: center;
+    padding: 20px;
+}
+
+.novel-writer-fw-workspace .novel-writer-fw-error-card {
+    background: var(--nw-danger-bg, rgba(224, 62, 62, 0.08));
+    border: 1px solid var(--nw-danger-border, rgba(224, 62, 62, 0.2));
+    border-radius: var(--nw-radius-md, 8px);
+    padding: 12px 16px;
+    margin: 8px 0;
+}
+
+.novel-writer-fw-workspace .novel-writer-fw-success-text {
+    color: var(--nw-success, #0f7b6c);
+}
+
+.novel-writer-fw-workspace .novel-writer-fw-error-text {
+    color: var(--nw-danger, #e03e3e);
+}
+
+/* ── 步骤指示器 ── */
+.novel-writer-fw-workspace .novel-writer-fw-step-done {
+    color: var(--nw-success, #0f7b6c);
+}
+
+.novel-writer-fw-workspace .novel-writer-fw-step-pending {
+    color: var(--nw-text-muted, var(--text-faint));
+}
+
+.novel-writer-fw-workspace .novel-writer-fw-step-active {
+    color: var(--nw-text-primary, var(--text-normal));
+    font-weight: 600;
+}
+
+/* ── 输入区域 ── */
+.novel-writer-fw-workspace .novel-writer-textarea,
+.nw-cowrite-root .nw-writer-textarea,
+.nw-wizard-root .nw-wizard-form-input {
+    background: var(--nw-input-bg, var(--background-primary-alt));
+    border: 1px solid var(--nw-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-md, 8px);
+    color: var(--nw-text-primary, var(--text-normal));
+    padding: 10px 12px;
+    font-size: 14px;
+    transition: border-color 0.15s;
+}
+
+.novel-writer-fw-workspace .novel-writer-textarea:focus,
+.nw-cowrite-root .nw-writer-textarea:focus,
+.nw-wizard-root .nw-wizard-form-input:focus {
+    border-color: var(--nw-accent, var(--interactive-accent));
+    box-shadow: 0 0 0 2px var(--nw-focus-ring, rgba(194, 65, 12, 0.15));
+    outline: none;
+}
+
+/* ── 标题栏 ── */
+.novel-writer-fw-workspace .novel-writer-fw-titlebar {
+    background: var(--nw-panel-bg, var(--background-secondary));
+    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    padding: 12px 16px;
+}
+
+.novel-writer-fw-workspace .novel-writer-fw-title {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--nw-text-primary, var(--text-normal));
+    font-family: var(--nw-font-display);
+    letter-spacing: .01em;
+    width: auto !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 8px !important;
+    box-shadow: none !important;
+}
+
+/* ── 状态栏 ── */
+.novel-writer-fw-workspace .novel-writer-fw-status-bar {
+    background: var(--nw-panel-bg, var(--background-secondary));
+    border-top: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--nw-text-secondary, var(--text-muted));
+}
+
+/* ── 面板标题 ── */
+.novel-writer-fw-workspace .novel-writer-fw-panel-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--nw-text-primary, var(--text-normal));
+    margin-bottom: 8px;
+}
+
+/* ── 上下文卡片 ── */
+.nw-scope .novel-writer-fw-context-card {
+    background: var(--nw-card-bg, var(--background-primary)) !important;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border)) !important;
+    border-radius: var(--nw-radius-md, 8px) !important;
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+}
+
+.nw-scope .novel-writer-fw-context-card:hover {
+    background: var(--nw-card-bg-hover, color-mix(in srgb, var(--background-primary), var(--background-secondary) 20%)) !important;
+    border-color: var(--nw-accent, var(--interactive-accent)) !important;
+}
+
+/* v6.0: 终层章节选择器样式已迁移至基础组件层 .nw-select + 业务差异类
+   原 .nw-scope .novel-writer-fw-chapter-select 终层覆盖已删除 */
+
+/* ── 结果卡片（wizard 步骤） ── */
+.nw-scope .novel-writer-fw-result-card {
+    background: var(--nw-card-bg, var(--background-primary)) !important;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border)) !important;
+    border-radius: var(--nw-radius-md, 8px) !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+}
+
+.nw-scope .novel-writer-fw-result-title {
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    margin-bottom: 8px !important;
+    color: var(--nw-text-primary, var(--text-normal)) !important;
+}
+
+.nw-scope .novel-writer-fw-result-section {
+    margin-bottom: 16px !important;
+}
+
+/* ── 标题间距 ── */
+.nw-scope .novel-writer-fw-title-spacer {
+    flex: 1 !important;
+}
+
+/* ── 标签按钮（小说分类） ── */
+.nw-scope .novel-writer-genre-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+.nw-scope .novel-writer-genre-btn {
+    padding: 6px 14px !important;
+    border: 1px solid var(--nw-border, var(--background-modifier-border)) !important;
+    border-radius: var(--nw-radius-sm, 6px) !important;
+    background: transparent !important;
+    color: var(--nw-text-primary, var(--text-normal)) !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s !important;
+}
+
+.nw-scope .novel-writer-genre-btn:hover {
+    background: var(--nw-accent, var(--interactive-accent)) !important;
+    color: #fff !important;
+    border-color: var(--nw-accent, var(--interactive-accent)) !important;
+}
+
+.nw-scope .novel-writer-genre-btn.selected {
+    background: var(--nw-accent, var(--interactive-accent)) !important;
+    color: #fff !important;
+}
+
+/* ── 关系面板 ── */
+.nw-scope .novel-writer-relation-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+.nw-scope .novel-writer-relation-table th {
+    font-weight: 600 !important;
+    color: var(--nw-text-secondary, var(--text-muted)) !important;
+    padding: 6px 8px !important;
+    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover)) !important;
+    font-size: 12px !important;
+}
+
+.nw-scope .novel-writer-relation-table td {
+    padding: 6px 8px !important;
+    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover)) !important;
+    font-size: 13px !important;
+}
+
+/* ── 设置面板 ── */
+.nw-scope .novel-writer-setting-section {
+    margin-bottom: 24px !important;
+}
+
+/* ── 深色/浅色主题适应 ── */
+.theme-dark .nw-scope .novel-writer-fw-tools-dropdown {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+}
+
+.theme-dark .nw-scope .novel-writer-fw-project-card:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+}
+
+/* v5.7 B1：协同写作灰色联想输入 */
+.nw-cowrite-editor-wrap {
+    position: relative !important;
+}
+
+/* v6.5: 建议卡片面板——右侧面板内流式布局，不遮挡编辑器
+   v7.x 修复：这里曾写成 display: none，而本文件里没有任何规则把它改回 flex/block，
+   结果「AI 建议」栏永久不可见——生成成功的 3 条候选只在 DOM 里，用户什么都看不到。
+   显隐统一由 .nw-cowrite-center.is-panel-collapsed 控制（见上方 4087 行）。 */
+.nw-cowrite-suggestions-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    padding: 8px;
+    margin-top: 0;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+}
+
+.nw-cowrite-suggestions-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.nw-cowrite-suggestions-close:hover {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+    border-radius: 4px;
+}
+
+.nw-cowrite-suggestions-panel .novel-writer-cowrite-card-row {
+    grid-template-columns: 1fr;
+}
+
+/* D3: 跨章节剧情冗余度检查 */
+
+/* v5.8：协同写作工作台内置章节流程控制 */
+/* 唯一一份定义（原来另有一份单行副本被这里的 !important 全量覆盖）。
+   去掉 !important：选择器已足够具体，且没有下游规则需要被压过。 */
+.nw-cowrite-flow-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-sm, 6px);
+    background: color-mix(in srgb, var(--nw-panel-bg, var(--background-secondary)) 82%, var(--nw-surface, var(--background-secondary)));
+}
+.nw-cowrite-flow-panel > .novel-writer-cowrite-advice {
+    flex: 0 0 auto;
+    min-height: 28px;
+    margin-top: 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 12px;
+    line-height: 1.35;
+}
+@media (max-width: 1200px) {
+}
+@media (max-width: 760px) {
+}
+
+/* E1/E3: 风格 / 偏好记忆管理 */
+.novel-writer-memory-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.novel-writer-memory-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.novel-writer-memory-stat,
+.novel-writer-memory-section {
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: 10px;
+    background: var(--nw-card-bg, var(--background-primary));
+    padding: 10px;
+}
+.novel-writer-memory-stat {
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+.novel-writer-memory-section-title {
+    margin-bottom: 8px;
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 13px;
+    font-weight: 750;
+}
+.novel-writer-memory-pre {
+    max-height: 160px;
+    overflow: auto;
+    margin: 0 0 8px 0;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--nw-surface, var(--background-secondary));
+    color: var(--nw-text-primary, var(--text-normal));
+    white-space: pre-wrap;
+    font-size: 11px;
+    line-height: 1.5;
+}
+.novel-writer-memory-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.novel-writer-memory-item {
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--nw-surface, var(--background-secondary));
+}
+.novel-writer-memory-item-title {
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 11px;
+    font-weight: 700;
+}
+.novel-writer-memory-item-body {
+    margin-top: 4px;
+    color: var(--nw-text-muted, var(--text-faint));
+    font-size: 11px;
+    line-height: 1.45;
+    word-break: break-word;
+}
+.novel-writer-memory-add {
+    display: grid;
+    gap: 8px;
+}
+.novel-writer-memory-input,
+.novel-writer-memory-textarea {
+    width: 100%;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: 8px;
+    background: var(--nw-input-bg, var(--background-primary-alt));
+    color: var(--nw-text-primary, var(--text-normal));
+    padding: 7px 9px;
+    font-size: 12px;
+}
+.novel-writer-memory-textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+/* ==========================================================================
+   11. v6.0 统一覆盖层 (.nw-scope 命名空间)
+   高特异性覆盖：用 .nw-scope 前缀 (0,0,2,0) 替代 !important
+   已从 style-overrides.ts 合并至此
+   ========================================================================== */
+
+/* v6.0 CSS Override Layer — A1 瘦身：提高选择器特异性替代 !important */
+.novel-writer-fw-project-area .novel-writer-fw-toolbar { position: absolute; top: 16px; right: 20px; z-index: 10; background: transparent; border: none; padding: 0; display: block; }
+.novel-writer-fw-toolbar .novel-writer-fw-tools-btn { padding: 8px 16px; font-size: 13px; background: var(--nw-btn-secondary-bg, transparent); color: var(--nw-text-primary, var(--text-normal)); border: 1px solid var(--nw-border, var(--background-modifier-border)); border-radius: var(--nw-radius-md, 8px); cursor: pointer; font-weight: 500; transition: background-color, border-color, color, box-shadow, opacity, transform 0.2s; box-shadow: none; transform: none; }
+.novel-writer-fw-toolbar .novel-writer-fw-tools-btn:hover { background: var(--nw-surface-hover, var(--background-modifier-hover)); border-color: var(--nw-text-secondary, var(--text-muted)); }
+.nw-scope .novel-writer-fw-tools-dropdown { display: none; position: absolute; top: 100%; right: 0; min-width: 300px; background: var(--nw-card-bg, var(--background-primary)); border: 1px solid var(--nw-border, var(--background-modifier-border)); border-radius: var(--nw-radius-lg, 12px); box-shadow: 0 8px 32px rgba(0,0,0,0.15); z-index: 1000; padding: 8px; max-height: 80vh; overflow-y: auto; }
+.nw-scope .novel-writer-fw-tools-dropdown.open { display: block; }
+.nw-scope .novel-writer-fw-tools-dropdown .tool-group { padding: 4px 0; }
+.nw-scope .novel-writer-fw-tools-dropdown .tool-group + .tool-group { border-top: 1px solid var(--nw-divider, var(--background-modifier-border-hover)); margin-top: 4px; padding-top: 8px; }
+.nw-scope .novel-writer-fw-tools-dropdown .nw-tool-group-title { color: var(--nw-text-secondary, var(--text-muted)); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 8px; }
+.nw-scope .novel-writer-fw-tools-dropdown .nw-tool-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; border-radius: var(--nw-radius-sm, 6px); background: transparent; color: var(--nw-text-primary, var(--text-normal)); font-size: 13px; cursor: pointer; transition: background 0.15s; text-align: left; box-shadow: none; transform: none; }
+.nw-scope .novel-writer-fw-tools-dropdown .nw-tool-item:hover { background: var(--nw-surface-hover, var(--background-modifier-hover)); }
+.nw-scope .novel-writer-fw-tools-dropdown .nw-tool-item .icon { font-size: 16px; width: 24px; text-align: center; }
+.novel-writer-fw-workspace .novel-writer-fw-project-area { display: flex; flex-wrap: wrap; gap: 16px; padding: 24px; overflow-y: auto; align-content: flex-start; flex: 1; background: var(--nw-surface, var(--background-secondary)); }
+.novel-writer-fw-project-area .novel-writer-fw-project-card { flex: 1 1 260px; min-width: 260px; max-width: 360px; background: var(--nw-card-bg, var(--background-primary)); border: 1px solid var(--nw-card-border, var(--background-modifier-border)); border-radius: var(--nw-radius-lg, 12px); box-shadow: none; cursor: pointer; transition: background-color, border-color, color, box-shadow, opacity, transform 0.2s ease; overflow: hidden; }
+.novel-writer-fw-project-area .novel-writer-fw-project-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-color: var(--nw-accent, var(--interactive-accent)); transform: translateY(-2px); }
+.novel-writer-fw-project-area .novel-writer-fw-project-card.selected { box-shadow: 0 0 0 2px var(--nw-accent, var(--interactive-accent)); }
+.novel-writer-fw-project-card .novel-writer-fw-card-name { font-size: 16px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); padding: 16px 16px 8px; }
+.novel-writer-fw-project-card .novel-writer-fw-card-meta, .novel-writer-fw-project-card .novel-writer-fw-card-latest, .novel-writer-fw-project-card .novel-writer-fw-card-progress-text { color: var(--nw-text-secondary, var(--text-muted)); font-size: 13px; padding: 0 16px; }
+.novel-writer-fw-project-card .novel-writer-fw-card-count-badge, .novel-writer-fw-project-card .novel-writer-fw-card-genre { display: inline-block; padding: 2px 10px; background: var(--nw-badge-bg, rgba(194, 65, 12, 0.1)); color: var(--nw-badge-text, var(--interactive-accent)); border-radius: 10px; font-size: 11px; font-weight: 600; margin: 0 16px; }
+.novel-writer-fw-project-card .novel-writer-fw-card-progress-bar { height: 3px; background: var(--nw-divider, var(--background-modifier-border-hover)); border-radius: 999px; overflow: hidden; margin: 8px 16px; }
+.novel-writer-fw-project-card .novel-writer-fw-card-progress-fill { background: var(--nw-accent, var(--interactive-accent)); border-radius: 999px; height: 100%; }
+.novel-writer-fw-project-card .novel-writer-fw-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 16px 16px; align-items: stretch; }
+.novel-writer-fw-project-card .novel-writer-fw-card-action-btn { width: 100%; min-width: 0; padding: 6px 10px; font-size: 12px; text-align: center; background: transparent; color: var(--nw-text-primary, var(--text-normal)); border: 1px solid var(--nw-border, var(--background-modifier-border)); border-radius: var(--nw-radius-sm, 6px); cursor: pointer; transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: none; transform: none; }
+.novel-writer-fw-project-card .novel-writer-fw-card-action-btn:hover { background: var(--nw-surface-hover, var(--background-modifier-hover)); }
+.novel-writer-fw-project-card .novel-writer-fw-card-delete-btn { width: 100%; padding: 6px 10px; box-sizing: border-box; }
+.novel-writer-fw-project-card .novel-writer-fw-card-name-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 16px 16px 8px; }
+.novel-writer-fw-project-card .novel-writer-fw-card-name { font-size: 16px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); padding: 0; }
+.novel-writer-fw-project-card .novel-writer-fw-card-new-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    animation: nw-pulse var(--nw-dur-slow) var(--nw-ease) 2;
+    flex-shrink: 0;
+}
+@keyframes nw-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+.novel-writer-fw-project-card-highlight {
+    animation: nw-highlight-glow 800ms var(--nw-ease);
+}
+@keyframes nw-highlight-glow {
+    0% { box-shadow: 0 0 0 0 rgba(194, 65, 12, 0.5); }
+    50% { box-shadow: 0 0 20px 5px rgba(194, 65, 12, 0.3); }
+    100% { box-shadow: 0 0 0 2px var(--nw-accent, var(--interactive-accent)); }
+}
+.novel-writer-fw-project-card .novel-writer-fw-card-actions {
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+}
+.novel-writer-fw-workspace .novel-writer-fw-preview-panel { background: var(--nw-surface, var(--background-secondary)); border-left: 1px solid var(--nw-divider, var(--background-modifier-border-hover)); padding: 24px; width: clamp(260px, 30vw, 340px); flex-shrink: 0; overflow-y: auto; }
+.novel-writer-fw-workspace .novel-writer-fw-preview-panel.hidden { display: none; }
+.novel-writer-fw-project-area .novel-writer-fw-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; width: 100%; }
+.novel-writer-fw-project-area .novel-writer-fw-empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+.novel-writer-fw-project-area .novel-writer-fw-empty-state p { color: var(--nw-text-secondary, var(--text-muted)); font-size: 15px; margin: 8px 0 20px; }
+.novel-writer-fw-workspace .novel-writer-fw-titlebar { background: var(--nw-panel-bg, var(--background-secondary)); border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover)); padding: 12px 16px; }
+.novel-writer-fw-workspace .novel-writer-fw-selector-wrapper { display: flex; gap: 0; height: 100%; padding: 0; }
+.novel-writer-fw-workspace .novel-writer-fw-status-bar { background: var(--nw-panel-bg, var(--background-secondary)); border-top: 1px solid var(--nw-divider, var(--background-modifier-border-hover)); padding: 6px 16px; font-size: 12px; color: var(--nw-text-secondary, var(--text-muted)); }
+.novel-writer-fw-workspace .novel-writer-fw-loading { color: var(--nw-text-secondary, var(--text-muted)); text-align: center; padding: 20px; }
+.novel-writer-fw-workspace .novel-writer-fw-cover-area { background: var(--nw-surface, var(--background-secondary)); border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover)); padding: 16px; }
+

@@ -292,6 +292,28 @@ export class ObsidianFileSystem implements FileSystemPort {
 }
 
 /**
+ * 写入 vault 内的文本文件（Markdown 等），保证 Obsidian 索引同步。
+ *
+ * 分流规则与 ObsidianFileSystem.write 一致：
+ * - 索引内已有 TFile → `vault.modify`（触发 metadataCache 重解析）
+ * - 配置目录 / 索引外已存在文件 → `adapter.write`（vault.create 建不出来）
+ * - 其余 → 先补齐父目录，再 `vault.create`（新建文件立即进入索引）
+ *
+ * UI 层原本直接调用 `app.vault.adapter.write(项目内 .md)`：该写法不触发索引，
+ * 移动端（无外部文件监听）与桌面端新建文件都可能长时间不出现在文件浏览器/双链中。
+ */
+export async function writeVaultText(
+    app: import('obsidian').App,
+    path: string,
+    content: string,
+): Promise<void> {
+    const fs = new ObsidianFileSystem(app);
+    const dir = path.substring(0, path.lastIndexOf('/'));
+    if (dir) await fs.mkdir(dir);
+    await fs.write(path, content);
+}
+
+/**
  * Obsidian Frontmatter 适配器
  */
 export class ObsidianFrontmatter implements FrontmatterPort {

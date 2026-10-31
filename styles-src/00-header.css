@@ -1,0 +1,274 @@
+/* ==========================================================================
+ * 小说工坊 Novel Writer AI - styles.css
+ * ==========================================================================
+ * 
+ * 【文件说明】
+ * 本文件为小说工坊 Obsidian 插件的主样式表，经历多版本迭代（v3.x → v4.x → v5.x → v6.x）。
+ * 由于采用渐进式迭代，存在历史层叠和重复定义。后续版本的样式会覆盖前期版本。
+ * 
+ * 【层叠生效原则】
+ * - CSS 按文件顺序从上到下解析，后定义的规则覆盖前面的规则（特异性相同时）
+ * - v6.0 基础组件层定义基础样式，业务类通过层叠覆盖实现差异
+ * - v5.x/v6.x 终层覆盖位于文件后部，通过 !important 或更高特异性确保生效
+ * - .nw-scope 命名空间提供高特异性 (0,0,2,0)，用于覆盖 Obsidian 默认样式
+ * 
+ * 【命名约定】
+ * - nw- 前缀：v5.0+ 新命名空间（协同视图、基础组件、浮窗等）
+ * - novel-writer- 前缀：旧版命名（全写作视图、向导、设置等）
+ * - 两种前缀长期共存，新功能优先使用 nw- 前缀
+ * 
+ * 【目录索引】
+ *  ├── 1. CSS 变量定义 (:root) — 设计令牌、布局/颜色/字体变量
+ *  ├── 2. v6.0 基础组件层 — 输入框、按钮、卡片、Badge 等通用基础组件
+ *  ├── 3. 全写作视图样式 (Full Writer) — 项目卡片、向导步骤、三栏布局
+ *  ├── 4. 协同写作早期样式 (v5.1 Co-write Legacy) — 情绪曲线、节奏分析
+ *  ├── 5. 协同写作现代化视图 (v5.1+ Co-write Modern) — 三栏布局、建议卡片
+ *  ├── 6. Notion风格统一设计系统 — 统一按钮、输入、进度条等
+ *  ├── 7. v5.2 监控面板 — 侧栏监控视图
+ *  ├── 8. v5.3 三视图统一重构终层 — 工作台 grid、面板卡片化
+ *  ├── 9. v5.4 协同写作终层收敛 — 三栏布局终版、容器查询
+ *  ├── 10. v5.7/v5.8 增量 — Ghost联想输入、Flow流程控制
+ *  ├── 11. v6.0 统一覆盖层 (.nw-scope 命名空间) — 高特异性覆盖
+ *  ├── 12. 质量报告面板
+ *  ├── 13. 浮窗监控面板
+ *  ├── 14. 协同写作缺失类补全
+ *  ├── 15. 建议编辑抽屉
+ *  ├── 16. 大纲树拖拽
+ *  ├── 17. 版本历史与对比
+ *  ├── 18. 设置面板样式
+ *  └── 19. v7.0 UI 优化通用组件层（布局、间距、卡片、状态行、标签、空状态、Modal 宽度规范）
+ * 
+ * 【⚠️ 修改注意】
+ * - 删除样式前请确认该选择器在所有 TS/HTML 文件中都未使用
+ * - 终层覆盖（文件后部）的样式不要轻易移动到前面，会破坏层叠顺序
+ * - 新增样式优先使用 nw- 前缀，并尽量添加到对应模块的末尾
+ * ========================================================================== */
+
+/**
+ * .nw-scope 命名空间说明：
+ * 所有使用 .nw-scope 前缀的选择器依赖 DOM 根节点挂载 .nw-scope 类。
+ * 该类比 body 前缀提供更高特异性 (0,0,2,0)，用于覆盖 Obsidian 默认样式。
+ * 若 DOM 尚未挂载 .nw-scope，相关样式不会生效——需在视图容器初始化时添加。
+ */
+
+/**
+ * CSS 变量文档表（完整列表见 :root 内分类注释）
+ * 
+ * 分类：
+ *  - 布局尺寸：--nw-layout-*, --nw-*-w, --nw-*-h, --nw-grid-*
+ *  - 间距内边距：--nw-*-pad, --nw-*-gap, --nw-section-gap
+ *  - 颜色系统：--nw-*-bg, --nw-*-text, --nw-accent, --nw-success, --nw-danger, --nw-warning
+ *  - 边框阴影：--nw-*-border, --nw-divider, --nw-*-shadow
+ *  - 组件变量：--nw-btn-*, --nw-input-bg, --nw-focus-ring, --nw-badge-*
+ *  - 圆角：--nw-radius-sm/md/lg
+ * 
+ * 运行时注入：
+ *  - main.ts injectLayoutVariables() — 布局变量
+ *  - main.ts injectThemeVariables() — 主题色变量
+ *  :root 为静态保底值，JS 注入值会覆盖之。
+ */
+:root {
+    /* ===== 布局尺寸 ===== */
+    --nw-wizard-sidebar-w: clamp(200px, 14vw, 240px);
+    --nw-entity-tree-w: min(240px, 16vw);
+    --nw-modal-max-w: 96vw;
+    --nw-modal-max-h: 90vh;
+    --nw-modal-md-w: min(1000px, 85vw);
+    --nw-project-selector-w: min(1000px, 85vw);
+    --nw-step-min-h: max(320px, calc(100vh - 380px));
+    --nw-scroll-max-h: max(450px, 55vh);
+    --nw-scroll-md-h: max(280px, 35vh);
+    --nw-grid-3col: minmax(120px, 160px) 1fr minmax(180px, 240px);
+    --nw-grid-2col-fm: auto 1fr;
+    --nw-grid-workspace: minmax(120px, 160px) 1fr minmax(180px, 240px);
+    --nw-panel-pad:20px;
+    --nw-card-pad:16px;
+    --nw-section-gap:32px;
+    --nw-element-gap:16px;
+    --nw-inline-gap:12px;
+
+    /* ===== 基础色（由 main.ts 运行时覆盖） ===== */
+    --nw-app-bg: var(--background-primary);
+    --nw-panel-bg: var(--background-secondary);
+    --nw-card-bg: var(--background-primary);
+    --nw-surface: var(--background-secondary);
+    --nw-surface-hover: var(--background-modifier-hover);
+    --nw-card-bg-hover: color-mix(in srgb, var(--background-primary), var(--background-secondary) 20%);
+    --nw-cover-bg: var(--background-secondary);
+    --nw-cover-bg-hover: none;
+    --nw-bg-muted: var(--background-secondary);
+
+    /* ===== 强调色 ===== */
+    --nw-accent: var(--interactive-accent);
+    --nw-accent-hover: color-mix(in srgb, var(--interactive-accent), black 8%);
+    --nw-accent-muted: rgba(194, 65, 12, 0.08);
+    --nw-accent-gradient: linear-gradient(90deg, var(--interactive-accent), #a78bfa);
+
+    /* ===== 边框与阴影 ===== */
+    --nw-card-border: var(--background-modifier-border);
+    --nw-divider: var(--background-modifier-border-hover);
+    --nw-border: var(--background-modifier-border);
+    --nw-card-shadow: none;
+    --nw-card-shadow-hover: 0 1px 3px var(--background-modifier-hover);
+    --nw-card-selected-ring: 0 0 0 2px var(--interactive-accent);
+
+    /* ===== 输入框 ===== */
+    --nw-input-bg: var(--background-primary-alt);
+    --nw-focus-ring: rgba(194, 65, 12, 0.15);
+
+    /* ===== 文字色 ===== */
+    --nw-text-primary: var(--text-normal);
+    --nw-text-secondary: var(--text-muted);
+    --nw-text-muted: var(--text-faint);
+    --nw-text-accent: var(--interactive-accent);
+    --nw-text-on-accent: var(--text-on-accent);
+    /* C11（技术审计）：曾被 var() 引用却未定义的幽灵变量，回退到既有 token */
+    --nw-accent-text: var(--nw-text-accent);
+
+    /* ===== 按钮 ===== */
+    --nw-btn-primary-bg: var(--interactive-accent);
+    --nw-btn-primary-text: var(--text-on-accent);
+    --nw-btn-primary-hover-bg: color-mix(in srgb, var(--interactive-accent), black 8%);
+    --nw-btn-primary-hover-shadow: none;
+    --nw-btn-secondary-bg: transparent;
+    --nw-btn-secondary-text: var(--text-normal);
+    --nw-btn-secondary-border: var(--background-modifier-border);
+    --nw-btn-secondary-hover-bg: var(--background-modifier-hover);
+    --nw-btn-secondary-hover-text: var(--text-normal);
+    /* C11：幽灵变量补齐（warning 按钮按下态，对齐 hover 加深模式） */
+    --nw-btn-warning-active-bg: color-mix(in srgb, var(--nw-warning), black 12%);
+
+    /* ===== 语义色 ===== */
+    --nw-success: #0f7b6c;
+    --nw-success-hover: #0d665b;
+    --nw-success-bg: rgba(15, 123, 108, 0.08);
+    --nw-success-bright: #22c55e;
+    --nw-success-soft: #10b981;
+    --nw-danger: #e03e3e;
+    --nw-danger-hover: #c93333;
+    --nw-danger-bg: rgba(224, 62, 62, 0.08);
+    --nw-danger-border: rgba(224, 62, 62, 0.2);
+    --nw-danger-bright: #ef4444;
+    --nw-danger-bright-bg: rgba(239, 68, 68, 0.1);
+    --nw-danger-soft: #e74c3c;
+    --nw-danger-soft-bg: rgba(231, 76, 60, 0.15);
+    --nw-danger-deep: #c0392b;
+    --nw-warning: #f59e0b;
+    --nw-warning-hover: #d97706;
+    --nw-warning-bg: rgba(245, 158, 11, 0.12);
+    --nw-warning-border: var(--text-warning, #f59e0b);
+    --nw-warning-text: var(--text-warning, #856404);
+    /* C11：幽灵变量补齐——信息/标签/情节强调/卡片 hover/进度条四件套，统一收敛到 token */
+    --nw-info: #3b82f6;
+    --nw-tag-bg: var(--background-modifier-hover);
+    --nw-plot-accent: #8b5cf6;
+    --nw-card-hover: var(--nw-card-bg-hover);
+    --nw-progress-bg: var(--background-modifier-hover);
+    --nw-progress-fill: var(--nw-accent);
+
+    /* ===== Badge ===== */
+    --nw-badge-bg: rgba(194, 65, 12, 0.1);
+    --nw-badge-text: var(--interactive-accent);
+
+    /* ===== 圆角系统 ===== */
+    --nw-radius-xs: 4px;
+    --nw-radius-sm: 6px;
+    --nw-radius-md: 8px;
+    --nw-radius-lg: 12px;
+    --nw-radius-full: 9999px;
+
+    /* ===== 间距系统（4px 基准） ===== */
+    --nw-space-1: 4px;
+    --nw-space-2: 8px;
+    --nw-space-3: 12px;
+    --nw-space-4: 16px;
+    --nw-space-5: 20px;
+    --nw-space-6: 24px;
+    --nw-space-12: 48px;
+
+    /* ===== 字体系统 ===== */
+    --nw-font-display: Georgia, "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
+    --nw-font-size-xs: 11px;
+    --nw-font-size-sm: 12px;
+    --nw-font-size-base: 13px;
+    --nw-font-size-md: 14px;
+    --nw-font-size-lg: 16px;
+    --nw-font-size-xl: 18px;
+    --nw-font-weight-medium: 500;
+    --nw-font-weight-semibold: 600;
+    --nw-font-weight-bold: 700;
+    --nw-line-height-normal: 1.5;
+    /* C11：幽灵变量补齐——排版别名统一指向既有字体 token */
+    --nw-text-xs: var(--nw-font-size-xs);
+    --nw-text-sm: var(--nw-font-size-sm);
+    --nw-text-lg: var(--nw-font-size-lg);
+    --nw-font-semibold: var(--nw-font-weight-semibold);
+    --nw-leading-normal: var(--nw-line-height-normal);
+
+    /* ===== 阴影系统 ===== */
+    --nw-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --nw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --nw-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --nw-shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.18);
+    /* C11：幽灵变量补齐——卡片阴影别名指向既有档位 */
+    --nw-shadow-card: var(--nw-shadow-sm);
+    --nw-shadow-card-hover: var(--nw-shadow-md);
+
+    /* ===== 滚动条 ===== */
+    --nw-scrollbar-thumb: var(--background-modifier-border-hover);
+    --nw-scrollbar-thumb-hover: var(--text-faint);
+
+    /* ===== 动效系统（2026-10-29 第 4 轮统一） =====
+       三档时长 + 一条统一缓动。旧代码里散落着 0.15s/0.2s/0.3s/0.4s/1s/1.2s/1.5s/2s
+       与 ease/ease-in-out/ease-out 混用，观感不统一且偏拖沓。
+       桌面软件的手感：状态变化 120ms 内响应，入场 180ms 完成，
+       需要存在感的过渡最多 240ms。 */
+    --nw-dur-fast: 120ms;
+    --nw-dur-base: 180ms;
+    --nw-dur-slow: 240ms;
+    --nw-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+    /* 兼容旧引用（后续逐步迁移到上面三档） */
+    --nw-transition-fast: var(--nw-dur-fast) var(--nw-ease);
+    --nw-transition-normal: var(--nw-dur-base) var(--nw-ease);
+    --nw-motion-fast: var(--nw-dur-fast) var(--nw-ease);
+    --nw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* ===== 图标系统 ===== */
+    --nw-icon-size-xs: 14px;
+    --nw-icon-size-sm: 16px;
+    --nw-icon-size-md: 20px;
+    --nw-icon-size-lg: 24px;
+
+    /* ===== 模态框尺寸 ===== */
+    --nw-modal-sm: min(480px, 92vw);
+    --nw-modal-md: min(640px, 92vw);
+    --nw-modal-lg: min(900px, 92vw);
+    --nw-modal-xl: clamp(900px, 92vw, 2000px);
+
+    /* ===== 按钮补充变量 ===== */
+    --nw-btn-primary-active-bg: color-mix(in srgb, var(--interactive-accent), black 15%);
+    --nw-btn-secondary-active-bg: var(--background-modifier-active-hover);
+    --nw-btn-danger-active-bg: #c93333;
+    --nw-btn-ghost-active-bg: var(--background-modifier-active-hover);
+
+    /* ===== 控件尺寸与点击热区（v8.0） ===== */
+    --nw-control-h-lg: 48px;
+    --nw-hit-min: 44px;
+
+    /* ===== 表单补充变量 ===== */
+    --nw-form-label-color: var(--text-normal);
+    --nw-form-help-color: var(--text-muted);
+    --nw-form-error-color: var(--nw-danger);
+    --nw-form-error-bg: var(--nw-danger-bg);
+    --nw-form-error-border: var(--nw-danger-border);
+
+    /* ===== 卡片补充变量 ===== */
+    --nw-card-header-padding: 16px 20px;
+    --nw-card-body-padding: 20px;
+    --nw-card-footer-padding: 14px 20px;
+    --nw-card-selected-bg: var(--nw-accent-muted);
+    --nw-card-selected-border: var(--nw-accent);
+
+}
+

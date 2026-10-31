@@ -2,7 +2,7 @@ import type {
     BreakdownDimension,
     DeconstructionQualityLevel,
     DimensionQualityScore,
-} from '../services/deconstruction-scheduler';
+} from './deconstruction-scheduler';
 
 export type { BreakdownDimension, DeconstructionQualityLevel, DimensionQualityScore };
 

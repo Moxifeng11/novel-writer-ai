@@ -5,10 +5,11 @@ import { getChapterFileName, findChapterFile, normalizeChapterFiles, CHAPTER_FIL
 import { readMergedVolumeOutline } from '../utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir } from '../shared/paths';
 import { mkdirp } from '../utils/helpers';
-import { TemplateService } from '../services/template-service';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { TemplateService } from '../engine/template-service';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { countPlannedChapters, hasBlockingIssues, parseVolumePlan, VolumePlan, VolumePlanParseResult } from '../shared/volume-plan';
 import { createLogger } from '../shared/logger';
+import { writeVaultText } from '../shared/file-system-port';
 import { getProjectMeta } from './project-utils';
 import { getCreationModeLabel, type CreationMode } from '../shared/creation-mode';
 import {
@@ -261,7 +262,7 @@ export class BatchCreateModal extends Modal {
                     const content = mode === 'short'
                         ? buildShortUnitSkeleton(n)
                         : buildScriptUnitSkeleton(n);
-                    await this.app.vault.adapter.write(path, content);
+                    await writeVaultText(this.app, path, content);
                     written.push({ label: `第${n}${unit}`, path });
                     created++;
                 } catch (e) {
@@ -316,7 +317,7 @@ export class BatchCreateModal extends Modal {
         let processedChapters = 0;
 
         const allFiles = this.app.vault.getFiles();
-        const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+        const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
 
         for (const volume of sortedVolumes) {
             const volN = volume.volumeNumber;

@@ -22,6 +22,11 @@ interface ExistingEntity {
  *   - 编辑全文
  *   - 删除文件
  *   - 智能猜名（用于"未命名_N"批量修复）
+ *
+ * 职责边界：本弹窗只做**单类别**（一个 `folderName` 目录）的文件操作，
+ * 由 4 个单类别生成弹窗、unified 总览 / 生成弹窗按类别跳转复用；
+ * 跨类别总览、完整性审计、批量补全在 `unified-entity-manager-modal`。
+ * 两者是「总览页 → 详情页」关系，不是重复实现，不要合并。
  */
 export class ExistingEntityManagerModal extends Modal {
     private plugin: NovelWriterPlugin;

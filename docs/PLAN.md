@@ -15,9 +15,10 @@
 | 入口 | `main.ts` | 插件生命周期、视图/命令注册、`onunload` 清理 | 不写业务逻辑 |
 | UI | `ui/` | 视图、弹窗、控制器；只通过 engine/service 公开方法 | 不直接读写 vault 业务文件 |
 | 引擎 | `engine/` | 写作流水线、上下文、结算、Agent harness、RAG | 不依赖 `ui/`、不依赖 `main` 单例 |
-| 服务 | `services/` | 版本、规则注册、执行登记表、知识库、迁移 | 不 import `engine/` |
-| 共享 | `shared/` | 纯函数：路径、格式、预算、体检、评分、协议 | 不依赖任何业务层 |
+| 服务 | `services/` | 版本、规则注册、执行登记表、知识库、性能监控 | 不 import `engine/`（迁移/批量导入/拆解调度已下沉 engine） |
+| 共享 | `shared/` | 纯函数与通用原语：路径、格式、预算、体检、评分、缓存（file-cache/multi-layer/lru）、等待（yield）、存储键 | 不依赖任何业务层 |
 | 核心 | `core/` | 设置服务、命令注册表、Provider | 不依赖 `ui/` |
+| 门面 | `plugin-api.ts`（根级） | 对外 API 门面（与 main.ts 同性质，不属于分层） | 只做类型聚合，不放业务 |
 | 领域 | `domains/` | 长篇/短篇/剧本三域声明（harness profile、工具目录、工厂） | 不复制通用逻辑 |
 
 ### 1.1 三条主数据流
@@ -50,6 +51,9 @@ Agent（harness）
 | 结算 | `engine/settlement-engine.ts` + `settlement/*` |
 | 长流程结果 | `services/execution-ledger.ts` |
 | 设置默认值 | `core/settings-service.ts::getDefaultSettings` |
+| 实体读取/统计 | `shared/entity-reader.ts::listEntityFiles / countProjectEntities` |
+| 等待原语 | `shared/yield.ts::yieldToUI / nextFrame`（禁止裸 setTimeout 等待 UI） |
+| 样式源 | `styles-src/*.css` → `npm run build:styles` 生成 `styles.css`（`check:styles` 校验一致） |
 
 ---
 

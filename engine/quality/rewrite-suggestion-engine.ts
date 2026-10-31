@@ -15,7 +15,7 @@
  *   - 向后兼容：不修改任何现有代码
  */
 
-import { LruCache } from '../repository/lru-cache';
+import { LruCache } from '../../shared/lru-cache';
 import type {
   SuggestionType,
   RewriteContext,

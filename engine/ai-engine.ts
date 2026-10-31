@@ -18,27 +18,19 @@ import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
-import { ENGINE_NAMES } from './engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
 import { createLogger } from '../shared/logger';
 import type { ThinkingMode } from '../shared/task-model';
+import type { APIResponse } from '../shared/api-types';
+
+export type { APIResponse } from '../shared/api-types';
 
 
 const log = createLogger('AiEngine');
 export interface BatchEntityResult {
     name: string;
     content: string;
-}
-
-export interface APIResponse {
-    content: string;
-    error?: string;
-    usage?: {
-        prompt: number;
-        completion: number;
-        total: number;
-    };
-    finishReason?: 'stop' | 'length' | 'error' | 'aborted';
 }
 
 export class AIEngine {
@@ -74,11 +66,11 @@ export class AIEngine {
         this.chapterHelpers = new ChapterHelpers(plugin, this.apiClient, this.notifier);
         this.worldviewGen = new WorldviewGenerator(plugin, this.apiClient, this.notifier);
         this.outlineGen = new OutlineGenerator(plugin, this.apiClient, this.notifier);
-        this.characterGen = plugin.engineRegistry.get<CharacterGenerator>(ENGINE_NAMES.CHARACTER_GENERATOR);
+        this.characterGen = plugin.engineRegistry.get(ENGINE_NAMES.CHARACTER_GENERATOR);
         this.entityGen = new EntityGenerator(plugin, this.apiClient, this.notifier);
         this.batchEntityGen = new BatchEntityGenerator(plugin, this.apiClient, this.notifier);
 
-        const cacheService = plugin.engineRegistry.getOrNull<WorldviewCacheService>(ENGINE_NAMES.WORLDVIEW_CACHE_SERVICE);
+        const cacheService = plugin.engineRegistry.getOrNull(ENGINE_NAMES.WORLDVIEW_CACHE_SERVICE);
         if (cacheService) {
             this.worldviewGen.setCacheService(cacheService);
         }
@@ -162,8 +154,8 @@ export class AIEngine {
         let knowledgeInjection = '';
         try {
             // 通过 EngineRegistry 获取共享的 WritingProfileManager 实例，避免多实例状态不同步
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
             const profile = await profileManager.load(context.project);
             if (profile && profile.fingerprint.injectionStrength > 0) {
                 knowledgeInjection = await injector.injectForBodyGeneration(profile, {
@@ -191,8 +183,8 @@ export class AIEngine {
 
         let knowledgeInjection = '';
         try {
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
             const profile = await profileManager.load(context.project);
             if (profile && profile.fingerprint.injectionStrength > 0) {
                 knowledgeInjection = await injector.injectForBodyGeneration(profile, {

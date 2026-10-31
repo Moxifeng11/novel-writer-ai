@@ -24,12 +24,12 @@ import {
     pjPromptUserTemplate,
     pjWritingRulesPromptTemplate,
 } from '../shared/paths';
-import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { CHAPTER_FILE_TYPES } from './chapter-utils';
 import {
     getStepTemplate,
     type PromptTemplate,
-} from '../engine/prompt-templates';
-import { RulesService } from './rules-service';
+} from './prompt-templates';
+import { RulesService } from '../services/rules-service';
 import { createLogger } from '../shared/logger';
 
 

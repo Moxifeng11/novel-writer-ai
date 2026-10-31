@@ -7,6 +7,7 @@
  */
 import { requestUrl } from 'obsidian';
 import { createLogger } from '../../shared/logger';
+import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '../../shared/http-request';
 
 const log = createLogger('TrendResearch');
 
@@ -68,7 +69,7 @@ export function buildTrendQuery(mode: 'short' | 'script', categoryOrGenre: strin
 }
 
 async function requestJson(request: RequestUrlFn, options: Parameters<RequestUrlFn>[0]): Promise<{ status: number; text: string; json?: unknown }> {
-    const response = await request(options);
+    const response = await requestWithPolicy(request, options, SEARCH_REQUEST_POLICY);
     let json: unknown;
     try { json = JSON.parse(response.text); } catch { json = undefined; }
     return { status: response.status, text: response.text, json };

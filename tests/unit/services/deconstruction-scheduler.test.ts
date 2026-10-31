@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Vault } from 'obsidian';
-import { DeconstructionScheduler } from '../../../services/deconstruction-scheduler';
+import { DeconstructionScheduler } from '../../../engine/deconstruction-scheduler';
 import type { LLMCaller } from '../../../engine/llm-enhancer';
 
 function createKnowledgeBaseManager() {

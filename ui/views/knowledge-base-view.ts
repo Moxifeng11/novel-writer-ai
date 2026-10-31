@@ -1,12 +1,12 @@
 import { ItemView, WorkspaceLeaf, Notice, Modal, App } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { KnowledgeBaseManager, type BookBasicInfo, type BreakdownStatus, type QualityScores } from '../../services/knowledge-base-manager';
-import { WebnovelKnowledgeBase, type GenreConfig } from '../../engine/webnovel-knowledge-base';
+import { WebnovelKnowledgeBase, type GenreConfig } from '../../shared/webnovel-knowledge-base';
 import { KnowledgeBaseConfigManager } from '../../engine/knowledge-base-config';
 import { applyNwScope } from '../../utils/helpers';
 import { AdaptiveDebounceManager } from '../../shared/adaptive-debounce-manager';
 import { radarChart, barChart, donutChart, attachChartInteractions } from '../svg-charts';
-import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgress, type BreakdownTask, type BreakdownDimension } from '../../services/deconstruction-scheduler';
+import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgress, type BreakdownTask, type BreakdownDimension } from '../../engine/deconstruction-scheduler';
 import { BatchImportModal } from '../batch-import-modal';
 import { MiniSettingsModal } from '../mini-settings-modal';
 import { OperationConfirmModal, TaskCardComponent } from '../components/progress';
@@ -17,6 +17,7 @@ import { exportTextFile } from '../../shared/export-file';
 import { ImportBookModal, EditBookModal, GenreEditModal, BatchOperationsModal } from './knowledge-base-modals';
 import { BookDetailRenderer } from './book-detail-renderer';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
+import { yieldToUI } from '../../shared/yield';
 
 const log = createLogger('KnowledgeBaseView');
 import {
@@ -1812,7 +1813,7 @@ export class KnowledgeBaseView extends ItemView {
                 }
                 if (processed % 20 === 0) {
                     progress.setMessage(`🏷️ 批量归类 ${processed}/${total}`);
-                    await new Promise(resolve => setTimeout(resolve, 0));
+                    await yieldToUI();
                 }
             }
         } finally {

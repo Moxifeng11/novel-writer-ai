@@ -27,6 +27,7 @@ import {
     countWords,
     generateVersionId,
 } from '../shared/diff-utils';
+import { withWriteLock } from '../shared/write-lock';
 
 export interface SaveVersionOptions {
     /** 版本类型 */
@@ -256,7 +257,11 @@ export class ChapterVersionService {
 
         const rolledBackContent = await this.getVersionContent(targetVersion);
 
-        await this.writeFile(sourcePath, rolledBackContent);
+        // P1-2（v4.27）：回滚与协同自动保存/流水线写正文共用同一路径，必须走同一把锁，
+        // 否则回滚刚写完就被并行的自动保存覆盖。
+        await withWriteLock(sourcePath, async () => {
+            await this.writeFile(sourcePath, rolledBackContent);
+        });
 
         await this.addRollbackRecord({
             id: generateVersionId(),

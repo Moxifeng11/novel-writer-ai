@@ -1,4 +1,5 @@
 import { createLogger } from './logger';
+import { STORAGE_KEYS } from './storage-keys';
 
 const log = createLogger('TimeEstimator');
 /**
@@ -57,7 +58,7 @@ export interface TimeEstimatorOptions {
 // 2. 常量
 // ============================================================
 
-const DEFAULT_STORAGE_KEY = 'novel-writer-time-estimator-history';
+const DEFAULT_STORAGE_KEY = STORAGE_KEYS.timeEstimatorHistory;
 const DEFAULT_MAX_HISTORY_PER_TYPE = 50;
 const DEFAULT_BUCKET_SIZE = 10000;
 const MIN_SAMPLES_FOR_CONFIDENCE = 10;

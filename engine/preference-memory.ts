@@ -9,7 +9,7 @@
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { pluginDataDir, pluginPreferenceFile } from '../shared/paths';
 import { SerializedWriter } from '../shared/serialized-writer';
-import type { NovelWriterPluginAPI } from '../shared/plugin-api';
+import type { NovelWriterPluginAPI } from '../plugin-api';
 import { createLogger } from '../shared/logger';
  
 

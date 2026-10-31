@@ -147,7 +147,7 @@
 - 工具目录拆分：`domains/long/tool-catalog.ts`、`domains/short/tool-catalog.ts`、`domains/script/tool-catalog.ts`。
 - 长篇工具目录不再包含短篇/剧本入口。
 - `detectProjects`、`getActiveProject`、导出项目列表、批量项目解析支持模式库路径。
-- 迁移服务：`services/project-migration-service.ts`，设置页新增「项目库迁移」。
+- 迁移服务：`engine/project-migration-service.ts`，设置页新增「项目库迁移」。
 - 静态隔离测试：`tests/unit/architecture/domain-isolation.test.ts`。
 
 ## 八、剩余路线图

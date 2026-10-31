@@ -11,7 +11,8 @@
 import { Modal, Setting, Notice, ButtonComponent } from 'obsidian';
 import type { App } from 'obsidian';
 import { ChapterVersionService } from '../services/chapter-version-service';
-import { ENGINE_NAMES, type EngineRegistry } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
+import type { EngineRegistry } from '../engine/engine-registry';
 import type { VersionMeta, ContentType, DiffStats, LineDiff } from '../shared/version-types';
 import {
     formatVersionTime,
@@ -55,7 +56,7 @@ export class ChapterVersionModal extends Modal {
     constructor(app: App, options: ChapterVersionModalOptions, engineRegistry?: EngineRegistry) {
         super(app);
         this.options = options;
-        this.service = engineRegistry?.get<ChapterVersionService>(ENGINE_NAMES.CHAPTER_VERSION_SERVICE)
+        this.service = engineRegistry?.get(ENGINE_NAMES.CHAPTER_VERSION_SERVICE)
             ?? new ChapterVersionService(app);
     }
 

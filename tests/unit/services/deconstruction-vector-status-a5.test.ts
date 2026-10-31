@@ -10,7 +10,7 @@ import {
     DeconstructionScheduler,
     buildBreakdownFinishNotice,
     type BreakdownTask,
-} from '../../../services/deconstruction-scheduler';
+} from '../../../engine/deconstruction-scheduler';
 
 function makeManager() {
     const vectorCalls: Array<{ bookId: string; status: string; error?: string }> = [];

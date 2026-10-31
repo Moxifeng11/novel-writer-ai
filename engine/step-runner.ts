@@ -4,7 +4,7 @@ import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM
 import { findChapterFile, findBodyFileByChapterNum } from './chapter-utils';
 import { mkdirp, stripFrontmatter } from '../utils/helpers';
 import { SettlementEngine } from './settlement-engine';
-import { ENGINE_NAMES } from './engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { NOTICE_WARNING, NOTICE_CRITICAL, getBusinessThreshold } from '../shared/thresholds';
 import { fitPromptToContext } from '../shared/prompt-budget';
 import { resolveTaskForStep, resolveTaskModelConfig, type ThinkingMode } from '../shared/task-model';
@@ -33,7 +33,7 @@ import { executeSettlement as executeSettlementPrimitive, type StepSettlementHos
 import { executeStepsSequential as executeStepsSequentialPrimitive } from './step-sequential';
 import { getStepTemplateAuto, fillTemplate } from './prompts/template-utils';
 import { assembleStepPrompt, type StepPromptAssemblyHost } from './step-prompt-assembly';
-import type { NovelWriterPluginAPI } from '../shared/plugin-api';
+import type { NovelWriterPluginAPI } from '../plugin-api';
 
 // ============================================================
 // 步骤定义（从 step-definitions.ts 重新导出，保持外部零修改）
@@ -147,8 +147,8 @@ export class StepRunner {
     private async injectEmotionPlanKnowledge(ctx: StepRunCtx): Promise<string> {
         try {
             // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
             const profile = await profileManager.load(ctx.project);
             if (profile && profile.fingerprint.injectionStrength > 0) {
                 const injection = await injector.injectForEmotionPlan(profile, {
@@ -168,8 +168,8 @@ export class StepRunner {
     private async injectSceneExpandKnowledge(ctx: StepRunCtx): Promise<string> {
         try {
             // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
             const profile = await profileManager.load(ctx.project);
             if (profile && profile.fingerprint.injectionStrength > 0) {
                 const injection = await injector.injectForSceneExpand(profile, {
@@ -273,8 +273,8 @@ export class StepRunner {
     private async loadBodyKnowledge(ctx: StepRunCtx): Promise<string> {
         const parts: string[] = [];
         try {
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
             const profile = await profileManager.load(ctx.project);
             if (profile && profile.fingerprint.injectionStrength > 0) {
                 const injection = await injector.injectForBodyGeneration(profile, {
@@ -325,8 +325,8 @@ export class StepRunner {
     private async loadOutlineKnowledge(ctx: StepRunCtx): Promise<string> {
         try {
             // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
-            const profileManager = this.plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
             const profile = await profileManager.load(ctx.project);
             if (profile && profile.fingerprint.injectionStrength > 0) {
                 const injection = await injector.injectForOutline(profile, {
@@ -349,7 +349,7 @@ export class StepRunner {
         deps?: { settlementPrimitive?: typeof executeSettlementPrimitive },
     ) {
         this.aiEngine = plugin.aiEngine;
-        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        this.settlementEngine = plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
         // 允许测试注入结算原语（默认即真实实现）
         this.settlementPrimitive = deps?.settlementPrimitive ?? executeSettlementPrimitive;
         // 合并默认空实现与传入的回调
@@ -923,7 +923,7 @@ export class StepRunner {
                     ? (JSON.parse(ctx.vars['_injectionLedger']) as { entries: InjectionLedgerEntry[]; generatedAt: number })
                     : null;
                 const extras: InjectionLedgerEntry[] = [];
-                const injector = this.plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+                const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
                 const meta = injector?.lastInjectionMeta;
                 // v4.21 成本观测：检索遥测在 if(meta) 之外也要用（本步成本行）
                 const ragTelemetry = meta?.retrieval;
@@ -1065,6 +1065,14 @@ export class StepRunner {
                     `⚠️ 本步输入超预算（~${promptAssembly.estimatedTokens} / ${promptAssembly.maxInputTokens} tokens）。${detail}。`
                     + '关键段（世界观/人物/本章规划/上一章结尾）不会被整段丢弃；如需完整保留，可在设置里调高「单步输入 token 上限」或精简该段内容。',
                     NOTICE_CRITICAL,
+                );
+            } else if (promptAssembly.droppedExtra) {
+                // 仅丢增强尾部（不截断主体）时，旧实现只写日志/账本，用户看不到提示
+                this.emitEvent('step-warning', 'warning', '上下文不足，知识注入（风格/节奏/技巧/伏笔）已整段跳过', stepKey, stepLabel);
+                this.callbacks.showNotice(
+                    '⚠️ 本步输入接近上限，知识注入（风格/节奏/技巧/伏笔）已整段跳过，以保住世界观/人物/大纲等关键段；'
+                    + '如需保留，可在设置里调高「单步输入 token 上限」。',
+                    NOTICE_WARNING,
                 );
             } else if (promptAssembly.truncated) {
                 this.emitEvent('step-warning', 'warning', `上下文过长，已按段截断（~${promptAssembly.estimatedTokens} tokens）`, stepKey, stepLabel);

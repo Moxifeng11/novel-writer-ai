@@ -139,7 +139,7 @@ export class WritingFingerprintView extends ItemView {
         this.fingerprintLibrary = new StyleFingerprintLibrary(this.app, project || undefined);
 
         try {
-            const aiEngine = this.plugin.engineRegistry.get<AIEngine>(ENGINE_NAMES.AI_ENGINE);
+            const aiEngine = this.plugin.engineRegistry.get(ENGINE_NAMES.AI_ENGINE);
             const embeddingProvider = EmbeddingProviderFactory.create(this.plugin.settings);
             this.extractionEngine = aiEngine;
             this.extractionProvider = embeddingProvider;

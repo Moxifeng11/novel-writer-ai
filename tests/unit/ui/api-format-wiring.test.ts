@@ -10,7 +10,7 @@ function read(rel: string): string {
 
 describe('设置页 API 格式与模型获取的接线', () => {
     it('设置页是「左列表 + 右详情」两栏布局', () => {
-        const source = read('ui/settings-tab.ts');
+        const source = read('ui/settings/api-section.ts');
         expect(source).toContain("cls: 'nw-api-layout'");
         expect(source).toContain("cls: 'nw-api-sidebar'");
         expect(source).toContain("cls: 'nw-api-detail'");
@@ -20,7 +20,7 @@ describe('设置页 API 格式与模型获取的接线', () => {
     });
 
     it('详情区提供 Base URL、API 格式与密钥输入', () => {
-        const source = read('ui/settings-tab.ts');
+        const source = read('ui/settings/api-section.ts');
         expect(source).toContain("renderField(container, 'Base URL'");
         expect(source).toContain("renderField(container, 'API 格式'");
         expect(source).toContain("renderField(container, 'API Key'");
@@ -30,7 +30,7 @@ describe('设置页 API 格式与模型获取的接线', () => {
     });
 
     it('模型列表支持从 URL 拉取与逐模型启停', () => {
-        const source = read('ui/settings-tab.ts');
+        const source = read('ui/settings/api-section.ts');
         expect(source).toContain('从 URL 获取');
         expect(source).toContain('discoverModels(');
         expect(source).toContain('new ModelPickerModal(');
@@ -38,7 +38,7 @@ describe('设置页 API 格式与模型获取的接线', () => {
     });
 
     it('连通性测试把当前格式传下去，避免格式选对但探测按 OpenAI 发', () => {
-        const source = read('ui/settings-tab.ts');
+        const source = read('ui/settings/api-section.ts');
         expect(source).toMatch(/testProviderConnectivity\(\{[\s\S]*apiFormat: format/);
     });
 

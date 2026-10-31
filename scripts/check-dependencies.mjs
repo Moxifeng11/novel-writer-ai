@@ -8,6 +8,12 @@
  * - shared 层 (shared/) → 不可依赖其他业务层
  * - 禁止循环依赖
  *
+ * 口径约定（运行时依赖 vs 类型依赖）：
+ * - `import type ...` 与 `import { type A }` 编译后整句擦除，不产生 require，
+ *   因此不计入分层违规门禁，也不参与成环；这类依赖单独作为「类型耦合提示」列出。
+ * - 注释里的 import 示例不参与任何检查（docs 示例会被误判成真实依赖）。
+ * - 门禁只对运行时分层违规与运行时循环做棘轮（见 .arch-baseline.json）。
+ *
  * 用法：
  *   node scripts/check-dependencies.mjs
  *   node scripts/check-dependencies.mjs --fix   (仅显示可修复建议)
@@ -104,23 +110,48 @@ function getFileLayer(filePath) {
     return null;
 }
 
-function parseImports(filePath) {
-    const content = readFileSync(filePath, 'utf-8');
-    const imports = [];
+/** 说明符是否全部为 inline type（`import { type A, type B }`），纯类型导入不产生运行时依赖 */
+function isAllInlineType(specifiers) {
+    const s = specifiers.trim();
+    if (!s.startsWith('{')) return false;
+    const inner = s.slice(1, s.lastIndexOf('}'));
+    const parts = inner.split(',').map(p => p.trim()).filter(Boolean);
+    return parts.length > 0 && parts.every(p => /^type\s/.test(p));
+}
 
-    const importRegex = /import\s+(?:type\s+)?(?:[\w*{}\s,]+)\s+from\s+['"]([^'"]+)['"]/g;
+/** 剥离注释，避免文档示例里的 `import ... from '...'` 被当作真实依赖（会造成假自环） */
+function stripComments(source) {
+    return source
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '');
+}
+
+function parseImports(filePath) {
+    const content = stripComments(readFileSync(filePath, 'utf-8'));
+    const imports = [];
+    const seen = new Set();
+
+    // 捕获 type 前缀：`import type X from '…'` 编译后整句被擦除，不构成运行时依赖
+    const importRegex = /import\s+(type\s+)?([\w*{}\s,]+)\s+from\s+['"]([^'"]+)['"]/g;
     let match;
 
     while ((match = importRegex.exec(content)) !== null) {
-        imports.push(match[1]);
+        const typeOnly = Boolean(match[1]) || isAllInlineType(match[2]);
+        const key = `${match[3]}|${typeOnly ? 'type' : 'runtime'}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        imports.push({ path: match[3], typeOnly });
     }
 
     const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = requireRegex.exec(content)) !== null) {
-        imports.push(match[1]);
+        const key = `${match[1]}|runtime`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        imports.push({ path: match[1], typeOnly: false });
     }
 
-    return [...new Set(imports)];
+    return imports;
 }
 
 function isExternalImport(importPath) {
@@ -207,7 +238,9 @@ function detectCircularDependencies(fileToImports) {
 
         const imports = fileToImports.get(file) || [];
         for (const imp of imports) {
-            const resolved = resolveImportPath(file, imp);
+            // 循环依赖是运行时概念：import type 编译后擦除，不参与成环
+            if (imp.typeOnly) continue;
+            const resolved = resolveImportPath(file, imp.path);
             if (resolved && getFileLayer(resolved)) {
                 dfs(resolved);
             }
@@ -251,7 +284,7 @@ function checkDependencies() {
 
     for (const layer of Object.keys(LAYERS)) {
         layerFiles[layer] = [];
-        layerStats[layer] = { total: 0, violations: 0 };
+        layerStats[layer] = { total: 0, violations: 0, typeOnly: 0 };
     }
 
     for (const file of allTsFiles) {
@@ -273,7 +306,7 @@ function checkDependencies() {
             const imports = parseImports(file);
 
             for (const imp of imports) {
-                const importLayer = getImportLayer(imp, file);
+                const importLayer = getImportLayer(imp.path, file);
 
                 if (importLayer === 'external' || importLayer === 'unresolved' || importLayer === null) {
                     continue;
@@ -288,11 +321,17 @@ function checkDependencies() {
                     violations.push({
                         file: relPath,
                         layer: layerName,
-                        import: imp,
+                        import: imp.path,
                         importLayer,
+                        typeOnly: imp.typeOnly,
                         message: `${layerName} 层不允许依赖 ${importLayer} 层`,
                     });
-                    layerStats[layerName].violations++;
+                    // 只有运行时依赖计入门禁；type-only 依赖仅作为提示
+                    if (imp.typeOnly) {
+                        layerStats[layerName].typeOnly++;
+                    } else {
+                        layerStats[layerName].violations++;
+                    }
                 }
             }
         }
@@ -309,14 +348,18 @@ function checkDependencies() {
     for (const [layerName, config] of Object.entries(LAYERS)) {
         const stats = layerStats[layerName];
         const status = stats.violations > 0 ? '❌' : '✅';
-        console.log(`  ${status} ${config.label} (${layerName}): ${stats.total} 个文件, ${stats.violations} 个违规`);
+        const typedNote = stats.typeOnly > 0 ? `, ${stats.typeOnly} 条类型耦合（不计入门禁）` : '';
+        console.log(`  ${status} ${config.label} (${layerName}): ${stats.total} 个文件, ${stats.violations} 个运行时违规${typedNote}`);
     }
 
     console.log('');
 
-    if (violations.length > 0) {
-        console.log(`❌ 发现 ${violations.length} 个分层违规：\n`);
-        for (const v of violations) {
+    const runtimeViolations = violations.filter(v => !v.typeOnly);
+    const typeOnlyViolations = violations.filter(v => v.typeOnly);
+
+    if (runtimeViolations.length > 0) {
+        console.log(`❌ 发现 ${runtimeViolations.length} 个运行时分层违规：\n`);
+        for (const v of runtimeViolations) {
             console.log(`  📄 ${v.file}`);
             console.log(`     ↳ import "${v.import}"`);
             console.log(`     ↳ ${v.message}`);
@@ -324,6 +367,14 @@ function checkDependencies() {
         }
     } else {
         console.log('✅ 分层依赖检查通过\n');
+    }
+
+    if (typeOnlyViolations.length > 0) {
+        console.log(`ℹ️  ${typeOnlyViolations.length} 条 import type 类型耦合（编译后擦除，不计入门禁）：\n`);
+        for (const v of typeOnlyViolations) {
+            console.log(`  · ${v.file} → "${v.import}"`);
+        }
+        console.log('');
     }
 
     if (cycles.length > 0) {
@@ -363,14 +414,14 @@ const result = checkDependencies();
 // 传入 --baseline 文件后进入「棘轮」模式：只有新增违规才失败。
 const { baselinePath } = parseBaselineArgs();
 if (!baselinePath) {
-    if (result.violations.length > 0 || result.cycles.length > 0) {
+    if (result.violations.some(v => !v.typeOnly) || result.cycles.length > 0) {
         process.exit(1);
     }
     process.exit(0);
 }
 
 const layerKeys = [...new Set(
-    result.violations.map(v => `${v.file}|${v.import}|${v.importLayer}`)
+    result.violations.filter(v => !v.typeOnly).map(v => `${v.file}|${v.import}|${v.importLayer}`)
 )].sort();
 const cycleKeys = [...new Set(
     result.cycles.map(cycle => cycle

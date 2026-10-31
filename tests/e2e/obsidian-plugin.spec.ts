@@ -328,7 +328,9 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
             };
             const root = host.app?.setting?.activeTab?.containerEl;
             if (!root) return -1;
-            return root.querySelectorAll('.nw-settings-tab-content > section').length;
+            // v4.27：设置页改为「每个页签一个 .nw-settings-panel 容器 + 面板缓存」，
+            // section 不再是 tab-content 的直接子节点；改为数面板内的 section。
+            return root.querySelectorAll('.nw-settings-tab-content section').length;
         });
 
         await expect.poll(async () => countSections(), { timeout: 15_000 }).toBe(1);

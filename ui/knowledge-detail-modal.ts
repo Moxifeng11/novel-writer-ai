@@ -1,7 +1,7 @@
 import { App, Modal, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
 import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
-import { DeconstructionScheduler } from '../services/deconstruction-scheduler';
+import { DeconstructionScheduler } from '../engine/deconstruction-scheduler';
 import { VectorEnhancer } from '../engine/vector-enhancer';
 import { EmbeddingProviderFactory } from '../engine/embedding/provider-factory';
 import { KnowledgeToFingerprintConverter } from '../engine/knowledge-to-fingerprint-converter';

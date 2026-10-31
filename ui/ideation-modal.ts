@@ -4,6 +4,7 @@ import { AIEngine } from '../engine/ai-engine';
 import { createLogger } from '../shared/logger';
 import { CreateProjectModal } from './create-project-modal';
 import { pjControlDir } from '../shared/paths';
+import { STORAGE_KEYS } from '../shared/storage-keys';
 
 
 const log = createLogger('IdeationModal');
@@ -36,8 +37,6 @@ const GENRE_OPTIONS = [
     '玄幻', '仙侠', '都市', '科幻', '悬疑', '历史', '言情',
     '奇幻', '武侠', '末世', '灵异', '游戏', '竞技', '同人'
 ];
-
-const STORAGE_KEY = 'novel-writer-ideation-favorites';
 
 export class IdeationModal extends Modal {
     private plugin: NovelWriterPlugin;
@@ -623,7 +622,7 @@ export class IdeationModal extends Modal {
 
     private loadSavedIdeas(): void {
         try {
-            const data = localStorage.getItem(STORAGE_KEY);
+            const data = localStorage.getItem(STORAGE_KEYS.ideationFavorites);
             if (data) {
                 this.savedIdeas = JSON.parse(data);
             }
@@ -635,7 +634,7 @@ export class IdeationModal extends Modal {
 
     private persistSavedIdeas(): void {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.savedIdeas));
+            localStorage.setItem(STORAGE_KEYS.ideationFavorites, JSON.stringify(this.savedIdeas));
         } catch (e) {
             log.warn('[IdeationModal] 保存收藏失败:', e);
         }

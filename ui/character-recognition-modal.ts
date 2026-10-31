@@ -14,7 +14,7 @@ import { CharacterDeconstructor } from '../engine/deconstructors/character-decon
 import { CharacterRecognitionPipeline } from '../engine/character-recognition-pipeline';
 import { SuggestionManager } from '../engine/suggestion-manager';
 import { VectorEnhancer } from '../engine/vector-enhancer';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import type { AnalysisSuggestion } from '../engine/types/analysis-suggestion';
 import { CharacterReviewPanel } from './components/character-review-panel';
 import { CategorizationReviewPanel } from './components/categorization-review-panel';
@@ -83,7 +83,7 @@ export class CharacterRecognitionModal extends Modal {
         this.analyzeBtn.disabled = true;
         this.statusEl.setText('识别中…');
         try {
-            const vectorEnhancer = this.plugin.engineRegistry.getOrNull<VectorEnhancer>(ENGINE_NAMES.VECTOR_ENHANCER) ?? undefined;
+            const vectorEnhancer = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.VECTOR_ENHANCER) ?? undefined;
             const deconstructor = new CharacterDeconstructor(vectorEnhancer);
             const pipeline = new CharacterRecognitionPipeline(
                 deconstructor,

@@ -10,9 +10,9 @@ import { getWorldviewPath, getSettingLibPath, pjFanficDir, pjProjectMeta } from 
 import { parseProjectMeta } from '../shared/fanfic-rules';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
-import { TemplateService } from '../services/template-service';
+import { TemplateService } from './template-service';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
-import { ENGINE_NAMES } from './engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
@@ -43,7 +43,7 @@ export class WorldviewGenerator {
         this.notifier = notifier || NOOP_NOTIFIER;
         this.plugin = plugin;
         this.apiClient = apiClient;
-        this.templateService = plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+        this.templateService = plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
     }
 
     setCacheService(cacheService: WorldviewCacheService | null): void {

@@ -1,26 +1,12 @@
-export interface EmbeddingAvailability {
-    available: boolean;
-    reason?: string;
-    model?: string;
-    dimensions?: number;
-}
-
-export interface ProviderInfo {
-    type: string;
-    name: string;
-    model: string;
-    dimensions?: number;
-}
-
-export interface EmbeddingOptions {
-    signal?: AbortSignal;
-}
-
-export interface EmbeddingProvider {
-    embed(text: string, options?: EmbeddingOptions): Promise<number[]>;
-    embedBatch(texts: string[], options?: EmbeddingOptions): Promise<number[][]>;
-    isAvailable(): Promise<EmbeddingAvailability>;
-    getProviderInfo(): ProviderInfo;
-    getModelName(): string;
-    getDimensions(): Promise<number>;
-}
+/**
+ * embedding-provider.ts — engine 层嵌入接口入口
+ *
+ * 接口定义已下沉 `shared/embedding-provider.ts`（services 层也要按类型使用）；
+ * 本文件仅再导出，engine / ui / tests 既有 `./embedding-provider` 引用不变。
+ */
+export type {
+    EmbeddingAvailability,
+    ProviderInfo,
+    EmbeddingOptions,
+    EmbeddingProvider,
+} from '../../shared/embedding-provider';

@@ -15,8 +15,8 @@
  * - 流式读取由 StreamTextReader 提供，但分段是首选（更精确）
  */
 
-import { TextSegment } from '../engine/text-segmenter';
-import { StreamTextReader } from '../engine/stream-text-reader';
+import { TextSegment } from './text-segmenter';
+import { StreamTextReader } from './stream-text-reader';
 import { yieldToUI } from '../shared/yield';
 
 export interface SegmentBreakdownOptions {

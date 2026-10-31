@@ -895,7 +895,7 @@ import { LruCache } from '../repository';
 ---
 
 ### 4.1 MultiLayerCache
-**定义**: `engine/cache/multi-layer-cache.ts`
+**定义**: `shared/multi-layer-cache.ts`（批次 5 从 `engine/cache/` 下沉，engine 侧 `engine/cache/index.ts` 保留再导出）
 
 ```typescript
 export class MultiLayerCache {
@@ -949,7 +949,7 @@ export interface CacheSetOptions {
 ---
 
 ### 4.2 FileCache
-**定义**: `engine/cache/file-cache.ts`
+**定义**: `shared/file-cache.ts`（批次 5 从 `engine/cache/` 下沉）
 
 ```typescript
 export class FileCache {
@@ -1051,7 +1051,7 @@ export interface PreloadManagerOptions {
 ---
 
 ### 4.4 LruCache
-**定义**: `engine/repository/lru-cache.ts`
+**定义**: `shared/lru-cache.ts`（批次 3 从 `engine/repository/lru-cache.ts` 下沉）
 
 ```typescript
 export class LruCache<K, V> {
@@ -1352,7 +1352,7 @@ import { EngineRegistry, ENGINE_NAMES } from '../engine/engine-registry';
 const registry = new EngineRegistry();
 await registry.initialize(plugin, { settingsWriter });
 
-const aiEngine = registry.get<AIEngine>(ENGINE_NAMES.AI_ENGINE);
+const aiEngine = registry.get(ENGINE_NAMES.AI_ENGINE); // 类型由 EngineServiceMap 推导
 
 const charRepo = await registry.getCharacterRepository('my-project');
 const characters = await charRepo.findAll();

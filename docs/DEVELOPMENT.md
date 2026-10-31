@@ -4,7 +4,7 @@
 > **最后更新**: 2026-10-31  
 > **状态**: 活跃可信 · 协同写作建议链路运行时验收通过（云端 32–72s / 本地 192s 返回 3 条，面板可见）
 >
-> **当前基线**：`npm run typecheck` 通过 · `npm run build` 通过 · 全量单测 **433 文件 / 5069 用例**
+> **当前基线**：`npm run typecheck` 通过 · `npm run build` 通过 · 全量单测 **480 文件 / 5497 用例**
 >
 > **已修复的运行时阻断（2026-10-20）**：
 > - `.nw-cowrite-suggestions-panel` 被 `display:none` 永久隐藏（生成成功也看不见）
@@ -824,8 +824,9 @@ const outcome = await saveEntities(app, project, kind, [{ name, content: integri
 硬约束（不要绕过）：
 - `saveEntities` 默认 `requireComplete: true`，不完整一律不落盘；仅在明确的迁移/导入场景才传 `false`。
 - 单次保存上限 200；空名拒绝；同名不覆盖（改另存「名称（2）」）。
-- 实体数量统计唯一入口是 `shared/entity-stats.ts#countProjectEntities`（世界观文件存在 = 1；人物/势力/地点/物品 = 对应目录下 `.md` 数量）。AI 世界元素生成器、实体管理、向导完成页等新增消费方不得各自写 countFiles，否则同一项目在不同界面显示不同数量。
-- 实体/章节选择器的新类名必须在 `styles.css` 有对应定义再提交：Rev 192 前 AI 世界元素生成器的 66 个 `novel-writer-ai-builder-*` 类零样式，浏览器按默认 block 排版，项目卡片塌成一列窄条、统计项竖排。「所有章节」弹窗必须提供搜索 + 按卷分组 + 自适应网格 + 限高滚动，且 `showAllChapters` 内部必须先 `sortChaptersByNumber`（章节来源是「正文 ∪ 骨架目录」的合并顺序，不保证升序）。
+- 实体文件读取/统计唯一入口是 `shared/entity-reader.ts`（`listEntityFiles` / `countProjectEntities` / `entityDir`）：目录前缀匹配 + 仅 `.md` + 排除名称含「模板」+ 路径升序。AI 世界元素生成器、实体管理、向导完成页、`context-manager.gatherEntityRecords`、`entity-audit` 等消费方不得再各自 `vault.getFiles().filter(...)`，否则同一项目在不同界面数量/顺序不一致。旧 `shared/entity-stats.ts` 已删除。
+- 实体/章节选择器的新类名必须在 `styles.css` 有对应定义再提交：Rev 192 前 AI 世界元素生成器的 66 个 `novel-writer-ai-builder-*` 类零样式，浏览器按默认 block 排版，项目卡片塌成一列窄条、统计项竖排。「所有章节」弹窗必须提供搜索 + 按卷分组 + 自适应网格 + 限高滚动，且 `showAllChapters` 内部必须先 `sortChaptersByNumber`（章节来源是「正文 ∪ 骨架目录」的合并顺序，不保证升序）。新类名必须先写进 `styles-src/` 对应源文件，再跑 `npm run build:styles` 生成根 `styles.css`；直接编辑 `styles.css` 会被 `check:styles` 判为产物漂移（`preflight` 失败）。
+- 一次渲染要对多个项目取章节时必须走 `ui/project-utils.ts#scanProjectChapters`（一次遍历 + 按 `项目/03-大纲与章节/` 前缀分桶），禁止对每个项目各调一次 `getChaptersForProject`（那是 N 轮全库遍历）。`getChaptersForProject` 与批量扫描共用内部 `buildChapterEntries`，正文 ∪ 骨架、去重、排序口径不得分叉。同一渲染周期内 `getProjectMeta` 结果与单元列表按项目复用，缓存随 render 丢弃——不要做长驻 vault 事件索引（外部改动/批量操作事件不全，会留下陈旧数据）。
 - 向导步骤前进入下一步必须调用 `validateWizardStepContent`（`ui/full-writer/wizard-step-validators.ts`），不完整时只允许「重新生成」或显式「跳过此步骤」。
 - 文笔风格预设新增走 `ui/writing-style-presets.ts#saveStylePreset`：落盘前用 `validateWritingStyleOutput` 校验 9 个一级分节 + 「二、文笔特征」3 个子节，不完整（含 `—` 占位）直接抛错，不写文件。
 - AI 补全（`repairEntity` / `completeCharacter` / `BatchEntityGenerator._retryFixEntity`）必须与生成共用同一输出契约，显式列出 YAML 字段、嵌套组与正文分节；只写「补全缺失字段」会让模型只补 frontmatter，复检必然失败。补全结果统一用 `stripCodeFence` 清理围栏。
@@ -847,7 +848,7 @@ const outcome = await saveEntities(app, project, kind, [{ name, content: integri
 - 质量评分的「维度总分权重 / 维度内子项权重 / 标定乘数 / 理想区间」统一放 `shared/thresholds.ts` 第十二节（`WQE_*` / `QSE_*`）：`WritingQualityEngine` 与 `QualityScoreEngine` 内禁止再写 `0.3`、`* 8`、`15-30 字`这类内联系数。改数值等于改评分，必须同步跑两个引擎的测试；`tests/unit/shared/quality-calibration.test.ts` 会校验每组权重和为 1、引擎权重确实引用阈值表。
 - 同人设定的「AI 生成提示词」必须使用 `ui/full-writer/fanfic-settings-utils.ts#buildFanficSettingsContent` 生成的骨架，不得另写一套输出格式：校验器 `validateFanficSettings` 要求 9 个字段**实质填写**（占位「（待补充）」不算）＋两张时间线表各 ≥1 行**真实数据**（口径与 `parseFanficTimeline` 一致：表头、分隔行、整行占位都不算），提示词少一项就会生成失败。向导表单只收集 9 个字段，它的保存与步骤回读统一走 `isFanficSettingsContentValidEnough`（内部 `requireTimelineData: false`）：两侧口径不一致会让「向导保存成功 → 重启 → 步骤被骨架占位行判成未完成」。绑定项目/回读统一走 `.project` 的「## 同人设定路径」，`.project` 缺失时用 `attachFanficPathToProject` 补建并写 `## 类型\nfanfic`。
 - 同人约束注入协同写作必须同时给「核心设定（世界观类型/力量体系/核心规则）」与「创作规则」：只注入三条红线时模型知道不许 OOC，却不知道原作力量体系边界，长篇续写会写出体系外能力。统一由 `shared/fanfic-rules.ts#formatFanficRulesForPrompt` 格式化（单条超 `FANFIC_RULE_ITEM_MAX_CHARS` 截断），engine 侧读取走 `readFanficRulesFromFS` 而不是直接拿 `App`；prompt 片段 key 为 `fanfic`（priority 98，高于本章简报、低于剧情节点）。
-- 同人项目的实体生成（人物/势力/地点/物品）必须把同人约束前置到「用户描述」之前，统一走 `shared/fanfic-rules.ts#mergeFanficRequirement(fanficBlock, extra)`，禁止各弹窗自己拼字符串：实体卡会成为后续 OOC / 设定矛盾检测的比对基准，漏注入会生成违反原作力量体系的人物，并被长篇流程持续放大。覆盖入口：`generate-character/faction/location/item-modal`、`unified-entity-generate-modal`、`ai-builder-modal`（单个 + 批量，人物按 2 个/批循环时同样携带）。原创项目块为空串，必须原样透传用户描述，不得留下同人痕迹。读取约束块必须走 `ui/fanfic-prompt-notice.ts#readFanficPromptBlockWithNotice`（内部 `Notice(…, 8000)` 提示设定缺失/为空），禁止再直接写 `formatFanficRulesForPrompt(await readFanficRules(...))`：空串与「同人项目本应有约束」在界面上无法区分。全文写作的模板变量（`ui/full-writer/template-vars-builder.ts#buildTemplateVars` 的 `fanficRules`）同样必须走该入口，否则 11 步流水线会在「零同人约束」下渲染模板且不提示。`tests/unit/ui/fanfic-read-entry-guard.test.ts` 是这条不变量的源码守卫：它扫描 `ui/**/*.ts`（剥离注释后）并禁止上述调用形态，新增 ui 入口若绕过会被直接测红。
+- 同人项目的实体生成（人物/势力/地点/物品）必须把同人约束前置到「用户描述」之前，统一走 `shared/fanfic-rules.ts#mergeFanficRequirement(fanficBlock, extra)`，禁止各弹窗自己拼字符串：实体卡会成为后续 OOC / 设定矛盾检测的比对基准，漏注入会生成违反原作力量体系的人物，并被长篇流程持续放大。覆盖入口：`generate-character/faction/location/item-modal`、`unified-entity-generate-modal`、`ai-builder-modal`（批次 4 起只保留世界观与人物，单个 + 批量人物按 2 个/批循环时仍携带；势力/地点/物品已统一到 `unified-entity-generate-modal`）。原创项目块为空串，必须原样透传用户描述，不得留下同人痕迹。读取约束块必须走 `ui/fanfic-prompt-notice.ts#readFanficPromptBlockWithNotice`（内部 `Notice(…, 8000)` 提示设定缺失/为空），禁止再直接写 `formatFanficRulesForPrompt(await readFanficRules(...))`：空串与「同人项目本应有约束」在界面上无法区分。全文写作的模板变量（`ui/full-writer/template-vars-builder.ts#buildTemplateVars` 的 `fanficRules`）同样必须走该入口，否则 11 步流水线会在「零同人约束」下渲染模板且不提示。`tests/unit/ui/fanfic-read-entry-guard.test.ts` 是这条不变量的源码守卫：它扫描 `ui/**/*.ts`（剥离注释后）并禁止上述调用形态，新增 ui 入口若绕过会被直接测红。
 - 同人设定文件覆盖保存必须走 `ui/full-writer/fanfic-settings-utils.ts#saveFanficSettingFile`（存在则 `vault.modify`），禁止 `delete` + `create`：中间态失败会既丢旧设定、又让 `.project` 指向不存在路径，`readFanficRules` 随后静默返回空规则，全部同人约束失效且用户无感知。
 - `.project` 的「## 同人设定路径」只允许由 `shared/fanfic-rules.ts#parseProjectMeta` 解析，禁止在 UI/engine 各写正则（历史上 6 处副本，其中一处只认 `\n`，CRLF 文件解析不到路径）。新增读取方必须复用该函数。
 - 同人设定文件的定位必须以 `.project` 记录的**完整路径**为准（`ContextManager#resolveFanficSettingsFile`）：禁止再把该值当文件名传给 `pjFanficFile` 拼 `05-同人设定库`——那会得到「项目/05-同人设定库/项目_05-同人设定库_名字.md」，上下文面板的原作时间线/OOC 规则对同人项目永远为空。旧数据只写文件名时回退到项目自己的同人设定库。面板展示用的 `parseCanonTimelineTable` / `parseFanTimelineTable` / `loadFanficRules` 必须与 prompt 侧同口径丢弃整行占位与占位规则，禁止出现「面板说有约束、prompt 里没有」。
@@ -983,7 +984,7 @@ const outcome = await saveEntities(app, project, kind, [{ name, content: integri
 - 模板骨架按「有效行」判定，不得只看字符数或 `${}` 占位：`engine/step-validator.ts#stripPlaceholderLines` 会剔除空标签行（`- 节点1：`）、空表格行（`| 1 | | | | | |`）、斜杠枚举值（`高/中/低`、`悬念式/反转式/…`）与方括号模板说明（`[开端/发展/…]`）；`hasMeaningfulContent` 与 `isTemplateSkeleton` 必须共用该清洗，后者忽略 Markdown 标题后有效长度 <30 即骨架。
 - 上下文加载（context）不是开关：完成态由 `engine/context-readiness.ts#assessContextReadiness` 决定（必做 = 人物、大纲、世界观或设定库、非首章的前章摘要），缺失时 `partial` + 点名；`ChapterStateManager.restoreChapterState` 不得再无条件把 context 写 complete，否则会覆盖 loadContext 的真实判定。上下文步骤页必须渲染 17 项输入清单（条数/字数/必做/是否加载）与重新加载入口。
 - 章节标签页身份必须含卷：`chapterKey = 项目/卷/章`；`TabController.selectChapter` 复用旧标签页时必须同步 `chapterName/volume/chapterNum/chapDir`（磁盘真实卷目录），切换后校验 `state.chapterName` 并在未生效时给明确 Notice。只按 `项目/第N章` 匹配会让跨卷同名章串用旧上下文。
-- 章节列表口径 = 正文 ∪ 骨架：`ui/project-utils.ts#getChaptersForProject` 返回 `ChapterListEntry`（`file: TFile | null`、`hasBody`），骨架来源为 `03-大纲与章节/步骤结果/第N卷/第M章` 目录；去重键为章名（全书连续章号），正文优先。任何消费方不得假设 `file` 非空——质量仪表盘必须过滤无正文者，顶部下拉/项目页「全部章节」/协同入口必须允许 `file=null` 继续切换（`WriterTab.file` 本就可选）。
+- 章节列表口径 = 正文 ∪ 骨架：`ui/project-utils.ts#getChaptersForProject` 返回 `ChapterListEntry`（`file: TFile | null`、`hasBody`），骨架来源为 `03-大纲与章节/步骤结果/第N卷/第M章` 目录；去重键为章名（全书连续章号），正文优先。**出口已用 `sortChaptersByNumber` 统一升序**，消费方不要再各自排序（重复调用是 no-op，但新增代码不得依赖未排序顺序）。任何消费方不得假设 `file` 非空——质量仪表盘必须过滤无正文者，顶部下拉/项目页「全部章节」/协同入口必须允许 `file=null` 继续切换（`WriterTab.file` 本就可选）。
 - 时间线/伏笔不得只平铺注入：`engine/story-linkage.ts#buildStoryLinkage` 产出按章关联索引（到期/逾期/3 章内即将到期 + 设定条目互链 + 全书规划定位 + 去重告警）；`buildUserPrompt` 在 `ctx.storyLinkage` 非空时必须用它替代 `【未揭示伏笔】`/`【时间线事件】`，否则同一批数据被注入两次、预算浪费在重复行上；为空时才回退旧平铺。
 - 关联回写只动标记块：`engine/story-linkage-writer.ts#upsertLinkageBlock` 仅替换 `NW-LINKAGE:BEGIN/END` 之间内容，无标记则追加，残缺标记不得删除用户内容；解析伏笔库/时间线看板前必须 `stripLinkageBlock`，否则回写表格会被再次解析成事件、块内容不再幂等。
 - 时间线看板解析必须同时兼容 7 列富表（`# | 事件名称 | 时间 | 地点 | 涉及人物 | 章节 | 类型`）与 4 列简表（`时间 | 对应章节 | 事件 | 影响`），不得再用固定列数阈值直接丢弃真实数据行。
@@ -1016,6 +1017,10 @@ const outcome = await saveEntities(app, project, kind, [{ name, content: integri
 - **协同保存必须入口快照章节身份**：`CoWritingView#saveBody` 在入口固定 `{ project, volume, chapterNum, chapterName, bodyPath }`，后续 `getChapterTitle / getStepFilePath / writer.write / 状态更新` 一律只用快照，`await` 之后不得再读 `this.project / this.chapterNum` 等可变字段；写盘后用 `isSameChapterIdentity(identity)` 判断是否已切章，已切章则不再回写旧章的 UI 状态。否则「生成/保存 await 期间用户切章」会把上一章正文写到新章路径，造成静默串章。
 - **切章前必须冲刷排队正文**：`CoWritingView#openChapter` 首行调用 `flushPendingBodySaveBeforeChapterSwitch()`，先用**旧身份** `cancel('auto-save')` 并 `saveBody(false)` 落盘；返回 `false` 时提示「上一章正文未能保存，已取消切章」并中止切章。禁止直接 `cancel` 丢掉排队内容，也禁止先切 `this.chapterNum` 再保存。
 - **所有插件数据目录 IO 必须能覆盖索引外路径**：`ObsidianFileSystem` 对 `vault.getAbstractFileByPath` 未命中的路径必须回退 `vault.adapter`（`read / write / exists / listFiles / listFolders / mkdir / delete`）。插件数据目录 `.obsidian/plugins/<id>/data` 不在 vault 索引里，`vault.getFiles` / `getAbstractFileByPath` 对它恒为空：只用 vault 索引会让知识向量 / 指纹向量 / 版本目录的加载静默变成 0，`exists` 门禁还会让改名同步、索引加载直接跳过。vault 内文件必须继续走 `vault.read / modify / create` 以保留索引与事件语义；索引外列表返回的虚拟 `TFile` 只保证 `path / name / basename / extension / stat` 字段。
+- **写 vault 内 `.md` 必须走 `writeVaultText`（2026-10-31 批次 13）**：`shared/file-system-port.ts#writeVaultText(app, path, content)` 是 UI 层写项目内文本的唯一出口。它先补父目录，再按 `ObsidianFileSystem.write` 四路分流（索引内 `TFile` → `vault.modify`；路径是文件夹 → 抛错；配置目录 / 索引外已存在 → `adapter.write`；其余 → `vault.create`）。**不要再写 `app.vault.adapter.write(项目内 .md)`**：那条路径不触发 `metadataCache` 重解析、绕过写锁，移动端（无外部文件监听）新建文件会长时间不出现在文件浏览器 / 双链。只有以下三类允许直连 adapter：
+  1. 索引外路径：`.project` 隐藏文件、`shared/plugin-cache.ts` 的 JSON 缓存、agent 会话 / 溢出数据；
+  2. 需要绝对路径的 `vault.adapter.basePath`；
+  3. engine 层拆解器对 `写作知识库/` 的批量后台写入——这些是插件自管数据、读取同走 adapter 闭环，改走索引会在拆解期间引发大量 `metadataCache` 重解析与 `vault.on` 抖动，收益为负（改动前先看这条约定）。
 - **知识向量写入必须全局串行**：`KnowledgeVectorStore.STATE_LOCK` 被 `ensureLoaded`（`reloadIfChanged`）与 `addBookSamples / replaceBookSamples / updateBookSamples / removeBook / clear` 共用；写操作在锁内完成「reload → 逐条 embed → set → saveBook → saveIndex」。禁止改回 per-book 锁：`loadIndex` 会 `samples.clear()`，书级并行会与跨实例 reload 互相清空内存样本。新增任何写向量入口也必须走这把锁（或走上述方法），不得直接 `samples.set` + `saveBook`。
 - **同一本书只允许一个在途拆解任务**：`DeconstructionScheduler.addTask` 对同书 `pending / running / paused` 任务直接返回既有 taskId，禁止并发拆解同一本书（会各自「读现有 → embed → 覆盖」）。删除书籍必须先 `cancelByBook(bookId)`；且 `vectorizeBook / saveSegmentedDimensionResult / appendBreakdownLog` 写盘前必须用 `getBook(bookId)` 二次校验，书已删除则跳过，避免重建已删除的书目录与向量。
 - **知识向量存活判定必须按 `bookId`**：向量文件名是 `${bookId}.json`，`KnowledgeVectorStore` 只能通过构造第 4 参 `{ isBookAlive }` 回调（生产入口为 `KnowledgeBaseManager#hasBook`）判断书目是否还在；`bookName` 只用于展示，不得再用它拼 `knowledge-base/{bookName}` 目录做孤儿判定（改过名的旧向量会被永久跳过，重启后检索恒为空）。`isBookAlive` 缺失时（测试/单机场景）才回退旧的目录判定。
@@ -1223,18 +1228,71 @@ console.log(`清理了 ${pruned} 个过期条目`);
 ### 构建命令
 
 ```bash
-npm run build          # 生产构建（同步版本号 + 生成内置模板资源）
+npm run build          # 生产构建（同步版本号 + 生成内置模板资源 + 拼接样式）
 npm run build:release  # 发布构建：先跑 preflight，再 build
-npm run preflight      # typecheck + test + check:templates + 两道架构守卫（基线门）
-npm run dev            # 开发模式（watch）
+npm run preflight      # typecheck + test + check:templates + check:styles + check:css/内联样式 + 两道架构守卫（基线门）
+npm run dev            # 开发模式（watch，前置同样生成模板与样式）
 npm run typecheck      # 类型检查
 npm run version:sync   # 同步版本号
 npm run gen:templates  # 由 assets/template-scaffold 重新生成内置模板模块
 npm run check:templates # 校验生成物与资源目录一致（CI 使用）
+npm run build:styles   # 由 styles-src/*.css 拼接生成根 styles.css
+npm run check:styles   # 校验 styles.css 与 styles-src 源文件一致（CI 使用）
 npm run check:release  # 发布前资产与版本一致性校验
 ```
 
+### 样式源文件（styles-src/）
+
+- 根目录 `styles.css` 是**自动生成产物**，不要直接编辑；源文件在 `styles-src/`（`00-header.css` … `15-late-fixes.css` 共 16 个）。
+- 文件名顺序（`localeCompare('en')`）就是拼接顺序，也就是层叠顺序；新增文件按编号插入，不要打乱既有文件顺序。
+- 修改样式：编辑 `styles-src/` 对应文件 → `npm run build:styles` → `npm run check:css`。`preflight` 内置 `check:styles`，只改根 `styles.css` 会以「产物漂移」失败。
+- 拼接是**纯文本**（不压缩、不合并选择器），保证与拆分前逐字节等价；头部注释由脚本自动生成，不要手写。
+
+### 构建产物压缩约束（2026-10-31 批次 12）
+
+`scripts/build.js` 对三个入口（`main.ts` + 两个 worker）开启 `minify: true` 与 `charset: 'utf8'`（`main.js` 9,089,917 → 4,798,890 字节，-47.2%）。`charset` 必须显式设为 `utf8`：esbuild 默认 `ascii` 会把中文提示词 / 模板转成 `\uXXXX`，实测多出约 1.6 MB。
+
+压缩带来两条硬约束，改代码时先看：
+
+1. **禁止对 `main.js` 断言非字符串内容**。模块路径注释、顶层变量名、函数名都会被压缩掉。需要校验产物内含某模块，只能断言**字符串字面量**（模板 key、版本号等），见 `scripts/check-release.mjs` 的 `markers` 实现。
+2. **禁止依赖标识符反射**。`constructor.name`、`Function.name`、`fn.toString()` 在压缩后不可靠（本项目已核：`createWorkerFromHandlers` 这类 `handler.toString()` 方案无任何调用点）。
+
+产物是 CJS（`format: 'cjs'`，`external: ['obsidian']`），压缩后仍需保留 `module.exports` 与版本字面量；构建后用 `node --check main.js` 与 `npm run check:release` 验证。
+
+### 异步等待原语（2026-10-31 批次 14）
+
+`shared/yield.ts` 是唯一的等待原语来源，业务代码里**禁止裸写 `await new Promise(r => setTimeout(r, 0|16))`**：
+
+| 场景 | 用法 |
+|---|---|
+| 长同步循环中让出事件循环（批量处理的进度刷新） | `await yieldToUI()` —— `setTimeout(0)`，只保证让出当前 tick，不等渲染 |
+| 刚改完 DOM 就要测量 / 聚焦 / 滚动 / 让动画先画出来 | `await nextFrame()` —— 双重 `requestAnimationFrame`，等一帧绘制完成 |
+
+`nextFrame()` 内部已处理两个历史坑，不要在调用处再写：**后台窗口 / 最小化时 rAF 可能长时间不触发**（P0-2 事故：流程永久挂起），内部与 50ms 超时竞速；**jsdom 单测无 rAF**，退化为 `setTimeout(16)`。
+
+以下 `setTimeout` 形态**不要**改成 await，改了会变语义：debounce 合并刷新（`knowledge-base-view` 的 `completeRefreshTimer`）、限流器队列调度（`token-bucket-rate-limiter`）、`window.setTimeout(cb, 0)` 同步回调（自动尺寸计算、聚焦，如 `manage-providers-modal` / `rename-project-modal`）。
+
+### catch 日志分级（2026-10-31 批次 14）
+
+每条 `catch` 写日志时必须能回答三件事：**失败对象**（哪个实体 / 维度 / 文件）、**场景**（正在做什么）、**可重试性**（可重试 / 不可重试 / 可降级继续）。级别按失败性质选，不按习惯选：
+
+| 失败性质 | 级别 | 处理 |
+|---|---|---|
+| 业务失败（结果不可用，用户需要知道） | `error` | 上抛或弹 Notice / 返回明确失败结果 |
+| 可重试失败（网络抖动、限流、超时） | `warn` | 走统一重试（见 `shared/http-request.ts`），日志记尝试次数 |
+| 可降级失败（可选增强、可选统计） | `warn` | 写明降级去向，如「降级为纯统计结果」，不重试 |
+
+样例（可降级失败）：`engine/deconstructors/foreshadow-deconstructor.ts` 的 LLM 增强与向量增强两处 `catch`，日志带 `维度=foreshadow 文本长度=N 可重试=否`。
+
+现状：全库 `catch` 1,504 次（排除 `node_modules` 实测），未做全量分级。新增 / 修改代码按本约定写；存量按「改到哪里、顺手改到哪里」增量推进。
+
 架构守卫使用 `.arch-baseline.json` 做棘轮（`dependencyLayerViolations` / `dependencyCycles` / `engineBypass` / `engineOverLimit`）：只有**新增**违规才失败，消除违规后用 `--update-baseline` 收紧；`--update-baseline` 在有新增时会拒绝写入，避免把新债记进基线。
+
+**口径（2026-10-31 批次 3 修正，先看这里再看数字）**：`scripts/check-dependencies.mjs` 只把**运行时**依赖计入门禁——`import type X from '…'`、`import { type A } from '…'` 编译后整句擦除，不计入分层违规、不参与成环；解析前先剥离注释，避免文档里的 import 示例被当成真实依赖（曾造成 `write-lock.ts` / `entity-models.ts` 两个假自环）。类型耦合以 `ℹ️` 提示单独列出，不参与棘轮。因此「53 个循环」其实只有 9 个运行时循环，「64 条分层违规」其实是 55 条运行时 + 9 条类型。引用这两个数字时必须说明口径，不要拿旧口径和当前基线对比。
+
+**引擎名称常量**：唯一来源是 `shared/engine-names.ts` 的 `ENGINE_NAMES`。`engine/engine-registry.ts` 只做再导出以兼容旧引用；**新代码与既有代码都直接从 `shared/engine-names` 引入**，禁止再从 `engine-registry` 取常量——那会给 `core` / `engine` 各模块拉出指向注册表的运行时边，与「注册表 → 具体引擎」的构造依赖闭合成环（批次 3 已经因为这条边产生 3 个循环）。
+
+**EngineRegistry 的 UI 能力注入**：engine 层禁止 import `ui/`。口令弹窗与模板管理器通过 `initialize(plugin, { settingsWriter, passwordPort, createTemplateManager })` 由 `main.ts` 注入；新增类似能力时同样走 `InitializeOptions` 端口，不在 engine 内 `new` UI 组件。
 
 ### 测试命令
 
@@ -1263,7 +1321,7 @@ E2E（FR-E-10）使用 Playwright `_electron` 启动本机 Obsidian，临时 vau
 - `npm run build` 通过，构建版本为 v4.21.1。
 - `npm run check:release` 通过（核心资产、Worker 产物、内置模板嵌入均校验）。
 - CI / 发布流水线配置位于 `.github/workflows/`（PR 全量 Gate；`v*` tag 自动发布；E2E 为条件执行的独立 job）。
-- `npm run check:deps -- --baseline .arch-baseline.json` / `npm run check-engines -- --baseline .arch-baseline.json` 均退出 0：存量 67 分层违规 / 54 循环 / 9 个非白名单 `new` / 2 个白名单超限已记入基线（Rev 175 收紧），**只允许减少**，新增违规即失败。
+- `npm run check:deps -- --baseline .arch-baseline.json` / `npm run check-engines -- --baseline .arch-baseline.json` 均退出 0：存量违规已记入基线（Rev 175 起棘轮收紧；批次 3 再收紧为运行时分层 0 条，批次 4 第二步后运行时循环也归零（0 条）），**只允许减少**，新增违规即失败。
 
 ### 发布流程
 

@@ -1,4 +1,5 @@
 import { App, Modal } from 'obsidian';
+import { STORAGE_KEY_PREFIXES } from '../../../shared/storage-keys';
 
 /**
  * 操作确认弹窗配置选项
@@ -14,8 +15,6 @@ export interface OperationConfirmOptions {
 	rememberKey?: string;
 	warning?: string;
 }
-
-const STORAGE_PREFIX = 'nw-op-confirm:';
 
 /**
  * 通用操作确认弹窗组件
@@ -52,7 +51,7 @@ export class OperationConfirmModal extends Modal {
 	 */
 	static confirm(app: App, options: OperationConfirmOptions): Promise<boolean> {
 		if (options.rememberKey) {
-			const stored = localStorage.getItem(STORAGE_PREFIX + options.rememberKey);
+			const stored = localStorage.getItem(STORAGE_KEY_PREFIXES.operationConfirm + options.rememberKey);
 			if (stored === '1') {
 				return Promise.resolve(true);
 			}
@@ -65,7 +64,7 @@ export class OperationConfirmModal extends Modal {
 	 * 重置"不再提示"偏好
 	 */
 	static resetRemember(rememberKey: string): void {
-		localStorage.removeItem(STORAGE_PREFIX + rememberKey);
+		localStorage.removeItem(STORAGE_KEY_PREFIXES.operationConfirm + rememberKey);
 	}
 
 	onOpen(): void {
@@ -286,7 +285,7 @@ export class OperationConfirmModal extends Modal {
 
 	private handleConfirm(): void {
 		if (this.rememberChecked && this.options.rememberKey) {
-			localStorage.setItem(STORAGE_PREFIX + this.options.rememberKey, '1');
+			localStorage.setItem(STORAGE_KEY_PREFIXES.operationConfirm + this.options.rememberKey, '1');
 		}
 		if (this.resolve) {
 			this.resolve(true);

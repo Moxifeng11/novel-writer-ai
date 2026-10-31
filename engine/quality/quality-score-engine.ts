@@ -18,7 +18,7 @@
  *   - 评估结果缓存（复用 LruCache）
  */
 
-import { LruCache } from '../repository/lru-cache';
+import { LruCache } from '../../shared/lru-cache';
 import { WritingQualityEngine, type WritingQualityResult } from '../writing-quality-engine';
 import { analyzeCoherence, CoherenceReport } from '../coherence-checker';
 import {

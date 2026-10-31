@@ -6,7 +6,7 @@ import { TimelineRow, FanficRules } from '../../shared/template-validator';
 import { getWritingStylePath, getLegacyWritingStylePath } from '../../shared/paths';
 import { findWritingStyleFile, getWritingStyleCandidatePaths } from '../writing-style-paths';
 import { mkdirp, readMergedVolumeOutline } from '../../utils/helpers';
-import type { NovelWriterPluginAPI } from '../../shared/plugin-api';
+import type { NovelWriterPluginAPI } from '../../plugin-api';
 import { parseSceneHeadings } from '../../engine/scene-expander';
 import { createLogger } from '../../shared/logger';
 import { MemoryPreview } from '../memory-preview';

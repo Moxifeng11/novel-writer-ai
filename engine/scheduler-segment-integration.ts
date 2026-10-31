@@ -18,11 +18,11 @@
  */
 
 import { SegmentAwareBreakdown, SegmentBreakdownResult } from './segment-aware-breakdown';
-import { TextSegment } from '../engine/text-segmenter';
-import { IncrementalResultAggregator, PartialResult, type AnalysisResult } from '../engine/incremental-result-aggregator';
+import { TextSegment } from './text-segmenter';
+import { IncrementalResultAggregator, PartialResult, type AnalysisResult } from './incremental-result-aggregator';
 import type { DeconstructionWorkerManager, DeconstructDimension } from './deconstruction-worker-manager';
-import type { LLMEnhancer } from '../engine/llm-enhancer';
-import type { LLMEnhanceDimension } from '../engine/llm-prompts';
+import type { LLMEnhancer } from './llm-enhancer';
+import type { LLMEnhanceDimension } from './llm-prompts';
 
 export interface SchedulerSegmentOptions {
     maxDirectWords?: number;

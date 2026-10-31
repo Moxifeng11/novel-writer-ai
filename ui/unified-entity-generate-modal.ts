@@ -13,7 +13,6 @@ import {
     pjSettingLib,
 } from '../shared/paths';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { UnifiedEntityManagerModal } from './unified-entity-manager-modal';
 import type { EntityCategory as ModelCategory } from '../shared/entity-models';
 import { saveEntities, formatSaveOutcome, type EntityKind } from '../shared/entity-persistence';
 import { ensureEntityIntegrity } from '../shared/entity-integrity';
@@ -1051,7 +1050,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         });
         manageBtn.onclick = () => {
             this.close();
-            new UnifiedEntityManagerModal(this.app, this.plugin, this._currentProject).open();
+            this.plugin.openEntityManagerModal(this._currentProject);
         };
 
         const fileMgrBtn = btnRow.createEl('button', {

@@ -13,7 +13,7 @@ import { IncrementalUpdater } from '../../../../engine/context/incremental-updat
 import type { SectionRefetcher, IncrementalUpdaterDeps } from '../../../../engine/context/incremental-updater';
 import { ContextDiffDetector, INCREMENTAL_FALLBACK_THRESHOLD } from '../../../../engine/context/context-diff-detector';
 import type { ContextChangeSet } from '../../../../engine/context/context-diff-detector';
-import { MultiLayerCache } from '../../../../engine/cache/multi-layer-cache';
+import { MultiLayerCache } from '../../../../shared/multi-layer-cache';
 import type { GatheredContext, ContextData } from '../../../../engine/context/context-types';
 
 describe('IncrementalUpdater', () => {

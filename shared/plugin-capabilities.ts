@@ -66,7 +66,7 @@ export interface PluginCapabilities {
     /** 上下文管理器实例 */
     contextManager?: import('../engine/context-manager').ContextManager;
     /** 伏笔管理器实例 */
-    foreshadowManager?: import('../services/foreshadow-manager').ForeshadowManager;
+    foreshadowManager?: import('../engine/foreshadow-manager').ForeshadowManager;
     /** 审查代理实例 */
     reviewAgent?: import('../engine/review-agent').ReviewAgent;
     /** 文件系统抽象（可选，已有懒加载兜底） */

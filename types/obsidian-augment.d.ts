@@ -171,6 +171,6 @@ declare module 'obsidian' {
 declare global {
     interface Window {
         /** 小说工坊内部注册表（开发调试用） */
-        novelAI?: import('../engine/internal-registry').InternalRegistry;
+        novelAI?: import('../shared/internal-registry').InternalRegistry;
     }
 }

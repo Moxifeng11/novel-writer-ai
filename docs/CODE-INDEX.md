@@ -41,6 +41,7 @@
 | `core/provider-manager.ts` | `ProviderManager` | AI 供应商管理（内置+自定义）、模型能力检测 |
 | `core/theme-manager.ts` | `ThemeManager` | 主题切换、CSS 变量管理 |
 | `core/command-registry.ts` | `CommandRegistry` | 命令注册与调度（只登记 id 与回调：45 个 Modal/视图命令委托 `CommandUiPort`，10 个无 UI 依赖命令在本类执行；不 import 任何 ui 模块） |
+| `core/example-project-service.ts` | `importExampleProject` | 最小示例项目导入（1 卷 3 章 + 人物 + 伏笔，静态内容）；批次 3 第二步由 `services/` 上移 |
 
 > 命令相关协作模块：`shared/command-ids.ts`（id 常量）、`shared/command-ui-port.ts`（执行端口 + payload 类型）、`ui/command-ui-executor.ts`（Modal / 视图 / 编辑器选区命令的实际执行层）。
 
@@ -52,10 +53,9 @@
 
 | 文件 | 类/导出 | 职责 |
 |------|---------|------|
-| `engine/engine-registry.ts` | `EngineRegistry` | 中央引擎注册中心，9 阶段初始化，3 种作用域（singleton/project/transient），懒加载，依赖检查，Dispose 生命周期 |
-| `engine/internal-registry.ts` | `InternalRegistry` | 内部注册工具函数 |
+| `engine/engine-registry.ts` | `EngineRegistry` / `EngineServiceMap` / `EngineToken` | 中央引擎注册中心，9 阶段初始化，3 种作用域（singleton/project/transient），懒加载，依赖检查，Dispose 生命周期。批次 3：`ENGINE_NAMES` 定义已下沉到 `shared/engine-names.ts`（此处仅再导出）。批次 6：新增 `EngineServiceMap`（35 个 token 的实例类型映射）与 `EngineToken`，`get` / `getOrNull` / `register` / `registerLazy` 的 typed-token 重载按名字推导类型；`TEMPLATE_MANAGER` / `CO_WRITING_SESSION_STORE` 等组合根注入项保留 `<T>(string)` 兼容重载 |
 
-**ENGINE_NAMES 常量（30+ 引擎）**：`CACHE_MANAGER`, `INTERNAL_REGISTRY`, `CRYPTO_SERVICE`, `SETTINGS_SERVICE`, `THEME_MANAGER`, `PROVIDER_MANAGER`, `COMMAND_REGISTRY`, `FILE_SYSTEM`, `LOGGER`, `PERFORMANCE_MONITOR`, `AI_ENGINE`, `AI_OUTLINE_GENERATOR`, `AI_CHAPTER_HELPERS`, `AI_CHARACTER_GENERATOR`, `AI_ENTITY_GENERATOR`, `AI_SCENE_GENERATOR`, `AI_WORLDVIEW_GENERATOR`, `AI_SCENE_EXPANDER`, `CO_WRITER_ENGINE`, `ANALYSIS_REPORT_ENGINE`, `QUALITY_SCORE_ENGINE`, `DEVIATION_DETECTOR`, `REWRITE_SUGGESTION_ENGINE`, `REALTIME_MONITOR`, `PERFORMANCE_OPTIMIZER`, `QUALITY_HISTORY_STORE`, `SETTLEMENT_ENGINE`, `STYLE_FINGERPRINT_LIBRARY`, `STYLE_VECTOR_STORE`, `KNOWLEDGE_BASE`, `UPDATE_CHECKER` 等
+**ENGINE_NAMES 常量（42 个 key，定义在 `shared/engine-names.ts`，`engine-registry.ts` 仅再导出）**：缓存/核心服务（`CACHE_MANAGER`、`INTERNAL_REGISTRY`、`CRYPTO_SERVICE`、`PROVIDER_MANAGER`、`THEME_MANAGER`、`SETTINGS_SERVICE`）、内容引擎（`CONTEXT_MANAGER`、`FORESHADOW_MANAGER`、`REVIEW_AGENT`、`COMMAND_REGISTRY`、`AI_ENGINE`、`CO_WRITER_ENGINE`、`ANALYSIS_REPORT_ENGINE`、`SETTLEMENT_ENGINE`、`QUALITY_GATE`）、知识库（`KNOWLEDGE_TAG_MANAGER`、`KNOWLEDGE_BASE_MANAGER`、`KNOWLEDGE_VECTOR_STORE`、`VECTOR_ENHANCER`、`KNOWLEDGE_INJECTOR`、`WRITING_PROFILE_MANAGER`）、拆解与重任务（`DECONSTRUCTION_SCHEDULER`、`HEAVY_TASK_WORKER_MANAGER`、`BATCH_IMPORT_MANAGER`、`CHARACTER_CONSISTENCY_CHECKER`）、生成与模板（`CHARACTER_GENERATOR`、`SCENE_GENERATION_LOOP`、`CHAPTER_SNAPSHOT_BUILDER`、`GENERATION_CHECKPOINT_STORE`、`PROMPT_CACHE`、`TEMPLATE_SERVICE`、`TEMPLATE_MANAGER`、`CHAPTER_VERSION_SERVICE`、`WORLDVIEW_CACHE_SERVICE`、`UPDATE_CHECKER`）、仓储（`CHARACTER_REPOSITORY`、`CHAPTER_REPOSITORY`、`PROJECT_REPOSITORY`、`FACTION_REPOSITORY`、`LOCATION_REPOSITORY`、`ITEM_REPOSITORY`）、协同（`CO_WRITING_SESSION_STORE`）。清单以源文件为准，本文不再逐字复制（旧版文档列出的 `FILE_SYSTEM` / `LOGGER` / `AI_OUTLINE_GENERATOR` 等 key 并不存在，已移除）。
 
 ---
 
@@ -68,7 +68,7 @@
 |------|---------|------|
 | `engine/repository/interfaces.ts` | `IRepository<T, TId>`, `IBulkRepository<T>` | Repository 接口定义 |
 | `engine/repository/base-markdown-repository.ts` | `BaseMarkdownRepository` | Markdown+Frontmatter 读写基类，内置 LRU 缓存 |
-| `engine/repository/lru-cache.ts` | `LruCache` | LRU 内存缓存 |
+| `shared/lru-cache.ts` | `LruCache` | LRU 内存缓存（批次 3 从 `engine/repository/lru-cache.ts` 迁入 shared：零业务依赖的通用数据结构，engine 与 services 都可合法引用；`engine/repository/index.ts` 保留再导出） |
 
 #### 领域模型（domain/）
 | 目录 | 内容 |
@@ -103,8 +103,8 @@
 | `engine/cross-volume-outline-validator.ts` | `CrossVolumeOutlineValidator` | 跨卷一致性校验（章节连续、人物、转折点、伏笔、势力、支线）；转折点在预期卷或更早卷出现即满足 |
 | `engine/ai-chapter-helpers.ts` | — | 章节生成辅助方法 |
 | `engine/ai-character-generator.ts` | `AICharacterGenerator` | AI 角色生成；`completeCharacter` 使用完整输出契约（18 字段 / 3 嵌套组 / 7 分节） |
-| `engine/ai-entity-generator.ts` | `AIEntityGenerator` | AI 实体生成 |
-| `engine/ai-batch-entity-generator.ts` | `AIBatchEntityGenerator` | AI 批量实体生成 |
+| `engine/ai-entity-generator.ts` | `EntityGenerator` | 单条实体生成（势力 / 地点 / 物品功法）：`EntityKindSpec` 配置表 + `generateByKind` 单一实现（批次 4），示例模板取自 `shared/entity-templates`；物品功法历史行为不注入自定义模板引导语 |
+| `engine/ai-batch-entity-generator.ts` | `BatchEntityGenerator` | 批量实体生成：指定名称 + 自由生成、完整性校验 / 分批补全 / 单条补全、不完整实体直接丢弃；示例模板同样取自 `shared/entity-templates`（批次 4 归一） |
 | `engine/ai-scene-generator.ts` | `AISceneGenerator` | AI 场景生成 |
 | `engine/ai-scene-expander.ts` | `AISceneExpander` | AI 场景扩写 |
 | `engine/ai-worldview-generator.ts` | `WorldviewGenerator` / `WorldviewGenerationResult` | AI 世界观生成（工作台路径返回 `{ content, error }`，失败原因可透传 UI） |
@@ -194,7 +194,7 @@
 | `engine/knowledge-to-fingerprint-converter.ts` | — | 知识到指纹转换器 |
 | `engine/knowledge-vector-store.ts` | `KnowledgeVectorStore` | 知识向量存储（支持 `original` 原文分块维度、`replaceBookSamples` 幂等替换；`STATE_LOCK` 让加载与所有写操作共用一把 `withWriteLock` 全局串行队列（并发 add 不丢更新、不同书互不覆盖）；`reloadIfChanged` 按向量文件签名感知其他实例的新书/重拆/删书；`loadIndex` 按 `bookId` 判孤儿——构造第 4 参 `{ isBookAlive(bookId) }`（生产入口为 `KnowledgeBaseManager#hasBook`）返回 `false` 时跳过该向量，`bookName` 只做展示；未提供回调时才回退「`knowledge-base/{bookName}` 目录不存在即跳过」的旧判定；向量文件记录 `modelId`/`dimensionCount`，换 embedding 模型后 `loadIndex`/`rebuildIndex` 跳过旧模型向量（不删文件，`getModelMismatches()` 可查），`search` 跳过维度不一致的样本而不是抛错，结果经 `filterRetrievalResults` 去掉低相关尾部后再 `slice(0, topN)`） |
 | `engine/local-vector-store.ts` | `LocalVectorStore` | 本地向量存储（`search` 结果回填 `fingerprintId`，并经 `filterRetrievalResults` 去掉低相关尾部后再 `slice(0, topN)`；按「路径+mtime+size」签名感知其他实例的新增/重建/删除，不依赖一次性 loaded 缓存；向量文件记录 `modelId`，换 embedding 模型后跳过旧模型指纹（`getModelMismatches()` 可查），`search` 跳过维度不一致样本而不是抛错） |
-| `engine/webnovel-knowledge-base.ts` | — | 网文知识库 |
+| `shared/webnovel-knowledge-base.ts` | `WebnovelKnowledgeBase` | 网文知识库（题材/子题材/技法/伏笔分类定义，零 import 的纯数据模块；批次 3 从 `engine/` 下沉，engine 拆解器、services 分类器、ui 知识库视图共用） |
 | `engine/vector-enhancer.ts` | — | 向量增强 |
 | `engine/embedding/` | — | Embedding 供应商适配层 |
 
@@ -270,7 +270,7 @@
 
 | 文件 | 类 | 职责 |
 |------|-----|------|
-| `engine/step-runner.ts` | `StepRunner` | 步骤执行器（11 步 prompt 统一经 `step-prompt-assembly` 做窗口闸门：知识注入作为增强尾部，超预算先丢注入再头尾截断主体；窗口/输出按本步实际模型经 `clampBudgetToModelLimits` 收窄，不直接用全局设置；`finishReason === 'aborted'` 或 signal 已取消时直接返回、不落盘）。重试原语、合并规划、特例步骤、结算链路、批量顺序执行与 prompt 装配均已外迁，本类保留同名委托方法 |
+| `engine/step-runner.ts` | `StepRunner` | 步骤执行器（11 步 prompt 统一经 `step-prompt-assembly` 做窗口闸门：知识注入作为增强尾部，超预算先丢注入再头尾截断主体；窗口/输出按本步实际模型经 `clampBudgetToModelLimits` 收窄，不直接用全局设置；`finishReason === 'aborted'` 或 signal 已取消时直接返回、不落盘）。`droppedExtra`（仅丢增强尾部、主体未截断）也有 `step-warning` + `NOTICE_WARNING`，不再只写账本。重试原语、合并规划、特例步骤、结算链路、批量顺序执行与 prompt 装配均已外迁，本类保留同名委托方法 |
 | `engine/step-runner-retry.ts` | — | `callAIWithRetry`（业务级 2 次尝试 + abort 不重试）、`callAIStreamWithRetry`（length 截断自动续写 ≤3 次）、`warnIfTruncated`；host 仅注入 `aiEngine` 与进度/通知回调 |
 | `engine/step-specials.ts` | — | 特例步骤：`characterSoul` / `emotionPlan` / `sceneExpand` 的独立编排（不经过通用 callAI）；宿主注入引擎、回调、保存、本步预算与知识注入 |
 | `engine/step-settlement.ts` | — | 章节结算链路：报告磁盘回退、强制揭示解析、结算汇总、叙事总览刷新与上下文面板通知；文件读写由宿主注入 |
@@ -327,15 +327,29 @@
 | `engine/chapter-utils.ts` | — | 章节工具函数。`listChapterNumbers`（Rev 184）以「步骤结果目录 ∪ 正文文件」并集推导已建骨架章节，供三个旧版章节生成工具确定章范围 |
 | `engine/export/manuscript-compiler.ts` | `compileManuscript` 等纯函数 | 成稿编译（Markdown / TXT / HTML，含排序与打印样式） |
 
+> 批次 3 第二步：以下 9 个「编排 engine 原语」的模块由 `services/` 上移（判定标准与证据见 `docs/OPTIMIZATION-AUDIT-2026-10.md` 批次 3 第二步）。
+
+| 文件 | 类/导出 | 职责 |
+|------|---------|------|
+| `engine/batch-import-manager.ts` | — | 批量导入管理器 |
+| `engine/deconstruction-scheduler.ts` | `DeconstructionScheduler` | 拆解任务调度器（v8.0 起导出 `DeconstructionEngineSettings`/`DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS`/`ALL_BREAKDOWN_DIMENSIONS`/`DIMENSION_LABELS`，批次 3 第二步起类型与默认值定义在 `shared/deconstruction-settings.ts`、此处仅再导出，`addTask` 保留全文，维度拆解超阈值时接入全文分块编排；`vectorizeBook` 同时写入原文分块与 6 个报告维度；`revectorizeBook` 为公开的重算入口，只重算向量、不重新拆解，向量存储缺失时抛错；`addTask` 对同书 `pending/running/paused` 任务直接返回既有 id，`cancelByBook` 供删除入口取消在途任务；`vectorizeBook` / `saveSegmentedDimensionResult` / `appendBreakdownLog` 写盘前二次校验书仍存在；A5 起导出 `buildBreakdownFinishNotice`，向量化结果经 `recordVectorOutcome` 写回 `task.vectorStatus/vectorError` 与 `KnowledgeBaseManager.setVectorStatus`，失败发 `vector` 降级事件，完成 Notice 不再无条件报「拆解完成」） |
+| `engine/deconstruction-worker-manager.ts` | — | 拆解任务专用 Worker 管理器 |
+| `engine/foreshadow-manager.ts` | — | 伏笔管理器 |
+| `engine/heavy-task-worker-manager.ts` | — | 重任务 Worker 管理器（主线程分支的 QSE 只注入 `v1Engine`，C1 起不再注入 `characterChecker` 并删除 `checkQualityEngineInjection`；`checkDeviationDetectorInjection` 保留，检查 `DeviationDetector` 的 `plotDivergenceEngine` / `characterChecker` / `rhythmAnalyzer`） |
+| `engine/project-migration-service.ts` | `ProjectMigrationService` | 旧版项目库迁移到三模式库（默认 dry-run，真实移动走 Obsidian `fileManager` 保证链接更新） |
+| `engine/scheduler-segment-integration.ts` | `SchedulerSegmentIntegration` | 调度器分块集成层：复用 `TextSegmenter` 的章节优先/段落与字数兜底分块，逐块调用 `DeconstructionWorkerManager`，通过 `IncrementalResultAggregator` 聚合结果，并保留可选 LLM 增强接入点 |
+| `engine/segment-aware-breakdown.ts` | `SegmentAwareBreakdown` | 分段感知拆解包装器：长文本自动分段 → 逐段拆解 → 按维度合并（短文本零开销直调原拆解器） |
+| `engine/template-service.ts` | `TemplateService` | 模板服务（系统模板+自定义模板） |
+
 ---
 
 ### 3.16 缓存系统（cache/）
 
 | 文件 | 类 | 职责 |
 |------|-----|------|
-| `engine/cache/multi-layer-cache.ts` | `MultiLayerCache` | 多层缓存（L1 内存 + L2 文件） |
-| `engine/cache/file-cache.ts` | `FileCache` | 文件缓存（带 TTL、损坏恢复） |
-| `engine/cache/preload-manager.ts` | `PreloadManager` | 预加载管理器 |
+| `shared/multi-layer-cache.ts` | `MultiLayerCache` | 多层缓存（L1 内存 + L2 文件）；批次 5 从 `engine/cache/` 下沉（只依赖 `lru-cache` / `file-cache` / `logger` / `file-system-port`），`engine/cache/index.ts` 保留再导出 |
+| `shared/file-cache.ts` | `FileCache` | 文件缓存（带 TTL、损坏恢复）；批次 5 同步下沉到 shared |
+| `engine/cache/preload-manager.ts` | `PreloadManager` | 预加载管理器（engine 侧唯一保留的缓存模块） |
 
 ---
 
@@ -360,17 +374,10 @@
 |------|-----|------|
 | `services/index.ts` | — | 统一导出 |
 | `services/worker-manager.ts` | `WorkerManager` | 通用 Worker 管理器（池化、队列、进度、降级） |
-| `services/deconstruction-worker-manager.ts` | — | 拆解任务专用 Worker 管理器 |
-| `services/deconstruction-scheduler.ts` | `DeconstructionScheduler` | 拆解任务调度器（v8.0 起导出 `DeconstructionEngineSettings`/`DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS`/`ALL_BREAKDOWN_DIMENSIONS`/`DIMENSION_LABELS`，`addTask` 保留全文，维度拆解超阈值时接入全文分块编排；`vectorizeBook` 同时写入原文分块与 6 个报告维度；`revectorizeBook` 为公开的重算入口，只重算向量、不重新拆解，向量存储缺失时抛错；`addTask` 对同书 `pending/running/paused` 任务直接返回既有 id，`cancelByBook` 供删除入口取消在途任务；`vectorizeBook` / `saveSegmentedDimensionResult` / `appendBreakdownLog` 写盘前二次校验书仍存在；A5 起导出 `buildBreakdownFinishNotice`，向量化结果经 `recordVectorOutcome` 写回 `task.vectorStatus/vectorError` 与 `KnowledgeBaseManager.setVectorStatus`，失败发 `vector` 降级事件，完成 Notice 不再无条件报「拆解完成」） |
-| `services/scheduler-segment-integration.ts` | `SchedulerSegmentIntegration` | 调度器分块集成层：复用 `TextSegmenter` 的章节优先/段落与字数兜底分块，逐块调用 `DeconstructionWorkerManager`，通过 `IncrementalResultAggregator` 聚合结果，并保留可选 LLM 增强接入点 |
-| `services/heavy-task-worker-manager.ts` | — | 重任务 Worker 管理器（主线程分支的 QSE 只注入 `v1Engine`，C1 起不再注入 `characterChecker` 并删除 `checkQualityEngineInjection`；`checkDeviationDetectorInjection` 保留，检查 `DeviationDetector` 的 `plotDivergenceEngine` / `characterChecker` / `rhythmAnalyzer`） |
 | `services/worker-protocol.ts` | — | Worker 通信协议 |
 | `services/worker-runtime.ts` | — | Worker 运行时 |
-| `services/template-service.ts` | `TemplateService` | 模板服务（系统模板+自定义模板） |
-| `services/example-project-service.ts` | `importExampleProject` | 最小示例项目导入（1 卷 3 章 + 人物 + 伏笔，静态内容） |
 | `services/prompt-manager.ts` | `PromptManager` | Prompt 管理服务 |
 | `services/prompt-templates-default.ts` | — | 默认 Prompt 模板 |
-| `services/prompt-manager-types.ts` | — | Prompt 管理类型 |
 | `services/settlement-service.ts` | — | 结算服务 |
 | `services/knowledge-base-manager.ts` | `KnowledgeBaseManager` | 知识库管理服务（`deleteBook` 同步清理向量文件与 `index.json` 条目；`updateBook` 改名在 `fs.rename` 后调 `renameVectorArtifacts(bookId, newName)` 重写 `${bookId}.json` 与 `index.json` 的 `bookName`（含 `samples[].bookName`），缺失/损坏只 warn；`hasBook(bookId)` 供 `KnowledgeVectorStore.isBookAlive` 判存活；A5 起 `BookBasicInfo` 增加 `vectorStatus`/`vectorError`，由 `setVectorStatus` 独立落盘，拆解状态仍为 `completed`） |
 | `services/knowledge-original-chunker.ts` | `chunkOriginalText` | 书籍原文分块（按段落拼装、超长硬切、超量均匀采样） |
@@ -378,8 +385,6 @@
 | `services/worldview-cache-service.ts` | — | 世界观缓存服务 |
 | `services/chapter-recognizer.ts` | — | 章节识别服务 |
 | `services/chapter-version-service.ts` | `ChapterVersionService` | 章节版本管理 |
-| `services/batch-import-manager.ts` | — | 批量导入管理器 |
-| `services/foreshadow-manager.ts` | — | 伏笔管理器 |
 | `services/genre-classifier.ts` | `GenreClassifier` | 题材分类器 |
 | `services/genre-preference-memory.ts` | — | 题材偏好记忆 |
 | `services/rules-service.ts` | — | 规则服务 |
@@ -409,7 +414,7 @@
 ### 核心工具
 | 文件 | 导出 | 职责 |
 |------|------|------|
-| `shared/file-system-port.ts` | `FileSystemPort` | 文件系统抽象端口（Obsidian/Mock 双实现）。`ObsidianFileSystem` 对 vault 索引未命中的路径（插件数据目录 `.obsidian/plugins/<id>/data`）回退 `vault.adapter`：`read`/`write`/`exists`/`listFiles`/`listFolders`/`mkdir`/`delete` 均有回退，索引外列表构造只含 `path/name/basename/extension/stat` 的虚拟 `TFile`；vault 内文件仍走 `vault.read/modify/create/createFolder`，保留索引与事件语义 |
+| `shared/file-system-port.ts` | `FileSystemPort` / `writeVaultText` | 文件系统抽象端口（Obsidian/Mock 双实现）。`ObsidianFileSystem` 对 vault 索引未命中的路径（插件数据目录 `.obsidian/plugins/<id>/data`）回退 `vault.adapter`：`read`/`write`/`exists`/`listFiles`/`listFolders`/`mkdir`/`delete` 均有回退，索引外列表构造只含 `path/name/basename/extension/stat` 的虚拟 `TFile`；vault 内文件仍走 `vault.read/modify/create/createFolder`，保留索引与事件语义。**`writeVaultText(app, path, content)`（批次 13）是「写 vault 内文本」的单一出口**：写前补父目录，再按 `ObsidianFileSystem.write` 的四路分流（`TFile → vault.modify` / 文件夹 → 抛错 / 配置目录或索引外已存在 → `adapter.write` / 其余 → `vault.create`）；UI 层写 `.md` 一律走它，只有 `.project` 隐藏文件、插件缓存 JSON、agent 会话数据等索引外路径才允许直连 `vault.adapter.write` |
 | `shared/logger.ts` | `Logger` | 日志工具 |
 | `shared/paths.ts` | — | 路径工具函数；全局层目录 `元文件/00-05`，Rev 181 新增 `GLOBAL_RANK_DIR = '元文件/06-榜单分析'` 与 `globalRankFile()` 承接平台级报告（番茄榜单），禁止写 vault 根目录 |
 | `shared/chapter-target.ts` | `resolveActiveChapterTarget` | 命令层章节上下文纯函数：优先级「工作台上下文 > activeFile 标准正文 > activeFile 步骤结果目录」，输出 `{project, volume, chapterName, chapterNum, chapDir, bodyPath}`；快捷工具/命令面板的章节级操作统一走此函数 |
@@ -423,7 +428,7 @@
 | `shared/time-estimator.ts` | `TimeEstimator` | 时间估算器 |
 | `shared/adaptive-debounce-manager.ts` | — | 自适应防抖管理器 |
 | `shared/serialized-writer.ts` | — | 序列化写入器 |
-| `shared/yield.ts` | `yieldToUI` | UI 让步工具（setTimeout(0) 让出主线程控制权） |
+| `shared/yield.ts` | `yieldToUI` / `nextFrame` | UI 让步原语。`yieldToUI()`：`setTimeout(0)` 让出主线程控制权；`nextFrame()`：双重 `requestAnimationFrame` 等一帧绘制完成，与 50ms 超时竞速（兜底后台窗口不触发 rAF 的 P0-2 事故），无 rAF 环境退化为 `setTimeout(16)`。**禁止在业务代码里裸写 `await new Promise(r => setTimeout(r, 0|16))`** |
 | `shared/settings-migrator.ts` | — | 设置迁移器 |
 | `shared/template-validator.ts` | — | 模板验证器（严格完整性：空值/占位词/空分节均判缺失；含世界观、分卷大纲、设定库、文笔风格、四类实体校验）。同人设定 `validateFanficSettings(content, { requireTimelineData })`：9 字段须实质填写（`isFanficValueFilled` 拒绝「（待补充）」等占位），时间线真实行口径与 `parseFanficTimeline` 一致；`requireTimelineData: false` 供只收集字段的向导表单使用。展示侧 `parseCanonTimelineTable` / `parseFanTimelineTable` 与 prompt 注入共用 `shared/fanfic-rules.ts#parseFanficTimelineRows`（保留空单元格列位，禁止先 `filter(c => c.length > 0)` 再按列名映射，否则中间空列会让后续列整体左移）；`loadFanficRules` 经 `extractFanficRuleValue` 读取并按分号/换行拆条，续行不再丢失；`parseMarkdownTable`（原创纪元时间轴）只去掉首尾竖线、保留中间空单元格。以上展示侧解析同样丢弃整行占位与占位规则 |
 | `shared/thresholds.ts` | — | 阈值与校准系数的唯一来源（质量等级 90/80/70/60、色阶 80/60、偏离 60/30、质量可评估 100 / 完成度可评估 50 / 偏离可检测 100 / 实时落盘 300、设定守卫增量 300 与冷却 5 分钟、剧情完成度评估增量 300 / 冷却 2 分钟 / 最小间隔 30 秒、偏离持续上升时间窗 2 分钟、自动联想最小间隔 4 秒、历史上限 200、原文分块 400/40/120、六维权重/子项权重/标定乘数 `WQE_*` / `QSE_*`） |
@@ -437,6 +442,11 @@
 | `shared/rhythm-intent.ts` | `parseExpectedRhythm` | 从规划文本解析预期节奏（纯函数、无 AI）：只认显式标注（`节奏：快/中/慢`、`快节奏`、`节奏偏慢`、`慢热`、`中等节奏` 等）；无标注或快慢同时出现返回 `undefined`（不做节奏偏离）；`CoWritingView#buildDeviationContext` 用它填充 `expectedRhythm` |
 | `shared/cursor-position.ts` | `resolveCursorPosition` | 编辑器光标位置归一化（纯函数）：`null` / `undefined` / 非有限数按 `fallback`（默认文末、`'start'` 为 0）回退，其余夹紧到 `[0, 正文长度]`；`0` 是合法光标位置，不再被 `selectionStart \|\| value.length` 当成「无光标」回退到文末 |
 | `shared/prompt-budget.ts` | `assemblePromptWithinBudget` / `truncateTextToTokens` / `resolvePrecedingCharLimit` / `fitPromptToContext` / `clampBudgetToModelLimits` / `countRetainedPromptParts` | prompt 按 token 预算裁剪：`assemblePromptWithinBudget` 供协同链路按优先级裁剪片段（保留节点/简报/角色状态）；`resolvePrecedingCharLimit` 按输入预算计算「已写内容」字符上限（800~2000，无预算=800）；`fitPromptToContext` 供 11 步流水线把 system+user+知识注入压进模型窗口，超预算时先丢注入再按 `sectionAware` 分段优先级丢段/缩段（低优先段整段丢弃并追加「已省略以下段落」标记，关键段最后才动），最后才头尾截断主体；`clampBudgetToModelLimits` 把全局设置窗口/输出收窄到本步模型真实能力（取小，非法值回退设置）；`countRetainedPromptParts` 统计预算裁剪后仍完整出现在 prompt 里的片段条数（B7 的「已注入 N 条」口径） |
+| `shared/internal-registry.ts` | `InternalRegistry` | 内部注册工具函数（批次 3 第二步由 `engine/` 下沉，仅依赖 `shared/logger`） |
+| `shared/prompt-manager-types.ts` | — | Prompt 管理类型与 `DEFAULT_PROMPT_MANAGER_CONFIG`（批次 3 第二步由 `services/` 下沉，纯类型零 import） |
+| `shared/deconstruction-settings.ts` | — | 拆解维度类型、`DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS`、`ALL_BREAKDOWN_DIMENSIONS`、`DIMENSION_LABELS`（批次 3 第二步新建；core 生成 `DEFAULT_SETTINGS` 需要，`engine/deconstruction-scheduler` 保留再导出） |
+| `shared/foreshadow-config.ts` | — | 伏笔类型配置与默认值（`ForeshadowTypeConfig` / `ForeshadowConfig` / 默认类型表）（批次 3 第二步新建；`engine/foreshadow-config-manager` 保留再导出） |
+| `shared/engine-names.ts` | `ENGINE_NAMES` | 引擎名字符串键常量（零 import；`engine/engine-registry` 仅再导出） |
 | `shared/ai-credentials.ts` | `hasUsableAiCredentials` | 「能否发起 AI 调用」的唯一判定：有密钥，或端点经 `resolveProviderSourceType` 判定为 local（本地免密钥推理）；供 `plugin.hasAiCredentials` 与所有生成前守卫使用 |
 | `shared/quality-baseline.ts` | `computeQualityBaseline` / `compareToBaseline` | 质量基线校准：按项目历史均值/标准差输出「高于/持平/低于基线」及 z 分数（纯函数；总分与各维度的 0 占位都不计入，旧记录不会把均值拉到 0；样本不足的维度不出结论） |
 | `shared/fanfic-rules.ts` | `readFanficRules` / `readFanficRulesFromFS` / `parseFanficRules` / `parseFanficCharacters` / `parseFanficFactions` / `parseFanficTimeline` / `parseFanficTimelineRows` / `extractFanficRuleValue` / `formatFanficRulesForPrompt` / `mergeFanficRequirement` / `formatFanficRulesLoadWarning` | 同人约束唯一读取与解析入口（`.project` 同人设定路径 → 核心设定 + 原作主要人物/势力组织 + 两张时间线 + 创作规则约束块）；`extractFanficRuleValue` 是单字段解析唯一口径（正文 `- **字段**：` 多行续行优先，frontmatter `字段: 值` 回退），向导回填与 `parseFanficRules` 共用；`parseFanficEntrySection` 是「多条目小节」唯一实现（人物与势力共用，按名称条目切分、占位「（待补充）」跳过；`parseFanficRules` 的核心字段与三条创作规则同样过滤占位，全占位时输出空串），`formatFanficRulesForPrompt` 各段最多注入 6 条、单字段 60 字（`FANFIC_MAX_INJECTED_CHARACTERS` / `FANFIC_CHARACTER_FIELD_MAX_CHARS`），人物/势力超过 6 条时按 `options.focusText` 中名字出现次数排序选取（同分保持原顺序，无 focus 回退前 6），截断时补「共 N 人/个，以上为与当前章节相关的 6 人/个」说明；`parseFanficTimelineRows` 是时间线表格的唯一行解析（原始单元格二维数组，列位置与文件一一对应、保留空单元格；丢弃表头、`|---|` 分隔行与整行占位），`parseFanficTimeline` 基于它过滤占位后拼「｜」行供 prompt 使用，上下文面板的 `parseCanonTimelineTable` / `parseFanTimelineTable` 复用同一函数（两侧必须同源，禁止先过滤空单元格再按列名映射）；注入上限 8 行 / 单行 120 字（`FANFIC_MAX_INJECTED_TIMELINE_ROWS` / `FANFIC_TIMELINE_ROW_MAX_CHARS`），超出时按进度选窗口：同人时间线取最近 8 行（`selectFanficTimeline`），原作时间线用同人最近 3 条的「对应原作时间」找 canon 锚点后取「锚点前 2 行」起连续 8 行（`selectCanonTimeline`，无锚点回退前 8 行），并补「共 N 行，以上为第 X–Y 行 / 最近 8 行」说明；两段分别输出「【原作剧情时间线】」「【同人时间线】」；`FanficRules.loadError` 区分 `missing-path` / `missing-file` / `read-failed`（FS 版先 `exists`），`formatFanficRulesLoadWarning` 生成用户提示，避免空规则静默：无 `loadError` 时还要判断「是否有可注入内容」（六字段 / 人物 / 势力 / 两张时间线任一非空，作品名与路径不算，口径与 `formatFanficRulesForPrompt` 是否输出约束块一致），只有骨架占位的文件同样提示「没有可用内容」，否则绑定成功却零约束；`mergeFanficRequirement` 统一实体生成 6 处入口的「约束块 + 用户描述」拼接 |
@@ -447,12 +457,17 @@
 | `shared/previous-chapter-window.ts` | `selectPreviousChapterFiles` / `buildPreviousChapterWindow` / `stripFrontmatterBlock` | 前文章节上下文窗口（纯函数）：`selectPreviousChapterFiles` 从正文文件列表按章号选最近 `PREVIOUS_CHAPTER_WINDOW_SIZE`(3) 章（跨卷、同章多份取最短路径正稿、排除当前章及更晚）；`buildPreviousChapterWindow` 先 `stripFrontmatterBlock` 再按单章 12000 / 合计 30000 字预算、最近优先裁剪，空正文跳过；供 `CoWritingView#loadPreviousChapterContext` 替代「同卷文件名替换」 |
 | `shared/scene-body-merge.ts` | `mergeSceneBodies` | 逐场景确认结果按顺序合并为整章正文（空场景丢弃，场景间空一行） |
 | `shared/format-constants.ts` | — | 格式常量（实体字段契约单一事实源，含嵌套组与必填值键） |
+| `shared/entity-templates.ts` | `buildEntityTemplateBlock` / `EntityTemplateKind` | 势力 / 地点 / 物品功法示例模板唯一来源（批次 4，零 import）：返回 `{ frontmatter, body }`，单条与批量实体生成共用；物品功法 `itemTag` 可切「功法」，并以 `nw/实体/物品` 层级标签双写 |
 | `shared/changelog-data.ts` | — | 更新日志数据 |
 | `shared/model-capabilities.ts` | `findModelCapability` / `registerDetectedModelCapability` | 模型能力映射（最长键优先；探测值 > 静态表 > 本地兜底 8192/4096；用户覆盖由 ProviderManager 最优先） |
 | `shared/volume-plan.ts` | `parseVolumePlan` / `hasBlockingIssues` / `countPlannedChapters` | 全书规划解析与建章前一致性校验（卷范围 / 表格章号 / 重叠与断档）；分隔行可选，不再漏算每卷首章 |
 | `shared/chapter-table.ts` | `parseChapterRow` / `extractChapterTableRows` / `isChapterTableHeaderLine` | 章节分配表解析单一事实源（表头变体、可选分隔行、`**N**`/`第N章` 单元格）；生成端与批量建章共用 |
 | `shared/model-source.ts` | `ModelSourceType` / `resolveProviderSourceType` | 模型源类型定义与解析（云端/本地） |
-| `shared/plugin-api.ts` | — | 插件 API 类型 |
+| `plugin-api.ts`（根级） | — | 插件 API 类型门面（批次 5 从 `shared/` 移到根级，与 `main.ts` 同级、不属于任何分层；对 `engine/*` / `ui/workspace-manager` 的类型引用不再构成 shared→上层反向耦合） |
+| `shared/api-types.ts` | `APIResponse` | AI 调用返回结构（批次 5 从 `engine/ai-engine.ts` 下沉；engine 侧保留 `export type` 再导出，12 处内部引用零改动） |
+| `shared/embedding-provider.ts` | `EmbeddingProvider` / `EmbeddingOptions` / `ProviderInfo` / `EmbeddingAvailability` | 嵌入服务契约（批次 5 从 `engine/embedding/` 下沉；engine 侧 `embedding-provider.ts` 变为纯再导出） |
+| `shared/chapter-version-port.ts` | `ChapterVersionPort` | 章节版本保存端口（`saveVersion` 签名）；`core/command-registry` 通过 `engineRegistry` 取端口，不再 import services 具体类 |
+| `shared/engine-names.ts` | `ENGINE_NAMES` | 引擎名称常量唯一事实源（批次 3 从 `engine/engine-registry.ts` 下沉，常量零 import）：`core` / `ui` / `engine` 各模块都从这里取 key，**禁止再从 `engine-registry` 取**，否则会与「注册表 → 具体引擎」的构造依赖闭合成运行时循环 |
 | `shared/plugin-cache.ts` | — | 插件缓存 |
 | `shared/write-lock.ts` | `withWriteLock` / `KNOWLEDGE_VECTOR_STATE_LOCK` | 写入锁（从 `engine/write-lock.ts` 迁出，`engine` 与 `services` 均可合法引用）：`withWriteLock(path, fn)` 以模块级 Map 维护 per-path Promise 串行队列；`BodyWriter.write` 的第一层用它包裹 `writeLocked`，`KnowledgeBaseManager#renameVectorArtifacts` 用 `KNOWLEDGE_VECTOR_STATE_LOCK` 与拆解/向量写入串行 |
 | `shared/plugin-capabilities.ts` | — | 插件能力 |
@@ -460,7 +475,10 @@
 | `shared/template-scaffold-assets.generated.ts` | `TEMPLATE_SCAFFOLD_FILES` | 内置模板资源（自动生成，勿手改） |
 | `shared/entity-persistence.ts` | `saveEntities` / `validateEntityContent` / `formatSaveOutcome` | 实体统一落盘最后门禁（四类实体共用：完整性校验不通过一律拒绝、单次上限 200、空名拒绝、同名不覆盖改另存、失败明细） |
 | `shared/entity-integrity.ts` | `ensureEntityIntegrity` / `EntityRepairHandler` | 实体完整性闭环（校验 → AI 补全一次 → 复检），所有 UI 保存入口共用 |
-| `shared/entity-stats.ts` | `countProjectEntities` / `ProjectEntityStats` | 项目实体数量统计唯一事实源（Rev 192）：世界观文件存在 = 1；人物/势力/地点/物品 = 对应目录下 `.md` 数量；AI 生成器/实体管理/向导完成页共用同一口径 |
+| `shared/http-request.ts` | `requestWithPolicy` / `HttpRequestTimeoutError` / `SEARCH_REQUEST_POLICY` / `HttpRequestParams` | 统一网络出口（单次尝试超时 + 可选重试；默认只重试 5xx/429/网络错误，超时不重试）。`requestUrl` 不支持 `AbortSignal`，超时=拒绝等待并丢弃迟到结果 |
+| `shared/storage-keys.ts` | `STORAGE_KEYS` / `STORAGE_KEY_PREFIXES` / `LEGACY_STORAGE_KEYS` / `projectScopedKey` | localStorage 键名唯一来源（零依赖）。**键值不可改**：改值会让用户既有收藏 / 折叠 / 向导 / 耗时 / 确认记忆静默失效；两套历史前缀（`novel-writer-*` / `nw-op-confirm:`）保持原样 |
+| `shared/entity-reader.ts` | `listEntityFiles` / `countProjectEntities` / `ProjectEntityStats` / `EntityKind` | 实体文件读取与统计唯一事实源（批次 1 / P0-3）：目录前缀 + 仅 `.md` + 排除名称含「模板」+ 路径升序；实体管理器 / `context-manager.gatherEntityRecords` / entity-audit / AI 生成器共用同一口径（旧 `shared/entity-stats.ts` 已删除） |
+| `shared/step-modal-styles.ts` | `injectDeaiModalStyles` / `injectRefineModalStyles` / `injectRoundSelectStyles` | 步骤弹窗样式注入（批次 3 从 `ui/full-writer/` 下沉 shared）：engine 的 `step-modal-controller` 与 ui 共用，避免 engine→ui 反向依赖 |
 | `shared/entity-audit.ts` | `auditEntityFiles` / `readProjectWorldview` / `overwriteEntityIfComplete` | 存量实体审计与原地修复（跳过模板，复检通过才覆写，不产生「名称（2）」副本） |
 | `shared/plugin-worker-url.ts` | `resolvePluginWorkerUrl` / `notifyWorkerUnavailable` | 插件目录 Worker 绝对 URL 解析与一次性降级通知 |
 
@@ -478,6 +496,20 @@
 ---
 
 ## 六、UI 层（ui/）
+
+### 设置页（ui/settings/）
+| 文件 | 内容 |
+|------|------|
+| `ui/settings-tab.ts` | `NovelWriterSettingTab` 宿主：16 个 tab 常量、tab 栏、`renderSection` 调度与 `panelCache` DOM 缓存（`refresh()` 清全部缓存并重绘当前 tab；纯切换命中缓存不重建） |
+| `ui/settings/section-base.ts` | `SettingsSectionHost`（app / plugin / refresh / reopen）与 `SettingsSection` 基类；分区经只读 getter 访问宿主，方法体保留 `this.plugin` / `this.app` / `this.refresh()` 写法 |
+| `ui/settings/api-section.ts` | `ApiSection`：供应商左列表 + 右详情、字段渲染、模型拉取 / 启停 / 编辑、密钥加密行、全局 API 设置、任务预算预览 |
+| `ui/settings/knowledge-section.ts` | `KnowledgeSection`：书籍列表 / 状态徽标 / 批量导入 / 向量增强设置（异步加载） |
+| `ui/settings/fingerprint-section.ts` | `FingerprintSection`：模板 / 全局 / 项目三类指纹分组与增删详情（异步加载） |
+| `ui/settings/deconstruction-section.ts` | `DeconstructionSection`：拆解引擎设置（含持久化兜底） |
+| `ui/settings/foreshadow-section.ts` | `ForeshadowSection`：伏笔类型配置与保存 |
+| `ui/settings/writing-sections.ts` | `CoWriteSection` / `WritingSection` / `TemplateSection` / `AppearanceSection` / `ProjectLibrarySection` / `LayoutSection`（含 `renderPanelSizeRows`） |
+| `ui/settings/general-sections.ts` | `PerformanceSection`（`render` + `renderBanner` 供宿主在 tab 栏前渲染更新提示）/ `PromptsSection` / `RulesSection`（`mountRulesSection` 幂等重绘）/ `AboutSection` / `RecognitionSection` / `SuggestionsSection` |
+| `ui/settings/provider-modals.ts` | `ProviderModalsSection`：供应商编辑 / 管理 / 新增三个弹窗（原文件内无调用点，待接入） |
 
 ### 共享构造与动作
 | 文件 | 内容 |
@@ -515,7 +547,7 @@
 | `ui/context-injector-modal.ts` | 上下文注入 |
 | `ui/cross-volume-state-modal.ts` | 跨卷状态 |
 | `ui/diagnose-writer-modal.ts` | 写作诊断 |
-| `ui/ai-builder-modal.ts` | AI 世界元素生成器（单个/批量实体生成均经 `readFanficPromptBlockWithNotice` 注入同人约束，设定失效时提示）。Rev 192：补齐 `novel-writer-ai-builder-*` 全套样式后，多项目视图为两列卡片矩阵（进度条 + 五项统计横排 + 进入/快捷生成），仪表盘为自适应实体卡片网格；统计走 `shared/entity-stats.ts#countProjectEntities`；人物批量记录失败批次数、全失败明确提示；单项目隐藏「切换项目」入口 |
+| `ui/ai-builder-modal.ts` | AI 世界元素生成器（单个/批量实体生成均经 `readFanficPromptBlockWithNotice` 注入同人约束，设定失效时提示）。Rev 192：补齐 `novel-writer-ai-builder-*` 全套样式后，多项目视图为两列卡片矩阵（进度条 + 五项统计横排 + 进入/快捷生成），仪表盘为自适应实体卡片网格；统计走 `shared/entity-reader.ts#countProjectEntities`；人物批量记录失败批次数、全失败明确提示；单项目隐藏「切换项目」入口。批次 4：势力 / 地点 / 物品功法三类 Tab 已移除（统一到 `ui/unified-entity-generate-modal.ts`），本弹窗只保留世界观与人物入口，仪表盘底部为「🏰 打开统一实体生成器」跳转按钮 |
 | `ui/fanfic-prompt-notice.ts` | `readFanficPromptBlockWithNotice` | 实体生成入口读取同人约束块的唯一入口：`readFanficRules` → `formatFanficRulesLoadWarning`（缺失/不存在/读取失败/内容全空）→ `Notice(…, 8000)` → `formatFanficRulesForPrompt`。人物/势力/地点/物品/统一实体/AI 建卡 7 处调用点不得再直接拼 `formatFanficRulesForPrompt(await readFanficRules(...))`，否则空块与「有约束」在界面上无法区分 |
 | `ui/add-fanfic-setting-modal.ts` | 同人设定（可绑定到指定项目：落盘到 `项目/05-同人设定库/` 并回写 `.project` 的同人设定路径；提示词复用 `buildFanficSettingsContent` 骨架，保存前做完整性校验与一次 AI 补全；有项目时另提供「🔗 使用已有设定文件」区，候选走 `listFanficSettingCandidates`、绑定走 `attachFanficPathToProject`，不完整允许绑定但提示缺失字段） |
 | `ui/full-writer/fanfic-settings-utils.ts` | 同人设定结构、保存前校验、`.project` 路径回写的唯一实现（`buildFanficSettingsContent` / `attachFanficPathToProject` / `isFanficSettingsContentValidEnough` / `saveFanficSettingFile`；向导口径 = 9 字段实质填写 + 时间线表格结构，占位「（待补充）」不算内容；骨架同时产出「## 主要人物」「## 势力组织」占位，AI 生成与向导保存结构一致；单字段解析不在本文件，统一走 `shared/fanfic-rules.ts#extractFanficRuleValue`） |
@@ -529,12 +561,12 @@
 | `ui/rename-project-modal.ts` | 重命名当前项目（fileManager 重命名 + `.project` 标题同步） |
 | `ui/writing-style-modal.ts` | 文笔风格设置（多文件预设一键应用、「➕ 新增预设」面板：填名称 → AI 生成 9 节内容 → 落盘为新预设、参考样本编辑、分节文本域） |
 | `ui/writing-style-presets.ts` | 多文件文笔预设解析 / 加载 / 新增（`元文件/00-系统模板/文笔风格预设/`，`saveStylePreset` 负责命名、序号、完整性校验与落盘） |
-| `ui/unified-entity-generate-modal.ts` | 统一实体生成（人物/势力/地点/物品，逐条 `ensureEntityIntegrity` 补全 + 复检后才交给 `saveEntities`） |
+| `ui/unified-entity-generate-modal.ts` | 统一实体生成（人物/势力/地点/物品，逐条 `ensureEntityIntegrity` 补全 + 复检后才交给 `saveEntities`）；「📚 打开实体管理」走组合根 `plugin.openEntityManagerModal(project)`，不 import 管理弹窗（批次 4 断环） |
 
 ### 完整写作工作台（ui/full-writer/）
 | 文件 | 功能 |
 |------|------|
-| `ui/full-writer/project-selector-controller.ts` | 项目与章节页：左侧项目卡片网格 + 右侧常驻项目概览与工具面板（不再有隐藏的预览抽屉与「⚡️ 工具」弹窗）；项目卡片选中/默认选中经 `onProjectSelected` 回写命令层上下文，默认选中优先沿用上次项目而非 `projects[0]`。Rev 192：「全部章节」弹窗改为 960px 宽 + 搜索框 + ✅/✏️/📝 图例 + 按卷分组（sticky 卷标题）+ 自适应网格 + 62vh 滚动 + 空态，`showAllChapters` 内部先 `sortChaptersByNumber` |
+| `ui/full-writer/project-selector-controller.ts` | 项目与章节页：左侧项目卡片网格 + 右侧常驻项目概览与工具面板（不再有隐藏的预览抽屉与「⚡️ 工具」弹窗）；项目卡片选中/默认选中经 `onProjectSelected` 回写命令层上下文，默认选中优先沿用上次项目而非 `projects[0]`。Rev 192：「全部章节」弹窗改为 960px 宽 + 搜索框 + ✅/✏️/📝 图例 + 按卷分组（sticky 卷标题）+ 自适应网格 + 62vh 滚动 + 空态，`showAllChapters` 内部先 `sortChaptersByNumber`。批次 2：单次 `render()` 内复用 `getProjectMeta` 结果与单元列表，长篇章节走 `scanProjectChapters` 一次扫描产出全部项目（缓存随 render 丢弃，不做长驻索引） |
 | `ui/full-writer/template-vars-builder.ts` | `buildTemplateVars`：提示词模板变量构建（章节上下文 / 实体 / 同人约束 / 长篇记忆 / 格式契约）；同人约束必须经 `ui/fanfic-prompt-notice.ts#readFanficPromptBlockWithNotice` 读取（设定失效时 `Notice` 提示），禁止直接拼 `formatFanficRulesForPrompt(await readFanficRules(...))` |
 | `ui/full-writer/context-loader-controller.ts` | `ContextLoaderController`：上下文加载 + 角色灵魂自动提取；提取结果必须经 `saveStepResult('characterSoul', …)` 落盘且保存成功才标 complete（失败降 partial）；磁盘已有真实灵魂文件或内存已有恢复内容时跳过提取，不得覆盖 |
 | `ui/full-writer/quick-tools-panel.ts` | 常驻快捷工具面板渲染：非 compact 模式下分组标题为可点击折叠头（组名 + 数量 + 箭头），compact 模式渲染章节页单行 chip 条 |
@@ -609,8 +641,9 @@
 
 | 文件 | 功能 |
 |------|------|
-| `scripts/build.js` | esbuild 构建脚本（main + 3 Worker 入口） |
+| `scripts/build.js` | esbuild 构建脚本（main + 3 Worker 入口）；**开启 `minify: true` + `charset: 'utf8'`**（批次 12，`main.js` 减 47.2%）。由此带来两条约束：① 任何「对 `main.js` 做字符串断言」的脚本必须断言字符串字面量（模板 key、版本号），不能断言模块路径注释或顶层变量名——压缩会把它们抹掉，见 `scripts/check-release.mjs`；② 不要依赖 `constructor.name` / `Function.name` / `fn.toString()` 反射（压缩会重命名标识符） |
 | `scripts/baseline-utils.mjs` | 架构守卫基线工具：`--baseline <file>` 只对新增违规失败，`--update-baseline` 仅在无新增时收紧（section 独立读写，`check:deps` / `check-engines` 共用） |
+| `scripts/build-styles.mjs` | 按文件名顺序拼接 `styles-src/*.css` → 根目录 `styles.css`（`--check` 校验产物与源一致，接入 `preflight` 的 `check:styles`） |
 | `scripts/check-css.js` | CSS 检查脚本 |
 | `scripts/check-dependencies.mjs` | 依赖检查 |
 | `scripts/check-release.mjs` | 发布资产与版本一致性校验（三资产 / Worker / 内置模板） |
@@ -630,7 +663,8 @@
 | `tsconfig.json` | TypeScript 配置 |
 | `manifest.json` | Obsidian 插件清单 |
 | `playwright.config.ts` | Playwright E2E 测试配置 |
-| `styles.css` | 插件样式 |
+| `styles.css` | 插件样式——**自动生成产物**，由 `styles-src/*.css` 按文件名顺序拼接；不要直接编辑 |
+| `styles-src/` | 样式源文件 16 个（`00-header` … `15-late-fixes`），文件名顺序即层叠顺序；改样式只改这里 + `npm run build:styles` |
 | `design-tokens.css` | 设计令牌 CSS 变量 |
 | `.engine-registry-whitelist.json` | 引擎注册白名单 |
 | `.github/workflows/ci.yml` | CI 门禁（模板一致性 / lint / typecheck / test / build / 发布校验） |
@@ -651,12 +685,12 @@
 | 添加新的状态切片 | `shared/store/createStore.ts` + 对应模块 |
 | 修改 UI 组件 | `ui/components/` 或 `ui/cowrite/` |
 | 添加新的质量检测 | `engine/quality/` |
-| 修改拆解质量评分 / 交叉验证规则 | `engine/quality-scorer.ts` + `services/deconstruction-scheduler.ts` |
+| 修改拆解质量评分 / 交叉验证规则 | `engine/quality-scorer.ts` + `engine/deconstruction-scheduler.ts` |
 | 添加新的风格维度 | `engine/style/style-dimensions-v2.ts` |
 | 修改构建配置 | `scripts/build.js` |
 | 添加新命令 | `shared/command-ids.ts`（id）+ `core/command-registry.ts`（注册）+ `ui/command-ui-executor.ts`（UI 执行，如需要）+ `main.ts`（装配） |
 | 添加新的设置项 | `core/settings-service.ts` + `ui/appearance-settings.ts` |
-| 修改拆解引擎配置（增强级别/维度/向量/LLM/性能） | `services/deconstruction-scheduler.ts`（`DeconstructionEngineSettings`） + `main.ts`（`NovelWriterSettings.deconstructionEngine`） + `ui/settings-tab.ts` / `ui/mini-settings-modal.ts`（`renderDeconstructionSection` / `renderDeconstructionTab`） |
+| 修改拆解引擎配置（增强级别/维度/向量/LLM/性能） | `engine/deconstruction-scheduler.ts`（`DeconstructionEngineSettings`） + `main.ts`（`NovelWriterSettings.deconstructionEngine`） + `ui/settings/deconstruction-section.ts` / `ui/mini-settings-modal.ts`（`DeconstructionSection.render` / `renderDeconstructionTab`） |
 | 修改指纹列表 / 作用域判定 | `ui/fingerprint-utils.ts`（`renderFingerprintList` / `isSourceOnlyFingerprintScope`；`template` 是来源库，不参与注入，三个入口统一用该判定隐藏启用/强度控件） |
 | 修改 Worker 相关 | `services/worker-manager.ts` + `services/worker-protocol.ts` |
 
@@ -667,9 +701,9 @@
 | AI 调用失败 | `engine/ai-engine.ts` |
 | 数据读取/写入失败 | `engine/repository/base-markdown-repository.ts` |
 | 性能问题 | `services/performance-monitor.ts` |
-| 缓存问题 | `engine/cache/multi-layer-cache.ts` |
+| 缓存问题 | `shared/multi-layer-cache.ts` |
 | 引擎找不到 | `engine/engine-registry.ts` + `.engine-registry-whitelist.json` |
-| 样式问题 | `styles.css` + `design-tokens.css` |
+| 样式问题 | `styles-src/*.css`（改后 `npm run build:styles`）+ `design-tokens.css` |
 | 测试失败 | `tests/unit/` 对应目录 |
-| 拆解质量评分异常 / 交叉验证规则不生效 | `engine/quality-scorer.ts` + `services/deconstruction-scheduler.ts` |
-| 拆解引擎设置不生效 / 维度缺失 / 并发不对 / 全文分块未触发 | `services/deconstruction-scheduler.ts`（`addTask` / `breakdownDimensionWithSegments` / `getSegmentedBreakdownConfig`） + `services/scheduler-segment-integration.ts` + `main.ts`（`NovelWriterSettings.deconstructionEngine`） + 设置面板「🧬 拆解引擎」tab |
+| 拆解质量评分异常 / 交叉验证规则不生效 | `engine/quality-scorer.ts` + `engine/deconstruction-scheduler.ts` |
+| 拆解引擎设置不生效 / 维度缺失 / 并发不对 / 全文分块未触发 | `engine/deconstruction-scheduler.ts`（`addTask` / `breakdownDimensionWithSegments` / `getSegmentedBreakdownConfig`） + `engine/scheduler-segment-integration.ts` + `main.ts`（`NovelWriterSettings.deconstructionEngine`） + 设置面板「🧬 拆解引擎」tab |

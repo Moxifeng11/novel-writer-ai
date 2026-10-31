@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GenreClassifier } from '../../services/genre-classifier';
-import { WebnovelKnowledgeBase } from '../../engine/webnovel-knowledge-base';
+import { WebnovelKnowledgeBase } from '../../shared/webnovel-knowledge-base';
 import { assertGenreClassificationResult } from './helpers/custom-assertions';
 import { XUANHUAN_SCENARIO, ROMANCE_SCENARIO, MYSTERY_SCENARIO, ALL_SCENARIOS } from './fixtures/scenarios';
 import { generateLongText } from './helpers/test-data-generator';

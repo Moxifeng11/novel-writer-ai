@@ -77,7 +77,7 @@ describe('C1 — v1Engine 为唯一口径', () => {
     it('生产入口不得再向 QSE 注入 characterChecker（源码守卫）', () => {
         const files = [
             'engine/quality/quality-worker.ts',
-            'services/heavy-task-worker-manager.ts',
+            'engine/heavy-task-worker-manager.ts',
         ];
 
         for (const relative of files) {

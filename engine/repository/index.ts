@@ -13,8 +13,8 @@ export type {
     BulkFailure,
 } from './interfaces';
 
-export { LruCache } from './lru-cache';
-export type { LruCacheOptions } from './lru-cache';
+export { LruCache } from '../../shared/lru-cache';
+export type { LruCacheOptions } from '../../shared/lru-cache';
 
 export { BaseMarkdownRepository } from './base-markdown-repository';
 export type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';

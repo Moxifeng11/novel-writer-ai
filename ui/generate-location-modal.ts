@@ -10,6 +10,7 @@ import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { pjLocsDir, pjWorldview, pjSettingLib, SUBDIR_LOCS } from '../shared/paths';
 import { saveEntities, formatSaveOutcome } from '../shared/entity-persistence';
 import { createLogger } from '../shared/logger';
+import { nextFrame } from '../shared/yield';
 
 
 const log = createLogger('GenerateLocationModal');
@@ -183,8 +184,8 @@ export class GenerateLocationModal extends Modal {
                 progressBarTrack.style.display = 'block';
                 progressBarFill.addClass('nw-progress-anim');
                 showProgress(`⏳ 正在生成地点...（模型：${modelName}）`);
-                // P0-2 修复: 后台窗口 rAF 不触发会导致永久挂起，改用 setTimeout 让出执行权
-                await new Promise(r => setTimeout(r, 16));
+                // 等一帧让进度条先渲染（后台窗口由 nextFrame 内部超时兜底，见 P0-2）
+                await nextFrame();
 
                 let wv = '';
                 try { const wf = this.app.vault.getAbstractFileByPath(pjWorldview(project)); if (wf instanceof TFile) wv = await this.app.vault.read(wf); } catch (e) { log.warn("[小说工坊] 操作异常:", e instanceof Error ? e.message : e); }

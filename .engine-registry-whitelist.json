@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
   "description": "EngineRegistry 治理白名单 — 列出允许直接 new 实例化的类（多实例或合理 fallback 或延迟迁移）",
-  "lastUpdated": "2026-10-28",
+  "lastUpdated": "2026-10-31",
   "whitelist": [
     {
       "className": "AbortController",
@@ -188,6 +188,12 @@
       "reason": "对话引导 AI Harness：每次打开 Agent 弹窗对应一个独立会话（记忆/日志/工具注册表），必须新实例；关闭弹窗即销毁",
       "category": "session-isolated",
       "allowedInstances": -1
+    },
+    {
+      "className": "TemplateManager",
+      "reason": "组合根注入：engine 层不允许 import ui/，TemplateManager 位于 ui/，因此由 main.ts 通过 createTemplateManager 工厂注入 EngineRegistry，全生命周期只构造一次",
+      "category": "composite-root-injected",
+      "allowedInstances": 1
     }
   ],
   "notes": {
@@ -201,7 +207,8 @@
       "context-isolated": "每个实例独立上下文，互不影响",
       "backward-compat-fallback": "向后兼容的 fallback 路径，正常路径已通过 registry",
       "transient": "Builder/DTO/Config 等瞬态对象",
-      "p1-deferred": "P1 延迟迁移类：当前未注册到 registry，已评估暂不强制迁移，建议未来统一通过 registry.get 获取"
+      "p1-deferred": "P1 延迟迁移类：当前未注册到 registry，已评估暂不强制迁移，建议未来统一通过 registry.get 获取",
+      "composite-root-injected": "组合根（main.ts）通过工厂注入 EngineRegistry 的唯一实例：类位于 ui/ 等 engine 层不可 import 的层，故不走 registry 内部 new"
     }
   }
 }

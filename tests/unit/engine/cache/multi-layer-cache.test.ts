@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { MultiLayerCache } from '../../../../engine/cache/multi-layer-cache';
+import { MultiLayerCache } from '../../../../shared/multi-layer-cache';
 import { MockFileSystem } from '../../../../shared/file-system-port';
 
 describe('MultiLayerCache', () => {

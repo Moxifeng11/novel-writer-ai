@@ -32,7 +32,7 @@ import { resolveTaskModelConfig } from '../shared/task-model';
 import { ContextManager } from '../engine/context-manager';
 import type { SceneNode } from '../shared/types';
 import { computePromptHash } from '../engine/prompt-hash';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import type NovelWriterPlugin from '../main';
 
 /** 断点恢复配置（可选注入；提供后失败场景保存断点，重试时展示恢复选项） */
@@ -169,8 +169,8 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
         return { content: fallback.content };
     };
 
-    const loop = plugin.engineRegistry.get<SceneGenerationLoop>(ENGINE_NAMES.SCENE_GENERATION_LOOP);
-    const store = plugin.engineRegistry.get<GenerationCheckpointStore>(ENGINE_NAMES.GENERATION_CHECKPOINT_STORE);
+    const loop = plugin.engineRegistry.get(ENGINE_NAMES.SCENE_GENERATION_LOOP);
+    const store = plugin.engineRegistry.get(ENGINE_NAMES.GENERATION_CHECKPOINT_STORE);
 
     const volumeNum = parseInt((opts.volumeName || '').match(/第(\d+)卷/)?.[1] || '1', 10) || 1;
     const volumeName = opts.volumeName || `第${volumeNum}卷`;

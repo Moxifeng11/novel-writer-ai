@@ -90,6 +90,18 @@ describe('getChaptersForProject — 正文 ∪ 骨架', () => {
         expect(getChaptersForProject(app, PROJECT)).toEqual([]);
     });
 
+    it('乱序种子 → 出口即升序（调用方无需再排序）', async () => {
+        const app = makeApp();
+        seedBody(app, 1, 3);
+        await seedSkeleton(app, 1, 4);
+        seedBody(app, 1, 1);
+        await seedSkeleton(app, 1, 2);
+
+        const chapters = getChaptersForProject(app, PROJECT);
+
+        expect(chapters.map(c => c.chapter)).toEqual(['第1章', '第2章', '第3章', '第4章']);
+    });
+
     it('排序后骨架章可作为「下一章待写」', async () => {
         const app = makeApp();
         seedBody(app, 1, 1);

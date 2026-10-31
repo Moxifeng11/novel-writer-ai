@@ -6,10 +6,10 @@
  */
 
 import { App, Editor, ItemView, MarkdownFileInfo, MarkdownView, Notice, TFile } from 'obsidian';
-import { InternalRegistry } from '../engine/internal-registry';
-import { ChapterVersionService } from '../services/chapter-version-service';
-import { importExampleProject } from '../services/example-project-service';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { InternalRegistry } from '../shared/internal-registry';
+import type { ChapterVersionPort } from '../shared/chapter-version-port';
+import { importExampleProject } from './example-project-service';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { pjNarrativeOverview } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { NOOP_COMMAND_UI_PORT, type CommandUiPort } from '../shared/command-ui-port';
@@ -572,7 +572,7 @@ export class CommandRegistry {
         const ctx = await this.getCurrentFileContext();
         if (!ctx) return;
 
-        const service = this.deps.plugin.engineRegistry.get<ChapterVersionService>(ENGINE_NAMES.CHAPTER_VERSION_SERVICE);
+        const service = this.deps.plugin.engineRegistry.get<ChapterVersionPort>(ENGINE_NAMES.CHAPTER_VERSION_SERVICE);
         const version = await service.saveVersion(
             ctx.project,
             ctx.contentType,

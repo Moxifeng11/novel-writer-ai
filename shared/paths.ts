@@ -68,6 +68,27 @@ export function pjSettingLib(project: string) { return `${project}/${SUBDIR_SETT
 /** v4.0: 文笔风格移入 01-世界架构/ */
 export function pjWritingStyle(project: string) { return `${project}/${SUBDIR_WRITING_STYLE_FILE}`; }
 /** 写作规则在 00-系统模板/，项目创建时复制 */
+/**
+ * 从文件路径解析项目根（P1-4）。
+ *
+ * 旧实现取路径首段：`长篇小说/书名/...` → `长篇小说`，而缓存键用完整项目路径，
+ * 失效永不命中（只能等 TTL）。这里优先在已知项目键里做最长前缀匹配，找不到才退回首段。
+ */
+export function matchProjectFromPath(filePath: string, candidates: Iterable<string>): string | null {
+    const path = String(filePath || '').split('\\').join('/');
+    if (!path) return null;
+    let best = '';
+    for (const candidate of candidates) {
+        const project = String(candidate || '').trim();
+        if (!project) continue;
+        if (project.length <= best.length) continue;
+        if (path === project || path.startsWith(`${project}/`)) best = project;
+    }
+    if (best) return best;
+    const first = path.split('/')[0];
+    return first || null;
+}
+
 export function pjWritingRules(project: string) { return `${project}/00-系统模板/写作规则.md`; }
 /** 弱/强写作对照库 */
 export function pjContrastLibrary(project: string) { return `${project}/00-系统模板/写作对照库.md`; }

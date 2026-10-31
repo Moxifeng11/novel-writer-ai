@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DeconstructionScheduler, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '../../../services/deconstruction-scheduler';
+import { DeconstructionScheduler, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '../../../engine/deconstruction-scheduler';
 
 function createKnowledgeBaseManager() {
     return {

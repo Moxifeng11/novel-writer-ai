@@ -6,7 +6,7 @@
  */
 
 import { kbBookForeshadowDBFile } from '../../shared/paths';
-import { WebnovelKnowledgeBase, ForeshadowCategoryDef } from '../webnovel-knowledge-base';
+import { WebnovelKnowledgeBase, ForeshadowCategoryDef } from '../../shared/webnovel-knowledge-base';
 import { yieldToUI } from '../../shared/yield';
 import { WORLDVIEW_WORDS } from '../dimension-keywords';
 import type { GenreConfig } from '../genre/types';
@@ -1336,7 +1336,8 @@ export class ForeshadowDeconstructor {
                 const contextText = LLMEnhancer.buildContextForDimension('foreshadow', text, paragraphs);
                 return await this.llmEnhancer.enhanceResult(result, contextText, 'foreshadow', this.genreConfig);
             } catch (e) {
-                log.warn('[ForeshadowDeconstructor] LLM 增强失败，使用纯统计结果', e);
+                // catch 分级：可降级失败（可选增强）→ warn 带定位信息，不重试，返回纯统计结果
+                log.warn(`[ForeshadowDeconstructor] LLM 增强失败，降级为纯统计结果（维度=foreshadow 文本长度=${text.length} 段落数=${paragraphs.length} 可重试=否）`, e);
                 return result;
             }
         }
@@ -1636,7 +1637,8 @@ export class ForeshadowDeconstructor {
                 qualityScore
             };
         } catch (e) {
-            log.warn('[ForeshadowDeconstructor] 向量增强分析失败，降级为纯关键词分析', e);
+            // catch 分级：可降级失败（可选向量增强）→ warn 带定位信息，不重试，返回纯关键词结果
+            log.warn(`[ForeshadowDeconstructor] 向量增强分析失败，降级为纯关键词分析（文本长度=${text.length} 可重试=否）`, e);
             return baseResult;
         }
     }

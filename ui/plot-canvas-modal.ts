@@ -14,6 +14,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import type NovelWriterPlugin from '../main';
 import { pjVolumeOutlineDir, pjStepDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
+import { writeVaultText } from '../shared/file-system-port';
 import { parseVolumeOutline, type VolumeNode, type ChapterNode } from './plot-canvas-parser';
 
 const log = createLogger('PlotCanvasModal');
@@ -298,7 +299,7 @@ export class PlotCanvasModal extends Modal {
                 }
             }
             for (let i = 0; i < this.sources.length; i++) {
-                await this.app.vault.adapter.write(this.sources[i].path, this.sources[i].lines.join('\n'));
+                await writeVaultText(this.app, this.sources[i].path, this.sources[i].lines.join('\n'));
             }
 
             new Notice(`✅ 已重排并保存 ${totalEdits} 处章节顺序`, 3000);

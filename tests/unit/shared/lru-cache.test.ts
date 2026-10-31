@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LruCache } from '../../../../engine/repository/lru-cache';
+import { LruCache } from '../../../shared/lru-cache';
 
 describe('LruCache', () => {
     describe('基础操作 (get/set/delete/has)', () => {

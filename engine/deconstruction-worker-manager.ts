@@ -13,20 +13,20 @@
  * - 降级模式下直接实例化拆解器并调用，保证功能完整性
  */
 
-import { WorkerManager } from './worker-manager';
+import { WorkerManager } from '../services/worker-manager';
 import { createLogger } from '../shared/logger';
 import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
-import { VectorEnhancer } from '../engine/vector-enhancer';
-import { LLMEnhancer } from '../engine/llm-enhancer';
-import { StyleDeconstructor, StyleAnalysisResult } from '../engine/deconstructors/style-deconstructor';
-import { RhythmDeconstructor, RhythmAnalysisResult } from '../engine/deconstructors/rhythm-deconstructor';
-import { TechniqueDeconstructor, TechniqueAnalysisResult } from '../engine/deconstructors/technique-deconstructor';
-import { StructureDeconstructor, StructureAnalysisResult } from '../engine/deconstructors/structure-deconstructor';
-import { CharacterDeconstructor, CharacterAnalysisResult } from '../engine/deconstructors/character-deconstructor';
-import { ForeshadowDeconstructor, ForeshadowAnalysisResult } from '../engine/deconstructors/foreshadow-deconstructor';
-import { CommercialDeconstructor, CommercialAnalysisResult } from '../engine/deconstructors/commercial-deconstructor';
-import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from '../engine/deconstructors/readability-deconstructor';
-import { AntiAIDetector } from '../engine/anti-ai-detector';
+import { VectorEnhancer } from './vector-enhancer';
+import { LLMEnhancer } from './llm-enhancer';
+import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';
+import { RhythmDeconstructor, RhythmAnalysisResult } from './deconstructors/rhythm-deconstructor';
+import { TechniqueDeconstructor, TechniqueAnalysisResult } from './deconstructors/technique-deconstructor';
+import { StructureDeconstructor, StructureAnalysisResult } from './deconstructors/structure-deconstructor';
+import { CharacterDeconstructor, CharacterAnalysisResult } from './deconstructors/character-deconstructor';
+import { ForeshadowDeconstructor, ForeshadowAnalysisResult } from './deconstructors/foreshadow-deconstructor';
+import { CommercialDeconstructor, CommercialAnalysisResult } from './deconstructors/commercial-deconstructor';
+import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from './deconstructors/readability-deconstructor';
+import { AntiAIDetector } from './anti-ai-detector';
 
 const log = createLogger('DeconstructionWorkerManager');
 

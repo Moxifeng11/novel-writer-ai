@@ -10,8 +10,8 @@
  * - 零外部依赖
  */
 
-import type { FileSystemPort } from '../../shared/file-system-port';
-import { createLogger } from '../../shared/logger';
+import type { FileSystemPort } from './file-system-port';
+import { createLogger } from './logger';
 
 
 const log = createLogger('FileCache');

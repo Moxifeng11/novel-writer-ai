@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { SegmentAwareBreakdown } from '../../../services/segment-aware-breakdown';
+import { SegmentAwareBreakdown } from '../../../engine/segment-aware-breakdown';
 
 describe('SegmentAwareBreakdown', () => {
     describe('短文本直通', () => {

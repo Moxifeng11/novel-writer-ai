@@ -6,7 +6,7 @@ import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils'
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './full-writer-view';
 import { SettlementEngine } from '../engine/settlement-engine';
 import { writeChapterStateSnapshot } from '../engine/chapter-state-snapshot-service';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { createLogger } from '../shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
 
@@ -30,7 +30,7 @@ export class ChapterSettlementModal extends Modal {
     constructor(app: App, plugin: NovelWriterPlugin, initial?: { project: string; volume: string; chapterNum: number; chapterName?: string }) {
         super(app);
         this.plugin = plugin;
-        this.settlementEngine = plugin.engineRegistry.get<SettlementEngine>(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        this.settlementEngine = plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
         this.initialProject = initial?.project;
         this.initialVolume = initial?.volume;
         this.initialChapterNum = initial?.chapterNum;

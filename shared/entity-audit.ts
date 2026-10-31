@@ -6,15 +6,9 @@
  * 避免修复时走 saveEntities 的同名另存逻辑产生「名称（2）」副本。
  */
 import { App, TFile } from 'obsidian';
-import { pjCharsDir, pjFactionsDir, pjItemsDir, pjLocsDir, pjWorldview } from './paths';
+import { pjWorldview } from './paths';
 import { validateEntityContent, type EntityKind } from './entity-persistence';
-
-const KIND_DIRS: Record<EntityKind, (project: string) => string> = {
-    characters: pjCharsDir,
-    factions: pjFactionsDir,
-    locations: pjLocsDir,
-    items: pjItemsDir,
-};
+import { ENTITY_KINDS, listEntityFiles } from './entity-reader';
 
 export interface AuditedEntity {
     kind: EntityKind;
@@ -28,13 +22,8 @@ export interface AuditedEntity {
 export async function auditEntityFiles(app: App, project: string): Promise<AuditedEntity[]> {
     const incomplete: AuditedEntity[] = [];
 
-    for (const kind of Object.keys(KIND_DIRS) as EntityKind[]) {
-        const dirPath = KIND_DIRS[kind](project);
-        const files = app.vault.getFiles().filter(f =>
-            f.path.startsWith(`${dirPath}/`) &&
-            f.name.endsWith('.md') &&
-            !f.name.includes('模板')
-        );
+    for (const kind of ENTITY_KINDS) {
+        const files = listEntityFiles(app, project, kind);
 
         for (const file of files) {
             try {

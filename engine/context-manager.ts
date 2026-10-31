@@ -8,12 +8,12 @@ import { CharacterFrontmatter, FactionFrontmatter, LocationFrontmatter, ItemFron
 import { CHARACTER_DISPLAY_KEYS, CHARACTER_FILE_EXCLUDE, WRITING_RULE_TITLES, TIMELINE_TABLE_HEADER, FORESHADOW_SECTION_UNREVEALED, FORESHADOW_SECTION_REVEALED, FORESHADOW_SECTION_ABANDONED, WRITING_RULES_PATH_PROJECT, WRITING_RULES_PATH_TEMPLATE, chapterOutlineSection } from '../shared/format-constants';
 import { detectTimelineStrategy, loadFanficRules, parseCanonTimelineTable, parseFanTimelineTable, TimelineStrategy, FanficRules, TimelineRow } from '../shared/template-validator';
 import { getWorldviewPath, getSettingLibPath, getWritingStylePath, getLegacyWritingStylePath, readProjectMeta,
-    pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir,
+    pjCharsDir,
     pjForeshadowDB, pjTimelineBoard, pjMemoryShardsDir,
     pjFanficFile, pjBodyFile, pjStepDir, pjStepFile, pjWritingRules, pjWritingRulesTemplate,
     pjChapterStateSnapshot,
     pjChapterStateSnapshotDir,
-    isInOutlineDir, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyDir } from '../shared/paths';
+    isInOutlineDir, matchProjectFromPath, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyDir } from '../shared/paths';
 import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRITICAL } from '../shared/thresholds';
 import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromContent } from './character-soul';
 import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
@@ -93,6 +93,7 @@ import { ContextDiffDetector } from './context/context-diff-detector';
 import type { ContextChangeSet } from './context/context-diff-detector';
 import { IncrementalUpdater } from './context/incremental-updater';
 import { createLogger } from '../shared/logger';
+import { listEntityFiles, ENTITY_KIND_LABEL, type EntityKind } from '../shared/entity-reader';
 import { activeContextQuotas } from '../shared/context-budget-policy';
 
 const log = createLogger('ContextManager');
@@ -938,10 +939,11 @@ export class ContextManager {
         return null;
     }
 
-    private async gatherEntityRecords(folderPath: string, entityType: string): Promise<Record<string, string>[]> {
+    private async gatherEntityRecords(project: string, kind: EntityKind): Promise<Record<string, string>[]> {
         const items: Record<string, string>[] = [];
-        const files = this.getFilesInFolder(folderPath).filter(f => !f.name.includes('模板'));
-        const project = this.extractProjectFromPath(folderPath);
+        // P0-3：文件清单统一走 entity-reader（排除模板 + 路径升序），与统计/实体管理同口径
+        const files = listEntityFiles(this.app, project, kind);
+        const entityType = ENTITY_KIND_LABEL[kind];
         const cache = this.getEntityCache();
         const existingPaths = new Set(files.map(f => f.path));
 
@@ -990,10 +992,18 @@ export class ContextManager {
         return items;
     }
 
-    /** 从文件夹路径提取项目名（取第一段） */
+    /**
+     * 从文件路径解析项目根。
+     * v4.27（P1-4）：优先用「已缓存的项目键」做最长前缀匹配——旧实现取首段，
+     * `长篇小说/书名` 会被解析成 `长篇小说`，失效键永远对不上，编辑设定后仍用旧上下文。
+     */
     private extractProjectFromPath(folderPath: string): string | null {
-        const parts = folderPath.split('/');
-        return parts.length > 0 ? parts[0] : null;
+        const knownProjects = new Set<string>();
+        for (const key of this.contextCache.keys()) {
+            const sep = key.indexOf('::');
+            if (sep > 0) knownProjects.add(key.slice(0, sep));
+        }
+        return matchProjectFromPath(folderPath, knownProjects);
     }
 
     async gatherCharacterState(project: string): Promise<ContextData> {
@@ -1164,7 +1174,7 @@ export class ContextManager {
             }
         }
 
-        const locations = await this.gatherEntityRecords(pjLocsDir(project), '地点');
+        const locations = await this.gatherEntityRecords(project, 'locations');
         const loadTime = Date.now() - startTime;
         this.recordPerf(false, loadTime);
         log.debug(`[ContextManager] gatherLocations via fallback | project=${project} | count=${locations.length} | time=${loadTime}ms`);
@@ -1192,7 +1202,7 @@ export class ContextManager {
             }
         }
 
-        const factions = await this.gatherEntityRecords(pjFactionsDir(project), '势力');
+        const factions = await this.gatherEntityRecords(project, 'factions');
         const loadTime = Date.now() - startTime;
         this.recordPerf(false, loadTime);
         log.debug(`[ContextManager] gatherFactions via fallback | project=${project} | count=${factions.length} | time=${loadTime}ms`);
@@ -1220,7 +1230,7 @@ export class ContextManager {
             }
         }
 
-        const items = await this.gatherEntityRecords(pjItemsDir(project), '物品功法');
+        const items = await this.gatherEntityRecords(project, 'items');
         const loadTime = Date.now() - startTime;
         this.recordPerf(false, loadTime);
         log.debug(`[ContextManager] gatherItems via fallback | project=${project} | count=${items.length} | time=${loadTime}ms`);
@@ -2168,9 +2178,9 @@ export class ContextManager {
             tasks.push(this.gatherCharacterState(project).then(r => { characters = (r.character_state || []) as CharacterData[]; }));
         }
         if (opts.includeEntities) {
-            tasks.push(this.gatherEntityRecords(pjLocsDir(project), '地点').then(r => locations = r));
-            tasks.push(this.gatherEntityRecords(pjFactionsDir(project), '势力').then(r => factions = r));
-            tasks.push(this.gatherEntityRecords(pjItemsDir(project), '物品功法').then(r => items = r));
+            tasks.push(this.gatherEntityRecords(project, 'locations').then(r => locations = r));
+            tasks.push(this.gatherEntityRecords(project, 'factions').then(r => factions = r));
+            tasks.push(this.gatherEntityRecords(project, 'items').then(r => items = r));
         }
         if (opts.includeTimeline) {
             tasks.push(this.gatherTimeline(project).then(r => { timeline = (r.timeline || []) as TimelineEvent[]; }));
@@ -2295,9 +2305,9 @@ ${usable}`;
                 this.readRawMd(getWorldviewPath(project)),
                 readMergedVolumeOutline(this.app, project),
                 this.gatherCharacterState(project),
-                this.gatherEntityRecords(pjLocsDir(project), '地点'),
-                this.gatherEntityRecords(pjFactionsDir(project), '势力'),
-                this.gatherEntityRecords(pjItemsDir(project), '物品功法'),
+                this.gatherEntityRecords(project, 'locations'),
+                this.gatherEntityRecords(project, 'factions'),
+                this.gatherEntityRecords(project, 'items'),
             ]);
 
             const foreshadows = foreshadowData.foreshadows?.unrevealed ?? [];

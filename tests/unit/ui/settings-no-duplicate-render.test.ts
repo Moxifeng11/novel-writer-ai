@@ -9,21 +9,21 @@ function read(rel: string): string {
 }
 
 describe('规则版本：重新检查不得重复渲染模块', () => {
-    it('renderRulesSection 只在 tabContent 上创建一次 section，并委托给 mountRulesSection', () => {
-        const source = read('ui/settings-tab.ts');
-        const fnIndex = source.indexOf('private async renderRulesSection()');
+    it('RulesSection.render 只在传入容器上创建一次 section，并委托给 mountRulesSection', () => {
+        const source = read('ui/settings/general-sections.ts');
+        const fnIndex = source.indexOf('export class RulesSection');
         expect(fnIndex).toBeGreaterThan(-1);
-        const body = source.slice(fnIndex, fnIndex + 400);
+        const body = source.slice(fnIndex, fnIndex + 260);
 
         // 只创建一个 section，且立刻交给挂载函数
-        expect(body).toContain("this.tabContent.createEl('section')");
+        expect(body).toContain("container.createEl('section')");
         expect(body).toContain('this.mountRulesSection(section)');
         // 不得在 renderRulesSection 里直接建内容（那会绕过清空逻辑）
         expect(body).not.toContain("createEl('h3'");
     });
 
     it('「重新检查」只重绘本容器，不调用 renderRulesSection', () => {
-        const source = read('ui/settings-tab.ts');
+        const source = read('ui/settings/general-sections.ts');
         const refreshIndex = source.indexOf("'🔄 重新检查'");
         expect(refreshIndex).toBeGreaterThan(-1);
 
@@ -35,7 +35,7 @@ describe('规则版本：重新检查不得重复渲染模块', () => {
     });
 
     it('mountRulesSection 开头清空容器，保证幂等', () => {
-        const source = read('ui/settings-tab.ts');
+        const source = read('ui/settings/general-sections.ts');
         const fnIndex = source.indexOf('private async mountRulesSection(');
         expect(fnIndex).toBeGreaterThan(-1);
         const body = source.slice(fnIndex, fnIndex + 300);

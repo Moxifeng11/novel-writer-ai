@@ -19,7 +19,8 @@ export const SCRIPT_ONLY: CreationMode[] = ['script'];
 export const COMMAND_MODE_RULES: Record<string, CreationMode[]> = {
     [CommandIds.PLAN_BOOK]: LONG_ONLY,
     [CommandIds.VOLUME_INTRO]: LONG_ONLY,
-    [CommandIds.BATCH_CREATE]: LONG_ONLY,
+    // 批量建章/建节/建集：BatchCreateModal 对三种模式都有实现，不能只放行长篇
+    [CommandIds.BATCH_CREATE]: ['long', 'short', 'script'],
     [CommandIds.REBUILD_CHAPTERS]: LONG_ONLY,
     [CommandIds.BATCH_CHAPTERS]: LONG_ONLY,
     [CommandIds.BATCH_NOVELS]: LONG_ONLY,
@@ -28,6 +29,7 @@ export const COMMAND_MODE_RULES: Record<string, CreationMode[]> = {
     [CommandIds.WRITE_CHAPTER_AUTO]: LONG_ONLY,
     [CommandIds.AUTO_WRITER]: LONG_ONLY,
     [CommandIds.REVIEW_CHAPTER]: LONG_ONLY,
+    [CommandIds.TARGETED_REVISION]: LONG_ONLY,
     [CommandIds.QUALITY_DASHBOARD]: LONG_ONLY,
     [CommandIds.CHAPTER_SETTLEMENT]: LONG_ONLY,
     [CommandIds.CROSS_VOLUME_STATE]: LONG_ONLY,

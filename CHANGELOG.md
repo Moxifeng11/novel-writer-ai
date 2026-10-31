@@ -2,6 +2,135 @@
 
 ## v4.22.0（2026-10-31）
 
+### 🔧 并发整合：Trae 结构重构 × 本地 Batch 2（P1 十二条）
+
+与 Trae 侧的结构重构（模块下沉 engine/shared、设置页拆 `ui/settings/`、样式源 `styles-src/`、门面根级 `plugin-api.ts`）合并后的整合修复，保证两套改动不互相踩。
+
+- **写锁收口**：伏笔库揭示/新增（`engine/foreshadow-manager.ts`）与章节版本回滚（`services/chapter-version-service.ts`）统一走 `withWriteLock`，锁内重读再做读-改-写；删除「单线程无竞态」的错误注释。
+- **缓存失效键修正**：新增 `shared/paths.matchProjectFromPath`（已知项目最长前缀），`ContextManager.invalidateCacheByPath` 不再把 `长篇小说/书名` 解析成 `长篇小说`（此前失效永不命中，只能等 TTL）。
+- **跨模式一致性**：`getToolGroupsForMode` 按 `command-mode-rules` 过滤（短篇/剧本不再显示 8 个长篇专属按钮）；`BATCH_CREATE` 放开短/剧本（`BatchCreateModal` 已实现建节/建集）；`TARGETED_REVISION` 登记长篇；新增「工具目录 × 模式规则」双向一致性测试。
+- **静默失败**：写作配置解析失败与文件缺失分离，失败后首次保存先留档 `.bak`（不再用默认值覆盖用户配置）。
+- **UI 正确性**：`file-open` 只处理章节正文路径并在切章前取消在跑任务；创建项目复用 `validateProjectName`（长度/保留名/重名）+ 防重复提交；协同编辑器 IME 组合期不拦截按键；正文实体重检按「路径+内容哈希」去重（自动保存不再反复烧 AI）且支持重命名章节；监控面板 B 改用 `getRightLeaf(true)` 不再与 A 争同一 leaf；一键规划失败写 `run-error` + Notice 并恢复按钮。
+- **文档与门禁**：`docs/PLAN.md` 按新结构更新（服务层职责、`plugin-api.ts` 门面、`styles-src` 构建链、`entity-reader`/`yield` 单一入口）；修正 `docs/OPTIMIZATION-AUDIT-2026-10.md` 指向已删除 `entity-stats` 的链接、`harness-audit.md` 迁移服务路径、`ai-builder-modal` 过期注释；E2E 设置页选择器适配「每页签一个 `.nw-settings-panel`」。
+- **验证**：`vitest` 481 文件 / 5505 用例；`tsc` / `lint` / `check:styles` / `check:css` / `check:inline-styles` / `check:deps` / `check-engines` / `check:templates` / `build` / `check:release` / 真实 Electron E2E 23 passed。
+
+### ⏱️ 优化审计批次 14：D3 等待原语收口 + F3 catch 分级试点（2026-10-31）
+审计称「`setTimeout` 255 处、无统一等待原语」「`catch` 2,202 次无分级」。**先问是不是**：两条口径都不成立——排除 `node_modules` 后实测 `setTimeout` **96 处**、`catch` **1,504 次**；`shared/yield.ts#yieldToUI` 早已存在，缺的是原语复用。
+
+- **新增** `shared/yield.ts#nextFrame()`：双重 `requestAnimationFrame` 等一帧绘制完成，与 50ms 超时竞速兜底「后台窗口不触发 rAF」的历史 P0-2 事故，无 rAF 环境（jsdom 单测）退化为 `setTimeout(16)`。
+- **替换 5 处「等一帧」**：4 个 `ui/generate-*-modal.ts`（先让进度条渲染再请求模型）、`ui/full-writer/wizard-step-executors.ts`（步骤「执行中」状态先可见）。这 5 处此前各带一行完全相同的「P0-2 修复: …改用 setTimeout」注释，事故知识现固化在原语内部。
+- **`ui/views/knowledge-base-view.ts`** 批量归类循环的 `setTimeout(0)` 改 `yieldToUI()`。
+- **有意不改**（按形态判定，非遗漏）：`token-bucket-rate-limiter`（同步队列调度）、`manage-providers-modal` / `api-section`（`window.setTimeout(autosize, 0)` 同步回调）、`rename-project-modal` / `project-selector-controller`（`window.setTimeout(focus, 0)`）、`knowledge-base-view#completeRefreshTimer`（debounce 合并刷新）——改成 await 会改变调用时序语义。
+- **F3 约定落地**：`docs/DEVELOPMENT.md` 新增「异步等待原语」「catch 日志分级」两节（三要素：失败对象 / 场景 / 可重试性；三级：业务失败 `error`、可重试失败 `warn` + 重试计数、可降级失败 `warn` + 降级去向）。试点 `engine/deconstructors/foreshadow-deconstructor.ts` 两处可选增强降级点。
+- **验证**：`tsc --noEmit` 0 错误；全量 vitest **480 文件 / 5497 用例**通过（新增 `tests/unit/shared/yield.test.ts` 4 用例：`yieldToUI` 让步、无 rAF 退化、双帧等待、后台窗口 50ms 兜底回归守卫）；`npm run build` / `check:release` / `preflight` 通过。
+
+### 🗂️ 优化审计批次 13：C2 `vault.adapter` 写入收口（2026-10-31）
+审计条目称 189 处 `vault.adapter` 直读绕过索引。实测为 **141 调用点 / 136 行**，且危害只落在「用 `adapter.write` 写 vault 索引内的 `.md`」这一子集：不触发 `metadataCache` 重解析、绕过 `vault.process` 写锁，移动端（无外部文件监听）新建文件可长时间不出现在文件浏览器 / 双链。
+
+- **新增单一出口** `shared/file-system-port.ts#writeVaultText(app, path, content)`：复用既有 `ObsidianFileSystem` 的四路分流——索引内已有 `TFile` → `vault.modify`；路径是文件夹 → 抛错；配置目录 / 索引外已存在 → `adapter.write`；其余 → 补父目录后 `vault.create`。
+- **替换 9 个模块的 13 处用户可感知写入**：`full-writer-view`（2 处指南）、`story-settings-modal`（2 处指南）、`project-create-service`（2 处建项目指南）、`mode-document-modal`、`chapter-outline-tree-modal`（2 处大纲回写）、`plot-canvas-modal`、`batch-create-modal`、`batch-pipeline-runner`（叙事总览）、`template-scaffold`（模板自举 56 文件）。其中模板自举修复最直观：全新安装时模板此前走 adapter，移动端文件浏览器看不到。
+- **按证据保留 adapter 的写入点**（非遗漏）：`engine` 层 11 处拆解器知识库写入（批量后台写、读取同走 adapter 闭环，改走索引会在拆解期间引发大量 `metadataCache` 重解析与 `vault.on` 抖动）；`chapter-version-service#writeFile`（已自带 `TFile → vault.modify` 分流）；`.project` 隐藏文件、`plugin-cache` JSON、agent 会话 / 溢出数据、`vault.adapter.basePath`（这些路径 `getAbstractFileByPath` 恒为 null，`vault.create` 建不出来）。
+- **测试同步**：`template-scaffold.test.ts` 的 `makeApp` 补齐 `getAbstractFileByPath` / `createFolder` / `create` / `modify` 最小替身（原 mock 只有 `vault.adapter`，写入改走索引后 4 个用例全失败），断言零改动。
+- **验证**：`tsc --noEmit` 0 错误；全量 vitest **479 文件 / 5493 用例**通过；`check:deps --baseline` 五层 0 违规 / 0 循环（678 文件 / 3,205 import）；`npm run build`、`check:release` 通过。
+
+### 📦 优化审计批次 12：C5 构建体积压缩（2026-10-31）
+审计称「模板资源内联进 bundle 导致产物 9.34 MB」。**先问是不是**：模板 56 文件仅 79,863 字节，生成物 86,221 字节（占产物约 1.6%），`data/knowledge-vectors` 6.26 MB 是本机运行时目录（批次 9 已核实不入仓不入包）。真因是构建从未开启压缩。
+
+- **`scripts/build.js` 增 `minify: true` + `charset: 'utf8'`**：esbuild 默认 `charset: 'ascii'` 会把本项目大量中文提示词 / 模板转成 `\uXXXX`，实测 minify+ascii 5.52 MB vs minify+utf8 3.92 MB（字符数口径）。Obsidian 运行于 Electron、产物按 UTF-8 读取，保留原字符安全且更小。
+- **`main.js` 9,089,917 → 4,798,890 字节（-47.2%）**；`deconstruction-worker.js` 1,330,977 → 680,977（-48.8%）；`quality-worker.js` 227,172 → 107,635（-52.6%）。
+- **`check-release.mjs` 产物内省口径修正**：原 marker 依赖「模块路径注释」与「顶层变量名」，压缩后必然消失。改为断言排序后前 2 个模板 key 的 **JSON 字符串字面量**（压缩只改标识符，不改字符串内容）。
+- **压缩安全已核**：`createWorkerFromHandlers`（`handler.toString()` 依赖函数名）无调用点；源码无 `constructor.name` / `Function.name` 依赖；`scripts/`、`tests/` 均不读 `main.js`。`node --check main.js` 通过，产物含 `module.exports` 与版本字面量。
+
+### 🧱 优化审计批次 11：C3 样式单体拆分 + 设置页分区（2026-10-31）
+`styles.css` 单文件 16,027 行、`ui/settings-tab.ts` 5,112 行 57 个方法，任何一个样式改动都要在 45 万字节里翻找，设置页每切一个 tab 都重建整块 DOM。
+
+- **样式拆为 `styles-src/` 16 个源文件**（`00-header.css` … `15-late-fixes.css`）：按**原顺序**切片而非按功能域重组——后置文件本就是覆盖层，重排会改变层叠结果且无测试能捕获。新增 `scripts/build-styles.mjs` 按文件名顺序**纯文本拼接**（不压缩、不合并选择器），头部注明「自动生成，请勿直接编辑」；`--check` 接入 `preflight`（`check:styles`），直接改根目录 `styles.css` 会失败；`npm run build` / `dev` 前置生成，新增 `build:styles` 脚本。
+- **零视觉风险有实测证据**：16 个切片 `join('')` 与拆分前原文逐字符相等（450,911 = 450,911）；产物 452,262 字节的 +1,351 全部为自动生成头注释，`.css-baseline.json` 仅上调 `bytes`，`!important 164` / 硬编码 hex 154 / rgb-hsl 181 / 唯一类 2346 / 非前缀类 87 / 最大选择器深度 4 全部持平。
+- **设置页拆为 227 行宿主 + 8 个分区模块（共 5,125 行）**：`ui/settings/` 下 `api-section`（1,215）/ `knowledge-section`（765）/ `fingerprint-section`（373）/ `deconstruction-section`（325）/ `foreshadow-section`（280）/ `writing-sections`（737，6 个分区）/ `general-sections`（1,095，6 个分区）/ `provider-modals`（335）。`section-base.ts` 提供 `SettingsSectionHost`（app / plugin / refresh / reopen）与 `SettingsSection` 基类，分区方法体保留 `this.plugin` / `this.app` / `this.refresh()` 原写法，搬移零逻辑改写。
+- **tab DOM 缓存**：纯切换复用 `panelCache` 中的 DOM，不重建；任何设置变更走 `refresh()` 时清空**全部**缓存并重绘当前 tab（防「A 分区改设置、B 分区显示旧值」）；异步分区（知识库 / 指纹库 / 模板 / 规则版本）命中缓存不重拉数据，需点分区内刷新按钮或重开设置页（文件头已注明）。`.nw-settings-panel` 是普通 block div，`nw-settings-tab-content` 规则全为后代选择器，布局不变。
+- **测试同步**：`api-format-wiring` / `settings-no-duplicate-render` / `panel-resizer-and-motion` 3 个源码结构断言改读新文件路径（`settings-no-duplicate-render` 的两个全页扫描用例对宿主已恒真，守卫强度弱化已记入审计文档待重写）。
+- **未接线项如实保留**：`provider-modals.ts` 的 `showEditCustomProviderForm` / `showManageProvidersModal` / `showAddCustomProviderForm` 在原文件即无调用点，原样搬运未删除。
+- **验证**：`tsc --noEmit` 0 错误；全量 vitest **479 文件 / 5493 用例**通过；`check:deps --baseline` 五层 0 违规 / 0 循环（678 文件 / 3,196 import）；`npm run build` 成功（v4.22.0，模板 56，styles 16 源文件 → 16,052 行）；`check:styles` / `check:css` / `check:release` 全通过。
+
+### 🧭 优化审计批次 10：B2 实体管理弹窗嵌套复核（2026-10-31，仅注释）
+审计条目把 `unified-entity-manager-modal` 内嵌 `existing-entity-manager` 记为「职责边界靠调用方约定」。复核后确认这是正常复用：后者构造签名为 `(app, plugin, project, folderName, displayLabel)`，只操作单类别目录（改名 / 编辑全文 / 删除 / 智能猜名），被 4 个单类别生成弹窗 + unified 总览（2 处）+ unified 生成（1 处）+ `full-writer-view` 共 7 个入口复用；前者做跨类别聚合、筛选、完整性审计与原地补全。两者是「总览页 → 详情页」，合并会破坏全部调用方并使总览弹窗更臃肿。处置：只在两处文件头补职责边界注释，不改任何逻辑。验证：仅注释改动，`tsc --noEmit` 0 错误、全量 vitest **479 文件 / 5493 用例**通过、`check:deps` 五层 0 违规 / 0 循环、`npm run build` 成功。
+
+### 🔍 优化审计批次 9：G2 分发目录混放复核（2026-10-31，无代码改动）
+审计条目称 `data/knowledge-vectors` 与 `*-preferences.json` 混在「分发目录」。复核后确认前提不成立：仓库根即插件目录，`.gitignore:30` 忽略整个 `data/`（`git ls-files data` 返回空）；`.github/workflows/release.yml` 的发布 zip 仅打 `main.js manifest.json styles.css workers`，Release 资产同理。`data/` 是本机运行时数据目录（向量 / 人味样本 / 实验产物 / 偏好 / 缓存），与偏好文件混放不构成分发污染；拆分子目录会破坏既有偏好读取且无收益，故不做改动。
+
+### 💾 优化审计批次 8：E2 localStorage 键名集中化（2026-10-31）
+7 类 localStorage 键名散落在 6 个文件，`main.ts` 还硬编码两处遗留键清理，新增键容易另起前缀。
+
+- **新增 `shared/storage-keys.ts`（零依赖，任何层可引用）**：`STORAGE_KEYS`（收藏 / 侧栏折叠 / 耗时历史）、`STORAGE_KEY_PREFIXES`（确认弹窗「不再提示」/ 流程导出标记 / 向导分桶）、`LEGACY_STORAGE_KEYS`（热重载遗留键，仅清理不写入）、`projectScopedKey(prefix, project)`（空项目落 `global`）。
+- **7 处使用方改引用**：`ui/ideation-modal`、`ui/components/progress/operation-confirm-modal`、`ui/full-writer/creation-flow-state`、`ui/full-writer/wizard-results-store`、`ui/project-side-panel-view`、`shared/time-estimator`，以及 `main.ts` 两处清理改 `for (const key of LEGACY_STORAGE_KEYS)`；向导 key 的两处重复拼接收为 `projectScopedKey`。
+- **键值保持不变＝零迁移**：不改前缀，用户既有的收藏、折叠状态、向导结果、耗时历史、「不再提示」记忆继续命中。两套历史前缀（`novel-writer-*` / `nw-op-confirm:`）保留；统一到 `nw:` 需配套「读新键失败 → 读旧键 → 回填」，不在本批次。
+- **验证**：新增 `tests/unit/shared/storage-keys.test.ts` 5 用例（键值不变 / 前缀不变 / 遗留键不变 / global 兜底 / 命名空间校验）；`tsc --noEmit` 0 错误；全量 vitest **479 文件 / 5493 用例**通过；`npm run check:deps -- --baseline .arch-baseline.json` 退出 0（五层运行时 0 / 循环 0 / 无类型耦合提示）；`npm run build` 成功。
+
+### 🌐 优化审计批次 7：E3 网络出口统一 + A5 文档校准 + E1/F2 复核（2026-10-31）
+canon 检索与趋势检索此前直连 `requestUrl`，既没有超时也没有重试：搜索服务端卡住时整个检索流程会无限等待。
+
+- **新增 `shared/http-request.ts`**：`requestWithPolicy(execute, params, policy)` 提供单次尝试超时（默认 30s）、超时专用错误 `HttpRequestTimeoutError`（带 url 与超时预算）、可选 `retries` / `retryDelayMs` / `retryOn`；默认只对 5xx / 429 / 网络类错误重试。**边界**：Obsidian `requestUrl` 不支持 `AbortSignal`，超时语义是「拒绝等待并丢弃迟到结果」，无法中断请求本身。
+- **两处搜索服务接入（9 个调用点）**：`services/canon-research-service.ts` 的 Bing / Brave / Serper / Tavily 与网页抓取、`engine/harness/trend-research-service.ts` 的四个搜索后端统一走 `requestWithPolicy`；搜索用 `SEARCH_REQUEST_POLICY`（15s + 重试 1 次，超时不重试），网页抓取 15s 不重试（避免对目标站点加压）。`api-connectivity-service` / `model-discovery` 已有自建 `Promise.race` 超时与 timeout 状态分类，本轮不动。
+- **A5 文档校准**：`ARCHITECTURE.md` 的 UI 层职责、访问边界表、「违反规则的标志」改为「目标边界 + 现状偏差」双口径，写明 UI 层 `app.vault` 直连约 683 处属未收口技术债、Engine 层仍直接 import `obsidian`，且门禁只约束层间内部 import，避免按文档误判架构现状。
+- **E1 / F2 复核为「原结论不成立」**：E1 的 Worker 能力探测早已在 `WorkerManager#detectWorkerSupport` 落地（`typeof Worker` + 内联实建探活 + 主线程 `fallbackToMain` + 会话内一次提示）；F2 的批量分支在 `ai-batch-entity-generator` 内已做「逐条校验 → 批量/逐条补全 → 复检 → 出口过滤」，不完整实体不落盘。两条审计结论基于旧版本，已在审计文档更正并附证据。
+- **验证**：新增 `tests/unit/shared/http-request.test.ts` 4 用例（正常透传 / 超时不重试 / 5xx 重试一次成功 / 401 不重试）；`tsc --noEmit` 0 错误；全量 vitest **478 文件 / 5488 用例**通过；`npm run check:deps -- --baseline .arch-baseline.json` 退出 0（五层运行时 0 / 循环 0 / 无类型耦合提示）；`npm run build` 成功。
+
+### 🧩 优化审计批次 6：A1 注册表类型化取用（EngineServiceMap）（2026-10-31）
+`EngineRegistry` 此前只有 `get<T>(name: string)`：字符串键 + 手写泛型，任一服务的类型变化都不会在编译期报错。本批次补上编译期映射，旧调用零改动。
+
+- **`EngineServiceMap` / `EngineToken`**：在 `engine/engine-registry.ts` 内建 35 个 token 的实例类型映射（复用文件已有的运行时 import，零新增耦合）；`TEMPLATE_MANAGER`（组合根注入、注册值为 `unknown`）与 `CO_WRITING_SESSION_STORE`（UI 层注入）不收录，继续走宽泛重载。
+- **重载而非替换**：`get` / `getOrNull` / `register` / `registerLazy` 增加 typed-token 重载在前、`<T>(string)` 兼容重载在后；84 处既有显式泛型调用一行不改即编译通过，`get<ChapterVersionPort>` 这类跨层端口仍走兼容重载。
+- **取用点迁移**：`main.ts`（17 处）、`settings-tab.ts`、`mini-settings-modal.ts`、`step-runner.ts`、`ai-engine.ts`、`co-writer-engine.ts` 等文件的冗余泛型改为推导；`getOrNull<any>(UPDATE_CHECKER)` 10 处恢复为 `UpdateChecker | null`。保留 7 处显式泛型：`TemplateManager` ×2（不在映射内）、`ChapterVersionPort` ×1（端口）、`getOrNull<any>(CACHE_MANAGER)` ×4（`PluginCacheManager.getUpdateLastResult()` 仍返回 `unknown`，属缓存模块既有类型精度问题，不在本批次范围）。
+- **收益**：服务名与实例类型绑定，`get` 取错类型、注册错实例在编译期报错；调用点不再需要手写泛型。
+- **验证**：`tsc --noEmit` 0 错误；全量 vitest **477 文件 / 5484 用例**通过；`npm run check:deps -- --baseline .arch-baseline.json` 退出 0（五层运行时 0 / 循环 0 / 无类型耦合提示）；`npm run build` 成功。
+
+### 🧩 优化审计批次 5：类型耦合提示项 10 → 0（2026-10-31）
+批次 3 遗留的 10 条 `import type` 跨层类型耦合（`check-dependencies.mjs` 的 `ℹ️` 提示项，不计入门禁）全部消除，守卫输出不再有该行。
+
+- **纯类型下沉 `shared/`**：`APIResponse` → 新增 `shared/api-types.ts`（原先定义在 `engine/ai-engine.ts`，`shared/api-response-utils.ts` 只能反向 `import type`）；`EmbeddingAvailability` / `ProviderInfo` / `EmbeddingOptions` / `EmbeddingProvider` → 新增 `shared/embedding-provider.ts`（原 `engine/embedding/embedding-provider.ts`）。两处 engine 侧均保留再导出（`export type { APIResponse } from '../shared/api-types'` / 纯 re-export 文件），engine 内部 12 + 37 处引用零改动。
+- **改导入源（零新增文件）**：`services/knowledge-base-manager.ts` 的 `BreakdownDimension` 本就定义在 `shared/deconstruction-settings.ts`（`engine/deconstruction-scheduler.ts` 只是再导出），直接从 shared 取；`services/genre-classifier.ts` 同理改取 `shared/embedding-provider`。
+- **缓存实现真正下沉**：`engine/cache/file-cache.ts`、`engine/cache/multi-layer-cache.ts` → `shared/file-cache.ts`、`shared/multi-layer-cache.ts`（两者只依赖 `lru-cache` / `logger` / `file-system-port`，零 engine 依赖）；`engine/cache/index.ts` 改为再导出，`engine/cache/` 现只剩 `preload-manager.ts`；3 个单测（`multi-layer-cache` / `file-cache` / `context/incremental-updater`）路径同步。
+- **门面外移根级**：`shared/plugin-api.ts` → 根级 `plugin-api.ts`（与 `main.ts` 同性质的外部 API 门面，不属于任何分层），一次性消除对 `engine/ai-engine` / `engine/context-manager` / `engine/engine-registry` / `ui/workspace-manager` 的 4 条提示；6 处引用改 `../plugin-api` / `../../plugin-api`。
+- **端口接口**：新增 `shared/chapter-version-port.ts`（`ChapterVersionPort#saveVersion` 签名），`core/command-registry.ts` 的 `get<ChapterVersionService>` 改为 `get<ChapterVersionPort>`（沿用 `commandUiPort` 先例，core 不再持有 services 具体类）。
+- **结果**：类型耦合提示 **10 → 0**；运行时分层违规 0 / 运行时循环 0 保持。
+- **验证**：`tsc --noEmit` 0 错误；全量 vitest **477 文件 / 5484 用例**通过；`npm run check:deps -- --baseline .arch-baseline.json` 退出 0（五层运行时 0 / 循环 0 / **类型耦合 0 条**）；`npm run build` 成功。
+
+### 🔧 优化审计 P0 落地（批次 1 首批三项）：章节排序 / 丢弃提示 / 实体读取归一（2026-10-31）
+依据 `docs/OPTIMIZATION-AUDIT-2026-10.md` 批次 1 首批清单，三项全部落地。
+
+- **章节排序下沉到唯一出口**：`ui/project-utils.ts#getChaptersForProject` 原先按「正文扫描序 + 骨架目录遍历序」拼接返回，各 UI 各自 `sortChaptersByNumber`；现出口统一升序，调用方重复排序变为 no-op。新增回归用例「乱序种子 → 出口即升序」。
+- **知识注入整段丢弃不再静默**：`engine/step-runner.ts` 原先只处理 `droppedSections/trimmedSections/truncated`，仅丢增强尾部（`droppedExtra=true` 且主体未截断）时用户无任何提示；现补 `step-warning` 事件 + `NOTICE_WARNING` 提示，说明可在设置调高「单步输入 token 上限」。
+- **实体读取唯一入口**：新增 `shared/entity-reader.ts`（`listEntityFiles` / `countProjectEntities` / `entityDir`），统一「目录前缀 + 仅 `.md` + 排除「模板」+ 路径升序」；`unified-entity-manager-modal`、`context-manager.gatherEntityRecords`、`entity-audit`、`ai-builder-modal` 全部改调。旧 `shared/entity-stats.ts` 删除。顺带修掉**统计把 `*模板.md` 算作实体**导致「生成器显示 5 人、管理器显示 4 人」的口径分歧。
+- **验证**：`tsc --noEmit` 0 错误；全量 vitest 475 文件 / 5471 用例通过（+9：章节排序 1、实体读取 8）；`npm run build` 成功。
+
+### ⚡ 优化审计批次 2：项目选择页多项目章节一次扫描（2026-10-31）
+- **新增 `ui/project-utils.ts#scanProjectChapters`**：项目选择页一次渲染要对 N 个项目取章节，旧实现每项目各调一次 `getChaptersForProject`（各自遍历全库文件 + 全库目录 = 2N 轮）；现改为**一次遍历 + 按 `项目/03-大纲与章节/` 前缀分桶**，轮次与项目数无关。
+- **章节口径不分叉**：抽出 `buildChapterEntries` 作为唯一构建实现，`getChaptersForProject` 与批量扫描都调它，正文 ∪ 骨架、去重、排序语义完全一致。
+- **渲染作用域复用**：`project-selector-controller` 在单次 `render()` 内复用 meta 与单元列表（原先每项目 `getProjectMeta` 读 2 次、选中项目的章节被卡片/详情/快捷工具各算 1 次）。缓存随 render 丢弃，不引入长驻 vault 事件索引，避免外部改动导致的陈旧数据。
+- **验证**：新增 `tests/unit/ui/project-scan.test.ts`（8 项目 / 400 章：批量与逐项目逐项一致；`getFiles` 调用 2 次 vs 旧路径 16 次；前缀相近项目隔离）；`tsc --noEmit` 0 错误；全量 vitest 476 文件 / 5477 用例通过；`npm run build` 成功。
+
+### 🧭 优化审计批次 3（第一步）：架构守卫口径修正 + `ENGINE_NAMES` 下沉（2026-10-31）
+- **守卫只统计运行时依赖**：`scripts/check-dependencies.mjs` 现在把 `import type X` / `import { type A }` 视为类型依赖（不计入分层违规、不参与成环），解析前先剥离注释（文档示例里的 import 会被误判成真实依赖，曾产生 `write-lock.ts` / `entity-models.ts` 两个假自环）。类型耦合以 `ℹ️` 提示单独列出，不参与棘轮。
+  - 口径结论：审计阶段的「53 个循环」实为 **9 个运行时循环**；「64 条分层违规」实为 **55 条运行时 + 9 条类型**。`shared/plugin-api.ts` 因此被证伪为「最大循环中心」——它的 import 全是 `import type`，运行时没有环。
+- **`ENGINE_NAMES` 下沉到 `shared/engine-names.ts`**（常量零 import），`engine/engine-registry.ts` 改为引入并再导出。`core/command-registry`、`engine/ai-engine`、`engine/ai-character-generator`、`engine/ai-entity-generator`、`engine/ai-worldview-generator`、`engine/co-writer-engine`、`engine/step-runner`、`engine/step-modal-controller` 与 15 个 ui 视图/弹窗改从 `shared/engine-names` 取常量，切断对 engine-registry 的运行时依赖 23 处。
+- **仅作类型使用的 import 改为 `import type`**：`engine/review-agent.ts`、`engine/emotion-planner.ts`（`AIEngine`）、`shared/api-response-utils.ts`（`APIResponse`）。
+- **零依赖模块下沉 `shared/`**（三处全部 grep 确认无 import，纯移动 + 改路径）：`engine/webnovel-knowledge-base.ts`（2696 行）→ `shared/webnovel-knowledge-base.ts`（12 处引用）、`engine/repository/lru-cache.ts` → `shared/lru-cache.ts`（8 处引用，含 `engine/repository/index.ts` 的再导出；单测同步移到 `tests/unit/shared/`）、`ui/full-writer/step-modal-styles.ts` → `shared/step-modal-styles.ts`（消除 `engine/step-modal-controller → ui/` 反向依赖 1 条）。
+- **Engine 层 UI 能力改组合根注入**：`engine/engine-registry.ts` 移除 `ui/password-modal`、`ui/template-manager` 两个 import；`InitializeOptions` 新增 `passwordPort`（`requestPassword` / `requestNewPassword`）与 `createTemplateManager` 工厂，由 `main.ts` 创建并注入。engine 层运行时分层违规归零（ui / engine / shared 三层均为 0）。
+- **services 编排模块上移 `engine/`**（第二步，消除分层倒置）：9 个「编排 engine 原语」的模块从 services 迁到 engine —— `deconstruction-scheduler`、`deconstruction-worker-manager`、`heavy-task-worker-manager`、`scheduler-segment-integration`、`segment-aware-breakdown`、`foreshadow-manager`、`template-service`、`project-migration-service`、`batch-import-manager`（最后一个自身零 engine 引用，但运行时会 `import` scheduler，一并上移以免残留 services→engine 运行时边）。它们依赖的都是 engine 原语（拆解器 / `text-segmenter` / `quality-scorer` / `vector-enhancer` / `llm-enhancer` / `context-manager`），放在 services 属分层倒置。
+- **零依赖配置下沉 `shared/`**（供 core 生成 `DEFAULT_SETTINGS`，切断 core→engine）：新增 `shared/deconstruction-settings.ts`（维度类型 + 引擎默认值）、`shared/foreshadow-config.ts`（伏笔类型 + 默认配置）；`services/prompt-manager-types.ts` → `shared/prompt-manager-types.ts`（纯类型 + 默认配置）、`engine/internal-registry.ts` → `shared/internal-registry.ts`（仅依赖 logger）。原模块保留再导出以兼容既有 ui / main 引用。`services/example-project-service.ts` → `core/example-project-service.ts`（只依赖 Obsidian `App` + 模板脚手架，命令注册表同层调用）。
+- **仅作类型使用改 `import type`**：`core/command-registry.ts` 的 `ChapterVersionService` 只在泛型参数位置出现，改为 `import type` 后不再计入运行时分层。
+- **结果**：运行时循环 **9 → 1**（仅剩 `unified-entity-manager-modal ↔ unified-entity-generate-modal` 两个兄弟模态互开，无模块级副作用，作为已知债务留在基线）；运行时分层违规 **55 → 0**（services 41 + core 6 全部消除，UI / Engine / Services / Shared / Core 五层归零，仅余 10 条 `import type` 类型耦合作为提示项）；`.arch-baseline.json` 已收紧（循环移除 52 条、分层 47 条全部移除）。
+- **验证**：`tsc --noEmit` 0 错误；`npm run check:deps -- --baseline .arch-baseline.json` 退出 0（**分层 0 / 循环 1**）；全量 vitest 476 文件 / 5477 用例通过；`npm run build` 成功。
+
+### 🧱 优化审计批次 4：实体生成器配置驱动 + 模板单一来源 + 入口收敛 + 断环（2026-10-31）
+- **`engine/ai-entity-generator.ts` 收敛为配置驱动**：势力 / 地点 / 物品功法三个近 90 行的重复方法收为「`EntityKindSpec` 配置表 + 一个 `generateByKind` 实现」，三个 public 方法签名不变；prompt 文本按字符级保持原样，由新增 `tests/unit/engine/entity-generator-prompt-parity.test.ts`（7 用例）钉住必填项 / 示例标题 / 角色称谓 / user prompt 文本 / `callAI` 参数透传。
+- **新增 `shared/entity-templates.ts`（模板唯一来源，纯字符串零 import）**：`buildEntityTemplateBlock('faction' | 'location' | 'item')` 返回 `{ frontmatter, body }`；单条生成与批量生成共用，消除此前两份模板分叉（Batch 的势力 / 地点缺 `entity_status` / `entity_created_at` 等元字段、地点 frontmatter 字段顺序不同）。物品功法保留 `itemTag` 参数（批量可切「功法」扁平标签）与 `nw/实体/物品` 层级标签双写。
+- **可见变化**：批量入口生成的势力 / 地点 frontmatter 与单条入口一致，补上 `entity_status` / `entity_created_at` / `entity_last_changed_at` / `entity_last_changed_reason` 四个元字段（既有数据不受影响，新生成实体更完整）。
+- **最后 1 条运行时循环消除**：`ui/unified-entity-generate-modal` 的「📚 打开实体管理」改走组合根 `plugin.openEntityManagerModal(project)`（`main.ts` 新增该方法），不再 import `unified-entity-manager-modal`；兄弟模态变为单向依赖（manager → generate）。运行时循环 **1 → 0**，`.arch-baseline.json` 的循环项已清空。
+- **产品侧双入口收敛（按「保留统一实体生成」决策）**：`ui/ai-builder-modal.ts` 移除势力 / 地点 / 物品功法三类 Tab，只保留世界观与人物创作入口；仪表盘底部新增「🏰 打开统一实体生成器」跳转，实体生成统一由 `ui/unified-entity-generate-modal.ts` 承接（四类实体、名称输入、批量数量、设定库、`ensureEntityIntegrity` 复检均在其内）。入口不再分叉，同一实体不会再从两条路径生成出不同结构。
+- **验证**：`tsc --noEmit` 0 错误；定向 8 用例通过；全量 vitest **477 文件 / 5484 用例**通过（+7）；`npm run check:deps -- --baseline .arch-baseline.json` 退出 0（**分层 0 / 循环 0**，循环基线已清空）；`npm run build` 成功。
+
+
 ### 🛡️ 全插件排查 Batch 1：六条 P0 数据安全修复（2026-10-31）
 首次全插件系统排查（三路只读审计：数据持久化 / UI 事件 / 工程质量），报告见 `docs/audits/v4.27-full-plugin-audit.md`。Batch 1 修掉 6 条 P0。
 

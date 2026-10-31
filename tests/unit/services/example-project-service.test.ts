@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import {
     EXAMPLE_PROJECT_NAME,
     importExampleProject,
-} from '../../../services/example-project-service';
+} from '../../../core/example-project-service';
 
 class FakeAdapter {
     files = new Map<string, string>();

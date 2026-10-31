@@ -48,3 +48,26 @@ describe('按项目类型切换快捷工具目录', () => {
         expect(IDS(SCRIPT_TOOL_GROUPS)).not.toContain('novel-writer-create-project');
     });
 });
+
+describe('快捷工具与模式规则一致性（P1-7/8）', () => {
+    it('短篇/剧本渲染出的按钮全部允许在当前模式执行', async () => {
+        const { isCommandAllowedInMode } = await import('../../../shared/command-mode-rules');
+        for (const mode of ['short', 'script'] as const) {
+            const ids = IDS(getToolGroupsForMode(mode));
+            const blocked = ids.filter((id) => isCommandAllowedInMode(id, mode) === false);
+            expect(blocked).toEqual([]);
+        }
+    });
+
+    it('批量建章在短篇/剧本可用（BatchCreateModal 已实现建节/建集）', async () => {
+        const { isCommandAllowedInMode } = await import('../../../shared/command-mode-rules');
+        expect(isCommandAllowedInMode('novel-writer-batch-create', 'short')).not.toBe(false);
+        expect(isCommandAllowedInMode('novel-writer-batch-create', 'script')).not.toBe(false);
+    });
+
+    it('定向修订登记为长篇专属', async () => {
+        const { isCommandAllowedInMode } = await import('../../../shared/command-mode-rules');
+        expect(isCommandAllowedInMode('novel-writer-targeted-revision', 'long')).toBe(true);
+        expect(isCommandAllowedInMode('novel-writer-targeted-revision', 'short')).toBe(false);
+    });
+});

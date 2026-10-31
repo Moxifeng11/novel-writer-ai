@@ -1,14 +1,15 @@
 import { App, TFile, Vault } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { getNextRowNum, hasTableSeparator, appendAfterSeparator, moveForeshadowToRevealed, mkdirp, showSuccess, showError } from '../utils/helpers';
-import { detectProjects } from '../engine/context-manager';
-import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { detectProjects } from './context-manager';
+import { CHAPTER_FILE_TYPES } from './chapter-utils';
 import { getInfoDebtMax, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_REVEAL_OVER_10, FORCED_REVEAL_OVER_5, FORCED_REVEAL_WINDOW_FORWARD, FORCED_REVEAL_WINDOW_BACKWARD, FORESHADOW_APPROACHING_CHAPTERS, NOTICE_ERROR, NOTICE_SUCCESS } from '../shared/thresholds';
 import { pjForeshadowDB, pjForeshadowTracker, pjTimelineDir, pjInfoDebtBoard, pjControlDir, pjCharsDir, isInCharsDir } from '../shared/paths';
 import type { Notifier } from '../shared/types';
+import { withWriteLock } from '../shared/write-lock';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { VectorEnhancer } from '../engine/vector-enhancer';
+import { VectorEnhancer } from './vector-enhancer';
 import { createLogger } from '../shared/logger';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 
@@ -261,29 +262,31 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
 
     /**
      * 揭示伏笔：将伏笔库中指定伏笔的状态改为"已揭示"
-     * v3.4.8 线程安全评估: Obsidian 单线程运行环境 + 本类单例 → 无竞态风险。
-     * 无需接入 withWriteLock。若未来引入 Web Worker 或并行写入请重新评估。
+     * v4.27 修订：单线程不等于无竞态——多个入口（结算/分析报告/协同）在 await 处交错
+     * 会对同一文件做读-改-写。本方法已接入 withWriteLock。
      */
     async revealForeshadows(project: string, foreshadowNames: string[], chapterName: string): Promise<void> {
         try {
             const fp = pjForeshadowDB(project);
             const ff = this.getVaultMeta().getAbstractFileByPath(fp);
-            
+
             if (!(ff instanceof TFile)) return;
-            
-            let content = await this.getFS().read(fp);
+
+            // P1-1（v4.27）：整段读-改-写进锁，避免与结算/分析报告互相覆盖
             let changed = false;
-            
-            for (const name of foreshadowNames) {
-                const newContent = this.moveForeshadowToRevealed(content, name, chapterName);
-                if (newContent !== content) {
-                    content = newContent;
-                    changed = true;
+            await withWriteLock(fp, async () => {
+                let content = await this.getFS().read(fp);
+                for (const name of foreshadowNames) {
+                    const newContent = this.moveForeshadowToRevealed(content, name, chapterName);
+                    if (newContent !== content) {
+                        content = newContent;
+                        changed = true;
+                    }
                 }
-            }
-            
+                if (changed) await this.getFS().write(fp, content);
+            });
+
             if (changed) {
-                await this.getFS().write(fp, content);
                 this.notifier.showNotice(`✅ 已揭示 ${foreshadowNames.length} 个伏笔`, NOTICE_SUCCESS);
                 await this.refreshInfoDebt();
             }
@@ -307,12 +310,21 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
 
             if (ff && hasTableSeparator(content)) {
                 content = appendAfterSeparator(content, newRow);
-                await this.getFS().write(fp, content);
+                // P1-1：锁内重读后再追加，避免 await 期间伏笔库被结算改动后整篇覆盖
+                await withWriteLock(fp, async () => {
+                    const fresh = await this.getFS().read(fp);
+                    const next = hasTableSeparator(fresh)
+                        ? appendAfterSeparator(fresh, newRow)
+                        : fresh;
+                    await this.getFS().write(fp, next);
+                    content = next;
+                });
             } else {
                 await mkdirp(this.app, pjTimelineDir(project));
                 content = `# 伏笔库\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 当前状态 |\n|---|---------|---------|---------|---------|---------|\n${newRow}\n`;
-                if (ff) await this.getFS().write(fp, content);
-                else await this.getFS().write(fp, content);
+                await withWriteLock(fp, async () => {
+                    await this.getFS().write(fp, content);
+                });
             }
             
             await this.refreshInfoDebt();

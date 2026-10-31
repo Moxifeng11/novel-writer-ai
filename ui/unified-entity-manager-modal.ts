@@ -24,6 +24,15 @@ import {
     type EntityCategory as ModelCategory,
 } from '../shared/entity-models';
 import { ENTITY_FIELD_MAPPINGS } from '../shared/entity-field-mappings';
+import { listEntityFiles, type EntityKind } from '../shared/entity-reader';
+
+/** 实体管理器分类 → 实体读取器目录类别 */
+const KIND_BY_CATEGORY: Record<ModelCategory, EntityKind> = {
+    character: 'characters',
+    faction: 'factions',
+    location: 'locations',
+    item: 'items',
+};
 
 interface EntityItem {
     file: TFile;
@@ -32,6 +41,14 @@ interface EntityItem {
     model: AnyEntityDomainModel | null;
 }
 
+/**
+ * 跨类别实体总览：按 `ENTITY_CATEGORIES` 聚合四类实体，提供筛选、
+ * 完整性审计 / 原地补全，以及「管理文件 / 编辑实体」跳转。
+ *
+ * 跳转目标 `ExistingEntityManagerModal` 负责**单类别**文件操作（改名 /
+ * 编辑全文 / 删除 / 智能猜名），按 `subdir + label` 被 7 个入口复用；
+ * 本弹窗不做文件级操作，两者职责分离，不要合并。
+ */
 export class UnifiedEntityManagerModal extends Modal {
     private plugin: NovelWriterPlugin;
     private project: string;
@@ -472,14 +489,8 @@ export class UnifiedEntityManagerModal extends Modal {
     }
 
     private async _loadEntities(): Promise<void> {
-        const subdir = this.subdirMap[this.activeCategory];
-        const dirPath = `${this.project}/${subdir}`;
-        const files = this.app.vault.getFiles().filter(
-            (f) =>
-                f.path.startsWith(dirPath + '/') &&
-                f.name.endsWith('.md') &&
-                !f.name.includes('模板'),
-        );
+        // P0-3：列表来源统一到 entity-reader（排除模板 + 路径升序），与统计/上下文口径一致
+        const files = listEntityFiles(this.app, this.project, KIND_BY_CATEGORY[this.activeCategory]);
 
         this.entities = [];
         this.allTags = new Set();
@@ -553,14 +564,7 @@ export class UnifiedEntityManagerModal extends Modal {
     }
 
     private _getCountForCategory(cat: ModelCategory): number {
-        const subdir = this.subdirMap[cat];
-        const dirPath = `${this.project}/${subdir}`;
-        return this.app.vault.getFiles().filter(
-            (f) =>
-                f.path.startsWith(dirPath + '/') &&
-                f.name.endsWith('.md') &&
-                !f.name.includes('模板'),
-        ).length;
+        return listEntityFiles(this.app, this.project, KIND_BY_CATEGORY[cat]).length;
     }
 
     private _applyFilters(): void {

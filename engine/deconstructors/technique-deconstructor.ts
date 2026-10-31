@@ -8,7 +8,7 @@
 
 import { kbBookWritingTechniquesFile } from '../../shared/paths';
 import { VectorEnhancer } from '../vector-enhancer';
-import { WebnovelKnowledgeBase, TechniqueDef, GenreConfig } from '../webnovel-knowledge-base';
+import { WebnovelKnowledgeBase, TechniqueDef, GenreConfig } from '../../shared/webnovel-knowledge-base';
 import { GenreDetector, GenreConfigRegistry } from '../genre';
 import type { GenreConfig as FrameworkGenreConfig } from '../genre';
 import { yieldToUI } from '../../shared/yield';

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DeconstructionScheduler } from '../../../services/deconstruction-scheduler';
+import { DeconstructionScheduler } from '../../../engine/deconstruction-scheduler';
 
 function createKnowledgeBaseManager(book: { id: string; name: string } | null = { id: 'book-1', name: '测试书籍' }) {
     return {

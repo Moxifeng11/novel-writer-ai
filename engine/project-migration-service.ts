@@ -4,7 +4,7 @@
  * Dry-run by default. A real move uses Obsidian fileManager so links update.
  */
 import { Notice, TFolder } from 'obsidian';
-import { detectProjects } from '../engine/context-manager';
+import { detectProjects } from './context-manager';
 import { readProjectMeta } from '../shared/paths';
 import { parseCreationModeMeta } from '../shared/creation-mode';
 import {

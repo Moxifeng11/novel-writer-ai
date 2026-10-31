@@ -1,10 +1,11 @@
 import { App, Modal, Notice, TFolder, TFile } from 'obsidian';
 import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
-import { DeconstructionScheduler, type BreakdownDimension } from '../services/deconstruction-scheduler';
+import { DeconstructionScheduler, type BreakdownDimension } from '../engine/deconstruction-scheduler';
 import { KnowledgeTagManager } from '../engine/knowledge-tags';
-import { BatchImportManager, type ImportBookPreview, type ImportHistoryItem, type ImportBatchSettings, type ImportPreset, type BatchImportProgress, type ImportTask } from '../services/batch-import-manager';
+import { BatchImportManager, type ImportBookPreview, type ImportHistoryItem, type ImportBatchSettings, type ImportPreset, type BatchImportProgress, type ImportTask } from '../engine/batch-import-manager';
 import { type BookRecognitionResult } from '../services/chapter-recognizer';
-import { ENGINE_NAMES, type EngineRegistry } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
+import type { EngineRegistry } from '../engine/engine-registry';
 import { createLogger } from '../shared/logger';
 
 
@@ -99,7 +100,7 @@ export class BatchImportModal extends Modal {
         // 优先使用调用方传入的实例；否则从 EngineRegistry 获取共享实例
         // 若二者均不可用，抛出错误以强制调用方提供其一（避免多实例状态不同步）
         const manager = options.batchImportManager
-            ?? options.engineRegistry?.get<BatchImportManager>(ENGINE_NAMES.BATCH_IMPORT_MANAGER);
+            ?? options.engineRegistry?.get(ENGINE_NAMES.BATCH_IMPORT_MANAGER);
         if (!manager) {
             throw new Error('[BatchImportModal] 必须提供 batchImportManager 或 engineRegistry 之一');
         }

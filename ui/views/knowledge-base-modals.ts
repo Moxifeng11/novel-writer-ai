@@ -1,6 +1,6 @@
 import { Modal, App, Notice, Setting, TFile } from 'obsidian';
 import { KnowledgeBaseManager, type BookBasicInfo } from '../../services/knowledge-base-manager';
-import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '../../engine/webnovel-knowledge-base';
+import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '../../shared/webnovel-knowledge-base';
 import { kbBookDir } from '../../shared/paths';
 import { createLogger } from '../../shared/logger';
 import { OperationConfirmModal } from '../components/progress';

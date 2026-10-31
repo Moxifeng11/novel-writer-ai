@@ -7,7 +7,7 @@
 import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { GatheredContext, CharacterData } from '../../engine/context-manager';
-import { getForeshadowWarnings } from '../../services/foreshadow-manager';
+import { getForeshadowWarnings } from '../../engine/foreshadow-manager';
 import { RulesService } from '../../services/rules-service';
 import { filterForeshadowsByChapter, getInvolvedEntities } from '../../engine/chapter-context-builder';
 import { scoreAndFilterEntitiesByType, ScoredEntity } from '../../engine/entity-scorer';

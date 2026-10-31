@@ -19,8 +19,12 @@ import {
 import { pjFanficResearchDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { GITHUB_REPO_URL } from '../shared/github-repo';
+import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '../shared/http-request';
 
 const log = createLogger('CanonResearch');
+
+/** 网页抓取统一策略：15s 超时，不重试（避免对目标站点加压） */
+const FETCH_REQUEST_POLICY = { timeoutMs: 15000 };
 
 export type CanonSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily';
 
@@ -236,11 +240,11 @@ export class CanonResearchService {
 
     private async searchBing(query: string, config: CanonResearchConfig): Promise<CanonSourceInput[]> {
         const url = `https://api.bing.microsoft.com/v7.0/search?q=${encodeURIComponent(query)}&count=8&mkt=zh-CN`;
-        const response = await requestUrl({
+        const response = await requestWithPolicy(requestUrl, {
             url,
             method: 'GET',
             headers: { 'Ocp-Apim-Subscription-Key': config.apiKey || '' },
-        });
+        }, SEARCH_REQUEST_POLICY);
         const data = response.json as { webPages?: { value?: Array<{ name?: string; url?: string; snippet?: string }> } };
         return (data.webPages?.value || []).map(item => ({
             title: item.name || '',
@@ -251,11 +255,11 @@ export class CanonResearchService {
 
     private async searchBrave(query: string, config: CanonResearchConfig): Promise<CanonSourceInput[]> {
         const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=8`;
-        const response = await requestUrl({
+        const response = await requestWithPolicy(requestUrl, {
             url,
             method: 'GET',
             headers: { 'X-Subscription-Token': config.apiKey || '' },
-        });
+        }, SEARCH_REQUEST_POLICY);
         const data = response.json as { web?: { results?: Array<{ title?: string; url?: string; description?: string }> } };
         return (data.web?.results || []).map(item => ({
             title: item.title || '',
@@ -265,7 +269,7 @@ export class CanonResearchService {
     }
 
     private async searchSerper(query: string, config: CanonResearchConfig): Promise<CanonSourceInput[]> {
-        const response = await requestUrl({
+        const response = await requestWithPolicy(requestUrl, {
             url: 'https://google.serper.dev/search',
             method: 'POST',
             headers: {
@@ -273,7 +277,7 @@ export class CanonResearchService {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ q: query, num: 8, gl: 'cn', hl: 'zh-cn' }),
-        });
+        }, SEARCH_REQUEST_POLICY);
         const data = response.json as { organic?: Array<{ title?: string; link?: string; snippet?: string }> };
         return (data.organic || []).map(item => ({
             title: item.title || '',
@@ -283,7 +287,7 @@ export class CanonResearchService {
     }
 
     private async searchTavily(query: string, config: CanonResearchConfig): Promise<CanonSourceInput[]> {
-        const response = await requestUrl({
+        const response = await requestWithPolicy(requestUrl, {
             url: 'https://api.tavily.com/search',
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -294,7 +298,7 @@ export class CanonResearchService {
                 search_depth: 'basic',
                 include_raw_content: false,
             }),
-        });
+        }, SEARCH_REQUEST_POLICY);
         const data = response.json as { results?: Array<{ title?: string; url?: string; content?: string }> };
         return (data.results || []).map(item => ({
             title: item.title || '',
@@ -311,17 +315,14 @@ export class CanonResearchService {
         if (isPrivateHost(parsed.hostname)) {
             throw new Error('不允许抓取本机/内网地址');
         }
-        const response = await Promise.race([
-            requestUrl({
-                url,
-                method: 'GET',
-                headers: {
-                    'User-Agent': `Mozilla/5.0 (compatible; NovelWriterAI/4.18; +${GITHUB_REPO_URL})`,
-                    'Accept': 'text/html,application/xhtml+xml,text/plain',
-                },
-            }),
-            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('抓取超时')), 15000)),
-        ]);
+        const response = await requestWithPolicy(requestUrl, {
+            url,
+            method: 'GET',
+            headers: {
+                'User-Agent': `Mozilla/5.0 (compatible; NovelWriterAI/4.18; +${GITHUB_REPO_URL})`,
+                'Accept': 'text/html,application/xhtml+xml,text/plain',
+            },
+        }, FETCH_REQUEST_POLICY);
         const text = String(response.text || '');
         const title = text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() || '';
         return {

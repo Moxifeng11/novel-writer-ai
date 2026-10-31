@@ -5,7 +5,7 @@ import { describeSecretForInput } from '../shared/secret-display';
 import { renderAppearanceSettings } from './appearance-settings';
 import { ManageProvidersModal } from './manage-providers-modal';
 import { TemplateManager } from './template-manager';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { getOllamaModelsWithFallback } from '../engine/co-writer-engine';
 import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
 import { FingerprintExtractor } from '../engine/fingerprint-extractor';
@@ -15,7 +15,7 @@ import { FingerprintDetailModal } from './fingerprint-detail-modal';
 import { renderFingerprintList } from './fingerprint-utils';
 import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
 import { KnowledgeTagManager } from '../engine/knowledge-tags';
-import { DeconstructionScheduler } from '../services/deconstruction-scheduler';
+import { DeconstructionScheduler } from '../engine/deconstruction-scheduler';
 import { performanceMonitor } from '../services/performance-monitor';
 import { VectorEnhancer } from '../engine/vector-enhancer';
 import { UpdateChecker } from '../services/update-checker';
@@ -2132,7 +2132,7 @@ export class MiniSettingsModal extends Modal {
 
         let cacheStats: { hitRate: number; totalEntries: number; totalSize: number } | undefined;
         try {
-            const cacheService = this.plugin.engineRegistry.getOrNull<WorldviewCacheService>(ENGINE_NAMES.WORLDVIEW_CACHE_SERVICE);
+            const cacheService = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.WORLDVIEW_CACHE_SERVICE);
             if (cacheService) {
                 const s = cacheService.getStats();
                 cacheStats = {
@@ -2373,7 +2373,7 @@ export class MiniSettingsModal extends Modal {
             checkBtn.disabled = true;
             checkBtn.textContent = '检查中...';
             try {
-                const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                 if (updateChecker) {
                     const result = await updateChecker.checkForUpdates(true);
                     if (result.hasUpdate) {
@@ -2415,7 +2415,7 @@ export class MiniSettingsModal extends Modal {
                 .onChange((value) => {
                     this.plugin.settings.autoCheckUpdates = value;
                     void this.plugin.saveSettings();
-                    const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                    const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                     if (updateChecker) {
                         updateChecker.updateConfig({ enabled: value });
                     }
@@ -2433,7 +2433,7 @@ export class MiniSettingsModal extends Modal {
                 dropdown.onChange((value) => {
                     this.plugin.settings.updateSource = value as 'github' | 'custom';
                     void this.plugin.saveSettings();
-                    const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                    const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                     if (updateChecker) {
                         updateChecker.updateConfig({ source: value as 'github' | 'custom' });
                     }
@@ -2451,7 +2451,7 @@ export class MiniSettingsModal extends Modal {
                     .onChange((value) => {
                         this.plugin.settings.updateGithubRepo = value;
                         void this.plugin.saveSettings();
-                        const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                        const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                         if (updateChecker) {
                             updateChecker.updateConfig({ githubRepo: value });
                             updateChecker.clearCache?.();
@@ -2468,7 +2468,7 @@ export class MiniSettingsModal extends Modal {
                         .onChange(async (value) => {
                             this.plugin.settings.updateGithubToken = value.trim();
                             await this.plugin.saveSettings();
-                            const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                            const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                             if (updateChecker) {
                                 updateChecker.updateConfig({ githubToken: value.trim() });
                                 updateChecker.clearCache?.();
@@ -2486,7 +2486,7 @@ export class MiniSettingsModal extends Modal {
                     .onChange((value) => {
                         this.plugin.settings.updateCustomUrl = value;
                         void this.plugin.saveSettings();
-                        const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                        const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                         if (updateChecker) {
                             updateChecker.updateConfig({ customUrl: value });
                         }
@@ -2511,7 +2511,7 @@ export class MiniSettingsModal extends Modal {
                 dropdown.onChange((value) => {
                     this.plugin.settings.updateCheckIntervalHours = parseInt(value, 10);
                     void this.plugin.saveSettings();
-                    const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+                    const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                     if (updateChecker) {
                         updateChecker.updateConfig({ checkIntervalHours: parseInt(value, 10) });
                     }
@@ -2696,7 +2696,7 @@ export class MiniSettingsModal extends Modal {
             cp.maxOutput = this.plugin.settings.maxOutput || cp.maxOutput;
         }
 
-        const updateChecker = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.UPDATE_CHECKER);
+        const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
         if (updateChecker) {
             updateChecker.updateConfig({
                 enabled: this.plugin.settings.autoCheckUpdates,

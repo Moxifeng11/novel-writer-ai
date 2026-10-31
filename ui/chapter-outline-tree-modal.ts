@@ -2,6 +2,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import type NovelWriterAI from '../main';
 import { pjVolumeOutlineDir, pjStepDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
+import { writeVaultText } from '../shared/file-system-port';
 
 
 const log = createLogger('ChapterOutlineTreeModal');
@@ -1175,7 +1176,7 @@ export class ChapterOutlineTreeModal extends Modal {
 
             for (let i = 0; i < this.sources.length; i++) {
                 const src = this.sources[i];
-                await this.app.vault.adapter.write(src.path, src.lines.join('\n'));
+                await writeVaultText(this.app, src.path, src.lines.join('\n'));
             }
 
             this.deletedRows.clear();
@@ -1194,7 +1195,7 @@ export class ChapterOutlineTreeModal extends Modal {
         if (!chap.sceneSourcePath) return;
 
         const content = this.buildSceneContent(chap.scenes);
-        await this.app.vault.adapter.write(chap.sceneSourcePath, content);
+        await writeVaultText(this.app, chap.sceneSourcePath, content);
     }
 
     private buildSceneContent(scenes: SceneNode[]): string {

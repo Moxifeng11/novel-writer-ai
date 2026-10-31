@@ -8,6 +8,10 @@
  * - main.ts → main.js (主插件入口)
  * - engine/deconstructors/deconstruction-worker.ts → workers/deconstruction-worker.js
  * - engine/quality/quality-worker.ts → workers/quality-worker.js
+ *
+ * 产物开启 minify（体积约 -36%）。由此带来的约束：
+ * - 模块路径注释与顶层变量名会被压缩掉，任何「对 main.js 做字符串断言」的脚本
+ *   必须改断言字符串字面量（如模板 key），见 scripts/check-release.mjs。
  */
 
 const { build } = require('esbuild');
@@ -36,6 +40,11 @@ const buildOptions = {
     format: 'cjs',
     platform: 'node',
     outdir: rootDir,
+    minify: true,
+    // esbuild 默认把非 ASCII 转成 \uXXXX：本项目大量中文提示词与模板会因此膨胀
+    // （实测 minify+ascii 5.52 MB，minify+utf8 3.92 MB）。Obsidian 运行于 Electron，
+    // 产物按 UTF-8 读取，保留原字符安全且更小。
+    charset: 'utf8',
     define: {
         PLUGIN_VERSION: `"${version}"`,
     },

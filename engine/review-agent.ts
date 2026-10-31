@@ -1,6 +1,6 @@
 import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
-import { AIEngine } from './ai-engine';
+import type { AIEngine } from './ai-engine';
 import { findChapterFile, getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { pjBodyDir, pjBodyFile, pjStepDir, pjStepFile, pjSettingLib, pjWorldview, pjCharsDir, pjForeshadowDB, pjLocsDir, pjFactionsDir, pjItemsDir, isInCharsDir } from '../shared/paths';
 import type { Notifier } from '../shared/types';

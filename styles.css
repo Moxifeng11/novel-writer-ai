@@ -1,4 +1,30 @@
 /* ==========================================================================
+ * styles.css — 自动生成，请勿直接编辑本文件
+ * ==========================================================================
+ * 由 scripts/build-styles.mjs 按文件名顺序拼接以下源文件而成：
+ *   - styles-src/00-header.css
+ *   - styles-src/01-base-components.css
+ *   - styles-src/02-full-writer-view.css
+ *   - styles-src/03-cowrite-and-notion.css
+ *   - styles-src/04-workspace-layers.css
+ *   - styles-src/05-floating-panels-and-settings.css
+ *   - styles-src/06-cowrite-missing-and-dark.css
+ *   - styles-src/07-charts-and-review.css
+ *   - styles-src/08-workbench-v7-v8.css
+ *   - styles-src/09-rev184-192.css
+ *   - styles-src/10-entity-and-utilities.css
+ *   - styles-src/11-fingerprint-and-workbench.css
+ *   - styles-src/12-agent-and-structure.css
+ *   - styles-src/13-agent-workspace.css
+ *   - styles-src/14-model-and-font-settings.css
+ *   - styles-src/15-late-fixes.css
+ *
+ * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
+ * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
+ * 顺序即层叠顺序：后置文件的同名规则覆盖前置文件，与拆分前保持一致。
+ * ==========================================================================
+ */
+/* ==========================================================================
  * 小说工坊 Novel Writer AI - styles.css
  * ==========================================================================
  * 

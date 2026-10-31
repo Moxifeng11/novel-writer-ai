@@ -3,8 +3,8 @@ import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { AIEngine } from '../engine/ai-engine';
 import { mkdirp } from '../utils/helpers';
-import { TemplateService } from '../services/template-service';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { TemplateService } from '../engine/template-service';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { getChapterFileName, CHAPTER_FILE_TYPES, normalizeChapterFiles, getChapterFile, findChapterFile } from '../engine/chapter-utils';
 import { readMergedVolumeOutline } from '../utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
@@ -162,7 +162,7 @@ export class RebuildChaptersModal extends Modal {
             }
         } catch (e) { log.warn('清理伏笔/时间线失败:', e); }
 
-        const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+        const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
 
         let done = 0;
         let preserved = 0;

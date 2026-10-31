@@ -43,7 +43,7 @@ import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
 import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
-import { ENGINE_NAMES } from './engine-registry';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { formatWritingRulesForPrompt } from './prompts/writing-rules-format';
 import {
     attachStoryContextToSnapshot,
@@ -812,7 +812,7 @@ export class CoWriterEngine {
             // ===== E5: 初始化写作知识库 =====
             try {
                 // 通过 EngineRegistry 获取共享实例（registry 已在 initialize 阶段调用 init()）
-                this.knowledgeManager = plugin.engineRegistry.get<KnowledgeBaseManager>(ENGINE_NAMES.KNOWLEDGE_BASE_MANAGER);
+                this.knowledgeManager = plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_BASE_MANAGER);
 
                 const kbEmbeddingClient = this.createEmbeddingProvider();
                 this.knowledgeVectorStore = new KnowledgeVectorStore(this.app, kbEmbeddingClient, undefined, {
@@ -867,8 +867,8 @@ export class CoWriterEngine {
             // ===== E6: 初始化知识注入器（全流程知识一致性） =====
             try {
                 // 通过 EngineRegistry 获取共享实例，避免多实例状态不同步
-                this.writingProfileManager = plugin.engineRegistry.get<WritingProfileManager>(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-                this.knowledgeInjector = plugin.engineRegistry.get<KnowledgeInjector>(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
+                this.writingProfileManager = plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
+                this.knowledgeInjector = plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
                 // E5 阶段注入器还没就位，恢复出来的参考书籍只同步到了 promptBuilder；
                 // 这里补一次，否则重启后知识库参考书籍注入静默为空，直到用户重新勾选。
                 if (this.referenceBookIds.length > 0) {

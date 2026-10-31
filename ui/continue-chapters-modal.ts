@@ -3,8 +3,8 @@ import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showError, stripFrontmatter } from '../utils/helpers';
 import { getChapterFileName, getChapterFile, findChapterFile, findBodyFileByChapterNum, normalizeChapterFiles, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
-import { TemplateService } from '../services/template-service';
-import { ENGINE_NAMES } from '../engine/engine-registry';
+import { TemplateService } from '../engine/template-service';
+import { ENGINE_NAMES } from '../shared/engine-names';
 import { RE_VOLUME_HEADER, RE_RANGE_NUMBERS, RE_OUTLINE_TABLE_ROW } from '../shared/format-constants';
 import { pjBodyDir, pjBodyFile, pjStepDir, pjVolumeOutlineFile, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjVolumeOutlineDir } from '../shared/paths';
 import { BodyWriter } from '../engine/body-writer';
@@ -188,7 +188,7 @@ export class ContinueChaptersModal extends Modal {
             const outlinePath = `${basePath}/${getChapterFileName(chapName, CHAPTER_FILE_TYPES.outline)}`;
             const infoPath = `${basePath}/${getChapterFileName(chapName, CHAPTER_FILE_TYPES.infoPlan)}`;
 
-            const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+            const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
             const vars = {
                 project,
                 volume,
@@ -325,7 +325,7 @@ export class ContinueChaptersModal extends Modal {
                 let bodyFile = findBodyFileByChapterNum(this.app.vault.getFiles(), bodyDir, chapter.num, chapName);
                 if (!bodyFile) {
                     await mkdirp(this.app, bodyDir);
-                    const templateService = this.plugin.engineRegistry.get<TemplateService>(ENGINE_NAMES.TEMPLATE_SERVICE);
+                    const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
                     const bodyContent = await templateService.getBodyTemplate({
                         project, volume, chapterName: chapName, chapterNumber: chapter.num
                     });

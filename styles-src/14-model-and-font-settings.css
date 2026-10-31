@@ -1,0 +1,1113 @@
+/* ── 字体管理弹窗 + 协同编辑器字体下拉（2026-10-28）──────── */
+
+.nw-font-modal {
+    max-width: 640px;
+}
+
+.nw-font-title {
+    margin: 0 0 8px;
+}
+
+.nw-font-hint {
+    margin-bottom: 14px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.nw-font-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.nw-font-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.nw-font-btn:hover {
+    border-color: var(--interactive-accent);
+}
+
+.nw-font-btn-primary {
+    border-color: transparent;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+}
+
+.nw-font-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nw-font-empty {
+    padding: 12px;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.nw-font-card {
+    padding: 10px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    background: var(--background-secondary);
+}
+
+.nw-font-card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.nw-font-family {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nw-font-path {
+    color: var(--text-faint);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nw-font-preview {
+    margin: 8px 0;
+    padding: 10px;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+    font-size: 15px;
+    line-height: 1.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-font-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-font-remove {
+    padding: 3px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-primary);
+    color: var(--text-error);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.nw-font-remove:hover {
+    border-color: var(--text-error);
+}
+
+/* 协同编辑器字体下拉 */
+.nw-cowrite-font-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nw-cowrite-font-label {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-cowrite-font-select {
+    max-width: 160px;
+    padding: 2px 6px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 11px;
+    cursor: pointer;
+}
+/* ── 工作台配色层级 / 动画 / 排版优化（吸收 dsh ui-chat/ui-tool；2026-10-28 第四轮）── */
+
+/* 消息入场动画：新行淡入上移 */
+@keyframes nw-awb-row-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nw-awb-row {
+    animation: nw-awb-row-in 0.24s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* 配色层级：AI 气泡 = 表面 + 左侧强调线；用户气泡 = 强调实底 */
+.nw-awb-row-agent .nw-awb-bubble {
+    border-left: 3px solid var(--interactive-accent);
+}
+
+.nw-awb-row-system .nw-awb-bubble {
+    border-left: none;
+}
+
+/* 消息列宽度：中栏内容居中，最大可读宽度（对话宽幅提升） */
+/* 会话列：按中栏宽度等比放宽（上限 1200px），避免窄栏观感 */
+.nw-awb-messages {
+    padding-left: clamp(14px, 2.2vw, 40px);
+    padding-right: clamp(14px, 2.2vw, 40px);
+}
+
+.nw-awb-messages > * {
+    max-width: min(100%, 1200px);
+}
+
+.nw-awb-row {
+    width: auto;
+}
+
+.nw-awb-row .nw-awb-bubble {
+    width: fit-content;
+}
+
+/* 工具调用行：可展开详情（dsh ToolRow 风格） */
+.nw-awb-row-system .nw-awb-bubble {
+    cursor: pointer;
+    max-width: 96%;
+}
+
+.nw-awb-tool-detail {
+    margin-top: 6px;
+    padding: 6px 8px;
+    border-top: 1px dashed var(--background-modifier-border);
+    font-family: var(--font-monospace);
+    font-size: 10.5px;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+/* 打字指示器：三点 shimmer */
+@keyframes nw-awb-dot-pulse {
+    0%, 60%, 100% {
+        opacity: 0.25;
+        transform: translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+.nw-awb-typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 14px;
+}
+
+.nw-awb-typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--interactive-accent);
+    animation: nw-awb-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.nw-awb-typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.nw-awb-typing-dot:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+/* 创作计划卡片：状态色阶（完成绿 / 进行中强调蓝闪烁 / 待办灰） */
+.nw-awb-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    background: var(--background-primary);
+}
+
+.nw-awb-plan-empty {
+    color: var(--text-faint);
+    font-size: 10.5px;
+}
+
+.nw-awb-plan-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.nw-awb-plan-icon {
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+    color: var(--text-faint);
+}
+
+.nw-awb-plan-row.is-done .nw-awb-plan-icon {
+    color: var(--color-green);
+}
+
+.nw-awb-plan-row.is-done .nw-awb-plan-step {
+    color: var(--text-faint);
+    text-decoration: line-through;
+}
+
+.nw-awb-plan-row.is-in_progress .nw-awb-plan-icon {
+    color: var(--interactive-accent);
+}
+
+.nw-awb-plan-row.is-in_progress .nw-awb-plan-step {
+    color: var(--text-normal);
+    font-weight: 600;
+}
+
+@keyframes nw-awb-plan-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
+}
+
+.nw-awb-plan-row.is-in_progress .nw-awb-plan-icon {
+    animation: nw-awb-plan-pulse 1.4s ease-in-out infinite;
+}
+
+/* 头部：吸顶毛玻璃，层级高于内容 */
+.nw-awb-header {
+    position: relative;
+    z-index: 5;
+    backdrop-filter: blur(8px);
+    background: color-mix(in srgb, var(--background-secondary) 86%, transparent);
+}
+
+/* 折叠状态：整体收起对应栏 */
+.nw-awb-layout.nw-awb-left-collapsed .nw-awb-left {
+    display: none;
+}
+
+.nw-awb-layout.nw-awb-right-collapsed .nw-awb-right {
+    display: none;
+}
+
+.nw-awb-layout.nw-awb-left-collapsed .nw-awb-resizer-left,
+.nw-awb-layout.nw-awb-right-collapsed .nw-awb-resizer-right {
+    display: none;
+}
+
+.nw-awb-collapse-btn {
+    min-width: 28px;
+    font-weight: 700;
+}
+
+/* chips 入场动画 */
+@keyframes nw-awb-chip-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nw-awb-chips .nw-agent-chip,
+.nw-awb-chips .nw-agent-choice {
+    animation: nw-awb-chip-in 0.2s ease-out both;
+}
+
+.nw-awb-chips .nw-agent-chip:nth-child(2),
+.nw-awb-chips .nw-agent-choice:nth-child(2) {
+    animation-delay: 0.04s;
+}
+
+.nw-awb-chips .nw-agent-chip:nth-child(3),
+.nw-awb-chips .nw-agent-choice:nth-child(3) {
+    animation-delay: 0.08s;
+}
+
+.nw-awb-chips .nw-agent-chip:nth-child(4),
+.nw-awb-chips .nw-agent-choice:nth-child(4) {
+    animation-delay: 0.12s;
+}
+
+/* 模型选择弹层入场：缩放淡入 */
+@keyframes nw-model-picker-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.nw-model-picker {
+    animation: nw-model-picker-in 0.16s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* 输入框聚焦层级提升 */
+.nw-awb-input-row {
+    position: relative;
+    z-index: 4;
+}
+
+/* 工具调用行：摘要 + 展开箭头（dsh ToolRow） */
+.nw-awb-tool-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 1px 4px;
+    margin: 0 -4px;
+}
+
+.nw-awb-tool-head:hover {
+    background: var(--background-modifier-hover);
+}
+
+.nw-awb-tool-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-awb-tool-caret {
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-size: 10px;
+}
+/* ── 工作台响应式与头部排版修复（2026-10-28）──────────────── */
+
+/* 三栏：默认按设置宽度；空间不足时优先压缩右栏、再压缩左栏，而不是整栏消失 */
+/* 宽度与 min/max 由 .nw-awb-panel-resizable（--nw-panel-size）统一管理，
+   此处不再重复声明，避免 flex-shrink:1 把拖拽结果又压回去。 */
+
+.nw-awb-center {
+    flex: 1 1 380px;
+    min-width: 280px;
+}
+
+/* 同上：右栏宽度交给 --nw-panel-size。 */
+
+/* 右栏内部：窄时文件树与预览上下堆叠，保证预览始终可见 */
+.nw-awb-file-split {
+    flex-wrap: nowrap;
+}
+
+@media (max-width: 1560px) {
+    .nw-awb-file-split {
+        flex-direction: column;
+    }
+
+    .nw-awb-file-tree {
+        width: 100%;
+        max-height: 180px;
+    }
+
+    .nw-awb-preview {
+        min-height: 200px;
+    }
+}
+
+/* 只有极窄时才隐藏右栏，且保留折叠按钮可恢复 */
+@media (max-width: 900px) {
+    .nw-awb-right {
+        display: none;
+    }
+
+    .nw-awb-resizer-right {
+        display: none;
+    }
+}
+
+/* 头部：标题不换行、徽标不缩、导航可换行，整体紧凑 */
+.nw-awb-header {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 8px 14px;
+}
+
+.nw-awb-header-title {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.nw-awb-mode-badge {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.nw-awb-header-nav {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 6px;
+    margin-left: auto;
+}
+
+.nw-awb-nav-btn {
+    padding: 3px 9px;
+    font-size: 10.5px;
+}
+
+.nw-awb-collapse-btn {
+    min-width: 26px;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+/* 右栏按自身宽度自适应：窄于 460px 时文件树与预览上下堆叠 */
+.nw-awb-right {
+    container-type: inline-size;
+}
+
+@container (max-width: 460px) {
+    .nw-awb-file-split {
+        flex-direction: column;
+    }
+
+    .nw-awb-file-tree {
+        width: 100%;
+        max-height: 200px;
+    }
+
+    .nw-awb-preview {
+        min-height: 220px;
+    }
+}
+
+/* ── 模型候选选择弹窗（从 URL 获取模型，2026-10-29）──────────── */
+.nw-model-fetch-desc {
+    margin-bottom: 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-model-fetch-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.nw-model-fetch-search {
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-model-fetch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 46vh;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+}
+
+.nw-model-fetch-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.nw-model-fetch-row:hover {
+    background: var(--background-modifier-hover);
+}
+
+.nw-model-fetch-name {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-model-fetch-id {
+    font-family: var(--font-monospace);
+    font-size: 12.5px;
+    word-break: break-all;
+}
+
+.nw-model-fetch-alias {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.nw-model-fetch-meta,
+.nw-model-fetch-tag {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    font-size: 10.5px;
+}
+
+.nw-model-fetch-empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.nw-model-fetch-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* ── 模型设置：两栏布局（2026-10-29 参照 dsh 界面重做）──────────── */
+.nw-api-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.nw-api-header-title h2 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.nw-api-header-title p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.nw-api-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nw-api-layout {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 16px;
+    align-items: stretch;
+    min-height: 420px;
+}
+
+.nw-api-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 208px;
+    min-width: 208px;
+    max-width: 208px;
+    flex: 0 0 208px;
+    padding: 10px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-secondary);
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.nw-api-sidebar-group {
+    margin: 10px 8px 4px;
+    color: var(--text-faint);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.nw-api-sidebar-group:first-child {
+    margin-top: 2px;
+}
+
+.nw-api-sidebar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.nw-api-sidebar-row:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.nw-api-sidebar-row-selected {
+    background: var(--background-modifier-active-hover, var(--background-modifier-hover));
+    color: var(--text-normal);
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--background-modifier-border);
+}
+
+.nw-api-sidebar-icon {
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.nw-api-sidebar-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-api-sidebar-dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--background-modifier-border);
+}
+
+.nw-api-sidebar-dot-current {
+    background: var(--interactive-accent);
+}
+
+.nw-api-detail {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-primary);
+}
+
+.nw-api-provider-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-api-provider-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+}
+
+.nw-api-provider-name {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-normal);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.nw-api-provider-name:hover,
+.nw-api-provider-name:focus {
+    border-color: var(--background-modifier-border);
+    background: var(--background-secondary);
+    outline: none;
+}
+
+/* 开关：原生 checkbox 做成滑动开关外观 */
+.nw-api-switch {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.nw-api-switch input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.nw-api-switch::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: var(--background-modifier-border);
+    transition: background 0.15s ease;
+}
+
+.nw-api-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-on-accent);
+    transition: transform 0.15s ease;
+}
+
+.nw-api-switch:has(input:checked)::before {
+    background: var(--interactive-accent);
+}
+
+.nw-api-switch:has(input:checked)::after {
+    transform: translateX(16px);
+}
+
+.nw-api-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nw-api-label {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nw-api-hint {
+    color: var(--text-faint);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.nw-api-text-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 13px;
+    font-family: var(--font-monospace);
+}
+
+/* 下拉：单一完整定义（旧版是两个重复块 + 一段 font-family 覆盖）。
+   坑一：曾用 appearance:none + 两个渐变画箭头，两个 5px 三角形位置重叠，
+        实测渲染成一个畸形的「↖」而不是下拉三角。
+   坑二：label 里塞 URL 路径（36 字符），面板收窄到 240px 时溢出 38px，
+        且没有 text-overflow，字被切在笔画中间。
+   现在：交回原生箭头（与 Obsidian 其它下拉一致），右侧留足空间，
+        并用省略号兜底 + title 悬停看全称。 */
+.nw-api-select {
+    width: 100%;
+    /* 关键：Obsidian 全局给 select 钉了 height: 30px（border-box）。
+       这里再叠 8px 上下内边距后，内容盒只剩 12.4px，而行高要 16.9px
+       —— 实测 verticalSlack = -4.5px，字形下半截被裁掉。
+       改 height: auto 让高度由「行高 + 内边距」决定，随字号自适应。 */
+    height: auto;
+    min-height: 34px;
+    line-height: 1.4;
+    padding: 7px 30px 7px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    /* Obsidian 全局对 select 做了 appearance:none，箭头是靠 .dropdown 类上的
+       data-URI 背景图画的；自定义类没有那个 class，所以此前「没有三角」。
+       这里自己画一个同形状的箭头，并用 background-color 而非简写，
+       避免把背景图一起重置掉。 */
+    background-color: var(--background-secondary);
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www%2Ew3%2Eorg/2000/svg%27%20width=%2710%27%20height=%276%27%20viewBox=%270%200%2010%206%27%3E%3Cpath%20d=%27M1%201l4%204%204-4%27%20fill=%27none%27%20stroke=%27%23808080%27%20stroke-width=%271.6%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    background-size: 10px 6px;
+    /* Obsidian 全局给 select 设了 background-blend-mode: hard-light，
+       灰箭头与背景色混合后几乎不可见（实测右侧 60px 内无任何像素）。
+       这也是旧版两个渐变三角混成畸形「↖」的原因。必须显式复位。 */
+    background-blend-mode: normal;
+    color: var(--text-normal);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-api-text-input:focus,
+.nw-api-select:focus {
+    border-color: var(--interactive-accent);
+    outline: none;
+}
+
+.nw-api-select option {
+    background: var(--background-primary);
+    color: var(--text-normal);
+}
+
+/* Base URL 用可换行 textarea：长地址必须能完整看到 */
+.nw-api-text-area {
+    min-height: 34px;
+    line-height: 1.45;
+    resize: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.nw-api-key-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nw-api-models-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.nw-api-models-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.nw-api-model-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    background: var(--background-secondary);
+}
+
+.nw-api-model-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 7px;
+}
+
+.nw-api-model-row:hover {
+    background: var(--background-modifier-hover);
+}
+
+.nw-api-model-row-disabled .nw-api-model-id {
+    color: var(--text-faint);
+    text-decoration: line-through;
+}
+
+.nw-api-model-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-api-model-id {
+    font-family: var(--font-monospace);
+    font-size: 12.5px;
+    word-break: break-all;
+}
+
+.nw-api-model-badge {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 999px;
+    color: var(--text-faint);
+    font-size: 10.5px;
+}
+
+.nw-api-model-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.nw-api-model-row:hover .nw-api-model-actions,
+.nw-api-model-row:focus-within .nw-api-model-actions {
+    opacity: 1;
+}
+
+.nw-api-model-empty {
+    padding: 18px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.nw-api-icon-btn,
+.nw-api-ghost-btn,
+.nw-api-primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nw-api-icon-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-muted);
+}
+
+.nw-api-icon-btn:hover {
+    border-color: var(--interactive-accent);
+    color: var(--text-normal);
+}
+
+.nw-api-ghost-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+}
+
+.nw-api-ghost-btn:hover {
+    border-color: var(--interactive-accent);
+}
+
+.nw-api-primary-btn {
+    padding: 6px 14px;
+    border: none;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+}
+
+.nw-api-primary-btn:hover {
+    filter: brightness(1.08);
+}
+
+.nw-api-test-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.nw-api-test-status {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-api-test-status-ok { color: var(--text-success); }
+.nw-api-test-status-warn { color: var(--text-warning); }
+.nw-api-test-status-error { color: var(--text-error); }
+
+.nw-api-global {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 16px 18px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-primary);
+}
+
+.nw-api-global h3 {
+    margin: 0 0 2px;
+    font-size: 15px;
+}
+
+.nw-api-global-hint {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-api-footer {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.nw-api-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.nw-api-empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 13px;
+}
+
+/* 窄屏：两栏改为上下堆叠 */
+/* 窄屏（设置面板本身很窄时）两栏改为上下堆叠。
+   用媒体查询而非容器查询：Obsidian 设置面板没有为 .nw-api-layout 建立
+   container-type，@container 会匹配到外层任意窄容器，导致宽窗口下也堆叠。 */
+@media (max-width: 900px) {
+    .nw-api-layout {
+        flex-direction: column;
+    }
+
+    .nw-api-sidebar {
+        width: 100%;
+        max-height: 220px;
+    }
+
+    .nw-api-detail {
+        width: 100%;
+        max-height: none;
+    }
+}
+

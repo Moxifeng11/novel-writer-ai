@@ -6,7 +6,7 @@ import type {
     PromptCategory,
     ABTest,
     PromptTemplateVersion,
-} from '../services/prompt-manager-types';
+} from '../shared/prompt-manager-types';
 import { OperationConfirmModal } from './components/progress';
 import { exportTextFile } from '../shared/export-file';
 

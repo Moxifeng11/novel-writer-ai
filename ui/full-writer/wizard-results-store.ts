@@ -1,5 +1,6 @@
 import { Notice } from 'obsidian';
 import { createLogger } from '../../shared/logger';
+import { STORAGE_KEY_PREFIXES, projectScopedKey } from '../../shared/storage-keys';
 
 
 const log = createLogger('WizardResultsStore');
@@ -17,7 +18,7 @@ const log = createLogger('WizardResultsStore');
 export function createPersistentWizardResults(
     getProject: () => string
 ): Record<string, string> {
-    const storageKey = (): string => `novel-writer-wizard-${getProject() || 'global'}`;
+    const storageKey = (): string => projectScopedKey(STORAGE_KEY_PREFIXES.wizardResults, getProject());
     let loadedKey = '';
     let bucket: Record<string, string> = {};
 

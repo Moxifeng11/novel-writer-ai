@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TemplateService } from '../../../services/template-service';
+import { TemplateService } from '../../../engine/template-service';
 import { CHAPTER_FILE_TYPES } from '../../../engine/chapter-utils';
 import { TFile } from '../../__mocks__/obsidian';
 

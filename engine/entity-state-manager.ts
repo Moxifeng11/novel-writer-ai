@@ -11,7 +11,7 @@ import { NOTICE_ERROR, NOTICE_WARNING } from '../shared/thresholds';
 import { withWriteLock } from '../shared/write-lock';
 import { pjCharsDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import type { NovelWriterPluginAPI } from '../shared/plugin-api';
+import type { NovelWriterPluginAPI } from '../plugin-api';
 import type { CharacterRepository } from './repository';
 import type { EngineRegistry } from './engine-registry';
 import { createLogger } from '../shared/logger';

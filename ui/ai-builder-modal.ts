@@ -3,10 +3,7 @@ import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { AIEngine } from '../engine/ai-engine';
 import { mkdirp } from '../utils/helpers';
-import {
-    CHARACTER_BODY_SECTIONS,
-    ENTITY_BODY_SECTIONS,
-} from '../shared/format-constants';
+import { CHARACTER_BODY_SECTIONS } from '../shared/format-constants';
 import { validateCharacterOutput } from '../shared/template-validator';
 import { createLogger } from '../shared/logger';
 import { ProjectRenameService } from '../services/project-rename-service';
@@ -16,13 +13,14 @@ const log = createLogger('AiBuilderModal');
 import {
     pjWorldview, pjSettingLib,
     pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir,
-    SUBDIR_CHARS, SUBDIR_FACTIONS, SUBDIR_LOCS, SUBDIR_ITEMS,
+    SUBDIR_CHARS,
 } from '../shared/paths';
 import { saveEntities, type EntityKind } from '../shared/entity-persistence';
 import { ensureEntityIntegrity } from '../shared/entity-integrity';
-import { countProjectEntities } from '../shared/entity-stats';
+import { countProjectEntities } from '../shared/entity-reader';
 import { mergeFanficRequirement } from '../shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
+import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
 
 // ── 实体类型配置 ──
 interface EntityTypeConfig {
@@ -40,6 +38,8 @@ interface EntityTypeConfig {
     engineMethod: 'generateCharacters' | 'generateFaction' | 'generateLocation' | 'generateItem' | undefined;
 }
 
+// 批次 4：势力 / 地点 / 物品功法生成已统一到 unified-entity-generate-modal，
+// 本仪表盘只保留世界观与角色创作入口（底部提供跳转按钮）。
 const ENTITY_TYPES: EntityTypeConfig[] = [
     {
         id: 'worldview', label: '世界观总览', icon: '🌍', folder: '',
@@ -52,24 +52,6 @@ const ENTITY_TYPES: EntityTypeConfig[] = [
         template: '人物模板.md', isFile: false, needName: false,
         description: '批量生成角色卡（姓名/身份/动机/技能等）',
         sections: CHARACTER_BODY_SECTIONS, engineMethod: 'generateCharacters',
-    },
-    {
-        id: 'faction', label: '势力', icon: '🏰', folder: SUBDIR_FACTIONS,
-        template: '势力模板.md', isFile: false, needName: true,
-        description: '生成宗门/组织/国家等势力设定',
-        sections: ENTITY_BODY_SECTIONS, engineMethod: 'generateFaction',
-    },
-    {
-        id: 'location', label: '地点', icon: '📍', folder: SUBDIR_LOCS,
-        template: '地点模板.md', isFile: false, needName: true,
-        description: '生成城市/秘境/战场等地点设定',
-        sections: ENTITY_BODY_SECTIONS, engineMethod: 'generateLocation',
-    },
-    {
-        id: 'item', label: '物品功法', icon: '⚔️', folder: SUBDIR_ITEMS,
-        template: '物品功法模板.md', isFile: false, needName: true,
-        description: '生成法宝/丹药/功法/秘籍等设定',
-        sections: ENTITY_BODY_SECTIONS, engineMethod: 'generateItem',
     },
 ];
 
@@ -280,7 +262,7 @@ export class AiBuilderModal extends Modal {
     private async getProjectEntityStats(project: string): Promise<{
         worldview: number; characters: number; factions: number; locations: number; items: number;
     }> {
-        // Rev 192：统计口径统一到 shared/entity-stats，避免与实体管理/向导各自数文件
+        // Rev 192：统计口径统一到 shared/entity-reader（原 entity-stats 已并入），避免各入口各自数文件
         return countProjectEntities(this.app, project);
     }
 
@@ -349,10 +331,7 @@ export class AiBuilderModal extends Modal {
         const cardGrid = contentEl.createDiv({ cls: 'novel-writer-ai-builder-card-grid' });
 
         for (const cfg of ENTITY_TYPES) {
-            const count = this.existingCounts[cfg.id === 'worldview' ? 'worldview' :
-                         cfg.id === 'character' ? 'characters' :
-                         cfg.id === 'faction' ? 'factions' :
-                         cfg.id === 'location' ? 'locations' : 'items'] || 0;
+            const count = this.existingCounts[cfg.id === 'worldview' ? 'worldview' : 'characters'] || 0;
 
             const card = cardGrid.createDiv({ cls: 'novel-writer-ai-builder-entity-card' });
 
@@ -424,6 +403,19 @@ export class AiBuilderModal extends Modal {
             }
         }
 
+        // 批次 4：势力 / 地点 / 物品功法已统一到独立实体生成器，这里只保留跳转入口
+        const unifiedHint = contentEl.createDiv({
+            cls: 'novel-writer-ai-builder-worldview-hint',
+            text: '势力 / 地点 / 物品功法已统一到「实体生成器」，需要生成请前往：',
+        });
+        const unifiedBtn = unifiedHint.createEl('button', {
+            text: '🏰 打开统一实体生成器',
+            cls: 'novel-writer-ai-builder-action-btn primary',
+        });
+        unifiedBtn.onclick = () => {
+            this.close();
+            new UnifiedEntityGenerateModal(this.app, this.plugin, this.selectedProject).open();
+        };
     }
 
     // ─────── 世界观状态提示 ───────

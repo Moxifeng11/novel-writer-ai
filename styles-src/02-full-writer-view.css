@@ -1,0 +1,827 @@
+/* ==========================================================================
+   3. 全写作视图样式 (Full Writer View)
+   包含：项目选择器、向导步骤、三栏工作区、上下文面板等
+   前缀：.novel-writer-fw-* / .novel-writer-wizard-*
+   ========================================================================== */
+
+/* ===== Tab 栏 ===== */
+.novel-writer-fw-tabs-container,
+.novel-writer-fw-tabbar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    padding: 0 16px 0 12px;
+    background: var(--nw-surface, var(--background-secondary));
+    min-height: 40px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+}
+
+.novel-writer-fw-tabs-container::-webkit-scrollbar,
+.novel-writer-fw-tabbar::-webkit-scrollbar {
+    display: none;
+    height: 0;
+}
+
+.novel-writer-fw-tab {
+    display: flex;
+    align-items: center;
+    padding: 8px 14px;
+    margin-right: 2px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--nw-text-secondary, var(--text-muted));
+    user-select: none;
+    flex-shrink: 0;
+    white-space: nowrap;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.novel-writer-fw-tab:hover:not(.active) {
+    background: var(--nw-surface-hover, var(--background-modifier-hover));
+    color: var(--nw-text-primary, var(--text-normal));
+}
+
+.novel-writer-fw-tab.active {
+    background: var(--nw-card-bg, var(--background-primary));
+    font-weight: 600;
+    color: var(--nw-text-primary, var(--text-normal));
+    border-bottom-color: var(--nw-accent, var(--interactive-accent));
+}
+
+.novel-writer-fw-tab.is-selector:not(.active) {
+    border: 1px dashed var(--nw-divider, var(--background-modifier-border-hover));
+    border-bottom: 1px dashed var(--nw-divider, var(--background-modifier-border-hover));
+    opacity: 0.7;
+}
+
+.novel-writer-fw-tab.is-selector:not(.active):hover {
+    opacity: 1;
+    border-color: var(--nw-accent, var(--interactive-accent));
+}
+
+.novel-writer-fw-tab-close {
+    margin-left: 8px;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.4;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.novel-writer-fw-tab-close:hover {
+    opacity: 1;
+    background: var(--nw-surface-hover, var(--background-modifier-hover));
+}
+
+.novel-writer-fw-tab-spacer {
+    flex: 1;
+    min-width: 8px;
+}
+
+.novel-writer-fw-tab-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--nw-text-secondary, var(--text-muted));
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.novel-writer-fw-tab-btn:hover {
+    background: var(--nw-surface-hover, var(--background-modifier-hover));
+    border-color: var(--nw-accent, var(--interactive-accent));
+    color: var(--nw-text-primary, var(--text-normal));
+}
+
+.novel-writer-fw-tab-btn-add {
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 500;
+}
+
+.novel-writer-fw-tab-btn-settings,
+.novel-writer-fw-tab-btn-reload {
+    font-size: 14px;
+    margin-left: 6px;
+}
+
+.novel-writer-fw-back-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 6px 10px;
+    margin-right: 8px;
+    margin-left: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--nw-text-accent, var(--interactive-accent));
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.novel-writer-fw-back-btn:hover {
+    background: var(--nw-surface-hover, var(--background-modifier-hover));
+    color: var(--nw-accent-hover, var(--interactive-accent-hover));
+}
+
+/* ===== Tab 内容区 ===== */
+
+/* ===== 项目选择器包装 ===== */
+/* ===== 容器 ===== */
+.novel-writer-fw-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    background: var(--background-primary);
+    overflow: hidden;
+}
+
+.novel-writer-fw-empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 16px;
+    margin: auto;
+}
+
+.novel-writer-fw-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.novel-writer-fw-title-spacer {
+    flex: 1;
+}
+.novel-writer-fw-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--nw-text-primary);
+    width: auto;
+    max-width: min(420px, 46vw);
+    /* background 简写会重置 .nw-select 上的箭头背景图，必须用 background-color */
+    background-color: transparent;
+    border: none;
+    /* 右侧给箭头留位（原先 8px，箭头会压在标题字上） */
+    padding: 4px 28px 4px 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== 三栏工作区 ===== */
+/* 三栏工作区：改 flex 以便两翼可拖拽。
+   旧实现是 grid + --nw-grid-workspace（minmax 区间），只能靠设置改数字；
+   现在左右两翼宽度由 --nw-panel-nav / --nw-panel-context 驱动，
+   分隔条（ui/panel-resizer.ts）拖动即改，中栏 flex:1 自适应。
+   ≤1100px 时仍回落到纵向堆叠（见下方媒体查询）。 */
+.novel-writer-fw-workspace {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 10px;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.novel-writer-fw-workspace > .novel-writer-fw-step-nav {
+    flex: 0 0 auto;
+    width: var(--nw-panel-nav, 140px);
+    min-width: 100px;
+}
+
+.novel-writer-fw-workspace > .novel-writer-fw-prompt-area {
+    flex: 1 1 auto;
+    min-width: 280px;
+}
+
+.novel-writer-fw-workspace > .novel-writer-fw-context-panel {
+    flex: 0 0 auto;
+    width: var(--nw-panel-context, 220px);
+    min-width: 160px;
+}
+
+/* ===== 左侧步骤导航 ===== */
+.novel-writer-fw-step-nav {
+    background: var(--nw-card-bg);
+    border-right: 1px solid var(--nw-divider);
+    overflow-y: auto;
+    padding: 12px;
+    min-width: 0;
+}
+.novel-writer-fw-nav-title {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nw-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.novel-writer-fw-step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.novel-writer-fw-step-active {
+    background: var(--nw-accent);
+    color: var(--nw-text-on-accent);
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(124,58,237,0.25);
+}
+.novel-writer-fw-step-done { color: var(--nw-success); }
+.novel-writer-fw-step-partial { color: var(--nw-warning); }
+.novel-writer-fw-step-skeleton { color: var(--nw-text-muted); opacity: 0.6; }
+.novel-writer-fw-step-pending { color: var(--nw-text-muted); opacity: 0.5; cursor: default; }
+.novel-writer-fw-step-clickable {
+    cursor: pointer;
+}
+.novel-writer-fw-step-clickable:hover { background: var(--nw-btn-secondary-hover-bg); color: var(--nw-text-primary); }
+.novel-writer-fw-step-icon {
+    font-size: 12px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.novel-writer-fw-step-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== 中间提示词区 ===== */
+.novel-writer-fw-prompt-area {
+    overflow-y: auto;
+    padding: 16px 20px;
+    min-width: 0;
+}
+.novel-writer-fw-step-header {
+    margin-bottom: 16px;
+}
+.novel-writer-fw-step-header h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+.novel-writer-fw-step-desc {
+    margin: 0;
+    color: var(--nw-text-secondary);
+    font-size: 13px;
+}
+.novel-writer-fw-planning-quickstart {
+    margin-bottom: 16px;
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--nw-accent-muted, rgba(194, 65, 12, 0.08));
+    background: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
+    border: 1px solid var(--nw-accent-muted, rgba(194, 65, 12, 0.25));
+    border: 1px solid color-mix(in srgb, var(--interactive-accent) 25%, transparent);
+}
+.novel-writer-fw-planning-title {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+.novel-writer-fw-planning-status-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.novel-writer-fw-planning-status-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 6px;
+    background: var(--background-primary);
+    font-size: 12px;
+    opacity: 0.6;
+}
+.novel-writer-fw-planning-status-item.is-done {
+    opacity: 1;
+}
+.novel-writer-fw-planning-status-icon {
+    font-size: 16px;
+}
+.novel-writer-fw-planning-status-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+.novel-writer-fw-planning-btn-row {
+    display: flex;
+    justify-content: center;
+}
+.novel-writer-fw-review-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--background-modifier-border);
+}
+.novel-writer-fw-review-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: background-color, border-color, color, box-shadow, opacity, transform 0.2s;
+}
+.novel-writer-fw-review-tab.is-active {
+    color: var(--interactive-accent);
+    border-bottom-color: var(--interactive-accent);
+}
+.novel-writer-fw-review-tab.is-clickable {
+    cursor: pointer;
+}
+.novel-writer-fw-review-tab.is-clickable:hover {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+}
+.novel-writer-fw-prompt-section {
+    margin-bottom: 14px;
+}
+.novel-writer-fw-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+.novel-writer-fw-textarea {
+    /* v6.0: 基础样式由 .nw-textarea 接管，此处仅保留业务差异（等宽字体+特殊padding） */
+    padding: 10px 12px;
+    font-family: var(--font-monospace);
+    line-height: 1.5;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Temperature */
+
+/* 按钮 */
+.novel-writer-fw-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.novel-writer-fw-btn {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12.5px; font-weight: 600;
+    line-height: 1.5;
+    cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.novel-writer-fw-btn:hover {
+    transform: translateY(-1px);
+}
+.novel-writer-fw-btn-primary {
+    background: var(--nw-accent);
+    color: var(--nw-btn-primary-text);
+    flex: 0 0 auto;
+}
+.novel-writer-fw-btn-primary:hover {
+    background: var(--nw-accent-hover);
+}
+.novel-writer-fw-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.novel-writer-fw-btn-secondary {
+    background: var(--nw-card-bg);
+    color: var(--nw-text-secondary);
+    border: 1px solid var(--nw-btn-secondary-border);
+}
+.novel-writer-fw-btn-secondary:hover {
+    background: var(--nw-btn-secondary-hover-bg);
+}
+.novel-writer-fw-btn-success {
+    background: var(--nw-success);
+    color: var(--nw-text-on-accent);
+    flex: 0 0 auto;
+}
+.novel-writer-fw-btn-success:hover {
+    background: var(--nw-success-hover);
+}
+.novel-writer-fw-btn-danger {
+    background: var(--nw-danger);
+    color: var(--nw-text-on-accent);
+}
+.novel-writer-fw-btn-danger:hover {
+    background: var(--nw-danger-hover);
+}
+
+/* 结果区 */
+.novel-writer-fw-result-section {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--nw-divider);
+}
+.novel-writer-fw-result-title {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nw-text-secondary);
+}
+.novel-writer-fw-error-card {
+    border-color: var(--nw-danger-border);
+    background: var(--nw-danger-bg);
+    color: var(--nw-danger);
+    white-space: normal;
+    font-family: inherit;
+}
+.novel-writer-fw-error-title {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nw-danger);
+}
+
+/* 状态文本 */
+.novel-writer-fw-success-text {
+    color: var(--nw-success);
+    font-weight: 500;
+}
+.novel-writer-fw-error-text {
+    color: var(--nw-danger);
+    font-weight: 500;
+}
+@keyframes novel-writer-fw-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ===== 右侧上下文面板 ===== */
+.novel-writer-fw-context-panel {
+    background: var(--nw-card-bg);
+    border-left: 1px solid var(--nw-divider);
+    overflow-y: auto;
+    padding: 12px;
+    min-width: 0;
+}
+.novel-writer-fw-panel-title {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== 上下文面板可折叠卡片 ===== */
+.nw-context-bar__collapsible-card {
+    background: var(--nw-card-bg);
+    border: 1px solid var(--nw-card-border);
+    border-radius: var(--nw-radius-md);
+    margin-bottom: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.nw-context-bar__collapsible-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    border-color: var(--nw-accent-muted);
+}
+.nw-context-bar__collapsible-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--nw-divider);
+    transition: background 0.15s ease;
+}
+.nw-context-bar__collapsible-header:hover {
+    background: var(--nw-btn-secondary-hover-bg);
+}
+.nw-context-bar__collapsible-title {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--nw-text-primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nw-context-bar__collapsible-icon {
+    font-size: 0.7em;
+    color: var(--nw-accent);
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    width: 14px;
+    text-align: center;
+}
+.nw-context-bar__collapsible-body {
+    padding: 12px 14px;
+    font-size: 0.82em;
+    line-height: 1.6;
+    color: var(--nw-text-secondary);
+    max-height: var(--nw-scroll-md-h);
+    overflow-y: auto;
+}
+
+/* 上下文面板内容列表 */
+.novel-writer-fw-char-list,
+.novel-writer-fw-foreshadow-list {
+    list-style: none; padding: 0; margin: 0;
+}
+.novel-writer-fw-char-list li,
+.novel-writer-fw-foreshadow-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--nw-divider);
+}
+.novel-writer-fw-char-list li:last-child,
+.novel-writer-fw-foreshadow-list li:last-child {
+    border-bottom: none;
+}
+.novel-writer-fw-char-name {
+    font-weight: 600; color: var(--nw-text-primary);
+}
+.novel-writer-fw-char-detail {
+    color: var(--nw-text-secondary); font-size: 11px;
+}
+.novel-writer-fw-imp { font-size: 10px; font-weight: 600; }
+.novel-writer-fw-imp-high { color: var(--nw-danger); }
+.novel-writer-fw-imp-low { color: var(--nw-text-muted); }
+.novel-writer-fw-context-text {
+    white-space: pre-wrap; color: var(--nw-text-secondary);
+    font-size: 12px; max-height: 200px; overflow-y: auto;
+    word-break: break-word;
+}
+.novel-writer-fw-muted {
+    color: var(--nw-text-muted); font-size: 12px;
+}
+
+.novel-writer-fw-context-table {
+    width: 100%;
+    max-width: 100%;
+    font-size: 11px;
+    border-collapse: collapse;
+    overflow-x: auto;
+}
+.novel-writer-fw-context-table th {
+    text-align: left;
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.novel-writer-fw-context-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--background-modifier-border-hover);
+    color: var(--text-secondary);
+}
+
+/* Token 条 */
+.novel-writer-fw-token-bar-container {
+    margin-bottom: 6px;
+}
+.novel-writer-fw-token-bar {
+    height: 8px;
+    background: var(--background-modifier-border);
+    border-radius: var(--nw-radius-sm);
+    overflow: hidden;
+}
+.novel-writer-fw-token-fill { height: 100%; background: var(--nw-accent); border-radius: var(--nw-radius-sm); transition: width 0.3s ease, background 0.3s ease; }
+.novel-writer-fw-token-text {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+}
+
+/* ===== 状态栏 ===== */
+.novel-writer-fw-status-bar {
+    padding: 8px 20px;
+    background: var(--nw-surface);
+    border-top: 1px solid var(--nw-divider);
+    font-size: 12px;
+    color: var(--nw-text-secondary);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+}
+.novel-writer-fw-status-item {
+    flex-shrink: 0;
+}
+.novel-writer-fw-status-sep {
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
+/* ===== 上下文面板 Markdown 缩放 ===== */
+.novel-writer-fw-context-text h1 { font-size: 1.1em; margin: 4px 0; }
+.novel-writer-fw-context-text h2 { font-size: 1.0em; margin: 3px 0; }
+.novel-writer-fw-context-text h3 { font-size: 0.95em; margin: 3px 0; }
+.novel-writer-fw-context-text h4,
+.novel-writer-fw-context-text h5,
+.novel-writer-fw-context-text h6 { font-size: 0.9em; margin: 2px 0; }
+.novel-writer-fw-context-text p,
+.novel-writer-fw-context-text li,
+.novel-writer-fw-context-text td,
+.novel-writer-fw-context-text th { font-size: 0.85em; }
+.novel-writer-fw-context-text table { font-size: 0.85em; }
+.novel-writer-input {
+    /* v6.0: 基础样式已由 .nw-input 统一接管，此处仅保留业务差异 */
+    width: 100%;
+    margin: 6px 0 12px;
+    font-size: 14px;
+}
+
+/* ===== v3.4.8: 通用输入/按钮/标签（多Modal共用，之前缺失导致排版错误）===== */
+/* v6.0: 基础样式已迁移至 v6.0 基础组件层（.nw-*），此处仅保留业务差异属性 */
+.novel-writer-primary-button {
+    /* v6.0: 基础按钮样式由 .nw-btn-primary 接管，此处仅保留业务差异 */
+    width: 100%;
+    padding: 10px 20px;
+    margin-top: 14px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.novel-writer-textarea {
+    /* v6.0: 基础样式已由 .nw-textarea 统一接管，此处仅保留业务差异 */
+    width: 100%;
+    min-height: 60px;
+    margin: 6px 0 12px;
+}
+.novel-writer-select {
+    /* v6.0: 基础样式已由 .nw-select 统一接管，此处仅保留业务差异 */
+    width: 100%;
+    margin: 6px 0 12px;
+    font-size: 14px;
+}
+.novel-writer-tag-container { margin: 12px 0 6px; }
+.novel-writer-tag-button {
+    display: inline-block; padding: 4px 12px; margin: 3px 4px 3px 0;
+    background: var(--nw-accent-muted); color: var(--nw-text-accent);
+    border: 1px solid transparent; border-radius: 12px;
+    cursor: pointer; font-size: 12px; transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s;
+}
+.novel-writer-tag-button:hover { border-color: var(--nw-accent); }
+/* ===== end v3.4.8 通用UI类 ===== */
+
+/* ===== v3.4.8 B12 fix: 项目与章节卡片布局（使用 --nw-* 设计系统变量） ===== */
+
+/* 画布底色 */
+.novel-writer-fw-project-area {
+    display: flex; flex-wrap: wrap; gap: 16px; padding: 20px;
+    overflow-y: auto; align-content: flex-start; flex: 1;
+    background: var(--nw-surface);
+}
+
+/* 项目卡片 */
+.novel-writer-fw-project-card {
+    flex: 1 1 260px; min-width: 260px; max-width: 360px;
+    background: var(--nw-card-bg);
+    border: 1px solid var(--nw-card-border);
+    border-radius: var(--nw-radius-md);
+    box-shadow: var(--nw-card-shadow);
+    cursor: pointer;
+    transition: background-color, border-color, color, box-shadow, opacity, transform 0.25s ease;
+    overflow: hidden;
+}
+.novel-writer-fw-project-card:hover {
+    box-shadow: var(--nw-card-shadow-hover);
+    border-color: var(--nw-accent);
+    transform: translateY(-2px);
+}
+.novel-writer-fw-project-card.selected {
+    box-shadow: var(--nw-card-selected-ring);
+    border-color: var(--nw-accent);
+}
+@media (max-width: 600px) {
+    .novel-writer-fw-project-card {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+}
+/* 左侧预览面板 */
+
+.novel-writer-fw-toolbar {
+    position: absolute; top: 12px; right: 16px; z-index: 10;
+}
+
+/* 项目卡片 */
+.novel-writer-fw-card-actions {
+    display: flex; gap: 8px; margin-top: 10px; justify-content: center;
+}
+.novel-writer-fw-card-action-btn {
+    padding: 6px 14px; font-size: 12px; background: var(--nw-btn-secondary-bg);
+    color: var(--nw-btn-secondary-text); border: 1px solid var(--nw-btn-secondary-border);
+    border-radius: var(--nw-radius-sm); cursor: pointer; transition: background-color, border-color, color, box-shadow, opacity, transform 0.2s;
+    white-space: nowrap;
+}
+.novel-writer-fw-card-action-btn:hover { background: var(--nw-btn-secondary-hover-bg); color: var(--nw-btn-secondary-hover-text); }
+.novel-writer-fw-card-count-badge {
+    display: inline-block; padding: 2px 10px; background: var(--nw-badge-bg);
+    color: var(--nw-badge-text); border-radius: 10px; font-size: 11px; font-weight: 600;
+}
+.novel-writer-fw-card-meta { font-size: 12px; color: var(--nw-text-muted); }
+.novel-writer-fw-card-name { font-size: 14px; font-weight: 700; margin: 4px 0; color: var(--nw-text-primary); }
+.novel-writer-fw-card-genre { font-size: 11px; color: var(--nw-text-accent); }
+.novel-writer-fw-card-progress-bar {
+    height: 4px; background: var(--nw-divider); border-radius: 2px; margin-top: 8px; overflow: hidden;
+}
+.novel-writer-fw-card-progress-fill {
+    height: 100%; background: var(--nw-accent-gradient); border-radius: 2px; transition: width 0.4s ease;
+}
+.novel-writer-fw-card-progress-text { font-size: 11px; color: var(--nw-text-muted); margin-top: 3px; }
+.novel-writer-fw-card-latest { font-size: 11px; color: var(--nw-text-muted); margin-top: 6px; }
+.novel-writer-fw-card-delete-btn {
+    padding: 6px 10px; font-size: 14px; line-height: 1;
+    color: var(--nw-danger); background: var(--nw-danger-bg);
+    border: 1px solid var(--nw-danger-border); border-radius: var(--nw-radius-sm);
+    cursor: pointer; transition: background-color, border-color, color, box-shadow, opacity, transform 0.2s; flex-shrink: 0;
+}
+.novel-writer-fw-card-delete-btn:hover { background: var(--nw-danger); color: #fff; }
+.novel-writer-fw-card-info-inner { padding: 14px; }
+
+/* 章节选择器 */
+/* v6.0: 基础样式已由 .nw-select 统一接管，此处仅保留业务差异属性 */
+.novel-writer-fw-chapter-select-container { margin: 10px 0; }
+.novel-writer-fw-chapter-select {
+    /* v6.0: 垂直高度由 .nw-select 的 height/line-height 统一控制，此处仅保留业务差异。
+       padding 右侧必须给箭头留位：旧值 0 10px 会把箭头压在章节名上。 */
+    min-width: 260px;
+    max-width: min(520px, 52vw);
+    font-size: 12px;
+    padding: 0 30px 0 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.novel-writer-fw-preview-desc { font-size: 13px; color: var(--nw-text-secondary); margin: 10px 0; }
+.novel-writer-fw-preview-genre { font-size: 11px; color: var(--nw-text-accent); }
+.novel-writer-fw-preview-next-chapter { font-size: 13px; color: var(--nw-text-accent); font-weight: 600; margin: 10px 0; }
+.novel-writer-fw-preview-progress-bar {
+    height: 6px; background: var(--nw-divider); border-radius: 3px; margin: 10px 0; overflow: hidden;
+}
+.novel-writer-fw-preview-progress-fill {
+    height: 100%; background: var(--nw-accent-gradient); border-radius: 3px; transition: width 0.4s ease;
+}
+
+/* 上下文卡片 */
+.novel-writer-fw-context-card {
+    padding: 14px; margin: 10px 0; background: var(--nw-card-bg);
+    border: 1px solid var(--nw-card-border); border-radius: var(--nw-radius-md);
+    box-shadow: var(--nw-card-shadow); transition: box-shadow 0.2s;
+}
+.novel-writer-fw-context-card:hover { box-shadow: var(--nw-card-shadow-hover); }
+
+/* 杂项 */
+.novel-writer-fw-nav-title { font-size: 13px; font-weight: 600; color: var(--nw-text-muted); padding: 10px 0; text-transform: uppercase; letter-spacing: 0.05em; }
+.novel-writer-fw-error-text { color: var(--nw-danger); font-size: 13px; margin: 8px 0; padding: 10px; background: var(--nw-danger-bg); border: 1px solid var(--nw-danger-border); border-radius: var(--nw-radius-sm); }
+.novel-writer-fw-empty-state { text-align: center; padding: 48px; color: var(--nw-text-muted); font-size: 14px; margin: auto; }
+.novel-writer-fw-cover-area {
+    width: 100%; height: 140px; background: var(--nw-cover-bg); border-radius: var(--nw-radius-md);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    font-size: 32px; color: var(--nw-text-muted); overflow: hidden; margin-bottom: 14px;
+    transition: filter 0.2s;
+}
+.novel-writer-fw-cover-area:hover { filter: var(--nw-cover-bg-hover); }
+.novel-writer-fw-cover-area img { width: 100%; height: 100%; object-fit: cover; }
+.novel-writer-fw-cover-placeholder { font-size: 13px; color: var(--nw-text-muted); }
+.novel-writer-fw-intervention {
+    border: 2px solid var(--nw-accent); border-radius: var(--nw-radius-md); padding: 10px; margin: 10px 0;
+    background: var(--nw-accent-muted);
+}
+/* V2 步骤颜色分组 */
+.novel-writer-fw-step-soul { border-left: 3px solid #a855f7; }     /* 紫色-灵魂类 */
+.novel-writer-fw-step-creative { border-left: 3px solid var(--nw-success-bright); } /* 绿色-创作类 */
+.novel-writer-fw-step-audit { border-left: 3px solid #f97316; }
+

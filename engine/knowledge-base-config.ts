@@ -9,7 +9,7 @@
 import { App } from 'obsidian';
 import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
 import { kbConfigDir, kbConfigFile } from '../shared/paths';
-import { GenreConfig, TechniqueDef, SubGenreConfig } from './webnovel-knowledge-base';
+import { GenreConfig, TechniqueDef, SubGenreConfig } from '../shared/webnovel-knowledge-base';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('KnowledgeBaseConfig');

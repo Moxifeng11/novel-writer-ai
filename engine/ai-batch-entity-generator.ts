@@ -8,6 +8,7 @@ import {
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse, BatchEntityResult } from './ai-engine';
 import { stripCodeFence } from '../shared/api-response-utils';
+import { buildEntityTemplateBlock } from '../shared/entity-templates';
 import {
     validateFactionOutput,
     validateLocationOutput,
@@ -43,43 +44,9 @@ export class BatchEntityGenerator {
     ): Promise<BatchEntityResult[]> {
         return this._generateEntitiesBatchInternal(
             '势力', FACTION_FRONTMATTER_KEYS, '名称、类型、领袖',
-            `---
-tags: [势力, nw/实体/势力]
-entity_status: active
-entity_created_at:
-entity_last_changed_at:
-entity_last_changed_reason:
-名称:
-别称:
-类型:
-地位/排名:
-描述:
-领袖:
----
+            `${buildEntityTemplateBlock('faction').frontmatter}
 
-# 势力名
-
-## 确定性设定
-- 领袖：
-- 核心成员：
-- 层级体系：
-- 规模：
-- 宗旨：
-- 行事风格：
-- 资源底蕴：
-
-## 不确定性
-- 内部矛盾：
-- 隐藏目的：
-- 潜在变数：
-
-## 与其他元素的互信息
-- [[关联人物]] :
-- [[敌对势力]] :
-- [[关联地点]] :
-
-## 变更记录
-- [章节名] 时间戳 | 变更描述`,
+${buildEntityTemplateBlock('faction').body}`,
             worldview, names, description, count, customSystemPrompt, settingLib
         );
     }
@@ -94,40 +61,9 @@ entity_last_changed_reason:
     ): Promise<BatchEntityResult[]> {
         return this._generateEntitiesBatchInternal(
             '地点', LOCATION_FRONTMATTER_KEYS, '名称、类型、地理位置',
-            `---
-tags: [地点, nw/实体/地点]
-名称:
-别称:
-类型:
-描述:
-重要程度:
-地理特征:
-主要居民/势力:
-所在世界/区域:
----
+            `${buildEntityTemplateBlock('location').frontmatter}
 
-# 地点名
-
-## 确定性设定
-- 地理特征：
-- 气候：
-- 灵脉/资源：
-- 规模：
-- 主要居民/势力：
-- 文化风俗：
-
-## 不确定性
-- 隐藏秘密：
-- 未探索区域：
-- 潜在危机：
-
-## 与其他元素的互信息
-- [[关联人物]] :
-- [[关联势力]] :
-- [[关联事件]] :
-
-## 变更记录
-- [章节名] 时间戳 | 变更描述`,
+${buildEntityTemplateBlock('location').body}`,
             worldview, names, description, count, customSystemPrompt, settingLib
         );
     }
@@ -143,44 +79,11 @@ tags: [地点, nw/实体/地点]
     ): Promise<BatchEntityResult[]> {
         const typeLabel = itemType || '物品/功法';
         const typeKey = itemType === '功法' ? '功法' : '物品';
-        // 双标签并存：旧扁平标签 + nw/ 层级标签（Bases 看板按层级标签筛选）
-        const namespaceTag = 'nw/实体/物品';
         return this._generateEntitiesBatchInternal(
             typeLabel, ITEM_FRONTMATTER_KEYS, '名称、类型、品级',
-            `---
-tags: [${typeKey}, ${namespaceTag}]
-entity_status: active
-entity_created_at:
-entity_last_changed_at:
-entity_last_changed_reason:
-名称:
-类型:
-品阶/等级:
-所属/归属:
-描述:
-效果:
----
+            `${buildEntityTemplateBlock('item', { itemTag: typeKey }).frontmatter}
 
-# 物品/功法名
-
-## 确定性设定
-- 外观/形态：
-- 特性：
-- 主要用途：
-- 特殊效果：
-
-## 不确定性
-- 隐藏能力：
-- 限制/副作用：
-- 真正来历：
-
-## 与其他元素的互信息
-- [[持有者/修炼者]] :
-- [[关联剧情]] :
-- [[关联物品]] :
-
-## 变更记录
-- [章节名] 时间戳 | 变更描述`,
+${buildEntityTemplateBlock('item', { itemTag: typeKey }).body}`,
             worldview, names, description, count, customSystemPrompt, settingLib
         );
     }

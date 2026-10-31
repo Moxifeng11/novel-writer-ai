@@ -1,6 +1,6 @@
 import { App, Modal, Notice } from 'obsidian';
 import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
-import { DeconstructionScheduler, BreakdownDimension, BreakdownProgress } from '../services/deconstruction-scheduler';
+import { DeconstructionScheduler, BreakdownDimension, BreakdownProgress } from '../engine/deconstruction-scheduler';
 import { StyleFingerprint, StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
 import { FingerprintExtractor } from '../engine/fingerprint-extractor';
 import type { ProviderFactoryConfig } from '../engine/embedding/provider-factory';

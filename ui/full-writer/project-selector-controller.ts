@@ -27,10 +27,13 @@ import {
     getProjectCover,
     getProjectMeta,
     getChaptersForProject,
+    scanProjectChapters,
     sortChaptersByNumber,
     getNextChapter,
     deleteProject,
 } from '../project-utils';
+
+type ProjectMeta = Awaited<ReturnType<typeof getProjectMeta>>;
 
 export type ChapterItem = {
     chapter: string;
@@ -154,15 +157,28 @@ export class ProjectSelectorController {
         }
     }
 
-    private getUnitsForProject(project: string, mode: CreationMode): ChapterItem[] {
-        if (mode === 'long') return sortChaptersByNumber(getChaptersForProject(this.app, project));
-        return listModeUnits(this.app, project, mode).map(unit => ({
-            chapter: unit.unitName,
-            volume: '',
-            title: unit.title,
-            status: unit.status,
-            file: unit.file,
-        }));
+    /**
+     * 项目单元列表。传入 unitsCache 时复用本次渲染已算好的结果
+     * （卡片 / 右侧详情 / 快捷工具会重复问同一项目的章节）。
+     */
+    private getUnitsForProject(
+        project: string,
+        mode: CreationMode,
+        unitsCache?: Map<string, ChapterItem[]>,
+    ): ChapterItem[] {
+        const cached = unitsCache?.get(project);
+        if (cached) return cached;
+        const units = mode === 'long'
+            ? sortChaptersByNumber(getChaptersForProject(this.app, project))
+            : listModeUnits(this.app, project, mode).map(unit => ({
+                chapter: unit.unitName,
+                volume: '',
+                title: unit.title,
+                status: unit.status,
+                file: unit.file,
+            }));
+        unitsCache?.set(project, units);
+        return units;
     }
 
     private async openUnit(project: string, mode: CreationMode, unit: ChapterItem | null): Promise<void> {
@@ -211,15 +227,26 @@ export class ProjectSelectorController {
 
         const contextManager = this.deps.getContextManager();
         const allProjects = await contextManager.detectProjects();
-        const modeOf = new Map<string, CreationMode>();
+        /** 本次渲染的项目元信息与单元列表缓存：卡片/详情/快捷工具共用，避免重复读文件与重复全库扫描 */
+        const metaOf = new Map<string, ProjectMeta>();
+        const unitsCache = new Map<string, ChapterItem[]>();
         await Promise.all(allProjects.map(async (project) => {
             try {
-                const meta = await getProjectMeta(this.app, project);
-                modeOf.set(project, meta.creationMode);
+                metaOf.set(project, await getProjectMeta(this.app, project));
             } catch {
-                modeOf.set(project, 'long');
+                // 元信息读不到的项目按长篇默认归类；卡片渲染处会再取一次（与旧行为一致）
             }
         }));
+        const modeOf = new Map<string, CreationMode>();
+        for (const project of allProjects) {
+            modeOf.set(project, metaOf.get(project)?.creationMode || 'long');
+        }
+        // 长篇章节一次扫描产出全部项目（旧实现每项目各遍历一次全库）
+        const longProjects = allProjects.filter(project => (modeOf.get(project) || 'long') === 'long');
+        const chapterScan = scanProjectChapters(this.app, longProjects);
+        for (const project of longProjects) {
+            unitsCache.set(project, chapterScan.get(project) || []);
+        }
 
         // 从外部高亮某个项目时，自动切到它所属的分类
         if (this.highlightedProject && allProjects.includes(this.highlightedProject)) {
@@ -240,7 +267,7 @@ export class ProjectSelectorController {
             this.selectedProject = preferred && projects.includes(preferred) ? preferred : projects[0];
         }
         this.deps.onProjectSelected?.(this.selectedProject);
-        await this.renderRightPanel();
+        await this.renderRightPanel(unitsCache);
 
         const modeLabel = this.selectedMode === 'long' ? '长篇小说' : this.selectedMode === 'short' ? '短篇小说' : '剧本';
         const toolbar = projectArea.createDiv({ cls: 'novel-writer-fw-project-toolbar' });
@@ -339,7 +366,8 @@ export class ProjectSelectorController {
             }
 
             const metaRow = info.createDiv({ cls: 'novel-writer-fw-card-meta' });
-            const meta = await getProjectMeta(this.app, project);
+            let meta = metaOf.get(project);
+            if (!meta) meta = await getProjectMeta(this.app, project);
             const modeText = meta.creationMode === 'long' ? '' : `${meta.creationModeLabel} · `;
             const categoryText = meta.shortCategory || meta.scriptGenre;
             metaRow.createSpan({ text: `${modeText}${categoryText || meta.genre}`.trim(), cls: 'novel-writer-fw-card-genre g0' });
@@ -347,7 +375,7 @@ export class ProjectSelectorController {
                 metaRow.createSpan({ text: `🧬 ${meta.storyStructureName}`, cls: 'novel-writer-fw-card-structure' });
             }
 
-            const sortedChapters = this.getUnitsForProject(project, meta.creationMode);
+            const sortedChapters = this.getUnitsForProject(project, meta.creationMode, unitsCache);
             const writtenChapters = sortedChapters.filter(c => c.status === 'written' || c.status === 'settled');
 
             metaRow.createSpan({ text: `${sortedChapters.length}${meta.unitLabel}`, cls: 'novel-writer-fw-card-count-badge' });
@@ -448,7 +476,7 @@ export class ProjectSelectorController {
     }
 
     /** 右侧面板 = 选中项目概览 + 按项目类型切换的快捷工具 */
-    private async renderRightPanel(): Promise<void> {
+    private async renderRightPanel(unitsCache?: Map<string, ChapterItem[]>): Promise<void> {
         const panel = this.rightPanel;
         if (!panel) return;
         panel.empty();
@@ -460,7 +488,7 @@ export class ProjectSelectorController {
             meta = await getProjectMeta(this.app, project);
             mode = meta.creationMode;
             this.selectedMode = mode;
-            await this.renderProjectDetail(panel, project, meta);
+            await this.renderProjectDetail(panel, project, meta, unitsCache);
             await this.renderFlowSummary(panel, project, mode);
         } else {
             const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
@@ -471,7 +499,7 @@ export class ProjectSelectorController {
         renderQuickToolsPanel(panel, {
             executeCommand: (commandId) => this.deps.executeCommand(commandId),
             project,
-            projectActions: project && meta ? this.buildProjectActions(project, mode, meta) : undefined,
+            projectActions: project && meta ? this.buildProjectActions(project, mode, meta, unitsCache) : undefined,
             toolGroups: getToolGroupsForMode(mode),
             title: getModeToolTitle(mode),
         });
@@ -523,9 +551,10 @@ export class ProjectSelectorController {
     private buildProjectActions(
         project: string,
         mode: CreationMode,
-        meta: Awaited<ReturnType<typeof getProjectMeta>>
+        meta: Awaited<ReturnType<typeof getProjectMeta>>,
+        unitsCache?: Map<string, ChapterItem[]>,
     ): ProjectQuickAction[] {
-        const chapters = this.getUnitsForProject(project, mode);
+        const chapters = this.getUnitsForProject(project, mode, unitsCache);
         const nextChapter = getNextChapter(chapters);
         const unit = meta.unitLabel;
 
@@ -654,11 +683,12 @@ export class ProjectSelectorController {
     private async renderProjectDetail(
         panel: HTMLElement,
         project: string,
-        metaArg?: Awaited<ReturnType<typeof getProjectMeta>>
+        metaArg?: Awaited<ReturnType<typeof getProjectMeta>>,
+        unitsCache?: Map<string, ChapterItem[]>,
     ): Promise<void> {
         const detail = panel.createDiv({ cls: 'novel-writer-fw-quick-detail' });
         const meta = metaArg ?? await getProjectMeta(this.app, project);
-        const chapters = this.getUnitsForProject(project, meta.creationMode);
+        const chapters = this.getUnitsForProject(project, meta.creationMode, unitsCache);
         const written = chapters.filter(c => c.status === 'written' || c.status === 'settled');
         const nextChapter = getNextChapter(chapters);
 

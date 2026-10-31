@@ -12,9 +12,9 @@ import type { CryptoService } from './crypto-service';
 import type { ProviderManager } from './provider-manager';
 import type { PluginCacheManager } from '../shared/plugin-cache';
 import type { SerializedWriter } from '../shared/serialized-writer';
-import { DEFAULT_PROMPT_MANAGER_CONFIG } from '../services/prompt-manager-types';
-import { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '../services/deconstruction-scheduler';
-import { DEFAULT_FORESHADOW_CONFIG } from '../engine/foreshadow-config-manager';
+import { DEFAULT_PROMPT_MANAGER_CONFIG } from '../shared/prompt-manager-types';
+import { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '../shared/deconstruction-settings';
+import { DEFAULT_FORESHADOW_CONFIG } from '../shared/foreshadow-config';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('SettingsService');

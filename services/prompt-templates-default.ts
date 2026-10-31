@@ -1,4 +1,4 @@
-import type { PromptTemplate, PromptCategory } from './prompt-manager-types';
+import type { PromptTemplate, PromptCategory } from '../shared/prompt-manager-types';
 
 const now = Date.now();
 

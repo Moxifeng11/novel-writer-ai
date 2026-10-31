@@ -1,0 +1,433 @@
+/* ==========================================================================
+   v6.0 基础组件层（Base Component Layer）
+   统一的表单控件基础样式，所有业务类继承此层
+   特异性说明：基础层用 .nw-*（0-1-0），业务差异类写在后面，同名属性自然覆盖
+   业务使用方式：cls="nw-select novel-writer-xxx-select"（基础类在前，业务类在后）
+   版本注释：v6.0 新增，替代 v3.4.8/v5.x 散落的各版本表单控件样式
+   ========================================================================== */
+
+/* ── 输入框（text / password / number / search） ── */
+.nw-input {
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    background: var(--nw-input-bg, var(--background-primary-alt));
+    border: 1px solid var(--nw-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-sm, 6px);
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 13px;
+    line-height: 30px;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.nw-input:focus {
+    outline: none;
+    border-color: var(--nw-accent, var(--interactive-accent));
+    box-shadow: 0 0 0 2px var(--nw-focus-ring, rgba(194, 65, 12, 0.15));
+}
+.nw-input::placeholder {
+    color: var(--nw-text-muted, var(--text-faint));
+}
+.nw-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── 多行文本框 ── */
+.nw-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--nw-input-bg, var(--background-primary-alt));
+    border: 1px solid var(--nw-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-sm, 6px);
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.6;
+    box-sizing: border-box;
+    resize: vertical;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.nw-textarea:focus {
+    outline: none;
+    border-color: var(--nw-accent, var(--interactive-accent));
+    box-shadow: 0 0 0 2px var(--nw-focus-ring, rgba(194, 65, 12, 0.15));
+}
+.nw-textarea::placeholder {
+    color: var(--nw-text-muted, var(--text-faint));
+}
+
+/* ── 下拉选择框 ── */
+/* 通用下拉（30+ 弹窗共用）。
+   旧版 padding: 0 12px —— 右侧只留 12px，而原生下拉箭头要占约 20px，
+   箭头直接压在文字上，末几个字看起来「缺了一半」。
+   同时缺 text-overflow，长选项（如「默认（doubao-seed-2-0-pro-260215）」）
+   实测溢出 3px，被切在笔画中间。
+   现在：右侧留 30px 给箭头，并加省略号兜底。 */
+.nw-select {
+    width: 100%;
+    height: 32px;
+    padding: 0 30px 0 12px;
+    /* 同上：自带箭头（Obsidian 只给 .dropdown 加箭头），
+       并用 background-color 避免把背景图重置掉 */
+    background-color: var(--nw-input-bg, var(--background-primary-alt));
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www%2Ew3%2Eorg/2000/svg%27%20width=%2710%27%20height=%276%27%20viewBox=%270%200%2010%206%27%3E%3Cpath%20d=%27M1%201l4%204%204-4%27%20fill=%27none%27%20stroke=%27%23808080%27%20stroke-width=%271.6%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    background-size: 10px 6px;
+    background-blend-mode: normal;
+    border: 1px solid var(--nw-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-sm, 6px);
+    color: var(--nw-text-primary, var(--text-normal));
+    font-size: 13px;
+    line-height: 30px;
+    box-sizing: border-box;
+    cursor: pointer;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: border-color var(--nw-dur-fast, 120ms) var(--nw-ease, ease),
+                box-shadow var(--nw-dur-fast, 120ms) var(--nw-ease, ease);
+}
+.nw-select:focus {
+    outline: none;
+    border-color: var(--nw-accent, var(--interactive-accent));
+    box-shadow: 0 0 0 2px var(--nw-focus-ring, rgba(194, 65, 12, 0.15));
+}
+/* 兜底：各业务变体（如 .novel-writer-fw-chapter-select）用单类选择器
+   覆盖了 padding-right，把箭头位置挤没了。这里用 select.nw-select
+   （多一个元素选择器）提高一格特异性统一兜住，而不是逐个改或上 !important。 */
+select.nw-select {
+    padding-right: 30px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-select option {
+    background: var(--background-primary);
+    color: var(--text-normal);
+}
+.nw-select option:checked {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+.nw-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── 按钮基础 ──
+   C-b2：原 6 处重复定义（:root 区 / 尺寸区 / 协同写作区 / v7.x 补充区 / v8.0 热区层）
+   合并为单一定义，各属性取层叠终值（运行时 computedStyle 实测校准）。
+   合并块必须位于所有 .nw-btn-* 变体之前，否则同特异性后写会覆盖变体样式。 */
+.nw-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--nw-text-secondary, var(--text-muted));
+    font-size: 12px;
+    font-weight: 500;
+    height: 32px;
+    min-width: var(--nw-hit-min, 44px);
+    min-height: var(--nw-hit-min, 44px);
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: background-color, border-color, color, box-shadow, opacity, transform 0.15s ease;
+    user-select: none;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.nw-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 按钮变体：主按钮 */
+.nw-btn-primary {
+    background: var(--nw-btn-primary-bg, var(--interactive-accent));
+    border-color: var(--nw-btn-primary-bg, var(--interactive-accent));
+    color: var(--nw-btn-primary-text, var(--text-on-accent));
+}
+.nw-btn-primary:hover:not(:disabled) {
+    background: var(--nw-btn-primary-hover-bg, color-mix(in srgb, var(--interactive-accent), black 8%));
+    border-color: var(--nw-btn-primary-hover-bg, color-mix(in srgb, var(--interactive-accent), black 8%));
+}
+.nw-btn-primary:active:not(:disabled) {
+    background: var(--nw-btn-primary-active-bg, color-mix(in srgb, var(--interactive-accent), black 15%));
+    border-color: var(--nw-btn-primary-active-bg, color-mix(in srgb, var(--interactive-accent), black 15%));
+    transform: translateY(1px);
+}
+.nw-btn-primary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--nw-focus-ring, rgba(194, 65, 12, 0.15));
+}
+
+/* 按钮变体：次按钮（描边） */
+.nw-btn-secondary {
+    background: var(--nw-btn-secondary-bg, transparent);
+    border-color: var(--nw-btn-secondary-border, var(--background-modifier-border));
+    color: var(--nw-btn-secondary-text, var(--text-normal));
+}
+.nw-btn-secondary:hover:not(:disabled) {
+    background: var(--nw-btn-secondary-hover-bg, var(--background-modifier-hover));
+    border-color: var(--nw-text-secondary, var(--text-muted));
+}
+.nw-btn-secondary:active:not(:disabled) {
+    background: var(--nw-btn-secondary-active-bg, var(--background-modifier-active-hover));
+    transform: translateY(1px);
+}
+.nw-btn-secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--nw-focus-ring, rgba(194, 65, 12, 0.15));
+}
+
+/* 按钮变体：幽灵/文字按钮（无边框） */
+.nw-btn-ghost,
+.nw-btn-text {
+    background: transparent;
+    border-color: transparent;
+    color: var(--nw-text-secondary, var(--text-muted));
+}
+.nw-btn-ghost:hover:not(:disabled),
+.nw-btn-text:hover:not(:disabled) {
+    background: var(--nw-surface-hover, var(--background-modifier-hover));
+    color: var(--nw-text-primary, var(--text-normal));
+}
+.nw-btn-ghost:active:not(:disabled),
+.nw-btn-text:active:not(:disabled) {
+    background: var(--nw-btn-ghost-active-bg, var(--background-modifier-active-hover));
+    transform: translateY(1px);
+}
+.nw-btn-ghost:focus-visible,
+.nw-btn-text:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--nw-focus-ring, rgba(194, 65, 12, 0.15));
+}
+
+/* 按钮变体：危险 */
+.nw-btn-danger {
+    background: var(--nw-danger-bg, rgba(224, 62, 62, 0.08));
+    border-color: var(--nw-danger-border, rgba(224, 62, 62, 0.2));
+    color: var(--nw-danger, #e03e3e);
+}
+.nw-btn-danger:hover:not(:disabled) {
+    background: var(--nw-danger, #e03e3e);
+    border-color: var(--nw-danger, #e03e3e);
+    color: #fff;
+}
+.nw-btn-danger:active:not(:disabled) {
+    background: var(--nw-btn-danger-active-bg, #c93333);
+    border-color: var(--nw-btn-danger-active-bg, #c93333);
+    transform: translateY(1px);
+}
+.nw-btn-danger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(224, 62, 62, 0.2);
+}
+
+/* 按钮变体：警告（用于可恢复的异常状态，如 interrupted） */
+.nw-btn-warning {
+    background: var(--nw-warning-bg, rgba(245, 158, 11, 0.08));
+    border-color: var(--nw-warning-border, rgba(245, 158, 11, 0.2));
+    color: var(--nw-warning, #f59e0b);
+}
+.nw-btn-warning:hover:not(:disabled) {
+    background: var(--nw-warning, #f59e0b);
+    border-color: var(--nw-warning, #f59e0b);
+    color: #fff;
+}
+.nw-btn-warning:active:not(:disabled) {
+    background: var(--nw-btn-warning-active-bg, #d97706);
+    border-color: var(--nw-btn-warning-active-bg, #d97706);
+    transform: translateY(1px);
+}
+.nw-btn-warning:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+/* 按钮尺寸：小 */
+.nw-btn-sm {
+    padding: 5px 10px;
+    font-size: var(--nw-font-size-sm, 12px);
+    border-radius: var(--nw-radius-xs, 4px);
+    height: 28px;
+}
+.nw-btn-sm .nw-btn-icon {
+    width: var(--nw-icon-size-xs, 14px);
+    height: var(--nw-icon-size-xs, 14px);
+}
+
+/* 按钮尺寸：大 */
+
+.nw-btn-lg .nw-btn-icon {
+    width: var(--nw-icon-size-md, 20px);
+    height: var(--nw-icon-size-md, 20px);
+}
+
+/* 按钮图标 */
+.nw-btn-icon {
+    width: var(--nw-icon-size-sm, 16px);
+    height: var(--nw-icon-size-sm, 16px);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.nw-btn-group .nw-btn {
+    border-radius: 0;
+}
+.nw-btn-group .nw-btn:first-child {
+    border-top-left-radius: var(--nw-radius-sm, 6px);
+    border-bottom-left-radius: var(--nw-radius-sm, 6px);
+}
+.nw-btn-group .nw-btn:last-child {
+    border-top-right-radius: var(--nw-radius-sm, 6px);
+    border-bottom-right-radius: var(--nw-radius-sm, 6px);
+}
+.nw-btn-group .nw-btn + .nw-btn {
+    margin-left: -1px;
+}
+
+/* ── 卡片 ──
+   C-b2：原 3 处重复定义（基础区 / 统计卡片区 / 协同写作区）合并为单一定义，
+   各属性取层叠终值。作用域覆盖（.nw-scope .nw-card、协同写作组合器 !important）保持不变。 */
+.nw-card {
+    background: var(--nw-card-bg, var(--background-primary));
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-md, 8px);
+    box-shadow: var(--nw-card-shadow, none);
+    padding: 8px 10px;
+    overflow: hidden;
+    transition: background var(--nw-transition-fast, 0.15s ease),
+                border-color var(--nw-transition-fast, 0.15s ease),
+                box-shadow var(--nw-transition-fast, 0.15s ease),
+                transform var(--nw-transition-fast, 0.15s ease);
+}
+.nw-card-hover:hover {
+    background: var(--nw-card-bg-hover, color-mix(in srgb, var(--background-primary), var(--background-secondary) 20%));
+    box-shadow: var(--nw-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+    border-color: var(--nw-accent-muted, rgba(194, 65, 12, 0.08));
+}
+.nw-card-hover:active {
+    transform: translateY(1px);
+}
+
+/* 卡片头部 */
+.nw-card-header {
+    padding: var(--nw-card-header-padding, 16px 20px);
+    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    display: flex;
+    align-items: center;
+    gap: var(--nw-space-3, 12px);
+}
+.nw-card-title {
+    /* C-b2：原 4 处重复定义合并，属性取层叠终值（运行时 computedStyle 实测校准） */
+    margin: 0 0 3px;
+    font-size: 15px;
+    font-weight: var(--nw-font-weight-semibold, 600);
+    color: var(--nw-text-primary, var(--text-normal));
+    line-height: 1.4;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── 分割线 ── */
+.nw-divider {
+    height: 1px;
+    background: var(--nw-divider, var(--background-modifier-border-hover));
+    margin: 12px 0;
+    border: none;
+}
+
+/* ── 表单标签 ── */
+.nw-form-label {
+    display: block;
+    font-size: var(--nw-font-size-sm, 12px);
+    font-weight: var(--nw-font-weight-medium, 500);
+    color: var(--nw-form-label-color, var(--text-normal));
+    margin-bottom: var(--nw-space-1, 4px);
+    line-height: 1.4;
+}
+.nw-form-label-required::after {
+    content: "*";
+    color: var(--nw-danger, #e03e3e);
+    margin-left: 2px;
+}
+
+/* ── 表单组 ── */
+.nw-form-group {
+    margin-bottom: var(--nw-space-4, 16px);
+}
+.nw-form-group:last-child {
+    margin-bottom: 0;
+}
+.nw-form-row .nw-form-group {
+    flex: 1;
+}
+
+/* C-b4：原「.nw-scope .modal.nw-modal*」后代选择器规则已删除
+   （运行时验证 0 命中：nw-scope 与 modal 为同一元素）。
+   模态框尺寸统一由文件末尾「v8.3 Modal 尺寸类」自身挂载规则接管。 */
+
+/* 模态框头部 */
+.nw-modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--nw-space-3, 12px);
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    flex-shrink: 0;
+}
+.nw-modal-title {
+    margin: 0;
+    font-size: var(--nw-font-size-xl, 18px);
+    font-weight: var(--nw-font-weight-bold, 700);
+    color: var(--nw-text-primary, var(--text-normal));
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nw-modal-title-wrap {
+    flex: 1;
+    min-width: 0;
+}
+.nw-modal-icon {
+    width: var(--nw-icon-size-lg, 24px);
+    height: var(--nw-icon-size-lg, 24px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+/* 模态框内容区 */
+.nw-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* 模态框底部操作区 */
+.nw-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--nw-space-2, 8px);
+    padding: 14px 24px 20px;
+    border-top: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+    flex-shrink: 0;
+}
+

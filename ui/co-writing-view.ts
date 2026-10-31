@@ -14,7 +14,7 @@ import { CoWriterEngine, resolveCoWriteLocalModel } from '../engine/co-writer-en
 import type { ChapterBriefInput } from '../engine/chapter-brief';
 import { CoWriteFacade } from './services/co-write-facade';
 import type { BookBasicInfo } from '../services/knowledge-base-manager';
-import { WebnovelKnowledgeBase } from '../engine/webnovel-knowledge-base';
+import { WebnovelKnowledgeBase } from '../shared/webnovel-knowledge-base';
 import { EndingTractionEngine } from '../engine/ending-traction-engine';
 import { EmotionCurveView } from './components/emotion-curve-view';
 import { createEmptyState } from './components/empty-state';
@@ -1385,6 +1385,9 @@ export class CoWritingView extends ItemView {
   }
 
   async handleEditorKeydown(event: KeyboardEvent) {
+    // P1-15（v4.27）：中文输入法组合期间不拦截任何按键，
+    // 否则 Tab/数字键会被当成「接受建议」，候选词被打断。
+    if (event.isComposing || (event as KeyboardEvent & { keyCode?: number }).keyCode === 229) return;
     if (this.handleMarkdownShortcut(event)) return;
     if (event.key === "Tab") {
       event.preventDefault();

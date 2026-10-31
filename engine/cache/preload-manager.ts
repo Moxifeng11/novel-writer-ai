@@ -14,7 +14,7 @@
  * - 可随时启用/禁用
  */
 
-import { LruCache } from '../repository/lru-cache';
+import { LruCache } from '../../shared/lru-cache';
 import type { Chapter } from '../repository/domain/aggregates';
 import type { ChapterRepository } from '../repository';
 

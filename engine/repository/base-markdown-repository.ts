@@ -27,7 +27,7 @@
  */
 
 import type { FileSystemPort } from '../../shared/file-system-port';
-import { LruCache } from './lru-cache';
+import { LruCache } from '../../shared/lru-cache';
 import type { IRepository, IBulkRepository, BulkResult, BulkFailure } from './interfaces';
 import type { MultiLayerCache } from '../cache';
 

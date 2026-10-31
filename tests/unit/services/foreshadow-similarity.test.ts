@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ForeshadowManager } from '../../../services/foreshadow-manager';
+import { ForeshadowManager } from '../../../engine/foreshadow-manager';
 
 /** 直接调用私有方法（与 ai-api-client.test.ts 的 isDisconnectionError 同款模式） */
 function sim(a: string, b: string): number {

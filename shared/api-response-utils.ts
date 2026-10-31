@@ -2,7 +2,7 @@
  * APIResponse 工具函数 — 消除 (response as any)?.content 模式
  * 从 co-writer-engine / emotion-curve-analyzer 等文件提取的公共逻辑
  */
-import { APIResponse } from '../engine/ai-engine';
+import type { APIResponse } from './api-types';
 
 /**
  * 判断是否为 APIResponse（有 content 字段的对象）

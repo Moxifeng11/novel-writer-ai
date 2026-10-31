@@ -18,7 +18,7 @@ import type { CharacterAnalysisResult } from './deconstructors/character-deconst
 import type { ForeshadowAnalysisResult } from './deconstructors/foreshadow-deconstructor';
 import type { CommercialAnalysisResult } from './deconstructors/commercial-deconstructor';
 import type { ReadabilityAnalysisResult } from './deconstructors/readability-deconstructor';
-import type { DeconstructDimension } from '../services/deconstruction-worker-manager';
+import type { DeconstructDimension } from './deconstruction-worker-manager';
 import { createLogger } from '../shared/logger';
 
 

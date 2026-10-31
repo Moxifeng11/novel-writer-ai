@@ -139,14 +139,11 @@ if (!fs.existsSync(assetDir)) {
     }
     notes.push(`内置模板: ${keys.length} 个文件`);
 
-    // 3 文件安装的自举依赖这些字符串出现在打包产物中
+    // 3 文件安装的自举依赖模板内容内联进产物。产物已开启 minify：模块路径注释与
+    // 顶层变量名会被压缩掉，因此改断言模板 key 的字符串字面量（压缩后必然保留）。
     if (assets['main.js']) {
         const mainJs = fs.readFileSync(path.join(rootDir, 'main.js'), 'utf8');
-        const markers = [
-            'template-scaffold-assets',
-            'TEMPLATE_SCAFFOLD_FILES',
-            'TemplateScaffold',
-        ];
+        const markers = [...keys].sort().slice(0, 2).map((key) => JSON.stringify(key));
         for (const marker of markers) {
             if (!mainJs.includes(marker)) {
                 errors.push(`main.js 未包含模板自举标记: ${marker}`);

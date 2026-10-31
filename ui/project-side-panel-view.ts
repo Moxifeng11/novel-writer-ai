@@ -11,6 +11,7 @@
  */
 import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
 import type NovelWriterPlugin from '../main';
+import { STORAGE_KEYS } from '../shared/storage-keys';
 import {
     FILE_KIND_LABELS,
     FRONTMATTER_SCHEMAS,
@@ -32,8 +33,6 @@ import { createLogger } from '../shared/logger';
 const log = createLogger('ProjectSidePanel');
 
 export const VIEW_TYPE_PROJECT_SIDE_PANEL = 'novel-writer-project-side-panel';
-
-const COLLAPSE_KEY = 'novel-writer-side-panel-collapsed';
 
 export interface PanelActionSpec {
     id: string;
@@ -119,7 +118,7 @@ export class ProjectSidePanelView extends ItemView {
 
     private loadCollapsed(): void {
         try {
-            const raw = localStorage.getItem(COLLAPSE_KEY);
+            const raw = localStorage.getItem(STORAGE_KEYS.sidePanelCollapsed);
             if (raw) this.collapsed = new Set(JSON.parse(raw) as string[]);
         } catch {
             this.collapsed = new Set();
@@ -128,7 +127,7 @@ export class ProjectSidePanelView extends ItemView {
 
     private saveCollapsed(): void {
         try {
-            localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...this.collapsed]));
+            localStorage.setItem(STORAGE_KEYS.sidePanelCollapsed, JSON.stringify([...this.collapsed]));
         } catch {
             // 忽略：折叠状态只是体验优化
         }
