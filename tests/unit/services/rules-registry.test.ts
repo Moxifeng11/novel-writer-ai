@@ -131,11 +131,13 @@ describe('rules-registry — 写作规则多版本注册', () => {
             expect(listing.drift.join()).toContain('版本号相同但内容不同');
         });
 
-        it('文件没有版本号时不与内置版本比对，不误报漂移', async () => {
+        it('文件没有版本号但内容匹配内置时，版本号被正确重标注（P0 修复）', async () => {
             const app = makeApp({ '元文件/00-系统模板/写作规则.md': WRITING_RULES });
             const listing = await listRulesVersions(app as any);
             expect(listing.active.doc?.source).toBe('vault');
-            expect(listing.active.doc?.version).toBe('unknown');
+            // v4.27：内容哈希匹配 builtin:3.6.0 → 版本号重标注为 3.6.0（不再 unknown）
+            expect(listing.active.doc?.version).toBe('3.6.0');
+            // 同版本同内容 → 无漂移
             expect(listing.drift).toEqual([]);
         });
     });
@@ -154,5 +156,24 @@ describe('rules-registry — 写作规则多版本注册', () => {
             expect(resolved.text).toBe(WRITING_RULES);
             expect(resolved.doc.source).toBe('builtin');
         });
+    });
+});
+
+describe('rules-registry — 内容哈希重标注（启动弹窗修复）', () => {
+    it('vault 文件内容匹配 legacy 内置时版本号被纠正为 legacy，不再报同版本漂移', async () => {
+        const app = makeApp({ '元文件/00-系统模板/写作规则.md': WRITING_RULES_LEGACY });
+        const listing = await listRulesVersions(app as any);
+        // vault 文件内容 = legacy → 版本号被重标注为 3.6.0-legacy
+        const vaultDoc = listing.docs.find(d => d.source === 'vault');
+        expect(vaultDoc?.version).toBe('3.6.0-legacy');
+        // selectActive 选中 vault 文件（优先级高于 builtin），但 drift 为空
+        // 因为同版本（3.6.0-legacy）的 builtin 哈希与 vault 文件一致
+        expect(listing.drift).toEqual([]);
+    });
+
+    it('vault 文件内容匹配新版内置时版本号不变，drift 为空', async () => {
+        const app = makeApp({ '元文件/00-系统模板/写作规则.md': WRITING_RULES });
+        const listing = await listRulesVersions(app as any);
+        expect(listing.drift).toEqual([]);
     });
 });

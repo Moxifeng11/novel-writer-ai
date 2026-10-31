@@ -142,6 +142,18 @@ export async function listRulesVersions(
         return true;
     });
 
+    // P0 修复（v4.27）：按内容哈希重新标注非内置文件的版本号。
+    // vault/project 文件自声明的版本号可能过期（如写着 3.6.0 但内容是 legacy），
+    // 导致「同版本号不同哈希」的假漂移。内容哈希匹配到内置版本时，以内容为准。
+    const builtins = unique.filter((doc) => doc.source === 'builtin');
+    for (const doc of unique) {
+        if (doc.source === 'builtin') continue;
+        const match = builtins.find((b) => b.hash === doc.hash);
+        if (match && doc.version !== match.version) {
+            doc.version = match.version;
+        }
+    }
+
     const active = selectActive(unique, { activeId: options.activeVersion });
     const drift: string[] = [];
     if (active.doc) {

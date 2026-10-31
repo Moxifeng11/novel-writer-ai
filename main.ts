@@ -900,12 +900,46 @@ export default class NovelWriterPlugin extends Plugin {
                 return;
             }
             if (info.current !== info.expected && info.current !== 'unknown') {
-                new Notice(
-                    `⚠️ 写作规则版本不匹配（当前 ${info.current}，内置 ${info.expected}）。`
-                    + '可在设置里切换生效版本，或核对文件内容。',
-                    7000,
+                // v4.27：提供一键同步——vault 规则文件是模板拷贝，不是用户创作内容。
+                // 旧实现只弹警告让用户自己去设置里找，但大多数用户不知道怎么修。
+                const notice = new Notice(
+                    `📜 写作规则版本：当前 ${info.current}，内置 ${info.expected}。`,
+                    0,
                 );
-                log.warn(`[小说工坊] 写作规则版本不匹配: 当前 ${info.current}，内置 ${info.expected}`);
+                const syncBtn = notice.noticeEl.createEl('button', {
+                    text: '同步到最新版',
+                    cls: 'nw-btn nw-btn-primary',
+                    attr: { style: 'margin-left:8px' },
+                });
+                syncBtn.addEventListener('click', async () => {
+                    syncBtn.disabled = true;
+                    syncBtn.setText('同步中…');
+                    try {
+                        const { WRITING_RULES } = await import('./shared/writing-rules');
+                        const targetPath = '元文件/00-系统模板/写作规则.md';
+                        const existing = this.app.vault.getAbstractFileByPath(targetPath);
+                        if (existing instanceof TFile) {
+                            await this.app.vault.modify(existing, WRITING_RULES);
+                        } else {
+                            await this.app.vault.create(targetPath, WRITING_RULES);
+                        }
+                        rulesService.invalidateCache();
+                        new Notice('✅ 写作规则已同步到内置最新版', 4000);
+                        notice.hide();
+                    } catch (e) {
+                        log.error('[小说工坊] 同步写作规则失败:', e);
+                        new Notice(`❌ 同步失败: ${e instanceof Error ? e.message : String(e)}`, 6000);
+                        syncBtn.disabled = false;
+                        syncBtn.setText('同步到最新版');
+                    }
+                });
+                const dismissBtn = notice.noticeEl.createEl('button', {
+                    text: '忽略',
+                    cls: 'nw-btn nw-btn-secondary',
+                    attr: { style: 'margin-left:4px' },
+                });
+                dismissBtn.addEventListener('click', () => notice.hide());
+                log.info(`[小说工坊] 写作规则版本：当前 ${info.current}，内置 ${info.expected}（用户可一键同步）`);
             }
         } catch (e) {
             log.warn('[小说工坊] 规则版本检查失败:', e);
