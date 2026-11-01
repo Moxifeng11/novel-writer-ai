@@ -131,11 +131,19 @@ export class VectorEnhancer {
         }
     }
 
+    /**
+     * 向量服务是否可用（缓存结果）。
+     * @returns 布尔值
+     */
     async isAvailable(): Promise<boolean> {
         const result = await this.checkAvailability();
         return result.available;
     }
 
+    /**
+     * 主动探测向量服务可用性。
+     * @returns 探测结果
+     */
     async checkAvailability(): Promise<AvailabilityResult> {
         const now = Date.now();
         if (this.availabilityCache && (now - this.availabilityCache.timestamp) < this.availabilityCacheTTL) {
@@ -191,12 +199,20 @@ export class VectorEnhancer {
         }
     }
 
+    /**
+     * 强制重新探测并更新缓存。
+     * @returns 是否可用
+     */
     async recheckAvailability(): Promise<boolean> {
         this.availabilityCache = null;
         const result = await this.checkAvailability();
         return result.available;
     }
 
+    /**
+     * 不可用原因（用于 UI 提示）。
+     * @returns 原因文本
+     */
     getUnavailableReason(): string {
         return this.lastUnavailableReason;
     }
@@ -226,6 +242,12 @@ export class VectorEnhancer {
         return results;
     }
 
+    /**
+     * 把单段文本转成向量。
+     *
+     * @param text - 参数
+     * @returns 向量
+     */
     async embedText(text: string): Promise<number[]> {
         const cacheKey = this.getCacheKey(text);
         const cached = this.getFromCache(cacheKey);
@@ -248,6 +270,12 @@ export class VectorEnhancer {
         }
     }
 
+    /**
+     * 批量转向量。
+     *
+     * @param texts - 参数
+     * @returns 向量数组
+     */
     async embedTexts(texts: string[]): Promise<number[][]> {
         const results: number[][] = new Array(texts.length);
         const uncachedIndices: number[] = [];
@@ -296,6 +324,13 @@ export class VectorEnhancer {
         return results;
     }
 
+    /**
+     * 计算两个向量的余弦相似度。
+     *
+     * @param a - 参数
+     * @param b - 参数
+     * @returns 相似度 0–1
+     */
     cosineSimilarity(a: number[], b: number[]): number {
         if (a.length !== b.length) {
             throw new Error(`向量维度不匹配: ${a.length} vs ${b.length}`);
@@ -503,6 +538,10 @@ export class VectorEnhancer {
         return hash;
     }
 
+    /**
+     * 清空向量缓存。
+     * @returns 无
+     */
     clearCache(): void {
         this.embedCache.clear();
         this.availabilityCache = null;
@@ -510,19 +549,37 @@ export class VectorEnhancer {
         this.cacheMisses = 0;
     }
 
+    /**
+     * 缓存条目数。
+     * @returns 数量
+     */
     getCacheSize(): number {
         return this.embedCache.size;
     }
 
+    /**
+     * 设置缓存上限。
+     *
+     * @param size - 参数
+     * @returns 无
+     */
     setMaxSize(size: number): void {
         this.maxCacheSize = size;
         this.evictIfNeeded();
     }
 
+    /**
+     * 读取缓存上限。
+     * @returns 数量
+     */
     getMaxSize(): number {
         return this.maxCacheSize;
     }
 
+    /**
+     * 读取缓存命中统计。
+     * @returns 统计对象
+     */
     getCacheStats(): CacheStats {
         const total = this.cacheHits + this.cacheMisses;
         const hitRate = total > 0 ? this.cacheHits / total : 0;
@@ -535,19 +592,37 @@ export class VectorEnhancer {
         };
     }
 
+    /**
+     * 重置缓存统计。
+     * @returns 无
+     */
     resetCacheStats(): void {
         this.cacheHits = 0;
         this.cacheMisses = 0;
     }
 
+    /**
+     * 当前向量提供方。
+     * @returns 提供方或 null
+     */
     getProvider(): EmbeddingProvider | null {
         return this.provider;
     }
 
+    /**
+     * 注入/移除限流器。
+     *
+     * @param rateLimiter - 参数
+     * @returns 无
+     */
     setRateLimiter(rateLimiter: TokenBucketRateLimiter | null): void {
         this.rateLimiter = rateLimiter;
     }
 
+    /**
+     * 取当前限流器。
+     * @returns 限流器或 null
+     */
     getRateLimiter(): TokenBucketRateLimiter | null {
         return this.rateLimiter;
     }

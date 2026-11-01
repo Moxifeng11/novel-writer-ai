@@ -105,6 +105,10 @@ export class KnowledgeBaseConfigManager {
         await fs.mkdir(configDir).catch(() => undefined);
     }
 
+    /**
+     * 加载配置（不存在时返回默认）。
+     * @returns 配置对象
+     */
     async load(): Promise<KnowledgeBaseConfig> {
         if (this.loaded) {
             return this.config;
@@ -159,6 +163,10 @@ export class KnowledgeBaseConfigManager {
         };
     }
 
+    /**
+     * 保存配置到磁盘。
+     * @returns 无
+     */
     async save(): Promise<void> {
         await this.ensureConfigDir();
         const fs = this.getFS();
@@ -169,10 +177,20 @@ export class KnowledgeBaseConfigManager {
         await fs.write(configPath, content);
     }
 
+    /**
+     * 读取内存中的配置。
+     * @returns 配置对象
+     */
     getConfig(): KnowledgeBaseConfig {
         return this.config;
     }
 
+    /**
+     * 新增自定义题材。
+     *
+     * @param genre - 参数
+     * @returns 无
+     */
     async addCustomGenre(genre: Omit<CustomGenre, 'isCustom'>): Promise<void> {
         await this.load();
         const exists = this.config.customGenres.some(g => g.id === genre.id);
@@ -182,6 +200,13 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 更新自定义题材。
+     *
+     * @param id - 参数
+     * @param updates - 参数
+     * @returns 无
+     */
     async updateCustomGenre(id: string, updates: Partial<Omit<CustomGenre, 'id' | 'isCustom'>>): Promise<void> {
         await this.load();
         const index = this.config.customGenres.findIndex(g => g.id === id);
@@ -194,6 +219,12 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 删除自定义题材。
+     *
+     * @param id - 参数
+     * @returns 无
+     */
     async deleteCustomGenre(id: string): Promise<void> {
         await this.load();
         this.config.customGenres = this.config.customGenres.filter(g => g.id !== id);
@@ -203,12 +234,26 @@ export class KnowledgeBaseConfigManager {
         await this.save();
     }
 
+    /**
+     * 覆盖某题材的性格标签。
+     *
+     * @param genreId - 参数
+     * @param tags - 参数
+     * @returns 无
+     */
     async setPersonalityTags(genreId: string, tags: string[]): Promise<void> {
         await this.load();
         this.config.customPersonalityTags[genreId] = tags;
         await this.save();
     }
 
+    /**
+     * 添加性格标签。
+     *
+     * @param genreId - 参数
+     * @param tag - 参数
+     * @returns 无
+     */
     async addPersonalityTag(genreId: string, tag: string): Promise<void> {
         await this.load();
         if (!this.config.customPersonalityTags[genreId]) {
@@ -220,6 +265,13 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 移除性格标签。
+     *
+     * @param genreId - 参数
+     * @param tag - 参数
+     * @returns 无
+     */
     async removePersonalityTag(genreId: string, tag: string): Promise<void> {
         await this.load();
         if (this.config.customPersonalityTags[genreId]) {
@@ -228,12 +280,26 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 覆盖某题材的能力类型。
+     *
+     * @param genreId - 参数
+     * @param types - 参数
+     * @returns 无
+     */
     async setAbilityTypes(genreId: string, types: string[]): Promise<void> {
         await this.load();
         this.config.customAbilityTypes[genreId] = types;
         await this.save();
     }
 
+    /**
+     * 添加能力类型。
+     *
+     * @param genreId - 参数
+     * @param type - 参数
+     * @returns 无
+     */
     async addAbilityType(genreId: string, type: string): Promise<void> {
         await this.load();
         if (!this.config.customAbilityTypes[genreId]) {
@@ -245,6 +311,13 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 移除能力类型。
+     *
+     * @param genreId - 参数
+     * @param type - 参数
+     * @returns 无
+     */
     async removeAbilityType(genreId: string, type: string): Promise<void> {
         await this.load();
         if (this.config.customAbilityTypes[genreId]) {
@@ -253,12 +326,26 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 覆盖某题材的技法列表。
+     *
+     * @param genreId - 参数
+     * @param techniques - 参数
+     * @returns 无
+     */
     async setTechniques(genreId: string, techniques: CustomTechnique[]): Promise<void> {
         await this.load();
         this.config.customTechniques[genreId] = techniques;
         await this.save();
     }
 
+    /**
+     * 添加技法。
+     *
+     * @param genreId - 参数
+     * @param technique - 参数
+     * @returns 无
+     */
     async addTechnique(genreId: string, technique: CustomTechnique): Promise<void> {
         await this.load();
         if (!this.config.customTechniques[genreId]) {
@@ -271,6 +358,14 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 更新技法。
+     *
+     * @param genreId - 参数
+     * @param techniqueId - 参数
+     * @param updates - 参数
+     * @returns 无
+     */
     async updateTechnique(genreId: string, techniqueId: string, updates: Partial<CustomTechnique>): Promise<void> {
         await this.load();
         const techniques = this.config.customTechniques[genreId];
@@ -283,6 +378,13 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 删除技法。
+     *
+     * @param genreId - 参数
+     * @param techniqueId - 参数
+     * @returns 无
+     */
     async deleteTechnique(genreId: string, techniqueId: string): Promise<void> {
         await this.load();
         if (this.config.customTechniques[genreId]) {
@@ -291,10 +393,20 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 取完整自定义题材配置。
+     * @returns 题材数组
+     */
     getFullCustomGenres(): GenreConfig[] {
         return this.config.customGenres.map(g => ({ ...g }));
     }
 
+    /**
+     * 保存完整题材配置。
+     *
+     * @param genre - 参数
+     * @returns 无
+     */
     async saveFullCustomGenre(genre: GenreConfig): Promise<void> {
         await this.load();
         const index = this.config.customGenres.findIndex(g => g.id === genre.id);
@@ -307,6 +419,13 @@ export class KnowledgeBaseConfigManager {
         await this.save();
     }
 
+    /**
+     * 更新完整题材配置。
+     *
+     * @param id - 参数
+     * @param updates - 参数
+     * @returns 是否更新
+     */
     async updateFullCustomGenre(id: string, updates: Partial<GenreConfig>): Promise<boolean> {
         await this.load();
         const index = this.config.customGenres.findIndex(g => g.id === id);
@@ -320,6 +439,12 @@ export class KnowledgeBaseConfigManager {
         return true;
     }
 
+    /**
+     * 删除完整题材配置。
+     *
+     * @param id - 参数
+     * @returns 是否删除
+     */
     async deleteFullCustomGenre(id: string): Promise<boolean> {
         await this.load();
         const index = this.config.customGenres.findIndex(g => g.id === id);
@@ -332,11 +457,21 @@ export class KnowledgeBaseConfigManager {
         return true;
     }
 
+    /**
+     * 导出配置为 JSON。
+     * @returns JSON 文本
+     */
     async exportConfig(): Promise<string> {
         await this.load();
         return JSON.stringify(this.config, null, 2);
     }
 
+    /**
+     * 导入配置 JSON。
+     *
+     * @param json - 参数
+     * @returns 无
+     */
     async importConfig(json: string): Promise<void> {
         try {
             const parsed = JSON.parse(json) as Partial<KnowledgeBaseConfig>;
@@ -347,6 +482,10 @@ export class KnowledgeBaseConfigManager {
         }
     }
 
+    /**
+     * 恢复默认配置。
+     * @returns 无
+     */
     async resetToDefault(): Promise<void> {
         this.config = { ...DEFAULT_CONFIG };
         await this.save();

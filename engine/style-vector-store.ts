@@ -301,12 +301,24 @@ export class StyleVectorStore {
         return await this.addFingerprintVectors(fingerprintId, features);
     }
 
+    /**
+     * 删除某个指纹的向量。
+     *
+     * @param fingerprintId - 参数
+     * @returns 无
+     */
     async deleteFingerprintVectors(fingerprintId: string): Promise<void> {
         await this.ensureLoaded();
         this.vectors.delete(fingerprintId);
         await this.saveToDisk(fingerprintId);
     }
 
+    /**
+     * 读取某个指纹的向量。
+     *
+     * @param fingerprintId - 参数
+     * @returns 向量或 undefined
+     */
     getFingerprintVectors(fingerprintId: string): StyleFingerprintVectors | undefined {
         return this.vectors.get(fingerprintId);
     }
@@ -552,6 +564,10 @@ export class StyleVectorStore {
         }
     }
 
+    /**
+     * 清空全部风格向量。
+     * @returns 无
+     */
     async clear(): Promise<void> {
         const ids = Array.from(this.vectors.keys());
         this.vectors.clear();
@@ -560,6 +576,10 @@ export class StyleVectorStore {
         }
     }
 
+    /**
+     * 当前向量数量。
+     * @returns 数量
+     */
     getVectorCount(): number {
         return this.vectors.size;
     }

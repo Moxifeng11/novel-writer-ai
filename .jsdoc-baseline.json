@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-01T23:50:19.327Z",
+  "generatedAt": "2026-11-01T23:52:59.158Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -7,7 +7,7 @@
       "exports": 1508,
       "documented": 604,
       "methods": 1253,
-      "methodsDocumented": 546,
+      "methodsDocumented": 610,
       "incomplete": 740
     },
     "services": {
@@ -21,7 +21,7 @@
     "shared": {
       "files": 163,
       "exports": 1517,
-      "documented": 887,
+      "documented": 964,
       "methods": 149,
       "methodsDocumented": 89,
       "incomplete": 457
@@ -945,14 +945,14 @@
       "exports": 5,
       "documented": 0,
       "methods": 23,
-      "methodsDocumented": 0,
+      "methodsDocumented": 23,
       "incomplete": 0
     },
     "engine/knowledge-injector.ts": {
       "exports": 13,
       "documented": 6,
       "methods": 23,
-      "methodsDocumented": 2,
+      "methodsDocumented": 23,
       "incomplete": 2
     },
     "engine/knowledge-tags.ts": {
@@ -1862,7 +1862,7 @@
       "exports": 11,
       "documented": 1,
       "methods": 17,
-      "methodsDocumented": 1,
+      "methodsDocumented": 5,
       "incomplete": 1
     },
     "engine/suggestion-manager.ts": {
@@ -1918,7 +1918,7 @@
       "exports": 5,
       "documented": 0,
       "methods": 20,
-      "methodsDocumented": 2,
+      "methodsDocumented": 18,
       "incomplete": 0
     },
     "engine/volume-outline-summarizer.ts": {
@@ -3141,7 +3141,7 @@
     },
     "shared/thresholds.ts": {
       "exports": 124,
-      "documented": 44,
+      "documented": 121,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3

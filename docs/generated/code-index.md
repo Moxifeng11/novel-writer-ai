@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 119701 | 1532 | 283 | 18% |
+| `engine/` | 289 | 120061 | 1532 | 283 | 18% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
-| `shared/` | 164 | 31930 | 1512 | 371 | 25% |
+| `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 92548 | 500 | 67 | 13% |
@@ -169,8 +169,8 @@
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
 | `engine/heavy-task-worker-manager.ts` | 284 | 2 | 0 |
 | `engine/incremental-result-aggregator.ts` | 1666 | 3 | 0 |
-| `engine/knowledge-base-config.ts` | 355 | 5 | 0 |
-| `engine/knowledge-injector.ts` | 1952 | 13 | 0 |
+| `engine/knowledge-base-config.ts` | 494 | 5 | 0 |
+| `engine/knowledge-injector.ts` | 2078 | 13 | 0 |
 | `engine/knowledge-tags.ts` | 551 | 2 | 0 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 321 | 1 | 0 |
 | `engine/knowledge-usage.ts` | 65 | 3 | 0 |
@@ -300,7 +300,7 @@
 | `engine/style-fingerprint-library.ts` | 1946 | 7 | 2 |
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
-| `engine/style-vector-store.ts` | 567 | 11 | 0 |
+| `engine/style-vector-store.ts` | 587 | 11 | 0 |
 | `engine/style/dynamic-injection-engine.ts` | 774 | 10 | 4 |
 | `engine/style/fingerprint-blender-v2.ts` | 652 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 610 | 13 | 12 |
@@ -319,7 +319,7 @@
 | `engine/types/analysis-session.ts` | 109 | 8 | 8 |
 | `engine/types/analysis-suggestion.ts` | 71 | 8 | 0 |
 | `engine/types/chart-config.ts` | 66 | 6 | 0 |
-| `engine/vector-enhancer.ts` | 793 | 5 | 0 |
+| `engine/vector-enhancer.ts` | 868 | 5 | 0 |
 | `engine/volume-outline-summarizer.ts` | 172 | 2 | 1 |
 | `engine/world-state-snapshot.ts` | 198 | 7 | 0 |
 | `engine/writing-profile.ts` | 505 | 8 | 0 |
@@ -495,7 +495,7 @@
 | `shared/text-utils.ts` | 42 | 5 | 1 |
 | `shared/theme-colors.ts` | 366 | 25 | 4 |
 | `shared/theme-gallery.ts` | 162 | 12 | 2 |
-| `shared/thresholds.ts` | 659 | 124 | 16 |
+| `shared/thresholds.ts` | 893 | 124 | 93 |
 | `shared/time-context.ts` | 29 | 3 | 0 |
 | `shared/time-estimator.ts` | 468 | 6 | 2 |
 | `shared/token-estimator.ts` | 159 | 8 | 6 |

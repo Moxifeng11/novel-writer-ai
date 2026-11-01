@@ -272,19 +272,45 @@ export class KnowledgeInjector {
             ?? (null as unknown as WritingProfileManager);
     }
 
+    /**
+     * 注入知识库与向量库实例（可传空解除）。
+     *
+     * @param manager? - 参数
+     * @param vectorStore? - 参数
+     * @returns 无
+     */
     setKnowledgeBase(manager?: KnowledgeBaseManager, vectorStore?: KnowledgeVectorStore): void {
         this.knowledgeManager = manager;
         this.knowledgeVectorStore = vectorStore;
     }
 
+    /**
+     * 设置参考书列表与权重。
+     *
+     * @param books - 参数
+     * @returns 无
+     */
     setReferenceBooks(books: ReferenceBookConfig[]): void {
         this.referenceBooks = books.slice(0, this.maxReferenceBooks);
     }
 
+    /**
+     * 读取参考书配置。
+     * @returns 参考书数组
+     */
     getReferenceBooks(): ReferenceBookConfig[] {
         return [...this.referenceBooks];
     }
 
+    /**
+     * 添加参考书；重复/非法返回 false。
+     *
+     * @param bookId - 参数
+     * @param bookName - 参数
+     * @param weight - 参数
+     * @param isPrimary - 参数
+     * @returns 是否添加
+     */
     addReferenceBook(bookId: string, bookName: string, weight: number = 0.5, isPrimary: boolean = false): boolean {
         if (this.referenceBooks.length >= this.maxReferenceBooks) return false;
         if (this.referenceBooks.some(b => b.bookId === bookId)) return false;
@@ -295,24 +321,50 @@ export class KnowledgeInjector {
         return true;
     }
 
+    /**
+     * 移除参考书。
+     *
+     * @param bookId - 参数
+     * @returns 无
+     */
     removeReferenceBook(bookId: string): void {
         this.referenceBooks = this.referenceBooks.filter(b => b.bookId !== bookId);
     }
 
+    /**
+     * 设置主参考书。
+     *
+     * @param bookId - 参数
+     * @returns 无
+     */
     setPrimaryReferenceBook(bookId: string): void {
         this.referenceBooks.forEach(b => {
             b.isPrimary = b.bookId === bookId;
         });
     }
 
+    /**
+     * 设置各知识维度权重。
+     *
+     * @param weights - 参数
+     * @returns 无
+     */
     setDimensionWeights(weights: Partial<KnowledgeDimensionWeights>): void {
         this.dimensionWeights = { ...this.dimensionWeights, ...weights };
     }
 
+    /**
+     * 读取维度权重。
+     * @returns 权重对象
+     */
     getDimensionWeights(): KnowledgeDimensionWeights {
         return { ...this.dimensionWeights };
     }
 
+    /**
+     * 读取参考书 id 列表。
+     * @returns id 数组
+     */
     getReferenceBookIds(): string[] {
         return this.referenceBooks.map(b => b.bookId);
     }
@@ -349,22 +401,49 @@ export class KnowledgeInjector {
         return adjustments[category] || {};
     }
 
+    /**
+     * 开关知识注入。
+     *
+     * @param enabled - 参数
+     * @returns 无
+     */
     setEnabled(enabled: boolean): void {
         this.enabled = enabled;
     }
 
+    /**
+     * 知识注入是否启用。
+     * @returns 布尔值
+     */
     isEnabled(): boolean {
         return this.enabled;
     }
 
+    /**
+     * 按模块开关注入（大纲/正文/润色等）。
+     *
+     * @param switches - 参数
+     * @returns 无
+     */
     setSwitches(switches: Partial<InjectionSwitches>): void {
         this.switches = { ...this.switches, ...switches };
     }
 
+    /**
+     * 读取模块开关。
+     * @returns 开关对象
+     */
     getSwitches(): InjectionSwitches {
         return { ...this.switches };
     }
 
+    /**
+     * 为大纲生成注入知识片段。
+     *
+     * @param profile - 参数
+     * @param context - 参数
+     * @returns 注入文本
+     */
     async injectForOutline(profile: WritingProfile, context: InjectionContext): Promise<string> {
         if (!this.enabled) return '';
 
@@ -405,6 +484,13 @@ export class KnowledgeInjector {
         return this.formatInjection(sections, strength);
     }
 
+    /**
+     * 为情绪规划注入知识片段。
+     *
+     * @param profile - 参数
+     * @param context - 参数
+     * @returns 注入文本
+     */
     async injectForEmotionPlan(profile: WritingProfile, context: InjectionContext): Promise<string> {
         if (!this.enabled) return '';
 
@@ -436,6 +522,13 @@ export class KnowledgeInjector {
         return this.formatInjection(sections, strength);
     }
 
+    /**
+     * 为场景展开注入知识片段。
+     *
+     * @param profile - 参数
+     * @param context - 参数
+     * @returns 注入文本
+     */
     async injectForSceneExpand(profile: WritingProfile, context: InjectionContext): Promise<string> {
         if (!this.enabled) return '';
 
@@ -852,6 +945,13 @@ export class KnowledgeInjector {
         return parts.join('\n').trim() + '\n';
     }
 
+    /**
+     * 为正文生成注入知识片段。
+     *
+     * @param profile - 参数
+     * @param context - 参数
+     * @returns 注入文本
+     */
     async injectForBodyGeneration(profile: WritingProfile, context: InjectionContext): Promise<string> {
         if (!this.enabled) return '';
 
@@ -919,6 +1019,13 @@ export class KnowledgeInjector {
         return this.formatInjection(sections, strength);
     }
 
+    /**
+     * 为润色注入知识片段。
+     *
+     * @param profile - 参数
+     * @param context - 参数
+     * @returns 注入文本
+     */
     async injectForPolish(profile: WritingProfile, context: InjectionContext): Promise<string> {
         if (!this.enabled) return '';
 
@@ -1485,6 +1592,13 @@ export class KnowledgeInjector {
         return lines.join('\n');
     }
 
+    /**
+     * 通用知识库注入（按强度）。
+     *
+     * @param context - 参数
+     * @param baseStrength - 参数
+     * @returns 注入文本
+     */
     async injectKnowledgeBase(context: InjectionContext, baseStrength: number = 0.7): Promise<string> {
         if (!this.enabled) return '';
         if (!this.knowledgeVectorStore || this.referenceBooks.length === 0) return '';
@@ -1873,6 +1987,12 @@ export class KnowledgeInjector {
         return parts.join('\n').trim() + '\n';
     }
 
+    /**
+     * 计算文本与知识库的匹配分（供调试/展示）。
+     *
+     * @param text - 参数
+     * @returns 匹配结果数组
+     */
     getKnowledgeMatchScore(text: string): Array<{ bookName: string; score: number; dimensions: string[] }> {
         const results: Array<{ bookName: string; score: number; dimensions: string[] }> = [];
         if (!text || this.referenceBooks.length === 0) return results;
@@ -1897,6 +2017,12 @@ export class KnowledgeInjector {
         return results.sort((a, b) => b.score - a.score);
     }
 
+    /**
+     * 读取某书的维度摘要。
+     *
+     * @param bookId - 参数
+     * @returns 维度→摘要 或 null
+     */
     async getBookDimensionSummary(bookId: string): Promise<Record<string, string> | null> {
         if (!this.knowledgeManager) return null;
 

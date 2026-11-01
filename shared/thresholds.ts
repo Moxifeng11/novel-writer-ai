@@ -8,80 +8,215 @@
 // ============================================================
 // 一、文件内容最小长度阈值（字节）
 // ============================================================
+/**
+ * 文件内容最小长度阈值（字节）：FILE_MIN_WORLDVIEW = 500。
+ */
 export const FILE_MIN_WORLDVIEW = 500;
+/**
+ * 文件内容最小长度阈值（字节）：FILE_MIN_SETTING_LIB = 300。
+ */
 export const FILE_MIN_SETTING_LIB = 300;
+/**
+ * 文件内容最小长度阈值（字节）：FILE_MIN_OUTLINE = 1000。
+ */
 export const FILE_MIN_OUTLINE = 1000;
+/**
+ * 文件内容最小长度阈值（字节）：FILE_MIN_WRITING_STYLE = 500。
+ */
 export const FILE_MIN_WRITING_STYLE = 500;
+/**
+ * 文件内容最小长度阈值（字节）：FILE_MIN_ENTITY_CONTENT = 100。
+ */
 export const FILE_MIN_ENTITY_CONTENT = 100;
+/**
+ * 文件内容最小长度阈值（字节）：FILE_MIN_ENTITY_BODY = 50。
+ */
 export const FILE_MIN_ENTITY_BODY = 50;
+/**
+ * 文件内容最小长度阈值（字节）：FILE_MIN_CHAPTER_SKELETON = 100。
+ */
 export const FILE_MIN_CHAPTER_SKELETON = 100;
 
 // ============================================================
 // 二、用户通知时长（毫秒）
 // ============================================================
+/**
+ * 用户通知时长（毫秒）：NOTICE_BRIEF = 2000。
+ */
 export const NOTICE_BRIEF = 2000;
+/**
+ * 用户通知时长（毫秒）：NOTICE_SUCCESS = 3000。
+ */
 export const NOTICE_SUCCESS = 3000;
+/**
+ * 用户通知时长（毫秒）：NOTICE_INFO = 4000。
+ */
 export const NOTICE_INFO = 4000;
+/**
+ * 用户通知时长（毫秒）：NOTICE_ERROR = 5000。
+ */
 export const NOTICE_ERROR = 5000;
+/**
+ * 用户通知时长（毫秒）：NOTICE_WARNING = 6000。
+ */
 export const NOTICE_WARNING = 6000;
+/**
+ * 用户通知时长（毫秒）：NOTICE_CRITICAL = 8000。
+ */
 export const NOTICE_CRITICAL = 8000;
+/**
+ * 用户通知时长（毫秒）：NOTICE_PERSIST = 0。
+ */
 export const NOTICE_PERSIST = 0;
 
 // ============================================================
 // 三、超时 / 间隔
 // ============================================================
+/**
+ * 超时 / 间隔：TIMEOUT_COVER_PICKER = 60000。
+ */
 export const TIMEOUT_COVER_PICKER = 60000;
+/**
+ * 超时 / 间隔：POLISH_DEBOUNCE_MS = 500。
+ */
 export const POLISH_DEBOUNCE_MS = 500;
 
 // ============================================================
 // 四、Token / 字数估算
 // ============================================================
+/**
+ * Token / 字数估算：MAX_CONTEXT_TOKENS = 128000。
+ */
 export const MAX_CONTEXT_TOKENS = 128000;
+/**
+ * Token / 字数估算：INTERVENTION_MAX_TOKENS = 2000。
+ */
 export const INTERVENTION_MAX_TOKENS = 2000;
+/**
+ * Token / 字数估算：TOKEN_ESTIMATE_EN_DIVISOR = 4。
+ */
 export const TOKEN_ESTIMATE_EN_DIVISOR = 4;
+/**
+ * Token / 字数估算：TOKEN_ESTIMATE_CN_DIVISOR = 1.5。
+ */
 export const TOKEN_ESTIMATE_CN_DIVISOR = 1.5;
+/**
+ * Token / 字数估算：KB_DIVISOR = 1024。
+ */
 export const KB_DIVISOR = 1024;
 
 // ============================================================
 // 五、伏笔信息债阈值
 // ============================================================
+/**
+ * 伏笔信息债阈值：DEBT_SEVERE = 20。
+ */
 export const DEBT_SEVERE = 20;
+/**
+ * 伏笔信息债阈值：DEBT_HIGH = 15。
+ */
 export const DEBT_HIGH = 15;
+/**
+ * 伏笔信息债阈值：DEBT_MODERATE = 10。
+ */
 export const DEBT_MODERATE = 10;
+/**
+ * 伏笔信息债阈值：DEBT_LIGHT = 5。
+ */
 export const DEBT_LIGHT = 5;
 
 // ============================================================
 // 六、章节 / 实体抽查
 // ============================================================
+/**
+ * 章节 / 实体抽查：CHAPTER_SPOT_CHECK_MAX = 3。
+ */
 export const CHAPTER_SPOT_CHECK_MAX = 3;
+/**
+ * 章节 / 实体抽查：SETTING_LIB_TEMPERATURE = 0.3。
+ */
 export const SETTING_LIB_TEMPERATURE = 0.3;
+/**
+ * 章节 / 实体抽查：DEFAULT_TEMPERATURE = 1.4。
+ */
 export const DEFAULT_TEMPERATURE = 1.4;
+/**
+ * 章节 / 实体抽查：TEMPERATURE_MIN = 0.1。
+ */
 export const TEMPERATURE_MIN = 0.1;
+/**
+ * 章节 / 实体抽查：TEMPERATURE_MAX = 2.0。
+ */
 export const TEMPERATURE_MAX = 2.0;
 
 // ============================================================
 // 七、内容截断 / 显示限制
 // ============================================================
+/**
+ * 内容截断 / 显示限制：SCENE_DESC_MAX_LEN = 80。
+ */
 export const SCENE_DESC_MAX_LEN = 80;
+/**
+ * 内容截断 / 显示限制：ACTION_CONTENT_MAX_LEN = 100。
+ */
 export const ACTION_CONTENT_MAX_LEN = 100;
+/**
+ * 内容截断 / 显示限制：REVIEW_ISSUE_MAX_LEN = 200。
+ */
 export const REVIEW_ISSUE_MAX_LEN = 200;
+/**
+ * 内容截断 / 显示限制：IMPROVEMENT_MAX_LEN = 300。
+ */
 export const IMPROVEMENT_MAX_LEN = 300;
+/**
+ * 内容截断 / 显示限制：WARNING_MAX_LEN = 500。
+ */
 export const WARNING_MAX_LEN = 500;
+/**
+ * 内容截断 / 显示限制：STYLE_SNIPPET_MAX_LEN = 1500。
+ */
 export const STYLE_SNIPPET_MAX_LEN = 1500;
+/**
+ * 内容截断 / 显示限制：SNAPSHOT_MAX_LEN = 3000。
+ */
 export const SNAPSHOT_MAX_LEN = 3000;
+/**
+ * 内容截断 / 显示限制：UNDERSTANDING_OUTPUT_MAX_LEN = 4000。
+ */
 export const UNDERSTANDING_OUTPUT_MAX_LEN = 4000;
+/**
+ * 内容截断 / 显示限制：INLINE_PREVIEW_MAX_LEN = 15000。
+ */
 export const INLINE_PREVIEW_MAX_LEN = 15000;
 
 // ============================================================
 // 八、编辑器阈值
 // ============================================================
+/**
+ * 编辑器阈值：POLISH_MIN_SAVE_LEN = 100。
+ */
 export const POLISH_MIN_SAVE_LEN = 100;
+/**
+ * 编辑器阈值：WORD_COUNT_WARN_RATIO = 0.7。
+ */
 export const WORD_COUNT_WARN_RATIO = 0.7;
 
 // ===== AI 调用超时与限制 =====
+/**
+ * 编辑器阈值：API_TIMEOUT_MS = 120_000。
+ */
 export const API_TIMEOUT_MS = 120_000;
+/**
+ * 编辑器阈值：ZAI_MAX_TOKENS = 131_072。
+ */
 export const ZAI_MAX_TOKENS = 131_072;
+/**
+ * 编辑器阈值：DEFAULT_CONTEXT_WINDOW = 32_768。
+ */
 export const DEFAULT_CONTEXT_WINDOW = 32_768;
+/**
+ * 编辑器阈值：CHAR_TO_TOKEN_RATIO = 1.5。
+ */
 export const CHAR_TO_TOKEN_RATIO = 1.5;
 /**
  * 协同写作单次建议的输出上限兜底。
@@ -115,13 +250,37 @@ export const STREAM_SEMAPHORE_POLL_MS = 500;
 export const AI_MAX_ATTEMPTS_PER_MODEL = 3;
 
 // ===== 上下文截断阈值 =====
+/**
+ * 编辑器阈值：WORLDVIEW_SLICE = 2_000。
+ */
 export const WORLDVIEW_SLICE = 2_000;
+/**
+ * 编辑器阈值：PREV_SUMMARY_SLICE = 6_000。
+ */
 export const PREV_SUMMARY_SLICE = 6_000;
+/**
+ * 编辑器阈值：BODY_STATE_SLICE = 6_000。
+ */
 export const BODY_STATE_SLICE = 6_000;
+/**
+ * 编辑器阈值：CONTEXT_LONG_SLICE = 3_000。
+ */
 export const CONTEXT_LONG_SLICE = 3_000;
+/**
+ * 编辑器阈值：CONTEXT_SHORT_SLICE = 500。
+ */
 export const CONTEXT_SHORT_SLICE = 500;
+/**
+ * 编辑器阈值：CONTEXT_MICRO_SLICE = 300。
+ */
 export const CONTEXT_MICRO_SLICE = 300;
+/**
+ * 编辑器阈值：CONTEXT_NANO_SLICE = 100。
+ */
 export const CONTEXT_NANO_SLICE = 100;
+/**
+ * 编辑器阈值：CONTEXT_XXL_SLICE = 15_000。
+ */
 export const CONTEXT_XXL_SLICE = 15_000;
 
 // ============================================================
@@ -137,6 +296,9 @@ export const STEP_SKELETON_BYTES = 100;
 // ============================================================
 
 // ===== 伏笔与信息债阈值 =====
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：INFO_DEBT_MAX = 15。
+ */
 export const INFO_DEBT_MAX = 15;
 
 /**
@@ -152,20 +314,59 @@ export function setInfoDebtMax(value: number | undefined): void {
 export function getInfoDebtMax(): number {
     return infoDebtMaxRuntime;
 }
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：INFO_DEBT_WARN_HIGH = 5。
+ */
 export const INFO_DEBT_WARN_HIGH = 5;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：INFO_DEBT_WARN_CRITICAL = 10。
+ */
 export const INFO_DEBT_WARN_CRITICAL = 10;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FORCED_REVEAL_OVER_20 = 4。
+ */
 export const FORCED_REVEAL_OVER_20 = 4;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FORCED_REVEAL_OVER_15 = 3。
+ */
 export const FORCED_REVEAL_OVER_15 = 3;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FORCED_REVEAL_OVER_10 = 2。
+ */
 export const FORCED_REVEAL_OVER_10 = 2;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FORCED_REVEAL_OVER_5 = 1。
+ */
 export const FORCED_REVEAL_OVER_5 = 1;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FORCED_REVEAL_WINDOW_FORWARD = 5。
+ */
 export const FORCED_REVEAL_WINDOW_FORWARD = 5;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FORCED_REVEAL_WINDOW_BACKWARD = 3。
+ */
 export const FORCED_REVEAL_WINDOW_BACKWARD = 3;
 
 // ===== 其他阈值 =====
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：PROMPT_SPLIT_RATIO = 0.67。
+ */
 export const PROMPT_SPLIT_RATIO = 0.67;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：WORD_MIN_RATIO = 0.70。
+ */
 export const WORD_MIN_RATIO = 0.70;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：TOKEN_SAFE_BUFFER = 500。
+ */
 export const TOKEN_SAFE_BUFFER = 500;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：TIMELINE_SLICE = 30。
+ */
 export const TIMELINE_SLICE = 30;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FORESHADOW_SLICE = 20。
+ */
 export const FORESHADOW_SLICE = 20;
 /** 距「计划回收章」还剩几章时开始提醒（协同偏离与全本工作台共用） */
 export const FORESHADOW_APPROACHING_CHAPTERS = 3;
@@ -175,7 +376,13 @@ export const FORESHADOW_APPROACHING_CHAPTERS = 3;
 export const RETRIEVAL_RELATIVE_MIN_SCORE = 0.85;
 /** 最高分低于此值视为整批噪声（查询与库无关），不注入 */
 export const RETRIEVAL_ABSOLUTE_MIN_SCORE = 0.15;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：FILE_READ_TIMEOUT_MS = 8_000。
+ */
 export const FILE_READ_TIMEOUT_MS = 8_000;
+/**
+ * v4.0: 模板骨架检测阈值（替代旧字节判定）：CONTEXT_LOAD_TIMEOUT_MS = 5_000。
+ */
 export const CONTEXT_LOAD_TIMEOUT_MS = 5_000;
 
 // ============================================================
@@ -184,16 +391,31 @@ export const CONTEXT_LOAD_TIMEOUT_MS = 5_000;
 
 /** 质量等级分界：≥90 S / ≥80 A / ≥70 B / ≥60 C / 其余 D */
 export const QUALITY_GRADE_S = 90;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：QUALITY_GRADE_A = 80。
+ */
 export const QUALITY_GRADE_A = 80;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：QUALITY_GRADE_B = 70。
+ */
 export const QUALITY_GRADE_B = 70;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：QUALITY_GRADE_C = 60。
+ */
 export const QUALITY_GRADE_C = 60;
 
 /** 分数着色分界：≥good 绿 / ≥warning 黄 / 其余红 */
 export const QUALITY_SCORE_GOOD = 80;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：QUALITY_SCORE_WARNING = 60。
+ */
 export const QUALITY_SCORE_WARNING = 60;
 
 /** 偏离度分界：≥critical 严重 / ≥warning 警告 */
 export const DIVERGENCE_CRITICAL = 60;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：DIVERGENCE_WARNING = 30。
+ */
 export const DIVERGENCE_WARNING = 30;
 
 /** 质量历史落盘上限（超出按时间裁剪最旧记录） */
@@ -240,6 +462,9 @@ export const DEVIATION_MIN_EVALUABLE_CHARS = 100;
  * 实时评估每 2.5s 触发一次，若不节流会变成「边打字边写盘」，且历史被同一章刷屏。
  */
 export const QUALITY_LIVE_PERSIST_MIN_CHARS = 300;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：QUALITY_LIVE_PERSIST_INTERVAL_MS = 10 * 60 * 1000。
+ */
 export const QUALITY_LIVE_PERSIST_INTERVAL_MS = 10 * 60 * 1000;
 
 /**
@@ -250,6 +475,9 @@ export const QUALITY_LIVE_PERSIST_INTERVAL_MS = 10 * 60 * 1000;
  * 这么多字，或距上次检查已过冷却时间」才重新检测；插入建议 / 保存 / 手动检查不受限。
  */
 export const GUARD_INPUT_MIN_GROWTH_CHARS = 300;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：GUARD_INPUT_COOLDOWN_MS = 5 * 60 * 1000。
+ */
 export const GUARD_INPUT_COOLDOWN_MS = 5 * 60 * 1000;
 
 /**
@@ -261,7 +489,13 @@ export const GUARD_INPUT_COOLDOWN_MS = 5 * 60 * 1000;
  * 并保留最小间隔，避免快速打字时连续触发；手动重试 / 生成完成后的强制刷新不受限。
  */
 export const PLOT_EVAL_MIN_GROWTH_CHARS = 300;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：PLOT_EVAL_COOLDOWN_MS = 2 * 60 * 1000。
+ */
 export const PLOT_EVAL_COOLDOWN_MS = 2 * 60 * 1000;
+/**
+ * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：PLOT_EVAL_MIN_INTERVAL_MS = 30 * 1000。
+ */
 export const PLOT_EVAL_MIN_INTERVAL_MS = 30 * 1000;
 
 /**
