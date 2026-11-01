@@ -95,6 +95,7 @@ import { IncrementalUpdater } from './context/incremental-updater';
 import { createLogger } from '../shared/logger';
 import { listEntityFiles, ENTITY_KIND_LABEL, type EntityKind } from '../shared/entity-reader';
 import { activeContextQuotas } from '../shared/context-budget-policy';
+import { withWriteLock } from '../shared/write-lock';
 
 const log = createLogger('ContextManager');
 import type {
@@ -2375,8 +2376,12 @@ ${usable}`;
         if (!linkage) return result;
 
         const generatedAt = this.formatTimestamp();
-        const foreshadowFile = this.getVaultMeta().getAbstractFileByPath(pjForeshadowDB(project));
-        if (foreshadowFile instanceof TFile) {
+        const foreshadowPath = pjForeshadowDB(project);
+        // 关联索引是「读整份 → 替换 NW-LINKAGE 块 → 写整份」，与结算/分析报告共写同一文件，
+        // 必须按路径加锁并在锁内重读，否则会把对方刚写的表格行整段覆盖掉。
+        await withWriteLock(foreshadowPath, async () => {
+            const foreshadowFile = this.getVaultMeta().getAbstractFileByPath(foreshadowPath);
+            if (!(foreshadowFile instanceof TFile)) return;
             const original = await this.app.vault.read(foreshadowFile);
             const block = buildForeshadowIndexBlock(
                 [...linkage.due, ...linkage.overdue, ...linkage.upcoming],
@@ -2386,15 +2391,17 @@ ${usable}`;
             );
             await this.app.vault.modify(foreshadowFile, upsertLinkageBlock(original, block));
             result.foreshadow = true;
-        }
+        });
 
-        const timelineFile = this.getVaultMeta().getAbstractFileByPath(pjTimelineBoard(project));
-        if (timelineFile instanceof TFile) {
+        const timelinePath = pjTimelineBoard(project);
+        await withWriteLock(timelinePath, async () => {
+            const timelineFile = this.getVaultMeta().getAbstractFileByPath(timelinePath);
+            if (!(timelineFile instanceof TFile)) return;
             const original = await this.app.vault.read(timelineFile);
             const block = buildTimelineIndexBlock(linkage.timelineAll, linkage.warnings, generatedAt);
             await this.app.vault.modify(timelineFile, upsertLinkageBlock(original, block));
             result.timeline = true;
-        }
+        });
 
         return result;
     }

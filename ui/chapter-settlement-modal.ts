@@ -9,6 +9,7 @@ import { writeChapterStateSnapshot } from '../engine/chapter-state-snapshot-serv
 import { ENGINE_NAMES } from '../shared/engine-names';
 import { createLogger } from '../shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
+import { OperationConfirmModal } from './components/progress';
 
 
 const log = createLogger('ChapterSettlementModal');
@@ -137,6 +138,20 @@ export class ChapterSettlementModal extends Modal {
         );
         const bodyFile = this.app.vault.getAbstractFileByPath(target.bodyPath);
         const bodyText = bodyFile instanceof TFile ? await this.app.vault.read(bodyFile) : '';
+
+        // 重复结算守卫：流水线侧已有 settled 守卫，弹窗此前没有，
+        // 连点两次会把成长/互信息/账本再写一遍。这里显式确认，避免「手滑重复结算」。
+        const settled = /^---\r?\n[\s\S]*?\bstatus:\s*['"]?(settled|已结算|已完稿)['"]?\s*[\s\S]*?\r?\n---/.test(bodyText);
+        if (settled) {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '本章已结算',
+                description: `「${target.chapName}」状态已是 settled。重新结算会再次回写实体/伏笔/时间线（追加类写入已按章去重）。`,
+                warning: '若你之后手动改过实体卡或伏笔库，重新结算可能覆盖这些手改。',
+                confirmText: '仍要重新结算',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
+        }
 
         if (!reportFile) {
             await this.createLightSettlement(target, bodyText);

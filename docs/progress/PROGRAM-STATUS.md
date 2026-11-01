@@ -5,14 +5,14 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
-- 当前基线：v4.22.0；单测 492 文件 / 5598 用例；E2E 25 条
-- 任务进度：31/48 已完成（65%），0 进行中，0 受阻
+- 当前基线：v4.22.0；单测 493 文件 / 5601 用例；E2E 25 条
+- 任务进度：33/50 已完成（66%），0 进行中，0 受阻
 
 ## 一、任务组总览
 
 | 组 | 名称 | 目标版本 | 状态 | 进度 | 责任人 |
 |---|---|---|---|---|---|
-| G1 | 创作主链闭环 | v4.23.0 | 🟡 进行中 | 9/11（82%） | 实现 ZCode / 验收 用户 |
+| G1 | 创作主链闭环 | v4.23.0 | 🟡 进行中 | 11/13（85%） | 实现 ZCode / 验收 用户 |
 | G2 | 语料与注入链 | v4.24.0 | 🟡 进行中 | 2/4（50%） | 实现 ZCode / 验收 用户 |
 | G3 | 项目生命周期与三模式 | v4.24.0 | 🟡 进行中 | 3/5（60%） | 实现 ZCode / 验收 用户 |
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
@@ -39,8 +39,10 @@
 | G1-7 | 正文覆盖前自动备份实际从未执行 | ✅ 已完成 | backupBeforeOverwrite 默认 true；仅显式 false（导入/迁移）跳过 | engine/body-writer.ts（=== false 才跳过） |
 | G1-8 | 版本索引读改写无锁 + 项目路径推导错误 | ✅ 已完成 | 并发 saveVersion 得到连续版本号且索引两条（单测）；版本落到正确项目目录 | services/chapter-version-service.ts + shared/paths.ts::projectIdFromPath + 单测 |
 | G1-9 | 统计事件路径采信陈旧 word_count | ✅ 已完成 | modify 事件按正文内容计数，不被旧元数据固化（单测） | services/writing-stats-service.ts + 单测 |
-| G1-10 | 时间线/关系/成长/互信息无锁与 append 无幂等 | ⬜ 待开始 | 三处时间线写入走同一锁；关系双通道归一；重结算不重复 append | 盘点 v10.2 |
-| G1-11 | 结算弹窗无 settled 守卫；settle / settleLight 两套语义 | ⬜ 待开始 | 重复点结算不重复写；light 降级有提示；回滚覆盖追加类写入 | 盘点 v10.5-G1 |
+| G1-10 | 时间线/关系/成长/互信息无锁与 append 无幂等 | ✅ 已完成 | 时间线三处写入同锁；成长/情绪/互信息/连续性账本按章去重（单测） | settlement-engine / analysis-report-engine / context-manager + settlement-growth-idempotency.test |
+| G1-11 | 结算弹窗无 settled 守卫；settle / settleLight 两套语义 | ✅ 已完成 | 弹窗重复结算先确认；追加类写入已按章去重 | ui/chapter-settlement-modal.ts（settled 守卫） |
+| G1-12 | 关系两套通道归一（V1 实体互信息 / V2 关系状态.md） | ⬜ 待开始 | 同一语义只有一个权威写入方；快照三列映射不丢列 | 盘点 v10.2-#3 |
+| G1-13 | settle 与 settleLight 语义收敛 + 回滚覆盖追加类写入 | ⬜ 待开始 | light 降级有提示；回滚能撤销关系/伏笔/时间线/成长追加 | 盘点 v10.5-G1 |
 
 > 强耦合簇：正文写入 / 步骤结果 / 结算产物 / 上下文缓存 / 统计台账 共享同一份磁盘事实，必须同组改动。
 
@@ -165,3 +167,4 @@
 - 2026-11-01｜G4｜版本升级备份对密钥脱敏（apiKey/providerKeys/各向量 Key/GitHub Token/考据 Key）（shared/secret-redaction.ts）
 - 2026-11-01｜G1/G3｜盘点后修复：备份默认失效、版本索引并发锁、项目路径推导收口（7 处）、统计陈旧元数据（body-writer / chapter-version-service / shared/paths / writing-stats-service）
 - 2026-11-01｜G5/G6｜批量建章进度横幅泄漏、缓存键 NUL、覆盖历史无上限（continue-chapters-modal / knowledge-vector-store / plugin-cache）
+- 2026-11-01｜G1｜时间线三处写入加锁；成长/情绪/互信息/连续性账本按章去重；结算弹窗重复结算守卫（settlement-engine / analysis-report-engine / context-manager / chapter-settlement-modal）

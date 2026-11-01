@@ -1333,36 +1333,42 @@ ${chapterText.slice(0, 5000)}
 
         try {
             const fp = pjTimelineBoard(project);
-            const ff = this.getVaultMeta().getAbstractFileByPath(fp);
+            // 时间线看板被结算/分析报告/关联索引三方读改写，必须整段加锁并在锁内重读，
+            // 否则并发时后写方拿旧内容覆盖，丢行。
+            appliedCount = await withWriteLock(fp, async () => {
+                let applied = 0;
+                const ff = this.getVaultMeta().getAbstractFileByPath(fp);
 
-            let content = '';
-            if (ff instanceof TFile) {
-                content = await this.getFS().read(fp);
-            } else {
-                const timelineDir = project + '/02-时间线与伏笔';
-                await mkdirp(this.app, timelineDir, this.getFS());
-                content = `# 时间线看板\n\n| # | 事件名称 | 时间 | 地点 | 涉及人物 | 章节 | 类型 |\n|---|---|---|---|---|---|---|\n`;
-            }
-
-            const highImportanceEvents = timeline.events.filter(e => e.importance === 'high' || e.importance === 'medium');
-
-            for (const event of highImportanceEvents) {
-                const rowNum = getNextRowNum(content);
-                const involved = event.involvedEntities && event.involvedEntities.length > 0
-                    ? event.involvedEntities.join('、')
-                    : '';
-                const newRow = `| ${rowNum} | ${event.event} | ${event.time || ''} | ${event.location || ''} | ${involved} | 第${event.chapter}章 | ${event.importance === 'high' ? '主线' : '支线'} |`;
-
-                if (hasTableSeparator(content)) {
-                    content = appendAfterSeparator(content, newRow);
-                    appliedCount++;
+                let content = '';
+                if (ff instanceof TFile) {
+                    content = await this.getFS().read(fp);
+                } else {
+                    const timelineDir = project + '/02-时间线与伏笔';
+                    await mkdirp(this.app, timelineDir, this.getFS());
+                    content = `# 时间线看板\n\n| # | 事件名称 | 时间 | 地点 | 涉及人物 | 章节 | 类型 |\n|---|---|---|---|---|---|---|\n`;
                 }
-            }
 
-            if (appliedCount > 0) {
-                await this.getFS().write(fp, content);
-                log.info('[AnalysisReportEngine] 时间线更新完成:', appliedCount, '项');
-            }
+                const highImportanceEvents = timeline.events.filter(e => e.importance === 'high' || e.importance === 'medium');
+
+                for (const event of highImportanceEvents) {
+                    const rowNum = getNextRowNum(content);
+                    const involved = event.involvedEntities && event.involvedEntities.length > 0
+                        ? event.involvedEntities.join('、')
+                        : '';
+                    const newRow = `| ${rowNum} | ${event.event} | ${event.time || ''} | ${event.location || ''} | ${involved} | 第${event.chapter}章 | ${event.importance === 'high' ? '主线' : '支线'} |`;
+
+                    if (hasTableSeparator(content)) {
+                        content = appendAfterSeparator(content, newRow);
+                        applied++;
+                    }
+                }
+
+                if (applied > 0) {
+                    await this.getFS().write(fp, content);
+                    log.info('[AnalysisReportEngine] 时间线更新完成:', applied, '项');
+                }
+                return applied;
+            });
 
             return {
                 applied: appliedCount > 0,

@@ -585,7 +585,8 @@ export class SettlementEngine {
                         // 覆盖语义会丢历史（上一章知道的事不会因为本章更新而消失）
                         const prev = String(fm[field] || '').trim();
                         const addition = `${value}（${ctx.chapName}）`;
-                        fm[field] = prev ? `${prev}；${addition}` : addition;
+                        // 重复结算时同章同值不再追加（此前会写两遍「（第N章）」）
+                        fm[field] = prev.includes(addition) ? prev : (prev ? `${prev}；${addition}` : addition);
                     } else {
                         fm[field] = value;
                     }
@@ -996,6 +997,9 @@ ${ni.description || '暂无描述'}
         for (const nt of ctx.instr.nt) {
             const tlPath = pjTimelineBoard(ctx.project);
             try {
+                // 时间线看板有三个写入方（结算/分析报告/关联索引），此前的幂等守卫只防重复，
+                // 不防并发覆盖：必须整段加锁，并在锁内重读最新内容再做幂等比对。
+                const appended = await withWriteLock(tlPath, async () => {
                 let tlC = '';
                 const tlF = this.getVaultMeta().getAbstractFileByPath(tlPath);
                 if (tlF instanceof TFile) tlC = await this.getFS().read(tlPath);
@@ -1016,7 +1020,7 @@ ${ni.description || '暂无描述'}
                 });
                 if (rowExists) {
                     log.info('[SettlementEngine] 时间线事件已存在，跳过:', nt.desc, nt.event);
-                    continue;
+                    return false;
                 }
 
                 // 判断应该写入哪个纪元
@@ -1025,15 +1029,16 @@ ${ni.description || '暂无描述'}
 
                 if (tlC.includes(sectionTitle)) {
                     tlC = appendAfterSectionHeader(tlC, sectionTitle, newRow);
-                    if (tlF) await this.getFS().write(tlPath, tlC);
-                    else await this.getFS().write(tlPath, tlC);
+                    await this.getFS().write(tlPath, tlC);
                 } else {
                     // 首次创建：写双表结构
                     const base = `# 时间线看板\n\n> 按时间顺序排列的关键事件，用于整体把控叙事节奏。\n\n## 纪元 / 时间轴\n\n### 背景纪元（故事开始前）\n\n| 时间 | 对应章节 | 事件 | 影响 |\n|------|---------|------|------|\n${isBackground ? newRow + '\n' : ''}\n### 主线纪元（故事进行中）\n\n| 时间 | 对应章节 | 事件 | 影响 |\n|------|---------|------|------|\n${isBackground ? '' : newRow + '\n'}`;
-                    if (tlF) await this.getFS().write(tlPath, base);
-                    else { await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {}); await this.getFS().write(tlPath, base); }
+                    if (!tlF) await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {});
+                    await this.getFS().write(tlPath, base);
                 }
-                ctx.result.createdTimelines++;
+                return true;
+                });
+                if (appended) ctx.result.createdTimelines++;
             } catch (e) { log.warn('[SettlementEngine] 追加时间线失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
         }
     }
@@ -1056,17 +1061,23 @@ ${ni.description || '暂无描述'}
                 const file = this.getVaultMeta().getAbstractFileByPath(fp);
                 if (!(file instanceof TFile)) continue;
                 const growthEntry = `- ${ctx.chapName} | ${g.type} | ${g.value} | ${g.desc}\n`;
-                let content = await this.getFS().read(fp);
-                // 在「变更记录」区块末尾追加
-                if (content.includes('## 变更记录')) {
-                    const idx = content.lastIndexOf('## 变更记录');
-                    const afterHeader = content.indexOf('\n', idx);
-                    content = content.slice(0, afterHeader + 1) + growthEntry + content.slice(afterHeader + 1);
-                } else {
-                    content += `\n## 变更记录\n${growthEntry}`;
-                }
-                await this.getFS().write(fp, content);
-                ctx.result.updatedGrowth++;
+                // 重复结算会重复 append 成长行：按「章 + 类型 + 新值」去重，且整段读改写加锁
+                const dedupeKey = `- ${ctx.chapName} | ${g.type} | ${g.value} |`;
+                const appended = await withWriteLock(fp, async () => {
+                    let content = await this.getFS().read(fp);
+                    if (content.includes(dedupeKey)) return false;
+                    // 在「变更记录」区块末尾追加
+                    if (content.includes('## 变更记录')) {
+                        const idx = content.lastIndexOf('## 变更记录');
+                        const afterHeader = content.indexOf('\n', idx);
+                        content = content.slice(0, afterHeader + 1) + growthEntry + content.slice(afterHeader + 1);
+                    } else {
+                        content += `\n## 变更记录\n${growthEntry}`;
+                    }
+                    await this.getFS().write(fp, content);
+                    return true;
+                });
+                if (appended) ctx.result.updatedGrowth++;
             } catch (e) { log.warn('[SettlementEngine] 更新成长失败:', g.name, e); ctx.hasPartialFailure = true; }
         }
     }
@@ -1078,13 +1089,13 @@ ${ni.description || '暂无描述'}
                 const fp = pjCharFile(ctx.project, e.name);
                 const file = this.getVaultMeta().getAbstractFileByPath(fp);
                 if (!file) continue;
-                await this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+                await withWriteLock(fp, () => this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
                     fm['当前情绪'] = e.emotion;
                     // v4.0: 实体状态追踪
                     if (fm['entity_status'] == null || fm['entity_status'] === '') fm['entity_status'] = 'active';
                     fm['entity_last_changed_at'] = ctx.chapName;
                     fm['entity_last_changed_reason'] = `结算：情绪更新为${e.emotion}`;
-                });
+                }));
                 ctx.result.updatedEmotions++;
             } catch (err) { log.warn('[SettlementEngine] 更新情绪失败:', e.name, err); }
         }
@@ -1351,6 +1362,8 @@ ${ni.description || '暂无描述'}
     /** 在实体文件的「互信息」区块追加条目 */
     private async appendToMutualSection(file: TFile, entry: string): Promise<void> {
         try {
+            // 实体卡被结算/分析报告/实体管理多处读改写：整段加锁并在锁内重读
+            await withWriteLock(file.path, async () => {
             let content = await this.getFS().read(file.path);
             if (content.includes('## 与其他元素的互信息')) {
                 const idx = content.lastIndexOf('## 与其他元素的互信息');
@@ -1362,6 +1375,7 @@ ${ni.description || '暂无描述'}
                 content = content.slice(0, afterHeader + 1) + entry + '\n' + content.slice(afterHeader + 1);
             }
             await this.getFS().write(file.path, content);
+            });
         } catch (e) { log.warn('[SettlementEngine] 追加互信息失败:', file.path, e); }
     }
 

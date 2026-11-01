@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 492,
-      "cases": 5598
+      "files": 493,
+      "cases": 5601
     },
     "e2e": 25,
     "gates": [
@@ -98,15 +98,29 @@
         {
           "id": "G1-10",
           "title": "时间线/关系/成长/互信息无锁与 append 无幂等",
-          "status": "todo",
-          "acceptance": "三处时间线写入走同一锁；关系双通道归一；重结算不重复 append",
-          "evidence": "盘点 v10.2"
+          "status": "done",
+          "acceptance": "时间线三处写入同锁；成长/情绪/互信息/连续性账本按章去重（单测）",
+          "evidence": "settlement-engine / analysis-report-engine / context-manager + settlement-growth-idempotency.test"
         },
         {
           "id": "G1-11",
           "title": "结算弹窗无 settled 守卫；settle / settleLight 两套语义",
+          "status": "done",
+          "acceptance": "弹窗重复结算先确认；追加类写入已按章去重",
+          "evidence": "ui/chapter-settlement-modal.ts（settled 守卫）"
+        },
+        {
+          "id": "G1-12",
+          "title": "关系两套通道归一（V1 实体互信息 / V2 关系状态.md）",
           "status": "todo",
-          "acceptance": "重复点结算不重复写；light 降级有提示；回滚覆盖追加类写入",
+          "acceptance": "同一语义只有一个权威写入方；快照三列映射不丢列",
+          "evidence": "盘点 v10.2-#3"
+        },
+        {
+          "id": "G1-13",
+          "title": "settle 与 settleLight 语义收敛 + 回滚覆盖追加类写入",
+          "status": "todo",
+          "acceptance": "light 降级有提示；回滚能撤销关系/伏笔/时间线/成长追加",
           "evidence": "盘点 v10.5-G1"
         }
       ]
@@ -498,6 +512,12 @@
       "group": "G5/G6",
       "summary": "批量建章进度横幅泄漏、缓存键 NUL、覆盖历史无上限",
       "evidence": "continue-chapters-modal / knowledge-vector-store / plugin-cache"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G1",
+      "summary": "时间线三处写入加锁；成长/情绪/互信息/连续性账本按章去重；结算弹窗重复结算守卫",
+      "evidence": "settlement-engine / analysis-report-engine / context-manager / chapter-settlement-modal"
     }
   ]
 }
