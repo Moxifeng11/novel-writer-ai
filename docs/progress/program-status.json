@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 505,
-      "cases": 5701
+      "files": 506,
+      "cases": 5710
     },
     "e2e": 25,
     "gates": [
@@ -525,8 +525,8 @@
           "id": "G7-4",
           "title": "覆盖缺口补齐（分批）",
           "status": "in_progress",
-          "acceptance": "a/b/c 已完成（结算/Agent/生命周期/Agent 工具/embedding/知识库标签）；剩 knowledge-base-view 视图级测试",
-          "evidence": "见 G7-4a/4b/4c"
+          "acceptance": "a/b/c/d 已完成；knowledge-base-view 的 DOM 级测试仍需引入 jsdom（依赖决策，未做）",
+          "evidence": "见 G7-4a..4d"
         },
         {
           "id": "G7-4a",
@@ -552,9 +552,9 @@
         {
           "id": "G7-4d",
           "title": "knowledge-base-view 视图级最小测试",
-          "status": "todo",
-          "acceptance": "书卡选中/返回、详情加载失败态、搜索筛选三条路径可回归",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "详情加载状态机纯逻辑 9 条（8 字段整体清空/错误文案/列表守卫）；视图委托该模块",
+          "evidence": "ui/views/knowledge-detail-state.ts + knowledge-detail-state.test"
         }
       ]
     }
@@ -667,6 +667,12 @@
       "group": "G7",
       "summary": "G7-4c：KnowledgeTagManager 9 条 + 修复损坏标签文件静默回落默认树（会覆盖用户原文件）",
       "evidence": "knowledge-tags.test + engine/knowledge-tags.ts"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G7",
+      "summary": "G7-4d：知识库详情状态机抽纯模块 + 9 条回归（换书清空/错误文案/列表守卫）",
+      "evidence": "knowledge-detail-state.ts + test"
     }
   ]
 }

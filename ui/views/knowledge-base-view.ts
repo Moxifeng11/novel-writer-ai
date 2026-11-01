@@ -15,6 +15,7 @@ import { createLogger } from '../../shared/logger';
 import { classifyBook, isClassificationTag, mergeClassificationTags, type ClassificationResult } from '../../shared/content-classifier';
 import { exportTextFile } from '../../shared/export-file';
 import { ImportBookModal, EditBookModal, GenreEditModal, BatchOperationsModal } from './knowledge-base-modals';
+import { canRefreshBookList, detailErrorMessage, emptyDetailData } from './knowledge-detail-state';
 import { BookDetailRenderer } from './book-detail-renderer';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
 import { yieldToUI } from '../../shared/yield';
@@ -1178,7 +1179,7 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private renderBookListOnly(): void {
-        if (this.activeMainTab !== 'books' || this.selectedBookId) return;
+        if (!canRefreshBookList(this.activeMainTab, this.selectedBookId)) return;
 
         const listContainer = this.rightPanel.querySelector('.nw-kb-book-list-container');
         if (!listContainer) return;
@@ -1541,7 +1542,7 @@ export class KnowledgeBaseView extends ItemView {
         tabContent.empty();
         const errorBox = tabContent.createDiv({ cls: 'nw-kb-error' });
         errorBox.createDiv({ text: '⚠️ 书籍详情加载失败', cls: 'nw-kb-error-title' });
-        errorBox.createDiv({ text: this.detailLoadError || '未知错误', cls: 'nw-kb-error-detail' });
+        errorBox.createDiv({ text: this.detailLoadError || detailErrorMessage(), cls: 'nw-kb-error-detail' });
         const retry = errorBox.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
         retry.addEventListener('click', () => this.retryBookDetailLoad());
     }
@@ -1628,28 +1629,29 @@ export class KnowledgeBaseView extends ItemView {
         const stale = () => this.viewClosed || seq !== this.detailLoadSeq || this.selectedBookId !== bookId;
 
         // 先清空上一本书的分析数据：本轮任何一步失败都不会把旧书的数据挂在新书详情页下。
-        this.styleData = null;
-        this.rhythmData = null;
-        this.techniqueData = null;
-        this.structureData = null;
-        this.characterData = null;
-        this.foreshadowData = null;
-        this.commercialData = null;
-        this.readabilityData = null;
+        const emptyDetail = emptyDetailData();
+        this.styleData = emptyDetail.styleData;
+        this.rhythmData = emptyDetail.rhythmData;
+        this.techniqueData = emptyDetail.techniqueData;
+        this.structureData = emptyDetail.structureData;
+        this.characterData = emptyDetail.characterData;
+        this.foreshadowData = emptyDetail.foreshadowData;
+        this.commercialData = emptyDetail.commercialData;
+        this.readabilityData = emptyDetail.readabilityData;
 
         let book: BookBasicInfo | undefined;
         try {
             book = await this.kbManager.getBook(bookId);
             this.detailLoadError = null;
         } catch (e) {
-            this.detailLoadError = e instanceof Error ? e.message : String(e);
+            this.detailLoadError = detailErrorMessage({ error: e });
             log.error('[KnowledgeBaseView] 读取书籍详情失败:', e);
             return;
         }
         if (stale()) return;
         if (!book) {
             // 书已被删除 / 列表数据过期：必须落错误态，否则详情区停在「加载中...」
-            this.detailLoadError = '书籍不存在或已被删除，请返回列表刷新';
+            this.detailLoadError = detailErrorMessage({ missing: true });
             return;
         }
 
