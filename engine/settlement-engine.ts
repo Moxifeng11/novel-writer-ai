@@ -17,13 +17,14 @@ import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { withWriteLock } from '../shared/write-lock';
 import type { SettlementJournal } from './settlement/settlement-journal';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates, getRelationshipFilePath } from './relationship-engine';
-import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '../shared/paths';
+import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '../shared/paths';
 import { DEFAULT_PROMISE_LEDGER, applyPromiseInstruction, formatPromiseLedger, parsePromiseLedger } from './promise-ledger';
 import { applyArcInstruction, buildArcRowsFromCharacters, formatCharacterArcTable, parseCharacterArcTable } from './character-arc';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
 import { listFolderFiles } from '../shared/vault-tree';
+import { entityDir, listEntityFiles } from '../shared/entity-reader';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '../shared/thresholds';
 import type { Instructions, FrontMatter } from './settlement/settlement-types';
 import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealNames } from './settlement/report-parser';
@@ -225,7 +226,7 @@ export class SettlementEngine {
     }> {
         try {
             // 只读本项目的角色目录：全库 getFiles() 在结算热路径上是 O(全库)
-            return listFolderFiles<TFile>(this.app.vault, pjCharsDir(project))
+            return listFolderFiles<TFile>(this.app.vault, entityDir(project, 'characters'))
                 .map(file => {
                     const fm = this.app.metadataCache.getFileCache(file)?.frontmatter || {};
                     return {
@@ -805,7 +806,7 @@ export class SettlementEngine {
     private async settleStep_recordBehaviors(ctx: SettleContext): Promise<void> {
         const incoming: BehaviorRow[] = buildChapterBehaviorRows(ctx.chapName, ctx.instr.behavior || []);
         if (incoming.length === 0) return;
-        const dir = pjCharsDir(ctx.project);
+        const dir = entityDir(ctx.project, 'characters');
         const path = `${dir}/出场记录.md`;
         try {
             await this.getFS().mkdir(dir);
@@ -830,7 +831,7 @@ export class SettlementEngine {
             const fp = pjCharFile(ctx.project, nc.name);
             if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(pjCharsDir(ctx.project));
+                await this.getFS().mkdir(entityDir(ctx.project, 'characters'));
                 const content = `---
 tags: [人物, nw/实体/人物]
 姓名: ${nc.name}
@@ -892,7 +893,7 @@ ${nc.description || '暂无描述'}
             const fp = pjLocFile(ctx.project, nl.name);
             if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(pjLocsDir(ctx.project));
+                await this.getFS().mkdir(entityDir(ctx.project, 'locations'));
                 const content = `---
 tags: [地点, nw/实体/地点]
 名称: ${nl.name}
@@ -934,7 +935,7 @@ ${nl.description || '暂无描述'}
             const fp = pjFactionFile(ctx.project, nf.name);
             if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(pjFactionsDir(ctx.project));
+                await this.getFS().mkdir(entityDir(ctx.project, 'factions'));
                 const content = `---
 tags: [势力, nw/实体/势力]
 名称: ${nf.name}
@@ -974,7 +975,7 @@ ${nf.description || '暂无描述'}
             const fp = pjItemFile(ctx.project, ni.name);
             if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(pjItemsDir(ctx.project));
+                await this.getFS().mkdir(entityDir(ctx.project, 'items'));
                 const content = `---
 tags: [物品功法, nw/实体/物品]
 名称: ${ni.name}
@@ -1562,8 +1563,7 @@ ${ni.description || '暂无描述'}
     // ================================================================
     private async refreshInfoDebt(project: string): Promise<void> {
         try {
-            const charFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjCharsDir(project))
-                .filter(f => f.name !== '人物模板.md');
+            const charFiles = listEntityFiles(this.app, project, 'characters');
             const chapFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjOutlineDir(project), { recursive: true })
                 .filter(f => f.name.includes('正文'));
 
@@ -1669,10 +1669,10 @@ tags: [看板]
     // v3.5.0: 结算后生成叙事总览
     async generateNarrativeOverview(project: string): Promise<string> {
         const baseDir = pjOutlineDir(project);
-        const charDir = pjCharsDir(project);
-        const factionDir = pjFactionsDir(project);
-        const locDir = pjLocsDir(project);
-        const itemDir = pjItemsDir(project);
+        const charDir = entityDir(project, 'characters');
+        const factionDir = entityDir(project, 'factions');
+        const locDir = entityDir(project, 'locations');
+        const itemDir = entityDir(project, 'items');
         const foreshadowPath = pjForeshadowDB(project);
         const timelinePath = pjTimelineBoard(project);
 

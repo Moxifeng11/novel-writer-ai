@@ -25,6 +25,7 @@ describe('已迁移模块', () => {
         'ui/context-injector-modal.ts',
         'engine/step-result-saver.ts',
         'engine/context-manager.ts',
+        'engine/settlement-engine.ts',
     ]) {
         it(`${rel} 不再直接拼实体目录`, () => {
             const source = read(rel);
