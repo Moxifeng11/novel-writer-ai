@@ -1,6 +1,7 @@
 import { TFile } from 'obsidian';
 import { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
-import { getWorldviewPath, getSettingLibPath, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir } from '../shared/paths';
+import { getWorldviewPath, getSettingLibPath, pjItemsDir } from '../shared/paths';
+import { entityDir } from '../shared/entity-reader';
 import { performanceMonitor } from './performance-monitor';
 import { createLogger } from '../shared/logger';
 
@@ -412,10 +413,10 @@ export class WorldviewCacheService {
         entityType: 'characters' | 'locations' | 'factions' | 'items'
     ): Promise<Array<{ name: string; content: string; fromCache: boolean }>> {
         const dirMap: Record<string, string> = {
-            characters: pjCharsDir(project),
-            locations: pjLocsDir(project),
-            factions: pjFactionsDir(project),
-            items: pjItemsDir(project),
+            characters: entityDir(project, 'characters'),
+            locations: entityDir(project, 'locations'),
+            factions: entityDir(project, 'factions'),
+            items: entityDir(project, 'items'),
         };
 
         const dirPath = dirMap[entityType];
@@ -444,10 +445,10 @@ export class WorldviewCacheService {
         parsedData?: Record<string, any>
     ): Promise<void> {
         const pathMap: Record<string, (p: string, n: string) => string> = {
-            characters: (p, n) => `${pjCharsDir(p)}/${n}.md`,
-            locations: (p, n) => `${pjLocsDir(p)}/${n}.md`,
-            factions: (p, n) => `${pjFactionsDir(p)}/${n}.md`,
-            items: (p, n) => `${pjItemsDir(p)}/${n}.md`,
+            characters: (p, n) => `${entityDir(p, 'characters')}/${n}.md`,
+            locations: (p, n) => `${entityDir(p, 'locations')}/${n}.md`,
+            factions: (p, n) => `${entityDir(p, 'factions')}/${n}.md`,
+            items: (p, n) => `${entityDir(p, 'items')}/${n}.md`,
         };
 
         const filePath = pathMap[entityType](project, name);
@@ -470,10 +471,10 @@ export class WorldviewCacheService {
 
         const keysToDelete: string[] = [];
         const dirMap: Record<string, string> = {
-            characters: pjCharsDir(project),
-            locations: pjLocsDir(project),
-            factions: pjFactionsDir(project),
-            items: pjItemsDir(project),
+            characters: entityDir(project, 'characters'),
+            locations: entityDir(project, 'locations'),
+            factions: entityDir(project, 'factions'),
+            items: entityDir(project, 'items'),
         };
 
         const dirPath = dirMap[entityType];
