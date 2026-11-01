@@ -12,7 +12,6 @@ import { TitleBarController } from './full-writer/title-bar-controller';
 import { StatusBarController } from './full-writer/status-bar-controller';
 import { ContextLoaderController } from './full-writer/context-loader-controller';
 import { parseChapterFromPath, estimateTotalChars as calcTotalChars, rebuildChapDir, calcResumeStepIndex as calcResumeIdx, findStepByIndex } from './full-writer/full-writer-utils';
-import { OutlineTreeController } from './full-writer/outline-tree-controller';
 import { CoverPickerController } from './full-writer/cover-picker-controller';
 import { SettingLibController } from './full-writer/setting-lib-controller';
 import { StepRenderController } from './full-writer/step-render-controller';
@@ -140,7 +139,6 @@ export class FullWriterView extends ItemView {
     private settlementEngine: SettlementEngine;
     private polishEditor: PolishEditor;
     private wizardChecker: WizardChecker;
-    private outlineTreeController: OutlineTreeController;
     private coverPickerController: CoverPickerController;
     private settingLibController: SettingLibController;
     private stepRenderController: StepRenderController;
@@ -565,7 +563,6 @@ export class FullWriterView extends ItemView {
         this.contextPanel = new ContextPanel(this.app);
         this.polishEditor = new PolishEditor(this.stepRunner, this.plugin);
         this.wizardChecker = new WizardChecker(this.app);
-        this.outlineTreeController = new OutlineTreeController(this.app, () => this.project);
         this.coverPickerController = new CoverPickerController(this.app);
         this.settingLibController = new SettingLibController(
             this.app,
@@ -2042,14 +2039,6 @@ export class FullWriterView extends ItemView {
         const userPromptValue = fillTemplate(template.userPrompt, vars);
         this.systemPromptEl = this.renderPromptEditor(area, '系统提示词', systemPromptValue, 12);
         this.userPromptEl = this.renderPromptEditor(area, '用户提示词', userPromptValue, 15);
-
-        // v6.0: outline 步骤额外显示分卷大纲树状预览（辅助视图，不替代结果编辑器）
-        // 已禁用：写作工作台（单章）的 outline 步骤不应显示全书分卷大纲树，那是全书规划向导的功能
-        // if (stepKey === 'outline' && this.stepCompleted.has('outline') && this.project) {
-        //     const previewSection = area.createDiv({ cls: 'novel-writer-fw-result-section' });
-        //     previewSection.createEl('h4', { text: '📚 分卷大纲预览', cls: 'novel-writer-fw-result-title' });
-        //     await this.outlineTreeController.render(previewSection);
-        // }
 
         // 步骤级附加操作（消痕/精修/定向修订/人味体检）+「继续下一步」，
         // 同样独立成区：步骤完成时只重绘这里，不动提示词编辑器。

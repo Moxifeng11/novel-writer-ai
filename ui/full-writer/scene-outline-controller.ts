@@ -8,7 +8,7 @@
  * - 自动保存（防抖 1s）
  * - 字数统计与完成度标记
  *
- * 集成方式：参考 OutlineTreeController，挂载到 FullWriterView 侧边栏
+ * 集成方式：挂载到 FullWriterView 侧边栏
  */
 
 import { App, TFile, Notice } from 'obsidian';

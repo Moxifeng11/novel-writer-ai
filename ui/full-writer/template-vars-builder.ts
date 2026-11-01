@@ -1082,4 +1082,3 @@ export async function buildSceneStyleHint(deps: TemplateVarsDeps, vars: Record<s
   }
 }
 
-// ui/full-writer/outline-tree-controller.ts

@@ -27,7 +27,6 @@ const HOT_FILES = [
     'engine/analysis-report-engine.ts',
     'services/writing-stats-service.ts',
     'ui/continue-chapters-modal.ts',
-    'ui/full-writer/outline-tree-controller.ts',
 ];
 
 /** 去掉注释，避免把说明文字当成调用 */

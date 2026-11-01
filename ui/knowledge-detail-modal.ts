@@ -306,7 +306,6 @@ export class KnowledgeDetailModal extends Modal {
             new Notice(`参考书籍保存失败：${e instanceof Error ? e.message : String(e)}`, 6000);
         });
 
-        this.refreshKnowledgePanel();
         this.render();
     }
 
@@ -347,27 +346,6 @@ export class KnowledgeDetailModal extends Modal {
         }
     }
 
-    private refreshKnowledgePanel(): void {
-        try {
-            const VIEW_TYPE_KNOWLEDGE = 'nw-float-knowledge';
-            const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_KNOWLEDGE);
-            for (const leaf of leaves) {
-                const view = leaf.view as unknown as { renderTabContent?: () => void; selectedBooks?: Set<string> };
-                if (view && typeof view.renderTabContent === 'function') {
-                    if (view.selectedBooks instanceof Set) {
-                        const isRef = this.isReferenceBook();
-                        if (isRef) {
-                            view.selectedBooks.add(this.bookId);
-                        } else {
-                            view.selectedBooks.delete(this.bookId);
-                        }
-                    }
-                    view.renderTabContent();
-                }
-            }
-        } catch {
-        }
-    }
 
     private renderHeader(container: HTMLElement): void {
         const header = container.createDiv({ cls: 'nw-u-marginbottom-16px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-gap-12px' });
