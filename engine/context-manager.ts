@@ -771,6 +771,14 @@ export class ContextManager {
 
         // ─── 写入缓存 ───
         if (this.contextCacheTTL > 0) {
+            // S-3（v4.27）：LRU 化——上限 16 章，超限先淘汰最旧条目
+            if (this.contextCache.size >= 16) {
+                const oldestKey = this.contextCache.keys().next().value;
+                if (oldestKey) {
+                    this.contextCache.delete(oldestKey);
+                    this.cacheStats.evictions++;
+                }
+            }
             this.contextCache.set(legacyCacheKey, { result: context, timestamp: Date.now() });
         }
         if (this.multiLayerCache) {

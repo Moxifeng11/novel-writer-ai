@@ -967,23 +967,26 @@ ${ni.description || '暂无描述'}
             try {
                 const fp = pjForeshadowDB(ctx.project);
                 const ff = this.getVaultMeta().getAbstractFileByPath(fp);
-                let c = ff instanceof TFile ? await this.getFS().read(fp) : '';
-                // v4.20 幂等守卫：同名伏笔已在库（未回收/已回收任一表）则跳过
-                if (this.foreshadowNameExistsInDb(c, nf.name)) {
-                    log.info('[SettlementEngine] 伏笔已存在，跳过:', nf.name);
-                    continue;
-                }
-                const newRow = `| ${getNextRowNum(c)} | ${nf.name} | 中 | ${nf.chapter || ctx.chapName} | ${nf.reveal || '待定'} | ${nf.relatedChars || ''} | ${nf.relatedPlotline || ''} | 未揭示 |`;
-                if (c.includes('未回收伏笔')) {
-                    c = appendAfterSectionHeader(c, '未回收伏笔', newRow);
-                    if (ff) await this.getFS().write(fp, c);
-                } else {
-                    // 首次创建：8列双表结构
-                    const base = `# 伏笔库\n\n> 所有伏笔总览，追踪状态，避免遗漏。\n\n## 未回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 相关人物 | 关联主线 | 当前状态 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n${newRow}\n\n## 已回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 相关人物 | 关联主线 | 回收章节 | 回收方式 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n`;
-                    if (ff) await this.getFS().write(fp, base);
-                    else { await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {}); await this.getFS().write(fp, base); }
-                }
-                ctx.result.createdForeshadows++;
+                // S-1（v4.27）：伏笔库读-检查-写整段进锁
+                let created = false;
+                await withWriteLock(fp, async () => {
+                    let c = ff instanceof TFile ? await this.getFS().read(fp) : '';
+                    if (this.foreshadowNameExistsInDb(c, nf.name)) {
+                        log.info('[SettlementEngine] 伏笔已存在，跳过:', nf.name);
+                        return;
+                    }
+                    const newRow = `| ${getNextRowNum(c)} | ${nf.name} | 中 | ${nf.chapter || ctx.chapName} | ${nf.reveal || '待定'} | ${nf.relatedChars || ''} | ${nf.relatedPlotline || ''} | 未揭示 |`;
+                    if (c.includes('未回收伏笔')) {
+                        c = appendAfterSectionHeader(c, '未回收伏笔', newRow);
+                        if (ff) await this.getFS().write(fp, c);
+                    } else {
+                        const base = `# 伏笔库\n\n> 所有伏笔总览，追踪状态，避免遗漏。\n\n## 未回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 相关人物 | 关联主线 | 当前状态 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n${newRow}\n\n## 已回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 相关人物 | 关联主线 | 回收章节 | 回收方式 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n`;
+                        if (ff) await this.getFS().write(fp, base);
+                        else { await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {}); await this.getFS().write(fp, base); }
+                    }
+                    created = true;
+                });
+                if (created) ctx.result.createdForeshadows++;
             } catch (e) { log.warn('[SettlementEngine] 追加伏笔失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
         }
     }

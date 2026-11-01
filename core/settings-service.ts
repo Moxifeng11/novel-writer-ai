@@ -225,15 +225,19 @@ export class SettingsService {
         const encryptedDoubaoApiKey = await this.resolveSecret('vectorDoubaoApiKey', settings.vectorDoubaoApiKey || '');
         const encryptedQwenApiKey = await this.resolveSecret('vectorQwenApiKey', settings.vectorQwenApiKey || '');
         const encryptedGithubToken = await this.resolveSecret('updateGithubToken', settings.updateGithubToken || '');
-        const dataToSave = withCurrentVersion({
+        // S-2（v4.27）：迁移未完成时保留磁盘上的旧 schemaVersion，不「盖章」为已完成
+        const baseData = {
             ...settings,
             apiKey: encryptedApiKey,
             providerKeys: keysToSave,
             vectorOpenaiApiKey: encryptedVectorApiKey,
-            vectorDoubaoApiKey: encryptedDoubaoApiKey,
+            vectorDoubaoApiKey: encryptedVectorApiKey,
             vectorQwenApiKey: encryptedQwenApiKey,
             updateGithubToken: encryptedGithubToken,
-        });
+        };
+        const dataToSave = this.migrationIncomplete
+            ? { ...baseData, schemaVersion: this.migrationIncomplete.toVersion }
+            : withCurrentVersion(baseData);
         // 双写缓存
         if (this.deps.cacheManager && settings.panelLayout) {
             this.deps.cacheManager.setPanelLayout(settings.panelLayout);
