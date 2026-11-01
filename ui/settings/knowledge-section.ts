@@ -20,6 +20,7 @@ import { OperationConfirmModal } from '../components/progress';
 import { rebuildKnowledgeIndexWithConfirm } from '../knowledge-rebuild-action';
 import { rebuildAllVectorsWithConfirm } from '../vector-rebuild-action';
 import { SettingsSection } from './section-base';
+import { describeSecretForInput } from '../../shared/secret-display';
 
 const log = createLogger('SettingsTab');
 
@@ -31,6 +32,8 @@ export class KnowledgeSection extends SettingsSection {
     private knowledgeLoading = false;
     private knowledgeSearchKeyword = '';
     private knowledgeStatusFilter: string = 'all';
+    /** 搜索框重建节流句柄：整分区 refresh 会销毁输入框，必须防抖 + 恢复焦点 */
+    private knowledgeSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
@@ -140,7 +143,19 @@ export class KnowledgeSection extends SettingsSection {
         });
         searchInput.addEventListener('input', (e) => {
             this.knowledgeSearchKeyword = (e.target as HTMLInputElement).value;
-            this.refresh();
+            // 宿主 refresh() 会清空并重建整个分区 → 每敲一个字符输入框就失焦。
+            // 防抖到停顿后再重建，并在重建后把焦点/光标放回搜索框。
+            if (this.knowledgeSearchTimer) clearTimeout(this.knowledgeSearchTimer);
+            this.knowledgeSearchTimer = setTimeout(() => {
+                this.knowledgeSearchTimer = null;
+                const caret = this.knowledgeSearchKeyword.length;
+                this.refresh();
+                const next = document.querySelector<HTMLInputElement>('input[placeholder="🔍 搜索书名/作者/标签..."]');
+                if (next) {
+                    next.focus();
+                    next.setSelectionRange(caret, caret);
+                }
+            }, 250);
         });
 
         const statusSelect = searchRow.createEl('select', {
@@ -554,11 +569,18 @@ export class KnowledgeSection extends SettingsSection {
                 .setDesc('OpenAI 兼容 API 的密钥')
                 .addText(text => {
                     text.inputEl.type = 'password';
-                    text.setValue(this.plugin.settings.vectorOpenaiApiKey || '');
-                    text.setPlaceholder('请输入 API Key');
-                    text.onChange(async (value) => {
-                        this.plugin.settings.vectorOpenaiApiKey = value;
-                        await this.plugin.saveSettings();
+                    const secretDisplay = describeSecretForInput(this.plugin.settings.vectorOpenaiApiKey || '');
+                    text.setValue(secretDisplay.value);
+                    text.setPlaceholder(secretDisplay.placeholder || '请输入 API Key');
+                    text.inputEl.title = secretDisplay.title;
+                    // 空值 = 未修改：加密锁定态输入框为空，写回会抹掉已加密密钥
+                    text.inputEl.addEventListener('change', () => {
+                        const next = text.inputEl.value.trim();
+                        if (!next) return;
+                        this.plugin.settings.vectorOpenaiApiKey = next;
+                        void this.plugin.saveSettings().catch((e: unknown) => {
+                            new Notice(`保存密钥失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                        });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
@@ -605,11 +627,18 @@ export class KnowledgeSection extends SettingsSection {
                 .setDesc('豆包/火山引擎 API 的密钥')
                 .addText(text => {
                     text.inputEl.type = 'password';
-                    text.setValue(this.plugin.settings.vectorDoubaoApiKey || '');
-                    text.setPlaceholder('请输入 API Key');
-                    text.onChange(async (value) => {
-                        this.plugin.settings.vectorDoubaoApiKey = value;
-                        await this.plugin.saveSettings();
+                    const secretDisplay = describeSecretForInput(this.plugin.settings.vectorDoubaoApiKey || '');
+                    text.setValue(secretDisplay.value);
+                    text.setPlaceholder(secretDisplay.placeholder || '请输入 API Key');
+                    text.inputEl.title = secretDisplay.title;
+                    // 空值 = 未修改：加密锁定态输入框为空，写回会抹掉已加密密钥
+                    text.inputEl.addEventListener('change', () => {
+                        const next = text.inputEl.value.trim();
+                        if (!next) return;
+                        this.plugin.settings.vectorDoubaoApiKey = next;
+                        void this.plugin.saveSettings().catch((e: unknown) => {
+                            new Notice(`保存密钥失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                        });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
@@ -656,11 +685,18 @@ export class KnowledgeSection extends SettingsSection {
                 .setDesc('通义千问 API 的密钥')
                 .addText(text => {
                     text.inputEl.type = 'password';
-                    text.setValue(this.plugin.settings.vectorQwenApiKey || '');
-                    text.setPlaceholder('请输入 API Key');
-                    text.onChange(async (value) => {
-                        this.plugin.settings.vectorQwenApiKey = value;
-                        await this.plugin.saveSettings();
+                    const secretDisplay = describeSecretForInput(this.plugin.settings.vectorQwenApiKey || '');
+                    text.setValue(secretDisplay.value);
+                    text.setPlaceholder(secretDisplay.placeholder || '请输入 API Key');
+                    text.inputEl.title = secretDisplay.title;
+                    // 空值 = 未修改：加密锁定态输入框为空，写回会抹掉已加密密钥
+                    text.inputEl.addEventListener('change', () => {
+                        const next = text.inputEl.value.trim();
+                        if (!next) return;
+                        this.plugin.settings.vectorQwenApiKey = next;
+                        void this.plugin.saveSettings().catch((e: unknown) => {
+                            new Notice(`保存密钥失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                        });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',

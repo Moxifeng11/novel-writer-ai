@@ -209,4 +209,29 @@ describe('SettingsService — 密钥不降级（2026-10-29 修复 API Key 失效
         expect(service.lockedSecretCount()).toBe(1);
         expect(service.findExistingCiphertext()).toBe(CIPHER);
     });
+
+    it('三个向量密钥各写各的字段，互不覆盖（曾把豆包写成 OpenAI）', async () => {
+        const { service, saved, current } = harness(
+            { schemaVersion: CURRENT_SCHEMA_VERSION },
+            {
+                decryptWithoutPrompt: async (v: string) => v,
+                hasSessionPassword: () => true,
+                encryptStrict: async (v: string) => 'enc:' + v,
+                encrypt: async (v: string) => v,
+            },
+        );
+
+        await service.loadSettings();
+        Object.assign(current() as Record<string, unknown>, {
+            vectorOpenaiApiKey: 'sk-openai',
+            vectorDoubaoApiKey: 'sk-doubao',
+            vectorQwenApiKey: 'sk-qwen',
+        });
+        await service.saveSettings();
+
+        const written = saved[saved.length - 1];
+        expect(written.vectorOpenaiApiKey).toBe('enc:sk-openai');
+        expect(written.vectorDoubaoApiKey).toBe('enc:sk-doubao');
+        expect(written.vectorQwenApiKey).toBe('enc:sk-qwen');
+    });
 });

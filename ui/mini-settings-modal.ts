@@ -44,6 +44,12 @@ export class MiniSettingsModal extends Modal {
     private proDropdown: DropdownComponent | null = null;
     private flashDropdown: DropdownComponent | null = null;
     private defaultDropdown: DropdownComponent | null = null;
+    /**
+     * 用户在密钥框里实际输入的值（null = 没动过）。
+     * 保存只在有输入时覆盖密钥：加密锁定态下输入框被刻意留空，
+     * 若把空串写回 settings，已加密的 API Key 会被抹掉且不可恢复。
+     */
+    private pendingApiKey: string | null = null;
     private activeTab: string = 'api';
     private tabContent!: HTMLElement;
     private tabBar!: HTMLElement;
@@ -290,6 +296,9 @@ export class MiniSettingsModal extends Modal {
                 text.setPlaceholder(secretDisplay.placeholder)
                     .setValue(secretDisplay.value);
                 text.inputEl.title = secretDisplay.title;
+                text.inputEl.addEventListener('input', () => {
+                    this.pendingApiKey = text.inputEl.value;
+                });
                 const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                     text: '👁',
                     cls: 'novel-writer-key-toggle',
@@ -2621,8 +2630,10 @@ export class MiniSettingsModal extends Modal {
         const contentEl = this.contentEl;
 
         const keyInput = contentEl.querySelector('input[type="password"], input[type="text"][placeholder*="密钥"], input[type="text"][placeholder*="API"]');
-        if (keyInput) {
-            const keyVal = (keyInput as HTMLInputElement).value;
+        // 空值 = 「未修改」：加密锁定态输入框为空，写回会抹掉已加密密钥。
+        // 优先用 input 事件记录的值（切页签后 DOM 可能已被重建）。
+        const keyVal = (this.pendingApiKey ?? (keyInput as HTMLInputElement | null)?.value ?? '').trim();
+        if (keyVal) {
             this.plugin.settings.apiKey = keyVal;
             const cid = this.plugin.getCurrentProviderId();
             if (cid) {

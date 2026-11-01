@@ -130,6 +130,9 @@ export class SettingsService {
         settings.vectorDoubaoApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorDoubaoApiKey || '');
         settings.vectorQwenApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorQwenApiKey || '');
         settings.updateGithubToken = await this.deps.crypto.decryptWithoutPrompt(settings.updateGithubToken || '');
+        if (settings.canonResearch && settings.canonResearch.apiKey) {
+            settings.canonResearch.apiKey = await this.deps.crypto.decryptWithoutPrompt(settings.canonResearch.apiKey);
+        }
 
         // 同步自定义提供商模型列表
         this.deps.providerManager.syncCustomModelsOnRestart();
@@ -164,6 +167,12 @@ export class SettingsService {
             vectorDoubaoApiKey: typeof data.vectorDoubaoApiKey === 'string' ? data.vectorDoubaoApiKey : '',
             vectorQwenApiKey: typeof data.vectorQwenApiKey === 'string' ? data.vectorQwenApiKey : '',
             updateGithubToken: typeof data.updateGithubToken === 'string' ? data.updateGithubToken : '',
+            'canonResearch.apiKey': (() => {
+                const canon = data.canonResearch;
+                return canon && typeof canon === 'object' && typeof (canon as Record<string, unknown>).apiKey === 'string'
+                    ? (canon as Record<string, string>).apiKey
+                    : '';
+            })(),
         };
         const providerKeys = (data.providerKeys && typeof data.providerKeys === 'object' && !Array.isArray(data.providerKeys))
             ? data.providerKeys as Record<string, unknown>
@@ -225,15 +234,22 @@ export class SettingsService {
         const encryptedDoubaoApiKey = await this.resolveSecret('vectorDoubaoApiKey', settings.vectorDoubaoApiKey || '');
         const encryptedQwenApiKey = await this.resolveSecret('vectorQwenApiKey', settings.vectorQwenApiKey || '');
         const encryptedGithubToken = await this.resolveSecret('updateGithubToken', settings.updateGithubToken || '');
+        // 同人考据的搜索 Key 也是第三方凭据：与其它密钥同一套加密策略，不能明文落 data.json
+        const encryptedCanonKey = settings.canonResearch?.apiKey
+            ? await this.resolveSecret('canonResearch.apiKey', settings.canonResearch.apiKey)
+            : '';
         // S-2（v4.27）：迁移未完成时保留磁盘上的旧 schemaVersion，不「盖章」为已完成
         const baseData = {
             ...settings,
             apiKey: encryptedApiKey,
             providerKeys: keysToSave,
             vectorOpenaiApiKey: encryptedVectorApiKey,
-            vectorDoubaoApiKey: encryptedVectorApiKey,
+            vectorDoubaoApiKey: encryptedDoubaoApiKey,
             vectorQwenApiKey: encryptedQwenApiKey,
             updateGithubToken: encryptedGithubToken,
+            canonResearch: settings.canonResearch
+                ? { ...settings.canonResearch, apiKey: encryptedCanonKey }
+                : settings.canonResearch,
         };
         const dataToSave = this.migrationIncomplete
             ? { ...baseData, schemaVersion: this.migrationIncomplete.toVersion }
@@ -255,6 +271,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * - 嵌套对象递归合并，旧配置缺失的字段回落默认值
  * - 数组整体替换（模型列表、自定义提供商等不能按索引合并）
  * - undefined 不覆盖默认值
+ * - null 不覆盖对象默认值：data.json 里 `"modelOverrides": null`（手工编辑/旧版损坏）
+ *   会让设置页 `settings.modelOverrides[endpoint]` 直接抛 TypeError。
  */
 export function deepMergeSettings<T>(base: T, override: unknown): T {
     if (!isPlainObject(base) || !isPlainObject(override)) {
@@ -263,6 +281,7 @@ export function deepMergeSettings<T>(base: T, override: unknown): T {
     const result: Record<string, unknown> = { ...base };
     for (const [key, value] of Object.entries(override)) {
         if (value === undefined) continue;
+        if (value === null && isPlainObject(result[key])) continue;
         result[key] = isPlainObject(result[key]) && isPlainObject(value)
             ? deepMergeSettings(result[key], value)
             : value;

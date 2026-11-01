@@ -917,15 +917,23 @@ export class ApiSection extends SettingsSection {
 
         new Setting(card)
             .setName('搜索 API Key')
-            .setDesc('仅用于同人考据检索；保存在插件设置中')
+            .setDesc('仅用于同人考据检索；与其它密钥同一套加密保存')
             .addText(text => {
                 text.inputEl.type = 'password';
-                text.setPlaceholder('留空则只能手动添加来源')
-                    .setValue(cfg.apiKey || '')
-                    .onChange(async (value) => {
-                        cfg.apiKey = value.trim();
-                        await this.plugin.saveSettings();
+                // 未解锁时内存里是密文：留空 + 占位提示，绝不把密文当明文展示/回写
+                const secretDisplay = describeSecretForInput(cfg.apiKey || '');
+                text.setPlaceholder(secretDisplay.placeholder || '留空则只能手动添加来源')
+                    .setValue(secretDisplay.value);
+                text.inputEl.title = secretDisplay.title;
+                // 用 change（失焦/回车）而不是 onChange：逐键保存会触发全量密钥加密 + 写盘
+                text.inputEl.addEventListener('change', () => {
+                    const next = text.inputEl.value.trim();
+                    if (!next) return; // 空值 = 未修改，避免把已加密 Key 清空
+                    cfg.apiKey = next;
+                    void this.plugin.saveSettings().catch(e => {
+                        new Notice(`保存搜索 API Key 失败：${e instanceof Error ? e.message : String(e)}`, 6000);
                     });
+                });
             });
 
         new Setting(card)
