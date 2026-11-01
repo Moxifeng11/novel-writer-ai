@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 120061 | 1532 | 283 | 18% |
+| `engine/` | 289 | 120223 | 1532 | 337 | 22% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 92548 | 500 | 67 | 13% |
+| `ui/` | 191 | 92729 | 500 | 110 | 22% |
 
 ## 文件清单
 
@@ -71,7 +71,7 @@
 | `engine/analysis-session-manager.ts` | 642 | 1 | 0 |
 | `engine/anti-ai-detector.ts` | 407 | 6 | 0 |
 | `engine/bases-generator.ts` | 213 | 8 | 0 |
-| `engine/batch-import-manager.ts` | 673 | 9 | 0 |
+| `engine/batch-import-manager.ts` | 700 | 9 | 9 |
 | `engine/beat-verifier.ts` | 64 | 3 | 1 |
 | `engine/body-writer.ts` | 444 | 8 | 1 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
@@ -107,14 +107,14 @@
 | `engine/craft-constraints.ts` | 69 | 5 | 1 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 625 | 16 | 5 |
-| `engine/deconstruction-scheduler.ts` | 2640 | 9 | 1 |
+| `engine/deconstruction-scheduler.ts` | 2661 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 547 | 3 | 0 |
 | `engine/deconstructors/character-deconstructor.ts` | 3986 | 14 | 0 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2004 | 5 | 0 |
 | `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
-| `engine/deconstructors/foreshadow-deconstructor.ts` | 3866 | 17 | 0 |
+| `engine/deconstructors/foreshadow-deconstructor.ts` | 3917 | 17 | 17 |
 | `engine/deconstructors/readability-deconstructor.ts` | 954 | 7 | 0 |
-| `engine/deconstructors/rhythm-deconstructor.ts` | 2771 | 21 | 0 |
+| `engine/deconstructors/rhythm-deconstructor.ts` | 2834 | 21 | 21 |
 | `engine/deconstructors/structure-deconstructor.ts` | 1812 | 12 | 0 |
 | `engine/deconstructors/style-deconstructor.ts` | 2255 | 14 | 0 |
 | `engine/deconstructors/technique-deconstructor.ts` | 1767 | 5 | 0 |
@@ -684,7 +684,7 @@
 | `ui/story-settings-form.ts` | 228 | 2 | 0 |
 | `ui/story-settings-modal.ts` | 103 | 1 | 0 |
 | `ui/style-distiller-modal.ts` | 479 | 1 | 0 |
-| `ui/svg-charts.ts` | 2132 | 49 | 6 |
+| `ui/svg-charts.ts` | 2313 | 49 | 49 |
 | `ui/template-manager.ts` | 673 | 5 | 0 |
 | `ui/tomato-rank-modal.ts` | 126 | 1 | 0 |
 | `ui/unified-entity-generate-modal.ts` | 1080 | 1 | 0 |

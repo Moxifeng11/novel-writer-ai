@@ -68,6 +68,9 @@ import {
 export type { BreakdownDimension, DeconstructionEngineSettings, DeconstructionQualityLevel };
 export { ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS };
 
+/**
+ * 拆解维度质量评分。
+ */
 export interface DimensionQualityScore {
     completeness: number;
     consistency: number;
@@ -77,8 +80,14 @@ export interface DimensionQualityScore {
     usedLevel: DeconstructionQualityLevel;
 }
 
+/**
+ * 拆解任务状态。
+ */
 export type TaskStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
 
+/**
+ * 拆解进度。
+ */
 export interface BreakdownProgress {
     taskId: string;
     bookId: string;
@@ -99,6 +108,9 @@ export interface BreakdownProgress {
     currentStep?: string;
 }
 
+/**
+ * 拆解任务。
+ */
 export interface BreakdownTask {
     id: string;
     bookId: string;
@@ -133,6 +145,9 @@ export function buildBreakdownFinishNotice(
     return `《${bookName}》拆解完成。可在知识库详情页点击"转为写作指纹"将结果导入指纹库。`;
 }
 
+/**
+ * 调度器选项。
+ */
 export interface SchedulerOptions {
     concurrency?: number;
 }
@@ -165,6 +180,9 @@ function generateTaskId(): string {
     return 'task_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
+/**
+ * 拆解调度设置。
+ */
 export interface DeconstructionSchedulerSettings {
     vectorEnhancedDeconstruction?: boolean;
     enableSegmentedBreakdown?: boolean;
@@ -177,6 +195,9 @@ export interface DeconstructionSchedulerSettings {
     providerKeys?: Record<string, string>;
 }
 
+/**
+ * 拆解调度器：任务队列、并发、重试与进度上报。
+ */
 export class DeconstructionScheduler {
     private app: App;
     private knowledgeBaseManager: KnowledgeBaseManager;

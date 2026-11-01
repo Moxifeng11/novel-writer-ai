@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-01T23:52:59.158Z",
+  "generatedAt": "2026-11-01T23:55:05.938Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 604,
+      "documented": 658,
       "methods": 1253,
       "methodsDocumented": 610,
       "incomplete": 740
@@ -45,7 +45,7 @@
     "ui": {
       "files": 189,
       "exports": 493,
-      "documented": 140,
+      "documented": 183,
       "methods": 632,
       "methodsDocumented": 146,
       "incomplete": 161
@@ -306,7 +306,7 @@
     },
     "engine/batch-import-manager.ts": {
       "exports": 9,
-      "documented": 0,
+      "documented": 9,
       "methods": 32,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -544,7 +544,7 @@
     },
     "engine/deconstruction-scheduler.ts": {
       "exports": 8,
-      "documented": 1,
+      "documented": 8,
       "methods": 33,
       "methodsDocumented": 4,
       "incomplete": 5
@@ -572,7 +572,7 @@
     },
     "engine/deconstructors/foreshadow-deconstructor.ts": {
       "exports": 17,
-      "documented": 0,
+      "documented": 17,
       "methods": 15,
       "methodsDocumented": 2,
       "incomplete": 2
@@ -586,7 +586,7 @@
     },
     "engine/deconstructors/rhythm-deconstructor.ts": {
       "exports": 21,
-      "documented": 0,
+      "documented": 21,
       "methods": 10,
       "methodsDocumented": 1,
       "incomplete": 1
@@ -4569,7 +4569,7 @@
     },
     "ui/svg-charts.ts": {
       "exports": 49,
-      "documented": 6,
+      "documented": 49,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3

@@ -15,10 +15,19 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('BatchImportManager');
+/**
+ * 导入任务状态。
+ */
 export type ImportTaskStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'queued';
 
+/**
+ * 导入来源。
+ */
 export type ImportSource = 'vault-file' | 'vault-folder' | 'local-file' | 'drag-drop';
 
+/**
+ * 导入前预览信息。
+ */
 export interface ImportBookPreview {
     id: string;
     filename: string;
@@ -33,6 +42,9 @@ export interface ImportBookPreview {
     };
 }
 
+/**
+ * 单个导入任务。
+ */
 export interface ImportTask {
     id: string;
     previewId: string;
@@ -51,6 +63,9 @@ export interface ImportTask {
     autoStartDeconstruction: boolean;
 }
 
+/**
+ * 导入历史记录。
+ */
 export interface ImportHistoryItem {
     id: string;
     importTime: number;
@@ -68,6 +83,9 @@ export interface ImportHistoryItem {
     settings: ImportBatchSettings;
 }
 
+/**
+ * 批量导入设置。
+ */
 export interface ImportBatchSettings {
     themeTags: string[];
     techniqueTags: string[];
@@ -80,6 +98,9 @@ export interface ImportBatchSettings {
     presetName?: string;
 }
 
+/**
+ * 导入预设。
+ */
 export interface ImportPreset {
     id: string;
     name: string;
@@ -88,6 +109,9 @@ export interface ImportPreset {
     updatedAt: number;
 }
 
+/**
+ * 批量导入进度。
+ */
 export interface BatchImportProgress {
     totalTasks: number;
     completedTasks: number;
@@ -112,6 +136,9 @@ function generateId(): string {
     return 'import_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
+/**
+ * 批量导入管理器：队列、并发、进度与历史。
+ */
 export class BatchImportManager {
     private app: App;
     private baseDir?: string;

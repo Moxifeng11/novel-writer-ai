@@ -1,18 +1,30 @@
+/**
+ * 雷达图数据项。
+ */
 export interface RadarDataItem {
 	label: string;
 	value: number;
 }
 
+/**
+ * 雷达图选项。
+ */
 export interface RadarOptions {
 	size?: number;
 	title?: string;
 }
 
+/**
+ * 柱状图数据项。
+ */
 export interface BarDataItem {
 	label: string;
 	value: number;
 }
 
+/**
+ * 柱状图选项。
+ */
 export interface BarOptions {
 	width?: number;
 	height?: number;
@@ -20,22 +32,34 @@ export interface BarOptions {
 	horizontal?: boolean;
 }
 
+/**
+ * 环形图数据项。
+ */
 export interface DonutDataItem {
 	label: string;
 	value: number;
 	color?: string;
 }
 
+/**
+ * 环形图选项。
+ */
 export interface DonutOptions {
 	size?: number;
 	title?: string;
 }
 
+/**
+ * 词云数据项。
+ */
 export interface WordCloudItem {
 	text: string;
 	weight: number;
 }
 
+/**
+ * 词云选项。
+ */
 export interface WordCloudOptions {
 	width?: number;
 	height?: number;
@@ -372,6 +396,13 @@ function positionTooltip(tooltip: HTMLElement, event: MouseEvent, container: HTM
 // Task 8/9: radarChart（响应式 + 动画 + 交互）
 // ============================================================================
 
+/**
+ * 渲染雷达图。
+ *
+ * @param data - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): string {
 	const size = options.size || 320;
 	const title = options.title;
@@ -473,6 +504,13 @@ export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): s
 // Task 8/9: barChart（响应式 + 动画 + 交互）
 // ============================================================================
 
+/**
+ * 渲染柱状图。
+ *
+ * @param data - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function barChart(data: BarDataItem[], options: BarOptions = {}): string {
 	const width = options.width || 400;
 	const height = options.height || 250;
@@ -580,6 +618,13 @@ export function barChart(data: BarDataItem[], options: BarOptions = {}): string 
 // Task 8/9: donutChart（响应式 + 动画 + 交互）
 // ============================================================================
 
+/**
+ * 渲染环形图。
+ *
+ * @param data - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): string {
 	const size = options.size || 280;
 	const title = options.title;
@@ -659,6 +704,9 @@ export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): s
 	</div>`;
 }
 
+/**
+ * 折线图数据点。
+ */
 export interface LineChartDataPoint {
 	label?: string;
 	value: number;
@@ -666,6 +714,9 @@ export interface LineChartDataPoint {
 	annotation?: string;
 }
 
+/**
+ * 折线图序列。
+ */
 export interface LineChartSeries {
 	name: string;
 	data: LineChartDataPoint[];
@@ -674,6 +725,9 @@ export interface LineChartSeries {
 	smooth?: boolean;
 }
 
+/**
+ * 折线图选项。
+ */
 export interface LineChartOptions {
 	width?: number;
 	height?: number;
@@ -684,6 +738,9 @@ export interface LineChartOptions {
 	showLegend?: boolean;
 }
 
+/**
+ * 散点图数据点。
+ */
 export interface ScatterDataPoint {
 	x: number;
 	y: number;
@@ -692,6 +749,9 @@ export interface ScatterDataPoint {
 	size?: number;
 }
 
+/**
+ * 散点图选项。
+ */
 export interface ScatterChartOptions {
 	width?: number;
 	height?: number;
@@ -702,6 +762,9 @@ export interface ScatterChartOptions {
 	showLegend?: boolean;
 }
 
+/**
+ * 时间线事件。
+ */
 export interface TimelineEvent {
 	position: number;
 	label: string;
@@ -711,6 +774,9 @@ export interface TimelineEvent {
 	date?: string;
 }
 
+/**
+ * 时间线图选项。
+ */
 export interface TimelineChartOptions {
 	width?: number;
 	height?: number;
@@ -723,6 +789,13 @@ export interface TimelineChartOptions {
 // Task 8/9: wordCloud（响应式 + 交互；Task 11 升级为螺旋布局）
 // ============================================================================
 
+/**
+ * 渲染词云。
+ *
+ * @param words - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function wordCloud(words: WordCloudItem[], options: WordCloudOptions = {}): string {
 	const width = options.width || 400;
 	const height = options.height || 200;
@@ -768,11 +841,17 @@ export function wordCloud(words: WordCloudItem[], options: WordCloudOptions = {}
 // Task 11: spiralLayout — wordCloud 阿基米德螺线布局
 // ============================================================================
 
+/**
+ * 螺旋布局输入。
+ */
 export interface SpiralLayoutInput {
 	text: string;
 	weight: number;
 }
 
+/**
+ * 螺旋布局输出。
+ */
 export interface SpiralLayoutOutput {
 	text: string;
 	weight: number;
@@ -877,6 +956,13 @@ export function spiralLayout(
 // Task 8/9: lineChart（响应式 + 动画 + 交互）
 // ============================================================================
 
+/**
+ * 渲染折线图。
+ *
+ * @param series - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function lineChart(series: LineChartSeries[], options: LineChartOptions = {}): string {
 	const width = options.width || 400;
 	const height = options.height || 250;
@@ -1038,6 +1124,13 @@ export function lineChart(series: LineChartSeries[], options: LineChartOptions =
 // Task 8/9: scatterChart（响应式 + 动画 + 交互）
 // ============================================================================
 
+/**
+ * 渲染散点图。
+ *
+ * @param points - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function scatterChart(points: ScatterDataPoint[], options: ScatterChartOptions = {}): string {
 	const width = options.width || 400;
 	const height = options.height || 250;
@@ -1159,6 +1252,9 @@ export function scatterChart(points: ScatterDataPoint[], options: ScatterChartOp
 // Task 11: scatterToHistogram — 散点数据转直方图
 // ============================================================================
 
+/**
+ * 直方图选项。
+ */
 export interface HistogramOptions {
 	bins?: number;
 	xAxisLabel?: string;
@@ -1216,6 +1312,13 @@ export function scatterToHistogram(
 // Task 8/9: timelineChart（响应式 + 交互）
 // ============================================================================
 
+/**
+ * 渲染时间线图。
+ *
+ * @param events - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function timelineChart(events: TimelineEvent[], options: TimelineChartOptions = {}): string {
 	const width = options.width || 500;
 	const height = options.height || 140;
@@ -1370,12 +1473,18 @@ export function timelineChart(events: TimelineEvent[], options: TimelineChartOpt
 // ============================================================================
 
 // ---------- heatmap ----------
+/**
+ * 热力图单元。
+ */
 export interface HeatmapCell {
 	row: string;
 	col: string;
 	value: number;
 }
 
+/**
+ * 热力图选项。
+ */
 export interface HeatmapOptions {
 	title?: string;
 	colorScale?: string[];
@@ -1383,6 +1492,13 @@ export interface HeatmapOptions {
 	height?: number;
 }
 
+/**
+ * 渲染热力图。
+ *
+ * @param data - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function heatmap(data: HeatmapCell[], options: HeatmapOptions = {}): string {
 	const title = options.title;
 	const colorScale = options.colorScale || ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8'];
@@ -1472,12 +1588,18 @@ export function heatmap(data: HeatmapCell[], options: HeatmapOptions = {}): stri
 }
 
 // ---------- treeChart ----------
+/**
+ * 树图节点。
+ */
 export interface TreeNode {
 	name: string;
 	children?: TreeNode[];
 	value?: number;
 }
 
+/**
+ * 树图选项。
+ */
 export interface TreeOptions {
 	title?: string;
 	orientation?: 'horizontal' | 'vertical';
@@ -1494,6 +1616,13 @@ interface LayoutNode {
 	children: LayoutNode[];
 }
 
+/**
+ * 渲染树图。
+ *
+ * @param root - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function treeChart(root: TreeNode, options: TreeOptions = {}): string {
 	const title = options.title;
 	const orientation = options.orientation || 'vertical';
@@ -1604,12 +1733,18 @@ export function treeChart(root: TreeNode, options: TreeOptions = {}): string {
 }
 
 // ---------- areaChart ----------
+/**
+ * 面积图序列。
+ */
 export interface AreaSeries {
 	label: string;
 	points: { x: number; y: number }[];
 	color?: string;
 }
 
+/**
+ * 面积图选项。
+ */
 export interface AreaOptions {
 	title?: string;
 	smooth?: boolean;
@@ -1620,6 +1755,13 @@ export interface AreaOptions {
 	yAxisLabel?: string;
 }
 
+/**
+ * 渲染面积图。
+ *
+ * @param series - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function areaChart(series: AreaSeries[], options: AreaOptions = {}): string {
 	const width = options.width || 400;
 	const height = options.height || 250;
@@ -1773,12 +1915,18 @@ export function areaChart(series: AreaSeries[], options: AreaOptions = {}): stri
 // ============================================================================
 
 // ---------- densityHeatmap ----------
+/**
+ * 密度热力点。
+ */
 export interface DensityPoint {
 	x: number;
 	y: number;
 	value?: number;
 }
 
+/**
+ * 密度热力图选项。
+ */
 export interface DensityHeatmapOptions {
 	title?: string;
 	colorScale?: string[];
@@ -1789,6 +1937,13 @@ export interface DensityHeatmapOptions {
 	bandwidth?: number;
 }
 
+/**
+ * 渲染密度热力图。
+ *
+ * @param points - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function densityHeatmap(points: DensityPoint[], options: DensityHeatmapOptions = {}): string {
 	const title = options.title;
 	const width = options.width || 500;
@@ -1922,12 +2077,18 @@ export function densityHeatmap(points: DensityPoint[], options: DensityHeatmapOp
 }
 
 // ---------- horizontalBarChart ----------
+/**
+ * 横向柱状图数据项。
+ */
 export interface HorizontalBarItem {
 	label: string;
 	value: number;
 	color?: string;
 }
 
+/**
+ * 横向柱状图选项。
+ */
 export interface HorizontalBarOptions {
 	title?: string;
 	width?: number;
@@ -1935,6 +2096,13 @@ export interface HorizontalBarOptions {
 	sorted?: boolean;
 }
 
+/**
+ * 渲染横向柱状图。
+ *
+ * @param data - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function horizontalBarChart(data: HorizontalBarItem[], options: HorizontalBarOptions = {}): string {
 	const width = options.width || 450;
 	const height = options.height || 300;
@@ -1994,12 +2162,18 @@ export function horizontalBarChart(data: HorizontalBarItem[], options: Horizonta
 }
 
 // ---------- violinChart ----------
+/**
+ * 小提琴图数据项。
+ */
 export interface ViolinDataItem {
 	label: string;
 	values: number[];
 	color?: string;
 }
 
+/**
+ * 小提琴图选项。
+ */
 export interface ViolinChartOptions {
 	title?: string;
 	width?: number;
@@ -2007,6 +2181,13 @@ export interface ViolinChartOptions {
 	showBox?: boolean;
 }
 
+/**
+ * 渲染小提琴图。
+ *
+ * @param data - 参数
+ * @param options - 参数
+ * @returns SVG 字符串
+ */
 export function violinChart(data: ViolinDataItem[], options: ViolinChartOptions = {}): string {
 	const width = options.width || 480;
 	const height = options.height || 320;

@@ -17,12 +17,24 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('RhythmDeconstructor');
+/**
+ * 情绪点类型。
+ */
 export type EmotionPointType = 'small_climax' | 'big_climax' | 'trough' | 'reversal' | 'suspense';
 
+/**
+ * 章末钩子类型。
+ */
 export type HookType = 'suspense' | 'foreshadow' | 'conflict';
 
+/**
+ * 张力事件类型。
+ */
 export type TensionEventType = 'conflict' | 'suspense' | 'reversal' | 'cool_point' | 'setback' | 'climax';
 
+/**
+ * 张力曲线上的一个点。
+ */
 export interface TensionPoint {
     chapterIndex: number;
     position: number;
@@ -32,6 +44,9 @@ export interface TensionPoint {
     matchedWords: string[];
 }
 
+/**
+ * 张力曲线分析结果。
+ */
 export interface TensionCurveResult {
     points: TensionPoint[];
     chapterTensions: number[];
@@ -49,6 +64,9 @@ export interface TensionCurveResult {
     waveformScore: number;
 }
 
+/**
+ * 章末钩子。
+ */
 export interface ChapterHook {
     chapterIndex: number;
     chapterTitle?: string;
@@ -58,6 +76,9 @@ export interface ChapterHook {
     matchedWords: string[];
 }
 
+/**
+ * 钩子分析结果。
+ */
 export interface HookAnalysisResult {
     hooks: ChapterHook[];
     totalChapters: number;
@@ -67,6 +88,9 @@ export interface HookAnalysisResult {
     avgIntensity: number;
 }
 
+/**
+ * 情绪点。
+ */
 export interface EmotionPoint {
     position: number;
     chapterIndex?: number;
@@ -78,6 +102,9 @@ export interface EmotionPoint {
     eventDescription?: string;
 }
 
+/**
+ * 节奏数据点（字数/对话/冲突密度等）。
+ */
 export interface RhythmDataPoint {
     position: number;
     chapterIndex?: number;
@@ -89,8 +116,14 @@ export interface RhythmDataPoint {
     overallRhythm: number;
 }
 
+/**
+ * 剧情阶段。
+ */
 export type PlotStage = 'foreshadowing' | 'development' | 'small_climax' | 'big_climax' | 'ending';
 
+/**
+ * 剧情阶段分段。
+ */
 export interface PlotStageSegment {
     type: PlotStage;
     startPosition: number;
@@ -98,12 +131,18 @@ export interface PlotStageSegment {
     description: string;
 }
 
+/**
+ * 结构匹配结果。
+ */
 export interface StructureMatch {
     name: string;
     matchScore: number;
     description: string;
 }
 
+/**
+ * 爽点。
+ */
 export interface CoolPoint {
     position: number;
     type: string;
@@ -111,12 +150,18 @@ export interface CoolPoint {
     excerpt?: string;
 }
 
+/**
+ * 主线切换点。
+ */
 export interface MainThreadSwitch {
     position: number;
     type: 'main' | 'sub';
     description: string;
 }
 
+/**
+ * 情绪弧类型。
+ */
 export type EmotionArcType =
     | 'rags_to_riches'
     | 'riches_to_rags'
@@ -127,6 +172,9 @@ export type EmotionArcType =
     | 'steady'
     | 'complex';
 
+/**
+ * 情绪弧分析结果。
+ */
 export interface EmotionArcResult {
     arcType: EmotionArcType;
     confidence: number;
@@ -140,8 +188,14 @@ export interface EmotionArcResult {
     description: string;
 }
 
+/**
+ * NRC 八类情绪。
+ */
 export type NRCEmotion = 'anger' | 'anticipation' | 'disgust' | 'fear' | 'joy' | 'sadness' | 'surprise' | 'trust';
 
+/**
+ * NRC 情绪分析结果。
+ */
 export interface NRCEmotionResult {
     overallDistribution: Record<NRCEmotion, number>;
     chapterDistribution: Array<Record<NRCEmotion, number>>;
@@ -155,6 +209,9 @@ export interface NRCEmotionResult {
     }>;
 }
 
+/**
+ * 节奏曲线结果。
+ */
 export interface RhythmCurveResult {
     chapterScores: number[];
     avgScore: number;
@@ -167,6 +224,9 @@ export interface RhythmCurveResult {
     description: string;
 }
 
+/**
+ * 节奏分析汇总结果。
+ */
 export interface RhythmAnalysisResult {
     emotionCurve: RhythmDataPoint[];
     emotionPoints: EmotionPoint[];
@@ -289,6 +349,9 @@ const EMOTION_POINT_TYPE_REFERENCES: { type: EmotionPointType; label: string; te
 const POSITIVE_EMOTION_REFERENCE = '非常高兴 兴奋 激动 畅快 满足 幸福';
 const NEGATIVE_EMOTION_REFERENCE = '悲伤 难过 痛苦 绝望 愤怒 恐惧';
 
+/**
+ * 节奏拆解器：张力/钩子/情绪/结构/爽点分析。
+ */
 export class RhythmDeconstructor {
     private positiveSet: Set<string>;
     private negativeSet: Set<string>;

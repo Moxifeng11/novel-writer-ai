@@ -17,8 +17,14 @@ import { ForeshadowConfigManager, ForeshadowTypeConfig } from '../foreshadow-con
 
 
 const log = createLogger('ForeshadowDeconstructor');
+/**
+ * 伏笔类型：物品/功法/人物/设定/事件。
+ */
 export type ForeshadowType = 'item' | 'skill' | 'character' | 'setting' | 'event';
 
+/**
+ * 伏笔条目：名称、类型、埋设/计划回收章节、状态等。
+ */
 export interface Foreshadow {
     id: string;
     name: string;
@@ -51,6 +57,9 @@ export interface Foreshadow {
     };
 }
 
+/**
+ * 语义相近的伏笔对（用于合并/去重）。
+ */
 export interface SemanticForeshadowPair {
     setupParagraph: string;
     payoffParagraph: string;
@@ -60,6 +69,9 @@ export interface SemanticForeshadowPair {
     confidence: 'high' | 'medium';
 }
 
+/**
+ * 伏笔质量评分（埋设/回收/关联度）。
+ */
 export interface ForeshadowQualityScore {
     totalScore: number;
     diversityScore: number;
@@ -68,6 +80,9 @@ export interface ForeshadowQualityScore {
     coverageScore: number;
 }
 
+/**
+ * 伏笔配对结果（埋设 ↔ 回收）。
+ */
 export interface ForeshadowPair {
     id: string;
     setupForeshadowId: string;
@@ -89,6 +104,9 @@ export interface ForeshadowPair {
     quality?: ResolutionQuality;
 }
 
+/**
+ * 伏笔回收质量评估。
+ */
 export interface ResolutionQuality {
     overallScore: number;
     completeness: number;
@@ -101,6 +119,9 @@ export interface ResolutionQuality {
     lowQuality: boolean;
 }
 
+/**
+ * 世界观设定分类。
+ */
 export type WorldbuildingCategory =
     | 'geography'
     | 'history'
@@ -113,6 +134,9 @@ export type WorldbuildingCategory =
     | 'technology'
     | 'organization';
 
+/**
+ * 单条世界观设定。
+ */
 export interface WorldbuildingEntry {
     category: WorldbuildingCategory;
     name: string;
@@ -123,6 +147,9 @@ export interface WorldbuildingEntry {
     relatedEntries: string[];
 }
 
+/**
+ * 世界观拆解结果。
+ */
 export interface WorldbuildingResult {
     entries: WorldbuildingEntry[];
     categoryDistribution: Record<WorldbuildingCategory, number>;
@@ -131,6 +158,9 @@ export interface WorldbuildingResult {
     description: string;
 }
 
+/**
+ * 设定密度分段统计。
+ */
 export interface SettingDensitySegment {
     chapterIndex: number;
     position: number;
@@ -140,6 +170,9 @@ export interface SettingDensitySegment {
     overload: boolean;
 }
 
+/**
+ * 设定密度分析结果。
+ */
 export interface SettingDensityResult {
     segments: SettingDensitySegment[];
     avgDensity: number;
@@ -152,6 +185,9 @@ export interface SettingDensityResult {
     description: string;
 }
 
+/**
+ * 伏笔网络分析（节点/边/中心度）。
+ */
 export interface ForeshadowNetworkAnalysis {
     mainlineForeshadows: string[];
     sidelineForeshadows: string[];
@@ -185,6 +221,9 @@ export interface ForeshadowNetworkAnalysis {
     };
 }
 
+/**
+ * 未回收伏笔条目。
+ */
 export interface UnresolvedForeshadow {
     id: string;
     name: string;
@@ -199,6 +238,9 @@ export interface UnresolvedForeshadow {
     urgency: 'high' | 'medium' | 'low';
 }
 
+/**
+ * 未回收伏笔追踪结果。
+ */
 export interface UnresolvedTracker {
     totalUnresolved: number;
     byImportance: UnresolvedForeshadow[];
@@ -211,6 +253,9 @@ export interface UnresolvedTracker {
     }>;
 }
 
+/**
+ * 增强版伏笔分析（含语义与网络）。
+ */
 export interface EnhancedForeshadowAnalysis extends ForeshadowAnalysisResult {
     pairs?: ForeshadowPair[];
     networkAnalysis?: ForeshadowNetworkAnalysis;
@@ -222,6 +267,9 @@ export interface EnhancedForeshadowAnalysis extends ForeshadowAnalysisResult {
     };
 }
 
+/**
+ * 伏笔分析汇总结果。
+ */
 export interface ForeshadowAnalysisResult {
     foreshadows: Foreshadow[];
     typeDistribution: Record<ForeshadowType, number>;
@@ -1203,6 +1251,9 @@ const VERB_BLACKLIST = new Set([
     '寂灭','涅槃','轮回','转世'
 ]);
 
+/**
+ * 伏笔拆解器：从正文抽取伏笔、评估质量、追踪回收。
+ */
 export class ForeshadowDeconstructor {
     private itemSuffixSet: Set<string>;
     private skillSuffixSet: Set<string>;

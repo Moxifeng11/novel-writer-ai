@@ -6,10 +6,10 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 604 | 40% | 1253 | 610 | 49% | 740 |
+| `engine/` | 271 | 1508 | 658 | 44% | 1253 | 610 | 49% | 740 |
 | `services/` | 28 | 151 | 49 | 32% | 202 | 123 | 61% | 66 |
 | `shared/` | 163 | 1517 | 964 | 64% | 149 | 89 | 60% | 457 |
-| `ui/` | 189 | 493 | 140 | 28% | 632 | 146 | 23% | 161 |
+| `ui/` | 189 | 493 | 183 | 37% | 632 | 146 | 23% | 161 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -19,12 +19,9 @@
 | `ui/services/co-write-facade.ts` | 2 | 2 | 58 | 53 |
 | `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 44 |
 | `shared/paths.ts` | 189 | 45 | 0 | 0 |
-| `ui/svg-charts.ts` | 49 | 43 | 0 | 0 |
-| `engine/batch-import-manager.ts` | 9 | 9 | 32 | 32 |
-| `engine/deconstruction-scheduler.ts` | 8 | 7 | 33 | 29 |
+| `engine/batch-import-manager.ts` | 9 | 0 | 32 | 32 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 26 |
-| `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 17 | 15 | 13 |
-| `engine/deconstructors/rhythm-deconstructor.ts` | 21 | 21 | 10 | 9 |
+| `engine/deconstruction-scheduler.ts` | 8 | 0 | 33 | 29 |
 | `engine/semantic-analyzer.ts` | 5 | 5 | 23 | 23 |
 | `engine/deconstruction-worker-manager.ts` | 3 | 3 | 21 | 21 |
 | `engine/foreshadow-manager.ts` | 8 | 6 | 18 | 17 |
@@ -45,3 +42,6 @@
 | `engine/deconstructors/style-deconstructor.ts` | 14 | 14 | 5 | 4 |
 | `engine/foreshadow-config-manager.ts` | 1 | 1 | 17 | 17 |
 | `ui/full-writer-view.ts` | 2 | 2 | 25 | 16 |
+| `engine/agent/agent-types.ts` | 20 | 17 | 0 | 0 |
+| `engine/context-manager.ts` | 2 | 2 | 43 | 15 |
+| `services/genre-preference-memory.ts` | 3 | 3 | 14 | 14 |
