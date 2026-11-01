@@ -1,5 +1,5 @@
 import { countCjkWordsAndNumbers } from '../shared/word-count';
-import { isChineseChar } from '../shared/text-utils';
+import { isChineseChar, splitParagraphs, splitSentences } from '../shared/text-utils';
 /**
  * novel-analyzer.ts — 小说内容分析引擎（纯统计）
  *
@@ -76,7 +76,7 @@ export class NovelAnalyzer {
             return this.getEmptyResult();
         }
 
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         const sentences = this.splitSentences(text);
         const charCount = text.length;
         const wordCount = countCjkWordsAndNumbers(text);

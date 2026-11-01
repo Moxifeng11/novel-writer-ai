@@ -8,7 +8,7 @@
  */
 
 import { kbBookStyleFingerprintFile } from '../../shared/paths';
-import { isChineseChar } from '../../shared/text-utils';
+import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
 import { VectorEnhancer } from '../vector-enhancer';
 import { yieldToUI } from '../../shared/yield';
 import { FIVE_SENSES_WORDS } from '../dimension-keywords';
@@ -388,7 +388,7 @@ export class StyleDeconstructor {
 
         const resolvedGenreConfig = genreConfig ?? this.detectGenreConfig(text);
 
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         const totalChars = text.length;
         const sentences = this.splitSentences(text);
         const totalSentences = sentences.length;
@@ -748,7 +748,7 @@ export class StyleDeconstructor {
     private async enhanceNarrativeStyle(text: string, result: StyleAnalysisResult): Promise<StyleAnalysisResult> {
         if (!this.vectorEnhancer) return result;
 
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         if (paragraphs.length < 5) return result;
 
         const sampleParagraphs: string[] = [];

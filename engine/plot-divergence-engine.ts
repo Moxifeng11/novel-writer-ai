@@ -1,4 +1,5 @@
 import { createLogger } from '../shared/logger';
+import { splitParagraphs, splitSentences } from '../shared/text-utils';
 import { DEVIATION_MIN_EVALUABLE_CHARS } from '../shared/thresholds';
 import { isRisingDivergence } from '../shared/divergence-trend';
 
@@ -151,7 +152,7 @@ export class PlotDivergenceEngine {
     }
 
     const paragraphs = this.splitParagraphs(cleanText);
-    const sentences = this.splitSentences(cleanText);
+    const sentences = splitSentences(cleanText);
 
     const mainlineDivergence = this.evaluateMainline(cleanText);
     const characterDivergence = this.evaluateCharacter(cleanText, sentences);

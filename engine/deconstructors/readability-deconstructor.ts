@@ -1,5 +1,5 @@
 import { kbBookReadabilityAnalysisFile } from '../../shared/paths';
-import { isChineseChar } from '../../shared/text-utils';
+import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
 import { VectorEnhancer } from '../vector-enhancer';
 import { yieldToUI } from '../../shared/yield';
 import { SHOW_TELL_WORDS, EMOTION_WORDS } from '../dimension-keywords';
@@ -210,7 +210,7 @@ export class ReadabilityDeconstructor {
     }
 
     calculateShowTellRatio(text: string): ShowTellResult {
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         const segments: ShowTellSegment[] = [];
         let currentIndex = 0;
 
@@ -380,7 +380,7 @@ export class ReadabilityDeconstructor {
     }
 
     private calculateParallelismAbuse(text: string): AITraceDimension {
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         if (paragraphs.length < 3) {
             return { score: 0, description: '段落数量不足，无法评估', details: {} };
         }
@@ -526,7 +526,7 @@ export class ReadabilityDeconstructor {
             emotionUniformity: AITraceDimension;
         }
     ): AITraceResult['highRiskParagraphs'] {
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         const highRisk: AITraceResult['highRiskParagraphs'] = [];
         let currentIndex = 0;
 

@@ -7,7 +7,7 @@
  */
 
 import { kbBookStructureBreakdownFile } from '../../shared/paths';
-import { isChineseChar } from '../../shared/text-utils';
+import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
 import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import { VectorEnhancer } from '../vector-enhancer';
 import { yieldToUI } from '../../shared/yield';
@@ -412,7 +412,7 @@ export class StructureDeconstructor {
         text: string,
         baseResult: StructureAnalysisResult
     ): Promise<ThreeLineStructure> {
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         if (paragraphs.length < 5) return baseResult.threeLineStructure;
 
         const MAX_SEGMENTS = 50;
@@ -836,7 +836,7 @@ export class StructureDeconstructor {
         chapters: RhythmUnit[]
     ): QCCHSegment[] {
         const segments: QCCHSegment[] = [];
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
 
         const rhythmCurve = this.calculateSimpleRhythmCurve(paragraphs, text, totalLength);
 
@@ -1045,7 +1045,7 @@ export class StructureDeconstructor {
         totalLength: number,
         chapters: RhythmUnit[]
     ): ThreeLineStructure {
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         const segmentCount = Math.max(10, Math.floor(paragraphs.length / 20));
 
         const mainLineScores: Array<{ position: number; score: number }> = [];
@@ -1160,7 +1160,7 @@ export class StructureDeconstructor {
     }
 
     private analyzeNarrativeTemporality(text: string, totalLength: number): NarrativeTemporalityResult {
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         const analepticSet = new Set(ANALEPTIC_MARKERS);
         const prolepticSet = new Set(PROLEPTIC_MARKERS);
 

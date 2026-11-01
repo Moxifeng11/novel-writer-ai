@@ -6,6 +6,7 @@
  * 不依赖 AI 调用，保证实时性（< 100ms / 万字）
  */
 
+import { splitParagraphs, splitSentences } from '../shared/text-utils';
 import {
   gradeFromScore,
   qualityGradeColor,
@@ -187,7 +188,7 @@ export class WritingQualityEngine {
     }
 
     const paragraphs = this.splitParagraphs(cleanText);
-    const sentences = this.splitSentences(cleanText);
+    const sentences = splitSentences(cleanText);
     const totalParagraphs = paragraphs.length;
     const totalSentences = sentences.length;
 

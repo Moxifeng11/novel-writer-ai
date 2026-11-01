@@ -21,3 +21,21 @@ export function isEnglishLetter(ch: string): boolean {
 export function isDigit(ch: string): boolean {
     return ch >= '0' && ch <= '9';
 }
+
+/**
+ * 按空行拆分段落（Pattern A：仅匹配 `\r?\n\r?\n`，与全部既有实现一致）。
+ * 仅匹配完全一致的模式才收口；`\n\s*\n` 等宽松变体语义不同，不在此收口。
+ */
+export function splitParagraphs(text: string): string[] {
+    return String(text ?? '')
+        .split(/\r?\n\r?\n/)
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+}
+
+/** 按中英文句末标点拆句子（Pattern A：`[。！？!?]+`，与全部既有实现一致） */
+export function splitSentences(text: string): string[] {
+    return String(text ?? '')
+        .split(/[。！？!?]+/)
+        .filter(s => s.trim().length > 0);
+}

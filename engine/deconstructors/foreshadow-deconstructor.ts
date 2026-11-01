@@ -6,7 +6,7 @@
  */
 
 import { kbBookForeshadowDBFile } from '../../shared/paths';
-import { isChineseChar } from '../../shared/text-utils';
+import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
 import { WebnovelKnowledgeBase, ForeshadowCategoryDef } from '../../shared/webnovel-knowledge-base';
 import { yieldToUI } from '../../shared/yield';
 import { WORLDVIEW_WORDS } from '../dimension-keywords';
@@ -1256,7 +1256,7 @@ export class ForeshadowDeconstructor {
             return this.getEmptyResult();
         }
 
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         const totalLength = text.length;
 
         const nounAppearances = this.extractForeshadowNouns(paragraphs, text, totalLength);
@@ -1439,7 +1439,7 @@ export class ForeshadowDeconstructor {
         }
 
         try {
-            const paragraphs = this.splitParagraphs(text);
+            const paragraphs = splitParagraphs(text);
             if (paragraphs.length < 10) {
                 return baseResult;
             }
@@ -3681,7 +3681,7 @@ export class ForeshadowDeconstructor {
             return this.getEmptySettingDensityResult();
         }
 
-        const paragraphs = this.splitParagraphs(text);
+        const paragraphs = splitParagraphs(text);
         if (paragraphs.length === 0) {
             return this.getEmptySettingDensityResult();
         }
