@@ -1427,6 +1427,14 @@ export default class NovelWriterPlugin extends Plugin {
     public deleteCustomProvider(id: string): boolean { return this._providerManager.deleteCustom(id); }
     public getAllProviders() { return this._providerManager.getAllProviders(); }
     public setHidden(id: string, hidden: boolean): boolean { return this._providerManager.setHidden(id, hidden); }
+    /** 删除自定义供应商（与「隐藏预设」区分：自定义项真删，预设可恢复） */
+    public removeCustomProvider(id: string): boolean { return this._providerManager.removeCustomProvider(id); }
+    /** 解锁前校验口令（没有密文时直接通过） */
+    public async verifySettingsPassword(password: string): Promise<boolean> {
+        const service = this.getSettingsService?.() as { canDecryptStoredSecret?: (pw: string) => Promise<boolean> } | null;
+        if (!service?.canDecryptStoredSecret) return true;
+        return service.canDecryptStoredSecret(password);
+    }
     public restoreDefaultProviders(): void { this._providerManager.restoreDefaultProviders(); }
     public updateProvider(id: string, updates: any): boolean { return this._providerManager.updateProvider(id, updates); }
     public hidePreset(presetId: string): boolean { return this._providerManager.hidePreset(presetId); }

@@ -16,15 +16,19 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /** kind: 'file' 存在即可；'text' 还要求文件内容包含 pattern */
 const ANCHORS = {
     '链 1 · 生成→质控→修订→结算→导出': [
-        { file: 'shared/command-ids.ts', text: "'novel-writer-batch-chapters'", why: '批量生成命令' },
+        { file: 'shared/command-ids.ts', text: "'novel-writer-batch-novels'", why: '批量生成命令（现行入口）' },
+        { file: 'shared/command-ids.ts', text: "'novel-writer-batch-chapters'", why: '批量生成命令（兼容入口）' },
         { file: 'shared/command-ids.ts', text: "'novel-writer-chapter-settlement'", why: '章节结算命令' },
         { file: 'shared/command-ids.ts', text: "'novel-writer-export-manuscript'", why: '成稿导出命令' },
         { file: 'engine/settlement-engine.ts', why: '结算引擎' },
         { file: 'engine/step-result-saver.ts', why: '步骤落盘' },
+        { file: 'engine/step-runner.ts', text: 'writeFixToBody', why: '修订稿回写正文' },
+        { file: 'engine/export/manuscript-compiler.ts', why: '成稿编译（EPUB/DOCX/TXT）' },
         { file: 'ui/export-manuscript-modal.ts', text: 'formatExportPrecheck', why: '导出前质量门槛' },
         { file: 'tests/unit/engine/settlement-engine-behavior.test.ts', why: '结算行为（成功/幂等/回滚）' },
         { file: 'tests/unit/engine/settlement-mode.test.ts', why: '轻结算语义' },
         { file: 'tests/unit/shared/export-precheck.test.ts', why: '导出提示文案' },
+        { file: 'tests/e2e/obsidian-plugin.spec.ts', text: '短篇：创建后落在创作流程页', why: '三模式 E2E 旅程' },
     ],
     '链 2 · 知识库→检索→注入→归因→统计': [
         { file: 'engine/rag/retrieval-service.ts', text: 'export async function retrieve', why: '检索引擎' },

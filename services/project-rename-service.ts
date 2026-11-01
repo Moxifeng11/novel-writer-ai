@@ -61,7 +61,8 @@ export class ProjectRenameService {
         const adapter = this.app.vault.adapter;
         if (!(await adapter.exists(path))) return;
         const content = await adapter.read(path);
-        const updated = content.replace(/^#\s+.+$/m, `# ${name}`);
+        // 用函数替换，避免书名里的 $&/$' 被当成替换模式
+        const updated = content.replace(/^#\s+.+$/m, () => `# ${name}`);
         if (updated !== content) await adapter.write(path, updated);
     }
 

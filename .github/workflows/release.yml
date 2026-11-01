@@ -35,6 +35,18 @@ jobs:
       - name: CSS 预算与命名检查
         run: npm run check:css
 
+      - name: 样式/依赖/引擎/台账/热路径/联动/隔离 全量门禁
+        run: |
+          npm run check:styles
+          npm run check:deps -- --baseline .arch-baseline.json
+          npm run check-engines
+          npm run check:program
+          npm run check:relationship-authority
+          npm run check:silent-failures
+          npm run check:hotpaths
+          npm run check:linked-scenarios
+          npm run check:dsh-isolation
+
       - name: 内联样式基线检查
         run: npm run check:inline-styles
 

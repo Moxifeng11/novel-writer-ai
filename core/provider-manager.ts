@@ -311,6 +311,25 @@ export class ProviderManager {
         return true;
     }
 
+    /**
+     * 删除自定义供应商（真删，不可恢复）。
+     * 预设供应商仍走 setHidden(true)，可通过「恢复默认供应商」找回。
+     */
+    removeCustomProvider(id: string): boolean {
+        const s = this.cb.getSettings();
+        const list = s.customProviders || [];
+        const index = list.findIndex(c => c.id === id);
+        if (index < 0 || list[index].isDefault) return false;
+        list.splice(index, 1);
+        s.customProviders = list;
+        if (s.providerKeys) delete s.providerKeys[id];
+        if (this.getCurrentProviderId() === null && s.apiEndpoint) {
+            const fallback = this.getAllProviders()[0];
+            if (fallback) this.switchByEndpoint(fallback.endpoint);
+        }
+        return true;
+    }
+
     /** @deprecated 请使用 setHidden(id, true) */
     hidePreset(presetId: string): boolean {
         log.warn('[ProviderManager] 警告: hidePreset() 已废弃，请使用 setHidden(id, true)');

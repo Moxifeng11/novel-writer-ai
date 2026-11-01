@@ -236,15 +236,23 @@ export class ApiSection extends SettingsSection {
                 rerender();
             }));
             menu.addSeparator();
-            menu.addItem(item => item.setTitle('删除供应商').onClick(async () => {
+            menu.addItem(item => item.setTitle(raw.isDefault ? '删除供应商' : '删除自定义供应商').onClick(async () => {
+                // 预设：隐藏，可在「恢复默认供应商」找回；自定义：真删，不可恢复
+                const isPreset = raw.isDefault === true;
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '删除供应商',
-                    description: `确定要删除供应商「${raw.name}」吗？可以在「恢复默认供应商」中找回默认项。`,
+                    title: isPreset ? '删除供应商' : '删除自定义供应商',
+                    description: isPreset
+                        ? `确定要删除供应商「${raw.name}」吗？可以在「恢复默认供应商」中找回。`
+                        : `确定要永久删除自定义供应商「${raw.name}」吗？此操作不可恢复（可重新添加）。`,
                     confirmText: '确认删除',
                     cancelText: '取消',
                 });
                 if (!confirmed) return;
-                this.plugin.setHidden(raw.id, true);
+                if (isPreset) this.plugin.setHidden(raw.id, true);
+                else if (!this.plugin.removeCustomProvider(raw.id)) {
+                    new Notice('删除失败：该供应商不存在或属于预设项', 5000);
+                    return;
+                }
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.apiSelectedProviderId = null;
@@ -652,6 +660,12 @@ export class ApiSection extends SettingsSection {
                 if (locked > 0) {
                     const password = await PasswordModal.ask(this.app);
                     if (!password) return;
+                    // 先验证能解开磁盘上的密文，避免「提示解锁成功、实际全是乱码」
+                    const ok = await this.plugin.verifySettingsPassword?.(password);
+                    if (ok === false) {
+                        new Notice('❌ 口令不正确，密钥仍未解锁', 6000);
+                        return;
+                    }
                     this.plugin.setSessionPassword?.(password);
                     await this.plugin.loadSettings();
                     this.refresh();

@@ -67,6 +67,20 @@ export class SettingsService {
         return null;
     }
 
+    /**
+     * 候选口令能否解开磁盘上已有的 v2 密文（解锁前校验）。
+     * 旧实现输入任意口令都提示「已解锁」，真正调用 AI 时才发现解不开。
+     */
+    async canDecryptStoredSecret(password: string): Promise<boolean> {
+        const existing = this.findExistingCiphertext();
+        if (!existing) return true;
+        try {
+            return await this.deps.crypto.canDecryptWith(password, existing);
+        } catch {
+            return false;
+        }
+    }
+
     /** v4.27：最近一次启动时未完成的设置迁移（null = 正常） */
     private migrationIncomplete: { fromVersion: number; toVersion: number; error?: string } | null = null;
 

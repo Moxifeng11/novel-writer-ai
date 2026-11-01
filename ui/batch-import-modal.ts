@@ -1414,36 +1414,42 @@ export class BatchImportModal extends Modal {
     private handleLocalFiles(fileList: FileList): void {
         const validExtensions = ['.txt', '.md', '.epub'];
         let addedCount = 0;
+        const jobs: Array<Promise<void>> = [];
 
         Array.from(fileList).forEach(file => {
             const ext = '.' + file.name.split('.').pop()?.toLowerCase();
             if (!validExtensions.includes(ext)) return;
 
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target?.result as string || '';
-
-                if (ext === '.epub') {
-                    new Notice('⚠️ EPUB 格式暂不支持，已跳过');
-                    return;
-                }
-
-                this.batchManager.addPreview({
-                    filename: file.name,
-                    content,
-                    source: 'local-file',
-                });
-                addedCount++;
-                this.render();
-            };
+            // 等所有 FileReader 完成后统一计数并重绘：旧实现用 setTimeout(100ms)
+            // 猜完成时间，大文件会漏报，且每读一个文件就整页重绘。
+            const job = new Promise<void>((resolve) => {
+                reader.onload = (e) => {
+                    const content = e.target?.result as string || '';
+                    if (ext !== '.epub') {
+                        this.batchManager.addPreview({
+                            filename: file.name,
+                            content,
+                            source: 'local-file',
+                        });
+                        addedCount++;
+                    } else {
+                        new Notice('⚠️ EPUB 格式暂不支持，已跳过');
+                    }
+                    resolve();
+                };
+                reader.onerror = () => resolve();
+            });
+            jobs.push(job);
             reader.readAsText(file);
         });
 
-        setTimeout(() => {
+        void Promise.all(jobs).then(() => {
             if (addedCount > 0) {
+                this.render();
                 new Notice(`✅ 已添加 ${addedCount} 个文件`);
             }
-        }, 100);
+        });
     }
 
     private showVaultFilePicker(): void {

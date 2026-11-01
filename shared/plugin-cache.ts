@@ -255,10 +255,6 @@ export class PluginCacheManager {
         this.save();
     }
 
-    getSettingsBackup(): unknown {
-        return this.data.settingsBackup;
-    }
-
     setSettingsBackup(backup: unknown): void {
         this.data.settingsBackup = backup;
         this.save();

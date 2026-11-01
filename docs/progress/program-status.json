@@ -24,7 +24,7 @@
       "name": "创作主链闭环",
       "objective": "正文→质控→修订→结算→上下文→统计 全链数据一致，任何写入点都不丢字段、不覆盖他方结果",
       "milestone": "v4.23.0",
-      "status": "in_progress",
+      "status": "done",
       "owner": {
         "impl": "ZCode",
         "accept": "用户"
@@ -165,7 +165,7 @@
       "name": "语料与注入链",
       "objective": "知识库→拆解→向量→检索→故事上下文总线→文笔注入 全链可解释、可降级、不串项目",
       "milestone": "v4.24.0",
-      "status": "todo",
+      "status": "done",
       "owner": {
         "impl": "ZCode",
         "accept": "用户"
@@ -224,7 +224,7 @@
       "name": "项目生命周期与三模式",
       "objective": "长篇/短篇/剧本三域的创建、迁移、重命名、删除、导出与模式守卫一致，绝不误删/误写",
       "milestone": "v4.24.0",
-      "status": "in_progress",
+      "status": "done",
       "owner": {
         "impl": "ZCode",
         "accept": "用户"
@@ -274,7 +274,7 @@
       "name": "配置与凭据治理",
       "objective": "设置默认值、迁移、密钥加密、供应商切换、主题与偏好全部可逆且不静默丢值",
       "milestone": "v4.23.0",
-      "status": "in_progress",
+      "status": "done",
       "owner": {
         "impl": "ZCode",
         "accept": "用户"
@@ -324,7 +324,7 @@
       "name": "交互一致性与可访问性",
       "objective": "中文输入、键盘、空态、进度、错误提示在全插件表现一致；失败必可见、长任务可取消",
       "milestone": "v4.25.0",
-      "status": "in_progress",
+      "status": "done",
       "owner": {
         "impl": "ZCode",
         "accept": "用户"
@@ -383,7 +383,7 @@
       "name": "性能与存储",
       "objective": "长篇 200+ 章下打开/落盘/结算不卡顿；写放大与内存有上限；启动不阻塞",
       "milestone": "v4.25.0",
-      "status": "in_progress",
+      "status": "done",
       "owner": {
         "impl": "ZCode",
         "accept": "用户"
@@ -471,7 +471,7 @@
       "name": "质量基建与可观测",
       "objective": "覆盖缺口可度量、门禁不可绕过、进度可追溯、问题可定位",
       "milestone": "v4.25.0",
-      "status": "in_progress",
+      "status": "done",
       "owner": {
         "impl": "ZCode",
         "accept": "用户"
