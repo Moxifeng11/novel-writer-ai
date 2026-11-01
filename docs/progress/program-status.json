@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 502,
-      "cases": 5665
+      "files": 504,
+      "cases": 5692
     },
     "e2e": 25,
     "gates": [
@@ -525,8 +525,8 @@
           "id": "G7-4",
           "title": "覆盖缺口补齐（分批）",
           "status": "in_progress",
-          "acceptance": "第一批（结算/Agent runner/生命周期）已完成；剩余 Agent 工具、知识库 UI、embedding provider 待补",
-          "evidence": "见 G7-4a 与 G7-4b"
+          "acceptance": "a/b 已完成（结算/Agent runner/生命周期/Agent 工具/embedding）；剩余知识库 UI 与 knowledge-tags",
+          "evidence": "见 G7-4a/4b/4c"
         },
         {
           "id": "G7-4a",
@@ -538,8 +538,15 @@
         {
           "id": "G7-4b",
           "title": "Agent 工具与知识库/embedding 覆盖",
+          "status": "done",
+          "acceptance": "host-tools 权限边界 16 条（命令白名单/模式守卫/危险确认/路径穿越/参数夹紧）+ 4 个 embedding provider 11 条（端点/鉴权/错误/截断/取消）",
+          "evidence": "host-tools-guard.test + embedding/providers.test"
+        },
+        {
+          "id": "G7-4c",
+          "title": "知识库 UI 与 knowledge-tags 覆盖",
           "status": "todo",
-          "acceptance": "host-tools 权限与写盘边界、knowledge-tags、4 个 embedding provider 各有最小行为测试",
+          "acceptance": "KnowledgeTagManager 默认树/增删改与 knowledge-base-view 关键交互有最小测试",
           "evidence": "—"
         }
       ]
@@ -641,6 +648,12 @@
       "group": "G7",
       "summary": "覆盖缺口第一批：SingleCallRunner 8 条 + 领域工厂 6 条（含失败回滚修复）；测试堆栈上限提高到 4G（Node 24 teardown 崩溃）",
       "evidence": "single-call-runner.test / domain-project-factory.test / package.json"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G7",
+      "summary": "G7-4b：host-tools 权限边界 16 条 + 4 个 embedding provider 11 条",
+      "evidence": "host-tools-guard.test / embedding/providers.test"
     }
   ]
 }

@@ -5,8 +5,8 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
-- 当前基线：v4.22.0；单测 502 文件 / 5665 用例；E2E 25 条
-- 任务进度：52/59 已完成（88%），1 进行中，0 受阻
+- 当前基线：v4.22.0；单测 504 文件 / 5692 用例；E2E 25 条
+- 任务进度：53/60 已完成（88%），1 进行中，0 受阻
 
 ## 一、任务组总览
 
@@ -18,7 +18,7 @@
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G5 | 交互一致性与可访问性 | v4.25.0 | 🟡 进行中 | 5/6（83%） | 实现 ZCode / 验收 用户 |
 | G6 | 性能与存储 | v4.25.0 | 🟡 进行中 | 8/10（80%） | 实现 ZCode / 验收 用户 |
-| G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 6/9（67%） | 实现 ZCode / 验收 用户 |
+| G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 7/10（70%） | 实现 ZCode / 验收 用户 |
 
 ## 二、分组明细
 
@@ -155,9 +155,10 @@
 | G7-5 | 联动场景回归清单 | ⬜ 待开始 | 每组改动跑「生成→质控→修订→结算→导出」+「知识库→注入」+「三模式创建」三条联动链 | — |
 | G7-6 | 结算引擎 1670 行 0 直接测试 | ✅ 已完成 | 成功结算/重复幂等/部分失败回滚 3 条真实行为用例（不再整体 mock）；并暴露正文 status 未进 journal 的缺陷 | tests/unit/engine/settlement-engine-behavior.test.ts + settlement-engine 正文快照修复 |
 | G7-7 | shared/ 与 ui/ 不在覆盖率口径内 | ✅ 已完成 | vitest include 覆盖 shared/；基线 76.7% lines（含 shared），shared 域阈值 90/90/82/80 已生效 | vitest.config.ts include + 各域阈值 + test:cov 通过 |
-| G7-4 | 覆盖缺口补齐（分批） | 🟡 进行中 | 第一批（结算/Agent runner/生命周期）已完成；剩余 Agent 工具、知识库 UI、embedding provider 待补 | 见 G7-4a 与 G7-4b |
+| G7-4 | 覆盖缺口补齐（分批） | 🟡 进行中 | a/b 已完成（结算/Agent runner/生命周期/Agent 工具/embedding）；剩余知识库 UI 与 knowledge-tags | 见 G7-4a/4b/4c |
 | G7-4a | 结算/Agent runner/生命周期行为测试 | ✅ 已完成 | settle 成功/幂等/回滚 3 条；SingleCallRunner 8 条（含不重试）；迁移撤销 4 条；领域工厂 6 条（含失败回滚） | settlement-engine-behavior / single-call-runner / project-migration-rollback / domain-project-factory |
-| G7-4b | Agent 工具与知识库/embedding 覆盖 | ⬜ 待开始 | host-tools 权限与写盘边界、knowledge-tags、4 个 embedding provider 各有最小行为测试 | — |
+| G7-4b | Agent 工具与知识库/embedding 覆盖 | ✅ 已完成 | host-tools 权限边界 16 条（命令白名单/模式守卫/危险确认/路径穿越/参数夹紧）+ 4 个 embedding provider 11 条（端点/鉴权/错误/截断/取消） | host-tools-guard.test + embedding/providers.test |
+| G7-4c | 知识库 UI 与 knowledge-tags 覆盖 | ⬜ 待开始 | KnowledgeTagManager 默认树/增删改与 knowledge-base-view 关键交互有最小测试 | — |
 
 > 本组是其它组的「刹车」：没有它，前面六组改快了会翻车。
 
@@ -187,3 +188,4 @@
 - 2026-11-01｜G7｜结算引擎真实行为测试（成功/幂等/回滚），修复正文 status 未进回滚日志（settlement-engine-behavior.test + settlement-engine updateBodyFrontmatter）
 - 2026-11-01｜G7｜覆盖率口径纳入 shared/（真实基线 76.7% lines），shared 域阈值 90/90/82/80 生效（vitest.config.ts）
 - 2026-11-01｜G7｜覆盖缺口第一批：SingleCallRunner 8 条 + 领域工厂 6 条（含失败回滚修复）；测试堆栈上限提高到 4G（Node 24 teardown 崩溃）（single-call-runner.test / domain-project-factory.test / package.json）
+- 2026-11-01｜G7｜G7-4b：host-tools 权限边界 16 条 + 4 个 embedding provider 11 条（host-tools-guard.test / embedding/providers.test）
