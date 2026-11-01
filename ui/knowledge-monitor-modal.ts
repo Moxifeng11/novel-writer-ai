@@ -200,7 +200,11 @@ export class KnowledgeMonitorModal extends Modal {
         const currentTask = activeTasks[0];
 
         const taskCard = wrap.createDiv({
-            attr: { style: 'padding:16px;border:1px solid var(--background-modifier-border);border-radius:8px;background:var(--background-secondary);' }
+            attr: {
+                style: 'padding:16px;border:1px solid var(--background-modifier-border);border-radius:8px;background:var(--background-secondary);',
+                'data-nw-task-id': currentTask.id,
+                'data-nw-task-status': currentTask.status,
+            }
         });
 
         taskCard.createEl('div', {
@@ -213,14 +217,18 @@ export class KnowledgeMonitorModal extends Modal {
             attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' }
         });
         totalHeader.createEl('span', { text: '总进度', attr: { style: 'font-size:13px;font-weight:500;' } });
-        totalHeader.createEl('span', { text: `${totalProgress}%`, attr: { style: 'font-size:12px;color:var(--text-muted);' } });
+        totalHeader.createEl('span', {
+            text: `${totalProgress}%`,
+            attr: { style: 'font-size:12px;color:var(--text-muted);', 'data-nw-progress': 'total-text' },
+        });
 
         const totalBarBg = taskCard.createDiv({
             attr: { style: 'width:100%;height:10px;background:var(--background-modifier-border);border-radius:5px;overflow:hidden;margin-bottom:16px;' }
         });
         totalBarBg.createDiv({
             attr: {
-                style: `height:100%;width:${totalProgress}%;background:var(--interactive-accent);border-radius:5px;transition:width 0.3s ease;`
+                style: `height:100%;width:${totalProgress}%;background:var(--interactive-accent);border-radius:5px;transition:width 0.3s ease;`,
+                'data-nw-progress': 'total-bar',
             }
         });
 
@@ -237,22 +245,26 @@ export class KnowledgeMonitorModal extends Modal {
             });
             dimHeader.createEl('span', {
                 text: `当前维度：${dimLabel}`,
-                attr: { style: 'font-size:13px;font-weight:500;' }
+                attr: { style: 'font-size:13px;font-weight:500;', 'data-nw-progress': 'dim-label' }
             });
-            dimHeader.createEl('span', { text: `${dimensionProgress}%`, attr: { style: 'font-size:12px;color:var(--text-muted);' } });
+            dimHeader.createEl('span', {
+                text: `${dimensionProgress}%`,
+                attr: { style: 'font-size:12px;color:var(--text-muted);', 'data-nw-progress': 'dim-text' },
+            });
 
             const dimBarBg = taskCard.createDiv({
                 attr: { style: 'width:100%;height:8px;background:var(--background-modifier-border);border-radius:4px;overflow:hidden;margin-bottom:12px;' }
             });
             dimBarBg.createDiv({
                 attr: {
-                    style: `height:100%;width:${dimensionProgress}%;background:var(--text-accent);border-radius:4px;transition:width 0.3s ease;`
+                    style: `height:100%;width:${dimensionProgress}%;background:var(--text-accent);border-radius:4px;transition:width 0.3s ease;`,
+                    'data-nw-progress': 'dim-bar',
                 }
             });
 
             taskCard.createEl('div', {
                 text: message,
-                attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:16px;' }
+                attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:16px;', 'data-nw-progress': 'message' }
             });
         } else if (currentTask.status === 'pending') {
             taskCard.createEl('div', {
@@ -281,11 +293,50 @@ export class KnowledgeMonitorModal extends Modal {
         }
     }
 
+    /**
+     * 定时/事件刷新：结构不变时只改文字与进度宽度（G6-10）。
+     * 旧实现每 500ms empty() 重建整块，展开态/滚动位置/焦点全丢。
+     */
     private updateCurrentTab(): void {
         const tabContent = this.contentEl.querySelector('[data-tab-content]') as HTMLElement;
-        if (tabContent && this.activeTab === 'current') {
+        if (!tabContent || this.activeTab !== 'current') return;
+
+        const currentTask = this.scheduler.getActiveTasks()[0];
+        const card = tabContent.querySelector('[data-nw-task-id]') as HTMLElement | null;
+        const sameTask = !!currentTask && !!card
+            && card.getAttribute('data-nw-task-id') === currentTask.id
+            && card.getAttribute('data-nw-task-status') === currentTask.status;
+        if (!sameTask) {
             this.renderCurrentTab(tabContent);
+            return;
         }
+
+        const total = this.currentProgress?.totalProgress ?? currentTask.progress;
+        this.patchProgressNode(card, 'total-text', `${total}%`);
+        this.patchProgressWidth(card, 'total-bar', total);
+
+        const dimension = this.currentProgress?.currentDimension;
+        if (dimension) {
+            const label = DIMENSION_LABELS[dimension] || dimension;
+            const pct = this.currentProgress?.dimensionProgress ?? 0;
+            this.patchProgressNode(card, 'dim-label', `当前维度：${label}`);
+            this.patchProgressNode(card, 'dim-text', `${pct}%`);
+            this.patchProgressWidth(card, 'dim-bar', pct);
+        }
+        const message = this.currentProgress?.message || this.currentProgress?.phase;
+        if (message) this.patchProgressNode(card, 'message', message);
+    }
+
+    private patchProgressNode(root: HTMLElement, key: string, text: string): void {
+        const node = root.querySelector(`[data-nw-progress="${key}"]`);
+        if (node && node.textContent !== text) node.textContent = text;
+    }
+
+    private patchProgressWidth(root: HTMLElement, key: string, percent: number): void {
+        const node = root.querySelector(`[data-nw-progress="${key}"]`) as HTMLElement | null;
+        if (!node) return;
+        const next = `${percent}%`;
+        if (node.style.width !== next) node.style.width = next;
     }
 
     private renderHistoryTab(container?: HTMLElement): void {

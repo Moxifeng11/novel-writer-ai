@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 498,
-      "cases": 5641
+      "files": 499,
+      "cases": 5648
     },
     "e2e": 25,
     "gates": [
@@ -446,23 +446,23 @@
         {
           "id": "G6-8",
           "title": "伏笔刷新无防抖 + 每次全库×项目扫描",
-          "status": "todo",
-          "acceptance": "modify 事件防抖 1s，仅刷当前项目；编辑伏笔时无整库重扫",
-          "evidence": "盘点 A2"
+          "status": "done",
+          "acceptance": "modify 事件按项目 800ms 防抖，只刷被改项目（源码契约测试）",
+          "evidence": "main.ts debounceFixed(info-debt:project) + perf-contracts"
         },
         {
           "id": "G6-9",
           "title": "写章前 n=1..N 循环内 4 次全库扫描",
-          "status": "todo",
-          "acceptance": "一次 getFiles 快照建索引；第 200 章生成前扫描次数从 800 降到 1",
-          "evidence": "盘点 A3"
+          "status": "done",
+          "acceptance": "一次 getFiles 快照；前文摘要最多 40 章、12000 字（源码契约测试）",
+          "evidence": "ui/write-chapter-modal.ts allFiles + PREV_SUMMARY_WINDOW"
         },
         {
           "id": "G6-10",
           "title": "拆解监控 500ms 整块重建 + 工作台每步重建",
-          "status": "todo",
-          "acceptance": "改为局部节点更新；展开态/滚动/焦点不丢",
-          "evidence": "盘点 A7/A8"
+          "status": "done",
+          "acceptance": "定时刷新只 patch 文字/宽度；仅任务或状态变化才重建 DOM",
+          "evidence": "knowledge-monitor updateCurrentTab + data-nw-progress"
         }
       ]
     },
@@ -603,6 +603,12 @@
       "group": "G5",
       "summary": "静默失败清零门禁 + 关键入口补提示（备份/浮窗保存/结算表/信息债/章节加载）+ 拆解监控空态 CTA",
       "evidence": "check-silent-failures.mjs + knowledge-monitor/backup-yuan/co-write-floating/write-chapter"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G6",
+      "summary": "性能三件：伏笔刷新防抖+单项目、写章一次快照+40 章窗口、监控局部更新（7 条契约测试）",
+      "evidence": "main.ts / write-chapter-modal / knowledge-monitor + perf-contracts.test"
     }
   ]
 }

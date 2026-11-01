@@ -185,13 +185,22 @@ export class WriteChapterModal extends Modal {
         if (showStepProgress) showProgress('📖 读取前文摘要...');
 
         let prevChaptersSummary = '';
-        for (let n = 1; n < chapNum; n++) {
+        // G6-9：一次快照 + 只取最近 N 章。旧实现每章调用 3-4 次 getFiles()，
+        // 写第 200 章时约 800 次全库数组重建 + 数百次串行读盘。
+        const allFiles = app.vault.getFiles();
+        const PREV_SUMMARY_WINDOW = 40;
+        const summaryStart = Math.max(1, chapNum - PREV_SUMMARY_WINDOW);
+        for (let n = summaryStart; n < chapNum; n++) {
             // v4.0：步骤结果按 步骤结果/第V卷/第N章/ 归档；正文则在 正文/第V卷/ 下
             const prevDir = pjStepDir(project, volN, n);
-            const prevOutline = findChapterFile(app.vault.getFiles(), prevDir, '大纲摘要');
+            const prevOutline = findChapterFile(allFiles, prevDir, '大纲摘要');
             if (prevOutline) {
                 const c = stripFrontmatter(await app.vault.read(prevOutline));
                 if (c.length > 50) prevChaptersSummary += `\n【第${n}章摘要】${c.slice(0, 300)}`;
+            }
+            if (prevChaptersSummary.length > 12000) {
+                log.info('[WriteChapter] 前文摘要达到 12000 字预算，停止收集更早章节');
+                break;
             }
             if (n === chapNum - 1) {
                 // v4.0：上一章正文文件位于 正文/第V卷/ 而非步骤结果目录
@@ -202,7 +211,7 @@ export class WriteChapterModal extends Modal {
                 if (!prevBody) {
                     // 兜底：在卷正文目录里寻找 "第n章...正文.md" 形态
                     const bodyDir = pjBodyDir(project, volN);
-                    prevBody = app.vault.getFiles().find(f =>
+                    prevBody = allFiles.find(f =>
                         f.path.startsWith(bodyDir + '/') &&
                         f.name.startsWith(`第${n}章`) &&
                         f.name.includes('正文') &&
@@ -218,7 +227,7 @@ export class WriteChapterModal extends Modal {
                     if (firstPara.length > 20) prevChaptersSummary += `\n【上一章开局】${firstPara}……`;
                 }
                 try {
-                    const reportFile = findChapterFile(app.vault.getFiles(), prevDir, '分析报告');
+                    const reportFile = findChapterFile(allFiles, prevDir, '分析报告');
                     if (reportFile) {
                         const reportText = await app.vault.read(reportFile);
                         const suggestMatch = reportText.match(/(?:续写建议|写作建议|建议)[：:]\s*([^#]+)/);
@@ -230,7 +239,7 @@ export class WriteChapterModal extends Modal {
                             prevChaptersSummary += `\n【上章分析·改进方向】${breakMatch[1].trim().slice(0, 300)}`;
                         }
                     }
-                    const reviewFile = findChapterFile(app.vault.getFiles(), prevDir, '连贯性审查');
+                    const reviewFile = findChapterFile(allFiles, prevDir, '连贯性审查');
                     if (reviewFile) {
                         const reviewText = await app.vault.read(reviewFile);
                         const issues: string[] = [];
@@ -298,11 +307,11 @@ export class WriteChapterModal extends Modal {
         if (showStepProgress) showProgress('📖 读取大纲摘要和世界观...');
 
         let outlineContent = '';
-        const outlineFile = findChapterFile(app.vault.getFiles(), chapDir, '大纲摘要');
+        const outlineFile = findChapterFile(allFiles, chapDir, '大纲摘要');
         if (outlineFile) outlineContent = stripFrontmatter(await app.vault.read(outlineFile));
 
         let infoPlan = '';
-        const infoFile = findChapterFile(app.vault.getFiles(), chapDir, '信息规划');
+        const infoFile = findChapterFile(allFiles, chapDir, '信息规划');
         if (infoFile) infoPlan = stripFrontmatter(await app.vault.read(infoFile));
 
         // Rev 186：关联索引（时间线/伏笔 ↔ 设定库/全书规划）。有值时替代平铺注入，避免重复占用预算。
@@ -322,7 +331,7 @@ export class WriteChapterModal extends Modal {
             if (direct instanceof TFile) bodyFile = direct;
             if (!bodyFile) {
                 const bodyDir = pjBodyDir(project, volN);
-                bodyFile = app.vault.getFiles().find(f =>
+                bodyFile = allFiles.find(f =>
                     f.path.startsWith(bodyDir + '/') &&
                     f.name.startsWith(`第${chapNum}章`) &&
                     f.name.includes('正文') &&

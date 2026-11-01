@@ -40,6 +40,7 @@ import { WritingStatsModal } from './ui/writing-stats-modal';
 import { WritingPet } from './ui/writing-pet';
 import { formatWords } from './shared/writing-stats';
 import { redactSecrets } from './shared/secret-redaction';
+import { projectIdFromPath } from './shared/paths';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
 import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
@@ -857,7 +858,17 @@ export default class NovelWriterPlugin extends Plugin {
             this.registerEvent(
                 this.app.vault.on('modify', (file) => {
                     if (file.path.includes('/02-时间线与伏笔/')) {
-                        this._foreshadowManager.refreshInfoDebt();
+                        // G6-8：旧实现每个 modify 都全库 detectProjects + 逐项目 2 次 getFiles +
+                        // 串行读全部人物卡（自动保存 2s 一次 → 每秒级全库重扫）。
+                        // 改为：只刷被改项目，并做 800ms 防抖。
+                        const project = projectIdFromPath(file.path);
+                        if (project) {
+                            this._debounceManager.debounceFixed(`info-debt:${project}`, () => {
+                                void this._foreshadowManager.generateInfoDebtBoard(project).catch((e: unknown) => {
+                                    log.warn('[小说工坊] 信息债看板刷新失败:', e);
+                                });
+                            }, 800);
+                        }
                     }
                     if (file instanceof TFile && /\/03-大纲与章节\/正文\/[^/]+\/第\d+章[^/]*_正文\.md$/.test(file.path)) {
                         this.handleBodyFileModify(file);

@@ -5,8 +5,8 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
-- 当前基线：v4.22.0；单测 498 文件 / 5641 用例；E2E 25 条
-- 任务进度：46/57 已完成（81%），0 进行中，0 受阻
+- 当前基线：v4.22.0；单测 499 文件 / 5648 用例；E2E 25 条
+- 任务进度：49/57 已完成（86%），0 进行中，0 受阻
 
 ## 一、任务组总览
 
@@ -17,7 +17,7 @@
 | G3 | 项目生命周期与三模式 | v4.24.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G5 | 交互一致性与可访问性 | v4.25.0 | 🟡 进行中 | 5/6（83%） | 实现 ZCode / 验收 用户 |
-| G6 | 性能与存储 | v4.25.0 | 🟡 进行中 | 5/10（50%） | 实现 ZCode / 验收 用户 |
+| G6 | 性能与存储 | v4.25.0 | 🟡 进行中 | 8/10（80%） | 实现 ZCode / 验收 用户 |
 | G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 3/7（43%） | 实现 ZCode / 验收 用户 |
 
 ## 二、分组明细
@@ -135,9 +135,9 @@
 | G6-5 | 步骤事件全量重渲染 | ⬜ 待开始 | 步骤完成时 DOM 变更 <100 节点（DevTools Performance） | — |
 | G6-6 | 缓存键含裸 NUL 导致文件对 grep 不可见 | ✅ 已完成 | 源码改为   转义，文件重新可检索 | engine/knowledge-vector-store.ts |
 | G6-7 | 模型覆盖历史无上限、cache.json 线性膨胀 | ✅ 已完成 | 历史保留最近 200 条 | shared/plugin-cache.ts |
-| G6-8 | 伏笔刷新无防抖 + 每次全库×项目扫描 | ⬜ 待开始 | modify 事件防抖 1s，仅刷当前项目；编辑伏笔时无整库重扫 | 盘点 A2 |
-| G6-9 | 写章前 n=1..N 循环内 4 次全库扫描 | ⬜ 待开始 | 一次 getFiles 快照建索引；第 200 章生成前扫描次数从 800 降到 1 | 盘点 A3 |
-| G6-10 | 拆解监控 500ms 整块重建 + 工作台每步重建 | ⬜ 待开始 | 改为局部节点更新；展开态/滚动/焦点不丢 | 盘点 A7/A8 |
+| G6-8 | 伏笔刷新无防抖 + 每次全库×项目扫描 | ✅ 已完成 | modify 事件按项目 800ms 防抖，只刷被改项目（源码契约测试） | main.ts debounceFixed(info-debt:project) + perf-contracts |
+| G6-9 | 写章前 n=1..N 循环内 4 次全库扫描 | ✅ 已完成 | 一次 getFiles 快照；前文摘要最多 40 章、12000 字（源码契约测试） | ui/write-chapter-modal.ts allFiles + PREV_SUMMARY_WINDOW |
+| G6-10 | 拆解监控 500ms 整块重建 + 工作台每步重建 | ✅ 已完成 | 定时刷新只 patch 文字/宽度；仅任务或状态变化才重建 DOM | knowledge-monitor updateCurrentTab + data-nw-progress |
 
 > 先量化再优化：所有条目都要有前/后对比数字，否则不进主线。
 
@@ -181,3 +181,4 @@
 - 2026-11-01｜G2｜rag_sources 展示：步骤面板知识来源条 + 统计页命中率/常用书目/最近引用（knowledge-usage.ts + writing-stats-modal + step-render-controller）
 - 2026-11-01｜G3｜短篇/剧本通用工具放开 + 模式不支持提示；项目迁移一键撤销（逆序、占用跳过）（command-mode-rules / tool-catalog-aggregator / project-migration-service）
 - 2026-11-01｜G5｜静默失败清零门禁 + 关键入口补提示（备份/浮窗保存/结算表/信息债/章节加载）+ 拆解监控空态 CTA（check-silent-failures.mjs + knowledge-monitor/backup-yuan/co-write-floating/write-chapter）
+- 2026-11-01｜G6｜性能三件：伏笔刷新防抖+单项目、写章一次快照+40 章窗口、监控局部更新（7 条契约测试）（main.ts / write-chapter-modal / knowledge-monitor + perf-contracts.test）
