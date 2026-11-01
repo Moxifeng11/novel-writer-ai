@@ -10,6 +10,9 @@ import { countTotalChars, countWords } from '../text-segmenter';
 
 
 const log = createLogger('CommercialDeconstructor');
+/**
+ * 黄金三章分析结果。
+ */
 export interface GoldenThreeChaptersResult {
   totalScore: number;
   subScores: {
@@ -52,6 +55,9 @@ export interface GoldenThreeChaptersResult {
   };
 }
 
+/**
+ * 波浪节奏结果。
+ */
 export interface WaveRhythmResult {
   complianceRate: number;
   smallCoolPointInterval: number;
@@ -66,6 +72,9 @@ export interface WaveRhythmResult {
   }>;
 }
 
+/**
+ * 全局分析结果。
+ */
 export interface GlobalAnalysisResult {
   rhythmBalance: number;
   emotionalFluctuation: number;
@@ -84,6 +93,9 @@ export interface GlobalAnalysisResult {
   };
 }
 
+/**
+ * 商业性分析结果。
+ */
 export interface CommercialAnalysisResult {
   goldenThreeChapters: GoldenThreeChaptersResult;
   waveRhythm?: WaveRhythmResult;
@@ -181,6 +193,9 @@ const EXPECTED_SMALL_INTERVAL = 2;
 const EXPECTED_MEDIUM_INTERVAL = 5;
 const EXPECTED_BIG_INTERVAL = 15;
 
+/**
+ * 商业拆解器：黄金三章、波浪节奏与全局分析。
+ */
 export class CommercialDeconstructor {
   private vectorEnhancer: any;
   private suspenseSet: Set<string>;

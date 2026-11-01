@@ -19,6 +19,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('CharacterDeconstructor');
+/**
+ * 角色弧线。
+ */
 export interface CharacterArc {
     initialState: {
         personality: string[];
@@ -41,6 +44,9 @@ export interface CharacterArc {
     completeness: number;
 }
 
+/**
+ * 角色重要度。
+ */
 export interface CharacterImportance {
     appearanceFrequency: number;
     dialogueRatio: number;
@@ -51,6 +57,9 @@ export interface CharacterImportance {
     tier: 'protagonist' | 'core_supporting' | 'important_supporting' | 'minor_supporting' | 'extra';
 }
 
+/**
+ * 角色关系明细。
+ */
 export interface CharacterRelationDetail {
     fromId: string;
     toId: string;
@@ -65,6 +74,9 @@ export interface CharacterRelationDetail {
     keyEvents: string[];
 }
 
+/**
+ * 关系网络统计。
+ */
 export interface RelationshipNetworkStats {
     protagonistCentrality: number;
     networkDensity: number;
@@ -72,6 +84,9 @@ export interface RelationshipNetworkStats {
     averageDegree: number;
 }
 
+/**
+ * 角色时间线事件。
+ */
 export interface CharacterTimelineEvent {
     position: number;
     type: 'appearance' | 'growth' | 'relationship' | 'plot' | 'turning_point';
@@ -79,6 +94,9 @@ export interface CharacterTimelineEvent {
     description?: string;
 }
 
+/**
+ * 角色卡。
+ */
 export interface Character {
     id: string;
     name: string;
@@ -108,6 +126,9 @@ export interface Character {
     keyEventCount?: number;
 }
 
+/**
+ * 角色关系。
+ */
 export interface CharacterRelation {
     fromId: string;
     toId: string;
@@ -115,6 +136,9 @@ export interface CharacterRelation {
     weight: number;
 }
 
+/**
+ * 角色分析结果。
+ */
 export interface CharacterAnalysisResult {
     characters: Character[];
     mainCharacter?: Character;
@@ -130,6 +154,9 @@ export interface CharacterAnalysisResult {
     };
 }
 
+/**
+ * 角色网络中心度。
+ */
 export interface CharacterNetworkCentrality {
     characterName: string;
     degreeCentrality: number;
@@ -139,6 +166,9 @@ export interface CharacterNetworkCentrality {
     role: 'protagonist' | 'major' | 'supporting' | 'minor';
 }
 
+/**
+ * 角色网络分析结果。
+ */
 export interface CharacterNetworkResult {
     nodes: string[];
     edges: Array<{
@@ -156,6 +186,9 @@ export interface CharacterNetworkResult {
     description: string;
 }
 
+/**
+ * 口吻指纹。
+ */
 export interface VoiceFingerprint {
     characterName: string;
     dialogueCount: number;
@@ -176,6 +209,9 @@ export interface VoiceFingerprint {
     fingerprint: string;
 }
 
+/**
+ * 口吻指纹结果。
+ */
 export interface VoiceFingerprintResult {
     characters: VoiceFingerprint[];
     distinctness: number;
@@ -427,6 +463,9 @@ const ALL_EMOTION_WORDS: string[] = (() => {
     return Array.from(set);
 })();
 
+/**
+ * 拆解质量评分。
+ */
 export interface QualityScore {
     totalScore: number;
     characterCountScore: number;
@@ -436,6 +475,9 @@ export interface QualityScore {
     roleDistributionScore: number;
 }
 
+/**
+ * 角色拆解器：关系、弧线、网络与口吻。
+ */
 export class CharacterDeconstructor {
     private dialogueVerbSet: Set<string>;
     private appearanceKeywordSet: Set<string>;

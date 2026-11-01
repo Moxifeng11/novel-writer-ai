@@ -9,8 +9,14 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('ReadabilityDeconstructor');
+/**
+ * 展示/讲述类型。
+ */
 export type ShowTellType = 'show' | 'tell' | 'mixed';
 
+/**
+ * 展示/讲述分段。
+ */
 export interface ShowTellSegment {
     startIndex: number;
     endIndex: number;
@@ -21,6 +27,9 @@ export interface ShowTellSegment {
     excerpt: string;
 }
 
+/**
+ * 展示/讲述分析结果。
+ */
 export interface ShowTellResult {
     overallRatio: number;
     showPercentage: number;
@@ -41,6 +50,9 @@ export interface ShowTellResult {
     }[];
 }
 
+/**
+ * AI 痕迹维度。
+ */
 export interface AITraceDimension {
     score: number;
     description: string;
@@ -48,6 +60,9 @@ export interface AITraceDimension {
   dataStatus?: 'complete' | 'insufficient' | 'estimated';
 }
 
+/**
+ * AI 痕迹分析结果。
+ */
 export interface AITraceResult {
     overallScore: number;
     level: 'low' | 'medium' | 'high';
@@ -68,6 +83,9 @@ export interface AITraceResult {
     }>;
 }
 
+/**
+ * 可读性分析结果。
+ */
 export interface ReadabilityAnalysisResult {
     showTell: ShowTellResult;
     aiTrace: AITraceResult;
@@ -78,6 +96,9 @@ export interface ReadabilityAnalysisResult {
   };
 }
 
+/**
+ * 可读性拆解器：展示讲述与 AI 痕迹。
+ */
 export class ReadabilityDeconstructor {
     private sensorySet: Set<string>;
     private actionSet: Set<string>;

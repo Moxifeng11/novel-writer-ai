@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 120223 | 1532 | 337 | 22% |
+| `engine/` | 289 | 120379 | 1532 | 389 | 25% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 92729 | 500 | 110 | 22% |
+| `ui/` | 191 | 92927 | 500 | 110 | 22% |
 
 ## 文件清单
 
@@ -109,14 +109,14 @@
 | `engine/cross-volume-outline-validator.ts` | 625 | 16 | 5 |
 | `engine/deconstruction-scheduler.ts` | 2661 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 547 | 3 | 0 |
-| `engine/deconstructors/character-deconstructor.ts` | 3986 | 14 | 0 |
-| `engine/deconstructors/commercial-deconstructor.ts` | 2004 | 5 | 0 |
+| `engine/deconstructors/character-deconstructor.ts` | 4028 | 14 | 14 |
+| `engine/deconstructors/commercial-deconstructor.ts` | 2019 | 5 | 5 |
 | `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 3917 | 17 | 17 |
-| `engine/deconstructors/readability-deconstructor.ts` | 954 | 7 | 0 |
+| `engine/deconstructors/readability-deconstructor.ts` | 975 | 7 | 7 |
 | `engine/deconstructors/rhythm-deconstructor.ts` | 2834 | 21 | 21 |
-| `engine/deconstructors/structure-deconstructor.ts` | 1812 | 12 | 0 |
-| `engine/deconstructors/style-deconstructor.ts` | 2255 | 14 | 0 |
+| `engine/deconstructors/structure-deconstructor.ts` | 1848 | 12 | 12 |
+| `engine/deconstructors/style-deconstructor.ts` | 2297 | 14 | 14 |
 | `engine/deconstructors/technique-deconstructor.ts` | 1767 | 5 | 0 |
 | `engine/dimension-keywords.ts` | 428 | 9 | 0 |
 | `engine/embedding/doubao-provider.ts` | 37 | 2 | 0 |
@@ -662,7 +662,7 @@
 | `ui/services/agent-port.ts` | 521 | 2 | 0 |
 | `ui/services/agent-session-store.ts` | 135 | 3 | 0 |
 | `ui/services/agent-spill-store.ts` | 99 | 3 | 2 |
-| `ui/services/co-write-facade.ts` | 565 | 2 | 0 |
+| `ui/services/co-write-facade.ts` | 763 | 2 | 0 |
 | `ui/services/human-sample-loader.ts` | 66 | 2 | 0 |
 | `ui/services/humanness-scorer.ts` | 100 | 3 | 1 |
 | `ui/services/project-create-service.ts` | 413 | 6 | 0 |

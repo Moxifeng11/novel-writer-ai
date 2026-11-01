@@ -16,6 +16,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('StructureDeconstructor');
+/**
+ * QCCH 结构分段。
+ */
 export interface QCCHSegment {
     type: '起' | '承' | '转' | '合';
     startPosition: number;
@@ -24,6 +27,9 @@ export interface QCCHSegment {
     description: string;
 }
 
+/**
+ * 节奏单元。
+ */
 export interface RhythmUnit {
     level: 'volume' | 'chapter' | 'section';
     index: number;
@@ -33,6 +39,9 @@ export interface RhythmUnit {
     wordCount: number;
 }
 
+/**
+ * 三线结构。
+ */
 export interface ThreeLineStructure {
     mainLine: {
         description: string;
@@ -48,10 +57,22 @@ export interface ThreeLineStructure {
     };
 }
 
+/**
+ * 叙事顺序。
+ */
 export type NarrativeOrder = 'chronological' | 'analeptic' | 'proleptic' | 'mixed';
+/**
+ * 叙事时距。
+ */
 export type NarrativeDuration = 'scene' | 'summary' | 'pause' | 'ellipsis' | 'stretch';
+/**
+ * 叙事频率。
+ */
 export type NarrativeFrequency = 'singulative' | 'repeating' | 'iterative';
 
+/**
+ * 叙事时间性分析结果。
+ */
 export interface NarrativeTemporalityResult {
     order: {
         type: NarrativeOrder;
@@ -84,6 +105,9 @@ export interface NarrativeTemporalityResult {
     description: string;
 }
 
+/**
+ * 结构模板类型。
+ */
 export type StructureTemplateType =
     | 'three_act'
     | 'hero_journey'
@@ -92,6 +116,9 @@ export type StructureTemplateType =
     | 'webnovel_formula'
     | 'custom';
 
+/**
+ * 结构模板匹配。
+ */
 export interface StructureTemplateMatch {
     template: StructureTemplateType;
     matchScore: number;
@@ -105,12 +132,18 @@ export interface StructureTemplateMatch {
     description: string;
 }
 
+/**
+ * 结构模板匹配结果。
+ */
 export interface StructureTemplateResult {
     bestMatch: StructureTemplateMatch;
     allMatches: StructureTemplateMatch[];
     description: string;
 }
 
+/**
+ * 结构分析结果。
+ */
 export interface StructureAnalysisResult {
     qcchSegments: QCCHSegment[];
     rhythmUnits: RhythmUnit[];
@@ -302,6 +335,9 @@ const STRUCTURE_TEMPLATES: StructureTemplateDef[] = [
     }
 ];
 
+/**
+ * 结构拆解器：三线、叙事时间性与模板匹配。
+ */
 export class StructureDeconstructor {
     private mainLineSet: Set<string>;
     private subLineSet: Set<string>;

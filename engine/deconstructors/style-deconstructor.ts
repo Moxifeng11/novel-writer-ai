@@ -19,6 +19,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('StyleDeconstructor');
+/**
+ * 句法节奏。
+ */
 export interface SentenceRhythm {
     avgSentenceLength: number;
     medianSentenceLength: number;
@@ -38,11 +41,17 @@ export interface SentenceRhythm {
     vectorStyleScores?: Record<string, number>;
 }
 
+/**
+ * 题材倾向。
+ */
 export interface GenreTendency {
     genre: string;
     score: number;
 }
 
+/**
+ * 用词偏好。
+ */
 export interface WordPreference {
     topWords: Array<{ word: string; count: number; frequency: number }>;
     posPreference: {
@@ -60,6 +69,9 @@ export interface WordPreference {
     genreTendency?: GenreTendency[];
 }
 
+/**
+ * 叙事风格。
+ */
 export interface NarrativeStyle {
     perspective: 'first_person' | 'third_person_omniscient' | 'third_person_limited' | 'mixed';
     perspectiveConfidence: number;
@@ -74,6 +86,9 @@ export interface NarrativeStyle {
     dialogueRatio: number;
 }
 
+/**
+ * 修辞统计。
+ */
 export interface RhetoricStats {
     metaphor: number;
     personification: number;
@@ -85,6 +100,9 @@ export interface RhetoricStats {
     perThousand: number;
 }
 
+/**
+ * 对话风格。
+ */
 export interface DialogueStyle {
     dialogueRatio: number;
     promptWordPreference: Array<{ word: string; count: number }>;
@@ -96,6 +114,9 @@ export interface DialogueStyle {
     };
 }
 
+/**
+ * 段落结构。
+ */
 export interface ParagraphStructure {
     avgParagraphLength: number;
     medianParagraphLength: number;
@@ -113,6 +134,9 @@ export interface ParagraphStructure {
     };
 }
 
+/**
+ * 整体风格。
+ */
 export interface OverallStyle {
     primaryStyle: string;
     secondaryStyle?: string;
@@ -122,6 +146,9 @@ export interface OverallStyle {
     vectorConfidence?: number;
 }
 
+/**
+ * 两阶段风格分析结果。
+ */
 export interface TwoPhaseStyleResult {
     ruleBased: StyleAnalysisResult;
     vectorVerified: StyleAnalysisResult;
@@ -132,8 +159,14 @@ export interface TwoPhaseStyleResult {
     };
 }
 
+/**
+ * 五感类型。
+ */
 export type SenseType = 'visual' | 'auditory' | 'olfactory' | 'gustatory' | 'tactile';
 
+/**
+ * 词汇丰富度。
+ */
 export interface VocabularyRichnessResult {
     ttr: number;
     mtld: number;
@@ -145,6 +178,9 @@ export interface VocabularyRichnessResult {
     score: number;
 }
 
+/**
+ * 五感分析结果。
+ */
 export interface FiveSensesResult {
     distribution: Record<SenseType, number>;
     counts: Record<SenseType, number>;
@@ -161,6 +197,9 @@ export interface FiveSensesResult {
     };
 }
 
+/**
+ * 风格分析结果。
+ */
 export interface StyleAnalysisResult {
     sentenceRhythm: SentenceRhythm;
     wordPreference: WordPreference;
@@ -312,6 +351,9 @@ const GENRE_VECTOR_REFERENCES: Record<string, string> = {
     youxi: '游戏题材：副本 装备 等级 技能 任务 NPC 公会 玩家 通关 打怪'
 };
 
+/**
+ * 文风拆解器：节奏、用词、修辞、五感与对话。
+ */
 export class StyleDeconstructor {
     private modalParticleSet: Set<string>;
     private verbSet: Set<string>;
