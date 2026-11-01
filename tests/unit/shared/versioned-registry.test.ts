@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     builtinId,
+    compareVersionBase,
     detectDrift,
     extractVersion,
     hashContent,
@@ -30,6 +31,30 @@ describe('versioned-registry — 内容哈希', () => {
         expect(extractVersion('version: "3.6.0-引导代禁止"')).toBe('3.6.0-引导代禁止');
         expect(extractVersion('v3.6.0 同步源')).toBe('3.6.0');
         expect(extractVersion('没有版本')).toBe('');
+    });
+
+    it('frontmatter 的 version 优先于 tags 里的版本标记（假漂移事故）', () => {
+        const text = [
+            '---',
+            'tags: [写作规则, 文风, v3.6.0]',
+            'version: "3.6.0-引导代禁止"',
+            'updated: "2026-10-19"',
+            '---',
+            '',
+            '# 网络小说写作规则（引导版）',
+        ].join('\n');
+        expect(extractVersion(text)).toBe('3.6.0-引导代禁止');
+    });
+
+    it('无 frontmatter 时退回正文第一个 semver', () => {
+        expect(extractVersion('# 规则\n\n同步源 v3.7.0-anchor')).toBe('3.7.0-anchor');
+    });
+
+    it('compareVersionBase 忽略后缀，只比主干', () => {
+        expect(compareVersionBase('3.6.0-引导代禁止', '3.6.0')).toBe(0);
+        expect(compareVersionBase('3.5.9', '3.6.0')).toBe(-1);
+        expect(compareVersionBase('3.7.0-anchor', '3.6.0')).toBe(1);
+        expect(compareVersionBase('3.6.0', '3.6.0-legacy')).toBe(0);
     });
 });
 

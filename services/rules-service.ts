@@ -116,11 +116,6 @@ export class RulesService {
         this.invalidateCache();
     }
 
-    private extractVersion(content: string): string {
-        const versionMatch = content.match(/v?(\d+\.\d+\.\d+)/);
-        return versionMatch ? versionMatch[1] : 'unknown';
-    }
-
     invalidateCache(): void {
         this.cachedRules = null;
         this.cacheTime = 0;

@@ -18,6 +18,22 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.23.3',
+        date: '2026-11-02',
+        title: '写作规则版本误报修复',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🔧 修复',
+                items: [
+                    '规则版本号优先读 frontmatter 的 version 字段，tags 里的 v3.6.0 不再抢先命中',
+                    '带后缀的自定义变体（3.6.0-引导代禁止）不再被误判为内置版本，启动不再弹假漂移告警',
+                    '版本提示只在主干落后时出现；3.7.0-anchor 等实验版不再每次提示',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.23.2',
         date: '2026-11-02',
         title: 'dsh 边界决策确认',

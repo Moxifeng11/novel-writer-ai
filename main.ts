@@ -74,6 +74,7 @@ import { getDegradationNotifier } from './shared/degradation-notifier';
 import { AntiAIDetector } from './engine/anti-ai-detector';
 import { setBusinessThresholdOverrides, setInfoDebtMax } from './shared/thresholds';
 import { SerializedWriter } from './shared/serialized-writer';
+import { compareVersionBase } from './shared/versioned-registry';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
@@ -957,7 +958,9 @@ export default class NovelWriterPlugin extends Plugin {
                 log.warn('[小说工坊] 写作规则版本异常:', info.warnings.join('；'));
                 return;
             }
-            if (info.current !== info.expected && info.current !== 'unknown') {
+            // 只有「主干版本落后」才提示同步。自定义变体（如 3.6.0-引导代禁止）与
+            // 实验版（3.7.0-anchor）是用户主动选择的版本，不应每次启动都弹告警。
+            if (info.current !== 'unknown' && compareVersionBase(info.current, info.expected) < 0) {
                 // v4.27：提供一键同步——vault 规则文件是模板拷贝，不是用户创作内容。
                 // 旧实现只弹警告让用户自己去设置里找，但大多数用户不知道怎么修。
                 const notice = new Notice(

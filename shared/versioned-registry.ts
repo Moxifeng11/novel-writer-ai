@@ -41,10 +41,40 @@ export function hashContent(text: string): string {
     return hash.toString(16).padStart(8, '0');
 }
 
-/** 从正文里抽取第一个 semver（兼容 `v3.6.0` / `version: "3.6.0-xxx"`） */
+/** 比较两个版本号的主干（忽略 `-suffix`），返回 -1 / 0 / 1 */
+export function compareVersionBase(a: string, b: string): number {
+    const parts = (value: string): number[] =>
+        String(value || '').split(/[-+]/)[0].split('.').map((part) => parseInt(part, 10) || 0);
+    const left = parts(a);
+    const right = parts(b);
+    for (let i = 0; i < Math.max(left.length, right.length, 3); i++) {
+        const diff = (left[i] || 0) - (right[i] || 0);
+        if (diff !== 0) return diff > 0 ? 1 : -1;
+    }
+    return 0;
+}
+
+/**
+ * 抽取规则文件的版本号。
+ *
+ * 权威来源是 frontmatter 的 `version:` 字段；只有当文件没有 frontmatter
+ * 声明时才退化为「正文第一个 semver」。
+ *
+ * 事故（2026-11-02）：`tags: [写作规则, 文风, v3.6.0]` 排在 `version: "3.6.0-引导代禁止"`
+ * 之前，全文取第一个版本号会把标签里的 `v3.6.0` 当成版本，于是自定义变体被误判成
+ * 内置 3.6.0，再比内容哈希就触发「版本号相同但内容不同」的假漂移告警。
+ */
 export function extractVersion(text: string): string {
-    // 后缀可能带中文（如 `3.6.0-引导代禁止`），\w 不匹配 CJK，这里放宽到「非空白/引号」
-    const match = String(text || '').match(/v?(\d+\.\d+\.\d+(?:[-+][^\s"',;]+)?)/);
+    const raw = String(text || '');
+    const frontmatter = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (frontmatter) {
+        const declared = frontmatter[1].match(/^\s*version\s*:\s*["']?([^"'\r\n]+)["']?\s*$/mi);
+        const value = declared?.[1]?.trim() || '';
+        // 后缀可能带中文（如 `3.6.0-引导代禁止`），\w 不匹配 CJK，这里放宽到「非空白/引号」
+        const match = value.match(/v?(\d+\.\d+\.\d+(?:[-+][^\s"',;]+)?)/);
+        if (match) return match[1];
+    }
+    const match = raw.match(/v?(\d+\.\d+\.\d+(?:[-+][^\s"',;]+)?)/);
     return match ? match[1] : '';
 }
 
