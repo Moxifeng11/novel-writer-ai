@@ -147,7 +147,6 @@
 | `engine/quality/rewrite-types.ts` | — | 改写类型定义 |
 | `engine/quality/rewrite-prompts.ts` | — | 改写提示词 |
 | `engine/quality/realtime-monitor.ts` | `RealtimeMonitor` | 实时质量监控（协同写作视图「实时质量」开关：评分 + 偏离报告，状态栏可见）；只返回结果、不写历史（历史由调用方经 `appendQualityHistory` 落盘）；`busy:` 并发守卫；外部 `AbortSignal` 监听由 `detachExternalAbort()` 在 `cleanup`/`reset`/`dispose` 成对摘除；不提供空分数兜底（部分失败由调用方跳过落盘）；`failures` 在任何失败时返回（含两项全失败），供 UI 区分「未评估」与「评估失败」 |
-| `engine/quality/performance-optimizer.ts` | `PerformanceOptimizer` | 性能优化器 |
 | `engine/quality/quality-worker.ts` | — | 质量检测 Worker（C1 起 QSE 只注入 `v1Engine`，不再注入 `characterChecker`；人物逐条比对由 `DeviationDetector` 的 `PlotDivergenceEngine` + `CharacterConsistencyChecker` 负责，`rhythmAnalyzer` 依赖主线程 AI 能力三处都不注入） |
 
 ---
@@ -165,7 +164,6 @@
 | `engine/style/style-intensity-engine.ts` | `StyleIntensityEngine` | 风格强度引擎 |
 | `engine/style/fingerprint-selection.ts` | `selectFingerprintsForInjection` | 指纹注入选择器唯一口径（上限 3；协同 `all` / 11 步 `firstN` 回退 + 降级回调），协同与 11 步共用 |
 | `engine/style/dynamic-injection-engine.ts` | `DynamicInjectionEngine` | 动态注入引擎（TieredInjectionBuilder 按指纹强度截断描述/示例；DynamicSampleSelector 的 2 条上限只对带 fingerprintId 的样本生效） |
-| `engine/style/style-worker.ts` | — | 风格计算 Worker |
 
 ---
 
@@ -372,13 +370,11 @@
 
 | 文件 | 类 | 职责 |
 |------|-----|------|
-| `services/index.ts` | — | 统一导出 |
 | `services/worker-manager.ts` | `WorkerManager` | 通用 Worker 管理器（池化、队列、进度、降级） |
 | `services/worker-protocol.ts` | — | Worker 通信协议 |
 | `services/worker-runtime.ts` | — | Worker 运行时 |
 | `services/prompt-manager.ts` | `PromptManager` | Prompt 管理服务 |
 | `services/prompt-templates-default.ts` | — | 默认 Prompt 模板 |
-| `services/settlement-service.ts` | — | 结算服务 |
 | `services/knowledge-base-manager.ts` | `KnowledgeBaseManager` | 知识库管理服务（`deleteBook` 同步清理向量文件与 `index.json` 条目；`updateBook` 改名在 `fs.rename` 后调 `renameVectorArtifacts(bookId, newName)` 重写 `${bookId}.json` 与 `index.json` 的 `bookName`（含 `samples[].bookName`），缺失/损坏只 warn；`hasBook(bookId)` 供 `KnowledgeVectorStore.isBookAlive` 判存活；A5 起 `BookBasicInfo` 增加 `vectorStatus`/`vectorError`，由 `setVectorStatus` 独立落盘，拆解状态仍为 `completed`） |
 | `services/knowledge-original-chunker.ts` | `chunkOriginalText` | 书籍原文分块（按段落拼装、超长硬切、超量均匀采样） |
 | `services/vector-rebuild-service.ts` | `rebuildAllVectors` | 批量重向量化编排（依赖注入、串行执行；只重算已有样本的向量，不调用 AI；单条失败不中断，返回成功/跳过/失败报告） |
@@ -665,7 +661,7 @@
 | `playwright.config.ts` | Playwright E2E 测试配置 |
 | `styles.css` | 插件样式——**自动生成产物**，由 `styles-src/*.css` 按文件名顺序拼接；不要直接编辑 |
 | `styles-src/` | 样式源文件 16 个（`00-header` … `15-late-fixes`），文件名顺序即层叠顺序；改样式只改这里 + `npm run build:styles` |
-| `design-tokens.css` | 设计令牌 CSS 变量 |
+| `styles-src/00-header.css` | 设计令牌 CSS 变量（`--nw-*` 唯一来源） |
 | `.engine-registry-whitelist.json` | 引擎注册白名单 |
 | `.github/workflows/ci.yml` | CI 门禁（模板一致性 / lint / typecheck / test / build / 发布校验） |
 | `.github/workflows/release.yml` | 推送 `v*` tag 自动创建 GitHub Release（核心文件 + `workers/` + 含 Worker 的 zip） |
@@ -703,7 +699,7 @@
 | 性能问题 | `services/performance-monitor.ts` |
 | 缓存问题 | `shared/multi-layer-cache.ts` |
 | 引擎找不到 | `engine/engine-registry.ts` + `.engine-registry-whitelist.json` |
-| 样式问题 | `styles-src/*.css`（改后 `npm run build:styles`）+ `design-tokens.css` |
+| 样式问题 | `styles-src/*.css`（改后 `npm run build:styles`；令牌在 `00-header.css`） |
 | 测试失败 | `tests/unit/` 对应目录 |
 | 拆解质量评分异常 / 交叉验证规则不生效 | `engine/quality-scorer.ts` + `engine/deconstruction-scheduler.ts` |
 | 拆解引擎设置不生效 / 维度缺失 / 并发不对 / 全文分块未触发 | `engine/deconstruction-scheduler.ts`（`addTask` / `breakdownDimensionWithSegments` / `getSegmentedBreakdownConfig`） + `engine/scheduler-segment-integration.ts` + `main.ts`（`NovelWriterSettings.deconstructionEngine`） + 设置面板「🧬 拆解引擎」tab |

@@ -11,6 +11,7 @@ import { pjFactionsDir, pjWorldview, pjSettingLib, SUBDIR_FACTIONS } from '../sh
 import { saveEntities, formatSaveOutcome } from '../shared/entity-persistence';
 import { createLogger } from '../shared/logger';
 import { nextFrame } from '../shared/yield';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('GenerateFactionModal');
@@ -280,6 +281,7 @@ export class GenerateFactionModal extends Modal {
                     cancelBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
                     cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
                     input.addEventListener('keydown', (e) => {
+                        if (isImeComposing(e)) return;
                         if (e.key === 'Enter') confirmBtn.click();
                         if (e.key === 'Escape') cancelBtn.click();
                     });

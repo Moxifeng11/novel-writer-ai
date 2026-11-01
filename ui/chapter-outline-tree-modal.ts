@@ -3,6 +3,7 @@ import type NovelWriterAI from '../main';
 import { pjVolumeOutlineDir, pjStepDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { writeVaultText } from '../shared/file-system-port';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('ChapterOutlineTreeModal');
@@ -797,6 +798,8 @@ export class ChapterOutlineTreeModal extends Modal {
         cancelEditBtn.addEventListener('click', () => this.finishEdit(container, displaySpan));
 
         input.addEventListener('keydown', (e) => {
+            // IME 组字中 Enter/Escape 属于候选操作，不能确认/取消重命名
+            if (isImeComposing(e)) return;
             if (e.key === 'Enter') confirmBtn.click();
             else if (e.key === 'Escape') cancelEditBtn.click();
         });
@@ -838,6 +841,8 @@ export class ChapterOutlineTreeModal extends Modal {
         cancelEditBtn.addEventListener('click', () => this.finishSceneEdit(container, displaySpan));
 
         input.addEventListener('keydown', (e) => {
+            // IME 组字中 Enter/Escape 属于候选操作，不能确认/取消重命名
+            if (isImeComposing(e)) return;
             if (e.key === 'Enter') confirmBtn.click();
             else if (e.key === 'Escape') cancelEditBtn.click();
         });
@@ -1125,7 +1130,9 @@ export class ChapterOutlineTreeModal extends Modal {
 
                     if (chap.rowLine >= 0) {
                         const oldLine = src.lines[chap.rowLine];
-                        const newLine = oldLine.replace(/^\|\s*\d+\s*\|.+\|$/, `| ${chap.chapNum} | ${chap.conflict} |`);
+                        // 原正则要求行尾必须是 `|`，手改成无尾管道的表格行会静默不写盘
+                        const isChapterRow = /^\s*\|\s*\d+\s*\|/.test(oldLine);
+                        const newLine = isChapterRow ? `| ${chap.chapNum} | ${chap.conflict} |` : oldLine;
                         if (newLine !== oldLine) {
                             if (!editsBySource.has(chap.sourceIdx)) editsBySource.set(chap.sourceIdx, []);
                             editsBySource.get(chap.sourceIdx)!.push({ lineIdx: chap.rowLine, newLine });
@@ -1146,32 +1153,34 @@ export class ChapterOutlineTreeModal extends Modal {
                 }
             }
 
-            for (const [srcIdx, edits] of editsBySource) {
+            // 单遍重建：编辑/删除/插入都按「加载时的原始行号」描述，
+            // 先删后插会让行号整体上移（删 1 行再加 1 行就落错章节）；
+            // 按原始索引遍历、边遍历边产出，天然免疫位移。
+            for (let srcIdx = 0; srcIdx < this.sources.length; srcIdx++) {
                 const src = this.sources[srcIdx];
-                edits.sort((a, b) => b.lineIdx - a.lineIdx);
-                for (const edit of edits) {
-                    src.lines[edit.lineIdx] = edit.newLine;
+                const edits = editsBySource.get(srcIdx) ?? [];
+                const inserts = insertsBySource.get(srcIdx) ?? [];
+                const deletedSet = this.deletedRows.get(srcIdx) ?? new Set<number>();
+                const editMap = new Map(edits.map(e => [e.lineIdx, e.newLine]));
+                const insertsAfter = new Map<number, string[]>();
+                const leadingInserts: string[] = [];
+                for (const ins of inserts) {
+                    if (ins.lineIdx < 0) {
+                        leadingInserts.push(ins.newLine);
+                        continue;
+                    }
+                    const list = insertsAfter.get(ins.lineIdx) ?? [];
+                    list.push(ins.newLine);
+                    insertsAfter.set(ins.lineIdx, list);
                 }
-            }
 
-            for (const [srcIdx, rows] of this.deletedRows) {
-                const src = this.sources[srcIdx];
-                if (!src) continue;
-                const sortedRows = Array.from(rows).sort((a, b) => b - a);
-                for (const rowLine of sortedRows) {
-                    src.lines.splice(rowLine, 1);
-                    totalEdits++;
+                const rebuilt: string[] = [...leadingInserts];
+                for (let i = 0; i < src.lines.length; i++) {
+                    if (deletedSet.has(i)) continue;
+                    rebuilt.push(editMap.get(i) ?? src.lines[i]);
+                    for (const row of insertsAfter.get(i) ?? []) rebuilt.push(row);
                 }
-            }
-
-            for (const [srcIdx, inserts] of insertsBySource) {
-                const src = this.sources[srcIdx];
-                inserts.sort((a, b) => a.lineIdx - b.lineIdx);
-                let offset = 0;
-                for (const insert of inserts) {
-                    src.lines.splice(insert.lineIdx + offset, 0, insert.newLine);
-                    offset++;
-                }
+                src.lines = rebuilt;
             }
 
             for (let i = 0; i < this.sources.length; i++) {
@@ -1180,6 +1189,10 @@ export class ChapterOutlineTreeModal extends Modal {
             }
 
             this.deletedRows.clear();
+
+            // 写盘后必须重载：新增章节的 rowLine 还是 -1，不重载再点一次保存会重复插入同一行
+            await this.loadOutline();
+            this.render();
 
             const message = sceneSaves > 0 
                 ? `✅ 已保存 ${totalEdits} 处章节修改，${sceneSaves} 个场景文件` 

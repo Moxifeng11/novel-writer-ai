@@ -102,6 +102,7 @@ import { resolveCursorPosition } from '../shared/cursor-position';
 import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck } from '../shared/prereq-check';
 import { buildQualityChapterKey } from '../shared/quality-history';
 import { RealtimeQualityController } from './cowrite/realtime-quality-controller';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('CoWritingView');
@@ -459,8 +460,24 @@ export class CoWritingView extends ItemView {
     this.renderMetrics(emptyMetrics());
     this.statusBar?.setText("未绑定章节");
   }
+  /** 按章号反查正文实际所在卷；找不到返回 null（调用方回落第 1 卷） */
+  private resolveVolumeForChapter(project: string, chapterNum: number): string | null {
+    const bodyRoot = `${project}/03-大纲与章节/正文/`;
+    const pattern = new RegExp(`/第\\d+卷/第${chapterNum}章[^/]*_正文\\.md$`);
+    const hit = this.app.vault.getFiles().find(f => f.path.startsWith(bodyRoot) && pattern.test(f.path));
+    return hit ? hit.path.slice(bodyRoot.length).split('/')[0] : null;
+  }
   /** 打开指定章节的协同写作视图 */
-  async openChapter(project: string, chapterName2: string, volume2 = "\u7B2C1\u5377", chapterNum = 1) {
+  async openChapter(project: string, chapterName2: string, volume2?: string, chapterNum?: number) {
+    // 只传 2 个参数时旧默认值是「第1卷/第1章」，会把第 3 卷第 12 章绑定成第 1 卷第 1 章、
+    // 保存直接写错文件。缺失参数时按章名推定章号，并按正文实际位置反查卷。
+    const parsedChapterNum = parseInt(chapterName2.match(/第(\d+)章/)?.[1] || '', 10);
+    const resolvedChapterNum = chapterNum && chapterNum > 0
+      ? chapterNum
+      : (Number.isFinite(parsedChapterNum) && parsedChapterNum > 0 ? parsedChapterNum : 1);
+    const resolvedVolume = volume2 || this.resolveVolumeForChapter(project, resolvedChapterNum) || "\u7B2C1\u5377";
+    volume2 = resolvedVolume;
+    chapterNum = resolvedChapterNum;
     // 上一章排队中的自动保存必须先用「旧身份」落盘：下面一旦改写 project/chapterNum，
     // 2s 防抖里的保存就会用新章路径写入旧章正文（静默串章）。
     const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
@@ -986,6 +1003,7 @@ export class CoWritingView extends ItemView {
       this.scheduleAutoSave();
     });
     this.hintInput.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (isImeComposing(event)) return;
       if (event.key === "Enter")
         this.applyHint();
     });
@@ -4919,9 +4937,11 @@ ${text}`;
     if (chars.length > 0) {
       detail.createDiv({ cls: "nw-cowrite-monitor-detail-title", text: "涉及人物:" });
       const ul = detail.createEl("ul", { cls: "nw-cowrite-monitor-list" });
+      // 只在本项目的人物设定目录里找：全库 includes 匹配会把同名角色的别书状态显示出来
+      const projectPrefix = this.project ? `${this.project}/` : '';
       chars.slice(0, 5).forEach((charName: string) => {
         const charFile = this.app.vault.getFiles().find(f =>
-          f.path.includes('人物设定') && f.name.includes(charName)
+          f.path.startsWith(projectPrefix) && f.path.includes('人物设定') && f.name.includes(charName)
         );
         const charFm: Record<string, unknown> = charFile ? (this.app.metadataCache.getFileCache(charFile)?.frontmatter || {}) : {};
         const status = (charFm['当前状态'] as string | undefined) || '未知';

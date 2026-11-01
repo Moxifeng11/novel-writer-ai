@@ -244,7 +244,7 @@ export class KnowledgeBaseManager {
             } catch (e) {
                 log.warn('[KnowledgeBaseManager] 分类偏好保存失败:', e);
             }
-        }).catch(() => {});
+        }).catch((e: unknown) => log.warn('[KnowledgeBaseManager] 写队列失败:', e));
     }
 
     private migrateBookData(book: Record<string, unknown>): BookBasicInfo {

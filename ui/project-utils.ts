@@ -131,6 +131,11 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
  * 现改为：逐项删除 adapter.list 返回的全部文件（含点文件），递归删子目录后删目录本身，
  * 最后校验目录确已消失，否则抛出明确错误，杜绝「假删除」。 */
 export async function deleteProject(app: App, projectName: string): Promise<void> {
+    // 防线：空串/根路径会让 adapter.list('') 列出 vault 根并递归删光整库
+    const target = String(projectName || '').trim().replace(/^\/+|\/+$/g, '');
+    if (!target || target === '.' || target === '..' || target.split('/').some(seg => seg === '..' || seg === '.')) {
+        throw new Error(`拒绝删除非法项目路径：${JSON.stringify(projectName)}`);
+    }
     const adapter = app.vault.adapter;
     const removeDir = async (dirPath: string) => {
         const list = await adapter.list(dirPath);
@@ -138,11 +143,11 @@ export async function deleteProject(app: App, projectName: string): Promise<void
         for (const d of list.folders) await removeDir(d);
         await adapter.rmdir(dirPath, true);
     };
-    await removeDir(projectName);
-    if (await adapter.exists(projectName)) {
-        throw new Error(`项目「${projectName}」删除后仍存在，可能有文件被占用或权限不足`);
+    await removeDir(target);
+    if (await adapter.exists(target)) {
+        throw new Error(`项目「${target}」删除后仍存在，可能有文件被占用或权限不足`);
     }
-    new Notice(`✅ 项目「${projectName}」已删除`);
+    new Notice(`✅ 项目「${target}」已删除`);
 }
 
 /** 章节列表条目：正文 ∪ 步骤结果骨架 */

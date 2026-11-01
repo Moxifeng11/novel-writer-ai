@@ -8,6 +8,7 @@ import { ChapterOutlineTreeModal } from './chapter-outline-tree-modal';
 import { createLogger } from '../shared/logger';
 import { OperationConfirmModal } from './components/progress';
 import { scanExistingVolumes, detectVolumeConflict } from '../shared/volume-conflict-detector';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('PlanBookModal');
@@ -414,6 +415,8 @@ ${worldviewResult.content}`;
                     };
 
                     const handleEnter = (e: KeyboardEvent) => {
+                        // IME 组字中回车是确认候选，不能提前关闭弹窗只提交半截题材
+                        if (isImeComposing(e)) return;
                         if (e.key === 'Enter') {
                             const genreValue = customInput.value.trim();
                             const themeValue = themeInput.value.trim();

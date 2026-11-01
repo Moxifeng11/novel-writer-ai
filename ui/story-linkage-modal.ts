@@ -15,6 +15,7 @@ import NovelWriterPlugin from '../main';
 import type { StoryLinkage } from '../engine/story-linkage';
 import type { LinkageForeshadow, LinkageTimelineEvent } from '../engine/story-linkage';
 import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from './project-utils';
+import { isImeComposing } from '../shared/keyboard';
 
 const EMPTY_FORESHADOW_TEXT = '无';
 const EMPTY_TIMELINE_TEXT = '本章暂无时间线事件';
@@ -200,6 +201,8 @@ export class StoryLinkageModal extends Modal {
                 return;
             }
             if (ev.key === 'Enter') {
+                // IME 组字中回车是确认候选，不能误切章节
+                if (isImeComposing(ev)) return;
                 const first = rows.find(r => !r.el.hidden);
                 if (first) {
                     ev.preventDefault();

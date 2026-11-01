@@ -10,6 +10,24 @@ export interface OpenAIProviderOptions {
     dimensions?: number;
 }
 
+/** 嵌入请求超时：服务端挂起时不能让批量向量化永久等待 */
+const EMBED_TIMEOUT_MS = 60_000;
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS);
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } catch (e) {
+        if (controller.signal.aborted) {
+            throw new Error(`嵌入请求超时（${EMBED_TIMEOUT_MS / 1000}s）：请检查网络或端点响应`);
+        }
+        throw e;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 const MODEL_DIMENSIONS: Record<string, number> = {
     'text-embedding-3-small': 1536,
     'text-embedding-3-large': 3072,
@@ -37,7 +55,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     async embed(text: string, _options?: EmbeddingOptions): Promise<number[]> {
         const endpoint = `${this.baseUrl}/embeddings`;
 
-        const response = await fetch(endpoint, {
+        const response = await fetchWithTimeout(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -71,7 +89,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     async embedBatch(texts: string[], _options?: EmbeddingOptions): Promise<number[][]> {
         const endpoint = `${this.baseUrl}/embeddings`;
 
-        const response = await fetch(endpoint, {
+        const response = await fetchWithTimeout(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

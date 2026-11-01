@@ -20,7 +20,11 @@ const log = createLogger('FileCache');
 // ============================================================
 
 export interface FileCacheEntry<T> {
-    value: T;
+    /**
+     * 仅内存持有；index.json 只落元数据（value 单独写在 key 文件里）。
+     * 旧版本写入的 index 可能仍带 value，读取时忽略即可。
+     */
+    value?: T;
     createdAt: number;
     accessedAt: number;
     sourceMtime?: number;
@@ -103,7 +107,6 @@ export class FileCache {
         const size = content.length;
 
         const entry: FileCacheEntry<T> = {
-            value,
             createdAt: Date.now(),
             accessedAt: Date.now(),
             sourcePath: options?.sourcePath,
@@ -271,7 +274,15 @@ export class FileCache {
     }
 
     private persistIndex(): void {
-        const data = Array.from(this.index.entries());
+        // index 只存元数据：value 已单独写在 keyToPath 里。
+        // 把 value 一起序列化会让每次 get()/set() 都重写整份缓存内容（写放大数百倍）。
+        const data = Array.from(this.index.entries()).map(([k, e]) => [k, {
+            createdAt: e.createdAt,
+            accessedAt: e.accessedAt,
+            sourcePath: e.sourcePath,
+            sourceMtime: e.sourceMtime,
+            size: e.size,
+        }]);
         const indexPath = `${this.options.cacheDir}/index.json`;
         this.fs.mkdir(this.options.cacheDir).then(() => {
             return this.fs.write(indexPath, JSON.stringify(data));

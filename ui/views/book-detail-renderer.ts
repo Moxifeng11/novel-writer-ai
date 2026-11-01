@@ -17,6 +17,7 @@ import type {
     CommercialData,
     ReadabilityData,
 } from './knowledge-base-view';
+import { isImeComposing } from '../../shared/keyboard';
 
 const log = createLogger('BookDetailRenderer');
 
@@ -2332,6 +2333,7 @@ export class BookDetailRenderer {
         };
         addBtn.addEventListener('click', addHandler);
         addInput.addEventListener('keydown', (e) => {
+            if (isImeComposing(e)) return;
             if (e.key === 'Enter') addHandler();
         });
     }

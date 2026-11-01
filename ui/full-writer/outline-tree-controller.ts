@@ -12,6 +12,7 @@ import { OutlineTreeVolume, OutlineTreeChapter, SceneOutlineTreeVolume, SceneOut
 import { pjVolumeOutlineDir, pjVolumeOutlineFile, pjBodyDir, pjStepDir, pjBodyFile, pjStepDir as pjStepDirFn } from '../../shared/paths';
 import { ObsidianFileSystem } from '../../shared/file-system-port';
 import { createLogger } from '../../shared/logger';
+import { isImeComposing } from '../../shared/keyboard';
 
 
 const log = createLogger('OutlineTreeController');
@@ -118,8 +119,17 @@ export class OutlineTreeController {
 
         const onKeyDown = (e: KeyboardEvent) => {
             if (!this._area || !this._area.isConnected) return;
-            const activeEl = document.activeElement;
+            // 组字中不接管按键
+            if (isImeComposing(e)) return;
+            const activeEl = document.activeElement as HTMLElement | null;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
+            // CodeMirror 正文是 contenteditable：在工作台处于后台标签页时，
+            // 不排除它会让 Backspace / Alt+↑↓ 在别的笔记里删改大纲章节。
+            if (activeEl && activeEl.isContentEditable) return;
+            // 焦点必须落在本面板内（或面板拥有焦点之外的空白页），否则不接管
+            const focusInArea = !!activeEl && this._area.contains(activeEl);
+            const focusOnBody = !activeEl || activeEl === document.body;
+            if (!focusInArea && !focusOnBody) return;
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (this._selectedItems.size > 0) {

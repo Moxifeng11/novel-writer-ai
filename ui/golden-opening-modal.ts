@@ -1357,8 +1357,9 @@ tags: [黄金开篇, 大纲]
             const content = this.buildGoldenContent();
             const existing = this.app.vault.getAbstractFileByPath(filePath);
             if (existing instanceof TFile) {
-                const old = await this.app.vault.read(existing);
-                await this.app.vault.modify(existing, `${old.trimEnd()}\n\n---\n\n${content}`);
+                // 旧实现是 `old + '---' + content`：每保存一次就追加一整份文档 + 第二个 frontmatter 块，
+                // Obsidian 只认第一块 → 内容看起来「没更新」，文件无限膨胀。这里是插件生成的成稿，直接覆盖。
+                await this.app.vault.modify(existing, content);
             } else {
                 await this.app.vault.create(filePath, content);
             }

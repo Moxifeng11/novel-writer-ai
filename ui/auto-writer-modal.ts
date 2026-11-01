@@ -183,12 +183,14 @@ export class AutoWriterModal extends Modal {
         const total = targetNums.length;
         let done = 0;
         let failed = 0;
-        let notice = new Notice(`⏳ 自动写作: 0/${total}`, 0);
+        const failedChapters: string[] = [];
+        // 单条常驻提示复用到底：逐章新建 Notice 在整卷写作时会堆叠刷屏
+        let notice: Notice | null = new Notice(`⏳ 自动写作: 0/${total}`, 0);
 
         for (const n of targetNums) {
             if (signal.aborted) break;
             const chapName = `第${n}章`;
-            notice.setMessage(`⏳ 自动写作: ${chapName}（${done + failed}/${total}）`);
+            notice?.setMessage(`⏳ 自动写作: ${chapName}（${done + failed}/${total}）`);
             try {
                 await WriteChapterModal.doWriteChapter(
                     this.app, this.plugin, this.plugin.aiEngine, this.plugin.reviewAgent,
@@ -196,21 +198,22 @@ export class AutoWriterModal extends Modal {
                 );
                 if (signal.aborted) break;
                 done++;
-                new Notice(`✅ ${chapName} 完成（${done}/${total}）`, 4000);
             } catch (e) {
                 failed++;
+                failedChapters.push(chapName);
                 log.warn(`[AutoWriter] ${chapName} 失败`, e);
-                new Notice(`❌ ${chapName} 失败: ${(e as Error).message}`, 6000);
             }
-            notice.hide();
-            notice = new Notice(`⏳ 自动写作: ${done}/${total}`, 0);
+            notice?.setMessage(`⏳ 自动写作: ${done + failed}/${total}`);
         }
 
-        notice.hide();
+        notice?.hide();
+        notice = null;
         if (signal.aborted) {
             showSuccess(`已停止自动写作：完成 ${done}/${total} 章（失败 ${failed}）`);
         } else if (failed > 0) {
-            showSuccess(`自动写作完成：成功 ${done}/${total}，失败 ${failed}`);
+            const listed = failedChapters.slice(0, 5).join('、');
+            const more = failedChapters.length > 5 ? '…' : '';
+            showSuccess(`自动写作完成：成功 ${done}/${total}，失败 ${failed}（${listed}${more}）`);
         } else {
             showSuccess(`自动写作完成：${done}/${total} 章`);
         }

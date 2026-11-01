@@ -7,6 +7,7 @@ import { type BookRecognitionResult } from '../services/chapter-recognizer';
 import { ENGINE_NAMES } from '../shared/engine-names';
 import type { EngineRegistry } from '../engine/engine-registry';
 import { createLogger } from '../shared/logger';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('BatchImportModal');
@@ -800,6 +801,7 @@ export class BatchImportModal extends Modal {
         });
         addCustomBtn.addEventListener('click', () => this.addCustomTag());
         customInput.addEventListener('keydown', (e) => {
+            if (isImeComposing(e)) return;
             if (e.key === 'Enter') {
                 e.preventDefault();
                 this.addCustomTag();

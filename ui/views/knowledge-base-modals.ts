@@ -4,6 +4,7 @@ import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type Tech
 import { kbBookDir } from '../../shared/paths';
 import { createLogger } from '../../shared/logger';
 import { OperationConfirmModal } from '../components/progress';
+import { isImeComposing } from '../../shared/keyboard';
 
 const log = createLogger('KnowledgeBaseModals');
 
@@ -424,6 +425,7 @@ export class EditBookModal extends Modal {
         };
         addTagBtn.addEventListener('click', addTagHandler);
         tagInput.addEventListener('keydown', (e) => {
+            if (isImeComposing(e)) return;
             if (e.key === 'Enter') addTagHandler();
         });
 
@@ -506,8 +508,9 @@ export class EditBookModal extends Modal {
             }
             this.close();
             new Notice('✅ 保存成功');
-        }).catch(e => {
-            new Notice('保存失败');
+        }).catch((e: unknown) => {
+            log.error('[KnowledgeBaseModals] 书籍保存失败:', e);
+            new Notice(`⚠️ 保存失败：${e instanceof Error ? e.message : String(e)}`, 8000);
         });
     }
 
@@ -690,6 +693,7 @@ export class GenreEditModal extends Modal {
                 }
             });
             input.addEventListener('keydown', (e) => {
+                if (isImeComposing(e)) return;
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     addBtn.click();

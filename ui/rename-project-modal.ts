@@ -10,6 +10,7 @@ import { createLogger } from '../shared/logger';
 import { validateProjectName } from '../shared/project-name';
 import { ProjectRenameService } from '../services/project-rename-service';
 import { MODE_LIBRARY_ROOT_LIST, projectDisplayName } from '../domains/kernel/project-locator';
+import { isImeComposing } from '../shared/keyboard';
 
 const log = createLogger('RenameProjectModal');
 
@@ -40,6 +41,7 @@ export class RenameProjectModal extends Modal {
             .addText((text) => {
                 text.setValue(this.value).onChange((value) => { this.value = value; });
                 text.inputEl.addEventListener('keydown', (event) => {
+                    if (isImeComposing(event)) return;
                     if (event.key === 'Enter') void this.submit();
                 });
                 window.setTimeout(() => text.inputEl.focus(), 0);

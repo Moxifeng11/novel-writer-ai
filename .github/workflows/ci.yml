@@ -42,6 +42,15 @@ jobs:
       - name: 内联样式基线检查
         run: npm run check:inline-styles
 
+      - name: 样式源与产物一致性
+        run: npm run check:styles
+
+      - name: 分层依赖与循环依赖（棘轮基线）
+        run: npm run check:deps -- --baseline .arch-baseline.json
+
+      - name: EngineRegistry 实例白名单
+        run: npm run check-engines
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -55,7 +64,7 @@ jobs:
         run: npm run check:release
 
       - name: 校验构建未产生版本/生成物漂移
-        run: git diff --exit-code -- manifest.json shared/template-scaffold-assets.generated.ts
+        run: git diff --exit-code -- manifest.json versions.json shared/template-scaffold-assets.generated.ts styles.css
 
       - name: 校验构建产物未入仓
         run: |

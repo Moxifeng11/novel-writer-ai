@@ -39,6 +39,7 @@ import {
     stripMentionMarkers,
     type MentionToken,
 } from '../shared/file-mention';
+import { isImeComposing } from '../shared/keyboard';
 
 const STAGES: Array<{ key: string; label: string; hint: string }> = [
     { key: 'create', label: '① 新建项目', hint: '长篇/短篇/剧本' },
@@ -534,19 +535,21 @@ export class AgentWorkbenchView extends ItemView {
                 return true;
             }
             if (ev.key === 'Enter' || ev.key === 'Tab') {
-                if (!ev.isComposing) {
+                if (!isImeComposing(ev)) {
                     ev.preventDefault();
                     this.acceptMention(this.mentionItems[this.mentionIndex]);
                     return true;
                 }
             }
             if (ev.key === 'Escape') {
+                // 组字中 Esc 应先取消输入法候选，不能顺手关掉 @ 弹层
+                if (isImeComposing(ev)) return false;
                 ev.preventDefault();
                 this.closeMentionPopup();
                 return true;
             }
         }
-        if (ev.key === 'Enter' && !ev.isComposing && !ev.shiftKey) {
+        if (ev.key === 'Enter' && !isImeComposing(ev) && !ev.shiftKey) {
             ev.preventDefault();
             void this.submit(this.inputEl?.value || '');
             return true;

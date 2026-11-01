@@ -21,6 +21,7 @@ import { TimeEstimator } from "../shared/time-estimator";
 import { createLogger } from '../shared/logger';
 import { resolveCursorPosition } from '../shared/cursor-position';
 import { BodyWriter } from '../engine/body-writer';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('CoWriteFloatingPanel');
@@ -162,6 +163,8 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   /** 绑定编辑器事件 */
   private bindEditorEvents(): void {
     this.rightEditor.addEventListener("keydown", (event: KeyboardEvent) => {
+      // IME 组字期间 Tab 用于选候选/结束组字，不能被劫持成「生成建议」
+      if (isImeComposing(event)) return;
       if (event.key === "Tab") {
         event.preventDefault();
         void this.handleTabSuggest();
@@ -181,6 +184,8 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     });
 
     this.hintInput.addEventListener("keydown", (event: KeyboardEvent) => {
+      // 组字中回车是确认候选，不能把半截指令应用掉
+      if (isImeComposing(event)) return;
       if (event.key === "Enter") this.applyHint();
     });
   }

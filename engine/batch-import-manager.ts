@@ -188,7 +188,7 @@ export class BatchImportManager {
             } catch (e) {
                 log.warn('[BatchImportManager] 历史记录保存失败:', e);
             }
-        }).catch(() => {});
+        }).catch((e: unknown) => log.warn('[BatchImportManager] 写队列失败:', e));
     }
 
     private async loadPresets(): Promise<void> {
@@ -214,7 +214,7 @@ export class BatchImportManager {
             } catch (e) {
                 log.warn('[BatchImportManager] 预设保存失败:', e);
             }
-        }).catch(() => {});
+        }).catch((e: unknown) => log.warn('[BatchImportManager] 写队列失败:', e));
     }
 
     addPreview(file: { filename: string; content: string; source: ImportSource; sourcePath?: string }): ImportBookPreview {

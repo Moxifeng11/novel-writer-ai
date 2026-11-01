@@ -18,6 +18,7 @@ import { kbBookRhythmAnalysisFile } from "../shared/paths";
 import { formatKnowledgeChunkLabel } from "../shared/knowledge-position";
 import { VIEW_TYPE_CO_WRITE } from "./co-writing-view";
 import { createLogger } from '../shared/logger';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('KnowledgeFloatingPanel');
@@ -870,6 +871,8 @@ export class KnowledgeFloatingPanel extends DraggablePanel {
       this.searchQuery = (e.target as HTMLInputElement).value;
     });
     searchInput.addEventListener("keydown", (e) => {
+      // IME 组字中回车是确认候选，别用半截关键词检索
+      if (isImeComposing(e)) return;
       if (e.key === "Enter") {
         this.doSimilarSearch();
       }

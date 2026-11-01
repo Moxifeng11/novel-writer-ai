@@ -3,6 +3,7 @@ import NovelWriterPlugin from '../main';
 import { showSuccess, showError, showWarning } from '../utils/helpers';
 import { createLogger } from '../shared/logger';
 import { OperationConfirmModal } from './components/progress';
+import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('ExistingEntityManager');
@@ -282,6 +283,7 @@ export class ExistingEntityManagerModal extends Modal {
                 
                 // 回车确认
                 input.addEventListener('keydown', (e) => {
+                    if (isImeComposing(e)) return;
                     if (e.key === 'Enter') confirmBtn.click();
                     if (e.key === 'Escape') cancelBtn.click();
                 });

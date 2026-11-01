@@ -45,9 +45,11 @@ export function openModelPickerPopover(
         if (closed) return;
         closed = true;
         root.remove();
+        activeClosers.delete(close);
         document.removeEventListener('mousedown', onOutside, true);
         document.removeEventListener('keydown', onKeydown, true);
     };
+    activeClosers.add(close);
 
     const onOutside = (event: MouseEvent): void => {
         const target = event.target as Node;
@@ -151,8 +153,16 @@ export function openModelPickerPopover(
     return { close };
 }
 
+/** 已打开弹层的关闭句柄：必须走 close() 才能解绑两个 document 监听 */
+const activeClosers = new Set<() => void>();
+
 /** 关闭页面上所有已打开的模型选择弹层 */
 export function closeExistingPopovers(): void {
+    for (const close of Array.from(activeClosers)) {
+        close();
+    }
+    activeClosers.clear();
+    // 兜底：父容器被外部移除等异常路径下残留的 DOM 节点
     document.querySelectorAll(`.${POPOVER_CLASS}`).forEach(el => el.remove());
 }
 

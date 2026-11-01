@@ -92,19 +92,30 @@ export class SerializedWriter {
     }
 
     /**
-     * 等待所有排队操作完成
+     * 等待所有排队操作完成。
+     *
+     * 不能无限等：底层写盘若卡住（Vault 锁 / 只读盘 / 网络盘），flush 会在
+     * 插件卸载或切章时永久挂起。超过 maxWaitMs 即返回并留下告警日志。
      */
-    async flush(): Promise<void> {
-        this.log.debug(`等待刷新，剩余: ${this.pendingCount}`);
+    async flush(timeoutMs: number = this.maxWaitMs): Promise<void> {
+        this.log.debug(`等待刷新，剩余: ${this.pendingCount}，超时 ${timeoutMs}ms`);
 
-        // 等待当前队列处理完毕
-        await this.queue;
+        const deadline = Date.now() + timeoutMs;
+        // 等待当前队列处理完毕（带超时）
+        await Promise.race([
+            this.queue,
+            new Promise<void>(resolve => setTimeout(resolve, Math.max(0, timeoutMs))),
+        ]);
 
         // 额外等待确保所有 pendingCount 归零
-        while (this.pendingCount > 0) {
+        while (this.pendingCount > 0 && Date.now() < deadline) {
             await new Promise(resolve => setTimeout(resolve, 10));
         }
 
+        if (this.pendingCount > 0) {
+            this.log.warn(`刷新超时（${timeoutMs}ms）：仍有 ${this.pendingCount} 个操作未完成，放行以避免阻塞`);
+            return;
+        }
         this.log.debug(`刷新完成`);
     }
 
@@ -114,6 +125,16 @@ export class SerializedWriter {
     markClean(): void {
         this._isDirty = false;
         this.log.debug(`标记为已清洁`);
+    }
+
+    /**
+     * 插件卸载 / 组件销毁前调用：尽量把队列写完，超时放行。
+     * 持有者（批量导入、指纹、偏好记忆、知识库）都必须在 onunload 里调用，
+     * 否则最后一批写入会随进程退出丢失。
+     */
+    async dispose(timeoutMs: number = this.maxWaitMs): Promise<void> {
+        await this.flush(timeoutMs);
+        this.reset();
     }
 
     /**

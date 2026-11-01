@@ -65,7 +65,7 @@ export class GenrePreferenceMemory {
     recordAutoClassify(): void {
         this.data.autoClassifyCount++;
         this.markDirty();
-        this.scheduleSave().catch(() => {});
+        this.scheduleSave().catch((e: unknown) => log.warn('[GenrePreferenceMemory] 保存失败:', e));
     }
 
     recordCorrection(record: Omit<GenreCorrectionRecord, 'timestamp'>): void {
@@ -93,7 +93,7 @@ export class GenrePreferenceMemory {
         }
 
         this.markDirty();
-        this.scheduleSave().catch(() => {});
+        this.scheduleSave().catch((e: unknown) => log.warn('[GenrePreferenceMemory] 保存失败:', e));
     }
 
     private updateGenreBias(corrected: string, original?: string): void {
@@ -238,7 +238,7 @@ export class GenrePreferenceMemory {
     reset(): void {
         this.data = { ...DEFAULT_PREFERENCE_DATA };
         this.markDirty();
-        this.scheduleSave().catch(() => {});
+        this.scheduleSave().catch((e: unknown) => log.warn('[GenrePreferenceMemory] 保存失败:', e));
     }
 
     private markDirty(): void {

@@ -160,6 +160,8 @@ export class FullWriterView extends ItemView {
     private logPanel: ExecutionLogPanel | null = null;
     private lastRunProgressMessage = '';
     private failureRenderTimer: ReturnType<typeof setTimeout> | null = null;
+    /** 项目创建后的延迟刷新：视图在 150ms 内关闭时必须取消，否则会往已销毁容器渲染 */
+    private projectRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
     private mainContainer: HTMLElement | null = null;
     private workspace: HTMLElement | null = null;
@@ -955,7 +957,11 @@ export class FullWriterView extends ItemView {
                 }
                 // 2. 直接调用 renderProjectSelectorInTab 强制重渲染（不依赖 refresh/container）
                 //    延迟 150ms 确保 vault.create 已完成
-                setTimeout(async () => {
+                if (this.projectRefreshTimer) clearTimeout(this.projectRefreshTimer);
+                this.projectRefreshTimer = setTimeout(async () => {
+                    this.projectRefreshTimer = null;
+                    // 视图已关闭时 contentEl 已脱离 DOM，继续渲染只会写进空容器
+                    if (!contentEl.isConnected) return;
                     try {
                         await this.renderProjectSelectorInTab();
                         // 3. 高亮新项目
@@ -1038,6 +1044,10 @@ export class FullWriterView extends ItemView {
         if (this.failureRenderTimer) {
             clearTimeout(this.failureRenderTimer);
             this.failureRenderTimer = null;
+        }
+        if (this.projectRefreshTimer) {
+            clearTimeout(this.projectRefreshTimer);
+            this.projectRefreshTimer = null;
         }
         this.flowPanelController?.dispose();
         this.unitWriterController?.dispose();

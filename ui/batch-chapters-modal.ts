@@ -190,12 +190,14 @@ export class BatchChaptersModal extends Modal {
         const total = targetNums.length;
         let done = 0;
         let failed = 0;
-        let mainNotice = new Notice(`⏳ 批量写正文: 0/${total}`, 0);
+        const failedChapters: string[] = [];
+        // 全程复用同一条常驻提示：逐章 hide + 新建会在 50/100 章时刷屏并抖动
+        let mainNotice: Notice | null = new Notice(`⏳ 批量写正文: 0/${total}`, 0);
 
         for (const n of targetNums) {
             if (signal.aborted) break;
             const chapName = `第${n}章`;
-            mainNotice.setMessage(`⏳ 批量写作: ${chapName}（${done + failed}/${total}）`);
+            mainNotice?.setMessage(`⏳ 批量写作: ${chapName}（${done + failed}/${total}）`);
             try {
                 await WriteChapterModal.doWriteChapter(
                     this.app, this.plugin, this.plugin.aiEngine, this.plugin.reviewAgent,
@@ -203,22 +205,23 @@ export class BatchChaptersModal extends Modal {
                 );
                 if (signal.aborted) break;
                 done++;
-                new Notice(`✅ ${chapName} 完成（${done}/${total}）`, 6000);
             } catch (e) {
                 failed++;
+                failedChapters.push(chapName);
                 log.warn(`${chapName} 失败:`, e);
-                new Notice(`❌ ${chapName} 失败: ${(e as Error).message}`, 8000);
             }
-            mainNotice.hide();
-            mainNotice = new Notice(`⏳ 批量写正文: ${done}/${total}`, 0);
+            mainNotice?.setMessage(`⏳ 批量写正文: ${done + failed}/${total}`);
         }
 
-        mainNotice.hide();
+        mainNotice?.hide();
+        mainNotice = null;
         await this.refreshInfoDebt(project);
         if (signal.aborted) {
             showWarning(`已取消批量写正文：已完成 ${done}/${total} 章，后续章节未执行`);
         } else if (failed > 0) {
-            showWarning(`批量写正文完成：成功 ${done}/${total}，失败 ${failed}`);
+            const listed = failedChapters.slice(0, 5).join('、');
+            const more = failedChapters.length > 5 ? '…' : '';
+            showWarning(`批量写正文完成：成功 ${done}/${total}，失败 ${failed}（${listed}${more}）`);
         } else {
             showSuccess(`批量写正文完成：${done}/${total} 章`);
         }

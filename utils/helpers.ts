@@ -109,14 +109,16 @@ export function extractChapterNumber(path: string): number | null {
 }
 
 export function getNextRowNum(content: string): number {
-    const match = content.match(/\| (\d+) \|/g);
+    // 列宽不固定（`| 1 |` 与 `|1|`，或补空格对齐），不能用 `| (\d+) |` 这种单空格模式
+    const match = content.match(/\|\s*(\d+)\s*\|/g);
     if (!match) return 1;
-    const nums = match.map(m => parseInt(m.match(/\| (\d+) \|/)![1]));
-    return Math.max(...nums) + 1;
+    const nums = match.map(m => parseInt(m.replace(/[^\d]/g, ''), 10)).filter(Number.isFinite);
+    return nums.length > 0 ? Math.max(...nums) + 1 : 1;
 }
 
 export function hasTableSeparator(content: string): boolean {
-    return content.includes('|---');
+    // 模板可能写成 `|---|` 或 `| --- |`
+    return /^\|[\s:|-]+\|/m.test(content);
 }
 
 export function appendAfterSeparator(content: string, newRow: string): string {
@@ -124,7 +126,7 @@ export function appendAfterSeparator(content: string, newRow: string): string {
     let found = false;
     
     for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes('|---')) {
+        if (/^\|[\s:|-]+\|/.test(lines[i])) {
             lines.splice(i + 1, 0, newRow);
             found = true;
             break;
@@ -141,10 +143,11 @@ export function getNextRowNumInSection(content: string, section: string): number
         if (inSection && l.startsWith('#')) break;
         if (!inSection) continue;
         if (!l.match(/^\|.*\|/)) continue;
-        const cols = l.split('|').map(s => s.trim()).filter(Boolean);
-        if (cols.length >= 1 && /^\d+$/.test(cols[0])) { 
-            const n = parseInt(cols[0]); 
-            if (n > maxNum) maxNum = n; 
+        // 保留空单元格位置，避免「计划回收」为空时整行左移
+        const cells = l.split('|').slice(1, -1).map(s => s.trim());
+        if (cells.length >= 1 && /^\d+$/.test(cells[0])) {
+            const n = parseInt(cells[0], 10);
+            if (n > maxNum) maxNum = n;
         }
     }
     return maxNum + 1;
@@ -153,18 +156,22 @@ export function getNextRowNumInSection(content: string, section: string): number
 export function renumberTable(lines: string[], section: string): void {
     let inSection = false, num = 1;
     for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes(section)) { inSection = true; continue; }
+        const line = lines[i];
+        if (line.includes(section)) { inSection = true; continue; }
         if (!inSection) continue;
-        if (lines[i].match(/^\|[- ]+\|/)) continue;
-        if (lines[i].match(/^\|.*\|/)) { 
-            const cols = lines[i].split('|'); 
-            if (cols.length >= 2 && /^\s*\d+\s*$/.test(cols[0].replace(/^\|/, "").trim())) { 
-                cols[0] = "| " + String(num); 
-                lines[i] = cols.join("|"); 
-                num++; 
-            } 
+        // 分隔行：`|---|` / `| --- |` / `|:--:|`
+        if (/^\|[\s:|-]+\|$/.test(line.trim())) continue;
+        if (/^\|.*\|$/.test(line.trim())) {
+            // 旧实现取 cols[0]===''（split 后的前导空串），正则永不命中 → 重编号恒为 no-op
+            const cells = line.trim().split('|').slice(1, -1).map(s => s.trim());
+            if (cells.length >= 2 && /^\d+$/.test(cells[0])) {
+                cells[0] = String(num);
+                lines[i] = `| ${cells.join(' | ')} |`;
+                num++;
+            }
+            continue;
         }
-        if (lines[i].startsWith("#") && !lines[i].includes(section)) break;
+        if (line.startsWith('#')) break;
     }
 }
 
@@ -176,7 +183,8 @@ export function moveForeshadowToRevealed(content: string, name: string, revealCh
         const l = lines[i];
         if (l.includes('已回收伏笔')) revealedStart = i;
         if (revealedStart === -1 && l.match(/^\|.*\|/)) {
-            const cols = l.split('|').map(s => s.trim()).filter(Boolean);
+            // 保留空单元格：filter(Boolean) 会把「计划回收」等空列丢掉，整行左移导致串列
+            const cols = l.trim().split('|').slice(1, -1).map(s => s.trim());
             if (cols.length >= 8 && cols[1] === name) { 
                 foundRow = i; 
                 foundCols = cols; 
@@ -192,7 +200,7 @@ export function moveForeshadowToRevealed(content: string, name: string, revealCh
     for (let i = 0; i < lines.length; i++) {
         if (lines[i].includes('已回收伏笔')) { 
             for (let j = i + 1; j < lines.length; j++) { 
-                if (lines[j].match(/^\|[- ]+\|/)) { 
+                if (/^\|[\s:|-]+\|$/.test(lines[j].trim())) { 
                     sepIdx = j; 
                     break; 
                 } 

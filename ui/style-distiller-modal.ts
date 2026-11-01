@@ -5,6 +5,7 @@ import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleBackupPa
 import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
 import { LoadingOverlayComponent } from './components/progress/loading-overlay';
 import { ProgressEmitter } from '../shared/progress-emitter';
+import { isImeComposing } from '../shared/keyboard';
 import {
     analyzeStyleFromSource,
     StyleDistillInput,
@@ -134,6 +135,7 @@ export class StyleDistillerModal extends Modal {
             await this.handleStartDistill(input);
         };
         nameInput.addEventListener('keydown', (e) => {
+            if (isImeComposing(e)) return;
             if (e.key === 'Enter' && !this.isAnalyzing) this.distillButton.click();
         });
     }
