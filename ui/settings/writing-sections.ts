@@ -8,6 +8,7 @@
  */
 import { Setting, Notice } from 'obsidian';
 import { renderAppearanceSettings } from '../appearance-settings';
+import { renderWritingStatsAndPetSettings } from '../writing-stats-settings';
 import { TemplateManager } from '../template-manager';
 import { getOllamaModelsWithFallback } from '../../engine/co-writer-engine';
 import { ProjectMigrationService } from '../../engine/project-migration-service';
@@ -504,6 +505,7 @@ export class AppearanceSection extends SettingsSection {
             compact: false,
             rerender: () => this.refresh(),
         });
+        renderWritingStatsAndPetSettings(section, this.plugin, () => this.refresh());
     }
 }
 

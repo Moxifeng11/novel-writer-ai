@@ -152,6 +152,8 @@ import { AIApiClient } from './ai-api-client';
 import { StyleLearner } from './style-learner';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
 import { UpdateChecker } from '../services/update-checker';
+import { WritingStatsService, type WritingStatsAppLike } from '../services/writing-stats-service';
+import { isChapterBodyPath } from '../shared/body-path';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import { pjFactIndexFile } from '../shared/paths';
 import { resolvePluginWorkerUrl } from '../shared/plugin-worker-url';
@@ -213,6 +215,7 @@ export interface EngineServiceMap {
     [ENGINE_NAMES.CHARACTER_GENERATOR]: CharacterGenerator;
     [ENGINE_NAMES.WORLDVIEW_CACHE_SERVICE]: WorldviewCacheService;
     [ENGINE_NAMES.UPDATE_CHECKER]: UpdateChecker;
+    [ENGINE_NAMES.WRITING_STATS]: WritingStatsService;
     [ENGINE_NAMES.TEMPLATE_SERVICE]: TemplateService;
     [ENGINE_NAMES.CHAPTER_VERSION_SERVICE]: ChapterVersionService;
     [ENGINE_NAMES.PROJECT_REPOSITORY]: ProjectRepository;
@@ -1300,6 +1303,18 @@ export class EngineRegistry {
             }
         );
         this.register(ENGINE_NAMES.UPDATE_CHECKER, updateChecker);
+
+        // ─── Phase 10: 写作统计台账（桌面宠物 / 状态栏 / 统计弹窗共用） ───
+        log.info('[EngineRegistry] Phase 10: 初始化写作统计...');
+        const pluginDir = (plugin as unknown as { manifest?: { dir?: string } }).manifest?.dir
+            || `${plugin.app.vault.configDir}/plugins/novel-writer-ai`;
+        const writingStats = new WritingStatsService({
+            app: plugin.app as unknown as WritingStatsAppLike,
+            ledgerPath: `${pluginDir}/data/writing-stats.json`,
+            // 判定放在 shared：services 不依赖 ui/engine
+            isBodyPath: (path: string) => isChapterBodyPath(path),
+        });
+        this.register(ENGINE_NAMES.WRITING_STATS, writingStats);
         log.info('[EngineRegistry] 全部初始化完成');
     }
 }

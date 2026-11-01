@@ -1,5 +1,5 @@
 import { InternalRegistry } from './shared/internal-registry';
-import { App, Plugin, PluginSettingTab, Setting, Notice, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, Notice, Platform, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { AIEngine } from './engine/ai-engine';
 import { CoWriterEngine } from './engine/co-writer-engine';
 import { ContextManager } from './engine/context-manager';
@@ -35,6 +35,10 @@ import { AiBuilderModal } from './ui/ai-builder-modal';
 import { UnifiedEntityManagerModal } from './ui/unified-entity-manager-modal';
 import { AddFanficSettingModal } from './ui/add-fanfic-setting-modal';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './ui/full-writer-view';
+import { WritingStatsService } from './services/writing-stats-service';
+import { WritingStatsModal } from './ui/writing-stats-modal';
+import { WritingPet } from './ui/writing-pet';
+import { formatWords } from './shared/writing-stats';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
 import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
@@ -386,6 +390,14 @@ export interface NovelWriterSettings {
     referenceBookIds?: string[];
     /** 参考书籍权重（bookId → 0.1~1），缺省 0.5；主参考固定按 1 处理 */
     referenceBookWeights?: Record<string, number>;
+    /** 桌面宠物：浮窗显示每日字数（移动端不创建） */
+    petEnabled?: boolean;
+    /** 宠物窗口位置（左上角像素） */
+    petPosition?: { x: number; y: number };
+    /** 每日目标字数，0 = 不设目标 */
+    dailyWordTarget?: number;
+    /** 状态栏显示今日字数 */
+    showWordCountInStatusBar?: boolean;
     /** 浮窗工作台布局（位置/折叠状态/自动恢复） */
     panelLayout?: {
         panels: Array<{
@@ -552,6 +564,18 @@ export default class NovelWriterPlugin extends Plugin {
     /** 当前选中的参考书籍ID列表（用于生成时注入） */
     public referenceBookIds: string[] = [];
 
+    /** 写作统计台账（每日/周/月产出的唯一数据源） */
+    private _writingStats: WritingStatsService | null = null;
+    /** 桌面宠物浮窗（body 级，非 workspace leaf） */
+    private _writingPet: WritingPet | null = null;
+    /** 状态栏「今日字数」元素 */
+    private _wordCountStatusEl: HTMLElement | null = null;
+
+    /** 供 UI 层读取统计服务（弹窗/宠物/设置页） */
+    public get writingStats(): WritingStatsService | null {
+        return this._writingStats;
+    }
+
     /** 提示词管理器 */
     public promptManager?: PromptManager;
 
@@ -659,6 +683,8 @@ export default class NovelWriterPlugin extends Plugin {
             // 启动路径只走 SettingsService.loadSettings()，不会调用 plugin.loadSettings()，
             // 不在这里补一次，重启后协同写作的参考书籍与主参考会全部为空。
             this.referenceBookIds = [...(this.settings.referenceBookIds ?? [])];
+            // 写作统计 + 桌面宠物 + 状态栏今日字数
+            await this._initWritingStats();
 
             // R2: 应用用户扩充的 AI 味词表（默认空数组 → 与内置词表行为一致）
             AntiAIDetector.setExtraHighFreqWords(this.settings.antiAiExtraWords ?? []);
@@ -1282,6 +1308,103 @@ export default class NovelWriterPlugin extends Plugin {
         refreshAllModelSwitchers();
     }
 
+    // ─── 写作统计 / 桌面宠物 / 状态栏 ───
+    /** 初始化统计台账：事件驱动增量更新，layout ready 后做一次全量补齐 */
+    private async _initWritingStats(): Promise<void> {
+        const service = this.engineRegistry.getOrNull<WritingStatsService>(ENGINE_NAMES.WRITING_STATS);
+        this._writingStats = service ?? null;
+        if (!service) return;
+        service.setOnUpdated(() => this.refreshWritingSurfaces());
+
+        const onChange = (file: unknown) => {
+            if (file instanceof TFile) void this._writingStats?.handleFileChange(file);
+        };
+        this.registerEvent(this.app.vault.on('modify', onChange));
+        this.registerEvent(this.app.vault.on('create', onChange));
+        this.registerEvent(this.app.vault.on('delete', (file) => {
+            if (file instanceof TFile) this._writingStats?.handleFileDelete(file.path);
+        }));
+
+        this.app.workspace.onLayoutReady(() => {
+            void this._writingStats?.scan().then(() => this.refreshWritingSurfaces());
+        });
+        // 跨天刷新：0 点后「今日」要归零，不能等下次写盘
+        this.registerInterval(window.setInterval(() => this.refreshWritingSurfaces(), 60_000));
+
+        this._setupWordCountStatusBar();
+        this.setWritingPetEnabled(this.settings.petEnabled !== false);
+        this.refreshWritingSurfaces();
+    }
+
+    private _setupWordCountStatusBar(): void {
+        if (Platform.isMobile) return;
+        const el = this.addStatusBarItem();
+        el.addClass('nw-wordcount-status');
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        el.addEventListener('click', () => this.openWritingStats());
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.openWritingStats();
+            }
+        });
+        this._wordCountStatusEl = el;
+    }
+
+    /** 状态栏 / 宠物统一刷新入口（统计变更、定时器、设置改动都会走这里） */
+    public refreshWritingSurfaces(): void {
+        const summary = this._writingStats?.getReport().global;
+        if (summary && this._wordCountStatusEl) {
+            const show = this.settings.showWordCountInStatusBar !== false;
+            this._wordCountStatusEl.setText(show ? `✍️ 今日 ${formatWords(summary.today)} 字` : '');
+            this._wordCountStatusEl.toggleClass('nw-status-hidden', !show);
+            this._wordCountStatusEl.setAttribute(
+                'aria-label',
+                `今日 ${formatWords(summary.today)} 字，本周 ${formatWords(summary.week)} 字，点击查看写作统计`,
+            );
+            this._wordCountStatusEl.setAttribute('title', '点击查看写作统计');
+        }
+        this._writingPet?.update();
+    }
+
+    public openWritingStats(): void {
+        // 打开前扫一次增量，保证刚写完的章立刻反映在统计里
+        void this._writingStats?.scan().then(() => this.refreshWritingSurfaces());
+        new WritingStatsModal(this.app, this, 'day').open();
+    }
+
+    /** 桌面宠物开关（设置页、命令、宠物自身关闭按钮共用） */
+    public setWritingPetEnabled(enabled: boolean): void {
+        this.settings.petEnabled = enabled;
+        if (!enabled || Platform.isMobile) {
+            this._writingPet?.destroy();
+            this._writingPet = null;
+            return;
+        }
+        if (!this._writingPet) {
+            this._writingPet = new WritingPet({
+                plugin: this,
+                getSummary: () => this._writingStats?.getReport().global ?? null,
+                getTarget: () => Number(this.settings.dailyWordTarget) || 0,
+                openStats: () => this.openWritingStats(),
+                hide: () => {
+                    this.setWritingPetEnabled(false);
+                    void this.saveSettings();
+                },
+            });
+        }
+        this._writingPet.mount();
+        this._writingPet.update();
+    }
+
+    public toggleWritingPet(): void {
+        const next = this.settings.petEnabled === false;
+        this.setWritingPetEnabled(next);
+        void this.saveSettings();
+        new Notice(next ? '🐾 桌面宠物已开启（可拖动）' : '🐾 桌面宠物已隐藏（设置 → 外观可重新开启）');
+    }
+
     // ─── 提供商管理（委托至 core/provider-manager）───
     public getCurrentProviderId(): string | null { return this._providerManager.getCurrentProviderId(); }
     public switchProviderByEndpoint(endpoint: string): boolean { return this._providerManager.switchByEndpoint(endpoint); }
@@ -1653,6 +1776,10 @@ export default class NovelWriterPlugin extends Plugin {
 
     onunload() {
         // 清理拆解调度器资源（定时器、看门狗、事件监听器）
+        this._writingPet?.destroy();
+        this._writingPet = null;
+        this._writingStats?.dispose();
+        this._wordCountStatusEl = null;
         this.deconstructionScheduler?.destroy();
         // 清理防抖管理器
         this._debounceManager.dispose();

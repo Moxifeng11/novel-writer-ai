@@ -118,13 +118,18 @@ describe('动效统一（zcode 手感）', () => {
 
     it('常驻 infinite 动画只保留必要的几个', () => {
         const infinite = [...css.matchAll(/animation:\s*([\w-]+)[^;]*infinite/g)].map(m => m[1]);
-        // 只允许：流式光标、进度条、打字点、计划脉冲
+        // 只允许：流式光标、进度条、打字点、计划脉冲、
+        // 桌面宠物待机三件套（漂浮/摆尾/眨眼，宠物不动的观感接近「卡死」）
         const allowed = new Set([
             'nw-stream-blink',
             'nw-indeterminate',
             'nw-progress-anim',
             'nw-awb-dot-pulse',
             'nw-awb-plan-pulse',
+            'nw-pet-float',
+            'nw-pet-tail',
+            'nw-pet-blink',
+            'nw-pet-happy',
         ]);
         for (const name of infinite) {
             expect(allowed.has(name)).toBe(true);

@@ -318,6 +318,8 @@ export class CommandRegistry {
             // 命令面板里注册了「🧭 创作流程」，但不在本表 → execute 找不到、
             // CommandUiExecutor 的 CREATION_FLOW 分支永远不可达（点了没反应）。
             CommandIds.CREATION_FLOW,
+            CommandIds.WRITING_STATS,
+            CommandIds.TOGGLE_PET,
         ];
         for (const id of uiCommandIds) {
             r.register(id, async () => { await this.ui.executeCommand(id); });
@@ -438,6 +440,8 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.GENERATE_BASES, name: '📊 生成/刷新项目看板（Bases）', callback: exec(CommandIds.GENERATE_BASES) });
         addCommand({ id: CommandIds.MIGRATE_NAMESPACE_TAGS, name: '🏷️ 补齐分层标签（先预览）', callback: exec(CommandIds.MIGRATE_NAMESPACE_TAGS) });
         addCommand({ id: CommandIds.COMPLETE_PROPERTIES, name: '🧩 补齐笔记属性（先预览）', callback: exec(CommandIds.COMPLETE_PROPERTIES) });
+        addCommand({ id: CommandIds.WRITING_STATS, name: '📊 写作统计（日/周/月）', callback: exec(CommandIds.WRITING_STATS) });
+        addCommand({ id: CommandIds.TOGGLE_PET, name: '🐾 显示/隐藏桌面宠物', callback: exec(CommandIds.TOGGLE_PET) });
         addCommand({ id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', checkCallback: execGuarded(CommandIds.CO_WRITING, LONG_ONLY) });
         addCommand({ id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', checkCallback: execGuarded(CommandIds.BATCH_NOVELS, LONG_ONLY) });
         addCommand({ id: 'novel-writer-fingerprint-library', name: '🔍 打开写作指纹库', callback: exec('novel-writer-fingerprint-library') });

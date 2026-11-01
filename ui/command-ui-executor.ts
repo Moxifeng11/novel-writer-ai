@@ -247,6 +247,12 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.CREATION_FLOW:
                 void plugin.openCreationFlow(resolveProject());
                 return true;
+            case CommandIds.WRITING_STATS:
+                plugin.openWritingStats();
+                return true;
+            case CommandIds.TOGGLE_PET:
+                plugin.toggleWritingPet();
+                return true;
             case CommandIds.MIGRATE_ENTITY_LINKS:
                 void this.runEntityLinkMigration(resolveProject());
                 return true;

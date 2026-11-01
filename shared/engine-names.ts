@@ -50,4 +50,6 @@ export const ENGINE_NAMES = {
     FACTION_REPOSITORY: 'factionRepository',
     LOCATION_REPOSITORY: 'locationRepository',
     ITEM_REPOSITORY: 'itemRepository',
+    /** 每日/周/月字数产出台账（桌面宠物与统计弹窗的数据源） */
+    WRITING_STATS: 'writingStats',
 } as const;

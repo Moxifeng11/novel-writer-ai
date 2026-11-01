@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-31T00:00:00.000Z",
-  "note": "棘轮基线（v4.20 dsh 对话能力）：新增 Agent 输入增强样式（引用条/引用按钮/@ 候选弹层/会话标题）与 textarea 自适应；唯一类 +13、体积 +2824、rgb/hsl +1（阴影），其余指标不变。2026-10-31 C3 样式拆分：styles.css 改为由 styles-src/*.css 拼接的产物，体积 +1351 全部来自自动生成头注释，选择器与规则零改动（唯一类 / !important / hex / 深度均不变）。",
-  "bytes": 452262,
+  "generatedAt": "2026-11-01T09:09:28.863Z",
+  "note": "棘轮基线：指标只能下降。2026-11-01 新增「写作统计 + 桌面宠物」UI（styles-src/16-writing-stats-pet.css）；宠物待机动效放在内层 SVG（外层是点击目标，持续位移会让点击目标一直「不稳定」），并补 prefers-reduced-motion 关闭动效。显式上调 uniqueClasses/bytes，其余指标（hex/rgb/important/otherClasses/深度）保持不变。",
+  "bytes": 459995,
   "important": 164,
   "hardcodedHex": 154,
   "rgbHsl": 181,
-  "uniqueClasses": 2346,
+  "uniqueClasses": 2391,
   "otherClasses": 87,
   "maxSelectorDepth": 4
 }

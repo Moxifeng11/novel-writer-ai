@@ -23,6 +23,7 @@ import {
 const CREATE_PROJECT_COMMAND = toObsidianCommandId('novel-writer-create-project');
 const AGENT_GUIDE_COMMAND = toObsidianCommandId('novel-writer-agent-guide');
 const SETTINGS_COMMAND = toObsidianCommandId('novel-writer-open-settings');
+const TOGGLE_PET_COMMAND = toObsidianCommandId('novel-writer-toggle-pet');
 const FULL_WRITER_VIEW_TYPE = 'novel-writer-full-writer';
 
 test.describe('Novel Writer AI · 真实 Electron 链路', () => {
@@ -572,6 +573,104 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
             const host = window as unknown as { app?: { setting?: { close?(): void } } };
             host.app?.setting?.close?.();
         });
+    });
+
+    test('桌面宠物显示今日字数，统计弹窗可按日/周/月切换', async () => {
+        const { page } = session;
+
+        // 宠物默认开启（移动端不创建；这里是桌面 Electron）
+        await expect.poll(async () => page.locator('.nw-pet').count(), { timeout: 15_000 }).toBe(1);
+
+        // 造一章正文（word_count=1500）并让统计服务扫一次，图表才有数据可断言
+        const seeded = await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: {
+                    vault?: {
+                        create(path: string, data: string): Promise<unknown>;
+                        createFolder(path: string): Promise<unknown>;
+                        getAbstractFileByPath(path: string): unknown;
+                    };
+                    plugins?: { plugins?: Record<string, {
+                        writingStats?: { scan(): Promise<void> };
+                        refreshWritingSurfaces?(): void;
+                    }> };
+                };
+            };
+            const vault = host.app?.vault;
+            const plugin = host.app?.plugins?.plugins?.['novel-writer-ai'];
+            if (!vault || !plugin) return false;
+            const dirs = ['长篇小说', '长篇小说/E2E统计', '长篇小说/E2E统计/03-大纲与章节', '长篇小说/E2E统计/03-大纲与章节/正文', '长篇小说/E2E统计/03-大纲与章节/正文/第1卷'];
+            for (const dir of dirs) {
+                if (vault.getAbstractFileByPath(dir)) continue;
+                try {
+                    await vault.createFolder(dir);
+                } catch {
+                    // 并发创建/已存在：继续
+                }
+            }
+            const path = '长篇小说/E2E统计/03-大纲与章节/正文/第1卷/第1章_正文.md';
+            try {
+                // 不写 word_count：验证「frontmatter 缺失时按正文字符数兜底」这条路径
+                const body = ['---', 'status: written', '---', '', '字'.repeat(1500), ''].join('\n');
+                await vault.create(path, body);
+            } catch {
+                return false;
+            }
+            await plugin.writingStats?.scan();
+            plugin.refreshWritingSurfaces?.();
+            return true;
+        });
+        expect(seeded).toBe(true);
+
+        // 今日字数至少包含刚写的 1500 字（同一次会话里别的用例也会写正文，所以用下界断言）
+        await expect.poll(async () => {
+            const text = await page.locator('.nw-pet-bubble-main').innerText();
+            const matched = text.match(/今日\s*([\d,]+)\s*字/);
+            return matched ? parseInt(matched[1].replace(/,/g, ''), 10) : 0;
+        }, { timeout: 15_000 }).toBeGreaterThanOrEqual(1500);
+
+        // 单击展开迷你卡（本周/本月/累计/连续）
+        await page.locator('.nw-pet-body-wrap').click();
+        await expect.poll(async () => page.locator('.nw-pet-card-row').count(), { timeout: 5_000 }).toBe(4);
+        const cardLabels = await page.locator('.nw-pet-card-row').allInnerTexts();
+        expect(cardLabels.join(' ')).toContain('本周');
+        expect(cardLabels.join(' ')).toContain('本月');
+
+        // 双击宠物打开统计弹窗。
+        // Obsidian 的 Modal 可能落在独立页面（弹窗窗口），要在所有 page 里找。
+        await page.locator('.nw-pet-body-wrap').dblclick();
+        const findStatsPage = async () => {
+            for (const candidate of page.context().pages()) {
+                if (await candidate.locator('.nw-stats-modal').count() > 0) return candidate;
+            }
+            return null;
+        };
+        let statsPage = null;
+        for (let i = 0; i < 40 && !statsPage; i++) {
+            statsPage = await findStatsPage();
+            if (!statsPage) await page.waitForTimeout(250);
+        }
+        expect(statsPage).not.toBeNull();
+        const modalPage = statsPage!;
+
+        const tabs = await modalPage.locator('.nw-stats-tab').allInnerTexts();
+        expect(tabs).toEqual(['按日', '按周', '按月']);
+
+        // SVG 里的 <text> 不进 innerText，只能读 textContent
+        const chartText = async () => (await modalPage.locator('.nw-stats-chart')
+            .evaluate(el => el.textContent || '')).replace(/\s+/g, ' ');
+        await modalPage.locator('.nw-stats-tab', { hasText: '按周' }).click();
+        await expect.poll(chartText, { timeout: 5_000 }).toContain('最近 8 周');
+        await modalPage.locator('.nw-stats-tab', { hasText: '按月' }).click();
+        await expect.poll(chartText, { timeout: 5_000 }).toContain('最近 6 个月');
+
+        await modalPage.keyboard.press('Escape');
+
+        // 命令切换宠物：隐藏 → 再显示
+        expect(await executeCommand(page, TOGGLE_PET_COMMAND)).toBe(true);
+        await expect.poll(async () => page.locator('.nw-pet').count(), { timeout: 10_000 }).toBe(0);
+        expect(await executeCommand(page, TOGGLE_PET_COMMAND)).toBe(true);
+        await expect.poll(async () => page.locator('.nw-pet').count(), { timeout: 10_000 }).toBe(1);
     });
 
     test('工作台分隔条可拖拽并持久化宽度', async () => {

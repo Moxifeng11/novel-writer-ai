@@ -307,6 +307,10 @@ export function getDefaultSettings(): NovelWriterSettings {
         coWriteCloudModel: '',
         referenceBookIds: [],
         referenceBookWeights: {},
+        // 桌面宠物默认开启（移动端不创建）；每日目标 3000 字，可在设置里改
+        petEnabled: true,
+        dailyWordTarget: 3000,
+        showWordCountInStatusBar: true,
         autoPlotEvaluation: true,
         autoGhostAssociation: true,
         precisionMode: false,

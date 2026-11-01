@@ -93,6 +93,8 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.COMPLETE_PROPERTIES,
     // 命令面板已注册「创作流程」但不在 UI 委托表 → exec 找不到、点了无反应；补进来
     CommandIds.CREATION_FLOW,
+    CommandIds.WRITING_STATS,
+    CommandIds.TOGGLE_PET,
 ];
 
 interface Harness {

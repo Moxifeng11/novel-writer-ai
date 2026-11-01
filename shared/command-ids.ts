@@ -89,6 +89,10 @@ export const CommandIds = {
     VERSION_HISTORY: 'novel-writer-version-history',
     SAVE_VERSION: 'novel-writer-save-version',
 
+    // ─── 写作统计 / 桌面宠物 ───
+    WRITING_STATS: 'novel-writer-writing-stats',
+    TOGGLE_PET: 'novel-writer-toggle-pet',
+
     // ─── 设置 ───
     OPEN_SETTINGS: 'novel-writer-open-settings',
 
