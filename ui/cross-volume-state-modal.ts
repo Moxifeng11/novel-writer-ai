@@ -2,6 +2,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import { splitTableCells } from '../shared/chapter-table';
 import NovelWriterPlugin from '../main';
 import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { listFolderFiles } from '../shared/vault-tree';
 import { pjBodyDir, pjControlDir, pjCharsDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
 import { mkdirp } from '../utils/helpers';
 import { createLogger } from '../shared/logger';
@@ -94,9 +95,8 @@ export class CrossVolumeStateModal extends Modal {
         // v4.0：正文位于 03-大纲与章节/正文/第N卷/
         const volN = parseInt(volName.match(/\d+/)?.[0] || '0');
         const bodyDir = pjBodyDir(project, volN);
-        const chapFiles = this.app.vault.getFiles().filter(f =>
-            f.path.startsWith(`${bodyDir}/`) && f.name.includes(CHAPTER_FILE_TYPES.body)
-        );
+        const chapFiles = listFolderFiles<TFile>(this.app.vault, bodyDir)
+            .filter(f => f.name.includes(CHAPTER_FILE_TYPES.body));
 
         const chapNums = chapFiles.map(f => {
             const m = f.name.match(/第(\d+)章/);
@@ -115,8 +115,8 @@ export class CrossVolumeStateModal extends Modal {
         }
 
         let allChars = '';
-        for (const f of this.app.vault.getFiles()) {
-            if (f.path.startsWith(`${pjCharsDir(project)}/`) && f.name !== '人物模板.md') {
+        for (const f of listFolderFiles<TFile>(this.app.vault, pjCharsDir(project))) {
+            if (f.name !== '人物模板.md') {
                 const c = await this.app.vault.read(f);
                 const fm = c.match(/^---\n([\s\S]*?)\n---/);
                 if (fm) {
