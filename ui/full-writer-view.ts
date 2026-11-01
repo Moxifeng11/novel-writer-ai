@@ -1244,6 +1244,7 @@ export class FullWriterView extends ItemView {
             buildTemplateVars: () => this.buildTemplateVars(),
             saveStepResult: async (key, content, meta) => { await this.stepRunner.saveStepResult(key, content, this.chapDir, this.chapterName, this.volume, meta); },
             renderInContainer: (c) => this.renderInContainer(c),
+            refreshAfterStep: () => this.refreshAfterStep(),
             setIsLoading: (v) => {
                 this.isLoading = v;
                 if (!v) this.stepAbortController = null;
@@ -1877,11 +1878,102 @@ export class FullWriterView extends ItemView {
     }
 
     // ============================================================
+    // 步骤完成后的分片刷新（G6-5）
+    // ============================================================
+
+    /** 带 data-nw-region 的可刷新区域 */
+    private stepRegion(parent: HTMLElement, name: string): HTMLElement {
+        return parent.createDiv({ cls: 'novel-writer-fw-region', attr: { 'data-nw-region': name } });
+    }
+
+    /** 前置步骤提醒（完成前置后需要整块消失，所以单独成区） */
+    private renderStepNotice(area: HTMLElement, currentStep: FullStep): void {
+        if (currentStep.index < 2 || currentStep.index > 9) return;
+        const stepPos = ALL_FULL_STEPS.findIndex(s => s.index === currentStep.index);
+        const prevStep = stepPos > 0 ? ALL_FULL_STEPS[stepPos - 1] : undefined;
+        const prevStepKey = prevStep?.key || (prevStep?.index === 0 ? 'context' : 'settlement');
+        if (this.stepCompleted.has(prevStepKey)) return;
+        const warning = area.createDiv({ cls: 'novel-writer-fw-warning' });
+        warning.createSpan({ text: `⚠️ 建议先完成「${prevStep?.label ?? '前置'}」步骤，再执行当前步骤以确保数据连贯性。` });
+    }
+
+    /**
+     * 步骤完成后的分片刷新。
+     *
+     * 旧实现每次都 renderInContainer(tabContent)：标题栏、执行日志浮层、阶段导航、
+     * 上下文面板、三栏分隔条、状态栏全部重建，提示词编辑器的展开状态与滚动位置
+     * 也会被重置。这里只重绘与本步结果相关的区域，其余 DOM 原样保留。
+     * 实测（E2E STEP_REFRESH_CHURN）：分片 71 节点 / 整页 494 节点。
+     *
+     * 结构不完整（自动步骤/切页/旧渲染）时退回整页渲染：功能正确性优先。
+     */
+    private refreshAfterStep(): void {
+        const area = this.workspace?.querySelector<HTMLElement>('.novel-writer-fw-prompt-area');
+        const step = findStepByIndex(this.currentStepIndex);
+        const stepKey = step?.key;
+        const regionNames = ['notice', 'actions', 'status', 'planning', 'review', 'result', 'extras'];
+        const missing = !area
+            || !step
+            || !stepKey
+            || regionNames.some(name => !area.querySelector(`[data-nw-region="${name}"]`));
+        if (missing || !area || !step || !stepKey) {
+            void this.renderInContainer(this.tabContent);
+            return;
+        }
+
+        const key = stepKey;
+        this.replaceStepRegion(area, 'notice', region => this.renderStepNotice(region, step));
+        this.replaceStepRegion(area, 'actions', region => this.renderStepActionBar(region, step, key));
+        this.replaceStepRegion(area, 'status', region => this.renderExecutionStatus(region, key));
+        this.replaceStepRegion(area, 'planning', region => {
+            if (key === 'infoPlan') this.renderPlanningQuickStart(region);
+        });
+        this.replaceStepRegion(area, 'review', region => {
+            if (key === 'qualityControl' || key === 'analysisReport') this.renderReviewPhaseTabs(region, key);
+        });
+        this.replaceStepRegion(area, 'result', region => this.renderResultArea(region, key));
+        this.replaceStepRegion(area, 'extras', region => this.renderStepExtras(region, step, key));
+        this.refreshStepNavState();
+    }
+
+    private replaceStepRegion(
+        area: HTMLElement,
+        name: string,
+        render: (region: HTMLElement) => void,
+    ): void {
+        const region = area.querySelector<HTMLElement>(`[data-nw-region="${name}"]`);
+        if (!region) return;
+        region.empty();
+        render(region);
+    }
+
+    /** 导航里的步骤完成标记：分片刷新不重建导航，但状态必须跟上 */
+    private refreshStepNavState(): void {
+        const nav = this.workspace?.querySelector<HTMLElement>('.novel-writer-fw-step-nav');
+        if (!nav) return;
+        const currentKey = findStepByIndex(this.currentStepIndex)?.key;
+        nav.querySelectorAll<HTMLElement>('[data-nw-substep]').forEach(sub => {
+            const key = sub.dataset.nwSubstep;
+            if (!key) return;
+            const done = this.stepCompleted.has(key);
+            const partial = !done && (this.chapterStateManager.stepLevels[key] === 'partial' || Boolean(this.stepResults[key]));
+            const icon = sub.querySelector<HTMLElement>('.novel-writer-fw-substep-icon');
+            if (icon) icon.setText(done ? '✅' : partial ? '◐' : '○');
+            sub.setAttr('title', done ? '已完成' : partial ? '部分完成' : '未执行');
+            sub.toggleClass('novel-writer-fw-substep-active', key === currentKey);
+        });
+    }
+
+    // ============================================================
     // 中间提示词工作区
     // ============================================================
     private async renderPromptArea(workspace: HTMLElement): Promise<void> {
         const area = workspace.createDiv({ cls: 'novel-writer-fw-prompt-area' });
+        await this.renderPromptAreaInto(area);
+    }
 
+    /** 把当前步骤渲染进已存在的提示词区（整页渲染与步骤完成后的分片刷新共用） */
+    private async renderPromptAreaInto(area: HTMLElement): Promise<void> {
         // 当前步骤信息
         const currentStep = findStepByIndex(this.currentStepIndex);
         if (!currentStep) {
@@ -1904,17 +1996,8 @@ export class FullWriterView extends ItemView {
         const hasCustomTemplate = await templateService.hasCustomPrompt(stepKey);
         const customTemplate = hasCustomTemplate ? await templateService.getStepPrompt(stepKey) : null;
 
-        // 检查前置步骤是否完成，未完成则显示提醒
-        if (currentStep && currentStep.index >= 2 && currentStep.index <= 9) {
-            // V2: 找到当前步骤在数组中的位置，取前一个
-            const stepPos = ALL_FULL_STEPS.findIndex(s => s.index === currentStep.index);
-            const prevStep = stepPos > 0 ? ALL_FULL_STEPS[stepPos - 1] : undefined;
-            const prevStepKey = prevStep?.key || (prevStep?.index === 0 ? 'context' : 'settlement');
-            if (!this.stepCompleted.has(prevStepKey)) {
-                const warning = area.createDiv({ cls: 'novel-writer-fw-warning' });
-                warning.createSpan({ text: `⚠️ 建议先完成「${prevStep?.label ?? '前置'}」步骤，再执行当前步骤以确保数据连贯性。` });
-            }
-        }
+        // 检查前置步骤是否完成，未完成则显示提醒（独立区域：步骤完成后可单独刷新移除）
+        this.renderStepNotice(this.stepRegion(area, 'notice'), currentStep);
 
         const vars = await this.buildTemplateVars();
         this.vars = vars;
@@ -1937,19 +2020,23 @@ export class FullWriterView extends ItemView {
         header.createEl('p', { text: template.description, cls: 'novel-writer-fw-step-desc' });
 
         // 操作栏紧跟标题，避免用户每次滚过整段提示词才能点到生成按钮。
-        this.renderStepActionBar(area, currentStep, stepKey);
-        this.renderExecutionStatus(area, stepKey);
+        // 每个动态区块都带 data-nw-region：步骤完成后只重绘这些块（G6-5）。
+        this.renderStepActionBar(this.stepRegion(area, 'actions'), currentStep, stepKey);
+        this.renderExecutionStatus(this.stepRegion(area, 'status'), stepKey);
 
+        // 区域先建再填：非 infoPlan/质控步骤也要有占位，否则分片刷新只能退回整页渲染
+        const planningRegion = this.stepRegion(area, 'planning');
         if (stepKey === 'infoPlan') {
-            this.renderPlanningQuickStart(area);
+            this.renderPlanningQuickStart(planningRegion);
         }
 
+        const reviewRegion = this.stepRegion(area, 'review');
         if (stepKey === 'qualityControl' || stepKey === 'analysisReport') {
-            this.renderReviewPhaseTabs(area, stepKey);
+            this.renderReviewPhaseTabs(reviewRegion, stepKey);
         }
 
         // 结果优先展示：先让用户看到本步实际产出，再决定是否展开提示词编辑。
-        this.renderResultArea(area, stepKey);
+        this.renderResultArea(this.stepRegion(area, 'result'), stepKey);
 
         const systemPromptValue = fillTemplate(template.systemPrompt, vars);
         const userPromptValue = fillTemplate(template.userPrompt, vars);
@@ -1964,6 +2051,13 @@ export class FullWriterView extends ItemView {
         //     await this.outlineTreeController.render(previewSection);
         // }
 
+        // 步骤级附加操作（消痕/精修/定向修订/人味体检）+「继续下一步」，
+        // 同样独立成区：步骤完成时只重绘这里，不动提示词编辑器。
+        this.renderStepExtras(this.stepRegion(area, 'extras'), currentStep, stepKey);
+    }
+
+    /** 步骤完成后的附加按钮区（消痕/精修/定向修订/人味体检 + 继续下一步） */
+    private renderStepExtras(area: HTMLElement, currentStep: FullStep, stepKey: string): void {
         // 步骤4完成后：显示消痕和迭代按钮
         if (stepKey === 'bodyGeneration' && this.stepCompleted.has('bodyGeneration')) {
             const deaiBtnRow = area.createDiv({ cls: 'novel-writer-fw-btn-row' });

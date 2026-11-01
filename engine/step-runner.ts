@@ -774,6 +774,18 @@ export class StepRunner {
     }
 
     /**
+     * 步骤成功后的刷新入口（G6-5）。
+     * 宿主提供 refreshAfterStep 时只重绘本步区域；否则退回整页重建。
+     */
+    private async afterStep(ctx: StepRunCtx): Promise<void> {
+        if (ctx.refreshAfterStep) {
+            ctx.refreshAfterStep();
+            return;
+        }
+        await ctx.renderInContainer(ctx.tabContent);
+    }
+
+    /**
      * 执行当前步骤的 AI 请求（策略驱动分发）
      */
     async executeCurrentStep(ctx: StepRunCtx): Promise<void> {
@@ -1343,7 +1355,7 @@ export class StepRunner {
             }
 
             this.callbacks.hideProgress();
-            await ctx.renderInContainer(ctx.tabContent);
+            await this.afterStep(ctx);
 
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);

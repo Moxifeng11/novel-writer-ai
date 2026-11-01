@@ -120,6 +120,8 @@ export class StepRenderController {
                 if (stepIndex === cs.currentStepIndex) cls.push('novel-writer-fw-substep-active');
                 if (def?.required) cls.push('novel-writer-fw-substep-required');
                 const sub = list.createDiv({ cls: cls.join(' ') });
+                // G6-5：分片刷新按 key 定位并更新完成标记
+                sub.setAttr('data-nw-substep', stepKey);
                 sub.createSpan({ text: icon, cls: 'novel-writer-fw-substep-icon' });
                 sub.createSpan({ text: def?.label || stepKey, cls: 'novel-writer-fw-substep-label' });
                 if (def?.required) sub.createSpan({ text: '必做', cls: 'novel-writer-fw-substep-mark' });

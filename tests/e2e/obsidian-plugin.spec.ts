@@ -977,6 +977,66 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(layout.navVar).toContain('px');
         expect(layout.ctxVar).toContain('px');
 
+        // G6-5：步骤完成后的刷新只重绘本步区域（data-nw-region）。
+        // 旧实现每次 renderInContainer(tabContent) 会重建标题栏/导航/上下文面板/分隔条/状态栏。
+        const churn = await page.evaluate(() => new Promise<{ added: number; removed: number; regions: number }>((resolve) => {
+            const host = window as unknown as {
+                app?: { workspace?: { getLeavesOfType(type: string): Array<{ view: unknown }> } };
+            };
+            const leaves = host.app?.workspace?.getLeavesOfType('novel-writer-full-writer') ?? [];
+            const view = leaves[leaves.length - 1]?.view as unknown as {
+                tabContent: HTMLElement;
+                refreshAfterStep(): void;
+            };
+            if (!view?.tabContent) { resolve({ added: -1, removed: -1, regions: 0 }); return; }
+            const regions = view.tabContent.querySelectorAll('[data-nw-region]').length;
+            let added = 0;
+            let removed = 0;
+            const observer = new MutationObserver((records) => {
+                for (const record of records) {
+                    added += record.addedNodes.length;
+                    removed += record.removedNodes.length;
+                }
+            });
+            observer.observe(view.tabContent, { childList: true, subtree: true });
+            view.refreshAfterStep();
+            setTimeout(() => {
+                observer.disconnect();
+                resolve({ added, removed, regions });
+            }, 0);
+        }));
+        console.log('STEP_REFRESH_CHURN ' + JSON.stringify(churn));
+
+        // 分片刷新前必须先有区域标记；没有就说明退化回了旧渲染结构
+        expect(churn.regions).toBeGreaterThanOrEqual(7);
+        expect(churn.added).toBeGreaterThan(0);
+        // 验收口径：单次步骤完成新增节点 <100
+        expect(churn.added).toBeLessThan(100);
+
+        // 对照：整页重建的节点数必须明显更高，否则这个测试没有意义
+        const fullChurn = await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: { workspace?: { getLeavesOfType(type: string): Array<{ view: unknown }> } };
+            };
+            const leaves = host.app?.workspace?.getLeavesOfType('novel-writer-full-writer') ?? [];
+            const view = leaves[leaves.length - 1]?.view as unknown as {
+                tabContent: HTMLElement;
+                renderInContainer(container: HTMLElement): Promise<void>;
+            };
+            if (!view?.tabContent) return -1;
+            let added = 0;
+            const observer = new MutationObserver((records) => {
+                for (const record of records) added += record.addedNodes.length;
+            });
+            observer.observe(view.tabContent, { childList: true, subtree: true });
+            await view.renderInContainer(view.tabContent);
+            await new Promise(resolve => setTimeout(resolve, 0));
+            observer.disconnect();
+            return added;
+        });
+        console.log('STEP_FULL_RENDER_CHURN ' + fullChurn);
+        expect(fullChurn).toBeGreaterThan(churn.added);
+
         // 拖左分隔条 +50px
         const left = page.locator('.nw-fw-resizer-left').first();
         const rbox = await left.boundingBox();

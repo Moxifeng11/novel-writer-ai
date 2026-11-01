@@ -6,7 +6,7 @@
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
 - 当前基线：v4.22.0；单测 506 文件 / 5710 用例；E2E 25 条
-- 任务进度：59/61 已完成（97%），1 进行中，0 受阻
+- 任务进度：60/61 已完成（98%），1 进行中，0 受阻
 
 ## 一、任务组总览
 
@@ -17,7 +17,7 @@
 | G3 | 项目生命周期与三模式 | v4.24.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G5 | 交互一致性与可访问性 | v4.25.0 | ✅ 已完成 | 6/6（100%） | 实现 ZCode / 验收 用户 |
-| G6 | 性能与存储 | v4.25.0 | 🟡 进行中 | 9/10（90%） | 实现 ZCode / 验收 用户 |
+| G6 | 性能与存储 | v4.25.0 | ✅ 已完成 | 10/10（100%） | 实现 ZCode / 验收 用户 |
 | G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 10/11（91%） | 实现 ZCode / 验收 用户 |
 
 ## 二、分组明细
@@ -119,7 +119,7 @@
 
 > IME 与全局按键属于「一处漏改就毁数据」的类型，优先统一原语。
 
-### G6 性能与存储（🟡 进行中）
+### G6 性能与存储（✅ 已完成）
 
 - 目标：长篇 200+ 章下打开/落盘/结算不卡顿；写放大与内存有上限；启动不阻塞
 - 目标版本：v4.25.0
@@ -132,7 +132,7 @@
 | G6-2 | 上下文缓存无上限 | ✅ 已完成 | LRU 上限 16；写入 20 章后 size ≤ 16 | 1e34ce5 |
 | G6-3 | 嵌入请求无超时 | ✅ 已完成 | 60s 超时并给出明确错误 | 67c53ca |
 | G6-4 | 全库 getFiles 热路径收敛 | ✅ 已完成 | 落盘/结算/统计/知识用量路径 0 次全库 getFiles()（check:hotpaths 门禁）；单章/本卷查询只访问本目录文件（基准 200 章）；200 章规模下单次查询 0.6ms→0.001~0.1ms | shared/vault-tree.ts（getAbstractFileByPath+children 局部遍历）+ shared/body-path.listChapterBodyFiles；改造 settlement-engine/step-result-saver/chapter-utils/context-manager/knowledge-usage/writing-stats-service；scripts/bench/get-files-hotpath.mjs（npm run bench:hotpath）；scripts/check-hotpath-scans.mjs（preflight+CI）；单测 vault-tree 10 条 + knowledge-usage/stats 适配 |
-| G6-5 | 步骤事件全量重渲染 | ⬜ 待开始 | 步骤完成时 DOM 变更 <100 节点（DevTools Performance） | — |
+| G6-5 | 步骤事件全量重渲染 | ✅ 已完成 | 步骤成功完成时只重绘本步 7 个区域，DOM 新增 <100 节点（E2E 实测 71；整页重建 494）；结构不完整时退回整页渲染 | ui/full-writer-view.ts（data-nw-region 7 区 + refreshAfterStep/replaceStepRegion/refreshStepNavState）；engine/step-runner afterStep 优先分片；导航 data-nw-substep；E2E STEP_REFRESH_CHURN/STEP_FULL_RENDER_CHURN；单测 step-refresh-regions 4 条 |
 | G6-6 | 缓存键含裸 NUL 导致文件对 grep 不可见 | ✅ 已完成 | 源码改为   转义，文件重新可检索 | engine/knowledge-vector-store.ts |
 | G6-7 | 模型覆盖历史无上限、cache.json 线性膨胀 | ✅ 已完成 | 历史保留最近 200 条 | shared/plugin-cache.ts |
 | G6-8 | 伏笔刷新无防抖 + 每次全库×项目扫描 | ✅ 已完成 | modify 事件按项目 800ms 防抖，只刷被改项目（源码契约测试） | main.ts debounceFixed(info-debt:project) + perf-contracts |

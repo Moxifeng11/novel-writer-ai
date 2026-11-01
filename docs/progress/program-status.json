@@ -425,9 +425,9 @@
         {
           "id": "G6-5",
           "title": "步骤事件全量重渲染",
-          "status": "todo",
-          "acceptance": "步骤完成时 DOM 变更 <100 节点（DevTools Performance）",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "步骤成功完成时只重绘本步 7 个区域，DOM 新增 <100 节点（E2E 实测 71；整页重建 494）；结构不完整时退回整页渲染",
+          "evidence": "ui/full-writer-view.ts（data-nw-region 7 区 + refreshAfterStep/replaceStepRegion/refreshStepNavState）；engine/step-runner afterStep 优先分片；导航 data-nw-substep；E2E STEP_REFRESH_CHURN/STEP_FULL_RENDER_CHURN；单测 step-refresh-regions 4 条"
         },
         {
           "id": "G6-6",

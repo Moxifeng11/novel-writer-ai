@@ -218,6 +218,11 @@ export type StepRunCtx = {
     /** 返回 false 表示根本没落盘（chapDir 为空 / 无文件映射 / 写盘失败） */
     saveStepResult: (stepKey: string, content: string, meta?: StepRunMeta) => Promise<boolean | void>;
     renderInContainer: (container: HTMLElement) => Promise<void>;
+    /**
+     * 步骤完成后的轻量刷新（G6-5）：只重绘本步相关区域。
+     * 未提供时调用方退回 renderInContainer（整页重建）。
+     */
+    refreshAfterStep?: () => void;
     setIsLoading: (loading: boolean) => void;
     refreshWorkspace: () => void;
     /** 统一失效传播：同时维护 stepCompleted / stepLevels / staleSteps */
