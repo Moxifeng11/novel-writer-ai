@@ -71,3 +71,47 @@ describe('快捷工具与模式规则一致性（P1-7/8）', () => {
         expect(isCommandAllowedInMode('novel-writer-targeted-revision', 'short')).toBe(false);
     });
 });
+
+describe('G3-3 短篇/剧本不再静默丢按钮', () => {
+    it('实体/设定/标签/文笔命令在短篇与剧本下都允许执行', async () => {
+        const { isCommandAllowedInMode } = await import('../../../shared/command-mode-rules');
+        const generic = [
+            'novel-writer-entity-manager',
+            'novel-writer-character',
+            'novel-writer-faction',
+            'novel-writer-location',
+            'novel-writer-item',
+            'novel-writer-entity-generate',
+            'novel-writer-add-fanfic',
+            'novel-writer-tags',
+            'novel-writer-style-distiller',
+        ];
+        for (const mode of ['short', 'script'] as const) {
+            for (const id of generic) {
+                expect(isCommandAllowedInMode(id, mode), `${mode}:${id}`).not.toBe(false);
+            }
+        }
+    });
+
+    it('短篇/剧本目录里这些按钮仍然存在（未被过滤成空组）', async () => {
+        const { getToolGroupsForMode } = await import('../../../ui/full-writer/tool-catalog');
+        for (const mode of ['short', 'script'] as const) {
+            const ids = getToolGroupsForMode(mode).flatMap(group => group.buttons.map(button => button.commandId));
+            expect(ids).toContain('novel-writer-entity-manager');
+            expect(ids).toContain('novel-writer-character');
+            expect(ids).toContain('novel-writer-style-distiller');
+        }
+    });
+
+    it('仍有长篇专属按钮时能给出隐藏清单（用于提示而不是静默消失）', async () => {
+        const { getHiddenToolLabels } = await import('../../../domains/kernel/tool-catalog-aggregator');
+        const groups = [
+            { label: '测试组', buttons: [
+                { label: '章节结算', desc: '', icon: '', commandId: 'novel-writer-chapter-settlement' },
+                { label: '实体管理', desc: '', icon: '', commandId: 'novel-writer-entity-manager' },
+            ] },
+        ];
+        expect(getHiddenToolLabels(groups as never, 'short')).toEqual(['章节结算']);
+        expect(getHiddenToolLabels(groups as never, 'long')).toEqual([]);
+    });
+});

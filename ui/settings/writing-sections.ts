@@ -595,6 +595,38 @@ export class ProjectLibrarySection extends SettingsSection {
                 }
                 if (result.warnings.length > 0) lines.push('', ...result.warnings);
                 renderPlan(lines.join('\n'));
+                if (result.moved.length > 0) {
+                    const undo = resultEl.createEl('button', {
+                        text: '↩️ 撤销本次迁移',
+                        cls: 'nw-btn nw-btn-secondary',
+                        attr: { type: 'button' },
+                    });
+                    undo.onclick = async () => {
+                        if (undo.disabled) return;
+                        const ok = await OperationConfirmModal.confirm(this.app, {
+                            title: '撤销本次迁移',
+                            description: `将把本次迁移的 ${result.moved.length} 个项目移回原路径。`,
+                            warning: '迁移后在新路径里做过的编辑会随目录一起移回；原路径若已被占用会跳过该项。',
+                            confirmText: '撤销迁移',
+                            cancelText: '保留现状',
+                        });
+                        if (!ok) return;
+                        undo.disabled = true;
+                        undo.setText('⏳ 撤销中…');
+                        const rollback = await service.rollbackWithNotice(result.moved);
+                        const rollbackLines = [
+                            `已撤销 ${rollback.restored.length} 个项目`,
+                            ...rollback.restored.map(item => `- ${item.targetPath} → ${item.projectId}`),
+                        ];
+                        if (rollback.failed.length > 0) {
+                            rollbackLines.push('', '未能撤销：');
+                            for (const item of rollback.failed) rollbackLines.push(`- ${item.projectId}：${item.error}`);
+                        }
+                        renderPlan(rollbackLines.join('\n'));
+                        this.plugin.ctxManager.invalidateContextCache();
+                        this.plugin.updateStatusBarText();
+                    };
+                }
                 this.plugin.ctxManager.invalidateContextCache();
                 this.plugin.updateStatusBarText();
             } catch (e) {

@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 497,
-      "cases": 5634
+      "files": 498,
+      "cases": 5641
     },
     "e2e": 25,
     "gates": [
@@ -249,16 +249,16 @@
         {
           "id": "G3-3",
           "title": "三模式快捷工具整组静默消失",
-          "status": "todo",
-          "acceptance": "被模式规则过滤的组显示「该模式不支持」空态说明，而不是整组消失",
-          "evidence": "docs/audits/v4.29（记录未修）"
+          "status": "done",
+          "acceptance": "实体/设定/标签/文笔在短篇/剧本可用；仍有专属按钮时显示「本模式暂不支持」清单（单测）",
+          "evidence": "command-mode-rules ALL_MODES + getHiddenToolLabels + project-selector 提示条"
         },
         {
           "id": "G3-4",
           "title": "项目迁移 dry-run 与回滚",
-          "status": "todo",
-          "acceptance": "计划可预览；失败可一键回滚；迁移前后文件数一致",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "dry-run 预览；迁移后一键撤销（逆序移回、占用跳过不覆盖）；备份清单留存（单测 4 条）",
+          "evidence": "project-migration-service.rollback + 设置页撤销按钮"
         },
         {
           "id": "G3-5",
@@ -591,6 +591,12 @@
       "group": "G2",
       "summary": "rag_sources 展示：步骤面板知识来源条 + 统计页命中率/常用书目/最近引用",
       "evidence": "knowledge-usage.ts + writing-stats-modal + step-render-controller"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G3",
+      "summary": "短篇/剧本通用工具放开 + 模式不支持提示；项目迁移一键撤销（逆序、占用跳过）",
+      "evidence": "command-mode-rules / tool-catalog-aggregator / project-migration-service"
     }
   ]
 }

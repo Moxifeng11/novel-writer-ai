@@ -17,7 +17,7 @@ import { WritingStyleModal } from '../writing-style-modal';
 import { CreateProjectModal } from '../create-project-modal';
 import { PreResearchModal } from '../pre-research-modal';
 import { ModeDocumentModal } from '../mode-document-modal';
-import { getToolGroupsForMode, getModeToolTitle } from '../../domains/kernel/tool-catalog-aggregator';
+import { getToolCatalogForMode, getToolGroupsForMode, getModeToolTitle } from '../../domains/kernel/tool-catalog-aggregator';
 import type { CreationMode } from '../../shared/creation-mode';
 import { collectCreationFlowState } from './creation-flow-state';
 import { findNextModeUnit, listModeUnits, modeUnitLabel } from '../../shared/mode-content';
@@ -496,13 +496,26 @@ export class ProjectSelectorController {
             hint.createDiv({ text: '点击任意项目卡片后，右侧会按项目类型显示对应的快捷工具。', cls: 'nw-qt-empty-desc' });
         }
 
+        const catalog = getToolCatalogForMode(mode);
         renderQuickToolsPanel(panel, {
             executeCommand: (commandId) => this.deps.executeCommand(commandId),
             project,
             projectActions: project && meta ? this.buildProjectActions(project, mode, meta, unitsCache) : undefined,
-            toolGroups: getToolGroupsForMode(mode),
+            toolGroups: catalog.groups,
             title: getModeToolTitle(mode),
         });
+
+        // G3-3：被模式规则过滤掉的按钮不再静默消失，明确告知「这个模式没有这些动作」
+        if (catalog.hiddenLabels.length > 0) {
+            const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
+            const shown = catalog.hiddenLabels.slice(0, 4).join('、');
+            const more = catalog.hiddenLabels.length > 4 ? ` 等 ${catalog.hiddenLabels.length} 项` : '';
+            hint.createDiv({ text: '本模式暂不支持', cls: 'nw-qt-empty-title' });
+            hint.createDiv({
+                text: `${shown}${more}属于长篇小说流水线；短篇/剧本请用上方的创作流程与单元工作台。`,
+                cls: 'nw-qt-empty-desc',
+            });
+        }
     }
 
     /**

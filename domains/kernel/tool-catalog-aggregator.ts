@@ -27,6 +27,32 @@ export function filterToolGroupsByMode(groups: ToolGroup[], mode: CreationMode):
     return changed ? filtered : groups;
 }
 
+/** 被模式规则过滤掉的按钮名（用于「本模式暂不支持」提示，避免整组静默消失） */
+export function getHiddenToolLabels(groups: ToolGroup[], mode: CreationMode): string[] {
+    const labels: string[] = [];
+    for (const group of groups) {
+        for (const button of group.buttons || []) {
+            if (isCommandAllowedInMode(button.commandId, mode) === false) labels.push(button.label);
+        }
+    }
+    return labels;
+}
+
+export interface ModeToolCatalog {
+    groups: ToolGroup[];
+    /** 该类目里因模式不适用被隐藏的按钮（空数组表示没有静默隐藏） */
+    hiddenLabels: string[];
+}
+
+/** 目录 + 隐藏项：调用方据此渲染「本模式暂不支持：…」提示 */
+export function getToolCatalogForMode(mode: CreationMode): ModeToolCatalog {
+    const source = mode === 'short' ? SHORT_TOOL_GROUPS : mode === 'script' ? SCRIPT_TOOL_GROUPS : TOOL_GROUPS;
+    return {
+        groups: filterToolGroupsByMode(source, mode),
+        hiddenLabels: getHiddenToolLabels(source, mode),
+    };
+}
+
 export function getToolGroupsForMode(mode: CreationMode): ToolGroup[] {
     const groups = mode === 'short' ? SHORT_TOOL_GROUPS : mode === 'script' ? SCRIPT_TOOL_GROUPS : TOOL_GROUPS;
     return filterToolGroupsByMode(groups, mode);

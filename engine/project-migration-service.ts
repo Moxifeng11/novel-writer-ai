@@ -33,6 +33,13 @@ export interface MigrationResult {
     moved: MigrationCandidate[];
     failed: Array<{ projectId: string; error: string }>;
     warnings: string[];
+    /** 备份清单目录（仅 backup:true 时写入） */
+    backupDir?: string;
+}
+
+export interface MigrationRollbackResult {
+    restored: MigrationCandidate[];
+    failed: Array<{ projectId: string; error: string }>;
 }
 
 export class ProjectMigrationService {
@@ -82,8 +89,10 @@ export class ProjectMigrationService {
         const failed: MigrationResult['failed'] = [];
         const warnings: string[] = [];
 
+        let backupDir: string | undefined;
         if (options?.backup) {
             const backupRoot = `.trash/project-migration-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`;
+            backupDir = backupRoot;
             try {
                 const adapter = this.app.vault.adapter;
                 if (!(await adapter.exists('.trash'))) await adapter.mkdir('.trash');
@@ -116,7 +125,51 @@ export class ProjectMigrationService {
             }
         }
 
-        return { moved, failed, warnings };
+        return { moved, failed, warnings, backupDir };
+    }
+
+    /**
+     * 撤销一次迁移：按相反顺序把已移动的项目移回原路径。
+     *
+     * 注意：只回退「本次 moved 列表」；迁移后用户在新路径里做过的编辑会随目录一起移回，
+     * 不会被丢弃。原路径若已被别的目录占用则跳过并报告，不覆盖。
+     */
+    async rollback(moved: MigrationCandidate[]): Promise<MigrationRollbackResult> {
+        const restored: MigrationCandidate[] = [];
+        const failed: MigrationRollbackResult['failed'] = [];
+        for (const candidate of [...moved].reverse()) {
+            try {
+                const folder = this.app.vault.getAbstractFileByPath(candidate.targetPath);
+                if (!(folder instanceof TFolder)) {
+                    failed.push({ projectId: candidate.projectId, error: `目标不存在：${candidate.targetPath}` });
+                    continue;
+                }
+                if (this.app.vault.getAbstractFileByPath(candidate.projectId)) {
+                    failed.push({ projectId: candidate.projectId, error: `原路径已被占用：${candidate.projectId}` });
+                    continue;
+                }
+                await this.app.fileManager.renameFile(folder, candidate.projectId);
+                restored.push(candidate);
+                log.info('项目迁移已撤销:', candidate.targetPath, '->', candidate.projectId);
+            } catch (e) {
+                failed.push({
+                    projectId: candidate.projectId,
+                    error: e instanceof Error ? e.message : String(e),
+                });
+            }
+        }
+        return { restored, failed };
+    }
+
+    async rollbackWithNotice(moved: MigrationCandidate[]): Promise<MigrationRollbackResult> {
+        const result = await this.rollback(moved);
+        if (result.restored.length > 0) {
+            new Notice(`↩️ 已撤销 ${result.restored.length} 个项目的迁移`, 6000);
+        }
+        if (result.failed.length > 0) {
+            new Notice(`⚠️ ${result.failed.length} 个项目未能撤销，详见控制台`, 10000);
+        }
+        return result;
     }
 
     /** Convenience wrapper for settings UI */

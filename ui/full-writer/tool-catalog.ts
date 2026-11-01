@@ -8,4 +8,4 @@ export type { ToolButton, ToolGroup } from '../../domains/kernel/tool-catalog-ty
 export { TOOL_GROUPS, LONG_TOOL_GROUPS, CHAPTER_QUICK_TOOL_IDS, findLongToolByCommandId } from '../../domains/long/tool-catalog';
 export { SHORT_TOOL_GROUPS } from '../../domains/short/tool-catalog';
 export { SCRIPT_TOOL_GROUPS } from '../../domains/script/tool-catalog';
-export { getToolGroupsForMode, getModeToolTitle } from '../../domains/kernel/tool-catalog-aggregator';
+export { getToolCatalogForMode, getHiddenToolLabels, getToolGroupsForMode, getModeToolTitle } from '../../domains/kernel/tool-catalog-aggregator';

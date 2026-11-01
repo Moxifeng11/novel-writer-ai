@@ -14,6 +14,8 @@ import type { CreationMode } from './creation-mode';
 export const LONG_ONLY: CreationMode[] = ['long'];
 export const SHORT_ONLY: CreationMode[] = ['short'];
 export const SCRIPT_ONLY: CreationMode[] = ['script'];
+/** 与项目结构无关的通用能力：实体/设定/标签/文笔，三种模式都有同一份目录结构 */
+export const ALL_MODES: CreationMode[] = ['long', 'short', 'script'];
 
 /** 命令 id → 允许的创作模式 */
 export const COMMAND_MODE_RULES: Record<string, CreationMode[]> = {
@@ -37,21 +39,23 @@ export const COMMAND_MODE_RULES: Record<string, CreationMode[]> = {
     [CommandIds.STEP_RESULT_VIEWER]: LONG_ONLY,
     [CommandIds.STORY_LINKAGE_BOARD]: LONG_ONLY,
     [CommandIds.BATCH_DECONSTRUCT]: LONG_ONLY,
-    [CommandIds.ADD_FANFIC]: LONG_ONLY,
+    // 实体/设定/标签/文笔：三模式共用 01-设定库 与项目路径，不再按长篇独占
+    // （P1-7 遗留：短篇/剧本目录里这几个按钮曾被整组过滤掉，用户以为没有这些功能）
+    [CommandIds.ADD_FANFIC]: ALL_MODES,
     [CommandIds.CHARACTER_RECOGNITION]: LONG_ONLY,
     [CommandIds.WORLDVIEW]: LONG_ONLY,
-    [CommandIds.CHARACTER]: LONG_ONLY,
-    [CommandIds.FACTION]: LONG_ONLY,
-    [CommandIds.LOCATION]: LONG_ONLY,
-    [CommandIds.ITEM]: LONG_ONLY,
-    [CommandIds.ENTITY_MANAGER]: LONG_ONLY,
-    [CommandIds.ENTITY_GENERATE]: LONG_ONLY,
+    [CommandIds.CHARACTER]: ALL_MODES,
+    [CommandIds.FACTION]: ALL_MODES,
+    [CommandIds.LOCATION]: ALL_MODES,
+    [CommandIds.ITEM]: ALL_MODES,
+    [CommandIds.ENTITY_MANAGER]: ALL_MODES,
+    [CommandIds.ENTITY_GENERATE]: ALL_MODES,
     [CommandIds.AI_BUILDER]: LONG_ONLY,
     [CommandIds.EXTRACT_ELEMENTS]: LONG_ONLY,
     [CommandIds.POPULATE_SETTING_LIB]: LONG_ONLY,
     [CommandIds.POPULATE_SETTING_LIB_INTERNAL]: LONG_ONLY,
-    [CommandIds.TAGS_ANALYSIS]: LONG_ONLY,
-    [CommandIds.STYLE_DISTILLER]: LONG_ONLY,
+    [CommandIds.TAGS_ANALYSIS]: ALL_MODES,
+    [CommandIds.STYLE_DISTILLER]: ALL_MODES,
     [CommandIds.CONTEXT_INJECTOR]: LONG_ONLY,
     [CommandIds.CO_WRITING]: LONG_ONLY,
     [CommandIds.SHORT_RESEARCH]: SHORT_ONLY,
