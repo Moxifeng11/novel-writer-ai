@@ -1,5 +1,24 @@
 # Changelog
 
+## v4.23.2（2026-11-02）
+
+dsh 后端的两项边界决策正式确认，并同步到设置页与设计文档（无行为变更）。
+
+### ✅ 决策
+
+- **整会话 `workspace-write` 作为唯一写入方式**：默认只读；打开「允许 dsh 写入 vault」后本次会话整段可写，启动前再确认一次。协议没有逐文件审批通道，拒绝时整会话保持只读。
+- **接受 dsh 完整依赖树（含 bash/pwsh）**：由用户手动安装，插件不自动安装/升级；设置页明示「接受安装即接受这些工具随包存在」。
+
+### 📝 文档
+
+- `docs/research/deepseek-harness/integration-dsh.md`：待决策项改为已决策；架构图里的「逐次审批 Bridge」改为「启动前一次性确认」；安全条款同步。
+- `docs/research/deepseek-harness/README.md`、`architecture-notes.md`：删除「写入逐次批准」的过时表述。
+- 设置页 Agent 后端分区补充依赖树与写入语义说明。
+
+### 🧪 测试
+
+- 全量 `preflight` 通过：**524 文件 / 5859 用例**。
+
 ## v4.23.1（2026-11-02）
 
 dsh 可选后端的首次真实环境验证（Windows 11 / Node 24 / `@deepseek-ai/dsh@0.2.1-rc.5`），并修掉三个启动层缺陷。

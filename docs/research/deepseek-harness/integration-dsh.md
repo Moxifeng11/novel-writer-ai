@@ -8,7 +8,7 @@
 
 - 默认后端仍是 native（零外部依赖，移动端可用）；
 - dsh 路径仅桌面端、opt-in、默认全 vault **只读**；
-- 任何写入 vault 的操作必须逐次批准；
+- **写入只能整会话放开**（`workspace-write`，启动前一次性确认；已决定，见 §9）；
 - 不自动安装 dsh，不上传会话日志，不把密钥写入 vault。
 
 ## 2. 已知事实（来自 `sources.json`）
@@ -41,7 +41,7 @@ AgentWorkbench (UI)
        └─ dsh: DshBackend
              ├─ DshTransport   ← child_process.spawn + JSON-RPC/行事件
              ├─ DshEventMapper ← dsh 事件 → HarnessTurnOutcome / 遥测
-             └─ DshApprovalBridge ← dsh 写操作请求 → 插件确认 Modal（逐次）
+             └─ 启动前一次性确认 ← 是否放开写入（协议无逐次审批，故不是 Bridge）
 ```
 
 - **进程**：按会话启动一个 dsh 进程；空闲超时退出；崩溃后不自动重启（避免死循环），UI 给重试。
@@ -65,7 +65,7 @@ AgentWorkbench (UI)
 
 ## 6. 安全与隐私
 
-- 默认只读；写入逐次批准；拒绝后不重试。
+- 默认只读；写入只能整会话放开，启动前一次性确认；拒绝则整会话只读，不降级。
 - 不自动安装、不自动升级 dsh；不执行用户未确认的命令。
 - 不开启会话日志上传；文档与 UI 明示 dsh 默认行为及本项目的关闭方式。
 - 子进程环境变量最小化：只注入模型/密钥/home 所需项（具体清单 spike 确定）。
@@ -116,10 +116,10 @@ AgentWorkbench (UI)
 - `scripts/check-dsh-isolation.mjs`：child_process 仅限该目录且必须动态加载；native harness 不得反向依赖
 - 单测 9 条（协议/会话/启动参数），不联网
 
-### 待决策（启用前必须回答）
+### 决策（2026-11-02，已确认）
 
-- 是否接受「dsh 后端整会话 workspace-write」作为唯一的写入方式？若不接受，dsh 后端只能只读问答。
-- 是否接受 dsh 的完整依赖树（含 bash/pwsh 工具）随用户手动安装？
+- ✅ **接受「整会话 workspace-write」作为唯一写入方式**：默认只读；用户打开「允许 dsh 写入 vault」后，本次会话整段可写，启动前再确认一次。不存在逐文件审批，拒绝时整会话保持只读。
+- ✅ **接受 dsh 完整依赖树（含 bash/pwsh 工具）**：由用户手动安装，插件不自动安装/升级。设置页已明示安装即接受这些工具随包存在。
 
 ---
 

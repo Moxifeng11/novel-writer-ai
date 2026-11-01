@@ -18,6 +18,22 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.23.2',
+        date: '2026-11-02',
+        title: 'dsh 边界决策确认',
+        sections: [
+            {
+                type: 'improved',
+                label: '✅ 决策',
+                items: [
+                    'dsh 写入只能整会话放开：默认只读，开启后启动前再确认一次，没有逐文件审批',
+                    '接受 dsh 完整依赖树（含 bash/pwsh），由用户手动安装，插件不自动安装/升级',
+                    '设置页补充依赖树与写入语义说明；研究档案删除「逐次批准」的过时表述',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.23.1',
         date: '2026-11-02',
         title: 'dsh 真实环境验证与 Windows 启动修复',
