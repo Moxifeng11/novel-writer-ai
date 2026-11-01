@@ -14,6 +14,7 @@
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { isChapterSettledText } from '../shared/chapter-status';
+import { buildSettlementTable } from '../engine/settlement/settlement-artifacts';
 import { splitTableCells } from '../shared/chapter-table';
 import NovelWriterPlugin from '../main';
 import { AIEngine, ChapterContext } from '../engine/ai-engine';
@@ -624,33 +625,14 @@ ${reportResult.content}
                 settlement: summarizeSettlement(settleResult),
             });
 
-            // v4.0: 结算表带 frontmatter（与 元文件/00-系统模板/结算表模板.md 对齐）
-            const settleNow = new Date().toISOString();
-            const settleFm = buildStepFrontmatter({
-                tag: '结算表',
+            // v4.0: 结算表统一由 settlement-artifacts 生成（与章节结算弹窗同模板）
+            const settleSummary = buildSettlementTable({
+                chapterName: chapName,
                 volume: volName,
-                chapter: chapName,
+                result: settleResult,
+                timestamp: new Date().toISOString(),
                 model: plugin.settings.flashModel,
-                timestamp: settleNow,
-                extra: {
-                    '结算时间': settleNow,
-                    '结算状态': 'completed',
-                },
             });
-            const settleSummary = `${settleFm}# 第${chapName}章 结算表
-
-## 更新状态
-- 人物状态更新：${settleResult.updatedChars} 人
-- 伏笔状态更新：${settleResult.updatedForeshadows} 个
-
-## 新建元素
-- 新建人物：${settleResult.createdChars} 个
-- 新建地点：${settleResult.createdLocs} 个
-- 新建势力：${settleResult.createdFactions} 个
-- 新建物品功法：${settleResult.createdItems} 个
-- 新建伏笔：${settleResult.createdForeshadows} 个
-- 新建时间线事件：${settleResult.createdTimelines} 个
-`;
             try {
                 const sp = `${chapDir}/${getChapterFileName(chapName, '结算表')}`;
                 const existingSettleFile = app.vault.getAbstractFileByPath(sp);

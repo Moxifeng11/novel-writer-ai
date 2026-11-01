@@ -1,5 +1,6 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import { isChapterSettledText } from '../shared/chapter-status';
+import { buildSettlementTable } from '../engine/settlement/settlement-artifacts';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
 
 import NovelWriterPlugin from '../main';
@@ -251,14 +252,14 @@ export class ChapterSettlementModal extends Modal {
     }
 
     private buildSettlementSummary(target: SettlementTargetChapter, result: { updatedChars: number; updatedForeshadows: number; createdChars: number; createdLocs: number; createdFactions: number; createdItems: number; createdForeshadows: number; createdTimelines: number }, _isLight: boolean): string {
-        // 回滚不完整时在结算表里留 settlement_partial，后续步骤/用户都能看到
-        const fm = this.buildSettlementFrontmatter(
-            target,
-            'completed',
-            'full',
-            Boolean((result as { settlementPartial?: boolean }).settlementPartial),
-        );
-        return `${fm}# ${target.chapName} 结算表\n\n## 更新状态\n- 人物状态更新：${result.updatedChars} 人\n- 伏笔状态更新：${result.updatedForeshadows} 个\n\n## 新建元素\n- 新建人物：${result.createdChars} 个\n- 新建地点：${result.createdLocs} 个\n- 新建势力：${result.createdFactions} 个\n- 新建物品功法：${result.createdItems} 个\n- 新建伏笔：${result.createdForeshadows} 个\n- 新建时间线事件：${result.createdTimelines} 个\n`;
+        // 表头/字段由 engine/settlement/settlement-artifacts 统一生成，
+        // 避免与「一键成文」路径各写一份模板造成漂移。
+        const volMatch = target.chapDir.match(/\/步骤结果\/(第\d+卷)\//);
+        return buildSettlementTable({
+            chapterName: target.chapName,
+            volume: volMatch ? volMatch[1] : '',
+            result,
+        });
     }
 
     private buildLightSummary(target: SettlementTargetChapter, wordCount: number, excerpt: string, truncated: boolean, result?: { updatedChars: number; updatedLocations: number; updatedFactions: number; updatedItems: number; updatedForeshadows: number; chars: string[]; locs: string[]; factions: string[]; items: string[] }): string {
