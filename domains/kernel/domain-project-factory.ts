@@ -12,7 +12,8 @@ import { CREATION_MODE_SPECS, buildCreationModeGuide, buildCreationModeMetaSecti
 import { ensureModeContentStructure } from '../../shared/mode-content';
 import { pjProjectMeta } from '../../shared/paths';
 import { WritingProfileManager } from '../../engine/writing-profile';
-import { ENGINE_NAMES } from '../../engine/engine-registry';
+// 只取名字常量：从 engine-registry 引会连带加载整个引擎图（其中 ai-engine 等 runtime import main）
+import { ENGINE_NAMES } from '../../shared/engine-names';
 import { newProjectPath } from './project-locator';
 import { createLogger } from '../../shared/logger';
 
@@ -75,6 +76,9 @@ export class DomainProjectFactory {
         }
 
         await this.adapter.mkdir(projectId);
+        // 失败回滚：旧实现 mkdir 成功后任一写盘失败都会留下半成品目录，
+        // 重试又被 exists 判成「已存在」→ 用户永久卡住。
+        try {
         const projectContent = `# ${input.name}
 
 ## 题材
@@ -113,10 +117,31 @@ ${meta.shortCategory ? `- 短篇分类：${meta.shortCategory}\n` : ''}${meta.sc
         } catch (e) {
             log.warn('初始化模式写作配置失败（不影响项目创建）:', e);
         }
+        } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            await this.removeProjectDir(projectId);
+            throw new Error(`创建${spec.label}项目失败，已回滚：${message}`);
+        }
 
         new Notice(`✅ ${spec.label}项目「${input.name}」创建完成`, 5000);
         await input.onCreated?.(projectId);
         return projectId;
+    }
+
+    /** 尽力删除半成品项目目录（回滚用；失败只记日志，不掩盖原始错误） */
+    private async removeProjectDir(projectId: string): Promise<void> {
+        try {
+            const list = await this.adapter.list(projectId);
+            for (const file of list.files) await this.adapter.remove(file);
+            for (const folder of list.folders) {
+                const nested = await this.adapter.list(folder);
+                for (const file of nested.files) await this.adapter.remove(file);
+                await this.adapter.rmdir(folder, true);
+            }
+            await this.adapter.rmdir(projectId, true);
+        } catch (e) {
+            log.warn('[DomainProjectFactory] 回滚删除半成品目录失败:', e);
+        }
     }
 
     private async writeModeGuide(project: string, meta: CreationModeMeta): Promise<void> {
