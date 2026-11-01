@@ -655,6 +655,10 @@ export default class NovelWriterPlugin extends Plugin {
                 createTemplateManager: () => new TemplateManager(this.app),
             });
             this._assignEngineFields();
+            // 参考书籍：设置里的 referenceBookIds → 实例字段镜像。
+            // 启动路径只走 SettingsService.loadSettings()，不会调用 plugin.loadSettings()，
+            // 不在这里补一次，重启后协同写作的参考书籍与主参考会全部为空。
+            this.referenceBookIds = [...(this.settings.referenceBookIds ?? [])];
 
             // R2: 应用用户扩充的 AI 味词表（默认空数组 → 与内置词表行为一致）
             AntiAIDetector.setExtraHighFreqWords(this.settings.antiAiExtraWords ?? []);
@@ -1428,7 +1432,8 @@ export default class NovelWriterPlugin extends Plugin {
 
     private async runEntityStateRecheck(file: TFile): Promise<void> {
         try {
-            const pathMatch = file.path.match(/^([^/]+\/[^/]+)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章_正文\.md$/);
+            // 正文可能被重命名为「第N章_标题_正文.md」，正则必须覆盖标题段
+            const pathMatch = file.path.match(/^([^/]+\/[^/]+)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章[^/]*_正文\.md$/);
             if (!pathMatch) return;
 
             const project = pathMatch[1];
@@ -1657,6 +1662,12 @@ export default class NovelWriterPlugin extends Plugin {
         );
         // 清理缓存管理器
         this._cacheManager?.dispose();
+        // 冲刷知识库 / 批量导入的串行写队列：这两个管理器持有 SerializedWriter，
+        // 不在这里 flush，卸载瞬间的最后一批索引/书籍元数据会丢。
+        void Promise.allSettled([
+            this.knowledgeBaseManager?.flush(),
+            this.batchImportManager?.flush(),
+        ]).then(() => undefined);
         // P0-14/16: 不再向 localStorage 保存恢复状态。
         // 热重载恢复完全通过内存态 _pendingReloadState 传递（按钮 handler 在 disable 前设置）。
         // 这样 Obsidian 正常关闭→启动时不会有任何残留，工作台默认不打开。
@@ -1679,6 +1690,10 @@ export default class NovelWriterPlugin extends Plugin {
             log.warn('[小说工坊] 卸载时释放引擎实例失败:', e)
         );
         log.info('Novel Writer AI plugin unloaded');
+        // 卸载后 window.novelAI 会指向已销毁的 registry，外部脚本调用只会报错
+        if (window.novelAI === this.registry) {
+            delete window.novelAI;
+        }
     }
 }
 

@@ -315,6 +315,9 @@ export class CommandRegistry {
             CommandIds.GENERATE_BASES,
             CommandIds.MIGRATE_NAMESPACE_TAGS,
             CommandIds.COMPLETE_PROPERTIES,
+            // 命令面板里注册了「🧭 创作流程」，但不在本表 → execute 找不到、
+            // CommandUiExecutor 的 CREATION_FLOW 分支永远不可达（点了没反应）。
+            CommandIds.CREATION_FLOW,
         ];
         for (const id of uiCommandIds) {
             r.register(id, async () => { await this.ui.executeCommand(id); });

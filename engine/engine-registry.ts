@@ -666,7 +666,26 @@ export class EngineRegistry {
         }
         // 3. 清理瞬态工厂（不持有实例）
         this.transientFactories.clear();
-        log.info(`[EngineRegistry] 已释放全部实例: ${count} 个`);
+        // 4. 旧 map 里的实例不经过 registry，必须单独冲刷写队列：
+        //    StyleLearner 持有 SerializedWriter，不 flush 会让最后一批学习结果随卸载丢失。
+        const pendingFlush: Promise<unknown>[] = [];
+        for (const learner of this.styleLearnerInstances.values()) {
+            if (typeof learner.flush === 'function') {
+                pendingFlush.push(learner.flush().catch(e => log.warn('[EngineRegistry] 风格学习器冲刷失败:', e)));
+            }
+        }
+        for (const projectMap of this.repositoryInstances.values()) {
+            for (const repo of projectMap.values()) {
+                const maybe = repo as { flush?: () => Promise<void> } | null;
+                if (maybe && typeof maybe.flush === 'function') {
+                    pendingFlush.push(maybe.flush().catch(e => log.warn('[EngineRegistry] 仓库冲刷失败:', e)));
+                }
+            }
+        }
+        await Promise.all(pendingFlush);
+        this.styleLearnerInstances.clear();
+        this.repositoryInstances.clear();
+        log.info(`[EngineRegistry] 已释放全部实例: ${count} 个，冲刷 ${pendingFlush.length} 个写队列`);
         return count;
     }
 

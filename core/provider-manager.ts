@@ -356,8 +356,12 @@ export class ProviderManager {
         const s = this.cb.getSettings();
         const idx = (s.customProviders || []).findIndex(c => c.id === id);
         if (idx === -1) return false;
+        // 必须在替换对象**之前**判断是否当前供应商：替换后端点已变，
+        // getCurrentProviderId() 按 apiEndpoint 匹配旧端点会失配，
+        // 导致改了 Base URL 但 apiEndpoint/availableModels 不跟着更新，请求仍打旧端点。
+        const isCurrent = this.getCurrentProviderId() === id;
         s.customProviders[idx] = { ...s.customProviders[idx], ...updates };
-        if (this.getCurrentProviderId() === id) {
+        if (isCurrent) {
             if (updates.endpoint !== undefined) s.apiEndpoint = updates.endpoint;
             if (updates.models !== undefined) s.availableModels = [...updates.models];
             if (updates.maxContext !== undefined) s.maxContext = updates.maxContext;
@@ -366,6 +370,14 @@ export class ProviderManager {
         }
         this.cb.saveSettings().catch(e => log.warn('[小说工坊] 供应商更新保存失败:', e));
         return true;
+    }
+
+    /** 卸载时取消待写盘定时器，避免插件停用后仍回调 saveSettings */
+    dispose(): void {
+        if (this._saveTimer) {
+            clearTimeout(this._saveTimer);
+            this._saveTimer = null;
+        }
     }
 
     /** @deprecated 请使用 updateProvider() */

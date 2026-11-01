@@ -300,6 +300,12 @@ export class KnowledgeDetailModal extends Modal {
             new Notice(`已添加《${bookName}》为参考书籍`);
         }
 
+        // 只改内存镜像的话重启就回退：必须同时写 settings 并落盘
+        plugin.settings.referenceBookIds = [...plugin.referenceBookIds];
+        void plugin.saveSettings().catch((e: unknown) => {
+            new Notice(`参考书籍保存失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+        });
+
         this.refreshKnowledgePanel();
         this.render();
     }

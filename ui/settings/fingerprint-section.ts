@@ -21,6 +21,8 @@ const log = createLogger('SettingsTab');
 
 export class FingerprintSection extends SettingsSection {
     private fingerprintLibrary: StyleFingerprintLibrary | null = null;
+    /** 当前库实例绑定的项目：项目切换后需 setProject 重建，否则写进旧项目 */
+    private currentLibraryProject: string | null = null;
     private templateFingerprints: StyleFingerprint[] = [];
     private globalFingerprints: StyleFingerprint[] = [];
     private projectFingerprints: StyleFingerprint[] = [];
@@ -50,6 +52,14 @@ export class FingerprintSection extends SettingsSection {
             await this.loadTemplateFingerprints();
             await this.loadGlobalFingerprints();
             await this.loadProjectFingerprints();
+        } else if ((this.currentLibraryProject || undefined) !== (activeProject || undefined)) {
+            // 库实例会固化项目路径：切换项目后必须 setProject 并重载，
+            // 否则列表还是旧项目的指纹，新增/删除会写进旧项目目录（跨项目写错数据）。
+            this.fingerprintLibrary.setProject(activeProject || undefined);
+            this.currentLibraryProject = activeProject || null;
+            await this.loadProjectFingerprints();
+        } else {
+            this.currentLibraryProject = activeProject || null;
         }
 
         const templateSection = section.createDiv({ cls: 'nw-u-marginbottom-24px-2' });
