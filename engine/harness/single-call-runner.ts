@@ -9,8 +9,6 @@ import type { AIEngine } from '../ai-engine';
 import type { CreationMode } from '../../shared/creation-mode';
 import type { Rule, RuleViolation, RuleValidationContext } from './rule-engine';
 import { RuleEngine } from './rule-engine';
-import type { AggregatedContext } from './context-aggregator';
-import type { PromptArtifact } from './prompt-artifact';
 import { callLedger } from './call-ledger';
 import { createLogger } from '../../shared/logger';
 
@@ -33,9 +31,23 @@ export interface SingleCallTaskInput<T> {
         parse: (raw: string) => T | null;
         validate?: (value: T) => string[];
     };
-    contextPack?: AggregatedContext;
+    contextPack?: {
+        projectId: string;
+        taskKey: string;
+        sections: Array<{ title: string; content: string }>;
+        promptText: string;
+        totalChars: number;
+        builtAt: number;
+    };
     /** 编译后的提示词产物；提供时优先于 systemPrompt/userPrompt */
-    promptArtifact?: PromptArtifact;
+    promptArtifact?: {
+        taskId: string;
+        systemPrompt: string;
+        userPrompt: string;
+        tokenBudget: { maxInputTokens?: number; maxOutput?: number };
+        hash: string;
+        createdAt: number;
+    };
     rules?: Rule[];
     validationContext?: RuleValidationContext;
     signal?: AbortSignal;

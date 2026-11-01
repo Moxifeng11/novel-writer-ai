@@ -4,7 +4,24 @@
  * Kernel only knows this interface; concrete profiles live in domains/*.
  */
 import type { CreationMode } from '../../shared/creation-mode';
-import type { ContextKind } from './context-pack';
+/** 上下文证据的八类（原 context-pack 的类型，此处内联避免死模块引用） */
+export type ContextKind =
+    | 'worldview'
+    | 'character'
+    | 'relationship'
+    | 'timeline'
+    | 'foreshadow'
+    | 'previous-summary'
+    | 'chapter-state'
+    | 'section-outline'
+    | 'episode-outline'
+    | 'scene-bible'
+    | 'shot-ledger'
+    | 'style'
+    | 'rule'
+    | 'research'
+    | 'random-factor'
+    | 'user-preference';
 
 export interface DomainHarnessProfile {
     mode: CreationMode;
