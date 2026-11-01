@@ -1,7 +1,7 @@
 import { App, Modal, Setting, DropdownComponent, Notice, TFolder } from 'obsidian';
 import NovelWriterPlugin, { CustomProvider, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from '../main';
 import type { DeconstructionEngineSettings } from '../main';
-import { describeSecretForInput } from '../shared/secret-display';
+import { describeSecretForInput, resolveSecretInput } from '../shared/secret-display';
 import { renderAppearanceSettings } from './appearance-settings';
 import { ManageProvidersModal } from './manage-providers-modal';
 import { TemplateManager } from './template-manager';
@@ -50,6 +50,8 @@ export class MiniSettingsModal extends Modal {
      * 若把空串写回 settings，已加密的 API Key 会被抹掉且不可恢复。
      */
     private pendingApiKey: string | null = null;
+    /** 向量密钥的待保存值：空/未输入 = 未修改（与主密钥同口径） */
+    private pendingVectorKeys: { openai?: string; doubao?: string; qwen?: string } = {};
     private activeTab: string = 'api';
     private tabContent!: HTMLElement;
     private tabBar!: HTMLElement;
@@ -1136,10 +1138,12 @@ export class MiniSettingsModal extends Modal {
                 .setDesc('OpenAI 兼容 API 的密钥')
                 .addText(text => {
                     text.inputEl.type = 'password';
-                    text.setValue(this.plugin.settings.vectorOpenaiApiKey || '');
-                    text.setPlaceholder('请输入 API Key');
+                    // 与主密钥同口径：密文不塞进输入框；空值 = 未修改，保存时才写回
+                    const secret = describeSecretForInput(this.plugin.settings.vectorOpenaiApiKey);
+                    text.setPlaceholder(secret.placeholder).setValue(secret.value);
+                    text.inputEl.title = secret.title;
                     text.onChange((value) => {
-                        this.plugin.settings.vectorOpenaiApiKey = value;
+                        this.pendingVectorKeys.openai = value;
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
@@ -1184,10 +1188,11 @@ export class MiniSettingsModal extends Modal {
                 .setDesc('豆包/火山引擎 API 的密钥')
                 .addText(text => {
                     text.inputEl.type = 'password';
-                    text.setValue(this.plugin.settings.vectorDoubaoApiKey || '');
-                    text.setPlaceholder('请输入 API Key');
+                    const secret = describeSecretForInput(this.plugin.settings.vectorDoubaoApiKey);
+                    text.setPlaceholder(secret.placeholder).setValue(secret.value);
+                    text.inputEl.title = secret.title;
                     text.onChange((value) => {
-                        this.plugin.settings.vectorDoubaoApiKey = value;
+                        this.pendingVectorKeys.doubao = value;
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
@@ -1232,10 +1237,11 @@ export class MiniSettingsModal extends Modal {
                 .setDesc('通义千问 API 的密钥')
                 .addText(text => {
                     text.inputEl.type = 'password';
-                    text.setValue(this.plugin.settings.vectorQwenApiKey || '');
-                    text.setPlaceholder('请输入 API Key');
+                    const secret = describeSecretForInput(this.plugin.settings.vectorQwenApiKey);
+                    text.setPlaceholder(secret.placeholder).setValue(secret.value);
+                    text.inputEl.title = secret.title;
                     text.onChange((value) => {
-                        this.plugin.settings.vectorQwenApiKey = value;
+                        this.pendingVectorKeys.qwen = value;
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
@@ -1288,6 +1294,8 @@ export class MiniSettingsModal extends Modal {
                         this.vectorConnectionStatus = 'checking';
                         updateStatusDisplay();
                         try {
+                            // 用户可能刚输入了密钥还没点保存：先记到 settings 再检测
+                            this.applyPendingVectorKeys();
                             const { EmbeddingProviderFactory } = await import('../engine/embedding/provider-factory');
                             const provider = EmbeddingProviderFactory.create({
                                 vectorProviderType: this.plugin.settings.vectorProviderType as 'ollama' | 'openai' | 'doubao' | 'qwen',
@@ -2626,6 +2634,18 @@ export class MiniSettingsModal extends Modal {
         return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     }
 
+    /**
+     * 向量密钥与主 API Key 同口径：只有输入了非空内容才覆盖。
+     * 加密锁定态下输入框为空，直接写回会把已保存的密钥抹掉。
+     */
+    private applyPendingVectorKeys(): void {
+        const apply = (pending: string | undefined, current: string | undefined): string =>
+            resolveSecretInput(pending, current);
+        this.plugin.settings.vectorOpenaiApiKey = apply(this.pendingVectorKeys.openai, this.plugin.settings.vectorOpenaiApiKey);
+        this.plugin.settings.vectorDoubaoApiKey = apply(this.pendingVectorKeys.doubao, this.plugin.settings.vectorDoubaoApiKey);
+        this.plugin.settings.vectorQwenApiKey = apply(this.pendingVectorKeys.qwen, this.plugin.settings.vectorQwenApiKey);
+    }
+
     private async saveAllSettings() {
         const contentEl = this.contentEl;
 
@@ -2640,6 +2660,7 @@ export class MiniSettingsModal extends Modal {
                 this.plugin.settings.providerKeys[cid] = keyVal;
             }
         }
+        this.applyPendingVectorKeys();
 
         const nameInput = contentEl.querySelector('input[placeholder*="我的代理"], input[placeholder*="提供商名称"]');
         if (nameInput) {

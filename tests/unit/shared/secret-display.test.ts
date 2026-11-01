@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     describeSecretForInput,
     isStoredCiphertext,
+    resolveSecretInput,
     SECRET_LOCKED_PLACEHOLDER,
 } from '../../../shared/secret-display';
 
@@ -36,5 +37,23 @@ describe('describeSecretForInput', () => {
         const d = describeSecretForInput('');
         expect(d.value).toBe('');
         expect(d.placeholder).toBe('sk-...');
+    });
+});
+
+describe('resolveSecretInput', () => {
+    it('空/未输入 = 未修改：保留原值（含密文）', () => {
+        expect(resolveSecretInput('', 'aes256v2:210000:s:i:c')).toBe('aes256v2:210000:s:i:c');
+        expect(resolveSecretInput(undefined, 'sk-old')).toBe('sk-old');
+        expect(resolveSecretInput('   ', 'sk-old')).toBe('sk-old');
+    });
+
+    it('输入非空 = 修改：去掉首尾空白后写回', () => {
+        expect(resolveSecretInput('  sk-new  ', 'sk-old')).toBe('sk-new');
+        expect(resolveSecretInput('sk-new', 'aes256v2:210000:s:i:c')).toBe('sk-new');
+    });
+
+    it('原值为空且未输入时返回空字符串，而不是 undefined', () => {
+        expect(resolveSecretInput('', undefined)).toBe('');
+        expect(resolveSecretInput(null, null)).toBe('');
     });
 });

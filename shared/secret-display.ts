@@ -50,3 +50,15 @@ export function describeSecretForInput(value: unknown): {
         title: text ? '当前密钥（已保存）' : '尚未填写密钥',
     };
 }
+
+/**
+ * 合并一次「可能未修改」的密钥输入。
+ *
+ * 加密锁定态下输入框是空的；用户只是切页签/保存时，不能把空值当成
+ * 「清空密钥」写回去。规则与主 API Key 一致：只有输入了非空内容才算修改。
+ */
+export function resolveSecretInput(pending: string | undefined | null, current: unknown): string {
+    const trimmed = String(pending ?? '').trim();
+    if (trimmed) return trimmed;
+    return typeof current === 'string' ? current : '';
+}
