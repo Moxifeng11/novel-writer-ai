@@ -20,6 +20,9 @@ describe('已迁移模块', () => {
         'engine/analysis-report-engine.ts',
         'engine/cross-volume-integration.ts',
         'services/worldview-cache-service.ts',
+        'ui/generate-character-modal.ts',
+        'ui/wizard-checker.ts',
+        'ui/context-injector-modal.ts',
     ]) {
         it(`${rel} 不再直接拼实体目录`, () => {
             const source = read(rel);

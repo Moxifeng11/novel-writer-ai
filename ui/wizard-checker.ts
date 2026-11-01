@@ -27,6 +27,7 @@ import {
     NOTICE_INFO, NOTICE_ERROR, CHAPTER_SPOT_CHECK_MAX,
 } from '../shared/thresholds';
 import { WV_SECTIONS } from '../shared/format-constants';
+import { entityDir } from '../shared/entity-reader';
 
 // WizardTab/WizardStep 接口由 full-writer/wizard-types 统一定义，避免重复（v6.0 去重）
 import { WizardTab, WizardStep } from './full-writer/wizard-types';
@@ -410,10 +411,10 @@ export class WizardChecker {
      */
     async checkEntitiesComplete(project: string): Promise<boolean> {
         const entityDirs = [
-            { name: '人物', dir: pjCharsDir(project), templateName: '人物模板.md' },
-            { name: '地点', dir: pjLocsDir(project), templateName: '地点模板.md' },
-            { name: '势力', dir: pjFactionsDir(project), templateName: '势力模板.md' },
-            { name: '物品功法', dir: pjItemsDir(project), templateName: '物品功法模板.md' },
+            { name: '人物', dir: entityDir(project, 'characters'), templateName: '人物模板.md' },
+            { name: '地点', dir: entityDir(project, 'locations'), templateName: '地点模板.md' },
+            { name: '势力', dir: entityDir(project, 'factions'), templateName: '势力模板.md' },
+            { name: '物品功法', dir: entityDir(project, 'items'), templateName: '物品功法模板.md' },
         ];
         const adapter = this.app.vault.adapter;
 

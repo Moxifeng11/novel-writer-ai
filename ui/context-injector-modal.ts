@@ -2,6 +2,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { getInvolvedEntities } from '../engine/chapter-context-builder';
 import { pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, SUBDIR_TIMELINE } from '../shared/paths';
+import { entityDir } from '../shared/entity-reader';
 import { upsertAutoContext } from '../shared/auto-context-block';
 import { createLogger } from '../shared/logger';
 
@@ -54,10 +55,10 @@ export class ContextInjectorModal extends Modal {
 
         const pathParts = filePath.split('/');
         const projectRoot = pathParts[0];
-        const charDir = pjCharsDir(projectRoot);
-        const locDir = pjLocsDir(projectRoot);
-        const factionDir = pjFactionsDir(projectRoot);
-        const itemDir = pjItemsDir(projectRoot);
+        const charDir = entityDir(projectRoot, 'characters');
+        const locDir = entityDir(projectRoot, 'locations');
+        const factionDir = entityDir(projectRoot, 'factions');
+        const itemDir = entityDir(projectRoot, 'items');
 
         new Notice(`🔍 在 ${projectRoot} 下检索关联...`);
 

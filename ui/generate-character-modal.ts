@@ -4,6 +4,7 @@ import { AIEngine, BatchEntityResult } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '../utils/helpers';
 import { validateCharacterOutput } from '../shared/template-validator';
+import { entityDir, listEntityFiles, type EntityKind } from '../shared/entity-reader';
 import { mergeFanficRequirement } from '../shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
@@ -233,8 +234,7 @@ export class GenerateCharacterModal extends Modal {
 
                 let isFirstCharacter = false;
                 try {
-                    const projectPath = pjCharsDir(project);
-                    const files = this.app.vault.getFiles().filter(f => f.path.startsWith(projectPath) && f.path.endsWith('.md'));
+                    const files = listEntityFiles(this.app, project, 'characters');
                     if (files.length === 0) {
                         isFirstCharacter = true;
                     } else {
@@ -438,7 +438,7 @@ export class GenerateCharacterModal extends Modal {
         const toSave = this._pendingResults.filter(r => !r.deleted);
         if (toSave.length === 0) { new Notice('⚠️ 没有可保存的实体', 3000); return; }
 
-        await mkdirp(this.app, pjCharsDir(this._currentProject));
+        await mkdirp(this.app, entityDir(this._currentProject, 'characters'));
         const outcome = await saveEntities(
             this.app,
             this._currentProject,
@@ -470,8 +470,7 @@ export class GenerateCharacterModal extends Modal {
 
     private async ensureProtagonistMarked(project: string): Promise<void> {
         try {
-            const projectPath = pjCharsDir(project);
-            const files = this.app.vault.getFiles().filter(f => f.path.startsWith(projectPath) && f.path.endsWith('.md'));
+            const files = listEntityFiles(this.app, project, 'characters');
             if (files.length === 0) return;
             const contents = await Promise.all(
                 files.map(f => this.app.vault.read(f).catch(() => ''))
@@ -494,15 +493,15 @@ export class GenerateCharacterModal extends Modal {
 
     private async collectExistingEntities(project: string): Promise<string> {
         const summaries: string[] = [];
-        const dirs = [
-            { path: pjCharsDir(project), label: '人物' },
-            { path: pjFactionsDir(project), label: '势力' },
-            { path: pjLocsDir(project), label: '地点' },
-            { path: pjItemsDir(project), label: '物品功法' }
+        const dirs: Array<{ kind: EntityKind; label: string }> = [
+            { kind: 'characters', label: '人物' },
+            { kind: 'factions', label: '势力' },
+            { kind: 'locations', label: '地点' },
+            { kind: 'items', label: '物品功法' }
         ];
         for (const dir of dirs) {
             try {
-                const files = this.app.vault.getFiles().filter(f => f.path.startsWith(dir.path) && f.path.endsWith('.md'));
+                const files = listEntityFiles(this.app, project, dir.kind);
                 if (files.length === 0) continue;
                 const contents = await Promise.all(files.map(f => this.app.vault.read(f).catch(() => '')));
                 for (let i = 0; i < files.length; i++) {
