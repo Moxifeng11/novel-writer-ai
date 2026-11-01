@@ -88,7 +88,7 @@ Agent（harness）
 
 ### Batch 3｜P2 低成本 + 门禁补强
 
-- `preflight` 补 `lint` + `build` + `check:release`；覆盖率 include 加 `shared/`
+- ✅ 覆盖率 include 已加 `shared/`（2026-11-01，G7-7）；`preflight` 补 `lint` + `build` + `check:release` 仍待评估（构建会重写产物，放 CI 更合适）
 - 占位测试/无效断言清理；未定义 CSS 类补规则；状态类统一 `nw-is-*`
 - `versions.json` 生成与校验；CODE-INDEX/README 脱节条目
 

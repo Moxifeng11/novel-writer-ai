@@ -18,14 +18,22 @@ export default defineConfig({
                 'engine/**/*.ts',
                 'services/**/*.ts',
                 'core/**/*.ts',
+                // G7-7：shared/ 是跨层原语（路径/预算/缓存/体检），此前完全不算覆盖率，
+                // 导致「70%」只代表约一半源码；纳入后数字会下降，但那是真话。
+                'shared/**/*.ts',
             ],
             exclude: [
                 '**/*.d.ts',
                 'tests/**',
                 'engine/**/*-worker.ts',
+                // 构建期嵌入的模板资产：纯字符串常量，测不到也没有行为
+                'shared/template-scaffold-assets.generated.ts',
             ],
-            // 阈值按核心域分别设定（FR-E-05）：基线取自 v4.11.0 实测值，留出小幅回退空间。
-            // 任一域低于阈值即失败，CI 的 test:cov 步骤因此成为阻断门禁。
+            // 阈值按核心域分别设定（FR-E-05）。
+            // 2026-11-01（G7-7）把 shared/ 纳入口径后重取基线：
+            //   全局 lines 76.7 / branches 78.7 / funcs 73.0
+            //   shared lines 93.3 / branches 85.5 / funcs 83.9
+            // 各域阈值取实测值下浮约 3-5 个点，任一域低于阈值即失败（CI test:cov 阻断）。
             thresholds: {
                 lines: 30,
                 statements: 30,
@@ -48,6 +56,12 @@ export default defineConfig({
                     statements: 45,
                     branches: 74,
                     functions: 14,
+                },
+                'shared/**/*.ts': {
+                    lines: 90,
+                    statements: 90,
+                    branches: 82,
+                    functions: 80,
                 },
             },
         },

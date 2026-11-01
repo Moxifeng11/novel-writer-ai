@@ -524,9 +524,9 @@
         {
           "id": "G7-7",
           "title": "shared/ 与 ui/ 不在覆盖率口径内",
-          "status": "todo",
-          "acceptance": "vitest include 覆盖 shared；报告行数占比可解释",
-          "evidence": "vitest.config.ts:17-26"
+          "status": "done",
+          "acceptance": "vitest include 覆盖 shared/；基线 76.7% lines（含 shared），shared 域阈值 90/90/82/80 已生效",
+          "evidence": "vitest.config.ts include + 各域阈值 + test:cov 通过"
         }
       ]
     }
@@ -615,6 +615,12 @@
       "group": "G7",
       "summary": "结算引擎真实行为测试（成功/幂等/回滚），修复正文 status 未进回滚日志",
       "evidence": "settlement-engine-behavior.test + settlement-engine updateBodyFrontmatter"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G7",
+      "summary": "覆盖率口径纳入 shared/（真实基线 76.7% lines），shared 域阈值 90/90/82/80 生效",
+      "evidence": "vitest.config.ts"
     }
   ]
 }
