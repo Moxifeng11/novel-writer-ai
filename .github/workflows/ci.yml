@@ -78,6 +78,9 @@ jobs:
       - name: 联动场景清单锚点检查
         run: npm run check:linked-scenarios
 
+      - name: dsh 后端隔离检查
+        run: npm run check:dsh-isolation
+
       - name: 专项进度台账与报告一致性
         run: npm run check:program
 

@@ -91,10 +91,33 @@
       "title": "dsh-superagent-prototype",
       "confidence": "high",
       "notes": "Research prototype, explicitly not an official DeepSeek product; not used."
+    },
+    {
+      "url": "https://unpkg.com/@deepseek-ai/dsh-sdk-app@0.1.2-alpha.2/README.md",
+      "title": "dsh SDK app bundle README",
+      "confidence": "high",
+      "notes": "SDK profile serves newline-delimited JSON-RPC over stdio; stdout reserved for protocol; initialization carries provider/model/cwd."
+    },
+    {
+      "url": "https://unpkg.com/@deepseek-ai/dsh-sdk-jsonrpc-server@0.0.1-rc.5/README.md",
+      "title": "dsh SDK JSON-RPC server README",
+      "confidence": "high",
+      "notes": "Methods initialize/session/prompt/shutdown; session.event and session.status notifications; no cancel or per-session close; no approval channel."
+    },
+    {
+      "url": "https://unpkg.com/@deepseek-ai/dsh-sdk-protocol@0.0.1-rc.1/README.md",
+      "title": "dsh SDK protocol README",
+      "confidence": "high",
+      "notes": "Wire types: InitializeParams {cwd,provider,model,maxTokens?}, SessionPromptParams {sessionId,contentBlocks}, SessionPromptResult {messageId}; notifications session.event/status and subagent.*."
+    },
+    {
+      "url": "https://unpkg.com/@deepseek-ai/dsh-sandbox@0.2.1-rc.5/README.md",
+      "title": "dsh sandbox README",
+      "confidence": "high",
+      "notes": "Modes read-only/workspace-write/danger-full-access; sandbox-policy config keys mode and workspaceRoot; escalation needs approval; Windows enforcement partial."
     }
   ],
   "unverified": [
-    "SDK profile transport (stdio vs HTTP vs WebSocket), handshake, and event shapes",
     "Exact model/API-key configuration keys for headless/SDK runs",
     "Whether dsh_session_log is enabled by default in headless/sdk profiles (assumed yes until spike proves otherwise)",
     "Electron renderer spawn limitations for the dsh CLI"

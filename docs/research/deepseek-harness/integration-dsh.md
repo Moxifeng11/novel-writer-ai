@@ -82,3 +82,42 @@ AgentWorkbench (UI)
 
 - 设置切回 `native` 即完全绕过 dsh；dsh 模块不参与打包主路径（动态导入）。
 - 若上游协议变更导致不可用：保留健康检查与错误提示，关闭入口，不影响 native。
+
+---
+
+## 9. D0 Spike 结果（2026-11-01，npm registry 实查）
+
+| 项 | 结论 | 依据 |
+|---|---|---|
+| npm 包 | `@deepseek-ai/dsh@0.2.1-rc.5`，bin `dsh`；依赖树包含 `dsh-base`、`dsh-sdk-app`、`dsh-tool-bash/pwsh/fs`、`node-addon-require-builtin` 等 | `npm view` |
+| SDK profile | `@deepseek-ai/dsh-sdk-app`：**newline-delimited JSON-RPC 2.0 over stdio**；stdout 仅协议帧 | 包 README |
+| 协议方法 | `initialize {cwd, provider, model, maxTokens?}`、`session/prompt {sessionId, contentBlocks}` → `{messageId}`、`shutdown` | `dsh-sdk-protocol` types |
+| 通知 | `session.event`（完整 SessionEvent 信封：`assistant/message`、`tool/call`、`tool/result`…）、`session.status`（`running/idle`）、`subagent.*` | 同上 |
+| 关键缺失 | **没有 cancel、没有 per-session close、没有审批通道**；取消只能杀进程 | 协议 README 明示 |
+| Sandbox | `dsh-sandbox-policy` 配置 `mode: read-only / workspace-write / danger-full-access` + `workspaceRoot`；通过 `--patch` 覆盖 | `dsh-sandbox` README |
+| 会话存储 | `DSH_HOME` 下的 `session.jsonl[.zstd]`；工作目录由 `initialize.cwd` 决定 | `dsh-base` / 架构文档 |
+
+### 对设计的修正
+
+1. **「写入逐次批准」在 SDK 协议下不可实现**：没有审批请求/响应通道。可行方案只有：
+   - 默认 `read-only`（写入被 sandbox 拒绝，fail-closed）；
+   - 用户在**启动前**显式选择 `workspace-write`（等于整会话放开，不是逐次）；
+   - 若坚持逐次批准，只能等上游提供 approval 通道，或不用 dsh 后端。
+2. **取消 = 杀进程**：无 cancel 方法；插件侧把「停止」映射为 kill，并在下一次消息时用同一 `sessionId` 恢复（依赖 DSH_HOME 持久化）。
+3. **模型/密钥**：`initialize` 只带 provider/model；密钥来源上游文档未明确，当前按 `DEEPSEEK_API_KEY` 环境变量注入（best-effort，需真实环境验证）。
+4. 由于 1，本次只交付**内核 + 隔离门禁 + 健康检查基础**；在工作台正式启用 dsh 前后端之前，必须先确定「整会话放开写入」是否可接受。
+
+### 已交付（Batch D 内核）
+
+- `engine/agent/dsh/dsh-protocol.ts`：stdio JSON-RPC 客户端（超时/错误/坏行/关闭）
+- `engine/agent/dsh/dsh-session.ts`：initialize/prompt/事件映射/idle 等待/close=kill
+- `engine/agent/dsh/dsh-launch.ts`：启动参数、DSH_HOME、最小 env、sandbox patch
+- `engine/agent/dsh/dsh-process.ts`：动态 import `node:child_process`，桌面端限定
+- `scripts/check-dsh-isolation.mjs`：child_process 仅限该目录且必须动态加载；native harness 不得反向依赖
+- 单测 9 条（协议/会话/启动参数），不联网
+
+### 待决策（启用前必须回答）
+
+- 是否接受「dsh 后端整会话 workspace-write」作为唯一的写入方式？若不接受，dsh 后端只能只读问答。
+- 是否接受 dsh 的完整依赖树（含 bash/pwsh 工具）随用户手动安装？
+- 真实环境验证：`DEEPSEEK_API_KEY` 是否被 dsh 的 provider 采纳、`--patch` 覆盖是否生效。
