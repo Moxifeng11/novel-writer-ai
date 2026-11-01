@@ -11,6 +11,7 @@ import {
 } from '../shared/paths';
 import { parsePromiseLedger, formatOpenPromisesForPrompt } from '../engine/promise-ledger';
 import { resolveTaskModelConfig } from '../shared/task-model';
+import { entityDir } from '../shared/entity-reader';
 import {
     buildSynopsisPrompts,
     parseSynopsisVariants,
@@ -394,7 +395,7 @@ export class VolumeIntroModal extends Modal {
     }
 
     private async readCharacterExcerpt(project: string): Promise<string> {
-        const prefix = `${pjCharsDir(project)}/`;
+        const prefix = `${entityDir(project, 'characters')}/`;
         const files = this.app.vault.getFiles()
             .filter(file => file.path.startsWith(prefix) && file.extension === 'md')
             .slice(0, 3);

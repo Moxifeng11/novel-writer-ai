@@ -5,7 +5,8 @@
  */
 
 import type { FileSystemPort } from '../../shared/file-system-port';
-import { pjCharFile, pjCharsDir } from '../../shared/paths';
+import { entityDir } from '../../shared/entity-reader';
+import { pjCharFile } from '../../shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Character } from './domain/aggregates';
@@ -44,7 +45,7 @@ export class CharacterRepository extends BaseMarkdownRepository<Character, strin
     }
 
     protected getBasePath(): string {
-        return pjCharsDir(this.project);
+        return entityDir(this.project, 'characters');
     }
 
     protected sampleId(): string {

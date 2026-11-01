@@ -5,7 +5,8 @@
  */
 
 import type { FileSystemPort } from '../../shared/file-system-port';
-import { pjFactionFile, pjFactionsDir } from '../../shared/paths';
+import { entityDir } from '../../shared/entity-reader';
+import { pjFactionFile } from '../../shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Faction } from './domain/aggregates';
@@ -44,7 +45,7 @@ export class FactionRepository extends BaseMarkdownRepository<Faction, string> {
     }
 
     protected getBasePath(): string {
-        return pjFactionsDir(this.project);
+        return entityDir(this.project, 'factions');
     }
 
     protected sampleId(): string {

@@ -10,12 +10,13 @@
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { splitTableCells } from '../shared/chapter-table';
+import { entityDir } from '../shared/entity-reader';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { listChapterNumbers } from '../engine/chapter-utils';
 import { showSuccess, showError, showWarning } from '../utils/helpers';
 import {
-    pjStepDir, pjControlDir, pjForeshadowDB, pjInfoDebtBoard, pjCharsDir,
+    pjStepDir, pjControlDir, pjForeshadowDB, pjInfoDebtBoard,
     SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT,
 } from '../shared/paths';
 import { WriteChapterModal } from './write-chapter-modal';
@@ -232,7 +233,7 @@ export class BatchChaptersModal extends Modal {
     /** 批量结束后刷新信息债看板（原逻辑保留） */
     private async refreshInfoDebt(project: string): Promise<void> {
         const files = this.app.vault.getFiles().filter(f => f.path.startsWith(project + '/'));
-        const charF = files.filter(f => f.path.startsWith(pjCharsDir(project) + '/') && f.name.endsWith('.md') && f.name !== '人物模板.md');
+        const charF = files.filter(f => f.path.startsWith(entityDir(project, 'characters') + '/') && f.name.endsWith('.md') && f.name !== '人物模板.md');
         const chapF = files.filter(f => f.path.includes('正文') && f.name.endsWith('.md'));
 
         let unrevealed = 0, revealed = 0;

@@ -4,10 +4,11 @@ import { AIEngine, BatchEntityResult } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
 import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '../utils/helpers';
 import { validateItemOutput } from '../shared/template-validator';
+import { entityDir } from '../shared/entity-reader';
 import { mergeFanficRequirement } from '../shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { pjItemsDir, pjWorldview, pjSettingLib, SUBDIR_ITEMS } from '../shared/paths';
+import { pjWorldview, pjSettingLib, SUBDIR_ITEMS } from '../shared/paths';
 import { saveEntities, formatSaveOutcome } from '../shared/entity-persistence';
 import { createLogger } from '../shared/logger';
 import { nextFrame } from '../shared/yield';
@@ -353,7 +354,7 @@ export class GenerateItemModal extends Modal {
         const toSave = this._pendingResults.filter(r => !r.deleted);
         if (toSave.length === 0) { new Notice('⚠️ 没有可保存的实体', 3000); return; }
 
-        await mkdirp(this.app, pjItemsDir(this._currentProject));
+        await mkdirp(this.app, entityDir(this._currentProject, 'items'));
         const outcome = await saveEntities(
             this.app,
             this._currentProject,

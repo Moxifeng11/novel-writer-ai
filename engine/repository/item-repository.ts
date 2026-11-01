@@ -5,7 +5,8 @@
  */
 
 import type { FileSystemPort } from '../../shared/file-system-port';
-import { pjItemFile, pjItemsDir } from '../../shared/paths';
+import { entityDir } from '../../shared/entity-reader';
+import { pjItemFile } from '../../shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Item } from './domain/aggregates';
@@ -44,7 +45,7 @@ export class ItemRepository extends BaseMarkdownRepository<Item, string> {
     }
 
     protected getBasePath(): string {
-        return pjItemsDir(this.project);
+        return entityDir(this.project, 'items');
     }
 
     protected sampleId(): string {

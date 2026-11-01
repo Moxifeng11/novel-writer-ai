@@ -36,6 +36,25 @@ describe('已迁移模块', () => {
     }
 });
 
+describe('全仓收口', () => {
+    it('engine/services/ui 不再直接拼四类实体目录', () => {
+        const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+            const full = path.join(dir, entry.name);
+            return entry.isDirectory() ? walk(full) : entry.name.endsWith('.ts') ? [full] : [];
+        });
+        const offenders: string[] = [];
+        for (const dir of ['engine', 'services', 'ui']) {
+            for (const file of walk(path.join(root, dir))) {
+                const rel = path.relative(root, file).replace(/\\/g, '/');
+                if (rel === 'shared/entity-reader.ts') continue;
+                const code = fs.readFileSync(file, 'utf8');
+                if (/pj(?:Chars|Locs|Factions|Items)Dir\(/.test(code)) offenders.push(rel);
+            }
+        }
+        expect(offenders).toEqual([]);
+    });
+});
+
 describe('entity-reader', () => {
     it('唯一入口不退化为全库扫描', () => {
         const source = read('shared/entity-reader.ts');

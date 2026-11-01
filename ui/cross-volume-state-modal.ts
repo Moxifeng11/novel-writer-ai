@@ -1,9 +1,10 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { splitTableCells } from '../shared/chapter-table';
+import { entityDir } from '../shared/entity-reader';
 import NovelWriterPlugin from '../main';
 import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
 import { listFolderFiles } from '../shared/vault-tree';
-import { pjBodyDir, pjControlDir, pjCharsDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
+import { pjBodyDir, pjControlDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
 import { mkdirp } from '../utils/helpers';
 import { createLogger } from '../shared/logger';
 
@@ -115,7 +116,7 @@ export class CrossVolumeStateModal extends Modal {
         }
 
         let allChars = '';
-        for (const f of listFolderFiles<TFile>(this.app.vault, pjCharsDir(project))) {
+        for (const f of listFolderFiles<TFile>(this.app.vault, entityDir(project, 'characters'))) {
             if (f.name !== '人物模板.md') {
                 const c = await this.app.vault.read(f);
                 const fm = c.match(/^---\n([\s\S]*?)\n---/);

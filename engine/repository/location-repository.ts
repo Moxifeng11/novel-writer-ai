@@ -5,7 +5,8 @@
  */
 
 import type { FileSystemPort } from '../../shared/file-system-port';
-import { pjLocFile, pjLocsDir } from '../../shared/paths';
+import { entityDir } from '../../shared/entity-reader';
+import { pjLocFile } from '../../shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Location } from './domain/aggregates';
@@ -44,7 +45,7 @@ export class LocationRepository extends BaseMarkdownRepository<Location, string>
     }
 
     protected getBasePath(): string {
-        return pjLocsDir(this.project);
+        return entityDir(this.project, 'locations');
     }
 
     protected sampleId(): string {

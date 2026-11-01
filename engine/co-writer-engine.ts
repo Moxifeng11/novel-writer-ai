@@ -28,6 +28,7 @@
 
 import { App, TFile } from 'obsidian';
 import { splitTableCells } from '../shared/chapter-table';
+import { entityDir } from '../shared/entity-reader';
 import { AIEngine } from './ai-engine';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from './context-manager';
@@ -70,7 +71,7 @@ import { SentenceDiversityEngine } from './sentence-diversity-engine';
 import { StyleSimilarityScorer } from './style-similarity-scorer';
 import { VectorEnhancer } from './vector-enhancer';
 import { PRECISION_MODE_SYSTEM_APPEND } from './prompts/co-write-prompts';
-import { pjCharsDir, readProjectMeta } from '../shared/paths';
+import { readProjectMeta } from '../shared/paths';
 import { getCreationModePromptBlock, parseCreationModeMeta } from '../shared/creation-mode';
 import { splitSceneSections } from './scene-expander';
 import {
@@ -653,7 +654,7 @@ export class CoWriterEngine {
             
             // Fallback: 原有的文件直接读取方式
             if (souls.length === 0) {
-                const charFolderPath = pjCharsDir(project);
+                const charFolderPath = entityDir(project, 'characters');
                 const mdFiles = this.getVaultMeta().getFiles().filter((f: TFile) =>
                     f.path.startsWith(charFolderPath + '/') && f.path.endsWith('.md'));
 
@@ -3331,7 +3332,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     private getProtagonistName(project: string): string {
         // 优先：扫描 01-世界架构/人物/*.md 的 frontmatter，
         // 若「身份」字段含「主角」/「主人公」，取该文件名（去 .md）作为主角名。
-        const charsDir = pjCharsDir(project);
+        const charsDir = entityDir(project, 'characters');
         try {
             const files = this.getVaultMeta().getFiles();
             for (const f of files) {

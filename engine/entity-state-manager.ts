@@ -7,6 +7,7 @@ import { App, TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
 import { getInvolvedEntities } from './chapter-context-builder';
 import { CharacterFrontmatter, Notifier, NOOP_NOTIFIER } from '../shared/types';
+import { entityDir } from '../shared/entity-reader';
 import { NOTICE_ERROR, NOTICE_WARNING } from '../shared/thresholds';
 import { withWriteLock } from '../shared/write-lock';
 import { pjCharsDir } from '../shared/paths';
@@ -329,7 +330,7 @@ ${bodyContent.slice(0, 6000)}
         }
 
         // Fallback: 原有的文件直接读写方式
-        const folderPath = pjCharsDir(project);
+        const folderPath = entityDir(project, 'characters');
         const files = this.getVaultMeta().getFiles().filter(f =>
             f.path.startsWith(folderPath) && f instanceof TFile
         );
@@ -478,7 +479,7 @@ ${bodyContent.slice(0, 6000)}
      */
     private extractMentionedNamesFallback(bodyContent: string, project: string): string[] {
         // 方案：从人物文件夹获取所有人名，检查是否在正文中出现
-        const folderPath = pjCharsDir(project);
+        const folderPath = entityDir(project, 'characters');
         const files = this.getVaultMeta().getFiles().filter(f =>
             f.path.startsWith(folderPath) && f instanceof TFile
         );

@@ -3,6 +3,7 @@
  */
 import { App, TFile } from 'obsidian';
 import { ObsidianFileSystem } from '../shared/file-system-port';
+import { entityDir } from '../shared/entity-reader';
 import {
     pjCharsDir,
     pjForeshadowDB,
@@ -57,7 +58,7 @@ function readInvolvedChars(app: App, project: string, chapterNum: number): strin
 }
 
 function readCharacterStates(app: App, project: string): CharacterWorldState[] {
-    const dir = `${pjCharsDir(project)}/`;
+    const dir = `${entityDir(project, 'characters')}/`;
     return app.vault.getFiles()
         .filter(f => f.path.startsWith(dir) && f.extension === 'md')
         .map(file => {
