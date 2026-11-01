@@ -114,7 +114,7 @@ export class BodyWriter {
     private app: App | undefined;
     private fs: FileSystemPort | null;
     private frontmatter: FrontmatterPort | null;
-    private contractCache = new Map<string, BodyFormatContract>();
+    private contractCache = new Map<string, { contract: BodyFormatContract; stamp: string }>();
 
     constructor(options: BodyWriterOptions = {}) {
         this.app = options.app;
@@ -138,23 +138,47 @@ export class BodyWriter {
         return this.frontmatter;
     }
 
-    /** 按项目写作规则推导格式契约（带缓存）；无规则文件时用默认契约 */
+    /** 按项目写作规则推导格式契约（带缓存 + 规则文件指纹校验）；无规则文件时用默认契约 */
     async resolveContract(project?: string): Promise<BodyFormatContract> {
         if (!project) return { ...DEFAULT_BODY_FORMAT };
+
+        let fs: FileSystemPort;
+        try {
+            fs = this.getFS();
+        } catch (e) {
+            log.warn('[BodyWriter] 文件端口不可用，使用默认契约:', e);
+            return { ...DEFAULT_BODY_FORMAT };
+        }
+
+        // P1-6（v4.27）：规则是用户直接编辑的 vault 文件，没有「保存」回调可以挂。
+        // 用规则文件 mtime+size 做指纹，每次解析都校验，变了就重新推导；
+        // 这样多个 BodyWriter 实例（ai-engine / step-result-saver / 续写弹窗）
+        // 各自持有的缓存都能自愈，不需要把实例逐个登记到失效通道。
+        const rulesPath = pjWritingRules(project);
+        let stamp = '';
+        let canValidate = false;
+        if (fs.getFileStamp) {
+            try {
+                const st = await fs.getFileStamp(rulesPath);
+                stamp = st ? `${st.mtime}:${st.size}` : 'missing';
+                canValidate = true;
+            } catch {
+                // 读指纹失败按「不可校验」处理，走进程内缓存
+            }
+        }
+
         const cached = this.contractCache.get(project);
-        if (cached) return cached;
+        if (cached && (!canValidate || cached.stamp === stamp)) return cached.contract;
 
         let contract: BodyFormatContract = { ...DEFAULT_BODY_FORMAT };
-        const rulesPath = pjWritingRules(project);
         try {
-            const fs = this.getFS();
             if (await fs.exists(rulesPath)) {
                 contract = deriveBodyFormat(await fs.read(rulesPath));
             }
         } catch (e) {
             log.warn('[BodyWriter] 读取写作规则失败，使用默认契约:', e);
         }
-        this.contractCache.set(project, contract);
+        this.contractCache.set(project, { contract, stamp });
         return contract;
     }
 
@@ -234,8 +258,18 @@ export class BodyWriter {
         await fs.write(req.path, content);
 
         // 5. 统一写入不变量字段
-        const file = await fs.getFile(req.path);
-        if (file) {
+        // P1-12（v4.27）：刚写入的文件可能还没进 vault 索引，getFile 一次拿不到 TFile。
+        // 旧实现只有 if (file)，拿不到时 status/tags/word_count 整段静默丢弃。
+        let file = await fs.getFile(req.path);
+        for (let attempt = 0; !file && attempt < 3; attempt++) {
+            await new Promise(r => setTimeout(r, 120));
+            file = await fs.getFile(req.path);
+        }
+        if (!file) {
+            log.warn(
+                `[BodyWriter] 写入后未取到 TFile，不变量字段（status/tags/word_count/step_status）未写入: ${req.path}`,
+            );
+        } else {
             try {
                 await this.getFrontmatter().processFrontmatter(file as TFile, (fm) => {
                     this.applyInvariants(fm, {

@@ -18,6 +18,59 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.23.0',
+        date: '2026-11-02',
+        title: '专项收口、dsh 可选后端与数据一致性加固',
+        sections: [
+            {
+                type: 'added',
+                label: '✨ 新功能',
+                items: [
+                    '内置主题画廊：7 套三层配色，浅色/深色一键切换',
+                    '日/周/月字数产出统计、状态栏今日字数与桌面宠物浮窗',
+                    '版本历史 UI 入口、首启引导与设置分区补全',
+                    'RAG 来源可见化：记录书名/维度/分数/片段，步骤面板与统计页可查',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🤖 Agent 与 dsh',
+                items: [
+                    'dsh 可选后端：stdio JSON-RPC、健康检查、启动前一次性写入确认、可强制结束',
+                    'Harness 回合内上下文预算、窗口化压缩阈值与事件日志纪律',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧱 数据一致性',
+                items: [
+                    '实体目录访问统一到 entity-reader / entityDir，目录前缀残留清零',
+                    '结算表收敛为唯一生成器，表/快照/总览在结算后统一编排',
+                    '文本拆分工具合并 10 份副本，差异行为用测试锁定',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🔧 修复',
+                items: [
+                    '结算快照与字段写入同进写锁，部分失败回滚不再写回过期值',
+                    '写作规则改动后格式契约缓存自动失效（按 mtime+size 指纹）',
+                    '正文写后取不到文件时重试并显式告警，不变量字段不再静默丢失',
+                    '项目改名改走 vault 索引写入，不会因旧 frontmatter 缓存被覆盖',
+                    '豆包向量 Key 被 OpenAI 覆盖、加密态保存清空 API Key 等严重问题',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🚦 门禁',
+                items: [
+                    'preflight 补齐 lint 与 build；发布校验覆盖 package/manifest/versions.json/tag 四方一致',
+                    '新增结算真实行为、知识库状态机、Agent 权限边界等回归测试',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.22.0',
         date: '2026-10-31',
         title: '版本治理、上下文体检、规划链契约与全插件排查',

@@ -624,9 +624,11 @@ export class SettlementEngine {
         }
 
         try {
-            await this.snapshotField(ctx, file as TFile, field);
-            await withWriteLock(fp, () =>
-                this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+            // P1-3（v4.27）：快照读必须与写入同锁。processFrontmatter 会写盘，
+            // 若在锁外先读旧值，锁内写入前原值可能已被其他写入者改掉，回滚会写回过期值。
+            await withWriteLock(fp, async () => {
+                await this.snapshotField(ctx, file as TFile, field);
+                await this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
                     if (CONTINUITY_APPEND_FIELDS.has(field)) {
                         // v4.25 连续性账本：已知信息/伤势/持有物品 追加语义 + 来源章，
                         // 覆盖语义会丢历史（上一章知道的事不会因为本章更新而消失）
@@ -643,8 +645,8 @@ export class SettlementEngine {
                     // v4.25 溯源：任何字段都带「最后结算时间 + 来源章」，供最新优先判断
                     fm['entity_last_changed_at'] = new Date().toISOString();
                     fm['entity_last_changed_chapter'] = ctx.chapName;
-                })
-            );
+                });
+            });
             return 'applied';
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);
@@ -1218,41 +1220,44 @@ ${ni.description || '暂无描述'}
 
             // 回滚快照：正文 status/涉及* 是结算的核心产物，旧实现没进 journal，
             // 部分失败时正文会永久停在 settled（实测 G7-6）。
-            await this.snapshotField(ctx, bodyFile, 'status');
-            if (allCharNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及人物');
-            if (allLocNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及地点');
-            if (allFactionNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及势力');
-            if (allItemNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及物品功法');
-            if (humanApplies) {
-                for (const key of ['对话占比', '口语密度', '时间锚点', '人味分']) {
-                    await this.snapshotField(ctx, bodyFile, key);
-                }
-            }
-
-            await this.getFrontmatter().processFrontmatter(bodyFile as TFile, (fm: FrontMatter) => {
-                // v4.0: 结算完成 → settled（旧值 '已完稿' 保留兼容）
-                fm['status'] = 'settled';
-                if (allCharNames.length > 0) {
-                    fm['涉及人物'] = allCharNames;
-                }
-                if (allLocNames.length > 0) {
-                    fm['涉及地点'] = allLocNames;
-                }
-                if (allFactionNames.length > 0) {
-                    fm['涉及势力'] = allFactionNames;
-                }
-                if (allItemNames.length > 0) {
-                    fm['涉及物品功法'] = allItemNames;
+            // P1-3（v4.27）：快照与写入同锁，避免快照读到后被并发写入改掉。
+            await withWriteLock(bodyFile.path, async () => {
+                await this.snapshotField(ctx, bodyFile, 'status');
+                if (allCharNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及人物');
+                if (allLocNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及地点');
+                if (allFactionNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及势力');
+                if (allItemNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及物品功法');
+                if (humanApplies) {
+                    for (const key of ['对话占比', '口语密度', '时间锚点', '人味分']) {
+                        await this.snapshotField(ctx, bodyFile, key);
+                    }
                 }
 
-                // v4.23：人味指标回写（对话占比/口语密度/时间锚点/人味分），
-                // 让「这一章像不像人写」变成可追踪的数据，而不是每次凭感觉。
-                if (human && humanApplies) {
-                    fm['对话占比'] = Math.round(human.metrics.dialogueRatio * 1000) / 1000;
-                    fm['口语密度'] = Math.round(human.metrics.colloquialPerKilo * 10) / 10;
-                    fm['时间锚点'] = human.metrics.timeAnchors;
-                    fm['人味分'] = Math.round(human.score * 100);
-                }
+                await this.getFrontmatter().processFrontmatter(bodyFile as TFile, (fm: FrontMatter) => {
+                    // v4.0: 结算完成 → settled（旧值 '已完稿' 保留兼容）
+                    fm['status'] = 'settled';
+                    if (allCharNames.length > 0) {
+                        fm['涉及人物'] = allCharNames;
+                    }
+                    if (allLocNames.length > 0) {
+                        fm['涉及地点'] = allLocNames;
+                    }
+                    if (allFactionNames.length > 0) {
+                        fm['涉及势力'] = allFactionNames;
+                    }
+                    if (allItemNames.length > 0) {
+                        fm['涉及物品功法'] = allItemNames;
+                    }
+
+                    // v4.23：人味指标回写（对话占比/口语密度/时间锚点/人味分），
+                    // 让「这一章像不像人写」变成可追踪的数据，而不是每次凭感觉。
+                    if (human && humanApplies) {
+                        fm['对话占比'] = Math.round(human.metrics.dialogueRatio * 1000) / 1000;
+                        fm['口语密度'] = Math.round(human.metrics.colloquialPerKilo * 10) / 10;
+                        fm['时间锚点'] = human.metrics.timeAnchors;
+                        fm['人味分'] = Math.round(human.score * 100);
+                    }
+                });
             });
         } catch (e) {
             log.warn('[SettlementEngine] body frontmatter回写失败:', e);

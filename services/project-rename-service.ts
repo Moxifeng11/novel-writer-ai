@@ -12,6 +12,7 @@ import {
     pluginStylePatternsFile,
 } from '../shared/paths';
 import { projectDisplayName } from '../domains/kernel/project-locator';
+import { writeVaultText } from '../shared/file-system-port';
 
 export interface ProjectRenameResult {
     success: boolean;
@@ -63,7 +64,9 @@ export class ProjectRenameService {
         const content = await adapter.read(path);
         // 用函数替换，避免书名里的 $&/$' 被当成替换模式
         const updated = content.replace(/^#\s+.+$/m, () => `# ${name}`);
-        if (updated !== content) await adapter.write(path, updated);
+        // P1-5（v4.27）：项目内 .md 走 vault 索引写入，adapter.write 不触发 modify 事件，
+        // metadataCache 仍是旧 frontmatter，后续 processFrontmatter 会用旧值覆盖改名结果。
+        if (updated !== content) await writeVaultText(this.app, path, updated);
     }
 
     private async syncWorldview(project: string, name: string): Promise<void> {
@@ -75,7 +78,7 @@ export class ProjectRenameService {
         const updated = /^项目名称:\s*.*$/m.test(content)
             ? content.replace(/^项目名称:\s*.*$/m, line)
             : content.replace(/^---\s*$/m, `---\n${line}`);
-        if (updated !== content) await adapter.write(path, updated);
+        if (updated !== content) await writeVaultText(this.app, path, updated);
     }
 
     private async syncWritingProfile(project: string, name: string): Promise<void> {
@@ -86,7 +89,7 @@ export class ProjectRenameService {
         const updated = /^projectName:\s*.*$/m.test(content)
             ? content.replace(/^projectName:\s*.*$/m, `projectName: ${name}`)
             : content.replace(/^---\s*$/m, `---\nprojectName: ${name}`);
-        if (updated !== content) await adapter.write(path, updated);
+        if (updated !== content) await writeVaultText(this.app, path, updated);
     }
 
     private async migratePluginData(oldProject: string, oldDisplayName: string, newProject: string, newDisplayName: string): Promise<void> {

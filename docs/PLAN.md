@@ -88,7 +88,7 @@ Agent（harness）
 
 ### Batch 3｜P2 低成本 + 门禁补强
 
-- ✅ 覆盖率 include 已加 `shared/`（2026-11-01，G7-7）；`preflight` 补 `lint` + `build` + `check:release` 仍待评估（构建会重写产物，放 CI 更合适）
+- ✅ 覆盖率 include 已加 `shared/`（2026-11-01，G7-7）；`preflight` 已补 `lint`（`2116c86`）与 `build`（`4be401f`）；`check:release` 仍待评估（构建会重写产物，放 CI 更合适）
 - 占位测试/无效断言清理；未定义 CSS 类补规则；状态类统一 `nw-is-*`
 - `versions.json` 生成与校验；CODE-INDEX/README 脱节条目
 
@@ -105,8 +105,8 @@ Agent（harness）
 |---|---|---|
 | M0 | v4.21.1 已发布（RAG/Agent/执行登记表） | ✅ |
 | M1 | 人味重建 + 版本治理 + 上下文体检 + 修订闭环 | ✅ v4.22.0 |
-| M2 | 全插件排查 Batch 2（P1 十八条） | 待做 |
-| M3 | Batch 3 + 门禁补强 + 真实链路回归 | 待做 |
+| M2 | 全插件排查 Batch 2（P1 十八条） | 进行中：P1-3/P1-6/P1-12 已修（2026-11-02）；P1-5 `adapter.write` 绕过 `modify` 事件范围待定（改代码 vs 书面接受） |
+| M3 | Batch 3 + 门禁补强 + 真实链路回归 | 进行中：`preflight` 已补 `lint`+`build`；`check:release` 未入 preflight；`E2E_REWRITE=1` 待授权 |
 | M4 | 发布 v4.23.0（远端 tag + Release） | 待用户确认 |
 
 ---

@@ -12,6 +12,7 @@ import { TFile, TFolder } from '../../__mocks__/obsidian';
 import { SettlementEngine } from '../../../engine/settlement-engine';
 import { pjCharFile, pjForeshadowDB, pjTimelineBoard, pjBodyFile } from '../../../shared/paths';
 import type { FileSystemPort, FrontmatterPort, VaultMetaPort } from '../../../shared/file-system-port';
+import { withWriteLock } from '../../../shared/write-lock';
 
 const PROJECT = '长篇小说/测试书';
 const VOL = 1;
@@ -52,7 +53,11 @@ function serializeFm(fm: Record<string, unknown>, body: string): string {
     return `---\n${lines.join('\n')}\n---\n${body}`;
 }
 
-function makeHarness(seed: Record<string, string>, failWritesMatching?: RegExp) {
+function makeHarness(
+    seed: Record<string, string>,
+    failWritesMatching?: RegExp,
+    hooks?: { onProcessFrontmatter?: (file: TFile) => Promise<void> | void },
+) {
     const files = new Map<string, string>(Object.entries(seed));
     const fileObjs = new Map<string, TFile>();
     const folders = new Set<string>();
@@ -112,6 +117,7 @@ function makeHarness(seed: Record<string, string>, failWritesMatching?: RegExp) 
 
     const frontmatter: FrontmatterPort = {
         processFrontmatter: async (file, updater) => {
+            await hooks?.onProcessFrontmatter?.(file);
             const raw = files.get(file.path) ?? '';
             const { fm, body } = parseFm(raw);
             updater(fm);
@@ -281,5 +287,32 @@ describe('SettlementEngine — 部分失败回滚', () => {
 
         const body = h.files.get(BODY_PATH)!;
         expect(body).toContain('status: written');
+    });
+});
+
+describe('SettlementEngine — 写锁覆盖快照（P1-3）', () => {
+    it('快照读取与字段写入同一把锁：并发写入无法插进两者之间', async () => {
+        let probed = false;
+        let lockHeldDuringSnapshot = false;
+        let externalDone: Promise<void> = Promise.resolve();
+
+        const h = makeHarness(seedAll(), undefined, {
+            onProcessFrontmatter: async (file) => {
+                if (probed || file.path !== CHAR_PATH) return;
+                probed = true;
+                let externalEntered = false;
+                // 若快照读在锁外，外部写入会在 30ms 内拿到锁
+                externalDone = withWriteLock(CHAR_PATH, async () => { externalEntered = true; });
+                await new Promise(r => setTimeout(r, 30));
+                lockHeldDuringSnapshot = !externalEntered;
+            },
+        });
+
+        await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, REPORT, BODY_SEED);
+        await externalDone;
+
+        expect(probed).toBe(true);
+        expect(lockHeldDuringSnapshot).toBe(true);
+        expect(h.files.get(CHAR_PATH)).toContain('当前状态: 受伤');
     });
 });
