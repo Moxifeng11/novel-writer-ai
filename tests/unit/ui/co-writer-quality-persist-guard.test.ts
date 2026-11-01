@@ -86,7 +86,7 @@ describe('RealtimeQualityController — 实时质量落盘不得二次评估', (
         await persist(controller, LONG_TEXT, undefined);
 
         expect(appendQualityHistory).not.toHaveBeenCalled();
-        expect((controller as unknown as { lastLiveQualityPersist: unknown }).lastLiveQualityPersist).toBeNull();
+        expect((controller as unknown as { lastLiveQualityPersist: Map<string, number> }).lastLiveQualityPersist.size).toBe(0);
     });
 
     it('有本次 WQE 结果时按该结果落盘', async () => {

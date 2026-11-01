@@ -69,7 +69,7 @@ export class RealtimeQualityController {
     private statusEl: HTMLElement | null = null;
     private readonly debouncer = new AdaptiveDebounceManager({ debug: false });
 
-    private lastLiveQualityPersist: { chapterKey: string; at: number } | null = null;
+    private lastLiveQualityPersist = new Map<string, number>();
     private liveQualityPersistInFlight = false;
     /** 偏离检测用的前文窗口缓存（按候选路径列表，避免每次评估重复读盘） */
     private previousChapterCache: { key: string; list: PreviousChapterContext[] } | null = null;
@@ -310,7 +310,9 @@ export class RealtimeQualityController {
         const throttleKey = `${project}::${chapterKey}`;
         const now = Date.now();
         const last = this.lastLiveQualityPersist;
-        if (last && last.chapterKey === throttleKey && now - last.at < QUALITY_LIVE_PERSIST_INTERVAL_MS) return;
+        // 按章节独立节流：切换 A→B→A 不再绕过 A 的节流窗口
+        const lastAt = this.lastLiveQualityPersist.get(throttleKey);
+        if (lastAt !== undefined && now - lastAt < QUALITY_LIVE_PERSIST_INTERVAL_MS) return;
         if (this.liveQualityPersistInFlight) return;
 
         this.liveQualityPersistInFlight = true;
@@ -329,7 +331,7 @@ export class RealtimeQualityController {
                 grade: result.grade,
                 trend: result.trend,
             });
-            this.lastLiveQualityPersist = { chapterKey: throttleKey, at: now };
+            this.lastLiveQualityPersist.set(throttleKey, now);
         } catch (e) {
             log.warn('[CoWritingView] 实时质量写入历史失败:', e);
         } finally {
