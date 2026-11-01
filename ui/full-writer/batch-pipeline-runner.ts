@@ -9,6 +9,7 @@
  * 不依赖 FullWriterView 的 DOM 状态：每个步骤执行前用模板重新填充 prompt。
  */
 import { App, TFile } from 'obsidian';
+import { writeSettlementArtifacts } from '../../engine/settlement/settlement-coordinator';
 import type NovelWriterPlugin from '../../main';
 import { ALL_FULL_STEPS, StepRunner } from '../../engine/step-runner';
 import type { StepRunCtx } from '../../engine/step-definitions';
@@ -411,22 +412,31 @@ export class BatchPipelineRunner {
             throw new Error('分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），结算未执行');
         }
 
-        await writeChapterStateSnapshot(this.app, {
-            project,
-            chapterNum: target.chapterNum,
+        const artifactReport = await writeSettlementArtifacts({
             chapterName: target.chapterName,
-            bodyText: ctx.stepResults['bodyGeneration'] || '',
-            sceneExpansion: ctx.stepResults['sceneExpand'] || '',
-            updatedChars: result.chars,
+            volume: target.volume || '',
+            mode: 'full',
+            result,
+        }, {
+            writeSnapshot: async () => {
+                await writeChapterStateSnapshot(this.app, {
+                    project,
+                    chapterNum: target.chapterNum,
+                    chapterName: target.chapterName,
+                    bodyText: ctx.stepResults['bodyGeneration'] || '',
+                    sceneExpansion: ctx.stepResults['sceneExpand'] || '',
+                    updatedChars: result.chars,
+                });
+            },
+            refreshNarrativeOverview: async () => {
+                const overview = await engine.generateNarrativeOverview(project);
+                if (overview.trim()) {
+                    await writeVaultText(this.app, pjNarrativeOverview(project), overview);
+                }
+            },
         });
-
-        try {
-            const overview = await engine.generateNarrativeOverview(project);
-            if (overview.trim()) {
-                await writeVaultText(this.app, pjNarrativeOverview(project), overview);
-            }
-        } catch (e) {
-            log.warn('[BatchPipeline] 叙事总览生成失败（不影响结算）:', e);
+        for (const warning of artifactReport.warnings) {
+            log.warn('[BatchPipeline] 结算产物未完全写入:', warning);
         }
     }
 }

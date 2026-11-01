@@ -1,7 +1,9 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import { isChapterSettledText } from '../shared/chapter-status';
 import { buildSettlementTable } from '../engine/settlement/settlement-artifacts';
-import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
+import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '../shared/paths';
+import { writeVaultText } from '../shared/file-system-port';
+import { settlementArtifactNotice, writeSettlementArtifacts } from '../engine/settlement/settlement-coordinator';
 
 import NovelWriterPlugin from '../main';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
@@ -201,10 +203,25 @@ export class ChapterSettlementModal extends Modal {
 
         const totalUpdated = result.updated;
         const totalCreated = result.createdChars + result.createdLocs + result.createdFactions + result.createdItems + result.createdForeshadows + result.createdTimelines;
-        const summary = this.buildSettlementSummary(target, result, false);
-
-        await this.writeSettlementFile(target, summary);
-        await this.writeStateSnapshot(target, bodyText, result.chars);
+        const artifactReport = await writeSettlementArtifacts({
+            chapterName: target.chapName,
+            volume: (target.chapDir.match(/第(\d+)卷/)?.[0]) || '',
+            mode: 'full',
+            result,
+            model: '',
+        }, {
+            writeSettlementTable: text => this.writeSettlementFile(target, text),
+            writeSnapshot: () => this.writeStateSnapshot(target, bodyText, result.chars),
+            // 完整结算后重建叙事总览；失败只记 warning，不影响结算本体
+            refreshNarrativeOverview: async () => {
+                const overview = await this.settlementEngine.generateNarrativeOverview(target.project);
+                if (overview.trim()) {
+                    await writeVaultText(this.app, pjNarrativeOverview(target.project), overview);
+                }
+            },
+        });
+        const artifactWarning = settlementArtifactNotice(artifactReport);
+        if (artifactWarning) new Notice(artifactWarning, 8000);
         new Notice(`✅ 结算完成：更新${totalUpdated}项，新建${totalCreated}项`, 8000);
         await this.refreshWorkspaceAndClose();
     }
@@ -229,9 +246,19 @@ export class ChapterSettlementModal extends Modal {
             settlement: summarizeSettlement(lightResult),
         });
 
-        const summary = this.buildLightSummary(target, wordCount, excerpt, trimmed.length > 240, lightResult);
-        await this.writeSettlementFile(target, summary);
-        await this.writeStateSnapshot(target, bodyText, lightResult.chars);
+        const lightTable = this.buildLightSummary(target, wordCount, excerpt, trimmed.length > 240, lightResult);
+        const lightReport = await writeSettlementArtifacts({
+            chapterName: target.chapName,
+            volume: (target.chapDir.match(/第(\d+)卷/)?.[0]) || '',
+            mode: 'light',
+            result: lightResult,
+            tableText: lightTable,
+        }, {
+            writeSettlementTable: text => this.writeSettlementFile(target, text),
+            writeSnapshot: () => this.writeStateSnapshot(target, bodyText, lightResult.chars),
+        });
+        const lightWarning = settlementArtifactNotice(lightReport);
+        if (lightWarning) new Notice(lightWarning, 8000);
 
         const totalUpdated = lightResult.updated;
         new Notice(`✅ 轻量结算完成：基于正文 frontmatter 更新${totalUpdated}项实体状态；补跑分析报告后可执行完整结算`, 8000);
