@@ -758,6 +758,13 @@ export class KnowledgeBaseView extends ItemView {
 
     // ============== Tab 1: 参考书籍 ==============
     private renderBooksTab(): void {
+        // 主 Tab 切回「参考书籍」时这里总是重建列表。若保留上次的详情选中态，
+        // renderBookListOnly() 的 `selectedBookId` 守卫会让搜索/状态/排序永久失效。
+        this.selectedBookId = null;
+        this.activeBookDetailTab = 'overview';
+        this.expandedItems = {};
+        this.foreshadowFilter = 'all';
+
         const content = this.rightContentEl.createDiv({
             cls: "nw-kb-books-tab nw-u-d-flex nw-u-h-100",
             attr: {}
@@ -1523,21 +1530,35 @@ export class KnowledgeBaseView extends ItemView {
         await this.loadBookDetailData(book.id);
         if (this.loadToken !== myToken || this.viewClosed) return;
         if (this.detailLoadError) {
-            tabContent.empty();
-            const errorBox = tabContent.createDiv({ cls: 'nw-kb-error' });
-            errorBox.createDiv({ text: '⚠️ 书籍详情加载失败', cls: 'nw-kb-error-title' });
-            errorBox.createDiv({ text: this.detailLoadError, cls: 'nw-kb-error-detail' });
-            const retry = errorBox.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
-            retry.addEventListener('click', () => {
-                if (!this.selectedBookId) return;
-                void this.loadBookDetailData(this.selectedBookId).then(() => {
-                    if (this.viewClosed) return;
-                    this.renderBookDetail();
-                });
-            });
+            this.renderDetailLoadError(tabContent as HTMLElement);
             return;
         }
         this.renderBookDetail();
+    }
+
+    /** 详情区加载失败框：初次加载与「重试失败」共用，避免渲染上一本书的残留数据 */
+    private renderDetailLoadError(tabContent: HTMLElement): void {
+        tabContent.empty();
+        const errorBox = tabContent.createDiv({ cls: 'nw-kb-error' });
+        errorBox.createDiv({ text: '⚠️ 书籍详情加载失败', cls: 'nw-kb-error-title' });
+        errorBox.createDiv({ text: this.detailLoadError || '未知错误', cls: 'nw-kb-error-detail' });
+        const retry = errorBox.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
+        retry.addEventListener('click', () => this.retryBookDetailLoad());
+    }
+
+    private retryBookDetailLoad(): void {
+        const bookId = this.selectedBookId;
+        if (!bookId) return;
+        void this.loadBookDetailData(bookId).then(() => {
+            if (this.viewClosed) return;
+            const tabContent = this.rightPanel.querySelector('.nw-kb-detail-tab-content');
+            if (!(tabContent instanceof HTMLElement)) return;
+            if (this.detailLoadError) {
+                this.renderDetailLoadError(tabContent);
+                return;
+            }
+            this.renderBookDetail();
+        });
     }
 
     private renderBookDetail(): void {
@@ -1547,6 +1568,12 @@ export class KnowledgeBaseView extends ItemView {
 
         const tabContent = this.rightPanel.querySelector('.nw-kb-detail-tab-content');
         if (!tabContent) return;
+
+        // 后台刷新（拆解完成等）失败时也走错误框，而不是用已清空的数据渲染「暂无数据」
+        if (this.detailLoadError) {
+            this.renderDetailLoadError(tabContent as HTMLElement);
+            return;
+        }
 
         (tabContent as HTMLElement).empty();
 
@@ -1600,6 +1627,16 @@ export class KnowledgeBaseView extends ItemView {
         const seq = ++this.detailLoadSeq;
         const stale = () => this.viewClosed || seq !== this.detailLoadSeq || this.selectedBookId !== bookId;
 
+        // 先清空上一本书的分析数据：本轮任何一步失败都不会把旧书的数据挂在新书详情页下。
+        this.styleData = null;
+        this.rhythmData = null;
+        this.techniqueData = null;
+        this.structureData = null;
+        this.characterData = null;
+        this.foreshadowData = null;
+        this.commercialData = null;
+        this.readabilityData = null;
+
         let book: BookBasicInfo | undefined;
         try {
             book = await this.kbManager.getBook(bookId);
@@ -1610,7 +1647,11 @@ export class KnowledgeBaseView extends ItemView {
             return;
         }
         if (stale()) return;
-        if (!book) return;
+        if (!book) {
+            // 书已被删除 / 列表数据过期：必须落错误态，否则详情区停在「加载中...」
+            this.detailLoadError = '书籍不存在或已被删除，请返回列表刷新';
+            return;
+        }
 
         const idx = this.allBooks.findIndex(b => b.id === bookId);
         if (idx >= 0) {
@@ -1983,7 +2024,8 @@ export class KnowledgeBaseView extends ItemView {
             if (isCustom) {
                 const deleteIcon = actions.createSpan({
                     text: '🗑️',
-                    cls: 'nw-u-fs-14px nw-u-c-text-muted nw-u-cur-pointer nw-u-p-2px'
+                    cls: 'nw-u-fs-14px nw-u-c-text-muted nw-u-cur-pointer nw-u-p-2px',
+                    attr: { 'aria-label': '删除这个题材', role: 'button', tabindex: '0' }
                 });
                 deleteIcon.addEventListener('click', (e) => {
                     e.stopPropagation();

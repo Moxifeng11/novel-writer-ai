@@ -1010,52 +1010,19 @@ export class OutlineTreeController {
 
         for (const vol of this._otvData.volumes) {
             const volStart = globalChapterNum;
+            const pending: Array<{ ci: number; oldNum: number; newNum: number }> = [];
 
             for (let ci = 0; ci < vol.chapters.length; ci++) {
                 const oldNum = vol.chapters[ci].num;
                 const newNum = globalChapterNum;
-
                 if (oldNum !== newNum) {
-                    const oldBodyFile = pjBodyFile(project, vol.num, oldNum);
-                    const newBodyFile = pjBodyFile(project, vol.num, newNum);
-                    const oldStepDir = pjStepDirFn(project, vol.num, oldNum);
-                    const newStepDir = pjStepDirFn(project, vol.num, newNum);
-
-                    try {
-                        const bodyFile = this.app.vault.getAbstractFileByPath(oldBodyFile);
-                        if (bodyFile instanceof TFile) {
-                            let content = await this.app.vault.read(bodyFile);
-                            content = content.replace(/^第(\d+)章/gm, `第${newNum}章`);
-                            content = content.replace(/^---[\s\S]*?---/, (fm) => {
-                                return fm.replace(/章:\s*.+/, `章: 第${newNum}章`);
-                            });
-                            await this.app.vault.modify(bodyFile, content);
-                            await this.app.vault.rename(bodyFile, newBodyFile);
-                        }
-                    } catch (e) {
-                        log.warn(`重命名章节 ${oldNum}->${newNum} 正文失败:`, e);
-                    }
-
-                    try {
-                        const allFiles = this.app.vault.getFiles();
-                        const stepFiles = allFiles.filter(f => f.path.startsWith(oldStepDir + '/'));
-                        for (const f of stepFiles) {
-                            const newPath = f.path.replace(oldStepDir, newStepDir).replace(`第${oldNum}章`, `第${newNum}章`);
-                            const newDir = newPath.substring(0, newPath.lastIndexOf('/'));
-                            await this._ensureDir(newDir);
-                            let content = await this.app.vault.read(f);
-                            content = content.replace(new RegExp(`第${oldNum}章`, 'g'), `第${newNum}章`);
-                            await this.app.vault.modify(f, content);
-                            await this.app.vault.rename(f, newPath);
-                        }
-                    } catch (e) {
-                        log.warn(`重命名章节 ${oldNum}->${newNum} 步骤文件失败:`, e);
-                    }
-
-                    vol.chapters[ci].num = newNum;
+                    pending.push({ ci, oldNum, newNum });
                 }
-
                 globalChapterNum++;
+            }
+
+            if (pending.length > 0) {
+                await this._applyChapterRenumber(project, vol.num, vol.chapters, pending);
             }
 
             const volEnd = globalChapterNum - 1;
@@ -1102,6 +1069,125 @@ export class OutlineTreeController {
 
         await this._loadOutlineTreeData();
         this._renderTree();
+    }
+
+    /**
+     * 章节重编号（两阶段）：先把所有待改名的文件移到临时名，再改到最终名。
+     *
+     * 单遍升序改名在插入章节时必然撞名（第2章→第3章 时第3章还没让开），
+     * rename 抛错被吞而内存编号照常前移 → 树与磁盘错位、同章双文件。
+     * 只有该章所有文件都改名成功才更新 num，失败则保留旧编号（宁可断号，不可重号）。
+     */
+    private async _applyChapterRenumber(
+        project: string,
+        volNum: number,
+        chapters: Array<{ num: number }>,
+        pending: Array<{ ci: number; oldNum: number; newNum: number }>,
+    ): Promise<void> {
+        const TMP_SUFFIX = '.nw-renum-tmp';
+        const toTemp = (path: string): string => `${path}${TMP_SUFFIX}.md`;
+        const fromTemp = (path: string): string => path.slice(0, -TMP_SUFFIX.length - 3);
+
+        interface Staged {
+            ci: number;
+            temp: string;
+            target: string;
+            oldNum: number;
+            newNum: number;
+            kind: 'body' | 'step';
+        }
+        const staged: Staged[] = [];
+        const failed = new Set<number>();
+
+        // Phase 1：全部移出原位，腾空目标名
+        for (const p of pending) {
+            const oldBodyFile = pjBodyFile(project, volNum, p.oldNum);
+            const newBodyFile = pjBodyFile(project, volNum, p.newNum);
+            try {
+                const bodyFile = this.app.vault.getAbstractFileByPath(oldBodyFile);
+                if (bodyFile instanceof TFile) {
+                    const temp = toTemp(oldBodyFile);
+                    await this.app.vault.rename(bodyFile, temp);
+                    staged.push({ ci: p.ci, temp, target: newBodyFile, oldNum: p.oldNum, newNum: p.newNum, kind: 'body' });
+                }
+            } catch (e) {
+                failed.add(p.ci);
+                log.warn(`重命名章节 ${p.oldNum}->${p.newNum} 正文暂存失败:`, e);
+            }
+
+            const oldStepDir = pjStepDirFn(project, volNum, p.oldNum);
+            const newStepDir = pjStepDirFn(project, volNum, p.newNum);
+            try {
+                const stepFiles = this.app.vault.getFiles().filter(f => f.path.startsWith(oldStepDir + '/'));
+                for (const f of stepFiles) {
+                    const originalPath = f.path;
+                    const temp = toTemp(originalPath);
+                    await this.app.vault.rename(f, temp);
+                    staged.push({
+                        ci: p.ci,
+                        temp,
+                        target: originalPath.replace(oldStepDir, newStepDir),
+                        oldNum: p.oldNum,
+                        newNum: p.newNum,
+                        kind: 'step',
+                    });
+                }
+            } catch (e) {
+                failed.add(p.ci);
+                log.warn(`重命名章节 ${p.oldNum}->${p.newNum} 步骤文件暂存失败:`, e);
+            }
+        }
+
+        // Phase 2：改内容 → 落到最终名；失败则（含内容）退回原名，避免临时文件或改号文件留在库里
+        for (const s of staged) {
+            let originalContent: string | undefined;
+            try {
+                const file = this.app.vault.getAbstractFileByPath(s.temp);
+                if (!(file instanceof TFile)) throw new Error(`临时文件不存在: ${s.temp}`);
+                const content = await this.app.vault.read(file);
+                originalContent = content;
+                let next = content;
+                if (s.kind === 'body') {
+                    next = content.replace(/^第(\d+)章/gm, `第${s.newNum}章`);
+                    next = next.replace(/^---[\s\S]*?---/, (fm) => fm.replace(/章:\s*.+/, `章: 第${s.newNum}章`));
+                } else {
+                    next = content.replace(new RegExp(`第${s.oldNum}章`, 'g'), `第${s.newNum}章`);
+                }
+                if (next !== content) {
+                    await this.app.vault.modify(file, next);
+                }
+                const newDir = s.target.substring(0, s.target.lastIndexOf('/'));
+                await this._ensureDir(newDir);
+                await this.app.vault.rename(file, s.target);
+            } catch (e) {
+                failed.add(s.ci);
+                log.warn(`章节 ${s.oldNum}->${s.newNum} 落盘失败:`, e);
+                await this._restoreStagedFile(s.temp, fromTemp(s.temp), originalContent);
+            }
+        }
+
+        for (const p of pending) {
+            if (!failed.has(p.ci)) {
+                chapters[p.ci].num = p.newNum;
+            } else {
+                log.warn(`章节 ${p.oldNum}->${p.newNum} 重编号未完成，保留旧编号以避免重号`);
+            }
+        }
+    }
+
+    /** 落盘失败时把临时文件（连同改号前内容）退回原名，尽力而为，失败只记日志 */
+    private async _restoreStagedFile(tempPath: string, originalPath: string, originalContent?: string): Promise<void> {
+        try {
+            const file = this.app.vault.getAbstractFileByPath(tempPath);
+            if (file instanceof TFile) {
+                if (originalContent !== undefined) {
+                    await this.app.vault.modify(file, originalContent);
+                }
+                await this.app.vault.rename(file, originalPath);
+            }
+        } catch (e) {
+            log.warn(`恢复临时文件 ${tempPath} 失败:`, e);
+        }
     }
 
     private _showContextMenu(x: number, y: number, items: Array<{ label: string; icon?: string; action: () => void; danger?: boolean; disabled?: boolean }>): void {

@@ -221,14 +221,12 @@ export class WorldviewCacheService {
                 accessCount: 1,
             };
 
-            if (entry) {
-                const oldSize = entry.size;
-                this.cache.set(key, newEntry);
-                this.projectSizes.set(project, currentProjectSize - oldSize + size);
-            } else {
-                this.cache.set(key, newEntry);
-                this.projectSizes.set(project, currentProjectSize + size);
-            }
+            // 驱逐已经改写过 projectSizes；必须以驱逐后的值为基准，
+            // 否则会按旧值回写，把刚驱逐掉的字节重新加回来（记账漂移）。
+            const baseSize = this.projectSizes.get(project) || 0;
+            const replacedSize = this.cache.get(key)?.size || 0;
+            this.cache.set(key, newEntry);
+            this.projectSizes.set(project, baseSize - replacedSize + size);
 
             this.evictProjectIfNeeded();
             this.updateStats();
@@ -278,8 +276,11 @@ export class WorldviewCacheService {
                 accessCount: existingEntry ? existingEntry.accessCount + 1 : 1,
             };
 
+            // 同上：驱逐会重写 projectSizes，回写必须用驱逐后的基数与被驱逐后是否仍在的旧条目
+            const baseSize = this.projectSizes.get(project) || 0;
+            const replacedSize = this.cache.get(key)?.size || 0;
             this.cache.set(key, newEntry);
-            this.projectSizes.set(project, currentProjectSize - oldSize + size);
+            this.projectSizes.set(project, baseSize - replacedSize + size);
             this.evictProjectIfNeeded();
             this.updateStats();
 

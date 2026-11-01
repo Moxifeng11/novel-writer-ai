@@ -5,7 +5,7 @@ import { radarChart, barChart, donutChart, wordCloud, lineChart, timelineChart, 
 import { SmartChart } from '../components/smart-chart';
 import { createEmptyState } from '../components/empty-state';
 import { createLogger } from '../../shared/logger';
-import { formatDetailNumber } from '../knowledge-detail-format';
+import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '../knowledge-detail-format';
 import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '../../engine/deconstruction-scheduler';
 import type {
     StyleData,
@@ -116,22 +116,22 @@ export class BookDetailRenderer {
                 cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax nw-u-gap-12px'
             });
             if (sentenceRhythm?.avgSentenceLength !== undefined) {
-                this.addInfoItem(grid, '平均句长', `${sentenceRhythm.avgSentenceLength.toFixed(1)} 字`);
+                this.addInfoItem(grid, '平均句长', formatDetailNumber(sentenceRhythm.avgSentenceLength, 1, ' 字'));
             }
             if (paragraphStructure?.avgParagraphLength !== undefined) {
-                this.addInfoItem(grid, '平均段长', `${paragraphStructure.avgParagraphLength.toFixed(1)} 字`);
+                this.addInfoItem(grid, '平均段长', formatDetailNumber(paragraphStructure.avgParagraphLength, 1, ' 字'));
             }
             if (narrativeStyle?.dialogueRatio !== undefined) {
-                this.addInfoItem(grid, '对白占比', `${(narrativeStyle.dialogueRatio * 100).toFixed(1)}%`);
+                this.addInfoItem(grid, '对白占比', formatDetailPercent(narrativeStyle.dialogueRatio, 1));
             }
             if (narrativeStyle?.descriptionRatio?.total !== undefined) {
-                this.addInfoItem(grid, '描写占比', `${(narrativeStyle.descriptionRatio.total * 100).toFixed(1)}%`);
+                this.addInfoItem(grid, '描写占比', formatDetailPercent(narrativeStyle.descriptionRatio.total, 1));
             }
             if (wordPreference?.idiomDensity !== undefined) {
-                this.addInfoItem(grid, '成语密度', `${wordPreference.idiomDensity.toFixed(1)} /千字`);
+                this.addInfoItem(grid, '成语密度', formatDetailNumber(wordPreference.idiomDensity, 1, ' /千字'));
             }
             if (wordPreference?.colloquialismLevel !== undefined) {
-                this.addInfoItem(grid, '口语化程度', `${(wordPreference.colloquialismLevel * 100).toFixed(1)}%`);
+                this.addInfoItem(grid, '口语化程度', formatDetailPercent(wordPreference.colloquialismLevel, 1));
             }
         }
 
@@ -179,7 +179,7 @@ export class BookDetailRenderer {
             if (overallStyle.secondaryStyle) {
                 styleCard.createEl('div', { text: `次要文风: ${overallStyle.secondaryStyle}`, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-4px' });
             }
-            styleCard.createEl('div', { text: `置信度: ${(overallStyle.confidence * 100).toFixed(0)}%`, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-4px' });
+            styleCard.createEl('div', { text: `置信度: ${formatDetailPercent(overallStyle.confidence)}`, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-4px' });
 
             if (overallStyle.styleScores) {
                 const scoresCard = grid.createDiv({
@@ -189,7 +189,7 @@ export class BookDetailRenderer {
                 const scoreList = scoresCard.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
                 Object.entries(overallStyle.styleScores).slice(0, 5).forEach(([style, score]) => {
                     scoreList.createEl('div', {
-                        text: `${style}: ${(score * 100).toFixed(0)}%`,
+                        text: `${style}: ${formatDetailPercent(score)}`,
                         cls: 'nw-u-fs-12px'
                     });
                 });
@@ -202,16 +202,16 @@ export class BookDetailRenderer {
             const grid = section.createDiv({
                 cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-3 nw-u-gap-12px'
             });
-            this.addInfoItem(grid, 'TTR', vr.ttr.toFixed(3));
-            this.addInfoItem(grid, 'MTLD', vr.mtld.toFixed(1));
-            this.addInfoItem(grid, "Yule's K", vr.yulesK.toFixed(3));
-            this.addInfoItem(grid, '词汇量', vr.vocabularySize.toLocaleString());
+            this.addInfoItem(grid, 'TTR', formatDetailNumber(vr.ttr, 3));
+            this.addInfoItem(grid, 'MTLD', formatDetailNumber(vr.mtld, 1));
+            this.addInfoItem(grid, "Yule's K", formatDetailNumber(vr.yulesK, 3));
+            this.addInfoItem(grid, '词汇量', formatDetailCount(vr.vocabularySize));
             const levelItem = grid.createDiv({
                 cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px'
             });
             levelItem.createDiv({ text: '级别', cls: "nw-text-muted-11 nw-u-marginbottom-4px", attr: {} });
             levelItem.createDiv({
-                text: `${vr.level} (${vr.score.toFixed(1)}分)`,
+                text: `${vr.level} (${formatDetailNumber(vr.score, 1, '分')})`,
                 cls: 'nw-u-fs-13px nw-u-c-interactive-accent nw-u-fwt-500'
             });
         }
@@ -233,7 +233,7 @@ export class BookDetailRenderer {
                 const statsRow = section.createDiv({
                     cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-12px nw-u-margintop-16px'
                 });
-                this.addInfoItem(statsRow, '平衡度', `${fs.balanceScore.toFixed(1)}分`);
+                this.addInfoItem(statsRow, '平衡度', formatDetailNumber(fs.balanceScore, 1, '分'));
                 this.addInfoItem(statsRow, '级别', fs.level);
                 this.addInfoItem(statsRow, '主导感', senseNameMap[fs.dominantSense] || fs.dominantSense);
             }
@@ -558,7 +558,7 @@ export class BookDetailRenderer {
                 cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-interactive-accent nw-u-marginbottom-8px'
             });
             card.createDiv({
-                text: `置信度: ${(ea.confidence * 100).toFixed(0)}%`,
+                text: `置信度: ${formatDetailPercent(ea.confidence)}`,
                 cls: 'nw-u-fs-13px nw-u-c-text-muted'
             });
             if (ea.description) {
@@ -645,7 +645,7 @@ export class BookDetailRenderer {
                 });
                 const content = row.createDiv({ cls: 'nw-u-flex-1' });
                 content.createEl('div', {
-                    text: `位置: ${(seg.startPosition * 100).toFixed(0)}% - ${(seg.endPosition * 100).toFixed(0)}%`,
+                    text: `位置: ${formatDetailPercent(seg.startPosition)} - ${formatDetailPercent(seg.endPosition)}`,
                     cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-marginbottom-2px'
                 });
                 if (seg.chapterRange && seg.chapterRange.length === 2) {
@@ -698,7 +698,7 @@ export class BookDetailRenderer {
                         cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-6px'
                     });
                     row.createSpan({ text: ch.title, cls: 'nw-u-fs-13px nw-u-fwt-500' });
-                    row.createSpan({ text: `${ch.wordCount.toLocaleString()}字`, cls: 'nw-u-fs-12px nw-u-c-text-muted' });
+                    row.createSpan({ text: `${formatDetailCount(ch.wordCount)}字`, cls: 'nw-u-fs-12px nw-u-c-text-muted' });
                 });
             }
         }
@@ -719,9 +719,10 @@ export class BookDetailRenderer {
 
         if (book.synopsis) {
             const synopsisSection = this.createDetailSection(container, '简介');
+            // 简介可能上千字，直接整段渲染会把概览页拉成数千行；限高滚动保留全文
             synopsisSection.createDiv({
                 text: book.synopsis,
-                cls: 'nw-u-fs-13px nw-u-lh-1-6 nw-u-c-text-normal nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px'
+                cls: 'nw-u-fs-13px nw-u-lh-1-6 nw-u-c-text-normal nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-maxh-400px nw-u-ovy-auto'
             });
         }
 
@@ -920,7 +921,7 @@ export class BookDetailRenderer {
             });
             if (row.confidence !== undefined) {
                 valueEl.createSpan({
-                    text: ` ${(row.confidence * 100).toFixed(0)}%`,
+                    text: ` ${formatDetailPercent(row.confidence)}`,
                     cls: "nw-text-muted-11 nw-u-fwt-400 nw-u-marginleft-4px", attr: {}
                 });
             }
@@ -1031,7 +1032,7 @@ export class BookDetailRenderer {
             cls: 'nw-u-ta-center nw-u-marginbottom-20px nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px'
         });
         overall.createDiv({
-            text: qs.overall.toFixed(0),
+            text: formatDetailNumber(qs.overall, 0),
             cls: 'nw-u-fs-36px nw-u-fwt-700 nw-u-c-interactive-accent'
         });
         overall.createDiv({ text: '综合评分', cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-margintop-4px' });
@@ -1053,7 +1054,7 @@ export class BookDetailRenderer {
             if (s.optional && s.value == null) {
                 top.createSpan({ text: 'N/A', cls: 'nw-u-fs-12px nw-u-c-text-faint' });
             } else {
-                top.createSpan({ text: `${(s.value ?? 0).toFixed(0)}分`, cls: 'nw-text-sm-muted' });
+                top.createSpan({ text: formatDetailNumber(s.value, 0, '分'), cls: 'nw-text-sm-muted' });
             }
             const bar = item.createDiv({
                 cls: 'nw-u-h-6px nw-u-bg-background-secondary nw-u-brd-3px nw-u-ov-hidden'
@@ -1095,7 +1096,7 @@ export class BookDetailRenderer {
             });
             this.addInfoItem(statsGrid, '总角色数', String(data.stats.totalCharacters));
             this.addInfoItem(statsGrid, '主角数', String(data.stats.mainCharacterCount));
-            this.addInfoItem(statsGrid, '人均出场', data.stats.avgAppearancePerCharacter.toFixed(1));
+            this.addInfoItem(statsGrid, '人均出场', formatDetailNumber(data.stats.avgAppearancePerCharacter, 1));
         }
 
         // 角色重要性排行
@@ -1632,7 +1633,7 @@ export class BookDetailRenderer {
                 { label: '总伏笔数', value: stats.totalForeshadows, color: 'var(--interactive-accent)' },
                 { label: '已回收', value: stats.resolvedCount, color: '#2ecc71' },
                 { label: '未回收', value: stats.unresolvedCount, color: '#f59e0b' },
-                { label: '平均重要度', value: `${(stats.avgImportance * 100).toFixed(0)}%`, color: '#9b59b6' },
+                { label: '平均重要度', value: formatDetailPercent(stats.avgImportance), color: '#9b59b6' },
             ];
             statItems.forEach(item => {
                 const card = statsGrid.createDiv({
@@ -1703,10 +1704,7 @@ export class BookDetailRenderer {
             cls: 'nw-u-maxh-400px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-8px'
         });
 
-        filteredItems.forEach((item, idx) => {
-            const key = `fs_${idx}`;
-            const isExpanded = this.deps.getExpandedItems()[key] ?? false;
-
+        filteredItems.forEach((item) => {
             const itemEl = list.createDiv({
                 attr: {
                     style: `border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}`
@@ -1744,9 +1742,9 @@ export class BookDetailRenderer {
                 cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-brd-10px nw-u-c-text-muted'
             });
 
-            const importancePct = (item.importance * 100).toFixed(0);
+            const importancePct = formatDetailPercent(item.importance);
             meta.createSpan({
-                text: `重要度 ${importancePct}%`,
+                text: `重要度 ${importancePct}`,
                 attr: {
                     style: `padding:2px 8px;font-size:11px;border-radius:10px;${
                         item.importance >= 0.7 ? 'background:rgba(231,76,60,0.1);color:#e74c3c;' :
@@ -1757,19 +1755,8 @@ export class BookDetailRenderer {
             });
 
             meta.createSpan({
-                text: `出场 ${item.totalAppearances}次`,
+                text: `出场 ${formatDetailCount(item.totalAppearances)}次`,
                 cls: 'nw-text-muted-11'
-            });
-
-            const toggle = header.createSpan({
-                text: isExpanded ? '▼' : '▶',
-                cls: "nw-text-sm-muted nw-flex-shrink-0 nw-u-margintop-2px", attr: {}
-            });
-            void toggle;
-
-            header.addEventListener('click', () => {
-                this.deps.getExpandedItems()[key] = !isExpanded;
-                this.deps.onRequestReRender();
             });
         });
     }
@@ -1893,7 +1880,7 @@ export class BookDetailRenderer {
                     cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px nw-u-marginbottom-12px'
                 });
                 progressWrap.createDiv({
-                    text: `节奏合规率：${(wr.complianceRate * 100).toFixed(1)}%`,
+                    text: `节奏合规率：${formatDetailPercent(wr.complianceRate, 1)}`,
                     cls: 'nw-u-fs-14px nw-u-fwt-600 nw-u-marginbottom-8px'
                 });
                 const barBg = progressWrap.createDiv({
@@ -2025,7 +2012,7 @@ export class BookDetailRenderer {
                     const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-6px' });
                     header.createSpan({ text: `#${i + 1}`, cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-color-red' });
                     if (seg.confidence !== undefined) {
-                        header.createSpan({ text: `置信度：${(seg.confidence * 100).toFixed(0)}%`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
+                        header.createSpan({ text: `置信度：${formatDetailPercent(seg.confidence)}`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
                     }
                     item.createDiv({
                         text: seg.excerpt,
@@ -2077,7 +2064,7 @@ export class BookDetailRenderer {
             });
             if (ai.overallScore !== undefined) {
                 overviewRow.createDiv({
-                    text: `AI 痕迹率：${(ai.overallScore * 100).toFixed(1)}%`,
+                    text: `AI 痕迹率：${formatDetailPercent(ai.overallScore, 1)}`,
                     cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-c-color-orange'
                 });
             }
@@ -2133,7 +2120,7 @@ export class BookDetailRenderer {
                     const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-6px' });
                     header.createSpan({ text: `#${i + 1}`, cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-color-red' });
                     if (p.score !== undefined) {
-                        header.createSpan({ text: `风险分：${(p.score * 100).toFixed(0)}%`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
+                        header.createSpan({ text: `风险分：${formatDetailPercent(p.score)}`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
                     }
                     item.createDiv({
                         text: p.excerpt,
@@ -2245,10 +2232,10 @@ export class BookDetailRenderer {
                 const info = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
                 info.createDiv({ text: tech.name, cls: 'nw-u-fs-13px nw-u-fwt-500' });
                 const meta = info.createDiv({ cls: "nw-text-muted-11 nw-u-d-flex nw-u-gap-12px nw-u-margintop-2px nw-u-fwr-wrap", attr: {} });
-                meta.createSpan({ text: `出现 ${tech.count} 次` });
+                meta.createSpan({ text: `出现 ${formatDetailCount(tech.count)} 次` });
                 meta.createSpan({ text: `分类: ${categoryLabels[tech.category] || tech.category}` });
-                meta.createSpan({ text: `置信度 ${(tech.confidence * 100).toFixed(0)}%` });
-                meta.createSpan({ text: `质量分 ${(tech.qualityScore * 100).toFixed(0)}%` });
+                meta.createSpan({ text: `置信度 ${formatDetailPercent(tech.confidence)}` });
+                meta.createSpan({ text: `质量分 ${formatDetailPercent(tech.qualityScore)}` });
 
                 const toggle = header.createSpan({
                     text: isExpanded ? '▼' : '▶',
@@ -2266,7 +2253,7 @@ export class BookDetailRenderer {
                         cls: 'nw-u-p-12px nw-u-bt-1px-solid-background-m nw-u-bg-background-secondary'
                     });
                     body.createDiv({ text: `技巧ID: ${tech.id}`, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-4px' });
-                    body.createDiv({ text: `题材权重: ${tech.genreWeight.toFixed(1)}x`, cls: 'nw-u-fs-12px nw-u-c-text-muted' });
+                    body.createDiv({ text: `题材权重: ${formatDetailNumber(tech.genreWeight, 1, 'x')}`, cls: 'nw-u-fs-12px nw-u-c-text-muted' });
                 }
             });
     }
@@ -2312,7 +2299,8 @@ export class BookDetailRenderer {
                 tagEl.createSpan({ text: tag });
                 const delBtn = tagEl.createSpan({
                     text: '×',
-                    cls: 'nw-u-cur-pointer nw-u-c-text-muted nw-u-fs-14px nw-u-lh-1'
+                    cls: 'nw-u-cur-pointer nw-u-c-text-muted nw-u-fs-14px nw-u-lh-1',
+                    attr: { 'aria-label': `删除标签 ${tag}`, role: 'button', tabindex: '0' }
                 });
                 delBtn.addEventListener('click', (e) => {
                     e.stopPropagation();

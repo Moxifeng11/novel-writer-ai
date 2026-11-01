@@ -21,6 +21,7 @@ import { classifyFingerprint, mergeClassificationTags } from '../../shared/conte
 import type { BookBasicInfo } from '../../services/knowledge-base-manager';
 import { createLogger } from '../../shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
+import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '../knowledge-detail-format';
 
 
 const log = createLogger('WritingFingerprintView');
@@ -668,7 +669,7 @@ export class WritingFingerprintView extends ItemView {
         metaRow.createEl('span', { text: `${SCOPE_LABELS[fp.scope as FingerprintScope]}` });
         metaRow.createEl('span', { text: `来源: ${fp.source || '未知'}` });
         metaRow.createEl('span', { text: `提取时间: ${new Date(fp.extractedAt).toLocaleString()}` });
-        metaRow.createEl('span', { text: `字数: ${fp.stats.wordCount.toLocaleString()}` });
+        metaRow.createEl('span', { text: `字数: ${formatDetailCount(fp.stats?.wordCount)}` });
         metaRow.createEl('span', { text: `原文样本: ${(fp.samples || []).length} 段` });
 
         if (fp.tags.length > 0) {
@@ -696,16 +697,20 @@ export class WritingFingerprintView extends ItemView {
      * - 无原文样本 → 段落层 few-shot 不会注入（只剩特征描述），黄条提示 + 一键从知识库补样本；
      * - 注入预算：默认 2000 字符（可在设置改 fingerprintInjectionBudget），指纹多时按相似度挑选。
      */
-    private renderInjectionCard(fp: StyleFingerprint): void {
-        const card = this.rightPanel.createDiv({ cls: 'nw-fingerprint-inject-card nw-mb-lg' });
+    /** 注入预算与真实生成链路同源（设置 fingerprintInjectionBudget，缺省 2000） */
+    private injectionBudget(): number {
+        const raw = Number(this.plugin.settings?.fingerprintInjectionBudget);
+        return Number.isFinite(raw) && raw > 0 ? raw : 2000;
+    }
+
+    private renderInjectionCard(fp: StyleFingerprint): void {        const card = this.rightPanel.createDiv({ cls: 'nw-fingerprint-inject-card nw-mb-lg' });
         card.createEl('h4', { text: '🎯 注入影响', cls: 'nw-u-m-0-2 nw-u-margintop-8px-2 nw-u-marginbottom-6px-2 nw-u-fs-14px-2' });
 
         const sampleCount = (fp.samples || []).length;
         const rows = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-12px-2 nw-u-fs-12px-2' });
         rows.createEl('span', { text: `原文样本: ${sampleCount} 段（段落层 few-shot）` });
         rows.createEl('span', { text: '注入层: 全局特征 + 段落样本 + 句子提示' });
-        rows.createEl('span', { text: '总预算: 2000 字符（设置可调 fingerprintInjectionBudget）' });
-
+        rows.createEl('span', { text: `总预算: ${this.injectionBudget()} 字符（设置可调 fingerprintInjectionBudget）` });
         if (sampleCount === 0) {
             const warn = card.createDiv({
                 cls: 'nw-fingerprint-sample-warn nw-u-margintop-6px-2 nw-u-p-6px-10px-2 nw-u-fs-12px-2 nw-u-brd-8px-2'
@@ -788,10 +793,10 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const statsItems = [
-            { label: '平均句长', value: fp.stats.avgSentenceLength.toFixed(1) + ' 字' },
-            { label: '平均段长', value: fp.stats.avgParagraphLength.toFixed(0) + ' 字' },
-            { label: '对话占比', value: (fp.stats.dialogueRatio * 100).toFixed(1) + '%' },
-            { label: '描写占比', value: (fp.stats.descriptionRatio * 100).toFixed(1) + '%' },
+            { label: '平均句长', value: formatDetailNumber(fp.stats?.avgSentenceLength, 1, ' 字') },
+            { label: '平均段长', value: formatDetailNumber(fp.stats?.avgParagraphLength, 0, ' 字') },
+            { label: '对话占比', value: formatDetailPercent(fp.stats?.dialogueRatio, 1) },
+            { label: '描写占比', value: formatDetailPercent(fp.stats?.descriptionRatio, 1) },
         ];
 
         statsItems.forEach(item => {
@@ -1029,26 +1034,7 @@ export class WritingFingerprintView extends ItemView {
         const modal = new AddFingerprintModal(this.app, {
             scope: this.filter.activeScope,
             extractor: this.extractor,
-            onCompleted: async (fp) => {
-                switch (fp.scope) {
-                    case 'template':
-                        await this.fingerprintLibrary!.addTemplate(fp);
-                        break;
-                    case 'global':
-                        await this.fingerprintLibrary!.addGlobal(fp);
-                        break;
-                    case 'project':
-                        await this.fingerprintLibrary!.addProject(fp);
-                        break;
-                }
-                await this.loadAllFingerprints();
-                this.selectedFingerprintId = fp.id;
-                this.selectedFingerprintScope = fp.scope as FingerprintScope;
-                this.renderSearchAndFilter();
-                this.renderFingerprintList();
-                this.renderDetailPanel();
-                new Notice('✅ 指纹添加成功');
-            }
+            onCompleted: (fp) => this.saveExtractedFingerprint(fp, '✅ 指纹添加成功')
         });
         modal.open();
     }
@@ -1083,29 +1069,42 @@ export class WritingFingerprintView extends ItemView {
         const modal = new AddFingerprintModal(this.app, {
             scope: this.filter.activeScope,
             extractor: this.extractor,
-            onCompleted: async (fp) => {
-                switch (fp.scope) {
-                    case 'template':
-                        await this.fingerprintLibrary!.addTemplate(fp);
-                        break;
-                    case 'global':
-                        await this.fingerprintLibrary!.addGlobal(fp);
-                        break;
-                    case 'project':
-                        await this.fingerprintLibrary!.addProject(fp);
-                        break;
-                }
-                await this.loadAllFingerprints();
-                this.selectedFingerprintId = fp.id;
-                this.selectedFingerprintScope = fp.scope as FingerprintScope;
-                this.renderSearchAndFilter();
-                this.renderFingerprintList();
-                this.renderDetailPanel();
-                new Notice('✅ 指纹提取成功');
-            }
+            onCompleted: (fp) => this.saveExtractedFingerprint(fp, '✅ 指纹提取成功')
         });
         modal.textValue = selectedText;
         modal.open();
+    }
+
+    /** 提取结果落库：Modal 已关闭，写失败必须兜住并提示，不能静默丢数据 */
+    private async saveExtractedFingerprint(fp: StyleFingerprint, successMessage: string): Promise<void> {
+        if (!this.fingerprintLibrary) {
+            new Notice('⚠️ 指纹库未初始化，提取结果未保存', 8000);
+            return;
+        }
+        try {
+            switch (fp.scope) {
+                case 'template':
+                    await this.fingerprintLibrary.addTemplate(fp);
+                    break;
+                case 'global':
+                    await this.fingerprintLibrary.addGlobal(fp);
+                    break;
+                case 'project':
+                    await this.fingerprintLibrary.addProject(fp);
+                    break;
+            }
+        } catch (e) {
+            log.error('[FingerprintView] 保存指纹失败:', e);
+            new Notice(`⚠️ 指纹保存失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            return;
+        }
+        await this.loadAllFingerprints();
+        this.selectedFingerprintId = fp.id;
+        this.selectedFingerprintScope = fp.scope as FingerprintScope;
+        this.renderSearchAndFilter();
+        this.renderFingerprintList();
+        this.renderDetailPanel();
+        new Notice(successMessage);
     }
 
     private async handleExtractFromChapters(): Promise<void> {
@@ -1158,14 +1157,28 @@ export class WritingFingerprintView extends ItemView {
 
                     new Notice(`正在从 ${selectedChapters.length} 个章节提取指纹...`, 3000);
 
+                    // 提取只需代表性样本：全选几百章会拼出百万字，超时且费用暴涨
+                    const MAX_EXTRACT_CHARS = 60000;
                     let allText = '';
+                    let truncated = false;
                     for (const chapPath of selectedChapters) {
+                        if (allText.length >= MAX_EXTRACT_CHARS) {
+                            truncated = true;
+                            break;
+                        }
                         try {
                             const content = await this.app.vault.adapter.read(chapPath);
                             allText += content + '\n\n';
                         } catch (e) {
                             log.warn('读取章节失败:', chapPath, e);
                         }
+                    }
+                    if (allText.length > MAX_EXTRACT_CHARS) {
+                        allText = allText.slice(0, MAX_EXTRACT_CHARS);
+                        truncated = true;
+                    }
+                    if (truncated) {
+                        new Notice(`已截取前 ${MAX_EXTRACT_CHARS} 字用于提取（避免超时与超量计费）`, 6000);
                     }
 
                     if (allText.length < 500) {
@@ -1420,35 +1433,49 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private handleEditFingerprint(fp: StyleFingerprint): void {
-        new EditFingerprintModal(this.app, fp, async (updated) => {
-            if (!this.fingerprintLibrary) return;
-            switch (fp.scope) {
-                case 'template': await this.fingerprintLibrary.updateTemplate(updated); break;
-                case 'global': await this.fingerprintLibrary.updateGlobal(updated); break;
-                case 'project': await this.fingerprintLibrary.updateProject(updated); break;
-            }
-            await this.loadAllFingerprints();
-            this.renderSearchAndFilter();
-            this.renderFingerprintList();
-            this.renderDetailPanel();
-            new Notice('✅ 指纹已更新');
+        new EditFingerprintModal(this.app, fp, (updated) => {
+            // 保存失败必须让用户看见：Modal 已关闭，静默 rejection 会表现为「看起来更新成功」
+            void (async () => {
+                if (!this.fingerprintLibrary) {
+                    new Notice('⚠️ 指纹库未初始化，修改未保存');
+                    return;
+                }
+                try {
+                    switch (fp.scope) {
+                        case 'template': await this.fingerprintLibrary.updateTemplate(updated); break;
+                        case 'global': await this.fingerprintLibrary.updateGlobal(updated); break;
+                        case 'project': await this.fingerprintLibrary.updateProject(updated); break;
+                    }
+                } catch (e) {
+                    log.error('[FingerprintView] 更新指纹失败:', e);
+                    new Notice(`⚠️ 指纹更新失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+                    return;
+                }
+                await this.loadAllFingerprints();
+                this.renderSearchAndFilter();
+                this.renderFingerprintList();
+                this.renderDetailPanel();
+                new Notice('✅ 指纹已更新');
+            })();
         }).open();
     }
 
     private async handlePromoteToGlobal(fp: StyleFingerprint): Promise<void> {
         if (!this.fingerprintLibrary) return;
         const result = await this.fingerprintLibrary.copyFingerprint('project', 'global', fp.id);
-        if (result) {
-            await this.loadAllFingerprints();
-            this.filter.activeScope = 'global';
-            this.selectedFingerprintId = result.id;
-            this.selectedFingerprintScope = 'global';
-            this.renderScopeTabs();
-            this.renderSearchAndFilter();
-            this.renderFingerprintList();
-            this.renderDetailPanel();
-            new Notice('⬆️ 已提升为全局指纹');
+        if (!result) {
+            new Notice('⚠️ 提升失败：未取到复制后的指纹，请重试');
+            return;
         }
+        await this.loadAllFingerprints();
+        this.filter.activeScope = 'global';
+        this.selectedFingerprintId = result.id;
+        this.selectedFingerprintScope = 'global';
+        this.renderScopeTabs();
+        this.renderSearchAndFilter();
+        this.renderFingerprintList();
+        this.renderDetailPanel();
+        new Notice('⬆️ 已提升为全局指纹');
     }
 
     private async handleCopyToProject(fp: StyleFingerprint): Promise<void> {
@@ -1464,17 +1491,19 @@ export class WritingFingerprintView extends ItemView {
             fp.id,
             project
         );
-        if (result) {
-            await this.loadAllFingerprints();
-            this.filter.activeScope = 'project';
-            this.selectedFingerprintId = result.id;
-            this.selectedFingerprintScope = 'project';
-            this.renderScopeTabs();
-            this.renderSearchAndFilter();
-            this.renderFingerprintList();
-            this.renderDetailPanel();
-            new Notice('📋 已复制到项目');
+        if (!result) {
+            new Notice('⚠️ 复制失败：未取到复制后的指纹，请重试');
+            return;
         }
+        await this.loadAllFingerprints();
+        this.filter.activeScope = 'project';
+        this.selectedFingerprintId = result.id;
+        this.selectedFingerprintScope = 'project';
+        this.renderScopeTabs();
+        this.renderSearchAndFilter();
+        this.renderFingerprintList();
+        this.renderDetailPanel();
+        new Notice('📋 已复制到项目');
     }
 
     /** 打开 V2 多指纹融合预览 Modal */
