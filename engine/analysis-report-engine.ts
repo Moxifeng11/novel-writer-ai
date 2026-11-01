@@ -1,4 +1,5 @@
 import { App, TFile } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
 import { 
@@ -725,7 +726,7 @@ ${chapterText.slice(0, 5000)}
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line.match(/^\|.*\|$/)) continue;
-            const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+            const cols = splitTableCells(line);
             if (cols.length < 2) continue;
             const lowerCols = cols.map(c => c.toLowerCase());
             const hasId = lowerCols.some(c => c === '#' || c === '编号' || c === 'id' || c === '序号');
@@ -752,7 +753,7 @@ ${chapterText.slice(0, 5000)}
         for (let i = headerIdx + 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line.match(/^\|.*\|$/)) continue;
-            const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+            const cols = splitTableCells(line);
             if (cols.length < 2) continue;
             if (cols[0].includes('---')) continue;
 
@@ -1291,7 +1292,7 @@ ${chapterText.slice(0, 5000)}
         for (let i = 0; i < lines.length; i++) {
             const l = lines[i];
             if (l.match(/^\|.*\|/)) {
-                const cols = l.split('|').map(s => s.trim()).filter(Boolean);
+                const cols = splitTableCells(l);
                 if (cols.length >= 6 && cols[1] === name && !cols[cols.length - 1].includes('已揭示') && !cols[cols.length - 1].includes('揭示')) {
                     foundRow = i;
                     foundCols = cols;

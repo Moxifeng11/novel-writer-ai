@@ -1,3 +1,4 @@
+import { countCjkWordsAndNumbers } from '../shared/word-count';
 /**
  * novel-analyzer.ts — 小说内容分析引擎（纯统计）
  *
@@ -77,10 +78,10 @@ export class NovelAnalyzer {
         const paragraphs = this.splitParagraphs(text);
         const sentences = this.splitSentences(text);
         const charCount = text.length;
-        const wordCount = this.countWords(text);
+        const wordCount = countCjkWordsAndNumbers(text);
 
-        const sentenceLengths = sentences.map(s => this.countWords(s));
-        const paragraphLengths = paragraphs.map(p => this.countWords(p));
+        const sentenceLengths = sentences.map(s => countCjkWordsAndNumbers(s));
+        const paragraphLengths = paragraphs.map(p => countCjkWordsAndNumbers(p));
 
         const { dialogueChars, descriptionChars, narrationChars } = this.calculateRatios(text);
         const totalContentChars = dialogueChars + descriptionChars + narrationChars;
@@ -173,41 +174,6 @@ export class NovelAnalyzer {
         return sentences;
     }
 
-    private countWords(text: string): number {
-        let count = 0;
-        let i = 0;
-
-        while (i < text.length) {
-            const char = text[i];
-
-            if (this.isChineseChar(char)) {
-                count++;
-                i++;
-            } else if (this.isEnglishLetter(char)) {
-                let j = i;
-                while (j < text.length && (this.isEnglishLetter(text[j]) || text[j] === "'" || text[j] === '-')) {
-                    j++;
-                }
-                if (j > i) {
-                    count++;
-                }
-                i = j;
-            } else if (this.isDigit(char)) {
-                let j = i;
-                while (j < text.length && (this.isDigit(text[j]) || text[j] === '.' || text[j] === ',')) {
-                    j++;
-                }
-                if (j > i) {
-                    count++;
-                }
-                i = j;
-            } else {
-                i++;
-            }
-        }
-
-        return count;
-    }
 
     private countChineseChars(text: string): number {
         let count = 0;

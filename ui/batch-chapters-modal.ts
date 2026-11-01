@@ -9,6 +9,7 @@
  * 「findChapterFile(整卷目录)」串章隐患随自造逻辑一并移除。
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { listChapterNumbers } from '../engine/chapter-utils';
@@ -242,7 +243,7 @@ export class BatchChaptersModal extends Modal {
                 const content = await this.app.vault.read(ff);
                 for (const line of content.split('\n')) {
                     if (!line.match(/^\|.*\|/)) continue;
-                    const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+                    const cols = splitTableCells(line);
                     if (cols.length === 0) continue;
                     if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '伏笔') continue;
                     const status = cols.length >= 6 ? cols[5] : cols[1] || '';

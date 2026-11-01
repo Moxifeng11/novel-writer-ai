@@ -13,6 +13,8 @@
  * 维护原则：仅修 Bug，不再加新特性。
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { isChapterSettledText } from '../shared/chapter-status';
+import { splitTableCells } from '../shared/chapter-table';
 import NovelWriterPlugin from '../main';
 import { AIEngine, ChapterContext } from '../engine/ai-engine';
 import { ContextManager } from '../engine/context-manager';
@@ -271,7 +273,7 @@ export class WriteChapterModal extends Modal {
                 // 统计全部未揭示伏笔数量（用于信息债判断）
                 for (const line of fContent.split('\n')) {
                     if (!line.match(/^\|.*\|/)) continue;
-                    const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+                    const cols = splitTableCells(line);
                     if (cols.length === 0) continue;
                     if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '伏笔') continue;
                     const status = cols.length >= 6 ? cols[5] : cols[1] || '';
@@ -491,7 +493,7 @@ ${olResult.content.trim()}
                     for (const name of selectedToReveal) {
                         for (const line of fc.split('\n')) {
                             if (!line.match(/^\|.*\|/)) continue;
-                            const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+                            const cols = splitTableCells(line);
                             if (cols.length >= 6 && cols[1] === name) {
                                 const buriedChap = cols[3];
                                 if (buriedChap) {
@@ -834,8 +836,7 @@ ${reportResult.content}
             const file = app.vault.getAbstractFileByPath(bodyPath);
             if (!(file instanceof TFile)) return false;
             const raw = await app.vault.read(file);
-            const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-            return Boolean(fm && /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m.test(fm[1]));
+            return isChapterSettledText(raw);
         } catch {
             return false;
         }

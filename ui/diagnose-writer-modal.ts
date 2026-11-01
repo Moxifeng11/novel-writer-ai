@@ -1,4 +1,5 @@
 import { App, Modal, Notice, Platform, TFile } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from '../engine/context-manager';
 import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
@@ -202,7 +203,7 @@ export class DiagnoseWriterModal extends Modal {
                 const names: string[] = [];
                 for (const line of fc.split('\n')) {
                     if (!line.match(/^\|.*\|/)) continue;
-                    const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+                    const cols = splitTableCells(line);
                     if (cols.length === 0) continue;
                     if (cols[0] === '#' || cols[0].includes('---')) continue;
                     const status = cols.length >= 6 ? cols[5] : cols[1] || '';

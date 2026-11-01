@@ -1,4 +1,5 @@
 import { kbBookCommercialAnalysisFile } from '../../shared/paths';
+import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import { yieldToUI } from '../../shared/yield';
 import { HOOK_WORDS, GOLDEN_FINGER_WORDS, WORLDVIEW_WORDS } from '../dimension-keywords';
 import { GenreDetector, GenreConfigRegistry } from '../genre';
@@ -570,7 +571,7 @@ export class CommercialDeconstructor {
     if (!firstChapterText || firstChapterText.length === 0) return 0;
 
     const first300Chars = firstChapterText.slice(0, 300);
-    const wordCount = this.countWords(first300Chars);
+    const wordCount = countCjkWordsAndNumbers(first300Chars);
 
     let conflictWordCount = 0;
     for (const word of this.conflictWordSet) {
@@ -642,7 +643,7 @@ export class CommercialDeconstructor {
         if (goalChapter === -1) {
           goalChapter = i;
         }
-        const wordCount = this.countWords(chapterText);
+        const wordCount = countCjkWordsAndNumbers(chapterText);
         goalClarity = Math.max(goalClarity, Math.min(1, goalWordCount / Math.max(wordCount * 0.01, 1)));
       }
     }
@@ -704,7 +705,7 @@ export class CommercialDeconstructor {
         if (gfChapter === -1) {
           gfChapter = i;
         }
-        const wordCount = this.countWords(chapterText);
+        const wordCount = countCjkWordsAndNumbers(chapterText);
         const strength = Math.min(1, chapterGfCount / Math.max(wordCount * 0.02, 1));
         gfStrength = Math.max(gfStrength, strength);
         gfTypeCount = Math.max(gfTypeCount, chapterTypeCount);
@@ -739,7 +740,7 @@ export class CommercialDeconstructor {
       if (!chapterText || chapterText.length === 0) continue;
 
       const endRegion = chapterText.slice(-200);
-      const wordCount = this.countWords(endRegion);
+      const wordCount = countCjkWordsAndNumbers(endRegion);
 
       const suspenseResult = this.calculateHookIntensity(endRegion, wordCount, this.suspenseSet, 'suspense');
       const foreshadowResult = this.calculateHookIntensity(endRegion, wordCount, this.foreshadowSet, 'foreshadow');
@@ -768,7 +769,7 @@ export class CommercialDeconstructor {
       const chapterText = chapterTexts[i];
       if (!chapterText || chapterText.length === 0) continue;
 
-      const wordCount = this.countWords(chapterText);
+      const wordCount = countCjkWordsAndNumbers(chapterText);
 
       let immersionWordCount = 0;
       for (const word of this.immersionSet) {
@@ -798,7 +799,7 @@ export class CommercialDeconstructor {
     const allText = chapterTexts.join('');
     if (!allText || allText.length === 0) return 0;
 
-    const wordCount = this.countWords(allText);
+    const wordCount = countCjkWordsAndNumbers(allText);
 
     let worldviewWordCount = 0;
     for (const word of this.worldviewSet) {
@@ -835,7 +836,7 @@ export class CommercialDeconstructor {
       const chapterText = chapterTexts[i];
       if (!chapterText || chapterText.length === 0) continue;
 
-      const wordCount = this.countWords(chapterText);
+      const wordCount = countCjkWordsAndNumbers(chapterText);
       const dialogueLines = this.countDialogueLines(chapterText);
 
       if (dialogueLines === 0) {
@@ -885,7 +886,7 @@ export class CommercialDeconstructor {
       const chapterText = chapterTexts[i];
       if (!chapterText || chapterText.length === 0) continue;
 
-      const wordCount = this.countWords(chapterText);
+      const wordCount = countCjkWordsAndNumbers(chapterText);
 
       let suspenseWordCount = 0;
       for (const word of this.suspenseSet2) {
@@ -928,7 +929,7 @@ export class CommercialDeconstructor {
       const chapterText = chapterTexts[i];
       if (!chapterText || chapterText.length === 0) continue;
 
-      const wordCount = this.countWords(chapterText);
+      const wordCount = countCjkWordsAndNumbers(chapterText);
 
       let emotionWordCount = 0;
       for (const word of this.emotionSet) {
@@ -1031,7 +1032,7 @@ export class CommercialDeconstructor {
       suspenseWordCount += (endRegion.match(new RegExp(word, 'g')) || []).length;
     }
 
-    const wordCount = this.countWords(endRegion);
+    const wordCount = countCjkWordsAndNumbers(endRegion);
     const density = Math.min(1, suspenseWordCount / Math.max(wordCount * 0.03, 1));
 
     const questionCount = (endRegion.match(/[？?]/g) || []).length;
@@ -1220,7 +1221,7 @@ export class CommercialDeconstructor {
     let firstChapterHookStrength = 0;
     if (firstChapterText.length > 0) {
       const endRegion = firstChapterText.slice(-200);
-      const wordCount = this.countWords(endRegion);
+      const wordCount = countCjkWordsAndNumbers(endRegion);
       const result = this.calculateHookIntensity(endRegion, wordCount, this.conflictSet, 'conflict');
       firstChapterHookStrength = this.round2(result.intensity);
     }
@@ -1268,7 +1269,7 @@ export class CommercialDeconstructor {
     let secondChapterHookStrength = 0;
     if (secondChapterText.length > 0) {
       const endRegion = secondChapterText.slice(-200);
-      const wordCount = this.countWords(endRegion);
+      const wordCount = countCjkWordsAndNumbers(endRegion);
       const result = this.calculateHookIntensity(endRegion, wordCount, this.suspenseSet, 'suspense');
       secondChapterHookStrength = this.round2(result.intensity);
     }
@@ -1276,7 +1277,7 @@ export class CommercialDeconstructor {
     let thirdChapterHookStrength = 0;
     if (thirdChapterText.length > 0) {
       const endRegion = thirdChapterText.slice(-200);
-      const wordCount = this.countWords(endRegion);
+      const wordCount = countCjkWordsAndNumbers(endRegion);
       const result = this.calculateHookIntensity(endRegion, wordCount, this.conflictSet, 'conflict');
       thirdChapterHookStrength = this.round2(result.intensity);
     }
@@ -1812,36 +1813,6 @@ export class CommercialDeconstructor {
       .filter(p => p.length > 0);
   }
 
-  private countWords(text: string): number {
-    let count = 0;
-    let i = 0;
-
-    while (i < text.length) {
-      const char = text[i];
-      if (this.isChineseChar(char)) {
-        count++;
-        i++;
-      } else if (this.isEnglishLetter(char)) {
-        let j = i;
-        while (j < text.length && (this.isEnglishLetter(text[j]) || text[j] === "'" || text[j] === '-')) {
-          j++;
-        }
-        if (j > i) count++;
-        i = j;
-      } else if (this.isDigit(char)) {
-        let j = i;
-        while (j < text.length && (this.isDigit(text[j]) || text[j] === '.' || text[j] === ',')) {
-          j++;
-        }
-        if (j > i) count++;
-        i = j;
-      } else {
-        i++;
-      }
-    }
-
-    return Math.max(count, 1);
-  }
 
   private isChineseChar(char: string): boolean {
     const code = char.charCodeAt(0);

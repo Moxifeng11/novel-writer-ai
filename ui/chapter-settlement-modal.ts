@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { isChapterSettledText } from '../shared/chapter-status';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
 
 import NovelWriterPlugin from '../main';
@@ -141,7 +142,7 @@ export class ChapterSettlementModal extends Modal {
 
         // 重复结算守卫：流水线侧已有 settled 守卫，弹窗此前没有，
         // 连点两次会把成长/互信息/账本再写一遍。这里显式确认，避免「手滑重复结算」。
-        const settled = /^---\r?\n[\s\S]*?\bstatus:\s*['"]?(settled|已结算|已完稿)['"]?\s*[\s\S]*?\r?\n---/.test(bodyText);
+        const settled = isChapterSettledText(bodyText);
         if (settled) {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
                 title: '本章已结算',

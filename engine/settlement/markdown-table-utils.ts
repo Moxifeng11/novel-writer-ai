@@ -1,3 +1,4 @@
+import { splitTableCells } from '../../shared/chapter-table';
 /**
  * engine/settlement/markdown-table-utils.ts
  * Markdown 表格通用工具 — 纯函数，无副作用，可单测。
@@ -15,7 +16,7 @@ export function getNextRowNum(content: string): number {
     if (!content) return 1;
     for (const l of content.split('\n')) {
         if (!l.match(/^\|.*\|/)) continue;
-        const cols = l.split('|').map(s => s.trim()).filter(Boolean);
+        const cols = splitTableCells(l);
         if (cols.length >= 1 && /^\d+$/.test(cols[0])) {
             const n = parseInt(cols[0]);
             if (n > maxNum) maxNum = n;
@@ -97,7 +98,7 @@ export function getNextRowNumInSection(lines: string[], sepIdx: number): number 
     for (let i = sepIdx + 1; i < lines.length; i++) {
         const l = lines[i];
         if (!l.match(/^\|.*\|/)) break;
-        const cols = l.split('|').map(s => s.trim()).filter(Boolean);
+        const cols = splitTableCells(l);
         if (cols.length >= 1 && /^\d+$/.test(cols[0])) {
             const n = parseInt(cols[0]);
             if (n > maxNum) maxNum = n;

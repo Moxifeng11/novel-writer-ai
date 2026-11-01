@@ -1,4 +1,5 @@
 import { App, TFile, parseFrontMatterStringArray } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import { ChapterFrontmatter } from '../shared/types';
 
 /**
@@ -55,7 +56,7 @@ export function filterForeshadowsByChapter(
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line.startsWith('|')) continue;
-        const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+        const cols = splitTableCells(line);
         if (cols.some(c => c.includes('伏笔名称') || c.includes('计划回收'))) {
             headerIdx = i;
             for (let j = 0; j < cols.length; j++) {
@@ -83,7 +84,7 @@ export function filterForeshadowsByChapter(
     for (let i = (headerIdx >= 0 ? headerIdx + 1 : 0); i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line.startsWith('|')) continue;
-        const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+        const cols = splitTableCells(line);
         if (cols.length === 0) continue;
 
         const first = cols[0] || '';

@@ -6,6 +6,7 @@
  */
 
 import { App, Modal, Notice, Setting, TFolder, TFile } from 'obsidian';
+import { isChapterSettledText } from '../shared/chapter-status';
 import type NovelWriterPlugin from '../main';
 import {
     compileManuscript,
@@ -322,8 +323,7 @@ export class ExportManuscriptModal extends Modal {
             const unreviewed: string[] = [];
             for (const chapter of chapters.slice(0, 400)) {
                 const label = `${chapter.chapter}${chapter.title ? ` ${chapter.title}` : ''}`;
-                const fm = chapter.content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-                const settled = Boolean(fm && /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m.test(fm[1]));
+                const settled = isChapterSettledText(chapter.content);
                 if (!settled) unsettled.push(label);
                 const volN = chapter.volume.match(/第(\d+)卷/)?.[1] || '1';
                 const stepDir = pjStepDir(this.project, parseInt(volN, 10), chapter.chapterNum);

@@ -1,6 +1,6 @@
 import { TFile } from 'obsidian';
 import { ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
-import { pjStepDir } from '../../shared/paths';
+import { parseChapterLocation, pjStepDir, projectIdFromPath } from '../../shared/paths';
 import { createLogger } from '../../shared/logger';
 
 
@@ -30,19 +30,25 @@ export function rebuildChapDir(
     return pjStepDir(project, volN, chapN);
 }
 
+/**
+ * 章节路径反解（工作台用）。
+ * 标准路径交给 shared/paths.parseChapterLocation；无法识别时退回“项目 + 空章节”，
+ * 项目仍走 projectIdFromPath，避免 v4 结构下把「长篇小说」当项目（B2）。
+ */
 export function parseChapterFromPath(path: string): {
     project: string;
     volume: string;
     chapterName: string;
     chapterNum: number;
 } {
-    const project = path.split('/')[0] || '';
-    const volMatch = path.match(/03-大纲与章节\/(?:正文\/|步骤结果\/)?(第\d+卷)/);
-    const volume = volMatch ? volMatch[1] : '';
-    const chapMatch = path.match(/(第\d+章)/);
-    const chapterName = chapMatch ? chapMatch[1] : '';
-    const chapterNum = chapterName ? parseInt(chapterName.match(/\d+/)![0]) : 0;
-    return { project, volume, chapterName, chapterNum };
+    const parsed = parseChapterLocation(path);
+    if (parsed) return parsed;
+    return {
+        project: projectIdFromPath(path),
+        volume: '',
+        chapterName: '',
+        chapterNum: 0,
+    };
 }
 
 export function estimateTotalChars(

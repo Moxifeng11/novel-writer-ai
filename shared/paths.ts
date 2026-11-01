@@ -460,6 +460,55 @@ export function projectIdFromPath(filePath: string): string {
     return parts.length >= 2 ? parts.slice(0, 2).join('/') : parts[0];
 }
 
+/** 从正文/步骤路径反解出的章节定位 */
+export interface ChapterLocation {
+    project: string;
+    volume: string;
+    chapterNum: number;
+    chapterName: string;
+}
+
+/**
+ * 章节路径的单一解析入口（B2）。
+ *
+ * 旧实现有三份：core/command-registry 只认「第N章_正文.md」，
+ * main.ts 允许带标题，ui/full-writer-utils 用 `split('/')[0]` 取项目
+ * （v4 结构下会把「长篇小说」当项目）。这里统一：
+ *   - 正文：<项目>/03-大纲与章节/正文/第N卷/第M章[_标题]_正文.md
+ *   - 步骤：<项目>/03-大纲与章节/步骤结果/第N卷/第M章/...
+ * 其它路径返回 null，由调用方决定回退。
+ */
+export function parseChapterLocation(filePath: string): ChapterLocation | null {
+    const path = String(filePath || '').replace(/\\/g, '/');
+    if (!path) return null;
+
+    const body = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第(\d+)卷)\/(第(\d+)章)(?:_[^/]*)?_正文\.md$/);
+    if (body) {
+        const chapterNum = parseInt(body[5], 10);
+        if (!Number.isFinite(chapterNum)) return null;
+        return {
+            project: body[1],
+            volume: body[2],
+            chapterNum,
+            chapterName: `第${chapterNum}章`,
+        };
+    }
+
+    const step = path.match(/^(.+?)\/03-大纲与章节\/步骤结果\/(第(\d+)卷)\/(第(\d+)章)(?:\/|$)/);
+    if (step) {
+        const chapterNum = parseInt(step[5], 10);
+        if (!Number.isFinite(chapterNum)) return null;
+        return {
+            project: step[1],
+            volume: step[2],
+            chapterNum,
+            chapterName: `第${chapterNum}章`,
+        };
+    }
+
+    return null;
+}
+
 /** 版本索引文件路径 */
 export function pjVersionIndexFile(project: string, contentType: string, contentKey: string): string {
     return `${pjContentVersionsDir(project, contentType, contentKey)}/${VERSION_INDEX_FILE}`;

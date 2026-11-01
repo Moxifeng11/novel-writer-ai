@@ -16,6 +16,7 @@
  */
 
 import { TextSegment } from './text-segmenter';
+import { countCjkAndWords } from '../shared/word-count';
 import { StreamTextReader } from './stream-text-reader';
 import { yieldToUI } from '../shared/yield';
 
@@ -38,11 +39,6 @@ const DEFAULT_OPTIONS: Required<Omit<SegmentBreakdownOptions, 'onSegmentProgress
 
 type ResolvedSegmentBreakdownOptions = Required<Omit<SegmentBreakdownOptions, 'onSegmentProgress'>> & Pick<SegmentBreakdownOptions, 'onSegmentProgress'>;
 
-function countWords(text: string): number {
-    const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-    const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
-    return chineseChars + englishWords;
-}
 
 export class SegmentAwareBreakdown {
     private options: ResolvedSegmentBreakdownOptions;
@@ -61,7 +57,7 @@ export class SegmentAwareBreakdown {
             throw new Error('任务已取消');
         }
 
-        const totalWords = countWords(text);
+        const totalWords = countCjkAndWords(text);
 
         if (totalWords <= this.options.maxDirectWords) {
             const segment: TextSegment = {
@@ -117,11 +113,11 @@ export class SegmentAwareBreakdown {
     }
 
     shouldUseSegmented(text: string): boolean {
-        return countWords(text) > this.options.maxDirectWords;
+        return countCjkAndWords(text) > this.options.maxDirectWords;
     }
 
     estimateSegments(text: string): number {
-        const words = countWords(text);
+        const words = countCjkAndWords(text);
         if (words <= this.options.maxDirectWords) {
             return 1;
         }

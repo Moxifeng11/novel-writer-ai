@@ -18,6 +18,7 @@
  */
 
 import { SegmentAwareBreakdown, SegmentBreakdownResult } from './segment-aware-breakdown';
+import { countCjkAndWords } from '../shared/word-count';
 import { TextSegment } from './text-segmenter';
 import { IncrementalResultAggregator, PartialResult, type AnalysisResult } from './incremental-result-aggregator';
 import type { DeconstructionWorkerManager, DeconstructDimension } from './deconstruction-worker-manager';
@@ -68,7 +69,7 @@ export class SchedulerSegmentIntegration {
                 text,
                 startOffset: 0,
                 endOffset: text.length,
-                wordCount: this.countWords(text),
+                wordCount: countCjkAndWords(text),
             };
 
             let result: T;
@@ -194,13 +195,13 @@ export class SchedulerSegmentIntegration {
     }
 
     shouldSegment(text: string, options: SchedulerSegmentOptions = {}): boolean {
-        const words = this.countWords(text);
+        const words = countCjkAndWords(text);
         const threshold = options.maxDirectWords ?? 300000;
         return words > threshold;
     }
 
     estimateSegments(text: string, options: SchedulerSegmentOptions = {}): number {
-        const words = this.countWords(text);
+        const words = countCjkAndWords(text);
         const threshold = options.maxDirectWords ?? 300000;
         const maxSeg = options.maxSegmentWords ?? 50000;
         if (words <= threshold) return 1;
@@ -258,9 +259,4 @@ export class SchedulerSegmentIntegration {
         return dimension;
     }
 
-    private countWords(text: string): number {
-        const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-        const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
-        return chineseChars + englishWords;
-    }
 }

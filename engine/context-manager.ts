@@ -1,4 +1,5 @@
 import { App, TFile, TFolder } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import { getChapterFile, getChapterFileName, CHAPTER_FILE_TYPES, findBodyFileV4, findBodyFileByChapterNum } from './chapter-utils';
 import NovelWriterPlugin from '../main';
 import { extractVolumeFromPath, showProgress, showError, readMergedVolumeOutline } from '../utils/helpers';
@@ -1766,7 +1767,7 @@ export class ContextManager {
 
             for (let i = 2; i < tableLines.length; i++) {
                 const line = tableLines[i];
-                const parts = line.split('|').map(s => s.trim()).filter(Boolean);
+                const parts = splitTableCells(line);
                 if (parts.length < 4) continue;
 
                 if (title.includes(FORESHADOW_SECTION_UNREVEALED)) {

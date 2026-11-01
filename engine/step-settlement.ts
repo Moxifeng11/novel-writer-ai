@@ -6,6 +6,7 @@
  */
 
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
+import { isChapterSettledText } from '../shared/chapter-status';
 import type { SettlementEngine, SettlementResult } from './settlement-engine';
 import { pjNarrativeOverview } from '../shared/paths';
 import { NOTICE_ERROR } from '../shared/thresholds';
@@ -78,8 +79,7 @@ export async function executeSettlement(
 
     // 结算写入是追加语义（伏笔/关系/时间线），重复结算会产生重复行。
     // 自动链路默认拦截；用户点“重新结算”时显式 force。
-    const alreadySettled = /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m
-        .test(bodyText.slice(0, 4000));
+    const alreadySettled = isChapterSettledText(bodyText);
     if (alreadySettled && !options.force) {
         host.hideProgress();
         host.showNotice('ℹ️ 本章已结算；如需重新写入，请使用“重新结算”', 6000);

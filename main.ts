@@ -1139,7 +1139,7 @@ export default class NovelWriterPlugin extends Plugin {
     public async openCoWritingFromActiveContext(): Promise<void> {
         // ① 从当前打开的正文文件路径反解章节
         const activeFile = this.app.workspace.getActiveFile();
-        const ctx = activeFile ? this.parseChapterFromPath(activeFile.path) : null;
+        const ctx = activeFile ? parseChapterFromPath(activeFile.path) : null;
         if (ctx) {
             await this.activateCoWritingView(ctx.project, ctx.chapterName, ctx.volume, ctx.chapterNum);
             new Notice(`✍️ 已绑定章节：${ctx.project} · ${ctx.volume} · 第${ctx.chapterNum}章`, 3000);
@@ -1197,24 +1197,6 @@ export default class NovelWriterPlugin extends Plugin {
             active: true
         });
         workspace.revealLeaf(leaf);
-    }
-
-    /**
-     * v6.0: 从文件路径反解出协同写作所需的章节上下文。
-     * 仅识别标准正文路径：<项目>/03-大纲与章节/正文/第X卷/第Y章_正文.md
-     * 反解失败返回 null（交由调用方回退到空态）。
-     */
-    private parseChapterFromPath(path: string): { project: string; volume: string; chapterNum: number; chapterName: string } | null {
-        if (!path) return null;
-        // 正文文件名可能被 BodyWriter 按标题重命名（第Y章_标题_正文.md），
-        // 旧正则只认「第Y章_正文.md」，导致重命名后协同写作拿不到章节上下文。
-        const m = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第(\d+)卷)\/第(\d+)章(?:_[^/]*)?_正文\.md$/);
-        if (!m) return null;
-        const project = m[1];
-        const volume = m[2];
-        const chapterNum = parseInt(m[4], 10);
-        if (!project || !Number.isFinite(chapterNum)) return null;
-        return { project, volume, chapterNum, chapterName: `第${chapterNum}章` };
     }
 
     async commandPopulateSettingLib() {

@@ -5,6 +5,7 @@
  * 不引入任何外部依赖。
  */
 import type { LineDiff, CharDiff, DiffStats, DiffOp } from './version-types';
+import { countCjkAndWords } from './word-count';
 
 /**
  * 计算两个数组的最长公共子序列 (LCS) 长度矩阵
@@ -251,17 +252,6 @@ export function computeDiffStats(diffs: LineDiff[], oldText: string, newText: st
     };
 }
 
-/**
- * 字数统计（中文按字算，英文按词算）
- * @param text 文本
- * @returns 字数
- */
-export function countWords(text: string): number {
-    if (!text) return 0;
-    const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-    const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
-    return chineseChars + englishWords;
-}
 
 /**
  * 生成版本唯一 ID
@@ -310,3 +300,8 @@ export const CONTENT_TYPE_LABELS: Record<string, string> = {
     'character': '人物设定',
     'setting': '设定',
 };
+
+/** 字数统计（中文按字算，英文按词算）——统一实现见 shared/word-count */
+export function countWords(text: string): number {
+    return countCjkAndWords(text);
+}

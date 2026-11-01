@@ -1,4 +1,5 @@
 import { App, TFile, Vault } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import NovelWriterPlugin from '../main';
 import { getNextRowNum, hasTableSeparator, appendAfterSeparator, moveForeshadowToRevealed, mkdirp, showSuccess, showError } from '../utils/helpers';
 import { detectProjects } from './context-manager';
@@ -816,7 +817,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line.match(/^\|.*\|$/)) continue;
-            const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+            const cols = splitTableCells(line);
             if (cols.length < 2) continue;
 
             if (!inTable) {
@@ -1066,7 +1067,7 @@ export function parseForeshadowTableContent(content: string): ForeshadowItem[] {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line.match(/^\|.*\|$/)) continue;
-        const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+        const cols = splitTableCells(line);
         if (cols.length < 2) continue;
         const lowerCols = cols.map(c => c.toLowerCase());
         const hasId = lowerCols.some(c => c === '#' || c === '编号' || c === 'id' || c === '序号');
@@ -1099,7 +1100,7 @@ export function parseForeshadowTableContent(content: string): ForeshadowItem[] {
     for (let i = headerIdx + 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line.match(/^\|.*\|$/)) continue;
-        const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+        const cols = splitTableCells(line);
         if (cols.length < 2) continue;
         if (cols[0].includes('---')) continue;
 
@@ -1123,7 +1124,7 @@ function parseForeshadowTableFallbackLegacy(content: string): ForeshadowItem[] {
     const items: ForeshadowItem[] = [];
     for (const line of content.split('\n')) {
         if (!line.match(/^\|.*\|$/)) continue;
-        const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+        const cols = splitTableCells(line);
         if (cols.length < 2) continue;
         if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '伏笔') continue;
         const status = cols.length >= 8 ? (cols[7] || '') : (cols.length >= 6 ? cols[5] : (cols[1] || ''));

@@ -1,4 +1,5 @@
 import { App, TFile } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import { RE_VOLUME_HEADER, RE_CHAPTER_RANGE } from '../shared/format-constants';
 import { readMergedVolumeOutline } from '../utils/helpers';
 import { pjCharsDir, pjFactionsDir, pjForeshadowDB, pjTimelineBoard, pjControlDir, pjVolumeOutlineDir } from '../shared/paths';
@@ -312,7 +313,7 @@ export class CrossVolumeIntegrator {
                 // 匹配表格行：| ... | ... | ... |
                 if (!line.match(/^\|.*\|/)) continue;
 
-                const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+                const cols = splitTableCells(line);
                 if (cols.length === 0) continue;
 
                 // 跳过表头和分隔行
@@ -365,7 +366,7 @@ export class CrossVolumeIntegrator {
                 // 匹配表格行
                 if (!line.match(/^\|.*\|/)) continue;
 
-                const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+                const cols = splitTableCells(line);
                 if (cols.length === 0) continue;
 
                 // 跳过表头（时间 / 对应章节 / 事件 / 影响）和分隔行

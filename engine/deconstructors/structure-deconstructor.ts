@@ -7,6 +7,7 @@
  */
 
 import { kbBookStructureBreakdownFile } from '../../shared/paths';
+import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import { VectorEnhancer } from '../vector-enhancer';
 import { yieldToUI } from '../../shared/yield';
 import { NARRATIVE_TEMPORALITY_WORDS, SHOW_TELL_WORDS } from '../dimension-keywords';
@@ -339,7 +340,7 @@ export class StructureDeconstructor {
 
         const structureType = this.determineStructureType(qcchSegments, rhythmUnits);
 
-        const totalWordCount = this.countWords(text);
+        const totalWordCount = countCjkWordsAndNumbers(text);
         const chapterCount = chapters.length;
         const avgChapterWordCount = chapterCount > 0
             ? Math.round(chapters.reduce((sum, c) => sum + c.wordCount, 0) / chapterCount)
@@ -813,7 +814,7 @@ export class StructureDeconstructor {
             const unitStart = m.startIndex;
             const unitEnd = i < matches.length - 1 ? matches[i + 1].startIndex : text.length;
             const unitText = text.substring(unitStart, unitEnd);
-            const wordCount = this.countWords(unitText);
+            const wordCount = countCjkWordsAndNumbers(unitText);
 
             units.push({
                 level,
@@ -994,7 +995,7 @@ export class StructureDeconstructor {
             const para = paragraphs[i];
             const paraStart = fullText.indexOf(para, charOffset);
             const position = totalLength > 0 ? paraStart / totalLength : 0;
-            const wordCount = this.countWords(para);
+            const wordCount = countCjkWordsAndNumbers(para);
 
             const emotionIntensity = this.calculateEmotionIntensity(para, wordCount);
             const actionDensity = this.calculateActionDensity(para, wordCount);
@@ -1057,7 +1058,7 @@ export class StructureDeconstructor {
             const endIdx = Math.min(startIdx + segmentSize, paragraphs.length);
             const segmentParas = paragraphs.slice(startIdx, endIdx);
             const segmentText = segmentParas.join(' ');
-            const wordCount = this.countWords(segmentText);
+            const wordCount = countCjkWordsAndNumbers(segmentText);
 
             const position = ((startIdx + endIdx) / 2) / paragraphs.length;
 
@@ -1232,7 +1233,7 @@ export class StructureDeconstructor {
         const stretchSet = new Set(NARRATIVE_TEMPORALITY_WORDS.duration);
 
         for (const para of paragraphs) {
-            const wordCount = this.countWords(para);
+            const wordCount = countCjkWordsAndNumbers(para);
             const dialogueDensity = this.calculateDialogueDensity(para);
             const descriptionDensity = this.countWordOccurrences(para, descriptionSet) / Math.max(wordCount, 1);
             const timeJumpDensity = this.countWordOccurrences(para, timeJumpSet) / Math.max(wordCount, 1);
@@ -1370,7 +1371,7 @@ export class StructureDeconstructor {
             const startPos = Math.max(0, Math.floor((node.position - node.tolerance) * totalLength));
             const endPos = Math.min(totalLength, Math.floor((node.position + node.tolerance) * totalLength));
             const windowText = text.substring(startPos, endPos);
-            const wordCount = this.countWords(windowText);
+            const wordCount = countCjkWordsAndNumbers(windowText);
 
             const keywordSet = new Set(node.keywords);
             const hitCount = this.countWordOccurrences(windowText, keywordSet);
@@ -1444,36 +1445,6 @@ export class StructureDeconstructor {
             .filter(p => p.length > 0);
     }
 
-    private countWords(text: string): number {
-        let count = 0;
-        let i = 0;
-
-        while (i < text.length) {
-            const char = text[i];
-            if (this.isChineseChar(char)) {
-                count++;
-                i++;
-            } else if (this.isEnglishLetter(char)) {
-                let j = i;
-                while (j < text.length && (this.isEnglishLetter(text[j]) || text[j] === "'" || text[j] === '-')) {
-                    j++;
-                }
-                if (j > i) count++;
-                i = j;
-            } else if (this.isDigit(char)) {
-                let j = i;
-                while (j < text.length && (this.isDigit(text[j]) || text[j] === '.' || text[j] === ',')) {
-                    j++;
-                }
-                if (j > i) count++;
-                i = j;
-            } else {
-                i++;
-            }
-        }
-
-        return Math.max(count, 1);
-    }
 
     private isChineseChar(char: string): boolean {
         const code = char.charCodeAt(0);

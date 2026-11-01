@@ -1,3 +1,4 @@
+import { countCjkAndWords } from '../shared/word-count';
 /**
  * chapter-recognizer.ts — 智能章节识别服务
  *
@@ -106,11 +107,6 @@ function extractAuthor(content: string): string | undefined {
     return undefined;
 }
 
-function countWords(text: string): number {
-    const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-    const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
-    return chineseChars + englishWords;
-}
 
 function isChapterLine(line: string, format: 'txt' | 'md' | 'unknown'): boolean {
     const trimmed = line.trim();
@@ -150,7 +146,7 @@ export function recognizeChapters(
 
     const title = extractTitle(filename, content);
     const author = extractAuthor(content);
-    const wordCount = countWords(content);
+    const wordCount = countCjkAndWords(content);
 
     const chapters: ChapterInfo[] = [];
     let currentChapterIndex = -1;
@@ -163,7 +159,7 @@ export function recognizeChapters(
                 const endIndex = i - 1;
                 const chapterText = lines.slice(chapterStartLine, endIndex + 1).join('\n');
                 chapters[currentChapterIndex].endIndex = endIndex;
-                chapters[currentChapterIndex].wordCount = countWords(chapterText);
+                chapters[currentChapterIndex].wordCount = countCjkAndWords(chapterText);
             }
 
             currentChapterIndex++;
@@ -184,7 +180,7 @@ export function recognizeChapters(
     if (currentChapterIndex >= 0 && chapters[currentChapterIndex]) {
         const chapterText = lines.slice(chapterStartLine, lines.length).join('\n');
         chapters[currentChapterIndex].endIndex = lines.length - 1;
-        chapters[currentChapterIndex].wordCount = countWords(chapterText);
+        chapters[currentChapterIndex].wordCount = countCjkAndWords(chapterText);
     }
 
     let confidence = 0;
@@ -238,7 +234,7 @@ export class ChapterRecognizer {
     }
 
     countWords(text: string): number {
-        return countWords(text);
+        return countCjkAndWords(text);
     }
 
     getChapterText(content: string, chapter: ChapterInfo): string {

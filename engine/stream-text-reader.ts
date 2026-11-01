@@ -11,6 +11,7 @@
  */
 
 import type { TextSegment } from './text-segmenter';
+import { countCjkAndWords } from '../shared/word-count';
 import { TextSegmenter } from './text-segmenter';
 import type { FileSystemPort } from '../shared/file-system-port';
 
@@ -142,7 +143,7 @@ export class StreamTextReader {
                     text: remainingText,
                     startOffset: bufferStart,
                     endOffset: bufferStart + remainingText.length,
-                    wordCount: this.countWords(remainingText),
+                    wordCount: countCjkAndWords(remainingText),
                 };
             }
         }
@@ -274,9 +275,4 @@ export class StreamTextReader {
         return this.position - this.buffer.length;
     }
 
-    private countWords(text: string): number {
-        const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-        const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
-        return chineseChars + englishWords;
-    }
 }

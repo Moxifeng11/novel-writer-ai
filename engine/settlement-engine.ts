@@ -10,6 +10,7 @@
  */
 
 import { TFile, TFolder } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import { mkdirp } from '../utils/helpers';
 import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
@@ -1574,7 +1575,7 @@ ${ni.description || '暂无描述'}
                     const content = await this.getFS().read(pjForeshadowDB(project));
                     for (const line of content.split('\n')) {
                         if (!line.match(/^\|.*\|/)) continue;
-                        const cols = line.split('|').map(s => s.trim()).filter(Boolean);
+                        const cols = splitTableCells(line);
                         if (cols.length === 0) continue;
                         if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '伏笔') continue;
                         const status = cols[cols.length - 1] || '';

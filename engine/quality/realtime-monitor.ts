@@ -20,6 +20,7 @@
  */
 
 import type { QualityScoreEngine, QualityScore, EvaluationContext } from './quality-score-engine';
+import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import type { DeviationDetector, DeviationReport, DeviationContext } from './deviation-detector';
 import { createLogger } from '../../shared/logger';
 
@@ -228,7 +229,7 @@ export class RealtimeMonitor {
         // 生成评估 ID
         const evaluationId = `${context.projectId}::${context.chapterId}::${Date.now()}`;
         const startTime = Date.now();
-        const wordCount = this.countWords(text);
+        const wordCount = countCjkWordsAndNumbers(text);
         const contentHash = this.hashText(text);
 
         // 创建内部 AbortController，便于取消
@@ -460,16 +461,6 @@ export class RealtimeMonitor {
     }
 
     /** 简易字数统计（中文按字，英文按词） */
-    private countWords(text: string): number {
-        if (!text) return 0;
-        // 中文字符
-        const cjkCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-        // 英文单词
-        const enCount = (text.match(/[a-zA-Z]+/g) || []).length;
-        // 数字
-        const digitCount = (text.match(/\d+/g) || []).length;
-        return cjkCount + enCount + digitCount;
-    }
 
     /** 简易文本 hash（FNV-1a） */
     private hashText(text: string): string {

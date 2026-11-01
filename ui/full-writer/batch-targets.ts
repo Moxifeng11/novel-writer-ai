@@ -3,6 +3,8 @@
  *
  * 单独拆出以便单元测试：不引入 main / UI 依赖，避免测试链条触达 main.js。
  */
+import { isChapterSettledText } from '../../shared/chapter-status';
+
 
 /**
  * 批量流水线执行的 7 个 AI 步骤。
@@ -43,23 +45,10 @@ export function buildBatchTargets(
     return targets;
 }
 
-/** frontmatter 里表示「已结算」的状态值（新值 settled，旧值兼容） */
-const SETTLED_STATUS_PATTERN = /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m;
-
 /**
- * 正文是否已结算（读 frontmatter 的 `status`）。
- *
- * 结算会在正文 frontmatter 写入 `status: settled`，而结算的伏笔/关系/时间线写入都是**追加**语义：
- * 对已结算的章节再结算一次，会在伏笔库与实体互信息章节里产生重复行。
- * 批量断点续跑必须据此跳过整章，而不是「步骤都在 → 再结算一遍」。
- * 只在 frontmatter 区域匹配，避免正文里出现同名字样造成误判。
+ * 正文是否已结算（B4：统一走 shared/chapter-status）。
+ * 结算写入是追加语义，批量续跑必须据 frontmatter.status 跳过整章。
  */
 export function isBodySettled(bodyText: string | undefined | null): boolean {
-    if (!bodyText) return false;
-    const head = bodyText.slice(0, 4000);
-    // 状态只写在 frontmatter 里；没有 frontmatter 就不能判定为已结算
-    if (!head.startsWith('---')) return false;
-    const end = head.indexOf('\n---', 3);
-    const frontmatter = end > 0 ? head.slice(0, end) : head;
-    return SETTLED_STATUS_PATTERN.test(frontmatter);
+    return isChapterSettledText(bodyText);
 }

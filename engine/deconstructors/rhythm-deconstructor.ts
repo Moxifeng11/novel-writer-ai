@@ -7,6 +7,7 @@
  */
 
 import { kbBookRhythmAnalysisFile } from '../../shared/paths';
+import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import { yieldToUI } from '../../shared/yield';
 import { EMOTION_WORDS, HOOK_WORDS } from '../dimension-keywords';
 import { LLMEnhancer, LLM_DEGRADED } from '../llm-enhancer';
@@ -425,7 +426,7 @@ export class RhythmDeconstructor {
             const ch = chapters[i];
             const chapterText = text.slice(ch.startIndex, ch.endIndex);
             const endRegion = chapterText.slice(-200);
-            const wordCount = this.countWords(endRegion);
+            const wordCount = countCjkWordsAndNumbers(endRegion);
 
             const chapterTitleMatch = chapterText.match(/第[一二三四五六七八九十百千零\d]+[章节部卷][^\n]*/);
             const chapterTitle = chapterTitleMatch ? chapterTitleMatch[0].trim() : undefined;
@@ -546,7 +547,7 @@ export class RhythmDeconstructor {
             const position = totalLength > 0 ? paraStart / totalLength : 0;
 
             const chapterIndex = this.findChapterIndex(paraStart, chapters);
-            const wordCount = this.countWords(para);
+            const wordCount = countCjkWordsAndNumbers(para);
 
             const tensionResult = this.calculateTensionIntensity(para, wordCount);
 
@@ -882,7 +883,7 @@ export class RhythmDeconstructor {
     }
 
     private calculateChapterEmotionValue(chapterText: string): number {
-        const wordCount = this.countWords(chapterText);
+        const wordCount = countCjkWordsAndNumbers(chapterText);
         const positiveCount = this.countWordOccurrences(chapterText, this.nrcPositiveSet);
         const negativeCount = this.countWordOccurrences(chapterText, this.nrcNegativeSet);
         const raw = positiveCount - negativeCount;
@@ -1207,7 +1208,7 @@ export class RhythmDeconstructor {
     }
 
     private calculateChapterRhythmScore(chapterText: string): number {
-        const wordCount = this.countWords(chapterText);
+        const wordCount = countCjkWordsAndNumbers(chapterText);
         const eventDensity = this.clamp01(
             this.countWordOccurrences(chapterText, this.actionSet) / Math.max(wordCount * 0.05, 1)
         );
@@ -1459,7 +1460,7 @@ export class RhythmDeconstructor {
             const position = totalLength > 0 ? paraStart / totalLength : 0;
 
             const chapterIndex = this.findChapterIndex(paraStart, chapters);
-            const wordCount = this.countWords(para);
+            const wordCount = countCjkWordsAndNumbers(para);
 
             const emotionIntensity = this.calculateEmotionIntensity(para, wordCount);
             const eventDensity = this.calculateEventDensity(para, wordCount);
@@ -1692,36 +1693,6 @@ export class RhythmDeconstructor {
         return chapters.length > 0 ? chapters.length - 1 : undefined;
     }
 
-    private countWords(text: string): number {
-        let count = 0;
-        let i = 0;
-
-        while (i < text.length) {
-            const char = text[i];
-            if (this.isChineseChar(char)) {
-                count++;
-                i++;
-            } else if (this.isEnglishLetter(char)) {
-                let j = i;
-                while (j < text.length && (this.isEnglishLetter(text[j]) || text[j] === "'" || text[j] === '-')) {
-                    j++;
-                }
-                if (j > i) count++;
-                i = j;
-            } else if (this.isDigit(char)) {
-                let j = i;
-                while (j < text.length && (this.isDigit(text[j]) || text[j] === '.' || text[j] === ',')) {
-                    j++;
-                }
-                if (j > i) count++;
-                i = j;
-            } else {
-                i++;
-            }
-        }
-
-        return Math.max(count, 1);
-    }
 
     private isChineseChar(char: string): boolean {
         const code = char.charCodeAt(0);

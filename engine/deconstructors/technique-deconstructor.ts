@@ -7,6 +7,7 @@
  */
 
 import { kbBookWritingTechniquesFile } from '../../shared/paths';
+import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import { VectorEnhancer } from '../vector-enhancer';
 import { WebnovelKnowledgeBase, TechniqueDef, GenreConfig } from '../../shared/webnovel-knowledge-base';
 import { GenreDetector, GenreConfigRegistry } from '../genre';
@@ -709,7 +710,7 @@ export class TechniqueDeconstructor {
             const para = paragraphs[i];
             const paraStart = text.indexOf(para, charOffset);
             const position = totalLength > 0 ? paraStart / totalLength : 0;
-            const paraWordCount = this.countWords(para);
+            const paraWordCount = countCjkWordsAndNumbers(para);
             const beforeCtx = i > 0 ? this.truncateText(paragraphs[i - 1], 80) : '';
             const afterCtx = i < paragraphs.length - 1 ? this.truncateText(paragraphs[i + 1], 80) : '';
 
@@ -1383,8 +1384,8 @@ export class TechniqueDeconstructor {
 
         const firstThreeChapters = this.getFirstThreeChaptersText(paragraphs, text);
         if (firstThreeChapters.length > 0) {
-            const firstChaptersWordCount = this.countWords(firstThreeChapters);
-            const totalWordCount = this.countWords(text);
+            const firstChaptersWordCount = countCjkWordsAndNumbers(firstThreeChapters);
+            const totalWordCount = countCjkWordsAndNumbers(text);
             const ratio = totalWordCount > 0 ? firstChaptersWordCount / totalWordCount : 0;
 
             if (ratio > 0.1 && paragraphs.length > 10) {
@@ -1496,36 +1497,6 @@ export class TechniqueDeconstructor {
             .filter(p => p.length > 0);
     }
 
-    private countWords(text: string): number {
-        let count = 0;
-        let i = 0;
-
-        while (i < text.length) {
-            const char = text[i];
-            if (this.isChineseChar(char)) {
-                count++;
-                i++;
-            } else if (this.isEnglishLetter(char)) {
-                let j = i;
-                while (j < text.length && (this.isEnglishLetter(text[j]) || text[j] === "'" || text[j] === '-')) {
-                    j++;
-                }
-                if (j > i) count++;
-                i = j;
-            } else if (this.isDigit(char)) {
-                let j = i;
-                while (j < text.length && (this.isDigit(text[j]) || text[j] === '.' || text[j] === ',')) {
-                    j++;
-                }
-                if (j > i) count++;
-                i = j;
-            } else {
-                i++;
-            }
-        }
-
-        return Math.max(count, 1);
-    }
 
     private isChineseChar(char: string): boolean {
         const code = char.charCodeAt(0);

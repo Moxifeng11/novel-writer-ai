@@ -27,6 +27,7 @@
  */
 
 import { App, TFile } from 'obsidian';
+import { splitTableCells } from '../shared/chapter-table';
 import { AIEngine } from './ai-engine';
 import NovelWriterPlugin from '../main';
 import { ContextManager } from './context-manager';
@@ -2629,7 +2630,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         if (keySceneSection) {
             const tableRows = keySceneSection.match(/^\|\s*\d+\s*\|.*$/gm) || [];
             for (const row of tableRows) {
-                const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+                const cells = splitTableCells(row);
                 if (cells.length >= 3) {
                     nodes.push({
                         id: `outline_${nodes.length + 1}`,

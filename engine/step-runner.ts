@@ -1,4 +1,5 @@
 import { App, TFile } from 'obsidian';
+import { isChapterSettledText } from '../shared/chapter-status';
 import { AIEngine, APIResponse } from './ai-engine';
 import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
 import { findChapterFile, findBodyFileByChapterNum } from './chapter-utils';
@@ -1590,9 +1591,7 @@ export class StepRunner {
                 bodyPath = found.path;
             }
             const raw = await this.getFS().read(bodyPath);
-            const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-            if (!fm) return false;
-            return /^\s*status:\s*['"]?(settled|已结算|已完稿)['"]?\s*$/m.test(fm[1]);
+            return isChapterSettledText(raw);
         } catch {
             return false;
         }

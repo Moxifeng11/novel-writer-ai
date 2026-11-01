@@ -11,6 +11,7 @@
  */
 
 import { yieldToUI } from '../shared/yield';
+import { countCjkAndWords, countPlatformWords, countTotalChars as sharedTotalChars, countCjkChars } from '../shared/word-count';
 
 export interface TextSegment {
     index: number;
@@ -124,7 +125,7 @@ export class TextSegmenter {
             return [];
         }
 
-        const wordCount = this.countWords(text);
+        const wordCount = countCjkAndWords(text);
 
         if (this.options.preferChapter) {
             const chapterSegments = await this.segmentByChapter(text);
@@ -245,14 +246,14 @@ export class TextSegmenter {
 
         for (let i = 0; i < paragraphs.length; i++) {
             const para = paragraphs[i];
-            const paraWordCount = this.countWords(para);
+            const paraWordCount = countCjkAndWords(para);
 
             if (currentWordCount + paraWordCount > this.options.maxSegmentWords && currentWordCount > 0) {
                 segments.push(this.createSegment(currentText, segments.length, currentOffset));
                 const overlapText = this.getTailWords(currentText, this.options.overlapWords);
                 currentOffset = text.indexOf(para, currentOffset + currentText.length - overlapText.length);
                 currentText = overlapText + '\n\n' + para;
-                currentWordCount = this.countWords(currentText);
+                currentWordCount = countCjkAndWords(currentText);
             } else {
                 if (currentText.length === 0) {
                     currentOffset = text.indexOf(para, currentOffset);
@@ -275,7 +276,7 @@ export class TextSegmenter {
 
     private segmentByWordCount(text: string): TextSegment[] {
         const segments: TextSegment[] = [];
-        const charsPerWord = text.length / Math.max(1, this.countWords(text));
+        const charsPerWord = text.length / Math.max(1, countCjkAndWords(text));
         const maxChars = Math.floor(this.options.maxSegmentWords * charsPerWord);
         const overlapChars = Math.floor(this.options.overlapWords * charsPerWord);
 
@@ -345,7 +346,7 @@ export class TextSegmenter {
                 if (overlapText.length > 0 && !currSeg.text.startsWith(overlapText)) {
                     currSeg.text = overlapText + currSeg.text;
                     currSeg.startOffset -= overlapText.length;
-                    currSeg.wordCount = this.countWords(currSeg.text);
+                    currSeg.wordCount = countCjkAndWords(currSeg.text);
                 }
             }
         }
@@ -390,7 +391,7 @@ export class TextSegmenter {
                 const overlapText = this.getTailWords(currentText, this.options.overlapWords);
                 currentOffset = seg.startOffset - overlapText.length;
                 currentText = overlapText + seg.text;
-                currentWordCount = this.countWords(currentText);
+                currentWordCount = countCjkAndWords(currentText);
                 currentChapter = seg.chapterTitle || currentChapter;
             } else {
                 if (currentText.length === 0) {
@@ -424,84 +425,39 @@ export class TextSegmenter {
             text: trimmed,
             startOffset,
             endOffset: startOffset + trimmed.length,
-            wordCount: this.countWords(trimmed),
+            wordCount: countCjkAndWords(trimmed),
             chapterTitle,
         };
     }
 
+
+    /** 兼容既有调用与单测：私有计数器仍保留，但实现已统一到 shared/word-count */
     private countWords(text: string): number {
-        const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-        const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
-        return chineseChars + englishWords;
+        return countCjkAndWords(text);
     }
 
     private getTailWords(text: string, wordCount: number): string {
-        const charsPerWord = text.length / Math.max(1, this.countWords(text));
+        const charsPerWord = text.length / Math.max(1, countCjkAndWords(text));
         const charCount = Math.floor(wordCount * charsPerWord);
         return text.slice(-charCount);
     }
 }
 
 export function countTotalChars(text: string): number {
-    let count = 0;
-    for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        if ((ch >= '\u4e00' && ch <= '\u9fff') ||    // CJK统一汉字
-            (ch >= '\u3400' && ch <= '\u4dbf') ||    // CJK扩展A
-            (ch >= '\uf900' && ch <= '\ufaff') ||    // CJK兼容汉字
-            (ch >= '\u3000' && ch <= '\u303f') ||    // CJK标点
-            (ch >= '\uff00' && ch <= '\uffef') ||    // 全角标点/字母
-            (ch >= '\x00' && ch <= '\x7f' && !(' \t\n\r'.includes(ch))) || // ASCII可打印(排除空白)
-            (ch >= '\u0030' && ch <= '\u0039') ||    // ASCII数字
-            (ch >= '\uff10' && ch <= '\uff19')) {    // 全角数字
-            count++;
-        }
-    }
-    return count;
+    return sharedTotalChars(text);
 }
 
 export type WordCountMode = 'total' | 'chinese_only' | 'platform';
 
 export function countWords(text: string, mode: WordCountMode = 'platform'): number {
     if (!text) return 0;
-
     switch (mode) {
         case 'total':
-            return countTotalChars(text);
-
-        case 'chinese_only': {
-            let count = 0;
-            for (let i = 0; i < text.length; i++) {
-                const ch = text[i];
-                if ((ch >= '\u4e00' && ch <= '\u9fff') ||
-                    (ch >= '\u3400' && ch <= '\u4dbf') ||
-                    (ch >= '\uf900' && ch <= '\ufaff')) {
-                    count++;
-                }
-            }
-            return count;
-        }
-
+            return sharedTotalChars(text);
+        case 'chinese_only':
+            return countCjkChars(text);
         case 'platform':
-        default: {
-            let count = 0;
-            for (let i = 0; i < text.length; i++) {
-                const ch = text[i];
-                if ((ch >= '\u4e00' && ch <= '\u9fff') ||
-                    (ch >= '\u3400' && ch <= '\u4dbf') ||
-                    (ch >= '\uf900' && ch <= '\ufaff')) {
-                    count++;
-                } else if ((ch >= '0' && ch <= '9') ||
-                           (ch >= '\uff10' && ch <= '\uff19')) {
-                    count++;
-                } else if ((ch >= 'a' && ch <= 'z') ||
-                           (ch >= 'A' && ch <= 'Z') ||
-                           (ch >= '\uff21' && ch <= '\uff3a') ||
-                           (ch >= '\uff41' && ch <= '\uff5a')) {
-                    count += 0.5;
-                }
-            }
-            return Math.floor(count);
-        }
+        default:
+            return countPlatformWords(text);
     }
 }

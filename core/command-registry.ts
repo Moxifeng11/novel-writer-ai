@@ -10,7 +10,7 @@ import { InternalRegistry } from '../shared/internal-registry';
 import type { ChapterVersionPort } from '../shared/chapter-version-port';
 import { importExampleProject } from './example-project-service';
 import { ENGINE_NAMES } from '../shared/engine-names';
-import { pjNarrativeOverview } from '../shared/paths';
+import { parseChapterLocation, pjNarrativeOverview } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { NOOP_COMMAND_UI_PORT, type CommandUiPort } from '../shared/command-ui-port';
 import type { CreationMode } from '../shared/creation-mode';
@@ -593,14 +593,14 @@ export class CommandRegistry {
     }
 }
 
-/** 从文件路径反解章节上下文 */
+/**
+ * 从文件路径反解章节上下文。
+ * 单一实现在 shared/paths.parseChapterLocation（B2）：正文与步骤路径都支持，
+ * 项目 ID 也不再用「第一段」猜（v4 结构下第一段是「长篇小说」）。
+ *
+ * 保留此导出是为了 command-registry 的既有调用点与 public API。
+ */
 export function parseChapterFromPath(path: string): { project: string; volume: string; chapterNum: number; chapterName: string } | null {
-    if (!path) return null;
-    const m = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第(\d+)卷)\/第(\d+)章_正文\.md$/);
-    if (!m) return null;
-    const project = m[1];
-    const chapterNum = parseInt(m[4], 10);
-    if (!project || !Number.isFinite(chapterNum)) return null;
-    return { project, volume: m[2], chapterNum, chapterName: `第${chapterNum}章` };
+    return parseChapterLocation(path);
 }
 import { projectIdFromPath } from '../shared/paths';
