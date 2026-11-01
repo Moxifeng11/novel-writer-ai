@@ -195,6 +195,9 @@ export class ExecutionLedger {
         return this.records.length === 0;
     }
 
+    /**
+     * 清空登记表（插件卸载/测试用）。
+     */
     clear(): void {
         this.records = [];
         this.seq = 0;

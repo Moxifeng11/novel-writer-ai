@@ -108,10 +108,20 @@ export class WorkerManager {
         }
     }
 
+    /**
+     * Worker 是否可用（不可用时走主线程降级）。
+     * @returns 布尔值
+     */
     isWorkerAvailable(): boolean {
         return this.workerAvailable && !this.destroyed;
     }
 
+    /**
+     * 注册某任务类型的主线程降级处理器。
+     *
+     * @param taskType - 任务类型
+     * @param handler - 降级处理函数
+     */
     registerFallbackHandler(taskType: string, handler: FallbackHandler): void {
         this.fallbackHandlers.set(taskType, handler);
     }
@@ -481,6 +491,9 @@ export class WorkerManager {
         }
     }
 
+    /**
+     * 取消全部在跑任务并清理队列。
+     */
     cancelAll(): void {
         const taskIds = Array.from(this.activeTasks.keys());
         for (const taskId of taskIds) {
@@ -488,6 +501,10 @@ export class WorkerManager {
         }
     }
 
+    /**
+     * 读取 Worker 池统计。
+     * @returns 池统计
+     */
     getStats(): WorkerPoolStats {
         const activeWorkers = this.workers.filter((w) => w.busy).length;
         const idleWorkers = this.workers.filter((w) => w.ready && !w.busy).length;
@@ -499,6 +516,9 @@ export class WorkerManager {
         };
     }
 
+    /**
+     * 销毁 Worker 池（插件卸载时调用）。
+     */
     destroy(): void {
         if (this.destroyed) return;
         this.destroyed = true;

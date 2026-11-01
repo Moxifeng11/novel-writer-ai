@@ -7,10 +7,10 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 289 | 119587 | 1532 | 283 | 18% |
-| `services/` | 28 | 9790 | 151 | 14 | 9% |
-| `shared/` | 164 | 31762 | 1512 | 371 | 25% |
+| `services/` | 28 | 9920 | 151 | 14 | 9% |
+| `shared/` | 164 | 31930 | 1512 | 371 | 25% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
-| `domains/` | 11 | 641 | 30 | 1 | 3% |
+| `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 92548 | 500 | 67 | 13% |
 
 ## 文件清单
@@ -25,10 +25,10 @@
 | `core/settings-service.ts` | 450 | 4 | 1 |
 | `core/theme-manager.ts` | 205 | 3 | 0 |
 | `domains/harness-profile-registry.ts` | 19 | 2 | 0 |
-| `domains/kernel/domain-project-factory.ts` | 158 | 2 | 0 |
-| `domains/kernel/project-locator.ts` | 81 | 9 | 0 |
-| `domains/kernel/tool-catalog-aggregator.ts` | 66 | 6 | 1 |
-| `domains/kernel/tool-catalog-types.ts` | 13 | 2 | 0 |
+| `domains/kernel/domain-project-factory.ts` | 167 | 2 | 0 |
+| `domains/kernel/project-locator.ts` | 125 | 9 | 7 |
+| `domains/kernel/tool-catalog-aggregator.ts` | 94 | 6 | 5 |
+| `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 41 | 1 | 0 |
 | `domains/long/tool-catalog.ts` | 103 | 4 | 0 |
 | `domains/script/harness-profile.ts` | 36 | 1 | 0 |
@@ -329,7 +329,7 @@
 | `services/chapter-recognizer.ts` | 244 | 5 | 1 |
 | `services/chapter-version-service.ts` | 542 | 2 | 0 |
 | `services/checkpoint-manager.ts` | 295 | 4 | 0 |
-| `services/execution-ledger.ts` | 254 | 10 | 1 |
+| `services/execution-ledger.ts` | 257 | 10 | 1 |
 | `services/font-manager.ts` | 145 | 13 | 0 |
 | `services/genre-classifier.ts` | 831 | 2 | 0 |
 | `services/genre-preference-memory.ts` | 285 | 3 | 0 |
@@ -337,7 +337,7 @@
 | `services/knowledge-original-chunker.ts` | 99 | 3 | 1 |
 | `services/local-model-probe.ts` | 168 | 6 | 3 |
 | `services/model-discovery.ts` | 241 | 5 | 2 |
-| `services/performance-monitor.ts` | 664 | 9 | 0 |
+| `services/performance-monitor.ts` | 771 | 9 | 0 |
 | `services/project-rename-service.ts` | 108 | 2 | 0 |
 | `services/prompt-manager.ts` | 482 | 3 | 0 |
 | `services/prompt-templates-default.ts` | 628 | 1 | 0 |
@@ -347,7 +347,7 @@
 | `services/synopsis-store.ts` | 273 | 5 | 0 |
 | `services/update-checker.ts` | 358 | 9 | 2 |
 | `services/vector-rebuild-service.ts` | 117 | 8 | 2 |
-| `services/worker-manager.ts` | 517 | 1 | 0 |
+| `services/worker-manager.ts` | 537 | 1 | 0 |
 | `services/worker-protocol.ts` | 74 | 11 | 1 |
 | `services/worker-runtime.ts` | 226 | 8 | 0 |
 | `services/worldview-cache-service.ts` | 501 | 4 | 0 |
@@ -407,7 +407,7 @@
 | `shared/file-cache.ts` | 427 | 3 | 0 |
 | `shared/file-mention.ts` | 130 | 9 | 3 |
 | `shared/file-path-guard.ts` | 139 | 10 | 3 |
-| `shared/file-system-port.ts` | 486 | 8 | 8 |
+| `shared/file-system-port.ts` | 654 | 8 | 8 |
 | `shared/foreshadow-config.ts` | 103 | 4 | 1 |
 | `shared/foreshadow-loop.ts` | 135 | 3 | 2 |
 | `shared/format-constants.ts` | 476 | 65 | 5 |

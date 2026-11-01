@@ -114,6 +114,12 @@ export class ObsidianFileSystem implements FileSystemPort {
         }
     }
 
+    /**
+     * 读取文件内容。
+     *
+     * @param path - 文件路径
+     * @returns 文件内容
+     */
     async read(path: string): Promise<string> {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file instanceof TFile) {
@@ -125,6 +131,12 @@ export class ObsidianFileSystem implements FileSystemPort {
         throw new Error(`File not found: ${path}`);
     }
 
+    /**
+     * 写入文件；已存在则覆盖（索引内走 vault.modify）。
+     *
+     * @param path - 文件路径
+     * @param content - 新内容
+     */
     async write(path: string, content: string): Promise<void> {
         const existing = this.app.vault.getAbstractFileByPath(path);
         if (existing instanceof TFile) {
@@ -140,16 +152,34 @@ export class ObsidianFileSystem implements FileSystemPort {
         }
     }
 
+    /**
+     * 判断文件或目录是否存在。
+     *
+     * @param path - 文件
+     * @returns 是否存在
+     */
     async exists(path: string): Promise<boolean> {
         if (this.app.vault.getAbstractFileByPath(path) !== null) return true;
         return this.adapterExists(path);
     }
 
+    /**
+     * 按路径取 TFile；不存在或不是文件时返回 null。
+     *
+     * @param path - 文件路径
+     * @returns TFile 或 null
+     */
     async getFile(path: string): Promise<TFile | null> {
         const file = this.app.vault.getAbstractFileByPath(path);
         return file instanceof TFile ? file : null;
     }
 
+    /**
+     * 取文件 mtime/size（索引外文件回退 adapter.stat）。
+     *
+     * @param path - 文件路径
+     * @returns 时间戳/大小或 null
+     */
     async getFileStamp(path: string): Promise<{ mtime: number; size: number } | null> {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file instanceof TFile) {
@@ -165,11 +195,23 @@ export class ObsidianFileSystem implements FileSystemPort {
         }
     }
 
+    /**
+     * 按路径取 TFolder；不存在或不是目录时返回 null。
+     *
+     * @param path - 目录路径
+     * @returns TFolder 或 null
+     */
     async getFolder(path: string): Promise<TFolder | null> {
         const folder = this.app.vault.getAbstractFileByPath(path);
         return folder instanceof TFolder ? folder : null;
     }
 
+    /**
+     * 列出目录下的文件（递归，仅文件）。
+     *
+     * @param dirPath - 目录路径
+     * @returns TFile 列表
+     */
     async listFiles(dirPath: string): Promise<TFile[]> {
         const folder = await this.getFolder(dirPath);
         if (!folder) {
@@ -182,6 +224,12 @@ export class ObsidianFileSystem implements FileSystemPort {
         return this.app.vault.getFiles().filter(f => f.path.startsWith(dirPath + '/'));
     }
 
+    /**
+     * 列出目录下的文件夹（递归）。
+     *
+     * @param dirPath - 目录路径
+     * @returns TFolder 列表
+     */
     async listFolders(dirPath: string): Promise<TFolder[]> {
         const folder = await this.getFolder(dirPath);
         if (!folder) return this.listAdapterFolders(dirPath);
@@ -234,6 +282,11 @@ export class ObsidianFileSystem implements FileSystemPort {
         } as unknown as TFolder;
     }
 
+    /**
+     * 递归创建目录。
+     *
+     * @param dirPath - 目录路径
+     */
     async mkdir(dirPath: string): Promise<void> {
         const folders = dirPath.split('/').filter(Boolean);
         let currentPath = '';
@@ -260,12 +313,23 @@ export class ObsidianFileSystem implements FileSystemPort {
         }
     }
 
+    /**
+     * 列出目录下的文件与文件夹（递归）。
+     *
+     * @param dirPath - 目录路径
+     * @returns 文件/文件夹列表
+     */
     async listAll(dirPath: string): Promise<Array<TFile | TFolder>> {
         const files = await this.listFiles(dirPath);
         const folders = await this.listFolders(dirPath);
         return [...files, ...folders];
     }
 
+    /**
+     * 删除文件或目录。
+     *
+     * @param path - 文件
+     */
     async delete(path: string): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file) {
@@ -286,6 +350,12 @@ export class ObsidianFileSystem implements FileSystemPort {
         }
     }
 
+    /**
+     * 重命名/移动文件或目录。
+     *
+     * @param oldPath - 原路径
+     * @param newPath - 新路径
+     */
     async rename(oldPath: string, newPath: string): Promise<void> {
         await this.app.vault.adapter.rename(oldPath, newPath);
     }
@@ -321,6 +391,12 @@ export class ObsidianFrontmatter implements FrontmatterPort {
         private app: import('obsidian').App,
     ) {}
 
+    /**
+     * 原子读写 frontmatter（由 Obsidian 保证一致性）。
+     *
+     * @param file - 目标文件
+     * @param updater - 修改函数
+     */
     async processFrontmatter(file: TFile, updater: (fm: Record<string, unknown>) => void): Promise<void> {
         await this.app.fileManager.processFrontMatter(file, updater);
     }
@@ -334,14 +410,28 @@ export class ObsidianVaultMeta implements VaultMetaPort {
         private app: import('obsidian').App,
     ) {}
 
+    /**
+     * 取全部已索引文件（仅测试替身/元数据端口使用）。
+     * @returns TFile 列表
+     */
     getFiles(): TFile[] {
         return this.app.vault.getFiles();
     }
 
+    /**
+     * 取全部已索引文件夹。
+     * @returns TFolder 列表
+     */
     getFolders(): TFolder[] {
         return this.app.vault.getAllFolders();
     }
 
+    /**
+     * 按路径取文件或文件夹（未索引返回 null）。
+     *
+     * @param path - 路径
+     * @returns 文件/文件夹或 null
+     */
     getAbstractFileByPath(path: string): TFile | TFolder | null {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file instanceof TFile || file instanceof TFolder) {
@@ -367,6 +457,12 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         return { path, name: path.split('/').pop() || '' } as unknown as TFolder;
     }
 
+    /**
+     * 读取文件内容。（内存实现，供单测使用）
+     *
+     * @param path - 文件路径
+     * @returns 文件内容
+     */
     async read(path: string): Promise<string> {
         const content = this.files.get(path);
         if (content === undefined) {
@@ -375,14 +471,32 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         return content;
     }
 
+    /**
+     * 写入文件；已存在则覆盖（索引内走 vault.modify）。（内存实现，供单测使用）
+     *
+     * @param path - 文件路径
+     * @param content - 新内容
+     */
     async write(path: string, content: string): Promise<void> {
         this.files.set(path, content);
     }
 
+    /**
+     * 判断文件或目录是否存在。（内存实现，供单测使用）
+     *
+     * @param path - 文件
+     * @returns 是否存在
+     */
     async exists(path: string): Promise<boolean> {
         return this.files.has(path) || this.folders.has(path);
     }
 
+    /**
+     * 按路径取 TFile；不存在或不是文件时返回 null。（内存实现，供单测使用）
+     *
+     * @param path - 文件路径
+     * @returns TFile 或 null
+     */
     async getFile(path: string): Promise<TFile | null> {
         if (this.files.has(path)) {
             return this.toTFile(path);
@@ -390,6 +504,12 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         return null;
     }
 
+    /**
+     * 按路径取 TFolder；不存在或不是目录时返回 null。（内存实现，供单测使用）
+     *
+     * @param path - 目录路径
+     * @returns TFolder 或 null
+     */
     async getFolder(path: string): Promise<TFolder | null> {
         if (this.folders.has(path)) {
             return this.toTFolder(path);
@@ -397,12 +517,24 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         return null;
     }
 
+    /**
+     * 列出目录下的文件（递归，仅文件）。（内存实现，供单测使用）
+     *
+     * @param dirPath - 目录路径
+     * @returns TFile 列表
+     */
     async listFiles(dirPath: string): Promise<TFile[]> {
         return Array.from(this.files.keys())
             .filter(p => dirPath === '' ? true : p.startsWith(dirPath + '/'))
             .map(p => this.toTFile(p));
     }
 
+    /**
+     * 列出目录下的文件夹（递归）。（内存实现，供单测使用）
+     *
+     * @param dirPath - 目录路径
+     * @returns TFolder 列表
+     */
     async listFolders(dirPath: string): Promise<TFolder[]> {
         const subFolders = new Set<string>();
         for (const path of this.folders) {
@@ -413,14 +545,30 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         return Array.from(subFolders).map(p => this.toTFolder(p));
     }
 
+    /**
+     * 递归创建目录。（内存实现，供单测使用）
+     *
+     * @param dirPath - 目录路径
+     */
     async mkdir(dirPath: string): Promise<void> {
         this.folders.add(dirPath);
     }
 
+    /**
+     * 列出目录下的文件与文件夹（递归）。（内存实现，供单测使用）
+     *
+     * @param dirPath - 目录路径
+     * @returns 文件/文件夹列表
+     */
     async listAll(dirPath: string): Promise<Array<TFile | TFolder>> {
         return [...(await this.listFiles(dirPath)), ...(await this.listFolders(dirPath))];
     }
 
+    /**
+     * 删除文件或目录。（内存实现，供单测使用）
+     *
+     * @param path - 文件
+     */
     async delete(path: string): Promise<void> {
         this.files.delete(path);
         this.folders.delete(path);
@@ -437,6 +585,12 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         }
     }
 
+    /**
+     * 重命名/移动文件或目录。（内存实现，供单测使用）
+     *
+     * @param oldPath - 原路径
+     * @param newPath - 新路径
+     */
     async rename(oldPath: string, newPath: string): Promise<void> {
         if (this.files.has(oldPath)) {
             const content = this.files.get(oldPath)!;
@@ -449,14 +603,28 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         }
     }
 
+    /**
+     * 取全部已索引文件（仅测试替身/元数据端口使用）。（内存实现，供单测使用）
+     * @returns TFile 列表
+     */
     getFiles(): TFile[] {
         return Array.from(this.files.keys()).map(p => this.toTFile(p));
     }
 
+    /**
+     * 取全部已索引文件夹。（内存实现，供单测使用）
+     * @returns TFolder 列表
+     */
     getFolders(): TFolder[] {
         return Array.from(this.folders).map(p => this.toTFolder(p));
     }
 
+    /**
+     * 按路径取文件或文件夹（未索引返回 null）。（内存实现，供单测使用）
+     *
+     * @param path - 路径
+     * @returns 文件/文件夹或 null
+     */
     getAbstractFileByPath(path: string): TFile | TFolder | null {
         if (this.files.has(path)) {
             return this.toTFile(path);

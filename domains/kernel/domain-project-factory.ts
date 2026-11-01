@@ -19,6 +19,7 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('DomainProjectFactory');
 
+/** 创建短篇/剧本项目所需的输入；长篇小说不走本工厂。 */
 export interface DomainProjectInput {
     name: string;
     mode: CreationMode;
@@ -40,6 +41,7 @@ function validateName(name: string): string | null {
     return null;
 }
 
+/** 短篇/剧本项目工厂：独立脚手架与模式内容根，不复用长篇创建弹窗。 */
 export class DomainProjectFactory {
     constructor(
         private readonly app: import('obsidian').App,
@@ -47,6 +49,13 @@ export class DomainProjectFactory {
         private readonly adapter: DataAdapter
     ) {}
 
+    /**
+     * 创建项目：校验名称 → 检查同名 → 写入 .project 与模式内容结构。
+     *
+     * @param input - 项目名、模式、题材、目标字数/单元等
+     * @returns 新项目 ID（vault 相对路径）
+     * @throws 名称非法、已存在、或不属于短篇/剧本模式时抛出
+     */
     async create(input: DomainProjectInput): Promise<string> {
         const error = validateName(input.name);
         if (error) throw new Error(error);

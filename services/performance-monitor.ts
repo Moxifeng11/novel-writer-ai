@@ -152,14 +152,28 @@ export class PerformanceMonitor {
         return PerformanceMonitor.instance;
     }
 
+    /**
+     * 更新监控选项（不重建实例）。
+     *
+     * @param options - 部分选项
+     */
     updateOptions(options: Partial<PerformanceMonitorOptions>): void {
         this.options = { ...this.options, ...options };
     }
 
+    /**
+     * 读取当前监控选项。
+     * @returns 选项副本
+     */
     getOptions(): PerformanceMonitorOptions {
         return { ...this.options };
     }
 
+    /**
+     * 开关监控；关闭后 start/end 退化为空操作。
+     *
+     * @param enabled - 是否启用
+     */
     setEnabled(enabled: boolean): void {
         this.options.enabled = enabled;
         if (!enabled) {
@@ -167,10 +181,23 @@ export class PerformanceMonitor {
         }
     }
 
+    /**
+     * 监控是否启用。
+     * @returns 布尔值
+     */
     isEnabled(): boolean {
         return this.options.enabled;
     }
 
+    /**
+     * 开始一个计时区间。
+     *
+     * @param name - 操作名
+     * @param category - 分类
+     * @param parentId - 父区间 id
+     * @param metadata - 附加元数据
+     * @returns 区间 id；监控关闭/超限时返回 null
+     */
     start(name: string, category: PerformanceCategory = 'other', parentId?: string, metadata?: Record<string, unknown>): string | null {
         if (!this.options.enabled) return null;
 
@@ -202,6 +229,13 @@ export class PerformanceMonitor {
         return id;
     }
 
+    /**
+     * 结束计时区间并写入日志。
+     *
+     * @param markId - start 返回的 id
+     * @param metadata - 附加元数据
+     * @returns 耗时（毫秒）或 null
+     */
     end(markId: string | null, metadata?: Record<string, unknown>): number | null {
         if (!markId || !this.options.enabled) return null;
 
@@ -266,6 +300,15 @@ export class PerformanceMonitor {
         }
     }
 
+    /**
+     * 测量两个区间之间的耗时并写日志。
+     *
+     * @param name - 操作名
+     * @param startMarkId - 起始区间 id
+     * @param category - 分类
+     * @param metadata - 附加元数据
+     * @returns 耗时或 null
+     */
     measure(name: string, startMarkId: string, category: PerformanceCategory = 'other', metadata?: Record<string, unknown>): number | null {
         if (!this.options.enabled) return null;
 
@@ -376,6 +419,13 @@ export class PerformanceMonitor {
         return undefined;
     }
 
+    /**
+     * 读取最近的性能日志。
+     *
+     * @param limit - 条数上限
+     * @param category - 按分类过滤
+     * @returns 日志条目数组
+     */
     getLog(limit?: number, category?: PerformanceCategory): PerformanceLogEntry[] {
         let entries = [...this.log];
         if (category) {
@@ -387,6 +437,13 @@ export class PerformanceMonitor {
         return entries.reverse();
     }
 
+    /**
+     * 读取某个操作的统计。
+     *
+     * @param operationName - 操作名
+     * @param category - 分类
+     * @returns 统计或 null
+     */
     getStats(operationName: string, category?: PerformanceCategory): PerformanceStats | null {
         const key = category ? `${category}:${operationName}` : operationName;
         // 统计以 "category:name" 存储；未指定分类时回退到默认分类 other
@@ -412,6 +469,10 @@ export class PerformanceMonitor {
         };
     }
 
+    /**
+     * 按操作名返回全部统计。
+     * @returns 操作名 → 统计
+     */
     getAllStats(): Record<string, PerformanceStats> {
         const result: Record<string, PerformanceStats> = {};
         for (const [key] of this.statsByOperation) {
@@ -423,6 +484,12 @@ export class PerformanceMonitor {
         return result;
     }
 
+    /**
+     * 列出超过阈值的慢操作。
+     *
+     * @param threshold - 毫秒阈值
+     * @returns 慢操作列表
+     */
     getSlowOperations(threshold?: number): SlowOperation[] {
         const result: SlowOperation[] = [];
         for (const entry of this.log) {
@@ -440,6 +507,10 @@ export class PerformanceMonitor {
         return result.sort((a, b) => b.duration - a.duration);
     }
 
+    /**
+     * 按分类汇总调用次数与耗时。
+     * @returns 分类 → {count,totalDuration,avgDuration}
+     */
     getCategoryStats(): Record<PerformanceCategory, { count: number; totalDuration: number; avgDuration: number }> {
         const result: Record<string, { count: number; totalDuration: number; avgDuration: number }> = {};
 
@@ -459,6 +530,10 @@ export class PerformanceMonitor {
         return result as Record<PerformanceCategory, { count: number; totalDuration: number; avgDuration: number }>;
     }
 
+    /**
+     * 读取内存采样信息（若环境支持）。
+     * @returns {current?,peak,avg?}
+     */
     getMemoryInfo(): { current?: number; peak: number; avg?: number } {
         const current = this.getCurrentMemory();
         const avg = this.memorySamples.length > 0
@@ -467,6 +542,14 @@ export class PerformanceMonitor {
         return { current, peak: this.peakMemory, avg };
     }
 
+    /**
+     * 判断某操作最近 N 次的趋势。
+     *
+     * @param operationName - 操作名
+     * @param category - 分类
+     * @param windowSize - 窗口大小
+     * @returns 最近样本与 improving/degrading/stable
+     */
     getTrend(operationName: string, category?: PerformanceCategory, windowSize: number = 10): { recent: number[]; trend: 'improving' | 'degrading' | 'stable' } | null {
         const entries = this.log
             .filter(e => e.name === operationName && (!category || e.category === category))
@@ -489,6 +572,12 @@ export class PerformanceMonitor {
         return { recent, trend };
     }
 
+    /**
+     * 生成结构化性能报告（可附缓存统计）。
+     *
+     * @param cacheStats - 缓存命中/条目/大小
+     * @returns 性能报告对象
+     */
     generateReport(cacheStats?: { hitRate: number; totalEntries: number; totalSize: number }): PerformanceReport {
         const categoryBreakdown = this.getCategoryStats();
         const allStats = this.getAllStats();
@@ -531,6 +620,12 @@ export class PerformanceMonitor {
         };
     }
 
+    /**
+     * 生成 Markdown 文本报告。
+     *
+     * @param cacheStats - 缓存统计
+     * @returns 报告文本
+     */
     generateTextReport(cacheStats?: { hitRate: number; totalEntries: number; totalSize: number }): string {
         const report = this.generateReport(cacheStats);
         const lines: string[] = [];
@@ -602,6 +697,9 @@ export class PerformanceMonitor {
         return lines.join('\n');
     }
 
+    /**
+     * 清空日志与统计。
+     */
     clearLog(): void {
         this.log = [];
         this.statsByOperation.clear();
@@ -610,10 +708,19 @@ export class PerformanceMonitor {
         log.info('性能日志已清空');
     }
 
+    /**
+     * 导出日志为 JSON 字符串。
+     * @returns JSON 文本
+     */
     exportLog(): string {
         return JSON.stringify(this.log, null, 2);
     }
 
+    /**
+     * 从 JSON 字符串导入日志。
+     *
+     * @param json - 日志 JSON
+     */
     importLog(json: string): void {
         try {
             const entries = JSON.parse(json) as PerformanceLogEntry[];
