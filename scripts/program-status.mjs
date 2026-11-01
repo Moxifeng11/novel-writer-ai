@@ -138,7 +138,7 @@ function render(data) {
     lines.push('| 对象 | 位置 | 说明 |');
     lines.push('|---|---|---|');
     lines.push(`| 本项目结构路线 | \`${sync.plan ?? 'docs/PLAN.md'}\` | 模块边界与里程碑 |`);
-    lines.push(`| 跨工具进度 | \`${sync.trae ?? '.trae/CURRENT-PROGRESS.md'}\` | Trae / ZCode 共享基线 |`);
+    lines.push(`| 跨工具进度 | \`${sync.trae ?? 'docs/progress/program-status.json'}\` | 唯一进度数据源 |`);
     lines.push(`| 进度报告 | \`${sync.reports ?? 'docs/progress/PROGRAM-STATUS.md'}\` | 本文件（自动生成） |`);
     lines.push(`| 审计取证 | \`${sync.audits ?? 'docs/audits/'}\` | 各轮问题清单与修复证据 |`);
     lines.push('');
@@ -152,7 +152,16 @@ function render(data) {
         lines.push('');
     }
 
-    return lines.join('\n');
+    return sanitizeControlChars(lines.join('\n'));
+}
+
+/**
+ * 剔除 Markdown 里不可见的控制字符。
+ * 台账 JSON 中一旦出现 `\u0000` 之类的转义，渲染物会变成含裸 NUL 的文件，
+ * grep/ripgrep 会把整篇当二进制跳过（2026-11 实测）。
+ */
+function sanitizeControlChars(text) {
+    return String(text).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 }
 
 function main() {

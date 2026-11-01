@@ -1,5 +1,38 @@
 # Changelog
 
+## v4.24.0（2026-11-02）
+
+### 📚 文档体系
+
+- 新增 `docs/README.md` 总索引与「真相源责任表」；新增 `docs/handbook/` 11 篇（上手、环境、架构、模块标准、接口契约、测试、门禁与发布、排障、评审、注释规范、文档政策）。
+- 新增 `docs/adr/`（索引 + 模板）、`docs/glossary.md`、`docs/releases/TEMPLATE.md`。
+- `docs/generated/` 改为生成物：代码索引（文件/层/行数/导出/JSDoc 覆盖）与门禁表。
+- 修复过期事实：README 版本与门禁清单、CONTRIBUTING/PR 模板、PLAN 真相源表、PROGRAM 的 `.trae` 引用与 NUL、BASELINE、tests/README、CODE-INDEX（改为导航 + 生成索引）、PERFORMANCE（旧文件编码损坏，按当前代码重写）。
+
+### 🚦 门禁与流程
+
+- 新增 `check:docs`（索引/链接/版本戳/命令/编码/生成物漂移）、`check:jsdoc`（注释覆盖率棘轮）、`gen:docs`。
+- `preflight` 补齐 `check:jsdoc`、`check:docs`、`build`、`check:release`；新增 `preflight:release`（+`test:cov`），`build:release` 改用它。
+- 基线缺失不再自动放行：`check:deps` / `check-engines` 支持 `--require-baseline`（CI 默认启用）。
+- `check:dsh-isolation` 修复漏检：匹配 `require('child_process')` 与 `node:` 前缀，扫描根级入口，并支持显式例外。
+- `check:release` 增加 `main.js` 语法检查、tag 时校验发布说明存在、`release.yml` 资产声明不可解析时报错。
+- CI：`check:styles` 前移、新增文档/注释门禁、生成物漂移纳入 diff；Release：补 `audit:deps`、`test:cov`、同样的文档门禁与漂移检查。
+
+### 🧩 代码
+
+- 新增 `shared/desktop-shell.ts`：只提供 `setPathReadOnly` 的窄接口，动态 import `node:child_process`，使用 `execFile` 参数数组；`ui/protect-yuan-modal.ts` 不再直接 `require('child_process')`。
+- `program-status.mjs` 渲染前剔除控制字符，修复台账 `\u0000` 导致的文档二进制化。
+
+### 📝 注释
+
+- 新增注释/JSDoc 规范（文件头四段式、导出标签、事故注释格式）与棘轮基线；当前导出覆盖 46%，新增/修改导出必须有注释。
+
+### 🧪 验证
+
+- `preflight`：524 文件 / 5866 用例通过，含文档与注释门禁、构建与发布资产校验。
+- `test:cov`：通过（lines 77.22% / branches 78.88% / functions 73.37%）。
+- 真实 Electron E2E：25 passed / 14 skipped。
+
 ## v4.23.4（2026-11-02）
 
 v4.23.3 的补强：把规则版本解析的边界补全，并修掉设置页/工作台两处版本显示问题。

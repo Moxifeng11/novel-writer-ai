@@ -2,7 +2,7 @@
 
 > 全流程 AI 长篇小说创作系统 —— 在 Obsidian 内完成从构思、大纲、设定管理到正文生成与质量复盘的全链路。
 
-**当前版本**：4.22.0 · **最低 Obsidian**：1.5.0 · **平台**：桌面端 / 移动端（界面仅中文；系统级文件保护仅桌面端）
+**当前版本**：4.24.0 · **最低 Obsidian**：1.5.0 · **平台**：桌面端 / 移动端（界面仅中文；系统级文件保护仅桌面端）
 
 ---
 
@@ -212,35 +212,34 @@ npm run build          # 产出 main.js（版本号自动同步到 manifest.json
 ## 开发
 
 ```bash
-npm install
-
-npm run dev         # watch 构建
-npm run build       # 生产构建（同步版本号 + 生成内置模板资源）
-npm run gen:templates   # 重新生成内置模板资源模块
-npm run check:templates # 校验生成物与 assets 一致
-npm run check:release   # 发布前资产与版本一致性校验
-npm run lint        # eslint（官方 obsidianmd 规则集）
-npm run typecheck   # tsc --noEmit
-npm test            # vitest 全量
-npm run test:cov    # 覆盖率
-npm run test:e2e    # Playwright（Electron 真实链路，需 OBSIDIAN_PATH）
-npm run check:deps  # 依赖与 Node 版本一致性检查
-npm run audit:deps  # 生产依赖安全审计
+npm ci                  # 严格按 lockfile 安装
+npm run dev             # watch 构建（含前置生成）
+npm run build           # 生产构建（版本同步 + 模板 + CSS + esbuild）
+npm run preflight       # 本地总门禁（含 build 与 check:release）
+npm run preflight:release # 发布前：preflight + 覆盖率
+npm run gen:docs        # 生成 docs/generated/*
+npm run check:docs      # 文档索引/链接/版本/编码
+npm run check:jsdoc     # 注释覆盖率（棘轮）
+npm run lint            # eslint（官方 obsidianmd 规则集）
+npm run typecheck       # tsc --noEmit
+npm test                # vitest 全量
+npm run test:cov        # 覆盖率门禁
+npm run test:e2e        # Playwright（Electron 真实链路，需 OBSIDIAN_PATH）
+npm run check:deps -- --baseline .arch-baseline.json  # 分层/循环依赖
+npm run audit:deps      # 生产依赖安全审计
 ```
 
 E2E 需要本机安装 Obsidian，并设置 `OBSIDIAN_PATH` 指向可执行文件；未设置时用例会明确跳过。详见 [tests/e2e/README.md](tests/e2e/README.md)。
 
-提交前请确保以下 Gate 全绿（`npm run preflight` 已串联前 7 项）：
+提交前只需一条命令：
 
-```
-npm run preflight   # typecheck → vitest → check:templates → check:styles
-                    # → check:css → check:inline-styles → check:deps(--baseline)
-                    # → check-engines
-npm run build       # 产物：main.js / styles.css / manifest.json / versions.json
-npm run check:release
+```bash
+npm run preflight
 ```
 
-CI 与发布流水线见 `.github/workflows/`：PR 执行全量 Gate；推送 `v*` tag 自动创建 GitHub Release。
+它串联类型、Lint、全量测试、模板/样式/CSS/内联/分层/引擎/台账/权威源/静默失败/热路径/联动/隔离、JSDoc、文档与生成物漂移、构建与发布资产校验。完整门禁表见 [docs/generated/gates.md](docs/generated/gates.md)，流程见 [docs/handbook/06-gates-and-release.md](docs/handbook/06-gates-and-release.md)。
+
+CI 与发布流水线见 `.github/workflows/`：PR 执行全量门禁；推送 `v*` tag 自动创建 GitHub Release。
 
 ### 目录结构
 
@@ -263,13 +262,20 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 
 | 文档 | 内容 |
 |---|---|
+| [docs/README.md](docs/README.md) | **开发文档总索引**（手册、ADR、术语、真相源） |
+| [docs/handbook/00-onboarding.md](docs/handbook/00-onboarding.md) | 新人上手指南 |
+| [docs/handbook/01-environment.md](docs/handbook/01-environment.md) | 环境搭建与开发循环 |
+| [docs/handbook/03-module-development.md](docs/handbook/03-module-development.md) | 新增模块检查表 |
+| [docs/handbook/06-gates-and-release.md](docs/handbook/06-gates-and-release.md) | 门禁、发布与回滚 |
+| [docs/handbook/07-runbook.md](docs/handbook/07-runbook.md) | 故障排查手册 |
+| [docs/handbook/09-comment-standard.md](docs/handbook/09-comment-standard.md) | 注释/JSDoc 规范 |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 分层架构、引擎注册表、数据流 |
 | [API.md](docs/API.md) | 内部接口与模块契约 |
 | [DEVELOPMENT.md](docs/DEVELOPMENT.md) | 开发规范与调试流程 |
-| [CODE-INDEX.md](docs/CODE-INDEX.md) | 文件与模块索引 |
+| [CODE-INDEX.md](docs/CODE-INDEX.md) | 文件与模块索引（清单见生成物） |
 | [PERFORMANCE.md](docs/PERFORMANCE.md) | 性能基线与优化记录 |
 | [CHANGELOG.md](CHANGELOG.md) | 完整变更历史 |
-| [v4.22.0 发布说明](docs/releases/v4.22.0.md) | 当前版本发布说明（历史版本见 CHANGELOG） |
+| [v4.23.4 发布说明](docs/releases/v4.23.4.md) | 当前版本发布说明（历史版本见 CHANGELOG） |
 | [v4.17.0 效率审计](docs/analysis/v4.17-pipeline-efficiency.html) | 11 步调用流、点击账单、协同写作调用审计（交互式 HTML） |
 | [v4.18 快捷工具健康度](docs/audits/v4.18-quick-tools-health.md) | 工具可用性、假项目/丢稿修复与待审计清单 |
 | [v4.18.0 验证报告](docs/audits/v4.18.0-verification-report.md) | 版本一致性、功能验证、高危问题与修改清单 |
@@ -289,7 +295,7 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 - 旧项目数据、旧版报告与既有设置键名保持向后兼容。
 - 旧版正文生成命令保留至 **v5.0.0**，之后移除；当前仅从公开命令面板收敛并给出弃用提示。
 - 版本号遵循语义化版本：`manifest.json` 与 `package.json` 由 `scripts/sync-version.js` 保持同步。
-- 变更记录见 [CHANGELOG.md](CHANGELOG.md)，最新发布说明见 [v4.22.0](docs/releases/v4.22.0.md)。
+- 变更记录见 [CHANGELOG.md](CHANGELOG.md)，最新发布说明见 [v4.23.4](docs/releases/v4.23.4.md)。
 
 ---
 

@@ -26,6 +26,9 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 生产依赖安全审计
+        run: npm run audit:deps
+
       - name: 校验内置模板生成物
         run: npm run check:templates
 
@@ -50,17 +53,26 @@ jobs:
       - name: 内联样式基线检查
         run: npm run check:inline-styles
 
+      - name: 文档与注释门禁
+        run: |
+          npm run gen:docs -- --check
+          npm run check:jsdoc
+          npm run check:docs
+
       - name: Typecheck
         run: npm run typecheck
 
-      - name: 单元测试
-        run: npm test
+      - name: 单元测试与覆盖率门禁
+        run: npm run test:cov
 
       - name: 构建
         run: npm run build
 
       - name: 发布资产校验（含 tag 版本一致性）
         run: npm run check:release -- --tag "$GITHUB_REF_NAME"
+
+      - name: 校验构建未产生版本/生成物漂移
+        run: git diff --exit-code -- manifest.json versions.json shared/template-scaffold-assets.generated.ts styles.css docs/generated
 
       - name: 打包发布 zip（含 Worker 产物）
         run: |

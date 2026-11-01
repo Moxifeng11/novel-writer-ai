@@ -18,6 +18,39 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.24.0',
+        date: '2026-11-02',
+        title: '完整开发系统：文档、门禁与注释基线',
+        sections: [
+            {
+                type: 'added',
+                label: '📚 文档体系',
+                items: [
+                    'docs/README 总索引 + handbook 11 篇（上手/环境/架构/模块/契约/测试/发布/排障/评审/注释/政策）',
+                    'ADR 索引与模板、术语表、发布说明模板；代码索引与门禁表改为生成物',
+                    '统一真相源：版本、门禁、测试基线、文件清单不再多处手抄',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🚦 门禁',
+                items: [
+                    'check:docs（索引/链接/版本/命令/编码/生成物漂移）与 check:jsdoc（注释棘轮）',
+                    'preflight 纳入文档、注释、构建与发布资产校验；新增 preflight:release',
+                    '基线缺失不再放行；dsh 隔离门禁修复漏检；CI/Release 对齐同一组门禁',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🔧 修复',
+                items: [
+                    '桌面系统命令收口到 shared/desktop-shell（不再直接 require child_process）',
+                    '台账 NUL 导致文档二进制化；README/CONTRIBUTING/CODE-INDEX/PERFORMANCE 等过期事实',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.23.4',
         date: '2026-11-02',
         title: '规则版本解析补强与版本显示修正',

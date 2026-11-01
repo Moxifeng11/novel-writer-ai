@@ -1,15 +1,16 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.22.0 · 更新：2026-10-31
+> 版本：v4.24.0 · 更新：2026-11-02
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
+> **开发手册**：[`docs/README.md`](README.md)（环境、模块标准、接口契约、排障、评审、注释规范）。
 
 ---
 
 ## 一、模块地图（是谁、归哪层、边界）
 
-分层门禁：`ui → engine → services → shared/core`（`check:deps` 棘轮，存量冻结、只降不升）。
+分层门禁（唯一可执行口径，见 `scripts/check-dependencies.mjs`）：`ui → engine/services → shared/core`；`services → shared/core`；`shared` 只依赖自身；`core` 只依赖 `shared`。`check:deps` 为棘轮，存量冻结、只降不升。目标边界与差异见 [handbook/02-architecture.md](handbook/02-architecture.md)。
 
 | 层 | 目录 | 职责 | 不该做的事 |
 |---|---|---|---|
@@ -106,8 +107,8 @@ Agent（harness）
 | M0 | v4.21.1 已发布（RAG/Agent/执行登记表） | ✅ |
 | M1 | 人味重建 + 版本治理 + 上下文体检 + 修订闭环 | ✅ v4.22.0 |
 | M2 | 全插件排查 Batch 2（P1 十八条） | 进行中：P1-3/P1-6/P1-12 已修（2026-11-02）；P1-5 `adapter.write` 绕过 `modify` 事件范围待定（改代码 vs 书面接受） |
-| M3 | Batch 3 + 门禁补强 + 真实链路回归 | 进行中：`preflight` 已补 `lint`+`build`；`check:release` 未入 preflight；`E2E_REWRITE=1` 待授权 |
-| M4 | 发布 v4.23.0（远端 tag + Release） | 待用户确认 |
+| M3 | Batch 3 + 门禁补强 + 真实链路回归 | 进行中：`preflight` 已补 `lint`/`build`/文档与注释门禁；`check:release` 已入 preflight；`E2E_REWRITE=1` 待授权 |
+| M4 | 发布 v4.23.x（远端 tag + Release） | ✅ v4.23.0 → v4.23.4 已发布 |
 
 ---
 
@@ -121,9 +122,13 @@ Agent（harness）
 
 | 文档 | 角色 | 更新时机 |
 |---|---|---|
+| `docs/README.md` | 文档总索引与真相源责任表 | 新增文档时 |
 | `docs/PLAN.md`（本文件） | 结构与路线唯一入口 | 每轮收口 |
-| `CHANGELOG.md` | 变更流水 | 每次提交 |
+| `CHANGELOG.md` | 变更流水 | 每个版本节点 |
 | `docs/releases/vX.Y.Z.md` | 版本交付说明 | 打版本时 |
 | `docs/audits/vX.Y-*.md` | 取证与实验记录 | 审计/实验后 |
-| `docs/ARCHITECTURE.md` / `CODE-INDEX.md` | 分层与文件索引 | 结构变化时 |
-| `.trae/CURRENT-PROGRESS.md` | 跨工具进度快照 | 每轮收口 |
+| `docs/generated/*` | 文件清单、门禁表、注释覆盖率（生成物） | `npm run gen:docs` |
+| `docs/ARCHITECTURE.md` | 分层与数据流深度说明 | 结构变化时 |
+| `docs/progress/program-status.json` | 专项进度与测试基线唯一源 | 每轮收口（`program:render`） |
+
+> `.trae/CURRENT-PROGRESS.md` 已被 gitignore，不再作为真相源；跨工具进度以 `program-status.json` 为准。

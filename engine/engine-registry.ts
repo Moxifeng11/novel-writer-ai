@@ -284,6 +284,10 @@ export class EngineRegistry {
      * 向后兼容：register(name, instance) 行为不变，默认 Singleton 作用域。
      * 增强：register(name, instance, { scope, dependencies, ... }) 支持元数据。
      * 类型约束：已知 token 的实例类型须与 EngineServiceMap 一致（未知 token 走宽泛重载）。
+     *
+     * @param name - 引擎 token（来自 shared/engine-names）
+     * @param instance - 实例
+     * @param options - 作用域/依赖/初始化回调等元数据
      */
     register<K extends EngineToken>(name: K, instance: EngineServiceMap[K], options?: EngineRegisterOptions): void;
     register<T>(name: string, instance: T, options?: EngineRegisterOptions): void;
@@ -310,6 +314,10 @@ export class EngineRegistry {
      * 增强：factory 可返回 Promise<T>，需通过 getAsync 获取。
      * 增强：options.scope=Transient 时，每次 getTransient 创建新实例。
      * 增强：options.onInit 在实例创建后调用。
+     *
+     * @param name - 引擎 token
+     * @param factory - 同步或异步工厂；异步工厂需用 getAsync 获取
+     * @param options - 作用域/依赖/初始化回调等元数据
      */
     registerLazy<K extends EngineToken>(
         name: K,
@@ -374,6 +382,10 @@ export class EngineRegistry {
      * 注意：仅支持同步工厂。异步工厂请使用 getAsync。
      * 已 dispose 的引擎：返回旧实例（运行时兼容），调用方应优先使用 getAsync 获取 destroyed 状态。
      * 已知 token 由 EngineServiceMap 推导返回类型；未知 token 可继续显式传泛型。
+     *
+     * @param name - 引擎 token
+     * @returns 已注册或懒加载创建的实例
+     * @throws 未注册且无工厂时抛出
      */
     get<K extends EngineToken>(name: K): EngineServiceMap[K];
     get<T>(name: string): T;
@@ -435,9 +447,19 @@ export class EngineRegistry {
     /** 获取引擎实例，不存在返回 null（不抛错）
      *
      * 已知 token 由 EngineServiceMap 推导返回类型；未知 token 可继续显式传泛型。
+     *
+     * @param name - 引擎 token
+     * @returns 已注册或懒加载创建的实例
+     * @throws 未注册且无工厂时抛出
      */
     getOrNull<K extends EngineToken>(name: K): EngineServiceMap[K] | null;
     getOrNull<T>(name: string): T | null;
+    /**
+     * 获取实例；未注册/懒加载失败时返回 null，不抛错。
+     *
+     * @param name - 引擎 token
+     * @returns 实例或 null
+     */
     getOrNull<T>(name: string): T | null {
         try {
             return this.get<T>(name);
@@ -454,6 +476,13 @@ export class EngineRegistry {
      * - 加载失败：lazyState='failed'，再次调用可重试
      * - 已 dispose：抛错 `destroyed`
      * - 已 destroyed 的引擎：抛错提示
+     */
+    /**
+     * 获取实例；支持异步工厂，等待初始化完成。
+     *
+     * @param name - 引擎 token
+     * @returns 初始化后的实例
+     * @throws 未注册、工厂失败或已销毁时抛出
      */
     async getAsync<T>(name: string): Promise<T> {
         if (this.destroyed.has(name)) {
@@ -576,6 +605,12 @@ export class EngineRegistry {
      * - 单个 dispose 失败不影响其他
      * @returns 是否成功 dispose（未实现 dispose 也算成功）
      */
+    /**
+     * 销毁单个引擎（调用其 dispose），之后禁止重新注册同名实例。
+     *
+     * @param name - 引擎 token
+     * @returns 是否执行了销毁
+     */
     async dispose(name: string): Promise<boolean> {
         const instance = this.instances.get(name);
         if (!instance) {
@@ -617,6 +652,12 @@ export class EngineRegistry {
      * - 不影响单例和瞬态实例
      * @returns 释放的实例数量
      */
+    /**
+     * 销毁某个项目作用域下的全部引擎。
+     *
+     * @param projectKey - 项目键（通常是项目路径）
+     * @returns 销毁的实例数
+     */
     async disposeProject(projectKey: string): Promise<number> {
         const key = projectKey || '__default__';
         const projectMap = this.projectInstances.get(key);
@@ -651,6 +692,11 @@ export class EngineRegistry {
      * - 单个 dispose 失败不影响其他
      * - 释放后所有引擎标记为 destroyed
      * @returns 释放的实例数量
+     */
+    /**
+     * 销毁全部引擎（插件卸载时调用）。
+     *
+     * @returns 销毁的实例数
      */
     async disposeAll(): Promise<number> {
         // 按依赖逆序：先释放有依赖的，再释放被依赖的

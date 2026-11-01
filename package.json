@@ -1,6 +1,6 @@
 {
   "name": "novel-writer-ai",
-  "version": "4.23.4",
+  "version": "4.24.0",
   "description": "Obsidian plugin for AI-powered novel writing",
   "main": "main.js",
   "scripts": {
@@ -9,8 +9,9 @@
     "check:templates": "node scripts/generate-template-assets.mjs --check",
     "check:release": "node scripts/check-release.mjs",
     "build": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js",
-    "build:release": "npm run preflight && npm run build",
-    "preflight": "npm run typecheck && npm run lint && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures && npm run check:hotpaths && npm run check:linked-scenarios && npm run check:dsh-isolation && npm run build",
+    "build:release": "npm run preflight:release",
+    "preflight": "npm run typecheck && npm run lint && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json --require-baseline && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures && npm run check:hotpaths && npm run check:linked-scenarios && npm run check:dsh-isolation && npm run check:jsdoc && npm run check:docs && npm run build && npm run check:release",
+    "preflight:release": "npm run preflight && npm run test:cov",
     "dev": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js --watch",
     "build:styles": "node scripts/build-styles.mjs",
     "check:styles": "node scripts/build-styles.mjs --check",
@@ -21,7 +22,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "check-engines": "node scripts/scan-engine-instances.mjs --check --baseline .arch-baseline.json",
+    "check-engines": "node scripts/scan-engine-instances.mjs --check --baseline .arch-baseline.json --require-baseline",
     "check:deps": "node scripts/check-dependencies.mjs",
     "check:css": "node scripts/check-css.js",
     "check:inline-styles": "node scripts/check-inline-styles.mjs",
@@ -39,6 +40,9 @@
     "eval:cowrite-local": "node scripts/eval-cowrite-local.mjs",
     "program:render": "node scripts/program-status.mjs",
     "check:program": "node scripts/program-status.mjs --check",
+    "gen:docs": "node scripts/gen-docs.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:jsdoc": "node scripts/check-jsdoc.mjs",
     "check:relationship-authority": "node scripts/check-relationship-authority.mjs",
     "check:silent-failures": "node scripts/check-silent-failures.mjs",
     "check:hotpaths": "node scripts/check-hotpath-scans.mjs",
@@ -47,7 +51,8 @@
     "bench:hotpath": "node scripts/bench/get-files-hotpath.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "npm": ">=10"
   },
   "keywords": [
     "obsidian",

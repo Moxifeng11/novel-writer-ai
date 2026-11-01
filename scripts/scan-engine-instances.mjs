@@ -212,7 +212,7 @@ function loadWhitelist() {
  * 无 --baseline 时保持原语义（有违规即失败）；传入基线后只有「新增类/实例数增加/超限增加」才失败。
  */
 function applyEngineBaseline(violations, overLimit) {
-    const { baselinePath, updateBaseline } = parseBaselineArgs();
+    const { baselinePath, updateBaseline, requireBaseline } = parseBaselineArgs();
     if (!baselinePath) {
         return violations.length > 0 || overLimit.length > 0 ? 1 : 0;
     }
@@ -223,6 +223,11 @@ function applyEngineBaseline(violations, overLimit) {
     const baseline = readBaseline(baselinePath);
     // 基线文件可能由 check:deps 先创建：只有引擎 section 不存在时才算首次基线化
     if (!baseline || !baseline.engineBypass) {
+        if (requireBaseline) {
+            console.error(`[基线] ❌ 缺少引擎守卫基线（${baselinePath}），拒绝自动初始化；`
+                + '请从版本控制恢复，或显式运行带 --update-baseline 的收紧流程。');
+            return 1;
+        }
         writeBaseline(baselinePath, 'engineBypass', bypassCounts);
         writeBaseline(baselinePath, 'engineOverLimit', overCounts);
         console.log(`\n[基线] 首次写入引擎守卫基线：${violations.length} 个非白名单类 / ${overLimit.length} 个超限类 → ${baselinePath}`);

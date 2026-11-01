@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-02",
   "baseline": {
-    "version": "4.23.4",
+    "version": "4.24.0",
     "tests": {
       "files": 524,
       "cases": 5866
@@ -433,7 +433,7 @@
           "id": "G6-6",
           "title": "缓存键含裸 NUL 导致文件对 grep 不可见",
           "status": "done",
-          "acceptance": "源码改为 \u0000 转义，文件重新可检索",
+          "acceptance": "源码改为 \\u0000 转义，文件重新可检索",
           "evidence": "engine/knowledge-vector-store.ts"
         },
         {

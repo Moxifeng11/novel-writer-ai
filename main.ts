@@ -1,3 +1,14 @@
+/**
+ * main.ts — 插件组合根与生命周期
+ *
+ * 职责：加载设置、初始化 EngineRegistry、注册命令/视图/设置页、启动后台服务。
+ * 不变量：
+ * - 业务逻辑不放这里；这里只做装配与转发；
+ * - 命令必须三处登记（定义、内部注册、命令面板）；
+ * - 启动阶段抛错必须可见（Notice + 日志），不允许静默失败。
+ * 使用方式：Obsidian 加载 `main.js` 后由 `Plugin#onload` 驱动；测试与 E2E 以
+ * 「命令是否注册」「视图是否可开」作为加载成功判据。
+ */
 import { InternalRegistry } from './shared/internal-registry';
 import { App, Plugin, PluginSettingTab, Setting, Notice, Platform, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { AIEngine } from './engine/ai-engine';
@@ -534,6 +545,7 @@ export const DEFAULT_SETTINGS: NovelWriterSettings = getDefaultSettings();
 
 export type { WorkbenchChapterContext, ActiveChapterTarget } from './shared/chapter-target';
 
+/** 插件主类：组合根。持有 settings / engineRegistry，负责生命周期与注册。 */
 export default class NovelWriterPlugin extends Plugin {
     settings!: NovelWriterSettings;
     private _degradationSinkUnregister: (() => void) | null = null;
@@ -673,6 +685,13 @@ export default class NovelWriterPlugin extends Plugin {
         });
     }
 
+    /**
+     * 插件加载入口。
+     *
+     * 顺序：设置迁移/解密 → EngineRegistry 初始化 → 命令注册 → 视图注册 →
+     * 设置页 → 后台服务（统计/宠物/模板自举/更新检查）。
+     * 任一阶段失败必须留日志并给出可见提示，不允许整段静默跳过。
+     */
     async onload() {
         log.info(`[小说工坊] 开始加载插件 v${PLUGIN_VERSION}...`);
         this.engineRegistry = new EngineRegistry();
@@ -1794,6 +1813,9 @@ export default class NovelWriterPlugin extends Plugin {
         }).open();
     }
 
+    /**
+     * 插件卸载入口：销毁宠物/统计/调度器等持有资源，避免重载后重复实例与定时器泄漏。
+     */
     onunload() {
         // 清理拆解调度器资源（定时器、看门狗、事件监听器）
         this._writingPet?.destroy();

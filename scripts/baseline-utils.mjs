@@ -15,11 +15,16 @@ import path from 'node:path';
 export function parseBaselineArgs(argv = process.argv.slice(2)) {
     let baselinePath = null;
     let updateBaseline = false;
+    let requireBaseline = process.env.CI === 'true';
 
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
         if (arg === '--update-baseline') {
             updateBaseline = true;
+            continue;
+        }
+        if (arg === '--require-baseline') {
+            requireBaseline = true;
             continue;
         }
         if (arg === '--baseline') {
@@ -35,6 +40,7 @@ export function parseBaselineArgs(argv = process.argv.slice(2)) {
     return {
         baselinePath: baselinePath ? path.resolve(process.cwd(), baselinePath) : null,
         updateBaseline,
+        requireBaseline,
     };
 }
 
@@ -102,12 +108,18 @@ export function diffCounts(baselineMap = {}, currentMap = {}) {
  * 无基线文件时写入并返回 false（首次基线化）。
  */
 export function applySetBaseline({ section, items, label }) {
-    const { baselinePath, updateBaseline } = parseBaselineArgs();
+    const { baselinePath, updateBaseline, requireBaseline } = parseBaselineArgs();
     if (!baselinePath) return { failed: items.length > 0, firstRun: false, tightened: 0 };
 
     const baseline = readBaseline(baselinePath);
     // 基线文件可能由另一个守卫先创建：只有本 section 不存在时才算首次基线化
     if (!baseline || !Array.isArray(baseline[section])) {
+        // 2026-11：删除/改名基线文件不应让棘轮静默放行
+        if (requireBaseline) {
+            console.error(`[基线] ❌ 缺少 ${label} 基线（${baselinePath}），拒绝自动初始化；`
+                + '请从版本控制恢复，或显式运行带 --update-baseline 的收紧流程。');
+            return { failed: true, firstRun: false, tightened: 0 };
+        }
         writeBaseline(baselinePath, section, items);
         console.log(`[基线] 首次写入 ${label} 基线：${items.length} 条 → ${baselinePath}`);
         return { failed: false, firstRun: true, tightened: 0 };

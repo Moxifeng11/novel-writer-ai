@@ -21,7 +21,19 @@
 // ============================================================
 // 1. 项目元数据
 // ============================================================
+/**
+ * pjProjectMeta：返回路径 ``${project}/.project``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjProjectMeta(project: string) { return `${project}/.project`; }
+/**
+ * pjConfig：返回路径 ``${project}/config``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjConfig(project: string) { return `${project}/config`; }
 
 // ------------------------------------------------------------
@@ -54,14 +66,41 @@ export function isProjectFolder(
 }
 /** v4.0 相对子目录常量（项目名之下的相对路径，供需要 relative folder 的 API 复用） */
 export const SUBDIR_WORLD_ARCH = '01-世界架构';
+/**
+ * 路径常量 SUBDIR_CHARS：``${SUBDIR_WORLD_ARCH}/人物``。
+ */
 export const SUBDIR_CHARS = `${SUBDIR_WORLD_ARCH}/人物`;
+/**
+ * 路径常量 SUBDIR_LOCS：``${SUBDIR_WORLD_ARCH}/地点``。
+ */
 export const SUBDIR_LOCS = `${SUBDIR_WORLD_ARCH}/地点`;
+/**
+ * 路径常量 SUBDIR_FACTIONS：``${SUBDIR_WORLD_ARCH}/势力``。
+ */
 export const SUBDIR_FACTIONS = `${SUBDIR_WORLD_ARCH}/势力`;
+/**
+ * 路径常量 SUBDIR_ITEMS：``${SUBDIR_WORLD_ARCH}/物品功法``。
+ */
 export const SUBDIR_ITEMS = `${SUBDIR_WORLD_ARCH}/物品功法`;
+/**
+ * 路径常量 SUBDIR_WORLDVIEW_FILE：``${SUBDIR_WORLD_ARCH}/世界观总览.md``。
+ */
 export const SUBDIR_WORLDVIEW_FILE = `${SUBDIR_WORLD_ARCH}/世界观总览.md`;
+/**
+ * 路径常量 SUBDIR_SETTING_LIB_FILE：``${SUBDIR_WORLD_ARCH}/设定库.md``。
+ */
 export const SUBDIR_SETTING_LIB_FILE = `${SUBDIR_WORLD_ARCH}/设定库.md`;
+/**
+ * 路径常量 SUBDIR_WRITING_STYLE_FILE：``${SUBDIR_WORLD_ARCH}/文笔风格.md``。
+ */
 export const SUBDIR_WRITING_STYLE_FILE = `${SUBDIR_WORLD_ARCH}/文笔风格.md`;
 
+/**
+ * pjWorldview：返回路径 ``${project}/${SUBDIR_WORLDVIEW_FILE}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjWorldview(project: string) { return `${project}/${SUBDIR_WORLDVIEW_FILE}`; }
 /** v4.0: 设定库移入 01-世界架构/ */
 export function pjSettingLib(project: string) { return `${project}/${SUBDIR_SETTING_LIB_FILE}`; }
@@ -89,6 +128,12 @@ export function matchProjectFromPath(filePath: string, candidates: Iterable<stri
     return first || null;
 }
 
+/**
+ * pjWritingRules：返回路径 ``${project}/00-系统模板/写作规则.md``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjWritingRules(project: string) { return `${project}/00-系统模板/写作规则.md`; }
 /** 弱/强写作对照库 */
 export function pjContrastLibrary(project: string) { return `${project}/00-系统模板/写作对照库.md`; }
@@ -120,13 +165,65 @@ export function sanitizeName(name: string): string {
     return cleaned || '未命名';
 }
 
+/**
+ * pjCharsDir：返回路径 ``${project}/${SUBDIR_CHARS}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjCharsDir(project: string) { return `${project}/${SUBDIR_CHARS}`; }
+/**
+ * pjLocsDir：返回路径 ``${project}/${SUBDIR_LOCS}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjLocsDir(project: string) { return `${project}/${SUBDIR_LOCS}`; }
+/**
+ * pjFactionsDir：返回路径 ``${project}/${SUBDIR_FACTIONS}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjFactionsDir(project: string) { return `${project}/${SUBDIR_FACTIONS}`; }
+/**
+ * pjItemsDir：返回路径 ``${project}/${SUBDIR_ITEMS}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjItemsDir(project: string) { return `${project}/${SUBDIR_ITEMS}`; }
+/**
+ * pjCharFile：返回路径 ``${project}/${SUBDIR_CHARS}/${sanitizeName(name)}.md``。
+ *
+ * @param project - 项目路径
+ * @param name - 实体名
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjCharFile(project: string, name: string) { return `${project}/${SUBDIR_CHARS}/${sanitizeName(name)}.md`; }
+/**
+ * pjLocFile：返回路径 ``${project}/${SUBDIR_LOCS}/${sanitizeName(name)}.md``。
+ *
+ * @param project - 项目路径
+ * @param name - 实体名
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjLocFile(project: string, name: string) { return `${project}/${SUBDIR_LOCS}/${sanitizeName(name)}.md`; }
+/**
+ * pjFactionFile：返回路径 ``${project}/${SUBDIR_FACTIONS}/${sanitizeName(name)}.md``。
+ *
+ * @param project - 项目路径
+ * @param name - 实体名
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjFactionFile(project: string, name: string) { return `${project}/${SUBDIR_FACTIONS}/${sanitizeName(name)}.md`; }
+/**
+ * pjItemFile：返回路径 ``${project}/${SUBDIR_ITEMS}/${sanitizeName(name)}.md``。
+ *
+ * @param project - 项目路径
+ * @param name - 实体名
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjItemFile(project: string, name: string) { return `${project}/${SUBDIR_ITEMS}/${sanitizeName(name)}.md`; }
 
 // ============================================================
@@ -162,28 +259,89 @@ export function pjVolumeDir(project: string, n: number) { return `${project}/03-
 // ============================================================
 // 5. 时间线 / 伏笔
 // ============================================================
+/**
+ * pjTimelineDir：返回路径 ``${project}/02-时间线与伏笔``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjTimelineDir(project: string) { return `${project}/02-时间线与伏笔`; }
+/**
+ * pjForeshadowDB：返回路径 ``${project}/02-时间线与伏笔/伏笔库.md``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjForeshadowDB(project: string) { return `${project}/02-时间线与伏笔/伏笔库.md`; }
 /** 承诺/谜团账本 */
 export function pjPromiseLedger(project: string) { return `${project}/02-时间线与伏笔/承诺账本.md`; }
+/**
+ * pjForeshadowTracker：返回路径 ``${project}/04-项目总控/伏笔追踪.md``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjForeshadowTracker(project: string) { return `${project}/04-项目总控/伏笔追踪.md`; }
+/**
+ * pjTimelineBoard：返回路径 ``${project}/02-时间线与伏笔/时间线看板.md``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjTimelineBoard(project: string) { return `${project}/02-时间线与伏笔/时间线看板.md`; }
+/**
+ * pjMemoryShardsDir：返回路径 ``${project}/02-时间线与伏笔/记忆碎片``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjMemoryShardsDir(project: string) { return `${project}/02-时间线与伏笔/记忆碎片`; }
 
 // ============================================================
 // 6. 封面
 // ============================================================
+/**
+ * pjCoverDir：返回路径 ``${project}/封面``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjCoverDir(project: string) { return `${project}/封面`; }
+/**
+ * pjCoverFile：返回路径 ``${project}/封面/cover.${ext}``。
+ *
+ * @param project - 项目路径
+ * @param ext - 参数
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjCoverFile(project: string, ext: string) { return `${project}/封面/cover.${ext}`; }
 
 // ============================================================
 // 7. 模板 (v4.0 升级)
 // ============================================================
+/**
+ * 路径常量 PJ_TEMPLATE_DIR：`'元文件/00-系统模板'`。
+ */
 export const PJ_TEMPLATE_DIR = '元文件/00-系统模板';
+/**
+ * 路径常量 PJ_WORLD_ARCH_DIR：`'元文件/01-世界架构'`。
+ */
 export const PJ_WORLD_ARCH_DIR = '元文件/01-世界架构';
+/**
+ * 路径常量 PJ_TIMELINE_DIR：`'元文件/02-时间线与伏笔'`。
+ */
 export const PJ_TIMELINE_DIR = '元文件/02-时间线与伏笔';
+/**
+ * 路径常量 PJ_OUTLINE_DIR：`'元文件/03-大纲与章节'`。
+ */
 export const PJ_OUTLINE_DIR = '元文件/03-大纲与章节';
+/**
+ * 路径常量 PJ_CONTROL_DIR：`'元文件/04-项目总控'`。
+ */
 export const PJ_CONTROL_DIR = '元文件/04-项目总控';
+/**
+ * 路径常量 PJ_FANFIC_DIR：`'元文件/05-同人设定库'`。
+ */
 export const PJ_FANFIC_DIR = '元文件/05-同人设定库';
 /** @deprecated */
 export function pjCharTemplate() { return `${PJ_TEMPLATE_DIR}/人物模板.md`; }
@@ -235,9 +393,29 @@ export function pjCharacterSoulTemplate() { return `${PJ_TEMPLATE_DIR}/角色灵
 // ============================================================
 // 7.5 AI Prompt 模板（v4.1.0 P7 新增）
 // ============================================================
+/**
+ * 路径常量 PJ_PROMPT_TEMPLATE_DIR：``${PJ_TEMPLATE_DIR}/prompts``。
+ */
 export const PJ_PROMPT_TEMPLATE_DIR = `${PJ_TEMPLATE_DIR}/prompts`;
+/**
+ * pjPromptSystemTemplate：返回路径 ``${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-system.md``。
+ *
+ * @param stepKey - 参数
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjPromptSystemTemplate(stepKey: string) { return `${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-system.md`; }
+/**
+ * pjPromptUserTemplate：返回路径 ``${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-user.md``。
+ *
+ * @param stepKey - 参数
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjPromptUserTemplate(stepKey: string) { return `${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-user.md`; }
+/**
+ * pjWritingRulesPromptTemplate：返回路径 ``${PJ_PROMPT_TEMPLATE_DIR}/writing-rules.md``。
+ *
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjWritingRulesPromptTemplate() { return `${PJ_PROMPT_TEMPLATE_DIR}/writing-rules.md`; }
 
 // ============================================================
@@ -245,6 +423,13 @@ export function pjWritingRulesPromptTemplate() { return `${PJ_PROMPT_TEMPLATE_DI
 // ============================================================
 /** v4.0: 99- → 05- */
 export function pjFanficDir(project: string) { return `${project}/05-同人设定库`; }
+/**
+ * pjFanficFile：返回路径 ``${project}/05-同人设定库/${sanitizeName(name)}.md``。
+ *
+ * @param project - 项目路径
+ * @param name - 实体名
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjFanficFile(project: string, name: string) { return `${project}/05-同人设定库/${sanitizeName(name)}.md`; }
 /** 同人设定草稿（未通过人工审核，不得绑定到项目） */
 export function pjFanficPendingDir(project: string) { return `${project}/05-同人设定库/_待审核`; }
@@ -258,13 +443,30 @@ export function pjFanficApprovedFile(project: string, workName: string) { return
 // ============================================================
 // 9. 项目总控
 // ============================================================
+/**
+ * pjControlDir：返回路径 ``${project}/04-项目总控``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjControlDir(project: string) { return `${project}/04-项目总控`; }
 
 // ============================================================
 // 10. 写作规则（模板路径）
 // ============================================================
+/**
+ * 路径常量 WRITING_RULES_PATH_PROJECT：`'00-系统模板/写作规则.md'`。
+ */
 export const WRITING_RULES_PATH_PROJECT = '00-系统模板/写作规则.md';
+/**
+ * 路径常量 WRITING_RULES_PATH_TEMPLATE：``${PJ_TEMPLATE_DIR}/写作规则.md``。
+ */
 export const WRITING_RULES_PATH_TEMPLATE = `${PJ_TEMPLATE_DIR}/写作规则.md`;
+/**
+ * pjWritingRulesTemplate：返回路径 `WRITING_RULES_PATH_TEMPLATE`。
+ *
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjWritingRulesTemplate() { return WRITING_RULES_PATH_TEMPLATE; }
 
 // ============================================================
@@ -283,8 +485,27 @@ export function getVolumeOutlinePath(project: string): string { return pjVolumeO
 export function pjInfoDebtBoard(project: string) { return `${project}/04-项目总控/信息债看板.md`; }
 /** 全书简介多版本目录（v4.18） */
 export function pjSynopsisDir(project: string) { return `${pjControlDir(project)}/全书简介`; }
+/**
+ * pjSynopsisIndexFile：返回路径 ``${pjSynopsisDir(project)}/index.json``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjSynopsisIndexFile(project: string) { return `${pjSynopsisDir(project)}/index.json`; }
+/**
+ * pjSynopsisDraftFile：返回路径 ``${pjSynopsisDir(project)}/草稿.md``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjSynopsisDraftFile(project: string) { return `${pjSynopsisDir(project)}/草稿.md`; }
+/**
+ * pjSynopsisVersionFile：返回路径 ``${pjSynopsisDir(project)}/${sanitizeName(id)}.md``。
+ *
+ * @param project - 项目路径
+ * @param id - 标识
+ * @returns 拼接后的 vault 相对路径
+ */
 export function pjSynopsisVersionFile(project: string, id: string) { return `${pjSynopsisDir(project)}/${sanitizeName(id)}.md`; }
 /** 兼容文件：当前采用版本 */
 export function pjSynopsisAdoptedFile(project: string) { return `${pjControlDir(project)}/全书简介.md`; }
@@ -306,17 +527,44 @@ export function pjCheckpointDir(project: string) { return `${project}/04-项目�
 // ============================================================
 /** 平台榜单分析目录：不属于任何作品，统一落在元文件全局层，禁止写 vault 根目录 */
 export const GLOBAL_RANK_DIR = '元文件/06-榜单分析';
+/**
+ * globalRankFile：返回路径 ``${GLOBAL_RANK_DIR}/${sanitizeName(name)}.md``。
+ *
+ * @param name - 实体名
+ * @returns 拼接后的 vault 相对路径
+ */
 export function globalRankFile(name: string) { return `${GLOBAL_RANK_DIR}/${sanitizeName(name)}.md`; }
 
 // ============================================================
 // 13. 实体目录常量（供 filter / startsWith 判断使用）
 // ============================================================
+/**
+ * 路径常量 SUBDIR_BODY_ROOT：`'03-大纲与章节/正文'`。
+ */
 export const SUBDIR_BODY_ROOT = '03-大纲与章节/正文';
+/**
+ * 路径常量 SUBDIR_STEP_ROOT：`'03-大纲与章节/步骤结果'`。
+ */
 export const SUBDIR_STEP_ROOT = '03-大纲与章节/步骤结果';
+/**
+ * 路径常量 SUBDIR_VOLUME_OUTLINE：`'03-大纲与章节/分卷大纲'`。
+ */
 export const SUBDIR_VOLUME_OUTLINE = '03-大纲与章节/分卷大纲';
+/**
+ * 路径常量 SUBDIR_OUTLINE_ROOT：`'03-大纲与章节'`。
+ */
 export const SUBDIR_OUTLINE_ROOT = '03-大纲与章节';
+/**
+ * 路径常量 SUBDIR_TIMELINE：`'02-时间线与伏笔'`。
+ */
 export const SUBDIR_TIMELINE = '02-时间线与伏笔';
+/**
+ * 路径常量 SUBDIR_CONTROL：`'04-项目总控'`。
+ */
 export const SUBDIR_CONTROL = '04-项目总控';
+/**
+ * 路径常量 SUBDIR_FANFIC：`'05-同人设定库'`。
+ */
 export const SUBDIR_FANFIC = '05-同人设定库';
 
 export function isInCharsDir(project: string, filePath: string): boolean {
@@ -353,13 +601,37 @@ export function pluginStylePatternsFile(project: string): string { return `${PLU
 // ============================================================
 // 15. 写作指纹库
 // ============================================================
+/**
+ * 路径常量 FINGERPRINT_LIBRARY_DIR：`'fingerprint-library'`。
+ */
 export const FINGERPRINT_LIBRARY_DIR = 'fingerprint-library';
+/**
+ * 路径常量 GLOBAL_FINGERPRINTS_FILE：`'global-fingerprints.json'`。
+ */
 export const GLOBAL_FINGERPRINTS_FILE = 'global-fingerprints.json';
+/**
+ * 路径常量 FINGERPRINT_VECTORS_DIR：`'vectors'`。
+ */
 export const FINGERPRINT_VECTORS_DIR = 'vectors';
+/**
+ * 路径常量 PROJECT_FINGERPRINT_LIBRARY_DIR：`'写作指纹库'`。
+ */
 export const PROJECT_FINGERPRINT_LIBRARY_DIR = '写作指纹库';
+/**
+ * 路径常量 PROJECT_FINGERPRINTS_FILE：`'project-fingerprints.json'`。
+ */
 export const PROJECT_FINGERPRINTS_FILE = 'project-fingerprints.json';
+/**
+ * 路径常量 TEMPLATE_FINGERPRINTS_FILE：`'template-fingerprints.json'`。
+ */
 export const TEMPLATE_FINGERPRINTS_FILE = 'template-fingerprints.json';
+/**
+ * 路径常量 PROJECT_GLOBAL_FINGERPRINT_STATE_FILE：`'global-fingerprint-state.json'`。
+ */
 export const PROJECT_GLOBAL_FINGERPRINT_STATE_FILE = 'global-fingerprint-state.json';
+/**
+ * 路径常量 FINGERPRINT_INTENSITY_CONFIG_FILE：`'fingerprint-intensity-config.json'`。
+ */
 export const FINGERPRINT_INTENSITY_CONFIG_FILE = 'fingerprint-intensity-config.json';
 
 export function globalFingerprintLibraryDir(): string { return `${pluginDataDir()}/${FINGERPRINT_LIBRARY_DIR}`; }
@@ -377,23 +649,77 @@ export function projectFingerprintIntensityFile(project: string): string { retur
 // ============================================================
 // 16. 写作知识库
 // ============================================================
+/**
+ * 路径常量 DEFAULT_KNOWLEDGE_BASE_DIR：`'写作知识库'`。
+ */
 export const DEFAULT_KNOWLEDGE_BASE_DIR = '写作知识库';
+/**
+ * 路径常量 KB_INDEX_FILE：`'知识库索引.md'`。
+ */
 export const KB_INDEX_FILE = '知识库索引.md';
+/**
+ * 路径常量 KB_TAG_SYSTEM_FILE：`'标签体系.md'`。
+ */
 export const KB_TAG_SYSTEM_FILE = '标签体系.md';
+/**
+ * 路径常量 KB_BASIC_INFO_FILE：`'基本信息.md'`。
+ */
 export const KB_BASIC_INFO_FILE = '基本信息.md';
+/**
+ * 路径常量 KB_STYLE_FINGERPRINT_FILE：`'风格指纹.json'`。
+ */
 export const KB_STYLE_FINGERPRINT_FILE = '风格指纹.json';
+/**
+ * 路径常量 KB_RHYTHM_ANALYSIS_FILE：`'节奏分析.md'`。
+ */
 export const KB_RHYTHM_ANALYSIS_FILE = '节奏分析.md';
+/**
+ * 路径常量 KB_WRITING_TECHNIQUES_FILE：`'写作技巧.md'`。
+ */
 export const KB_WRITING_TECHNIQUES_FILE = '写作技巧.md';
+/**
+ * 路径常量 KB_STRUCTURE_BREAKDOWN_FILE：`'结构拆解.md'`。
+ */
 export const KB_STRUCTURE_BREAKDOWN_FILE = '结构拆解.md';
+/**
+ * 路径常量 KB_CHARACTER_EXTRACTION_FILE：`'人设提取.md'`。
+ */
 export const KB_CHARACTER_EXTRACTION_FILE = '人设提取.md';
+/**
+ * 路径常量 KB_FORESHADOW_DB_FILE：`'伏笔库.md'`。
+ */
 export const KB_FORESHADOW_DB_FILE = '伏笔库.md';
+/**
+ * 路径常量 KB_COMMERCIAL_ANALYSIS_FILE：`'商业价值.md'`。
+ */
 export const KB_COMMERCIAL_ANALYSIS_FILE = '商业价值.md';
+/**
+ * 路径常量 KB_READABILITY_ANALYSIS_FILE：`'可读性分析.md'`。
+ */
 export const KB_READABILITY_ANALYSIS_FILE = '可读性分析.md';
+/**
+ * 路径常量 KB_BREAKDOWN_LOG_FILE：`'拆解日志.md'`。
+ */
 export const KB_BREAKDOWN_LOG_FILE = '拆解日志.md';
+/**
+ * 路径常量 KB_VECTORS_DIR：`'knowledge-vectors'`。
+ */
 export const KB_VECTORS_DIR = 'knowledge-vectors';
+/**
+ * 路径常量 KB_CONFIG_DIR：`'_config'`。
+ */
 export const KB_CONFIG_DIR = '_config';
+/**
+ * 路径常量 KB_CONFIG_FILE：`'knowledge-base-config.json'`。
+ */
 export const KB_CONFIG_FILE = 'knowledge-base-config.json';
+/**
+ * 路径常量 KB_IMPORT_HISTORY_FILE：`'import-history.json'`。
+ */
 export const KB_IMPORT_HISTORY_FILE = 'import-history.json';
+/**
+ * 路径常量 KB_IMPORT_PRESETS_FILE：`'import-presets.json'`。
+ */
 export const KB_IMPORT_PRESETS_FILE = 'import-presets.json';
 
 export function kbKnowledgeBaseDir(baseDir?: string): string { return baseDir || DEFAULT_KNOWLEDGE_BASE_DIR; }

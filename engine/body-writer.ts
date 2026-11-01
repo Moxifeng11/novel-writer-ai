@@ -138,7 +138,12 @@ export class BodyWriter {
         return this.frontmatter;
     }
 
-    /** 按项目写作规则推导格式契约（带缓存 + 规则文件指纹校验）；无规则文件时用默认契约 */
+    /**
+     * 按项目写作规则推导格式契约（带缓存 + 规则文件指纹校验）。
+     *
+     * @param project - 项目路径；为空时返回默认契约
+     * @returns 正文格式契约（separator/indent/allowTitle/source）
+     */
     async resolveContract(project?: string): Promise<BodyFormatContract> {
         if (!project) return { ...DEFAULT_BODY_FORMAT };
 
@@ -182,7 +187,11 @@ export class BodyWriter {
         return contract;
     }
 
-    /** P1-6（v4.27）：写作规则变更后清除格式契约缓存 */
+    /**
+     * P1-6（v4.27）：写作规则变更后清除格式契约缓存。
+     *
+     * @param project - 只清指定项目；省略时清空全部
+     */
     invalidateContractCache(project?: string): void {
         if (project) this.contractCache.delete(project);
         else this.contractCache.clear();
@@ -190,6 +199,13 @@ export class BodyWriter {
 
     /**
      * 写入正文。所有正文入口都应调用它。
+     *
+     * 保证：旧 frontmatter 原文保留、标题行统一、正文按契约规整、status 不降级；
+     * 同一路径串行写入，覆盖前按节流备份。
+     *
+     * @param req - 目标路径、原始文本、章节/卷信息与写入模式
+     * @returns 写入结果（是否新建、规整后正文、字数、标题）
+     * @throws path 为空时抛出；文件系统错误由调用方处理
      */
     async write(req: BodyWriteRequest): Promise<BodyWriteResult> {
         if (!req.path) throw new Error('[BodyWriter] path 为空');

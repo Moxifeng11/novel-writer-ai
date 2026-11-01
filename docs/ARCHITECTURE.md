@@ -1,8 +1,9 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.22.0
-> **最后更新**: 2026-10-27  
+> **版本**: v4.24.0
+> **最后更新**: 2026-11-02
 > **状态**: 活跃可信 · 与代码同步
+> **唯一可执行分层口径**: `scripts/check-dependencies.mjs`（目标边界与差异见 [handbook/02-architecture.md](handbook/02-architecture.md)）
 
 本文档描述 Novel Writer AI Obsidian 插件的分层架构、依赖关系、数据流和关键设计决策，帮助开发者快速理解整体结构。
 

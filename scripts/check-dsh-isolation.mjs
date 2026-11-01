@@ -15,6 +15,23 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DSH_DIR = path.join(ROOT, 'engine/agent/dsh');
+const ALLOWED = [
+    DSH_DIR,
+    path.join(ROOT, 'shared/desktop-shell.ts'),
+];
+const CHILD_PROCESS_RE = /(?:from\s+['"](?:node:)?child_process['"]|require\(\s*['"](?:node:)?child_process['"]\s*\)|import\(\s*['"](?:node:)?child_process['"]\s*\))/;
+const TOP_LEVEL_IMPORT_RE = /^import\s[^\n]*from\s+['"](?:node:)?child_process['"]/m;
+
+function isAllowed(file) {
+    return ALLOWED.some((entry) => file === entry || file.startsWith(entry + path.sep));
+}
+
+/** 注释里出现的 `require('child_process')` 是说明文字，不是真实依赖 */
+function stripComments(source) {
+    return String(source)
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '');
+}
 
 function walk(dir, files = []) {
     if (!fs.existsSync(dir)) return files;
@@ -28,22 +45,42 @@ function walk(dir, files = []) {
 
 const problems = [];
 
-// 1) child_process 只允许在 dsh 目录
-for (const dir of ['engine', 'services', 'ui', 'core', 'shared', 'domains']) {
+// 1) child_process 只允许在显式例外目录/文件
+for (const dir of ['engine', 'services', 'ui', 'core', 'shared', 'domains', 'utils']) {
     for (const file of walk(path.join(ROOT, dir))) {
-        if (file.startsWith(DSH_DIR)) continue;
-        const source = fs.readFileSync(file, 'utf8');
-        if (/from ['"]node:child_process['"]|require\(['"]node:child_process['"]\)/.test(source)) {
-            problems.push(`${path.relative(ROOT, file)} 引用了 child_process（只允许 engine/agent/dsh/**）`);
+        if (isAllowed(file)) continue;
+        const source = stripComments(fs.readFileSync(file, 'utf8'));
+        if (CHILD_PROCESS_RE.test(source)) {
+            problems.push(`${path.relative(ROOT, file)} 引用了 child_process（只允许 engine/agent/dsh/** 与 shared/desktop-shell.ts）`);
         }
     }
 }
+// 根级入口也要扫（此前只扫目录，main.ts 是漏网区）
+for (const rel of ['main.ts', 'plugin-api.ts']) {
+    const file = path.join(ROOT, rel);
+    if (!fs.existsSync(file)) continue;
+    const source = stripComments(fs.readFileSync(file, 'utf8'));
+    if (CHILD_PROCESS_RE.test(source)) {
+        problems.push(`${rel} 引用了 child_process（只允许 engine/agent/dsh/** 与 shared/desktop-shell.ts）`);
+    }
+}
 
-// 2) dsh 目录内部必须动态 import
-for (const file of walk(DSH_DIR)) {
-    const source = fs.readFileSync(file, 'utf8');
-    if (/^import\s[^\n]*from ['"]node:child_process['"]/m.test(source)) {
-        problems.push(`${path.relative(ROOT, file)} 顶层 import 了 child_process，必须改成动态 import`);
+// 2) 例外文件内部必须动态 import（不允许顶层 import）
+for (const dir of ['engine/agent/dsh']) {
+    for (const file of walk(path.join(ROOT, dir))) {
+        const source = fs.readFileSync(file, 'utf8');
+        if (TOP_LEVEL_IMPORT_RE.test(source)) {
+            problems.push(`${path.relative(ROOT, file)} 顶层 import 了 child_process，必须改成动态 import`);
+        }
+    }
+}
+{
+    const file = path.join(ROOT, 'shared/desktop-shell.ts');
+    if (fs.existsSync(file)) {
+        const source = fs.readFileSync(file, 'utf8');
+        if (TOP_LEVEL_IMPORT_RE.test(source)) {
+            problems.push('shared/desktop-shell.ts 顶层 import 了 child_process，必须改成动态 import');
+        }
     }
 }
 
@@ -61,4 +98,4 @@ if (problems.length > 0) {
     process.exit(1);
 }
 
-console.log('✅ dsh 隔离检查通过（child_process 仅限 engine/agent/dsh 且动态加载）');
+console.log('✅ dsh 隔离检查通过（child_process 仅限 engine/agent/dsh 与 shared/desktop-shell，且动态加载）');

@@ -1,8 +1,9 @@
 # API 文档
 
-> **版本**: v4.10.0  
-> **最后更新**: 2026-07-15  
-> **状态**: 活跃可信 · 与代码同步
+> **版本**: v4.24.0  
+> **最后更新**: 2026-11-02  
+> **状态**: 活跃可信 · 签名参考（契约规则见 [handbook/04-interface-contracts.md](handbook/04-interface-contracts.md)）
+> **说明**: 本文是签名索引，不定义兼容承诺；公开/内部边界与废弃策略以 handbook 04 为准。
 
 本文档列出 Novel Writer AI 插件的核心 API，重点覆盖 Repository、Store、流式、缓存和性能监控模块。
 所有 API 均基于实际代码，导入路径相对于 `engine/` 或 `shared/` 目录。

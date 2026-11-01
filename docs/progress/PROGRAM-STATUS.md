@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-02
-- 当前基线：v4.23.4；单测 524 文件 / 5866 用例；E2E 25 条
+- 当前基线：v4.24.0；单测 524 文件 / 5866 用例；E2E 25 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -133,7 +133,7 @@
 | G6-3 | 嵌入请求无超时 | ✅ 已完成 | 60s 超时并给出明确错误 | 67c53ca |
 | G6-4 | 全库 getFiles 热路径收敛 | ✅ 已完成 | 落盘/结算/统计/知识用量路径 0 次全库 getFiles()（check:hotpaths 门禁）；单章/本卷查询只访问本目录文件（基准 200 章）；200 章规模下单次查询 0.6ms→0.001~0.1ms | shared/vault-tree.ts（getAbstractFileByPath+children 局部遍历）+ shared/body-path.listChapterBodyFiles；改造 settlement-engine/step-result-saver/chapter-utils/context-manager/knowledge-usage/writing-stats-service；scripts/bench/get-files-hotpath.mjs（npm run bench:hotpath）；scripts/check-hotpath-scans.mjs（preflight+CI）；单测 vault-tree 10 条 + knowledge-usage/stats 适配 |
 | G6-5 | 步骤事件全量重渲染 | ✅ 已完成 | 步骤成功完成时只重绘本步 7 个区域，DOM 新增 <100 节点（E2E 实测 71；整页重建 494）；结构不完整时退回整页渲染 | ui/full-writer-view.ts（data-nw-region 7 区 + refreshAfterStep/replaceStepRegion/refreshStepNavState）；engine/step-runner afterStep 优先分片；导航 data-nw-substep；E2E STEP_REFRESH_CHURN/STEP_FULL_RENDER_CHURN；单测 step-refresh-regions 4 条 |
-| G6-6 | 缓存键含裸 NUL 导致文件对 grep 不可见 | ✅ 已完成 | 源码改为   转义，文件重新可检索 | engine/knowledge-vector-store.ts |
+| G6-6 | 缓存键含裸 NUL 导致文件对 grep 不可见 | ✅ 已完成 | 源码改为 \u0000 转义，文件重新可检索 | engine/knowledge-vector-store.ts |
 | G6-7 | 模型覆盖历史无上限、cache.json 线性膨胀 | ✅ 已完成 | 历史保留最近 200 条 | shared/plugin-cache.ts |
 | G6-8 | 伏笔刷新无防抖 + 每次全库×项目扫描 | ✅ 已完成 | modify 事件按项目 800ms 防抖，只刷被改项目（源码契约测试） | main.ts debounceFixed(info-debt:project) + perf-contracts |
 | G6-9 | 写章前 n=1..N 循环内 4 次全库扫描 | ✅ 已完成 | 一次 getFiles 快照；前文摘要最多 40 章、12000 字（源码契约测试） | ui/write-chapter-modal.ts allFiles + PREV_SUMMARY_WINDOW |
@@ -168,7 +168,7 @@
 | 对象 | 位置 | 说明 |
 |---|---|---|
 | 本项目结构路线 | `docs/PLAN.md` | 模块边界与里程碑 |
-| 跨工具进度 | `.trae/CURRENT-PROGRESS.md` | Trae / ZCode 共享基线 |
+| 跨工具进度 | `.trae/CURRENT-PROGRESS.md` | 唯一进度数据源 |
 | 进度报告 | `docs/progress/PROGRAM-STATUS.md` | 本文件（自动生成） |
 | 审计取证 | `docs/audits/` | 各轮问题清单与修复证据 |
 

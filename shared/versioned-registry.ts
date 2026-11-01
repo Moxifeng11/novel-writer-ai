@@ -29,7 +29,12 @@ export interface VersionedDoc {
     path?: string;
 }
 
-/** FNV-1a 32 位哈希（十六进制 8 位）。没有任何依赖，Obsidian/浏览器/Node 通用。 */
+/**
+ * FNV-1a 32 位哈希（十六进制 8 位）。没有任何依赖，Obsidian/浏览器/Node 通用。
+ *
+ * @param text - 任意文本；null/undefined 按空串处理
+ * @returns 8 位十六进制哈希（小写）
+ */
 export function hashContent(text: string): string {
     let hash = 0x811c9dc5;
     const source = String(text || '');
@@ -47,6 +52,9 @@ export function hashContent(text: string): string {
  * 同一份规则可能以两种形态存在：内置常量（纯正文，注入 prompt 用）与
  * vault 文件（带 tags/version/updated）。二者正文相同、哈希不同，会被误判成
  * 「同版本号不同内容」。比较内容身份时应先规范化，元数据不参与哈希。
+ *
+ * @param text - 文件全文或内置常量
+ * @returns 去 BOM、LF 归一、剥离 frontmatter 并 trim 后的正文
  */
 export function canonicalContent(text: string): string {
     return String(text || '')
@@ -56,7 +64,13 @@ export function canonicalContent(text: string): string {
         .trim();
 }
 
-/** 比较两个版本号的主干（忽略 `-suffix` 与前导 v），返回 -1 / 0 / 1 */
+/**
+ * 比较两个版本号的主干（忽略 `-suffix` 与前导 v）。
+ *
+ * @param a - 版本号，如 `3.6.0-引导代禁止` / `v3.6.0`
+ * @param b - 版本号
+ * @returns a<b 返回 -1，相等返回 0，a>b 返回 1
+ */
 export function compareVersionBase(a: string, b: string): number {
     const parts = (value: string): number[] =>
         String(value || '').replace(/^v/i, '').split(/[-+]/)[0]
@@ -79,6 +93,15 @@ export function compareVersionBase(a: string, b: string): number {
  * 事故（2026-11-02）：`tags: [写作规则, 文风, v3.6.0]` 排在 `version: "3.6.0-引导代禁止"`
  * 之前，全文取第一个版本号会把标签里的 `v3.6.0` 当成版本，于是自定义变体被误判成
  * 内置 3.6.0，再比内容哈希就触发「版本号相同但内容不同」的假漂移告警。
+ *
+ * @param text - 文件全文（可含 frontmatter）
+ * @returns 版本号；无法识别时返回空串
+ * @example
+ * ```ts
+ * extractVersion('---
+version: "3.6.0-引导代禁止"
+---') // '3.6.0-引导代禁止'
+ * ```
  */
 export function extractVersion(text: string): string {
     // 去 BOM：Windows 记事本/部分同步工具会在文件头写 U+FEFF，导致 `^---` 匹配失败
@@ -117,6 +140,10 @@ export interface SelectResult<T extends VersionedDoc = VersionedDoc> {
  * 多版本并存、只生效一个。
  * 规则：精确 id 命中 → 同 version 命中的最高优先级（project > vault > custom > builtin）
  *      → 第一个内置版本 → null。
+ *
+ * @param docs - 候选版本；调用方负责去重
+ * @param options - `activeId` 可写 id 或版本号；`mode` 用于过滤 applicableModes
+ * @returns 生效文档、实际 id、是否回退、告警（回退/无可用版本）
  */
 export function selectActive<T extends VersionedDoc>(docs: readonly T[], options: SelectOptions = {}): SelectResult<T> {
     const warnings: string[] = [];
@@ -166,6 +193,10 @@ function sourceWeight(source: VersionedSource): number {
 /**
  * 版本漂移检测：版本号相同但内容哈希不同 → 说明「版本号没变、正文被换过」。
  * 返回需要展示给用户的告警（空数组表示一致）。
+ *
+ * @param expected - 基准版本（通常是内置版）；为空时跳过
+ * @param actual - 实际生效版本；为空时跳过
+ * @returns 告警文本数组；版本或内容不一致时非空
  */
 export function detectDrift(expected: VersionedDoc | null, actual: VersionedDoc | null): string[] {
     if (!expected || !actual) return [];
@@ -182,7 +213,12 @@ export function detectDrift(expected: VersionedDoc | null, actual: VersionedDoc 
     return [];
 }
 
-/** 生成版本 id（内置版本用）：`builtin:<version>` */
+/**
+ * 生成版本 id（内置版本用）。
+ *
+ * @param version - 版本号
+ * @returns `builtin:<version>`
+ */
 export function builtinId(version: string): string {
     return `builtin:${version}`;
 }

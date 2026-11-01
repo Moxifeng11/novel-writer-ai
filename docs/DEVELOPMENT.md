@@ -1,10 +1,10 @@
 # 开发指南
 
-> **版本**: v4.22.0
-> **最后更新**: 2026-10-31  
+> **版本**: v4.24.0
+> **最后更新**: 2026-11-02  
 > **状态**: 活跃可信 · 协同写作建议链路运行时验收通过（云端 32–72s / 本地 192s 返回 3 条，面板可见）
 >
-> **当前基线**：`npm run typecheck` 通过 · `npm run build` 通过 · 全量单测 **480 文件 / 5497 用例**
+> **当前基线**：以 `npm run preflight` 与 `docs/progress/program-status.json` 为准（不在本文写死用例数）；测试口径见 [handbook/05-testing.md](handbook/05-testing.md)。
 >
 > **已修复的运行时阻断（2026-10-20）**：
 > - `.nw-cowrite-suggestions-panel` 被 `display:none` 永久隐藏（生成成功也看不见）
@@ -1312,16 +1312,14 @@ E2E（FR-E-10）使用 Playwright `_electron` 启动本机 Obsidian，临时 vau
 
 ### 当前验证状态
 
-截至 2026-10-31（v4.16.0 + Phase 1–3 审计修复 + Phase 4 工程门 + 步骤执行器切片 + 命令注册表 UI 注入化 + 章节流程专项 + 章节信息流重构 + 阶段导航识别修复 + 快捷工具三层对齐 + 数据层收敛 + 上下文注入幂等化 + 项目与章节入口修复 + 章节生成三工具统一/实体前端重设计 + 步骤完成度结构校验/上下文输入清单 + 全章节选择/关联索引程序 + 关联看板章节选择器 DOM 化与同章补扫 + 保存设置后布局塌陷修复 + 关联索引弹窗布局重排与章节列表压扁修复 + 设定与实体模块排版/统计口径优化，Rev 192；审计 §5 五项收口 + 节奏检索接入，v4.12.1；CSS 预算门禁 + 批量 7 步口径，M1 v4.12.2；预算遥测/跨视图同分/检索下限/浮窗契约，M2/M3 非 CSS v4.12.3；CSS 预算 LF 归一化 v4.12.4；A2/A3 内联迁移 + 死 CSS 清理 v4.13.0；协同 Markdown 编辑器 + 段落工具 + 一键排版 v4.14.0；任务级参数路由 + 截断状态机 + URL 识别 + 本地 Ollama 链路 v4.15.0；场景卡/工艺约束/样章/世界快照/定向修订/承诺弧线/基准评估 v4.16.0；单章一键编排/规划合并/信息流补齐/协同批量与本地串行 v4.17.0；同人考据/人工审核/项目重命名/简介多版本/快捷工具收口 v4.18.0；长篇/短篇/剧本三模式创作体系 v4.19.0；三模式创作流程 + 单元写作工作台 + EPUB/DOCX 导出 v4.20.0；RAG 检索管线 + Agent 会话运行时 + Obsidian 原生能力接入 v4.21.0；执行登记表/RAG 评估/真实 AI 链路实测 v4.21.1）：
+最新基线与用例数只写在 `docs/progress/program-status.json`（报告：[`progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)）。本节不再记录具体数字，避免多份口径漂移。
 
-- `npm run check:templates` / `npm run check:css` / `npm run check:inline-styles` / `npm run lint` / `npm run typecheck` 通过。
-- `npm test`：**456 个测试文件、5319 个用例全部通过**。
-- `npm run test:cov`：覆盖率门禁通过（口径与阈值见 `vitest.config.ts`）。
-- `npm run test:e2e`：未配置 `OBSIDIAN_PATH` 时 Electron 用例显式跳过；配置后覆盖「创建项目 → 打开工作台」。
-- `npm run build` 通过，构建版本为 v4.21.1。
-- `npm run check:release` 通过（核心资产、Worker 产物、内置模板嵌入均校验）。
-- CI / 发布流水线配置位于 `.github/workflows/`（PR 全量 Gate；`v*` tag 自动发布；E2E 为条件执行的独立 job）。
-- `npm run check:deps -- --baseline .arch-baseline.json` / `npm run check-engines -- --baseline .arch-baseline.json` 均退出 0：存量违规已记入基线（Rev 175 起棘轮收紧；批次 3 再收紧为运行时分层 0 条，批次 4 第二步后运行时循环也归零（0 条）），**只允许减少**，新增违规即失败。
+- `npm run preflight`：本地总门禁（类型、Lint、全量测试、模板/样式/CSS/分层/引擎/文档/JSDoc、构建、发布资产）。
+- `npm run test:cov`：覆盖率门禁（口径与阈值见 `vitest.config.ts`）。
+- `npm run test:e2e`：未配置 `OBSIDIAN_PATH` 时 Electron 用例显式跳过；配置后覆盖真实 Obsidian 旅程。
+- `npm run check:release -- --tag vX.Y.Z`：发布资产与版本一致性。
+- CI / 发布流水线位于 `.github/workflows/`（PR 全量门禁；`v*` tag 自动发布；E2E 为条件 job）。
+- `check:deps` / `check-engines` 为棘轮：存量违规记入 `.arch-baseline.json`，只允许减少，新增即失败。
 
 ### 发布流程
 

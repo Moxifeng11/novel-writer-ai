@@ -36,20 +36,26 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: 样式源与产物一致性
+        run: npm run check:styles
+
       - name: CSS 预算与命名检查
         run: npm run check:css
 
       - name: 内联样式基线检查
         run: npm run check:inline-styles
 
-      - name: 样式源与产物一致性
-        run: npm run check:styles
-
       - name: 分层依赖与循环依赖（棘轮基线）
-        run: npm run check:deps -- --baseline .arch-baseline.json
+        run: npm run check:deps -- --baseline .arch-baseline.json --require-baseline
 
       - name: EngineRegistry 实例白名单
         run: npm run check-engines
+
+      - name: 文档与注释门禁
+        run: |
+          npm run gen:docs -- --check
+          npm run check:jsdoc
+          npm run check:docs
 
       - name: Typecheck
         run: npm run typecheck
@@ -64,7 +70,7 @@ jobs:
         run: npm run check:release
 
       - name: 校验构建未产生版本/生成物漂移
-        run: git diff --exit-code -- manifest.json versions.json shared/template-scaffold-assets.generated.ts styles.css
+        run: git diff --exit-code -- manifest.json versions.json shared/template-scaffold-assets.generated.ts styles.css docs/generated
 
       - name: 关系数据权威源契约
         run: npm run check:relationship-authority

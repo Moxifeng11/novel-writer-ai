@@ -456,6 +456,18 @@ export class SettlementEngine {
      * parseFrontmatterFromText / parseFmList 已外迁至 ./settlement/report-parser.ts
      */
 
+    /**
+     * 执行一次结算：解析报告 → 写实体/伏笔/时间线/关系/正文状态 → 失败按 journal 回滚。
+     *
+     * @param project - 项目路径（`长篇小说/书名`）
+     * @param chapDir - 章节目录（步骤结果目录）
+     * @param chapName - 章名（用于溯源与去重）
+     * @param report - 模型输出的结算报告文本
+     * @param bodyText - 本章正文（用于人味指标与长度判断）
+     * @param options - 结算选项（模式、强制揭示、来源等）
+     * @returns 结算结果；`rollback` 存在表示发生了部分失败回滚
+     * @throws 仅在参数非法等编程错误时抛出；业务失败通过 result 表达
+     */
     async settle(
         project: string,
         chapDir: string,

@@ -186,7 +186,7 @@
 |---|---|---|
 | 实现（ZCode） | 代码、单测、E2E、门禁、文档 | 提交 + 证据（提交号/用例名） |
 | 验收（用户） | 产品口径确认、真实链路抽读、发布授权 | 验收结论 + 授权指令 |
-| 文档同步（Trae） | `.trae/` 进度与索引同步 | `CURRENT-PROGRESS.md` / `DOCUMENTATION-INDEX.md` |
+| 文档同步 | `docs/` 文档索引与进度同步 | `docs/README.md` / `docs/progress/program-status.json` |
 
 > 单人项目里"责任人"= 上述角色的组合；任何任务在 JSON 里都必须能对应到具体证据（提交号或测试名），否则视为未完成。
 
@@ -198,7 +198,7 @@
 2. `npm run program:render` 生成 `docs/progress/PROGRAM-STATUS.md`（禁止手改）；
 3. `npm run check:program` 校验两者一致，已接入 `preflight` 与 CI；
 4. 每个版本节点在 JSON `changelog` 追加一条（日期｜组｜摘要｜证据）；
-5. 同步对象：`docs/PLAN.md`（结构）、`.trae/CURRENT-PROGRESS.md`（跨工具基线）、vault `.trae/DOCUMENTATION-INDEX.md`（索引）、`CHANGELOG.md`（发版流水）。
+5. 同步对象：`docs/PLAN.md`（结构）、`docs/README.md`（文档索引）、`docs/progress/program-status.json`（跨工具基线）、`CHANGELOG.md`（发版流水）。
 
 ---
 
@@ -302,7 +302,7 @@
 | 项目推导用 `split('/')[0]` → 版本/缓存落到「长篇小说」 | 新增 `projectIdFromPath`，替换 7 处调用点 | `shared/paths.ts` + 单测 |
 | 统计事件路径可能采信陈旧 `word_count` 并永久固化 | 事件路径改读正文内容计数 | `services/writing-stats-service.ts` + 单测 |
 | 批量建章失败留下永久进度横幅 | try/catch/finally + 失败汇总 | `ui/continue-chapters-modal.ts` |
-| 缓存键含裸 NUL 导致文件不可检索 | 改为源码转义 ` ` | `engine/knowledge-vector-store.ts` |
+| 缓存键含裸 NUL 导致文件不可检索 | 改为源码转义 `` | `engine/knowledge-vector-store.ts` |
 | 模型覆盖历史无上限，cache.json 越来越大 | 保留最近 200 条 | `shared/plugin-cache.ts` |
 | 升级备份写入含明文密钥的 settings 快照 | 新增 `redactSecrets` 脱敏 | `shared/secret-redaction.ts` + 单测 |
 

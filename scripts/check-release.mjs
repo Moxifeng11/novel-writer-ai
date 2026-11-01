@@ -70,6 +70,11 @@ if (tagIndex !== -1) {
         errors.push('--tag 缺少参数值');
     } else if (tag.replace(/^v/, '') !== pkg.version) {
         errors.push(`tag 与 package.json 版本不一致: tag=${tag} version=${pkg.version}`);
+    } else {
+        const notesPath = path.join(rootDir, 'docs', 'releases', `${tag}.md`);
+        if (!fs.existsSync(notesPath)) {
+            errors.push(`缺少发布说明: docs/releases/${tag}.md（release.yml 会退化为自动生成 notes）`);
+        }
     }
 }
 
@@ -87,9 +92,22 @@ if (!manifest.minAppVersion) {
 // 3. 发布三资产
 const assets = {
     'main.js': requireFile('main.js', 100_000),
+}
+if (assets['main.js']) {
+    try {
+        // 只做语法可加载性检查，不执行插件逻辑
+        const { execFileSync } = await import('node:child_process');
+        execFileSync(process.execPath, ['--check', path.join(rootDir, 'main.js')], { stdio: 'pipe' });
+        notes.push('main.js 语法检查通过（node --check）');
+    } catch (e) {
+        errors.push(`main.js 语法检查失败: ${e instanceof Error ? e.message : String(e)}`);
+    }
+}
+const assetSizes = {
     'manifest.json': requireFile('manifest.json', 50),
     'styles.css': requireFile('styles.css', 10_000),
 };
+Object.assign(assets, assetSizes);
 
 // 4. Worker 构建产物（运行时可达性由 FR-F-03 负责，发布前先保证产物存在）
 const workerFiles = [
@@ -108,7 +126,9 @@ try {
     if (fs.existsSync(workflowPath)) {
         const workflow = fs.readFileSync(workflowPath, 'utf8');
         const assetsMatch = workflow.match(/ASSETS=\(([^)]*)\)/);
-        if (assetsMatch) {
+        if (!assetsMatch) {
+            errors.push('release.yml 未找到 ASSETS=(...) 声明，无法校验发布资产（格式变化时必须同步本脚本）');
+        } else {
             // 只校验 worker 和 versions.json：main.js/manifest.json/styles.css/$ZIP 由 requireFile 独立检查
             const declared = assetsMatch[1]
                 .split(/\s+/)

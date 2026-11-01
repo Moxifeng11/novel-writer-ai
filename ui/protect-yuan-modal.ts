@@ -1,6 +1,7 @@
 import { App, Modal, Notice, FileSystemAdapter, Platform } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { createLogger } from '../shared/logger';
+import { readOnlyManualHint, setPathReadOnly } from '../shared/desktop-shell';
 
 
 const log = createLogger('ProtectYuanModal');
@@ -50,31 +51,22 @@ export class ProtectYuanModal extends Modal {
 
         const vaultPath = (adapter as FileSystemAdapter).getBasePath();
         const yuanPath = `${vaultPath}/元文件`;
-        const isWindows = process.platform === 'win32';
-        const cmd = isWindows
-            ? `attrib +r "${yuanPath}" /s /d`
-            : `chmod -R a-w "${yuanPath}"`;
-        const manualHint = isWindows
-            ? '右键「元文件」→ 属性 → 勾选「只读」→ 应用到所有子文件'
-            : '在终端执行：chmod -R a-w "元文件"';
+        const manualHint = readOnlyManualHint();
 
+        // M4（技术审计）：持久进度通知持有引用，所有出口（成功/失败/异常）hide
+        const progressNotice = new Notice('⏳ 正在设置元文件保护...', 0);
         try {
-            const { exec } = require('child_process');
-
-            // M4（技术审计）：持久进度通知持有引用，所有出口（成功/失败/异常）hide
-            const progressNotice = new Notice('⏳ 正在设置元文件保护...', 0);
-
-            exec(cmd, (error: Error | null) => {
-                progressNotice.hide();
-                if (error) {
-                    log.error('设置只读失败:', error);
-                    new Notice(`❌ 自动设置失败，请手动操作：\n${manualHint}`, 10000);
-                    return;
-                }
+            // 系统命令收口在 shared/desktop-shell；UI 不再直接 require('child_process')
+            const result = await setPathReadOnly(yuanPath);
+            progressNotice.hide();
+            if (!result.ok) {
+                log.error('设置只读失败:', result.error);
+                new Notice(`❌ 自动设置失败，请手动操作：\n${manualHint}`, 10000);
+            } else {
                 new Notice('✅ 元文件已设为只读保护，无法误改误删', 6000);
-            });
-
+            }
         } catch (err) {
+            progressNotice.hide();
             log.error('保护失败:', err);
             new Notice(`❌ 自动设置失败，请手动操作：\n${manualHint}`, 10000);
         }

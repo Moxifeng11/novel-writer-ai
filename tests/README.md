@@ -1,38 +1,40 @@
 # tests/
 
-Vitest 测试基建（P2-6）。
+Vitest + Playwright 测试基建。完整规范见 [docs/handbook/05-testing.md](../docs/handbook/05-testing.md)。
 
 ## 运行
 
 ```bash
-npm test            # 跑全部测试
-npm run test:cov    # 跑测试 + 覆盖率（v8）
+npm test            # 单元 + 集成（全量）
+npm run test:cov    # 带覆盖率门禁
+npm run test:e2e    # Playwright（需 OBSIDIAN_PATH）
+npx playwright test --list   # 只校验用例可解析
 ```
 
-## 范围
+## 目录
 
-只覆盖 engine/ 下的 V2 纯函数模块：
-- `engine/character-soul.ts`：CharacterSoul 提取与压缩
-- `engine/emotion-planner.ts`：validateEmotionPlan 纯校验
-- `engine/scene-expander.ts`：validateSceneExpansion 纯校验
-- `engine/step-runner.ts`：ALL_FULL_STEPS / STEP_INDEX_MIGRATION_MAP / migrateStepIndex 常量与纯函数
-- `engine/incremental-result-aggregator.ts`：分段置信度传播、池化方差、单段角色重判与统计口径
+| 目录 | 内容 |
+|---|---|
+| `tests/unit/` | 纯函数、引擎行为、状态机、契约、架构源码扫描 |
+| `tests/integration/` | 跨模块工作流（项目创建、知识库链、联动场景） |
+| `tests/e2e/` | 真实 Obsidian Electron 旅程（独立 userData + CDP） |
+| `tests/benchmark/` | 人味/质量基准（`npm run eval:*`，不进 `npm test`） |
+| `tests/__mocks__/` | `obsidian` 最小替身（vitest alias） |
+| `tests/fixtures/` | 测试数据 |
 
-ai-engine / settlement-engine / ui-* 暂不覆盖（ROI 太低，需 fake timer + 完整 Obsidian harness）。
+## 约定
 
-## 聚合器回归测试
-
-```bash
-npx vitest run tests/unit/engine/incremental-result-aggregator.test.ts
-```
-
-覆盖一致与冲突视角的置信度、节奏池化方差、单段角色全局重判，以及修辞总量/总字数速率口径。
+- 单元：`tests/unit/<layer>/<name>.test.ts`；集成：`tests/integration/<topic>.test.ts`。
+- 用中文行为句命名 `it(...)`，断言行为而不是私有实现。
+- 并发/锁/回滚类改动必须有专门回归用例（参考 `body-writer-concurrent-write.test.ts`、`settlement-engine-behavior.test.ts`）。
+- 架构约束用源码扫描测试固化（参考 `tests/unit/architecture/domain-isolation.test.ts`）。
+- 覆盖率阈值见 `vitest.config.ts`（`engine/services/core/shared` 分域阈值）。
+- 不要保留永久为真的占位测试或 `describe.skip` 尸体。
 
 ## Obsidian Mock
 
-`tests/__mocks__/obsidian.ts` 通过 `vitest.config.ts` 的 `resolve.alias` 重定向。最小化 stub。需要新 API 时按需追加，不要预填。
+`tests/__mocks__/obsidian.ts` 通过 `vitest.config.ts` 的 `resolve.alias` 重定向。缺失 API 时按需补最小实现，不要 mock 整模块。
 
-## 命名约定
+## E2E
 
-- 单元测试：`tests/unit/<dir>/<name>.test.ts`
-- 集成测试：`tests/integration/<dir>/<name>.test.ts`（暂不引入）
+见 [tests/e2e/README.md](e2e/README.md)。未设置 `OBSIDIAN_PATH` 时 Electron 用例会 skip 且退出码 0（假绿），CI 用 `--list` 做解析校验。
