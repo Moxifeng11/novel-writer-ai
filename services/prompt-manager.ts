@@ -35,6 +35,16 @@ export class PromptManager {
         await this.deps.setConfig(this.config);
     }
 
+    /**
+     * 同步接口内的写盘：不能 await，但必须吃掉 rejection，
+     * 否则持久化失败会变成 unhandled rejection，用户以为已保存。
+     */
+    private flushConfig(): void {
+        void this.saveConfig().catch((e: unknown) => {
+            console.error('[PromptManager] 保存提示词配置失败:', e);
+        });
+    }
+
     getAllTemplates(): PromptTemplate[] {
         const customMap = new Map(this.config.customTemplates.map(t => [t.id, t]));
         const result: PromptTemplate[] = [];
@@ -434,7 +444,7 @@ export class PromptManager {
 
     setABTestingEnabled(enabled: boolean): void {
         this.config.abTestingEnabled = enabled;
-        this.saveConfig();
+        this.flushConfig();
     }
 
     isABTestingEnabled(): boolean {
@@ -449,7 +459,7 @@ export class PromptManager {
         try {
             const data = JSON.parse(jsonStr);
             this.config = { ...DEFAULT_PROMPT_MANAGER_CONFIG, ...data };
-            this.saveConfig();
+            this.flushConfig();
             return true;
         } catch {
             return false;

@@ -4,12 +4,6 @@
   "lastUpdated": "2026-10-31",
   "whitelist": [
     {
-      "className": "AbortController",
-      "reason": "JavaScript 内置类，每次调用需要独立的 abort 信号，不可共享",
-      "category": "language-builtin",
-      "allowedInstances": -1
-    },
-    {
       "className": "LocalVectorStore",
       "reason": "按 scope (global/project) 和 project 参数区分实例，不同 scope 必须独立",
       "category": "scope-based-multi-instance",

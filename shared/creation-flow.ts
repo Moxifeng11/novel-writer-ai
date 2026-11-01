@@ -194,7 +194,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
 };
 
 export function getCreationFlowStages(mode: CreationMode): CreationFlowStage[] {
-    return STAGE_LABELS[mode].map(stage => ({ ...stage, dependsOn: stage.dependsOn ? [...stage.dependsOn] : undefined }));
+    // 存量配置可能持久化了已删除的模式字符串，缺表时回退长篇而不是抛 TypeError
+    const stages = STAGE_LABELS[mode] ?? STAGE_LABELS.long;
+    return stages.map(stage => ({ ...stage, dependsOn: stage.dependsOn ? [...stage.dependsOn] : undefined }));
 }
 
 function clamp01(value: number): number {

@@ -44,7 +44,8 @@ describe('MockFileSystem', () => {
 
         it('重复创建不报错', async () => {
             await fs.mkdir('x');
-            await expect(fs.mkdir('x')).resolves.not.toThrow();
+            await expect(fs.mkdir('x')).resolves.toBeUndefined();
+            expect(await fs.exists('x')).toBe(true);
         });
     });
 
@@ -57,7 +58,9 @@ describe('MockFileSystem', () => {
         });
 
         it('删除不存在的文件不报错', async () => {
-            await expect(fs.delete('not-exist.md')).resolves.not.toThrow();
+            await fs.mkdir('dir');
+            await expect(fs.delete('dir/not-exist.md')).resolves.toBeUndefined();
+            expect(await fs.exists('dir/not-exist.md')).toBe(false);
         });
     });
 

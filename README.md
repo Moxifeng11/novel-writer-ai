@@ -230,10 +230,14 @@ npm run audit:deps  # 生产依赖安全审计
 
 E2E 需要本机安装 Obsidian，并设置 `OBSIDIAN_PATH` 指向可执行文件；未设置时用例会明确跳过。详见 [tests/e2e/README.md](tests/e2e/README.md)。
 
-提交前请确保以下 Gate 全绿：
+提交前请确保以下 Gate 全绿（`npm run preflight` 已串联前 7 项）：
 
 ```
-audit:deps → check:templates → lint 0 error / 0 warning → typecheck 0 error → vitest 全绿 → build 成功 → check:release
+npm run preflight   # typecheck → vitest → check:templates → check:styles
+                    # → check:css → check:inline-styles → check:deps(--baseline)
+                    # → check-engines
+npm run build       # 产物：main.js / styles.css / manifest.json / versions.json
+npm run check:release
 ```
 
 CI 与发布流水线见 `.github/workflows/`：PR 执行全量 Gate；推送 `v*` tag 自动创建 GitHub Release。

@@ -94,14 +94,22 @@ export class MemoryManagerModal extends Modal {
         const valueInput = section.createEl('textarea', { cls: 'novel-writer-memory-textarea', placeholder: '偏好内容，例如：动作句优先，避免连续心理独白。' });
         const addBtn = section.createEl('button', { cls: 'novel-writer-cowrite-primary-btn', text: '写入偏好记忆' });
         addBtn.addEventListener('click', async () => {
+            if (addBtn.disabled) return;
             const key = keyInput.value.trim();
             const value = valueInput.value.trim();
             if (!key || !value) {
                 new Notice('请填写偏好名和偏好内容', 2000);
                 return;
             }
-            await this.onAddPreference(categorySelect.value, key, value);
-            this.close();
+            addBtn.disabled = true;
+            try {
+                await this.onAddPreference(categorySelect.value, key, value);
+                this.close();
+            } catch (e) {
+                // 弹窗保持打开，方便用户改完重试；失败必须可见
+                new Notice(`⚠️ 写入偏好记忆失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                addBtn.disabled = false;
+            }
         });
     }
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     getChapterFileName,
     isStandardChapterFileName,
+    sanitizeFileSegment,
     CHAPTER_FILE_TYPES,
     BODY_FILE_TYPES,
     STEP_FILE_TYPES,
@@ -32,6 +33,28 @@ describe('isStandardChapterFileName', () => {
         expect(isStandardChapterFileName('第1章正文.md', '第1章', '正文')).toBe(false);
         expect(isStandardChapterFileName('_正文.md', '第1章', '正文')).toBe(false);
         expect(isStandardChapterFileName('第1章_正文.txt', '第1章', '正文')).toBe(false);
+    });
+
+    it('章名含正则元字符时按字面量匹配', () => {
+        // 未转义时 `(` 会被当作分组，导致误判
+        expect(isStandardChapterFileName('第1章(修)_正文.md', '第1章(修)', '正文')).toBe(true);
+        expect(isStandardChapterFileName('第1章a_正文.md', '第1章(修)', '正文')).toBe(false);
+    });
+});
+
+describe('sanitizeFileSegment', () => {
+    it('替换文件系统非法字符与路径分隔符', () => {
+        expect(sanitizeFileSegment('棋手/落子')).toBe('棋手 落子');
+        expect(sanitizeFileSegment('A:B*C?D"E<F>G|H\\I')).toBe('A B C D E F G H I');
+    });
+
+    it('压缩空白并去首尾空格', () => {
+        expect(sanitizeFileSegment('  棋手   落子  ')).toBe('棋手 落子');
+    });
+
+    it('空输入返回空串', () => {
+        expect(sanitizeFileSegment('')).toBe('');
+        expect(sanitizeFileSegment(undefined as unknown as string)).toBe('');
     });
 });
 

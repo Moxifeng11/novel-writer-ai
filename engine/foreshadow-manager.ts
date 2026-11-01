@@ -869,7 +869,9 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
             if (statusStr.includes('已回收') || statusStr === 'resolved') status = 'resolved';
             else if (statusStr.includes('部分') || statusStr === 'partial') status = 'partial';
             const resolvedChapterStr = getCol('resolvedChapter', '');
-            const resolvedChapter = resolvedChapterStr ? parseInt(resolvedChapterStr.replace(/[^\d]/g, ''), 10) : undefined;
+            // 无数字（如「见第X章末」）必须落 undefined，NaN 会让后续 <= / 排序比较恒 false
+            const resolvedDigits = resolvedChapterStr.replace(/[^\d]/g, '');
+            const resolvedChapter = resolvedDigits ? parseInt(resolvedDigits, 10) : undefined;
             const resolvedWay = getCol('resolvedWay');
             const confidenceStr = getCol('confidence', '0.8');
             const confidence = parseFloat(confidenceStr) || 0.8;

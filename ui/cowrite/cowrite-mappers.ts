@@ -33,7 +33,8 @@ export function getAssociationLabel(type: string): string {
 
 export function associationToSuggestion(association: AssociationSuggestion, index: number): SuggestionRecord {
   return {
-    id: `assoc_${Date.now()}_${index}`,
+    // 同毫秒生成两批建议时 Date.now()+index 会碰撞，导致 chosenSuggestionId 指错条目
+    id: `assoc_${Date.now().toString(36)}_${index}_${Math.random().toString(36).slice(2, 8)}`,
     text: association.text,
     direction: associationTypeToDirection(association.type),
     style: "creative",

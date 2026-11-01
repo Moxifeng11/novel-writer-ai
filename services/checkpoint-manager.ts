@@ -226,7 +226,9 @@ export class CheckpointManager {
 
     private deserializeCheckpoint(content: string): CheckpointState | null {
         try {
-            const match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+            // 文件可能被外部编辑器/同步盘改成 CRLF，统一换行后再解析
+            const normalized = content.replace(/\r\n/g, '\n');
+            const match = normalized.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
             if (!match) return null;
 
             const yamlContent = match[1];
@@ -234,16 +236,21 @@ export class CheckpointManager {
 
             const frontmatter: Record<string, unknown> = {};
             for (const line of yamlContent.split('\n')) {
-                const [key, value] = line.split(': ');
-                if (key && value !== undefined) {
-                    const trimmed = value.trim();
-                    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-                        frontmatter[key.trim()] = trimmed.slice(1, -1);
-                    } else if (!isNaN(Number(trimmed))) {
-                        frontmatter[key.trim()] = Number(trimmed);
-                    } else {
-                        frontmatter[key.trim()] = trimmed;
-                    }
+                // 只按第一个 `: ` 切分：值本身可能含 `: `（如 filePath、bookName）
+                const sep = line.indexOf(': ');
+                if (sep <= 0) continue;
+                const key = line.slice(0, sep).trim();
+                const value = line.slice(sep + 2);
+                if (!key) continue;
+                const trimmed = value.trim();
+                if (trimmed === '') {
+                    frontmatter[key] = '';
+                } else if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+                    frontmatter[key] = trimmed.slice(1, -1);
+                } else if (!isNaN(Number(trimmed))) {
+                    frontmatter[key] = Number(trimmed);
+                } else {
+                    frontmatter[key] = trimmed;
                 }
             }
 

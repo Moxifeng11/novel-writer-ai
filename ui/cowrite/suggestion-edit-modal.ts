@@ -27,7 +27,11 @@ export class SuggestionEditModal {
         // ----- header -----
         const header = drawer.createDiv({ cls: 'nw-suggestion-drawer-header' });
         header.createDiv({ cls: 'nw-suggestion-drawer-title', text: '✏️ 编辑建议并验证' });
-        const closeBtn = header.createEl('button', { cls: 'nw-suggestion-drawer-close', text: '✕' });
+        const closeBtn = header.createEl('button', {
+            cls: 'nw-suggestion-drawer-close',
+            text: '✕',
+            attr: { 'aria-label': '关闭编辑面板' }
+        });
         closeBtn.addEventListener('click', () => this.close());
 
         // ----- body -----

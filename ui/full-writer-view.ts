@@ -97,6 +97,26 @@ import { ensureTemplateScaffold } from '../shared/template-scaffold';
 const log = createLogger('FullWriterView');
 export const VIEW_TYPE = 'novel-writer-full-writer';
 
+/**
+ * 工作台注入到 <html> 的响应式 CSS 变量（与 styles.css :root 保底值一致）。
+ * onOpen 写入、onClose 移除，避免插件卸载后仍在全局留下 --nw-* 令牌。
+ */
+const WORKBENCH_ROOT_VARS: Record<string, string> = {
+    '--nw-wizard-sidebar-w': 'clamp(200px, 14vw, 240px)',
+    '--nw-entity-tree-w': 'min(240px, 16vw)',
+    '--nw-modal-max-w': '96vw',
+    '--nw-modal-max-h': '90vh',
+    '--nw-modal-md-w': 'min(1000px, 85vw)',
+    '--nw-project-selector-w': 'min(1000px, 85vw)',
+    '--nw-step-min-h': 'max(320px, calc(100vh - 380px))',
+    '--nw-scroll-max-h': 'max(450px, 55vh)',
+    '--nw-scroll-md-h': 'max(280px, 35vh)',
+    '--nw-grid-3col': 'minmax(120px, 160px) 1fr minmax(180px, 240px)',
+    '--nw-grid-2col-fm': 'auto 1fr',
+    '--nw-panel-pad': '20px',
+    '--nw-card-pad': '16px',
+};
+
 export class FullWriterView extends ItemView {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -829,23 +849,14 @@ export class FullWriterView extends ItemView {
         contentEl.style.height = '100%';
 
         // v3.4.5: 注入 CSS 响应式变量（全局生效，一次定义，所有弹窗/面板复用）
-        // 注：数值与 styles.css :root 保底值保持一致，仅在未来需要动态计算时才覆盖
+        // 注：数值与 styles.css :root 保底值保持一致，仅在未来需要动态计算时才覆盖。
+        // onClose 会逐一 removeProperty，插件卸载/视图关闭后不在 <html> 留残余变量。
         const root = document.documentElement;
-        root.style.setProperty('--nw-wizard-sidebar-w', 'clamp(200px, 14vw, 240px)');
-        root.style.setProperty('--nw-entity-tree-w', 'min(240px, 16vw)');
-        root.style.setProperty('--nw-modal-max-w', '96vw');
-        root.style.setProperty('--nw-modal-max-h', '90vh');
-        root.style.setProperty('--nw-modal-md-w', 'min(1000px, 85vw)');
-        root.style.setProperty('--nw-project-selector-w', 'min(1000px, 85vw)');
-        root.style.setProperty('--nw-step-min-h', 'max(320px, calc(100vh - 380px))');
-        root.style.setProperty('--nw-scroll-max-h', 'max(450px, 55vh)');
-        root.style.setProperty('--nw-scroll-md-h', 'max(280px, 35vh)');
-        root.style.setProperty('--nw-grid-3col', 'minmax(120px, 160px) 1fr minmax(180px, 240px)');
-        root.style.setProperty('--nw-grid-2col-fm', 'auto 1fr');
+        for (const [name, value] of Object.entries(WORKBENCH_ROOT_VARS)) {
+            root.style.setProperty(name, value);
+        }
         // --nw-grid-workspace 由 ThemeManager 统一注入（读 panelSizes），此处不再重复设置，
         // 否则两处各写一套值，谁后执行谁生效，宽度会「看起来随机」。
-        root.style.setProperty('--nw-panel-pad', '20px');
-        root.style.setProperty('--nw-card-pad', '16px');
 
         // 创建 Tab 栏
         this.tabBar = contentEl.createDiv({
@@ -1030,6 +1041,10 @@ export class FullWriterView extends ItemView {
         }
         this.flowPanelController?.dispose();
         this.unitWriterController?.dispose();
+        // 移除 onOpen 注入到 <html> 的响应式变量（构建脚本无法校验，只能靠这里成对清理）
+        for (const name of Object.keys(WORKBENCH_ROOT_VARS)) {
+            document.documentElement.style.removeProperty(name);
+        }
         await super.onClose();
         const { contentEl } = this;
         contentEl.empty();

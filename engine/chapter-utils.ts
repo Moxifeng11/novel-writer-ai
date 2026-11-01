@@ -31,6 +31,17 @@ export function getChapterFileName(chapterName: string, type: string): string {
     return `${chapterName}_${type}.md`;
 }
 
+/** 文件系统非法字符（Windows 最严）与路径分隔符统一替换 */
+const ILLEGAL_FILENAME_CHARS = /[\\/:*?"<>|]/g;
+
+/**
+ * 把 AI 生成/用户输入的标题消毒成可安全落盘的片段。
+ * 标题里的 `/` 会意外建出子目录，`:` 在同步盘上会失败。
+ */
+export function sanitizeFileSegment(input: string): string {
+    return String(input || '').replace(ILLEGAL_FILENAME_CHARS, ' ').replace(/\s+/g, ' ').trim();
+}
+
 /**
  * 判断文件名是否符合标准格式
  * 标准格式: 第X章_类型.md 或 第X章_标题_类型.md
@@ -38,8 +49,9 @@ export function getChapterFileName(chapterName: string, type: string): string {
 export function isStandardChapterFileName(fileName: string, chapterName: string, type: string): boolean {
     // 精确匹配: 第1章_正文.md
     if (fileName === `${chapterName}_${type}.md`) return true;
-    // 带标题匹配: 第1章_棋手落子_正文.md
-    const pattern = new RegExp(`^${chapterName}_.+?_${type}\\.md$`);
+    // 带标题匹配: 第1章_棋手落子_正文.md（chapterName/type 需转义，避免正则元字符误判）
+    const esc = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`^${esc(chapterName)}_.+?_${esc(type)}\\.md$`);
     if (pattern.test(fileName)) return true;
     return false;
 }
@@ -148,7 +160,7 @@ export async function migrateLegacyFile(
     } catch { /* ignore */ }
 
     const newName = title
-        ? getChapterFileName(chapterName, `${title.slice(0, 15)}_${detectedType}`)
+        ? getChapterFileName(chapterName, `${sanitizeFileSegment(title).slice(0, 15)}_${detectedType}`)
         : getChapterFileName(chapterName, detectedType);
     const newPath = file.path.replace(/\/[^/]+$/, '/' + newName);
 

@@ -140,6 +140,10 @@ export class BodySaveController {
             return true;
         } catch (e) {
             log.warn("[CoWritingView] 保存失败:", e);
+            // 状态栏不能停在「保存中...」，否则用户会以为仍在保存/已保存
+            if (this.host.isSameChapterIdentity(identity)) {
+                this.host.updateControlState("保存失败");
+            }
             if (showNotice)
                 new Notice("⚠️ 保存失败，请检查章节路径或文件权限", 4e3);
             return false;

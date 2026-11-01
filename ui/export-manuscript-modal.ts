@@ -22,6 +22,7 @@ import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils'
 import { getProjectMeta, findProjectCoverFile, loadProjectCover } from './project-utils';
 import type { CreationMode } from '../shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '../shared/mode-content';
+import { formatExportPrecheck } from '../shared/export-precheck';
 import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
 import { getExecutionLedger } from '../services/execution-ledger';
 
@@ -312,10 +313,11 @@ export class ExportManuscriptModal extends Modal {
             return;
         }
 
-        // v4.25 导出前质量门槛（只告警不阻断）：列出未结算/未过质控的章，
-        // 让「导出」成为一次显式的质量确认点，而不是静默打包半成品。
+        // v4.25/v4.28 导出前质量门槛（只告警不阻断）：长篇列未结算/未过质控的章，
+        // 短篇/剧本列未完成的节/集，让「导出」成为一次显式的质量确认点，而不是静默打包半成品。
+        let precheck: string | null = null;
         if (this.creationMode === 'long') {
-            // 逐章从正文 frontmatter 读 status；QC 完成与否用章节状态快照？——用步骤结果文件存在性。
+            // 逐章从正文 frontmatter 读 status；质控完成与否用步骤结果文件存在性判断。
             const unsettled: string[] = [];
             const unreviewed: string[] = [];
             for (const chapter of chapters.slice(0, 400)) {
@@ -328,13 +330,23 @@ export class ExportManuscriptModal extends Modal {
                 const qcFile = this.app.vault.getAbstractFileByPath(`${stepDir}/${getChapterFileName(chapter.chapter, CHAPTER_FILE_TYPES.qualityControl)}`);
                 if (!(qcFile instanceof TFile)) unreviewed.push(label);
             }
-            const parts: string[] = [];
-            if (unsettled.length > 0) parts.push(`未结算 ${unsettled.length} 章（${unsettled.slice(0, 5).join('、')}${unsettled.length > 5 ? '…' : ''}）`);
-            if (unreviewed.length > 0) parts.push(`未过质控 ${unreviewed.length} 章（${unreviewed.slice(0, 5).join('、')}${unreviewed.length > 5 ? '…' : ''}）`);
-            if (parts.length > 0) {
-                new Notice(`📋 导出前检查：${parts.join('；')}。已按当前内容导出，建议结算/质控后重新导出成稿。`, 8000);
-            }
+            precheck = formatExportPrecheck({ mode: 'long', unsettled, unreviewed });
+        } else {
+            // 短篇/剧本没有独立质控产物，完成度只由单元 frontmatter status 表达；
+            // 正文为空的单元同样算未完成（导出会得到空节/空集）。
+            const units = listModeUnits(this.app, this.project, this.creationMode);
+            const bodyByPath = new Map(chapters.map(ch => [ch.path, ch.content]));
+            const unfinished = units
+                .filter(unit => {
+                    const done = unit.status === 'written' || unit.status === 'settled';
+                    const body = bodyByPath.get(unit.file.path) ?? '';
+                    const empty = body.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim().length === 0;
+                    return !done || empty;
+                })
+                .map(unit => `${unit.unitName}${unit.title ? ` ${unit.title}` : ''}`);
+            precheck = formatExportPrecheck({ mode: this.creationMode, unfinished });
         }
+        if (precheck) new Notice(precheck, 8000);
 
         const bookTitle = this.project.split('/').pop() || this.project;
         const includeVolumeHeadings = this.creationMode === 'long' ? this.includeVolumeHeadings : false;

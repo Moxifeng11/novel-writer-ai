@@ -16,6 +16,8 @@ import { createLogger } from '../../shared/logger';
 const log = createLogger('SuggestionHistoryStore');
 export class SuggestionHistoryStore {
   view: CoWritingView;
+  /** 串行化写盘：并发 persist 会同时判定「文件不存在」→ 后者 create 抛错被吞，静默少写一批 */
+  private persistChain: Promise<void> = Promise.resolve();
 
   constructor(view: CoWritingView) {
     this.view = view;
@@ -35,22 +37,32 @@ export class SuggestionHistoryStore {
     const view = this.view;
     if (view.historyLoaded || !view.project || !view.volume || !view.chapterNum)
       return;
-    view.historyLoaded = true;
     try {
       const historyPath = this.getHistoryPath();
       const file = historyPath ? view.app.vault.getAbstractFileByPath(historyPath) : null;
-      if (!(file instanceof TFile))
+      if (!(file instanceof TFile)) {
+        // 文件不存在属于确定结果：不必再重试
+        view.historyLoaded = true;
         return;
+      }
       const raw = await view.app.vault.read(file);
       const parsed = JSON.parse(raw);
       const records = Array.isArray(parsed?.records) ? parsed.records : Array.isArray(parsed) ? parsed : [];
       view.suggestionHistory = records.filter((rec: SentenceEditRecord) => rec && rec.id).slice(-20);
+      view.historyLoaded = true;
     } catch (e) {
+      // 读取/解析失败不能锁死：否则本次会话历史面板永远为空，也不会再重试
+      view.historyLoaded = false;
       log.warn("[SuggestionHistoryStore] B3: 历史建议加载失败:", e);
     }
   }
 
   async persistSuggestionHistory() {
+    this.persistChain = this.persistChain.then(() => this.doPersist()).catch(() => {});
+    return this.persistChain;
+  }
+
+  private async doPersist() {
     const view = this.view;
     try {
       const historyPath = this.getHistoryPath();
@@ -69,8 +81,15 @@ export class SuggestionHistoryStore {
       const file = view.app.vault.getAbstractFileByPath(historyPath);
       if (file instanceof TFile) {
         await view.app.vault.modify(file, payload);
-      } else {
+        return;
+      }
+      try {
         await view.app.vault.create(historyPath, payload);
+      } catch (createError) {
+        // create 与外部/并发创建竞争时，退回 modify，别把这一批历史吞掉
+        const raced = view.app.vault.getAbstractFileByPath(historyPath);
+        if (!(raced instanceof TFile)) throw createError;
+        await view.app.vault.modify(raced, payload);
       }
     } catch (e) {
       log.warn("[SuggestionHistoryStore] B3: 历史建议保存失败:", e);
