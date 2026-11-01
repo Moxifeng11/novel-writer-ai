@@ -69,6 +69,8 @@ export interface ChapterOrchestratorDeps {
     showWarning?: (message: string, duration?: number) => void;
     showSuccess: (message: string, duration?: number) => void;
     onProgress?: (progress: ChapterRunProgress) => void;
+    /** 可重试错误的等待时长（毫秒）；缺省 3000。测试注入 0 用。 */
+    retryDelayMs?: number;
 }
 
 export interface ChapterRunPlan {
@@ -343,8 +345,12 @@ export class ChapterOrchestrator {
             if (retryable) {
                 this._retriedThisRun = true;
                 this.deps.showNotice?.(`⚠️ ${message}，3 秒后自动重试…`, 6000);
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, this.deps.retryDelayMs ?? 3000));
                 if (signal.aborted) return this.finish('cancelled', aiCalls);
+                // 递归重跑前必须先释放运行锁：外层 finally 还没执行，running 仍为 true，
+                // 不释放会让 run() 命中「已有任务在运行」守卫，重试必然瞬时失败。
+                this.running = false;
+                this.abortController = null;
                 try {
                     return await this.run(options);
                 } catch (retryError) {

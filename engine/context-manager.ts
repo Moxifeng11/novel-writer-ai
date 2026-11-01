@@ -1506,24 +1506,26 @@ export class ContextManager {
                     }
                 }
 
+                // findStepFile 只返回路径：扫描与读取之间文件可能被删/移，必须判空，
+                // 否则 cachedRead(null) 会把整章上下文加载打断。
                 const outlineFile = this.findStepFile(stepBase, `第${prevNum}章`, '大纲摘要');
                 if (outlineFile) {
-                    result.outline = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(outlineFile) as TFile);
+                    result.outline = await this.readStepFileContent(outlineFile);
                 }
 
                 const analysisFile = this.findStepFile(stepBase, `第${prevNum}章`, '分析报告');
                 if (analysisFile) {
-                    result.analysisReport = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(analysisFile) as TFile);
+                    result.analysisReport = await this.readStepFileContent(analysisFile);
                 }
 
                 const reviewFile = this.findStepFile(stepBase, `第${prevNum}章`, '连贯性审查');
                 if (reviewFile) {
-                    result.continuityReview = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(reviewFile) as TFile);
+                    result.continuityReview = await this.readStepFileContent(reviewFile);
                 }
 
                 const infoPlanFile = this.findStepFile(stepBase, `第${prevNum}章`, '信息规划');
                 if (infoPlanFile) {
-                    result.infoPlan = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(infoPlanFile) as TFile);
+                    result.infoPlan = await this.readStepFileContent(infoPlanFile);
                 }
 
                 if (result.content || result.outline) {
@@ -1615,8 +1617,8 @@ export class ContextManager {
                     : `${project}/${SUBDIR_STEP_ROOT}/${volume}/第${chapterNum}章`;
                 const outlineFile = this.findStepFile(stepDir, currentChapter, '大纲摘要');
                 if (outlineFile) {
-                    const content = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(outlineFile) as TFile);
-                    return { outline: parseMdContent(content) };
+                    const content = await this.readStepFileContent(outlineFile);
+                    if (content !== null) return { outline: parseMdContent(content) };
                 }
             }
 
@@ -1655,8 +1657,8 @@ export class ContextManager {
                     : `${project}/${SUBDIR_STEP_ROOT}/${volume}/第${chapterNum}章`;
                 const emoFile = this.findStepFile(stepDir, currentChapter, '情绪规划');
                 if (emoFile) {
-                    const content = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(emoFile) as TFile);
-                    return { emotion_plan: parseMdContent(content) };
+                    const content = await this.readStepFileContent(emoFile);
+                    if (content !== null) return { emotion_plan: parseMdContent(content) };
                 }
             }
         } catch (e) {
@@ -1685,8 +1687,8 @@ export class ContextManager {
                     : `${project}/${SUBDIR_STEP_ROOT}/${volume}/第${chapterNum}章`;
                 const sceneFile = this.findStepFile(stepDir, currentChapter, 'Scene展开');
                 if (sceneFile) {
-                    const content = await this.app.vault.cachedRead(this.getVaultMeta().getAbstractFileByPath(sceneFile) as TFile);
-                    return { scene_expansion: parseMdContent(content) };
+                    const content = await this.readStepFileContent(sceneFile);
+                    if (content !== null) return { scene_expansion: parseMdContent(content) };
                 }
             }
         } catch (e) {
@@ -2268,10 +2270,22 @@ ${usable}`;
         return usable.length >= 120;
     }
 
-    /** 取 `## 标题` 小节正文（到下一个 ## 或文件尾） */
-    private extractTopSection(content: string, title: string): string {
+    /**
+     * findStepFile 只返回路径，读之前必须判空：
+     * 批量流水线清理 / 用户移动文件时，扫描与读取之间文件可能已经不存在。
+     */
+    private async readStepFileContent(path: string): Promise<string | null> {
+        const file = this.getVaultMeta().getAbstractFileByPath(path);
+        return file instanceof TFile ? this.app.vault.cachedRead(file) : null;
+    }
+
+    /** 取 `## 标题` 小节正文（到下一个 ## 或文件尾） */    private extractTopSection(content: string, title: string): string {
         const lines = String(content || '').split('\n');
-        const start = lines.findIndex((line) => new RegExp(`^##\s*${title}`).test(line));
+        // 注意：模板字符串里的 `\s` 会退化成字面量 `s`，必须写 `\\s`；
+        // 标题也要转义，否则「零、参考样本」以外的元字符会让定位整体失效。
+        const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const startPattern = new RegExp(`^##\\s*${escaped}`);
+        const start = lines.findIndex((line) => startPattern.test(line));
         if (start < 0) return '';
         const end = lines.findIndex((line, index) => index > start && /^##\s/.test(line));
         return (end < 0 ? lines.slice(start + 1) : lines.slice(start + 1, end)).join('\n');

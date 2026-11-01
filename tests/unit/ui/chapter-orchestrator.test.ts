@@ -146,4 +146,43 @@ describe('ChapterOrchestrator — 推荐模式', () => {
         expect(h.settle).not.toHaveBeenCalled();
         expect(h.state.stepCompleted.has('qualityControl')).toBe(false);
     });
+
+    it('可重试错误会自动重试一次（重试不被 running 守卫短路）', async () => {
+        const h = makeHarness();
+        h.deps.retryDelayMs = 0;
+        let bodyAttempts = 0;
+        h.stepRunner.executeStepsSequential.mockImplementation(async (keys: string[]) => {
+            if (keys.includes('bodyGeneration')) {
+                bodyAttempts += 1;
+                if (bodyAttempts === 1) throw new Error('request timeout after 30s');
+            }
+            for (const key of keys) h.state.stepCompleted.add(key);
+        });
+        const orchestrator = new ChapterOrchestrator(h.deps);
+
+        const result = await orchestrator.run({ mode: 'recommended' });
+
+        expect(result.status).toBe('completed');
+        expect(bodyAttempts).toBe(2);
+        expect(h.deps.showError).not.toHaveBeenCalledWith(expect.stringContaining('已有章节生成任务在运行'), expect.anything());
+    });
+
+    it('不可重试错误只跑一次，不自动重试', async () => {
+        const h = makeHarness();
+        h.deps.retryDelayMs = 0;
+        let bodyAttempts = 0;
+        h.stepRunner.executeStepsSequential.mockImplementation(async (keys: string[]) => {
+            if (keys.includes('bodyGeneration')) {
+                bodyAttempts += 1;
+                throw new Error('invalid api key');
+            }
+            for (const key of keys) h.state.stepCompleted.add(key);
+        });
+        const orchestrator = new ChapterOrchestrator(h.deps);
+
+        const result = await orchestrator.run({ mode: 'recommended' });
+
+        expect(result.status).toBe('failed');
+        expect(bodyAttempts).toBe(1);
+    });
 });
