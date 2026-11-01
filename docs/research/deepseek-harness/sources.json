@@ -1,0 +1,102 @@
+{
+  "topic": "DeepSeek Harness (dsh)",
+  "accessedAt": "2026-11-01",
+  "sources": [
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness",
+      "title": "deepseek-ai/deepseek-harness",
+      "confidence": "high",
+      "notes": "Official repo metadata: MIT, TypeScript, default branch master, topics ai-agents/dsh. README states it is an open-source agent harness based on an everything-is-a-plugin architecture and Cordis."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md",
+      "title": "dsh architecture",
+      "confidence": "high",
+      "notes": "Profiles web/headless/sdk/sdk-minimal/acp; 'dsh --profile <name>' or 'dsh <name>'; sdk bundle adds SDK JSON-RPC server; headless is a one-shot runner without server; session log filenames session.jsonl[.zstd] / session.vN.jsonl[.zstd]; DSH_HOME and profile composition (bundles, cordis.patch.yml, --patch)."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/tool-execution-pipeline.md",
+      "title": "Tool execution pipeline",
+      "confidence": "high",
+      "notes": "pre-execute waterfall, monotonic guards, fail-closed approval, execute wrapper with timeout/retry/metrics, write-intent gates, post-execute, additional context injection."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/tools.md",
+      "title": "Tools subsystem",
+      "confidence": "high",
+      "notes": "defineTool schema/output/execute separation, allowlisted model-facing schema, step-owned ResolvedToolSet, per-agent restrict, native vs PTC executors."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/compaction/compaction-basic/README.md",
+      "title": "Compaction",
+      "confidence": "high",
+      "notes": "Trigger ~ floor(min(W*0.8, W-O-B)) with headroom B=65536; retain newest ~16% of (W-O); replace oldest balanced span with a compacted-summary message; pruner before model call; overflow recovery."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/spill/README.md",
+      "title": "Spill",
+      "confidence": "high",
+      "notes": "Oversized text stored outside context; model gets preview + locator + retrieval guidance; original kept on storage failure."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/subagent.md",
+      "title": "Subagents",
+      "confidence": "high",
+      "notes": "Activation API with agentOptions/agentPreset/outputSchema/depthLimit; maxDepth default 1; delivery parent|caller; structured outputs."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/sandbox.md",
+      "title": "Sandbox",
+      "confidence": "high",
+      "notes": "SandboxMode read-only | workspace-write | danger-full-access; enforcement reported as full|partial (e.g. Windows partial)."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/approval.md",
+      "title": "Approval",
+      "confidence": "high",
+      "notes": "ApprovalOutcome allowed-once | rejected | cancelled | unavailable, closed and fail-closed; per-session ask|never policy."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/deepseek-llm-api-wire-extensions.md",
+      "title": "API wire extensions / session log upload",
+      "confidence": "high",
+      "notes": "dsh_session_log uploads a contiguous suffix of the session log (default cap 8 MiB/request) and is enabled by default for the official provider. Explicitly not adopted by this project."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-deepseek/README.md",
+      "title": "DeepSeek LLM adapter",
+      "confidence": "high",
+      "notes": "Session-frozen prefix for prompt caching; append-only mid-session content; compaction replay of warm prefix; tool catalog update modes."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/README.md",
+      "title": "dsh README (raw)",
+      "confidence": "high",
+      "notes": "npm package @deepseek-ai/dsh; 'npx @deepseek-ai/dsh web'; default 127.0.0.1:3080; --no-open; Node.js prerequisite; safety notice."
+    },
+    {
+      "url": "https://deepseek-harness.github.io/deepseek-harness/en/guide/quickstart",
+      "title": "Quickstart (Web UI)",
+      "confidence": "medium",
+      "notes": "Web UI quickstart only; defers commands to root README; no SDK/JSON-RPC details on this page."
+    },
+    {
+      "url": "https://api-docs.deepseek.com/",
+      "title": "DeepSeek API docs",
+      "confidence": "medium",
+      "notes": "Links the harness developer preview; no harness protocol details."
+    },
+    {
+      "url": "https://github.com/deepseek-ai/dsh-superagent-prototype",
+      "title": "dsh-superagent-prototype",
+      "confidence": "high",
+      "notes": "Research prototype, explicitly not an official DeepSeek product; not used."
+    }
+  ],
+  "unverified": [
+    "SDK profile transport (stdio vs HTTP vs WebSocket), handshake, and event shapes",
+    "Exact model/API-key configuration keys for headless/SDK runs",
+    "Whether dsh_session_log is enabled by default in headless/sdk profiles (assumed yes until spike proves otherwise)",
+    "Electron renderer spawn limitations for the dsh CLI"
+  ]
+}
