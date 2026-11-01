@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 495,
-      "cases": 5617
+      "files": 496,
+      "cases": 5627
     },
     "e2e": 25,
     "gates": [
@@ -190,17 +190,31 @@
           "evidence": "84d1e31"
         },
         {
-          "id": "G2-3",
-          "title": "RAG 注入来源可追溯",
-          "status": "todo",
-          "acceptance": "步骤结果 frontmatter 记录实际引用的知识片段 id；统计页可查命中率",
-          "evidence": "—"
-        },
-        {
           "id": "G2-4",
           "title": "上下文总线预算与去重口径统一",
           "status": "todo",
           "acceptance": "本地/云端双预算生效；重复段剔除率可量化（体检报告）",
+          "evidence": "—"
+        },
+        {
+          "id": "G2-3",
+          "title": "RAG 注入来源可追溯",
+          "status": "in_progress",
+          "acceptance": "写入已完成（rag_sources 落步骤 frontmatter）；展示/命中率未见",
+          "evidence": "shared/rag-sources.ts + injector/step-runner/saver"
+        },
+        {
+          "id": "G2-3a",
+          "title": "rag_sources 写入步骤结果",
+          "status": "done",
+          "acceptance": "注入命中的书/维度/分数/片段截断后写入 frontmatter；同片去重、上限 8（单测）",
+          "evidence": "knowledge-injector.ragSink → step-runner meta → step-result-saver"
+        },
+        {
+          "id": "G2-3b",
+          "title": "统计页展示知识命中与命中率",
+          "status": "todo",
+          "acceptance": "步骤详情可见 rag_sources；按项目统计命中率与最常引用书目",
           "evidence": "—"
         }
       ]
@@ -565,6 +579,12 @@
       "group": "G1",
       "summary": "G1-12b/13a/13b/13c 落地：权威源门禁、settlement_mode、SettlementJournal 三类回滚、失败标记",
       "evidence": "check-relationship-authority.mjs / settlement-journal.ts / chapter-settlement-modal.ts"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G2",
+      "summary": "知识注入来源落盘：rag_sources（书/维度/分数/片段）写入步骤 frontmatter",
+      "evidence": "shared/rag-sources.ts + injector/step-runner/saver + 10 条单测"
     }
   ]
 }

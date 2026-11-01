@@ -190,6 +190,8 @@ export interface StepRunMeta {
     truncated?: boolean;
     usage?: { prompt: number; completion: number; total: number };
     maxTokens?: number;
+    /** G2 可追溯：本步骤实际注入的知识库片段（写入 rag_sources） */
+    ragSources?: Array<{ book: string; dimension: string; score: number; excerpt: string }>;
 }
 
 export type StepRunCtx = {
@@ -209,6 +211,8 @@ export type StepRunCtx = {
     chapterNum: number;
     project: string;
     vars: Record<string, string>;
+    /** 本次步骤执行期间，知识注入上报的来源（每步保存后清空） */
+    ragSources?: Array<{ book: string; dimension: string; score: number; excerpt: string }>;
     isLoading: boolean;
     buildTemplateVars: () => Promise<Record<string, string>>;
     /** 返回 false 表示根本没落盘（chapDir 为空 / 无文件映射 / 写盘失败） */

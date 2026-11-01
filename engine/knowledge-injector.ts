@@ -17,6 +17,7 @@ import {
 } from './style/fingerprint-selection';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { createLogger } from '../shared/logger';
+import type { RagSource } from '../shared/rag-sources';
 import { retrieve, type RetrievalTelemetry } from './rag/retrieval-service';
 import { activeContextQuotas } from '../shared/context-budget-policy';
 
@@ -41,6 +42,11 @@ export interface InjectionContext {
     sceneObjective?: string;
     /** Task 6 必须层：上一场景结尾 */
     previousSceneEnding?: string;
+    /**
+     * 知识来源上报（G2 可追溯）：实际进入 prompt 的命中文档逐条回调，
+     * 由调用方收集后写入步骤结果 frontmatter 的 rag_sources。
+     */
+    ragSink?: (source: RagSource) => void;
 }
 
 /** ==== Task 6: 分层上下文注入契约（story-quality spec TR-6.1~6.4） ==== */
@@ -572,6 +578,17 @@ export class KnowledgeInjector {
                 currentText: context.currentText,
             },
         });
+        // 统一在此上报：所有 buildKb* 都走 retrieveKb，避免逐处补
+        if (context.ragSink && outcome.hits.length > 0) {
+            for (const hit of outcome.hits) {
+                context.ragSink({
+                    book: hit.bookName,
+                    dimension: hit.dimension,
+                    score: hit.score,
+                    excerpt: hit.sample,
+                });
+            }
+        }
         const telemetry: RetrievalTelemetry = outcome.telemetry;
         this.retrievalTelemetry.calls++;
         this.retrievalTelemetry.queries += telemetry.queries;
@@ -1737,6 +1754,18 @@ export class KnowledgeInjector {
                 .slice(0, topN);
 
             if (results.length === 0) return '';
+
+            // style 通道是独立检索（不走 retrieveKb），这里单独上报来源
+            if (context.ragSink) {
+                for (const hit of results) {
+                    context.ragSink({
+                        book: hit.bookName,
+                        dimension: hit.dimension,
+                        score: hit.score,
+                        excerpt: hit.sample,
+                    });
+                }
+            }
 
             const lines: string[] = [];
             const byBook = this.groupResultsByBook(results);

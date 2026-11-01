@@ -5,15 +5,15 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
-- 当前基线：v4.22.0；单测 495 文件 / 5617 用例；E2E 25 条
-- 任务进度：40/55 已完成（73%），0 进行中，0 受阻
+- 当前基线：v4.22.0；单测 496 文件 / 5627 用例；E2E 25 条
+- 任务进度：41/57 已完成（72%），1 进行中，0 受阻
 
 ## 一、任务组总览
 
 | 组 | 名称 | 目标版本 | 状态 | 进度 | 责任人 |
 |---|---|---|---|---|---|
 | G1 | 创作主链闭环 | v4.23.0 | ✅ 已完成 | 18/18（100%） | 实现 ZCode / 验收 用户 |
-| G2 | 语料与注入链 | v4.24.0 | 🟡 进行中 | 2/4（50%） | 实现 ZCode / 验收 用户 |
+| G2 | 语料与注入链 | v4.24.0 | 🟡 进行中 | 3/6（50%） | 实现 ZCode / 验收 用户 |
 | G3 | 项目生命周期与三模式 | v4.24.0 | 🟡 进行中 | 3/5（60%） | 实现 ZCode / 验收 用户 |
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G5 | 交互一致性与可访问性 | v4.25.0 | 🟡 进行中 | 4/6（67%） | 实现 ZCode / 验收 用户 |
@@ -62,8 +62,10 @@
 |---|---|---|---|---|
 | G2-1 | 指纹库跨项目写入 | ✅ 已完成 | 切换项目后列表与增删落在当前项目 | 9c6dcd7 |
 | G2-2 | 文笔样文小节解析恒失败（\s 退化） | ✅ 已完成 | 「零、参考样本」可定位；样文校验可用（单测锁定） | 84d1e31 |
-| G2-3 | RAG 注入来源可追溯 | ⬜ 待开始 | 步骤结果 frontmatter 记录实际引用的知识片段 id；统计页可查命中率 | — |
 | G2-4 | 上下文总线预算与去重口径统一 | ⬜ 待开始 | 本地/云端双预算生效；重复段剔除率可量化（体检报告） | — |
+| G2-3 | RAG 注入来源可追溯 | 🟡 进行中 | 写入已完成（rag_sources 落步骤 frontmatter）；展示/命中率未见 | shared/rag-sources.ts + injector/step-runner/saver |
+| G2-3a | rag_sources 写入步骤结果 | ✅ 已完成 | 注入命中的书/维度/分数/片段截断后写入 frontmatter；同片去重、上限 8（单测） | knowledge-injector.ragSink → step-runner meta → step-result-saver |
+| G2-3b | 统计页展示知识命中与命中率 | ⬜ 待开始 | 步骤详情可见 rag_sources；按项目统计命中率与最常引用书目 | — |
 
 > 知识库与指纹都属于「参考资料」域，跨项目读取是最容易出静默错误的地方。
 
@@ -175,3 +177,4 @@
 - 2026-11-01｜G1｜时间线三处写入加锁；成长/情绪/互信息/连续性账本按章去重；结算弹窗重复结算守卫（settlement-engine / analysis-report-engine / context-manager / chapter-settlement-modal）
 - 2026-11-01｜G1｜G1-12/13 权威源决策定稿；V1 互信息改整行去重（2 条单测）（docs/design/g1-authority-decisions.md + settlement-engine）
 - 2026-11-01｜G1｜G1-12b/13a/13b/13c 落地：权威源门禁、settlement_mode、SettlementJournal 三类回滚、失败标记（check-relationship-authority.mjs / settlement-journal.ts / chapter-settlement-modal.ts）
+- 2026-11-01｜G2｜知识注入来源落盘：rag_sources（书/维度/分数/片段）写入步骤 frontmatter（shared/rag-sources.ts + injector/step-runner/saver + 10 条单测）

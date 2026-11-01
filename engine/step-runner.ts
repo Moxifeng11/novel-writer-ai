@@ -41,6 +41,7 @@ import type { NovelWriterPluginAPI } from '../plugin-api';
 export { ALL_FULL_STEPS, STEP_INDEX_MIGRATION_MAP, migrateStepIndex, preCheckQualityControl } from './step-definitions';
 export type { FullStep, StepRunCtx, ModelStrategy, PreValidationFn, PostValidationFn } from './step-definitions';
 import type { StepRunCtx, StepRunMeta } from './step-definitions';
+import { formatRagSources, pushRagSource, type RagSource } from '../shared/rag-sources';
 import { ALL_FULL_STEPS, preCheckQualityControl } from './step-definitions';
 import { calcStepIndexAfterPlanning, downstreamStepsAfterPlanningChange } from './planning-step-advance';
 import {
@@ -155,6 +156,7 @@ export class StepRunner {
                     projectPath: ctx.project,
                     chapterIndex: ctx.chapterNum,
                     outline: ctx.vars.outlineContent || ctx.stepResults['outline'] || '',
+                    ragSink: this.ragSinkFor(ctx),
                 });
                 return injection || '';
             }
@@ -162,6 +164,14 @@ export class StepRunner {
             log.warn('[StepRunner] 情绪规划知识注入失败，跳过:', e);
         }
         return '';
+    }
+
+    /** 知识来源收集器：注入器每命中一条就回调，保存步骤结果时写入 rag_sources */
+    private ragSinkFor(ctx: StepRunCtx): (source: RagSource) => void {
+        return (source: RagSource) => {
+            if (!ctx.ragSources) ctx.ragSources = [];
+            pushRagSource(ctx.ragSources, source);
+        };
     }
 
     /** Scene 展开知识注入：与情绪规划同一套降级语义 */
@@ -177,6 +187,7 @@ export class StepRunner {
                     chapterIndex: ctx.chapterNum,
                     outline: ctx.vars.outlineContent || ctx.stepResults['outline'] || '',
                     emotionPlan: ctx.vars.emotionPlan || ctx.stepResults['emotionPlan'] || '',
+                    ragSink: this.ragSinkFor(ctx),
                 });
                 return injection || '';
             }
@@ -283,6 +294,7 @@ export class StepRunner {
                     outline: ctx.vars.outlineContent || ctx.stepResults['outline'] || '',
                     emotionPlan: ctx.vars.emotionPlan || ctx.stepResults['emotionPlan'] || '',
                     sceneType: ctx.vars._sceneType || undefined,
+                    ragSink: this.ragSinkFor(ctx),
                 });
                 if (injection) parts.push(injection);
             }
@@ -1115,7 +1127,10 @@ export class StepRunner {
                 truncated,
                 usage: result.usage,
                 maxTokens: stepMaxOutput,
+                // G2：本步骤实际注入的知识片段，保存时写进 rag_sources
+                ragSources: formatRagSources(ctx.ragSources ?? []),
             };
+            ctx.ragSources = [];
             if (!ctx.stepMeta) ctx.stepMeta = {};
             ctx.stepMeta[stepKey] = stepMeta;
 
@@ -1727,7 +1742,9 @@ export class StepRunner {
                 truncated: result.finishReason === 'length',
                 usage: result.usage,
                 maxTokens: flashLimits.maxOutput,
+                ragSources: formatRagSources(ctx.ragSources ?? []),
             };
+            ctx.ragSources = [];
             const failedSaves: string[] = [];
             for (const stepKey of evaluation.generated) {
                 const stepContent = parsed[stepKey];

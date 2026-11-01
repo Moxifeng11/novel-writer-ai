@@ -51,6 +51,8 @@ export interface StepSaveMeta {
     rulesHash?: string;
     voiceMode?: string;
     experimentGroup?: string;
+    /** G2 可追溯：本步骤实际注入的知识库片段 */
+    ragSources?: Array<{ book: string; dimension: string; score: number; excerpt: string }>;
 }
 
 /**
@@ -321,6 +323,20 @@ export class StepResultSaver {
                         });
                     } catch (fmErr) {
                         log.warn('[StepResultSaver] processFrontMatter 失败:', fmErr);
+                    }
+                }
+            }
+
+            // G2：知识来源归因（正文步骤也写，BodyWriter 已落盘，这里补 frontmatter）
+            if (meta?.ragSources && meta.ragSources.length > 0) {
+                const ragFile = await this.getFS().getFile(targetPath);
+                if (ragFile) {
+                    try {
+                        await this.getFrontmatter().processFrontmatter(ragFile, (fm: Record<string, unknown>) => {
+                            fm['rag_sources'] = meta.ragSources;
+                        });
+                    } catch (e) {
+                        log.warn('[StepResultSaver] 写入 rag_sources 失败:', e);
                     }
                 }
             }
