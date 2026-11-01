@@ -1275,6 +1275,8 @@ export function assembleStoryContextBundle(
         included: 0,
         dropped: 0,
         truncated: 0,
+        deduped: 0,
+        dedupeRate: 0,
         requiredTotal: requiredIds.size,
         requiredIncluded: 0,
         missingRequired: [],
@@ -1328,6 +1330,7 @@ export function assembleStoryContextBundle(
         }
         const dedupeKey = normalizeName(chosen.text);
         if (dedupeKey && seenText.has(dedupeKey)) {
+            telemetry.deduped++;
             telemetry.droppedItems.push({ id: node.id, kind: node.kind, title: node.title, reason: '内容重复' });
             return false;
         }
@@ -1357,6 +1360,10 @@ export function assembleStoryContextBundle(
 
     telemetry.included = selected.length;
     telemetry.estimatedTokens = used;
+    // 去重率口径：重复项 /（真正入选项 + 重复项），避免把「预算不足丢弃」算进去
+    telemetry.dedupeRate = telemetry.deduped + telemetry.included > 0
+        ? Math.round((telemetry.deduped / (telemetry.deduped + telemetry.included)) * 1000) / 1000
+        : 0;
     telemetry.requiredIncluded = requiredNodes.filter(node => includedIds.has(node.id)).length;
     telemetry.missingRequired = requiredNodes.filter(node => !includedIds.has(node.id)).map(node => node.id);
     for (const node of graph.nodes.values()) {

@@ -117,6 +117,10 @@ export interface StoryContextTelemetry {
     included: number;
     dropped: number;
     truncated: number;
+    /** 因内容重复被剔除的节点数（G2-4：可量化的去重口径） */
+    deduped: number;
+    /** 去重剔除率 = deduped / (included + deduped)，0~1 */
+    dedupeRate: number;
     requiredTotal: number;
     requiredIncluded: number;
     missingRequired: string[];

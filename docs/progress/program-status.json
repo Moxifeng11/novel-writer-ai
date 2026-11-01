@@ -192,9 +192,9 @@
         {
           "id": "G2-4",
           "title": "上下文总线预算与去重口径统一",
-          "status": "todo",
-          "acceptance": "本地/云端双预算生效；重复段剔除率可量化（体检报告）",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "步骤装配/协同写作按本步模型预算设置配额并在结束后还原；32K 本地窗口各切片不低于旧常量；故事包遥测给出 deduped/dedupeRate 并在体检行展示",
+          "evidence": "shared/context-budget-policy.withActiveInputBudget（成对还原，嵌套/抛错均覆盖）+ resolveContextQuotas 增加旧常量下限；engine/step-prompt-assembly 先定预算再注入；co-writer suggestNext 包裹；StoryContextTelemetry.deduped/dedupeRate + 体检行；单测 context-budget-policy 8 条 / story-context 去重 3 条 / step-prompt-assembly-budget 2 条"
         },
         {
           "id": "G2-3",

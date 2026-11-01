@@ -232,7 +232,9 @@ export class StepRenderController {
                 .map(([kind, v]) => `${STORY_CONTEXT_KIND_LABELS[kind as keyof typeof STORY_CONTEXT_KIND_LABELS]} ${v.included}/${v.total}`)
                 .join(' · ');
             const detail = area.createDiv({ cls: 'novel-writer-fw-context-hint' });
-            detail.setText(kindText + (t.dropped > 0 ? ` · 丢弃 ${t.dropped} 项低优先级信息` : ''));
+            detail.setText(kindText
+                + (t.deduped > 0 ? ` · 去重 ${t.deduped} 项（${Math.round(t.dedupeRate * 100)}%）` : '')
+                + (t.dropped > 0 ? ` · 丢弃 ${t.dropped} 项低优先级信息` : ''));
             if (t.missingRequired.length > 0) {
                 detail.setText(`缺少必含项：${t.missingRequired.slice(0, 5).join('、')}；${detail.textContent || ''}`);
             }

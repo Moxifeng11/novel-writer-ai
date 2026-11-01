@@ -13,6 +13,11 @@ import {
     buildStoryContext,
     resolveStoryContextTier,
 } from '../../../engine/context/story-context-service';
+import type {
+    StoryContextGraph,
+    StoryContextKind,
+    StoryContextNode,
+} from '../../../engine/context/story-context-types';
 
 function makeContext(): GatheredContext {
     return {
@@ -477,5 +482,99 @@ describe('story-context service adapters', () => {
         const cloud = resolveStoryContextProfile('cloud', 100000);
         expect(cloud.maxPackTokens).toBeGreaterThan(local.maxPackTokens);
         expect(cloud.maxPerKind.character).toBeGreaterThan(local.maxPerKind.character ?? 0);
+    });
+});
+
+describe('故事上下文包 — 去重口径（G2-4）', () => {
+    const KINDS: StoryContextKind[] = [
+        'worldview', 'setting', 'character', 'faction', 'location', 'item',
+        'timeline', 'foreshadow', 'scene', 'emotion',
+    ];
+
+    function makeNode(id: string, kind: StoryContextKind, text: string): StoryContextNode {
+        return {
+            id,
+            kind,
+            title: id,
+            text,
+            compactText: text,
+            priority: 10,
+            required: false,
+            tokens: 12,
+            compactTokens: 12,
+            links: [],
+            metadata: {},
+        };
+    }
+
+    function makeGraph(nodes: StoryContextNode[]): StoryContextGraph {
+        const byKind = Object.fromEntries(KINDS.map(kind => [kind, [] as StoryContextNode[]])) as Record<StoryContextKind, StoryContextNode[]>;
+        for (const node of nodes) byKind[node.kind].push(node);
+        return {
+            project: '测试书',
+            chapterName: '第1章',
+            chapterNum: 1,
+            volume: '',
+            nodes: new Map(nodes.map(node => [node.id, node])),
+            byKind,
+            nameIndex: new Map(),
+            sourceHash: '',
+            warnings: [],
+        };
+    }
+
+    it('同文重复节点只入包一次，并计入 deduped / dedupeRate', () => {
+        const graph = makeGraph([
+            makeNode('setting:a', 'setting', '灵气从地脉升起，逆脉者会被天阙标记。'),
+            makeNode('setting:b', 'setting', '灵气从地脉升起，逆脉者会被天阙标记。'),
+        ]);
+
+        const bundle = assembleStoryContextBundle(graph, {
+            mode: 'one-click',
+            tier: 'cloud',
+            chapterNum: 1,
+        });
+
+        expect(bundle.telemetry.included).toBe(1);
+        expect(bundle.telemetry.deduped).toBe(1);
+        // 1 项入包 + 1 项重复 → 50%
+        expect(bundle.telemetry.dedupeRate).toBe(0.5);
+        expect(bundle.telemetry.droppedItems.some(item => item.reason === '内容重复')).toBe(true);
+    });
+
+    it('内容不同则不去重，比率为 0', () => {
+        const graph = makeGraph([
+            makeNode('setting:a', 'setting', '灵气从地脉升起，逆脉者会被天阙标记。'),
+            makeNode('setting:b', 'setting', '断魂桥是砂峡唯一的通道，桥下是灰白砂雾。'),
+        ]);
+
+        const bundle = assembleStoryContextBundle(graph, {
+            mode: 'one-click',
+            tier: 'cloud',
+            chapterNum: 1,
+        });
+
+        expect(bundle.telemetry.included).toBe(2);
+        expect(bundle.telemetry.deduped).toBe(0);
+        expect(bundle.telemetry.dedupeRate).toBe(0);
+    });
+
+    it('去重口径不把「预算不足丢弃」算进比率', () => {
+        // 小预算 + 大文本：后面的项会因为预算被丢，但 deduped 必须是 0
+        const long = '长'.repeat(2000);
+        const graph = makeGraph([
+            makeNode('setting:a', 'setting', long),
+            makeNode('setting:b', 'setting', `${long}不同结尾`),
+        ]);
+
+        const bundle = assembleStoryContextBundle(graph, {
+            mode: 'one-click',
+            tier: 'local',
+            chapterNum: 1,
+            maxInputTokens: 2000,
+        });
+
+        expect(bundle.telemetry.deduped).toBe(0);
+        expect(bundle.telemetry.dedupeRate).toBe(0);
     });
 });

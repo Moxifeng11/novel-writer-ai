@@ -109,6 +109,7 @@ import { resolveProviderSourceType } from '../shared/model-source';
 import { CO_WRITE_MAX_TOKENS_CAP, EDIT_VALIDATION_PASS_SCORE } from '../shared/thresholds';
 import { countRetainedPromptParts } from '../shared/prompt-budget';
 import { roleIndicatesProtagonist } from '../shared/protagonist';
+import { withActiveInputBudget } from '../shared/context-budget-policy';
 import { findModelCapability } from '../shared/model-capabilities';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 import { acquireLocalAiSlot } from '../shared/local-ai-queue';
@@ -906,6 +907,23 @@ export class CoWriterEngine {
     // ============================================================
 
     async suggestNext(
+        precedingText: string,
+        cursorHint: string = '',
+        mode: WritingMode = 'continue',
+        count: number = 3,
+        signal?: AbortSignal,
+        onChunk?: (index: number, cumulativeText: string) => void
+    ): Promise<SuggestionRecord[]> {
+        // 协同写作的上下文切片（前章结尾/实体速览/知识维度）读 activeContextQuotas，
+        // 必须按本次协同模型窗口设置并在结束后还原（G2-4）
+        const budget = this.getCoWriteInputBudget();
+        return withActiveInputBudget(
+            budget.maxInputTokens,
+            () => this.suggestNextUnbounded(precedingText, cursorHint, mode, count, signal, onChunk),
+        );
+    }
+
+    private async suggestNextUnbounded(
         precedingText: string,
         cursorHint: string = '',
         mode: WritingMode = 'continue',

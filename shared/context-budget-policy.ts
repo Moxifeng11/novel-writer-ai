@@ -44,8 +44,13 @@ function scaleFor(maxInputTokens: number): number {
     return Math.max(0.3, Math.min(3.2, tokens / BASE_INPUT_TOKENS));
 }
 
-function scale(value: number, factor: number, max: number): number {
-    return Math.round(Math.min(max, Math.max(value * Math.min(factor, 1), value * factor)));
+/**
+ * 按 factor 缩放，并夹在 [floor, max] 之间。
+ * floor 必须是旧常量：小窗口（本地 32K）时不能比改造前切得更少，
+ * 否则「按预算推导」反而成了缩水（G2-4：32K 下 prevChapterEnding 曾从 500 掉到 360）。
+ */
+function scale(value: number, factor: number, max: number, floor: number): number {
+    return Math.round(Math.min(max, Math.max(floor, value * factor)));
 }
 
 /**
@@ -55,16 +60,17 @@ function scale(value: number, factor: number, max: number): number {
 export function resolveContextQuotas(maxInputTokens?: number): ContextQuotas {
     const factor = scaleFor(maxInputTokens ?? DEFAULT_INPUT_TOKENS);
     return {
-        prevChapterEndingChars: scale(1200, factor, 4000),
-        longTermMemoryChars: scale(3000, factor, 12000),
-        longTermMemoryPerCategory: Math.round(scale(20, factor, 48)),
-        sceneCardMaxCount: Math.round(scale(12, factor, 40)),
-        sceneCardChars: scale(400, factor, 900),
-        entityGraphMaxChars: Math.round(scale(20, factor, 60)),
-        entityFieldChars: scale(600, factor, 1600),
-        knowledgePerDimensionChars: scale(1800, factor, 6000),
-        memoryFragmentCount: Math.round(scale(6, factor, 20)),
-        memoryFragmentChars: scale(400, factor, 1200),
+        prevChapterEndingChars: scale(1200, factor, 4000, 500),
+        longTermMemoryChars: scale(3000, factor, 12000, 1500),
+        longTermMemoryPerCategory: scale(20, factor, 48, 12),
+        sceneCardMaxCount: scale(12, factor, 40, 12),
+        // 旧常量是「12 场 / 共 3000 字」，折合单卡约 250；保留 400 作为单卡下限
+        sceneCardChars: scale(400, factor, 900, 400),
+        entityGraphMaxChars: scale(20, factor, 60, 8),
+        entityFieldChars: scale(600, factor, 1600, 600),
+        knowledgePerDimensionChars: scale(1800, factor, 6000, 600),
+        memoryFragmentCount: scale(6, factor, 20, 3),
+        memoryFragmentChars: scale(400, factor, 1200, 200),
     };
 }
 
@@ -79,6 +85,27 @@ let activeQuotasCache: ContextQuotas | null = null;
 export function activeContextQuotas(): ContextQuotas {
     if (!activeQuotasCache) activeQuotasCache = resolveContextQuotas();
     return activeQuotasCache;
+}
+
+/**
+ * 在「一次流程」内临时生效的输入预算，结束后恢复上一个值（G2-4）。
+ *
+ * activeTokens 是进程级单值：协同写作、一键生成、逐步执行如果各自 set 了不同模型的
+ * 预算，异步交错时后开始的流程会污染前一个流程的切片配额（实测：小窗口模型先跑，
+ * 后续云端流程仍按 120K 默认配额切上下文，或反过来把云端流程压到本地配额）。
+ * 所有入口统一用这个包装，保证「谁设置、谁还原」。
+ */
+export async function withActiveInputBudget<T>(
+    maxInputTokens: number | undefined,
+    fn: () => T | Promise<T>,
+): Promise<T> {
+    const previous = activeTokens;
+    setActiveInputBudget(maxInputTokens);
+    try {
+        return await fn();
+    } finally {
+        setActiveInputBudget(previous || undefined);
+    }
 }
 
 /** 设置当前生效的输入预算（进入一次生成前调用；传 0/undefined 恢复默认） */
