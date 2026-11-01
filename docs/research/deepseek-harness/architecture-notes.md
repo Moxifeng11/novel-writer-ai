@@ -69,7 +69,7 @@
 
 **为什么**：安全默认值比“能力”更重要；“假装沙箱生效”比没有沙箱更危险。
 
-**本地映射**：`HarnessTool.sideEffect` 已有语义但只在重复守卫里使用；`runCommand` 白名单 + 危险正则确认是唯一审批点。dsh 可选后端（Batch D）采用全 vault 只读 + 写入逐次批准，并在 UI 明确“Obsidian 无法真正沙箱”的事实。
+**本地映射**：`HarnessTool.sideEffect` 已有语义但只在重复守卫里使用；`runCommand` 白名单 + 危险正则确认是唯一审批点。dsh 可选后端（Batch D）默认全 vault 只读；写入只能**整会话**放开（`workspace-write`，启动前一次性确认），因为 SDK 协议没有逐次审批通道（2026-11-02 实测：只读下写入被沙箱拒绝，升级请求因无审批通道而失败）。UI 明示“Obsidian 无法真正沙箱”的事实。
 
 **批次**：C2（native）、D2（dsh）。
 

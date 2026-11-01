@@ -120,4 +120,37 @@ AgentWorkbench (UI)
 
 - 是否接受「dsh 后端整会话 workspace-write」作为唯一的写入方式？若不接受，dsh 后端只能只读问答。
 - 是否接受 dsh 的完整依赖树（含 bash/pwsh 工具）随用户手动安装？
-- 真实环境验证：`DEEPSEEK_API_KEY` 是否被 dsh 的 provider 采纳、`--patch` 覆盖是否生效。
+
+---
+
+## 10. 真实环境验证（2026-11-02，dsh 0.2.1-rc.5）
+
+环境：Windows 11 / Node 24.16 / `@deepseek-ai/dsh@0.2.1-rc.5`（npm 发布版，装在临时目录）；密钥取插件 `data.json` 的 `apiKey`，只经 `DEEPSEEK_API_KEY` 注入子进程。全部经插件自身的 `dsh-launch` / `dsh-process` / `dsh-session` 模块执行。
+
+| 验证项 | 结果 | 证据 |
+|---|---|---|
+| 健康检查（`npx -y @deepseek-ai/dsh --version`） | ✅ `0.2.1-rc.5` | `probeDshVersion` 返回 `{ ok: true, version: '0.2.1-rc.5' }` |
+| `initialize` | ✅ `serverInfo: { name: 'deepseek-harness-sdk-runtime', version: '0.0.1' }` | provider `deepseek-official` + model `deepseek-flash` 均被接受 |
+| `DEEPSEEK_API_KEY` 是否被采纳 | ✅ 采纳 | 模型回答正常，stderr 出现 `[llm-deepseek-api-key] model listing ... loaded 2 model(s)` |
+| `--patch` 覆盖是否生效 | ✅ 生效 | 只读会话：`write` 工具被拒（`sandbox: file access denied under read-only mode`），文件未创建；`workspace-write` 会话：文件成功创建且内容正确 |
+| 逐次审批通道 | ❌ 不存在（已确认） | dsh 自述 `sandbox escalation ... requires approval, but no approval channel is available` |
+| `session/wait` | ✅ rc.5 提供 | 返回即空闲；插件已改为「status idle 与 session/wait 竞速」，旧版本无该方法时静默回落 |
+| 工具集 | `pwsh` / `glob` / `read` / `write` | Windows 上暴露 `pwsh`（完整依赖树），确认了待决策第 2 条的现实 |
+
+### 验证中发现并修复的缺陷（Windows 启动）
+
+1. **`spawn('npx')` 直接 ENOENT**；改为 `spawn('npx.cmd')` 在 Node 18.20+/20.12+ 抛 `EINVAL`（.cmd 必须经 shell）。→ 新增 `buildDshSpawnSpec`：Windows 上除 `.exe` 外统一交给 `ComSpec` 执行，含空格参数加引号。
+2. **最小 env 缺平台必需键**：只传 `PATH`/`HOME` 时，`cmd.exe` 找不到 `SystemRoot`、`npx` 找不到 `APPDATA`/`USERPROFILE` 缓存。→ 新增 `buildDshChildEnv`：Windows 补 `SystemRoot/windir/ComSpec/PATHEXT/APPDATA/LOCALAPPDATA/USERPROFILE/TEMP/TMP/...`，仍不含任何凭据；`DSH_HOME` 与 Key 只来自启动计划。
+3. **`waitForIdle` 只看 `session.status`**：改为与 `session/wait` 竞速，先到者唤醒；错误静默回落到状态信号。
+
+### 复现命令
+
+```bash
+# 安装被测版本（无需全局安装）
+npm install --no-audit --no-fund @deepseek-ai/dsh@0.2.1-rc.5
+
+# 关键路径：initialize → prompt → session/wait；read-only 与 workspace-write 各跑一次
+# 断言：只读时 write 工具失败且目标文件不存在；可写时文件内容正确
+```
+
+> 本地源码 `D:/小说工坊/小说工坊/deepseek-harness` 为 `0.2.1-rc.3` 未构建副本（无 `node_modules`/`lib`），本次验证使用发布版 rc.5；两者协议一致（rc.5 仅新增 `session/wait` 等方法）。

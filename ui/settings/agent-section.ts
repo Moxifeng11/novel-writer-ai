@@ -92,7 +92,7 @@ export class AgentBackendSection extends SettingsSection {
                         PATH: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.PATH || '',
                         Path: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.Path || '',
                     },
-                });
+                }, 120_000);
                 new Notice(result.ok
                     ? `✅ dsh 可用${result.version ? `：${result.version}` : ''}`
                     : `❌ dsh 不可用：${result.error}`, 8000);

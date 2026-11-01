@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DshJsonRpcClient, DshJsonRpcError } from '../../../engine/agent/dsh/dsh-protocol';
 import { DshSession, textOfContentBlocks, type DshTransport } from '../../../engine/agent/dsh/dsh-session';
 import { buildDshLaunchPlan, buildSandboxPatch } from '../../../engine/agent/dsh/dsh-launch';
+import { buildDshChildEnv, buildDshSpawnSpec } from '../../../engine/agent/dsh/dsh-process';
 
 function fakeTransport() {
     const lineListeners: Array<(line: string) => void> = [];
@@ -156,6 +157,18 @@ describe('DshSession', () => {
         expect(session.isClosed).toBe(true);
     });
 
+    it('rc.5 session/wait 返回也视为空闲（不依赖 state 通知）', async () => {
+        const fake = fakeTransport();
+        const session = new DshSession({ transport: fake.transport, sessionId: 's1' });
+        const idle = session.waitForIdle(1_000);
+        const frame = fake.lastFrame();
+        expect(frame.method).toBe('session/wait');
+        expect(frame.params).toEqual({ sessionId: 's1' });
+        fake.emit(JSON.stringify({ jsonrpc: '2.0', id: frame.id, result: {} }));
+        await expect(idle).resolves.toBeUndefined();
+        session.close();
+    });
+
     it('textOfContentBlocks 只取 text，跳过 reasoning/image', () => {
         expect(textOfContentBlocks([
             { type: 'reasoning', text: '思考' },
@@ -190,5 +203,56 @@ describe('启动参数', () => {
         expect(plan.args).toEqual(['-y', '@deepseek-ai/dsh', '--profile', 'sdk', '--patch', '/h/sandbox.yml']);
         expect(buildSandboxPatch('read-only', '/v')).toContain('mode: read-only');
         expect(buildSandboxPatch('workspace-write', '/v')).toContain('workspaceRoot: "/v"');
+    });
+});
+
+describe('子进程启动（Windows shim）', () => {
+    it('POSIX 原样 spawn', () => {
+        expect(buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh'], 'linux'))
+            .toEqual({ command: 'npx', args: ['-y', '@deepseek-ai/dsh'] });
+    });
+
+    it('Windows 上 npx 经 ComSpec 执行（spawn npx 会 ENOENT）', () => {
+        const spec = buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh', '--profile', 'sdk'], 'win32', 'C:\\Windows\\System32\\cmd.exe');
+        expect(spec.command).toBe('C:\\Windows\\System32\\cmd.exe');
+        expect(spec.args.slice(0, 3)).toEqual(['/d', '/s', '/c']);
+        expect(spec.args[3]).toBe('npx -y @deepseek-ai/dsh --profile sdk');
+    });
+
+    it('含空格的路径被引号包裹，.exe 保持直连', () => {
+        const spec = buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh', '--patch', 'C:\\a b\\sandbox.yml'], 'win32', 'cmd.exe');
+        expect(spec.args[3]).toContain('"C:\\a b\\sandbox.yml"');
+        expect(buildDshSpawnSpec('C:\\nodejs\\node.exe', ['x'], 'win32', 'cmd.exe'))
+            .toEqual({ command: 'C:\\nodejs\\node.exe', args: ['x'] });
+    });
+});
+
+describe('子进程环境', () => {
+    it('Windows 补 SystemRoot/APPDATA/USERPROFILE，密钥只来自 plan', () => {
+        const env = buildDshChildEnv(
+            { DSH_HOME: 'C:/h', DEEPSEEK_API_KEY: 'sk-test' },
+            { PATH: 'C:\\bin' },
+            {
+                SystemRoot: 'C:\\Windows', ComSpec: 'C:\\Windows\\system32\\cmd.exe',
+                APPDATA: 'C:\\Users\\u\\AppData\\Roaming',
+                USERPROFILE: 'C:\\Users\\u', PATHEXT: '.EXE;.CMD', PATH: 'C:\\orig',
+            },
+        );
+        expect(env.SystemRoot).toBe('C:\\Windows');
+        expect(env.APPDATA).toBe('C:\\Users\\u\\AppData\\Roaming');
+        expect(env.USERPROFILE).toBe('C:\\Users\\u');
+        expect(env.PATH).toBe('C:\\bin');
+        expect(env.DSH_HOME).toBe('C:/h');
+        expect(env.DEEPSEEK_API_KEY).toBe('sk-test');
+        expect(env).not.toHaveProperty('HOME');
+    });
+
+    it('空串不覆盖已补齐的平台变量', () => {
+        const env = buildDshChildEnv(
+            { DSH_HOME: 'C:/h' },
+            { PATH: '' },
+            { PATH: 'C:\\Windows\\System32' },
+        );
+        expect(env.PATH).toBe('C:\\Windows\\System32');
     });
 });

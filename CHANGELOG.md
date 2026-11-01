@@ -1,5 +1,28 @@
 # Changelog
 
+## v4.23.1（2026-11-02）
+
+dsh 可选后端的首次真实环境验证（Windows 11 / Node 24 / `@deepseek-ai/dsh@0.2.1-rc.5`），并修掉三个启动层缺陷。
+
+### 🔧 修复
+
+- **Windows 上 dsh 完全无法启动**：`spawn('npx')` 直接 `ENOENT`；改 `npx.cmd` 又在 Node 18.20+/20.12+ 抛 `EINVAL`（`.cmd` 必须经 shell）。新增 `buildDshSpawnSpec`：Windows 上除 `.exe` 外统一交给 `ComSpec` 执行，含空格参数自动加引号；健康检查与正式启动共用。
+- **子进程环境缺平台必需键**：此前只传 `PATH`/`HOME`，`cmd.exe` 找不到 `SystemRoot`、`npx` 找不到 `APPDATA`/`USERPROFILE` 缓存。新增 `buildDshChildEnv`，补 `SystemRoot/windir/ComSpec/PATHEXT/APPDATA/LOCALAPPDATA/USERPROFILE/TEMP/TMP` 等本机既有值（不含任何凭据），并保证空串不会覆盖已补齐的 `PATH`。
+- **空闲等待只看 `session.status`**：rc.5 起服务端提供 `session/wait`，改为两者竞速，先到者唤醒；旧版本无该方法时静默回落。
+- **健康检查超时 20s 太短**：首次 `npx` 下载常超过 20s，设置页检测按钮改为 120s。
+
+### ✅ 已验证（真实模型调用）
+
+- `initialize` 接受 `provider: deepseek-official` / `model: deepseek-flash`，返回 `deepseek-harness-sdk-runtime 0.0.1`。
+- `DEEPSEEK_API_KEY` 经环境变量注入即被采纳（不写配置文件、不落 vault）。
+- `--patch` sandbox 覆盖生效：只读会话写入被拒且文件未创建；`workspace-write` 会话文件创建成功。
+- SDK 协议确无逐次审批通道（dsh 自述 `no approval channel is available`）；Windows 上暴露 `pwsh` 工具（完整依赖树）。
+
+### 🧪 测试
+
+- 新增 6 条单测（Windows shim、参数引号、`.exe` 直连、平台环境补齐、空串不覆盖、`session/wait` 唤醒）。
+- 全量 `preflight` 通过：**524 文件 / 5859 用例**。
+
 ## v4.23.0（2026-11-02）
 
 覆盖 v4.22.0 之后的 60 个提交，外加本轮 P1 收口。测试基线：**524 文件 / 5853 用例**（v4.22.0 为 481/5506）。

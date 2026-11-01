@@ -18,6 +18,32 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.23.1',
+        date: '2026-11-02',
+        title: 'dsh 真实环境验证与 Windows 启动修复',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🔧 修复',
+                items: [
+                    'Windows 上 dsh 无法启动：npx 的 .cmd shim 改为经 ComSpec 执行，含空格参数自动加引号',
+                    '子进程补齐 SystemRoot/APPDATA/USERPROFILE 等平台必需环境变量，npx 才能找到缓存',
+                    '空闲等待改为与 rc.5 的 session/wait 竞速，旧版本无该方法时静默回落',
+                    'dsh 健康检查超时从 20 秒放宽到 120 秒（首次 npx 下载）',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '✅ 已验证',
+                items: [
+                    '真实模型调用通过：DEEPSEEK_API_KEY 经环境变量生效，不写配置文件',
+                    'sandbox --patch 生效：只读拒绝写入，workspace-write 放行',
+                    '确认 SDK 协议没有逐次审批通道；只读是默认且唯一安全的写入策略',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.23.0',
         date: '2026-11-02',
         title: '专项收口、dsh 可选后端与数据一致性加固',

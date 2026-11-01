@@ -16,6 +16,80 @@ export interface DshProcessOptions {
     passthroughEnv?: Record<string, string | undefined>;
 }
 
+/**
+ * Windows 平台启动子进程所需的最小环境变量。
+ *
+ * 只给 PATH 不够：cmd.exe 需要 SystemRoot，npm/npx 需要 APPDATA/USERPROFILE
+ * 才能找到缓存与配置；缺了它们 npx 会以「找不到包」或直接异常退出。
+ * 这里只透传本机既有值，不含任何凭据。
+ */
+const PLATFORM_ENV_KEYS = process.platform === 'win32'
+    ? [
+        'PATH', 'Path', 'SystemRoot', 'windir', 'ComSpec', 'PATHEXT',
+        'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH',
+        'TEMP', 'TMP', 'ProgramFiles', 'ProgramW6432',
+        'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'PROCESSOR_IDENTIFIER', 'OS',
+    ]
+    : ['PATH', 'HOME', 'TMPDIR'];
+
+export interface DshSpawnSpec {
+    command: string;
+    args: string[];
+}
+
+/** cmd 里需要引号的字符（空格、引号、管道、重定向等） */
+const CMD_QUOTE_NEEDED = /[\s"&|<>^()]/;
+
+function quoteForCmd(value: string): string {
+    if (!CMD_QUOTE_NEEDED.test(value)) return value;
+    return `"${value.replace(/"/g, '""')}"`;
+}
+
+/**
+ * 把「用户填的命令 + 参数」转成可被 spawn 直接执行的形态。
+ *
+ * Windows 上 `npx` / `npm` / `pnpm` / `dsh.cmd` 都是脚本 shim，不是 PE 可执行文件：
+ * `spawn('npx', ...)` 直接 ENOENT；`spawn('npx.cmd', ...)` 在 Node 18.20+/20.12+
+ * 会因为 .cmd 必须经 shell 而抛 EINVAL。这里统一改由 ComSpec 执行；
+ * .exe 保持直连，不做多余的一层 cmd。
+ */
+export function buildDshSpawnSpec(
+    command: string,
+    args: string[],
+    platform: NodeJS.Platform = process.platform,
+    comSpec: string | undefined = process.env.ComSpec || process.env.COMSPEC,
+): DshSpawnSpec {
+    if (platform !== 'win32' || /\.exe$/i.test(command)) {
+        return { command, args };
+    }
+    const shell = comSpec || 'cmd.exe';
+    return {
+        command: shell,
+        args: ['/d', '/s', '/c', [command, ...args].map(quoteForCmd).join(' ')],
+    };
+}
+
+/** 合并运行环境：平台必需变量 → 调用方透传 → 启动计划（含 DSH_HOME / Key） */
+export function buildDshChildEnv(
+    planEnv: Record<string, string>,
+    passthroughEnv?: Record<string, string | undefined>,
+    source: Record<string, string | undefined> = process.env,
+): Record<string, string> {
+    const env: Record<string, string> = {};
+    for (const key of PLATFORM_ENV_KEYS) {
+        const value = source[key];
+        if (typeof value === 'string') env[key] = value;
+    }
+    // 空串不覆盖：调用方常写 `process.env.PATH || ''`，空串会把已补齐的 PATH 清掉
+    for (const [key, value] of Object.entries(passthroughEnv || {})) {
+        if (typeof value === 'string' && value !== '') env[key] = value;
+    }
+    for (const [key, value] of Object.entries(planEnv)) {
+        if (typeof value === 'string' && value !== '') env[key] = value;
+    }
+    return env;
+}
+
 export async function createDshProcessTransport(
     plan: DshLaunchPlan,
     options: DshProcessOptions,
@@ -25,13 +99,10 @@ export async function createDshProcessTransport(
     }
 
     const childProcess = await import('node:child_process');
-    const env: Record<string, string> = {};
-    for (const [key, value] of Object.entries(options.passthroughEnv || {})) {
-        if (typeof value === 'string') env[key] = value;
-    }
-    Object.assign(env, plan.env);
+    const env = buildDshChildEnv(plan.env, options.passthroughEnv);
+    const spec = buildDshSpawnSpec(plan.command, plan.args);
 
-    const child = childProcess.spawn(plan.command, plan.args, {
+    const child = childProcess.spawn(spec.command, spec.args, {
         cwd: options.cwd,
         env,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -113,11 +184,7 @@ export async function probeDshVersion(
 ): Promise<DshProbeResult> {
     if (!options.isDesktop) return { ok: false, error: 'dsh 仅支持桌面端' };
     const childProcess = await import('node:child_process');
-    const env: Record<string, string> = {};
-    for (const [key, value] of Object.entries(options.passthroughEnv || {})) {
-        if (typeof value === 'string') env[key] = value;
-    }
-    Object.assign(env, plan.env);
+    const env = buildDshChildEnv(plan.env, options.passthroughEnv);
 
     return new Promise<DshProbeResult>(resolve => {
         let settled = false;
@@ -135,10 +202,11 @@ export async function probeDshVersion(
             versionArgs.push(arg);
         }
         versionArgs.push('--version');
+        const spec = buildDshSpawnSpec(plan.command, versionArgs);
 
         let child;
         try {
-            child = childProcess.spawn(plan.command, versionArgs, {
+            child = childProcess.spawn(spec.command, spec.args, {
                 cwd: options.cwd,
                 env,
                 stdio: ['ignore', 'pipe', 'pipe'],

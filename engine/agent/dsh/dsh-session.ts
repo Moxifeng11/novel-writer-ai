@@ -111,6 +111,10 @@ export class DshSession {
     /** 等待该会话回到 idle（dsh 没有 per-prompt 结果，只能看 agent 级状态） */
     waitForIdle(timeoutMs = 120_000): Promise<void> {
         return new Promise((resolve, reject) => {
+            if (this.disposed) {
+                resolve();
+                return;
+            }
             const waiter: { resolve: () => void; timer: ReturnType<typeof setTimeout> | null } = {
                 resolve,
                 timer: null,
@@ -122,6 +126,13 @@ export class DshSession {
                 }, timeoutMs);
             }
             this.idleWaiters.push(waiter);
+
+            // rc.5 起服务端提供 session/wait：只有根会话空闲且受管子任务推进完成才返回，
+            // 比单看 session.status 更确定。旧版本返回 -32601，忽略后仍以状态信号为准。
+            this.client
+                .request('session/wait', { sessionId: this.options.sessionId }, timeoutMs)
+                .then(() => this.flushIdle())
+                .catch(() => { /* 旧版本无该方法或已超时：状态信号兜底 */ });
         });
     }
 

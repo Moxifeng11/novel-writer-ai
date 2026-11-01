@@ -25,7 +25,7 @@
 | 类别 | 内容 | 决定 |
 |---|---|---|
 | 设计借鉴 | 事件日志即事实源、step 级工具集快照、工具管线与 fail-closed 审批、压缩公式、spill 定位符、子代理深度限制、前缀缓存友好布局 | ✅ 采纳（Batch C） |
-| 可选后端 | 用户显式开启后，插件通过 dsh 的 SDK/headless profile 运行 Agent；默认关闭、仅桌面端、全 vault 只读、写入逐次批准 | ✅ 采纳（Batch D，前置 spike） |
+| 可选后端 | 用户显式开启后，插件通过 dsh 的 SDK profile 运行 Agent；默认关闭、仅桌面端、默认全 vault 只读。**写入只能整会话放开**（`workspace-write`，启动前一次性确认）——SDK 协议没有逐次审批通道，2026-11-02 真实环境已确认 | ✅ 采纳（Batch D） |
 | 运行时内核 | Cordis 插件内核、profile/bundle/patch 组合、PTC/`run_code` 任意代码执行、MCP 市场、终端/LSP/SSH | ❌ 不移植 |
 | 数据上传 | dsh 的 `dsh_session_log` 默认会把会话日志片段上传到 DeepSeek 端点 | ❌ 明确禁用/不启用；本项目后端不上传会话内容 |
 | 品牌 | DeepSeek 名称与标识受品牌规范约束 | ❌ 不在插件命名/宣传中使用 |
