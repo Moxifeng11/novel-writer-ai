@@ -17,20 +17,20 @@ export interface DshProcessOptions {
 }
 
 /**
- * Windows 平台启动子进程所需的最小环境变量。
+ * 子进程需要透传的环境变量白名单（Windows 与 POSIX 合并）。
  *
  * 只给 PATH 不够：cmd.exe 需要 SystemRoot，npm/npx 需要 APPDATA/USERPROFILE
  * 才能找到缓存与配置；缺了它们 npx 会以「找不到包」或直接异常退出。
- * 这里只透传本机既有值，不含任何凭据。
+ * 列表不按运行平台裁剪——单测与 CI 可能在不同平台跑同一份断言；
+ * 这里只复制本机确实存在的键，不存在的自然跳过，不含任何凭据。
  */
-const PLATFORM_ENV_KEYS = process.platform === 'win32'
-    ? [
-        'PATH', 'Path', 'SystemRoot', 'windir', 'ComSpec', 'PATHEXT',
-        'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH',
-        'TEMP', 'TMP', 'ProgramFiles', 'ProgramW6432',
-        'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'PROCESSOR_IDENTIFIER', 'OS',
-    ]
-    : ['PATH', 'HOME', 'TMPDIR'];
+const PLATFORM_ENV_KEYS = [
+    'PATH', 'Path', 'SystemRoot', 'windir', 'ComSpec', 'PATHEXT',
+    'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH',
+    'TEMP', 'TMP', 'ProgramFiles', 'ProgramW6432',
+    'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'PROCESSOR_IDENTIFIER', 'OS',
+    'HOME', 'TMPDIR',
+];
 
 export interface DshSpawnSpec {
     command: string;
