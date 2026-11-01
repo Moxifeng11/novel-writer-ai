@@ -6,7 +6,7 @@
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
 - 当前基线：v4.22.0；单测 506 文件 / 5710 用例；E2E 25 条
-- 任务进度：60/61 已完成（98%），1 进行中，0 受阻
+- 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
 
@@ -18,7 +18,7 @@
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G5 | 交互一致性与可访问性 | v4.25.0 | ✅ 已完成 | 6/6（100%） | 实现 ZCode / 验收 用户 |
 | G6 | 性能与存储 | v4.25.0 | ✅ 已完成 | 10/10（100%） | 实现 ZCode / 验收 用户 |
-| G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 10/11（91%） | 实现 ZCode / 验收 用户 |
+| G7 | 质量基建与可观测 | v4.25.0 | ✅ 已完成 | 11/11（100%） | 实现 ZCode / 验收 用户 |
 
 ## 二、分组明细
 
@@ -141,7 +141,7 @@
 
 > 先量化再优化：所有条目都要有前/后对比数字，否则不进主线。
 
-### G7 质量基建与可观测（🟡 进行中）
+### G7 质量基建与可观测（✅ 已完成）
 
 - 目标：覆盖缺口可度量、门禁不可绕过、进度可追溯、问题可定位
 - 目标版本：v4.25.0
@@ -155,7 +155,7 @@
 | G7-5 | 联动场景回归清单 | ✅ 已完成 | 三条联动链（生成→质控→修订→结算→导出 / 知识库→注入→归因→统计 / 三模式创建→内容结构→单元写作）均有落点清单 + 自动化覆盖；知识库链有跨模块集成用例 | docs/regression/LINKED-SCENARIOS.md（环节/入口/产物/覆盖/手工验收）+ tests/integration/linked-scenarios.test.ts（注入→rag_sources→统计，2 条）+ scripts/check-linked-scenarios.mjs（3 链 21 锚点，preflight+CI） |
 | G7-6 | 结算引擎 1670 行 0 直接测试 | ✅ 已完成 | 成功结算/重复幂等/部分失败回滚 3 条真实行为用例（不再整体 mock）；并暴露正文 status 未进 journal 的缺陷 | tests/unit/engine/settlement-engine-behavior.test.ts + settlement-engine 正文快照修复 |
 | G7-7 | shared/ 与 ui/ 不在覆盖率口径内 | ✅ 已完成 | vitest include 覆盖 shared/；基线 76.7% lines（含 shared），shared 域阈值 90/90/82/80 已生效 | vitest.config.ts include + 各域阈值 + test:cov 通过 |
-| G7-4 | 覆盖缺口补齐（分批） | 🟡 进行中 | a/b/c/d 已完成；knowledge-base-view 的 DOM 级测试仍需引入 jsdom（依赖决策，未做） | 见 G7-4a..4d |
+| G7-4 | 覆盖缺口补齐（分批） | ✅ 已完成 | a/b/c/d 已完成；DOM 级测试决策：不引入 jsdom（见 ADR），DOM 行为由真实 Electron E2E 覆盖，视图逻辑继续抽纯模块 | G7-4a..4d 证据 + docs/design/g7-4-dom-testing-decision.md（2026-11-01 决策+重评条件） |
 | G7-4a | 结算/Agent runner/生命周期行为测试 | ✅ 已完成 | settle 成功/幂等/回滚 3 条；SingleCallRunner 8 条（含不重试）；迁移撤销 4 条；领域工厂 6 条（含失败回滚） | settlement-engine-behavior / single-call-runner / project-migration-rollback / domain-project-factory |
 | G7-4b | Agent 工具与知识库/embedding 覆盖 | ✅ 已完成 | host-tools 权限边界 16 条（命令白名单/模式守卫/危险确认/路径穿越/参数夹紧）+ 4 个 embedding provider 11 条（端点/鉴权/错误/截断/取消） | host-tools-guard.test + embedding/providers.test |
 | G7-4c | 知识库 UI 与 knowledge-tags 覆盖 | ✅ 已完成 | KnowledgeTagManager 9 条（默认树/幂等/损坏留档/CRUD/级联/往返）；并修复「损坏文件静默回落默认树」 | knowledge-tags.test + parseFromMarkdown 去静默回落 |

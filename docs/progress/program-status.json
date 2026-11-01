@@ -524,9 +524,9 @@
         {
           "id": "G7-4",
           "title": "覆盖缺口补齐（分批）",
-          "status": "in_progress",
-          "acceptance": "a/b/c/d 已完成；knowledge-base-view 的 DOM 级测试仍需引入 jsdom（依赖决策，未做）",
-          "evidence": "见 G7-4a..4d"
+          "status": "done",
+          "acceptance": "a/b/c/d 已完成；DOM 级测试决策：不引入 jsdom（见 ADR），DOM 行为由真实 Electron E2E 覆盖，视图逻辑继续抽纯模块",
+          "evidence": "G7-4a..4d 证据 + docs/design/g7-4-dom-testing-decision.md（2026-11-01 决策+重评条件）"
         },
         {
           "id": "G7-4a",
