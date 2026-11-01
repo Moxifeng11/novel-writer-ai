@@ -1349,6 +1349,7 @@ export class AgentWorkbenchView extends ItemView {
             turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [],
             prunedChars: 0, prunedResults: 0, compactions: 0, compactedEvents: 0, steers: 0,
             contextTokens: 0, windowUsage: 0, spilledResults: 0, spilledChars: 0,
+            modelSteps: 0, toolMs: 0, trimmedTurns: 0, compactionCalls: 0, promptTokens: 0, completionTokens: 0,
         };
 
         // 遥测网格：复用既有的 grid 容器
@@ -1358,11 +1359,14 @@ export class AgentWorkbenchView extends ItemView {
             const cells: Array<[string, string]> = [
                 ['轮次', String(telemetry.turns)],
                 ['模型调用', String(telemetry.modelCalls)],
+                ['模型步数', String(telemetry.modelSteps)],
                 ['工具调用', `${telemetry.toolOk}/${telemetry.toolCalls}`],
                 ['失败', String(telemetry.toolFail)],
+                ['工具耗时', telemetry.toolMs > 0 ? `${(telemetry.toolMs / 1000).toFixed(1)}s` : '0'],
+                ['裁剪', telemetry.trimmedTurns > 0 ? `${telemetry.trimmedTurns} 轮` : '0'],
                 // dsh token-meter / pruner 的可观测化：裁剪与压缩省下的上下文
                 ['省字符', telemetry.prunedChars > 0 ? `${Math.round(telemetry.prunedChars / 1000)}k` : '0'],
-                ['压缩', String(telemetry.compactions)],
+                ['压缩', telemetry.compactionCalls > 0 ? `${telemetry.compactions}（${telemetry.compactionCalls} 次）` : String(telemetry.compactions)],
                 // v4.20 dsh token-meter：会话上下文规模与窗口占用
                 ['上下文', telemetry.contextTokens > 0 ? `~${Math.round(telemetry.contextTokens / 1000)}k` : '0'],
                 ['窗口', telemetry.windowUsage > 0 ? `${Math.round(telemetry.windowUsage * 100)}%` : '—'],

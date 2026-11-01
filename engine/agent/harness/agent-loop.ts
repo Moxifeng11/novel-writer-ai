@@ -12,6 +12,7 @@
  */
 import { AgentSessionLog } from './session-log';
 import { assembleHarnessSystemPrompt } from './prompt-sections';
+import { fitTurnsToBudget, resolveContextBudget } from './context-fit';
 import type { HarnessToolRegistry } from './tool-registry';
 import type {
     DerivedTurn,
@@ -62,6 +63,10 @@ export interface HarnessLoopOptions {
      */
     requestApproval?: (request: HarnessApprovalRequest) => Promise<boolean>;
     writeApproval?: 'allow' | 'ask';
+    /** 模型上下文窗口（token）。提供后每步调用前按预算裁剪历史 */
+    contextWindowTokens?: number;
+    /** 预算预留（默认 2000 token，给输出与模板固定段） */
+    contextHeadroomTokens?: number;
 }
 
 export interface HarnessLoopTurnResult {
@@ -78,6 +83,14 @@ export interface HarnessLoopTurnResult {
     /** 本回合落盘的大结果条数与节省下的字符数 */
     spilledResults: number;
     spilledChars: number;
+    /** 本回合实际模型调用次数（含工具后续步骤） */
+    modelSteps: number;
+    /** 工具执行总耗时（毫秒） */
+    toolMs: number;
+    /** 为适配上下文被裁剪/丢弃的轮次数 */
+    trimmedTurns: number;
+    /** provider 返回的用量累计（若支持） */
+    usage: { prompt: number; completion: number; total: number };
 }
 
 const DEFAULT_MAX_STEPS = 6;
@@ -263,7 +276,11 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
     const result: HarnessLoopTurnResult = {
         reply: '', chips: [], toolCalls: [], usedAi: false, failed: false,
         spilledResults: 0, spilledChars: 0,
+        modelSteps: 0, toolMs: 0, trimmedTurns: 0,
+        usage: { prompt: 0, completion: 0, total: 0 },
     };
+    const budgetTokens = resolveContextBudget(options.contextWindowTokens, maxTokens, options.contextHeadroomTokens);
+    let systemChars = 0;
     const spillPolicy = options.spillPolicy || DEFAULT_SPILL_POLICY;
     let lastToolContent = '';
     let lastToolFailed = false;
@@ -303,7 +320,17 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
             registry: toolset,
             planSteps: plan?.steps,
         });
-        const turns: DerivedTurn[] = log.derive();
+        systemChars = system.length;
+        const derived: DerivedTurn[] = log.derive();
+        // 回合内预算：每次模型调用前裁剪，避免 6 次大工具结果撑爆窗口
+        const fitted = fitTurnsToBudget(derived, budgetTokens, systemChars);
+        result.trimmedTurns += fitted.trimmedTurns + fitted.droppedTurns;
+        if (fitted.overBudget) {
+            result.failed = true;
+            result.failReason = `上下文超预算（约 ${fitted.estimatedTokens} token，预算 ${budgetTokens}）。请缩短本章参考或清理会话后重试。`;
+            return result;
+        }
+        const turns = fitted.turns;
 
         let assistant;
         try {
@@ -319,6 +346,12 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
             return result;
         }
         result.usedAi = true;
+        result.modelSteps += 1;
+        if (assistant.usage) {
+            result.usage.prompt += Number(assistant.usage.prompt) || 0;
+            result.usage.completion += Number(assistant.usage.completion) || 0;
+            result.usage.total += Number(assistant.usage.total) || 0;
+        }
 
         const parsed = parseAssistantTurn(assistant.raw || '') ?? assistant;
         const reply = parsed.reply || assistant.reply || '';
@@ -407,6 +440,7 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
                 const startedAt = Date.now();
                 toolResult = await toolset.execute(tool.name, tool.args, toolCtx);
                 toolDurationMs = Date.now() - startedAt;
+                result.toolMs += toolDurationMs;
             }
         }
         const finalToolResult = toolResult ?? { ok: false, content: '工具未执行' };

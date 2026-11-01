@@ -26,6 +26,7 @@ import {
     type HarnessSessionSnapshot,
 } from './session-snapshot';
 import { buildTimeContextMessage, timeContextKey } from '../../../shared/time-context';
+import { resolveCompactionCharThreshold } from './context-fit';
 import type { DerivedTurn } from './harness-types';
 
 /** 会话压缩配置（吸收 dsh compaction：压力触发 → 范围替换为单个摘要节点） */
@@ -44,6 +45,8 @@ export interface HarnessCompactionOptions {
 export interface AgentHarnessEngineOptions {
     /** 模型上下文窗口（token）；缺省从插件设置 maxContext 读取 */
     contextWindowTokens?: number;
+    /** 上下文预算预留（默认 2000 token） */
+    contextHeadroomTokens?: number;
     ctx: AgentContext;
     adapter: HarnessAdapter;
     portDeps: Omit<HostToolDeps, 'memory'>;
@@ -71,7 +74,19 @@ export interface AgentHarnessEngineOptions {
 
 export interface HarnessTelemetry {
     turns: number;
+    /** 回合数（旧字段保留） */
     modelCalls: number;
+    /** 模型调用步数（含工具后续与压缩） */
+    modelSteps: number;
+    /** 工具执行总耗时（毫秒） */
+    toolMs: number;
+    /** 为适配上下文被裁剪/丢弃的轮次 */
+    trimmedTurns: number;
+    /** 压缩专用模型调用次数 */
+    compactionCalls: number;
+    /** provider 返回的用量（若支持） */
+    promptTokens: number;
+    completionTokens: number;
     toolCalls: number;
     toolOk: number;
     toolFail: number;
@@ -107,6 +122,7 @@ export class AgentHarnessEngine {
         turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [],
         prunedChars: 0, prunedResults: 0, compactions: 0, compactedEvents: 0, steers: 0,
         contextTokens: 0, windowUsage: 0, spilledResults: 0, spilledChars: 0,
+        modelSteps: 0, toolMs: 0, trimmedTurns: 0, compactionCalls: 0, promptTokens: 0, completionTokens: 0,
     };
     /** 回合内收件箱（dsh steering）：用户在一回合进行中补充的话 */
     private inbox: string[] = [];
@@ -225,7 +241,7 @@ export class AgentHarnessEngine {
         if (!compaction) return;
         const threshold = compaction.thresholdTurns ?? 30;
         const keepTurns = compaction.keepTurns ?? 12;
-        const thresholdChars = compaction.thresholdChars ?? 32_000;
+        const thresholdChars = resolveCompactionCharThreshold(this.options.contextWindowTokens, compaction.thresholdChars);
         const turns = this.log.derive(10_000).length;
         const chars = this.log.derivedChars(10_000);
         // 压力信号：任一超阈值就压缩（只靠轮次时，几段超长工具结果会一直撑满上下文）
@@ -257,6 +273,7 @@ export class AgentHarnessEngine {
             // 保留最近的 24k：被删范围里靠后的轮次才是最新结论（已确认结构/已写章节），
             // 旧实现 slice(0) 丢掉的正是这些内容。
             .slice(-24_000);
+        this.telemetry.compactionCalls++;
         const result = await this.options.adapter.complete({
             system: '你是会话压缩器。把一段小说创作助手与用户的对话历史压缩成一份摘要，保留：已确认的创作决定（项目名/类型/结构/基调等）、已执行的工具操作及其结果、未完成的待办与用户的明确要求。用条目列出，总长不超过 400 字。只输出摘要正文。',
             turns: [{ role: 'user', text: transcript }],
@@ -291,6 +308,8 @@ export class AgentHarnessEngine {
                 spillPolicy: this.options.spillPolicy,
                 requestApproval: this.options.requestApproval ?? this.defaultApprovalHandler(),
                 writeApproval: this.options.writeApproval,
+                contextWindowTokens: this.options.contextWindowTokens,
+                contextHeadroomTokens: this.options.contextHeadroomTokens,
             });
             return this.finishTurn(outcome);
         } finally {
@@ -389,12 +408,32 @@ export class AgentHarnessEngine {
         }
     }
 
-    private finishTurn(outcome: { usedAi: boolean; failed: boolean; failReason?: string; reply: string; chips: HarnessChip[]; toolCalls: Array<{ tool: string; ok: boolean; summary: string }>; spilledResults?: number; spilledChars?: number }): HarnessTurnOutcome {
+    private finishTurn(outcome: {
+        usedAi: boolean;
+        failed: boolean;
+        failReason?: string;
+        reply: string;
+        chips: HarnessChip[];
+        toolCalls: Array<{ tool: string; ok: boolean; summary: string; data?: Record<string, unknown> }>;
+        spilledResults?: number;
+        spilledChars?: number;
+        modelSteps?: number;
+        toolMs?: number;
+        trimmedTurns?: number;
+        usage?: { prompt: number; completion: number; total: number };
+    }): HarnessTurnOutcome {
         // 遥测累积（工作台右栏监控）
         this.telemetry.turns++;
         this.telemetry.spilledResults += outcome.spilledResults || 0;
         this.telemetry.spilledChars += outcome.spilledChars || 0;
         if (outcome.usedAi) this.telemetry.modelCalls++;
+        this.telemetry.modelSteps += outcome.modelSteps || 0;
+        this.telemetry.toolMs += outcome.toolMs || 0;
+        this.telemetry.trimmedTurns += outcome.trimmedTurns || 0;
+        if (outcome.usage) {
+            this.telemetry.promptTokens += outcome.usage.prompt || 0;
+            this.telemetry.completionTokens += outcome.usage.completion || 0;
+        }
         const prune = this.log.pruneStats;
         this.telemetry.prunedChars += prune.chars;
         this.telemetry.prunedResults += prune.results;
