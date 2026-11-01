@@ -9,6 +9,7 @@
 import { App, TFile, TFolder, Modal, Notice } from 'obsidian';
 import { showSuccess, showError, showWarning } from '../../utils/helpers';
 import { OutlineTreeVolume, OutlineTreeChapter, SceneOutlineTreeVolume, SceneOutlineTreeChapter, SceneNode, SceneType, SceneStatus, SCENE_TYPE_LABELS, SCENE_STATUS_LABELS } from '../../shared/types';
+import { listFolderFiles } from '../../shared/vault-tree';
 import { pjVolumeOutlineDir, pjVolumeOutlineFile, pjBodyDir, pjStepDir, pjBodyFile, pjStepDir as pjStepDirFn } from '../../shared/paths';
 import { ObsidianFileSystem } from '../../shared/file-system-port';
 import { createLogger } from '../../shared/logger';
@@ -967,8 +968,7 @@ export class OutlineTreeController {
             }
 
             try {
-                const allFiles = this.app.vault.getFiles();
-                const oldBodyFiles = allFiles.filter(f => f.path.startsWith(oldBodyDir + '/'));
+                const oldBodyFiles = listFolderFiles<TFile>(this.app.vault, oldBodyDir);
                 for (const f of oldBodyFiles) {
                     const newPath = f.path.replace(oldBodyDir, newBodyDir);
                     const newDir = newPath.substring(0, newPath.lastIndexOf('/'));
@@ -980,8 +980,7 @@ export class OutlineTreeController {
             }
 
             try {
-                const allFiles = this.app.vault.getFiles();
-                const oldStepFiles = allFiles.filter(f => f.path.startsWith(oldStepDir + '/'));
+                const oldStepFiles = listFolderFiles<TFile>(this.app.vault, oldStepDir);
                 for (const f of oldStepFiles) {
                     const newPath = f.path.replace(oldStepDir, newStepDir);
                     const newDir = newPath.substring(0, newPath.lastIndexOf('/'));
@@ -1128,7 +1127,7 @@ export class OutlineTreeController {
             const oldStepDir = pjStepDirFn(project, volNum, p.oldNum);
             const newStepDir = pjStepDirFn(project, volNum, p.newNum);
             try {
-                const stepFiles = this.app.vault.getFiles().filter(f => f.path.startsWith(oldStepDir + '/'));
+                const stepFiles = listFolderFiles<TFile>(this.app.vault, oldStepDir);
                 for (const f of stepFiles) {
                     const originalPath = f.path;
                     const temp = toTemp(originalPath);
@@ -1606,8 +1605,7 @@ export class OutlineTreeController {
                     }
 
                     const stepDir = pjStepDirFn(project, vol.num, chapter.num);
-                    const allFiles = this.app.vault.getFiles();
-                    const stepFiles = allFiles.filter(f => f.path.startsWith(stepDir + '/'));
+                    const stepFiles = listFolderFiles<TFile>(this.app.vault, stepDir);
                     for (const sf of stepFiles) {
                         await this.app.vault.trash(sf, true);
                     }
@@ -1627,8 +1625,8 @@ export class OutlineTreeController {
         if (!project) return;
 
         const volumeDir = pjVolumeOutlineDir(project);
-        const volumeFiles = this.app.vault.getFiles()
-            .filter(f => f.path.startsWith(`${volumeDir}/`) && f.name.endsWith('_分卷大纲.md'))
+        const volumeFiles = listFolderFiles<TFile>(this.app.vault, volumeDir)
+            .filter(f => f.name.endsWith('_分卷大纲.md'))
             .sort((a, b) => a.path.localeCompare(b.path, 'zh-Hans-CN'));
         if (volumeFiles.length === 0) {
             log.warn('[OutlineTree] 未找到分卷大纲目录:', volumeDir);
@@ -1670,8 +1668,7 @@ export class OutlineTreeController {
                 let summary = '';
                 try {
                     const stepDir = pjStepDir(project, volNum, chNum);
-                    const outlineFiles = this.app.vault.getFiles().filter(f =>
-                        f.path.startsWith(`${stepDir}/`) &&
+                    const outlineFiles = listFolderFiles<TFile>(this.app.vault, stepDir).filter(f =>
                         f.name.includes(chapName) &&
                         f.name.includes('大纲摘要')
                     );
@@ -1713,8 +1710,8 @@ export class OutlineTreeController {
         if (!project) return;
 
         const volDir = pjVolumeOutlineDir(project);
-        const volumeFiles = this.app.vault.getFiles()
-            .filter(f => f.path.startsWith(`${volDir}/`) && f.name.endsWith('_分卷大纲.md'));
+        const volumeFiles = listFolderFiles<TFile>(this.app.vault, volDir)
+            .filter(f => f.name.endsWith('_分卷大纲.md'));
 
         let targetFile: TFile | null = null;
         let targetVolN = 0;
@@ -1742,9 +1739,8 @@ export class OutlineTreeController {
 
         if (summary && targetVolN > 0) {
             const stepDir = pjStepDir(project, targetVolN, chNum);
-            const allFiles = this.app.vault.getFiles();
-            const outlineFile = allFiles.find(f =>
-                f.path.startsWith(`${stepDir}/`) &&
+            const outlineFile = listFolderFiles<TFile>(this.app.vault, stepDir).find(f =>
+                f.name.includes(`第${chNum}章`) &&
                 f.name.includes(`第${chNum}章`) &&
                 f.name.includes('大纲摘要')
             );

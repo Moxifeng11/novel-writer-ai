@@ -15,14 +15,19 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// 说明：engine/context-manager.ts 只保留 detectProjects 一处全库扫描——
+// 说明：engine/context-manager.ts 与 ui/cross-volume-state-modal.ts 各保留一处
+// 「发现所有项目」的全库扫描（含旧版根目录布局），属冷路径，不在清单内。
+// engine/context-manager.ts 只保留 detectProjects 一处全库扫描——
 // 它的职责就是「发现所有项目（含旧版根目录布局）」，属于冷路径，不在清单内。
 const HOT_FILES = [
     'engine/settlement-engine.ts',
     'engine/step-result-saver.ts',
     'engine/chapter-utils.ts',
     'engine/knowledge-usage.ts',
+    'engine/analysis-report-engine.ts',
     'services/writing-stats-service.ts',
+    'ui/continue-chapters-modal.ts',
+    'ui/full-writer/outline-tree-controller.ts',
 ];
 
 /** 去掉注释，避免把说明文字当成调用 */

@@ -1,5 +1,6 @@
 import { App, TFile } from 'obsidian';
 import { splitTableCells } from '../shared/chapter-table';
+import { listFolderFiles } from '../shared/vault-tree';
 import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
 import { 
@@ -399,9 +400,8 @@ export class AnalysisReportEngine {
         chapterText: string
     ): Promise<EntityChange[]> {
         const changes: EntityChange[] = [];
-        const charFiles = this.getVaultMeta().getFiles().filter(f =>
-            f.path.startsWith(pjCharsDir(project)) && f instanceof TFile && f.name !== '人物模板.md'
-        );
+        const charFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjCharsDir(project))
+            .filter(f => f.name !== '人物模板.md');
 
         const charNames: string[] = [];
         const charStates: Record<string, { oldStatus?: string; file: TFile }> = {};
@@ -568,9 +568,7 @@ ${chapterText.slice(0, 5000)}
 
     private analyzeLocationEntities(project: string, chapterText: string): EntityChange[] {
         const changes: EntityChange[] = [];
-        const locFiles = this.getVaultMeta().getFiles().filter(f =>
-            f.path.startsWith(pjLocsDir(project)) && f instanceof TFile
-        );
+        const locFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjLocsDir(project));
 
         for (const f of locFiles) {
             const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -593,9 +591,7 @@ ${chapterText.slice(0, 5000)}
 
     private analyzeFactionEntities(project: string, chapterText: string): EntityChange[] {
         const changes: EntityChange[] = [];
-        const factionFiles = this.getVaultMeta().getFiles().filter(f =>
-            f.path.startsWith(pjFactionsDir(project)) && f instanceof TFile
-        );
+        const factionFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjFactionsDir(project));
 
         for (const f of factionFiles) {
             const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -618,9 +614,7 @@ ${chapterText.slice(0, 5000)}
 
     private analyzeItemEntities(project: string, chapterText: string): EntityChange[] {
         const changes: EntityChange[] = [];
-        const itemFiles = this.getVaultMeta().getFiles().filter(f =>
-            f.path.startsWith(pjItemsDir(project)) && f instanceof TFile
-        );
+        const itemFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjItemsDir(project));
 
         for (const f of itemFiles) {
             const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -1166,9 +1160,7 @@ ${chapterText.slice(0, 5000)}
     private async applySingleCharacterStatusChange(project: string, change: EntityChange): Promise<boolean> {
         try {
             const folderPath = pjCharsDir(project);
-            const files = this.getVaultMeta().getFiles().filter(f =>
-                f.path.startsWith(folderPath) && f instanceof TFile
-            );
+            const files = listFolderFiles<TFile>(this.getVaultMeta(), folderPath);
 
             let targetFile: TFile | null = null;
             for (const f of files) {

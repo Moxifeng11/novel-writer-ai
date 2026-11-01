@@ -9,6 +9,7 @@ import { RE_VOLUME_HEADER, RE_RANGE_NUMBERS, RE_OUTLINE_TABLE_ROW } from '../sha
 import { pjBodyDir, pjBodyFile, pjStepDir, pjVolumeOutlineFile, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjVolumeOutlineDir } from '../shared/paths';
 import { BodyWriter } from '../engine/body-writer';
 import { describeBodyFormat } from '../shared/body-format';
+import { listFolderFiles } from '../shared/vault-tree';
 import { createLogger } from '../shared/logger';
 
 
@@ -199,19 +200,19 @@ export class ContinueChaptersModal extends Modal {
                 chapterNumber: chapter.num,
             };
 
-            const existingBody = findBodyFileByChapterNum(this.app.vault.getFiles(), bodyDir, chapter.num, chapName);
+            const existingBody = findBodyFileByChapterNum(listFolderFiles<TFile>(this.app.vault, bodyDir), bodyDir, chapter.num, chapName);
             if (!existingBody) {
                 const bodyContent = await templateService.getBodyTemplate(vars);
                 await this.app.vault.create(bodyPath, bodyContent);
             }
 
-            const existingOutline = findChapterFile(this.app.vault.getFiles(), basePath, '大纲摘要');
+            const existingOutline = findChapterFile(listFolderFiles<TFile>(this.app.vault, basePath), basePath, '大纲摘要');
             if (!existingOutline) {
                 const outlineContent = await templateService.getOutlineTemplate(vars);
                 await this.app.vault.create(outlinePath, outlineContent);
             }
 
-            const existingInfo = findChapterFile(this.app.vault.getFiles(), basePath, '信息规划');
+            const existingInfo = findChapterFile(listFolderFiles<TFile>(this.app.vault, basePath), basePath, '信息规划');
             if (!existingInfo) {
                 const infoContent = await templateService.getInfoPlanTemplate(vars);
                 await this.app.vault.create(infoPath, infoContent);
@@ -333,7 +334,7 @@ export class ContinueChaptersModal extends Modal {
                     ? pjBodyDir(project, volN)
                     : `${project}/${SUBDIR_BODY_ROOT}/${volume}`;
                 const bodyPath = volN > 0 ? pjBodyFile(project, volN, chapter.num) : `${bodyDir}/${chapName}_正文.md`;
-                let bodyFile = findBodyFileByChapterNum(this.app.vault.getFiles(), bodyDir, chapter.num, chapName);
+                let bodyFile = findBodyFileByChapterNum(listFolderFiles<TFile>(this.app.vault, bodyDir), bodyDir, chapter.num, chapName);
                 if (!bodyFile) {
                     await mkdirp(this.app, bodyDir);
                     const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
@@ -445,7 +446,7 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
         }
         if (volN > 0) {
             const basePath = pjStepDir(project, volN, chapter.num);
-            const outlineFile = findChapterFile(this.app.vault.getFiles(), basePath, '大纲摘要');
+            const outlineFile = findChapterFile(listFolderFiles<TFile>(this.app.vault, basePath), basePath, '大纲摘要');
             if (outlineFile) {
                 try {
                     const content = stripFrontmatter(await this.app.vault.read(outlineFile));
@@ -487,7 +488,7 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
         const volumes: string[] = [];
         const visited = new Set<string>();
 
-        for (const f of this.app.vault.getFiles()) {
+        for (const f of listFolderFiles<TFile>(this.app.vault, `${project}/03-大纲与章节`, { recursive: true })) {
             const m = f.path.match(new RegExp(`${project}/(?:${SUBDIR_BODY_ROOT}|${SUBDIR_STEP_ROOT})/(第\\d+卷)/`));
             if (m && !visited.has(m[1])) {
                 volumes.push(m[1]);
@@ -529,8 +530,8 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
         if (legacy instanceof TFile) parts.push(await this.app.vault.read(legacy));
         // 按卷归档：扫描 03-大纲与章节/分卷大纲/*.md
         const volOutlineDir = `${pjVolumeOutlineDir(project)}`;
-        for (const f of this.app.vault.getFiles()) {
-            if (f.path.startsWith(volOutlineDir) && f.name.endsWith('_分卷大纲.md')) {
+        for (const f of listFolderFiles<TFile>(this.app.vault, pjVolumeOutlineDir(project))) {
+            if (f.name.endsWith('_分卷大纲.md')) {
                 try { parts.push(await this.app.vault.read(f)); } catch (e) { log.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }
             }
         }
