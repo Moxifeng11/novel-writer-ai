@@ -5,14 +5,15 @@
  * 每段职责单一（身份 / 工具目录 / 记忆 / 上下文 / 策略 / 输出协议），
  * 便于单独测试与后续替换。
  */
-import type { HarnessToolRegistry } from './tool-registry';
+import type { HarnessToolCatalog } from './tool-registry';
 import type { HarnessMemoryState } from './harness-types';
 
 export interface HarnessPromptContext {
     projects: string[];
     activeProject: string | null;
     memory: HarnessMemoryState;
-    registry: HarnessToolRegistry;
+    /** 工具目录（step 级快照；只需要 describeForPrompt 能力） */
+    registry: HarnessToolCatalog;
     /** 创作计划（update_plan 工具维护；为空时不渲染该段） */
     planSteps?: Array<{ step: string; status: string }>;
 }

@@ -240,6 +240,6 @@ describe('AgentHarnessEngine — 压力触发压缩', () => {
 
         const telemetry = engine.getTelemetry();
         expect(telemetry.compactions).toBeGreaterThan(0);
-        expect(log.snapshot().some(e => e.type === 'user_message' && e.text.includes('历史摘要'))).toBe(true);
+        expect(log.snapshot().some(e => e.type === 'summary' && e.text.includes('历史摘要'))).toBe(true);
     });
 });

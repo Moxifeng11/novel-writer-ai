@@ -56,6 +56,10 @@ export interface AgentHarnessEngineOptions {
     /** 大结果落盘（dsh spill）：宿主提供写盘能力，超过阈值的结果只留定位符 */
     spill?: SpillSink;
     spillPolicy?: SpillPolicy;
+    /** 工具审批（dangerous 工具 fail-closed）；未提供时 dangerous 一律拒绝 */
+    requestApproval?: (request: import('./harness-types').HarnessApprovalRequest) => Promise<boolean>;
+    /** 写工具是否需要询问（默认 allow，保持既有行为） */
+    writeApproval?: 'allow' | 'ask';
     /**
      * 会话变化回调（dsh session-persistence-jsonl）：
      * 每次回合结束后把快照交给宿主落盘；宿主负责节流与文件管理。
@@ -285,6 +289,8 @@ export class AgentHarnessEngine {
                 takeInbox: () => this.inbox.splice(0, this.inbox.length),
                 spill: this.options.spill,
                 spillPolicy: this.options.spillPolicy,
+                requestApproval: this.options.requestApproval ?? this.defaultApprovalHandler(),
+                writeApproval: this.options.writeApproval,
             });
             return this.finishTurn(outcome);
         } finally {
@@ -362,6 +368,16 @@ export class AgentHarnessEngine {
                 text: turn.role === 'user' ? turn.text.replace(/^【当前时间】.*?\n?/, '') : turn.text,
             }))
             .filter(turn => turn.text.trim().length > 0);
+    }
+
+    /** 默认审批：复用宿主的 confirmDangerousAction；没有端口时 fail-closed */
+    private defaultApprovalHandler(): ((request: import('./harness-types').HarnessApprovalRequest) => Promise<boolean>) | undefined {
+        const port = this.options.portDeps?.port;
+        if (!port?.confirmDangerousAction) return undefined;
+        return async (request) => port.confirmDangerousAction!({
+            title: `Agent 请求执行「${request.tool}」`,
+            detail: request.reason,
+        });
     }
 
     private emitSessionChange(): void {

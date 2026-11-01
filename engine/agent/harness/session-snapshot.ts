@@ -60,7 +60,7 @@ function isEvent(value: unknown): value is AgentSessionEvent {
     const type = (value as { type?: unknown }).type;
     return typeof type === 'string' && [
         'system_message', 'user_message', 'context_message', 'assistant_message',
-        'tool_call', 'tool_result', 'turn_marker',
+        'summary', 'tool_call', 'tool_result', 'turn_marker',
     ].includes(type);
 }
 

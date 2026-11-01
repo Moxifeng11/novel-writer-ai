@@ -778,8 +778,9 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
                     }
                 }
             }
-            // 危险命令必须让用户确认（吸收 dsh user-approval）；没有确认端口时拒绝执行
-            if (isDangerousCommand(commandId)) {
+            // 危险命令必须让用户确认（吸收 dsh user-approval）；没有确认端口时拒绝执行。
+            // 若回合层已通过 HarnessApprovalRequest 批准过，这里不再二次弹窗。
+            if (isDangerousCommand(commandId) && toolCtx.approvalGranted !== true) {
                 if (!port.confirmDangerousAction) {
                     return {
                         ok: false,

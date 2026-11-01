@@ -14,6 +14,8 @@ export class AgentSessionLog {
     private events: AgentSessionEvent[] = [];
     /** 工具调用计数，用于生成稳定 callId */
     private callSeq = 0;
+    /** 事件序号（append 时单调递增；恢复时取历史最大值） */
+    private eventSeq = 0;
     /** 投影时裁剪工具结果的预算 */
     private pruneConfig: PruneConfig = { ...DEFAULT_PRUNE_CONFIG };
     /** 最近一次 derive 的裁剪统计（遥测用） */
@@ -39,8 +41,14 @@ export class AgentSessionLog {
         return { chars: this.lastPrunedChars, results: this.lastPrunedResults };
     }
 
+    /** 写入事件：补齐 seq/ts（dsh：日志即事实源，事件必须可排序） */
     append(event: AgentSessionEvent): void {
-        this.events.push(event);
+        this.events.push(this.stamp(event));
+    }
+
+    private stamp(event: AgentSessionEvent): AgentSessionEvent {
+        this.eventSeq += 1;
+        return { ...event, seq: event.seq ?? this.eventSeq, ts: event.ts ?? Date.now() } as AgentSessionEvent;
     }
 
     nextCallId(tool: string): string {
@@ -62,6 +70,8 @@ export class AgentSessionLog {
     restore(events: readonly AgentSessionEvent[], callSeq: number): void {
         this.events = events.map(event => ({ ...event }));
         this.callSeq = Math.max(0, Math.floor(callSeq) || 0);
+        this.eventSeq = this.events.reduce((max, event) => Math.max(max, event.seq ?? 0), 0)
+            || this.events.length;
         this.lastPrunedChars = 0;
         this.lastPrunedResults = 0;
     }
@@ -70,6 +80,7 @@ export class AgentSessionLog {
     reset(): void {
         this.events = [];
         this.callSeq = 0;
+        this.eventSeq = 0;
         this.lastPrunedChars = 0;
         this.lastPrunedResults = 0;
     }
@@ -91,6 +102,9 @@ export class AgentSessionLog {
         for (const event of this.events) {
             switch (event.type) {
                 case 'user_message':
+                    turns.push({ role: 'user', text: event.text });
+                    break;
+                case 'summary':
                     turns.push({ role: 'user', text: event.text });
                     break;
                 case 'context_message':
@@ -172,7 +186,7 @@ export class AgentSessionLog {
         for (let i = events.length - 1; i >= 0; i--) {
             const type = events[i].type;
             if (type === 'user_message' || type === 'context_message'
-                || type === 'assistant_message' || type === 'tool_result') {
+                || type === 'assistant_message' || type === 'tool_result' || type === 'summary') {
                 derivedSeen++;
                 if (derivedSeen >= keepTurns) {
                     keepStart = i;
@@ -199,7 +213,7 @@ export class AgentSessionLog {
         const removed = cut - keptSystem.length;
         this.events = [
             ...keptSystem,
-            { type: 'user_message', text: `【历史摘要】以下是更早对话的压缩摘要（原文已归档）：\n${summary}` },
+            this.stamp({ type: 'summary', text: `【历史摘要】以下是更早对话的压缩摘要（原文已归档）：\n${summary}` }),
             ...events.slice(cut),
         ];
         return removed;

@@ -16,6 +16,7 @@ import type { HarnessToolRegistry } from './tool-registry';
 import type {
     DerivedTurn,
     HarnessAdapter,
+    HarnessApprovalRequest,
     HarnessChip,
     HarnessMemoryState,
     HarnessToolContext,
@@ -55,14 +56,20 @@ export interface HarnessLoopOptions {
      */
     spill?: SpillSink;
     spillPolicy?: SpillPolicy;
+    /**
+     * 工具审批（dsh approval 的移植）。dangerous 工具没有审批端口时一律拒绝；
+     * write 工具是否询问由 `writeApproval` 决定（默认 allow，保持既有行为）。
+     */
+    requestApproval?: (request: HarnessApprovalRequest) => Promise<boolean>;
+    writeApproval?: 'allow' | 'ask';
 }
 
 export interface HarnessLoopTurnResult {
     /** 最终给用户看的回复 */
     reply: string;
     chips: HarnessChip[];
-    /** 本回合执行过的工具调用 */
-    toolCalls: Array<{ tool: string; ok: boolean; summary: string }>;
+    /** 本回合执行过的工具调用（data 为工具产出的结构化结果） */
+    toolCalls: Array<{ tool: string; ok: boolean; summary: string; data?: Record<string, unknown> }>;
     /** 是否至少成功调用过一次模型 */
     usedAi: boolean;
     /** 模型/网络层失败（宿主应考虑降级） */
@@ -260,11 +267,13 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
     const spillPolicy = options.spillPolicy || DEFAULT_SPILL_POLICY;
     let lastToolContent = '';
     let lastToolFailed = false;
-    /** 连续重复调用链：同一「工具 + 规范化参数」连续出现的次数 */
-    let lastCallKey = '';
-    let repeatStreak = 0;
-    /** 已发过提醒的阈值（3/5/8），避免每次重复都刷一条 */
-    const remindedAt = new Set<number>();
+    /**
+     * 整回合调用计数：key = 工具 + 规范化参数。
+     * 旧实现只比对「上一次调用」，A-B-A-B 交替即可绕过写工具拦截。
+     */
+    const callCounts = new Map<string, number>();
+    /** 每个 key 已提醒过的阈值（3/5/8），避免反复刷同一条提醒 */
+    const remindedAt = new Map<string, Set<number>>();
 
     const drainInbox = (): void => {
         if (!options.takeInbox) return;
@@ -285,11 +294,13 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
         // 回合内补充：每步调模型前把 inbox 里的用户消息写进日志
         drainInbox();
 
+        // 本 step 的工具集快照：提示词与执行同源（dsh ResolvedToolSet）
+        const toolset = registry.snapshot();
         const system = assembleHarnessSystemPrompt({
             projects,
             activeProject,
             memory,
-            registry,
+            registry: toolset,
             planSteps: plan?.steps,
         });
         const turns: DerivedTurn[] = log.derive();
@@ -338,34 +349,70 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
         // - none（只读/查询）：允许重跑，但在 3/5/8 连续重复时注入一条上下文提醒，
         //   让模型自己意识到在原地打转（dsh 的 advisory 语义，不硬否决）。
         const callKey = `${tool.name}|${canonicalizeArgs(tool.args)}`;
-        if (callKey === lastCallKey) repeatStreak += 1;
-        else {
-            lastCallKey = callKey;
-            repeatStreak = 1;
-            remindedAt.clear();
-        }
-        const sideEffect = registry.get(tool.name)?.sideEffect ?? 'write';
-        let toolResult: { ok: boolean; content: string };
-        if (sideEffect !== 'none' && repeatStreak >= 2) {
+        const repeatCount = (callCounts.get(callKey) || 0) + 1;
+        callCounts.set(callKey, repeatCount);
+        const toolDef = toolset.get(tool.name);
+        const sideEffect = toolDef?.sideEffect ?? 'write';
+
+        let toolResult: { ok: boolean; content: string; data?: Record<string, unknown> } | null = null;
+        let toolDurationMs: number | undefined;
+        let approvalGranted = false;
+        if (sideEffect !== 'none' && repeatCount >= 2) {
             toolResult = {
                 ok: false,
-                content: `重复调用已被阻止：本回合已经用相同参数执行过「${tool.name}」。请直接使用上一次的结果继续，或换一种做法。`,
+                content: `重复调用已被阻止：本回合已经用相同参数执行过「${tool.name}」（第 ${repeatCount} 次）。请直接使用上一次的结果继续，或换一种做法。`,
             };
         } else {
-            if (sideEffect === 'none' && [3, 5, 8].includes(repeatStreak) && !remindedAt.has(repeatStreak)) {
-                remindedAt.add(repeatStreak);
-                log.append({
-                    type: 'context_message',
-                    text: `【系统提醒】你已连续 ${repeatStreak} 次用完全相同的参数调用「${tool.name}」。`
-                        + '如果任务还没完成，请换一种做法或换个参数；如果信息已经足够，请直接给出结论。',
-                });
+            if (sideEffect === 'none' && [3, 5, 8].includes(repeatCount)) {
+                const reminded = remindedAt.get(callKey) ?? new Set<number>();
+                if (!reminded.has(repeatCount)) {
+                    reminded.add(repeatCount);
+                    remindedAt.set(callKey, reminded);
+                    log.append({
+                        type: 'context_message',
+                        text: `【系统提醒】你已连续 ${repeatCount} 次用完全相同的参数调用「${tool.name}」。`
+                            + '如果任务还没完成，请换一种做法或换个参数；如果信息已经足够，请直接给出结论。',
+                    });
+                }
             }
-            const toolCtx: HarnessToolContext = { memory: { slots: { ...memory.slots } }, plan, signal };
-            toolResult = await registry.execute(tool.name, tool.args, toolCtx);
+
+            // 审批：dangerous 一律 fail-closed；write 按会话策略（默认 allow）
+            const needsApproval = sideEffect === 'dangerous'
+                || (sideEffect === 'write' && options.writeApproval === 'ask');
+            if (needsApproval) {
+                const approved = options.requestApproval
+                    ? await options.requestApproval({
+                        tool: tool.name,
+                        args: tool.args,
+                        sideEffect: sideEffect === 'dangerous' ? 'dangerous' : 'write',
+                        reason: summarizeToolArgs(tool.name, tool.args),
+                    })
+                    : false;
+                if (!approved) {
+                    toolResult = {
+                        ok: false,
+                        content: `用户未批准执行「${tool.name}」。不要重复尝试；请说明你打算做什么，或改用无需写入的方式。`,
+                    };
+                } else {
+                    approvalGranted = true;
+                }
+            }
+            if (!toolResult) {
+                const toolCtx: HarnessToolContext = {
+                    memory: { slots: { ...memory.slots } },
+                    plan,
+                    signal,
+                    approvalGranted,
+                };
+                const startedAt = Date.now();
+                toolResult = await toolset.execute(tool.name, tool.args, toolCtx);
+                toolDurationMs = Date.now() - startedAt;
+            }
         }
+        const finalToolResult = toolResult ?? { ok: false, content: '工具未执行' };
         // 大结果落盘（dsh spill）：原文进 .sessions，日志只留定位符 + 头尾摘要。
         // 写盘失败时保留原文（宁可多花 token，也不能丢结果）。
-        let resultContent = toolResult.content;
+        let resultContent = finalToolResult.content;
         if (options.spill && shouldSpill(resultContent, spillPolicy)) {
             try {
                 const original = resultContent;
@@ -381,18 +428,21 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
             }
         }
         lastToolContent = resultContent;
-        lastToolFailed = !toolResult.ok;
+        lastToolFailed = !finalToolResult.ok;
         log.append({
             type: 'tool_result',
             callId,
             tool: tool.name,
-            ok: toolResult.ok,
+            ok: finalToolResult.ok,
             content: resultContent,
+            data: finalToolResult.data,
+            durationMs: toolDurationMs,
         });
         result.toolCalls.push({
             tool: tool.name,
-            ok: toolResult.ok,
+            ok: finalToolResult.ok,
             summary: summarizeToolArgs(tool.name, tool.args),
+            data: finalToolResult.data,
         });
 
         // 工具执行后若没有下一步模型调用的预算，直接把工具结果作为回复兜底

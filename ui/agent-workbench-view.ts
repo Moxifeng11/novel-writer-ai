@@ -893,9 +893,23 @@ export class AgentWorkbenchView extends ItemView {
                         bypassCache: true,
                         signal: opts?.signal,
                     });
-                    return { content: result.content, error: result.error, finishReason: result.finishReason };
+                    return {
+                        content: result.content,
+                        error: result.error,
+                        finishReason: result.finishReason,
+                        usage: result.usage,
+                    };
                 }),
                 portDeps: { port: this.port, ctx },
+                // 工具审批：危险工具一律询问（没有确认端口 = 拒绝）；写工具默认放行
+                requestApproval: async (request) => {
+                    const confirm = this.port.confirmDangerousAction;
+                    if (!confirm) return false;
+                    return confirm.call(this.port, {
+                        title: `Agent 请求执行「${request.tool}」`,
+                        detail: request.reason,
+                    });
+                },
                 // 会话压缩（dsh compaction 思路）：30 轮触发，保留最近 12 轮
                 compaction: { thresholdTurns: 30, keepTurns: 12 },
                 // 大结果落盘（dsh spill）：超过 6000 字符写 .sessions/spill，日志只留定位符

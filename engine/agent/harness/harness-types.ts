@@ -14,15 +14,36 @@
 // 会话事件（dsh session log 的精简移植）
 // ============================================================
 
+/**
+ * 事件元数据（dsh：日志即事实源，事件要可排序、可审计）。
+ * ts 为写入时刻；seq 为会话内单调序号，旧存档没有时由恢复逻辑补齐。
+ */
+export interface HarnessEventMeta {
+    readonly ts?: number;
+    readonly seq?: number;
+}
+
 export type AgentSessionEvent =
-    | { readonly type: 'system_message'; readonly text: string }
-    | { readonly type: 'user_message'; readonly text: string }
+    | ({ readonly type: 'system_message'; readonly text: string } & HarnessEventMeta)
+    | ({ readonly type: 'user_message'; readonly text: string } & HarnessEventMeta)
     /** 系统/守卫注入的上下文（进转写、按 user 角色呈现；dsh 的 context message） */
-    | { readonly type: 'context_message'; readonly text: string }
-    | { readonly type: 'assistant_message'; readonly text: string }
-    | { readonly type: 'tool_call'; readonly callId: string; readonly tool: string; readonly args: Record<string, unknown> }
-    | { readonly type: 'tool_result'; readonly callId: string; readonly tool: string; readonly ok: boolean; readonly content: string }
-    | { readonly type: 'turn_marker'; readonly marker: 'turn_start' | 'turn_end' };
+    | ({ readonly type: 'context_message'; readonly text: string } & HarnessEventMeta)
+    | ({ readonly type: 'assistant_message'; readonly text: string } & HarnessEventMeta)
+    /** 压缩摘要：独立事件类型，不再伪装成 user_message 靠前缀识别 */
+    | ({ readonly type: 'summary'; readonly text: string } & HarnessEventMeta)
+    | ({ readonly type: 'tool_call'; readonly callId: string; readonly tool: string; readonly args: Record<string, unknown> } & HarnessEventMeta)
+    | ({
+        readonly type: 'tool_result';
+        readonly callId: string;
+        readonly tool: string;
+        readonly ok: boolean;
+        readonly content: string;
+        /** 工具产出的结构化结果（给 UI/后续步骤用，不写进模型转写） */
+        readonly data?: Record<string, unknown>;
+        /** 执行耗时（毫秒） */
+        readonly durationMs?: number;
+    } & HarnessEventMeta)
+    | ({ readonly type: 'turn_marker'; readonly marker: 'turn_start' | 'turn_end' } & HarnessEventMeta);
 
 /** 从日志推导模型可见的对话转写（dsh deriveMessages 的移植） */
 export interface DerivedTurn {
@@ -38,6 +59,8 @@ export interface HarnessToolParameter {
     type: 'string' | 'number' | 'boolean' | 'object' | 'array';
     description: string;
     enum?: string[];
+    /** array 类型时元素类型（可选，声明后会被校验） */
+    items?: 'string' | 'number' | 'boolean';
     /** 缺省时工具自行决定（如从记忆回填） */
     required?: boolean;
 }
@@ -57,6 +80,16 @@ export interface HarnessToolContext {
     plan?: { steps: Array<{ step: string; status: string }> };
     /** 中止信号（用户关闭弹窗/取消） */
     signal?: AbortSignal;
+    /** 本回合该工具已通过宿主审批（避免工具内部二次弹窗） */
+    approvalGranted?: boolean;
+}
+
+/** 工具审批请求（dsh approval 的移植：缺省即拒绝） */
+export interface HarnessApprovalRequest {
+    tool: string;
+    args: Record<string, unknown>;
+    sideEffect: 'write' | 'dangerous';
+    reason: string;
 }
 
 export interface HarnessTool {
@@ -98,6 +131,8 @@ export interface HarnessAssistantTurn {
     chips?: Array<{ label: string; value: string; description?: string }>;
     /** 原始文本（日志/调试用；协议解析的事实来源） */
     raw?: string;
+    /** 模型返回的用量（provider 支持时用于成本遥测） */
+    usage?: { prompt?: number; completion?: number; total?: number };
 }
 
 export interface HarnessAdapter {
