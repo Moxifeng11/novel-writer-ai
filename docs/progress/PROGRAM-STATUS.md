@@ -5,14 +5,14 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
-- 当前基线：v4.22.0；单测 493 文件 / 5603 用例；E2E 25 条
-- 任务进度：34/55 已完成（62%），2 进行中，0 受阻
+- 当前基线：v4.22.0；单测 495 文件 / 5617 用例；E2E 25 条
+- 任务进度：40/55 已完成（73%），0 进行中，0 受阻
 
 ## 一、任务组总览
 
 | 组 | 名称 | 目标版本 | 状态 | 进度 | 责任人 |
 |---|---|---|---|---|---|
-| G1 | 创作主链闭环 | v4.23.0 | 🟡 进行中 | 12/18（67%） | 实现 ZCode / 验收 用户 |
+| G1 | 创作主链闭环 | v4.23.0 | ✅ 已完成 | 18/18（100%） | 实现 ZCode / 验收 用户 |
 | G2 | 语料与注入链 | v4.24.0 | 🟡 进行中 | 2/4（50%） | 实现 ZCode / 验收 用户 |
 | G3 | 项目生命周期与三模式 | v4.24.0 | 🟡 进行中 | 3/5（60%） | 实现 ZCode / 验收 用户 |
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
@@ -22,7 +22,7 @@
 
 ## 二、分组明细
 
-### G1 创作主链闭环（🟡 进行中）
+### G1 创作主链闭环（✅ 已完成）
 
 - 目标：正文→质控→修订→结算→上下文→统计 全链数据一致，任何写入点都不丢字段、不覆盖他方结果
 - 目标版本：v4.23.0
@@ -41,13 +41,13 @@
 | G1-9 | 统计事件路径采信陈旧 word_count | ✅ 已完成 | modify 事件按正文内容计数，不被旧元数据固化（单测） | services/writing-stats-service.ts + 单测 |
 | G1-10 | 时间线/关系/成长/互信息无锁与 append 无幂等 | ✅ 已完成 | 时间线三处写入同锁；成长/情绪/互信息/连续性账本按章去重（单测） | settlement-engine / analysis-report-engine / context-manager + settlement-growth-idempotency.test |
 | G1-11 | 结算弹窗无 settled 守卫；settle / settleLight 两套语义 | ✅ 已完成 | 弹窗重复结算先确认；追加类写入已按章去重 | ui/chapter-settlement-modal.ts（settled 守卫） |
-| G1-12 | 关系双通道权威源 | 🟡 进行中 | 决策已定：V2 关系状态.md 为唯一权威源；V1 互信息仅人读日志（ADR） | docs/design/g1-authority-decisions.md §1 |
-| G1-12a | V1 互信息整行去重 | ✅ 已完成 | 同章同描述重复结算只留 1 行；不同描述仍追加（单测） | settlement-engine.appendToMutualSection + 2 条单测 |
-| G1-12b | 禁止从互信息解析关系的契约与扫描 | ⬜ 待开始 | 评审清单写入 PROGRAM；grep 检查 0 处机器读取互信息 | ADR §1.3 |
-| G1-13 | settle / settleLight 语义与回滚 | 🟡 进行中 | 决策已定：light=出场确认且必须标记；回滚用 run 级 journal 覆盖追加类写入（ADR） | docs/design/g1-authority-decisions.md §2 |
-| G1-13a | settlement_mode 标记 + 轻结算显式确认 | ⬜ 待开始 | 无分析报告时先确认；结算表/快照写 settlement_mode: light\|full；空指令集返回 empty | ADR §2.2 |
-| G1-13b | SettlementJournal 统一回滚（frontmatter/整文件/追加标记） | ⬜ 待开始 | 注入 partial failure → 关系/成长/时间线回到结算前；他处合法写入不被误删（单测） | ADR §2.2 |
-| G1-13c | 回滚失败可见性 | ⬜ 待开始 | 回滚失败 critical 通知 + settlement_partial 标记 | ADR §2.2 |
+| G1-12 | 关系双通道权威源 | ✅ 已完成 | V2 关系状态.md 为唯一权威源；V1 互信息仅人读日志并整行去重（ADR + 单测） | docs/design/g1-authority-decisions.md §1 + 2 条单测 |
+| G1-12a | V1 互信息整行去重 | ✅ 已完成 | 同章同描述重复结算只留 1 行；不同描述仍追加（单测） | settlement-engine.appendToMutualSection + 单测 |
+| G1-12b | 禁止从互信息解析关系的契约与扫描 | ✅ 已完成 | 互信息分节只允许出现在白名单写入方/模板；preflight 与 CI 均执行 | scripts/check-relationship-authority.mjs |
+| G1-13 | settle / settleLight 语义与回滚 | ✅ 已完成 | light=出场确认并标记；回滚按 journal 三类条目（ADR） | docs/design/g1-authority-decisions.md §2 |
+| G1-13a | settlement_mode 标记 + 轻结算显式确认 | ✅ 已完成 | 无报告先确认；settlement_mode 落盘；空指令集返回 empty 且不写状态 | chapter-settlement-modal / settlement-engine + settlement-mode.test（5 条） |
+| G1-13b | SettlementJournal 统一回滚（frontmatter/整文件/追加标记） | ✅ 已完成 | partial failure → 关系/成长/时间线等回到结算前，他处写入不误删（单测） | engine/settlement/settlement-journal.ts + 9 条单测 |
+| G1-13c | 回滚失败可见性 | ✅ 已完成 | 回滚失败 critical 通知 + 产物 settlement_partial | finalizeRollback + 结算表 frontmatter |
 
 > 强耦合簇：正文写入 / 步骤结果 / 结算产物 / 上下文缓存 / 统计台账 共享同一份磁盘事实，必须同组改动。
 
@@ -174,3 +174,4 @@
 - 2026-11-01｜G5/G6｜批量建章进度横幅泄漏、缓存键 NUL、覆盖历史无上限（continue-chapters-modal / knowledge-vector-store / plugin-cache）
 - 2026-11-01｜G1｜时间线三处写入加锁；成长/情绪/互信息/连续性账本按章去重；结算弹窗重复结算守卫（settlement-engine / analysis-report-engine / context-manager / chapter-settlement-modal）
 - 2026-11-01｜G1｜G1-12/13 权威源决策定稿；V1 互信息改整行去重（2 条单测）（docs/design/g1-authority-decisions.md + settlement-engine）
+- 2026-11-01｜G1｜G1-12b/13a/13b/13c 落地：权威源门禁、settlement_mode、SettlementJournal 三类回滚、失败标记（check-relationship-authority.mjs / settlement-journal.ts / chapter-settlement-modal.ts）

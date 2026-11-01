@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { TFile } from '../../__mocks__/obsidian';
 import { SettlementEngine } from '../../../engine/settlement-engine';
+import { SettlementJournal } from '../../../engine/settlement/settlement-journal';
 
 type GrowthCtx = {
     project: string;
@@ -14,6 +15,7 @@ type GrowthCtx = {
     instr: { growth: Array<{ name: string; type: string; value: string; desc: string }> };
     result: { updatedGrowth: number };
     hasPartialFailure: boolean;
+    journal: SettlementJournal;
 };
 
 function makeStub(initial: string) {
@@ -41,9 +43,9 @@ describe('SettlementEngine — 成长追加幂等', () => {
             settleStep_updateGrowth: (this: unknown, ctx: GrowthCtx) => Promise<void>;
         }).settleStep_updateGrowth;
 
-        const ctx1: GrowthCtx = { project: 'P', chapName: '第1章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false };
+        const ctx1: GrowthCtx = { project: 'P', chapName: '第1章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false, journal: new SettlementJournal() };
         await fn.call(stub, ctx1);
-        const ctx2: GrowthCtx = { project: 'P', chapName: '第1章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false };
+        const ctx2: GrowthCtx = { project: 'P', chapName: '第1章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false, journal: new SettlementJournal() };
         await fn.call(stub, ctx2);
 
         expect(writes).toHaveLength(1);
@@ -59,8 +61,8 @@ describe('SettlementEngine — 成长追加幂等', () => {
             settleStep_updateGrowth: (this: unknown, ctx: GrowthCtx) => Promise<void>;
         }).settleStep_updateGrowth;
 
-        await fn.call(stub, { project: 'P', chapName: '第1章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false });
-        await fn.call(stub, { project: 'P', chapName: '第2章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false });
+        await fn.call(stub, { project: 'P', chapName: '第1章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false, journal: new SettlementJournal() });
+        await fn.call(stub, { project: 'P', chapName: '第2章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false, journal: new SettlementJournal() });
 
         expect(writes).toHaveLength(2);
     });
@@ -71,7 +73,7 @@ describe('SettlementEngine — 成长追加幂等', () => {
             settleStep_updateGrowth: (this: unknown, ctx: GrowthCtx) => Promise<void>;
         }).settleStep_updateGrowth;
 
-        await fn.call(stub, { project: 'P', chapName: '第3章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false });
+        await fn.call(stub, { project: 'P', chapName: '第3章', instr: GROWTH, result: { updatedGrowth: 0 }, hasPartialFailure: false, journal: new SettlementJournal() });
 
         expect(getContent()).toContain('## 变更记录');
         expect(getContent()).toContain('第3章 | 境界 | 筑基中期');

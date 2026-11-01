@@ -14,6 +14,7 @@
 import type { TFile } from 'obsidian';
 import type { Instructions } from './settlement-types';
 import type { SettlementOptions, SettlementResult } from '../settlement-engine';
+import { SettlementJournal } from './settlement-journal';
 
 export interface SettleContext {
     /** 项目名 */
@@ -55,6 +56,12 @@ export interface SettleContext {
 
     /** R3-3: 回滚本身失败的标志，触发"数据可能脏态"提示 */
     rollbackFailed: boolean;
+
+    /**
+     * run 级回滚日志（frontmatter 字段 / 整文件前值 / 追加标记）。
+     * 与 snapshots 并存但取代其回滚职责：追加类写入只有 journal 能精确撤销。
+     */
+    journal: SettlementJournal;
 }
 
 /** 创建 SettleContext 的工厂函数 */
@@ -104,5 +111,6 @@ export function createSettleContext(
         createdFiles: [],
         hasPartialFailure: false,
         rollbackFailed: false,
+        journal: new SettlementJournal(),
     };
 }

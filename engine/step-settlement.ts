@@ -112,6 +112,14 @@ export async function executeSettlement(
         );
         settlementResult = result;
 
+        // 空指令集：报告没解析出任何可应用指令时，不得标记已结算（mode=empty 由引擎返回）
+        if (result.mode === 'empty') {
+            host.hideProgress();
+            host.showNotice('⚠️ 分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），本次未执行结算；请检查分析报告，或改用轻结算', 8000);
+            await renderInContainer(tabContent);
+            return result;
+        }
+
         stepCompleted.add('settlement');
         host.hideProgress();
         // v3.4.8 Batch-2: 结算结果汇总通知（settlement引擎 22+ 处静默吞错 → 汇总为1条Notice）

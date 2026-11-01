@@ -14,7 +14,8 @@ import { mkdirp } from '../utils/helpers';
 import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
 import { withWriteLock } from '../shared/write-lock';
-import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates } from './relationship-engine';
+import type { SettlementJournal } from './settlement/settlement-journal';
+import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates, getRelationshipFilePath } from './relationship-engine';
 import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '../shared/paths';
 import { DEFAULT_PROMISE_LEDGER, applyPromiseInstruction, formatPromiseLedger, parsePromiseLedger } from './promise-ledger';
 import { applyArcInstruction, buildArcRowsFromCharacters, formatCharacterArcTable, parseCharacterArcTable } from './character-arc';
@@ -69,6 +70,17 @@ export interface SettlementOptions {
 }
 
 export interface SettlementResult {
+    /** 回滚统计（仅 hasPartialFailure 时出现） */
+    rollback?: { reverted: number; failed: number };
+    /** 回滚不完整标记：产物需标 settlement_partial，提示用户手动检查 */
+    settlementPartial?: boolean;
+    /**
+     * 本次结算形态：
+     * - full：完整结算（可写关系/伏笔/时间线/成长/情绪/账本）
+     * - light：出场确认（只写 entity_status / entity_last_seen_at）
+     * - empty：分析报告解析出 0 条可应用指令，未执行任何写入
+     */
+    mode?: 'full' | 'light' | 'empty';
     updated: number;
     created: number;
     updatedChars: number;
@@ -171,6 +183,7 @@ export class SettlementEngine {
             }
             const dir = path.slice(0, path.lastIndexOf('/'));
             await fs.mkdir(dir);
+            await this.recordWholeFileBefore(ctx, path);
             await fs.write(path, formatPromiseLedger(items));
             log.info(`[SettlementEngine] 承诺账本更新 ${ctx.instr.promise.length} 条`);
         } catch (e) {
@@ -195,6 +208,7 @@ export class SettlementEngine {
             if (rows.length === 0) return;
             const dir = path.slice(0, path.lastIndexOf('/'));
             await fs.mkdir(dir);
+            await this.recordWholeFileBefore(ctx, path);
             await fs.write(path, formatCharacterArcTable(rows));
             if (ctx.instr.arc?.length) {
                 log.info(`[SettlementEngine] 角色弧线更新 ${ctx.instr.arc.length} 条`);
@@ -430,6 +444,8 @@ export class SettlementEngine {
         result.locs = [...new Set(result.locs)];
         result.factions = [...new Set(result.factions)];
         result.items = [...new Set(result.items)];
+        // 轻结算 = 出场确认：只有 entity_status / entity_last_seen_at，不写关系/伏笔/时间线
+        result.mode = 'light';
 
         return result;
     }
@@ -448,6 +464,16 @@ export class SettlementEngine {
     ): Promise<SettlementResult> {
         const instr = parseReport(report);
         const ctx = createSettleContext(project, chapDir, chapName, bodyText, report, instr, options);
+
+        // 空指令集守卫：报告里没有任何 UPDATE_/NEW_/RELATION/GROWTH/EMOTION/DELETE
+        // 且没有强制揭示时，不得「什么都不写却标记已结算」——交给调用方决定改用轻结算。
+        const hasInstruction = Object.values(instr).some(list => Array.isArray(list) && list.length > 0)
+            || (options?.forceReveal?.length ?? 0) > 0;
+        if (!hasInstruction) {
+            log.warn('[SettlementEngine] 分析报告未解析出可应用指令，结算未执行（mode=empty）');
+            ctx.result.mode = 'empty';
+            return ctx.result;
+        }
 
         // ─── 1-4: UPDATE_* 系列（带回滚快照 + 写入锁）───
         await this.settleStep_updateCharacters(ctx);
@@ -497,18 +523,37 @@ export class SettlementEngine {
         await this.settleStep_updatePromiseLedger(ctx);
         await this.settleStep_updateCharacterArcs(ctx);
 
+        ctx.result.mode = 'full';
         return ctx.result;
     }
 
     // ================================================================
     // 回滚快照工具（settle 内部使用，从原内嵌闭包提取）
     // ================================================================
+    /** 记录「整份文件前值」：不存在时登记为本次新建，回滚阶段删除 */
+    private async recordWholeFileBefore(ctx: SettleContext, path: string): Promise<string> {
+        try {
+            const fs = this.getFS();
+            if (await fs.exists(path)) {
+                const before = await fs.read(path);
+                ctx.journal.recordWholeFile(path, before);
+                return before;
+            }
+        } catch (e) {
+            log.warn('[SettlementEngine] 记录文件前值失败:', path, e);
+        }
+        ctx.createdFiles.push(path);
+        return '';
+    }
+
     private async snapshotField(ctx: SettleContext, file: TFile, field: string): Promise<void> {
         if (!ctx.snapshots.has(file.path)) ctx.snapshots.set(file.path, new Map());
         if (ctx.snapshots.get(file.path)!.has(field)) return;
         let origVal = '';
         try {
             await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => { origVal = String(fm[field] ?? ''); });
+            // 统一进 journal：失败回滚时与追加类条目一起按逆序恢复
+            ctx.journal.recordField(file.path, field, origVal);
         } catch (e) {
             log.warn('[SettlementEngine] 快照失败:', e);
             this.notifier.showNotice('SettlementEngine：数据读取异常，部分功能可能受限');
@@ -586,7 +631,10 @@ export class SettlementEngine {
                         const prev = String(fm[field] || '').trim();
                         const addition = `${value}（${ctx.chapName}）`;
                         // 重复结算时同章同值不再追加（此前会写两遍「（第N章）」）
-                        fm[field] = prev.includes(addition) ? prev : (prev ? `${prev}；${addition}` : addition);
+                        if (!prev.includes(addition)) {
+                            fm[field] = prev ? `${prev}；${addition}` : addition;
+                            ctx.journal.recordAppend(file.path, addition);
+                        }
                     } else {
                         fm[field] = value;
                     }
@@ -687,6 +735,7 @@ export class SettlementEngine {
             // v3.4.6 跨模块写入保护：伏笔库也加锁
             await withWriteLock(fp, async () => {
                 let content = await this.getFS().read(fp);
+                const originalContent = content;
                 let changed = false;
 
                 // v4.24 修复：旧实现遍历所有 UPDATE_FORESHADOW 并一律 move，
@@ -707,7 +756,10 @@ export class SettlementEngine {
                         skipped.map(u => `${u.name}:${u.field}=${u.value}`).join('；'));
                 }
 
-                if (changed) { await this.getFS().write(fp, content); }
+                if (changed) {
+                    ctx.journal.recordWholeFile(fp, originalContent);
+                    await this.getFS().write(fp, content);
+                }
             });
         } catch (e) { log.warn('[SettlementEngine] 更新伏笔库失败:', e); ctx.hasPartialFailure = true; }
     }
@@ -762,6 +814,7 @@ export class SettlementEngine {
                     rows = parseBehaviorLog(await this.getFS().read(path));
                 }
                 const merged = mergeBehaviorRows(rows, incoming);
+                await this.recordWholeFileBefore(ctx, path);
                 await this.getFS().write(path, formatBehaviorLog(merged));
             });
             ctx.result.recordedBehaviors = incoming.length;
@@ -977,6 +1030,8 @@ ${ni.description || '暂无描述'}
                         return;
                     }
                     const newRow = `| ${getNextRowNum(c)} | ${nf.name} | 中 | ${nf.chapter || ctx.chapName} | ${nf.reveal || '待定'} | ${nf.relatedChars || ''} | ${nf.relatedPlotline || ''} | 未揭示 |`;
+                    ctx.journal.recordAppend(fp, newRow);
+                    if (!ff) ctx.createdFiles.push(fp);
                     if (c.includes('未回收伏笔')) {
                         c = appendAfterSectionHeader(c, '未回收伏笔', newRow);
                         if (ff) await this.getFS().write(fp, c);
@@ -1005,6 +1060,8 @@ ${ni.description || '暂无描述'}
                 if (tlF instanceof TFile) tlC = await this.getFS().read(tlPath);
 
                 const newRow = `| ${nt.desc} | ${ctx.chapName} | ${nt.event} | |`;
+                ctx.journal.recordAppend(tlPath, newRow);
+                if (!tlF) ctx.createdFiles.push(tlPath);
 
                 // v4.25 幂等守卫：按「时间+章节+事件」三列结构化比对（去空白）。
                 // 旧实现用子串 includes，章名/描述多一个空格就匹配失败 → 重复结算翻倍。
@@ -1047,7 +1104,7 @@ ${ni.description || '暂无描述'}
     private async settleStep_updateRelations(ctx: SettleContext): Promise<void> {
         for (const r of ctx.instr.rel) {
             try {
-                await this.updateRelation(ctx.project, r.entityA, r.entityB, r.relType, r.desc, ctx.chapName);
+                await this.updateRelation(ctx.project, r.entityA, r.entityB, r.relType, r.desc, ctx.chapName, ctx.journal);
                 ctx.result.updatedRelations++;
             } catch (e) { log.warn('[SettlementEngine] 更新关系失败:', r.entityA, r.entityB, e); }
         }
@@ -1077,7 +1134,10 @@ ${ni.description || '暂无描述'}
                     await this.getFS().write(fp, content);
                     return true;
                 });
-                if (appended) ctx.result.updatedGrowth++;
+                if (appended) {
+                    ctx.journal.recordAppend(fp, growthEntry.trim());
+                    ctx.result.updatedGrowth++;
+                }
             } catch (e) { log.warn('[SettlementEngine] 更新成长失败:', g.name, e); ctx.hasPartialFailure = true; }
         }
     }
@@ -1211,11 +1271,39 @@ ${ni.description || '暂无描述'}
      * rollbackFailed 时通知用户存在脏态。
      */
     private async settleStep_finalizeRollback(ctx: SettleContext): Promise<void> {
-        // v3.4.6 回滚机制：如果任何 NEW 实体创建失败，恢复所有 UPDATE 的原始值
-        if (ctx.hasPartialFailure && ctx.snapshots.size > 0) {
-            log.warn(`[SettlementEngine] 检测到部分失败，回滚 ${ctx.snapshots.size} 个文件的 frontmatter`);
-            await this.restoreSnapshots(ctx);
-            // v3.4.9 P0-3: 清理 NEW 操作创建的文件
+        if (ctx.hasPartialFailure) {
+            const journalSize = ctx.journal.size;
+            if (journalSize > 0) {
+                log.warn(`[SettlementEngine] 检测到部分失败，按 journal 回滚 ${journalSize} 条`);
+                const fsPort = {
+                    read: (p: string) => this.getFS().read(p),
+                    write: (p: string, content: string) => this.getFS().write(p, content),
+                    exists: (p: string) => this.getFS().exists(p),
+                };
+                const fmPort = {
+                    readField: async (path: string, field: string): Promise<string> => {
+                        const file = this.getVaultMeta().getAbstractFileByPath(path);
+                        if (!(file instanceof TFile)) return '';
+                        let value = '';
+                        await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
+                            value = String(fm[field] ?? '');
+                        });
+                        return value;
+                    },
+                    restoreField: async (path: string, field: string, value: string): Promise<void> => {
+                        const file = this.getVaultMeta().getAbstractFileByPath(path);
+                        if (!(file instanceof TFile)) return;
+                        await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
+                            fm[field] = value;
+                        });
+                    },
+                };
+                const report = await ctx.journal.rollback(fsPort, fmPort);
+                ctx.result.rollback = { reverted: report.reverted, failed: report.failed };
+                if (report.failed > 0) ctx.rollbackFailed = true;
+            }
+
+            // 清理 NEW 操作创建的文件
             for (const fp of ctx.createdFiles) {
                 try {
                     await this.getFS().delete(fp);
@@ -1223,17 +1311,25 @@ ${ni.description || '暂无描述'}
                     log.warn('[SettlementEngine] 清理新建文件失败:', fp, e);
                 }
             }
+
             // 将 updated 计数清零（已回滚）
             ctx.result.updated = 0;
             ctx.result.updatedChars = 0;
             ctx.result.updatedFactions = 0;
             ctx.result.updatedLocations = 0;
             ctx.result.updatedItems = 0;
+            ctx.result.updatedRelations = 0;
+            ctx.result.updatedGrowth = 0;
+            ctx.result.updatedEmotions = 0;
         }
 
-        // R3-3: 回滚失败提示 — 数据可能处于半改半回滚的脏态
+        // R3-3: 回滚失败 → 标记 settlement_partial，产物可自证「数据可能半改半回滚」
         if (ctx.rollbackFailed) {
-            this.notifier.showNotice('⚠️ 结算回滚不完整！部分文件 frontmatter 恢复失败，请手动检查相关人物/地点/势力/物品文件的变更记录', 10000);
+            ctx.result.settlementPartial = true;
+            this.notifier.showNotice(
+                '⚠️ 结算回滚不完整！部分文件未能恢复，产物已标记 settlement_partial，请用章节版本历史手动核对',
+                10000,
+            );
         }
     }
 
@@ -1249,6 +1345,8 @@ ${ni.description || '暂无描述'}
             if (changes.length > 0) {
                 const relations = await loadRelationshipStates(this.app, ctx.project);
                 const outcome = applyRelationshipChanges(relations, changes, ctx.chapName);
+                // 关系状态是整表覆盖写入：先记整文件前值，失败时可整体恢复
+                await this.recordWholeFileBefore(ctx, getRelationshipFilePath(ctx.project));
                 await saveRelationshipStates(this.app, ctx.project, outcome.relations, ctx.chapName);
                 v2RelationCount = outcome.applied;
                 if (outcome.skipped > 0) {
@@ -1326,7 +1424,8 @@ ${ni.description || '暂无描述'}
         entityB: string,
         relType: string,
         desc: string,
-        chapName: string
+        chapName: string,
+        journal?: SettlementJournal
     ): Promise<void> {
         const entry = `- [[${entityB}]] | ${relType} | ${desc} | ${chapName}`;
         const entryB = `- [[${entityA}]] | ${relType} | ${desc} | ${chapName}`;
@@ -1334,12 +1433,12 @@ ${ni.description || '暂无描述'}
         // 更新实体A
         const candidatesA = this.findEntityFiles(project, entityA);
         if (candidatesA.length > 0) {
-            await this.appendToMutualSection(candidatesA[0], entry);
+            await this.appendToMutualSection(candidatesA[0], entry, journal);
         }
         // 更新实体B
         const candidatesB = this.findEntityFiles(project, entityB);
         if (candidatesB.length > 0) {
-            await this.appendToMutualSection(candidatesB[0], entryB);
+            await this.appendToMutualSection(candidatesB[0], entryB, journal);
         }
     }
 
@@ -1360,7 +1459,7 @@ ${ni.description || '暂无描述'}
     }
 
     /** 在实体文件的「互信息」区块追加条目 */
-    private async appendToMutualSection(file: TFile, entry: string): Promise<void> {
+    private async appendToMutualSection(file: TFile, entry: string, journal?: SettlementJournal): Promise<void> {
         try {
             // 实体卡被结算/分析报告/实体管理多处读改写：整段加锁并在锁内重读
             await withWriteLock(file.path, async () => {
@@ -1380,6 +1479,7 @@ ${ni.description || '暂无描述'}
                 content = content.slice(0, afterHeader + 1) + entry + '\n' + content.slice(afterHeader + 1);
             }
             await this.getFS().write(file.path, content);
+            journal?.recordAppend(file.path, entry.trim());
             });
         } catch (e) { log.warn('[SettlementEngine] 追加互信息失败:', file.path, e); }
     }

@@ -154,6 +154,14 @@ export class ChapterSettlementModal extends Modal {
         }
 
         if (!reportFile) {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '未找到分析报告',
+                description: '将执行「轻结算」：只根据正文 frontmatter 更新实体出场状态。',
+                warning: '轻结算不会更新关系、伏笔、时间线与成长记录；如需完整结算，请先在流水线中生成分析报告。',
+                confirmText: '执行轻结算',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
             await this.createLightSettlement(target, bodyText);
             return;
         }
@@ -172,6 +180,15 @@ export class ChapterSettlementModal extends Modal {
         } catch (e) {
             ledger.finish(runId, { status: 'failed', failure: e instanceof Error ? e.message : String(e) });
             throw e;
+        }
+        // 空指令集：引擎未执行任何写入（mode=empty），不得写结算表 / 标记 settled
+        if (result.mode === 'empty') {
+            ledger.finish(runId, {
+                status: 'done',
+                detail: `${target.chapName} 分析报告无可应用指令，未执行结算`,
+            });
+            new Notice('⚠️ 分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），本次未执行结算；请检查报告，或改用轻结算', 8000);
+            return;
         }
         // 执行登记表：Agent 通过 get_execution_status 读取本次结算回写量
         ledger.finish(runId, {
@@ -220,20 +237,31 @@ export class ChapterSettlementModal extends Modal {
     }
 
     /** v4.0: 结算表 frontmatter（与 元文件/00-系统模板/结算表模板.md 对齐） */
-    private buildSettlementFrontmatter(target: SettlementTargetChapter, status: 'completed' | 'pending'): string {
+    private buildSettlementFrontmatter(
+        target: SettlementTargetChapter,
+        status: 'completed' | 'pending',
+        mode: 'full' | 'light',
+        partial = false,
+    ): string {
         const volMatch = target.chapDir.match(/\/步骤结果\/(第\d+卷)\//);
         const vol = volMatch ? volMatch[1] : '';
         const now = new Date().toISOString();
-        return `---\ntags: [结算表]\n卷: "${vol}"\n章: "${target.chapName}"\nstep_status: generated\nstep_model: ""\nstep_timestamp: ${now}\n结算时间: ${now}\n结算状态: ${status}\n---\n\n`;
+        return `---\ntags: [结算表]\n卷: "${vol}"\n章: "${target.chapName}"\nstep_status: generated\nstep_model: ""\nstep_timestamp: ${now}\n结算时间: ${now}\n结算状态: ${status}\nsettlement_mode: ${mode}${partial ? '\nsettlement_partial: true' : ''}\n---\n\n`;
     }
 
     private buildSettlementSummary(target: SettlementTargetChapter, result: { updatedChars: number; updatedForeshadows: number; createdChars: number; createdLocs: number; createdFactions: number; createdItems: number; createdForeshadows: number; createdTimelines: number }, _isLight: boolean): string {
-        const fm = this.buildSettlementFrontmatter(target, 'completed');
+        // 回滚不完整时在结算表里留 settlement_partial，后续步骤/用户都能看到
+        const fm = this.buildSettlementFrontmatter(
+            target,
+            'completed',
+            'full',
+            Boolean((result as { settlementPartial?: boolean }).settlementPartial),
+        );
         return `${fm}# ${target.chapName} 结算表\n\n## 更新状态\n- 人物状态更新：${result.updatedChars} 人\n- 伏笔状态更新：${result.updatedForeshadows} 个\n\n## 新建元素\n- 新建人物：${result.createdChars} 个\n- 新建地点：${result.createdLocs} 个\n- 新建势力：${result.createdFactions} 个\n- 新建物品功法：${result.createdItems} 个\n- 新建伏笔：${result.createdForeshadows} 个\n- 新建时间线事件：${result.createdTimelines} 个\n`;
     }
 
     private buildLightSummary(target: SettlementTargetChapter, wordCount: number, excerpt: string, truncated: boolean, result?: { updatedChars: number; updatedLocations: number; updatedFactions: number; updatedItems: number; updatedForeshadows: number; chars: string[]; locs: string[]; factions: string[]; items: string[] }): string {
-        const fm = this.buildSettlementFrontmatter(target, 'completed');
+        const fm = this.buildSettlementFrontmatter(target, 'completed', 'light');
         const charList = result?.chars?.length ? result.chars.join('、') : '无';
         const locList = result?.locs?.length ? result.locs.join('、') : '无';
         const factionList = result?.factions?.length ? result.factions.join('、') : '无';

@@ -406,6 +406,11 @@ export class BatchPipelineRunner {
         const engine = this.plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
         const result = await engine.settle(project, ctx.chapDir, target.chapterName, analysisReport, bodyText);
 
+        // 空指令集：引擎未执行任何写入，不能继续写快照/叙事总览，也不应把本章当已结算
+        if (result.mode === 'empty') {
+            throw new Error('分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），结算未执行');
+        }
+
         await writeChapterStateSnapshot(this.app, {
             project,
             chapterNum: target.chapterNum,
