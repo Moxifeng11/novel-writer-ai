@@ -365,9 +365,9 @@
         {
           "id": "G5-5",
           "title": "窄屏与移动端布局",
-          "status": "todo",
-          "acceptance": "侧栏收起时三栏视图可单列滚动；移动端无白屏（宠物/状态栏已守卫）",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "面板容器 ≤760px（写作）/≤980px（Agent）时三栏折单列并可整体滚动；左右栏限高保留、横向抓手隐藏；焦点/拖拽在宽面板下不变",
+          "evidence": "@container nw-fw / nw-awb + .novel-writer-fw-layout-host（避开 fixed 执行日志被 containment 裁切）；单测 tests/unit/ui/narrow-layout-container-queries.test.ts；E2E「工作台分隔条」新增窄屏断言"
         },
         {
           "id": "G5-6",

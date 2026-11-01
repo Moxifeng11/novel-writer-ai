@@ -931,7 +931,9 @@ select.nw-select {
    旧实现是 grid + --nw-grid-workspace（minmax 区间），只能靠设置改数字；
    现在左右两翼宽度由 --nw-panel-nav / --nw-panel-context 驱动，
    分隔条（ui/panel-resizer.ts）拖动即改，中栏 flex:1 自适应。
-   ≤1100px 时仍回落到纵向堆叠（见下方媒体查询）。 */
+   窄屏降级分两层：窗口级 ≤1100px 在 04-workspace-layers.css；
+   面板级（容器 ≤760px，侧栏/分屏）在 15-late-fixes.css 的 @container nw-fw
+   ——窗口级媒体查询测不到「窗口很宽、面板很窄」的情况。 */
 .novel-writer-fw-workspace {
     display: flex;
     flex-direction: row;
@@ -16050,6 +16052,114 @@ body.nw-panel-resizing .nw-awb-center webview {
 .nw-awb-mention-name {
     color: var(--text-normal);
     font-weight: 500;
+}
+
+/* ==========================================================================
+   G5-5 窄屏：三栏布局折成单列（容器查询）
+   --------------------------------------------------------------------------
+   为什么不用 @media：写作工作台/Agent 工作台经常被拖进侧栏或左右分屏，
+   此时窗口仍然很宽，但面板实际可用宽度只有几百像素。窗口级媒体查询测不到，
+   表现为「中栏被 min-width 撑破、右栏直接被裁掉」。容器查询按面板自身宽度判断。
+
+   @container 不能给容器自身写样式，所以 container 声明放在两个视图的
+   外层节点上，规则作用于内部三栏。
+   注意：写作工作台的容器不能直接挂在 .novel-writer-fw-container 上——
+   该容器里还有一条 position: fixed 的执行日志浮层（.nw-exec-log-root）。
+   container-type 会带来 layout containment，把浮层的包含块从视口改成容器，
+   再被容器上的 overflow: hidden 裁掉；因此单独加一层 .novel-writer-fw-layout-host
+   只承担查询职责。
+   ========================================================================== */
+.novel-writer-fw-layout-host {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    container-type: inline-size;
+    container-name: nw-fw;
+}
+
+.nw-awb {
+    container-type: inline-size;
+    container-name: nw-awb;
+}
+
+/* 写作工作台：步骤导航 → 提示词区 → 上下文面板 自上而下 */
+@container nw-fw (max-width: 760px) {
+    .novel-writer-fw-workspace {
+        flex-direction: column;
+        gap: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .novel-writer-fw-workspace > .novel-writer-fw-step-nav {
+        width: auto;
+        min-width: 0;
+        max-height: 30vh;
+        border-right: none;
+        border-bottom: 1px solid var(--nw-divider);
+    }
+
+    .novel-writer-fw-workspace > .novel-writer-fw-prompt-area {
+        flex: 0 0 auto;
+        min-width: 0;
+        min-height: 320px;
+    }
+
+    .novel-writer-fw-workspace > .novel-writer-fw-context-panel {
+        width: auto;
+        min-width: 0;
+        max-height: 40vh;
+        border-left: none;
+        border-top: 1px solid var(--nw-divider);
+    }
+
+    /* 单列下没有横向可拖的分界，隐藏抓手避免误导 */
+    .novel-writer-fw-workspace > .nw-fw-resizer {
+        display: none;
+    }
+}
+
+/* Agent 工作台：会话/项目 → 对话 → 上下文与遥测 自上而下。
+   这里显式恢复左右栏：媒体查询在 ≤900px / ≤820px 会把它们藏掉，
+   窄面板里藏栏等于功能消失；改为限高 + 各自滚动，保证都可达。
+   断点 980px 而非 760px：三栏默认宽 210 + 中栏最小 380 + 360 ≈ 950，
+   低于这个宽度横向排列一定把中栏压到 280px 以下。 */
+@container nw-awb (max-width: 980px) {
+    .nw-awb-layout {
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .nw-awb-left {
+        display: flex;
+        flex: 0 0 auto;
+        width: auto;
+        max-height: 30vh;
+        border-right: none;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .nw-awb-center {
+        flex: 0 0 auto;
+        min-width: 0;
+        min-height: 55vh;
+    }
+
+    .nw-awb-right {
+        display: flex;
+        flex: 0 0 auto;
+        width: auto;
+        max-height: 45vh;
+        border-left: none;
+        border-top: 1px solid var(--background-modifier-border);
+    }
+
+    .nw-awb-resizer {
+        display: none;
+    }
 }
 /* ==========================================================================
    16-writing-stats-pet.css — 写作统计弹窗 + 桌面宠物

@@ -1765,10 +1765,13 @@ export class FullWriterView extends ItemView {
             await this.renderTitleBar(mainContainer);
             this.mountExecutionPanels(mainContainer);
 
-            // 三栏布局：步骤导航(grid-col:1) | 正文写作(grid-col:2) | 上下文监控(grid-col:3)
-            const workspace = mainContainer.createDiv({ cls: 'novel-writer-fw-workspace' });
-            // 仅设置不影响响应式断点的基础尺寸；display/grid 模板交由 styles.css 控制，
-            // 否则内联 !important 会压过 @media(max-width:1100px) 的窄屏单列规则（中间栏滑块丢失根因）。
+            // 三栏布局：步骤导航 | 正文写作 | 上下文监控。
+            // layout-host 只用于窄屏容器查询：不能把 container-type 放在
+            // .novel-writer-fw-container 上（里面的 fixed 执行日志会被 Containment 改锚点并裁掉）。
+            const layoutHost = mainContainer.createDiv({ cls: 'novel-writer-fw-layout-host' });
+            const workspace = layoutHost.createDiv({ cls: 'novel-writer-fw-workspace' });
+            // 仅设置不影响响应式断点的基础尺寸；display/flex 方向交由 styles.css 控制，
+            // 否则内联样式会压过 @container nw-fw 的窄屏单列规则（中栏滑块丢失根因）。
             Object.assign(workspace.style, {
                 width: '100%',
                 height: '100%',

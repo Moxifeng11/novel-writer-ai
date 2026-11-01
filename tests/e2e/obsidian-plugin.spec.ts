@@ -675,10 +675,21 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
 
     test('工作台分隔条可拖拽并持久化宽度', async () => {
         const { page } = session;
+        const originalViewport = page.viewportSize();
         expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
 
         const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
         await expect(workbench).toBeVisible({ timeout: 15_000 });
+
+        // 容器 ≤980px 时是单列布局（G5-5），横向分隔条不显示，无法测拖拽；
+        // 先把视口拉宽让三栏并排。
+        await page.setViewportSize({ width: 1600, height: 950 }).catch(() => undefined);
+        await expect.poll(async () => page.evaluate(() => {
+            const layout = document.querySelector<HTMLElement>(
+                '.workspace-leaf-content[data-type="novel-writer-agent-workbench"] .nw-awb-layout',
+            );
+            return layout ? getComputedStyle(layout).flexDirection : '';
+        }), { timeout: 5_000 }).toBe('row');
 
         // 分隔条必须存在，且用统一原语（含 role=separator 与 CSS 变量）
         const resizerInfo = await page.evaluate(() => {
@@ -751,6 +762,46 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         });
         console.log('RESIZER_AFTER_RESET ' + afterReset);
         expect(afterReset).toBe(210);
+
+        // G5-5：面板被压窄（窗口仍可很宽）时必须折成单列，且左右栏不能消失
+        await page.setViewportSize({ width: 700, height: 950 }).catch(() => undefined);
+        await expect.poll(async () => page.evaluate(() => {
+            const layout = document.querySelector<HTMLElement>(
+                '.workspace-leaf-content[data-type="novel-writer-agent-workbench"] .nw-awb-layout',
+            );
+            return layout ? getComputedStyle(layout).flexDirection : '';
+        }), { timeout: 5_000 }).toBe('column');
+
+        const narrow = await page.evaluate(() => {
+            const root = document.querySelector('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+            const layout = root?.querySelector<HTMLElement>('.nw-awb-layout');
+            const left = root?.querySelector<HTMLElement>('.nw-awb-left');
+            const center = root?.querySelector<HTMLElement>('.nw-awb-center');
+            const right = root?.querySelector<HTMLElement>('.nw-awb-right');
+            const resizer = root?.querySelector<HTMLElement>('.nw-awb-resizer-left');
+            const layoutBox = layout?.getBoundingClientRect();
+            const centerBox = center?.getBoundingClientRect();
+            return {
+                layoutWidth: Math.round(layoutBox?.width ?? 0),
+                centerWidth: Math.round(centerBox?.width ?? 0),
+                leftHeight: Math.round(left?.getBoundingClientRect().height ?? 0),
+                rightHeight: Math.round(right?.getBoundingClientRect().height ?? 0),
+                leftMaxHeight: left ? getComputedStyle(left).maxHeight : '',
+                resizerDisplay: resizer ? getComputedStyle(resizer).display : '',
+            };
+        });
+        console.log('AGENT_NARROW ' + JSON.stringify(narrow));
+        expect(narrow.leftHeight).toBeGreaterThan(0);
+        expect(narrow.rightHeight).toBeGreaterThan(0);
+        expect(narrow.leftMaxHeight).not.toBe('none');
+        expect(narrow.resizerDisplay).toBe('none');
+        // 单列下中栏必须撑满，不能被 380px 的 flex-basis 卡住。
+        // 留 10% 余量：Obsidian 的纵向滚动条（约 12px）会占用容器内容宽度。
+        expect(narrow.centerWidth).toBeGreaterThan(narrow.layoutWidth * 0.9);
+
+        if (originalViewport) {
+            await page.setViewportSize(originalViewport).catch(() => undefined);
+        }
     });
 
     test('自定义下拉都有可见箭头且文字不被截断', async () => {

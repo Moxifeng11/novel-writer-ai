@@ -197,7 +197,9 @@
    旧实现是 grid + --nw-grid-workspace（minmax 区间），只能靠设置改数字；
    现在左右两翼宽度由 --nw-panel-nav / --nw-panel-context 驱动，
    分隔条（ui/panel-resizer.ts）拖动即改，中栏 flex:1 自适应。
-   ≤1100px 时仍回落到纵向堆叠（见下方媒体查询）。 */
+   窄屏降级分两层：窗口级 ≤1100px 在 04-workspace-layers.css；
+   面板级（容器 ≤760px，侧栏/分屏）在 15-late-fixes.css 的 @container nw-fw
+   ——窗口级媒体查询测不到「窗口很宽、面板很窄」的情况。 */
 .novel-writer-fw-workspace {
     display: flex;
     flex-direction: row;
