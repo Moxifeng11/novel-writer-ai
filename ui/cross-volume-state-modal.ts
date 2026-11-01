@@ -35,7 +35,7 @@ export class CrossVolumeStateModal extends Modal {
             const projects: string[] = [];
             for (const f of this.app.vault.getFiles()) {
                 if (f.path.includes(`/${SUBDIR_WORLD_ARCH}/`) && !f.path.startsWith('.obsidian') && !f.path.startsWith('元文件')) {
-                    const r = f.path.split('/')[0];
+                    const r = projectIdFromPath(f.path);
                     if (!projects.includes(r)) projects.push(r);
                 }
             }
@@ -219,3 +219,4 @@ ${timeline || '（无时间线事件）'}
         contentEl.empty();
     }
 }
+import { projectIdFromPath } from '../shared/paths';

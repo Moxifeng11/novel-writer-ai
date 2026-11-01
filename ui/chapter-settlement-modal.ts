@@ -101,7 +101,7 @@ export class ChapterSettlementModal extends Modal {
         if (!activeFile) return null;
 
         const path = activeFile.path;
-        const project = path.split('/')[0];
+        const project = projectIdFromPath(path);
         const bodyMatch = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第\d+卷)\/(第\d+章)_正文\.md$/);
         if (bodyMatch) {
             const volume = bodyMatch[2];
@@ -310,3 +310,4 @@ export class ChapterSettlementModal extends Modal {
         contentEl.empty();
     }
 }
+import { projectIdFromPath } from '../shared/paths';

@@ -161,6 +161,9 @@ export class ContinueChaptersModal extends Modal {
         const notice = new Notice(`⏳ 正在创建章节：0/${targetChapters.length}`, 0);
         let done = 0;
 
+        // 常驻进度条必须在 finally 里关：旧实现只在成功路径 hide()，
+        // 中途 create 抛错（同名/只读/权限）会留下永久「正在创建章节 k/N」横幅，且错误不可见。
+        try {
         for (const chapter of targetChapters) {
             const volume = this.findVolumeForChapter(project, chapter.num);
             const chapName = `第${chapter.num}章`;
@@ -217,8 +220,16 @@ export class ContinueChaptersModal extends Modal {
             done++;
             notice.setMessage(`⏳ 正在创建章节：${done}/${targetChapters.length}`);
         }
+        } catch (e) {
+            log.error('[ContinueChapters] 批量创建章节中断:', e);
+            showError(
+                `创建章节中断：已创建 ${done}/${targetChapters.length} 章。${e instanceof Error ? e.message : String(e)}`,
+            );
+            return;
+        } finally {
+            notice.hide();
+        }
 
-        notice.hide();
         showSuccess(`自动创建完成：${done}个章节`);
     }
 

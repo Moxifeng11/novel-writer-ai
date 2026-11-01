@@ -323,7 +323,8 @@ export class BodyWriter {
      */
     private async backupBeforeOverwrite(req: BodyWriteRequest, oldRaw: string): Promise<void> {
         if (!this.app) return;
-        if (!req.backupBeforeOverwrite) return;
+        // 默认 true：只有显式传 false（导入/迁移全量替换）才跳过，否则 null/undefined 会把“默认备份”悄悄关掉
+        if (req.backupBeforeOverwrite === false) return;
         const oldBody = stripFrontmatterBlock(oldRaw).body.trim();
         if (!oldBody) return;
         const previous = backupStamp.get(req.path) || 0;

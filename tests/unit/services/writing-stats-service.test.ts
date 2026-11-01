@@ -101,11 +101,28 @@ describe('WritingStatsService', () => {
         await service.scan();
 
         const file = list.get('p/第1章_正文.md')!;
-        file.wordCount = 1500;
+        // 事件路径按正文内容计数（不依赖 frontmatter）
+        file.content = '字'.repeat(1500);
         file.stat = { mtime: NOW + 60_000 };
         await service.handleFileChange({ path: file.path, stat: file.stat });
 
         expect(service.getReport().global.today).toBe(1500);
+    });
+
+    it('modify 事件忽略陈旧的 word_count（metadataCache 可能还没更新）', async () => {
+        const { app, list } = makeApp([
+            { path: 'p/第1章_正文.md', stat: { mtime: NOW }, content: '字'.repeat(500) },
+        ]);
+        const service = makeService(app);
+        await service.scan();
+
+        const file = list.get('p/第1章_正文.md')!;
+        file.content = '字'.repeat(800);
+        file.wordCount = 9999; // 陈旧元数据：若被采信会记成 +9499
+        file.stat = { mtime: NOW + 60_000 };
+        await service.handleFileChange({ path: file.path, stat: file.stat });
+
+        expect(service.getReport().global.today).toBe(800);
     });
 
     it('无 word_count 时用正文字符数兜底', async () => {

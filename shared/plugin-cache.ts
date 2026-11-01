@@ -124,6 +124,10 @@ export class PluginCacheManager {
             this.data.modelOverrideHistory = [];
         }
         this.data.modelOverrideHistory.push(entry);
+        // 长会话里无上限累加会让 cache.json 每次全量重写越来越大，只保留最近 200 条
+        if (this.data.modelOverrideHistory.length > 200) {
+            this.data.modelOverrideHistory = this.data.modelOverrideHistory.slice(-200);
+        }
         this.save();
     }
 

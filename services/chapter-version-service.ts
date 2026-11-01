@@ -63,6 +63,20 @@ export class ChapterVersionService {
         content: string,
         options: SaveVersionOptions,
     ): Promise<VersionMeta> {
+        // 索引是「读—改—写」：并发保存会各自读到 latestVersion=N 都写 N+1，丢版本条目。
+        // 锁键用索引文件路径，保证同一 contentKey 的保存/删除串行。
+        const indexPath = pjVersionIndexFile(project, contentType, contentKey);
+        return withWriteLock(indexPath, () => this.saveVersionUnlocked(project, contentType, contentKey, sourcePath, content, options));
+    }
+
+    private async saveVersionUnlocked(
+        project: string,
+        contentType: ContentType,
+        contentKey: string,
+        sourcePath: string,
+        content: string,
+        options: SaveVersionOptions,
+    ): Promise<VersionMeta> {
         const versionId = generateVersionId();
         const now = new Date().toISOString();
         const wordCount = countWords(content);
@@ -437,6 +451,16 @@ export class ChapterVersionService {
      * 删除指定版本
      */
     async deleteVersion(
+        project: string,
+        contentType: ContentType,
+        contentKey: string,
+        versionId: string,
+    ): Promise<boolean> {
+        const indexPath = pjVersionIndexFile(project, contentType, contentKey);
+        return withWriteLock(indexPath, () => this.deleteVersionUnlocked(project, contentType, contentKey, versionId));
+    }
+
+    private async deleteVersionUnlocked(
         project: string,
         contentType: ContentType,
         contentKey: string,

@@ -25,6 +25,7 @@ import {
     pjEmotionPlanTemplate,
     pjSceneExpandTemplate,
     pjCharacterSoulTemplate,
+    projectIdFromPath,
 } from '../../../shared/paths';
 
 describe('路径函数', () => {
@@ -120,5 +121,33 @@ describe('模板路径函数（v4.0）', () => {
             expect(p.startsWith(PJ_TEMPLATE_DIR)).toBe(true);
             expect(p.endsWith('.md')).toBe(true);
         });
+    });
+});
+
+describe('projectIdFromPath — 项目推断', () => {
+    it('v4 结构取「模式库/书名」而不是「模式库」', () => {
+        expect(projectIdFromPath('长篇小说/九霄逆脉行/03-大纲与章节/正文/第1卷/第1章_正文.md'))
+            .toBe('长篇小说/九霄逆脉行');
+        expect(projectIdFromPath('短篇小说/短篇A/03-正文/第1节.md')).toBe('短篇小说/短篇A');
+        expect(projectIdFromPath('剧本/剧本A/03-正文/第1集.md')).toBe('剧本/剧本A');
+    });
+
+    it('旧版单层项目取书名', () => {
+        expect(projectIdFromPath('旧项目/03-大纲与章节/正文/第1卷/第1章_正文.md')).toBe('旧项目');
+    });
+
+    it('章节目录本身（无尾部文件）同样可用', () => {
+        expect(projectIdFromPath('长篇小说/书A/03-大纲与章节/步骤结果/第1卷/第3章'))
+            .toBe('长篇小说/书A');
+    });
+
+    it('无已知子目录时退回前两段；反斜杠路径归一化', () => {
+        expect(projectIdFromPath('长篇小说/书B/随便/文件.md')).toBe('长篇小说/书B');
+        expect(projectIdFromPath('长篇小说\\书C\\03-大纲与章节\\正文\\第1卷\\第1章_正文.md'))
+            .toBe('长篇小说/书C');
+    });
+
+    it('空输入返回空串', () => {
+        expect(projectIdFromPath('')).toBe('');
     });
 });

@@ -4,6 +4,7 @@ import { pjVolumeOutlineDir, pjStepDir } from '../shared/paths';
 import { createLogger } from '../shared/logger';
 import { writeVaultText } from '../shared/file-system-port';
 import { isImeComposing } from '../shared/keyboard';
+import { projectIdFromPath } from '../shared/paths';
 
 
 const log = createLogger('ChapterOutlineTreeModal');
@@ -92,7 +93,7 @@ export class ChapterOutlineTreeModal extends Modal {
         if (project.endsWith('.md')) {
             // 向后兼容：直接传入单文件路径
             this.legacyPath = project;
-            this.project = project.split('/')[0] || project;
+            this.project = projectIdFromPath(project);
         } else {
             this.project = project;
         }

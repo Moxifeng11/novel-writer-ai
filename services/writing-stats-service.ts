@@ -131,7 +131,9 @@ export class WritingStatsService {
     async handleFileChange(file: StatsFileLike): Promise<void> {
         if (!this.deps.isBodyPath(file.path)) return;
         await this.load();
-        const count = await this.resolveCount(file);
+        // 事件路径必须读正文本身：此刻 metadataCache 可能仍是上一版 frontmatter，
+        // 用旧 word_count 记账后 mtime 被标记为已处理，scan() 会永久跳过这个错误值。
+        const count = await this.resolveCountFromContent(file);
         if (count === null) return;
         const { delta } = recordFileWords(
             this.data,
@@ -191,6 +193,18 @@ export class WritingStatsService {
         // frontmatter 里没有（旧章/手工文件）：读一次正文兜底
         try {
             const path = file.path;
+            const content = await this.readFile(file);
+            if (content === null) return null;
+            return countBodyChars(content);
+        } catch (e) {
+            log.warn('[WritingStats] 读取正文失败:', e);
+            return null;
+        }
+    }
+
+    /** 只按正文内容计数（事件路径用，避免陈旧分词元数据） */
+    private async resolveCountFromContent(file: StatsFileLike): Promise<number | null> {
+        try {
             const content = await this.readFile(file);
             if (content === null) return null;
             return countBodyChars(content);

@@ -531,7 +531,7 @@ export class CommandRegistry {
         }
 
         const path = activeFile.path;
-        const project = path.split('/')[0];
+        const project = projectIdFromPath(path);
         if (!project) {
             new Notice('未找到所属项目');
             return null;
@@ -603,3 +603,4 @@ export function parseChapterFromPath(path: string): { project: string; volume: s
     if (!project || !Number.isFinite(chapterNum)) return null;
     return { project, volume: m[2], chapterNum, chapterName: `第${chapterNum}章` };
 }
+import { projectIdFromPath } from '../shared/paths';

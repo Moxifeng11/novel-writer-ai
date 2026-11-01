@@ -647,7 +647,7 @@ export class StepRunner {
         // v4.25：修订期间给执行时间线一个可见状态（此前 40-60 秒无任何进度更新）
         this.callbacks.showProgress?.(`🎯 定向修订中：处理 ${issues.length} 条质控问题（1 次调用）...`);
         const result = await tasks.targetedRevision(body, issueLines, {
-            projectId: chapDir ? chapDir.split('/')[0] : undefined,
+            projectId: chapDir ? projectIdFromPath(chapDir) : undefined,
             lockedFacts: locked.length > 0 ? [`以下人物必须保留且行为一致：${locked.join('、')}`] : [],
         });
 
@@ -668,7 +668,7 @@ export class StepRunner {
         }
 
         // 采纳前备份原稿，保证可回滚
-        const project = chapDir ? chapDir.split('/')[0] : '';
+        const project = chapDir ? projectIdFromPath(chapDir) : '';
         if (project) {
             try {
                 await new ChapterVersionService(this.plugin.app).saveVersion(
@@ -1817,3 +1817,4 @@ export class StepRunner {
     }
 
 }
+import { projectIdFromPath } from '../shared/paths';

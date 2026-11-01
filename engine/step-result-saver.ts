@@ -20,6 +20,7 @@ import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, Obs
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { validateStepResult } from './step-validator';
 import { createLogger } from '../shared/logger';
+import { projectIdFromPath } from '../shared/paths';
 
 
 const log = createLogger('StepResultSaver');
@@ -212,7 +213,7 @@ export class StepResultSaver {
                     }
                 }
 
-                const project = v4Project || chapDir.split('/')[0] || '';
+                const project = v4Project || projectIdFromPath(chapDir);
                 const entityNames = project ? await this.extractEntityNames(project) : null;
                 const truncated = meta?.truncated === true;
 
@@ -339,7 +340,7 @@ export class StepResultSaver {
     async writeFixToBody(fixContent: string, chapDir: string, chapterName: string, volume: string): Promise<void> {
         try {
             const v4Match = chapDir.match(/^(.+?)\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
-            const project = v4Match ? v4Match[1] : (chapDir.split('/')[0] || '');
+            const project = v4Match ? v4Match[1] : projectIdFromPath(chapDir);
             let targetPath: string;
             let chapterNum: number | undefined;
             if (v4Match) {

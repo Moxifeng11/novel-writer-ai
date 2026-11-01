@@ -382,3 +382,23 @@ describe('ChapterVersionService — 删除版本', () => {
     expect(latest).toBeNull();
   });
 });
+
+describe('ChapterVersionService — 并发保存不丢版本', () => {
+  it('两个并发 saveVersion 得到连续版本号，索引保留两条', async () => {
+    const app = new App();
+    const vault = app.vault as any;
+    const service = new ChapterVersionService(app as any);
+    const path = '长篇小说/书X/03-大纲与章节/正文/第1卷/第1章_正文.md';
+    vault._seedFile(path, '初始正文');
+
+    const [a, b] = await Promise.all([
+      service.saveVersion('长篇小说/书X', 'chapter', '第1章', path, '内容 A', { type: 'manual' }),
+      service.saveVersion('长篇小说/书X', 'chapter', '第1章', path, '内容 B', { type: 'manual' }),
+    ]);
+
+    expect(new Set([a.version, b.version]).size).toBe(2);
+    const versions = await service.getVersions('长篇小说/书X', 'chapter', '第1章', path);
+    expect(versions.length).toBe(2);
+    expect(versions.map(v => v.version).sort()).toEqual([1, 2]);
+  });
+});

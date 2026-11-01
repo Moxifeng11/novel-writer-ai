@@ -39,6 +39,7 @@ import { WritingStatsService } from './services/writing-stats-service';
 import { WritingStatsModal } from './ui/writing-stats-modal';
 import { WritingPet } from './ui/writing-pet';
 import { formatWords } from './shared/writing-stats';
+import { redactSecrets } from './shared/secret-redaction';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
 import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
@@ -1668,7 +1669,8 @@ export default class NovelWriterPlugin extends Plugin {
         // 备份设置（版本升级时）
         if (lastVersion && lastVersion !== currentVersion) {
             try {
-                const settingsCopy = JSON.parse(JSON.stringify(this.settings));
+                // 备份只用于「对比旧配置」，绝不能带密钥：脱敏后再落 cache.json
+                const settingsCopy = redactSecrets(JSON.parse(JSON.stringify(this.settings)));
                 cacheManager.setSettingsBackup({
                     version: lastVersion,
                     timestamp: new Date().toISOString(),
