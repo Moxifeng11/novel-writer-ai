@@ -94,7 +94,7 @@ import { ContextDiffDetector } from './context/context-diff-detector';
 import type { ContextChangeSet } from './context/context-diff-detector';
 import { IncrementalUpdater } from './context/incremental-updater';
 import { createLogger } from '../shared/logger';
-import { listEntityFiles, ENTITY_KIND_LABEL, type EntityKind } from '../shared/entity-reader';
+import { listEntityFiles, entityDir, ENTITY_KIND_LABEL, type EntityKind } from '../shared/entity-reader';
 import { activeContextQuotas } from '../shared/context-budget-policy';
 import { withWriteLock } from '../shared/write-lock';
 
@@ -1036,7 +1036,7 @@ export class ContextManager {
         }
 
         const characters: CharacterData[] = [];
-        const folderPath = pjCharsDir(project);
+        const folderPath = entityDir(project, 'characters');
         const files = this.getFilesInFolder(folderPath).filter(f => !f.name.includes(CHARACTER_FILE_EXCLUDE));
         const cache = this.getEntityCache();
         const existingPaths = new Set(files.map(f => f.path));
@@ -1091,7 +1091,7 @@ export class ContextManager {
      */
     async gatherCharacterCores(project: string): Promise<ContextData> {
         const souls: CharacterSoul[] = [];
-        const folderPath = pjCharsDir(project);
+        const folderPath = entityDir(project, 'characters');
 
         for (const file of this.getFilesInFolder(folderPath)) {
             if (!file.name.includes(CHARACTER_FILE_EXCLUDE)) {

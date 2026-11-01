@@ -14,7 +14,8 @@
 import { App, TFile } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { BodyWriter } from './body-writer';
-import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
+import { pjBodyFile, pjBodyDir, pjItemsDir } from '../shared/paths';
+import { entityDir } from '../shared/entity-reader';
 import { findBodyFileByChapterNum } from './chapter-utils';
 import { listFolderFiles } from '../shared/vault-tree';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
@@ -430,10 +431,10 @@ export class StepResultSaver {
         try {
             const result: EntityNames = { chars: [], factions: [], locs: [], items: [] };
             const entityDirs: [string, keyof EntityNames][] = [
-                [pjCharsDir(project), 'chars'],
-                [pjFactionsDir(project), 'factions'],
-                [pjLocsDir(project), 'locs'],
-                [pjItemsDir(project), 'items'],
+                [entityDir(project, 'characters'), 'chars'],
+                [entityDir(project, 'factions'), 'factions'],
+                [entityDir(project, 'locations'), 'locs'],
+                [entityDir(project, 'items'), 'items'],
             ];
             for (const [dir, key] of entityDirs) {
                 const files = await this.getFS().listFiles(dir);
