@@ -37,6 +37,7 @@ import {
     RecognitionSection,
     SuggestionsSection,
 } from './settings/general-sections';
+import { AgentBackendSection } from './settings/agent-section';
 
 const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = [
     { id: 'api', label: '🔌 API 配置' },
@@ -54,6 +55,7 @@ const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = [
     { id: 'layout', label: '🧩 工作台布局' },
     { id: 'projects', label: '🗂 项目库迁移' },
     { id: 'performance', label: '📈 性能监控' },
+    { id: 'agent', label: '🤖 Agent 后端' },
     { id: 'about', label: 'ℹ️ 关于' },
 ];
 
@@ -82,6 +84,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     private about: AboutSection;
     private recognition: RecognitionSection;
     private suggestions: SuggestionsSection;
+    private agentBackend: AgentBackendSection;
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app, plugin);
@@ -110,6 +113,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         this.about = new AboutSection(host);
         this.recognition = new RecognitionSection(host);
         this.suggestions = new SuggestionsSection(host);
+        this.agentBackend = new AgentBackendSection(host);
     }
 
     /** 分区回调：设置项变更后清缓存并重绘当前 tab */
@@ -214,6 +218,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'layout': this.layout.render(container); break;
             case 'projects': this.projectLibrary.render(container); break;
             case 'performance': this.performance.render(container); break;
+            case 'agent': this.agentBackend.render(container); break;
             case 'about': this.about.render(container); break;
         }
     }

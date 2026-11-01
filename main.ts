@@ -267,6 +267,20 @@ export interface NovelWriterSettings {
     /** 2026-10-28: Agent 工作台右栏折叠状态 */
     agentWorkbenchRightCollapsed?: boolean;
     /**
+     * Agent 对话后端（D）：native = 内置 Harness（默认）；dsh = 外部 DeepSeek Harness。
+     * dsh 仅桌面端、需用户自行安装 @deepseek-ai/dsh。
+     */
+    agentBackend?: 'native' | 'dsh';
+    /** dsh provider 路由（默认 deepseek-official） */
+    dshProvider?: string;
+    /** dsh 模型名（空 = 跟随 defaultModel） */
+    dshModel?: string;
+    /**
+     * 是否允许 dsh 本会话写入 vault。
+     * SDK 协议没有逐次审批通道：开启等于整会话 workspace-write，启动前会再确认一次。
+     */
+    dshAllowVaultWrite?: boolean;
+    /**
      * 2026-10-29 第 4 轮：其余面板的可拖拽尺寸（px）。
      * 统一放在 panelSizes 下，避免再加一堆散落字段。
      */

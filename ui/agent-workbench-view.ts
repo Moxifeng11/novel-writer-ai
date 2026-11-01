@@ -15,6 +15,11 @@ import { ItemView, MarkdownRenderer, Menu, Notice, TFile, TFolder, WorkspaceLeaf
 import NovelWriterPlugin from '../main';
 import { applyNwScope } from '../utils/helpers';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
+import { Platform } from 'obsidian';
+import { DshSession } from '../engine/agent/dsh/dsh-session';
+import { buildDshLaunchPlan, buildSandboxPatch } from '../engine/agent/dsh/dsh-launch';
+import { createDshProcessTransport } from '../engine/agent/dsh/dsh-process';
+import { OperationConfirmModal } from './components/progress';
 import { GuideAgentEngine } from '../engine/agent/conversation-engine';
 import { AgentHarnessEngine, type HarnessTelemetry } from '../engine/agent/harness/harness-engine';
 import { createCallAIAdapter } from '../engine/agent/harness/agent-adapter';
@@ -115,6 +120,10 @@ export class AgentWorkbenchView extends ItemView {
     private planEl: HTMLElement | null = null;
     /** 第 4 轮：统一拖拽原语的句柄，onClose 时释放 */
     private layoutResizers: PanelResizerHandle[] = [];
+    /** dsh 可选后端（实验）：仅桌面端、显式开启时存在 */
+    private dshSession: DshSession | null = null;
+    /** 当前 dsh 回合收集器（assistant/tool 事件按回合归并） */
+    private dshTurnCollector: { texts: string[]; tools: Array<{ tool: string; ok: boolean; summary: string }> } | null = null;
     private typingEl: HTMLElement | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
@@ -236,6 +245,9 @@ export class AgentWorkbenchView extends ItemView {
         this.turnAbort = null;
         this.harnessEngine = null;
         this.ruleEngine = null;
+        this.dshSession?.close();
+        this.dshSession = null;
+        this.dshTurnCollector = null;
         this.busy = false;
         // 关视图前把节流中的快照写完（最多 1s 未落盘）
         void this.sessionStore?.flush();
@@ -250,6 +262,9 @@ export class AgentWorkbenchView extends ItemView {
         this.turnAbort = null;
         this.harnessEngine = null;
         this.ruleEngine = null;
+        this.dshSession?.close();
+        this.dshSession = null;
+        this.dshTurnCollector = null;
         this.busy = false;
         this.previewedPath = '';
         this.lastUserText = '';
@@ -882,6 +897,12 @@ export class AgentWorkbenchView extends ItemView {
         // 会话存档按项目分文件；切换项目后重启会话会读/写各自的档
         this.sessionStore = createAgentSessionStore(this.app, () => this.resolveActiveProject());
 
+        // dsh 可选后端：显式开启才走；失败自动回退到内置/规则引擎
+        if ((this.plugin.settings.agentBackend || 'native') === 'dsh') {
+            const started = await this.bootDsh(ctx);
+            if (started) return;
+        }
+
         if (this.plugin.hasAiCredentials) {
             // 每次装配一个新会话就换一个中止器：关闭/重启时能真正停掉在途回合与工具
             const abort = new AbortController();
@@ -952,6 +973,139 @@ export class AgentWorkbenchView extends ItemView {
         if (session !== this.sessionSeq) return;
         this.ruleEngine = new GuideAgentEngine(ctx, this.port);
         this.renderTurn(this.ruleEngine.start());
+    }
+
+    /**
+     * 启动 dsh 后端（D）。返回 false 表示未启用/失败，调用方继续走 native。
+     *
+     * 写入语义：协议没有逐次审批，只能整会话 read-only 或 workspace-write；
+     * 选择写入时先弹一次确认（用户已了解范围是整个 vault）。
+     */
+    private async bootDsh(ctx: ReturnType<typeof getAgentContext>): Promise<boolean> {
+        if (Platform.isMobile) {
+            new Notice('dsh 后端仅支持桌面端，已回退到内置 Agent', 6000);
+            return false;
+        }
+        try {
+            const adapter = this.app.vault.adapter as unknown as {
+                getBasePath?: () => string;
+                exists?: (path: string) => Promise<boolean>;
+                mkdir?: (path: string) => Promise<void>;
+                write?: (path: string, data: string) => Promise<void>;
+            };
+            const base = adapter.getBasePath?.() || '';
+            if (!base) {
+                new Notice('无法获取 vault 路径，dsh 后端不可用', 6000);
+                return false;
+            }
+            const pluginDir = this.plugin.manifest.dir || `${this.app.vault.configDir}/plugins/novel-writer-ai`;
+            const relHome = `${pluginDir}/data/dsh`;
+            const home = `${base}/${relHome}`;
+            if (adapter.exists && adapter.mkdir && !(await adapter.exists(relHome))) {
+                await adapter.mkdir(relHome);
+            }
+
+            let allowWrite = this.plugin.settings.dshAllowVaultWrite === true;
+            if (allowWrite) {
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: 'dsh 将可写入整个 vault',
+                    description: 'DeepSeek Harness 的 SDK 协议没有逐次审批通道。确认后，本次会话可以修改 vault 内任何笔记。',
+                    warning: '建议先在测试库试用；只读模式下 dsh 不会写入任何文件。',
+                    confirmText: '仍要允许写入',
+                    cancelText: '改为只读',
+                });
+                allowWrite = confirmed;
+            }
+            const sandbox = allowWrite ? 'workspace-write' : 'read-only';
+            const patchPath = `${home}/sandbox.yml`;
+            if (adapter.write) await adapter.write(`${relHome}/sandbox.yml`, buildSandboxPatch(sandbox, base));
+
+            const plan = buildDshLaunchPlan({
+                home,
+                workspace: base,
+                sandbox,
+                sandboxPatchPath: patchPath,
+                apiKey: this.plugin.settings.apiKey || '',
+                env: {
+                    PATH: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.PATH || '',
+                    Path: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.Path || '',
+                    HOME: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.HOME || '',
+                },
+            });
+            const transport = await createDshProcessTransport(plan, {
+                cwd: base,
+                isDesktop: true,
+                passthroughEnv: {
+                    PATH: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.PATH || '',
+                    Path: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.Path || '',
+                },
+            });
+            const sessionId = `nw-${ctx.activeProject || 'default'}-${Date.now()}`;
+            const dsh = new DshSession({
+                transport,
+                sessionId,
+                sink: {
+                    onAssistantText: text => this.dshTurnCollector?.texts.push(text),
+                    onToolResult: result => this.dshTurnCollector?.tools.push({
+                        tool: result.name || 'tool',
+                        ok: result.ok,
+                        summary: result.text.slice(0, 300),
+                    }),
+                    onStderr: line => console.warn('[dsh]', line),
+                },
+            });
+            await dsh.initialize({
+                cwd: base,
+                provider: this.plugin.settings.dshProvider || 'deepseek-official',
+                model: this.plugin.settings.dshModel || this.plugin.settings.defaultModel || 'deepseek-chat',
+                maxTokens: 4000,
+            });
+            this.dshSession = dsh;
+            if (this.modeBadgeEl) {
+                this.modeBadgeEl.setText(`🐋 dsh · ${sandbox === 'read-only' ? '只读' : '可写'}`);
+                this.modeBadgeEl.addClass('is-ai');
+            }
+            this.appendSystemNote(
+                `已连接 DeepSeek Harness（${sandbox === 'read-only' ? '只读' : '可写'}）。`
+                + '会话由 dsh 自行持久化；点关闭/重启会终止进程。',
+            );
+            return true;
+        } catch (e) {
+            new Notice(`dsh 启动失败，已回退到内置 Agent：${e instanceof Error ? e.message : String(e)}`, 8000);
+            this.dshSession?.close();
+            this.dshSession = null;
+            return false;
+        }
+    }
+
+    private async runDshTurn(text: string, session: number): Promise<void> {
+        const dsh = this.dshSession;
+        if (!dsh) return;
+        this.dshTurnCollector = { texts: [], tools: [] };
+        this.showTyping();
+        try {
+            await dsh.prompt(text);
+            await dsh.waitForIdle(180_000);
+            if (session !== this.sessionSeq) return;
+            const collected = this.dshTurnCollector;
+            this.dshTurnCollector = null;
+            this.hideTyping();
+            this.renderOutcome({
+                messages: (collected?.texts.length ? collected.texts : ['（dsh 没有返回可见回复）'])
+                    .map(item => ({ role: 'agent' as const, text: item })),
+                chips: [],
+                done: true,
+                usedAi: true,
+                degraded: false,
+                toolCalls: collected?.tools || [],
+            });
+        } catch (e) {
+            if (session !== this.sessionSeq) return;
+            this.hideTyping();
+            new Notice(`dsh 回合失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+        } finally {
+            if (session === this.sessionSeq) this.dshTurnCollector = null;
+        }
     }
 
     private async switchToRuleEngine(): Promise<void> {
@@ -1029,6 +1183,8 @@ export class AgentWorkbenchView extends ItemView {
             if (this.inputEl) this.resetComposer();
             // 回合进行中切离线：先中止 harness 回合，否则它会继续跑完剩余步骤
             this.turnAbort?.abort();
+            this.dshSession?.close();
+            this.dshSession = null;
             await this.switchToRuleEngine();
             return;
         }
@@ -1095,6 +1251,10 @@ export class AgentWorkbenchView extends ItemView {
         const session = this.sessionSeq;
         this.busy = true;
         try {
+            if (this.dshSession) {
+                await this.runDshTurn(text, session);
+                return;
+            }
             if (this.harnessEngine) {
                 this.showTyping();
                 const outcome = await this.harnessEngine.handle(text);

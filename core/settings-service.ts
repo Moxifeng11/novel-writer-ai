@@ -338,6 +338,10 @@ export function getDefaultSettings(): NovelWriterSettings {
         agentWorkbenchRightWidth: 360,
         agentWorkbenchLeftCollapsed: false,
         agentWorkbenchRightCollapsed: false,
+        agentBackend: 'native',
+        dshProvider: 'deepseek-official',
+        dshModel: '',
+        dshAllowVaultWrite: false,
         storyContextTier: 'auto',
         /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */
         fingerprintInjectionBudget: 2000,

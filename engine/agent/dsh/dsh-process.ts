@@ -95,3 +95,77 @@ export async function createDshProcessTransport(
         },
     };
 }
+
+export interface DshProbeResult {
+    ok: boolean;
+    version?: string;
+    error?: string;
+}
+
+/**
+ * 健康检查：只跑 `<command> ... --version`，不创建会话、不联网（除 npx 首次解析包）。
+ * 超时/退出码非 0/命令不存在都返回结构化错误，交给设置页展示。
+ */
+export async function probeDshVersion(
+    plan: DshLaunchPlan,
+    options: DshProcessOptions,
+    timeoutMs = 20_000,
+): Promise<DshProbeResult> {
+    if (!options.isDesktop) return { ok: false, error: 'dsh 仅支持桌面端' };
+    const childProcess = await import('node:child_process');
+    const env: Record<string, string> = {};
+    for (const [key, value] of Object.entries(options.passthroughEnv || {})) {
+        if (typeof value === 'string') env[key] = value;
+    }
+    Object.assign(env, plan.env);
+
+    return new Promise<DshProbeResult>(resolve => {
+        let settled = false;
+        const finish = (result: DshProbeResult): void => {
+            if (settled) return;
+            settled = true;
+            resolve(result);
+        };
+        let stdout = '';
+        let stderr = '';
+        const versionArgs: string[] = [];
+        for (let i = 0; i < plan.args.length; i++) {
+            const arg = plan.args[i];
+            if (arg === '--profile' || arg === '--patch') { i += 1; continue; }
+            versionArgs.push(arg);
+        }
+        versionArgs.push('--version');
+
+        let child;
+        try {
+            child = childProcess.spawn(plan.command, versionArgs, {
+                cwd: options.cwd,
+                env,
+                stdio: ['ignore', 'pipe', 'pipe'],
+                windowsHide: true,
+            });
+        } catch (e) {
+            finish({ ok: false, error: e instanceof Error ? e.message : String(e) });
+            return;
+        }
+        const timer = setTimeout(() => {
+            try { child.kill(); } catch { /* 已退出 */ }
+            finish({ ok: false, error: `dsh --version 超时（${timeoutMs}ms）；首次 npx 拉取可能较慢，请稍后重试` });
+        }, timeoutMs);
+        child.stdout?.on('data', chunk => { stdout += String(chunk); });
+        child.stderr?.on('data', chunk => { stderr += String(chunk); });
+        child.on('error', (error: Error) => {
+            clearTimeout(timer);
+            finish({ ok: false, error: `无法启动 dsh：${error.message}。请确认已安装 Node.js 与 @deepseek-ai/dsh` });
+        });
+        child.on('exit', (code: number | null) => {
+            clearTimeout(timer);
+            const version = (stdout || stderr).trim().split(/\r?\n/).pop()?.trim();
+            if (code === 0 || (version && /\d+\.\d+/.test(version))) {
+                finish({ ok: true, version });
+            } else {
+                finish({ ok: false, error: `dsh --version 退出码 ${code ?? 'null'}${stderr ? `：${stderr.trim().slice(0, 200)}` : ''}` });
+            }
+        });
+    });
+}
