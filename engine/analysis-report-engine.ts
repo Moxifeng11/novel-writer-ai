@@ -1,6 +1,6 @@
 import { App, TFile } from 'obsidian';
 import { splitTableCells } from '../shared/chapter-table';
-import { listFolderFiles } from '../shared/vault-tree';
+import { listEntityFiles } from '../shared/entity-reader';
 import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
 import { 
@@ -400,8 +400,7 @@ export class AnalysisReportEngine {
         chapterText: string
     ): Promise<EntityChange[]> {
         const changes: EntityChange[] = [];
-        const charFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjCharsDir(project))
-            .filter(f => f.name !== '人物模板.md');
+        const charFiles = listEntityFiles(this.app, project, 'characters');
 
         const charNames: string[] = [];
         const charStates: Record<string, { oldStatus?: string; file: TFile }> = {};
@@ -568,7 +567,7 @@ ${chapterText.slice(0, 5000)}
 
     private analyzeLocationEntities(project: string, chapterText: string): EntityChange[] {
         const changes: EntityChange[] = [];
-        const locFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjLocsDir(project));
+        const locFiles = listEntityFiles(this.app, project, 'locations');
 
         for (const f of locFiles) {
             const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -591,7 +590,7 @@ ${chapterText.slice(0, 5000)}
 
     private analyzeFactionEntities(project: string, chapterText: string): EntityChange[] {
         const changes: EntityChange[] = [];
-        const factionFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjFactionsDir(project));
+        const factionFiles = listEntityFiles(this.app, project, 'factions');
 
         for (const f of factionFiles) {
             const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -614,7 +613,7 @@ ${chapterText.slice(0, 5000)}
 
     private analyzeItemEntities(project: string, chapterText: string): EntityChange[] {
         const changes: EntityChange[] = [];
-        const itemFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjItemsDir(project));
+        const itemFiles = listEntityFiles(this.app, project, 'items');
 
         for (const f of itemFiles) {
             const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -1159,8 +1158,7 @@ ${chapterText.slice(0, 5000)}
 
     private async applySingleCharacterStatusChange(project: string, change: EntityChange): Promise<boolean> {
         try {
-            const folderPath = pjCharsDir(project);
-            const files = listFolderFiles<TFile>(this.getVaultMeta(), folderPath);
+            const files = listEntityFiles(this.app, project, 'characters');
 
             let targetFile: TFile | null = null;
             for (const f of files) {

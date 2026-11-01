@@ -1,8 +1,9 @@
 import { App, TFile } from 'obsidian';
 import { splitTableCells } from '../shared/chapter-table';
+import { listEntityFiles } from '../shared/entity-reader';
 import { RE_VOLUME_HEADER, RE_CHAPTER_RANGE } from '../shared/format-constants';
 import { readMergedVolumeOutline } from '../utils/helpers';
-import { pjCharsDir, pjFactionsDir, pjForeshadowDB, pjTimelineBoard, pjControlDir, pjVolumeOutlineDir } from '../shared/paths';
+import { pjForeshadowDB, pjTimelineBoard, pjControlDir, pjVolumeOutlineDir } from '../shared/paths';
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
@@ -227,10 +228,7 @@ export class CrossVolumeIntegrator {
      */
     private async scanCharacters(project: string): Promise<CharacterSnapshot[]> {
         const result: CharacterSnapshot[] = [];
-        const dir = pjCharsDir(project);
-
-        const files = this.getVaultMeta().getFiles()
-            .filter(f => f.path.startsWith(dir + '/') && f.name.endsWith('.md') && f.name !== '人物模板.md');
+        const files = listEntityFiles(this.app, project, 'characters');
 
         for (const file of files) {
             try {
@@ -258,10 +256,7 @@ export class CrossVolumeIntegrator {
      */
     private async scanFactions(project: string): Promise<FactionSnapshot[]> {
         const result: FactionSnapshot[] = [];
-        const dir = pjFactionsDir(project);
-
-        const files = this.getVaultMeta().getFiles()
-            .filter(f => f.path.startsWith(dir + '/') && f.name.endsWith('.md'));
+        const files = listEntityFiles(this.app, project, 'factions');
 
         for (const file of files) {
             try {

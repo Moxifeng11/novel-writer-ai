@@ -24,6 +24,7 @@ const HOT_FILES = [
     'engine/step-result-saver.ts',
     'engine/chapter-utils.ts',
     'engine/knowledge-usage.ts',
+    'shared/entity-reader.ts',
     'engine/analysis-report-engine.ts',
     'services/writing-stats-service.ts',
     'ui/continue-chapters-modal.ts',

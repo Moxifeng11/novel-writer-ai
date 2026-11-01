@@ -23,10 +23,17 @@ export class Vault {
     /** 测试辅助：种子文件（路径→内容） */
     _seedFile(path: string, content: string): TFile {
         this._store.set(path, content);
+        // 自动登记祖先目录：否则 getAbstractFileByPath 找不到目录，
+        // 基于目录遍历的实现（listFolderFiles）在测试里会恒为空。
+        const parts = path.split('/');
+        for (let i = 1; i < parts.length; i++) {
+            this._folders.add(parts.slice(0, i).join('/'));
+        }
         const f = new TFile();
         f.path = path;
         f.name = path.split('/').pop() || 'unknown.md';
         f.basename = f.name.replace(/\.[^/.]+$/, '');
+        f.extension = f.name.includes('.') ? f.name.split('.').pop() || '' : '';
         f.vault = this;
         f.stat.size = content.length;
         return f;
@@ -79,6 +86,7 @@ export class Vault {
         f.path = path;
         f.name = path.split('/').pop() || 'unknown.md';
         f.basename = f.name.replace(/\.[^/.]+$/, '');
+        f.extension = f.name.includes('.') ? f.name.split('.').pop() || '' : '';
         f.vault = this;
         f.stat.size = data.length;
         return f;
@@ -101,6 +109,7 @@ export class Vault {
             f.path = path;
             f.name = path.split('/').pop() || 'unknown.md';
             f.basename = f.name.replace(/\.[^/.]+$/, '');
+        f.extension = f.name.includes('.') ? f.name.split('.').pop() || '' : '';
             f.vault = this;
             f.stat.size = (this._store.get(path) || '').length;
             return f;
@@ -113,26 +122,42 @@ export class Vault {
             }
         }
         if (this._folders.has(folderPath)) {
-            const f = new TFolder();
-            f.path = folderPath;
-            f.name = folderPath.split('/').filter(Boolean).pop() || folderPath;
-            f.vault = this;
-            // 直接子文件：供 loadStylePresets 等按目录枚举文件的逻辑使用
-            const prefix = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
-            for (const filePath of this._store.keys()) {
-                if (!filePath.startsWith(prefix)) continue;
-                if (filePath.slice(prefix.length).includes('/')) continue;
-                const child = new TFile();
-                child.path = filePath;
-                child.name = filePath.split('/').pop() || 'unknown.md';
-                child.basename = child.name.replace(/\.[^/.]+$/, '');
-                child.vault = this;
-                child.stat.size = (this._store.get(filePath) || '').length;
-                f.children.push(child);
-            }
-            return f;
+            return this._makeFolder(folderPath);
         }
         return null;
+    }
+
+    /** 递归构造 TFolder.children（文件 + 子文件夹），供目录遍历逻辑使用 */
+    private _makeFolder(folderPath: string): TFolder {
+        const canonical = folderPath.replace(/\/+$/, '');
+        const folder = new TFolder();
+        folder.path = canonical;
+        folder.name = canonical.split('/').filter(Boolean).pop() || canonical;
+        folder.vault = this;
+        const prefix = `${canonical}/`;
+        const folderChildren: TFolder[] = [];
+        const fileChildren: TFile[] = [];
+        for (const filePath of this._store.keys()) {
+            if (!filePath.startsWith(prefix)) continue;
+            if (filePath.slice(prefix.length).includes('/')) continue;
+            const child = new TFile();
+            child.path = filePath;
+            child.name = filePath.split('/').pop() || 'unknown.md';
+            child.basename = child.name.replace(/\.[^/.]+$/, '');
+        child.extension = child.name.includes('.') ? child.name.split('.').pop() || '' : '';
+            child.vault = this;
+            child.stat.size = (this._store.get(filePath) || '').length;
+            fileChildren.push(child);
+        }
+        for (const childPath of this._folders) {
+            const normalized = childPath.replace(/\/+$/, '');
+            if (!normalized.startsWith(prefix)) continue;
+            const rest = normalized.slice(prefix.length);
+            if (!rest || rest.includes('/')) continue;
+            folderChildren.push(this._makeFolder(normalized));
+        }
+        folder.children = [...fileChildren, ...folderChildren];
+        return folder;
     }
 
     getFiles(): TFile[] {
@@ -142,6 +167,7 @@ export class Vault {
             f.path = path;
             f.name = path.split('/').pop() || 'unknown.md';
             f.basename = f.name.replace(/\.[^/.]+$/, '');
+        f.extension = f.name.includes('.') ? f.name.split('.').pop() || '' : '';
             f.vault = this;
             f.stat.size = (this._store.get(path) || '').length;
             files.push(f);

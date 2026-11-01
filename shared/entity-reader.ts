@@ -10,6 +10,7 @@
  */
 import { App, TFile } from 'obsidian';
 import { pjWorldview, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from './paths';
+import { listFolderFiles } from './vault-tree';
 
 /** 四类实体（与 shared/entity-persistence.ts 的 EntityKind 保持一致） */
 export type EntityKind = 'characters' | 'factions' | 'locations' | 'items';
@@ -46,13 +47,9 @@ export function isEntityTemplateFile(name: string): boolean {
  * 注意：全库扫描，调用方在同一渲染周期内多次调用时应自行复用结果（见批次 2 增量索引）。
  */
 export function listEntityFiles(app: App, project: string, kind: EntityKind): TFile[] {
-    const dirPath = `${entityDir(project, kind)}/`;
-    return app.vault.getFiles()
-        .filter(f =>
-            f.path.startsWith(dirPath) &&
-            f.name.endsWith('.md') &&
-            !isEntityTemplateFile(f.name)
-        )
+    // 只遍历本项目实体目录（递归）：不再对整库 getFiles() 再过滤前缀
+    return listFolderFiles<TFile>(app.vault, entityDir(project, kind), { recursive: true })
+        .filter(f => !isEntityTemplateFile(f.name))
         .sort((a, b) => a.path.localeCompare(b.path));
 }
 
