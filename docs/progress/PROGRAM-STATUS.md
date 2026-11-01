@@ -6,7 +6,7 @@
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
 - 当前基线：v4.22.0；单测 506 文件 / 5710 用例；E2E 25 条
-- 任务进度：57/61 已完成（93%），1 进行中，0 受阻
+- 任务进度：58/61 已完成（95%），1 进行中，0 受阻
 
 ## 一、任务组总览
 
@@ -18,7 +18,7 @@
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G5 | 交互一致性与可访问性 | v4.25.0 | ✅ 已完成 | 6/6（100%） | 实现 ZCode / 验收 用户 |
 | G6 | 性能与存储 | v4.25.0 | 🟡 进行中 | 9/10（90%） | 实现 ZCode / 验收 用户 |
-| G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 9/11（82%） | 实现 ZCode / 验收 用户 |
+| G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 10/11（91%） | 实现 ZCode / 验收 用户 |
 
 ## 二、分组明细
 
@@ -152,7 +152,7 @@
 | G7-1 | CI 绕过架构门禁 | ✅ 已完成 | CI 跑 styles/deps/engines；漂移检查覆盖 versions.json 与 styles.css | 67c53ca |
 | G7-2 | 占位测试与无效断言 | ✅ 已完成 | 0 个 `expect(true)`；`resolves.not.toThrow` 已改用实际值断言 | 4e89a67 |
 | G7-3 | 专项进度台账与渲染脚本 | ✅ 已完成 | program-status.json 单一数据源；MD 由脚本生成且 --check 可校验 | docs/progress/PROGRAM-STATUS.md |
-| G7-5 | 联动场景回归清单 | ⬜ 待开始 | 每组改动跑「生成→质控→修订→结算→导出」+「知识库→注入」+「三模式创建」三条联动链 | — |
+| G7-5 | 联动场景回归清单 | ✅ 已完成 | 三条联动链（生成→质控→修订→结算→导出 / 知识库→注入→归因→统计 / 三模式创建→内容结构→单元写作）均有落点清单 + 自动化覆盖；知识库链有跨模块集成用例 | docs/regression/LINKED-SCENARIOS.md（环节/入口/产物/覆盖/手工验收）+ tests/integration/linked-scenarios.test.ts（注入→rag_sources→统计，2 条）+ scripts/check-linked-scenarios.mjs（3 链 21 锚点，preflight+CI） |
 | G7-6 | 结算引擎 1670 行 0 直接测试 | ✅ 已完成 | 成功结算/重复幂等/部分失败回滚 3 条真实行为用例（不再整体 mock）；并暴露正文 status 未进 journal 的缺陷 | tests/unit/engine/settlement-engine-behavior.test.ts + settlement-engine 正文快照修复 |
 | G7-7 | shared/ 与 ui/ 不在覆盖率口径内 | ✅ 已完成 | vitest include 覆盖 shared/；基线 76.7% lines（含 shared），shared 域阈值 90/90/82/80 已生效 | vitest.config.ts include + 各域阈值 + test:cov 通过 |
 | G7-4 | 覆盖缺口补齐（分批） | 🟡 进行中 | a/b/c/d 已完成；knowledge-base-view 的 DOM 级测试仍需引入 jsdom（依赖决策，未做） | 见 G7-4a..4d |

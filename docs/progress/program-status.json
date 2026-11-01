@@ -503,9 +503,9 @@
         {
           "id": "G7-5",
           "title": "联动场景回归清单",
-          "status": "todo",
-          "acceptance": "每组改动跑「生成→质控→修订→结算→导出」+「知识库→注入」+「三模式创建」三条联动链",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "三条联动链（生成→质控→修订→结算→导出 / 知识库→注入→归因→统计 / 三模式创建→内容结构→单元写作）均有落点清单 + 自动化覆盖；知识库链有跨模块集成用例",
+          "evidence": "docs/regression/LINKED-SCENARIOS.md（环节/入口/产物/覆盖/手工验收）+ tests/integration/linked-scenarios.test.ts（注入→rag_sources→统计，2 条）+ scripts/check-linked-scenarios.mjs（3 链 21 锚点，preflight+CI）"
         },
         {
           "id": "G7-6",
