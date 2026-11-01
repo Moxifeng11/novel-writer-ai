@@ -15,6 +15,10 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { isChapterSettledText } from '../shared/chapter-status';
 import { buildSettlementTable } from '../engine/settlement/settlement-artifacts';
+import { settlementArtifactNotice, writeSettlementArtifacts } from '../engine/settlement/settlement-coordinator';
+import { writeChapterStateSnapshot } from '../engine/chapter-state-snapshot-service';
+import { pjNarrativeOverview } from '../shared/paths';
+import { writeVaultText } from '../shared/file-system-port';
 import { splitTableCells } from '../shared/chapter-table';
 import NovelWriterPlugin from '../main';
 import { AIEngine, ChapterContext } from '../engine/ai-engine';
@@ -625,23 +629,6 @@ ${reportResult.content}
                 settlement: summarizeSettlement(settleResult),
             });
 
-            // v4.0: 结算表统一由 settlement-artifacts 生成（与章节结算弹窗同模板）
-            const settleSummary = buildSettlementTable({
-                chapterName: chapName,
-                volume: volName,
-                result: settleResult,
-                timestamp: new Date().toISOString(),
-                model: plugin.settings.flashModel,
-            });
-            try {
-                const sp = `${chapDir}/${getChapterFileName(chapName, '结算表')}`;
-                const existingSettleFile = app.vault.getAbstractFileByPath(sp);
-                if (existingSettleFile) await app.vault.delete(existingSettleFile);
-                await app.vault.create(sp, settleSummary);
-            } catch (e) {
-                log.warn('结算表写入失败:', e);
-                new Notice('⚠️ 结算表写入失败（结算结果已应用到实体/伏笔，可稍后重新结算补齐表格）', 8000);
-            }
 
             try {
                 let currentBody = await app.vault.read(bodyFile);
@@ -716,6 +703,52 @@ ${reportResult.content}
                 } catch (e) { log.warn('正文文件重命名失败:', e); }
             }
 
+            // v4.0: 结算表统一由 settlement-artifacts 生成（与章节结算弹窗同模板）
+            const settleSummary = buildSettlementTable({
+                chapterName: chapName,
+                volume: volName,
+                result: settleResult,
+                timestamp: new Date().toISOString(),
+                model: plugin.settings.flashModel,
+            });
+            const artifactReport = await writeSettlementArtifacts({
+                chapterName: chapName,
+                volume: volName,
+                mode: 'full',
+                result: settleResult,
+                tableText: settleSummary,
+            }, {
+                writeSettlementTable: async text => {
+                    const sp = `${chapDir}/${getChapterFileName(chapName, '结算表')}`;
+                    const existingSettleFile = app.vault.getAbstractFileByPath(sp);
+                    if (existingSettleFile) await app.vault.delete(existingSettleFile);
+                    await app.vault.create(sp, text);
+                },
+                writeSnapshot: async () => {
+                    // 正文 frontmatter 已在上方更新；快照读取最终正文，避免 status 仍是旧值
+                    const finalBody = await app.vault.read(bodyFile);
+                    const scenePath = `${chapDir}/${getChapterFileName(chapName, CHAPTER_FILE_TYPES.sceneExpand)}`;
+                    const sceneFile = app.vault.getAbstractFileByPath(scenePath);
+                    const sceneExpansion = sceneFile instanceof TFile ? await app.vault.read(sceneFile) : '';
+                    await writeChapterStateSnapshot(app, {
+                        project,
+                        chapterNum: parseInt(chapName.match(/第(\d+)章/)?.[1] || '0', 10),
+                        chapterName: chapName,
+                        bodyText: finalBody,
+                        sceneExpansion,
+                        updatedChars: settleResult.chars,
+                    });
+                },
+                refreshNarrativeOverview: async () => {
+                    const engine = plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
+                    const overview = await engine.generateNarrativeOverview(project);
+                    if (overview.trim()) {
+                        await writeVaultText(app, pjNarrativeOverview(project), overview);
+                    }
+                },
+            });
+            const artifactWarning = settlementArtifactNotice(artifactReport);
+            if (artifactWarning) new Notice(artifactWarning, 8000);
             if (aborted()) return;
             showProgress('⏳ 正在执行连贯性审查...');
             await reviewAgent.reviewChapter(project, bodyFile.path);

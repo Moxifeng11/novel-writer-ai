@@ -5,6 +5,8 @@
  * 空指令集不写任何产物；轻量结算不重建总览。
  */
 import { describe, expect, it, vi } from 'vitest';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
     settlementArtifactNotice,
     writeSettlementArtifacts,
@@ -87,5 +89,21 @@ describe('writeSettlementArtifacts', () => {
             refreshNarrativeOverview: async () => {},
         });
         expect(report.written).toEqual(['snapshot', 'overview']);
+    });
+});
+
+describe('源码约束：入口不再各自写产物', () => {
+    const root = path.resolve(__dirname, '../../..');
+    const read = (rel: string): string => fs.readFileSync(path.join(root, rel), 'utf8');
+
+    it('一键成文与步骤路径都走协调器', () => {
+        expect(read('ui/write-chapter-modal.ts')).toContain('writeSettlementArtifacts({');
+        expect(read('engine/step-runner.ts')).toContain('writeSettlementArtifacts({');
+    });
+
+    it('步骤结算不再自己写叙事总览（避免与协调器重复）', () => {
+        const source = read('engine/step-settlement.ts');
+        expect(source).not.toContain('generateNarrativeOverview');
+        expect(source).not.toContain('pjNarrativeOverview');
     });
 });

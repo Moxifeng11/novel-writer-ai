@@ -22,6 +22,8 @@ import { StyleFingerprintLibrary } from './style-fingerprint-library';
 import { selectBodyStyleSamples, formatStyleSamplesForPrompt } from './style/style-sample-service';
 import { parseContrastLibrary, selectContrastPair, formatContrastPairForPrompt } from '../shared/contrast-library';
 import { writeChapterStateSnapshot } from './chapter-state-snapshot-service';
+import { writeSettlementArtifacts } from './settlement/settlement-coordinator';
+import { pjNarrativeOverview } from '../shared/paths';
 import { parseQualityControlReport } from './revision/quality-issue-parser';
 import { runTargetedRevision } from './revision/targeted-revision';
 import { evaluateRevision, extractCharacterNames, recheckRevision } from './revision/revision-guard';
@@ -1556,14 +1558,32 @@ export class StepRunner {
             : { status: 'failed', failure: `${chapterName} 结算未产出结果（缺分析报告或已中断）` });
         if (result) {
             const chapterNum = parseInt(chapterName.match(/第(\d+)章/)?.[1] || '0', 10);
-            await writeChapterStateSnapshot(this.app, {
-                project,
-                chapterNum,
+            const artifactReport = await writeSettlementArtifacts({
                 chapterName,
-                bodyText: stepResults['bodyGeneration'] || '',
-                sceneExpansion: stepResults['sceneExpand'] || '',
-                updatedChars: result.chars,
+                volume: (chapDir.match(/第(\d+)卷/)?.[0]) || '',
+                mode: 'full',
+                result,
+            }, {
+                writeSnapshot: async () => {
+                    await writeChapterStateSnapshot(this.app, {
+                        project,
+                        chapterNum,
+                        chapterName,
+                        bodyText: stepResults['bodyGeneration'] || '',
+                        sceneExpansion: stepResults['sceneExpand'] || '',
+                        updatedChars: result.chars,
+                    });
+                },
+                refreshNarrativeOverview: async () => {
+                    const overview = await this.settlementEngine.generateNarrativeOverview(project);
+                    if (overview.trim()) {
+                        await this.getFS().write(pjNarrativeOverview(project), overview);
+                    }
+                },
             });
+            for (const warning of artifactReport.warnings) {
+                log.warn('[StepRunner] 结算产物未完全写入:', warning);
+            }
         }
     }
 

@@ -8,7 +8,6 @@
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { isChapterSettledText } from '../shared/chapter-status';
 import type { SettlementEngine, SettlementResult } from './settlement-engine';
-import { pjNarrativeOverview } from '../shared/paths';
 import { NOTICE_ERROR } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
 
@@ -132,17 +131,7 @@ export async function executeSettlement(
             host.showSuccess(`章节结算完成（${summary.join('，')}）`);
         }
 
-        // v3.5.0: 结算后生成叙事总览
-        try {
-            const overview = await host.settlementEngine.generateNarrativeOverview(project);
-            const overviewPath = pjNarrativeOverview(project);
-            await host.writeTextFile(overviewPath, overview);
-            log.warn('[StepRunner] 叙事总览已更新:', overviewPath);
-        } catch (e) {
-            log.warn('[StepRunner] 叙事总览生成失败（不影响结算）:', e);
-            host.showNotice('[StepRunner] 叙事总览生成失败，请稍后重试');
-        }
-
+        // 叙事总览与章节快照由 StepRunner 的 settlement-coordinator 统一写入
         host.triggerContextRefresh();
     } catch (e) {
         host.hideProgress();
