@@ -369,7 +369,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                     confirmText: '允许执行',
                     cancelText: '拒绝',
                 });
-            } catch (e) {
+            } catch (e) { // silent-ok: 确认弹窗异常按「拒绝执行」处理，属安全兜底
                 log.warn('[AgentPort] 危险命令确认弹窗失败:', e);
                 return false;
             }

@@ -645,7 +645,10 @@ ${reportResult.content}
                 const existingSettleFile = app.vault.getAbstractFileByPath(sp);
                 if (existingSettleFile) await app.vault.delete(existingSettleFile);
                 await app.vault.create(sp, settleSummary);
-            } catch (e) { log.warn('结算表写入失败:', e); }
+            } catch (e) {
+                log.warn('结算表写入失败:', e);
+                new Notice('⚠️ 结算表写入失败（结算结果已应用到实体/伏笔，可稍后重新结算补齐表格）', 8000);
+            }
 
             try {
                 let currentBody = await app.vault.read(bodyFile);

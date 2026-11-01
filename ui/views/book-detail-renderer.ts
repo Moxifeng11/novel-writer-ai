@@ -2305,7 +2305,7 @@ export class BookDetailRenderer {
                 });
                 delBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.deps.onDeleteCustomTag(book, idx).catch(err => {
+                    this.deps.onDeleteCustomTag(book, idx).catch(err => { // silent-ok: 失败提示在 onDeleteCustomTag 内部
                         log.error('删除标签失败:', err);
                     });
                 });

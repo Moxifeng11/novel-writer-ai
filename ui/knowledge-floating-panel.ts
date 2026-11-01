@@ -221,6 +221,15 @@ export class KnowledgeFloatingPanel extends DraggablePanel {
         if (this.rhythmTabContent) {
           this.renderRhythmTab(this.rhythmTabContent);
         }
+      }).catch(e => {
+        log.warn('[KnowledgeFloatingPanel] 加载知识库书目失败:', e);
+        container.empty();
+        const retry = container.createDiv({ cls: 'nw-float-empty', text: '书目加载失败' });
+        const btn = retry.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '重试' });
+        btn.onclick = () => {
+          this.booksCacheLoaded = false;
+          this.renderRhythmTab(container);
+        };
       });
       return;
     }

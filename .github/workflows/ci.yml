@@ -69,6 +69,9 @@ jobs:
       - name: 关系数据权威源契约
         run: npm run check:relationship-authority
 
+      - name: 用户操作型静默失败检查
+        run: npm run check:silent-failures
+
       - name: 专项进度台账与报告一致性
         run: npm run check:program
 

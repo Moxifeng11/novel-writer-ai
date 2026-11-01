@@ -454,7 +454,7 @@ export class ExistingEntityManagerModal extends Modal {
             try {
                 await this.app.vault.modify(file, newContent);
                 modified++;
-            } catch (e) {
+            } catch (e) { // silent-ok: 单条失败计数后由调用方统一汇总提示
                 log.error(`[小说工坊] 修改 ${path} 失败:`, e);
                 failed++;
             }

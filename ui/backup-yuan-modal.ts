@@ -86,19 +86,25 @@ export class BackupYuanModal extends Modal {
             }
 
             let count = 0;
+            let failed = 0;
             for (const f of src.files) {
                 try {
                     const content = await adapter.read(f);
                     await adapter.write(f.replace('元文件', backupName), content);
                     count++;
                 } catch (e) {
+                    failed++;
                     log.warn('备份失败:', f, e);
                 }
             }
 
             await new Promise(r => setTimeout(r, 300));
 
-            new Notice(`✅ 备份完成：${backupName}（${count} 个文件）`, 6000);
+            if (failed > 0) {
+                new Notice(`⚠️ 备份不完整：${count} 个成功，${failed} 个失败（详见控制台）`, 10000);
+            } else {
+                new Notice(`✅ 备份完成：${backupName}（${count} 个文件）`, 6000);
+            }
             this.close();
         } finally {
             progressNotice.hide();

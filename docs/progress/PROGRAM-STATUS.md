@@ -6,7 +6,7 @@
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-01
 - 当前基线：v4.22.0；单测 498 文件 / 5641 用例；E2E 25 条
-- 任务进度：45/57 已完成（79%），0 进行中，0 受阻
+- 任务进度：46/57 已完成（81%），0 进行中，0 受阻
 
 ## 一、任务组总览
 
@@ -16,7 +16,7 @@
 | G2 | 语料与注入链 | v4.24.0 | 🟡 进行中 | 5/6（83%） | 实现 ZCode / 验收 用户 |
 | G3 | 项目生命周期与三模式 | v4.24.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
 | G4 | 配置与凭据治理 | v4.23.0 | ✅ 已完成 | 5/5（100%） | 实现 ZCode / 验收 用户 |
-| G5 | 交互一致性与可访问性 | v4.25.0 | 🟡 进行中 | 4/6（67%） | 实现 ZCode / 验收 用户 |
+| G5 | 交互一致性与可访问性 | v4.25.0 | 🟡 进行中 | 5/6（83%） | 实现 ZCode / 验收 用户 |
 | G6 | 性能与存储 | v4.25.0 | 🟡 进行中 | 5/10（50%） | 实现 ZCode / 验收 用户 |
 | G7 | 质量基建与可观测 | v4.25.0 | 🟡 进行中 | 3/7（43%） | 实现 ZCode / 验收 用户 |
 
@@ -113,7 +113,7 @@
 | G5-1 | IME 守卫统一（15 处） | ✅ 已完成 | 组字中 Enter/Tab/Escape 不触发提交/切换（shared/keyboard.ts） | 67c53ca |
 | G5-2 | 大纲树全局按键误删章节 | ✅ 已完成 | 焦点不在面板内或为 contenteditable 时不接管按键 | 67c53ca |
 | G5-3 | 批量写作 Notice 刷屏 | ✅ 已完成 | 单条常驻提示 + 失败章汇总（最多列 5 个） | 67c53ca |
-| G5-4 | 空态与失败可见性补齐 | ⬜ 待开始 | 保存/导出/删除类入口 0 处静默失败；空面板均有下一步引导 | — |
+| G5-4 | 空态与失败可见性补齐 | ✅ 已完成 | 用户操作型 catch 0 处无可见提示（check:silent-failures 门禁）；拆解监控空态带「去知识库」入口 | scripts/check-silent-failures.mjs（preflight+CI）+ 备份/浮窗/结算表/信息债提示 + 监控空态 CTA |
 | G5-5 | 窄屏与移动端布局 | ⬜ 待开始 | 侧栏收起时三栏视图可单列滚动；移动端无白屏（宠物/状态栏已守卫） | — |
 | G5-6 | 批量建章失败后永久进度横幅 + 静默失败 | ✅ 已完成 | finally 关闭横幅；失败给出已创建数并报原因 | ui/continue-chapters-modal.ts |
 
@@ -180,3 +180,4 @@
 - 2026-11-01｜G2｜知识注入来源落盘：rag_sources（书/维度/分数/片段）写入步骤 frontmatter（shared/rag-sources.ts + injector/step-runner/saver + 10 条单测）
 - 2026-11-01｜G2｜rag_sources 展示：步骤面板知识来源条 + 统计页命中率/常用书目/最近引用（knowledge-usage.ts + writing-stats-modal + step-render-controller）
 - 2026-11-01｜G3｜短篇/剧本通用工具放开 + 模式不支持提示；项目迁移一键撤销（逆序、占用跳过）（command-mode-rules / tool-catalog-aggregator / project-migration-service）
+- 2026-11-01｜G5｜静默失败清零门禁 + 关键入口补提示（备份/浮窗保存/结算表/信息债/章节加载）+ 拆解监控空态 CTA（check-silent-failures.mjs + knowledge-monitor/backup-yuan/co-write-floating/write-chapter）

@@ -922,6 +922,8 @@ export class FullWriterView extends ItemView {
             } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[FullWriter] onOpen error:', errMsg);
+                // 回到项目页必须说明原因，否则用户只看到「闪一下又回去了」
+                new Notice(`⚠️ 章节加载失败，已返回项目页：${errMsg}`, 8000);
                 this.activateTab('project-selector');
             }
         } else {
@@ -1778,7 +1780,7 @@ export class FullWriterView extends ItemView {
             await this.renderPromptArea(workspace);
             try {
                 this.contextPanel.render(workspace, this.context, this.project, this.chapterNum, this.plugin, () => this.estimateTotalChars());
-            } catch (e) {
+            } catch (e) { // silent-ok: 面板渲染是旁路，异常跳过不阻塞主流程
                 log.warn('[小说工坊] 上下文面板渲染异常（已跳过）:', e);
                 workspace.createDiv({ text: '⚠️ 上下文面板渲染失败', cls: 'novel-writer-fw-warning' });
             }

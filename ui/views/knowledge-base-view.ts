@@ -2029,7 +2029,7 @@ export class KnowledgeBaseView extends ItemView {
                 });
                 deleteIcon.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.handleDeleteGenre(genre.id).catch(err => {
+                    this.handleDeleteGenre(genre.id).catch(err => { // silent-ok: handleDeleteGenre 内部已有失败 Notice
                         log.error('删除题材失败:', err);
                     });
                 });
@@ -2551,7 +2551,7 @@ export class KnowledgeBaseView extends ItemView {
         batchDeleteBtn.style.opacity = deletableSelected.length === 0 ? '0.5' : '1';
         batchDeleteBtn.style.cursor = deletableSelected.length === 0 ? 'not-allowed' : 'pointer';
         batchDeleteBtn.addEventListener('click', () => {
-            this.handleBatchDelete(deletableSelected).catch(err => {
+            this.handleBatchDelete(deletableSelected).catch(err => { // silent-ok: handleBatchDelete 内部已汇总提示
                 log.error('批量删除任务失败:', err);
             });
         });
@@ -2746,7 +2746,7 @@ export class KnowledgeBaseView extends ItemView {
                     attr: { title: '删除该任务记录' }
                 });
                 deleteBtn.addEventListener('click', () => {
-                    this.handleDeleteTask(task).catch(err => {
+                    this.handleDeleteTask(task).catch(err => { // silent-ok: handleDeleteTask 内部已有失败 Notice
                         log.error('删除任务失败:', err);
                     });
                 });
@@ -3325,7 +3325,7 @@ export class KnowledgeBaseView extends ItemView {
             attr: { title: '删除该书籍及其拆解数据' }
         });
         deleteBtn.addEventListener('click', () => {
-            this.handleDeleteBook(book).catch(err => {
+            this.handleDeleteBook(book).catch(err => { // silent-ok: handleDeleteBook 内部已有失败 Notice
                 log.error('删除书籍失败:', err);
             });
         });

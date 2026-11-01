@@ -276,6 +276,7 @@ export class DraggablePanel extends ItemView {
     if (!s) return;
     if (!s.panelLayout) s.panelLayout = { panels: [], autoRestore: true, lastWorkspaceOpen: false };
     s.panelLayout.panels = layout;
-    this.plugin.saveSettings?.();
+    // 布局保存失败不应产生未处理 rejection（拖拽是高频操作）
+    void Promise.resolve(this.plugin.saveSettings?.()).catch(() => undefined); // silent-ok: 布局保存失败不影响当前会话
   }
 }

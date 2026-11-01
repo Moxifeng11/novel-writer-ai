@@ -265,7 +265,8 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       await this.renderFlowPanel();
     } catch (e) {
       log.warn("[CoWriteFloating] \u4FDD\u5B58\u5931\u8D25:", e);
-      new Notice("\u26A0\uFE0F \u4FDD\u5B58\u5931\u8D25");
+      this.updateSaveState("\u4FDD\u5B58\u5931\u8D25");
+      new Notice(`\u26A0\uFE0F \u4FDD\u5B58\u5931\u8D25\uFF1A${e instanceof Error ? e.message : String(e)}`, 6000);
     }
   }
 

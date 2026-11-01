@@ -1277,7 +1277,7 @@ export class MonitorPanelB extends DraggablePanel {
     // 紧接着 qualityHistory 被清空，这一条记录就永久丢失。
     // 串行化与去重都由 appendQualityHistory / mergeQualityHistory 保证，重复入队不会写出重复记录。
     appendQualityHistory(this.app, project, latest)
-      .catch(e => {
+      .catch(e => { // silent-ok: 质量历史后台落盘，失败不阻塞面板
         log.warn('[MonitorPanelB] 质量历史落盘失败:', e);
       });
   }

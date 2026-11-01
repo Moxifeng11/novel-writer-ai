@@ -960,7 +960,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             try {
                 const wvFile = this.app.vault.getAbstractFileByPath(pjWorldview(this._currentProject));
                 if (wvFile instanceof TFile) worldview = await this.app.vault.read(wvFile);
-            } catch { /* 世界观缺失时补全仍可进行 */ }
+            } catch { /* silent-ok: 世界观缺失时补全仍可进行 */ }
 
             const ready: Array<{ name: string; content: string }> = [];
             const integrityFailures: string[] = [];

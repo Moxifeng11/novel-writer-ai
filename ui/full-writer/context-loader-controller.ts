@@ -200,7 +200,7 @@ export class ContextLoaderController {
                         log.warn('[ContextLoader] 没有完整的 9 字段角色灵魂层，跳过完成标记');
                     }
                 }
-            } catch (e) {
+            } catch (e) { // silent-ok: 自动提取是增强项，失败跳过
                 log.warn('[ContextLoader] 自动提取角色灵魂失败:', e);
             }
             stopProgress();

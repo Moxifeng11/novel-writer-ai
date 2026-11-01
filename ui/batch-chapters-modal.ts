@@ -311,7 +311,10 @@ ${charMiss > 0 ? `- ⚠️ ${charMiss}个人物未填写当前状态` : ''}
             } else {
                 await this.app.vault.create(debtP, debtContent);
             }
-        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
+        } catch (e) {
+            log.warn('[小说工坊] 信息债看板写入失败:', e);
+            new Notice('⚠️ 信息债看板更新失败（不影响已生成的章节）', 6000);
+        }
     }
 
     onClose(): void {

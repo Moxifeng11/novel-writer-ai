@@ -193,10 +193,7 @@ export class KnowledgeMonitorModal extends Modal {
         const activeTasks = this.scheduler.getActiveTasks();
 
         if (activeTasks.length === 0) {
-            wrap.createDiv({
-                text: '暂无进行中的拆解任务',
-                attr: { style: 'text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px;' }
-            });
+            this.renderEmptyHint(wrap, '暂无进行中的拆解任务', '去知识库导入一本书并启动拆解，进度会实时显示在这里。');
             return;
         }
 
@@ -304,10 +301,7 @@ export class KnowledgeMonitorModal extends Modal {
             .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
         if (historyTasks.length === 0) {
-            wrap.createDiv({
-                text: '暂无历史任务记录',
-                attr: { style: 'text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px;' }
-            });
+            this.renderEmptyHint(wrap, '暂无历史任务记录', '完成或中断过一次拆解后，这里会保留最近的任务结果。');
             return;
         }
 
@@ -316,6 +310,20 @@ export class KnowledgeMonitorModal extends Modal {
         for (const task of historyTasks) {
             this.renderHistoryItem(list, task);
         }
+    }
+
+    /** 空态：标题 + 一句话说明 + 去知识库的入口（G5-4：空面板必须有下一步） */
+    private renderEmptyHint(container: HTMLElement, title: string, desc: string): void {
+        // 复用快捷工具空态样式，避免新增内联样式（内联样式基线只降不升）
+        const box = container.createDiv({ cls: 'nw-qt-empty-hint' });
+        box.createDiv({ text: title, cls: 'nw-qt-empty-title' });
+        box.createDiv({ text: desc, cls: 'nw-qt-empty-desc' });
+        const btn = box.createEl('button', { text: '📚 打开知识库开始拆解', cls: 'nw-btn nw-btn-secondary' });
+        btn.onclick = () => {
+            (this.app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } })
+                .commands?.executeCommandById?.('novel-writer-open-knowledge-base');
+            this.close();
+        };
     }
 
     private renderHistoryItem(container: HTMLElement, task: BreakdownTask): void {

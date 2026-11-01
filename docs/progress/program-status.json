@@ -358,9 +358,9 @@
         {
           "id": "G5-4",
           "title": "空态与失败可见性补齐",
-          "status": "todo",
-          "acceptance": "保存/导出/删除类入口 0 处静默失败；空面板均有下一步引导",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "用户操作型 catch 0 处无可见提示（check:silent-failures 门禁）；拆解监控空态带「去知识库」入口",
+          "evidence": "scripts/check-silent-failures.mjs（preflight+CI）+ 备份/浮窗/结算表/信息债提示 + 监控空态 CTA"
         },
         {
           "id": "G5-5",
@@ -597,6 +597,12 @@
       "group": "G3",
       "summary": "短篇/剧本通用工具放开 + 模式不支持提示；项目迁移一键撤销（逆序、占用跳过）",
       "evidence": "command-mode-rules / tool-catalog-aggregator / project-migration-service"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G5",
+      "summary": "静默失败清零门禁 + 关键入口补提示（备份/浮窗保存/结算表/信息债/章节加载）+ 拆解监控空态 CTA",
+      "evidence": "check-silent-failures.mjs + knowledge-monitor/backup-yuan/co-write-floating/write-chapter"
     }
   ]
 }

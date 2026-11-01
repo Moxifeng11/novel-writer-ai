@@ -238,7 +238,7 @@ export class LiveAnalysisController {
           });
         }
       }
-    } catch (e) {
+    } catch (e) { // silent-ok: 设定守卫是只读检查，失败只影响提示，不改正文
       if (token !== this.guardSeq) return;
       log.warn("[LiveAnalysisController] 设定守卫检查失败:", e);
     } finally {

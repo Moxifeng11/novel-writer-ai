@@ -55,7 +55,7 @@ export function markFlowExported(project: string): void {
     if (!project) return;
     try {
         localStorage.setItem(`${STORAGE_KEY_PREFIXES.flowExport}${project}`, String(Date.now()));
-    } catch {
+    } catch { // silent-ok: localStorage 不可用时只是无法标记导出完成
         // localStorage 不可用时只是无法标记导出完成，不影响导出本身
     }
 }
@@ -63,7 +63,7 @@ export function markFlowExported(project: string): void {
 function readExportFlag(project: string): boolean {
     try {
         return !!localStorage.getItem(`${STORAGE_KEY_PREFIXES.flowExport}${project}`);
-    } catch {
+    } catch { // silent-ok: 只读检查导出目录，失败按未导出处理
         return false;
     }
 }
@@ -117,7 +117,7 @@ function hasExportArtifact(app: App, project: string): boolean {
         }
         return files.some(file =>
             file.path.startsWith(`${project}/05-导出/`) || file.path.startsWith(`${project}/06-导出/`));
-    } catch {
+    } catch { // silent-ok: 只读检查导出目录，失败按未导出处理
         return false;
     }
 }
