@@ -85,3 +85,56 @@ describe('formatRagSources / summarizeRagSources', () => {
         expect(summarizeRagSources([])).toBe('');
     });
 });
+
+import { normalizeRagSources, summarizeRagUsage } from '../../../shared/rag-sources';
+
+describe('normalizeRagSources — 读取 frontmatter', () => {
+    it('非数组返回空；坏条目被丢弃', () => {
+        expect(normalizeRagSources(undefined)).toEqual([]);
+        expect(normalizeRagSources('x')).toEqual([]);
+        const list = normalizeRagSources([
+            { book: '书A', dimension: 'style', score: 0.8, excerpt: '片段' },
+            { book: '', dimension: 'style', score: 0.5, excerpt: '无效' },
+            null,
+            'x',
+        ]);
+        expect(list).toHaveLength(1);
+        expect(list[0].book).toBe('书A');
+    });
+});
+
+describe('summarizeRagUsage', () => {
+    const records = [
+        { path: 'p/第1章_大纲摘要.md', label: '大纲摘要', sources: [{ book: '书A', dimension: 'style', score: 0.8, excerpt: 'a' }] },
+        { path: 'p/第1章_正文.md', label: '正文', sources: [
+            { book: '书A', dimension: 'style', score: 0.7, excerpt: 'b' },
+            { book: '书B', dimension: 'original', score: 0.6, excerpt: 'c' },
+        ] },
+        { path: 'p/第1章_质量控制.md', label: '质量控制', sources: [] },
+    ];
+
+    it('计算命中率、片段数、书目与维度聚合', () => {
+        const usage = summarizeRagUsage(records);
+        expect(usage.stepsTotal).toBe(3);
+        expect(usage.stepsWithRag).toBe(2);
+        expect(usage.hitRate).toBeCloseTo(2 / 3);
+        expect(usage.totalSources).toBe(3);
+        expect(usage.byBook).toEqual([
+            { book: '书A', count: 2 },
+            { book: '书B', count: 1 },
+        ]);
+        expect(usage.byDimension[0]).toEqual({ dimension: 'style', count: 2 });
+    });
+
+    it('recent 只保留有引用的记录，并尊重上限', () => {
+        const usage = summarizeRagUsage(records, { recentLimit: 1 });
+        expect(usage.recent).toHaveLength(1);
+        expect(usage.recent[0].label).toBe('大纲摘要');
+    });
+
+    it('空记录集命中率为 0 而不是 NaN', () => {
+        const usage = summarizeRagUsage([]);
+        expect(usage.hitRate).toBe(0);
+        expect(usage.stepsTotal).toBe(0);
+    });
+});

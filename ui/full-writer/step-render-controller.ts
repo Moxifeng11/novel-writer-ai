@@ -10,7 +10,7 @@
  * 读取宿主视图的可变状态，避免直接触碰 FullWriterView 的 private 成员（防 TS2341）。
  * 行为与外迁前逐行等价，不改变写作流程。
  */
-import { App } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 import { StepRunner, ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
 import { downstreamStepsAfterPlanningChange } from '../../engine/planning-step-advance';
@@ -19,6 +19,9 @@ import { assessContextReadiness } from '../../engine/context-readiness';
 import { buildStoryContext, resolveStoryContextTier } from '../../engine/context/story-context-service';
 import { STORY_CONTEXT_KIND_LABELS } from '../../engine/context/story-context-graph';
 import { isTemplateSkeleton } from '../../engine/step-validator';
+import { STEP_FILE_TYPES, getChapterFileName } from '../../engine/chapter-utils';
+import { pjBodyFile } from '../../shared/paths';
+import { normalizeRagSources, summarizeRagSources, type RagSource } from '../../shared/rag-sources';
 import type { GatheredContext } from '../../engine/context-manager';
 import { ChapterStateManager } from '../states/chapter-state-manager';
 import {
@@ -320,6 +323,33 @@ export class StepRenderController {
         if (downstream.length > 0) cs.invalidateSteps(downstream);
     }
 
+    /** 读取本步（含正文）frontmatter 的 rag_sources；文件不存在或无字段返回空 */
+    private readRagSources(stepKey: string): RagSource[] {
+        const d = this.deps;
+        const chapDir = d.getChapDir();
+        const chapterName = d.getChapterName();
+        if (!chapDir || !chapterName) return [];
+
+        const candidates: string[] = [];
+        const type = (STEP_FILE_TYPES as Record<string, string>)[stepKey];
+        if (type) candidates.push(`${chapDir}/${getChapterFileName(chapterName, type)}`);
+        if (stepKey === 'bodyGeneration') {
+            const match = chapDir.match(/^(.+?)\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
+            if (match) {
+                candidates.push(pjBodyFile(match[1], parseInt(match[2], 10), parseInt(match[3], 10)));
+            }
+        }
+
+        for (const path of candidates) {
+            const file = d.app.vault.getAbstractFileByPath(path);
+            if (!(file instanceof TFile)) continue;
+            const frontmatter = d.app.metadataCache.getFileCache(file)?.frontmatter;
+            const sources = normalizeRagSources(frontmatter?.['rag_sources']);
+            if (sources.length > 0) return sources;
+        }
+        return [];
+    }
+
     renderResultArea(area: HTMLElement, stepKey: string): void {
         const d = this.deps;
         const cs = d.chapterState;
@@ -359,6 +389,20 @@ export class StepRenderController {
                 text: '💾 保存修改',
                 cls: 'nw-result-save-btn',
             });
+
+            // G2-3b：显示本步实际引用的知识库片段（frontmatter.rag_sources）
+            const ragSources = this.readRagSources(stepKey);
+            if (ragSources.length > 0) {
+                const strip = resultContainer.createDiv({
+                    cls: 'nw-result-meta',
+                    attr: {
+                        title: ragSources
+                            .map(item => `${item.book}（${item.dimension}） ${item.score}\n${item.excerpt}`)
+                            .join('\n\n'),
+                    },
+                });
+                strip.setText(`📚 知识来源：${summarizeRagSources(ragSources)}`);
+            }
 
             // 先给结果预览，编辑原文折叠，避免大段 textarea 把成果挤到看不见。
             const preview = resultContainer.createDiv({ cls: 'nw-result-preview' });

@@ -9,6 +9,8 @@ import { Modal, type App } from 'obsidian';
 import type NovelWriterPlugin from '../main';
 import { barChart, attachChartInteractions } from './svg-charts';
 import { formatWords, type DayPoint, type StatsSummary } from '../shared/writing-stats';
+import { collectKnowledgeUsage } from '../engine/knowledge-usage';
+import { summarizeRagSources } from '../shared/rag-sources';
 
 type StatsTab = 'day' | 'week' | 'month';
 
@@ -83,6 +85,7 @@ export class WritingStatsModal extends Modal {
                 : summary.monthly;
         this.renderChart(chartWrap, points, this.tab);
         this.renderBreakdown(contentEl, points, this.tab);
+        this.renderKnowledgeUsage(contentEl);
         this.renderProjectTable(contentEl);
     }
 
@@ -170,6 +173,55 @@ export class WritingStatsModal extends Modal {
             row.createEl('td', { text: formatWords(summary.week) });
             row.createEl('td', { text: formatWords(summary.month) });
             row.createEl('td', { text: formatWords(summary.total) });
+        }
+    }
+
+    /** G2-3b：知识引用命中率与常用书目（按当前项目，按需扫描 metadataCache） */
+    private renderKnowledgeUsage(container: HTMLElement): void {
+        const project = this.plugin.getActiveProject?.() || '';
+        if (!project) return;
+        let usage;
+        try {
+            usage = collectKnowledgeUsage(this.app as never, project, { recentLimit: 5 });
+        } catch {
+            return;
+        }
+        if (usage.stepsTotal === 0) return;
+
+        container.createEl('h3', { text: '📚 知识引用' });
+        const metrics = container.createDiv({ cls: 'nw-stats-metrics' });
+        const items: Array<{ label: string; value: string }> = [
+            { label: '命中率', value: `${Math.round(usage.hitRate * 100)}%` },
+            { label: '引用片段', value: String(usage.totalSources) },
+            { label: '涉及书目', value: String(usage.byBook.length) },
+        ];
+        for (const item of items) {
+            const card = metrics.createDiv({ cls: 'nw-stats-metric' });
+            card.createDiv({ cls: 'nw-stats-metric-value', text: item.value });
+            card.createDiv({ cls: 'nw-stats-metric-label', text: item.label });
+        }
+
+        if (usage.byBook.length > 0) {
+            const books = container.createDiv({ cls: 'nw-stats-breakdown' });
+            for (const entry of usage.byBook.slice(0, 4)) {
+                const row = books.createDiv({ cls: 'nw-stats-breakdown-row' });
+                row.createSpan({ text: entry.book, cls: 'nw-stats-breakdown-label' });
+                row.createSpan({ text: `${entry.count} 条`, cls: 'nw-stats-breakdown-value' });
+            }
+        }
+
+        if (usage.recent.length > 0) {
+            container.createDiv({ text: '最近引用', cls: 'nw-text-sm-muted nw-u-margintop-8px' });
+            const list = container.createDiv({ cls: 'nw-stats-breakdown' });
+            for (const record of usage.recent) {
+                const row = list.createDiv({ cls: 'nw-stats-breakdown-row', attr: { title: record.path } });
+                row.createSpan({ text: record.label, cls: 'nw-stats-breakdown-label' });
+                const summary = summarizeRagSources(record.sources);
+                row.createSpan({
+                    text: summary.length > 48 ? `${summary.slice(0, 48)}…` : summary,
+                    cls: 'nw-stats-breakdown-value',
+                });
+            }
         }
     }
 

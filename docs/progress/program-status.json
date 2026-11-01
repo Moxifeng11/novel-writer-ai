@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 496,
-      "cases": 5627
+      "files": 497,
+      "cases": 5634
     },
     "e2e": 25,
     "gates": [
@@ -199,9 +199,9 @@
         {
           "id": "G2-3",
           "title": "RAG 注入来源可追溯",
-          "status": "in_progress",
-          "acceptance": "写入已完成（rag_sources 落步骤 frontmatter）；展示/命中率未见",
-          "evidence": "shared/rag-sources.ts + injector/step-runner/saver"
+          "status": "done",
+          "acceptance": "写入 + 步骤面板可见 + 统计页命中率/常用书目",
+          "evidence": "rag-sources / knowledge-usage / step-render-controller / writing-stats-modal"
         },
         {
           "id": "G2-3a",
@@ -213,9 +213,9 @@
         {
           "id": "G2-3b",
           "title": "统计页展示知识命中与命中率",
-          "status": "todo",
-          "acceptance": "步骤详情可见 rag_sources；按项目统计命中率与最常引用书目",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "统计页显示命中率、引用片段、涉及书目、最近引用；步骤面板显示本步来源",
+          "evidence": "engine/knowledge-usage.ts + 统计弹窗「知识引用」+ 步骤结果条"
         }
       ]
     },
@@ -585,6 +585,12 @@
       "group": "G2",
       "summary": "知识注入来源落盘：rag_sources（书/维度/分数/片段）写入步骤 frontmatter",
       "evidence": "shared/rag-sources.ts + injector/step-runner/saver + 10 条单测"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G2",
+      "summary": "rag_sources 展示：步骤面板知识来源条 + 统计页命中率/常用书目/最近引用",
+      "evidence": "knowledge-usage.ts + writing-stats-modal + step-render-controller"
     }
   ]
 }
