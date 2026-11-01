@@ -140,6 +140,26 @@ describe('rules-registry — 写作规则多版本注册', () => {
             // 同版本同内容 → 无漂移
             expect(listing.drift).toEqual([]);
         });
+
+        it('正文相同、frontmatter 不同 → 内容身份一致，不判漂移（真实事故形态）', async () => {
+            const app = makeApp({
+                '元文件/00-系统模板/写作规则.md': [
+                    '---',
+                    'tags: [写作规则, 文风, v3.6.0]',
+                    'version: "3.6.0-引导代禁止"',
+                    'updated: "2026-10-19"',
+                    '---',
+                    '',
+                    WRITING_RULES,
+                ].join('\n'),
+            });
+            const listing = await listRulesVersions(app as any);
+            const vaultDoc = listing.docs.find((doc) => doc.source === 'vault');
+            // 元数据不参与内容身份：正文相同即视为同一版本
+            expect(vaultDoc?.version).toBe(BUILTIN_RULES_VERSION);
+            expect(listing.drift).toEqual([]);
+            expect(listing.active.doc?.source).toBe('vault');
+        });
     });
 
     describe('resolveActiveRulesText', () => {

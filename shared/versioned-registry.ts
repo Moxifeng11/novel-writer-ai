@@ -41,10 +41,26 @@ export function hashContent(text: string): string {
     return hash.toString(16).padStart(8, '0');
 }
 
-/** 比较两个版本号的主干（忽略 `-suffix`），返回 -1 / 0 / 1 */
+/**
+ * 规则类内容的规范化：去 BOM、统一换行、剥离 frontmatter、去首尾空白。
+ *
+ * 同一份规则可能以两种形态存在：内置常量（纯正文，注入 prompt 用）与
+ * vault 文件（带 tags/version/updated）。二者正文相同、哈希不同，会被误判成
+ * 「同版本号不同内容」。比较内容身份时应先规范化，元数据不参与哈希。
+ */
+export function canonicalContent(text: string): string {
+    return String(text || '')
+        .replace(/^\uFEFF/, '')
+        .replace(/\r\n/g, '\n')
+        .replace(/^---\n[\s\S]*?\n---\n?/, '')
+        .trim();
+}
+
+/** 比较两个版本号的主干（忽略 `-suffix` 与前导 v），返回 -1 / 0 / 1 */
 export function compareVersionBase(a: string, b: string): number {
     const parts = (value: string): number[] =>
-        String(value || '').split(/[-+]/)[0].split('.').map((part) => parseInt(part, 10) || 0);
+        String(value || '').replace(/^v/i, '').split(/[-+]/)[0]
+            .split('.').map((part) => parseInt(part, 10) || 0);
     const left = parts(a);
     const right = parts(b);
     for (let i = 0; i < Math.max(left.length, right.length, 3); i++) {
@@ -65,10 +81,13 @@ export function compareVersionBase(a: string, b: string): number {
  * 内置 3.6.0，再比内容哈希就触发「版本号相同但内容不同」的假漂移告警。
  */
 export function extractVersion(text: string): string {
-    const raw = String(text || '');
-    const frontmatter = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    // 去 BOM：Windows 记事本/部分同步工具会在文件头写 U+FEFF，导致 `^---` 匹配失败
+    const raw = String(text || '').replace(/^\uFEFF/, '');
+    // 允许空 frontmatter（`---\n---`）
+    const frontmatter = raw.match(/^---\r?\n([\s\S]*?)(?:\r?\n)?---(?:\r?\n|$)/);
     if (frontmatter) {
-        const declared = frontmatter[1].match(/^\s*version\s*:\s*["']?([^"'\r\n]+)["']?\s*$/mi);
+        // 只认顶层字段（无缩进）；嵌套的 `meta.version` 不是文件版本
+        const declared = frontmatter[1].match(/^version\s*:\s*["']?([^"'\r\n]+)["']?\s*$/mi);
         const value = declared?.[1]?.trim() || '';
         // 后缀可能带中文（如 `3.6.0-引导代禁止`），\w 不匹配 CJK，这里放宽到「非空白/引号」
         const match = value.match(/v?(\d+\.\d+\.\d+(?:[-+][^\s"',;]+)?)/);

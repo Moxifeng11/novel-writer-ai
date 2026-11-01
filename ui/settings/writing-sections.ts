@@ -306,6 +306,7 @@ export class WritingSection extends SettingsSection {
                 }));
 
         // v4.23: 版本治理（写作规则多版本 + 人味模式 + 实验分组 + 规则去重）
+        const rulesDriftEl = section.createDiv({ cls: 'nw-warning-text nw-u-fs-12px' });
         new Setting(section)
             .setName('写作规则版本')
             .setDesc('多版本并存，同一时刻只生效一个。空的「auto」按「项目 → vault → 内置」优先级；版本号相同但内容不同会在这里提示漂移。')
@@ -318,8 +319,13 @@ export class WritingSection extends SettingsSection {
                         project: this.plugin.getActiveProject() || undefined,
                     });
                     for (const doc of listing.docs) {
-                        dropdown.addOption(doc.id, `${doc.id}（${doc.source}${doc.path ? ` ${doc.path}` : ''}）`);
+                        dropdown.addOption(
+                            doc.id,
+                            `${doc.id} · v${doc.version}（${doc.source}${doc.path ? ` ${doc.path}` : ''}）`,
+                        );
                     }
+                    // 描述里承诺的漂移提示：不渲染就等于永远不提示
+                    rulesDriftEl.setText(listing.drift.length > 0 ? `⚠️ ${listing.drift.join('；')}` : '');
                 } catch (e) {
                     console.warn('[设置] 读取规则版本失败:', e);
                 }

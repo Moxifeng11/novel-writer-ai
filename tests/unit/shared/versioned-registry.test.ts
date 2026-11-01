@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     builtinId,
+    canonicalContent,
     compareVersionBase,
     detectDrift,
     extractVersion,
@@ -50,11 +51,35 @@ describe('versioned-registry — 内容哈希', () => {
         expect(extractVersion('# 规则\n\n同步源 v3.7.0-anchor')).toBe('3.7.0-anchor');
     });
 
+    it('只认顶层 version，忽略嵌套的 meta.version', () => {
+        const text = [
+            '---',
+            'meta:',
+            '  version: 1.0.0',
+            'version: "3.8.0-scene-beat"',
+            '---',
+        ].join('\n');
+        expect(extractVersion(text)).toBe('3.8.0-scene-beat');
+    });
+
+    it('容忍 BOM 与空 frontmatter', () => {
+        expect(extractVersion('\uFEFF---\nversion: 3.9.0-voiceprint\n---')).toBe('3.9.0-voiceprint');
+        expect(extractVersion('---\n---\n正文 v3.6.0')).toBe('3.6.0');
+    });
+
+    it('canonicalContent 剥离 frontmatter、统一换行、去 BOM', () => {
+        const text = ['---', 'version: 1', '---', '', '# A', 'B'].join('\n');
+        expect(canonicalContent(text)).toBe('# A\nB');
+        expect(canonicalContent('\uFEFF# A')).toBe('# A');
+        expect(canonicalContent('# 正文')).toBe('# 正文');
+    });
+
     it('compareVersionBase 忽略后缀，只比主干', () => {
         expect(compareVersionBase('3.6.0-引导代禁止', '3.6.0')).toBe(0);
         expect(compareVersionBase('3.5.9', '3.6.0')).toBe(-1);
         expect(compareVersionBase('3.7.0-anchor', '3.6.0')).toBe(1);
         expect(compareVersionBase('3.6.0', '3.6.0-legacy')).toBe(0);
+        expect(compareVersionBase('v3.6.0', '3.6.0')).toBe(0);
     });
 });
 

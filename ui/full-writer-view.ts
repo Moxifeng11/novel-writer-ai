@@ -466,10 +466,24 @@ export class FullWriterView extends ItemView {
         // P0-5（v4.27）：常驻状态信息——当前模型 / 规则版本 / token 消耗
         const infoSpan = strip.createSpan({ cls: 'nw-chapter-run-info' });
         infoSpan.style.cssText = 'font-size:11px;color:var(--text-faint);white-space:nowrap;';
-        const rulesVersion = this.plugin.settings.activeRulesVersion || '内置 3.6.0';
+        const rulesVersion = this.plugin.settings.activeRulesVersion || 'auto';
         const voiceMode = this.plugin.settings.humanVoiceMode === 'quota' ? '配额' : '样文';
         const bodyVariant = (this.plugin.settings.activeBodyTemplate || 'auto').toUpperCase();
         infoSpan.setText(`📐 ${bodyVariant} | 📜 ${rulesVersion} | 🗣 ${voiceMode}`);
+        // auto 时补上实际生效版本（此前硬编码「内置 3.6.0」，项目/vault 规则生效时会误报）
+        if (!this.plugin.settings.activeRulesVersion) {
+            void (async () => {
+                try {
+                    const { RulesService } = await import('../services/rules-service');
+                    const cfg = await RulesService.getInstance(this.app).getRulesConfig();
+                    infoSpan.setText(
+                        `📐 ${bodyVariant} | 📜 ${cfg.version}${cfg.path ? '' : '（内置）'} | 🗣 ${voiceMode}`,
+                    );
+                } catch {
+                    // 解析失败时保留 auto 文案
+                }
+            })();
+        }
         // token 消耗在步骤事件中由 prompt-ledger 更新
         this._statusInfoEl = infoSpan;
         const pauseBtn = strip.createEl('button', { text: '⏸ 暂停', cls: 'novel-writer-settings-btn' });

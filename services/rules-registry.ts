@@ -18,6 +18,7 @@ import { WRITING_RULES_LEGACY, WRITING_RULES_LEGACY_VERSION } from '../shared/wr
 import { builtinRuleVariants } from '../shared/writing-rules-variants';
 import {
     builtinId,
+    canonicalContent,
     detectDrift,
     extractVersion,
     hashContent,
@@ -42,7 +43,7 @@ export function builtinRulesDocs(): VersionedDoc[] {
             id: builtinId(BUILTIN_RULES_VERSION),
             version: BUILTIN_RULES_VERSION,
             content: WRITING_RULES,
-            hash: hashContent(WRITING_RULES),
+            hash: hashContent(canonicalContent(WRITING_RULES)),
             source: 'builtin',
             notes: '仓库新版：自然段 2–6 句、对话可并段、允许必要过渡（默认生效）',
         },
@@ -50,7 +51,7 @@ export function builtinRulesDocs(): VersionedDoc[] {
             id: builtinId(WRITING_RULES_LEGACY_VERSION),
             version: WRITING_RULES_LEGACY_VERSION,
             content: WRITING_RULES_LEGACY,
-            hash: hashContent(WRITING_RULES_LEGACY),
+            hash: hashContent(canonicalContent(WRITING_RULES_LEGACY)),
             source: 'builtin',
             notes: '旧版快照：一句一段、一段一个句号（仅用于对照/消融）',
         },
@@ -60,7 +61,7 @@ export function builtinRulesDocs(): VersionedDoc[] {
             id: builtinId(variant.version),
             version: variant.version,
             content: variant.content,
-            hash: hashContent(variant.content),
+            hash: hashContent(canonicalContent(variant.content)),
             source: 'builtin',
             notes: variant.notes,
         });
@@ -85,7 +86,7 @@ async function readDoc(app: App, path: string, source: 'vault' | 'project'): Pro
             id: `${source}:${path}`,
             version,
             content,
-            hash: hashContent(content),
+            hash: hashContent(canonicalContent(content)),
             source,
             path,
             notes: source === 'project' ? '项目内规则文件' : 'vault 根模板',

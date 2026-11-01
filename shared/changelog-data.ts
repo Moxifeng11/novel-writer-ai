@@ -18,6 +18,24 @@ export interface ChangelogEntry {
 
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.23.4',
+        date: '2026-11-02',
+        title: '规则版本解析补强与版本显示修正',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🔧 修复',
+                items: [
+                    '内容身份与 frontmatter 分离：正文相同的内置版与文件版不再误判「同版本不同内容」',
+                    '模板资产版本号对齐内置 3.6.0，tags 去掉多余的 v3.6.0',
+                    '版本解析跳过 BOM、支持空 frontmatter，且只认顶层 version（嵌套 meta.version 不再误判）',
+                    '设置页规则版本选项显示具体版本号；漂移提示真正渲染出来',
+                    '工作台状态条不再硬编码「内置 3.6.0」，auto 时解析实际生效版本',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.23.3',
         date: '2026-11-02',
         title: '写作规则版本误报修复',

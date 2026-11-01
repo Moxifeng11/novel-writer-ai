@@ -1,5 +1,23 @@
 # Changelog
 
+## v4.23.4（2026-11-02）
+
+v4.23.3 的补强：把规则版本解析的边界补全，并修掉设置页/工作台两处版本显示问题。
+
+### 🔧 修复
+
+- **内容身份与元数据分离**：同一份规则有两种形态——内置常量（纯正文，注入 prompt）与 vault 文件（带 tags/version/updated）。此前直接对整文件算哈希，正文相同也会判成「同版本不同内容」。新增 `canonicalContent()`：去 BOM、统一换行、剥离 frontmatter 后再算哈希；元数据不再参与内容身份。
+- **模板资产与内置版对齐**：`assets/template-scaffold/00-系统模板/写作规则.md` 的 `version` 从 `3.6.0-引导代禁止` 改回 `3.6.0`，并从 `tags` 移除 `v3.6.0`（正文与内置常量逐字相同，此前只有元数据不一致）。
+- **版本解析边界**：`extractVersion` 现在跳过 BOM、支持空 frontmatter，并且只认**顶层** `version:`（嵌套的 `meta.version` 不再被误当文件版本）；`compareVersionBase` 兼容前导 `v`。
+- **设置页版本下拉**：选项标签补上 `v${version}`。此前只显示 `vault:路径`，多个规则文件并存时分不清哪个是哪个版本。
+- **设置页漂移提示**：描述里承诺「版本号相同但内容不同会在这里提示漂移」，但代码从未渲染 `listing.drift`；现已显示。
+- **工作台状态条**：不再硬编码「内置 3.6.0」；`auto` 时异步解析实际生效版本，项目/vault 规则生效时不再误报。
+
+### 🧪 测试
+
+- 新增 4 条：嵌套 version / BOM 与空 frontmatter / `canonicalContent` 规范化 / 正文相同但 frontmatter 不同不判漂移；并补前导 `v` 的主干比较。
+- `preflight` 全绿：**524 文件 / 5866 用例**；真实 Electron E2E 复检 25 passed。
+
 ## v4.23.3（2026-11-02）
 
 ### 🔧 修复
