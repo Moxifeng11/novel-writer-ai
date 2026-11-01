@@ -22,6 +22,7 @@ import { applyArcInstruction, buildArcRowsFromCharacters, formatCharacterArcTabl
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
+import { listFolderFiles } from '../shared/vault-tree';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '../shared/thresholds';
 import type { Instructions, FrontMatter } from './settlement/settlement-types';
 import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealNames } from './settlement/report-parser';
@@ -222,9 +223,8 @@ export class SettlementEngine {
         name: string; motivation?: string; fear?: string; weakness?: string; stage?: string;
     }> {
         try {
-            const dir = `${pjCharsDir(project)}/`;
-            return this.app.vault.getFiles()
-                .filter(f => f.path.startsWith(dir) && f.extension === 'md')
+            // 只读本项目的角色目录：全库 getFiles() 在结算热路径上是 O(全库)
+            return listFolderFiles<TFile>(this.app.vault, pjCharsDir(project))
                 .map(file => {
                     const fm = this.app.metadataCache.getFileCache(file)?.frontmatter || {};
                     return {
@@ -1177,7 +1177,7 @@ ${ni.description || '暂无描述'}
             // 旧实现固定 pjBodyFile 无章名路径：同章存在遗留裸文件时，
             // settled/涉及人物会写到裸文件，真章文件永远停在 pending。
             const existingBody = findBodyFileByChapterNum(
-                this.getVaultMeta().getFiles(),
+                listFolderFiles<TFile>(this.getVaultMeta(), pjBodyDir(v4Proj, v4VolN)),
                 `${pjBodyDir(v4Proj, v4VolN)}/`,
                 v4ChapN,
                 chapterNameOf(ctx),
@@ -1561,10 +1561,10 @@ ${ni.description || '暂无描述'}
     // ================================================================
     private async refreshInfoDebt(project: string): Promise<void> {
         try {
-            const allFiles = this.getVaultMeta().getFiles();
-            const projectFiles = allFiles.filter(f => f.path.startsWith(project + '/'));
-            const charFiles = projectFiles.filter(f => f.path.startsWith(pjCharsDir(project) + '/') && f.name.endsWith('.md') && f.name !== '人物模板.md');
-            const chapFiles = projectFiles.filter(f => f.path.startsWith(pjOutlineDir(project) + '/') && f.name.includes('正文') && f.name.endsWith('.md'));
+            const charFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjCharsDir(project))
+                .filter(f => f.name !== '人物模板.md');
+            const chapFiles = listFolderFiles<TFile>(this.getVaultMeta(), pjOutlineDir(project), { recursive: true })
+                .filter(f => f.name.includes('正文'));
 
             // 1. 伏笔统计（遍历两表）
             let unrevealed = 0, revealed = 0, abandoned = 0;
@@ -1676,11 +1676,12 @@ tags: [看板]
         const timelinePath = pjTimelineBoard(project);
 
         let completed = 0, drafts = 0;
-        const allFiles = this.getVaultMeta().getFiles().filter(f => f.name.endsWith('.md'));
+        // 只遍历本项目的大纲/正文目录（递归），不再全库 getFiles()
+        const chapterFiles = listFolderFiles<TFile>(this.getVaultMeta(), baseDir, { recursive: true })
+            .filter(f => f.name.includes('正文'));
 
         // 统计章节进度
-        for (const f of allFiles) {
-            if (!f.path.startsWith(baseDir + '/') || !f.name.includes('正文')) continue;
+        for (const f of chapterFiles) {
             try {
                 const raw = await this.getFS().read(f.path);
                 // v4.0: 章节状态优先匹配新值 settled/written；旧值 '已完稿' 仅保留兼容
@@ -1695,8 +1696,7 @@ tags: [看板]
         // 收集实体摘要
         const collectEntities = async (dir: string, field: string): Promise<string> => {
             const rows: string[] = [];
-            for (const f of allFiles) {
-                if (!f.path.startsWith(dir + '/')) continue;
+            for (const f of listFolderFiles<TFile>(this.getVaultMeta(), dir, { recursive: true })) {
                 try {
                     const raw = await this.getFS().read(f.path);
                     const fm = raw.match(/^---\n([\s\S]*?)\n---/);

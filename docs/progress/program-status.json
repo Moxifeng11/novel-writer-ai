@@ -418,9 +418,9 @@
         {
           "id": "G6-4",
           "title": "全库 getFiles 热路径收敛",
-          "status": "todo",
-          "acceptance": "落盘/结算/统计路径 0 次全库遍历；200 章落盘 <200ms",
-          "evidence": "—"
+          "status": "done",
+          "acceptance": "落盘/结算/统计/知识用量路径 0 次全库 getFiles()（check:hotpaths 门禁）；单章/本卷查询只访问本目录文件（基准 200 章）；200 章规模下单次查询 0.6ms→0.001~0.1ms",
+          "evidence": "shared/vault-tree.ts（getAbstractFileByPath+children 局部遍历）+ shared/body-path.listChapterBodyFiles；改造 settlement-engine/step-result-saver/chapter-utils/context-manager/knowledge-usage/writing-stats-service；scripts/bench/get-files-hotpath.mjs（npm run bench:hotpath）；scripts/check-hotpath-scans.mjs（preflight+CI）；单测 vault-tree 10 条 + knowledge-usage/stats 适配"
         },
         {
           "id": "G6-5",

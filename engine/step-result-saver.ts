@@ -11,11 +11,12 @@
  * - 内部逻辑保持不变，只是对文件系统访问进行抽象
  */
 
-import { App } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { BodyWriter } from './body-writer';
 import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
 import { findBodyFileByChapterNum } from './chapter-utils';
+import { listFolderFiles } from '../shared/vault-tree';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { validateStepResult } from './step-validator';
@@ -151,7 +152,8 @@ export class StepResultSaver {
         //（实测：同一章出现 第1章_正文.md 与 第1章_九脉逆行_正文.md 两个文件）。
         const existingBodyFile = v4Match
             ? findBodyFileByChapterNum(
-                this.getVaultMeta().getFiles(),
+                // 只读本卷正文目录：getFiles() 每次落盘都要遍历整库
+                listFolderFiles<TFile>(this.getVaultMeta(), pjBodyDir(v4Project, v4VolN)),
                 `${pjBodyDir(v4Project, v4VolN)}/`,
                 v4ChapN,
                 chapterName,
@@ -207,7 +209,12 @@ export class StepResultSaver {
                 if (v4Match) {
                     actualTargetPath = bodyDefaultPath;
                 } else {
-                    const foundBody = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
+                    const foundBody = findChapterFile(
+                        listFolderFiles<TFile>(this.getVaultMeta(), chapDir),
+                        chapDir,
+                        '正文',
+                        this.app,
+                    );
                     if (foundBody) {
                         actualTargetPath = foundBody.path;
                     } else {
@@ -365,14 +372,19 @@ export class StepResultSaver {
                 const volNum = parseInt(v4Match[2], 10);
                 chapterNum = parseInt(v4Match[3], 10);
                 const existing = findBodyFileByChapterNum(
-                    this.getVaultMeta().getFiles(),
+                    listFolderFiles<TFile>(this.getVaultMeta(), pjBodyDir(project, volNum)),
                     `${pjBodyDir(project, volNum)}/`,
                     chapterNum,
                     chapterName,
                 );
                 targetPath = existing?.path ?? pjBodyFile(project, volNum, chapterNum);
             } else {
-                const foundBody = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
+                const foundBody = findChapterFile(
+                    listFolderFiles<TFile>(this.getVaultMeta(), chapDir),
+                    chapDir,
+                    '正文',
+                    this.app,
+                );
                 if (!foundBody) {
                     log.warn('[StepResultSaver] writeFixToBody: 未找到正文文件，跳过覆写', chapDir);
                     return;

@@ -56,14 +56,20 @@ describe('listChapterNumbers', () => {
             makeBodyFile(`${project}/03-大纲与章节/正文/第3卷/第9章_正文.md`),
             makeBodyFile(`${project}/03-大纲与章节/步骤结果/第2卷/第1章/第1章_大纲摘要.md`),
         ];
-        const app = makeApp(files, [stepVol]);
+        // 目录树里也要有本卷正文目录：listChapterNumbers 现在只列该目录（G6-4）
+        const bodyVol = makeFolder(`${project}/03-大纲与章节/正文/第2卷`, [
+            { name: '第2章_正文.md' },
+            { name: '第3章_风起_正文.md' },
+        ]);
+        const app = makeApp(files, [stepVol, bodyVol]);
 
         expect(listChapterNumbers(app, project, 2)).toEqual([1, 2, 3]);
     });
 
     it('步骤目录不存在时只按正文文件推导', () => {
         const files = [makeBodyFile(`${project}/03-大纲与章节/正文/第1卷/第5章_正文.md`)];
-        const app = makeApp(files, []);
+        const bodyVol = makeFolder(`${project}/03-大纲与章节/正文/第1卷`, [{ name: '第5章_正文.md' }]);
+        const app = makeApp(files, [bodyVol]);
 
         expect(listChapterNumbers(app, project, 1)).toEqual([5]);
     });

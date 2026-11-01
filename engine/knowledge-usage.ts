@@ -15,11 +15,11 @@ import {
     type RagUsageRecord,
     type RagUsageSummary,
 } from '../shared/rag-sources';
+import { listFolderFiles, type VaultTreePort } from '../shared/vault-tree';
 
 export interface KnowledgeUsageAppLike {
-    vault: {
-        getFiles(): Array<{ path: string; name: string; stat?: { mtime: number } }>;
-    };
+    /** 只需要目录索引：按项目目录遍历，不调用 getFiles() 扫全库 */
+    vault: VaultTreePort;
     metadataCache: {
         getFileCache(file: { path: string }): { frontmatter?: Record<string, unknown> } | null;
     };
@@ -39,12 +39,15 @@ export function collectKnowledgeUsage(
     options: { recentLimit?: number } = {},
 ): RagUsageSummary {
     if (!project) return summarizeRagUsage([], options);
-    const prefix = `${project}/`;
-    const files = app.vault.getFiles()
-        .filter(file => file.path.startsWith(prefix)
-            && (file.path.includes('/步骤结果/')
-                || file.path.includes('/正文/')
-                || file.path.includes('/03-正文/')))
+    // 只走本项目目录树（G6-4）：整库 getFiles() 在几百章项目上会随其它笔记线性变慢
+    const files = listFolderFiles<{ path: string; name: string; stat?: { mtime: number } }>(
+        app.vault,
+        project,
+        { recursive: true },
+    )
+        .filter(file => file.path.includes('/步骤结果/')
+            || file.path.includes('/正文/')
+            || file.path.includes('/03-正文/'))
         // 最近的排前面，recent 才有意义
         .sort((a, b) => (b.stat?.mtime ?? 0) - (a.stat?.mtime ?? 0))
         // 防御：统计页按需打开，不为极端项目卡死

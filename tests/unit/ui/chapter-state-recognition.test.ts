@@ -39,6 +39,14 @@ describe('ChapterStateManager — 完成性识别', () => {
         const bodyFile = new TFile();
         bodyFile.path = BODY_PATH;
         bodyFile.name = '第1章_正文.md';
+        // findBodyFileV4 现在只列本卷正文目录（G6-4），目录树里必须挂上这个文件
+        const bodyVol = new TFolder();
+        bodyVol.path = '测试项目/03-大纲与章节/正文/第1卷';
+        bodyVol.name = '第1卷';
+        bodyVol.children = [bodyFile];
+        const chapterFolder = app.vault.getAbstractFileByPath(CHAP_DIR) as TFolder;
+        app.vault.getAbstractFileByPath = (path: string) =>
+            path === bodyVol.path ? bodyVol : chapterFolder;
         app.vault.getFiles = () => [bodyFile];
         app.metadataCache.getFileCache = (file) =>
             file === bodyFile ? { frontmatter: { status: 'settled' } } : null;
@@ -56,6 +64,13 @@ describe('ChapterStateManager — 完成性识别', () => {
         const bodyFile = new TFile();
         bodyFile.path = BODY_PATH;
         bodyFile.name = '第1章_正文.md';
+        const bodyVol = new TFolder();
+        bodyVol.path = '测试项目/03-大纲与章节/正文/第1卷';
+        bodyVol.name = '第1卷';
+        bodyVol.children = [bodyFile];
+        const chapterFolder = app.vault.getAbstractFileByPath(CHAP_DIR) as TFolder;
+        app.vault.getAbstractFileByPath = (path: string) =>
+            path === bodyVol.path ? bodyVol : chapterFolder;
         app.vault.getFiles = () => [bodyFile];
         app.metadataCache.getFileCache = (file) =>
             file === bodyFile ? { frontmatter: { status: 'written' } } : null;

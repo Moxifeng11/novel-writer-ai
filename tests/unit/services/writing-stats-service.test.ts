@@ -13,12 +13,13 @@ interface FakeFile extends StatsFileLike {
     content?: string;
 }
 
+const LISTINGS = new WeakMap<object, FakeFile[]>();
+
 function makeApp(files: FakeFile[]) {
     const disk = new Map<string, string>();
     const list = new Map(files.map(file => [file.path, file]));
     const app = {
         vault: {
-            getFiles: () => Array.from(list.values()).map(f => ({ path: f.path, stat: f.stat })),
             read: async (target: StatsFileLike) => {
                 const file = list.get(target.path);
                 return file?.content ?? '';
@@ -44,6 +45,7 @@ function makeApp(files: FakeFile[]) {
             },
         },
     };
+    LISTINGS.set(app, files);
     return { app, disk, list };
 }
 
@@ -52,6 +54,8 @@ function makeService(app: ReturnType<typeof makeApp>['app'], ledgerPath = 'data/
         app: app as never,
         ledgerPath,
         isBodyPath: path => path.includes('_正文.md'),
+        // G6-4 后必填：生产注入 listChapterBodyFiles，测试用同一份内存文件清单
+        listBodyFiles: () => (LISTINGS.get(app) ?? []).map(file => ({ path: file.path, stat: file.stat })),
         now: () => NOW,
     });
 }

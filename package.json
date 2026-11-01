@@ -10,7 +10,7 @@
     "check:release": "node scripts/check-release.mjs",
     "build": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js",
     "build:release": "npm run preflight && npm run build",
-    "preflight": "npm run typecheck && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures",
+    "preflight": "npm run typecheck && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures && npm run check:hotpaths",
     "dev": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js --watch",
     "build:styles": "node scripts/build-styles.mjs",
     "check:styles": "node scripts/build-styles.mjs --check",
@@ -40,7 +40,9 @@
     "program:render": "node scripts/program-status.mjs",
     "check:program": "node scripts/program-status.mjs --check",
     "check:relationship-authority": "node scripts/check-relationship-authority.mjs",
-    "check:silent-failures": "node scripts/check-silent-failures.mjs"
+    "check:silent-failures": "node scripts/check-silent-failures.mjs",
+    "check:hotpaths": "node scripts/check-hotpath-scans.mjs",
+    "bench:hotpath": "node scripts/bench/get-files-hotpath.mjs"
   },
   "engines": {
     "node": ">=20"

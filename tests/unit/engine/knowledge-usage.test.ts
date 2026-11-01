@@ -3,9 +3,47 @@ import { collectKnowledgeUsage, labelOfStepFile } from '../../../engine/knowledg
 
 interface FakeFile { path: string; name: string; stat?: { mtime: number } }
 
+interface FakeNode {
+    path: string;
+    name: string;
+    extension?: string;
+    stat?: { mtime: number };
+    children?: FakeNode[];
+}
+
+/** 按路径搭出目录树，模拟 Obsidian 的 TFolder.children（G6-4 后只按项目目录遍历） */
+function treeOf(files: FakeFile[]): FakeNode {
+    const root: FakeNode = { path: '', name: '', children: [] };
+    for (const file of files) {
+        const parts = file.path.split('/');
+        let node = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+            let next = (node.children ?? []).find(child => child.name === parts[i] && child.children);
+            if (!next) {
+                next = { path: parts.slice(0, i + 1).join('/'), name: parts[i], children: [] };
+                node.children!.push(next);
+            }
+            node = next;
+        }
+        node.children!.push({ ...file, extension: 'md' });
+    }
+    return root;
+}
+
 function makeApp(files: Array<FakeFile & { rag?: unknown; frontmatter?: Record<string, unknown> }>) {
+    const root = treeOf(files);
     return {
-        vault: { getFiles: () => files.map(({ path, name, stat }) => ({ path, name, stat })) },
+        vault: {
+            getAbstractFileByPath: (path: string) => {
+                if (path === '') return root;
+                let node: FakeNode | undefined = root;
+                for (const part of path.split('/')) {
+                    node = node?.children?.find(child => child.children && child.name === part);
+                    if (!node) return null;
+                }
+                return node;
+            },
+        },
         metadataCache: {
             getFileCache: (target: { path: string }) => {
                 const hit = files.find(file => file.path === target.path);

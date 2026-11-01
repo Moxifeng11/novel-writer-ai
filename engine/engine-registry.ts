@@ -152,8 +152,8 @@ import { AIApiClient } from './ai-api-client';
 import { StyleLearner } from './style-learner';
 import { WorldviewCacheService } from '../services/worldview-cache-service';
 import { UpdateChecker } from '../services/update-checker';
-import { WritingStatsService, type WritingStatsAppLike } from '../services/writing-stats-service';
-import { isChapterBodyPath } from '../shared/body-path';
+import { WritingStatsService, type StatsFileLike, type WritingStatsAppLike } from '../services/writing-stats-service';
+import { isChapterBodyPath, listChapterBodyFiles } from '../shared/body-path';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import { pjFactIndexFile } from '../shared/paths';
 import { resolvePluginWorkerUrl } from '../shared/plugin-worker-url';
@@ -1313,6 +1313,8 @@ export class EngineRegistry {
             ledgerPath: `${pluginDir}/data/writing-stats.json`,
             // 判定放在 shared：services 不依赖 ui/engine
             isBodyPath: (path: string) => isChapterBodyPath(path),
+            // G6-4：扫描只走三个内容根，避免每次刷新都 getFiles() 遍历整库
+            listBodyFiles: () => listChapterBodyFiles<StatsFileLike>(plugin.app.vault),
         });
         this.register(ENGINE_NAMES.WRITING_STATS, writingStats);
         log.info('[EngineRegistry] 全部初始化完成');

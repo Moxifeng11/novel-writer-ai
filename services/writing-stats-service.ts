@@ -30,7 +30,6 @@ export interface StatsFileLike {
 
 export interface WritingStatsAppLike {
     vault: {
-        getFiles(): StatsFileLike[];
         adapter: {
             exists(path: string): Promise<boolean>;
             read(path: string): Promise<string>;
@@ -49,6 +48,12 @@ export interface WritingStatsServiceDeps {
     ledgerPath: string;
     /** 判断是否正文文件（由调用方注入 shared/body-path 的判定，避免 services 反向依赖 ui） */
     isBodyPath: (path: string) => boolean;
+    /**
+     * 正文文件清单（G6-4，必填）：由 engine 层注入 `listChapterBodyFiles`，
+     * 只走三个内容根目录。服务层刻意不持有「列全库」的能力，
+     * 避免热路径再退回 vault.getFiles()。
+     */
+    listBodyFiles: () => StatsFileLike[];
     /** 台账变化回调（状态栏 / 宠物刷新用） */
     onUpdated?: (data: WritingStatsData) => void;
     now?: () => number;
@@ -104,7 +109,7 @@ export class WritingStatsService {
         await this.load();
         this.scanning = true;
         try {
-            const files = this.deps.app.vault.getFiles().filter(file => this.deps.isBodyPath(file.path));
+            const files = this.deps.listBodyFiles().filter(file => this.deps.isBodyPath(file.path));
             const existing = new Set<string>();
             for (const file of files) {
                 existing.add(file.path);

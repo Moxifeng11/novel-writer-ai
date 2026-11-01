@@ -1582,7 +1582,7 @@ export class ContextManager {
             for (const volume of this.findVolumes(project)) {
                 const volN = parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
                 if (volN <= 0) continue;
-                const hit = findBodyFileByChapterNum(this.getVaultMeta().getFiles(), `${pjBodyDir(project, volN)}/`, chapterNum);
+                const hit = findBodyFileByChapterNum(this.getFilesInFolder(pjBodyDir(project, volN)), `${pjBodyDir(project, volN)}/`, chapterNum);
                 if (hit) return volume;
             }
         } catch { /* 目录不可读时退化为原顺序 */ }
@@ -1716,7 +1716,8 @@ export class ContextManager {
         const volumes: string[] = [];
         const visited = new Set<string>();
         
-        for (const file of this.getVaultMeta().getFiles()) {
+        // 只列本项目大纲/正文目录（递归），不再全库扫
+        for (const file of this.getFilesInFolder(`${project}/${SUBDIR_OUTLINE_ROOT}`)) {
             if (isInOutlineDir(project, file.path)) {
                 const volume = extractVolumeFromPath(file.path);
                 if (volume && !visited.has(volume)) {
@@ -2422,9 +2423,7 @@ ${usable}`;
     /** 项目内已有正文的最大章号（无正文返回 0） */
     private resolveLatestBodyChapterNum(project: string): number {
         let max = 0;
-        const prefix = `${project}/${SUBDIR_BODY_ROOT}/`;
-        for (const file of this.getVaultMeta().getFiles()) {
-            if (!file.path.startsWith(prefix)) continue;
+        for (const file of this.getFilesInFolder(`${project}/${SUBDIR_BODY_ROOT}`)) {
             const match = file.path.match(/第(\d+)章/);
             if (!match) continue;
             max = Math.max(max, parseInt(match[1], 10) || 0);

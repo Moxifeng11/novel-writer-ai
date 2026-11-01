@@ -2,6 +2,7 @@ import { App, TFile, TFolder } from 'obsidian';
 import { ChapterFrontmatter } from '../shared/types';
 import { pjBodyDir } from '../shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { listFolderFiles } from '../shared/vault-tree';
 import { createLogger } from '../shared/logger';
 
 
@@ -185,8 +186,8 @@ export async function migrateLegacyFile(
 
     try {
         await fs.rename(file.path, newPath);
-        const migrated = vaultMeta.getFiles().find(f => f.path === newPath);
-        return migrated || null;
+        const migrated = vaultMeta.getAbstractFileByPath(newPath);
+        return migrated instanceof TFile ? migrated : null;
     } catch (e) {
         log.warn('[小说工坊] 迁移旧格式文件失败:', file.path, e);
         return null;
@@ -249,9 +250,8 @@ export function listChapterNumbers(app: App, project: string, volN: number): num
             if (m) nums.add(parseInt(m[1], 10));
         }
     }
-    const bodyDir = pjBodyDir(project, volN) + '/';
-    for (const f of app.vault.getFiles()) {
-        if (!f.path.startsWith(bodyDir)) continue;
+    // 只列本卷正文目录：getFiles() 会构造整库数组
+    for (const f of listFolderFiles<TFile>(app.vault, pjBodyDir(project, volN))) {
         const m = f.name.match(/^第(\d+)章.*_正文\.md$/);
         if (m) nums.add(parseInt(m[1], 10));
     }
@@ -340,10 +340,8 @@ export function chapterHasAnyFile(folder: TFolder): boolean {
 export function findBodyFileV4(app: App, project: string, volN: number, chapNum: number): TFile | undefined {
     const bodyDir = pjBodyDir(project, volN);
     const prefix = `第${chapNum}章`;
-    const vaultMeta = new ObsidianVaultMeta(app);
-    return vaultMeta.getFiles().find(f =>
-        f.path.startsWith(bodyDir)
-        && f.name.startsWith(prefix)
+    return listFolderFiles<TFile>(app.vault, bodyDir).find(f =>
+        f.name.startsWith(prefix)
         && f.name.endsWith('_正文.md')
     );
 }
