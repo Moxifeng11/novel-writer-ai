@@ -323,6 +323,11 @@ export class KnowledgeTagManager {
         if (exists) {
             try {
                 await this.load();
+                // 解析成功但一条标签都没有，等同于格式不可识别：
+                // 若不处理，下次 addTag/save 会用默认树（或单条新标签）覆盖用户原文件。
+                if (this.tags.length === 0) {
+                    throw new Error('标签体系为空或格式不可识别');
+                }
             } catch (e) {
                 // 读取失败（权限/同步冲突）时旧实现让 init 直接抛出，知识库整体初始化中断；
                 // 这里退回默认标签继续工作，并把读不到的原文件改名留档，
@@ -538,6 +543,8 @@ export class KnowledgeTagManager {
             stack.push({ depth, tag });
         }
 
-        return tags.length > 0 ? tags : buildDefaultTags();
+        // 不在解析器里静默回落默认树：否则「文件损坏」与「正常但为空」无法区分，
+        // init 既不会留档也不会阻止下一次 save 覆盖用户原文件。
+        return tags;
     }
 }

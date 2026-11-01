@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 504,
-      "cases": 5692
+      "files": 505,
+      "cases": 5701
     },
     "e2e": 25,
     "gates": [
@@ -525,7 +525,7 @@
           "id": "G7-4",
           "title": "覆盖缺口补齐（分批）",
           "status": "in_progress",
-          "acceptance": "a/b 已完成（结算/Agent runner/生命周期/Agent 工具/embedding）；剩余知识库 UI 与 knowledge-tags",
+          "acceptance": "a/b/c 已完成（结算/Agent/生命周期/Agent 工具/embedding/知识库标签）；剩 knowledge-base-view 视图级测试",
           "evidence": "见 G7-4a/4b/4c"
         },
         {
@@ -545,8 +545,15 @@
         {
           "id": "G7-4c",
           "title": "知识库 UI 与 knowledge-tags 覆盖",
+          "status": "done",
+          "acceptance": "KnowledgeTagManager 9 条（默认树/幂等/损坏留档/CRUD/级联/往返）；并修复「损坏文件静默回落默认树」",
+          "evidence": "knowledge-tags.test + parseFromMarkdown 去静默回落"
+        },
+        {
+          "id": "G7-4d",
+          "title": "knowledge-base-view 视图级最小测试",
           "status": "todo",
-          "acceptance": "KnowledgeTagManager 默认树/增删改与 knowledge-base-view 关键交互有最小测试",
+          "acceptance": "书卡选中/返回、详情加载失败态、搜索筛选三条路径可回归",
           "evidence": "—"
         }
       ]
@@ -654,6 +661,12 @@
       "group": "G7",
       "summary": "G7-4b：host-tools 权限边界 16 条 + 4 个 embedding provider 11 条",
       "evidence": "host-tools-guard.test / embedding/providers.test"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G7",
+      "summary": "G7-4c：KnowledgeTagManager 9 条 + 修复损坏标签文件静默回落默认树（会覆盖用户原文件）",
+      "evidence": "knowledge-tags.test + engine/knowledge-tags.ts"
     }
   ]
 }
