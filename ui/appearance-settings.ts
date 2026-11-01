@@ -10,6 +10,15 @@ import {
     type AppearancePreset,
     type ThemePreset,
 } from '../shared/theme-colors';
+import {
+    BUILTIN_THEMES,
+    activeBuiltinTheme,
+    builtinPresetId,
+    galleryThemeToPreset,
+    isGalleryThemeValid,
+    type GalleryTheme,
+    type ThemeMode,
+} from '../shared/theme-gallery';
 
 export const DEFAULT_APPEARANCE_PRESET: AppearancePreset = 'soft';
 
@@ -97,6 +106,22 @@ export function renderAppearanceSettings(
                 dropdown.setValue(plugin.settings.theme);
                 dropdown.onChange(async (value) => {
                     plugin.settings.theme = value as 'light' | 'dark' | 'auto';
+                    // 当前用的是内置主题：跟着模式换到同一主题的对应配色，不要停留在反色的底
+                    const current = activeBuiltinTheme(plugin.settings.themeColors?.activePresetId);
+                    const theme = current ? BUILTIN_THEMES.find(item => item.id === current.themeId) : undefined;
+                    if (theme) {
+                        const resolvedMode: ThemeMode = value === 'dark'
+                            ? 'dark'
+                            : value === 'light'
+                                ? 'light'
+                                : (document.body.classList.contains('theme-dark') ? 'dark' : 'light');
+                        const { themeColors } = presetToSettings(galleryThemeToPreset(theme, resolvedMode));
+                        plugin.settings.themeColors = themeColors;
+                        await plugin.saveSettings();
+                        plugin.injectThemeVariables();
+                        rerender();
+                        return;
+                    }
                     await apply();
                     rerender();
                 });
@@ -181,7 +206,10 @@ export function renderAppearanceSettings(
             }));
 
     if (!compact) {
+        renderThemeGallery(section, plugin, rerender);
         renderPresetManager(section, plugin, rerender);
+    } else {
+        renderThemeGalleryCompact(section, plugin, rerender);
     }
 
     new Setting(section)
@@ -193,6 +221,111 @@ export function renderAppearanceSettings(
                 new Notice('✅ 已恢复默认配色');
             });
             if (!compact) btn.setWarning();
+        });
+}
+
+/** 应用一套内置主题（浅/深），全量与紧凑入口共用 */
+async function applyGalleryTheme(
+    plugin: NovelWriterPlugin,
+    theme: GalleryTheme,
+    mode: ThemeMode,
+): Promise<void> {
+    const preset = galleryThemeToPreset(theme, mode);
+    const { theme: nextTheme, themeColors } = presetToSettings(preset);
+    plugin.settings.theme = nextTheme;
+    // 整体替换：切了主题就用该主题的三层值，不残留上一套的单项覆盖
+    plugin.settings.themeColors = themeColors;
+    await plugin.saveSettings();
+    plugin.injectThemeVariables();
+    new Notice(`✅ 已切换到「${theme.name} · ${mode === 'dark' ? '深色' : '浅色'}」`);
+}
+
+/** 内置主题画廊：三层配色预设，点一下就切换（不占用户的「配色方案」配额） */
+function renderThemeGallery(
+    section: HTMLElement,
+    plugin: NovelWriterPlugin,
+    rerender: () => void,
+): void {
+    const active = activeBuiltinTheme(plugin.settings.themeColors?.activePresetId);
+    const activeId = active ? builtinPresetId(active.themeId, active.mode) : '';
+
+    section.createEl('h4', { text: '🎨 内置主题' });
+    section.createEl('p', {
+        text: '每套主题都定义了三个 CSS 层：基底（L1）、卡片（L2）、强调（L3），面板与文字由基底自动派生。点「浅色」或「深色」立即切换，切换后仍可在下面继续微调。',
+        cls: 'setting-item-description',
+    });
+
+    const list = section.createDiv({ cls: 'nw-preset-list' });
+
+    for (const theme of BUILTIN_THEMES) {
+        if (!isGalleryThemeValid(theme)) continue;
+        const lightId = builtinPresetId(theme.id, 'light');
+        const darkId = builtinPresetId(theme.id, 'dark');
+        const rowActive = activeId === lightId || activeId === darkId;
+
+        const row = list.createDiv({
+            cls: 'nw-preset-row' + (rowActive ? ' nw-preset-row-active' : ''),
+        });
+
+        // 三色色卡：浅色在前、深色在后，一眼能看出两种模式的分层
+        // （复用 .nw-preset-swatch 的 flex 布局，两列各三个 chip，不新增 CSS）
+        const swatch = row.createDiv({ cls: 'nw-preset-swatch' });
+        for (const mode of ['light', 'dark'] as const) {
+            const variant = mode === 'dark' ? theme.dark : theme.light;
+            const group = swatch.createDiv();
+            group.setAttribute('title', `${theme.name}（${mode === 'dark' ? '深色' : '浅色'}）：基底 / 卡片 / 强调`);
+            group.createDiv({ cls: 'nw-preset-chip' }).style.background = variant.base;
+            group.createDiv({ cls: 'nw-preset-chip' }).style.background = variant.card;
+            group.createDiv({ cls: 'nw-preset-chip' }).style.background = variant.accent;
+        }
+
+        const nameEl = row.createDiv({ cls: 'nw-preset-name' });
+        nameEl.createSpan({ text: theme.name });
+        nameEl.createSpan({ cls: 'nw-preset-meta', text: theme.description });
+
+        const actions = row.createDiv({ cls: 'nw-preset-actions' });
+        for (const mode of ['light', 'dark'] as const) {
+            const id = mode === 'dark' ? darkId : lightId;
+            const btn = actions.createEl('button', {
+                cls: 'nw-preset-apply',
+                text: id === activeId ? `✓ ${mode === 'dark' ? '深色' : '浅色'}` : (mode === 'dark' ? '深色' : '浅色'),
+                attr: { type: 'button' },
+            });
+            btn.addEventListener('click', () => {
+                void applyGalleryTheme(plugin, theme, mode).then(rerender);
+            });
+        }
+    }
+}
+
+/** 紧凑模式（mini 设置）：一个下拉即可切换全部内置主题 */
+function renderThemeGalleryCompact(
+    section: HTMLElement,
+    plugin: NovelWriterPlugin,
+    rerender: () => void,
+): void {
+    const active = activeBuiltinTheme(plugin.settings.themeColors?.activePresetId);
+    const activeId = active ? builtinPresetId(active.themeId, active.mode) : '';
+
+    new Setting(section)
+        .setName('内置主题')
+        .setDesc('三层配色预设，选一个立即生效')
+        .addDropdown(dropdown => {
+            dropdown.addOption('', '自定义（当前三层设置）');
+            for (const theme of BUILTIN_THEMES) {
+                if (!isGalleryThemeValid(theme)) continue;
+                dropdown.addOption(builtinPresetId(theme.id, 'light'), `${theme.name} · 浅色`);
+                dropdown.addOption(builtinPresetId(theme.id, 'dark'), `${theme.name} · 深色`);
+            }
+            dropdown.setValue(activeId);
+            dropdown.onChange(async (value) => {
+                const parsed = activeBuiltinTheme(value);
+                if (!parsed) return;
+                const theme = BUILTIN_THEMES.find(item => item.id === parsed.themeId);
+                if (!theme) return;
+                await applyGalleryTheme(plugin, theme, parsed.mode);
+                rerender();
+            });
         });
 }
 

@@ -469,6 +469,111 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         });
     });
 
+    test('内置主题画廊：点「青瓷·深色」立即切换三层 CSS 变量', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+
+        const opened = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return false;
+            const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
+                .find(el => ((el as HTMLElement).textContent || '').includes('外观'));
+            if (!tab) return false;
+            (tab as HTMLElement).click();
+            return true;
+        });
+        expect(opened).toBe(true);
+
+        // 画廊行渲染出来（主题名 + 浅/深两个按钮）
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return 0;
+            return Array.from(root.querySelectorAll('.nw-preset-name'))
+                .filter(el => ((el as HTMLElement).textContent || '').includes('青瓷')).length;
+        }), { timeout: 15_000 }).toBe(1);
+
+        const clicked = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return false;
+            const row = Array.from(root.querySelectorAll('.nw-preset-row'))
+                .find(el => ((el as HTMLElement).textContent || '').includes('青瓷'));
+            if (!row) return false;
+            const darkBtn = Array.from(row.querySelectorAll('button'))
+                .find(b => ((b as HTMLElement).textContent || '').trim() === '深色');
+            if (!darkBtn) return false;
+            (darkBtn as HTMLElement).click();
+            return true;
+        });
+        expect(clicked).toBe(true);
+
+        // 等 CSS 变量真正注入：settings 是同步写入的，只轮询 settings 会在
+        // injectThemeVariables()（await saveSettings 之后）执行前就通过，断言到旧样式。
+        await expect.poll(async () => page.evaluate(() =>
+            getComputedStyle(document.documentElement).getPropertyValue('--nw-app-bg').trim()
+        ), { timeout: 15_000 }).toBe('#16211F');
+
+        const state = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { plugins?: { plugins?: Record<string, { settings?: Record<string, unknown> }> } };
+            };
+            const settings = host.app?.plugins?.plugins?.['novel-writer-ai']?.settings as
+                | { theme?: string; themeColors?: { appBg?: string; activePresetId?: string } }
+                | undefined;
+            const styles = Array.from(document.querySelectorAll('style#novel-writer-theme-vars'))
+                .map(el => el.textContent || '').join('');
+            return {
+                theme: settings?.theme,
+                appBg: settings?.themeColors?.appBg,
+                activeId: settings?.themeColors?.activePresetId,
+                cssHasBg: styles.includes('--nw-app-bg: #16211F'),
+                resolvedBg: getComputedStyle(document.documentElement).getPropertyValue('--nw-app-bg').trim(),
+                styleCount: document.querySelectorAll('style#novel-writer-theme-vars').length,
+                styleHead: styles.slice(0, 160),
+            };
+        });
+
+        console.log('THEME_GALLERY ' + JSON.stringify(state));
+        expect(state.theme).toBe('dark');
+        expect(state.appBg).toBe('#16211F');
+        expect(state.activeId).toBe('builtin:celadon:dark');
+        expect(state.cssHasBg).toBe(true);
+        expect(state.resolvedBg).toBe('#16211F');
+
+        // 还原默认配色，避免影响后续用例的配色假设
+        await page.evaluate(async () => {
+            const host = window as unknown as {
+                app?: {
+                    plugins?: {
+                        plugins?: Record<string, {
+                            settings?: Record<string, unknown>;
+                            saveSettings?(): Promise<void>;
+                            injectThemeVariables?(): void;
+                        }>;
+                    };
+                };
+            };
+            const plugin = host.app?.plugins?.plugins?.['novel-writer-ai'];
+            if (!plugin?.settings) return;
+            plugin.settings.themeColors = {};
+            plugin.settings.theme = 'light';
+            await plugin.saveSettings?.();
+            plugin.injectThemeVariables?.();
+        });
+        await page.evaluate(() => {
+            const host = window as unknown as { app?: { setting?: { close?(): void } } };
+            host.app?.setting?.close?.();
+        });
+    });
+
     test('工作台分隔条可拖拽并持久化宽度', async () => {
         const { page } = session;
         expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
