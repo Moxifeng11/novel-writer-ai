@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-01T23:57:01.456Z",
+  "generatedAt": "2026-11-01T23:58:50.997Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 710,
+      "documented": 762,
       "methods": 1253,
       "methodsDocumented": 610,
       "incomplete": 740
@@ -1251,49 +1251,49 @@
     },
     "engine/quality/deviation-detector.ts": {
       "exports": 26,
-      "documented": 11,
+      "documented": 26,
       "methods": 6,
       "methodsDocumented": 6,
       "incomplete": 11
     },
     "engine/quality/gate-snapshot.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/quality/quality-score-engine.ts": {
       "exports": 15,
-      "documented": 8,
+      "documented": 15,
       "methods": 6,
       "methodsDocumented": 6,
       "incomplete": 8
     },
     "engine/quality/realtime-monitor.ts": {
       "exports": 7,
-      "documented": 0,
+      "documented": 7,
       "methods": 10,
       "methodsDocumented": 10,
       "incomplete": 7
     },
     "engine/quality/rewrite-prompts.ts": {
       "exports": 6,
-      "documented": 3,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3
     },
     "engine/quality/rewrite-suggestion-engine.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 6,
       "methodsDocumented": 2,
       "incomplete": 1
     },
     "engine/quality/rewrite-types.ts": {
       "exports": 13,
-      "documented": 1,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1489,21 +1489,21 @@
     },
     "engine/revision/quality-issue-parser.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 2
     },
     "engine/revision/revision-guard.ts": {
       "exports": 7,
-      "documented": 5,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 4
     },
     "engine/revision/revision-prompts.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

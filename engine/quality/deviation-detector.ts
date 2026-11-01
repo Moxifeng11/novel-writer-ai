@@ -26,6 +26,9 @@ import { DIVERGENCE_CRITICAL, DIVERGENCE_WARNING, FORESHADOW_APPROACHING_CHAPTER
 // 一、偏离类型与严重度
 // ============================================================
 
+/**
+ * 偏差类型。
+ */
 export type DeviationType =
   | 'mainline'
   | 'characterOOC'
@@ -34,6 +37,9 @@ export type DeviationType =
   | 'rhythm'
   | 'emotionBreak';
 
+/**
+ * 全部偏差类型。
+ */
 export const DEVIATION_TYPES: readonly DeviationType[] = [
   'mainline',
   'characterOOC',
@@ -43,6 +49,9 @@ export const DEVIATION_TYPES: readonly DeviationType[] = [
   'emotionBreak',
 ] as const;
 
+/**
+ * 偏差类型中文名。
+ */
 export const DEVIATION_TYPE_LABELS: Record<DeviationType, string> = {
   mainline: '剧情偏离主线',
   characterOOC: '人物 OOC',
@@ -55,12 +64,18 @@ export const DEVIATION_TYPE_LABELS: Record<DeviationType, string> = {
 /** 预警级别（由低到高） */
 export type DeviationSeverity = 'info' | 'warning' | 'critical';
 
+/**
+ * 严重度排序（数值越大越严重）。
+ */
 export const SEVERITY_ORDER: Record<DeviationSeverity, number> = {
   info: 0,
   warning: 1,
   critical: 2,
 };
 
+/**
+ * 严重度中文名。
+ */
 export const SEVERITY_LABELS: Record<DeviationSeverity, string> = {
   info: '提示',
   warning: '警告',
@@ -71,6 +86,9 @@ export const SEVERITY_LABELS: Record<DeviationSeverity, string> = {
 // 二、偏离问题与报告模型
 // ============================================================
 
+/**
+ * 偏差位置。
+ */
 export interface DeviationLocation {
   /** 行号（1-based） */
   line?: number;
@@ -84,6 +102,9 @@ export interface DeviationLocation {
   chapterRef?: string;
 }
 
+/**
+ * 偏差问题。
+ */
 export interface DeviationIssue {
   id: string;
   type: DeviationType;
@@ -100,6 +121,9 @@ export interface DeviationIssue {
   evidence?: string[];
 }
 
+/**
+ * 偏差修复建议。
+ */
 export interface DeviationSuggestion {
   id: string;
   type: DeviationType;
@@ -109,6 +133,9 @@ export interface DeviationSuggestion {
   relatedIssueIds?: string[];
 }
 
+/**
+ * 偏差报告。
+ */
 export interface DeviationReport {
   /** 总偏离分数 0-100（越高越严重） */
   overallScore: number;
@@ -138,6 +165,9 @@ export interface DeviationReport {
 // 三、伏笔追踪模型
 // ============================================================
 
+/**
+ * 伏笔追踪状态。
+ */
 export interface ForeshadowTracking {
   id: string;
   /** 伏笔描述 */
@@ -162,6 +192,9 @@ export interface ForeshadowTracking {
 // 四、检测上下文
 // ============================================================
 
+/**
+ * 上一章上下文。
+ */
 export interface PreviousChapterContext {
   chapterId: string;
   chapterNum: number;
@@ -171,6 +204,9 @@ export interface PreviousChapterContext {
   frontmatter?: Record<string, unknown>;
 }
 
+/**
+ * 偏差检测上下文。
+ */
 export interface DeviationContext {
   /** 当前章节 ID */
   chapterId?: string;
@@ -254,6 +290,9 @@ export interface IRhythmAnalyzerForDeviation {
 // 六、预警阈值配置
 // ============================================================
 
+/**
+ * 严重度阈值。
+ */
 export interface SeverityThresholds {
   /** 偏离度 >= 此值 → critical */
   critical: number;
@@ -263,6 +302,9 @@ export interface SeverityThresholds {
   info: number;
 }
 
+/**
+ * 默认严重度阈值。
+ */
 export const DEFAULT_SEVERITY_THRESHOLDS: SeverityThresholds = {
   critical: DIVERGENCE_CRITICAL,
   warning: DIVERGENCE_WARNING,
@@ -273,6 +315,9 @@ export const DEFAULT_SEVERITY_THRESHOLDS: SeverityThresholds = {
 // 七、引擎选项
 // ============================================================
 
+/**
+ * 偏差检测器选项。
+ */
 export interface DeviationDetectorOptions {
   /** V1 剧情偏离引擎（注入后复用，否则使用内置规则） */
   plotDivergenceEngine?: IPlotDivergenceEngine;

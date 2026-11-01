@@ -31,6 +31,12 @@ const DIMENSION_RULES: Record<RevisionDimension, string> = {
 - 保持原叙述视角和人物声音，不把文字改成另一种风格。`,
 };
 
+/**
+ * 构建按维度修订的系统提示词。
+ *
+ * @param dimension - 参数
+ * @returns 提示词
+ */
 export function buildRevisionSystemPrompt(dimension: RevisionDimension): string {
     return `你是小说修订师。你只负责【${DIMENSION_RULES[dimension].split('\n')[0]}】这一维度。
 

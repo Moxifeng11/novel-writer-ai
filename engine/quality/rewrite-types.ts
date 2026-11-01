@@ -8,6 +8,9 @@
 // 一、改写类型
 // ============================================================
 
+/**
+ * 改写建议类型。
+ */
 export type SuggestionType =
   | 'polish'      // 润色优化
   | 'expand'      // 扩写充实
@@ -16,6 +19,9 @@ export type SuggestionType =
   | 'character'   // 人物校准
   | 'logic';      // 逻辑补全
 
+/**
+ * 全部建议类型。
+ */
 export const SUGGESTION_TYPES: readonly SuggestionType[] = [
   'polish',
   'expand',
@@ -25,6 +31,9 @@ export const SUGGESTION_TYPES: readonly SuggestionType[] = [
   'logic',
 ] as const;
 
+/**
+ * 建议类型中文名。
+ */
 export const SUGGESTION_TYPE_LABELS: Record<SuggestionType, string> = {
   polish: '润色优化',
   expand: '扩写充实',
@@ -34,6 +43,9 @@ export const SUGGESTION_TYPE_LABELS: Record<SuggestionType, string> = {
   logic: '逻辑补全',
 };
 
+/**
+ * 建议类型说明。
+ */
 export const SUGGESTION_TYPE_DESC: Record<SuggestionType, string> = {
   polish: '优化用词和句式，提升语言质感',
   expand: '增加细节描写和心理活动，让内容更丰满',
@@ -47,12 +59,18 @@ export const SUGGESTION_TYPE_DESC: Record<SuggestionType, string> = {
 // 二、触发场景
 // ============================================================
 
+/**
+ * 触发类型。
+ */
 export type TriggerType =
   | 'cursorHover'    // 光标停留触发
   | 'selection'      // 选中文本触发
   | 'issueClick'     // 点击预警项触发
   | 'lowScore';      // 低分配方触发
 
+/**
+ * 触发类型中文名。
+ */
 export const TRIGGER_TYPE_LABELS: Record<TriggerType, string> = {
   cursorHover: '光标停留',
   selection: '选中文本',
@@ -64,6 +82,9 @@ export const TRIGGER_TYPE_LABELS: Record<TriggerType, string> = {
 // 三、改写建议实体
 // ============================================================
 
+/**
+ * 改写建议。
+ */
 export interface RewriteSuggestion {
   /** 建议唯一 ID */
   id: string;
@@ -88,6 +109,9 @@ export interface RewriteSuggestion {
   improvedDimensions?: string[];
 }
 
+/**
+ * 改写结果。
+ */
 export interface RewriteResult {
   /** 生成请求 ID */
   requestId: string;
@@ -111,6 +135,9 @@ export interface RewriteResult {
 // 四、生成上下文
 // ============================================================
 
+/**
+ * 改写上下文。
+ */
 export interface RewriteContext {
   /** 项目 ID */
   projectId: string;
@@ -153,6 +180,9 @@ export interface RewriteContext {
 // 五、引擎选项
 // ============================================================
 
+/**
+ * 引擎选项。
+ */
 export interface RewriteSuggestionEngineOptions {
   /** AI 引擎调用器（注入后使用 AI 生成，否则使用规则建议） */
   aiEngine?: {
@@ -170,6 +200,9 @@ export interface RewriteSuggestionEngineOptions {
 // 六、流式生成事件
 // ============================================================
 
+/**
+ * 流事件类型。
+ */
 export type RewriteStreamEventType =
   | 'start'
   | 'progress'
@@ -178,6 +211,9 @@ export type RewriteStreamEventType =
   | 'error'
   | 'cancelled';
 
+/**
+ * 流事件。
+ */
 export interface RewriteStreamEvent {
   type: RewriteStreamEventType;
   /** 当前方案索引 */
@@ -192,4 +228,7 @@ export interface RewriteStreamEvent {
   timestamp: number;
 }
 
+/**
+ * 流事件处理器。
+ */
 export type RewriteStreamHandler = (event: RewriteStreamEvent) => void;

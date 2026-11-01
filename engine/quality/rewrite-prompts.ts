@@ -94,6 +94,9 @@ const TYPE_SYSTEM_PROMPTS: Record<SuggestionType, string> = {
 // 三、用户提示词构建
 // ============================================================
 
+/**
+ * 改写提示词变量。
+ */
 export interface RewritePromptVars {
   /** 待改写的原文 */
   text: string;
@@ -183,6 +186,9 @@ export function buildUserPrompt(vars: RewritePromptVars): string {
 // 四、自动判断改写类型的 Prompt
 // ============================================================
 
+/**
+ * 自动判定改写类型的系统提示词。
+ */
 export const AUTO_TYPE_DETECTION_SYSTEM = `你是一位小说分析助手。根据提供的文本和上下文，判断最适合的改写类型。
 
 可选类型：
@@ -195,6 +201,13 @@ export const AUTO_TYPE_DETECTION_SYSTEM = `你是一位小说分析助手。根�
 
 只返回一个类型代码，不要解释。`;
 
+/**
+ * 构建自动判定类型的提示词。
+ *
+ * @param text - 参数
+ * @param context? - 参数
+ * @returns 提示词
+ */
 export function buildAutoTypePrompt(text: string, context?: string): string {
   const sections = [`【待分析文本】\n${text}`];
   if (context) {

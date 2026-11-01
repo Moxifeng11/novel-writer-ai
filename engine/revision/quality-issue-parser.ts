@@ -108,6 +108,13 @@ export function mergeQualityIssues(
     return result;
 }
 
+/**
+ * 把问题合并为分轮修订计划。
+ *
+ * @param issues - 参数
+ * @param maxPasses = 3 - 参数
+ * @returns 修订计划
+ */
 export function buildRevisionPlan(issues: RevisionIssue[], maxPasses = 3): RevisionPlan {
     if (issues.length === 0) {
         return { passes: [], reason: '没有可执行的结构化问题' };

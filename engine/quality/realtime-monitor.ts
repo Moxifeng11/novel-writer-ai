@@ -30,8 +30,14 @@ const log = createLogger('RealtimeMonitor');
 // 一、状态机与事件
 // ============================================================
 
+/**
+ * 实时监控状态。
+ */
 export type MonitorState = 'idle' | 'evaluating' | 'success' | 'failed' | 'cancelled';
 
+/**
+ * 监控事件类型。
+ */
 export type MonitorEventType =
     | 'state-change'   // 状态变更
     | 'start'           // 评估开始
@@ -39,6 +45,9 @@ export type MonitorEventType =
     | 'failed'          // 评估失败
     | 'cancelled';      // 评估取消
 
+/**
+ * 监控事件。
+ */
 export interface MonitorEvent<T = unknown> {
     type: MonitorEventType;
     timestamp: number;
@@ -54,12 +63,18 @@ export interface MonitorEvent<T = unknown> {
     data?: T;
 }
 
+/**
+ * 监控事件处理器。
+ */
 export type MonitorEventHandler = (event: MonitorEvent) => void;
 
 // ============================================================
 // 二、监控结果模型
 // ============================================================
 
+/**
+ * 监控上下文。
+ */
 export interface MonitorContext {
     projectId: string;
     chapterId: string;
@@ -73,6 +88,9 @@ export interface MonitorContext {
     skipQuality?: boolean;
 }
 
+/**
+ * 监控结果。
+ */
 export interface MonitorResult {
     evaluationId: string;
     projectId: string;
@@ -102,6 +120,9 @@ export interface MonitorResult {
 // 三、RealtimeMonitor 主类
 // ============================================================
 
+/**
+ * 实时质量监控：节流评估与事件上报。
+ */
 export class RealtimeMonitor {
     private readonly scoreEngine: QualityScoreEngine;
     private readonly deviationDetector: DeviationDetector;

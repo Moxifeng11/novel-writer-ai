@@ -43,6 +43,9 @@ type QualityDimension =
   | 'coherence'
   | 'languageTexture';
 
+/**
+ * 质量维度列表。
+ */
 export const QUALITY_DIMENSIONS: readonly QualityDimension[] = [
   'readability',
   'rhythm',
@@ -52,6 +55,9 @@ export const QUALITY_DIMENSIONS: readonly QualityDimension[] = [
   'languageTexture',
 ] as const;
 
+/**
+ * 质量维度中文名。
+ */
 export const DIMENSION_LABELS: Record<QualityDimension, string> = {
   readability: '可读性',
   rhythm: '节奏',
@@ -62,6 +68,9 @@ export const DIMENSION_LABELS: Record<QualityDimension, string> = {
 };
 
 // 维度权重（用于综合评分；数值统一在 shared/thresholds.ts）
+/**
+ * 质量维度权重。
+ */
 export const DIMENSION_WEIGHTS: Record<QualityDimension, number> = QSE_DIMENSION_WEIGHTS;
 
 // ============================================================
@@ -97,6 +106,9 @@ interface ImprovementSuggestion {
   estimatedEffort?: string;
 }
 
+/**
+ * 单维度得分。
+ */
 export interface DimensionScore {
   dimension: QualityDimension;
   /** 评分 0-100 */
@@ -111,6 +123,9 @@ export interface DimensionScore {
   details: Record<string, number | string>;
 }
 
+/**
+ * 质量总分。
+ */
 export interface QualityScore {
   /** 总分数 0-100 */
   overallScore: number;
@@ -139,6 +154,9 @@ export interface QualityScore {
 // 三、评估上下文
 // ============================================================
 
+/**
+ * 人物上下文信息。
+ */
 export interface CharacterContextInfo {
   name: string;
   personality?: string;
@@ -147,6 +165,9 @@ export interface CharacterContextInfo {
   background?: string;
 }
 
+/**
+ * 评估上下文。
+ */
 export interface EvaluationContext {
   chapterId?: string;
   chapterTitle?: string;

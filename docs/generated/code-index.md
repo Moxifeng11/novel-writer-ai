@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 120379 | 1532 | 389 | 25% |
+| `engine/` | 289 | 120552 | 1532 | 441 | 29% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -219,14 +219,14 @@
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
 | `engine/quality-gate.ts` | 159 | 5 | 0 |
 | `engine/quality-scorer.ts` | 338 | 5 | 0 |
-| `engine/quality/deviation-detector.ts` | 1984 | 26 | 3 |
-| `engine/quality/gate-snapshot.ts` | 102 | 2 | 0 |
-| `engine/quality/quality-score-engine.ts` | 1986 | 15 | 1 |
+| `engine/quality/deviation-detector.ts` | 2029 | 26 | 18 |
+| `engine/quality/gate-snapshot.ts` | 111 | 2 | 2 |
+| `engine/quality/quality-score-engine.ts` | 2007 | 15 | 8 |
 | `engine/quality/quality-worker.ts` | 87 | 0 | 0 |
-| `engine/quality/realtime-monitor.ts` | 499 | 7 | 0 |
-| `engine/quality/rewrite-prompts.ts` | 239 | 6 | 3 |
-| `engine/quality/rewrite-suggestion-engine.ts` | 590 | 2 | 0 |
-| `engine/quality/rewrite-types.ts` | 196 | 13 | 1 |
+| `engine/quality/realtime-monitor.ts` | 520 | 7 | 7 |
+| `engine/quality/rewrite-prompts.ts` | 252 | 6 | 6 |
+| `engine/quality/rewrite-suggestion-engine.ts` | 596 | 2 | 2 |
+| `engine/quality/rewrite-types.ts` | 235 | 13 | 13 |
 | `engine/rag/retrieval-service.ts` | 237 | 6 | 1 |
 | `engine/relationship-engine.ts` | 318 | 8 | 5 |
 | `engine/repository/base-markdown-repository.ts` | 424 | 1 | 0 |
@@ -258,9 +258,9 @@
 | `engine/repository/location-repository.ts` | 106 | 1 | 1 |
 | `engine/repository/project-repository.ts` | 133 | 1 | 1 |
 | `engine/review-agent.ts` | 416 | 1 | 0 |
-| `engine/revision/quality-issue-parser.ts` | 127 | 3 | 1 |
-| `engine/revision/revision-guard.ts` | 165 | 7 | 1 |
-| `engine/revision/revision-prompts.ts` | 85 | 2 | 0 |
+| `engine/revision/quality-issue-parser.ts` | 134 | 3 | 2 |
+| `engine/revision/revision-guard.ts` | 171 | 7 | 3 |
+| `engine/revision/revision-prompts.ts` | 91 | 2 | 1 |
 | `engine/revision/revision-types.ts` | 50 | 7 | 1 |
 | `engine/revision/targeted-revision.ts` | 194 | 4 | 0 |
 | `engine/rhythm-analyzer.ts` | 240 | 1 | 0 |

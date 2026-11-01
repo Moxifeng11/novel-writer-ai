@@ -37,12 +37,18 @@ import {
 // 一、引擎状态
 // ============================================================
 
+/**
+ * 改写建议引擎状态。
+ */
 export type RewriteEngineState = 'idle' | 'generating' | 'success' | 'failed' | 'cancelled';
 
 // ============================================================
 // 二、RewriteSuggestionEngine 实现
 // ============================================================
 
+/**
+ * 改写建议引擎：生成/流式/取消。
+ */
 export class RewriteSuggestionEngine {
   private readonly aiEngine?: RewriteSuggestionEngineOptions['aiEngine'];
   private readonly maxSuggestions: number;

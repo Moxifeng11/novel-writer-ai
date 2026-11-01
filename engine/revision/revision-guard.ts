@@ -13,6 +13,9 @@
 import { analyzeHumanFeatures } from '../../shared/human-feature-rubric';
 import { AntiAIDetector } from '../anti-ai-detector';
 
+/**
+ * 修订闸门结果。
+ */
 export interface RevisionGateResult {
     accept: boolean;
     reasons: string[];
@@ -24,6 +27,9 @@ export interface RevisionGateResult {
     };
 }
 
+/**
+ * 闸门选项。
+ */
 export interface RevisionGateOptions {
     /** 原稿里出现、必须保留的人物名 */
     lockedNames?: readonly string[];

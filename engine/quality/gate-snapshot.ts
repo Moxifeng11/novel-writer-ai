@@ -60,11 +60,20 @@ function firstLine(text: string | undefined, fallback = ''): string {
     return line || fallback;
 }
 
+/**
+ * 闸门快照输入。
+ */
 export interface GateSnapshotInput {
     chapterNum: number;
     vars: Record<string, string>;
 }
 
+/**
+ * 从步骤变量构建章节状态快照。
+ *
+ * @param input - 参数
+ * @returns 章节状态快照
+ */
 export function buildGateSnapshotFromVars(input: GateSnapshotInput): ChapterStateSnapshot {
     const vars = input.vars || {};
     const conflict = firstLine(
