@@ -204,6 +204,10 @@ export class KnowledgeBaseManager {
         return this.fs;
     }
 
+    /**
+     * 初始化知识库：加载索引、恢复中断任务、预热缓存。
+     * @returns 无
+     */
     async init(): Promise<void> {
         const fs = this.getFS();
         const kbDir = kbKnowledgeBaseDir(this.baseDir);
@@ -477,6 +481,12 @@ export class KnowledgeBaseManager {
         return book;
     }
 
+    /**
+     * 删除书籍及其派生数据。
+     *
+     * @param bookId - 参数
+     * @returns 无
+     */
     async deleteBook(bookId: string): Promise<void> {
         const book = this.books.get(bookId);
         if (!book) return;
@@ -597,6 +607,13 @@ export class KnowledgeBaseManager {
         }
     }
 
+    /**
+     * 更新书籍基础信息。
+     *
+     * @param bookId - 参数
+     * @param updates - 参数
+     * @returns 无
+     */
     async updateBook(bookId: string, updates: Partial<BookBasicInfo>): Promise<void> {
         const book = this.books.get(bookId);
         if (!book) return;
@@ -663,10 +680,22 @@ export class KnowledgeBaseManager {
         return this.mutationSeq;
     }
 
+    /**
+     * 书是否存在。
+     *
+     * @param bookId - 参数
+     * @returns 布尔值
+     */
     hasBook(bookId: string): boolean {
         return this.books.has(bookId);
     }
 
+    /**
+     * 读取书籍基础信息。
+     *
+     * @param bookId - 参数
+     * @returns 书籍信息或 undefined
+     */
     async getBook(bookId: string): Promise<BookBasicInfo | undefined> {
         if (this.bookInfoCache) {
             const cached = this.bookInfoCache.get(bookId);
@@ -681,10 +710,20 @@ export class KnowledgeBaseManager {
         return book;
     }
 
+    /**
+     * 读取全部书籍。
+     * @returns 书籍数组
+     */
     async getAllBooks(): Promise<BookBasicInfo[]> {
         return Array.from(this.books.values());
     }
 
+    /**
+     * 按选项列出书籍（筛选/排序）。
+     *
+     * @param options - 参数
+     * @returns 书籍数组
+     */
     async listBooks(options: ListBooksOptions = {}): Promise<BookBasicInfo[]> {
         let result = Array.from(this.books.values());
 
@@ -738,6 +777,15 @@ export class KnowledgeBaseManager {
         return result;
     }
 
+    /**
+     * 更新拆解状态与进度。
+     *
+     * @param bookId - 参数
+     * @param status - 参数
+     * @param progress? - 参数
+     * @param error? - 参数
+     * @returns 无
+     */
     async setBreakdownStatus(bookId: string, status: BreakdownStatus, progress?: number, error?: string): Promise<void> {
         const book = this.books.get(bookId);
         if (!book) return;
@@ -866,6 +914,12 @@ export class KnowledgeBaseManager {
         });
     }
 
+    /**
+     * 读取书籍原文（用于拆解/检索）。
+     *
+     * @param bookId - 参数
+     * @returns 原文
+     */
     async getSourceText(bookId: string): Promise<string> {
         const book = this.books.get(bookId);
         if (!book) {
@@ -927,6 +981,12 @@ export class KnowledgeBaseManager {
         }
     }
 
+    /**
+     * 列出缺失的拆解维度。
+     *
+     * @param bookId - 参数
+     * @returns 维度数组
+     */
     async getMissingDimensions(bookId: string): Promise<BreakdownDimension[]> {
         const book = this.books.get(bookId);
         if (!book) {
@@ -946,6 +1006,12 @@ export class KnowledgeBaseManager {
         return missing;
     }
 
+    /**
+     * 读取各维度完成状态。
+     *
+     * @param bookId - 参数
+     * @returns 维度 → 状态
+     */
     async getDimensionStatus(bookId: string): Promise<Record<BreakdownDimension, 'completed' | 'missing' | 'failed'>> {
         const book = this.books.get(bookId);
         if (!book) {
@@ -976,6 +1042,15 @@ export class KnowledgeBaseManager {
         return status;
     }
 
+    /**
+     * 设置书籍题材与置信度。
+     *
+     * @param bookId - 参数
+     * @param primaryGenre - 参数
+     * @param secondaryGenres? - 参数
+     * @param confidence? - 参数
+     * @returns 无
+     */
     async setBookGenre(bookId: string, primaryGenre: string, secondaryGenres?: string[], confidence?: number): Promise<void> {
         const book = this.books.get(bookId);
         if (!book) return;
@@ -997,6 +1072,13 @@ export class KnowledgeBaseManager {
         await this.saveIndex();
     }
 
+    /**
+     * 更新质量评分。
+     *
+     * @param bookId - 参数
+     * @param scores - 参数
+     * @returns 无
+     */
     async updateQualityScores(bookId: string, scores: Partial<QualityScores>): Promise<void> {
         const book = this.books.get(bookId);
         if (!book) return;
@@ -1028,6 +1110,12 @@ export class KnowledgeBaseManager {
         await this.saveIndex();
     }
 
+    /**
+     * 按题材筛选书籍。
+     *
+     * @param genreId - 参数
+     * @returns 书籍数组
+     */
     async getBooksByGenre(genreId: string): Promise<BookBasicInfo[]> {
         const result: BookBasicInfo[] = [];
         for (const book of this.books.values()) {
@@ -1040,6 +1128,12 @@ export class KnowledgeBaseManager {
         return result;
     }
 
+    /**
+     * 基于规则/模型自动识别题材。
+     *
+     * @param bookId - 参数
+     * @returns 题材结果或 null
+     */
     async autoDetectGenre(bookId: string): Promise<{ primaryGenre: string; secondaryGenres: string[]; confidence: number } | null> {
         const book = this.books.get(bookId);
         if (!book) return null;
@@ -1105,6 +1199,12 @@ export class KnowledgeBaseManager {
         };
     }
 
+    /**
+     * 对单本书做题材分类。
+     *
+     * @param bookId - 参数
+     * @returns 分类结果
+     */
     async classifyBook(bookId: string): Promise<GenreClassificationResult> {
         const book = this.books.get(bookId);
         if (!book) {
@@ -1189,22 +1289,46 @@ export class KnowledgeBaseManager {
         await this.saveIndex();
     }
 
+    /**
+     * 取底层知识库实例。
+     * @returns 知识库
+     */
     getKnowledgeBase(): WebnovelKnowledgeBase {
         return this.kb;
     }
 
+    /**
+     * 取题材分类器。
+     * @returns 分类器
+     */
     getGenreClassifier(): GenreClassifier {
         return this.genreClassifier;
     }
 
+    /**
+     * 取知识库根目录。
+     * @returns 根目录或 undefined
+     */
     getBaseDir(): string | undefined {
         return this.baseDir;
     }
 
+    /**
+     * 替换向量化提供方。
+     *
+     * @param embeddingProvider - 参数
+     * @returns 无
+     */
     setEmbeddingProvider(embeddingProvider: EmbeddingProvider): void {
         this.genreClassifier = new GenreClassifier(this.kb, embeddingProvider, this.preferenceMemory);
     }
 
+    /**
+     * 批量分类指定书籍。
+     *
+     * @param bookIds - 参数
+     * @returns 书 id → 结果
+     */
     async classifyBatch(bookIds: string[]): Promise<Map<string, GenreClassificationResult>> {
         const results = new Map<string, GenreClassificationResult>();
         for (const bookId of bookIds) {
@@ -1218,6 +1342,10 @@ export class KnowledgeBaseManager {
         return results;
     }
 
+    /**
+     * 分类所有未分类书籍。
+     * @returns 书 id → 结果
+     */
     async classifyAllUncategorized(): Promise<Map<string, GenreClassificationResult>> {
         const uncategorized = Array.from(this.books.values()).filter(b => !b.primaryGenre);
         return this.classifyBatch(uncategorized.map(b => b.id));
@@ -1272,14 +1400,28 @@ export class KnowledgeBaseManager {
         await this.saveIndex();
     }
 
+    /**
+     * 取题材偏好记忆。
+     * @returns 偏好记忆
+     */
     getPreferenceMemory(): GenrePreferenceMemory {
         return this.preferenceMemory;
     }
 
+    /**
+     * 导出题材偏好为 JSON。
+     * @returns JSON 文本
+     */
     async exportGenrePreference(): Promise<string> {
         return this.preferenceMemory.exportConfig();
     }
 
+    /**
+     * 导入题材偏好。
+     *
+     * @param jsonStr - 参数
+     * @returns 是否成功
+     */
     async importGenrePreference(jsonStr: string): Promise<boolean> {
         const result = await this.preferenceMemory.importConfig(jsonStr);
         if (result) {
@@ -1288,10 +1430,18 @@ export class KnowledgeBaseManager {
         return result;
     }
 
+    /**
+     * 重置题材偏好。
+     * @returns 无
+     */
     async resetGenrePreference(): Promise<void> {
         this.preferenceMemory.reset();
     }
 
+    /**
+     * 清空知识库缓存。
+     * @returns 无
+     */
     clearCache(): void {
         if (this.bookInfoCache) {
             this.bookInfoCache.clear();
@@ -1301,6 +1451,12 @@ export class KnowledgeBaseManager {
         }
     }
 
+    /**
+     * 失效单本书缓存。
+     *
+     * @param bookId - 参数
+     * @returns 无
+     */
     invalidateBookCache(bookId: string): void {
         if (this.bookInfoCache) {
             this.bookInfoCache.delete(bookId);
@@ -1310,6 +1466,10 @@ export class KnowledgeBaseManager {
         }
     }
 
+    /**
+     * 清理过期缓存。
+     * @returns 清理数量
+     */
     pruneExpiredCache(): number {
         let count = 0;
         if (this.bookInfoCache) {
@@ -1328,6 +1488,10 @@ export class KnowledgeBaseManager {
         };
     }
 
+    /**
+     * 把待写数据刷盘。
+     * @returns 无
+     */
     async flush(): Promise<void> {
         await this.indexWriter.flush();
         await this.bookWriter.flush();

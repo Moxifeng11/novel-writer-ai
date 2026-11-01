@@ -27,6 +27,10 @@ export class PromptManager {
         this.config = { ...DEFAULT_PROMPT_MANAGER_CONFIG, ...deps.getConfig() };
     }
 
+    /**
+     * 重新读取配置并重建模板/版本索引。
+     * @returns 无
+     */
     reloadConfig(): void {
         this.config = { ...DEFAULT_PROMPT_MANAGER_CONFIG, ...this.deps.getConfig() };
     }
@@ -45,6 +49,10 @@ export class PromptManager {
         });
     }
 
+    /**
+     * 返回全部提示词模板。
+     * @returns 模板数组
+     */
     getAllTemplates(): PromptTemplate[] {
         const customMap = new Map(this.config.customTemplates.map(t => [t.id, t]));
         const result: PromptTemplate[] = [];
@@ -65,6 +73,12 @@ export class PromptManager {
         return result;
     }
 
+    /**
+     * 按 id 取模板。
+     *
+     * @param id - 参数
+     * @returns 模板或 null
+     */
     getTemplateById(id: string): PromptTemplate | null {
         const custom = this.config.customTemplates.find(t => t.id === id);
         if (custom) return custom;
@@ -72,10 +86,20 @@ export class PromptManager {
         return def || null;
     }
 
+    /**
+     * 按分类取模板。
+     *
+     * @param category - 参数
+     * @returns 模板数组
+     */
     getTemplatesByCategory(category: PromptCategory): PromptTemplate[] {
         return this.getAllTemplates().filter(t => t.category === category);
     }
 
+    /**
+     * 返回分类及模板数量。
+     * @returns 分类计数数组
+     */
     getCategories(): { category: PromptCategory; count: number }[] {
         const all = this.getAllTemplates();
         const map = new Map<PromptCategory, number>();
@@ -85,10 +109,23 @@ export class PromptManager {
         return Array.from(map.entries()).map(([category, count]) => ({ category, count }));
     }
 
+    /**
+     * 取模板当前生效版本。
+     *
+     * @param template - 参数
+     * @returns 版本或 null
+     */
     getActiveVersion(template: PromptTemplate): PromptTemplateVersion | null {
         return template.versions.find(v => v.isActive) || template.versions[0] || null;
     }
 
+    /**
+     * 取模板的指定版本。
+     *
+     * @param templateId - 参数
+     * @param version - 参数
+     * @returns 版本或 null
+     */
     getVersion(templateId: string, version: string): PromptTemplateVersion | null {
         const template = this.getTemplateById(templateId);
         if (!template) return null;
@@ -123,6 +160,12 @@ export class PromptManager {
         return result;
     }
 
+    /**
+     * 创建自定义模板。
+     *
+     * @param template - 参数
+     * @returns 新模板
+     */
     async createCustomTemplate(template: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt' | 'isCustom'> & { id?: string }): Promise<PromptTemplate> {
         const now = Date.now();
         const newTemplate: PromptTemplate = {
@@ -144,6 +187,13 @@ export class PromptManager {
         return newTemplate;
     }
 
+    /**
+     * 更新模板元数据。
+     *
+     * @param templateId - 参数
+     * @param updates - 参数
+     * @returns 更新后的模板或 null
+     */
     async updateTemplate(templateId: string, updates: Partial<PromptTemplate>): Promise<PromptTemplate | null> {
         const idx = this.config.customTemplates.findIndex(t => t.id === templateId);
         if (idx === -1) {
@@ -171,6 +221,12 @@ export class PromptManager {
         return this.config.customTemplates[idx];
     }
 
+    /**
+     * 删除自定义模板（内置模板不可删）。
+     *
+     * @param templateId - 参数
+     * @returns 是否删除
+     */
     async deleteCustomTemplate(templateId: string): Promise<boolean> {
         const idx = this.config.customTemplates.findIndex(t => t.id === templateId);
         if (idx === -1) return false;
@@ -179,6 +235,12 @@ export class PromptManager {
         return true;
     }
 
+    /**
+     * 把模板恢复为内置默认。
+     *
+     * @param templateId - 参数
+     * @returns 是否恢复
+     */
     async resetTemplateToDefault(templateId: string): Promise<boolean> {
         const idx = this.config.customTemplates.findIndex(t => t.id === templateId);
         if (idx === -1) return false;
@@ -219,6 +281,13 @@ export class PromptManager {
         return newVersion;
     }
 
+    /**
+     * 切换模板生效版本。
+     *
+     * @param templateId - 参数
+     * @param version - 参数
+     * @returns 是否切换
+     */
     async setActiveVersion(templateId: string, version: string): Promise<boolean> {
         const template = this.config.customTemplates.find(t => t.id === templateId);
         if (!template) {
@@ -244,14 +313,30 @@ export class PromptManager {
         return true;
     }
 
+    /**
+     * 返回全部 A/B 实验。
+     * @returns 实验数组
+     */
     getABTests(): ABTest[] {
         return this.config.abTests;
     }
 
+    /**
+     * 按 id 取实验。
+     *
+     * @param testId - 参数
+     * @returns 实验或 null
+     */
     getABTestById(testId: string): ABTest | null {
         return this.config.abTests.find(t => t.id === testId) || null;
     }
 
+    /**
+     * 取模板当前运行中的实验。
+     *
+     * @param templateId - 参数
+     * @returns 实验或 null
+     */
     getActiveABTestForTemplate(templateId: string): ABTest | null {
         return this.config.abTests.find(
             t => t.templateId === templateId && t.status === 'running'
@@ -306,6 +391,13 @@ export class PromptManager {
         return test;
     }
 
+    /**
+     * 更新实验状态。
+     *
+     * @param testId - 参数
+     * @param status - 参数
+     * @returns 更新后的实验或 null
+     */
     async updateABTestStatus(testId: string, status: ABTestStatus): Promise<ABTest | null> {
         const test = this.config.abTests.find(t => t.id === testId);
         if (!test) return null;
@@ -320,6 +412,12 @@ export class PromptManager {
         return test;
     }
 
+    /**
+     * 删除实验。
+     *
+     * @param testId - 参数
+     * @returns 是否删除
+     */
     async deleteABTest(testId: string): Promise<boolean> {
         const idx = this.config.abTests.findIndex(t => t.id === testId);
         if (idx === -1) return false;
@@ -328,6 +426,12 @@ export class PromptManager {
         return true;
     }
 
+    /**
+     * 按实验权重选择 a/b 变体。
+     *
+     * @param test - 参数
+     * @returns 变体
+     */
     selectABVariant(test: ABTest): 'a' | 'b' {
         const rand = Math.random() * 100;
         return rand < test.trafficSplit.a ? 'a' : 'b';
@@ -395,6 +499,13 @@ export class PromptManager {
         await this.saveConfig();
     }
 
+    /**
+     * 读取模板使用历史。
+     *
+     * @param templateId? - 参数
+     * @param limit = 100 - 参数
+     * @returns 使用记录数组
+     */
     getUsageHistory(templateId?: string, limit = 100): PromptUsageRecord[] {
         let history = [...this.config.usageHistory];
         if (templateId) {
@@ -403,6 +514,12 @@ export class PromptManager {
         return history.slice(-limit).reverse();
     }
 
+    /**
+     * 计算实验统计与胜者。
+     *
+     * @param testId - 参数
+     * @returns 统计或 null
+     */
     getABTestStats(testId: string): { test: ABTest; winner?: 'a' | 'b' | 'tie'; confidence?: number } | null {
         const test = this.getABTestById(testId);
         if (!test) return null;
@@ -428,6 +545,13 @@ export class PromptManager {
         return { test, winner };
     }
 
+    /**
+     * 手动指定实验胜者。
+     *
+     * @param testId - 参数
+     * @param winner - 参数
+     * @returns 是否成功
+     */
     async setWinner(testId: string, winner: 'a' | 'b'): Promise<boolean> {
         const test = this.config.abTests.find(t => t.id === testId);
         if (!test) return false;
@@ -442,19 +566,39 @@ export class PromptManager {
         return true;
     }
 
+    /**
+     * 开关 A/B 实验。
+     *
+     * @param enabled - 参数
+     * @returns 无
+     */
     setABTestingEnabled(enabled: boolean): void {
         this.config.abTestingEnabled = enabled;
         this.flushConfig();
     }
 
+    /**
+     * A/B 实验是否启用。
+     * @returns 布尔值
+     */
     isABTestingEnabled(): boolean {
         return this.config.abTestingEnabled;
     }
 
+    /**
+     * 导出模板/实验配置为 JSON。
+     * @returns JSON 文本
+     */
     exportConfig(): string {
         return JSON.stringify(this.config, null, 2);
     }
 
+    /**
+     * 从 JSON 导入配置。
+     *
+     * @param jsonStr - 参数
+     * @returns 是否成功
+     */
     importConfig(jsonStr: string): boolean {
         try {
             const data = JSON.parse(jsonStr);

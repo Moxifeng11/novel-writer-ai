@@ -6,8 +6,8 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 604 | 40% | 1253 | 531 | 42% | 740 |
-| `services/` | 28 | 151 | 49 | 32% | 202 | 68 | 34% | 66 |
+| `engine/` | 271 | 1508 | 604 | 40% | 1253 | 546 | 44% | 740 |
+| `services/` | 28 | 151 | 49 | 32% | 202 | 123 | 61% | 66 |
 | `shared/` | 163 | 1517 | 887 | 58% | 149 | 89 | 60% | 457 |
 | `ui/` | 189 | 493 | 140 | 28% | 632 | 146 | 23% | 161 |
 
@@ -22,10 +22,7 @@
 | `shared/paths.ts` | 189 | 45 | 0 | 0 |
 | `ui/svg-charts.ts` | 49 | 43 | 0 | 0 |
 | `engine/batch-import-manager.ts` | 9 | 9 | 32 | 32 |
-| `services/knowledge-base-manager.ts` | 5 | 4 | 35 | 33 |
 | `engine/deconstruction-scheduler.ts` | 8 | 7 | 33 | 29 |
-| `engine/ai-engine.ts` | 2 | 2 | 33 | 31 |
-| `services/prompt-manager.ts` | 3 | 3 | 30 | 30 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 26 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 17 | 15 | 13 |
 | `engine/deconstructors/rhythm-deconstructor.ts` | 21 | 21 | 10 | 9 |
@@ -45,3 +42,6 @@
 | `engine/writing-quality-engine.ts` | 13 | 13 | 8 | 8 |
 | `shared/webnovel-knowledge-base.ts` | 7 | 7 | 14 | 14 |
 | `engine/co-writer/session-state.ts` | 34 | 20 | 0 | 0 |
+| `engine/prompt-manager.ts` | 4 | 4 | 16 | 16 |
+| `ui/full-writer/execution-run-store.ts` | 5 | 5 | 16 | 15 |
+| `shared/store/types.ts` | 20 | 19 | 0 | 0 |

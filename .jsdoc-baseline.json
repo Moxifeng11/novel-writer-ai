@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-01T23:48:32.070Z",
+  "generatedAt": "2026-11-01T23:50:19.327Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -7,7 +7,7 @@
       "exports": 1508,
       "documented": 604,
       "methods": 1253,
-      "methodsDocumented": 531,
+      "methodsDocumented": 546,
       "incomplete": 740
     },
     "services": {
@@ -15,7 +15,7 @@
       "exports": 151,
       "documented": 49,
       "methods": 202,
-      "methodsDocumented": 68,
+      "methodsDocumented": 123,
       "incomplete": 66
     },
     "shared": {
@@ -217,7 +217,7 @@
       "exports": 2,
       "documented": 0,
       "methods": 33,
-      "methodsDocumented": 2,
+      "methodsDocumented": 17,
       "incomplete": 2
     },
     "engine/ai-entity-generator.ts": {
@@ -2016,7 +2016,7 @@
       "exports": 5,
       "documented": 1,
       "methods": 35,
-      "methodsDocumented": 2,
+      "methodsDocumented": 32,
       "incomplete": 1
     },
     "services/knowledge-original-chunker.ts": {
@@ -2058,7 +2058,7 @@
       "exports": 3,
       "documented": 0,
       "methods": 30,
-      "methodsDocumented": 0,
+      "methodsDocumented": 25,
       "incomplete": 0
     },
     "services/prompt-templates-default.ts": {

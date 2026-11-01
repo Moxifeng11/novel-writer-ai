@@ -6,8 +6,8 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 119587 | 1532 | 283 | 18% |
-| `services/` | 28 | 9920 | 151 | 14 | 9% |
+| `engine/` | 289 | 119701 | 1532 | 283 | 18% |
+| `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 31930 | 1512 | 371 | 25% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
@@ -58,7 +58,7 @@
 | `engine/ai-batch-entity-generator.ts` | 535 | 1 | 0 |
 | `engine/ai-chapter-helpers.ts` | 288 | 1 | 0 |
 | `engine/ai-character-generator.ts` | 404 | 1 | 0 |
-| `engine/ai-engine.ts` | 523 | 4 | 0 |
+| `engine/ai-engine.ts` | 637 | 4 | 0 |
 | `engine/ai-entity-generator.ts` | 194 | 1 | 0 |
 | `engine/ai-lexicon.ts` | 91 | 3 | 1 |
 | `engine/ai-outline-generator.ts` | 1374 | 1 | 0 |
@@ -333,13 +333,13 @@
 | `services/font-manager.ts` | 145 | 13 | 0 |
 | `services/genre-classifier.ts` | 831 | 2 | 0 |
 | `services/genre-preference-memory.ts` | 285 | 3 | 0 |
-| `services/knowledge-base-manager.ts` | 1342 | 5 | 0 |
+| `services/knowledge-base-manager.ts` | 1506 | 5 | 0 |
 | `services/knowledge-original-chunker.ts` | 99 | 3 | 1 |
 | `services/local-model-probe.ts` | 168 | 6 | 3 |
 | `services/model-discovery.ts` | 241 | 5 | 2 |
 | `services/performance-monitor.ts` | 771 | 9 | 0 |
 | `services/project-rename-service.ts` | 108 | 2 | 0 |
-| `services/prompt-manager.ts` | 482 | 3 | 0 |
+| `services/prompt-manager.ts` | 626 | 3 | 0 |
 | `services/prompt-templates-default.ts` | 628 | 1 | 0 |
 | `services/quality-history-store.ts` | 103 | 4 | 0 |
 | `services/rules-registry.ts` | 180 | 5 | 1 |

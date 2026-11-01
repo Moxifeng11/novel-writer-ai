@@ -51,10 +51,17 @@ export class AIEngine {
 
     get sessionTokens() { return this.apiClient.sessionTokens; }
 
+    /**
+     * 重置本次会话的 token 用量累计。
+     */
     resetSessionTokens(): void {
         this.apiClient.resetSessionTokens();
     }
 
+    /**
+     * 取所属插件实例（部分引擎调用需要组合根能力）。
+     * @returns 插件实例
+     */
     getPlugin(): NovelWriterPlugin {
         return this.plugin;
     }
@@ -150,6 +157,12 @@ export class AIEngine {
         return yield* this.apiClient.callAIAsyncIterator(systemPrompt, userPrompt, model, temperature, effectiveMaxTokens, options);
     }
 
+    /**
+     * 生成一章正文（非流式）。
+     *
+     * @param context - 参数
+     * @returns API 响应
+     */
     async generateChapter(context: ChapterContext): Promise<APIResponse> {
         let knowledgeInjection = '';
         try {
@@ -295,18 +308,57 @@ export class AIEngine {
         return this.worldviewGen.generateWorldview(worldName, projectName, genre, theme, customPrompt, onProgress);
     }
 
+    /**
+     * 为项目生成世界观并写入文件。
+     *
+     * @param app - 参数
+     * @param project - 参数
+     * @param genre? - 参数
+     * @param onProgress? - 参数
+     * @returns 生成结果
+     */
     async generateWorldviewForProject(app: App, project: string, genre?: string, onProgress?: (phase: string, module?: string) => void): Promise<WorldviewGenerationResult> {
         return this.worldviewGen.generateWorldviewForProject(app, project, genre, onProgress);
     }
 
+    /**
+     * 为项目生成设定库。
+     *
+     * @param app - 参数
+     * @param project - 参数
+     * @param worldview? - 参数
+     * @returns 设定库文本
+     */
     async generateSettingLibForProject(app: App, project: string, worldview?: string): Promise<string> {
         return this.worldviewGen.generateSettingLibForProject(app, project, worldview);
     }
 
+    /**
+     * 为同人项目生成世界观。
+     *
+     * @param app - 参数
+     * @param project - 参数
+     * @param onProgress? - 参数
+     * @returns 世界观文本
+     */
     async generateFanficWorldviewForProject(app: App, project: string, onProgress?: (phase: string) => void): Promise<string> {
         return this.worldviewGen.generateFanficWorldviewForProject(app, project, onProgress);
     }
 
+    /**
+     * 批量生成角色卡。
+     *
+     * @param worldview - 参数
+     * @param count - 参数
+     * @param customPrompt? - 参数
+     * @param templateContent? - 参数
+     * @param isFirstCharacter? - 参数
+     * @param names? - 参数
+     * @param settingLib? - 参数
+     * @param signal? - 参数
+     * @param existingEntities? - 参数
+     * @returns API 响应
+     */
     async generateCharacters(worldview: string, count: number = 5, customPrompt?: string, templateContent?: string, isFirstCharacter?: boolean, names?: string[], settingLib?: string, signal?: AbortSignal, existingEntities?: string): Promise<APIResponse> {
         return this.characterGen.generateCharacters(worldview, count, customPrompt, templateContent, isFirstCharacter, names, settingLib, signal, existingEntities);
     }
@@ -333,14 +385,44 @@ export class AIEngine {
         return this.outlineGen.generateOutline(worldview, settings, existingWorldElements, customPrompt, onProgress);
     }
 
+    /**
+     * 生成单个势力卡。
+     *
+     * @param worldview - 参数
+     * @param name - 参数
+     * @param description - 参数
+     * @param templateContent? - 参数
+     * @param settingLib? - 参数
+     * @returns API 响应
+     */
     async generateFaction(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         return this.entityGen.generateFaction(worldview, name, description, templateContent, settingLib);
     }
 
+    /**
+     * 生成单个地点卡。
+     *
+     * @param worldview - 参数
+     * @param name - 参数
+     * @param description - 参数
+     * @param templateContent? - 参数
+     * @param settingLib? - 参数
+     * @returns API 响应
+     */
     async generateLocation(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         return this.entityGen.generateLocation(worldview, name, description, templateContent, settingLib);
     }
 
+    /**
+     * 生成单个物品/功法卡。
+     *
+     * @param worldview - 参数
+     * @param name - 参数
+     * @param description - 参数
+     * @param templateContent? - 参数
+     * @param settingLib? - 参数
+     * @returns API 响应
+     */
     async generateItem(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         return this.entityGen.generateItem(worldview, name, description, templateContent, settingLib);
     }
@@ -379,22 +461,54 @@ export class AIEngine {
         return this.batchEntityGen.generateItemsBatch(worldview, names, description, count, customSystemPrompt, itemType, settingLib);
     }
 
+    /**
+     * 审阅章节正文并返回质量问题。
+     *
+     * @param chapterContent - 参数
+     * @param context - 参数
+     * @returns API 响应
+     */
     async reviewChapter(chapterContent: string, context: ReviewContext): Promise<APIResponse> {
         return this.chapterHelpers.reviewChapter(chapterContent, context);
     }
 
+    /**
+     * 生成章节计划/细纲。
+     *
+     * @param context - 参数
+     * @returns API 响应
+     */
     async generateChapterPlan(context: ChapterContext): Promise<APIResponse> {
         return this.chapterHelpers.generateChapterPlan(context);
     }
 
+    /**
+     * 生成章节分析报告（结算输入）。
+     *
+     * @param bodyText - 参数
+     * @returns API 响应
+     */
     async generateAnalysisReport(bodyText: string): Promise<APIResponse> {
         return this.chapterHelpers.generateAnalysisReport(bodyText);
     }
 
+    /**
+     * 从正文抽取实体/要素。
+     *
+     * @param bodyText - 参数
+     * @returns API 响应
+     */
     async extractElements(bodyText: string): Promise<APIResponse> {
         return this.chapterHelpers.extractElements(bodyText);
     }
 
+    /**
+     * 分析作品文笔风格。
+     *
+     * @param novelName - 参数
+     * @param signal? - 参数
+     * @returns API 响应
+     */
     async analyzeStyle(novelName: string, signal?: AbortSignal): Promise<APIResponse> {
         return this.chapterHelpers.analyzeStyle(novelName, signal);
     }
