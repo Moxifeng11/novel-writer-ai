@@ -6,7 +6,7 @@
     "version": "4.22.0",
     "tests": {
       "files": 493,
-      "cases": 5601
+      "cases": 5603
     },
     "e2e": 25,
     "gates": [
@@ -16,7 +16,7 @@
       "build",
       "check:release"
     ],
-    "localCommitsAhead": 20
+    "localCommitsAhead": 21
   },
   "groups": [
     {
@@ -111,17 +111,52 @@
         },
         {
           "id": "G1-12",
-          "title": "关系两套通道归一（V1 实体互信息 / V2 关系状态.md）",
+          "title": "关系双通道权威源",
+          "status": "in_progress",
+          "acceptance": "决策已定：V2 关系状态.md 为唯一权威源；V1 互信息仅人读日志（ADR）",
+          "evidence": "docs/design/g1-authority-decisions.md §1"
+        },
+        {
+          "id": "G1-12a",
+          "title": "V1 互信息整行去重",
+          "status": "done",
+          "acceptance": "同章同描述重复结算只留 1 行；不同描述仍追加（单测）",
+          "evidence": "settlement-engine.appendToMutualSection + 2 条单测"
+        },
+        {
+          "id": "G1-12b",
+          "title": "禁止从互信息解析关系的契约与扫描",
           "status": "todo",
-          "acceptance": "同一语义只有一个权威写入方；快照三列映射不丢列",
-          "evidence": "盘点 v10.2-#3"
+          "acceptance": "评审清单写入 PROGRAM；grep 检查 0 处机器读取互信息",
+          "evidence": "ADR §1.3"
         },
         {
           "id": "G1-13",
-          "title": "settle 与 settleLight 语义收敛 + 回滚覆盖追加类写入",
+          "title": "settle / settleLight 语义与回滚",
+          "status": "in_progress",
+          "acceptance": "决策已定：light=出场确认且必须标记；回滚用 run 级 journal 覆盖追加类写入（ADR）",
+          "evidence": "docs/design/g1-authority-decisions.md §2"
+        },
+        {
+          "id": "G1-13a",
+          "title": "settlement_mode 标记 + 轻结算显式确认",
           "status": "todo",
-          "acceptance": "light 降级有提示；回滚能撤销关系/伏笔/时间线/成长追加",
-          "evidence": "盘点 v10.5-G1"
+          "acceptance": "无分析报告时先确认；结算表/快照写 settlement_mode: light|full；空指令集返回 empty",
+          "evidence": "ADR §2.2"
+        },
+        {
+          "id": "G1-13b",
+          "title": "SettlementJournal 统一回滚（frontmatter/整文件/追加标记）",
+          "status": "todo",
+          "acceptance": "注入 partial failure → 关系/成长/时间线回到结算前；他处合法写入不被误删（单测）",
+          "evidence": "ADR §2.2"
+        },
+        {
+          "id": "G1-13c",
+          "title": "回滚失败可见性",
+          "status": "todo",
+          "acceptance": "回滚失败 critical 通知 + settlement_partial 标记",
+          "evidence": "ADR §2.2"
         }
       ]
     },
@@ -518,6 +553,12 @@
       "group": "G1",
       "summary": "时间线三处写入加锁；成长/情绪/互信息/连续性账本按章去重；结算弹窗重复结算守卫",
       "evidence": "settlement-engine / analysis-report-engine / context-manager / chapter-settlement-modal"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G1",
+      "summary": "G1-12/13 权威源决策定稿；V1 互信息改整行去重（2 条单测）",
+      "evidence": "docs/design/g1-authority-decisions.md + settlement-engine"
     }
   ]
 }

@@ -1365,6 +1365,11 @@ ${ni.description || '暂无描述'}
             // 实体卡被结算/分析报告/实体管理多处读改写：整段加锁并在锁内重读
             await withWriteLock(file.path, async () => {
             let content = await this.getFS().read(file.path);
+            // 互信息只是「人读日志」，关系权威源是 关系状态.md（见 docs/design/g1-authority-decisions.md）。
+            // 按整行去重：重复结算不再堆同一行，避免实体卡无限增长。
+            const normalizedEntry = entry.trim();
+            const alreadyLogged = content.split('\n').some(line => line.trim() === normalizedEntry);
+            if (alreadyLogged) return;
             if (content.includes('## 与其他元素的互信息')) {
                 const idx = content.lastIndexOf('## 与其他元素的互信息');
                 const afterHeader = content.indexOf('\n', idx);

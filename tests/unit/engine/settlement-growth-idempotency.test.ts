@@ -77,3 +77,46 @@ describe('SettlementEngine — 成长追加幂等', () => {
         expect(getContent()).toContain('第3章 | 境界 | 筑基中期');
     });
 });
+
+describe('SettlementEngine — 互信息日志去重（关系权威源是 关系状态.md）', () => {
+    function makeMutualStub(initial: string) {
+        const writes: string[] = [];
+        let content = initial;
+        const file = new TFile();
+        file.path = 'P/01-世界架构/人物设定/林惊鸿.md';
+        const stub = {
+            getFS: () => ({
+                read: async () => content,
+                write: async (_p: string, next: string) => { content = next; writes.push(next); },
+            }),
+        };
+        return { stub, writes, getContent: () => content };
+    }
+
+    const ENTRY = '- [[苏晚]] | 信任 | 并肩作战 | 第3章';
+
+    it('同一行重复追加只写一次', async () => {
+        const { stub, writes, getContent } = makeMutualStub('## 与其他角色的互信息\n');
+        const fn = (SettlementEngine.prototype as unknown as {
+            appendToMutualSection: (this: unknown, file: TFile, entry: string) => Promise<void>;
+        }).appendToMutualSection;
+
+        await fn.call(stub, new TFile(), ENTRY);
+        await fn.call(stub, new TFile(), ENTRY);
+
+        expect(writes).toHaveLength(1);
+        expect(getContent().split(ENTRY).length - 1).toBe(1);
+    });
+
+    it('不同描述仍会追加', async () => {
+        const { stub, writes } = makeMutualStub('## 与其他角色的互信息\n');
+        const fn = (SettlementEngine.prototype as unknown as {
+            appendToMutualSection: (this: unknown, file: TFile, entry: string) => Promise<void>;
+        }).appendToMutualSection;
+
+        await fn.call(stub, new TFile(), ENTRY);
+        await fn.call(stub, new TFile(), '- [[苏晚]] | 信任 | 共同御敌 | 第4章');
+
+        expect(writes).toHaveLength(2);
+    });
+});
