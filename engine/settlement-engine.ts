@@ -1205,39 +1205,51 @@ ${ni.description || '暂无描述'}
         }
         if (!bodyFile) return;
         try {
+            const allCharNames = [...new Set([...ctx.instr.uc.map(c => c.name), ...ctx.instr.nc.map(c => c.name)])];
+            const allLocNames = ctx.instr.nl.map(l => l.name);
+            const allFactionNames = ctx.instr.nf.map(f => f.name);
+            const allItemNames = ctx.instr.ni.map(i => i.name);
+            const human = (ctx.bodyText || ctx.result.chars?.length)
+                ? evaluateHumanFeatures(ctx.bodyText || '')
+                : null;
+            const humanApplies = !!human && human.metrics.chars >= 500;
+
+            // 回滚快照：正文 status/涉及* 是结算的核心产物，旧实现没进 journal，
+            // 部分失败时正文会永久停在 settled（实测 G7-6）。
+            await this.snapshotField(ctx, bodyFile, 'status');
+            if (allCharNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及人物');
+            if (allLocNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及地点');
+            if (allFactionNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及势力');
+            if (allItemNames.length > 0) await this.snapshotField(ctx, bodyFile, '涉及物品功法');
+            if (humanApplies) {
+                for (const key of ['对话占比', '口语密度', '时间锚点', '人味分']) {
+                    await this.snapshotField(ctx, bodyFile, key);
+                }
+            }
+
             await this.getFrontmatter().processFrontmatter(bodyFile as TFile, (fm: FrontMatter) => {
                 // v4.0: 结算完成 → settled（旧值 '已完稿' 保留兼容）
                 fm['status'] = 'settled';
-                const allCharNames = [...new Set([...ctx.instr.uc.map(c => c.name), ...ctx.instr.nc.map(c => c.name)])];
                 if (allCharNames.length > 0) {
                     fm['涉及人物'] = allCharNames;
                 }
-
-                const allLocNames = ctx.instr.nl.map(l => l.name);
                 if (allLocNames.length > 0) {
                     fm['涉及地点'] = allLocNames;
                 }
-
-                const allFactionNames = ctx.instr.nf.map(f => f.name);
                 if (allFactionNames.length > 0) {
                     fm['涉及势力'] = allFactionNames;
                 }
-
-                const allItemNames = ctx.instr.ni.map(i => i.name);
                 if (allItemNames.length > 0) {
                     fm['涉及物品功法'] = allItemNames;
                 }
 
                 // v4.23：人味指标回写（对话占比/口语密度/时间锚点/人味分），
                 // 让「这一章像不像人写」变成可追踪的数据，而不是每次凭感觉。
-                if (ctx.bodyText || ctx.result.chars?.length) {
-                    const human = evaluateHumanFeatures(ctx.bodyText || '');
-                    if (human.metrics.chars >= 500) {
-                        fm['对话占比'] = Math.round(human.metrics.dialogueRatio * 1000) / 1000;
-                        fm['口语密度'] = Math.round(human.metrics.colloquialPerKilo * 10) / 10;
-                        fm['时间锚点'] = human.metrics.timeAnchors;
-                        fm['人味分'] = Math.round(human.score * 100);
-                    }
+                if (human && humanApplies) {
+                    fm['对话占比'] = Math.round(human.metrics.dialogueRatio * 1000) / 1000;
+                    fm['口语密度'] = Math.round(human.metrics.colloquialPerKilo * 10) / 10;
+                    fm['时间锚点'] = human.metrics.timeAnchors;
+                    fm['人味分'] = Math.round(human.score * 100);
                 }
             });
         } catch (e) {

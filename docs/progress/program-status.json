@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.22.0",
     "tests": {
-      "files": 499,
-      "cases": 5648
+      "files": 500,
+      "cases": 5651
     },
     "e2e": 25,
     "gates": [
@@ -517,9 +517,9 @@
         {
           "id": "G7-6",
           "title": "结算引擎 1670 行 0 直接测试",
-          "status": "todo",
-          "acceptance": "settle 主流程（成功/部分失败/幂等）至少 3 个行为用例，不再整体 mock",
-          "evidence": "盘点 10.1-⑧"
+          "status": "done",
+          "acceptance": "成功结算/重复幂等/部分失败回滚 3 条真实行为用例（不再整体 mock）；并暴露正文 status 未进 journal 的缺陷",
+          "evidence": "tests/unit/engine/settlement-engine-behavior.test.ts + settlement-engine 正文快照修复"
         },
         {
           "id": "G7-7",
@@ -609,6 +609,12 @@
       "group": "G6",
       "summary": "性能三件：伏笔刷新防抖+单项目、写章一次快照+40 章窗口、监控局部更新（7 条契约测试）",
       "evidence": "main.ts / write-chapter-modal / knowledge-monitor + perf-contracts.test"
+    },
+    {
+      "date": "2026-11-01",
+      "group": "G7",
+      "summary": "结算引擎真实行为测试（成功/幂等/回滚），修复正文 status 未进回滚日志",
+      "evidence": "settlement-engine-behavior.test + settlement-engine updateBodyFrontmatter"
     }
   ]
 }
