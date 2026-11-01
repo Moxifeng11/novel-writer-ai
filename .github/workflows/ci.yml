@@ -66,6 +66,9 @@ jobs:
       - name: 校验构建未产生版本/生成物漂移
         run: git diff --exit-code -- manifest.json versions.json shared/template-scaffold-assets.generated.ts styles.css
 
+      - name: 专项进度台账与报告一致性
+        run: npm run check:program
+
       - name: 校验构建产物未入仓
         run: |
           if git ls-files | grep -Eq '^(main\.js|workers/|\.hotreload)'; then
