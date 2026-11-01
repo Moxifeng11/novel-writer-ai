@@ -7,6 +7,7 @@
  */
 
 import { kbBookWritingTechniquesFile } from '../../shared/paths';
+import { isChineseChar } from '../../shared/text-utils';
 import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import { VectorEnhancer } from '../vector-enhancer';
 import { WebnovelKnowledgeBase, TechniqueDef, GenreConfig } from '../../shared/webnovel-knowledge-base';
@@ -1498,10 +1499,6 @@ export class TechniqueDeconstructor {
     }
 
 
-    private isChineseChar(char: string): boolean {
-        const code = char.charCodeAt(0);
-        return code >= 0x4E00 && code <= 0x9FFF;
-    }
 
     private isEnglishLetter(char: string): boolean {
         const code = char.charCodeAt(0);

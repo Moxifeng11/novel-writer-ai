@@ -6,6 +6,7 @@
  */
 
 import { kbBookForeshadowDBFile } from '../../shared/paths';
+import { isChineseChar } from '../../shared/text-utils';
 import { WebnovelKnowledgeBase, ForeshadowCategoryDef } from '../../shared/webnovel-knowledge-base';
 import { yieldToUI } from '../../shared/yield';
 import { WORLDVIEW_WORDS } from '../dimension-keywords';
@@ -2033,7 +2034,7 @@ export class ForeshadowDeconstructor {
         for (const suffix of verbSuffixes) {
             if (word.endsWith(suffix) && word.length > suffix.length + 1) {
                 const prefix = word.slice(0, -suffix.length);
-                if (prefix.length >= 1 && this.isChineseChar(prefix[0])) {
+                if (prefix.length >= 1 && isChineseChar(prefix[0])) {
                     return true;
                 }
             }
@@ -2051,10 +2052,6 @@ export class ForeshadowDeconstructor {
         return false;
     }
 
-    private isChineseChar(ch: string): boolean {
-        const code = ch.charCodeAt(0);
-        return code >= 0x4E00 && code <= 0x9FFF;
-    }
 
     private classifyForeshadowType(
         name: string,

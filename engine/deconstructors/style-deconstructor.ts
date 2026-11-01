@@ -8,6 +8,7 @@
  */
 
 import { kbBookStyleFingerprintFile } from '../../shared/paths';
+import { isChineseChar } from '../../shared/text-utils';
 import { VectorEnhancer } from '../vector-enhancer';
 import { yieldToUI } from '../../shared/yield';
 import { FIVE_SENSES_WORDS } from '../dimension-keywords';
@@ -1321,7 +1322,7 @@ export class StyleDeconstructor {
             const start2 = s2.slice(0, 2);
             const start3 = s3.slice(0, 2);
 
-            if (start1 === start2 && start2 === start3 && this.isChineseChar(start1[0])) {
+            if (start1 === start2 && start2 === start3 && isChineseChar(start1[0])) {
                 count++;
             }
         }
@@ -1965,7 +1966,7 @@ export class StyleDeconstructor {
     private countChineseChars(text: string): number {
         let count = 0;
         for (let i = 0; i < text.length; i++) {
-            if (this.isChineseChar(text[i])) {
+            if (isChineseChar(text[i])) {
                 count++;
             }
         }
@@ -1974,17 +1975,13 @@ export class StyleDeconstructor {
 
     private isAllChinese(text: string): boolean {
         for (let i = 0; i < text.length; i++) {
-            if (!this.isChineseChar(text[i])) {
+            if (!isChineseChar(text[i])) {
                 return false;
             }
         }
         return text.length > 0;
     }
 
-    private isChineseChar(char: string): boolean {
-        const code = char.charCodeAt(0);
-        return code >= 0x4E00 && code <= 0x9FFF;
-    }
 
     private buildFrontmatter(result: StyleAnalysisResult): string {
         const data = {

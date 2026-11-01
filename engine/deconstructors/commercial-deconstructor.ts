@@ -1,4 +1,5 @@
 import { kbBookCommercialAnalysisFile } from '../../shared/paths';
+import { isChineseChar } from '../../shared/text-utils';
 import { countCjkWordsAndNumbers } from '../../shared/word-count';
 import { yieldToUI } from '../../shared/yield';
 import { HOOK_WORDS, GOLDEN_FINGER_WORDS, WORLDVIEW_WORDS } from '../dimension-keywords';
@@ -1814,10 +1815,6 @@ export class CommercialDeconstructor {
   }
 
 
-  private isChineseChar(char: string): boolean {
-    const code = char.charCodeAt(0);
-    return code >= 0x4E00 && code <= 0x9FFF;
-  }
 
   private isEnglishLetter(char: string): boolean {
     const code = char.charCodeAt(0);

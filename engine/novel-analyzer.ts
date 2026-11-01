@@ -1,4 +1,5 @@
 import { countCjkWordsAndNumbers } from '../shared/word-count';
+import { isChineseChar } from '../shared/text-utils';
 /**
  * novel-analyzer.ts — 小说内容分析引擎（纯统计）
  *
@@ -178,17 +179,13 @@ export class NovelAnalyzer {
     private countChineseChars(text: string): number {
         let count = 0;
         for (let i = 0; i < text.length; i++) {
-            if (this.isChineseChar(text[i])) {
+            if (isChineseChar(text[i])) {
                 count++;
             }
         }
         return count;
     }
 
-    private isChineseChar(char: string): boolean {
-        const code = char.charCodeAt(0);
-        return code >= 0x4E00 && code <= 0x9FFF;
-    }
 
     private isEnglishLetter(char: string): boolean {
         const code = char.charCodeAt(0);
@@ -284,7 +281,7 @@ export class NovelAnalyzer {
 
             let dialogueInSentence = 0;
             for (let i = sentenceStart; i < sentenceEnd; i++) {
-                if (dialogueSet.has(i) && this.isChineseChar(text[i])) {
+                if (dialogueSet.has(i) && isChineseChar(text[i])) {
                     dialogueInSentence++;
                 }
             }
@@ -367,7 +364,7 @@ export class NovelAnalyzer {
 
                 let allChinese = true;
                 for (let j = 0; j < gram.length; j++) {
-                    if (!this.isChineseChar(gram[j])) {
+                    if (!isChineseChar(gram[j])) {
                         allChinese = false;
                         break;
                     }

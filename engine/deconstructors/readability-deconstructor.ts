@@ -1,4 +1,5 @@
 import { kbBookReadabilityAnalysisFile } from '../../shared/paths';
+import { isChineseChar } from '../../shared/text-utils';
 import { VectorEnhancer } from '../vector-enhancer';
 import { yieldToUI } from '../../shared/yield';
 import { SHOW_TELL_WORDS, EMOTION_WORDS } from '../dimension-keywords';
@@ -751,17 +752,13 @@ export class ReadabilityDeconstructor {
     private countChineseChars(text: string): number {
         let count = 0;
         for (let i = 0; i < text.length; i++) {
-            if (this.isChineseChar(text[i])) {
+            if (isChineseChar(text[i])) {
                 count++;
             }
         }
         return count;
     }
 
-    private isChineseChar(char: string): boolean {
-        const code = char.charCodeAt(0);
-        return code >= 0x4E00 && code <= 0x9FFF;
-    }
 
     private clamp01(v: number): number {
         return Math.max(0, Math.min(1, v));

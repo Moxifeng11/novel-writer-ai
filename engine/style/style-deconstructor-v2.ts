@@ -26,6 +26,7 @@
  */
 
 import { StyleDeconstructor, type StyleAnalysisResult } from '../deconstructors/style-deconstructor';
+import { isChineseChar } from '../../shared/text-utils';
 import type { VectorEnhancer } from '../vector-enhancer';
 import type {
     StyleFingerprintFeaturesV2,
@@ -768,9 +769,9 @@ export class StyleDeconstructorV2 {
         let total = 0;
         // 简化：按字符序列统计
         for (let i = 0; i < text.length; i++) {
-            if (!this.isChineseChar(text[i])) continue;
+            if (!isChineseChar(text[i])) continue;
             // 简化估算：每 2 字一个词
-            if (i + 1 < text.length && this.isChineseChar(text[i + 1])) {
+            if (i + 1 < text.length && isChineseChar(text[i + 1])) {
                 len2++;
                 total++;
                 i++; // 跳过下一字
@@ -1895,7 +1896,7 @@ export class StyleDeconstructorV2 {
             const start1 = sentences[i].slice(0, 2);
             const start2 = sentences[i + 1].slice(0, 2);
             const start3 = sentences[i + 2].slice(0, 2);
-            if (start1 === start2 && start2 === start3 && this.isChineseChar(start1[0] || '')) {
+            if (start1 === start2 && start2 === start3 && isChineseChar(start1[0] || '')) {
                 count++;
             }
         }
@@ -1961,7 +1962,7 @@ export class StyleDeconstructorV2 {
 
         let count = 0;
         for (let i = 0; i < text.length; i++) {
-            if (this.isChineseChar(text[i])) count++;
+            if (isChineseChar(text[i])) count++;
         }
         this._cachedText = text;
         this._cachedChineseCharCount = count;

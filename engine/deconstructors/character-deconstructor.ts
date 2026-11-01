@@ -7,6 +7,7 @@
  */
 
 import { kbBookCharacterExtractionFile } from '../../shared/paths';
+import { isChineseChar } from '../../shared/text-utils';
 import { VectorEnhancer } from '../vector-enhancer';
 import { WebnovelKnowledgeBase, GenreConfig } from '../../shared/webnovel-knowledge-base';
 import { yieldToUI } from '../../shared/yield';
@@ -694,10 +695,6 @@ export class CharacterDeconstructor {
             .filter(p => p.length > 0);
     }
 
-    private isChineseChar(char: string): boolean {
-        const code = char.charCodeAt(0);
-        return code >= 0x4E00 && code <= 0x9FFF;
-    }
 
     private isPlausibleName(name: string): boolean {
         if (name.length < 2 || name.length > 4) return false;
@@ -2935,7 +2932,7 @@ export class CharacterDeconstructor {
         const tokens: string[] = [];
         for (const d of dialogues) {
             for (let i = 0; i < d.length - 1; i++) {
-                if (this.isChineseChar(d[i]) && this.isChineseChar(d[i + 1])) {
+                if (isChineseChar(d[i]) && isChineseChar(d[i + 1])) {
                     tokens.push(d.substring(i, i + 2));
                 }
             }
@@ -2997,7 +2994,7 @@ export class CharacterDeconstructor {
                     const gram = d.substring(i, i + n);
                     let allChinese = true;
                     for (const ch of gram) {
-                        if (!this.isChineseChar(ch)) {
+                        if (!isChineseChar(ch)) {
                             allChinese = false;
                             break;
                         }

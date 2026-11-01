@@ -10,7 +10,7 @@
     "check:release": "node scripts/check-release.mjs",
     "build": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js",
     "build:release": "npm run preflight && npm run build",
-    "preflight": "npm run typecheck && npm run lint && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures && npm run check:hotpaths && npm run check:linked-scenarios && npm run check:dsh-isolation",
+    "preflight": "npm run typecheck && npm run lint && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures && npm run check:hotpaths && npm run check:linked-scenarios && npm run check:dsh-isolation && npm run build",
     "dev": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js --watch",
     "build:styles": "node scripts/build-styles.mjs",
     "check:styles": "node scripts/build-styles.mjs --check",
