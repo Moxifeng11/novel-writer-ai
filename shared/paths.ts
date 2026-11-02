@@ -472,10 +472,40 @@ export function pjWritingRulesTemplate() { return WRITING_RULES_PATH_TEMPLATE; }
 // ============================================================
 // 11. 别名函数（更具可读性的 API）
 // ============================================================
+/**
+ * getWorldviewPath：返回路径 `pjWorldview(project)`。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function getWorldviewPath(project: string): string { return pjWorldview(project); }
+/**
+ * getSettingLibPath：返回路径 `pjSettingLib(project)`。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function getSettingLibPath(project: string): string { return pjSettingLib(project); }
+/**
+ * getWritingStylePath：返回路径 `pjWritingStyle(project)`。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function getWritingStylePath(project: string): string { return pjWritingStyle(project); }
+/**
+ * getLegacyWritingStylePath：返回路径 ``${project}/文笔风格.md``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function getLegacyWritingStylePath(project: string): string { return `${project}/文笔风格.md`; }
+/**
+ * getVolumeOutlinePath：返回路径 `pjVolumeOutlineFile(project, 1)`。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function getVolumeOutlinePath(project: string): string { return pjVolumeOutlineFile(project, 1); }
 
 // ============================================================
@@ -594,8 +624,25 @@ export function isInStepDir(project: string, filePath: string): boolean {
 // ============================================================
 const PLUGIN_DATA_DIR = '.obsidian/plugins/novel-writer-ai/data';
 
+/**
+ * pluginDataDir：返回路径 `PLUGIN_DATA_DIR`。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function pluginDataDir(): string { return PLUGIN_DATA_DIR; }
+/**
+ * pluginPreferenceFile：返回路径 ``${PLUGIN_DATA_DIR}/${project}-preferences.json``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function pluginPreferenceFile(project: string): string { return `${PLUGIN_DATA_DIR}/${project}-preferences.json`; }
+/**
+ * pluginStylePatternsFile：返回路径 ``${PLUGIN_DATA_DIR}/${project}-style-patterns.json``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function pluginStylePatternsFile(project: string): string { return `${PLUGIN_DATA_DIR}/${project}-style-patterns.json`; }
 
 // ============================================================
@@ -634,16 +681,76 @@ export const PROJECT_GLOBAL_FINGERPRINT_STATE_FILE = 'global-fingerprint-state.j
  */
 export const FINGERPRINT_INTENSITY_CONFIG_FILE = 'fingerprint-intensity-config.json';
 
+/**
+ * globalFingerprintLibraryDir：返回路径 ``${pluginDataDir()}/${FINGERPRINT_LIBRARY_DIR}``。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function globalFingerprintLibraryDir(): string { return `${pluginDataDir()}/${FINGERPRINT_LIBRARY_DIR}`; }
+/**
+ * globalFingerprintsFile：返回路径 ``${pluginDataDir()}/${GLOBAL_FINGERPRINTS_FILE}``。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function globalFingerprintsFile(): string { return `${pluginDataDir()}/${GLOBAL_FINGERPRINTS_FILE}`; }
+/**
+ * globalFingerprintVectorsDir：返回路径 ``${pluginDataDir()}/${FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}``。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function globalFingerprintVectorsDir(): string { return `${pluginDataDir()}/${FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}`; }
+/**
+ * projectFingerprintLibraryDir：返回路径 ``${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function projectFingerprintLibraryDir(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}`; }
+/**
+ * projectFingerprintsFile：返回路径 ``${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${PROJECT_FINGERPRINTS_FILE}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function projectFingerprintsFile(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${PROJECT_FINGERPRINTS_FILE}`; }
+/**
+ * projectFingerprintVectorsDir：返回路径 ``${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function projectFingerprintVectorsDir(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}`; }
+/**
+ * templateFingerprintLibraryDir：返回路径 ``${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}``。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function templateFingerprintLibraryDir(): string { return `${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}`; }
+/**
+ * templateFingerprintsFile：返回路径 ``${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${TEMPLATE_FINGERPRINTS_FILE}``。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function templateFingerprintsFile(): string { return `${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${TEMPLATE_FINGERPRINTS_FILE}`; }
+/**
+ * templateFingerprintVectorsDir：返回路径 ``${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}``。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function templateFingerprintVectorsDir(): string { return `${PJ_CONTROL_DIR}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_VECTORS_DIR}`; }
+/**
+ * projectGlobalFingerprintStateFile：返回路径 ``${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${PROJECT_GLOBAL_FINGERPRINT_STATE_FILE}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function projectGlobalFingerprintStateFile(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${PROJECT_GLOBAL_FINGERPRINT_STATE_FILE}`; }
+/**
+ * projectFingerprintIntensityFile：返回路径 ``${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_INTENSITY_CONFIG_FILE}``。
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function projectFingerprintIntensityFile(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_INTENSITY_CONFIG_FILE}`; }
 
 // ============================================================
@@ -722,28 +829,145 @@ export const KB_IMPORT_HISTORY_FILE = 'import-history.json';
  */
 export const KB_IMPORT_PRESETS_FILE = 'import-presets.json';
 
+/**
+ * kbKnowledgeBaseDir：返回路径 `baseDir || DEFAULT_KNOWLEDGE_BASE_DIR`。
+ *
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbKnowledgeBaseDir(baseDir?: string): string { return baseDir || DEFAULT_KNOWLEDGE_BASE_DIR; }
+/**
+ * kbConfigDir：返回路径 ``${kbKnowledgeBaseDir(baseDir)}/${KB_CONFIG_DIR}``。
+ *
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbConfigDir(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_CONFIG_DIR}`; }
+/**
+ * kbConfigFile：返回路径 ``${kbConfigDir(baseDir)}/${KB_CONFIG_FILE}``。
+ *
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbConfigFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_CONFIG_FILE}`; }
+/**
+ * kbIndexFile：返回路径 ``${kbKnowledgeBaseDir(baseDir)}/${KB_INDEX_FILE}``。
+ *
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbIndexFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_INDEX_FILE}`; }
+/**
+ * kbTagSystemFile：返回路径 ``${kbKnowledgeBaseDir(baseDir)}/${KB_TAG_SYSTEM_FILE}``。
+ *
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbTagSystemFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_TAG_SYSTEM_FILE}`; }
 export function kbBookDir(bookName: string, baseDir?: string): string {
     // F5：sanitizeName 在原字符替换基础上补 `..` 段剥离，防止书名逃逸出知识库目录
     const safeBookName = sanitizeName(bookName);
     return `${kbKnowledgeBaseDir(baseDir)}/${safeBookName}`;
 }
+/**
+ * kbBookBasicInfoFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_BASIC_INFO_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookBasicInfoFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_BASIC_INFO_FILE}`; }
+/**
+ * kbBookStyleFingerprintFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_STYLE_FINGERPRINT_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookStyleFingerprintFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_STYLE_FINGERPRINT_FILE}`; }
+/**
+ * kbBookRhythmAnalysisFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_RHYTHM_ANALYSIS_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookRhythmAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_RHYTHM_ANALYSIS_FILE}`; }
+/**
+ * kbBookWritingTechniquesFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_WRITING_TECHNIQUES_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookWritingTechniquesFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_WRITING_TECHNIQUES_FILE}`; }
+/**
+ * kbBookStructureBreakdownFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_STRUCTURE_BREAKDOWN_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookStructureBreakdownFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_STRUCTURE_BREAKDOWN_FILE}`; }
+/**
+ * kbBookCharacterExtractionFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_CHARACTER_EXTRACTION_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookCharacterExtractionFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_CHARACTER_EXTRACTION_FILE}`; }
+/**
+ * kbBookForeshadowDBFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_FORESHADOW_DB_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookForeshadowDBFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_FORESHADOW_DB_FILE}`; }
+/**
+ * kbBookCommercialAnalysisFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_COMMERCIAL_ANALYSIS_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookCommercialAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_COMMERCIAL_ANALYSIS_FILE}`; }
+/**
+ * kbBookReadabilityAnalysisFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_READABILITY_ANALYSIS_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookReadabilityAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_READABILITY_ANALYSIS_FILE}`; }
+/**
+ * kbBookBreakdownLogFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_BREAKDOWN_LOG_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbBookBreakdownLogFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_BREAKDOWN_LOG_FILE}`; }
+/**
+ * kbVectorsDir：返回路径 ``${pluginDataDir()}/${KB_VECTORS_DIR}``。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbVectorsDir(): string { return `${pluginDataDir()}/${KB_VECTORS_DIR}`; }
+/**
+ * kbImportHistoryFile：返回路径 ``${kbConfigDir(baseDir)}/${KB_IMPORT_HISTORY_FILE}``。
+ *
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbImportHistoryFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_IMPORT_HISTORY_FILE}`; }
+/**
+ * kbImportPresetsFile：返回路径 ``${kbConfigDir(baseDir)}/${KB_IMPORT_PRESETS_FILE}``。
+ *
+ * @param baseDir? - 参数
+ * @returns 拼接后的 vault/插件相对路径
+ */
 export function kbImportPresetsFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_IMPORT_PRESETS_FILE}`; }
 
 // ============================================================

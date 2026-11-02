@@ -276,11 +276,20 @@ export class DeconstructionWorkerManager {
         return result;
     }
 
+    /**
+     * Worker 是否可用（不可用走主线程）。
+     * @returns 布尔值
+     */
     isWorkerAvailable(): boolean {
         // LLM 增强会强制主线程；向量任务在 executeTask 内部按 taskType 单独绕过 Worker。
         return !this.llmEnhancer && this.useWorkerMode && this.workerManager?.isWorkerAvailable() === true;
     }
 
+    /**
+     * 注入向量增强器。
+     *
+     * @param vectorEnhancer? - 参数
+     */
     setVectorEnhancer(vectorEnhancer?: VectorEnhancer): void {
         this.vectorEnhancer = vectorEnhancer || null;
         this.styleDeconstructor = new StyleDeconstructor(this.vectorEnhancer || undefined);
@@ -299,6 +308,11 @@ export class DeconstructionWorkerManager {
         }
     }
 
+    /**
+     * 注入 LLM 增强器。
+     *
+     * @param llmEnhancer - 参数
+     */
     setLlmEnhancer(llmEnhancer: LLMEnhancer): void {
         this.llmEnhancer = llmEnhancer;
         this.styleDeconstructor?.setLLMEnhancer(llmEnhancer);
@@ -513,12 +527,18 @@ export class DeconstructionWorkerManager {
         return promise;
     }
 
+    /**
+     * 取消全部在跑任务。
+     */
     cancelAll(): void {
         if (this.workerManager) {
             this.workerManager.cancelAll();
         }
     }
 
+    /**
+     * 销毁 Worker 池。
+     */
     destroy(): void {
         if (this.destroyed) return;
         this.destroyed = true;

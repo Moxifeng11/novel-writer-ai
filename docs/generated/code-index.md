@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 121827 | 1532 | 617 | 40% |
-| `services/` | 28 | 10440 | 151 | 75 | 50% |
-| `shared/` | 164 | 32350 | 1512 | 468 | 31% |
+| `engine/` | 289 | 121853 | 1532 | 617 | 40% |
+| `services/` | 28 | 10515 | 151 | 75 | 50% |
+| `shared/` | 164 | 32574 | 1512 | 505 | 33% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 93024 | 500 | 110 | 22% |
@@ -108,7 +108,7 @@
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 655 | 16 | 14 |
 | `engine/deconstruction-scheduler.ts` | 2790 | 9 | 8 |
-| `engine/deconstruction-worker-manager.ts` | 547 | 3 | 0 |
+| `engine/deconstruction-worker-manager.ts` | 567 | 3 | 0 |
 | `engine/deconstructors/character-deconstructor.ts` | 4028 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2019 | 5 | 5 |
 | `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
@@ -300,7 +300,7 @@
 | `engine/style-fingerprint-library.ts` | 2099 | 7 | 2 |
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
-| `engine/style-vector-store.ts` | 587 | 11 | 0 |
+| `engine/style-vector-store.ts` | 593 | 11 | 0 |
 | `engine/style/dynamic-injection-engine.ts` | 777 | 10 | 5 |
 | `engine/style/fingerprint-blender-v2.ts` | 652 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 613 | 13 | 13 |
@@ -350,7 +350,7 @@
 | `services/worker-manager.ts` | 537 | 1 | 0 |
 | `services/worker-protocol.ts` | 107 | 11 | 11 |
 | `services/worker-runtime.ts` | 257 | 8 | 7 |
-| `services/worldview-cache-service.ts` | 501 | 4 | 0 |
+| `services/worldview-cache-service.ts` | 576 | 4 | 0 |
 | `services/writing-stats-service.ts` | 275 | 6 | 4 |
 | `shared/adaptive-debounce-manager.ts` | 307 | 2 | 1 |
 | `shared/ai-credentials.ts` | 47 | 2 | 0 |
@@ -436,7 +436,7 @@
 | `shared/model-source.ts` | 41 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 507 | 6 | 0 |
 | `shared/novel-format.ts` | 263 | 12 | 1 |
-| `shared/paths.ts` | 856 | 189 | 82 |
+| `shared/paths.ts` | 1080 | 189 | 119 |
 | `shared/plot-eval-throttle.ts` | 80 | 5 | 0 |
 | `shared/plugin-cache.ts` | 359 | 6 | 0 |
 | `shared/plugin-capabilities.ts` | 96 | 4 | 1 |

@@ -65,6 +65,11 @@ export class WorldviewCacheService {
         this.maxSizePerProject = (options?.maxSizePerProjectMB || DEFAULT_MAX_SIZE_PER_PROJECT_MB) * BYTES_PER_MB;
     }
 
+    /**
+     * 开关缓存调试模式。
+     *
+     * @param enabled - 参数
+     */
     setDebugMode(enabled: boolean): void {
         this.debugMode = enabled;
     }
@@ -295,6 +300,12 @@ export class WorldviewCacheService {
         }
     }
 
+    /**
+     * 失效单个文件缓存。
+     *
+     * @param project - 参数
+     * @param filePath - 参数
+     */
     invalidate(project: string, filePath: string): void {
         const key = this.makeKey(project, filePath);
         const entry = this.cache.get(key);
@@ -309,6 +320,11 @@ export class WorldviewCacheService {
         }
     }
 
+    /**
+     * 失效整个项目缓存。
+     *
+     * @param project - 参数
+     */
     invalidateProject(project: string): void {
         const keysToDelete: string[] = [];
         for (const [key, entry] of this.cache.entries()) {
@@ -326,6 +342,9 @@ export class WorldviewCacheService {
         }
     }
 
+    /**
+     * 清空全部缓存。
+     */
     clearAll(): void {
         this.cache.clear();
         this.projectSizes.clear();
@@ -342,11 +361,21 @@ export class WorldviewCacheService {
         }
     }
 
+    /**
+     * 读取缓存统计。
+     * @returns 统计
+     */
     getStats(): CacheStats {
         this.updateStats();
         return { ...this.stats };
     }
 
+    /**
+     * 读取项目级缓存统计。
+     *
+     * @param project - 参数
+     * @returns 统计
+     */
     getProjectStats(project: string): { entries: number; size: number; files: string[] } {
         let entries = 0;
         let size = 0;
@@ -388,21 +417,51 @@ export class WorldviewCacheService {
         return { loaded, totalSize };
     }
 
+    /**
+     * 读取世界观（可附解析器）。
+     *
+     * @param project - 参数
+     * @param parser? - 参数
+     * @param any> - 参数
+     * @returns {rawText,parsedData,fromCache}
+     */
     async getWorldview(project: string, parser?: (text: string) => Record<string, any>): Promise<{ rawText: string; parsedData?: Record<string, any>; fromCache: boolean }> {
         const filePath = getWorldviewPath(project);
         return this.get(project, filePath, parser);
     }
 
+    /**
+     * 读取设定库（可附解析器）。
+     *
+     * @param project - 参数
+     * @param parser? - 参数
+     * @param any> - 参数
+     * @returns {rawText,parsedData,fromCache}
+     */
     async getSettingLib(project: string, parser?: (text: string) => Record<string, any>): Promise<{ rawText: string; parsedData?: Record<string, any>; fromCache: boolean }> {
         const filePath = getSettingLibPath(project);
         return this.get(project, filePath, parser);
     }
 
+    /**
+     * 写入世界观缓存。
+     *
+     * @param project - 参数
+     * @param rawText - 参数
+     * @param parsedData? - 参数
+     */
     async setWorldview(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
         const filePath = getWorldviewPath(project);
         return this.set(project, filePath, rawText, parsedData);
     }
 
+    /**
+     * 写入设定库缓存。
+     *
+     * @param project - 参数
+     * @param rawText - 参数
+     * @param parsedData? - 参数
+     */
     async setSettingLib(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
         const filePath = getSettingLibPath(project);
         return this.set(project, filePath, rawText, parsedData);
@@ -455,14 +514,30 @@ export class WorldviewCacheService {
         return this.set(project, filePath, content, parsedData);
     }
 
+    /**
+     * 失效世界观缓存。
+     *
+     * @param project - 参数
+     */
     invalidateWorldview(project: string): void {
         this.invalidate(project, getWorldviewPath(project));
     }
 
+    /**
+     * 失效设定库缓存。
+     *
+     * @param project - 参数
+     */
     invalidateSettingLib(project: string): void {
         this.invalidate(project, getSettingLibPath(project));
     }
 
+    /**
+     * 失效项目实体缓存。
+     *
+     * @param project - 参数
+     * @param entityType? - 参数
+     */
     invalidateEntities(project: string, entityType?: 'characters' | 'locations' | 'factions' | 'items'): void {
         if (!entityType) {
             this.invalidateProject(project);

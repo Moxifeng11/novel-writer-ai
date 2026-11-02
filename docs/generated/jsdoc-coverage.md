@@ -6,9 +6,9 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 744 | 59% | 739 |
-| `services/` | 28 | 151 | 110 | 73% | 202 | 123 | 61% | 66 |
-| `shared/` | 163 | 1517 | 984 | 65% | 149 | 118 | 79% | 457 |
+| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 750 | 60% | 739 |
+| `services/` | 28 | 151 | 110 | 73% | 202 | 136 | 67% | 66 |
+| `shared/` | 163 | 1517 | 1021 | 67% | 149 | 118 | 79% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 206 | 33% | 161 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -16,16 +16,14 @@
 | 文件 | 导出 | 未注释 | 公开方法 | 未注释 |
 |---|---:|---:|---:|---:|
 | `ui/co-writing-view.ts` | 3 | 3 | 103 | 56 |
-| `shared/paths.ts` | 189 | 45 | 0 | 0 |
 | `engine/semantic-analyzer.ts` | 5 | 5 | 23 | 23 |
-| `engine/deconstruction-worker-manager.ts` | 3 | 3 | 21 | 21 |
-| `engine/style-vector-store.ts` | 11 | 10 | 17 | 12 |
-| `services/worldview-cache-service.ts` | 4 | 4 | 18 | 18 |
 | `ui/full-writer/full-writer-store.ts` | 5 | 5 | 17 | 17 |
+| `engine/style-vector-store.ts` | 11 | 10 | 17 | 11 |
 | `engine/writing-quality-engine.ts` | 13 | 13 | 8 | 8 |
 | `shared/webnovel-knowledge-base.ts` | 7 | 7 | 14 | 14 |
 | `engine/prompt-manager.ts` | 4 | 4 | 16 | 16 |
 | `ui/full-writer/execution-run-store.ts` | 5 | 5 | 16 | 15 |
+| `engine/deconstruction-worker-manager.ts` | 3 | 3 | 21 | 16 |
 | `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 14 |
 | `shared/store/types.ts` | 20 | 19 | 0 | 0 |
 | `engine/ai-engine.ts` | 2 | 2 | 33 | 16 |
@@ -45,3 +43,5 @@
 | `shared/synopsis-spec.ts` | 15 | 14 | 0 | 0 |
 | `engine/context/story-context-types.ts` | 13 | 13 | 0 | 0 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 0 | 15 | 13 |
+| `engine/outline-to-text-expander.ts` | 8 | 7 | 6 | 6 |
+| `engine/streaming/stream-parser.ts` | 9 | 9 | 4 | 4 |

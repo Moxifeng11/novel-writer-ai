@@ -232,6 +232,12 @@ export class StyleVectorStore {
         }
     }
 
+    /**
+     * 把维度描述转为向量。
+     *
+     * @param description - 参数
+     * @returns 向量
+     */
     async buildDimensionVector(description: string): Promise<number[]> {
         return await this.embeddingProvider.embed(description);
     }
