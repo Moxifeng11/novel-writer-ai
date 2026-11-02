@@ -452,6 +452,17 @@ const NON_PROJECT_ROOTS = new Set([
 ]);
 
 /**
+ * 判断目录是否为真实项目：至少有一个项目标志文件/目录。
+ *
+ * 不能只看「是模式库下的子目录」：`长篇小说/_versions` 是章节版本存储，
+ * 不是项目；模板骨架、缓存目录也可能被误判。
+ */
+function isProjectFolder(app: App, path: string): boolean {
+    const markers = ['.project', '作品信息.md', '世界观总览.md', '03-大纲与章节', '01-世界架构', '短篇创作', '剧本创作'];
+    return markers.some((marker) => app.vault.getAbstractFileByPath(`${path}/${marker}`) != null);
+}
+
+/**
  * 列出项目列表。
  * @param app - Obsidian 应用实例
  * @returns 结果数组
@@ -465,13 +476,14 @@ export function listProjects(app: App): string[] {
         if (folder.name.startsWith('.') || folder.name.startsWith('_')) continue;
         if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
             for (const child of folder.children) {
-                if (child instanceof TFolder && !NON_PROJECT_ROOTS.has(child.name)) projects.push(child.path);
+                if (!(child instanceof TFolder)) continue;
+                if (NON_PROJECT_ROOTS.has(child.name)) continue;
+                if (child.name.startsWith('.') || child.name.startsWith('_')) continue;
+                if (isProjectFolder(app, child.path)) projects.push(child.path);
             }
             continue;
         }
-        if (app.vault.getAbstractFileByPath(`${folder.path}/03-大纲与章节`) != null
-            || app.vault.getAbstractFileByPath(`${folder.path}/短篇创作`) != null
-            || app.vault.getAbstractFileByPath(`${folder.path}/剧本创作`) != null) {
+        if (isProjectFolder(app, folder.path)) {
             projects.push(folder.path);
         }
     }

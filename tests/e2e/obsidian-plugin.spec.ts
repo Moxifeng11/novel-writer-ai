@@ -2174,4 +2174,38 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(nameMatch?.[1]).toBeTruthy();
         expect(fs.existsSync(path.join(vault.path, '长篇小说', nameMatch![1]))).toBe(true);
     });
+
+    test('项目列表不把 _versions 识别为项目', async () => {
+        const { page } = session;
+        // 真实 vault 的 长篇小说/_versions 是章节版本存储；这里复刻同样的目录结构
+        await page.evaluate(async () => {
+            const app = (window as unknown as { app: any }).app;
+            for (const dir of [
+                '长篇小说/_versions',
+                '长篇小说/_versions/chapter',
+                '长篇小说/_versions/chapter/第1章',
+                '长篇小说/E2E真实项目',
+                '长篇小说/E2E真实项目/03-大纲与章节',
+            ]) {
+                await app.vault.createFolder(dir).catch(() => undefined);
+            }
+            const versionPath = '长篇小说/_versions/chapter/第1章/v_e2e.md';
+            if (!app.vault.getAbstractFileByPath(versionPath)) {
+                await app.vault.create(versionPath, '# 旧版本');
+            }
+            const markerPath = '长篇小说/E2E真实项目/作品信息.md';
+            if (!app.vault.getAbstractFileByPath(markerPath)) {
+                await app.vault.create(markerPath, '# 作品信息');
+            }
+        });
+
+        expect(await executeCommand(page, AGENT_GUIDE_COMMAND)).toBe(true);
+        const workbench = page.locator('.workspace-leaf-content[data-type="novel-writer-agent-workbench"]');
+        await expect(workbench).toBeVisible({ timeout: 15_000 });
+        await expect(workbench.locator('.nw-awb-project-card').first()).toBeVisible({ timeout: 15_000 });
+
+        const cards = await workbench.locator('.nw-awb-project-card').allInnerTexts();
+        expect(cards.join(' ')).toContain('E2E真实项目');
+        expect(cards.join(' ')).not.toContain('_versions');
+    });
 });

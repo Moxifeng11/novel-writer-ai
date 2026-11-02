@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 289 | 130199 | 1532 | 1301 | 85% |
 | `services/` | 28 | 11363 | 151 | 136 | 90% |
-| `shared/` | 164 | 37168 | 1512 | 1265 | 84% |
+| `shared/` | 164 | 37169 | 1512 | 1265 | 84% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 762 | 30 | 22 | 73% |
-| `ui/` | 191 | 96670 | 500 | 462 | 92% |
+| `ui/` | 191 | 96682 | 500 | 462 | 92% |
 
 ## 文件清单
 
@@ -363,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 943 | 3 | 3 |
+| `shared/changelog-data.ts` | 944 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -567,7 +567,7 @@
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 553 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 523 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 535 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 417 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |

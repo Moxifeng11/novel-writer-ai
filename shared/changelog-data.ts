@@ -48,6 +48,7 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 label: '🐛 修复',
                 items: [
                     '模拟流按段落切分保留 \\n\\n，正文段落不再粘连',
+                    '项目列表不再把 长篇小说/_versions 当成项目（要求项目标志并跳过 _/. 前缀）',
                 ],
             },
         ],
