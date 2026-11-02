@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T00:12:03.062Z",
+  "generatedAt": "2026-11-02T00:13:51.726Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -13,7 +13,7 @@
     "services": {
       "files": 28,
       "exports": 151,
-      "documented": 49,
+      "documented": 110,
       "methods": 202,
       "methodsDocumented": 123,
       "incomplete": 66
@@ -1951,14 +1951,14 @@
     },
     "services/api-connectivity-service.ts": {
       "exports": 8,
-      "documented": 0,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "services/canon-research-service.ts": {
       "exports": 7,
-      "documented": 1,
+      "documented": 7,
       "methods": 4,
       "methodsDocumented": 2,
       "incomplete": 3
@@ -1986,14 +1986,14 @@
     },
     "services/execution-ledger.ts": {
       "exports": 10,
-      "documented": 8,
+      "documented": 10,
       "methods": 8,
       "methodsDocumented": 8,
       "incomplete": 11
     },
     "services/font-manager.ts": {
       "exports": 13,
-      "documented": 9,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 7
@@ -2028,7 +2028,7 @@
     },
     "services/local-model-probe.ts": {
       "exports": 6,
-      "documented": 5,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 4
@@ -2042,7 +2042,7 @@
     },
     "services/performance-monitor.ts": {
       "exports": 9,
-      "documented": 0,
+      "documented": 9,
       "methods": 22,
       "methodsDocumented": 19,
       "incomplete": 0
@@ -2091,7 +2091,7 @@
     },
     "services/synopsis-store.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 8,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2105,7 +2105,7 @@
     },
     "services/vector-rebuild-service.ts": {
       "exports": 8,
-      "documented": 2,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 1
@@ -2119,14 +2119,14 @@
     },
     "services/worker-protocol.ts": {
       "exports": 11,
-      "documented": 1,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "services/worker-runtime.ts": {
       "exports": 8,
-      "documented": 0,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2140,7 +2140,7 @@
     },
     "services/writing-stats-service.ts": {
       "exports": 6,
-      "documented": 2,
+      "documented": 6,
       "methods": 9,
       "methodsDocumented": 6,
       "incomplete": 6

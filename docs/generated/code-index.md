@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 289 | 121336 | 1532 | 563 | 37% |
-| `services/` | 28 | 10228 | 151 | 14 | 9% |
+| `services/` | 28 | 10440 | 151 | 75 | 50% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
@@ -324,34 +324,34 @@
 | `engine/world-state-snapshot.ts` | 198 | 7 | 0 |
 | `engine/writing-profile.ts` | 505 | 8 | 0 |
 | `engine/writing-quality-engine.ts` | 1281 | 14 | 0 |
-| `services/api-connectivity-service.ts` | 287 | 8 | 0 |
-| `services/canon-research-service.ts` | 413 | 7 | 0 |
+| `services/api-connectivity-service.ts` | 311 | 8 | 7 |
+| `services/canon-research-service.ts` | 435 | 7 | 6 |
 | `services/chapter-recognizer.ts` | 244 | 5 | 1 |
 | `services/chapter-version-service.ts` | 542 | 2 | 0 |
 | `services/checkpoint-manager.ts` | 295 | 4 | 0 |
-| `services/execution-ledger.ts` | 257 | 10 | 1 |
-| `services/font-manager.ts` | 145 | 13 | 0 |
+| `services/execution-ledger.ts` | 266 | 10 | 3 |
+| `services/font-manager.ts` | 160 | 13 | 4 |
 | `services/genre-classifier.ts` | 831 | 2 | 0 |
 | `services/genre-preference-memory.ts` | 285 | 3 | 0 |
 | `services/knowledge-base-manager.ts` | 1506 | 5 | 0 |
 | `services/knowledge-original-chunker.ts` | 99 | 3 | 1 |
-| `services/local-model-probe.ts` | 168 | 6 | 3 |
+| `services/local-model-probe.ts` | 171 | 6 | 4 |
 | `services/model-discovery.ts` | 241 | 5 | 2 |
-| `services/performance-monitor.ts` | 771 | 9 | 0 |
+| `services/performance-monitor.ts` | 798 | 9 | 9 |
 | `services/project-rename-service.ts` | 108 | 2 | 0 |
 | `services/prompt-manager.ts` | 626 | 3 | 0 |
 | `services/prompt-templates-default.ts` | 628 | 1 | 0 |
 | `services/quality-history-store.ts` | 103 | 4 | 0 |
 | `services/rules-registry.ts` | 180 | 5 | 1 |
 | `services/rules-service.ts` | 150 | 2 | 0 |
-| `services/synopsis-store.ts` | 273 | 5 | 0 |
+| `services/synopsis-store.ts` | 288 | 5 | 5 |
 | `services/update-checker.ts` | 358 | 9 | 2 |
-| `services/vector-rebuild-service.ts` | 117 | 8 | 2 |
+| `services/vector-rebuild-service.ts` | 138 | 8 | 8 |
 | `services/worker-manager.ts` | 537 | 1 | 0 |
-| `services/worker-protocol.ts` | 74 | 11 | 1 |
-| `services/worker-runtime.ts` | 226 | 8 | 0 |
+| `services/worker-protocol.ts` | 107 | 11 | 11 |
+| `services/worker-runtime.ts` | 257 | 8 | 7 |
 | `services/worldview-cache-service.ts` | 501 | 4 | 0 |
-| `services/writing-stats-service.ts` | 263 | 6 | 0 |
+| `services/writing-stats-service.ts` | 275 | 6 | 4 |
 | `shared/adaptive-debounce-manager.ts` | 307 | 2 | 1 |
 | `shared/ai-credentials.ts` | 47 | 2 | 0 |
 | `shared/api-format.ts` | 358 | 16 | 7 |

@@ -23,11 +23,17 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('WritingStats');
 
+/**
+ * 统计文件的最小结构。
+ */
 export interface StatsFileLike {
     path: string;
     stat?: { mtime: number };
 }
 
+/**
+ * 统计所需 app 的最小结构。
+ */
 export interface WritingStatsAppLike {
     vault: {
         adapter: {
@@ -42,6 +48,9 @@ export interface WritingStatsAppLike {
     };
 }
 
+/**
+ * 统计服务依赖。
+ */
 export interface WritingStatsServiceDeps {
     app: WritingStatsAppLike;
     /** 台账文件完整路径（插件目录下，如 .obsidian/plugins/novel-writer-ai/data/writing-stats.json） */
@@ -71,6 +80,9 @@ export function projectOfFile(filePath: string): string {
     return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : (parts[0] || '');
 }
 
+/**
+ * 写作统计服务。
+ */
 export class WritingStatsService {
     private deps: WritingStatsServiceDeps;
     private data: WritingStatsData = createEmptyWritingStats();

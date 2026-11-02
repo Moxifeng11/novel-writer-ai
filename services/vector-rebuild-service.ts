@@ -8,11 +8,17 @@
  * 编排与实例构造分离：依赖全部注入，单测不需要 Obsidian。
  */
 
+/**
+ * 向量重建的书籍目标。
+ */
 export interface VectorRebuildBookTarget {
     bookId: string;
     bookName: string;
 }
 
+/**
+ * 向量重建的指纹目标。
+ */
 export interface VectorRebuildFingerprintTarget {
     id: string;
     name: string;
@@ -21,6 +27,9 @@ export interface VectorRebuildFingerprintTarget {
     scope: 'global' | 'project';
 }
 
+/**
+ * 重建依赖。
+ */
 export interface VectorRebuildDeps {
     listBooks: () => Promise<VectorRebuildBookTarget[]>;
     revectorizeBook: (bookId: string, bookName: string) => Promise<void>;
@@ -28,11 +37,17 @@ export interface VectorRebuildDeps {
     revectorizeFingerprint: (target: VectorRebuildFingerprintTarget) => Promise<void>;
 }
 
+/**
+ * 跳过/失败项。
+ */
 export interface VectorRebuildSkipOrFailure {
     name: string;
     reason: string;
 }
 
+/**
+ * 分段报告。
+ */
 export interface VectorRebuildSectionReport {
     total: number;
     rebuilt: number;
@@ -40,11 +55,17 @@ export interface VectorRebuildSectionReport {
     failed: VectorRebuildSkipOrFailure[];
 }
 
+/**
+ * 重建汇总报告。
+ */
 export interface VectorRebuildReport {
     books: VectorRebuildSectionReport;
     fingerprints: VectorRebuildSectionReport;
 }
 
+/**
+ * 重建进度。
+ */
 export interface VectorRebuildProgress {
     phase: 'books' | 'fingerprints';
     current: number;

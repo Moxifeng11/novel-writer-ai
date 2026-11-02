@@ -19,6 +19,9 @@ import { createLogger } from '../shared/logger';
 const log = createLogger('SynopsisStore');
 const MAX_VERSIONS = 20;
 
+/**
+ * 简介版本元数据。
+ */
 export interface SynopsisVersionMeta {
     id: string;
     style: SynopsisStyle;
@@ -29,22 +32,34 @@ export interface SynopsisVersionMeta {
     model?: string;
 }
 
+/**
+ * 简介版本索引。
+ */
 export interface SynopsisIndex {
     version: 1;
     activeId: string;
     items: SynopsisVersionMeta[];
 }
 
+/**
+ * 简介版本内容。
+ */
 export interface SynopsisVersion extends SynopsisVersionMeta {
     text: string;
 }
 
+/**
+ * 简介快照。
+ */
 export interface SynopsisSnapshot {
     index: SynopsisIndex;
     versions: SynopsisVersion[];
     draft: string;
 }
 
+/**
+ * 简介多版本存储。
+ */
 export class SynopsisStore {
     constructor(private readonly app: App) {}
 

@@ -15,6 +15,9 @@ import {
 
 const log = createLogger('LocalModelProbe');
 
+/**
+ * 本地模型探测超时（毫秒）。
+ */
 export const LOCAL_PROBE_TIMEOUT_MS = 4_000;
 /** 探测失败后的冷却时间，避免每次请求都为不可用的本地服务多等一次超时 */
 const PROBE_FAILURE_TTL_MS = 5 * 60 * 1000;

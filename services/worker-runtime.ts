@@ -16,11 +16,17 @@ import type {
     WorkerErrorPayload,
 } from './worker-protocol';
 
+/**
+ * 任务处理器上下文。
+ */
 export interface TaskHandlerContext {
     onProgress: (progress: number, message?: string) => void;
     signal: AbortSignal;
 }
 
+/**
+ * 任务处理器。
+ */
 export type TaskHandler = (input: any, context: TaskHandlerContext) => Promise<any>;
 
 const taskHandlers: Map<string, TaskHandler> = new Map();
@@ -108,15 +114,28 @@ function handleMessage(event: MessageEvent<WorkerMessage>): void {
     }
 }
 
+/**
+ * 注册任务处理器。
+ *
+ * @param taskType - 参数
+ * @param handler - 参数
+ */
 export function registerTaskHandler(taskType: string, handler: TaskHandler): void {
     taskHandlers.set(taskType, handler);
 }
 
+/**
+ * 启动 Worker 运行时。
+ */
 export function startWorkerRuntime(): void {
     (self as any).onmessage = handleMessage;
     postMessageToMain('worker:ready');
 }
 
+/**
+ * 读取已注册任务类型。
+ * @returns 类型数组
+ */
 export function getRegisteredTaskTypes(): string[] {
     return Array.from(taskHandlers.keys());
 }
@@ -209,12 +228,24 @@ export function createInlineWorkerCode(customHandlers?: Record<string, string>):
     `;
 }
 
+/**
+ * 从内联代码创建 Worker。
+ *
+ * @param workerCode - 参数
+ * @returns Worker
+ */
 export function createInlineWorker(workerCode: string): Worker {
     const blob = new Blob([workerCode], { type: 'application/javascript' });
     const url = URL.createObjectURL(blob);
     return new Worker(url);
 }
 
+/**
+ * 从处理器集合创建 Worker。
+ *
+ * @param handlers - 参数
+ * @returns Worker
+ */
 export function createWorkerFromHandlers(handlers: Record<string, TaskHandler>): Worker {
     const handlerStrings: Record<string, string> = {};
     for (const [taskType, handler] of Object.entries(handlers)) {

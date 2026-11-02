@@ -16,8 +16,14 @@ import {
 
 const log = createLogger('ApiConnectivity');
 
+/**
+ * 连通性等级。
+ */
 export type ApiConnectivityLevel = 'ok' | 'warn' | 'error';
 
+/**
+ * 连通性状态。
+ */
 export type ApiConnectivityStatus =
     | 'ok'
     | 'degraded'
@@ -31,6 +37,9 @@ export type ApiConnectivityStatus =
     | 'empty_response'
     | 'unknown_error';
 
+/**
+ * 连通性配置。
+ */
 export interface ApiConnectivityConfig {
     providerName?: string;
     endpoint: string;
@@ -41,6 +50,9 @@ export interface ApiConnectivityConfig {
     apiFormat?: ApiFormat;
 }
 
+/**
+ * 连通性结果。
+ */
 export interface ApiConnectivityResult {
     level: ApiConnectivityLevel;
     status: ApiConnectivityStatus;
@@ -52,12 +64,18 @@ export interface ApiConnectivityResult {
     testedAt: number;
 }
 
+/**
+ * 探测响应。
+ */
 export interface ApiProbeResponse {
     status: number;
     text: string;
     json?: unknown;
 }
 
+/**
+ * 请求函数类型。
+ */
 export type RequestUrlFn = (options: {
     url: string;
     method: string;
@@ -69,6 +87,12 @@ export type RequestUrlFn = (options: {
 const TIMEOUT_MS = 15_000;
 const DEGRADED_LATENCY_MS = 5_000;
 
+/**
+ * 规范化 chat 端点 URL。
+ *
+ * @param endpoint - 参数
+ * @returns 端点
+ */
 export function normalizeChatEndpoint(endpoint: string): string {
     const raw = String(endpoint || '').trim().replace(/\/+$/, '');
     if (!raw) return '';

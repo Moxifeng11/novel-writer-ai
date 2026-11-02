@@ -24,10 +24,19 @@ const log = createLogger('FontManager');
 /** 字体文件存放目录（vault 根下） */
 export const FONT_DIR = '元文件/字体';
 
+/**
+ * 支持的字体扩展名。
+ */
 export const FONT_EXTENSIONS = ['ttf', 'otf', 'woff', 'woff2'] as const;
 
+/**
+ * 字体文件格式。
+ */
 export type FontFileFormat = 'truetype' | 'opentype' | 'woff' | 'woff2';
 
+/**
+ * 自定义字体条目。
+ */
 export interface CustomFontEntry {
     /** FontFace family 名（取文件名去扩展名） */
     family: string;
@@ -43,6 +52,12 @@ export function isSupportedFontFile(name: string): boolean {
     return (FONT_EXTENSIONS as readonly string[]).includes(ext);
 }
 
+/**
+ * 按扩展名返回字体格式。
+ *
+ * @param name - 参数
+ * @returns 格式或 null
+ */
 export function fontFileFormat(name: string): FontFileFormat | null {
     const ext = name.split('.').pop()?.toLowerCase() || '';
     switch (ext) {

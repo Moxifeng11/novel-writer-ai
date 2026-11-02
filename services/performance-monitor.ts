@@ -20,6 +20,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('PerformanceMonitor');
 
+/**
+ * 性能计时标记。
+ */
 export interface PerformanceMark {
     id: string;
     name: string;
@@ -36,6 +39,9 @@ export interface PerformanceMark {
     category?: PerformanceCategory;
 }
 
+/**
+ * 性能分类。
+ */
 export type PerformanceCategory =
     | 'projectLoad'
     | 'chapterGeneration'
@@ -48,6 +54,9 @@ export type PerformanceCategory =
     | 'fileIO'
     | 'other';
 
+/**
+ * 性能日志条目。
+ */
 export interface PerformanceLogEntry {
     id: string;
     name: string;
@@ -59,6 +68,9 @@ export interface PerformanceLogEntry {
     parentName?: string;
 }
 
+/**
+ * 操作统计。
+ */
 export interface PerformanceStats {
     count: number;
     totalDuration: number;
@@ -70,6 +82,9 @@ export interface PerformanceStats {
     p99: number;
 }
 
+/**
+ * 慢操作。
+ */
 export interface SlowOperation {
     name: string;
     duration: number;
@@ -78,6 +93,9 @@ export interface SlowOperation {
     threshold: number;
 }
 
+/**
+ * 性能报告。
+ */
 export interface PerformanceReport {
     generatedAt: number;
     timeRange: { start: number; end: number };
@@ -99,6 +117,9 @@ export interface PerformanceReport {
     };
 }
 
+/**
+ * 监控选项。
+ */
 export interface PerformanceMonitorOptions {
     enabled: boolean;
     maxLogEntries: number;
@@ -130,6 +151,9 @@ const CATEGORY_THRESHOLDS: Partial<Record<PerformanceCategory, number>> = {
 let markIdCounter = 0;
 const generateMarkId = (): string => `perf-${Date.now()}-${++markIdCounter}`;
 
+/**
+ * 性能监控器。
+ */
 export class PerformanceMonitor {
     private static instance: PerformanceMonitor | null = null;
     private options: PerformanceMonitorOptions;
@@ -767,4 +791,7 @@ export class PerformanceMonitor {
     }
 }
 
+/**
+ * 全局性能监控实例。
+ */
 export const performanceMonitor = PerformanceMonitor.getInstance();

@@ -12,6 +12,9 @@
  * 纯内存 + 纯投影，不依赖 Obsidian。
  */
 
+/**
+ * 命令执行状态。
+ */
 export type CommandRunStatus = 'running' | 'done' | 'failed';
 
 /** 结算结果的结构化投影（字段来自 SettlementResult，见 engine/settlement-engine.ts） */
@@ -34,6 +37,9 @@ export interface SettlementSummary {
     foreshadowLoop?: { pass: boolean; summary: string };
 }
 
+/**
+ * 命令执行记录。
+ */
 export interface CommandRunRecord {
     id: string;
     commandId: string;
@@ -102,6 +108,9 @@ export function summarizeSettlement(result: SettlementLike | null | undefined): 
     return summary;
 }
 
+/**
+ * 执行登记表。
+ */
 export class ExecutionLedger {
     private records: CommandRunRecord[] = [];
     private seq = 0;

@@ -26,8 +26,14 @@ const log = createLogger('CanonResearch');
 /** 网页抓取统一策略：15s 超时，不重试（避免对目标站点加压） */
 const FETCH_REQUEST_POLICY = { timeoutMs: 15000 };
 
+/**
+ * 考据搜索提供方。
+ */
 export type CanonSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily';
 
+/**
+ * 考据配置。
+ */
 export interface CanonResearchConfig {
     provider: CanonSearchProvider;
     apiKey?: string;
@@ -43,6 +49,9 @@ interface CanonResearchHost {
     };
 }
 
+/**
+ * 考据选项。
+ */
 export interface CanonResearchOptions {
     project?: string;
     author?: string;
@@ -50,6 +59,9 @@ export interface CanonResearchOptions {
     manualSources?: CanonSourceInput[];
 }
 
+/**
+ * 考据结果。
+ */
 export interface CanonResearchResult {
     workName: string;
     provider: CanonSearchProvider;
@@ -71,6 +83,9 @@ const DEFAULT_CONFIG: CanonResearchConfig = {
     excerptChars: 1200,
 };
 
+/**
+ * 同人考据服务。
+ */
 export class CanonResearchService {
     constructor(
         private readonly app: App,
@@ -375,6 +390,13 @@ function safeDomain(url: string): string {
     }
 }
 
+/**
+ * 从 HTML 提取可读文本。
+ *
+ * @param html - 参数
+ * @param maxChars - 参数
+ * @returns 文本
+ */
 export function extractReadableText(html: string, maxChars: number): string {
     if (!html) return '';
     if (!/<[a-z][\s\S]*>/i.test(html)) return html.trim().slice(0, maxChars);
