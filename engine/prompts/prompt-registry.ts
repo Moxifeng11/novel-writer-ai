@@ -25,8 +25,14 @@ import { BODY_GENERATION_SYSTEM_PROMPT_V4, BODY_GENERATION_USER_TEMPLATE_V4 } fr
 import { HUMAN_VOICE_BLOCK, HUMAN_VOICE_WEAK_RULES } from './human-voice';
 import { DEAI_REWRITE_SYSTEM_PROMPT } from './deai-prompts';
 
+/**
+ * 人味模式（样文/配额）。
+ */
 export type HumanVoiceMode = 'exemplar' | 'quota';
 
+/**
+ * 提示词变体元数据。
+ */
 export interface PromptVariantMeta {
     /** 稳定 id，如 `bodyGeneration.v2` */
     id: string;
@@ -38,6 +44,9 @@ export interface PromptVariantMeta {
     notes?: string;
 }
 
+/**
+ * 提示词渲染元数据（变体+哈希）。
+ */
 export interface PromptRenderMeta extends PromptVariantMeta {
     stepKey: string;
     /** 人味块版本（仅正文相关步骤有） */

@@ -22,6 +22,9 @@ import type { ChapterRepository } from '../repository';
 // 一、类型定义
 // ============================================================
 
+/**
+ * 预加载管理器选项。
+ */
 export interface PreloadManagerOptions {
     /** 是否启用预加载 */
     enabled?: boolean;
@@ -37,6 +40,9 @@ export interface PreloadManagerOptions {
     behaviorHistoryMaxSize?: number;
 }
 
+/**
+ * 用户行为记录。
+ */
 export interface UserBehavior {
     /** 行为类型 */
     action: 'read' | 'edit' | 'navigate' | 'search' | 'generate';
@@ -52,6 +58,9 @@ export interface UserBehavior {
     metadata?: Record<string, any>;
 }
 
+/**
+ * 空闲任务。
+ */
 export interface IdleTask {
     /** 任务唯一标识 */
     id: string;
@@ -65,6 +74,9 @@ export interface IdleTask {
     createdAt: number;
 }
 
+/**
+ * 预加载统计。
+ */
 export interface PreloadStats {
     /** 章节预加载缓存命中数 */
     chapterCacheHits: number;
@@ -99,6 +111,9 @@ const DEFAULT_OPTIONS: Required<PreloadManagerOptions> = {
 // 二、PreloadManager 类
 // ============================================================
 
+/**
+ * 空闲预加载管理器。
+ */
 export class PreloadManager {
     private options: Required<PreloadManagerOptions>;
     private chapterCache: LruCache<string, Chapter>;
@@ -594,4 +609,7 @@ export class PreloadManager {
     }
 }
 
+/**
+ * 全局预加载管理器实例。
+ */
 export const preloadManager = new PreloadManager();

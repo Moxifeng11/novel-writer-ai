@@ -7,6 +7,9 @@
  */
 import type { LongStorySettings, StoryStructureId } from '../../shared/story-structure';
 
+/**
+ * Agent 引导流程 id。
+ */
 export type AgentFlowId =
     | 'root'
     | 'long_variant'
@@ -17,6 +20,9 @@ export type AgentFlowId =
     | 'resume'
     | 'done';
 
+/**
+ * Agent 选择卡。
+ */
 export interface AgentChip {
     label: string;
     value: string;
@@ -30,12 +36,18 @@ export interface AgentChip {
     preview?: string;
 }
 
+/**
+ * Agent 消息。
+ */
 export interface AgentMessage {
     role: 'agent' | 'system';
     text: string;
     chips?: AgentChip[];
 }
 
+/**
+ * Agent 槽位集合。
+ */
 export interface AgentSlots {
     mode?: 'create' | 'resume';
     /** 用户在最前端选择的创作类型 */
@@ -75,11 +87,17 @@ export interface AgentSlots {
     pickedProject?: string;
 }
 
+/**
+ * Agent 上下文。
+ */
 export interface AgentContext {
     projects: string[];
     activeProject: string | null;
 }
 
+/**
+ * 新建长篇意图参数。
+ */
 export interface CreateLongIntentParams {
     projectName: string;
     genre: string;
@@ -91,6 +109,9 @@ export interface CreateLongIntentParams {
     storySettings: LongStorySettings;
 }
 
+/**
+ * 短篇前期调研槽位。
+ */
 export interface ShortPreResearchSlots {
     primaryCategory: string;
     premise: string;
@@ -101,6 +122,9 @@ export interface ShortPreResearchSlots {
     characterCore: string;
 }
 
+/**
+ * 新建短篇意图参数。
+ */
 export interface CreateShortIntentParams {
     projectName: string;
     targetWords: number;
@@ -108,6 +132,9 @@ export interface CreateShortIntentParams {
     preResearch: ShortPreResearchSlots;
 }
 
+/**
+ * 剧本前期调研槽位。
+ */
 export interface ScriptPreResearchSlots {
     scriptGenre: string;
     logline: string;
@@ -120,12 +147,18 @@ export interface ScriptPreResearchSlots {
     paywallEpisode: number;
 }
 
+/**
+ * 新建剧本意图参数。
+ */
 export interface CreateScriptIntentParams {
     projectName: string;
     genre: string;
     preResearch: ScriptPreResearchSlots;
 }
 
+/**
+ * Agent 意图联合类型。
+ */
 export type AgentIntent =
     | { kind: 'create_long_project'; params: CreateLongIntentParams }
     | { kind: 'create_short_project'; params: CreateShortIntentParams }
@@ -137,6 +170,9 @@ export type AgentIntent =
     | { kind: 'open_pre_research'; mode: 'short' | 'script'; project?: string }
     | { kind: 'none' };
 
+/**
+ * Agent 单回合结果。
+ */
 export interface AgentTurnResult {
     messages: AgentMessage[];
     intent: AgentIntent;
@@ -144,8 +180,14 @@ export interface AgentTurnResult {
     done: boolean;
 }
 
+/**
+ * Agent 动作类型。
+ */
 export type AgentActionKind = 'create_project' | 'open_wizard' | 'open_flow' | 'open_story_settings' | 'open_full_writer' | 'open_pre_research';
 
+/**
+ * 章节摘要。
+ */
 export interface AgentChapterSummary {
     chapter: string;
     volume: string;
@@ -158,6 +200,9 @@ export interface AgentChapterSummary {
     size: number;
 }
 
+/**
+ * 项目状态摘要。
+ */
 export interface AgentProjectStatus {
     project: string;
     mode: 'long' | 'short' | 'script';
@@ -178,6 +223,9 @@ export interface AgentProjectStatus {
     nextChapterToWrite: string;
 }
 
+/**
+ * 命令摘要。
+ */
 export interface AgentCommandSummary {
     id: string;
     name: string;
@@ -208,6 +256,9 @@ export interface AgentVaultSearchHit {
     text: string;
 }
 
+/**
+ * 对话引导 Agent 端口。
+ */
 export interface GuideAgentPort {
     createProject(params: CreateLongIntentParams): Promise<{ created: boolean; projectId: string; fileCount: number; reason?: string }>;
     createShortProject?(params: CreateShortIntentParams): Promise<{ created: boolean; projectId: string; fileCount: number; reason?: string }>;

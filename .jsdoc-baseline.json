@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-02T00:09:03.667Z",
+  "generatedAt": "2026-11-02T00:12:03.062Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 846,
+      "documented": 884,
       "methods": 1253,
       "methodsDocumented": 683,
       "incomplete": 739
@@ -54,7 +54,7 @@
   "files": {
     "engine/agent/agent-types.ts": {
       "exports": 20,
-      "documented": 3,
+      "documented": 20,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -327,7 +327,7 @@
     },
     "engine/cache/preload-manager.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 25,
       "methodsDocumented": 15,
       "incomplete": 10
@@ -1020,7 +1020,7 @@
     },
     "engine/memory/memory-shard-writer.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3
@@ -1174,7 +1174,7 @@
     },
     "engine/prompts/chapter-pipeline-prompts.ts": {
       "exports": 11,
-      "documented": 4,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3
@@ -1216,7 +1216,7 @@
     },
     "engine/prompts/prompt-registry.ts": {
       "exports": 8,
-      "documented": 5,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 5
@@ -1314,7 +1314,7 @@
     },
     "engine/rag/retrieval-service.ts": {
       "exports": 6,
-      "documented": 3,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3

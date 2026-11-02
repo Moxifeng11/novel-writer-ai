@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 846 | 56% | 1253 | 683 | 55% | 739 |
+| `engine/` | 271 | 1508 | 884 | 59% | 1253 | 683 | 55% | 739 |
 | `services/` | 28 | 151 | 49 | 32% | 202 | 123 | 61% | 66 |
 | `shared/` | 163 | 1517 | 964 | 64% | 149 | 89 | 60% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 206 | 33% | 161 |
@@ -37,11 +37,11 @@
 | `engine/ai-engine.ts` | 2 | 2 | 33 | 16 |
 | `engine/foreshadow-config-manager.ts` | 1 | 1 | 17 | 17 |
 | `ui/full-writer-view.ts` | 2 | 2 | 25 | 16 |
-| `engine/agent/agent-types.ts` | 20 | 17 | 0 | 0 |
 | `services/genre-preference-memory.ts` | 3 | 3 | 14 | 14 |
 | `shared/template-validator.ts` | 25 | 17 | 0 | 0 |
 | `ui/services/co-write-facade.ts` | 2 | 2 | 58 | 15 |
-| `engine/cache/preload-manager.ts` | 6 | 6 | 25 | 10 |
 | `shared/mode-content.ts` | 19 | 16 | 0 | 0 |
 | `shared/pre-research.ts` | 17 | 16 | 0 | 0 |
 | `shared/creation-mode.ts` | 20 | 15 | 0 | 0 |
+| `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
+| `engine/context/context-types.ts` | 15 | 14 | 0 | 0 |

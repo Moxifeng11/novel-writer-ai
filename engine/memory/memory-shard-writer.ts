@@ -17,6 +17,9 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('MemoryShards');
 
+/**
+ * 记忆碎片草稿。
+ */
 export interface MemoryShardDraft {
     id: string;
     title: string;
@@ -57,6 +60,9 @@ export function formatMemoryShardFile(shards: MemoryShardDraft[]): string {
     return lines.join('\n');
 }
 
+/**
+ * 记忆碎片写入选项。
+ */
 export interface MemoryShardRunOptions {
     /** 已存在同名碎片文件时跳过（默认 true，保护手写内容） */
     skipIfExists?: boolean;

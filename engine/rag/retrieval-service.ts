@@ -17,6 +17,9 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('RagRetrieval');
 
+/**
+ * 检索选项。
+ */
 export interface RetrieveOptions {
     /** 只在这些维度里检索 */
     dimensions?: string[];
@@ -38,6 +41,9 @@ export interface RetrieveOptions {
     queryText?: string;
 }
 
+/**
+ * 检索遥测。
+ */
 export interface RetrievalTelemetry {
     queries: number;
     hits: number;
@@ -51,6 +57,9 @@ export interface RetrievalTelemetry {
     durationMs: number;
 }
 
+/**
+ * 检索结果。
+ */
 export interface RetrievalResult {
     hits: RagHit[];
     telemetry: RetrievalTelemetry;

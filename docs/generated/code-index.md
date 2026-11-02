@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 121219 | 1532 | 525 | 34% |
+| `engine/` | 289 | 121336 | 1532 | 563 | 37% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -35,7 +35,7 @@
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 39 | 1 | 0 |
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
-| `engine/agent/agent-types.ts` | 274 | 20 | 0 |
+| `engine/agent/agent-types.ts` | 325 | 20 | 17 |
 | `engine/agent/conversation-engine.ts` | 1241 | 1 | 0 |
 | `engine/agent/dsh/dsh-launch.ts` | 66 | 5 | 1 |
 | `engine/agent/dsh/dsh-process.ts` | 240 | 7 | 2 |
@@ -75,7 +75,7 @@
 | `engine/beat-verifier.ts` | 64 | 3 | 1 |
 | `engine/body-writer.ts` | 444 | 8 | 1 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
-| `engine/cache/preload-manager.ts` | 598 | 6 | 0 |
+| `engine/cache/preload-manager.ts` | 616 | 6 | 6 |
 | `engine/chapter-brief.ts` | 288 | 9 | 3 |
 | `engine/chapter-context-builder.ts` | 132 | 3 | 3 |
 | `engine/chapter-snapshot-builder.ts` | 141 | 2 | 1 |
@@ -181,7 +181,7 @@
 | `engine/logic-consistency-checker.ts` | 129 | 4 | 1 |
 | `engine/long-term-memory.ts` | 141 | 6 | 3 |
 | `engine/memory-trigger.ts` | 359 | 13 | 6 |
-| `engine/memory/memory-shard-writer.ts` | 123 | 5 | 1 |
+| `engine/memory/memory-shard-writer.ts` | 129 | 5 | 3 |
 | `engine/mode-unit-writer.ts` | 416 | 16 | 0 |
 | `engine/note-properties-service.ts` | 229 | 12 | 0 |
 | `engine/novel-analyzer.ts` | 419 | 2 | 1 |
@@ -203,14 +203,14 @@
 | `engine/prompts/body-v2-prompts.ts` | 136 | 3 | 1 |
 | `engine/prompts/body-v3-prompts.ts` | 92 | 3 | 1 |
 | `engine/prompts/body-v4-prompts.ts` | 61 | 3 | 1 |
-| `engine/prompts/chapter-pipeline-prompts.ts` | 678 | 11 | 4 |
+| `engine/prompts/chapter-pipeline-prompts.ts` | 702 | 11 | 11 |
 | `engine/prompts/co-write-prompts.ts` | 94 | 4 | 1 |
 | `engine/prompts/deai-prompts.ts` | 91 | 4 | 1 |
 | `engine/prompts/human-countable-hints.ts` | 15 | 1 | 1 |
 | `engine/prompts/human-voice.ts` | 96 | 5 | 3 |
 | `engine/prompts/index.ts` | 67 | 2 | 0 |
 | `engine/prompts/memory-prompts.ts` | 60 | 3 | 1 |
-| `engine/prompts/prompt-registry.ts` | 177 | 8 | 1 |
+| `engine/prompts/prompt-registry.ts` | 186 | 8 | 4 |
 | `engine/prompts/soul-driven-prompts.ts` | 183 | 3 | 1 |
 | `engine/prompts/style-exemplars.ts` | 108 | 8 | 3 |
 | `engine/prompts/template-utils.ts` | 149 | 4 | 3 |
@@ -227,7 +227,7 @@
 | `engine/quality/rewrite-prompts.ts` | 252 | 6 | 6 |
 | `engine/quality/rewrite-suggestion-engine.ts` | 596 | 2 | 2 |
 | `engine/quality/rewrite-types.ts` | 235 | 13 | 13 |
-| `engine/rag/retrieval-service.ts` | 237 | 6 | 1 |
+| `engine/rag/retrieval-service.ts` | 246 | 6 | 4 |
 | `engine/relationship-engine.ts` | 318 | 8 | 5 |
 | `engine/repository/base-markdown-repository.ts` | 427 | 1 | 1 |
 | `engine/repository/chapter-repository.ts` | 242 | 1 | 1 |
