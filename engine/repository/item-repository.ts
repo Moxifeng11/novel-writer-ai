@@ -58,6 +58,8 @@ export class ItemRepository extends BaseMarkdownRepository<Item, string> {
 
     /**
      * 按所有者查找物品
+     * @param ownerName - 所有者名称
+     * @returns 结果数组
      */
     async findByOwner(ownerName: string): Promise<Item[]> {
         const all = await this.findAll();
@@ -66,6 +68,8 @@ export class ItemRepository extends BaseMarkdownRepository<Item, string> {
 
     /**
      * 按品阶/等级查找物品
+     * @param grade - 等级
+     * @returns 结果数组
      */
     async findByGrade(grade: string): Promise<Item[]> {
         const all = await this.findAll();
@@ -74,6 +78,8 @@ export class ItemRepository extends BaseMarkdownRepository<Item, string> {
 
     /**
      * 按类型查找物品
+     * @param type - 类型
+     * @returns 结果数组
      */
     async findByType(type: string): Promise<Item[]> {
         const all = await this.findAll();
@@ -82,6 +88,8 @@ export class ItemRepository extends BaseMarkdownRepository<Item, string> {
 
     /**
      * 按状态查找物品
+     * @param status - 状态
+     * @returns 结果数组
      */
     async findByStatus(status: 'active' | 'inactive' | 'dead' | 'hidden'): Promise<Item[]> {
         const all = await this.findAll();
@@ -90,6 +98,8 @@ export class ItemRepository extends BaseMarkdownRepository<Item, string> {
 
     /**
      * 按名称模糊查找
+     * @param name - 名称
+     * @returns 结果数组
      */
     async findByName(name: string): Promise<Item[]> {
         const all = await this.findAll();
@@ -98,6 +108,7 @@ export class ItemRepository extends BaseMarkdownRepository<Item, string> {
 
     /**
      * 获取项目名称（供关联查询使用）
+     * @returns 文本结果
      */
     getProjectName(): string {
         return this.project;

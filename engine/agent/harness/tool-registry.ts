@@ -71,7 +71,11 @@ export class HarnessToolRegistry {
         this.tools.set(tool.name, tool);
     }
 
-    /** 已注册工具名（HarnessToolCatalog 的结构要求） */
+    /**
+     * 已注册工具名（HarnessToolCatalog 的结构要求）
+     *
+     * @returns 结果数组
+     */
     get names(): readonly string[] {
         return [...this.tools.keys()];
     }
@@ -94,7 +98,11 @@ export class HarnessToolRegistry {
         return [...this.tools.values()];
     }
 
-    /** 生成系统提示词里的工具目录段 */
+    /**
+     * 生成系统提示词里的工具目录段
+     *
+     * @returns 文本结果
+     */
     describeForPrompt(): string {
         return renderCatalog(this.tools);
     }
@@ -102,6 +110,7 @@ export class HarnessToolRegistry {
     /**
      * 取本模型 step 的工具集快照：此后即使注册表增删工具，本 step 的
      * 提示词与执行仍使用同一份集合（dsh ResolvedToolSet 语义）。
+      * @returns HarnessToolCatalog 实例
      */
     snapshot(): HarnessToolCatalog {
         const frozen = new Map(this.tools);
@@ -114,7 +123,14 @@ export class HarnessToolRegistry {
         };
     }
 
-    /** 执行一个工具调用；永不抛异常 */
+    /**
+     * 执行一个工具调用；永不抛异常
+     *
+     * @param toolName - 工具名
+     * @param rawArgs - 原始参数列表
+     * @param ctx - 上下文
+      * @returns HarnessToolResult 实例
+     */
     async execute(
         toolName: string,
         rawArgs: unknown,
@@ -219,7 +235,13 @@ export class HarnessToolRegistry {
     }
 }
 
-/** 校验必填 / 枚举 / 类型 / 未知键；返回错误说明或 null */
+/**
+ * 校验必填 / 枚举 / 类型 / 未知键；返回错误说明或 null
+ *
+ * @param tool - 工具
+ * @param args - 参数列表
+  * @returns 文本结果 或 null
+ */
 export function validateArgs(tool: HarnessTool, args: Record<string, unknown>): string | null {
     const missing: string[] = [];
     for (const name of tool.required) {

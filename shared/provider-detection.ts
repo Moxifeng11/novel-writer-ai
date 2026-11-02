@@ -106,6 +106,8 @@ function looksLikeOllamaPath(path: string): boolean {
  *
  * 对无法解析的输入返回 valid=false，但保留原始输入供 UI 提示，
  * 不会静默把错误 URL 写进设置。
+ * @param raw - 原始
+  * @returns ProviderDetection 实例
  */
 export function detectProviderFromEndpoint(raw: string): ProviderDetection {
     const input = (raw || '').trim();

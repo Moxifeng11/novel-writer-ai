@@ -398,6 +398,7 @@ export class DeviationDetector {
    * @param text 正文文本
    * @param context 检测上下文
    * @param signal 取消信号
+    * @returns DeviationReport 实例
    */
   async detect(
     text: string,
@@ -479,6 +480,7 @@ export class DeviationDetector {
    * @param type 偏离类型
    * @param context 检测上下文
    * @param signal 取消信号
+   * @returns 结果数组
    */
   async detectByType(
     text: string,
@@ -496,7 +498,11 @@ export class DeviationDetector {
     this.fullCache.clear();
   }
 
-  /** 按文本失效缓存 */
+  /**
+   * 按文本失效缓存
+   *
+   * @param text - 文本内容
+   */
   invalidateCache(text?: string): void {
     if (text === undefined) {
       this.clearCache();
@@ -510,12 +516,20 @@ export class DeviationDetector {
     }
   }
 
-  /** 获取当前预警阈值 */
+  /**
+   * 获取当前预警阈值
+   *
+    * @returns SeverityThresholds 实例
+   */
   getSeverityThresholds(): SeverityThresholds {
     return { ...this.severityThresholds };
   }
 
-  /** 获取伏笔回收阈值章节数 */
+  /**
+   * 获取伏笔回收阈值章节数
+   *
+   * @returns 数值结果
+   */
   getForeshadowRecoverChapters(): number {
     return this.foreshadowRecoverChapters;
   }
@@ -1933,7 +1947,12 @@ export class DeviationDetector {
 // 九、辅助函数
 // ============================================================
 
-/** 获取偏离类型标签 */
+/**
+ * 获取偏离类型标签
+ *
+ * @param type - 类型
+ * @returns 文本结果
+ */
 export function getDeviationTypeLabel(type: DeviationType): string {
   return DEVIATION_TYPE_LABELS[type] || type;
 }
@@ -1943,6 +1962,9 @@ export function getDeviationTypeLabel(type: DeviationType): string {
  *
  * 总评只表达最严重的一处偏差，多类型同时偏离的「面」由这里给 UI 展示，
  * 未评估类型（缺数据源）不计入，避免把「没检查」算成「有问题」。
+ * @param typeScores - 类型分数表
+ * @param unevaluatedTypes - 未评估类型
+ * @returns 结果数组
  */
 export function listDeviatedTypes(
   typeScores: Record<DeviationType, number>,
@@ -1954,19 +1976,34 @@ export function listDeviatedTypes(
   );
 }
 
-/** 获取严重度标签 */
+/**
+ * 获取严重度标签
+ *
+ * @param severity - 严重度
+ * @returns 文本结果
+ */
 export function getDeviationSeverityLabel(severity: DeviationSeverity): string {
   return SEVERITY_LABELS[severity] || severity;
 }
 
-/** 获取严重度对应的图标 */
+/**
+ * 获取严重度对应的图标
+ *
+ * @param severity - 严重度
+ * @returns 文本结果
+ */
 export function getDeviationSeverityIcon(severity: DeviationSeverity): string {
   if (severity === 'critical') return '🔴';
   if (severity === 'warning') return '🟡';
   return '🟢';
 }
 
-/** 获取严重度对应的颜色 */
+/**
+ * 获取严重度对应的颜色
+ *
+ * @param severity - 严重度
+ * @returns 文本结果
+ */
 export function getDeviationSeverityColor(severity: DeviationSeverity): string {
   if (severity === 'critical') return 'var(--nw-danger, #ef4444)';
   if (severity === 'warning') return 'var(--nw-warning, #f59e0b)';
@@ -2001,6 +2038,8 @@ function normalizeTimeUnit(raw: string): TimeMark['unit'] {
 /**
  * 解析中文/阿拉伯数字（支持 0-9999，如「十二」「二十」「一百零五」「3」）。
  * 无法解析返回 null。
+ * @param raw - 原始
+  * @returns 数值结果 或 null
  */
 export function parseChineseNumber(raw: string): number | null {
   if (!raw) return null;

@@ -75,6 +75,9 @@ function computeStats(values: number[]): QualityBaselineStats {
 
 /**
  * 计算基线；样本数不足 `minSamples`（默认 3）时返回 null，避免用一两次评估冒充基线。
+ * @param records - 记录列表
+ * @param options - 配置项
+  * @returns QualityBaseline 或 null
  */
 export function computeQualityBaseline(
     records: QualityHistoryRecord[],
@@ -124,6 +127,10 @@ function compareDimension(
 
 /**
  * 当前质量对照基线。`dimensions` 只包含调用方提供的维度。
+ * @param current - 当前
+ * @param baseline - 基线值
+ * @param options - 配置项
+  * @returns BaselineComparison 实例
  */
 export function compareToBaseline(
     current: CurrentQualitySnapshot,

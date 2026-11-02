@@ -95,7 +95,12 @@ export class VaultFactWriter implements FactWriter {
     }
 }
 
-/** 项目事实索引落盘路径 */
+/**
+ * 项目事实索引落盘路径
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function projectFactIndexPath(project: string): string {
     return pjFactIndexFile(project);
 }

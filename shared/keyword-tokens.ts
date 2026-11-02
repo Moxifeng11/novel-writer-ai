@@ -3,6 +3,8 @@
  *
  * 用于向量检索后的关键词重排。不引入分词依赖，保证指纹库与知识库
  * 在任何运行环境（含移动端）都能用同一套规则，且结果稳定可测试。
+ * @param text - 文本内容
+ * @returns 结果数组
  */
 export function extractKeywordTokens(text: string, limit = 80): string[] {
     const normalized = String(text || '').toLowerCase();
@@ -13,7 +15,13 @@ export function extractKeywordTokens(text: string, limit = 80): string[] {
     return [...tokens].slice(0, limit);
 }
 
-/** 查询词在样本文本中的命中比例，上限 1。 */
+/**
+ * 查询词在样本文本中的命中比例，上限 1。
+ *
+ * @param tokens - token 列表
+ * @param sample - 样本
+ * @returns 数值结果
+ */
 export function keywordOverlapRatio(tokens: string[], sample: string): number {
     if (tokens.length === 0) return 0;
     const haystack = String(sample || '').toLowerCase();

@@ -194,6 +194,8 @@ export const STEP_INDEX_MIGRATION_MAP: Readonly<Record<number, number>> = Object
  * 将历史 logicalIndex 升级到新的连续索引。
  * 已是新值（≥0 且 <=14 且不在旧映射范围内）→ 原样返回。
  * 旧值（包含 12/13/14 这种 V2 插槽）→ 映射到新值。
+ * @param oldIndex - 旧索引
+ * @returns 数值结果
  */
 export function migrateStepIndex(oldIndex: number): number {
     if (typeof oldIndex !== 'number' || !Number.isFinite(oldIndex)) return 0;

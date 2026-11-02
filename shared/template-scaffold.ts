@@ -35,7 +35,12 @@ interface ScaffoldAdapter {
     write(path: string, data: string): Promise<void>;
 }
 
-/** 为待创建文件补齐父目录（按层级从浅到深） */
+/**
+ * 为待创建文件补齐父目录（按层级从浅到深）
+ *
+ * @param adapter - 适配器
+ * @param paths - 路径列表
+ */
 async function ensureParentDirs(adapter: ScaffoldAdapter, paths: string[]): Promise<void> {
     const dirs = new Set<string>();
     for (const p of paths) {
@@ -56,6 +61,8 @@ async function ensureParentDirs(adapter: ScaffoldAdapter, paths: string[]): Prom
 /**
  * 确保「元文件」模板树存在；返回本次落盘统计。
  * 幂等：重复调用只补齐缺失文件。
+ * @param app - Obsidian 应用实例
+  * @returns TemplateScaffoldResult 实例
  */
 export async function ensureTemplateScaffold(app: App): Promise<TemplateScaffoldResult> {
     const adapter = app.vault.adapter as unknown as ScaffoldAdapter;

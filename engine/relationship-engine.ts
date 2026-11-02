@@ -32,13 +32,21 @@ export interface CharacterPairRelation {
     lastUpdatedChapter: string;
 }
 
-/** 关系状态文件路径 */
+/**
+ * 关系状态文件路径
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function getRelationshipFilePath(project: string): string {
     return `${project}/${SUBDIR_WORLD_ARCH}/关系状态.md`;
 }
 
 /**
  * 读取所有关系状态
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
  */
 export async function loadRelationshipStates(app: App, project: string): Promise<CharacterPairRelation[]> {
     const path = getRelationshipFilePath(project);
@@ -57,6 +65,8 @@ export async function loadRelationshipStates(app: App, project: string): Promise
 
 /**
  * 解析关系状态.md文件
+ * @param content - 内容
+ * @returns 结果数组
  */
 function parseRelationshipFile(content: string): CharacterPairRelation[] {
     const relations: CharacterPairRelation[] = [];
@@ -114,6 +124,10 @@ function extractMultiline(text: string, key: string): string {
 
 /**
  * 获取或创建两个角色间的关系
+ * @param relations - 关系
+ * @param charA - 字符 A
+ * @param charB - 字符 B
+  * @returns CharacterPairRelation 实例
  */
 function getOrCreateRelation(
     relations: CharacterPairRelation[],
@@ -142,6 +156,9 @@ function getOrCreateRelation(
 
 /**
  * 应用关系变化（限制在 0-100 范围内）
+ * @param value - 值
+ * @param delta - 增量
+ * @returns 数值结果
  */
 function applyDelta(value: number, delta: number): number {
     return Math.max(0, Math.min(100, value + delta));
@@ -153,6 +170,8 @@ function applyDelta(value: number, delta: number): number {
  *   RELATION: 林砚|苏晴|信任|+5
  *   EMOTION: [[林砚]] | 当前情绪 | 对苏晴 fear +10
  *   RELATION: 墨渊|守御者联盟|敌对|resentment +5
+ * @param reportContent - 报告内容
+ * @returns 结果数组
  */
 export function extractRelationshipChanges(reportContent: string): Array<{
     charA: string; charB: string; dimension: string; delta: number; reason: string;
@@ -200,6 +219,10 @@ export function extractRelationshipChanges(reportContent: string): Array<{
  *
  * 幂等（v4.25）：history 以「章名: 原因」为行。重跑同一章结算时，原因相同的变更
  * 直接跳过——旧实现会二次累加 delta 并堆叠重复历史行，数值随重跑次数漂移。
+ * @param relations - 关系
+ * @param changes - 变更
+ * @param chapterName - 章节名
+  * @returns number } 结果
  */
 export function applyRelationshipChanges(
     relations: CharacterPairRelation[],
@@ -239,6 +262,8 @@ export function applyRelationshipChanges(
 
 /**
  * 根据数值生成关系状态描述
+ * @param state - 状态
+ * @returns 文本结果
  */
 function describeRelationshipStatus(state: RelationshipState): string {
     if (state.trust >= 80) return '深厚信任';
@@ -254,6 +279,9 @@ function describeRelationshipStatus(state: RelationshipState): string {
 
 /**
  * 将关系状态格式化为 Markdown 文件内容
+ * @param relations - 关系
+ * @param chapterName - 章节名
+ * @returns 文本结果
  */
 export function formatRelationshipFile(
     relations: CharacterPairRelation[],
@@ -289,6 +317,11 @@ last_updated_chapter: ${chapterName}
 
 /**
  * 保存关系状态文件
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param relations - 关系
+ * @param chapterName - 章节名
+ * @param notifier - 通知器
  */
 export async function saveRelationshipStates(
     app: App,

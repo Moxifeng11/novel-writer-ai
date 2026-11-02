@@ -37,6 +37,8 @@ export interface CharacterSoulSummary {
  * 支持两种格式：
  *   1. YAML 嵌套（推荐）：character_core:\n  desire: xxx\n  fear: xxx
  *   2. 顶级扁平（回退）：desire: xxx（从 frontmatter 中独立提取）
+ * @param content - 内容
+  * @returns Partial<CharacterSoul> 实例
  */
 function parseCharacterCore(content: string): Partial<CharacterSoul> {
     const soul: Record<string, string> = {};
@@ -81,6 +83,9 @@ function isSoulValueMeaningful(value: string): boolean {
 
 /**
  * 从角色文件构建完整 CharacterSoul
+ * @param name - 名称
+ * @param content - 内容
+  * @returns CharacterSoul 实例
  */
 function buildSoul(name: string, content: string): CharacterSoul {
     const core = parseCharacterCore(content);
@@ -106,6 +111,9 @@ function buildSoul(name: string, content: string): CharacterSoul {
 
 /**
  * 从角色文件提取 CharacterSoul
+ * @param file - 文件
+ * @param vault - 仓库（Vault）
+  * @returns CharacterSoul 或 null
  */
 export async function extractCharacterCore(file: TFile, vault: Vault): Promise<CharacterSoul | null> {
     const name = file.name.replace(/\.md$/, '');
@@ -120,6 +128,9 @@ export async function extractCharacterCore(file: TFile, vault: Vault): Promise<C
 
 /**
  * 从文件内容文本中提取角色灵魂层（异步版本使用）
+ * @param name - 名称
+ * @param content - 内容
+  * @returns CharacterSoul 实例
  */
 export function extractCharacterCoreFromContent(name: string, content: string): CharacterSoul {
     return buildSoul(name, content);
@@ -127,6 +138,9 @@ export function extractCharacterCoreFromContent(name: string, content: string): 
 
 /**
  * 批量提取所有角色灵魂层
+ * @param charFiles - 角色文件列表
+ * @param vault - 仓库（Vault）
+ * @returns 结果数组
  */
 export async function gatherAllCharacterCores(
     charFiles: TFile[],
@@ -147,6 +161,8 @@ export async function gatherAllCharacterCores(
 
 /**
  * 将角色灵魂层格式化为 prompt 友好文本（≤300 tokens/人）
+ * @param soul - 灵魂
+ * @returns 文本结果
  */
 export function formatSoulForPrompt(soul: CharacterSoul): string {
     if (!soul.hasSoul) {
@@ -178,6 +194,10 @@ export interface CharacterSoulSummaryOptions {
 /**
  * 构建全量灵魂层压缩文本（含主角标记）。
  * 只注入本章相关角色：全部角色都塞进去会稀释 prompt，并在超预算时把关键约束挤掉。
+ * @param souls - 角色灵魂
+ * @param protagonistName - 主角名称
+ * @param options - 配置项
+  * @returns CharacterSoulSummary 实例
  */
 export function buildCharacterSoulSummary(
     souls: CharacterSoul[],
@@ -225,6 +245,8 @@ export function buildCharacterSoulSummary(
 
 /**
  * 获取主角灵魂层的详细描述（用于正文生成 system prompt）
+ * @param soul - 灵魂
+ * @returns 文本结果
  */
 export function getProtagonistSoulDetail(soul: CharacterSoul): string {
     if (!soul.hasSoul) return '';

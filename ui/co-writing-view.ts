@@ -485,7 +485,14 @@ export class CoWritingView extends ItemView {
     const hit = this.app.vault.getFiles().find(f => f.path.startsWith(bodyRoot) && pattern.test(f.path));
     return hit ? hit.path.slice(bodyRoot.length).split('/')[0] : null;
   }
-  /** 打开指定章节的协同写作视图 */
+  /**
+   * 打开指定章节的协同写作视图
+   *
+   * @param project - 项目（路径或对象）
+   * @param chapterName2 - 章节名
+   * @param volume2 - 第二卷
+   * @param chapterNum - 章号
+   */
   async openChapter(project: string, chapterName2: string, volume2?: string, chapterNum?: number) {
     // 只传 2 个参数时旧默认值是「第1卷/第1章」，会把第 3 卷第 12 章绑定成第 1 卷第 1 章、
     // 保存直接写错文件。缺失参数时按章名推定章号，并按正文实际位置反查卷。
@@ -1899,7 +1906,11 @@ export class CoWritingView extends ItemView {
     this.renderHumanRateInto(scores);
   }
 
-  /** 计算人工率各维度评分 */
+  /**
+   * 计算人工率各维度评分
+   *
+    * @returns number } 结果
+   */
   calculateHumanRate(): { overall: number; style: number; sentenceLength: number; opening: number; punctuation: number; aiWords: number } {
     const text = this.rightEditor?.value || '';
 
@@ -1959,7 +1970,11 @@ export class CoWritingView extends ItemView {
     return { overall, style, sentenceLength, opening, punctuation, aiWords };
   }
 
-  /** 将评分渲染到仪表盘容器 */
+  /**
+   * 将评分渲染到仪表盘容器
+   *
+   * @param scores - 分数表
+   */
   renderHumanRateInto(scores: { overall: number; style: number; sentenceLength: number; opening: number; punctuation: number; aiWords: number }) {
     if (!this.humanRateDashboard) return;
     this.humanRateDashboard.empty();
@@ -3133,6 +3148,7 @@ ${text}`;
    * @param index - 索引
    * @param currentText - 当前文本
    * @param isStreaming - 是否流式
+    * @returns HTMLElement 实例
    */
   renderStreamingSuggestionCard(
     direction: string,
@@ -3682,7 +3698,12 @@ ${text}`;
     this.refreshWritingAdvice();
   }
 
-  /** 权重滑杆：以前只打日志，滑了等于没滑；现在写进设置并立即作用到注入器 */
+  /**
+   * 权重滑杆：以前只打日志，滑了等于没滑；现在写进设置并立即作用到注入器
+   *
+   * @param bookId - 书籍 ID
+   * @param weight - 权重
+   */
   adjustReferenceWeight(bookId: string, weight: number): void {
     const clamped = Math.max(0.1, Math.min(1, Math.round(weight * 100) / 100));
     this.plugin.settings.referenceBookWeights = {
@@ -4448,6 +4469,9 @@ ${text}`;
    * 直接给 textarea 赋值不会派发 input，旧实现的自动保存只挂在 input 上，
    * 于是「采纳建议后立刻切章」时 `flushBeforeChapterSwitch` 看到没有 pending
    * 直接放行 → 刚插入的整段文字被新章正文覆盖掉。
+   * @param nextText - 下一个文本
+   * @param cursorPos - 光标位置
+   * @param reason - 原因
    */
   applyProgrammaticEdit(nextText: string, cursorPos: number, reason: string): void {
     if (!this.rightEditor) return;
@@ -4631,7 +4655,11 @@ ${text}`;
     ).open();
   }
 
-  /** 获取当前光标在章节中的相对位置 (0-1) */
+  /**
+   * 获取当前光标在章节中的相对位置 (0-1)
+   *
+   * @returns 数值结果
+   */
   getCursorRelativePosition(): number {
     const editor = this.rightEditor;
     if (!editor || !editor.value) return 0;
@@ -4640,7 +4668,12 @@ ${text}`;
     return Math.min(1, Math.max(0, cursor / total));
   }
 
-  /** 获取光标前的文本（用于上下文检索） */
+  /**
+   * 获取光标前的文本（用于上下文检索）
+   *
+   * @param maxLen - 最大长度
+   * @returns 文本结果
+   */
   getPrecedingText(maxLen: number = 500): string {
     const editor = this.rightEditor;
     if (!editor) return '';
@@ -4670,7 +4703,12 @@ ${text}`;
       }
     }, 300);
   }
-  /** v6.4: 将指标渲染到指定容器 */
+  /**
+   * v6.4: 将指标渲染到指定容器
+   *
+   * @param metrics - 指标
+   * @param container - 容器元素
+   */
   renderMetricsInto(metrics: PlotCompletionMetrics, container: HTMLElement) {
     container.empty();
     const isEvaluating = this.metricsStatus === 'evaluating';
@@ -4908,7 +4946,11 @@ ${text}`;
     return lines.length * lineHeight;
   }
 
-  /** v6.4: AI 修复质量问题 */
+  /**
+   * v6.4: AI 修复质量问题
+   *
+   * @param issue - 问题
+   */
   async handleQualityFix(issue: QualityIssue) {
     if (!this.rightEditor?.value) {
       new Notice("\u26A0\uFE0F \u6B63\u6587\u4E3A\u7A7A\uFF0C\u65E0\u6CD5\u4FEE\u590D", 2000);

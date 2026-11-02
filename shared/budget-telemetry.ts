@@ -49,7 +49,11 @@ export function recordBudgetSnapshot(input: BudgetSnapshotInput): void {
     }
 }
 
-/** 返回副本，调用方修改不会污染内部缓冲。 */
+/**
+ * 返回副本，调用方修改不会污染内部缓冲。
+ *
+ * @returns 结果数组
+ */
 export function getBudgetSnapshots(): BudgetSnapshot[] {
     return snapshots.map((snapshot) => ({
         ...snapshot,

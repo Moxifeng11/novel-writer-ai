@@ -28,7 +28,12 @@ export interface WizardStep {
     subSteps?: { id: string; label: string; status: WizardSubStepStatus }[];
 }
 
-/** 按项目类型构建向导步骤定义（original / fanfic 两套固定流程） */
+/**
+ * 按项目类型构建向导步骤定义（original / fanfic 两套固定流程）
+ *
+ * @param projectType - 项目类型
+ * @returns 结果数组
+ */
 export function buildWizardSteps(projectType: 'original' | 'fanfic'): WizardStep[] {
     if (projectType === 'fanfic') {
         return [

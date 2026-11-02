@@ -116,7 +116,13 @@ export interface LayeredInjectionOptions {
     modelId?: string;
 }
 
-/** 默认相关性判断：候选名出现在大纲/场景目标/出场人物任一文本中即相关 */
+/**
+ * 默认相关性判断：候选名出现在大纲/场景目标/出场人物任一文本中即相关
+ *
+ * @param candidate - 候选
+ * @param context - 上下文
+ * @returns 是否成功
+ */
 function defaultRelevanceMatcher(candidate: OnDemandCandidate, context: InjectionContext): boolean {
     const haystack = [
         context.outline || '',
@@ -1063,6 +1069,9 @@ export class KnowledgeInjector {
      * 区别于 injectForSceneExpand（场景展开设计的写作指引）：
      * 本方法输出"故事约束上下文"——任务卡/场景目标/上一场景结尾/人物状态/时间地点/禁止事项，
      * 与写作指引由调用方分别拼接。低频层（完整世界观/全部档案/大事记等）契约拒绝，不进场景 prompt。
+     * @param context - 上下文
+     * @param options - 配置项
+     * @returns 文本结果
      */
     async injectForSceneBody(context: InjectionContext, options: LayeredInjectionOptions = {}): Promise<string> {
         const layers = await this.injectForSceneBodyLayers(context, options);
@@ -1075,6 +1084,9 @@ export class KnowledgeInjector {
      *
      * 旧实现把两层拼成一个字符串交回调用方，最终整体塞进 user：
      * 窗口不足时 `callAI` 从尾部截断，最先丢掉的正是必须层里的禁止事项。
+     * @param context - 上下文
+     * @param options - 配置项
+      * @returns string }> 结果
      */
     async injectForSceneBodyLayers(
         context: InjectionContext,

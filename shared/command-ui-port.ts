@@ -26,6 +26,8 @@ export interface CommandUiPayload {
 export interface CommandUiPort {
     /**
      * 执行一个 UI 类命令。
+     * @param id - 标识
+     * @param payload - 载荷
      * @returns true = 已由 UI 层处理；false = 该 id 不属于 UI 执行器（core 不再兜底）
      */
     executeCommand(id: string, payload?: CommandUiPayload): Promise<boolean>;

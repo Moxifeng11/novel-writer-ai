@@ -87,6 +87,7 @@ export class EndingTractionEngine {
      /**
       * 已解析的情节线数量。
       * 供 UI 判断首次初始化是否因 AI 瞬时失败而得到空结果（需要重试）。
+      * @returns 数值结果
       */
      getThreadCount(): number {
          return this.threads.size;
@@ -94,6 +95,7 @@ export class EndingTractionEngine {
      
      /**
       * 初始化牵引引擎
+      * @param project - 项目（路径或对象）
       */
      async initialize(project: string): Promise<void> {
          this.project = project;
@@ -120,6 +122,9 @@ export class EndingTractionEngine {
      
      /**
       * 检查当前牵引状态
+      * @param currentVolume - 当前卷
+      * @param currentChapter - 当前章节
+       * @returns EndingTractionState 实例
       */
      async checkTraction(currentVolume: number, currentChapter: number): Promise<EndingTractionState> {
          const threads = Array.from(this.threads.values());
@@ -149,6 +154,9 @@ export class EndingTractionEngine {
      
      /**
       * 获取牵引点建议
+      * @param currentVolume - 当前卷
+      * @param currentChapter - 当前章节
+      * @returns 结果数组
       */
      async suggestTractionPoints(currentVolume: number, currentChapter: number): Promise<TractionSuggestion[]> {
          const state = await this.checkTraction(currentVolume, currentChapter);

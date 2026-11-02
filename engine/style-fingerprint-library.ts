@@ -120,7 +120,13 @@ export interface StyleFingerprint {
  */
 export interface VectorStore {
     add(fingerprintId: string, samples: string[]): Promise<void>;
-    /** fingerprintId 用于上游过滤已禁用指纹、以及按指纹做多样性筛选；旧实现可不返回 */
+    /**
+     * fingerprintId 用于上游过滤已禁用指纹、以及按指纹做多样性筛选；旧实现可不返回
+     *
+     * @param query - 查询串
+     * @param topN - 顶部编号
+      * @returns string }>> 结果
+     */
     search(query: string, topN?: number): Promise<Array<{ sample: string; score: number; fingerprintId?: string }>>;
     delete(fingerprintId: string): Promise<void>;
 }
@@ -218,7 +224,11 @@ export class StyleFingerprintLibrary {
      * 项目层的三张表（指纹、V2 缓存、向量库）都跟 project 绑定：
      * 直接改 project 字段会让新项目在 load 之前先读到上一个项目的指纹。
      */
-    /** 当前绑定的项目（无项目时为 undefined） */
+    /**
+     * 当前绑定的项目（无项目时为 undefined）
+     *
+      * @returns 文本结果 或 undefined
+     */
     get activeProject(): string | undefined {
         return this.project;
     }
@@ -627,6 +637,7 @@ export class StyleFingerprintLibrary {
 
     /**
      * 从知识库导入指纹：强制 scope=project 后委托 addProject 入库。
+     * @param fingerprint - 指纹
      */
     async addFromKnowledge(fingerprint: StyleFingerprint): Promise<void> {
         fingerprint.scope = 'project';
@@ -812,7 +823,11 @@ export class StyleFingerprintLibrary {
     // 风格迁移强度配置持久化（Task 5）
     // ============================================================
 
-    /** 获取强度引擎实例（懒加载） */
+    /**
+     * 获取强度引擎实例（懒加载）
+     *
+      * @returns StyleIntensityEngine 实例
+     */
     getIntensityEngine(): StyleIntensityEngine {
         if (!this.intensityEngine) {
             this.intensityEngine = new StyleIntensityEngine();
@@ -825,6 +840,8 @@ export class StyleFingerprintLibrary {
      * - 文件不存在时返回空对象（使用默认强度 1.0）
      * - 每次调用都读盘：强度弹窗与协同引擎持有不同的库实例，
      *   缓存会让「弹窗里改完、协同 prompt 仍用旧强度」静默发生
+     * @param project - 项目（路径或对象）
+     * @returns 映射结果
      */
     async loadIntensityConfigs(project?: string): Promise<Record<string, StyleIntensityConfig>> {
         const targetProject = project ?? this.project;
@@ -872,6 +889,9 @@ export class StyleFingerprintLibrary {
     /**
      * 获取指定指纹的强度配置
      * - 未配置时返回默认配置（globalIntensity = 1.0，完全启用）
+     * @param fpId - 指纹 ID
+     * @param project - 项目（路径或对象）
+      * @returns StyleIntensityConfig 实例
      */
     getIntensityConfig(fpId: string, project?: string): StyleIntensityConfig {
         const targetProject = project ?? this.project;
@@ -885,6 +905,9 @@ export class StyleFingerprintLibrary {
 
     /**
      * 设置指定指纹的强度配置并持久化
+     * @param fpId - 指纹 ID
+     * @param config - 配置
+     * @param project - 项目（路径或对象）
      */
     async setIntensityConfig(
         fpId: string,
@@ -911,6 +934,8 @@ export class StyleFingerprintLibrary {
 
     /**
      * 删除指定指纹的强度配置
+     * @param fpId - 指纹 ID
+     * @param project - 项目（路径或对象）
      */
     async removeIntensityConfig(fpId: string, project?: string): Promise<void> {
         const targetProject = project ?? this.project;
@@ -925,6 +950,8 @@ export class StyleFingerprintLibrary {
 
     /**
      * 预览强度效果（不修改指纹）
+     * @param config - 配置
+      * @returns StyleIntensityPreview 实例
      */
     previewIntensity(config: StyleIntensityConfig): StyleIntensityPreview {
         return this.getIntensityEngine().previewIntensity(config);
@@ -1108,6 +1135,8 @@ export class StyleFingerprintLibrary {
     /**
      * 指纹文件签名（全局指纹 + 项目指纹 + 项目全局启用状态）
      * 文件不可读时返回 null：调用方应保留当前内存状态
+     * @param project - 项目（路径或对象）
+      * @returns 文本结果 或 null
      */
     async computeFingerprintSignature(project?: string): Promise<string | null> {
         const target = project ?? this.project;
@@ -1139,6 +1168,8 @@ export class StyleFingerprintLibrary {
     /**
      * 指纹文件变化时重新加载（新增/删除/启用/禁用）
      * 指纹库 UI 与协同引擎各持一个实例，后者的内存列表不会自动更新
+     * @param project - 项目（路径或对象）
+     * @returns 是否成功
      */
     async reloadIfChanged(project?: string): Promise<boolean> {
         const target = project ?? this.project;
@@ -1228,12 +1259,22 @@ export class StyleFingerprintLibrary {
         }
     }
 
-    /** 获取单个指纹的 V2 12 维特征（不存在时返回 undefined） */
+    /**
+     * 获取单个指纹的 V2 12 维特征（不存在时返回 undefined）
+     *
+     * @param id - 标识
+      * @returns V2Fingerprint 或 undefined
+     */
     getV2Fingerprint(id: string): V2Fingerprint | undefined {
         return this.v2Fingerprints.get(id);
     }
 
-    /** 列出已加载的 V2 12 维指纹 */
+    /**
+     * 列出已加载的 V2 12 维指纹
+     *
+     * @param scope - 作用域
+     * @returns 结果数组
+     */
     listV2Fingerprints(scope?: 'template' | 'global' | 'project'): V2Fingerprint[] {
         const all = Array.from(this.v2Fingerprints.values());
         if (!scope) return all;
@@ -1698,7 +1739,13 @@ export class StyleFingerprintLibrary {
         return candidates.filter(candidate => allowed.has(candidate.id));
     }
 
-    /** 获取（必要时构建）指定指纹的 V2 12 维向量 */
+    /**
+     * 获取（必要时构建）指定指纹的 V2 12 维向量
+     *
+     * @param fpId - 指纹 ID
+     * @param scope - 作用域
+      * @returns StyleFingerprintVectorsV2 或 undefined
+     */
     async getFingerprintVectorsV2(
         fpId: string,
         scope: 'template' | 'global' | 'project'
@@ -1710,7 +1757,13 @@ export class StyleFingerprintLibrary {
         return store.getOrBuildVectors(fpId, v2.features, v2.extractedAt);
     }
 
-    /** 强制重建指定指纹的 V2 12 维向量 */
+    /**
+     * 强制重建指定指纹的 V2 12 维向量
+     *
+     * @param fpId - 指纹 ID
+     * @param scope - 作用域
+      * @returns StyleFingerprintVectorsV2 或 undefined
+     */
     async buildV2VectorsForFingerprint(
         fpId: string,
         scope: 'template' | 'global' | 'project'
@@ -1724,7 +1777,13 @@ export class StyleFingerprintLibrary {
         return store.addOrUpdateVectors(fpId, v2.features);
     }
 
-    /** V2 加权整体检索（12 维） */
+    /**
+     * V2 加权整体检索（12 维）
+     *
+     * @param query - 查询串
+     * @param options - 配置项
+     * @returns 结果数组
+     */
     async searchSimilarStylesV2(
         query: string,
         options?: {
@@ -1773,7 +1832,14 @@ export class StyleFingerprintLibrary {
         return results.slice(0, options?.topN ?? 10);
     }
 
-    /** V2 单维度检索（12 维任选其一） */
+    /**
+     * V2 单维度检索（12 维任选其一）
+     *
+     * @param query - 查询串
+     * @param dimension - 维度
+     * @param options - 配置项
+     * @returns 结果数组
+     */
     async searchByDimensionV2(
         query: string,
         dimension: StyleDimensionKeyV2,
@@ -1813,6 +1879,8 @@ export class StyleFingerprintLibrary {
     /**
      * 换 embedding 模型后被隔离、需要重建的 V2 向量。
      * 调用方据此提示用户执行 `rebuildAllV2StyleVectors`。
+     * @param scope - 作用域
+     * @returns 结果数组
      */
     async getVectorModelMismatches(
         scope?: 'template' | 'global' | 'project'
@@ -1831,7 +1899,12 @@ export class StyleFingerprintLibrary {
         return mismatches;
     }
 
-    /** 重建所有带 12 维特征指纹的 V2 向量 */
+    /**
+     * 重建所有带 12 维特征指纹的 V2 向量
+     *
+     * @param onProgress - 进度回调
+      * @returns string[] }> 结果
+     */
     async rebuildAllV2StyleVectors(
         onProgress?: (current: number, total: number, fingerprintId: string, scope: string) => void
     ): Promise<{ rebuilt: string[]; failed: string[] }> {
@@ -2010,6 +2083,9 @@ export class StyleFingerprintLibrary {
     /**
      * 融合预览（不保存，仅计算）
      * 等同于 blendFingerprints，语义上明确"仅预览"
+     * @param sources - 来源列表
+     * @param options - 配置项
+      * @returns BlendResult 实例
      */
     blendFingerprintsPreview(
         sources: BlendSource[],

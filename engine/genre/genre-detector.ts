@@ -37,6 +37,8 @@ export class GenreDetector {
 
     /**
      * 识别文本题材。
+     * @param text - 文本内容
+      * @returns GenreDetectionResult 实例
      */
     detect(text: string): GenreDetectionResult {
         if (!text || text.length === 0) {
@@ -151,6 +153,7 @@ export class GenreDetector {
      * @param text 待识别文本
      * @param caller LLM 调用器（通常传 AIEngine 实例）
      * @param options 可选配置（模型名等）
+      * @returns GenreDetectionResult 实例
      */
     async detectWithLLM(
         text: string,

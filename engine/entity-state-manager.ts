@@ -80,6 +80,7 @@ export class EntityStateManager {
 
     /**
      * 获取 Repository 性能统计
+      * @returns typeof this.repoPerfStats 结果
      */
     getRepositoryPerfStats(): typeof this.repoPerfStats {
         return { ...this.repoPerfStats };
@@ -100,6 +101,7 @@ export class EntityStateManager {
 
     /**
      * 设置 CharacterRepository 实例
+     * @param repo - 仓储
      */
     setCharacterRepository(repo: CharacterRepository | null): void {
         this.characterRepo = repo;
@@ -162,6 +164,7 @@ export class EntityStateManager {
      * @param project 当前项目名
      * @param chapterNum 当前章节号
      * @param options 模型与调用选项覆盖；协同写作传入协同模型，避免绕过本地模型配置
+     * @param chapterName - 章节名
      * @returns 检测到的状态变更列表
      */
     async detectStateChanges(
@@ -217,6 +220,10 @@ export class EntityStateManager {
 
     /**
      * 将状态变更写入人物 frontmatter
+     * @param project - 项目（路径或对象）
+     * @param changes - 变更
+     * @param chapterNum - 章号
+     * @param chapterName - 章节名
      */
     async applyStateChanges(
         project: string,
@@ -232,6 +239,9 @@ export class EntityStateManager {
     /**
      * 更新章节正文文件的"涉及人物/地点/势力/物品功法" frontmatter
      * 基于正文内容自动扩展涉及实体索引
+     * @param project - 项目（路径或对象）
+     * @param chapterBodyPath - 章节正文路径
+     * @param bodyContent - 正文内容
      */
     async updateInvolvedEntities(
         project: string,

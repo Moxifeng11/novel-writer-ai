@@ -14,6 +14,8 @@ const log = createLogger('RhythmAnalyzer');
 export class RhythmAnalyzer {
      /**
       * 分析文本节奏
+      * @param text - 文本内容
+       * @returns RhythmAnalysis 实例
       */
      async analyze(text: string): Promise<RhythmAnalysis> {
          if (!text || text.length < 100) {

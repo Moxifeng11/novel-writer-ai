@@ -446,6 +446,10 @@ export class QualityDashboardModal extends Modal {
 /**
  * 打开章节文件并定位到指定行（1-based）。
  * 无行号时仅打开文件；定位失败会给出提示，不抛出异常。
+ * @param app - Obsidian 应用实例
+ * @param file - 文件
+ * @param line - 行
+ * @returns 是否成功
  */
 export async function openFileAtLine(app: App, file: TFile, line?: number): Promise<boolean> {
     try {

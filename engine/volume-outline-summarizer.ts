@@ -15,7 +15,13 @@ export interface VolumeSummary {
     factionChanges: string[];
 }
 
-/** 提取指定 Markdown 标题下的内容块，直到下一个同级或更高级标题 */
+/**
+ * 提取指定 Markdown 标题下的内容块，直到下一个同级或更高级标题
+ *
+ * @param content - 内容
+ * @param headingText - 标题文本
+ * @returns 文本结果
+ */
 function extractSection(content: string, headingText: string): string {
     const lines = content.split('\n');
     let startIdx = -1;
@@ -45,7 +51,12 @@ function extractSection(content: string, headingText: string): string {
     return sectionLines.join('\n').trim();
 }
 
-/** 从文本中提取 Markdown 列表项（- 或 * 开头） */
+/**
+ * 从文本中提取 Markdown 列表项（- 或 * 开头）
+ *
+ * @param text - 文本内容
+ * @returns 结果数组
+ */
 function extractListItems(text: string): string[] {
     if (!text) return [];
     return text
@@ -55,7 +66,12 @@ function extractListItems(text: string): string[] {
         .map(l => l.substring(2).trim());
 }
 
-/** 去除伏笔项中的「埋设/回收」前缀，用于比对 */
+/**
+ * 去除伏笔项中的「埋设/回收」前缀，用于比对
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 function cleanForeshadow(text: string): string {
     return text.replace(/^(埋设|回收)[:：]\s*/, '').trim();
 }
@@ -63,6 +79,9 @@ function cleanForeshadow(text: string): string {
 export class VolumeOutlineSummarizer {
     /**
      * 从单卷 Markdown 大纲中提取结构化摘要。
+     * @param volumeContent - 卷内容
+     * @param volumeNumber - 卷号
+      * @returns VolumeSummary 实例
      */
     extract(volumeContent: string, volumeNumber: number): VolumeSummary {
         const characterSection = extractSection(volumeContent, '人物弧光');
@@ -99,6 +118,9 @@ export class VolumeOutlineSummarizer {
     /**
      * 将多卷累积摘要格式化为 Markdown 文本。
      * 若总长度超过 maxLength，按「越远越简」原则渐进压缩。
+     * @param summaries - 摘要列表
+     * @param maxLength - 最大长度
+     * @returns 文本结果
      */
     compress(summaries: VolumeSummary[], maxLength: number = 6000): string {
         for (let level = 0; level <= 5; level++) {

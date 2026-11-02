@@ -32,6 +32,10 @@ const CATEGORY_LABELS: Record<FactCategory, string> = {
 
 /**
  * 把已确认事实格式化为 prompt 块；无事实时返回空串。
+ * @param facts - 事实
+ * @param maxPerCategory - 单类上限
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export function formatConfirmedFacts(
     facts: readonly ConfirmedFact[],
@@ -77,6 +81,10 @@ export const VOLUME_SUMMARY_MAX_CHARS = 2000;
 /**
  * 读取「当前卷之前」各卷的分卷大纲，提取并渐进压缩为前情提要。
  * 单卷损坏跳过；无前卷/无大纲时返回空串。
+ * @param fs - 文件系统端口
+ * @param project - 项目（路径或对象）
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export async function loadVolumeSummaries(
     fs: FileSystemPort,
@@ -120,6 +128,10 @@ export async function loadVolumeSummaries(
  * 读取项目事实索引中的已确认事实并格式化。
  * 传入 `beforeVolume` 时同时注入前序卷摘要。
  * 索引缺失/损坏/无已确认事实时返回空串，调用方按「无长篇记忆」降级。
+ * @param fs - 文件系统端口
+ * @param project - 项目（路径或对象）
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export async function loadLongTermMemory(
     fs: FileSystemPort,

@@ -267,7 +267,12 @@ export interface GuideAgentPort {
     /** 打开「创作流程」页（三模式通用）；非长篇没有初始化向导时用它 */
     openFlow?(project?: string): boolean | Promise<boolean>;
     openStorySettings(project: string): boolean;
-    /** 打开工作台；传 project 时定位到该项目的第一个未写章节（返回值可异步） */
+    /**
+     * 打开工作台；传 project 时定位到该项目的第一个未写章节（返回值可异步）
+     *
+     * @param project - 项目（路径或对象）
+      * @returns 结果
+     */
     openFullWriter(project?: string): boolean | Promise<boolean>;
     openPreResearch(mode: 'short' | 'script', project?: string): boolean;
     /** 可选：用 AI 把自然语言解析成槽位；失败/未提供时回退到 chips 匹配 */

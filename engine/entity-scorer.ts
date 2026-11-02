@@ -72,6 +72,10 @@ export const DEFAULT_ENTITY_TYPE_BUDGETS: EntityTypeBudgets = {
 /**
  * 按类型分别打分与截断。
  * 旧实现把四类实体放在同一个 topN=8 里竞争，人物名额会被势力/地点/物品吃掉。
+ * @param entities - 实体列表
+ * @param contextText - 上下文文本
+ * @param budgets - 预算表
+ * @returns 结果数组
  */
 export function scoreAndFilterEntitiesByType(
     entities: ScoredEntity[],

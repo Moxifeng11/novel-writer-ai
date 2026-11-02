@@ -20,7 +20,11 @@ export interface ExemplarSample {
 const MAX_LIBRARY = 400;
 let library: ExemplarSample[] = [];
 
-/** 由宿主（UI 层）在启动时把本地样文灌进来 */
+/**
+ * 由宿主（UI 层）在启动时把本地样文灌进来
+ *
+ * @param samples - 样本
+ */
 export function setExemplarLibrary(samples: ExemplarSample[]): void {
     library = (samples || [])
         .filter((sample) => sample && typeof sample.text === 'string' && sample.text.trim().length >= 120)
@@ -52,7 +56,13 @@ export interface SelectOptions {
     limit?: number;
 }
 
-/** 截到句末标点，避免把样文切成半句 */
+/**
+ * 截到句末标点，避免把样文切成半句
+ *
+ * @param text - 文本内容
+ * @param maxChars - 最大字符数
+ * @returns 文本结果
+ */
 function cutAtSentence(text: string, maxChars: number): string {
     if (text.length <= maxChars) return text;
     const head = text.slice(0, maxChars);
@@ -65,6 +75,8 @@ function cutAtSentence(text: string, maxChars: number): string {
 /**
  * 按场景类型挑样文：优先覆盖战斗/日常/心理三类，不足则按库内顺序补。
  * 不做语义检索（样文是风格参照，场景覆盖面比语义相似更重要）。
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function selectExemplars(options: SelectOptions = {}): ExemplarSample[] {
     if (library.length === 0) return [];
@@ -92,6 +104,9 @@ export function selectExemplars(options: SelectOptions = {}): ExemplarSample[] {
 /**
  * 渲染成 prompt 块。
  * 只在有样文时返回内容；无样文返回空串，调用方退化为「弱约束模式」。
+ * @param samples - 样本
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export function formatExemplarBlock(samples: ExemplarSample[], options: { header?: string } = {}): string {
     if (samples.length === 0) return '';

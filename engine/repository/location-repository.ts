@@ -58,6 +58,8 @@ export class LocationRepository extends BaseMarkdownRepository<Location, string>
 
     /**
      * 按区域/世界查找地点
+     * @param region - 区域
+     * @returns 结果数组
      */
     async findByRegion(region: string): Promise<Location[]> {
         const all = await this.findAll();
@@ -66,6 +68,8 @@ export class LocationRepository extends BaseMarkdownRepository<Location, string>
 
     /**
      * 按重要程度查找地点
+     * @param importance - 重要度
+     * @returns 结果数组
      */
     async findByImportance(importance: string): Promise<Location[]> {
         const all = await this.findAll();
@@ -74,6 +78,8 @@ export class LocationRepository extends BaseMarkdownRepository<Location, string>
 
     /**
      * 按类型查找地点
+     * @param type - 类型
+     * @returns 结果数组
      */
     async findByType(type: string): Promise<Location[]> {
         const all = await this.findAll();
@@ -82,6 +88,8 @@ export class LocationRepository extends BaseMarkdownRepository<Location, string>
 
     /**
      * 按状态查找地点
+     * @param status - 状态
+     * @returns 结果数组
      */
     async findByStatus(status: 'active' | 'inactive' | 'dead' | 'hidden'): Promise<Location[]> {
         const all = await this.findAll();
@@ -90,6 +98,8 @@ export class LocationRepository extends BaseMarkdownRepository<Location, string>
 
     /**
      * 按名称模糊查找
+     * @param name - 名称
+     * @returns 结果数组
      */
     async findByName(name: string): Promise<Location[]> {
         const all = await this.findAll();
@@ -98,6 +108,7 @@ export class LocationRepository extends BaseMarkdownRepository<Location, string>
 
     /**
      * 获取项目名称（供关联查询使用）
+     * @returns 文本结果
      */
     getProjectName(): string {
         return this.project;

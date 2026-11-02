@@ -14,7 +14,12 @@ export interface RankableFact {
     recency?: number;
 }
 
-/** 字符 2-gram（与 RAG 多样性口径一致，中文无需分词） */
+/**
+ * 字符 2-gram（与 RAG 多样性口径一致，中文无需分词）
+ *
+ * @param text - 文本内容
+ * @returns 集合结果
+ */
 function bigrams(text: string): Set<string> {
     const normalized = String(text || '').replace(/\s+/g, '');
     const set = new Set<string>();

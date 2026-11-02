@@ -97,7 +97,12 @@ export interface SceneLoopOptions {
 const SCENE_HEADER_RE = new RegExp(SCENE_HEADING_SOURCE, 'im');
 
 /** 解析单个字段行（与 validateSceneExpansion 的 fieldRegex 同源格式） */
-/** 中文数字解析（与 scene-expander 保持一致的容错：失败时按序号兜底） */
+/**
+ * 中文数字解析（与 scene-expander 保持一致的容错：失败时按序号兜底）
+ *
+ * @param raw - 原始
+  * @returns 数值结果 或 null
+ */
 function parseChineseNum(raw: string): number | null {
     const map: Record<string, number> = {
         零: 0, 〇: 0, 一: 1, 两: 2, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 百: 100,
@@ -112,6 +117,8 @@ function parseChineseNum(raw: string): number | null {
 /**
  * 把 sceneExpand 规划文本拆分为结构化场景块（TR-5.1）。
  * 无场景格式时返回空数组，不抛异常。
+ * @param content - 内容
+ * @returns 结果数组
  */
 export function parseSceneBlocks(content: string): SceneTask[] {
     if (typeof content !== 'string' || content.trim() === '') return [];

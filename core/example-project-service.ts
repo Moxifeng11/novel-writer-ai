@@ -278,6 +278,8 @@ export interface ImportExampleResult {
 /**
  * 在 vault 根目录创建最小示例项目。
  * 已存在时不覆盖，直接返回 created=false（避免覆盖用户改动）。
+ * @param app - Obsidian 应用实例
+  * @returns ImportExampleResult 实例
  */
 export async function importExampleProject(app: App): Promise<ImportExampleResult> {
     const project = EXAMPLE_PROJECT_NAME;

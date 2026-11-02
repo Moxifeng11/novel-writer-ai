@@ -10,7 +10,11 @@ import { AntiAIDetector } from './anti-ai-detector';
 export const CRAFT_CONSTRAINT_MAX_CHARS = 1200;
 export const NEGATIVE_LIST_MAX_CHARS = 600;
 
-/** 通用小说工艺约束；与具体题材/设定无关。 */
+/**
+ * 通用小说工艺约束；与具体题材/设定无关。
+ *
+ * @returns 文本结果
+ */
 export function buildCraftConstraintBlock(): string {
     return `【生成期工艺硬约束】
 1. 具体性配额：每个场景至少 2 个可被五感验证的具体细节（物件/声音/气味/温度/身体感受），禁止用“气氛紧张/十分震撼”等抽象概括代替。
@@ -26,6 +30,7 @@ export function buildCraftConstraintBlock(): string {
 /**
  * 从现有 AI 味词库生成稳定、限长的生成期禁用清单。
  * 只取最有辨识度的短语/词/句式标签，避免 prompt 膨胀。
+ * @returns 文本结果
  */
 export function buildNegativeConstraintBlock(): string {
     const phrases: string[] = [];
@@ -57,7 +62,11 @@ export function buildNegativeConstraintBlock(): string {
     return text;
 }
 
-/** 合并成一段可直接放进 system prompt 的工艺块。 */
+/**
+ * 合并成一段可直接放进 system prompt 的工艺块。
+ *
+ * @returns 文本结果
+ */
 export function buildCraftSystemBlock(): string {
     const craft = buildCraftConstraintBlock();
     const negative = buildNegativeConstraintBlock();

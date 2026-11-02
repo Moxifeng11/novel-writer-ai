@@ -15,7 +15,12 @@
 
 /** 通用通知回调 — 所有 engine 类统一使用，替代直接 new Notice() */
 export interface Notifier {
-    /** 普通通知（默认5秒） */
+    /**
+     * 普通通知（默认5秒）
+     *
+     * @param message - 消息
+     * @param duration - 耗时
+     */
     showNotice(message: string, duration?: number): void;
     /** 成功通知 */
     showSuccess?(message: string, duration?: number): void;
@@ -677,7 +682,12 @@ export interface ExtendedSceneData {
     wordCountEstimate: number;   // 字数预估
 }
 
-/** 创建默认空场景 */
+/**
+ * 创建默认空场景
+ *
+ * @param index - 索引
+  * @returns ExtendedSceneData 实例
+ */
 export function createDefaultScene(index: number): ExtendedSceneData {
     return {
         index,

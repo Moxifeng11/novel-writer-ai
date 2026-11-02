@@ -243,6 +243,8 @@ export class PreloadManager {
 
     /**
      * 从缓存获取章节（未命中返回 null）
+     * @param chapterId - 章节ID
+      * @returns Chapter 或 null
      */
     getCachedChapter(chapterId: string): Chapter | null {
         const cached = this.chapterCache.get(chapterId);
@@ -256,6 +258,7 @@ export class PreloadManager {
 
     /**
      * 将章节放入预加载缓存
+     * @param chapter - 章节
      */
     cacheChapter(chapter: Chapter): void {
         this.chapterCache.set(chapter.id, chapter);
@@ -263,6 +266,7 @@ export class PreloadManager {
 
     /**
      * 失效章节缓存
+     * @param chapterId - 章节ID
      */
     invalidateChapter(chapterId: string): void {
         this.chapterCache.delete(chapterId);
@@ -374,6 +378,8 @@ export class PreloadManager {
 
     /**
      * 失效实体缓存
+     * @param entityType - 实体类型
+     * @param entityId - 实体ID
      */
     invalidateEntity(entityType: string, entityId: string): void {
         const cache = this.entityCaches.get(entityType);
@@ -384,6 +390,7 @@ export class PreloadManager {
 
     /**
      * 失效某类型所有实体缓存
+     * @param entityType - 实体类型
      */
     invalidateEntityType(entityType: string): void {
         const cache = this.entityCaches.get(entityType);
@@ -424,6 +431,8 @@ export class PreloadManager {
 
     /**
      * 取消空闲任务
+     * @param taskId - 任务ID
+     * @returns 是否成功
      */
     cancelIdleTask(taskId: string): boolean {
         const index = this.idleQueue.findIndex(t => t.id === taskId);
@@ -443,6 +452,7 @@ export class PreloadManager {
 
     /**
      * 获取空闲队列长度
+     * @returns 数值结果
      */
     getIdleQueueSize(): number {
         return this.idleQueue.length;
@@ -493,6 +503,7 @@ export class PreloadManager {
 
     /**
      * 记录用户行为
+     * @param behavior - 行为
      */
     recordBehavior(behavior: Omit<UserBehavior, 'timestamp'>): void {
         const entry: UserBehavior = {

@@ -20,6 +20,7 @@ export class StoryBeatExtractor {
     /**
      * 从章节规划文本提取剧情任务卡。
      * @param chapterPlan 章节规划文本
+     * @returns 结果数组
      */
     extract(chapterPlan: string): StoryBeat[] {
         if (typeof chapterPlan !== 'string' || chapterPlan.trim() === '') return [];

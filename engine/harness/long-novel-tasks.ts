@@ -97,7 +97,12 @@ function validateRefine(value: RefineSingleCallResult): string[] {
     return issues;
 }
 
-/** 定向修订结果校验（导出供单测锁定「dimensions 必须是数组」） */
+/**
+ * 定向修订结果校验（导出供单测锁定「dimensions 必须是数组」）
+ *
+ * @param value - 值
+ * @returns 结果数组
+ */
 export function validateRevision(value: RevisionSingleCallResult): string[] {
     const issues = validateFields(value as unknown as Record<string, unknown>, revisionContract.fields as never || []);
     if (!Array.isArray(value.dimensions)) issues.push('dimensions 必须是数组');

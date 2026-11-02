@@ -21,11 +21,26 @@ interface BaselineFile {
 }
 
 export interface HumannessScorer {
-    /** 对话占比（引号内字符 / 全文；判断是否要补一轮对话改写） */
+    /**
+     * 对话占比（引号内字符 / 全文；判断是否要补一轮对话改写）
+     *
+     * @param text - 文本内容
+     * @returns 数值结果
+     */
     dialogueRatio(text: string): number;
-    /** 打分；始终返回（无基线时 humanSim 记 0，composite 只由 AI 味与保真构成） */
+    /**
+     * 打分；始终返回（无基线时 humanSim 记 0，composite 只由 AI 味与保真构成）
+     *
+     * @param candidate - 候选
+     * @param original - 原始
+      * @returns RefineRoundScore 实例
+     */
     score(candidate: string, original: string): RefineRoundScore;
-    /** 是否有真人基线（决定 composite 是否包含 humanSim 权重） */
+    /**
+     * 是否有真人基线（决定 composite 是否包含 humanSim 权重）
+     *
+     * @returns 是否成功
+     */
     hasBaseline(): boolean;
 }
 
@@ -51,7 +66,11 @@ async function loadBaseline(app: App): Promise<DistributionHistogram | null> {
     return cachedBaseline;
 }
 
-/** 测试用：直接注入基线 */
+/**
+ * 测试用：直接注入基线
+ *
+ * @param distribution - 分布
+ */
 export function setHumannessBaseline(distribution: DistributionHistogram | null): void {
     cachedBaseline = distribution;
     baselineLoaded = true;
@@ -61,6 +80,8 @@ export function setHumannessBaseline(distribution: DistributionHistogram | null)
  * 创建打分器。
  * 无基线时 composite = 0.55×(100−antiAI)/100 + 0.45×fidelity，
  * 有基线时为 0.40/0.45/0.15（见 human-similarity.scoreHumanity）。
+ * @param app - Obsidian 应用实例
+  * @returns HumannessScorer 实例
  */
 export async function createHumannessScorer(app: App): Promise<HumannessScorer> {
     const baseline = await loadBaseline(app);

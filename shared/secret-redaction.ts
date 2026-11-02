@@ -16,7 +16,12 @@ const SECRET_KEY_PATTERN = /(api_?key|token|secret|password|cookie|credential)/i
 /** 「供应商 → 密钥」映射：键名是 provider id，不含 apiKey 字样，需要整表按密钥处理 */
 const SECRET_MAP_PATTERN = /provider_?keys/i;
 
-/** 整表按密钥处理：所有非空字符串叶子替换为占位符，保留键名以便排查"配了哪几个供应商" */
+/**
+ * 整表按密钥处理：所有非空字符串叶子替换为占位符，保留键名以便排查"配了哪几个供应商"
+ *
+ * @param map - 映射
+ * @returns 映射结果
+ */
 function redactStringMap(map: Record<string, unknown>): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(map)) {
@@ -53,7 +58,12 @@ export function redactSecrets<T>(input: T): T {
     return walk(input) as T;
 }
 
-/** 备份里是否还残留未脱敏的密钥（用于自检/回归） */
+/**
+ * 备份里是否还残留未脱敏的密钥（用于自检/回归）
+ *
+ * @param input - 输入
+ * @returns 是否成功
+ */
 export function containsPlaintextSecret(input: unknown): boolean {
     const walk = (value: unknown): boolean => {
         if (Array.isArray(value)) return value.some(walk);

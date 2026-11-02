@@ -34,6 +34,7 @@ export function rebuildChapDir(
  * 章节路径反解（工作台用）。
  * 标准路径交给 shared/paths.parseChapterLocation；无法识别时退回“项目 + 空章节”，
  * 项目仍走 projectIdFromPath，避免 v4 结构下把「长篇小说」当项目（B2）。
+ * @param path - 路径
  */
 export function parseChapterFromPath(path: string): {
     project: string;

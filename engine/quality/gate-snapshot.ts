@@ -9,7 +9,12 @@
  */
 import type { ChapterStateSnapshot, CharacterStateBrief, StoryBeat } from '../story-state-types';
 
-/** 从 `${allChars}` 行抽「- 名字：…」并读取若干字段 */
+/**
+ * 从 `${allChars}` 行抽「- 名字：…」并读取若干字段
+ *
+ * @param charBlock - 字符块
+ * @returns 结果数组
+ */
 function parseCharacterStates(charBlock: string | undefined): CharacterStateBrief[] {
     const states: CharacterStateBrief[] = [];
     for (const line of String(charBlock || '').split('\n')) {
@@ -34,7 +39,12 @@ function parseCharacterStates(charBlock: string | undefined): CharacterStateBrie
     return states;
 }
 
-/** 从情节蒸馏里抽「- 节点N：描述」作为 required beats */
+/**
+ * 从情节蒸馏里抽「- 节点N：描述」作为 required beats
+ *
+ * @param distilled - 蒸馏结果
+ * @returns 结果数组
+ */
 function parseRequiredBeats(distilled: string | undefined): StoryBeat[] {
     const beats: StoryBeat[] = [];
     let index = 0;

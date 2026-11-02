@@ -19,7 +19,12 @@ export interface WritingRulesLike {
     style?: string;
 }
 
-/** RuleItem[] → `### 标题 / 说明 / - 要点`，空项自动跳过 */
+/**
+ * RuleItem[] → `### 标题 / 说明 / - 要点`，空项自动跳过
+ *
+ * @param rules - 规则集
+ * @returns 文本结果
+ */
 export function formatWritingRulesForPrompt(rules: WritingRulesLike | undefined): string {
     if (!rules) return '';
     const lines: string[] = [];

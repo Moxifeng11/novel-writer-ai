@@ -38,7 +38,11 @@ function pump(): void {
     }
 }
 
-/** 获取一个本地调用槽；signal 中止时从队列移除并 reject。 */
+/**
+ * 获取一个本地调用槽；signal 中止时从队列移除并 reject。
+ *
+ * @param signal - 取消信号
+ */
 export function acquireLocalAiSlot(signal?: AbortSignal, timeoutMs = 300_000): Promise<() => void> {
     if (signal?.aborted) {
         return Promise.reject(new Error('aborted'));

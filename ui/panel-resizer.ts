@@ -81,6 +81,8 @@ function clamp(value: number, min: number, max: number): number {
  *
  * 尺寸以 CSS 自定义属性写到目标元素上（`--nw-panel-size`），
  * 这样样式与 JS 都读同一个值，不会出现 inline style 与 CSS 打架。
+ * @param options - 配置项
+  * @returns PanelResizerHandle 实例
  */
 export function createPanelResizer(options: PanelResizerOptions): PanelResizerHandle {
     const {

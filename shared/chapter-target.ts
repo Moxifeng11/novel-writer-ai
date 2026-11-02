@@ -27,12 +27,22 @@ export interface ResolveChapterTargetInput {
 const BODY_PATH_RE = /^(.+?)\/03-大纲与章节\/正文\/(第\d+卷)\/(第\d+章)_正文\.md$/;
 const STEP_DIR_RE = /^(.+?)\/03-大纲与章节\/步骤结果\/(第\d+卷)\/(第\d+章)/;
 
-/** 从「第N章」中取章节号 */
+/**
+ * 从「第N章」中取章节号
+ *
+ * @param chapterName - 章节名
+ * @returns 数值结果
+ */
 function chapterNumber(chapterName: string): number {
     return parseInt(chapterName.match(/\d+/)?.[0] || '0', 10);
 }
 
-/** 从「第N卷」中取卷号 */
+/**
+ * 从「第N卷」中取卷号
+ *
+ * @param volume - 卷
+ * @returns 数值结果
+ */
 export function volumeNumber(volume: string): number {
     return parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
 }

@@ -366,6 +366,11 @@ ${customPrompt}`;
      * 补全必须与生成使用同一套「输出契约」：只补 frontmatter 会通过不了
      * validateCharacterOutput（它还要求 7 个正文分节与 3 个嵌套组），
      * 因此这里显式列出全部必需结构，避免「补了但复检依旧失败」。
+     * @param rawContent - 原始内容
+     * @param missingFields - 缺失字段列表
+     * @param signal - 取消信号
+     * @param options - 配置项
+     * @returns 文本结果
      */
     async completeCharacter(
         rawContent: string,

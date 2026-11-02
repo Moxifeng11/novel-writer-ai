@@ -65,6 +65,7 @@ export class ProjectRepository extends BaseMarkdownRepository<Project, string> {
     /**
      * 查找所有项目
      * 通过扫描根目录下包含 .project 文件的子目录来发现项目
+     * @returns 结果数组
      */
     async findAll(): Promise<Project[]> {
         const allFiles = await this.fs.listFiles('');
@@ -88,6 +89,8 @@ export class ProjectRepository extends BaseMarkdownRepository<Project, string> {
 
     /**
      * 获取项目元数据
+     * @param projectId - 项目ID
+      * @returns ProjectMeta 或 null
      */
     async getMeta(projectId: string): Promise<ProjectMeta | null> {
         const project = await this.findById(projectId);
@@ -97,6 +100,9 @@ export class ProjectRepository extends BaseMarkdownRepository<Project, string> {
 
     /**
      * 更新项目元数据
+     * @param projectId - 项目ID
+     * @param meta - 元数据
+      * @returns Project 或 null
      */
     async updateMeta(projectId: string, meta: Partial<ProjectMeta>): Promise<Project | null> {
         const project = await this.findById(projectId);
@@ -108,6 +114,8 @@ export class ProjectRepository extends BaseMarkdownRepository<Project, string> {
 
     /**
      * 按题材查找项目
+     * @param genre - 题材
+     * @returns 结果数组
      */
     async findByGenre(genre: string): Promise<Project[]> {
         const all = await this.findAll();
@@ -116,6 +124,8 @@ export class ProjectRepository extends BaseMarkdownRepository<Project, string> {
 
     /**
      * 按类型查找项目
+     * @param type - 类型
+     * @returns 结果数组
      */
     async findByType(type: string): Promise<Project[]> {
         const all = await this.findAll();
@@ -124,6 +134,8 @@ export class ProjectRepository extends BaseMarkdownRepository<Project, string> {
 
     /**
      * 按作者查找项目
+     * @param author - 作者
+     * @returns 结果数组
      */
     async findByAuthor(author: string): Promise<Project[]> {
         const all = await this.findAll();

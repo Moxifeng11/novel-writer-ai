@@ -43,6 +43,7 @@ export interface ValidationWarning {
 
 /**
  * 创建空的验证结果
+  * @returns ValidationResult 实例
  */
 function createEmptyResult(): ValidationResult {
     return { isValid: true, errors: [], warnings: [] };
@@ -50,6 +51,10 @@ function createEmptyResult(): ValidationResult {
 
 /**
  * 添加错误
+ * @param result - 结果
+ * @param field - 字段
+ * @param message - 消息
+ * @param code - 代码
  */
 function addError(result: ValidationResult, field: string, message: string, code?: string): void {
     result.isValid = false;
@@ -58,6 +63,9 @@ function addError(result: ValidationResult, field: string, message: string, code
 
 /**
  * 添加警告
+ * @param result - 结果
+ * @param field - 字段
+ * @param message - 消息
  */
 function addWarning(result: ValidationResult, field: string, message: string): void {
     result.warnings.push({ field, message });
@@ -69,6 +77,8 @@ function addWarning(result: ValidationResult, field: string, message: string): v
 export class DomainValidator {
     /**
      * 验证基础实体
+     * @param entity - 实体
+      * @returns ValidationResult 实例
      */
     static validateBaseEntity(entity: BaseEntity): ValidationResult {
         const result = createEmptyResult();
@@ -102,6 +112,8 @@ export class DomainValidator {
 
     /**
      * 验证 Project
+     * @param project - 项目（路径或对象）
+      * @returns ValidationResult 实例
      */
     static validateProject(project: Project): ValidationResult {
         const result = this.validateBaseEntity(project);
@@ -134,6 +146,8 @@ export class DomainValidator {
 
     /**
      * 验证 Chapter
+     * @param chapter - 章节
+      * @returns ValidationResult 实例
      */
     static validateChapter(chapter: Chapter): ValidationResult {
         const result = this.validateBaseEntity(chapter);
@@ -165,6 +179,8 @@ export class DomainValidator {
 
     /**
      * 验证 Character
+     * @param character - 角色
+      * @returns ValidationResult 实例
      */
     static validateCharacter(character: Character): ValidationResult {
         const result = this.validateBaseEntity(character);
@@ -194,6 +210,8 @@ export class DomainValidator {
 
     /**
      * 验证 Faction
+     * @param faction - 势力
+      * @returns ValidationResult 实例
      */
     static validateFaction(faction: Faction): ValidationResult {
         return this.validateBaseEntity(faction);
@@ -201,6 +219,8 @@ export class DomainValidator {
 
     /**
      * 验证 Location
+     * @param location - 地点
+      * @returns ValidationResult 实例
      */
     static validateLocation(location: Location): ValidationResult {
         return this.validateBaseEntity(location);
@@ -208,6 +228,8 @@ export class DomainValidator {
 
     /**
      * 验证 Item
+     * @param item - 条目
+      * @returns ValidationResult 实例
      */
     static validateItem(item: Item): ValidationResult {
         return this.validateBaseEntity(item);
@@ -215,6 +237,8 @@ export class DomainValidator {
 
     /**
      * 统一验证入口
+     * @param entity - 实体
+      * @returns ValidationResult 实例
      */
     static validate(entity: BaseEntity): ValidationResult {
         switch (entity.category) {
@@ -245,6 +269,7 @@ export class DomainValidator {
 
     /**
      * 合并多个验证结果
+      * @returns ValidationResult 实例
      */
     static mergeResults(...results: ValidationResult[]): ValidationResult {
         const merged = createEmptyResult();

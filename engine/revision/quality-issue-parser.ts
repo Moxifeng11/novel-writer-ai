@@ -40,6 +40,8 @@ function stripMarkers(line: string): string {
 /**
  * 解析 qualityControl 的自由 Markdown 报告。
  * 只收 ❌/⚠️ 行；✅ 与普通说明不进入修订计划。
+ * @param report - 报告
+ * @returns 结果数组
  */
 export function parseQualityControlReport(report: string): RevisionIssue[] {
     if (!report || !report.trim()) return [];
@@ -71,7 +73,11 @@ export function parseQualityControlReport(report: string): RevisionIssue[] {
     return issues;
 }
 
-/** 合并来自 QSE/WQE 的结构化 issues（它们通常带 dimension/severity/location）。 */
+/**
+ * 合并来自 QSE/WQE 的结构化 issues（它们通常带 dimension/severity/location）。
+ *
+ * @returns 结果数组
+ */
 export function mergeQualityIssues(
     ...groups: Array<Array<{
         dimension?: string;

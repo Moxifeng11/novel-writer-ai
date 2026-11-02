@@ -50,7 +50,11 @@ export interface CreationFlowState {
  */
 const REQUIRED_WIZARD_KEYS = ['worldview', 'setting_lib'];
 
-/** 桌面端导出走浏览器下载，磁盘上看不到；调用导出后记一个项目级标记 */
+/**
+ * 桌面端导出走浏览器下载，磁盘上看不到；调用导出后记一个项目级标记
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function markFlowExported(project: string): void {
     if (!project) return;
     try {
@@ -174,6 +178,10 @@ function summarizeLongChapters(chapters: ChapterListEntry[]): UnitTotals {
 
 /**
  * 采集流程快照。project 必须是项目 ID（含模式目录前缀）。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param options - 配置项
+  * @returns CreationFlowState 实例
  */
 export async function collectCreationFlowState(
     app: App,

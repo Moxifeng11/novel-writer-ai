@@ -105,7 +105,13 @@ export function budgetTierSpec(tier: BudgetTier | undefined): BudgetTierSpec {
     return BUDGET_TIERS.find(t => t.value === normalized) ?? BUDGET_TIERS[1];
 }
 
-/** 极端档会把思考强度强制拉满 */
+/**
+ * 极端档会把思考强度强制拉满
+ *
+ * @param tier - 层级
+ * @param intensity - 强度
+ * @returns 数值结果
+ */
 export function effectiveIntensity(tier: BudgetTier | undefined, intensity: number): number {
     if (normalizeBudgetTier(tier) === 'extreme') return 100;
     const value = Number.isFinite(intensity) ? Math.round(intensity) : 50;
@@ -154,6 +160,8 @@ const MIN_OUTPUT = 1;
  *   1. 任务级覆盖（老数据）优先；
  *   2. 否则按档位系数 × 模型能力推导；
  *   3. 最后做边界收敛：输入 + 输出不超过 context，且输入不少于 512。
+ * @param input - 输入
+  * @returns BudgetPlan 实例
  */
 export function planTaskBudget(input: BudgetPlanInput): BudgetPlan {
     const tierSpec = budgetTierSpec(input.tier);
@@ -230,6 +238,13 @@ export function planTaskBudget(input: BudgetPlanInput): BudgetPlan {
 /**
  * 一份可直接展示的分发表：给定全部任务，返回每个任务的推导结果。
  * 用于设置页的只读预览表，替代原先 6 张可编辑卡片。
+ * @param tasks - 任务列表
+ * @param resolveLimits - 解析限制函数
+ * @param tier - 层级
+ * @param intensity - 强度
+ * @param explicitThinkingBudget - 显式思考预算
+ * @param overrides - 覆盖项
+  * @returns BudgetPlan }> 实例
  */
 export function planAllTasks(
     tasks: readonly string[],

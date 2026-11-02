@@ -148,18 +148,27 @@ export class AgentHarnessEngine {
         }
     }
 
-    /** 创作计划（工作台左栏「创作计划」卡片实时渲染） */
+    /**
+     * 创作计划（工作台左栏「创作计划」卡片实时渲染）
+     *
+     * @returns 结果数组
+     */
     getPlan(): readonly PlanStep[] {
         return this.plan.steps;
     }
 
     /** 会话上下文变化（用户在左栏切换项目）时更新，后续工具解析用新列表。
+     * @param ctx - 上下文
      * 原地合并：工具闭包捕获的是同一 ctx 对象引用，不能用新对象替换。 */
     updateContext(ctx: AgentContext): void {
         Object.assign(this.ctx, ctx);
     }
 
-    /** 会话遥测（工作台右栏监控用） */
+    /**
+     * 会话遥测（工作台右栏监控用）
+     *
+      * @returns Readonly<HarnessTelemetry> 实例
+     */
     getTelemetry(): Readonly<HarnessTelemetry> {
         return this.telemetry;
     }
@@ -172,7 +181,11 @@ export class AgentHarnessEngine {
         return this.registry.list().map(tool => ({ name: tool.name, description: tool.description }));
     }
 
-    /** 当前记忆槽位（宿主降级到规则引擎时可用来续接上下文） */
+    /**
+     * 当前记忆槽位（宿主降级到规则引擎时可用来续接上下文）
+     *
+      * @returns Readonly<Record<string, unknown>> 实例
+     */
     getSlots(): Readonly<Record<string, unknown>> {
         return { ...this.memory.slots };
     }
@@ -180,6 +193,7 @@ export class AgentHarnessEngine {
     /**
      * 回合内补充（吸收 dsh agent-loop inbox）。
      * 只在回合进行中有效：消息进入收件箱，loop 在下一步调模型前把它写进会话日志。
+     * @param text - 文本内容
      * @returns 是否被接收（false = 当前没有在跑的回合，调用方应走普通 handle）
      */
     steer(text: string): boolean {
@@ -190,7 +204,11 @@ export class AgentHarnessEngine {
         return true;
     }
 
-    /** 是否正在跑一个回合 */
+    /**
+     * 是否正在跑一个回合
+     *
+     * @returns 是否成功
+     */
     get isRunning(): boolean {
         return this.turnRunning;
     }
@@ -244,7 +262,12 @@ export class AgentHarnessEngine {
         return this.runTurn();
     }
 
-    /** 供宿主在工具已直接执行后追加一条说明（兼容旧 UI 流程，一般不用） */
+    /**
+     * 供宿主在工具已直接执行后追加一条说明（兼容旧 UI 流程，一般不用）
+     *
+     * @param text - 文本内容
+      * @returns HarnessTurnOutcome 实例
+     */
     appendSystemNote(text: string): HarnessTurnOutcome {
         this.log.append({ type: 'assistant_message', text });
         return {
@@ -365,7 +388,11 @@ export class AgentHarnessEngine {
         }
     }
 
-    /** 会话快照（宿主落盘 / 测试断言用） */
+    /**
+     * 会话快照（宿主落盘 / 测试断言用）
+     *
+      * @returns HarnessSessionSnapshot 实例
+     */
     serialize(): HarnessSessionSnapshot {
         return buildSessionSnapshot({
             events: this.log.allEvents(),
@@ -378,6 +405,7 @@ export class AgentHarnessEngine {
     /**
      * 从存档恢复会话（工作台重新打开时）。
      * 恢复后  不应再被调用，否则会把开场白追加到历史后面。
+     * @param snapshot - 快照
      */
     restore(snapshot: HarnessSessionSnapshot): void {
         const callSeq = snapshot.callSeq > 0 ? snapshot.callSeq : deriveCallSeq(snapshot.events);
@@ -391,19 +419,31 @@ export class AgentHarnessEngine {
         this.maybeAppendTimeContext();
     }
 
-    /** 是否恢复自存档（宿主据此决定是否重放开场白） */
+    /**
+     * 是否恢复自存档（宿主据此决定是否重放开场白）
+     *
+     * @returns 是否成功
+     */
     get isRestored(): boolean {
         return this.restored;
     }
 
-    /** 会话标题（首条用户消息前 30 字；工作台头部展示） */
+    /**
+     * 会话标题（首条用户消息前 30 字；工作台头部展示）
+     *
+     * @returns 文本结果
+     */
     getSessionTitle(): string {
         const events = this.log.allEvents();
         const title = sessionTitleOf(events);
         return title === '新会话' ? '' : title;
     }
 
-    /** 供工作台回填历史气泡（只含用户/助手两条角色，工具行省略） */
+    /**
+     * 供工作台回填历史气泡（只含用户/助手两条角色，工具行省略）
+     *
+      * @returns string }> 结果
+     */
     getHistory(): Array<{ role: 'user' | 'agent'; text: string }> {
         return this.log.derive(200)
             .filter((turn: DerivedTurn) => turn.role === 'user' || turn.role === 'assistant')
@@ -534,7 +574,12 @@ export class AgentHarnessEngine {
     }
 }
 
-/** 把 harness 记忆导出为 AgentIntent 需要的形状（宿主降级时使用） */
+/**
+ * 把 harness 记忆导出为 AgentIntent 需要的形状（宿主降级时使用）
+ *
+ * @param slots - 槽位表
+ * @returns 映射结果
+ */
 export function harnessSlotsToIntentSlots(slots: Readonly<Record<string, unknown>>): Record<string, unknown> {
     return { ...slots };
 }

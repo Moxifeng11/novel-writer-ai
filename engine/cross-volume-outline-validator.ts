@@ -85,6 +85,8 @@ export interface BlueprintFactionEvent {
  * 例如：「苍穹之痕觉醒」→ ["苍穹", "觉醒"]
  * 例如：「灭门真凶浮现」→ ["灭门", "真凶", "浮现"]
  * 例如：「幽渊第七氏族」→ ["幽渊", "氏族"]
+ * @param name - 名称
+ * @returns 结果数组
  */
 export function extractKeywords(name: string): string[] {
     // 移除括号及其中内容
@@ -103,6 +105,9 @@ export function extractKeywords(name: string): string[] {
 
 /**
  * 检查目标文本中是否包含所有关键词
+ * @param keywords - 关键词列表
+ * @param text - 文本内容
+ * @returns 是否成功
  */
 export function matchesKeywords(keywords: string[], text: string): boolean {
     if (keywords.length === 0) return true;

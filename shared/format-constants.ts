@@ -57,6 +57,9 @@ export const chapterOutlineSection = (chapterNum: number) =>
  * 从「合并后的分卷大纲」里截出指定卷的段落。
  * chapPlan 若在全部卷拼接内容里按章号取段，同号章（重编号/残留旧卷）会取到别卷的规划；
  * 先按 `### 第N卷` 切出当前卷，再在其中按章号匹配。找不到卷头时返回全文（行为不变）。
+ * @param content - 内容
+ * @param volume - 卷
+ * @returns 文本结果
  */
 export function volumeSectionSlice(content: string, volume: string | undefined): string {
     const text = String(content || '');

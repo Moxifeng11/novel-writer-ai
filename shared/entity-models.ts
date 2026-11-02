@@ -233,7 +233,14 @@ function buildBaseEntity(
 // 八、Character 转换函数
 // ============================================================
 
-/** CharacterFrontmatter → CharacterDomainModel */
+/**
+ * CharacterFrontmatter → CharacterDomainModel
+ *
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns CharacterDomainModel 实例
+ */
 export function characterFromFrontmatter(
     fm: CharacterFrontmatter,
     rawContent: string = '',
@@ -307,7 +314,12 @@ export function characterFromFrontmatter(
     };
 }
 
-/** CharacterDomainModel → CharacterFrontmatter（仅核心字段，无损回退用 frontmatter 属性） */
+/**
+ * CharacterDomainModel → CharacterFrontmatter（仅核心字段，无损回退用 frontmatter 属性）
+ *
+ * @param model - 模型标识
+  * @returns CharacterFrontmatter 实例
+ */
 export function characterToFrontmatter(model: CharacterDomainModel): CharacterFrontmatter {
     const fm: CharacterFrontmatter = {
         ...model.frontmatter,
@@ -341,14 +353,27 @@ export function characterToFrontmatter(model: CharacterDomainModel): CharacterFr
     return fm;
 }
 
-/** 从 Markdown 文本构建 CharacterDomainModel */
+/**
+ * 从 Markdown 文本构建 CharacterDomainModel
+ *
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns CharacterDomainModel 实例
+ */
 export function characterFromMarkdown(content: string, filePath: string = ''): CharacterDomainModel {
     const fmRaw = parseFrontmatter(content);
     const fm = fmRaw as unknown as CharacterFrontmatter;
     return characterFromFrontmatter(fm, content, filePath);
 }
 
-/** 旧函数名别名 — 保持与 shared/types.ts 中 toDomainModel 的向后兼容 */
+/**
+ * 旧函数名别名 — 保持与 shared/types.ts 中 toDomainModel 的向后兼容
+ *
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns CharacterDomainModel 实例
+ */
 export function toDomainModel(
     fm: CharacterFrontmatter,
     rawContent: string = '',
@@ -361,7 +386,14 @@ export function toDomainModel(
 // 九、Faction 转换函数
 // ============================================================
 
-/** FactionFrontmatter → FactionDomainModel */
+/**
+ * FactionFrontmatter → FactionDomainModel
+ *
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns FactionDomainModel 实例
+ */
 export function factionFromFrontmatter(
     fm: FactionFrontmatter,
     rawContent: string = '',
@@ -381,7 +413,12 @@ export function factionFromFrontmatter(
     };
 }
 
-/** FactionDomainModel → FactionFrontmatter */
+/**
+ * FactionDomainModel → FactionFrontmatter
+ *
+ * @param model - 模型标识
+  * @returns FactionFrontmatter 实例
+ */
 export function factionToFrontmatter(model: FactionDomainModel): FactionFrontmatter {
     const fm: FactionFrontmatter = {
         ...model.frontmatter,
@@ -400,7 +437,13 @@ export function factionToFrontmatter(model: FactionDomainModel): FactionFrontmat
     return fm;
 }
 
-/** 从 Markdown 文本构建 FactionDomainModel */
+/**
+ * 从 Markdown 文本构建 FactionDomainModel
+ *
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns FactionDomainModel 实例
+ */
 export function factionFromMarkdown(content: string, filePath: string = ''): FactionDomainModel {
     const fmRaw = parseFrontmatter(content);
     const fm = fmRaw as unknown as FactionFrontmatter;
@@ -411,7 +454,14 @@ export function factionFromMarkdown(content: string, filePath: string = ''): Fac
 // 十、Location 转换函数
 // ============================================================
 
-/** LocationFrontmatter → LocationDomainModel */
+/**
+ * LocationFrontmatter → LocationDomainModel
+ *
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns LocationDomainModel 实例
+ */
 export function locationFromFrontmatter(
     fm: LocationFrontmatter,
     rawContent: string = '',
@@ -433,7 +483,12 @@ export function locationFromFrontmatter(
     };
 }
 
-/** LocationDomainModel → LocationFrontmatter */
+/**
+ * LocationDomainModel → LocationFrontmatter
+ *
+ * @param model - 模型标识
+  * @returns LocationFrontmatter 实例
+ */
 export function locationToFrontmatter(model: LocationDomainModel): LocationFrontmatter {
     const fm: LocationFrontmatter = {
         ...model.frontmatter,
@@ -454,7 +509,13 @@ export function locationToFrontmatter(model: LocationDomainModel): LocationFront
     return fm;
 }
 
-/** 从 Markdown 文本构建 LocationDomainModel */
+/**
+ * 从 Markdown 文本构建 LocationDomainModel
+ *
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns LocationDomainModel 实例
+ */
 export function locationFromMarkdown(content: string, filePath: string = ''): LocationDomainModel {
     const fmRaw = parseFrontmatter(content);
     const fm = fmRaw as unknown as LocationFrontmatter;
@@ -465,7 +526,14 @@ export function locationFromMarkdown(content: string, filePath: string = ''): Lo
 // 十一、Item 转换函数
 // ============================================================
 
-/** ItemFrontmatter → ItemDomainModel */
+/**
+ * ItemFrontmatter → ItemDomainModel
+ *
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns ItemDomainModel 实例
+ */
 export function itemFromFrontmatter(
     fm: ItemFrontmatter,
     rawContent: string = '',
@@ -486,7 +554,12 @@ export function itemFromFrontmatter(
     };
 }
 
-/** ItemDomainModel → ItemFrontmatter */
+/**
+ * ItemDomainModel → ItemFrontmatter
+ *
+ * @param model - 模型标识
+  * @returns ItemFrontmatter 实例
+ */
 export function itemToFrontmatter(model: ItemDomainModel): ItemFrontmatter {
     const fm: ItemFrontmatter = {
         ...model.frontmatter,
@@ -506,7 +579,13 @@ export function itemToFrontmatter(model: ItemDomainModel): ItemFrontmatter {
     return fm;
 }
 
-/** 从 Markdown 文本构建 ItemDomainModel */
+/**
+ * 从 Markdown 文本构建 ItemDomainModel
+ *
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns ItemDomainModel 实例
+ */
 export function itemFromMarkdown(content: string, filePath: string = ''): ItemDomainModel {
     const fmRaw = parseFrontmatter(content);
     const fm = fmRaw as unknown as ItemFrontmatter;
@@ -517,7 +596,15 @@ export function itemFromMarkdown(content: string, filePath: string = ''): ItemDo
 // 十二、统一分发函数
 // ============================================================
 
-/** 按分类从 frontmatter 构建对应 DomainModel */
+/**
+ * 按分类从 frontmatter 构建对应 DomainModel
+ *
+ * @param category - 分类
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns CharacterDomainModel 实例
+ */
 export function entityFromFrontmatter(
     category: 'character',
     fm: CharacterFrontmatter,
@@ -560,7 +647,14 @@ export function entityFromFrontmatter(
     }
 }
 
-/** 按分类从 Markdown 构建对应 DomainModel */
+/**
+ * 按分类从 Markdown 构建对应 DomainModel
+ *
+ * @param category - 分类
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns CharacterDomainModel 实例
+ */
 export function entityFromMarkdown(
     category: 'character',
     content: string,

@@ -29,7 +29,12 @@ const probedKeys = new Set<string>();
 const failedAt = new Map<string, number>();
 const inflight = new Map<string, Promise<ModelCapability | null>>();
 
-/** 把任意 Ollama 端点收敛为 base（去掉 /v1/chat/completions、/api/generate 等路径） */
+/**
+ * 把任意 Ollama 端点收敛为 base（去掉 /v1/chat/completions、/api/generate 等路径）
+ *
+ * @param endpoint - 接口地址
+  * @returns 文本结果 或 null
+ */
 export function normalizeOllamaBaseUrl(endpoint: string): string | null {
     if (!endpoint) return null;
     try {
@@ -55,6 +60,8 @@ function buildCapability(contextLength: number): ModelCapability | null {
  * 从 `/api/show` 响应解析上下文长度。
  * 优先 `model_info[<arch>.context_length]`，其次 `general.context_length`，
  * 最后回退 `parameters` 里的 `num_ctx`。
+ * @param payload - 载荷
+  * @returns 数值结果 或 null
  */
 export function parseOllamaShowContextLength(payload: unknown): number | null {
     const data = payload as {
@@ -92,6 +99,10 @@ export function parseOllamaShowContextLength(payload: unknown): number | null {
 /**
  * 探测单个模型的能力（带缓存与并发去重）。
  * 失败会进入 5 分钟冷却，冷却期内直接返回 null，不再发起请求。
+ * @param endpoint - 接口地址
+ * @param modelId - 模型ID
+ * @param options - 配置项
+  * @returns ModelCapability 或 null
  */
 export async function probeOllamaModelCapability(
     endpoint: string,
@@ -151,6 +162,9 @@ export async function probeOllamaModelCapability(
 
 /**
  * 仅在静态表未登记时探测：已登记模型直接使用文档值，避免每次启动多一次请求。
+ * @param endpoint - 接口地址
+ * @param modelId - 模型ID
+ * @param options - 配置项
  */
 export async function ensureLocalModelCapability(
     endpoint: string,

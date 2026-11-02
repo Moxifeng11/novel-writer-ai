@@ -235,7 +235,11 @@ export class StyleVectorStore {
         }
     }
 
-    /** 因换 embedding 模型/维度被跳过的 V1 向量（文件保留） */
+    /**
+     * 因换 embedding 模型/维度被跳过的 V1 向量（文件保留）
+     *
+     * @returns 结果数组
+     */
     getModelMismatches(): StyleVectorStoreModelMismatch[] {
         return [...this.modelMismatches];
     }
@@ -329,6 +333,7 @@ export class StyleVectorStore {
      *
      * @param fingerprintId - 指纹 ID
      * @param features - 特征
+      * @returns StyleFingerprintVectors 实例
      */
     async addFingerprintVectors(
         fingerprintId: string,
@@ -348,6 +353,7 @@ export class StyleVectorStore {
      *
      * @param fingerprintId - 指纹 ID
      * @param features - 特征
+      * @returns StyleFingerprintVectors 实例
      */
     async updateFingerprintVectors(
         fingerprintId: string,

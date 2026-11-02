@@ -61,7 +61,13 @@ export interface ChapterBriefInput {
     bodyText?: string;
 }
 
-/** 读取场景块中的单行字段（兼容 `字段：值`、`**字段**：值`、`- **字段**：值`） */
+/**
+ * 读取场景块中的单行字段（兼容 `字段：值`、`**字段**：值`、`- **字段**：值`）
+ *
+ * @param block - 文本块
+ * @param keys - 键列表
+ * @returns 文本结果
+ */
 function readField(block: string, keys: string[]): string {
     for (const key of keys) {
         const m = block.match(new RegExp(`^\\s*(?:[-*]\\s*)?\\*{0,2}\\s*${key}\\s*\\*{0,2}\\s*[：:]\\s*(.+)$`, 'im'));
@@ -70,14 +76,24 @@ function readField(block: string, keys: string[]): string {
     return '';
 }
 
-/** 情绪值只保留主句，避免把整段描述塞进简报 */
+/**
+ * 情绪值只保留主句，避免把整段描述塞进简报
+ *
+ * @param value - 值
+ * @returns 文本结果
+ */
 function shortEmotion(value: string): string {
     if (!value) return '';
     const head = value.split(/[—-]/)[0].trim();
     return (head || value.trim()).slice(0, 40);
 }
 
-/** 解析 Scene 展开（8 要素 + 预估字数） */
+/**
+ * 解析 Scene 展开（8 要素 + 预估字数）
+ *
+ * @param sceneExpansion - 场景扩写
+ * @returns 结果数组
+ */
 function parseBriefScenes(sceneExpansion: string): BriefScene[] {
     const scenes: BriefScene[] = [];
     for (const { heading, body } of splitSceneSections(sceneExpansion)) {
@@ -107,7 +123,12 @@ function parseBriefScenes(sceneExpansion: string): BriefScene[] {
     return scenes;
 }
 
-/** 把情绪规划合并进场景（按场景序号对齐；缺失字段不覆盖已有值） */
+/**
+ * 把情绪规划合并进场景（按场景序号对齐；缺失字段不覆盖已有值）
+ *
+ * @param scenes - 场景列表
+ * @param emotionPlan - 情绪规划
+ */
 function mergeEmotionPlan(scenes: BriefScene[], emotionPlan: string): void {
     if (!emotionPlan || scenes.length === 0) return;
     const byIndex = new Map<number, BriefScene>();
@@ -125,7 +146,12 @@ function mergeEmotionPlan(scenes: BriefScene[], emotionPlan: string): void {
     }
 }
 
-/** 提取信息规划中的「信息释放计划」，缺失时退回正文前 800 字 */
+/**
+ * 提取信息规划中的「信息释放计划」，缺失时退回正文前 800 字
+ *
+ * @param infoPlan - 信息计划
+ * @returns 文本结果
+ */
 function extractInfoRelease(infoPlan: string): string {
     if (!infoPlan) return '';
     const start = infoPlan.search(/^##\s*(?:信息释放计划|信息释放)/m);
@@ -141,6 +167,9 @@ function extractInfoRelease(infoPlan: string): string {
 /**
  * 根据已写字数推断当前场景。
  * 有预估字数时按累计预算定位；没有预算时按 1500 字/场 粗略推进。
+ * @param scenes - 场景列表
+ * @param writtenWords - 已写字数
+ * @returns 数值结果
  */
 export function resolveSceneIndex(scenes: BriefScene[], writtenWords: number): number {
     if (scenes.length === 0) return -1;
@@ -159,14 +188,24 @@ export function resolveSceneIndex(scenes: BriefScene[], writtenWords: number): n
     return Math.min(scenes.length - 1, Math.floor(writtenWords / 1500));
 }
 
-/** 去掉 YAML frontmatter；未闭合时原样返回，避免吞掉正文 */
+/**
+ * 去掉 YAML frontmatter；未闭合时原样返回，避免吞掉正文
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 function stripFrontmatter(text: string): string {
     if (!text) return '';
     const m = text.match(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/);
     return m ? text.slice(m[0].length).trim() : text.trim();
 }
 
-/** 构建章节写作简报（纯函数） */
+/**
+ * 构建章节写作简报（纯函数）
+ *
+ * @param input - 输入
+  * @returns ChapterBrief 实例
+ */
 export function buildChapterBrief(input: ChapterBriefInput): ChapterBrief {
     const bodyText = input.bodyText || '';
     const writtenWords = countWords(bodyText);
@@ -187,13 +226,24 @@ export function buildChapterBrief(input: ChapterBriefInput): ChapterBrief {
     };
 }
 
-/** 是否存在可用于冷启动的规划成果 */
+/**
+ * 是否存在可用于冷启动的规划成果
+ *
+ * @param brief - 简报
+ * @returns 是否成功
+ */
 export function hasUsablePlanning(brief: ChapterBrief | null): boolean {
     if (!brief) return false;
     return brief.scenes.length > 0 || brief.outlineSummary.length > 0;
 }
 
-/** 未写正文时，是否能从规划直接开始（空正文冷启动） */
+/**
+ * 未写正文时，是否能从规划直接开始（空正文冷启动）
+ *
+ * @param brief - 简报
+ * @param hasText - 是否含文本
+ * @returns 是否成功
+ */
 export function canStartFromBrief(brief: ChapterBrief | null, hasText: boolean): boolean {
     if (hasText) return true;
     return hasUsablePlanning(brief);
@@ -202,6 +252,8 @@ export function canStartFromBrief(brief: ChapterBrief | null, hasText: boolean):
 /**
  * 生成注入提示词的「本章简报」片段。
  * 当前场景完整注入（8 要素 + 情绪），其余场景只给一行方向，避免整段截断。
+ * @param brief - 简报
+ * @returns 结果数组
  */
 export function buildBriefPromptParts(brief: ChapterBrief | null): string[] {
     if (!brief || !brief.currentScene) return [];
@@ -251,6 +303,9 @@ export function buildBriefPromptParts(brief: ChapterBrief | null): string[] {
  *
  * 实体文件使用中文字段（姓名/名称、人物背景/描述、当前状态），
  * 旧实现只读 name/description/state，导致提示词里的实体总览几乎为空。
+ * @param list - 列表
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export function formatEntityBrief(
     list: unknown,

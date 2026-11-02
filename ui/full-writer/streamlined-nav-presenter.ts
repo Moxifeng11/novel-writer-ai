@@ -54,7 +54,12 @@ const PHASE_DEFINITIONS: PhaseDefinition[] = [
     { key: 'settlement', label: '章节结算', icon: '💾', colorClass: null, stepKeys: ['settlement'] },
 ];
 
-/** 步骤 0 / 10 在 ALL_FULL_STEPS 中 key 为空，导航层使用合成 key */
+/**
+ * 步骤 0 / 10 在 ALL_FULL_STEPS 中 key 为空，导航层使用合成 key
+ *
+ * @param step - 步骤
+ * @returns 文本结果
+ */
 function navStepKey(step: FullStep): string {
     if (step.index === 0) return 'context';
     if (step.index === 10) return 'settlement';

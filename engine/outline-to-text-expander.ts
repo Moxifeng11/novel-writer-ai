@@ -113,6 +113,9 @@ const STRATEGY_DESCRIPTIONS: Record<ExpansionStrategy, string> = {
  * - separator === '\n\n'：空行分段，段内保留软换行
  *
  * 与 prompt 里的 ${bodyFormat} 使用同一契约，避免「提示要一句一段、解析只认空行」。
+ * @param content - 内容
+ * @param separator - 分隔符
+ * @returns 结果数组
  */
 export function splitParagraphsByContract(content: string, separator: BodySeparator): ParagraphOutline[] {
     const lines = (content || '').replace(/\r\n?/g, '\n').split('\n');

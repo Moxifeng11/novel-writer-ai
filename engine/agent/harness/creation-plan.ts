@@ -23,7 +23,12 @@ export interface PlanStep {
  */
 export const PLAN_STEP_STATUSES: PlanStepStatus[] = ['pending', 'in_progress', 'done'];
 
-/** 校验并规整模型提交的步骤数组；非法条目剔除，最多保留 8 步 */
+/**
+ * 校验并规整模型提交的步骤数组；非法条目剔除，最多保留 8 步
+ *
+ * @param raw - 原始
+  * @returns 结果数组 或 null
+ */
 export function parsePlanSteps(raw: unknown): PlanStep[] | null {
     if (!Array.isArray(raw)) return null;
     const steps: PlanStep[] = [];
@@ -42,14 +47,24 @@ export function parsePlanSteps(raw: unknown): PlanStep[] | null {
     return steps.length > 0 ? steps : null;
 }
 
-/** 渲染给模型看的计划文本（系统提示词「创作计划」段） */
+/**
+ * 渲染给模型看的计划文本（系统提示词「创作计划」段）
+ *
+ * @param steps - 步骤列表
+ * @returns 文本结果
+ */
 export function formatPlanForPrompt(steps: PlanStep[]): string {
     if (steps.length === 0) return '（尚未建立创作计划）';
     const marks: Record<PlanStepStatus, string> = { done: '[已完成]', in_progress: '[进行中]', pending: '[ ]' };
     return steps.map((step, index) => `${index + 1}. ${marks[step.status]} ${step.step}`).join('\n');
 }
 
-/** 渲染给 UI 的单行摘要（工具调用行用） */
+/**
+ * 渲染给 UI 的单行摘要（工具调用行用）
+ *
+ * @param steps - 步骤列表
+ * @returns 文本结果
+ */
 export function summarizePlanUpdate(steps: PlanStep[]): string {
     const done = steps.filter(step => step.status === 'done').length;
     const inProgress = steps.find(step => step.status === 'in_progress');

@@ -51,6 +51,8 @@ export interface PromptTemplate {
 /**
  * 根据步骤 key 获取对应的提示词模板
  * 使用函数导出以避免 esbuild tree-shaking 掉模板字符串
+ * @param key - 键
+  * @returns PromptTemplate 或 null
  */
 export function getStepTemplate(key: string): PromptTemplate | null {
     const map: Record<string, PromptTemplate> = {
@@ -97,6 +99,9 @@ export function getStepTemplate(key: string): PromptTemplate | null {
  * V2: 获取步骤模板——支持使用 V2 prompt 替换 V1
  * 只有「主角真实 9 字段灵魂层」存在时才启用 V2；
  * 旧口径只看 characterCores 长度，多个「（灵魂层未配置）」也能超过 100 字而误开 V2。
+ * @param key - 键
+ * @param vars - 变量表
+  * @returns PromptTemplate 或 null
  */
 export function getStepTemplateAuto(key: string, vars?: Record<string, string>): PromptTemplate | null {
     let template: PromptTemplate | null = null;
@@ -139,6 +144,9 @@ ${modeBlock}`,
 
 /**
  * 替换模板变量
+ * @param template - 模板
+ * @param vars - 变量表
+ * @returns 文本结果
  */
 export function fillTemplate(template: string, vars: Record<string, string>): string {
     let result = template;

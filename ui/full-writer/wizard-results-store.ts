@@ -14,6 +14,7 @@ const log = createLogger('WizardResultsStore');
  * - A 的结果重启后读不回来（读取用的是 global key）。
  *
  * @param getProject 返回当前项目名的惰性取值器。
+ * @returns 映射结果
  */
 export function createPersistentWizardResults(
     getProject: () => string

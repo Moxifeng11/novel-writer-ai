@@ -122,6 +122,11 @@ export class ChapterVersionService {
 
     /**
      * 获取版本索引
+     * @param project - 项目（路径或对象）
+     * @param contentType - 内容类型
+     * @param contentKey - 内容键
+     * @param sourcePath - 源路径
+      * @returns VersionIndex 实例
      */
     async getVersionIndex(
         project: string,
@@ -161,6 +166,11 @@ export class ChapterVersionService {
 
     /**
      * 获取版本列表（按版本号倒序）
+     * @param project - 项目（路径或对象）
+     * @param contentType - 内容类型
+     * @param contentKey - 内容键
+     * @param sourcePath - 源路径
+     * @returns 结果数组
      */
     async getVersions(
         project: string,
@@ -174,6 +184,8 @@ export class ChapterVersionService {
 
     /**
      * 获取指定版本的内容
+     * @param version - 版本
+     * @returns 文本结果
      */
     async getVersionContent(version: VersionMeta): Promise<string> {
         return await this.readFile(version.versionPath);
@@ -181,6 +193,11 @@ export class ChapterVersionService {
 
     /**
      * 获取最新版本
+     * @param project - 项目（路径或对象）
+     * @param contentType - 内容类型
+     * @param contentKey - 内容键
+     * @param sourcePath - 源路径
+      * @returns VersionMeta 或 null
      */
     async getLatestVersion(
         project: string,
@@ -215,6 +232,9 @@ export class ChapterVersionService {
 
     /**
      * 对比版本与当前内容
+     * @param version - 版本
+     * @param currentContent - 当前内容
+      * @returns DiffStats }> 实例
      */
     async compareVersionWithCurrent(
         version: VersionMeta,
@@ -228,6 +248,9 @@ export class ChapterVersionService {
 
     /**
      * 字符级 diff 对比
+     * @param oldText - 旧文本
+     * @param newText - 新文本
+      * @returns ReturnType<typeof charDiff> 实例
      */
     async compareChars(oldText: string, newText: string): Promise<ReturnType<typeof charDiff>> {
         return charDiff(oldText, newText);
@@ -301,6 +324,7 @@ export class ChapterVersionService {
      * @param targetVersion 目标版本
      * @param currentContent 当前内容
      * @param lineIndices 要回滚的行号（当前内容中的行号，从 0 开始）
+      * @returns Promise< 实例
      */
     async partialRollback(
         targetVersion: VersionMeta,
@@ -377,6 +401,8 @@ export class ChapterVersionService {
 
     /**
      * 获取回滚历史记录
+     * @param project - 项目（路径或对象）
+     * @returns 结果数组
      */
     async getRollbackHistory(project: string): Promise<RollbackRecord[]> {
         const historyPath = pjRollbackHistoryFile(project);
@@ -397,6 +423,7 @@ export class ChapterVersionService {
 
     /**
      * 添加回滚记录
+     * @param record - 记录
      */
     async addRollbackRecord(record: RollbackRecord): Promise<void> {
         const history = await this.getRollbackHistory(record.project);
@@ -411,6 +438,12 @@ export class ChapterVersionService {
 
     /**
      * 更新版本标签
+     * @param project - 项目（路径或对象）
+     * @param contentType - 内容类型
+     * @param contentKey - 内容键
+     * @param versionId - 版本ID
+     * @param tags - 标签列表
+     * @returns 是否成功
      */
     async updateVersionTags(
         project: string,
@@ -430,6 +463,12 @@ export class ChapterVersionService {
 
     /**
      * 更新版本备注
+     * @param project - 项目（路径或对象）
+     * @param contentType - 内容类型
+     * @param contentKey - 内容键
+     * @param versionId - 版本ID
+     * @param note - 笔记
+     * @returns 是否成功
      */
     async updateVersionNote(
         project: string,
@@ -449,6 +488,11 @@ export class ChapterVersionService {
 
     /**
      * 删除指定版本
+     * @param project - 项目（路径或对象）
+     * @param contentType - 内容类型
+     * @param contentKey - 内容键
+     * @param versionId - 版本ID
+     * @returns 是否成功
      */
     async deleteVersion(
         project: string,

@@ -27,12 +27,20 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 /** 全局日志级别（模块级单例） */
 let globalLogLevel: LogLevel = 'warn';
 
-/** 设置全局日志级别 */
+/**
+ * 设置全局日志级别
+ *
+ * @param level - 层级或档位
+ */
 export function setGlobalLogLevel(level: LogLevel): void {
     globalLogLevel = level;
 }
 
-/** 获取当前全局日志级别 */
+/**
+ * 获取当前全局日志级别
+ *
+  * @returns LogLevel 实例
+ */
 export function getGlobalLogLevel(): LogLevel {
     return globalLogLevel;
 }
@@ -46,7 +54,12 @@ export interface Logger {
     warn(...args: unknown[]): void;
     /** 错误（除 silent 外均输出） */
     error(...args: unknown[]): void;
-    /** 带前缀的子作用域 */
+    /**
+     * 带前缀的子作用域
+     *
+     * @param scope - 作用域
+      * @returns Logger 实例
+     */
     child(scope: string): Logger;
 }
 
@@ -54,6 +67,7 @@ export interface Logger {
  * 创建模块级 Logger
  * @param scope 模块名称，会作为 [scope] 前缀输出
  * @param level 可选的模块级日志覆盖（不设则跟随全局）
+  * @returns Logger 实例
  */
 export function createLogger(scope: string, level?: LogLevel): Logger {
     const prefix = `[${scope}]`;

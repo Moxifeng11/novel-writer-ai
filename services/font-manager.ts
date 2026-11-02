@@ -46,7 +46,12 @@ export interface CustomFontEntry {
 
 const registeredFonts = new Map<string, FontFace>();
 
-/** 是否受支持的字体文件 */
+/**
+ * 是否受支持的字体文件
+ *
+ * @param name - 名称
+ * @returns 是否成功
+ */
 export function isSupportedFontFile(name: string): boolean {
     const ext = name.split('.').pop()?.toLowerCase() || '';
     return (FONT_EXTENSIONS as readonly string[]).includes(ext);
@@ -69,19 +74,34 @@ export function fontFileFormat(name: string): FontFileFormat | null {
     }
 }
 
-/** FontFace family 名：文件名去扩展名，剔除 CSS 非法字符 */
+/**
+ * FontFace family 名：文件名去扩展名，剔除 CSS 非法字符
+ *
+ * @param fileName - 文件名
+ * @returns 文本结果
+ */
 export function sanitizeFamily(fileName: string): string {
     const base = fileName.replace(/\.[^.]+$/, '').trim();
     const cleaned = base.replace(/["'\\]/g, '').replace(/\s+/g, ' ');
     return cleaned || '自定义字体';
 }
 
-/** 已注册（载入成功且记录在 settings）的自定义字体 family 列表 */
+/**
+ * 已注册（载入成功且记录在 settings）的自定义字体 family 列表
+ *
+ * @param plugin - 插件实例
+ * @returns 结果数组
+ */
 export function getCustomFontFamilies(plugin: NovelWriterPlugin): string[] {
     return (plugin.settings.customFonts || []).map(entry => entry.family);
 }
 
-/** 扫描字体目录中尚未登记的字体文件 */
+/**
+ * 扫描字体目录中尚未登记的字体文件
+ *
+ * @param plugin - 插件实例
+ * @returns 结果数组
+ */
 export async function scanFontFolder(plugin: NovelWriterPlugin): Promise<TFile[]> {
     const folder = plugin.app.vault.getAbstractFileByPath(FONT_DIR);
     if (!(folder && 'children' in folder)) return [];
@@ -96,7 +116,13 @@ export async function scanFontFolder(plugin: NovelWriterPlugin): Promise<TFile[]
     return files;
 }
 
-/** 注册单个字体文件（读二进制 → FontFace → document.fonts） */
+/**
+ * 注册单个字体文件（读二进制 → FontFace → document.fonts）
+ *
+ * @param plugin - 插件实例
+ * @param file - 文件
+  * @returns 文本结果 或 null
+ */
 export async function registerFont(plugin: NovelWriterPlugin, file: TFile): Promise<string | null> {
     const family = sanitizeFamily(file.name);
     if (registeredFonts.has(family)) return family;
@@ -120,7 +146,11 @@ export async function registerFont(plugin: NovelWriterPlugin, file: TFile): Prom
     }
 }
 
-/** 按 settings 清单注册全部自定义字体（插件启动时调用） */
+/**
+ * 按 settings 清单注册全部自定义字体（插件启动时调用）
+ *
+ * @param plugin - 插件实例
+ */
 export async function registerAllCustomFonts(plugin: NovelWriterPlugin): Promise<void> {
     const entries = plugin.settings.customFonts || [];
     for (const entry of entries) {
@@ -132,7 +162,12 @@ export async function registerAllCustomFonts(plugin: NovelWriterPlugin): Promise
     }
 }
 
-/** 注销单个 family（从 document.fonts 移除并清出 settings） */
+/**
+ * 注销单个 family（从 document.fonts 移除并清出 settings）
+ *
+ * @param plugin - 插件实例
+ * @param family - 家族
+ */
 export async function unregisterFont(plugin: NovelWriterPlugin, family: string): Promise<void> {
     const font = registeredFonts.get(family);
     if (font) {

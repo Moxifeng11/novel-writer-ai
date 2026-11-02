@@ -194,7 +194,13 @@ const APP_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 </Properties>
 `;
 
-/** 生成 .docx 二进制与统计信息 */
+/**
+ * 生成 .docx 二进制与统计信息
+ *
+ * @param chapters - 章节列表
+ * @param options - 配置项
+  * @returns BuiltBook 实例
+ */
 export function buildDocx(chapters: ManuscriptChapter[], options: BookBuildOptions): BuiltBook {
     const stats = summarizeManuscriptChapters(chapters);
     const date = options.metadata.date ?? new Date();

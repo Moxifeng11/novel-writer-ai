@@ -98,7 +98,12 @@ export function thinkingIntensityFromMode(mode: ThinkingMode | undefined): numbe
     return thinkingLevelSpec(thinkingLevelFromMode(mode)).percent;
 }
 
-/** 强度 → 最接近的预设等级（滑杆拖动时保持四级语义） */
+/**
+ * 强度 → 最接近的预设等级（滑杆拖动时保持四级语义）
+ *
+ * @param intensity - 强度
+  * @returns ThinkingLevel 实例
+ */
 export function nearestThinkingLevel(intensity: number): ThinkingLevel {
     const value = clampThinkingIntensity(intensity);
     return THINKING_LEVELS.reduce((best, item) =>
@@ -193,7 +198,13 @@ const PLANNING_STEPS = new Set([
     'sceneExpand',
 ]);
 
-/** 步骤 key → 任务类型。fix/finalFix 等正文修正与正文共用 pro 预算。 */
+/**
+ * 步骤 key → 任务类型。fix/finalFix 等正文修正与正文共用 pro 预算。
+ *
+ * @param stepKey - 步骤键
+ * @param modelStrategy - 模型策略
+  * @returns AiTask 实例
+ */
 export function resolveTaskForStep(stepKey: string, modelStrategy?: string): AiTask {
     if (stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') {
         return 'body';
@@ -206,7 +217,13 @@ export function resolveTaskForStep(stepKey: string, modelStrategy?: string): AiT
     return 'default';
 }
 
-/** 任务默认使用的模型。任务覆盖优先于模型策略。 */
+/**
+ * 任务默认使用的模型。任务覆盖优先于模型策略。
+ *
+ * @param settings - 设置
+ * @param task - 任务
+ * @returns 文本结果
+ */
 export function resolveTaskModel(settings: TaskModelSettings, task: AiTask): string {
     const override = settings.taskBudgets?.[task]?.model;
     if (override && override.trim()) return override.trim();
@@ -231,6 +248,9 @@ export function resolveTaskModel(settings: TaskModelSettings, task: AiTask): str
 /**
  * 按模型名找所属 provider。
  * 任务级模型可以跨供应商选择，预算/本地路由必须用该模型自己的 endpoint。
+ * @param settings - 设置
+ * @param model - 模型标识
+  * @returns TaskModelProvider 或 null
  */
 export function findTaskModelProvider(
     settings: TaskModelSettings,
@@ -248,6 +268,11 @@ export function findTaskModelProvider(
  *
  * maxInput 是「提示词预算」，不是模型窗口：默认给输出预留 15% 的估算余量，
  * 避免输入把输出空间挤到 0。后续设置页会允许显式覆盖。
+ * @param settings - 设置
+ * @param task - 任务
+ * @param resolveLimits - 解析限制函数
+ * @param endpoint - 接口地址
+  * @returns TaskModelConfig 实例
  */
 export function resolveTaskModelConfig(
     settings: TaskModelSettings,

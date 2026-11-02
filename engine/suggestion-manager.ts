@@ -30,6 +30,7 @@ export class SuggestionManager {
     /**
      * 获取待处理的建议列表
      * @param type 可选，按类型过滤
+     * @returns 结果数组
      */
     getPendingSuggestions(type?: SuggestionType): AnalysisSuggestion[] {
         return this.getAllSuggestions(type).filter(s => s.status === 'pending');
@@ -38,6 +39,7 @@ export class SuggestionManager {
     /**
      * 获取所有建议
      * @param type 可选，按类型过滤
+     * @returns 结果数组
      */
     getAllSuggestions(type?: SuggestionType): AnalysisSuggestion[] {
         const all = Array.from(this.suggestions.values());
@@ -50,6 +52,7 @@ export class SuggestionManager {
     /**
      * 根据 ID 获取单个建议
      * @param id 建议 ID
+      * @returns AnalysisSuggestion 或 undefined
      */
     getSuggestionById(id: string): AnalysisSuggestion | undefined {
         return this.suggestions.get(id);
@@ -58,6 +61,7 @@ export class SuggestionManager {
     /**
      * 按状态获取建议列表
      * @param status 建议状态
+     * @returns 结果数组
      */
     getSuggestionsByStatus(status: SuggestionStatus): AnalysisSuggestion[] {
         return Array.from(this.suggestions.values()).filter(s => s.status === status);
@@ -193,6 +197,7 @@ export class SuggestionManager {
 
     /**
      * 获取建议状态统计
+      * @returns number } 结果
      */
     getStats(): { total: number; pending: number; adopted: number; rejected: number; modified: number } {
         const stats = {
@@ -216,6 +221,7 @@ export class SuggestionManager {
 
     /**
      * 序列化为 JSON 数组
+     * @returns 结果数组
      */
     toJSON(): AnalysisSuggestion[] {
         return Array.from(this.suggestions.values());

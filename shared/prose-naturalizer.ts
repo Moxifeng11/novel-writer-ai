@@ -152,6 +152,9 @@ function shouldMerge(prev: string, next: string, opts: Required<Pick<NaturalizeO
 /**
  * 把碎片正文重排成自然段。
  * 不会修改句子内部，只调整段落边界。
+ * @param raw - 原始
+ * @param options - 配置项
+  * @returns NaturalizeResult 实例
  */
 export function naturalizeBodyText(raw: string, options: NaturalizeOptions = {}): NaturalizeResult {
     const text = normalizeNewlines(raw).trim();

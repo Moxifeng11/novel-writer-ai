@@ -390,6 +390,8 @@ export type PersistedCoWritingState = ChapterState & MetricsState & UiState;
  * 从完整状态中提取需要持久化的部分
  * - 持久化：chapter / metrics / ui
  * - 内存态：suggestion / editor
+ * @param state - 状态
+  * @returns PersistedCoWritingState 实例
  */
 export function partializeCoWritingState(
     state: CoWritingSessionState,
@@ -430,7 +432,12 @@ export function partializeCoWritingState(
     };
 }
 
-/** 判断一个字段是否属于持久化切片 */
+/**
+ * 判断一个字段是否属于持久化切片
+ *
+ * @param key - 键
+ * @returns 是否成功
+ */
 export function isPersistedField(key: string): boolean {
     const persistedKeys = [
         'currentProject',
@@ -451,7 +458,12 @@ export function isPersistedField(key: string): boolean {
     return persistedKeys.includes(key);
 }
 
-/** 判断一个字段是否属于内存态切片 */
+/**
+ * 判断一个字段是否属于内存态切片
+ *
+ * @param key - 键
+ * @returns 是否成功
+ */
 export function isMemoryOnlyField(key: string): boolean {
     const memoryKeys = [
         'suggestions',
@@ -498,6 +510,10 @@ const log = createLogger('SessionState');
 /**
  * 异步加载章节
  * 调用 Repository 加载章节内容并更新状态
+ * @param project - 项目（路径或对象）
+ * @param volume - 卷
+ * @param chapter - 章节
+ * @param deps - 依赖
  */
 export function fetchChapterThunk(
     project: string,
@@ -533,6 +549,9 @@ export function fetchChapterThunk(
 /**
  * 异步生成建议
  * 调用 CoWriterEngine 生成建议并更新状态
+ * @param context - 上下文
+ * @param direction - 方向
+ * @param deps - 依赖
  */
 export function generateSuggestionsThunk(
     context: unknown,
@@ -578,6 +597,8 @@ export function generateSuggestionsThunk(
 /**
  * 异步应用建议
  * 写回文件 + 更新状态
+ * @param suggestionId - 建议ID
+ * @param deps - 依赖
  */
 export function applySuggestionThunk(
     suggestionId: string,
@@ -629,6 +650,7 @@ export function applySuggestionThunk(
 
 /**
  * 创建绑定了依赖的 thunk action creators
+ * @param deps - 依赖
  */
 export function createThunkActions(deps: ThunkDependencies) {
     return {

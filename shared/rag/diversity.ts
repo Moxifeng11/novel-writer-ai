@@ -8,7 +8,12 @@
  */
 import type { RagHit } from './neighbors';
 
-/** 字符 2-gram 集合（跳过空白） */
+/**
+ * 字符 2-gram 集合（跳过空白）
+ *
+ * @param text - 文本内容
+ * @returns 集合结果
+ */
 export function bigrams(text: string): Set<string> {
     const normalized = String(text || '').replace(/\s+/g, '');
     const set = new Set<string>();
@@ -18,7 +23,13 @@ export function bigrams(text: string): Set<string> {
     return set;
 }
 
-/** Jaccard 相似度（0–1） */
+/**
+ * Jaccard 相似度（0–1）
+ *
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 数值结果
+ */
 export function bigramSimilarity(a: string, b: string): number {
     const setA = bigrams(a);
     const setB = bigrams(b);
@@ -43,6 +54,10 @@ export interface MmrOptions {
  * MMR 选择至多 k 条。
  * 第一条永远取分数最高的；之后每轮在「剩余」里选 MMR 最大者。
  * 与已选项相似度 ≥ duplicateThreshold 的直接丢弃（避免近乎重复）。
+ * @param hits - 命中
+ * @param k - 键或索引
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function mmrSelect(hits: RagHit[], k: number, options: MmrOptions = {}): RagHit[] {
     const lambda = options.lambda ?? 0.7;

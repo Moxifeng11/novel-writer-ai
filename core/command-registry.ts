@@ -185,7 +185,11 @@ export interface CommandRegistryDeps {
     ui?: CommandUiPort;
     /** 插件实例引用（实体 Modal 需要 access settings 和回调槽） */
     plugin: import('../main').default;
-    /** 获取当前活动项目名 */
+    /**
+     * 获取当前活动项目名
+     *
+      * @returns 文本结果 或 null
+     */
     getActiveProject(): string | null;
     /** 打开提供商切换弹窗 */
     openProviderSwitcher(): void;
@@ -193,7 +197,11 @@ export interface CommandRegistryDeps {
     refreshFullWriterContextPanel(): void;
     /** 执行 populateSettingLib */
     populateSettingLib(): Promise<void>;
-    /** 是否为工作台上下文 */
+    /**
+     * 是否为工作台上下文
+     *
+     * @returns 是否成功
+     */
     isWorkbenchContext(): boolean;
 }
 
@@ -211,37 +219,68 @@ export class CommandRegistry {
 
     // ─── 命令查询方法 ───
 
-    /** 获取所有命令定义列表 */
+    /**
+     * 获取所有命令定义列表
+     *
+     * @returns 结果数组
+     */
     getAllCommands(): CommandDefinition[] {
         return [...COMMAND_DEFINITIONS];
     }
 
-    /** 根据 ID 查找命令定义 */
+    /**
+     * 根据 ID 查找命令定义
+     *
+     * @param id - 标识
+      * @returns CommandDefinition 或 undefined
+     */
     findCommand(id: string): CommandDefinition | undefined {
         return COMMAND_DEFINITIONS.find(cmd => cmd.id === id);
     }
 
-    /** 根据分组获取命令列表 */
+    /**
+     * 根据分组获取命令列表
+     *
+     * @param group - 分组
+     * @returns 结果数组
+     */
     getCommandsByGroup(group: CommandGroup): CommandDefinition[] {
         return COMMAND_DEFINITIONS.filter(cmd => cmd.group === group);
     }
 
-    /** 获取所有公开命令（排除内部调试命令） */
+    /**
+     * 获取所有公开命令（排除内部调试命令）
+     *
+     * @returns 结果数组
+     */
     getPublicCommands(): CommandDefinition[] {
         return COMMAND_DEFINITIONS.filter(cmd => !cmd.internalOnly);
     }
 
-    /** 获取所有内部命令 */
+    /**
+     * 获取所有内部命令
+     *
+     * @returns 结果数组
+     */
     getInternalCommands(): CommandDefinition[] {
         return COMMAND_DEFINITIONS.filter(cmd => cmd.internalOnly);
     }
 
-    /** 检查命令是否存在 */
+    /**
+     * 检查命令是否存在
+     *
+     * @param id - 标识
+     * @returns 是否成功
+     */
     hasCommand(id: string): boolean {
         return COMMAND_DEFINITIONS.some(cmd => cmd.id === id);
     }
 
-    /** 获取命令总数统计 */
+    /**
+     * 获取命令总数统计
+     *
+      * @returns number } 结果
+     */
     getCommandCount(): { total: number; public: number; internal: number } {
         const total = COMMAND_DEFINITIONS.length;
         const internal = COMMAND_DEFINITIONS.filter(cmd => cmd.internalOnly).length;
@@ -366,7 +405,11 @@ export class CommandRegistry {
         r.register(CommandIds.SAVE_VERSION, async () => { await this.saveCurrentVersion(); });
     }
 
-    /** 注册 Obsidian 命令面板命令 */
+    /**
+     * 注册 Obsidian 命令面板命令
+     *
+     * @param addCommand - 注册命令函数
+     */
     registerObsidianCommands(addCommand: (cmd: {
         id: string;
         name: string;
@@ -602,6 +645,8 @@ export class CommandRegistry {
  * 项目 ID 也不再用「第一段」猜（v4 结构下第一段是「长篇小说」）。
  *
  * 保留此导出是为了 command-registry 的既有调用点与 public API。
+ * @param path - 路径
+  * @returns string } 结果 或 null
  */
 export function parseChapterFromPath(path: string): { project: string; volume: string; chapterNum: number; chapterName: string } | null {
     return parseChapterLocation(path);

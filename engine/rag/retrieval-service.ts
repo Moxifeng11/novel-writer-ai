@@ -71,7 +71,14 @@ const DEFAULT_TOP_N = 4;
 const DEFAULT_MAX_CHARS = 600;
 const DEFAULT_MIN_SCORE = 0.35;
 
-/** 把向量库结果转成统一的 RagHit（带上命中的查询标签） */
+/**
+ * 把向量库结果转成统一的 RagHit（带上命中的查询标签）
+ *
+ * @param result - 结果
+ * @param label - 标签
+ * @param weight - 权重
+  * @returns RagHit 实例
+ */
 function toRagHit(result: KnowledgeSearchResult, label: string, weight: number): RagHit {
     return {
         sample: result.sample,
@@ -85,7 +92,11 @@ function toRagHit(result: KnowledgeSearchResult, label: string, weight: number):
     };
 }
 
-/** 合并多查询结果：key 用 book|dimension|position|sample 前缀，保留最高分并合并标签 */
+/**
+ * 合并多查询结果：key 用 book|dimension|position|sample 前缀，保留最高分并合并标签
+ *
+ * @param groups - 分组列表
+ */
 export function mergeQueryResults(groups: Array<{ label: string; weight: number; results: KnowledgeSearchResult[] }>): {
     hits: RagHit[];
     deduped: number;
@@ -115,6 +126,9 @@ export function mergeQueryResults(groups: Array<{ label: string; weight: number;
 /**
  * 执行检索。任何异常都被收敛成 `{ hits: [], error }`，
  * 由调用方写进注入账本（旧实现直接 `catch { return '' }`，失败完全不可见）。
+ * @param store - 存储
+ * @param options - 配置项
+  * @returns RetrievalResult 实例
  */
 export async function retrieve(
     store: KnowledgeVectorStore | null | undefined,
@@ -228,7 +242,13 @@ export async function retrieve(
     }
 }
 
-/** 把命中渲染成注入块（统一 citation 格式） */
+/**
+ * 把命中渲染成注入块（统一 citation 格式）
+ *
+ * @param hits - 命中
+ * @param options - 配置项
+ * @returns 文本结果
+ */
 export function formatRetrievalHits(
     hits: RagHit[],
     options: { perItemChars?: number; header?: string; showCitation?: boolean } = {},

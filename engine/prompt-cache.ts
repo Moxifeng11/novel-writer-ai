@@ -21,7 +21,12 @@ export class PromptCache {
 
     constructor(private readonly maxEntries: number = 64) {}
 
-    /** 命中返回响应；未命中返回 null */
+    /**
+     * 命中返回响应；未命中返回 null
+     *
+     * @param hash - 哈希值
+      * @returns APIResponse 或 null
+     */
     get(hash: string): APIResponse | null {
         const entry = this.entries.get(hash);
         if (!entry) return null;
@@ -31,7 +36,13 @@ export class PromptCache {
         return entry.response;
     }
 
-    /** 写入；超过 maxEntries 时淘汰最旧（Map 首个 key） */
+    /**
+     * 写入；超过 maxEntries 时淘汰最旧（Map 首个 key）
+     *
+     * @param hash - 哈希值
+     * @param response - 响应
+     * @param model - 模型标识
+     */
     set(hash: string, response: APIResponse, model: string = ''): void {
         if (this.entries.has(hash)) this.entries.delete(hash);
         this.entries.set(hash, { hash, response, createdAt: Date.now(), model });

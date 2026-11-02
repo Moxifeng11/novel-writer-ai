@@ -88,6 +88,13 @@ export class AnalysisReportEngine {
 
     /**
      * 执行完整分析流程
+     * @param project - 项目（路径或对象）
+     * @param chapterText - 章节文本
+     * @param chapterName - 章节名
+     * @param chapterNum - 章号
+     * @param volume - 卷
+     * @param existingReport - 已有报告
+      * @returns FullAnalysisReport 实例
      */
     async executeFullAnalysis(
         project: string,
@@ -156,7 +163,18 @@ export class AnalysisReportEngine {
      * @param characterInfos 人物信息列表
      * @returns 一致性检测结果
      */
-    /** 从步骤 9 的报告文本构建结构化结果（无 AI 调用）。 */
+    /**
+     * 从步骤 9 的报告文本构建结构化结果（无 AI 调用）。
+     *
+     * @param project - 项目（路径或对象）
+     * @param reportText - 报告文本
+     * @param chapterName - 章节名
+     * @param chapterNum - 章号
+     * @param volume - 卷
+     * @param wordCount - 词语数量
+     * @param startTime - 起始时间
+      * @returns FullAnalysisReport 实例
+     */
     analyzeFromReport(
         project: string,
         reportText: string,
@@ -326,6 +344,8 @@ export class AnalysisReportEngine {
 
     /**
      * 将分析报告的变更写入项目文件（需用户确认后调用）
+     * @param project - 项目（路径或对象）
+     * @param report - 报告
      * @returns 变更摘要 { applied: 已应用的项, pending: 需手动处理的项 }
      */
     async applyReportChanges(project: string, report: FullAnalysisReport): Promise<{ success: boolean; applied: string[]; pending: string[]; details: string }> {

@@ -7,6 +7,9 @@ import { formatFanficRulesForPrompt, formatFanficRulesLoadWarning, readFanficRul
  * 这些入口此前直接 `formatFanficRulesForPrompt(await readFanficRules(...))`：
  * 返回空串与「同人项目本应有约束」在界面上无法区分，生成的人物/势力/地点会脱离原作体系，
  * 还会成为后续 OOC 与设定矛盾检测的错误基准。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
  */
 export async function readFanficPromptBlockWithNotice(app: App, project: string): Promise<string> {
     const rules = await readFanficRules(app, project);

@@ -163,6 +163,16 @@ export class WriteChapterModal extends Modal {
      * 统一的整章生成流水线。Rev 184 起被三个旧版章节生成工具共用，
      * 保证 prompt 装配（buildChapterPrompts）、正文落盘（BodyWriter）与步骤产物完全一致。
      * @param opts.signal 中止信号：批量入口关闭弹窗时传入，已落盘章节保留
+     * @param app - Obsidian 应用实例
+     * @param plugin - 插件实例
+     * @param aiEngine - AI 引擎
+     * @param reviewAgent - 审校 Agent
+     * @param project - 项目（路径或对象）
+     * @param volName - 卷名称
+     * @param chapName - 章节名
+     * @param chapNum - 章号
+     * @param chapDir - 章节目录
+     * @param showStepProgress - 是否显示步骤进度
      */
     public static async doWriteChapter(
         app: App, plugin: NovelWriterPlugin, aiEngine: AIEngine, reviewAgent: ReviewAgent,

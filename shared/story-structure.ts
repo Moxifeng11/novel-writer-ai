@@ -442,7 +442,12 @@ export interface RandomStoryOptions {
     random?: RandomSource;
 }
 
-/** CSPRNG 随机组合：先选结构，再在通过校验的候选池中逐项抽样。 */
+/**
+ * CSPRNG 随机组合：先选结构，再在通过校验的候选池中逐项抽样。
+ *
+ * @param options - 配置项
+  * @returns LongStorySettings 实例
+ */
 export function generateRandomStorySettings(options: RandomStoryOptions = {}): LongStorySettings {
     const random = options.random || trueRandom;
     const genre = String(options.genre || '').trim();

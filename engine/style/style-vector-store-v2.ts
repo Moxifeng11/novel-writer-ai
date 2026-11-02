@@ -304,17 +304,30 @@ export class StyleVectorStoreV2 {
         return getEmbeddingFingerprint(this.embeddingProvider);
     }
 
-    /** 因换 embedding 模型被隔离、需要重建的向量 */
+    /**
+     * 因换 embedding 模型被隔离、需要重建的向量
+     *
+     * @returns 结果数组
+     */
     getModelMismatches(): StyleVectorModelMismatch[] {
         return [...this.modelMismatches];
     }
 
-    /** 指定指纹是否因模型不一致被隔离 */
+    /**
+     * 指定指纹是否因模型不一致被隔离
+     *
+     * @param fingerprintId - 指纹ID
+     * @returns 是否成功
+     */
     hasModelMismatch(fingerprintId: string): boolean {
         return this.modelMismatches.some(m => m.fingerprintId === fingerprintId);
     }
 
-    /** 触发磁盘加载后返回模型不一致的隔离报告 */
+    /**
+     * 触发磁盘加载后返回模型不一致的隔离报告
+     *
+     * @returns 结果数组
+     */
     async reportModelMismatches(): Promise<StyleVectorModelMismatch[]> {
         await this.ensureLoaded();
         return this.getModelMismatches();
@@ -414,6 +427,9 @@ export class StyleVectorStoreV2 {
 
     /**
      * 为指纹生成 V2 12 维向量
+     * @param fingerprintId - 指纹ID
+     * @param features - 特征集合
+      * @returns StyleFingerprintVectorsV2 实例
      */
     async buildV2Vectors(
         fingerprintId: string,
@@ -456,6 +472,9 @@ export class StyleVectorStoreV2 {
 
     /**
      * 添加或更新指纹 V2 向量
+     * @param fingerprintId - 指纹ID
+     * @param features - 特征集合
+      * @returns StyleFingerprintVectorsV2 实例
      */
     async addOrUpdateVectors(
         fingerprintId: string,
@@ -470,6 +489,7 @@ export class StyleVectorStoreV2 {
 
     /**
      * 删除指纹向量
+     * @param fingerprintId - 指纹ID
      */
     async deleteVectors(fingerprintId: string): Promise<void> {
         await this.ensureLoaded();
@@ -480,6 +500,8 @@ export class StyleVectorStoreV2 {
 
     /**
      * 获取向量（仅内存）
+     * @param fingerprintId - 指纹ID
+      * @returns StyleFingerprintVectorsV2 或 undefined
      */
     getVectors(fingerprintId: string): StyleFingerprintVectorsV2 | undefined {
         return this.vectors.get(fingerprintId);
@@ -487,6 +509,10 @@ export class StyleVectorStoreV2 {
 
     /**
      * 获取或构建向量（不存在时构建）
+     * @param fingerprintId - 指纹ID
+     * @param features - 特征集合
+     * @param extractedAt - 抽取时间
+      * @returns StyleFingerprintVectorsV2 或 undefined
      */
     async getOrBuildVectors(
         fingerprintId: string,
@@ -517,6 +543,8 @@ export class StyleVectorStoreV2 {
 
     /**
      * 检测 V1 向量文件是否存在
+     * @param fingerprintId - 指纹ID
+     * @returns 是否成功
      */
     async hasV1Vectors(fingerprintId: string): Promise<boolean> {
         const fs = this.getFS();
@@ -535,6 +563,9 @@ export class StyleVectorStoreV2 {
      * 从 V1 向量文件迁移到 V2（缺失维度用 overallVector 近似）
      * - 迁移前会备份 V1 原始数据到 .v1.bak
      * - 若已存在 V2 向量则跳过
+     * @param fingerprintId - 指纹ID
+     * @param options - 配置项
+      * @returns StyleFingerprintVectorsV2 或 undefined
      */
     async migrateFromV1(
         fingerprintId: string,
@@ -620,6 +651,8 @@ export class StyleVectorStoreV2 {
 
     /**
      * 回滚 V2 → V1（从 .v1.bak 恢复）
+     * @param fingerprintId - 指纹ID
+     * @returns 是否成功
      */
     async rollbackToV1(fingerprintId: string): Promise<boolean> {
         await this.ensureLoaded();
@@ -655,6 +688,8 @@ export class StyleVectorStoreV2 {
 
     /**
      * 批量迁移所有 V1 指纹向量到 V2
+     * @param options - 配置项
+      * @returns Promise< 实例
      */
     async migrateAllFromV1(options?: { overwrite?: boolean }): Promise<{
         migrated: string[];
@@ -697,6 +732,9 @@ export class StyleVectorStoreV2 {
 
     /**
      * 重建指定指纹的 V2 向量（基于新 features 重新生成）
+     * @param fingerprintId - 指纹ID
+     * @param features - 特征集合
+      * @returns StyleFingerprintVectorsV2 实例
      */
     async rebuildVectors(
         fingerprintId: string,
@@ -708,6 +746,7 @@ export class StyleVectorStoreV2 {
     /**
      * 批量重建所有已加载指纹的 V2 向量
      * @param featuresProvider 提供 fingerprintId → features 的回调
+      * @returns string }[] }> 结果
      */
     async rebuildAllVectors(
         featuresProvider: (fingerprintId: string) => Promise<StyleFingerprintFeaturesV2 | undefined>
@@ -749,6 +788,11 @@ export class StyleVectorStoreV2 {
 
     /**
      * 按单维度检索：返回在该维度上与查询文本最相似的指纹
+     * @param queryText - 查询文本
+     * @param fingerprints - 指纹集合
+     * @param dimension - 维度
+     * @param options - 配置项
+     * @returns 结果数组
      */
     async searchByDimension(
         queryText: string,
@@ -812,6 +856,10 @@ export class StyleVectorStoreV2 {
 
     /**
      * 加权检索：按维度权重计算整体相似度
+     * @param queryText - 查询文本
+     * @param fingerprints - 指纹集合
+     * @param options - 配置项
+     * @returns 结果数组
      */
     async searchWeighted(
         queryText: string,
@@ -893,6 +941,10 @@ export class StyleVectorStoreV2 {
 
     /**
      * 指纹对指纹检索：基于已有指纹找相似指纹
+     * @param sourceFingerprintId - 来源指纹ID
+     * @param fingerprints - 指纹集合
+     * @param options - 配置项
+     * @returns 结果数组
      */
     async searchSimilarByFingerprint(
         sourceFingerprintId: string,
@@ -970,19 +1022,34 @@ export class StyleVectorStoreV2 {
     // 状态查询
     // ----------------------------------------------------------
 
-    /** 获取所有已加载的指纹 ID */
+    /**
+     * 获取所有已加载的指纹 ID
+     *
+     * @returns 结果数组
+     */
     listLoadedFingerprintIds(): string[] {
         return Array.from(this.vectors.keys());
     }
 
-    /** 检查指定维度是否为近似 */
+    /**
+     * 检查指定维度是否为近似
+     *
+     * @param fingerprintId - 指纹ID
+     * @param dimension - 维度
+     * @returns 是否成功
+     */
     isDimensionApproximated(fingerprintId: string, dimension: StyleDimensionKeyV2): boolean {
         const vectors = this.vectors.get(fingerprintId);
         if (!vectors) return true;
         return vectors.dimensions[dimension]?.approximated ?? true;
     }
 
-    /** 统计近似维度数量 */
+    /**
+     * 统计近似维度数量
+     *
+     * @param fingerprintId - 指纹ID
+     * @returns 数值结果
+     */
     countApproximatedDimensions(fingerprintId: string): number {
         const vectors = this.vectors.get(fingerprintId);
         if (!vectors) return STYLE_DIMENSION_KEYS_V2.length;

@@ -198,6 +198,10 @@ export class EntityContextEngine {
 
     /**
      * 智能选择与当前场景相关的实体
+     * @param entities - 实体列表
+     * @param options - 配置项
+     * @param relations - 关系
+     * @returns 结果数组
      */
     selectRelevantEntities(
         entities: AnyEntityDomainModel[],
@@ -384,6 +388,10 @@ export class EntityContextEngine {
 
     /**
      * 根据 token 预算和角色重要度智能裁剪实体信息
+     * @param scoredEntities - 打分后的实体
+     * @param options - 配置项
+     * @param relations - 关系
+      * @returns SmartEntityContextResult 实例
      */
     buildSmartContext(
         scoredEntities: ScoredEntity[],
@@ -465,6 +473,11 @@ export class EntityContextEngine {
 
     /**
      * 记录实体出场
+     * @param project - 项目（路径或对象）
+     * @param entityId - 实体ID
+     * @param entityName - 实体名称
+     * @param category - 分类
+     * @param chapterNum - 章号
      */
     recordAppearance(
         project: string,
@@ -502,6 +515,10 @@ export class EntityContextEngine {
 
     /**
      * 从章节正文中批量提取实体出场
+     * @param project - 项目（路径或对象）
+     * @param chapterNum - 章号
+     * @param chapterContent - 章节内容
+     * @param entities - 实体列表
      */
     extractAppearancesFromChapter(
         project: string,
@@ -523,6 +540,9 @@ export class EntityContextEngine {
 
     /**
      * 获取实体出场记录
+     * @param project - 项目（路径或对象）
+     * @param entityId - 实体ID
+      * @returns EntityAppearanceRecord 或 undefined
      */
     getAppearanceRecord(project: string, entityId: string): EntityAppearanceRecord | undefined {
         return this.getProjectAppearanceCache(project).get(entityId);
@@ -530,6 +550,11 @@ export class EntityContextEngine {
 
     /**
      * 获取长时间未出场的实体
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
+     * @param thresholdChapters - 阈值章数
+     * @param entities - 实体列表
+      * @returns number }> 结果
      */
     getLongAbsentEntities(
         project: string,
@@ -554,6 +579,7 @@ export class EntityContextEngine {
 
     /**
      * 清除项目出场缓存
+     * @param project - 项目（路径或对象）
      */
     clearAppearanceCache(project: string): void {
         this.appearanceCache.delete(project);
@@ -995,6 +1021,8 @@ export class EntityContextEngine {
 
     /**
      * 将智能实体上下文格式化为 AI 提示词可用的文本
+     * @param result - 结果
+     * @returns 文本结果
      */
     formatSmartContextForPrompt(result: SmartEntityContextResult): string {
         const sections: string[] = [];
@@ -1053,7 +1081,11 @@ export class EntityContextEngine {
 /** 全局单例实例 */
 let globalEntityContextEngine: EntityContextEngine | null = null;
 
-/** 获取全局实体上下文引擎 */
+/**
+ * 获取全局实体上下文引擎
+ *
+  * @returns EntityContextEngine 实例
+ */
 export function getEntityContextEngine(): EntityContextEngine {
     if (!globalEntityContextEngine) {
         globalEntityContextEngine = new EntityContextEngine();

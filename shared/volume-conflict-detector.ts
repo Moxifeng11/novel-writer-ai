@@ -82,6 +82,7 @@ export type VolumeConflictResolution =
  * @param projectPath 项目根路径（扫描 `03-大纲与章节/正文/第N卷/`，兼容旧版 `volumes/第N卷/`）
  * @param filePaths 可选：文件路径列表。若提供则基于该列表统计；
  *                  若不提供，则假设目录不存在，返回空结果。
+  * @returns VolumeScanResult 实例
  */
 export function scanExistingVolumes(
     projectPath: string,
@@ -155,6 +156,7 @@ export function scanExistingVolumes(
  * @param existingVolumes 数据层现有卷扫描结果
  * @param newConfigVolumes 新大纲配置的卷数量
  * @param newConfigChaptersPerVolume 新大纲每卷章节数配置（数组索引+1 为卷号）
+  * @returns VolumeConflictInfo 实例
  */
 export function detectVolumeConflict(
     existingVolumes: VolumeScanResult,
@@ -234,7 +236,12 @@ export function detectVolumeConflict(
 // 辅助函数
 // ============================================================
 
-/** 转义正则特殊字符 */
+/**
+ * 转义正则特殊字符
+ *
+ * @param str - 字符串
+ * @returns 文本结果
+ */
 function escapeRegex(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

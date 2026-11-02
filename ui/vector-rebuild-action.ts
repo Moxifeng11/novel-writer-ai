@@ -45,7 +45,12 @@ function notifyReport(report: VectorRebuildReport, v2?: { rebuilt: string[]; fai
     new Notice(`⚠️ 重向量化完成：${summary}${v2Summary}\n失败：${preview}${failed.length > 3 ? ' …' : ''}${v2Preview}`, 12000);
 }
 
-/** 重算知识库与指纹的全部向量：带确认弹窗与结果汇总 */
+/**
+ * 重算知识库与指纹的全部向量：带确认弹窗与结果汇总
+ *
+ * @param app - Obsidian 应用实例
+ * @param plugin - 插件实例
+ */
 export async function rebuildAllVectorsWithConfirm(app: App, plugin: unknown): Promise<void> {
     const p = plugin as any;
     const manager = p?.knowledgeBaseManager;

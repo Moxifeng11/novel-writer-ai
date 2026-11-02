@@ -36,7 +36,11 @@ export const BUILTIN_RULES_VERSION = WRITING_RULES_BUILTIN_VERSION;
 /** 目录约定：vault 根与项目内都可能有 `00-系统模板/写作规则*.md` */
 const RULES_TEMPLATE_DIRS = ['元文件/00-系统模板', '00-系统模板'];
 
-/** 内置版本：3.6.0 默认 + legacy 对照 + 三个「不同思路」实验版（3.7/3.8/3.9） */
+/**
+ * 内置版本：3.6.0 默认 + legacy 对照 + 三个「不同思路」实验版（3.7/3.8/3.9）
+ *
+ * @returns 结果数组
+ */
 export function builtinRulesDocs(): VersionedDoc[] {
     const docs: VersionedDoc[] = [
         {
@@ -97,7 +101,14 @@ async function readDoc(app: App, path: string, source: 'vault' | 'project'): Pro
     }
 }
 
-/** 扫描某个目录下所有 `写作规则*.md`（含 `写作规则.md` 本身） */
+/**
+ * 扫描某个目录下所有 `写作规则*.md`（含 `写作规则.md` 本身）
+ *
+ * @param app - Obsidian 应用实例
+ * @param folder - 文件夹
+ * @param source - 来源
+ * @returns 结果数组
+ */
 async function scanRuleFiles(app: App, folder: string, source: 'vault' | 'project'): Promise<VersionedDoc[]> {
     try {
         const listed = await app.vault.adapter.list(folder);
@@ -118,6 +129,9 @@ async function scanRuleFiles(app: App, folder: string, source: 'vault' | 'projec
  * 列出全部可用规则版本并解析生效版本。
  * @param activeVersion 设置里的选择（id 或版本号，空 = 按 project/vault/builtin 优先级）
  * @param project 当前项目（可选；有则同时扫描项目内规则文件）
+ * @param app - Obsidian 应用实例
+ * @param options - 配置项
+  * @returns RulesVersionListing 实例
  */
 export async function listRulesVersions(
     app: App,
@@ -164,7 +178,13 @@ export async function listRulesVersions(
     return { docs: unique, active, drift };
 }
 
-/** 取当前生效规则的纯文本（找不到时回退内置新版） */
+/**
+ * 取当前生效规则的纯文本（找不到时回退内置新版）
+ *
+ * @param app - Obsidian 应用实例
+ * @param options - 配置项
+  * @returns string[] }> 结果
+ */
 export async function resolveActiveRulesText(
     app: App,
     options: { activeVersion?: string; project?: string } = {},

@@ -92,6 +92,8 @@ export class FingerprintExtractor {
      * 提取 V2 定量拆解数据（纯本地统计，不依赖 AI）。
      * 当前覆盖节奏（rhythm）与视角（perspective）两个维度，
      * 用于填补 V1→V2 迁移时定量字段全 0 的空缺。
+     * @param text - 文本内容
+      * @returns PerspectiveStats } 实例
      */
     extractV2Quantitative(text: string): { rhythm: RhythmStats; perspective: PerspectiveStats } {
         return {

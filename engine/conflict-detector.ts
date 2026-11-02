@@ -43,6 +43,7 @@ export class ConflictDetector {
      * @param snapshot 章节状态快照
      * @param body 正文内容
      * @param options 检测选项
+     * @returns 结果数组
      */
     detect(
         snapshot: ChapterStateSnapshot,

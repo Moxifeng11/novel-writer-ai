@@ -88,6 +88,9 @@ function errorMessage(error: unknown): string {
  * - 单本书 / 单个指纹失败只记录，不中断后续条目；
  * - 没有样本文本的指纹记为 skipped（重算也产生不了向量）；
  * - `listBooks` / `listFingerprints` 本身失败会向上抛出（装配问题，继续没有意义）。
+ * @param deps - 依赖
+ * @param onProgress - 进度回调
+  * @returns VectorRebuildReport 实例
  */
 export async function rebuildAllVectors(
     deps: VectorRebuildDeps,

@@ -109,7 +109,11 @@ export interface MigrationResult {
 // 默认值工厂（新增 5 维）
 // ============================================================
 
-/** 创建新增维度的 pending 默认值 */
+/**
+ * 创建新增维度的 pending 默认值
+ *
+  * @returns SentencePatternStats 实例
+ */
 function createPendingSentencePattern(): SentencePatternStats {
     return {
         inversionDensity: 0,
@@ -175,7 +179,12 @@ function createPendingDescription(): DescriptionStats {
 // V1 字段 → V2 维度构造器
 // ============================================================
 
-/** 从 V1 字符串描述创建 V2 维度（标记为 complete） */
+/**
+ * 从 V1 字符串描述创建 V2 维度（标记为 complete）
+ *
+ * @param v1Desc - 版本 1 描述
+  * @returns RhythmStats 实例
+ */
 function createRhythmFromV1(v1Desc: string): RhythmStats {
     return {
         sentenceLengthDistribution: { short: 0, medium: 0, long: 0 },
@@ -352,6 +361,8 @@ export function migrateV1ToV2(
 
 /**
  * 检测指纹数据是否需要 V1→V2 迁移
+ * @param data - 数据
+ * @returns 是否成功
  */
 export function needsV1ToV2Migration(data: unknown): boolean {
     if (!data || typeof data !== 'object') return false;
@@ -522,6 +533,8 @@ export async function rollbackV2ToV1(
 
 /**
  * 获取 V2 指纹中所有 pending 维度
+ * @param v2 - 版本 2 的值
+ * @returns 结果数组
  */
 export function getPendingDimensions(v2: V2Fingerprint): StyleDimensionKeyV2[] {
     const result: StyleDimensionKeyV2[] = [];
@@ -536,6 +549,8 @@ export function getPendingDimensions(v2: V2Fingerprint): StyleDimensionKeyV2[] {
 
 /**
  * 获取 V2 指纹中所有 complete 维度
+ * @param v2 - 版本 2 的值
+ * @returns 结果数组
  */
 export function getCompleteDimensions(v2: V2Fingerprint): StyleDimensionKeyV2[] {
     const result: StyleDimensionKeyV2[] = [];
@@ -552,6 +567,8 @@ export function getCompleteDimensions(v2: V2Fingerprint): StyleDimensionKeyV2[] 
  * 校验 V2 指纹完整性
  * - 12 维全部存在
  * - 每维有 status 字段
+ * @param v2 - 版本 2 的值
+  * @returns v2 is V2Fingerprint 结果
  */
 export function validateV2Fingerprint(v2: unknown): v2 is V2Fingerprint {
     if (!v2 || typeof v2 !== 'object') return false;
@@ -575,6 +592,7 @@ export function validateV2Fingerprint(v2: unknown): v2 is V2Fingerprint {
 
 /**
  * 统计 V2 指纹维度状态
+ * @param v2 - 版本 2 的值
  */
 export function getDimensionStatusSummary(v2: V2Fingerprint): {
     complete: number;
@@ -599,6 +617,8 @@ export function getDimensionStatusSummary(v2: V2Fingerprint): {
 
 /**
  * 查询 V1 字段对应的 V2 维度键
+ * @param v1Field - 版本 1 字段
+  * @returns StyleDimensionKeyV2 或 undefined
  */
 export function getV2DimensionForV1Field(v1Field: string): StyleDimensionKeyV2 | undefined {
     return V1_TO_V2_FIELD_MAP[v1Field];
@@ -606,6 +626,8 @@ export function getV2DimensionForV1Field(v1Field: string): StyleDimensionKeyV2 |
 
 /**
  * 判断 V2 维度是否为新增（无 V1 来源）
+ * @param v2Key - 版本 2 键
+ * @returns 是否成功
  */
 export function isV2DimensionNew(v2Key: StyleDimensionKeyV2): boolean {
     return V2_NEW_DIMENSIONS.includes(v2Key);

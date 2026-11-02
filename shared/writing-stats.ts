@@ -79,7 +79,12 @@ function pad2(value: number): string {
     return value < 10 ? `0${value}` : String(value);
 }
 
-/** 本地时区日期键 YYYY-MM-DD */
+/**
+ * 本地时区日期键 YYYY-MM-DD
+ *
+ * @param date - 日期
+ * @returns 文本结果
+ */
 export function localDayKey(date: Date | number): string {
     const d = date instanceof Date ? date : new Date(date);
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -97,7 +102,12 @@ export function startOfDay(date: Date | number): Date {
     return d;
 }
 
-/** 周一为一周起点（符合中文使用习惯，而非周日） */
+/**
+ * 周一为一周起点（符合中文使用习惯，而非周日）
+ *
+ * @param date - 日期
+  * @returns Date 实例
+ */
 export function startOfWeek(date: Date | number): Date {
     const d = startOfDay(date);
     const day = d.getDay(); // 0=周日
@@ -144,13 +154,26 @@ export function addMonths(date: Date | number, months: number): Date {
     return d;
 }
 
-/** 安全读取某天字数 */
+/**
+ * 安全读取某天字数
+ *
+ * @param days - 天数
+ * @param key - 键
+ * @returns 数值结果
+ */
 function wordsOn(days: DayMap, key: string): number {
     const value = days[key];
     return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-/** 区间求和：左闭右开 */
+/**
+ * 区间求和：左闭右开
+ *
+ * @param days - 天数
+ * @param from - 起始值
+ * @param toExclusive - 结束位置（不含）
+ * @returns 数值结果
+ */
 export function sumBetween(days: DayMap, from: Date, toExclusive: Date): number {
     let total = 0;
     const cursor = startOfDay(from);
@@ -162,7 +185,13 @@ export function sumBetween(days: DayMap, from: Date, toExclusive: Date): number 
     return total;
 }
 
-/** 连续写作天数：今天没写则从昨天开始数 */
+/**
+ * 连续写作天数：今天没写则从昨天开始数
+ *
+ * @param days - 天数
+ * @param now - 当前时间
+ * @returns 数值结果
+ */
 export function computeStreak(days: DayMap, now: Date | number = Date.now()): number {
     let cursor = startOfDay(now);
     if (wordsOn(days, localDayKey(cursor)) === 0) {
@@ -192,7 +221,13 @@ export function findBestDay(days: DayMap): DayPoint | null {
     return best;
 }
 
-/** 最近 7 天（含今天），补零保证图表连续 */
+/**
+ * 最近 7 天（含今天），补零保证图表连续
+ *
+ * @param days - 天数
+ * @param now - 当前时间
+ * @returns 结果数组
+ */
 export function dailySeries(days: DayMap, now: Date | number = Date.now(), count = 7): DayPoint[] {
     const points: DayPoint[] = [];
     const today = startOfDay(now);
@@ -203,7 +238,13 @@ export function dailySeries(days: DayMap, now: Date | number = Date.now(), count
     return points;
 }
 
-/** 最近 N 周（周一为一周起点），label 形如 10-27 */
+/**
+ * 最近 N 周（周一为一周起点），label 形如 10-27
+ *
+ * @param days - 天数
+ * @param now - 当前时间
+ * @returns 结果数组
+ */
 export function weeklySeries(days: DayMap, now: Date | number = Date.now(), count = 8): DayPoint[] {
     const points: DayPoint[] = [];
     const thisWeek = startOfWeek(now);
@@ -216,7 +257,13 @@ export function weeklySeries(days: DayMap, now: Date | number = Date.now(), coun
     return points;
 }
 
-/** 最近 N 个月（自然月），date 为月初 */
+/**
+ * 最近 N 个月（自然月），date 为月初
+ *
+ * @param days - 天数
+ * @param now - 当前时间
+ * @returns 结果数组
+ */
 export function monthlySeries(days: DayMap, now: Date | number = Date.now(), count = 6): DayPoint[] {
     const points: DayPoint[] = [];
     const thisMonth = startOfMonth(now);
@@ -286,6 +333,13 @@ export function buildReport(data: WritingStatsData, now: Date | number = Date.no
  * - 首次见到的文件：整份字数归到其 mtime 当天（视为「那天写的」）
  * - 字数增长：差值归到 mtime 当天
  * - 字数减少/不变：不动台账，只更新快照
+ * @param data - 数据
+ * @param filePath - 文件路径
+ * @param project - 项目（路径或对象）
+ * @param count - 数量
+ * @param mtime - 修改时间
+ * @param now - 当前时间
+  * @returns string } 结果
  */
 export function recordFileWords(
     data: WritingStatsData,
@@ -312,7 +366,13 @@ export function recordFileWords(
     return { delta, day };
 }
 
-/** 清理已删除文件的快照，避免 files 无限增长 */
+/**
+ * 清理已删除文件的快照，避免 files 无限增长
+ *
+ * @param data - 数据
+ * @param existingPaths - 已有路径
+ * @returns 数值结果
+ */
 export function pruneMissingFiles(data: WritingStatsData, existingPaths: ReadonlySet<string>): number {
     let removed = 0;
     for (const path of Object.keys(data.files)) {
@@ -324,7 +384,12 @@ export function pruneMissingFiles(data: WritingStatsData, existingPaths: Readonl
     return removed;
 }
 
-/** 1,234 / 1.2万 / 12.3万，用于状态栏与宠物冒泡 */
+/**
+ * 1,234 / 1.2万 / 12.3万，用于状态栏与宠物冒泡
+ *
+ * @param value - 值
+ * @returns 文本结果
+ */
 export function formatWords(value: number): string {
     const n = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
     if (n < 10000) return n.toLocaleString('zh-CN');
@@ -332,7 +397,12 @@ export function formatWords(value: number): string {
     return `${wan >= 100 ? Math.round(wan) : wan.toFixed(1).replace(/\.0$/, '')}万`;
 }
 
-/** 解析台账，容忍损坏/旧结构 */
+/**
+ * 解析台账，容忍损坏/旧结构
+ *
+ * @param raw - 原始
+  * @returns WritingStatsData 实例
+ */
 export function normalizeWritingStats(raw: unknown): WritingStatsData {
     const empty = createEmptyWritingStats();
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return empty;

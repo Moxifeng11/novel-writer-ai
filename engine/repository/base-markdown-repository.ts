@@ -114,6 +114,8 @@ export abstract class BaseMarkdownRepository<T, TId = string>
     /**
      * 根据 ID 查找实体
      * 优先从 L1 缓存读取，其次 L2 多层缓存，最后读取文件
+     * @param id - 标识
+      * @returns T 或 null
      */
     async findById(id: TId): Promise<T | null> {
         const filePath = this.filePathFromId(id);
@@ -158,6 +160,7 @@ export abstract class BaseMarkdownRepository<T, TId = string>
      * 扫描目录下所有 .md 文件并转换为实体
      *
      * 注意：子类可以覆盖此方法以提供更高效的目录扫描实现
+     * @returns 结果数组
      */
     async findAll(): Promise<T[]> {
         const basePath = this.getBasePath();
@@ -178,6 +181,8 @@ export abstract class BaseMarkdownRepository<T, TId = string>
     /**
      * 保存实体（新增或更新）
      * 保存后更新缓存
+     * @param entity - 实体
+      * @returns T 实例
      */
     async save(entity: T): Promise<T> {
         const id = this.idFromEntity(entity);
@@ -201,6 +206,8 @@ export abstract class BaseMarkdownRepository<T, TId = string>
     /**
      * 根据 ID 删除实体
      * 删除后同时清除缓存
+     * @param id - 标识
+     * @returns 是否成功
      */
     async delete(id: TId): Promise<boolean> {
         const filePath = this.filePathFromId(id);
@@ -228,6 +235,8 @@ export abstract class BaseMarkdownRepository<T, TId = string>
     /**
      * 检查实体是否存在
      * 优先检查缓存，再检查文件系统
+     * @param id - 标识
+     * @returns 是否成功
      */
     async exists(id: TId): Promise<boolean> {
         const filePath = this.filePathFromId(id);
@@ -246,6 +255,8 @@ export abstract class BaseMarkdownRepository<T, TId = string>
     /**
      * 批量保存实体
      * 按顺序逐个执行，失败记录错误，不中断后续操作
+     * @param entities - 实体列表
+      * @returns BulkResult<T> 实例
      */
     async saveAll(entities: T[]): Promise<BulkResult<T>> {
         const success: T[] = [];
@@ -276,6 +287,8 @@ export abstract class BaseMarkdownRepository<T, TId = string>
     /**
      * 批量删除实体
      * 按顺序逐个执行，失败记录错误，不中断后续操作
+     * @param ids - 标识列表
+      * @returns BulkResult<TId> 实例
      */
     async deleteAll(ids: TId[]): Promise<BulkResult<TId>> {
         const success: TId[] = [];
@@ -314,6 +327,8 @@ export abstract class BaseMarkdownRepository<T, TId = string>
     /**
      * 批量查找实体
      * 返回所有找到的实体，未找到的不包含在结果中
+     * @param ids - 标识列表
+     * @returns 结果数组
      */
     async findAllById(ids: TId[]): Promise<T[]> {
         const results: T[] = [];
@@ -342,7 +357,11 @@ export abstract class BaseMarkdownRepository<T, TId = string>
         }
     }
 
-    /** 使指定 ID 的缓存失效 */
+    /**
+     * 使指定 ID 的缓存失效
+     *
+     * @param id - 标识
+     */
     invalidateCache(id: TId): void {
         if (this.cache) {
             const filePath = this.filePathFromId(id);
@@ -355,7 +374,11 @@ export abstract class BaseMarkdownRepository<T, TId = string>
         }
     }
 
-    /** 使指定前缀的所有缓存失效（如目录级失效） */
+    /**
+     * 使指定前缀的所有缓存失效（如目录级失效）
+     *
+     * @param prefix - 前缀
+     */
     invalidateCacheByPrefix(prefix: string): void {
         if (this.cache) {
             this.cache.deleteByPrefix(prefix);
@@ -366,7 +389,11 @@ export abstract class BaseMarkdownRepository<T, TId = string>
         }
     }
 
-    /** 清理已过期的缓存条目 */
+    /**
+     * 清理已过期的缓存条目
+     *
+     * @returns 数值结果
+     */
     pruneExpiredCache(): number {
         if (this.cache) {
             return this.cache.pruneExpired();
@@ -374,7 +401,11 @@ export abstract class BaseMarkdownRepository<T, TId = string>
         return 0;
     }
 
-    /** 当前缓存条目数 */
+    /**
+     * 当前缓存条目数
+     *
+     * @returns 数值结果
+     */
     get cacheSize(): number {
         return this.cache?.size ?? 0;
     }

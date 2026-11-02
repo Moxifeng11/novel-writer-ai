@@ -27,13 +27,29 @@ export interface SettingsServiceDeps {
     providerManager: ProviderManager;
     cacheManager: PluginCacheManager | null;
     settingsWriter: SerializedWriter;
-    /** 读取当前设置 */
+    /**
+     * 读取当前设置
+     *
+      * @returns NovelWriterSettings 实例
+     */
     getSettings(): NovelWriterSettings;
-    /** 替换设置对象（loadSettings 时） */
+    /**
+     * 替换设置对象（loadSettings 时）
+     *
+     * @param s - 字符串
+     */
     setSettings(s: NovelWriterSettings): void;
-    /** Obsidian loadData */
+    /**
+     * Obsidian loadData
+     *
+      * @returns any 结果
+     */
     loadData(): Promise<any>;
-    /** Obsidian saveData */
+    /**
+     * Obsidian saveData
+     *
+     * @param data - 数据
+     */
     saveData(data: any): Promise<void>;
 }
 
@@ -55,14 +71,22 @@ export class SettingsService {
         this.deps = deps;
     }
 
-    /** 是否已存在任何 v2 密文（决定能不能走「设定新口令」） */
+    /**
+     * 是否已存在任何 v2 密文（决定能不能走「设定新口令」）
+     *
+     * @returns 是否成功
+     */
     hasEncryptedSecrets(): boolean {
         return Object.values(this.rawSecrets).some(
             v => typeof v === 'string' && v.startsWith('aes256v2:'),
         );
     }
 
-    /** 任意一条已存在的 v2 密文（供 CryptoService 校验候选口令） */
+    /**
+     * 任意一条已存在的 v2 密文（供 CryptoService 校验候选口令）
+     *
+      * @returns 文本结果 或 null
+     */
     findExistingCiphertext(): string | null {
         for (const v of Object.values(this.rawSecrets)) {
             if (typeof v === 'string' && v.startsWith('aes256v2:')) return v;
@@ -73,6 +97,8 @@ export class SettingsService {
     /**
      * 候选口令能否解开磁盘上已有的 v2 密文（解锁前校验）。
      * 旧实现输入任意口令都提示「已解锁」，真正调用 AI 时才发现解不开。
+     * @param password - 口令
+     * @returns 是否成功
      */
     async canDecryptStoredSecret(password: string): Promise<boolean> {
         const existing = this.findExistingCiphertext();
@@ -87,7 +113,11 @@ export class SettingsService {
     /** v4.27：最近一次启动时未完成的设置迁移（null = 正常） */
     private migrationIncomplete: { fromVersion: number; toVersion: number; error?: string } | null = null;
 
-    /** 磁盘上仍处于密文状态、且本次会话未能解开的条目数（UI 用） */
+    /**
+     * 磁盘上仍处于密文状态、且本次会话未能解开的条目数（UI 用）
+     *
+     * @returns 数值结果
+     */
     lockedSecretCount(): number {
         return Object.values(this.rawSecrets).filter(
             v => typeof v === 'string' && v.startsWith('aes256v2:'),
@@ -170,7 +200,11 @@ export class SettingsService {
         }
     }
 
-    /** 最近一次启动时未完成的迁移（UI 可据此提示用户） */
+    /**
+     * 最近一次启动时未完成的迁移（UI 可据此提示用户）
+     *
+      * @returns string } 结果 或 null
+     */
     getMigrationIncomplete(): { fromVersion: number; toVersion: number; error?: string } | null {
         return this.migrationIncomplete;
     }
@@ -306,7 +340,11 @@ export function deepMergeSettings<T>(base: T, override: unknown): T {
     return result as T;
 }
 
-/** 默认设置 */
+/**
+ * 默认设置
+ *
+  * @returns NovelWriterSettings 实例
+ */
 export function getDefaultSettings(): NovelWriterSettings {
     return {
         apiKey: '',

@@ -28,7 +28,15 @@ export interface BatchChapterTarget {
     chapterName: string;
 }
 
-/** 依据起始章号与数量生成目标列表 */
+/**
+ * 依据起始章号与数量生成目标列表
+ *
+ * @param volume - 卷
+ * @param volumeNum - 卷编号
+ * @param startChapter - 起始章节
+ * @param count - 数量
+ * @returns 结果数组
+ */
 export function buildBatchTargets(
     volume: string,
     volumeNum: number,
@@ -48,6 +56,8 @@ export function buildBatchTargets(
 /**
  * 正文是否已结算（B4：统一走 shared/chapter-status）。
  * 结算写入是追加语义，批量续跑必须据 frontmatter.status 跳过整章。
+ * @param bodyText - 正文文本
+ * @returns 是否成功
  */
 export function isBodySettled(bodyText: string | undefined | null): boolean {
     return isChapterSettledText(bodyText);

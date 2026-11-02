@@ -890,6 +890,8 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
 /**
  * 获取版本摘要（用于更新提示条）
  * 返回该版本前 2-3 条主要更新内容
+ * @param version - 版本
+ * @returns 结果数组
  */
 export function getVersionSummary(version: string): string[] {
     const entry = BUILTIN_CHANGELOG.find(e => e.version === version);

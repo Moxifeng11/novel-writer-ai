@@ -70,7 +70,13 @@ const VALIDATORS: Record<EntityKind, (content: string) => ValidationResult> = {
     items: validateItemOutput,
 };
 
-/** 按实体类型校验内容完整性 */
+/**
+ * 按实体类型校验内容完整性
+ *
+ * @param kind - 种类
+ * @param content - 内容
+  * @returns ValidationResult 实例
+ */
 export function validateEntityContent(kind: EntityKind, content: string): ValidationResult {
     return VALIDATORS[kind](content);
 }
@@ -79,7 +85,14 @@ export function getEntityKindLabel(kind: EntityKind): string {
     return KIND_META[kind].label;
 }
 
-/** 缺少 frontmatter 时补齐最小可用字段，保证实体可被检索与渲染 */
+/**
+ * 缺少 frontmatter 时补齐最小可用字段，保证实体可被检索与渲染
+ *
+ * @param content - 内容
+ * @param name - 名称
+ * @param kind - 种类
+ * @returns 文本结果
+ */
 export function normalizeEntityContent(content: string, name: string, kind: EntityKind): string {
     if (content.trimStart().startsWith('---')) return content;
     const meta = KIND_META[kind];

@@ -64,6 +64,8 @@ import {
 /**
  * 判断 `writing_rules.style` 是否其实是「规则编号章」的副本。
  * 规则解析器会把 16 个编号章塞进 style；用来决定是否在「文笔风格」里再次注入。
+ * @param style - 文风
+ * @returns 是否成功
  */
 function looksLikeWritingRules(style: string): boolean {
     const text = String(style || '').trim();
@@ -559,6 +561,9 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
  * - 用同一张图重新选取世界观/设定/实体/时间线/伏笔；
  * - 覆盖既有模板变量，但保留原有变量名与格式；
  * - 额外注入 storyContextPack（关联摘要）与遥测。
+ * @param deps - 依赖
+ * @param vars - 变量表
+ * @param d - 参与比较的值
  */
 export async function applyStoryContextBus(
   deps: TemplateVarsDeps,

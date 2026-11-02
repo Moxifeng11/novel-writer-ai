@@ -60,14 +60,24 @@ export const KIND_NAMESPACE_TAG: Partial<Record<NotebookFileKind, string>> = {
 
 export const NAMESPACE_PREFIX = 'nw/';
 
-/** 旧标签 → 层级标签；未知标签返回 null（表示不需要追加） */
+/**
+ * 旧标签 → 层级标签；未知标签返回 null（表示不需要追加）
+ *
+ * @param legacyTag - 旧标签
+  * @returns 文本结果 或 null
+ */
 export function namespaceTagOf(legacyTag: string): string | null {
     const tag = String(legacyTag || '').replace(/^#/, '').trim();
     if (!tag) return null;
     return LEGACY_TO_NAMESPACE[tag] ?? null;
 }
 
-/** 是否已是层级标签 */
+/**
+ * 是否已是层级标签
+ *
+ * @param tag - 标签
+ * @returns 是否成功
+ */
 export function isNamespaceTag(tag: string): boolean {
     return String(tag || '').replace(/^#/, '').startsWith(NAMESPACE_PREFIX);
 }
@@ -77,6 +87,9 @@ export function isNamespaceTag(tag: string): boolean {
  * - 旧标签原样保留（双标签并存）；
  * - 已有同名层级标签不重复追加；
  * - 未知标签原样保留、不追加。
+ * @param existing - 已有
+ * @param legacyTags - 旧标签列表
+ * @returns 结果数组
  */
 export function withNamespaceTags(existing: unknown, legacyTags: string | string[]): string[] {
     const base = Array.isArray(existing)
@@ -103,7 +116,12 @@ export function withNamespaceTags(existing: unknown, legacyTags: string | string
     return result;
 }
 
-/** 该文件当前缺少哪些层级标签（迁移 dry-run 用） */
+/**
+ * 该文件当前缺少哪些层级标签（迁移 dry-run 用）
+ *
+ * @param existing - 已有
+ * @returns 结果数组
+ */
 export function missingNamespaceTags(existing: unknown): string[] {
     const tags = Array.isArray(existing)
         ? existing.map((tag) => String(tag).replace(/^#/, '').trim())
@@ -119,7 +137,12 @@ export function missingNamespaceTags(existing: unknown): string[] {
     return missing;
 }
 
-/** 把标签数组渲染成 YAML 内联数组（保持中文原样，含 `/` 不需要引号） */
+/**
+ * 把标签数组渲染成 YAML 内联数组（保持中文原样，含 `/` 不需要引号）
+ *
+ * @param tags - 标签列表
+ * @returns 文本结果
+ */
 export function formatTagArray(tags: string[]): string {
     return `[${tags.join(', ')}]`;
 }

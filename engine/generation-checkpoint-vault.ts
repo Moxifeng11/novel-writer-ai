@@ -51,7 +51,12 @@ export class VaultCheckpointStorage implements CheckpointStoragePort {
         }
     }
 
-    /** 列出项目断点目录下的全部断点（恢复面板数据源）；目录缺失/单文件损坏时跳过 */
+    /**
+     * 列出项目断点目录下的全部断点（恢复面板数据源）；目录缺失/单文件损坏时跳过
+     *
+     * @param projectId - 项目ID
+     * @returns 结果数组
+     */
     async list(projectId: string): Promise<GenerationCheckpoint[]> {
         try {
             const files = await this.fs.listFiles(pjCheckpointDir(projectId));

@@ -25,6 +25,7 @@ export class ChapterSnapshotBuilder {
      * @param chapterNumber 目标章节号
      * @param gathered ContextManager.gatherAll 的产物
      * @param options 章节规划选项（五字段数据源）
+      * @returns ChapterStateSnapshot 实例
      */
     buildFromContext(
         chapterNumber: number,

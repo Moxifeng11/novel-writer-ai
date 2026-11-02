@@ -193,6 +193,7 @@ export class RewriteSuggestionEngine {
    * @param context 改写上下文
    * @param handler 流式事件处理器
    * @param signal 取消信号
+    * @returns RewriteResult 实例
    */
   async generateStream(
     context: RewriteContext,

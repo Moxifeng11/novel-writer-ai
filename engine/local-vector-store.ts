@@ -133,7 +133,11 @@ export class LocalVectorStore implements VectorStore {
         return detectEmbeddingMismatch(data, current);
     }
 
-    /** 因换 embedding 模型被跳过的指纹向量（文件保留，重新提取即可按当前模型重建） */
+    /**
+     * 因换 embedding 模型被跳过的指纹向量（文件保留，重新提取即可按当前模型重建）
+     *
+     * @returns 结果数组
+     */
     getModelMismatches(): FingerprintVectorModelMismatch[] {
         return [...this.modelMismatches];
     }

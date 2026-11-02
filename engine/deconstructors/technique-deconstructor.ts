@@ -1561,6 +1561,8 @@ export class TechniqueDeconstructor {
      * 保存技法到 Markdown。
      *
      * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param baseDir - 基础目录
      */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
@@ -1586,6 +1588,9 @@ export class TechniqueDeconstructor {
      * 保存分析到 Markdown。
      *
      * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param result - 结果
+     * @param baseDir - 基础目录
      */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },

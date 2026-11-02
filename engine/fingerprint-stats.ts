@@ -20,7 +20,12 @@ function stdDev(values: number[], mean: number): number {
     return round1(Math.sqrt(variance));
 }
 
-/** 统计成对引号内的字符数；支持中日引号与中英文双引号。 */
+/**
+ * 统计成对引号内的字符数；支持中日引号与中英文双引号。
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countDialogueChars(text: string): number {
     const patterns = [
         /「([^」]+)」/g,

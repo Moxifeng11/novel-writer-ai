@@ -23,6 +23,9 @@ const MIN_SAMPLE_CHARS = 40;
  * - 先保底：分数最高的 1 条无论多长都装入（截断到 maxChars）；
  * - 其余按 value = score / sqrt(chars) 排序（性价比），能装就装；
  * - 每条超过「剩余预算」时尝试截断到剩余（至少保留 MIN_SAMPLE_CHARS）。
+ * @param hits - 命中
+ * @param maxChars - 最大字符数
+  * @returns PackResult 实例
  */
 export function packByBudget(hits: RagHit[], maxChars: number): PackResult {
     if (maxChars <= 0 || hits.length === 0) return { picked: [], dropped: hits.length, chars: 0 };
@@ -68,7 +71,13 @@ export function packByBudget(hits: RagHit[], maxChars: number): PackResult {
 /** 每条结果的固定开销（标题/序号/书名），用于从字符预算里预留 */
 export const RESULT_OVERHEAD_CHARS = 24;
 
-/** 把总预算换成「用于样本正文」的预算 */
+/**
+ * 把总预算换成「用于样本正文」的预算
+ *
+ * @param totalChars - 总字符
+ * @param itemCount - 条目数量
+ * @returns 数值结果
+ */
 export function sampleBudgetOf(totalChars: number, itemCount: number): number {
     return Math.max(0, totalChars - RESULT_OVERHEAD_CHARS * Math.max(1, itemCount));
 }

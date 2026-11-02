@@ -196,7 +196,11 @@ export class FullWriterView extends ItemView {
     private get wizardStepResults(): Record<string, string> { return this.state.wizardStepResults; }
     get wizardStepExecuting(): Set<string> { return this.state.wizardStepExecuting; }
 
-    /** 供质量仪表盘等外部组件获取当前选中章节（工作台视图活动时 getActiveFile 为 null，需此 fallback） */
+    /**
+     * 供质量仪表盘等外部组件获取当前选中章节（工作台视图活动时 getActiveFile 为 null，需此 fallback）
+     *
+      * @returns string } 结果
+     */
     public getCurrentChapterState(): { project: string; chapterName: string; chapterNum: number; volume: string } {
         return { project: this.project, chapterName: this.chapterName, chapterNum: this.chapterNum, volume: this.volume };
     }
@@ -393,7 +397,11 @@ export class FullWriterView extends ItemView {
         return this.chapterOrchestrator;
     }
 
-    /** 一键完成本章：步骤仍可见、可编辑、可单独重生成。 */
+    /**
+     * 一键完成本章：步骤仍可见、可编辑、可单独重生成。
+     *
+     * @param mode - 模式
+     */
     public async runChapterOneClick(mode: ChapterRunMode = 'recommended'): Promise<void> {
         if (!this.project || !this.chapterName || !this.chapDir) {
             this.executionStore.addEvent({ type: 'run-error', level: 'error', message: '请先打开一个章节' });
@@ -1413,7 +1421,11 @@ export class FullWriterView extends ItemView {
         await this.unitWriterController.render(this.tabContent, tab);
     }
 
-    /** 打开某项目的创作流程页签（不存在则创建） */
+    /**
+     * 打开某项目的创作流程页签（不存在则创建）
+     *
+     * @param project - 项目（路径或对象）
+     */
     public async openFlowTab(project?: string): Promise<void> {
         const target = project || this.project || this.plugin.getActiveProject() || '';
         if (!target) {
@@ -1426,7 +1438,13 @@ export class FullWriterView extends ItemView {
         await this.activateTab(flowTabId(target));
     }
 
-    /** 打开短篇/剧本的单元写作页签 */
+    /**
+     * 打开短篇/剧本的单元写作页签
+     *
+     * @param project - 项目（路径或对象）
+     * @param unitNumber - 单元号
+     * @param modeArg - 模式参数
+     */
     public async openUnitTab(project: string, unitNumber: number, modeArg?: CreationMode): Promise<void> {
         if (!project || unitNumber <= 0) return;
         const mode = modeArg ?? await resolveProjectMode(this.app, project);
@@ -1494,6 +1512,8 @@ export class FullWriterView extends ItemView {
     /**
      * 从外部入口（章节列表、命令等）按路径直接定位章节。
      * 解析路径中的卷名与章名后复用 selectChapter，保证标签页/上下文与手动选择一致。
+     * @param project - 项目（路径或对象）
+     * @param chapterPath - 章节路径
      */
     async openChapterByPath(project: string, chapterPath: string): Promise<void> {
         // v4.25：外部调用方（Node/E2E/插件 API）可能传 Windows 反斜杠路径；
@@ -1541,7 +1561,11 @@ export class FullWriterView extends ItemView {
         return getNextChapter(sortedChapters);
     }
 
-    /** v3.4.6: 从向导完成后直接进入写作界面，打开第一个未完稿章节（短篇/剧本落到单元工作台） */
+    /**
+     * v3.4.6: 从向导完成后直接进入写作界面，打开第一个未完稿章节（短篇/剧本落到单元工作台）
+     *
+     * @param project - 项目（路径或对象）
+     */
     async openFirstUnwrittenChapter(project: string): Promise<void> {
         try {
             const mode = await resolveProjectMode(this.app, project);
@@ -2366,6 +2390,7 @@ export class FullWriterView extends ItemView {
 
     /**
      * 外部（如对话引导 Agent）打开指定项目的向导。
+     * @param project - 项目（路径或对象）
      */
     public async openWizardForProjectById(project: string): Promise<void> {
         await this.wizardController.openWizardForProject(project);

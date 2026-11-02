@@ -11,7 +11,14 @@ import { assemblePromptWithinBudget, type PromptSection } from '../shared/prompt
 import { recordBudgetSnapshot } from '../shared/budget-telemetry';
 import { estimateInputTokens } from '../shared/token-estimator';
 
-/** 系统提示词（写作引导） */
+/**
+ * 系统提示词（写作引导）
+ *
+ * @param ctx - 上下文
+ * @param settings - 设置
+ * @param bodyFormat - 正文格式
+ * @returns 文本结果
+ */
 export function buildSystemPrompt(
     ctx: ChapterContext,
     settings: { minWordCount: number; maxWordCount: number },
@@ -87,6 +94,12 @@ export interface ChapterPromptResult {
  * 知识注入不能拼到 system 尾部：`callAI` 在窗口不足时从尾部截断，
  * 最先丢掉的恰好是输出约束与风格参考。这里把知识作为 user 中的
  * 可裁剪层（priority 25），正文任务主体作为必保尾部。
+ * @param ctx - 上下文
+ * @param settings - 设置
+ * @param bodyFormat - 正文格式
+ * @param knowledgeInjection - 知识注入
+ * @param limits - 限制
+  * @returns ChapterPromptResult 实例
  */
 export function buildChapterPrompts(
     ctx: ChapterContext,
@@ -143,7 +156,14 @@ export function buildChapterPrompts(
     };
 }
 
-/** 用户提示词（上下文拼接） */
+/**
+ * 用户提示词（上下文拼接）
+ *
+ * @param ctx - 上下文
+ * @param settings - 设置
+ * @param bodyFormat - 正文格式
+ * @returns 文本结果
+ */
 export function buildUserPrompt(
     ctx: ChapterContext,
     settings: { minWordCount: number },

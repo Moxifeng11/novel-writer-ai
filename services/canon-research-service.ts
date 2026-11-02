@@ -96,7 +96,13 @@ export class CanonResearchService {
         return { ...DEFAULT_CONFIG, ...(this.host.settings?.canonResearch || {}) };
     }
 
-    /** 检索/整理来源；manualSources 优先，缺失摘录时按 URL 抓取短正文。 */
+    /**
+     * 检索/整理来源；manualSources 优先，缺失摘录时按 URL 抓取短正文。
+     *
+     * @param workName - 作品名
+     * @param options - 配置项
+      * @returns CanonResearchResult 实例
+     */
     async research(workName: string, options: CanonResearchOptions = {}): Promise<CanonResearchResult> {
         const config = this.getConfig();
         const warnings: string[] = [];
@@ -201,7 +207,15 @@ export class CanonResearchService {
         }
     }
 
-    /** 手工添加一条来源（UI 只填 URL/标题/摘录，不抓整本正文）。 */
+    /**
+     * 手工添加一条来源（UI 只填 URL/标题/摘录，不抓整本正文）。
+     *
+     * @param url - 地址
+     * @param title - 标题
+     * @param excerpt - 摘录
+     * @param config - 配置
+      * @returns CanonSource 实例
+     */
     async addManualSource(
         url: string,
         title: string,
@@ -429,7 +443,12 @@ function decodeHtml(value: string): string {
         .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
 }
 
-/** 把来源集合渲染成审核摘要用的稳定指纹。 */
+/**
+ * 把来源集合渲染成审核摘要用的稳定指纹。
+ *
+ * @param sources - 来源列表
+ * @returns 文本结果
+ */
 export function canonSourceFingerprint(sources: CanonSource[]): string {
     return hashText(computeCanonSourceHash(sources));
 }

@@ -133,6 +133,9 @@ export interface BreakdownTask {
 /**
  * 拆解完成提示（A5）：向量化失败时必须如实告知，并指路到知识库详情重试，
  * 不能无条件弹「拆解完成」让用户以为检索可用。
+ * @param bookName - 书名
+ * @param vector - 向量
+ * @returns 文本结果
  */
 export function buildBreakdownFinishNotice(
     bookName: string,
@@ -350,12 +353,20 @@ export class DeconstructionScheduler {
         this.settingsGetter = settingsGetter;
     }
 
-    /** EngineRegistry 注入共享 embedding 模型名解析器。 */
+    /**
+     * EngineRegistry 注入共享 embedding 模型名解析器。
+     *
+     * @param resolver - 解析器
+     */
     setVectorModelResolver(resolver: () => string | undefined): void {
         this.vectorModelResolver = resolver;
     }
 
-    /** 设置 LLM 调用器获取器。AIEngine 是懒加载的，通过 getter 延迟获取避免在初始化阶段触发创建。 */
+    /**
+     * 设置 LLM 调用器获取器。AIEngine 是懒加载的，通过 getter 延迟获取避免在初始化阶段触发创建。
+     *
+     * @param getter - 读取函数
+     */
     setLlmCaller(getter: () => LLMCaller | undefined): void {
         this.llmCallerGetter = getter;
     }
@@ -672,7 +683,11 @@ export class DeconstructionScheduler {
         }
     }
 
-    /** 取消某本书所有在途任务（删书时调用，避免任务继续写已删除的书目录/向量） */
+    /**
+     * 取消某本书所有在途任务（删书时调用，避免任务继续写已删除的书目录/向量）
+     *
+     * @param bookId - 书籍 ID
+     */
     async cancelByBook(bookId: string): Promise<void> {
         const active = this.getActiveTasks().filter(t => t.bookId === bookId);
         for (const task of active) {
@@ -2432,6 +2447,8 @@ export class DeconstructionScheduler {
      * 按当前 embedding 模型重算一本书的向量（不重新拆解、不调用 AI）。
      * 与拆解流程不同，这里在向量存储缺失时抛错：批量重向量化需要把「没做成」如实报给用户，
      * 静默跳过会让人以为已经修好。
+     * @param bookId - 书籍 ID
+     * @param bookName - 书名
      */
     async revectorizeBook(bookId: string, bookName: string): Promise<void> {
         if (!this.vectorStore || typeof this.vectorStore.addBookSamples !== 'function') {

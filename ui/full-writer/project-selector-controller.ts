@@ -44,7 +44,13 @@ export type ChapterItem = {
     file: TFile | null;
 };
 
-/** 内部文件名仍是「第N章」；短篇/剧本展示时映射为节/集 */
+/**
+ * 内部文件名仍是「第N章」；短篇/剧本展示时映射为节/集
+ *
+ * @param text - 文本内容
+ * @param unitLabel - 单元标签
+ * @returns 文本结果
+ */
 function formatUnitDisplay(text: string, unitLabel: string): string {
     if (unitLabel === '章') return text;
     return text.replace(/第(\d+)章/g, `第$1${unitLabel}`);
@@ -738,6 +744,8 @@ export class ProjectSelectorController {
      * 显示所有章选择弹窗
      * Rev 192：400 章直接平铺会让按钮零散、无法检索。改为「搜索 + 按卷分组 +
      * 自适应网格 + 限定高度滚动」，并补图例与空态。
+     * @param project - 项目（路径或对象）
+     * @param chapters - 章节列表
      */
     showAllChapters(project: string, chapters: ChapterItem[], unitLabel = '章', openDirectly = false): void {
         // Rev 192：章节来源是「正文 ∪ 骨架目录」，顺序不保证；先按全书章号排序再分组
@@ -869,6 +877,7 @@ export class ProjectSelectorController {
 
     /**
      * 显示删除项目确认弹窗
+     * @param projectName - 项目名
      */
     showDeleteProjectModal(projectName: string): void {
         const modal = new Modal(this.app);

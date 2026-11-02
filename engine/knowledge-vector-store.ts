@@ -181,7 +181,11 @@ export class KnowledgeVectorStore {
         return detectEmbeddingMismatch(data, current);
     }
 
-    /** 因换 embedding 模型被跳过的书籍向量（文件保留，重新拆解即可按新模型重建） */
+    /**
+     * 因换 embedding 模型被跳过的书籍向量（文件保留，重新拆解即可按新模型重建）
+     *
+     * @returns 结果数组
+     */
     getModelMismatches(): KnowledgeVectorModelMismatch[] {
         return [...this.modelMismatches];
     }
@@ -193,7 +197,11 @@ export class KnowledgeVectorStore {
         await this.reloadIfChanged();
     }
 
-    /** 查询向量缓存命中统计（遥测/测试用） */
+    /**
+     * 查询向量缓存命中统计（遥测/测试用）
+     *
+      * @returns number } 结果
+     */
     getQueryCacheStats(): { hits: number; misses: number; size: number } {
         return { hits: this.queryCacheHits, misses: this.queryCacheMisses, size: this.queryVectorCache.size };
     }
@@ -230,6 +238,10 @@ export class KnowledgeVectorStore {
     /**
      * 取同书同维度的邻块（v4.20 邻块扩展）：直接读内存 samples，零 I/O。
      * 返回按 position 升序的样本，用于把被 400/40 分块切开的场景拼回完整上下文。
+     * @param bookIds - 书籍 ID 列表
+     * @param dimension - 维度
+     * @param positions - 位置列表
+     * @returns 结果数组
      */
     async getNeighbors(
         bookIds: string[],
@@ -269,6 +281,7 @@ export class KnowledgeVectorStore {
      * 向量文件变化时重新加载。
      * 拆解调度器写入的是 EngineRegistry 的单例，协同引擎持有另一个实例；
      * 只认一次 loaded 会让新书/重新拆解后的向量在协同检索里不可见，直到重启。
+     * @returns 是否成功
      */
     async reloadIfChanged(): Promise<boolean> {
         const signature = await this.computeSignature();
@@ -473,6 +486,9 @@ export class KnowledgeVectorStore {
     /**
      * 用新样本替换整本书的向量。
      * 重新拆解时使用：避免旧报告样本与新原文分块叠加导致索引膨胀。
+     * @param bookId - 书籍 ID
+     * @param bookName - 书名
+     * @param samples - 样本
      */
     async replaceBookSamples(
         bookId: string,

@@ -68,6 +68,7 @@ export class GenreConfigRegistry {
 
     /**
      * 注册单个自定义配置。同 genreId 时覆盖内置配置。
+     * @param config - 配置
      */
     registerCustomConfig(config: GenreConfig): void {
         this.configs.set(config.genreId, { ...config });
@@ -75,6 +76,7 @@ export class GenreConfigRegistry {
 
     /**
      * 批量注册自定义配置。同 genreId 时覆盖内置配置。
+     * @param configs - 配置列表
      */
     loadCustomConfigs(configs: GenreConfig[]): void {
         for (const config of configs) {
@@ -85,6 +87,7 @@ export class GenreConfigRegistry {
     /**
      * 设置自定义配置加载器（生产环境由 main.ts 注入，从 vault 读取 .trae/genres/*.genre.json）。
      * 设置后需调用 reloadCustomConfigs() 才会触发加载。
+     * @param loader - 加载器
      */
     setCustomConfigLoader(loader: CustomConfigLoader): void {
         this.customLoader = loader;
@@ -106,6 +109,8 @@ export class GenreConfigRegistry {
     /**
      * 按 genreId 查询配置。
      * 未找到时回退到 generic 兜底配置；若 generic 也缺失，抛出错误。
+     * @param genreId - 题材ID
+      * @returns GenreConfig 实例
      */
     getGenreConfig(genreId: string): GenreConfig {
         const config = this.configs.get(genreId);
@@ -121,6 +126,7 @@ export class GenreConfigRegistry {
 
     /**
      * 列出所有已注册的 genreId。
+     * @returns 结果数组
      */
     listGenreIds(): string[] {
         return Array.from(this.configs.keys());
@@ -128,6 +134,8 @@ export class GenreConfigRegistry {
 
     /**
      * 判断指定 genreId 是否已注册。
+     * @param genreId - 题材ID
+     * @returns 是否成功
      */
     hasGenreConfig(genreId: string): boolean {
         return this.configs.has(genreId);

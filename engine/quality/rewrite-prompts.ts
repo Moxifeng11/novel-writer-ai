@@ -120,6 +120,8 @@ export interface RewritePromptVars {
 
 /**
  * 构建系统提示词
+ * @param type - 类型
+ * @returns 文本结果
  */
 export function buildSystemPrompt(type: SuggestionType): string {
   return TYPE_SYSTEM_PROMPTS[type] || SYSTEM_BASE;
@@ -127,6 +129,8 @@ export function buildSystemPrompt(type: SuggestionType): string {
 
 /**
  * 构建用户提示词
+ * @param vars - 变量表
+ * @returns 文本结果
  */
 export function buildUserPrompt(vars: RewritePromptVars): string {
   const sections: string[] = [];
@@ -223,6 +227,8 @@ export function buildAutoTypePrompt(text: string, context?: string): string {
 
 /**
  * 从 AI 响应中提取 JSON
+ * @param response - 响应
+ * @returns 结果数组
  */
 export function extractJSONFromResponse(response: string): unknown[] {
   const cleaned = response

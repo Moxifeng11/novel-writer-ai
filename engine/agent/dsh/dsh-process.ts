@@ -58,6 +58,11 @@ function quoteForCmd(value: string): string {
  * `spawn('npx', ...)` 直接 ENOENT；`spawn('npx.cmd', ...)` 在 Node 18.20+/20.12+
  * 会因为 .cmd 必须经 shell 而抛 EINVAL。这里统一改由 ComSpec 执行；
  * .exe 保持直连，不做多余的一层 cmd。
+ * @param command - 命令
+ * @param args - 参数列表
+ * @param platform - 平台标识
+ * @param comSpec - ComSpec 路径
+  * @returns DshSpawnSpec 实例
  */
 export function buildDshSpawnSpec(
     command: string,
@@ -75,7 +80,14 @@ export function buildDshSpawnSpec(
     };
 }
 
-/** 合并运行环境：平台必需变量 → 调用方透传 → 启动计划（含 DSH_HOME / Key） */
+/**
+ * 合并运行环境：平台必需变量 → 调用方透传 → 启动计划（含 DSH_HOME / Key）
+ *
+ * @param planEnv - 计划环境变量
+ * @param passthroughEnv - 透传环境变量
+ * @param source - 来源
+ * @returns 映射结果
+ */
 export function buildDshChildEnv(
     planEnv: Record<string, string>,
     passthroughEnv?: Record<string, string | undefined>,
@@ -185,6 +197,9 @@ export interface DshProbeResult {
 /**
  * 健康检查：只跑 `<command> ... --version`，不创建会话、不联网（除 npx 首次解析包）。
  * 超时/退出码非 0/命令不存在都返回结构化错误，交给设置页展示。
+ * @param plan - 计划
+ * @param options - 配置项
+  * @returns DshProbeResult 实例
  */
 export async function probeDshVersion(
     plan: DshLaunchPlan,

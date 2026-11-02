@@ -45,11 +45,19 @@ export interface RealtimeQualityHost {
     getChapterName(): string;
     getBodyPath(): string;
     getChapterBrief(): ChapterBrief | null;
-    /** 本章规划正文（快照 chapPlan），用于偏离上下文 */
+    /**
+     * 本章规划正文（快照 chapPlan），用于偏离上下文
+     *
+      * @returns 文本结果 或 undefined
+     */
     getChapPlan(): string | undefined;
     loadCharacterInfos(): Promise<CharacterContextInfo[]>;
     loadForeshadows(): Promise<ForeshadowTracking[]>;
-    /** 由视图装配评分/偏离内核（composition root），controller 只管生命周期 */
+    /**
+     * 由视图装配评分/偏离内核（composition root），controller 只管生命周期
+     *
+      * @returns RealtimeMonitor 实例
+     */
     createMonitor(): RealtimeMonitor;
 }
 
@@ -84,7 +92,11 @@ export class RealtimeQualityController {
         return this.enabled;
     }
 
-    /** 开关实时质量；返回新状态供视图同步按钮样式 */
+    /**
+     * 开关实时质量；返回新状态供视图同步按钮样式
+     *
+     * @returns 是否成功
+     */
     toggle(): boolean {
         this.enabled = !this.enabled;
         if (!this.enabled) {

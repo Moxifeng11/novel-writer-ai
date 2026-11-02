@@ -48,7 +48,12 @@ export interface ProviderManagerCallbacks {
     addOverrideHistory?(entry: NovelWriterSettings['modelOverrideHistory'][number]): void;
 }
 
-/** 端点归一：忽略协议尾部斜杠、`/v1`、`/chat/completions`，用于供应商与覆盖表匹配 */
+/**
+ * 端点归一：忽略协议尾部斜杠、`/v1`、`/chat/completions`，用于供应商与覆盖表匹配
+ *
+ * @param endpoint - 接口地址
+ * @returns 文本结果
+ */
 export function normalizeEndpointKey(endpoint?: string): string {
     return String(endpoint || '')
         .trim()
@@ -58,7 +63,15 @@ export function normalizeEndpointKey(endpoint?: string): string {
         .replace(/\/+$/, '');
 }
 
-/** 覆盖表按「精确 key → 归一化 key」两级查找 */
+/**
+ * 覆盖表按「精确 key → 归一化 key」两级查找
+ *
+ * @param overrides - 覆盖项
+ * @param endpointKey - 端点键
+ * @param normalized - 规范化
+ * @param modelName - 模型名
+  * @returns number } 结果 或 undefined
+ */
 function findOverrideByEndpoint(
     overrides: Record<string, Record<string, { maxContext?: number; maxOutput?: number }>> | undefined,
     endpointKey: string,
@@ -86,14 +99,23 @@ export class ProviderManager {
         this.cb = callbacks;
     }
 
-    /** 获取当前提供商 ID（从 customProviders 中按 endpoint 查找） */
+    /**
+     * 获取当前提供商 ID（从 customProviders 中按 endpoint 查找）
+     *
+      * @returns 文本结果 或 null
+     */
     getCurrentProviderId(): string | null {
         const s = this.cb.getSettings();
         const custom = s.customProviders?.find(c => c.endpoint === s.apiEndpoint);
         return custom ? custom.id : null;
     }
 
-    /** 根据端点 URL 切换提供商 */
+    /**
+     * 根据端点 URL 切换提供商
+     *
+     * @param endpoint - 接口地址
+     * @returns 是否成功
+     */
     switchByEndpoint(endpoint: string): boolean {
         const s = this.cb.getSettings();
         const provider = (s.customProviders || []).find(c => c.endpoint === endpoint);
@@ -128,7 +150,11 @@ export class ProviderManager {
         return true;
     }
 
-    /** 根据模型名称更新 maxContext / maxOutput */
+    /**
+     * 根据模型名称更新 maxContext / maxOutput
+     *
+     * @param modelName - 模型名
+     */
     updateModelLimits(modelName: string): void {
         const s = this.cb.getSettings();
         const resolved = this.resolveModelLimits(modelName);
@@ -137,7 +163,13 @@ export class ProviderManager {
         log.info(`[小说工坊] 模型 "${modelName}" → maxContext=${resolved.maxContext}, maxOutput=${resolved.maxOutput}`);
     }
 
-    /** 根据 endpoint + 模型名确定 maxContext / maxOutput 生效值 */
+    /**
+     * 根据 endpoint + 模型名确定 maxContext / maxOutput 生效值
+     *
+     * @param modelName - 模型名
+     * @param endpoint - 接口地址
+      * @returns number } 结果
+     */
     resolveModelLimits(modelName: string, endpoint?: string): { maxContext: number; maxOutput: number } {
         const s = this.cb.getSettings();
         const endpointKey = endpoint || s.apiEndpoint;
@@ -178,7 +210,14 @@ export class ProviderManager {
         };
     }
 
-    /** 设置某个模型的覆盖值并记录历史 */
+    /**
+     * 设置某个模型的覆盖值并记录历史
+     *
+     * @param providerId - 提供方ID
+     * @param model - 模型标识
+     * @param field - 字段
+     * @param newValue - 新值
+     */
     setModelOverride(providerId: string, model: string, field: 'maxContext' | 'maxOutput', newValue: number): void {
         if (!Number.isFinite(newValue) || newValue <= 0) return;
         const s = this.cb.getSettings();
@@ -210,7 +249,18 @@ export class ProviderManager {
         this.scheduleSave();
     }
 
-    /** 添加自定义提供商 */
+    /**
+     * 添加自定义提供商
+     *
+     * @param name - 名称
+     * @param endpoint - 接口地址
+     * @param models - 模型列表
+     * @param maxContext - 最大上下文
+     * @param maxOutput - 最大输出
+     * @param apiKey - API 密钥
+     * @param apiFormat - API 格式
+      * @returns 文本结果 或 null
+     */
     addCustom(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string, apiFormat?: CustomProvider['apiFormat']): string | null {
         const s = this.cb.getSettings();
         s.customProviders = s.customProviders || [];
@@ -249,7 +299,12 @@ export class ProviderManager {
         return id;
     }
 
-    /** 删除自定义提供商 */
+    /**
+     * 删除自定义提供商
+     *
+     * @param id - 标识
+     * @returns 是否成功
+     */
     deleteCustom(id: string): boolean {
         const s = this.cb.getSettings();
         const idx = (s.customProviders || []).findIndex(c => c.id === id);
@@ -263,7 +318,11 @@ export class ProviderManager {
         return true;
     }
 
-    /** 获取所有可用提供商（过滤掉 isHidden 为 true 的） */
+    /**
+     * 获取所有可用提供商（过滤掉 isHidden 为 true 的）
+     *
+      * @returns boolean }> 结果
+     */
     getAllProviders(): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; apiFormat?: string; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
         const s = this.cb.getSettings();
         const customProviders = s.customProviders || [];
@@ -284,24 +343,44 @@ export class ProviderManager {
             }));
     }
 
-    /** 获取指定源类型（cloud/local）的提供商 */
+    /**
+     * 获取指定源类型（cloud/local）的提供商
+     *
+     * @param type - 类型
+      * @returns boolean }> 结果
+     */
     getProvidersBySourceType(type: ModelSourceType): Array<{ id: string; name: string; endpoint: string; models: string[]; maxContext: number; maxOutput: number; sourceType: ModelSourceType; apiFormat?: string; isPreset: boolean; isDefault?: boolean; isHidden?: boolean }> {
         return this.getAllProviders().filter(p => p.sourceType === type);
     }
 
-    /** 判断 provider 是否为本地源 */
+    /**
+     * 判断 provider 是否为本地源
+     *
+     * @param provider - 提供方
+     * @returns 是否成功
+     */
     isLocalProvider(provider: Pick<CustomProvider, 'id' | 'endpoint' | 'sourceType'>): boolean {
         return resolveProviderSourceType(provider) === 'local';
     }
 
-    /** 获取当前 provider 的源类型 */
+    /**
+     * 获取当前 provider 的源类型
+     *
+      * @returns ModelSourceType 实例
+     */
     getCurrentSourceType(): ModelSourceType {
         const s = this.cb.getSettings();
         const provider = (s.customProviders || []).find(c => c.endpoint === s.apiEndpoint);
         return provider ? resolveProviderSourceType(provider) : 'cloud';
     }
 
-    /** 设置供应商的隐藏状态 */
+    /**
+     * 设置供应商的隐藏状态
+     *
+     * @param id - 标识
+     * @param hidden - 隐藏
+     * @returns 是否成功
+     */
     setHidden(id: string, hidden: boolean): boolean {
         const s = this.cb.getSettings();
         const provider = (s.customProviders || []).find(c => c.id === id);
@@ -317,6 +396,8 @@ export class ProviderManager {
     /**
      * 删除自定义供应商（真删，不可恢复）。
      * 预设供应商仍走 setHidden(true)，可通过「恢复默认供应商」找回。
+     * @param id - 标识
+     * @returns 是否成功
      */
     removeCustomProvider(id: string): boolean {
         const s = this.cb.getSettings();
@@ -333,13 +414,23 @@ export class ProviderManager {
         return true;
     }
 
-    /** @deprecated 请使用 setHidden(id, true) */
+    /**
+     * @deprecated 请使用 setHidden(id, true)
+     *
+     * @param presetId - 预设 ID
+     * @returns 是否成功
+     */
     hidePreset(presetId: string): boolean {
         log.warn('[ProviderManager] 警告: hidePreset() 已废弃，请使用 setHidden(id, true)');
         return this.setHidden(presetId, true);
     }
 
-    /** @deprecated 请使用 setHidden(id, false) */
+    /**
+     * @deprecated 请使用 setHidden(id, false)
+     *
+     * @param presetId - 预设 ID
+     * @returns 是否成功
+     */
     restorePreset(presetId: string): boolean {
         log.warn('[ProviderManager] 警告: restorePreset() 已废弃，请使用 setHidden(id, false)');
         return this.setHidden(presetId, false);
@@ -373,7 +464,13 @@ export class ProviderManager {
         this.restoreDefaultProviders();
     }
 
-    /** 更新供应商信息 */
+    /**
+     * 更新供应商信息
+     *
+     * @param id - 标识
+     * @param updates - 更新字段
+     * @returns 是否成功
+     */
     updateProvider(id: string, updates: Partial<CustomProvider>): boolean {
         const s = this.cb.getSettings();
         const idx = (s.customProviders || []).findIndex(c => c.id === id);
@@ -402,7 +499,17 @@ export class ProviderManager {
         }
     }
 
-    /** @deprecated 请使用 updateProvider() */
+    /**
+     * @deprecated 请使用 updateProvider()
+     *
+     * @param presetId - 预设 ID
+     * @param name - 名称
+     * @param endpoint - 接口地址
+     * @param models - 模型列表
+     * @param maxContext - 最大上下文
+     * @param maxOutput - 最大输出
+     * @returns 是否成功
+     */
     savePresetOverride(presetId: string, name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number): boolean {
         log.warn('[ProviderManager] 警告: savePresetOverride() 已废弃，请使用 updateProvider()');
         return this.updateProvider(presetId, { name, endpoint, models: [...models], maxContext, maxOutput });

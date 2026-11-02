@@ -42,6 +42,8 @@ export interface PanelActionSpec {
 
 /**
  * 纯函数：按文件类型给出动作清单（单测直接验证，不需要 DOM）。
+ * @param kind - 种类
+ * @returns 结果数组
  */
 export function actionsForKind(kind: NotebookFileKind): PanelActionSpec[] {
     switch (kind) {
@@ -75,7 +77,12 @@ export function actionsForKind(kind: NotebookFileKind): PanelActionSpec[] {
     }
 }
 
-/** 该类型下哪些属性可编辑（unknown/无 schema 则空） */
+/**
+ * 该类型下哪些属性可编辑（unknown/无 schema 则空）
+ *
+ * @param kind - 种类
+ * @returns 结果数组
+ */
 export function editableProperties(kind: NotebookFileKind): PropertySpec[] {
     return FRONTMATTER_SCHEMAS[kind] || [];
 }

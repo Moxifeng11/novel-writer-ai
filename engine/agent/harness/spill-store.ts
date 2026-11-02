@@ -16,6 +16,9 @@ export interface SpillSink {
     /**
      * 写入一份大结果，返回库内相对路径（locator）；失败返回 null（调用方保留原文）。
      * name 只是建议文件名，实现需自行保证唯一性。
+     * @param name - 名称
+     * @param content - 内容
+      * @returns 文本结果 或 null
      */
     write(name: string, content: string): Promise<string | null>;
 }
@@ -52,7 +55,14 @@ export function shouldSpill(content: string, policy: SpillPolicy = DEFAULT_SPILL
     return String(content || '').length > Math.max(0, policy.thresholdChars);
 }
 
-/** 落盘文件的正文：带来源与规模头，便于用户/模型直接打开时知道这是什么 */
+/**
+ * 落盘文件的正文：带来源与规模头，便于用户/模型直接打开时知道这是什么
+ *
+ * @param tool - 工具
+ * @param content - 内容
+ * @param at - 时间点
+ * @returns 文本结果
+ */
 export function buildSpillBody(tool: string, content: string, at: Date = new Date()): string {
     const pad = (value: number): string => String(value).padStart(2, '0');
     // 用本地时间而不是 UTC：存档是给人看的，ISO 的 Z 时间会与用户时钟差 8 小时
@@ -72,7 +82,14 @@ export function buildSpillBody(tool: string, content: string, at: Date = new Dat
     ].join('\n');
 }
 
-/** 日志中的替代文本：定位符 + 头尾摘要 + 取回指引 */
+/**
+ * 日志中的替代文本：定位符 + 头尾摘要 + 取回指引
+ *
+ * @param content - 内容
+ * @param locator - 定位器
+ * @param policy - 策略
+ * @returns 文本结果
+ */
 export function buildSpillReplacement(
     content: string,
     locator: string,

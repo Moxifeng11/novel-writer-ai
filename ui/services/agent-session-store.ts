@@ -21,10 +21,18 @@ const MAX_STORE_BYTES = 512 * 1024;
 const SAVE_THROTTLE_MS = 1000;
 
 export interface AgentSessionStore {
-    /** 当前项目的存档路径（库内相对路径） */
+    /**
+     * 当前项目的存档路径（库内相对路径）
+     *
+     * @returns 文本结果
+     */
     path(): string;
     load(): Promise<HarnessSessionSnapshot | null>;
-    /** 登记快照并节流写入（同步返回，不阻塞对话） */
+    /**
+     * 登记快照并节流写入（同步返回，不阻塞对话）
+     *
+     * @param snapshot - 快照
+     */
     save(snapshot: HarnessSessionSnapshot): void;
     /** 立刻写入待保存的快照（关闭视图前调用） */
     flush(): Promise<void>;

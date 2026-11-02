@@ -70,6 +70,7 @@ export class SerializedWriter {
 
     /**
      * 同步操作（无返回值）
+     * @param operation - 操作名
      */
     enqueueVoid(operation: () => Promise<void>): Promise<void> {
         return this.enqueue(async () => {
@@ -79,6 +80,7 @@ export class SerializedWriter {
 
     /**
      * 检查是否有待处理的操作
+     * @returns 是否成功
      */
     get isDirty(): boolean {
         return this._isDirty;
@@ -86,6 +88,7 @@ export class SerializedWriter {
 
     /**
      * 获取当前待处理操作数量
+     * @returns 数值结果
      */
     get pending(): number {
         return this.pendingCount;
@@ -96,6 +99,7 @@ export class SerializedWriter {
      *
      * 不能无限等：底层写盘若卡住（Vault 锁 / 只读盘 / 网络盘），flush 会在
      * 插件卸载或切章时永久挂起。超过 maxWaitMs 即返回并留下告警日志。
+     * @param timeoutMs - 超时时间（毫秒）
      */
     async flush(timeoutMs: number = this.maxWaitMs): Promise<void> {
         this.log.debug(`等待刷新，剩余: ${this.pendingCount}，超时 ${timeoutMs}ms`);
@@ -131,6 +135,7 @@ export class SerializedWriter {
      * 插件卸载 / 组件销毁前调用：尽量把队列写完，超时放行。
      * 持有者（批量导入、指纹、偏好记忆、知识库）都必须在 onunload 里调用，
      * 否则最后一批写入会随进程退出丢失。
+     * @param timeoutMs - 超时时间（毫秒）
      */
     async dispose(timeoutMs: number = this.maxWaitMs): Promise<void> {
         await this.flush(timeoutMs);

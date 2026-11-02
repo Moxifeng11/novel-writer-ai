@@ -8,7 +8,12 @@
 
 import type { CharacterContextInfo } from './quality/quality-score-engine';
 
-/** 只接受字符串（frontmatter 可能把字段解析成对象/数字），并去掉首尾空白 */
+/**
+ * 只接受字符串（frontmatter 可能把字段解析成对象/数字），并去掉首尾空白
+ *
+ * @param value - 值
+ * @returns 文本结果
+ */
 function text(value: unknown): string {
     return typeof value === 'string' ? value.trim() : '';
 }
@@ -16,6 +21,8 @@ function text(value: unknown): string {
 /**
  * 把 `ctxManager.gatherCharacterState` 返回的原始人物记录映射为检测上下文。
  * 缺少可用姓名的记录直接丢弃（无姓名的角色无法参与 OOC / 外貌矛盾匹配）。
+ * @param raw - 原始
+ * @returns 结果数组
  */
 export function toCharacterContextInfos(
     raw: Array<Record<string, unknown>> | undefined | null,

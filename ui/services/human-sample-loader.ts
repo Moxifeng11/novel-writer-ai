@@ -21,7 +21,12 @@ interface SampleFile {
     samples?: Array<{ kind?: string; text?: string }>;
 }
 
-/** 读取本地样文并注入；返回注入条数（0 表示没有样文） */
+/**
+ * 读取本地样文并注入；返回注入条数（0 表示没有样文）
+ *
+ * @param app - Obsidian 应用实例
+ * @returns 数值结果
+ */
 export async function loadHumanSamples(app: App): Promise<number> {
     const adapter = app.vault.adapter;
     try {

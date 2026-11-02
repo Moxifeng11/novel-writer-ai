@@ -153,17 +153,29 @@ export class RealtimeMonitor {
     // 状态查询
     // ----------------------------------------------------------
 
-    /** 获取当前状态 */
+    /**
+     * 获取当前状态
+     *
+      * @returns MonitorState 实例
+     */
     getState(): MonitorState {
         return this.state;
     }
 
-    /** 是否正在评估 */
+    /**
+     * 是否正在评估
+     *
+     * @returns 是否成功
+     */
     isEvaluating(): boolean {
         return this.state === 'evaluating';
     }
 
-    /** 当前评估 ID（无评估时为 undefined） */
+    /**
+     * 当前评估 ID（无评估时为 undefined）
+     *
+      * @returns 文本结果 或 undefined
+     */
     getCurrentEvaluationId(): string | undefined {
         return this.currentEvaluationId;
     }
@@ -172,7 +184,12 @@ export class RealtimeMonitor {
     // 事件订阅
     // ----------------------------------------------------------
 
-    /** 订阅事件 */
+    /**
+     * 订阅事件
+     *
+     * @param eventType - 事件类型
+     * @param handler - 处理函数
+     */
     on(eventType: MonitorEventType, handler: MonitorEventHandler): () => void {
         if (!this.subscribers.has(eventType)) {
             this.subscribers.set(eventType, new Set());
@@ -182,7 +199,12 @@ export class RealtimeMonitor {
         return () => this.off(eventType, handler);
     }
 
-    /** 取消订阅 */
+    /**
+     * 取消订阅
+     *
+     * @param eventType - 事件类型
+     * @param handler - 处理函数
+     */
     off(eventType: MonitorEventType, handler: MonitorEventHandler): void {
         const set = this.subscribers.get(eventType);
         if (set) {
@@ -190,7 +212,11 @@ export class RealtimeMonitor {
         }
     }
 
-    /** 订阅所有事件 */
+    /**
+     * 订阅所有事件
+     *
+     * @param handler - 处理函数
+     */
     onAll(handler: MonitorEventHandler): () => void {
         const unsubscribers = (['state-change', 'start', 'complete', 'failed', 'cancelled'] as MonitorEventType[])
             .map(type => this.on(type, handler));
@@ -236,6 +262,10 @@ export class RealtimeMonitor {
      * 执行评估
      * - 若当前正在评估 → 抛错 'busy'
      * - 返回完整结果（含 score + deviations）
+     * @param text - 文本内容
+     * @param context - 上下文
+     * @param externalSignal - 外部取消信号
+      * @returns MonitorResult 实例
      */
     async evaluate(
         text: string,

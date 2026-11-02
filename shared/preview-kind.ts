@@ -16,7 +16,12 @@ const TEXT_EXTENSIONS = new Set([
 
 export type PreviewKind = 'image' | 'audio' | 'video' | 'markdown' | 'text' | 'binary';
 
-/** 按扩展名判定预览渲染方式 */
+/**
+ * 按扩展名判定预览渲染方式
+ *
+ * @param extension - 扩展名
+  * @returns PreviewKind 实例
+ */
 export function classifyPreviewKind(extension: string): PreviewKind {
     const ext = String(extension || '').toLowerCase();
     if (IMAGE_EXTENSIONS.has(ext)) return 'image';

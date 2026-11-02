@@ -47,7 +47,14 @@ export interface PromptBudgetResult {
     overBudget: boolean;
 }
 
-/** 按 token 预算截断文本（保留前缀；中文按 1.5 字符/token 估算） */
+/**
+ * 按 token 预算截断文本（保留前缀；中文按 1.5 字符/token 估算）
+ *
+ * @param text - 文本内容
+ * @param maxTokens - 最大 token 数
+ * @param modelId - 模型ID
+ * @returns 文本结果
+ */
 export function truncateTextToTokens(
     text: string,
     maxTokens: number,
@@ -73,6 +80,10 @@ export function truncateTextToTokens(
  *
  * 旧实现只保留前缀，正文模板把最终写指令放在段尾，于是最先被吃掉；
  * 改为头尾双保，并在中段插入可读的省略标记。
+ * @param text - 文本内容
+ * @param maxTokens - 最大 token 数
+ * @param modelId - 模型ID
+ * @returns 文本结果
  */
 export function truncateTextToTokensHeadTail(
     text: string,
@@ -116,6 +127,9 @@ export function truncateTextToTokensHeadTail(
  *
  * 预算裁剪只会从片段尾部截断（`truncateTextToTokens` 取前缀），
  * 因此「完整出现」等价于「实际注入」；被整段丢弃或截断到一半的条目不计入。
+ * @param parts - 片段列表
+ * @param promptText - 提示词文本
+ * @returns 数值结果
  */
 export function countRetainedPromptParts(parts: string[], promptText: string): number {
     if (!promptText) return 0;
@@ -146,6 +160,9 @@ export interface PrecedingLimitOptions {
  * 前文却被静默截掉 1200 字。这里按输入预算的 20%（中文约 1.5 字符/token）
  * 换算后夹在 [800, 2000]：本地 8192 窗口取满 2000，云端大窗口同样 2000，
  * 极小窗口回落到 800，不弱于旧行为。
+ * @param maxInputTokens - 最大输入 token 数
+ * @param options - 配置项
+ * @returns 数值结果
  */
 export function resolvePrecedingCharLimit(
     maxInputTokens?: number,
@@ -173,6 +190,9 @@ export interface BudgetLimits {
  * 要么被 Ollama 从尾部静默截断（最先丢的是输出约束）。
  *
  * 规则：模型能力有效时取两者的较小值——模型能力是硬上限，设置值是用户主动设的成本上限。
+ * @param configured - 已配置值
+ * @param modelLimits - 模型限制
+  * @returns BudgetLimits 实例
  */
 export function clampBudgetToModelLimits(
     configured: BudgetLimits,
@@ -200,6 +220,8 @@ function totalTokens(
 
 /**
  * 按预算装配 prompt。正常窗口下输出与未裁剪时一致（顺序不变）。
+ * @param input - 输入
+  * @returns PromptBudgetResult 实例
  */
 export function assemblePromptWithinBudget(input: PromptBudgetInput): PromptBudgetResult {
     const modelId = input.modelId || 'default';
@@ -336,6 +358,8 @@ function classifySectionPriority(title: string): number {
 /**
  * 把已填充的 prompt 按行首【标题】切成段落。
  * 没有标题时返回单段，调用方应回退到头尾截断。
+ * @param prompt - 提示词
+ * @returns 结果数组
  */
 export function splitPromptIntoSections(prompt: string): PromptSection[] {
     const lines = prompt.split('\n');
@@ -425,6 +449,8 @@ function fitBySectionPriority(
  * 于是要么超预算不触发、要么在重建 prompt 时静默丢掉注入。
  * 这里按优先级处理：完整原文 → 丢增强尾部 → 分段优先级裁剪（sectionAware）→ 主体头尾截断。
  * 增量一律以 `estimateInputTokens` 为准，与协同链路共用同一估算器。
+ * @param input - 输入
+  * @returns PromptFitResult 实例
  */
 export function fitPromptToContext(input: PromptFitInput): PromptFitResult {
     const modelId = input.modelId || 'default';

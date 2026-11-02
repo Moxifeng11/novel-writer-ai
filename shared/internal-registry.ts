@@ -9,7 +9,12 @@ export class InternalRegistry {
         log.info('[Registry] Command registered: ' + id);
     }
 
-    /** 检查命令是否已注册 */
+    /**
+     * 检查命令是否已注册
+     *
+     * @param id - 标识
+     * @returns 是否成功
+     */
     has(id: string): boolean {
         return this.commands.has(id);
     }

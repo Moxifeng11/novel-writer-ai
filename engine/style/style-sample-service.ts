@@ -42,7 +42,15 @@ function sampleScope(fp: StyleSampleFingerprint): 'global' | 'project' {
     return fp.scope === 'project' ? 'project' : 'global';
 }
 
-/** 把某个指纹的样章写入对应的 LocalVectorStore（覆盖旧样本）。 */
+/**
+ * 把某个指纹的样章写入对应的 LocalVectorStore（覆盖旧样本）。
+ *
+ * @param app - Obsidian 应用实例
+ * @param fingerprint - 指纹
+ * @param project - 项目（路径或对象）
+ * @param options - 配置项
+ * @returns 是否成功
+ */
 export async function vectorizeFingerprintSamples(
     app: App,
     fingerprint: StyleSampleFingerprint,
@@ -69,6 +77,10 @@ export async function vectorizeFingerprintSamples(
  * 删除某个指纹的样章向量。
  * 指纹被删除时必须调用：否则样章向量文件留在磁盘上成为孤儿，
  * 检索侧仍可能命中一个已经不在库里的指纹。
+ * @param app - Obsidian 应用实例
+ * @param fingerprint - 指纹
+ * @param project - 项目（路径或对象）
+ * @returns 是否成功
  */
 export async function deleteFingerprintSamples(
     app: App,
@@ -90,7 +102,14 @@ export async function deleteFingerprintSamples(
     }
 }
 
-/** 重建一批指纹的样章向量（供“重向量化全部”使用）。 */
+/**
+ * 重建一批指纹的样章向量（供“重向量化全部”使用）。
+ *
+ * @param app - Obsidian 应用实例
+ * @param fingerprints - 指纹集合
+ * @param project - 项目（路径或对象）
+ * @returns 数值结果
+ */
 export async function vectorizeFingerprintSamplesBatch(
     app: App,
     fingerprints: StyleSampleFingerprint[],
@@ -108,6 +127,11 @@ export async function vectorizeFingerprintSamplesBatch(
  *
  * 优先用 LocalVectorStore 做语义检索；embedding 不可用/无结果时回退到
  * 启用指纹的原始 samples，避免“样章注入静默为空”。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param fingerprints - 指纹集合
+ * @param query - 查询串
+  * @returns StyleSampleSelection 实例
  */
 export async function selectBodyStyleSamples(
     app: App,
@@ -175,7 +199,12 @@ export async function selectBodyStyleSamples(
     return { samples: fallback, source: fallback.length > 0 ? 'fallback' : 'none' };
 }
 
-/** 格式化为正文 system prompt 片段（限长 1500 字）。 */
+/**
+ * 格式化为正文 system prompt 片段（限长 1500 字）。
+ *
+ * @param selection - 选区
+ * @returns 文本结果
+ */
 export function formatStyleSamplesForPrompt(
     selection: StyleSampleSelection,
     maxChars = 1500,

@@ -22,7 +22,12 @@ export interface PlannedRevealLike {
     status?: string;
 }
 
-/** 解析「计划回收」文本中的章号：`第12章` / `第 12 章` / 纯数字 `12`；无法解析返回 null */
+/**
+ * 解析「计划回收」文本中的章号：`第12章` / `第 12 章` / 纯数字 `12`；无法解析返回 null
+ *
+ * @param value - 值
+  * @returns 数值结果 或 null
+ */
 export function parsePlannedRevealChapter(value: string | undefined | null): number | null {
     if (!value) return null;
     const matched = value.match(/第\s*(\d+)\s*章/) || value.match(/^\s*(\d+)\s*$/);
@@ -45,6 +50,9 @@ function normalizeForeshadowName(value: string): string {
  *
  * 匹配按规范化名称的包含关系，取最长命中，避免「玄铁剑」抢走「玄铁剑鞘」的计划章。
  * 已有 `expectedRecoverChapterNum` 的条目保持原值（调用方显式设置的优先）。
+ * @param trackings - 追踪记录
+ * @param items - 条目列表
+ * @returns 结果数组
  */
 export function applyPlannedRevealChapters(
     trackings: ForeshadowTracking[],
@@ -85,6 +93,8 @@ export function applyPlannedRevealChapters(
  * 越长越容易匹配不到（误报）。这里宁漏勿误：
  * - 短伏笔（4–12 字）整体作为关键词；过短的名称（<4 字）无法可靠检索，直接丢弃；
  * - 长伏笔按标点切分，只保留 4–16 字片段，最多 4 个。
+ * @param content - 内容
+ * @returns 结果数组
  */
 export function extractForeshadowKeywords(content: string): string[] {
     const normalized = (content || '').trim();
@@ -109,6 +119,8 @@ export function extractForeshadowKeywords(content: string): string[] {
  * - 已回收（`status === 'resolved'`）；
  * - 低重要度（`importance === 'low'`）；
  * - 埋设章号缺失/非法（`distance = 当前章 - 0` 会让每条都直接判 critical）。
+ * @param items - 条目列表
+ * @returns 结果数组
  */
 export function toForeshadowTrackings(
     items: TrackedForeshadowLike[] | undefined | null,

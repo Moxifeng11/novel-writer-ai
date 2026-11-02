@@ -675,6 +675,7 @@ export class KnowledgeBaseManager {
     /**
      * 知识库数据版本号：任何一次增删改都会递增。
      * 供检索缓存做键的一部分（同步读取，不触发 IO）。
+     * @returns 数值结果
      */
     get version(): number {
         return this.mutationSeq;
@@ -816,6 +817,9 @@ export class KnowledgeBaseManager {
     /**
      * 记录向量化结果（A5）。
      * 拆解状态保持 `completed`，向量失败单独落盘，供列表徽标与详情页「重试向量化」使用。
+     * @param bookId - 书籍 ID
+     * @param status - 状态
+     * @param error - 错误
      */
     async setVectorStatus(bookId: string, status: VectorStatus, error?: string): Promise<void> {
         const book = this.books.get(bookId);

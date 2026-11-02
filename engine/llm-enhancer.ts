@@ -550,6 +550,7 @@ export class LLMEnhancer {
 
     /**
      * 获取缓存统计信息
+      * @returns number } 结果
      */
     getCacheStats(): { verifySize: number; titleSize: number; maxSize: number } {
         return {

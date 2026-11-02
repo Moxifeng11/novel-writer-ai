@@ -12,7 +12,12 @@ type KeyLike = {
     nativeEvent?: { isComposing?: boolean; keyCode?: number };
 };
 
-/** 事件是否处于 IME 组字阶段（React/原生事件都能传） */
+/**
+ * 事件是否处于 IME 组字阶段（React/原生事件都能传）
+ *
+ * @param event - 事件
+ * @returns 是否成功
+ */
 export function isImeComposing(event: KeyLike | null | undefined): boolean {
     if (!event) return false;
     if (event.isComposing === true) return true;

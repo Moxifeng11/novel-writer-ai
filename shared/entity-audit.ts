@@ -18,7 +18,13 @@ export interface AuditedEntity {
     missingFields: string[];
 }
 
-/** 扫描项目下四类实体，返回所有未通过完整性校验的文件 */
+/**
+ * 扫描项目下四类实体，返回所有未通过完整性校验的文件
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export async function auditEntityFiles(app: App, project: string): Promise<AuditedEntity[]> {
     const incomplete: AuditedEntity[] = [];
 
@@ -47,7 +53,13 @@ export async function auditEntityFiles(app: App, project: string): Promise<Audit
     return incomplete;
 }
 
-/** 读取项目世界观，作为 AI 补全的上下文（可为空） */
+/**
+ * 读取项目世界观，作为 AI 补全的上下文（可为空）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export async function readProjectWorldview(app: App, project: string): Promise<string> {
     const file = app.vault.getAbstractFileByPath(pjWorldview(project));
     if (!(file instanceof TFile)) return '';
@@ -61,6 +73,10 @@ export async function readProjectWorldview(app: App, project: string): Promise<s
 /**
  * 复检通过后原地覆写实体文件。
  * 返回 false 表示补全结果仍不完整，调用方必须保持原文件不变。
+ * @param app - Obsidian 应用实例
+ * @param item - 条目
+ * @param content - 内容
+  * @returns string[] }> 结果
  */
 export async function overwriteEntityIfComplete(
     app: App,

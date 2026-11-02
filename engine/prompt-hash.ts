@@ -8,7 +8,13 @@
  * 纯函数、无依赖；fnv1a 双轮拼接（64 位效果），无密码学需求。
  */
 
-/** FNV-1a 32 位（seed 可变，双轮不同 seed 降低碰撞） */
+/**
+ * FNV-1a 32 位（seed 可变，双轮不同 seed 降低碰撞）
+ *
+ * @param input - 输入
+ * @param seed - 随机种子
+ * @returns 文本结果
+ */
 function fnv1a32(input: string, seed: number): string {
     let hash = seed >>> 0;
     for (let i = 0; i < input.length; i++) {
@@ -21,6 +27,12 @@ function fnv1a32(input: string, seed: number): string {
 /**
  * 计算稳定哈希 key：切换供应商/模型/温度/参数后 key 自动变化（决策 D-6）。
  * 维度：systemPrompt / userPrompt / model / temperature / maxTokens。
+ * @param systemPrompt - 系统提示词
+ * @param userPrompt - 用户提示词
+ * @param model - 模型标识
+ * @param temperature - 采样温度
+ * @param maxTokens - 最大 token 数
+ * @returns 文本结果
  */
 export function computePromptHash(
     systemPrompt: string,

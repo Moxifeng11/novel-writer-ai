@@ -388,6 +388,8 @@ export async function readPreResearchData(
  * 只要求每类最关键的四项：分类/类型、一句话故事(logline/premise)、
  * 核心冲突、情绪承诺(hook/promise)。目标字数与参考资料不参与判定，
  * 否则默认值会把新项目直接判成已完成。
+ * @param data - 数据
+ * @returns 是否成功
  */
 export function isPreResearchComplete(data: PreResearchData | null): boolean {
     if (!data) return false;

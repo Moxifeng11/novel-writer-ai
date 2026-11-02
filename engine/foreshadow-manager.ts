@@ -294,6 +294,9 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
      * 揭示伏笔：将伏笔库中指定伏笔的状态改为"已揭示"
      * v4.27 修订：单线程不等于无竞态——多个入口（结算/分析报告/协同）在 await 处交错
      * 会对同一文件做读-改-写。本方法已接入 withWriteLock。
+     * @param project - 项目（路径或对象）
+     * @param foreshadowNames - 伏笔名称列表
+     * @param chapterName - 章节名
      */
     async revealForeshadows(project: string, foreshadowNames: string[], chapterName: string): Promise<void> {
         try {
@@ -1169,7 +1172,12 @@ export async function getForeshadowWarnings(
     return warnings;
 }
 
-/** 模块级：健壮解析伏笔表格（自动检测表头，兼容列顺序变化） */
+/**
+ * 模块级：健壮解析伏笔表格（自动检测表头，兼容列顺序变化）
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseForeshadowTableContent(content: string): ForeshadowItem[] {
     const lines = content.split('\n');
     let headerIdx = -1;
@@ -1230,7 +1238,12 @@ export function parseForeshadowTableContent(content: string): ForeshadowItem[] {
     return items;
 }
 
-/** 模块级：旧格式回退解析（兼容无表头的表格） */
+/**
+ * 模块级：旧格式回退解析（兼容无表头的表格）
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 function parseForeshadowTableFallbackLegacy(content: string): ForeshadowItem[] {
     const items: ForeshadowItem[] = [];
     for (const line of content.split('\n')) {
@@ -1256,6 +1269,8 @@ function parseForeshadowTableFallbackLegacy(content: string): ForeshadowItem[] {
 /**
  * 从 plannedReveal 字段中解析章号
  * 支持"第N章"格式，跳过"第N卷"格式
+ * @param plannedReveal - 计划揭示位置
+  * @returns 数值结果 或 null
  */
 function parseChapterNumber(plannedReveal: string): number | null {
     if (!plannedReveal) return null;

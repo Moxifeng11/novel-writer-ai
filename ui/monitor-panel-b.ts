@@ -191,7 +191,11 @@ export class MonitorPanelB extends DraggablePanel {
     }
   }
 
-  /** 同步注入当前项目名（协同写作视图没有 activeFile，必须由调用方显式提供） */
+  /**
+   * 同步注入当前项目名（协同写作视图没有 activeFile，必须由调用方显式提供）
+   *
+   * @param project - 项目（路径或对象）
+   */
   setActiveProject(project: string): void {
     this.activeProject = (project || "").trim();
   }
@@ -215,7 +219,12 @@ export class MonitorPanelB extends DraggablePanel {
     await super.onClose();
   }
 
-  /** 实时更新剧情完成度和偏离检测（带防抖） */
+  /**
+   * 实时更新剧情完成度和偏离检测（带防抖）
+   *
+   * @param text - 文本内容
+   * @param chapterKey - 章节键
+   */
   updateCompletion(text: string, chapterKey?: string): void {
     if (!this.completionEngine || !this.completionContent) return;
 
@@ -1098,41 +1107,69 @@ export class MonitorPanelB extends DraggablePanel {
   }
 
 
-  /** 更新引擎选项 */
+  /**
+   * 更新引擎选项
+   *
+   * @param options - 配置项
+   */
   setCompletionOptions(options: Partial<PlotCompletionEngineOptions>): void {
     if (this.completionEngine) {
       this.completionEngine.updateOptions(options);
     }
   }
 
-  /** 获取最新评估结果 */
+  /**
+   * 获取最新评估结果
+   *
+    * @returns PlotCompletionResult 或 null
+   */
   getLastResult(): PlotCompletionResult | null {
     return this.lastResult;
   }
 
-  /** 获取历史记录 */
+  /**
+   * 获取历史记录
+   *
+   * @returns 结果数组
+   */
   getHistory(): CompletionHistoryEntry[] {
     return [...this.history];
   }
 
-  /** 更新偏离引擎选项 */
+  /**
+   * 更新偏离引擎选项
+   *
+   * @param options - 配置项
+   */
   setDivergenceOptions(options: Partial<PlotDivergenceEngineOptions>): void {
     if (this.divergenceEngine) {
       this.divergenceEngine.updateOptions(options);
     }
   }
 
-  /** 获取最新偏离检测结果 */
+  /**
+   * 获取最新偏离检测结果
+   *
+    * @returns DivergenceResult 或 null
+   */
   getLastDivergenceResult(): DivergenceResult | null {
     return this.lastDivergenceResult;
   }
 
-  /** 获取偏离历史记录 */
+  /**
+   * 获取偏离历史记录
+   *
+   * @returns 结果数组
+   */
   getDivergenceHistory(): DivergenceHistoryEntry[] {
     return [...this.divergenceHistory];
   }
 
-  /** 忽略当前偏离问题 */
+  /**
+   * 忽略当前偏离问题
+   *
+   * @param issueKey - 问题键
+   */
   ignoreDivergenceIssue(issueKey: string): void {
     if (this.divergenceEngine) {
       this.divergenceEngine.ignoreIssue(issueKey);
@@ -1825,17 +1862,29 @@ export class MonitorPanelB extends DraggablePanel {
   }
 
   /** 更新质量引擎选项 */
-  /** 获取最新质量评估结果 */
+  /**
+   * 获取最新质量评估结果
+   *
+    * @returns WritingQualityResult 或 null
+   */
   getLastQualityResult(): WritingQualityResult | null {
     return this.lastQualityResult;
   }
 
-  /** 获取质量历史记录 */
+  /**
+   * 获取质量历史记录
+   *
+   * @returns 结果数组
+   */
   getQualityHistory(): QualityHistoryEntry[] {
     return [...this.qualityHistory];
   }
 
-  /** 忽略质量建议 */
+  /**
+   * 忽略质量建议
+   *
+   * @param suggestionId - 建议ID
+   */
   ignoreQualitySuggestion(suggestionId: string): void {
     if (this.qualityEngine) {
       this.qualityEngine.ignoreSuggestion(suggestionId);

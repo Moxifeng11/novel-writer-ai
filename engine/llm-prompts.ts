@@ -55,6 +55,10 @@ const JSON_SYSTEM_PREFIX = `你是一名专业的小说文本分析师。请根�
 /**
  * 构建 personality 维度提示词（性格标签提炼）
  * 输出结构：{ personality: string[], evidence: string[] }
+ * @param text - 文本内容
+ * @param _genreConfig - 题材配置
+ * @param existing - 已有
+  * @returns LLMPromptPair 实例
  */
 function buildPersonalityPrompt(text: string, _genreConfig?: GenreConfig, existing?: unknown): LLMPromptPair {
     return {
@@ -77,6 +81,10 @@ ${existing ? JSON.stringify(existing).slice(0, 800) : '（无）'}
 /**
  * 构建 abilities 维度提示词（能力提炼）
  * 输出结构：{ abilities: string[], categories: string[] }
+ * @param text - 文本内容
+ * @param _genreConfig - 题材配置
+ * @param existing - 已有
+  * @returns LLMPromptPair 实例
  */
 function buildAbilitiesPrompt(text: string, _genreConfig?: GenreConfig, existing?: unknown): LLMPromptPair {
     return {
@@ -99,6 +107,10 @@ ${existing ? JSON.stringify(existing).slice(0, 800) : '（无）'}
 /**
  * 构建 goals 维度提示词（目标描述）
  * 输出结构：{ shortTermGoals: string[], longTermGoal: string }
+ * @param text - 文本内容
+ * @param _genreConfig - 题材配置
+ * @param existing - 已有
+  * @returns LLMPromptPair 实例
  */
 function buildGoalsPrompt(text: string, _genreConfig?: GenreConfig, existing?: unknown): LLMPromptPair {
     return {
@@ -121,6 +133,10 @@ ${existing ? JSON.stringify(existing).slice(0, 800) : '（无）'}
 /**
  * 构建 style 维度提示词（风格关键词）
  * 输出结构：{ styleKeywords: string[], rhetoricFeatures: string[] }
+ * @param text - 文本内容
+ * @param _genreConfig - 题材配置
+ * @param existing - 已有
+  * @returns LLMPromptPair 实例
  */
 function buildStylePrompt(text: string, _genreConfig?: GenreConfig, existing?: unknown): LLMPromptPair {
     return {
@@ -143,6 +159,10 @@ ${existing ? JSON.stringify(existing).slice(0, 800) : '（无）'}
 /**
  * 构建 rhythm 维度提示词（事件描述）
  * 输出结构：{ events: Array<{description: string, type: string}>, pacing: string }
+ * @param text - 文本内容
+ * @param _genreConfig - 题材配置
+ * @param existing - 已有
+  * @returns LLMPromptPair 实例
  */
 function buildRhythmPrompt(text: string, _genreConfig?: GenreConfig, existing?: unknown): LLMPromptPair {
     return {
@@ -165,6 +185,10 @@ ${existing ? JSON.stringify(existing).slice(0, 800) : '（无）'}
 /**
  * 构建 foreshadow 维度提示词（伏笔列表）
  * 输出结构：{ foreshadows: Array<{hint: string, type: string, confidence: number}> }
+ * @param text - 文本内容
+ * @param _genreConfig - 题材配置
+ * @param existing - 已有
+  * @returns LLMPromptPair 实例
  */
 function buildForeshadowPrompt(text: string, _genreConfig?: GenreConfig, existing?: unknown): LLMPromptPair {
     return {
@@ -191,6 +215,10 @@ ${existing ? JSON.stringify(existing).slice(0, 800) : '（无）'}
  * 输出结构：{ genreId: string, displayName: string, detectorSignals: string[], keywords: { abilityKeywords: string[], styleKeywords: string[], foreshadowTypes: string[] } }
  *
  * 注意：genreId 必须从给定列表中选择，或返回 "generic"
+ * @param text - 文本内容
+ * @param _genreConfig - 题材配置
+ * @param existing - 已有
+  * @returns LLMPromptPair 实例
  */
 function buildGenrePrompt(text: string, _genreConfig?: GenreConfig, existing?: unknown): LLMPromptPair {
     return {
@@ -235,6 +263,7 @@ const PROMPT_BUILDERS: Record<LLMEnhanceDimension, (text: string, genreConfig?: 
  * @param text 上下文摘要文本（建议 200-500 字）
  * @param genreConfig 题材配置（可选，目前仅 genre 维度使用）
  * @param existingResult 已有统计结果（可选，作为 LLM 参考）
+  * @returns LLMPromptPair 实例
  */
 export function getDimensionPrompt(
     dimension: LLMEnhanceDimension,
@@ -254,6 +283,9 @@ export function getDimensionPrompt(
  * - 给出 0-1 的置信度，便于后续与统计置信度加权融合
  * - 要求提供简短理由，便于调试和人工审核
  * - 批处理模式：每批最多 20 个候选，避免 prompt 过长
+ * @param candidates - 候选
+ * @param textSample - 文本样本
+  * @returns LLMPromptPair 实例
  */
 export function buildCharacterVerifyPrompt(
     candidates: string[],
@@ -294,6 +326,9 @@ ${candidatesList}
  * - 返回 merge 建议格式，sourceName=称号/别名，targetName=主名称
  * - 只生成建议，不直接合并，由上层 pipeline 决定是否采纳
  * - 批处理模式：每批处理 5-10 个角色的上下文
+ * @param candidates - 候选
+ * @param textSample - 文本样本
+  * @returns LLMPromptPair 实例
  */
 export function buildTitleAliasPrompt(
     candidates: string[],

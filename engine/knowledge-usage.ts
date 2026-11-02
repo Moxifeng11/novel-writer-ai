@@ -25,14 +25,26 @@ export interface KnowledgeUsageAppLike {
     };
 }
 
-/** 从文件名推断展示标签：第1章_大纲摘要.md → 大纲摘要；第1章_正文.md → 正文 */
+/**
+ * 从文件名推断展示标签：第1章_大纲摘要.md → 大纲摘要；第1章_正文.md → 正文
+ *
+ * @param fileName - 文件名
+ * @returns 文本结果
+ */
 export function labelOfStepFile(fileName: string): string {
     const match = fileName.match(/^第\d+章(?:_[^_/]+)?_([^_/]+)\.md$/);
     if (match) return match[1];
     return fileName.replace(/\.md$/, '');
 }
 
-/** 扫描项目内所有承载 rag_sources 的文件（步骤结果 + 正文） */
+/**
+ * 扫描项目内所有承载 rag_sources 的文件（步骤结果 + 正文）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param options - 配置项
+  * @returns RagUsageSummary 实例
+ */
 export function collectKnowledgeUsage(
     app: KnowledgeUsageAppLike,
     project: string,

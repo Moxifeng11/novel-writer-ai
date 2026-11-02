@@ -44,6 +44,9 @@ export interface PruneOutcome {
 /**
  * 按 Unicode 码点裁剪，避免把代理对（emoji）切成半个字符。
  * 中段被替换为 {@link PRUNE_MARKER}。
+ * @param text - 文本内容
+ * @param config - 配置
+  * @returns PruneOutcome 实例
  */
 export function pruneToolResultText(text: string, config: Partial<PruneConfig> = {}): PruneOutcome {
     const cfg = { ...DEFAULT_PRUNE_CONFIG, ...config };

@@ -160,7 +160,12 @@ export interface HarnessAssistantTurn {
  * 模型适配器接口。
  */
 export interface HarnessAdapter {
-    /** 返回 null 表示适配失败（网络/凭据/解析全部失败），由 loop 决定降级 */
+    /**
+     * 返回 null 表示适配失败（网络/凭据/解析全部失败），由 loop 决定降级
+     *
+     * @param request - 请求
+      * @returns HarnessAssistantTurn 或 null
+     */
     complete(request: HarnessAdapterRequest): Promise<HarnessAssistantTurn | null>;
 }
 

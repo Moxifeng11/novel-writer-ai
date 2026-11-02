@@ -12,6 +12,10 @@ export type CursorFallback = 'start' | 'end';
  * 归一化光标位置。
  * - `null` / `undefined` / 非有限数 → 按 `fallback` 回退到开头或文末；
  * - 其余值夹紧到 [0, 正文长度]（`0` 是合法光标位置，不再回退到文末）。
+ * @param selectionStart - 选区起始
+ * @param textLength - 文本长度
+ * @param fallback - 回退值
+ * @returns 数值结果
  */
 export function resolveCursorPosition(
     selectionStart: number | null | undefined,

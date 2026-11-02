@@ -50,6 +50,8 @@ export class KnowledgeToFingerprintConverter {
      * @param bookId 书籍 ID（保留参数，当前未直接使用）
      * @param bookName 书名（用于定位知识库目录）
      * @param baseDir 知识库根目录，可选
+     * @param originalSamples - 原始样本
+      * @returns StyleFingerprint 实例
      */
     async convert(bookId: string, bookName: string, baseDir?: string, originalSamples?: string[]): Promise<StyleFingerprint> {
         const styleFilePath = kbBookStyleFingerprintFile(bookName, baseDir);
@@ -87,6 +89,12 @@ export class KnowledgeToFingerprintConverter {
     /**
      * 转换并向量化：将知识库拆解数据转换为写作指纹，
      * 并在 embeddingClient 可用时生成风格向量数据。
+     * @param bookId - 书籍 ID
+     * @param bookName - 书名
+     * @param baseDir - 基础目录
+     * @param onProgress - 进度回调
+     * @param originalSamples - 原始样本
+      * @returns boolean }> 结果
      */
     async convertWithVectors(
         bookId: string,
@@ -126,6 +134,8 @@ export class KnowledgeToFingerprintConverter {
 
     /**
      * 从风格分析结果生成更丰富的特征描述，用于向量化。
+     * @param features - 特征集合
+      * @returns StyleFingerprintFeatures 实例
      */
     enhanceFeaturesForVectorization(features: StyleFingerprintFeatures): StyleFingerprintFeatures {
         const enhanced = { ...features };

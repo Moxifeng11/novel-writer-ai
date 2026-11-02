@@ -600,7 +600,11 @@ export default class NovelWriterPlugin extends Plugin {
     /** 状态栏「今日字数」元素 */
     private _wordCountStatusEl: HTMLElement | null = null;
 
-    /** 供 UI 层读取统计服务（弹窗/宠物/设置页） */
+    /**
+     * 供 UI 层读取统计服务（弹窗/宠物/设置页）
+     *
+      * @returns WritingStatsService 或 null
+     */
     public get writingStats(): WritingStatsService | null {
         return this._writingStats;
     }
@@ -617,6 +621,7 @@ export default class NovelWriterPlugin extends Plugin {
     /**
      * 安全打开文件：工作台上下文中仅显示 Notice，避免跳转到 Obsidian 主窗口
      * 用于替换 Modal 中所有 workspace.getLeaf(false).openFile(file) 调用
+     * @param file - 文件
      */
     async safeOpenFile(file: TFile): Promise<void> {
         if (this._isWorkbenchContext) {
@@ -633,12 +638,17 @@ export default class NovelWriterPlugin extends Plugin {
     /**
      * 是否具备发起 AI 调用的凭据：云端密钥，或本地免密钥推理端点（Ollama 等）。
      * UI 的「生成前守卫」必须用它，不能直接看 `settings.apiKey`——本地模型用户本来就无需密钥。
+     * @returns 是否成功
      */
     get hasAiCredentials(): boolean {
         return hasUsableAiCredentials(this.settings);
     }
 
-    /** 从当前活动文件检测所属项目名（非项目目录返回 null） */
+    /**
+     * 从当前活动文件检测所属项目名（非项目目录返回 null）
+     *
+      * @returns 文本结果 或 null
+     */
     getActiveProject(): string | null {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
@@ -664,7 +674,11 @@ export default class NovelWriterPlugin extends Plugin {
         return this._workbenchContext?.project || null;
     }
 
-    /** 工作台每次渲染时写入当前章节上下文；关闭工作台时传入 null 清空 */
+    /**
+     * 工作台每次渲染时写入当前章节上下文；关闭工作台时传入 null 清空
+     *
+     * @param ctx - 上下文
+     */
     setWorkbenchContext(ctx: WorkbenchChapterContext | null): void {
         this._workbenchContext = ctx;
     }
@@ -677,6 +691,7 @@ export default class NovelWriterPlugin extends Plugin {
      * 解析命令层可用的章节目标。
      * 优先级：工作台上下文 > activeFile 标准正文 > activeFile 步骤结果目录 > null。
      * 所有从快捷工具/命令面板触发的章节级操作都应走这里，禁止各自读 getActiveFile。
+      * @returns ActiveChapterTarget 或 null
      */
     getActiveChapterTarget(): ActiveChapterTarget | null {
         return resolveActiveChapterTarget({
@@ -1084,6 +1099,7 @@ export default class NovelWriterPlugin extends Plugin {
      * 打开统一实体管理弹窗（组合根入口）。
      * 供 `ui/unified-entity-generate-modal` 反向跳转时调用：弹窗只依赖插件实例，
      * 不再 import 管理弹窗，从而断开两个兄弟模态的运行时循环依赖。
+     * @param project - 项目（路径或对象）
      */
     openEntityManagerModal(project: string): void {
         new UnifiedEntityManagerModal(this.app, this, project).open();
@@ -1122,6 +1138,7 @@ export default class NovelWriterPlugin extends Plugin {
     /**
      * 「创作流程」入口：打开工作台并停在指定项目的流程页签。
      * 创建短篇/剧本、Agent 引导、命令面板都走这里，避免各自重复实现跳转。
+     * @param project - 项目（路径或对象）
      */
     public async openCreationFlow(project?: string): Promise<void> {
         await this.openFullWriterView();
@@ -1133,7 +1150,14 @@ export default class NovelWriterPlugin extends Plugin {
         }
     }
 
-    /** v4.0: 打开句级协同写作视图 */
+    /**
+     * v4.0: 打开句级协同写作视图
+     *
+     * @param project - 项目（路径或对象）
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param chapterNum - 章号
+     */
     public async activateCoWritingView(project?: string, chapterName?: string, volume?: string, chapterNum?: number): Promise<void> {
         const { workspace } = this.app;
         let leaf = workspace.getLeavesOfType(VIEW_TYPE_CO_WRITE)[0];
@@ -1254,7 +1278,12 @@ export default class NovelWriterPlugin extends Plugin {
     private async encryptKey(plaintext: string): Promise<string> {
         return this._cryptoService.encrypt(plaintext);
     }
-    /** 解密单个密钥（供 AIApiClient 在请求前按需解锁） */
+    /**
+     * 解密单个密钥（供 AIApiClient 在请求前按需解锁）
+     *
+     * @param stored - 已存储值
+     * @returns 文本结果
+     */
     async decryptKey(stored: string): Promise<string> {
         return this._cryptoService.decrypt(stored);
     }
@@ -1262,12 +1291,18 @@ export default class NovelWriterPlugin extends Plugin {
      * 静默解密：不弹口令框。未解锁时原样返回密文。
      * 供章节打开时的后台分析（如情节线 AI 解析）使用——这类调用失败可以跳过，
      * 不应该用口令弹窗打断用户。
+     * @param stored - 已存储值
+     * @returns 文本结果
      */
     async decryptKeyWithoutPrompt(stored: string): Promise<string> {
         return this._cryptoService.decryptWithoutPrompt(stored);
     }
 
-    /** 设置页读取加密状态用（未初始化时返回 null） */
+    /**
+     * 设置页读取加密状态用（未初始化时返回 null）
+     *
+      * @returns boolean } 结果 或 null
+     */
     getSettingsService(): { lockedSecretCount(): number; hasEncryptedSecrets(): boolean } | null {
         const service = this.engineRegistry.getOrNull<{
             lockedSecretCount(): number;
@@ -1276,7 +1311,11 @@ export default class NovelWriterPlugin extends Plugin {
         return service ?? null;
     }
 
-    /** 设置会话口令（解锁 / 首次设定口令后调用） */
+    /**
+     * 设置会话口令（解锁 / 首次设定口令后调用）
+     *
+     * @param password - 口令
+     */
     setSessionPassword(password: string): void {
         this._cryptoService.setSessionPassword(password);
     }
@@ -1286,6 +1325,8 @@ export default class NovelWriterPlugin extends Plugin {
      *
      * 用新口令重新加密所有可读的明文；解不开的旧密文会被清空并列名，
      * 让用户重新填写——避免它们停留在「看起来配好但实际无效」的状态。
+     * @param password - 口令
+      * @returns string[] }> 结果
      */
     async resetKeyPassword(password: string): Promise<{ reencrypted: number; cleared: string[] }> {
         this._cryptoService.setSessionPassword(password);
@@ -1404,7 +1445,11 @@ export default class NovelWriterPlugin extends Plugin {
         new WritingStatsModal(this.app, this, 'day').open();
     }
 
-    /** 桌面宠物开关（设置页、命令、宠物自身关闭按钮共用） */
+    /**
+     * 桌面宠物开关（设置页、命令、宠物自身关闭按钮共用）
+     *
+     * @param enabled - 是否启用
+     */
     public setWritingPetEnabled(enabled: boolean): void {
         this.settings.petEnabled = enabled;
         if (!enabled || Platform.isMobile) {
@@ -1449,9 +1494,18 @@ export default class NovelWriterPlugin extends Plugin {
     public deleteCustomProvider(id: string): boolean { return this._providerManager.deleteCustom(id); }
     public getAllProviders() { return this._providerManager.getAllProviders(); }
     public setHidden(id: string, hidden: boolean): boolean { return this._providerManager.setHidden(id, hidden); }
-    /** 删除自定义供应商（与「隐藏预设」区分：自定义项真删，预设可恢复） */
+    /**
+     * 删除自定义供应商（与「隐藏预设」区分：自定义项真删，预设可恢复）
+     *
+     * @param id - 标识
+     */
     public removeCustomProvider(id: string): boolean { return this._providerManager.removeCustomProvider(id); }
-    /** 解锁前校验口令（没有密文时直接通过） */
+    /**
+     * 解锁前校验口令（没有密文时直接通过）
+     *
+     * @param password - 口令
+     * @returns 是否成功
+     */
     public async verifySettingsPassword(password: string): Promise<boolean> {
         const service = this.getSettingsService?.() as { canDecryptStoredSecret?: (pw: string) => Promise<boolean> } | null;
         if (!service?.canDecryptStoredSecret) return true;
@@ -1490,7 +1544,11 @@ export default class NovelWriterPlugin extends Plugin {
     public get foreshadowManager(): ForeshadowManager { return this._foreshadowManager; }
     public get reviewAgent(): ReviewAgent { return this._reviewAgent; }
 
-    /** 分析报告引擎（懒加载，首次访问时由注册表创建） */
+    /**
+     * 分析报告引擎（懒加载，首次访问时由注册表创建）
+     *
+      * @returns AnalysisReportEngine 实例
+     */
     get analysisReportEngine(): AnalysisReportEngine {
         return this.engineRegistry.get(ENGINE_NAMES.ANALYSIS_REPORT_ENGINE);
     }
@@ -1505,6 +1563,7 @@ export default class NovelWriterPlugin extends Plugin {
     /**
      * 打开本插件的设置页。
      * Obsidian 未提供公开 API，只能用内部的 `app.setting`；不可用时退回提示用户手动进入。
+     * @returns 是否成功
      */
     openPluginSettings(): boolean {
         const appSetting = (this.app as unknown as {
@@ -1534,7 +1593,11 @@ export default class NovelWriterPlugin extends Plugin {
         return this.app.commands.executeCommandById(commandId);
     }
 
-    /** 最近的长流程执行记录（诊断/E2E/Agent 端口共用；新→旧） */
+    /**
+     * 最近的长流程执行记录（诊断/E2E/Agent 端口共用；新→旧）
+     *
+     * @returns 结果数组
+     */
     getExecutionLedgerRecords(limit = 20): Array<Record<string, unknown>> {
         return getExecutionLedger().getRecent(limit) as unknown as Array<Record<string, unknown>>;
     }
@@ -1545,6 +1608,8 @@ export default class NovelWriterPlugin extends Plugin {
      * executeCommand 是 fire-and-forget（UI 点击不需要等），Agent 却必须知道
      * 「派发成功还是立刻抛错」。这里对 registry 命令 await 真实完成，
      * 未注册的命令仍走 Obsidian 路由（同步派发，无法等待）。
+     * @param commandId - 命令ID
+     * @returns 是否成功
      */
     async executeCommandAsync(commandId: string): Promise<boolean> {
         if (this.registry.has(commandId)) {
@@ -1806,7 +1871,11 @@ export default class NovelWriterPlugin extends Plugin {
         modal.open();
     }
 
-    /** 打开更新日志模态框 */
+    /**
+     * 打开更新日志模态框
+     *
+     * @param highlightVersion - 高亮版本
+     */
     public openChangelog(highlightVersion?: string): void {
         new ChangelogModal(this.app, {
             highlightVersion,

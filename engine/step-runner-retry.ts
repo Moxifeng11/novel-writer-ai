@@ -175,6 +175,9 @@ export async function callAIStreamWithRetry(
 /**
  * 输出仍被截断时给用户可见提示。
  * 只写日志会让「半章」被当成完整章节保存，用户无从判断结尾是否缺失。
+ * @param host - 宿主元素
+ * @param result - 结果
+ * @param label - 标签
  */
 export function warnIfTruncated(
     host: Pick<StepRunnerRetryHost, 'showNotice'>,

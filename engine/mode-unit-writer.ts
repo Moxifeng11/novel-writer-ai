@@ -120,7 +120,13 @@ function formatFrontmatterValue(value: unknown): string {
     return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
-/** 在原始文本上就地更新 frontmatter 字段；没有 frontmatter 时补一个 */
+/**
+ * 在原始文本上就地更新 frontmatter 字段；没有 frontmatter 时补一个
+ *
+ * @param raw - 原始
+ * @param patch - 补丁
+ * @returns 文本结果
+ */
 export function patchFrontmatterText(raw: string, patch: Record<string, unknown>): string {
     const source = String(raw ?? '');
     const { frontmatter, body } = splitFrontmatter(source);
@@ -149,7 +155,12 @@ export function patchFrontmatterText(raw: string, patch: Record<string, unknown>
     return `${lines.join('\n')}\n${tail.slice(1)}${body}`;
 }
 
-/** 正文字数：去掉 frontmatter、标题符号与空白后的字符数 */
+/**
+ * 正文字数：去掉 frontmatter、标题符号与空白后的字符数
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countUnitWords(text: string): number {
     const body = splitFrontmatter(text).body;
     return body
@@ -431,7 +442,13 @@ export function createObsidianUnitFilePort(app: App): UnitFilePort {
     };
 }
 
-/** 改写结果的应用守卫：目标区间原文变了就拒绝，避免覆盖用户新输入 */
+/**
+ * 改写结果的应用守卫：目标区间原文变了就拒绝，避免覆盖用户新输入
+ *
+ * @param currentText - 当前文本
+ * @param selection - 选区
+ * @returns 是否成功
+ */
 export function canApplyRewrite(
     currentText: string,
     selection: { start: number; end: number; originalText: string },

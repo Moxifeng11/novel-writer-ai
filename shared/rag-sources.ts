@@ -29,7 +29,13 @@ function normalizeExcerpt(sample: string): string {
     return text.length > RAG_EXCERPT_MAX ? `${text.slice(0, RAG_EXCERPT_MAX)}…` : text;
 }
 
-/** 追加一条来源（去重 + 上限），返回是否真的写入 */
+/**
+ * 追加一条来源（去重 + 上限），返回是否真的写入
+ *
+ * @param list - 列表
+ * @param source - 来源
+ * @returns 是否成功
+ */
 export function pushRagSource(list: RagSource[], source: RagSource): boolean {
     const book = String(source.book || '').trim();
     if (!book) return false;
@@ -48,14 +54,24 @@ export function pushRagSource(list: RagSource[], source: RagSource): boolean {
     return true;
 }
 
-/** 写入 frontmatter 前的清洗：去重、截断、限制条数（幂等） */
+/**
+ * 写入 frontmatter 前的清洗：去重、截断、限制条数（幂等）
+ *
+ * @param list - 列表
+ * @returns 结果数组
+ */
 export function formatRagSources(list: readonly RagSource[]): RagSource[] {
     const out: RagSource[] = [];
     for (const item of list) pushRagSource(out, item);
     return out;
 }
 
-/** 一句话摘要，用于统计页/日志：书A(style) 0.82；书B(original) 0.74 … */
+/**
+ * 一句话摘要，用于统计页/日志：书A(style) 0.82；书B(original) 0.74 …
+ *
+ * @param list - 列表
+ * @returns 文本结果
+ */
 export function summarizeRagSources(list: readonly RagSource[]): string {
     return formatRagSources(list)
         .map(item => `${item.book}(${item.dimension}) ${item.score.toFixed(2)}`)
@@ -89,7 +105,12 @@ export interface RagUsageSummary {
     recent: RagUsageRecord[];
 }
 
-/** 从 frontmatter 的 rag_sources 还原（容忍旧数据/手改） */
+/**
+ * 从 frontmatter 的 rag_sources 还原（容忍旧数据/手改）
+ *
+ * @param value - 值
+ * @returns 结果数组
+ */
 export function normalizeRagSources(value: unknown): RagSource[] {
     if (!Array.isArray(value)) return [];
     const out: RagSource[] = [];
@@ -105,7 +126,13 @@ export function normalizeRagSources(value: unknown): RagSource[] {
     return out;
 }
 
-/** 汇总知识引用情况（纯函数） */
+/**
+ * 汇总知识引用情况（纯函数）
+ *
+ * @param records - 记录列表
+ * @param options - 配置项
+  * @returns RagUsageSummary 实例
+ */
 export function summarizeRagUsage(
     records: readonly RagUsageRecord[],
     options: { recentLimit?: number } = {},

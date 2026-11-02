@@ -83,6 +83,8 @@ export interface HumanVoiceOptions {
  * 组装人味约束块。
  * - 样文优先模式：样文块 + 6 条弱约束；没有样文时只给弱约束（绝不再退回配额清单）。
  * - 配额模式：返回旧版 `HUMAN_VOICE_BLOCK`，用于 A/B 对比与回退。
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export function buildHumanVoiceBlock(options: HumanVoiceOptions = {}): string {
     if (options.mode === 'quota') return HUMAN_VOICE_BLOCK;

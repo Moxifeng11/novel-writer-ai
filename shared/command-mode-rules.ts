@@ -110,7 +110,12 @@ export const COMMAND_MODE_LABELS: Record<string, string> = {
     [CommandIds.SCRIPT_STORYBOARD]: '剧本分镜表',
 };
 
-/** 返回该命令允许的模式；未登记返回 null（不限制） */
+/**
+ * 返回该命令允许的模式；未登记返回 null（不限制）
+ *
+ * @param commandId - 命令ID
+  * @returns 结果数组 或 null
+ */
 export function commandAllowedModes(commandId: string): CreationMode[] | null {
     return COMMAND_MODE_RULES[commandId] ?? null;
 }

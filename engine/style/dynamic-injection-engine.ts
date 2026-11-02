@@ -212,6 +212,7 @@ export class ContextAnalyzer {
      * 分析文本上下文特征
      * @param text 当前已写文本（建议传尾部 500-800 字）
      * @param directionHint 可选的 direction 提示（优先于自动识别）
+      * @returns ContextFeatures 实例
      */
     analyze(text: string, directionHint?: SuggestionDirection): ContextFeatures {
         const safeText = (text || '').slice(-800);
@@ -348,6 +349,7 @@ export class DynamicSampleSelector {
      * @param samples 向量检索结果（已按相似度排序）
      * @param context 上下文特征
      * @param topN 返回的示例数量（默认 3）
+     * @returns 结果数组
      */
     select(
         samples: Array<{ sample: string; score: number; fingerprintId?: string }>,
@@ -476,6 +478,7 @@ export class TieredInjectionBuilder {
      * @param intensityConfigs 可选的强度配置（按 fpId 索引）
      * @param maxTotalLength 总长度上限（默认 2000；v4.20 起可由设置 fingerprintInjectionBudget 调整）
      * @param statsOut 可选：填充注入统计（prompt-ledger 消费）
+     * @returns 结果数组
      */
     build(
         fingerprints: StyleFingerprint[],
@@ -770,7 +773,11 @@ export function createDynamicInjectionEngine(): {
     };
 }
 
-/** 获取默认强度配置（用于未传入 intensityConfigs 时的兜底） */
+/**
+ * 获取默认强度配置（用于未传入 intensityConfigs 时的兜底）
+ *
+  * @returns StyleIntensityConfig 实例
+ */
 function getDefaultIntensityConfig(): StyleIntensityConfig {
     return { ...DEFAULT_INTENSITY_CONFIG };
 }

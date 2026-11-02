@@ -19,6 +19,8 @@ export interface ModelSourceLike {
 /**
  * 解析模型源类型。
  * 优先使用显式 sourceType 字段；旧数据缺失时按 id/endpoint 启发式兜底，保证向后兼容。
+ * @param provider - 提供方
+  * @returns ModelSourceType 实例
  */
 export function resolveProviderSourceType(provider: ModelSourceLike): ModelSourceType {
     if (provider.sourceType === 'local' || provider.sourceType === 'cloud') {

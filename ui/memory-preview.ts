@@ -27,6 +27,10 @@ export class MemoryPreview {
 
     /**
      * 刷新显示：触发记忆 + 全量记忆库
+     * @param triggered - 是否触发
+     * @param allShards - 全部分片
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
      */
     refresh(
         triggered: TriggeredMemory[],

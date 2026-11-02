@@ -46,6 +46,8 @@ type StepValidator = (content: string) => StepValidationResult;
  *   1. 去掉行内 `**粗体**` / `__粗体__` 标记；
  *   2. 把「独占一行的标签：」升级为二级标题，便于统一走分节内容校验。
  * 不修改落盘内容，仅影响校验结果。
+ * @param content - 内容
+ * @returns 文本结果
  */
 export function normalizeStepMarkup(content: string): string {
     if (!content) return '';
@@ -100,7 +102,12 @@ function stripHeadingNumbering(line: string): string {
     return line;
 }
 
-/** 去掉标题序号前缀与包裹符（`一、`/`【修改建议汇总】`/`（三）质量评估`） */
+/**
+ * 去掉标题序号前缀与包裹符（`一、`/`【修改建议汇总】`/`（三）质量评估`）
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 function stripHeadingDecoration(text: string): string {
     return stripNumberingPrefix(text)
         .replace(/^[\s【\[（(]+/, '')
@@ -111,6 +118,9 @@ function stripHeadingDecoration(text: string): string {
 /**
  * 提取指定标题（Markdown ## 或 ### 级）后的内容块，直到下一个同级或更高级标题。
  * 返回空字符串表示没找到标题或标题后无内容。
+ * @param content - 内容
+ * @param headingPattern - 标题匹配模式
+ * @returns 文本结果
  */
 function extractSectionAfterHeading(content: string, headingPattern: RegExp): string {
     const lines = content.split('\n');
@@ -146,7 +156,12 @@ function extractSectionAfterHeading(content: string, headingPattern: RegExp): st
 const PLACEHOLDER_VALUE_RE =
     /^(?:（可选）|\(可选\)|\[[^\]]*\]|>-|-{2,}|—|暂无|无|略|待补充|待定|未设置|未知|n\/a|\.{3,}|…+|[\u4e00-\u9fa5A-Za-z]+(?:\/[\u4e00-\u9fa5A-Za-z]+){2,})$/i;
 
-/** 值是否为占位（空 / 枚举提示 / >- / 暂无 等） */
+/**
+ * 值是否为占位（空 / 枚举提示 / >- / 暂无 等）
+ *
+ * @param value - 值
+ * @returns 是否成功
+ */
 function isPlaceholderValue(value: string): boolean {
     const v = value.trim().replace(/^["'「」]|["'「」]$/g, '').trim();
     if (!v) return true;
@@ -166,6 +181,8 @@ const BRACKET_ENUM_RE = /\[[^\]\n]*\/[^\]\n]*\]/;
  *   - 本章处于全书 [开端/发展/转折/高潮/收尾] 阶段
  * 旧实现按字符数判定，这些标签与枚举本身就能凑够 20/30 字门槛，
  * 导致未生成的情节蒸馏/大纲摘要被判为 complete（Rev 185 修复）。
+ * @param content - 内容
+ * @returns 文本结果
  */
 export function stripPlaceholderLines(content: string): string {
     if (!content) return '';
@@ -204,6 +221,8 @@ export function stripPlaceholderLines(content: string): string {
  * - 去除空白后长度 >= minChars
  * - 不是纯占位符（待补充、待定、省略号等）
  * - 键值对格式时，值不能为空
+ * @param text - 文本内容
+ * @returns 是否成功
  */
 function hasMeaningfulContent(text: string, minChars = 15): boolean {
     const clean = stripPlaceholderLines(text).replace(/\s+/g, '').trim();
@@ -215,6 +234,9 @@ function hasMeaningfulContent(text: string, minChars = 15): boolean {
 
 /**
  * 检查某个标题下是否有实质内容（组合版，一步到位）
+ * @param content - 内容
+ * @param headingPattern - 标题匹配模式
+ * @returns 是否成功
  */
 function sectionContentValid(content: string, headingPattern: RegExp, minChars = 20): boolean {
     const section = extractSectionAfterHeading(content, headingPattern);
@@ -227,6 +249,7 @@ function sectionContentValid(content: string, headingPattern: RegExp, minChars =
  * @param total 必填项总数
  * @param missing 缺失的必填项名称
  * @param extraBonus 额外加分（可选加分项）
+  * @returns StepValidationResult 实例
  */
 function makeResult(
     found: number,
@@ -263,6 +286,8 @@ function makeResult(
  * 信息规划校验
  * 必填：章名与核心冲突 / 情感温度+冲突强度 / 熵预算与自信息 / 伏笔操作
  * v6.1: 从标题存在校验升级为内容实质校验
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateInfoPlan(content: string): StepValidationResult {
     const required = [
@@ -301,6 +326,8 @@ function validateInfoPlan(content: string): StepValidationResult {
  * 与 PLOT_DISTILL_PROMPTS 的输出结构对齐：
  * 必填：情节节点规划 / 冲突升级路径 / 信息密度指标
  * 加分：场景节奏设计 / 爽点设计
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validatePlotDistill(content: string): StepValidationResult {
     const required = [
@@ -330,6 +357,8 @@ function validatePlotDistill(content: string): StepValidationResult {
  * 大纲摘要校验
  * 必填：全书定位 / 至少3个场景 / 结尾钩子
  * v6.1: 从标题存在校验升级为内容实质校验
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateOutline(content: string): StepValidationResult {
     const required = [
@@ -393,7 +422,14 @@ const SOUL_COMPACT_LABELS: Record<string, string> = {
     boundary: '底',
 };
 
-/** 取块内某字段的值：优先「标签：值」同行，其次紧凑「欲>值」，最后「## 标签」下的第一行 */
+/**
+ * 取块内某字段的值：优先「标签：值」同行，其次紧凑「欲>值」，最后「## 标签」下的第一行
+ *
+ * @param body - 正文
+ * @param labels - 标签列表
+ * @param compactLabel - 精简标签
+ * @returns 文本结果
+ */
 function readSoulField(body: string, labels: string[], compactLabel?: string): string {
     if (compactLabel) {
         const compact = body.match(new RegExp(`(?:^|[|】])\\s*${compactLabel}>\\s*([^|\\n]+)`));
@@ -409,7 +445,12 @@ function readSoulField(body: string, labels: string[], compactLabel?: string): s
     return '';
 }
 
-/** 灵魂字段是否实质有效：非占位，且去掉标点后 >= 4 个字符（防「>-」「暂无」「无」） */
+/**
+ * 灵魂字段是否实质有效：非占位，且去掉标点后 >= 4 个字符（防「>-」「暂无」「无」）
+ *
+ * @param value - 值
+ * @returns 是否成功
+ */
 function isEffectiveSoulValue(value: string): boolean {
     if (!value || isPlaceholderValue(value)) return false;
     const pure = value.replace(/[\s，。、“”‘’！？；：、,.!?;:"'()（）\-—…]/g, '');
@@ -458,6 +499,8 @@ function validateCharacterSoul(content: string): StepValidationResult {
 
 /**
  * 情绪规划校验（复用引擎层校验）
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateEmotionPlanWrapper(content: string): StepValidationResult {
     const result = validateEmotionPlan(content);
@@ -475,6 +518,8 @@ function validateEmotionPlanWrapper(content: string): StepValidationResult {
 
 /**
  * Scene展开校验（复用引擎层校验）
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateSceneExpandWrapper(content: string): StepValidationResult {
     const result = validateSceneExpansion(content);
@@ -496,6 +541,8 @@ function validateSceneExpandWrapper(content: string): StepValidationResult {
  * @deprecated bodyGeneration 步骤已废弃，推荐使用句级协同写作（CoWriterEngine）。
  *             此校验函数保留用于兼容旧数据和句级写作完成后的正文完整性检查。
  *             两条路径共享同一正文文件格式，校验规则一致。
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateBodyGeneration(content: string, minWords = 2100): StepValidationResult {
     const pureText = content.replace(/^---[\s\S]*?---/, '').trim();
@@ -540,6 +587,8 @@ function validateBodyGeneration(content: string, minWords = 2100): StepValidatio
 /**
  * 审查类步骤校验（分析报告等）
  * 必填：问题列表（至少1个问题或明确无问题）/ 总结评价
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateAuditStep(content: string): StepValidationResult {
     const hasIssues = /问题|缺陷|不足|错误|❌|⚠️|需修正/.test(content);
@@ -567,6 +616,8 @@ function validateAuditStep(content: string): StepValidationResult {
  * v6.0: 三合一质量控制校验（写作技法检查 + 连贯性审查 + 质量评估）
  * 必填：三大板块标题 / 修改建议汇总 / 检查项结论
  * v6.1: 从标题存在校验升级为内容实质校验
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateQualityControlMerged(content: string): StepValidationResult {
     // v4.25：标题允许「## 【一、写作技法检查】」这类带全角括号+序号的装饰
@@ -601,6 +652,8 @@ function validateQualityControlMerged(content: string): StepValidationResult {
 /**
  * 修正类步骤校验（fix / finalFix）
  * 必填：字数达标 / 有对话 / 结构完整
+ * @param content - 内容
+  * @returns StepValidationResult 实例
  */
 function validateFixStep(content: string): StepValidationResult {
     const pureText = content.replace(/^---[\s\S]*?---/, '').trim();
@@ -656,6 +709,7 @@ const STEP_VALIDATORS: Record<string, StepValidator> = {
  * 校验步骤内容完整性
  * @param stepKey 步骤 key
  * @param content 步骤内容（纯正文，不含 frontmatter）
+  * @returns StepValidationResult 实例
  */
 export function validateStepResult(stepKey: string, content: string): StepValidationResult {
     const validator = STEP_VALIDATORS[stepKey];
@@ -689,6 +743,9 @@ const STRUCTURAL_STEPS = new Set([
  * Rev 185：除 `${}` / 待定标记外，骨架还包括「所有标签后都空着」的模板
  * （情节蒸馏、大纲摘要的模板没有变量占位符，旧实现直接放过）。
  * 这里先剔除占位行与 Markdown 标题，再按有效正文长度判断。
+ * @param content - 内容
+ * @param stepKey - 步骤键
+ * @returns 是否成功
  */
 export function isTemplateSkeleton(content: string, stepKey?: string): boolean {
     if (!content || content.trim().length < 30) return true;
@@ -708,6 +765,9 @@ export function isTemplateSkeleton(content: string, stepKey?: string): boolean {
 /**
  * A4: 步骤结果是否真正完成（供断点续跑/恢复等「文件是否存在」场景使用）。
  * 文件非空不代表完成：模板骨架必须排除，其余交给结构校验。
+ * @param stepKey - 步骤键
+ * @param content - 内容
+ * @returns 是否成功
  */
 export function isStepResultComplete(stepKey: string, content: string): boolean {
     const pure = (content || '').replace(/^---[\s\S]*?\n---\n?/, '').trim();

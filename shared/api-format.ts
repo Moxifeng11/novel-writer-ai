@@ -41,7 +41,12 @@ export const API_FORMAT_OPTIONS: readonly ApiFormatOption[] = [
 
 const FORMAT_VALUES = new Set<string>(API_FORMAT_OPTIONS.map(option => option.value));
 
-/** 任意输入 → 合法格式；未知/空值回落到 OpenAI Chat Completions */
+/**
+ * 任意输入 → 合法格式；未知/空值回落到 OpenAI Chat Completions
+ *
+ * @param value - 值
+  * @returns ApiFormat 实例
+ */
 export function normalizeApiFormat(value: unknown): ApiFormat {
     const text = typeof value === 'string' ? value.trim().toLowerCase() : '';
     if (FORMAT_VALUES.has(text)) return text as ApiFormat;
@@ -50,12 +55,22 @@ export function normalizeApiFormat(value: unknown): ApiFormat {
     return 'openai-chat';
 }
 
-/** 是否为 Anthropic 协议（请求头与非流式响应结构都不同） */
+/**
+ * 是否为 Anthropic 协议（请求头与非流式响应结构都不同）
+ *
+ * @param format - 格式
+ * @returns 是否成功
+ */
 export function isAnthropicFormat(format: ApiFormat): boolean {
     return format === 'anthropic-messages';
 }
 
-/** 去掉尾部斜杠 */
+/**
+ * 去掉尾部斜杠
+ *
+ * @param url - 地址
+ * @returns 文本结果
+ */
 function trimSlash(url: string): string {
     return String(url || '').trim().replace(/\/+$/, '');
 }
@@ -68,6 +83,8 @@ function trimSlash(url: string): string {
  *   https://api.deepseek.com/anthropic          → https://api.deepseek.com/anthropic
  *   https://api.deepseek.com/anthropic/v1       → https://api.deepseek.com/anthropic
  *   https://api.openai.com/v1/chat/completions  → https://api.openai.com
+ * @param endpoint - 接口地址
+ * @returns 文本结果
  */
 export function resolveApiRoot(endpoint: string): string {
     let root = trimSlash(endpoint);
@@ -87,6 +104,9 @@ export function resolveApiRoot(endpoint: string): string {
  *   否则在根上补 `/v1/chat/completions`；
  * - anthropic-messages：根 + `/v1/messages`；
  * - openai-responses：根 + `/v1/responses`。
+ * @param endpoint - 接口地址
+ * @param format - 格式
+ * @returns 文本结果
  */
 export function resolveRequestUrl(endpoint: string, format: ApiFormat): string {
     const raw = trimSlash(endpoint);
@@ -108,6 +128,9 @@ export function resolveRequestUrl(endpoint: string, format: ApiFormat): string {
  *
  * OpenAI 系在根上补 `/models`；Anthropic 用 `/v1/models`（官方同时接受带与不带 /v1
  * 两种写法，这里统一按官方文档口径）。
+ * @param endpoint - 接口地址
+ * @param format - 格式
+ * @returns 文本结果
  */
 export function resolveModelsUrl(endpoint: string, format: ApiFormat): string {
     const raw = trimSlash(endpoint);
@@ -133,6 +156,9 @@ export interface ChatRequestInput {
  * 按格式构造请求体。
  * 非 Anthropic 的额外思考参数（reasoning_effort / thinking.type）由调用方补，
  * 这里只保证三套基础骨架正确。
+ * @param format - 格式
+ * @param input - 输入
+ * @returns 映射结果
  */
 export function buildChatRequestBody(format: ApiFormat, input: ChatRequestInput): Record<string, unknown> {
     if (format === 'anthropic-messages') {
@@ -177,7 +203,13 @@ export function buildChatRequestBody(format: ApiFormat, input: ChatRequestInput)
     return body;
 }
 
-/** 按格式生成鉴权头（不含 Content-Type） */
+/**
+ * 按格式生成鉴权头（不含 Content-Type）
+ *
+ * @param format - 格式
+ * @param apiKey - API 密钥
+ * @returns 映射结果
+ */
 export function buildAuthHeaders(format: ApiFormat, apiKey: string): Record<string, string> {
     const headers: Record<string, string> = {};
     const key = String(apiKey || '').trim();
@@ -199,7 +231,12 @@ export interface ParsedChatReply {
     reasoning?: string;
 }
 
-/** Responses API 的 output 数组里可能有多段 output_text */
+/**
+ * Responses API 的 output 数组里可能有多段 output_text
+ *
+ * @param payload - 载荷
+ * @returns 文本结果
+ */
 function readResponsesOutput(payload: unknown): string {
     const data = payload as {
         output_text?: unknown;
@@ -215,7 +252,13 @@ function readResponsesOutput(payload: unknown): string {
     return parts.join('');
 }
 
-/** 解析非流式响应 */
+/**
+ * 解析非流式响应
+ *
+ * @param format - 格式
+ * @param payload - 载荷
+  * @returns ParsedChatReply 实例
+ */
 export function parseChatResponse(format: ApiFormat, payload: unknown): ParsedChatReply {
     if (format === 'anthropic-messages') {
         const data = payload as {
@@ -286,6 +329,9 @@ export interface SseUpdate {
  *   - 空对象 `{}` 表示帧合法但没有正文增量。
  *
  * 传入的是 `data:` 之后的 JSON 文本已解析对象，不负责切行。
+ * @param format - 格式
+ * @param payload - 载荷
+  * @returns SseUpdate 或 null
  */
 export function parseSseFrame(format: ApiFormat, payload: unknown): SseUpdate | null {
     if (format === 'anthropic-messages') {
@@ -351,6 +397,8 @@ export function parseSseFrame(format: ApiFormat, payload: unknown): SseUpdate | 
 /**
  * 判断该格式的流是否以 `data: [DONE]` 收尾。
  * Anthropic 与 Responses 都用语义事件结束，不发 [DONE]。
+ * @param format - 格式
+ * @returns 是否成功
  */
 export function usesDoneSentinel(format: ApiFormat): boolean {
     return format === 'openai-chat';

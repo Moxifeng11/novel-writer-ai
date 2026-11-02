@@ -97,6 +97,7 @@ function docItem(
  *
  * @param context gatherAll 的结果（null 表示尚未加载/加载失败）
  * @param chapterNum 当前章号（用于首章豁免「前章摘要」）
+  * @returns ContextReadiness 实例
  */
 export function assessContextReadiness(
     context: GatheredContext | null,

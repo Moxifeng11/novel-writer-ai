@@ -1237,7 +1237,14 @@ function nodeTextFor(
     return { text: '', tokens: 0, truncated: false };
 }
 
-/** 预算不足时按句末截断，避免把设定/人物卡切在半句话中间 */
+/**
+ * 预算不足时按句末截断，避免把设定/人物卡切在半句话中间
+ *
+ * @param text - 文本内容
+ * @param maxTokens - 最大 token 数
+ * @param modelId - 模型ID
+ * @returns 文本结果
+ */
 function truncateAtSentence(text: string, maxTokens: number, modelId?: string): string {
     const clipped = truncateTextToTokens(text, maxTokens, modelId);
     if (clipped === text) return text;
@@ -1482,7 +1489,12 @@ export function formatStoryContextPack(
     return parts.join('\n');
 }
 
-/** 把信息包映射回既有模板变量，保持模板契约不变 */
+/**
+ * 把信息包映射回既有模板变量，保持模板契约不变
+ *
+ * @param bundle - 打包结果
+ * @returns 映射结果
+ */
 export function formatStoryContextLegacyVars(bundle: StoryContextBundle): Record<string, string> {
     const joinLines = (kind: StoryContextKind, key: 'legacyLine' | 'text'): string => {
         const lines = bundle.byKind[kind]

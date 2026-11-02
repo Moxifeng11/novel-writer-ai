@@ -113,7 +113,12 @@ function isoModified(date: Date): string {
     return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-/** 正文按行拆段：本项目正文约定「一个自然段一行」，剧本也是一行一个元素 */
+/**
+ * 正文按行拆段：本项目正文约定「一个自然段一行」，剧本也是一行一个元素
+ *
+ * @param body - 正文
+ * @returns 结果数组
+ */
 function bodyLines(body: string): string[] {
     return body
         .replace(/\r\n/g, '\n')
@@ -315,7 +320,13 @@ p.empty {
 `;
 }
 
-/** 生成 EPUB 二进制与统计信息 */
+/**
+ * 生成 EPUB 二进制与统计信息
+ *
+ * @param chapters - 章节列表
+ * @param options - 配置项
+  * @returns BuiltBook 实例
+ */
 export function buildEpub(chapters: ManuscriptChapter[], options: BookBuildOptions): BuiltBook {
     const stats = summarizeManuscriptChapters(chapters);
     const metadata: BookMetadata = {

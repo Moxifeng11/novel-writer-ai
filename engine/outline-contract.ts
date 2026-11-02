@@ -63,7 +63,12 @@ function escapeRegExp(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** 匹配 `- **字段**：` 行（用于定位字段起点） */
+/**
+ * 匹配 `- **字段**：` 行（用于定位字段起点）
+ *
+ * @param key - 键
+  * @returns RegExp 实例
+ */
 function fieldLineRegex(key: string): RegExp {
     return new RegExp(`^-\\s*\\*\\*${escapeRegExp(key)}\\*\\*\\s*[：:]`);
 }
@@ -78,6 +83,9 @@ const ANY_FIELD_LINE = /^-\s*\*\*[^*]+\*\*\s*[：:]/;
 /**
  * 提取指定字段的值文本（支持「同行内联」与「换行子列表」两种写法）。
  * 返回 null 表示该字段在内容中完全缺失。
+ * @param content - 内容
+ * @param key - 键
+  * @returns 文本结果 或 null
  */
 export function extractFieldValue(content: string, key: string): string | null {
     const lines = content.split('\n');
@@ -103,7 +111,13 @@ export function extractFieldValue(content: string, key: string): string | null {
     return parts.join('\n').trim();
 }
 
-/** 值是否为「空/占位」。hard=true 时占位符也算空；hard=false 时占位符视为合法的「确实没有」。 */
+/**
+ * 值是否为「空/占位」。hard=true 时占位符也算空；hard=false 时占位符视为合法的「确实没有」。
+ *
+ * @param value - 值
+ * @param hard - 硬约束
+ * @returns 是否成功
+ */
 function isBlankValue(value: string | null, hard: boolean): boolean {
     if (value === null) return true;
     const normalized = value
@@ -138,6 +152,8 @@ export interface NormalizedOutlineSettings {
  * 归一化输入参数，保证后续所有除法/循环都处于合法域内：
  * - volumes / wordsPerChapter / totalWords 非法（NaN、≤0、非整数）时回退默认值；
  * - totalChapters 至少为 volumes，保证每卷至少 1 章（否则按比例分配会出现 0 章卷）。
+ * @param raw - 原始
+  * @returns NormalizedOutlineSettings 实例
  */
 export function normalizeOutlineSettings(raw: {
     totalWords: string;
@@ -170,6 +186,9 @@ export function normalizeOutlineSettings(raw: {
 /**
  * 按比例把 totalChapters 精确分配到 volumes 卷：总和恒等于 totalChapters，且每卷 ≥ 1 章。
  * 这是蓝图不可用/不合法时的回退，也是蓝图章号的归一化目标。
+ * @param volumes - 卷列表
+ * @param totalChapters - 总章数
+ * @returns 结果数组
  */
 export function buildProportionalChapterRanges(volumes: number, totalChapters: number): Array<[number, number]> {
     const ranges: Array<[number, number]> = [];
@@ -190,7 +209,14 @@ export function buildProportionalChapterRanges(volumes: number, totalChapters: n
     return ranges;
 }
 
-/** 校验章号范围是否满足全部硬约束；返回 null 表示合法，否则返回原因描述 */
+/**
+ * 校验章号范围是否满足全部硬约束；返回 null 表示合法，否则返回原因描述
+ *
+ * @param ranges - 范围列表
+ * @param volumes - 卷列表
+ * @param totalChapters - 总章数
+  * @returns 文本结果 或 null
+ */
 export function validateChapterRanges(
     ranges: unknown,
     volumes: number,
@@ -218,6 +244,10 @@ export function validateChapterRanges(
 /**
  * 蓝图章号范围的归一化：合法则原样返回；不合法则按比例重新分配（总和严格等于 totalChapters）。
  * 无论 AI 返回什么（缺项、越界、不连续、总和不符、非数组），结果都是可直接使用的合法范围。
+ * @param ranges - 范围列表
+ * @param volumes - 卷列表
+ * @param totalChapters - 总章数
+  * @returns string } 结果
  */
 export function normalizeChapterRanges(
     ranges: unknown,
@@ -255,6 +285,9 @@ export interface BlueprintValidationContext {
  * - 转折点 ≥ 1 且卷号合法、章节范围落在该卷内；
  * - 伏笔 ≥ 1 且 buryVolume < expectedRevealVolume（否则回收在埋设之前，语义倒置）；
  * - 提供了角色/势力时，对应时间线必须非空。
+ * @param blueprint - 全局蓝图
+ * @param ctx - 上下文
+ * @returns 结果数组
  */
 export function validateBlueprintCompleteness(
     blueprint: ValidatorBlueprint,
@@ -342,7 +375,13 @@ export function validateBlueprintCompleteness(
     return gaps;
 }
 
-/** 蓝图定向补全指令（携带缺陷清单，提示词随轮次变化以绕过 prompt 缓存） */
+/**
+ * 蓝图定向补全指令（携带缺陷清单，提示词随轮次变化以绕过 prompt 缓存）
+ *
+ * @param gaps - 缺口列表
+ * @param attempt - 尝试次数
+ * @returns 文本结果
+ */
 export function buildBlueprintRepairHint(gaps: string[], attempt: number): string {
     return [
         `【第 ${attempt} 轮蓝图定向补全——必须逐项修正】`,
@@ -362,12 +401,24 @@ export function buildBlueprintRepairHint(gaps: string[], attempt: number): strin
 // 四、章节分配表解析 / 校验 / 归一化
 // ============================================================
 
-/** 从内容中提取全部章节号（**不做范围过滤**，用于发现越界/跨卷重叠等全局问题） */
+/**
+ * 从内容中提取全部章节号（**不做范围过滤**，用于发现越界/跨卷重叠等全局问题）
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function extractAllChapterNumbers(content: string): number[] {
     return extractChapterTableRows(content).map(row => row.chapterNumber);
 }
 
-/** 从内容中提取落在 [start, end] 内、去重且描述非空的章节号集合 */
+/**
+ * 从内容中提取落在 [start, end] 内、去重且描述非空的章节号集合
+ *
+ * @param content - 内容
+ * @param start - 起始位置
+ * @param end - 结束位置
+ * @returns 集合结果
+ */
 export function extractCoveredChapters(content: string, start: number, end: number): Set<number> {
     const covered = new Set<number>();
     for (const row of extractChapterTableRows(content)) {
@@ -388,7 +439,14 @@ export interface ChapterTableAnalysis {
     emptyDescription: number[];
 }
 
-/** 全量分析章节表：区分「范围内 / 越界 / 重复 / 描述为空」四类异常 */
+/**
+ * 全量分析章节表：区分「范围内 / 越界 / 重复 / 描述为空」四类异常
+ *
+ * @param content - 内容
+ * @param start - 起始位置
+ * @param end - 结束位置
+  * @returns ChapterTableAnalysis 实例
+ */
 export function analyzeChapterTable(content: string, start: number, end: number): ChapterTableAnalysis {
     const inRange = new Set<number>();
     const outOfRange = new Set<number>();
@@ -416,7 +474,14 @@ export function analyzeChapterTable(content: string, start: number, end: number)
     };
 }
 
-/** 找出 [start, end] 内缺失的章节号，并压缩为连续区间列表（供增量补全按区间请求） */
+/**
+ * 找出 [start, end] 内缺失的章节号，并压缩为连续区间列表（供增量补全按区间请求）
+ *
+ * @param content - 内容
+ * @param start - 起始位置
+ * @param end - 结束位置
+ * @returns 结果数组
+ */
 export function findMissingChapterRanges(
     content: string,
     start: number,
@@ -439,7 +504,13 @@ export function findMissingChapterRanges(
     return ranges;
 }
 
-/** 把连续区间按上限切分成不超过 maxSize 的批次 */
+/**
+ * 把连续区间按上限切分成不超过 maxSize 的批次
+ *
+ * @param ranges - 范围列表
+ * @param maxSize - 最大大小
+ * @returns 结果数组
+ */
 export function chunkRanges(
     ranges: Array<[number, number]>,
     maxSize: number,
@@ -460,6 +531,10 @@ export function chunkRanges(
  * 同时把表格规范化为合法 Markdown（表头 + 分隔行 + 数据行）：
  * 生成端可能省略分隔行，或把分隔行写在数据行之后，直接落盘会导致表格无法渲染。
  * 未找到表头时不改动结构，仅原样返回内容（由校验层报告「缺表格」缺陷）。
+ * @param content - 内容
+ * @param start - 起始位置
+ * @param end - 结束位置
+ * @returns 文本结果
  */
 export function consolidateChapterTable(
     content: string,
@@ -516,6 +591,10 @@ export function consolidateChapterTable(
  *  3. 2 个跨卷摘要字段**存在**（值为「（无）」可接受，因为确实可能没有）；
  *  4. 章节范围必须与规划范围严格一致；
  *  5. 章节表必须是「精确覆盖」：不多、不少、不越界、不重复、描述不为空。
+ * @param content - 内容
+ * @param chapterRange - 章节范围
+ * @param expectedCount - 期望数量
+ * @returns 结果数组
  */
 export function validateVolumeStructure(
     content: string,
@@ -566,7 +645,13 @@ export function validateVolumeStructure(
     return gaps;
 }
 
-/** 卷级定向补全指令（提示词随轮次变化，避免命中 prompt 缓存形成无效重试） */
+/**
+ * 卷级定向补全指令（提示词随轮次变化，避免命中 prompt 缓存形成无效重试）
+ *
+ * @param gaps - 缺口列表
+ * @param attempt - 尝试次数
+ * @returns 文本结果
+ */
 export function buildVolumeRepairHint(gaps: string[], attempt: number): string {
     return [
         `【第 ${attempt} 轮定向补全——必须逐项修正】`,
@@ -593,6 +678,10 @@ export function buildVolumeRepairHint(gaps: string[], attempt: number): string {
  *
  * 注意：这里必须统计**全部**章节号（含越界行），否则越界行会被范围过滤掉，
  * 跨卷重叠与超总章数就永远检不出来——那正是原算法「章号被放大却无人发现」的盲点。
+ * @param volumeContents - 卷内容
+ * @param volumeRanges - 卷范围
+ * @param totalChapters - 总章数
+ * @returns 结果数组
  */
 export function validateGlobalChapterContinuity(
     volumeContents: string[],

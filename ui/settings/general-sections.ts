@@ -310,7 +310,11 @@ export class PerformanceSection extends SettingsSection {
         return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     }
 
-    /** 供宿主 `display()` 调用：更新提示条不属于任何 tab，需在 tab 栏之前渲染 */
+    /**
+     * 供宿主 `display()` 调用：更新提示条不属于任何 tab，需在 tab 栏之前渲染
+     *
+     * @param container - 容器元素
+     */
     renderBanner(container: HTMLElement): void {
         this.renderUpdateBanner(container);
     }

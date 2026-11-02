@@ -79,6 +79,10 @@ const log = createLogger('StyleLearner');
      
      /**
       * 从用户编辑中学习
+      * @param original - 原始
+      * @param modified - 修改后
+      * @param context - 上下文
+       * @returns StyleLearningResult 实例
       */
      async learnFromEdit(
          original: string, 
@@ -119,6 +123,7 @@ const log = createLogger('StyleLearner');
      
      /**
       * 生成风格指南（用于注入提示词）
+      * @returns 文本结果
       */
      getStyleGuide(): string {
          const positive = Array.from(this.patterns.values())
@@ -279,6 +284,7 @@ const log = createLogger('StyleLearner');
 
     /**
      * 检查是否有待处理的写入
+     * @returns 是否成功
      */
     get hasPendingWrites(): boolean {
         return this.writer.isDirty;
@@ -286,6 +292,7 @@ const log = createLogger('StyleLearner');
      
      /**
       * 获取所有模式
+      * @returns 结果数组
       */
      getAllPatterns(): StylePattern[] {
          return Array.from(this.patterns.values());

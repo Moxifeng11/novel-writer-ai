@@ -34,12 +34,23 @@ export const LINK_FIELD_POLICY: Record<string, LinkFieldPolicy> = {
     'faction.领袖': { key: '领袖', cardinality: 'single', targetCategory: 'character' },
 };
 
-/** 该字段是否是链接字段；是则返回策略 */
+/**
+ * 该字段是否是链接字段；是则返回策略
+ *
+ * @param category - 分类
+ * @param fieldKey - 字段键
+  * @returns LinkFieldPolicy 或 undefined
+ */
 export function getLinkPolicy(category: string, fieldKey: string): LinkFieldPolicy | undefined {
     return LINK_FIELD_POLICY[`${category}.${fieldKey}`];
 }
 
-/** 实体名 → wiki-link；空名原样返回 */
+/**
+ * 实体名 → wiki-link；空名原样返回
+ *
+ * @param name - 名称
+ * @returns 文本结果
+ */
 export function toWikiLink(name: string): string {
     const trimmed = String(name || '').trim();
     if (!trimmed) return '';
@@ -47,7 +58,12 @@ export function toWikiLink(name: string): string {
     return `[[${trimmed.replace(/^\[\[|\]\]$/g, '')}]]`;
 }
 
-/** 名单 → 链接数组（去重、去空） */
+/**
+ * 名单 → 链接数组（去重、去空）
+ *
+ * @param names - 名称列表
+ * @returns 结果数组
+ */
 export function toWikiLinks(names: string[]): string[] {
     const seen = new Set<string>();
     const links: string[] = [];
@@ -66,6 +82,8 @@ export function toWikiLinks(names: string[]): string[] {
 /**
  * 任意历史格式的字段值 → 实体名数组。
  * 容忍：`[[A]]`、`[[A|别名]]`、`A、B`、`"A"`、YAML 数组解析后的数组值。
+ * @param value - 值
+ * @returns 结果数组
  */
 export function parseLinkValue(value: unknown): string[] {
     if (value === null || value === undefined) return [];
@@ -85,12 +103,22 @@ export function parseLinkValue(value: unknown): string[] {
         .filter((part) => part.length > 0 && part.length <= 60);
 }
 
-/** single 字段的写入值：第一个名字的链接（旧值有多个时只链第一个，其余信息不丢——反查仍在） */
+/**
+ * single 字段的写入值：第一个名字的链接（旧值有多个时只链第一个，其余信息不丢——反查仍在）
+ *
+ * @param names - 名称列表
+ * @returns 文本结果
+ */
 export function formatSingleLinkValue(names: string[]): string {
     return names.length > 0 ? toWikiLink(names[0]) : '';
 }
 
-/** list 字段的写入值：YAML 内联数组 */
+/**
+ * list 字段的写入值：YAML 内联数组
+ *
+ * @param names - 名称列表
+ * @returns 结果数组
+ */
 export function formatListLinkValue(names: string[]): string[] {
     return toWikiLinks(names);
 }

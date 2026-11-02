@@ -464,7 +464,13 @@ export function listProjects(app: App): string[] {
     return projects.sort();
 }
 
-/** 列出项目正文文件（正文/第N卷/第N章_正文.md） */
+/**
+ * 列出项目正文文件（正文/第N卷/第N章_正文.md）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export function listChapterFiles(app: App, project: string): TFile[] {
     const prefix = `${project}/03-大纲与章节/正文/`;
     return app.vault.getFiles().filter(
@@ -472,7 +478,13 @@ export function listChapterFiles(app: App, project: string): TFile[] {
     );
 }
 
-/** 读取并解析章节元数据 + 正文 */
+/**
+ * 读取并解析章节元数据 + 正文
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export async function collectChapters(app: App, project: string): Promise<ManuscriptChapter[]> {
     const files = listChapterFiles(app, project);
     const chapters: ManuscriptChapter[] = [];

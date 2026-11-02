@@ -58,7 +58,12 @@ export interface SceneBodyGeneratorDeps {
     bodyFormat?: BodyFormatContract;
 }
 
-/** 场景正文生成的系统提示 */
+/**
+ * 场景正文生成的系统提示
+ *
+ * @param bodyFormat - 正文格式
+ * @returns 文本结果
+ */
 export function buildSceneBodySystemPrompt(bodyFormat: BodyFormatContract = DEFAULT_BODY_FORMAT): string {
     return `你是专业的小说作家，负责根据场景任务卡撰写小说正文。
 
@@ -78,6 +83,8 @@ ${buildCraftSystemBlock()}`;
 /**
  * 创建 generateSceneBody 回调（组装 KnowledgeInjector + AIEngine）。
  * 注入/调用失败时返回 error（不抛未捕获异常），由 SceneGenerationLoop 失败隔离。
+ * @param deps - 依赖
+  * @returns GenerateSceneBody 实例
  */
 export function createSceneBodyGenerator(deps: SceneBodyGeneratorDeps): GenerateSceneBody {
     const knowledgeBudgetTokens = Math.max(
@@ -125,7 +132,15 @@ export function createSceneBodyGenerator(deps: SceneBodyGeneratorDeps): Generate
     };
 }
 
-/** 组装 user prompt：任务卡 8 要素 → 上一场景结尾 → 修正方向 → 分层约束上下文 */
+/**
+ * 组装 user prompt：任务卡 8 要素 → 上一场景结尾 → 修正方向 → 分层约束上下文
+ *
+ * @param task - 任务
+ * @param prevEnding - 上一章结尾
+ * @param directive - 指令
+ * @param injection - 注入
+ * @returns 文本结果
+ */
 export function buildUserPrompt(
     task: SceneTask,
     prevEnding: string,

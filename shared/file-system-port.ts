@@ -33,13 +33,33 @@ import { TFile, TFolder } from 'obsidian';
  */
 export interface FileSystemPort {
     // ── 文件操作 ──────────────────────────────────────────────
-    /** 读取文件内容 */
+    /**
+     * 读取文件内容
+     *
+     * @param path - 路径
+     * @returns 文本结果
+     */
     read(path: string): Promise<string>;
-    /** 写入文件（已存在则覆盖） */
+    /**
+     * 写入文件（已存在则覆盖）
+     *
+     * @param path - 路径
+     * @param content - 内容
+     */
     write(path: string, content: string): Promise<void>;
-    /** 检查文件是否存在 */
+    /**
+     * 检查文件是否存在
+     *
+     * @param path - 路径
+     * @returns 是否成功
+     */
     exists(path: string): Promise<boolean>;
-    /** 获取文件元数据（不存在返回 null） */
+    /**
+     * 获取文件元数据（不存在返回 null）
+     *
+     * @param path - 路径
+      * @returns TFile 或 null
+     */
     getFile(path: string): Promise<TFile | null>;
     /**
      * 文件的时间戳与大小（不存在返回 null）。
@@ -49,19 +69,52 @@ export interface FileSystemPort {
      * 能拿到真实的 mtime/size。变更检测只关心这两个数字，不需要 TFile。
      */
     getFileStamp?(path: string): Promise<{ mtime: number; size: number } | null>;
-    /** 获取文件夹元数据（不存在返回 null） */
+    /**
+     * 获取文件夹元数据（不存在返回 null）
+     *
+     * @param path - 路径
+      * @returns TFolder 或 null
+     */
     getFolder(path: string): Promise<TFolder | null>;
-    /** 列出目录下的所有文件（递归） */
+    /**
+     * 列出目录下的所有文件（递归）
+     *
+     * @param dirPath - 目录路径
+     * @returns 结果数组
+     */
     listFiles(dirPath: string): Promise<TFile[]>;
-    /** 列出目录下的所有文件夹（递归） */
+    /**
+     * 列出目录下的所有文件夹（递归）
+     *
+     * @param dirPath - 目录路径
+     * @returns 结果数组
+     */
     listFolders(dirPath: string): Promise<TFolder[]>;
-    /** 创建目录（递归） */
+    /**
+     * 创建目录（递归）
+     *
+     * @param dirPath - 目录路径
+     */
     mkdir(dirPath: string): Promise<void>;
-    /** 获取目录下所有条目 */
+    /**
+     * 获取目录下所有条目
+     *
+     * @param dirPath - 目录路径
+     * @returns 结果数组
+     */
     listAll(dirPath: string): Promise<Array<TFile | TFolder>>;
-    /** 删除文件或目录 */
+    /**
+     * 删除文件或目录
+     *
+     * @param path - 路径
+     */
     delete(path: string): Promise<void>;
-    /** 重命名/移动文件 */
+    /**
+     * 重命名/移动文件
+     *
+     * @param oldPath - 旧路径
+     * @param newPath - 新路径
+     */
     rename(oldPath: string, newPath: string): Promise<void>;
 }
 
@@ -70,7 +123,12 @@ export interface FileSystemPort {
  * 封装 Obsidian 的 frontmatter 处理
  */
 export interface FrontmatterPort {
-    /** 处理文件的 frontmatter（原子操作） */
+    /**
+     * 处理文件的 frontmatter（原子操作）
+     *
+     * @param file - 文件
+     * @param updater - 更新函数
+     */
     processFrontmatter(file: TFile, updater: (fm: Record<string, unknown>) => void): Promise<void>;
 }
 
@@ -79,11 +137,24 @@ export interface FrontmatterPort {
  * 封装 vault 的元数据查询
  */
 export interface VaultMetaPort {
-    /** 获取所有文件 */
+    /**
+     * 获取所有文件
+     *
+     * @returns 结果数组
+     */
     getFiles(): TFile[];
-    /** 获取所有文件夹 */
+    /**
+     * 获取所有文件夹
+     *
+     * @returns 结果数组
+     */
     getFolders(): TFolder[];
-    /** 根据路径获取抽象文件 */
+    /**
+     * 根据路径获取抽象文件
+     *
+     * @param path - 路径
+      * @returns TFile 或 null
+     */
     getAbstractFileByPath(path: string): TFile | TFolder | null;
 }
 
@@ -371,6 +442,9 @@ export class ObsidianFileSystem implements FileSystemPort {
  *
  * UI 层原本直接调用 `app.vault.adapter.write(项目内 .md)`：该写法不触发索引，
  * 移动端（无外部文件监听）与桌面端新建文件都可能长时间不出现在文件浏览器/双链中。
+ * @param app - Obsidian 应用实例
+ * @param path - 路径
+ * @param content - 内容
  */
 export async function writeVaultText(
     app: import('obsidian').App,
@@ -635,12 +709,21 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
         return null;
     }
 
-    /** 辅助方法：预设文件内容 */
+    /**
+     * 辅助方法：预设文件内容
+     *
+     * @param path - 路径
+     * @param content - 内容
+     */
     setFile(path: string, content: string): void {
         this.files.set(path, content);
     }
 
-    /** 辅助方法：预设文件夹 */
+    /**
+     * 辅助方法：预设文件夹
+     *
+     * @param path - 路径
+     */
     setFolder(path: string): void {
         this.folders.add(path);
     }

@@ -77,7 +77,12 @@ export const trueRandom: RandomSource = {
     },
 };
 
-/** Deterministic helper for tests only; production code must use trueRandom. */
+/**
+ * Deterministic helper for tests only; production code must use trueRandom.
+ *
+ * @param seed - 随机种子
+  * @returns RandomSource 实例
+ */
 export function createSeededRandom(seed: string): RandomSource {
     let state = 2166136261;
     for (const char of seed) {

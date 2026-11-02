@@ -30,6 +30,8 @@ export class ChapterStatus {
     /**
      * 从字符串创建 ChapterStatus
      * 非法值默认返回 pending
+     * @param value - 值
+      * @returns ChapterStatus 实例
      */
     static from(value: string | undefined | null): ChapterStatus {
         if (value === 'written') return ChapterStatus.WRITTEN;
@@ -39,27 +41,45 @@ export class ChapterStatus {
 
     /**
      * 从旧的 BodyStatus 类型转换
+     * @param status - 状态
+      * @returns ChapterStatus 实例
      */
     static fromBodyStatus(status: BodyStatus | undefined): ChapterStatus {
         return ChapterStatus.from(status);
     }
 
-    /** 转换为 BodyStatus 类型（向后兼容） */
+    /**
+     * 转换为 BodyStatus 类型（向后兼容）
+     *
+      * @returns BodyStatus 实例
+     */
     toBodyStatus(): BodyStatus {
         return this.value;
     }
 
-    /** 是否为待写状态 */
+    /**
+     * 是否为待写状态
+     *
+     * @returns 是否成功
+     */
     isPending(): boolean {
         return this.value === 'pending';
     }
 
-    /** 是否已写状态 */
+    /**
+     * 是否已写状态
+     *
+     * @returns 是否成功
+     */
     isWritten(): boolean {
         return this.value === 'written';
     }
 
-    /** 是否已结算状态 */
+    /**
+     * 是否已结算状态
+     *
+     * @returns 是否成功
+     */
     isSettled(): boolean {
         return this.value === 'settled';
     }
@@ -67,6 +87,7 @@ export class ChapterStatus {
     /**
      * 转换到下一个状态
      * pending → written → settled
+      * @returns ChapterStatus 实例
      */
     next(): ChapterStatus {
         switch (this.value) {
@@ -82,6 +103,7 @@ export class ChapterStatus {
     /**
      * 回退到上一个状态
      * settled → written → pending
+      * @returns ChapterStatus 实例
      */
     previous(): ChapterStatus {
         switch (this.value) {
@@ -96,6 +118,7 @@ export class ChapterStatus {
 
     /**
      * 获取状态显示文本
+     * @returns 文本结果
      */
     getLabel(): string {
         switch (this.value) {
@@ -108,7 +131,12 @@ export class ChapterStatus {
         }
     }
 
-    /** 值对象相等性比较 */
+    /**
+     * 值对象相等性比较
+     *
+     * @param other - 另一侧值
+     * @returns 是否成功
+     */
     equals(other: ChapterStatus): boolean {
         return this.value === other.value;
     }

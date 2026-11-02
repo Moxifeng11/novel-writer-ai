@@ -30,11 +30,26 @@ export interface StepSpecialsHost {
         chapterName: string,
         volume: string
     ): Promise<boolean>;
-    /** 本步实际模型的窗口/输出上限（sceneExpand 的 prompt 预算闸门） */
+    /**
+     * 本步实际模型的窗口/输出上限（sceneExpand 的 prompt 预算闸门）
+     *
+     * @param model - 模型标识
+      * @returns number } 结果
+     */
     resolveStepBudgetLimits(model: string): { maxContext: number; maxOutput: number };
-    /** 情绪规划知识注入（宿主内部完成画像读取、强度判断与失败降级） */
+    /**
+     * 情绪规划知识注入（宿主内部完成画像读取、强度判断与失败降级）
+     *
+     * @param ctx - 上下文
+     * @returns 文本结果
+     */
     injectEmotionPlanKnowledge(ctx: StepRunCtx): Promise<string>;
-    /** Scene 展开知识注入（宿主内部完成画像读取、强度判断与失败降级） */
+    /**
+     * Scene 展开知识注入（宿主内部完成画像读取、强度判断与失败降级）
+     *
+     * @param ctx - 上下文
+     * @returns 文本结果
+     */
     injectSceneExpandKnowledge(ctx: StepRunCtx): Promise<string>;
     /** 项目自定义 sceneExpand prompt；不存在时返回 null */
     getSceneExpandCustomPrompt?(): Promise<{ systemPrompt: string; userPrompt: string } | null>;

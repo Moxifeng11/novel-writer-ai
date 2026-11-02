@@ -22,23 +22,44 @@
  * @typeParam TId  实体 ID 类型（通常为 string）
  */
 export interface IRepository<T, TId> {
-    /** 根据 ID 查找实体，不存在返回 null */
+    /**
+     * 根据 ID 查找实体，不存在返回 null
+     *
+     * @param id - 标识
+      * @returns T 或 null
+     */
     findById(id: TId): Promise<T | null>;
 
-    /** 查找所有实体 */
+    /**
+     * 查找所有实体
+     *
+     * @returns 结果数组
+     */
     findAll(): Promise<T[]>;
 
     /**
      * 保存实体（新增或更新）
      * - 若实体已存在（ID 匹配）则更新
      * - 若不存在则新增
+     * @param entity - 实体
+      * @returns T 实例
      */
     save(entity: T): Promise<T>;
 
-    /** 根据 ID 删除实体，返回是否删除成功 */
+    /**
+     * 根据 ID 删除实体，返回是否删除成功
+     *
+     * @param id - 标识
+     * @returns 是否成功
+     */
     delete(id: TId): Promise<boolean>;
 
-    /** 检查指定 ID 的实体是否存在 */
+    /**
+     * 检查指定 ID 的实体是否存在
+     *
+     * @param id - 标识
+     * @returns 是否成功
+     */
     exists(id: TId): Promise<boolean>;
 }
 
@@ -83,18 +104,24 @@ export interface IBulkRepository<T, TId> extends IRepository<T, TId> {
     /**
      * 批量保存实体
      * 按顺序逐个执行，失败的记录错误，成功的继续
+     * @param entities - 实体列表
+      * @returns BulkResult<T> 实例
      */
     saveAll(entities: T[]): Promise<BulkResult<T>>;
 
     /**
      * 批量删除实体
      * 按顺序逐个执行，失败的记录错误，成功的继续
+     * @param ids - 标识列表
+      * @returns BulkResult<TId> 实例
      */
     deleteAll(ids: TId[]): Promise<BulkResult<TId>>;
 
     /**
      * 批量查找实体
      * 返回所有找到的实体，未找到的不包含在结果中
+     * @param ids - 标识列表
+     * @returns 结果数组
      */
     findAllById(ids: TId[]): Promise<T[]>;
 }

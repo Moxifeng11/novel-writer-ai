@@ -219,6 +219,8 @@ export class WritingProfileManager {
      * 读取写作配置。
      * P1-10（v4.27）：旧实现把「文件不存在」与「解析失败」都吞成默认值，随后任何 save
      * 都会用默认值覆盖用户配置。现在区分两者：解析失败置 loadFailed，保存前先留档。
+     * @param projectPath - 项目路径
+      * @returns WritingProfile 实例
      */
     async load(projectPath: string): Promise<WritingProfile> {
         const filePath = WritingProfileManager.getConfigFilePath(projectPath);

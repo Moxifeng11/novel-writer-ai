@@ -13,7 +13,12 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('KnowledgeRebuildAction');
 
-/** 重建向量索引：带确认弹窗与完成/未初始化/失败三态反馈 */
+/**
+ * 重建向量索引：带确认弹窗与完成/未初始化/失败三态反馈
+ *
+ * @param app - Obsidian 应用实例
+ * @param plugin - 插件实例
+ */
 export async function rebuildKnowledgeIndexWithConfirm(
     app: App,
     plugin: unknown,

@@ -41,7 +41,12 @@ export interface VolumePlanParseResult {
 const RE_VOLUME_NAME_FIELD = /-\s*\*\*卷名\*\*[：:]\s*(.+)/;
 const RE_CHAPTER_RANGE_FIELD = new RegExp(`-\\s*\\*\\*章节范围\\*\\*[：:]\\s*${RE_CHAPTER_RANGE.source}`);
 
-/** 解析合并后的全书规划文本 */
+/**
+ * 解析合并后的全书规划文本
+ *
+ * @param content - 内容
+  * @returns VolumePlanParseResult 实例
+ */
 export function parseVolumePlan(content: string): VolumePlanParseResult {
     const issues: VolumePlanIssue[] = [];
     const volumes: VolumePlan[] = [];
@@ -152,7 +157,13 @@ export function parseVolumePlan(content: string): VolumePlanParseResult {
     return { volumes, issues };
 }
 
-/** 读取 `- **分卷数**：N` / `- **总章节数**：N` 这类全局声明 */
+/**
+ * 读取 `- **分卷数**：N` / `- **总章节数**：N` 这类全局声明
+ *
+ * @param text - 文本内容
+ * @param field - 字段
+  * @returns 数值结果 或 null
+ */
 function readDeclaredNumber(text: string, field: string): number | null {
     const match = text.match(new RegExp(`-\\s*\\*\\*${field}\\*\\*[：:]\\s*(\\d+)`));
     if (!match) return null;
@@ -160,7 +171,13 @@ function readDeclaredNumber(text: string, field: string): number | null {
     return Number.isFinite(value) && value > 0 ? value : null;
 }
 
-/** 全书总览与分卷明细必须一致，否则说明大纲本身自相矛盾 */
+/**
+ * 全书总览与分卷明细必须一致，否则说明大纲本身自相矛盾
+ *
+ * @param text - 文本内容
+ * @param volumes - 卷列表
+ * @param issues - 问题列表
+ */
 function checkDeclaredTotals(text: string, volumes: VolumePlan[], issues: VolumePlanIssue[]): void {
     const declaredVolumes = readDeclaredNumber(text, '分卷数');
     if (declaredVolumes !== null && volumes.length > 0 && declaredVolumes !== volumes.length) {
@@ -185,6 +202,8 @@ function checkDeclaredTotals(text: string, volumes: VolumePlan[], issues: Volume
  * 分隔行可有可无（生成端有时省略），不能依赖「表头后固定跳过两行」。
  * 卷内还可能有其他以数字开头的表格（三幕结构 / 爽点节奏等），
  * 不能把它们误算成章节。
+ * @param section - 分区
+ * @returns 结果数组
  */
 function extractChapterNumbers(section: string): number[] {
     const lines = section.split(/\r?\n/);
@@ -202,7 +221,14 @@ function extractChapterNumbers(section: string): number[] {
     return numbers;
 }
 
-/** 表格章号必须严格等于声明范围（顺序、连续性、边界） */
+/**
+ * 表格章号必须严格等于声明范围（顺序、连续性、边界）
+ *
+ * @param numbers - 数值
+ * @param start - 起始位置
+ * @param end - 结束位置
+  * @returns 文本结果 或 null
+ */
 function findSequenceMismatch(numbers: number[], start: number, end: number): string | null {
     const expectedLength = end - start + 1;
     for (let i = 0; i < Math.min(numbers.length, expectedLength); i++) {
@@ -216,7 +242,12 @@ function findSequenceMismatch(numbers: number[], start: number, end: number): st
     return null;
 }
 
-/** 卷与卷之间：重叠是错误（会重复建章），断档是警告 */
+/**
+ * 卷与卷之间：重叠是错误（会重复建章），断档是警告
+ *
+ * @param volumes - 卷列表
+ * @param issues - 问题列表
+ */
 function checkCrossVolumeRanges(volumes: VolumePlan[], issues: VolumePlanIssue[]): void {
     const sorted = [...volumes].sort((a, b) => a.startChapter - b.startChapter);
     if (sorted.length > 0 && sorted[0].startChapter !== 1) {

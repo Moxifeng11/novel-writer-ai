@@ -263,6 +263,7 @@ export class ProgressEmitter {
 
     /**
      * 获取当前状态快照
+      * @returns ProgressState 实例
      */
     getState(): ProgressState {
         return { ...this.state };
@@ -270,6 +271,7 @@ export class ProgressEmitter {
 
     /**
      * 获取 AbortSignal，用于取消关联的异步操作
+      * @returns AbortSignal 实例
      */
     getSignal(): AbortSignal {
         return this.abortController.signal;

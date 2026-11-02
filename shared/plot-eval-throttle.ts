@@ -42,7 +42,12 @@ export interface PlotEvalGateDecision {
     next: PlotEvalGateState;
 }
 
-/** FNV-1a 32 位哈希：只用于「正文是否变过」的判定，不参与持久化 */
+/**
+ * FNV-1a 32 位哈希：只用于「正文是否变过」的判定，不参与持久化
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 function hashText(text: string): string {
     let hash = 0x811c9dc5;
     for (let i = 0; i < text.length; i++) {

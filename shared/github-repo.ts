@@ -17,7 +17,12 @@ export function buildGitHubLatestReleaseApi(repoSlug: string = GITHUB_REPO_SLUG)
     return `${GITHUB_API_BASE}/repos/${repoSlug}/releases/latest`;
 }
 
-/** 校验并规范化 owner/repo；非法值返回空串，避免把任意文本拼进 API URL。 */
+/**
+ * 校验并规范化 owner/repo；非法值返回空串，避免把任意文本拼进 API URL。
+ *
+ * @param value - 值
+ * @returns 文本结果
+ */
 export function normalizeGitHubRepo(value: string | undefined | null): string {
     const repo = (value || '').trim()
         .replace(/^https?:\/\/github\.com\//i, '')

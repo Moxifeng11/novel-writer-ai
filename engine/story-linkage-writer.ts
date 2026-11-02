@@ -29,6 +29,9 @@ function pushWarnings(lines: string[], warnings: string[]): void {
  * - 标记对完整 → 原位替换；
  * - 无标记 → 追加到文末（前面加分隔线）；
  * - 只有 BEGIN 没有 END（残缺）→ 视为无标记追加，不删除任何用户内容。
+ * @param original - 原始
+ * @param block - 文本块
+ * @returns 文本结果
  */
 export function upsertLinkageBlock(original: string, block: string): string {
     const body = (block || '').trim();
@@ -47,7 +50,15 @@ export function upsertLinkageBlock(original: string, block: string): string {
     return trimmed ? `${trimmed}\n\n---\n\n${wrapped}\n` : `${wrapped}\n`;
 }
 
-/** 伏笔库自动块：到期 / 逾期 / 即将到期 / 数据质量 */
+/**
+ * 伏笔库自动块：到期 / 逾期 / 即将到期 / 数据质量
+ *
+ * @param items - 条目列表
+ * @param warnings - 警告
+ * @param generatedAt - 生成时间
+ * @param referenceChapter - 参考章节
+ * @returns 文本结果
+ */
 export function buildForeshadowIndexBlock(
     items: LinkageForeshadow[],
     warnings: string[],
@@ -94,7 +105,14 @@ export function buildForeshadowIndexBlock(
     return lines.join('\n');
 }
 
-/** 时间线看板自动块：去重后的事件总览 + 数据质量 */
+/**
+ * 时间线看板自动块：去重后的事件总览 + 数据质量
+ *
+ * @param events - 事件列表
+ * @param warnings - 警告
+ * @param generatedAt - 生成时间
+ * @returns 文本结果
+ */
 export function buildTimelineIndexBlock(
     events: LinkageTimelineEvent[],
     warnings: string[],

@@ -15,7 +15,12 @@ import { readProjectMeta } from './paths';
 
 const MODE_CACHE = new Map<string, CreationMode>();
 
-/** 项目路径前缀 → 模式；返回 null 表示前缀无法判断（老项目在根目录） */
+/**
+ * 项目路径前缀 → 模式；返回 null 表示前缀无法判断（老项目在根目录）
+ *
+ * @param project - 项目（路径或对象）
+  * @returns CreationMode 或 null
+ */
 export function modeFromPathPrefix(project: string): CreationMode | null {
     const prefix = String(project || '').split('/')[0];
     if (prefix === '短篇创作' || prefix === '短篇小说') return 'short';
@@ -32,13 +37,24 @@ export function forgetProjectMode(project: string): void {
     MODE_CACHE.delete(project);
 }
 
-/** 同步读取模式：缓存 → 路径前缀 → long。用于命令面板与同步守卫。 */
+/**
+ * 同步读取模式：缓存 → 路径前缀 → long。用于命令面板与同步守卫。
+ *
+ * @param project - 项目（路径或对象）
+  * @returns CreationMode 实例
+ */
 export function getProjectModeSync(project: string | null | undefined): CreationMode {
     if (!project) return 'long';
     return MODE_CACHE.get(project) ?? modeFromPathPrefix(project) ?? 'long';
 }
 
-/** 异步读取模式：缓存 → 路径前缀 → `.project` → long */
+/**
+ * 异步读取模式：缓存 → 路径前缀 → `.project` → long
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns CreationMode 实例
+ */
 export async function resolveProjectMode(app: App, project: string): Promise<CreationMode> {
     if (!project) return 'long';
     const cached = MODE_CACHE.get(project);

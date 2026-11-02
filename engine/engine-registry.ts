@@ -373,7 +373,12 @@ export class EngineRegistry {
         this.metadata.set(name, meta);
     }
 
-    /** 检查引擎是否已注册（含懒加载工厂、瞬态工厂） */
+    /**
+     * 检查引擎是否已注册（含懒加载工厂、瞬态工厂）
+     *
+     * @param name - 名称
+     * @returns 是否成功
+     */
     has(name: string): boolean {
         return this.instances.has(name)
             || this.lazyFactories.has(name)
@@ -574,12 +579,18 @@ export class EngineRegistry {
         return factory() as T;
     }
 
-    /** 获取懒加载状态 */
+    /**
+     * 获取懒加载状态
+     *
+     * @param name - 名称
+      * @returns LazyState 或 null
+     */
     getLazyState(name: string): LazyState | null {
         return this.lazyStates.get(name) ?? null;
     }
 
     /** 设置当前活跃项目 key，并自动释放非活跃项目的项目级实例
+     * @param projectKey - 项目键
      * @returns 释放的实例数量
      */
     async setActiveProject(projectKey: string | null): Promise<number> {
@@ -779,7 +790,12 @@ export class EngineRegistry {
         return result.reverse();
     }
 
-    /** 判断引擎是否已 dispose */
+    /**
+     * 判断引擎是否已 dispose
+     *
+     * @param name - 名称
+     * @returns 是否成功
+     */
     isDestroyed(name: string): boolean {
         return this.destroyed.has(name);
     }
@@ -791,6 +807,7 @@ export class EngineRegistry {
      * - 检测依赖是否缺失
      * - 检测循环依赖（DFS 找环）
      * - 启动后可手动调用
+      * @returns DependencyCheckResult 实例
      */
     verifyDependencies(): DependencyCheckResult {
         const missing: Array<{ engine: string; missingDependency: string }> = [];
@@ -850,12 +867,18 @@ export class EngineRegistry {
 
     // ─── 元数据查询 ───
 
-    /** 获取单个引擎元数据 */
+    /**
+     * 获取单个引擎元数据
+     *
+     * @param name - 名称
+      * @returns EngineMetadata 或 null
+     */
     getMetadata(name: string): EngineMetadata | null {
         return this.metadata.get(name) ?? null;
     }
 
     /** 列出所有已注册引擎，支持筛选
+     * @param filter - 过滤条件
      * @returns 引擎名 + 元数据 数组
      */
     listEngines(filter?: EngineListFilter): Array<{ name: string; metadata: EngineMetadata }> {
@@ -878,7 +901,11 @@ export class EngineRegistry {
         return result;
     }
 
-    /** 统计已注册引擎数量 */
+    /**
+     * 统计已注册引擎数量
+     *
+     * @returns 数值结果
+     */
     size(): number {
         return this.metadata.size;
     }
@@ -886,6 +913,8 @@ export class EngineRegistry {
     /**
      * 获取指定项目的 StyleLearner 实例（项目级单例）
      * 同一 project 共享同一个实例，首次调用时自动创建并加载数据
+     * @param project - 项目（路径或对象）
+      * @returns StyleLearner 实例
      */
     async getStyleLearner(project: string): Promise<StyleLearner> {
         if (!this.plugin) {
@@ -910,6 +939,8 @@ export class EngineRegistry {
     /**
      * 获取指定项目的 FactIndexManager（项目级单例，故事质量闭环 Task 11）
      * 同一 project 共享同一实例；落盘到项目事实索引 JSON，确认事实写入正式库。
+     * @param project - 项目（路径或对象）
+      * @returns FactIndexManager 实例
      */
     async getFactIndexManager(project: string): Promise<FactIndexManager> {
         if (!this.plugin) {
@@ -962,7 +993,12 @@ export class EngineRegistry {
         return repo;
     }
 
-    /** 获取指定项目的 CharacterRepository */
+    /**
+     * 获取指定项目的 CharacterRepository
+     *
+     * @param project - 项目（路径或对象）
+      * @returns CharacterRepository 实例
+     */
     getCharacterRepository(project: string): CharacterRepository {
         return this.getProjectScopedRepository(
             ENGINE_NAMES.CHARACTER_REPOSITORY,
@@ -971,7 +1007,12 @@ export class EngineRegistry {
         );
     }
 
-    /** 获取指定项目的 ChapterRepository */
+    /**
+     * 获取指定项目的 ChapterRepository
+     *
+     * @param project - 项目（路径或对象）
+      * @returns ChapterRepository 实例
+     */
     getChapterRepository(project: string): ChapterRepository {
         return this.getProjectScopedRepository(
             ENGINE_NAMES.CHAPTER_REPOSITORY,
@@ -980,7 +1021,12 @@ export class EngineRegistry {
         );
     }
 
-    /** 获取指定项目的 FactionRepository */
+    /**
+     * 获取指定项目的 FactionRepository
+     *
+     * @param project - 项目（路径或对象）
+      * @returns FactionRepository 实例
+     */
     getFactionRepository(project: string): FactionRepository {
         return this.getProjectScopedRepository(
             ENGINE_NAMES.FACTION_REPOSITORY,
@@ -989,7 +1035,12 @@ export class EngineRegistry {
         );
     }
 
-    /** 获取指定项目的 LocationRepository */
+    /**
+     * 获取指定项目的 LocationRepository
+     *
+     * @param project - 项目（路径或对象）
+      * @returns LocationRepository 实例
+     */
     getLocationRepository(project: string): LocationRepository {
         return this.getProjectScopedRepository(
             ENGINE_NAMES.LOCATION_REPOSITORY,
@@ -998,7 +1049,12 @@ export class EngineRegistry {
         );
     }
 
-    /** 获取指定项目的 ItemRepository */
+    /**
+     * 获取指定项目的 ItemRepository
+     *
+     * @param project - 项目（路径或对象）
+      * @returns ItemRepository 实例
+     */
     getItemRepository(project: string): ItemRepository {
         return this.getProjectScopedRepository(
             ENGINE_NAMES.ITEM_REPOSITORY,
@@ -1013,6 +1069,8 @@ export class EngineRegistry {
      * 注意：
      * - 调用此方法后，需由 main.ts 从注册表获取实例并赋值给 Plugin 的私有字段
      * - aiEngine / coWriterEngine / analysisReportEngine 为懒加载，首次 get 时才创建
+     * @param plugin - 插件实例
+     * @param opts - 选项
      */
     async initialize(plugin: NovelWriterPlugin, opts: InitializeOptions): Promise<void> {
         this.plugin = plugin;

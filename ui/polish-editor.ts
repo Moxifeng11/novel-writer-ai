@@ -32,7 +32,12 @@ const intensityEngine = new StyleIntensityEngine();
 // 工具函数 (纯函数，无 this 依赖)
 // ============================================================
 
-/** HTML 实体转义（防止 XSS 和标记污染） */
+/**
+ * HTML 实体转义（防止 XSS 和标记污染）
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 export function escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
@@ -57,7 +62,14 @@ export function injectPolishEditorStyles(): void {
     document.head.appendChild(style);
 }
 
-/** 将正文文本转为带实体标记的 HTML */
+/**
+ * 将正文文本转为带实体标记的 HTML
+ *
+ * @param bodyText - 正文文本
+ * @param entityMap - 实体映射
+ * @param typeLabels - 类型标签列表
+ * @returns 文本结果
+ */
 export function buildEntityMarkedHtml(
     bodyText: string,
     entityMap: Map<string, { type: string; color: string }>,
@@ -79,7 +91,13 @@ export function buildEntityMarkedHtml(
     });
 }
 
-/** 从 contenteditable div 提取纯文本（剥离实体 span 的 HTML 包裹） */
+/**
+ * 从 contenteditable div 提取纯文本（剥离实体 span 的 HTML 包裹）
+ *
+ * @param editorDiv - 编辑区元素
+ * @param _entityMap - 实体映射
+ * @returns 文本结果
+ */
 export function extractPlainTextFromEditor(
     editorDiv: HTMLDivElement,
     _entityMap: Map<string, { type: string; color: string }>,

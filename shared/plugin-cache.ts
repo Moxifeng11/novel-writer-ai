@@ -152,17 +152,36 @@ export class PluginCacheManager {
         this.save();
     }
 
-    /** 获取项目实体元数据缓存 */
+    /**
+     * 获取项目实体元数据缓存
+     *
+     * @param project - 项目（路径或对象）
+      * @returns ProjectEntityCache 或 undefined
+     */
     getEntityCache(project: string): ProjectEntityCache | undefined {
         return this.data.entityMetadata?.[project];
     }
 
-    /** 获取单个实体的缓存条目 */
+    /**
+     * 获取单个实体的缓存条目
+     *
+     * @param project - 项目（路径或对象）
+     * @param filePath - 文件路径
+      * @returns EntityCacheEntry 或 undefined
+     */
     getEntityEntry(project: string, filePath: string): EntityCacheEntry | undefined {
         return this.data.entityMetadata?.[project]?.entities[filePath];
     }
 
-    /** 更新单个实体的缓存条目 */
+    /**
+     * 更新单个实体的缓存条目
+     *
+     * @param project - 项目（路径或对象）
+     * @param filePath - 文件路径
+     * @param mtime - 修改时间
+     * @param frontmatter - frontmatter
+     * @param entityType - 实体类型
+     */
     updateEntityEntry(
         project: string,
         filePath: string,
@@ -189,7 +208,12 @@ export class PluginCacheManager {
         this.save();
     }
 
-    /** 批量更新实体缓存 */
+    /**
+     * 批量更新实体缓存
+     *
+     * @param project - 项目（路径或对象）
+     * @param entries - 记录集合
+     */
     batchUpdateEntityEntries(
         project: string,
         entries: Array<{ path: string; mtime: number; frontmatter: Record<string, unknown>; entityType: string }>,
@@ -215,7 +239,12 @@ export class PluginCacheManager {
         this.save();
     }
 
-    /** 清理已删除文件的缓存条目 */
+    /**
+     * 清理已删除文件的缓存条目
+     *
+     * @param project - 项目（路径或对象）
+     * @param existingPaths - 已有路径
+     */
     cleanupEntityCache(project: string, existingPaths: Set<string>): void {
         const projCache = this.data.entityMetadata?.[project];
         if (!projCache) return;
@@ -232,7 +261,11 @@ export class PluginCacheManager {
         }
     }
 
-    /** 清空指定项目的实体缓存 */
+    /**
+     * 清空指定项目的实体缓存
+     *
+     * @param project - 项目（路径或对象）
+     */
     clearEntityCache(project: string): void {
         if (this.data.entityMetadata?.[project]) {
             delete this.data.entityMetadata[project];

@@ -229,6 +229,8 @@ export interface MigrationOutcome {
  *
  * 旧实现里迁移失败只 `break`，而 `saveSettings()` 会无条件写入
  * `schemaVersion: CURRENT`——失败被「盖章完成」，以后不再重试。
+ * @param rawData - 原始数据
+  * @returns MigrationOutcome 实例
  */
 export function migrateSettingsWithStatus(rawData: Record<string, unknown>): MigrationOutcome {
     let data = { ...rawData };

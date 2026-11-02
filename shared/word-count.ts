@@ -14,19 +14,34 @@
 const CJK_BASIC = /[\u4e00-\u9fa5]/g;
 const EN_WORD = /[a-zA-Z]+/g;
 
-/** 中文汉字数（仅基本区） */
+/**
+ * 中文汉字数（仅基本区）
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countCjkChars(text: string): number {
     return (String(text ?? '').match(CJK_BASIC) || []).length;
 }
 
-/** 口径 A：中文字 + 英文单词（数字不计） */
+/**
+ * 口径 A：中文字 + 英文单词（数字不计）
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countCjkAndWords(text: string): number {
     const raw = String(text ?? '');
     if (!raw) return 0;
     return (raw.match(CJK_BASIC) || []).length + (raw.match(EN_WORD) || []).length;
 }
 
-/** 口径 B/C：中文字 + 英文单词 + 数字串，各算 1（英文允许 ' 与 - 连接） */
+/**
+ * 口径 B/C：中文字 + 英文单词 + 数字串，各算 1（英文允许 ' 与 - 连接）
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countCjkWordsAndNumbers(text: string): number {
     const raw = String(text ?? '');
     if (!raw) return 0;
@@ -57,7 +72,12 @@ export function countCjkWordsAndNumbers(text: string): number {
     return count;
 }
 
-/** 口径 D：平台字数（中文字 + 数字逐个 + 英文 0.5/字符，向下取整） */
+/**
+ * 口径 D：平台字数（中文字 + 数字逐个 + 英文 0.5/字符，向下取整）
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countPlatformWords(text: string): number {
     const raw = String(text ?? '');
     if (!raw) return 0;
@@ -78,7 +98,12 @@ export function countPlatformWords(text: string): number {
     return Math.floor(count);
 }
 
-/** 总字符数（原 text-segmenter.countTotalChars 的行为） */
+/**
+ * 总字符数（原 text-segmenter.countTotalChars 的行为）
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countTotalChars(text: string): number {
     const raw = String(text ?? '');
     let count = 0;
@@ -100,7 +125,13 @@ export function countTotalChars(text: string): number {
 
 export type SharedWordCountMode = 'cjk_only' | 'cjk_words' | 'cjk_words_numbers' | 'platform' | 'total';
 
-/** 统一入口；默认与历史多数实现一致（中文字 + 英文单词） */
+/**
+ * 统一入口；默认与历史多数实现一致（中文字 + 英文单词）
+ *
+ * @param text - 文本内容
+ * @param mode - 模式
+ * @returns 数值结果
+ */
 export function countWordsByMode(text: string, mode: SharedWordCountMode = 'cjk_words'): number {
     switch (mode) {
         case 'cjk_only': return countCjkChars(text);

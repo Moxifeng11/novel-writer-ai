@@ -100,7 +100,11 @@ export class RulesService {
         };
     }
 
-    /** 设置生效版本（模板变量构建入口在知道项目时调用） */
+    /**
+     * 设置生效版本（模板变量构建入口在知道项目时调用）
+     *
+     * @param version - 版本
+     */
     setActiveVersion(version: string | undefined): void {
         const next = String(version || '').trim();
         if (next === this.activeVersion) return;
@@ -108,7 +112,11 @@ export class RulesService {
         this.invalidateCache();
     }
 
-    /** 设置当前项目（存在项目内规则文件时优先） */
+    /**
+     * 设置当前项目（存在项目内规则文件时优先）
+     *
+     * @param project - 项目（路径或对象）
+     */
     setProject(project: string | undefined): void {
         const next = String(project || '').trim();
         if (next === this.project) return;

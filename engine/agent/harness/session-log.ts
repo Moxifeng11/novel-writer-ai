@@ -29,22 +29,38 @@ export class AgentSessionLog {
         return this.events.length;
     }
 
-    /** 只读快照（测试/遥测用） */
+    /**
+     * 只读快照（测试/遥测用）
+     *
+     * @returns 结果数组
+     */
     snapshot(): readonly AgentSessionEvent[] {
         return [...this.events];
     }
 
-    /** 调整工具结果裁剪预算（0 表示关闭裁剪） */
+    /**
+     * 调整工具结果裁剪预算（0 表示关闭裁剪）
+     *
+     * @param config - 配置
+     */
     setPruneConfig(config: Partial<PruneConfig>): void {
         this.pruneConfig = { ...this.pruneConfig, ...config };
     }
 
-    /** 最近一次 derive 的裁剪统计 */
+    /**
+     * 最近一次 derive 的裁剪统计
+     *
+      * @returns number } 结果
+     */
     get pruneStats(): { chars: number; results: number } {
         return { chars: this.lastPrunedChars, results: this.lastPrunedResults };
     }
 
-    /** 写入事件：补齐 seq/ts（dsh：日志即事实源，事件必须可排序） */
+    /**
+     * 写入事件：补齐 seq/ts（dsh：日志即事实源，事件必须可排序）
+     *
+     * @param event - 事件
+     */
     append(event: AgentSessionEvent): void {
         this.events.push(this.stamp(event));
     }
@@ -65,17 +81,30 @@ export class AgentSessionLog {
         return `call_${this.callSeq}_${tool}`;
     }
 
-    /** 当前事件序列（会话持久化用；命名避开内部字段 events） */
+    /**
+     * 当前事件序列（会话持久化用；命名避开内部字段 events）
+     *
+     * @returns 结果数组
+     */
     allEvents(): readonly AgentSessionEvent[] {
         return [...this.events];
     }
 
-    /** 当前工具调用序号（会话持久化用） */
+    /**
+     * 当前工具调用序号（会话持久化用）
+     *
+     * @returns 数值结果
+     */
     get callCounter(): number {
         return this.callSeq;
     }
 
-    /** 从存档恢复（替换全部事件；callSeq 由调用方提供或按 callId 反推） */
+    /**
+     * 从存档恢复（替换全部事件；callSeq 由调用方提供或按 callId 反推）
+     *
+     * @param events - 事件列表
+     * @param callSeq - 调用序号
+     */
     restore(events: readonly AgentSessionEvent[], callSeq: number): void {
         this.events = events.map(event => ({ ...event }));
         this.callSeq = Math.max(0, Math.floor(callSeq) || 0);
@@ -101,6 +130,7 @@ export class AgentSessionLog {
      * - tool_call 与对应 tool_result 合并为一行工具交互，避免把 JSON 参数原文塞给模型两次；
      * - tool_result 超预算时保留头/尾、裁剪中段（dsh pruner）；
      * - turn_marker 不进转写。
+     * @returns 结果数组
      */
     derive(limitTurns = 24): DerivedTurn[] {
         const turns: DerivedTurn[] = [];
@@ -157,7 +187,11 @@ export class AgentSessionLog {
         return turns.slice(-limitTurns);
     }
 
-    /** 当前投影的总字符数（会话压缩的压力信号，dsh token-meter 的精简版） */
+    /**
+     * 当前投影的总字符数（会话压缩的压力信号，dsh token-meter 的精简版）
+     *
+     * @returns 数值结果
+     */
     derivedChars(limitTurns = 24): number {
         return this.derive(limitTurns).reduce((sum, turn) => sum + turn.text.length, 0);
     }
@@ -171,6 +205,8 @@ export class AgentSessionLog {
      * （切割处之前所有 tool_call 都已收到 tool_result）；把切割点之前的事件
      * 替换为一个摘要 user_message 节点。system_message 永远保留。
      *
+     * @param summary - 摘要
+     * @param keepTurns - 保留轮数
      * @returns 实际被摘要掉的事件数（0 = 没有可压缩的空间）
      */
     compactToSummary(summary: string, keepTurns: number): number {

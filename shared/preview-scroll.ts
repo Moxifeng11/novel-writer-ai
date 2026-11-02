@@ -19,6 +19,11 @@ export const PREVIEW_BOTTOM_THRESHOLD_PX = 32;
 /**
  * 渲染前抓取滚动锚点。
  * 传入值可能超出可滚动范围（内容刚被删减），先夹紧再判断贴底。
+ * @param top - 顶部
+ * @param scrollHeight - 滚动高度
+ * @param clientHeight - 客户端高度
+ * @param threshold - 阈值
+  * @returns ScrollSnapshot 实例
  */
 export function captureScrollSnapshot(
     top: number,
@@ -37,6 +42,10 @@ export function captureScrollSnapshot(
 /**
  * 渲染后计算应恢复到哪个滚动位置。
  * 内容变长时保持原绝对位置（用户看的那段不动）；变短时夹紧到新的最大滚动值。
+ * @param snapshot - 快照
+ * @param scrollHeight - 滚动高度
+ * @param clientHeight - 客户端高度
+ * @returns 数值结果
  */
 export function resolveRestoredScrollTop(
     snapshot: ScrollSnapshot,

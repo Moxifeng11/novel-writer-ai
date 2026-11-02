@@ -14,13 +14,29 @@ import type { StepRunCtx } from './step-definitions';
 const log = createLogger('StepPromptAssembly');
 
 export interface StepPromptAssemblyHost {
-    /** 大纲摘要步骤的知识注入（宿主内部完成画像读取与失败降级，非 outline 步骤不调用） */
+    /**
+     * 大纲摘要步骤的知识注入（宿主内部完成画像读取与失败降级，非 outline 步骤不调用）
+     *
+     * @param ctx - 上下文
+     * @returns 文本结果
+     */
     loadOutlineKnowledge(ctx: StepRunCtx): Promise<string>;
-    /** 正文生成步骤的知识注入（文笔指纹；宿主内部完成画像读取与失败降级） */
+    /**
+     * 正文生成步骤的知识注入（文笔指纹；宿主内部完成画像读取与失败降级）
+     *
+     * @param ctx - 上下文
+     * @returns 文本结果
+     */
     loadBodyKnowledge(ctx: StepRunCtx): Promise<string>;
     /** 正文步骤的硬约束尾部（样章/对照），不允许被 extraTail 预算裁剪 */
     loadBodyKnowledgeParts?(ctx: StepRunCtx): Promise<{ extra: string; system: string }>;
-    /** 本步实际模型的窗口/输出上限（budget 由任务层给出时优先采用其 maxInput） */
+    /**
+     * 本步实际模型的窗口/输出上限（budget 由任务层给出时优先采用其 maxInput）
+     *
+     * @param model - 模型标识
+     * @param budget - 预算
+      * @returns StepBudgetLimits 实例
+     */
     resolveStepBudgetLimits(model: string, budget?: StepBudgetHint): StepBudgetLimits;
 }
 

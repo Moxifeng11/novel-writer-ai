@@ -117,7 +117,12 @@ const STEP_VARIANTS: Record<string, PromptVariantMeta & { system: string; user: 
     },
 };
 
-/** 人味块版本（正文 system 里的 `${humanVoice}`） */
+/**
+ * 人味块版本（正文 system 里的 `${humanVoice}`）
+ *
+ * @param mode - 模式
+  * @returns PromptVariantMeta 实例
+ */
 export function voiceVariantMeta(mode: HumanVoiceMode): PromptVariantMeta {
     const content = mode === 'quota' ? HUMAN_VOICE_BLOCK : HUMAN_VOICE_WEAK_RULES;
     return {
@@ -128,7 +133,13 @@ export function voiceVariantMeta(mode: HumanVoiceMode): PromptVariantMeta {
     };
 }
 
-/** 正文变体：V2 需要灵魂层数据，`forceVariant` 供实验/设置强制指定 */
+/**
+ * 正文变体：V2 需要灵魂层数据，`forceVariant` 供实验/设置强制指定
+ *
+ * @param vars - 变量表
+ * @param forceVariant - 是否强制变体
+  * @returns PromptVariantMeta 实例
+ */
 export function resolveBodyVariant(
     vars: Record<string, string> | undefined,
     forceVariant?: 'v1' | 'v2' | 'v3' | 'v4',
@@ -148,7 +159,12 @@ export function resolveBodyVariant(
     return soulReady ? STEP_VARIANTS.bodyGenerationV2 : STEP_VARIANTS.bodyGeneration;
 }
 
-/** 任意步骤的模板变体（未登记的步骤返回 null，调用方按无版本处理） */
+/**
+ * 任意步骤的模板变体（未登记的步骤返回 null，调用方按无版本处理）
+ *
+ * @param stepKey - 步骤键
+  * @returns PromptVariantMeta 或 null
+ */
 export function promptVariantOf(stepKey: string): PromptVariantMeta | null {
     const hit = STEP_VARIANTS[stepKey];
     if (!hit) return null;
@@ -159,6 +175,9 @@ export function promptVariantOf(stepKey: string): PromptVariantMeta | null {
 /**
  * 组装归因元数据：正文会把模板版本与人味版本合成一个 compositeId，
  * 这样账本里既能区分「改了哪段模板」，也能区分「用的是配额还是样文」。
+ * @param stepKey - 步骤键
+ * @param options - 配置项
+  * @returns PromptRenderMeta 或 null
  */
 export function renderMetaOf(
     stepKey: string,
@@ -177,7 +196,11 @@ export function renderMetaOf(
     };
 }
 
-/** 全部已登记变体（设置页/文档用） */
+/**
+ * 全部已登记变体（设置页/文档用）
+ *
+ * @returns 结果数组
+ */
 export function listPromptVariants(): PromptVariantMeta[] {
     const list = Object.values(STEP_VARIANTS).map(({ system: _s, user: _u, ...meta }) => meta);
     list.push(voiceVariantMeta('exemplar'), voiceVariantMeta('quota'));

@@ -85,7 +85,12 @@ export interface TriggerContext {
   chapterNumber: number;
 }
 
-/** 记忆碎片文件路径 */
+/**
+ * 记忆碎片文件路径
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function getMemoryDir(project: string): string {
   return pjMemoryShardsDir(project);
 }
@@ -102,7 +107,12 @@ const SENSORY_DICT: Record<string, string[]> = {
   visual: ['红', '黑', '白', '金', '银', '暗', '亮', '昏', '晨', '夜', '月', '日', '星', '火', '血', '影', '雾', '光', '墓', '殿', '楼', '院', '巷', '街', '桥', '河', '山', '林', '荒', '破', '旧', '新'],
 };
 
-/** 从文本中提取感官元素 */
+/**
+ * 从文本中提取感官元素
+ *
+ * @param text - 文本内容
+  * @returns string[] } 结果
+ */
 export function extractSensoryElements(text: string): { smells: string[]; sounds: string[]; touches: string[]; visuals: string[] } {
   const smells: string[] = [];
   const sounds: string[] = [];
@@ -127,6 +137,10 @@ export function extractSensoryElements(text: string): { smells: string[]; sounds
 
 /**
  * 核心匹配函数：从角色记忆库中找出被当前场景触发的记忆
+ * @param shards - 分片列表
+ * @param context - 上下文
+ * @param maxResults - 最大结果列表
+ * @returns 结果数组
  */
 export function matchMemories(
   shards: MemoryShard[],
@@ -186,6 +200,9 @@ export function matchMemories(
 
 /**
  * 生成触发记忆的 prompt 文本（用于注入 AI prompt）
+ * @param triggered - 是否触发
+ * @param protagonistName - 主角名称
+ * @returns 文本结果
  */
 export function formatTriggeredMemoriesForPrompt(
   triggered: TriggeredMemory[],
@@ -211,6 +228,10 @@ export function formatTriggeredMemoriesForPrompt(
 
 /**
  * 读取单个角色的记忆碎片
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param characterName - 角色名称
+ * @returns 结果数组
  */
 export async function loadCharacterMemories(app: App, project: string, characterName: string): Promise<MemoryShard[]> {
   const path = getCharacterMemoryPath(project, characterName);
@@ -229,6 +250,9 @@ export async function loadCharacterMemories(app: App, project: string, character
 
 /**
  * 解析记忆碎片文件
+ * @param content - 内容
+ * @param characterName - 角色名称
+ * @returns 结果数组
  */
 function parseMemoryFile(content: string, characterName: string): MemoryShard[] {
   const shards: MemoryShard[] = [];
@@ -279,6 +303,11 @@ function parseMemoryFile(content: string, characterName: string): MemoryShard[] 
 
 /**
  * 读取项目中所有角色的记忆碎片（用于场景扩展注入）
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param presentCharacters - 出场角色
+ * @param protagonistName - 主角名称
+ * @returns 结果数组
  */
 export async function loadAllMemories(app: App, project: string, presentCharacters: string[], protagonistName: string): Promise<MemoryShard[]> {
   const allShards: MemoryShard[] = [];
@@ -291,6 +320,14 @@ export async function loadAllMemories(app: App, project: string, presentCharacte
 
 /**
  * 完整触发流程：加载 → 提取感官 → 匹配 → 格式化
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param sceneText - 场景文本
+ * @param presentCharacters - 出场角色
+ * @param protagonistName - 主角名称
+ * @param chapterNumber - 章号
+ * @param location - 地点
+  * @returns string }> 结果
  */
 export async function gatherTriggeredMemories(
   app: App,
@@ -327,6 +364,12 @@ export async function gatherTriggeredMemories(
 
 /**
  * 标记记忆为已揭示
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param characterName - 角色名称
+ * @param memoryId - 记忆ID
+ * @param chapterNumber - 章号
+ * @param notifier - 通知器
  */
 export async function markMemoryRevealed(
   app: App,

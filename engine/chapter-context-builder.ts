@@ -5,6 +5,9 @@ import { ChapterFrontmatter } from '../shared/types';
 /**
  * 从章节正文文件的 frontmatter 中提取涉及人物、地点、势力、物品功法列表
  * 使用 metadataCache 零 I/O 读取
+ * @param app - Obsidian 应用实例
+ * @param bodyFile - 正文文件
+  * @returns string[] } 结果
  */
 export function getInvolvedEntities(
     app: App,
@@ -27,6 +30,9 @@ export function getInvolvedEntities(
 /**
  * 获取人物的一行状态摘要（用于非涉及实体的精简展示）。
  * 格式：- [[角色名]]：当前状态=XXX\n
+ * @param content - 内容
+ * @param name - 名称
+ * @returns 文本结果
  */
 export function getEntityStatusLine(content: string, name: string): string {
     const fm = content.match(/^---\n([\s\S]*?)\n---/);
@@ -38,6 +44,9 @@ export function getEntityStatusLine(content: string, name: string): string {
 
 /**
  * 按章号过滤伏笔——只注入当前章相关的伏笔到提示词上下文
+ * @param foreshadowTable - 伏笔表
+ * @param currentChapter - 当前章节
+  * @returns string } 结果
  */
 export function filterForeshadowsByChapter(
     foreshadowTable: string,

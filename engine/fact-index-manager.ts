@@ -90,7 +90,13 @@ export class FactIndexManager {
         this.loaded = true;
     }
 
-    /** 程序性提取正文中的新增实体事实（[[人名]] → character / 《地名》 → world / 【剧情节点】 → plot） */
+    /**
+     * 程序性提取正文中的新增实体事实（[[人名]] → character / 《地名》 → world / 【剧情节点】 → plot）
+     *
+     * @param body - 正文
+     * @param source - 来源
+     * @returns 结果数组
+     */
     extractNewFacts(body: string, source: string = 'body-generation'): PendingFact[] {
         if (!body || body.trim() === '') return [];
 
@@ -120,7 +126,11 @@ export class FactIndexManager {
         return facts;
     }
 
-    /** 入队待确认事实并落盘（不写正式库） */
+    /**
+     * 入队待确认事实并落盘（不写正式库）
+     *
+     * @param facts - 事实
+     */
     async enqueue(facts: PendingFact[]): Promise<void> {
         if (facts.length === 0) return;
         this.pending.push(...facts);
@@ -135,7 +145,12 @@ export class FactIndexManager {
         return [...this.confirmed];
     }
 
-    /** 确认事实：写正式库 + 移入 confirmed + 落盘 */
+    /**
+     * 确认事实：写正式库 + 移入 confirmed + 落盘
+     *
+     * @param id - 标识
+     * @returns 是否成功
+     */
     async confirm(id: string): Promise<boolean> {
         const idx = this.pending.findIndex((f) => f.id === id);
         if (idx < 0) return false;
@@ -157,7 +172,12 @@ export class FactIndexManager {
         return true;
     }
 
-    /** 忽略事实：从队列移除并落盘（不写正式库） */
+    /**
+     * 忽略事实：从队列移除并落盘（不写正式库）
+     *
+     * @param id - 标识
+     * @returns 是否成功
+     */
     async ignore(id: string): Promise<boolean> {
         const idx = this.pending.findIndex((f) => f.id === id);
         if (idx < 0) return false;

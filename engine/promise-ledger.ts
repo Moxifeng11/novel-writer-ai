@@ -151,7 +151,13 @@ function chapterNumber(chapter: string): number | null {
     return m ? parseInt(m[1], 10) : null;
 }
 
-/** 未兑现且已到/超过预期章的承诺；以及长期无推进的承诺。 */
+/**
+ * 未兑现且已到/超过预期章的承诺；以及长期无推进的承诺。
+ *
+ * @param items - 条目列表
+ * @param currentChapter - 当前章节
+ * @returns 结果数组
+ */
 export function getPromiseWarnings(items: PromiseItem[], currentChapter: number, idleWindow = 5): string[] {
     const warnings: string[] = [];
     for (const item of items) {

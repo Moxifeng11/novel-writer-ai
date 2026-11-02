@@ -23,7 +23,12 @@ export interface AiCredentialSettingsLike {
     }>;
 }
 
-/** 是否具备发起 AI 调用的凭据：有密钥，或端点是本地免密钥推理服务 */
+/**
+ * 是否具备发起 AI 调用的凭据：有密钥，或端点是本地免密钥推理服务
+ *
+ * @param settings - 设置
+ * @returns 是否成功
+ */
 export function hasUsableAiCredentials(settings: AiCredentialSettingsLike | undefined | null): boolean {
     if (!settings) return false;
     if ((settings.apiKey || '').trim()) return true;

@@ -19,6 +19,7 @@ export interface DivergenceSample {
 /**
  * @param samples 按时间顺序排列的评估样本（至少 3 条才可能判定）
  * @param now 当前时间戳
+ * @returns 是否成功
  */
 export function isRisingDivergence(samples: DivergenceSample[], now: number): boolean {
     if (samples.length < 3) return false;

@@ -45,7 +45,11 @@ export type DiscoverRequestUrlFn = (options: {
     throw?: boolean;
 }) => Promise<{ status: number; text: string; json?: unknown; headers?: Record<string, string> }>;
 
-/** 一个可用的正整数容量字段 */
+/**
+ * 一个可用的正整数容量字段
+ *
+  * @returns 数值结果 或 undefined
+ */
 function capacity(...candidates: unknown[]): number | undefined {
     for (const value of candidates) {
         const n = typeof value === 'number' ? value : Number(value);
@@ -80,7 +84,13 @@ interface ListingEntry {
     top_provider?: { max_completion_tokens?: unknown } | null;
 }
 
-/** 从单个条目提取模型 */
+/**
+ * 从单个条目提取模型
+ *
+ * @param entry - 条目
+ * @param fallbackId - 回退 ID
+  * @returns DiscoveredModel 或 null
+ */
 function toModel(entry: unknown, fallbackId?: string): DiscoveredModel | null {
     const raw = entry as ListingEntry | null;
     const id = label(fallbackId, raw?.id, raw?.model);
@@ -117,6 +127,8 @@ function toModel(entry: unknown, fallbackId?: string): DiscoveredModel | null {
  *   - 部分网关的 `{ models: { id: {...} } }` 富化映射。
  *
  * 单个条目畸形不影响整体：跳过它，而不是让整个端点看起来没有模型。
+ * @param payload - 载荷
+ * @returns 结果数组
  */
 export function parseModelListing(payload: unknown): DiscoveredModel[] {
     const listing = payload as { data?: unknown; models?: unknown } | null;
@@ -149,7 +161,12 @@ export function parseModelListing(payload: unknown): DiscoveredModel[] {
     throw new Error('响应里既没有 data 数组也没有 models 对象，可能不是模型列表接口');
 }
 
-/** 常见 HTTP 状态的用户可读解释 */
+/**
+ * 常见 HTTP 状态的用户可读解释
+ *
+ * @param status - 状态
+ * @returns 文本结果
+ */
 function describeStatus(status: number): string {
     if (status === 401 || status === 403) return `鉴权失败（HTTP ${status}），请检查 API Key`;
     if (status === 404) return `接口不存在（HTTP 404），可能该端点不提供模型列表，或 Base URL 填错`;
@@ -158,7 +175,12 @@ function describeStatus(status: number): string {
     return `请求失败（HTTP ${status}）`;
 }
 
-/** 读取响应文本并做体量约束 */
+/**
+ * 读取响应文本并做体量约束
+ *
+ * @param raw - 原始
+ * @returns 文本结果
+ */
 function boundedText(raw: unknown): string {
     if (typeof raw !== 'string') return '';
     if (raw.length > MAX_RESPONSE_BYTES) {
@@ -173,6 +195,8 @@ function boundedText(raw: unknown): string {
  * @param endpoint 用户填写的 Base URL（可带 path）
  * @param format   协议格式，决定列表 URL 与鉴权头
  * @param apiKey   API Key；Anthropic 走 x-api-key，其余走 Bearer
+ * @param request - 请求
+  * @returns DiscoveryResult 实例
  */
 export async function discoverModels(
     endpoint: string,

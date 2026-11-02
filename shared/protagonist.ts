@@ -6,13 +6,23 @@
  * 避免两处口径漂移。
  */
 
-/** 判断「身份」字段是否指向主角 */
+/**
+ * 判断「身份」字段是否指向主角
+ *
+ * @param role - 角色
+ * @returns 是否成功
+ */
 export function roleIndicatesProtagonist(role: unknown): boolean {
     const text = Array.isArray(role) ? role.join('') : String(role ?? '');
     return text.includes('主角') || text.includes('主人公');
 }
 
-/** 从人物 frontmatter 列表里取主角名；找不到返回空串 */
+/**
+ * 从人物 frontmatter 列表里取主角名；找不到返回空串
+ *
+ * @param characters - 角色列表
+ * @returns 文本结果
+ */
 export function findProtagonistName(
     characters: Array<Record<string, unknown>> | undefined | null,
 ): string {

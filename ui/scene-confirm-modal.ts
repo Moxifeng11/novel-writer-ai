@@ -69,6 +69,7 @@ export interface SceneConfirmHooks {
  * 组装顺序：gatherAll → ChapterSnapshotBuilder 快照 → StoryBeatExtractor 任务卡
  * → createSceneBodyGenerator 正文回调 → 获取 loop/store → 实例化 SceneConfirmModal。
  * 任一依赖缺失时静默降级（注入返回空、任务卡为空数组），不阻塞向导打开。
+ * @param opts - 选项
  */
 export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): Promise<void> {
     const { plugin, project, chapterName, chapterNumber, expansionText, chapterPlan } = opts;

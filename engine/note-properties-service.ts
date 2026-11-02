@@ -44,7 +44,13 @@ export interface ProjectFilesScan {
     skipped: number;
 }
 
-/** 扫描项目内所有 markdown（排除模板/导出/看板目录） */
+/**
+ * 扫描项目内所有 markdown（排除模板/导出/看板目录）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns ProjectFilesScan 实例
+ */
 export function listProjectNotes(app: App, project: string): ProjectFilesScan {
     const excluded = ['/00-系统模板/', '/.看板/', '/05-导出/', '/06-导出/', '/04-质检/'];
     const files: TFile[] = [];
@@ -60,7 +66,13 @@ export function listProjectNotes(app: App, project: string): ProjectFilesScan {
     return { files, skipped };
 }
 
-/** 纯函数：给一个文件的 frontmatter 算标签迁移变更 */
+/**
+ * 纯函数：给一个文件的 frontmatter 算标签迁移变更
+ *
+ * @param path - 路径
+ * @param frontmatter - frontmatter
+  * @returns TagMigrationChange 或 null
+ */
 export function planTagMigrationForFile(
     path: string,
     frontmatter: Record<string, unknown> | null | undefined,
@@ -71,7 +83,13 @@ export function planTagMigrationForFile(
     return { path, kind: resolveFileKind(frontmatter, path), tags, add };
 }
 
-/** 扫描项目，生成标签迁移计划（不写文件） */
+/**
+ * 扫描项目，生成标签迁移计划（不写文件）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export function scanTagMigration(app: App, project: string): TagMigrationChange[] {
     const changes: TagMigrationChange[] = [];
     for (const file of listProjectNotes(app, project).files) {
@@ -82,7 +100,13 @@ export function scanTagMigration(app: App, project: string): TagMigrationChange[
     return changes;
 }
 
-/** 纯函数：属性补齐计划（只补必填且缺失的属性） */
+/**
+ * 纯函数：属性补齐计划（只补必填且缺失的属性）
+ *
+ * @param path - 路径
+ * @param frontmatter - frontmatter
+  * @returns PropertyCompletionChange 或 null
+ */
 export function planPropertyCompletionForFile(
     path: string,
     frontmatter: Record<string, unknown> | null | undefined,
@@ -98,7 +122,13 @@ export function planPropertyCompletionForFile(
     return { path, kind, fill };
 }
 
-/** 扫描项目，生成属性补齐计划 */
+/**
+ * 扫描项目，生成属性补齐计划
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export function scanPropertyCompletion(app: App, project: string): PropertyCompletionChange[] {
     const changes: PropertyCompletionChange[] = [];
     for (const file of listProjectNotes(app, project).files) {
@@ -128,7 +158,13 @@ function processFrontmatter(app: App, file: TFile, mutate: (fm: Record<string, u
     })();
 }
 
-/** 无 fileManager 时的文本级兜底：只在已有 frontmatter 上改 `tags`/简单标量 */
+/**
+ * 无 fileManager 时的文本级兜底：只在已有 frontmatter 上改 `tags`/简单标量
+ *
+ * @param raw - 原始
+ * @param mutate - 变更函数
+ * @returns 文本结果
+ */
 function applyFrontmatterTextPatch(raw: string, mutate: (fm: Record<string, unknown>) => Record<string, unknown>): string {
     const matched = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!matched) return raw;
@@ -155,7 +191,13 @@ function applyFrontmatterTextPatch(raw: string, mutate: (fm: Record<string, unkn
     return raw.replace(/^---\r?\n[\s\S]*?\r?\n---/, `---\n${lines.join('\n')}\n---`);
 }
 
-/** 执行标签迁移（写锁 + 幂等） */
+/**
+ * 执行标签迁移（写锁 + 幂等）
+ *
+ * @param app - Obsidian 应用实例
+ * @param changes - 变更
+  * @returns number }> 结果
+ */
 export async function applyTagMigration(app: App, changes: TagMigrationChange[]): Promise<{ written: number; added: number }> {
     let written = 0;
     let added = 0;
@@ -177,7 +219,13 @@ export async function applyTagMigration(app: App, changes: TagMigrationChange[])
     return { written, added };
 }
 
-/** 执行属性补齐（只补缺失键，不覆盖已有值） */
+/**
+ * 执行属性补齐（只补缺失键，不覆盖已有值）
+ *
+ * @param app - Obsidian 应用实例
+ * @param changes - 变更
+  * @returns number }> 结果
+ */
 export async function applyPropertyCompletion(app: App, changes: PropertyCompletionChange[]): Promise<{ written: number; filled: number }> {
     let written = 0;
     let filled = 0;
@@ -204,7 +252,13 @@ export async function applyPropertyCompletion(app: App, changes: PropertyComplet
     return { written, filled };
 }
 
-/** 生成/刷新项目看板；返回写出的文件路径 */
+/**
+ * 生成/刷新项目看板；返回写出的文件路径
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export async function writeProjectBases(app: App, project: string): Promise<string[]> {
     const adapter = app.vault.adapter;
     const dir = `${project}/${BASE_DIR}`;
@@ -223,7 +277,12 @@ export async function writeProjectBases(app: App, project: string): Promise<stri
     return written;
 }
 
-/** 供面板显示：某类型有多少必填属性（0 表示无需补齐） */
+/**
+ * 供面板显示：某类型有多少必填属性（0 表示无需补齐）
+ *
+ * @param kind - 种类
+ * @returns 数值结果
+ */
 export function schemaSizeOf(kind: NotebookFileKind): number {
     return (FRONTMATTER_SCHEMAS[kind] || []).length;
 }

@@ -66,6 +66,8 @@ export class AnalysisSessionManager {
 
     /**
      * 创建新的分析会话
+     * @param options - 配置项
+      * @returns AnalysisSession 实例
      */
     createSession(options: SessionCreateOptions): AnalysisSession {
         const now = Date.now();
@@ -103,6 +105,8 @@ export class AnalysisSessionManager {
 
     /**
      * 获取会话
+     * @param id - 标识
+      * @returns AnalysisSession 或 undefined
      */
     getSession(id: string): AnalysisSession | undefined {
         return this.sessions.get(id);
@@ -110,6 +114,8 @@ export class AnalysisSessionManager {
 
     /**
      * 获取会话（如果内存中没有则从磁盘加载）
+     * @param id - 标识
+      * @returns AnalysisSession 或 undefined
      */
     async getSessionOrLoad(id: string): Promise<AnalysisSession | undefined> {
         const cached = this.sessions.get(id);
@@ -129,6 +135,9 @@ export class AnalysisSessionManager {
 
     /**
      * 更新会话
+     * @param id - 标识
+     * @param updates - 更新字段
+     * @returns 是否成功
      */
     updateSession(id: string, updates: Partial<AnalysisSession>): boolean {
         const session = this.sessions.get(id);
@@ -150,6 +159,8 @@ export class AnalysisSessionManager {
 
     /**
      * 删除会话
+     * @param id - 标识
+     * @returns 是否成功
      */
     async deleteSession(id: string): Promise<boolean> {
         if (!this.sessions.has(id)) {
@@ -178,6 +189,7 @@ export class AnalysisSessionManager {
     /**
      * 列出会话
      * @param file 可选，按文件路径过滤
+     * @returns 结果数组
      */
     listSessions(file?: string): SessionListEntry[] {
         let entries = [...this.index.entries];
@@ -191,6 +203,8 @@ export class AnalysisSessionManager {
 
     /**
      * 获取某个文件的最新会话
+     * @param file - 文件
+      * @returns SessionListEntry 或 undefined
      */
     getLatestSession(file: string): SessionListEntry | undefined {
         const sessions = this.listSessions(file);
@@ -203,6 +217,9 @@ export class AnalysisSessionManager {
 
     /**
      * 记录操作日志
+     * @param sessionId - 会话ID
+     * @param action - 动作
+     * @returns 是否成功
      */
     logAction(
         sessionId: string,
@@ -228,6 +245,9 @@ export class AnalysisSessionManager {
 
     /**
      * 批量记录操作日志
+     * @param sessionId - 会话ID
+     * @param actions - 动作列表
+     * @returns 是否成功
      */
     logActions(sessionId: string, actions: Array<Omit<SessionAction, 'id' | 'timestamp'>>): boolean {
         const session = this.sessions.get(sessionId);
@@ -255,6 +275,9 @@ export class AnalysisSessionManager {
 
     /**
      * 从 SuggestionManager 同步建议状态到会话
+     * @param sessionId - 会话ID
+     * @param manager - 管理器
+     * @returns 是否成功
      */
     syncFromSuggestionManager(sessionId: string, manager: SuggestionManager): boolean {
         const session = this.sessions.get(sessionId);
@@ -271,6 +294,8 @@ export class AnalysisSessionManager {
 
     /**
      * 从会话恢复 SuggestionManager
+     * @param session - 会话
+      * @returns SuggestionManager 实例
      */
     restoreSuggestionManager(session: AnalysisSession): SuggestionManager {
         const manager = new SuggestionManager();
@@ -303,6 +328,8 @@ export class AnalysisSessionManager {
 
     /**
      * 保存单个会话到磁盘
+     * @param sessionId - 会话ID
+     * @returns 是否成功
      */
     async saveSession(sessionId: string): Promise<boolean> {
         const session = this.sessions.get(sessionId);
@@ -355,6 +382,9 @@ export class AnalysisSessionManager {
 
     /**
      * 对比两个会话
+     * @param sessionId1 - 会话 ID 1
+     * @param sessionId2 - 会话 ID 2
+      * @returns SessionDiff 实例
      */
     compareSessions(sessionId1: string, sessionId2: string): SessionDiff {
         const s1 = this.sessions.get(sessionId1);
@@ -418,6 +448,8 @@ export class AnalysisSessionManager {
 
     /**
      * 导出会话为 JSON 字符串
+     * @param id - 标识
+     * @returns 文本结果
      */
     exportSession(id: string): string {
         const session = this.sessions.get(id);
@@ -429,6 +461,8 @@ export class AnalysisSessionManager {
 
     /**
      * 从 JSON 字符串导入会话
+     * @param json - JSON
+      * @returns AnalysisSession 实例
      */
     importSession(json: string): AnalysisSession {
         let session: AnalysisSession;

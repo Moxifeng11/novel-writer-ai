@@ -74,7 +74,12 @@ function withTimeout<T>(
     });
 }
 
-/** 默认可重试判定：超时不重试；仅 5xx / 429 / 网络类错误放行 */
+/**
+ * 默认可重试判定：超时不重试；仅 5xx / 429 / 网络类错误放行
+ *
+ * @param error - 错误
+ * @returns 是否成功
+ */
 function isRetryableByDefault(error: unknown): boolean {
     if (error instanceof HttpRequestTimeoutError) return false;
     const message = error instanceof Error ? error.message : String(error);

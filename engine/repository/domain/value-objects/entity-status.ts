@@ -32,6 +32,8 @@ export class EntityStatus {
     /**
      * 从字符串创建 EntityStatus
      * 非法值默认返回 active
+     * @param value - 值
+      * @returns EntityStatus 实例
      */
     static from(value: string | undefined | null): EntityStatus {
         if (value === 'inactive') return EntityStatus.INACTIVE;
@@ -40,28 +42,45 @@ export class EntityStatus {
         return EntityStatus.ACTIVE;
     }
 
-    /** 是否活跃 */
+    /**
+     * 是否活跃
+     *
+     * @returns 是否成功
+     */
     isActive(): boolean {
         return this.value === 'active';
     }
 
-    /** 是否非活跃 */
+    /**
+     * 是否非活跃
+     *
+     * @returns 是否成功
+     */
     isInactive(): boolean {
         return this.value === 'inactive';
     }
 
-    /** 是否死亡 */
+    /**
+     * 是否死亡
+     *
+     * @returns 是否成功
+     */
     isDead(): boolean {
         return this.value === 'dead';
     }
 
-    /** 是否隐藏 */
+    /**
+     * 是否隐藏
+     *
+     * @returns 是否成功
+     */
     isHidden(): boolean {
         return this.value === 'hidden';
     }
 
     /**
      * 获取状态显示文本
+     * @returns 文本结果
      */
     getLabel(): string {
         switch (this.value) {
@@ -76,12 +95,21 @@ export class EntityStatus {
         }
     }
 
-    /** 转换为旧类型（向后兼容） */
+    /**
+     * 转换为旧类型（向后兼容）
+     *
+      * @returns EntityStatusType 实例
+     */
     toLegacyType(): EntityStatusType {
         return this.value;
     }
 
-    /** 值对象相等性比较 */
+    /**
+     * 值对象相等性比较
+     *
+     * @param other - 另一侧值
+     * @returns 是否成功
+     */
     equals(other: EntityStatus): boolean {
         return this.value === other.value;
     }

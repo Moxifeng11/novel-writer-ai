@@ -112,6 +112,11 @@ export class IncrementalUpdater {
      * - 未变更分区：直接复用旧上下文数据
      * - 变更分区：优先从缓存读取，未命中则从 Repository 重新获取
      * - 重算受影响的派生数据（compressed、issues）
+     * @param fullContext - 完整上下文
+     * @param changeSet - 变更集
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
+      * @returns GatheredContext 实例
      */
     async updateContext(
         fullContext: GatheredContext,
@@ -194,6 +199,8 @@ export class IncrementalUpdater {
     /**
      * 判断增量更新是否比全量更快
      * 变更范围超过阈值（50%）时返回 false，建议回退全量
+     * @param changeSet - 变更集
+     * @returns 是否成功
      */
     isIncrementalUpdateFaster(changeSet: ContextChangeSet): boolean {
         return changeSet.changeScope <= INCREMENTAL_FALLBACK_THRESHOLD;
@@ -201,6 +208,9 @@ export class IncrementalUpdater {
 
     /**
      * 记录新版本
+     * @param changeSet - 变更集
+     * @param strategy - 策略
+      * @returns ContextVersion 实例
      */
     recordVersion(
         changeSet: ContextChangeSet | undefined,
@@ -226,6 +236,7 @@ export class IncrementalUpdater {
 
     /**
      * 获取版本历史
+     * @returns 结果数组
      */
     getVersionHistory(): ContextVersion[] {
         return [...this.versionHistory];
@@ -233,6 +244,7 @@ export class IncrementalUpdater {
 
     /**
      * 获取当前版本
+      * @returns ContextVersion 或 null
      */
     getCurrentVersion(): ContextVersion | null {
         return this.currentVersion;
@@ -248,6 +260,7 @@ export class IncrementalUpdater {
 
     /**
      * 获取统计信息
+      * @returns IncrementalStats 实例
      */
     getStats(): IncrementalStats {
         return { ...this.stats };

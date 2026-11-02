@@ -48,6 +48,8 @@ export class EmbeddingProviderFactory {
     /**
      * 按插件设置构造 provider（缺省值集中在工厂里，调用方不再各自写死 Ollama）。
      * 不做可用性探测：切章等高频路径直接构造，失败由 embed 调用侧的降级逻辑处理。
+     * @param config - 配置
+      * @returns EmbeddingProvider 实例
      */
     static fromSettings(config?: Partial<ProviderFactoryConfig>): EmbeddingProvider {
         const c = config ?? {};

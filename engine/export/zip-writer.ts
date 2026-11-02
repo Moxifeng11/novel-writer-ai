@@ -78,7 +78,13 @@ function concatChunks(chunks: Uint8Array[]): Uint8Array {
     return output;
 }
 
-/** 把若干文件打成 ZIP（全部 store，不压缩） */
+/**
+ * 把若干文件打成 ZIP（全部 store，不压缩）
+ *
+ * @param entries - 记录集合
+ * @param options - 配置项
+  * @returns Uint8Array 实例
+ */
 export function createZip(entries: ZipEntry[], options: ZipOptions = {}): Uint8Array {
     const { time, date } = dosDateTime(options.date ?? new Date());
     const localChunks: Uint8Array[] = [];

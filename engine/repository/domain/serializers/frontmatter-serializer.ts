@@ -14,6 +14,8 @@ export class FrontmatterSerializer {
     /**
      * 从 Markdown 内容中解析 frontmatter
      * 返回 Frontmatter 对象和去除 frontmatter 的正文
+     * @param content - 内容
+      * @returns string } 结果
      */
     static parse(content: string): { frontmatter: Frontmatter; body: string } {
         const match = content.match(/^---\n([\s\S]*?)\n---\n?/);
@@ -112,6 +114,8 @@ export class FrontmatterSerializer {
 
     /**
      * 将 Frontmatter 序列化为 YAML 字符串
+     * @param frontmatter - frontmatter
+     * @returns 文本结果
      */
     static serialize(frontmatter: Frontmatter): string {
         const lines: string[] = ['---'];
@@ -210,6 +214,9 @@ export class FrontmatterSerializer {
 
     /**
      * 将 Frontmatter + body 组合为完整 Markdown
+     * @param frontmatter - frontmatter
+     * @param body - 正文
+     * @returns 文本结果
      */
     static toMarkdown(frontmatter: Frontmatter, body: string): string {
         if (frontmatter.isEmpty()) {
@@ -222,6 +229,8 @@ export class FrontmatterSerializer {
 
     /**
      * 从 Markdown 字符串创建 Frontmatter（仅解析，不返回 body）
+     * @param content - 内容
+      * @returns Frontmatter 实例
      */
     static parseFrontmatterOnly(content: string): Frontmatter {
         return FrontmatterSerializer.parse(content).frontmatter;

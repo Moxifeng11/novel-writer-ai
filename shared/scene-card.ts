@@ -63,7 +63,13 @@ export const SCENE_CARD_FIELD_MAP = {
 
 export type SceneCardFieldKey = keyof typeof SCENE_CARD_FIELD_MAP;
 
-/** 解析 `field: value` / `field：value`；容忍 Markdown 加粗 */
+/**
+ * 解析 `field: value` / `field：value`；容忍 Markdown 加粗
+ *
+ * @param block - 文本块
+ * @param field - 字段
+ * @returns 文本结果
+ */
 export function parseSceneField(block: string, field: string): string {
     const m = block.match(new RegExp(`^\\s*\\*?\\*?${field}\\s*[：:]\\s*(.+)$`, 'im'));
     return m ? m[1].trim() : '';
@@ -72,6 +78,8 @@ export function parseSceneField(block: string, field: string): string {
 /**
  * 解析对话骨架（多行字段）。
  * 兼容 `dialogue_beats:` / `对话骨架：`，取其后连续以 `-` 开头的行，直到空行或下一个字段。
+ * @param block - 文本块
+ * @returns 结果数组
  */
 export function parseDialogueBeats(block: string): string[] {
     const lines = String(block || '').split(/\r?\n/);
@@ -145,6 +153,9 @@ export function emptySceneCard(num: number, name = ''): SceneCardFields {
 /**
  * 渲染「本场对话骨架」提示词块。
  * 有骨架时正文必须逐条用上；没有骨架返回空串（调用方跳过注入）。
+ * @param scenes - 场景列表
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export function formatDialogueSkeleton(
     scenes: SceneCardFields[],
@@ -171,6 +182,9 @@ export function formatDialogueSkeleton(
 /**
  * 生成紧凑场景卡，放入正文 prompt。
  * 只保留写作时必须遵守的字段，避免把整段 Scene 展开再注入一遍。
+ * @param scenes - 场景列表
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export function formatSceneCardDigest(
     scenes: SceneCardFields[],

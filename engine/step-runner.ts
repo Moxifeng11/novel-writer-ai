@@ -438,6 +438,8 @@ export class StepRunner {
     /**
      * 输出仍被截断时给用户可见提示。
      * 只写日志会让「半章」被当成完整章节保存，用户无从判断结尾是否缺失。
+     * @param result - 结果
+     * @param label - 标签
      */
     warnIfTruncated(result: APIResponse, label: string): void {
         warnIfTruncatedPrimitive(this.retryHost(), result, label);
@@ -535,6 +537,7 @@ export class StepRunner {
      * @param chapterName - 章节名
      * @param volume - 卷
      * @param meta - 参数
+     * @returns 是否成功
      */
     async saveStepResult(
         stepKey: string,
@@ -606,6 +609,12 @@ export class StepRunner {
      *
      * @param stepResults - 步骤结果
      * @param renderInContainer - 渲染容器
+     * @param tabContent - 页签内容
+     * @param setIsLoading - 加载状态设置函数
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param stepCompleted - 步骤完成状态
      * @returns 结果
      */
     async executeDeaiRewrite(
@@ -628,6 +637,13 @@ export class StepRunner {
      * @param vars - 变量表
      * @param chapterNum - 章号
      * @param buildTemplateVars - 模板变量构建函数
+     * @param renderInContainer - 渲染容器
+     * @param tabContent - 页签内容
+     * @param setIsLoading - 加载状态设置函数
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param stepCompleted - 步骤完成状态
      * @returns 结果
      */
     async executeIterativeRefine(
@@ -662,6 +678,12 @@ export class StepRunner {
      * - 把「锁定人物」写进 prompt，并要求不得删改；
      * - 修订稿必须通过 revision-guard（长度 ±10%、锁定人物不丢、对话占比不塌、非 JSON）才落盘；
      * - 采纳前先存一份章节版本，失败保留原稿。
+     * @param stepResults - 步骤结果列表
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param stepCompleted - 步骤完成状态
+     * @param lockedNames - 锁定名称
      */
     async executeTargetedRevision(
         stepResults: Record<string, string>,
@@ -845,6 +867,7 @@ export class StepRunner {
 
     /**
      * 执行当前步骤的 AI 请求（策略驱动分发）
+     * @param ctx - 上下文
      */
     async executeCurrentStep(ctx: StepRunCtx): Promise<void> {
         // D3：重试按钮依赖「最近一次执行的上下文」，必须在入口记录，
@@ -1466,6 +1489,9 @@ export class StepRunner {
 
     /**
      * 渲染 AI 请求失败的错误信息
+     * @param errorMsg - 错误消息
+     * @param stepKey - 步骤键
+     * @param tabContent - 页签内容
      */
     renderErrorResult(errorMsg: string, stepKey: string, tabContent: HTMLElement): void {
         const promptArea = tabContent.querySelector('.novel-writer-fw-prompt-area');
@@ -1501,6 +1527,7 @@ export class StepRunner {
 
     /**
      * 移动到下一步骤
+     * @param ctx - 上下文
      */
     async moveToNextStep(ctx: StepRunCtx): Promise<void> {
         // P2-5: 按 index 字段查找当前步骤，再从 ALL_FULL_STEPS 顺序中取下一个
@@ -1528,6 +1555,16 @@ export class StepRunner {
      * ① 一键完成本章的编排器；② 步骤 10 渲染时的自动触发。
      * 旧实现两条路径各跑一次，重复追加；渲染路径失败后还会因为错误重渲染而无限重试。
      * 这里按「项目 + 章节目录」合并并发触发，并在落盘正文已是 settled 时直接跳过。
+     * @param project - 项目（路径或对象）
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param stepResults - 步骤结果列表
+     * @param stepCompleted - 步骤完成状态
+     * @param vars - 变量表
+     * @param plugin - 插件实例
+     * @param renderInContainer - 渲染容器
+     * @param tabContent - 页签内容
+     * @param options - 配置项
      */
     async executeSettlement(
         project: string,

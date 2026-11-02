@@ -71,12 +71,22 @@ export function normalizePreset(value: unknown): AppearancePreset {
     return 'soft';
 }
 
-/** 合法 6 位 / 3 位 hex 才允许写入 CSS 变量，避免注入无效值 */
+/**
+ * 合法 6 位 / 3 位 hex 才允许写入 CSS 变量，避免注入无效值
+ *
+ * @param value - 值
+  * @returns value is string 结果
+ */
 export function isHexColor(value: unknown): value is string {
     return typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value.trim());
 }
 
-/** hex → [r,g,b]（0-255）；非法输入返回 null */
+/**
+ * hex → [r,g,b]（0-255）；非法输入返回 null
+ *
+ * @param hex - 十六进制颜色
+  * @returns [number, number, number] 结果 或 null
+ */
 export function hexToRgb(hex: string): [number, number, number] | null {
     if (!isHexColor(hex)) return null;
     let body = hex.trim().slice(1);
@@ -86,7 +96,12 @@ export function hexToRgb(hex: string): [number, number, number] | null {
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** WCAG 相对亮度（0 = 全黑，1 = 全白） */
+/**
+ * WCAG 相对亮度（0 = 全黑，1 = 全白）
+ *
+ * @param hex - 十六进制颜色
+  * @returns 数值结果 或 null
+ */
 export function relativeLuminance(hex: string): number | null {
     const rgb = hexToRgb(hex);
     if (!rgb) return null;
@@ -97,7 +112,12 @@ export function relativeLuminance(hex: string): number | null {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-/** 该背景是深色吗（用于决定文字取亮还是取暗） */
+/**
+ * 该背景是深色吗（用于决定文字取亮还是取暗）
+ *
+ * @param hex - 十六进制颜色
+  * @returns 是否成功 或 null
+ */
 export function isDarkBackground(hex: string): boolean | null {
     const luminance = relativeLuminance(hex);
     if (luminance === null) return null;
@@ -107,6 +127,8 @@ export function isDarkBackground(hex: string): boolean | null {
 /**
  * 按基底亮度派生一套文字色。
  * 不再让用户单独配文字色——三层模型里文字是对比度问题，不是配色问题。
+ * @param baseBg - 基础背景色
+  * @returns 结果
  */
 export function deriveTextColors(baseBg: string): Pick<DerivedPalette, 'textPrimary' | 'textSecondary' | 'textMuted'> {
     const dark = isDarkBackground(baseBg);
@@ -124,7 +146,13 @@ export function deriveTextColors(baseBg: string): Pick<DerivedPalette, 'textPrim
     return { textPrimary: '#3d3530', textSecondary: '#8b7e70', textMuted: '#a09890' };
 }
 
-/** 强调色 hover：深色背景上提亮，浅色背景上加深 */
+/**
+ * 强调色 hover：深色背景上提亮，浅色背景上加深
+ *
+ * @param accent - 强调色
+ * @param baseBg - 基础背景色
+ * @returns 文本结果
+ */
 export function deriveAccentHover(accent: string, baseBg: string): string {
     const rgb = hexToRgb(accent);
     if (!rgb) return accent;
@@ -140,6 +168,9 @@ export function deriveAccentHover(accent: string, baseBg: string): string {
  * 面板与卡片默认都用 `color-mix` 相对基底派生，因此用户只填「底色」就能
  * 得到稳定分层；填了「卡片色」才覆盖 L2。这消除了旧模型里
  * 「底色/面板色/卡片色」三个独立输入 + 一个开关的组合爆炸。
+ * @param input - 输入
+ * @param themeDefaults - 主题默认值
+  * @returns DerivedPalette 实例
  */
 export function derivePalette(
     input: ThreeLayerInput,
@@ -175,7 +206,12 @@ export function derivePalette(
     };
 }
 
-/** 渲染成 `--nw-*: value;` 片段，供 ThemeManager 拼接 */
+/**
+ * 渲染成 `--nw-*: value;` 片段，供 ThemeManager 拼接
+ *
+ * @param palette - 配色
+ * @returns 文本结果
+ */
 export function paletteToCssVars(palette: DerivedPalette): string {
     return [
         `--nw-app-bg: ${palette.appBg};`,
@@ -230,14 +266,24 @@ export const THEME_PRESET_LIMIT = 20;
 /** 单套方案体积上限（序列化字符数），用于导入校验 */
 export const THEME_PRESET_BYTES_MAX = 2048;
 
-/** 清洗方案名：去空白、截断、空则给默认名 */
+/**
+ * 清洗方案名：去空白、截断、空则给默认名
+ *
+ * @param raw - 原始
+ * @returns 文本结果
+ */
 export function sanitizePresetName(raw: unknown, fallbackIndex = 1): string {
     const text = typeof raw === 'string' ? raw.trim().replace(/\s+/g, ' ') : '';
     if (!text) return `配色方案 ${fallbackIndex}`;
     return text.length > THEME_PRESET_NAME_MAX ? text.slice(0, THEME_PRESET_NAME_MAX) : text;
 }
 
-/** 校验并清洗一套方案；非法返回 null */
+/**
+ * 校验并清洗一套方案；非法返回 null
+ *
+ * @param raw - 原始
+  * @returns ThemePreset 或 null
+ */
 export function normalizeThemePreset(raw: unknown): ThemePreset | null {
     if (!raw || typeof raw !== 'object') return null;
     const obj = raw as Record<string, unknown>;
@@ -259,7 +305,15 @@ export function normalizeThemePreset(raw: unknown): ThemePreset | null {
     return preset;
 }
 
-/** 从当前设置生成一套方案（用于「保存当前配色」） */
+/**
+ * 从当前设置生成一套方案（用于「保存当前配色」）
+ *
+ * @param colors - 颜色
+ * @param theme - 主题
+ * @param name - 名称
+ * @param existing - 已有
+  * @returns ThemePreset 实例
+ */
 export function capturePreset(
     colors: { appBg?: string; cardBg?: string; accent?: string; textPrimary?: string; appearancePreset?: string } | undefined,
     theme: 'auto' | 'light' | 'dark',
@@ -286,6 +340,7 @@ export function capturePreset(
  * 只写三层 + 氛围 + 激活 id。文字色与旧面板直通值留在方案对象里，
  * 由 `resolveActivePresetInput` 在注入变量时反查叠加——如果把它们塞进
  * themeColors，三层结构就又被撑回 5 层了。
+ * @param preset - 预设
  */
 export function presetToSettings(preset: ThemePreset): {
     theme: 'auto' | 'light' | 'dark';
@@ -307,6 +362,9 @@ export function presetToSettings(preset: ThemePreset): {
  * themeColors 只保留三层 + 氛围；方案里的额外观感（文字色、旧面板直通值）
  * 不写回 themeColors（否则又变成 5 层），而是按 activePresetId 反查后
  * 临时叠加到派生输入上。
+ * @param themeColors - 主题颜色
+ * @param presets - 预设列表
+  * @returns ThreeLayerInput 实例
  */
 export function resolveActivePresetInput(
     themeColors: { appBg?: string; cardBg?: string; accent?: string; appearancePreset?: string; activePresetId?: string } | undefined,
@@ -328,7 +386,13 @@ export function resolveActivePresetInput(
     return input;
 }
 
-/** 追加方案（同名替换、超上限淘汰最旧） */
+/**
+ * 追加方案（同名替换、超上限淘汰最旧）
+ *
+ * @param list - 列表
+ * @param preset - 预设
+ * @returns 结果数组
+ */
 export function upsertPreset(list: readonly ThemePreset[], preset: ThemePreset): ThemePreset[] {
     const withoutSameName = list.filter(item => item.name !== preset.name);
     const next = [...withoutSameName, preset];
@@ -338,7 +402,13 @@ export function upsertPreset(list: readonly ThemePreset[], preset: ThemePreset):
         .slice(next.length - THEME_PRESET_LIMIT);
 }
 
-/** 解析导入的 JSON（支持单套或数组） */
+/**
+ * 解析导入的 JSON（支持单套或数组）
+ *
+ * @param raw - 原始
+ * @param existing - 已有
+ * @returns 结果数组
+ */
 export function parsePresetImport(raw: string, existing: readonly ThemePreset[] = []): ThemePreset[] {
     const text = String(raw || '').trim();
     if (!text) return [];

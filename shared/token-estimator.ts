@@ -26,6 +26,9 @@ export interface TokenEstimate {
  * 中文：约 1.5 字符/token
  * 英文：约 4 字符/token  
  * Prompt 模板/JSON：约 3.5 字符/token（中等效率）
+ * @param text - 文本内容
+ * @param modelId - 模型ID
+ * @returns 数值结果
  */
 export function estimateTokens(text: string, modelId: string = 'default'): number {
     if (!text) return 0;
@@ -75,6 +78,10 @@ export function estimateTokens(text: string, modelId: string = 'default'): numbe
 
 /**
  * 估算 API 调用的输入 token 数
+ * @param systemPrompt - 系统提示词
+ * @param userPrompt - 用户提示词
+ * @param modelId - 模型ID
+ * @returns 数值结果
  */
 export function estimateInputTokens(
     systemPrompt: string,
@@ -90,6 +97,9 @@ export function estimateInputTokens(
 /**
  * 获取模型上下文窗口大小（从 model-capabilities 查找）
  * `source` 用于未登记模型的兜底：本地模型按更保守的窗口处理
+ * @param modelId - 模型ID
+ * @param source - 来源
+ * @returns 数值结果
  */
 export function getModelContextWindow(modelId: string, source?: ModelSourceKind): number {
     return findModelCapability(modelId, source).maxContext;
@@ -98,6 +108,9 @@ export function getModelContextWindow(modelId: string, source?: ModelSourceKind)
 /**
  * 获取模型最大输出 token 数（从 model-capabilities 查找）
  * `source` 用于未登记模型的兜底：本地模型按更保守的输出上限处理
+ * @param modelId - 模型ID
+ * @param source - 来源
+ * @returns 数值结果
  */
 export function getModelMaxOutput(modelId: string, source?: ModelSourceKind): number {
     return findModelCapability(modelId, source).maxOutput;
@@ -115,6 +128,11 @@ export interface ModelLimitOverrides {
  * `limits` 传入用户「模型覆盖」中的真实上限；未传时回退静态能力表。
  * 只查静态表会把未登记模型（如 deepseek-flash）误判为 32K 上下文，
  * 导致长上下文请求被错误拒绝。
+ * @param systemPrompt - 系统提示词
+ * @param userPrompt - 用户提示词
+ * @param modelId - 模型ID
+ * @param limits - 限制
+  * @returns TokenEstimate 实例
  */
 export function calculateTokenBudget(
     systemPrompt: string,
@@ -143,6 +161,10 @@ export function calculateTokenBudget(
 
 /**
  * 推荐的 max_tokens：不超过可用窗口的 80% 和模型最大输出的较小值
+ * @param systemPrompt - 系统提示词
+ * @param userPrompt - 用户提示词
+ * @param modelId - 模型ID
+ * @returns 数值结果
  */
 export function recommendMaxTokens(
     systemPrompt: string,

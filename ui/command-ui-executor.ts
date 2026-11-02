@@ -71,7 +71,11 @@ const log = createLogger('CommandUiExecutor');
 export interface CommandUiExecutorDeps {
     app: App;
     plugin: NovelWriterPlugin;
-    /** 版本服务（由 main 从 engineRegistry 取，避免本模块依赖 engine-registry） */
+    /**
+     * 版本服务（由 main 从 engineRegistry 取，避免本模块依赖 engine-registry）
+     *
+      * @returns ChapterVersionService 或 null
+     */
     getVersionService(): ChapterVersionService | null;
 }
 
@@ -219,6 +223,9 @@ export class CommandUiExecutor implements CommandUiPort {
     /**
      * 执行 UI 类命令。
      * 返回 false 表示该 id 不属于 UI 执行器，由调用方维持原有处理。
+     * @param id - 标识
+     * @param payload - 载荷
+     * @returns 是否成功
      */
     async executeCommand(id: string, payload?: CommandUiPayload): Promise<boolean> {
         const { app, plugin } = this.deps;

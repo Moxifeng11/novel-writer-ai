@@ -187,7 +187,12 @@ const PATH_RULES: Array<{ test: RegExp; kind: NotebookFileKind }> = [
     { test: /(^|\/)01-世界架构\/.*设定库/, kind: 'settingLib' },
 ];
 
-/** frontmatter.tags 可能是数组或逗号串 */
+/**
+ * frontmatter.tags 可能是数组或逗号串
+ *
+ * @param tags - 标签列表
+ * @returns 结果数组
+ */
 export function readTagList(tags: unknown): string[] {
     if (Array.isArray(tags)) return tags.map((tag) => String(tag).replace(/^#/, '').trim()).filter(Boolean);
     if (typeof tags === 'string') {
@@ -196,7 +201,12 @@ export function readTagList(tags: unknown): string[] {
     return [];
 }
 
-/** `nw/实体/人物` → 人物；`nw/步骤/分析报告` → step */
+/**
+ * `nw/实体/人物` → 人物；`nw/步骤/分析报告` → step
+ *
+ * @param tag - 标签
+  * @returns NotebookFileKind 或 null
+ */
 function kindFromNamespaceTag(tag: string): NotebookFileKind | null {
     if (!tag.startsWith('nw/')) return null;
     const rest = tag.slice(3);
@@ -223,6 +233,8 @@ function kindFromNamespaceTag(tag: string): NotebookFileKind | null {
 
 /**
  * 判定文件类型：`nw/*` 标签优先 → 旧标签 → 路径兜底 → unknown。
+ * @param frontmatter - frontmatter
+  * @returns NotebookFileKind 实例
  */
 export function resolveFileKind(frontmatter: Record<string, unknown> | null | undefined, path = ''): NotebookFileKind {
     const tags = readTagList(frontmatter?.['tags']);
@@ -240,7 +252,13 @@ export function resolveFileKind(frontmatter: Record<string, unknown> | null | un
     return 'unknown';
 }
 
-/** 缺失的必填属性（只查 required；null/undefined/空串都算缺失） */
+/**
+ * 缺失的必填属性（只查 required；null/undefined/空串都算缺失）
+ *
+ * @param kind - 种类
+ * @param frontmatter - frontmatter
+ * @returns 结果数组
+ */
 export function findMissingProperties(kind: NotebookFileKind, frontmatter: Record<string, unknown> | null | undefined): PropertySpec[] {
     const schema = FRONTMATTER_SCHEMAS[kind] || [];
     const fm = frontmatter || {};
@@ -253,12 +271,22 @@ export function findMissingProperties(kind: NotebookFileKind, frontmatter: Recor
     });
 }
 
-/** 某类型的全部必填属性（补齐命令用） */
+/**
+ * 某类型的全部必填属性（补齐命令用）
+ *
+ * @param kind - 种类
+ * @returns 结果数组
+ */
 export function requiredProperties(kind: NotebookFileKind): PropertySpec[] {
     return (FRONTMATTER_SCHEMAS[kind] || []).filter((spec) => spec.required);
 }
 
-/** 模式 → 正文标签（写入端与看板 filter 共用） */
+/**
+ * 模式 → 正文标签（写入端与看板 filter 共用）
+ *
+ * @param mode - 模式
+ * @returns 文本结果
+ */
 export function bodyLegacyTagForMode(mode: CreationMode): string {
     if (mode === 'short') return '短篇正文';
     if (mode === 'script') return '剧本';

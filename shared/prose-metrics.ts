@@ -99,6 +99,9 @@ function countMatches(text: string, re: RegExp): number {
  * 末段是否为「升华/点题」短段。
  * 判据（窄，防误伤）：末段无对话、可读字数 ≤ 42、命中升华词表、
  * 且全文足够长（≥ 150 字）——更短的文本末段本来就允许收束句。
+ * @param paragraphs - 段落列表
+ * @param text - 文本内容
+ * @returns 是否成功
  */
 function detectElevatedEnding(paragraphs: string[], text: string): boolean {
     if (countReadableChars(text) < 150) return false;
@@ -129,7 +132,12 @@ function countReadableChars(text: string): number {
     return count;
 }
 
-/** 段落：按行切（项目默认一个自然段一行；空行只是段落分隔符） */
+/**
+ * 段落：按行切（项目默认一个自然段一行；空行只是段落分隔符）
+ *
+ * @param raw - 原始
+ * @returns 结果数组
+ */
 export function splitProseParagraphs(raw: string): string[] {
     const text = normalizeText(raw);
     if (!text) return [];
@@ -161,7 +169,12 @@ function dialogueChars(text: string): number {
     return total;
 }
 
-/** 对话占本段可读字符的比例；≥0.5 视为对话段，否则仍算叙述段 */
+/**
+ * 对话占本段可读字符的比例；≥0.5 视为对话段，否则仍算叙述段
+ *
+ * @param paragraph - 段落
+ * @returns 数值结果
+ */
 function paragraphDialogueRatio(paragraph: string): number {
     const chars = countReadableChars(paragraph);
     return chars > 0 ? dialogueChars(paragraph) / chars : 0;
@@ -325,6 +338,8 @@ function issue(
 /**
  * 把指标折算成 0–100 的“碎片化风险”。
  * 分数只反映可读性风险，不代表任何外部检测器的判定。
+ * @param metrics - 指标
+  * @returns ProseRiskReport 实例
  */
 export function scoreProseRisk(metrics: ProseMetrics): ProseRiskReport {
     if (metrics.chars === 0 || metrics.sentences === 0) {

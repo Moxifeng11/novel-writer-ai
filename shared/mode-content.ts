@@ -266,7 +266,13 @@ export function modeDocStarter(project: string, mode: CreationMode, doc: 'storyC
     return SCRIPT_STORYBOARD_STARTER.replace('# 分镜表', `# ${project} · 分镜表`);
 }
 
-/** 创建短篇/剧本独立目录与起始文档（不复制长篇模板） */
+/**
+ * 创建短篇/剧本独立目录与起始文档（不复制长篇模板）
+ *
+ * @param adapter - 适配器
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ */
 export async function ensureModeContentStructure(
     adapter: DataAdapter,
     project: string,
@@ -325,7 +331,14 @@ function unitInfo(app: App, file: TFile, mode: CreationMode, legacy: boolean): M
     };
 }
 
-/** 读取短篇/剧本正文单元；新结构优先，旧版长篇结构仅作为兼容回退 */
+/**
+ * 读取短篇/剧本正文单元；新结构优先，旧版长篇结构仅作为兼容回退
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @returns 结果数组
+ */
 export function listModeUnits(app: App, project: string, mode: CreationMode): ModeUnitInfo[] {
     if (mode === 'long') return [];
     const dir = modeBodyDir(project, mode);
@@ -373,7 +386,14 @@ export function findNextModeUnit(units: ModeUnitInfo[]): ModeUnitInfo | null {
     return units.find(unit => unit.status !== 'written' && unit.status !== 'settled') || units[units.length - 1] || null;
 }
 
-/** 导出的章节数据（与 engine/export/manuscript-compiler 的输入兼容） */
+/**
+ * 导出的章节数据（与 engine/export/manuscript-compiler 的输入兼容）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+  * @returns string }>> 结果
+ */
 export async function collectModeManuscript(
     app: App,
     project: string,

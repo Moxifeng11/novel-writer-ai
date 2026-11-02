@@ -63,6 +63,7 @@ export class InterventionController {
 
     /**
      * 渲染干预面板到指定容器
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const box = container.createDiv({

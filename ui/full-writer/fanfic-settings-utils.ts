@@ -61,7 +61,12 @@ export function buildFanficSettingsContent(values: FanficSettingsValues): string
 `;
 }
 
-/** 同一套文件名规则：创建项目、生成设定、绑定/补全都用它，避免 .project 指向不存在的路径。 */
+/**
+ * 同一套文件名规则：创建项目、生成设定、绑定/补全都用它，避免 .project 指向不存在的路径。
+ *
+ * @param workName - 作品名
+ * @returns 文本结果
+ */
 export function fanficSettingsFileName(workName: string): string {
   return `${sanitizeFilePart(workName)}设定.md`;
 }
@@ -69,7 +74,12 @@ export function fanficSettingsFileName(workName: string): string {
 const FANFIC_TEMPLATE_NAME = '同人设定模板.md';
 const FANFIC_TEMPLATE_SOURCE = `元文件/05-同人设定库/${FANFIC_TEMPLATE_NAME}`;
 
-/** 项目内模板路径；模板丢失时可从元文件/内置骨架恢复。 */
+/**
+ * 项目内模板路径；模板丢失时可从元文件/内置骨架恢复。
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function projectFanficTemplatePath(project: string): string {
   return `${pjFanficDir(project)}/${FANFIC_TEMPLATE_NAME}`;
 }
@@ -77,6 +87,9 @@ export function projectFanficTemplatePath(project: string): string {
 /**
  * 确保项目内有一份可复用的同人设定模板。
  * 优先复制元文件模板；元文件模板也丢失时，用内置骨架重建，避免“模板丢了就再也建不了”。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
  */
 export async function ensureFanficTemplate(app: App, project: string): Promise<string> {
   const target = projectFanficTemplatePath(project);
@@ -120,7 +133,14 @@ export async function ensureFanficTemplate(app: App, project: string): Promise<s
   return target;
 }
 
-/** 从项目模板复制一份待审核草稿；模板丢失会自动恢复。 */
+/**
+ * 从项目模板复制一份待审核草稿；模板丢失会自动恢复。
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param workName - 作品名
+ * @returns 文本结果
+ */
 export async function createFanficDraftFromTemplate(
   app: App,
   project: string,
@@ -179,6 +199,9 @@ export function isFanficSettingsContentValidEnough(content: string) {
 /**
  * 把同人设定文件路径回写到项目 `.project` 的「## 同人设定路径」段。
  * 向导内保存同人设定时调用，保证重新进入向导后能按同一路径恢复。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
  */
 export async function attachFanficPathToProject(app: App, project: string, filePath: string): Promise<void> {
   const target = app.vault.getAbstractFileByPath(filePath);
@@ -207,6 +230,9 @@ export async function attachFanficPathToProject(app: App, project: string, fileP
  * 覆盖保存同人设定文件。
  * 必须对已存在文件走 modify：delete + create 的中间态一旦失败（权限/磁盘/路径竞态），
  * 旧设定已删除、新文件未创建，而 `.project` 仍指向该路径 → 同人约束静默全部失效。
+ * @param app - Obsidian 应用实例
+ * @param filePath - 文件路径
+ * @param content - 内容
  */
 export async function saveFanficSettingFile(app: App, filePath: string, content: string): Promise<void> {
   const existing = app.vault.getAbstractFileByPath(filePath);

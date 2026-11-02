@@ -107,6 +107,9 @@ export class ContextDiffDetector {
     /**
      * 检测两个 GatheredContext 之间的差异
      * 逐分区比较，识别变更类型与受影响分区
+     * @param oldContext - 旧上下文
+     * @param newContext - 新上下文
+      * @returns ContextChangeSet 实例
      */
     detectChanges(
         oldContext: GatheredContext,
@@ -146,6 +149,8 @@ export class ContextDiffDetector {
 
     /**
      * 根据变更集返回需要重新计算的上下文分区
+     * @param changeSet - 变更集
+     * @returns 结果数组
      */
     getAffectedSections(changeSet: ContextChangeSet): string[] {
         return [...changeSet.affectedSections];
@@ -154,6 +159,9 @@ export class ContextDiffDetector {
     /**
      * 根据文件路径列表创建变更集
      * 用于增量更新流程：文件修改事件 → 变更集
+     * @param filePaths - 文件路径列表
+     * @param project - 项目（路径或对象）
+      * @returns ContextChangeSet 实例
      */
     createChangeSetFromPaths(
         filePaths: string[],

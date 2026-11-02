@@ -290,6 +290,11 @@ ${description ? `【补充要求】\n${description}` : ''}
      * 公开的单条实体补全入口。
      * 供生成模态在保存前做「校验 → AI 补全 → 复检」闭环使用；
      * 补全结果仍不完整时返回 null，调用方必须拒绝落盘。
+     * @param entityType - 实体类型
+     * @param name - 名称
+     * @param content - 内容
+     * @param missingFields - 缺失字段列表
+      * @returns 文本结果 或 null
      */
     async repairEntity(
         entityType: '势力' | '地点' | '物品/功法',

@@ -2,7 +2,12 @@
 
 import { INFOPLAN_CHECK_FIELDS, INFOPLAN_LEGACY_FIELDS, OUTLINE_CHECK_FIELDS } from './format-constants';
 
-/** 检查信息规划是否完整（需包含章名、核心冲突、熵预算等 6 个关键字段） */
+/**
+ * 检查信息规划是否完整（需包含章名、核心冲突、熵预算等 6 个关键字段）
+ *
+ * @param content - 内容
+ * @returns 是否成功
+ */
 export function isInfoPlanComplete(content: string): boolean {
     if (!content || content.length < 30) return false;
     const fields: readonly string[] = INFOPLAN_CHECK_FIELDS;
@@ -23,7 +28,12 @@ export function isInfoPlanComplete(content: string): boolean {
     return true;
 }
 
-/** 检查大纲摘要是否完整（需包含定位、场景、信息、基调、钩子 5 个字段） */
+/**
+ * 检查大纲摘要是否完整（需包含定位、场景、信息、基调、钩子 5 个字段）
+ *
+ * @param content - 内容
+ * @returns 是否成功
+ */
 export function isOutlineComplete(content: string): boolean {
     const fields: ReadonlyArray<{ label: string; minLen: number }> = [...OUTLINE_CHECK_FIELDS];
     for (const f of fields) {
@@ -35,7 +45,12 @@ export function isOutlineComplete(content: string): boolean {
     return true;
 }
 
-/** 诊断大纲摘要完整度（返回诊断文本而非 bool） */
+/**
+ * 诊断大纲摘要完整度（返回诊断文本而非 bool）
+ *
+ * @param content - 内容
+ * @returns 文本结果
+ */
 export function diagnoseOutline(content: string): string {
     const fields = [
         { label: '本章在全书中的位置', minLen: 10 },

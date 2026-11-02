@@ -31,6 +31,8 @@ export interface AppearanceSectionOptions {
  * 三层配色预览：基底 → 卡片 → 强调。
  * 旧版预览画了「底色/面板/卡片」三块色板，让人误以为要配三个背景色；
  * 三层模型下只需看基底、卡片与强调，面板由基底派生。
+ * @param parent - 父级
+ * @param compact - 精简结果
  */
 function renderThemePreview(parent: HTMLElement, compact: boolean): void {
     const cls = compact ? 'nw-theme-preview nw-theme-preview-mini' : 'nw-theme-preview';
@@ -224,7 +226,13 @@ export function renderAppearanceSettings(
         });
 }
 
-/** 应用一套内置主题（浅/深），全量与紧凑入口共用 */
+/**
+ * 应用一套内置主题（浅/深），全量与紧凑入口共用
+ *
+ * @param plugin - 插件实例
+ * @param theme - 主题
+ * @param mode - 模式
+ */
 async function applyGalleryTheme(
     plugin: NovelWriterPlugin,
     theme: GalleryTheme,
@@ -240,7 +248,13 @@ async function applyGalleryTheme(
     new Notice(`✅ 已切换到「${theme.name} · ${mode === 'dark' ? '深色' : '浅色'}」`);
 }
 
-/** 内置主题画廊：三层配色预设，点一下就切换（不占用户的「配色方案」配额） */
+/**
+ * 内置主题画廊：三层配色预设，点一下就切换（不占用户的「配色方案」配额）
+ *
+ * @param section - 分区
+ * @param plugin - 插件实例
+ * @param rerender - 是否重渲染
+ */
 function renderThemeGallery(
     section: HTMLElement,
     plugin: NovelWriterPlugin,
@@ -298,7 +312,13 @@ function renderThemeGallery(
     }
 }
 
-/** 紧凑模式（mini 设置）：一个下拉即可切换全部内置主题 */
+/**
+ * 紧凑模式（mini 设置）：一个下拉即可切换全部内置主题
+ *
+ * @param section - 分区
+ * @param plugin - 插件实例
+ * @param rerender - 是否重渲染
+ */
 function renderThemeGalleryCompact(
     section: HTMLElement,
     plugin: NovelWriterPlugin,
@@ -329,7 +349,13 @@ function renderThemeGalleryCompact(
         });
 }
 
-/** 配色方案管理：保存 / 一键切换 / 删除 / 导入导出 */
+/**
+ * 配色方案管理：保存 / 一键切换 / 删除 / 导入导出
+ *
+ * @param section - 分区
+ * @param plugin - 插件实例
+ * @param rerender - 是否重渲染
+ */
 function renderPresetManager(
     section: HTMLElement,
     plugin: NovelWriterPlugin,

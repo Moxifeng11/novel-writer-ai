@@ -42,7 +42,12 @@ export interface PreviousChapterWindowOptions {
 
 const BODY_FILE_NAME = /^第(\d+)章.*_正文\.md$/;
 
-/** 去掉 Markdown frontmatter，只保留正文（元数据不参与矛盾检测） */
+/**
+ * 去掉 Markdown frontmatter，只保留正文（元数据不参与矛盾检测）
+ *
+ * @param content - 内容
+ * @returns 文本结果
+ */
 export function stripFrontmatterBlock(content: string): string {
     if (!content) return '';
     return content.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n?/, '');
@@ -51,6 +56,10 @@ export function stripFrontmatterBlock(content: string): string {
 /**
  * 从正文文件列表里选出当前章之前最近的 `windowSize` 章。
  * 返回按章号降序（最近优先）；同章多份文件时保留路径最短的正稿。
+ * @param files - 文件列表
+ * @param currentChapterNum - 当前章节编号
+ * @param windowSize - 窗口大小
+ * @returns 结果数组
  */
 export function selectPreviousChapterFiles(
     files: BodyFileRef[],
@@ -82,6 +91,9 @@ export function selectPreviousChapterFiles(
 /**
  * 按预算把前文章节裁剪成上下文片段：最近优先消耗总量预算，
  * 单章超过上限时截断，空正文跳过。
+ * @param sources - 来源列表
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function buildPreviousChapterWindow(
     sources: PreviousChapterSource[],

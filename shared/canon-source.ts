@@ -92,7 +92,12 @@ export function sourceDomain(url: string): string {
     }
 }
 
-/** 识别来源层级；衍生作品优先级最高，避免手工误标成 official。 */
+/**
+ * 识别来源层级；衍生作品优先级最高，避免手工误标成 official。
+ *
+ * @param input - 输入
+  * @returns CanonSourceTier 实例
+ */
 export function classifyCanonSource(input: Pick<CanonSourceInput, 'url' | 'title' | 'tier'>): CanonSourceTier {
     const url = normalizeSourceUrl(input.url) || input.url || '';
     const title = (input.title || '').trim();
@@ -155,7 +160,12 @@ export function hashText(text: string): string {
     return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-/** 来源集合哈希：用于审核通过后检测文件/来源是否被修改。 */
+/**
+ * 来源集合哈希：用于审核通过后检测文件/来源是否被修改。
+ *
+ * @param sources - 来源列表
+ * @returns 文本结果
+ */
 export function computeCanonSourceHash(sources: CanonSource[]): string {
     const stable = [...sources]
         .sort((a, b) => `${a.id}|${a.url}`.localeCompare(`${b.id}|${b.url}`))
@@ -175,7 +185,12 @@ export interface CanonSourceValidation {
     excluded: CanonSource[];
 }
 
-/** 生成前的来源闸门：没有官方来源就不允许让模型补内容。 */
+/**
+ * 生成前的来源闸门：没有官方来源就不允许让模型补内容。
+ *
+ * @param sources - 来源列表
+  * @returns CanonSourceValidation 实例
+ */
 export function validateCanonSources(sources: CanonSource[]): CanonSourceValidation {
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -194,7 +209,12 @@ export function validateCanonSources(sources: CanonSource[]): CanonSourceValidat
     return { valid: errors.length === 0, errors, warnings, authoritative, excluded };
 }
 
-/** 只把官方来源送进生成 prompt；参考资料/衍生作品一律不送。 */
+/**
+ * 只把官方来源送进生成 prompt；参考资料/衍生作品一律不送。
+ *
+ * @param sources - 来源列表
+ * @returns 结果数组
+ */
 export function selectAuthoritativeSources(sources: CanonSource[]): CanonSource[] {
     return sources.filter(s => isAuthoritativeSource(s.tier) && s.excerpt.trim().length > 0);
 }
@@ -221,7 +241,13 @@ export function extractCitationIds(text: string): string[] {
     return [...ids];
 }
 
-/** 引用覆盖率：有来源标注的字段比例，用于人工审核摘要。 */
+/**
+ * 引用覆盖率：有来源标注的字段比例，用于人工审核摘要。
+ *
+ * @param text - 文本内容
+ * @param sources - 来源列表
+ * @returns 数值结果
+ */
 export function citationCoverage(text: string, sources: CanonSource[]): number {
     const validIds = new Set(sources.map(s => s.id));
     const cited = extractCitationIds(text).filter(id => validIds.has(id));

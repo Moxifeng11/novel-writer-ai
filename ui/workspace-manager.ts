@@ -38,7 +38,12 @@ export class FloatWorkspaceManager {
     );
   }
 
-  /** 打开所有浮窗 */
+  /**
+   * 打开所有浮窗
+   *
+   * @param project - 项目（路径或对象）
+   * @param chapterName - 章节名
+   */
   async openAll(project?: string, chapterName?: string): Promise<void> {
     const { workspace } = this.plugin.app;
 
@@ -98,19 +103,31 @@ export class FloatWorkspaceManager {
     }
   }
 
-  /** 获取主协同写作面板引用 */
+  /**
+   * 获取主协同写作面板引用
+   *
+    * @returns CoWritingView 或 null
+   */
   getCoWritingView(): CoWritingView | null {
     const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_CO_WRITE);
     return leaves.length > 0 ? (leaves[0].view as CoWritingView) : null;
   }
 
-  /** 获取监控面板A引用 */
+  /**
+   * 获取监控面板A引用
+   *
+    * @returns MonitorPanelA 或 null
+   */
   getMonitorPanelA(): MonitorPanelA | null {
     const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_MONITOR_A);
     return leaves.length > 0 ? (leaves[0].view as MonitorPanelA) : null;
   }
 
-  /** 获取监控面板B引用 */
+  /**
+   * 获取监控面板B引用
+   *
+    * @returns MonitorPanelB 或 null
+   */
   getMonitorPanelB(): MonitorPanelB | null {
     const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_MONITOR_B);
     return leaves.length > 0 ? (leaves[0].view as MonitorPanelB) : null;

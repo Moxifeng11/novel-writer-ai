@@ -49,7 +49,15 @@ export interface CheckpointStoragePort {
 
 export const CHECKPOINT_VERSION = 1;
 
-/** 断点 key：project::chapter::scene::promptHash（TR-7.3 多章多场景隔离） */
+/**
+ * 断点 key：project::chapter::scene::promptHash（TR-7.3 多章多场景隔离）
+ *
+ * @param projectId - 项目ID
+ * @param chapter - 章节
+ * @param sceneNum - 场景编号
+ * @param promptHash - 提示词哈希
+ * @returns 文本结果
+ */
 export function makeCheckpointKey(
     projectId: string,
     chapter: string,
@@ -62,7 +70,12 @@ export function makeCheckpointKey(
 export class GenerationCheckpointStore {
     constructor(private readonly port: CheckpointStoragePort) {}
 
-    /** 保存断点；落盘失败 catch 返回 false（TR-7.4） */
+    /**
+     * 保存断点；落盘失败 catch 返回 false（TR-7.4）
+     *
+     * @param input - 输入
+     * @returns 是否成功
+     */
     async save(input: Omit<GenerationCheckpoint, 'savedAt' | 'version'>): Promise<boolean> {
         const key = makeCheckpointKey(input.projectId, input.chapter, input.sceneNum, input.promptHash);
         const checkpoint: GenerationCheckpoint = {
@@ -80,7 +93,12 @@ export class GenerationCheckpointStore {
         }
     }
 
-    /** 读取断点；不存在返回 null */
+    /**
+     * 读取断点；不存在返回 null
+     *
+     * @param locator - 定位器
+      * @returns GenerationCheckpoint 或 null
+     */
     async get(locator: CheckpointLocator): Promise<GenerationCheckpoint | null> {
         try {
             const key = makeCheckpointKey(locator.projectId, locator.chapter, locator.sceneNum, locator.promptHash);
@@ -94,7 +112,11 @@ export class GenerationCheckpointStore {
         }
     }
 
-    /** 放弃断点（用户选择"放弃本次/使用已有结果"时清除） */
+    /**
+     * 放弃断点（用户选择"放弃本次/使用已有结果"时清除）
+     *
+     * @param locator - 定位器
+     */
     async discard(locator: CheckpointLocator): Promise<void> {
         try {
             const key = makeCheckpointKey(locator.projectId, locator.chapter, locator.sceneNum, locator.promptHash);
@@ -107,6 +129,8 @@ export class GenerationCheckpointStore {
     /**
      * 列出某项目的全部断点（Task 10 恢复面板数据源）。
      * 端口未实现 list 或读取失败时降级空数组，不阻塞向导打开。
+     * @param projectId - 项目ID
+     * @returns 结果数组
      */
     async listCheckpoints(projectId: string): Promise<GenerationCheckpoint[]> {
         try {

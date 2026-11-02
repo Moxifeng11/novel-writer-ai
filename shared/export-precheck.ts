@@ -30,7 +30,12 @@ function listNames(names: string[], maxListed: number): string {
     return names.length > maxListed ? `${shown}…` : shown;
 }
 
-/** 返回 Notice 文案；无需告警时返回 null */
+/**
+ * 返回 Notice 文案；无需告警时返回 null
+ *
+ * @param input - 输入
+  * @returns 文本结果 或 null
+ */
 export function formatExportPrecheck(input: ExportPrecheckInput): string | null {
     const maxListed = input.maxListed ?? 5;
     const parts: string[] = [];

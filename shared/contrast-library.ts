@@ -29,7 +29,12 @@ function extractSubsection(body: string, heading: string): string {
     return m ? m[1].trim() : '';
 }
 
-/** 解析对照库 Markdown。缺少任一强/弱段落的章节跳过。 */
+/**
+ * 解析对照库 Markdown。缺少任一强/弱段落的章节跳过。
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseContrastLibrary(content: string): ContrastPair[] {
     if (!content || !content.trim()) return [];
     const pairs: ContrastPair[] = [];
@@ -61,7 +66,13 @@ const SCENE_TYPE_ALIASES: Record<string, string[]> = {
     rhythm: ['节奏', '叙事'],
 };
 
-/** 按场景类型匹配对照；无匹配返回 null。 */
+/**
+ * 按场景类型匹配对照；无匹配返回 null。
+ *
+ * @param pairs - 配对列表
+ * @param sceneType - 场景类型
+  * @returns ContrastPair 或 null
+ */
 export function selectContrastPair(pairs: ContrastPair[], sceneType?: string): ContrastPair | null {
     if (pairs.length === 0) return null;
     const aliases = sceneType ? (SCENE_TYPE_ALIASES[sceneType] || [sceneType]) : [];

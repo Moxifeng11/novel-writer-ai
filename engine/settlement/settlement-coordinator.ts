@@ -87,7 +87,12 @@ export async function writeSettlementArtifacts(
     return report;
 }
 
-/** 把报告转成一条用户可见提示；全部成功返回 null */
+/**
+ * 把报告转成一条用户可见提示；全部成功返回 null
+ *
+ * @param report - 报告
+  * @returns 文本结果 或 null
+ */
 export function settlementArtifactNotice(report: SettlementArtifactReport): string | null {
     return report.warnings.length > 0 ? `⚠️ ${report.warnings.join('；')}` : null;
 }

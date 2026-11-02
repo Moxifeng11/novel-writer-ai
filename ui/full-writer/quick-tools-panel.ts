@@ -98,6 +98,8 @@ function renderProjectActions(parent: HTMLElement, opts: QuickToolsPanelOptions)
 
 /**
  * 在容器内渲染常驻工具面板。
+ * @param container - 容器元素
+ * @param opts - 选项
  */
 export function renderQuickToolsPanel(container: HTMLElement, opts: QuickToolsPanelOptions): void {
     const panel = container.createDiv({

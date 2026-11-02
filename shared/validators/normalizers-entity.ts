@@ -32,6 +32,9 @@ export interface NormalizeResult {
 /**
  * 人物卡归一化 —— 对确实缺失的 YAML 字段和正文分节补入 "待补充"
  * 注意：此函数假设 validateCharacterOutput 已用于判定缺失字段
+ * @param content - 内容
+ * @param missingFields - 缺失字段列表
+  * @returns NormalizeResult 实例
  */
 export function normalizeCharacterOutput(content: string, missingFields: string[]): NormalizeResult {
     let normalized = content;
@@ -80,6 +83,9 @@ export function normalizeCharacterOutput(content: string, missingFields: string[
 
 /**
  * 势力卡归一化
+ * @param content - 内容
+ * @param missingFields - 缺失字段列表
+  * @returns NormalizeResult 实例
  */
 export function normalizeFactionOutput(content: string, missingFields: string[]): NormalizeResult {
     let normalized = content;
@@ -126,6 +132,9 @@ export function normalizeFactionOutput(content: string, missingFields: string[])
 
 /**
  * 地点卡归一化
+ * @param content - 内容
+ * @param missingFields - 缺失字段列表
+  * @returns NormalizeResult 实例
  */
 export function normalizeLocationOutput(content: string, missingFields: string[]): NormalizeResult {
     let normalized = content;
@@ -172,6 +181,9 @@ export function normalizeLocationOutput(content: string, missingFields: string[]
 
 /**
  * 物品功法卡归一化
+ * @param content - 内容
+ * @param missingFields - 缺失字段列表
+  * @returns NormalizeResult 实例
  */
 export function normalizeItemOutput(content: string, missingFields: string[]): NormalizeResult {
     let normalized = content;

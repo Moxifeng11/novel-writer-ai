@@ -21,7 +21,11 @@ export const DETAIL_DATA_KEYS = [
 
 export type DetailDataKey = typeof DETAIL_DATA_KEYS[number];
 
-/** 统一的空详情数据（每次开始加载都从这里整体覆盖） */
+/**
+ * 统一的空详情数据（每次开始加载都从这里整体覆盖）
+ *
+ * @returns 映射结果
+ */
 export function emptyDetailData(): Record<DetailDataKey, null> {
     return {
         styleData: null,
@@ -41,7 +45,12 @@ export interface DetailErrorInput {
     error?: unknown;
 }
 
-/** 详情加载失败文案；保证永远非空 */
+/**
+ * 详情加载失败文案；保证永远非空
+ *
+ * @param input - 输入
+ * @returns 文本结果
+ */
 export function detailErrorMessage(input: DetailErrorInput = {}): string {
     if (input.missing) return '书籍不存在或已被删除，请返回列表刷新';
     const { error } = input;
@@ -52,7 +61,13 @@ export function detailErrorMessage(input: DetailErrorInput = {}): string {
     return text || '未知错误';
 }
 
-/** 是否允许重绘书籍列表：只在「参考书籍」页签且没有打开详情时 */
+/**
+ * 是否允许重绘书籍列表：只在「参考书籍」页签且没有打开详情时
+ *
+ * @param activeMainTab - 活动主页签
+ * @param selectedBookId - 选中书籍ID
+ * @returns 是否成功
+ */
 export function canRefreshBookList(activeMainTab: string, selectedBookId: string | null): boolean {
     return activeMainTab === 'books' && !selectedBookId;
 }

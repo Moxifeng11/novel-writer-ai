@@ -158,6 +158,8 @@ export class ProjectMigrationService {
      *
      * 注意：只回退「本次 moved 列表」；迁移后用户在新路径里做过的编辑会随目录一起移回，
      * 不会被丢弃。原路径若已被别的目录占用则跳过并报告，不覆盖。
+     * @param moved - 是否移动
+      * @returns MigrationRollbackResult 实例
      */
     async rollback(moved: MigrationCandidate[]): Promise<MigrationRollbackResult> {
         const restored: MigrationCandidate[] = [];
@@ -203,7 +205,12 @@ export class ProjectMigrationService {
         return result;
     }
 
-    /** Convenience wrapper for settings UI */
+    /**
+     * Convenience wrapper for settings UI
+     *
+     * @param options - 配置项
+      * @returns MigrationResult 实例
+     */
     async migrateWithNotice(options?: { backup?: boolean }): Promise<MigrationResult> {
         const result = await this.migrate(options);
         if (result.moved.length > 0) {

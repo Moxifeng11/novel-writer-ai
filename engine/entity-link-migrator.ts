@@ -52,7 +52,13 @@ function policiesForCategory(category: string): Array<{ field: string; cardinali
         .map(([, policy]) => ({ field: policy.key, cardinality: policy.cardinality }));
 }
 
-/** 纯函数：单个实体 frontmatter 的迁移计划（供单测直接验证） */
+/**
+ * 纯函数：单个实体 frontmatter 的迁移计划（供单测直接验证）
+ *
+ * @param category - 分类
+ * @param frontmatter - frontmatter
+  * @returns 结果
+ */
 export function planEntityLinkChanges(
     category: string,
     frontmatter: Record<string, unknown>,
@@ -83,7 +89,13 @@ export function planEntityLinkChanges(
     return changes;
 }
 
-/** 扫描项目四类实体，生成迁移计划（不写任何文件） */
+/**
+ * 扫描项目四类实体，生成迁移计划（不写任何文件）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns EntityLinkMigrationPlan 实例
+ */
 export function scanEntityLinkMigration(app: App, project: string): EntityLinkMigrationPlan {
     const vaultMeta = new ObsidianVaultMeta(app);
     const plan: EntityLinkMigrationPlan = { scanned: 0, changes: [] };
@@ -103,7 +115,14 @@ export function scanEntityLinkMigration(app: App, project: string): EntityLinkMi
     return plan;
 }
 
-/** 执行迁移：按计划逐文件写 frontmatter（写锁）。返回成功写入的文件数 */
+/**
+ * 执行迁移：按计划逐文件写 frontmatter（写锁）。返回成功写入的文件数
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param plan - 计划
+ * @returns 数值结果
+ */
 export async function applyEntityLinkMigration(
     app: App,
     project: string,

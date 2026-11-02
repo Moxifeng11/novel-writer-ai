@@ -105,6 +105,8 @@ function inRange(value: number, [min, max]: [number, number]): boolean {
 /**
  * 按人工样本区间打分。
  * 章级文本（≥1200 字）才评；短片段只返回指标不做判定（样本太小。
+ * @param raw - 原始
+  * @returns RubricResult 实例
  */
 export function evaluateHumanFeatures(raw: string): RubricResult {
     const metrics = analyzeHumanFeatures(raw);
@@ -151,7 +153,12 @@ export function evaluateHumanFeatures(raw: string): RubricResult {
     return { metrics, score, issues, pass: issues.length === 0 };
 }
 
-/** 一行摘要（账本/面板/日志用） */
+/**
+ * 一行摘要（账本/面板/日志用）
+ *
+ * @param result - 结果
+ * @returns 文本结果
+ */
 export function formatRubric(result: RubricResult): string {
     const m = result.metrics;
     const head = `人工特征 ${(result.score * 100).toFixed(0)}/100｜对话 ${(m.dialogueRatio * 100).toFixed(0)}%`

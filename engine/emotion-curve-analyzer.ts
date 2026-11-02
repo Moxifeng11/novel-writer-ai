@@ -17,6 +17,8 @@ export class EmotionCurveAnalyzer {
 
      /**
       * 分析文本的情绪曲线
+      * @param text - 文本内容
+       * @returns EmotionCurve 实例
       */
      async analyze(text: string): Promise<EmotionCurve> {
          if (!text || text.length < 100) {

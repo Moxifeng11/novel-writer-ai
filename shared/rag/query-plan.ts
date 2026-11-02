@@ -23,7 +23,12 @@ export interface RagQuerySource {
     currentText?: string;
 }
 
-/** 归一化：压缩空白、去掉重复标点，避免同义查询被当成不同文本 */
+/**
+ * 归一化：压缩空白、去掉重复标点，避免同义查询被当成不同文本
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 export function normalizeQuery(text: string): string {
     return String(text || '')
         .replace(/\s+/g, ' ')
@@ -49,6 +54,8 @@ function clip(text: string): string {
  * - 章纲（设定/结构维度）
  * - 出场人物名单（角色维度）
  * 文本相同的查询只保留权重最高的一条。
+ * @param source - 来源
+ * @returns 结果数组
  */
 export function buildQueryPlan(source: RagQuerySource): RagQuery[] {
     const candidates: RagQuery[] = [];
@@ -74,7 +81,12 @@ export function buildQueryPlan(source: RagQuerySource): RagQuery[] {
     return [...byText.values()].sort((a, b) => b.weight - a.weight);
 }
 
-/** 查询计划是否为空（调用方据此跳过检索） */
+/**
+ * 查询计划是否为空（调用方据此跳过检索）
+ *
+ * @param plan - 计划
+ * @returns 是否成功
+ */
 export function isQueryPlanEmpty(plan: RagQuery[]): boolean {
     return plan.length === 0;
 }

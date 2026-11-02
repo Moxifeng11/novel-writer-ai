@@ -25,7 +25,12 @@ export interface ChunkOriginalTextOptions {
     maxChunks?: number;
 }
 
-/** 去除首尾空白并压缩连续空行 */
+/**
+ * 去除首尾空白并压缩连续空行
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 function normalizeText(text: string): string {
     return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
@@ -37,7 +42,13 @@ function splitParagraphs(text: string): string[] {
         .filter(Boolean);
 }
 
-/** 单段超过目标长度时按窗口硬切 */
+/**
+ * 单段超过目标长度时按窗口硬切
+ *
+ * @param paragraph - 段落
+ * @param chunkSize - 分块大小
+ * @returns 结果数组
+ */
 function hardSplit(paragraph: string, chunkSize: number): string[] {
     if (paragraph.length <= chunkSize) return [paragraph];
     const pieces: string[] = [];
@@ -50,6 +61,9 @@ function hardSplit(paragraph: string, chunkSize: number): string[] {
 /**
  * 原文分块。
  * 返回的 position 为分块在全文中的顺序索引（采样后保持原索引）。
+ * @param text - 文本内容
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function chunkOriginalText(
     text: string,

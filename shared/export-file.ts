@@ -16,7 +16,12 @@ const log = createLogger('ExportFile');
 /** 移动端回退写入的目录（放在 vault 根下，便于用户找到） */
 export const EXPORT_FALLBACK_DIR = '导出文件';
 
-/** 与 kbBookDir 一致的非法字符净化，避免文件名破坏路径 */
+/**
+ * 与 kbBookDir 一致的非法字符净化，避免文件名破坏路径
+ *
+ * @param name - 名称
+ * @returns 文本结果
+ */
 function sanitizeFileName(name: string): string {
     return name.replace(/[\\/:*?"<>|]/g, '_');
 }
@@ -42,6 +47,11 @@ export interface ExportFileResult {
 
 /**
  * 导出文本内容到用户可获取的位置（桌面=下载，移动=写入 vault）。
+ * @param app - Obsidian 应用实例
+ * @param filename - 文件名
+ * @param content - 内容
+ * @param options - 配置项
+  * @returns ExportFileResult 实例
  */
 export async function exportTextFile(
     app: App,
@@ -84,6 +94,11 @@ export async function exportTextFile(
 /**
  * 导出二进制内容（EPUB / DOCX）。与文本导出同源：
  * 桌面走下载，移动端/`preferVault` 写入 vault 的「导出文件」目录。
+ * @param app - Obsidian 应用实例
+ * @param filename - 文件名
+ * @param data - 数据
+ * @param options - 配置项
+  * @returns ExportFileResult 实例
  */
 export async function exportBinaryFile(
     app: App,
@@ -122,7 +137,14 @@ export async function exportBinaryFile(
     return downloadBlob(new Blob([buffer], { type: mime }), safeName, options);
 }
 
-/** 桌面端下载：Electron 下载异步启动，blob URL 必须延迟释放 */
+/**
+ * 桌面端下载：Electron 下载异步启动，blob URL 必须延迟释放
+ *
+ * @param blob - 二进制数据
+ * @param safeName - 安全名称
+ * @param options - 配置项
+  * @returns ExportFileResult 实例
+ */
 function downloadBlob(blob: Blob, safeName: string, options?: ExportFileOptions): ExportFileResult {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

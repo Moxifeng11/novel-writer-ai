@@ -26,7 +26,12 @@ export interface MemoryShardDraft {
     body: string;
 }
 
-/** 从模型输出里解析 `## mXXX 标题` 段；无 trigger 标签且正文过短的空段丢弃；id 重排为 m001… */
+/**
+ * 从模型输出里解析 `## mXXX 标题` 段；无 trigger 标签且正文过短的空段丢弃；id 重排为 m001…
+ *
+ * @param raw - 原始
+ * @returns 结果数组
+ */
 export function parseMemoryShardsFromModel(raw: string): MemoryShardDraft[] {
     const text = String(raw || '').replace(/\r\n/g, '\n');
     const drafts: MemoryShardDraft[] = [];
@@ -46,7 +51,12 @@ export function parseMemoryShardsFromModel(raw: string): MemoryShardDraft[] {
     return drafts.map((draft, index) => ({ ...draft, id: `m${String(index + 1).padStart(3, '0')}` }));
 }
 
-/** 序列化为 `<角色>_记忆碎片.md` 的正文（与 memory-trigger.parseMemoryFile 同构） */
+/**
+ * 序列化为 `<角色>_记忆碎片.md` 的正文（与 memory-trigger.parseMemoryFile 同构）
+ *
+ * @param shards - 分片列表
+ * @returns 文本结果
+ */
 export function formatMemoryShardFile(shards: MemoryShardDraft[]): string {
     const lines = [
         `# 记忆碎片`,
@@ -71,6 +81,8 @@ export interface MemoryShardRunOptions {
 
 /**
  * 为主角生成记忆碎片文件；失败只记日志（记忆是增强层，不应阻塞章节流程）。
+ * @param app - Obsidian 应用实例
+ * @param options - 配置项
  * @returns 生成的文件路径；未生成返回 null（无灵魂层/已存在/模型空返回）
  */
 export async function ensureProtagonistMemoryShards(

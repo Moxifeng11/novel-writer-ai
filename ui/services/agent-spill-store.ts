@@ -39,6 +39,8 @@ async function ensureFolder(app: App, folder: string): Promise<void> {
 /**
  * 创建 spill 写入器。
  * @param scope 当前项目的读取函数（每次写入时求值，切换项目后自动分目录）
+ * @param app - Obsidian 应用实例
+  * @returns SpillSink 实例
  */
 export function createVaultSpillSink(app: App, scope: () => string): SpillSink {
     return {
@@ -66,6 +68,8 @@ export function createVaultSpillSink(app: App, scope: () => string): SpillSink {
 /**
  * 清理过期存档（只删 `.sessions/spill/agent/` 下、超过保留期的文件）。
  * 会话启动时调用一次；失败静默（清理不该影响对话）。
+ * @param app - Obsidian 应用实例
+ * @returns 数值结果
  */
 export async function pruneSpillArchive(app: App, keepDays = SPILL_KEEP_DAYS): Promise<number> {
     const cutoff = Date.now() - Math.max(1, keepDays) * 24 * 60 * 60 * 1000;

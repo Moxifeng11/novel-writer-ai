@@ -87,6 +87,10 @@ export class Character extends BaseEntity {
 
     /**
      * 创建新的 Character 实例
+     * @param id - 标识
+     * @param name - 名称
+     * @param filePath - 文件路径
+      * @returns Character 实例
      */
     static create(id: string, name: string, filePath: string): Character {
         return new Character({
@@ -110,6 +114,8 @@ export class Character extends BaseEntity {
 
     /**
      * 从完整属性创建 Character
+     * @param props - 属性表
+      * @returns Character 实例
      */
     static from(props: CharacterProps): Character {
         return new Character(props);
@@ -133,6 +139,8 @@ export class Character extends BaseEntity {
 
     /**
      * 更新人物灵魂数据
+     * @param soul - 灵魂
+      * @returns Character 实例
      */
     withSoul(soul: CharacterSoulData | null): Character {
         return new Character({
@@ -145,6 +153,8 @@ export class Character extends BaseEntity {
 
     /**
      * 添加关系
+     * @param relation - 关系
+      * @returns Character 实例
      */
     addRelation(relation: CharacterRelation): Character {
         return new Character({
@@ -157,6 +167,8 @@ export class Character extends BaseEntity {
 
     /**
      * 移除关系
+     * @param toName - 目标名称
+      * @returns Character 实例
      */
     removeRelation(toName: string): Character {
         return new Character({

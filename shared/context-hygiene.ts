@@ -62,7 +62,13 @@ function normalize(text: string): string {
     return String(text || '').replace(/[\s\u3000]+/g, '').replace(/[，。！？；：“”「」『』、（）()【】\[\]—-]/g, '');
 }
 
-/** 2-gram 集合相似度（Dice 系数）；短文本返回 0，避免误判 */
+/**
+ * 2-gram 集合相似度（Dice 系数）；短文本返回 0，避免误判
+ *
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 数值结果
+ */
 export function bigramSimilarity(a: string, b: string): number {
     const x = normalize(a);
     const y = normalize(b);
@@ -86,7 +92,12 @@ export function bigramSimilarity(a: string, b: string): number {
     return (2 * overlap) / (x.length - 1 + (y.length - 1));
 }
 
-/** 从正文里抽出「第N章」的章节号（去重，按出现顺序） */
+/**
+ * 从正文里抽出「第N章」的章节号（去重，按出现顺序）
+ *
+ * @param text - 文本内容
+ * @returns 结果数组
+ */
 export function extractChapterNumbers(text: string): number[] {
     const found: number[] = [];
     for (const match of String(text || '').matchAll(/第\s*(\d+)\s*章/g)) {
@@ -100,6 +111,8 @@ export function extractChapterNumbers(text: string): number[] {
  * 上下文体检。
  * @param blocks 参与注入的段（key/label/text）
  * @param chapterNum 当前章号（用于串章判定）
+ * @param options - 配置项
+  * @returns HygieneResult 实例
  */
 export function auditContextBlocks(
     blocks: readonly ContextBlock[],
@@ -153,7 +166,12 @@ export function auditContextBlocks(
     return { issues, dropKeys, checked: scan.length };
 }
 
-/** 一行摘要（注入账本用） */
+/**
+ * 一行摘要（注入账本用）
+ *
+ * @param result - 结果
+ * @returns 文本结果
+ */
 export function formatContextHygiene(result: HygieneResult): string {
     if (result.issues.length === 0) return '';
     const dup = result.issues.filter((issue) => issue.type === 'duplicate').length;
@@ -181,7 +199,12 @@ const STYLE_FRAGMENT_PATTERNS: Array<{ re: RegExp; label: string }> = [
     { re: /每段(?:仅|只)(?:写)?一句/, label: '每段只写一句' },
 ];
 
-/** 规则里是否给了「自然段」正向锚点（这是与碎段冲突的判定依据） */
+/**
+ * 规则里是否给了「自然段」正向锚点（这是与碎段冲突的判定依据）
+ *
+ * @param rulesText - 规则集文本
+ * @returns 是否成功
+ */
 export function hasParagraphAnchor(rulesText: string): boolean {
     return /自然段\s*[2２][–\-~—]\s*6\s*句|80\s*[–\-~—]\s*220\s*字/.test(String(rulesText || ''));
 }

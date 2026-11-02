@@ -32,7 +32,12 @@ function parseChapterNum(chapter: string): number {
     return matched ? parseInt(matched[1], 10) : 0;
 }
 
-/** 解析出场记录文件内容；空文件/无表格返回空数组 */
+/**
+ * 解析出场记录文件内容；空文件/无表格返回空数组
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseBehaviorLog(content: string): BehaviorRow[] {
     const rows: BehaviorRow[] = [];
     for (const line of String(content || '').replace(/\r\n/g, '\n').split('\n')) {
@@ -57,6 +62,9 @@ export function parseBehaviorLog(content: string): BehaviorRow[] {
  * 去重键 = (章号, 角色名)（v4.25：改用数字章号，不再用「章节」字符串——章名带标题/格式
  * 变化就会重复一行）；本章新摘要**直接覆盖**旧摘要（最新优先，不比长短——旧实现会
  * 用被改短的旧摘要压制新的短摘要，矛盾长期存在）。
+ * @param existing - 已有
+ * @param incoming - 输入
+ * @returns 结果数组
  */
 export function mergeBehaviorRows(existing: BehaviorRow[], incoming: BehaviorRow[]): BehaviorRow[] {
     const byKey = new Map<string, BehaviorRow>();
@@ -74,7 +82,12 @@ export function mergeBehaviorRows(existing: BehaviorRow[], incoming: BehaviorRow
     });
 }
 
-/** 序列化为完整文件内容（覆盖写语义） */
+/**
+ * 序列化为完整文件内容（覆盖写语义）
+ *
+ * @param rows - 行列表
+ * @returns 文本结果
+ */
 export function formatBehaviorLog(rows: BehaviorRow[]): string {
     const lines = [
         BEHAVIOR_LOG_TITLE,
@@ -90,7 +103,13 @@ export function formatBehaviorLog(rows: BehaviorRow[]): string {
     return `${lines.join('\n')}\n`;
 }
 
-/** 从分析报告的 CHARACTER_BEHAVIOR 指令行构造本章记录 */
+/**
+ * 从分析报告的 CHARACTER_BEHAVIOR 指令行构造本章记录
+ *
+ * @param chapter - 章节
+ * @param behaviors - 行为列表
+ * @returns 结果数组
+ */
 export function buildChapterBehaviorRows(
     chapter: string,
     behaviors: Array<{ name: string; summary: string }>,

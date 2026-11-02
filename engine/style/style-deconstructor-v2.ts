@@ -425,6 +425,8 @@ export class StyleDeconstructorV2 {
     /**
      * V2 12 维分析（异步，纯统计）
      * 兼容 V1：返回结果中包含 v1Result 字段
+     * @param text - 文本内容
+      * @returns StyleAnalysisResultV2 实例
      */
     async analyze(text: string): Promise<StyleAnalysisResultV2> {
         if (!text || text.length === 0) {
@@ -476,6 +478,8 @@ export class StyleDeconstructorV2 {
     /**
      * V1 兼容方法：返回 V1 格式结果
      * 这是 V1 analyze 的包装器，确保完全向后兼容
+     * @param text - 文本内容
+      * @returns StyleAnalysisResult 实例
      */
     async analyzeV1(text: string): Promise<StyleAnalysisResult> {
         return await this.v1Deconstructor.analyze(text);

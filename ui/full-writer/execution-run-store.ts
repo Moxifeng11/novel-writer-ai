@@ -215,7 +215,11 @@ export class ExecutionRunStore {
         this.notify('reset');
     }
 
-    /** 生成可直接粘贴到问题反馈里的纯文本日志。 */
+    /**
+     * 生成可直接粘贴到问题反馈里的纯文本日志。
+     *
+     * @returns 文本结果
+     */
     exportText(): string {
         const lines: string[] = [`执行日志（${new Date().toLocaleString()}）`];
         for (const event of this.events) {

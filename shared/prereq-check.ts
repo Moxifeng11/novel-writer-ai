@@ -24,6 +24,9 @@ export const PREREQ_MIN_BODY_CHARS = 100;
  * - 文件不存在 → 只报名字；
  * - 读取失败 → 「（读取失败）」；
  * - 正文不足门槛 → 「（内容过短）」，恰好等于门槛视为通过。
+ * @param checks - 检查项
+ * @param minBodyChars - 最小正文字符
+ * @returns 结果数组
  */
 export function describePrerequisiteGaps(
     checks: PrerequisiteCheck[],

@@ -266,7 +266,12 @@ function renderProviderPane(
     manage.addEventListener('click', () => actions.onManage());
 }
 
-/** 触发按钮文案（工作台输入框徽章用） */
+/**
+ * 触发按钮文案（工作台输入框徽章用）
+ *
+ * @param plugin - 插件实例
+ * @returns 文本结果
+ */
 export function formatWorkbenchModelBadge(plugin: NovelWriterPlugin): string {
     const settings = plugin.settings;
     const providerName = resolveProviderDisplayName(plugin as unknown as ModelSwitcherPluginLike, plugin.getCurrentProviderId());

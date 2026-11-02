@@ -105,7 +105,12 @@ const FANFIC_TIMELINE_ANCHOR_LOOKBACK = 3;
 /** 模板里的空占位，解析时视为未填写（生成骨架会写「（待补充）」） */
 const FANFIC_PLACEHOLDERS = new Set(['待补充', '（待补充）', '(待补充)']);
 
-/** 解析 `.project` 元信息，取出类型与同人设定路径 */
+/**
+ * 解析 `.project` 元信息，取出类型与同人设定路径
+ *
+ * @param metaContent - 元数据内容
+  * @returns string } 结果
+ */
 export function parseProjectMeta(metaContent: string): { isFanfic: boolean; fanficPath: string } {
     const typeMatch = metaContent.match(/^##\s*类型\s*\r?\n\s*(\S+)/m);
     const pathMatch = metaContent.match(/^##\s*同人设定路径\s*\r?\n\s*(\S.*)/m);
@@ -121,6 +126,9 @@ export function parseProjectMeta(metaContent: string): { isFanfic: boolean; fanf
  * 只取第一行会让 prompt 里的规则比向导里显示的少一截。
  * 正文没有该字段时回退 frontmatter `字段: 值`（用户可能只写了 frontmatter）。
  * 遇到下一条 `- **` 规则、Markdown 标题或空行即停止，避免吞并后续内容。
+ * @param content - 内容
+ * @param label - 标签
+ * @returns 文本结果
  */
 export function extractFanficRuleValue(content: string, label: string): string {
     if (!content) return '';
@@ -156,6 +164,10 @@ export function extractFanficRuleValue(content: string, label: string): string {
  *
  * 不能用 `extractFanficRuleValue(content, 名称标签)` 一次搞定：它只会取第一条。
  * 这里按条目切分，再对每条复用同一字段解析（子项以 `- **` 开头，会被正确截断）。
+ * @param content - 内容
+ * @param sectionTitle - 分区标题
+ * @param nameLabel - 名称标签
+ * @returns 结果数组
  */
 function parseFanficEntrySection(content: string, sectionTitle: string, nameLabel: string): FanficCharacter[] {
     if (!content) return [];
@@ -200,12 +212,22 @@ function parseFanficEntrySection(content: string, sectionTitle: string, nameLabe
     return entries;
 }
 
-/** 解析「## 主要人物」 */
+/**
+ * 解析「## 主要人物」
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseFanficCharacters(content: string): FanficCharacter[] {
     return parseFanficEntrySection(content, '主要人物', '人物名');
 }
 
-/** 解析「## 势力组织」 */
+/**
+ * 解析「## 势力组织」
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseFanficFactions(content: string): FanficCharacter[] {
     return parseFanficEntrySection(content, '势力组织', '势力名');
 }
@@ -217,6 +239,9 @@ export function parseFanficFactions(content: string): FanficCharacter[] {
  * 表格永远解析为空：模型不知道当前情节落在 canon 的哪一段，也看不到本书自己的时间进度。
  * 表头行与 `|---|` 分隔行不是内容，必须丢弃；整行都是占位「待补充」的行同样丢弃
  * （生成骨架写的就是占位行，注入它等于告诉模型「时间线: 待补充」）。
+ * @param content - 内容
+ * @param sectionTitle - 分区标题
+ * @returns 结果数组
  */
 export function parseFanficTimeline(content: string, sectionTitle: string): string[] {
     return parseFanficTimelineRows(content, sectionTitle)
@@ -229,6 +254,9 @@ export function parseFanficTimeline(content: string, sectionTitle: string): stri
  * prompt 注入与上下文面板必须共用这一份行数据：面板侧旧实现先过滤空单元格再按列名映射，
  * 中间某列为空时后续列会整体左移（「章节参考」显示在「涉及人物」下），
  * 与 prompt 里的行内容对不上。空单元格必须保留为空串，占位单元格按原值保留、由调用方决定是否展示。
+ * @param content - 内容
+ * @param sectionTitle - 分区标题
+ * @returns 结果数组
  */
 export function parseFanficTimelineRows(content: string, sectionTitle: string): string[][] {
     if (!content) return [];
@@ -265,7 +293,12 @@ export function parseFanficTimelineRows(content: string, sectionTitle: string): 
     return result;
 }
 
-/** 解析人工审核状态；没有该字段的旧文件按 legacy 兼容。 */
+/**
+ * 解析人工审核状态；没有该字段的旧文件按 legacy 兼容。
+ *
+ * @param content - 内容
+  * @returns FanficReviewStatus 实例
+ */
 export function parseFanficReviewStatus(content: string): FanficReviewStatus {
     const raw = content.match(/^审核状态:\s*(.+)$/m)?.[1]?.trim().toLowerCase() || '';
     if (!raw) return 'legacy';
@@ -289,7 +322,13 @@ export function parseFanficReviewMeta(content: string): {
     };
 }
 
-/** 从同人设定正文中解析「作品名称 + 原作核心设定 + 三条创作规则」 */
+/**
+ * 从同人设定正文中解析「作品名称 + 原作核心设定 + 三条创作规则」
+ *
+ * @param content - 内容
+ * @param path - 路径
+  * @returns FanficRules 实例
+ */
 export function parseFanficRules(content: string, path: string): FanficRules {
     const workName = content.match(/^作品名称:\s*(.+)$/m)?.[1]?.trim()
         || content.match(/^#\s*(.+?)\s*同人设定\s*$/m)?.[1]?.trim()
@@ -319,7 +358,13 @@ export function parseFanficRules(content: string, path: string): FanficRules {
     };
 }
 
-/** 读取项目的同人约束；非同人项目或设定缺失时返回空规则 */
+/**
+ * 读取项目的同人约束；非同人项目或设定缺失时返回空规则
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns FanficRules 实例
+ */
 export async function readFanficRules(app: App, project: string): Promise<FanficRules> {
     if (!project) return EMPTY_RULES;
     const metaFile = app.vault.getAbstractFileByPath(pjProjectMeta(project));
@@ -353,6 +398,9 @@ export async function readFanficRules(app: App, project: string): Promise<Fanfic
 /**
  * 通过 FileSystemPort 读取同人约束（engine 层用，避免依赖 App）。
  * 与 readFanficRules 共用解析逻辑，缺失/损坏时返回空规则。
+ * @param fs - 文件系统端口
+ * @param project - 项目（路径或对象）
+  * @returns FanficRules 实例
  */
 export async function readFanficRulesFromFS(
     fs: import('./file-system-port').FileSystemPort,
@@ -392,6 +440,9 @@ function splitTimelineRow(row: string): string[] {
 /**
  * 用同人时间线最近几条的「对应原作时间」在 canon 时间线里定位锚点。
  * 先精确匹配、再包含匹配，都从后往前取最近一次出现；找不到返回 -1。
+ * @param canonRows - 考据行
+ * @param fanRows - 同人行
+ * @returns 数值结果
  */
 function findCanonTimelineAnchor(canonRows: string[], fanRows: string[]): number {
     const recent = fanRows.slice(-FANFIC_TIMELINE_ANCHOR_LOOKBACK);
@@ -415,6 +466,9 @@ function findCanonTimelineAnchor(canonRows: string[], fanRows: string[]): number
 /**
  * 原作时间线窗口：超过上限时按同人进度锚点取连续 8 行；
  * 没有锚点保持原来的「前 8 行」，避免用户只填 canon 时行为突变。
+ * @param rows - 行列表
+ * @param fanRows - 同人行
+  * @returns FanficTimelineSelection 实例
  */
 function selectCanonTimeline(rows: string[], fanRows: string[]): FanficTimelineSelection {
     const limit = FANFIC_MAX_INJECTED_TIMELINE_ROWS;
@@ -428,6 +482,8 @@ function selectCanonTimeline(rows: string[], fanRows: string[]): FanficTimelineS
 /**
  * 同人时间线窗口：这是本书自己的进度，越靠后越接近当前章节，
  * 超过上限时取最近 8 行；继续取前 8 行会让写到中后期的同人永远看不到自己的最新进度。
+ * @param rows - 行列表
+  * @returns FanficTimelineSelection 实例
  */
 function selectFanficTimeline(rows: string[]): FanficTimelineSelection {
     const limit = FANFIC_MAX_INJECTED_TIMELINE_ROWS;
@@ -459,6 +515,9 @@ function countNameMentions(text: string, name: string): number {
 /**
  * 超过注入上限时按 focusText 中的出现次数排序（同分保持原顺序）；
  * 没有 focusText 时回退「前 N 条」，保证只填资料、不写正文的场景行为不变。
+ * @param entries - 记录集合
+ * @param focusText - 聚焦文本
+ * @returns 结果数组
  */
 function selectEntriesForInjection(
     entries: FanficCharacter[] | undefined,
@@ -483,6 +542,9 @@ function selectEntriesForInjection(
  * 原作核心设定（世界观类型/力量体系/核心规则）必须一起注入：
  * 只给三条规则时，模型知道「不许 OOC」却不知道原作力量体系边界，
  * 长篇续写仍会写出体系外的能力。
+ * @param rules - 规则集
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export function formatFanficRulesForPrompt(rules: FanficRules, options: FanficPromptOptions = {}): string {
     if (!rules.isFanfic) return '';
@@ -594,6 +656,9 @@ export function formatFanficRulesForPrompt(rules: FanficRules, options: FanficPr
 /**
  * 把同人约束块拼到用户要求之前。
  * 统一 6 处实体生成入口的拼接方式，避免「有的入口有约束、有的没有」导致生成标准漂移。
+ * @param fanficBlock - 同人设定块
+ * @param extra - 额外
+ * @returns 文本结果
  */
 export function mergeFanficRequirement(fanficBlock: string, extra?: string): string {
     const base = (extra || '').trim();
@@ -601,7 +666,12 @@ export function mergeFanficRequirement(fanficBlock: string, extra?: string): str
     return base ? `${fanficBlock}\n\n${base}` : fanficBlock;
 }
 
-/** 旧文件没有审核记录时的提醒（用于管理面板，不用于每次写作注入）。 */
+/**
+ * 旧文件没有审核记录时的提醒（用于管理面板，不用于每次写作注入）。
+ *
+ * @param rules - 规则集
+  * @returns 文本结果 或 null
+ */
 export function formatFanficReviewWarning(rules: FanficRules): string | null {
     if (!rules.isFanfic) return null;
     if (rules.reviewStatus === 'legacy' && rules.path) {
@@ -618,6 +688,8 @@ export function formatFanficReviewWarning(rules: FanficRules): string | null {
  * 此时没有 loadError，若不单独判断，用户会以为绑定成功就一定有约束。
  * 「有可用内容」的口径与 `formatFanficRulesForPrompt` 是否输出约束块一致：
  * 作品名、路径不算内容；六个字段、人物/势力条目、两张时间线任一有实质内容才算。
+ * @param rules - 规则集
+  * @returns 文本结果 或 null
  */
 export function formatFanficRulesLoadWarning(rules: FanficRules): string | null {
     if (!rules.isFanfic) return null;

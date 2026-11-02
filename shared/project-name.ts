@@ -63,7 +63,12 @@ export function validateProjectName(raw: string, existing: string[] = []): Proje
     return { valid: true, normalized };
 }
 
-/** AI 构思结果可能带书名号/标点；先净化，再交给用户确认。 */
+/**
+ * AI 构思结果可能带书名号/标点；先净化，再交给用户确认。
+ *
+ * @param raw - 原始
+ * @returns 文本结果
+ */
 export function suggestProjectName(raw: string): string {
     const cleaned = sanitizeProjectName(raw);
     if (cleaned.length >= 2) return cleaned;

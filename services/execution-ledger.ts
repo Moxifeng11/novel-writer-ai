@@ -86,7 +86,12 @@ function countOf(value: unknown): number {
     return Number.isFinite(num) && num > 0 ? Math.round(num) : 0;
 }
 
-/** 把 SettlementResult 投影成摘要（结算弹窗/写章弹窗/步骤式结算共用） */
+/**
+ * 把 SettlementResult 投影成摘要（结算弹窗/写章弹窗/步骤式结算共用）
+ *
+ * @param result - 结果
+  * @returns SettlementSummary 实例
+ */
 export function summarizeSettlement(result: SettlementLike | null | undefined): SettlementSummary {
     const loop = result?.foreshadowLoop;
     const summary: SettlementSummary = {
@@ -115,7 +120,12 @@ export class ExecutionLedger {
     private records: CommandRunRecord[] = [];
     private seq = 0;
 
-    /** 开始一次长流程，返回记录 id */
+    /**
+     * 开始一次长流程，返回记录 id
+     *
+     * @param input - 输入
+     * @returns 文本结果
+     */
     begin(input: { commandId: string; project?: string; source?: 'agent' | 'ui'; label?: string; at?: number }): string {
         const commandId = String(input.commandId || '').trim();
         this.seq += 1;
@@ -133,7 +143,13 @@ export class ExecutionLedger {
         return record.id;
     }
 
-    /** 结束一次长流程（成功或失败）；记录不存在时返回 false */
+    /**
+     * 结束一次长流程（成功或失败）；记录不存在时返回 false
+     *
+     * @param id - 标识
+     * @param outcome - 结果
+     * @returns 是否成功
+     */
     finish(
         id: string,
         outcome: { status?: 'done' | 'failed'; detail?: string; failure?: string; settlement?: SettlementSummary; at?: number } = {},
@@ -149,7 +165,12 @@ export class ExecutionLedger {
         return true;
     }
 
-    /** 一步登记「已完成」的流程（导出/看板等没有明确开始点的场景） */
+    /**
+     * 一步登记「已完成」的流程（导出/看板等没有明确开始点的场景）
+     *
+     * @param input - 输入
+     * @returns 文本结果
+     */
     recordCompleted(input: {
         commandId: string;
         project?: string;
@@ -164,7 +185,12 @@ export class ExecutionLedger {
         return id;
     }
 
-    /** 一步登记「失败」的流程（派发失败/立即抛错的场景） */
+    /**
+     * 一步登记「失败」的流程（派发失败/立即抛错的场景）
+     *
+     * @param input - 输入
+     * @returns 文本结果
+     */
     recordFailed(input: {
         commandId: string;
         project?: string;
@@ -178,7 +204,13 @@ export class ExecutionLedger {
         return id;
     }
 
-    /** 绑定结算摘要到指定记录；未给 id 时取该项目最近一条结算类记录 */
+    /**
+     * 绑定结算摘要到指定记录；未给 id 时取该项目最近一条结算类记录
+     *
+     * @param idOrProject - 标识或项目
+     * @param settlement - 结算
+     * @returns 是否成功
+     */
     attachSettlement(idOrProject: string, settlement: SettlementSummary): boolean {
         const record = this.records.find(item => item.id === idOrProject)
             || this.records.find(item => item.project === idOrProject && /settle/i.test(item.commandId))
@@ -188,18 +220,30 @@ export class ExecutionLedger {
         return true;
     }
 
-    /** 最近 N 条（新的在前；不传则全部，最多 20） */
+    /**
+     * 最近 N 条（新的在前；不传则全部，最多 20）
+     *
+     * @returns 结果数组
+     */
     getRecent(limit = MAX_RECORDS): CommandRunRecord[] {
         const count = Math.max(0, Math.min(MAX_RECORDS, Math.round(limit)));
         return this.records.slice(0, count).map(record => ({ ...record }));
     }
 
-    /** 仍在运行的记录 */
+    /**
+     * 仍在运行的记录
+     *
+     * @returns 结果数组
+     */
     getRunning(): CommandRunRecord[] {
         return this.records.filter(record => record.status === 'running').map(record => ({ ...record }));
     }
 
-    /** 是否有任何记录（工作台/测试用） */
+    /**
+     * 是否有任何记录（工作台/测试用）
+     *
+     * @returns 是否成功
+     */
     get isEmpty(): boolean {
         return this.records.length === 0;
     }
@@ -221,7 +265,11 @@ export class ExecutionLedger {
 
 let singleton: ExecutionLedger | null = null;
 
-/** 插件级单例（UI 埋点与 Agent 端口共用同一实例） */
+/**
+ * 插件级单例（UI 埋点与 Agent 端口共用同一实例）
+ *
+  * @returns ExecutionLedger 实例
+ */
 export function getExecutionLedger(): ExecutionLedger {
     if (!singleton) singleton = new ExecutionLedger();
     return singleton;
@@ -232,13 +280,23 @@ export function resetExecutionLedger(): void {
     singleton = null;
 }
 
-/** 记录时长（毫秒；未结束时返回 undefined） */
+/**
+ * 记录时长（毫秒；未结束时返回 undefined）
+ *
+ * @param record - 记录
+  * @returns 数值结果 或 undefined
+ */
 export function runDurationMs(record: CommandRunRecord): number | undefined {
     if (typeof record.finishedAt !== 'number') return undefined;
     return Math.max(0, record.finishedAt - record.startedAt);
 }
 
-/** 一行摘要（Agent 工具与执行日志共用口径） */
+/**
+ * 一行摘要（Agent 工具与执行日志共用口径）
+ *
+ * @param record - 记录
+ * @returns 文本结果
+ */
 export function formatRunRecord(record: CommandRunRecord): string {
     const statusText = record.status === 'running' ? '进行中' : record.status === 'done' ? '完成' : '失败';
     const duration = runDurationMs(record);

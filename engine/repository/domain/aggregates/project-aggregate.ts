@@ -62,38 +62,67 @@ export class Project extends BaseEntity {
         return 'project';
     }
 
-    /** 项目元数据 */
+    /**
+     * 项目元数据
+     *
+      * @returns ProjectMeta 实例
+     */
     get projectMeta(): ProjectMeta {
         return { ...this._projectMeta };
     }
 
-    /** 题材 */
+    /**
+     * 题材
+     *
+      * @returns 文本结果 或 undefined
+     */
     get genre(): string | undefined {
         return this._projectMeta.genre;
     }
 
-    /** 类型 */
+    /**
+     * 类型
+     *
+      * @returns 文本结果 或 undefined
+     */
     get type(): string | undefined {
         return this._projectMeta.type;
     }
 
-    /** 简介 */
+    /**
+     * 简介
+     *
+      * @returns 文本结果 或 undefined
+     */
     get description(): string | undefined {
         return this._projectMeta.description;
     }
 
-    /** 作者 */
+    /**
+     * 作者
+     *
+      * @returns 文本结果 或 undefined
+     */
     get author(): string | undefined {
         return this._projectMeta.author;
     }
 
-    /** 目标字数 */
+    /**
+     * 目标字数
+     *
+      * @returns 数值结果 或 undefined
+     */
     get targetWordCount(): number | undefined {
         return this._projectMeta.targetWordCount;
     }
 
     /**
      * 创建新的 Project 实例
+     * @param id - 标识
+     * @param name - 名称
+     * @param filePath - 文件路径
+     * @param meta - 元数据
+      * @returns Project 实例
      */
     static create(id: string, name: string, filePath: string, meta: Partial<ProjectMeta> = {}): Project {
         const now = new Date().toISOString();
@@ -118,6 +147,8 @@ export class Project extends BaseEntity {
 
     /**
      * 从原始数据创建 Project
+     * @param props - 属性表
+      * @returns Project 实例
      */
     static from(props: Omit<ProjectProps, 'category'>): Project {
         return new Project(props);
@@ -144,6 +175,8 @@ export class Project extends BaseEntity {
 
     /**
      * 更新项目元数据
+     * @param meta - 元数据
+      * @returns Project 实例
      */
     withMeta(meta: Partial<ProjectMeta>): Project {
         return new Project({

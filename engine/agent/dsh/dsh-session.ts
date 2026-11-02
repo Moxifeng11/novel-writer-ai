@@ -16,13 +16,25 @@ import { DshJsonRpcClient, type DshJsonRpcNotification } from './dsh-protocol';
  * dsh 传输层接口。
  */
 export interface DshTransport {
-    /** 写一行到子进程 stdin */
+    /**
+     * 写一行到子进程 stdin
+     *
+     * @param line - 行
+     */
     write(line: string): void;
-    /** 订阅 stdout 的完整行 */
+    /**
+     * 订阅 stdout 的完整行
+     *
+     * @param listener - 监听器
+     */
     onLine(listener: (line: string) => void): void;
     /** 订阅 stderr（诊断用） */
     onStderr?(listener: (line: string) => void): void;
-    /** 订阅进程退出 */
+    /**
+     * 订阅进程退出
+     *
+     * @param listener - 监听器
+     */
     onExit(listener: (code: number | null, signal: string | null) => void): void;
     kill(): void;
 }
@@ -70,7 +82,12 @@ export interface DshSessionOptions {
     requestTimeoutMs?: number;
 }
 
-/** 从 contentBlocks 里抽取可见文本（跳过 reasoning/image） */
+/**
+ * 从 contentBlocks 里抽取可见文本（跳过 reasoning/image）
+ *
+ * @param blocks - 文本块列表
+ * @returns 文本结果
+ */
 export function textOfContentBlocks(blocks: unknown): string {
     if (!Array.isArray(blocks)) return '';
     const parts: string[] = [];
@@ -122,7 +139,12 @@ export class DshSession {
         this.initialized = true;
     }
 
-    /** 发送一条用户消息，返回入队回执（不代表 assistant 已回复） */
+    /**
+     * 发送一条用户消息，返回入队回执（不代表 assistant 已回复）
+     *
+     * @param text - 文本内容
+     * @returns 文本结果
+     */
     async prompt(text: string): Promise<string> {
         if (!this.initialized) throw new Error('dsh 会话尚未 initialize');
         const result = await this.client.request<{ messageId?: string }>('session/prompt', {

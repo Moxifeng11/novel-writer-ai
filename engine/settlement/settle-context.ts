@@ -64,7 +64,18 @@ export interface SettleContext {
     journal: SettlementJournal;
 }
 
-/** 创建 SettleContext 的工厂函数 */
+/**
+ * 创建 SettleContext 的工厂函数
+ *
+ * @param project - 项目（路径或对象）
+ * @param chapDir - 章节目录
+ * @param chapName - 章节名
+ * @param bodyText - 正文文本
+ * @param report - 报告
+ * @param instr - 指令
+ * @param options - 配置项
+  * @returns SettleContext 实例
+ */
 export function createSettleContext(
     project: string,
     chapDir: string,

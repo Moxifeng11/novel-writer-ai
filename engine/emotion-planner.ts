@@ -109,6 +109,8 @@ export const EMOTION_PLAN_USER_TEMPLATE = `根据以下素材，为第\${chapNum
 
 /**
  * 校验情绪规划是否合法
+ * @param content - 内容
+  * @returns string[] } 结果
  */
 export function validateEmotionPlan(content: string): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
@@ -160,6 +162,13 @@ export function validateEmotionPlan(content: string): { valid: boolean; errors: 
 
 /**
  * 调用 AI 生成情绪规划
+ * @param aiEngine - AI 引擎
+ * @param app - Obsidian 应用实例
+ * @param vars - 变量表
+ * @param model - 模型标识
+ * @param notifier - 通知器
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export async function generateEmotionPlan(
     aiEngine: AIEngine,

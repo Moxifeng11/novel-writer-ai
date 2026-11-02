@@ -48,6 +48,9 @@ export class OperationConfirmModal extends Modal {
 	 *
 	 * 如果提供了 rememberKey 且用户之前已勾选"不再提示"，
 	 * 则直接返回 true，不显示弹窗。
+	 * @param app - Obsidian 应用实例
+	 * @param options - 配置项
+	 * @returns 是否成功
 	 */
 	static confirm(app: App, options: OperationConfirmOptions): Promise<boolean> {
 		if (options.rememberKey) {
@@ -62,6 +65,7 @@ export class OperationConfirmModal extends Modal {
 
 	/**
 	 * 重置"不再提示"偏好
+	 * @param rememberKey - 记忆键
 	 */
 	static resetRemember(rememberKey: string): void {
 		localStorage.removeItem(STORAGE_KEY_PREFIXES.operationConfirm + rememberKey);

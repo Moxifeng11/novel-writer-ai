@@ -351,6 +351,7 @@ export class QualityScoreEngine {
    * @param text 正文文本
    * @param context 评估上下文
    * @param signal 取消信号
+    * @returns QualityScore 实例
    */
   async evaluate(
     text: string,
@@ -445,6 +446,7 @@ export class QualityScoreEngine {
    * @param dimension 维度
    * @param context 评估上下文
    * @param signal 取消信号
+    * @returns DimensionScore 实例
    */
   async evaluateDimension(
     text: string,
@@ -460,7 +462,11 @@ export class QualityScoreEngine {
     });
   }
 
-  /** 获取历史趋势记录 */
+  /**
+   * 获取历史趋势记录
+   *
+   * @returns 结果数组
+   */
   getHistory(): number[] {
     return [...this.history];
   }
@@ -471,7 +477,11 @@ export class QualityScoreEngine {
     this.fullCache.clear();
   }
 
-  /** 按 key 失效缓存 */
+  /**
+   * 按 key 失效缓存
+   *
+   * @param text - 文本内容
+   */
   invalidateCache(text?: string): void {
     if (text === undefined) {
       this.clearCache();
@@ -1970,12 +1980,22 @@ export class QualityScoreEngine {
 // 七、辅助函数
 // ============================================================
 
-/** 获取维度标签 */
+/**
+ * 获取维度标签
+ *
+ * @param dimension - 维度
+ * @returns 文本结果
+ */
 export function getDimensionLabel(dimension: QualityDimension): string {
   return DIMENSION_LABELS[dimension] || dimension;
 }
 
-/** 获取问题严重度标签 */
+/**
+ * 获取问题严重度标签
+ *
+ * @param severity - 严重度
+ * @returns 文本结果
+ */
 export function getSeverityLabel(severity: IssueSeverity): string {
   const labels: Record<IssueSeverity, string> = {
     high: '严重',
@@ -1985,7 +2005,12 @@ export function getSeverityLabel(severity: IssueSeverity): string {
   return labels[severity];
 }
 
-/** 获取建议优先级标签 */
+/**
+ * 获取建议优先级标签
+ *
+ * @param priority - 优先级
+ * @returns 文本结果
+ */
 export function getSuggestionPriorityLabel(priority: SuggestionPriority): string {
   const labels: Record<SuggestionPriority, string> = {
     high: '高优先级',
@@ -1995,7 +2020,12 @@ export function getSuggestionPriorityLabel(priority: SuggestionPriority): string
   return labels[priority];
 }
 
-/** 获取趋势标签 */
+/**
+ * 获取趋势标签
+ *
+ * @param trend - 趋势
+ * @returns 文本结果
+ */
 export function getTrendLabel(trend: ScoreTrend): string {
   const labels: Record<ScoreTrend, string> = {
     rising: '上升',

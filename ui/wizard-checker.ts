@@ -101,6 +101,8 @@ export class WizardChecker {
 
     /**
      * 检测世界观设定是否完整（9模块 + frontmatter 字段级校验）
+     * @param project - 项目（路径或对象）
+     * @returns 是否成功
      */
     async checkWorldviewComplete(project: string): Promise<boolean> {
         const filePath = pjWorldview(project);
@@ -194,6 +196,9 @@ export class WizardChecker {
 
     /**
      * 自动填充世界名称和项目名称到世界观总览.md frontmatter
+     * @param project - 项目（路径或对象）
+     * @param file - 文件
+     * @param content - 内容
      */
     async autoFillWorldviewNames(project: string, file: TFile, content: string): Promise<void> {
         let fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
@@ -289,6 +294,8 @@ export class WizardChecker {
 
     /**
      * 重命名项目文件夹
+     * @param oldPath - 旧路径
+     * @param newName - 新名称
      */
     async renameProjectFolder(oldPath: string, newName: string): Promise<void> {
         try {
@@ -315,6 +322,8 @@ export class WizardChecker {
 
     /**
      * 检测设定库是否完整
+     * @param project - 项目（路径或对象）
+     * @returns 是否成功
      */
     async checkSettingLibComplete(project: string): Promise<boolean> {
         const filePath = pjSettingLib(project);
@@ -357,6 +366,8 @@ export class WizardChecker {
 
     /**
      * 检测文笔风格是否完整
+     * @param project - 项目（路径或对象）
+     * @returns 是否成功
      */
     async checkWritingStyleComplete(project: string): Promise<boolean> {
         // v4.1: 通过候选路径解析真实文件（兼容 文笔风格.md / 文笔风格模板.md / 旧根目录），
@@ -408,6 +419,8 @@ export class WizardChecker {
 
     /**
      * 检测实体生成是否完整
+     * @param project - 项目（路径或对象）
+     * @returns 是否成功
      */
     async checkEntitiesComplete(project: string): Promise<boolean> {
         const entityDirs = [
@@ -447,6 +460,8 @@ export class WizardChecker {
 
     /**
      * 检测全书规划是否完整
+     * @param project - 项目（路径或对象）
+     * @returns 是否成功
      */
     async checkOutlineComplete(project: string): Promise<boolean> {
         const filePath = pjVolumeOutlineFile(project, 1);
@@ -489,6 +504,8 @@ export class WizardChecker {
 
     /**
      * 检测批量建章是否完整
+     * @param project - 项目（路径或对象）
+     * @returns 是否成功
      */
     async checkChaptersComplete(project: string): Promise<boolean> {
         const baseDir = pjOutlineDir(project);

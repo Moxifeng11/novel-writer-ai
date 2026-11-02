@@ -616,7 +616,11 @@ export class ContextManager {
         return false;
     }
 
-    /** 获取缓存统计信息（用于调试和监控） */
+    /**
+     * 获取缓存统计信息（用于调试和监控）
+     *
+      * @returns number } 结果
+     */
     getCacheStats(): { hits: number; misses: number; evictions: number; size: number; ttl: number } {
         return {
             hits: this.cacheStats.hits,
@@ -1106,6 +1110,8 @@ export class ContextManager {
     /**
      * V2: 收集所有角色的灵魂层（character_core）
      * 从人物/*.md 的 frontmatter 中提取 character_core YAML 嵌套字段
+     * @param project - 项目（路径或对象）
+      * @returns ContextData 实例
      */
     async gatherCharacterCores(project: string): Promise<ContextData> {
         const souls: CharacterSoul[] = [];
@@ -1129,6 +1135,12 @@ export class ContextManager {
     /**
      * V2 Phase 3: 收集所有角色的记忆碎片
      * 扫描 {project}/02-时间线与伏笔/记忆碎片/ 目录下的 _记忆碎片.md 文件
+     * @param project - 项目（路径或对象）
+     * @param sceneText - 场景文本
+     * @param presentCharacters - 出场角色
+     * @param protagonistName - 主角名称
+     * @param chapterNum - 章号
+      * @returns ContextData 实例
      */
     async gatherMemories(project: string, sceneText?: string, presentCharacters?: string[], protagonistName?: string, chapterNum?: number): Promise<ContextData> {
         const result: ContextData = {};
@@ -1184,6 +1196,8 @@ export class ContextManager {
     /**
      * 收集所有地点数据
      * 扫描 01-世界架构/地点/ 目录下的所有 .md 文件
+     * @param project - 项目（路径或对象）
+      * @returns ContextData 实例
      */
     async gatherLocations(project: string): Promise<ContextData> {
         const startTime = Date.now();
@@ -1212,6 +1226,8 @@ export class ContextManager {
     /**
      * 收集所有势力数据
      * 扫描 01-世界架构/势力/ 目录下的所有 .md 文件
+     * @param project - 项目（路径或对象）
+      * @returns ContextData 实例
      */
     async gatherFactions(project: string): Promise<ContextData> {
         const startTime = Date.now();
@@ -1240,6 +1256,8 @@ export class ContextManager {
     /**
      * 收集所有物品数据
      * 扫描 01-世界架构/物品功法/ 目录下的所有 .md 文件
+     * @param project - 项目（路径或对象）
+      * @returns ContextData 实例
      */
     async gatherItems(project: string): Promise<ContextData> {
         const startTime = Date.now();
@@ -1442,7 +1460,12 @@ export class ContextManager {
         return legacy instanceof TFile ? legacy : null;
     }
 
-    /** 加载同人原作剧情时间线表格 */
+    /**
+     * 加载同人原作剧情时间线表格
+     *
+     * @param project - 项目（路径或对象）
+     * @returns 结果数组
+     */
     async loadFanficCanonTimeline(project: string): Promise<TimelineRow[]> {
         try {
             const dotContent = await readProjectMeta(this.app, project);
@@ -1457,7 +1480,12 @@ export class ContextManager {
         } catch (e) { log.warn('loadFanficCanonTimeline failed:', e); return []; }
     }
 
-    /** 加载同人故事背景时间线表格 */
+    /**
+     * 加载同人故事背景时间线表格
+     *
+     * @param project - 项目（路径或对象）
+     * @returns 结果数组
+     */
     async loadFanficFanTimeline(project: string): Promise<TimelineRow[]> {
         try {
             const dotContent = await readProjectMeta(this.app, project);
@@ -1472,7 +1500,12 @@ export class ContextManager {
         } catch (e) { log.warn('loadFanficFanTimeline failed:', e); return []; }
     }
 
-    /** 加载同人OOC防护规则 */
+    /**
+     * 加载同人OOC防护规则
+     *
+     * @param project - 项目（路径或对象）
+      * @returns FanficRules 实例
+     */
     async loadFanficRules(project: string): Promise<FanficRules> {
         try {
             const dotContent = await readProjectMeta(this.app, project);
@@ -2155,6 +2188,9 @@ export class ContextManager {
     /**
      * v5.0: 构建智能实体上下文
      * 基于当前场景智能选择相关实体，并按重要度裁剪信息
+     * @param project - 项目（路径或对象）
+     * @param options - 配置项
+      * @returns SmartEntityContextResult 实例
      */
     async buildSmartEntityContext(
         project: string,
@@ -2237,6 +2273,9 @@ export class ContextManager {
 
     /**
      * v5.0: 获取格式化后的智能实体上下文（用于 AI 提示词注入）
+     * @param project - 项目（路径或对象）
+     * @param options - 配置项
+     * @returns 文本结果
      */
     async getSmartEntityContextText(
         project: string,
@@ -2247,7 +2286,13 @@ export class ContextManager {
         return engine.formatSmartContextForPrompt(result);
     }
 
-    /** 统一上下文构建：返回 AI-ready 的格式化文本，保留 Markdown 结构（标题、表格等） */
+    /**
+     * 统一上下文构建：返回 AI-ready 的格式化文本，保留 Markdown 结构（标题、表格等）
+     *
+     * @param project - 项目（路径或对象）
+     * @param options - 配置项
+      * @returns PromptContextSection 实例
+     */
     async buildPromptSection(project: string, options?: PromptContextOptions): Promise<PromptContextSection> {
         const opts = { ...DEFAULT_PROMPT_OPTIONS, ...options };
         const max = opts.maxCharsPerSection;
@@ -2406,6 +2451,9 @@ ${usable}`;
     /**
      * Rev 186：生成某章的「关联索引」——伏笔到期/逾期、时间线事件、命中的设定条目、
      * 全书规划中本章定位。任一数据源缺失都返回 null，调用方回退旧行为，不阻塞写作。
+     * @param project - 项目（路径或对象）
+     * @param chapterName - 章节名
+      * @returns StoryLinkage 或 null
      */
     async buildStoryLinkage(project: string, chapterName: string): Promise<StoryLinkage | null> {
         try {
@@ -2459,6 +2507,8 @@ ${usable}`;
     /**
      * Rev 186：把关联索引回写到 伏笔库.md / 时间线看板.md 的标记块。
      * 只替换 NW-LINKAGE 标记之间内容，用户表格一行不动；文件缺失则跳过。
+     * @param project - 项目（路径或对象）
+      * @returns boolean }> 结果
      */
     async writeStoryLinkageIndex(project: string): Promise<{ foreshadow: boolean; timeline: boolean }> {
         const result = { foreshadow: false, timeline: false };
@@ -2527,7 +2577,12 @@ ${usable}`;
         return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
     }
 
-    /** 将人物数据格式化为 AI 提示文本（与 Modal 端现有格式一致） */
+    /**
+     * 将人物数据格式化为 AI 提示文本（与 Modal 端现有格式一致）
+     *
+     * @param characters - 角色列表
+     * @returns 文本结果
+     */
     static formatCharacters(characters: CharacterData[]): string {
         if (!characters || characters.length === 0) return '';
         const keys: readonly string[] = CHARACTER_DISPLAY_KEYS;
@@ -2539,7 +2594,13 @@ ${usable}`;
         }).join('');
     }
 
-    /** 将实体数据（地点/势力/物品功法）格式化为 AI 提示文本 */
+    /**
+     * 将实体数据（地点/势力/物品功法）格式化为 AI 提示文本
+     *
+     * @param entities - 实体列表
+     * @param type - 类型
+     * @returns 文本结果
+     */
     static formatEntities(entities: Record<string, string>[], type: 'location' | 'faction' | 'item'): string {
         if (!entities || entities.length === 0) return '';
 
@@ -2561,7 +2622,12 @@ ${usable}`;
         }).join('');
     }
 
-    /** 将时间线事件格式化为 Markdown 表格 */
+    /**
+     * 将时间线事件格式化为 Markdown 表格
+     *
+     * @param events - 事件列表
+     * @returns 文本结果
+     */
     static formatTimeline(events: TimelineEvent[]): string {
         if (!events || events.length === 0) return '';
         let table = TIMELINE_TABLE_HEADER;
@@ -2573,7 +2639,12 @@ ${usable}`;
         return table;
     }
 
-    /** 格式化同人原作剧情时间线 */
+    /**
+     * 格式化同人原作剧情时间线
+     *
+     * @param rows - 行列表
+     * @returns 文本结果
+     */
     static formatFanficCanonTimeline(rows: TimelineRow[]): string {
         if (!rows || rows.length === 0) return '';
         let table = '| 时间节点 | 原作事件 | 涉及人物 | 章节参考 | 你的同人如何切入 |\n| --- | --- | --- | --- | --- |';
@@ -2583,7 +2654,12 @@ ${usable}`;
         return table;
     }
 
-    /** 格式化同人故事背景时间线 */
+    /**
+     * 格式化同人故事背景时间线
+     *
+     * @param rows - 行列表
+     * @returns 文本结果
+     */
     static formatFanficFanTimeline(rows: TimelineRow[]): string {
         if (!rows || rows.length === 0) return '';
         let table = '| 你的时间节点 | 你的事件 | 对应原作时间 | 涉及人物 |\n| --- | --- | --- | --- |';
@@ -2593,7 +2669,12 @@ ${usable}`;
         return table;
     }
 
-    /** 格式化同人OOC防护规则 */
+    /**
+     * 格式化同人OOC防护规则
+     *
+     * @param rules - 规则集
+     * @returns 文本结果
+     */
     static formatFanficRules(rules?: FanficRules): string {
         if (!rules) return '';
         const parts: string[] = [];

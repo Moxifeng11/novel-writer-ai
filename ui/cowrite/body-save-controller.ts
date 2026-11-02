@@ -20,18 +20,40 @@ export interface ChapterSaveIdentity {
  */
 export interface BodySaveHost {
     readonly app: App;
-    /** 右栏编辑器当前内容 */
+    /**
+     * 右栏编辑器当前内容
+     *
+     * @returns 文本结果
+     */
     getBodyText(): string;
-    /** 入口处快照当前章节身份 */
+    /**
+     * 入口处快照当前章节身份
+     *
+      * @returns ChapterSaveIdentity 实例
+     */
     getIdentity(): ChapterSaveIdentity;
     updateControlState(state: string): void;
-    /** 按快照身份取章节标题（信息规划 / 大纲摘要） */
+    /**
+     * 按快照身份取章节标题（信息规划 / 大纲摘要）
+     *
+     * @param identity - 身份信息
+     * @returns 文本结果
+     */
     getChapterTitle(identity: ChapterSaveIdentity): Promise<string>;
-    /** 视图是否仍绑定快照里的章节 */
+    /**
+     * 视图是否仍绑定快照里的章节
+     *
+     * @param identity - 身份信息
+     * @returns 是否成功
+     */
     isSameChapterIdentity(identity: ChapterSaveIdentity): boolean;
     /** 写盘成功后的 UI 刷新（指标 / 实时分析 / 结算提醒） */
     onSaved(): void;
-    /** 取消防抖中的自动保存，返回是否存在待保存 */
+    /**
+     * 取消防抖中的自动保存，返回是否存在待保存
+     *
+     * @returns 是否成功
+     */
     takePendingAutoSave(): boolean;
     /** 排一次自动保存（视图负责 2s 防抖） */
     scheduleAutoSave(): void;
@@ -184,6 +206,7 @@ export class BodySaveController {
      *
      * 先等在途保存结束再判断：旧实现先取消防抖定时器、再遇到 `saving` 直接返回 false，
      * 用户重试一次切章（此时已无 pending）就会真的把这段文字丢掉。
+     * @returns 是否成功
      */
     async flushBeforeChapterSwitch(): Promise<boolean> {
         const hasPending = this.host.takePendingAutoSave();
@@ -201,6 +224,8 @@ export class BodySaveController {
  * 比较用：剥离 frontmatter、标题行与空白差异（只用于冲突判定）。
  * 标题行必须剥：编辑器内容是「正文」，磁盘文件是「# 第N章 标题 + 正文」，
  * 不剥离会把每次正常保存都判成外部修改。
+ * @param raw - 原始
+ * @returns 文本结果
  */
 function stripBodyForCompare(raw: string): string {
     return String(raw || '')

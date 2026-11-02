@@ -26,6 +26,9 @@ const NEIGHBOR_RADIUS = 1;
  * - 合并后按 position 升序拼接，去重重叠部分（按最长公共前后缀裁剪）；
  * - 分数取组内最高，labels 取并集。
  * 无 position 的命中不做合并（保持原样）。
+ * @param hits - 命中
+ * @param radius - 半径
+  * @returns number } 结果
  */
 export function mergeNeighborHits(hits: RagHit[], radius: number = NEIGHBOR_RADIUS): { hits: RagHit[]; mergedGroups: number } {
     const withPosition = hits.filter((hit) => typeof hit.position === 'number');
@@ -68,7 +71,12 @@ export function mergeNeighborHits(hits: RagHit[], radius: number = NEIGHBOR_RADI
     return { hits: [...merged, ...withoutPosition], mergedGroups };
 }
 
-/** 组内按 position 拼接，裁掉重叠前缀 */
+/**
+ * 组内按 position 拼接，裁掉重叠前缀
+ *
+ * @param group - 分组
+  * @returns RagHit 实例
+ */
 function combineGroup(group: RagHit[]): RagHit {
     const sorted = [...group].sort((a, b) => (a.position || 0) - (b.position || 0));
     let text = sorted[0].sample;
@@ -84,7 +92,13 @@ function combineGroup(group: RagHit[]): RagHit {
     };
 }
 
-/** 若后一段开头与已拼文本结尾重叠，去掉重叠部分再拼接 */
+/**
+ * 若后一段开头与已拼文本结尾重叠，去掉重叠部分再拼接
+ *
+ * @param base - 基础
+ * @param next - 下一个
+ * @returns 文本结果
+ */
 export function appendWithoutOverlap(base: string, next: string): string {
     const maxOverlap = Math.min(120, base.length, next.length);
     for (let size = maxOverlap; size >= 4; size--) {

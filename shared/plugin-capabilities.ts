@@ -79,6 +79,8 @@ export interface PluginCapabilities {
 
 /**
  * 从 NovelWriterPlugin 实例提取 PluginCapabilities
+ * @param plugin - 插件实例
+  * @returns PluginCapabilities 实例
  */
 export function extractPluginCapabilities(plugin: {
     app: import('obsidian').App;

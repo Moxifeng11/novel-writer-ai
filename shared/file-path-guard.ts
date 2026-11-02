@@ -16,7 +16,12 @@ export type VaultPathGuardResult =
     | { ok: true; path: string }
     | { ok: false; reason: string };
 
-/** 去掉包裹引号与首尾空白（模型常把路径写成 `"a/b.md"`） */
+/**
+ * 去掉包裹引号与首尾空白（模型常把路径写成 `"a/b.md"`）
+ *
+ * @param raw - 原始
+ * @returns 文本结果
+ */
 function stripQuotes(raw: string): string {
     let text = String(raw || '').trim();
     while (text.length >= 2 && /^["'`]/.test(text) && /["'`]$/.test(text)) {
@@ -28,6 +33,9 @@ function stripQuotes(raw: string): string {
 /**
  * 校验并规范化库内路径。
  * 拒绝：空值、绝对路径（`/x`、`C:\x`）、`..` 段、隐藏目录、含空字节/控制字符。
+ * @param raw - 原始
+ * @param options - 配置项
+  * @returns VaultPathGuardResult 实例
  */
 export function sanitizeVaultPath(raw: string, options: VaultPathGuardOptions = {}): VaultPathGuardResult {
     const text = stripQuotes(raw).replace(/\\/g, '/');
@@ -79,6 +87,9 @@ export const MAX_READ_LINES = 2000;
 /**
  * 从全文取一段行窗口。
  * 先按行切，再按字符上限收缩：两种上限都遵守，返回的 endLine 是**实际包含**的最后一行。
+ * @param text - 文本内容
+ * @param options - 配置项
+  * @returns LineWindowResult 实例
  */
 export function extractLineWindow(text: string, options: LineWindowOptions = {}): LineWindowResult {
     const content = String(text ?? '');
@@ -131,7 +142,12 @@ export function extractLineWindow(text: string, options: LineWindowOptions = {})
     };
 }
 
-/** 搜索命中的一行摘要（去缩进、压空白、截断），用于 `path:line:摘要` */
+/**
+ * 搜索命中的一行摘要（去缩进、压空白、截断），用于 `path:line:摘要`
+ *
+ * @param line - 行
+ * @returns 文本结果
+ */
 export function summarizeHitLine(line: string, maxChars = 120): string {
     const compact = String(line || '').replace(/^[\s>#*-]+/, '').replace(/\s+/g, ' ').trim();
     if (compact.length <= maxChars) return compact;

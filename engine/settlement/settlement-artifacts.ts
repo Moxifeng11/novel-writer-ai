@@ -32,7 +32,12 @@ export interface SettlementTableInput {
     model?: string;
 }
 
-/** 结算表 frontmatter（与 元文件/00-系统模板/结算表模板.md 对齐） */
+/**
+ * 结算表 frontmatter（与 元文件/00-系统模板/结算表模板.md 对齐）
+ *
+ * @param input - 输入
+ * @returns 文本结果
+ */
 export function buildSettlementTableFrontmatter(input: {
     chapterName: string;
     volume: string;
@@ -59,7 +64,12 @@ export function buildSettlementTableFrontmatter(input: {
     ].join('\n');
 }
 
-/** 完整结算表正文（字段顺序固定，便于表格消费方与人工核对） */
+/**
+ * 完整结算表正文（字段顺序固定，便于表格消费方与人工核对）
+ *
+ * @param input - 输入
+ * @returns 文本结果
+ */
 export function buildSettlementTable(input: SettlementTableInput): string {
     const timestamp = input.timestamp ?? new Date().toISOString();
     const fm = buildSettlementTableFrontmatter({
@@ -86,7 +96,12 @@ export function buildSettlementTable(input: SettlementTableInput): string {
 `;
 }
 
-/** 跨入口统一口径的「更新/新建」总数（Notice 与账本共用） */
+/**
+ * 跨入口统一口径的「更新/新建」总数（Notice 与账本共用）
+ *
+ * @param result - 结果
+  * @returns number } 结果
+ */
 export function countSettlementChanges(result: SettlementTableResult): { updated: number; created: number } {
     return {
         updated: result.updatedChars + result.updatedForeshadows,

@@ -143,7 +143,11 @@ export class WritingPet {
         if (this.card) this.renderCard(summary, target, ratio);
     }
 
-    /** 写完一章：短促的开心动作（不改心情，只是动一下） */
+    /**
+     * 写完一章：短促的开心动作（不改心情，只是动一下）
+     *
+     * @param delta - 增量
+     */
     notifyDelta(delta: number): void {
         if (!this.isMounted || delta <= 0) return;
         this.update();

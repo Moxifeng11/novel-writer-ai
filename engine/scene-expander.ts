@@ -155,6 +155,14 @@ export const SCENE_EXPAND_USER_TEMPLATE = `你是\${protagonistName}本人。现
 
 /**
  * 调用 AI 生成 Scene 展开
+ * @param aiEngine - AI 引擎
+ * @param vars - 变量表
+ * @param model - 模型标识
+ * @param notifier - 通知器
+ * @param budget - 预算
+ * @param customPrompt - 自定义提示词
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export async function generateSceneExpansion(
     aiEngine: AIEngine,
@@ -240,6 +248,8 @@ ${buildCraftSystemBlock()}`;
  * 支持零、一、二、...、九、十、百、千、万、亿
  * 支持组合如"一百二十三"、"三千零五"、"十万"
  * 返回对应的阿拉伯数字，解析失败返回 null
+ * @param str - 字符串
+  * @returns 数值结果 或 null
  */
 export function parseChineseNumber(str: string): number | null {
     if (!str || str.trim() === '') return null;
@@ -299,7 +309,12 @@ export interface SceneHeading {
     end: number;
 }
 
-/** 解析 Scene 展开内容中的场景标题位置（所有场景相关解析的唯一入口） */
+/**
+ * 解析 Scene 展开内容中的场景标题位置（所有场景相关解析的唯一入口）
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseSceneHeadings(content: string): SceneHeading[] {
     const headings: SceneHeading[] = [];
     if (!content) return headings;
@@ -323,7 +338,12 @@ export function parseSceneHeadings(content: string): SceneHeading[] {
     return headings;
 }
 
-/** 按场景标题切分场景正文 */
+/**
+ * 按场景标题切分场景正文
+ *
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function splitSceneSections(content: string): { heading: SceneHeading; body: string }[] {
     const headings = parseSceneHeadings(content);
     return headings.map((heading, i) => ({
@@ -334,6 +354,8 @@ export function splitSceneSections(content: string): { heading: SceneHeading; bo
 
 /**
  * 校验 Scene 展开是否包含必要要素
+ * @param content - 内容
+  * @returns string[] } 结果
  */
 export function validateSceneExpansion(content: string): { valid: boolean; errors: string[]; warnings: string[] } {
     const errors: string[] = [];

@@ -26,6 +26,9 @@ interface WorkerUrlHost {
 /**
  * 解析插件目录下的 Worker 脚本绝对 URL。
  * 返回 null 表示当前宿主无法解析（调用方应显式降级到主线程）。
+ * @param app - Obsidian 应用实例
+ * @param workerFile - Worker 文件
+  * @returns 文本结果 或 null
  */
 export function resolvePluginWorkerUrl(app: WorkerUrlHost, workerFile: string): string | null {
     const vault = app?.vault;
@@ -64,6 +67,7 @@ let workerDegradationNotified = false;
 /**
  * 发出一次性的 Worker 降级通知（复用统一 degradation notifier）。
  * 会话内只提示一次，避免每个任务重复弹窗。
+ * @param reason - 原因
  */
 export function notifyWorkerUnavailable(reason: string): void {
     if (workerDegradationNotified) return;

@@ -169,17 +169,29 @@ export class CoWriteFacade {
         this.engine.updateSnapshot(confirmedText);
     }
 
-    /** 设置本章简报（承接规划阶段成果） */
+    /**
+     * 设置本章简报（承接规划阶段成果）
+     *
+     * @param input - 输入
+     */
     setChapterBrief(input: ChapterBriefInput): void {
         this.engine.setChapterBrief(input);
     }
 
-    /** 获取本章简报 */
+    /**
+     * 获取本章简报
+     *
+      * @returns ChapterBrief 或 null
+     */
     getChapterBrief(): ChapterBrief | null {
         return this.engine.getChapterBrief();
     }
 
-    /** 手动切换当前场景 */
+    /**
+     * 手动切换当前场景
+     *
+     * @param index - 索引
+     */
     setCurrentSceneIndex(index: number): void {
         this.engine.setCurrentSceneIndex(index);
     }
@@ -256,12 +268,20 @@ export class CoWriteFacade {
         return this.engine.suggestNext(precedingText, cursorHint, mode as any, count, signal, onChunk);
     }
 
-    /** 最近一次建议生成的失败原因（null 表示无错误或已成功） */
+    /**
+     * 最近一次建议生成的失败原因（null 表示无错误或已成功）
+     *
+      * @returns 文本结果 或 null
+     */
     getLastSuggestError(): string | null {
         return this.engine.lastSuggestError;
     }
 
-    /** 当前串行候选进度（第几条 / 共几条）；并行模式或未生成时为 null */
+    /**
+     * 当前串行候选进度（第几条 / 共几条）；并行模式或未生成时为 null
+     *
+      * @returns number } 结果 或 null
+     */
     getSuggestProgress(): { current: number; total: number } | null {
         return this.engine.suggestProgress;
     }
@@ -305,6 +325,7 @@ export class CoWriteFacade {
      * @param cursorHint - 光标提示
      * @param count - 数量
      * @param onChunk - 参数
+     * @param signal - 取消信号
      * @returns 改写结果
      */
     async rewriteSelection(

@@ -22,6 +22,14 @@ export class AnalysisReportPanel {
 
     /**
      * 执行分析并渲染面板
+     * @param container - 容器元素
+     * @param project - 项目（路径或对象）
+     * @param chapterText - 章节文本
+     * @param chapterName - 章节名
+     * @param chapterNum - 章号
+     * @param volume - 卷
+     * @param existingReport - 已有报告
+      * @returns FullAnalysisReport 实例
      */
     async analyzeAndRender(
         container: HTMLElement,
@@ -56,6 +64,7 @@ export class AnalysisReportPanel {
 
     /**
      * 应用报告中的变更到项目文件
+      * @returns string }> 结果
      */
     async applyChanges(): Promise<{ success: boolean; applied: string[]; pending: string[]; details: string }> {
         if (!this.currentReport) {

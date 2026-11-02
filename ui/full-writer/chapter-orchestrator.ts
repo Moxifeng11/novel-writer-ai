@@ -105,7 +105,15 @@ export interface ChapterRunPlan {
 const PLANNING_SET = new Set<string>(CHAPTER_PLANNING_KEYS);
 const SETTLEMENT_DIRECTIVE_RE = /(UPDATE_|NEW_|RELATION:|GROWTH:|EMOTION:|PROMISE_|ARC:)/;
 
-/** 纯函数：根据当前完成态推导本次要跑的动作。 */
+/**
+ * 纯函数：根据当前完成态推导本次要跑的动作。
+ *
+ * @param completed - 完成状态
+ * @param bodyText - 正文文本
+ * @param analysisReport - 分析报告
+ * @param options - 配置项
+  * @returns ChapterRunPlan 实例
+ */
 export function buildChapterRunPlan(
     completed: Set<string>,
     bodyText: string,

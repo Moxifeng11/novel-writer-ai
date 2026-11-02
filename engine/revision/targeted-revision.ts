@@ -71,7 +71,14 @@ function keywordScore(text: string, dimension: RevisionDimension): number {
     return (keywords[dimension] || []).reduce((sum, k) => sum + (text.includes(k) ? 1 : 0), 0);
 }
 
-/** 为一个维度选择最小可修订片段。 */
+/**
+ * 为一个维度选择最小可修订片段。
+ *
+ * @param body - 正文
+ * @param dimension - 维度
+ * @param issues - 问题列表
+  * @returns TextRange 或 null
+ */
 export function selectRevisionTarget(
     body: string,
     dimension: RevisionDimension,

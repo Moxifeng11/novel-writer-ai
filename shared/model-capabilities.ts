@@ -116,6 +116,8 @@ export function clearDetectedModelCapabilities(): void {
  *
  * 旧实现按对象插入顺序首次命中即返回，导致 `deepseek-r1:7b`（本地 32768/8192）
  * 先命中 `deepseek-r1`（云端 131072/65536），本地小模型被放大预算。
+ * @param modelId - 模型ID
+  * @returns ModelCapability 或 null
  */
 export function lookupModelCapability(modelId: string): ModelCapability | null {
     const lower = (modelId || '').toLowerCase();
@@ -135,6 +137,9 @@ export function lookupModelCapability(modelId: string): ModelCapability | null {
 /**
  * 按模型 ID 子串查找能力映射
  * 未找到时按来源回退：本地更保守，云端沿用全局默认
+ * @param modelId - 模型ID
+ * @param source - 来源
+  * @returns ModelCapability 实例
  */
 export function findModelCapability(modelId: string, source?: ModelSourceKind): ModelCapability {
     const detected = getDetectedModelCapability(modelId);

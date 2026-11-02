@@ -31,6 +31,7 @@ export class ChapterStateManager {
      *
      * 旧实现只删 stepCompleted，stepLevels 仍是 complete，导致导航仍显示「已完成」，
      * 与「待重做」的提示自相矛盾。所有「上游变更 → 下游失效」都必须走这里。
+     * @param stepKeys - 步骤键列表
      */
     invalidateSteps(stepKeys: string[], markStale = true): void {
         for (const key of stepKeys) {
@@ -103,6 +104,7 @@ export class ChapterStateManager {
      * 使用 getChapterFile（name.includes 模糊匹配）而非 getChapterFileName 精确路径，
      * 因为正文文件名可能包含标题（如"第1章_异变的黄昏_正文.md"），
      * 且 stepFileMap 中的英语 key 需转换为 CHAPTER_FILE_TYPES 的中文值。
+     * @param chapDir - 章节目录
      */
     async restoreChapterState(chapDir: string): Promise<void> {
         if (!chapDir) { log.warn('[ChapterStateManager] restoreChapterState: chapDir 为空，跳过'); return; }

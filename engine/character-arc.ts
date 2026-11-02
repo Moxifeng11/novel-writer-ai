@@ -54,7 +54,12 @@ export function formatCharacterArcTable(rows: CharacterArcRow[]): string {
     return `# 角色弧线\n\n> want=角色以为自己要的；need=角色真正需要的；lie=角色相信的错误信念。\n> 分析报告用 ARC: 角色 | 阶段前 | 阶段后 | 触发事件 | 是否可见 更新。\n\n${ARC_TABLE_HEADER}\n${ARC_TABLE_SEPARATOR}\n${body}${body ? '\n' : ''}`;
 }
 
-/** 从角色 frontmatter 建骨架；缺字段留空，不编造。 */
+/**
+ * 从角色 frontmatter 建骨架；缺字段留空，不编造。
+ *
+ * @param characters - 角色列表
+ * @returns 结果数组
+ */
 export function buildArcRowsFromCharacters(
     characters: Array<{ name: string; motivation?: string; fear?: string; weakness?: string; stage?: string }>,
 ): CharacterArcRow[] {

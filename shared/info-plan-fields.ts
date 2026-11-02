@@ -36,6 +36,9 @@ const EMPTY_FIELDS: InfoPlanFields = {
  * 取小节正文（到下一个同级小节或文件尾）。
  * 兼容两种存量写法：`## 伏笔操作` 标题，以及 `**伏笔操作（本章埋设）**：` 加粗行。
  * 旧版信息规划模板用的是加粗行，只认 `##` 会让这些项目解析出空字段（章纲约束静默失效）。
+ * @param content - 内容
+ * @param title - 标题
+ * @returns 文本结果
  */
 function extractSection(content: string, title: string): string {
     const lines = String(content || '').replace(/\r\n/g, '\n').split('\n');
@@ -46,14 +49,25 @@ function extractSection(content: string, title: string): string {
     return (end < 0 ? lines.slice(start) : lines.slice(start, end)).join('\n');
 }
 
-/** 取小节里 `- 字段名（可带括号说明）：值` 的值（容忍字段名与冒号之间的括号说明） */
+/**
+ * 取小节里 `- 字段名（可带括号说明）：值` 的值（容忍字段名与冒号之间的括号说明）
+ *
+ * @param section - 分区
+ * @param label - 标签
+ * @returns 文本结果
+ */
 function readListItem(section: string, label: string): string {
     const pattern = new RegExp(`^[-*]\\s*${label}[^：:\\n]*[：:]\\s*(.*)$`, 'm');
     const matched = section.match(pattern);
     return matched ? matched[1].trim() : '';
 }
 
-/** 把「A、B；C」或多行列表拆成名称数组 */
+/**
+ * 把「A、B；C」或多行列表拆成名称数组
+ *
+ * @param raw - 原始
+ * @returns 结果数组
+ */
 function splitNames(raw: string): string[] {
     if (!raw) return [];
     const names: string[] = [];
@@ -68,7 +82,12 @@ function splitNames(raw: string): string[] {
     return names;
 }
 
-/** 表格兜底：取 markdown 表格第一列（跳过表头与分隔行）；旧版伏笔操作是表格写法 */
+/**
+ * 表格兜底：取 markdown 表格第一列（跳过表头与分隔行）；旧版伏笔操作是表格写法
+ *
+ * @param section - 分区
+ * @returns 结果数组
+ */
 function readTableFirstColumn(section: string): string[] {
     const names: string[] = [];
     for (const line of section.split('\n')) {
@@ -90,6 +109,8 @@ function readTableFirstColumn(section: string): string[] {
  * 从信息规划正文解析结构化字段。
  * 旧版信息规划没有这几个小节时全部返回空串——调用方按「字段缺失」处理，
  * 不阻塞生成。
+ * @param content - 内容
+  * @returns InfoPlanFields 实例
  */
 export function parseInfoPlanFields(content: string): InfoPlanFields {
     const text = String(content || '').replace(/\r\n/g, '\n');
@@ -117,6 +138,8 @@ export function parseInfoPlanFields(content: string): InfoPlanFields {
 /**
  * 把字段格式化成可注入正文生成的提示词块。
  * 只输出已填写的部分；全部为空时返回空串（调用方跳过注入）。
+ * @param fields - 字段表
+ * @returns 文本结果
  */
 export function formatInfoPlanPromptBlock(fields: InfoPlanFields): string {
     const lines: string[] = ['【章纲硬要求（来自信息规划，最高优先级）】'];

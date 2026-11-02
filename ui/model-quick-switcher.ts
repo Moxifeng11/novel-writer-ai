@@ -58,7 +58,13 @@ export interface ModelSwitcherPluginLike {
 
 const refreshers = new Set<() => void>();
 
-/** 供应商显示名：自定义供应商缺失名称时回落，避免按钮显示 "undefined" */
+/**
+ * 供应商显示名：自定义供应商缺失名称时回落，避免按钮显示 "undefined"
+ *
+ * @param plugin - 插件实例
+ * @param providerId - 提供方ID
+ * @returns 文本结果
+ */
 export function resolveProviderDisplayName(
     plugin: Pick<ModelSwitcherPluginLike, 'settings'> & { getCurrentProviderId(): string | null },
     providerId: string | null,
@@ -69,7 +75,12 @@ export function resolveProviderDisplayName(
     return plugin.settings.customProviderName || '自定义';
 }
 
-/** 当前选择快照：供应商名 + 当前默认模型 */
+/**
+ * 当前选择快照：供应商名 + 当前默认模型
+ *
+ * @param plugin - 插件实例
+  * @returns ModelSwitcherSnapshot 实例
+ */
 export function resolveModelSwitcherSnapshot(plugin: ModelSwitcherPluginLike): ModelSwitcherSnapshot {
     const providerId = plugin.getCurrentProviderId();
     return {
@@ -80,7 +91,12 @@ export function resolveModelSwitcherSnapshot(plugin: ModelSwitcherPluginLike): M
     };
 }
 
-/** 胶囊按钮文案：与旧状态栏信息量对齐，但只保留「在哪 · 用什么」 */
+/**
+ * 胶囊按钮文案：与旧状态栏信息量对齐，但只保留「在哪 · 用什么」
+ *
+ * @param snapshot - 快照
+ * @returns 文本结果
+ */
 export function formatModelSwitcherLabel(snapshot: ModelSwitcherSnapshot): string {
     const model = snapshot.defaultModel || '未配置模型';
     const provider = snapshot.providerName || '未配置供应商';
@@ -108,6 +124,10 @@ export function sortProviderOptions<T extends { id: string; name: string; isPres
  * - 然后把选中的模型设为全局模型：defaultModel / flashModel / proModel 统一，
  *   避免界面显示的模型与正文实际使用的 proModel 不一致；
  * - 刷新模型窗口上限、持久化并通知所有已装配的切换器。
+ * @param plugin - 插件实例
+ * @param provider - 提供方
+ * @param model - 模型标识
+ * @returns 是否成功
  */
 export async function applyModelChoice(
     plugin: ModelSwitcherPluginLike,
@@ -133,7 +153,11 @@ export async function applyModelChoice(
     return true;
 }
 
-/** 注册/注销切换器刷新回调（updateStatusBarText 会触发全部刷新） */
+/**
+ * 注册/注销切换器刷新回调（updateStatusBarText 会触发全部刷新）
+ *
+ * @param refresh - 是否刷新
+ */
 export function registerModelSwitcherRefresher(refresh: () => void): () => void {
     refreshers.add(refresh);
     return () => refreshers.delete(refresh);
@@ -154,7 +178,13 @@ interface MenuLike {
     showAtMouseEvent(evt: MouseEvent): unknown;
 }
 
-/** 给菜单加一项；setChecked 在旧 API 上不存在时静默跳过 */
+/**
+ * 给菜单加一项；setChecked 在旧 API 上不存在时静默跳过
+ *
+ * @param menu - 菜单
+ * @param title - 标题
+ * @param opts - 选项
+ */
 function addMenuItem(
     menu: MenuLike,
     title: string,
@@ -172,6 +202,8 @@ function addMenuItem(
  * 弹出两级选择菜单。
  * 第一级：供应商列表（当前供应商置顶并勾选）；
  * 第二级：该供应商的模型列表（当前默认模型勾选）。
+ * @param plugin - 插件实例
+ * @param evt - 事件
  */
 export function openModelSwitcherMenu(plugin: ModelSwitcherPluginLike, evt?: MouseEvent): void {
     const snapshot = resolveModelSwitcherSnapshot(plugin);
@@ -226,6 +258,9 @@ export function openModelSwitcherMenu(plugin: ModelSwitcherPluginLike, evt?: Mou
  * 在容器中装配一枚快速切换按钮。
  * 返回句柄：`refresh()` 同步文案；`destroy()` 注销刷新回调并移除按钮。
  * `button` 暴露给测试与需要二次定位的调用方。
+ * @param container - 容器元素
+ * @param plugin - 插件实例
+  * @returns ModelQuickSwitcherHandle 实例
  */
 export function renderModelQuickSwitcher(
     container: HTMLElement,

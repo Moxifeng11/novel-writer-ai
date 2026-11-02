@@ -127,6 +127,13 @@ export class StepResultSaver {
 
     /**
      * 保存步骤结果到磁盘文件
+     * @param stepKey - 步骤键
+     * @param content - 内容
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param meta - 元数据
+     * @returns 是否成功
      */
     async saveStepResult(
         stepKey: string,
@@ -360,6 +367,10 @@ export class StepResultSaver {
 
     /**
      * 将修正内容写回正文
+     * @param fixContent - 修正内容
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
      */
     async writeFixToBody(fixContent: string, chapDir: string, chapterName: string, volume: string): Promise<void> {
         try {
@@ -463,6 +474,8 @@ export class StepResultSaver {
 
     /**
      * 公开获取项目实体名称
+     * @param project - 项目（路径或对象）
+      * @returns EntityNames 或 null
      */
     async getEntityNames(project: string): Promise<EntityNames | null> {
         return this.extractEntityNames(project);

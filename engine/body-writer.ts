@@ -99,7 +99,13 @@ function stripFrontmatterBlock(content: string): { fmRaw: string; body: string }
     return { fmRaw: m[1], body: content.slice(m[0].length) };
 }
 
-/** 从文本中提取章节标题（`# 第3章 试炼` / `第3章：试炼`） */
+/**
+ * 从文本中提取章节标题（`# 第3章 试炼` / `第3章：试炼`）
+ *
+ * @param content - 内容
+ * @param chapterNum - 章号
+ * @returns 文本结果
+ */
 export function extractChapterTitle(content: string, chapterNum?: number): string {
     const { body } = stripFrontmatterBlock(content);
     const firstLines = body.split('\n').slice(0, 6).join('\n');
@@ -416,6 +422,9 @@ export class BodyWriter {
 /**
  * 把 patch 合并进 frontmatter 原文（纯文本级）：已有键覆盖、新键按行追加。
  * 值统一 JSON 序列化后去引号——字符串不带引号、数组为内联、布尔/数字原样。
+ * @param fmRaw - 原始 frontmatter
+ * @param patch - 补丁
+ * @returns 文本结果
  */
 export function mergeFrontmatterRaw(fmRaw: string, patch: Record<string, unknown>): string {
     const lines = String(fmRaw || '').split('\n');

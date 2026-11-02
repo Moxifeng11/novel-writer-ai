@@ -23,6 +23,8 @@ export class CoverPickerController {
 
     /**
      * 打开文件选择器让用户选择封面图片（v3.4.6 P0 封面三层联动）
+     * @param project - 项目（路径或对象）
+     * @param coverArea - 封面区域
      */
     openCoverPicker(project: string, coverArea: HTMLElement) {
         // 防重入：避免并发触发多个文件选择器（v3.4.7 P0-4）

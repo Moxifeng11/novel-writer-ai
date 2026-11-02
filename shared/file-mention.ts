@@ -23,7 +23,13 @@ const MAX_QUERY_CHARS = 120;
 /** 引用串允许的结尾标点（不吞掉 `.md` 里的点） */
 const TRAILING_PUNCTUATION = /[，。；：、！？,;:!?)\]]+$/;
 
-/** 光标前是否处于一个 `@` 引用中（输入法组词/中文标点后不触发） */
+/**
+ * 光标前是否处于一个 `@` 引用中（输入法组词/中文标点后不触发）
+ *
+ * @param text - 文本内容
+ * @param cursor - 光标
+  * @returns MentionToken 或 null
+ */
 export function activeAtToken(text: string, cursor: number): MentionToken | null {
     const source = String(text ?? '');
     const pos = Math.max(0, Math.min(source.length, cursor));
@@ -45,7 +51,12 @@ export function activeAtToken(text: string, cursor: number): MentionToken | null
     return { start: at, end: pos, query, quoted };
 }
 
-/** 生成可插入的引用串：含空格/特殊字符时用引号包起来 */
+/**
+ * 生成可插入的引用串：含空格/特殊字符时用引号包起来
+ *
+ * @param path - 路径
+ * @returns 文本结果
+ */
 export function formatFileMention(path: string): string {
     const cleaned = String(path || '').trim().replace(/^\/+/, '');
     if (!cleaned) return '';
@@ -58,7 +69,12 @@ export interface ParsedMention {
     end: number;
 }
 
-/** 解析文本中所有引用（按出现顺序，保留位置便于替换） */
+/**
+ * 解析文本中所有引用（按出现顺序，保留位置便于替换）
+ *
+ * @param text - 文本内容
+ * @returns 结果数组
+ */
 export function parseMentions(text: string): ParsedMention[] {
     const source = String(text ?? '');
     const mentions: ParsedMention[] = [];
@@ -76,7 +92,12 @@ export function parseMentions(text: string): ParsedMention[] {
     return mentions;
 }
 
-/** 文本里引用到的文件路径（去重，保持首次出现顺序） */
+/**
+ * 文本里引用到的文件路径（去重，保持首次出现顺序）
+ *
+ * @param text - 文本内容
+ * @returns 结果数组
+ */
 export function extractMentionPaths(text: string): string[] {
     const seen = new Set<string>();
     const paths: string[] = [];
@@ -91,6 +112,9 @@ export function extractMentionPaths(text: string): string[] {
 /**
  * 候选排序：文件名前缀命中 > 路径包含 > 其余；同分时短路径优先。
  * 只做纯字符串匹配，不读库。
+ * @param paths - 路径列表
+ * @param query - 查询串
+ * @returns 结果数组
  */
 export function filterVaultPaths(paths: readonly string[], query: string, limit = 20): string[] {
     const needle = String(query || '').trim().toLowerCase();
@@ -113,6 +137,8 @@ export function filterVaultPaths(paths: readonly string[], query: string, limit 
 /**
  * 注入给模型的引用说明块：只给路径与取用方式，不含正文。
  * 未提供路径时返回空串。
+ * @param paths - 路径列表
+ * @returns 文本结果
  */
 export function buildMentionBlock(paths: readonly string[]): string {
     const unique = [...new Set(paths.map(path => String(path || '').trim()).filter(Boolean))];
@@ -121,7 +147,12 @@ export function buildMentionBlock(paths: readonly string[]): string {
     return ['【用户引用的文件】（内容未自动加载；需要时用 read_file 读取，不要凭空猜测）', ...lines].join('\n');
 }
 
-/** 把用户输入里的引用替换成纯文本（引用条/气泡展示时去掉 `@`，保留路径可读性） */
+/**
+ * 把用户输入里的引用替换成纯文本（引用条/气泡展示时去掉 `@`，保留路径可读性）
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 export function stripMentionMarkers(text: string): string {
     return String(text ?? '').replace(/@(?:"([^"\n]+)"|([^\s@"'`]+))/g, (_all, quoted: string | undefined, plain: string | undefined) => {
         const path = quoted ?? (plain || '').replace(TRAILING_PUNCTUATION, '');

@@ -117,6 +117,7 @@ export class AntiAIDetector {
     /**
      * 当前生效的高频词表 = 内置基线 + 用户扩充。
      * 只读快照：每次访问返回新数组，外部修改不会污染内部状态。
+     * @returns 结果数组
      */
     static get AI_HIGH_FREQ_WORDS(): string[] {
         return extraAiHighFreqWords.length > 0
@@ -127,6 +128,7 @@ export class AntiAIDetector {
     /**
      * R2: 设置用户扩充词（去空白、去重，并剔除与内置基线重复的项）。
      * 传空数组或不传即恢复默认词表；未设置时检测结果与改动前完全一致。
+     * @param words - 词表
      */
     static setExtraHighFreqWords(words: string[]): void {
         const seen = new Set<string>();
@@ -140,7 +142,11 @@ export class AntiAIDetector {
         extraAiHighFreqWords = cleaned;
     }
 
-    /** R2: 当前生效的扩充词（副本，供 Worker 侧同步） */
+    /**
+     * R2: 当前生效的扩充词（副本，供 Worker 侧同步）
+     *
+     * @returns 结果数组
+     */
     static getExtraHighFreqWords(): string[] {
         return [...extraAiHighFreqWords];
     }
@@ -261,6 +267,8 @@ export class AntiAIDetector {
     /**
      * 段落级定位检测：返回所有命中项（含位置），供编辑器标红使用。
      * 三层词库：L2 短语精确匹配（权重最高）→ L3 句式正则 → L1 词频弱信号。
+     * @param text - 文本内容
+     * @returns 结果数组
      */
     detectWithPositions(text: string): AIDetectionHit[] {
         const hits: AIDetectionHit[] = [];
@@ -293,12 +301,22 @@ export class AntiAIDetector {
         return hits;
     }
 
-    /** 0-100 AI 味评分（越高越像 AI 写的） */
+    /**
+     * 0-100 AI 味评分（越高越像 AI 写的）
+     *
+     * @param text - 文本内容
+     * @returns 数值结果
+     */
     score(text: string): number {
         return this.detect(text).score;
     }
 
-    /** 完整检测：评分 + 命中项 + 特征向量 + 修改建议 */
+    /**
+     * 完整检测：评分 + 命中项 + 特征向量 + 修改建议
+     *
+     * @param text - 文本内容
+      * @returns AIDetectionResult 实例
+     */
     detect(text: string): AIDetectionResult {
         const hits = this.detectWithPositions(text);
 

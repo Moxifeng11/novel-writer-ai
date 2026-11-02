@@ -1,6 +1,11 @@
 /** Frontmatter 解析工具 — 被 ui/ 和 engine/ 共享 */
 
-/** HTML 净化（在 shared 层独立实现，避免循环依赖 helpers.ts） */
+/**
+ * HTML 净化（在 shared 层独立实现，避免循环依赖 helpers.ts）
+ *
+ * @param html - HTML
+ * @returns 文本结果
+ */
 function stripHtml(html: string): string {
     return html.replace(/<[^>]*>/g, '');
 }
@@ -17,7 +22,12 @@ export interface MarkdownSection {
     content: string[];
 }
 
-/** 从 Markdown 文件内容中解析 YAML frontmatter 为键值对象 */
+/**
+ * 从 Markdown 文件内容中解析 YAML frontmatter 为键值对象
+ *
+ * @param content - 内容
+ * @returns 映射结果
+ */
 export function parseFrontmatter(content: string): Record<string, string> {
     const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!fm) return {};
@@ -49,7 +59,12 @@ export function parseFrontmatter(content: string): Record<string, string> {
     return result;
 }
 
-/** 将 Markdown 内容解析为 raw + sections 结构（与 context-manager 的实现一致） */
+/**
+ * 将 Markdown 内容解析为 raw + sections 结构（与 context-manager 的实现一致）
+ *
+ * @param content - 内容
+  * @returns MarkdownContent 实例
+ */
 export function parseMarkdownContent(content: string): MarkdownContent {
     const lines = content.split('\n');
     const sections: MarkdownSection[] = [];

@@ -45,7 +45,14 @@ export interface ChapterProgressSummary {
     plannedChapters: number;
 }
 
-/** 单章是否已写（status 优先，无 status 时按体量兜底） */
+/**
+ * 单章是否已写（status 优先，无 status 时按体量兜底）
+ *
+ * @param status - 状态
+ * @param hasBody - 是否含正文
+ * @param size - 大小
+ * @returns 是否成功
+ */
 export function isChapterWritten(status: string, hasBody: boolean, size: number): boolean {
     if (!hasBody) return false;
     const normalized = (status || '').trim().toLowerCase();
@@ -55,7 +62,12 @@ export function isChapterWritten(status: string, hasBody: boolean, size: number)
     return size > SKELETON_BYTE_THRESHOLD;
 }
 
-/** 章名 → 单元号（支持章/节/集/回/幕；解析失败返回 0） */
+/**
+ * 章名 → 单元号（支持章/节/集/回/幕；解析失败返回 0）
+ *
+ * @param chapter - 章节
+ * @returns 数值结果
+ */
 export function chapterNumber(chapter: string): number {
     const matched = String(chapter || '').match(/第\s*(\d+)\s*[章节集回幕]/);
     return matched ? parseInt(matched[1], 10) : 0;
@@ -66,7 +78,13 @@ export interface SummarizeChapterOptions {
     unitLabel?: string;
 }
 
-/** 汇总章节完成度；输入顺序无关，内部按章号排序 */
+/**
+ * 汇总章节完成度；输入顺序无关，内部按章号排序
+ *
+ * @param entries - 记录集合
+ * @param options - 配置项
+  * @returns ChapterProgressSummary 实例
+ */
 export function summarizeChapterProgress(
     entries: ChapterProgressInput[],
     options: SummarizeChapterOptions = {},

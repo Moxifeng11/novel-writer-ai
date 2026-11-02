@@ -32,6 +32,9 @@ function basenameWithoutExt(path: string): string {
  * - 只保留 `dirs` 下的 `.md`（含子目录）；
  * - 排除当前已绑定的文件（避免「绑定到自己」）；
  * - 去重后按文件名排序。
+ * @param mdPaths - Markdown 路径列表
+ * @param dirs - 目录列表
+ * @returns 结果数组
  */
 export function listFanficSettingCandidates(
     mdPaths: string[],

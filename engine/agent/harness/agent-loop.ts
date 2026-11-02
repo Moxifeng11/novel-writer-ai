@@ -103,7 +103,12 @@ const DEFAULT_MAX_STEPS = 6;
 const DEFAULT_TEMPERATURE = 0.6;
 const DEFAULT_MAX_TOKENS = 2500;
 
-/** 深度键排序后再 stringify：仅属性顺序不同的参数应视为同一次调用（dsh canonicalize） */
+/**
+ * 深度键排序后再 stringify：仅属性顺序不同的参数应视为同一次调用（dsh canonicalize）
+ *
+ * @param value - 值
+ * @returns 文本结果
+ */
 function canonicalizeArgs(value: unknown): string {
     const sort = (input: unknown): unknown => {
         if (Array.isArray(input)) return input.map(sort);
@@ -122,7 +127,12 @@ function canonicalizeArgs(value: unknown): string {
     }
 }
 
-/** 从模型原始输出解析 JSON 协议；容错：代码块围栏、前后杂文本、非 JSON 纯文本 */
+/**
+ * 从模型原始输出解析 JSON 协议；容错：代码块围栏、前后杂文本、非 JSON 纯文本
+ *
+ * @param raw - 原始
+  * @returns HarnessChip[] } 实例
+ */
 export function parseAssistantTurn(raw: string): { reply: string; tool?: { name: string; args: Record<string, unknown> }; chips?: HarnessChip[] } {
     const text = String(raw || '').trim();
     if (!text) return { reply: '' };
@@ -152,7 +162,12 @@ export function parseAssistantTurn(raw: string): { reply: string; tool?: { name:
     return { reply: text };
 }
 
-/** 工具参数：对象直接用；JSON 字符串（OpenAI 兼容端点常见）解析后使用 */
+/**
+ * 工具参数：对象直接用；JSON 字符串（OpenAI 兼容端点常见）解析后使用
+ *
+ * @param value - 值
+ * @returns 映射结果
+ */
 function normalizeToolArgs(value: unknown): Record<string, unknown> {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
         return value as Record<string, unknown>;
@@ -173,6 +188,8 @@ function normalizeToolArgs(value: unknown): Record<string, unknown> {
 /**
  * 提取文本中所有平衡的 JSON 对象候选（优先代码围栏内的内容）。
  * 逐个尝试解析，由调用方挑选「协议对象」——只取第一个 `{` 会把前言里的花括号当协议。
+ * @param text - 文本内容
+ * @returns 结果数组
  */
 export function extractJsonCandidates(text: string): string[] {
     const candidates: string[] = [];
@@ -185,7 +202,12 @@ export function extractJsonCandidates(text: string): string[] {
     return candidates;
 }
 
-/** 文本中所有平衡的 {...} 片段（按出现顺序） */
+/**
+ * 文本中所有平衡的 {...} 片段（按出现顺序）
+ *
+ * @param text - 文本内容
+ * @returns 结果数组
+ */
 function extractBalancedObjects(text: string): string[] {
     const objects: string[] = [];
     let index = 0;
@@ -200,7 +222,13 @@ function extractBalancedObjects(text: string): string[] {
     return objects;
 }
 
-/** 从 start 处 `{` 开始找配对的 `}`，找不到返回 -1 */
+/**
+ * 从 start 处 `{` 开始找配对的 `}`，找不到返回 -1
+ *
+ * @param text - 文本内容
+ * @param start - 起始位置
+ * @returns 数值结果
+ */
 function findBalancedEnd(text: string, start: number): number {
     let depth = 0;
     let inString = false;
@@ -223,7 +251,12 @@ function findBalancedEnd(text: string, start: number): number {
     return -1;
 }
 
-/** 兼容旧调用方：返回第一个平衡 JSON 对象 */
+/**
+ * 兼容旧调用方：返回第一个平衡 JSON 对象
+ *
+ * @param text - 文本内容
+  * @returns 文本结果 或 null
+ */
 export function extractJsonBlock(text: string): string | null {
     const objects = extractBalancedObjects(String(text || ''));
     return objects.length > 0 ? objects[0] : null;
@@ -268,6 +301,8 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
 /**
  * 运行一个用户回合。日志里应已包含本回合的 user_message（由引擎层写入）。
  * 返回最终回复与遥测；适配器失败时 failed=true，由宿主决定降级。
+ * @param options - 配置项
+  * @returns HarnessLoopTurnResult 实例
  */
 export async function runHarnessTurn(options: HarnessLoopOptions): Promise<HarnessLoopTurnResult> {
     const {

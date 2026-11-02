@@ -127,12 +127,23 @@ export const COMBINED_PLANNING_USER_PROMPT = `根据以下素材，为第\${chap
 
 请严格按照输出格式的分隔符（========== MODULE_NAME ==========）划分5个模块，每个模块内容完整。`;
 
-/** 将模板中的 ${key} 替换为变量值；缺失变量替换为空串 */
+/**
+ * 将模板中的 ${key} 替换为变量值；缺失变量替换为空串
+ *
+ * @param template - 模板
+ * @param vars - 变量表
+ * @returns 文本结果
+ */
 export function fillPlanningTemplate(template: string, vars: Record<string, string>): string {
     return template.replace(/\$\{(\w+)\}/g, (_, key) => vars[key] || '');
 }
 
-/** 构建合并规划的 system/user 提示词（变量已填充） */
+/**
+ * 构建合并规划的 system/user 提示词（变量已填充）
+ *
+ * @param vars - 变量表
+  * @returns string } 结果
+ */
 export function buildCombinedPlanningPrompts(vars: Record<string, string>): { system: string; user: string } {
     return {
         system: fillPlanningTemplate(COMBINED_PLANNING_SYSTEM_PROMPT, vars),
@@ -152,6 +163,10 @@ export const COMBINED_PLANNING_MIN_MODULE_CHARS = 50;
  *
  * Rev 185：`isValid` 用于把「字符数够但结构残缺」的模块排除出 generated。
  * 不传时保持旧行为（仅按字符数），供既有调用方/测试兼容。
+ * @param parsed - 解析结果
+ * @param completed - 完成状态
+ * @param isValid - 是否有效
+  * @returns boolean } 结果
  */
 export function evaluateCombinedPlanning(
     parsed: Record<string, string>,
@@ -177,6 +192,8 @@ export function evaluateCombinedPlanning(
  * 解析合并规划的 AI 输出。
  * 按固定模块顺序查找分隔符；某模块内容持续到下一个出现过的分隔符为止。
  * 缺失的模块不会产生 key；是否算成功由 `evaluateCombinedPlanning` 决定。
+ * @param content - 内容
+ * @returns 映射结果
  */
 export function parseCombinedPlanning(content: string): Record<string, string> {
     const result: Record<string, string> = {};

@@ -6,6 +6,11 @@ export interface SectionHeaderButton {
 /**
  * v6.0: 渲染可折叠的设置区块
  * 迷你设置和完整设置页共用，保证 CSS 样式和交互一致
+ * @param containerEl - 容器元素
+ * @param title - 标题
+ * @param defaultOpen - 默认展开
+ * @param render - 渲染函数
+ * @param headerButtons - 标题按钮
  */
 export function renderCollapsibleSection(
     containerEl: HTMLElement,

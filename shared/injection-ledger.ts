@@ -153,6 +153,9 @@ function estimateTokens(chars: number): number {
  * 从模板变量生成注入账本。
  * 预算与截断信息通过 `budgets` 传入（key → { budget, truncated }），由各引擎运行时填充；
  * 静态表没有的 key（如指纹分层）通过 `extra` 追加。
+ * @param vars - 变量表
+ * @param options - 配置项
+  * @returns InjectionLedger 实例
  */
 export function buildInjectionLedger(
     vars: Record<string, string>,
@@ -205,7 +208,12 @@ export function buildInjectionLedger(
     };
 }
 
-/** 从 vars 的 `_contextHygiene`（template-vars-builder 写入）读取体检结果 */
+/**
+ * 从 vars 的 `_contextHygiene`（template-vars-builder 写入）读取体检结果
+ *
+ * @param vars - 变量表
+  * @returns InjectionHygiene 或 undefined
+ */
 function readInjectionHygiene(vars: Record<string, string>): InjectionHygiene | undefined {
     const raw = vars['_contextHygiene'];
     if (!raw) return undefined;
@@ -230,7 +238,12 @@ function readInjectionHygiene(vars: Record<string, string>): InjectionHygiene | 
     }
 }
 
-/** 从 vars 的 `_rulesMeta` / `_voiceMeta` / `_experimentGroup` 读取版本归因 */
+/**
+ * 从 vars 的 `_rulesMeta` / `_voiceMeta` / `_experimentGroup` 读取版本归因
+ *
+ * @param vars - 变量表
+  * @returns InjectionVersions 实例
+ */
 function readInjectionVersions(vars: Record<string, string>): InjectionVersions {
     const versions: InjectionVersions = {};
     const parse = (raw: string | undefined): Record<string, unknown> | null => {
@@ -261,7 +274,12 @@ function readInjectionVersions(vars: Record<string, string>): InjectionVersions 
     return versions;
 }
 
-/** 渲染为可读文本（执行日志 / 调试窗口用） */
+/**
+ * 渲染为可读文本（执行日志 / 调试窗口用）
+ *
+ * @param ledger - 账本
+ * @returns 文本结果
+ */
 export function formatInjectionLedger(ledger: InjectionLedger): string {
     const lines: string[] = [
         `【注入溯源】共 ${ledger.entries.length} 段 / ${ledger.totalChars} 字符 / ~${ledger.totalEstTokens} token` +

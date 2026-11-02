@@ -38,9 +38,21 @@ export interface JournalFilePort {
  * frontmatter 端口。
  */
 export interface JournalFrontmatterPort {
-    /** 读取单个字段的当前值 */
+    /**
+     * 读取单个字段的当前值
+     *
+     * @param path - 路径
+     * @param field - 字段
+     * @returns 文本结果
+     */
     readField(path: string, field: string): Promise<string>;
-    /** 把字段恢复为指定值 */
+    /**
+     * 把字段恢复为指定值
+     *
+     * @param path - 路径
+     * @param field - 字段
+     * @param value - 值
+     */
     restoreField(path: string, field: string, value: string): Promise<void>;
 }
 
@@ -112,7 +124,13 @@ export class SettlementJournal {
         this.entries.push({ kind: 'append-marker', path, marker: normalized });
     }
 
-    /** 按逆序回滚；单条失败不影响其余条目，但会计入 failed 供调用方告警 */
+    /**
+     * 按逆序回滚；单条失败不影响其余条目，但会计入 failed 供调用方告警
+     *
+     * @param fs - 文件系统端口
+     * @param frontmatter - frontmatter
+      * @returns RollbackReport 实例
+     */
     async rollback(fs: JournalFilePort, frontmatter: JournalFrontmatterPort): Promise<RollbackReport> {
         const report: RollbackReport = { reverted: 0, failed: 0, failures: [] };
         for (let i = this.entries.length - 1; i >= 0; i--) {
@@ -153,6 +171,9 @@ export class SettlementJournal {
  * 支持两种形态：
  * - 整行标记（成长/互信息/行为日志）：按行精确匹配，去掉整行（含其换行）
  * - 行内片段（连续性账本「；值（第N章）」）：删掉 marker 文本，并清理残留分隔符
+ * @param content - 内容
+ * @param marker - 标记
+ * @returns 文本结果
  */
 export function removeMarkerOnce(content: string, marker: string): string {
     const lines = content.split('\n');

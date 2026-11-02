@@ -301,7 +301,12 @@ export const CONTENT_TYPE_LABELS: Record<string, string> = {
     'setting': '设定',
 };
 
-/** 字数统计（中文按字算，英文按词算）——统一实现见 shared/word-count */
+/**
+ * 字数统计（中文按字算，英文按词算）——统一实现见 shared/word-count
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countWords(text: string): number {
     return countCjkAndWords(text);
 }

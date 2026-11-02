@@ -58,7 +58,13 @@ export const ALL_TEMPLATE_DEFS: Omit<TemplateInfo, 'hasSystem' | 'hasUser'>[] = 
     { key: 'deaiRewrite', name: 'DEAI改写', category: 'deai', categoryName: 'DEAI模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/deaiRewrite-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/deaiRewrite-user.md` },
 ];
 
-/** 获取模板的默认内容 */
+/**
+ * 获取模板的默认内容
+ *
+ * @param key - 键
+ * @param type - 类型
+ * @returns 文本结果
+ */
 export function getDefaultTemplateContent(key: string, type: 'system' | 'user'): string {
     const template = getStepTemplate(key);
     if (template) {
@@ -76,12 +82,20 @@ export class TemplateManager {
         this.app = app;
     }
 
-    /** 设置筛选器 */
+    /**
+     * 设置筛选器
+     *
+     * @param filter - 过滤条件
+     */
     setFilter(filter: TemplateCategory | 'all'): void {
         this.filter = filter;
     }
 
-    /** 获取所有模板信息 */
+    /**
+     * 获取所有模板信息
+     *
+     * @returns 结果数组
+     */
     async getAllTemplates(): Promise<TemplateInfo[]> {
         const templates: TemplateInfo[] = [];
 
@@ -103,7 +117,11 @@ export class TemplateManager {
         return templates;
     }
 
-    /** 渲染模板列表到容器 */
+    /**
+     * 渲染模板列表到容器
+     *
+     * @param container - 容器元素
+     */
     async renderTemplateList(container: HTMLElement): Promise<void> {
         container.empty();
 
@@ -213,12 +231,20 @@ export class TemplateManager {
         }
     }
 
-    /** 显示编辑弹窗 */
+    /**
+     * 显示编辑弹窗
+     *
+     * @param template - 模板
+     */
     showEditModal(template: TemplateInfo): void {
         new TemplateEditModal(this.app, template).open();
     }
 
-    /** 导出单个模板 */
+    /**
+     * 导出单个模板
+     *
+     * @param template - 模板
+     */
     async exportTemplate(template: TemplateInfo): Promise<void> {
         try {
             const content: string[] = [`# ${template.name} 模板\n`, `Key: ${template.key}\n`, `分类: ${template.categoryName}\n`];
@@ -289,7 +315,11 @@ export class TemplateManager {
         }
     }
 
-    /** 显示导入弹窗 */
+    /**
+     * 显示导入弹窗
+     *
+     * @param container - 容器元素
+     */
     showImportModal(container: HTMLElement): void {
         new TemplateImportModal(this.app, () => {
             // 导入成功后刷新列表
@@ -297,7 +327,11 @@ export class TemplateManager {
         }).open();
     }
 
-    /** 重置单个模板 */
+    /**
+     * 重置单个模板
+     *
+     * @param template - 模板
+     */
     async resetTemplate(template: TemplateInfo): Promise<void> {
         const confirmed = await OperationConfirmModal.confirm(this.app, {
             title: '删除自定义模板',
@@ -331,7 +365,11 @@ export class TemplateManager {
         }
     }
 
-    /** 重置全部模板 */
+    /**
+     * 重置全部模板
+     *
+     * @param container - 容器元素
+     */
     async resetAllTemplates(container: HTMLElement): Promise<void> {
         const confirmed = await OperationConfirmModal.confirm(this.app, {
             title: '删除所有自定义模板',

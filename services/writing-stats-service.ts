@@ -68,13 +68,23 @@ export interface WritingStatsServiceDeps {
     now?: () => number;
 }
 
-/** 正文字符数兜底：去掉 frontmatter 后统计非空白字符（与 word_count 口径接近） */
+/**
+ * 正文字符数兜底：去掉 frontmatter 后统计非空白字符（与 word_count 口径接近）
+ *
+ * @param content - 内容
+ * @returns 数值结果
+ */
 export function countBodyChars(content: string): number {
     const body = String(content || '').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
     return body.replace(/\s/g, '').length;
 }
 
-/** 文件路径 → 项目路径（类别/项目名）；短篇/剧本同为两级 */
+/**
+ * 文件路径 → 项目路径（类别/项目名）；短篇/剧本同为两级
+ *
+ * @param filePath - 文件路径
+ * @returns 文本结果
+ */
 export function projectOfFile(filePath: string): string {
     const parts = String(filePath || '').split('/');
     return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : (parts[0] || '');
@@ -144,7 +154,11 @@ export class WritingStatsService {
         }
     }
 
-    /** 单个文件变更（vault modify/create 事件） */
+    /**
+     * 单个文件变更（vault modify/create 事件）
+     *
+     * @param file - 文件
+     */
     async handleFileChange(file: StatsFileLike): Promise<void> {
         if (!this.deps.isBodyPath(file.path)) return;
         await this.load();
@@ -166,7 +180,11 @@ export class WritingStatsService {
         }
     }
 
-    /** 文件删除：只清快照，历史日产出保持不变 */
+    /**
+     * 文件删除：只清快照，历史日产出保持不变
+     *
+     * @param path - 路径
+     */
     handleFileDelete(path: string): void {
         if (!this.data.files[path]) return;
         delete this.data.files[path];
@@ -177,7 +195,11 @@ export class WritingStatsService {
         return this.data;
     }
 
-    /** 运行期替换更新回调（main 在拿到实例后订阅，刷新状态栏与宠物） */
+    /**
+     * 运行期替换更新回调（main 在拿到实例后订阅，刷新状态栏与宠物）
+     *
+     * @param listener - 监听器
+     */
     setOnUpdated(listener: ((data: WritingStatsData) => void) | undefined): void {
         this.deps.onUpdated = listener;
     }
@@ -186,7 +208,11 @@ export class WritingStatsService {
         return buildReport(this.data, this.now());
     }
 
-    /** 今日字数（状态栏/宠物最高频读取，短路到 days 表） */
+    /**
+     * 今日字数（状态栏/宠物最高频读取，短路到 days 表）
+     *
+     * @returns 数值结果
+     */
     getTodayWords(): number {
         return this.getReport().global.today;
     }

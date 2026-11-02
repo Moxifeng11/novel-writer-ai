@@ -42,6 +42,9 @@ const LOCAL_MODEL_HINTS = [
  * - 显式 storyContextTier 优先；
  * - 协同写作按 coWriteModelMode（本地 Ollama / 云端 API）；
  * - 一键生成按默认模型/端点推断，无法判断时按云端处理（云端预算更大，不会静默丢信息）。
+ * @param settings - 设置
+ * @param mode - 模式
+  * @returns StoryContextTier 实例
  */
 export function resolveStoryContextTier(
     settings: StoryContextTierSettings | null | undefined,
@@ -112,6 +115,9 @@ export function buildStoryContext(options: BuildStoryContextOptions): StoryConte
 /**
  * 一键生成适配：只覆盖既有模板变量，不改模板契约。
  * 结构化信息包本身放进 storyContextPack（关联摘要），避免与模板里的完整字段重复。
+ * @param vars - 变量表
+ * @param bundle - 打包结果
+ * @param fallback - 回退值
  */
 export function applyStoryContextToVars(
     vars: Record<string, string>,
@@ -147,6 +153,8 @@ export function applyStoryContextToVars(
 /**
  * 协同写作适配：把选中的实体/设定/时间线/情绪写回 snapshot，
  * 并把完整信息包与压缩信息包挂到 snapshot 上供 PromptBuilder 使用。
+ * @param snapshot - 快照
+ * @param result - 结果
  */
 export function attachStoryContextToSnapshot(
     snapshot: Record<string, unknown>,

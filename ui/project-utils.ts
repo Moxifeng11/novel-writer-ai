@@ -38,7 +38,13 @@ export function getNextChapter<T extends { chapter: string; status: string }>(
     return next || (sortedChapters.length > 0 ? sortedChapters[sortedChapters.length - 1] : null);
 }
 
-/** 获取项目封面资源路径 */
+/**
+ * 获取项目封面资源路径
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns 文本结果 或 null
+ */
 export function getProjectCover(app: App, project: string): string | null {
     const extensions = ['png', 'jpg', 'jpeg', 'webp'];
     for (const ext of extensions) {
@@ -51,7 +57,13 @@ export function getProjectCover(app: App, project: string): string | null {
     return null;
 }
 
-/** 找到项目封面文件本体（getProjectCover 只给资源 URL，读二进制需要 TFile） */
+/**
+ * 找到项目封面文件本体（getProjectCover 只给资源 URL，读二进制需要 TFile）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns string } 结果 或 null
+ */
 export function findProjectCoverFile(app: App, project: string): { file: TFile; ext: string } | null {
     for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
         const file = app.vault.getAbstractFileByPath(`${project}/封面/cover.${ext}`);
@@ -63,6 +75,9 @@ export function findProjectCoverFile(app: App, project: string): { file: TFile; 
 /**
  * 读取项目封面为 EPUB 封面数据；无封面或读取失败返回 undefined（导出降级为无封面）。
  * webp 不是 EPUB 核心媒体类型，但主流阅读器（Apple Books / Calibre / 微信读书）均已支持。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns BookCover 或 undefined
  */
 export async function loadProjectCover(app: App, project: string): Promise<BookCover | undefined> {
     const found = findProjectCoverFile(app, project);
@@ -78,7 +93,12 @@ export async function loadProjectCover(app: App, project: string): Promise<BookC
     }
 }
 
-/** 更新项目的文笔风格模板——从最新模板合并缺失的"零、参考样本"章节 */
+/**
+ * 更新项目的文笔风格模板——从最新模板合并缺失的"零、参考样本"章节
+ *
+ * @param app - Obsidian 应用实例
+ * @param projectName - 项目名
+ */
 export async function updateWritingStyleTemplate(app: App, projectName: string): Promise<void> {
     const wsPath = getWritingStyleWritePath(projectName);
     const templatePath = '元文件/00-系统模板/文笔风格模板.md';
@@ -129,6 +149,8 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
  * v73: 修复「删除未真正生效」——.project 等点文件不入 vault 索引。
  * 旧实现遗留两个隐患：① 残留点文件时 rmdir 可能失败被静默吞掉；② 删除后无校验，UI 直接提示成功。
  * 现改为：逐项删除 adapter.list 返回的全部文件（含点文件），递归删子目录后删目录本身，
+ * @param app - Obsidian 应用实例
+ * @param projectName - 项目名
  * 最后校验目录确已消失，否则抛出明确错误，杜绝「假删除」。 */
 export async function deleteProject(app: App, projectName: string): Promise<void> {
     // 防线：空串/根路径会让 adapter.list('') 列出 vault 根并递归删光整库
@@ -170,6 +192,11 @@ export interface ChapterListEntry {
  * 章节列表构建的唯一实现：正文 ∪ 步骤结果骨架目录。
  * files/folders 由调用方提供（单项目传全集，批量扫描传按项目分桶后的子集），
  * 保证「单项目查询」与「多项目一次扫描」口径完全一致。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param files - 文件列表
+ * @param folders - 文件夹列表
+ * @returns 结果数组
  */
 function buildChapterEntries(app: App, project: string, files: TFile[], folders: TFolder[]): ChapterListEntry[] {
     const result: ChapterListEntry[] = [];
@@ -241,7 +268,13 @@ function buildChapterEntries(app: App, project: string, files: TFile[], folders:
     return sortChaptersByNumber(result);
 }
 
-/** 获取项目所有章节列表（正文 ∪ 步骤结果骨架目录），含标题、状态、卷信息 */
+/**
+ * 获取项目所有章节列表（正文 ∪ 步骤结果骨架目录），含标题、状态、卷信息
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export function getChaptersForProject(app: App, project: string): ChapterListEntry[] {
     return buildChapterEntries(
         app,
@@ -257,6 +290,9 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
  * 旧实现每个项目各调一次 getChaptersForProject，等于对全库文件/目录遍历 N 次；
  * 这里只遍历一次，按 `项目/03-大纲与章节/` 前缀分桶后交给同一个构建函数。
  * 仅影响"遍历轮次"，章节口径与 getChaptersForProject 逐项一致。
+ * @param app - Obsidian 应用实例
+ * @param projects - 项目列表
+ * @returns 映射结果
  */
 export function scanProjectChapters(app: App, projects: string[]): Map<string, ChapterListEntry[]> {
     const result = new Map<string, ChapterListEntry[]>();
@@ -286,7 +322,13 @@ export function scanProjectChapters(app: App, projects: string[]): Map<string, C
     return result;
 }
 
-/** 读取项目元信息（题材/描述 来自 .project；字数/章节/分卷 来自合并分卷大纲） */
+/**
+ * 读取项目元信息（题材/描述 来自 .project；字数/章节/分卷 来自合并分卷大纲）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns string }> 结果
+ */
 export async function getProjectMeta(app: App, project: string): Promise<{ genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string; storyStructure: string; storyStructureName: string }> {
     const result: { genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string; storyStructure: string; storyStructureName: string } = { genre: '', description: '', volumes: [], totalWordsTarget: '', totalChapters: 0, creationMode: 'long', creationModeLabel: '长篇小说', shortCategory: '', scriptGenre: '', modeTargetWords: CREATION_MODE_SPECS.long.targetWords.default, modeTargetUnits: CREATION_MODE_SPECS.long.targetUnits.default, unitLabel: '章', storyStructure: '', storyStructureName: '' };
     const dotContent = await readProjectMeta(app, project);

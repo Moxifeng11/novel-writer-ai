@@ -59,7 +59,14 @@ function nameMatches(owner: string, charName: string): boolean {
     return a === b || a.includes(b) || b.includes(a);
 }
 
-/** 某角色当前拥有的物品：物品 frontmatter「所属/归属」反查（单侧写入的查询侧） */
+/**
+ * 某角色当前拥有的物品：物品 frontmatter「所属/归属」反查（单侧写入的查询侧）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param charName - 字符名称
+ * @returns 结果数组
+ */
 export function getOwnedItems(app: App, project: string, charName: string): OwnedItemSummary[] {
     const dir = `${project}/${WORLD_ARCH}/物品功法`;
     const out: OwnedItemSummary[] = [];
@@ -78,7 +85,14 @@ export function getOwnedItems(app: App, project: string, charName: string): Owne
     return out;
 }
 
-/** 出场记录里该角色最近的行为摘要（按文件顺序取最后 limit 条，即最近章节） */
+/**
+ * 出场记录里该角色最近的行为摘要（按文件顺序取最后 limit 条，即最近章节）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param charName - 字符名称
+ * @returns 结果数组
+ */
 export async function getRecentBehaviors(app: App, project: string, charName: string, limit = 2): Promise<string[]> {
     try {
         const path = `${project}/${WORLD_ARCH}/人物/出场记录.md`;
@@ -98,6 +112,11 @@ export async function getRecentBehaviors(app: App, project: string, charName: st
  * 汇总出场角色的状态速览块：
  * 修为 / 当前位置 / 所属势力 / 状态情绪 / 随身物品（品阶+状态）/ 近况。
  * 全部数据来自结算回写，零 AI；无数据时返回空串（调用方跳过注入）。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param charNames - 角色名称列表
+ * @param options - 配置项
+ * @returns 文本结果
  */
 export async function buildEntityRelationsBlock(
     app: App,
@@ -149,7 +168,14 @@ export async function buildEntityRelationsBlock(
     return hasAny ? `${lines.join('\n')}\n` : '';
 }
 
-/** 实体文件的图谱反链（基于 metadataCache.resolvedLinks；限定项目前缀） */
+/**
+ * 实体文件的图谱反链（基于 metadataCache.resolvedLinks；限定项目前缀）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param entityPath - 实体路径
+ * @returns 结果数组
+ */
 export function getEntityBacklinks(app: App, project: string, entityPath: string): string[] {
     const resolved = (app.metadataCache as unknown as {
         resolvedLinks?: Record<string, Record<string, number>>;

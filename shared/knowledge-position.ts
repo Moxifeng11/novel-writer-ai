@@ -4,6 +4,8 @@
  * `KnowledgeSearchResult.position` 来自分块/报告样本的数组下标（0 基），
  * 不是 0–1 的相对位置。此前 prompt 与浮窗都按比例乘 100，
  * 会显示「位置4500%」这类无意义数值，误导模型与用户。
+ * @param position - 位置
+ * @returns 文本结果
  */
 export function formatKnowledgeChunkLabel(position?: number): string {
     if (position === undefined || !Number.isFinite(position) || position < 0) return '';

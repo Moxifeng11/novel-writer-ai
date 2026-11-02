@@ -15,7 +15,12 @@ const log = createLogger('StepSettlement');
 
 export interface StepSettlementHost {
     settlementEngine: SettlementEngine;
-    /** 读取文本文件；文件不存在时返回 null，读取异常向上抛 */
+    /**
+     * 读取文本文件；文件不存在时返回 null，读取异常向上抛
+     *
+     * @param path - 路径
+      * @returns 文本结果 或 null
+     */
     readTextFile(path: string): Promise<string | null>;
     writeTextFile(path: string, content: string): Promise<void>;
     hideProgress(): void;
@@ -30,6 +35,17 @@ export interface StepSettlementHost {
 /**
  * 执行章节结算。
  * 返回前一定会调用一次 renderInContainer（前置守卫命中时直接返回，不渲染）。
+ * @param host - 宿主元素
+ * @param project - 项目（路径或对象）
+ * @param chapDir - 章节目录
+ * @param chapterName - 章节名
+ * @param stepResults - 步骤结果列表
+ * @param stepCompleted - 步骤完成状态
+ * @param vars - 变量表
+ * @param renderInContainer - 渲染容器
+ * @param tabContent - 页签内容
+ * @param options - 配置项
+  * @returns SettlementResult 或 null
  */
 export async function executeSettlement(
     host: StepSettlementHost,

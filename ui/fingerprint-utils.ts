@@ -32,6 +32,8 @@ export interface FingerprintListOptions {
  *
  * 因此 template 指纹的「启用/禁用」「强度调节」没有任何消费方，三个入口
  * （指纹库视图、设置页、mini 设置）都必须隐藏这两个控件，否则用户会以为设置生效。
+ * @param scope - 作用域
+ * @returns 是否成功
  */
 export function isSourceOnlyFingerprintScope(scope: StyleFingerprint['scope']): boolean {
     return scope === 'template';
@@ -164,6 +166,9 @@ export const DIMENSION_STATUS_SCORES: Record<DimensionStatus, number> = {
  * 根据维度数据状态计算雷达图分值
  * - 优先使用真实统计指标（如归一化的比例值 × 100）
  * - 缺乏指标时回退到状态分值
+ * @param status - 状态
+ * @param normalizedMetric - 规范化指标
+ * @returns 数值结果
  */
 export function getDimensionScore(
     status: DimensionStatus,

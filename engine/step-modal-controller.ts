@@ -88,6 +88,14 @@ export class StepModalController {
 
     /**
      * 执行 AI 消痕改写（两阶段弹窗）
+     * @param stepResults - 步骤结果列表
+     * @param renderInContainer - 渲染容器
+     * @param tabContent - 页签内容
+     * @param setIsLoading - 加载状态设置函数
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param stepCompleted - 步骤完成状态
      */
     async executeDeaiRewrite(
         stepResults: Record<string, string>,
@@ -313,6 +321,8 @@ export class StepModalController {
 
     /**
      * 创建浮层覆盖（不替换工作台内容）
+     * @param tabContent - 页签内容
+      * @returns HTMLElement } 实例
      */
     createStepOverlay(tabContent: HTMLElement): { overlay: HTMLElement; panel: HTMLElement } {
         const workspace = tabContent.closest('.novel-writer-fw-content') as HTMLElement || tabContent;
@@ -344,6 +354,17 @@ export class StepModalController {
 
     /**
      * 自动迭代精修 — 两阶段非黑盒弹窗
+     * @param stepResults - 步骤结果列表
+     * @param vars - 变量表
+     * @param chapterNum - 章号
+     * @param buildTemplateVars - 模板变量构建函数
+     * @param renderInContainer - 渲染容器
+     * @param tabContent - 页签内容
+     * @param setIsLoading - 加载状态设置函数
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param stepCompleted - 步骤完成状态
      */
     async executeIterativeRefine(
         stepResults: Record<string, string>,

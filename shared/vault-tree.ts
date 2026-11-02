@@ -34,7 +34,12 @@ export interface ListFolderOptions {
     maxFiles?: number;
 }
 
-/** 归一化目录路径：去首尾斜杠、合并重复斜杠 */
+/**
+ * 归一化目录路径：去首尾斜杠、合并重复斜杠
+ *
+ * @param folderPath - 文件夹路径
+ * @returns 文本结果
+ */
 export function normalizeFolderPath(folderPath: string): string {
     return String(folderPath ?? '').replace(/\\/g, '/').replace(/\/{2,}/g, '/').replace(/^\/+|\/+$/g, '');
 }
@@ -97,7 +102,13 @@ export function listFolderFiles<T = VaultTreeNode>(
     return files;
 }
 
-/** 目录是否真实存在（用于区分「目录还没建」与「目录为空」） */
+/**
+ * 目录是否真实存在（用于区分「目录还没建」与「目录为空」）
+ *
+ * @param vault - 仓库（Vault）
+ * @param folderPath - 文件夹路径
+ * @returns 是否成功
+ */
 export function folderExists(vault: VaultTreePort, folderPath: string): boolean {
     const normalized = normalizeFolderPath(folderPath);
     if (!normalized) return false;

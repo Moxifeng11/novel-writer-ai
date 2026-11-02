@@ -51,6 +51,8 @@ function escapeRegex(text: string): string {
  * 判断一个 YAML/正文值是否是「实质内容」。
  * 严格模式：空字符串、引号空串、纯占位词、纯符号都视为未填写。
  * 这是完整性校验的核心——此前 `姓名: ""` 会被当成已填写。
+ * @param raw - 原始
+ * @returns 是否成功
  */
 export function isMeaningfulValue(raw: string | undefined | null): boolean {
     if (raw == null) return false;
@@ -68,7 +70,13 @@ export function isMeaningfulValue(raw: string | undefined | null): boolean {
     return true;
 }
 
-/** 读取某个顶层 YAML 字段的原始值（支持块标量） */
+/**
+ * 读取某个顶层 YAML 字段的原始值（支持块标量）
+ *
+ * @param yamlContent - YAML内容
+ * @param field - 字段
+  * @returns 文本结果 或 undefined
+ */
 function readYamlFieldValue(yamlContent: string, field: string): string | undefined {
     const re = new RegExp(`^${escapeRegex(field)}\\s*:\\s*(.*)$`, 'm');
     const match = re.exec(yamlContent);
@@ -97,12 +105,25 @@ function yamlFieldHasValue(yamlContent: string, field: string): boolean {
     return isMeaningfulValue(readYamlFieldValue(yamlContent, field));
 }
 
-/** 字段键是否存在（允许空值，用于 entity_status 等系统字段） */
+/**
+ * 字段键是否存在（允许空值，用于 entity_status 等系统字段）
+ *
+ * @param yamlContent - YAML内容
+ * @param field - 字段
+ * @returns 是否成功
+ */
 function yamlFieldExists(yamlContent: string, field: string): boolean {
     return readYamlFieldValue(yamlContent, field) !== undefined;
 }
 
-/** 读取嵌套组（如 character_core:）下的子字段值 */
+/**
+ * 读取嵌套组（如 character_core:）下的子字段值
+ *
+ * @param yamlContent - YAML内容
+ * @param parent - 父级
+ * @param child - 子节点
+ * @returns 是否成功
+ */
 function yamlNestedFieldHasValue(yamlContent: string, parent: string, child: string): boolean {
     const parentRe = new RegExp(`^${escapeRegex(parent)}\\s*:\\s*$`, 'm');
     const parentMatch = parentRe.exec(yamlContent);
@@ -126,7 +147,12 @@ function yamlNestedGroupExists(yamlContent: string, parent: string): boolean {
 // === 正文分节校验辅助 ===
 // 修正版：大小写不敏感 + 空格宽松 + 内容非空
 
-/** 判断一段正文是否包含实质内容（排除「- 外貌：」这类空标签行） */
+/**
+ * 判断一段正文是否包含实质内容（排除「- 外貌：」这类空标签行）
+ *
+ * @param text - 文本内容
+ * @returns 是否成功
+ */
 function textHasContent(text: string): boolean {
     return text.split('\n').some(raw => {
         let line = raw.trim();
@@ -140,7 +166,13 @@ function textHasContent(text: string): boolean {
     });
 }
 
-/** 宽松查找分节正文：允许标题带序号前缀（如「## 一、叙事视角」） */
+/**
+ * 宽松查找分节正文：允许标题带序号前缀（如「## 一、叙事视角」）
+ *
+ * @param content - 内容
+ * @param section - 分区
+  * @returns 文本结果 或 null
+ */
 function findSectionBody(content: string, section: string): string | null {
     const re = new RegExp(
         // 注意：末尾必须用 (?![\\s\\S]) 表示「字符串结束」；若用 $（配合 m 标志）
@@ -152,7 +184,13 @@ function findSectionBody(content: string, section: string): string | null {
     return match ? match[1] : null;
 }
 
-/** 分节不仅要有标题，标题下还必须有实质内容 */
+/**
+ * 分节不仅要有标题，标题下还必须有实质内容
+ *
+ * @param content - 内容
+ * @param section - 分区
+ * @returns 是否成功
+ */
 function bodySectionHasContent(content: string, section: string): boolean {
     const body = findSectionBody(content, section);
     return body !== null && textHasContent(body);
@@ -501,6 +539,9 @@ export function validateBulletFormat(content: string): ValidationResult {
  * 原始单元格 → 列名对象。
  * 单元格与列一一对应，空单元格保留为空串：旧实现先过滤空单元格再映射，
  * 中间某列为空时后续列整体左移，面板会把「章节参考」显示在「涉及人物」下。
+ * @param rows - 行列表
+ * @param columns - 列列表
+ * @returns 结果数组
  */
 function toTimelineRows(rows: string[][], columns: readonly string[]): TimelineRow[] {
     return rows.map((cells) => {
@@ -644,7 +685,12 @@ export function loadFanficRules(content: string): FanficRules {
     };
 }
 
-/** 同人规则按分号/换行拆条（面板按条展示），占位与空条目直接丢弃 */
+/**
+ * 同人规则按分号/换行拆条（面板按条展示），占位与空条目直接丢弃
+ *
+ * @param raw - 原始
+ * @returns 结果数组
+ */
 function splitFanficRules(raw: string | undefined): string[] {
     if (!raw) return [];
     return raw.split(/[；;\n]/).map(s => s.trim()).filter(isFanficValueFilled);
@@ -652,6 +698,8 @@ function splitFanficRules(raw: string | undefined): string[] {
 
 /**
  * 校验单个人物卡的 YAML frontmatter 字段是否完整 + 正文分节是否齐全
+ * @param content - 内容
+  * @returns ValidationResult 实例
  */
 export function validateCharacterOutput(content: string): ValidationResult {
     const missingFields: string[] = [];
@@ -711,6 +759,8 @@ export function validateCharacterOutput(content: string): ValidationResult {
 
 /**
  * 校验势力卡格式
+ * @param content - 内容
+  * @returns ValidationResult 实例
  */
 export function validateFactionOutput(content: string): ValidationResult {
     const missingFields: string[] = [];
@@ -751,6 +801,8 @@ export function validateFactionOutput(content: string): ValidationResult {
 
 /**
  * 校验地点卡格式
+ * @param content - 内容
+  * @returns ValidationResult 实例
  */
 export function validateLocationOutput(content: string): ValidationResult {
     const missingFields: string[] = [];
@@ -787,6 +839,8 @@ export function validateLocationOutput(content: string): ValidationResult {
 
 /**
  * 校验物品功法卡格式
+ * @param content - 内容
+  * @returns ValidationResult 实例
  */
 export function validateItemOutput(content: string): ValidationResult {
     const missingFields: string[] = [];
@@ -823,6 +877,8 @@ export function validateItemOutput(content: string): ValidationResult {
 
 /**
  * 批量解析人物卡输出，返回结构化数据 + 完整性校验结果
+ * @param content - 内容
+ * @returns 结果数组
  */
 export function parseCharacterBlocks(content: string): ParsedCharacterBlock[] {
     const blocks = content.split(/^(?=---\s*$)/m).filter(b => b.trim());

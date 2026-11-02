@@ -122,7 +122,11 @@ export class PromptBuilder {
         private vectorStore?: VectorStore | null
     ) {}
 
-    /** 当前项目的正文格式契约（由写作规则推导；无规则时用默认契约） */
+    /**
+     * 当前项目的正文格式契约（由写作规则推导；无规则时用默认契约）
+     *
+      * @returns BodyFormatContract 实例
+     */
     getBodyFormat(): BodyFormatContract {
         const rules = this.getSnapshot()?.writingRules || '';
         return rules.trim() ? deriveBodyFormat(rules) : { ...DEFAULT_BODY_FORMAT };
@@ -244,7 +248,12 @@ export class PromptBuilder {
         return parts;
     }
 
-    /** E1/E3: 风格自学习 + 偏好记忆注入 */
+    /**
+     * E1/E3: 风格自学习 + 偏好记忆注入
+     *
+     * @param fingerprintParts - 指纹片段
+     * @returns 结果数组
+     */
     getMemoryPromptParts(fingerprintParts?: string[]): string[] {
         const styleGuide = this.styleLearner?.getStyleGuide()?.trim() || '';
         const preferencePrompt = this.preferenceMemory?.generatePreferencePrompt()?.trim() || '';
@@ -267,6 +276,7 @@ export class PromptBuilder {
      * 获取写作风格指纹 prompt 片段（异步，涉及向量检索）
      * @param queryText 当前已写文本（用于上下文分析和向量检索）
      * @param direction 可选的写作方向提示（优先于自动识别）
+     * @returns 结果数组
      */
     async getFingerprintPromptParts(queryText: string, direction?: SuggestionDirection): Promise<string[]> {
         if (!this.fingerprintLibrary || !this.vectorStore) return [];
@@ -379,12 +389,21 @@ export class PromptBuilder {
         });
     }
 
-    /** 设置参考书籍 ID */
+    /**
+     * 设置参考书籍 ID
+     *
+     * @param bookIds - 书籍 ID 列表
+     */
     setReferenceBooks(bookIds: string[]): void {
         this.referenceBookIds = bookIds || [];
     }
 
-    /** 设置知识库管理器和向量存储 */
+    /**
+     * 设置知识库管理器和向量存储
+     *
+     * @param knowledgeManager - 知识管理器
+     * @param knowledgeVectorStore - 知识向量存储
+     */
     setKnowledgeBase(
         knowledgeManager?: KnowledgeBaseManager | null,
         knowledgeVectorStore?: KnowledgeVectorStore | null
@@ -423,7 +442,13 @@ export class PromptBuilder {
         return sentences.slice(-2).join('。');
     }
 
-    /** 获取知识库 prompt 片段（异步，涉及向量检索） */
+    /**
+     * 获取知识库 prompt 片段（异步，涉及向量检索）
+     *
+     * @param queryText - 查询文本
+     * @param direction - 方向
+     * @returns 结果数组
+     */
     async getKnowledgePromptParts(
         queryText: string,
         direction?: SuggestionDirection
@@ -623,14 +648,23 @@ export class PromptBuilder {
         return parts;
     }
 
-    /** A2: 情绪曲线镀点——将本章情绪规划注入生成 prompt */
+    /**
+     * A2: 情绪曲线镀点——将本章情绪规划注入生成 prompt
+     *
+     * @returns 结果数组
+     */
     getEmotionAnchorPromptParts(): string[] {
         const plan = (this.getSnapshot()?.emotionPlan || '').trim();
         if (!plan) return [];
         return ['【A2 本章情绪曲线镀点】', plan.slice(0, 500), '请让续写的情绪走向与上述规划一致，不要提前泄气或跳过关键情绪转折。', ''];
     }
 
-    /** A3: 伏笔智能触发——根据已写前文提示可回收/推进的未揭示伏笔 */
+    /**
+     * A3: 伏笔智能触发——根据已写前文提示可回收/推进的未揭示伏笔
+     *
+     * @param precedingText - 前文文本
+     * @returns 结果数组
+     */
     getForeshadowTriggerPromptParts(precedingText: string): string[] {
         const fs: any = this.getSnapshot()?.foreshadows;
         const unrevealed: any[] = Array.isArray(fs?.unrevealed) ? fs.unrevealed : [];
@@ -648,7 +682,11 @@ export class PromptBuilder {
         return ['【A3 未揭示伏笔（可埋设/铺垫，勿提前揭示）】', ...lines, ''];
     }
 
-    /** 未回收伏笔提醒——筛选计划回收章节 ≤ 当前章节的未揭示伏笔，提示 AI 推进回收 */
+    /**
+     * 未回收伏笔提醒——筛选计划回收章节 ≤ 当前章节的未揭示伏笔，提示 AI 推进回收
+     *
+     * @returns 结果数组
+     */
     getUnrevealedForeshadowReminderPromptParts(): string[] {
         const snap = this.getSnapshot();
         if (!snap) return [];
@@ -669,7 +707,12 @@ export class PromptBuilder {
         return ['【未回收伏笔提醒】', '以下伏笔计划在本章或之前回收，请在续写中推进：', ...lines, ''];
     }
 
-    /** A4: 关系状态驱动——注入与当前场景相关的角色关系数值 */
+    /**
+     * A4: 关系状态驱动——注入与当前场景相关的角色关系数值
+     *
+     * @param precedingText - 前文文本
+     * @returns 结果数组
+     */
     getRelationshipDriverPromptParts(precedingText: string): string[] {
         const rels = this.getSnapshot()?.relationshipStates || [];
         if (!rels.length) return [];
@@ -691,21 +734,33 @@ export class PromptBuilder {
         return ['【A4 角色关系状态（请让对话/互动符合这些关系数值）】', ...lines, ''];
     }
 
-    /** v4.20: 实体状态速览——境界/位置/所有权/近况（结算回写，零 AI） */
+    /**
+     * v4.20: 实体状态速览——境界/位置/所有权/近况（结算回写，零 AI）
+     *
+     * @returns 结果数组
+     */
     getEntityRelationsPromptParts(): string[] {
         const ctx = (this.getSnapshot()?.entityRelationsContext || '').trim();
         if (!ctx) return [];
         return [ctx, ''];
     }
 
-    /** D2: 跨卷一致性——注入前面卷的状态快照 */
+    /**
+     * D2: 跨卷一致性——注入前面卷的状态快照
+     *
+     * @returns 结果数组
+     */
     getCrossVolumePromptParts(): string[] {
         const ctx = (this.getSnapshot()?.crossVolumeContext || '').trim();
         if (!ctx) return [];
         return ['【D2 跨卷状态快照（请保持与前面卷的人物/势力/伏笔/时间线一致）】', ctx.slice(0, 1200), ''];
     }
 
-    /** 长篇记忆：事实索引中已确认的人物/世界观/剧情事实（跨章累积） */
+    /**
+     * 长篇记忆：事实索引中已确认的人物/世界观/剧情事实（跨章累积）
+     *
+     * @returns 结果数组
+     */
     getLongTermMemoryPromptParts(): string[] {
         const ctx = (this.getSnapshot()?.longTermMemoryContext || '').trim();
         if (!ctx) return [];
@@ -715,6 +770,7 @@ export class PromptBuilder {
     /**
      * 同人约束：原作的硬性设定与红线（仅同人项目存在）。
      * 文本由 formatFanficRulesForPrompt 统一格式化，自带标题，此处不再包装。
+     * @returns 结果数组
      */
     getFanficRulesPromptParts(): string[] {
         const ctx = (this.getSnapshot()?.fanficRulesContext || '').trim();
@@ -725,6 +781,7 @@ export class PromptBuilder {
     /**
      * 创作模式硬约束：短篇/剧本的平台规格、节奏与输出格式。
      * 块文本自带标题；长篇为空，原有协同 prompt 不受影响。
+     * @returns 结果数组
      */
     getCreationModePromptParts(): string[] {
         const ctx = (this.getSnapshot()?.creationModeContext || '').trim();
@@ -735,6 +792,7 @@ export class PromptBuilder {
     /**
      * v4.20 协同写作侧注入账本：把快照里已生效的记忆/风格/流程段聚合成可渲染账本。
      * 指纹分层用最近一次拼装统计（lastFingerprintStats）；未调用过时标注「未调用」。
+      * @returns InjectionLedger 实例
      */
     buildCoWriterInjectionLedger(): InjectionLedger {
         const snap = this.getSnapshot();
@@ -780,7 +838,12 @@ export class PromptBuilder {
         };
     }
 
-    /** 统一聚合 A2/A3/A4/D2 注入点 */
+    /**
+     * 统一聚合 A2/A3/A4/D2 注入点
+     *
+     * @param precedingText - 前文文本
+     * @returns 结果数组
+     */
     getNarrativeDriverPromptParts(precedingText: string): string[] {
         return [
             ...this.getEmotionAnchorPromptParts(),
@@ -794,6 +857,7 @@ export class PromptBuilder {
     /**
      * 故事上下文总线提供的完整/压缩信息包。
      * 有信息包时，实体/设定/时间线/伏笔/情绪走这一条，旧的分段注入只保留关系与跨卷。
+     * @returns 结果数组
      */
     getStoryContextPackParts(compact = false): string[] {
         const snap = this.getSnapshot();
@@ -802,7 +866,12 @@ export class PromptBuilder {
         return pack && pack.includes('■') ? [pack, ''] : [];
     }
 
-    /** 有信息包时仍需保留的驱动：关系状态 + 跨卷快照（信息包不含这两类动态状态） */
+    /**
+     * 有信息包时仍需保留的驱动：关系状态 + 跨卷快照（信息包不含这两类动态状态）
+     *
+     * @param precedingText - 前文文本
+     * @returns 结果数组
+     */
     getRelationshipOnlyDriverParts(precedingText: string): string[] {
         return [
             ...this.getRelationshipDriverPromptParts(precedingText),
@@ -810,7 +879,21 @@ export class PromptBuilder {
         ];
     }
 
-    /** 构建续写建议 prompt（system 仅含静态指令，用户内容全部在 user prompt） */
+    /**
+     * 构建续写建议 prompt（system 仅含静态指令，用户内容全部在 user prompt）
+     *
+     * @param precedingText - 前文文本
+     * @param direction - 方向
+     * @param cursorHint - 光标提示
+     * @param soulInjection - 灵魂注入
+     * @param plotTarget - 情节目标
+     * @param fingerprintParts - 指纹片段
+     * @param knowledgeParts - 知识片段
+     * @param knowledgeInjection - 知识注入
+     * @param briefParts - 简报片段
+     * @param budget - 预算
+      * @returns string } 结果
+     */
     buildSuggestionPrompt(
         precedingText: string,
         direction: SuggestionDirection,
@@ -1008,7 +1091,19 @@ export class PromptBuilder {
         return [result.system, result.user].filter(Boolean).join('\n');
     }
 
-    /** 构建选区改写 prompt */
+    /**
+     * 构建选区改写 prompt
+     *
+     * @param selectedText - 选中文本
+     * @param beforeContext - 前文上下文
+     * @param afterContext - 后文上下文
+     * @param cursorHint - 光标提示
+     * @param direction - 方向
+     * @param fingerprintParts - 指纹片段
+     * @param knowledgeParts - 知识片段
+     * @param budget - 预算
+     * @returns 文本结果
+     */
     buildRewritePrompt(
         selectedText: string,
         beforeContext: string,
@@ -1112,7 +1207,14 @@ export class PromptBuilder {
         return [systemPrompt, ...sections.map(s => s.text), ...tailParts].filter(Boolean).join('\n');
     }
 
-    /** 构建编辑验证 prompt */
+    /**
+     * 构建编辑验证 prompt
+     *
+     * @param modifiedText - 修改后文本
+     * @param originalText - 原始文本
+     * @param context - 上下文
+     * @returns 文本结果
+     */
     buildValidationPrompt(
         modifiedText: string,
         originalText: string,
@@ -1146,7 +1248,17 @@ export class PromptBuilder {
         ].join('\n');
     }
 
-    /** 构建联想输入 prompt */
+    /**
+     * 构建联想输入 prompt
+     *
+     * @param context - 上下文
+     * @param hint - 提示
+     * @param fingerprintParts - 指纹片段
+     * @param knowledgeParts - 知识片段
+     * @param briefParts - 简报片段
+     * @param budget - 预算
+     * @returns 文本结果
+     */
     buildAssociationPrompt(
         context: string,
         hint: AssociationHint,
@@ -1240,7 +1352,18 @@ export class PromptBuilder {
         return [systemPrompt, ...sections.map(s => s.text), ...tailParts].filter(Boolean).join('\n');
     }
 
-    /** 构建句级建议迭代 prompt（在已有候选上做定向修改） */
+    /**
+     * 构建句级建议迭代 prompt（在已有候选上做定向修改）
+     *
+     * @param originalText - 原始文本
+     * @param precedingContext - 前文上下文
+     * @param instruction - 指令
+     * @param cursorHint - 光标提示
+     * @param fingerprintParts - 指纹片段
+     * @param knowledgeParts - 知识片段
+     * @param budget - 预算
+     * @returns 文本结果
+     */
     buildIteratePrompt(
         originalText: string,
         precedingContext: string,
@@ -1316,7 +1439,13 @@ export class PromptBuilder {
         return [systemPrompt, ...sections.map(s => s.text), ...tailParts].filter(Boolean).join('\n');
     }
 
-    /** 构建 OOC 检测 prompt */
+    /**
+     * 构建 OOC 检测 prompt
+     *
+     * @param text - 文本内容
+     * @param soul - 灵魂
+     * @returns 文本结果
+     */
     buildOOCPrompt(
         text: string,
         soul: CharacterSoul

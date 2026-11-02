@@ -19,7 +19,11 @@ export interface DshJsonRpcNotification {
  * JSON-RPC 客户端选项。
  */
 export interface DshJsonRpcClientOptions {
-    /** 写一行到子进程 stdin（调用方负责换行） */
+    /**
+     * 写一行到子进程 stdin（调用方负责换行）
+     *
+     * @param line - 行
+     */
     write(line: string): void;
     onNotification?: (notification: DshJsonRpcNotification) => void;
     onProtocolError?: (message: string, line?: string) => void;
@@ -51,7 +55,11 @@ export class DshJsonRpcClient {
 
     constructor(private readonly options: DshJsonRpcClientOptions) {}
 
-    /** 处理一行 stdout；坏行被忽略并回报（stdout 可能混入日志） */
+    /**
+     * 处理一行 stdout；坏行被忽略并回报（stdout 可能混入日志）
+     *
+     * @param raw - 原始
+     */
     handleLine(raw: string): void {
         const line = String(raw ?? '').trim();
         if (!line) return;

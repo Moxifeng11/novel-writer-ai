@@ -48,6 +48,11 @@ function scaleFor(maxInputTokens: number): number {
  * 按 factor 缩放，并夹在 [floor, max] 之间。
  * floor 必须是旧常量：小窗口（本地 32K）时不能比改造前切得更少，
  * 否则「按预算推导」反而成了缩水（G2-4：32K 下 prevChapterEnding 曾从 500 掉到 360）。
+ * @param value - 值
+ * @param factor - 因子
+ * @param max - 最大
+ * @param floor - 下限
+ * @returns 数值结果
  */
 function scale(value: number, factor: number, max: number, floor: number): number {
     return Math.round(Math.min(max, Math.max(floor, value * factor)));
@@ -56,6 +61,8 @@ function scale(value: number, factor: number, max: number, floor: number): numbe
 /**
  * 推导当前输入预算下的配额。
  * 下限就是旧常量（不会比过去更差），放大倍数随窗口增长。
+ * @param maxInputTokens - 最大输入 token 数
+  * @returns ContextQuotas 实例
  */
 export function resolveContextQuotas(maxInputTokens?: number): ContextQuotas {
     const factor = scaleFor(maxInputTokens ?? DEFAULT_INPUT_TOKENS);
@@ -81,6 +88,7 @@ let activeQuotasCache: ContextQuotas | null = null;
  * 当前生效的配额。
  * 调用点大多是同步的常量位置（切片上限），不想每处都传预算：
  * 由 `setActiveInputBudget()` 在一键/协同入口设置一次即可。
+  * @returns ContextQuotas 实例
  */
 export function activeContextQuotas(): ContextQuotas {
     if (!activeQuotasCache) activeQuotasCache = resolveContextQuotas();
@@ -108,7 +116,11 @@ export async function withActiveInputBudget<T>(
     }
 }
 
-/** 设置当前生效的输入预算（进入一次生成前调用；传 0/undefined 恢复默认） */
+/**
+ * 设置当前生效的输入预算（进入一次生成前调用；传 0/undefined 恢复默认）
+ *
+ * @param maxInputTokens - 最大输入 token 数
+ */
 export function setActiveInputBudget(maxInputTokens?: number): void {
     activeTokens = Number.isFinite(maxInputTokens) && (maxInputTokens || 0) > 0
         ? Math.floor(maxInputTokens as number)
@@ -116,7 +128,11 @@ export function setActiveInputBudget(maxInputTokens?: number): void {
     activeQuotasCache = resolveContextQuotas(activeTokens || undefined);
 }
 
-/** 当前设置的预算（0 = 默认）；测试与账本展示用 */
+/**
+ * 当前设置的预算（0 = 默认）；测试与账本展示用
+ *
+ * @returns 数值结果
+ */
 export function getActiveInputBudget(): number {
     return activeTokens;
 }

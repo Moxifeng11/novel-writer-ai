@@ -58,6 +58,8 @@ export class CharacterRepository extends BaseMarkdownRepository<Character, strin
 
     /**
      * 按所属势力查找人物
+     * @param factionName - 势力名称
+     * @returns 结果数组
      */
     async findByFaction(factionName: string): Promise<Character[]> {
         const all = await this.findAll();
@@ -67,6 +69,7 @@ export class CharacterRepository extends BaseMarkdownRepository<Character, strin
     /**
      * 按状态查找人物
      * @param status 实体状态：active | inactive | dead | hidden
+     * @returns 结果数组
      */
     async findByStatus(status: 'active' | 'inactive' | 'dead' | 'hidden'): Promise<Character[]> {
         const all = await this.findAll();
@@ -75,6 +78,8 @@ export class CharacterRepository extends BaseMarkdownRepository<Character, strin
 
     /**
      * 按身份查找人物（主角/配角/反派/路人等）
+     * @param identity - 身份信息
+     * @returns 结果数组
      */
     async findByIdentity(identity: string): Promise<Character[]> {
         const all = await this.findAll();
@@ -83,6 +88,8 @@ export class CharacterRepository extends BaseMarkdownRepository<Character, strin
 
     /**
      * 按姓名模糊查找
+     * @param name - 名称
+     * @returns 结果数组
      */
     async findByName(name: string): Promise<Character[]> {
         const all = await this.findAll();
@@ -91,6 +98,8 @@ export class CharacterRepository extends BaseMarkdownRepository<Character, strin
 
     /**
      * 按当前位置查找人物
+     * @param location - 地点
+     * @returns 结果数组
      */
     async findByCurrentLocation(location: string): Promise<Character[]> {
         const all = await this.findAll();
@@ -99,6 +108,7 @@ export class CharacterRepository extends BaseMarkdownRepository<Character, strin
 
     /**
      * 获取项目名称（供关联查询使用）
+     * @returns 文本结果
      */
     getProjectName(): string {
         return this.project;

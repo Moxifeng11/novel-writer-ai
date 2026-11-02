@@ -53,6 +53,8 @@ const FORBIDS_BLANK_LINE = /(禁止|不要|不得)[^\n。]{0,10}(空行|两个�
 /**
  * 从项目「写作规则.md」文本推导正文格式契约。
  * 优先级：明确肯定式（空两格 / 空行）> 禁止式 > 默认值。
+ * @param writingRules - 写作规则
+  * @returns BodyFormatContract 实例
  */
 export function deriveBodyFormat(writingRules: string): BodyFormatContract {
     const rules = (writingRules || '').trim();
@@ -101,6 +103,10 @@ const PLAIN_CHAPTER_TITLE = /^第[0-9一二三四五六七八九十百千]+章(\
  * 3. 剥离模型自带标题与首行元叙述
  * 4. 按契约决定段落分隔（单换行模式压掉空行，空行模式保留段落）
  * 5. 按契约统一段首缩进（先清掉模型自带的空格/Tab/全角空格）
+ * @param raw - 原始
+ * @param contract - 正文契约
+ * @param opts - 选项
+ * @returns 文本结果
  */
 export function normalizeBodyText(
     raw: string,
@@ -182,6 +188,7 @@ export function normalizeBodyText(
  * 禁止再手写「空两格/Tab/空行」等互相矛盾的条目。
  *
  * @param contract 格式契约；`allowTitle` 决定是否要求输出 `# 第X章 标题` 行
+ * @returns 文本结果
  */
 export function describeBodyFormat(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): string {
     const parts: string[] = ['【输出格式（硬性约束）】'];

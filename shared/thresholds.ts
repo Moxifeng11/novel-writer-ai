@@ -842,6 +842,8 @@ export const MODEL_TIMEOUT_MAP: Record<string, number> = {
  * 根据模型 ID 返回对应的超时毫秒数。
  * 使用子串匹配：modelId 中包含 map key 即视为匹配。
  * 无匹配时返回 MODEL_TIMEOUT_DEFAULT_MS (120s)。
+ * @param modelId - 模型ID
+ * @returns 数值结果
  */
 export function getTimeoutForModel(modelId: string): number {
     const lower = modelId.toLowerCase();
@@ -872,6 +874,7 @@ const businessThresholdOverrides = new Map<BusinessThresholdKey, number>();
 /**
  * 应用业务阈值覆盖。非法值（非有限数、≤0、>1）会被忽略并回落到内置默认值，
  * 因此调用方即使传入空设置也不改变现有行为。
+ * @param next - 下一个
  */
 export function setBusinessThresholdOverrides(
     next: Partial<Record<BusinessThresholdKey, number | undefined>>
@@ -886,7 +889,12 @@ export function setBusinessThresholdOverrides(
     }
 }
 
-/** 读取当前生效的业务阈值（未覆盖时返回内置默认值） */
+/**
+ * 读取当前生效的业务阈值（未覆盖时返回内置默认值）
+ *
+ * @param key - 键
+ * @returns 数值结果
+ */
 export function getBusinessThreshold(key: BusinessThresholdKey): number {
     return businessThresholdOverrides.get(key) ?? BUSINESS_THRESHOLD_DEFAULTS[key];
 }

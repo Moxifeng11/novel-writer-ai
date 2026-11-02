@@ -38,6 +38,8 @@ export interface EmotionAuditResult {
 
 /**
  * 检测段落是否包含心理活动（关键词匹配）
+ * @param paragraph - 段落
+ * @returns 是否成功
  */
 function hasPsychActivity(paragraph: string): boolean {
     const psychPatterns = [
@@ -61,6 +63,8 @@ function hasPsychActivity(paragraph: string): boolean {
 
 /**
  * 检测段落是否包含身体反应（V2 新增）
+ * @param paragraph - 段落
+ * @returns 是否成功
  */
 function hasBodyReaction(paragraph: string): boolean {
     const bodyPatterns = [
@@ -89,6 +93,8 @@ function hasBodyReaction(paragraph: string): boolean {
 
 /**
  * 检测段落是否包含情绪词汇
+ * @param paragraph - 段落
+ * @returns 是否成功
  */
 function hasEmotionWord(paragraph: string): boolean {
     const emotionPatterns = [
@@ -117,6 +123,8 @@ function hasEmotionWord(paragraph: string): boolean {
 
 /**
  * 检测段落结尾是否有情绪钩子
+ * @param closingParagraphs - 结尾段落
+ * @returns 是否成功
  */
 function hasEmotionHook(closingParagraphs: string[]): boolean {
     const hookPatterns = [
@@ -138,6 +146,8 @@ function hasEmotionHook(closingParagraphs: string[]): boolean {
 
 /**
  * 对正文进行情绪审计
+ * @param bodyText - 正文文本
+  * @returns EmotionAuditResult 实例
  */
 export function auditEmotions(bodyText: string): EmotionAuditResult {
     // 清理 frontmatter
@@ -251,6 +261,8 @@ function auditEmotionHook(paragraphs: string[]): EmotionAuditResult['emotionHook
 
 /**
  * 格式化为审计报告文本（用于注入自检结果）
+ * @param audit - 审计信息
+ * @returns 文本结果
  */
 export function formatEmotionAuditReport(audit: EmotionAuditResult): string {
     const lines: string[] = [

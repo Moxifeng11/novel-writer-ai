@@ -14,7 +14,12 @@
 const V2_PREFIX = 'aes256v2:';
 const V1_PREFIX = 'aes256:';
 
-/** 该值是否是磁盘上的密文（v1 或 v2） */
+/**
+ * 该值是否是磁盘上的密文（v1 或 v2）
+ *
+ * @param value - 值
+ * @returns 是否成功
+ */
 export function isStoredCiphertext(value: unknown): boolean {
     return typeof value === 'string'
         && (value.startsWith(V2_PREFIX) || value.startsWith(V1_PREFIX));
@@ -27,6 +32,7 @@ export const SECRET_LOCKED_PLACEHOLDER = '已加密 · 输入口令解锁后可�
  * 决定密钥输入框该如何显示：
  * - 密文 → 输入框留空（不泄露密文），给出提示与说明
  * - 明文 → 直接显示
+ * @param value - 值
  */
 export function describeSecretForInput(value: unknown): {
     /** 输入框应显示的值 */
@@ -56,6 +62,9 @@ export function describeSecretForInput(value: unknown): {
  *
  * 加密锁定态下输入框是空的；用户只是切页签/保存时，不能把空值当成
  * 「清空密钥」写回去。规则与主 API Key 一致：只有输入了非空内容才算修改。
+ * @param pending - 待处理项
+ * @param current - 当前
+ * @returns 文本结果
  */
 export function resolveSecretInput(pending: string | undefined | null, current: unknown): string {
     const trimmed = String(pending ?? '').trim();

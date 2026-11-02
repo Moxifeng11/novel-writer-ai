@@ -18,6 +18,10 @@ interface UnitMarker {
 /**
  * 取出第 number 个单元的大纲段落（含标题行）。
  * 找不到编号时返回空串，调用方自行回退到整篇大纲。
+ * @param doc - 文档
+ * @param mode - 模式
+ * @param number - 数值
+ * @returns 文本结果
  */
 export function extractUnitOutlineSection(doc: string, mode: CreationMode, number: number): string {
     if (!doc || !Number.isFinite(number) || number <= 0) return '';
@@ -63,7 +67,13 @@ export function extractUnitOutlineSection(doc: string, mode: CreationMode, numbe
     return lines.slice(target.index, end).join('\n').trim();
 }
 
-/** 大纲里出现过的单元编号（升序），用于「骨架数与大纲对不上」时提示 */
+/**
+ * 大纲里出现过的单元编号（升序），用于「骨架数与大纲对不上」时提示
+ *
+ * @param doc - 文档
+ * @param mode - 模式
+ * @returns 结果数组
+ */
 export function listOutlineUnitNumbers(doc: string, mode: CreationMode): number[] {
     if (!doc) return [];
     const label = modeUnitLabel(mode);

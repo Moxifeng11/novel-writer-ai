@@ -41,7 +41,12 @@ export interface RevisionGateOptions {
 
 const GENERIC_NAMES = new Set(['主角', '主人公', '角色', '人物', '姓名', '名称', '旁白']);
 
-/** 从 `${allChars}` 这类「- 名字：…」块里抽人物名 */
+/**
+ * 从 `${allChars}` 这类「- 名字：…」块里抽人物名
+ *
+ * @param charBlock - 字符块
+ * @returns 结果数组
+ */
 export function extractCharacterNames(charBlock: string | undefined): string[] {
     const names: string[] = [];
     for (const line of String(charBlock || '').split('\n')) {
@@ -54,7 +59,13 @@ export function extractCharacterNames(charBlock: string | undefined): string[] {
     return names.slice(0, 24);
 }
 
-/** 只锁定「原稿里真的出现过」的名字，避免要求模型凭空补人 */
+/**
+ * 只锁定「原稿里真的出现过」的名字，避免要求模型凭空补人
+ *
+ * @param originalText - 原始文本
+ * @param candidates - 候选
+ * @returns 结果数组
+ */
 export function collectLockedNames(originalText: string, candidates: readonly string[]): string[] {
     const text = String(originalText || '');
     return candidates.filter((name) => name.length >= 2 && text.includes(name)).slice(0, 20);
@@ -62,7 +73,14 @@ export function collectLockedNames(originalText: string, candidates: readonly st
 
 const charCount = (text: string): number => String(text || '').replace(/\s+/g, '').length;
 
-/** 判定是否接受修订稿；返回中文原因（accept=false 时非空） */
+/**
+ * 判定是否接受修订稿；返回中文原因（accept=false 时非空）
+ *
+ * @param before - 变更前内容
+ * @param after - 变更后内容
+ * @param options - 配置项
+  * @returns RevisionGateResult 实例
+ */
 export function evaluateRevision(
     before: string,
     after: string,
@@ -125,6 +143,11 @@ export interface RevisionRecheck {
 /**
  * 修订复检：单次量化对照，不消耗额外模型调用。
  * AI 味上升 / 对话占比明显下滑时在 summary 里给出「建议人工复核」提示。
+ * @param before - 变更前内容
+ * @param after - 变更后内容
+ * @param issues - 问题列表
+ * @param options - 配置项
+  * @returns RevisionRecheck 实例
  */
 export function recheckRevision(
     before: string,

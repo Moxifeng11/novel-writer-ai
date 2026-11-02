@@ -43,7 +43,13 @@ export function pjConfig(project: string) { return `${project}/config`; }
 // 统一改走 adapter（直接读底层文件系统），下列助手集中封装这一行为。
 // ------------------------------------------------------------
 
-/** 读取 `.project` 原始内容；点文件需走 adapter，读不到返回 null */
+/**
+ * 读取 `.project` 原始内容；点文件需走 adapter，读不到返回 null
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns 文本结果 或 null
+ */
 export async function readProjectMeta(
     app: { vault: { adapter: { exists(p: string): Promise<boolean>; read(p: string): Promise<string> } } },
     project: string,
@@ -57,7 +63,13 @@ export async function readProjectMeta(
     }
 }
 
-/** 同步判断项目是否存在：用项目文件夹（被索引）替代不被索引的 `.project` 点文件 */
+/**
+ * 同步判断项目是否存在：用项目文件夹（被索引）替代不被索引的 `.project` 点文件
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 是否成功
+ */
 export function isProjectFolder(
     app: { vault: { getAbstractFileByPath(p: string): unknown } },
     project: string,
@@ -102,9 +114,17 @@ export const SUBDIR_WRITING_STYLE_FILE = `${SUBDIR_WORLD_ARCH}/文笔风格.md`;
  * @returns 拼接后的 vault 相对路径
  */
 export function pjWorldview(project: string) { return `${project}/${SUBDIR_WORLDVIEW_FILE}`; }
-/** v4.0: 设定库移入 01-世界架构/ */
+/**
+ * v4.0: 设定库移入 01-世界架构/
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjSettingLib(project: string) { return `${project}/${SUBDIR_SETTING_LIB_FILE}`; }
-/** v4.0: 文笔风格移入 01-世界架构/ */
+/**
+ * v4.0: 文笔风格移入 01-世界架构/
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjWritingStyle(project: string) { return `${project}/${SUBDIR_WRITING_STYLE_FILE}`; }
 /** 写作规则在 00-系统模板/，项目创建时复制 */
 /**
@@ -112,6 +132,9 @@ export function pjWritingStyle(project: string) { return `${project}/${SUBDIR_WR
  *
  * 旧实现取路径首段：`长篇小说/书名/...` → `长篇小说`，而缓存键用完整项目路径，
  * 失效永不命中（只能等 TTL）。这里优先在已知项目键里做最长前缀匹配，找不到才退回首段。
+ * @param filePath - 文件路径
+ * @param candidates - 候选
+  * @returns 文本结果 或 null
  */
 export function matchProjectFromPath(filePath: string, candidates: Iterable<string>): string | null {
     const path = String(filePath || '').split('\\').join('/');
@@ -135,9 +158,17 @@ export function matchProjectFromPath(filePath: string, candidates: Iterable<stri
  * @returns 拼接后的 vault 相对路径
  */
 export function pjWritingRules(project: string) { return `${project}/00-系统模板/写作规则.md`; }
-/** 弱/强写作对照库 */
+/**
+ * 弱/强写作对照库
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjContrastLibrary(project: string) { return `${project}/00-系统模板/写作对照库.md`; }
-/** 角色弧线表 */
+/**
+ * 角色弧线表
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjCharacterArcTable(project: string) { return `${project}/${SUBDIR_WORLD_ARCH}/角色弧线.md`; }
 
 // ============================================================
@@ -154,6 +185,8 @@ export function pjCharacterArcTable(project: string) { return `${project}/${SUBD
  * - 净化后为空时返回 '未命名'，保证调用方恒拿到可用相对段
  *
  * 例：`../../evil` → `_.._evil`；`C:\x` → `C__x`；`林晚舟` → `林晚舟`。
+ * @param name - 名称
+ * @returns 文本结果
  */
 export function sanitizeName(name: string): string {
     const cleaned = name
@@ -230,28 +263,70 @@ export function pjItemFile(project: string, name: string) { return `${project}/$
 // 4. 大纲 / 章节 (v4.0 重构)
 // ============================================================
 
-/** 大纲章节根目录 */
+/**
+ * 大纲章节根目录
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjOutlineDir(project: string) { return `${project}/03-大纲与章节`; }
 
 // ---- 4a. 正文 ----
-/** 某卷正文目录 */
+/**
+ * 某卷正文目录
+ *
+ * @param project - 项目（路径或对象）
+ * @param volN - 卷编号
+ */
 export function pjBodyDir(project: string, volN: number) { return `${project}/03-大纲与章节/正文/第${volN}卷`; }
-/** 某章正文文件 */
+/**
+ * 某章正文文件
+ *
+ * @param project - 项目（路径或对象）
+ * @param volN - 卷编号
+ * @param chapN - 章号
+ */
 export function pjBodyFile(project: string, volN: number, chapN: number) { return `${pjBodyDir(project, volN)}/第${chapN}章_正文.md`; }
 
 // ---- 4b. 步骤结果 ----
-/** 某章步骤结果目录 */
+/**
+ * 某章步骤结果目录
+ *
+ * @param project - 项目（路径或对象）
+ * @param volN - 卷编号
+ * @param chapN - 章号
+ */
 export function pjStepDir(project: string, volN: number, chapN: number) { return `${project}/03-大纲与章节/步骤结果/第${volN}卷/第${chapN}章`; }
-/** 某章的某步骤文件（匹配元文件命名：第X章_类型.md） */
+/**
+ * 某章的某步骤文件（匹配元文件命名：第X章_类型.md）
+ *
+ * @param project - 项目（路径或对象）
+ * @param volN - 卷编号
+ * @param chapN - 章号
+ * @param stepType - 步骤类型
+ */
 export function pjStepFile(project: string, volN: number, chapN: number, stepType: string) { return `${pjStepDir(project, volN, chapN)}/第${chapN}章_${stepType}.md`; }
 
 // ---- 4c. 分卷大纲 ----
-/** 分卷大纲目录 */
+/**
+ * 分卷大纲目录
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjVolumeOutlineDir(project: string) { return `${project}/03-大纲与章节/分卷大纲`; }
-/** 某卷分卷大纲文件 */
+/**
+ * 某卷分卷大纲文件
+ *
+ * @param project - 项目（路径或对象）
+ * @param volN - 卷编号
+ */
 export function pjVolumeOutlineFile(project: string, volN: number) { return `${project}/03-大纲与章节/分卷大纲/第${volN}卷_分卷大纲.md`; }
 
-/** 卷目录（正文+步骤结果的父级概念，用于扫描） */
+/**
+ * 卷目录（正文+步骤结果的父级概念，用于扫描）
+ *
+ * @param project - 项目（路径或对象）
+ * @param n - 编号
+ */
 export function pjVolumeDir(project: string, n: number) { return `${project}/03-大纲与章节/正文/第${n}卷`; }
 
 // ---- 旧路径（v4.0 废弃，0 调用者，待 Batch-E 移除） ----
@@ -273,7 +348,11 @@ export function pjTimelineDir(project: string) { return `${project}/02-时间线
  * @returns 拼接后的 vault 相对路径
  */
 export function pjForeshadowDB(project: string) { return `${project}/02-时间线与伏笔/伏笔库.md`; }
-/** 承诺/谜团账本 */
+/**
+ * 承诺/谜团账本
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjPromiseLedger(project: string) { return `${project}/02-时间线与伏笔/承诺账本.md`; }
 /**
  * pjForeshadowTracker：返回路径 ``${project}/04-项目总控/伏笔追踪.md``。
@@ -421,7 +500,11 @@ export function pjWritingRulesPromptTemplate() { return `${PJ_PROMPT_TEMPLATE_DI
 // ============================================================
 // 8. 同人设定库
 // ============================================================
-/** v4.0: 99- → 05- */
+/**
+ * v4.0: 99- → 05-
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjFanficDir(project: string) { return `${project}/05-同人设定库`; }
 /**
  * pjFanficFile：返回路径 ``${project}/05-同人设定库/${sanitizeName(name)}.md``。
@@ -431,13 +514,31 @@ export function pjFanficDir(project: string) { return `${project}/05-同人设�
  * @returns 拼接后的 vault 相对路径
  */
 export function pjFanficFile(project: string, name: string) { return `${project}/05-同人设定库/${sanitizeName(name)}.md`; }
-/** 同人设定草稿（未通过人工审核，不得绑定到项目） */
+/**
+ * 同人设定草稿（未通过人工审核，不得绑定到项目）
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjFanficPendingDir(project: string) { return `${project}/05-同人设定库/_待审核`; }
-/** 同人考据资料缓存（来源、摘录、哈希） */
+/**
+ * 同人考据资料缓存（来源、摘录、哈希）
+ *
+ * @param project - 项目（路径或对象）
+ * @param workName - 作品名
+ */
 export function pjFanficResearchDir(project: string, workName: string) { return `${project}/05-同人设定库/_资料/${sanitizeName(workName)}`; }
-/** 人工审核记录 sidecar */
+/**
+ * 人工审核记录 sidecar
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjFanficAuditDir(project: string) { return `${project}/05-同人设定库/_审核`; }
-/** 审核通过的正式同人设定路径 */
+/**
+ * 审核通过的正式同人设定路径
+ *
+ * @param project - 项目（路径或对象）
+ * @param workName - 作品名
+ */
 export function pjFanficApprovedFile(project: string, workName: string) { return `${pjFanficDir(project)}/${sanitizeName(workName)}设定.md`; }
 
 // ============================================================
@@ -511,9 +612,17 @@ export function getVolumeOutlinePath(project: string): string { return pjVolumeO
 // ============================================================
 // 12. 项目总控文件
 // ============================================================
-/** 信息债看板 */
+/**
+ * 信息债看板
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjInfoDebtBoard(project: string) { return `${project}/04-项目总控/信息债看板.md`; }
-/** 全书简介多版本目录（v4.18） */
+/**
+ * 全书简介多版本目录（v4.18）
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjSynopsisDir(project: string) { return `${pjControlDir(project)}/全书简介`; }
 /**
  * pjSynopsisIndexFile：返回路径 ``${pjSynopsisDir(project)}/index.json``。
@@ -537,19 +646,44 @@ export function pjSynopsisDraftFile(project: string) { return `${pjSynopsisDir(p
  * @returns 拼接后的 vault 相对路径
  */
 export function pjSynopsisVersionFile(project: string, id: string) { return `${pjSynopsisDir(project)}/${sanitizeName(id)}.md`; }
-/** 兼容文件：当前采用版本 */
+/**
+ * 兼容文件：当前采用版本
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjSynopsisAdoptedFile(project: string) { return `${pjControlDir(project)}/全书简介.md`; }
-/** 叙事总览 */
+/**
+ * 叙事总览
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjNarrativeOverview(project: string) { return `${project}/04-项目总控/叙事总览.md`; }
-/** 每章世界状态快照目录 */
+/**
+ * 每章世界状态快照目录
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjChapterStateSnapshotDir(project: string) { return `${project}/04-项目总控/章节状态快照`; }
-/** 第 N 章结束状态快照 */
+/**
+ * 第 N 章结束状态快照
+ *
+ * @param project - 项目（路径或对象）
+ * @param chapterNum - 章号
+ */
 export function pjChapterStateSnapshot(project: string, chapterNum: number) {
     return `${pjChapterStateSnapshotDir(project)}/第${chapterNum}章_状态快照.md`;
 }
-/** 事实索引（故事质量闭环 Task 11 待确认队列落盘） */
+/**
+ * 事实索引（故事质量闭环 Task 11 待确认队列落盘）
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjFactIndexFile(project: string) { return `${project}/04-项目总控/事实索引.json`; }
-/** 生成断点目录（故事质量闭环 Task 7/10 断点落盘） */
+/**
+ * 生成断点目录（故事质量闭环 Task 7/10 断点落盘）
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjCheckpointDir(project: string) { return `${project}/04-项目总控/断点`; }
 
 // ============================================================
@@ -980,15 +1114,32 @@ export const VERSION_INDEX_FILE = 'versions.json';
 /** 回滚历史文件名 */
 export const ROLLBACK_HISTORY_FILE = 'rollback-history.json';
 
-/** 项目内版本根目录 */
+/**
+ * 项目内版本根目录
+ *
+ * @param project - 项目（路径或对象）
+ */
 export function pjVersionsDir(project: string): string { return `${project}/${PROJECT_VERSIONS_DIR}`; }
 
-/** 某内容类型的版本目录 */
+/**
+ * 某内容类型的版本目录
+ *
+ * @param project - 项目（路径或对象）
+ * @param contentType - 内容类型
+ * @returns 文本结果
+ */
 export function pjContentTypeVersionsDir(project: string, contentType: string): string {
     return `${pjVersionsDir(project)}/${contentType}`;
 }
 
-/** 某内容的版本目录（按内容 key 分目录） */
+/**
+ * 某内容的版本目录（按内容 key 分目录）
+ *
+ * @param project - 项目（路径或对象）
+ * @param contentType - 内容类型
+ * @param contentKey - 内容键
+ * @returns 文本结果
+ */
 export function pjContentVersionsDir(project: string, contentType: string, contentKey: string): string {
     const safeKey = contentKey.replace(/[\\/:*?"<>|]/g, '_');
     return `${pjContentTypeVersionsDir(project, contentType)}/${safeKey}`;
@@ -1000,6 +1151,8 @@ export function pjContentVersionsDir(project: string, contentType: string, conte
  * 结构有两代：v4+ 为「长篇小说/书名/03-…」，旧版为「书名/03-…」。
  * 直接 `split('/')[0]` 在 v4 结构下会把「长篇小说」当项目，导致版本历史/项目级缓存落到错误目录。
  * 规则：定位已知子目录（03-大纲与章节 等），取它前面最多两段；找不到就退回前两段。
+ * @param filePath - 文件路径
+ * @returns 文本结果
  */
 export function projectIdFromPath(filePath: string): string {
     const parts = String(filePath || '').replace(/\\/g, '/').split('/').filter(Boolean);
@@ -1027,6 +1180,8 @@ export interface ChapterLocation {
  *   - 正文：<项目>/03-大纲与章节/正文/第N卷/第M章[_标题]_正文.md
  *   - 步骤：<项目>/03-大纲与章节/步骤结果/第N卷/第M章/...
  * 其它路径返回 null，由调用方决定回退。
+ * @param filePath - 文件路径
+  * @returns ChapterLocation 或 null
  */
 export function parseChapterLocation(filePath: string): ChapterLocation | null {
     const path = String(filePath || '').replace(/\\/g, '/');
@@ -1059,17 +1214,37 @@ export function parseChapterLocation(filePath: string): ChapterLocation | null {
     return null;
 }
 
-/** 版本索引文件路径 */
+/**
+ * 版本索引文件路径
+ *
+ * @param project - 项目（路径或对象）
+ * @param contentType - 内容类型
+ * @param contentKey - 内容键
+ * @returns 文本结果
+ */
 export function pjVersionIndexFile(project: string, contentType: string, contentKey: string): string {
     return `${pjContentVersionsDir(project, contentType, contentKey)}/${VERSION_INDEX_FILE}`;
 }
 
-/** 具体版本内容文件路径 */
+/**
+ * 具体版本内容文件路径
+ *
+ * @param project - 项目（路径或对象）
+ * @param contentType - 内容类型
+ * @param contentKey - 内容键
+ * @param versionId - 版本ID
+ * @returns 文本结果
+ */
 export function pjVersionContentFile(project: string, contentType: string, contentKey: string, versionId: string): string {
     return `${pjContentVersionsDir(project, contentType, contentKey)}/${versionId}.md`;
 }
 
-/** 回滚历史文件路径 */
+/**
+ * 回滚历史文件路径
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function pjRollbackHistoryFile(project: string): string {
     return `${pjVersionsDir(project)}/${ROLLBACK_HISTORY_FILE}`;
 }

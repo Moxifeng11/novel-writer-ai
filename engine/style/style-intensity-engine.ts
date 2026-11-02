@@ -192,6 +192,8 @@ export class StyleIntensityEngine {
 
     /**
      * 从预设获取强度配置
+     * @param preset - 预设
+      * @returns StyleIntensityConfig 实例
      */
     getConfigFromPreset(preset: IntensityPreset): StyleIntensityConfig {
         return {
@@ -202,6 +204,7 @@ export class StyleIntensityEngine {
 
     /**
      * 校验强度配置
+     * @param config - 配置
      * @returns 校验后的配置（globalIntensity 在 [0,1] 范围内）
      */
     normalizeConfig(config: StyleIntensityConfig): StyleIntensityConfig {

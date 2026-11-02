@@ -74,7 +74,13 @@ export function computeBenchmarkSummary(samples: BenchmarkSampleScore[]): Benchm
     };
 }
 
-/** 回归判断：good 与 bad 的均分差至少达到 minGap，且误分类不超过 maxMisclassified。 */
+/**
+ * 回归判断：good 与 bad 的均分差至少达到 minGap，且误分类不超过 maxMisclassified。
+ *
+ * @param summary - 摘要
+ * @param options - 配置项
+  * @returns string[] } 结果
+ */
 export function passesBenchmark(
     summary: BenchmarkSummary,
     options: { minGap?: number; maxMisclassified?: number } = {},

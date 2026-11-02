@@ -96,6 +96,7 @@ export class AdaptiveDebounceManager {
 
     /**
      * 取消指定 key 的防抖
+     * @param key - 键
      */
     cancel(key: string): void {
         const entry = this.timers.get(key);
@@ -110,6 +111,7 @@ export class AdaptiveDebounceManager {
 
     /**
      * 立即执行指定 key 的防抖（如果有待执行）
+     * @param key - 键
      */
     flush(key: string): void {
         const entry = this.timers.get(key);
@@ -176,6 +178,7 @@ export class AdaptiveDebounceManager {
 
     /**
      * 获取待执行的 key 数量
+     * @returns 数值结果
      */
     getPendingCount(): number {
         return this.timers.size;
@@ -183,6 +186,8 @@ export class AdaptiveDebounceManager {
 
     /**
      * 检查指定 key 是否有待执行的防抖
+     * @param key - 键
+     * @returns 是否成功
      */
     hasPending(key: string): boolean {
         return this.timers.has(key);

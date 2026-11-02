@@ -22,12 +22,22 @@ export class PasswordModal extends Modal {
         this.mode = mode;
     }
 
-    /** 询问已有口令（解密场景）；取消/关闭返回 null */
+    /**
+     * 询问已有口令（解密场景）；取消/关闭返回 null
+     *
+     * @param app - Obsidian 应用实例
+      * @returns 文本结果 或 null
+     */
     static ask(app: App): Promise<string | null> {
         return new PasswordModal(app, 'ask').openAndWait();
     }
 
-    /** 设定新口令（首次加密场景）；两次输入须一致，取消/关闭返回 null */
+    /**
+     * 设定新口令（首次加密场景）；两次输入须一致，取消/关闭返回 null
+     *
+     * @param app - Obsidian 应用实例
+      * @returns 文本结果 或 null
+     */
     static setup(app: App): Promise<string | null> {
         return new PasswordModal(app, 'set').openAndWait();
     }

@@ -163,6 +163,8 @@ export function mapModelToFrontmatter(
  * 结算回写用的字段白名单（v4.20）。
  * 四类实体统一从映射表派生；人物额外并入 CHARACTER_DISPLAY_KEYS（旧白名单超集），
  * 保证旧报告里合法的字段继续可用、新字段（修为等级/当前位置）不再被静默丢弃。
+ * @param category - 分类
+ * @returns 集合结果
  */
 export function getValidFrontmatterKeys(category: EntityCategory): Set<string> {
     const keys = new Set(ENTITY_FIELD_MAPPINGS[category].fields.map((f) => f.frontmatterKey));

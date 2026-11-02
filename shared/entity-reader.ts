@@ -32,12 +32,23 @@ const ENTITY_DIRS: Record<EntityKind, (project: string) => string> = {
     items: pjItemsDir,
 };
 
-/** 实体目录（供需要写入/展示目录的场景复用，避免再拼字符串） */
+/**
+ * 实体目录（供需要写入/展示目录的场景复用，避免再拼字符串）
+ *
+ * @param project - 项目（路径或对象）
+ * @param kind - 种类
+ * @returns 文本结果
+ */
 export function entityDir(project: string, kind: EntityKind): string {
     return ENTITY_DIRS[kind](project);
 }
 
-/** 模板文件不是实体：带「模板」字样的 .md 一律不参与列表/统计/上下文注入 */
+/**
+ * 模板文件不是实体：带「模板」字样的 .md 一律不参与列表/统计/上下文注入
+ *
+ * @param name - 名称
+ * @returns 是否成功
+ */
 export function isEntityTemplateFile(name: string): boolean {
     return name.includes('模板');
 }
@@ -45,6 +56,10 @@ export function isEntityTemplateFile(name: string): boolean {
 /**
  * 列出项目某类实体的 .md 文件（排除模板，按路径升序保证跨入口顺序一致）。
  * 注意：全库扫描，调用方在同一渲染周期内多次调用时应自行复用结果（见批次 2 增量索引）。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param kind - 种类
+ * @returns 结果数组
  */
 export function listEntityFiles(app: App, project: string, kind: EntityKind): TFile[] {
     // 只遍历本项目实体目录（递归）：不再对整库 getFiles() 再过滤前缀
@@ -61,7 +76,13 @@ export interface ProjectEntityStats {
     items: number;
 }
 
-/** 统计项目实体数量：世界观文件存在 = 1；人物/势力/地点/物品 = listEntityFiles 数量 */
+/**
+ * 统计项目实体数量：世界观文件存在 = 1；人物/势力/地点/物品 = listEntityFiles 数量
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+  * @returns ProjectEntityStats 实例
+ */
 export function countProjectEntities(app: App, project: string): ProjectEntityStats {
     return {
         worldview: app.vault.getAbstractFileByPath(pjWorldview(project)) ? 1 : 0,

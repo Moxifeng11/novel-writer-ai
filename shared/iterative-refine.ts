@@ -136,7 +136,12 @@ export async function runIterativeRefine(options: IterativeRefineOptions): Promi
     return { best, rounds: records, improved, stoppedReason: 'max-rounds', totalNetworkCalls };
 }
 
-/** 一行摘要（执行登记表 / 日志用） */
+/**
+ * 一行摘要（执行登记表 / 日志用）
+ *
+ * @param records - 记录列表
+ * @returns 文本结果
+ */
 export function formatRefineRounds(records: RefineRoundRecord[]): string {
     if (records.length === 0) return '无轮次';
     return records

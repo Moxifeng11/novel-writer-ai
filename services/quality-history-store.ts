@@ -20,7 +20,13 @@ export function qualityHistoryPath(project: string): string {
     return `${pjControlDir(project)}/质量历史.json`;
 }
 
-/** 读取项目质量历史；文件缺失或损坏时返回空数组 */
+/**
+ * 读取项目质量历史；文件缺失或损坏时返回空数组
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export async function loadQualityHistory(app: App, project: string): Promise<QualityHistoryRecord[]> {
     if (!project) return [];
     const file = app.vault.getAbstractFileByPath(qualityHistoryPath(project));
@@ -41,7 +47,15 @@ export async function loadQualityHistory(app: App, project: string): Promise<Qua
  */
 const appendQueues = new Map<string, Promise<unknown>>();
 
-/** 追加一条记录并回写；返回合并后的完整历史 */
+/**
+ * 追加一条记录并回写；返回合并后的完整历史
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param record - 记录
+ * @param max - 最大
+ * @returns 结果数组
+ */
 export async function appendQualityHistory(
     app: App,
     project: string,
@@ -77,7 +91,13 @@ export async function appendQualityHistory(
     }
 }
 
-/** 覆盖写入（裁剪后） */
+/**
+ * 覆盖写入（裁剪后）
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param entries - 记录集合
+ */
 export async function writeQualityHistory(
     app: App,
     project: string,

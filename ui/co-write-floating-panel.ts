@@ -196,7 +196,14 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     });
   }
 
-  /** 打开章节 */
+  /**
+   * 打开章节
+   *
+   * @param project - 项目（路径或对象）
+   * @param chapterName - 章节名
+   * @param volume - 卷
+   * @param chapterNum - 章号
+   */
   async openChapter(project: string, chapterName: string, volume: string, chapterNum: number): Promise<void> {
     // 切章先把上一章的候选/幽灵/改写范围与在途请求全部作废：
     // 旧实现只换身份读文件，残留卡片仍可点击，旧章建议会被插进新章；

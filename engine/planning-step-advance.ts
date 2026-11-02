@@ -29,6 +29,9 @@ export const BODY_DOWNSTREAM_STEP_KEYS = [
  * 规划步骤变更后需要失效的步骤。
  *
  * 正文尚未生成时返回空数组：避免把「还没写的正文」标成「待重做」。
+ * @param stepKey - 步骤键
+ * @param hasBody - 是否含正文
+ * @returns 结果数组
  */
 export function downstreamStepsAfterPlanningChange(stepKey: string, hasBody: boolean): string[] {
     if (!hasBody) return [];
@@ -41,6 +44,8 @@ export function downstreamStepsAfterPlanningChange(stepKey: string, hasBody: boo
  * - 5 个规划步骤全部完成 → 正文写作（index 7）
  * - 仍有缺失 → 第一个缺失的规划步骤
  * - 无可用步骤 → -1（调用方保持原位）
+ * @param stepCompleted - 步骤完成状态
+ * @returns 数值结果
  */
 export function calcStepIndexAfterPlanning(stepCompleted: Set<string>): number {
     if (PLANNING_STEP_KEYS.every(key => stepCompleted.has(key))) {

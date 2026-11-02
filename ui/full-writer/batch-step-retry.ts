@@ -8,7 +8,12 @@
 /** 单步最多尝试次数（首次 + 1 次重试）：本地模型偶发空输出，整章判失败代价过高 */
 export const BATCH_STEP_MAX_ATTEMPTS = 2;
 
-/** 步骤失败后是否需要重试：取消不重试，达到上限不重试 */
+/**
+ * 步骤失败后是否需要重试：取消不重试，达到上限不重试
+ *
+ * @param params - 参数集合
+ * @returns 是否成功
+ */
 export function shouldRetryBatchStep(params: {
     produced: boolean;
     cancelled: boolean;

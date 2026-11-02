@@ -49,7 +49,13 @@ function bigrams(text: string): Set<string> {
     return set;
 }
 
-/** 2-gram Jaccard（与 MMR 同口径；空文本返回 0） */
+/**
+ * 2-gram Jaccard（与 MMR 同口径；空文本返回 0）
+ *
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 数值结果
+ */
 export function textSimilarity(a: string, b: string): number {
     const setA = bigrams(a);
     const setB = bigrams(b);
@@ -66,6 +72,9 @@ export function textSimilarity(a: string, b: string): number {
  * 判「近重复」用重叠而不是 Jaccard：400/40 重叠分块产生的重复对是
  * 「一段是另一段的超集/子集」，Jaccard 会因为长度差把 0.95 的重叠压到 0.7，
  * 而重叠系数能正确识别「短的那段被长的那段包住」。
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 数值结果
  */
 export function overlapSimilarity(a: string, b: string): number {
     const setA = bigrams(a);
@@ -80,6 +89,9 @@ export function overlapSimilarity(a: string, b: string): number {
 /**
  * 计算一个用例的近重复占比。
  * `texts` 可选：给出时按文本相似度判定，否则只按 id 判重（id 相同即重复）。
+ * @param ranked - 排序后
+ * @param texts - 文本列表
+ * @returns 数值结果
  */
 export function duplicateRatioOf(ranked: readonly string[], texts?: readonly string[], threshold = DEFAULT_DUPLICATE_THRESHOLD): number {
     if (ranked.length === 0) return 0;
@@ -97,7 +109,13 @@ export function duplicateRatioOf(ranked: readonly string[], texts?: readonly str
     return duplicates / ranked.length;
 }
 
-/** 评分单条用例 */
+/**
+ * 评分单条用例
+ *
+ * @param query - 查询串
+ * @param texts - 文本列表
+  * @returns EvalQueryRow 实例
+ */
 export function scoreQuery(query: EvalQuery, k = DEFAULT_K, texts?: readonly string[], duplicateThreshold = DEFAULT_DUPLICATE_THRESHOLD): EvalQueryRow {
     const ranked = Array.isArray(query.ranked) ? query.ranked : [];
     const relevant = new Set(Array.isArray(query.relevant) ? query.relevant : []);
@@ -111,7 +129,13 @@ export function scoreQuery(query: EvalQuery, k = DEFAULT_K, texts?: readonly str
     };
 }
 
-/** 汇总一批用例；空输入不抛错（CI 友好） */
+/**
+ * 汇总一批用例；空输入不抛错（CI 友好）
+ *
+ * @param queries - 查询列表
+ * @param options - 配置项
+  * @returns EvalReport 实例
+ */
 export function scoreRetrieval(
     queries: readonly EvalQuery[],
     options: { k?: number; textsByQuery?: Record<string, readonly string[]>; duplicateThreshold?: number } = {},
@@ -132,7 +156,12 @@ export function scoreRetrieval(
     };
 }
 
-/** 一行汇总文本（CLI 与日志共用） */
+/**
+ * 一行汇总文本（CLI 与日志共用）
+ *
+ * @param report - 报告
+ * @returns 文本结果
+ */
 export function formatEvalReport(report: EvalReport): string {
     return `queries=${report.queries} hit@${report.k}=${report.hitRate.toFixed(1)}% `
         + `MRR=${report.mrr.toFixed(3)} 近重复=${(report.duplicateRatio * 100).toFixed(1)}%`;

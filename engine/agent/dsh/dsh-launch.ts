@@ -40,7 +40,13 @@ export interface DshLaunchPlan {
     env: Record<string, string>;
 }
 
-/** sandbox patch 内容：覆盖 base bundle 的 sandbox-policy 行 */
+/**
+ * sandbox patch 内容：覆盖 base bundle 的 sandbox-policy 行
+ *
+ * @param mode - 模式
+ * @param workspaceRoot - 工作区根路径
+ * @returns 文本结果
+ */
 export function buildSandboxPatch(mode: DshSandboxMode, workspaceRoot: string): string {
     return [
         '- id: sandbox-policy',

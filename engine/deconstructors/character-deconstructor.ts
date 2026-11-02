@@ -515,6 +515,7 @@ export class CharacterDeconstructor {
     /**
      * 注入 LLM 增强器。注入后 analyze 方法末尾会调用 LLM 做语义提炼。
      * 不注入时 analyze 行为完全不变（纯统计）。
+     * @param llmEnhancer - LLM 增强器
      */
     setLLMEnhancer(llmEnhancer?: LLMEnhancer): void {
         this.llmEnhancer = llmEnhancer;

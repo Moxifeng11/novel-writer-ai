@@ -174,7 +174,12 @@ export function formatChapterStateSnapshot(snapshot: ChapterWorldStateSnapshot):
     return lines.join('\n');
 }
 
-/** 供下一章 prompt 使用的紧凑摘要（≤1800 字）。 */
+/**
+ * 供下一章 prompt 使用的紧凑摘要（≤1800 字）。
+ *
+ * @param snapshot - 快照
+ * @returns 文本结果
+ */
 export function formatSnapshotForPrompt(snapshot: ChapterWorldStateSnapshot, maxChars = 1800): string {
     const lines: string[] = [];
     lines.push(`【上一章结束状态（硬约束）】`);

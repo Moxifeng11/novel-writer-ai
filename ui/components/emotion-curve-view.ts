@@ -29,6 +29,8 @@ export class EmotionCurveView {
      * 渲染情绪曲线
      * 调用 lineChart() 生成 SVG，并附加统计面板。
      * 若需启用 hover tooltip / 图例 toggle 等交互，在 mount 后调用 attachInteractions(container)。
+     * @param curve - 曲线数据
+     * @returns 文本结果
      */
     render(curve: EmotionCurve): string {
         if (!curve.points.length) {
@@ -81,6 +83,7 @@ export class EmotionCurveView {
     /**
      * 为已挂载的容器附加图表交互（tooltip / 图例 toggle）。
      * 在调用方将 render() 返回的 HTML 写入 DOM 后调用。
+     * @param container - 容器元素
      */
     attachInteractions(container: HTMLElement): void {
         attachChartInteractions(container);

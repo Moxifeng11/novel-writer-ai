@@ -40,7 +40,12 @@ export interface SnapshotInput {
     now?: number;
 }
 
-/** 会话标题：首条用户消息前 30 字（跳过系统注入的「会话开始」占位） */
+/**
+ * 会话标题：首条用户消息前 30 字（跳过系统注入的「会话开始」占位）
+ *
+ * @param events - 事件列表
+ * @returns 文本结果
+ */
 export function sessionTitleOf(events: readonly AgentSessionEvent[]): string {
     for (const event of events) {
         if (event.type !== 'user_message') continue;
@@ -81,7 +86,12 @@ function isEvent(value: unknown): value is AgentSessionEvent {
     ].includes(type);
 }
 
-/** 宽容解析：坏字段丢弃，整条不可用返回 null（不允许坏存档把工作台打挂） */
+/**
+ * 宽容解析：坏字段丢弃，整条不可用返回 null（不允许坏存档把工作台打挂）
+ *
+ * @param text - 文本内容
+  * @returns HarnessSessionSnapshot 或 null
+ */
 export function parseSessionSnapshot(text: string): HarnessSessionSnapshot | null {
     const raw = String(text || '').trim();
     if (!raw) return null;
@@ -121,7 +131,12 @@ export function parseSessionSnapshot(text: string): HarnessSessionSnapshot | nul
     }
 }
 
-/** 从 tool_call 的 callId（`call_<n>_<tool>`）反推计数器，修复缺失的 callSeq */
+/**
+ * 从 tool_call 的 callId（`call_<n>_<tool>`）反推计数器，修复缺失的 callSeq
+ *
+ * @param events - 事件列表
+ * @returns 数值结果
+ */
 export function deriveCallSeq(events: readonly AgentSessionEvent[]): number {
     let max = 0;
     for (const event of events) {
@@ -132,7 +147,12 @@ export function deriveCallSeq(events: readonly AgentSessionEvent[]): number {
     return max;
 }
 
-/** JSONL 存档的最后一行为最新快照；坏行跳过 */
+/**
+ * JSONL 存档的最后一行为最新快照；坏行跳过
+ *
+ * @param content - 内容
+  * @returns HarnessSessionSnapshot 或 null
+ */
 export function parseSnapshotFromJsonl(content: string): HarnessSessionSnapshot | null {
     const lines = String(content || '').split(/\r?\n/).filter(line => line.trim().length > 0);
     for (let i = lines.length - 1; i >= 0; i--) {

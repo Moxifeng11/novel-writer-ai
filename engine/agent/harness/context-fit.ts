@@ -20,7 +20,13 @@ export function estimateTokens(text: string): number {
     return Math.ceil(String(text || '').length / 1.5);
 }
 
-/** 可用输入预算：窗口 × 0.8，并给输出与固定 headroom 留位；无窗口信息返回 null */
+/**
+ * 可用输入预算：窗口 × 0.8，并给输出与固定 headroom 留位；无窗口信息返回 null
+ *
+ * @param windowTokens - 窗口token 列表
+ * @param maxOutputTokens - 最大输出 token 数
+  * @returns 数值结果 或 null
+ */
 export function resolveContextBudget(
     windowTokens: number | undefined,
     maxOutputTokens: number,
@@ -109,6 +115,9 @@ export function fitTurnsToBudget<T extends ContextTurn>(
 /**
  * 压缩触发阈值：有窗口信息时按窗口比例推导（字符 ≈ token × 1.5），
  * 否则沿用显式默认值。返回的阈值不会高于显式配置（用户可更早触发）。
+ * @param windowTokens - 窗口token 列表
+ * @param explicit - 显式配置
+ * @returns 数值结果
  */
 export function resolveCompactionCharThreshold(
     windowTokens: number | undefined,

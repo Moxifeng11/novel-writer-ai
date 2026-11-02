@@ -50,7 +50,12 @@ function parseChapterNumber(chapter: string): number {
     return parseInt(chapter.match(/\d+/)?.[0] || '0', 10) || 0;
 }
 
-/** 章节条目 → Agent 摘要（截断字段，控制 token） */
+/**
+ * 章节条目 → Agent 摘要（截断字段，控制 token）
+ *
+ * @param entry - 条目
+  * @returns AgentChapterSummary 实例
+ */
 function toChapterSummary(entry: ChapterListEntry): AgentChapterSummary {
     return {
         chapter: entry.chapter,

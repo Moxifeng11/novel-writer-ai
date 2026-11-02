@@ -9,6 +9,10 @@
 /**
  * 是否已过最小请求间隔。
  * `lastRequestAt <= 0` 视为「尚未请求过」，立即放行；`minIntervalMs <= 0` 关闭限频。
+ * @param now - 当前时间
+ * @param lastRequestAt - 上次请求时间
+ * @param minIntervalMs - 最小间隔（毫秒）
+ * @returns 是否成功
  */
 export function shouldRequestGhostAssociationByInterval(
     now: number,

@@ -62,17 +62,32 @@ export interface CompiledManuscript {
     emptyChapters: number;
 }
 
-/** 去掉 YAML frontmatter（仅处理文件头部的 `--- ... ---`） */
+/**
+ * 去掉 YAML frontmatter（仅处理文件头部的 `--- ... ---`）
+ *
+ * @param markdown - Markdown 文本
+ * @returns 文本结果
+ */
 export function stripFrontmatter(markdown: string): string {
     return markdown.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
 }
 
-/** 去掉正文开头重复的 H1 标题（模板中的 `# 第X章`） */
+/**
+ * 去掉正文开头重复的 H1 标题（模板中的 `# 第X章`）
+ *
+ * @param body - 正文
+ * @returns 文本结果
+ */
 export function stripLeadingHeading(body: string): string {
     return body.replace(/^\s*#\s+[^\n]*\r?\n?/, '').replace(/^\s+/, '');
 }
 
-/** 章节正文：去 frontmatter、去重复 H1 */
+/**
+ * 章节正文：去 frontmatter、去重复 H1
+ *
+ * @param markdown - Markdown 文本
+ * @returns 文本结果
+ */
 export function normalizeChapterBody(markdown: string): string {
     return stripLeadingHeading(stripFrontmatter(markdown)).replace(/\s+$/, '');
 }
@@ -82,7 +97,12 @@ function parseVolumeNumber(volume: string): number {
     return match ? parseInt(match[0], 10) : 0;
 }
 
-/** 按卷号、章号稳定排序（不改动入参） */
+/**
+ * 按卷号、章号稳定排序（不改动入参）
+ *
+ * @param chapters - 章节列表
+ * @returns 结果数组
+ */
 export function sortManuscriptChapters(chapters: ManuscriptChapter[]): ManuscriptChapter[] {
     return [...chapters].sort((a, b) => {
         const volumeDiff = parseVolumeNumber(a.volume) - parseVolumeNumber(b.volume);
@@ -91,7 +111,13 @@ export function sortManuscriptChapters(chapters: ManuscriptChapter[]): Manuscrip
     });
 }
 
-/** 供 EPUB/DOCX 等二进制格式复用同一套标题规则 */
+/**
+ * 供 EPUB/DOCX 等二进制格式复用同一套标题规则
+ *
+ * @param chapter - 章节
+ * @param options - 配置项
+ * @returns 文本结果
+ */
 export function formatChapterLabel(chapter: ManuscriptChapter, options?: { unitLabel?: string }): string {
     let label = chapter.chapter;
     if (options?.unitLabel && options.unitLabel !== '章') {
@@ -112,7 +138,12 @@ export interface ManuscriptStats {
     emptyChapters: number;
 }
 
-/** 统一统计口径：各格式共用，避免 Markdown 与 EPUB 的「章数/字数」对不上 */
+/**
+ * 统一统计口径：各格式共用，避免 Markdown 与 EPUB 的「章数/字数」对不上
+ *
+ * @param chapters - 章节列表
+  * @returns ManuscriptStats 实例
+ */
 export function summarizeManuscriptChapters(chapters: ManuscriptChapter[]): ManuscriptStats {
     const sorted = sortManuscriptChapters(chapters);
     const volumes = new Set(sorted.map((chapter) => chapter.volume).filter(Boolean));
@@ -225,7 +256,13 @@ ${parts.filter((part) => part !== '').join('\n')}
 `;
 }
 
-/** 编译成稿；空章节仍保留标题，但在结果中计数 */
+/**
+ * 编译成稿；空章节仍保留标题，但在结果中计数
+ *
+ * @param chapters - 章节列表
+ * @param options - 配置项
+  * @returns CompiledManuscript 实例
+ */
 export function compileManuscript(
     chapters: ManuscriptChapter[],
     options: CompileOptions

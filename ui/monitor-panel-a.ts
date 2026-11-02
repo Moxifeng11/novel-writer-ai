@@ -73,7 +73,12 @@ export class MonitorPanelA extends DraggablePanel {
   /** 分析代次：连续输入会并发触发 refreshWithBody，慢的旧结果不得覆盖新结果 */
   private analysisSeq = 0;
 
-  /** 外部调用：用正文内容刷新所有分析 */
+  /**
+   * 外部调用：用正文内容刷新所有分析
+   *
+   * @param body - 正文
+   * @param modelName - 模型名
+   */
   async refreshWithBody(body: string, modelName?: string): Promise<void> {
     const token = ++this.analysisSeq;
     if (!body || body.length < 100) {
@@ -128,7 +133,12 @@ export class MonitorPanelA extends DraggablePanel {
     }
   }
 
-  /** OOC警告 */
+  /**
+   * OOC警告
+   *
+   * @param warnings - 警告
+   * @param score - 分数
+   */
   showOOCWarnings(warnings: string[], score: number): void {
     if (!this.oocContent) return;
     this.oocContent.empty();
@@ -148,7 +158,11 @@ export class MonitorPanelA extends DraggablePanel {
     }
   }
 
-  /** 实体状态变更 */
+  /**
+   * 实体状态变更
+   *
+   * @param changes - 变更
+   */
   showEntityChanges(changes: { entityName: string; newStatus: string }[]): void {
     if (!this.entityContent) return;
     this.entityContent.empty();

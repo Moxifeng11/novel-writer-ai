@@ -30,6 +30,8 @@ export function applyNwScope(el: { containerEl?: HTMLElement; modalEl?: HTMLElem
 /**
  * HTML 转义（覆盖 & < > " '），用于 innerHTML / SVG text 插值前的防 XSS 净化。
  * 统一落点：project-selector-controller、knowledge-detail-modal 等 UI 模块共用（审计 F1/F2）。
+ * @param text - 文本内容
+ * @returns 文本结果
  */
 export function escapeHtml(text: string): string {
     return text
@@ -223,7 +225,14 @@ export function moveForeshadowToRevealed(content: string, name: string, revealCh
 // 分卷大纲（v4.0 按卷归档）读写工具
 // ============================================================
 
-/** 写入文件：存在则覆盖内容，否则新建 */
+/**
+ * 写入文件：存在则覆盖内容，否则新建
+ *
+ * @param app - Obsidian 应用实例
+ * @param path - 路径
+ * @param content - 内容
+ * @param fs - 文件系统端口
+ */
 async function writeOrReplaceFile(app: App, path: string, content: string, fs?: FileSystemPort): Promise<void> {
     const fileSystem = fs || new ObsidianFileSystem(app);
     await fileSystem.write(path, content);
@@ -236,6 +245,10 @@ async function writeOrReplaceFile(app: App, path: string, content: string, fs?: 
  * 全书总览 / 前言块归入第 1 卷文件头部，使读取第 1 卷即可命中
  * 总字数目标 / 分卷数 等全局字段（与 getVolumeOutlinePath 语义保持一致）。
  *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param outlineBody - 大纲正文
+ * @param fs - 文件系统端口
  * @returns 实际写入的卷文件数量
  */
 export async function writeVolumeOutlines(app: App, project: string, outlineBody: string, fs?: FileSystemPort): Promise<number> {
@@ -301,6 +314,10 @@ export async function writeVolumeOutlines(app: App, project: string, outlineBody
  * v4.0：合并读取 `分卷大纲/*_分卷大纲.md`（按卷号升序），
  * 向后兼容旧版单文件 `03-大纲与章节/分卷大纲.md`。
  *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param fs - 文件系统端口
+ * @param vaultMeta - 仓库元数据
  * @returns 合并后的大纲文本；若两者皆缺失返回空串
  */
 export async function readMergedVolumeOutline(app: App, project: string, fs?: FileSystemPort, vaultMeta?: VaultMetaPort): Promise<string> {

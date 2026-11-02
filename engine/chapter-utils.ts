@@ -30,6 +30,9 @@ export const CHAPTER_FILE_TYPES = {
 /**
  * 构造标准章节文件名（写/创建操作）
  * 格式: 第X章_类型.md 或 第X章_标题_类型.md
+ * @param chapterName - 章节名
+ * @param type - 类型
+ * @returns 文本结果
  */
 export function getChapterFileName(chapterName: string, type: string): string {
     return `${chapterName}_${type}.md`;
@@ -41,6 +44,8 @@ const ILLEGAL_FILENAME_CHARS = /[\\/:*?"<>|]/g;
 /**
  * 把 AI 生成/用户输入的标题消毒成可安全落盘的片段。
  * 标题里的 `/` 会意外建出子目录，`:` 在同步盘上会失败。
+ * @param input - 输入
+ * @returns 文本结果
  */
 export function sanitizeFileSegment(input: string): string {
     return String(input || '').replace(ILLEGAL_FILENAME_CHARS, ' ').replace(/\s+/g, ' ').trim();
@@ -49,6 +54,10 @@ export function sanitizeFileSegment(input: string): string {
 /**
  * 判断文件名是否符合标准格式
  * 标准格式: 第X章_类型.md 或 第X章_标题_类型.md
+ * @param fileName - 文件名
+ * @param chapterName - 章节名
+ * @param type - 类型
+ * @returns 是否成功
  */
 export function isStandardChapterFileName(fileName: string, chapterName: string, type: string): boolean {
     // 精确匹配: 第1章_正文.md
@@ -63,6 +72,9 @@ export function isStandardChapterFileName(fileName: string, chapterName: string,
 /**
  * 检测旧格式（非标准）的章节文件
  * 旧格式特征: 以下划线开头、无章节前缀等
+ * @param folder - 文件夹
+ * @param chapterName - 章节名
+ * @returns 结果数组
  */
 export function detectLegacyFiles(folder: TFolder, chapterName: string): TFile[] {
     const legacy: TFile[] = [];
@@ -86,6 +98,10 @@ export function detectLegacyFiles(folder: TFolder, chapterName: string): TFile[]
 
 /**
  * 尝试将旧格式文件识别并迁移为标准格式
+ * @param app - Obsidian 应用实例
+ * @param file - 文件
+ * @param chapterName - 章节名
+ * @param typeHint - 类型提示
  * @returns 迁移后的新文件，无法识别则返回 null
  */
 export async function migrateLegacyFile(
@@ -200,6 +216,9 @@ export async function migrateLegacyFile(
 /**
  * 规范化章节文件夹内的所有文件
  * 将旧格式文件统一迁移为标准格式
+ * @param app - Obsidian 应用实例
+ * @param folder - 文件夹
+ * @param chapterName - 章节名
  */
 export async function normalizeChapterFiles(app: App, folder: TFolder, chapterName: string): Promise<void> {
     const legacyFiles = detectLegacyFiles(folder, chapterName);
@@ -212,6 +231,10 @@ export async function normalizeChapterFiles(app: App, folder: TFolder, chapterNa
 
 /**
  * 异步版本：先规范化再查找标准格式
+ * @param app - Obsidian 应用实例
+ * @param folder - 文件夹
+ * @param type - 类型
+  * @returns TFile 或 null
  */
 export async function getChapterFileAsync(app: App, folder: TFolder, type: string): Promise<TFile | null> {
     const chapterName = folder.name;
@@ -223,6 +246,9 @@ export async function getChapterFileAsync(app: App, folder: TFolder, type: strin
  * 在 TFolder 内查找章节文件（读操作）
  * 只匹配标准格式：第X章_类型.md 或 第X章_标题_类型.md
  * 不兼容旧格式——调用前必须先 normalizeChapterFiles()
+ * @param folder - 文件夹
+ * @param type - 类型
+  * @returns TFile 或 null
  */
 export function getChapterFile(folder: TFolder, type: string): TFile | null {
     const chapterName = folder.name;
@@ -242,6 +268,10 @@ export function getChapterFile(folder: TFolder, type: string): TFile | null {
  * Rev 184：旧版章节生成工具原先只把「已有正文」当候选章，导致尚未写正文的新章
  * 永远无法被选中（输入范围后仍得到 0 目标）。章范围必须以骨架为准，
  * 骨架由「批量建章」创建。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param volN - 卷编号
+ * @returns 结果数组
  */
 export function listChapterNumbers(app: App, project: string, volN: number): number[] {
     const nums = new Set<number>();
@@ -267,6 +297,11 @@ export function listChapterNumbers(app: App, project: string, volN: number): num
  * 与 findChapterFile 的区别：后者的 chapDir 语义是「章目录」（最后一段是章名），
  * 传卷目录时标准名匹配必然失败，frontmatter 兜底会返回该卷第一个正文——
  * 实测会把新章写进旧章文件（数据损坏）。卷目录请用本函数：按 `第N章` 前缀匹配。
+ * @param files - 文件列表
+ * @param bodyDir - 正文目录
+ * @param chapterNum - 章号
+ * @param chapterName - 章节名
+  * @returns TFile 或 undefined
  */
 export function findBodyFileByChapterNum(files: TFile[], bodyDir: string, chapterNum: number, chapterName?: string): TFile | undefined {
     const prefix = `第${chapterNum}章`;
@@ -290,6 +325,11 @@ export function findBodyFileByChapterNum(files: TFile[], bodyDir: string, chapte
  * 在文件列表中跨目录查找章节文件（读操作）
  * 只匹配标准格式：第X章_类型.md 或 第X章_标题_类型.md
  * 不兼容旧格式——调用前必须先 normalizeChapterFiles()
+ * @param files - 文件列表
+ * @param chapDir - 章节目录
+ * @param type - 类型
+ * @param app - Obsidian 应用实例
+  * @returns TFile 或 undefined
  */
 export function findChapterFile(files: TFile[], chapDir: string, type: string, app?: App): TFile | undefined {
     const chapterName = chapDir.split('/').pop() || '';
@@ -324,6 +364,8 @@ export function findChapterFile(files: TFile[], chapDir: string, type: string, a
 
 /**
  * 检查章节文件夹是否存在且包含至少一个类型文件
+ * @param folder - 文件夹
+ * @returns 是否成功
  */
 export function chapterHasAnyFile(folder: TFolder): boolean {
     for (const child of folder.children) {
@@ -339,6 +381,11 @@ export function chapterHasAnyFile(folder: TFolder): boolean {
 /**
  * v4.0: 按卷号+章号查找正文文件
  * 路径格式: {project}/03-大纲与章节/正文/第{volN}卷/第{chapNum}章_*_正文.md
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param volN - 卷编号
+ * @param chapNum - 章号
+  * @returns TFile 或 undefined
  */
 export function findBodyFileV4(app: App, project: string, volN: number, chapNum: number): TFile | undefined {
     const bodyDir = pjBodyDir(project, volN);
@@ -369,18 +416,31 @@ export const STEP_FILE_TYPES = {
     characterSoul: '角色灵魂',
 } as const;
 
-/** 判断某类型是否为正文（非步骤文件） */
+/**
+ * 判断某类型是否为正文（非步骤文件）
+ *
+ * @param type - 类型
+ * @returns 是否成功
+ */
 export function isBodyType(type: string): boolean {
     return type === '正文' || type === 'body';
 }
 
-/** 判断某类型是否为步骤文件 */
+/**
+ * 判断某类型是否为步骤文件
+ *
+ * @param type - 类型
+ * @returns 是否成功
+ */
 export function isStepType(type: string): boolean {
     return (Object.values(STEP_FILE_TYPES) as string[]).includes(type);
 }
 
 /**
  * v4.0: 构造步骤文件名（匹配元文件命名：第X章_类型.md）
+ * @param chapterName - 章节名
+ * @param stepType - 步骤类型
+ * @returns 文本结果
  */
 export function getStepFileName(chapterName: string, stepType: string): string {
     return `${chapterName}_${stepType}.md`;

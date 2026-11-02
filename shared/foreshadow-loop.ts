@@ -48,12 +48,23 @@ function normalizeName(name: string): string {
         .toLowerCase();
 }
 
-/** 比较用名称：去掉「的/之/了」这类虚词，容忍「姜晚的断口」vs「姜晚剑柄缠绳断口」 */
+/**
+ * 比较用名称：去掉「的/之/了」这类虚词，容忍「姜晚的断口」vs「姜晚剑柄缠绳断口」
+ *
+ * @param normalized - 规范化
+ * @returns 文本结果
+ */
 function compareForm(normalized: string): string {
     return normalized.replace(/[的之了个着]/g, '');
 }
 
-/** 计划名的 2-gram 被实际名覆盖的比例（容忍「姜晚的断口」vs「姜晚剑柄缠绳断口」） */
+/**
+ * 计划名的 2-gram 被实际名覆盖的比例（容忍「姜晚的断口」vs「姜晚剑柄缠绳断口」）
+ *
+ * @param plan - 计划
+ * @param actual - 实际
+ * @returns 数值结果
+ */
 function bigramCoverage(plan: string, actual: string): number {
     if (plan.length < 2) return actual.includes(plan) ? 1 : 0;
     let hit = 0;
@@ -68,7 +79,13 @@ function bigramCoverage(plan: string, actual: string): number {
 /** 相似名覆盖阈值：章纲名是人工简写，结算名是模型描述，允许一定差异 */
 const NAME_COVERAGE_THRESHOLD = 0.6;
 
-/** 计划名是否被结算侧覆盖（双向包含 + 2-gram 覆盖，容忍人工简写与模型描述的差异） */
+/**
+ * 计划名是否被结算侧覆盖（双向包含 + 2-gram 覆盖，容忍人工简写与模型描述的差异）
+ *
+ * @param planName - 计划名称
+ * @param actualNames - 实际名称列表
+ * @returns 是否成功
+ */
 function nameCovered(planName: string, actualNames: string[]): boolean {
     const plan = normalizeName(planName);
     if (!plan) return true;
@@ -88,6 +105,8 @@ function nameCovered(planName: string, actualNames: string[]): boolean {
 /**
  * 核对本章伏笔闭环。
  * 计划为空（旧版信息规划没有伏笔操作小节）时只做数量核对。
+ * @param params - 参数集合
+  * @returns ForeshadowLoopCheck 实例
  */
 export function verifyForeshadowLoop(params: {
     /** UPDATE_FORESHADOW 指令（name + value） */

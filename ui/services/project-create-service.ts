@@ -78,7 +78,14 @@ export async function writeStoryStructureGuideFile(app: App, project: string, se
     }
 }
 
-/** 创建长篇小说项目；覆盖被拒绝或同人设定未审核时 created=false。 */
+/**
+ * 创建长篇小说项目；覆盖被拒绝或同人设定未审核时 created=false。
+ *
+ * @param app - Obsidian 应用实例
+ * @param plugin - 插件实例
+ * @param params - 参数集合
+  * @returns CreateLongProjectResult 实例
+ */
 export async function createLongNovelProject(
     app: App,
     plugin: ProjectCreatePluginHost,

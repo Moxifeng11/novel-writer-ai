@@ -277,7 +277,12 @@ export function buildCreationModeMetaSection(meta: CreationModeMeta): string {
     return lines.join('\n');
 }
 
-/** 生成项目内可编辑的模式指南（写入 00-系统模板/创作模式指南.md）。 */
+/**
+ * 生成项目内可编辑的模式指南（写入 00-系统模板/创作模式指南.md）。
+ *
+ * @param meta - 元数据
+ * @returns 文本结果
+ */
 export function buildCreationModeGuide(meta: CreationModeMeta): string {
     const spec = CREATION_MODE_SPECS[meta.mode];
     const category = meta.mode === 'short' ? findShortStoryCategory(meta.shortCategory) : undefined;
@@ -391,6 +396,9 @@ N-1 日/内 场景名
 
 /**
  * 模式提示词覆盖块。长篇返回空串，保证原有提示词完全不变。
+ * @param mode - 模式
+ * @param meta - 元数据
+ * @returns 文本结果
  */
 export function getCreationModePromptBlock(mode: CreationMode, meta: Partial<CreationModeMeta> = {}): string {
     if (mode === 'short') {

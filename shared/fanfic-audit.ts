@@ -58,7 +58,14 @@ export interface FanficAuditOptions {
 const PLACEHOLDER_RE = /（待补充）|\(待补充\)|（待核实[^）]*）|\(待核实[^)]*\)/g;
 const DERIVATIVE_SOURCE_RE = /(同人|fanfic|fanfiction|衍生|改编|动画|电视剧|影视|电影|游戏|漫画|续写|外传|二次创作|fandom|lofter|ao3)/i;
 
-/** 规则审核：0 次 AI，覆盖字段、占位、时间线、来源、引用、审核状态。 */
+/**
+ * 规则审核：0 次 AI，覆盖字段、占位、时间线、来源、引用、审核状态。
+ *
+ * @param content - 内容
+ * @param sources - 来源列表
+ * @param options - 配置项
+  * @returns FanficAuditResult 实例
+ */
 export function auditFanficSettings(
     content: string,
     sources: CanonSource[] = [],
@@ -296,7 +303,12 @@ function findDuplicateEntries(content: string): string[] {
     return [...names.entries()].filter(([, count]) => count > 1).map(([name]) => name);
 }
 
-/** 人工审核通过时建议写入 frontmatter 的字段（供 UI 拼装）。 */
+/**
+ * 人工审核通过时建议写入 frontmatter 的字段（供 UI 拼装）。
+ *
+ * @param input - 输入
+ * @returns 映射结果
+ */
 export function buildFanficApprovalMeta(input: {
     reviewer: string;
     sources: CanonSource[];
@@ -312,7 +324,13 @@ export function buildFanficApprovalMeta(input: {
     };
 }
 
-/** 写入/替换审核元数据；保留正文其余内容。 */
+/**
+ * 写入/替换审核元数据；保留正文其余内容。
+ *
+ * @param content - 内容
+ * @param meta - 元数据
+ * @returns 文本结果
+ */
 export function applyFanficReviewMeta(content: string, meta: Record<string, string>): string {
     const lines = Object.entries(meta).map(([key, value]) => `${key}: ${value}`);
     const keys = new Set(Object.keys(meta));

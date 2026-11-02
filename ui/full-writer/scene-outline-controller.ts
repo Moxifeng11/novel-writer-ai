@@ -55,7 +55,11 @@ export class SceneOutlineController {
 
     get app(): App { return this.deps.app; }
 
-    /** 主渲染入口 */
+    /**
+     * 主渲染入口
+     *
+     * @param container - 容器元素
+     */
     async render(container: HTMLElement): Promise<void> {
         container.empty();
         const project = this.deps.getProject();
@@ -936,7 +940,11 @@ export class SceneOutlineController {
         return { project, volNum: volMatch ? parseInt(volMatch[1]) : 1, chapNum };
     }
 
-    /** 保存场景数据；返回是否真正写入 */
+    /**
+     * 保存场景数据；返回是否真正写入
+     *
+     * @returns 是否成功
+     */
     async saveScenes(): Promise<boolean> {
         // 优先用「编辑发生时」捕获的目标，避免切章后写进新章；手动保存时目标就是当前章
         const target = this.pendingSaveTarget ?? this.resolveSaveTarget();
@@ -1039,12 +1047,21 @@ export class SceneOutlineController {
         }
     }
 
-    /** 最近一次成功写入/读取的内容（供调用方同步步骤状态） */
+    /**
+     * 最近一次成功写入/读取的内容（供调用方同步步骤状态）
+     *
+     * @returns 文本结果
+     */
     getSavedContent(): string {
         return this.originalContent;
     }
 
-    /** 纯文本模式保存：原样写入，不做场景解析 */
+    /**
+     * 纯文本模式保存：原样写入，不做场景解析
+     *
+     * @param content - 内容
+     * @returns 是否成功
+     */
     async saveRawContent(content: string): Promise<boolean> {
         const project = this.deps.getProject();
         const chapNum = this.deps.getChapterNum();

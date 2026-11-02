@@ -59,17 +59,41 @@ export interface RoundSelectModalParams {
 /** StepRunner 回调接口 — UI 层实现 */
 export interface StepRunnerCallbacks {
     // ── 通知类 ──────────────────────────────────────────────
-    /** 显示通知（默认5秒） */
+    /**
+     * 显示通知（默认5秒）
+     *
+     * @param message - 消息
+     * @param duration - 耗时
+     */
     showNotice(message: string, duration?: number): void;
-    /** 显示成功通知 */
+    /**
+     * 显示成功通知
+     *
+     * @param message - 消息
+     * @param duration - 耗时
+     */
     showSuccess(message: string, duration?: number): void;
-    /** 显示错误通知 */
+    /**
+     * 显示错误通知
+     *
+     * @param message - 消息
+     * @param duration - 耗时
+     */
     showError(message: string, duration?: number): void;
-    /** 显示警告通知 */
+    /**
+     * 显示警告通知
+     *
+     * @param message - 消息
+     * @param duration - 耗时
+     */
     showWarning(message: string, duration?: number): void;
 
     // ── 进度类 ──────────────────────────────────────────────
-    /** 显示进度（持续显示，可更新） */
+    /**
+     * 显示进度（持续显示，可更新）
+     *
+     * @param message - 消息
+     */
     showProgress(message: string): void;
     /** 隐藏进度通知 */
     hideProgress(): void;
@@ -83,11 +107,23 @@ export interface StepRunnerCallbacks {
     onDiagnostic?(entry: DiagnosticInput): void;
 
     // ── 弹窗类 ──────────────────────────────────────────────
-    /** 显示 DEAI 消痕改写两阶段弹窗 */
+    /**
+     * 显示 DEAI 消痕改写两阶段弹窗
+     *
+     * @param params - 参数集合
+     */
     showDeaiTwoPhaseModal(params: DeaiModalParams): void;
-    /** 显示自动迭代精修两阶段弹窗 */
+    /**
+     * 显示自动迭代精修两阶段弹窗
+     *
+     * @param params - 参数集合
+     */
     showRefineTwoPhaseModal(params: RefineModalParams): void;
-    /** 显示逐轮版本选择弹窗 */
+    /**
+     * 显示逐轮版本选择弹窗
+     *
+     * @param params - 参数集合
+     */
     showRoundSelectModal(params: RoundSelectModalParams): void;
 
     // ── 状态类 ──────────────────────────────────────────────

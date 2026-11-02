@@ -24,7 +24,12 @@ function quotePath(path: string): string {
     return `"${String(path).replace(/\\/g, '/').replace(/"/g, '\\"')}"`;
 }
 
-/** YAML 字符串值转义（用于 displayName 等） */
+/**
+ * YAML 字符串值转义（用于 displayName 等）
+ *
+ * @param value - 值
+ * @returns 文本结果
+ */
 function q(value: string): string {
     return `"${String(value).replace(/"/g, '\\"')}"`;
 }
@@ -49,7 +54,12 @@ function orderBlock(columns: ColumnSpec[], indent = '      '): string {
     return columns.map((column) => `${indent}- ${column.property}`).join('\n');
 }
 
-/** 章节进度看板：表格 + 状态分组卡片 */
+/**
+ * 章节进度看板：表格 + 状态分组卡片
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function buildChapterProgressBase(project: string): string {
     const tag = KIND_NAMESPACE_TAG.body!;
     const columns: ColumnSpec[] = [
@@ -87,7 +97,12 @@ ${orderBlock(columns, '      ')}
 `;
 }
 
-/** 人物状态看板：修为/势力/位置/存活状态 */
+/**
+ * 人物状态看板：修为/势力/位置/存活状态
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function buildCharacterBase(project: string): string {
     const tag = KIND_NAMESPACE_TAG.character!;
     const schema = FRONTMATTER_SCHEMAS.character;
@@ -120,7 +135,12 @@ ${orderBlock(columns, '      ')}
 `;
 }
 
-/** 物品归属看板：所有权与当前状态一眼可见 */
+/**
+ * 物品归属看板：所有权与当前状态一眼可见
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function buildItemBase(project: string): string {
     const tag = KIND_NAMESPACE_TAG.item!;
     const columns: ColumnSpec[] = [
@@ -153,7 +173,12 @@ ${orderBlock(columns, '      ')}
 `;
 }
 
-/** 地点与势力看板：两个视图 */
+/**
+ * 地点与势力看板：两个视图
+ *
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function buildPlaceFactionBase(project: string): string {
     const locationTag = KIND_NAMESPACE_TAG.location!;
     const factionTag = KIND_NAMESPACE_TAG.faction!;
@@ -207,7 +232,13 @@ export function buildProjectBases(project: string): BaseFileSpec[] {
     ];
 }
 
-/** 看板 → 项目内绝对路径 */
+/**
+ * 看板 → 项目内绝对路径
+ *
+ * @param project - 项目（路径或对象）
+ * @param relativePath - 相对路径
+ * @returns 文本结果
+ */
 export function baseFilePath(project: string, relativePath: string): string {
     return `${project}/${relativePath}`;
 }

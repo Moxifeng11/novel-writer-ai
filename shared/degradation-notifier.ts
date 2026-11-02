@@ -72,6 +72,7 @@ export class DegradationNotifier {
 
     /**
      * 注册一个降级事件消费者（如状态栏更新、Notice 弹窗、Markdown 日志写入）。
+     * @param sink - 事件接收器
      * @returns 取消注册的函数
      */
     registerSink(sink: DegradationSink): () => void {
@@ -84,6 +85,8 @@ export class DegradationNotifier {
     /**
      * 发射一个降级事件。
      * 会写入结构化日志、追加到事件数组、分发给所有 sink。
+     * @param input - 输入
+      * @returns DegradationEvent 实例
      */
     notify(input: DegradationEventInput): DegradationEvent {
         const event: DegradationEvent = {
@@ -104,17 +107,31 @@ export class DegradationNotifier {
         return event;
     }
 
-    /** 获取已收集的降级事件（副本，按时间顺序） */
+    /**
+     * 获取已收集的降级事件（副本，按时间顺序）
+     *
+     * @returns 结果数组
+     */
     getEvents(): DegradationEvent[] {
         return [...this.events];
     }
 
-    /** 获取指定维度的降级事件 */
+    /**
+     * 获取指定维度的降级事件
+     *
+     * @param dimension - 维度
+     * @returns 结果数组
+     */
     getEventsByDimension(dimension: string): DegradationEvent[] {
         return this.events.filter((e) => e.dimension === dimension);
     }
 
-    /** 是否存在指定维度的降级 */
+    /**
+     * 是否存在指定维度的降级
+     *
+     * @param dimension - 维度
+     * @returns 是否成功
+     */
     hasDegradation(dimension: string): boolean {
         return this.events.some((e) => e.dimension === dimension);
     }
@@ -157,7 +174,11 @@ export class DegradationNotifier {
 /** 模块级单例 */
 let notifierInstance: DegradationNotifier | null = null;
 
-/** 获取全局降级通知器单例 */
+/**
+ * 获取全局降级通知器单例
+ *
+  * @returns DegradationNotifier 实例
+ */
 export function getDegradationNotifier(): DegradationNotifier {
     if (!notifierInstance) {
         notifierInstance = new DegradationNotifier();

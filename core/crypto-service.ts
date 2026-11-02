@@ -71,7 +71,11 @@ export class CryptoService {
         this.callbacks = callbacks;
     }
 
-    /** 设置会话口令（解密验证成功后调用；供 UI「修改口令」等入口复用） */
+    /**
+     * 设置会话口令（解密验证成功后调用；供 UI「修改口令」等入口复用）
+     *
+     * @param password - 口令
+     */
     setSessionPassword(password: string): void {
         this._password = password;
         this._derivedKeys.clear();
@@ -83,7 +87,11 @@ export class CryptoService {
         this._derivedKeys.clear();
     }
 
-    /** 当前是否已有会话口令 */
+    /**
+     * 当前是否已有会话口令
+     *
+     * @returns 是否成功
+     */
     hasSessionPassword(): boolean {
         return this._password != null;
     }
@@ -246,6 +254,8 @@ export class CryptoService {
     /**
      * 加密明文。v2：口令 + PBKDF2。
      * 无会话口令时通过 requestNewPassword 询问；用户取消则明文返回（保持向下兼容）。
+     * @param plaintext - 明文
+     * @returns 文本结果
      */
     async encrypt(plaintext: string): Promise<string> {
         const encrypted = await this.encryptStrict(plaintext);
@@ -260,6 +270,8 @@ export class CryptoService {
      * 设置持久化必须用这个：磁盘上已有密文时若拿不到口令，
      * 写回明文会把原本受保护的值降级，同时造成「部分加密部分明文」的
      * 混合状态（历史 bug 的表现之一）。
+     * @param plaintext - 明文
+      * @returns 文本结果 或 null
      */
     async encryptStrict(plaintext: string): Promise<string | null> {
         if (!plaintext) return '';
@@ -278,6 +290,9 @@ export class CryptoService {
     /**
      * 该密文能否用给定口令解开。
      * 供「重置口令」流程判断哪些条目需要用户重新输入。
+     * @param password - 口令
+     * @param stored - 已存储值
+     * @returns 是否成功
      */
     async canDecryptWith(password: string, stored: string): Promise<boolean> {
         if (!stored) return true;
@@ -290,6 +305,8 @@ export class CryptoService {
      * - `aes256v2:` → 口令派生解密（无会话口令时询问；口令错误重问一次）
      * - `aes256:`   → v1 旧 seed 兼容读取
      * - 其他        → 视为明文原样返回
+     * @param stored - 已存储值
+     * @returns 文本结果
      */
     async decrypt(stored: string): Promise<string> {
         if (!stored) return '';
@@ -318,6 +335,8 @@ export class CryptoService {
      * 启动期静默解密：仅有会话口令时才解密 v2 密文，否则原样返回。
      * 用于 loadSettings——插件启动不应弹口令框阻塞 onload（否则视图/命令注册不完成，
      * 表现为「插件无法正常使用」）。真正调用 AI 时再由 resolveApiKey 按需解锁。
+     * @param stored - 已存储值
+     * @returns 文本结果
      */
     async decryptWithoutPrompt(stored: string): Promise<string> {
         if (!stored) return '';

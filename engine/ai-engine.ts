@@ -132,6 +132,11 @@ export class AIEngine {
     /**
      * 实体补全统一入口：人物走 CharacterGenerator，其余走 BatchEntityGenerator。
      * 返回 null 表示补全失败；调用方必须复检后才允许落盘。
+     * @param kind - 种类
+     * @param name - 名称
+     * @param content - 内容
+     * @param missingFields - 缺失字段列表
+      * @returns 文本结果 或 null
      */
     async repairEntity(
         kind: 'characters' | 'factions' | 'locations' | 'items',
@@ -164,6 +169,7 @@ export class AIEngine {
      * @param temperature - 采样温度
      * @param maxTokens - 参数
      * @param onChunk - 参数
+     * @param options - 配置项
      * @returns API 响应
      */
     async callAIStream(
@@ -225,6 +231,7 @@ export class AIEngine {
      *
      * @param context - 上下文
      * @param onChunk - 分片回调
+     * @param signal - 取消信号
      * @returns API 响应
      */
     async generateChapterStream(
@@ -693,7 +700,12 @@ export class AIEngine {
         }
     }
 
-    /** 供其他生成器复用同一套预算口径（设置值 + 模型能力取小） */
+    /**
+     * 供其他生成器复用同一套预算口径（设置值 + 模型能力取小）
+     *
+     * @param model - 模型标识
+      * @returns number } 结果
+     */
     getPromptLimits(model?: string): { maxContext: number; maxOutput: number } {
         return this.resolvePromptLimits(model || this.plugin.settings.proModel);
     }

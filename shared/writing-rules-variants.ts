@@ -166,7 +166,11 @@ export const WRITING_RULES_VOICEPRINT = `# 网络小说写作规则（真人特�
 - 省略号、破折号全文各不超过 2 处；不用分号。
 `;
 
-/** 全部「不同思路」版本（不含 3.6.0 基线与 legacy 快照） */
+/**
+ * 全部「不同思路」版本（不含 3.6.0 基线与 legacy 快照）
+ *
+ * @returns 结果数组
+ */
 export function builtinRuleVariants(): BuiltinRuleVariant[] {
     return [
         {

@@ -1082,6 +1082,7 @@ export class RhythmDeconstructor {
     /**
      * 注入 LLM 增强器。注入后 analyze 方法末尾会调用 LLM 做语义提炼。
      * 不注入时 analyze 行为完全不变（纯统计）。
+     * @param llmEnhancer - LLM 增强器
      */
     setLLMEnhancer(llmEnhancer?: LLMEnhancer): void {
         this.llmEnhancer = llmEnhancer;
@@ -1654,6 +1655,8 @@ export class RhythmDeconstructor {
      * 保存到 Markdown。
      *
      * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param baseDir - 基础目录
      */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
@@ -1679,6 +1682,9 @@ export class RhythmDeconstructor {
      * 保存分析到 Markdown。
      *
      * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param result - 结果
+     * @param baseDir - 基础目录
      */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },

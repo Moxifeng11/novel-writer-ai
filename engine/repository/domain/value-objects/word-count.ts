@@ -31,6 +31,10 @@ export class WordCount {
     /**
      * 创建 WordCount 实例
      * 自动校验数值有效性，非法值归零
+     * @param chinese - 中文文本
+     * @param total - 总数
+     * @param paragraphs - 段落列表
+      * @returns WordCount 实例
      */
     static create(chinese: number = 0, total: number = 0, paragraphs: number = 0): WordCount {
         return new WordCount({
@@ -42,6 +46,8 @@ export class WordCount {
 
     /**
      * 从文本内容统计字数
+     * @param text - 文本内容
+      * @returns WordCount 实例
      */
     static fromText(text: string): WordCount {
         if (!text) {
@@ -55,13 +61,19 @@ export class WordCount {
         return WordCount.create(chinese, total, paragraphs);
     }
 
-    /** 空字数对象 */
+    /**
+     * 空字数对象
+     *
+      * @returns WordCount 实例
+     */
     static zero(): WordCount {
         return WordCount.create(0, 0, 0);
     }
 
     /**
      * 两个字数相加
+     * @param other - 另一侧值
+      * @returns WordCount 实例
      */
     add(other: WordCount): WordCount {
         return WordCount.create(
@@ -73,6 +85,8 @@ export class WordCount {
 
     /**
      * 减去另一个字数
+     * @param other - 另一侧值
+      * @returns WordCount 实例
      */
     subtract(other: WordCount): WordCount {
         return WordCount.create(
@@ -84,6 +98,7 @@ export class WordCount {
 
     /**
      * 判断是否为空（零字数）
+     * @returns 是否成功
      */
     isZero(): boolean {
         return this.chinese === 0 && this.total === 0 && this.paragraphs === 0;
@@ -91,6 +106,7 @@ export class WordCount {
 
     /**
      * 转换为普通对象（用于序列化）
+      * @returns WordCountProps 实例
      */
     toJSON(): WordCountProps {
         return {
@@ -102,6 +118,8 @@ export class WordCount {
 
     /**
      * 从普通对象创建
+     * @param json - JSON
+      * @returns WordCount 实例
      */
     static fromJSON(json: Partial<WordCountProps> | undefined | null): WordCount {
         if (!json) return WordCount.zero();
@@ -110,6 +128,8 @@ export class WordCount {
 
     /**
      * 值对象相等性比较
+     * @param other - 另一侧值
+     * @returns 是否成功
      */
     equals(other: WordCount): boolean {
         return (

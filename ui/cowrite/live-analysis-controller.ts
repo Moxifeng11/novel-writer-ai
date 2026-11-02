@@ -39,7 +39,11 @@ export class LiveAnalysisController {
   /** 最近一次守卫结果（监控卡数据源）。旧实现读 `liveAnalysis.issues`，该字段从不存在。 */
   private lastGuardSummary: GuardSummary | null = null;
 
-  /** 最近一次守卫结果（null = 本章还没检查过） */
+  /**
+   * 最近一次守卫结果（null = 本章还没检查过）
+   *
+    * @returns GuardSummary 或 null
+   */
   getGuardSummary(): GuardSummary | null {
     return this.lastGuardSummary;
   }

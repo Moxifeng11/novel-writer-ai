@@ -310,7 +310,12 @@ export class PlotCanvasModal extends Modal {
     }
 }
 
-/** 打开情节画布 */
+/**
+ * 打开情节画布
+ *
+ * @param plugin - 插件实例
+ * @param project - 项目（路径或对象）
+ */
 export function openPlotCanvas(plugin: NovelWriterPlugin, project: string): void {
     new PlotCanvasModal(plugin.app, plugin, project).open();
 }

@@ -15,12 +15,21 @@ export class Frontmatter {
         this.data = { ...data };
     }
 
-    /** 创建空 Frontmatter */
+    /**
+     * 创建空 Frontmatter
+     *
+      * @returns Frontmatter 实例
+     */
     static empty(): Frontmatter {
         return new Frontmatter({});
     }
 
-    /** 从普通对象创建 */
+    /**
+     * 从普通对象创建
+     *
+     * @param data - 数据
+      * @returns Frontmatter 实例
+     */
     static from(data: Record<string, any> | undefined | null): Frontmatter {
         return new Frontmatter(data || {});
     }
@@ -35,6 +44,8 @@ export class Frontmatter {
 
     /**
      * 检查字段是否存在
+     * @param key - 键
+     * @returns 是否成功
      */
     has(key: string): boolean {
         return key in this.data;
@@ -42,6 +53,9 @@ export class Frontmatter {
 
     /**
      * 设置字段值，返回新的 Frontmatter 实例（不可变）
+     * @param key - 键
+     * @param value - 值
+      * @returns Frontmatter 实例
      */
     set(key: string, value: any): Frontmatter {
         const newData = { ...this.data };
@@ -55,6 +69,8 @@ export class Frontmatter {
 
     /**
      * 合并多个字段，返回新的 Frontmatter 实例
+     * @param patch - 补丁
+      * @returns Frontmatter 实例
      */
     merge(patch: Record<string, any>): Frontmatter {
         const newData = { ...this.data };
@@ -70,6 +86,8 @@ export class Frontmatter {
 
     /**
      * 删除字段，返回新的 Frontmatter 实例
+     * @param key - 键
+      * @returns Frontmatter 实例
      */
     remove(key: string): Frontmatter {
         const newData = { ...this.data };
@@ -79,6 +97,7 @@ export class Frontmatter {
 
     /**
      * 获取所有 keys
+     * @returns 结果数组
      */
     keys(): string[] {
         return Object.keys(this.data);
@@ -86,6 +105,7 @@ export class Frontmatter {
 
     /**
      * 获取所有 values
+     * @returns 结果数组
      */
     values(): any[] {
         return Object.values(this.data);
@@ -93,6 +113,7 @@ export class Frontmatter {
 
     /**
      * 获取所有 entries
+     * @returns 结果数组
      */
     entries(): [string, any][] {
         return Object.entries(this.data);
@@ -100,6 +121,7 @@ export class Frontmatter {
 
     /**
      * 转换为普通对象（深拷贝）
+     * @returns 映射结果
      */
     toObject(): Record<string, any> {
         return { ...this.data };
@@ -107,6 +129,7 @@ export class Frontmatter {
 
     /**
      * 是否为空
+     * @returns 是否成功
      */
     isEmpty(): boolean {
         return Object.keys(this.data).length === 0;
@@ -114,6 +137,7 @@ export class Frontmatter {
 
     /**
      * 字段数量
+     * @returns 数值结果
      */
     size(): number {
         return Object.keys(this.data).length;
@@ -121,6 +145,7 @@ export class Frontmatter {
 
     /**
      * 以字符串数组形式获取 tags 字段
+     * @returns 结果数组
      */
     getTags(): string[] {
         const tags = this.data['tags'];
@@ -134,6 +159,8 @@ export class Frontmatter {
 
     /**
      * 等值比较
+     * @param other - 另一侧值
+     * @returns 是否成功
      */
     equals(other: Frontmatter): boolean {
         const keys1 = Object.keys(this.data).sort();

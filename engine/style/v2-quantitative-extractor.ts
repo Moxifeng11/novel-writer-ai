@@ -15,7 +15,12 @@
 
 import type { RhythmStats, PerspectiveStats } from './style-dimensions-v2';
 
-/** 清洗文本：统一换行、去除多余空白 */
+/**
+ * 清洗文本：统一换行、去除多余空白
+ *
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 function cleanText(text: string): string {
     return text
         .replace(/\r\n/g, '\n')
@@ -23,12 +28,22 @@ function cleanText(text: string): string {
         .trim();
 }
 
-/** 计算去除空白后的字数 */
+/**
+ * 计算去除空白后的字数
+ *
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 function countChars(text: string): number {
     return text.replace(/\s/g, '').length;
 }
 
-/** 将文本切分为句子（按句末标点 / 换行） */
+/**
+ * 将文本切分为句子（按句末标点 / 换行）
+ *
+ * @param text - 文本内容
+ * @returns 结果数组
+ */
 function splitSentences(text: string): string[] {
     return text
         .split(/[。！？!?；;\n]+/)
@@ -36,7 +51,12 @@ function splitSentences(text: string): string[] {
         .filter(s => s.length > 0);
 }
 
-/** 归一到 3 位小数（0-1 区间） */
+/**
+ * 归一到 3 位小数（0-1 区间）
+ *
+ * @param n - 编号
+ * @returns 数值结果
+ */
 function roundRatio(n: number): number {
     return Math.round(Math.min(1, Math.max(0, n)) * 1000) / 1000;
 }
@@ -44,6 +64,8 @@ function roundRatio(n: number): number {
 /**
  * 计算节奏维度定量指标。
  * 纯本地统计，不依赖 AI/词典。
+ * @param text - 文本内容
+  * @returns RhythmStats 实例
  */
 export function calculateRhythmStats(text: string): RhythmStats {
     const cleaned = cleanText(text);
@@ -109,6 +131,8 @@ export function calculateRhythmStats(text: string): RhythmStats {
 /**
  * 计算视角维度定量指标（人称分布）。
  * 纯本地统计：按人称代词出现频次估算，不依赖 AI。
+ * @param text - 文本内容
+  * @returns PerspectiveStats 实例
  */
 export function calculatePerspectiveStats(text: string): PerspectiveStats {
     const cleaned = text.replace(/\s/g, '');

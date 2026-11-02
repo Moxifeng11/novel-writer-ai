@@ -174,6 +174,8 @@ export interface ChartContainerResult {
 /**
  * 创建统一图表容器
  * 封装 SVG 根元素、viewBox、网格、坐标轴、图例、tooltip 等公共逻辑
+ * @param options - 配置项
+  * @returns ChartContainerResult 实例
  */
 export function createChartContainer(options: ChartContainerOptions = {}): ChartContainerResult {
 	const width = options.width || 400;
@@ -867,6 +869,9 @@ export interface SpiralLayoutOutput {
  * - 从中心开始，沿 r = a + b*θ 螺线计算位置
  * - bounding box 碰撞检测
  * - 字体大小 5 级梯度（按权重分位数）
+ * @param words - 词表
+ * @param bounds - 边界
+ * @returns 结果数组
  */
 export function spiralLayout(
 	words: SpiralLayoutInput[],
@@ -1262,6 +1267,9 @@ export interface HistogramOptions {
 
 /**
  * 将散点数据转换为直方图数据（按 x 轴分桶统计数量）
+ * @param points - 点位
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function scatterToHistogram(
 	points: ScatterDataPoint[],

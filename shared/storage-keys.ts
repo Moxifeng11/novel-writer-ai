@@ -37,7 +37,13 @@ export const LEGACY_STORAGE_KEYS = [
     `${NOVEL_WRITER_KEY_PREFIX}user-reload`,
 ] as const;
 
-/** 项目分桶键：项目名为空时落到 `global`（保证切换项目后能读回） */
+/**
+ * 项目分桶键：项目名为空时落到 `global`（保证切换项目后能读回）
+ *
+ * @param prefix - 前缀
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function projectScopedKey(prefix: string, project?: string | null): string {
     return `${prefix}${project || 'global'}`;
 }

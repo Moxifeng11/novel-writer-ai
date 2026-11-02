@@ -366,7 +366,14 @@ function evaluateStage(
     }
 }
 
-/** 已完成阶段的按钮文案：从「继续做」改成「查看/回看」 */
+/**
+ * 已完成阶段的按钮文案：从「继续做」改成「查看/回看」
+ *
+ * @param stage - 阶段
+ * @param mode - 模式
+ * @param unitLabel - 单元标签
+ * @returns 文本结果
+ */
 function doneCtaLabel(stage: CreationFlowStage, mode: CreationMode, unitLabel: string): string {
     switch (stage.id) {
         case 'wizard': return '查看初始化向导';
@@ -390,6 +397,10 @@ function doneCtaLabel(stage: CreationFlowStage, mode: CreationMode, unitLabel: s
  *   3. 第一个未完成阶段 → active
  *   4. 依赖未完成 → blocked
  *   5. 其余 → todo
+ * @param mode - 模式
+ * @param project - 项目（路径或对象）
+ * @param facts - 事实
+  * @returns CreationFlowSnapshot 实例
  */
 export function resolveCreationFlow(
     mode: CreationMode,
@@ -497,6 +508,8 @@ function countSubstantiveLines(content: string): number {
  *   - 与 starter 完全一致 → 未填写
  *   - 比 starter 多出 20 字符以上 → 已填写
  *   - 否则至少有 2 行实质内容（排除标题、引用、空字段）
+ * @param content - 内容
+ * @returns 是否成功
  */
 export function hasMeaningfulDocContent(content: string, starter = ''): boolean {
     const body = String(content || '').replace(/\r\n/g, '\n').trim();
@@ -508,7 +521,12 @@ export function hasMeaningfulDocContent(content: string, starter = ''): boolean 
     return countSubstantiveLines(body) >= 2;
 }
 
-/** 流程总览文案，供项目页摘要与 Agent 复用 */
+/**
+ * 流程总览文案，供项目页摘要与 Agent 复用
+ *
+ * @param snapshot - 快照
+ * @returns 文本结果
+ */
 export function formatCreationFlowSummary(snapshot: CreationFlowSnapshot): string {
     const percent = Math.round(snapshot.overallRatio * 100);
     const next = snapshot.stages.find(stage => stage.id === snapshot.nextStageId);

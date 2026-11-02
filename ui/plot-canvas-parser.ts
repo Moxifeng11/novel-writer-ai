@@ -28,6 +28,7 @@ export interface ChapterNode {
  * 解析单个分卷大纲源文件为卷列表。
  * @param lines 源文件按行拆分
  * @param sourceIdx 来源文件索引
+ * @returns 结果数组
  */
 export function parseVolumeOutline(lines: string[], sourceIdx: number): VolumeNode[] {
     const volumes: VolumeNode[] = [];
@@ -78,7 +79,12 @@ export function parseVolumeOutline(lines: string[], sourceIdx: number): VolumeNo
     return volumes;
 }
 
-/** 统计章节总数 */
+/**
+ * 统计章节总数
+ *
+ * @param volumes - 卷列表
+ * @returns 数值结果
+ */
 export function countChapters(volumes: VolumeNode[]): number {
     return volumes.reduce((sum, v) => sum + v.chapters.length, 0);
 }

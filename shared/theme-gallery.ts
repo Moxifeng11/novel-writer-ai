@@ -108,7 +108,12 @@ export function builtinPresetId(themeId: string, mode: ThemeMode): string {
     return `${BUILTIN_PRESET_PREFIX}${themeId}:${mode}`;
 }
 
-/** 解析 activePresetId；非内置或形态不对返回 null */
+/**
+ * 解析 activePresetId；非内置或形态不对返回 null
+ *
+ * @param activePresetId - 当前预设 ID
+  * @returns ThemeMode } 或 null
+ */
 export function parseBuiltinPresetId(activePresetId: string | undefined): { themeId: string; mode: ThemeMode } | null {
     if (!activePresetId || !activePresetId.startsWith(BUILTIN_PRESET_PREFIX)) return null;
     const body = activePresetId.slice(BUILTIN_PRESET_PREFIX.length);
@@ -130,6 +135,9 @@ export function isBuiltinPresetId(activePresetId: string | undefined): boolean {
  *
  * 复用 ThemePreset 形态，落盘路径与用户方案完全一致
  * （presetToSettings → themeColors + theme），不改注入逻辑。
+ * @param theme - 主题
+ * @param mode - 模式
+  * @returns ThemePreset 实例
  */
 export function galleryThemeToPreset(theme: GalleryTheme, mode: ThemeMode): ThemePreset {
     const variant = mode === 'dark' ? theme.dark : theme.light;
@@ -145,7 +153,12 @@ export function galleryThemeToPreset(theme: GalleryTheme, mode: ThemeMode): Them
     };
 }
 
-/** 方案是否可用：三层都必须是合法 hex，否则会写入无效 CSS 变量 */
+/**
+ * 方案是否可用：三层都必须是合法 hex，否则会写入无效 CSS 变量
+ *
+ * @param theme - 主题
+ * @returns 是否成功
+ */
 export function isGalleryThemeValid(theme: GalleryTheme): boolean {
     const ok = (v: GalleryVariant) =>
         isHexColor(v.base) && isHexColor(v.card) && isHexColor(v.accent)
@@ -153,7 +166,12 @@ export function isGalleryThemeValid(theme: GalleryTheme): boolean {
     return ok(theme.light) && ok(theme.dark);
 }
 
-/** 当前模式下应高亮的内置主题（用于设置页按钮态） */
+/**
+ * 当前模式下应高亮的内置主题（用于设置页按钮态）
+ *
+ * @param activePresetId - 当前预设 ID
+  * @returns ThemeMode } 或 null
+ */
 export function activeBuiltinTheme(
     activePresetId: string | undefined,
 ): { themeId: string; mode: ThemeMode } | null {

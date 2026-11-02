@@ -38,7 +38,13 @@ function parseFrontmatter(raw: string): { meta: Record<string, string>; body: st
     return { meta, body: raw.slice(match[0].length) };
 }
 
-/** 取 `## 标题` 到下一个 `## ` 之间的内容 */
+/**
+ * 取 `## 标题` 到下一个 `## ` 之间的内容
+ *
+ * @param body - 正文
+ * @param heading - 标题
+ * @returns 文本结果
+ */
 export function extractSection(body: string, heading: string): string {
     const marker = `## ${heading}`;
     const idx = body.indexOf(marker);
@@ -49,7 +55,13 @@ export function extractSection(body: string, heading: string): string {
     return body.slice(after + 1, next === -1 ? body.length : next).trim();
 }
 
-/** 取 `### 子标题` 到下一个 `### ` 之间的内容 */
+/**
+ * 取 `### 子标题` 到下一个 `### ` 之间的内容
+ *
+ * @param section - 分区
+ * @param sub - 子项
+ * @returns 文本结果
+ */
 export function extractSubSection(section: string, sub: string): string {
     const marker = `### ${sub}`;
     const idx = section.indexOf(marker);
@@ -75,6 +87,9 @@ const SUB_KEYS = ['总体风格', '句式特征', '用语习惯'];
 /**
  * 解析单个预设文件。章节键统一用标题名，方便 UI 直接映射。
  * 缺少 frontmatter 时以文件名兜底，保证用户随手新增的文件也能被识别。
+ * @param id - 标识
+ * @param raw - 原始
+  * @returns WritingStylePreset 实例
  */
 export function parseStylePreset(id: string, raw: string): WritingStylePreset {
     const text = normalize(raw);
@@ -106,7 +121,12 @@ export function parseStylePreset(id: string, raw: string): WritingStylePreset {
     };
 }
 
-/** 读取 vault 中全部预设；目录不存在时返回空数组 */
+/**
+ * 读取 vault 中全部预设；目录不存在时返回空数组
+ *
+ * @param app - Obsidian 应用实例
+ * @returns 结果数组
+ */
 export async function loadStylePresets(app: App): Promise<WritingStylePreset[]> {
     const folder = app.vault.getAbstractFileByPath(STYLE_PRESET_DIR);
     if (!(folder instanceof TFolder)) return [];
@@ -181,6 +201,9 @@ function buildPresetMarkdown(draft: StylePresetDraft, order: number): string {
  * 保存一个新预设到 vault 预设目录。
  * 返回落盘路径；同名预设已存在时抛错（不覆盖用户已有预设）。
  * 内容不完整（缺分节 / 分节为空 / 占位符）时同样抛错，避免写入不可用预设。
+ * @param app - Obsidian 应用实例
+ * @param draft - 草稿
+ * @returns 文本结果
  */
 export async function saveStylePreset(app: App, draft: StylePresetDraft): Promise<string> {
     const name = draft.name.trim();

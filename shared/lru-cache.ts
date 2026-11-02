@@ -67,6 +67,8 @@ export class LruCache<K, V> {
      * 获取缓存值
      * 命中时更新访问时间并将条目移到末尾（最新）
      * 未命中或已过期返回 undefined
+     * @param key - 键
+      * @returns V 或 undefined
      */
     get(key: K): V | undefined {
         const entry = this.cache.get(key);
@@ -87,6 +89,8 @@ export class LruCache<K, V> {
     /**
      * 设置缓存值
      * 超过 maxSize 时淘汰最久未使用的条目
+     * @param key - 键
+     * @param value - 值
      */
     set(key: K, value: V): void {
         const now = Date.now();
@@ -107,6 +111,8 @@ export class LruCache<K, V> {
     /**
      * 删除指定缓存条目
      * 返回是否存在并删除成功
+     * @param key - 键
+     * @returns 是否成功
      */
     delete(key: K): boolean {
         return this.cache.delete(key);
@@ -114,6 +120,8 @@ export class LruCache<K, V> {
 
     /**
      * 检查键是否存在（考虑 TTL）
+     * @param key - 键
+     * @returns 是否成功
      */
     has(key: K): boolean {
         const entry = this.cache.get(key);
@@ -139,6 +147,8 @@ export class LruCache<K, V> {
     /**
      * 按前缀批量删除缓存
      * 适用于：目录变更时失效该目录下所有文件缓存
+     * @param prefix - 前缀
+     * @returns 数值结果
      */
     deleteByPrefix(prefix: string): number {
         let count = 0;
@@ -154,6 +164,7 @@ export class LruCache<K, V> {
     /**
      * 清理所有已过期的条目
      * 返回清理的条目数
+     * @returns 数值结果
      */
     pruneExpired(): number {
         if (this.ttlMs <= 0) return 0;
@@ -171,12 +182,20 @@ export class LruCache<K, V> {
 
     // ── 元信息 ────────────────────────────────────────────────
 
-    /** 当前缓存条目数 */
+    /**
+     * 当前缓存条目数
+     *
+     * @returns 数值结果
+     */
     get size(): number {
         return this.cache.size;
     }
 
-    /** 获取所有键（按访问顺序，最旧在前） */
+    /**
+     * 获取所有键（按访问顺序，最旧在前）
+     *
+     * @returns 结果数组
+     */
     keys(): K[] {
         return Array.from(this.cache.keys());
     }

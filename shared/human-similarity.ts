@@ -53,7 +53,12 @@ function normalizeHistogram(buckets: number[]): number[] {
     return total > 0 ? buckets.map((n) => n / total) : buckets;
 }
 
-/** 去掉 frontmatter、标题行与引用行，只留正文 */
+/**
+ * 去掉 frontmatter、标题行与引用行，只留正文
+ *
+ * @param raw - 原始
+ * @returns 文本结果
+ */
 export function stripNonProse(raw: string): string {
     return String(raw || '')
         .replace(/^---[\s\S]*?---\s*/, '')
@@ -62,7 +67,12 @@ export function stripNonProse(raw: string): string {
         .join('\n');
 }
 
-/** 统计一段文本的分布 */
+/**
+ * 统计一段文本的分布
+ *
+ * @param raw - 原始
+  * @returns TextDistribution 实例
+ */
 export function analyzeDistribution(raw: string): TextDistribution {
     const text = stripNonProse(raw);
     const paragraphs = text.split(/\n+/).map((p) => p.trim()).filter((p) => p.length > 0);
@@ -95,7 +105,13 @@ export function analyzeDistribution(raw: string): TextDistribution {
     };
 }
 
-/** 直方图相似度：1 - 0.5 * Σ|p-q|（重叠系数），取值 0–1 */
+/**
+ * 直方图相似度：1 - 0.5 * Σ|p-q|（重叠系数），取值 0–1
+ *
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 数值结果
+ */
 export function histogramSimilarity(a: readonly number[], b: readonly number[]): number {
     const length = Math.max(a.length, b.length);
     let diff = 0;
@@ -105,7 +121,13 @@ export function histogramSimilarity(a: readonly number[], b: readonly number[]):
     return Math.max(0, 1 - diff / 2);
 }
 
-/** 余弦相似度（向量全部非负时取值 0–1） */
+/**
+ * 余弦相似度（向量全部非负时取值 0–1）
+ *
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 数值结果
+ */
 function cosineSimilarity(
     a: Record<string, number>,
     b: Record<string, number>,
@@ -126,7 +148,13 @@ function cosineSimilarity(
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-/** 标量相似度：按参照值归一化，避免「越接近 0 越好」的线性误判 */
+/**
+ * 标量相似度：按参照值归一化，避免「越接近 0 越好」的线性误判
+ *
+ * @param actual - 实际
+ * @param reference - 参考文本
+ * @returns 数值结果
+ */
 function ratioSimilarity(actual: number, reference: number): number {
     if (reference <= 0 && actual <= 0) return 1;
     // 下限 0.01：分号/破折号这类千分之几的标点，相对误差会被放大到失真
@@ -140,6 +168,9 @@ function ratioSimilarity(actual: number, reference: number): number {
  *
  * 400 字短样文的占比噪声很大（一段对话就能把对话占比从 0.1 抬到 0.3），
  * 用纯相对误差会把「同一批真人文本」判成低分。容差带让指标对样本长度更稳。
+ * @param actual - 实际
+ * @param reference - 参考文本
+ * @returns 数值结果
  */
 function bandedRatioSimilarity(actual: number, reference: number, tolerance = 0.35): number {
     if (reference <= 0 && actual <= 0) return 1;
@@ -166,6 +197,9 @@ export interface HumanSimilarityDetail {
  * 真人基线（提示词早就把这些表层特征优化过了），真正拉开差距的是**对话占比**——
  * 真人网文 25% 上下，AI 正文只有 9%。所以对话权重从 0.15 提到 0.35，
  * 句长/段长降权，避免「表面参差」冒充人味。
+ * @param text - 文本内容
+ * @param baseline - 基线值
+  * @returns HumanSimilarityDetail 实例
  */
 export function humanSimilarity(text: string, baseline: DistributionHistogram): HumanSimilarityDetail {
     const actual = analyzeDistribution(text);
@@ -204,6 +238,9 @@ function bigrams(text: string): Set<string> {
 /**
  * 保真检查：改写只应改表达，不应改情节与人设。
  * 长度 ±15%、原文 2-gram 覆盖 ≥0.55、原文数字全保留才算通过。
+ * @param original - 原始
+ * @param candidate - 候选
+  * @returns FidelityCheck 实例
  */
 export function checkFidelity(original: string, candidate: string): FidelityCheck {
     const source = stripNonProse(original).replace(/\s+/g, '');
@@ -250,6 +287,8 @@ export interface HumanityScore {
 /**
  * 综合分：0.40×(100−antiAI)/100 + 0.45×humanSim + 0.15×fidelity。
  * 保真不过（ok=false）时综合分按 0 计——改得再「像人」但把情节改没了也不能接受。
+ * @param params - 参数集合
+  * @returns HumanityScore 实例
  */
 export function scoreHumanity(params: {
     original: string;

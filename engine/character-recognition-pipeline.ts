@@ -51,6 +51,7 @@ export class CharacterRecognitionPipeline {
      * 执行角色识别三层流水线
      * @param text 待分析文本
      * @param options 流水线配置选项
+      * @returns CharacterRecognitionResult 实例
      */
     async analyze(text: string, options: RecognitionPipelineOptions): Promise<CharacterRecognitionResult> {
         const errors: string[] = [];

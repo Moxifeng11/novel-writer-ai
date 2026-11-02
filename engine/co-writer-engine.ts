@@ -518,6 +518,7 @@ export class CoWriterEngine {
 
     /**
      * 获取 Repository 性能统计
+      * @returns typeof this.repoPerfStats 结果
      */
     getRepositoryPerfStats(): typeof this.repoPerfStats {
         return { ...this.repoPerfStats };
@@ -1663,6 +1664,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * @param cursorHint - 光标提示
      * @param count - 数量
      * @param onChunk - 参数
+     * @param signal - 取消信号
      * @returns 改写结果
      */
     async rewriteSelection(
@@ -2147,7 +2149,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         await this.preferenceMemory?.recordPreference(category, key, value, 'explicit');
     }
 
-    /** E5: 设置参考书籍（用于知识库注入） */
+    /**
+     * E5: 设置参考书籍（用于知识库注入）
+     *
+     * @param bookIds - 书籍 ID 列表
+     */
     setReferenceBooks(bookIds: string[]): void {
         this.referenceBookIds = bookIds || [];
         if (this.promptBuilder) {
@@ -2158,12 +2164,20 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         }
     }
 
-    /** E5: 获取当前参考书籍 ID 列表 */
+    /**
+     * E5: 获取当前参考书籍 ID 列表
+     *
+     * @returns 结果数组
+     */
     getReferenceBooks(): string[] {
         return [...this.referenceBookIds];
     }
 
-    /** E7: 设置参考书籍配置（带权重） */
+    /**
+     * E7: 设置参考书籍配置（带权重）
+     *
+     * @param books - 书籍列表
+     */
     async setReferenceBooksWithWeight(books: Array<{ bookId: string; weight: number; isPrimary: boolean }>): Promise<void> {
         const bookIds = books.map(b => b.bookId);
         this.referenceBookIds = bookIds;
@@ -2187,12 +2201,21 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         }
     }
 
-    /** E7: 获取知识注入器实例 */
+    /**
+     * E7: 获取知识注入器实例
+     *
+      * @returns typeof this.knowledgeInjector 结果
+     */
     getKnowledgeInjector(): typeof this.knowledgeInjector {
         return this.knowledgeInjector;
     }
 
-    /** E7: 获取知识匹配分数 */
+    /**
+     * E7: 获取知识匹配分数
+     *
+     * @param text - 文本内容
+      * @returns string[] }> 结果
+     */
     getKnowledgeMatchScore(text: string): Array<{ bookName: string; score: number; dimensions: string[] }> {
         if (!this.knowledgeInjector) return [];
         return this.knowledgeInjector.getKnowledgeMatchScore(text);
@@ -2296,7 +2319,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 章节简报（承接规划阶段成果）
     // ============================================================
 
-    /** 设置本章简报输入并立即构建（由视图在读取规划文件后调用） */
+    /**
+     * 设置本章简报输入并立即构建（由视图在读取规划文件后调用）
+     *
+     * @param input - 输入
+     */
     setChapterBrief(input: ChapterBriefInput): void {
         this.chapterBriefInput = input;
         this.manualSceneIndex = null;
@@ -2304,7 +2331,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         this.maybeRefreshStoryContextPack(true);
     }
 
-    /** 获取当前章节简报（供左栏「本章简报」渲染） */
+    /**
+     * 获取当前章节简报（供左栏「本章简报」渲染）
+     *
+      * @returns ChapterBrief 或 null
+     */
     getChapterBrief(): ChapterBrief | null {
         return this.chapterBrief;
     }
@@ -2319,7 +2350,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         this.maybeRefreshStoryContextPack();
     }
 
-    /** 手动切换当前场景（点击左栏场景列表），后续正文变化不再自动覆盖 */
+    /**
+     * 手动切换当前场景（点击左栏场景列表），后续正文变化不再自动覆盖
+     *
+     * @param index - 索引
+     */
     setCurrentSceneIndex(index: number): void {
         if (!this.chapterBrief) return;
         if (index < 0 || index >= this.chapterBrief.scenes.length) return;
@@ -2429,6 +2464,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * v4.20 注入溯源：协同写作侧注入账本文本（PromptBuilder 聚合快照各段 + 指纹分层统计）。
      * 供监控面板与调试日志消费；PromptBuilder 未装配时返回空串。
+     * @returns 文本结果
      */
     getInjectionLedgerText(): string {
         if (!this.promptBuilder) return '';
@@ -2543,6 +2579,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 最近一次同人设定加载的用户可见警告（加载成功 / 原创项目返回 null）。
      * 供协同视图在初始化后提示一次，避免「同人项目实际无约束」静默继续写作。
+      * @returns 文本结果 或 null
      */
     getFanficRulesWarning(): string | null {
         return this.lastFanficRules ? formatFanficRulesLoadWarning(this.lastFanficRules) : null;
@@ -2918,7 +2955,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         };
     }
 
-    /** v6.4: 暴露剧情节点进度供 UI 显示按钮状态（不触发 AI 评估） */
+    /**
+     * v6.4: 暴露剧情节点进度供 UI 显示按钮状态（不触发 AI 评估）
+     *
+     * @param currentBody - 当前正文
+      * @returns PlotProgress 实例
+     */
     getPlotProgress(currentBody: string): PlotProgress {
         return this.computePlotProgress(currentBody);
     }
@@ -3342,6 +3384,9 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * 供协同 UI 的“质量报告修复”使用的统一调用入口。
      * 旧实现直接 aiEngine.callAI(..., undefined)，会落到全局 default 模型/端点，
      * 本地协同模式下可能静默打云端。
+     * @param systemPrompt - 系统提示词
+     * @param userPrompt - 用户提示词
+      * @returns string }> 结果
      */
     async callCoWriteForUi(
         systemPrompt: string,
@@ -3379,6 +3424,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     
     /**
      * 追踪当前正文中的实体状态变化
+     * @param bodyContent - 正文内容
+     * @returns 结果数组
      */
     async trackEntityStates(bodyContent: string): Promise<EntityStateChange[]> {
         if (!this.entityStateManager || !this.session) return [];
@@ -3446,6 +3493,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     
     /**
      * A1+D1: 检查正文是否触发角色 OOC 或实体状态变更。
+     * @param bodyContent - 正文内容
+      * @returns SettingGuardReport 实例
      */
     async inspectSettingGuard(bodyContent: string): Promise<SettingGuardReport> {
         let oocResult: OOCCheckResult | null = null;
@@ -3467,6 +3516,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     }
     /**
      * 获取待处理的状态变更列表
+     * @returns 结果数组
      */
     getPendingStateChanges(): EntityStateChange[] {
         return [...this.pendingStateChanges];
@@ -3509,6 +3559,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     
     /**
      * 基于上下文的智能联想输入
+     * @param cursorPosition - 光标位置
+     * @param fullText - 完整文本
+     * @param trigger - 触发器
+     * @param signal - 取消信号
+     * @returns 结果数组
      */
     async suggestAssociation(
         cursorPosition: number,
@@ -3664,6 +3719,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 /**
  * 判断 provider 的 endpoint 是否指向本地
  * 统一复用 model-source 的源类型解析（含 sourceType 显式标记 + endpoint 启发式兜底）
+ * @param endpoint - 接口地址
+ * @returns 是否成功
  */
 export function isLocalProviderEndpoint(endpoint: string): boolean {
     if (!endpoint) return false;
@@ -3678,6 +3735,7 @@ export function isLocalProviderEndpoint(endpoint: string): boolean {
  *
  * @param modelName 模型名
  * @param settings 可选，插件 settings，用于检查模型所属 provider
+ * @returns 是否成功
  */
 export function isLocalModel(modelName: string, settings?: any): boolean {
     if (!modelName) return false;
@@ -3697,6 +3755,8 @@ export function isLocalModel(modelName: string, settings?: any): boolean {
  * 返回 undefined，由调用方报错并阻断，绝不把本地内容发到云端。
  *
  * 回退优先级：coWriteModel（本地） > proModel（本地） > defaultModel（本地） > flashModel（本地）
+ * @param settings - 设置
+  * @returns 文本结果 或 undefined
  */
 export function resolveCoWriteLocalModel(settings: any): string | undefined {
     if (!settings) return undefined;
@@ -3729,6 +3789,8 @@ export function resolveCoWriteLocalModel(settings: any): string | undefined {
 /**
  * 模型列表去重并保持顺序
  * 使用 Set 去重，保持原有顺序
+ * @param models - 模型列表
+ * @returns 结果数组
  */
 export function dedupeModels(models: string[]): string[] {
     if (!Array.isArray(models)) return [];

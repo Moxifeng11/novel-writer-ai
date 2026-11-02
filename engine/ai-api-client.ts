@@ -37,7 +37,12 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('AiApiClient');
-/** 安全提取 Error 的 message，未知类型返回空串 */
+/**
+ * 安全提取 Error 的 message，未知类型返回空串
+ *
+ * @param err - 错误
+ * @returns 文本结果
+ */
 function errorMessage(err: unknown): string {
     if (err instanceof Error) return err.message;
     if (typeof err === 'string') return err;
@@ -56,12 +61,22 @@ class AIAuthError extends Error {
     }
 }
 
-/** 口令未解锁时 crypto.decrypt 会原样返回密文，据此识别「看起来像密钥但其实是密文」 */
+/**
+ * 口令未解锁时 crypto.decrypt 会原样返回密文，据此识别「看起来像密钥但其实是密文」
+ *
+ * @param secret - 密钥
+ * @returns 是否成功
+ */
 function isEncryptedSecret(secret: string): boolean {
     return secret.startsWith('aes256v2:') || secret.startsWith('aes256:');
 }
 
-/** 判断错误信息是否属于认证失败（用于降级链短路） */
+/**
+ * 判断错误信息是否属于认证失败（用于降级链短路）
+ *
+ * @param message - 消息
+ * @returns 是否成功
+ */
 function isAuthErrorMessage(message: string | undefined): boolean {
     if (!message) return false;
     return /HTTP\s+(401|403)\b/.test(message) || message.includes('密钥未解锁');
@@ -88,6 +103,8 @@ interface AIApiJsonResponse {
 /**
  * 端点来源判定：本地端点未登记模型时使用更保守的能力兜底。
  * 做成模块函数而非类方法，便于在没有完整插件实例的调用场景（测试/工具）复用。
+ * @param endpoint - 接口地址
+  * @returns 结果
  */
 function resolveEndpointSource(endpoint?: string): 'local' | 'cloud' {
     if (!endpoint) return 'cloud';

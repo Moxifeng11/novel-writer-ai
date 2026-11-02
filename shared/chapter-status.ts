@@ -14,7 +14,12 @@ export const SETTLED_STATUS_VALUES = ['settled', '已结算', '已完稿'] as co
 
 export type ChapterStatus = 'settled' | 'written' | 'draft' | 'unknown';
 
-/** 取正文的 frontmatter 文本（不含分隔行）；没有则返回 null */
+/**
+ * 取正文的 frontmatter 文本（不含分隔行）；没有则返回 null
+ *
+ * @param text - 文本内容
+  * @returns 文本结果 或 null
+ */
 export function extractFrontmatter(text: string | undefined | null): string | null {
     const raw = String(text ?? '');
     // 容忍 BOM 与 CRLF
@@ -25,7 +30,12 @@ export function extractFrontmatter(text: string | undefined | null): string | nu
     return normalized.slice(4, end);
 }
 
-/** 读取 frontmatter 的 status 值（去引号/空白）；没有返回 null */
+/**
+ * 读取 frontmatter 的 status 值（去引号/空白）；没有返回 null
+ *
+ * @param text - 文本内容
+  * @returns 文本结果 或 null
+ */
 export function readFrontmatterStatus(text: string | undefined | null): string | null {
     const fm = extractFrontmatter(text);
     if (!fm) return null;
@@ -33,13 +43,23 @@ export function readFrontmatterStatus(text: string | undefined | null): string |
     return match ? match[1].trim() : null;
 }
 
-/** 正文是否已结算（只读 frontmatter，避免正文里出现同名字样造成误判） */
+/**
+ * 正文是否已结算（只读 frontmatter，避免正文里出现同名字样造成误判）
+ *
+ * @param text - 文本内容
+ * @returns 是否成功
+ */
 export function isChapterSettledText(text: string | undefined | null): boolean {
     const status = readFrontmatterStatus(text);
     return status !== null && (SETTLED_STATUS_VALUES as readonly string[]).includes(status);
 }
 
-/** 归一化后的状态（用于 UI 展示/统计，不改变写盘值） */
+/**
+ * 归一化后的状态（用于 UI 展示/统计，不改变写盘值）
+ *
+ * @param text - 文本内容
+  * @returns ChapterStatus 实例
+ */
 export function parseChapterStatus(text: string | undefined | null): ChapterStatus {
     const status = readFrontmatterStatus(text);
     if (status === null) return 'unknown';

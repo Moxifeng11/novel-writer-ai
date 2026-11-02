@@ -140,6 +140,8 @@ const GENERIC_SETTING_TITLES = new Set([
  * | 第6-8章 / 第6章至第8章 | 6 | 8 |
  * | 第6章前后 / 左右 | 5     | 7   |
  * | 待定 / 后续章节 / 空 | null | null |
+ * @param raw - 原始
+  * @returns PlannedRange 实例
  */
 export function parsePlannedRange(raw: string): PlannedRange {
     const text = (raw || '').trim();
@@ -159,7 +161,14 @@ export function parsePlannedRange(raw: string): PlannedRange {
     return { start, end, raw: text };
 }
 
-/** 伏笔相对当前章的状态 */
+/**
+ * 伏笔相对当前章的状态
+ *
+ * @param range - 范围
+ * @param current - 当前
+ * @param window - 窗口
+  * @returns ForeshadowState 实例
+ */
 export function classifyForeshadow(
     range: PlannedRange,
     current: number,
@@ -190,7 +199,13 @@ function matchSettings(keywords: string[], settingTitles: string[]): string[] {
     return hits;
 }
 
-/** 把合并分卷大纲裁剪到本章段落；无匹配返回空串（避免把别章规划当成本章定位） */
+/**
+ * 把合并分卷大纲裁剪到本章段落；无匹配返回空串（避免把别章规划当成本章定位）
+ *
+ * @param text - 文本内容
+ * @param chapterNum - 章号
+ * @returns 文本结果
+ */
 function scopePlanningToChapter(text: string | undefined, chapterNum: number): string {
     if (!text || chapterNum <= 0) return '';
     const match = text.match(chapterOutlineSection(chapterNum));
@@ -216,6 +231,8 @@ function clip(value: string, max: number): string {
 
 /**
  * 生成某章的关联索引。
+ * @param input - 输入
+  * @returns StoryLinkage 实例
  */
 export function buildStoryLinkage(input: StoryLinkageInput): StoryLinkage {
     const chapterNum = input.chapterNum || 0;
@@ -351,6 +368,9 @@ function formatForeshadowRow(item: LinkageForeshadow): string {
 
 /**
  * 生成 prompt 关联段：到期 → 逾期 → 设定/规划 → 时间线，超限按段截断。
+ * @param linkage - 联动
+ * @param limit - 上限
+ * @returns 文本结果
  */
 export function formatStoryLinkageForPrompt(
     linkage: StoryLinkage,

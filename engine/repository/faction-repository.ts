@@ -58,6 +58,8 @@ export class FactionRepository extends BaseMarkdownRepository<Faction, string> {
 
     /**
      * 按领袖查找势力
+     * @param leaderName - 负责人名称
+     * @returns 结果数组
      */
     async findByLeader(leaderName: string): Promise<Faction[]> {
         const all = await this.findAll();
@@ -66,6 +68,8 @@ export class FactionRepository extends BaseMarkdownRepository<Faction, string> {
 
     /**
      * 按类型查找势力
+     * @param type - 类型
+     * @returns 结果数组
      */
     async findByType(type: string): Promise<Faction[]> {
         const all = await this.findAll();
@@ -74,6 +78,8 @@ export class FactionRepository extends BaseMarkdownRepository<Faction, string> {
 
     /**
      * 按状态查找势力
+     * @param status - 状态
+     * @returns 结果数组
      */
     async findByStatus(status: 'active' | 'inactive' | 'dead' | 'hidden'): Promise<Faction[]> {
         const all = await this.findAll();
@@ -82,6 +88,8 @@ export class FactionRepository extends BaseMarkdownRepository<Faction, string> {
 
     /**
      * 按名称模糊查找
+     * @param name - 名称
+     * @returns 结果数组
      */
     async findByName(name: string): Promise<Faction[]> {
         const all = await this.findAll();
@@ -90,6 +98,7 @@ export class FactionRepository extends BaseMarkdownRepository<Faction, string> {
 
     /**
      * 获取项目名称（供关联查询使用）
+     * @returns 文本结果
      */
     getProjectName(): string {
         return this.project;

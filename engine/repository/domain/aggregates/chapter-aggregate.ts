@@ -69,63 +69,114 @@ export class Chapter extends BaseEntity {
         return 'chapter';
     }
 
-    /** 卷号 */
+    /**
+     * 卷号
+     *
+     * @returns 数值结果
+     */
     get volume(): number {
         return this._chapterMeta.volume;
     }
 
-    /** 章号 */
+    /**
+     * 章号
+     *
+     * @returns 数值结果
+     */
     get chapterNum(): number {
         return this._chapterMeta.chapter;
     }
 
-    /** 章节标题 */
+    /**
+     * 章节标题
+     *
+     * @returns 文本结果
+     */
     get title(): string {
         return this._chapterMeta.title;
     }
 
-    /** 章节状态 */
+    /**
+     * 章节状态
+     *
+      * @returns ChapterStatus 实例
+     */
     get status(): ChapterStatus {
         return this._chapterMeta.status;
     }
 
-    /** 写作模式 */
+    /**
+     * 写作模式
+     *
+      * @returns WritingMode 或 undefined
+     */
     get writingMode(): WritingMode | undefined {
         return this._chapterMeta.writingMode;
     }
 
-    /** 字数统计 */
+    /**
+     * 字数统计
+     *
+      * @returns WordCount 实例
+     */
     get wordCount(): WordCount {
         return this._chapterMeta.wordCount;
     }
 
-    /** 涉及人物列表 */
+    /**
+     * 涉及人物列表
+     *
+     * @returns 结果数组
+     */
     get characters(): string[] {
         return [...this._chapterMeta.characters];
     }
 
-    /** 涉及地点列表 */
+    /**
+     * 涉及地点列表
+     *
+     * @returns 结果数组
+     */
     get locations(): string[] {
         return [...this._chapterMeta.locations];
     }
 
-    /** 涉及势力列表 */
+    /**
+     * 涉及势力列表
+     *
+     * @returns 结果数组
+     */
     get factions(): string[] {
         return [...this._chapterMeta.factions];
     }
 
-    /** 涉及物品功法列表 */
+    /**
+     * 涉及物品功法列表
+     *
+     * @returns 结果数组
+     */
     get items(): string[] {
         return [...this._chapterMeta.items];
     }
 
-    /** 场景列表 */
+    /**
+     * 场景列表
+     *
+     * @returns 结果数组
+     */
     get scenes(): SceneNode[] {
         return [...this._chapterMeta.scenes];
     }
 
     /**
      * 创建新的 Chapter 实例
+     * @param id - 标识
+     * @param title - 标题
+     * @param volume - 卷
+     * @param chapter - 章节
+     * @param filePath - 文件路径
+     * @param body - 正文
+      * @returns Chapter 实例
      */
     static create(
         id: string,
@@ -165,6 +216,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 从原始数据创建 Chapter
+     * @param props - 属性表
+      * @returns Chapter 实例
      */
     static from(props: Omit<ChapterProps, 'category'>): Chapter {
         return new Chapter(props);
@@ -191,6 +244,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 更新章节状态
+     * @param status - 状态
+      * @returns Chapter 实例
      */
     withChapterStatus(status: ChapterStatus): Chapter {
         return new Chapter({
@@ -205,6 +260,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 更新正文内容（自动重新统计字数）
+     * @param body - 正文
+      * @returns Chapter 实例
      */
     withBody(body: string): Chapter {
         const wordCount = WordCount.fromText(body);
@@ -221,6 +278,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 添加涉及人物
+     * @param name - 名称
+      * @returns Chapter 实例
      */
     addCharacter(name: string): Chapter {
         if (!name || this._chapterMeta.characters.includes(name)) {
@@ -237,6 +296,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 移除涉及人物
+     * @param name - 名称
+      * @returns Chapter 实例
      */
     removeCharacter(name: string): Chapter {
         return new Chapter({
@@ -250,6 +311,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 添加场景
+     * @param scene - 场景
+      * @returns Chapter 实例
      */
     addScene(scene: SceneNode): Chapter {
         const existingScene = this._chapterMeta.scenes.find(s => s.id === scene.id);
@@ -268,6 +331,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 更新场景
+     * @param scene - 场景
+      * @returns Chapter 实例
      */
     updateScene(scene: SceneNode): Chapter {
         return new Chapter({
@@ -282,6 +347,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 移除场景
+     * @param sceneId - 场景ID
+      * @returns Chapter 实例
      */
     removeScene(sceneId: string): Chapter {
         return new Chapter({
@@ -296,6 +363,8 @@ export class Chapter extends BaseEntity {
 
     /**
      * 重新排序场景
+     * @param sceneIds - 场景 ID 列表
+      * @returns Chapter 实例
      */
     reorderScenes(sceneIds: string[]): Chapter {
         const scenesMap = new Map(this._chapterMeta.scenes.map(s => [s.id, s]));

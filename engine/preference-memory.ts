@@ -61,6 +61,10 @@ const log = createLogger('PreferenceMemory');
      
      /**
       * 记录偏好
+      * @param category - 分类
+      * @param key - 键
+      * @param value - 值
+      * @param source - 来源
       */
      async recordPreference(
          category: UserPreference['category'],
@@ -95,6 +99,9 @@ const log = createLogger('PreferenceMemory');
      
      /**
       * 获取偏好
+      * @param category - 分类
+      * @param key - 键
+       * @returns UserPreference 或 undefined
       */
      getPreference(category: string, key: string): UserPreference | undefined {
          return this.preferences.get(`${category}:${key}`);
@@ -102,6 +109,8 @@ const log = createLogger('PreferenceMemory');
      
      /**
       * 获取某类别的所有偏好
+      * @param category - 分类
+      * @returns 结果数组
       */
      getAllPreferences(category?: UserPreference['category']): UserPreference[] {
          const all = Array.from(this.preferences.values());
@@ -110,6 +119,7 @@ const log = createLogger('PreferenceMemory');
      
      /**
       * 生成偏好提示词
+      * @returns 文本结果
       */
      generatePreferencePrompt(): string {
          const prefs = this.getAllPreferences()
@@ -231,6 +241,7 @@ const log = createLogger('PreferenceMemory');
 
     /**
      * 检查是否有待处理的写入
+     * @returns 是否成功
      */
     get hasPendingWrites(): boolean {
         return this.writer.isDirty;
@@ -246,6 +257,7 @@ const log = createLogger('PreferenceMemory');
      
      /**
       * 导出偏好（用于迁移或备份）
+      * @returns 文本结果
       */
      exportPreferences(): string {
          return JSON.stringify(Object.fromEntries(this.preferences), null, 2);
@@ -253,6 +265,7 @@ const log = createLogger('PreferenceMemory');
      
      /**
       * 导入偏好
+      * @param json - JSON
       */
      async importPreferences(json: string): Promise<void> {
          try {

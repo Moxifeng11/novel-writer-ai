@@ -36,7 +36,11 @@ export function clearSharedEmbeddingProvider(): void {
     sharedProvider = null;
 }
 
-/** 共享 provider 的身份；用于向量索引元数据/重建判断。 */
+/**
+ * 共享 provider 的身份；用于向量索引元数据/重建判断。
+ *
+  * @returns number } 结果 或 null
+ */
 export function getSharedEmbeddingIdentity(): { type: string; model: string; dimensions?: number } | null {
     if (!sharedProvider) return null;
     try {

@@ -72,6 +72,9 @@ class UpdateCheckError extends Error {
 /**
  * SemVer 比较：判断 version1 是否大于 version2
  * 返回值：1=v1>v2, -1=v1<v2, 0=相等
+ * @param v1 - 版本 1 的值
+ * @param v2 - 版本 2 的值
+ * @returns 数值结果
  */
 export function compareVersions(v1: string, v2: string): number {
     const parse = (v: string): number[] => {
@@ -92,6 +95,9 @@ export function compareVersions(v1: string, v2: string): number {
 
 /**
  * 判断是否是大版本更新（major 版本号变化）
+ * @param v1 - 版本 1 的值
+ * @param v2 - 版本 2 的值
+ * @returns 是否成功
  */
 export function isMajorUpdate(v1: string, v2: string): boolean {
     const parse = (v: string): number => {
@@ -117,17 +123,29 @@ export class UpdateChecker {
         this.config = { ...DEFAULT_UPDATE_CONFIG, ...config };
     }
 
-    /** 更新配置 */
+    /**
+     * 更新配置
+     *
+     * @param config - 配置
+     */
     updateConfig(config: Partial<UpdateCheckConfig>): void {
         this.config = { ...this.config, ...config };
     }
 
-    /** 获取当前版本 */
+    /**
+     * 获取当前版本
+     *
+     * @returns 文本结果
+     */
     getCurrentVersion(): string {
         return this.currentVersion;
     }
 
-    /** 获取上次检查时间 */
+    /**
+     * 获取上次检查时间
+     *
+      * @returns Date 或 null
+     */
     getLastCheckTime(): Date | null {
         const lastCheck = this.cacheManager.getUpdateLastCheck();
         if (!lastCheck) return null;
@@ -146,6 +164,7 @@ export class UpdateChecker {
      * 插件升级后缓存里的 currentVersion 可能还是旧版本（例如从 4.12.4 升到 4.18.0），
      * 直接返回会让更新 UI 显示旧版本号。这里按当前版本重算 hasUpdate；
      * 如果缓存是旧错误结果、连 latestVersion 都没有，则返回 null 触发一次新检查。
+      * @returns UpdateCheckResult 或 null
      */
     getLastCheckResult(): UpdateCheckResult | null {
         const cached = this.cacheManager.getUpdateLastResult() as UpdateCheckResult | null;
@@ -178,7 +197,11 @@ export class UpdateChecker {
         return normalized;
     }
 
-    /** 判断是否应该检查更新（基于检查间隔） */
+    /**
+     * 判断是否应该检查更新（基于检查间隔）
+     *
+     * @returns 是否成功
+     */
     shouldCheck(): boolean {
         if (!this.config.enabled) return false;
         const lastCheck = this.getLastCheckTime();
@@ -191,6 +214,7 @@ export class UpdateChecker {
     /**
      * 检查更新
      * @param force 是否强制检查（忽略检查间隔）
+      * @returns UpdateCheckResult 实例
      */
     async checkForUpdates(force: boolean = false): Promise<UpdateCheckResult> {
         const baseResult: UpdateCheckResult = {
@@ -345,12 +369,21 @@ export class UpdateChecker {
         this.cacheManager.setUpdateLastResult(result);
     }
 
-    /** 标记更新通知已读（用户选择稍后提醒） */
+    /**
+     * 标记更新通知已读（用户选择稍后提醒）
+     *
+     * @param version - 版本
+     */
     markUpdateNotified(version: string): void {
         this.cacheManager.setUpdateNotifiedVersion(version);
     }
 
-    /** 判断是否已通知过该版本 */
+    /**
+     * 判断是否已通知过该版本
+     *
+     * @param version - 版本
+     * @returns 是否成功
+     */
     hasNotifiedVersion(version: string): boolean {
         return this.cacheManager.getUpdateNotifiedVersion() === version;
     }

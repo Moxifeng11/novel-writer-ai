@@ -10,6 +10,8 @@ import type { Instructions } from './settlement-types';
  * 解析 AI 分析报告文本，提取所有 UPDATE/NEW/RELATION/GROWTH/EMOTION/DELETE 指令。
  *
  * 指令格式见 settlement-types.ts 中 Instructions 接口注释。
+ * @param report - 报告
+  * @returns Instructions 实例
  */
 export function parseReport(report: string): Instructions {
     const instr: Instructions = {
@@ -143,6 +145,9 @@ export function parseReport(report: string): Instructions {
  * v4.24：旧实现对所有 UPDATE_FORESHADOW 都执行「移入已回收」，
  * 于是 `[[X]] | 计划回收 | 第9章` 这类只改字段的指令也会把伏笔标成已回收（不可回滚）。
  * 只有「新值表示已揭示/揭示」或显式 forceReveal 才移动。
+ * @param updates - 更新字段
+ * @param forceReveal - 是否强制揭示
+ * @returns 集合结果
  */
 export function resolveForceRevealNames(
     updates: readonly { name: string; field: string; value: string }[],
@@ -162,6 +167,8 @@ export function resolveForceRevealNames(
 /**
  * 从纯文本中解析 frontmatter 段（不依赖 Obsidian metadataCache）。
  * 用于 settleLight 等需要在文件读取后立即解析的场景。
+ * @param content - 内容
+ * @returns 映射结果
  */
 export function parseFrontmatterFromText(content: string): Record<string, string> {
     const fm = content.match(/^---\n([\s\S]*?)\n---/);
@@ -185,6 +192,8 @@ export function parseFrontmatterFromText(content: string): Record<string, string
 /**
  * 将 frontmatter 中数组/逗号分隔字符串规范化为 string[]。
  * 支持：JSON 数组、中英文逗号、顿号、未填空值。
+ * @param value - 值
+ * @returns 结果数组
  */
 export function parseFmList(value: string | undefined): string[] {
     if (!value) return [];

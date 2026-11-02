@@ -97,6 +97,7 @@ export function preprocess(text: string): PreprocessResult {
  * 1. 书名号内的人名：《紫川秀》《帝林》等
  * 2. 对话引语前的说话人名：XX说/问道/笑道 等
  *
+ * @param text - 文本内容
  * @returns 去重后的人名列表
  */
 export function extractKeyEntities(text: string): string[] {
@@ -170,6 +171,8 @@ export class TextSegmenter {
      * 对第 2 段及之后：
      * - rollingSummary：前段末尾 ~200 字 + 关键人物列表
      * - overlapWithPrev：与前段共享的重叠文本
+     * @param text - 文本内容
+     * @returns 结果数组
      */
     async segmentWithContext(text: string): Promise<TextSegment[]> {
         const segments = await this.segment(text);
