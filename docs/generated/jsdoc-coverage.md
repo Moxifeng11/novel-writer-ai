@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 23 | 100% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 30 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 1097 | 73% | 1253 | 1039 | 83% | 753 |
+| `engine/` | 271 | 1508 | 1175 | 78% | 1253 | 1097 | 88% | 753 |
 | `services/` | 28 | 151 | 120 | 79% | 202 | 165 | 82% | 66 |
 | `shared/` | 163 | 1517 | 1170 | 77% | 149 | 138 | 93% | 457 |
 | `ui/` | 189 | 493 | 235 | 48% | 632 | 380 | 60% | 163 |
@@ -17,22 +17,8 @@
 |---|---:|---:|---:|---:|
 | `shared/story-structure.ts` | 23 | 12 | 0 | 0 |
 | `ui/views/book-detail-renderer.ts` | 2 | 0 | 10 | 10 |
-| `engine/ai-chapter-helpers.ts` | 1 | 1 | 7 | 7 |
-| `engine/ai-engine.ts` | 2 | 2 | 33 | 6 |
-| `engine/ai-worldview-generator.ts` | 2 | 1 | 7 | 7 |
-| `engine/anti-ai-detector.ts` | 6 | 6 | 7 | 2 |
-| `engine/embedding/ollama-provider.ts` | 2 | 0 | 8 | 8 |
-| `engine/engine-registry.ts` | 13 | 1 | 34 | 7 |
-| `engine/foreshadow-manager.ts` | 8 | 6 | 18 | 2 |
-| `engine/harness/single-call-runner.ts` | 7 | 7 | 1 | 1 |
-| `engine/project-migration-service.ts` | 5 | 5 | 5 | 3 |
-| `engine/prompt-manager.ts` | 4 | 4 | 16 | 4 |
 | `engine/repository/domain/aggregates/faction-aggregate.ts` | 2 | 2 | 6 | 6 |
 | `engine/repository/domain/aggregates/item-aggregate.ts` | 2 | 2 | 6 | 6 |
-| `engine/settlement/settlement-journal.ts` | 6 | 5 | 4 | 3 |
-| `engine/step-definitions.ts` | 13 | 8 | 0 | 0 |
-| `engine/story-linkage.ts` | 14 | 8 | 0 | 0 |
-| `engine/types/analysis-suggestion.ts` | 8 | 8 | 0 | 0 |
 | `services/prompt-manager.ts` | 3 | 3 | 30 | 5 |
 | `services/rules-service.ts` | 2 | 2 | 8 | 6 |
 | `services/synopsis-store.ts` | 5 | 0 | 8 | 8 |
@@ -45,3 +31,17 @@
 | `shared/quality-baseline.ts` | 10 | 8 | 0 | 0 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 12 | 8 | 0 | 0 |
 | `ui/project-side-panel-view.ts` | 5 | 3 | 5 | 5 |
+| `ui/views/writing-fingerprint-view.ts` | 3 | 0 | 8 | 8 |
+| `engine/character-arc.ts` | 9 | 7 | 0 | 0 |
+| `engine/deconstructors/character-deconstructor.ts` | 14 | 0 | 8 | 7 |
+| `engine/engine-registry.ts` | 13 | 0 | 34 | 7 |
+| `engine/harness/creative-randomizer.ts` | 4 | 4 | 3 | 3 |
+| `engine/harness/long-novel-tasks.ts` | 5 | 4 | 3 | 3 |
+| `engine/knowledge-injector.ts` | 13 | 7 | 23 | 0 |
+| `engine/plot-completion-engine.ts` | 6 | 5 | 2 | 2 |
+| `engine/plot-divergence-engine.ts` | 8 | 0 | 7 | 7 |
+| `engine/repository/domain/aggregates/location-aggregate.ts` | 2 | 2 | 5 | 5 |
+| `engine/vector-enhancer.ts` | 5 | 5 | 20 | 2 |
+| `services/knowledge-base-manager.ts` | 5 | 4 | 35 | 3 |
+| `shared/execution-events.ts` | 8 | 7 | 0 | 0 |
+| `shared/file-cache.ts` | 3 | 0 | 10 | 7 |

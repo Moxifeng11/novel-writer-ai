@@ -288,7 +288,7 @@ export class DeconstructionWorkerManager {
     /**
      * 注入向量增强器。
      *
-     * @param vectorEnhancer? - 参数
+     * @param vectorEnhancer - 参数
      */
     setVectorEnhancer(vectorEnhancer?: VectorEnhancer): void {
         this.vectorEnhancer = vectorEnhancer || null;
@@ -325,7 +325,7 @@ export class DeconstructionWorkerManager {
      * 拆解文风（Worker/主线程）。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeStyle(
@@ -339,7 +339,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的文风拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeStyleWithVector(
@@ -353,7 +353,7 @@ export class DeconstructionWorkerManager {
      * 拆解节奏。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeRhythm(
@@ -367,7 +367,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的节奏拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeRhythmWithVector(
@@ -381,7 +381,7 @@ export class DeconstructionWorkerManager {
      * 拆解技法。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeTechnique(
@@ -395,7 +395,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的技法拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeTechniqueWithVector(
@@ -409,7 +409,7 @@ export class DeconstructionWorkerManager {
      * 拆解结构。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeStructure(
@@ -423,7 +423,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的结构拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeStructureWithVector(
@@ -437,7 +437,7 @@ export class DeconstructionWorkerManager {
      * 拆解人物。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeCharacter(
@@ -451,7 +451,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的人物拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeCharacterWithVector(
@@ -465,7 +465,7 @@ export class DeconstructionWorkerManager {
      * 拆解伏笔。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeForeshadow(
@@ -479,7 +479,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的伏笔拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeForeshadowWithVector(
@@ -493,7 +493,7 @@ export class DeconstructionWorkerManager {
      * 商业性拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeCommercial(
@@ -507,7 +507,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的商业性拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeCommercialWithVector(
@@ -521,7 +521,7 @@ export class DeconstructionWorkerManager {
      * 可读性拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeReadability(
@@ -535,7 +535,7 @@ export class DeconstructionWorkerManager {
      * 带向量增强的可读性拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 分析结果
      */
     analyzeReadabilityWithVector(

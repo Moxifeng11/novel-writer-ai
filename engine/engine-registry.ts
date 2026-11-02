@@ -224,6 +224,9 @@ export interface EngineServiceMap {
 /** 可静态推导实例类型的引擎名（`EngineServiceMap` 的键） */
 export type EngineToken = keyof EngineServiceMap;
 
+/**
+ * 引擎初始化选项。
+ */
 export interface InitializeOptions {
     /** Plugin 的序列化写入器（私有字段，需显式传入） */
     settingsWriter: SerializedWriter;

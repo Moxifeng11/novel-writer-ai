@@ -29,12 +29,18 @@ export interface ChapterContext {
     model?: string;
 }
 
+/**
+ * 审校上下文。
+ */
 export interface ReviewContext {
     characters?: string;
     settingLib?: string;
     previousChapter?: string;
 }
 
+/**
+ * 大纲设置。
+ */
 export interface OutlineSettings {
     totalWords: string;
     volumes: number;
@@ -45,6 +51,9 @@ export interface OutlineSettings {
     genre?: string;
 }
 
+/**
+ * 世界要素集合。
+ */
 export interface WorldElements {
     characters?: string;
     locations?: string;

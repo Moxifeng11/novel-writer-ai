@@ -203,7 +203,7 @@ export function getCreationModeLabel(mode: CreationMode): string {
  * 模式单元单位名。
  *
  * @param mode - 模式
- * @param count? - 参数
+ * @param count - 参数
  * @returns 单位名
  */
 export function getCreationUnitLabel(mode: CreationMode, count?: number): string {

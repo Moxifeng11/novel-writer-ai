@@ -17,17 +17,26 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('SettlementJournal');
 
+/**
+ * 结算日志条目。
+ */
 export type JournalEntry =
     | { kind: 'frontmatter-field'; path: string; field: string; before: string }
     | { kind: 'whole-file-before'; path: string; before: string }
     | { kind: 'append-marker'; path: string; marker: string };
 
+/**
+ * 文件读写端口。
+ */
 export interface JournalFilePort {
     read(path: string): Promise<string>;
     write(path: string, content: string): Promise<void>;
     exists(path: string): Promise<boolean>;
 }
 
+/**
+ * frontmatter 端口。
+ */
 export interface JournalFrontmatterPort {
     /** 读取单个字段的当前值 */
     readField(path: string, field: string): Promise<string>;
@@ -35,12 +44,18 @@ export interface JournalFrontmatterPort {
     restoreField(path: string, field: string, value: string): Promise<void>;
 }
 
+/**
+ * 回滚报告。
+ */
 export interface RollbackReport {
     reverted: number;
     failed: number;
     failures: Array<{ entry: JournalEntry; error: string }>;
 }
 
+/**
+ * 结算日志：记录并支持回滚。
+ */
 export class SettlementJournal {
     private entries: JournalEntry[] = [];
     /** 同一文件只保留第一份前值（后续写入不覆盖回滚点） */
@@ -56,6 +71,13 @@ export class SettlementJournal {
         return this.entries.length === 0;
     }
 
+    /**
+     * 记录字段级变更。
+     *
+     * @param path - 路径
+     * @param field - 字段名
+     * @param before - 变更前内容
+     */
     recordField(path: string, field: string, before: string): void {
         const key = `${path}\u0000${field}`;
         if (this.fieldSeen.has(key)) return;
@@ -63,12 +85,24 @@ export class SettlementJournal {
         this.entries.push({ kind: 'frontmatter-field', path, field, before });
     }
 
+    /**
+     * 记录整文件变更。
+     *
+     * @param path - 路径
+     * @param before - 变更前内容
+     */
     recordWholeFile(path: string, before: string): void {
         if (this.wholeFileSeen.has(path)) return;
         this.wholeFileSeen.add(path);
         this.entries.push({ kind: 'whole-file-before', path, before });
     }
 
+    /**
+     * 记录追加变更。
+     *
+     * @param path - 路径
+     * @param marker - 标记
+     */
     recordAppend(path: string, marker: string): void {
         const normalized = marker.trim();
         if (!normalized) return;

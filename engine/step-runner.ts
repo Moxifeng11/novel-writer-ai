@@ -534,7 +534,7 @@ export class StepRunner {
      * @param chapDir - 章节目录
      * @param chapterName - 章节名
      * @param volume - 卷
-     * @param meta? - 参数
+     * @param meta - 参数
      */
     async saveStepResult(
         stepKey: string,
@@ -1677,7 +1677,7 @@ export class StepRunner {
      *
      * @param stepKeys - 步骤键列表
      * @param baseCtx - 基础上下文
-     * @param options? - 参数
+     * @param options - 参数
      * @param error - 错误
      * @returns 结果
      */

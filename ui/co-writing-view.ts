@@ -957,7 +957,7 @@ export class CoWritingView extends ItemView {
   /**
    * 展开/收起浮动面板。
    *
-   * @param show? - 参数
+   * @param show - 参数
    */
   toggleFloatingPanel(show?: boolean) {
     if (!this.floatingPanel) this.createFloatingPanel();
@@ -2472,7 +2472,7 @@ export class CoWritingView extends ItemView {
    * 编辑建议后再采纳。
    *
    * @param suggestion - 建议
-   * @param initialText? - 参数
+   * @param initialText - 参数
    */
   handleEditSuggestion(suggestion: SuggestionRecord, initialText?: string) {
     const startedAt = Date.now();
@@ -4361,7 +4361,7 @@ ${text}`;
   /**
    * 取章节标题。
    *
-   * @param identity? - 参数
+   * @param identity - 参数
    * @returns 标题
    */
   async getChapterTitle(

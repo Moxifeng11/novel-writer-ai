@@ -34,7 +34,7 @@ export class CallLedger {
      * 开始一条调用记录。
      *
      * @param taskId - 任务 ID
-     * @param projectId? - 参数
+     * @param projectId - 参数
      * @returns id
      */
     start(taskId: string, projectId?: string): string {

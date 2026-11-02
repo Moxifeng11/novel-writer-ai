@@ -7,6 +7,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('AiSceneGenerator');
+/**
+ * 场景生成上下文。
+ */
 export interface SceneGeneratorContext {
     projectId: string;
     volumeNumber: number;
@@ -22,6 +25,9 @@ export interface SceneGeneratorContext {
     targetSceneCount?: number;
 }
 
+/**
+ * 场景生成器。
+ */
 export class SceneGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -33,6 +39,12 @@ export class SceneGenerator {
         this.apiClient = apiClient;
     }
 
+    /**
+     * 生成场景列表。
+     *
+     * @param context - 上下文
+     * @returns 场景数组
+     */
     async generateScenes(context: SceneGeneratorContext): Promise<APIResponse> {
         const targetCount = context.targetSceneCount || 3;
 

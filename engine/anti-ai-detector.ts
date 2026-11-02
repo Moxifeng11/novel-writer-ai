@@ -1,5 +1,8 @@
 import { AI_LEXICON } from './ai-lexicon';
 
+/**
+ * 反 AI 约束集合。
+ */
 export interface AntiAIConstraints {
     constraints: string;
     blacklistedWords: string[];
@@ -8,8 +11,14 @@ export interface AntiAIConstraints {
     punctuationWarning?: string;
 }
 
+/**
+ * AI 特征命中类型。
+ */
 export type AIDetectionHitType = 'l1' | 'l2' | 'l3';
 
+/**
+ * 单条命中。
+ */
 export interface AIDetectionHit {
     type: AIDetectionHitType;
     text: string;
@@ -18,6 +27,9 @@ export interface AIDetectionHit {
     weight: number;
 }
 
+/**
+ * 可检测特征。
+ */
 export interface AIDetectionFeature {
     key: string;
     displayName: string;
@@ -30,6 +42,9 @@ export interface AIDetectionFeature {
     score?: number;
 }
 
+/**
+ * 检测结果。
+ */
 export interface AIDetectionResult {
     /** 0-100，越高越像 AI 写的 */
     score: number;
@@ -95,6 +110,9 @@ const DEFAULT_AI_HIGH_FREQ_WORDS: string[] = [
  */
 let extraAiHighFreqWords: string[] = [];
 
+/**
+ * AI 味检测器。
+ */
 export class AntiAIDetector {
     /**
      * 当前生效的高频词表 = 内置基线 + 用户扩充。
@@ -161,6 +179,12 @@ export class AntiAIDetector {
             : AI_LEXICON.l1Connectives;
     }
 
+    /**
+     * 检测 AI 高频词。
+     *
+     * @param text - 文本内容
+     * @returns 命中列表
+     */
     detectAIWords(text: string): string[] {
         if (!text) return [];
         const found: string[] = [];

@@ -502,7 +502,7 @@ export class PromptManager {
     /**
      * 读取模板使用历史。
      *
-     * @param templateId? - 参数
+     * @param templateId - 参数
      * @param limit = 100 - 参数
      * @returns 使用记录数组
      */

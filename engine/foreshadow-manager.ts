@@ -17,6 +17,9 @@ import { getDegradationNotifier } from '../shared/degradation-notifier';
 
 
 const log = createLogger('ForeshadowManager');
+/**
+ * 伏笔管理器：登记、追踪与回收提示。
+ */
 export class ForeshadowManager {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -234,7 +237,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
      * 计算强制揭示项。
      *
      * @param project - 项目（路径或对象）
-     * @param currentChapter? - 参数
+     * @param currentChapter - 参数
      * @returns 名称数组
      */
     async calculateForceReveal(project: string, currentChapter?: number): Promise<string[]> {
@@ -376,6 +379,14 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
 
     // ==================== 增强：伏笔追踪器 ====================
 
+    /**
+     * 自动识别伏笔。
+     *
+     * @param text - 文本内容
+     * @param chapterIndex - 章节索引
+     * @param options - 配置项
+     * @returns 识别结果
+     */
     async autoDetect(
         text: string,
         chapterIndex: number,
@@ -685,6 +696,13 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         return result.filter(c => c.confidence >= 0.4);
     }
 
+    /**
+     * 取待回收伏笔。
+     *
+     * @param currentChapter - 当前章节
+     * @param options - 配置项
+     * @returns 伏笔列表
+     */
     getPendingResolutions(
         currentChapter: number,
         options?: { minImportance?: 'low' | 'medium' | 'high'; overdueOnly?: boolean }
@@ -738,7 +756,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
      *
      * @param id - 标识
      * @param chapter - 章节
-     * @param way? - 参数
+     * @param way - 参数
      */
     markResolved(id: string, chapter: number, way?: string): void {
         if (!this.tracker) return;
@@ -851,7 +869,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
      * 保存追踪器。
      *
      * @param projectPath - 项目路径
-     * @param tracker? - 参数
+     * @param tracker - 参数
      */
     async saveTracker(projectPath: string, tracker?: ForeshadowTracker): Promise<void> {
         try {
@@ -1062,6 +1080,9 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     }
 }
 
+/**
+ * 伏笔条目。
+ */
 export interface ForeshadowItem {
     id: string;
     name: string;
@@ -1073,6 +1094,9 @@ export interface ForeshadowItem {
     status: string;
 }
 
+/**
+ * 伏笔预警。
+ */
 export interface ForeshadowWarning {
     level: 'warning' | 'critical';
     msg: string;
@@ -1250,8 +1274,14 @@ function parseChapterNumber(plannedReveal: string): number | null {
 
 // ==================== 增强：伏笔追踪器类型 ====================
 
+/**
+ * 伏笔分类。
+ */
 export type ForeshadowCategory = 'object' | 'character' | 'setting' | 'event';
 
+/**
+ * 追踪中的伏笔条目。
+ */
 export interface TrackedForeshadowItem {
     id: string;
     content: string;
@@ -1268,6 +1298,9 @@ export interface TrackedForeshadowItem {
     notes?: string;
 }
 
+/**
+ * 伏笔追踪状态。
+ */
 export interface ForeshadowTracker {
     items: TrackedForeshadowItem[];
     lastUpdated: string;

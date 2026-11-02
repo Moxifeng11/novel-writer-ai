@@ -322,7 +322,7 @@ export class DeconstructionScheduler {
     /**
      * 注入向量增强器（可传空解除）。
      *
-     * @param vectorEnhancer? - 参数
+     * @param vectorEnhancer - 参数
      */
     setVectorEnhancer(vectorEnhancer?: VectorEnhancer): void {
         this.vectorEnhancer = vectorEnhancer;
@@ -602,7 +602,7 @@ export class DeconstructionScheduler {
      * 重跑整本书的指定维度。
      *
      * @param bookId - 书籍 ID
-     * @param dimensions? - 参数
+     * @param dimensions - 参数
      * @returns 任务 id
      */
     async rerunBook(bookId: string, dimensions?: BreakdownDimension[]): Promise<string> {

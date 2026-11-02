@@ -23,6 +23,9 @@ import { NOTICE_ERROR } from '../shared/thresholds';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('AiBatchEntityGenerator');
+/**
+ * 批量实体生成器（势力/地点/物品）。
+ */
 export class BatchEntityGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -34,6 +37,17 @@ export class BatchEntityGenerator {
         this.apiClient = apiClient;
     }
 
+    /**
+     * 批量生成势力。
+     *
+     * @param worldview - 世界观
+     * @param names - 名称列表
+     * @param description - 描述
+     * @param count - 数量
+     * @param customSystemPrompt - 自定义系统提示词
+     * @param settingLib - 设定库
+     * @returns 生成结果
+     */
     async generateFactionsBatch(
         worldview: string,
         names: string[],
@@ -51,6 +65,17 @@ ${buildEntityTemplateBlock('faction').body}`,
         );
     }
 
+    /**
+     * 批量生成地点。
+     *
+     * @param worldview - 世界观
+     * @param names - 名称列表
+     * @param description - 描述
+     * @param count - 数量
+     * @param customSystemPrompt - 自定义系统提示词
+     * @param settingLib - 设定库
+     * @returns 生成结果
+     */
     async generateLocationsBatch(
         worldview: string,
         names: string[],
@@ -68,6 +93,18 @@ ${buildEntityTemplateBlock('location').body}`,
         );
     }
 
+    /**
+     * 批量生成物品。
+     *
+     * @param worldview - 世界观
+     * @param names - 名称列表
+     * @param description - 描述
+     * @param count - 数量
+     * @param customSystemPrompt - 自定义系统提示词
+     * @param itemType - 物品类型
+     * @param settingLib - 设定库
+     * @returns 生成结果
+     */
     async generateItemsBatch(
         worldview: string,
         names: string[],

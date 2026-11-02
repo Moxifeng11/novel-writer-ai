@@ -98,6 +98,9 @@ function resolveEndpointSource(endpoint?: string): 'local' | 'cloud' {
     }
 }
 
+/**
+ * AI API 客户端：并发控制、重试、token 统计与流式/非流式调用。
+ */
 export class AIApiClient {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -110,6 +113,12 @@ export class AIApiClient {
     private static rateLimitHits = 0;
     private static rateLimitBackoffUntil = 0;
 
+    /**
+     * 当前最大并发数。
+     *
+     * @param modelId - 模型 ID
+     * @returns 并发数
+     */
     static getMaxConcurrent(modelId: string): number {
         const m = modelId.toLowerCase();
         // v6.3: 本地 Ollama 模型（如 qwen2.5:7b、deepseek-r1:7b）按轻量并发处理
@@ -143,6 +152,9 @@ export class AIApiClient {
 
     get sessionTokens() { return { ...this._sessionTokens }; }
 
+    /**
+     * 重置会话 token 计数。
+     */
     resetSessionTokens(): void {
         this._sessionTokens = { input: 0, output: 0 };
     }
@@ -447,6 +459,17 @@ export class AIApiClient {
         return { key: decrypted };
     }
 
+    /**
+     * 发起单次非流式调用。
+     *
+     * @param systemPrompt - 系统提示词
+     * @param userPrompt - 用户提示词
+     * @param model - 模型标识
+     * @param temperature - 采样温度
+     * @param maxTokens - 最大 token 数
+     * @param options - 配置项
+     * @returns 模型返回文本
+     */
     async callAI(
         systemPrompt: string,
         userPrompt: string,
@@ -828,6 +851,18 @@ export class AIApiClient {
         return { content: '', error: msg };
     }
 
+    /**
+     * 发起流式调用并按块回调。
+     *
+     * @param systemPrompt - 系统提示词
+     * @param userPrompt - 用户提示词
+     * @param model - 模型标识
+     * @param temperature - 采样温度
+     * @param maxTokens - 最大 token 数
+     * @param onChunk - 流式分片回调
+     * @param options - 调用选项（端点、密钥、思考模式等）
+     * @returns 完整文本
+     */
     async callAIStream(
         systemPrompt: string,
         userPrompt: string,

@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 124148 | 1532 | 776 | 51% |
+| `engine/` | 289 | 124837 | 1532 | 854 | 56% |
 | `services/` | 28 | 10715 | 151 | 85 | 56% |
 | `shared/` | 164 | 33301 | 1512 | 654 | 43% |
 | `core/` | 7 | 2399 | 28 | 11 | 39% |
@@ -54,22 +54,22 @@
 | `engine/agent/harness/spill-store.ts` | 95 | 6 | 4 |
 | `engine/agent/harness/tool-registry.ts` | 273 | 5 | 1 |
 | `engine/agent/harness/tool-result-pruner.ts` | 64 | 5 | 5 |
-| `engine/ai-api-client.ts` | 1651 | 1 | 0 |
-| `engine/ai-batch-entity-generator.ts` | 535 | 1 | 0 |
-| `engine/ai-chapter-helpers.ts` | 288 | 1 | 0 |
-| `engine/ai-character-generator.ts` | 404 | 1 | 0 |
-| `engine/ai-engine.ts` | 743 | 4 | 0 |
-| `engine/ai-entity-generator.ts` | 194 | 1 | 0 |
-| `engine/ai-lexicon.ts` | 91 | 3 | 1 |
-| `engine/ai-outline-generator.ts` | 1374 | 1 | 0 |
-| `engine/ai-prompt-builder.ts` | 207 | 5 | 1 |
-| `engine/ai-scene-expander.ts` | 259 | 2 | 0 |
-| `engine/ai-scene-generator.ts` | 272 | 2 | 0 |
-| `engine/ai-types.ts` | 78 | 6 | 3 |
-| `engine/ai-worldview-generator.ts` | 671 | 2 | 0 |
+| `engine/ai-api-client.ts` | 1686 | 1 | 1 |
+| `engine/ai-batch-entity-generator.ts` | 572 | 1 | 1 |
+| `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
+| `engine/ai-character-generator.ts` | 421 | 1 | 1 |
+| `engine/ai-engine.ts` | 792 | 4 | 2 |
+| `engine/ai-entity-generator.ts` | 227 | 1 | 1 |
+| `engine/ai-lexicon.ts` | 97 | 3 | 3 |
+| `engine/ai-outline-generator.ts` | 1414 | 1 | 1 |
+| `engine/ai-prompt-builder.ts` | 213 | 5 | 3 |
+| `engine/ai-scene-expander.ts` | 286 | 2 | 2 |
+| `engine/ai-scene-generator.ts` | 284 | 2 | 2 |
+| `engine/ai-types.ts` | 87 | 6 | 6 |
+| `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
 | `engine/analysis-report-engine.ts` | 1375 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 642 | 1 | 0 |
-| `engine/anti-ai-detector.ts` | 407 | 6 | 0 |
+| `engine/anti-ai-detector.ts` | 431 | 6 | 6 |
 | `engine/bases-generator.ts` | 213 | 8 | 0 |
 | `engine/batch-import-manager.ts` | 853 | 9 | 9 |
 | `engine/beat-verifier.ts` | 64 | 3 | 1 |
@@ -124,7 +124,7 @@
 | `engine/embedding/embedding-provider.ts` | 13 | 1 | 1 |
 | `engine/embedding/embedding-service.ts` | 49 | 4 | 3 |
 | `engine/embedding/index.ts` | 12 | 6 | 0 |
-| `engine/embedding/ollama-provider.ts` | 180 | 2 | 2 |
+| `engine/embedding/ollama-provider.ts` | 218 | 2 | 2 |
 | `engine/embedding/openai-provider.ts` | 233 | 2 | 2 |
 | `engine/embedding/provider-factory.ts` | 188 | 4 | 4 |
 | `engine/embedding/qwen-provider.ts` | 43 | 2 | 2 |
@@ -132,7 +132,7 @@
 | `engine/emotion-curve-analyzer.ts` | 215 | 1 | 0 |
 | `engine/emotion-planner.ts` | 200 | 7 | 3 |
 | `engine/ending-traction-engine.ts` | 392 | 1 | 0 |
-| `engine/engine-registry.ts` | 1369 | 13 | 2 |
+| `engine/engine-registry.ts` | 1372 | 13 | 3 |
 | `engine/entity-context-engine.ts` | 1063 | 10 | 0 |
 | `engine/entity-graph.ts` | 165 | 6 | 1 |
 | `engine/entity-link-migrator.ts` | 143 | 5 | 0 |
@@ -148,7 +148,7 @@
 | `engine/fingerprint-stats.ts` | 107 | 4 | 0 |
 | `engine/foreshadow-config-manager.ts` | 307 | 2 | 0 |
 | `engine/foreshadow-context.ts` | 142 | 6 | 3 |
-| `engine/foreshadow-manager.ts` | 1276 | 8 | 1 |
+| `engine/foreshadow-manager.ts` | 1309 | 8 | 7 |
 | `engine/generation-checkpoint-vault.ts` | 78 | 1 | 0 |
 | `engine/generation-checkpoint.ts` | 124 | 6 | 0 |
 | `engine/genre/genre-config-registry.ts` | 136 | 2 | 0 |
@@ -162,7 +162,7 @@
 | `engine/harness/domain-profile.ts` | 48 | 3 | 0 |
 | `engine/harness/long-novel-tasks.ts` | 248 | 5 | 0 |
 | `engine/harness/rule-engine.ts` | 186 | 8 | 8 |
-| `engine/harness/single-call-runner.ts` | 196 | 7 | 0 |
+| `engine/harness/single-call-runner.ts` | 217 | 7 | 7 |
 | `engine/harness/structured-output.ts` | 91 | 6 | 1 |
 | `engine/harness/tool-registry.ts` | 141 | 6 | 5 |
 | `engine/harness/trend-research-service.ts` | 190 | 8 | 6 |
@@ -193,12 +193,12 @@
 | `engine/plot-divergence-engine.ts` | 915 | 8 | 8 |
 | `engine/plot-redundancy-checker.ts` | 107 | 4 | 0 |
 | `engine/preference-memory.ts` | 269 | 0 | 0 |
-| `engine/project-migration-service.ts` | 189 | 5 | 0 |
+| `engine/project-migration-service.ts` | 220 | 5 | 5 |
 | `engine/promise-ledger.ts` | 192 | 11 | 6 |
 | `engine/prompt-builder.ts` | 1350 | 2 | 0 |
 | `engine/prompt-cache.ts` | 60 | 3 | 0 |
 | `engine/prompt-hash.ts` | 38 | 1 | 1 |
-| `engine/prompt-manager.ts` | 348 | 4 | 0 |
+| `engine/prompt-manager.ts` | 395 | 4 | 4 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v2-prompts.ts` | 136 | 3 | 1 |
 | `engine/prompts/body-v3-prompts.ts` | 92 | 3 | 1 |
@@ -277,9 +277,9 @@
 | `engine/settlement/settle-context.ts` | 117 | 2 | 0 |
 | `engine/settlement/settlement-artifacts.ts` | 97 | 5 | 1 |
 | `engine/settlement/settlement-coordinator.ts` | 94 | 6 | 0 |
-| `engine/settlement/settlement-journal.ts` | 142 | 6 | 1 |
+| `engine/settlement/settlement-journal.ts` | 176 | 6 | 6 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
-| `engine/step-definitions.ts` | 238 | 13 | 3 |
+| `engine/step-definitions.ts` | 262 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 636 | 2 | 0 |
 | `engine/step-prompt-assembly.ts` | 130 | 5 | 0 |
 | `engine/step-result-saver.ts` | 534 | 5 | 1 |
@@ -292,7 +292,7 @@
 | `engine/step-validator.ts` | 716 | 7 | 5 |
 | `engine/story-beat-extractor.ts` | 72 | 1 | 1 |
 | `engine/story-linkage-writer.ts` | 137 | 5 | 1 |
-| `engine/story-linkage.ts` | 372 | 14 | 3 |
+| `engine/story-linkage.ts` | 396 | 14 | 11 |
 | `engine/story-state-types.ts` | 44 | 3 | 0 |
 | `engine/stream-text-reader.ts` | 315 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 146 | 2 | 0 |
@@ -317,7 +317,7 @@
 | `engine/text-segmenter.ts` | 485 | 10 | 6 |
 | `engine/token-bucket-rate-limiter.ts` | 285 | 3 | 3 |
 | `engine/types/analysis-session.ts` | 109 | 8 | 8 |
-| `engine/types/analysis-suggestion.ts` | 71 | 8 | 0 |
+| `engine/types/analysis-suggestion.ts` | 95 | 8 | 8 |
 | `engine/types/chart-config.ts` | 66 | 6 | 0 |
 | `engine/vector-enhancer.ts` | 868 | 5 | 0 |
 | `engine/volume-outline-summarizer.ts` | 172 | 2 | 1 |

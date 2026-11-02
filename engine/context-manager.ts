@@ -631,8 +631,8 @@ export class ContextManager {
      * 装配项目全量上下文（可含进度回调）。
      *
      * @param project - 项目（路径或对象）
-     * @param currentChapter? - 参数
-     * @param onProgress? - 参数
+     * @param currentChapter - 参数
+     * @param onProgress - 参数
      * @returns 聚合上下文
      */
     async gatherAll(project: string, currentChapter?: string, onProgress?: (completedCount: number, totalCount: number, currentTaskName: string) => void): Promise<GatheredContext> {
@@ -1350,7 +1350,7 @@ export class ContextManager {
      * 装配时间线（可限定当前章）。
      *
      * @param project - 项目（路径或对象）
-     * @param currentChapter? - 参数
+     * @param currentChapter - 参数
      * @returns 上下文数据
      */
     async gatherTimeline(project: string, currentChapter?: string): Promise<ContextData> {

@@ -59,12 +59,18 @@ ${cultureRule}
     return systemPrompt;
 }
 
+/**
+ * 单章提示词长度上限。
+ */
 export interface ChapterPromptLimits {
     maxContext: number;
     maxOutput: number;
     modelId?: string;
 }
 
+/**
+ * 单章提示词构建结果。
+ */
 export interface ChapterPromptResult {
     system: string;
     user: string;

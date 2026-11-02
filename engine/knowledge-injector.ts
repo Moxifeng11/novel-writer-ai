@@ -275,8 +275,8 @@ export class KnowledgeInjector {
     /**
      * 注入知识库与向量库实例（可传空解除）。
      *
-     * @param manager? - 参数
-     * @param vectorStore? - 参数
+     * @param manager - 参数
+     * @param vectorStore - 参数
      * @returns 无
      */
     setKnowledgeBase(manager?: KnowledgeBaseManager, vectorStore?: KnowledgeVectorStore): void {

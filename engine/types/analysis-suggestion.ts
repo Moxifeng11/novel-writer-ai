@@ -1,3 +1,6 @@
+/**
+ * 建议类型。
+ */
 export type SuggestionType =
     | 'character'
     | 'character_merge'
@@ -8,10 +11,19 @@ export type SuggestionType =
     | 'plot'
     | 'quality';
 
+/**
+ * 建议状态。
+ */
 export type SuggestionStatus = 'pending' | 'adopted' | 'rejected' | 'modified';
 
+/**
+ * 建议来源。
+ */
 export type SuggestionSource = 'rule' | 'vector' | 'llm';
 
+/**
+ * 分析建议。
+ */
 export interface AnalysisSuggestion {
     id: string;
     type: SuggestionType;
@@ -26,6 +38,9 @@ export interface AnalysisSuggestion {
     evidence?: string[];
 }
 
+/**
+ * 角色候选。
+ */
 export interface CharacterCandidate {
     name: string;
     aliases: string[];
@@ -37,6 +52,9 @@ export interface CharacterCandidate {
     lastAppearance: number;
 }
 
+/**
+ * 角色合并建议。
+ */
 export interface CharacterMergeSuggestion {
     sourceName: string;
     targetName: string;
@@ -44,6 +62,9 @@ export interface CharacterMergeSuggestion {
     similarity: number;
 }
 
+/**
+ * 识别流水线选项。
+ */
 export interface RecognitionPipelineOptions {
     enableRuleLayer: boolean;
     enableVectorLayer: boolean;
@@ -54,6 +75,9 @@ export interface RecognitionPipelineOptions {
     onProgress?: (stage: string, progress: number) => void;
 }
 
+/**
+ * 角色识别结果。
+ */
 export interface CharacterRecognitionResult {
     ruleCandidates: CharacterCandidate[];
     vectorFiltered: CharacterCandidate[];

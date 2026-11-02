@@ -162,7 +162,7 @@ export class HeavyTaskWorkerManager {
      * 文风拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 结果
      */
     analyzeStyle(
@@ -176,7 +176,7 @@ export class HeavyTaskWorkerManager {
      * 带向量增强的文风拆解。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 结果
      */
     analyzeStyleWithVector(
@@ -190,7 +190,7 @@ export class HeavyTaskWorkerManager {
      * 文风拆解 v2。
      *
      * @param text - 文本内容
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 结果
      */
     analyzeStyleV2(
@@ -205,7 +205,7 @@ export class HeavyTaskWorkerManager {
      *
      * @param text - 文本内容
      * @param context - 上下文
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 结果
      */
     evaluateQuality(
@@ -221,7 +221,7 @@ export class HeavyTaskWorkerManager {
      *
      * @param text - 文本内容
      * @param context - 上下文
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 结果
      */
     detectDeviation(

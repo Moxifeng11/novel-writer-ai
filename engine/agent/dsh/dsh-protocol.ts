@@ -117,7 +117,7 @@ export class DshJsonRpcClient {
      * 发送通知（不等待响应）。
      *
      * @param method - RPC 方法名
-     * @param params? - 参数值
+     * @param params - 参数集合
      */
     notify(method: string, params?: unknown): void {
         this.options.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);

@@ -15,6 +15,9 @@ import { NOOP_NOTIFIER } from '../shared/types';
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('AiCharacterGenerator');
+/**
+ * 角色生成器。
+ */
 export class CharacterGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -84,6 +87,20 @@ ${toc}
         }
     }
 
+    /**
+     * 生成角色列表。
+     *
+     * @param worldview - 世界观
+     * @param count - 数量
+     * @param customPrompt - 自定义提示词
+     * @param templateContent - 模板内容
+     * @param isFirstCharacter - 是否首个角色
+     * @param names - 名称列表
+     * @param settingLib - 设定库
+     * @param signal - 取消信号
+     * @param existingEntities - 已有实体
+     * @returns 角色数组
+     */
     async generateCharacters(worldview: string, count: number = 5, customPrompt?: string, templateContent?: string, isFirstCharacter?: boolean, names?: string[], settingLib?: string, signal?: AbortSignal, existingEntities?: string): Promise<APIResponse> {
         const nameList = names?.filter(n => n && n.trim().length > 0) || [];
         const namedCount = nameList.length;

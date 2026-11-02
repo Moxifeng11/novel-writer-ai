@@ -81,7 +81,7 @@ export class CheckpointManager {
      * 保存检查点。
      *
      * @param state - 状态
-     * @param sourceText? - 参数
+     * @param sourceText - 参数
      */
     async saveCheckpoint(state: Omit<CheckpointState, 'checksum' | 'lastSavedAt' | 'sourceChecksum' | 'version'>, sourceText?: string): Promise<void> {
         const fullState: CheckpointState = {

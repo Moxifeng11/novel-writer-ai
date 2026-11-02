@@ -51,18 +51,36 @@ export const BODY_CHANGE_INVALIDATED_STEPS = [
 // 策略类型
 // ============================================================
 
+/**
+ * 模型选择策略。
+ */
 export type ModelStrategy = 'pro' | 'flash' | 'default';
 
+/**
+ * 前置校验结果。
+ */
 export type PreValidationResult = { passed: boolean; error?: string; warning?: string };
+/**
+ * 后置校验结果。
+ */
 export type PostValidationResult = { passed: boolean; error?: string; warning?: string };
 
+/**
+ * 前置校验函数。
+ */
 export type PreValidationFn = (ctx: StepRunCtx) => PreValidationResult;
+/**
+ * 后置校验函数。
+ */
 export type PostValidationFn = (content: string, ctx: StepRunCtx) => PostValidationResult;
 
 // ============================================================
 // 前置校验函数
 // ============================================================
 
+/**
+ * 质控前置检查。
+ */
 export const preCheckQualityControl: PreValidationFn = (ctx) => {
     const qcContent = ctx.stepResults['qualityControl'];
     if (!qcContent) {
@@ -124,6 +142,9 @@ export type FullStep = {
     postValidation: PostValidationFn | null;
 };
 
+/**
+ * 全流程步骤定义。
+ */
 export const ALL_FULL_STEPS: FullStep[] = [
     { index: 0,  key: '',               label: '📦 上下文加载',     required: true,  canSkip: false, auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
     { index: 1,  key: 'infoPlan',       label: '📋 信息规划',       required: true,  canSkip: false, auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
@@ -194,6 +215,9 @@ export interface StepRunMeta {
     ragSources?: Array<{ book: string; dimension: string; score: number; excerpt: string }>;
 }
 
+/**
+ * 步骤执行上下文。
+ */
 export type StepRunCtx = {
     stepResults: Record<string, string>;
     stepCompleted: Set<string>;

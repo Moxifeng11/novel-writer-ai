@@ -14,8 +14,14 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('SingleCallRunner');
 
+/**
+ * 模型任务类型。
+ */
 export type ModelTask = 'planning' | 'body' | 'quality' | 'analysis' | 'default';
 
+/**
+ * 单次调用任务输入。
+ */
 export interface SingleCallTaskInput<T> {
     taskId: string;
     projectId?: string;
@@ -55,6 +61,9 @@ export interface SingleCallTaskInput<T> {
     thinkingBudget?: number;
 }
 
+/**
+ * 调用成功结果。
+ */
 export interface SingleCallSuccess<T> {
     ok: true;
     taskId: string;
@@ -65,6 +74,9 @@ export interface SingleCallSuccess<T> {
     durationMs: number;
 }
 
+/**
+ * 调用失败结果。
+ */
 export interface SingleCallFailure {
     ok: false;
     taskId: string;
@@ -76,8 +88,14 @@ export interface SingleCallFailure {
     durationMs: number;
 }
 
+/**
+ * 调用结果联合类型。
+ */
 export type SingleCallResult<T> = SingleCallSuccess<T> | SingleCallFailure;
 
+/**
+ * 单次调用执行器。
+ */
 export class SingleCallRunner {
     private ruleEngine = new RuleEngine();
 
@@ -192,4 +210,7 @@ export class SingleCallRunner {
     }
 }
 
+/**
+ * 全局单次调用执行器。
+ */
 export const singleCallRunner = new SingleCallRunner();

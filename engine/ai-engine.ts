@@ -28,11 +28,17 @@ export type { APIResponse } from '../shared/api-types';
 
 
 const log = createLogger('AiEngine');
+/**
+ * 批量实体生成结果。
+ */
 export interface BatchEntityResult {
     name: string;
     content: string;
 }
 
+/**
+ * AI 引擎门面：聚合生成器与 API 客户端。
+ */
 export class AIEngine {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -45,6 +51,12 @@ export class AIEngine {
     private batchEntityGen: BatchEntityGenerator;
     private bodyWriter: BodyWriter | null = null;
 
+    /**
+     * 当前最大并发数。
+     *
+     * @param modelId - 模型 ID
+     * @returns 并发数
+     */
     static getMaxConcurrent(modelId: string): number {
         return AIApiClient.getMaxConcurrent(modelId);
     }
@@ -96,10 +108,10 @@ export class AIEngine {
      *
      * @param systemPrompt - 系统提示词
      * @param userPrompt - 用户提示词
-     * @param model? - 参数
+     * @param model - 参数
      * @param temperature - 采样温度
-     * @param maxTokens? - 参数
-     * @param options? - 参数
+     * @param maxTokens - 参数
+     * @param options - 参数
      * @returns API 响应
      */
     async callAI(
@@ -148,10 +160,10 @@ export class AIEngine {
      *
      * @param systemPrompt - 系统提示词
      * @param userPrompt - 用户提示词
-     * @param model? - 参数
+     * @param model - 参数
      * @param temperature - 采样温度
-     * @param maxTokens? - 参数
-     * @param onChunk? - 参数
+     * @param maxTokens - 参数
+     * @param onChunk - 参数
      * @returns API 响应
      */
     async callAIStream(
@@ -306,6 +318,16 @@ export class AIEngine {
         };
     }
 
+    /**
+     * 生成世界观骨架。
+     *
+     * @param worldName - 世界名
+     * @param projectName - 项目名
+     * @param genre - 题材
+     * @param theme - 主题
+     * @param customPrompt - 自定义提示词
+     * @returns 骨架文本
+     */
     async generateWorldviewSkeleton(
         worldName: string,
         projectName: string,
@@ -316,6 +338,16 @@ export class AIEngine {
         return this.worldviewGen.generateWorldviewSkeleton(worldName, projectName, genre, theme, customPrompt);
     }
 
+    /**
+     * 生成单个世界观模块。
+     *
+     * @param moduleName - 模块名
+     * @param skeleton - 骨架文本
+     * @param worldName - 世界名
+     * @param genre - 题材
+     * @param customPrompt - 自定义提示词
+     * @returns 模块文本
+     */
     async generateWorldviewModule(
         moduleName: string,
         skeleton: string,
@@ -326,6 +358,17 @@ export class AIEngine {
         return this.worldviewGen.generateWorldviewModule(moduleName, skeleton, worldName, genre, customPrompt);
     }
 
+    /**
+     * 生成完整世界观。
+     *
+     * @param worldName - 世界名
+     * @param projectName - 项目名
+     * @param genre - 题材
+     * @param theme - 主题
+     * @param customPrompt - 自定义提示词
+     * @param onProgress - 进度回调
+     * @returns 世界观文本
+     */
     async generateWorldview(
         worldName: string,
         projectName: string,
@@ -342,8 +385,8 @@ export class AIEngine {
      *
      * @param app - Obsidian 应用实例
      * @param project - 项目（路径或对象）
-     * @param genre? - 参数
-     * @param onProgress? - 参数
+     * @param genre - 参数
+     * @param onProgress - 参数
      * @returns 生成结果
      */
     async generateWorldviewForProject(app: App, project: string, genre?: string, onProgress?: (phase: string, module?: string) => void): Promise<WorldviewGenerationResult> {
@@ -355,7 +398,7 @@ export class AIEngine {
      *
      * @param app - Obsidian 应用实例
      * @param project - 项目（路径或对象）
-     * @param worldview? - 参数
+     * @param worldview - 参数
      * @returns 设定库文本
      */
     async generateSettingLibForProject(app: App, project: string, worldview?: string): Promise<string> {
@@ -367,7 +410,7 @@ export class AIEngine {
      *
      * @param app - Obsidian 应用实例
      * @param project - 项目（路径或对象）
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 世界观文本
      */
     async generateFanficWorldviewForProject(app: App, project: string, onProgress?: (phase: string) => void): Promise<string> {
@@ -379,13 +422,13 @@ export class AIEngine {
      *
      * @param worldview - 世界观
      * @param count - 数量
-     * @param customPrompt? - 参数
-     * @param templateContent? - 参数
-     * @param isFirstCharacter? - 参数
-     * @param names? - 参数
-     * @param settingLib? - 参数
-     * @param signal? - 参数
-     * @param existingEntities? - 参数
+     * @param customPrompt - 参数
+     * @param templateContent - 参数
+     * @param isFirstCharacter - 参数
+     * @param names - 参数
+     * @param settingLib - 参数
+     * @param signal - 参数
+     * @param existingEntities - 参数
      * @returns API 响应
      */
     async generateCharacters(worldview: string, count: number = 5, customPrompt?: string, templateContent?: string, isFirstCharacter?: boolean, names?: string[], settingLib?: string, signal?: AbortSignal, existingEntities?: string): Promise<APIResponse> {
@@ -400,8 +443,8 @@ export class AIEngine {
      * @param volumeNumber - 卷号
      * @param totalVolumes - 总卷数
      * @param chaptersPerVolume - 每卷章数
-     * @param contextPrompt? - 参数
-     * @param existingElements? - 参数
+     * @param contextPrompt - 参数
+     * @param existingElements - 参数
      * @returns API 响应
      */
     async generateVolumeOutline(
@@ -421,9 +464,9 @@ export class AIEngine {
      *
      * @param worldview - 世界观
      * @param settings - 设置
-     * @param existingWorldElements? - 参数
-     * @param customPrompt? - 参数
-     * @param onProgress? - 参数
+     * @param existingWorldElements - 参数
+     * @param customPrompt - 参数
+     * @param onProgress - 参数
      * @returns API 响应
      */
     async generateOutline(
@@ -442,8 +485,8 @@ export class AIEngine {
      * @param worldview - 世界观
      * @param name - 名称
      * @param description - 描述
-     * @param templateContent? - 参数
-     * @param settingLib? - 参数
+     * @param templateContent - 参数
+     * @param settingLib - 参数
      * @returns API 响应
      */
     async generateFaction(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
@@ -456,8 +499,8 @@ export class AIEngine {
      * @param worldview - 世界观
      * @param name - 名称
      * @param description - 描述
-     * @param templateContent? - 参数
-     * @param settingLib? - 参数
+     * @param templateContent - 参数
+     * @param settingLib - 参数
      * @returns API 响应
      */
     async generateLocation(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
@@ -470,8 +513,8 @@ export class AIEngine {
      * @param worldview - 世界观
      * @param name - 名称
      * @param description - 描述
-     * @param templateContent? - 参数
-     * @param settingLib? - 参数
+     * @param templateContent - 参数
+     * @param settingLib - 参数
      * @returns API 响应
      */
     async generateItem(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
@@ -485,8 +528,8 @@ export class AIEngine {
      * @param names - 名称列表
      * @param description - 描述
      * @param count - 数量
-     * @param customSystemPrompt? - 参数
-     * @param settingLib? - 参数
+     * @param customSystemPrompt - 参数
+     * @param settingLib - 参数
      * @returns API 响应
      */
     async generateFactionsBatch(
@@ -507,8 +550,8 @@ export class AIEngine {
      * @param names - 名称列表
      * @param description - 描述
      * @param count - 数量
-     * @param customSystemPrompt? - 参数
-     * @param settingLib? - 参数
+     * @param customSystemPrompt - 参数
+     * @param settingLib - 参数
      * @returns API 响应
      */
     async generateLocationsBatch(
@@ -529,9 +572,9 @@ export class AIEngine {
      * @param names - 名称列表
      * @param description - 描述
      * @param count - 数量
-     * @param customSystemPrompt? - 参数
-     * @param itemType? - 参数
-     * @param settingLib? - 参数
+     * @param customSystemPrompt - 参数
+     * @param itemType - 参数
+     * @param settingLib - 参数
      * @returns API 响应
      */
     async generateItemsBatch(
@@ -591,13 +634,19 @@ export class AIEngine {
      * 分析作品文笔风格。
      *
      * @param novelName - 小说名
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns API 响应
      */
     async analyzeStyle(novelName: string, signal?: AbortSignal): Promise<APIResponse> {
         return this.chapterHelpers.analyzeStyle(novelName, signal);
     }
 
+    /**
+     * 执行去 AI 味改写。
+     *
+     * @param bodyText - 正文文本
+     * @returns 改写结果
+     */
     async deaiRewrite(bodyText: string): Promise<{
         original: string;
         checkReport: string;
@@ -612,8 +661,8 @@ export class AIEngine {
      * @param bodyText - 正文文本
      * @param contextPrompt - 上下文提示词
      * @param maxRounds - 最大轮次
-     * @param chapNum? - 参数
-     * @param onProgress? - 参数
+     * @param chapNum - 参数
+     * @param onProgress - 参数
      * @returns 精修结果
      */
     async iterativeRefine(
@@ -672,10 +721,10 @@ export class AIEngine {
      *
      * @param templateId - 模板 ID
      * @param variables - 变量表
-     * @param model? - 参数
+     * @param model - 参数
      * @param temperature - 采样温度
      * @param maxTokens - 最大 token 数
-     * @param options? - 参数
+     * @param options - 参数
      * @returns API 响应
      */
     async callAIWithTemplate(

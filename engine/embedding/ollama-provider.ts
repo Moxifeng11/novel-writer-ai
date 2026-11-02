@@ -32,6 +32,13 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
             : 6000;
     }
 
+    /**
+     * 生成单条向量。
+     *
+     * @param text - 文本内容
+     * @param options - 配置项
+     * @returns 向量
+     */
     async embed(text: string, options?: EmbeddingOptions): Promise<number[]> {
         const endpoint = `${this.baseUrl}/api/embeddings`;
         const safeText = text.length > this.maxInputChars ? text.slice(0, this.maxInputChars) : text;
@@ -92,6 +99,13 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
         }
     }
 
+    /**
+     * 批量生成向量。
+     *
+     * @param texts - 文本列表
+     * @param options - 配置项
+     * @returns 向量数组
+     */
     async embedBatch(texts: string[], options?: EmbeddingOptions): Promise<number[][]> {
         const MAX_CONCURRENT = 5; // 并发限流
 
@@ -126,6 +140,10 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
         return results;
     }
 
+    /**
+     * 提供方是否可用。
+     * @returns 布尔值
+     */
     async isAvailable(): Promise<EmbeddingAvailability> {
         try {
             const testVector = await this.embed('test');
@@ -142,6 +160,10 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
         }
     }
 
+    /**
+     * 提供方信息。
+     * @returns 信息
+     */
     getProviderInfo(): ProviderInfo {
         return {
             type: 'ollama',
@@ -151,10 +173,18 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
         };
     }
 
+    /**
+     * 模型名。
+     * @returns 名称
+     */
     getModelName(): string {
         return this.model;
     }
 
+    /**
+     * 向量维度。
+     * @returns 维度
+     */
     async getDimensions(): Promise<number> {
         if (this.cachedDimensions !== null) {
             return this.cachedDimensions;
@@ -169,10 +199,18 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
         }
     }
 
+    /**
+     * Base URL。
+     * @returns URL
+     */
     getBaseUrl(): string {
         return this.baseUrl;
     }
 
+    /**
+     * 模型标识。
+     * @returns 模型
+     */
     getModel(): string {
         return this.model;
     }

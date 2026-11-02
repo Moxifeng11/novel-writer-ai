@@ -98,7 +98,7 @@ export class ToolRegistry {
     /**
      * 按模式列出工具。
      *
-     * @param mode? - 参数
+     * @param mode - 参数
      * @returns 工具数组
      */
     list(mode?: CreationMode): HarnessTool[] {

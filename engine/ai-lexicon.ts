@@ -16,6 +16,9 @@ export interface AILexiconPattern {
     label: string;
 }
 
+/**
+ * AI 词表类型。
+ */
 export interface AILexicon {
     /** L1 连接词/副词层 */
     l1Connectives: string[];
@@ -32,6 +35,9 @@ export interface AILexicon {
     weakSignals?: string[];
 }
 
+/**
+ * 内置 AI 词汇表。
+ */
 export const AI_LEXICON: AILexicon = {
     l1Connectives: [
         // 原有 15 个（保留）

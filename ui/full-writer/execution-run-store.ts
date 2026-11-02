@@ -186,9 +186,9 @@ export class ExecutionRunStore {
      * 设置执行状态。
      *
      * @param message - 消息
-     * @param current? - 参数
-     * @param total? - 参数
-     * @param aiCalls? - 参数
+     * @param current - 参数
+     * @param total - 参数
+     * @param aiCalls - 参数
      */
     setStatus(message: string, current?: number, total?: number, aiCalls?: number): void {
         this.status = { message, current, total, aiCalls };

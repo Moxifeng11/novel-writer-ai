@@ -62,7 +62,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
      * 生成单条向量。
      *
      * @param text - 文本内容
-     * @param _options? - 参数
+     * @param _options - 参数
      * @returns 向量
      */
     async embed(text: string, _options?: EmbeddingOptions): Promise<number[]> {
@@ -103,7 +103,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
      * 批量生成向量。
      *
      * @param texts - 文本列表
-     * @param _options? - 参数
+     * @param _options - 参数
      * @returns 向量数组
      */
     async embedBatch(texts: string[], _options?: EmbeddingOptions): Promise<number[][]> {

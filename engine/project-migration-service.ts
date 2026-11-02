@@ -16,6 +16,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('ProjectMigration');
 
+/**
+ * 待迁移项目候选。
+ */
 export interface MigrationCandidate {
     projectId: string;
     displayName: string;
@@ -23,12 +26,18 @@ export interface MigrationCandidate {
     targetPath: string;
 }
 
+/**
+ * 迁移计划。
+ */
 export interface MigrationPlan {
     candidates: MigrationCandidate[];
     skipped: Array<{ projectId: string; reason: string }>;
     conflicts: Array<{ projectId: string; reason: string }>;
 }
 
+/**
+ * 迁移结果。
+ */
 export interface MigrationResult {
     moved: MigrationCandidate[];
     failed: Array<{ projectId: string; error: string }>;
@@ -37,14 +46,24 @@ export interface MigrationResult {
     backupDir?: string;
 }
 
+/**
+ * 回滚结果。
+ */
 export interface MigrationRollbackResult {
     restored: MigrationCandidate[];
     failed: Array<{ projectId: string; error: string }>;
 }
 
+/**
+ * 项目迁移服务。
+ */
 export class ProjectMigrationService {
     constructor(private readonly app: import('obsidian').App) {}
 
+    /**
+     * 生成迁移计划。
+     * @returns 迁移计划
+     */
     async plan(): Promise<MigrationPlan> {
         const projects = detectProjects(this.app);
         const candidates: MigrationCandidate[] = [];
@@ -83,6 +102,12 @@ export class ProjectMigrationService {
         return { candidates, skipped, conflicts };
     }
 
+    /**
+     * 执行迁移。
+     *
+     * @param options - 配置项
+     * @returns 迁移结果
+     */
     async migrate(options?: { backup?: boolean }): Promise<MigrationResult> {
         const plan = await this.plan();
         const moved: MigrationCandidate[] = [];
@@ -161,6 +186,12 @@ export class ProjectMigrationService {
         return { restored, failed };
     }
 
+    /**
+     * 回滚并提示结果。
+     *
+     * @param moved - 是否移动
+     * @returns 回滚结果
+     */
     async rollbackWithNotice(moved: MigrationCandidate[]): Promise<MigrationRollbackResult> {
         const result = await this.rollback(moved);
         if (result.restored.length > 0) {

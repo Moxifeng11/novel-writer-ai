@@ -423,7 +423,7 @@ export class StyleVectorStore {
      *
      * @param queryText - 查询文本
      * @param fingerprints - 指纹集合
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 检索结果
      */
     async searchSimilarByText(
@@ -485,7 +485,7 @@ export class StyleVectorStore {
      *
      * @param fingerprintId - 指纹 ID
      * @param fingerprints - 指纹集合
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 检索结果
      */
     async searchSimilarByFingerprint(
@@ -553,7 +553,7 @@ export class StyleVectorStore {
      * 混合多个风格向量。
      *
      * @param fingerprints - 指纹集合
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 混合向量
      */
     blendStyles(
@@ -607,7 +607,7 @@ export class StyleVectorStore {
      *
      * @param fpA - 指纹 A
      * @param fpB - 指纹 B
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 插值向量
      */
     interpolateStyles(
@@ -652,7 +652,7 @@ export class StyleVectorStore {
      * 重建全部指纹向量。
      *
      * @param fingerprints - 指纹集合
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 重建结果
      */
     async rebuildAllVectors(

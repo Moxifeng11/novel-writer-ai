@@ -160,7 +160,7 @@ export class OutlineToTextExpander {
      *
      * @param chapterOutline - 章纲
      * @param options - 配置项
-     * @param context? - 参数
+     * @param context - 参数
      * @returns 扩写结果
      */
     async expandChapterToScenes(
@@ -208,7 +208,7 @@ export class OutlineToTextExpander {
      *
      * @param sceneOutline - 场景大纲
      * @param options - 配置项
-     * @param context? - 参数
+     * @param context - 参数
      * @returns 扩写结果
      */
     async expandSceneToParagraphs(
@@ -259,7 +259,7 @@ export class OutlineToTextExpander {
      *
      * @param paragraph - 段落
      * @param options - 配置项
-     * @param context? - 参数
+     * @param context - 参数
      * @returns 扩写结果
      */
     async expandParagraph(
@@ -307,7 +307,7 @@ export class OutlineToTextExpander {
      *
      * @param chapterOutline - 章纲
      * @param options - 配置项
-     * @param context? - 参数
+     * @param context - 参数
      * @returns 扩写结果
      */
     async expandFullChapter(

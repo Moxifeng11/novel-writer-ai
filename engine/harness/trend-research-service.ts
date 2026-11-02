@@ -104,7 +104,7 @@ export class TrendResearchService {
      *
      * @param mode - 模式
      * @param categoryOrGenre - 分类或题材
-     * @param audience? - 参数
+     * @param audience - 参数
      * @returns 来源数组
      */
     async search(mode: 'short' | 'script', categoryOrGenre: string, audience?: string): Promise<TrendSource[]> {

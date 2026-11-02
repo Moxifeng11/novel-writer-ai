@@ -30,6 +30,9 @@ export interface WorldviewGenerationResult {
     error?: string;
 }
 
+/**
+ * 世界观生成器。
+ */
 export class WorldviewGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -46,6 +49,11 @@ export class WorldviewGenerator {
         this.templateService = plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
     }
 
+    /**
+     * 注入世界观缓存服务。
+     *
+     * @param cacheService - 缓存服务
+     */
     setCacheService(cacheService: WorldviewCacheService | null): void {
         this.cacheService = cacheService;
     }
@@ -64,6 +72,16 @@ export class WorldviewGenerator {
         return this.vaultMeta;
     }
 
+    /**
+     * 生成世界观骨架。
+     *
+     * @param worldName - 世界名
+     * @param projectName - 项目名
+     * @param genre - 题材
+     * @param theme - 主题
+     * @param customPrompt - 自定义提示词
+     * @returns 骨架文本
+     */
     async generateWorldviewSkeleton(
         worldName: string,
         projectName: string,
@@ -117,6 +135,16 @@ ${theme ? `【主题】${theme}` : ''}`;
         return this.apiClient.callAI(custom.system, userPrompt, this.plugin.settings.flashModel, 0.8, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 生成世界观模块。
+     *
+     * @param moduleName - 模块名
+     * @param skeleton - 骨架文本
+     * @param worldName - 世界名
+     * @param genre - 题材
+     * @param customPrompt - 自定义提示词
+     * @returns 模块文本
+     */
     async generateWorldviewModule(
         moduleName: string,
         skeleton: string,
@@ -171,6 +199,17 @@ ${skeleton.slice(0, 3000)}
         return this.apiClient.callAI(custom.system, userPrompt, this.plugin.settings.flashModel, 0.8, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 生成完整世界观。
+     *
+     * @param worldName - 世界名
+     * @param projectName - 项目名
+     * @param genre - 题材
+     * @param theme - 主题
+     * @param customPrompt - 自定义提示词
+     * @param onProgress - 进度回调
+     * @returns 世界观文本
+     */
     async generateWorldview(
         worldName: string,
         projectName: string,
@@ -291,6 +330,15 @@ ${theme ? `【主题】${theme}` : ''}`;
         return this.apiClient.callAI(custom.system, userPrompt, this.plugin.settings.flashModel, 0.8, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 为项目生成世界观。
+     *
+     * @param app - Obsidian 应用实例
+     * @param project - 项目（路径或对象）
+     * @param genre - 题材
+     * @param onProgress - 进度回调
+     * @returns 生成结果
+     */
     async generateWorldviewForProject(app: App, project: string, genre?: string, onProgress?: (phase: string, module?: string) => void): Promise<WorldviewGenerationResult> {
         const fs = this.getFS();
         const vaultMeta = this.getVaultMeta();
@@ -398,6 +446,14 @@ ${theme ? `【主题】${theme}` : ''}`;
         return { content: result.content || '' };
     }
 
+    /**
+     * 为项目生成设定库。
+     *
+     * @param app - Obsidian 应用实例
+     * @param project - 项目（路径或对象）
+     * @param worldview - 世界观
+     * @returns 生成结果
+     */
     async generateSettingLibForProject(app: App, project: string, worldview?: string): Promise<string> {
         const fs = this.getFS();
         const vaultMeta = this.getVaultMeta();
@@ -532,6 +588,14 @@ ${existingContent ? `\n【已有设定库（请保留其中非冲突内容，进
         return content;
     }
 
+    /**
+     * 为同人项目生成世界观。
+     *
+     * @param app - Obsidian 应用实例
+     * @param project - 项目（路径或对象）
+     * @param onProgress - 进度回调
+     * @returns 生成结果
+     */
     async generateFanficWorldviewForProject(app: App, project: string, onProgress?: (phase: string) => void): Promise<string> {
         const fs = this.getFS();
         const vaultMeta = this.getVaultMeta();

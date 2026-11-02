@@ -102,6 +102,9 @@ const ENTITY_KIND_SPECS: Record<EntityKind, EntityKindSpec> = {
     },
 };
 
+/**
+ * 单实体生成器（势力/地点/物品）。
+ */
 export class EntityGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -115,14 +118,44 @@ export class EntityGenerator {
         this.templateService = plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
     }
 
+    /**
+     * 生成势力。
+     *
+     * @param worldview - 世界观
+     * @param name - 名称
+     * @param description - 描述
+     * @param templateContent - 模板内容
+     * @param settingLib - 设定库
+     * @returns 势力实体
+     */
     async generateFaction(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         return this.generateByKind('faction', worldview, name, description, templateContent, settingLib);
     }
 
+    /**
+     * 生成地点。
+     *
+     * @param worldview - 世界观
+     * @param name - 名称
+     * @param description - 描述
+     * @param templateContent - 模板内容
+     * @param settingLib - 设定库
+     * @returns 地点实体
+     */
     async generateLocation(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         return this.generateByKind('location', worldview, name, description, templateContent, settingLib);
     }
 
+    /**
+     * 生成物品。
+     *
+     * @param worldview - 世界观
+     * @param name - 名称
+     * @param description - 描述
+     * @param templateContent - 模板内容
+     * @param settingLib - 设定库
+     * @returns 物品实体
+     */
     async generateItem(worldview: string, name: string, description: string, templateContent?: string, settingLib?: string): Promise<APIResponse> {
         return this.generateByKind('item', worldview, name, description, templateContent, settingLib);
     }

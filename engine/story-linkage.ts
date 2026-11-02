@@ -13,14 +13,23 @@
  */
 import { chapterOutlineSection } from '../shared/format-constants';
 
+/**
+ * 计划范围。
+ */
 export interface PlannedRange {
     start: number | null;
     end: number | null;
     raw: string;
 }
 
+/**
+ * 伏笔状态。
+ */
 export type ForeshadowState = 'due' | 'overdue' | 'upcoming' | 'later' | 'unknown';
 
+/**
+ * 联动伏笔。
+ */
 export interface LinkageForeshadow {
     name: string;
     importance: string;
@@ -36,6 +45,9 @@ export interface LinkageForeshadow {
     planningRef: string;
 }
 
+/**
+ * 联动时间线事件。
+ */
 export interface LinkageTimelineEvent {
     time: string;
     chapter: string;
@@ -45,6 +57,9 @@ export interface LinkageTimelineEvent {
     settingRefs: string[];
 }
 
+/**
+ * 故事联动汇总。
+ */
 export interface StoryLinkage {
     chapterName: string;
     chapterNum: number;
@@ -63,6 +78,9 @@ export interface StoryLinkage {
     promptText: string;
 }
 
+/**
+ * 伏笔联动输入。
+ */
 export interface StoryLinkageForeshadowInput {
     name?: string;
     importance?: string;
@@ -73,6 +91,9 @@ export interface StoryLinkageForeshadowInput {
     status?: string;
 }
 
+/**
+ * 时间线联动输入。
+ */
 export interface StoryLinkageTimelineInput {
     time?: string;
     chapter?: string;
@@ -81,6 +102,9 @@ export interface StoryLinkageTimelineInput {
     involvedEntities?: string[];
 }
 
+/**
+ * 联动输入。
+ */
 export interface StoryLinkageInput {
     chapterName: string;
     chapterNum: number;

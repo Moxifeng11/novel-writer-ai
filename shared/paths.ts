@@ -832,35 +832,35 @@ export const KB_IMPORT_PRESETS_FILE = 'import-presets.json';
 /**
  * kbKnowledgeBaseDir：返回路径 `baseDir || DEFAULT_KNOWLEDGE_BASE_DIR`。
  *
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbKnowledgeBaseDir(baseDir?: string): string { return baseDir || DEFAULT_KNOWLEDGE_BASE_DIR; }
 /**
  * kbConfigDir：返回路径 ``${kbKnowledgeBaseDir(baseDir)}/${KB_CONFIG_DIR}``。
  *
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbConfigDir(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_CONFIG_DIR}`; }
 /**
  * kbConfigFile：返回路径 ``${kbConfigDir(baseDir)}/${KB_CONFIG_FILE}``。
  *
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbConfigFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_CONFIG_FILE}`; }
 /**
  * kbIndexFile：返回路径 ``${kbKnowledgeBaseDir(baseDir)}/${KB_INDEX_FILE}``。
  *
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbIndexFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_INDEX_FILE}`; }
 /**
  * kbTagSystemFile：返回路径 ``${kbKnowledgeBaseDir(baseDir)}/${KB_TAG_SYSTEM_FILE}``。
  *
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbTagSystemFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_TAG_SYSTEM_FILE}`; }
@@ -873,7 +873,7 @@ export function kbBookDir(bookName: string, baseDir?: string): string {
  * kbBookBasicInfoFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_BASIC_INFO_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookBasicInfoFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_BASIC_INFO_FILE}`; }
@@ -881,7 +881,7 @@ export function kbBookBasicInfoFile(bookName: string, baseDir?: string): string 
  * kbBookStyleFingerprintFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_STYLE_FINGERPRINT_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookStyleFingerprintFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_STYLE_FINGERPRINT_FILE}`; }
@@ -889,7 +889,7 @@ export function kbBookStyleFingerprintFile(bookName: string, baseDir?: string): 
  * kbBookRhythmAnalysisFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_RHYTHM_ANALYSIS_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookRhythmAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_RHYTHM_ANALYSIS_FILE}`; }
@@ -897,7 +897,7 @@ export function kbBookRhythmAnalysisFile(bookName: string, baseDir?: string): st
  * kbBookWritingTechniquesFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_WRITING_TECHNIQUES_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookWritingTechniquesFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_WRITING_TECHNIQUES_FILE}`; }
@@ -905,7 +905,7 @@ export function kbBookWritingTechniquesFile(bookName: string, baseDir?: string):
  * kbBookStructureBreakdownFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_STRUCTURE_BREAKDOWN_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookStructureBreakdownFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_STRUCTURE_BREAKDOWN_FILE}`; }
@@ -913,7 +913,7 @@ export function kbBookStructureBreakdownFile(bookName: string, baseDir?: string)
  * kbBookCharacterExtractionFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_CHARACTER_EXTRACTION_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookCharacterExtractionFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_CHARACTER_EXTRACTION_FILE}`; }
@@ -921,7 +921,7 @@ export function kbBookCharacterExtractionFile(bookName: string, baseDir?: string
  * kbBookForeshadowDBFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_FORESHADOW_DB_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookForeshadowDBFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_FORESHADOW_DB_FILE}`; }
@@ -929,7 +929,7 @@ export function kbBookForeshadowDBFile(bookName: string, baseDir?: string): stri
  * kbBookCommercialAnalysisFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_COMMERCIAL_ANALYSIS_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookCommercialAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_COMMERCIAL_ANALYSIS_FILE}`; }
@@ -937,7 +937,7 @@ export function kbBookCommercialAnalysisFile(bookName: string, baseDir?: string)
  * kbBookReadabilityAnalysisFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_READABILITY_ANALYSIS_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookReadabilityAnalysisFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_READABILITY_ANALYSIS_FILE}`; }
@@ -945,7 +945,7 @@ export function kbBookReadabilityAnalysisFile(bookName: string, baseDir?: string
  * kbBookBreakdownLogFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_BREAKDOWN_LOG_FILE}``。
  *
  * @param bookName - 书名
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbBookBreakdownLogFile(bookName: string, baseDir?: string): string { return `${kbBookDir(bookName, baseDir)}/${KB_BREAKDOWN_LOG_FILE}`; }
@@ -958,14 +958,14 @@ export function kbVectorsDir(): string { return `${pluginDataDir()}/${KB_VECTORS
 /**
  * kbImportHistoryFile：返回路径 ``${kbConfigDir(baseDir)}/${KB_IMPORT_HISTORY_FILE}``。
  *
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbImportHistoryFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_IMPORT_HISTORY_FILE}`; }
 /**
  * kbImportPresetsFile：返回路径 ``${kbConfigDir(baseDir)}/${KB_IMPORT_PRESETS_FILE}``。
  *
- * @param baseDir? - 参数
+ * @param baseDir - 参数
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbImportPresetsFile(baseDir?: string): string { return `${kbConfigDir(baseDir)}/${KB_IMPORT_PRESETS_FILE}`; }

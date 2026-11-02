@@ -58,6 +58,9 @@ const OUTLINE_BLUEPRINT_MAX_ATTEMPTS = 3;
 /** 章节缺失时「只补缺失区间」的增量补全最大轮数（避免整卷重写造成的成倍耗时） */
 const OUTLINE_CHAPTER_COMPLETION_MAX_ROUNDS = 2;
 
+/**
+ * 大纲生成器。
+ */
 export class OutlineGenerator {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -69,6 +72,21 @@ export class OutlineGenerator {
         this.apiClient = apiClient;
     }
 
+    /**
+     * 生成卷纲。
+     *
+     * @param worldview - 世界观
+     * @param globalSkeleton - 全局骨架
+     * @param volumeNumber - 卷号
+     * @param totalVolumes - 总卷数
+     * @param chaptersPerVolume - 每卷章数
+     * @param contextPrompt - 上下文提示词
+     * @param existingElements - 已有要素
+     * @param blueprint - 全局蓝图文本
+     * @param previousSummaries - 前情摘要
+     * @param chapterRange - 章节范围
+     * @returns 卷纲文本
+     */
     async generateVolumeOutline(
         worldview: string,
         globalSkeleton: string,
@@ -246,6 +264,16 @@ ${previousSummaries}
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.6, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 生成大纲。
+     *
+     * @param worldview - 世界观
+     * @param settings - 设置
+     * @param existingWorldElements - 已有世界要素
+     * @param customPrompt - 自定义提示词
+     * @param onProgress - 进度回调
+     * @returns 大纲文本
+     */
     async generateOutline(
         worldview: string,
         settings: OutlineSettings,
@@ -1240,6 +1268,18 @@ ${args.existingElements.items || '无'}
         };
     }
 
+    /**
+     * 生成全局蓝图。
+     *
+     * @param worldview - 世界观
+     * @param charactersText - 角色文本
+     * @param volumeCount - 卷数
+     * @param totalChapters - 总章数
+     * @param existingSnapshot - 已有快照
+     * @param repairHint - 修复提示
+     * @param elementContext - 要素上下文
+     * @returns 蓝图文本
+     */
     async generateGlobalBlueprint(
         worldview: string,
         charactersText: string,

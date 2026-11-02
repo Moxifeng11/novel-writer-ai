@@ -231,7 +231,7 @@ export class ChapterRecognizer {
      * 识别章节结构。
      *
      * @param content - 内容
-     * @param filename? - 参数
+     * @param filename - 参数
      * @returns 识别结果
      */
     recognize(content: string, filename?: string): BookRecognitionResult {
@@ -242,7 +242,7 @@ export class ChapterRecognizer {
      * 抽取标题。
      *
      * @param content - 内容
-     * @param filename? - 参数
+     * @param filename - 参数
      * @returns 标题
      */
     extractTitle(content: string, filename?: string): string {

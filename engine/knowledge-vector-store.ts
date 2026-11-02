@@ -564,7 +564,7 @@ export class KnowledgeVectorStore {
      * 检索相似样本。
      *
      * @param query - 查询串
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 结果数组
      */
     async search(

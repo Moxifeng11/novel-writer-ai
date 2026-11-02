@@ -1,6 +1,9 @@
 import type { PromptTemplate } from './prompts/template-utils';
 import { getStepTemplate, fillTemplate } from './prompts/template-utils';
 
+/**
+ * 提示词模板版本。
+ */
 export interface PromptTemplateVersion {
     version: string;
     template: PromptTemplate;
@@ -8,6 +11,9 @@ export interface PromptTemplateVersion {
     description: string;
 }
 
+/**
+ * 提示词变量。
+ */
 export interface PromptVariable {
     name: string;
     type: 'string' | 'number' | 'boolean' | 'array' | 'object';
@@ -17,11 +23,17 @@ export interface PromptVariable {
     validationRegex?: string;
 }
 
+/**
+ * 提示词管理器选项。
+ */
 export interface PromptManagerOptions {
     enableCache?: boolean;
     cacheTTL?: number;
 }
 
+/**
+ * 提示词管理器。
+ */
 export class PromptManager {
     private templates: Map<string, PromptTemplateVersion[]> = new Map();
     private currentVersions: Map<string, string> = new Map();
@@ -52,6 +64,14 @@ export class PromptManager {
         }
     }
 
+    /**
+     * 注册模板。
+     *
+     * @param key - 键
+     * @param template - 模板
+     * @param version - 版本
+     * @param description - 描述
+     */
     registerTemplate(
         key: string,
         template: PromptTemplate,
@@ -75,7 +95,7 @@ export class PromptManager {
      * 取模板（可指定版本）。
      *
      * @param key - 键
-     * @param version? - 参数
+     * @param version - 参数
      * @returns 模板或 null
      */
     getTemplate(key: string, version?: string): PromptTemplate | null {
@@ -194,7 +214,7 @@ export class PromptManager {
      *
      * @param key - 键
      * @param vars - 变量表
-     * @param version? - 参数
+     * @param version - 参数
      * @returns 渲染文本或 null
      */
     fillTemplate(key: string, vars: Record<string, string>, version?: string): string | null {
@@ -219,6 +239,14 @@ export class PromptManager {
         return result;
     }
 
+    /**
+     * 填充分离模板。
+     *
+     * @param key - 键
+     * @param vars - 变量表
+     * @param version - 版本
+     * @returns 填充结果
+     */
     fillSeparateTemplates(
         key: string,
         vars: Record<string, string>,
@@ -233,6 +261,16 @@ export class PromptManager {
         };
     }
 
+    /**
+     * 创建动态模板。
+     *
+     * @param key - 键
+     * @param systemPromptParts - 系统提示词片段
+     * @param userPromptParts - 用户提示词片段
+     * @param version - 版本
+     * @param description - 描述
+     * @returns 模板
+     */
     createDynamicTemplate(
         key: string,
         systemPromptParts: string[],
@@ -249,6 +287,15 @@ export class PromptManager {
         this.registerTemplate(key, template, version, description);
     }
 
+    /**
+     * 组合多个模板。
+     *
+     * @param targetKey - 目标键
+     * @param sourceKeys - 来源键列表
+     * @param version - 版本
+     * @param description - 描述
+     * @returns 组合结果
+     */
     combineTemplates(
         targetKey: string,
         sourceKeys: string[],
@@ -306,7 +353,7 @@ export class PromptManager {
     /**
      * 失效模板缓存。
      *
-     * @param key? - 参数
+     * @param key - 参数
      */
     invalidateCache(key?: string): void {
         if (key) {

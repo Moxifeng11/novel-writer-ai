@@ -241,8 +241,8 @@ export class CoWriteFacade {
      * @param cursorHint - 光标提示
      * @param mode - 模式
      * @param count - 数量
-     * @param signal? - 参数
-     * @param onChunk? - 参数
+     * @param signal - 参数
+     * @param onChunk - 参数
      * @returns 建议结果
      */
     async suggestNext(
@@ -283,7 +283,7 @@ export class CoWriteFacade {
      * @param instruction - 指令
      * @param precedingText - 前文
      * @param cursorHint - 光标提示
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns 迭代结果
      */
     async iterateSuggestion(
@@ -304,7 +304,7 @@ export class CoWriteFacade {
      * @param afterContext - 后文上下文
      * @param cursorHint - 光标提示
      * @param count - 数量
-     * @param onChunk? - 参数
+     * @param onChunk - 参数
      * @returns 改写结果
      */
     async rewriteSelection(
@@ -325,7 +325,7 @@ export class CoWriteFacade {
      * @param cursor - 光标位置
      * @param text - 文本内容
      * @param trigger - 触发器
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns 联想结果
      */
     async suggestAssociation(
@@ -343,7 +343,7 @@ export class CoWriteFacade {
      * @param modifiedText - 修改后文本
      * @param suggestion - 建议
      * @param context - 上下文
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns 校验结果
      */
     async validateEdit(
@@ -359,7 +359,7 @@ export class CoWriteFacade {
      * 评估情节完成度。
      *
      * @param currentBody - 当前正文
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns 指标
      */
     async evaluatePlotComplete(
@@ -761,7 +761,7 @@ export class CoWriteFacade {
      * 同步建议生成完成。
      *
      * @param suggestions - 建议列表
-     * @param direction? - 参数
+     * @param direction - 参数
      */
     syncSuggestionsReady(suggestions: SuggestionRecord[], direction?: SuggestionDirection): void {
         this._syncSuggestionState({
@@ -796,7 +796,7 @@ export class CoWriteFacade {
      * 同步编辑中状态与缓冲。
      *
      * @param isEditing - 是否编辑中
-     * @param editBuffer? - 参数
+     * @param editBuffer - 参数
      */
     syncEditorEditing(isEditing: boolean, editBuffer?: string): void {
         this._syncEditorState({

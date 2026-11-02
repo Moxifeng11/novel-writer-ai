@@ -939,8 +939,8 @@ export class CoWriterEngine {
      * @param cursorHint - 光标提示
      * @param mode - 模式
      * @param count - 数量
-     * @param signal? - 参数
-     * @param onChunk? - 参数
+     * @param signal - 参数
+     * @param onChunk - 参数
      * @returns 建议结果
      */
     async suggestNext(
@@ -1662,7 +1662,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * @param afterContext - 后文上下文
      * @param cursorHint - 光标提示
      * @param count - 数量
-     * @param onChunk? - 参数
+     * @param onChunk - 参数
      * @returns 改写结果
      */
     async rewriteSelection(
@@ -1795,7 +1795,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * @param instruction - 指令
      * @param precedingContext - 前文上下文
      * @param cursorHint - 光标提示
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns 迭代结果
      */
     async iterateSuggestion(
@@ -1893,7 +1893,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * @param modifiedText - 修改后文本
      * @param originalSuggestion - 原始建议
      * @param precedingContext - 前文上下文
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns 校验结果
      */
     async validateEdit(
@@ -1963,7 +1963,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * 评估情节完成度。
      *
      * @param currentBody - 当前正文
-     * @param signal? - 参数
+     * @param signal - 参数
      * @returns 指标
      */
     async evaluatePlotComplete(currentBody: string, signal?: AbortSignal): Promise<PlotCompletionMetrics> {

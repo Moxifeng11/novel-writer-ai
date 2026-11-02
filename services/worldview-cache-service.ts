@@ -168,7 +168,7 @@ export class WorldviewCacheService {
      *
      * @param project - 项目（路径或对象）
      * @param filePath - 文件路径
-     * @param parser? - 参数
+     * @param parser - 参数
      * @param any> - 参数
      * @returns 值或 null
      */
@@ -272,7 +272,7 @@ export class WorldviewCacheService {
      * @param project - 项目（路径或对象）
      * @param filePath - 文件路径
      * @param rawText - 原始文本
-     * @param parsedData? - 参数
+     * @param parsedData - 参数
      */
     async set(
         project: string,
@@ -456,7 +456,7 @@ export class WorldviewCacheService {
      * 读取世界观（可附解析器）。
      *
      * @param project - 项目（路径或对象）
-     * @param parser? - 参数
+     * @param parser - 参数
      * @param any> - 参数
      * @returns {rawText,parsedData,fromCache}
      */
@@ -469,7 +469,7 @@ export class WorldviewCacheService {
      * 读取设定库（可附解析器）。
      *
      * @param project - 项目（路径或对象）
-     * @param parser? - 参数
+     * @param parser - 参数
      * @param any> - 参数
      * @returns {rawText,parsedData,fromCache}
      */
@@ -483,7 +483,7 @@ export class WorldviewCacheService {
      *
      * @param project - 项目（路径或对象）
      * @param rawText - 原始文本
-     * @param parsedData? - 参数
+     * @param parsedData - 参数
      */
     async setWorldview(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
         const filePath = getWorldviewPath(project);
@@ -495,7 +495,7 @@ export class WorldviewCacheService {
      *
      * @param project - 项目（路径或对象）
      * @param rawText - 原始文本
-     * @param parsedData? - 参数
+     * @param parsedData - 参数
      */
     async setSettingLib(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
         const filePath = getSettingLibPath(project);
@@ -545,7 +545,7 @@ export class WorldviewCacheService {
      * @param entityType - 实体类型
      * @param name - 名称
      * @param content - 内容
-     * @param parsedData? - 参数
+     * @param parsedData - 参数
      */
     async setEntity(
         project: string,
@@ -587,7 +587,7 @@ export class WorldviewCacheService {
      * 失效项目实体缓存。
      *
      * @param project - 项目（路径或对象）
-     * @param entityType? - 参数
+     * @param entityType - 参数
      */
     invalidateEntities(project: string, entityType?: 'characters' | 'locations' | 'factions' | 'items'): void {
         if (!entityType) {

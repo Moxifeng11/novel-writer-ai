@@ -782,8 +782,8 @@ export class KnowledgeBaseManager {
      *
      * @param bookId - 书籍 ID
      * @param status - 状态
-     * @param progress? - 参数
-     * @param error? - 参数
+     * @param progress - 参数
+     * @param error - 参数
      * @returns 无
      */
     async setBreakdownStatus(bookId: string, status: BreakdownStatus, progress?: number, error?: string): Promise<void> {
@@ -1047,8 +1047,8 @@ export class KnowledgeBaseManager {
      *
      * @param bookId - 书籍 ID
      * @param primaryGenre - 主题材
-     * @param secondaryGenres? - 参数
-     * @param confidence? - 参数
+     * @param secondaryGenres - 参数
+     * @param confidence - 参数
      * @returns 无
      */
     async setBookGenre(bookId: string, primaryGenre: string, secondaryGenres?: string[], confidence?: number): Promise<void> {

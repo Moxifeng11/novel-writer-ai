@@ -6,6 +6,9 @@ import { NOOP_NOTIFIER, SceneNode, SCENE_TYPE_LABELS } from '../shared/types';
 import { BodyWriter } from './body-writer';
 import { describeBodyFormat } from '../shared/body-format';
 
+/**
+ * 场景扩写上下文。
+ */
 export interface SceneExpandContext {
     projectId: string;
     volumeNumber: number;
@@ -23,6 +26,9 @@ export interface SceneExpandContext {
     emotionPlan?: string;
 }
 
+/**
+ * 场景扩写器。
+ */
 export class SceneExpander {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -36,6 +42,13 @@ export class SceneExpander {
         this.bodyWriter = new BodyWriter({ app: plugin.app });
     }
 
+    /**
+     * 扩写单个场景。
+     *
+     * @param scene - 场景
+     * @param context - 上下文
+     * @returns 扩写文本
+     */
     async expandScene(scene: SceneNode, context: SceneExpandContext): Promise<APIResponse> {
         // 扩写输出与正文落盘共用同一份格式契约
         const bodyFormat = await this.bodyWriter.resolveContract(context.projectId);
@@ -121,6 +134,13 @@ ${scene.keyDialogues?.join('\n') || '无'}
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 扩写整章。
+     *
+     * @param scenes - 场景列表
+     * @param context - 上下文
+     * @returns 扩写结果
+     */
     async expandChapter(scenes: SceneNode[], context: SceneExpandContext): Promise<APIResponse> {
         const bodyFormat = await this.bodyWriter.resolveContract(context.projectId);
         const systemPrompt = `你是专业的小说作家。根据多个场景细纲，将其扩写为完整的章节内容。
@@ -194,6 +214,13 @@ ${sceneList}
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, 8192);
     }
 
+    /**
+     * 带记忆的场景扩写。
+     *
+     * @param scene - 场景
+     * @param context - 上下文
+     * @returns 扩写文本
+     */
     async expandSceneWithMemory(scene: SceneNode, context: SceneExpandContext): Promise<APIResponse> {
         const bodyFormat = await this.bodyWriter.resolveContract(context.projectId);
         const systemPrompt = `你就是主角本人。现在你正在经历这个场景——不是在写小说，是在真实地体验。

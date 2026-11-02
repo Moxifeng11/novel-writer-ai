@@ -226,7 +226,7 @@ export class StyleFingerprintLibrary {
     /**
      * 切换当前项目（可传空）。
      *
-     * @param project? - 参数
+     * @param project - 参数
      */
     setProject(project?: string): void {
         if (this.project === project) return;
@@ -727,7 +727,7 @@ export class StyleFingerprintLibrary {
     /**
      * 加载项目的全局指纹启用状态。
      *
-     * @param project? - 参数
+     * @param project - 参数
      * @returns id→启用
      */
     async loadGlobalState(project?: string): Promise<Record<string, boolean>> {
@@ -748,8 +748,8 @@ export class StyleFingerprintLibrary {
     /**
      * 保存项目的全局指纹启用状态。
      *
-     * @param project? - 参数
-     * @param state? - 参数
+     * @param project - 参数
+     * @param state - 参数
      */
     async saveGlobalState(project?: string, state?: Record<string, boolean>): Promise<void> {
         const targetProject = project ?? this.project;
@@ -772,7 +772,7 @@ export class StyleFingerprintLibrary {
      * 判断全局指纹在项目内是否启用。
      *
      * @param globalFpId - 全局指纹 ID
-     * @param project? - 参数
+     * @param project - 参数
      * @returns 布尔值
      */
     isGlobalEnabledForProject(globalFpId: string, project?: string): boolean {
@@ -794,7 +794,7 @@ export class StyleFingerprintLibrary {
      *
      * @param globalFpId - 全局指纹 ID
      * @param enabled - 是否启用
-     * @param project? - 参数
+     * @param project - 参数
      */
     async setGlobalEnabledForProject(globalFpId: string, enabled: boolean, project?: string): Promise<void> {
         const targetProject = project ?? this.project;
@@ -959,7 +959,7 @@ export class StyleFingerprintLibrary {
      * @param sourceScope - 源作用域
      * @param targetScope - 目标作用域
      * @param fpId - 指纹 ID
-     * @param targetProject? - 参数
+     * @param targetProject - 参数
      * @returns 新指纹
      */
     async copyFingerprint(
@@ -1055,7 +1055,7 @@ export class StyleFingerprintLibrary {
     /**
      * 从模板同步指纹。
      *
-     * @param project? - 参数
+     * @param project - 参数
      * @returns 增/改/删统计
      */
     async syncFromTemplate(project?: string): Promise<{ added: string[]; updated: string[]; deleted: string[] }> {
@@ -1156,7 +1156,7 @@ export class StyleFingerprintLibrary {
     /**
      * 读取启用的指纹。
      *
-     * @param project? - 参数
+     * @param project - 参数
      * @returns 指纹数组
      */
     async getEnabledFingerprints(project?: string): Promise<StyleFingerprint[]> {
@@ -1418,7 +1418,7 @@ export class StyleFingerprintLibrary {
      * @param sourceText - 源文本
      * @param extractor - 抽取器
      * @param vectorStore - 向量库
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 指纹
      */
     async refillFingerprint(
@@ -1551,7 +1551,7 @@ export class StyleFingerprintLibrary {
      * 检索相似风格。
      *
      * @param query - 查询串
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 检索结果
      */
     async searchSimilarStyles(
@@ -1876,7 +1876,7 @@ export class StyleFingerprintLibrary {
      * 混合风格。
      *
      * @param fingerprints - 指纹集合
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 混合结果
      */
     blendStyles(
@@ -1930,7 +1930,7 @@ export class StyleFingerprintLibrary {
      *
      * @param fpA - 指纹 A
      * @param fpB - 指纹 B
-     * @param options? - 参数
+     * @param options - 参数
      * @returns 插值结果
      */
     interpolateStyles(
@@ -2115,7 +2115,7 @@ export class StyleFingerprintLibrary {
     /**
      * 重建全部风格向量。
      *
-     * @param onProgress? - 参数
+     * @param onProgress - 参数
      * @returns 重建统计
      */
     async rebuildAllStyleVectors(

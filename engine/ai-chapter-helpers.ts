@@ -13,6 +13,9 @@ import type { APIResponse } from './ai-engine';
 
 import type { Notifier } from '../shared/types';
 import { NOOP_NOTIFIER } from '../shared/types';
+/**
+ * 单章 AI 辅助集合（审校/章纲/分析/改写）。
+ */
 export class ChapterHelpers {
     private plugin: NovelWriterPlugin;
     private notifier: Notifier;
@@ -24,6 +27,13 @@ export class ChapterHelpers {
         this.apiClient = apiClient;
     }
 
+    /**
+     * 审校章节正文。
+     *
+     * @param chapterContent - 章节正文
+     * @param context - 上下文
+     * @returns 审校结果
+     */
     async reviewChapter(chapterContent: string, context: ReviewContext): Promise<APIResponse> {
         const systemPrompt = `你是一位严谨的小说连贯性审查员。请从多个维度审查章节内容。
 
@@ -54,6 +64,12 @@ ${context.previousChapter ? `【前章内容】${context.previousChapter.slice(-
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.3, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 生成章节规划。
+     *
+     * @param context - 上下文
+     * @returns 规划文本
+     */
     async generateChapterPlan(context: ChapterContext): Promise<APIResponse> {
         const systemPrompt = `你是一个小说章节规划师。根据以下素材，为章节生成「章节信息规划」。
 
@@ -75,6 +91,12 @@ ${context.previousChapter ? `【前章内容】${context.previousChapter.slice(-
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 生成章节分析报告。
+     *
+     * @param bodyText - 正文文本
+     * @returns 报告
+     */
     async generateAnalysisReport(bodyText: string): Promise<APIResponse> {
         const systemPrompt = `你是一位小说信息论分析师兼元素提取器。对正文做两件事：
 
@@ -110,6 +132,12 @@ NEW_TIMELINE: 时间点 | 事件
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.5, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 抽取章节要素。
+     *
+     * @param bodyText - 正文文本
+     * @returns 要素结果
+     */
     async extractElements(bodyText: string): Promise<APIResponse> {
         const systemPrompt = `你是一个小说元素提取器。从正文中提取所有新出现的人物、地点、势力、功法/武技/法宝/物品、伏笔、时间线事件。
 
@@ -131,6 +159,13 @@ TIMELINE: 时间点 | 事件描述`;
         return this.apiClient.callAI(systemPrompt, userContent, this.plugin.settings.flashModel, 0.5, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 分析章节文风。
+     *
+     * @param novelName - 小说名
+     * @param signal - 取消信号
+     * @returns 文风分析
+     */
     async analyzeStyle(novelName: string, signal?: AbortSignal): Promise<APIResponse> {
         const systemPrompt = `你是一位资深网络小说编辑，精通各大平台（番茄、起点、七猫等）热门小说的文笔风格分析。
 
@@ -187,6 +222,12 @@ TIMELINE: 时间点 | 事件描述`;
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput, { signal });
     }
 
+    /**
+     * 执行去 AI 味改写。
+     *
+     * @param bodyText - 正文文本
+     * @returns 改写结果
+     */
     async deaiRewrite(bodyText: string): Promise<{
         original: string;
         checkReport: string;
@@ -210,6 +251,16 @@ TIMELINE: 时间点 | 事件描述`;
         };
     }
 
+    /**
+     * 执行迭代精修。
+     *
+     * @param bodyText - 正文文本
+     * @param contextPrompt - 上下文提示词
+     * @param maxRounds - 最大轮次
+     * @param chapNum - 章号
+     * @param onProgress - 进度回调
+     * @returns 精修结果
+     */
     async iterativeRefine(
         bodyText: string, 
         contextPrompt: string,
