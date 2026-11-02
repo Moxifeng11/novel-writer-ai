@@ -683,7 +683,7 @@ export class TechniqueDeconstructor {
     /**
      * 技法权重。
      *
-     * @param techniqueId - 参数
+     * @param techniqueId - 技法 ID
      * @returns 权重
      */
     getTechniqueWeight(techniqueId: string): number {
@@ -703,7 +703,7 @@ export class TechniqueDeconstructor {
     /**
      * 分析技法。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 分析结果
      */
     async analyze(text: string): Promise<TechniqueAnalysisResult> {
@@ -933,7 +933,7 @@ export class TechniqueDeconstructor {
     /**
      * 带向量增强的技法分析。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 分析结果
      */
     async analyzeWithVector(text: string): Promise<TechniqueAnalysisResult> {
@@ -1126,11 +1126,11 @@ export class TechniqueDeconstructor {
     /**
      * 计算质量分。
      *
-     * @param exampleCount - 参数
-     * @param avgConfidence - 参数
-     * @param totalCount - 参数
-     * @param genreWeight - 参数
-     * @param contextScore - 参数
+     * @param exampleCount - 示例数量
+     * @param avgConfidence - 平均置信度
+     * @param totalCount - 总数
+     * @param genreWeight - 题材权重
+     * @param contextScore - 上下文得分
      * @returns 分数
      */
     calculateQualityScore(
@@ -1560,7 +1560,7 @@ export class TechniqueDeconstructor {
     /**
      * 保存技法到 Markdown。
      *
-     * @param app - 参数
+     * @param app - Obsidian 应用实例
      */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
@@ -1585,7 +1585,7 @@ export class TechniqueDeconstructor {
     /**
      * 保存分析到 Markdown。
      *
-     * @param app - 参数
+     * @param app - Obsidian 应用实例
      */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },

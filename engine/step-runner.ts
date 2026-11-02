@@ -529,11 +529,11 @@ export class StepRunner {
     /**
      * 保存步骤结果。
      *
-     * @param stepKey - 参数
-     * @param content - 参数
-     * @param chapDir - 参数
-     * @param chapterName - 参数
-     * @param volume - 参数
+     * @param stepKey - 步骤键
+     * @param content - 内容
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
      * @param meta? - 参数
      */
     async saveStepResult(
@@ -572,10 +572,10 @@ export class StepRunner {
     /**
      * 把修正写回正文。
      *
-     * @param fixContent - 参数
-     * @param chapDir - 参数
-     * @param chapterName - 参数
-     * @param volume - 参数
+     * @param fixContent - 修正内容
+     * @param chapDir - 章节目录
+     * @param chapterName - 章节名
+     * @param volume - 卷
      */
     async writeFixToBody(fixContent: string, chapDir: string, chapterName: string, volume: string): Promise<void> {
         return this.resultSaver.writeFixToBody(fixContent, chapDir, chapterName, volume);
@@ -584,7 +584,7 @@ export class StepRunner {
     /**
      * 提取实体名。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 名称数组
      */
     async getEntityNames(project: string) {
@@ -604,8 +604,8 @@ export class StepRunner {
     /**
      * 执行去 AI 味改写。
      *
-     * @param stepResults - 参数
-     * @param renderInContainer - 参数
+     * @param stepResults - 步骤结果
+     * @param renderInContainer - 渲染容器
      * @returns 结果
      */
     async executeDeaiRewrite(
@@ -624,10 +624,10 @@ export class StepRunner {
     /**
      * 执行迭代精修。
      *
-     * @param stepResults - 参数
-     * @param vars - 参数
-     * @param chapterNum - 参数
-     * @param buildTemplateVars - 参数
+     * @param stepResults - 步骤结果
+     * @param vars - 变量表
+     * @param chapterNum - 章号
+     * @param buildTemplateVars - 模板变量构建函数
      * @returns 结果
      */
     async executeIterativeRefine(
@@ -649,7 +649,7 @@ export class StepRunner {
     /**
      * 创建步骤浮层。
      *
-     * @param tabContent - 参数
+     * @param tabContent - 页签内容
      * @returns 元素
      */
     createStepOverlay(tabContent: HTMLElement): { overlay: HTMLElement; panel: HTMLElement } {
@@ -1675,10 +1675,10 @@ export class StepRunner {
     /**
      * 顺序执行步骤。
      *
-     * @param stepKeys - 参数
-     * @param baseCtx - 参数
+     * @param stepKeys - 步骤键列表
+     * @param baseCtx - 基础上下文
      * @param options? - 参数
-     * @param error - 参数
+     * @param error - 错误
      * @returns 结果
      */
     async executeStepsSequential(
@@ -1731,8 +1731,8 @@ export class StepRunner {
     /**
      * 执行合并规划。
      *
-     * @param ctx - 参数
-     * @param options - 参数
+     * @param ctx - 上下文
+     * @param options - 配置项
      * @returns 结果
      */
     async executePlanningCombined(

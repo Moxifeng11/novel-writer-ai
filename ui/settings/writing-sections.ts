@@ -26,7 +26,7 @@ export class CoWriteSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -237,7 +237,7 @@ export class WritingSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -509,7 +509,7 @@ export class TemplateSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
@@ -535,7 +535,7 @@ export class AppearanceSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -554,7 +554,7 @@ export class ProjectLibrarySection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -692,7 +692,7 @@ export class LayoutSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');

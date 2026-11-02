@@ -94,10 +94,10 @@ export class AIEngine {
     /**
      * 调用模型（非流式），带缓存/重试/降级。
      *
-     * @param systemPrompt - 参数
-     * @param userPrompt - 参数
+     * @param systemPrompt - 系统提示词
+     * @param userPrompt - 用户提示词
      * @param model? - 参数
-     * @param temperature - 参数
+     * @param temperature - 采样温度
      * @param maxTokens? - 参数
      * @param options? - 参数
      * @returns API 响应
@@ -146,10 +146,10 @@ export class AIEngine {
     /**
      * 调用模型（流式）。
      *
-     * @param systemPrompt - 参数
-     * @param userPrompt - 参数
+     * @param systemPrompt - 系统提示词
+     * @param userPrompt - 用户提示词
      * @param model? - 参数
-     * @param temperature - 参数
+     * @param temperature - 采样温度
      * @param maxTokens? - 参数
      * @param onChunk? - 参数
      * @returns API 响应
@@ -182,7 +182,7 @@ export class AIEngine {
     /**
      * 生成一章正文（非流式）。
      *
-     * @param context - 参数
+     * @param context - 上下文
      * @returns API 响应
      */
     async generateChapter(context: ChapterContext): Promise<APIResponse> {
@@ -211,8 +211,8 @@ export class AIEngine {
     /**
      * 流式生成章节正文。
      *
-     * @param context - 参数
-     * @param onChunk - 参数
+     * @param context - 上下文
+     * @param onChunk - 分片回调
      * @returns API 响应
      */
     async generateChapterStream(
@@ -340,8 +340,8 @@ export class AIEngine {
     /**
      * 为项目生成世界观并写入文件。
      *
-     * @param app - 参数
-     * @param project - 参数
+     * @param app - Obsidian 应用实例
+     * @param project - 项目（路径或对象）
      * @param genre? - 参数
      * @param onProgress? - 参数
      * @returns 生成结果
@@ -353,8 +353,8 @@ export class AIEngine {
     /**
      * 为项目生成设定库。
      *
-     * @param app - 参数
-     * @param project - 参数
+     * @param app - Obsidian 应用实例
+     * @param project - 项目（路径或对象）
      * @param worldview? - 参数
      * @returns 设定库文本
      */
@@ -365,8 +365,8 @@ export class AIEngine {
     /**
      * 为同人项目生成世界观。
      *
-     * @param app - 参数
-     * @param project - 参数
+     * @param app - Obsidian 应用实例
+     * @param project - 项目（路径或对象）
      * @param onProgress? - 参数
      * @returns 世界观文本
      */
@@ -377,8 +377,8 @@ export class AIEngine {
     /**
      * 批量生成角色卡。
      *
-     * @param worldview - 参数
-     * @param count - 参数
+     * @param worldview - 世界观
+     * @param count - 数量
      * @param customPrompt? - 参数
      * @param templateContent? - 参数
      * @param isFirstCharacter? - 参数
@@ -395,11 +395,11 @@ export class AIEngine {
     /**
      * 生成分卷大纲。
      *
-     * @param worldview - 参数
-     * @param globalSkeleton - 参数
-     * @param volumeNumber - 参数
-     * @param totalVolumes - 参数
-     * @param chaptersPerVolume - 参数
+     * @param worldview - 世界观
+     * @param globalSkeleton - 全局骨架
+     * @param volumeNumber - 卷号
+     * @param totalVolumes - 总卷数
+     * @param chaptersPerVolume - 每卷章数
      * @param contextPrompt? - 参数
      * @param existingElements? - 参数
      * @returns API 响应
@@ -419,8 +419,8 @@ export class AIEngine {
     /**
      * 生成全书大纲。
      *
-     * @param worldview - 参数
-     * @param settings - 参数
+     * @param worldview - 世界观
+     * @param settings - 设置
      * @param existingWorldElements? - 参数
      * @param customPrompt? - 参数
      * @param onProgress? - 参数
@@ -439,9 +439,9 @@ export class AIEngine {
     /**
      * 生成单个势力卡。
      *
-     * @param worldview - 参数
-     * @param name - 参数
-     * @param description - 参数
+     * @param worldview - 世界观
+     * @param name - 名称
+     * @param description - 描述
      * @param templateContent? - 参数
      * @param settingLib? - 参数
      * @returns API 响应
@@ -453,9 +453,9 @@ export class AIEngine {
     /**
      * 生成单个地点卡。
      *
-     * @param worldview - 参数
-     * @param name - 参数
-     * @param description - 参数
+     * @param worldview - 世界观
+     * @param name - 名称
+     * @param description - 描述
      * @param templateContent? - 参数
      * @param settingLib? - 参数
      * @returns API 响应
@@ -467,9 +467,9 @@ export class AIEngine {
     /**
      * 生成单个物品/功法卡。
      *
-     * @param worldview - 参数
-     * @param name - 参数
-     * @param description - 参数
+     * @param worldview - 世界观
+     * @param name - 名称
+     * @param description - 描述
      * @param templateContent? - 参数
      * @param settingLib? - 参数
      * @returns API 响应
@@ -481,10 +481,10 @@ export class AIEngine {
     /**
      * 批量生成势力卡。
      *
-     * @param worldview - 参数
-     * @param names - 参数
-     * @param description - 参数
-     * @param count - 参数
+     * @param worldview - 世界观
+     * @param names - 名称列表
+     * @param description - 描述
+     * @param count - 数量
      * @param customSystemPrompt? - 参数
      * @param settingLib? - 参数
      * @returns API 响应
@@ -503,10 +503,10 @@ export class AIEngine {
     /**
      * 批量生成地点卡。
      *
-     * @param worldview - 参数
-     * @param names - 参数
-     * @param description - 参数
-     * @param count - 参数
+     * @param worldview - 世界观
+     * @param names - 名称列表
+     * @param description - 描述
+     * @param count - 数量
      * @param customSystemPrompt? - 参数
      * @param settingLib? - 参数
      * @returns API 响应
@@ -525,10 +525,10 @@ export class AIEngine {
     /**
      * 批量生成物品/功法卡。
      *
-     * @param worldview - 参数
-     * @param names - 参数
-     * @param description - 参数
-     * @param count - 参数
+     * @param worldview - 世界观
+     * @param names - 名称列表
+     * @param description - 描述
+     * @param count - 数量
      * @param customSystemPrompt? - 参数
      * @param itemType? - 参数
      * @param settingLib? - 参数
@@ -549,8 +549,8 @@ export class AIEngine {
     /**
      * 审阅章节正文并返回质量问题。
      *
-     * @param chapterContent - 参数
-     * @param context - 参数
+     * @param chapterContent - 章节正文
+     * @param context - 上下文
      * @returns API 响应
      */
     async reviewChapter(chapterContent: string, context: ReviewContext): Promise<APIResponse> {
@@ -560,7 +560,7 @@ export class AIEngine {
     /**
      * 生成章节计划/细纲。
      *
-     * @param context - 参数
+     * @param context - 上下文
      * @returns API 响应
      */
     async generateChapterPlan(context: ChapterContext): Promise<APIResponse> {
@@ -570,7 +570,7 @@ export class AIEngine {
     /**
      * 生成章节分析报告（结算输入）。
      *
-     * @param bodyText - 参数
+     * @param bodyText - 正文文本
      * @returns API 响应
      */
     async generateAnalysisReport(bodyText: string): Promise<APIResponse> {
@@ -580,7 +580,7 @@ export class AIEngine {
     /**
      * 从正文抽取实体/要素。
      *
-     * @param bodyText - 参数
+     * @param bodyText - 正文文本
      * @returns API 响应
      */
     async extractElements(bodyText: string): Promise<APIResponse> {
@@ -590,7 +590,7 @@ export class AIEngine {
     /**
      * 分析作品文笔风格。
      *
-     * @param novelName - 参数
+     * @param novelName - 小说名
      * @param signal? - 参数
      * @returns API 响应
      */
@@ -609,9 +609,9 @@ export class AIEngine {
     /**
      * 迭代精修（审查-修复循环）。
      *
-     * @param bodyText - 参数
-     * @param contextPrompt - 参数
-     * @param maxRounds - 参数
+     * @param bodyText - 正文文本
+     * @param contextPrompt - 上下文提示词
+     * @param maxRounds - 最大轮次
      * @param chapNum? - 参数
      * @param onProgress? - 参数
      * @returns 精修结果
@@ -670,11 +670,11 @@ export class AIEngine {
     /**
      * 按模板键渲染并调用模型。
      *
-     * @param templateId - 参数
-     * @param variables - 参数
+     * @param templateId - 模板 ID
+     * @param variables - 变量表
      * @param model? - 参数
-     * @param temperature - 参数
-     * @param maxTokens - 参数
+     * @param temperature - 采样温度
+     * @param maxTokens - 最大 token 数
      * @param options? - 参数
      * @returns API 响应
      */

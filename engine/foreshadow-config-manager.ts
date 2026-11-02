@@ -34,7 +34,7 @@ export class ForeshadowConfigManager {
     /**
      * 注册配置变更回调。
      *
-     * @param callback - 参数
+     * @param callback - 回调
      */
     setOnConfigChange(callback: () => void): void {
         this.onConfigChange = callback;
@@ -69,7 +69,7 @@ export class ForeshadowConfigManager {
     /**
      * 按 id 取类型。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 类型或 undefined
      */
     getTypeById(id: string): ForeshadowTypeConfig | undefined {
@@ -79,7 +79,7 @@ export class ForeshadowConfigManager {
     /**
      * 新增伏笔类型。
      *
-     * @param type - 参数
+     * @param type - 类型
      * @returns 类型
      */
     addType(type: Omit<ForeshadowTypeConfig, 'id'>): ForeshadowTypeConfig {
@@ -95,8 +95,8 @@ export class ForeshadowConfigManager {
     /**
      * 更新伏笔类型。
      *
-     * @param id - 参数
-     * @param updates - 参数
+     * @param id - 标识
+     * @param updates - 更新字段
      * @returns 是否更新
      */
     updateType(id: string, updates: Partial<ForeshadowTypeConfig>): boolean {
@@ -111,7 +111,7 @@ export class ForeshadowConfigManager {
     /**
      * 删除伏笔类型。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 是否删除
      */
     deleteType(id: string): boolean {
@@ -126,8 +126,8 @@ export class ForeshadowConfigManager {
     /**
      * 启用/停用类型。
      *
-     * @param id - 参数
-     * @param enabled - 参数
+     * @param id - 标识
+     * @param enabled - 是否启用
      * @returns 是否成功
      */
     toggleType(id: string, enabled: boolean): boolean {
@@ -137,8 +137,8 @@ export class ForeshadowConfigManager {
     /**
      * 添加类型关键词。
      *
-     * @param typeId - 参数
-     * @param keyword - 参数
+     * @param typeId - 类型 ID
+     * @param keyword - 关键词
      * @returns 是否添加
      */
     addKeyword(typeId: string, keyword: string): boolean {
@@ -155,8 +155,8 @@ export class ForeshadowConfigManager {
     /**
      * 移除类型关键词。
      *
-     * @param typeId - 参数
-     * @param keyword - 参数
+     * @param typeId - 类型 ID
+     * @param keyword - 关键词
      * @returns 是否移除
      */
     removeKeyword(typeId: string, keyword: string): boolean {
@@ -174,7 +174,7 @@ export class ForeshadowConfigManager {
     /**
      * 按名称匹配类型。
      *
-     * @param name - 参数
+     * @param name - 名称
      * @returns 类型或 undefined
      */
     matchType(name: string): ForeshadowTypeConfig | undefined {
@@ -194,7 +194,7 @@ export class ForeshadowConfigManager {
     /**
      * 按名称匹配全部类型。
      *
-     * @param name - 参数
+     * @param name - 名称
      * @returns 类型数组
      */
     matchAllTypes(name: string): ForeshadowTypeConfig[] {
@@ -216,7 +216,7 @@ export class ForeshadowConfigManager {
     /**
      * 校验配置。
      *
-     * @param config - 参数
+     * @param config - 配置
      * @returns {valid,errors}
      */
     validateConfig(config: ForeshadowConfig): { valid: boolean; errors: string[] } {
@@ -268,7 +268,7 @@ export class ForeshadowConfigManager {
     /**
      * 导入配置 JSON。
      *
-     * @param jsonString - 参数
+     * @param jsonString - JSON 字符串
      * @returns {success,errors}
      */
     importConfig(jsonString: string): { success: boolean; errors: string[] } {

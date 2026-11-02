@@ -117,8 +117,8 @@ function handleMessage(event: MessageEvent<WorkerMessage>): void {
 /**
  * 注册任务处理器。
  *
- * @param taskType - 参数
- * @param handler - 参数
+ * @param taskType - 任务类型
+ * @param handler - 处理函数
  */
 export function registerTaskHandler(taskType: string, handler: TaskHandler): void {
     taskHandlers.set(taskType, handler);
@@ -231,7 +231,7 @@ export function createInlineWorkerCode(customHandlers?: Record<string, string>):
 /**
  * 从内联代码创建 Worker。
  *
- * @param workerCode - 参数
+ * @param workerCode - Worker 代码
  * @returns Worker
  */
 export function createInlineWorker(workerCode: string): Worker {
@@ -243,7 +243,7 @@ export function createInlineWorker(workerCode: string): Worker {
 /**
  * 从处理器集合创建 Worker。
  *
- * @param handlers - 参数
+ * @param handlers - 回调集合
  * @returns Worker
  */
 export function createWorkerFromHandlers(handlers: Record<string, TaskHandler>): Worker {

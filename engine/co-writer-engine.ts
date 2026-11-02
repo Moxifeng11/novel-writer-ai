@@ -256,7 +256,7 @@ export class CoWriterEngine {
     /**
      * 开关精准模式。
      *
-     * @param enabled - 参数
+     * @param enabled - 是否启用
      */
     setPrecisionMode(enabled: boolean): void {
         this.precisionMode = enabled;
@@ -554,10 +554,10 @@ export class CoWriterEngine {
     /**
      * 初始化协同会话（项目/章节/卷/章号）。
      *
-     * @param project - 参数
-     * @param chapterName - 参数
-     * @param volume - 参数
-     * @param chapterNum - 参数
+     * @param project - 项目（路径或对象）
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param chapterNum - 章号
      */
     async init(
         project: string,
@@ -935,10 +935,10 @@ export class CoWriterEngine {
     /**
      * 生成下一句建议。
      *
-     * @param precedingText - 参数
-     * @param cursorHint - 参数
-     * @param mode - 参数
-     * @param count - 参数
+     * @param precedingText - 前文
+     * @param cursorHint - 光标提示
+     * @param mode - 模式
+     * @param count - 数量
      * @param signal? - 参数
      * @param onChunk? - 参数
      * @returns 建议结果
@@ -1657,11 +1657,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 定向改写选中文本。
      *
-     * @param selectedText - 参数
-     * @param beforeContext - 参数
-     * @param afterContext - 参数
-     * @param cursorHint - 参数
-     * @param count - 参数
+     * @param selectedText - 选中文本
+     * @param beforeContext - 前文上下文
+     * @param afterContext - 后文上下文
+     * @param cursorHint - 光标提示
+     * @param count - 数量
      * @param onChunk? - 参数
      * @returns 改写结果
      */
@@ -1791,10 +1791,10 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 迭代精修建议。
      *
-     * @param originalSuggestion - 参数
-     * @param instruction - 参数
-     * @param precedingContext - 参数
-     * @param cursorHint - 参数
+     * @param originalSuggestion - 原始建议
+     * @param instruction - 指令
+     * @param precedingContext - 前文上下文
+     * @param cursorHint - 光标提示
      * @param signal? - 参数
      * @returns 迭代结果
      */
@@ -1890,9 +1890,9 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 校验编辑是否可采纳。
      *
-     * @param modifiedText - 参数
-     * @param originalSuggestion - 参数
-     * @param precedingContext - 参数
+     * @param modifiedText - 修改后文本
+     * @param originalSuggestion - 原始建议
+     * @param precedingContext - 前文上下文
      * @param signal? - 参数
      * @returns 校验结果
      */
@@ -1962,7 +1962,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 评估情节完成度。
      *
-     * @param currentBody - 参数
+     * @param currentBody - 当前正文
      * @param signal? - 参数
      * @returns 指标
      */
@@ -2055,7 +2055,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 按完成度调整建议方向。
      *
-     * @param metrics - 参数
+     * @param metrics - 指标
      * @returns 方向数组
      */
     adjustDirection(metrics: PlotCompletionMetrics): SuggestionDirection[] {
@@ -2097,7 +2097,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 记录句子编辑交互。
      *
-     * @param record - 参数
+     * @param record - 记录
      */
     recordInteraction(record: SentenceEditRecord): void {
         this.interactionHistory.push(record);
@@ -2135,9 +2135,9 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 记录显式写作偏好。
      *
-     * @param category - 参数
-     * @param key - 参数
-     * @param value - 参数
+     * @param category - 分类
+     * @param key - 键
+     * @param value - 值
      */
     async addExplicitPreference(
         category: Parameters<PreferenceMemory['recordPreference']>[0],
@@ -2280,7 +2280,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 更新已确认正文快照。
      *
-     * @param confirmedText - 参数
+     * @param confirmedText - 已确认文本
      */
     updateSnapshot(confirmedText: string): void {
         if (this.snapshot) {
@@ -2344,7 +2344,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 设置光标提示。
      *
-     * @param hint - 参数
+     * @param hint - 提示
      */
     setCursorHint(hint: string): void {
         if (this.snapshot) this.snapshot.cursorHint = hint;
@@ -2659,7 +2659,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 检查正文连贯性。
      *
-     * @param body - 参数
+     * @param body - 正文
      * @returns 检查报告
      */
     checkCoherence(body: string): CoherenceReport {
@@ -2670,7 +2670,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 检查逻辑一致性。
      *
-     * @param body - 参数
+     * @param body - 正文
      * @returns 检查报告
      */
     checkLogicConsistency(body: string): LogicConsistencyReport {
@@ -2681,7 +2681,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 检查内容安全。
      *
-     * @param body - 参数
+     * @param body - 正文
      * @returns 检查报告
      */
     checkContentSafety(body: string): ContentSafetyReport {
@@ -2692,7 +2692,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 检查情节冗余。
      *
-     * @param body - 参数
+     * @param body - 正文
      * @returns 检查结果
      */
     async checkPlotRedundancy(body: string): Promise<PlotRedundancyReport> {
@@ -2717,7 +2717,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 标注建议风险。
      *
-     * @param suggestion - 参数
+     * @param suggestion - 建议
      * @returns 标注结果
      */
     annotateSuggestionRisk(suggestion: SuggestionRecord): SuggestionRecord {

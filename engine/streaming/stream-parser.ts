@@ -31,7 +31,7 @@ export interface SSEEvent {
 /**
  * 解析原始 SSE 缓冲。
  *
- * @param buffer - 参数
+ * @param buffer - 缓冲区
  * @returns {events,remaining}
  */
 export function parseSSERaw(buffer: string): { events: SSEEvent[]; remaining: string } {
@@ -95,7 +95,7 @@ export function parseSSERaw(buffer: string): { events: SSEEvent[]; remaining: st
 /**
  * 解析 OpenAI SSE 事件。
  *
- * @param event - 参数
+ * @param event - 事件
  * @returns 解析结果或 null
  */
 export function parseOpenAISSE(event: SSEEvent): StreamParseResult | null {
@@ -127,7 +127,7 @@ export function parseOpenAISSE(event: SSEEvent): StreamParseResult | null {
 /**
  * 解析 Ollama 行。
  *
- * @param line - 参数
+ * @param line - 行
  * @returns 解析结果或 null
  */
 export function parseOllamaLine(line: string): StreamParseResult | null {
@@ -159,7 +159,7 @@ export function parseOllamaLine(line: string): StreamParseResult | null {
 /**
  * 检测流格式。
  *
- * @param firstChunk - 参数
+ * @param firstChunk - 首个分片
  * @returns 格式
  */
 export function detectStreamFormat(firstChunk: string): StreamFormat {
@@ -196,7 +196,7 @@ export class StreamParser {
     /**
      * 喂入数据块并返回解析结果。
      *
-     * @param chunk - 参数
+     * @param chunk - 文本块
      * @returns 结果数组
      */
     feed(chunk: string): StreamParseResult[] {

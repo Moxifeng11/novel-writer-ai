@@ -134,7 +134,7 @@ export class TextSegmenter {
     /**
      * 分段。
      *
-     * @param rawText - 参数
+     * @param rawText - 原始文本
      * @returns 分段数组
      */
     async segment(rawText: string): Promise<TextSegment[]> {

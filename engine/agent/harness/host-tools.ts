@@ -37,7 +37,7 @@ export type MemorySlotKey = typeof MEMORY_KEYS[number];
 /**
  * 记忆键类型守卫。
  *
- * @param key - 参数
+ * @param key - 键
  * @returns 布尔值
  */
 export function isMemoryKey(key: string): key is MemorySlotKey {
@@ -47,8 +47,8 @@ export function isMemoryKey(key: string): key is MemorySlotKey {
 /**
  * 读取记忆槽。
  *
- * @param memory - 参数
- * @param key - 参数
+ * @param memory - 记忆
+ * @param key - 键
  * @returns 槽内容
  */
 export function readSlot(memory: HarnessMemoryState, key: MemorySlotKey): string {
@@ -70,7 +70,7 @@ export interface HostToolDeps {
 /**
  * 创建宿主工具集（读写/检索/计划等）。
  *
- * @param deps - 参数
+ * @param deps - 依赖
  * @returns 工具数组
  */
 export function createHostTools(deps: HostToolDeps): HarnessTool[] {
@@ -846,7 +846,7 @@ const DANGEROUS_COMMAND_PATTERN = /(batch|auto-writer|write-chapter|continue-cha
 /**
  * 判断命令是否属于危险操作。
  *
- * @param commandId - 参数
+ * @param commandId - 命令 ID
  * @returns 布尔值
  */
 export function isDangerousCommand(commandId: string): boolean {

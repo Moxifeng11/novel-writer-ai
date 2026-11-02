@@ -55,7 +55,7 @@ export function isSupportedFontFile(name: string): boolean {
 /**
  * 按扩展名返回字体格式。
  *
- * @param name - 参数
+ * @param name - 名称
  * @returns 格式或 null
  */
 export function fontFileFormat(name: string): FontFileFormat | null {

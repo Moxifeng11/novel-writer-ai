@@ -158,8 +158,8 @@ export class OutlineToTextExpander {
     /**
      * 章纲→场景。
      *
-     * @param chapterOutline - 参数
-     * @param options - 参数
+     * @param chapterOutline - 章纲
+     * @param options - 配置项
      * @param context? - 参数
      * @returns 扩写结果
      */
@@ -206,8 +206,8 @@ export class OutlineToTextExpander {
     /**
      * 场景→段落。
      *
-     * @param sceneOutline - 参数
-     * @param options - 参数
+     * @param sceneOutline - 场景大纲
+     * @param options - 配置项
      * @param context? - 参数
      * @returns 扩写结果
      */
@@ -257,8 +257,8 @@ export class OutlineToTextExpander {
     /**
      * 段落扩写。
      *
-     * @param paragraph - 参数
-     * @param options - 参数
+     * @param paragraph - 段落
+     * @param options - 配置项
      * @param context? - 参数
      * @returns 扩写结果
      */
@@ -305,8 +305,8 @@ export class OutlineToTextExpander {
     /**
      * 整章扩写。
      *
-     * @param chapterOutline - 参数
-     * @param options - 参数
+     * @param chapterOutline - 章纲
+     * @param options - 配置项
      * @param context? - 参数
      * @returns 扩写结果
      */

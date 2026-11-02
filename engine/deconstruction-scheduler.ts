@@ -333,7 +333,7 @@ export class DeconstructionScheduler {
     /**
      * 注入 LLM 增强器。
      *
-     * @param llmEnhancer - 参数
+     * @param llmEnhancer - LLM 增强器
      */
     setLlmEnhancer(llmEnhancer: LLMEnhancer): void {
         this.llmEnhancer = llmEnhancer;
@@ -344,7 +344,7 @@ export class DeconstructionScheduler {
     /**
      * 注入设置读取器。
      *
-     * @param settingsGetter - 参数
+     * @param settingsGetter - 设置读取函数
      */
     setSettingsGetter(settingsGetter: () => DeconstructionSchedulerSettings): void {
         this.settingsGetter = settingsGetter;
@@ -363,7 +363,7 @@ export class DeconstructionScheduler {
     /**
      * 设置拆解质量档位。
      *
-     * @param level - 参数
+     * @param level - 层级或档位
      */
     setQualityLevel(level: DeconstructionQualityLevel): void {
         if (!this.settingsGetter) return;
@@ -601,7 +601,7 @@ export class DeconstructionScheduler {
     /**
      * 重跑整本书的指定维度。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @param dimensions? - 参数
      * @returns 任务 id
      */
@@ -613,7 +613,7 @@ export class DeconstructionScheduler {
     /**
      * 取消任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      */
     async cancelTask(taskId: string): Promise<void> {
         const task = this.tasks.get(taskId);
@@ -683,7 +683,7 @@ export class DeconstructionScheduler {
     /**
      * 移除任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      * @returns 是否移除
      */
     async removeTask(taskId: string): Promise<boolean> {
@@ -703,7 +703,7 @@ export class DeconstructionScheduler {
     /**
      * 暂停任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      */
     async pauseTask(taskId: string): Promise<void> {
         const task = this.tasks.get(taskId);
@@ -737,7 +737,7 @@ export class DeconstructionScheduler {
     /**
      * 恢复任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      */
     async resumeTask(taskId: string): Promise<void> {
         const task = this.tasks.get(taskId);
@@ -775,7 +775,7 @@ export class DeconstructionScheduler {
     /**
      * 按 id 取任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      * @returns 任务或 undefined
      */
     getTask(taskId: string): BreakdownTask | undefined {
@@ -803,7 +803,7 @@ export class DeconstructionScheduler {
     /**
      * 取任务的进度发射器。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      * @returns 发射器或 undefined
      */
     getTaskEmitter(taskId: string): ProgressEmitter | undefined {
@@ -850,7 +850,7 @@ export class DeconstructionScheduler {
     /**
      * 订阅整体进度。
      *
-     * @param callback - 参数
+     * @param callback - 回调
      * @returns 取消订阅函数
      */
     onProgress(callback: (progress: BreakdownProgress) => void): () => void {
@@ -861,7 +861,7 @@ export class DeconstructionScheduler {
     /**
      * 订阅任务完成。
      *
-     * @param callback - 参数
+     * @param callback - 回调
      * @returns 取消订阅函数
      */
     onTaskComplete(callback: (task: BreakdownTask) => void): () => void {
@@ -872,7 +872,7 @@ export class DeconstructionScheduler {
     /**
      * 订阅任务失败。
      *
-     * @param callback - 参数
+     * @param callback - 回调
      * @returns 取消订阅函数
      */
     onTaskFailed(callback: (task: BreakdownTask) => void): () => void {

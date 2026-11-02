@@ -53,7 +53,7 @@ const COVER_MEDIA_TYPES: Record<string, string> = {
 /**
  * 按扩展名返回封面媒体类型。
  *
- * @param ext - 参数
+ * @param ext - 扩展名
  * @returns 媒体类型或 null
  */
 export function coverMediaTypeForExt(ext: string): string | null {

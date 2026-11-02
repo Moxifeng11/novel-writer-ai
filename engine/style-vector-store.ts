@@ -265,7 +265,7 @@ export class StyleVectorStore {
     /**
      * 把维度描述转为向量。
      *
-     * @param description - 参数
+     * @param description - 描述
      * @returns 向量
      */
     async buildDimensionVector(description: string): Promise<number[]> {
@@ -275,8 +275,8 @@ export class StyleVectorStore {
     /**
      * 构建指纹的维度向量。
      *
-     * @param fingerprintId - 参数
-     * @param features - 参数
+     * @param fingerprintId - 指纹 ID
+     * @param features - 特征
      * @returns 指纹向量
      */
     async buildFingerprintVectors(
@@ -327,8 +327,8 @@ export class StyleVectorStore {
     /**
      * 新增指纹向量。
      *
-     * @param fingerprintId - 参数
-     * @param features - 参数
+     * @param fingerprintId - 指纹 ID
+     * @param features - 特征
      */
     async addFingerprintVectors(
         fingerprintId: string,
@@ -346,8 +346,8 @@ export class StyleVectorStore {
     /**
      * 更新指纹向量。
      *
-     * @param fingerprintId - 参数
-     * @param features - 参数
+     * @param fingerprintId - 指纹 ID
+     * @param features - 特征
      */
     async updateFingerprintVectors(
         fingerprintId: string,
@@ -359,7 +359,7 @@ export class StyleVectorStore {
     /**
      * 删除某个指纹的向量。
      *
-     * @param fingerprintId - 参数
+     * @param fingerprintId - 指纹 ID
      * @returns 无
      */
     async deleteFingerprintVectors(fingerprintId: string): Promise<void> {
@@ -371,7 +371,7 @@ export class StyleVectorStore {
     /**
      * 读取某个指纹的向量。
      *
-     * @param fingerprintId - 参数
+     * @param fingerprintId - 指纹 ID
      * @returns 向量或 undefined
      */
     getFingerprintVectors(fingerprintId: string): StyleFingerprintVectors | undefined {
@@ -381,7 +381,7 @@ export class StyleVectorStore {
     /**
      * 取指纹向量，缺失则构建。
      *
-     * @param fingerprint - 参数
+     * @param fingerprint - 指纹
      * @returns 指纹向量
      */
     async getOrBuildVectors(
@@ -405,8 +405,8 @@ export class StyleVectorStore {
     /**
      * 计算两个维度向量的相似度。
      *
-     * @param vecA - 参数
-     * @param vecB - 参数
+     * @param vecA - 向量 A
+     * @param vecB - 向量 B
      * @returns 相似度
      */
     calculateDimensionSimilarity(
@@ -421,8 +421,8 @@ export class StyleVectorStore {
     /**
      * 按文本检索相似风格。
      *
-     * @param queryText - 参数
-     * @param fingerprints - 参数
+     * @param queryText - 查询文本
+     * @param fingerprints - 指纹集合
      * @param options? - 参数
      * @returns 检索结果
      */
@@ -483,8 +483,8 @@ export class StyleVectorStore {
     /**
      * 按指纹检索相似风格。
      *
-     * @param fingerprintId - 参数
-     * @param fingerprints - 参数
+     * @param fingerprintId - 指纹 ID
+     * @param fingerprints - 指纹集合
      * @param options? - 参数
      * @returns 检索结果
      */
@@ -552,7 +552,7 @@ export class StyleVectorStore {
     /**
      * 混合多个风格向量。
      *
-     * @param fingerprints - 参数
+     * @param fingerprints - 指纹集合
      * @param options? - 参数
      * @returns 混合向量
      */
@@ -605,8 +605,8 @@ export class StyleVectorStore {
     /**
      * 在两种风格间插值。
      *
-     * @param fpA - 参数
-     * @param fpB - 参数
+     * @param fpA - 指纹 A
+     * @param fpB - 指纹 B
      * @param options? - 参数
      * @returns 插值向量
      */
@@ -630,7 +630,7 @@ export class StyleVectorStore {
     /**
      * 生成风格混合提示词。
      *
-     * @param blendedFeatures - 参数
+     * @param blendedFeatures - 混合后的特征
      * @returns 提示词
      */
     generateBlendPrompt(
@@ -651,7 +651,7 @@ export class StyleVectorStore {
     /**
      * 重建全部指纹向量。
      *
-     * @param fingerprints - 参数
+     * @param fingerprints - 指纹集合
      * @param onProgress? - 参数
      * @returns 重建结果
      */

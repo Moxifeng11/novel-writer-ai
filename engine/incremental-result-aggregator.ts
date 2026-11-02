@@ -81,10 +81,10 @@ export class IncrementalResultAggregator {
     /**
      * 添加分段结果。
      *
-     * @param dimension - 参数
-     * @param segmentResult - 参数
-     * @param segmentIndex - 参数
-     * @param totalSegments - 参数
+     * @param dimension - 维度
+     * @param segmentResult - 分段结果
+     * @param segmentIndex - 分段索引
+     * @param totalSegments - 总分段数
      */
     addSegmentResult(
         dimension: DeconstructDimension,
@@ -119,7 +119,7 @@ export class IncrementalResultAggregator {
     /**
      * 标记维度完成。
      *
-     * @param dimension - 参数
+     * @param dimension - 维度
      */
     markDimensionComplete(dimension: DeconstructDimension): void {
         const existing = this.partialResults.get(dimension);
@@ -137,7 +137,7 @@ export class IncrementalResultAggregator {
     /**
      * 取部分结果。
      *
-     * @param dimension - 参数
+     * @param dimension - 维度
      * @returns 结果
      */
     getPartialResult(dimension: DeconstructDimension): PartialResult | undefined {
@@ -155,7 +155,7 @@ export class IncrementalResultAggregator {
     /**
      * 订阅部分结果。
      *
-     * @param callback - 参数
+     * @param callback - 回调
      * @returns 取消订阅
      */
     onPartialResult(callback: PartialResultCallback): () => void {

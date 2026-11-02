@@ -1148,7 +1148,7 @@ export class FullWriterView extends ItemView {
     /**
      * 压入导航栈。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     async pushNav(tabId: string): Promise<void> {
         await this.tabController.pushNav(tabId);
@@ -1195,7 +1195,7 @@ export class FullWriterView extends ItemView {
     /**
      * 关闭页签。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     closeTab(tabId: string): void {
         this.tabController.closeTab(tabId);
@@ -2572,7 +2572,7 @@ export class FullWriterView extends ItemView {
     /**
      * 世界观是否完整。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 布尔值
      */
     async checkWorldviewComplete(project: string): Promise<boolean> {
@@ -2590,7 +2590,7 @@ export class FullWriterView extends ItemView {
     /**
      * 设定库是否完整。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 布尔值
      */
     async checkSettingLibComplete(project: string): Promise<boolean> {
@@ -2600,7 +2600,7 @@ export class FullWriterView extends ItemView {
     /**
      * 文笔风格是否完整。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 布尔值
      */
     async checkWritingStyleComplete(project: string): Promise<boolean> {
@@ -2610,7 +2610,7 @@ export class FullWriterView extends ItemView {
     /**
      * 实体是否完整。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 布尔值
      */
     async checkEntitiesComplete(project: string): Promise<boolean> {
@@ -2620,7 +2620,7 @@ export class FullWriterView extends ItemView {
     /**
      * 大纲是否完整。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 布尔值
      */
     async checkOutlineComplete(project: string): Promise<boolean> {

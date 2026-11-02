@@ -179,7 +179,7 @@ export interface CreationModeMeta {
 /**
  * 解析创作模式。
  *
- * @param value - 参数
+ * @param value - 值
  * @returns 模式
  */
 export function parseCreationMode(value: unknown): CreationMode {
@@ -192,7 +192,7 @@ export function parseCreationMode(value: unknown): CreationMode {
 /**
  * 模式中文名。
  *
- * @param mode - 参数
+ * @param mode - 模式
  * @returns 名称
  */
 export function getCreationModeLabel(mode: CreationMode): string {
@@ -202,7 +202,7 @@ export function getCreationModeLabel(mode: CreationMode): string {
 /**
  * 模式单元单位名。
  *
- * @param mode - 参数
+ * @param mode - 模式
  * @param count? - 参数
  * @returns 单位名
  */
@@ -214,7 +214,7 @@ export function getCreationUnitLabel(mode: CreationMode, count?: number): string
 /**
  * 按名称找短篇题材。
  *
- * @param name - 参数
+ * @param name - 名称
  * @returns 题材或 undefined
  */
 export function findShortStoryCategory(name: string): ShortStoryCategory | undefined {
@@ -224,7 +224,7 @@ export function findShortStoryCategory(name: string): ShortStoryCategory | undef
 /**
  * 按名称找剧本类型。
  *
- * @param name - 参数
+ * @param name - 名称
  * @returns 类型或 undefined
  */
 export function findScriptGenre(name: string): ScriptGenreSpec | undefined {
@@ -234,7 +234,7 @@ export function findScriptGenre(name: string): ScriptGenreSpec | undefined {
 /**
  * 解析项目元信息中的模式。
  *
- * @param meta - 参数
+ * @param meta - 元数据
  * @returns 模式元信息
  */
 export function parseCreationModeMeta(meta: string): CreationModeMeta {
@@ -261,7 +261,7 @@ export function parseCreationModeMeta(meta: string): CreationModeMeta {
 /**
  * 构建模式元信息分节。
  *
- * @param meta - 参数
+ * @param meta - 元数据
  * @returns Markdown
  */
 export function buildCreationModeMetaSection(meta: CreationModeMeta): string {

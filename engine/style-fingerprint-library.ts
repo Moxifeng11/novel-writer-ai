@@ -202,7 +202,7 @@ export class StyleFingerprintLibrary {
     /**
      * 注入向量客户端。
      *
-     * @param client - 参数
+     * @param client - 客户端实例
      */
     setEmbeddingClient(client: EmbeddingProvider): void {
         this.embeddingClient = client;
@@ -367,7 +367,7 @@ export class StyleFingerprintLibrary {
     /**
      * 新增模板指纹。
      *
-     * @param fp - 参数
+     * @param fp - 文风指纹
      */
     async addTemplate(fp: StyleFingerprint): Promise<void> {
         this.templateFingerprints.set(fp.id, fp);
@@ -378,7 +378,7 @@ export class StyleFingerprintLibrary {
     /**
      * 更新模板指纹。
      *
-     * @param fp - 参数
+     * @param fp - 文风指纹
      */
     async updateTemplate(fp: StyleFingerprint): Promise<void> {
         if (!this.templateFingerprints.has(fp.id)) return;
@@ -418,7 +418,7 @@ export class StyleFingerprintLibrary {
     /**
      * 删除模板指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async deleteTemplate(id: string): Promise<void> {
         this.templateFingerprints.delete(id);
@@ -430,7 +430,7 @@ export class StyleFingerprintLibrary {
     /**
      * 取模板指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 指纹或 undefined
      */
     getTemplate(id: string): StyleFingerprint | undefined {
@@ -448,7 +448,7 @@ export class StyleFingerprintLibrary {
     /**
      * 启用模板指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async enableTemplate(id: string): Promise<void> {
         const fp = this.templateFingerprints.get(id);
@@ -460,7 +460,7 @@ export class StyleFingerprintLibrary {
     /**
      * 停用模板指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async disableTemplate(id: string): Promise<void> {
         const fp = this.templateFingerprints.get(id);
@@ -505,7 +505,7 @@ export class StyleFingerprintLibrary {
     /**
      * 新增全局指纹。
      *
-     * @param fp - 参数
+     * @param fp - 文风指纹
      */
     async addGlobal(fp: StyleFingerprint): Promise<void> {
         this.globalFingerprints.set(fp.id, fp);
@@ -516,7 +516,7 @@ export class StyleFingerprintLibrary {
     /**
      * 更新全局指纹。
      *
-     * @param fp - 参数
+     * @param fp - 文风指纹
      */
     async updateGlobal(fp: StyleFingerprint): Promise<void> {
         if (!this.globalFingerprints.has(fp.id)) return;
@@ -528,7 +528,7 @@ export class StyleFingerprintLibrary {
     /**
      * 删除全局指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async deleteGlobal(id: string): Promise<void> {
         this.globalFingerprints.delete(id);
@@ -540,7 +540,7 @@ export class StyleFingerprintLibrary {
     /**
      * 取全局指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 指纹或 undefined
      */
     getGlobal(id: string): StyleFingerprint | undefined {
@@ -558,7 +558,7 @@ export class StyleFingerprintLibrary {
     /**
      * 启用全局指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async enableGlobal(id: string): Promise<void> {
         const fp = this.globalFingerprints.get(id);
@@ -570,7 +570,7 @@ export class StyleFingerprintLibrary {
     /**
      * 停用全局指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async disableGlobal(id: string): Promise<void> {
         const fp = this.globalFingerprints.get(id);
@@ -616,7 +616,7 @@ export class StyleFingerprintLibrary {
     /**
      * 新增项目指纹。
      *
-     * @param fp - 参数
+     * @param fp - 文风指纹
      */
     async addProject(fp: StyleFingerprint): Promise<void> {
         if (!this.project) return;
@@ -636,7 +636,7 @@ export class StyleFingerprintLibrary {
     /**
      * 更新项目指纹。
      *
-     * @param fp - 参数
+     * @param fp - 文风指纹
      */
     async updateProject(fp: StyleFingerprint): Promise<void> {
         if (!this.project || !this.projectFingerprints.has(fp.id)) return;
@@ -648,7 +648,7 @@ export class StyleFingerprintLibrary {
     /**
      * 删除项目指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async deleteProject(id: string): Promise<void> {
         if (!this.project) return;
@@ -661,7 +661,7 @@ export class StyleFingerprintLibrary {
     /**
      * 取项目指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 指纹或 undefined
      */
     getProject(id: string): StyleFingerprint | undefined {
@@ -679,7 +679,7 @@ export class StyleFingerprintLibrary {
     /**
      * 启用项目指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async enableProject(id: string): Promise<void> {
         const fp = this.projectFingerprints.get(id);
@@ -691,7 +691,7 @@ export class StyleFingerprintLibrary {
     /**
      * 停用项目指纹。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async disableProject(id: string): Promise<void> {
         const fp = this.projectFingerprints.get(id);
@@ -771,7 +771,7 @@ export class StyleFingerprintLibrary {
     /**
      * 判断全局指纹在项目内是否启用。
      *
-     * @param globalFpId - 参数
+     * @param globalFpId - 全局指纹 ID
      * @param project? - 参数
      * @returns 布尔值
      */
@@ -792,8 +792,8 @@ export class StyleFingerprintLibrary {
     /**
      * 设置全局指纹在项目内的启用状态。
      *
-     * @param globalFpId - 参数
-     * @param enabled - 参数
+     * @param globalFpId - 全局指纹 ID
+     * @param enabled - 是否启用
      * @param project? - 参数
      */
     async setGlobalEnabledForProject(globalFpId: string, enabled: boolean, project?: string): Promise<void> {
@@ -956,9 +956,9 @@ export class StyleFingerprintLibrary {
     /**
      * 复制指纹到其他作用域。
      *
-     * @param sourceScope - 参数
-     * @param targetScope - 参数
-     * @param fpId - 参数
+     * @param sourceScope - 源作用域
+     * @param targetScope - 目标作用域
+     * @param fpId - 指纹 ID
      * @param targetProject? - 参数
      * @returns 新指纹
      */
@@ -1412,12 +1412,12 @@ export class StyleFingerprintLibrary {
     /**
      * 重填指纹特征。
      *
-     * @param fpId - 参数
-     * @param scope - 参数
-     * @param options - 参数
-     * @param sourceText - 参数
-     * @param extractor - 参数
-     * @param vectorStore - 参数
+     * @param fpId - 指纹 ID
+     * @param scope - 作用域
+     * @param options - 配置项
+     * @param sourceText - 源文本
+     * @param extractor - 抽取器
+     * @param vectorStore - 向量库
      * @param onProgress? - 参数
      * @returns 指纹
      */
@@ -1494,8 +1494,8 @@ export class StyleFingerprintLibrary {
     /**
      * 按作用域取指纹。
      *
-     * @param fpId - 参数
-     * @param scope - 参数
+     * @param fpId - 指纹 ID
+     * @param scope - 作用域
      * @returns 指纹或 undefined
      */
     getFingerprint(fpId: string, scope: 'template' | 'global' | 'project'): StyleFingerprint | undefined {
@@ -1510,8 +1510,8 @@ export class StyleFingerprintLibrary {
     /**
      * 向量化指纹。
      *
-     * @param fpId - 参数
-     * @param scope - 参数
+     * @param fpId - 指纹 ID
+     * @param scope - 作用域
      * @returns 是否成功
      */
     async vectorizeFingerprint(fpId: string, scope: 'template' | 'global' | 'project'): Promise<boolean> {
@@ -1533,8 +1533,8 @@ export class StyleFingerprintLibrary {
     /**
      * 取指纹向量。
      *
-     * @param fpId - 参数
-     * @param scope - 参数
+     * @param fpId - 指纹 ID
+     * @param scope - 作用域
      * @returns 向量
      */
     async getFingerprintVectors(fpId: string, scope: 'template' | 'global' | 'project') {
@@ -1550,7 +1550,7 @@ export class StyleFingerprintLibrary {
     /**
      * 检索相似风格。
      *
-     * @param query - 参数
+     * @param query - 查询串
      * @param options? - 参数
      * @returns 检索结果
      */
@@ -1875,7 +1875,7 @@ export class StyleFingerprintLibrary {
     /**
      * 混合风格。
      *
-     * @param fingerprints - 参数
+     * @param fingerprints - 指纹集合
      * @param options? - 参数
      * @returns 混合结果
      */
@@ -1928,8 +1928,8 @@ export class StyleFingerprintLibrary {
     /**
      * 插值风格。
      *
-     * @param fpA - 参数
-     * @param fpB - 参数
+     * @param fpA - 指纹 A
+     * @param fpB - 指纹 B
      * @param options? - 参数
      * @returns 插值结果
      */
@@ -1949,7 +1949,7 @@ export class StyleFingerprintLibrary {
     /**
      * 生成混合提示词。
      *
-     * @param blendedFeatures - 参数
+     * @param blendedFeatures - 混合后的特征
      * @returns 提示词
      */
     generateBlendPrompt(blendedFeatures: StyleFingerprintFeatures): string {

@@ -230,7 +230,7 @@ export class ChapterRecognizer {
     /**
      * 识别章节结构。
      *
-     * @param content - 参数
+     * @param content - 内容
      * @param filename? - 参数
      * @returns 识别结果
      */
@@ -241,7 +241,7 @@ export class ChapterRecognizer {
     /**
      * 抽取标题。
      *
-     * @param content - 参数
+     * @param content - 内容
      * @param filename? - 参数
      * @returns 标题
      */
@@ -252,7 +252,7 @@ export class ChapterRecognizer {
     /**
      * 抽取作者。
      *
-     * @param content - 参数
+     * @param content - 内容
      * @returns 作者
      */
     extractAuthor(content: string): string | undefined {
@@ -262,7 +262,7 @@ export class ChapterRecognizer {
     /**
      * 统计字数。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 字数
      */
     countWords(text: string): number {
@@ -272,8 +272,8 @@ export class ChapterRecognizer {
     /**
      * 取章节文本。
      *
-     * @param content - 参数
-     * @param chapter - 参数
+     * @param content - 内容
+     * @param chapter - 章节
      * @returns 文本
      */
     getChapterText(content: string, chapter: ChapterInfo): string {

@@ -880,7 +880,7 @@ export class PlotDivergenceEngine {
 /**
  * 偏离等级颜色。
  *
- * @param level - 参数
+ * @param level - 层级或档位
  * @returns 颜色
  */
 export function getDivergenceLevelColor(level: DivergenceLevel): string {
@@ -892,7 +892,7 @@ export function getDivergenceLevelColor(level: DivergenceLevel): string {
 /**
  * 偏离等级中文名。
  *
- * @param level - 参数
+ * @param level - 层级或档位
  * @returns 名称
  */
 export function getDivergenceLevelLabel(level: DivergenceLevel): string {
@@ -904,7 +904,7 @@ export function getDivergenceLevelLabel(level: DivergenceLevel): string {
 /**
  * 偏离等级图标。
  *
- * @param level - 参数
+ * @param level - 层级或档位
  * @returns 图标
  */
 export function getDivergenceLevelIcon(level: DivergenceLevel): string {

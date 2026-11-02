@@ -311,7 +311,7 @@ export function pjCoverDir(project: string) { return `${project}/封面`; }
  * pjCoverFile：返回路径 ``${project}/封面/cover.${ext}``。
  *
  * @param project - 项目路径
- * @param ext - 参数
+ * @param ext - 扩展名
  * @returns 拼接后的 vault 相对路径
  */
 export function pjCoverFile(project: string, ext: string) { return `${project}/封面/cover.${ext}`; }
@@ -400,14 +400,14 @@ export const PJ_PROMPT_TEMPLATE_DIR = `${PJ_TEMPLATE_DIR}/prompts`;
 /**
  * pjPromptSystemTemplate：返回路径 ``${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-system.md``。
  *
- * @param stepKey - 参数
+ * @param stepKey - 步骤键
  * @returns 拼接后的 vault 相对路径
  */
 export function pjPromptSystemTemplate(stepKey: string) { return `${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-system.md`; }
 /**
  * pjPromptUserTemplate：返回路径 ``${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-user.md``。
  *
- * @param stepKey - 参数
+ * @param stepKey - 步骤键
  * @returns 拼接后的 vault 相对路径
  */
 export function pjPromptUserTemplate(stepKey: string) { return `${PJ_PROMPT_TEMPLATE_DIR}/${stepKey}-user.md`; }

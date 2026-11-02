@@ -447,9 +447,9 @@ export class KnowledgeVectorStore {
     /**
      * 添加书籍样本。
      *
-     * @param bookId - 参数
-     * @param bookName - 参数
-     * @param samples - 参数
+     * @param bookId - 书籍 ID
+     * @param bookName - 书名
+     * @param samples - 样本列表
      */
     async addBookSamples(
         bookId: string,
@@ -515,7 +515,7 @@ export class KnowledgeVectorStore {
     /**
      * 移除书籍样本。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      */
     async removeBook(bookId: string): Promise<void> {
         await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
@@ -530,8 +530,8 @@ export class KnowledgeVectorStore {
     /**
      * 更新书籍样本。
      *
-     * @param bookId - 参数
-     * @param samples - 参数
+     * @param bookId - 书籍 ID
+     * @param samples - 样本列表
      */
     async updateBookSamples(bookId: string, samples: KnowledgeVectorSample[]): Promise<void> {
         await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
@@ -563,7 +563,7 @@ export class KnowledgeVectorStore {
     /**
      * 检索相似样本。
      *
-     * @param query - 参数
+     * @param query - 查询串
      * @param options? - 参数
      * @returns 结果数组
      */

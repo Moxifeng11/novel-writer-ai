@@ -238,7 +238,7 @@ export class MultiLayerCache {
     /**
      * 失效单个键（所有层）。
      *
-     * @param key - 参数
+     * @param key - 键
      */
     async invalidate(key: string): Promise<void> {
         const startTime = Date.now();
@@ -256,7 +256,7 @@ export class MultiLayerCache {
     /**
      * 按前缀失效。
      *
-     * @param prefix - 参数
+     * @param prefix - 前缀
      * @returns 失效数量
      */
     async invalidateByPrefix(prefix: string): Promise<number> {
@@ -277,7 +277,7 @@ export class MultiLayerCache {
     /**
      * 按来源文件失效。
      *
-     * @param sourcePath - 参数
+     * @param sourcePath - 源路径
      * @returns 失效数量
      */
     async invalidateBySourcePath(sourcePath: string): Promise<number> {
@@ -307,7 +307,7 @@ export class MultiLayerCache {
     /**
      * 更新项目实体数量（用于容量决策）。
      *
-     * @param count - 参数
+     * @param count - 数量
      */
     setEntityCount(count: number): void {
         this.entityCount = count;
@@ -372,7 +372,7 @@ export class MultiLayerCache {
     /**
      * 按内存压力调整缓存容量。
      *
-     * @param memoryUsageRatio - 参数
+     * @param memoryUsageRatio - 内存使用比例
      * @returns 建议容量
      */
     adjustForMemoryPressure(memoryUsageRatio: number): number {

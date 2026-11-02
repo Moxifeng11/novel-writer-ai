@@ -88,7 +88,7 @@ export function localDayKey(date: Date | number): string {
 /**
  * 当天起点。
  *
- * @param date - 参数
+ * @param date - 日期
  * @returns 日期
  */
 export function startOfDay(date: Date | number): Date {
@@ -109,7 +109,7 @@ export function startOfWeek(date: Date | number): Date {
 /**
  * 本月起点。
  *
- * @param date - 参数
+ * @param date - 日期
  * @returns 日期
  */
 export function startOfMonth(date: Date | number): Date {
@@ -121,8 +121,8 @@ export function startOfMonth(date: Date | number): Date {
 /**
  * 加/减天数。
  *
- * @param date - 参数
- * @param days - 参数
+ * @param date - 日期
+ * @param days - 天数
  * @returns 日期
  */
 export function addDays(date: Date | number, days: number): Date {
@@ -134,8 +134,8 @@ export function addDays(date: Date | number, days: number): Date {
 /**
  * 加/减月数。
  *
- * @param date - 参数
- * @param months - 参数
+ * @param date - 日期
+ * @param months - 月数
  * @returns 日期
  */
 export function addMonths(date: Date | number, months: number): Date {
@@ -180,7 +180,7 @@ export function computeStreak(days: DayMap, now: Date | number = Date.now()): nu
 /**
  * 最佳单日。
  *
- * @param days - 参数
+ * @param days - 天数
  * @returns 数据点或 null
  */
 export function findBestDay(days: DayMap): DayPoint | null {
@@ -231,8 +231,8 @@ export function monthlySeries(days: DayMap, now: Date | number = Date.now(), cou
 /**
  * 生成统计摘要。
  *
- * @param days - 参数
- * @param now - 参数
+ * @param days - 天数
+ * @param now - 当前时间
  * @returns 摘要
  */
 export function summarize(days: DayMap, now: Date | number = Date.now()): StatsSummary {
@@ -268,8 +268,8 @@ export interface StatsReport {
 /**
  * 生成统计报告。
  *
- * @param data - 参数
- * @param now - 参数
+ * @param data - 数据
+ * @param now - 当前时间
  * @returns 报告
  */
 export function buildReport(data: WritingStatsData, now: Date | number = Date.now()): StatsReport {

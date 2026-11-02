@@ -97,8 +97,8 @@ export const SYNOPSIS_RUBRIC = [
 /**
  * 构建简介提示词。
  *
- * @param ctx - 参数
- * @param length - 参数
+ * @param ctx - 上下文
+ * @param length - 长度
  * @returns 提示词
  */
 export function buildSynopsisPrompts(
@@ -155,7 +155,7 @@ ${ctx.openPromises || '未设定'}
 /**
  * 解析简介变体。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 变体数组
  */
 export function parseSynopsisVariants(content: string): SynopsisVariant[] {
@@ -219,9 +219,9 @@ export interface SynopsisValidation {
 /**
  * 校验简介文本。
  *
- * @param text - 参数
- * @param style - 参数
- * @param length - 参数
+ * @param text - 文本内容
+ * @param style - 文风
+ * @param length - 长度
  * @returns 校验结果
  */
 export function validateSynopsisText(text: string, style: SynopsisStyle, length: SynopsisLength = 'standard'): SynopsisValidation {
@@ -249,7 +249,7 @@ export function validateSynopsisText(text: string, style: SynopsisStyle, length:
 /**
  * 统计字符数。
  *
- * @param text - 参数
+ * @param text - 文本内容
  * @returns 数量
  */
 export function countChars(text: string): number {
@@ -267,7 +267,7 @@ function normalizeStyle(raw: unknown): SynopsisStyle {
 /**
  * 风格中文名。
  *
- * @param style - 参数
+ * @param style - 文风
  * @returns 名称
  */
 export function styleLabel(style: SynopsisStyle): string {

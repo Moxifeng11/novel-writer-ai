@@ -510,8 +510,8 @@ export class TemplateService {
     /**
      * 按类型取模板。
      *
-     * @param type - 参数
-     * @param vars - 参数
+     * @param type - 类型
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getTemplate(type: string, vars: TemplateVariables = {}): Promise<string> {
@@ -568,7 +568,7 @@ export class TemplateService {
     /**
      * 取正文模板。
      *
-     * @param vars - 参数
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getBodyTemplate(vars: TemplateVariables): Promise<string> {
@@ -643,7 +643,7 @@ writing_mode: pipeline
     /**
      * 取信息规划模板。
      *
-     * @param vars - 参数
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getInfoPlanTemplate(vars: TemplateVariables): Promise<string> {
@@ -653,7 +653,7 @@ writing_mode: pipeline
     /**
      * 取情节提炼模板。
      *
-     * @param vars - 参数
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getPlotDistillTemplate(vars: TemplateVariables): Promise<string> {
@@ -663,7 +663,7 @@ writing_mode: pipeline
     /**
      * 取章纲模板。
      *
-     * @param vars - 参数
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getOutlineTemplate(vars: TemplateVariables): Promise<string> {
@@ -673,8 +673,8 @@ writing_mode: pipeline
     /**
      * 按步骤类型取模板。
      *
-     * @param stepType - 参数
-     * @param vars - 参数
+     * @param stepType - 步骤类型
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getStepTemplate(stepType: string, vars: TemplateVariables): Promise<string> {
@@ -684,7 +684,7 @@ writing_mode: pipeline
     /**
      * 取分卷大纲模板。
      *
-     * @param vars - 参数
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getVolumeOutlineTemplate(vars: TemplateVariables): Promise<string> {
@@ -694,7 +694,7 @@ writing_mode: pipeline
     /**
      * 取世界观模板。
      *
-     * @param vars - 参数
+     * @param vars - 变量表
      * @returns 模板文本
      */
     async getWorldviewTemplate(vars: TemplateVariables): Promise<string> {
@@ -704,7 +704,7 @@ writing_mode: pipeline
     /**
      * 取步骤提示词。
      *
-     * @param stepKey - 参数
+     * @param stepKey - 步骤键
      * @returns 模板或 null
      */
     async getStepPrompt(stepKey: string): Promise<PromptTemplate | null> {
@@ -752,7 +752,7 @@ writing_mode: pipeline
     /**
      * 是否有自定义提示词。
      *
-     * @param stepKey - 参数
+     * @param stepKey - 步骤键
      * @returns 布尔值
      */
     async hasCustomPrompt(stepKey: string): Promise<boolean> {

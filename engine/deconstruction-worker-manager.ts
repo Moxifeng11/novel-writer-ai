@@ -311,7 +311,7 @@ export class DeconstructionWorkerManager {
     /**
      * 注入 LLM 增强器。
      *
-     * @param llmEnhancer - 参数
+     * @param llmEnhancer - LLM 增强器
      */
     setLlmEnhancer(llmEnhancer: LLMEnhancer): void {
         this.llmEnhancer = llmEnhancer;
@@ -324,7 +324,7 @@ export class DeconstructionWorkerManager {
     /**
      * 拆解文风（Worker/主线程）。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -338,7 +338,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的文风拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -352,7 +352,7 @@ export class DeconstructionWorkerManager {
     /**
      * 拆解节奏。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -366,7 +366,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的节奏拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -380,7 +380,7 @@ export class DeconstructionWorkerManager {
     /**
      * 拆解技法。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -394,7 +394,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的技法拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -408,7 +408,7 @@ export class DeconstructionWorkerManager {
     /**
      * 拆解结构。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -422,7 +422,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的结构拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -436,7 +436,7 @@ export class DeconstructionWorkerManager {
     /**
      * 拆解人物。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -450,7 +450,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的人物拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -464,7 +464,7 @@ export class DeconstructionWorkerManager {
     /**
      * 拆解伏笔。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -478,7 +478,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的伏笔拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -492,7 +492,7 @@ export class DeconstructionWorkerManager {
     /**
      * 商业性拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -506,7 +506,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的商业性拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -520,7 +520,7 @@ export class DeconstructionWorkerManager {
     /**
      * 可读性拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */
@@ -534,7 +534,7 @@ export class DeconstructionWorkerManager {
     /**
      * 带向量增强的可读性拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 分析结果
      */

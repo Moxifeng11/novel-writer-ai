@@ -630,7 +630,7 @@ export class ContextManager {
     /**
      * 装配项目全量上下文（可含进度回调）。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @param currentChapter? - 参数
      * @param onProgress? - 参数
      * @returns 聚合上下文
@@ -1031,7 +1031,7 @@ export class ContextManager {
     /**
      * 装配角色当前状态。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 上下文数据
      */
     async gatherCharacterState(project: string): Promise<ContextData> {
@@ -1268,7 +1268,7 @@ export class ContextManager {
     /**
      * 装配设定库。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 上下文数据
      */
     async gatherSettingLib(project: string): Promise<ContextData> {
@@ -1288,7 +1288,7 @@ export class ContextManager {
     /**
      * 装配文笔风格。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 上下文数据
      */
     async gatherWritingStyle(project: string): Promise<ContextData> {
@@ -1328,7 +1328,7 @@ export class ContextManager {
     /**
      * 装配伏笔库。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 上下文数据
      */
     async gatherForeshadows(project: string): Promise<ContextData> {
@@ -1349,7 +1349,7 @@ export class ContextManager {
     /**
      * 装配时间线（可限定当前章）。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @param currentChapter? - 参数
      * @returns 上下文数据
      */
@@ -1490,8 +1490,8 @@ export class ContextManager {
     /**
      * 装配上一章状态快照。
      *
-     * @param project - 参数
-     * @param currentChapter - 参数
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
      * @returns 上下文数据
      */
     async gatherPreviousChapter(project: string, currentChapter: string): Promise<ContextData> {
@@ -1607,7 +1607,7 @@ export class ContextManager {
     /**
      * 装配写作规则。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 上下文数据
      */
     async gatherWritingRules(project: string): Promise<ContextData> {
@@ -1656,8 +1656,8 @@ export class ContextManager {
     /**
      * 装配大纲/章纲。
      *
-     * @param project - 参数
-     * @param currentChapter - 参数
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
      * @returns 上下文数据
      */
     async gatherOutline(project: string, currentChapter: string): Promise<ContextData> {
@@ -1705,8 +1705,8 @@ export class ContextManager {
     /**
      * 装配情绪规划。
      *
-     * @param project - 参数
-     * @param currentChapter - 参数
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
      * @returns 上下文数据
      */
     async gatherEmotionPlan(project: string, currentChapter: string): Promise<ContextData> {
@@ -1742,8 +1742,8 @@ export class ContextManager {
     /**
      * 装配场景扩写底稿。
      *
-     * @param project - 参数
-     * @param currentChapter - 参数
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
      * @returns 上下文数据
      */
     async gatherSceneExpansion(project: string, currentChapter: string): Promise<ContextData> {
@@ -1815,7 +1815,7 @@ export class ContextManager {
     /**
      * 装配世界观。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 上下文数据
      */
     async gatherWorldView(project: string): Promise<ContextData> {
@@ -2124,7 +2124,7 @@ export class ContextManager {
     /**
      * 生成上下文信息摘要（账本/调试用）。
      *
-     * @param context - 参数
+     * @param context - 上下文
      * @returns 摘要文本
      */
     getInfoSummary(context: GatheredContext): string {

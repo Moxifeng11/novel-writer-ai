@@ -126,7 +126,7 @@ export class QualityScorer {
     /**
      * 计算质量分。
      *
-     * @param input - 参数
+     * @param input - 输入
      * @returns 分数
      */
     calculateQualityScore(input: QualityScoringInput): DimensionQualityScore {
@@ -148,7 +148,7 @@ export class QualityScorer {
     /**
      * 批量评分。
      *
-     * @param inputs - 参数
+     * @param inputs - 输入集合
      * @returns 分数表
      */
     calculateBatchScores(inputs: QualityScoringInput[]): Record<BreakdownDimension, DimensionQualityScore> {
@@ -162,7 +162,7 @@ export class QualityScorer {
     /**
      * 交叉校验。
      *
-     * @param results - 参数
+     * @param results - 结果列表
      * @returns 结果
      */
     crossValidate(results: Partial<Record<BreakdownDimension, any>>): CrossValidationResult[] {
@@ -222,7 +222,7 @@ export class QualityScorer {
     /**
      * 是否应升级质量档。
      *
-     * @param score - 参数
+     * @param score - 分数
      * @returns 布尔值
      */
     shouldUpgrade(score: DimensionQualityScore): boolean {
@@ -232,7 +232,7 @@ export class QualityScorer {
     /**
      * 建议质量档。
      *
-     * @param score - 参数
+     * @param score - 分数
      * @returns 档位
      */
     suggestLevel(score: DimensionQualityScore): DeconstructionQualityLevel {

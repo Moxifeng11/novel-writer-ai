@@ -58,7 +58,7 @@ export const THINKING_LEVELS: ThinkingLevelSpec[] = [
 /**
  * 夹取思考强度。
  *
- * @param value - 参数
+ * @param value - 值
  * @returns 强度
  */
 export function clampThinkingIntensity(value: number): number {
@@ -69,7 +69,7 @@ export function clampThinkingIntensity(value: number): number {
 /**
  * 取思考等级规格。
  *
- * @param level - 参数
+ * @param level - 层级或档位
  * @returns 规格
  */
 export function thinkingLevelSpec(level: ThinkingLevel | undefined): ThinkingLevelSpec {
@@ -79,7 +79,7 @@ export function thinkingLevelSpec(level: ThinkingLevel | undefined): ThinkingLev
 /**
  * 思考模式→等级。
  *
- * @param mode - 参数
+ * @param mode - 模式
  * @returns 等级
  */
 export function thinkingLevelFromMode(mode: ThinkingMode | undefined): ThinkingLevel {
@@ -91,7 +91,7 @@ export function thinkingLevelFromMode(mode: ThinkingMode | undefined): ThinkingL
 /**
  * 思考模式→强度。
  *
- * @param mode - 参数
+ * @param mode - 模式
  * @returns 强度
  */
 export function thinkingIntensityFromMode(mode: ThinkingMode | undefined): number {

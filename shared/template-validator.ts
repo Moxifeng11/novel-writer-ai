@@ -220,7 +220,7 @@ const FANFIC_EMPTY_VALUES = new Set([
 /**
  * 判断同人字段是否已填。
  *
- * @param raw - 参数
+ * @param raw - 原始值
  * @returns 布尔值
  */
 export function isFanficValueFilled(raw: string | undefined | null): boolean {
@@ -254,8 +254,8 @@ const FANFIC_TIMELINE_SECTIONS: Array<{ title: string; dataMissingLabel: string 
 /**
  * 校验同人设定。
  *
- * @param content - 参数
- * @param options - 参数
+ * @param content - 内容
+ * @param options - 配置项
  * @returns 校验结果
  */
 export function validateFanficSettings(content: string, options: FanficValidationOptions = {}): ValidationResult {
@@ -297,7 +297,7 @@ export function validateFanficSettings(content: string, options: FanficValidatio
 /**
  * 校验世界观输出。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 校验结果
  */
 export function validateWorldviewOutput(content: string): ValidationResult {
@@ -342,7 +342,7 @@ export function validateWorldviewOutput(content: string): ValidationResult {
 /**
  * 校验大纲输出。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 校验结果
  */
 export function validateOutlineOutput(content: string): ValidationResult {
@@ -389,7 +389,7 @@ export function validateOutlineOutput(content: string): ValidationResult {
 /**
  * 校验设定库输出。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 校验结果
  */
 export function validateSettingLibOutput(content: string): ValidationResult {
@@ -435,7 +435,7 @@ const WRITING_STYLE_SUB_SECTIONS: Record<string, readonly string[]> = {
 /**
  * 校验文笔风格输出。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 校验结果
  */
 export function validateWritingStyleOutput(content: string): ValidationResult {
@@ -476,7 +476,7 @@ export function validateWritingStyleOutput(content: string): ValidationResult {
 /**
  * 校验要点格式。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 校验结果
  */
 export function validateBulletFormat(content: string): ValidationResult {
@@ -513,7 +513,7 @@ function toTimelineRows(rows: string[][], columns: readonly string[]): TimelineR
 /**
  * 解析原作时间线表。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 行数组
  */
 export function parseCanonTimelineTable(content: string): TimelineRow[] {
@@ -524,7 +524,7 @@ export function parseCanonTimelineTable(content: string): TimelineRow[] {
 /**
  * 解析同人时间线表。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 行数组
  */
 export function parseFanTimelineTable(content: string): TimelineRow[] {
@@ -534,7 +534,7 @@ export function parseFanTimelineTable(content: string): TimelineRow[] {
 /**
  * 解析时间线看板表。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 行数组
  */
 export function parseTimelineBoardTable(content: string): TimelineRow[] {
@@ -550,7 +550,7 @@ export function parseTimelineBoardTable(content: string): TimelineRow[] {
 /**
  * 检测项目采用的时间线策略。
  *
- * @param projectDotFileContent - 参数
+ * @param projectDotFileContent - 项目文件内容
  * @returns 策略
  */
 export function detectTimelineStrategy(projectDotFileContent: string): TimelineStrategy {
@@ -629,7 +629,7 @@ function parseMarkdownTable(content: string, columns: string[]): TimelineRow[] {
 /**
  * 加载同人规则。
  *
- * @param content - 参数
+ * @param content - 内容
  * @returns 规则
  */
 export function loadFanficRules(content: string): FanficRules {

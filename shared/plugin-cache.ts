@@ -120,7 +120,7 @@ export class PluginCacheManager {
     /**
      * 写入面板布局缓存。
      *
-     * @param layout - 参数
+     * @param layout - 布局
      */
     setPanelLayout(layout: PanelLayoutCache): void {
         this.data.panelLayout = layout;
@@ -138,7 +138,7 @@ export class PluginCacheManager {
     /**
      * 追加一条模型覆盖历史。
      *
-     * @param entry - 参数
+     * @param entry - 条目
      */
     addModelOverrideHistory(entry: ModelOverrideHistoryEntry): void {
         if (!this.data.modelOverrideHistory) {
@@ -251,7 +251,7 @@ export class PluginCacheManager {
     /**
      * 写入上次更新检查时间。
      *
-     * @param time - 参数
+     * @param time - 时间
      */
     setUpdateLastCheck(time: string): void {
         this.data.updateLastCheck = time;
@@ -269,7 +269,7 @@ export class PluginCacheManager {
     /**
      * 写入上次更新检查结果。
      *
-     * @param result - 参数
+     * @param result - 结果
      */
     setUpdateLastResult(result: unknown): void {
         this.data.updateLastResult = result;
@@ -287,7 +287,7 @@ export class PluginCacheManager {
     /**
      * 写入已提示的版本。
      *
-     * @param version - 参数
+     * @param version - 版本
      */
     setUpdateNotifiedVersion(version: string): void {
         this.data.updateNotifiedVersion = version;
@@ -305,7 +305,7 @@ export class PluginCacheManager {
     /**
      * 写入上次运行版本。
      *
-     * @param version - 参数
+     * @param version - 版本
      */
     setLastRunVersion(version: string): void {
         this.data.lastRunVersion = version;
@@ -315,7 +315,7 @@ export class PluginCacheManager {
     /**
      * 保存设置备份。
      *
-     * @param backup - 参数
+     * @param backup - 备份数据
      */
     setSettingsBackup(backup: unknown): void {
         this.data.settingsBackup = backup;
@@ -333,7 +333,7 @@ export class PluginCacheManager {
     /**
      * 标记首次欢迎完成。
      *
-     * @param welcomed - 参数
+     * @param welcomed - 是否已欢迎
      */
     setWelcomed(welcomed: boolean): void {
         this.data.welcomed = welcomed;

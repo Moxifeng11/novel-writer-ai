@@ -484,7 +484,7 @@ export class KnowledgeBaseManager {
     /**
      * 删除书籍及其派生数据。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 无
      */
     async deleteBook(bookId: string): Promise<void> {
@@ -610,8 +610,8 @@ export class KnowledgeBaseManager {
     /**
      * 更新书籍基础信息。
      *
-     * @param bookId - 参数
-     * @param updates - 参数
+     * @param bookId - 书籍 ID
+     * @param updates - 更新字段
      * @returns 无
      */
     async updateBook(bookId: string, updates: Partial<BookBasicInfo>): Promise<void> {
@@ -683,7 +683,7 @@ export class KnowledgeBaseManager {
     /**
      * 书是否存在。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 布尔值
      */
     hasBook(bookId: string): boolean {
@@ -693,7 +693,7 @@ export class KnowledgeBaseManager {
     /**
      * 读取书籍基础信息。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 书籍信息或 undefined
      */
     async getBook(bookId: string): Promise<BookBasicInfo | undefined> {
@@ -721,7 +721,7 @@ export class KnowledgeBaseManager {
     /**
      * 按选项列出书籍（筛选/排序）。
      *
-     * @param options - 参数
+     * @param options - 配置项
      * @returns 书籍数组
      */
     async listBooks(options: ListBooksOptions = {}): Promise<BookBasicInfo[]> {
@@ -780,8 +780,8 @@ export class KnowledgeBaseManager {
     /**
      * 更新拆解状态与进度。
      *
-     * @param bookId - 参数
-     * @param status - 参数
+     * @param bookId - 书籍 ID
+     * @param status - 状态
      * @param progress? - 参数
      * @param error? - 参数
      * @returns 无
@@ -917,7 +917,7 @@ export class KnowledgeBaseManager {
     /**
      * 读取书籍原文（用于拆解/检索）。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 原文
      */
     async getSourceText(bookId: string): Promise<string> {
@@ -984,7 +984,7 @@ export class KnowledgeBaseManager {
     /**
      * 列出缺失的拆解维度。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 维度数组
      */
     async getMissingDimensions(bookId: string): Promise<BreakdownDimension[]> {
@@ -1009,7 +1009,7 @@ export class KnowledgeBaseManager {
     /**
      * 读取各维度完成状态。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 维度 → 状态
      */
     async getDimensionStatus(bookId: string): Promise<Record<BreakdownDimension, 'completed' | 'missing' | 'failed'>> {
@@ -1045,8 +1045,8 @@ export class KnowledgeBaseManager {
     /**
      * 设置书籍题材与置信度。
      *
-     * @param bookId - 参数
-     * @param primaryGenre - 参数
+     * @param bookId - 书籍 ID
+     * @param primaryGenre - 主题材
      * @param secondaryGenres? - 参数
      * @param confidence? - 参数
      * @returns 无
@@ -1075,8 +1075,8 @@ export class KnowledgeBaseManager {
     /**
      * 更新质量评分。
      *
-     * @param bookId - 参数
-     * @param scores - 参数
+     * @param bookId - 书籍 ID
+     * @param scores - 分数表
      * @returns 无
      */
     async updateQualityScores(bookId: string, scores: Partial<QualityScores>): Promise<void> {
@@ -1113,7 +1113,7 @@ export class KnowledgeBaseManager {
     /**
      * 按题材筛选书籍。
      *
-     * @param genreId - 参数
+     * @param genreId - 题材 ID
      * @returns 书籍数组
      */
     async getBooksByGenre(genreId: string): Promise<BookBasicInfo[]> {
@@ -1131,7 +1131,7 @@ export class KnowledgeBaseManager {
     /**
      * 基于规则/模型自动识别题材。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 题材结果或 null
      */
     async autoDetectGenre(bookId: string): Promise<{ primaryGenre: string; secondaryGenres: string[]; confidence: number } | null> {
@@ -1202,7 +1202,7 @@ export class KnowledgeBaseManager {
     /**
      * 对单本书做题材分类。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 分类结果
      */
     async classifyBook(bookId: string): Promise<GenreClassificationResult> {
@@ -1316,7 +1316,7 @@ export class KnowledgeBaseManager {
     /**
      * 替换向量化提供方。
      *
-     * @param embeddingProvider - 参数
+     * @param embeddingProvider - 向量提供方
      * @returns 无
      */
     setEmbeddingProvider(embeddingProvider: EmbeddingProvider): void {
@@ -1326,7 +1326,7 @@ export class KnowledgeBaseManager {
     /**
      * 批量分类指定书籍。
      *
-     * @param bookIds - 参数
+     * @param bookIds - 书籍 ID 列表
      * @returns 书 id → 结果
      */
     async classifyBatch(bookIds: string[]): Promise<Map<string, GenreClassificationResult>> {
@@ -1419,7 +1419,7 @@ export class KnowledgeBaseManager {
     /**
      * 导入题材偏好。
      *
-     * @param jsonStr - 参数
+     * @param jsonStr - JSON 字符串
      * @returns 是否成功
      */
     async importGenrePreference(jsonStr: string): Promise<boolean> {
@@ -1454,7 +1454,7 @@ export class KnowledgeBaseManager {
     /**
      * 失效单本书缓存。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 无
      */
     invalidateBookCache(bookId: string): void {

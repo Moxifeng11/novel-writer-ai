@@ -40,7 +40,7 @@ const CRC_TABLE: Uint32Array = (() => {
 /**
  * 计算 CRC32。
  *
- * @param data - 参数
+ * @param data - 数据
  * @returns 校验值
  */
 export function crc32(data: Uint8Array): number {

@@ -49,8 +49,8 @@ export class EntityFactory {
     /**
      * 角色 Markdown→实体。
      *
-     * @param content - 参数
-     * @param filePath - 参数
+     * @param content - 内容
+     * @param filePath - 文件路径
      * @returns 角色
      */
     static characterFromMarkdown(content: string, filePath: string = ''): Character {
@@ -61,7 +61,7 @@ export class EntityFactory {
     /**
      * 角色实体→Markdown。
      *
-     * @param character - 参数
+     * @param character - 角色
      * @returns Markdown
      */
     static characterToMarkdown(character: Character): string {
@@ -158,8 +158,8 @@ export class EntityFactory {
     /**
      * 势力 Markdown→实体。
      *
-     * @param content - 参数
-     * @param filePath - 参数
+     * @param content - 内容
+     * @param filePath - 文件路径
      * @returns 势力
      */
     static factionFromMarkdown(content: string, filePath: string = ''): Faction {
@@ -170,7 +170,7 @@ export class EntityFactory {
     /**
      * 势力实体→Markdown。
      *
-     * @param faction - 参数
+     * @param faction - 势力
      * @returns Markdown
      */
     static factionToMarkdown(faction: Faction): string {
@@ -233,8 +233,8 @@ export class EntityFactory {
     /**
      * 地点 Markdown→实体。
      *
-     * @param content - 参数
-     * @param filePath - 参数
+     * @param content - 内容
+     * @param filePath - 文件路径
      * @returns 地点
      */
     static locationFromMarkdown(content: string, filePath: string = ''): Location {
@@ -245,7 +245,7 @@ export class EntityFactory {
     /**
      * 地点实体→Markdown。
      *
-     * @param location - 参数
+     * @param location - 地点
      * @returns Markdown
      */
     static locationToMarkdown(location: Location): string {
@@ -312,8 +312,8 @@ export class EntityFactory {
     /**
      * 物品 Markdown→实体。
      *
-     * @param content - 参数
-     * @param filePath - 参数
+     * @param content - 内容
+     * @param filePath - 文件路径
      * @returns 物品
      */
     static itemFromMarkdown(content: string, filePath: string = ''): Item {
@@ -324,7 +324,7 @@ export class EntityFactory {
     /**
      * 物品实体→Markdown。
      *
-     * @param item - 参数
+     * @param item - 条目
      * @returns Markdown
      */
     static itemToMarkdown(item: Item): string {
@@ -387,8 +387,8 @@ export class EntityFactory {
     /**
      * 章节 Markdown→实体。
      *
-     * @param content - 参数
-     * @param filePath - 参数
+     * @param content - 内容
+     * @param filePath - 文件路径
      * @returns 章节
      */
     static chapterFromMarkdown(content: string, filePath: string = ''): Chapter {
@@ -455,7 +455,7 @@ export class EntityFactory {
     /**
      * 章节实体→Markdown。
      *
-     * @param chapter - 参数
+     * @param chapter - 章节
      * @returns Markdown
      */
     static chapterToMarkdown(chapter: Chapter): string {
@@ -489,8 +489,8 @@ export class EntityFactory {
     /**
      * 项目 Markdown→实体。
      *
-     * @param content - 参数
-     * @param filePath - 参数
+     * @param content - 内容
+     * @param filePath - 文件路径
      * @returns 项目
      */
     static projectFromMarkdown(content: string, filePath: string = ''): Project {
@@ -520,7 +520,7 @@ export class EntityFactory {
     /**
      * 项目实体→Markdown。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns Markdown
      */
     static projectToMarkdown(project: Project): string {

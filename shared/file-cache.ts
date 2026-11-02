@@ -144,7 +144,7 @@ export class FileCache {
     /**
      * 删除缓存项。
      *
-     * @param key - 参数
+     * @param key - 键
      * @returns 是否删除
      */
     async delete(key: string): Promise<boolean> {
@@ -169,7 +169,7 @@ export class FileCache {
     /**
      * 是否存在。
      *
-     * @param key - 参数
+     * @param key - 键
      * @returns 布尔值
      */
     async has(key: string): Promise<boolean> {

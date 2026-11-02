@@ -198,7 +198,7 @@ export class SemanticAnalyzer {
     /**
      * 分析单词的词性与置信度。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 词性分析
      */
     static analyzeWord(word: string): WordAnalysis {
@@ -272,7 +272,7 @@ export class SemanticAnalyzer {
     /**
      * 是否名词。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 布尔值
      */
     static isNoun(word: string): boolean {
@@ -301,7 +301,7 @@ export class SemanticAnalyzer {
     /**
      * 是否动词。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 布尔值
      */
     static isVerb(word: string): boolean {
@@ -436,7 +436,7 @@ export class SemanticAnalyzer {
     /**
      * 是否形容词。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 布尔值
      */
     static isAdjective(word: string): boolean {
@@ -470,7 +470,7 @@ export class SemanticAnalyzer {
     /**
      * 是否副词。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 布尔值
      */
     static isAdverb(word: string): boolean {
@@ -511,7 +511,7 @@ export class SemanticAnalyzer {
     /**
      * 名词置信度。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 置信度
      */
     static calculateNounConfidence(word: string): number {
@@ -545,7 +545,7 @@ export class SemanticAnalyzer {
     /**
      * 动词置信度。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 置信度
      */
     static calculateVerbConfidence(word: string): number {
@@ -568,7 +568,7 @@ export class SemanticAnalyzer {
     /**
      * 形容词置信度。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 置信度
      */
     static calculateAdjectiveConfidence(word: string): number {
@@ -591,7 +591,7 @@ export class SemanticAnalyzer {
     /**
      * 副词置信度。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 置信度
      */
     static calculateAdverbConfidence(word: string): number {
@@ -607,7 +607,7 @@ export class SemanticAnalyzer {
     /**
      * 名词子类型（人名/地名等）。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 子类型
      */
     static detectNounSubType(word: string): string {
@@ -695,7 +695,7 @@ export class SemanticAnalyzer {
     /**
      * 是否像人名。
      *
-     * @param word - 参数
+     * @param word - 词语
      * @returns 布尔值
      */
     static looksLikePersonName(word: string): boolean {
@@ -743,7 +743,7 @@ export class SemanticAnalyzer {
     /**
      * 是否常见姓氏。
      *
-     * @param char - 参数
+     * @param char - 字符
      * @returns 布尔值
      */
     static isCommonSurname(char: string): boolean {
@@ -756,8 +756,8 @@ export class SemanticAnalyzer {
     /**
      * 编辑距离。
      *
-     * @param a - 参数
-     * @param b - 参数
+     * @param a - 参与比较的左侧值
+     * @param b - 参与比较的右侧值
      * @returns 距离
      */
     static levenshteinDistance(a: string, b: string): number {
@@ -792,8 +792,8 @@ export class SemanticAnalyzer {
     /**
      * 语义相似度。
      *
-     * @param a - 参数
-     * @param b - 参数
+     * @param a - 参与比较的左侧值
+     * @param b - 参与比较的右侧值
      * @returns 相似度
      */
     static semanticSimilarity(a: string, b: string): number {
@@ -871,8 +871,8 @@ export class SemanticAnalyzer {
     /**
      * 比较两个词的语义匹配。
      *
-     * @param word1 - 参数
-     * @param word2 - 参数
+     * @param word1 - 词 1
+     * @param word2 - 词 2
      * @returns 匹配结果
      */
     static compare(word1: string, word2: string): SemanticMatchResult {
@@ -928,8 +928,8 @@ export class SemanticAnalyzer {
     /**
      * 最长公共前缀。
      *
-     * @param a - 参数
-     * @param b - 参数
+     * @param a - 参与比较的左侧值
+     * @param b - 参与比较的右侧值
      * @returns 前缀
      */
     static findCommonPrefix(a: string, b: string): string {
@@ -948,8 +948,8 @@ export class SemanticAnalyzer {
     /**
      * 按相似度聚合别名。
      *
-     * @param names - 参数
-     * @param threshold - 参数
+     * @param names - 名称列表
+     * @param threshold - 阈值
      * @returns 实体分组
      */
     static findAliases(names: string[], threshold: number = 0.6): EntityGroup[] {
@@ -1008,7 +1008,7 @@ export class SemanticAnalyzer {
     /**
      * 选择规范名。
      *
-     * @param names - 参数
+     * @param names - 名称列表
      * @returns 规范名
      */
     static selectCanonicalName(names: string[]): string {
@@ -1049,7 +1049,7 @@ export class SemanticAnalyzer {
     /**
      * 计算实体分组置信度。
      *
-     * @param names - 参数
+     * @param names - 名称列表
      * @returns 置信度
      */
     static calculateGroupConfidence(names: string[]): number {
@@ -1072,8 +1072,8 @@ export class SemanticAnalyzer {
     /**
      * 在上下文中分析实体词性。
      *
-     * @param context - 参数
-     * @param entity - 参数
+     * @param context - 上下文
+     * @param entity - 实体
      * @returns 词性分析
      */
     static analyzeContext(context: string, entity: string): WordAnalysis {
@@ -1143,8 +1143,8 @@ export class SemanticAnalyzer {
     /**
      * 从文本抽取实体。
      *
-     * @param text - 参数
-     * @param types - 参数
+     * @param text - 文本内容
+     * @param types - 类型列表
      * @returns 实体名数组
      */
     static extractEntities(text: string, types: WordType[] = ['noun']): string[] {
@@ -1285,7 +1285,7 @@ export class SemanticAnalyzer {
     /**
      * 过滤噪声词。
      *
-     * @param words - 参数
+     * @param words - 词表
      * @returns 词数组
      */
     static filterNoiseWords(words: string[]): string[] {
@@ -1307,7 +1307,7 @@ export class SemanticAnalyzer {
     /**
      * 规范化实体名。
      *
-     * @param name - 参数
+     * @param name - 名称
      * @returns 名称
      */
     static normalizeEntityName(name: string): string {

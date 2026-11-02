@@ -393,8 +393,8 @@ function safeDomain(url: string): string {
 /**
  * 从 HTML 提取可读文本。
  *
- * @param html - 参数
- * @param maxChars - 参数
+ * @param html - HTML 片段
+ * @param maxChars - 最大字符数
  * @returns 文本
  */
 export function extractReadableText(html: string, maxChars: number): string {

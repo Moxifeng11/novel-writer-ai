@@ -136,7 +136,7 @@ export class CoWriteFacade {
     /**
      * 订阅会话状态变化。
      *
-     * @param listener - 参数
+     * @param listener - 监听器
      * @returns 取消订阅函数或 null
      */
     subscribe(listener: StateListener<CoWritingSessionState>): (() => void) | null {
@@ -151,10 +151,10 @@ export class CoWriteFacade {
     /**
      * 初始化协同写作引擎（项目/章节/卷/章号）。
      *
-     * @param project - 参数
-     * @param chapterName - 参数
-     * @param volume - 参数
-     * @param chapterNum - 参数
+     * @param project - 项目（路径或对象）
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param chapterNum - 章号
      */
     async initEngine(project: string, chapterName: string, volume: string, chapterNum: number): Promise<void> {
         await this.engine.init(project, chapterName, volume, chapterNum);
@@ -163,7 +163,7 @@ export class CoWriteFacade {
     /**
      * 更新已确认正文快照。
      *
-     * @param confirmedText - 参数
+     * @param confirmedText - 已确认文本
      */
     updateSnapshot(confirmedText: string): void {
         this.engine.updateSnapshot(confirmedText);
@@ -187,7 +187,7 @@ export class CoWriteFacade {
     /**
      * 设置光标提示。
      *
-     * @param hint - 参数
+     * @param hint - 提示
      */
     setCursorHint(hint: string): void {
         this.engine.setCursorHint(hint);
@@ -196,7 +196,7 @@ export class CoWriteFacade {
     /**
      * 开关精准模式。
      *
-     * @param enabled - 参数
+     * @param enabled - 是否启用
      */
     setPrecisionMode(enabled: boolean): void {
         this.engine.setPrecisionMode(enabled);
@@ -237,10 +237,10 @@ export class CoWriteFacade {
     /**
      * 生成下一句建议。
      *
-     * @param precedingText - 参数
-     * @param cursorHint - 参数
-     * @param mode - 参数
-     * @param count - 参数
+     * @param precedingText - 前文
+     * @param cursorHint - 光标提示
+     * @param mode - 模式
+     * @param count - 数量
      * @param signal? - 参数
      * @param onChunk? - 参数
      * @returns 建议结果
@@ -279,10 +279,10 @@ export class CoWriteFacade {
     /**
      * 对建议做迭代精修。
      *
-     * @param suggestion - 参数
-     * @param instruction - 参数
-     * @param precedingText - 参数
-     * @param cursorHint - 参数
+     * @param suggestion - 建议
+     * @param instruction - 指令
+     * @param precedingText - 前文
+     * @param cursorHint - 光标提示
      * @param signal? - 参数
      * @returns 迭代结果
      */
@@ -299,11 +299,11 @@ export class CoWriteFacade {
     /**
      * 对选中文本做定向改写。
      *
-     * @param selectedText - 参数
-     * @param beforeContext - 参数
-     * @param afterContext - 参数
-     * @param cursorHint - 参数
-     * @param count - 参数
+     * @param selectedText - 选中文本
+     * @param beforeContext - 前文上下文
+     * @param afterContext - 后文上下文
+     * @param cursorHint - 光标提示
+     * @param count - 数量
      * @param onChunk? - 参数
      * @returns 改写结果
      */
@@ -322,9 +322,9 @@ export class CoWriteFacade {
     /**
      * 生成联想建议。
      *
-     * @param cursor - 参数
-     * @param text - 参数
-     * @param trigger - 参数
+     * @param cursor - 光标位置
+     * @param text - 文本内容
+     * @param trigger - 触发器
      * @param signal? - 参数
      * @returns 联想结果
      */
@@ -340,9 +340,9 @@ export class CoWriteFacade {
     /**
      * 校验编辑是否可采纳。
      *
-     * @param modifiedText - 参数
-     * @param suggestion - 参数
-     * @param context - 参数
+     * @param modifiedText - 修改后文本
+     * @param suggestion - 建议
+     * @param context - 上下文
      * @param signal? - 参数
      * @returns 校验结果
      */
@@ -358,7 +358,7 @@ export class CoWriteFacade {
     /**
      * 评估情节完成度。
      *
-     * @param currentBody - 参数
+     * @param currentBody - 当前正文
      * @param signal? - 参数
      * @returns 指标
      */
@@ -372,7 +372,7 @@ export class CoWriteFacade {
     /**
      * 根据情节完成度调整建议方向。
      *
-     * @param metrics - 参数
+     * @param metrics - 指标
      * @returns 方向数组
      */
     adjustDirection(metrics: PlotCompletionMetrics): SuggestionDirection[] {
@@ -382,7 +382,7 @@ export class CoWriteFacade {
     /**
      * 记录一次句子编辑交互。
      *
-     * @param record - 参数
+     * @param record - 记录
      */
     recordInteraction(record: SentenceEditRecord): void {
         this.engine.recordInteraction(record);
@@ -399,9 +399,9 @@ export class CoWriteFacade {
     /**
      * 记录显式偏好。
      *
-     * @param category - 参数
-     * @param key - 参数
-     * @param value - 参数
+     * @param category - 分类
+     * @param key - 键
+     * @param value - 值
      */
     async addExplicitPreference(
         category: Parameters<PreferenceMemory['recordPreference']>[0],
@@ -434,7 +434,7 @@ export class CoWriteFacade {
     /**
      * 设置参考书（默认权重）。
      *
-     * @param bookIds - 参数
+     * @param bookIds - 书籍 ID 列表
      */
     setReferenceBooks(bookIds: string[]): void {
         this.engine.setReferenceBooks(bookIds);
@@ -443,7 +443,7 @@ export class CoWriteFacade {
     /**
      * 设置参考书及权重。
      *
-     * @param books - 参数
+     * @param books - 书籍列表
      */
     async setReferenceBooksWithWeight(books: Array<{ bookId: string; weight: number; isPrimary: boolean }>): Promise<void> {
         await this.engine.setReferenceBooksWithWeight(books);
@@ -452,7 +452,7 @@ export class CoWriteFacade {
     /**
      * 计算文本与知识库匹配分。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 匹配结果
      */
     getKnowledgeMatchScore(text: string): Array<{ bookName: string; score: number; dimensions: string[] }> {
@@ -470,7 +470,7 @@ export class CoWriteFacade {
     /**
      * 取情节完成度。
      *
-     * @param body - 参数
+     * @param body - 正文
      * @returns 指标
      */
     getPlotProgress(body: string) {
@@ -506,7 +506,7 @@ export class CoWriteFacade {
     /**
      * 取角色 Repository。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns Repository 或 null
      */
     getCharacterRepository(project: string): CharacterRepository | null {
@@ -519,7 +519,7 @@ export class CoWriteFacade {
     /**
      * 取章节 Repository。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns Repository 或 null
      */
     getChapterRepository(project: string): ChapterRepository | null {
@@ -543,7 +543,7 @@ export class CoWriteFacade {
     /**
      * 取势力 Repository。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns Repository 或 null
      */
     getFactionRepository(project: string): FactionRepository | null {
@@ -556,7 +556,7 @@ export class CoWriteFacade {
     /**
      * 取地点 Repository。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns Repository 或 null
      */
     getLocationRepository(project: string): LocationRepository | null {
@@ -569,7 +569,7 @@ export class CoWriteFacade {
     /**
      * 取物品 Repository。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns Repository 或 null
      */
     getItemRepository(project: string): ItemRepository | null {
@@ -602,7 +602,7 @@ export class CoWriteFacade {
     /**
      * 创建结尾牵引力引擎。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 引擎实例
      */
     async createEndingTractionEngine(project: string): Promise<EndingTractionEngine> {
@@ -618,7 +618,7 @@ export class CoWriteFacade {
     /**
      * 取项目文风学习器。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 学习器或 null
      */
     async getStyleLearner(project: string): Promise<StyleLearner | null> {
@@ -717,12 +717,12 @@ export class CoWriteFacade {
     /**
      * 同步章节加载状态。
      *
-     * @param project - 参数
-     * @param volume - 参数
-     * @param chapter - 参数
-     * @param title - 参数
-     * @param content - 参数
-     * @param wordCount - 参数
+     * @param project - 项目（路径或对象）
+     * @param volume - 卷
+     * @param chapter - 章节
+     * @param title - 标题
+     * @param content - 内容
+     * @param wordCount - 字数
      */
     syncChapterLoaded(project: string, volume: number, chapter: number, title: string, content: string, wordCount: number): void {
         this._syncChapterState({
@@ -738,8 +738,8 @@ export class CoWriteFacade {
     /**
      * 同步正文内容与字数。
      *
-     * @param content - 参数
-     * @param wordCount - 参数
+     * @param content - 内容
+     * @param wordCount - 字数
      */
     syncChapterContent(content: string, wordCount: number): void {
         this._syncChapterState({
@@ -751,7 +751,7 @@ export class CoWriteFacade {
     /**
      * 同步建议生成中状态。
      *
-     * @param isGenerating - 参数
+     * @param isGenerating - 是否生成中
      */
     syncSuggestionsGenerating(isGenerating: boolean): void {
         this._syncSuggestionState({ isGenerating });
@@ -760,7 +760,7 @@ export class CoWriteFacade {
     /**
      * 同步建议生成完成。
      *
-     * @param suggestions - 参数
+     * @param suggestions - 建议列表
      * @param direction? - 参数
      */
     syncSuggestionsReady(suggestions: SuggestionRecord[], direction?: SuggestionDirection): void {
@@ -774,7 +774,7 @@ export class CoWriteFacade {
     /**
      * 同步建议生成失败。
      *
-     * @param error - 参数
+     * @param error - 错误
      */
     syncSuggestionsError(error: string): void {
         this._syncSuggestionState({
@@ -786,7 +786,7 @@ export class CoWriteFacade {
     /**
      * 同步编辑器光标位置。
      *
-     * @param position - 参数
+     * @param position - 位置
      */
     syncEditorCursor(position: number): void {
         this._syncEditorState({ cursorPosition: position });
@@ -795,7 +795,7 @@ export class CoWriteFacade {
     /**
      * 同步编辑中状态与缓冲。
      *
-     * @param isEditing - 参数
+     * @param isEditing - 是否编辑中
      * @param editBuffer? - 参数
      */
     syncEditorEditing(isEditing: boolean, editBuffer?: string): void {
@@ -808,7 +808,7 @@ export class CoWriteFacade {
     /**
      * 同步情节完成度指标。
      *
-     * @param metrics - 参数
+     * @param metrics - 指标
      */
     syncPlotCompletion(metrics: PlotCompletionMetrics | null): void {
         this._syncMetricsState({ plotCompletion: metrics });
@@ -817,7 +817,7 @@ export class CoWriteFacade {
     /**
      * 同步一条编辑记录。
      *
-     * @param record - 参数
+     * @param record - 记录
      */
     syncEditRecord(record: SentenceEditRecord): void {
         if (!this._sessionStore) return;
@@ -834,7 +834,7 @@ export class CoWriteFacade {
     /**
      * 同步右栏页签。
      *
-     * @param tab - 参数
+     * @param tab - 页签
      */
     syncRightPanelTab(tab: string): void {
         this._syncUiState({ rightPanelTab: tab });
@@ -843,7 +843,7 @@ export class CoWriteFacade {
     /**
      * 同步面板展开状态。
      *
-     * @param expanded - 参数
+     * @param expanded - 是否展开
      */
     syncPanelExpanded(expanded: boolean): void {
         this._syncUiState({ isPanelExpanded: expanded });

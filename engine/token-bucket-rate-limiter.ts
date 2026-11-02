@@ -59,8 +59,8 @@ export class TokenBucketRateLimiter {
     /**
      * 获取令牌（等待）。
      *
-     * @param tokenAmount - 参数
-     * @param options - 参数
+     * @param tokenAmount - token 数量
+     * @param options - 配置项
      * @returns 是否获取
      */
     async acquire(tokenAmount: number = 1, options: AcquireOptions = {}): Promise<void> {
@@ -109,7 +109,7 @@ export class TokenBucketRateLimiter {
     /**
      * 尝试获取令牌。
      *
-     * @param tokenAmount - 参数
+     * @param tokenAmount - token 数量
      * @returns 布尔值
      */
     tryAcquire(tokenAmount: number = 1): boolean {
@@ -130,7 +130,7 @@ export class TokenBucketRateLimiter {
     /**
      * 归还令牌。
      *
-     * @param tokenAmount - 参数
+     * @param tokenAmount - token 数量
      */
     release(tokenAmount: number = 1): void {
         if (tokenAmount <= 0) return;
@@ -141,7 +141,7 @@ export class TokenBucketRateLimiter {
     /**
      * 设置速率。
      *
-     * @param tokensPerSecond - 参数
+     * @param tokensPerSecond - 每秒 token 数
      */
     setRate(tokensPerSecond: number): void {
         if (tokensPerSecond < 0) {
@@ -154,7 +154,7 @@ export class TokenBucketRateLimiter {
     /**
      * 设置桶容量。
      *
-     * @param maxTokens - 参数
+     * @param maxTokens - 最大 token 数
      */
     setMaxTokens(maxTokens: number): void {
         if (maxTokens <= 0) {

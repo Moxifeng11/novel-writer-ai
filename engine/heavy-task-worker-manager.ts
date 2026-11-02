@@ -161,7 +161,7 @@ export class HeavyTaskWorkerManager {
     /**
      * 文风拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 结果
      */
@@ -175,7 +175,7 @@ export class HeavyTaskWorkerManager {
     /**
      * 带向量增强的文风拆解。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 结果
      */
@@ -189,7 +189,7 @@ export class HeavyTaskWorkerManager {
     /**
      * 文风拆解 v2。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param onProgress? - 参数
      * @returns 结果
      */
@@ -203,8 +203,8 @@ export class HeavyTaskWorkerManager {
     /**
      * 质量评估。
      *
-     * @param text - 参数
-     * @param context - 参数
+     * @param text - 文本内容
+     * @param context - 上下文
      * @param onProgress? - 参数
      * @returns 结果
      */
@@ -219,8 +219,8 @@ export class HeavyTaskWorkerManager {
     /**
      * 偏离检测。
      *
-     * @param text - 参数
-     * @param context - 参数
+     * @param text - 文本内容
+     * @param context - 上下文
      * @param onProgress? - 参数
      * @returns 结果
      */

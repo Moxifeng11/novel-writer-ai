@@ -399,8 +399,8 @@ function positionTooltip(tooltip: HTMLElement, event: MouseEvent, container: HTM
 /**
  * 渲染雷达图。
  *
- * @param data - 参数
- * @param options - 参数
+ * @param data - 数据
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): string {
@@ -507,8 +507,8 @@ export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): s
 /**
  * 渲染柱状图。
  *
- * @param data - 参数
- * @param options - 参数
+ * @param data - 数据
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function barChart(data: BarDataItem[], options: BarOptions = {}): string {
@@ -621,8 +621,8 @@ export function barChart(data: BarDataItem[], options: BarOptions = {}): string 
 /**
  * 渲染环形图。
  *
- * @param data - 参数
- * @param options - 参数
+ * @param data - 数据
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): string {
@@ -792,8 +792,8 @@ export interface TimelineChartOptions {
 /**
  * 渲染词云。
  *
- * @param words - 参数
- * @param options - 参数
+ * @param words - 词表
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function wordCloud(words: WordCloudItem[], options: WordCloudOptions = {}): string {
@@ -959,8 +959,8 @@ export function spiralLayout(
 /**
  * 渲染折线图。
  *
- * @param series - 参数
- * @param options - 参数
+ * @param series - 序列
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function lineChart(series: LineChartSeries[], options: LineChartOptions = {}): string {
@@ -1127,8 +1127,8 @@ export function lineChart(series: LineChartSeries[], options: LineChartOptions =
 /**
  * 渲染散点图。
  *
- * @param points - 参数
- * @param options - 参数
+ * @param points - 点位
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function scatterChart(points: ScatterDataPoint[], options: ScatterChartOptions = {}): string {
@@ -1315,8 +1315,8 @@ export function scatterToHistogram(
 /**
  * 渲染时间线图。
  *
- * @param events - 参数
- * @param options - 参数
+ * @param events - 事件列表
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function timelineChart(events: TimelineEvent[], options: TimelineChartOptions = {}): string {
@@ -1495,8 +1495,8 @@ export interface HeatmapOptions {
 /**
  * 渲染热力图。
  *
- * @param data - 参数
- * @param options - 参数
+ * @param data - 数据
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function heatmap(data: HeatmapCell[], options: HeatmapOptions = {}): string {
@@ -1619,8 +1619,8 @@ interface LayoutNode {
 /**
  * 渲染树图。
  *
- * @param root - 参数
- * @param options - 参数
+ * @param root - 根路径
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function treeChart(root: TreeNode, options: TreeOptions = {}): string {
@@ -1758,8 +1758,8 @@ export interface AreaOptions {
 /**
  * 渲染面积图。
  *
- * @param series - 参数
- * @param options - 参数
+ * @param series - 序列
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function areaChart(series: AreaSeries[], options: AreaOptions = {}): string {
@@ -1940,8 +1940,8 @@ export interface DensityHeatmapOptions {
 /**
  * 渲染密度热力图。
  *
- * @param points - 参数
- * @param options - 参数
+ * @param points - 点位
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function densityHeatmap(points: DensityPoint[], options: DensityHeatmapOptions = {}): string {
@@ -2099,8 +2099,8 @@ export interface HorizontalBarOptions {
 /**
  * 渲染横向柱状图。
  *
- * @param data - 参数
- * @param options - 参数
+ * @param data - 数据
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function horizontalBarChart(data: HorizontalBarItem[], options: HorizontalBarOptions = {}): string {
@@ -2184,8 +2184,8 @@ export interface ViolinChartOptions {
 /**
  * 渲染小提琴图。
  *
- * @param data - 参数
- * @param options - 参数
+ * @param data - 数据
+ * @param options - 配置项
  * @returns SVG 字符串
  */
 export function violinChart(data: ViolinDataItem[], options: ViolinChartOptions = {}): string {

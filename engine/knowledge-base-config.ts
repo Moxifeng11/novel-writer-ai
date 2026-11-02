@@ -188,7 +188,7 @@ export class KnowledgeBaseConfigManager {
     /**
      * 新增自定义题材。
      *
-     * @param genre - 参数
+     * @param genre - 题材
      * @returns 无
      */
     async addCustomGenre(genre: Omit<CustomGenre, 'isCustom'>): Promise<void> {
@@ -203,8 +203,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 更新自定义题材。
      *
-     * @param id - 参数
-     * @param updates - 参数
+     * @param id - 标识
+     * @param updates - 更新字段
      * @returns 无
      */
     async updateCustomGenre(id: string, updates: Partial<Omit<CustomGenre, 'id' | 'isCustom'>>): Promise<void> {
@@ -222,7 +222,7 @@ export class KnowledgeBaseConfigManager {
     /**
      * 删除自定义题材。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 无
      */
     async deleteCustomGenre(id: string): Promise<void> {
@@ -237,8 +237,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 覆盖某题材的性格标签。
      *
-     * @param genreId - 参数
-     * @param tags - 参数
+     * @param genreId - 题材 ID
+     * @param tags - 标签列表
      * @returns 无
      */
     async setPersonalityTags(genreId: string, tags: string[]): Promise<void> {
@@ -250,8 +250,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 添加性格标签。
      *
-     * @param genreId - 参数
-     * @param tag - 参数
+     * @param genreId - 题材 ID
+     * @param tag - 标签
      * @returns 无
      */
     async addPersonalityTag(genreId: string, tag: string): Promise<void> {
@@ -268,8 +268,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 移除性格标签。
      *
-     * @param genreId - 参数
-     * @param tag - 参数
+     * @param genreId - 题材 ID
+     * @param tag - 标签
      * @returns 无
      */
     async removePersonalityTag(genreId: string, tag: string): Promise<void> {
@@ -283,8 +283,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 覆盖某题材的能力类型。
      *
-     * @param genreId - 参数
-     * @param types - 参数
+     * @param genreId - 题材 ID
+     * @param types - 类型列表
      * @returns 无
      */
     async setAbilityTypes(genreId: string, types: string[]): Promise<void> {
@@ -296,8 +296,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 添加能力类型。
      *
-     * @param genreId - 参数
-     * @param type - 参数
+     * @param genreId - 题材 ID
+     * @param type - 类型
      * @returns 无
      */
     async addAbilityType(genreId: string, type: string): Promise<void> {
@@ -314,8 +314,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 移除能力类型。
      *
-     * @param genreId - 参数
-     * @param type - 参数
+     * @param genreId - 题材 ID
+     * @param type - 类型
      * @returns 无
      */
     async removeAbilityType(genreId: string, type: string): Promise<void> {
@@ -329,8 +329,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 覆盖某题材的技法列表。
      *
-     * @param genreId - 参数
-     * @param techniques - 参数
+     * @param genreId - 题材 ID
+     * @param techniques - 技法列表
      * @returns 无
      */
     async setTechniques(genreId: string, techniques: CustomTechnique[]): Promise<void> {
@@ -342,8 +342,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 添加技法。
      *
-     * @param genreId - 参数
-     * @param technique - 参数
+     * @param genreId - 题材 ID
+     * @param technique - 技法
      * @returns 无
      */
     async addTechnique(genreId: string, technique: CustomTechnique): Promise<void> {
@@ -361,9 +361,9 @@ export class KnowledgeBaseConfigManager {
     /**
      * 更新技法。
      *
-     * @param genreId - 参数
-     * @param techniqueId - 参数
-     * @param updates - 参数
+     * @param genreId - 题材 ID
+     * @param techniqueId - 技法 ID
+     * @param updates - 更新字段
      * @returns 无
      */
     async updateTechnique(genreId: string, techniqueId: string, updates: Partial<CustomTechnique>): Promise<void> {
@@ -381,8 +381,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 删除技法。
      *
-     * @param genreId - 参数
-     * @param techniqueId - 参数
+     * @param genreId - 题材 ID
+     * @param techniqueId - 技法 ID
      * @returns 无
      */
     async deleteTechnique(genreId: string, techniqueId: string): Promise<void> {
@@ -404,7 +404,7 @@ export class KnowledgeBaseConfigManager {
     /**
      * 保存完整题材配置。
      *
-     * @param genre - 参数
+     * @param genre - 题材
      * @returns 无
      */
     async saveFullCustomGenre(genre: GenreConfig): Promise<void> {
@@ -422,8 +422,8 @@ export class KnowledgeBaseConfigManager {
     /**
      * 更新完整题材配置。
      *
-     * @param id - 参数
-     * @param updates - 参数
+     * @param id - 标识
+     * @param updates - 更新字段
      * @returns 是否更新
      */
     async updateFullCustomGenre(id: string, updates: Partial<GenreConfig>): Promise<boolean> {
@@ -442,7 +442,7 @@ export class KnowledgeBaseConfigManager {
     /**
      * 删除完整题材配置。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 是否删除
      */
     async deleteFullCustomGenre(id: string): Promise<boolean> {
@@ -469,7 +469,7 @@ export class KnowledgeBaseConfigManager {
     /**
      * 导入配置 JSON。
      *
-     * @param json - 参数
+     * @param json - JSON 文本
      * @returns 无
      */
     async importConfig(json: string): Promise<void> {

@@ -44,8 +44,8 @@ export const DEFAULT_SPILL_POLICY: SpillPolicy = {
 /**
  * 判断内容是否应溢出到磁盘。
  *
- * @param content - 参数
- * @param policy - 参数
+ * @param content - 内容
+ * @param policy - 策略
  * @returns 布尔值
  */
 export function shouldSpill(content: string, policy: SpillPolicy = DEFAULT_SPILL_POLICY): boolean {

@@ -76,7 +76,7 @@ export class PromptManager {
     /**
      * 按 id 取模板。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 模板或 null
      */
     getTemplateById(id: string): PromptTemplate | null {
@@ -89,7 +89,7 @@ export class PromptManager {
     /**
      * 按分类取模板。
      *
-     * @param category - 参数
+     * @param category - 分类
      * @returns 模板数组
      */
     getTemplatesByCategory(category: PromptCategory): PromptTemplate[] {
@@ -112,7 +112,7 @@ export class PromptManager {
     /**
      * 取模板当前生效版本。
      *
-     * @param template - 参数
+     * @param template - 模板
      * @returns 版本或 null
      */
     getActiveVersion(template: PromptTemplate): PromptTemplateVersion | null {
@@ -122,8 +122,8 @@ export class PromptManager {
     /**
      * 取模板的指定版本。
      *
-     * @param templateId - 参数
-     * @param version - 参数
+     * @param templateId - 模板 ID
+     * @param version - 版本
      * @returns 版本或 null
      */
     getVersion(templateId: string, version: string): PromptTemplateVersion | null {
@@ -163,7 +163,7 @@ export class PromptManager {
     /**
      * 创建自定义模板。
      *
-     * @param template - 参数
+     * @param template - 模板
      * @returns 新模板
      */
     async createCustomTemplate(template: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt' | 'isCustom'> & { id?: string }): Promise<PromptTemplate> {
@@ -190,8 +190,8 @@ export class PromptManager {
     /**
      * 更新模板元数据。
      *
-     * @param templateId - 参数
-     * @param updates - 参数
+     * @param templateId - 模板 ID
+     * @param updates - 更新字段
      * @returns 更新后的模板或 null
      */
     async updateTemplate(templateId: string, updates: Partial<PromptTemplate>): Promise<PromptTemplate | null> {
@@ -224,7 +224,7 @@ export class PromptManager {
     /**
      * 删除自定义模板（内置模板不可删）。
      *
-     * @param templateId - 参数
+     * @param templateId - 模板 ID
      * @returns 是否删除
      */
     async deleteCustomTemplate(templateId: string): Promise<boolean> {
@@ -238,7 +238,7 @@ export class PromptManager {
     /**
      * 把模板恢复为内置默认。
      *
-     * @param templateId - 参数
+     * @param templateId - 模板 ID
      * @returns 是否恢复
      */
     async resetTemplateToDefault(templateId: string): Promise<boolean> {
@@ -284,8 +284,8 @@ export class PromptManager {
     /**
      * 切换模板生效版本。
      *
-     * @param templateId - 参数
-     * @param version - 参数
+     * @param templateId - 模板 ID
+     * @param version - 版本
      * @returns 是否切换
      */
     async setActiveVersion(templateId: string, version: string): Promise<boolean> {
@@ -324,7 +324,7 @@ export class PromptManager {
     /**
      * 按 id 取实验。
      *
-     * @param testId - 参数
+     * @param testId - 测试 ID
      * @returns 实验或 null
      */
     getABTestById(testId: string): ABTest | null {
@@ -334,7 +334,7 @@ export class PromptManager {
     /**
      * 取模板当前运行中的实验。
      *
-     * @param templateId - 参数
+     * @param templateId - 模板 ID
      * @returns 实验或 null
      */
     getActiveABTestForTemplate(templateId: string): ABTest | null {
@@ -394,8 +394,8 @@ export class PromptManager {
     /**
      * 更新实验状态。
      *
-     * @param testId - 参数
-     * @param status - 参数
+     * @param testId - 测试 ID
+     * @param status - 状态
      * @returns 更新后的实验或 null
      */
     async updateABTestStatus(testId: string, status: ABTestStatus): Promise<ABTest | null> {
@@ -415,7 +415,7 @@ export class PromptManager {
     /**
      * 删除实验。
      *
-     * @param testId - 参数
+     * @param testId - 测试 ID
      * @returns 是否删除
      */
     async deleteABTest(testId: string): Promise<boolean> {
@@ -429,7 +429,7 @@ export class PromptManager {
     /**
      * 按实验权重选择 a/b 变体。
      *
-     * @param test - 参数
+     * @param test - 测试实例
      * @returns 变体
      */
     selectABVariant(test: ABTest): 'a' | 'b' {
@@ -517,7 +517,7 @@ export class PromptManager {
     /**
      * 计算实验统计与胜者。
      *
-     * @param testId - 参数
+     * @param testId - 测试 ID
      * @returns 统计或 null
      */
     getABTestStats(testId: string): { test: ABTest; winner?: 'a' | 'b' | 'tie'; confidence?: number } | null {
@@ -548,8 +548,8 @@ export class PromptManager {
     /**
      * 手动指定实验胜者。
      *
-     * @param testId - 参数
-     * @param winner - 参数
+     * @param testId - 测试 ID
+     * @param winner - 胜出项
      * @returns 是否成功
      */
     async setWinner(testId: string, winner: 'a' | 'b'): Promise<boolean> {
@@ -569,7 +569,7 @@ export class PromptManager {
     /**
      * 开关 A/B 实验。
      *
-     * @param enabled - 参数
+     * @param enabled - 是否启用
      * @returns 无
      */
     setABTestingEnabled(enabled: boolean): void {
@@ -596,7 +596,7 @@ export class PromptManager {
     /**
      * 从 JSON 导入配置。
      *
-     * @param jsonStr - 参数
+     * @param jsonStr - JSON 字符串
      * @returns 是否成功
      */
     importConfig(jsonStr: string): boolean {

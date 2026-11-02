@@ -71,7 +71,7 @@ export interface GateSnapshotInput {
 /**
  * 从步骤变量构建章节状态快照。
  *
- * @param input - 参数
+ * @param input - 输入
  * @returns 章节状态快照
  */
 export function buildGateSnapshotFromVars(input: GateSnapshotInput): ChapterStateSnapshot {

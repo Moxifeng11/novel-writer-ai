@@ -370,7 +370,7 @@ export class KnowledgeTagManager {
     /**
      * 按分类取标签。
      *
-     * @param category - 参数
+     * @param category - 分类
      * @returns 标签数组
      */
     getTagsByCategory(category: 'theme' | 'technique'): KnowledgeTag[] {
@@ -380,7 +380,7 @@ export class KnowledgeTagManager {
     /**
      * 按类型取标签。
      *
-     * @param type - 参数
+     * @param type - 类型
      * @returns 标签数组
      */
     getTagsByType(type: string): KnowledgeTag[] {
@@ -390,7 +390,7 @@ export class KnowledgeTagManager {
     /**
      * 按 id 取标签。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 标签或 undefined
      */
     getTagById(id: string): KnowledgeTag | undefined {
@@ -400,7 +400,7 @@ export class KnowledgeTagManager {
     /**
      * 按名称取标签。
      *
-     * @param name - 参数
+     * @param name - 名称
      * @returns 标签或 undefined
      */
     getTagByName(name: string): KnowledgeTag | undefined {
@@ -410,7 +410,7 @@ export class KnowledgeTagManager {
     /**
      * 取子标签。
      *
-     * @param parentId - 参数
+     * @param parentId - 父级 ID
      * @returns 标签数组
      */
     getChildTags(parentId: string): KnowledgeTag[] {
@@ -420,7 +420,7 @@ export class KnowledgeTagManager {
     /**
      * 新增标签。
      *
-     * @param tag - 参数
+     * @param tag - 标签
      * @returns 标签
      */
     async addTag(tag: Omit<KnowledgeTag, 'id'>): Promise<KnowledgeTag> {
@@ -436,8 +436,8 @@ export class KnowledgeTagManager {
     /**
      * 更新标签。
      *
-     * @param id - 参数
-     * @param updates - 参数
+     * @param id - 标识
+     * @param updates - 更新字段
      */
     async updateTag(id: string, updates: Partial<KnowledgeTag>): Promise<void> {
         const idx = this.tags.findIndex(t => t.id === id);
@@ -449,7 +449,7 @@ export class KnowledgeTagManager {
     /**
      * 删除标签及其子标签。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     async deleteTag(id: string): Promise<void> {
         const toDelete = new Set<string>([id]);

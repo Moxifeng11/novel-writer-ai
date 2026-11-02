@@ -251,8 +251,8 @@ export class WritingProfileManager {
     /**
      * 保存写作配置。
      *
-     * @param projectPath - 参数
-     * @param profile - 参数
+     * @param projectPath - 项目路径
+     * @param profile - 配置档
      */
     async save(projectPath: string, profile: WritingProfile): Promise<void> {
         const filePath = WritingProfileManager.getConfigFilePath(projectPath);
@@ -331,9 +331,9 @@ export class WritingProfileManager {
     /**
      * 更新单个字段。
      *
-     * @param projectPath - 参数
-     * @param fieldPath - 参数
-     * @param value - 参数
+     * @param projectPath - 项目路径
+     * @param fieldPath - 字段路径
+     * @param value - 值
      */
     async updateField(projectPath: string, fieldPath: string, value: any): Promise<void> {
         const profile = await this.load(projectPath);
@@ -344,7 +344,7 @@ export class WritingProfileManager {
     /**
      * 配置是否存在。
      *
-     * @param projectPath - 参数
+     * @param projectPath - 项目路径
      * @returns 布尔值
      */
     async exists(projectPath: string): Promise<boolean> {
@@ -359,7 +359,7 @@ export class WritingProfileManager {
     /**
      * 空配置模板。
      *
-     * @param projectName - 参数
+     * @param projectName - 项目名
      * @returns 配置
      */
     getEmptyProfile(projectName: string = '未命名项目'): WritingProfile {

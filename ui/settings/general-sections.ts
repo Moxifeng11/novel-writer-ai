@@ -24,7 +24,7 @@ export class PerformanceSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -383,7 +383,7 @@ export class PromptsSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -403,7 +403,7 @@ export class RulesSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
@@ -531,7 +531,7 @@ export class AboutSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -776,7 +776,7 @@ export class RecognitionSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
@@ -1066,7 +1066,7 @@ export class SuggestionsSection extends SettingsSection {
     /**
      * 渲染该设置分区。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');

@@ -15,7 +15,7 @@ let sharedProvider: EmbeddingProvider | null = null;
 /**
  * 设置全局共享向量提供方。
  *
- * @param provider - 参数
+ * @param provider - 提供方
  */
 export function setSharedEmbeddingProvider(provider: EmbeddingProvider | null): void {
     sharedProvider = provider;

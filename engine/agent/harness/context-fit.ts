@@ -13,7 +13,7 @@
 /**
  * 估算文本 token 数。
  *
- * @param text - 参数
+ * @param text - 文本内容
  * @returns token 数
  */
 export function estimateTokens(text: string): number {

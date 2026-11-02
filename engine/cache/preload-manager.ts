@@ -146,7 +146,7 @@ export class PreloadManager {
     /**
      * 更新预加载选项。
      *
-     * @param options - 参数
+     * @param options - 配置项
      */
     setOptions(options: Partial<PreloadManagerOptions>): void {
         this.options = { ...this.options, ...options };
@@ -190,7 +190,7 @@ export class PreloadManager {
     /**
      * 注入章节仓储。
      *
-     * @param repo - 参数
+     * @param repo - 仓储
      */
     setChapterRepository(repo: ChapterRepository): void {
         this.chapterRepository = repo;
@@ -620,7 +620,7 @@ export class PreloadManager {
     /**
      * 实体缓存统计。
      *
-     * @param entityType - 参数
+     * @param entityType - 实体类型
      * @returns 统计
      */
     getEntityCacheStats(entityType: string): { size: number; hitRate: number } | null {

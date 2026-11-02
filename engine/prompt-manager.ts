@@ -74,7 +74,7 @@ export class PromptManager {
     /**
      * 取模板（可指定版本）。
      *
-     * @param key - 参数
+     * @param key - 键
      * @param version? - 参数
      * @returns 模板或 null
      */
@@ -99,8 +99,8 @@ export class PromptManager {
     /**
      * 切换模板生效版本。
      *
-     * @param key - 参数
-     * @param version - 参数
+     * @param key - 键
+     * @param version - 版本
      * @returns 是否切换
      */
     setCurrentVersion(key: string, version: string): boolean {
@@ -119,7 +119,7 @@ export class PromptManager {
     /**
      * 读取模板版本列表。
      *
-     * @param key - 参数
+     * @param key - 键
      * @returns 版本数组
      */
     getVersions(key: string): string[] {
@@ -130,7 +130,7 @@ export class PromptManager {
     /**
      * 删除模板。
      *
-     * @param key - 参数
+     * @param key - 键
      */
     deleteTemplate(key: string): void {
         this.templates.delete(key);
@@ -142,8 +142,8 @@ export class PromptManager {
     /**
      * 注册模板变量定义。
      *
-     * @param key - 参数
-     * @param variables - 参数
+     * @param key - 键
+     * @param variables - 变量表
      */
     registerVariables(key: string, variables: PromptVariable[]): void {
         this.variableDefinitions.set(key, variables);
@@ -152,7 +152,7 @@ export class PromptManager {
     /**
      * 读取模板变量定义。
      *
-     * @param key - 参数
+     * @param key - 键
      * @returns 变量数组
      */
     getVariables(key: string): PromptVariable[] {
@@ -162,8 +162,8 @@ export class PromptManager {
     /**
      * 校验变量是否齐全。
      *
-     * @param key - 参数
-     * @param vars - 参数
+     * @param key - 键
+     * @param vars - 变量表
      * @returns {valid,errors}
      */
     validateVariables(key: string, vars: Record<string, string>): { valid: boolean; errors: string[] } {
@@ -192,8 +192,8 @@ export class PromptManager {
     /**
      * 渲染模板（变量替换）。
      *
-     * @param key - 参数
-     * @param vars - 参数
+     * @param key - 键
+     * @param vars - 变量表
      * @param version? - 参数
      * @returns 渲染文本或 null
      */
@@ -280,7 +280,7 @@ export class PromptManager {
     /**
      * 读取模板信息摘要。
      *
-     * @param key - 参数
+     * @param key - 键
      * @returns 信息对象
      */
     getTemplateInfo(key: string): {

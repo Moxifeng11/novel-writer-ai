@@ -146,8 +146,8 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 设置单个变量。
      *
-     * @param key - 参数
-     * @param value - 参数
+     * @param key - 键
+     * @param value - 值
      */
     setVar(key: string, value: string): void {
         this._vars[key] = value;
@@ -157,7 +157,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 删除变量。
      *
-     * @param key - 参数
+     * @param key - 键
      */
     deleteVar(key: string): void {
         delete this._vars[key];
@@ -167,7 +167,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 覆盖变量集合。
      *
-     * @param newVars - 参数
+     * @param newVars - 新变量表
      */
     setVars(newVars: Record<string, string>): void {
         this._vars = { ...newVars };
@@ -177,7 +177,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 合并变量集合。
      *
-     * @param additionalVars - 参数
+     * @param additionalVars - 附加变量
      */
     mergeVars(additionalVars: Record<string, string>): void {
         this._vars = { ...this._vars, ...additionalVars };
@@ -187,7 +187,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 压入导航栈。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     pushNav(tabId: string): void {
         this._navStack.push(this._activeTabId);
@@ -211,7 +211,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 跳转到标签页。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     navigateTo(tabId: string): void {
         this._activeTabId = tabId;
@@ -221,7 +221,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 按 id 查找标签页。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 标签页或 undefined
      */
     findTab(id: string): WriterTab | undefined {
@@ -231,7 +231,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 按章节键查找标签页。
      *
-     * @param chapterKey - 参数
+     * @param chapterKey - 章节键
      * @returns 标签页或 undefined
      */
     findTabByChapterKey(chapterKey: string): WriterTab | undefined {
@@ -241,7 +241,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 新增标签页。
      *
-     * @param tab - 参数
+     * @param tab - 页签
      * @param activate = true - 参数
      */
     addTab(tab: WriterTab, activate = true): void {
@@ -255,7 +255,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 移除标签页。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     removeTab(tabId: string): void {
         const idx = this._tabs.findIndex(t => t.id === tabId);
@@ -272,8 +272,8 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 更新标签页。
      *
-     * @param tabId - 参数
-     * @param updates - 参数
+     * @param tabId - 页签 ID
+     * @param updates - 更新字段
      */
     updateTab(tabId: string, updates: Partial<WriterTab>): void {
         const tab = this._tabs.find(t => t.id === tabId);
@@ -286,7 +286,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 激活标签页。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     activateTab(tabId: string): void {
         if (this._tabs.some(t => t.id === tabId)) {
@@ -332,7 +332,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     /**
      * 订阅状态变化。
      *
-     * @param listener - 参数
+     * @param listener - 监听器
      * @returns 取消订阅函数
      */
     subscribe(listener: StateChangeListener): () => void {

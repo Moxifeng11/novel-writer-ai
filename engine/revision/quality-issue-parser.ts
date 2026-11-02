@@ -111,7 +111,7 @@ export function mergeQualityIssues(
 /**
  * 把问题合并为分轮修订计划。
  *
- * @param issues - 参数
+ * @param issues - 问题列表
  * @param maxPasses = 3 - 参数
  * @returns 修订计划
  */

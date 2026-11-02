@@ -33,7 +33,7 @@ export class CallLedger {
     /**
      * 开始一条调用记录。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      * @param projectId? - 参数
      * @returns id
      */
@@ -54,7 +54,7 @@ export class CallLedger {
     /**
      * 标记逻辑调用。
      *
-     * @param key - 参数
+     * @param key - 键
      */
     markLogical(key: string): void {
         const entry = this.active.get(key);
@@ -65,7 +65,7 @@ export class CallLedger {
     /**
      * 标记网络调用。
      *
-     * @param key - 参数
+     * @param key - 键
      * @param retried = false - 参数
      */
     markNetwork(key: string, retried = false): void {
@@ -78,8 +78,8 @@ export class CallLedger {
     /**
      * 结束调用。
      *
-     * @param key - 参数
-     * @param ok - 参数
+     * @param key - 键
+     * @param ok - 是否成功
      * @returns 耗时
      */
     end(key: string, ok: boolean): CallLedgerEntry | null {

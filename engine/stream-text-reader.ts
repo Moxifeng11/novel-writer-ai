@@ -66,8 +66,8 @@ export class StreamTextReader {
     /**
      * 从字符串创建。
      *
-     * @param text - 参数
-     * @param startOffset - 参数
+     * @param text - 文本内容
+     * @param startOffset - 起始偏移
      * @returns 读取器
      */
     async fromString(text: string, startOffset: number = 0): Promise<void> {
@@ -91,9 +91,9 @@ export class StreamTextReader {
     /**
      * 从文件创建。
      *
-     * @param fs - 参数
-     * @param filePath - 参数
-     * @param startOffset - 参数
+     * @param fs - 文件系统端口
+     * @param filePath - 文件路径
+     * @param startOffset - 起始偏移
      * @returns 读取器
      */
     async fromFile(fs: FileSystemPort, filePath: string, startOffset: number = 0): Promise<void> {

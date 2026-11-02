@@ -58,7 +58,7 @@ export class ToolRegistry {
     /**
      * 注册工具。
      *
-     * @param tool - 参数
+     * @param tool - 工具
      */
     register(tool: HarnessTool): void {
         if (!tool.id.trim()) throw new Error('ToolRegistry: tool.id 不能为空');
@@ -69,7 +69,7 @@ export class ToolRegistry {
     /**
      * 批量注册。
      *
-     * @param tools - 参数
+     * @param tools - 工具列表
      */
     registerAll(tools: HarnessTool[]): void {
         for (const tool of tools) this.register(tool);
@@ -78,7 +78,7 @@ export class ToolRegistry {
     /**
      * 是否存在。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 布尔值
      */
     has(id: string): boolean {
@@ -88,7 +88,7 @@ export class ToolRegistry {
     /**
      * 取工具。
      *
-     * @param id - 参数
+     * @param id - 标识
      * @returns 工具或 undefined
      */
     get(id: string): HarnessTool | undefined {

@@ -34,7 +34,7 @@ const DIMENSION_RULES: Record<RevisionDimension, string> = {
 /**
  * 构建按维度修订的系统提示词。
  *
- * @param dimension - 参数
+ * @param dimension - 维度
  * @returns 提示词
  */
 export function buildRevisionSystemPrompt(dimension: RevisionDimension): string {

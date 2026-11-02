@@ -40,7 +40,7 @@ export interface StyleDistillPrompts {
 /**
  * 构建文风提炼提示词。
  *
- * @param input - 参数
+ * @param input - 输入
  * @returns 提示词集合
  */
 export function buildStyleDistillPrompts(input: StyleDistillInput): StyleDistillPrompts {

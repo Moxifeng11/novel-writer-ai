@@ -204,7 +204,7 @@ export const AUTO_TYPE_DETECTION_SYSTEM = `你是一位小说分析助手。根�
 /**
  * 构建自动判定类型的提示词。
  *
- * @param text - 参数
+ * @param text - 文本内容
  * @param context? - 参数
  * @returns 提示词
  */

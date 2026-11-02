@@ -287,7 +287,7 @@ export class KnowledgeInjector {
     /**
      * 设置参考书列表与权重。
      *
-     * @param books - 参数
+     * @param books - 书籍列表
      * @returns 无
      */
     setReferenceBooks(books: ReferenceBookConfig[]): void {
@@ -305,10 +305,10 @@ export class KnowledgeInjector {
     /**
      * 添加参考书；重复/非法返回 false。
      *
-     * @param bookId - 参数
-     * @param bookName - 参数
-     * @param weight - 参数
-     * @param isPrimary - 参数
+     * @param bookId - 书籍 ID
+     * @param bookName - 书名
+     * @param weight - 权重
+     * @param isPrimary - 是否主项
      * @returns 是否添加
      */
     addReferenceBook(bookId: string, bookName: string, weight: number = 0.5, isPrimary: boolean = false): boolean {
@@ -324,7 +324,7 @@ export class KnowledgeInjector {
     /**
      * 移除参考书。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 无
      */
     removeReferenceBook(bookId: string): void {
@@ -334,7 +334,7 @@ export class KnowledgeInjector {
     /**
      * 设置主参考书。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 无
      */
     setPrimaryReferenceBook(bookId: string): void {
@@ -346,7 +346,7 @@ export class KnowledgeInjector {
     /**
      * 设置各知识维度权重。
      *
-     * @param weights - 参数
+     * @param weights - 权重表
      * @returns 无
      */
     setDimensionWeights(weights: Partial<KnowledgeDimensionWeights>): void {
@@ -404,7 +404,7 @@ export class KnowledgeInjector {
     /**
      * 开关知识注入。
      *
-     * @param enabled - 参数
+     * @param enabled - 是否启用
      * @returns 无
      */
     setEnabled(enabled: boolean): void {
@@ -422,7 +422,7 @@ export class KnowledgeInjector {
     /**
      * 按模块开关注入（大纲/正文/润色等）。
      *
-     * @param switches - 参数
+     * @param switches - 开关表
      * @returns 无
      */
     setSwitches(switches: Partial<InjectionSwitches>): void {
@@ -440,8 +440,8 @@ export class KnowledgeInjector {
     /**
      * 为大纲生成注入知识片段。
      *
-     * @param profile - 参数
-     * @param context - 参数
+     * @param profile - 配置档
+     * @param context - 上下文
      * @returns 注入文本
      */
     async injectForOutline(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -487,8 +487,8 @@ export class KnowledgeInjector {
     /**
      * 为情绪规划注入知识片段。
      *
-     * @param profile - 参数
-     * @param context - 参数
+     * @param profile - 配置档
+     * @param context - 上下文
      * @returns 注入文本
      */
     async injectForEmotionPlan(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -525,8 +525,8 @@ export class KnowledgeInjector {
     /**
      * 为场景展开注入知识片段。
      *
-     * @param profile - 参数
-     * @param context - 参数
+     * @param profile - 配置档
+     * @param context - 上下文
      * @returns 注入文本
      */
     async injectForSceneExpand(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -948,8 +948,8 @@ export class KnowledgeInjector {
     /**
      * 为正文生成注入知识片段。
      *
-     * @param profile - 参数
-     * @param context - 参数
+     * @param profile - 配置档
+     * @param context - 上下文
      * @returns 注入文本
      */
     async injectForBodyGeneration(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -1022,8 +1022,8 @@ export class KnowledgeInjector {
     /**
      * 为润色注入知识片段。
      *
-     * @param profile - 参数
-     * @param context - 参数
+     * @param profile - 配置档
+     * @param context - 上下文
      * @returns 注入文本
      */
     async injectForPolish(profile: WritingProfile, context: InjectionContext): Promise<string> {
@@ -1595,8 +1595,8 @@ export class KnowledgeInjector {
     /**
      * 通用知识库注入（按强度）。
      *
-     * @param context - 参数
-     * @param baseStrength - 参数
+     * @param context - 上下文
+     * @param baseStrength - 基础强度
      * @returns 注入文本
      */
     async injectKnowledgeBase(context: InjectionContext, baseStrength: number = 0.7): Promise<string> {
@@ -1990,7 +1990,7 @@ export class KnowledgeInjector {
     /**
      * 计算文本与知识库的匹配分（供调试/展示）。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 匹配结果数组
      */
     getKnowledgeMatchScore(text: string): Array<{ bookName: string; score: number; dimensions: string[] }> {
@@ -2020,7 +2020,7 @@ export class KnowledgeInjector {
     /**
      * 读取某书的维度摘要。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 维度→摘要 或 null
      */
     async getBookDimensionSummary(bookId: string): Promise<Record<string, string> | null> {

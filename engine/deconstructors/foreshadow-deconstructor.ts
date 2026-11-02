@@ -1293,7 +1293,7 @@ export class ForeshadowDeconstructor {
     /**
      * 注入伏笔配置管理器。
      *
-     * @param configManager - 参数
+     * @param configManager - 配置管理器
      */
     setConfigManager(configManager: ForeshadowConfigManager): void {
         this.configManager = configManager;
@@ -1310,7 +1310,7 @@ export class ForeshadowDeconstructor {
     /**
      * 分析伏笔。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 分析结果
      */
     async analyze(text: string): Promise<ForeshadowAnalysisResult> {
@@ -1495,7 +1495,7 @@ export class ForeshadowDeconstructor {
     /**
      * 带向量增强的伏笔分析。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 分析结果
      */
     async analyzeWithVector(text: string): Promise<ForeshadowAnalysisResult> {
@@ -1764,7 +1764,7 @@ export class ForeshadowDeconstructor {
     /**
      * 保存伏笔到 Markdown。
      *
-     * @param app - 参数
+     * @param app - Obsidian 应用实例
      */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
@@ -1789,7 +1789,7 @@ export class ForeshadowDeconstructor {
     /**
      * 保存分析到 Markdown。
      *
-     * @param app - 参数
+     * @param app - Obsidian 应用实例
      */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
@@ -2952,7 +2952,7 @@ export class ForeshadowDeconstructor {
     /**
      * 增强伏笔配对。
      *
-     * @param result - 参数
+     * @param result - 结果
      * @returns 配对结果
      */
     enhanceForeshadowPairs(result: ForeshadowAnalysisResult): ForeshadowPair[] {
@@ -3098,8 +3098,8 @@ export class ForeshadowDeconstructor {
     /**
      * 分析回收质量。
      *
-     * @param setup - 参数
-     * @param payoff - 参数
+     * @param setup - 初始化函数
+     * @param payoff - 回收点
      * @returns 结果
      */
     analyzeResolutionQuality(setup: Foreshadow | undefined, payoff: Foreshadow): ResolutionQuality {
@@ -3255,7 +3255,7 @@ export class ForeshadowDeconstructor {
     /**
      * 分析伏笔网络。
      *
-     * @param result - 参数
+     * @param result - 结果
      * @returns 网络结果
      */
     analyzeForeshadowNetwork(result: ForeshadowAnalysisResult): ForeshadowNetworkAnalysis {
@@ -3472,7 +3472,7 @@ export class ForeshadowDeconstructor {
     /**
      * 追踪未回收伏笔。
      *
-     * @param result - 参数
+     * @param result - 结果
      * @returns 追踪结果
      */
     trackUnresolvedForeshadows(result: ForeshadowAnalysisResult): UnresolvedTracker {
@@ -3581,7 +3581,7 @@ export class ForeshadowDeconstructor {
     /**
      * 增强分析结果。
      *
-     * @param result - 参数
+     * @param result - 结果
      * @returns 结果
      */
     async enhanceAnalysis(result: ForeshadowAnalysisResult): Promise<EnhancedForeshadowAnalysis> {
@@ -3622,7 +3622,7 @@ export class ForeshadowDeconstructor {
     /**
      * 抽取世界观设定。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 结果
      */
     extractWorldbuilding(text: string): WorldbuildingResult {
@@ -3794,7 +3794,7 @@ export class ForeshadowDeconstructor {
     /**
      * 分析设定密度。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 结果
      */
     async analyzeSettingDensity(text: string): Promise<SettingDensityResult> {

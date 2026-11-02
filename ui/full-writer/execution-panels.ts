@@ -40,7 +40,7 @@ export class ExecutionTimelinePanel {
     /**
      * 挂载面板。
      *
-     * @param container - 参数
+     * @param container - 容器元素
      */
     mount(container: HTMLElement): void {
         this.destroy();
@@ -239,7 +239,7 @@ export class ExecutionLogPanel {
     /**
      * 挂载面板。
      *
-     * @param host - 参数
+     * @param host - 宿主元素
      */
     mount(host: HTMLElement): void {
         this.unsubscribe?.();
@@ -311,7 +311,7 @@ export class ExecutionLogPanel {
     /**
      * 展开/收起。
      *
-     * @param expanded - 参数
+     * @param expanded - 是否展开
      */
     setExpanded(expanded: boolean): void {
         this.expanded = expanded;

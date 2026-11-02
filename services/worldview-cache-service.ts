@@ -80,7 +80,7 @@ export class WorldviewCacheService {
     /**
      * 开关缓存调试模式。
      *
-     * @param enabled - 参数
+     * @param enabled - 是否启用
      */
     setDebugMode(enabled: boolean): void {
         this.debugMode = enabled;
@@ -166,8 +166,8 @@ export class WorldviewCacheService {
     /**
      * 读取缓存。
      *
-     * @param project - 参数
-     * @param filePath - 参数
+     * @param project - 项目（路径或对象）
+     * @param filePath - 文件路径
      * @param parser? - 参数
      * @param any> - 参数
      * @returns 值或 null
@@ -269,9 +269,9 @@ export class WorldviewCacheService {
     /**
      * 写入缓存。
      *
-     * @param project - 参数
-     * @param filePath - 参数
-     * @param rawText - 参数
+     * @param project - 项目（路径或对象）
+     * @param filePath - 文件路径
+     * @param rawText - 原始文本
      * @param parsedData? - 参数
      */
     async set(
@@ -332,8 +332,8 @@ export class WorldviewCacheService {
     /**
      * 失效单个文件缓存。
      *
-     * @param project - 参数
-     * @param filePath - 参数
+     * @param project - 项目（路径或对象）
+     * @param filePath - 文件路径
      */
     invalidate(project: string, filePath: string): void {
         const key = this.makeKey(project, filePath);
@@ -352,7 +352,7 @@ export class WorldviewCacheService {
     /**
      * 失效整个项目缓存。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      */
     invalidateProject(project: string): void {
         const keysToDelete: string[] = [];
@@ -402,7 +402,7 @@ export class WorldviewCacheService {
     /**
      * 读取项目级缓存统计。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 统计
      */
     getProjectStats(project: string): { entries: number; size: number; files: string[] } {
@@ -422,7 +422,7 @@ export class WorldviewCacheService {
     /**
      * 预加载项目缓存。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns 统计
      */
     async preloadProject(project: string): Promise<{ loaded: number; totalSize: number }> {
@@ -455,7 +455,7 @@ export class WorldviewCacheService {
     /**
      * 读取世界观（可附解析器）。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @param parser? - 参数
      * @param any> - 参数
      * @returns {rawText,parsedData,fromCache}
@@ -468,7 +468,7 @@ export class WorldviewCacheService {
     /**
      * 读取设定库（可附解析器）。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @param parser? - 参数
      * @param any> - 参数
      * @returns {rawText,parsedData,fromCache}
@@ -481,8 +481,8 @@ export class WorldviewCacheService {
     /**
      * 写入世界观缓存。
      *
-     * @param project - 参数
-     * @param rawText - 参数
+     * @param project - 项目（路径或对象）
+     * @param rawText - 原始文本
      * @param parsedData? - 参数
      */
     async setWorldview(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
@@ -493,8 +493,8 @@ export class WorldviewCacheService {
     /**
      * 写入设定库缓存。
      *
-     * @param project - 参数
-     * @param rawText - 参数
+     * @param project - 项目（路径或对象）
+     * @param rawText - 原始文本
      * @param parsedData? - 参数
      */
     async setSettingLib(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
@@ -505,8 +505,8 @@ export class WorldviewCacheService {
     /**
      * 读取实体缓存。
      *
-     * @param project - 参数
-     * @param entityType - 参数
+     * @param project - 项目（路径或对象）
+     * @param entityType - 实体类型
      * @returns 实体
      */
     async getEntities(
@@ -541,10 +541,10 @@ export class WorldviewCacheService {
     /**
      * 写入实体缓存。
      *
-     * @param project - 参数
-     * @param entityType - 参数
-     * @param name - 参数
-     * @param content - 参数
+     * @param project - 项目（路径或对象）
+     * @param entityType - 实体类型
+     * @param name - 名称
+     * @param content - 内容
      * @param parsedData? - 参数
      */
     async setEntity(
@@ -568,7 +568,7 @@ export class WorldviewCacheService {
     /**
      * 失效世界观缓存。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      */
     invalidateWorldview(project: string): void {
         this.invalidate(project, getWorldviewPath(project));
@@ -577,7 +577,7 @@ export class WorldviewCacheService {
     /**
      * 失效设定库缓存。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      */
     invalidateSettingLib(project: string): void {
         this.invalidate(project, getSettingLibPath(project));
@@ -586,7 +586,7 @@ export class WorldviewCacheService {
     /**
      * 失效项目实体缓存。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @param entityType? - 参数
      */
     invalidateEntities(project: string, entityType?: 'characters' | 'locations' | 'factions' | 'items'): void {

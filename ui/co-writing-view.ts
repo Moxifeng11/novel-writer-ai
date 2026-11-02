@@ -1440,7 +1440,7 @@ export class CoWritingView extends ItemView {
   /**
    * 处理编辑器快捷键（Tab 建议/格式命令）。
    *
-   * @param event - 参数
+   * @param event - 事件
    */
   async handleEditorKeydown(event: KeyboardEvent) {
     // P1-15（v4.27）：中文输入法组合期间不拦截任何按键，
@@ -2100,7 +2100,7 @@ export class CoWritingView extends ItemView {
   /**
    * 渲染建议卡片列表。
    *
-   * @param suggestions - 参数
+   * @param suggestions - 建议列表
    */
   renderSuggestionCards(suggestions: SuggestionRecord[]) {
     this.setGhostSuggestion(null);
@@ -2137,7 +2137,7 @@ export class CoWritingView extends ItemView {
   /**
    * 对单条建议做迭代精修。
    *
-   * @param suggestion - 参数
+   * @param suggestion - 建议
    */
   async handleIterateSuggestion(suggestion: SuggestionRecord) {
     const instruction = await this.promptIterateInstruction();
@@ -2199,7 +2199,7 @@ export class CoWritingView extends ItemView {
   /**
    * 拒绝一条建议。
    *
-   * @param suggestionId - 参数
+   * @param suggestionId - 建议 ID
    */
   rejectSuggestion(suggestionId: string) {
     this.currentSuggestions = this.currentSuggestions.filter((s) => s.id !== suggestionId);
@@ -2394,8 +2394,8 @@ export class CoWritingView extends ItemView {
   /**
    * 渲染联想建议卡片。
    *
-   * @param associations - 参数
-   * @param suggestions - 参数
+   * @param associations - 关联列表
+   * @param suggestions - 建议列表
    */
   renderAssociationCards(associations: AssociationSuggestion[], suggestions: SuggestionRecord[]) {
     this.showSuggestionPanel();
@@ -2442,7 +2442,7 @@ export class CoWritingView extends ItemView {
   /**
    * 按序号采纳建议。
    *
-   * @param index - 参数
+   * @param index - 索引
    */
   async acceptByIndex(index: number) {
     // RG-02: 生成/改写进行中时 currentSuggestions 可能仍是上一轮残留，禁止按索引接受
@@ -2456,7 +2456,7 @@ export class CoWritingView extends ItemView {
   /**
    * 采纳建议并写入正文。
    *
-   * @param suggestion - 参数
+   * @param suggestion - 建议
    */
   async handleAcceptSuggestion(suggestion: SuggestionRecord) {
     // 双击「接受」与连按 Tab 都走这里：异步窗口期（历史落盘/预览/指标评估）内必须互斥
@@ -2471,7 +2471,7 @@ export class CoWritingView extends ItemView {
   /**
    * 编辑建议后再采纳。
    *
-   * @param suggestion - 参数
+   * @param suggestion - 建议
    * @param initialText? - 参数
    */
   handleEditSuggestion(suggestion: SuggestionRecord, initialText?: string) {
@@ -2508,10 +2508,10 @@ export class CoWritingView extends ItemView {
   /**
    * 渲染编辑校验结果。
    *
-   * @param validation - 参数
-   * @param modifiedText - 参数
-   * @param suggestion - 参数
-   * @param editDurationMs - 参数
+   * @param validation - 校验结果
+   * @param modifiedText - 修改后文本
+   * @param suggestion - 建议
+   * @param editDurationMs - 编辑耗时（毫秒）
    */
   renderValidationResult(validation: EditValidation, modifiedText: string, suggestion: SuggestionRecord, editDurationMs: number) {
     this.showSuggestionPanel();
@@ -2560,10 +2560,10 @@ export class CoWritingView extends ItemView {
   /**
    * 插入文本并记录编辑交互。
    *
-   * @param text - 参数
-   * @param suggestion - 参数
-   * @param validation - 参数
-   * @param editDurationMs - 参数
+   * @param text - 文本内容
+   * @param suggestion - 建议
+   * @param validation - 校验结果
+   * @param editDurationMs - 编辑耗时（毫秒）
    */
   async insertTextAndRecord(text: string, suggestion: SuggestionRecord, validation: EditValidation | undefined, editDurationMs: number) {
     // NBI-05: 记录接受时的代次，收尾时若已开始新一轮生成则不得覆盖其面板
@@ -2652,7 +2652,7 @@ ${text}`;
   /**
    * 刷新预览。
    *
-   * @param force - 参数
+   * @param force - 是否强制
    */
   async refreshPreview(force: boolean) {
     const now = Date.now();
@@ -2749,7 +2749,7 @@ ${text}`;
   /**
    * 刷新指标。
    *
-   * @param force - 参数
+   * @param force - 是否强制
    */
   async refreshMetrics(force: boolean) {
     this.updateNextNodeButton();
@@ -2805,7 +2805,7 @@ ${text}`;
   /**
    * 渲染情节完成度指标。
    *
-   * @param metrics - 参数
+   * @param metrics - 指标
    */
   renderMetrics(metrics: PlotCompletionMetrics) {
     this.metricsContainer.empty();
@@ -2877,8 +2877,8 @@ ${text}`;
   /**
    * 渲染指标条。
    *
-   * @param label - 参数
-   * @param value - 参数
+   * @param label - 显示标签
+   * @param value - 值
    */
   renderMetricBar(label: string, value: number) {
     const safe = Math.max(0, Math.min(100, Math.round(value || 0)));
@@ -2892,8 +2892,8 @@ ${text}`;
   /**
    * 创建评分卡。
    *
-   * @param label - 参数
-   * @param value - 参数
+   * @param label - 显示标签
+   * @param value - 值
    * @returns 元素
    */
   createScoreCard(label: string, value: number) {
@@ -3128,11 +3128,11 @@ ${text}`;
   /**
    * 渲染流式建议卡。
    *
-   * @param direction - 参数
-   * @param style - 参数
-   * @param index - 参数
-   * @param currentText - 参数
-   * @param isStreaming - 参数
+   * @param direction - 方向
+   * @param style - 文风
+   * @param index - 索引
+   * @param currentText - 当前文本
+   * @param isStreaming - 是否流式
    */
   renderStreamingSuggestionCard(
     direction: string,
@@ -3162,7 +3162,7 @@ ${text}`;
   /**
    * 流式生成建议。
    *
-   * @param directionIndex - 参数
+   * @param directionIndex - 方向索引
    */
   async handleStreamSuggestion(directionIndex: number = 0) {
     if (this.isSuggesting) return;
@@ -3334,7 +3334,7 @@ ${text}`;
   /**
    * 切换右栏页签。
    *
-   * @param tab - 参数
+   * @param tab - 页签
    */
   switchRightTab(tab: 'overview' | 'knowledge') {
     this.activeRightTab = tab;
@@ -3386,7 +3386,7 @@ ${text}`;
   /**
    * 切换知识库子页签。
    *
-   * @param tab - 参数
+   * @param tab - 页签
    */
   switchKbSubTab(tab: 'books' | 'match' | 'quote' | 'advice') {
     this.activeKbSubTab = tab;
@@ -3488,7 +3488,7 @@ ${text}`;
   /**
    * 创建书籍卡片。
    *
-   * @param book - 参数
+   * @param book - 书籍
    * @returns 元素
    */
   createKbBookCard(book: BookBasicInfo): HTMLElement {
@@ -3618,9 +3618,9 @@ ${text}`;
   /**
    * 启用/停用参考书。
    *
-   * @param bookId - 参数
-   * @param bookName - 参数
-   * @param enable - 参数
+   * @param bookId - 书籍 ID
+   * @param bookName - 书名
+   * @param enable - 是否启用
    */
   toggleReferenceBook(bookId: string, bookName: string, enable: boolean): void {
     const currentRefs = this.facade.getReferenceBooks();
@@ -3668,7 +3668,7 @@ ${text}`;
   /**
    * 设置主参考书。
    *
-   * @param bookId - 参数
+   * @param bookId - 书籍 ID
    */
   setPrimaryReference(bookId: string): void {
     const currentRefs = this.facade.getReferenceBooks();
@@ -3697,7 +3697,7 @@ ${text}`;
   /**
    * 取书籍高频人物。
    *
-   * @param book - 参数
+   * @param book - 书籍
    * @returns 名称数组
    */
   getBookTopCharacters(book: BookBasicInfo): string[] {
@@ -3711,7 +3711,7 @@ ${text}`;
   /**
    * 取书籍高频技法。
    *
-   * @param book - 参数
+   * @param book - 书籍
    * @returns 名称数组
    */
   getBookTopTechniques(book: BookBasicInfo): string[] {
@@ -3824,7 +3824,7 @@ ${text}`;
   /**
    * 创建匹配卡片。
    *
-   * @param match - 参数
+   * @param match - 匹配结果
    * @returns 元素
    */
   createMatchCard(match: { book: BookBasicInfo; score: number; topChars: string[]; topTechs: string[] }): HTMLElement {
@@ -3949,7 +3949,7 @@ ${text}`;
   /**
    * 插入技法示例。
    *
-   * @param tech - 参数
+   * @param tech - 技法
    */
   insertTechniqueExample(tech: { name: string; description: string }) {
     const exampleText = `【${tech.name}】${tech.description}`;
@@ -3960,7 +3960,7 @@ ${text}`;
   /**
    * 快速插入文本。
    *
-   * @param text - 参数
+   * @param text - 文本内容
    */
   quickInsertText(text: string) {
     const editor = this.rightEditor;
@@ -4171,7 +4171,7 @@ ${text}`;
   /**
    * 设置幽灵建议。
    *
-   * @param suggestion - 参数
+   * @param suggestion - 建议
    */
   setGhostSuggestion(suggestion: SuggestionRecord | null) {
     this.ghostSuggestion = suggestion;
@@ -4285,7 +4285,7 @@ ${text}`;
   /**
    * 更新控件状态。
    *
-   * @param state - 参数
+   * @param state - 状态
    */
   updateControlState(state: string) {
     this.refreshStatusBar();
@@ -4308,7 +4308,7 @@ ${text}`;
   /**
    * 取光标前上下文。
    *
-   * @param limit - 参数
+   * @param limit - 上限
    * @returns 文本
    */
   getContextBeforeCursor(limit: number) {
@@ -4410,7 +4410,7 @@ ${text}`;
   /**
    * 确保 vault 目录存在。
    *
-   * @param dirPath - 参数
+   * @param dirPath - 目录路径
    */
   async ensureVaultFolder(dirPath: string) {
     if (!dirPath)
@@ -4427,7 +4427,7 @@ ${text}`;
   /**
    * 保存正文。
    *
-   * @param showNotice - 参数
+   * @param showNotice - 提示函数
    * @returns 是否成功
    */
   async saveBody(showNotice: boolean): Promise<boolean> {

@@ -63,7 +63,7 @@ export class TabController {
     /**
      * 压入导航。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     async pushNav(tabId: string): Promise<void> {
         this.deps.state.pushNav(tabId);
@@ -90,7 +90,7 @@ export class TabController {
     /**
      * 激活页签。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     async activateTab(tabId: string): Promise<void> {
         this.deps.closeOutlineTreeModal();
@@ -106,7 +106,7 @@ export class TabController {
     /**
      * 关闭页签。
      *
-     * @param tabId - 参数
+     * @param tabId - 页签 ID
      */
     closeTab(tabId: string): void {
         const tab = this.deps.state.findTab(tabId);
@@ -309,8 +309,8 @@ export class TabController {
     /**
      * 选择章节。
      *
-     * @param project - 参数
-     * @param chapter - 参数
+     * @param project - 项目（路径或对象）
+     * @param chapter - 章节
      */
     async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
         const volumeKey = chapter.volume || '';

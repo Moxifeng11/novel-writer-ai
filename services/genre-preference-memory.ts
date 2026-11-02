@@ -63,7 +63,7 @@ export class GenrePreferenceMemory {
     /**
      * 写入偏好数据。
      *
-     * @param data - 参数
+     * @param data - 数据
      */
     async setData(data: GenrePreferenceData): Promise<void> {
         this.data = { ...data };
@@ -83,7 +83,7 @@ export class GenrePreferenceMemory {
     /**
      * 记录一次用户纠正。
      *
-     * @param record - 参数
+     * @param record - 记录
      */
     recordCorrection(record: Omit<GenreCorrectionRecord, 'timestamp'>): void {
         const correctionRecord: GenreCorrectionRecord = {
@@ -156,7 +156,7 @@ export class GenrePreferenceMemory {
     /**
      * 题材偏置。
      *
-     * @param genreId - 参数
+     * @param genreId - 题材 ID
      * @returns 偏置值
      */
     getGenreBias(genreId: string): number {
@@ -166,8 +166,8 @@ export class GenrePreferenceMemory {
     /**
      * 子题材偏置。
      *
-     * @param genreId - 参数
-     * @param subGenreId - 参数
+     * @param genreId - 题材 ID
+     * @param subGenreId - 子题材 ID
      * @returns 偏置值
      */
     getSubGenreBias(genreId: string, subGenreId: string): number {
@@ -178,7 +178,7 @@ export class GenrePreferenceMemory {
     /**
      * 频道偏置。
      *
-     * @param channel - 参数
+     * @param channel - 通道
      * @returns 偏置值
      */
     getChannelBias(channel: 'male' | 'female' | 'neutral'): number {
@@ -265,7 +265,7 @@ export class GenrePreferenceMemory {
     /**
      * 导入偏好 JSON。
      *
-     * @param jsonStr - 参数
+     * @param jsonStr - JSON 字符串
      * @returns 是否成功
      */
     async importConfig(jsonStr: string): Promise<boolean> {

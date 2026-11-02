@@ -455,7 +455,7 @@ export class RhythmDeconstructor {
     /**
      * 检测章末钩子。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 钩子结果
      */
     async detectChapterHooks(text: string): Promise<HookAnalysisResult> {
@@ -591,7 +591,7 @@ export class RhythmDeconstructor {
     /**
      * 计算张力曲线。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 曲线结果
      */
     async calculateTensionCurve(text: string): Promise<TensionCurveResult> {
@@ -895,7 +895,7 @@ export class RhythmDeconstructor {
     /**
      * 检测情绪弧。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 情绪弧结果
      */
     async detectEmotionArc(text: string): Promise<EmotionArcResult> {
@@ -1090,7 +1090,7 @@ export class RhythmDeconstructor {
     /**
      * NRC 情绪分析。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 结果
      */
     async analyzeNRCEmotion(text: string): Promise<NRCEmotionResult> {
@@ -1229,7 +1229,7 @@ export class RhythmDeconstructor {
     /**
      * 计算节奏曲线。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 曲线结果
      */
     async calculateRhythmCurve(text: string): Promise<RhythmCurveResult> {
@@ -1345,7 +1345,7 @@ export class RhythmDeconstructor {
     /**
      * 带向量增强的节奏分析。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 结果
      */
     async analyzeWithVector(text: string): Promise<RhythmAnalysisResult> {
@@ -1542,7 +1542,7 @@ export class RhythmDeconstructor {
     /**
      * 节奏分析。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 结果
      */
     async analyze(text: string): Promise<RhythmAnalysisResult> {
@@ -1653,7 +1653,7 @@ export class RhythmDeconstructor {
     /**
      * 保存到 Markdown。
      *
-     * @param app - 参数
+     * @param app - Obsidian 应用实例
      */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
@@ -1678,7 +1678,7 @@ export class RhythmDeconstructor {
     /**
      * 保存分析到 Markdown。
      *
-     * @param app - 参数
+     * @param app - Obsidian 应用实例
      */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },

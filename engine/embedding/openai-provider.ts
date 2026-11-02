@@ -61,7 +61,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     /**
      * 生成单条向量。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @param _options? - 参数
      * @returns 向量
      */
@@ -102,7 +102,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     /**
      * 批量生成向量。
      *
-     * @param texts - 参数
+     * @param texts - 文本列表
      * @param _options? - 参数
      * @returns 向量数组
      */

@@ -80,7 +80,7 @@ export class CheckpointManager {
     /**
      * 保存检查点。
      *
-     * @param state - 参数
+     * @param state - 状态
      * @param sourceText? - 参数
      */
     async saveCheckpoint(state: Omit<CheckpointState, 'checksum' | 'lastSavedAt' | 'sourceChecksum' | 'version'>, sourceText?: string): Promise<void> {
@@ -106,7 +106,7 @@ export class CheckpointManager {
     /**
      * 读取检查点。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 检查点或 null
      */
     async getCheckpoint(bookId: string): Promise<CheckpointInfo> {
@@ -140,8 +140,8 @@ export class CheckpointManager {
     /**
      * 从检查点恢复。
      *
-     * @param bookId - 参数
-     * @param options - 参数
+     * @param bookId - 书籍 ID
+     * @param options - 配置项
      * @returns 恢复结果
      */
     async resumeFromCheckpoint(bookId: string, options: ResumeOptions = {}): Promise<CheckpointState | null> {
@@ -170,7 +170,7 @@ export class CheckpointManager {
     /**
      * 删除检查点。
      *
-     * @param bookId - 参数
+     * @param bookId - 书籍 ID
      * @returns 是否删除
      */
     async deleteCheckpoint(bookId: string): Promise<void> {
@@ -184,7 +184,7 @@ export class CheckpointManager {
     /**
      * 清理旧检查点。
      *
-     * @param maxAgeMs - 参数
+     * @param maxAgeMs - 最长缓存时间（毫秒）
      * @returns 清理数量
      */
     async cleanupOldCheckpoints(maxAgeMs: number = MAX_CHECKPOINT_AGE): Promise<number> {
@@ -218,8 +218,8 @@ export class CheckpointManager {
     /**
      * 校验来源是否匹配。
      *
-     * @param bookId - 参数
-     * @param sourceText - 参数
+     * @param bookId - 书籍 ID
+     * @param sourceText - 源文本
      * @returns 布尔值
      */
     async verifySourceMatch(bookId: string, sourceText: string): Promise<boolean> {

@@ -60,8 +60,8 @@ export class WizardStepRenderers {
     /**
      * 渲染故事结构步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardStoryStructureStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
@@ -125,8 +125,8 @@ export class WizardStepRenderers {
     /**
      * 渲染同人设定步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardFanficStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
@@ -296,8 +296,8 @@ export class WizardStepRenderers {
     /**
      * 渲染设定库步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardSettingLibStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         const step = tab.steps[tab.currentStepIdx];
@@ -445,8 +445,8 @@ export class WizardStepRenderers {
     /**
      * 渲染文笔风格步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardWritingStyleStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         const step = tab.steps[tab.currentStepIdx];
@@ -501,8 +501,8 @@ export class WizardStepRenderers {
     /**
      * 渲染大纲步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardOutlineStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
@@ -567,8 +567,8 @@ export class WizardStepRenderers {
     /**
      * 渲染章节步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardChaptersStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
@@ -607,8 +607,8 @@ export class WizardStepRenderers {
     /**
      * 渲染完成步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardCompleteStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
@@ -679,8 +679,8 @@ export class WizardStepRenderers {
     /**
      * 渲染实体步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardEntitiesStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
@@ -860,8 +860,8 @@ export class WizardStepRenderers {
     /**
      * 渲染世界观步骤。
      *
-     * @param container - 参数
-     * @param tab - 参数
+     * @param container - 容器元素
+     * @param tab - 页签
      */
     async renderWizardWorldviewStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();

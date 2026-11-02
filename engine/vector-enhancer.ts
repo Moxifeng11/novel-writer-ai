@@ -245,7 +245,7 @@ export class VectorEnhancer {
     /**
      * 把单段文本转成向量。
      *
-     * @param text - 参数
+     * @param text - 文本内容
      * @returns 向量
      */
     async embedText(text: string): Promise<number[]> {
@@ -273,7 +273,7 @@ export class VectorEnhancer {
     /**
      * 批量转向量。
      *
-     * @param texts - 参数
+     * @param texts - 文本列表
      * @returns 向量数组
      */
     async embedTexts(texts: string[]): Promise<number[][]> {
@@ -327,8 +327,8 @@ export class VectorEnhancer {
     /**
      * 计算两个向量的余弦相似度。
      *
-     * @param a - 参数
-     * @param b - 参数
+     * @param a - 参与比较的左侧值
+     * @param b - 参与比较的右侧值
      * @returns 相似度 0–1
      */
     cosineSimilarity(a: number[], b: number[]): number {
@@ -560,7 +560,7 @@ export class VectorEnhancer {
     /**
      * 设置缓存上限。
      *
-     * @param size - 参数
+     * @param size - 尺寸
      * @returns 无
      */
     setMaxSize(size: number): void {
@@ -612,7 +612,7 @@ export class VectorEnhancer {
     /**
      * 注入/移除限流器。
      *
-     * @param rateLimiter - 参数
+     * @param rateLimiter - 限流器
      * @returns 无
      */
     setRateLimiter(rateLimiter: TokenBucketRateLimiter | null): void {

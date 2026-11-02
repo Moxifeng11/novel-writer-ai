@@ -102,8 +102,8 @@ export class TrendResearchService {
     /**
      * 搜索趋势来源。
      *
-     * @param mode - 参数
-     * @param categoryOrGenre - 参数
+     * @param mode - 模式
+     * @param categoryOrGenre - 分类或题材
      * @param audience? - 参数
      * @returns 来源数组
      */
@@ -178,7 +178,7 @@ export class TrendResearchService {
     /**
      * 格式化来源。
      *
-     * @param sources - 参数
+     * @param sources - 来源列表
      * @returns 文本
      */
     formatSources(sources: TrendSource[]): string {

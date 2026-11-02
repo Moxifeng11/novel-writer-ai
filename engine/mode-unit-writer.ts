@@ -101,7 +101,7 @@ export interface UnitGenerateOptions {
 /**
  * 拆分 frontmatter 与正文。
  *
- * @param text - 参数
+ * @param text - 文本内容
  * @returns {frontmatter,body}
  */
 export function splitFrontmatter(text: string): { frontmatter: string; body: string } {
@@ -400,7 +400,7 @@ export async function saveUnitBody(
 /**
  * 创建基于 Obsidian 的文件端口。
  *
- * @param app - 参数
+ * @param app - Obsidian 应用实例
  * @returns 文件端口
  */
 export function createObsidianUnitFilePort(app: App): UnitFilePort {
@@ -443,7 +443,7 @@ export function canApplyRewrite(
 /**
  * 单元标题。
  *
- * @param ctx - 参数
+ * @param ctx - 上下文
  * @returns 标题
  */
 export function unitTitleOf(ctx: UnitWriterContext): string {

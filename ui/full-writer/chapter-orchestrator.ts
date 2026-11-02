@@ -206,7 +206,7 @@ export class ChapterOrchestrator {
     /**
      * 执行计划。
      *
-     * @param options - 参数
+     * @param options - 配置项
      * @returns 结果
      */
     async run(options: ChapterRunOptions = {}): Promise<ChapterRunResult> {

@@ -189,7 +189,7 @@ export class WritingQualityEngine {
   /**
    * 更新评估选项。
    *
-   * @param options - 参数
+   * @param options - 配置项
    */
   updateOptions(options: Partial<WritingQualityEngineOptions>): void {
     if (options.characterNames !== undefined) this.characterNames = options.characterNames;
@@ -204,7 +204,7 @@ export class WritingQualityEngine {
   /**
    * 评估正文写作质量。
    *
-   * @param text - 参数
+   * @param text - 文本内容
    * @returns 质量结果
    */
   evaluate(text: string): WritingQualityResult {
@@ -1168,7 +1168,7 @@ export class WritingQualityEngine {
   /**
    * 分数对应的等级。
    *
-   * @param score - 参数
+   * @param score - 分数
    * @returns 等级
    */
   getGrade(score: number): QualityGrade {
@@ -1187,7 +1187,7 @@ export class WritingQualityEngine {
   /**
    * 忽略一条建议。
    *
-   * @param suggestionId - 参数
+   * @param suggestionId - 建议 ID
    */
   ignoreSuggestion(suggestionId: string): void {
     this.ignoredSuggestions.add(suggestionId);
@@ -1196,7 +1196,7 @@ export class WritingQualityEngine {
   /**
    * 取消忽略。
    *
-   * @param suggestionId - 参数
+   * @param suggestionId - 建议 ID
    */
   unignoreSuggestion(suggestionId: string): void {
     this.ignoredSuggestions.delete(suggestionId);
@@ -1293,7 +1293,7 @@ export class WritingQualityEngine {
 /**
  * 等级颜色。
  *
- * @param grade - 参数
+ * @param grade - 等级
  * @returns 颜色
  */
 export function getQualityGradeColor(grade: QualityGrade): string {
@@ -1303,7 +1303,7 @@ export function getQualityGradeColor(grade: QualityGrade): string {
 /**
  * 等级中文名。
  *
- * @param grade - 参数
+ * @param grade - 等级
  * @returns 名称
  */
 export function getQualityGradeLabel(grade: QualityGrade): string {
@@ -1314,7 +1314,7 @@ export function getQualityGradeLabel(grade: QualityGrade): string {
 /**
  * 趋势图标。
  *
- * @param trend - 参数
+ * @param trend - 趋势
  * @returns 图标
  */
 export function getQualityTrendIcon(trend: string): string {
@@ -1329,7 +1329,7 @@ export function getQualityTrendIcon(trend: string): string {
 /**
  * 趋势中文名。
  *
- * @param trend - 参数
+ * @param trend - 趋势
  * @returns 名称
  */
 export function getQualityTrendLabel(trend: string): string {
@@ -1344,7 +1344,7 @@ export function getQualityTrendLabel(trend: string): string {
 /**
  * 优先级颜色。
  *
- * @param priority - 参数
+ * @param priority - 优先级
  * @returns 颜色
  */
 export function getPriorityColor(priority: SuggestionPriority): string {
@@ -1359,7 +1359,7 @@ export function getPriorityColor(priority: SuggestionPriority): string {
 /**
  * 优先级中文名。
  *
- * @param priority - 参数
+ * @param priority - 优先级
  * @returns 名称
  */
 export function getPriorityLabel(priority: SuggestionPriority): string {

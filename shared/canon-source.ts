@@ -62,7 +62,7 @@ const OFFICIAL_WIKI_RE = /(官方\s*wiki|official\s*wiki|官方资料站)/i;
 /**
  * 规范化来源 URL。
  *
- * @param raw - 参数
+ * @param raw - 原始值
  * @returns URL 或 null
  */
 export function normalizeSourceUrl(raw: string): string | null {
@@ -81,7 +81,7 @@ export function normalizeSourceUrl(raw: string): string | null {
 /**
  * 取来源域名。
  *
- * @param url - 参数
+ * @param url - 地址
  * @returns 域名
  */
 export function sourceDomain(url: string): string {
@@ -110,7 +110,7 @@ export function classifyCanonSource(input: Pick<CanonSourceInput, 'url' | 'title
 /**
  * 是否权威来源。
  *
- * @param tier - 参数
+ * @param tier - 层级
  * @returns 布尔值
  */
 export function isAuthoritativeSource(tier: CanonSourceTier): boolean {
@@ -120,8 +120,8 @@ export function isAuthoritativeSource(tier: CanonSourceTier): boolean {
 /**
  * 创建来源记录。
  *
- * @param input - 参数
- * @param index - 参数
+ * @param input - 输入
+ * @param index - 索引
  * @returns 来源
  */
 export function createCanonSource(input: CanonSourceInput, index: number): CanonSource {
@@ -143,7 +143,7 @@ export function createCanonSource(input: CanonSourceInput, index: number): Canon
 /**
  * 计算文本哈希。
  *
- * @param text - 参数
+ * @param text - 文本内容
  * @returns 哈希
  */
 export function hashText(text: string): string {

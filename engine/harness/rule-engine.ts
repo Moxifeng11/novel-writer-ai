@@ -126,7 +126,7 @@ export class RuleEngine {
     /**
      * 编译规则。
      *
-     * @param input - 参数
+     * @param input - 输入
      * @returns 编译结果
      */
     compile(input: RuleEngineInput): CompiledRules {
@@ -165,9 +165,9 @@ export class RuleEngine {
     /**
      * 校验文本是否违规。
      *
-     * @param rules - 参数
-     * @param output - 参数
-     * @param ctx - 参数
+     * @param rules - 规则集
+     * @param output - 输出
+     * @param ctx - 上下文
      * @returns 违规数组
      */
     validate(rules: Rule[], output: string, ctx: RuleValidationContext): RuleViolation[] {

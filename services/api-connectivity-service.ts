@@ -90,7 +90,7 @@ const DEGRADED_LATENCY_MS = 5_000;
 /**
  * 规范化 chat 端点 URL。
  *
- * @param endpoint - 参数
+ * @param endpoint - 接口地址
  * @returns 端点
  */
 export function normalizeChatEndpoint(endpoint: string): string {

@@ -97,7 +97,7 @@ export type PreResearchData = ShortPreResearch | ScriptPreResearch;
 /**
  * 创建默认调研数据。
  *
- * @param mode - 参数
+ * @param mode - 模式
  * @param name = '' - 参数
  * @returns 调研数据
  */

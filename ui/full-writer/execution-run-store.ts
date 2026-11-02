@@ -46,7 +46,7 @@ export class ExecutionRunStore {
     /**
      * 订阅执行账本变化。
      *
-     * @param listener - 参数
+     * @param listener - 监听器
      * @returns 取消订阅函数
      */
     subscribe(listener: (change: ExecutionStoreChange) => void): () => void {
@@ -81,7 +81,7 @@ export class ExecutionRunStore {
     /**
      * 取指定步骤失败。
      *
-     * @param stepKey - 参数
+     * @param stepKey - 步骤键
      * @returns 失败或 undefined
      */
     getFailure(stepKey: string): StepFailure | undefined {
@@ -107,7 +107,7 @@ export class ExecutionRunStore {
     /**
      * 追加时间线事件。
      *
-     * @param input - 参数
+     * @param input - 输入
      */
     addEvent(input: ExecutionEventInput): void {
         const recent = this.events[this.events.length - 1];
@@ -128,7 +128,7 @@ export class ExecutionRunStore {
     /**
      * 追加日志。
      *
-     * @param input - 参数
+     * @param input - 输入
      */
     addLog(input: DiagnosticInput): void {
         this.logs.push({ ...input, id: this.nextId++, at: Date.now() });
@@ -139,7 +139,7 @@ export class ExecutionRunStore {
     /**
      * 记录步骤失败。
      *
-     * @param failure - 参数
+     * @param failure - 失败信息
      */
     recordFailure(failure: StepFailure): void {
         this.failures.set(failure.stepKey, failure);
@@ -166,7 +166,7 @@ export class ExecutionRunStore {
     /**
      * 清除指定失败。
      *
-     * @param stepKey - 参数
+     * @param stepKey - 步骤键
      */
     clearFailure(stepKey: string): void {
         if (!this.failures.delete(stepKey)) return;
@@ -185,7 +185,7 @@ export class ExecutionRunStore {
     /**
      * 设置执行状态。
      *
-     * @param message - 参数
+     * @param message - 消息
      * @param current? - 参数
      * @param total? - 参数
      * @param aiCalls? - 参数

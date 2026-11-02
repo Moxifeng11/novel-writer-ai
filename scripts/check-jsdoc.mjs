@@ -33,6 +33,8 @@ const SKIP_DIRS = new Set(['node_modules', '.git', 'coverage', 'tests', 'scripts
 
 const UPDATE = process.argv.includes('--update-baseline') || process.argv.includes('--init');
 const REPORT = !process.argv.includes('--no-report');
+// 诊断用：列出每个文件仍未注释的符号名，便于分批补注释（不影响门禁结果）。
+const LIST_MISSING = process.argv.includes('--list-missing');
 
 function walk(dir, out = []) {
     if (!fs.existsSync(dir)) return out;
@@ -107,7 +109,15 @@ function isIncomplete(node, doc) {
 function inspectFile(rel) {
     const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
     const source = ts.createSourceFile(rel, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    const stats = { exports: 0, documented: 0, methods: 0, methodsDocumented: 0, incomplete: 0 };
+    const stats = {
+        exports: 0,
+        documented: 0,
+        methods: 0,
+        methodsDocumented: 0,
+        incomplete: 0,
+        missingExports: [],
+        missingMethods: [],
+    };
 
     const visit = (node) => {
         if (isExported(node) && (
@@ -123,6 +133,11 @@ function inspectFile(rel) {
             if (doc) {
                 stats.documented++;
                 if (isIncomplete(node, doc)) stats.incomplete++;
+            } else {
+                const name = ts.isVariableStatement(node)
+                    ? node.declarationList.declarations[0]?.name?.getText?.() ?? ''
+                    : node.name?.getText?.() ?? '';
+                if (name) stats.missingExports.push(name);
             }
         }
 
@@ -138,6 +153,8 @@ function inspectFile(rel) {
                 if (doc) {
                     stats.methodsDocumented++;
                     if (isIncomplete(member, doc)) stats.incomplete++;
+                } else {
+                    stats.missingMethods.push(name);
                 }
             }
         }
@@ -217,12 +234,29 @@ function main() {
     }
     const layers = summarize(files);
 
+    if (LIST_MISSING) {
+        for (const [rel, stats] of Object.entries(files).sort((a, b) => a[0].localeCompare(b[0], 'en'))) {
+            if (stats.missingExports.length === 0 && stats.missingMethods.length === 0) continue;
+            console.log(`${rel}\n  E:${stats.missingExports.join(',')}\n  M:${stats.missingMethods.join(',')}`);
+        }
+    }
+
     if (UPDATE) {
+        const baselineFiles = {};
+        for (const [rel, stats] of Object.entries(files)) {
+            baselineFiles[rel] = {
+                exports: stats.exports,
+                documented: stats.documented,
+                methods: stats.methods,
+                methodsDocumented: stats.methodsDocumented,
+                incomplete: stats.incomplete,
+            };
+        }
         const payload = {
             generatedAt: new Date().toISOString(),
             note: '棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。',
             layers,
-            files,
+            files: baselineFiles,
         };
         fs.writeFileSync(BASELINE_PATH, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
         console.log(`[jsdoc] 已写入基线：${path.relative(ROOT, BASELINE_PATH)}（${Object.keys(files).length} 个文件）`);

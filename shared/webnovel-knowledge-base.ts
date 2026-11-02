@@ -2580,7 +2580,7 @@ export class WebnovelKnowledgeBase {
   /**
    * 新增自定义题材。
    *
-   * @param genre - 参数
+   * @param genre - 题材
    */
   addCustomGenre(genre: GenreConfig): void {
     this.customGenres.set(genre.id, { ...genre, isCustom: true });
@@ -2589,8 +2589,8 @@ export class WebnovelKnowledgeBase {
   /**
    * 更新自定义题材。
    *
-   * @param id - 参数
-   * @param updates - 参数
+   * @param id - 标识
+   * @param updates - 更新字段
    * @returns 是否更新
    */
   updateCustomGenre(id: string, updates: Partial<GenreConfig>): boolean {
@@ -2603,7 +2603,7 @@ export class WebnovelKnowledgeBase {
   /**
    * 删除自定义题材。
    *
-   * @param id - 参数
+   * @param id - 标识
    * @returns 是否删除
    */
   deleteCustomGenre(id: string): boolean {
@@ -2621,7 +2621,7 @@ export class WebnovelKnowledgeBase {
   /**
    * 是否自定义题材。
    *
-   * @param id - 参数
+   * @param id - 标识
    * @returns 布尔值
    */
   isCustomGenre(id: string): boolean {
@@ -2639,7 +2639,7 @@ export class WebnovelKnowledgeBase {
   /**
    * 取题材定义。
    *
-   * @param id - 参数
+   * @param id - 标识
    * @returns 题材或 undefined
    */
   getGenre(id: string): GenreConfig | undefined {
@@ -2668,7 +2668,7 @@ export class WebnovelKnowledgeBase {
   /**
    * 按性别向分类取题材。
    *
-   * @param category - 参数
+   * @param category - 分类
    * @returns 题材数组
    */
   getGenresByCategory(category: 'male' | 'female' | 'neutral'): GenreConfig[] {
@@ -2678,7 +2678,7 @@ export class WebnovelKnowledgeBase {
   /**
    * 读取子题材。
    *
-   * @param genreId - 参数
+   * @param genreId - 题材 ID
    * @returns 子题材数组
    */
   getSubGenres(genreId: string): SubGenreConfig[] {
@@ -2689,8 +2689,8 @@ export class WebnovelKnowledgeBase {
   /**
    * 取子题材。
    *
-   * @param genreId - 参数
-   * @param subGenreId - 参数
+   * @param genreId - 题材 ID
+   * @param subGenreId - 子题材 ID
    * @returns 子题材或 null
    */
   getSubGenre(genreId: string, subGenreId: string): SubGenreConfig | null {
@@ -2710,7 +2710,7 @@ export class WebnovelKnowledgeBase {
   /**
    * 按关键词匹配题材。
    *
-   * @param text - 参数
+   * @param text - 文本内容
    * @returns {genreId,score} 数组
    */
   matchGenreByKeywords(text: string): { genreId: string; score: number }[] {

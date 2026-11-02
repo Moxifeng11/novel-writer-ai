@@ -250,7 +250,7 @@ export class BatchImportManager {
     /**
      * 添加一条导入预览。
      *
-     * @param file - 参数
+     * @param file - 文件
      * @returns 预览对象
      */
     addPreview(file: { filename: string; content: string; source: ImportSource; sourcePath?: string }): ImportBookPreview {
@@ -272,7 +272,7 @@ export class BatchImportManager {
     /**
      * 移除预览。
      *
-     * @param previewId - 参数
+     * @param previewId - 预览 ID
      */
     removePreview(previewId: string): void {
         this.previews.delete(previewId);
@@ -304,8 +304,8 @@ export class BatchImportManager {
     /**
      * 更新预览信息（名称/分类等）。
      *
-     * @param previewId - 参数
-     * @param updates - 参数
+     * @param previewId - 预览 ID
+     * @param updates - 更新字段
      */
     updatePreview(previewId: string, updates: Partial<ImportBookPreview>): void {
         const preview = this.previews.get(previewId);
@@ -317,7 +317,7 @@ export class BatchImportManager {
     /**
      * 更新批量导入设置。
      *
-     * @param settings - 参数
+     * @param settings - 设置
      */
     setSettings(settings: Partial<ImportBatchSettings>): void {
         this.settings = { ...this.settings, ...settings };
@@ -533,7 +533,7 @@ export class BatchImportManager {
     /**
      * 取消任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      */
     cancelTask(taskId: string): void {
         const task = this.tasks.get(taskId);
@@ -558,7 +558,7 @@ export class BatchImportManager {
     /**
      * 暂停任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      */
     pauseTask(taskId: string): void {
         const task = this.tasks.get(taskId);
@@ -574,7 +574,7 @@ export class BatchImportManager {
     /**
      * 恢复任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      */
     resumeTask(taskId: string): void {
         const task = this.tasks.get(taskId);
@@ -590,7 +590,7 @@ export class BatchImportManager {
     /**
      * 重试失败任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      */
     retryTask(taskId: string): void {
         const task = this.tasks.get(taskId);
@@ -611,8 +611,8 @@ export class BatchImportManager {
     /**
      * 调整任务优先级。
      *
-     * @param taskId - 参数
-     * @param priority - 参数
+     * @param taskId - 任务 ID
+     * @param priority - 优先级
      */
     setTaskPriority(taskId: string, priority: number): void {
         const task = this.tasks.get(taskId);
@@ -644,7 +644,7 @@ export class BatchImportManager {
     /**
      * 按 id 取任务。
      *
-     * @param taskId - 参数
+     * @param taskId - 任务 ID
      * @returns 任务或 undefined
      */
     getTask(taskId: string): ImportTask | undefined {
@@ -678,7 +678,7 @@ export class BatchImportManager {
     /**
      * 订阅整体进度。
      *
-     * @param callback - 参数
+     * @param callback - 回调
      * @returns 取消订阅函数
      */
     onProgress(callback: (progress: BatchImportProgress) => void): () => void {
@@ -689,7 +689,7 @@ export class BatchImportManager {
     /**
      * 订阅单任务更新。
      *
-     * @param callback - 参数
+     * @param callback - 回调
      * @returns 取消订阅函数
      */
     onTaskUpdate(callback: (task: ImportTask) => void): () => void {
@@ -729,7 +729,7 @@ export class BatchImportManager {
     /**
      * 按 id 取历史项。
      *
-     * @param historyId - 参数
+     * @param historyId - 历史记录 ID
      * @returns 历史项或 undefined
      */
     getHistoryItem(historyId: string): ImportHistoryItem | undefined {
@@ -747,7 +747,7 @@ export class BatchImportManager {
     /**
      * 从历史重试失败项。
      *
-     * @param historyId - 参数
+     * @param historyId - 历史记录 ID
      */
     retryFailedFromHistory(historyId: string): void {
         const historyItem = this.history.find(h => h.id === historyId);
@@ -773,8 +773,8 @@ export class BatchImportManager {
     /**
      * 保存导入预设。
      *
-     * @param name - 参数
-     * @param settings - 参数
+     * @param name - 名称
+     * @param settings - 设置
      * @returns 预设对象
      */
     savePreset(name: string, settings: ImportBatchSettings): ImportPreset {
@@ -793,7 +793,7 @@ export class BatchImportManager {
     /**
      * 删除预设。
      *
-     * @param presetId - 参数
+     * @param presetId - 预设 ID
      */
     deletePreset(presetId: string): void {
         this.presets = this.presets.filter(p => p.id !== presetId);
@@ -803,7 +803,7 @@ export class BatchImportManager {
     /**
      * 应用预设。
      *
-     * @param presetId - 参数
+     * @param presetId - 预设 ID
      * @returns 是否成功
      */
     applyPreset(presetId: string): boolean {
@@ -816,8 +816,8 @@ export class BatchImportManager {
     /**
      * 更新预设。
      *
-     * @param presetId - 参数
-     * @param updates - 参数
+     * @param presetId - 预设 ID
+     * @param updates - 更新字段
      */
     updatePreset(presetId: string, updates: Partial<ImportPreset>): void {
         const preset = this.presets.find(p => p.id === presetId);

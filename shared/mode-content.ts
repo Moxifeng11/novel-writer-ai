@@ -57,7 +57,7 @@ export interface ModeUnitInfo {
 /**
  * 模式内容根目录名。
  *
- * @param mode - 参数
+ * @param mode - 模式
  * @returns 目录名
  */
 export function modeContentRoot(mode: CreationMode): string {
@@ -79,7 +79,7 @@ export function modeBodyDir(project: string, mode: CreationMode): string {
 /**
  * 模式单元单位名（章/节/集）。
  *
- * @param mode - 参数
+ * @param mode - 模式
  * @returns 单位名
  */
 export function modeUnitLabel(mode: CreationMode): string {
@@ -89,8 +89,8 @@ export function modeUnitLabel(mode: CreationMode): string {
 /**
  * 单元文件名。
  *
- * @param mode - 参数
- * @param number - 参数
+ * @param mode - 模式
+ * @param number - 数值
  * @returns 文件名
  */
 export function modeUnitFileName(mode: CreationMode, number: number): string {
@@ -101,8 +101,8 @@ export function modeUnitFileName(mode: CreationMode, number: number): string {
 /**
  * 单元展示名。
  *
- * @param number - 参数
- * @param mode - 参数
+ * @param number - 数值
+ * @param mode - 模式
  * @returns 展示名
  */
 export function modeUnitDisplay(number: number, mode: CreationMode): string {
@@ -124,7 +124,7 @@ export function modeDocPath(project: string, mode: CreationMode, doc: 'storyCore
 /**
  * 短篇单元骨架。
  *
- * @param number - 参数
+ * @param number - 数值
  * @returns Markdown
  */
 export function buildShortUnitSkeleton(number: number): string {
@@ -151,7 +151,7 @@ word_count: 0
 /**
  * 剧本单元骨架。
  *
- * @param number - 参数
+ * @param number - 数值
  * @returns Markdown
  */
 export function buildScriptUnitSkeleton(number: number): string {
@@ -251,9 +251,9 @@ const SCRIPT_STORYBOARD_STARTER = `# 分镜表
 /**
  * 模式文档初始内容。
  *
- * @param project - 参数
- * @param mode - 参数
- * @param doc - 参数
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @param doc - 文档
  * @returns Markdown
  */
 export function modeDocStarter(project: string, mode: CreationMode, doc: 'storyCore' | 'outline' | 'bible' | 'storyboard'): string {
@@ -366,7 +366,7 @@ export function listModeUnits(app: App, project: string, mode: CreationMode): Mo
 /**
  * 找下一个待写单元。
  *
- * @param units - 参数
+ * @param units - 单元数
  * @returns 单元或 null
  */
 export function findNextModeUnit(units: ModeUnitInfo[]): ModeUnitInfo | null {

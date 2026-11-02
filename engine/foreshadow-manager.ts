@@ -85,7 +85,7 @@ export class ForeshadowManager {
     /**
      * 生成信息债看板。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      */
     async generateInfoDebtBoard(project: string): Promise<void> {
         let unrevealed = 0, revealed = 0, abandoned = 0;
@@ -203,7 +203,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 读取未揭示伏笔。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @returns {items,count}
      */
     async getUnrevealedForeshadows(project: string): Promise<{ items: ForeshadowItem[], count: number }> {
@@ -233,7 +233,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 计算强制揭示项。
      *
-     * @param project - 参数
+     * @param project - 项目（路径或对象）
      * @param currentChapter? - 参数
      * @returns 名称数组
      */
@@ -325,11 +325,11 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 新增伏笔。
      *
-     * @param project - 参数
-     * @param name - 参数
-     * @param chapter - 参数
-     * @param importance - 参数
-     * @param plannedReveal - 参数
+     * @param project - 项目（路径或对象）
+     * @param name - 名称
+     * @param chapter - 章节
+     * @param importance - 重要度
+     * @param plannedReveal - 计划揭示位置
      */
     async addForeshadow(project: string, name: string, chapter: string, importance: string = '中', plannedReveal: string = '待定'): Promise<void> {
         try {
@@ -715,8 +715,8 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 读取逾期伏笔。
      *
-     * @param currentChapter - 参数
-     * @param thresholdChapters - 参数
+     * @param currentChapter - 当前章节
+     * @param thresholdChapters - 阈值章数
      * @returns 伏笔数组
      */
     getOverdueForeshadows(currentChapter: number, thresholdChapters: number = 15): TrackedForeshadowItem[] {
@@ -736,8 +736,8 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 标记伏笔已回收。
      *
-     * @param id - 参数
-     * @param chapter - 参数
+     * @param id - 标识
+     * @param chapter - 章节
      * @param way? - 参数
      */
     markResolved(id: string, chapter: number, way?: string): void {
@@ -755,7 +755,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 新增追踪项。
      *
-     * @param item - 参数
+     * @param item - 条目
      * @returns 追踪项
      */
     addItem(item: Omit<TrackedForeshadowItem, 'id' | 'autoDetected' | 'confidence'>): TrackedForeshadowItem {
@@ -784,7 +784,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 移除追踪项。
      *
-     * @param id - 参数
+     * @param id - 标识
      */
     removeItem(id: string): void {
         if (!this.tracker) return;
@@ -799,8 +799,8 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 更新追踪项。
      *
-     * @param id - 参数
-     * @param updates - 参数
+     * @param id - 标识
+     * @param updates - 更新字段
      */
     updateItem(id: string, updates: Partial<TrackedForeshadowItem>): void {
         if (!this.tracker) return;
@@ -815,7 +815,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 加载追踪器。
      *
-     * @param projectPath - 参数
+     * @param projectPath - 项目路径
      * @returns 追踪器
      */
     async loadTracker(projectPath: string): Promise<ForeshadowTracker> {
@@ -850,7 +850,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 保存追踪器。
      *
-     * @param projectPath - 参数
+     * @param projectPath - 项目路径
      * @param tracker? - 参数
      */
     async saveTracker(projectPath: string, tracker?: ForeshadowTracker): Promise<void> {
@@ -1055,7 +1055,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     /**
      * 设置当前追踪器。
      *
-     * @param tracker - 参数
+     * @param tracker - 追踪器
      */
     setTracker(tracker: ForeshadowTracker): void {
         this.tracker = tracker;
