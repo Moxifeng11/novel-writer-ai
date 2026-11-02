@@ -526,6 +526,16 @@ export class StepRunner {
     // ============================================================
     // 结果持久化（委托给 StepResultSaver）
     // ============================================================
+    /**
+     * 保存步骤结果。
+     *
+     * @param stepKey - 参数
+     * @param content - 参数
+     * @param chapDir - 参数
+     * @param chapterName - 参数
+     * @param volume - 参数
+     * @param meta? - 参数
+     */
     async saveStepResult(
         stepKey: string,
         content: string,
@@ -559,10 +569,24 @@ export class StepRunner {
         };
     }
 
+    /**
+     * 把修正写回正文。
+     *
+     * @param fixContent - 参数
+     * @param chapDir - 参数
+     * @param chapterName - 参数
+     * @param volume - 参数
+     */
     async writeFixToBody(fixContent: string, chapDir: string, chapterName: string, volume: string): Promise<void> {
         return this.resultSaver.writeFixToBody(fixContent, chapDir, chapterName, volume);
     }
 
+    /**
+     * 提取实体名。
+     *
+     * @param project - 参数
+     * @returns 名称数组
+     */
     async getEntityNames(project: string) {
         return this.resultSaver.getEntityNames(project);
     }
@@ -577,6 +601,13 @@ export class StepRunner {
     // ============================================================
     // 弹窗控制器（委托给 StepModalController）
     // ============================================================
+    /**
+     * 执行去 AI 味改写。
+     *
+     * @param stepResults - 参数
+     * @param renderInContainer - 参数
+     * @returns 结果
+     */
     async executeDeaiRewrite(
         stepResults: Record<string, string>,
         renderInContainer: (container: HTMLElement) => Promise<void>,
@@ -590,6 +621,15 @@ export class StepRunner {
         return this.modalController.executeDeaiRewrite(stepResults, renderInContainer, tabContent, setIsLoading, chapDir, chapterName, volume, stepCompleted);
     }
 
+    /**
+     * 执行迭代精修。
+     *
+     * @param stepResults - 参数
+     * @param vars - 参数
+     * @param chapterNum - 参数
+     * @param buildTemplateVars - 参数
+     * @returns 结果
+     */
     async executeIterativeRefine(
         stepResults: Record<string, string>,
         vars: Record<string, string>,
@@ -606,6 +646,12 @@ export class StepRunner {
         return this.modalController.executeIterativeRefine(stepResults, vars, chapterNum, buildTemplateVars, renderInContainer, tabContent, setIsLoading, chapDir, chapterName, volume, stepCompleted);
     }
 
+    /**
+     * 创建步骤浮层。
+     *
+     * @param tabContent - 参数
+     * @returns 元素
+     */
     createStepOverlay(tabContent: HTMLElement): { overlay: HTMLElement; panel: HTMLElement } {
         return this.modalController.createStepOverlay(tabContent);
     }
@@ -732,14 +778,23 @@ export class StepRunner {
         this.callbacks.showSuccess(`定向修订完成：${changed || '已更新正文'}（${issues.length} 条问题，单次调用，${result.durationMs}ms）`);
     }
 
+    /**
+     * 注入去 AI 样式。
+     */
     injectDeaiModalStyles(): void {
         this.modalController.injectDeaiModalStyles();
     }
 
+    /**
+     * 注入精修样式。
+     */
     injectRefineModalStyles(): void {
         this.modalController.injectRefineModalStyles();
     }
 
+    /**
+     * 注入轮次选择样式。
+     */
     injectRoundSelectStyles(): void {
         this.modalController.injectRoundSelectStyles();
     }
@@ -1617,6 +1672,15 @@ export class StepRunner {
         }
     }
 
+    /**
+     * 顺序执行步骤。
+     *
+     * @param stepKeys - 参数
+     * @param baseCtx - 参数
+     * @param options? - 参数
+     * @param error - 参数
+     * @returns 结果
+     */
     async executeStepsSequential(
         stepKeys: string[],
         baseCtx: StepRunCtx,
@@ -1664,6 +1728,13 @@ export class StepRunner {
         ctx.userPromptEl.value = fillTemplate(template.userPrompt, vars);
     }
 
+    /**
+     * 执行合并规划。
+     *
+     * @param ctx - 参数
+     * @param options - 参数
+     * @returns 结果
+     */
     async executePlanningCombined(
         ctx: StepRunCtx,
         options: { signal?: AbortSignal; force?: boolean } = {},

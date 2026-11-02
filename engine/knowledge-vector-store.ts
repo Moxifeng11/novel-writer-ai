@@ -19,6 +19,9 @@ import { extractKeywordTokens, keywordOverlapRatio } from '../shared/keyword-tok
 
 const log = createLogger('KnowledgeVectorStore');
 
+/**
+ * 知识向量样本。
+ */
 export interface KnowledgeVectorSample {
     id: string;
     bookId: string;
@@ -30,6 +33,9 @@ export interface KnowledgeVectorSample {
     position?: number;
 }
 
+/**
+ * 知识检索结果。
+ */
 export interface KnowledgeSearchResult {
     sample: string;
     bookId: string;
@@ -69,6 +75,9 @@ interface KnowledgeVectorIndex {
     }>;
 }
 
+/**
+ * 向量库选项。
+ */
 export interface KnowledgeVectorStoreOptions {
     /**
      * 判断书籍是否仍在知识库中。
@@ -79,6 +88,9 @@ export interface KnowledgeVectorStoreOptions {
     isBookAlive?: (bookId: string) => boolean | undefined | Promise<boolean | undefined>;
 }
 
+/**
+ * 知识库向量存储。
+ */
 export class KnowledgeVectorStore {
     /**
      * 状态锁：加载（reloadIfChanged）与所有写操作共用同一把锁。
@@ -174,6 +186,9 @@ export class KnowledgeVectorStore {
         return [...this.modelMismatches];
     }
 
+    /**
+     * 初始化向量索引。
+     */
     async init(): Promise<void> {
         await this.reloadIfChanged();
     }
@@ -429,6 +444,13 @@ export class KnowledgeVectorStore {
         }
     }
 
+    /**
+     * 添加书籍样本。
+     *
+     * @param bookId - 参数
+     * @param bookName - 参数
+     * @param samples - 参数
+     */
     async addBookSamples(
         bookId: string,
         bookName: string,
@@ -490,6 +512,11 @@ export class KnowledgeVectorStore {
         return result;
     }
 
+    /**
+     * 移除书籍样本。
+     *
+     * @param bookId - 参数
+     */
     async removeBook(bookId: string): Promise<void> {
         await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
             await this.reloadIfChanged();
@@ -500,6 +527,12 @@ export class KnowledgeVectorStore {
         });
     }
 
+    /**
+     * 更新书籍样本。
+     *
+     * @param bookId - 参数
+     * @param samples - 参数
+     */
     async updateBookSamples(bookId: string, samples: KnowledgeVectorSample[]): Promise<void> {
         await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
             await this.reloadIfChanged();
@@ -510,6 +543,9 @@ export class KnowledgeVectorStore {
         });
     }
 
+    /**
+     * 清空索引。
+     */
     async clear(): Promise<void> {
         await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
             await this.reloadIfChanged();
@@ -524,6 +560,13 @@ export class KnowledgeVectorStore {
         });
     }
 
+    /**
+     * 检索相似样本。
+     *
+     * @param query - 参数
+     * @param options? - 参数
+     * @returns 结果数组
+     */
     async search(
         query: string,
         options?: {
@@ -613,6 +656,10 @@ export class KnowledgeVectorStore {
         }
     }
 
+    /**
+     * 重建索引。
+     * @returns 重建统计
+     */
     async rebuildIndex(): Promise<void> {
         await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
             await this.reloadIfChanged();

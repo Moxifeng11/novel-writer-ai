@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 123192 | 1532 | 689 | 45% |
+| `engine/` | 289 | 123640 | 1532 | 715 | 47% |
 | `services/` | 28 | 10575 | 151 | 75 | 50% |
-| `shared/` | 164 | 33247 | 1512 | 640 | 42% |
+| `shared/` | 164 | 33277 | 1512 | 646 | 43% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 93782 | 500 | 149 | 30% |
+| `ui/` | 191 | 93791 | 500 | 152 | 30% |
 
 ## 文件清单
 
@@ -75,7 +75,7 @@
 | `engine/beat-verifier.ts` | 64 | 3 | 1 |
 | `engine/body-writer.ts` | 444 | 8 | 1 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
-| `engine/cache/preload-manager.ts` | 616 | 6 | 6 |
+| `engine/cache/preload-manager.ts` | 657 | 6 | 6 |
 | `engine/chapter-brief.ts` | 288 | 9 | 3 |
 | `engine/chapter-context-builder.ts` | 132 | 3 | 3 |
 | `engine/chapter-snapshot-builder.ts` | 141 | 2 | 1 |
@@ -86,7 +86,7 @@
 | `engine/character-context.ts` | 39 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 448 | 1 | 0 |
 | `engine/character-soul.ts` | 243 | 10 | 6 |
-| `engine/co-writer-engine.ts` | 3711 | 9 | 4 |
+| `engine/co-writer-engine.ts` | 3786 | 9 | 5 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/co-writer-types.ts` | 89 | 6 | 0 |
 | `engine/co-writer/create-session-store.ts` | 243 | 4 | 2 |
@@ -112,7 +112,7 @@
 | `engine/deconstructors/character-deconstructor.ts` | 4028 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2019 | 5 | 5 |
 | `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
-| `engine/deconstructors/foreshadow-deconstructor.ts` | 3917 | 17 | 17 |
+| `engine/deconstructors/foreshadow-deconstructor.ts` | 3987 | 17 | 17 |
 | `engine/deconstructors/readability-deconstructor.ts` | 975 | 7 | 7 |
 | `engine/deconstructors/rhythm-deconstructor.ts` | 2834 | 21 | 21 |
 | `engine/deconstructors/structure-deconstructor.ts` | 1848 | 12 | 12 |
@@ -161,20 +161,20 @@
 | `engine/harness/creative-randomizer.ts` | 143 | 4 | 0 |
 | `engine/harness/domain-profile.ts` | 48 | 3 | 0 |
 | `engine/harness/long-novel-tasks.ts` | 248 | 5 | 0 |
-| `engine/harness/rule-engine.ts` | 148 | 8 | 0 |
+| `engine/harness/rule-engine.ts` | 186 | 8 | 8 |
 | `engine/harness/single-call-runner.ts` | 196 | 7 | 0 |
 | `engine/harness/structured-output.ts` | 91 | 6 | 1 |
 | `engine/harness/tool-registry.ts` | 141 | 6 | 5 |
-| `engine/harness/trend-research-service.ts` | 158 | 8 | 0 |
+| `engine/harness/trend-research-service.ts` | 190 | 8 | 6 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
-| `engine/heavy-task-worker-manager.ts` | 284 | 2 | 0 |
+| `engine/heavy-task-worker-manager.ts` | 337 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1666 | 3 | 0 |
 | `engine/knowledge-base-config.ts` | 494 | 5 | 0 |
 | `engine/knowledge-injector.ts` | 2078 | 13 | 0 |
 | `engine/knowledge-tags.ts` | 617 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 321 | 1 | 0 |
 | `engine/knowledge-usage.ts` | 65 | 3 | 0 |
-| `engine/knowledge-vector-store.ts` | 663 | 5 | 0 |
+| `engine/knowledge-vector-store.ts` | 710 | 5 | 4 |
 | `engine/llm-enhancer.ts` | 619 | 7 | 1 |
 | `engine/llm-prompts.ts` | 329 | 7 | 3 |
 | `engine/local-vector-store.ts` | 296 | 3 | 0 |
@@ -285,7 +285,7 @@
 | `engine/step-result-saver.ts` | 534 | 5 | 1 |
 | `engine/step-runner-callbacks.ts` | 121 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 190 | 6 | 2 |
-| `engine/step-runner.ts` | 1869 | 2 | 1 |
+| `engine/step-runner.ts` | 1940 | 2 | 1 |
 | `engine/step-sequential.ts` | 102 | 4 | 0 |
 | `engine/step-settlement.ts` | 144 | 2 | 1 |
 | `engine/step-specials.ts` | 224 | 5 | 0 |
@@ -314,7 +314,7 @@
 | `engine/style/v2-quantitative-extractor.ts` | 147 | 2 | 2 |
 | `engine/suggestion-manager.ts` | 276 | 1 | 0 |
 | `engine/template-service.ts` | 798 | 2 | 2 |
-| `engine/text-segmenter.ts` | 464 | 10 | 1 |
+| `engine/text-segmenter.ts` | 485 | 10 | 6 |
 | `engine/token-bucket-rate-limiter.ts` | 245 | 3 | 1 |
 | `engine/types/analysis-session.ts` | 109 | 8 | 8 |
 | `engine/types/analysis-suggestion.ts` | 71 | 8 | 0 |
@@ -434,7 +434,7 @@
 | `shared/mode-unit-outline.ts` | 77 | 2 | 1 |
 | `shared/model-capabilities.ts` | 147 | 11 | 5 |
 | `shared/model-source.ts` | 41 | 3 | 1 |
-| `shared/multi-layer-cache.ts` | 507 | 6 | 0 |
+| `shared/multi-layer-cache.ts` | 537 | 6 | 6 |
 | `shared/novel-format.ts` | 263 | 12 | 1 |
 | `shared/paths.ts` | 1080 | 189 | 119 |
 | `shared/plot-eval-throttle.ts` | 80 | 5 | 0 |
@@ -695,7 +695,7 @@
 | `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
 | `ui/views/knowledge-base-view.ts` | 3733 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 59 | 6 | 0 |
-| `ui/views/writing-fingerprint-view.ts` | 1872 | 3 | 0 |
+| `ui/views/writing-fingerprint-view.ts` | 1881 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 496 | 1 | 0 |
 | `ui/welcome-modal.ts` | 209 | 1 | 0 |
 | `ui/wizard-checker.ts` | 542 | 2 | 0 |

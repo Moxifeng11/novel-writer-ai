@@ -1290,6 +1290,11 @@ export class ForeshadowDeconstructor {
         this.configManager = configManager;
     }
 
+    /**
+     * 注入伏笔配置管理器。
+     *
+     * @param configManager - 参数
+     */
     setConfigManager(configManager: ForeshadowConfigManager): void {
         this.configManager = configManager;
     }
@@ -1302,6 +1307,12 @@ export class ForeshadowDeconstructor {
         this.llmEnhancer = llmEnhancer;
     }
 
+    /**
+     * 分析伏笔。
+     *
+     * @param text - 参数
+     * @returns 分析结果
+     */
     async analyze(text: string): Promise<ForeshadowAnalysisResult> {
         if (!text || text.length === 0) {
             return this.getEmptyResult();
@@ -1481,6 +1492,12 @@ export class ForeshadowDeconstructor {
         return totalChecks > 0 ? Math.max(0, nounScore / totalChecks) : 0.5;
     }
 
+    /**
+     * 带向量增强的伏笔分析。
+     *
+     * @param text - 参数
+     * @returns 分析结果
+     */
     async analyzeWithVector(text: string): Promise<ForeshadowAnalysisResult> {
         const baseResult = await this.analyze(text);
         await yieldToUI();
@@ -1744,6 +1761,11 @@ export class ForeshadowDeconstructor {
         };
     }
 
+    /**
+     * 保存伏笔到 Markdown。
+     *
+     * @param app - 参数
+     */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,
@@ -1764,6 +1786,11 @@ export class ForeshadowDeconstructor {
         await app.vault.adapter.write(filePath, content);
     }
 
+    /**
+     * 保存分析到 Markdown。
+     *
+     * @param app - 参数
+     */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,
@@ -2922,6 +2949,12 @@ export class ForeshadowDeconstructor {
 
     // ==================== 增强：伏笔配对引擎 ====================
 
+    /**
+     * 增强伏笔配对。
+     *
+     * @param result - 参数
+     * @returns 配对结果
+     */
     enhanceForeshadowPairs(result: ForeshadowAnalysisResult): ForeshadowPair[] {
         const { foreshadows } = result;
         const pairs: ForeshadowPair[] = [];
@@ -3062,6 +3095,13 @@ export class ForeshadowDeconstructor {
 
     // ==================== 增强：回收质量分析 ====================
 
+    /**
+     * 分析回收质量。
+     *
+     * @param setup - 参数
+     * @param payoff - 参数
+     * @returns 结果
+     */
     analyzeResolutionQuality(setup: Foreshadow | undefined, payoff: Foreshadow): ResolutionQuality {
         const suggestions: string[] = [];
 
@@ -3212,6 +3252,12 @@ export class ForeshadowDeconstructor {
 
     // ==================== 增强：伏笔网络分析 ====================
 
+    /**
+     * 分析伏笔网络。
+     *
+     * @param result - 参数
+     * @returns 网络结果
+     */
     analyzeForeshadowNetwork(result: ForeshadowAnalysisResult): ForeshadowNetworkAnalysis {
         const { foreshadows, timeline } = result;
 
@@ -3423,6 +3469,12 @@ export class ForeshadowDeconstructor {
 
     // ==================== 增强：未回收伏笔追踪 ====================
 
+    /**
+     * 追踪未回收伏笔。
+     *
+     * @param result - 参数
+     * @returns 追踪结果
+     */
     trackUnresolvedForeshadows(result: ForeshadowAnalysisResult): UnresolvedTracker {
         const { foreshadows } = result;
         const totalChapters = 20;
@@ -3526,6 +3578,12 @@ export class ForeshadowDeconstructor {
 
     // ==================== 增强：综合分析方法 ====================
 
+    /**
+     * 增强分析结果。
+     *
+     * @param result - 参数
+     * @returns 结果
+     */
     async enhanceAnalysis(result: ForeshadowAnalysisResult): Promise<EnhancedForeshadowAnalysis> {
         const pairs = this.enhanceForeshadowPairs(result);
         const networkAnalysis = this.analyzeForeshadowNetwork(result);
@@ -3561,6 +3619,12 @@ export class ForeshadowDeconstructor {
 
     // ==================== 增强：世界观设定提取 ====================
 
+    /**
+     * 抽取世界观设定。
+     *
+     * @param text - 参数
+     * @returns 结果
+     */
     extractWorldbuilding(text: string): WorldbuildingResult {
         if (!text || text.length === 0) {
             return this.getEmptyWorldbuildingResult();
@@ -3727,6 +3791,12 @@ export class ForeshadowDeconstructor {
 
     // ==================== 增强：设定植入密度分析 ====================
 
+    /**
+     * 分析设定密度。
+     *
+     * @param text - 参数
+     * @returns 结果
+     */
     async analyzeSettingDensity(text: string): Promise<SettingDensityResult> {
         if (!text || text.length === 0) {
             return this.getEmptySettingDensityResult();

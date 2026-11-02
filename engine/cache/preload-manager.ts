@@ -143,6 +143,11 @@ export class PreloadManager {
     // 配置与生命周期
     // ============================================================
 
+    /**
+     * 更新预加载选项。
+     *
+     * @param options - 参数
+     */
     setOptions(options: Partial<PreloadManagerOptions>): void {
         this.options = { ...this.options, ...options };
         if (options.chapterCacheSize !== undefined) {
@@ -150,24 +155,43 @@ export class PreloadManager {
         }
     }
 
+    /**
+     * 读取预加载选项。
+     * @returns 选项
+     */
     getOptions(): PreloadManagerOptions {
         return { ...this.options };
     }
 
+    /**
+     * 启用预加载。
+     */
     enable(): void {
         this.options.enabled = true;
         this.startIdleProcessor();
     }
 
+    /**
+     * 停用预加载。
+     */
     disable(): void {
         this.options.enabled = false;
         this.stopIdleProcessor();
     }
 
+    /**
+     * 是否启用。
+     * @returns 布尔值
+     */
     isEnabled(): boolean {
         return this.options.enabled;
     }
 
+    /**
+     * 注入章节仓储。
+     *
+     * @param repo - 参数
+     */
     setChapterRepository(repo: ChapterRepository): void {
         this.chapterRepository = repo;
     }
@@ -572,10 +596,18 @@ export class PreloadManager {
     // 统计与诊断
     // ============================================================
 
+    /**
+     * 读取统计。
+     * @returns 统计
+     */
     getStats(): PreloadStats {
         return { ...this.stats };
     }
 
+    /**
+     * 章节缓存统计。
+     * @returns 统计
+     */
     getChapterCacheStats(): { size: number; maxSize: number; hitRate: number } {
         const total = this.stats.chapterCacheHits + this.stats.chapterCacheMisses;
         return {
@@ -585,6 +617,12 @@ export class PreloadManager {
         };
     }
 
+    /**
+     * 实体缓存统计。
+     *
+     * @param entityType - 参数
+     * @returns 统计
+     */
     getEntityCacheStats(entityType: string): { size: number; hitRate: number } | null {
         const cache = this.entityCaches.get(entityType);
         if (!cache) return null;
@@ -596,6 +634,9 @@ export class PreloadManager {
         };
     }
 
+    /**
+     * 重置统计。
+     */
     resetStats(): void {
         this.stats = {
             chapterCacheHits: 0,

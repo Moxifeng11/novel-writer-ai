@@ -158,6 +158,9 @@ const MAX_INTERACTION_HISTORY = 200;
 /** 把结构化写作规则渲染成可读文本（实现见 `prompts/writing-rules-format.ts`） */
 export { formatWritingRulesForPrompt } from './prompts/writing-rules-format';
 
+/**
+ * 协同写作引擎：建议/改写/校验/记忆。
+ */
 export class CoWriterEngine {
     private app: App;
     private aiEngine: AIEngine;
@@ -548,6 +551,14 @@ export class CoWriterEngine {
             ?? EmbeddingProviderFactory.fromSettings(this.aiEngine.getPlugin()?.settings);
     }
 
+    /**
+     * 初始化协同会话（项目/章节/卷/章号）。
+     *
+     * @param project - 参数
+     * @param chapterName - 参数
+     * @param volume - 参数
+     * @param chapterNum - 参数
+     */
     async init(
         project: string,
         chapterName: string,
@@ -921,6 +932,17 @@ export class CoWriterEngine {
     // 核心 API 1：生成 3 条建议（含方向标记）
     // ============================================================
 
+    /**
+     * 生成下一句建议。
+     *
+     * @param precedingText - 参数
+     * @param cursorHint - 参数
+     * @param mode - 参数
+     * @param count - 参数
+     * @param signal? - 参数
+     * @param onChunk? - 参数
+     * @returns 建议结果
+     */
     async suggestNext(
         precedingText: string,
         cursorHint: string = '',
@@ -1632,6 +1654,17 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         return sanitizeStoryText(accumulated);
     }
 
+    /**
+     * 定向改写选中文本。
+     *
+     * @param selectedText - 参数
+     * @param beforeContext - 参数
+     * @param afterContext - 参数
+     * @param cursorHint - 参数
+     * @param count - 参数
+     * @param onChunk? - 参数
+     * @returns 改写结果
+     */
     async rewriteSelection(
         selectedText: string,
         beforeContext: string,
@@ -1755,6 +1788,16 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         return suggestions.map(sg => this.annotateSuggestionRisk(sg));
     }
 
+    /**
+     * 迭代精修建议。
+     *
+     * @param originalSuggestion - 参数
+     * @param instruction - 参数
+     * @param precedingContext - 参数
+     * @param cursorHint - 参数
+     * @param signal? - 参数
+     * @returns 迭代结果
+     */
     async iterateSuggestion(
         originalSuggestion: SuggestionRecord,
         instruction: string,
@@ -1844,6 +1887,15 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 核心 API 2：验证用户编辑
     // ============================================================
 
+    /**
+     * 校验编辑是否可采纳。
+     *
+     * @param modifiedText - 参数
+     * @param originalSuggestion - 参数
+     * @param precedingContext - 参数
+     * @param signal? - 参数
+     * @returns 校验结果
+     */
     async validateEdit(
         modifiedText: string,
         originalSuggestion: SuggestionRecord,
@@ -2080,6 +2132,13 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         };
     }
 
+    /**
+     * 记录显式写作偏好。
+     *
+     * @param category - 参数
+     * @param key - 参数
+     * @param value - 参数
+     */
     async addExplicitPreference(
         category: Parameters<PreferenceMemory['recordPreference']>[0],
         key: string,
@@ -2630,6 +2689,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     }
 
     // D3：跨章节剧情冗余度检查（只读当前项目/当前卷前 10 章）
+    /**
+     * 检查情节冗余。
+     *
+     * @param body - 参数
+     * @returns 检查结果
+     */
     async checkPlotRedundancy(body: string): Promise<PlotRedundancyReport> {
         if (!this.session) {
             return analyzePlotRedundancy(body, []);
@@ -2649,6 +2714,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // ============================================================
 
     // 为单条建议标注 riskLevel / riskWarnings，不修改文本本身
+    /**
+     * 标注建议风险。
+     *
+     * @param suggestion - 参数
+     * @returns 标注结果
+     */
     annotateSuggestionRisk(suggestion: SuggestionRecord): SuggestionRecord {
         try {
             const warnings: string[] = [];
@@ -2984,6 +3055,10 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         return { system: systemPrompt, user: userParts.join('\n') };
     }
     // D2: 跨卷一致性——注入前面卷的状态快照（人物/势力/伏笔/时间线）
+    /**
+     * 取跨卷上下文提示词片段。
+     * @returns 片段数组
+     */
     getCrossVolumePromptParts(): string[] {
         const ctx = (this.snapshot?.crossVolumeContext || '').trim();
         if (!ctx) return [];

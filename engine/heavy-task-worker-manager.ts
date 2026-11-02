@@ -13,6 +13,9 @@ import { PlotDivergenceEngine } from './plot-divergence-engine';
 
 const log = createLogger('HeavyTaskWorkerManager');
 
+/**
+ * 重任务 Worker 管理器选项。
+ */
 export interface HeavyTaskWorkerManagerOptions {
     maxWorkers?: number;
     useWorker?: boolean;
@@ -24,6 +27,9 @@ interface CancelablePromise<T> extends Promise<T> {
     cancel: () => void;
 }
 
+/**
+ * 重任务 Worker 管理器。
+ */
 export class HeavyTaskWorkerManager {
     private workerManager: WorkerManager | null = null;
     private useWorkerMode: boolean = false;
@@ -152,6 +158,13 @@ export class HeavyTaskWorkerManager {
         });
     }
 
+    /**
+     * 文风拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 结果
+     */
     analyzeStyle(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -159,6 +172,13 @@ export class HeavyTaskWorkerManager {
         return this.executeTask('style:analyze', { text }, onProgress);
     }
 
+    /**
+     * 带向量增强的文风拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 结果
+     */
     analyzeStyleWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -166,6 +186,13 @@ export class HeavyTaskWorkerManager {
         return this.executeTask('style:analyze:vector', { text }, onProgress);
     }
 
+    /**
+     * 文风拆解 v2。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 结果
+     */
     analyzeStyleV2(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -173,6 +200,14 @@ export class HeavyTaskWorkerManager {
         return this.executeTask('style:analyze:v2', { text }, onProgress);
     }
 
+    /**
+     * 质量评估。
+     *
+     * @param text - 参数
+     * @param context - 参数
+     * @param onProgress? - 参数
+     * @returns 结果
+     */
     evaluateQuality(
         text: string,
         context: EvaluationContext,
@@ -181,6 +216,14 @@ export class HeavyTaskWorkerManager {
         return this.executeTask('quality:evaluate', { text, context }, onProgress);
     }
 
+    /**
+     * 偏离检测。
+     *
+     * @param text - 参数
+     * @param context - 参数
+     * @param onProgress? - 参数
+     * @returns 结果
+     */
     detectDeviation(
         text: string,
         context: DeviationContext,
@@ -252,16 +295,26 @@ export class HeavyTaskWorkerManager {
         return promise;
     }
 
+    /**
+     * Worker 是否可用。
+     * @returns 布尔值
+     */
     isWorkerAvailable(): boolean {
         return this.useWorkerMode && this.workerManager?.isWorkerAvailable() === true;
     }
 
+    /**
+     * 取消全部任务。
+     */
     cancelAll(): void {
         if (this.workerManager) {
             this.workerManager.cancelAll();
         }
     }
 
+    /**
+     * 销毁管理器。
+     */
     destroy(): void {
         if (this.destroyed) return;
         this.destroyed = true;

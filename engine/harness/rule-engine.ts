@@ -6,15 +6,27 @@
  */
 import type { CreationMode } from '../../shared/creation-mode';
 
+/**
+ * 规则作用域。
+ */
 export type RuleScope = 'global' | 'planning' | 'body' | 'quality' | 'analysis';
+/**
+ * 规则严重度。
+ */
 export type RuleSeverity = 'must' | 'should' | 'hint';
 
+/**
+ * 规则违规。
+ */
 export interface RuleViolation {
     ruleId: string;
     severity: RuleSeverity;
     message: string;
 }
 
+/**
+ * 规则定义。
+ */
 export interface Rule {
     id: string;
     mode: CreationMode | 'all';
@@ -25,6 +37,9 @@ export interface Rule {
     validate?: (output: string, ctx: RuleValidationContext) => RuleViolation | RuleViolation[] | null;
 }
 
+/**
+ * 规则校验上下文。
+ */
 export interface RuleValidationContext {
     mode: CreationMode;
     scope: RuleScope;
@@ -32,11 +47,17 @@ export interface RuleValidationContext {
     unitLabel?: string;
 }
 
+/**
+ * 编译后的规则集。
+ */
 export interface CompiledRules {
     rules: Rule[];
     promptBlock: string;
 }
 
+/**
+ * 规则引擎输入。
+ */
 export interface RuleEngineInput {
     mode: CreationMode;
     scope: RuleScope;
@@ -98,7 +119,16 @@ const DEFAULT_META_RULE: Rule = {
     },
 };
 
+/**
+ * 规则引擎。
+ */
 export class RuleEngine {
+    /**
+     * 编译规则。
+     *
+     * @param input - 参数
+     * @returns 编译结果
+     */
     compile(input: RuleEngineInput): CompiledRules {
         const rules: Rule[] = [...(input.extraRules || [])];
         if (input.scope === 'body') {
@@ -132,6 +162,14 @@ export class RuleEngine {
         return { rules, promptBlock };
     }
 
+    /**
+     * 校验文本是否违规。
+     *
+     * @param rules - 参数
+     * @param output - 参数
+     * @param ctx - 参数
+     * @returns 违规数组
+     */
     validate(rules: Rule[], output: string, ctx: RuleValidationContext): RuleViolation[] {
         const violations: RuleViolation[] = [];
         for (const rule of rules) {

@@ -6,28 +6,17 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 1010 | 67% | 1253 | 919 | 73% | 745 |
+| `engine/` | 271 | 1508 | 1036 | 69% | 1253 | 981 | 78% | 751 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 149 | 74% | 66 |
-| `shared/` | 163 | 1517 | 1156 | 76% | 149 | 135 | 91% | 457 |
-| `ui/` | 189 | 493 | 222 | 45% | 632 | 344 | 54% | 163 |
+| `shared/` | 163 | 1517 | 1162 | 77% | 149 | 138 | 93% | 457 |
+| `ui/` | 189 | 493 | 225 | 46% | 632 | 344 | 54% | 163 |
 
 ## 缺口最大的文件（按未注释导出数）
 
 | 文件 | 导出 | 未注释 | 公开方法 | 未注释 |
 |---|---:|---:|---:|---:|
-| `engine/co-writer-engine.ts` | 8 | 4 | 45 | 10 |
-| `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 0 | 15 | 13 |
 | `shared/story-structure.ts` | 23 | 12 | 0 | 0 |
-| `engine/knowledge-vector-store.ts` | 5 | 4 | 13 | 7 |
-| `engine/step-runner.ts` | 1 | 0 | 17 | 11 |
-| `shared/multi-layer-cache.ts` | 6 | 6 | 16 | 5 |
-| `ui/views/writing-fingerprint-view.ts` | 3 | 3 | 8 | 8 |
-| `engine/cache/preload-manager.ts` | 6 | 0 | 25 | 10 |
-| `engine/harness/rule-engine.ts` | 8 | 8 | 2 | 2 |
-| `engine/harness/trend-research-service.ts` | 8 | 8 | 2 | 2 |
-| `engine/heavy-task-worker-manager.ts` | 2 | 2 | 9 | 8 |
 | `engine/style-vector-store.ts` | 11 | 10 | 17 | 0 |
-| `engine/text-segmenter.ts` | 10 | 9 | 2 | 1 |
 | `services/checkpoint-manager.ts` | 4 | 4 | 6 | 6 |
 | `shared/content-classifier.ts` | 11 | 10 | 0 | 0 |
 | `ui/full-writer/execution-panels.ts` | 4 | 4 | 6 | 6 |
@@ -45,3 +34,14 @@
 | `engine/token-bucket-rate-limiter.ts` | 3 | 2 | 7 | 7 |
 | `services/chapter-recognizer.ts` | 5 | 4 | 5 | 5 |
 | `services/worldview-cache-service.ts` | 4 | 4 | 18 | 5 |
+| `shared/entity-field-mappings.ts` | 10 | 9 | 0 | 0 |
+| `ui/co-write-floating-panel.ts` | 2 | 2 | 8 | 7 |
+| `ui/full-writer/tab-controller.ts` | 2 | 2 | 7 | 7 |
+| `engine/agent/dsh/dsh-session.ts` | 7 | 6 | 5 | 2 |
+| `engine/ai-chapter-helpers.ts` | 1 | 1 | 7 | 7 |
+| `engine/ai-engine.ts` | 2 | 2 | 33 | 6 |
+| `engine/ai-worldview-generator.ts` | 2 | 1 | 7 | 7 |
+| `engine/anti-ai-detector.ts` | 6 | 6 | 7 | 2 |
+| `engine/embedding/ollama-provider.ts` | 2 | 0 | 8 | 8 |
+| `engine/engine-registry.ts` | 13 | 1 | 34 | 7 |
+| `engine/foreshadow-manager.ts` | 8 | 6 | 18 | 2 |

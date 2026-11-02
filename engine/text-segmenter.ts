@@ -13,6 +13,9 @@
 import { yieldToUI } from '../shared/yield';
 import { countCjkAndWords, countPlatformWords, countTotalChars as sharedTotalChars, countCjkChars } from '../shared/word-count';
 
+/**
+ * 文本分段。
+ */
 export interface TextSegment {
     index: number;
     text: string;
@@ -26,6 +29,9 @@ export interface TextSegment {
     overlapWithPrev?: string;
 }
 
+/**
+ * 分段选项。
+ */
 export interface SegmentOptions {
     maxSegmentWords?: number;
     minSegmentWords?: number;
@@ -49,6 +55,9 @@ const CHAPTER_PATTERNS = [
     /^\d+\s*[.、]\s*.{2,}/m,
 ];
 
+/**
+ * 预处理结果。
+ */
 export interface PreprocessResult {
     text: string;
     isEmpty: boolean;
@@ -112,6 +121,9 @@ export function extractKeyEntities(text: string): string[] {
     return [...entities];
 }
 
+/**
+ * 文本分段器。
+ */
 export class TextSegmenter {
     private options: Required<SegmentOptions>;
 
@@ -119,6 +131,12 @@ export class TextSegmenter {
         this.options = { ...DEFAULT_OPTIONS, ...options };
     }
 
+    /**
+     * 分段。
+     *
+     * @param rawText - 参数
+     * @returns 分段数组
+     */
     async segment(rawText: string): Promise<TextSegment[]> {
         const text = normalizeText(rawText);
         if (!text || text.trim().length === 0) {
@@ -447,6 +465,9 @@ export function countTotalChars(text: string): number {
     return sharedTotalChars(text);
 }
 
+/**
+ * 字数统计口径。
+ */
 export type WordCountMode = 'total' | 'chinese_only' | 'platform';
 
 export function countWords(text: string, mode: WordCountMode = 'platform'): number {

@@ -25,6 +25,9 @@ import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '../k
 
 
 const log = createLogger('WritingFingerprintView');
+/**
+ * 写作指纹视图类型。
+ */
 export const VIEW_TYPE_WRITING_FINGERPRINT = 'novel-writer-writing-fingerprint';
 
 type FingerprintScope = 'template' | 'global' | 'project';
@@ -47,6 +50,9 @@ const SCOPE_ICONS: Record<FingerprintScope, string> = {
     project: '📁',
 };
 
+/**
+ * 写作指纹视图。
+ */
 export class WritingFingerprintView extends ItemView {
     plugin: NovelWriterPlugin;
     fingerprintLibrary: StyleFingerprintLibrary | null = null;
@@ -1674,6 +1680,9 @@ class EditFingerprintModal extends Modal {
     }
 }
 
+/**
+ * 从章节抽取指纹弹窗。
+ */
 export class ExtractFromChaptersModal extends Modal {
     private chapters: string[];
     private selectedChapters: Set<string> = new Set();

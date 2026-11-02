@@ -25,10 +25,19 @@ const log = createLogger('MultiLayerCache');
 // 一、类型定义
 // ============================================================
 
+/**
+ * 缓存层标识。
+ */
 export type CacheTier = 'L1' | 'L2' | 'L3';
 
+/**
+ * 项目规模档位。
+ */
 export type ProjectSizeTier = 'small' | 'medium' | 'large';
 
+/**
+ * 多层缓存选项。
+ */
 export interface MultiLayerCacheOptions {
     l1MaxSize?: number;
     l1TtlMs?: number;
@@ -41,6 +50,9 @@ export interface MultiLayerCacheOptions {
     entityCount?: number;
 }
 
+/**
+ * 写入选项。
+ */
 export interface CacheSetOptions {
     sourcePath?: string;
     sourceMtime?: number;
@@ -48,6 +60,9 @@ export interface CacheSetOptions {
     tier?: CacheTier | 'all';
 }
 
+/**
+ * 缓存统计。
+ */
 export interface CacheStats {
     l1: {
         size: number;
@@ -120,6 +135,9 @@ const DEFAULT_OPTIONS: Required<Pick<MultiLayerCacheOptions,
 // 二、多层缓存实现
 // ============================================================
 
+/**
+ * 多层缓存（L1/L2）。
+ */
 export class MultiLayerCache {
     private l1: LruCache<string, unknown>;
     private l2: FileCache | null = null;
@@ -446,14 +464,26 @@ export class MultiLayerCache {
 
     // ── L1/L2 直接访问（用于高级用法） ───────────────────────
 
+    /**
+     * 取 L1 缓存。
+     * @returns 缓存
+     */
     getL1Cache(): LruCache<string, unknown> {
         return this.l1;
     }
 
+    /**
+     * 取 L2 缓存。
+     * @returns 缓存
+     */
     getL2Cache(): FileCache | null {
         return this.l2;
     }
 
+    /**
+     * L2 是否启用。
+     * @returns 布尔值
+     */
     isL2Enabled(): boolean {
         return this.l2 !== null;
     }

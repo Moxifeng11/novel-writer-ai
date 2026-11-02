@@ -11,20 +11,32 @@ import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '../../shared/http-requ
 
 const log = createLogger('TrendResearch');
 
+/**
+ * 趋势搜索提供方。
+ */
 export type TrendSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily';
 
+/**
+ * 趋势研究配置。
+ */
 export interface TrendResearchConfig {
     provider: TrendSearchProvider;
     apiKey?: string;
     maxSources?: number;
 }
 
+/**
+ * 趋势来源。
+ */
 export interface TrendSource {
     title: string;
     url: string;
     snippet: string;
 }
 
+/**
+ * 趋势研究结果。
+ */
 export interface TrendResearchResult {
     provider: TrendSearchProvider;
     sources: TrendSource[];
@@ -34,6 +46,9 @@ export interface TrendResearchResult {
     researchedAt: number;
 }
 
+/**
+ * 请求函数类型。
+ */
 export type RequestUrlFn = (options: {
     url: string;
     method?: string;
@@ -75,12 +90,23 @@ async function requestJson(request: RequestUrlFn, options: Parameters<RequestUrl
     return { status: response.status, text: response.text, json };
 }
 
+/**
+ * 趋势研究服务。
+ */
 export class TrendResearchService {
     constructor(
         private readonly config: TrendResearchConfig,
         private readonly request: RequestUrlFn = requestUrl as unknown as RequestUrlFn,
     ) {}
 
+    /**
+     * 搜索趋势来源。
+     *
+     * @param mode - 参数
+     * @param categoryOrGenre - 参数
+     * @param audience? - 参数
+     * @returns 来源数组
+     */
     async search(mode: 'short' | 'script', categoryOrGenre: string, audience?: string): Promise<TrendSource[]> {
         const config = normalizeTrendConfig(this.config);
         if (config.provider === 'manual' || !String(config.apiKey || '').trim()) return [];
@@ -149,6 +175,12 @@ export class TrendResearchService {
         })).slice(0, config.maxSources);
     }
 
+    /**
+     * 格式化来源。
+     *
+     * @param sources - 参数
+     * @returns 文本
+     */
     formatSources(sources: TrendSource[]): string {
         return sources.map((source, index) =>
             `[T${index + 1}] ${source.title || '无标题'}\nURL: ${source.url || '（无）'}\n摘要: ${source.snippet.slice(0, 300)}`
