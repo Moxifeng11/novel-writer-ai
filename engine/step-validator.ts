@@ -632,27 +632,49 @@ function validateQualityControlMerged(content: string): StepValidationResult {
     // v4.25：标题允许「## 【一、写作技法检查】」这类带全角括号+序号的装饰
     // （实测模型按提示词的【一、…】输出，旧正则判整节缺失 → QC 永远 partial）。
     const deco = '(?:\\s*(?:【[^】]*】|[一二三四五六七八九十]+、))?\\s*';
+    // v4.26：QC 改为六块引导式复盘；旧三块名仍兼容（旧项目/自定义模板）
     const sections = [
-        { key: '写作技法检查', check: () => sectionContentValid(content, new RegExp('##' + deco + '(写作技法|AI自检|技法检查)'), 40) },
-        { key: '连贯性审查', check: () => sectionContentValid(content, new RegExp('##' + deco + '(连贯性审查|连贯性|设定冲突|人物OOC)'), 40) },
-        { key: '质量评估', check: () => sectionContentValid(content, new RegExp('##' + deco + '(质量评估|质量控制|大纲偏离|信息密度)'), 40) },
+        { key: '镜头一致性', check: () => sectionContentValid(content, new RegExp('##' + deco + '(镜头一致性|镜头|视角)'), 20) },
+        { key: '承接与钩子', check: () => sectionContentValid(content, new RegExp('##' + deco + '(承接与钩子|承接|钩子)'), 20) },
+        { key: '人物动机与变化', check: () => sectionContentValid(content, new RegExp('##' + deco + '(人物动机与变化|人物动机|人物OOC|写作技法)'), 20) },
+        { key: '世界与设定观感', check: () => sectionContentValid(content, new RegExp('##' + deco + '(世界与设定观感|世界与设定|连贯性审查|连贯性)'), 20) },
+        { key: '节奏与阅读冲动', check: () => sectionContentValid(content, new RegExp('##' + deco + '(节奏与阅读冲动|节奏|质量评估)'), 20) },
+        { key: '语言质感', check: () => sectionContentValid(content, new RegExp('##' + deco + '(语言质感|语言|文笔)'), 20) },
     ];
     const hasSuggestions = /(修改建议|建议汇总|改进建议)[：:].{10,}/.test(content) || sectionContentValid(content, /##\s*(修改建议|改进建议)/, 20);
     const hasCheckmarks = /[✅❌⚠️]/.test(content) || /(通过|问题|待改进)[：:]/.test(content);
 
+    // v4.26：新六块为准；旧三块（写作技法/连贯性/质量评估）齐全时按 legacy 通过，
+    // 缺失项的 missing 文案沿用旧名，避免旧项目报出「镜头一致性」这类看不懂的键。
+    const legacy = [
+        { key: '写作技法检查', check: () => sectionContentValid(content, new RegExp('##' + deco + '(写作技法|AI自检|技法检查)'), 40) },
+        { key: '连贯性审查', check: () => sectionContentValid(content, new RegExp('##' + deco + '(连贯性审查|连贯性|设定冲突|人物OOC)'), 40) },
+        { key: '质量评估', check: () => sectionContentValid(content, new RegExp('##' + deco + '(质量评估|质量控制|大纲偏离|信息密度)'), 40) },
+    ];
+    const legacyFound = legacy.filter((s) => s.check()).length;
+
     let found = 0;
     const missing: string[] = [];
-    for (const s of sections) {
-        if (s.check()) found++;
-        else missing.push(s.key);
+    if (legacyFound === legacy.length) {
+        found = legacy.length;
+    } else {
+        for (const s of sections) {
+            if (s.check()) found++;
+            else missing.push(s.key);
+        }
+        if (legacyFound > 0) {
+            for (const s of legacy) {
+                if (!s.check() && !missing.includes(s.key)) missing.push(s.key);
+            }
+        }
     }
 
     const extra = (hasSuggestions ? 10 : 0) + (hasCheckmarks ? 10 : 0);
-    const result = makeResult(found, sections.length, missing, extra);
+    const result = makeResult(found, legacyFound === legacy.length ? legacy.length : sections.length, missing, extra);
     // 三项必填模块齐全即视为完成：✅/建议 只是加分项，不应让「在、但没写建议」的
     // 完整质控永远卡在 partial（实测：7013 字质控因缺一个【修改建议汇总】被判不完整，
     // 且 missing 为空、用户看不到原因）。
-    if (found === sections.length && missing.length === 0) {
+    if (missing.length === 0 && (found === sections.length || legacyFound === legacy.length)) {
         return { valid: true, missing: [], score: Math.max(85, result.score), level: 'complete' };
     }
     return result;

@@ -107,6 +107,22 @@ export function getStepTemplate(key: string): PromptTemplate | null {
   * @returns PromptTemplate 或 null
  */
 export function getStepTemplateAuto(key: string, vars?: Record<string, string>): PromptTemplate | null {
+    // v4.26：管理界面对该步骤的自定义模板（已填充变量）优先——让「改模板」真正生效
+    if (vars?._stepOverrides) {
+        try {
+            const overrides = JSON.parse(vars._stepOverrides) as Record<string, { system: string; user: string }>;
+            const override = overrides[key];
+            if (override?.system?.trim() && override?.user?.trim()) {
+                return {
+                    description: '（用户自定义模板）',
+                    systemPrompt: override.system,
+                    userPrompt: override.user,
+                };
+            }
+        } catch {
+            // 解析失败按无覆盖处理
+        }
+    }
     let template: PromptTemplate | null = null;
     if (key === 'bodyGeneration' && vars) {
         // 实验/设置可强制正文变体（v1/v2/v3/v4）；留空按灵魂层自动路由。

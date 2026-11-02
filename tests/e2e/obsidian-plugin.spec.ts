@@ -411,7 +411,7 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(writingText).not.toContain('实验分组标签');
 
         await expect.poll(() => switchTab('写作规则'), { timeout: 15_000 }).toBe(true);
-        await expect.poll(activeText, { timeout: 15_000 }).toContain('生效版本');
+        await expect.poll(activeText, { timeout: 15_000 }).toContain('唯一来源:');
         await expect.poll(activeText, { timeout: 15_000 }).toContain('重新检查');
         const rulesText = await activeText();
         expect(rulesText).toContain('实验分组标签');

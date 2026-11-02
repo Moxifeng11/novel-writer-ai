@@ -121,7 +121,9 @@ export class QualityGate {
             }
         }
 
-        const passed = conflicts.length === 0 && beatVerify.passed;
+        // v4.26：规则层（冲突/AI词表）降级为报告项——引导型体系下不再一票否决；
+        // passed 只看结构层（节拍完整性），结构失败才是硬问题。
+        const passed = beatVerify.passed;
         return {
             passed,
             layers: { rule: { conflicts, aiWords, aiDetection }, structure: { beatVerify, endingHookPresent, repeatedScenes }, model },

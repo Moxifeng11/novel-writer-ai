@@ -106,12 +106,16 @@ describe('AIEngine.getMaxConcurrent', () => {
 });
 
 describe('buildSystemPrompt - 请求构建', () => {
-    it('包含写作引导和字数范围', () => {
+    it('注入唯一来源规则文本与单一镜头锚点（v4.26）', () => {
         const ctx = makeChapterContext();
-        const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 });
-        expect(prompt).toContain('镜头贴着主角');
-        expect(prompt).toContain('2000-4000字');
-        expect(prompt).toContain('每章至少回收1个旧伏笔、埋下1个新伏笔');
+        const rules = '【写作规则（唯一来源）】每章只有一个镜头。';
+        const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 }, undefined, rules);
+        expect(prompt).toContain('【本章镜头】视角人物：主角');
+        expect(prompt).toContain('【写作规则（唯一来源）】');
+        expect(prompt).toContain('每章只有一个镜头');
+        // 不再内嵌第二份规则/数值禁令
+        expect(prompt).not.toContain('破折号偶尔用');
+        expect(prompt).not.toContain('每章至少回收1个旧伏笔');
     });
 
     it('包含世界观题材类型', () => {
@@ -121,24 +125,11 @@ describe('buildSystemPrompt - 请求构建', () => {
         expect(prompt).toContain('题材世界');
     });
 
-    it('信息债过高时替换伏笔规则为强制揭示', () => {
-        const ctx = makeChapterContext({
-            forcedReveal: ['伏笔A', '伏笔B'],
-            unrevealedCount: 25,
-        });
+    it('传入空规则时使用镜头兜底引导（不注入第二份规则）', () => {
+        const ctx = makeChapterContext();
         const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 });
-        expect(prompt).toContain('信息债严重');
-        expect(prompt).toContain('本章必须揭示 2 个旧伏笔');
-        expect(prompt).toContain('不要埋新伏笔');
-    });
-
-    it('信息债偏高时正确标记级别', () => {
-        const ctx = makeChapterContext({
-            forcedReveal: ['伏笔A'],
-            unrevealedCount: 12,
-        });
-        const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 });
-        expect(prompt).toContain('信息债偏高');
+        expect(prompt).toContain('【本章镜头】视角人物：主角');
+        expect(prompt).toContain('别人的心思只从动作与语气里流露');
     });
 
     // B6：知识注入是 user 中的可裁剪层，不能拼到 system 尾部（否则窗口不足时最先被截掉）

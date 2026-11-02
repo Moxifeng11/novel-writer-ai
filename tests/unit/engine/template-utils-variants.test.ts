@@ -5,7 +5,7 @@ describe('template-utils — 正文模板变体路由', () => {
     it('_bodyVariant=v3/v4 强制使用对应模板', () => {
         const v3 = getStepTemplateAuto('bodyGeneration', { _bodyVariant: 'v3' });
         const v4 = getStepTemplateAuto('bodyGeneration', { _bodyVariant: 'v4' });
-        expect(v3?.systemPrompt).toContain('这一版的三条硬要求');
+        expect(v3?.systemPrompt).toContain('三条偏好');
         expect(v3?.userPrompt).toContain('台词清单');
         expect(v4?.systemPrompt).toContain('录音机');
         expect(v4?.userPrompt).toContain('每两三条对话之间');

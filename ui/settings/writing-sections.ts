@@ -333,16 +333,6 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(section)
-            .setName('规则去重')
-            .setDesc('开启后「文笔风格」段不再重复注入写作规则副本，避免规则权重翻倍并绕过版本管理。')
-            .addToggle((toggle) => toggle
-                .setValue(this.plugin.settings.dedupeRulesInStyle !== false)
-                .onChange(async (value) => {
-                    this.plugin.settings.dedupeRulesInStyle = value;
-                    await this.plugin.saveSettings();
-                }));
-
         group('上下文与模型', '影响每次生成能看到多少资料，以及模型断联时的回退行为。');
         new Setting(section)
             .setName('故事上下文档位')

@@ -166,6 +166,9 @@ export async function createLongNovelProject(
             if (path.startsWith(`${PJ_OUTLINE_DIR}/正文`)) return false;
             if (projectType === 'original' && path.startsWith(PJ_FANFIC_DIR)) return false;
             if (projectType === 'fanfic' && new RegExp(`^${PJ_FANFIC_DIR.replace(/[/\\]/g, '\\/')}/(斗罗大陆设定|哈利波特设定)\\.md$`).test(path)) return false;
+            // 写作规则 v4：唯一来源是 vault 的 元文件/00-系统模板/写作规则.md，
+            // 项目内不再持有副本（否则会回到「多来源冲突」的老问题）。
+            if (path === '元文件/00-系统模板/写作规则.md') return false;
             return true;
         };
 

@@ -53,13 +53,14 @@ describe('QualityGate — TR-9.1 三层默认运行（程序/结构层零 AI 调
 });
 
 describe('QualityGate — TR-9.2 程序规则层（复用 ConflictDetector + AntiAIDetector）', () => {
-    it('禁止揭示提前出现 → 冲突检出，passed=false', async () => {
+    it('禁止揭示提前出现 → 冲突检出（报告项，不再一票否决 passed）', async () => {
         const snap = makeSnapshot({ forbiddenReveals: ['主角是皇子'] });
         const gate = new QualityGate();
         const report = await gate.run('众人震惊地发现，原来主角是皇子！', snap, { beats: [] });
 
         expect(report.layers.rule.conflicts.some((c) => c.type === 'foreshadow')).toBe(true);
-        expect(report.passed).toBe(false);
+        // v4.26：规则层降级为报告项，passed 只由结构层（节拍）决定
+        expect(report.passed).toBe(true);
     });
 
     it('AI 词汇被程序检出并列入 rule 层报告', async () => {

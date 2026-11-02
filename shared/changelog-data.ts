@@ -21,6 +21,32 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.26.0',
+        date: '2026-11-03',
+        title: '引导型写作规则 v4：单一镜头 + 单一来源 + 提示词全量同步',
+        sections: [
+            {
+                type: 'improved',
+                label: '✍️ 规则体系',
+                items: [
+                    '规则唯一来源：vault 元文件/00-系统模板/写作规则.md；项目副本自动删除',
+                    '核心锚点「单一镜头」；心法改提问式；删除全部数值禁令',
+                    '长篇/短篇/剧本模式附录自动拼入同一份规则文本',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🎯 提示词',
+                items: [
+                    'V1–V4/规划/蒸馏/QC/分析全量去数值禁令；QC 改六块引导复盘',
+                    '管理界面自定义步骤模板现在真正覆盖 pipeline',
+                    'ai-prompt-builder 与协同路径的内置规则/切片全部下线',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.25.0',
         date: '2026-11-02',
         title: '生产兼容性与性能优化：Obsidian 1.4+、空闲 CPU、流式分段',

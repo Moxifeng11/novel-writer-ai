@@ -29,7 +29,6 @@ import { findWritingStyleFile } from '../writing-style-paths';
 import { createLogger } from '../../shared/logger';
 import { parseSceneBlocks } from '../../engine/scene-generation-loop';
 import { formatDialogueSkeleton, formatSceneCardDigest } from '../../shared/scene-card';
-import { buildCraftConstraintBlock, buildNegativeConstraintBlock } from '../../engine/craft-constraints';
 import { pjPromiseLedger, pjCharacterArcTable, readProjectMeta } from '../../shared/paths';
 import { parsePromiseLedger, formatOpenPromisesForPrompt } from '../../engine/promise-ledger';
 import { parseCharacterArcTable, formatArcsForPrompt } from '../../engine/character-arc';
@@ -67,6 +66,18 @@ import {
  * @param style - 文风
  * @returns 是否成功
  */
+/**
+ * 单一镜头声明：视角人物取场景卡 POV，缺省主角。
+ * 这是 v4 引导体系的核心锚点——所有正文/复盘提示词共用这一行。
+ *
+ * @param pov - 场景卡里的视角人物（可空）
+ * @returns 形如「【本章镜头】视角人物：X——只写 X 能感知的信息」的声明
+ */
+function buildLensDeclaration(pov: string | undefined): string {
+    const person = (pov || '').trim() || '主角';
+    return `【本章镜头】视角人物：${person}——只写 ${person} 能看到、听到、感知到的信息；镜头不切换。`;
+}
+
 function looksLikeWritingRules(style: string): boolean {
     const text = String(style || '').trim();
     if (text.length < 400) return false;
@@ -668,8 +679,7 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "unrevealedForeshadow",
   "timelineEvents",
   "sceneCardDigest",
-  "craftConstraints",
-  "negativeList",
+  "lensDeclaration",
   "sceneStyleSnippet",
   "suggestedRhythm",
   "openPromises",
@@ -979,17 +989,18 @@ ${vars["allItems"]}`);
   try {
     const cards = parseSceneBlocks(deps.stepResults["sceneExpand"] || '');
     vars["sceneCardDigest"] = formatSceneCardDigest(cards);
+    // v4.26：单一镜头声明——视角人物取第一张场景卡的 POV，缺省主角
+    vars["lensDeclaration"] = buildLensDeclaration(cards[0]?.pov);
     // v4.23：对话骨架（Scene 展开的 dialogue_beats）——对话密度来自数据，不靠提示词数比例
     // v4.25：骨架为空时给兜底文案，避免 V3/V4 的【台词清单】只剩空标题（模型会当成可以不写对话）
     vars["dialogueSkeleton"] = formatDialogueSkeleton(cards)
       || "（本章没有台词骨架：请按场景卡与信息规划自然生成对话，信息由角色说出来，不要用叙述转述；每场至少 4 个来回）";
   } catch (e) {
-    log.warn('[小说工坊] 场景卡解析失败，跳过硬约束摘要:', e);
+    log.warn('[小说工坊] 场景卡解析失败，跳过镜头/骨架摘要:', e);
     vars["sceneCardDigest"] = '';
+    vars["lensDeclaration"] = buildLensDeclaration(undefined);
     vars["dialogueSkeleton"] = "（本章没有台词骨架：请按场景卡与信息规划自然生成对话，信息由角色说出来，不要用叙述转述；每场至少 4 个来回）";
   }
-  vars["craftConstraints"] = buildCraftConstraintBlock();
-  vars["negativeList"] = buildNegativeConstraintBlock();
   // v4.23：主链路此前硬编码 quota 版，设置里的 humanVoiceMode 完全不生效。
   // 现在按设置组装：exemplar（样文 + 6 条弱约束）为默认，quota 为对照版本。
   const voiceMode = deps.plugin.settings.humanVoiceMode === 'quota' ? 'quota' : 'exemplar';
@@ -1022,7 +1033,7 @@ ${vars["allItems"]}`);
       const fixed = autoFix && !styleConflict.tooMuchTrimmed && !styleConflict.rulesLackAnchor;
       if (fixed) vars["writingStyleContent"] = styleConflict.cleaned;
       const detail = styleConflict.rulesLackAnchor
-        ? '（生效规则没有「自然段 2–6 句」锚点，建议切到 3.7.0-anchor 或更新规则文件；本次未改风格文本）'
+        ? '（生效规则没有「每段开头空两格」格式锚点，本次未改风格文本）'
         : styleConflict.tooMuchTrimmed
           ? '（冲突行占比过高，仅告警）'
           : fixed
@@ -1057,6 +1068,35 @@ ${vars["allItems"]}`);
   } catch (e) {
     log.warn("[小说工坊] 注入溯源账本生成失败:", e);
     vars["_injectionLedger"] = "";
+  }
+  // v4.26：管理界面对步骤模板的自定义覆盖（PromptManager customTemplates）。
+  // 只取「用户改过的」默认模板：getTemplateById 命中 custom 才覆盖，避免默认值二份漂移。
+  try {
+    const pm = deps.plugin.promptManager;
+    const overrides: Record<string, { system: string; user: string }> = {};
+    const stepToTemplate: Record<string, string> = {
+      infoPlan: 'info-plan',
+      plotDistill: 'plot-distill',
+      outline: 'outline-generation',
+      emotionPlan: 'emotion-plan',
+      sceneExpand: 'scene-expand',
+      bodyGeneration: 'body-generation-v2',
+    };
+    for (const [stepKey, tplId] of Object.entries(stepToTemplate)) {
+      const tpl = pm?.getTemplateById(tplId);
+      if (!tpl || !pm) continue;
+      const isCustom = pm.getTemplateById(tplId) && (pm as unknown as { config?: { customTemplates?: Array<{ id: string }> } }).config?.customTemplates?.some(t => t.id === tplId);
+      if (!isCustom) continue;
+      const rendered = pm.renderPrompt(tplId, vars);
+      if (rendered && rendered.systemPrompt.trim() && rendered.userPrompt.trim()) {
+        overrides[stepKey] = { system: rendered.systemPrompt, user: rendered.userPrompt };
+      }
+    }
+    if (Object.keys(overrides).length > 0) {
+      vars['_stepOverrides'] = JSON.stringify(overrides);
+    }
+  } catch (e) {
+    log.warn('[小说工坊] 组装步骤模板覆盖失败，忽略自定义模板:', e);
   }
   return vars;
 }

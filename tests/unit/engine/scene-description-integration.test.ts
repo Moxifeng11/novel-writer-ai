@@ -5,7 +5,7 @@ import { CO_WRITE_DIRECTION_PROMPTS, CO_WRITE_PROMPTS } from '../../../engine/pr
 describe('场景描写在整章与协同写作中的注入', () => {
     it('整章正文模板包含场景描写硬约束与场景卡', () => {
         expect(BODY_GENERATION_USER_TEMPLATE_V2).toContain('${sceneCardDigest}');
-        expect(BODY_GENERATION_USER_TEMPLATE_V2).toContain('【场景描写硬约束】');
+        expect(BODY_GENERATION_USER_TEMPLATE_V2).toContain('【场景落地提示】');
         expect(BODY_GENERATION_USER_TEMPLATE_V2).toContain('sensory_hook');
         expect(BODY_GENERATION_USER_TEMPLATE_V2).toContain('body_reaction');
         expect(BODY_GENERATION_USER_TEMPLATE_V2).toContain('时间/地点过渡');

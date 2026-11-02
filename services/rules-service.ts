@@ -1,12 +1,21 @@
-import { App } from 'obsidian';
-import { WRITING_RULES } from '../shared/writing-rules';
-import { pjWritingRulesTemplate, WRITING_RULES_PATH_PROJECT } from '../shared/paths';
-import { BUILTIN_RULES_VERSION, listRulesVersions } from './rules-registry';
-import type { VersionedDoc } from '../shared/versioned-registry';
+import { App, TFile } from 'obsidian';
+import { WRITING_RULES, WRITING_RULES_BUILTIN_VERSION } from '../shared/writing-rules';
+import { VAULT_RULES_PATH, BUILTIN_RULES_VERSION, listRulesVersions } from './rules-registry';
+import { composeWritingRules } from '../shared/writing-rules-mode-addons';
+import { resolveProjectMode } from '../shared/project-mode';
+import type { CreationMode } from '../shared/creation-mode';
 import { createLogger } from '../shared/logger';
 
-
 const log = createLogger('RulesService');
+
+/** v4 迁移结果：写入了什么、删了几个项目副本 */
+export interface RulesMigrationResult {
+    /** 元文件缺失（写入模板）或版本 ≠ 4.0.0（覆写）时为 true */
+    overwrote: boolean;
+    /** 删除的项目内副本数量 */
+    removedProjectCopies: number;
+}
+
 /**
  * 规则列表配置结构定义。
  */
@@ -14,24 +23,26 @@ export interface RulesConfig {
     version: string;
     lastModified: number;
     content: string;
-    /** 生效版本 id（`builtin:3.6.0` / `vault:元文件/...`），用于账本与归因 */
+    /** 生效来源 id（`vault:元文件/...` / `builtin:4.0.0`），用于账本与归因 */
     id?: string;
-    /** 内容哈希（版本号相同但正文不同时靠它发现漂移） */
+    /** 内容哈希 */
     hash?: string;
-    /** 实际来源路径（内置版本为空） */
+    /** 实际来源路径（内置模板为空） */
     path?: string;
-    /** 漂移/回退告警 */
+    /** v4 单一来源下恒为空（保留字段以兼容旧调用方） */
     warnings?: string[];
+    /** 组合进 content 的创作模式（long/short/script） */
+    mode?: CreationMode;
 }
 
 /**
- * 规则列表服务。
+ * 规则列表服务（v4：vault 元文件是唯一生效来源，模式附录按项目拼入）。
  *
  * @example
  * ```ts
  * const rules = RulesService.getInstance(app);
- * const text = await rules.getWritingRules();
- * const config = await rules.getRulesConfig();
+ * rules.setProject('长篇小说/书甲');
+ * const text = await rules.getWritingRules(); // 主文档 + 对应模式附录
  * ```
  */
 export class RulesService {
@@ -40,9 +51,9 @@ export class RulesService {
     private cachedRules: RulesConfig | null = null;
     private cacheTime = 0;
     private static readonly CACHE_TTL = 5000;
-    /** 设置里选择的生效版本（id 或版本号；空 = 按 project/vault/builtin 回退） */
+    /** v4 起不再有多版本可选；字段保留以兼容旧调用方（写入不影响解析） */
     private activeVersion = '';
-    /** 当前项目（用于优先读项目内规则文件） */
+    /** 当前项目（决定模式附录的拼接） */
     private project = '';
 
     private constructor(app: App) {
@@ -62,7 +73,7 @@ export class RulesService {
     }
 
     /**
-     * getWritingRules 方法。
+     * getWritingRules 方法：主文档 + 当前项目的模式附录。
      * @returns 文本结果
      */
     async getWritingRules(): Promise<string> {
@@ -94,52 +105,48 @@ export class RulesService {
     }
 
     /**
-     * 读取生效规则。
-     * 旧实现：先读 vault 根 `00-系统模板/写作规则.md`、再读 `元文件` 模板、最后内置——
-     * 于是 vault 里那份旧版（一句一段）覆盖了仓库新版，且版本号相同所以没人发现。
-     * 现在交给 rules-registry 做多版本选择：设置指定 → 项目 → vault → 内置，并做哈希漂移检测。
+     * 读取生效规则：vault 唯一文件 → 内置模板兜底；再按项目模式拼附录。
      */
     private async loadWritingRules(): Promise<RulesConfig> {
-        const listing = await listRulesVersions(this.app, {
-            activeVersion: this.activeVersion,
-            project: this.project,
-        });
-        const doc: VersionedDoc = listing.active.doc || {
+        const listing = await listRulesVersions(this.app);
+        const doc = listing.active.doc || {
             id: 'builtin:fallback',
             version: BUILTIN_RULES_VERSION,
             content: WRITING_RULES,
             hash: '',
-            source: 'builtin',
+            source: 'builtin' as const,
         };
-        const warnings = [...listing.active.warnings, ...listing.drift];
-        if (warnings.length > 0) {
-            log.warn('[RulesService] 写作规则版本告警:', warnings.join('；'));
+        let mode: CreationMode = 'long';
+        if (this.project) {
+            try {
+                mode = await resolveProjectMode(this.app, this.project);
+            } catch (e) {
+                log.warn('[RulesService] 解析项目创作模式失败，按长篇处理:', e);
+            }
         }
         return {
             version: doc.version,
             lastModified: Date.now(),
-            content: doc.content,
+            content: composeWritingRules(doc.content, mode),
             id: doc.id,
             hash: doc.hash,
             path: doc.path,
-            warnings,
+            warnings: [],
+            mode,
         };
     }
 
     /**
-     * 设置生效版本（模板变量构建入口在知道项目时调用）
+     * 兼容旧调用方：v4 没有多版本可选，本方法只使缓存失效。
      *
-     * @param version - 版本
+     * @param _version - 忽略
      */
-    setActiveVersion(version: string | undefined): void {
-        const next = String(version || '').trim();
-        if (next === this.activeVersion) return;
-        this.activeVersion = next;
+    setActiveVersion(_version: string | undefined): void {
         this.invalidateCache();
     }
 
     /**
-     * 设置当前项目（存在项目内规则文件时优先）
+     * 设置当前项目（决定模式附录）
      *
      * @param project - 项目（路径或对象）
      */
@@ -159,37 +166,96 @@ export class RulesService {
     }
 
     /**
-     * 检查规则列表版本。
-      * @returns Promise< 实例
+     * 规则状态（v4：唯一来源的版本与路径；无「期望版本」概念）。
+      * @returns 版本与路径
      */
     async checkRulesVersion(): Promise<{
+        version: string;
+        sourcePath: string;
+        lastModified: number;
+        /** 兼容旧调用方的字段：恒等于 version / '' */
         current: string;
         expected: string;
         currentHash: string;
         currentId: string;
-        sourcePath: string;
         warnings: string[];
     }> {
         const config = await this.getRulesConfig();
         return {
+            version: config.version,
+            sourcePath: config.path || `(内置模板 ${WRITING_RULES_BUILTIN_VERSION})`,
+            lastModified: config.lastModified,
             current: config.version,
-            expected: BUILTIN_RULES_VERSION,
+            expected: config.version,
             currentHash: config.hash || '',
             currentId: config.id || '',
-            sourcePath: config.path || '(内置)',
-            warnings: config.warnings || [],
+            warnings: [],
         };
     }
 
     /**
-     * isRulesFilePresent 方法。
+     * isRulesFilePresent 方法：vault 唯一文件是否存在。
      * @returns 是否成功
      */
     async isRulesFilePresent(): Promise<boolean> {
-        // 只要有任意版本可用就算存在（内置也算，避免「未检测到规则文件」误导）
-        const listing = await listRulesVersions(this.app, { activeVersion: this.activeVersion, project: this.project });
-        return listing.docs.length > 0
-            || Boolean(this.app.vault.getAbstractFileByPath(WRITING_RULES_PATH_PROJECT))
-            || Boolean(this.app.vault.getAbstractFileByPath(pjWritingRulesTemplate()));
+        return this.app.vault.getAbstractFileByPath(VAULT_RULES_PATH) instanceof TFile;
+    }
+
+    /**
+     * v4 迁移（幂等，启动时调用一次）：
+     * 1. 元文件缺失 → 用内置 v4 模板写入；
+     * 2. 元文件存在但 frontmatter `version` ≠ 4.0.0 → 直接覆写为 v4（用户已确认不备份）；
+     * 3. 删除各项目内的「项目 / 00-系统模板 / 写作规则.md」副本（项目不再持有副本）。
+     *
+     * @returns RulesMigrationResult 实例
+     */
+    async migrateToVaultSingleSource(): Promise<RulesMigrationResult> {
+        const result: RulesMigrationResult = { overwrote: false, removedProjectCopies: 0 };
+
+        // 1) 元文件缺失/旧版 → 覆写
+        const existing = this.app.vault.getAbstractFileByPath(VAULT_RULES_PATH);
+        if (existing instanceof TFile) {
+            const content = await this.app.vault.read(existing);
+            const versionMatch = content.match(/^version:\s*"?([^"\n]+)"?/m);
+            const version = (versionMatch?.[1] || '').trim();
+            if (version !== WRITING_RULES_BUILTIN_VERSION) {
+                await this.app.vault.modify(existing, WRITING_RULES);
+                result.overwrote = true;
+                log.info(`[RulesService] 元文件写作规则已覆写为 v${WRITING_RULES_BUILTIN_VERSION}（原 version=${version || '未知'}）`);
+            }
+        } else {
+            const dir = VAULT_RULES_PATH.slice(0, VAULT_RULES_PATH.lastIndexOf('/'));
+            try {
+                if (!(this.app.vault.getAbstractFileByPath(dir) instanceof TFile)) {
+                    await this.app.vault.adapter.mkdir(dir);
+                }
+                await this.app.vault.create(VAULT_RULES_PATH, WRITING_RULES);
+                result.overwrote = true;
+                log.info(`[RulesService] 已创建唯一规则来源：${VAULT_RULES_PATH}`);
+            } catch (e) {
+                log.error('[RulesService] 创建元文件写作规则失败:', e);
+            }
+        }
+
+        // 2) 删除项目内副本（`<项目>/00-系统模板/写作规则.md`，排除元文件自身）
+        const copyPattern = /^([^/]+)\/00-系统模板\/写作规则\.md$/;
+        for (const file of [...this.app.vault.getFiles()]) {
+            const match = file.path.match(copyPattern);
+            if (!match || match[1] === '元文件') continue;
+            try {
+                await this.app.vault.delete(file, true);
+                result.removedProjectCopies += 1;
+            } catch (e) {
+                log.warn('[RulesService] 删除项目规则副本失败:', file.path, e);
+            }
+        }
+        if (result.removedProjectCopies > 0) {
+            log.info(`[RulesService] 已删除 ${result.removedProjectCopies} 个项目内写作规则副本（唯一来源：元文件）`);
+        }
+
+        if (result.overwrote || result.removedProjectCopies > 0) {
+            this.invalidateCache();
+        }
+        return result;
     }
 }

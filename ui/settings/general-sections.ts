@@ -6,7 +6,7 @@
  * 角色识别（L4740-L5019）、建议设置（L5020-L5097）。
  * 来源：原 settings-tab.ts，方法体逐行搬移，无逻辑改动。
  */
-import { Setting, Notice, Modal } from 'obsidian';
+import { Setting, Notice, Modal, TFile } from 'obsidian';
 import { performanceMonitor } from '../../services/performance-monitor';
 import { ENGINE_NAMES } from '../../shared/engine-names';
 import { ChangelogModal } from '../changelog-modal';
@@ -426,40 +426,9 @@ export class RulesSection extends SettingsSection {
         section.createEl('h3', { text: '📜 写作规则版本管理', cls: 'nw-u-margintop-0' });
 
         section.createEl('p', {
-            text: '写作规则是 AI 生成正文时遵循的核心准则。这里统一管理生效版本、漂移检查与实验标记。',
+            text: '写作规则是 AI 生成正文时遵循的核心准则。唯一来源是 vault 的「元文件/00-系统模板/写作规则.md」——编辑这个文件，就是修改所有项目的写作规则。',
             cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-20px-2'
         });
-
-        new Setting(section)
-            .setName('生效版本')
-            .setDesc('auto 按「项目 → vault → 内置」优先级选择；同一时刻只生效一个。版本号相同但内容不同会在下方提示漂移。')
-            .addDropdown(async (dropdown) => {
-                dropdown.addOption('', 'auto（项目 → vault → 内置）');
-                try {
-                    const { listRulesVersions } = await import('../../services/rules-registry');
-                    const listing = await listRulesVersions(this.plugin.app, {
-                        activeVersion: this.plugin.settings.activeRulesVersion,
-                        project: this.plugin.getActiveProject() || undefined,
-                    });
-                    for (const doc of listing.docs) {
-                        dropdown.addOption(
-                            doc.id,
-                            `${doc.id} · v${doc.version}（${doc.source}${doc.path ? ` ${doc.path}` : ''}）`,
-                        );
-                    }
-                    driftEl.setText(listing.drift.length > 0 ? `⚠️ ${listing.drift.join('；')}` : '');
-                } catch (e) {
-                    console.warn('[设置] 读取规则版本失败:', e);
-                }
-                dropdown.setValue(this.plugin.settings.activeRulesVersion || '');
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.activeRulesVersion = value;
-                    await this.plugin.saveSettings();
-                    RulesService.getInstance(this.plugin.app).setActiveVersion(value);
-                    await this.mountRulesSection(section);
-                });
-            });
-        const driftEl = section.createDiv({ cls: 'nw-warning-text nw-u-fs-12px nw-u-marginbottom-16px-2' });
 
         const statusCard = section.createDiv({
             cls: 'nw-u-p-20px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-marginbottom-20px-2'
@@ -467,53 +436,37 @@ export class RulesSection extends SettingsSection {
 
         try {
             const rulesService = RulesService.getInstance(this.app);
-            const { current, expected } = await rulesService.checkRulesVersion();
+            const info = await rulesService.checkRulesVersion();
             const isPresent = await rulesService.isRulesFilePresent();
-            const config = await rulesService.getRulesConfig();
 
-            const statusRow1 = statusCard.createDiv({ cls: 'nw-status-row' });
-            statusRow1.createDiv({ text: '规则文件状态:', cls: 'nw-status-label' });
-            statusRow1.createDiv({
-                text: isPresent ? '✅ 已检测到' : '⚠️ 未找到',
-                attr: {
-                    style: `padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;${
-                        isPresent ? 'background:var(--text-accent);color:var(--background-primary);' : 'background:var(--background-modifier-warning);color:var(--text-warning);'
-                    }`
-                }
+            const statusRow0 = statusCard.createDiv({ cls: 'nw-status-row' });
+            statusRow0.createDiv({ text: '唯一来源:', cls: 'nw-status-label' });
+            statusRow0.createDiv({
+                text: isPresent ? info.sourcePath : '⚠️ 未找到（将写入 v4 模板）',
+                cls: 'nw-u-fontfamily-monospace',
             });
 
+            const statusRow1 = statusCard.createDiv({ cls: 'nw-status-row' });
+            statusRow1.createDiv({ text: '规则版本:', cls: 'nw-status-label' });
+            statusRow1.createDiv({ text: `v${info.version}`, cls: 'nw-u-fontfamily-monospace' });
+
             const statusRow2 = statusCard.createDiv({ cls: 'nw-status-row' });
-            statusRow2.createDiv({ text: '当前规则版本:', cls: 'nw-status-label' });
-            statusRow2.createDiv({ text: current === 'unknown' ? '无法检测' : `v${current}`, cls: 'nw-u-fontfamily-monospace' });
-
-            const statusRow3 = statusCard.createDiv({ cls: 'nw-status-row' });
-            statusRow3.createDiv({ text: '期望规则版本:', cls: 'nw-status-label' });
-            statusRow3.createDiv({ text: `v${expected}`, cls: 'nw-u-fontfamily-monospace' });
-
-            if (config.lastModified > 0) {
-                const statusRow4 = statusCard.createDiv({ cls: 'nw-status-row' });
-                statusRow4.createDiv({ text: '最后修改时间:', cls: 'nw-status-label' });
-                statusRow4.createDiv({ text: new Date(config.lastModified).toLocaleString(), cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2' });
-            }
+            statusRow2.createDiv({ text: '模式附录:', cls: 'nw-status-label' });
+            statusRow2.createDiv({ text: '当前项目按创作模式自动拼接（长篇连载 / 短篇单元 / 剧本分镜）', cls: 'nw-u-fs-12px-2' });
 
             if (!isPresent) {
                 section.createDiv({
-                    text: '❌ 警告：未找到写作规则文件！AI 将使用内置的默认规则。建议在项目根目录创建「00-系统模板/写作规则.md」文件。',
-                    cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-er nw-u-c-text-error nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
-                });
-            } else if (current !== expected && current !== 'unknown') {
-                section.createDiv({
-                    text: `⚠️ 警告：规则版本不匹配！当前 v${current}，期望 v${expected}。建议更新写作规则文件以确保生成质量。`,
+                    text: '⚠️ 未找到写作规则文件。重启插件时会自动写入 v4 引导版模板；也可点击「重新检查」立即生成。',
                     cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-wa nw-u-c-text-warning nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
                 });
             } else {
                 section.createDiv({
-                    text: '✅ 规则版本正常',
+                    text: '✅ 单一来源已就绪。没有可选版本、没有漂移——改文件即全局生效。',
                     cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-su nw-u-c-text-success nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
                 });
             }
 
-            const actions = section.createDiv({ cls: 'nw-settings-actions' });
+        const actions = section.createDiv({ cls: 'nw-settings-actions' });
 
             const refreshBtn = actions.createEl('button', {
                 text: '🔄 重新检查',
@@ -548,6 +501,21 @@ export class RulesSection extends SettingsSection {
                     }
                 })(this.app);
                 modal.open();
+            });
+
+            const openBtn = actions.createEl('button', {
+                text: '📂 在 Obsidian 中打开',
+                cls: 'nw-btn nw-btn-secondary',
+                attr: { type: 'button' },
+            });
+            openBtn.addEventListener('click', async () => {
+                const { VAULT_RULES_PATH } = await import('../../services/rules-registry');
+                const file = this.app.vault.getAbstractFileByPath(VAULT_RULES_PATH);
+                if (file) {
+                    await this.app.workspace.getLeaf('tab').openFile(file as TFile);
+                } else {
+                    new Notice('⚠️ 规则文件不存在，点击「重新检查」生成', 4000);
+                }
             });
 
         } catch (e) {

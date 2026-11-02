@@ -1,27 +1,27 @@
 {
-  "generatedAt": "2026-11-02T12:28:35.597Z",
+  "generatedAt": "2026-11-02T18:14:47.307Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
-      "exports": 1508,
-      "documented": 1508,
+      "exports": 1509,
+      "documented": 1509,
       "methods": 1253,
       "methodsDocumented": 1253,
       "incomplete": 0
     },
     "services": {
       "files": 28,
-      "exports": 151,
-      "documented": 151,
-      "methods": 202,
-      "methodsDocumented": 202,
+      "exports": 154,
+      "documented": 154,
+      "methods": 203,
+      "methodsDocumented": 203,
       "incomplete": 0
     },
     "shared": {
-      "files": 163,
-      "exports": 1517,
-      "documented": 1517,
+      "files": 164,
+      "exports": 1524,
+      "documented": 1524,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
@@ -1703,8 +1703,8 @@
       "incomplete": 0
     },
     "engine/step-settlement.ts": {
-      "exports": 2,
-      "documented": 2,
+      "exports": 3,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2088,19 +2088,19 @@
       "incomplete": 0
     },
     "services/rules-registry.ts": {
-      "exports": 5,
-      "documented": 5,
+      "exports": 7,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0,
-      "exampleTargets": 3,
-      "examplesDocumented": 3
+      "exampleTargets": 4,
+      "examplesDocumented": 4
     },
     "services/rules-service.ts": {
-      "exports": 2,
-      "documented": 2,
-      "methods": 8,
-      "methodsDocumented": 8,
+      "exports": 3,
+      "documented": 3,
+      "methods": 9,
+      "methodsDocumented": 9,
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1
@@ -2584,8 +2584,8 @@
       "incomplete": 0
     },
     "shared/frontmatter.ts": {
-      "exports": 4,
-      "documented": 4,
+      "exports": 6,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3286,6 +3286,13 @@
     "shared/writing-rules-legacy.ts": {
       "exports": 2,
       "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/writing-rules-mode-addons.ts": {
+      "exports": 5,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

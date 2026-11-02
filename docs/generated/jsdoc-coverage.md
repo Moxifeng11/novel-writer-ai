@@ -7,8 +7,8 @@
 | `core/` | 6 | 23 | 23 | 100% | 48 | 48 | 100% | 0 |
 | `domains/` | 11 | 30 | 30 | 100% | 1 | 1 | 100% | 0 |
 | `engine/` | 271 | 1509 | 1509 | 100% | 1253 | 1253 | 100% | 0 |
-| `services/` | 28 | 151 | 151 | 100% | 202 | 202 | 100% | 0 |
-| `shared/` | 163 | 1519 | 1519 | 100% | 149 | 149 | 100% | 0 |
+| `services/` | 28 | 154 | 154 | 100% | 203 | 203 | 100% | 0 |
+| `shared/` | 164 | 1524 | 1524 | 100% | 149 | 149 | 100% | 0 |
 | `ui/` | 189 | 493 | 493 | 100% | 632 | 632 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -56,7 +56,7 @@
 | `engine/co-writer/create-session-store.ts` | 2 | 2 | 100% | — |
 | `engine/engine-registry.ts` | 1 | 1 | 100% | — |
 | `engine/settlement-engine.ts` | 1 | 1 | 100% | — |
-| `services/rules-registry.ts` | 3 | 3 | 100% | — |
+| `services/rules-registry.ts` | 4 | 4 | 100% | — |
 | `services/rules-service.ts` | 1 | 1 | 100% | — |
 | `shared/file-cache.ts` | 1 | 1 | 100% | — |
 | `shared/multi-layer-cache.ts` | 1 | 1 | 100% | — |

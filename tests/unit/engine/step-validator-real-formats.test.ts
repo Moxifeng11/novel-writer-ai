@@ -74,6 +74,9 @@ describe('step-validator — 真实模型输出格式兼容', () => {
         ].join('\n');
         const result = validateStepResult('qualityControl', partialQuality);
         expect(result.valid).toBe(false);
-        expect(result.missing).toContain('连贯性审查');
+        // v4.26：缺失项按「新六块」报；旧三块名（连贯性审查）任一出现也算点名成功
+        expect(
+            result.missing.some((m) => ['连贯性审查', '世界与设定观感'].includes(m)),
+        ).toBe(true);
     });
 });

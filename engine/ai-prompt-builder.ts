@@ -17,53 +17,39 @@ import { estimateInputTokens } from '../shared/token-estimator';
  * @param ctx - 上下文
  * @param settings - 设置
  * @param bodyFormat - 正文格式
+ * @param writingRules - 写作规则全文（唯一来源 RulesService；调用方负责读取）
  * @returns 文本结果
+ *
+ * @example
+ * ```ts
+ * const system = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 }, fmt, rules);
+ * ```
  */
 export function buildSystemPrompt(
     ctx: ChapterContext,
     settings: { minWordCount: number; maxWordCount: number },
     bodyFormat: BodyFormatContract = DEFAULT_BODY_FORMAT,
+    writingRules = '',
 ): string {
-    const writingRules = `【写作引导——镜头贴着主角，不跳不解释】
-镜头贴着主角。他看到的，你写。他听到的，你写。他皮肤感受到的，你写。
-1. 从一个身体感觉开始：窄、烫、麻、凉、硌。感受到什么就写什么。
-2. 情绪藏在动作和身体里，不讲直接情绪词。不讲"他很难过"，讲"他把手从手腕上拿开了"。
-3. 画面之间用句号直接跳，不讲"过了一会儿""然后""于是"。
-4. 每个名词最多配一个形容词，让名词动词自己说话。
-5. 关键信息分多次漏，从主角的眼睛、耳朵、皮肤去感知。不写世界观旁白。
-6. 主角不知道的事，不写。不讲幕后，不讲别人背地里做了什么。
-7. 字数：每章${settings.minWordCount}-${settings.maxWordCount}字
-8. 标点：破折号偶尔用（≤3处），感叹号偶尔用（≤3个），不用分号和裸省略号
-9. 分段与缩进：严格按下方【输出格式（硬性约束）】执行
-10. 从已有实体中选角，不凭空自创主角或核心配角
-11. 世界观一致性：所在的是${ctx.worldType ? ` **${ctx.worldType}** ` : ''}题材世界，所有要素与世界观和设定库一致`;
+    // v4.26：规则文本唯一来源是 RulesService（由调用方传入），这里不再内嵌第二份规则。
+    const rulesBlock = writingRules.trim();
 
-    let foreshadowRule = '12. 每章至少回收1个旧伏笔、埋下1个新伏笔';
-    if (ctx.forcedReveal && ctx.forcedReveal.length > 0) {
-        const unrevealedCount = ctx.unrevealedCount ?? 0;
-        const levelLabel = unrevealedCount > 20 ? '严重' : 
-                          unrevealedCount > 15 ? '过高' : 
-                          unrevealedCount > 10 ? '偏高' : '中等';
-        foreshadowRule = `12. 信息债${levelLabel}（当前未揭示${unrevealedCount}个），本章必须揭示 ${ctx.forcedReveal.length} 个旧伏笔，不要埋新伏笔`;
-    }
-
-    const roleLockRule = '13. 从上下文中指定的已有角色里选角——主角和核心配角已经在设定库里，不需要自创';
-    const cultureRule = '14. 社会行为必须符合世界观中的"文化与社会"设定（社会结构、价值观念、风俗禁忌），角色的言行举止不得违背其所处时代和阶层的行为规范';
-
-    let systemPrompt = `镜头贴着主角。你不是作者——你只是记录他正在经历的事。
-
-${writingRules}
+    let systemPrompt = `${lensDeclarationFallback(ctx)}
+${rulesBlock ? `${rulesBlock}` : '【镜头引导】贴着主角写：他看到的你才写，他的内心如实记下，别人的心思只从动作与语气里流露。'}
 
 ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}
 
-【补充引导】
-${foreshadowRule}
-${roleLockRule}
-${cultureRule}
+【世界观】所在的是${ctx.worldType ? ` **${ctx.worldType}** ` : ''}题材世界；角色言行要符合世界观与设定库。
 
 记住：你不是在写，你是在记。你是在记录主角刚刚经历的真实时刻。`;
 
     return systemPrompt;
+}
+
+/** 单一镜头声明（无场景卡时的兜底形态） */
+function lensDeclarationFallback(_ctx: ChapterContext): string {
+    const person = '主角';
+    return `【本章镜头】视角人物：${person}——只写 ${person} 能看到、听到、感知到的信息；镜头不切换。`;
 }
 
 /**
@@ -99,7 +85,13 @@ export interface ChapterPromptResult {
  * @param bodyFormat - 正文格式
  * @param knowledgeInjection - 知识注入
  * @param limits - 限制
+ * @param writingRules - 写作规则全文（唯一来源 RulesService）
   * @returns ChapterPromptResult 实例
+ *
+ * @example
+ * ```ts
+ * const { system, user } = buildChapterPrompts(ctx, settings, fmt, knowledge, limits, rules);
+ * ```
  */
 export function buildChapterPrompts(
     ctx: ChapterContext,
@@ -107,8 +99,9 @@ export function buildChapterPrompts(
     bodyFormat: BodyFormatContract = DEFAULT_BODY_FORMAT,
     knowledgeInjection?: string,
     limits?: ChapterPromptLimits,
+    writingRules = '',
 ): ChapterPromptResult {
-    const system = buildSystemPrompt(ctx, settings, bodyFormat);
+    const system = buildSystemPrompt(ctx, settings, bodyFormat, writingRules);
     const user = buildUserPrompt(ctx, settings, bodyFormat);
     const knowledge = (knowledgeInjection || '').trim();
     const modelId = limits?.modelId || 'default';

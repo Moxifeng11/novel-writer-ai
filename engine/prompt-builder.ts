@@ -216,9 +216,6 @@ export class PromptBuilder {
             !skipCoreInfo && allItems ? '【物品功法总览】' : '',
             !skipCoreInfo && allItems ? allItems.slice(0, 2000) : '',
             !skipCoreInfo && allItems ? '' : '',
-            writingRules ? '【写作规则（必须遵守）】' : '',
-            writingRules ? writingRules.slice(0, 3000) : '',
-            writingRules ? '' : '',
             writingStyle ? '【文笔风格（请严格遵循此文件定义的风格）】' + writingStyle : '',
             '',
             // 有章节简报时，简报已完整承载大纲与当前场景，避免重复注入整段 Scene 展开
@@ -1134,8 +1131,6 @@ export class PromptBuilder {
 
         // 项目规则与文笔风格可能很长，放进 sections 参与预算裁剪（system 不裁剪）
         const projectStyleText = [
-            writingRules ? '【写作规则（必须遵守）】' : '',
-            writingRules ? writingRules.slice(0, 3000) : '',
             writingStyle ? '【文笔风格（请严格遵循此文件定义的风格）】' + writingStyle : '',
         ].filter(Boolean).join('\n');
 
@@ -1287,8 +1282,6 @@ export class PromptBuilder {
 
         // 项目规则与文笔风格可能很长，放进 sections 参与预算裁剪（system 不裁剪）
         const projectStyleText = [
-            writingRules ? '【写作规则（必须遵守）】' : '',
-            writingRules ? writingRules.slice(0, 2000) : '',
             writingStyle ? '【文笔风格（请严格遵循此文件定义的风格）】' + writingStyle : '',
         ].filter(Boolean).join('\n');
 

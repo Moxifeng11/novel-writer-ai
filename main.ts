@@ -85,7 +85,6 @@ import { getDegradationNotifier } from './shared/degradation-notifier';
 import { AntiAIDetector } from './engine/anti-ai-detector';
 import { setBusinessThresholdOverrides, setInfoDebtMax } from './shared/thresholds';
 import { SerializedWriter } from './shared/serialized-writer';
-import { compareVersionBase } from './shared/versioned-registry';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
@@ -971,74 +970,22 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     /**
-     * 启动时检查生效的写作规则版本。
-     * v4.23：从「只比版本号」升级为「版本号 + 内容哈希」——实测事故正是
-     * 版本号同为 3.6.0、正文却是旧版（一句一段），旧检查一路通过、无人发现。
+     * 启动时执行写作规则 v4 迁移（唯一来源：元文件/00-系统模板/写作规则.md）。
+     * - 元文件缺失 → 写入 v4 模板；旧版本 → 直接覆写（不备份）；
+     * - 删除各项目内副本；此后不再有「多版本/漂移」概念。
      */
     private async _checkRulesVersion(): Promise<void> {
         try {
             const rulesService = RulesService.getInstance(this.app);
-            rulesService.setActiveVersion(this.settings.activeRulesVersion);
-            const info = await rulesService.checkRulesVersion();
-            const isPresent = await rulesService.isRulesFilePresent();
-
-            if (!isPresent) {
-                new Notice('⚠️ 未检测到写作规则文件，将使用内置默认规则', 5000);
-                log.warn('[小说工坊] 写作规则文件不存在，使用内置默认规则');
-                return;
+            const migration = await rulesService.migrateToVaultSingleSource();
+            if (migration.overwrote) {
+                new Notice('📜 写作规则已更新到 v4 引导版（唯一来源：元文件/00-系统模板）', 5000);
             }
-            if (info.warnings.length > 0) {
-                new Notice(`⚠️ 写作规则版本异常：${info.warnings[0]}`, 9000);
-                log.warn('[小说工坊] 写作规则版本异常:', info.warnings.join('；'));
-                return;
-            }
-            // 只有「主干版本落后」才提示同步。自定义变体（如 3.6.0-引导代禁止）与
-            // 实验版（3.7.0-anchor）是用户主动选择的版本，不应每次启动都弹告警。
-            if (info.current !== 'unknown' && compareVersionBase(info.current, info.expected) < 0) {
-                // v4.27：提供一键同步——vault 规则文件是模板拷贝，不是用户创作内容。
-                // 旧实现只弹警告让用户自己去设置里找，但大多数用户不知道怎么修。
-                const notice = new Notice(
-                    `📜 写作规则版本：当前 ${info.current}，内置 ${info.expected}。`,
-                    0,
-                );
-                const syncBtn = notice.noticeEl.createEl('button', {
-                    text: '同步到最新版',
-                    cls: 'nw-btn nw-btn-primary',
-                    attr: { style: 'margin-left:8px' },
-                });
-                syncBtn.addEventListener('click', async () => {
-                    syncBtn.disabled = true;
-                    syncBtn.setText('同步中…');
-                    try {
-                        const { WRITING_RULES } = await import('./shared/writing-rules');
-                        const targetPath = '元文件/00-系统模板/写作规则.md';
-                        const existing = this.app.vault.getAbstractFileByPath(targetPath);
-                        if (existing instanceof TFile) {
-                            await this.app.vault.modify(existing, WRITING_RULES);
-                        } else {
-                            await this.app.vault.create(targetPath, WRITING_RULES);
-                        }
-                        rulesService.invalidateCache();
-                        new Notice('✅ 写作规则已同步到内置最新版', 4000);
-                        notice.hide();
-                    } catch (e) {
-                        log.error('[小说工坊] 同步写作规则失败:', e);
-                        new Notice(`❌ 同步失败: ${e instanceof Error ? e.message : String(e)}`, 6000);
-                        syncBtn.disabled = false;
-                        syncBtn.setText('同步到最新版');
-                    }
-                });
-                const dismissBtn = notice.noticeEl.createEl('button', {
-                    text: '忽略',
-                    cls: 'nw-btn nw-btn-secondary',
-                    attr: { style: 'margin-left:4px' },
-                });
-                dismissBtn.addEventListener('click', () => notice.hide());
-                log.info(`[小说工坊] 写作规则版本：当前 ${info.current}，内置 ${info.expected}（用户可一键同步）`);
+            if (migration.removedProjectCopies > 0) {
+                new Notice(`🗂 已移除 ${migration.removedProjectCopies} 个项目内写作规则副本（规则只保留一份）`, 5000);
             }
         } catch (e) {
-            log.warn('[小说工坊] 规则版本检查失败:', e);
-            new Notice('⚠️ 写作规则检查异常，请查看控制台', 5000);
+            log.warn('[小说工坊] 写作规则 v4 迁移失败:', e);
         }
     }
 

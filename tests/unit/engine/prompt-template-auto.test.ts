@@ -52,7 +52,7 @@ describe('getStepTemplateAuto — 整章草稿的新流程选择', () => {
         expect(v2.systemPrompt).toContain('${protagonistSoulDetail}');
     });
 
-    it('V1 / V2 都必须消费场景卡、工艺约束和负面清单', () => {
+    it('V1 / V2 消费镜头锚点与场景卡，且不再注入工艺/负面清单（v4.26 引导化）', () => {
         const v1 = getStepTemplateAuto('bodyGeneration', {})!;
         const v2 = getStepTemplateAuto('bodyGeneration', {
             characterSoulReady: '1',
@@ -60,9 +60,11 @@ describe('getStepTemplateAuto — 整章草稿的新流程选择', () => {
         })!;
 
         for (const tpl of [v1, v2]) {
-            expect(tpl.systemPrompt).toContain('${craftConstraints}');
-            expect(tpl.systemPrompt).toContain('${negativeList}');
+            expect(tpl.systemPrompt).toContain('${lensDeclaration}');
+            expect(tpl.systemPrompt).toContain('${writingRules}');
             expect(tpl.systemPrompt).toContain('${prevChapterStateSnapshot}');
+            expect(tpl.systemPrompt).not.toContain('${craftConstraints}');
+            expect(tpl.systemPrompt).not.toContain('${negativeList}');
             expect(tpl.userPrompt).toContain('${sceneCardDigest}');
         }
         // V2 不再丢失场景类型样本与节奏建议

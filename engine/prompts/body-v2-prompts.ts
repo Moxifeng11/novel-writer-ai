@@ -5,7 +5,8 @@
  */
 
 // ============================================================
-export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagonistName}。你活在他身体里。
+export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `\${lensDeclaration}
+你的镜头贴着 \${protagonistName}。你活在他身体里。
 
 【他的灵魂——他不是角色卡，他是活人】
 \${protagonistSoulDetail}
@@ -22,13 +23,12 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagoni
 【现在开始】
 把 \${protagonistName} 刚刚经历的这段写出来。从一个具体的时刻开始——可以是身体感觉，也可以是一句对话、一个动作或一个念头。
 
-【每个场景至少要有——但不要逐段打卡】
-1. 2–3 处关键身体感觉（冷/热/痛/麻/紧/松/轻/重），放在真正重要的动作或转折上。
-2. 一次情绪变化：进来时是警惕的→出去时变成害怕的，或者其他变化。
-3. 一次关系变化：谁让他更信任了一点？谁让他更讨厌了？
-4. 一次回忆或联想：某个声音/气味/触感，让他想起过去。
+【每场问自己三件事——不是配额，是入口】
+1. 他身体的哪个部位先有了反应？把它写在动作或转折上。
+2. 进这一场时他是什么状态，出去时变了什么（情绪/关系/认知）？
+3. 场景里有没有什么声音/气味/触感，让他想起过去？
 
-段落可以只是过渡、交代或对话，不必每段都塞满身体感觉和情绪变化。
+段落可以只是过渡、交代或对话，不必每段都塞满身体感觉。
 
 \${writingRules}
 
@@ -39,25 +39,21 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagoni
 
 【当前时间】\${timeContext}
 
-【上一章结束状态（硬约束）】
+【上一章结束状态】
 \${prevChapterStateSnapshot}
-本章开头必须与此状态一致；人物位置、状态、已知信息如要改变，正文必须写出过渡。
+本章开头从这一状态自然长出来；位置/状态/已知信息要变，就让正文写出过程。
 
 📌 输出格式
 \${bodyFormat}
 - 对话必须加引号""
-- 字数 ≥ \${baseWords} 字
-
-\${craftConstraints}
+- 字数跟随本章目标：约 \${baseWords} 字
 
 \${humanVoice}
-
-\${negativeList}
 
 【永远记住】
 你的镜头贴着 \${protagonistName}。你不是在写小说。
 你在记录他刚刚经历过的、真实的、有质感的每一刻。
-每个场景至少 2–3 处关键身体感觉；段落可以平淡地过渡，不必逐段打卡。`;
+回到镜头：此刻他注意到了什么？`;
 
 /**
  * BODY_GENERATION_USER_TEMPLATE_V2 常量。
@@ -79,14 +75,14 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 【场景展开——每个场景的感受设计】
 \${sceneExpansion}
 
-【场景卡（硬约束：POV/时间/地点/入场→转折→离场）】
+【场景卡（POV/时间/地点/入场→转折→离场）】
 \${sceneCardDigest}
 
 \${storyContextPack}
 
-【场景描写硬约束】
+【场景落地提示】
 - 每个场景开头 1-3 句落地：具体地点、时间/光线、至少一个感官细节（声音/气味/温度/触感）。
-- 必须使用当前场景卡的 sensory_hook 与 body_reaction；不得用空泛的“气氛凝重”代替。
+- 优先用场景卡的 sensory_hook 与 body_reaction，别用空泛的“气氛凝重”带过。
 - 场景切换必须写清时间/地点过渡；同一场景内不要反复重新介绍环境。
 - 环境描写只服务人物行动与情绪，不写与当前冲突无关的设定说明。
 
@@ -109,7 +105,7 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 
 【这个世界】\${worldView}
 
-【设定库（能力/物品/地理/势力硬约束）】\${settingLib}
+【设定库（能力/物品/地理/势力，注意别越界）】\${settingLib}
 
 【人物与势力状态】\${allChars}
 \${allFactions}

@@ -2035,7 +2035,7 @@ export class MiniSettingsModal extends Modal {
 
         try {
             const rulesService = RulesService.getInstance(this.app);
-            const { current, expected } = await rulesService.checkRulesVersion();
+            const { version } = await rulesService.checkRulesVersion();
             const isPresent = await rulesService.isRulesFilePresent();
             const config = await rulesService.getRulesConfig();
 
@@ -2052,11 +2052,8 @@ export class MiniSettingsModal extends Modal {
 
             const statusRow2 = statusCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-12px-2' });
             statusRow2.createDiv({ text: '当前规则版本:', cls: 'nw-u-fwt-600-2' });
-            statusRow2.createDiv({ text: current === 'unknown' ? '无法检测' : `v${current}`, cls: 'nw-u-fontfamily-monospace' });
+            statusRow2.createDiv({ text: `v${version}`, cls: 'nw-u-fontfamily-monospace' });
 
-            const statusRow3 = statusCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-12px-2' });
-            statusRow3.createDiv({ text: '期望规则版本:', cls: 'nw-u-fwt-600-2' });
-            statusRow3.createDiv({ text: `v${expected}`, cls: 'nw-u-fontfamily-monospace' });
 
             if (config.lastModified > 0) {
                 const statusRow4 = statusCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-12px-2' });
@@ -2068,11 +2065,6 @@ export class MiniSettingsModal extends Modal {
                 section.createDiv({
                     text: '❌ 警告：未找到写作规则文件！AI 将使用内置的默认规则。建议在项目根目录创建「00-系统模板/写作规则.md」文件。',
                     cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-er nw-u-c-text-error nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
-                });
-            } else if (current !== expected && current !== 'unknown') {
-                section.createDiv({
-                    text: `⚠️ 警告：规则版本不匹配！当前 v${current}，期望 v${expected}。建议更新写作规则文件以确保生成质量。`,
-                    cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-wa nw-u-c-text-warning nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
                 });
             } else {
                 section.createDiv({

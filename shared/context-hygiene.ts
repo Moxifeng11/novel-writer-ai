@@ -215,7 +215,10 @@ const STYLE_FRAGMENT_PATTERNS: Array<{ re: RegExp; label: string }> = [
  * @returns 是否成功
  */
 export function hasParagraphAnchor(rulesText: string): boolean {
-    return /自然段\s*[2２][–\-~—]\s*6\s*句|80\s*[–\-~—]\s*220\s*字/.test(String(rulesText || ''));
+    // v4.26：规则改为引导版，「每段开头空两格」就是格式锚点；
+    // 旧版「自然段 2–6 句」仍兼容（存量项目文件）。
+    return /每段开头空两格/.test(String(rulesText || ''))
+        || /自然段\s*[2２][–\-~—]\s*6\s*句|80\s*[–\-~—]\s*220\s*字/.test(String(rulesText || ''));
 }
 
 /**

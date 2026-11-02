@@ -46,7 +46,7 @@ import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
 import { ENGINE_NAMES } from '../shared/engine-names';
-import { formatWritingRulesForPrompt } from './prompts/writing-rules-format';
+import { RulesService } from '../services/rules-service';
 import {
     attachStoryContextToSnapshot,
     buildStoryContext,
@@ -586,7 +586,7 @@ export class CoWriterEngine {
             const ctx = await this.contextManager.gatherAll(project, chapterName);
             if (!this.isInitCurrent(seq)) return;
             this.lastGatheredContext = ctx;
-            this.snapshot = this.buildSnapshot(ctx, project, chapterName);
+            this.snapshot = await this.buildSnapshot(ctx, project, chapterName);
             // 故事上下文总线：初始化时先按整章建包，后续切场景时再按当前场景细化
             this.maybeRefreshStoryContextPack(true);
             await this.syncCreationModeContext(project);
@@ -2521,7 +2521,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                 this.snapshot.chapterName
             );
             this.lastGatheredContext = ctx;
-            const next = this.buildSnapshot(ctx, this.snapshot.project, this.snapshot.chapterName);
+            const next = await this.buildSnapshot(ctx, this.snapshot.project, this.snapshot.chapterName);
             // buildSnapshot 只覆盖 gatherAll 的静态字段，以下字段由 init 阶段单独加载。
             // 直接整体替换会把它们清空：协同写作会静默丢失同人约束/长篇记忆/跨卷上下文/人物关系
             next.relationshipStates = this.snapshot.relationshipStates;
@@ -2613,8 +2613,15 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 私有方法：构建 Snapshot
     // ============================================================
 
-    private buildSnapshot(ctx: any, project: string, chapterName: string): ContextSnapshot {
+    private async buildSnapshot(ctx: any, project: string, chapterName: string): Promise<ContextSnapshot> {
         const data = ctx?.data || {};
+        // v4.26：规则唯一来源 RulesService（含模式附录全文）
+        let cachedRulesText = '';
+        try {
+            cachedRulesText = await RulesService.getInstance(this.app).getWritingRules();
+        } catch (e) {
+            log.warn('[CoWriterEngine] 读取写作规则失败，规则块为空:', e);
+        }
         const getRaw = (obj: any) => obj?.raw || '';
         const getEntitySummary = (list: unknown, maxChars = 3000) => {
             if (!Array.isArray(list) || list.length === 0) return '';
@@ -2644,9 +2651,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             worldView: worldViewRaw,
             worldType,
             writingStyle: getRaw(data.writing_style),
-            // v4.23 修复：mandatory 是 RuleItem[]（{title,description,points}），
-            // 旧实现直接 join 会得到 `[object Object]`，协同写作的项目规则实际是垃圾串。
-            writingRules: formatWritingRulesForPrompt(data.writing_rules),
+            // v4.26：规则唯一来源 RulesService（含模式附录全文），不再走 ContextManager 的节选渲染
+            writingRules: cachedRulesText,
             protagonistSoulDetail: '',
             emotionPlan: getRaw(data.emotion_plan),
             sceneExpansion: getRaw(data.scene_expansion),

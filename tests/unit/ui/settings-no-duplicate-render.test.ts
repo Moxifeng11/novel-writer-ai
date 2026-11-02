@@ -153,7 +153,9 @@ describe('写作配置与写作规则的分工', () => {
         const general = read('ui/settings/general-sections.ts');
         const tab = read('ui/settings-tab.ts');
         expect(writing).not.toContain("setName('写作规则版本')");
-        expect(general).toContain("setName('生效版本')");
+        // v4.26：规则页不再有版本下拉（唯一来源），改为来源卡片 + 打开按钮
+        expect(general).toContain("唯一来源:");
+        expect(general).not.toContain("setName('生效版本')");
         expect(tab).toContain("label: '📜 写作规则'");
     });
 

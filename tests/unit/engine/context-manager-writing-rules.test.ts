@@ -107,28 +107,35 @@ describe('ContextManager.parseWritingRules — 解析契约', () => {
 });
 
 describe('WRITING_RULES（代码副本）— 与规范结构一致', () => {
-    it('可被完整解析：mandatory 4 块 / checklist 9 条 / style 含编号章与默念', () => {
+    it('可被完整解析：mandatory 4 块 / checklist 5 条 / style 为写作前默念（v4 无编号章）', () => {
         const r = parse(WRITING_RULES);
 
         expect(r.mandatory.map((m) => m.title)).toEqual(['标点', '段落', '对话', '字数']);
-        expect(r.mandatory[0].points).toContain('不用分号。不用裸省略号（对话内的可以）。');
-        expect(r.mandatory[3].points).toContain('每章≥2000字');
+        expect(r.mandatory[0].points).toContain('句号为主，逗号够用就不加别的。');
+        expect(r.mandatory[1].points.join('\n')).toContain('每段开头空两格');
+        expect(r.mandatory[3].points.join('\n')).toContain('跟随章节目标字数');
 
-        expect(r.checklist).toHaveLength(9);
-        expect(r.style).toContain('一、角色活着');
-        expect(r.style).toContain('我是角色本人');
+        expect(r.checklist).toHaveLength(5);
+        expect(r.checklist[0]).toContain('同一个镜头');
+        expect(r.style).toContain('我只透过一个镜头看世界');
     });
 
-    it('含全部规范锚点与 16 个编号章，且不再使用 `【…】` 自定义分隔符', () => {
+    it('v4 锚点齐全：单一镜头锚点 / 三大结构标题 / 唯一禁止两条，且无【…】分隔符', () => {
         expect(WRITING_RULES).toContain('## 格式参考（最低要求）');
-        expect(WRITING_RULES).toContain('## 十六、写作自检');
+        expect(WRITING_RULES).toContain('## 写作自检');
         expect(WRITING_RULES).toContain('## 写作前默念');
+        expect(WRITING_RULES).toContain('## 单一镜头（核心锚点）');
+        expect(WRITING_RULES).toContain('每段开头空两格');
 
-        const numbered = WRITING_RULES
-            .split('\n')
-            .filter((l) => /^## [一二三四五六七八九十]+[、.]/.test(l.trim()));
-        expect(numbered).toHaveLength(16);
+        // 两条唯一禁止：身份禁止 + 镜头外信息禁止
+        expect(WRITING_RULES).toContain('禁止以"作者"或"叙述者"的身份写作');
+        expect(WRITING_RULES).toContain('禁止写镜头外的信息');
 
-        expect(WRITING_RULES).not.toContain('【');
+        // 数值禁令已彻底删除
+        for (const banned of ['禁用词', '每2500字', '2000-3000', '2–6 句', '80–220 字', '≥2000字']) {
+            expect(WRITING_RULES).not.toContain(banned);
+        }
+
+        expect(WRITING_RULES).not.toContain('【写作引导');
     });
 });

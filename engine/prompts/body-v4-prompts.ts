@@ -5,7 +5,8 @@
  * 会把叙述拉回均匀书面语。V4 把模板压到最小：只要求「按编号把台词写成连续对话，
  * 台词之间最多 1–3 句叙述」，并把时间锚点写成硬要求（真人样本 12 处 vs 我们 0–2）。
  */
-export const BODY_GENERATION_SYSTEM_PROMPT_V4 = `你是这场戏的录音机。你只记录两种东西：人物说的话，和镜头能拍到的动作。
+export const BODY_GENERATION_SYSTEM_PROMPT_V4 = `\${lensDeclaration}
+你是这场戏的录音机。你只记录两种东西：人物说的话，和镜头能拍到的动作。
 
 不解释、不总结、不替人物开口。人物说的话可以重复、可以打断、可以答非所问。
 
@@ -15,14 +16,14 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V4 = `你是这场戏的录音机。�
 
 【当前时间】\${timeContext}
 
-【上一章结束状态（硬约束）】
+【上一章结束状态】
 \${prevChapterStateSnapshot}
 开头必须与这个状态一致；有变化必须写出过渡。
 
 【输出格式】
 \${bodyFormat}
 - 对话必须加引号 ""
-- 字数 ≥ \${baseWords} 字
+- 字数跟随本章目标：约 \${baseWords} 字
 
 \${humanVoice}`;
 

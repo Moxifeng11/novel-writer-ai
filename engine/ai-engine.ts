@@ -5,6 +5,7 @@ import { buildChapterPrompts as buildChapterPromptsFn, buildUserPrompt as buildU
 import { clampBudgetToModelLimits } from '../shared/prompt-budget';
 import { DEFAULT_CONTEXT_WINDOW } from '../shared/thresholds';
 import { BodyWriter } from './body-writer';
+import { RulesService } from '../services/rules-service';
 import type { BodyFormatContract } from '../shared/body-format';
 import { AIApiClient } from './ai-api-client';
 import { ChapterHelpers } from './ai-chapter-helpers';
@@ -240,7 +241,7 @@ export class AIEngine {
         }
 
         const bodyFormat = await this.getBodyWriter().resolveContract(context.project);
-        const prompts = this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
+        const prompts = await this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
         return this.callAI(prompts.system, prompts.user, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput, { isWritingTask: true });
     }
 
@@ -277,7 +278,7 @@ export class AIEngine {
         }
 
         const bodyFormat = await this.getBodyWriter().resolveContract(context.project);
-        const prompts = this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
+        const prompts = await this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
         const systemPrompt = prompts.system;
         const userPrompt = prompts.user;
 
@@ -728,17 +729,25 @@ export class AIEngine {
         return this.resolvePromptLimits(model || this.plugin.settings.proModel);
     }
 
-    private buildChapterPrompts(
+    private async buildChapterPrompts(
         context: ChapterContext,
         knowledgeInjection?: string,
         bodyFormat?: BodyFormatContract,
     ) {
+        // v4.26：规则文本唯一来源 RulesService（含模式附录），不再内嵌第二份
+        let writingRules = '';
+        try {
+            writingRules = await RulesService.getInstance(this.plugin.app).getWritingRules();
+        } catch (e) {
+            log.warn('[AIEngine] 读取写作规则失败，使用镜头兜底:', e);
+        }
         return buildChapterPromptsFn(
             context,
             { minWordCount: this.plugin.settings.minWordCount, maxWordCount: this.plugin.settings.maxWordCount },
             bodyFormat,
             knowledgeInjection,
             this.resolvePromptLimits(this.plugin.settings.proModel),
+            writingRules,
         );
     }
 

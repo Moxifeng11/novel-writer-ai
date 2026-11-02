@@ -135,9 +135,9 @@ describe('TemplateService', () => {
         it('getWritingRules 返回写作规则', async () => {
             const result = await service.getWritingRules();
             expect(result.length).toBeGreaterThan(0);
-            // v3.6.0：回退文本已与元文件规范同结构（`## 编号章 + 格式参考`）
-            expect(result).toContain('一、角色活着');
-            expect(result).toContain('十六、写作自检');
+            // v4.26：回退文本为单一镜头引导版（结构锚点齐全）
+            expect(result).toContain('## 单一镜头（核心锚点）');
+            expect(result).toContain('## 格式参考（最低要求）');
             expect(result).toContain('主角');
         });
 

@@ -224,7 +224,8 @@ describe('PromptBuilder — 项目规则与文笔风格参与预算裁剪', () =
         );
 
         expect(prompt).toContain('【风格尾部标记】');
-        expect(prompt).toContain('【规则开始】');
+        // v4.26：规则不再注入改写 prompt（唯一来源在正文/规则链路），只保留文笔风格
+        expect(prompt).not.toContain('【规则开始】');
     });
 
     it('联想：超预算时保留上下文与提示，项目风格可被裁剪', () => {
