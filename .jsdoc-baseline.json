@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T00:07:08.473Z",
+  "generatedAt": "2026-11-02T00:09:03.667Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -7,7 +7,7 @@
       "exports": 1508,
       "documented": 846,
       "methods": 1253,
-      "methodsDocumented": 624,
+      "methodsDocumented": 683,
       "incomplete": 739
     },
     "services": {
@@ -308,7 +308,7 @@
       "exports": 9,
       "documented": 9,
       "methods": 32,
-      "methodsDocumented": 0,
+      "methodsDocumented": 32,
       "incomplete": 0
     },
     "engine/beat-verifier.ts": {
@@ -546,7 +546,7 @@
       "exports": 8,
       "documented": 8,
       "methods": 33,
-      "methodsDocumented": 4,
+      "methodsDocumented": 31,
       "incomplete": 5
     },
     "engine/deconstruction-worker-manager.ts": {

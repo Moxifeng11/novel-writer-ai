@@ -319,18 +319,33 @@ export class DeconstructionScheduler {
         }
     }
 
+    /**
+     * 注入向量增强器（可传空解除）。
+     *
+     * @param vectorEnhancer? - 参数
+     */
     setVectorEnhancer(vectorEnhancer?: VectorEnhancer): void {
         this.vectorEnhancer = vectorEnhancer;
         this.initDeconstructors();
         this.workerManager.setVectorEnhancer(vectorEnhancer);
     }
 
+    /**
+     * 注入 LLM 增强器。
+     *
+     * @param llmEnhancer - 参数
+     */
     setLlmEnhancer(llmEnhancer: LLMEnhancer): void {
         this.llmEnhancer = llmEnhancer;
         this.initDeconstructors();
         this.workerManager.setLlmEnhancer(llmEnhancer);
     }
 
+    /**
+     * 注入设置读取器。
+     *
+     * @param settingsGetter - 参数
+     */
     setSettingsGetter(settingsGetter: () => DeconstructionSchedulerSettings): void {
         this.settingsGetter = settingsGetter;
     }
@@ -345,6 +360,11 @@ export class DeconstructionScheduler {
         this.llmCallerGetter = getter;
     }
 
+    /**
+     * 设置拆解质量档位。
+     *
+     * @param level - 参数
+     */
     setQualityLevel(level: DeconstructionQualityLevel): void {
         if (!this.settingsGetter) return;
         const settings = this.settingsGetter();
@@ -373,6 +393,10 @@ export class DeconstructionScheduler {
         return settings.vectorEnhancedDeconstruction ?? false;
     }
 
+    /**
+     * 读取拆解引擎设置。
+     * @returns 设置对象
+     */
     getDeconstructionEngineSettings(): DeconstructionEngineSettings {
         if (!this.settingsGetter) return { ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS };
         const settings = this.settingsGetter();
@@ -427,27 +451,51 @@ export class DeconstructionScheduler {
         return { cleaned, segments, wordCount, paragraphCount };
     }
 
+    /**
+     * 最大并发数。
+     * @returns 并发数
+     */
     getMaxConcurrency(): number {
         const c = this.getDeconstructionEngineSettings().maxConcurrency;
         return c > 0 ? c : DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS.maxConcurrency;
     }
 
+    /**
+     * 是否启用自动升级。
+     * @returns 布尔值
+     */
     isAutoUpgradeEnabled(): boolean {
         return this.getDeconstructionEngineSettings().enableAutoUpgrade;
     }
 
+    /**
+     * 是否包含商业性拆解。
+     * @returns 布尔值
+     */
     isCommercialIncluded(): boolean {
         return this.getDeconstructionEngineSettings().includeCommercial;
     }
 
+    /**
+     * 是否包含可读性拆解。
+     * @returns 布尔值
+     */
     isReadabilityIncluded(): boolean {
         return this.getDeconstructionEngineSettings().includeReadability;
     }
 
+    /**
+     * 是否启用 LLM 增强。
+     * @returns 布尔值
+     */
     isLlmEnhancementEnabled(): boolean {
         return this.getDeconstructionEngineSettings().llmEnabled;
     }
 
+    /**
+     * 当前向量模型名。
+     * @returns 模型名
+     */
     getVectorModel(): string {
         // 实际向量由共享 EmbeddingService 生成；拆解设置里的 vectorModel 可能是旧值。
         // 优先返回真实模型，避免 UI/缓存 key 与实际向量模型不一致。
@@ -456,11 +504,19 @@ export class DeconstructionScheduler {
         return this.getDeconstructionEngineSettings().vectorModel || DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS.vectorModel;
     }
 
+    /**
+     * 向量缓存条目上限。
+     * @returns 数量
+     */
     getVectorCacheSize(): number {
         const s = this.getDeconstructionEngineSettings().vectorCacheSize;
         return s > 0 ? s : DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS.vectorCacheSize;
     }
 
+    /**
+     * 向量批大小。
+     * @returns 数量
+     */
     getVectorBatchSize(): number {
         const s = this.getDeconstructionEngineSettings().vectorBatchSize;
         return s > 0 ? s : DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS.vectorBatchSize;
@@ -542,11 +598,23 @@ export class DeconstructionScheduler {
         return taskId;
     }
 
+    /**
+     * 重跑整本书的指定维度。
+     *
+     * @param bookId - 参数
+     * @param dimensions? - 参数
+     * @returns 任务 id
+     */
     async rerunBook(bookId: string, dimensions?: BreakdownDimension[]): Promise<string> {
         const sourceText = await this.knowledgeBaseManager.getSourceText(bookId);
         return await this.addTask(bookId, sourceText, dimensions);
     }
 
+    /**
+     * 取消任务。
+     *
+     * @param taskId - 参数
+     */
     async cancelTask(taskId: string): Promise<void> {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -612,6 +680,12 @@ export class DeconstructionScheduler {
         }
     }
 
+    /**
+     * 移除任务。
+     *
+     * @param taskId - 参数
+     * @returns 是否移除
+     */
     async removeTask(taskId: string): Promise<boolean> {
         const task = this.tasks.get(taskId);
         if (!task) return false;
@@ -626,6 +700,11 @@ export class DeconstructionScheduler {
         return true;
     }
 
+    /**
+     * 暂停任务。
+     *
+     * @param taskId - 参数
+     */
     async pauseTask(taskId: string): Promise<void> {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -655,6 +734,11 @@ export class DeconstructionScheduler {
         }
     }
 
+    /**
+     * 恢复任务。
+     *
+     * @param taskId - 参数
+     */
     async resumeTask(taskId: string): Promise<void> {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -688,24 +772,48 @@ export class DeconstructionScheduler {
         }
     }
 
+    /**
+     * 按 id 取任务。
+     *
+     * @param taskId - 参数
+     * @returns 任务或 undefined
+     */
     getTask(taskId: string): BreakdownTask | undefined {
         return this.tasks.get(taskId);
     }
 
+    /**
+     * 读取全部任务。
+     * @returns 任务数组
+     */
     getAllTasks(): BreakdownTask[] {
         return Array.from(this.tasks.values());
     }
 
+    /**
+     * 读取进行中任务。
+     * @returns 任务数组
+     */
     getActiveTasks(): BreakdownTask[] {
         return Array.from(this.tasks.values()).filter(
             t => t.status === 'running' || t.status === 'pending' || t.status === 'paused'
         );
     }
 
+    /**
+     * 取任务的进度发射器。
+     *
+     * @param taskId - 参数
+     * @returns 发射器或 undefined
+     */
     getTaskEmitter(taskId: string): ProgressEmitter | undefined {
         return this.taskEmitters.get(taskId);
     }
 
+    /**
+     * 取时间估算器。
+     * @returns 估算器
+     */
     getTimeEstimator(): TimeEstimator {
         return this.timeEstimator;
     }
@@ -739,16 +847,34 @@ export class DeconstructionScheduler {
         return { eta: totalEta, etaMin: totalEtaMin, etaMax: totalEtaMax };
     }
 
+    /**
+     * 订阅整体进度。
+     *
+     * @param callback - 参数
+     * @returns 取消订阅函数
+     */
     onProgress(callback: (progress: BreakdownProgress) => void): () => void {
         this.progressCallbacks.add(callback);
         return () => this.progressCallbacks.delete(callback);
     }
 
+    /**
+     * 订阅任务完成。
+     *
+     * @param callback - 参数
+     * @returns 取消订阅函数
+     */
     onTaskComplete(callback: (task: BreakdownTask) => void): () => void {
         this.completeCallbacks.add(callback);
         return () => this.completeCallbacks.delete(callback);
     }
 
+    /**
+     * 订阅任务失败。
+     *
+     * @param callback - 参数
+     * @returns 取消订阅函数
+     */
     onTaskFailed(callback: (task: BreakdownTask) => void): () => void {
         this.failedCallbacks.add(callback);
         return () => this.failedCallbacks.delete(callback);
@@ -2624,6 +2750,9 @@ export class DeconstructionScheduler {
         }
     }
 
+    /**
+     * 销毁调度器并清理资源。
+     */
     destroy(): void {
         for (const timer of this.heartbeatTimers.values()) {
             clearInterval(timer);

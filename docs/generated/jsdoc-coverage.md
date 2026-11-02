@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 846 | 56% | 1253 | 624 | 50% | 739 |
+| `engine/` | 271 | 1508 | 846 | 56% | 1253 | 683 | 55% | 739 |
 | `services/` | 28 | 151 | 49 | 32% | 202 | 123 | 61% | 66 |
 | `shared/` | 163 | 1517 | 964 | 64% | 149 | 89 | 60% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 206 | 33% | 161 |
@@ -18,9 +18,7 @@
 | `ui/co-writing-view.ts` | 3 | 3 | 103 | 56 |
 | `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 44 |
 | `shared/paths.ts` | 189 | 45 | 0 | 0 |
-| `engine/batch-import-manager.ts` | 9 | 0 | 32 | 32 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 26 |
-| `engine/deconstruction-scheduler.ts` | 8 | 0 | 33 | 29 |
 | `engine/semantic-analyzer.ts` | 5 | 5 | 23 | 23 |
 | `engine/deconstruction-worker-manager.ts` | 3 | 3 | 21 | 21 |
 | `engine/foreshadow-manager.ts` | 8 | 6 | 18 | 17 |
@@ -45,3 +43,5 @@
 | `ui/services/co-write-facade.ts` | 2 | 2 | 58 | 15 |
 | `engine/cache/preload-manager.ts` | 6 | 6 | 25 | 10 |
 | `shared/mode-content.ts` | 19 | 16 | 0 | 0 |
+| `shared/pre-research.ts` | 17 | 16 | 0 | 0 |
+| `shared/creation-mode.ts` | 20 | 15 | 0 | 0 |

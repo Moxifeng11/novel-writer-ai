@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 120937 | 1532 | 525 | 34% |
+| `engine/` | 289 | 121219 | 1532 | 525 | 34% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -71,7 +71,7 @@
 | `engine/analysis-session-manager.ts` | 642 | 1 | 0 |
 | `engine/anti-ai-detector.ts` | 407 | 6 | 0 |
 | `engine/bases-generator.ts` | 213 | 8 | 0 |
-| `engine/batch-import-manager.ts` | 700 | 9 | 9 |
+| `engine/batch-import-manager.ts` | 853 | 9 | 9 |
 | `engine/beat-verifier.ts` | 64 | 3 | 1 |
 | `engine/body-writer.ts` | 444 | 8 | 1 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
@@ -107,7 +107,7 @@
 | `engine/craft-constraints.ts` | 69 | 5 | 1 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 625 | 16 | 5 |
-| `engine/deconstruction-scheduler.ts` | 2661 | 9 | 8 |
+| `engine/deconstruction-scheduler.ts` | 2790 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 547 | 3 | 0 |
 | `engine/deconstructors/character-deconstructor.ts` | 4028 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2019 | 5 | 5 |

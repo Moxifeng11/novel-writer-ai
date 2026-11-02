@@ -183,6 +183,9 @@ export class BatchImportManager {
         return this.fs;
     }
 
+    /**
+     * 初始化：加载历史与预设。
+     */
     async init(): Promise<void> {
         const fs = this.getFS();
         const configDir = kbImportHistoryFile(this.baseDir).split('/').slice(0, -1).join('/');
@@ -244,6 +247,12 @@ export class BatchImportManager {
         }).catch((e: unknown) => log.warn('[BatchImportManager] 写队列失败:', e));
     }
 
+    /**
+     * 添加一条导入预览。
+     *
+     * @param file - 参数
+     * @returns 预览对象
+     */
     addPreview(file: { filename: string; content: string; source: ImportSource; sourcePath?: string }): ImportBookPreview {
         const recognition = this.chapterRecognizer.recognize(file.content, file.filename);
         const preview: ImportBookPreview = {
@@ -260,22 +269,44 @@ export class BatchImportManager {
         return preview;
     }
 
+    /**
+     * 移除预览。
+     *
+     * @param previewId - 参数
+     */
     removePreview(previewId: string): void {
         this.previews.delete(previewId);
     }
 
+    /**
+     * 清空预览列表。
+     */
     clearPreviews(): void {
         this.previews.clear();
     }
 
+    /**
+     * 读取全部预览。
+     * @returns 预览数组
+     */
     getPreviews(): ImportBookPreview[] {
         return Array.from(this.previews.values());
     }
 
+    /**
+     * 读取已勾选的预览。
+     * @returns 预览数组
+     */
     getSelectedPreviews(): ImportBookPreview[] {
         return Array.from(this.previews.values()).filter(p => p.selected);
     }
 
+    /**
+     * 更新预览信息（名称/分类等）。
+     *
+     * @param previewId - 参数
+     * @param updates - 参数
+     */
     updatePreview(previewId: string, updates: Partial<ImportBookPreview>): void {
         const preview = this.previews.get(previewId);
         if (preview) {
@@ -283,14 +314,27 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 更新批量导入设置。
+     *
+     * @param settings - 参数
+     */
     setSettings(settings: Partial<ImportBatchSettings>): void {
         this.settings = { ...this.settings, ...settings };
     }
 
+    /**
+     * 读取批量导入设置。
+     * @returns 设置对象
+     */
     getSettings(): ImportBatchSettings {
         return { ...this.settings };
     }
 
+    /**
+     * 开始批量导入，返回批次 id。
+     * @returns 批次 id
+     */
     startImport(): string {
         const selected = this.getSelectedPreviews();
         const historyId = generateId();
@@ -486,6 +530,11 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 取消任务。
+     *
+     * @param taskId - 参数
+     */
     cancelTask(taskId: string): void {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -506,6 +555,11 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 暂停任务。
+     *
+     * @param taskId - 参数
+     */
     pauseTask(taskId: string): void {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -517,6 +571,11 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 恢复任务。
+     *
+     * @param taskId - 参数
+     */
     resumeTask(taskId: string): void {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -528,6 +587,11 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 重试失败任务。
+     *
+     * @param taskId - 参数
+     */
     retryTask(taskId: string): void {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -544,6 +608,12 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 调整任务优先级。
+     *
+     * @param taskId - 参数
+     * @param priority - 参数
+     */
     setTaskPriority(taskId: string, priority: number): void {
         const task = this.tasks.get(taskId);
         if (!task) return;
@@ -553,20 +623,38 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 读取进行中的任务。
+     * @returns 任务数组
+     */
     getActiveTasks(): ImportTask[] {
         return Array.from(this.tasks.values()).filter(
             t => t.status === 'processing' || t.status === 'queued' || t.status === 'pending'
         );
     }
 
+    /**
+     * 读取全部任务。
+     * @returns 任务数组
+     */
     getAllTasks(): ImportTask[] {
         return Array.from(this.tasks.values());
     }
 
+    /**
+     * 按 id 取任务。
+     *
+     * @param taskId - 参数
+     * @returns 任务或 undefined
+     */
     getTask(taskId: string): ImportTask | undefined {
         return this.tasks.get(taskId);
     }
 
+    /**
+     * 读取整体进度。
+     * @returns 进度对象
+     */
     getProgress(): BatchImportProgress {
         const allTasks = Array.from(this.tasks.values());
         const totalTasks = allTasks.length;
@@ -587,11 +675,23 @@ export class BatchImportManager {
         };
     }
 
+    /**
+     * 订阅整体进度。
+     *
+     * @param callback - 参数
+     * @returns 取消订阅函数
+     */
     onProgress(callback: (progress: BatchImportProgress) => void): () => void {
         this.progressCallbacks.add(callback);
         return () => this.progressCallbacks.delete(callback);
     }
 
+    /**
+     * 订阅单任务更新。
+     *
+     * @param callback - 参数
+     * @returns 取消订阅函数
+     */
     onTaskUpdate(callback: (task: ImportTask) => void): () => void {
         this.taskCallbacks.add(callback);
         return () => this.taskCallbacks.delete(callback);
@@ -618,19 +718,37 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 读取导入历史。
+     * @returns 历史数组
+     */
     getHistory(): ImportHistoryItem[] {
         return [...this.history];
     }
 
+    /**
+     * 按 id 取历史项。
+     *
+     * @param historyId - 参数
+     * @returns 历史项或 undefined
+     */
     getHistoryItem(historyId: string): ImportHistoryItem | undefined {
         return this.history.find(h => h.id === historyId);
     }
 
+    /**
+     * 清空历史。
+     */
     clearHistory(): void {
         this.history = [];
         this.saveHistory();
     }
 
+    /**
+     * 从历史重试失败项。
+     *
+     * @param historyId - 参数
+     */
     retryFailedFromHistory(historyId: string): void {
         const historyItem = this.history.find(h => h.id === historyId);
         if (!historyItem) return;
@@ -644,10 +762,21 @@ export class BatchImportManager {
         }
     }
 
+    /**
+     * 读取导入预设。
+     * @returns 预设数组
+     */
     getPresets(): ImportPreset[] {
         return [...this.presets];
     }
 
+    /**
+     * 保存导入预设。
+     *
+     * @param name - 参数
+     * @param settings - 参数
+     * @returns 预设对象
+     */
     savePreset(name: string, settings: ImportBatchSettings): ImportPreset {
         const preset: ImportPreset = {
             id: generateId(),
@@ -661,11 +790,22 @@ export class BatchImportManager {
         return preset;
     }
 
+    /**
+     * 删除预设。
+     *
+     * @param presetId - 参数
+     */
     deletePreset(presetId: string): void {
         this.presets = this.presets.filter(p => p.id !== presetId);
         this.savePresets();
     }
 
+    /**
+     * 应用预设。
+     *
+     * @param presetId - 参数
+     * @returns 是否成功
+     */
     applyPreset(presetId: string): boolean {
         const preset = this.presets.find(p => p.id === presetId);
         if (!preset) return false;
@@ -673,6 +813,12 @@ export class BatchImportManager {
         return true;
     }
 
+    /**
+     * 更新预设。
+     *
+     * @param presetId - 参数
+     * @param updates - 参数
+     */
     updatePreset(presetId: string, updates: Partial<ImportPreset>): void {
         const preset = this.presets.find(p => p.id === presetId);
         if (!preset) return;
@@ -684,6 +830,9 @@ export class BatchImportManager {
         this.savePresets();
     }
 
+    /**
+     * 把待写状态刷盘。
+     */
     async flush(): Promise<void> {
         await this.historyWriter.flush();
         await this.presetsWriter.flush();
@@ -693,6 +842,10 @@ export class BatchImportManager {
         return this.historyWriter.isDirty || this.presetsWriter.isDirty;
     }
 
+    /**
+     * 取章节识别器。
+     * @returns 识别器
+     */
     getChapterRecognizer(): ChapterRecognizer {
         return this.chapterRecognizer;
     }
