@@ -60,28 +60,32 @@ function copyIfExists(source: string, target: string): void {
 }
 
 /**
- * 创建临时 vault，并把构建产物安装为唯一启用的社区插件。
+ * 创建临时 vault，默认把构建产物安装为唯一启用的社区插件。
+ * `installPlugin: false` 用于性能基线（同版本 Obsidian、无插件）。
  * 不复制 data.json，避免把本机 API Key 带入测试。
  */
-export function createTestVault(): TestVault {
+export function createTestVault(options: { installPlugin?: boolean } = {}): TestVault {
+    const installPlugin = options.installPlugin !== false;
     const root = pluginRoot();
     const vaultPath = fs.mkdtempSync(path.join(os.tmpdir(), 'nw-e2e-vault-'));
     const pluginDir = path.join(vaultPath, '.obsidian', 'plugins', PLUGIN_ID);
     fs.mkdirSync(pluginDir, { recursive: true });
 
-    for (const file of ['main.js', 'manifest.json', 'styles.css']) {
-        const source = path.join(root, file);
-        if (!fs.existsSync(source)) {
-            fs.rmSync(vaultPath, { recursive: true, force: true });
-            throw new Error(`缺少构建产物 ${file}。请先执行 npm run build 再运行 E2E。`);
+    if (installPlugin) {
+        for (const file of ['main.js', 'manifest.json', 'styles.css']) {
+            const source = path.join(root, file);
+            if (!fs.existsSync(source)) {
+                fs.rmSync(vaultPath, { recursive: true, force: true });
+                throw new Error(`缺少构建产物 ${file}。请先执行 npm run build 再运行 E2E。`);
+            }
+            fs.copyFileSync(source, path.join(pluginDir, file));
         }
-        fs.copyFileSync(source, path.join(pluginDir, file));
+        copyIfExists(path.join(root, 'workers'), path.join(pluginDir, 'workers'));
     }
-    copyIfExists(path.join(root, 'workers'), path.join(pluginDir, 'workers'));
 
     fs.writeFileSync(
         path.join(vaultPath, '.obsidian', 'community-plugins.json'),
-        JSON.stringify([PLUGIN_ID], null, 2),
+        JSON.stringify(installPlugin ? [PLUGIN_ID] : [], null, 2),
     );
     fs.writeFileSync(
         path.join(vaultPath, '.obsidian', 'core-plugins.json'),

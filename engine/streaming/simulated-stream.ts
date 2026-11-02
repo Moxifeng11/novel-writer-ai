@@ -19,7 +19,7 @@ const DEFAULT_OPTIONS: Required<SimulatedStreamOptions> = {
 };
 
 const SENTENCE_END_REGEX = /[。！？.!?]+/g;
-const PARAGRAPH_SPLIT_REGEX = /\n\n+/;
+const PARAGRAPH_SPLIT_REGEX = /\n\n+/g;
 
 function splitBySentence(text: string): string[] {
     if (!text) return [];
@@ -40,7 +40,20 @@ function splitBySentence(text: string): string[] {
 
 function splitByParagraph(text: string): string[] {
     if (!text) return [];
-    return text.split(PARAGRAPH_SPLIT_REGEX).filter(p => p.trim().length > 0);
+    // 分隔符必须留在前一段末尾：stream 是逐块拼接的，丢掉 \n\n 会让正文段落粘连。
+    const chunks: string[] = [];
+    let lastIndex = 0;
+    PARAGRAPH_SPLIT_REGEX.lastIndex = 0;
+    let match;
+    while ((match = PARAGRAPH_SPLIT_REGEX.exec(text)) !== null) {
+        const endIndex = match.index + match[0].length;
+        chunks.push(text.slice(lastIndex, endIndex));
+        lastIndex = endIndex;
+    }
+    if (lastIndex < text.length) {
+        chunks.push(text.slice(lastIndex));
+    }
+    return chunks.filter(chunk => chunk.trim().length > 0);
 }
 
 function splitByChar(text: string, chunkSize: number = 1): string[] {

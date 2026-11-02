@@ -304,7 +304,19 @@ export class ObsidianFileSystem implements FileSystemPort {
     async listFolders(dirPath: string): Promise<TFolder[]> {
         const folder = await this.getFolder(dirPath);
         if (!folder) return this.listAdapterFolders(dirPath);
-        return this.app.vault.getAllFolders().filter((f: TFolder) => f.path.startsWith(dirPath + '/') && f.path !== dirPath);
+        // 不用 Vault.getAllFolders()：该 API 晚于 1.5 才加入，会让 minAppVersion=1.5.0 的声明失真。
+        // 从当前目录沿 children 递归，语义等价且覆盖全部已索引子目录。
+        const result: TFolder[] = [];
+        const walk = (current: TFolder): void => {
+            for (const child of current.children) {
+                if (child instanceof TFolder) {
+                    result.push(child);
+                    walk(child);
+                }
+            }
+        };
+        walk(folder);
+        return result;
     }
 
     private async listAdapterFiles(dirPath: string): Promise<string[]> {
@@ -497,7 +509,18 @@ export class ObsidianVaultMeta implements VaultMetaPort {
      * @returns TFolder 列表
      */
     getFolders(): TFolder[] {
-        return this.app.vault.getAllFolders();
+        // 与 listFolders 同理：避免使用晚于 1.5 的 Vault.getAllFolders()。
+        const result: TFolder[] = [];
+        const walk = (current: TFolder): void => {
+            for (const child of current.children) {
+                if (child instanceof TFolder) {
+                    result.push(child);
+                    walk(child);
+                }
+            }
+        };
+        walk(this.app.vault.getRoot());
+        return result;
     }
 
     /**

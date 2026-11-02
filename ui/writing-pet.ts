@@ -95,7 +95,9 @@ export class WritingPet {
             cls: 'nw-pet-body-wrap',
             attr: { role: 'button', tabindex: '0', 'aria-label': '写作宠物，单击查看本周/本月，双击打开统计' },
         });
-        petBody.innerHTML = PET_SVG;
+        // 浮动动画放在内层 HTML 容器：外层是点击/拖拽目标，必须保持几何稳定。
+        const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
+        floatWrap.innerHTML = PET_SVG;
         petBody.addEventListener('pointerdown', (e) => this.onPointerDown(e));
         petBody.addEventListener('click', () => {
             if (this.moved) return;

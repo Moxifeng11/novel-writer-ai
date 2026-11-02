@@ -42,6 +42,17 @@ export default defineConfig({
       testMatch: /obsidian-plugin\.spec\.ts/,
     },
 
+    {
+      name: 'lifecycle',
+      testMatch: /lifecycle\.spec\.ts/,
+    },
+
+    {
+      name: 'perf-smoke',
+      testMatch: /perf-smoke\.spec\.ts/,
+      timeout: 120_000,
+    },
+
     /* 真实 AI 链路：打开真实 vault、消耗 API 额度，默认跳过（需 E2E_REAL_AI=1） */
     {
       name: 'real-ai',

@@ -16365,6 +16365,15 @@ body.nw-panel-resizing .nw-awb-center webview {
     cursor: grab;
 }
 
+.nw-pet-float {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    /* HTML 容器上的 transform 可走合成层；SVG 内层逐帧动画会持续重绘主线程。 */
+    animation: nw-pet-float 4.2s ease-in-out infinite;
+    will-change: transform;
+}
+
 .nw-pet-body-wrap:active {
     cursor: grabbing;
 }
@@ -16374,7 +16383,6 @@ body.nw-panel-resizing .nw-awb-center webview {
     height: 108px;
     display: block;
     overflow: visible;
-    animation: nw-pet-float 4.2s ease-in-out infinite;
 }
 
 .nw-pet-shadow {
@@ -16387,7 +16395,6 @@ body.nw-panel-resizing .nw-awb-center webview {
     stroke-width: 8;
     stroke-linecap: round;
     transform-origin: 92px 84px;
-    animation: nw-pet-tail 3.4s ease-in-out infinite;
 }
 
 .nw-pet-body,
@@ -16408,7 +16415,6 @@ body.nw-panel-resizing .nw-awb-center webview {
 .nw-pet-eye {
     fill: var(--nw-card-bg);
     transform-origin: center;
-    animation: nw-pet-blink 5.2s ease-in-out infinite;
 }
 
 .nw-pet-mouth {
@@ -16432,16 +16438,15 @@ body.nw-panel-resizing .nw-awb-center webview {
     stroke-linejoin: round;
 }
 
-.nw-pet.nw-is-sleep .nw-pet-svg {
+.nw-pet.nw-is-sleep .nw-pet-float {
     animation-duration: 7s;
 }
 
 .nw-pet.nw-is-sleep .nw-pet-eye {
-    animation: none;
     transform: scaleY(0.18);
 }
 
-.nw-pet.nw-is-happy .nw-pet-svg {
+.nw-pet.nw-is-happy .nw-pet-float {
     animation: nw-pet-happy 1.6s ease-in-out infinite;
 }
 
@@ -16517,16 +16522,6 @@ body.nw-panel-resizing .nw-awb-center webview {
     50% { transform: translateY(-3px); }
 }
 
-@keyframes nw-pet-tail {
-    0%, 100% { transform: rotate(-6deg); }
-    50% { transform: rotate(10deg); }
-}
-
-@keyframes nw-pet-blink {
-    0%, 92%, 100% { transform: scaleY(1); }
-    95% { transform: scaleY(0.12); }
-}
-
 @keyframes nw-pet-happy {
     0%, 100% { transform: translateY(0) scale(1); }
     35% { transform: translateY(-7px) scale(1.03); }
@@ -16540,9 +16535,7 @@ body.nw-panel-resizing .nw-awb-center webview {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .nw-pet-svg,
-    .nw-pet-tail,
-    .nw-pet-eye {
+    .nw-pet-float {
         animation: none;
     }
 }

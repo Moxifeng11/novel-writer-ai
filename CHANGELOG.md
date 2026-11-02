@@ -1,5 +1,30 @@
 # Changelog
 
+## v4.25.0（2026-11-02）
+
+生产环境兼容性测试与优化更新：把声明的最低 Obsidian 版本真正落到可运行，并修掉空闲 CPU 与流式分段两处实测问题。
+
+### 🔧 兼容性
+
+- **Obsidian 1.4.0 支持**：`Modal.setTitle()` 仅 1.5+ 提供，批量导入的文件/文件夹选择弹窗改用 `titleEl.setText()`；`manifest.minAppVersion` 由 1.5.0 下调到 1.4.0。
+- **修复 1.5.x 运行时报错**：`shared/file-system-port.ts` 不再调用晚于 1.5 才加入的 `Vault.getAllFolders()`，改为沿 `TFolder.children` 递归；否则声明的最低版本与实际 API 不符。
+- 以 `obsidian@1.4.0`、`obsidian@1.5.7` 类型定义分别执行全量 `tsc --noEmit`，均无 API 缺失。
+
+### ⚡ 性能
+
+- **桌面宠物空闲功耗**：SVG 内层的浮动/尾巴/眨眼无限动画会让主线程逐帧重绘；改为只在 HTML 外层做 `transform` 浮动（走合成层），移除尾巴与眨眼常驻动画。
+- 实测（Obsidian 1.14.5，Windows，CDP `TaskDuration`，无插件基线对照）：空闲主线程开销 **10.22% → 0.21%–0.23%**，JS 堆增量约 **24–30 MB**，满足 5% CPU 阈值。
+- 新增 `perf-smoke` E2E（`E2E_PERF=1`）与生命周期 E2E：重复 3 轮禁用/启用、移除插件目录后重启。
+
+### 🐛 修复
+
+- **模拟流按段落切分丢换行**：`splitTextIntoChunks(..., { splitBy: 'paragraph' })` 原实现用 `split` 丢弃 `\n\n`，逐块拼接后正文段落粘连；现保留分隔符并新增 `chunks.join('') === 原文` 回归断言。
+
+### 🧪 测试与依赖
+
+- 单测 526 文件 / 5871 用例通过；真实 Obsidian E2E 25 条主旅程 + 2 条生命周期 + 1 条性能冒烟通过。
+- 运行时依赖为 0（仅 `obsidian` external）；开发依赖审计有 39 条告警（Vitest/Vite 链），不随插件发布，已登记为后续升级项。
+
 ## v4.24.0（2026-11-02）
 
 ### 📚 文档体系

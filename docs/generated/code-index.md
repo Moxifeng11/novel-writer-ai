@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 130186 | 1532 | 1301 | 85% |
+| `engine/` | 289 | 130199 | 1532 | 1301 | 85% |
 | `services/` | 28 | 11363 | 151 | 136 | 90% |
-| `shared/` | 164 | 37113 | 1512 | 1265 | 84% |
+| `shared/` | 164 | 37168 | 1512 | 1265 | 84% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 762 | 30 | 22 | 73% |
-| `ui/` | 191 | 96668 | 500 | 462 | 92% |
+| `ui/` | 191 | 96670 | 500 | 462 | 92% |
 
 ## 文件清单
 
@@ -295,7 +295,7 @@
 | `engine/story-linkage.ts` | 416 | 14 | 12 |
 | `engine/story-state-types.ts` | 44 | 3 | 0 |
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
-| `engine/streaming/simulated-stream.ts` | 170 | 2 | 2 |
+| `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |
 | `engine/style-fingerprint-library.ts` | 2284 | 7 | 7 |
 | `engine/style-learner.ts` | 319 | 0 | 0 |
@@ -363,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 911 | 3 | 3 |
+| `shared/changelog-data.ts` | 943 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -407,7 +407,7 @@
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 165 | 9 | 9 |
 | `shared/file-path-guard.ts` | 174 | 10 | 10 |
-| `shared/file-system-port.ts` | 737 | 8 | 8 |
+| `shared/file-system-port.ts` | 760 | 8 | 8 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
 | `shared/format-constants.ts` | 503 | 65 | 13 |
@@ -701,7 +701,7 @@
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
 | `ui/workspace-manager.ts` | 143 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 889 | 1 | 1 |
-| `ui/writing-pet.ts` | 277 | 2 | 2 |
+| `ui/writing-pet.ts` | 279 | 2 | 2 |
 | `ui/writing-stats-modal.ts` | 244 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 592 | 1 | 1 |

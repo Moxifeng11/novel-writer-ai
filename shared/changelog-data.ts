@@ -21,6 +21,38 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.25.0',
+        date: '2026-11-02',
+        title: '生产兼容性与性能优化：Obsidian 1.4+、空闲 CPU、流式分段',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🔧 兼容性',
+                items: [
+                    'Obsidian 1.4.0：Modal.setTitle 改为 titleEl.setText，minAppVersion 下调到 1.4.0',
+                    '移除晚于 1.5 的 Vault.getAllFolders，改为 TFolder.children 递归，修复 1.5.x 运行时报错',
+                    '以 obsidian 1.4.0 / 1.5.7 类型定义全量 typecheck 通过',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '⚡ 性能',
+                items: [
+                    '宠物浮动动画移到 HTML 外层合成层，移除尾巴/眨眼常驻动画',
+                    '空闲主线程开销实测 10.22% → 0.21%–0.23%（无插件基线对照）',
+                    '新增 perf-smoke 与生命周期 E2E（重复禁用/启用、卸载后重启）',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    '模拟流按段落切分保留 \\n\\n，正文段落不再粘连',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.24.0',
         date: '2026-11-02',
         title: '完整开发系统：文档、门禁与注释基线',

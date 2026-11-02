@@ -39,6 +39,8 @@ describe('simulated-stream', () => {
             expect(chunks[0]).toContain('第一段');
             expect(chunks[1]).toContain('第二段');
             expect(chunks[2]).toContain('第三段');
+            // 逐块拼接必须还原原文；分隔符丢失会让正文段落粘连
+            expect(chunks.join('')).toBe(text);
         });
 
         it('should split text by character', () => {

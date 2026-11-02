@@ -1474,7 +1474,7 @@ export class BatchImportModal extends Modal {
         const pickerModal = new Modal(this.app);
         pickerModal.modalEl.addClass('nw-scope');
         pickerModal.modalEl.addClass('nw-modal-sm');
-        pickerModal.setTitle('从库内选择文件');
+        pickerModal.titleEl.setText('从库内选择文件');
 
         const content = pickerModal.contentEl;
         content.style.padding = '12px';
@@ -1638,7 +1638,7 @@ export class BatchImportModal extends Modal {
         const pickerModal = new Modal(this.app);
         pickerModal.modalEl.addClass('nw-scope');
         pickerModal.modalEl.addClass('nw-modal-sm');
-        pickerModal.setTitle('从库内选择文件夹');
+        pickerModal.titleEl.setText('从库内选择文件夹');
 
         const content = pickerModal.contentEl;
         content.style.padding = '12px';
