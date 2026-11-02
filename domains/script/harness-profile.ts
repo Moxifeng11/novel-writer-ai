@@ -1,5 +1,8 @@
 import type { DomainHarnessProfile } from '../../engine/harness/domain-profile';
 
+/**
+ * 剧本模式 Harness 配置档。
+ */
 export const SCRIPT_HARNESS_PROFILE: DomainHarnessProfile = {
     mode: 'script',
     label: '短剧剧本',

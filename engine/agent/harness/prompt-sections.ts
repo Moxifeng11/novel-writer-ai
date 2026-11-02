@@ -8,6 +8,9 @@
 import type { HarnessToolCatalog } from './tool-registry';
 import type { HarnessMemoryState } from './harness-types';
 
+/**
+ * 系统提示词装配上下文。
+ */
 export interface HarnessPromptContext {
     projects: string[];
     activeProject: string | null;
@@ -29,6 +32,14 @@ const SECTION_BUILDERS: Array<{ order: number; name: string; build: (ctx: Harnes
     { order: 60, name: 'protocol', build: buildProtocol },
 ];
 
+/**
+ * 按配置档装配 Harness 系统提示词。
+ *
+ * 各分区按 `order` 升序拼接，空分区会被过滤，避免提示词里出现多余空段。
+ *
+ * @param ctx - 提示词装配上下文（创作模式、工具、规则等）
+ * @returns 拼接后的系统提示词
+ */
 export function assembleHarnessSystemPrompt(ctx: HarnessPromptContext): string {
     return SECTION_BUILDERS
         .map(({ build }) => build(ctx).trim())

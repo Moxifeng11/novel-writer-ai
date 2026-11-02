@@ -9,12 +9,18 @@
  */
 import type { CreationMode } from '../../shared/creation-mode';
 
+/**
+ * 各创作模式的项目库根路径。
+ */
 export const MODE_LIBRARY_ROOTS: Record<Exclude<CreationMode, never>, string> = {
     long: '长篇小说',
     short: '短篇小说',
     script: '剧本',
 };
 
+/**
+ * 项目库根路径列表（用于遍历）。
+ */
 export const MODE_LIBRARY_ROOT_LIST = Object.values(MODE_LIBRARY_ROOTS);
 
 /**

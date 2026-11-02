@@ -6,54 +6,54 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 124002 | 1532 | 752 | 49% |
+| `engine/` | 289 | 124148 | 1532 | 776 | 51% |
 | `services/` | 28 | 10715 | 151 | 85 | 56% |
 | `shared/` | 164 | 33301 | 1512 | 654 | 43% |
-| `core/` | 7 | 2375 | 28 | 3 | 11% |
-| `domains/` | 11 | 724 | 30 | 12 | 40% |
+| `core/` | 7 | 2399 | 28 | 11 | 39% |
+| `domains/` | 11 | 762 | 30 | 22 | 73% |
 | `ui/` | 191 | 93983 | 500 | 162 | 32% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 607 | 6 | 1 |
-| `core/crypto-service.ts` | 357 | 3 | 0 |
-| `core/example-project-service.ts` | 304 | 3 | 1 |
+| `core/command-registry.ts` | 610 | 6 | 2 |
+| `core/crypto-service.ts` | 360 | 3 | 1 |
+| `core/example-project-service.ts` | 310 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
-| `core/provider-manager.ts` | 430 | 4 | 0 |
-| `core/settings-service.ts` | 450 | 4 | 1 |
-| `core/theme-manager.ts` | 205 | 3 | 0 |
-| `domains/harness-profile-registry.ts` | 19 | 2 | 0 |
+| `core/provider-manager.ts` | 433 | 4 | 1 |
+| `core/settings-service.ts` | 453 | 4 | 2 |
+| `core/theme-manager.ts` | 211 | 3 | 2 |
+| `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 167 | 2 | 0 |
-| `domains/kernel/project-locator.ts` | 125 | 9 | 7 |
+| `domains/kernel/project-locator.ts` | 131 | 9 | 9 |
 | `domains/kernel/tool-catalog-aggregator.ts` | 94 | 6 | 5 |
 | `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
-| `domains/long/harness-profile.ts` | 41 | 1 | 0 |
-| `domains/long/tool-catalog.ts` | 103 | 4 | 0 |
-| `domains/script/harness-profile.ts` | 36 | 1 | 0 |
+| `domains/long/harness-profile.ts` | 44 | 1 | 1 |
+| `domains/long/tool-catalog.ts` | 115 | 4 | 3 |
+| `domains/script/harness-profile.ts` | 39 | 1 | 1 |
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
-| `domains/short/harness-profile.ts` | 39 | 1 | 0 |
+| `domains/short/harness-profile.ts` | 42 | 1 | 1 |
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
 | `engine/agent/agent-types.ts` | 325 | 20 | 17 |
 | `engine/agent/conversation-engine.ts` | 1241 | 1 | 0 |
-| `engine/agent/dsh/dsh-launch.ts` | 66 | 5 | 1 |
-| `engine/agent/dsh/dsh-process.ts` | 240 | 7 | 2 |
-| `engine/agent/dsh/dsh-protocol.ts` | 125 | 4 | 1 |
-| `engine/agent/dsh/dsh-session.ts` | 230 | 7 | 0 |
-| `engine/agent/harness/agent-adapter.ts` | 73 | 2 | 0 |
+| `engine/agent/dsh/dsh-launch.ts` | 78 | 5 | 4 |
+| `engine/agent/dsh/dsh-process.ts` | 249 | 7 | 5 |
+| `engine/agent/dsh/dsh-protocol.ts` | 140 | 4 | 4 |
+| `engine/agent/dsh/dsh-session.ts` | 257 | 7 | 6 |
+| `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
 | `engine/agent/harness/agent-loop.ts` | 508 | 6 | 4 |
 | `engine/agent/harness/context-fit.ts` | 123 | 6 | 5 |
 | `engine/agent/harness/creation-plan.ts` | 58 | 6 | 3 |
-| `engine/agent/harness/harness-engine.ts` | 526 | 7 | 3 |
+| `engine/agent/harness/harness-engine.ts` | 544 | 7 | 3 |
 | `engine/agent/harness/harness-types.ts` | 208 | 14 | 12 |
 | `engine/agent/harness/host-tools.ts` | 890 | 6 | 6 |
-| `engine/agent/harness/prompt-sections.ts` | 136 | 2 | 0 |
-| `engine/agent/harness/session-log.ts` | 222 | 1 | 0 |
-| `engine/agent/harness/session-snapshot.ts` | 135 | 8 | 3 |
+| `engine/agent/harness/prompt-sections.ts` | 147 | 2 | 2 |
+| `engine/agent/harness/session-log.ts` | 231 | 1 | 1 |
+| `engine/agent/harness/session-snapshot.ts` | 143 | 8 | 4 |
 | `engine/agent/harness/spill-store.ts` | 95 | 6 | 4 |
-| `engine/agent/harness/tool-registry.ts` | 255 | 5 | 0 |
-| `engine/agent/harness/tool-result-pruner.ts` | 55 | 5 | 2 |
+| `engine/agent/harness/tool-registry.ts` | 273 | 5 | 1 |
+| `engine/agent/harness/tool-result-pruner.ts` | 64 | 5 | 5 |
 | `engine/ai-api-client.ts` | 1651 | 1 | 0 |
 | `engine/ai-batch-entity-generator.ts` | 535 | 1 | 0 |
 | `engine/ai-chapter-helpers.ts` | 288 | 1 | 0 |

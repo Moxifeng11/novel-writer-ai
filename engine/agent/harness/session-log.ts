@@ -10,6 +10,9 @@
 import type { AgentSessionEvent, DerivedTurn } from './harness-types';
 import { pruneToolResultText, DEFAULT_PRUNE_CONFIG, type PruneConfig } from './tool-result-pruner';
 
+/**
+ * Agent 会话日志（调用序列与结果）。
+ */
 export class AgentSessionLog {
     private events: AgentSessionEvent[] = [];
     /** 工具调用计数，用于生成稳定 callId */
@@ -51,6 +54,12 @@ export class AgentSessionLog {
         return { ...event, seq: event.seq ?? this.eventSeq, ts: event.ts ?? Date.now() } as AgentSessionEvent;
     }
 
+    /**
+     * 生成下一个调用 ID。
+     *
+     * @param tool - 工具
+     * @returns 调用 ID
+     */
     nextCallId(tool: string): string {
         this.callSeq += 1;
         return `call_${this.callSeq}_${tool}`;

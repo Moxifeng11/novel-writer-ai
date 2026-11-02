@@ -51,6 +51,14 @@ export function sessionTitleOf(events: readonly AgentSessionEvent[]): string {
     return '新会话';
 }
 
+/**
+ * 构造可恢复的会话快照。
+ *
+ * 事件、记忆与计划都会做浅拷贝，调用方后续修改原对象不会污染快照。
+ *
+ * @param input - 快照输入（事件、调用序号、记忆、计划）
+ * @returns 带版本号的会话快照
+ */
 export function buildSessionSnapshot(input: SnapshotInput): HarnessSessionSnapshot {
     const events = input.events.map(event => ({ ...event }));
     return {

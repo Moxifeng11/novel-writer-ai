@@ -8,6 +8,9 @@
 import type { DshTransport } from './dsh-session';
 import type { DshLaunchPlan } from './dsh-launch';
 
+/**
+ * 子进程传输选项。
+ */
 export interface DshProcessOptions {
     cwd: string;
     /** 是否桌面端（移动端必须为 false） */
@@ -32,6 +35,9 @@ const PLATFORM_ENV_KEYS = [
     'HOME', 'TMPDIR',
 ];
 
+/**
+ * 平台自适应的 spawn 规格。
+ */
 export interface DshSpawnSpec {
     command: string;
     args: string[];
@@ -167,6 +173,9 @@ export async function createDshProcessTransport(
     };
 }
 
+/**
+ * 可执行性探测结果。
+ */
 export interface DshProbeResult {
     ok: boolean;
     version?: string;

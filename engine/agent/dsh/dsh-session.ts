@@ -12,6 +12,9 @@
  */
 import { DshJsonRpcClient, type DshJsonRpcNotification } from './dsh-protocol';
 
+/**
+ * dsh 传输层接口。
+ */
 export interface DshTransport {
     /** 写一行到子进程 stdin */
     write(line: string): void;
@@ -24,6 +27,9 @@ export interface DshTransport {
     kill(): void;
 }
 
+/**
+ * 会话事件。
+ */
 export interface DshSessionEvent {
     type: string;
     seq?: number;
@@ -31,6 +37,9 @@ export interface DshSessionEvent {
     data?: Record<string, unknown>;
 }
 
+/**
+ * 事件接收器。
+ */
 export interface DshSessionSink {
     onAssistantText?(text: string): void;
     onToolCall?(call: { callId: string; name: string; args: string }): void;
@@ -40,6 +49,9 @@ export interface DshSessionSink {
     onStderr?(line: string): void;
 }
 
+/**
+ * initialize 选项。
+ */
 export interface DshInitializeOptions {
     cwd: string;
     provider: string;
@@ -47,6 +59,9 @@ export interface DshInitializeOptions {
     maxTokens?: number;
 }
 
+/**
+ * 会话选项。
+ */
 export interface DshSessionOptions {
     transport: DshTransport;
     sessionId: string;
@@ -67,6 +82,9 @@ export function textOfContentBlocks(blocks: unknown): string {
     return parts.join('\n').trim();
 }
 
+/**
+ * dsh 会话封装（初始化/提示/等待/关闭）。
+ */
 export class DshSession {
     private readonly client: DshJsonRpcClient;
     private initialized = false;
@@ -88,6 +106,12 @@ export class DshSession {
         });
     }
 
+    /**
+     * 初始化会话并协商能力。
+     *
+     * @param options - 配置项
+     * @returns 初始化结果
+     */
     async initialize(options: DshInitializeOptions): Promise<void> {
         await this.client.request('initialize', {
             cwd: options.cwd,
@@ -136,6 +160,9 @@ export class DshSession {
         });
     }
 
+    /**
+     * 关闭会话。
+     */
     async shutdown(): Promise<void> {
         try {
             await this.client.request('shutdown', undefined, 5_000);

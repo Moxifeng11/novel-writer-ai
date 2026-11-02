@@ -34,6 +34,16 @@ function formatTurns(turns: DerivedTurn[]): string {
         .join('\n\n');
 }
 
+/**
+ * 把 AI 调用封装成 Harness 适配器。
+ *
+ * 适配器把「对话历史 + 系统指令」压成一次调用，并解析模型返回的 JSON 回合；
+ * 解析失败时返回 `null`，由 Harness 上层决定重试或终止。
+ *
+ * @param callAI - 底层 AI 调用函数
+ * @param opts - 可选的模型覆盖
+ * @returns Harness 适配器
+ */
 export function createCallAIAdapter(callAI: CallAIFn, opts: { model?: string } = {}): HarnessAdapter {
     return {
         async complete(request: HarnessAdapterRequest): Promise<HarnessAssistantTurn | null> {

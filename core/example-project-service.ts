@@ -8,6 +8,9 @@
 import { App } from 'obsidian';
 import { ensureTemplateScaffold } from '../shared/template-scaffold';
 
+/**
+ * 内置示例项目名称。
+ */
 export const EXAMPLE_PROJECT_NAME = '示例项目';
 
 interface ExampleFile {
@@ -264,6 +267,9 @@ async function ensureDir(app: App, dir: string): Promise<void> {
     }
 }
 
+/**
+ * 导入示例项目的执行结果。
+ */
 export interface ImportExampleResult {
     created: boolean;
     project: string;

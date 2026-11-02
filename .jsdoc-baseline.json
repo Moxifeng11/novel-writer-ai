@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-02T00:55:55.892Z",
+  "generatedAt": "2026-11-02T01:00:54.913Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 1073,
+      "documented": 1097,
       "methods": 1253,
-      "methodsDocumented": 1028,
+      "methodsDocumented": 1039,
       "incomplete": 753
     },
     "services": {
@@ -29,7 +29,7 @@
     "core": {
       "files": 6,
       "exports": 23,
-      "documented": 15,
+      "documented": 23,
       "methods": 48,
       "methodsDocumented": 48,
       "incomplete": 43
@@ -37,7 +37,7 @@
     "domains": {
       "files": 11,
       "exports": 30,
-      "documented": 20,
+      "documented": 30,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
@@ -68,35 +68,35 @@
     },
     "engine/agent/dsh/dsh-launch.ts": {
       "exports": 5,
-      "documented": 2,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 1
     },
     "engine/agent/dsh/dsh-process.ts": {
       "exports": 7,
-      "documented": 3,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3
     },
     "engine/agent/dsh/dsh-protocol.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 4,
-      "methodsDocumented": 2,
+      "methodsDocumented": 3,
       "incomplete": 2
     },
     "engine/agent/dsh/dsh-session.ts": {
       "exports": 7,
-      "documented": 1,
+      "documented": 7,
       "methods": 5,
-      "methodsDocumented": 3,
+      "methodsDocumented": 5,
       "incomplete": 3
     },
     "engine/agent/harness/agent-adapter.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -126,7 +126,7 @@
       "exports": 5,
       "documented": 5,
       "methods": 14,
-      "methodsDocumented": 10,
+      "methodsDocumented": 14,
       "incomplete": 11
     },
     "engine/agent/harness/harness-types.ts": {
@@ -145,21 +145,21 @@
     },
     "engine/agent/harness/prompt-sections.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/agent/harness/session-log.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 10,
-      "methodsDocumented": 9,
+      "methodsDocumented": 10,
       "incomplete": 8
     },
     "engine/agent/harness/session-snapshot.ts": {
       "exports": 8,
-      "documented": 7,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 4
@@ -173,14 +173,14 @@
     },
     "engine/agent/harness/tool-registry.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 6,
-      "methodsDocumented": 3,
+      "methodsDocumented": 6,
       "incomplete": 4
     },
     "engine/agent/harness/tool-result-pruner.ts": {
       "exports": 5,
-      "documented": 2,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 1
@@ -3288,49 +3288,49 @@
     },
     "core/command-registry.ts": {
       "exports": 6,
-      "documented": 5,
+      "documented": 6,
       "methods": 9,
       "methodsDocumented": 9,
       "incomplete": 9
     },
     "core/crypto-service.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 8,
       "methodsDocumented": 8,
       "incomplete": 7
     },
     "core/example-project-service.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 1
     },
     "core/provider-manager.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 21,
       "methodsDocumented": 21,
       "incomplete": 19
     },
     "core/settings-service.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 7,
       "methodsDocumented": 7,
       "incomplete": 7
     },
     "core/theme-manager.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 3,
       "methodsDocumented": 3,
       "incomplete": 0
     },
     "domains/harness-profile-registry.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3344,7 +3344,7 @@
     },
     "domains/kernel/project-locator.ts": {
       "exports": 9,
-      "documented": 7,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3365,21 +3365,21 @@
     },
     "domains/long/harness-profile.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "domains/long/tool-catalog.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "domains/script/harness-profile.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3393,7 +3393,7 @@
     },
     "domains/short/harness-profile.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

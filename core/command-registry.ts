@@ -197,6 +197,9 @@ export interface CommandRegistryDeps {
     isWorkbenchContext(): boolean;
 }
 
+/**
+ * 命令注册表：统一登记命令 ID、执行入口与可用性判断。
+ */
 export class CommandRegistry {
     private readonly deps: CommandRegistryDeps;
     private readonly ui: CommandUiPort;

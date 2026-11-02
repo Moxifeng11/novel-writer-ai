@@ -53,9 +53,17 @@ function renderCatalog(tools: ReadonlyMap<string, HarnessTool>): string {
     return lines.join('\n');
 }
 
+/**
+ * Harness 工具注册表。
+ */
 export class HarnessToolRegistry {
     private tools = new Map<string, HarnessTool>();
 
+    /**
+     * 注册工具。
+     *
+     * @param tool - 工具
+     */
     register(tool: HarnessTool): void {
         if (this.tools.has(tool.name)) {
             throw new Error(`Harness tool 重复注册: ${tool.name}`);
@@ -68,10 +76,20 @@ export class HarnessToolRegistry {
         return [...this.tools.keys()];
     }
 
+    /**
+     * 按名称取工具。
+     *
+     * @param name - 名称
+     * @returns 工具或 undefined
+     */
     get(name: string): HarnessTool | undefined {
         return this.tools.get(name);
     }
 
+    /**
+     * 列出全部工具。
+     * @returns 工具数组
+     */
     list(): HarnessTool[] {
         return [...this.tools.values()];
     }

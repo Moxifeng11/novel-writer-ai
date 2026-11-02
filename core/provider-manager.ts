@@ -76,6 +76,9 @@ function findOverrideByEndpoint(
     return undefined;
 }
 
+/**
+ * AI 提供方管理：模型清单、连通性探测与 Key 校验。
+ */
 export class ProviderManager {
     private readonly cb: ProviderManagerCallbacks;
 

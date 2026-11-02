@@ -1,5 +1,8 @@
 import type { DomainHarnessProfile } from '../../engine/harness/domain-profile';
 
+/**
+ * 短篇模式 Harness 配置档。
+ */
 export const SHORT_HARNESS_PROFILE: DomainHarnessProfile = {
     mode: 'short',
     label: '短篇小说',

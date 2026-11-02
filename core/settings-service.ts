@@ -37,6 +37,9 @@ export interface SettingsServiceDeps {
     saveData(data: any): Promise<void>;
 }
 
+/**
+ * 设置服务：读写、迁移与默认值合并的唯一入口。
+ */
 export class SettingsService {
     private readonly deps: SettingsServiceDeps;
     /**

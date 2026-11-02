@@ -15,6 +15,9 @@ export interface ThemeSettings {
     themePresets?: NovelWriterSettings['themePresets'];
 }
 
+/**
+ * 布局尺寸设置（面板宽度等）。
+ */
 export interface LayoutSizeSettings {
     fwStepNav?: number;
     fwRightPanel?: number;
@@ -24,6 +27,9 @@ export interface LayoutSizeSettings {
     entitySide?: number;
 }
 
+/**
+ * 主题管理：内置主题、配色派生与样式注入。
+ */
 export class ThemeManager {
     private getSettings: () => ThemeSettings;
     private getLayoutSizes?: () => LayoutSizeSettings;

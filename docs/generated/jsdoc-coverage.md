@@ -4,9 +4,9 @@
 
 | 层 | 文件 | 导出 | 已注释 | 导出覆盖 | 公开方法 | 已注释 | 方法覆盖 | 不完整 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
-| `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 1073 | 71% | 1253 | 1028 | 82% | 753 |
+| `core/` | 6 | 23 | 23 | 100% | 48 | 48 | 100% | 43 |
+| `domains/` | 11 | 30 | 30 | 100% | 1 | 1 | 100% | 0 |
+| `engine/` | 271 | 1508 | 1097 | 73% | 1253 | 1039 | 83% | 753 |
 | `services/` | 28 | 151 | 120 | 79% | 202 | 165 | 82% | 66 |
 | `shared/` | 163 | 1517 | 1170 | 77% | 149 | 138 | 93% | 457 |
 | `ui/` | 189 | 493 | 235 | 48% | 632 | 380 | 60% | 163 |
@@ -17,7 +17,6 @@
 |---|---:|---:|---:|---:|
 | `shared/story-structure.ts` | 23 | 12 | 0 | 0 |
 | `ui/views/book-detail-renderer.ts` | 2 | 0 | 10 | 10 |
-| `engine/agent/dsh/dsh-session.ts` | 7 | 6 | 5 | 2 |
 | `engine/ai-chapter-helpers.ts` | 1 | 1 | 7 | 7 |
 | `engine/ai-engine.ts` | 2 | 2 | 33 | 6 |
 | `engine/ai-worldview-generator.ts` | 2 | 1 | 7 | 7 |
@@ -45,3 +44,4 @@
 | `shared/pre-research.ts` | 17 | 8 | 0 | 0 |
 | `shared/quality-baseline.ts` | 10 | 8 | 0 | 0 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 12 | 8 | 0 | 0 |
+| `ui/project-side-panel-view.ts` | 5 | 3 | 5 | 5 |

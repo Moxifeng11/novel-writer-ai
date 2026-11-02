@@ -10,10 +10,21 @@ const PROFILES: Record<CreationMode, DomainHarnessProfile> = {
     script: SCRIPT_HARNESS_PROFILE,
 };
 
+/**
+ * 按创作模式取 Harness 配置档。
+ *
+ * @param mode - 创作模式
+ * @returns 对应配置档；未知模式回退到长篇配置
+ */
 export function getHarnessProfile(mode: CreationMode): DomainHarnessProfile {
     return PROFILES[mode] || LONG_HARNESS_PROFILE;
 }
 
+/**
+ * 列出全部 Harness 配置档。
+ *
+ * @returns 配置档数组（顺序与注册表一致）
+ */
 export function listHarnessProfiles(): DomainHarnessProfile[] {
     return Object.values(PROFILES);
 }

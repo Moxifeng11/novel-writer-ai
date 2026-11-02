@@ -18,14 +18,23 @@ export interface PruneConfig {
     tailChars: number;
 }
 
+/**
+ * 默认裁剪配置。
+ */
 export const DEFAULT_PRUNE_CONFIG: PruneConfig = {
     thresholdChars: 6000,
     headChars: 1200,
     tailChars: 1200,
 };
 
+/**
+ * 裁剪占位标记。
+ */
 export const PRUNE_MARKER = '\n…【中间内容已裁剪，不参与本轮上下文；需要全文请让用户重新查询】…\n';
 
+/**
+ * 裁剪结果。
+ */
 export interface PruneOutcome {
     text: string;
     /** 被裁掉的字符数（0 表示未裁剪） */

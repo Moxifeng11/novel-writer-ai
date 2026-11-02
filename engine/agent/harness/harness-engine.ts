@@ -164,6 +164,10 @@ export class AgentHarnessEngine {
         return this.telemetry;
     }
 
+    /**
+     * 注册的工具列表。
+     * @returns 工具数组
+     */
     getTools(): Array<{ name: string; description: string }> {
         return this.registry.list().map(tool => ({ name: tool.name, description: tool.description }));
     }
@@ -191,10 +195,18 @@ export class AgentHarnessEngine {
         return this.turnRunning;
     }
 
+    /**
+     * 会话是否结束。
+     * @returns 布尔值
+     */
     isDone(): boolean {
         return this.done;
     }
 
+    /**
+     * 启动会话。
+     * @returns 结果
+     */
     start(): Promise<HarnessTurnOutcome> {
         this.log.reset();
         this.done = false;
@@ -209,6 +221,12 @@ export class AgentHarnessEngine {
         return this.runTurn();
     }
 
+    /**
+     * 处理一轮输入。
+     *
+     * @param text - 文本内容
+     * @returns 结果
+     */
     async handle(text: string): Promise<HarnessTurnOutcome> {
         const raw = String(text || '').trim();
         this.maybeAppendTimeContext();

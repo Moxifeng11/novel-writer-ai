@@ -51,6 +51,9 @@ export interface CryptoPasswordCallbacks {
     findExistingCiphertext?: () => string | null;
 }
 
+/**
+ * 加密服务：敏感配置（API Key 等）的安全存取。
+ */
 export class CryptoService {
     private _legacyKey: CryptoKey | null = null;
     private _legacyKeyPromise: Promise<CryptoKey> | null = null;

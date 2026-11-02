@@ -1,5 +1,8 @@
 import type { DomainHarnessProfile } from '../../engine/harness/domain-profile';
 
+/**
+ * 长篇模式 Harness 配置档。
+ */
 export const LONG_HARNESS_PROFILE: DomainHarnessProfile = {
     mode: 'long',
     label: '长篇小说',

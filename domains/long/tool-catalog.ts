@@ -3,6 +3,9 @@
  */
 import type { ToolGroup } from '../kernel/tool-catalog-types';
 
+/**
+ * 工具分组表。
+ */
 export const TOOL_GROUPS: ToolGroup[] = [
     {
         label: '✍️ 核心写作',
@@ -77,6 +80,9 @@ export const TOOL_GROUPS: ToolGroup[] = [
     },
 ];
 
+/**
+ * 长篇模式的工具分组。
+ */
 export const LONG_TOOL_GROUPS = TOOL_GROUPS;
 
 /** 长篇章节页高频工具；仅允许长篇目录内的命令 */
@@ -93,6 +99,12 @@ export const CHAPTER_QUICK_TOOL_IDS: string[] = [
     'novel-writer-export-manuscript',
 ];
 
+/**
+ * 按命令 ID 查找长篇工具定义。
+ *
+ * @param commandId - 命令 ID
+ * @returns 工具定义；未找到时为 undefined
+ */
 export function findLongToolByCommandId(commandId: string) {
     for (const group of TOOL_GROUPS) {
         const found = group.buttons.find(b => b.commandId === commandId);

@@ -10,6 +10,9 @@
 
 export type DshSandboxMode = 'read-only' | 'workspace-write';
 
+/**
+ * dsh 启动参数。
+ */
 export interface DshLaunchOptions {
     /** 可执行文件（默认 npx）；支持用户改成绝对路径 */
     command?: string;
@@ -28,6 +31,9 @@ export interface DshLaunchOptions {
     env?: Record<string, string | undefined>;
 }
 
+/**
+ * 解析后的启动计划（命令、参数、环境）。
+ */
 export interface DshLaunchPlan {
     command: string;
     args: string[];
@@ -44,6 +50,12 @@ export function buildSandboxPatch(mode: DshSandboxMode, workspaceRoot: string): 
     ].join('\n') + '\n';
 }
 
+/**
+ * 构造 dsh 启动计划（含 Windows 命令解释器处理）。
+ *
+ * @param options - 启动参数（命令、profile、沙箱补丁路径等）
+ * @returns 平台自适应的启动计划
+ */
 export function buildDshLaunchPlan(options: DshLaunchOptions): DshLaunchPlan {
     const command = (options.command || 'npx').trim();
     const baseArgs = options.commandArgs && options.commandArgs.length > 0

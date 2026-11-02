@@ -15,6 +15,9 @@ export interface DshJsonRpcNotification {
     params?: unknown;
 }
 
+/**
+ * JSON-RPC 客户端选项。
+ */
 export interface DshJsonRpcClientOptions {
     /** 写一行到子进程 stdin（调用方负责换行） */
     write(line: string): void;
@@ -28,6 +31,9 @@ interface PendingCall {
     timer: ReturnType<typeof setTimeout> | null;
 }
 
+/**
+ * JSON-RPC 错误对象。
+ */
 export class DshJsonRpcError extends Error {
     constructor(readonly code: number, message: string, readonly data?: unknown) {
         super(message);
@@ -35,6 +41,9 @@ export class DshJsonRpcError extends Error {
     }
 }
 
+/**
+ * 基于换行分隔 JSON 的 RPC 客户端。
+ */
 export class DshJsonRpcClient {
     private nextId = 1;
     private pending = new Map<number, PendingCall>();
@@ -104,6 +113,12 @@ export class DshJsonRpcClient {
         });
     }
 
+    /**
+     * 发送通知（不等待响应）。
+     *
+     * @param method - RPC 方法名
+     * @param params? - 参数值
+     */
     notify(method: string, params?: unknown): void {
         this.options.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
     }
