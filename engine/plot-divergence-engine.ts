@@ -12,8 +12,14 @@ const log = createLogger('PlotDivergenceEngine');
  * 不依赖 AI 调用，保证实时性（< 100ms / 万字）
  */
 
+/**
+ * 偏离等级。
+ */
 export type DivergenceLevel = 'normal' | 'warning' | 'danger';
 
+/**
+ * 偏离维度。
+ */
 export interface DivergenceDimension {
   score: number;
   level: DivergenceLevel;
@@ -22,6 +28,9 @@ export interface DivergenceDimension {
   suggestions: string[];
 }
 
+/**
+ * 偏离检测结果。
+ */
 export interface DivergenceResult {
   mainlineDivergence: DivergenceDimension;
   characterDivergence: DivergenceDimension;
@@ -36,6 +45,9 @@ export interface DivergenceResult {
   alertReason?: string;
 }
 
+/**
+ * 引擎选项。
+ */
 export interface PlotDivergenceEngineOptions {
   chapterOutline?: string;
   mainlineKeywords?: string[];
@@ -98,6 +110,9 @@ const FORESHADOW_PLANT_PATTERNS = [
   /心里暗想/, /心中一动/, /暗自/, /悄悄/, /不动声色/,
 ];
 
+/**
+ * 剧情偏离引擎。
+ */
 export class PlotDivergenceEngine {
   private chapterOutline: string;
   private mainlineKeywords: string[];
@@ -862,18 +877,36 @@ export class PlotDivergenceEngine {
   }
 }
 
+/**
+ * 偏离等级颜色。
+ *
+ * @param level - 参数
+ * @returns 颜色
+ */
 export function getDivergenceLevelColor(level: DivergenceLevel): string {
   if (level === 'danger') return 'var(--nw-danger, #ef4444)';
   if (level === 'warning') return 'var(--nw-warning, #f59e0b)';
   return 'var(--nw-success, #22c55e)';
 }
 
+/**
+ * 偏离等级中文名。
+ *
+ * @param level - 参数
+ * @returns 名称
+ */
 export function getDivergenceLevelLabel(level: DivergenceLevel): string {
   if (level === 'danger') return '警告';
   if (level === 'warning') return '注意';
   return '正常';
 }
 
+/**
+ * 偏离等级图标。
+ *
+ * @param level - 参数
+ * @returns 图标
+ */
 export function getDivergenceLevelIcon(level: DivergenceLevel): string {
   if (level === 'danger') return '🔴';
   if (level === 'warning') return '🟡';

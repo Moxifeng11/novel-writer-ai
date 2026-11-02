@@ -6,12 +6,18 @@ import { createLogger } from '../shared/logger';
 import type { CreationMode } from '../shared/creation-mode';
 
 const log = createLogger('WritingProfile');
+/**
+ * 题材配置。
+ */
 export interface GenreConfig {
     primary: string;
     secondary?: string[];
     tags: string[];
 }
 
+/**
+ * 文风配置。
+ */
 export interface StyleConfig {
     primaryStyle: string;
     secondaryStyle?: string;
@@ -20,6 +26,9 @@ export interface StyleConfig {
     formalityLevel: number;
 }
 
+/**
+ * 节奏配置。
+ */
 export interface RhythmConfig {
     pace: 'fast' | 'medium' | 'slow';
     pacingPattern: string;
@@ -27,6 +36,9 @@ export interface RhythmConfig {
     climaxFrequency: string;
 }
 
+/**
+ * 技法配置。
+ */
 export interface TechniquesConfig {
     enabled: string[];
     disabled: string[];
@@ -34,6 +46,9 @@ export interface TechniquesConfig {
     descriptionRatio?: number;
 }
 
+/**
+ * 指纹配置。
+ */
 export interface FingerprintConfig {
     /**
      * 模板层继承的指纹 id。
@@ -44,12 +59,18 @@ export interface FingerprintConfig {
     injectionStrength: number;
 }
 
+/**
+ * 一致性配置。
+ */
 export interface ConsistencyConfig {
     characterCheck: boolean;
     foreshadowCheck: boolean;
     rhythmCheck: boolean;
 }
 
+/**
+ * 写作配置。
+ */
 export interface WritingProfile {
     projectName: string;
     projectType: 'original' | 'fanfic';
@@ -165,6 +186,9 @@ const DEFAULT_GENRE: GenreDefaults = {
     climaxFrequency: '每5-8章一个小高潮，每15-20章一个大高潮',
 };
 
+/**
+ * 写作配置管理器。
+ */
 export class WritingProfileManager {
     private app: App;
     private cache: WritingProfile | null;
@@ -224,6 +248,12 @@ export class WritingProfileManager {
         return defaultProfile;
     }
 
+    /**
+     * 保存写作配置。
+     *
+     * @param projectPath - 参数
+     * @param profile - 参数
+     */
     async save(projectPath: string, profile: WritingProfile): Promise<void> {
         const filePath = WritingProfileManager.getConfigFilePath(projectPath);
         if (this.loadFailed && this.loadFailedPath === filePath) {
@@ -298,12 +328,25 @@ export class WritingProfileManager {
         };
     }
 
+    /**
+     * 更新单个字段。
+     *
+     * @param projectPath - 参数
+     * @param fieldPath - 参数
+     * @param value - 参数
+     */
     async updateField(projectPath: string, fieldPath: string, value: any): Promise<void> {
         const profile = await this.load(projectPath);
         this.setNestedValue(profile, fieldPath, value);
         await this.save(projectPath, profile);
     }
 
+    /**
+     * 配置是否存在。
+     *
+     * @param projectPath - 参数
+     * @returns 布尔值
+     */
     async exists(projectPath: string): Promise<boolean> {
         const filePath = WritingProfileManager.getConfigFilePath(projectPath);
         try {
@@ -313,6 +356,12 @@ export class WritingProfileManager {
         }
     }
 
+    /**
+     * 空配置模板。
+     *
+     * @param projectName - 参数
+     * @returns 配置
+     */
     getEmptyProfile(projectName: string = '未命名项目'): WritingProfile {
         const now = new Date().toISOString();
         return {

@@ -1,5 +1,8 @@
 import { kbTagSystemFile } from '../shared/paths';
 
+/**
+ * 知识库标签。
+ */
 export interface KnowledgeTag {
     id: string;
     name: string;
@@ -303,6 +306,9 @@ function buildDefaultTags(): KnowledgeTag[] {
     return tags;
 }
 
+/**
+ * 知识库标签管理器。
+ */
 export class KnowledgeTagManager {
     private app: { vault: { adapter: { exists(p: string): Promise<boolean>; read(p: string): Promise<string>; write(p: string, data: string): Promise<void>; mkdir(p: string): Promise<void> } } };
     private baseDir?: string;
@@ -314,6 +320,9 @@ export class KnowledgeTagManager {
         this.baseDir = baseDir;
     }
 
+    /**
+     * 初始化：加载或创建标签体系。
+     */
     async init(): Promise<void> {
         if (this.initialized) return;
 
@@ -350,30 +359,70 @@ export class KnowledgeTagManager {
         this.initialized = true;
     }
 
+    /**
+     * 读取全部标签。
+     * @returns 标签数组
+     */
     getAllTags(): KnowledgeTag[] {
         return [...this.tags];
     }
 
+    /**
+     * 按分类取标签。
+     *
+     * @param category - 参数
+     * @returns 标签数组
+     */
     getTagsByCategory(category: 'theme' | 'technique'): KnowledgeTag[] {
         return this.tags.filter(t => t.category === category);
     }
 
+    /**
+     * 按类型取标签。
+     *
+     * @param type - 参数
+     * @returns 标签数组
+     */
     getTagsByType(type: string): KnowledgeTag[] {
         return this.tags.filter(t => t.type === type);
     }
 
+    /**
+     * 按 id 取标签。
+     *
+     * @param id - 参数
+     * @returns 标签或 undefined
+     */
     getTagById(id: string): KnowledgeTag | undefined {
         return this.tags.find(t => t.id === id);
     }
 
+    /**
+     * 按名称取标签。
+     *
+     * @param name - 参数
+     * @returns 标签或 undefined
+     */
     getTagByName(name: string): KnowledgeTag | undefined {
         return this.tags.find(t => t.name === name);
     }
 
+    /**
+     * 取子标签。
+     *
+     * @param parentId - 参数
+     * @returns 标签数组
+     */
     getChildTags(parentId: string): KnowledgeTag[] {
         return this.tags.filter(t => t.parentId === parentId);
     }
 
+    /**
+     * 新增标签。
+     *
+     * @param tag - 参数
+     * @returns 标签
+     */
     async addTag(tag: Omit<KnowledgeTag, 'id'>): Promise<KnowledgeTag> {
         const newTag: KnowledgeTag = {
             ...tag,
@@ -384,6 +433,12 @@ export class KnowledgeTagManager {
         return newTag;
     }
 
+    /**
+     * 更新标签。
+     *
+     * @param id - 参数
+     * @param updates - 参数
+     */
     async updateTag(id: string, updates: Partial<KnowledgeTag>): Promise<void> {
         const idx = this.tags.findIndex(t => t.id === id);
         if (idx === -1) return;
@@ -391,6 +446,11 @@ export class KnowledgeTagManager {
         await this.save();
     }
 
+    /**
+     * 删除标签及其子标签。
+     *
+     * @param id - 参数
+     */
     async deleteTag(id: string): Promise<void> {
         const toDelete = new Set<string>([id]);
         let changed = true;
@@ -407,6 +467,9 @@ export class KnowledgeTagManager {
         await this.save();
     }
 
+    /**
+     * 保存标签体系。
+     */
     async save(): Promise<void> {
         const filePath = kbTagSystemFile(this.baseDir);
         const content = this.serializeToMarkdown();
@@ -417,6 +480,9 @@ export class KnowledgeTagManager {
         await this.app.vault.adapter.write(filePath, content);
     }
 
+    /**
+     * 加载标签体系。
+     */
     async load(): Promise<void> {
         const filePath = kbTagSystemFile(this.baseDir);
         const content = await this.app.vault.adapter.read(filePath);

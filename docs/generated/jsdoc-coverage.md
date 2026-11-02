@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 963 | 64% | 1253 | 847 | 68% | 743 |
+| `engine/` | 271 | 1508 | 990 | 66% | 1253 | 878 | 70% | 743 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 149 | 74% | 66 |
 | `shared/` | 163 | 1517 | 1136 | 75% | 149 | 135 | 91% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 286 | 45% | 162 |
@@ -19,13 +19,8 @@
 | `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 14 |
 | `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 10 |
-| `engine/knowledge-tags.ts` | 2 | 2 | 12 | 12 |
-| `engine/plot-divergence-engine.ts` | 8 | 7 | 7 | 7 |
-| `engine/writing-profile.ts` | 8 | 8 | 7 | 6 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 0 | 15 | 13 |
 | `engine/outline-to-text-expander.ts` | 8 | 7 | 6 | 6 |
-| `engine/streaming/stream-parser.ts` | 9 | 9 | 4 | 4 |
-| `engine/template-service.ts` | 2 | 2 | 12 | 11 |
 | `engine/deconstructors/technique-deconstructor.ts` | 5 | 5 | 7 | 7 |
 | `engine/harness/tool-registry.ts` | 6 | 6 | 6 | 6 |
 | `engine/repository/domain/serializers/entity-factory.ts` | 1 | 0 | 12 | 12 |
@@ -45,3 +40,8 @@
 | `engine/cache/preload-manager.ts` | 6 | 0 | 25 | 10 |
 | `engine/harness/rule-engine.ts` | 8 | 8 | 2 | 2 |
 | `engine/harness/trend-research-service.ts` | 8 | 8 | 2 | 2 |
+| `engine/heavy-task-worker-manager.ts` | 2 | 2 | 9 | 8 |
+| `engine/style-vector-store.ts` | 11 | 10 | 17 | 0 |
+| `engine/text-segmenter.ts` | 10 | 9 | 2 | 1 |
+| `services/checkpoint-manager.ts` | 4 | 4 | 6 | 6 |
+| `shared/content-classifier.ts` | 11 | 10 | 0 | 0 |

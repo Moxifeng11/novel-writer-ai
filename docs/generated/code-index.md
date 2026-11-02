@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 122588 | 1532 | 642 | 42% |
+| `engine/` | 289 | 122861 | 1532 | 669 | 44% |
 | `services/` | 28 | 10575 | 151 | 75 | 50% |
 | `shared/` | 164 | 33168 | 1512 | 620 | 41% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -171,7 +171,7 @@
 | `engine/incremental-result-aggregator.ts` | 1666 | 3 | 0 |
 | `engine/knowledge-base-config.ts` | 494 | 5 | 0 |
 | `engine/knowledge-injector.ts` | 2078 | 13 | 0 |
-| `engine/knowledge-tags.ts` | 551 | 2 | 0 |
+| `engine/knowledge-tags.ts` | 617 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 321 | 1 | 0 |
 | `engine/knowledge-usage.ts` | 65 | 3 | 0 |
 | `engine/knowledge-vector-store.ts` | 663 | 5 | 0 |
@@ -190,7 +190,7 @@
 | `engine/planning-combined.ts` | 215 | 9 | 2 |
 | `engine/planning-step-advance.ts` | 52 | 5 | 2 |
 | `engine/plot-completion-engine.ts` | 778 | 6 | 1 |
-| `engine/plot-divergence-engine.ts` | 882 | 8 | 1 |
+| `engine/plot-divergence-engine.ts` | 915 | 8 | 8 |
 | `engine/plot-redundancy-checker.ts` | 107 | 4 | 0 |
 | `engine/preference-memory.ts` | 269 | 0 | 0 |
 | `engine/project-migration-service.ts` | 189 | 5 | 0 |
@@ -296,7 +296,7 @@
 | `engine/story-state-types.ts` | 44 | 3 | 0 |
 | `engine/stream-text-reader.ts` | 279 | 3 | 0 |
 | `engine/streaming/simulated-stream.ts` | 146 | 2 | 0 |
-| `engine/streaming/stream-parser.ts` | 305 | 8 | 0 |
+| `engine/streaming/stream-parser.ts` | 358 | 8 | 8 |
 | `engine/style-fingerprint-library.ts` | 2099 | 7 | 2 |
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
@@ -313,7 +313,7 @@
 | `engine/style/style-vector-store-v2.ts` | 1018 | 6 | 1 |
 | `engine/style/v2-quantitative-extractor.ts` | 147 | 2 | 2 |
 | `engine/suggestion-manager.ts` | 276 | 1 | 0 |
-| `engine/template-service.ts` | 726 | 2 | 0 |
+| `engine/template-service.ts` | 798 | 2 | 2 |
 | `engine/text-segmenter.ts` | 464 | 10 | 1 |
 | `engine/token-bucket-rate-limiter.ts` | 245 | 3 | 1 |
 | `engine/types/analysis-session.ts` | 109 | 8 | 8 |
@@ -322,7 +322,7 @@
 | `engine/vector-enhancer.ts` | 868 | 5 | 0 |
 | `engine/volume-outline-summarizer.ts` | 172 | 2 | 1 |
 | `engine/world-state-snapshot.ts` | 198 | 7 | 0 |
-| `engine/writing-profile.ts` | 505 | 8 | 0 |
+| `engine/writing-profile.ts` | 554 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1373 | 14 | 12 |
 | `services/api-connectivity-service.ts` | 311 | 8 | 7 |
 | `services/canon-research-service.ts` | 435 | 7 | 6 |

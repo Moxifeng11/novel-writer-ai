@@ -38,6 +38,9 @@ const log = createLogger('TemplateService');
 /** 已告警过的模板路径，避免每次读取都刷屏 */
 const warnedTemplatePaths = new Set<string>();
 
+/**
+ * 模板变量。
+ */
 export interface TemplateVariables {
     project?: string;
     volume?: string;
@@ -494,6 +497,9 @@ const TEMPLATE_PATH_MAP: Record<string, () => string> = {
     characterSoul: pjCharacterSoulTemplate,
 };
 
+/**
+ * 模板服务（步骤/正文/世界观等）。
+ */
 export class TemplateService {
     private app: App;
 
@@ -501,6 +507,13 @@ export class TemplateService {
         this.app = app;
     }
 
+    /**
+     * 按类型取模板。
+     *
+     * @param type - 参数
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getTemplate(type: string, vars: TemplateVariables = {}): Promise<string> {
         const templatePathFn = TEMPLATE_PATH_MAP[type];
         let content = DEFAULT_TEMPLATES[type] || '';
@@ -552,6 +565,12 @@ export class TemplateService {
         return result;
     }
 
+    /**
+     * 取正文模板。
+     *
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getBodyTemplate(vars: TemplateVariables): Promise<string> {
         const mode = vars.creationMode || 'long';
         if (mode === 'short' || mode === 'script') {
@@ -621,30 +640,73 @@ writing_mode: pipeline
         return this.getTemplate('body', vars);
     }
 
+    /**
+     * 取信息规划模板。
+     *
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getInfoPlanTemplate(vars: TemplateVariables): Promise<string> {
         return this.getTemplate('infoPlan', vars);
     }
 
+    /**
+     * 取情节提炼模板。
+     *
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getPlotDistillTemplate(vars: TemplateVariables): Promise<string> {
         return this.getTemplate('plotDistill', vars);
     }
 
+    /**
+     * 取章纲模板。
+     *
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getOutlineTemplate(vars: TemplateVariables): Promise<string> {
         return this.getTemplate('outline', vars);
     }
 
+    /**
+     * 按步骤类型取模板。
+     *
+     * @param stepType - 参数
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getStepTemplate(stepType: string, vars: TemplateVariables): Promise<string> {
         return this.getTemplate(stepType, vars);
     }
 
+    /**
+     * 取分卷大纲模板。
+     *
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getVolumeOutlineTemplate(vars: TemplateVariables): Promise<string> {
         return this.getTemplate('volumeOutline', vars);
     }
 
+    /**
+     * 取世界观模板。
+     *
+     * @param vars - 参数
+     * @returns 模板文本
+     */
     async getWorldviewTemplate(vars: TemplateVariables): Promise<string> {
         return this.getTemplate('worldview', vars);
     }
 
+    /**
+     * 取步骤提示词。
+     *
+     * @param stepKey - 参数
+     * @returns 模板或 null
+     */
     async getStepPrompt(stepKey: string): Promise<PromptTemplate | null> {
         const systemPath = pjPromptSystemTemplate(stepKey);
         const userPath = pjPromptUserTemplate(stepKey);
@@ -679,10 +741,20 @@ writing_mode: pipeline
         return { description, systemPrompt, userPrompt };
     }
 
+    /**
+     * 取写作规则文本。
+     * @returns 规则文本
+     */
     async getWritingRules(): Promise<string> {
         return RulesService.getInstance(this.app).getWritingRules();
     }
 
+    /**
+     * 是否有自定义提示词。
+     *
+     * @param stepKey - 参数
+     * @returns 布尔值
+     */
     async hasCustomPrompt(stepKey: string): Promise<boolean> {
         const systemPath = pjPromptSystemTemplate(stepKey);
         const userPath = pjPromptUserTemplate(stepKey);

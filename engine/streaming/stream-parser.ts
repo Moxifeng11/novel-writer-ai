@@ -1,6 +1,12 @@
 
+/**
+ * 流格式。
+ */
 export type StreamFormat = 'openai-sse' | 'ollama' | 'auto';
 
+/**
+ * 流解析结果。
+ */
 export interface StreamParseResult {
     content: string;
     done: boolean;
@@ -12,6 +18,9 @@ export interface StreamParseResult {
     };
 }
 
+/**
+ * SSE 事件。
+ */
 export interface SSEEvent {
     event?: string;
     data: string;
@@ -19,6 +28,12 @@ export interface SSEEvent {
     retry?: number;
 }
 
+/**
+ * 解析原始 SSE 缓冲。
+ *
+ * @param buffer - 参数
+ * @returns {events,remaining}
+ */
 export function parseSSERaw(buffer: string): { events: SSEEvent[]; remaining: string } {
     const events: SSEEvent[] = [];
     const lines = buffer.split('\n');
@@ -77,6 +92,12 @@ export function parseSSERaw(buffer: string): { events: SSEEvent[]; remaining: st
     return { events, remaining };
 }
 
+/**
+ * 解析 OpenAI SSE 事件。
+ *
+ * @param event - 参数
+ * @returns 解析结果或 null
+ */
 export function parseOpenAISSE(event: SSEEvent): StreamParseResult | null {
     if (event.data === '[DONE]') {
         return { content: '', done: true };
@@ -103,6 +124,12 @@ export function parseOpenAISSE(event: SSEEvent): StreamParseResult | null {
     }
 }
 
+/**
+ * 解析 Ollama 行。
+ *
+ * @param line - 参数
+ * @returns 解析结果或 null
+ */
 export function parseOllamaLine(line: string): StreamParseResult | null {
     try {
         const data = JSON.parse(line);
@@ -129,6 +156,12 @@ export function parseOllamaLine(line: string): StreamParseResult | null {
     }
 }
 
+/**
+ * 检测流格式。
+ *
+ * @param firstChunk - 参数
+ * @returns 格式
+ */
 export function detectStreamFormat(firstChunk: string): StreamFormat {
     const trimmed = firstChunk.trim();
     if (!trimmed) return 'openai-sse';
@@ -148,6 +181,9 @@ export function detectStreamFormat(firstChunk: string): StreamFormat {
     return 'openai-sse';
 }
 
+/**
+ * 流解析器（SSE/Ollama）。
+ */
 export class StreamParser {
     private buffer = '';
     private format: StreamFormat;
@@ -157,6 +193,12 @@ export class StreamParser {
         this.format = format;
     }
 
+    /**
+     * 喂入数据块并返回解析结果。
+     *
+     * @param chunk - 参数
+     * @returns 结果数组
+     */
     feed(chunk: string): StreamParseResult[] {
         const results: StreamParseResult[] = [];
         this.buffer += chunk;
@@ -207,6 +249,10 @@ export class StreamParser {
         return results;
     }
 
+    /**
+     * 冲刷剩余缓冲。
+     * @returns 结果数组
+     */
     flush(): StreamParseResult[] {
         if (!this.buffer.trim()) return [];
 
@@ -234,6 +280,9 @@ export class StreamParser {
         return results;
     }
 
+    /**
+     * 重置解析器。
+     */
     reset(): void {
         this.buffer = '';
         this.detected = false;
@@ -242,6 +291,10 @@ export class StreamParser {
         }
     }
 
+    /**
+     * 当前格式。
+     * @returns 格式
+     */
     getFormat(): StreamFormat {
         return this.detected ? this.format : 'auto';
     }

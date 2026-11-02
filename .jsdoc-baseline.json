@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-02T00:41:56.723Z",
+  "generatedAt": "2026-11-02T00:43:54.133Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 963,
+      "documented": 990,
       "methods": 1253,
-      "methodsDocumented": 847,
+      "methodsDocumented": 878,
       "incomplete": 743
     },
     "services": {
@@ -957,9 +957,9 @@
     },
     "engine/knowledge-tags.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 12,
-      "methodsDocumented": 0,
+      "methodsDocumented": 12,
       "incomplete": 0
     },
     "engine/knowledge-to-fingerprint-converter.ts": {
@@ -1090,7 +1090,7 @@
     },
     "engine/plot-divergence-engine.ts": {
       "exports": 8,
-      "documented": 1,
+      "documented": 8,
       "methods": 7,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1755,9 +1755,9 @@
     },
     "engine/streaming/stream-parser.ts": {
       "exports": 9,
-      "documented": 0,
+      "documented": 8,
       "methods": 4,
-      "methodsDocumented": 0,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "engine/style/dynamic-injection-engine.ts": {
@@ -1874,9 +1874,9 @@
     },
     "engine/template-service.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 12,
-      "methodsDocumented": 1,
+      "methodsDocumented": 12,
       "incomplete": 0
     },
     "engine/text-segmenter.ts": {
@@ -1937,9 +1937,9 @@
     },
     "engine/writing-profile.ts": {
       "exports": 8,
-      "documented": 0,
+      "documented": 8,
       "methods": 7,
-      "methodsDocumented": 1,
+      "methodsDocumented": 5,
       "incomplete": 1
     },
     "engine/writing-quality-engine.ts": {
