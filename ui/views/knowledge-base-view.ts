@@ -32,6 +32,9 @@ import {
     kbBookReadabilityAnalysisFile,
 } from '../../shared/paths';
 
+/**
+ * 知识库视图类型常量。
+ */
 export const VIEW_TYPE_KNOWLEDGE_BASE = 'novel-writer-knowledge-base';
 
 type MainTabKey = 'books' | 'config' | 'tasks' | 'stats';
@@ -48,6 +51,9 @@ interface FilterState {
     sortOrder: 'asc' | 'desc';
 }
 
+/**
+ * 知识库文风数据。
+ */
 export interface StyleData {
     sentenceRhythm?: {
         avgSentenceLength: number;
@@ -121,6 +127,9 @@ export interface StyleData {
     };
 }
 
+/**
+ * 知识库节奏数据。
+ */
 export interface RhythmData {
     emotionPoints?: Array<{ position: number; type: string; intensity: number; description: string; chapterIndex: number }>;
     chapterRhythm?: Array<{ chapterIndex: number; emotionScore: number; tensionScore: number; densityScore: number; description: string }>;
@@ -163,12 +172,18 @@ export interface RhythmData {
     };
 }
 
+/**
+ * 知识库技法数据。
+ */
 export interface TechniqueData {
     techniques?: Array<{ id: string; name: string; category: string; confidence: number; count: number; genreWeight: number; qualityScore: number }>;
     typeDistribution?: Record<string, number>;
     qualityScore?: { totalScore: number; diversityScore: number; coverageScore: number };
 }
 
+/**
+ * 知识库结构数据。
+ */
 export interface StructureData {
     qcchSegments?: Array<{ type: string; startPosition: number; endPosition: number; chapterRange: number[] }>;
     rhythmUnits?: Array<{ level: string; index: number; title: string; startPosition: number; endPosition: number; wordCount: number }>;
@@ -181,6 +196,9 @@ export interface StructureData {
     stats?: { volumeCount: number; chapterCount: number; avgChapterWordCount: number; totalWordCount: number };
 }
 
+/**
+ * 知识库人物数据。
+ */
 export interface CharacterKnowledgeData {
     characters?: Array<{
         id: string;
@@ -261,6 +279,9 @@ export interface CharacterKnowledgeData {
     };
 }
 
+/**
+ * 知识库伏笔数据。
+ */
 export interface ForeshadowData {
     foreshadows?: Array<{
         id: string;
@@ -286,6 +307,9 @@ export interface ForeshadowData {
     };
 }
 
+/**
+ * 知识库商业数据。
+ */
 export interface CommercialData {
     overallScore?: number;
     overallLevel?: string;
@@ -316,6 +340,9 @@ export interface CommercialData {
     };
 }
 
+/**
+ * 知识库可读性数据。
+ */
 export interface ReadabilityData {
     overallScore?: number;
     showTell?: {
@@ -381,6 +408,9 @@ const DIMENSION_LABELS: Record<BreakdownDimension, string> = {
     readability: '可读性',
 };
 
+/**
+ * 知识库视图。
+ */
 export class KnowledgeBaseView extends ItemView {
     plugin: NovelWriterPlugin;
     kbManager: KnowledgeBaseManager | null = null;
@@ -455,18 +485,33 @@ export class KnowledgeBaseView extends ItemView {
         this.plugin = plugin;
     }
 
+    /**
+     * 视图类型。
+     * @returns 类型
+     */
     getViewType() {
         return VIEW_TYPE_KNOWLEDGE_BASE;
     }
 
+    /**
+     * 显示名。
+     * @returns 名称
+     */
     getDisplayText() {
         return '📚 知识库管理';
     }
 
+    /**
+     * 图标。
+     * @returns 图标
+     */
     getIcon() {
         return 'book-open';
     }
 
+    /**
+     * 打开视图并渲染。
+     */
     async onOpen() {
         applyNwScope(this);
         this.kbManager = this.plugin.knowledgeBaseManager ?? null;
@@ -518,6 +563,9 @@ export class KnowledgeBaseView extends ItemView {
         this.setupSchedulerListeners();
     }
 
+    /**
+     * 关闭视图并释放资源。
+     */
     async onClose() {
         this.viewClosed = true;
         this.modelSwitcher?.destroy();

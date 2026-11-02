@@ -8,6 +8,9 @@ import { isImeComposing } from '../../shared/keyboard';
 
 const log = createLogger('KnowledgeBaseModals');
 
+/**
+ * 导入书籍弹窗。
+ */
 export class ImportBookModal extends Modal {
     private kbManager: KnowledgeBaseManager | null;
     private onImported: (book: any) => void;
@@ -24,6 +27,9 @@ export class ImportBookModal extends Modal {
         this.onImported = onImported;
     }
 
+    /**
+     * 打开弹窗并渲染。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
@@ -258,11 +264,17 @@ export class ImportBookModal extends Modal {
         }
     }
 
+    /**
+     * 关闭弹窗并清空。
+     */
     onClose(): void {
         this.contentEl.empty();
     }
 }
 
+/**
+ * 编辑书籍弹窗。
+ */
 export class EditBookModal extends Modal {
     private book: BookBasicInfo;
     private kbManager: KnowledgeBaseManager | null;
@@ -299,6 +311,9 @@ export class EditBookModal extends Modal {
         this.customTagsList = [...book.customTags];
     }
 
+    /**
+     * 打开弹窗并渲染。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
@@ -514,11 +529,17 @@ export class EditBookModal extends Modal {
         });
     }
 
+    /**
+     * 关闭弹窗并清空。
+     */
     onClose(): void {
         this.contentEl.empty();
     }
 }
 
+/**
+ * 题材编辑弹窗。
+ */
 export class GenreEditModal extends Modal {
     private mode: 'create' | 'edit' | 'view';
     private genre: GenreConfig;
@@ -543,6 +564,9 @@ export class GenreEditModal extends Modal {
         this.onDelete = onDelete;
     }
 
+    /**
+     * 打开弹窗并渲染。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
@@ -1094,11 +1118,17 @@ export class GenreEditModal extends Modal {
         return true;
     }
 
+    /**
+     * 关闭弹窗并清空。
+     */
     onClose(): void {
         this.contentEl.empty();
     }
 }
 
+/**
+ * 批量操作弹窗。
+ */
 export class BatchOperationsModal extends Modal {
     private kbManager: KnowledgeBaseManager | null;
     private onCompleted: () => void;
@@ -1114,6 +1144,9 @@ export class BatchOperationsModal extends Modal {
         this.onCompleted = onCompleted;
     }
 
+    /**
+     * 打开弹窗并渲染。
+     */
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
@@ -1318,6 +1351,9 @@ export class BatchOperationsModal extends Modal {
         return sub ? `${genre.name}·${sub.name}` : genre.name;
     }
 
+    /**
+     * 关闭弹窗并清空。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

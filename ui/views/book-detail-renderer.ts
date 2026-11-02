@@ -21,6 +21,9 @@ import { isImeComposing } from '../../shared/keyboard';
 
 const log = createLogger('BookDetailRenderer');
 
+/**
+ * 书籍详情渲染依赖。
+ */
 export interface BookDetailRendererDeps {
     app: App;
     getKb: () => WebnovelKnowledgeBase | null;
@@ -52,6 +55,9 @@ export interface BookDetailRendererDeps {
     onRequestReRender: () => void;
 }
 
+/**
+ * 书籍详情渲染器。
+ */
 export class BookDetailRenderer {
     private deps: BookDetailRendererDeps;
 

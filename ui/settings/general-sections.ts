@@ -17,7 +17,15 @@ import { exportTextFile } from '../../shared/export-file';
 import { OperationConfirmModal } from '../components/progress';
 import { SettingsSection } from './section-base';
 
+/**
+ * 性能监控设置分区。
+ */
 export class PerformanceSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 
@@ -368,7 +376,15 @@ export class PerformanceSection extends SettingsSection {
     }
 }
 
+/**
+ * 提示词设置分区。
+ */
 export class PromptsSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         if (!this.plugin.promptManager) {
@@ -380,7 +396,15 @@ export class PromptsSection extends SettingsSection {
     }
 }
 
+/**
+ * 写作规则设置分区。
+ */
 export class RulesSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
         await this.mountRulesSection(section);
@@ -500,7 +524,15 @@ export class RulesSection extends SettingsSection {
     }
 }
 
+/**
+ * 关于分区。
+ */
 export class AboutSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 
@@ -737,7 +769,15 @@ export class AboutSection extends SettingsSection {
     }
 }
 
+/**
+ * 实体识别设置分区。
+ */
 export class RecognitionSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 
@@ -1019,7 +1059,15 @@ export class RecognitionSection extends SettingsSection {
     }
 }
 
+/**
+ * 建议设置分区。
+ */
 export class SuggestionsSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 

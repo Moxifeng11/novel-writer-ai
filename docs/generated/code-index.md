@@ -11,7 +11,7 @@
 | `shared/` | 164 | 33247 | 1512 | 640 | 42% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 93548 | 500 | 110 | 22% |
+| `ui/` | 191 | 93782 | 500 | 149 | 30% |
 
 ## 文件清单
 
@@ -581,7 +581,7 @@
 | `ui/full-writer/batch-pipeline-runner.ts` | 443 | 5 | 0 |
 | `ui/full-writer/batch-step-retry.ts` | 21 | 2 | 0 |
 | `ui/full-writer/batch-targets.ts` | 55 | 4 | 2 |
-| `ui/full-writer/chapter-orchestrator.ts` | 423 | 10 | 0 |
+| `ui/full-writer/chapter-orchestrator.ts` | 459 | 10 | 7 |
 | `ui/full-writer/context-loader-controller.ts` | 247 | 2 | 0 |
 | `ui/full-writer/cover-picker-controller.ts` | 141 | 1 | 0 |
 | `ui/full-writer/creation-flow-state.ts` | 227 | 4 | 1 |
@@ -601,7 +601,7 @@
 | `ui/full-writer/setting-lib-controller.ts` | 57 | 1 | 0 |
 | `ui/full-writer/status-bar-controller.ts` | 80 | 2 | 0 |
 | `ui/full-writer/step-render-controller.ts` | 665 | 2 | 0 |
-| `ui/full-writer/streamlined-nav-presenter.ts` | 208 | 12 | 0 |
+| `ui/full-writer/streamlined-nav-presenter.ts` | 220 | 12 | 4 |
 | `ui/full-writer/tab-controller.ts` | 331 | 2 | 0 |
 | `ui/full-writer/template-vars-builder.ts` | 1085 | 7 | 2 |
 | `ui/full-writer/title-bar-controller.ts` | 182 | 2 | 0 |
@@ -673,10 +673,10 @@
 | `ui/settings/deconstruction-section.ts` | 326 | 1 | 0 |
 | `ui/settings/fingerprint-section.ts` | 384 | 1 | 0 |
 | `ui/settings/foreshadow-section.ts` | 281 | 1 | 0 |
-| `ui/settings/general-sections.ts` | 1101 | 6 | 0 |
+| `ui/settings/general-sections.ts` | 1149 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 802 | 1 | 0 |
 | `ui/settings/section-base.ts` | 44 | 1 | 0 |
-| `ui/settings/writing-sections.ts` | 778 | 6 | 0 |
+| `ui/settings/writing-sections.ts` | 826 | 6 | 6 |
 | `ui/sidebar-component.ts` | 30 | 1 | 0 |
 | `ui/states/chapter-state-manager.ts` | 401 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 436 | 1 | 0 |
@@ -691,9 +691,9 @@
 | `ui/unified-entity-manager-modal.ts` | 945 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 100 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 133 | 1 | 0 |
-| `ui/views/book-detail-renderer.ts` | 2404 | 2 | 0 |
-| `ui/views/knowledge-base-modals.ts` | 1325 | 4 | 0 |
-| `ui/views/knowledge-base-view.ts` | 3685 | 10 | 0 |
+| `ui/views/book-detail-renderer.ts` | 2410 | 2 | 2 |
+| `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
+| `ui/views/knowledge-base-view.ts` | 3733 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 59 | 6 | 0 |
 | `ui/views/writing-fingerprint-view.ts` | 1872 | 3 | 0 |
 | `ui/volume-intro-modal.ts` | 496 | 1 | 0 |

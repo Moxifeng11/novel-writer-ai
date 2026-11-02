@@ -19,7 +19,15 @@ import { OperationConfirmModal } from '../components/progress';
 import { setBusinessThresholdOverrides } from '../../shared/thresholds';
 import { SettingsSection } from './section-base';
 
+/**
+ * 协同写作设置分区。
+ */
 export class CoWriteSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 
@@ -222,7 +230,15 @@ export class CoWriteSection extends SettingsSection {
     }
 }
 
+/**
+ * 写作设置分区。
+ */
 export class WritingSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 
@@ -486,7 +502,15 @@ export class WritingSection extends SettingsSection {
     }
 }
 
+/**
+ * 模板设置分区。
+ */
 export class TemplateSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
         const templateManager = this.plugin.engineRegistry.get<TemplateManager>(ENGINE_NAMES.TEMPLATE_MANAGER);
@@ -504,7 +528,15 @@ export class TemplateSection extends SettingsSection {
     }
 }
 
+/**
+ * 外观设置分区。
+ */
 export class AppearanceSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         renderAppearanceSettings(section, this.plugin, {
@@ -515,7 +547,15 @@ export class AppearanceSection extends SettingsSection {
     }
 }
 
+/**
+ * 项目库设置分区。
+ */
 export class ProjectLibrarySection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         section.createEl('h3', { text: '🗂 项目库迁移' });
@@ -645,7 +685,15 @@ export class ProjectLibrarySection extends SettingsSection {
     }
 }
 
+/**
+ * 布局设置分区。
+ */
 export class LayoutSection extends SettingsSection {
+    /**
+     * 渲染该设置分区。
+     *
+     * @param container - 参数
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         section.createEl('h3', { text: '🧩 工作台布局' });

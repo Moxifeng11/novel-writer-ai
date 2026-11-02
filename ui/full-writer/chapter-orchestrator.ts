@@ -23,6 +23,9 @@ interface ChapterRunState {
     currentStepIndex: number;
 }
 
+/**
+ * 章节规划步骤键。
+ */
 export const CHAPTER_PLANNING_KEYS = [
     'infoPlan',
     'plotDistill',
@@ -31,6 +34,9 @@ export const CHAPTER_PLANNING_KEYS = [
     'sceneExpand',
 ] as const;
 
+/**
+ * 单章执行选项。
+ */
 export interface ChapterRunOptions {
     mode?: ChapterRunMode;
     includeQuality?: boolean;
@@ -40,6 +46,9 @@ export interface ChapterRunOptions {
     pauseBetweenSteps?: boolean;
 }
 
+/**
+ * 执行进度。
+ */
 export interface ChapterRunProgress {
     phase: string;
     current: number;
@@ -48,6 +57,9 @@ export interface ChapterRunProgress {
     aiCalls: number;
 }
 
+/**
+ * 执行结果。
+ */
 export interface ChapterRunResult {
     status: 'completed' | 'paused' | 'cancelled' | 'failed' | 'nothing';
     failedStep?: string;
@@ -55,6 +67,9 @@ export interface ChapterRunResult {
     aiCalls: number;
 }
 
+/**
+ * 编排器依赖。
+ */
 export interface ChapterOrchestratorDeps {
     stepRunner: ChapterStepRunner;
     state: ChapterRunState;
@@ -73,6 +88,9 @@ export interface ChapterOrchestratorDeps {
     retryDelayMs?: number;
 }
 
+/**
+ * 执行计划。
+ */
 export interface ChapterRunPlan {
     missingPlanning: string[];
     useCombinedPlanning: boolean;
@@ -144,6 +162,9 @@ export function countRemainingChapterActions(
     return plan.plannedActions;
 }
 
+/**
+ * 单章执行编排器。
+ */
 export class ChapterOrchestrator {
     private abortController: AbortController | null = null;
     private pauseRequested = false;
@@ -157,10 +178,16 @@ export class ChapterOrchestrator {
         return this.running;
     }
 
+    /**
+     * 暂停执行。
+     */
     pause(): void {
         if (this.running) this.pauseRequested = true;
     }
 
+    /**
+     * 恢复执行。
+     */
     resume(): void {
         this.pauseRequested = false;
         const resolver = this.resumeResolver;
@@ -168,11 +195,20 @@ export class ChapterOrchestrator {
         resolver?.();
     }
 
+    /**
+     * 取消执行。
+     */
     cancel(): void {
         this.abortController?.abort();
         this.resume();
     }
 
+    /**
+     * 执行计划。
+     *
+     * @param options - 参数
+     * @returns 结果
+     */
     async run(options: ChapterRunOptions = {}): Promise<ChapterRunResult> {
         if (this.running) {
             return { status: 'failed', message: '已有章节生成任务在运行', aiCalls: 0 };

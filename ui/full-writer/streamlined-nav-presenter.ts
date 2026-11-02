@@ -4,8 +4,14 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('StreamlinedNav');
 
+/**
+ * 精简导航阶段键。
+ */
 export type StreamlinedPhaseKey = 'context' | 'planning' | 'writing' | 'review' | 'settlement';
 
+/**
+ * 精简导航阶段。
+ */
 export interface StreamlinedPhase {
     key: StreamlinedPhaseKey;
     label: string;
@@ -17,8 +23,14 @@ export interface StreamlinedPhase {
     requiredSteps: string[];
 }
 
+/**
+ * 阶段状态。
+ */
 export type PhaseStatus = 'pending' | 'loading' | 'partial' | 'complete' | 'stale' | 'active';
 
+/**
+ * 阶段状态描述。
+ */
 export interface PhaseStatusDescriptor {
     icon: string;
     cls: string;

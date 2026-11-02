@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T00:49:08.061Z",
+  "generatedAt": "2026-11-02T00:51:06.975Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -45,9 +45,9 @@
     "ui": {
       "files": 189,
       "exports": 493,
-      "documented": 183,
+      "documented": 222,
       "methods": 632,
-      "methodsDocumented": 315,
+      "methodsDocumented": 344,
       "incomplete": 163
     }
   },
@@ -3848,9 +3848,9 @@
     },
     "ui/full-writer/chapter-orchestrator.ts": {
       "exports": 9,
-      "documented": 1,
+      "documented": 8,
       "methods": 4,
-      "methodsDocumented": 0,
+      "methodsDocumented": 4,
       "incomplete": 1
     },
     "ui/full-writer/context-loader-controller.ts": {
@@ -3988,7 +3988,7 @@
     },
     "ui/full-writer/streamlined-nav-presenter.ts": {
       "exports": 12,
-      "documented": 0,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4478,9 +4478,9 @@
     },
     "ui/settings/general-sections.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 7,
-      "methodsDocumented": 1,
+      "methodsDocumented": 7,
       "incomplete": 1
     },
     "ui/settings/knowledge-section.ts": {
@@ -4499,9 +4499,9 @@
     },
     "ui/settings/writing-sections.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 6,
-      "methodsDocumented": 0,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "ui/settings-tab.ts": {
@@ -4618,23 +4618,23 @@
     },
     "ui/views/book-detail-renderer.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 10,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/views/knowledge-base-modals.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 8,
-      "methodsDocumented": 0,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "ui/views/knowledge-base-view.ts": {
       "exports": 10,
-      "documented": 0,
+      "documented": 10,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "ui/views/knowledge-detail-state.ts": {

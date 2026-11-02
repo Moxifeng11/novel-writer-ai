@@ -9,22 +9,15 @@
 | `engine/` | 271 | 1508 | 1010 | 67% | 1253 | 919 | 73% | 745 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 149 | 74% | 66 |
 | `shared/` | 163 | 1517 | 1156 | 76% | 149 | 135 | 91% | 457 |
-| `ui/` | 189 | 493 | 183 | 37% | 632 | 315 | 50% | 163 |
+| `ui/` | 189 | 493 | 222 | 45% | 632 | 344 | 54% | 163 |
 
 ## 缺口最大的文件（按未注释导出数）
 
 | 文件 | 导出 | 未注释 | 公开方法 | 未注释 |
 |---|---:|---:|---:|---:|
-| `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 10 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 0 | 15 | 13 |
 | `shared/story-structure.ts` | 23 | 12 | 0 | 0 |
-| `ui/full-writer/chapter-orchestrator.ts` | 9 | 8 | 4 | 4 |
-| `ui/full-writer/streamlined-nav-presenter.ts` | 12 | 12 | 0 | 0 |
-| `ui/settings/general-sections.ts` | 6 | 6 | 7 | 6 |
-| `ui/settings/writing-sections.ts` | 6 | 6 | 6 | 6 |
-| `ui/views/book-detail-renderer.ts` | 2 | 2 | 10 | 10 |
-| `ui/views/knowledge-base-modals.ts` | 4 | 4 | 8 | 8 |
 | `engine/knowledge-vector-store.ts` | 5 | 4 | 13 | 7 |
 | `engine/step-runner.ts` | 1 | 0 | 17 | 11 |
 | `shared/multi-layer-cache.ts` | 6 | 6 | 16 | 5 |
@@ -40,8 +33,15 @@
 | `ui/full-writer/execution-panels.ts` | 4 | 4 | 6 | 6 |
 | `ui/full-writer/wizard-step-renderers.ts` | 1 | 1 | 9 | 9 |
 | `ui/services/co-write-facade.ts` | 2 | 2 | 58 | 8 |
+| `ui/views/book-detail-renderer.ts` | 2 | 0 | 10 | 10 |
 | `engine/deconstructors/rhythm-deconstructor.ts` | 21 | 0 | 10 | 9 |
 | `engine/dimension-keywords.ts` | 9 | 9 | 0 | 0 |
 | `engine/embedding/openai-provider.ts` | 2 | 0 | 9 | 9 |
 | `engine/harness/call-ledger.ts` | 3 | 3 | 6 | 6 |
 | `engine/incremental-result-aggregator.ts` | 3 | 3 | 6 | 6 |
+| `engine/promise-ledger.ts` | 11 | 9 | 0 | 0 |
+| `engine/quality-scorer.ts` | 4 | 4 | 5 | 5 |
+| `engine/stream-text-reader.ts` | 3 | 3 | 6 | 6 |
+| `engine/token-bucket-rate-limiter.ts` | 3 | 2 | 7 | 7 |
+| `services/chapter-recognizer.ts` | 5 | 4 | 5 | 5 |
+| `services/worldview-cache-service.ts` | 4 | 4 | 18 | 5 |
