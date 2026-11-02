@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T00:25:57.462Z",
+  "generatedAt": "2026-11-02T00:27:41.886Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -7,7 +7,7 @@
       "exports": 1508,
       "documented": 938,
       "methods": 1253,
-      "methodsDocumented": 770,
+      "methodsDocumented": 810,
       "incomplete": 739
     },
     "services": {
@@ -21,7 +21,7 @@
     "shared": {
       "files": 163,
       "exports": 1517,
-      "documented": 1021,
+      "documented": 1040,
       "methods": 149,
       "methodsDocumented": 132,
       "incomplete": 457
@@ -798,7 +798,7 @@
       "exports": 1,
       "documented": 0,
       "methods": 17,
-      "methodsDocumented": 0,
+      "methodsDocumented": 17,
       "incomplete": 0
     },
     "engine/foreshadow-context.ts": {
@@ -1568,7 +1568,7 @@
       "exports": 5,
       "documented": 0,
       "methods": 23,
-      "methodsDocumented": 0,
+      "methodsDocumented": 23,
       "incomplete": 0
     },
     "engine/sentence-diversity-engine.ts": {
@@ -3064,7 +3064,7 @@
     },
     "shared/store/types.ts": {
       "exports": 20,
-      "documented": 1,
+      "documented": 20,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

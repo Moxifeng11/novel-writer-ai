@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 121962 | 1532 | 617 | 40% |
+| `engine/` | 289 | 122201 | 1532 | 617 | 40% |
 | `services/` | 28 | 10515 | 151 | 75 | 50% |
-| `shared/` | 164 | 32649 | 1512 | 505 | 33% |
+| `shared/` | 164 | 32709 | 1512 | 524 | 35% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 93106 | 500 | 110 | 22% |
@@ -146,7 +146,7 @@
 | `engine/fact-index-vault.ts` | 102 | 3 | 1 |
 | `engine/fingerprint-extractor.ts` | 517 | 4 | 0 |
 | `engine/fingerprint-stats.ts` | 107 | 4 | 0 |
-| `engine/foreshadow-config-manager.ts` | 213 | 2 | 0 |
+| `engine/foreshadow-config-manager.ts` | 307 | 2 | 0 |
 | `engine/foreshadow-context.ts` | 142 | 6 | 3 |
 | `engine/foreshadow-manager.ts` | 1276 | 8 | 1 |
 | `engine/generation-checkpoint-vault.ts` | 78 | 1 | 0 |
@@ -269,7 +269,7 @@
 | `engine/scene-generation-loop.ts` | 235 | 7 | 1 |
 | `engine/scheduler-segment-integration.ts` | 263 | 2 | 0 |
 | `engine/segment-aware-breakdown.ts` | 131 | 3 | 0 |
-| `engine/semantic-analyzer.ts` | 1183 | 5 | 0 |
+| `engine/semantic-analyzer.ts` | 1328 | 5 | 0 |
 | `engine/sentence-diversity-engine.ts` | 119 | 2 | 0 |
 | `engine/settlement-engine.ts` | 1820 | 3 | 0 |
 | `engine/settlement/markdown-table-utils.ts` | 109 | 6 | 6 |
@@ -484,7 +484,7 @@
 | `shared/store/middleware/persist.ts` | 371 | 5 | 3 |
 | `shared/store/middleware/thunk.ts` | 30 | 1 | 1 |
 | `shared/store/shallow.ts` | 48 | 1 | 1 |
-| `shared/store/types.ts` | 148 | 20 | 1 |
+| `shared/store/types.ts` | 208 | 20 | 20 |
 | `shared/story-structure.ts` | 637 | 23 | 10 |
 | `shared/synopsis-spec.ts` | 212 | 15 | 1 |
 | `shared/tag-taxonomy.ts` | 125 | 8 | 1 |

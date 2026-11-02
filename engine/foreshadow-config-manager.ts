@@ -31,28 +31,57 @@ export class ForeshadowConfigManager {
         }
     }
 
+    /**
+     * 注册配置变更回调。
+     *
+     * @param callback - 参数
+     */
     setOnConfigChange(callback: () => void): void {
         this.onConfigChange = callback;
     }
 
+    /**
+     * 读取伏笔配置。
+     * @returns 配置
+     */
     getConfig(): ForeshadowConfig {
         return { ...this.config };
     }
 
+    /**
+     * 读取启用的伏笔类型。
+     * @returns 类型数组
+     */
     getTypes(): ForeshadowTypeConfig[] {
         return this.config.types
             .filter(t => t.enabled)
             .sort((a, b) => b.priority - a.priority);
     }
 
+    /**
+     * 读取全部伏笔类型。
+     * @returns 类型数组
+     */
     getAllTypes(): ForeshadowTypeConfig[] {
         return [...this.config.types];
     }
 
+    /**
+     * 按 id 取类型。
+     *
+     * @param id - 参数
+     * @returns 类型或 undefined
+     */
     getTypeById(id: string): ForeshadowTypeConfig | undefined {
         return this.config.types.find(t => t.id === id);
     }
 
+    /**
+     * 新增伏笔类型。
+     *
+     * @param type - 参数
+     * @returns 类型
+     */
     addType(type: Omit<ForeshadowTypeConfig, 'id'>): ForeshadowTypeConfig {
         const newType: ForeshadowTypeConfig = {
             ...type,
@@ -63,6 +92,13 @@ export class ForeshadowConfigManager {
         return newType;
     }
 
+    /**
+     * 更新伏笔类型。
+     *
+     * @param id - 参数
+     * @param updates - 参数
+     * @returns 是否更新
+     */
     updateType(id: string, updates: Partial<ForeshadowTypeConfig>): boolean {
         const index = this.config.types.findIndex(t => t.id === id);
         if (index === -1) return false;
@@ -72,6 +108,12 @@ export class ForeshadowConfigManager {
         return true;
     }
 
+    /**
+     * 删除伏笔类型。
+     *
+     * @param id - 参数
+     * @returns 是否删除
+     */
     deleteType(id: string): boolean {
         const index = this.config.types.findIndex(t => t.id === id);
         if (index === -1) return false;
@@ -81,10 +123,24 @@ export class ForeshadowConfigManager {
         return true;
     }
 
+    /**
+     * 启用/停用类型。
+     *
+     * @param id - 参数
+     * @param enabled - 参数
+     * @returns 是否成功
+     */
     toggleType(id: string, enabled: boolean): boolean {
         return this.updateType(id, { enabled });
     }
 
+    /**
+     * 添加类型关键词。
+     *
+     * @param typeId - 参数
+     * @param keyword - 参数
+     * @returns 是否添加
+     */
     addKeyword(typeId: string, keyword: string): boolean {
         const type = this.config.types.find(t => t.id === typeId);
         if (!type) return false;
@@ -96,6 +152,13 @@ export class ForeshadowConfigManager {
         return true;
     }
 
+    /**
+     * 移除类型关键词。
+     *
+     * @param typeId - 参数
+     * @param keyword - 参数
+     * @returns 是否移除
+     */
     removeKeyword(typeId: string, keyword: string): boolean {
         const type = this.config.types.find(t => t.id === typeId);
         if (!type) return false;
@@ -108,6 +171,12 @@ export class ForeshadowConfigManager {
         return true;
     }
 
+    /**
+     * 按名称匹配类型。
+     *
+     * @param name - 参数
+     * @returns 类型或 undefined
+     */
     matchType(name: string): ForeshadowTypeConfig | undefined {
         const normalizedName = name.toLowerCase().trim();
         
@@ -122,6 +191,12 @@ export class ForeshadowConfigManager {
         return undefined;
     }
 
+    /**
+     * 按名称匹配全部类型。
+     *
+     * @param name - 参数
+     * @returns 类型数组
+     */
     matchAllTypes(name: string): ForeshadowTypeConfig[] {
         const normalizedName = name.toLowerCase().trim();
         const matches: ForeshadowTypeConfig[] = [];
@@ -138,6 +213,12 @@ export class ForeshadowConfigManager {
         return matches.sort((a, b) => b.priority - a.priority);
     }
 
+    /**
+     * 校验配置。
+     *
+     * @param config - 参数
+     * @returns {valid,errors}
+     */
     validateConfig(config: ForeshadowConfig): { valid: boolean; errors: string[] } {
         const errors: string[] = [];
         
@@ -176,10 +257,20 @@ export class ForeshadowConfigManager {
         return { valid: errors.length === 0, errors };
     }
 
+    /**
+     * 导出配置 JSON。
+     * @returns JSON 文本
+     */
     exportConfig(): string {
         return JSON.stringify(this.config, null, 2);
     }
 
+    /**
+     * 导入配置 JSON。
+     *
+     * @param jsonString - 参数
+     * @returns {success,errors}
+     */
     importConfig(jsonString: string): { success: boolean; errors: string[] } {
         try {
             const config = JSON.parse(jsonString);
@@ -197,6 +288,9 @@ export class ForeshadowConfigManager {
         }
     }
 
+    /**
+     * 恢复默认配置。
+     */
     resetToDefault(): void {
         this.config = {
             ...DEFAULT_FORESHADOW_CONFIG,

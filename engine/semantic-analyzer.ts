@@ -195,6 +195,12 @@ const SURNAMES = new Set([
 const CULTIVATION_WORDS = new Set(['修炼', '修练', '修行', '修持']);
 
 export class SemanticAnalyzer {
+    /**
+     * 分析单词的词性与置信度。
+     *
+     * @param word - 参数
+     * @returns 词性分析
+     */
     static analyzeWord(word: string): WordAnalysis {
         const normalized = word.trim();
         if (normalized.length === 0) {
@@ -263,6 +269,12 @@ export class SemanticAnalyzer {
         return { word, type: 'unknown', confidence: 0.3 };
     }
 
+    /**
+     * 是否名词。
+     *
+     * @param word - 参数
+     * @returns 布尔值
+     */
     static isNoun(word: string): boolean {
         for (const suffix of NOUN_SUFFIXES) {
             if (word.endsWith(suffix)) {
@@ -286,6 +298,12 @@ export class SemanticAnalyzer {
         return false;
     }
 
+    /**
+     * 是否动词。
+     *
+     * @param word - 参数
+     * @returns 布尔值
+     */
     static isVerb(word: string): boolean {
         const verbPatterns = [
             /^[修练演炼修研]+/,
@@ -415,6 +433,12 @@ export class SemanticAnalyzer {
         return false;
     }
 
+    /**
+     * 是否形容词。
+     *
+     * @param word - 参数
+     * @returns 布尔值
+     */
     static isAdjective(word: string): boolean {
         const adjPatterns = [
             /^(大|小|多|少|高|低|长|短|宽|窄|厚|薄|深|浅|远|近){1,2}/,
@@ -443,6 +467,12 @@ export class SemanticAnalyzer {
         return false;
     }
 
+    /**
+     * 是否副词。
+     *
+     * @param word - 参数
+     * @returns 布尔值
+     */
     static isAdverb(word: string): boolean {
         const adverbPatterns = [
             /^(很|非常|特别|十分|格外|分外)$/,
@@ -478,6 +508,12 @@ export class SemanticAnalyzer {
         return false;
     }
 
+    /**
+     * 名词置信度。
+     *
+     * @param word - 参数
+     * @returns 置信度
+     */
     static calculateNounConfidence(word: string): number {
         let confidence = 0.5;
 
@@ -506,6 +542,12 @@ export class SemanticAnalyzer {
         return Math.min(1, confidence);
     }
 
+    /**
+     * 动词置信度。
+     *
+     * @param word - 参数
+     * @returns 置信度
+     */
     static calculateVerbConfidence(word: string): number {
         let confidence = 0.5;
 
@@ -523,6 +565,12 @@ export class SemanticAnalyzer {
         return Math.min(1, confidence);
     }
 
+    /**
+     * 形容词置信度。
+     *
+     * @param word - 参数
+     * @returns 置信度
+     */
     static calculateAdjectiveConfidence(word: string): number {
         let confidence = 0.5;
 
@@ -540,6 +588,12 @@ export class SemanticAnalyzer {
         return Math.min(1, confidence);
     }
 
+    /**
+     * 副词置信度。
+     *
+     * @param word - 参数
+     * @returns 置信度
+     */
     static calculateAdverbConfidence(word: string): number {
         let confidence = 0.5;
 
@@ -550,6 +604,12 @@ export class SemanticAnalyzer {
         return Math.min(1, confidence);
     }
 
+    /**
+     * 名词子类型（人名/地名等）。
+     *
+     * @param word - 参数
+     * @returns 子类型
+     */
     static detectNounSubType(word: string): string {
         const itemSuffixes = ['玉佩', '戒指', '葫芦',
             '剑', '刀', '枪', '戟', '斧', '钺', '钩', '叉', '鞭', '锏',
@@ -632,6 +692,12 @@ export class SemanticAnalyzer {
         return 'unknown';
     }
 
+    /**
+     * 是否像人名。
+     *
+     * @param word - 参数
+     * @returns 布尔值
+     */
     static looksLikePersonName(word: string): boolean {
         if (word.length < 2 || word.length > 4) return false;
 
@@ -674,6 +740,12 @@ export class SemanticAnalyzer {
         return false;
     }
 
+    /**
+     * 是否常见姓氏。
+     *
+     * @param char - 参数
+     * @returns 布尔值
+     */
     static isCommonSurname(char: string): boolean {
         const commonSurnames = ['李', '王', '张', '刘', '陈', '杨', '赵', '黄', '周', '吴',
             '徐', '孙', '马', '朱', '胡', '郭', '何', '林', '罗', '高',
@@ -681,6 +753,13 @@ export class SemanticAnalyzer {
         return commonSurnames.includes(char);
     }
 
+    /**
+     * 编辑距离。
+     *
+     * @param a - 参数
+     * @param b - 参数
+     * @returns 距离
+     */
     static levenshteinDistance(a: string, b: string): number {
         const m = a.length;
         const n = b.length;
@@ -710,6 +789,13 @@ export class SemanticAnalyzer {
         return dp[m][n];
     }
 
+    /**
+     * 语义相似度。
+     *
+     * @param a - 参数
+     * @param b - 参数
+     * @returns 相似度
+     */
     static semanticSimilarity(a: string, b: string): number {
         const normA = a.toLowerCase().trim();
         const normB = b.toLowerCase().trim();
@@ -782,6 +868,13 @@ export class SemanticAnalyzer {
         return Math.max(0, Math.min(1, similarity));
     }
 
+    /**
+     * 比较两个词的语义匹配。
+     *
+     * @param word1 - 参数
+     * @param word2 - 参数
+     * @returns 匹配结果
+     */
     static compare(word1: string, word2: string): SemanticMatchResult {
         const norm1 = word1.trim();
         const norm2 = word2.trim();
@@ -832,6 +925,13 @@ export class SemanticAnalyzer {
         return { similarity: 0, normalizedWord1: norm1, normalizedWord2: norm2, matched: false, matchType: 'semantic' };
     }
 
+    /**
+     * 最长公共前缀。
+     *
+     * @param a - 参数
+     * @param b - 参数
+     * @returns 前缀
+     */
     static findCommonPrefix(a: string, b: string): string {
         let prefix = '';
         const minLen = Math.min(a.length, b.length);
@@ -845,6 +945,13 @@ export class SemanticAnalyzer {
         return prefix;
     }
 
+    /**
+     * 按相似度聚合别名。
+     *
+     * @param names - 参数
+     * @param threshold - 参数
+     * @returns 实体分组
+     */
     static findAliases(names: string[], threshold: number = 0.6): EntityGroup[] {
         const n = names.length;
         const parent: number[] = new Array(n).fill(0).map((_, i) => i);
@@ -898,6 +1005,12 @@ export class SemanticAnalyzer {
         return groups;
     }
 
+    /**
+     * 选择规范名。
+     *
+     * @param names - 参数
+     * @returns 规范名
+     */
     static selectCanonicalName(names: string[]): string {
         if (names.length === 0) return '';
         if (names.length === 1) return names[0];
@@ -933,6 +1046,12 @@ export class SemanticAnalyzer {
         return canonical;
     }
 
+    /**
+     * 计算实体分组置信度。
+     *
+     * @param names - 参数
+     * @returns 置信度
+     */
     static calculateGroupConfidence(names: string[]): number {
         if (names.length === 1) return 1.0;
 
@@ -950,6 +1069,13 @@ export class SemanticAnalyzer {
         return count > 0 ? totalSimilarity / count : 0;
     }
 
+    /**
+     * 在上下文中分析实体词性。
+     *
+     * @param context - 参数
+     * @param entity - 参数
+     * @returns 词性分析
+     */
     static analyzeContext(context: string, entity: string): WordAnalysis {
         const result = this.analyzeWord(entity);
 
@@ -1014,6 +1140,13 @@ export class SemanticAnalyzer {
         return result;
     }
 
+    /**
+     * 从文本抽取实体。
+     *
+     * @param text - 参数
+     * @param types - 参数
+     * @returns 实体名数组
+     */
     static extractEntities(text: string, types: WordType[] = ['noun']): string[] {
         type Candidate = { word: string; pos: number; score: number; subType: string; tier: number };
         const candidates: Candidate[] = [];
@@ -1149,6 +1282,12 @@ export class SemanticAnalyzer {
         return result;
     }
 
+    /**
+     * 过滤噪声词。
+     *
+     * @param words - 参数
+     * @returns 词数组
+     */
     static filterNoiseWords(words: string[]): string[] {
         const noiseWords = new Set([
             ...FUNCTION_WORDS,
@@ -1165,6 +1304,12 @@ export class SemanticAnalyzer {
         });
     }
 
+    /**
+     * 规范化实体名。
+     *
+     * @param name - 参数
+     * @returns 名称
+     */
     static normalizeEntityName(name: string): string {
         let normalized = name.trim();
 

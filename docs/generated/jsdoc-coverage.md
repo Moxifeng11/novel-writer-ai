@@ -6,9 +6,9 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 770 | 61% | 739 |
+| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 810 | 65% | 739 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 136 | 67% | 66 |
-| `shared/` | 163 | 1517 | 1021 | 67% | 149 | 132 | 89% | 457 |
+| `shared/` | 163 | 1517 | 1040 | 69% | 149 | 132 | 89% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 222 | 35% | 161 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -16,14 +16,11 @@
 | 文件 | 导出 | 未注释 | 公开方法 | 未注释 |
 |---|---:|---:|---:|---:|
 | `ui/co-writing-view.ts` | 3 | 3 | 103 | 56 |
-| `engine/semantic-analyzer.ts` | 5 | 5 | 23 | 23 |
 | `engine/style-vector-store.ts` | 11 | 10 | 17 | 11 |
 | `ui/full-writer/execution-run-store.ts` | 5 | 5 | 16 | 15 |
 | `engine/deconstruction-worker-manager.ts` | 3 | 3 | 21 | 16 |
 | `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 14 |
-| `shared/store/types.ts` | 20 | 19 | 0 | 0 |
 | `engine/ai-engine.ts` | 2 | 2 | 33 | 16 |
-| `engine/foreshadow-config-manager.ts` | 1 | 1 | 17 | 17 |
 | `ui/full-writer-view.ts` | 2 | 2 | 25 | 16 |
 | `services/genre-preference-memory.ts` | 3 | 3 | 14 | 14 |
 | `shared/template-validator.ts` | 25 | 17 | 0 | 0 |
@@ -45,3 +42,6 @@
 | `engine/writing-quality-engine.ts` | 13 | 13 | 8 | 0 |
 | `shared/file-cache.ts` | 3 | 3 | 10 | 10 |
 | `shared/task-model.ts` | 19 | 13 | 0 | 0 |
+| `shared/writing-stats.ts` | 25 | 13 | 0 | 0 |
+| `engine/deconstructors/technique-deconstructor.ts` | 5 | 5 | 7 | 7 |
+| `engine/harness/tool-registry.ts` | 6 | 6 | 6 | 6 |

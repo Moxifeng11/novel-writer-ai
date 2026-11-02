@@ -8,18 +8,36 @@
 // 一、核心 Store API 类型
 // ============================================================
 
+/**
+ * 状态基类型。
+ */
 export type State = object;
 
+/**
+ * 状态的部分更新。
+ */
 export type PartialState<T extends State> =
     | Partial<T>
     | ((state: T) => Partial<T>);
 
+/**
+ * 状态订阅回调。
+ */
 export type StateListener<T extends State> = (state: T, prevState: T) => void;
 
+/**
+ * 状态选择器。
+ */
 export type StateSelector<T extends State, U> = (state: T) => U;
 
+/**
+ * 相等比较函数。
+ */
 export type EqualityChecker<U> = (a: U, b: U) => boolean;
 
+/**
+ * Store 公共 API。
+ */
 export interface StoreApi<T extends State> {
     getState: () => T;
     setState: (partial: PartialState<T>, replace?: boolean) => void;
@@ -27,6 +45,9 @@ export interface StoreApi<T extends State> {
     destroy: () => void;
 }
 
+/**
+ * Store 创建器。
+ */
 export type StoreCreator<T extends State> = (
     set: StoreApi<T>['setState'],
     get: StoreApi<T>['getState'],
@@ -37,6 +58,9 @@ export type StoreCreator<T extends State> = (
 // 二、选择器订阅类型
 // ============================================================
 
+/**
+ * 带选择器订阅的 Store API。
+ */
 export interface SubscribeWithSelector<T extends State> extends StoreApi<T> {
     subscribe: {
         (listener: StateListener<T>): () => void;
@@ -55,6 +79,9 @@ export interface SubscribeWithSelector<T extends State> extends StoreApi<T> {
 // 三、中间件类型
 // ============================================================
 
+/**
+ * 可变 Store 类型。
+ */
 export type MutateStore<S, Ms extends [...unknown[]]> = Ms extends [
     infer M,
     ...infer Rest,
@@ -64,6 +91,9 @@ export type MutateStore<S, Ms extends [...unknown[]]> = Ms extends [
         : never
     : S;
 
+/**
+ * Store 中间件。
+ */
 export type Middleware<T extends State, U extends StoreApi<T> = StoreApi<T>> = (
     config: StoreApi<T>,
 ) => U;
@@ -72,17 +102,26 @@ export type Middleware<T extends State, U extends StoreApi<T> = StoreApi<T>> = (
 // 四、Persist 中间件类型
 // ============================================================
 
+/**
+ * 持久化存储值。
+ */
 export type PersistStorageValue<S> = {
     state: S;
     version?: number;
 };
 
+/**
+ * 持久化存储适配器。
+ */
 export interface PersistStorage<S> {
     getItem: (name: string) => PersistStorageValue<S> | null | Promise<PersistStorageValue<S> | null>;
     setItem: (name: string, value: PersistStorageValue<S>) => void | Promise<void>;
     removeItem: (name: string) => void | Promise<void>;
 }
 
+/**
+ * 持久化选项。
+ */
 export interface PersistOptions<T extends State, PersistedState extends State = T> {
     name: string;
     storage?: PersistStorage<PersistedState>;
@@ -93,6 +132,9 @@ export interface PersistOptions<T extends State, PersistedState extends State = 
     onRehydrateStorage?: (state: T) => ((state: T, error?: unknown) => void) | void;
 }
 
+/**
+ * 持久化 Store API。
+ */
 export interface PersistApi<T extends State> extends StoreApi<T> {
     persist: {
         setOptions: (options: Partial<PersistOptions<T>>) => void;
@@ -107,15 +149,24 @@ export interface PersistApi<T extends State> extends StoreApi<T> {
 // 五、Devtools 中间件类型
 // ============================================================
 
+/**
+ * Devtools 选项。
+ */
 export interface DevtoolsOptions {
     name?: string;
     enabled?: boolean;
 }
 
+/**
+ * Devtools 状态。
+ */
 export interface DevtoolsState {
     type: string;
 }
 
+/**
+ * Devtools Store API。
+ */
 export interface DevtoolsApi<T extends State> extends StoreApi<T> {
     devtools: {
         send: (action: string, state: T) => void;
@@ -126,6 +177,9 @@ export interface DevtoolsApi<T extends State> extends StoreApi<T> {
 // 六、Logger 中间件类型
 // ============================================================
 
+/**
+ * 日志中间件选项。
+ */
 export interface LoggerOptions {
     name?: string;
     enabled?: boolean;
@@ -135,6 +189,9 @@ export interface LoggerOptions {
 // 七、Thunk 类型（可选）
 // ============================================================
 
+/**
+ * Thunk dispatch 类型。
+ */
 export type ThunkDispatch<T extends State> = <R>(
     thunk: (
         set: StoreApi<T>['setState'],
@@ -142,6 +199,9 @@ export type ThunkDispatch<T extends State> = <R>(
     ) => R,
 ) => R;
 
+/**
+ * Thunk API。
+ */
 export interface ThunkApi<T extends State> extends StoreApi<T> {
     dispatch: ThunkDispatch<T>;
 }
