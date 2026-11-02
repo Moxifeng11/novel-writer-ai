@@ -8,7 +8,7 @@
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
 | `engine/` | 271 | 1508 | 938 | 62% | 1253 | 831 | 66% | 743 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 136 | 67% | 66 |
-| `shared/` | 163 | 1517 | 1040 | 69% | 149 | 132 | 89% | 457 |
+| `shared/` | 163 | 1517 | 1093 | 72% | 149 | 132 | 89% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 237 | 38% | 161 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -20,11 +20,7 @@
 | `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 14 |
 | `ui/full-writer-view.ts` | 2 | 2 | 25 | 16 |
 | `services/genre-preference-memory.ts` | 3 | 3 | 14 | 14 |
-| `shared/template-validator.ts` | 25 | 17 | 0 | 0 |
 | `ui/services/co-write-facade.ts` | 2 | 2 | 58 | 15 |
-| `shared/mode-content.ts` | 19 | 16 | 0 | 0 |
-| `shared/pre-research.ts` | 17 | 16 | 0 | 0 |
-| `shared/creation-mode.ts` | 20 | 15 | 0 | 0 |
 | `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 10 |
 | `engine/knowledge-tags.ts` | 2 | 2 | 12 | 12 |
@@ -45,3 +41,7 @@
 | `engine/repository/domain/serializers/entity-factory.ts` | 1 | 0 | 12 | 12 |
 | `shared/story-structure.ts` | 23 | 12 | 0 | 0 |
 | `ui/full-writer/chapter-orchestrator.ts` | 9 | 8 | 4 | 4 |
+| `ui/full-writer/streamlined-nav-presenter.ts` | 12 | 12 | 0 | 0 |
+| `ui/settings/general-sections.ts` | 6 | 6 | 7 | 6 |
+| `ui/settings/writing-sections.ts` | 6 | 6 | 6 | 6 |
+| `ui/views/book-detail-renderer.ts` | 2 | 2 | 10 | 10 |

@@ -166,22 +166,34 @@ function bodySectionOrAliasHasContent(content: string, section: string, aliasesM
     return aliasList.some(alias => bodySectionHasContent(content, alias));
 }
 
+/**
+ * 校验结果。
+ */
 export interface ValidationResult {
     valid: boolean;
     missingFields: string[];
     errorType?: string;
 }
 
+/**
+ * 时间线表格行。
+ */
 export interface TimelineRow {
     [key: string]: string;
 }
 
+/**
+ * 同人规则。
+ */
 export interface FanficRules {
     mustFollow: string[];
     adaptScope: string;
     redlines: string[];
 }
 
+/**
+ * 时间线策略。
+ */
 export interface TimelineStrategy {
     strategy: 'fanfic' | 'original';
     timelines: string[];
@@ -205,6 +217,12 @@ const FANFIC_EMPTY_VALUES = new Set([
     '待补充', '待填写', '（待补充）', '(待补充)', '（待填写）', '(待填写)', '...', '…', '—', '-',
 ]);
 
+/**
+ * 判断同人字段是否已填。
+ *
+ * @param raw - 参数
+ * @returns 布尔值
+ */
 export function isFanficValueFilled(raw: string | undefined | null): boolean {
     if (raw == null) return false;
     let value = String(raw).trim();
@@ -215,6 +233,9 @@ export function isFanficValueFilled(raw: string | undefined | null): boolean {
     return value !== '' && !FANFIC_EMPTY_VALUES.has(value);
 }
 
+/**
+ * 同人校验选项。
+ */
 export interface FanficValidationOptions {
     /**
      * 是否要求两张时间线各至少 1 行真实数据（默认 true）。
@@ -230,6 +251,13 @@ const FANFIC_TIMELINE_SECTIONS: Array<{ title: string; dataMissingLabel: string 
     { title: '故事背景时间线', dataMissingLabel: '故事背景时间线(需要至少1行真实数据)' },
 ];
 
+/**
+ * 校验同人设定。
+ *
+ * @param content - 参数
+ * @param options - 参数
+ * @returns 校验结果
+ */
 export function validateFanficSettings(content: string, options: FanficValidationOptions = {}): ValidationResult {
     const requireTimelineData = options.requireTimelineData !== false;
     const missing: string[] = [];
@@ -266,6 +294,12 @@ export function validateFanficSettings(content: string, options: FanficValidatio
 // ============================================================
 // 世界观输出校验
 // ============================================================
+/**
+ * 校验世界观输出。
+ *
+ * @param content - 参数
+ * @returns 校验结果
+ */
 export function validateWorldviewOutput(content: string): ValidationResult {
     const missing: string[] = [];
 
@@ -305,6 +339,12 @@ export function validateWorldviewOutput(content: string): ValidationResult {
 // ============================================================
 // 分卷大纲输出校验
 // ============================================================
+/**
+ * 校验大纲输出。
+ *
+ * @param content - 参数
+ * @returns 校验结果
+ */
 export function validateOutlineOutput(content: string): ValidationResult {
     const missing: string[] = [];
 
@@ -346,6 +386,12 @@ export function validateOutlineOutput(content: string): ValidationResult {
 // 设定库输出校验
 // ============================================================
 
+/**
+ * 校验设定库输出。
+ *
+ * @param content - 参数
+ * @returns 校验结果
+ */
 export function validateSettingLibOutput(content: string): ValidationResult {
     const missingFields: string[] = [];
     if (!content.trim()) {
@@ -386,6 +432,12 @@ const WRITING_STYLE_SUB_SECTIONS: Record<string, readonly string[]> = {
     '二、文笔特征': ['总体风格', '句式特征', '用语习惯'],
 };
 
+/**
+ * 校验文笔风格输出。
+ *
+ * @param content - 参数
+ * @returns 校验结果
+ */
 export function validateWritingStyleOutput(content: string): ValidationResult {
     const missingFields: string[] = [];
     if (!content.trim()) {
@@ -421,6 +473,12 @@ export function validateWritingStyleOutput(content: string): ValidationResult {
 // ============================================================
 // 通用要点格式检测
 // ============================================================
+/**
+ * 校验要点格式。
+ *
+ * @param content - 参数
+ * @returns 校验结果
+ */
 export function validateBulletFormat(content: string): ValidationResult {
     // Check for prose: continuous Chinese chars without newline
     const prosePattern = /[\u4e00-\u9fff]{200,}/;
@@ -452,15 +510,33 @@ function toTimelineRows(rows: string[][], columns: readonly string[]): TimelineR
     });
 }
 
+/**
+ * 解析原作时间线表。
+ *
+ * @param content - 参数
+ * @returns 行数组
+ */
 export function parseCanonTimelineTable(content: string): TimelineRow[] {
     // 与 prompt 注入共用 `parseFanficTimelineRows`：面板与 prompt 必须同口径
     return toTimelineRows(parseFanficTimelineRows(content, '原作剧情时间线'), FF_CANON_TIMELINE_COLS);
 }
 
+/**
+ * 解析同人时间线表。
+ *
+ * @param content - 参数
+ * @returns 行数组
+ */
 export function parseFanTimelineTable(content: string): TimelineRow[] {
     return toTimelineRows(parseFanficTimelineRows(content, '故事背景时间线'), FF_FAN_TIMELINE_COLS);
 }
 
+/**
+ * 解析时间线看板表。
+ *
+ * @param content - 参数
+ * @returns 行数组
+ */
 export function parseTimelineBoardTable(content: string): TimelineRow[] {
     const section = content.match(/##\s+纪元\s*\/\s*时间轴[\s\S]*$/);
     if (!section) return [];
@@ -471,6 +547,12 @@ export function parseTimelineBoardTable(content: string): TimelineRow[] {
 // ============================================================
 // 同人/原创流程识别
 // ============================================================
+/**
+ * 检测项目采用的时间线策略。
+ *
+ * @param projectDotFileContent - 参数
+ * @returns 策略
+ */
 export function detectTimelineStrategy(projectDotFileContent: string): TimelineStrategy {
     // v31: `.project` 写入端统一写英文枚举值（original/fanfic），
     // 但旧逻辑只认中文「同人」，导致同人项目永远退化为 original，
@@ -544,6 +626,12 @@ function parseMarkdownTable(content: string, columns: string[]): TimelineRow[] {
 // ============================================================
 // 加载 fanfic 规则
 // ============================================================
+/**
+ * 加载同人规则。
+ *
+ * @param content - 参数
+ * @returns 规则
+ */
 export function loadFanficRules(content: string): FanficRules {
     // 与 prompt 侧 `parseFanficRules` 共用 `extractFanficRuleValue`：
     // 旧实现用单行正则 `.+`，用户把规则写成续行时面板会漏掉后半段，prompt 里却带着。

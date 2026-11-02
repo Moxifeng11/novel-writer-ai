@@ -10,7 +10,13 @@
  * 长篇默认返回空覆盖，保证原有 11 步与提示词完全不变。
  */
 
+/**
+ * 创作模式。
+ */
 export type CreationMode = 'long' | 'short' | 'script';
+/**
+ * 性别频道。
+ */
 export type GenderChannel = '女频' | '男频' | '通用';
 
 import {
@@ -24,6 +30,9 @@ import {
     type StoryStructureId,
 } from './story-structure';
 
+/**
+ * 创作模式规格。
+ */
 export interface CreationModeSpec {
     mode: CreationMode;
     label: string;
@@ -35,6 +44,9 @@ export interface CreationModeSpec {
     targetUnits: { min: number; max: number; default: number };
 }
 
+/**
+ * 模式规格表。
+ */
 export const CREATION_MODE_SPECS: Record<CreationMode, CreationModeSpec> = {
     long: {
         mode: 'long', label: '长篇小说', icon: '📖',
@@ -59,6 +71,9 @@ export const CREATION_MODE_SPECS: Record<CreationMode, CreationModeSpec> = {
     },
 };
 
+/**
+ * 短篇题材。
+ */
 export interface ShortStoryCategory {
     name: string;
     definition: string;
@@ -93,6 +108,9 @@ export const SHORT_STORY_CATEGORIES: ShortStoryCategory[] = [
     { name: '其他', gender: '通用', definition: '以上所有主分类无法囊括的故事，可以选择该分类。' },
 ];
 
+/**
+ * 剧本类型规格。
+ */
 export interface ScriptGenreSpec {
     name: string;
     coreHook: string;
@@ -116,6 +134,9 @@ export const SCRIPT_GENRES: ScriptGenreSpec[] = [
     { name: '萌宝', coreHook: '萌宝意外出现，揭开多年前的秘密', coreConflict: '亲子关系与豪门阻挠', payoff: '亲子名场面、豪门认亲、护妈打脸' },
 ];
 
+/**
+ * 短篇规格。
+ */
 export const SHORT_STORY_SPEC = {
     platform: '番茄小说短篇',
     wordRange: { min: 50000, max: 100000 },
@@ -126,6 +147,9 @@ export const SHORT_STORY_SPEC = {
     structureRule: '单主线、强情绪、3–5 个关键反转；结尾必须完成情绪兑现或留下余味，不写长篇式支线扩张。',
 } as const;
 
+/**
+ * 剧本规格。
+ */
 export const SCRIPT_SPEC = {
     platform: '红果短剧',
     wordRange: { min: 50000, max: 100000 },
@@ -137,6 +161,9 @@ export const SCRIPT_SPEC = {
     formatRule: '场景标题（集-场 日/夜 内/外 地点）→ 人物 → 动作/画面 → 角色对白 → 必要 VO/字幕；对白驱动，少写小说式心理描写。',
 } as const;
 
+/**
+ * 创作模式元信息。
+ */
 export interface CreationModeMeta {
     mode: CreationMode;
     shortCategory: string;
@@ -149,6 +176,12 @@ export interface CreationModeMeta {
     storySettings?: LongStorySettings;
 }
 
+/**
+ * 解析创作模式。
+ *
+ * @param value - 参数
+ * @returns 模式
+ */
 export function parseCreationMode(value: unknown): CreationMode {
     const raw = String(value || '').trim().toLowerCase();
     if (raw === 'short' || raw === '短篇' || raw === '短篇小说') return 'short';
@@ -156,23 +189,54 @@ export function parseCreationMode(value: unknown): CreationMode {
     return 'long';
 }
 
+/**
+ * 模式中文名。
+ *
+ * @param mode - 参数
+ * @returns 名称
+ */
 export function getCreationModeLabel(mode: CreationMode): string {
     return CREATION_MODE_SPECS[mode]?.label || '长篇小说';
 }
 
+/**
+ * 模式单元单位名。
+ *
+ * @param mode - 参数
+ * @param count? - 参数
+ * @returns 单位名
+ */
 export function getCreationUnitLabel(mode: CreationMode, count?: number): string {
     const spec = CREATION_MODE_SPECS[mode] || CREATION_MODE_SPECS.long;
     return count === 1 ? spec.unitLabel : spec.unitPlural;
 }
 
+/**
+ * 按名称找短篇题材。
+ *
+ * @param name - 参数
+ * @returns 题材或 undefined
+ */
 export function findShortStoryCategory(name: string): ShortStoryCategory | undefined {
     return SHORT_STORY_CATEGORIES.find(item => item.name === name);
 }
 
+/**
+ * 按名称找剧本类型。
+ *
+ * @param name - 参数
+ * @returns 类型或 undefined
+ */
 export function findScriptGenre(name: string): ScriptGenreSpec | undefined {
     return SCRIPT_GENRES.find(item => item.name === name);
 }
 
+/**
+ * 解析项目元信息中的模式。
+ *
+ * @param meta - 参数
+ * @returns 模式元信息
+ */
 export function parseCreationModeMeta(meta: string): CreationModeMeta {
     const read = (key: string): string => {
         const match = meta.match(new RegExp(`^##\\s*${key}\\s*\\r?\\n\\s*(\\S.*)$`, 'm'));
@@ -194,6 +258,12 @@ export function parseCreationModeMeta(meta: string): CreationModeMeta {
     };
 }
 
+/**
+ * 构建模式元信息分节。
+ *
+ * @param meta - 参数
+ * @returns Markdown
+ */
 export function buildCreationModeMetaSection(meta: CreationModeMeta): string {
     const lines = ['## 创作模式', meta.mode];
     if (meta.mode === 'short' && meta.shortCategory) lines.push('', '## 短篇分类', meta.shortCategory);

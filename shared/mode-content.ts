@@ -9,9 +9,18 @@ import { TFile } from 'obsidian';
 import type { CreationMode } from './creation-mode';
 import { resolveProjectRoot } from '../domains/kernel/project-locator';
 
+/**
+ * 短篇内容根目录。
+ */
 export const SHORT_CONTENT_ROOT = '短篇创作';
+/**
+ * 剧本内容根目录。
+ */
 export const SCRIPT_CONTENT_ROOT = '剧本创作';
 
+/**
+ * 短篇目录结构。
+ */
 export const SHORT_DIRS = {
     storyCore: '01-故事核',
     outline: '02-分节大纲',
@@ -20,6 +29,9 @@ export const SHORT_DIRS = {
     export: '05-导出',
 } as const;
 
+/**
+ * 剧本目录结构。
+ */
 export const SCRIPT_DIRS = {
     bible: '01-人物与场景',
     outline: '02-分集大纲',
@@ -29,6 +41,9 @@ export const SCRIPT_DIRS = {
     export: '06-导出',
 } as const;
 
+/**
+ * 模式单元信息。
+ */
 export interface ModeUnitInfo {
     unitName: string;
     number: number;
@@ -39,6 +54,12 @@ export interface ModeUnitInfo {
     legacy: boolean;
 }
 
+/**
+ * 模式内容根目录名。
+ *
+ * @param mode - 参数
+ * @returns 目录名
+ */
 export function modeContentRoot(mode: CreationMode): string {
     if (mode === 'short') return SHORT_CONTENT_ROOT;
     if (mode === 'script') return SCRIPT_CONTENT_ROOT;
@@ -55,15 +76,35 @@ export function modeBodyDir(project: string, mode: CreationMode): string {
     return `${project}/03-大纲与章节/正文`;
 }
 
+/**
+ * 模式单元单位名（章/节/集）。
+ *
+ * @param mode - 参数
+ * @returns 单位名
+ */
 export function modeUnitLabel(mode: CreationMode): string {
     return mode === 'short' ? '节' : mode === 'script' ? '集' : '章';
 }
 
+/**
+ * 单元文件名。
+ *
+ * @param mode - 参数
+ * @param number - 参数
+ * @returns 文件名
+ */
 export function modeUnitFileName(mode: CreationMode, number: number): string {
     const n = String(number).padStart(2, '0');
     return mode === 'short' ? `第${n}节.md` : mode === 'script' ? `第${n}集.md` : `第${n}章_正文.md`;
 }
 
+/**
+ * 单元展示名。
+ *
+ * @param number - 参数
+ * @param mode - 参数
+ * @returns 展示名
+ */
 export function modeUnitDisplay(number: number, mode: CreationMode): string {
     return `第${number}${modeUnitLabel(mode)}`;
 }
@@ -80,6 +121,12 @@ export function modeDocPath(project: string, mode: CreationMode, doc: 'storyCore
     return `${project}/${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.outline}/分集大纲.md`;
 }
 
+/**
+ * 短篇单元骨架。
+ *
+ * @param number - 参数
+ * @returns Markdown
+ */
 export function buildShortUnitSkeleton(number: number): string {
     const name = modeUnitDisplay(number, 'short');
     return `---
@@ -101,6 +148,12 @@ word_count: 0
 `;
 }
 
+/**
+ * 剧本单元骨架。
+ *
+ * @param number - 参数
+ * @returns Markdown
+ */
 export function buildScriptUnitSkeleton(number: number): string {
     const name = modeUnitDisplay(number, 'script');
     return `---
@@ -195,6 +248,14 @@ const SCRIPT_STORYBOARD_STARTER = `# 分镜表
 | E01-S01-SH01 | 中景 | 平视 | 固定 | 2.5s |  |  |  | 切 |  |
 `;
 
+/**
+ * 模式文档初始内容。
+ *
+ * @param project - 参数
+ * @param mode - 参数
+ * @param doc - 参数
+ * @returns Markdown
+ */
 export function modeDocStarter(project: string, mode: CreationMode, doc: 'storyCore' | 'outline' | 'bible' | 'storyboard'): string {
     if (mode === 'short') {
         if (doc === 'storyCore') return SHORT_STORY_CORE_STARTER.replace('# 故事核', `# ${project} · 故事核`);
@@ -302,6 +363,12 @@ export function listModeUnits(app: App, project: string, mode: CreationMode): Mo
     return legacy.sort((a, b) => a.number - b.number);
 }
 
+/**
+ * 找下一个待写单元。
+ *
+ * @param units - 参数
+ * @returns 单元或 null
+ */
 export function findNextModeUnit(units: ModeUnitInfo[]): ModeUnitInfo | null {
     return units.find(unit => unit.status !== 'written' && unit.status !== 'settled') || units[units.length - 1] || null;
 }

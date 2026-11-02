@@ -8,10 +8,22 @@ import type { DataAdapter } from 'obsidian';
 import type { CreationMode } from './creation-mode';
 import { resolveProjectRoot } from '../domains/kernel/project-locator';
 
+/**
+ * 前期调研目录。
+ */
 export const PRE_RESEARCH_DIR = '00-前期调研';
+/**
+ * 调研数据文件名。
+ */
 export const PRE_RESEARCH_DATA_FILE = '调研数据.json';
+/**
+ * 调研报告文件名。
+ */
 export const PRE_RESEARCH_REPORT_FILE = '调研报告.md';
 
+/**
+ * 调研洞察。
+ */
 export interface PreResearchInsight {
     /** 热点/行业调研摘要；无实时来源时以“未经实时核实：”开头 */
     summary: string;
@@ -30,6 +42,9 @@ export interface PreResearchInsight {
     };
 }
 
+/**
+ * 短篇前期调研数据。
+ */
 export interface ShortPreResearch {
     mode: 'short';
     name: string;
@@ -51,6 +66,9 @@ export interface ShortPreResearch {
     insight?: PreResearchInsight;
 }
 
+/**
+ * 剧本前期调研数据。
+ */
 export interface ScriptPreResearch {
     mode: 'script';
     name: string;
@@ -71,8 +89,18 @@ export interface ScriptPreResearch {
     insight?: PreResearchInsight;
 }
 
+/**
+ * 前期调研数据联合类型。
+ */
 export type PreResearchData = ShortPreResearch | ScriptPreResearch;
 
+/**
+ * 创建默认调研数据。
+ *
+ * @param mode - 参数
+ * @param name = '' - 参数
+ * @returns 调研数据
+ */
 export function createDefaultPreResearch(mode: CreationMode, name = ''): PreResearchData {
     if (mode === 'script') {
         return {

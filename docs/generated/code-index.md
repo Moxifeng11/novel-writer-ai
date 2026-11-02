@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 289 | 122383 | 1532 | 617 | 40% |
 | `services/` | 28 | 10515 | 151 | 75 | 50% |
-| `shared/` | 164 | 32709 | 1512 | 524 | 35% |
+| `shared/` | 164 | 32962 | 1512 | 577 | 38% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 93175 | 500 | 110 | 22% |
@@ -379,7 +379,7 @@
 | `shared/context-hygiene.ts` | 238 | 11 | 2 |
 | `shared/contrast-library.ts` | 87 | 4 | 1 |
 | `shared/creation-flow.ts` | 518 | 11 | 2 |
-| `shared/creation-mode.ts` | 351 | 20 | 2 |
+| `shared/creation-mode.ts` | 421 | 20 | 17 |
 | `shared/cursor-position.ts` | 27 | 2 | 2 |
 | `shared/deconstruction-settings.ts` | 63 | 6 | 1 |
 | `shared/degradation-notifier.ts` | 167 | 7 | 1 |
@@ -430,7 +430,7 @@
 | `shared/logger.ts` | 84 | 5 | 2 |
 | `shared/lru-cache.ts` | 202 | 2 | 2 |
 | `shared/memory-rank.ts` | 87 | 4 | 2 |
-| `shared/mode-content.ts` | 330 | 19 | 0 |
+| `shared/mode-content.ts` | 397 | 19 | 13 |
 | `shared/mode-unit-outline.ts` | 77 | 2 | 1 |
 | `shared/model-capabilities.ts` | 147 | 11 | 5 |
 | `shared/model-source.ts` | 41 | 3 | 1 |
@@ -441,7 +441,7 @@
 | `shared/plugin-cache.ts` | 359 | 6 | 0 |
 | `shared/plugin-capabilities.ts` | 96 | 4 | 1 |
 | `shared/plugin-worker-url.ts` | 85 | 3 | 2 |
-| `shared/pre-research.ts` | 378 | 17 | 1 |
+| `shared/pre-research.ts` | 406 | 17 | 9 |
 | `shared/prereq-check.ts` | 48 | 3 | 2 |
 | `shared/preview-kind.ts` | 29 | 2 | 0 |
 | `shared/preview-scroll.ts` | 50 | 4 | 3 |
@@ -491,7 +491,7 @@
 | `shared/task-budget-engine.ts` | 255 | 13 | 4 |
 | `shared/task-model.ts` | 305 | 19 | 2 |
 | `shared/template-scaffold.ts` | 109 | 3 | 1 |
-| `shared/template-validator.ts` | 823 | 26 | 6 |
+| `shared/template-validator.ts` | 911 | 26 | 23 |
 | `shared/text-utils.ts` | 42 | 5 | 1 |
 | `shared/theme-colors.ts` | 366 | 25 | 4 |
 | `shared/theme-gallery.ts` | 162 | 12 | 2 |
