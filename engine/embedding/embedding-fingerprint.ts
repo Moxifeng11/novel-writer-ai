@@ -63,6 +63,9 @@ export function getEmbeddingModelName(provider: EmbeddingProvider): string {
     }
 }
 
+/**
+ * 向量模型不匹配原因（模型/维度）。
+ */
 export type EmbeddingMismatchReason = 'model' | 'dimension';
 
 /**

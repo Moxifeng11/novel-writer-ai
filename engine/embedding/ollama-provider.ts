@@ -3,6 +3,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('OllamaProvider');
+/**
+ * Ollama 向量提供方选项。
+ */
 export interface OllamaProviderOptions {
     baseUrl?: string;
     model?: string;
@@ -11,6 +14,9 @@ export interface OllamaProviderOptions {
     maxInputChars?: number;
 }
 
+/**
+ * Ollama 本地向量提供方。
+ */
 export class OllamaEmbeddingProvider implements EmbeddingProvider {
     private baseUrl: string;
     private model: string;

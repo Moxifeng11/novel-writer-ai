@@ -1,12 +1,18 @@
 import { OpenAIEmbeddingProvider, OpenAIProviderOptions } from './openai-provider';
 import type { EmbeddingAvailability, ProviderInfo } from './embedding-provider';
 
+/**
+ * 通义向量提供方选项。
+ */
 export interface QwenProviderOptions extends OpenAIProviderOptions {
 }
 
 const QWEN_DEFAULT_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const QWEN_DEFAULT_MODEL = 'text-embedding-v3';
 
+/**
+ * 通义（DashScope）向量提供方。
+ */
 export class QwenEmbeddingProvider extends OpenAIEmbeddingProvider {
     constructor(options: QwenProviderOptions = {}) {
         super({

@@ -7,10 +7,19 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('ProviderFactory');
+/**
+ * 向量提供方类型。
+ */
 export type VectorProviderType = 'ollama' | 'openai' | 'doubao' | 'qwen';
 
+/**
+ * 向量运行模式。
+ */
 export type EmbeddingMode = 'auto' | 'primary' | 'hybrid';
 
+/**
+ * 提供方工厂配置。
+ */
 export interface ProviderFactoryConfig {
     vectorProviderType: VectorProviderType;
     vectorMode?: EmbeddingMode;
@@ -32,6 +41,9 @@ export interface ProviderFactoryConfig {
     embeddingFallbackPolicy?: 'never' | 'local-only' | 'allow-cloud';
 }
 
+/**
+ * 向量提供方工厂：按配置创建与降级。
+ */
 export class EmbeddingProviderFactory {
     /**
      * 按插件设置构造 provider（缺省值集中在工厂里，调用方不再各自写死 Ollama）。

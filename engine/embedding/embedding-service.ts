@@ -12,14 +12,26 @@ import type { EmbeddingProvider } from './embedding-provider';
 
 let sharedProvider: EmbeddingProvider | null = null;
 
+/**
+ * 设置全局共享向量提供方。
+ *
+ * @param provider - 参数
+ */
 export function setSharedEmbeddingProvider(provider: EmbeddingProvider | null): void {
     sharedProvider = provider;
 }
 
+/**
+ * 取全局共享向量提供方。
+ * @returns 提供方或 null
+ */
 export function getSharedEmbeddingProvider(): EmbeddingProvider | null {
     return sharedProvider;
 }
 
+/**
+ * 清除全局共享向量提供方。
+ */
 export function clearSharedEmbeddingProvider(): void {
     sharedProvider = null;
 }

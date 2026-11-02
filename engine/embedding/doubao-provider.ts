@@ -1,12 +1,18 @@
 import { OpenAIEmbeddingProvider, OpenAIProviderOptions } from './openai-provider';
 import type { EmbeddingAvailability, ProviderInfo } from './embedding-provider';
 
+/**
+ * 豆包向量提供方选项。
+ */
 export interface DoubaoProviderOptions extends OpenAIProviderOptions {
 }
 
 const DOUBAO_DEFAULT_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3';
 const DOUBAO_DEFAULT_MODEL = 'doubao-embedding-text-240915';
 
+/**
+ * 豆包（火山方舟）向量提供方。
+ */
 export class DoubaoEmbeddingProvider extends OpenAIEmbeddingProvider {
     constructor(options: DoubaoProviderOptions = {}) {
         super({

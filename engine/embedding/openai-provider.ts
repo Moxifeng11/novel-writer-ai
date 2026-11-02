@@ -3,6 +3,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('OpenaiProvider');
+/**
+ * OpenAI 兼容向量提供方选项。
+ */
 export interface OpenAIProviderOptions {
     apiKey?: string;
     baseUrl?: string;
@@ -39,6 +42,9 @@ const MODEL_DIMENSIONS: Record<string, number> = {
     'text-embedding-v3': 1024,
 };
 
+/**
+ * OpenAI 兼容向量提供方。
+ */
 export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     private apiKey: string;
     private baseUrl: string;

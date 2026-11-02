@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 120552 | 1532 | 441 | 29% |
+| `engine/` | 289 | 120651 | 1532 | 470 | 31% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -119,15 +119,15 @@
 | `engine/deconstructors/style-deconstructor.ts` | 2297 | 14 | 14 |
 | `engine/deconstructors/technique-deconstructor.ts` | 1767 | 5 | 0 |
 | `engine/dimension-keywords.ts` | 428 | 9 | 0 |
-| `engine/embedding/doubao-provider.ts` | 37 | 2 | 0 |
-| `engine/embedding/embedding-fingerprint.ts` | 92 | 7 | 1 |
+| `engine/embedding/doubao-provider.ts` | 43 | 2 | 2 |
+| `engine/embedding/embedding-fingerprint.ts` | 95 | 7 | 2 |
 | `engine/embedding/embedding-provider.ts` | 13 | 1 | 1 |
-| `engine/embedding/embedding-service.ts` | 37 | 4 | 0 |
+| `engine/embedding/embedding-service.ts` | 49 | 4 | 3 |
 | `engine/embedding/index.ts` | 12 | 6 | 0 |
-| `engine/embedding/ollama-provider.ts` | 174 | 2 | 0 |
-| `engine/embedding/openai-provider.ts` | 185 | 2 | 0 |
-| `engine/embedding/provider-factory.ts` | 176 | 4 | 0 |
-| `engine/embedding/qwen-provider.ts` | 37 | 2 | 0 |
+| `engine/embedding/ollama-provider.ts` | 180 | 2 | 2 |
+| `engine/embedding/openai-provider.ts` | 191 | 2 | 2 |
+| `engine/embedding/provider-factory.ts` | 188 | 4 | 4 |
+| `engine/embedding/qwen-provider.ts` | 43 | 2 | 2 |
 | `engine/emotion-auditor.ts` | 268 | 3 | 3 |
 | `engine/emotion-curve-analyzer.ts` | 215 | 1 | 0 |
 | `engine/emotion-planner.ts` | 200 | 7 | 3 |
@@ -139,9 +139,9 @@
 | `engine/entity-scorer.ts` | 162 | 6 | 1 |
 | `engine/entity-state-manager.ts` | 508 | 4 | 0 |
 | `engine/export/docx-builder.ts` | 221 | 1 | 0 |
-| `engine/export/epub-builder.ts` | 367 | 7 | 0 |
-| `engine/export/manuscript-compiler.ts` | 236 | 12 | 0 |
-| `engine/export/zip-writer.ts` | 139 | 4 | 1 |
+| `engine/export/epub-builder.ts` | 388 | 7 | 6 |
+| `engine/export/manuscript-compiler.ts` | 251 | 12 | 5 |
+| `engine/export/zip-writer.ts` | 151 | 4 | 3 |
 | `engine/fact-index-manager.ts` | 183 | 9 | 0 |
 | `engine/fact-index-vault.ts` | 102 | 3 | 1 |
 | `engine/fingerprint-extractor.ts` | 517 | 4 | 0 |

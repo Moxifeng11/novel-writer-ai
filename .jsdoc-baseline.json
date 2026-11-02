@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-02T00:01:27.611Z",
+  "generatedAt": "2026-11-02T00:02:16.521Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 762,
+      "documented": 791,
       "methods": 1253,
       "methodsDocumented": 610,
       "incomplete": 740
@@ -621,49 +621,49 @@
     },
     "engine/embedding/doubao-provider.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/embedding/embedding-fingerprint.ts": {
       "exports": 7,
-      "documented": 6,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 6
     },
     "engine/embedding/embedding-service.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 1
     },
     "engine/embedding/ollama-provider.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 8,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/embedding/openai-provider.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 9,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/embedding/provider-factory.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 5,
       "methodsDocumented": 1,
       "incomplete": 1
     },
     "engine/embedding/qwen-provider.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -747,21 +747,21 @@
     },
     "engine/export/epub-builder.ts": {
       "exports": 7,
-      "documented": 1,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 1
     },
     "engine/export/manuscript-compiler.ts": {
       "exports": 12,
-      "documented": 7,
+      "documented": 12,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 7
     },
     "engine/export/zip-writer.ts": {
       "exports": 4,
-      "documented": 2,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 1

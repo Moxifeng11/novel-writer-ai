@@ -11,8 +11,14 @@
 
 import { countWords } from '../../shared/diff-utils';
 
+/**
+ * 成稿格式。
+ */
 export type ManuscriptFormat = 'markdown' | 'text' | 'html';
 
+/**
+ * 待编译章节。
+ */
 export interface ManuscriptChapter {
     /** 卷名，如「第1卷」；可为空 */
     volume: string;
@@ -28,6 +34,9 @@ export interface ManuscriptChapter {
     path: string;
 }
 
+/**
+ * 编译选项。
+ */
 export interface CompileOptions {
     format: ManuscriptFormat;
     /** 是否输出卷标题 */
@@ -40,6 +49,9 @@ export interface CompileOptions {
     unitLabel?: string;
 }
 
+/**
+ * 编译结果。
+ */
 export interface CompiledManuscript {
     content: string;
     format: ManuscriptFormat;
@@ -89,6 +101,9 @@ export function formatChapterLabel(chapter: ManuscriptChapter, options?: { unitL
     return `${label} ${chapter.title}`;
 }
 
+/**
+ * 成稿统计。
+ */
 export interface ManuscriptStats {
     sorted: ManuscriptChapter[];
     chapterCount: number;

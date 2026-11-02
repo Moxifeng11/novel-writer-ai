@@ -6,12 +6,18 @@
  * store（method=0）与 CRC32——足够生成合规的 EPUB/DOCX，且输出可复现。
  */
 
+/**
+ * ZIP 条目。
+ */
 export interface ZipEntry {
     /** ZIP 内路径，必须用 `/` 分隔 */
     path: string;
     data: string | Uint8Array;
 }
 
+/**
+ * ZIP 写入选项。
+ */
 export interface ZipOptions {
     /** 固定时间戳（测试/可复现导出用）；默认当前时间 */
     date?: Date;
@@ -31,6 +37,12 @@ const CRC_TABLE: Uint32Array = (() => {
     return table;
 })();
 
+/**
+ * 计算 CRC32。
+ *
+ * @param data - 参数
+ * @returns 校验值
+ */
 export function crc32(data: Uint8Array): number {
     let crc = 0xffffffff;
     for (let index = 0; index < data.length; index++) {

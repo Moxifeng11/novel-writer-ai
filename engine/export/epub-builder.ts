@@ -15,6 +15,9 @@ import {
 } from './manuscript-compiler';
 import { createZip, type ZipEntry } from './zip-writer';
 
+/**
+ * 书籍元数据。
+ */
 export interface BookMetadata {
     title: string;
     author?: string;
@@ -27,6 +30,9 @@ export interface BookMetadata {
     cover?: BookCover;
 }
 
+/**
+ * 封面资源。
+ */
 export interface BookCover {
     data: Uint8Array;
     /** 如 image/png / image/jpeg / image/webp */
@@ -44,10 +50,19 @@ const COVER_MEDIA_TYPES: Record<string, string> = {
     gif: 'image/gif',
 };
 
+/**
+ * 按扩展名返回封面媒体类型。
+ *
+ * @param ext - 参数
+ * @returns 媒体类型或 null
+ */
 export function coverMediaTypeForExt(ext: string): string | null {
     return COVER_MEDIA_TYPES[ext.toLowerCase()] ?? null;
 }
 
+/**
+ * 书籍构建选项。
+ */
 export interface BookBuildOptions {
     includeVolumeHeadings: boolean;
     includeChapterTitles: boolean;
@@ -58,6 +73,9 @@ export interface BookBuildOptions {
     zipDate?: Date;
 }
 
+/**
+ * 构建产物（文件名/字节/媒体类型）。
+ */
 export interface BuiltBook {
     data: Uint8Array;
     chapterCount: number;
@@ -66,6 +84,9 @@ export interface BuiltBook {
     emptyChapters: number;
 }
 
+/**
+ * EPUB 媒体类型常量。
+ */
 export const EPUB_MIMETYPE = 'application/epub+zip';
 
 function escapeXml(text: string): string {
