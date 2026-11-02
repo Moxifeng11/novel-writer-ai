@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-02T00:43:54.133Z",
+  "generatedAt": "2026-11-02T00:47:00.523Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 990,
+      "documented": 994,
       "methods": 1253,
-      "methodsDocumented": 878,
+      "methodsDocumented": 891,
       "incomplete": 743
     },
     "services": {
@@ -47,8 +47,8 @@
       "exports": 493,
       "documented": 183,
       "methods": 632,
-      "methodsDocumented": 286,
-      "incomplete": 162
+      "methodsDocumented": 315,
+      "incomplete": 163
     }
   },
   "files": {
@@ -1839,9 +1839,9 @@
     },
     "engine/style-fingerprint-library.ts": {
       "exports": 7,
-      "documented": 2,
+      "documented": 6,
       "methods": 65,
-      "methodsDocumented": 51,
+      "methodsDocumented": 64,
       "incomplete": 18
     },
     "engine/style-learner.ts": {
@@ -3528,8 +3528,8 @@
       "exports": 3,
       "documented": 0,
       "methods": 103,
-      "methodsDocumented": 74,
-      "incomplete": 9
+      "methodsDocumented": 103,
+      "incomplete": 10
     },
     "ui/command-ui-executor.ts": {
       "exports": 2,

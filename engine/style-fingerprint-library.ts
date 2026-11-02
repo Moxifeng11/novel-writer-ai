@@ -58,6 +58,9 @@ import {
     DEFAULT_INTENSITY_CONFIG,
 } from './style/style-intensity-engine';
 
+/**
+ * 指纹统计。
+ */
 export interface StyleFingerprintStats {
     avgSentenceLength: number;
     avgParagraphLength: number;
@@ -112,6 +115,9 @@ export interface StyleFingerprint {
     sourceText?: string;
 }
 
+/**
+ * 向量存储接口。
+ */
 export interface VectorStore {
     add(fingerprintId: string, samples: string[]): Promise<void>;
     /** fingerprintId 用于上游过滤已禁用指纹、以及按指纹做多样性筛选；旧实现可不返回 */
@@ -119,12 +125,18 @@ export interface VectorStore {
     delete(fingerprintId: string): Promise<void>;
 }
 
+/**
+ * 重填指纹选项。
+ */
 export interface RefillFingerprintOptions {
     refillFeatures?: boolean;
     refillSamples?: boolean;
     reVectorize?: boolean;
 }
 
+/**
+ * 相似风格检索选项。
+ */
 export interface SearchSimilarStylesOptions {
     topN?: number;
     minScore?: number;
@@ -941,6 +953,15 @@ export class StyleFingerprintLibrary {
     // 层间复制
     // ============================================================
 
+    /**
+     * 复制指纹到其他作用域。
+     *
+     * @param sourceScope - 参数
+     * @param targetScope - 参数
+     * @param fpId - 参数
+     * @param targetProject? - 参数
+     * @returns 新指纹
+     */
     async copyFingerprint(
         sourceScope: 'template' | 'global' | 'project',
         targetScope: 'template' | 'global' | 'project',
@@ -1031,6 +1052,12 @@ export class StyleFingerprintLibrary {
     // 模板同步
     // ============================================================
 
+    /**
+     * 从模板同步指纹。
+     *
+     * @param project? - 参数
+     * @returns 增/改/删统计
+     */
     async syncFromTemplate(project?: string): Promise<{ added: string[]; updated: string[]; deleted: string[] }> {
         const targetProject = project ?? this.project;
         if (!targetProject) return { added: [], updated: [], deleted: [] };
@@ -1126,6 +1153,12 @@ export class StyleFingerprintLibrary {
         return true;
     }
 
+    /**
+     * 读取启用的指纹。
+     *
+     * @param project? - 参数
+     * @returns 指纹数组
+     */
     async getEnabledFingerprints(project?: string): Promise<StyleFingerprint[]> {
         const targetProject = project ?? this.project;
 
@@ -1376,6 +1409,18 @@ export class StyleFingerprintLibrary {
     // 指纹重新提取
     // ============================================================
 
+    /**
+     * 重填指纹特征。
+     *
+     * @param fpId - 参数
+     * @param scope - 参数
+     * @param options - 参数
+     * @param sourceText - 参数
+     * @param extractor - 参数
+     * @param vectorStore - 参数
+     * @param onProgress? - 参数
+     * @returns 指纹
+     */
     async refillFingerprint(
         fpId: string,
         scope: 'template' | 'global' | 'project',
@@ -1446,6 +1491,13 @@ export class StyleFingerprintLibrary {
         onProgress?.({ phase: 'complete', percent: 100, message: '重新提取完成' });
     }
 
+    /**
+     * 按作用域取指纹。
+     *
+     * @param fpId - 参数
+     * @param scope - 参数
+     * @returns 指纹或 undefined
+     */
     getFingerprint(fpId: string, scope: 'template' | 'global' | 'project'): StyleFingerprint | undefined {
         const scopeMap = this.getScopeMap(scope);
         return scopeMap.get(fpId);
@@ -1455,6 +1507,13 @@ export class StyleFingerprintLibrary {
     // 风格向量存储集成
     // ============================================================
 
+    /**
+     * 向量化指纹。
+     *
+     * @param fpId - 参数
+     * @param scope - 参数
+     * @returns 是否成功
+     */
     async vectorizeFingerprint(fpId: string, scope: 'template' | 'global' | 'project'): Promise<boolean> {
         const fp = this.getFingerprint(fpId, scope);
         if (!fp) return false;
@@ -1471,6 +1530,13 @@ export class StyleFingerprintLibrary {
         }
     }
 
+    /**
+     * 取指纹向量。
+     *
+     * @param fpId - 参数
+     * @param scope - 参数
+     * @returns 向量
+     */
     async getFingerprintVectors(fpId: string, scope: 'template' | 'global' | 'project') {
         const vectorStore = this.getStyleVectorStoreForScope(scope);
         if (!vectorStore) return undefined;
@@ -1481,6 +1547,13 @@ export class StyleFingerprintLibrary {
     // 风格相似度搜索
     // ============================================================
 
+    /**
+     * 检索相似风格。
+     *
+     * @param query - 参数
+     * @param options? - 参数
+     * @returns 检索结果
+     */
     async searchSimilarStyles(
         query: string | { fingerprintId: string; scope: 'template' | 'global' | 'project' },
         options?: SearchSimilarStylesOptions
@@ -1799,6 +1872,13 @@ export class StyleFingerprintLibrary {
     // 风格混合与插值
     // ============================================================
 
+    /**
+     * 混合风格。
+     *
+     * @param fingerprints - 参数
+     * @param options? - 参数
+     * @returns 混合结果
+     */
     blendStyles(
         fingerprints: Array<{ fingerprint: StyleFingerprint; weight?: number }>,
         options?: StyleBlendOptions
@@ -1845,6 +1925,14 @@ export class StyleFingerprintLibrary {
         return blended as StyleFingerprintFeatures;
     }
 
+    /**
+     * 插值风格。
+     *
+     * @param fpA - 参数
+     * @param fpB - 参数
+     * @param options? - 参数
+     * @returns 插值结果
+     */
     interpolateStyles(
         fpA: StyleFingerprint,
         fpB: StyleFingerprint,
@@ -1858,6 +1946,12 @@ export class StyleFingerprintLibrary {
         );
     }
 
+    /**
+     * 生成混合提示词。
+     *
+     * @param blendedFeatures - 参数
+     * @returns 提示词
+     */
     generateBlendPrompt(blendedFeatures: StyleFingerprintFeatures): string {
         const sampleStore = this.getGlobalStyleVectorStore() ?? this.getProjectStyleVectorStore();
         if (sampleStore) {
@@ -2018,6 +2112,12 @@ export class StyleFingerprintLibrary {
     // 批量重建向量索引
     // ============================================================
 
+    /**
+     * 重建全部风格向量。
+     *
+     * @param onProgress? - 参数
+     * @returns 重建统计
+     */
     async rebuildAllStyleVectors(
         onProgress?: (current: number, total: number, fingerprintId: string, scope: string) => void
     ): Promise<void> {
@@ -2076,6 +2176,9 @@ export class StyleFingerprintLibrary {
     // 刷新和脏状态
     // ============================================================
 
+    /**
+     * 刷盘。
+     */
     async flush(): Promise<void> {
         await this.templateWriter.flush();
         await this.globalWriter.flush();

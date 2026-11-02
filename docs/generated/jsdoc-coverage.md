@@ -6,17 +6,15 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 990 | 66% | 1253 | 878 | 70% | 743 |
+| `engine/` | 271 | 1508 | 994 | 66% | 1253 | 891 | 71% | 743 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 149 | 74% | 66 |
 | `shared/` | 163 | 1517 | 1136 | 75% | 149 | 135 | 91% | 457 |
-| `ui/` | 189 | 493 | 183 | 37% | 632 | 286 | 45% | 162 |
+| `ui/` | 189 | 493 | 183 | 37% | 632 | 315 | 50% | 163 |
 
 ## 缺口最大的文件（按未注释导出数）
 
 | 文件 | 导出 | 未注释 | 公开方法 | 未注释 |
 |---|---:|---:|---:|---:|
-| `ui/co-writing-view.ts` | 3 | 3 | 103 | 29 |
-| `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 14 |
 | `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 10 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 0 | 15 | 13 |
@@ -45,3 +43,5 @@
 | `engine/text-segmenter.ts` | 10 | 9 | 2 | 1 |
 | `services/checkpoint-manager.ts` | 4 | 4 | 6 | 6 |
 | `shared/content-classifier.ts` | 11 | 10 | 0 | 0 |
+| `ui/full-writer/execution-panels.ts` | 4 | 4 | 6 | 6 |
+| `ui/full-writer/wizard-step-renderers.ts` | 1 | 1 | 9 | 9 |

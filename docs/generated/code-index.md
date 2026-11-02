@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 122861 | 1532 | 669 | 44% |
+| `engine/` | 289 | 122964 | 1532 | 673 | 44% |
 | `services/` | 28 | 10575 | 151 | 75 | 50% |
 | `shared/` | 164 | 33168 | 1512 | 620 | 41% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 93416 | 500 | 110 | 22% |
+| `ui/` | 191 | 93548 | 500 | 110 | 22% |
 
 ## 文件清单
 
@@ -297,7 +297,7 @@
 | `engine/stream-text-reader.ts` | 279 | 3 | 0 |
 | `engine/streaming/simulated-stream.ts` | 146 | 2 | 0 |
 | `engine/streaming/stream-parser.ts` | 358 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 2099 | 7 | 2 |
+| `engine/style-fingerprint-library.ts` | 2202 | 7 | 6 |
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
 | `engine/style-vector-store.ts` | 669 | 11 | 0 |
@@ -533,7 +533,7 @@
 | `ui/chapter-version-modal.ts` | 639 | 2 | 0 |
 | `ui/character-recognition-modal.ts` | 216 | 1 | 0 |
 | `ui/co-write-floating-panel.ts` | 895 | 2 | 0 |
-| `ui/co-writing-view.ts` | 5406 | 3 | 0 |
+| `ui/co-writing-view.ts` | 5538 | 3 | 0 |
 | `ui/command-ui-executor.ts` | 618 | 2 | 0 |
 | `ui/components/ai-detection-report.ts` | 97 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 282 | 1 | 1 |

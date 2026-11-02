@@ -969,12 +969,18 @@ export class CoWritingView extends ItemView {
       this.renderFloatingQuality();
     }
   }
+  /**
+   * 渲染浮动指标面板。
+   */
   renderFloatingMetrics() {
     if (!this.floatingMetricsSection) return;
     this.floatingMetricsSection.empty();
     const metrics = this.engine?.getSession()?.currentMetrics || { sceneObjectivesMet: 0, characterArcsAdvanced: 0, foreshadowingSeeded: 0, emotionalArcProgress: 0, overallCompletion: 0, suggestionAdvice: '', nextDirectionHints: [], evaluatedAt: 0 };
     this.renderMetricsInto(metrics, this.floatingMetricsSection);
   }
+  /**
+   * 渲染浮动质量面板。
+   */
   renderFloatingQuality() {
     if (!this.floatingQualitySection) return;
     this.floatingQualitySection.empty();
@@ -2416,6 +2422,9 @@ export class CoWritingView extends ItemView {
       rejectBtn.addEventListener("click", () => this.rejectSuggestion(suggestion.id));
     });
   }
+  /**
+   * 渲染联想加载态。
+   */
   renderAssociationLoading() {
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = "联想中...";
@@ -2496,6 +2505,14 @@ export class CoWritingView extends ItemView {
     );
     modal.open();
   }
+  /**
+   * 渲染编辑校验结果。
+   *
+   * @param validation - 参数
+   * @param modifiedText - 参数
+   * @param suggestion - 参数
+   * @param editDurationMs - 参数
+   */
   renderValidationResult(validation: EditValidation, modifiedText: string, suggestion: SuggestionRecord, editDurationMs: number) {
     this.showSuggestionPanel();
     const degraded = validation.degraded === true;
@@ -2857,6 +2874,12 @@ ${text}`;
       this.metricsContainer.createDiv({ cls: "nw-cowrite-metrics-hint", text: "\uD83D\uDCDD \u5185\u5BB9\u4E0D\u8DB3\uFF0C\u7EE7\u7EED\u5199\u4F5C\u540E\u81EA\u52A8\u8BC4\u4F30" });
     }
   }
+  /**
+   * 渲染指标条。
+   *
+   * @param label - 参数
+   * @param value - 参数
+   */
   renderMetricBar(label: string, value: number) {
     const safe = Math.max(0, Math.min(100, Math.round(value || 0)));
     const row = this.metricsContainer.createDiv({ cls: "novel-writer-cowrite-metric-row" });
@@ -2866,6 +2889,13 @@ ${text}`;
     fill.style.width = `${safe}%`;
     row.createSpan({ cls: "novel-writer-cowrite-metric-value", text: `${safe}%` });
   }
+  /**
+   * 创建评分卡。
+   *
+   * @param label - 参数
+   * @param value - 参数
+   * @returns 元素
+   */
   createScoreCard(label: string, value: number) {
     const card = createDiv({ cls: "novel-writer-cowrite-score-card" });
     card.createDiv({ cls: "novel-writer-cowrite-score-value", text: `${Math.round(value || 0)}` });
@@ -3095,6 +3125,15 @@ ${text}`;
     void this.handleTabSuggest(true);
   }
 
+  /**
+   * 渲染流式建议卡。
+   *
+   * @param direction - 参数
+   * @param style - 参数
+   * @param index - 参数
+   * @param currentText - 参数
+   * @param isStreaming - 参数
+   */
   renderStreamingSuggestionCard(
     direction: string,
     style: string,
@@ -3252,6 +3291,9 @@ ${text}`;
       }
     }
   }
+  /**
+   * 显示知识注入提示。
+   */
   showKnowledgeInjectionNotice() {
     // 生成完成后的统一收口：同人设定可能在会话中被删除/移动，这里补一次失效复查
     this.warnFanficRulesOnce();
@@ -3265,12 +3307,20 @@ ${text}`;
       new Notice(`⚠️ 知识库片段因预算不足未注入（${dropped} 条）`);
     }
   }
+  /**
+   * 渲染校验加载态。
+   */
   renderValidationLoading() {
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = "验证中...";
     this.suggestionContent.empty();
     this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-empty", text: "\u6B63\u5728\u9A8C\u8BC1\u4F60\u7684\u4FEE\u6539\uFF1A\u8BBE\u5B9A\u4E00\u81F4\u6027 / \u6587\u98CE\u5BF9\u9F50 / \u5267\u60C5\u5BF9\u9F50\u2026\u2026" });
   }
+  /**
+   * 渲染空建议提示。
+   *
+   * @param message = "\u6309 Tab \u751F\u6210\u4E3B\u5EFA\u8BAE\uFF1B\u6709\u5EFA\u8BAE\u65F6 Tab \u63A5\u53D7\u7B2C\u4E00\u6761\u3002Ctrl+J \u6362\u4E00\u7EC4\uFF0CCtrl+K/Ctrl+Space \u8054\u60F3\uFF0C\u9009\u4E2D\u6587\u672C\u540E Ctrl+Shift+R \u6539\u5199\u3002" - 参数
+   */
   renderEmptySuggestions(message = "\u6309 Tab \u751F\u6210\u4E3B\u5EFA\u8BAE\uFF1B\u6709\u5EFA\u8BAE\u65F6 Tab \u63A5\u53D7\u7B2C\u4E00\u6761\u3002Ctrl+J \u6362\u4E00\u7EC4\uFF0CCtrl+K/Ctrl+Space \u8054\u60F3\uFF0C\u9009\u4E2D\u6587\u672C\u540E Ctrl+Shift+R \u6539\u5199\u3002") {
     this.setGhostSuggestion(null);
     this.showSuggestionPanel();
@@ -3361,6 +3411,9 @@ ${text}`;
 
   // ========== 子 Tab 1: 参考书籍列表 ==========
 
+  /**
+   * 渲染知识库书籍页签。
+   */
   renderKbBooksTab() {
     const tab = this.kbSubTabContent.createDiv({
       cls: "nw-kb-subtab-content is-active",
@@ -3399,6 +3452,9 @@ ${text}`;
     }
   }
 
+  /**
+   * 渲染书籍列表。
+   */
   renderKbBookList() {
     if (!this.kbBookListContainer) return;
     this.kbBookListContainer.empty();
@@ -3429,6 +3485,12 @@ ${text}`;
     });
   }
 
+  /**
+   * 创建书籍卡片。
+   *
+   * @param book - 参数
+   * @returns 元素
+   */
   createKbBookCard(book: BookBasicInfo): HTMLElement {
     const isExpanded = this.expandedBookId === book.id;
     const card = createDiv({
@@ -3632,6 +3694,12 @@ ${text}`;
     this.refreshWritingAdvice();
   }
 
+  /**
+   * 取书籍高频人物。
+   *
+   * @param book - 参数
+   * @returns 名称数组
+   */
   getBookTopCharacters(book: BookBasicInfo): string[] {
     const kb = this.facade.knowledgeBaseManager?.getKnowledgeBase();
     if (!kb || !book.primaryGenre) return book.themeTags.slice(0, 5);
@@ -3640,6 +3708,12 @@ ${text}`;
     return genre.personalityTags.slice(0, 5);
   }
 
+  /**
+   * 取书籍高频技法。
+   *
+   * @param book - 参数
+   * @returns 名称数组
+   */
   getBookTopTechniques(book: BookBasicInfo): string[] {
     const kb = this.facade.knowledgeBaseManager?.getKnowledgeBase();
     if (!kb || !book.primaryGenre) return book.techniqueTags.slice(0, 5);
@@ -3650,6 +3724,9 @@ ${text}`;
 
   // ========== 子 Tab 2: 当前章节匹配 ==========
 
+  /**
+   * 渲染匹配页签。
+   */
   renderKbMatchTab() {
     const tab = this.kbSubTabContent.createDiv({
       cls: "nw-kb-subtab-content",
@@ -3685,6 +3762,10 @@ ${text}`;
     });
   }
 
+  /**
+   * 计算本章与书籍匹配度。
+   * @returns 匹配数组
+   */
   calculateChapterMatches(): Array<{ book: BookBasicInfo; score: number; topChars: string[]; topTechs: string[] }> {
     const text = this.rightEditor?.value || '';
     if (!text || this.kbBooksCache.length === 0) return [];
@@ -3740,6 +3821,12 @@ ${text}`;
     return results;
   }
 
+  /**
+   * 创建匹配卡片。
+   *
+   * @param match - 参数
+   * @returns 元素
+   */
   createMatchCard(match: { book: BookBasicInfo; score: number; topChars: string[]; topTechs: string[] }): HTMLElement {
     const card = createDiv({ cls: "nw-kb-match-card" });
 
@@ -3789,6 +3876,9 @@ ${text}`;
 
   // ========== 子 Tab 3: 快速引用 ==========
 
+  /**
+   * 渲染引用页签。
+   */
   renderKbQuoteTab() {
     const tab = this.kbSubTabContent.createDiv({
       cls: "nw-kb-subtab-content",
@@ -3887,6 +3977,9 @@ ${text}`;
 
   // ========== 子 Tab 4: 写作建议 ==========
 
+  /**
+   * 渲染建议页签。
+   */
   renderKbAdviceTab() {
     const tab = this.kbSubTabContent.createDiv({
       cls: "nw-kb-subtab-content",
@@ -3932,6 +4025,10 @@ ${text}`;
     });
   }
 
+  /**
+   * 生成写作建议。
+   * @returns 建议数组
+   */
   generateWritingAdvice(): Array<{ icon: string; title: string; desc: string; source?: string; category?: string }> {
     const text = this.rightEditor?.value || '';
     const advice: Array<{ icon: string; title: string; desc: string; source?: string; category?: string }> = [];
@@ -4090,6 +4187,9 @@ ${text}`;
   private isGhostAssociationEnabled(): boolean {
     return this.plugin.settings.autoGhostAssociation !== false;
   }
+  /**
+   * 安排幽灵联想刷新（防抖）。
+   */
   scheduleGhostAssociationRefresh() {
     this.setGhostSuggestion(null);
     if (!this.isGhostAssociationEnabled())
@@ -4194,6 +4294,9 @@ ${text}`;
       this.saveStateDisplay.toggleClass("is-dirty", state !== "\u5DF2\u4FDD\u5B58" && state !== "\u5DF2\u52A0\u8F7D");
     }
   }
+  /**
+   * 应用提示。
+   */
   applyHint() {
     this.cursorHint = this.hintInput.value.trim();
     this.facade.setCursorHint(this.cursorHint);
@@ -4202,19 +4305,37 @@ ${text}`;
     this.refreshHintState();
     new Notice(this.cursorHint ? `\u5DF2\u5E94\u7528\u4E34\u65F6\u6307\u4EE4\uFF1A${this.cursorHint}` : "\u5DF2\u6E05\u7A7A\u4E34\u65F6\u6307\u4EE4", 2500);
   }
+  /**
+   * 取光标前上下文。
+   *
+   * @param limit - 参数
+   * @returns 文本
+   */
   getContextBeforeCursor(limit: number) {
     const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
     return this.rightEditor.value.slice(0, cursor).slice(-limit);
   }
+  /**
+   * 取正文路径。
+   * @returns 路径
+   */
   getBodyPath() {
     // v4.5.1 fix: 必须用 "第N章" 前缀，与 pjBodyFile/findBodyFileV4 规范一致
     // 之前用 chapterName（如"初始之痕"）导致 findBodyFileV4 找不到正文文件
     const chapterPrefix = `第${this.chapterNum}章`;
     return `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/\u6B63\u6587/${this.volume}/${chapterPrefix}_\u6B63\u6587.md`;
   }
+  /**
+   * 取正文目录。
+   * @returns 目录
+   */
   getBodyDir() {
     return `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/\u6B63\u6587/${this.volume}`;
   }
+  /**
+   * 取步骤结果目录列表。
+   * @returns 目录数组
+   */
   getStepResultDirs() {
     // v4.5.1 fix: 步骤结果目录也用 "第N章" 前缀，与 checkChaptersComplete 正则一致
     const chapterPrefix = `第${this.chapterNum}章`;
@@ -4237,6 +4358,12 @@ ${text}`;
     const stepDir = `${project}/${SUBDIR_STEP_ROOT}/${volume}/${chapterPrefix}`;
     return `${stepDir}/${chapterPrefix}_${stepType}.md`;
   }
+  /**
+   * 取章节标题。
+   *
+   * @param identity? - 参数
+   * @returns 标题
+   */
   async getChapterTitle(
     identity?: { project: string; volume: string; chapterNum: number }
   ): Promise<string> {
@@ -4280,6 +4407,11 @@ ${text}`;
     }
     return '';
   }
+  /**
+   * 确保 vault 目录存在。
+   *
+   * @param dirPath - 参数
+   */
   async ensureVaultFolder(dirPath: string) {
     if (!dirPath)
       return;
