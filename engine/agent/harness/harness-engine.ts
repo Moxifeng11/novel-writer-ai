@@ -42,6 +42,9 @@ export interface HarnessCompactionOptions {
     thresholdChars?: number;
 }
 
+/**
+ * Harness 引擎选项。
+ */
 export interface AgentHarnessEngineOptions {
     /** 模型上下文窗口（token）；缺省从插件设置 maxContext 读取 */
     contextWindowTokens?: number;
@@ -72,6 +75,9 @@ export interface AgentHarnessEngineOptions {
     now?: () => Date;
 }
 
+/**
+ * Harness 遥测数据。
+ */
 export interface HarnessTelemetry {
     turns: number;
     /** 回合数（旧字段保留） */
@@ -110,6 +116,9 @@ export interface HarnessTelemetry {
     spilledChars: number;
 }
 
+/**
+ * 内置 Agent Harness 引擎。
+ */
 export class AgentHarnessEngine {
     private readonly log = new AgentSessionLog();
     private readonly registry = new HarnessToolRegistry();

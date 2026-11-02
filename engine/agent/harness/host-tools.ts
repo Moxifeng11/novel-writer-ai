@@ -29,17 +29,36 @@ const MEMORY_KEYS = [
     'characters', 'scenes', 'targetEpisodes', 'paywallEpisode', 'pickedProject',
 ] as const;
 
+/**
+ * Harness 记忆槽键。
+ */
 export type MemorySlotKey = typeof MEMORY_KEYS[number];
 
+/**
+ * 记忆键类型守卫。
+ *
+ * @param key - 参数
+ * @returns 布尔值
+ */
 export function isMemoryKey(key: string): key is MemorySlotKey {
     return (MEMORY_KEYS as readonly string[]).includes(key);
 }
 
+/**
+ * 读取记忆槽。
+ *
+ * @param memory - 参数
+ * @param key - 参数
+ * @returns 槽内容
+ */
 export function readSlot(memory: HarnessMemoryState, key: MemorySlotKey): string {
     const value = memory.slots[key];
     return typeof value === 'string' ? value.trim() : '';
 }
 
+/**
+ * 宿主工具依赖。
+ */
 export interface HostToolDeps {
     port: GuideAgentPort;
     ctx: AgentContext;
@@ -48,6 +67,12 @@ export interface HostToolDeps {
     plan?: { steps: PlanStep[] };
 }
 
+/**
+ * 创建宿主工具集（读写/检索/计划等）。
+ *
+ * @param deps - 参数
+ * @returns 工具数组
+ */
 export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     const { port, ctx, memory } = deps;
     const tools: HarnessTool[] = [];
@@ -818,6 +843,12 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
  */
 const DANGEROUS_COMMAND_PATTERN = /(batch|auto-writer|write-chapter|continue-chapters|settle|settlement|export|rebuild|backup|protect|deconstruct)/i;
 
+/**
+ * 判断命令是否属于危险操作。
+ *
+ * @param commandId - 参数
+ * @returns 布尔值
+ */
 export function isDangerousCommand(commandId: string): boolean {
     return DANGEROUS_COMMAND_PATTERN.test(commandId);
 }

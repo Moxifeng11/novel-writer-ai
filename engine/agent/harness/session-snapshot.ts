@@ -11,8 +11,14 @@ import type { AgentSessionEvent } from './harness-types';
 import type { PlanStep, PlanStepStatus } from './creation-plan';
 import { PLAN_STEP_STATUSES } from './creation-plan';
 
+/**
+ * 会话快照格式版本。
+ */
 export const SESSION_SNAPSHOT_VERSION = 1;
 
+/**
+ * Harness 会话快照。
+ */
 export interface HarnessSessionSnapshot {
     version: number;
     title: string;
@@ -23,6 +29,9 @@ export interface HarnessSessionSnapshot {
     updatedAt: number;
 }
 
+/**
+ * 快照构建输入。
+ */
 export interface SnapshotInput {
     events: readonly AgentSessionEvent[];
     callSeq: number;

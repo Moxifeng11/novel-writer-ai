@@ -10,6 +10,12 @@
  *   3. 仍超预算则返回 overBudget，由调用方显式失败（不静默截断用户输入）。
  */
 
+/**
+ * 估算文本 token 数。
+ *
+ * @param text - 参数
+ * @returns token 数
+ */
 export function estimateTokens(text: string): number {
     return Math.ceil(String(text || '').length / 1.5);
 }
@@ -27,11 +33,17 @@ export function resolveContextBudget(
     return Math.max(256, Math.min(byRatio, byReserve));
 }
 
+/**
+ * 待适配的上下文轮次。
+ */
 export interface ContextTurn {
     role: 'user' | 'assistant' | 'tool';
     text: string;
 }
 
+/**
+ * 上下文适配结果。
+ */
 export interface FitContextResult<T extends ContextTurn> {
     turns: T[];
     /** 被替换为占位符的工具轮次数 */

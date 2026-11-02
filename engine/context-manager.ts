@@ -500,6 +500,10 @@ export class ContextManager {
         } as ItemFrontmatter;
     }
 
+    /**
+     * 扫描 vault 中可识别的项目。
+     * @returns 项目路径数组
+     */
     async detectProjects(): Promise<string[]> {
         return detectProjects(this.app);
     }
@@ -623,6 +627,14 @@ export class ContextManager {
         };
     }
 
+    /**
+     * 装配项目全量上下文（可含进度回调）。
+     *
+     * @param project - 参数
+     * @param currentChapter? - 参数
+     * @param onProgress? - 参数
+     * @returns 聚合上下文
+     */
     async gatherAll(project: string, currentChapter?: string, onProgress?: (completedCount: number, totalCount: number, currentTaskName: string) => void): Promise<GatheredContext> {
         // ─── 缓存命中检查 ───
         const cacheKey = `context:gatherAll:${project}::${currentChapter || '_global'}`;
@@ -1016,6 +1028,12 @@ export class ContextManager {
         return matchProjectFromPath(folderPath, knownProjects);
     }
 
+    /**
+     * 装配角色当前状态。
+     *
+     * @param project - 参数
+     * @returns 上下文数据
+     */
     async gatherCharacterState(project: string): Promise<ContextData> {
         const startTime = Date.now();
         const repo = this.getCharacterRepo(project);
@@ -1247,6 +1265,12 @@ export class ContextManager {
         return { items };
     }
 
+    /**
+     * 装配设定库。
+     *
+     * @param project - 参数
+     * @returns 上下文数据
+     */
     async gatherSettingLib(project: string): Promise<ContextData> {
         try {
             const path = getSettingLibPath(project);
@@ -1261,6 +1285,12 @@ export class ContextManager {
         return { setting_lib: null };
     }
 
+    /**
+     * 装配文笔风格。
+     *
+     * @param project - 参数
+     * @returns 上下文数据
+     */
     async gatherWritingStyle(project: string): Promise<ContextData> {
         try {
             const paths = [getWritingStylePath(project), getLegacyWritingStylePath(project)];
@@ -1295,6 +1325,12 @@ export class ContextManager {
         return content;
     }
 
+    /**
+     * 装配伏笔库。
+     *
+     * @param project - 参数
+     * @returns 上下文数据
+     */
     async gatherForeshadows(project: string): Promise<ContextData> {
         try {
             const path = pjForeshadowDB(project);
@@ -1310,6 +1346,13 @@ export class ContextManager {
         return { foreshadows: { unrevealed: [], revealed: [], abandoned: [] } };
     }
 
+    /**
+     * 装配时间线（可限定当前章）。
+     *
+     * @param project - 参数
+     * @param currentChapter? - 参数
+     * @returns 上下文数据
+     */
     async gatherTimeline(project: string, currentChapter?: string): Promise<ContextData> {
         const ctx: ContextData = {};
         try {
@@ -1444,6 +1487,13 @@ export class ContextManager {
         } catch (e) { log.warn('loadFanficRules failed:', e); return { mustFollow: [], adaptScope: '', redlines: [] }; }
     }
 
+    /**
+     * 装配上一章状态快照。
+     *
+     * @param project - 参数
+     * @param currentChapter - 参数
+     * @returns 上下文数据
+     */
     async gatherPreviousChapter(project: string, currentChapter: string): Promise<ContextData> {
         try {
             const match = currentChapter.match(/第(\d+)章/);
@@ -1554,6 +1604,12 @@ export class ContextManager {
         }
     }
 
+    /**
+     * 装配写作规则。
+     *
+     * @param project - 参数
+     * @returns 上下文数据
+     */
     async gatherWritingRules(project: string): Promise<ContextData> {
         try {
             let path = pjWritingRules(project);
@@ -1597,6 +1653,13 @@ export class ContextManager {
         return { ordered, preferred };
     }
 
+    /**
+     * 装配大纲/章纲。
+     *
+     * @param project - 参数
+     * @param currentChapter - 参数
+     * @returns 上下文数据
+     */
     async gatherOutline(project: string, currentChapter: string): Promise<ContextData> {
         try {
             const match = currentChapter.match(/第(\d+)章/);
@@ -1639,6 +1702,13 @@ export class ContextManager {
         return { outline: null };
     }
 
+    /**
+     * 装配情绪规划。
+     *
+     * @param project - 参数
+     * @param currentChapter - 参数
+     * @returns 上下文数据
+     */
     async gatherEmotionPlan(project: string, currentChapter: string): Promise<ContextData> {
         try {
             const match = currentChapter.match(/第(\d+)章/);
@@ -1669,6 +1739,13 @@ export class ContextManager {
         return { emotion_plan: null };
     }
 
+    /**
+     * 装配场景扩写底稿。
+     *
+     * @param project - 参数
+     * @param currentChapter - 参数
+     * @returns 上下文数据
+     */
     async gatherSceneExpansion(project: string, currentChapter: string): Promise<ContextData> {
         try {
             const match = currentChapter.match(/第(\d+)章/);
@@ -1735,6 +1812,12 @@ export class ContextManager {
         });
     }
 
+    /**
+     * 装配世界观。
+     *
+     * @param project - 参数
+     * @returns 上下文数据
+     */
     async gatherWorldView(project: string): Promise<ContextData> {
         try {
             const path = getWorldviewPath(project);
@@ -2038,6 +2121,12 @@ export class ContextManager {
         return issues;
     }
 
+    /**
+     * 生成上下文信息摘要（账本/调试用）。
+     *
+     * @param context - 参数
+     * @returns 摘要文本
+     */
     getInfoSummary(context: GatheredContext): string {
         const summary: string[] = [];
 

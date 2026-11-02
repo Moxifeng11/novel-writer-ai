@@ -31,6 +31,9 @@ import {
     type SpillSink,
 } from './spill-store';
 
+/**
+ * Harness 循环选项。
+ */
 export interface HarnessLoopOptions {
     adapter: HarnessAdapter;
     registry: HarnessToolRegistry;
@@ -69,6 +72,9 @@ export interface HarnessLoopOptions {
     contextHeadroomTokens?: number;
 }
 
+/**
+ * 单回合结果。
+ */
 export interface HarnessLoopTurnResult {
     /** 最终给用户看的回复 */
     reply: string;

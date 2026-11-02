@@ -35,6 +35,9 @@ import type { MultiLayerCache } from '../cache';
 // 一、配置选项
 // ============================================================
 
+/**
+ * Markdown 仓储基类选项。
+ */
 export interface BaseMarkdownRepositoryOptions {
     /** 缓存最大条目数，默认 100 */
     cacheMaxSize?: number;

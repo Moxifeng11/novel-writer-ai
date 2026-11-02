@@ -9,6 +9,9 @@
  * 这里只放策略与文本构造（纯函数）；真正写盘由宿主注入 SpillSink。
  */
 
+/**
+ * 溢出写入接口。
+ */
 export interface SpillSink {
     /**
      * 写入一份大结果，返回库内相对路径（locator）；失败返回 null（调用方保留原文）。
@@ -17,6 +20,9 @@ export interface SpillSink {
     write(name: string, content: string): Promise<string | null>;
 }
 
+/**
+ * 溢出策略（阈值/目标目录）。
+ */
 export interface SpillPolicy {
     /** 超过该字符数才落盘（默认 6000，约 4000 token） */
     thresholdChars: number;
@@ -26,12 +32,22 @@ export interface SpillPolicy {
     tailChars: number;
 }
 
+/**
+ * 默认溢出策略。
+ */
 export const DEFAULT_SPILL_POLICY: SpillPolicy = {
     thresholdChars: 6000,
     headChars: 600,
     tailChars: 200,
 };
 
+/**
+ * 判断内容是否应溢出到磁盘。
+ *
+ * @param content - 参数
+ * @param policy - 参数
+ * @returns 布尔值
+ */
 export function shouldSpill(content: string, policy: SpillPolicy = DEFAULT_SPILL_POLICY): boolean {
     return String(content || '').length > Math.max(0, policy.thresholdChars);
 }

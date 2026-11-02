@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 120753 | 1532 | 503 | 33% |
+| `engine/` | 289 | 120937 | 1532 | 525 | 34% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -42,16 +42,16 @@
 | `engine/agent/dsh/dsh-protocol.ts` | 125 | 4 | 1 |
 | `engine/agent/dsh/dsh-session.ts` | 230 | 7 | 0 |
 | `engine/agent/harness/agent-adapter.ts` | 73 | 2 | 0 |
-| `engine/agent/harness/agent-loop.ts` | 502 | 6 | 2 |
-| `engine/agent/harness/context-fit.ts` | 111 | 6 | 3 |
-| `engine/agent/harness/creation-plan.ts` | 49 | 6 | 1 |
-| `engine/agent/harness/harness-engine.ts` | 517 | 7 | 0 |
+| `engine/agent/harness/agent-loop.ts` | 508 | 6 | 4 |
+| `engine/agent/harness/context-fit.ts` | 123 | 6 | 5 |
+| `engine/agent/harness/creation-plan.ts` | 58 | 6 | 3 |
+| `engine/agent/harness/harness-engine.ts` | 526 | 7 | 3 |
 | `engine/agent/harness/harness-types.ts` | 208 | 14 | 12 |
-| `engine/agent/harness/host-tools.ts` | 859 | 6 | 0 |
+| `engine/agent/harness/host-tools.ts` | 890 | 6 | 6 |
 | `engine/agent/harness/prompt-sections.ts` | 136 | 2 | 0 |
 | `engine/agent/harness/session-log.ts` | 222 | 1 | 0 |
-| `engine/agent/harness/session-snapshot.ts` | 126 | 8 | 0 |
-| `engine/agent/harness/spill-store.ts` | 79 | 6 | 1 |
+| `engine/agent/harness/session-snapshot.ts` | 135 | 8 | 3 |
+| `engine/agent/harness/spill-store.ts` | 95 | 6 | 4 |
 | `engine/agent/harness/tool-registry.ts` | 255 | 5 | 0 |
 | `engine/agent/harness/tool-result-pruner.ts` | 55 | 5 | 2 |
 | `engine/ai-api-client.ts` | 1651 | 1 | 0 |
@@ -96,7 +96,7 @@
 | `engine/conflict-detector.ts` | 246 | 4 | 1 |
 | `engine/content-safety-checker.ts` | 106 | 5 | 0 |
 | `engine/context-compressor.ts` | 302 | 2 | 0 |
-| `engine/context-manager.ts` | 2526 | 3 | 1 |
+| `engine/context-manager.ts` | 2615 | 3 | 1 |
 | `engine/context-readiness.ts` | 236 | 3 | 1 |
 | `engine/context/context-diff-detector.ts` | 383 | 5 | 0 |
 | `engine/context/context-types.ts` | 237 | 16 | 1 |
@@ -229,7 +229,7 @@
 | `engine/quality/rewrite-types.ts` | 235 | 13 | 13 |
 | `engine/rag/retrieval-service.ts` | 237 | 6 | 1 |
 | `engine/relationship-engine.ts` | 318 | 8 | 5 |
-| `engine/repository/base-markdown-repository.ts` | 424 | 1 | 0 |
+| `engine/repository/base-markdown-repository.ts` | 427 | 1 | 1 |
 | `engine/repository/chapter-repository.ts` | 242 | 1 | 1 |
 | `engine/repository/character-repository.ts` | 107 | 1 | 1 |
 | `engine/repository/domain/aggregates/base-entity.ts` | 175 | 2 | 2 |

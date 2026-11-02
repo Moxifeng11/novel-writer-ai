@@ -5,13 +5,22 @@
  * 维护一份有序步骤清单；工作台左栏实时渲染。纯函数 + 纯状态，不依赖 Obsidian。
  */
 
+/**
+ * 计划步骤状态。
+ */
 export type PlanStepStatus = 'pending' | 'in_progress' | 'done';
 
+/**
+ * 计划步骤。
+ */
 export interface PlanStep {
     step: string;
     status: PlanStepStatus;
 }
 
+/**
+ * 全部计划步骤状态。
+ */
 export const PLAN_STEP_STATUSES: PlanStepStatus[] = ['pending', 'in_progress', 'done'];
 
 /** 校验并规整模型提交的步骤数组；非法条目剔除，最多保留 8 步 */
