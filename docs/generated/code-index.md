@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 130199 | 1532 | 1301 | 85% |
+| `engine/` | 289 | 130241 | 1533 | 1302 | 85% |
 | `services/` | 28 | 11363 | 151 | 136 | 90% |
-| `shared/` | 164 | 37178 | 1512 | 1265 | 84% |
+| `shared/` | 164 | 37179 | 1512 | 1265 | 84% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 762 | 30 | 22 | 73% |
 | `ui/` | 191 | 96690 | 500 | 462 | 92% |
@@ -287,7 +287,7 @@
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
 | `engine/step-runner.ts` | 1977 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
-| `engine/step-settlement.ts` | 163 | 2 | 2 |
+| `engine/step-settlement.ts` | 205 | 3 | 3 |
 | `engine/step-specials.ts` | 262 | 5 | 4 |
 | `engine/step-validator.ts` | 785 | 7 | 7 |
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
@@ -363,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 953 | 3 | 3 |
+| `shared/changelog-data.ts` | 954 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |

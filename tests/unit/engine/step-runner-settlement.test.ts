@@ -229,10 +229,53 @@ describe('StepRunner.executeSettlement — 结算与总览', () => {
         );
     });
 
-    it('强制揭示提示非空但未解析出名字：提示格式问题，仍继续结算', async () => {
+    it('默认 builder 的 bullet 列表也能解析出名字，不再误报格式错误', async () => {
+        const h = makeHarness();
+        const hint = [
+            '⚠️ 信息债过高（18个未揭示），本章优先揭示以下临近伏笔：',
+            '- 玉佩（高，计划:第3章）',
+            '- 老者的身份（中，计划:第4章）',
+        ].join('\n');
+
+        await runSettlement(h, { vars: { forcedRevealHint: hint } });
+
+        expect(h.callbacks.showNotice).not.toHaveBeenCalledWith(
+            expect.stringContaining('强制揭示提示未识别出任何名字'),
+            expect.anything()
+        );
+        expect(h.settle).toHaveBeenCalledWith(
+            '书甲',
+            CHAP_DIR,
+            CHAPTER,
+            'UPDATE_CHAR: 林舟',
+            '',
+            { forceReveal: ['玉佩', '老者的身份'] }
+        );
+    });
+
+    it('信息债健康等纯提示行不解析出名字，也不告警', async () => {
         const h = makeHarness();
 
-        await runSettlement(h, { vars: { forcedRevealHint: '随便写点什么' } });
+        await runSettlement(h, { vars: { forcedRevealHint: '当前伏笔生态健康' } });
+
+        expect(h.callbacks.showNotice).not.toHaveBeenCalledWith(
+            expect.stringContaining('强制揭示提示未识别出任何名字'),
+            expect.anything()
+        );
+        expect(h.settle).toHaveBeenCalledWith(
+            '书甲',
+            CHAP_DIR,
+            CHAPTER,
+            'UPDATE_CHAR: 林舟',
+            '',
+            { forceReveal: undefined }
+        );
+    });
+
+    it('强制揭示提示非空且应含名字却解析不出：提示格式问题，仍继续结算', async () => {
+        const h = makeHarness();
+
+        await runSettlement(h, { vars: { forcedRevealHint: '揭示：\n（这里忘了写名字）' } });
 
         expect(h.callbacks.showNotice).toHaveBeenCalledWith(
             expect.stringContaining('强制揭示提示未识别出任何名字'),

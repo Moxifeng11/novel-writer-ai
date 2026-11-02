@@ -14,6 +14,57 @@ import { createLogger } from '../shared/logger';
 const log = createLogger('StepSettlement');
 
 /**
+ * 从 forcedRevealHint 中解析需要强制揭示的名字。
+ *
+ * 兼容三种真实格式（`template-vars-builder.ts` 生成的就是前两种）：
+ *  1. 显式行：`揭示：A，B` / `提示：A、B`（自定义模板写法）
+ *  2. bullet 行：`- 玉佩（高，计划:第3章）`
+ *  3. 单行建议：`建议至少揭示1个：玉佩（高）`
+ *
+ * 引导语（「优先揭示以下临近伏笔」）后面的名字在 bullet 行里，不再从该行截取，
+ * 避免把「以下临近伏笔」当名字。信息债健康等纯提示行解析结果为空是正常情况。
+ *
+ * @param hint - 模板变量 forcedRevealHint 的原文
+ * @returns 去重后的名字列表（最多 8 个）
+ */
+export function parseForcedRevealNames(hint: string): string[] {
+    const text = String(hint || '');
+    const names: string[] = [];
+    const push = (raw: string): void => {
+        const name = String(raw || '')
+            .replace(/[，,、;；。.]+$/g, '')
+            .trim();
+        if (name && !names.includes(name)) names.push(name);
+    };
+
+    let match: RegExpExecArray | null;
+
+    // 1) 显式「揭示：/提示：」行；引导语行（含 以下/临近/窗口/建议/至少）跳过
+    const explicit = /(?:揭示|提示)[：:][ \t]*([^\n]+)/g;
+    while ((match = explicit.exec(text)) !== null) {
+        if (/以下|临近|窗口|建议|至少/.test(match[1])) continue;
+        for (const part of match[1].split(/[,，、]/)) push(part);
+    }
+
+    // 2) bullet 行：取 `（` 之前的部分作为名字
+    const bullet = /^[ \t]*[-*•][ \t]*(.+?)(?:[（(].*)?$/gm;
+    while ((match = bullet.exec(text)) !== null) push(match[1]);
+
+    // 3) 单行建议：…揭示N个：名字（重要度）
+    const single = /揭示\d*个[：:][ \t]*([^\s，,（(]+)/g;
+    while ((match = single.exec(text)) !== null) push(match[1]);
+
+    return names.slice(0, 8);
+}
+
+/** hint 是否「应当包含名字」：显式行、bullet 列表或单行建议至少出现一种。 */
+function looksNameBearing(hint: string): boolean {
+    return /(?:揭示|提示)[：:]/.test(hint)
+        || /^[ \t]*[-*•][ \t]*\S/m.test(hint)
+        || /揭示\d*个[：:]/.test(hint);
+}
+
+/**
  * StepSettlementHost 类型定义。
  */
 export interface StepSettlementHost {
@@ -106,20 +157,11 @@ export async function executeSettlement(
 
     // 解析强制揭示
     const forcedRevealHint = vars?.['forcedRevealHint'] || '';
-    const forceReveal: string[] = [];
-    if (forcedRevealHint) {
-        const nameMatches = forcedRevealHint.match(/揭示[：:]\s*(.+?)(?=\n|$)/)?.[1];
-        if (nameMatches) {
-            for (const name of nameMatches.split(/[,，、]/)) {
-                const n = name.trim();
-                if (n) forceReveal.push(n);
-            }
-        }
-        // P2-3: 空结果检测 — forcedRevealHint 非空但未解析出任何名字时反馈
-        if (forceReveal.length === 0) {
-            log.warn('[小说工坊] forcedRevealHint 非空但未解析出名字，输入:', forcedRevealHint.slice(0, 100));
-            host.showNotice('⚠️ 强制揭示提示未识别出任何名字（请用「揭示：名字1, 名字2」格式）', NOTICE_ERROR);
-        }
+    const forceReveal: string[] = forcedRevealHint ? parseForcedRevealNames(forcedRevealHint) : [];
+    if (forcedRevealHint && looksNameBearing(forcedRevealHint) && forceReveal.length === 0) {
+        // P2-3: 空结果检测 — hint 看起来应包含名字（显式行/列表/建议）却一个都没解析出来
+        log.warn('[小说工坊] forcedRevealHint 未解析出名字，输入:', forcedRevealHint.slice(0, 100));
+        host.showNotice('⚠️ 强制揭示提示未识别出任何名字（请用「揭示：名字1, 名字2」或 bullet 列表「- 名字（重要度）」格式）', NOTICE_ERROR);
     }
 
     let settlementResult: SettlementResult | null = null;
