@@ -217,6 +217,11 @@ export class MultiLayerCache {
         this.checkSlowOp('set', key, startTime);
     }
 
+    /**
+     * 失效单个键（所有层）。
+     *
+     * @param key - 参数
+     */
     async invalidate(key: string): Promise<void> {
         const startTime = Date.now();
 
@@ -230,6 +235,12 @@ export class MultiLayerCache {
         this.checkSlowOp('invalidate', key, startTime);
     }
 
+    /**
+     * 按前缀失效。
+     *
+     * @param prefix - 参数
+     * @returns 失效数量
+     */
     async invalidateByPrefix(prefix: string): Promise<number> {
         const startTime = Date.now();
         let count = 0;
@@ -245,6 +256,12 @@ export class MultiLayerCache {
         return count;
     }
 
+    /**
+     * 按来源文件失效。
+     *
+     * @param sourcePath - 参数
+     * @returns 失效数量
+     */
     async invalidateBySourcePath(sourcePath: string): Promise<number> {
         let count = 0;
 
@@ -256,6 +273,9 @@ export class MultiLayerCache {
         return count;
     }
 
+    /**
+     * 清空全部缓存。
+     */
     async clear(): Promise<void> {
         this.l1.clear();
         if (this.l2) {
@@ -266,6 +286,11 @@ export class MultiLayerCache {
 
     // ── 动态自适应策略 ────────────────────────────────────────
 
+    /**
+     * 更新项目实体数量（用于容量决策）。
+     *
+     * @param count - 参数
+     */
     setEntityCount(count: number): void {
         this.entityCount = count;
         if (this.options.autoAdapt) {
@@ -273,10 +298,18 @@ export class MultiLayerCache {
         }
     }
 
+    /**
+     * 读取项目实体数量。
+     * @returns 数量
+     */
     getEntityCount(): number {
         return this.entityCount;
     }
 
+    /**
+     * 按实体数量返回项目规模档位。
+     * @returns 档位
+     */
     getProjectSizeTier(): ProjectSizeTier {
         return this.projectSizeTier;
     }
@@ -318,6 +351,12 @@ export class MultiLayerCache {
         }
     }
 
+    /**
+     * 按内存压力调整缓存容量。
+     *
+     * @param memoryUsageRatio - 参数
+     * @returns 建议容量
+     */
     adjustForMemoryPressure(memoryUsageRatio: number): number {
         if (memoryUsageRatio < 0.5) return 0;
 
@@ -342,6 +381,10 @@ export class MultiLayerCache {
 
     // ── 统计与监控 ────────────────────────────────────────────
 
+    /**
+     * 读取缓存命中/容量统计。
+     * @returns 统计对象
+     */
     getStats(): CacheStats {
         const totalL1Accesses = this.stats.l1Hits + this.stats.l1Misses;
         const totalL2Accesses = this.stats.l2Hits + this.stats.l2Misses;
@@ -384,6 +427,9 @@ export class MultiLayerCache {
         };
     }
 
+    /**
+     * 重置统计。
+     */
     resetStats(): void {
         this.stats = {
             l1Hits: 0,
@@ -449,6 +495,9 @@ export class MultiLayerCache {
         return arr.reduce((a, b) => a + b, 0) / arr.length;
     }
 
+    /**
+     * 把待写缓存刷盘。
+     */
     async flush(): Promise<void> {
         if (this.l2) {
             await this.l2.flush();

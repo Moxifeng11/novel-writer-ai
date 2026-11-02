@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 289 | 121510 | 1532 | 617 | 40% |
 | `services/` | 28 | 10440 | 151 | 75 | 50% |
-| `shared/` | 164 | 32164 | 1512 | 448 | 30% |
+| `shared/` | 164 | 32350 | 1512 | 468 | 31% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 93024 | 500 | 110 | 22% |
@@ -392,7 +392,7 @@
 | `shared/entity-field-mappings.ts` | 175 | 10 | 1 |
 | `shared/entity-integrity.ts` | 62 | 4 | 0 |
 | `shared/entity-links.ts` | 97 | 9 | 3 |
-| `shared/entity-models.ts` | 597 | 34 | 0 |
+| `shared/entity-models.ts` | 600 | 34 | 1 |
 | `shared/entity-persistence.ts` | 190 | 9 | 1 |
 | `shared/entity-placeholder.ts` | 30 | 1 | 1 |
 | `shared/entity-reader.ts` | 74 | 8 | 1 |
@@ -434,11 +434,11 @@
 | `shared/mode-unit-outline.ts` | 77 | 2 | 1 |
 | `shared/model-capabilities.ts` | 147 | 11 | 5 |
 | `shared/model-source.ts` | 41 | 3 | 1 |
-| `shared/multi-layer-cache.ts` | 458 | 6 | 0 |
+| `shared/multi-layer-cache.ts` | 507 | 6 | 0 |
 | `shared/novel-format.ts` | 263 | 12 | 1 |
 | `shared/paths.ts` | 856 | 189 | 82 |
 | `shared/plot-eval-throttle.ts` | 80 | 5 | 0 |
-| `shared/plugin-cache.ts` | 282 | 6 | 0 |
+| `shared/plugin-cache.ts` | 359 | 6 | 0 |
 | `shared/plugin-capabilities.ts` | 96 | 4 | 1 |
 | `shared/plugin-worker-url.ts` | 85 | 3 | 2 |
 | `shared/pre-research.ts` | 378 | 17 | 1 |
@@ -485,7 +485,7 @@
 | `shared/store/middleware/thunk.ts` | 30 | 1 | 1 |
 | `shared/store/shallow.ts` | 48 | 1 | 1 |
 | `shared/store/types.ts` | 148 | 20 | 1 |
-| `shared/story-structure.ts` | 607 | 23 | 0 |
+| `shared/story-structure.ts` | 637 | 23 | 10 |
 | `shared/synopsis-spec.ts` | 212 | 15 | 1 |
 | `shared/tag-taxonomy.ts` | 125 | 8 | 1 |
 | `shared/task-budget-engine.ts` | 255 | 13 | 4 |
@@ -500,7 +500,7 @@
 | `shared/time-estimator.ts` | 468 | 6 | 2 |
 | `shared/token-estimator.ts` | 159 | 8 | 6 |
 | `shared/true-random.ts` | 126 | 3 | 1 |
-| `shared/types.ts` | 688 | 48 | 1 |
+| `shared/types.ts` | 715 | 48 | 10 |
 | `shared/validators/normalizers-entity.ts` | 217 | 5 | 4 |
 | `shared/vault-tree.ts` | 110 | 6 | 2 |
 | `shared/version-types.ts` | 125 | 10 | 0 |

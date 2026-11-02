@@ -6,8 +6,14 @@
  */
 import { trueRandom, type RandomSource } from './true-random';
 
+/**
+ * 故事结构 id。
+ */
 export type StoryStructureId = 'qichengzhuanhe' | 'three_act' | 'five_act' | 'hero_journey' | 'kishotenketsu';
 
+/**
+ * 故事结构阶段。
+ */
 export interface StoryStructureStage {
     name: string;
     ratio: number;
@@ -15,6 +21,9 @@ export interface StoryStructureStage {
     beats: string[];
 }
 
+/**
+ * 故事结构定义。
+ */
 export interface StoryStructureSpec {
     id: StoryStructureId;
     name: string;
@@ -26,6 +35,9 @@ export interface StoryStructureSpec {
     hardRules: string[];
 }
 
+/**
+ * 内置故事结构列表。
+ */
 export const STORY_STRUCTURES: StoryStructureSpec[] = [
     {
         id: 'qichengzhuanhe',
@@ -111,6 +123,9 @@ export function getStructureStageSummary(id: StoryStructureId | string | undefin
     return getStoryStructure(id).stages.map(stage => `${stage.name} ${stage.ratio}%`).join(' · ');
 }
 
+/**
+ * 故事选项分类。
+ */
 export type StoryOptionCategory =
     | 'protagonistStart'
     | 'coreConflict'
@@ -122,6 +137,9 @@ export type StoryOptionCategory =
     | 'romance'
     | 'pacing';
 
+/**
+ * 故事选项。
+ */
 export interface StoryOption {
     id: string;
     label: string;
@@ -132,6 +150,9 @@ export interface StoryOption {
     structures?: StoryStructureId[];
 }
 
+/**
+ * 故事选项分组。
+ */
 export interface StoryOptionGroup {
     key: StoryOptionCategory;
     label: string;
@@ -140,6 +161,9 @@ export interface StoryOptionGroup {
     options: StoryOption[];
 }
 
+/**
+ * 全部故事选项。
+ */
 export const STORY_OPTION_GROUPS: StoryOptionGroup[] = [
     {
         key: 'protagonistStart',
@@ -286,6 +310,9 @@ export function getStoryOptionLabel(key: StoryOptionCategory, value: string): st
     return findStoryOption(key, value)?.label || value || '未选择';
 }
 
+/**
+ * 长篇故事设定。
+ */
 export interface LongStorySettings {
     structureId: StoryStructureId;
     protagonistStart: string;
@@ -405,6 +432,9 @@ const FALLBACKS: Record<StoryStructureId, Partial<LongStorySettings>> = {
     kishotenketsu: { protagonistStart: '普通人', coreConflict: '求真', powerSystem: '现实', goldenFinger: '读心', archetype: '日常流', temperament: '温和坚韧', tone: '悬疑冷峻', romance: '弱', pacing: '慢热铺陈' },
 };
 
+/**
+ * 随机设定选项。
+ */
 export interface RandomStoryOptions {
     genre?: string;
     structureId?: StoryStructureId;

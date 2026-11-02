@@ -81,6 +81,9 @@ export interface EntityMeta {
 // 正文 frontmatter
 // ============================================================
 
+/**
+ * 章节 frontmatter。
+ */
 export interface ChapterFrontmatter {
     tags?: string | string[];
     卷?: string;
@@ -102,6 +105,9 @@ export interface ChapterFrontmatter {
 // 人物 frontmatter
 // ============================================================
 
+/**
+ * 角色 frontmatter。
+ */
 export interface CharacterFrontmatter extends EntityMeta {
     tags?: string | string[];
     name?: string;
@@ -154,6 +160,9 @@ export interface CharacterRawData {
 // 势力 frontmatter
 // ============================================================
 
+/**
+ * 势力 frontmatter。
+ */
 export interface FactionFrontmatter extends EntityMeta {
     tags?: string | string[];
     名称?: string;
@@ -169,6 +178,9 @@ export interface FactionFrontmatter extends EntityMeta {
 // 地点 frontmatter
 // ============================================================
 
+/**
+ * 地点 frontmatter。
+ */
 export interface LocationFrontmatter extends EntityMeta {
     tags?: string | string[];
     名称?: string;
@@ -186,6 +198,9 @@ export interface LocationFrontmatter extends EntityMeta {
 // 物品功法 frontmatter
 // ============================================================
 
+/**
+ * 物品 frontmatter。
+ */
 export interface ItemFrontmatter extends EntityMeta {
     tags?: string | string[];
     名称?: string;
@@ -202,6 +217,9 @@ export interface ItemFrontmatter extends EntityMeta {
 // 分析报告 frontmatter
 // ============================================================
 
+/**
+ * 分析报告 frontmatter。
+ */
 export interface AnalysisFrontmatter extends StepFileMeta {
     tags?: string | string[];
     卷?: string;
@@ -213,12 +231,18 @@ export interface AnalysisFrontmatter extends StepFileMeta {
 // 分卷大纲树状预览数据结构
 // ============================================================
 
+/**
+ * 大纲树章节节点。
+ */
 export interface OutlineTreeChapter {
     num: number;
     conflict: string;
     summary: string;
 }
 
+/**
+ * 大纲树卷节点。
+ */
 export interface OutlineTreeVolume {
     num: number;
     title: string;
@@ -345,6 +369,9 @@ export interface SceneOutlineTreeChapter extends OutlineTreeChapter {
     scenes: SceneNode[];
 }
 
+/**
+ * 场景大纲树卷节点。
+ */
 export interface SceneOutlineTreeVolume extends OutlineTreeVolume {
     chapters: SceneOutlineTreeChapter[];
 }

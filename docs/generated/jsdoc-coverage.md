@@ -8,7 +8,7 @@
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
 | `engine/` | 271 | 1508 | 938 | 62% | 1253 | 683 | 55% | 739 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 123 | 61% | 66 |
-| `shared/` | 163 | 1517 | 964 | 64% | 149 | 89 | 60% | 457 |
+| `shared/` | 163 | 1517 | 984 | 65% | 149 | 118 | 79% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 206 | 33% | 161 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -24,9 +24,6 @@
 | `engine/foreshadow-manager.ts` | 8 | 6 | 18 | 17 |
 | `engine/style-vector-store.ts` | 11 | 10 | 17 | 12 |
 | `services/worldview-cache-service.ts` | 4 | 4 | 18 | 18 |
-| `shared/multi-layer-cache.ts` | 6 | 6 | 16 | 16 |
-| `shared/plugin-cache.ts` | 6 | 4 | 24 | 18 |
-| `shared/story-structure.ts` | 23 | 22 | 0 | 0 |
 | `ui/full-writer/full-writer-store.ts` | 5 | 5 | 17 | 17 |
 | `engine/writing-quality-engine.ts` | 13 | 13 | 8 | 8 |
 | `shared/webnovel-knowledge-base.ts` | 7 | 7 | 14 | 14 |
@@ -45,3 +42,6 @@
 | `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
 | `engine/knowledge-tags.ts` | 2 | 2 | 12 | 12 |
 | `engine/plot-divergence-engine.ts` | 8 | 7 | 7 | 7 |
+| `engine/writing-profile.ts` | 8 | 8 | 7 | 6 |
+| `shared/synopsis-spec.ts` | 15 | 14 | 0 | 0 |
+| `engine/context/story-context-types.ts` | 13 | 13 | 0 | 0 |

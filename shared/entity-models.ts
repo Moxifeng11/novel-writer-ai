@@ -172,6 +172,9 @@ export interface ItemDomainModel extends BaseEntity {
 // 六、统一实体联合类型
 // ============================================================
 
+/**
+ * 任意实体领域模型。
+ */
 export type AnyEntityDomainModel =
     | CharacterDomainModel
     | FactionDomainModel

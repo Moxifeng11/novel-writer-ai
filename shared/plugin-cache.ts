@@ -73,6 +73,9 @@ export class PluginCacheManager {
         this.app = app;
     }
 
+    /**
+     * 加载插件缓存文件。
+     */
     async load(): Promise<void> {
         if (this.loaded) return;
         try {
@@ -106,19 +109,37 @@ export class PluginCacheManager {
         });
     }
 
+    /**
+     * 读取面板布局缓存。
+     * @returns 布局或 undefined
+     */
     getPanelLayout(): PanelLayoutCache | undefined {
         return this.data.panelLayout;
     }
 
+    /**
+     * 写入面板布局缓存。
+     *
+     * @param layout - 参数
+     */
     setPanelLayout(layout: PanelLayoutCache): void {
         this.data.panelLayout = layout;
         this.save();
     }
 
+    /**
+     * 读取模型覆盖历史。
+     * @returns 历史数组
+     */
     getModelOverrideHistory(): ModelOverrideHistoryEntry[] {
         return this.data.modelOverrideHistory || [];
     }
 
+    /**
+     * 追加一条模型覆盖历史。
+     *
+     * @param entry - 参数
+     */
     addModelOverrideHistory(entry: ModelOverrideHistoryEntry): void {
         if (!this.data.modelOverrideHistory) {
             this.data.modelOverrideHistory = [];
@@ -219,60 +240,116 @@ export class PluginCacheManager {
         }
     }
 
+    /**
+     * 读取上次更新检查时间。
+     * @returns 时间或 undefined
+     */
     getUpdateLastCheck(): string | undefined {
         return this.data.updateLastCheck;
     }
 
+    /**
+     * 写入上次更新检查时间。
+     *
+     * @param time - 参数
+     */
     setUpdateLastCheck(time: string): void {
         this.data.updateLastCheck = time;
         this.save();
     }
 
+    /**
+     * 读取上次更新检查结果。
+     * @returns 结果
+     */
     getUpdateLastResult(): unknown {
         return this.data.updateLastResult;
     }
 
+    /**
+     * 写入上次更新检查结果。
+     *
+     * @param result - 参数
+     */
     setUpdateLastResult(result: unknown): void {
         this.data.updateLastResult = result;
         this.save();
     }
 
+    /**
+     * 读取已提示的版本。
+     * @returns 版本或 undefined
+     */
     getUpdateNotifiedVersion(): string | undefined {
         return this.data.updateNotifiedVersion;
     }
 
+    /**
+     * 写入已提示的版本。
+     *
+     * @param version - 参数
+     */
     setUpdateNotifiedVersion(version: string): void {
         this.data.updateNotifiedVersion = version;
         this.save();
     }
 
+    /**
+     * 读取上次运行版本。
+     * @returns 版本或 undefined
+     */
     getLastRunVersion(): string | undefined {
         return this.data.lastRunVersion;
     }
 
+    /**
+     * 写入上次运行版本。
+     *
+     * @param version - 参数
+     */
     setLastRunVersion(version: string): void {
         this.data.lastRunVersion = version;
         this.save();
     }
 
+    /**
+     * 保存设置备份。
+     *
+     * @param backup - 参数
+     */
     setSettingsBackup(backup: unknown): void {
         this.data.settingsBackup = backup;
         this.save();
     }
 
+    /**
+     * 是否已完成首次欢迎。
+     * @returns 布尔值
+     */
     hasWelcomed(): boolean {
         return this.data.welcomed === true;
     }
 
+    /**
+     * 标记首次欢迎完成。
+     *
+     * @param welcomed - 参数
+     */
     setWelcomed(welcomed: boolean): void {
         this.data.welcomed = welcomed;
         this.save();
     }
 
+    /**
+     * 把缓存刷盘。
+     */
     async flush(): Promise<void> {
         await this.writer.flush();
     }
 
+    /**
+     * 释放缓存实例。
+     */
     dispose(): void {
         this.flush().catch(e =>
             log.warn('[PluginCache] 卸载时缓存写入失败:', e instanceof Error ? e.message : String(e))
