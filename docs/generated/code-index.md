@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 122201 | 1532 | 617 | 40% |
+| `engine/` | 289 | 122383 | 1532 | 617 | 40% |
 | `services/` | 28 | 10515 | 151 | 75 | 50% |
 | `shared/` | 164 | 32709 | 1512 | 524 | 35% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 93106 | 500 | 110 | 22% |
+| `ui/` | 191 | 93175 | 500 | 110 | 22% |
 
 ## 文件清单
 
@@ -58,7 +58,7 @@
 | `engine/ai-batch-entity-generator.ts` | 535 | 1 | 0 |
 | `engine/ai-chapter-helpers.ts` | 288 | 1 | 0 |
 | `engine/ai-character-generator.ts` | 404 | 1 | 0 |
-| `engine/ai-engine.ts` | 637 | 4 | 0 |
+| `engine/ai-engine.ts` | 743 | 4 | 0 |
 | `engine/ai-entity-generator.ts` | 194 | 1 | 0 |
 | `engine/ai-lexicon.ts` | 91 | 3 | 1 |
 | `engine/ai-outline-generator.ts` | 1374 | 1 | 0 |
@@ -300,7 +300,7 @@
 | `engine/style-fingerprint-library.ts` | 2099 | 7 | 2 |
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
-| `engine/style-vector-store.ts` | 593 | 11 | 0 |
+| `engine/style-vector-store.ts` | 669 | 11 | 0 |
 | `engine/style/dynamic-injection-engine.ts` | 777 | 10 | 5 |
 | `engine/style/fingerprint-blender-v2.ts` | 652 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 613 | 13 | 13 |
@@ -587,7 +587,7 @@
 | `ui/full-writer/creation-flow-state.ts` | 227 | 4 | 1 |
 | `ui/full-writer/entity-state-controller.ts` | 119 | 2 | 0 |
 | `ui/full-writer/execution-panels.ts` | 342 | 4 | 0 |
-| `ui/full-writer/execution-run-store.ts` | 190 | 5 | 0 |
+| `ui/full-writer/execution-run-store.ts` | 259 | 5 | 0 |
 | `ui/full-writer/fanfic-settings-utils.ts` | 238 | 13 | 3 |
 | `ui/full-writer/flow-panel-controller.ts` | 317 | 3 | 0 |
 | `ui/full-writer/flow-tab.ts` | 41 | 3 | 0 |

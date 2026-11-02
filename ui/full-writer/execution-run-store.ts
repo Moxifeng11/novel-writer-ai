@@ -43,35 +43,72 @@ export class ExecutionRunStore {
     private status: { message: string; current?: number; total?: number; aiCalls?: number } | null = null;
     private statusTimer: ReturnType<typeof setTimeout> | null = null;
 
+    /**
+     * 订阅执行账本变化。
+     *
+     * @param listener - 参数
+     * @returns 取消订阅函数
+     */
     subscribe(listener: (change: ExecutionStoreChange) => void): () => void {
         this.listeners.add(listener);
         return () => this.listeners.delete(listener);
     }
 
+    /**
+     * 读取时间线事件。
+     * @returns 事件数组
+     */
     getEvents(): readonly ExecutionEvent[] {
         return this.events;
     }
 
+    /**
+     * 读取日志条目。
+     * @returns 日志数组
+     */
     getLogs(): readonly ExecutionLogEntry[] {
         return this.logs;
     }
 
+    /**
+     * 读取执行状态。
+     * @returns 状态或 null
+     */
     getStatus(): Readonly<{ message: string; current?: number; total?: number; aiCalls?: number }> | null {
         return this.status;
     }
 
+    /**
+     * 取指定步骤失败。
+     *
+     * @param stepKey - 参数
+     * @returns 失败或 undefined
+     */
     getFailure(stepKey: string): StepFailure | undefined {
         return this.failures.get(stepKey);
     }
 
+    /**
+     * 读取全部失败。
+     * @returns 失败数组
+     */
     getFailures(): readonly StepFailure[] {
         return [...this.failures.values()];
     }
 
+    /**
+     * 是否存在错误。
+     * @returns 布尔值
+     */
     hasErrors(): boolean {
         return this.failures.size > 0;
     }
 
+    /**
+     * 追加时间线事件。
+     *
+     * @param input - 参数
+     */
     addEvent(input: ExecutionEventInput): void {
         const recent = this.events[this.events.length - 1];
         // 同一条消息常同时由 showError/showNotice 与结构化失败上报，
@@ -88,12 +125,22 @@ export class ExecutionRunStore {
         this.notify('event');
     }
 
+    /**
+     * 追加日志。
+     *
+     * @param input - 参数
+     */
     addLog(input: DiagnosticInput): void {
         this.logs.push({ ...input, id: this.nextId++, at: Date.now() });
         if (this.logs.length > MAX_LOGS) this.logs.splice(0, this.logs.length - MAX_LOGS);
         this.notify('log');
     }
 
+    /**
+     * 记录步骤失败。
+     *
+     * @param failure - 参数
+     */
     recordFailure(failure: StepFailure): void {
         this.failures.set(failure.stepKey, failure);
         this.addEvent({
@@ -116,27 +163,49 @@ export class ExecutionRunStore {
         this.notify('failure');
     }
 
+    /**
+     * 清除指定失败。
+     *
+     * @param stepKey - 参数
+     */
     clearFailure(stepKey: string): void {
         if (!this.failures.delete(stepKey)) return;
         this.notify('failure');
     }
 
+    /**
+     * 清除全部失败。
+     */
     clearAllFailures(): void {
         if (this.failures.size === 0) return;
         this.failures.clear();
         this.notify('failure');
     }
 
+    /**
+     * 设置执行状态。
+     *
+     * @param message - 参数
+     * @param current? - 参数
+     * @param total? - 参数
+     * @param aiCalls? - 参数
+     */
     setStatus(message: string, current?: number, total?: number, aiCalls?: number): void {
         this.status = { message, current, total, aiCalls };
         this.scheduleStatusNotify();
     }
 
+    /**
+     * 清除状态。
+     */
     clearStatus(): void {
         this.status = null;
         this.scheduleStatusNotify();
     }
 
+    /**
+     * 重置账本。
+     */
     reset(): void {
         this.events = [];
         this.logs = [];

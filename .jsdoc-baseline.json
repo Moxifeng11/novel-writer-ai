@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T00:27:41.886Z",
+  "generatedAt": "2026-11-02T00:29:38.673Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -7,8 +7,8 @@
       "exports": 1508,
       "documented": 938,
       "methods": 1253,
-      "methodsDocumented": 810,
-      "incomplete": 739
+      "methodsDocumented": 831,
+      "incomplete": 743
     },
     "services": {
       "files": 28,
@@ -47,7 +47,7 @@
       "exports": 493,
       "documented": 183,
       "methods": 632,
-      "methodsDocumented": 222,
+      "methodsDocumented": 237,
       "incomplete": 161
     }
   },
@@ -217,8 +217,8 @@
       "exports": 2,
       "documented": 0,
       "methods": 33,
-      "methodsDocumented": 17,
-      "incomplete": 2
+      "methodsDocumented": 27,
+      "incomplete": 4
     },
     "engine/ai-entity-generator.ts": {
       "exports": 1,
@@ -1862,8 +1862,8 @@
       "exports": 11,
       "documented": 1,
       "methods": 17,
-      "methodsDocumented": 6,
-      "incomplete": 1
+      "methodsDocumented": 17,
+      "incomplete": 3
     },
     "engine/suggestion-manager.ts": {
       "exports": 1,
@@ -3892,7 +3892,7 @@
       "exports": 5,
       "documented": 0,
       "methods": 16,
-      "methodsDocumented": 1,
+      "methodsDocumented": 16,
       "incomplete": 1
     },
     "ui/full-writer/fanfic-settings-utils.ts": {

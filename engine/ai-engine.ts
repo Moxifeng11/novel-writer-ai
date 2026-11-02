@@ -91,6 +91,17 @@ export class AIEngine {
         return this.bodyWriter;
     }
 
+    /**
+     * 调用模型（非流式），带缓存/重试/降级。
+     *
+     * @param systemPrompt - 参数
+     * @param userPrompt - 参数
+     * @param model? - 参数
+     * @param temperature - 参数
+     * @param maxTokens? - 参数
+     * @param options? - 参数
+     * @returns API 响应
+     */
     async callAI(
         systemPrompt: string,
         userPrompt: string,
@@ -132,6 +143,17 @@ export class AIEngine {
         }
     }
 
+    /**
+     * 调用模型（流式）。
+     *
+     * @param systemPrompt - 参数
+     * @param userPrompt - 参数
+     * @param model? - 参数
+     * @param temperature - 参数
+     * @param maxTokens? - 参数
+     * @param onChunk? - 参数
+     * @returns API 响应
+     */
     async callAIStream(
         systemPrompt: string,
         userPrompt: string,
@@ -186,6 +208,13 @@ export class AIEngine {
         return this.callAI(prompts.system, prompts.user, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput, { isWritingTask: true });
     }
 
+    /**
+     * 流式生成章节正文。
+     *
+     * @param context - 参数
+     * @param onChunk - 参数
+     * @returns API 响应
+     */
     async generateChapterStream(
         context: ChapterContext,
         onChunk: (text: string, done: boolean) => void,
@@ -363,6 +392,18 @@ export class AIEngine {
         return this.characterGen.generateCharacters(worldview, count, customPrompt, templateContent, isFirstCharacter, names, settingLib, signal, existingEntities);
     }
 
+    /**
+     * 生成分卷大纲。
+     *
+     * @param worldview - 参数
+     * @param globalSkeleton - 参数
+     * @param volumeNumber - 参数
+     * @param totalVolumes - 参数
+     * @param chaptersPerVolume - 参数
+     * @param contextPrompt? - 参数
+     * @param existingElements? - 参数
+     * @returns API 响应
+     */
     async generateVolumeOutline(
         worldview: string,
         globalSkeleton: string,
@@ -375,6 +416,16 @@ export class AIEngine {
         return this.outlineGen.generateVolumeOutline(worldview, globalSkeleton, volumeNumber, totalVolumes, chaptersPerVolume, contextPrompt, existingElements);
     }
 
+    /**
+     * 生成全书大纲。
+     *
+     * @param worldview - 参数
+     * @param settings - 参数
+     * @param existingWorldElements? - 参数
+     * @param customPrompt? - 参数
+     * @param onProgress? - 参数
+     * @returns API 响应
+     */
     async generateOutline(
         worldview: string,
         settings: OutlineSettings,
@@ -427,6 +478,17 @@ export class AIEngine {
         return this.entityGen.generateItem(worldview, name, description, templateContent, settingLib);
     }
 
+    /**
+     * 批量生成势力卡。
+     *
+     * @param worldview - 参数
+     * @param names - 参数
+     * @param description - 参数
+     * @param count - 参数
+     * @param customSystemPrompt? - 参数
+     * @param settingLib? - 参数
+     * @returns API 响应
+     */
     async generateFactionsBatch(
         worldview: string,
         names: string[],
@@ -438,6 +500,17 @@ export class AIEngine {
         return this.batchEntityGen.generateFactionsBatch(worldview, names, description, count, customSystemPrompt, settingLib);
     }
 
+    /**
+     * 批量生成地点卡。
+     *
+     * @param worldview - 参数
+     * @param names - 参数
+     * @param description - 参数
+     * @param count - 参数
+     * @param customSystemPrompt? - 参数
+     * @param settingLib? - 参数
+     * @returns API 响应
+     */
     async generateLocationsBatch(
         worldview: string,
         names: string[],
@@ -449,6 +522,18 @@ export class AIEngine {
         return this.batchEntityGen.generateLocationsBatch(worldview, names, description, count, customSystemPrompt, settingLib);
     }
 
+    /**
+     * 批量生成物品/功法卡。
+     *
+     * @param worldview - 参数
+     * @param names - 参数
+     * @param description - 参数
+     * @param count - 参数
+     * @param customSystemPrompt? - 参数
+     * @param itemType? - 参数
+     * @param settingLib? - 参数
+     * @returns API 响应
+     */
     async generateItemsBatch(
         worldview: string,
         names: string[],
@@ -521,6 +606,16 @@ export class AIEngine {
         return this.chapterHelpers.deaiRewrite(bodyText);
     }
 
+    /**
+     * 迭代精修（审查-修复循环）。
+     *
+     * @param bodyText - 参数
+     * @param contextPrompt - 参数
+     * @param maxRounds - 参数
+     * @param chapNum? - 参数
+     * @param onProgress? - 参数
+     * @returns 精修结果
+     */
     async iterativeRefine(
         bodyText: string, 
         contextPrompt: string,
@@ -572,6 +667,17 @@ export class AIEngine {
         return buildUserPromptFn(context, { minWordCount: this.plugin.settings.minWordCount }, bodyFormat);
     }
 
+    /**
+     * 按模板键渲染并调用模型。
+     *
+     * @param templateId - 参数
+     * @param variables - 参数
+     * @param model? - 参数
+     * @param temperature - 参数
+     * @param maxTokens - 参数
+     * @param options? - 参数
+     * @returns API 响应
+     */
     async callAIWithTemplate(
         templateId: string,
         variables: Record<string, string>,
