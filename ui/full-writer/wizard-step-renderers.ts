@@ -22,6 +22,9 @@ import { listFanficSettingCandidates } from '../../shared/fanfic-binding';
 import { getStoryStructure, getStructureStageSummary, getStoryOptionLabel, parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
 import { StorySettingsModal } from '../story-settings-modal';
 
+/**
+ * 创作向导各步骤渲染器。
+ */
 export class WizardStepRenderers {
     private wizardStepResults: Record<string, string>;
     private wizardStepExecuting: Set<string>;
@@ -54,6 +57,12 @@ export class WizardStepRenderers {
         this.registerOutlineTreeModal = registerOutlineTreeModal;
     }
 
+    /**
+     * 渲染故事结构步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardStoryStructureStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
         let settings = null;
@@ -113,6 +122,12 @@ export class WizardStepRenderers {
         };
     }
 
+    /**
+     * 渲染同人设定步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardFanficStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
         
@@ -278,6 +293,12 @@ export class WizardStepRenderers {
         );
     }
 
+    /**
+     * 渲染设定库步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardSettingLibStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         const step = tab.steps[tab.currentStepIdx];
         const isDone = step.status === 'done';
@@ -421,6 +442,12 @@ export class WizardStepRenderers {
         container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
     }
 
+    /**
+     * 渲染文笔风格步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardWritingStyleStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         const step = tab.steps[tab.currentStepIdx];
         const isDone = step.status === 'done';
@@ -471,6 +498,12 @@ export class WizardStepRenderers {
         container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-u-margintop-8px-2 nw-u-c-text-muted-2 nw-u-fs-0-85em' });
     }
 
+    /**
+     * 渲染大纲步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardOutlineStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
         
@@ -531,6 +564,12 @@ export class WizardStepRenderers {
         }
     }
 
+    /**
+     * 渲染章节步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardChaptersStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
         
@@ -565,6 +604,12 @@ export class WizardStepRenderers {
         }
     }
 
+    /**
+     * 渲染完成步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardCompleteStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
         
@@ -631,6 +676,12 @@ export class WizardStepRenderers {
         container.createEl('p', { text: '点击下方"🎯 进入写作界面"开始写作。', cls: 'nw-u-margintop-16px-2 nw-u-c-text-accent nw-u-fwt-600-2' });
     }
 
+    /**
+     * 渲染实体步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardEntitiesStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
 
@@ -806,6 +857,12 @@ export class WizardStepRenderers {
         });
     }
 
+    /**
+     * 渲染世界观步骤。
+     *
+     * @param container - 参数
+     * @param tab - 参数
+     */
     async renderWizardWorldviewStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
         

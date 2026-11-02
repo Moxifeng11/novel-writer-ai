@@ -18,8 +18,14 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('StyleVectorStore');
+/**
+ * 风格维度。
+ */
 export type StyleDimension = 'sentenceRhythm' | 'wordPreference' | 'narrativeStyle' | 'rhetoric' | 'dialogueStyle' | 'paragraphStructure' | 'overallTone';
 
+/**
+ * 全部风格维度。
+ */
 export const STYLE_DIMENSIONS: StyleDimension[] = [
     'sentenceRhythm',
     'wordPreference',
@@ -30,6 +36,9 @@ export const STYLE_DIMENSIONS: StyleDimension[] = [
     'overallTone',
 ];
 
+/**
+ * 风格维度中文名。
+ */
 export const STYLE_DIMENSION_LABELS: Record<StyleDimension, string> = {
     sentenceRhythm: '句式节奏',
     wordPreference: '用词偏好',
@@ -40,6 +49,9 @@ export const STYLE_DIMENSION_LABELS: Record<StyleDimension, string> = {
     overallTone: '整体基调',
 };
 
+/**
+ * 风格维度权重。
+ */
 export const STYLE_DIMENSION_WEIGHTS: Record<StyleDimension, number> = {
     sentenceRhythm: 0.15,
     wordPreference: 0.15,
@@ -50,12 +62,18 @@ export const STYLE_DIMENSION_WEIGHTS: Record<StyleDimension, number> = {
     overallTone: 0.2,
 };
 
+/**
+ * 单维度向量。
+ */
 export interface StyleDimensionVector {
     dimension: StyleDimension;
     vector: number[];
     description: string;
 }
 
+/**
+ * 指纹向量集合。
+ */
 export interface StyleFingerprintVectors {
     fingerprintId: string;
     /** 生成向量时使用的 embedding 模型指纹；旧文件可能没有（纯模型名） */
@@ -75,6 +93,9 @@ export interface StyleVectorStoreModelMismatch {
     reason?: EmbeddingMismatchReason;
 }
 
+/**
+ * 风格相似度结果。
+ */
 export interface StyleSimilarityResult {
     fingerprintId: string;
     fingerprintName: string;
@@ -83,14 +104,23 @@ export interface StyleSimilarityResult {
     scope: 'template' | 'global' | 'project';
 }
 
+/**
+ * 风格混合选项。
+ */
 export interface StyleBlendOptions {
     weights?: Record<string, number>;
 }
 
+/**
+ * 风格插值选项。
+ */
 export interface StyleInterpolationOptions {
     ratio?: number;
 }
 
+/**
+ * 风格向量库。
+ */
 export class StyleVectorStore {
     private app: App;
     private scope: 'global' | 'project';

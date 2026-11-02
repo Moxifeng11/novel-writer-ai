@@ -14,6 +14,9 @@
 import { FileSystemPort } from '../shared/file-system-port';
 import { yieldToUI } from '../shared/yield';
 
+/**
+ * 检查点状态。
+ */
 export interface CheckpointState {
     taskId: string;
     bookId: string;
@@ -32,11 +35,17 @@ export interface CheckpointState {
     version: string;
 }
 
+/**
+ * 恢复选项。
+ */
 export interface ResumeOptions {
     force?: boolean;
     maxAgeMs?: number;
 }
 
+/**
+ * 检查点信息。
+ */
 export interface CheckpointInfo {
     exists: boolean;
     valid: boolean;
@@ -58,6 +67,9 @@ function computeChecksum(text: string): string {
     return Math.abs(hash).toString(16).padStart(8, '0');
 }
 
+/**
+ * 检查点管理器。
+ */
 export class CheckpointManager {
     private fs: FileSystemPort;
 
@@ -65,6 +77,12 @@ export class CheckpointManager {
         this.fs = fs;
     }
 
+    /**
+     * 保存检查点。
+     *
+     * @param state - 参数
+     * @param sourceText? - 参数
+     */
     async saveCheckpoint(state: Omit<CheckpointState, 'checksum' | 'lastSavedAt' | 'sourceChecksum' | 'version'>, sourceText?: string): Promise<void> {
         const fullState: CheckpointState = {
             ...state,
@@ -85,6 +103,12 @@ export class CheckpointManager {
         await this.fs.write(path, content);
     }
 
+    /**
+     * 读取检查点。
+     *
+     * @param bookId - 参数
+     * @returns 检查点或 null
+     */
     async getCheckpoint(bookId: string): Promise<CheckpointInfo> {
         const path = this.getCheckpointPath(bookId);
 
@@ -113,6 +137,13 @@ export class CheckpointManager {
         }
     }
 
+    /**
+     * 从检查点恢复。
+     *
+     * @param bookId - 参数
+     * @param options - 参数
+     * @returns 恢复结果
+     */
     async resumeFromCheckpoint(bookId: string, options: ResumeOptions = {}): Promise<CheckpointState | null> {
         const info = await this.getCheckpoint(bookId);
 
@@ -136,6 +167,12 @@ export class CheckpointManager {
         return info.state;
     }
 
+    /**
+     * 删除检查点。
+     *
+     * @param bookId - 参数
+     * @returns 是否删除
+     */
     async deleteCheckpoint(bookId: string): Promise<void> {
         const path = this.getCheckpointPath(bookId);
         try {
@@ -144,6 +181,12 @@ export class CheckpointManager {
         }
     }
 
+    /**
+     * 清理旧检查点。
+     *
+     * @param maxAgeMs - 参数
+     * @returns 清理数量
+     */
     async cleanupOldCheckpoints(maxAgeMs: number = MAX_CHECKPOINT_AGE): Promise<number> {
         let cleanedCount = 0;
         const now = Date.now();
@@ -172,6 +215,13 @@ export class CheckpointManager {
         return cleanedCount;
     }
 
+    /**
+     * 校验来源是否匹配。
+     *
+     * @param bookId - 参数
+     * @param sourceText - 参数
+     * @returns 布尔值
+     */
     async verifySourceMatch(bookId: string, sourceText: string): Promise<boolean> {
         const info = await this.getCheckpoint(bookId);
         if (!info.exists || !info.state) {

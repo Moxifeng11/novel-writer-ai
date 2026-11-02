@@ -17,6 +17,9 @@ export interface RateLimiterOptions {
     initialTokens?: number;
 }
 
+/**
+ * 获取令牌选项。
+ */
 export interface AcquireOptions {
     priority?: number;
     signal?: AbortSignal;
@@ -31,6 +34,9 @@ interface PendingRequest {
     queuedAt: number;
 }
 
+/**
+ * 令牌桶限流器。
+ */
 export class TokenBucketRateLimiter {
     private tokensPerSecond: number;
     private maxTokens: number;
@@ -50,6 +56,13 @@ export class TokenBucketRateLimiter {
         this.paused = false;
     }
 
+    /**
+     * 获取令牌（等待）。
+     *
+     * @param tokenAmount - 参数
+     * @param options - 参数
+     * @returns 是否获取
+     */
     async acquire(tokenAmount: number = 1, options: AcquireOptions = {}): Promise<void> {
         if (tokenAmount <= 0) {
             return;
@@ -93,6 +106,12 @@ export class TokenBucketRateLimiter {
         });
     }
 
+    /**
+     * 尝试获取令牌。
+     *
+     * @param tokenAmount - 参数
+     * @returns 布尔值
+     */
     tryAcquire(tokenAmount: number = 1): boolean {
         if (tokenAmount <= 0 || this.paused) {
             return false;
@@ -108,12 +127,22 @@ export class TokenBucketRateLimiter {
         return false;
     }
 
+    /**
+     * 归还令牌。
+     *
+     * @param tokenAmount - 参数
+     */
     release(tokenAmount: number = 1): void {
         if (tokenAmount <= 0) return;
         this.currentTokens = Math.min(this.maxTokens, this.currentTokens + tokenAmount);
         this.scheduleProcessQueue();
     }
 
+    /**
+     * 设置速率。
+     *
+     * @param tokensPerSecond - 参数
+     */
     setRate(tokensPerSecond: number): void {
         if (tokensPerSecond < 0) {
             throw new Error('速率不能为负数');
@@ -122,6 +151,11 @@ export class TokenBucketRateLimiter {
         this.tokensPerSecond = tokensPerSecond;
     }
 
+    /**
+     * 设置桶容量。
+     *
+     * @param maxTokens - 参数
+     */
     setMaxTokens(maxTokens: number): void {
         if (maxTokens <= 0) {
             throw new Error('最大令牌数必须大于 0');
@@ -132,10 +166,16 @@ export class TokenBucketRateLimiter {
         }
     }
 
+    /**
+     * 暂停。
+     */
     pause(): void {
         this.paused = true;
     }
 
+    /**
+     * 恢复。
+     */
     resume(): void {
         if (this.paused) {
             this.paused = false;

@@ -8,6 +8,9 @@ import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../mode
 
 
 const log = createLogger('TabController');
+/**
+ * 页签控制器依赖。
+ */
 export interface TabControllerDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -33,6 +36,9 @@ export interface TabControllerDeps {
     cancelActiveRun?: () => void;
 }
 
+/**
+ * 工作台页签控制器。
+ */
 export class TabController {
     private deps: TabControllerDeps;
     /** 模型快速切换器（Tab 栏右端）；重渲染时销毁旧实例避免刷新回调泄漏 */
@@ -54,11 +60,19 @@ export class TabController {
         return this.deps.state.activeTabId;
     }
 
+    /**
+     * 压入导航。
+     *
+     * @param tabId - 参数
+     */
     async pushNav(tabId: string): Promise<void> {
         this.deps.state.pushNav(tabId);
         await this.activateTab(tabId);
     }
 
+    /**
+     * 弹出导航。
+     */
     popNav(): void {
         // 导航栈里可能留着已关闭的页签：先跳过，否则 activateTab 到已删除的 id
         // 会让 renderTabContent 在 empty() 之后 findTab 失败直接 return —— 界面空白。
@@ -73,6 +87,11 @@ export class TabController {
         }
     }
 
+    /**
+     * 激活页签。
+     *
+     * @param tabId - 参数
+     */
     async activateTab(tabId: string): Promise<void> {
         this.deps.closeOutlineTreeModal();
         const wasActive = this.deps.state.activeTabId === tabId;
@@ -84,6 +103,11 @@ export class TabController {
         }
     }
 
+    /**
+     * 关闭页签。
+     *
+     * @param tabId - 参数
+     */
     closeTab(tabId: string): void {
         const tab = this.deps.state.findTab(tabId);
         if (tab && tab.type === 'wizard') {
@@ -116,6 +140,9 @@ export class TabController {
         }
     }
 
+    /**
+     * 渲染页签内容。
+     */
     async renderTabContent(): Promise<void> {
         const tabContent = this.deps.getTabContent();
         if (!tabContent) return;
@@ -193,6 +220,9 @@ export class TabController {
         }
     }
 
+    /**
+     * 渲染页签栏。
+     */
     renderTabBar(): void {
         const tabBar = this.deps.getTabBar();
         if (!tabBar) return;
@@ -276,6 +306,12 @@ export class TabController {
         });
     }
 
+    /**
+     * 选择章节。
+     *
+     * @param project - 参数
+     * @param chapter - 参数
+     */
     async selectChapter(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
         const volumeKey = chapter.volume || '';
         const chapKey = `${project}/${volumeKey}/${chapter.chapter}`;

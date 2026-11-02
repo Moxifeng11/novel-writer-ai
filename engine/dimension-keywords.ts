@@ -1,3 +1,6 @@
+/**
+ * 情绪关键词。
+ */
 export const EMOTION_WORDS: Record<'anger' | 'anticipation' | 'disgust' | 'fear' | 'joy' | 'sadness' | 'surprise' | 'trust', string[]> = {
   anger: [
     '愤怒', '生气', '暴怒', '怒吼', '咆哮', '怒斥', '愤慨', '愤恨', '恼怒', '恼火',
@@ -78,6 +81,9 @@ export const EMOTION_WORDS: Record<'anger' | 'anticipation' | 'disgust' | 'fear'
   ]
 };
 
+/**
+ * 钩子关键词。
+ */
 export const HOOK_WORDS = {
   suspense: [
     '究竟', '到底', '难道', '殊不知', '未曾想', '没想到', '竟然', '居然', '岂料', '谁知道',
@@ -117,6 +123,9 @@ export const HOOK_WORDS = {
   ]
 };
 
+/**
+ * 展示/讲述关键词。
+ */
 export const SHOW_TELL_WORDS = {
   show: {
     sensory: [
@@ -207,6 +216,9 @@ export const SHOW_TELL_WORDS = {
   }
 };
 
+/**
+ * 五感关键词。
+ */
 export const FIVE_SENSES_WORDS = {
   visual: [
     '看', '望', '视', '睹', '瞅', '瞟', '瞥', '瞪', '注视', '凝视',
@@ -270,6 +282,9 @@ export const FIVE_SENSES_WORDS = {
   ]
 };
 
+/**
+ * 世界观关键词。
+ */
 export const WORLDVIEW_WORDS = {
   system: [
     '修炼', '境界', '功法', '法术', '神通', '法宝', '丹药', '阵法', '符箓', '灵器',
@@ -320,6 +335,9 @@ export const WORLDVIEW_WORDS = {
   ]
 };
 
+/**
+ * 金手指关键词。
+ */
 export const GOLDEN_FINGER_WORDS: string[] = [
   '系统', '签到', '任务', '奖励', '积分', '兑换', '商城', '面板', '属性', '技能',
   '天赋', '血脉', '体质', '灵根', '功法', '传承', '老爷爷', '戒指', '玉佩', '空间',
@@ -343,6 +361,9 @@ export const GOLDEN_FINGER_WORDS: string[] = [
   '都市兵王', '都市鉴宝'
 ];
 
+/**
+ * 叙事时间性关键词。
+ */
 export const NARRATIVE_TEMPORALITY_WORDS = {
   analepsis: [
     '回忆起', '记得', '想起', '曾经', '当年', '那时候', '从前', '过去', '以前', '往昔',

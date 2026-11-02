@@ -25,8 +25,14 @@ import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('CoWriteFloatingPanel');
+/**
+ * 浮动协同面板视图类型。
+ */
 export const VIEW_TYPE_FLOAT_COWRITE = "nw-float-cowrite";
 
+/**
+ * 浮动协同面板。
+ */
 export class CoWriteFloatingPanel extends DraggablePanel {
   // === DOM 容器 ===
   private rightEditor!: HTMLTextAreaElement;
@@ -245,6 +251,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     return chapDir;
   }
 
+  /**
+   * 保存正文。
+   * @returns 是否成功
+   */
   async saveBody(): Promise<void> {
     const content = this.rightEditor.value;
     if (!content.trim()) return;
@@ -271,6 +281,9 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   }
 
   // === 建议生成（进度增强版） ===
+  /**
+   * 处理 Tab 建议。
+   */
   async handleTabSuggest(): Promise<void> {
     if (this.isSuggesting) return;
 
@@ -641,6 +654,9 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   }
 
   // === 联想功能 ===
+  /**
+   * 处理联想建议。
+   */
   async handleAssociationSuggest(): Promise<void> {
     if (this.isSuggesting) return;
     this.isSuggesting = true;
@@ -675,6 +691,9 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   }
 
   // === 改写功能 ===
+  /**
+   * 处理选中改写。
+   */
   async handleRewriteSelection(): Promise<void> {
     const start = this.rightEditor.selectionStart;
     const end = this.rightEditor.selectionEnd;
@@ -704,12 +723,18 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     }
   }
 
+  /**
+   * 处理完成本章。
+   */
   async handleComplete(): Promise<void> {
     await this.saveBody();
     new Notice("\u2705 \u7AE0\u8282\u4FDD\u5B58\u5DF2\u5B8C\u6210\uFF0C\u8BF7\u5728\u5168\u672C\u5199\u4F5C\u89C6\u56FE\u4E2D\u6267\u884C\u7ED3\u7B97");
   }
 
   // === 逻辑检查（人设一致性） ===
+  /**
+   * 处理逻辑检查。
+   */
   async handleLogicCheck(): Promise<void> {
     const body = this.rightEditor.value;
     if (!body.trim()) {
@@ -871,6 +896,9 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     new Notice(`\uD83D\uDCA1 \u5DF2\u5E94\u7528\u6307\u4EE4\uFF0C\u5C06\u5728\u4E0B\u6B21\u751F\u6210\u65F6\u751F\u6548: ${hint}`);
   }
 
+  /**
+   * 关闭并清理。
+   */
   async onClose(): Promise<void> {
     if (this.suggestAbortController) {
       this.suggestAbortController.abort();

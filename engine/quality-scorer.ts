@@ -6,6 +6,9 @@ import type {
 
 export type { BreakdownDimension, DeconstructionQualityLevel, DimensionQualityScore };
 
+/**
+ * 质量评分输入。
+ */
 export interface QualityScoringInput {
     dimension: BreakdownDimension;
     result: any;
@@ -14,6 +17,9 @@ export interface QualityScoringInput {
     elapsedTime?: number;
 }
 
+/**
+ * 交叉校验规则。
+ */
 export interface CrossValidationRule {
     name: string;
     dimensionA: BreakdownDimension;
@@ -25,6 +31,9 @@ export interface CrossValidationRule {
     description: string;
 }
 
+/**
+ * 交叉校验结果。
+ */
 export interface CrossValidationResult {
     rule: CrossValidationRule;
     passed: boolean;
@@ -110,7 +119,16 @@ const CROSS_VALIDATION_RULES: CrossValidationRule[] = [
     },
 ];
 
+/**
+ * 质量评分器。
+ */
 export class QualityScorer {
+    /**
+     * 计算质量分。
+     *
+     * @param input - 参数
+     * @returns 分数
+     */
     calculateQualityScore(input: QualityScoringInput): DimensionQualityScore {
         const completeness = this.calculateCompleteness(input.dimension, input.result);
         const consistency = this.calculateConsistency(input.dimension, input.result);
@@ -127,6 +145,12 @@ export class QualityScorer {
         };
     }
 
+    /**
+     * 批量评分。
+     *
+     * @param inputs - 参数
+     * @returns 分数表
+     */
     calculateBatchScores(inputs: QualityScoringInput[]): Record<BreakdownDimension, DimensionQualityScore> {
         const out = {} as Record<BreakdownDimension, DimensionQualityScore>;
         for (const input of inputs) {
@@ -135,6 +159,12 @@ export class QualityScorer {
         return out;
     }
 
+    /**
+     * 交叉校验。
+     *
+     * @param results - 参数
+     * @returns 结果
+     */
     crossValidate(results: Partial<Record<BreakdownDimension, any>>): CrossValidationResult[] {
         const out: CrossValidationResult[] = [];
         for (const rule of CROSS_VALIDATION_RULES) {
@@ -189,10 +219,22 @@ export class QualityScorer {
         return out;
     }
 
+    /**
+     * 是否应升级质量档。
+     *
+     * @param score - 参数
+     * @returns 布尔值
+     */
     shouldUpgrade(score: DimensionQualityScore): boolean {
         return score.overall < 60 && score.usedLevel !== 'deep';
     }
 
+    /**
+     * 建议质量档。
+     *
+     * @param score - 参数
+     * @returns 档位
+     */
     suggestLevel(score: DimensionQualityScore): DeconstructionQualityLevel {
         if (score.overall >= 80) return score.usedLevel;
         if (score.usedLevel === 'fast') return 'standard';

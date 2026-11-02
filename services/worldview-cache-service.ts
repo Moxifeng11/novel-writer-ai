@@ -7,6 +7,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('WorldviewCacheService');
+/**
+ * 缓存条目。
+ */
 export interface CacheEntry {
     key: string;
     project: string;
@@ -19,6 +22,9 @@ export interface CacheEntry {
     accessCount: number;
 }
 
+/**
+ * 缓存统计。
+ */
 export interface CacheStats {
     hitCount: number;
     missCount: number;
@@ -28,6 +34,9 @@ export interface CacheStats {
     hitRate: number;
 }
 
+/**
+ * 缓存选项。
+ */
 export interface WorldviewCacheOptions {
     maxProjects?: number;
     maxSizePerProjectMB?: number;
@@ -37,6 +46,9 @@ const DEFAULT_MAX_PROJECTS = 10;
 const DEFAULT_MAX_SIZE_PER_PROJECT_MB = 5;
 const BYTES_PER_MB = 1024 * 1024;
 
+/**
+ * 世界观缓存服务。
+ */
 export class WorldviewCacheService {
     private cache: Map<string, CacheEntry> = new Map();
     private projectSizes: Map<string, number> = new Map();
@@ -151,6 +163,15 @@ export class WorldviewCacheService {
         return 0;
     }
 
+    /**
+     * 读取缓存。
+     *
+     * @param project - 参数
+     * @param filePath - 参数
+     * @param parser? - 参数
+     * @param any> - 参数
+     * @returns 值或 null
+     */
     async get(
         project: string,
         filePath: string,
@@ -245,6 +266,14 @@ export class WorldviewCacheService {
         }
     }
 
+    /**
+     * 写入缓存。
+     *
+     * @param project - 参数
+     * @param filePath - 参数
+     * @param rawText - 参数
+     * @param parsedData? - 参数
+     */
     async set(
         project: string,
         filePath: string,
@@ -390,6 +419,12 @@ export class WorldviewCacheService {
         return { entries, size, files };
     }
 
+    /**
+     * 预加载项目缓存。
+     *
+     * @param project - 参数
+     * @returns 统计
+     */
     async preloadProject(project: string): Promise<{ loaded: number; totalSize: number }> {
         const filesToPreload = [
             getWorldviewPath(project),
@@ -467,6 +502,13 @@ export class WorldviewCacheService {
         return this.set(project, filePath, rawText, parsedData);
     }
 
+    /**
+     * 读取实体缓存。
+     *
+     * @param project - 参数
+     * @param entityType - 参数
+     * @returns 实体
+     */
     async getEntities(
         project: string,
         entityType: 'characters' | 'locations' | 'factions' | 'items'
@@ -496,6 +538,15 @@ export class WorldviewCacheService {
         return results;
     }
 
+    /**
+     * 写入实体缓存。
+     *
+     * @param project - 参数
+     * @param entityType - 参数
+     * @param name - 参数
+     * @param content - 参数
+     * @param parsedData? - 参数
+     */
     async setEntity(
         project: string,
         entityType: 'characters' | 'locations' | 'factions' | 'items',

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 123640 | 1532 | 715 | 47% |
-| `services/` | 28 | 10575 | 151 | 75 | 50% |
-| `shared/` | 164 | 33277 | 1512 | 646 | 43% |
+| `engine/` | 289 | 124002 | 1532 | 752 | 49% |
+| `services/` | 28 | 10715 | 151 | 85 | 56% |
+| `shared/` | 164 | 33301 | 1512 | 654 | 43% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 93791 | 500 | 152 | 30% |
+| `ui/` | 191 | 93983 | 500 | 162 | 32% |
 
 ## 文件清单
 
@@ -114,18 +114,18 @@
 | `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 3987 | 17 | 17 |
 | `engine/deconstructors/readability-deconstructor.ts` | 975 | 7 | 7 |
-| `engine/deconstructors/rhythm-deconstructor.ts` | 2834 | 21 | 21 |
+| `engine/deconstructors/rhythm-deconstructor.ts` | 2886 | 21 | 21 |
 | `engine/deconstructors/structure-deconstructor.ts` | 1848 | 12 | 12 |
 | `engine/deconstructors/style-deconstructor.ts` | 2297 | 14 | 14 |
 | `engine/deconstructors/technique-deconstructor.ts` | 1824 | 5 | 5 |
-| `engine/dimension-keywords.ts` | 428 | 9 | 0 |
+| `engine/dimension-keywords.ts` | 449 | 9 | 7 |
 | `engine/embedding/doubao-provider.ts` | 43 | 2 | 2 |
 | `engine/embedding/embedding-fingerprint.ts` | 95 | 7 | 2 |
 | `engine/embedding/embedding-provider.ts` | 13 | 1 | 1 |
 | `engine/embedding/embedding-service.ts` | 49 | 4 | 3 |
 | `engine/embedding/index.ts` | 12 | 6 | 0 |
 | `engine/embedding/ollama-provider.ts` | 180 | 2 | 2 |
-| `engine/embedding/openai-provider.ts` | 191 | 2 | 2 |
+| `engine/embedding/openai-provider.ts` | 233 | 2 | 2 |
 | `engine/embedding/provider-factory.ts` | 188 | 4 | 4 |
 | `engine/embedding/qwen-provider.ts` | 43 | 2 | 2 |
 | `engine/emotion-auditor.ts` | 268 | 3 | 3 |
@@ -156,7 +156,7 @@
 | `engine/genre/index.ts` | 12 | 2 | 1 |
 | `engine/genre/types.ts` | 60 | 5 | 3 |
 | `engine/harness/ai-assisted-premise-service.ts` | 211 | 3 | 0 |
-| `engine/harness/call-ledger.ts` | 77 | 3 | 0 |
+| `engine/harness/call-ledger.ts` | 120 | 3 | 3 |
 | `engine/harness/creative-frameworks.ts` | 178 | 6 | 0 |
 | `engine/harness/creative-randomizer.ts` | 143 | 4 | 0 |
 | `engine/harness/domain-profile.ts` | 48 | 3 | 0 |
@@ -168,7 +168,7 @@
 | `engine/harness/trend-research-service.ts` | 190 | 8 | 6 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
 | `engine/heavy-task-worker-manager.ts` | 337 | 2 | 2 |
-| `engine/incremental-result-aggregator.ts` | 1666 | 3 | 0 |
+| `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 494 | 5 | 0 |
 | `engine/knowledge-injector.ts` | 2078 | 13 | 0 |
 | `engine/knowledge-tags.ts` | 617 | 2 | 2 |
@@ -194,7 +194,7 @@
 | `engine/plot-redundancy-checker.ts` | 107 | 4 | 0 |
 | `engine/preference-memory.ts` | 269 | 0 | 0 |
 | `engine/project-migration-service.ts` | 189 | 5 | 0 |
-| `engine/promise-ledger.ts` | 177 | 11 | 1 |
+| `engine/promise-ledger.ts` | 192 | 11 | 6 |
 | `engine/prompt-builder.ts` | 1350 | 2 | 0 |
 | `engine/prompt-cache.ts` | 60 | 3 | 0 |
 | `engine/prompt-hash.ts` | 38 | 1 | 1 |
@@ -218,7 +218,7 @@
 | `engine/prompts/writing-rules-legacy.ts` | 8 | 0 | 0 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
 | `engine/quality-gate.ts` | 159 | 5 | 0 |
-| `engine/quality-scorer.ts` | 338 | 5 | 0 |
+| `engine/quality-scorer.ts` | 380 | 5 | 4 |
 | `engine/quality/deviation-detector.ts` | 2029 | 26 | 18 |
 | `engine/quality/gate-snapshot.ts` | 111 | 2 | 2 |
 | `engine/quality/quality-score-engine.ts` | 2007 | 15 | 8 |
@@ -294,13 +294,13 @@
 | `engine/story-linkage-writer.ts` | 137 | 5 | 1 |
 | `engine/story-linkage.ts` | 372 | 14 | 3 |
 | `engine/story-state-types.ts` | 44 | 3 | 0 |
-| `engine/stream-text-reader.ts` | 279 | 3 | 0 |
+| `engine/stream-text-reader.ts` | 315 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 146 | 2 | 0 |
 | `engine/streaming/stream-parser.ts` | 358 | 8 | 8 |
 | `engine/style-fingerprint-library.ts` | 2202 | 7 | 6 |
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
-| `engine/style-vector-store.ts` | 669 | 11 | 0 |
+| `engine/style-vector-store.ts` | 699 | 11 | 10 |
 | `engine/style/dynamic-injection-engine.ts` | 777 | 10 | 5 |
 | `engine/style/fingerprint-blender-v2.ts` | 652 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 613 | 13 | 13 |
@@ -315,7 +315,7 @@
 | `engine/suggestion-manager.ts` | 276 | 1 | 0 |
 | `engine/template-service.ts` | 798 | 2 | 2 |
 | `engine/text-segmenter.ts` | 485 | 10 | 6 |
-| `engine/token-bucket-rate-limiter.ts` | 245 | 3 | 1 |
+| `engine/token-bucket-rate-limiter.ts` | 285 | 3 | 3 |
 | `engine/types/analysis-session.ts` | 109 | 8 | 8 |
 | `engine/types/analysis-suggestion.ts` | 71 | 8 | 0 |
 | `engine/types/chart-config.ts` | 66 | 6 | 0 |
@@ -326,9 +326,9 @@
 | `engine/writing-quality-engine.ts` | 1373 | 14 | 12 |
 | `services/api-connectivity-service.ts` | 311 | 8 | 7 |
 | `services/canon-research-service.ts` | 435 | 7 | 6 |
-| `services/chapter-recognizer.ts` | 244 | 5 | 1 |
+| `services/chapter-recognizer.ts` | 283 | 5 | 3 |
 | `services/chapter-version-service.ts` | 542 | 2 | 0 |
-| `services/checkpoint-manager.ts` | 295 | 4 | 0 |
+| `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 266 | 10 | 3 |
 | `services/font-manager.ts` | 160 | 13 | 4 |
 | `services/genre-classifier.ts` | 831 | 2 | 0 |
@@ -350,7 +350,7 @@
 | `services/worker-manager.ts` | 537 | 1 | 0 |
 | `services/worker-protocol.ts` | 107 | 11 | 11 |
 | `services/worker-runtime.ts` | 257 | 8 | 7 |
-| `services/worldview-cache-service.ts` | 576 | 4 | 0 |
+| `services/worldview-cache-service.ts` | 627 | 4 | 4 |
 | `services/writing-stats-service.ts` | 275 | 6 | 4 |
 | `shared/adaptive-debounce-manager.ts` | 307 | 2 | 1 |
 | `shared/ai-credentials.ts` | 47 | 2 | 0 |
@@ -374,7 +374,7 @@
 | `shared/command-ids.ts` | 106 | 2 | 1 |
 | `shared/command-mode-rules.ts` | 123 | 8 | 0 |
 | `shared/command-ui-port.ts` | 43 | 4 | 1 |
-| `shared/content-classifier.ts` | 207 | 11 | 1 |
+| `shared/content-classifier.ts` | 222 | 11 | 6 |
 | `shared/context-budget-policy.ts` | 129 | 7 | 4 |
 | `shared/context-hygiene.ts` | 238 | 11 | 2 |
 | `shared/contrast-library.ts` | 87 | 4 | 1 |
@@ -389,7 +389,7 @@
 | `shared/embedding-provider.ts` | 34 | 4 | 1 |
 | `shared/engine-names.ts` | 56 | 1 | 1 |
 | `shared/entity-audit.ts` | 77 | 4 | 1 |
-| `shared/entity-field-mappings.ts` | 175 | 10 | 1 |
+| `shared/entity-field-mappings.ts` | 184 | 10 | 4 |
 | `shared/entity-integrity.ts` | 62 | 4 | 0 |
 | `shared/entity-links.ts` | 97 | 9 | 3 |
 | `shared/entity-models.ts` | 600 | 34 | 1 |
@@ -532,7 +532,7 @@
 | `ui/chapter-settlement-modal.ts` | 386 | 1 | 0 |
 | `ui/chapter-version-modal.ts` | 639 | 2 | 0 |
 | `ui/character-recognition-modal.ts` | 216 | 1 | 0 |
-| `ui/co-write-floating-panel.ts` | 895 | 2 | 0 |
+| `ui/co-write-floating-panel.ts` | 923 | 2 | 2 |
 | `ui/co-writing-view.ts` | 5538 | 3 | 0 |
 | `ui/command-ui-executor.ts` | 618 | 2 | 0 |
 | `ui/components/ai-detection-report.ts` | 97 | 1 | 1 |
@@ -586,7 +586,7 @@
 | `ui/full-writer/cover-picker-controller.ts` | 141 | 1 | 0 |
 | `ui/full-writer/creation-flow-state.ts` | 227 | 4 | 1 |
 | `ui/full-writer/entity-state-controller.ts` | 119 | 2 | 0 |
-| `ui/full-writer/execution-panels.ts` | 342 | 4 | 0 |
+| `ui/full-writer/execution-panels.ts` | 376 | 4 | 3 |
 | `ui/full-writer/execution-run-store.ts` | 259 | 5 | 0 |
 | `ui/full-writer/fanfic-settings-utils.ts` | 238 | 13 | 3 |
 | `ui/full-writer/flow-panel-controller.ts` | 317 | 3 | 0 |
@@ -602,7 +602,7 @@
 | `ui/full-writer/status-bar-controller.ts` | 80 | 2 | 0 |
 | `ui/full-writer/step-render-controller.ts` | 665 | 2 | 0 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 220 | 12 | 4 |
-| `ui/full-writer/tab-controller.ts` | 331 | 2 | 0 |
+| `ui/full-writer/tab-controller.ts` | 367 | 2 | 2 |
 | `ui/full-writer/template-vars-builder.ts` | 1085 | 7 | 2 |
 | `ui/full-writer/title-bar-controller.ts` | 182 | 2 | 0 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
@@ -611,7 +611,7 @@
 | `ui/full-writer/wizard-controller.ts` | 393 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 80 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 341 | 1 | 0 |
-| `ui/full-writer/wizard-step-renderers.ts` | 888 | 1 | 0 |
+| `ui/full-writer/wizard-step-renderers.ts` | 945 | 1 | 1 |
 | `ui/full-writer/wizard-step-validators.ts` | 138 | 2 | 0 |
 | `ui/full-writer/wizard-types.ts` | 69 | 5 | 1 |
 | `ui/full-writer/wizard-view-access.ts` | 38 | 2 | 0 |
@@ -662,7 +662,7 @@
 | `ui/services/agent-port.ts` | 521 | 2 | 0 |
 | `ui/services/agent-session-store.ts` | 135 | 3 | 0 |
 | `ui/services/agent-spill-store.ts` | 99 | 3 | 2 |
-| `ui/services/co-write-facade.ts` | 827 | 2 | 0 |
+| `ui/services/co-write-facade.ts` | 864 | 2 | 2 |
 | `ui/services/human-sample-loader.ts` | 66 | 2 | 0 |
 | `ui/services/humanness-scorer.ts` | 100 | 3 | 1 |
 | `ui/services/project-create-service.ts` | 413 | 6 | 0 |

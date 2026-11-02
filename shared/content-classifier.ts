@@ -15,6 +15,9 @@ export type ClassificationDimension =
     | '商业'
     | '受众';
 
+/**
+ * 指纹统计的最小结构。
+ */
 export interface FingerprintStatsLike {
     avgSentenceLength?: number;
     avgParagraphLength?: number;
@@ -29,6 +32,9 @@ export interface FingerprintStatsLike {
     lexicalDiversity?: number;
 }
 
+/**
+ * 可分类指纹。
+ */
 export interface ClassifiableFingerprint {
     name: string;
     source?: string;
@@ -37,6 +43,9 @@ export interface ClassifiableFingerprint {
     features?: object;
 }
 
+/**
+ * 分类标签。
+ */
 export interface ClassificationTag {
     dimension: ClassificationDimension;
     label: string;
@@ -44,12 +53,18 @@ export interface ClassificationTag {
     reason: string;
 }
 
+/**
+ * 分类结果。
+ */
 export interface ClassificationResult {
     primary: string;
     tags: ClassificationTag[];
     summary: string;
 }
 
+/**
+ * 书籍分类输入。
+ */
 export interface BookClassificationInput {
     name: string;
     author?: string;

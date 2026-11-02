@@ -5,8 +5,14 @@
  * 读者被抛出了什么问题”，用于防止支线被遗忘。
  */
 export type PromiseStatus = 'open' | 'advanced' | 'resolved' | 'dropped';
+/**
+ * 承诺类型。
+ */
 export type PromiseType = '角色承诺' | '读者问题' | '悬念' | '约定' | '威胁' | '其他';
 
+/**
+ * 承诺条目。
+ */
 export interface PromiseItem {
     id: number;
     name: string;
@@ -19,9 +25,18 @@ export interface PromiseItem {
     note: string;
 }
 
+/**
+ * 承诺表表头。
+ */
 export const PROMISE_TABLE_HEADER = '| # | 承诺/谜团 | 类型 | 提出章 | 提出角色 | 预期兑现 | 状态 | 最近推进章 | 备注 |';
+/**
+ * 承诺表分隔行。
+ */
 export const PROMISE_TABLE_SEPARATOR = '|---|---|---|---|---|---|---|---|---|';
 
+/**
+ * 默认承诺账本。
+ */
 export const DEFAULT_PROMISE_LEDGER = `# 承诺账本
 
 > 记录角色承诺、读者问题、悬念与约定。分析报告会按 PROMISE_* 指令更新，规划时会注入未兑现项。

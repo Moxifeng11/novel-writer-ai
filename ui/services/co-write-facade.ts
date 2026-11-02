@@ -46,10 +46,16 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('CoWriteFacade');
+/**
+ * 协同门面选项。
+ */
 export interface CoWriteFacadeOptions {
     plugin: NovelWriterPlugin;
 }
 
+/**
+ * 协同写作门面。
+ */
 export class CoWriteFacade {
     private plugin: NovelWriterPlugin;
     private _engine: CoWriterEngine | null = null;
@@ -204,10 +210,18 @@ export class CoWriteFacade {
         return this.engine.getPrecisionMode();
     }
 
+    /**
+     * 取当前会话。
+     * @returns 会话或 null
+     */
     getSession() {
         return this.engine.getSession();
     }
 
+    /**
+     * 取正文快照。
+     * @returns 快照或 null
+     */
     getSnapshot() {
         return this.engine.getSnapshot();
     }
@@ -374,6 +388,10 @@ export class CoWriteFacade {
         this.engine.recordInteraction(record);
     }
 
+    /**
+     * 取记忆快照。
+     * @returns 快照
+     */
     getMemorySnapshot() {
         return this.engine.getMemorySnapshot();
     }
@@ -422,6 +440,11 @@ export class CoWriteFacade {
         this.engine.setReferenceBooks(bookIds);
     }
 
+    /**
+     * 设置参考书及权重。
+     *
+     * @param books - 参数
+     */
     async setReferenceBooksWithWeight(books: Array<{ bookId: string; weight: number; isPrimary: boolean }>): Promise<void> {
         await this.engine.setReferenceBooksWithWeight(books);
     }
@@ -436,14 +459,28 @@ export class CoWriteFacade {
         return this.engine.getKnowledgeMatchScore(text);
     }
 
+    /**
+     * 取指纹库。
+     * @returns 指纹库
+     */
     getFingerprintLibrary() {
         return this.engine.getFingerprintLibrary();
     }
 
+    /**
+     * 取情节完成度。
+     *
+     * @param body - 参数
+     * @returns 指标
+     */
     getPlotProgress(body: string) {
         return (this.engine as any).getPlotProgress?.(body) || { totalNodes: 0, completedNodes: 0, completionPercent: 0 };
     }
 
+    /**
+     * 取仓储性能统计。
+     * @returns 统计
+     */
     getRepositoryPerfStats() {
         return (this.engine as any).getRepositoryPerfStats?.() || {};
     }

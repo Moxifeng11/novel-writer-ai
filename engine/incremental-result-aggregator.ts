@@ -23,6 +23,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('IncrementalResultAggregator');
+/**
+ * 整体分析结果。
+ */
 export type AnalysisResult =
     | StyleAnalysisResult
     | RhythmAnalysisResult
@@ -33,6 +36,9 @@ export type AnalysisResult =
     | CommercialAnalysisResult
     | ReadabilityAnalysisResult;
 
+/**
+ * 部分结果。
+ */
 export interface PartialResult {
     dimension: DeconstructDimension;
     results: AnalysisResult[];
@@ -58,6 +64,9 @@ const DEFAULT_OPTIONS: Required<AggregatorOptions> = {
     progressThreshold: 0.1,
 };
 
+/**
+ * 增量结果聚合器。
+ */
 export class IncrementalResultAggregator {
     private partialResults: Map<DeconstructDimension, PartialResult> = new Map();
     private callbacks: Set<PartialResultCallback> = new Set();
@@ -69,6 +78,14 @@ export class IncrementalResultAggregator {
         this.options = { ...DEFAULT_OPTIONS, ...options };
     }
 
+    /**
+     * 添加分段结果。
+     *
+     * @param dimension - 参数
+     * @param segmentResult - 参数
+     * @param segmentIndex - 参数
+     * @param totalSegments - 参数
+     */
     addSegmentResult(
         dimension: DeconstructDimension,
         segmentResult: AnalysisResult,
@@ -99,6 +116,11 @@ export class IncrementalResultAggregator {
         this.triggerCallbackIfNeeded(dimension, progress, partialResult);
     }
 
+    /**
+     * 标记维度完成。
+     *
+     * @param dimension - 参数
+     */
     markDimensionComplete(dimension: DeconstructDimension): void {
         const existing = this.partialResults.get(dimension);
         if (existing) {
@@ -112,14 +134,30 @@ export class IncrementalResultAggregator {
         }
     }
 
+    /**
+     * 取部分结果。
+     *
+     * @param dimension - 参数
+     * @returns 结果
+     */
     getPartialResult(dimension: DeconstructDimension): PartialResult | undefined {
         return this.partialResults.get(dimension);
     }
 
+    /**
+     * 取全部部分结果。
+     * @returns 结果集
+     */
     getAllPartialResults(): PartialResult[] {
         return Array.from(this.partialResults.values());
     }
 
+    /**
+     * 订阅部分结果。
+     *
+     * @param callback - 参数
+     * @returns 取消订阅
+     */
     onPartialResult(callback: PartialResultCallback): () => void {
         this.callbacks.add(callback);
         return () => {
@@ -127,6 +165,9 @@ export class IncrementalResultAggregator {
         };
     }
 
+    /**
+     * 清空聚合。
+     */
     clear(): void {
         this.partialResults.clear();
         this.lastCallbackTimes.clear();

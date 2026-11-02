@@ -58,6 +58,13 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
         this.cachedDimensions = options.dimensions || MODEL_DIMENSIONS[this.model] || null;
     }
 
+    /**
+     * 生成单条向量。
+     *
+     * @param text - 参数
+     * @param _options? - 参数
+     * @returns 向量
+     */
     async embed(text: string, _options?: EmbeddingOptions): Promise<number[]> {
         const endpoint = `${this.baseUrl}/embeddings`;
 
@@ -92,6 +99,13 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
         return embedding as number[];
     }
 
+    /**
+     * 批量生成向量。
+     *
+     * @param texts - 参数
+     * @param _options? - 参数
+     * @returns 向量数组
+     */
     async embedBatch(texts: string[], _options?: EmbeddingOptions): Promise<number[][]> {
         const endpoint = `${this.baseUrl}/embeddings`;
 
@@ -130,6 +144,10 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
         return sortedEmbeddings;
     }
 
+    /**
+     * 提供方是否可用。
+     * @returns 布尔值
+     */
     async isAvailable(): Promise<EmbeddingAvailability> {
         try {
             if (!this.apiKey) {
@@ -149,6 +167,10 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
         }
     }
 
+    /**
+     * 提供方信息。
+     * @returns 信息
+     */
     getProviderInfo(): ProviderInfo {
         return {
             type: 'openai',
@@ -158,10 +180,18 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
         };
     }
 
+    /**
+     * 模型名。
+     * @returns 名称
+     */
     getModelName(): string {
         return this.model;
     }
 
+    /**
+     * 向量维度。
+     * @returns 维度
+     */
     async getDimensions(): Promise<number> {
         if (this.cachedDimensions !== null) {
             return this.cachedDimensions;
@@ -176,14 +206,26 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
         }
     }
 
+    /**
+     * Base URL。
+     * @returns URL
+     */
     getBaseUrl(): string {
         return this.baseUrl;
     }
 
+    /**
+     * 模型标识。
+     * @returns 模型
+     */
     getModel(): string {
         return this.model;
     }
 
+    /**
+     * API Key 引用。
+     * @returns Key
+     */
     getApiKey(): string {
         return this.apiKey;
     }

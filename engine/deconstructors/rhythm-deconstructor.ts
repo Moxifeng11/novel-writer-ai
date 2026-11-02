@@ -452,6 +452,12 @@ export class RhythmDeconstructor {
         }
     }
 
+    /**
+     * 检测章末钩子。
+     *
+     * @param text - 参数
+     * @returns 钩子结果
+     */
     async detectChapterHooks(text: string): Promise<HookAnalysisResult> {
         if (!text || text.length === 0) {
             return {
@@ -582,6 +588,12 @@ export class RhythmDeconstructor {
         return { type, intensity, matchedWords: matchedWords.slice(0, 10) };
     }
 
+    /**
+     * 计算张力曲线。
+     *
+     * @param text - 参数
+     * @returns 曲线结果
+     */
     async calculateTensionCurve(text: string): Promise<TensionCurveResult> {
         if (!text || text.length === 0) {
             return this.getEmptyTensionResult();
@@ -880,6 +892,12 @@ export class RhythmDeconstructor {
         return 100 - (stdDeviation / maxDeviation) * 80;
     }
 
+    /**
+     * 检测情绪弧。
+     *
+     * @param text - 参数
+     * @returns 情绪弧结果
+     */
     async detectEmotionArc(text: string): Promise<EmotionArcResult> {
         if (!text || text.length === 0) {
             return this.getEmptyEmotionArcResult();
@@ -1069,6 +1087,12 @@ export class RhythmDeconstructor {
         this.llmEnhancer = llmEnhancer;
     }
 
+    /**
+     * NRC 情绪分析。
+     *
+     * @param text - 参数
+     * @returns 结果
+     */
     async analyzeNRCEmotion(text: string): Promise<NRCEmotionResult> {
         if (!text || text.length === 0) {
             return this.getEmptyNRCEmotionResult();
@@ -1202,6 +1226,12 @@ export class RhythmDeconstructor {
         return best;
     }
 
+    /**
+     * 计算节奏曲线。
+     *
+     * @param text - 参数
+     * @returns 曲线结果
+     */
     async calculateRhythmCurve(text: string): Promise<RhythmCurveResult> {
         if (!text || text.length === 0) {
             return this.getEmptyRhythmCurveResult();
@@ -1312,6 +1342,12 @@ export class RhythmDeconstructor {
         return `节奏${labels[pattern]}（平均 ${avgScore.toFixed(1)} 分，标准差 ${std.toFixed(1)}）`;
     }
 
+    /**
+     * 带向量增强的节奏分析。
+     *
+     * @param text - 参数
+     * @returns 结果
+     */
     async analyzeWithVector(text: string): Promise<RhythmAnalysisResult> {
         const baseResult = await this.analyze(text);
         await yieldToUI();
@@ -1503,6 +1539,12 @@ export class RhythmDeconstructor {
         };
     }
 
+    /**
+     * 节奏分析。
+     *
+     * @param text - 参数
+     * @returns 结果
+     */
     async analyze(text: string): Promise<RhythmAnalysisResult> {
         if (!text || text.length === 0) {
             return this.getEmptyResult();
@@ -1608,6 +1650,11 @@ export class RhythmDeconstructor {
         return result;
     }
 
+    /**
+     * 保存到 Markdown。
+     *
+     * @param app - 参数
+     */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,
@@ -1628,6 +1675,11 @@ export class RhythmDeconstructor {
         await app.vault.adapter.write(filePath, content);
     }
 
+    /**
+     * 保存分析到 Markdown。
+     *
+     * @param app - 参数
+     */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,

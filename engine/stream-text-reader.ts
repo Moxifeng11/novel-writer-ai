@@ -15,6 +15,9 @@ import { countCjkAndWords } from '../shared/word-count';
 import { TextSegmenter } from './text-segmenter';
 import type { FileSystemPort } from '../shared/file-system-port';
 
+/**
+ * 流读取状态。
+ */
 export interface StreamReaderState {
     filePath?: string;
     position: number;
@@ -25,6 +28,9 @@ export interface StreamReaderState {
     startTime: number;
 }
 
+/**
+ * 流读取选项。
+ */
 export interface StreamReaderOptions {
     bufferSize?: number;
     segmentOptions?: ConstructorParameters<typeof TextSegmenter>[0];
@@ -35,6 +41,9 @@ const DEFAULT_OPTIONS: Required<Omit<StreamReaderOptions, 'segmentOptions'>> & {
     segmentOptions: {},
 };
 
+/**
+ * 流文本读取器。
+ */
 export class StreamTextReader {
     private fs: FileSystemPort | null = null;
     private filePath: string | null = null;
@@ -54,6 +63,13 @@ export class StreamTextReader {
         this.segmenter = new TextSegmenter(this.options.segmentOptions);
     }
 
+    /**
+     * 从字符串创建。
+     *
+     * @param text - 参数
+     * @param startOffset - 参数
+     * @returns 读取器
+     */
     async fromString(text: string, startOffset: number = 0): Promise<void> {
         this.fullText = text;
         this.filePath = null;
@@ -72,6 +88,14 @@ export class StreamTextReader {
         }
     }
 
+    /**
+     * 从文件创建。
+     *
+     * @param fs - 参数
+     * @param filePath - 参数
+     * @param startOffset - 参数
+     * @returns 读取器
+     */
     async fromFile(fs: FileSystemPort, filePath: string, startOffset: number = 0): Promise<void> {
         this.fs = fs;
         this.filePath = filePath;
@@ -97,6 +121,10 @@ export class StreamTextReader {
         }
     }
 
+    /**
+     * 读取下一块。
+     * @returns 文本或 null
+     */
     async readNext(): Promise<TextSegment | null> {
         if (this.isReadComplete && this.buffer.length === 0) {
             return null;
@@ -158,6 +186,10 @@ export class StreamTextReader {
         }
     }
 
+    /**
+     * 读取全部。
+     * @returns 文本
+     */
     async readAll(): Promise<TextSegment[]> {
         const segments: TextSegment[] = [];
         for await (const segment of this) {
@@ -166,6 +198,10 @@ export class StreamTextReader {
         return segments;
     }
 
+    /**
+     * 读取状态。
+     * @returns 状态
+     */
     getState(): StreamReaderState {
         const elapsed = (Date.now() - this.startTime) / 1000;
         const readSpeed = elapsed > 0 ? this.bytesRead / elapsed : 0;

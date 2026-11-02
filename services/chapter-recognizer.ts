@@ -15,6 +15,9 @@ export interface ChapterInfo {
     wordCount: number;
 }
 
+/**
+ * 书籍识别结果。
+ */
 export interface BookRecognitionResult {
     title: string;
     author?: string;
@@ -218,25 +221,61 @@ export function getChapterText(content: string, chapter: ChapterInfo): string {
     return lines.slice(chapter.startIndex, chapter.endIndex + 1).join('\n');
 }
 
+/**
+ * 章节识别器。
+ */
 export class ChapterRecognizer {
     constructor() {}
 
+    /**
+     * 识别章节结构。
+     *
+     * @param content - 参数
+     * @param filename? - 参数
+     * @returns 识别结果
+     */
     recognize(content: string, filename?: string): BookRecognitionResult {
         return recognizeChapters(content, filename);
     }
 
+    /**
+     * 抽取标题。
+     *
+     * @param content - 参数
+     * @param filename? - 参数
+     * @returns 标题
+     */
     extractTitle(content: string, filename?: string): string {
         return extractTitle(filename || '', content);
     }
 
+    /**
+     * 抽取作者。
+     *
+     * @param content - 参数
+     * @returns 作者
+     */
     extractAuthor(content: string): string | undefined {
         return extractAuthor(content);
     }
 
+    /**
+     * 统计字数。
+     *
+     * @param text - 参数
+     * @returns 字数
+     */
     countWords(text: string): number {
         return countCjkAndWords(text);
     }
 
+    /**
+     * 取章节文本。
+     *
+     * @param content - 参数
+     * @param chapter - 参数
+     * @returns 文本
+     */
     getChapterText(content: string, chapter: ChapterInfo): string {
         return getChapterText(content, chapter);
     }

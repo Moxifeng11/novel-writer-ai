@@ -1,5 +1,8 @@
 import type { EntityCategory } from './entity-models';
 
+/**
+ * 字段映射。
+ */
 export interface FieldMapping {
     frontmatterKey: string;
     modelKey: string;
@@ -9,6 +12,9 @@ export interface FieldMapping {
     required?: boolean;
 }
 
+/**
+ * 分类映射。
+ */
 export interface CategoryMapping {
     category: EntityCategory;
     nameField: string;
@@ -16,6 +22,9 @@ export interface CategoryMapping {
     frontmatterPrefix?: string;
 }
 
+/**
+ * 实体字段映射表。
+ */
 export const ENTITY_FIELD_MAPPINGS: Record<EntityCategory, CategoryMapping> = {
     character: {
         category: 'character',

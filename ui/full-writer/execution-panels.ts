@@ -7,6 +7,9 @@ import type { StepFailure } from '../../shared/execution-events';
 import type { ExecutionEvent, ExecutionLogEntry, ExecutionRunStore } from './execution-run-store';
 import { formatTime } from './execution-run-store';
 
+/**
+ * 执行面板回调。
+ */
 export interface ExecutionPanelHandlers {
     onRetry: (stepKey: string) => void;
     onOpenLog: () => void;
@@ -20,6 +23,9 @@ const LEVEL_ICON: Record<string, string> = {
     error: '✕',
 };
 
+/**
+ * 执行时间线面板。
+ */
 export class ExecutionTimelinePanel {
     private unsubscribe: (() => void) | null = null;
     private root: HTMLElement | null = null;
@@ -31,6 +37,11 @@ export class ExecutionTimelinePanel {
         private readonly handlers: ExecutionPanelHandlers,
     ) {}
 
+    /**
+     * 挂载面板。
+     *
+     * @param container - 参数
+     */
     mount(container: HTMLElement): void {
         this.destroy();
         const root = container.createDiv({ cls: 'nw-exec-timeline' });
@@ -57,6 +68,9 @@ export class ExecutionTimelinePanel {
         this.render();
     }
 
+    /**
+     * 销毁面板。
+     */
     destroy(): void {
         this.unsubscribe?.();
         this.unsubscribe = null;
@@ -208,6 +222,9 @@ function kindLabel(kind: StepFailure['kind']): string {
 
 type LogFilter = 'all' | 'error' | 'warning' | 'debug';
 
+/**
+ * 执行日志面板。
+ */
 export class ExecutionLogPanel {
     private root: HTMLElement | null = null;
     private list: HTMLElement | null = null;
@@ -219,6 +236,11 @@ export class ExecutionLogPanel {
 
     constructor(private readonly store: ExecutionRunStore) {}
 
+    /**
+     * 挂载面板。
+     *
+     * @param host - 参数
+     */
     mount(host: HTMLElement): void {
         this.unsubscribe?.();
         this.root?.remove();
@@ -273,6 +295,9 @@ export class ExecutionLogPanel {
         this.setExpanded(this.expanded);
     }
 
+    /**
+     * 销毁面板。
+     */
     destroy(): void {
         this.unsubscribe?.();
         this.unsubscribe = null;
@@ -283,6 +308,11 @@ export class ExecutionLogPanel {
         this.badge = null;
     }
 
+    /**
+     * 展开/收起。
+     *
+     * @param expanded - 参数
+     */
     setExpanded(expanded: boolean): void {
         this.expanded = expanded;
         this.panel?.toggleClass('nw-exec-log-panel-open', expanded);
@@ -290,6 +320,10 @@ export class ExecutionLogPanel {
         if (expanded) this.render();
     }
 
+    /**
+     * 是否展开。
+     * @returns 布尔值
+     */
     isExpanded(): boolean {
         return this.expanded;
     }
