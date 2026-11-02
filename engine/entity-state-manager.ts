@@ -16,6 +16,7 @@ import type { NovelWriterPluginAPI } from '../plugin-api';
 import type { CharacterRepository } from './repository';
 import type { EngineRegistry } from './engine-registry';
 import { createLogger } from '../shared/logger';
+import { setFrontmatterValue } from '../shared/frontmatter';
 
 
 const log = createLogger('EntityStateManager');
@@ -433,18 +434,8 @@ ${bodyContent.slice(0, 6000)}
      * 更新 frontmatter 中的单个字段
      */
     private updateFrontmatterField(content: string, fieldName: string, value: string): string {
-        const fieldRegex = new RegExp(`^(${fieldName}\\s*:).+$`, 'm');
-        const newLine = `${fieldName}: ${value}`;
-
-        if (fieldRegex.test(content)) {
-            return content.replace(fieldRegex, `$1 ${value}`);
-        } else {
-            // 字段不存在，在 --- 后插入
-            return content.replace(
-                /^(---\s*\n)/m,
-                `$1${newLine}\n`
-            );
-        }
+        // 统一走 shared/frontmatter：空值行与历史重复键都能正确收敛（旧实现会插出重复键）
+        return setFrontmatterValue(content, fieldName, value);
     }
 
     /**

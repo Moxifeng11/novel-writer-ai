@@ -28,6 +28,7 @@ import {
     mkdirp 
 } from '../utils/helpers';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { setFrontmatterValue } from '../shared/frontmatter';
 import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
 import { createLogger } from '../shared/logger';
 import { resolveTaskModelConfig } from '../shared/task-model';
@@ -36,6 +37,8 @@ import { parseReport } from './settlement/report-parser';
 
 
 const log = createLogger('AnalysisReportEngine');
+/** 分析子任务（角色状态/时间线提取）送入模型的正文上限；超过部分不再参与检测 */
+const ANALYSIS_BODY_SLICE = 12_000;
 /**
  * v6.0 智能分析报告引擎
  * 
@@ -556,8 +559,8 @@ export class AnalysisReportEngine {
 
 【涉及角色】${charNames.join('、')}
 
-【正文内容】（前 5000 字）：
-${chapterText.slice(0, 5000)}
+【正文内容】（前 12000 字）：
+${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
 
 【输出】仅输出 JSON 数组：`;
 
@@ -901,8 +904,8 @@ ${chapterText.slice(0, 5000)}
 4. importance: high=主线重大事件, medium=重要支线, low=次要事件
 5. event 描述简洁，不超过20字
 
-【正文内容】（前 5000 字）：
-${chapterText.slice(0, 5000)}
+【正文内容】（前 12000 字）：
+${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
 
 【输出】仅输出 JSON 数组：`;
 
@@ -1222,17 +1225,8 @@ ${chapterText.slice(0, 5000)}
     }
 
     private updateFrontmatterField(content: string, fieldName: string, value: string): string {
-        const fieldRegex = new RegExp(`^(${fieldName}\\s*:).+$`, 'm');
-        const newLine = `${fieldName}: ${value}`;
-
-        if (fieldRegex.test(content)) {
-            return content.replace(fieldRegex, `$1 ${value}`);
-        } else {
-            return content.replace(
-                /^(---\s*\n)/m,
-                `$1${newLine}\n`
-            );
-        }
+        // 统一走 shared/frontmatter：空值行与历史重复键都能正确收敛（旧实现会插出重复键）
+        return setFrontmatterValue(content, fieldName, value);
     }
 
     private async applyForeshadowChanges(

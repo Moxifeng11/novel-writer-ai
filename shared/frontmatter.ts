@@ -94,3 +94,84 @@ export function parseMarkdownContent(content: string): MarkdownContent {
 
     return { raw: content, sections };
 }
+
+/**
+ * frontmatter 写入护栏：历史数据里可能出现同名重复键
+ * （旧版 `updateFrontmatterField` 对空值行 `key:` 匹配失败后又在顶部插入同名键）。
+ * Obsidian 的 processFrontMatter 解析 YAML 时会抛
+ * `Map keys must be unique`，导致结算等写操作整体失败。
+ */
+
+const FM_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
+const TOP_LEVEL_KEY = /^([^\s#][^:]*)[ \t]*:/;
+
+/**
+ * 去除 frontmatter 中的重复顶层键：保留首次出现，丢弃后续重复。
+ * frontmatter 之外的正文不动；缩进行（列表/嵌套）不视为键。
+ *
+ * @param content - 完整 Markdown 文本
+ * @returns 去重后的文本（无 frontmatter 或无重复时原样返回）
+ */
+export function dedupeFrontmatterKeys(content: string): string {
+    const match = content.match(FM_BLOCK);
+    if (!match) return content;
+
+    const lines = match[1].split(/\r?\n/);
+    const seen = new Set<string>();
+    const kept: string[] = [];
+    for (const line of lines) {
+        const keyMatch = line.match(TOP_LEVEL_KEY);
+        if (keyMatch) {
+            const key = keyMatch[1].trim();
+            if (seen.has(key)) continue;
+            seen.add(key);
+        }
+        kept.push(line);
+    }
+
+    const deduped = kept.join('\n');
+    if (deduped === match[1]) return content;
+    const rest = content.slice(match[0].length);
+    return `---\n${deduped}\n---${rest.startsWith('\n') || rest === '' ? rest : `\n${rest}`}`;
+}
+
+/**
+ * 设置 frontmatter 顶层键的值（字符串/数字/布尔）。
+ *
+ * 与旧的字符串级 `updateFrontmatterField` 相比：
+ * - 空值行 `key:` 也能命中（旧正则要求冒号后至少 1 个字符，命中失败后会在
+ *   顶部再插一个同名键，制造重复）；
+ * - 已有重复键时会收敛成一行，而不是继续追加；
+ * - 不存在时插入到 frontmatter 开头。
+ *
+ * @param content - 完整 Markdown 文本
+ * @param key - 顶层键名
+ * @param value - 写入值（原样序列化，不做引号处理）
+ * @returns 更新后的文本
+ */
+export function setFrontmatterValue(content: string, key: string, value: string | number | boolean): string {
+    const fm = content.match(FM_BLOCK);
+    if (!fm) return content;
+
+    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // 不带 g：逐行 test 时 lastIndex 会跨行推进，导致漏判重复键
+    const keyLine = new RegExp(`^[ \t]*${escaped}[ \t]*:.*$`, 'm');
+    const lines = fm[1].split(/\r?\n/);
+    const newLine = `${key}: ${value}`;
+    let replaced = false;
+    const out: string[] = [];
+    for (const line of lines) {
+        if (keyLine.test(line)) {
+            if (!replaced) {
+                out.push(newLine);
+                replaced = true;
+            }
+            // 其余同名重复行直接丢弃
+            continue;
+        }
+        out.push(line);
+    }
+    if (!replaced) out.unshift(newLine);
+
+    return content.replace(FM_BLOCK, `---\n${out.join('\n')}\n---\n`);
+}

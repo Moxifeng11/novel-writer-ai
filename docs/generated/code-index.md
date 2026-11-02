@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 130241 | 1533 | 1302 | 85% |
+| `engine/` | 289 | 130226 | 1533 | 1302 | 85% |
 | `services/` | 28 | 11363 | 151 | 136 | 90% |
-| `shared/` | 164 | 37179 | 1512 | 1265 | 84% |
+| `shared/` | 164 | 37277 | 1514 | 1267 | 84% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 762 | 30 | 22 | 73% |
 | `ui/` | 191 | 96690 | 500 | 462 | 92% |
@@ -67,7 +67,7 @@
 | `engine/ai-scene-generator.ts` | 289 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
-| `engine/analysis-report-engine.ts` | 1401 | 1 | 1 |
+| `engine/analysis-report-engine.ts` | 1395 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 679 | 1 | 1 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/bases-generator.ts` | 249 | 8 | 6 |
@@ -137,7 +137,7 @@
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
 | `engine/entity-scorer.ts` | 182 | 6 | 5 |
-| `engine/entity-state-manager.ts` | 527 | 4 | 3 |
+| `engine/entity-state-manager.ts` | 518 | 4 | 3 |
 | `engine/export/docx-builder.ts` | 227 | 1 | 1 |
 | `engine/export/epub-builder.ts` | 399 | 7 | 7 |
 | `engine/export/manuscript-compiler.ts` | 288 | 12 | 12 |
@@ -363,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 954 | 3 | 3 |
+| `shared/changelog-data.ts` | 956 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -407,12 +407,12 @@
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 165 | 9 | 9 |
 | `shared/file-path-guard.ts` | 174 | 10 | 10 |
-| `shared/file-system-port.ts` | 760 | 8 | 8 |
+| `shared/file-system-port.ts` | 775 | 8 | 8 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
 | `shared/format-constants.ts` | 503 | 65 | 13 |
 | `shared/frontmatter-schema.ts` | 307 | 13 | 9 |
-| `shared/frontmatter.ts` | 97 | 4 | 3 |
+| `shared/frontmatter.ts` | 178 | 6 | 5 |
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
 | `shared/github-repo.ts` | 57 | 9 | 9 |
 | `shared/http-request.ts` | 124 | 7 | 3 |

@@ -26,6 +26,7 @@
  */
 
 import { TFile, TFolder } from 'obsidian';
+import { dedupeFrontmatterKeys } from './frontmatter';
 
 /**
  * 文件系统操作接口
@@ -484,7 +485,21 @@ export class ObsidianFrontmatter implements FrontmatterPort {
      * @param updater - 修改函数
      */
     async processFrontmatter(file: TFile, updater: (fm: Record<string, unknown>) => void): Promise<void> {
-        await this.app.fileManager.processFrontMatter(file, updater);
+        try {
+            await this.app.fileManager.processFrontMatter(file, updater);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            // 历史数据可能带有重复顶层键（旧版字符串级更新器造成），
+            // Obsidian 解析 YAML 时会抛 `Map keys must be unique` 导致结算等写操作整体失败。
+            // 这里去重后重试一次：保留首次出现的键，丢弃后续重复。
+            if (!/keys? must be unique|duplicate/i.test(message)) throw error;
+            const content = await this.app.vault.read(file);
+            const deduped = dedupeFrontmatterKeys(content);
+            if (deduped !== content) {
+                await this.app.vault.modify(file, deduped);
+            }
+            await this.app.fileManager.processFrontMatter(file, updater);
+        }
     }
 }
 
