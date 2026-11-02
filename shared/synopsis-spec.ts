@@ -5,15 +5,27 @@
  * 爽点承诺、终局悬念；四种风格各生成一版，用户挑最有感觉的。
  */
 
+/**
+ * 简介风格。
+ */
 export type SynopsisStyle = 'hook' | 'satisfaction' | 'character' | 'world';
+/**
+ * 简介长度档。
+ */
 export type SynopsisLength = 'short' | 'standard' | 'long';
 
+/**
+ * 风格元数据。
+ */
 export interface SynopsisStyleMeta {
     label: string;
     description: string;
     targetChars: number;
 }
 
+/**
+ * 风格元数据表。
+ */
 export const SYNOPSIS_STYLE_META: Record<SynopsisStyle, SynopsisStyleMeta> = {
     hook: { label: '悬念型', description: '异常开局 + 真相悬念，先让读者想问“然后呢”', targetChars: 240 },
     satisfaction: { label: '爽点型', description: '困境 + 金手指 + 连续打脸/升级承诺', targetChars: 260 },
@@ -21,12 +33,18 @@ export const SYNOPSIS_STYLE_META: Record<SynopsisStyle, SynopsisStyleMeta> = {
     world: { label: '世界观型', description: '独特规则 + 主角在规则中的位置与代价', targetChars: 260 },
 };
 
+/**
+ * 长度范围。
+ */
 export const SYNOPSIS_LENGTH_RANGE: Record<SynopsisLength, { min: number; max: number; label: string }> = {
     short: { min: 120, max: 180, label: '短版 120-180 字' },
     standard: { min: 220, max: 320, label: '标准版 220-320 字' },
     long: { min: 350, max: 500, label: '长版 350-500 字' },
 };
 
+/**
+ * 简介变体。
+ */
 export interface SynopsisVariant {
     style: SynopsisStyle;
     title: string;
@@ -35,6 +53,9 @@ export interface SynopsisVariant {
     selfCheck?: string;
 }
 
+/**
+ * 简介上下文。
+ */
 export interface SynopsisContext {
     project: string;
     genre: string;
@@ -45,6 +66,9 @@ export interface SynopsisContext {
     openPromises: string;
 }
 
+/**
+ * 简介提示词。
+ */
 export interface SynopsisPrompts {
     system: string;
     user: string;
@@ -56,6 +80,9 @@ const NEGATIVE_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
     { pattern: /^(?:[^。！？]{0,6})[，,]\s*(?:[^。！？]{0,6})[，,]/, message: '开头不要在背景信息上绕圈，先给钩子' },
 ];
 
+/**
+ * 简介评分表。
+ */
 export const SYNOPSIS_RUBRIC = [
     { key: 'hook', label: '首屏钩子', weight: 20 },
     { key: 'agency', label: '主角主动性', weight: 15 },
@@ -67,6 +94,13 @@ export const SYNOPSIS_RUBRIC = [
     { key: 'platform', label: '平台适配', weight: 5 },
 ] as const;
 
+/**
+ * 构建简介提示词。
+ *
+ * @param ctx - 参数
+ * @param length - 参数
+ * @returns 提示词
+ */
 export function buildSynopsisPrompts(
     ctx: SynopsisContext,
     length: SynopsisLength = 'standard',
@@ -118,6 +152,12 @@ ${ctx.openPromises || '未设定'}
     };
 }
 
+/**
+ * 解析简介变体。
+ *
+ * @param content - 参数
+ * @returns 变体数组
+ */
 export function parseSynopsisVariants(content: string): SynopsisVariant[] {
     const cleaned = String(content || '')
         .replace(/```json\s*/gi, '')
@@ -167,12 +207,23 @@ export function parseSynopsisVariants(content: string): SynopsisVariant[] {
     return variants;
 }
 
+/**
+ * 简介校验结果。
+ */
 export interface SynopsisValidation {
     score: number;
     issues: string[];
     charCount: number;
 }
 
+/**
+ * 校验简介文本。
+ *
+ * @param text - 参数
+ * @param style - 参数
+ * @param length - 参数
+ * @returns 校验结果
+ */
 export function validateSynopsisText(text: string, style: SynopsisStyle, length: SynopsisLength = 'standard'): SynopsisValidation {
     const charCount = countChars(text);
     const issues: string[] = [];
@@ -195,6 +246,12 @@ export function validateSynopsisText(text: string, style: SynopsisStyle, length:
     return { score: Math.max(0, 90 - penalty), issues, charCount };
 }
 
+/**
+ * 统计字符数。
+ *
+ * @param text - 参数
+ * @returns 数量
+ */
 export function countChars(text: string): number {
     return (text || '').replace(/\s/g, '').length;
 }
@@ -207,6 +264,12 @@ function normalizeStyle(raw: unknown): SynopsisStyle {
     return 'hook';
 }
 
+/**
+ * 风格中文名。
+ *
+ * @param style - 参数
+ * @returns 名称
+ */
 export function styleLabel(style: SynopsisStyle): string {
     return SYNOPSIS_STYLE_META[style]?.label || style;
 }

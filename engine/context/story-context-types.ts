@@ -15,6 +15,9 @@ import type { SceneCardFields } from '../../shared/scene-card';
 import type { StoryLinkage } from '../story-linkage';
 import type { GatheredContext } from './context-types';
 
+/**
+ * 故事上下文节点类型。
+ */
 export type StoryContextKind =
     | 'worldview'
     | 'setting'
@@ -27,10 +30,19 @@ export type StoryContextKind =
     | 'scene'
     | 'emotion';
 
+/**
+ * 上下文预算层级。
+ */
 export type StoryContextTier = 'local' | 'cloud';
 
+/**
+ * 使用场景（一键/协同）。
+ */
 export type StoryContextMode = 'one-click' | 'co-write';
 
+/**
+ * 节点关联原因。
+ */
 export type StoryContextLinkReason =
     | 'scene-explicit'
     | 'scene-mention'
@@ -41,12 +53,18 @@ export type StoryContextLinkReason =
     | 'story-linkage'
     | 'alias';
 
+/**
+ * 上下文关联边。
+ */
 export interface StoryContextLink {
     targetId: string;
     reason: StoryContextLinkReason;
     weight: number;
 }
 
+/**
+ * 上下文节点。
+ */
 export interface StoryContextNode {
     id: string;
     kind: StoryContextKind;
@@ -70,6 +88,9 @@ export interface StoryContextNode {
     metadata: Record<string, unknown>;
 }
 
+/**
+ * 上下文图。
+ */
 export interface StoryContextGraph {
     project: string;
     chapterName: string;
@@ -84,6 +105,9 @@ export interface StoryContextGraph {
     warnings: string[];
 }
 
+/**
+ * 上下文请求。
+ */
 export interface StoryContextRequest {
     mode: StoryContextMode;
     tier: StoryContextTier;
@@ -102,6 +126,9 @@ export interface StoryContextRequest {
     pinnedIds?: string[];
 }
 
+/**
+ * 按类型的遥测。
+ */
 export interface StoryContextKindTelemetry {
     total: number;
     included: number;
@@ -109,6 +136,9 @@ export interface StoryContextKindTelemetry {
     truncated: number;
 }
 
+/**
+ * 上下文遥测。
+ */
 export interface StoryContextTelemetry {
     tier: StoryContextTier;
     mode: StoryContextMode;
@@ -129,6 +159,9 @@ export interface StoryContextTelemetry {
     warnings: string[];
 }
 
+/**
+ * 上下文包。
+ */
 export interface StoryContextBundle {
     tier: StoryContextTier;
     mode: StoryContextMode;
@@ -141,6 +174,9 @@ export interface StoryContextBundle {
     formattedCrossLink: string;
 }
 
+/**
+ * 上下文来源。
+ */
 export interface StoryContextSource {
     project: string;
     chapterName: string;
@@ -154,6 +190,9 @@ export interface StoryContextSource {
     precedingText?: string;
 }
 
+/**
+ * 上下文画像。
+ */
 export interface StoryContextProfile {
     tier: StoryContextTier;
     /** 信息包自身的 token 上限 */

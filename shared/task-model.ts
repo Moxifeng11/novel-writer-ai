@@ -13,6 +13,9 @@ import { resolveProviderSourceType } from './model-source';
 
 import { planTaskBudget, TASK_CATEGORY, type BudgetTier } from './task-budget-engine';
 
+/**
+ * AI 任务类型。
+ */
 export type AiTask =
     | 'default'
     | 'planning'
@@ -23,11 +26,17 @@ export type AiTask =
     | 'fingerprint'
     | 'cowrite';
 
+/**
+ * 思考模式。
+ */
 export type ThinkingMode = 'off' | 'auto' | 'on';
 
 /** 四级思考能力：极速 / 标准 / 深度 / 极限 */
 export type ThinkingLevel = 'fast' | 'standard' | 'deep' | 'max';
 
+/**
+ * 思考等级规格。
+ */
 export interface ThinkingLevelSpec {
     level: ThinkingLevel;
     label: string;
@@ -36,6 +45,9 @@ export interface ThinkingLevelSpec {
     description: string;
 }
 
+/**
+ * 思考等级表。
+ */
 export const THINKING_LEVELS: ThinkingLevelSpec[] = [
     { level: 'fast', label: '极速', percent: 0, mode: 'off', description: '关闭思考，最低延迟与成本；适合快速草稿、格式整理。' },
     { level: 'standard', label: '标准', percent: 35, mode: 'auto', description: '由供应商决定是否思考，默认强度；适合大多数规划与正文。' },
@@ -43,21 +55,45 @@ export const THINKING_LEVELS: ThinkingLevelSpec[] = [
     { level: 'max', label: '极限', percent: 100, mode: 'on', description: '最大思考预算，适合高难推理；延迟与费用最高。' },
 ];
 
+/**
+ * 夹取思考强度。
+ *
+ * @param value - 参数
+ * @returns 强度
+ */
 export function clampThinkingIntensity(value: number): number {
     if (!Number.isFinite(value)) return 0;
     return Math.max(0, Math.min(100, Math.round(value)));
 }
 
+/**
+ * 取思考等级规格。
+ *
+ * @param level - 参数
+ * @returns 规格
+ */
 export function thinkingLevelSpec(level: ThinkingLevel | undefined): ThinkingLevelSpec {
     return THINKING_LEVELS.find(item => item.level === level) || THINKING_LEVELS[1];
 }
 
+/**
+ * 思考模式→等级。
+ *
+ * @param mode - 参数
+ * @returns 等级
+ */
 export function thinkingLevelFromMode(mode: ThinkingMode | undefined): ThinkingLevel {
     if (mode === 'off') return 'fast';
     if (mode === 'on') return 'deep';
     return 'standard';
 }
 
+/**
+ * 思考模式→强度。
+ *
+ * @param mode - 参数
+ * @returns 强度
+ */
 export function thinkingIntensityFromMode(mode: ThinkingMode | undefined): number {
     return thinkingLevelSpec(thinkingLevelFromMode(mode)).percent;
 }
@@ -70,6 +106,9 @@ export function nearestThinkingLevel(intensity: number): ThinkingLevel {
     ).level;
 }
 
+/**
+ * 任务预算覆盖。
+ */
 export interface TaskBudgetOverride {
     model?: string;
     maxInputTokens?: number;
@@ -82,6 +121,9 @@ export interface TaskBudgetOverride {
     thinkingIntensity?: number;
 }
 
+/**
+ * 任务模型提供方。
+ */
 export interface TaskModelProvider {
     id: string;
     endpoint: string;
@@ -89,6 +131,9 @@ export interface TaskModelProvider {
     sourceType?: 'cloud' | 'local';
 }
 
+/**
+ * 任务模型设置。
+ */
 export interface TaskModelSettings {
     defaultModel: string;
     flashModel: string;
@@ -114,11 +159,17 @@ export interface TaskModelSettings {
     budgetTier?: BudgetTier;
 }
 
+/**
+ * 模型上下文/输出上限。
+ */
 export interface ModelLimits {
     maxContext: number;
     maxOutput: number;
 }
 
+/**
+ * 任务模型配置。
+ */
 export interface TaskModelConfig extends ModelLimits {
     task: AiTask;
     model: string;

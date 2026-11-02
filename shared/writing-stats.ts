@@ -9,8 +9,14 @@
  * - 日期一律按本地时区取 `YYYY-MM-DD`，不做 UTC 换算——用户认知里的「今天」是本地今天。
  */
 
+/**
+ * 日期→字数映射。
+ */
 export type DayMap = Record<string, number>;
 
+/**
+ * 统计文件快照。
+ */
 export interface WritingStatsFileSnapshot {
     /** 最近一次见到的字数 */
     count: number;
@@ -20,6 +26,9 @@ export interface WritingStatsFileSnapshot {
     project: string;
 }
 
+/**
+ * 写作统计数据。
+ */
 export interface WritingStatsData {
     version: 1;
     /** 全局：日期 → 当日新增字数 */
@@ -31,11 +40,17 @@ export interface WritingStatsData {
     updatedAt: number;
 }
 
+/**
+ * 单日数据点。
+ */
 export interface DayPoint {
     date: string;
     words: number;
 }
 
+/**
+ * 统计摘要。
+ */
 export interface StatsSummary {
     today: number;
     week: number;
@@ -52,6 +67,10 @@ export interface StatsSummary {
     monthly: DayPoint[];
 }
 
+/**
+ * 创建空统计。
+ * @returns 统计数据
+ */
 export function createEmptyWritingStats(): WritingStatsData {
     return { version: 1, days: {}, projects: {}, files: {}, updatedAt: 0 };
 }
@@ -66,6 +85,12 @@ export function localDayKey(date: Date | number): string {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
+/**
+ * 当天起点。
+ *
+ * @param date - 参数
+ * @returns 日期
+ */
 export function startOfDay(date: Date | number): Date {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -81,18 +106,38 @@ export function startOfWeek(date: Date | number): Date {
     return d;
 }
 
+/**
+ * 本月起点。
+ *
+ * @param date - 参数
+ * @returns 日期
+ */
 export function startOfMonth(date: Date | number): Date {
     const d = startOfDay(date);
     d.setDate(1);
     return d;
 }
 
+/**
+ * 加/减天数。
+ *
+ * @param date - 参数
+ * @param days - 参数
+ * @returns 日期
+ */
 export function addDays(date: Date | number, days: number): Date {
     const d = new Date(date);
     d.setDate(d.getDate() + days);
     return d;
 }
 
+/**
+ * 加/减月数。
+ *
+ * @param date - 参数
+ * @param months - 参数
+ * @returns 日期
+ */
 export function addMonths(date: Date | number, months: number): Date {
     const d = new Date(date);
     d.setMonth(d.getMonth() + months);
@@ -132,6 +177,12 @@ export function computeStreak(days: DayMap, now: Date | number = Date.now()): nu
     return streak;
 }
 
+/**
+ * 最佳单日。
+ *
+ * @param days - 参数
+ * @returns 数据点或 null
+ */
 export function findBestDay(days: DayMap): DayPoint | null {
     let best: DayPoint | null = null;
     for (const [date, words] of Object.entries(days)) {
@@ -177,6 +228,13 @@ export function monthlySeries(days: DayMap, now: Date | number = Date.now(), cou
     return points;
 }
 
+/**
+ * 生成统计摘要。
+ *
+ * @param days - 参数
+ * @param now - 参数
+ * @returns 摘要
+ */
 export function summarize(days: DayMap, now: Date | number = Date.now()): StatsSummary {
     const todayDate = new Date(now);
     const today = wordsOn(days, localDayKey(todayDate));
@@ -199,11 +257,21 @@ export function summarize(days: DayMap, now: Date | number = Date.now()): StatsS
     };
 }
 
+/**
+ * 统计报告。
+ */
 export interface StatsReport {
     global: StatsSummary;
     byProject: Record<string, StatsSummary>;
 }
 
+/**
+ * 生成统计报告。
+ *
+ * @param data - 参数
+ * @param now - 参数
+ * @returns 报告
+ */
 export function buildReport(data: WritingStatsData, now: Date | number = Date.now()): StatsReport {
     const byProject: Record<string, StatsSummary> = {};
     for (const [project, days] of Object.entries(data.projects || {})) {

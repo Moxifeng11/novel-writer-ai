@@ -6,9 +6,9 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 847 | 68% | 743 |
+| `engine/` | 271 | 1508 | 963 | 64% | 1253 | 847 | 68% | 743 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 149 | 74% | 66 |
-| `shared/` | 163 | 1517 | 1093 | 72% | 149 | 132 | 89% | 457 |
+| `shared/` | 163 | 1517 | 1136 | 75% | 149 | 135 | 91% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 286 | 45% | 162 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -22,16 +22,10 @@
 | `engine/knowledge-tags.ts` | 2 | 2 | 12 | 12 |
 | `engine/plot-divergence-engine.ts` | 8 | 7 | 7 | 7 |
 | `engine/writing-profile.ts` | 8 | 8 | 7 | 6 |
-| `shared/synopsis-spec.ts` | 15 | 14 | 0 | 0 |
-| `engine/context/story-context-types.ts` | 13 | 13 | 0 | 0 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 17 | 0 | 15 | 13 |
 | `engine/outline-to-text-expander.ts` | 8 | 7 | 6 | 6 |
 | `engine/streaming/stream-parser.ts` | 9 | 9 | 4 | 4 |
 | `engine/template-service.ts` | 2 | 2 | 12 | 11 |
-| `engine/writing-quality-engine.ts` | 13 | 13 | 8 | 0 |
-| `shared/file-cache.ts` | 3 | 3 | 10 | 10 |
-| `shared/task-model.ts` | 19 | 13 | 0 | 0 |
-| `shared/writing-stats.ts` | 25 | 13 | 0 | 0 |
 | `engine/deconstructors/technique-deconstructor.ts` | 5 | 5 | 7 | 7 |
 | `engine/harness/tool-registry.ts` | 6 | 6 | 6 | 6 |
 | `engine/repository/domain/serializers/entity-factory.ts` | 1 | 0 | 12 | 12 |
@@ -45,3 +39,9 @@
 | `engine/knowledge-vector-store.ts` | 5 | 4 | 13 | 7 |
 | `engine/step-runner.ts` | 1 | 0 | 17 | 11 |
 | `shared/canon-source.ts` | 18 | 11 | 0 | 0 |
+| `shared/multi-layer-cache.ts` | 6 | 6 | 16 | 5 |
+| `shared/prompt-manager-types.ts` | 11 | 11 | 0 | 0 |
+| `ui/views/writing-fingerprint-view.ts` | 3 | 3 | 8 | 8 |
+| `engine/cache/preload-manager.ts` | 6 | 0 | 25 | 10 |
+| `engine/harness/rule-engine.ts` | 8 | 8 | 2 | 2 |
+| `engine/harness/trend-research-service.ts` | 8 | 8 | 2 | 2 |

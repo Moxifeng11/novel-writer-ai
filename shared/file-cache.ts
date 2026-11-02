@@ -19,6 +19,9 @@ const log = createLogger('FileCache');
 // 一、类型定义
 // ============================================================
 
+/**
+ * 文件缓存条目。
+ */
 export interface FileCacheEntry<T> {
     /**
      * 仅内存持有；index.json 只落元数据（value 单独写在 key 文件里）。
@@ -32,6 +35,9 @@ export interface FileCacheEntry<T> {
     size: number;
 }
 
+/**
+ * 文件缓存选项。
+ */
 export interface FileCacheOptions {
     cacheDir?: string;
     ttlMs?: number;
@@ -55,6 +61,9 @@ interface HeapEntry {
 // 二、文件缓存实现
 // ============================================================
 
+/**
+ * 文件缓存（按修改时间失效）。
+ */
 export class FileCache {
     private fs: FileSystemPort;
     private options: Required<FileCacheOptions>;
@@ -132,6 +141,12 @@ export class FileCache {
         this.persistIndex();
     }
 
+    /**
+     * 删除缓存项。
+     *
+     * @param key - 参数
+     * @returns 是否删除
+     */
     async delete(key: string): Promise<boolean> {
         await this.ensureIndexLoaded();
 
@@ -151,6 +166,12 @@ export class FileCache {
         return true;
     }
 
+    /**
+     * 是否存在。
+     *
+     * @param key - 参数
+     * @returns 布尔值
+     */
     async has(key: string): Promise<boolean> {
         await this.ensureIndexLoaded();
 
@@ -165,6 +186,9 @@ export class FileCache {
         return true;
     }
 
+    /**
+     * 清空缓存。
+     */
     async clear(): Promise<void> {
         const keys = Array.from(this.index.keys());
         for (const key of keys) {

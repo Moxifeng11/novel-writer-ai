@@ -21,9 +21,18 @@ import {
 } from '../shared/thresholds';
 
 export type { QualityGrade };
+/**
+ * 建议优先级。
+ */
 export type SuggestionPriority = 'high' | 'medium' | 'low';
+/**
+ * 质量趋势。
+ */
 export type QualityTrend = 'rising' | 'falling' | 'stable';
 
+/**
+ * 质量建议。
+ */
 export interface QualitySuggestion {
   id: string;
   dimension: string;
@@ -33,12 +42,18 @@ export interface QualitySuggestion {
   category: 'language' | 'rhythm' | 'character' | 'plot' | 'atmosphere' | 'structure';
 }
 
+/**
+ * 质量维度。
+ */
 export interface QualityDimension {
   score: number;
   details: Record<string, number | string>;
   suggestions: QualitySuggestion[];
 }
 
+/**
+ * 质量评估结果。
+ */
 export interface WritingQualityResult {
   languageQuality: QualityDimension;
   rhythmQuality: QualityDimension;
@@ -57,6 +72,9 @@ export interface WritingQualityResult {
   milestoneReached?: string;
 }
 
+/**
+ * 引擎选项。
+ */
 export interface WritingQualityEngineOptions {
   characterNames?: string[];
   mainlineKeywords?: string[];
@@ -1272,15 +1290,33 @@ export class WritingQualityEngine {
   }
 }
 
+/**
+ * 等级颜色。
+ *
+ * @param grade - 参数
+ * @returns 颜色
+ */
 export function getQualityGradeColor(grade: QualityGrade): string {
   return qualityGradeColor(grade);
 }
 
+/**
+ * 等级中文名。
+ *
+ * @param grade - 参数
+ * @returns 名称
+ */
 export function getQualityGradeLabel(grade: QualityGrade): string {
   return qualityGradeLabel(grade);
 }
 
 // 历史记录从磁盘恢复时 trend 是字符串，这里按字符串收口并提供兜底
+/**
+ * 趋势图标。
+ *
+ * @param trend - 参数
+ * @returns 图标
+ */
 export function getQualityTrendIcon(trend: string): string {
   const icons: Record<string, string> = {
     'rising': '📈',
@@ -1290,6 +1326,12 @@ export function getQualityTrendIcon(trend: string): string {
   return icons[trend] || icons['stable'];
 }
 
+/**
+ * 趋势中文名。
+ *
+ * @param trend - 参数
+ * @returns 名称
+ */
 export function getQualityTrendLabel(trend: string): string {
   const labels: Record<string, string> = {
     'rising': '上升',
@@ -1299,6 +1341,12 @@ export function getQualityTrendLabel(trend: string): string {
   return labels[trend] || labels['stable'];
 }
 
+/**
+ * 优先级颜色。
+ *
+ * @param priority - 参数
+ * @returns 颜色
+ */
 export function getPriorityColor(priority: SuggestionPriority): string {
   const colors: Record<SuggestionPriority, string> = {
     'high': 'var(--nw-danger, #ef4444)',
@@ -1308,6 +1356,12 @@ export function getPriorityColor(priority: SuggestionPriority): string {
   return colors[priority];
 }
 
+/**
+ * 优先级中文名。
+ *
+ * @param priority - 参数
+ * @returns 名称
+ */
 export function getPriorityLabel(priority: SuggestionPriority): string {
   const labels: Record<SuggestionPriority, string> = {
     'high': '高优先级',

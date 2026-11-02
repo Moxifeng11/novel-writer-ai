@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 122495 | 1532 | 617 | 40% |
+| `engine/` | 289 | 122588 | 1532 | 642 | 42% |
 | `services/` | 28 | 10575 | 151 | 75 | 50% |
-| `shared/` | 164 | 32962 | 1512 | 577 | 38% |
+| `shared/` | 164 | 33168 | 1512 | 620 | 41% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 93416 | 500 | 110 | 22% |
@@ -103,7 +103,7 @@
 | `engine/context/incremental-updater.ts` | 286 | 6 | 0 |
 | `engine/context/story-context-graph.ts` | 1530 | 7 | 0 |
 | `engine/context/story-context-service.ts` | 191 | 8 | 3 |
-| `engine/context/story-context-types.ts` | 168 | 13 | 0 |
+| `engine/context/story-context-types.ts` | 207 | 13 | 13 |
 | `engine/craft-constraints.ts` | 69 | 5 | 1 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 655 | 16 | 14 |
@@ -323,7 +323,7 @@
 | `engine/volume-outline-summarizer.ts` | 172 | 2 | 1 |
 | `engine/world-state-snapshot.ts` | 198 | 7 | 0 |
 | `engine/writing-profile.ts` | 505 | 8 | 0 |
-| `engine/writing-quality-engine.ts` | 1319 | 14 | 0 |
+| `engine/writing-quality-engine.ts` | 1373 | 14 | 12 |
 | `services/api-connectivity-service.ts` | 311 | 8 | 7 |
 | `services/canon-research-service.ts` | 435 | 7 | 6 |
 | `services/chapter-recognizer.ts` | 244 | 5 | 1 |
@@ -404,7 +404,7 @@
 | `shared/fanfic-audit.ts` | 347 | 11 | 0 |
 | `shared/fanfic-binding.ts` | 63 | 2 | 2 |
 | `shared/fanfic-rules.ts` | 648 | 25 | 8 |
-| `shared/file-cache.ts` | 427 | 3 | 0 |
+| `shared/file-cache.ts` | 451 | 3 | 3 |
 | `shared/file-mention.ts` | 130 | 9 | 3 |
 | `shared/file-path-guard.ts` | 139 | 10 | 3 |
 | `shared/file-system-port.ts` | 654 | 8 | 8 |
@@ -486,10 +486,10 @@
 | `shared/store/shallow.ts` | 48 | 1 | 1 |
 | `shared/store/types.ts` | 208 | 20 | 20 |
 | `shared/story-structure.ts` | 637 | 23 | 10 |
-| `shared/synopsis-spec.ts` | 212 | 15 | 1 |
+| `shared/synopsis-spec.ts` | 275 | 15 | 15 |
 | `shared/tag-taxonomy.ts` | 125 | 8 | 1 |
 | `shared/task-budget-engine.ts` | 255 | 13 | 4 |
-| `shared/task-model.ts` | 305 | 19 | 2 |
+| `shared/task-model.ts` | 356 | 19 | 15 |
 | `shared/template-scaffold.ts` | 109 | 3 | 1 |
 | `shared/template-validator.ts` | 911 | 26 | 23 |
 | `shared/text-utils.ts` | 42 | 5 | 1 |
@@ -514,7 +514,7 @@
 | `shared/writing-rules-legacy.ts` | 221 | 2 | 1 |
 | `shared/writing-rules-variants.ts` | 189 | 5 | 1 |
 | `shared/writing-rules.ts` | 234 | 2 | 0 |
-| `shared/writing-stats.ts` | 313 | 25 | 2 |
+| `shared/writing-stats.ts` | 381 | 25 | 15 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 515 | 1 | 0 |
 | `ui/agent-workbench-view.ts` | 1587 | 1 | 0 |
