@@ -344,15 +344,30 @@ export class CoWritingView extends ItemView {
       }),
     });
   }
+  /**
+   * 视图类型标识。
+   * @returns 视图类型
+   */
   getViewType() {
     return VIEW_TYPE_CO_WRITE;
   }
+  /**
+   * 侧栏/标签页显示名。
+   * @returns 显示名
+   */
   getDisplayText() {
     return "\u270D\uFE0F \u53E5\u7EA7\u534F\u540C\u5199\u4F5C";
   }
+  /**
+   * 视图图标。
+   * @returns 图标名
+   */
   getIcon() {
     return "pen-nib";
   }
+  /**
+   * 视图打开：渲染布局、绑定事件、恢复章节状态。
+   */
   async onOpen() {
     const { contentEl } = this;
     contentEl.empty();
@@ -385,6 +400,9 @@ export class CoWritingView extends ItemView {
       await this.timeEstimator.loadHistory();
     }
   }
+  /**
+   * 视图关闭：释放编辑器/监听器/定时器。
+   */
   async onClose() {
     this.modelSwitcher?.destroy();
     this.modelSwitcher = null;
@@ -651,6 +669,9 @@ export class CoWritingView extends ItemView {
     };
   }
 
+  /**
+   * 渲染三栏布局（编辑器/建议/辅助面板）。
+   */
   renderLayout() {
     this.mainContainer = this.contentEl.createDiv({ cls: "nw-cowrite-root" });
     const header = this.mainContainer.createDiv({ cls: "nw-cowrite-header" });
@@ -933,6 +954,11 @@ export class CoWritingView extends ItemView {
     this.floatingMetricsSection = this.floatingBody.createDiv({ cls: "nw-float-monitor-section" });
     this.floatingQualitySection = this.floatingBody.createDiv({ cls: "nw-float-monitor-section" });
   }
+  /**
+   * 展开/收起浮动面板。
+   *
+   * @param show? - 参数
+   */
   toggleFloatingPanel(show?: boolean) {
     if (!this.floatingPanel) this.createFloatingPanel();
     if (!this.floatingPanel) return;
@@ -987,6 +1013,9 @@ export class CoWritingView extends ItemView {
       fixBtn.addEventListener("click", () => void this.handleQualityFix(issue));
     }
   }
+  /**
+   * 绑定编辑器与面板事件（含 IME 守卫）。
+   */
   bindEvents() {
     this.rightEditor.addEventListener("keydown", (event: KeyboardEvent) => this.handleEditorKeydown(event));
     this.rightEditor.addEventListener("input", () => {
@@ -1402,6 +1431,11 @@ export class CoWritingView extends ItemView {
     new Notice(`已按小说格式排版：${describeContractShort(contract)}${sourceHint}`, 4000);
   }
 
+  /**
+   * 处理编辑器快捷键（Tab 建议/格式命令）。
+   *
+   * @param event - 参数
+   */
   async handleEditorKeydown(event: KeyboardEvent) {
     // P1-15（v4.27）：中文输入法组合期间不拦截任何按键，
     // 否则 Tab/数字键会被当成「接受建议」，候选词被打断。
@@ -1481,6 +1515,11 @@ export class CoWritingView extends ItemView {
       this.renderEmptySuggestions("\u5DF2\u53D6\u6D88\u5F53\u524D\u5EFA\u8BAE\u3002\u6309 Tab / Ctrl+J \u91CD\u65B0\u751F\u6210\u3002");
     }
   }
+  /**
+   * 触发 Tab 建议生成。
+   *
+   * @param force = false - 参数
+   */
   async handleTabSuggest(force = false) {
     // UX 修复：未绑定章节时 CoWriterEngine 未初始化，原逻辑会空等数十秒才显示「无建议」
     if (!this.project || !this.volume || !this.chapterNum) {
@@ -2052,6 +2091,11 @@ export class CoWritingView extends ItemView {
     });
   }
 
+  /**
+   * 渲染建议卡片列表。
+   *
+   * @param suggestions - 参数
+   */
   renderSuggestionCards(suggestions: SuggestionRecord[]) {
     this.setGhostSuggestion(null);
     this.showSuggestionPanel();
@@ -2084,6 +2128,11 @@ export class CoWritingView extends ItemView {
     });
   }
   // B2: 多轮迭代改写——基于单条候选做定向迭代，不重新生成整组
+  /**
+   * 对单条建议做迭代精修。
+   *
+   * @param suggestion - 参数
+   */
   async handleIterateSuggestion(suggestion: SuggestionRecord) {
     const instruction = await this.promptIterateInstruction();
     if (!instruction)
@@ -2131,12 +2180,21 @@ export class CoWritingView extends ItemView {
     }
   }
   // B2: 弹出输入框获取迭代指令
+  /**
+   * 向用户询问迭代指令。
+   * @returns 指令文本或 null
+   */
   promptIterateInstruction(): Promise<string | null> {
     return new Promise<string | null>((resolve) => {
       const modal = new IterateInstructionModal(this.app, (value) => resolve(value));
       modal.open();
     });
   }
+  /**
+   * 拒绝一条建议。
+   *
+   * @param suggestionId - 参数
+   */
   rejectSuggestion(suggestionId: string) {
     this.currentSuggestions = this.currentSuggestions.filter((s) => s.id !== suggestionId);
     if (this.ghostSuggestion?.id === suggestionId)
@@ -2149,6 +2207,9 @@ export class CoWritingView extends ItemView {
       this.renderEmptySuggestions("\u5DF2\u62D2\u7EDD\u672C\u8F6E\u5EFA\u8BAE\u3002\u6309 Tab / Ctrl+J \u91CD\u65B0\u751F\u6210\u3002");
     }
   }
+  /**
+   * 对选中文本做定向改写。
+   */
   async handleRewriteSelection() {
     const start = this.rightEditor.selectionStart;
     const end = this.rightEditor.selectionEnd;
@@ -2233,6 +2294,9 @@ export class CoWritingView extends ItemView {
       }
     }
   }
+  /**
+   * 把大纲节点展开为正文建议。
+   */
   handleOutlineExpand() {
     const start = this.rightEditor.selectionStart;
     const end = this.rightEditor.selectionEnd;
@@ -2252,6 +2316,9 @@ export class CoWritingView extends ItemView {
     });
     modal.open();
   }
+  /**
+   * 生成联想/关联建议。
+   */
   async handleAssociationSuggest() {
     if (this.isAssociating || this.isSuggesting)
       return;
@@ -2318,6 +2385,12 @@ export class CoWritingView extends ItemView {
       if (associationToken === this.associationSeq) this.isAssociating = false;
     }
   }
+  /**
+   * 渲染联想建议卡片。
+   *
+   * @param associations - 参数
+   * @param suggestions - 参数
+   */
   renderAssociationCards(associations: AssociationSuggestion[], suggestions: SuggestionRecord[]) {
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = `${suggestions.length} 条联想`;
@@ -2357,6 +2430,11 @@ export class CoWritingView extends ItemView {
       card.createDiv();
     }
   }
+  /**
+   * 按序号采纳建议。
+   *
+   * @param index - 参数
+   */
   async acceptByIndex(index: number) {
     // RG-02: 生成/改写进行中时 currentSuggestions 可能仍是上一轮残留，禁止按索引接受
     if (this.isSuggesting) return;
@@ -2366,6 +2444,11 @@ export class CoWritingView extends ItemView {
     if (suggestion)
       await this.handleAcceptSuggestion(suggestion);
   }
+  /**
+   * 采纳建议并写入正文。
+   *
+   * @param suggestion - 参数
+   */
   async handleAcceptSuggestion(suggestion: SuggestionRecord) {
     // 双击「接受」与连按 Tab 都走这里：异步窗口期（历史落盘/预览/指标评估）内必须互斥
     if (this.acceptInFlight) return;
@@ -2376,6 +2459,12 @@ export class CoWritingView extends ItemView {
       this.acceptInFlight = false;
     }
   }
+  /**
+   * 编辑建议后再采纳。
+   *
+   * @param suggestion - 参数
+   * @param initialText? - 参数
+   */
   handleEditSuggestion(suggestion: SuggestionRecord, initialText?: string) {
     const startedAt = Date.now();
     const modal = new SuggestionEditModal(
@@ -2451,6 +2540,14 @@ export class CoWritingView extends ItemView {
     const editBtn = actions.createEl("button", { text: "\u4FEE\u6539\u540E\u518D\u9A8C\u8BC1", cls: "novel-writer-cowrite-secondary-btn" });
     editBtn.addEventListener("click", () => this.handleEditSuggestion(suggestion, modifiedText));
   }
+  /**
+   * 插入文本并记录编辑交互。
+   *
+   * @param text - 参数
+   * @param suggestion - 参数
+   * @param validation - 参数
+   * @param editDurationMs - 参数
+   */
   async insertTextAndRecord(text: string, suggestion: SuggestionRecord, validation: EditValidation | undefined, editDurationMs: number) {
     // NBI-05: 记录接受时的代次，收尾时若已开始新一轮生成则不得覆盖其面板
     const epoch = this.suggestionEpoch;

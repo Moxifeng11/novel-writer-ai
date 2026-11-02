@@ -11,7 +11,7 @@
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 92927 | 500 | 110 | 22% |
+| `ui/` | 191 | 93024 | 500 | 110 | 22% |
 
 ## 文件清单
 
@@ -533,7 +533,7 @@
 | `ui/chapter-version-modal.ts` | 639 | 2 | 0 |
 | `ui/character-recognition-modal.ts` | 216 | 1 | 0 |
 | `ui/co-write-floating-panel.ts` | 895 | 2 | 0 |
-| `ui/co-writing-view.ts` | 5199 | 3 | 0 |
+| `ui/co-writing-view.ts` | 5296 | 3 | 0 |
 | `ui/command-ui-executor.ts` | 618 | 2 | 0 |
 | `ui/components/ai-detection-report.ts` | 97 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 282 | 1 | 1 |
