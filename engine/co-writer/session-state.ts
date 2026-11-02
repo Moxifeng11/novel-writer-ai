@@ -81,6 +81,9 @@ export interface CoWritingSessionState
 // 二、初始状态
 // ============================================================
 
+/**
+ * 初始章节状态。
+ */
 export const initialChapterState: ChapterState = {
     currentProject: '',
     currentVolume: 1,
@@ -91,6 +94,9 @@ export const initialChapterState: ChapterState = {
     chapterStatus: 'draft',
 };
 
+/**
+ * 初始建议状态。
+ */
 export const initialSuggestionState: SuggestionState = {
     suggestions: [],
     selectedSuggestionIndex: -1,
@@ -99,6 +105,9 @@ export const initialSuggestionState: SuggestionState = {
     currentDirection: 'action',
 };
 
+/**
+ * 初始编辑器状态。
+ */
 export const initialEditorState: EditorState = {
     cursorPosition: 0,
     selectedText: '',
@@ -106,6 +115,9 @@ export const initialEditorState: EditorState = {
     editBuffer: '',
 };
 
+/**
+ * 初始指标状态。
+ */
 export const initialMetricsState: MetricsState = {
     plotCompletion: null,
     qualityScore: 0,
@@ -113,12 +125,18 @@ export const initialMetricsState: MetricsState = {
     sessionWordCount: 0,
 };
 
+/**
+ * 初始 UI 状态。
+ */
 export const initialUiState: UiState = {
     rightPanelTab: 'suggestions',
     isPanelExpanded: true,
     fontSize: 16,
 };
 
+/**
+ * 初始会话状态。
+ */
 export const initialCoWritingSessionState: CoWritingSessionState = {
     ...initialChapterState,
     ...initialSuggestionState,
@@ -131,6 +149,9 @@ export const initialCoWritingSessionState: CoWritingSessionState = {
 // 三、Action Types
 // ============================================================
 
+/**
+ * 协同写作动作类型。
+ */
 export type CoWritingActionType =
     | 'chapter/loadChapter'
     | 'chapter/updateChapterContent'
@@ -157,6 +178,9 @@ export type CoWritingActionType =
 // 四、Chapter Slice Action Creators
 // ============================================================
 
+/**
+ * 章节动作创建器。
+ */
 export interface ChapterActionCreators {
     loadChapter: (project: string, volume: number, chapter: number) => Partial<CoWritingSessionState>;
     updateChapterContent: (content: string) => Partial<CoWritingSessionState>;
@@ -164,6 +188,9 @@ export interface ChapterActionCreators {
     setChapterStatus: (status: string) => Partial<CoWritingSessionState>;
 }
 
+/**
+ * 章节动作创建器实例。
+ */
 export const chapterActions: ChapterActionCreators = {
     loadChapter: (project, volume, chapter) => ({
         currentProject: project,
@@ -188,6 +215,9 @@ export const chapterActions: ChapterActionCreators = {
 // 五、Suggestion Slice Action Creators
 // ============================================================
 
+/**
+ * 建议动作创建器。
+ */
 export interface SuggestionActionCreators {
     setSuggestions: (suggestions: Suggestion[]) => Partial<CoWritingSessionState>;
     selectSuggestion: (index: number) => Partial<CoWritingSessionState>;
@@ -196,6 +226,9 @@ export interface SuggestionActionCreators {
     clearSuggestions: () => Partial<CoWritingSessionState>;
 }
 
+/**
+ * 建议动作创建器实例。
+ */
 export const suggestionActions: SuggestionActionCreators = {
     setSuggestions: (suggestions) => ({
         suggestions,
@@ -225,6 +258,9 @@ export const suggestionActions: SuggestionActionCreators = {
 // 六、Editor Slice Action Creators
 // ============================================================
 
+/**
+ * 编辑器动作创建器。
+ */
 export interface EditorActionCreators {
     setCursorPosition: (pos: number) => Partial<CoWritingSessionState>;
     setSelectedText: (text: string) => Partial<CoWritingSessionState>;
@@ -232,6 +268,9 @@ export interface EditorActionCreators {
     setEditBuffer: (text: string) => Partial<CoWritingSessionState>;
 }
 
+/**
+ * 编辑器动作创建器实例。
+ */
 export const editorActions: EditorActionCreators = {
     setCursorPosition: (pos) => ({
         cursorPosition: pos,
@@ -256,6 +295,9 @@ export const editorActions: EditorActionCreators = {
 
 const MAX_EDIT_HISTORY = 100;
 
+/**
+ * 指标动作创建器。
+ */
 export interface MetricsActionCreators {
     setPlotCompletion: (metrics: PlotCompletionMetrics | null) => Partial<CoWritingSessionState>;
     setQualityScore: (score: number) => Partial<CoWritingSessionState>;
@@ -263,6 +305,9 @@ export interface MetricsActionCreators {
     incrementSessionWordCount: (delta: number) => (state: CoWritingSessionState) => Partial<CoWritingSessionState>;
 }
 
+/**
+ * 指标动作创建器实例。
+ */
 export const metricsActions: MetricsActionCreators = {
     setPlotCompletion: (metrics) => ({
         plotCompletion: metrics,
@@ -286,12 +331,18 @@ export const metricsActions: MetricsActionCreators = {
 // 八、UI Slice Action Creators
 // ============================================================
 
+/**
+ * UI 动作创建器。
+ */
 export interface UiActionCreators {
     setRightPanelTab: (tab: string) => Partial<CoWritingSessionState>;
     setPanelExpanded: (expanded: boolean) => Partial<CoWritingSessionState>;
     setFontSize: (size: number) => Partial<CoWritingSessionState>;
 }
 
+/**
+ * UI 动作创建器实例。
+ */
 export const uiActions: UiActionCreators = {
     setRightPanelTab: (tab) => ({
         rightPanelTab: tab,
@@ -310,6 +361,9 @@ export const uiActions: UiActionCreators = {
 // 九、所有 Action Creators 汇总
 // ============================================================
 
+/**
+ * 全部动作创建器集合。
+ */
 export interface AllActionCreators
     extends ChapterActionCreators,
         SuggestionActionCreators,

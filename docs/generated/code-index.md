@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 121336 | 1532 | 563 | 37% |
+| `engine/` | 289 | 121510 | 1532 | 617 | 40% |
 | `services/` | 28 | 10440 | 151 | 75 | 50% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -80,7 +80,7 @@
 | `engine/chapter-context-builder.ts` | 132 | 3 | 3 |
 | `engine/chapter-snapshot-builder.ts` | 141 | 2 | 1 |
 | `engine/chapter-state-snapshot-service.ts` | 173 | 2 | 0 |
-| `engine/chapter-utils.ts` | 402 | 20 | 15 |
+| `engine/chapter-utils.ts` | 405 | 20 | 16 |
 | `engine/character-arc.ts` | 103 | 9 | 1 |
 | `engine/character-consistency-checker.ts` | 541 | 3 | 0 |
 | `engine/character-context.ts` | 39 | 1 | 1 |
@@ -91,7 +91,7 @@
 | `engine/co-writer/co-writer-types.ts` | 89 | 6 | 0 |
 | `engine/co-writer/create-session-store.ts` | 243 | 4 | 2 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
-| `engine/co-writer/session-state.ts` | 597 | 34 | 5 |
+| `engine/co-writer/session-state.ts` | 651 | 34 | 23 |
 | `engine/coherence-checker.ts` | 99 | 3 | 1 |
 | `engine/conflict-detector.ts` | 246 | 4 | 1 |
 | `engine/content-safety-checker.ts` | 106 | 5 | 0 |
@@ -99,14 +99,14 @@
 | `engine/context-manager.ts` | 2615 | 3 | 1 |
 | `engine/context-readiness.ts` | 236 | 3 | 1 |
 | `engine/context/context-diff-detector.ts` | 383 | 5 | 0 |
-| `engine/context/context-types.ts` | 237 | 16 | 1 |
+| `engine/context/context-types.ts` | 279 | 16 | 15 |
 | `engine/context/incremental-updater.ts` | 286 | 6 | 0 |
 | `engine/context/story-context-graph.ts` | 1530 | 7 | 0 |
 | `engine/context/story-context-service.ts` | 191 | 8 | 3 |
 | `engine/context/story-context-types.ts` | 168 | 13 | 0 |
 | `engine/craft-constraints.ts` | 69 | 5 | 1 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
-| `engine/cross-volume-outline-validator.ts` | 625 | 16 | 5 |
+| `engine/cross-volume-outline-validator.ts` | 655 | 16 | 14 |
 | `engine/deconstruction-scheduler.ts` | 2790 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 547 | 3 | 0 |
 | `engine/deconstructors/character-deconstructor.ts` | 4028 | 14 | 14 |
@@ -182,10 +182,10 @@
 | `engine/long-term-memory.ts` | 141 | 6 | 3 |
 | `engine/memory-trigger.ts` | 359 | 13 | 6 |
 | `engine/memory/memory-shard-writer.ts` | 129 | 5 | 3 |
-| `engine/mode-unit-writer.ts` | 416 | 16 | 0 |
+| `engine/mode-unit-writer.ts` | 452 | 16 | 9 |
 | `engine/note-properties-service.ts` | 229 | 12 | 0 |
 | `engine/novel-analyzer.ts` | 419 | 2 | 1 |
-| `engine/outline-contract.ts` | 638 | 21 | 9 |
+| `engine/outline-contract.ts` | 647 | 21 | 12 |
 | `engine/outline-to-text-expander.ts` | 606 | 8 | 1 |
 | `engine/planning-combined.ts` | 215 | 9 | 2 |
 | `engine/planning-step-advance.ts` | 52 | 5 | 2 |

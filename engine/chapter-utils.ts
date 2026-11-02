@@ -7,6 +7,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('ChapterUtils');
+/**
+ * 章节文件类型映射。
+ */
 export const CHAPTER_FILE_TYPES = {
     body: '正文',
     outline: '大纲摘要',

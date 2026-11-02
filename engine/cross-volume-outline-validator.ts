@@ -16,8 +16,14 @@
  *   - 第三代结合两者优势，精确匹配快速短路，模糊匹配兜底召回。
  */
 
+/**
+ * 问题严重度。
+ */
 export type IssueSeverity = 'critical' | 'warning';
 
+/**
+ * 校验问题。
+ */
 export interface ValidationIssue {
     type: string;
     severity: IssueSeverity;
@@ -26,6 +32,9 @@ export interface ValidationIssue {
     relatedVolumes?: number[];
 }
 
+/**
+ * 跨卷校验报告。
+ */
 export interface CrossVolumeValidationReport {
     isValid: boolean;
     criticalIssues: ValidationIssue[];
@@ -33,6 +42,9 @@ export interface CrossVolumeValidationReport {
     checkedAt: number;
 }
 
+/**
+ * 卷冲突信息。
+ */
 export interface VolumeConflictInfo {
     hasConflict: boolean;
     conflictType: 'count_mismatch' | 'range_mismatch' | 'none';
@@ -40,18 +52,27 @@ export interface VolumeConflictInfo {
     details: string;
 }
 
+/**
+ * 蓝图转折点。
+ */
 export interface BlueprintTurningPoint {
     name: string;
     expectedVolume: number;
     expectedChapterRange?: [number, number];
 }
 
+/**
+ * 蓝图伏笔。
+ */
 export interface BlueprintForeshadow {
     name: string;
     buryVolume: number;
     expectedRevealVolume: number;
 }
 
+/**
+ * 蓝图势力事件。
+ */
 export interface BlueprintFactionEvent {
     factionName: string;
     eventType: 'rise' | 'fall' | 'transform';
@@ -174,11 +195,17 @@ export function smartMatchName(name: string, text: string): boolean {
     return fuzzyMatchName(name, text);
 }
 
+/**
+ * 蓝图人物状态。
+ */
 export interface BlueprintCharacterState {
     characterName: string;
     expectedStates: Array<{ volume: number; state: string }>;
 }
 
+/**
+ * 全局故事线蓝图。
+ */
 export interface GlobalStorylineBlueprint {
     turningPoints?: BlueprintTurningPoint[];
     requiredForeshadows?: BlueprintForeshadow[];
@@ -311,6 +338,9 @@ function isActiveState(states: string[]): boolean {
     return states.some(s => ACTIVE_STATES.some(as => s.includes(as)));
 }
 
+/**
+ * 跨卷大纲校验器。
+ */
 export class CrossVolumeOutlineValidator {
     validate(volumes: string[], blueprint: GlobalStorylineBlueprint): CrossVolumeValidationReport {
         const criticalIssues: ValidationIssue[] = [];

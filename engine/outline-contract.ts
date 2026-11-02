@@ -122,6 +122,9 @@ function isBlankValue(value: string | null, hard: boolean): boolean {
 // 二、设置归一化与章号范围契约
 // ============================================================
 
+/**
+ * 规范化后的大纲设置。
+ */
 export interface NormalizedOutlineSettings {
     totalWords: number;
     volumes: number;
@@ -235,6 +238,9 @@ export function normalizeChapterRanges(
 // 三、蓝图契约（结构与字段完整性）
 // ============================================================
 
+/**
+ * 蓝图校验上下文。
+ */
 export interface BlueprintValidationContext {
     volumes: number;
     totalChapters: number;
@@ -372,6 +378,9 @@ export function extractCoveredChapters(content: string, start: number, end: numb
     return covered;
 }
 
+/**
+ * 章节表分析结果。
+ */
 export interface ChapterTableAnalysis {
     inRange: number[];
     outOfRange: number[];

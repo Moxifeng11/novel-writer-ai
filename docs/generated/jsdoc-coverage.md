@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 884 | 59% | 1253 | 683 | 55% | 739 |
+| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 683 | 55% | 739 |
 | `services/` | 28 | 151 | 110 | 73% | 202 | 123 | 61% | 66 |
 | `shared/` | 163 | 1517 | 964 | 64% | 149 | 89 | 60% | 457 |
 | `ui/` | 189 | 493 | 183 | 37% | 632 | 206 | 33% | 161 |
@@ -30,7 +30,6 @@
 | `ui/full-writer/full-writer-store.ts` | 5 | 5 | 17 | 17 |
 | `engine/writing-quality-engine.ts` | 13 | 13 | 8 | 8 |
 | `shared/webnovel-knowledge-base.ts` | 7 | 7 | 14 | 14 |
-| `engine/co-writer/session-state.ts` | 34 | 20 | 0 | 0 |
 | `engine/prompt-manager.ts` | 4 | 4 | 16 | 16 |
 | `ui/full-writer/execution-run-store.ts` | 5 | 5 | 16 | 15 |
 | `shared/store/types.ts` | 20 | 19 | 0 | 0 |
@@ -44,4 +43,5 @@
 | `shared/pre-research.ts` | 17 | 16 | 0 | 0 |
 | `shared/creation-mode.ts` | 20 | 15 | 0 | 0 |
 | `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
-| `engine/context/context-types.ts` | 15 | 14 | 0 | 0 |
+| `engine/knowledge-tags.ts` | 2 | 2 | 12 | 12 |
+| `engine/plot-divergence-engine.ts` | 8 | 7 | 7 | 7 |

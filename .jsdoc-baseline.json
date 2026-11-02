@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-02T00:13:51.726Z",
+  "generatedAt": "2026-11-02T00:16:25.821Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 884,
+      "documented": 938,
       "methods": 1253,
       "methodsDocumented": 683,
       "incomplete": 739
@@ -362,7 +362,7 @@
     },
     "engine/chapter-utils.ts": {
       "exports": 20,
-      "documented": 19,
+      "documented": 20,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 16
@@ -418,7 +418,7 @@
     },
     "engine/co-writer/session-state.ts": {
       "exports": 34,
-      "documented": 14,
+      "documented": 32,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 7
@@ -467,7 +467,7 @@
     },
     "engine/context/context-types.ts": {
       "exports": 15,
-      "documented": 1,
+      "documented": 15,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -537,7 +537,7 @@
     },
     "engine/cross-volume-outline-validator.ts": {
       "exports": 16,
-      "documented": 7,
+      "documented": 16,
       "methods": 2,
       "methodsDocumented": 0,
       "incomplete": 2
@@ -1034,7 +1034,7 @@
     },
     "engine/mode-unit-writer.ts": {
       "exports": 16,
-      "documented": 3,
+      "documented": 12,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 3
@@ -1055,7 +1055,7 @@
     },
     "engine/outline-contract.ts": {
       "exports": 21,
-      "documented": 18,
+      "documented": 21,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 16

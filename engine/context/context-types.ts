@@ -69,6 +69,9 @@ export interface ContextManagerOptions {
 // PromptContext 系列（buildPromptSection 用）
 // ============================================================
 
+/**
+ * 提示词上下文选项。
+ */
 export interface PromptContextOptions {
     includeWorldView?: boolean;
     includeWritingStyle?: boolean;
@@ -79,6 +82,9 @@ export interface PromptContextOptions {
     maxCharsPerSection?: number;
 }
 
+/**
+ * 提示词上下文段。
+ */
 export interface PromptContextSection {
     worldView: string;
     writingStyle: string;
@@ -104,6 +110,9 @@ export interface PromptContextSection {
 // GatheredContext 系列（gatherAll 用）
 // ============================================================
 
+/**
+ * 聚合上下文。
+ */
 export interface GatheredContext {
     project: string;
     gatheredAt: string;
@@ -111,6 +120,9 @@ export interface GatheredContext {
     issues: ContextIssue[];
 }
 
+/**
+ * 上下文数据。
+ */
 export interface ContextData {
     character_state?: CharacterData[];
     locations?: LocationFrontmatter[];
@@ -147,25 +159,40 @@ export interface ContextData {
 }
 
 // CharacterData — 字段定义见 shared/types.ts（CharacterFrontmatter），此处保留别名以确保向后兼容
+/**
+ * 角色数据别名。
+ */
 export type CharacterData = CharacterFrontmatter;
 
+/**
+ * Markdown 内容。
+ */
 export interface MarkdownContent {
     raw: string;
     sections: MarkdownSection[];
 }
 
+/**
+ * Markdown 分节。
+ */
 export interface MarkdownSection {
     title: string;
     level: number;
     content: string[];
 }
 
+/**
+ * 伏笔数据。
+ */
 export interface ForeshadowData {
     unrevealed: ForeshadowItem[];
     revealed: ForeshadowItem[];
     abandoned: ForeshadowItem[];
 }
 
+/**
+ * 伏笔条目。
+ */
 export interface ForeshadowItem {
     id: string;
     name: string;
@@ -181,6 +208,9 @@ export interface ForeshadowItem {
     abandonChapter?: string;
 }
 
+/**
+ * 时间线事件。
+ */
 export interface TimelineEvent {
     time: string;
     chapter: string;
@@ -193,6 +223,9 @@ export interface TimelineEvent {
     idx?: string;
 }
 
+/**
+ * 上一章数据。
+ */
 export interface PreviousChapterData {
     chapterNumber: number;
     content: string | null;
@@ -206,18 +239,27 @@ export interface PreviousChapterData {
     stateSnapshot?: string | null;
 }
 
+/**
+ * 写作规则。
+ */
 export interface WritingRules {
     mandatory: RuleItem[];
     checklist: string[];
     style: string;
 }
 
+/**
+ * 规则条目。
+ */
 export interface RuleItem {
     title: string;
     description: string;
     points: string[];
 }
 
+/**
+ * 上下文问题。
+ */
 export interface ContextIssue {
     type: 'warning' | 'error';
     message: string;

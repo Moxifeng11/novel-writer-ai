@@ -27,8 +27,14 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('ModeUnitWriter');
 
+/**
+ * 单元写作动作。
+ */
 export type UnitWriteAction = 'generate' | 'continue' | 'rewrite';
 
+/**
+ * 单元写作上下文。
+ */
 export interface UnitWriterContext {
     mode: CreationMode;
     project: string;
@@ -45,6 +51,9 @@ export interface UnitWriterContext {
     existingBody: string;
 }
 
+/**
+ * 单元 AI 引擎接口。
+ */
 export interface UnitAIEngine {
     callAI(
         systemPrompt: string,
@@ -64,12 +73,18 @@ export interface UnitAIEngine {
     ): AsyncGenerator<string, unknown, unknown>;
 }
 
+/**
+ * 单元文件端口。
+ */
 export interface UnitFilePort {
     read(path: string): Promise<string>;
     write(path: string, content: string): Promise<void>;
     updateFrontmatter(path: string, patch: Record<string, unknown>): Promise<void>;
 }
 
+/**
+ * 单元生成选项。
+ */
 export interface UnitGenerateOptions {
     model: string;
     maxTokens: number;
@@ -83,6 +98,12 @@ export interface UnitGenerateOptions {
 // 纯函数：frontmatter / 字数
 // ============================================================
 
+/**
+ * 拆分 frontmatter 与正文。
+ *
+ * @param text - 参数
+ * @returns {frontmatter,body}
+ */
 export function splitFrontmatter(text: string): { frontmatter: string; body: string } {
     const raw = String(text ?? '');
     const matched = raw.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
@@ -348,6 +369,9 @@ export async function generateUnitText(
 // 落盘
 // ============================================================
 
+/**
+ * 单元保存选项。
+ */
 export interface SaveUnitOptions {
     markWritten?: boolean;
     title?: string;
@@ -373,6 +397,12 @@ export async function saveUnitBody(
     return { words };
 }
 
+/**
+ * 创建基于 Obsidian 的文件端口。
+ *
+ * @param app - 参数
+ * @returns 文件端口
+ */
 export function createObsidianUnitFilePort(app: App): UnitFilePort {
     const adapter = app.vault.adapter;
     return {
@@ -410,6 +440,12 @@ export function canApplyRewrite(
     return currentText.slice(selection.start, selection.end) === selection.originalText;
 }
 
+/**
+ * 单元标题。
+ *
+ * @param ctx - 参数
+ * @returns 标题
+ */
 export function unitTitleOf(ctx: UnitWriterContext): string {
     return `${getCreationModeLabel(ctx.mode)} · ${ctx.unitName}`;
 }
