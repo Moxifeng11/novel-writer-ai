@@ -63,6 +63,15 @@ interface HeapEntry {
 
 /**
  * 文件缓存（按修改时间失效）。
+ *
+ * @example
+ * ```ts
+ * import { ObsidianFileSystem } from "./file-system-port";
+ *
+ * const cache = new FileCache(new ObsidianFileSystem(app), { cacheDir: '.novel-writer-cache' });
+ * await cache.set('chapter:1', { words: 3200 });
+ * const hit = await cache.get<{ words: number }>('chapter:1');
+ * ```
  */
 export class FileCache {
     private fs: FileSystemPort;

@@ -137,6 +137,14 @@ const DEFAULT_OPTIONS: Required<Pick<MultiLayerCacheOptions,
 
 /**
  * 多层缓存（L1/L2）。
+ *
+ * @example
+ * ```ts
+ * const cache = new MultiLayerCache({ l2Enabled: false });
+ * await cache.set('worldview:book-a', worldview);
+ * const cached = await cache.get<Worldview>('worldview:book-a');
+ * await cache.invalidate('worldview:book-a');
+ * ```
  */
 export class MultiLayerCache {
     private l1: LruCache<string, unknown>;

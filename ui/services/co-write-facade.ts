@@ -55,6 +55,13 @@ export interface CoWriteFacadeOptions {
 
 /**
  * 协同写作门面。
+ *
+ * @example
+ * ```ts
+ * const facade = new CoWriteFacade({ plugin });
+ * await facade.engine.init('长篇小说/书名', '第3章 试炼', '第1卷', 3);
+ * const snapshot = facade.getSnapshot();
+ * ```
  */
 export class CoWriteFacade {
     private plugin: NovelWriterPlugin;

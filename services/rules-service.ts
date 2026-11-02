@@ -26,6 +26,13 @@ export interface RulesConfig {
 
 /**
  * 规则列表服务。
+ *
+ * @example
+ * ```ts
+ * const rules = RulesService.getInstance(app);
+ * const text = await rules.getWritingRules();
+ * const config = await rules.getRulesConfig();
+ * ```
  */
 export class RulesService {
     private static instance: RulesService | null = null;

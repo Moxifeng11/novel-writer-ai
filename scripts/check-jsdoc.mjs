@@ -6,17 +6,21 @@
  *  - 导出声明（class/interface/type/function/const/let/var/enum）是否有紧邻 JSDoc
  *  - 类的公开方法是否有 JSDoc
  *  - 已注释函数的 @param 覆盖与 @returns（非 void）
+ *  - 公共入口（白名单文件）的可执行导出是否有非空 @example
  *
  * 棘轮：
  *  - 每个文件的「已注释数」不得下降
  *  - 每个文件的「未注释数」不得上升（新导出必须带注释）
  *  - 「已注释但不完整」数不得上升
+ *  - 公共入口的「已有示例数」不得下降、「缺示例数」不得上升
  *  - 基线缺失时失败（用 --update-baseline 初始化）
  *
  * 用法：
  *   node scripts/check-jsdoc.mjs
  *   node scripts/check-jsdoc.mjs --update-baseline
  *   node scripts/check-jsdoc.mjs            # 同时刷新 docs/generated/jsdoc-coverage.md
+ *   node scripts/check-jsdoc.mjs --list-missing   # 输出 E:/M:/I:/X: 诊断行
+ *   node scripts/check-jsdoc.mjs --root <dir>     # 指定扫描根（用于门禁自测）
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,12 +28,45 @@ import process from 'node:process';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT_ARG = process.argv.indexOf('--root');
+if (ROOT_ARG !== -1 && !process.argv[ROOT_ARG + 1]) {
+    console.error('[jsdoc] ❌ --root 缺少目录参数');
+    process.exit(2);
+}
+const ROOT = ROOT_ARG !== -1 ? path.resolve(process.argv[ROOT_ARG + 1]) : DEFAULT_ROOT;
 const BASELINE_PATH = path.join(ROOT, '.jsdoc-baseline.json');
 const REPORT_PATH = path.join(ROOT, 'docs/generated/jsdoc-coverage.md');
 const DIRS = ['engine', 'services', 'shared', 'core', 'domains', 'ui'];
 const SKIP_FILES = new Set(['shared/template-scaffold-assets.generated.ts']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'coverage', 'tests', 'scripts']);
+
+/**
+ * 公共入口白名单：这些文件里的可执行导出必须有 @example。
+ *
+ * 只列「声明的定义处」，不列 barrel（index.ts 只有 re-export，挂不上示例）；
+ * 目录前缀用于成组复用组件，避免逐文件维护。改公共入口时同步改这里。
+ */
+const EXAMPLE_REQUIRED_FILES = new Set([
+    'shared/store/createStore.ts',
+    'shared/store/compose.ts',
+    'shared/store/middleware/persist.ts',
+    'shared/progress-emitter.ts',
+    'shared/time-estimator.ts',
+    'shared/versioned-registry.ts',
+    'shared/multi-layer-cache.ts',
+    'shared/file-cache.ts',
+    'engine/engine-registry.ts',
+    'engine/body-writer.ts',
+    'engine/settlement-engine.ts',
+    'engine/ai-api-client.ts',
+    'engine/ai-engine.ts',
+    'engine/co-writer/create-session-store.ts',
+    'services/rules-registry.ts',
+    'services/rules-service.ts',
+    'ui/services/co-write-facade.ts',
+]);
+const EXAMPLE_REQUIRED_PREFIXES = ['ui/components/'];
 
 const UPDATE = process.argv.includes('--update-baseline') || process.argv.includes('--init');
 const REPORT = !process.argv.includes('--no-report');
@@ -65,6 +102,49 @@ function lastJsDoc(node) {
 
 function tagCount(doc, name) {
     return (doc?.tags ?? []).filter((tag) => tag.tagName?.text === name).length;
+}
+
+/** 是否属于「必须有 @example」的公共入口。 */
+function isExampleRequiredFile(rel) {
+    if (EXAMPLE_REQUIRED_FILES.has(rel)) return true;
+    return EXAMPLE_REQUIRED_PREFIXES.some((prefix) => rel.startsWith(prefix));
+}
+
+/** 非空 @example（围栏内容算正文；空 tag 不算）。 */
+function hasExample(doc) {
+    const tags = (doc?.tags ?? []).filter((tag) => tag.tagName?.text === 'example');
+    return tags.some((tag) => {
+        const comment = tag.comment;
+        if (typeof comment === 'string') return comment.trim().length > 0;
+        if (Array.isArray(comment)) {
+            return comment.some((part) => String(part?.text ?? part ?? '').trim().length > 0);
+        }
+        return false;
+    });
+}
+
+/** 废弃 API 不再要求维护示例。 */
+function isDeprecated(doc) {
+    return tagCount(doc, 'deprecated') > 0;
+}
+
+/** 需要示例的可执行导出：函数、类、箭头函数/函数表达式常量。 */
+function isExampleTarget(node) {
+    if (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) return true;
+    if (ts.isVariableStatement(node)) {
+        return node.declarationList.declarations.some((decl) => (
+            decl.initializer
+            && (ts.isArrowFunction(decl.initializer) || ts.isFunctionExpression(decl.initializer))
+        ));
+    }
+    return false;
+}
+
+function declaredName(node) {
+    if (ts.isVariableStatement(node)) {
+        return node.declarationList.declarations[0]?.name?.getText?.() ?? '';
+    }
+    return node.name?.getText?.() ?? '';
 }
 
 function hasDescription(doc) {
@@ -115,10 +195,14 @@ function inspectFile(rel) {
         methods: 0,
         methodsDocumented: 0,
         incomplete: 0,
+        exampleTargets: 0,
+        examplesDocumented: 0,
         missingExports: [],
         missingMethods: [],
         incompleteNames: [],
+        missingExamples: [],
     };
+    const exampleRequired = isExampleRequiredFile(rel);
 
     const visit = (node) => {
         if (isExported(node) && (
@@ -145,6 +229,15 @@ function inspectFile(rel) {
                     ? node.declarationList.declarations[0]?.name?.getText?.() ?? ''
                     : node.name?.getText?.() ?? '';
                 if (name) stats.missingExports.push(name);
+            }
+            if (exampleRequired && isExampleTarget(node) && !isDeprecated(doc)) {
+                stats.exampleTargets++;
+                const name = declaredName(node);
+                if (hasExample(doc)) {
+                    stats.examplesDocumented++;
+                } else if (name) {
+                    stats.missingExamples.push(name);
+                }
             }
         }
 
@@ -180,6 +273,29 @@ function layerOf(rel) {
     return rel.split('/')[0];
 }
 
+/**
+ * 白名单校验：只在真实仓库根执行。
+ *
+ * 自测会把 `--root` 指向临时目录，那里不可能有完整白名单；若在临时根也硬校验，
+ * 门禁自测会被误伤。真实仓库里白名单文件被改名/移动时必须显式失败，避免静默失效。
+ */
+function validateExampleAllowlist() {
+    if (ROOT !== DEFAULT_ROOT) return;
+    const missing = [];
+    for (const rel of EXAMPLE_REQUIRED_FILES) {
+        if (!fs.existsSync(path.join(ROOT, rel))) missing.push(rel);
+    }
+    for (const prefix of EXAMPLE_REQUIRED_PREFIXES) {
+        if (!fs.existsSync(path.join(ROOT, prefix))) missing.push(prefix);
+    }
+    if (missing.length > 0) {
+        console.error('[jsdoc] ❌ @example 白名单路径不存在：');
+        for (const rel of missing) console.error(`  - ${rel}`);
+        console.error('  改公共入口时同步更新 scripts/check-jsdoc.mjs 的 EXAMPLE_REQUIRED_FILES/PREFIXES');
+        process.exit(2);
+    }
+}
+
 function loadBaseline() {
     if (!fs.existsSync(BASELINE_PATH)) return null;
     try {
@@ -210,7 +326,7 @@ function renderReport(layers, files) {
     const out = [];
     out.push('# JSDoc 覆盖率（生成物）');
     out.push('');
-    out.push('> 由 `npm run check:jsdoc -- --report` 生成，禁止手改。');
+    out.push('> 由 `npm run check:jsdoc` 生成，禁止手改。');
     out.push('');
     out.push('| 层 | 文件 | 导出 | 已注释 | 导出覆盖 | 公开方法 | 已注释 | 方法覆盖 | 不完整 |');
     out.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|');
@@ -232,10 +348,28 @@ function renderReport(layers, files) {
         out.push(`| \`${row.rel}\` | ${row.exports} | ${row.exports - row.documented} | ${row.methods} | ${row.methods - row.methodsDocumented} |`);
     }
     out.push('');
+    out.push('## @example 覆盖（公共入口）');
+    out.push('');
+    out.push('| 文件 | 目标 | 有示例 | 覆盖 | 缺失符号 |');
+    out.push('|---|---:|---:|---:|---|');
+    const exampleRows = Object.entries(files)
+        .filter(([rel]) => isExampleRequiredFile(rel))
+        .sort((a, b) => a[0].localeCompare(b[0], 'en'));
+    if (exampleRows.length === 0) {
+        out.push('| — | 0 | 0 | 100% | — |');
+    } else {
+        for (const [rel, s] of exampleRows) {
+            const pct = s.exampleTargets ? Math.round((s.examplesDocumented / s.exampleTargets) * 100) : 100;
+            const missing = s.missingExamples.length > 0 ? s.missingExamples.join('、') : '—';
+            out.push(`| \`${rel}\` | ${s.exampleTargets} | ${s.examplesDocumented} | ${pct}% | ${missing} |`);
+        }
+    }
+    out.push('');
     return out.join('\n');
 }
 
 function main() {
+    validateExampleAllowlist();
     const rels = DIRS.flatMap((dir) => walk(path.join(ROOT, dir)));
     const files = {};
     for (const rel of rels) {
@@ -246,21 +380,27 @@ function main() {
 
     if (LIST_MISSING) {
         for (const [rel, stats] of Object.entries(files).sort((a, b) => a[0].localeCompare(b[0], 'en'))) {
-            if (stats.missingExports.length === 0 && stats.missingMethods.length === 0 && stats.incompleteNames.length === 0) continue;
-            console.log(`${rel}\n  E:${stats.missingExports.join(',')}\n  M:${stats.missingMethods.join(',')}\n  I:${stats.incompleteNames.join(',')}`);
+            if (stats.missingExports.length === 0 && stats.missingMethods.length === 0
+                && stats.incompleteNames.length === 0 && stats.missingExamples.length === 0) continue;
+            console.log(`${rel}\n  E:${stats.missingExports.join(',')}\n  M:${stats.missingMethods.join(',')}\n  I:${stats.incompleteNames.join(',')}\n  X:${stats.missingExamples.join(',')}`);
         }
     }
 
     if (UPDATE) {
         const baselineFiles = {};
         for (const [rel, stats] of Object.entries(files)) {
-            baselineFiles[rel] = {
+            const entry = {
                 exports: stats.exports,
                 documented: stats.documented,
                 methods: stats.methods,
                 methodsDocumented: stats.methodsDocumented,
                 incomplete: stats.incomplete,
             };
+            if (isExampleRequiredFile(rel)) {
+                entry.exampleTargets = stats.exampleTargets;
+                entry.examplesDocumented = stats.examplesDocumented;
+            }
+            baselineFiles[rel] = entry;
         }
         const payload = {
             generatedAt: new Date().toISOString(),
@@ -308,18 +448,38 @@ function main() {
         }
     }
 
+    for (const [rel, stats] of Object.entries(files)) {
+        if (!isExampleRequiredFile(rel)) continue;
+        const base = baseline.files[rel];
+        if (!base || base.exampleTargets === undefined) {
+            problems.push(`${rel}: 基线缺少 @example 字段，请运行 npm run check:jsdoc -- --update-baseline`);
+            continue;
+        }
+        const missingNow = stats.exampleTargets - stats.examplesDocumented;
+        const missingBase = base.exampleTargets - base.examplesDocumented;
+        if (stats.examplesDocumented < base.examplesDocumented) {
+            problems.push(`${rel}: 已有 @example 从 ${base.examplesDocumented} 降到 ${stats.examplesDocumented}`);
+        }
+        if (missingNow > missingBase) {
+            problems.push(`${rel}: 缺 @example 的可执行导出从 ${missingBase} 增到 ${missingNow}（公共入口新增必须带示例）`);
+        }
+    }
+
     const totalExports = Object.values(layers).reduce((sum, e) => sum + e.exports, 0);
     const totalDocumented = Object.values(layers).reduce((sum, e) => sum + e.documented, 0);
     const pct = totalExports ? Math.round((totalDocumented / totalExports) * 100) : 100;
+    const totalExampleTargets = Object.values(files).reduce((sum, s) => sum + s.exampleTargets, 0);
+    const totalExamples = Object.values(files).reduce((sum, s) => sum + s.examplesDocumented, 0);
+    const exampleSummary = totalExampleTargets > 0 ? `，@example ${totalExamples}/${totalExampleTargets}` : '';
 
     if (problems.length > 0) {
-        console.error(`❌ JSDoc 门禁失败（当前导出覆盖 ${pct}%）：`);
+        console.error(`❌ JSDoc 门禁失败（当前导出覆盖 ${pct}%${exampleSummary}）：`);
         for (const item of problems) console.error(`  - ${item}`);
         console.error('  仅在覆盖率上升后运行：npm run check:jsdoc -- --update-baseline');
         process.exit(1);
     }
 
-    console.log(`✅ JSDoc 门禁通过（导出覆盖 ${pct}%，${Object.keys(files).length} 个文件）`);
+    console.log(`✅ JSDoc 门禁通过（导出覆盖 ${pct}%${exampleSummary}，${Object.keys(files).length} 个文件）`);
 }
 
 main();

@@ -131,6 +131,16 @@ const CHART_META: Record<ChartType, ChartMeta> = {
 
 /**
  * SmartChart 类。
+ *
+ * @example
+ * ```ts
+ * const chart = new SmartChart(container, {
+ *     data: emotionPoints,
+ *     preferredType: 'line',
+ * });
+ * chart.setData(nextPoints);
+ * chart.destroy();
+ * ```
  */
 export class SmartChart {
 	private container: HTMLElement;

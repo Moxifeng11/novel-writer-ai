@@ -37,6 +37,11 @@ export interface VersionedDoc {
  *
  * @param text - 任意文本；null/undefined 按空串处理
  * @returns 8 位十六进制哈希（小写）
+ *
+ * @example
+ * ```ts
+ * hashContent('---\nversion: "3.6.0"\n---'); // 8 位十六进制
+ * ```
  */
 export function hashContent(text: string): string {
     let hash = 0x811c9dc5;
@@ -58,6 +63,11 @@ export function hashContent(text: string): string {
  *
  * @param text - 文件全文或内置常量
  * @returns 去 BOM、LF 归一、剥离 frontmatter 并 trim 后的正文
+ *
+ * @example
+ * ```ts
+ * canonicalContent('\uFEFF# 写作规则\r\n'); // '# 写作规则'
+ * ```
  */
 export function canonicalContent(text: string): string {
     return String(text || '')
@@ -73,6 +83,12 @@ export function canonicalContent(text: string): string {
  * @param a - 版本号，如 `3.6.0-引导代禁止` / `v3.6.0`
  * @param b - 版本号
  * @returns a<b 返回 -1，相等返回 0，a>b 返回 1
+ *
+ * @example
+ * ```ts
+ * compareVersionBase('v3.6.0', '3.6.0-rc.1'); // 0
+ * compareVersionBase('3.5.0', '3.6.0');         // < 0
+ * ```
  */
 export function compareVersionBase(a: string, b: string): number {
     const parts = (value: string): number[] =>
@@ -102,8 +118,8 @@ export function compareVersionBase(a: string, b: string): number {
  * @example
  * ```ts
  * extractVersion('---
-version: "3.6.0-引导代禁止"
----') // '3.6.0-引导代禁止'
+ * version: "3.6.0-引导代禁止"
+ * ---') // '3.6.0-引导代禁止'
  * ```
  */
 export function extractVersion(text: string): string {
@@ -148,11 +164,19 @@ export interface SelectResult<T extends VersionedDoc = VersionedDoc> {
 /**
  * 多版本并存、只生效一个。
  * 规则：精确 id 命中 → 同 version 命中的最高优先级（project > vault > custom > builtin）
- *      → 第一个内置版本 → null。
+ * → 第一个内置版本 → null。
  *
  * @param docs - 候选版本；调用方负责去重
  * @param options - `activeId` 可写 id 或版本号；`mode` 用于过滤 applicableModes
  * @returns 生效文档、实际 id、是否回退、告警（回退/无可用版本）
+ *
+ * @example
+ * ```ts
+ * const { doc, fellBack, warnings } = selectActive([projectDoc, vaultDoc, builtinDoc], {
+ *     activeId: '3.6.0',
+ *     mode: 'long',
+ * });
+ * ```
  */
 export function selectActive<T extends VersionedDoc>(docs: readonly T[], options: SelectOptions = {}): SelectResult<T> {
     const warnings: string[] = [];
@@ -206,6 +230,12 @@ function sourceWeight(source: VersionedSource): number {
  * @param expected - 基准版本（通常是内置版）；为空时跳过
  * @param actual - 实际生效版本；为空时跳过
  * @returns 告警文本数组；版本或内容不一致时非空
+ *
+ * @example
+ * ```ts
+ * const warnings = detectDrift(builtinDoc, activeDoc);
+ * if (warnings.length > 0) console.warn(warnings.join("\n"));
+ * ```
  */
 export function detectDrift(expected: VersionedDoc | null, actual: VersionedDoc | null): string[] {
     if (!expected || !actual) return [];
@@ -227,6 +257,11 @@ export function detectDrift(expected: VersionedDoc | null, actual: VersionedDoc 
  *
  * @param version - 版本号
  * @returns `builtin:<version>`
+ *
+ * @example
+ * ```ts
+ * builtinId('3.6.0'); // 'builtin:3.6.0'
+ * ```
  */
 export function builtinId(version: string): string {
     return `builtin:${version}`;

@@ -117,6 +117,11 @@ function stripFrontmatterBlock(content: string): { fmRaw: string; body: string }
  * @param content - 内容
  * @param chapterNum - 章号
  * @returns 文本结果
+ *
+ * @example
+ * ```ts
+ * extractChapterTitle('# 第3章 试炼\n\n正文'); // '试炼'
+ * ```
  */
 export function extractChapterTitle(content: string, chapterNum?: number): string {
     const { body } = stripFrontmatterBlock(content);
@@ -130,6 +135,17 @@ export function extractChapterTitle(content: string, chapterNum?: number): strin
 
 /**
  * 正文写入器。
+ *
+ * @example
+ * ```ts
+ * const writer = new BodyWriter({ app });
+ * const result = await writer.write({
+ *     path: '长篇小说/书名/正文/第1卷/第1章.md',
+ *     raw: '# 第1章 试炼\n\n正文……',
+ *     chapterNum: 1,
+ * });
+ * console.log(result.wordCount, result.title);
+ * ```
  */
 export class BodyWriter {
     private app: App | undefined;
@@ -440,6 +456,11 @@ export class BodyWriter {
  * @param fmRaw - 原始 frontmatter
  * @param patch - 补丁
  * @returns 文本结果
+ *
+ * @example
+ * ```ts
+ * mergeFrontmatterRaw("title: 旧标题", { title: "新标题", status: "draft" });
+ * ```
  */
 export function mergeFrontmatterRaw(fmRaw: string, patch: Record<string, unknown>): string {
     const lines = String(fmRaw || '').split('\n');
@@ -468,6 +489,11 @@ export function mergeFrontmatterRaw(fmRaw: string, patch: Record<string, unknown
  * @param chapterNum - 章号
  * @param chapterName - 章节名
  * @returns 文本结果
+ *
+ * @example
+ * ```ts
+ * defaultBodyPath('长篇小说/书名', 1, 3, '试炼');
+ * ```
  */
 export function defaultBodyPath(project: string, volumeNum: number, chapterNum: number, chapterName?: string): string {
     if (volumeNum > 0) return pjBodyFile(project, volumeNum, chapterNum);

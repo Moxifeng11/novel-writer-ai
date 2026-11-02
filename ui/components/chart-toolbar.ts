@@ -30,6 +30,17 @@ const DENSITY_TITLES: Record<ChartDensity, string> = {
  * createChartToolbar 函数。
  * @param container - 容器元素
  * @param options - 配置项
+ *
+ * @example
+ * ```ts
+ * createChartToolbar(container, {
+ *     currentType: 'line',
+ *     availableTypes: ['line', 'bar'],
+ *     currentDensity: 'normal',
+ *     onTypeChange: (type) => console.log(type),
+ *     onDensityChange: (density) => console.log(density),
+ * });
+ * ```
  */
 export function createChartToolbar(container: HTMLElement, options: ChartToolbarOptions): void {
 	container.innerHTML = '';

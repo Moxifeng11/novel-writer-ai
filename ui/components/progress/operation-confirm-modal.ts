@@ -21,6 +21,16 @@ export interface OperationConfirmOptions {
  *
  * 用于在执行耗时操作前向用户展示操作详情、预估时间和执行步骤，
  * 并支持"不再提示"功能以提升高频操作的使用体验。
+ *
+ * @example
+ * ```ts
+ * const ok = await OperationConfirmModal.confirm(app, {
+ *     title: '重新生成',
+ *     description: '将覆盖当前章节正文',
+ *     steps: ['收集上下文', '调用模型', '写入正文'],
+ * });
+ * if (!ok) return;
+ * ```
  */
 export class OperationConfirmModal extends Modal {
 	private options: OperationConfirmOptions;

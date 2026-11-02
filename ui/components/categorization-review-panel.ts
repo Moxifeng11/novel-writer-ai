@@ -17,6 +17,19 @@ const CATEGORIZATION_TYPES: SuggestionType[] = ['character_role'];
 
 /**
  * CategorizationReviewPanel 类。
+ *
+ * @example
+ * ```ts
+ * const panel = new CategorizationReviewPanel(container, {
+ *     suggestionManager,
+ *     categoryTypes: ['角色', '势力'],
+ *     onAdopt: () => {},
+ *     onReject: () => {},
+ *     onModify: () => {},
+ *     onBatchAdopt: (count) => console.log(`批量采纳 ${count} 条`),
+ * });
+ * panel.render();
+ * ```
  */
 export class CategorizationReviewPanel {
     private container: HTMLElement;

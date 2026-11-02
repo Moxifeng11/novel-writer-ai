@@ -21,6 +21,15 @@ import { shallow } from './shallow';
  *
  * @param initialState 初始状态
  * @returns Store API 对象
+ *
+ * @example
+ * ```ts
+ * import { createStore } from './shared/store';
+ *
+ * const store = createStore({ count: 0 });
+ * store.setState({ count: 1 });
+ * store.subscribe((state) => console.log(state.count));
+ * ```
  */
 export function createStore<T extends State>(
     initialState: T | (() => T),
@@ -80,6 +89,15 @@ export function createStore<T extends State>(
  *
  * @param store 基础 Store
  * @returns 增强后的 Store
+ *
+ * @example
+ * ```ts
+ * const store = subscribeWithSelector(createStore({ count: 0 }));
+ * const off = store.subscribe((state) => state.count, (count) => {
+ *     console.log(count);
+ * });
+ * off();
+ * ```
  */
 export function subscribeWithSelector<T extends State>(
     store: StoreApi<T>,

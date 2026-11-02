@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T01:24:44.341Z",
+  "generatedAt": "2026-11-02T12:28:35.597Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -190,7 +190,9 @@
       "documented": 1,
       "methods": 5,
       "methodsDocumented": 5,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "engine/ai-batch-entity-generator.ts": {
       "exports": 1,
@@ -218,7 +220,9 @@
       "documented": 2,
       "methods": 33,
       "methodsDocumented": 33,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "engine/ai-entity-generator.ts": {
       "exports": 1,
@@ -323,7 +327,9 @@
       "documented": 8,
       "methods": 3,
       "methodsDocumented": 3,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 4,
+      "examplesDocumented": 4
     },
     "engine/cache/preload-manager.ts": {
       "exports": 6,
@@ -414,7 +420,9 @@
       "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 2,
+      "examplesDocumented": 2
     },
     "engine/co-writer/session-state.ts": {
       "exports": 34,
@@ -701,7 +709,9 @@
       "documented": 13,
       "methods": 34,
       "methodsDocumented": 34,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "engine/entity-context-engine.ts": {
       "exports": 10,
@@ -1632,7 +1642,9 @@
       "documented": 3,
       "methods": 3,
       "methodsDocumented": 3,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "engine/step-definitions.ts": {
       "exports": 13,
@@ -2080,14 +2092,18 @@
       "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 3,
+      "examplesDocumented": 3
     },
     "services/rules-service.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 8,
       "methodsDocumented": 8,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "services/synopsis-store.ts": {
       "exports": 5,
@@ -2514,7 +2530,9 @@
       "documented": 3,
       "methods": 10,
       "methodsDocumented": 10,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "shared/file-mention.ts": {
       "exports": 9,
@@ -2724,7 +2742,9 @@
       "documented": 6,
       "methods": 16,
       "methodsDocumented": 16,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "shared/novel-format.ts": {
       "exports": 12,
@@ -2808,7 +2828,9 @@
       "documented": 5,
       "methods": 13,
       "methodsDocumented": 13,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "shared/project-mode.ts": {
       "exports": 5,
@@ -3018,14 +3040,18 @@
       "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 2,
+      "examplesDocumented": 2
     },
     "shared/store/createStore.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 2,
+      "examplesDocumented": 2
     },
     "shared/store/middleware/devtools.ts": {
       "exports": 1,
@@ -3046,7 +3072,9 @@
       "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 3,
+      "examplesDocumented": 3
     },
     "shared/store/middleware/thunk.ts": {
       "exports": 1,
@@ -3158,7 +3186,9 @@
       "documented": 6,
       "methods": 6,
       "methodsDocumented": 6,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 2,
+      "examplesDocumented": 2
     },
     "shared/token-estimator.ts": {
       "exports": 8,
@@ -3207,7 +3237,9 @@
       "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 7,
+      "examplesDocumented": 7
     },
     "shared/view-types.ts": {
       "exports": 1,
@@ -3543,91 +3575,117 @@
       "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/analysis-report-panel.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,
       "methodsDocumented": 2,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/categorization-review-panel.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 4,
       "methodsDocumented": 4,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/character-review-panel.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 4,
       "methodsDocumented": 4,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/chart-toolbar.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/emotion-curve-view.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,
       "methodsDocumented": 2,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/empty-state.ts": {
       "exports": 3,
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/progress/loading-overlay.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 5,
       "methodsDocumented": 5,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/progress/operation-confirm-modal.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 5,
       "methodsDocumented": 5,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/progress/progress-bar.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 3,
       "methodsDocumented": 3,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/progress/step-list.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 5,
       "methodsDocumented": 5,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/progress/task-card.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 3,
       "methodsDocumented": 3,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/components/smart-chart.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 6,
       "methodsDocumented": 6,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/context-injector-modal.ts": {
       "exports": 1,
@@ -4418,7 +4476,9 @@
       "documented": 2,
       "methods": 58,
       "methodsDocumented": 58,
-      "incomplete": 0
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
     },
     "ui/services/human-sample-loader.ts": {
       "exports": 2,

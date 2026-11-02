@@ -117,6 +117,13 @@ function resolveEndpointSource(endpoint?: string): 'local' | 'cloud' {
 
 /**
  * AI API 客户端：并发控制、重试、token 统计与流式/非流式调用。
+ *
+ * @example
+ * ```ts
+ * const client = new AIApiClient(plugin);
+ * const res = await client.callAI('你是资深网文编辑', '润色这段对话……', 'gpt-4o-mini');
+ * if (res.error) console.error(res.error);
+ * ```
  */
 export class AIApiClient {
     private plugin: NovelWriterPlugin;

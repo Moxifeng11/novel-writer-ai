@@ -249,14 +249,22 @@ export interface PasswordPort {
  * 引擎注册表 — 集中管理所有引擎实例（单例）
  *
  * 8 阶段初始化顺序：
- *   Phase 1: 缓存管理器 (PluginCacheManager)
- *   Phase 2: Core 服务 (InternalRegistry, CryptoService, ProviderManager, ThemeManager, SettingsService)
- *   Phase 3: 基础引擎 (ContextManager, ForeshadowManager, ReviewAgent)
- *   Phase 4: 命令注册表 (CommandRegistry)
- *   Phase 5: 设置加载 (SettingsService.loadSettings)
- *   Phase 6: 知识库系统 (KnowledgeTag/Base/Vector, VectorEnhancer, DeconstructionScheduler)
- *   Phase 7: 写作配置与注入 (WritingProfileManager, KnowledgeInjector, CharacterConsistencyChecker)
- *   Phase 8: 懒加载引擎注册 (AIEngine, CoWriterEngine, AnalysisReportEngine)
+ * Phase 1: 缓存管理器 (PluginCacheManager)
+ * Phase 2: Core 服务 (InternalRegistry, CryptoService, ProviderManager, ThemeManager, SettingsService)
+ * Phase 3: 基础引擎 (ContextManager, ForeshadowManager, ReviewAgent)
+ * Phase 4: 命令注册表 (CommandRegistry)
+ * Phase 5: 设置加载 (SettingsService.loadSettings)
+ * Phase 6: 知识库系统 (KnowledgeTag/Base/Vector, VectorEnhancer, DeconstructionScheduler)
+ * Phase 7: 写作配置与注入 (WritingProfileManager, KnowledgeInjector, CharacterConsistencyChecker)
+ * Phase 8: 懒加载引擎注册 (AIEngine, CoWriterEngine, AnalysisReportEngine)
+ *
+ * @example
+ * ```ts
+ * const registry = new EngineRegistry();
+ * registry.register(ENGINE_NAMES.AI_ENGINE, aiEngine);
+ * const engine = registry.get(ENGINE_NAMES.AI_ENGINE);
+ * if (registry.has(ENGINE_NAMES.AI_ENGINE)) registry.dispose(ENGINE_NAMES.AI_ENGINE);
+ * ```
  */
 export class EngineRegistry {
     private instances = new Map<string, unknown>();

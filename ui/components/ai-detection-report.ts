@@ -27,6 +27,13 @@ function levelLabel(score: number): string {
  * 渲染 AI 味检测报告到指定容器。
  * @param container 目标容器（会被清空后写入）
  * @param text 待检测的正文文本
+ *
+ * @example
+ * ```ts
+ * const el = document.createElement('div');
+ * renderAIDetectionReport(el, '他的眼神像一潭死水……');
+ * container.appendChild(el);
+ * ```
  */
 export function renderAIDetectionReport(container: HTMLElement, text: string): void {
     const detector = new AntiAIDetector();

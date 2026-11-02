@@ -49,6 +49,14 @@ export interface ObsidianPluginSettingStorageOptions {
  *
  * @param options 配置选项
  * @returns PersistStorage 实例
+ *
+ * @example
+ * ```ts
+ * const storage = createObsidianSettingStorage<{ theme: string }>({
+ *     plugin,          // NovelWriterPlugin：有 settings / saveSettings
+ *     key: 'uiStore',
+ * });
+ * ```
  */
 export function createObsidianSettingStorage<S extends State>(
     options: ObsidianPluginSettingStorageOptions,
@@ -110,6 +118,14 @@ export interface IndexedDbStorageOptions {
  *
  * @param options 配置选项
  * @returns PersistStorage 实例
+ *
+ * @example
+ * ```ts
+ * const storage = createIndexedDbStorage<{ drafts: string[] }>({
+ *     dbName: 'novel-writer-store',
+ *     storeName: 'persist',
+ * });
+ * ```
  */
 export function createIndexedDbStorage<S extends State>(
     options: IndexedDbStorageOptions = {},
@@ -239,6 +255,14 @@ export function createIndexedDbStorage<S extends State>(
  *
  * @param options 持久化配置
  * @returns 中间件函数
+ *
+ * @example
+ * ```ts
+ * const store = persist({ name: 'ui', storage: createIndexedDbStorage() })(
+ *     createStore({ panel: 'outline' }),
+ * );
+ * await store.persist.rehydrate();
+ * ```
  */
 export function persist<T extends State, PersistedState extends State = T>(
     options: PersistOptions<T, PersistedState>,

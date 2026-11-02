@@ -16,6 +16,18 @@ type TabKey = 'characters' | 'merges' | 'all';
 
 /**
  * CharacterReviewPanel 类。
+ *
+ * @example
+ * ```ts
+ * const panel = new CharacterReviewPanel(container, {
+ *     suggestionManager,
+ *     onAdopt: () => {},
+ *     onReject: () => {},
+ *     onModify: () => {},
+ *     onBatchAdopt: (count) => console.log(`批量采纳 ${count} 条`),
+ * });
+ * panel.render();
+ * ```
  */
 export class CharacterReviewPanel {
     private container: HTMLElement;

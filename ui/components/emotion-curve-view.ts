@@ -18,6 +18,13 @@ import {
 
 /**
  * EmotionCurveView 类。
+ *
+ * @example
+ * ```ts
+ * const view = new EmotionCurveView(container);
+ * view.render(curve);
+ * view.attachInteractions(container);
+ * ```
  */
 export class EmotionCurveView {
     private container: HTMLElement | null = null;

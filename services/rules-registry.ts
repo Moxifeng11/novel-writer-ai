@@ -40,6 +40,12 @@ const RULES_TEMPLATE_DIRS = ['元文件/00-系统模板', '00-系统模板'];
  * 内置版本：3.6.0 默认 + legacy 对照 + 三个「不同思路」实验版（3.7/3.8/3.9）
  *
  * @returns 结果数组
+ *
+ * @example
+ * ```ts
+ * const docs = builtinRulesDocs();
+ * const versions = docs.map((doc) => doc.version);
+ * ```
  */
 export function builtinRulesDocs(): VersionedDoc[] {
     const docs: VersionedDoc[] = [
@@ -134,7 +140,13 @@ async function scanRuleFiles(app: App, folder: string, source: 'vault' | 'projec
  * @param project 当前项目（可选；有则同时扫描项目内规则文件）
  * @param app - Obsidian 应用实例
  * @param options - 配置项
-  * @returns RulesVersionListing 实例
+ * @returns RulesVersionListing 实例
+ *
+ * @example
+ * ```ts
+ * const listing = await listRulesVersions(app, { project });
+ * console.log(listing.active.effectiveId, listing.drift);
+ * ```
  */
 export async function listRulesVersions(
     app: App,
@@ -186,7 +198,13 @@ export async function listRulesVersions(
  *
  * @param app - Obsidian 应用实例
  * @param options - 配置项
-  * @returns string[] }> 结果
+ * @returns string[] }> 结果
+ *
+ * @example
+ * ```ts
+ * const { text, warnings } = await resolveActiveRulesText(app, { activeVersion: '3.6.0' });
+ * if (warnings.length > 0) console.warn(warnings);
+ * ```
  */
 export async function resolveActiveRulesText(
     app: App,

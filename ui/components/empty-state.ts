@@ -12,11 +12,11 @@
  * @example
  * ```ts
  * const empty = createEmptyState({
- *     icon: 'book',
- *     title: '暂无书籍',
- *     description: '点击「导入书籍」开始添加你的第一本参考书籍',
- *     actionText: '导入书籍',
- *     onAction: () => this.handleImportBooks()
+ * icon: 'book',
+ * title: '暂无书籍',
+ * description: '点击「导入书籍」开始添加你的第一本参考书籍',
+ * actionText: '导入书籍',
+ * onAction: () => this.handleImportBooks()
  * });
  * container.appendChild(empty);
  * ```
@@ -93,6 +93,16 @@ const SVG_ICONS: Record<EmptyStateIcon, string> = {
  *
  * @param options 空状态选项
  * @returns 空状态根元素（已绑定事件，可被外部 appendChild 追加额外子元素）
+ *
+ * @example
+ * ```ts
+ * container.appendChild(createEmptyState({
+ *     title: '暂无章节',
+ *     description: '先创建第一卷，再添加章节',
+ *     actionText: '新建章节',
+ *     onAction: () => openCreateChapterModal(),
+ * }));
+ * ```
  */
 export function createEmptyState(options: EmptyStateOptions): HTMLElement {
     const { icon = 'default', title, description, actionText, onAction } = options;

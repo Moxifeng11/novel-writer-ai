@@ -133,6 +133,13 @@ interface SettlementEngineDeps {
 
 /**
  * 结算引擎。
+ *
+ * @example
+ * ```ts
+ * const engine = new SettlementEngine(app);
+ * const result = await engine.settle(project, chapDir, chapterName, report, bodyText);
+ * if (result.hasPartialFailure) console.warn(result.rollback);
+ * ```
  */
 export class SettlementEngine {
     private app: import('obsidian').App;

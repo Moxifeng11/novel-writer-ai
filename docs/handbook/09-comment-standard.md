@@ -50,7 +50,7 @@ export function extractVersion(text: string): string
 - `@param`：每个参数一条，写语义与边界，不写类型（TS 已有）。
 - `@returns`：非 `void` 必填；说明空值/错误值。
 - `@throws`：同步抛错或 Promise reject 的条件。
-- `@example`：跨模块入口、纯函数库、事故相关模块必填；示例必须能对应真实 API。
+- `@example`：公共入口白名单（`scripts/check-jsdoc.mjs` 的 `EXAMPLE_REQUIRED_FILES` / `EXAMPLE_REQUIRED_PREFIXES`）里的导出函数、类、箭头函数常量必填；`interface`/`type`/`enum`、普通常量与 `@deprecated` 声明豁免。示例统一用 ```` ```ts ```` 围栏，必须对应真实 API 与真实导入路径，接口变更时同 PR 更新示例。
 - `@deprecated`：写替代方案与计划移除版本。
 
 ## 3. 类与公开方法
@@ -116,8 +116,11 @@ items = items.filter(Boolean);
 - 每个导出必须有紧邻的 JSDoc；
 - 公开方法（`public` 或缺省）必须有 JSDoc；
 - 对已注释函数检查 `@param` 覆盖与 `@returns`（非 `void`）；
+- 公共入口白名单内统计可执行导出的非空 `@example`；`--list-missing` 的 `X:` 行是缺示例符号；
+- 示例同样走棘轮：**已有示例数不得下降**、**缺示例数不得上升**（公共入口新增导出必须带示例）；
+- 白名单路径被改名/移动会直接失败，改公共入口时同步更新脚本常量；
 - 与 `.jsdoc-baseline.json` 对比：**已注释数不得下降**；新文件/新导出必须全部有注释；
-- 每次运行都会刷新 [generated/jsdoc-coverage.md](../generated/jsdoc-coverage.md)。
+- 每次运行都会刷新 [generated/jsdoc-coverage.md](../generated/jsdoc-coverage.md)（末尾含「@example 覆盖（公共入口）」表）。
 
 更新基线：
 

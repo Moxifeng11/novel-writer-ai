@@ -87,7 +87,7 @@
 
 - [ ] 文件头四段式（职责/背景或事故背景/不变量/使用方式），见 [09-comment-standard.md](09-comment-standard.md)。
 - [ ] 所有导出声明有 JSDoc；公开方法有 `@param`/`@returns`/`@throws`。
-- [ ] 跨模块入口/纯函数库有 `@example`。
+- [ ] 跨模块入口/纯函数库有 `@example`（白名单与门禁见 [09-comment-standard.md](09-comment-standard.md#7-门禁如何判定)）。
 - [ ] 新增模块登记到 `docs/generated/code-index.md`（自动生成）。
 - [ ] 若改变公开契约（命令/事件/frontmatter/设置键），更新 [04-interface-contracts.md](04-interface-contracts.md)。
 

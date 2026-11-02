@@ -8,6 +8,12 @@ const log = createLogger('AnalysisReportPanel');
 /**
  * v6.0 智能分析报告展示面板
  * 展示实体变更、伏笔回收、时间线更新、情绪曲线
+ *
+ * @example
+ * ```ts
+ * const panel = new AnalysisReportPanel(app, analysisEngine);
+ * await panel.analyzeAndRender(container, '长篇小说/书名', chapterText, '第3章 试炼', 3, '第1卷');
+ * ```
  */
 export class AnalysisReportPanel {
     private app: App;

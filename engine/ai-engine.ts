@@ -38,6 +38,12 @@ export interface BatchEntityResult {
 
 /**
  * AI 引擎门面：聚合生成器与 API 客户端。
+ *
+ * @example
+ * ```ts
+ * const ai = new AIEngine(plugin);
+ * const outline = await ai.generateOutline(project, { genre: '都市', chapters: 120 });
+ * ```
  */
 export class AIEngine {
     private plugin: NovelWriterPlugin;
