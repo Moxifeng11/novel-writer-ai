@@ -50,7 +50,7 @@ const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = [
     { id: 'knowledge', label: '📚 写作知识库' },
     { id: 'deconstruction', label: '🧬 拆解引擎' },
     { id: 'foreshadow', label: '🔮 伏笔管理' },
-    { id: 'rules', label: '📜 规则版本' },
+    { id: 'rules', label: '📜 写作规则' },
     { id: 'appearance', label: '🎨 外观设置' },
     { id: 'layout', label: '🧩 工作台布局' },
     { id: 'projects', label: '🗂 项目库迁移' },

@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 289 | 130199 | 1532 | 1301 | 85% |
 | `services/` | 28 | 11363 | 151 | 136 | 90% |
-| `shared/` | 164 | 37169 | 1512 | 1265 | 84% |
+| `shared/` | 164 | 37178 | 1512 | 1265 | 84% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 762 | 30 | 22 | 73% |
-| `ui/` | 191 | 96682 | 500 | 462 | 92% |
+| `ui/` | 191 | 96690 | 500 | 462 | 92% |
 
 ## 文件清单
 
@@ -363,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 944 | 3 | 3 |
+| `shared/changelog-data.ts` | 953 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -673,10 +673,10 @@
 | `ui/settings/deconstruction-section.ts` | 333 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 288 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1153 | 6 | 6 |
+| `ui/settings/general-sections.ts` | 1195 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 809 | 1 | 1 |
 | `ui/settings/section-base.ts` | 50 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 826 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 792 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 404 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 445 | 1 | 1 |

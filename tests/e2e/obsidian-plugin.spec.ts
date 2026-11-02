@@ -321,7 +321,7 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
             return ok;
         };
 
-        await expect.poll(() => switchTab('规则版本'), { timeout: 15_000 }).toBe(true);
+        await expect.poll(() => switchTab('写作规则'), { timeout: 15_000 }).toBe(true);
 
         const countSections = () => page.evaluate(() => {
             const host = window as unknown as {
@@ -359,6 +359,63 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const after = await countSections();
         console.log('RULES_SECTION_COUNT ' + JSON.stringify({ before, after }));
         expect(after).toBe(1);
+    });
+
+    test('写作配置按五组组织，写作规则页集中版本管理', async () => {
+        const { page } = session;
+        expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
+
+        const switchTab = async (label: string): Promise<boolean> => page.evaluate((name) => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            if (!root) return false;
+            const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
+                .find(el => ((el as HTMLElement).textContent || '').includes(name));
+            if (!tab) return false;
+            (tab as HTMLElement).click();
+            return true;
+        }, label);
+
+        await expect.poll(() => switchTab('写作配置'), { timeout: 15_000 }).toBe(true);
+        const activeText = () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            return root?.querySelector('.nw-settings-tab-content')?.textContent || '';
+        });
+        await expect.poll(async () => page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            return Array.from(root?.querySelectorAll('.nw-settings-tab-content h4') ?? [])
+                .map(el => (el.textContent || '').trim()).join('|');
+        }), { timeout: 15_000 }).toContain('篇幅与字数');
+
+        const groups = await page.evaluate(() => {
+            const host = window as unknown as {
+                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
+            };
+            const root = host.app?.setting?.activeTab?.containerEl;
+            return Array.from(root?.querySelectorAll('.nw-settings-tab-content h4') ?? [])
+                .map(el => (el.textContent || '').trim());
+        });
+        for (const title of ['篇幅与字数', '正文形态', '上下文与模型', '质量闸门与修订', '阈值与词表']) {
+            expect(groups).toContain(title);
+        }
+        const writingText = await activeText();
+        expect(writingText).not.toContain('生效版本');
+        expect(writingText).not.toContain('实验分组标签');
+
+        await expect.poll(() => switchTab('写作规则'), { timeout: 15_000 }).toBe(true);
+        await expect.poll(activeText, { timeout: 15_000 }).toContain('生效版本');
+        await expect.poll(activeText, { timeout: 15_000 }).toContain('重新检查');
+        const rulesText = await activeText();
+        expect(rulesText).toContain('实验分组标签');
+        expect(rulesText).toContain('重新检查');
     });
 
     test('外观设置是三层结构且配色方案可保存', async () => {

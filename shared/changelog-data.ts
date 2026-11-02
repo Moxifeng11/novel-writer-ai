@@ -44,6 +44,15 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 ],
             },
             {
+                type: 'improved',
+                label: '✍️ 设置整理',
+                items: [
+                    '写作配置按五组重排：篇幅与字数 / 正文形态 / 上下文与模型 / 质量闸门与修订 / 阈值与词表',
+                    '写作规则版本、实验分组标签集中到「写作规则」页；页签改名并支持切换后立即重检',
+                    '精简设置说明，去掉实验编号与内部事故叙述',
+                ],
+            },
+            {
                 type: 'fixed',
                 label: '🐛 修复',
                 items: [

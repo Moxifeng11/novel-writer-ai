@@ -78,7 +78,7 @@ graph TD
 - `section-base.ts` — `SettingsSectionHost` / `SettingsSection`，分区经它访问 `app` / `plugin` / `refresh` / `reopen`
 - `api-section.ts` / `knowledge-section.ts` / `fingerprint-section.ts` / `deconstruction-section.ts` / `foreshadow-section.ts` — 单 tab 分区
 - `writing-sections.ts` — 协同写作 / 写作配置 / 模板 / 外观 / 项目库 / 工作台布局 6 个分区
-- `general-sections.ts` — 性能监控 / 提示词 / 规则版本 / 关于 / 角色识别 / 建议 6 个分区
+- `general-sections.ts` — 性能监控 / 提示词 / 写作规则 / 关于 / 角色识别 / 建议 6 个分区
 - `provider-modals.ts` — 供应商编辑 / 管理 / 新增弹窗（当前无调用点）
 
 **`ui/full-writer/` 子目录** — 工作台控制器集合：

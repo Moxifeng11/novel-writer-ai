@@ -146,3 +146,23 @@ describe('外观设置：三层模型结构', () => {
         expect(source).not.toContain('tc.enableCustomCardBg && tc.cardBg');
     });
 });
+
+describe('写作配置与写作规则的分工', () => {
+    it('写作规则版本只在「写作规则」页渲染，写作配置不再重复', () => {
+        const writing = read('ui/settings/writing-sections.ts');
+        const general = read('ui/settings/general-sections.ts');
+        const tab = read('ui/settings-tab.ts');
+        expect(writing).not.toContain("setName('写作规则版本')");
+        expect(general).toContain("setName('生效版本')");
+        expect(tab).toContain("label: '📜 写作规则'");
+    });
+
+    it('写作配置按五组标题组织，实验分组标签移到写作规则页', () => {
+        const writing = read('ui/settings/writing-sections.ts');
+        for (const title of ['篇幅与字数', '正文形态', '上下文与模型', '质量闸门与修订', '阈值与词表']) {
+            expect(writing).toContain(`group('${title}'`);
+        }
+        expect(writing).not.toContain("setName('实验分组标签')");
+        expect(read('ui/settings/general-sections.ts')).toContain("setName('实验分组标签')");
+    });
+});

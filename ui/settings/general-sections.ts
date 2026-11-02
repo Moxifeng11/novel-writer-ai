@@ -426,9 +426,40 @@ export class RulesSection extends SettingsSection {
         section.createEl('h3', { text: '📜 写作规则版本管理', cls: 'nw-u-margintop-0' });
 
         section.createEl('p', {
-            text: '写作规则是 AI 生成正文时遵循的核心准则。版本不匹配可能导致生成质量下降或出现不一致行为。',
+            text: '写作规则是 AI 生成正文时遵循的核心准则。这里统一管理生效版本、漂移检查与实验标记。',
             cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-20px-2'
         });
+
+        new Setting(section)
+            .setName('生效版本')
+            .setDesc('auto 按「项目 → vault → 内置」优先级选择；同一时刻只生效一个。版本号相同但内容不同会在下方提示漂移。')
+            .addDropdown(async (dropdown) => {
+                dropdown.addOption('', 'auto（项目 → vault → 内置）');
+                try {
+                    const { listRulesVersions } = await import('../../services/rules-registry');
+                    const listing = await listRulesVersions(this.plugin.app, {
+                        activeVersion: this.plugin.settings.activeRulesVersion,
+                        project: this.plugin.getActiveProject() || undefined,
+                    });
+                    for (const doc of listing.docs) {
+                        dropdown.addOption(
+                            doc.id,
+                            `${doc.id} · v${doc.version}（${doc.source}${doc.path ? ` ${doc.path}` : ''}）`,
+                        );
+                    }
+                    driftEl.setText(listing.drift.length > 0 ? `⚠️ ${listing.drift.join('；')}` : '');
+                } catch (e) {
+                    console.warn('[设置] 读取规则版本失败:', e);
+                }
+                dropdown.setValue(this.plugin.settings.activeRulesVersion || '');
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.activeRulesVersion = value;
+                    await this.plugin.saveSettings();
+                    RulesService.getInstance(this.plugin.app).setActiveVersion(value);
+                    await this.mountRulesSection(section);
+                });
+            });
+        const driftEl = section.createDiv({ cls: 'nw-warning-text nw-u-fs-12px nw-u-marginbottom-16px-2' });
 
         const statusCard = section.createDiv({
             cls: 'nw-u-p-20px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-marginbottom-20px-2'
@@ -525,6 +556,17 @@ export class RulesSection extends SettingsSection {
                 cls: 'nw-text-error'
             });
         }
+
+        new Setting(section)
+            .setName('实验分组标签')
+            .setDesc('写进注入账本与步骤结果 frontmatter，便于把「哪一组实验产生的正文」与规则/模板版本对上。留空不记录。')
+            .addText((text) => text
+                .setPlaceholder('例如 G2-新规则+样文')
+                .setValue(this.plugin.settings.experimentGroup || '')
+                .onChange(async (value) => {
+                    this.plugin.settings.experimentGroup = value.trim().slice(0, 60);
+                    await this.plugin.saveSettings();
+                }));
     }
 }
 

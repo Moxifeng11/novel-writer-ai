@@ -241,10 +241,20 @@ export class WritingSection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
+        section.createEl('p', {
+            text: '控制每章字数、正文形态、上下文分配与质量闸门；规则版本与实验分组已移到「写作规则」页统一管理。',
+            cls: 'setting-item-description',
+        });
 
+        const group = (title: string, desc: string): void => {
+            section.createEl('h4', { text: title, cls: 'nw-u-margintop-24px' });
+            section.createEl('p', { text: desc, cls: 'setting-item-description' });
+        };
+
+        group('篇幅与字数', '每章的目标字数与上下限；质量控制与字数校验都使用这三个值。');
         new Setting(section)
             .setName('默认字数')
-            .setDesc('每章默认字数')
+            .setDesc('每章目标字数（默认 3000）。')
             .addText(text => text
                 .setPlaceholder('3000')
                 .setValue(String(this.plugin.settings.defaultWordCount))
@@ -255,7 +265,7 @@ export class WritingSection extends SettingsSection {
 
         new Setting(section)
             .setName('最小字数')
-            .setDesc('每章最小字数')
+            .setDesc('低于该值触发字数不足判定。')
             .addText(text => text
                 .setPlaceholder('2500')
                 .setValue(String(this.plugin.settings.minWordCount))
@@ -266,7 +276,7 @@ export class WritingSection extends SettingsSection {
 
         new Setting(section)
             .setName('最大字数')
-            .setDesc('每章最大字数')
+            .setDesc('高于该值触发超长提示。')
             .addText(text => text
                 .setPlaceholder('5000')
                 .setValue(String(this.plugin.settings.maxWordCount))
@@ -275,9 +285,10 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
+        group('正文形态', '决定生成时如何断段、使用哪套正文模板，以及注入哪些人味约束。');
         new Setting(section)
             .setName('自然段模式')
-            .setDesc('正文写入时，把相邻的“一句一段”合并成 2–6 句的自然段，并合并对话与说话人的动作。只影响一键生成/续写/批量/场景，不影响手工编辑和协同写作逐段插入。')
+            .setDesc('把“一句一段”合并为 2–6 句自然段，并合并对话与说话人的动作；只影响自动生成，不影响手工编辑与协同逐段插入。')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.naturalParagraphMode !== false)
                 .onChange(async (value) => {
@@ -286,77 +297,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('故事上下文档位')
-            .setDesc('自动：协同按本地/云端模式，一键按默认模型推断。本地档位使用压缩文本与更少条目，云端档位使用完整文本与更多条目。')
-            .addDropdown(dropdown => dropdown
-                .addOption('auto', '自动')
-                .addOption('local', '本地 Ollama / 小窗口')
-                .addOption('cloud', '云端 API / 大窗口')
-                .setValue(this.plugin.settings.storyContextTier || 'auto')
-                .onChange(async (value) => {
-                    this.plugin.settings.storyContextTier = value as 'auto' | 'local' | 'cloud';
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(section)
-            .setName('断联自动切换模型')
-            .setDesc('API断联/超时/503时，自动尝试同端点下其他可用模型（写作类任务会注入文风接续保护）')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.enableAutoModelFallback !== false)
-                .onChange(async (value) => {
-                    this.plugin.settings.enableAutoModelFallback = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        // P0-4: 精修迭代轮数参数化（原硬编码 3，spec p0-api-efficiency-optimization AC-4.3）
-        new Setting(section)
-            .setName('精修迭代轮数')
-            .setDesc('「迭代精修」的最大审查-修复轮数（0-5，0=跳过精修，默认 3）。首轮审查通过时自动短路，不额外消耗调用。')
-            .addText(text => text
-                .setPlaceholder('3')
-                .setValue(String(this.plugin.settings.refineRounds ?? 3))
-                .onChange(async (value) => {
-                    const n = Math.max(0, Math.min(5, parseInt(value) || 0));
-                    this.plugin.settings.refineRounds = n;
-                    await this.plugin.saveSettings();
-                }));
-
-        // v4.23: 版本治理（写作规则多版本 + 人味模式 + 实验分组 + 规则去重）
-        const rulesDriftEl = section.createDiv({ cls: 'nw-warning-text nw-u-fs-12px' });
-        new Setting(section)
-            .setName('写作规则版本')
-            .setDesc('多版本并存，同一时刻只生效一个。空的「auto」按「项目 → vault → 内置」优先级；版本号相同但内容不同会在这里提示漂移。')
-            .addDropdown(async (dropdown) => {
-                dropdown.addOption('', 'auto（项目 → vault → 内置）');
-                try {
-                    const { listRulesVersions } = await import('../../services/rules-registry');
-                    const listing = await listRulesVersions(this.plugin.app, {
-                        activeVersion: this.plugin.settings.activeRulesVersion,
-                        project: this.plugin.getActiveProject() || undefined,
-                    });
-                    for (const doc of listing.docs) {
-                        dropdown.addOption(
-                            doc.id,
-                            `${doc.id} · v${doc.version}（${doc.source}${doc.path ? ` ${doc.path}` : ''}）`,
-                        );
-                    }
-                    // 描述里承诺的漂移提示：不渲染就等于永远不提示
-                    rulesDriftEl.setText(listing.drift.length > 0 ? `⚠️ ${listing.drift.join('；')}` : '');
-                } catch (e) {
-                    console.warn('[设置] 读取规则版本失败:', e);
-                }
-                dropdown.setValue(this.plugin.settings.activeRulesVersion || '');
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.activeRulesVersion = value;
-                    await this.plugin.saveSettings();
-                    const { RulesService } = await import('../../services/rules-service');
-                    RulesService.getInstance(this.plugin.app).invalidateCache();
-                });
-            });
-
-        new Setting(section)
             .setName('正文模板变体')
-            .setDesc('auto：有灵魂层走 V2。V3 节拍先行（台词清单前置、不注入禁用清单）；V4 对话主干（按台词编号写成连续对话）。V1/V2 可做对照。')
+            .setDesc('auto：有灵魂层走 V2；V3 节拍先行，V4 对话主干；V1/V2 可做对照。')
             .addDropdown((dropdown) => dropdown
                 .addOption('auto', 'auto（有灵魂层 → V2）')
                 .addOption('v1', 'V1 流水线正文')
@@ -370,38 +312,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('可数硬指标（实验 C9）')
-            .setDesc('在正文 system 末尾追加四项可数要求：≥6 个时间锚点、≥8 处口语标记、对话三成以上、段落仍 2–6 句。实测配 V4 对话主干可把对话占比推到 24%、锚点从 0 到 2；配 V3 会把节奏压塌。默认关闭。')
-            .addToggle((toggle) => toggle
-                .setValue(this.plugin.settings.countableHumanHints === true)
-                .onChange(async (value) => {
-                    this.plugin.settings.countableHumanHints = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(section)
-            .setName('质量控制后自动定向修订')
-            .setDesc('质量控制步骤完成后自动跑一次「按报告定向修订」：只改报告列出的问题（最多 8 条），锁定人物与情节，修订稿通过长度/人物/对话占比校验才落盘，采纳前自动存章节版本并做量化复检。每次消耗 1 次正文调用。默认开。')
-            .addToggle((toggle) => toggle
-                .setValue(this.plugin.settings.autoRevisionAfterQC !== false)
-                .onChange(async (value) => {
-                    this.plugin.settings.autoRevisionAfterQC = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(section)
-            .setName('上下文体检（重复段自动清空）')
-            .setDesc('发 prompt 前比较各注入段：内容重复 ≥85% 的保留权威版本、清空另一份（如「文笔风格」里的规则副本、世界观与设定库重复段）；步骤结果引用了别的章节号时在注入账本里告警（不自动改）。默认开。')
-            .addToggle((toggle) => toggle
-                .setValue(this.plugin.settings.contextHygieneAutoFix !== false)
-                .onChange(async (value) => {
-                    this.plugin.settings.contextHygieneAutoFix = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(section)
             .setName('人味约束模式')
-            .setDesc('样文优先（默认）：3 段真人样文 + 6 条弱约束；旧配额：23 条数值配额（对照用）。此项在正文/消痕/精修链路都生效。')
+            .setDesc('样文优先：3 段真人样文 + 6 条弱约束；旧配额用于对照。正文/消痕/精修链路都生效。')
             .addDropdown((dropdown) => dropdown
                 .addOption('exemplar', '样文优先（默认）')
                 .addOption('quota', '旧版数值配额（对照）')
@@ -412,8 +324,18 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('规则去重（文笔风格里不再重复注入规则）')
-            .setDesc('开启后，「文笔风格」段不再包含写作规则的编号章副本，避免规则权重翻倍并绕过版本管理。关掉可恢复旧行为。')
+            .setName('可数硬指标（实验）')
+            .setDesc('在正文 system 末尾追加可数的人味要求：时间锚点、口语标记、对话占比、段落长度。默认关闭。')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.countableHumanHints === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.countableHumanHints = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('规则去重')
+            .setDesc('开启后「文笔风格」段不再重复注入写作规则副本，避免规则权重翻倍并绕过版本管理。')
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.dedupeRulesInStyle !== false)
                 .onChange(async (value) => {
@@ -421,21 +343,33 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
+        group('上下文与模型', '影响每次生成能看到多少资料，以及模型断联时的回退行为。');
         new Setting(section)
-            .setName('实验分组标签')
-            .setDesc('写进注入账本与步骤结果 frontmatter，便于把「哪一组实验产生的正文」与实际模板/规则版本对上。留空则不记录。')
-            .addText((text) => text
-                .setPlaceholder('例如 G2-新规则+样文')
-                .setValue(this.plugin.settings.experimentGroup || '')
+            .setName('故事上下文档位')
+            .setDesc('自动按本地/云端模型选择资料量；本地更省上下文，云端使用完整文本与更多条目。')
+            .addDropdown(dropdown => dropdown
+                .addOption('auto', '自动')
+                .addOption('local', '本地 Ollama / 小窗口')
+                .addOption('cloud', '云端 API / 大窗口')
+                .setValue(this.plugin.settings.storyContextTier || 'auto')
                 .onChange(async (value) => {
-                    this.plugin.settings.experimentGroup = value.trim().slice(0, 60);
+                    this.plugin.settings.storyContextTier = value as 'auto' | 'local' | 'cloud';
                     await this.plugin.saveSettings();
                 }));
 
-        // v4.22: 单步输入 token 上限（0=按模型真实窗口自动分配）
+        new Setting(section)
+            .setName('断联自动切换模型')
+            .setDesc('API 断联/超时/503 时，自动尝试同端点下其他可用模型；写作任务会注入文风接续保护。')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enableAutoModelFallback !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableAutoModelFallback = value;
+                    await this.plugin.saveSettings();
+                }));
+
         new Setting(section)
             .setName('单步输入上限（token）')
-            .setDesc('0 = 按当前模型的真实上下文窗口自动分配（推荐）。实测旧闸门回退到 32768 窗口，正文只拿到 24K token，与 1M 窗口差 40 倍，导致世界观/人物/上一章结尾被大量丢弃。仅在想控制成本时填一个上限（最大 200000）。')
+            .setDesc('0 = 按模型真实上下文窗口自动分配（推荐）；仅在需要控制成本时填写上限（最大 200000）。')
             .addText(text => text
                 .setPlaceholder('0')
                 .setValue(String(this.plugin.settings.contextTokenCap ?? 0))
@@ -445,26 +379,67 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
-        // R2: 反AI 检测词表扩充（默认空 → 检测结果与内置词表一致，无行为变化）
         new Setting(section)
-            .setName('AI 味词表扩充')
-            .setDesc('每行一个词。这些词会同时加入「AI 味检测」的 L1 词频命中、写作避用词黑名单，以及拆解引擎的连接词密度统计。留空则只用内置词表。')
-            .addTextArea(area => {
-                area.setPlaceholder('例如：\n话说\n说白了\n不妨\n')
-                    .setValue((this.plugin.settings.antiAiExtraWords ?? []).join('\n'))
-                    .onChange(async (value) => {
-                        const words = value.split('\n').map(w => w.trim()).filter(w => w.length > 0);
-                        this.plugin.settings.antiAiExtraWords = words;
-                        AntiAIDetector.setExtraHighFreqWords(words);
-                        await this.plugin.saveSettings();
-                    });
-                area.inputEl.rows = 4;
-            });
+            .setName('上下文范围')
+            .setDesc('紧凑模式只注入本章涉及实体（节省上下文）；完整模式遍历全部实体（质量优先）。')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.contextScope === 'full')
+                .onChange(async (value) => {
+                    this.plugin.settings.contextScope = value ? 'full' : 'compact';
+                    await this.plugin.saveSettings();
+                }));
 
-        // R1: 业务阈值设置项化（默认值与 shared/thresholds.ts 内置常量一致，不改变默认行为）
+        new Setting(section)
+            .setName('超长提示词分片比例')
+            .setDesc('提示词超出上下文安全线时保留头部的比例（0–1，默认 0.67）。')
+            .addText(text => text
+                .setPlaceholder('0.67')
+                .setValue(String(this.plugin.settings.promptSplitRatio ?? 0.67))
+                .onChange(async (value) => {
+                    const ratio = Number.parseFloat(value);
+                    if (!Number.isFinite(ratio) || ratio <= 0 || ratio > 1) return;
+                    this.plugin.settings.promptSplitRatio = ratio;
+                    setBusinessThresholdOverrides({ promptSplitRatio: ratio });
+                    await this.plugin.saveSettings();
+                }));
+
+        group('质量闸门与修订', '生成后的检查与自动修复；关闭后只保留基础质控。');
+        new Setting(section)
+            .setName('精修迭代轮数')
+            .setDesc('「迭代精修」最多审查-修复几轮（0–5，默认 3）；首轮通过会提前结束，不额外消耗调用。')
+            .addText(text => text
+                .setPlaceholder('3')
+                .setValue(String(this.plugin.settings.refineRounds ?? 3))
+                .onChange(async (value) => {
+                    const n = Math.max(0, Math.min(5, parseInt(value) || 0));
+                    this.plugin.settings.refineRounds = n;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('质量控制后自动定向修订')
+            .setDesc('质量控制后按报告定向修订（最多 8 条），修订稿通过长度/人物/对话校验才落盘；每次多 1 次正文调用。默认开。')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.autoRevisionAfterQC !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoRevisionAfterQC = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('上下文体检')
+            .setDesc('发 prompt 前清理重复注入段；步骤结果引用别的章节号时在注入账本告警。默认开。')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.contextHygieneAutoFix !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.contextHygieneAutoFix = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        group('阈值与词表', '一般保持默认；用于微调字数判定与 AI 味检测。');
         new Setting(section)
             .setName('步骤最低字数比例')
-            .setDesc('步骤输出低于「目标字数 × 此比例」即判定字数不足（0-1，默认 0.70）。')
+            .setDesc('步骤输出低于「目标字数 × 此比例」即判定字数不足（0–1，默认 0.70）。')
             .addText(text => text
                 .setPlaceholder('0.70')
                 .setValue(String(this.plugin.settings.wordMinRatio ?? 0.7))
@@ -477,28 +452,19 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('超长提示词分片比例')
-            .setDesc('提示词超出上下文安全线时，保留头部的比例（0-1，默认 0.67；越小保留的中段资料越少）。')
-            .addText(text => text
-                .setPlaceholder('0.67')
-                .setValue(String(this.plugin.settings.promptSplitRatio ?? 0.67))
-                .onChange(async (value) => {
-                    const ratio = Number.parseFloat(value);
-                    if (!Number.isFinite(ratio) || ratio <= 0 || ratio > 1) return;
-                    this.plugin.settings.promptSplitRatio = ratio;
-                    setBusinessThresholdOverrides({ promptSplitRatio: ratio });
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(section)
-            .setName('上下文范围')
-            .setDesc('紧凑模式仅注入本章涉及实体（节省上下文），完整模式遍历全部实体（质量优先）')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.contextScope === 'full')
-                .onChange(async (value) => {
-                    this.plugin.settings.contextScope = value ? 'full' : 'compact';
-                    await this.plugin.saveSettings();
-                }));
+            .setName('AI 味词表扩充')
+            .setDesc('每行一个词；会加入 AI 味检测、写作避用词黑名单与拆解引擎的连接词统计。留空只用内置词表。')
+            .addTextArea(area => {
+                area.setPlaceholder('例如：\n话说\n说白了\n不妨\n')
+                    .setValue((this.plugin.settings.antiAiExtraWords ?? []).join('\n'))
+                    .onChange(async (value) => {
+                        const words = value.split('\n').map(w => w.trim()).filter(w => w.length > 0);
+                        this.plugin.settings.antiAiExtraWords = words;
+                        AntiAIDetector.setExtraHighFreqWords(words);
+                        await this.plugin.saveSettings();
+                    });
+                area.inputEl.rows = 4;
+            });
     }
 }
 
