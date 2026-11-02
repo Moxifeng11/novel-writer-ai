@@ -250,14 +250,27 @@ export class CoWriterEngine {
         }
     }
 
+    /**
+     * 开关精准模式。
+     *
+     * @param enabled - 参数
+     */
     setPrecisionMode(enabled: boolean): void {
         this.precisionMode = enabled;
     }
 
+    /**
+     * 精准模式是否开启。
+     * @returns 布尔值
+     */
     getPrecisionMode(): boolean {
         return this.precisionMode;
     }
 
+    /**
+     * 取文风指纹库。
+     * @returns 指纹库或 null
+     */
     getFingerprintLibrary(): StyleFingerprintLibrary | null {
         return this.fingerprintLibrary;
     }
@@ -1894,6 +1907,13 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 核心 API 3：评估剧情完成度
     // ============================================================
 
+    /**
+     * 评估情节完成度。
+     *
+     * @param currentBody - 参数
+     * @param signal? - 参数
+     * @returns 指标
+     */
     async evaluatePlotComplete(currentBody: string, signal?: AbortSignal): Promise<PlotCompletionMetrics> {
         if (!this.snapshot || !this.hasCoWriteModel()) return this.getEmptyMetrics();
 
@@ -1980,6 +2000,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 核心 API 4：动态调整建议方向
     // ============================================================
 
+    /**
+     * 按完成度调整建议方向。
+     *
+     * @param metrics - 参数
+     * @returns 方向数组
+     */
     adjustDirection(metrics: PlotCompletionMetrics): SuggestionDirection[] {
         const directions: SuggestionDirection[] = [];
 
@@ -2016,6 +2042,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 核心 API 5：记录交互
     // ============================================================
 
+    /**
+     * 记录句子编辑交互。
+     *
+     * @param record - 参数
+     */
     recordInteraction(record: SentenceEditRecord): void {
         this.interactionHistory.push(record);
         // v6.3: 加上限，避免长会话下无界增长（仅保留最近 MAX_INTERACTION_HISTORY 条）
@@ -2031,6 +2062,10 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         void this.learnFromInteraction(record);
     }
 
+    /**
+     * 取写作记忆快照。
+     * @returns 快照
+     */
     getMemorySnapshot(): {
         styleGuide: string;
         stylePatterns: ReturnType<StyleLearner['getAllPatterns']>;
@@ -2183,6 +2218,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 上下文快照方法
     // ============================================================
 
+    /**
+     * 更新已确认正文快照。
+     *
+     * @param confirmedText - 参数
+     */
     updateSnapshot(confirmedText: string): void {
         if (this.snapshot) {
             this.snapshot.precedingText = confirmedText.slice(-2000);
@@ -2242,6 +2282,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         };
     }
 
+    /**
+     * 设置光标提示。
+     *
+     * @param hint - 参数
+     */
     setCursorHint(hint: string): void {
         if (this.snapshot) this.snapshot.cursorHint = hint;
     }
@@ -2336,18 +2381,33 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         }
     }
 
+    /**
+     * 取当前上下文快照。
+     * @returns 快照或 null
+     */
     getSnapshot(): ContextSnapshot | null {
         return this.snapshot;
     }
 
+    /**
+     * 取当前协同会话。
+     * @returns 会话或 null
+     */
     getSession(): CoWritingSession | null {
         return this.session;
     }
 
+    /**
+     * 取句子编辑历史。
+     * @returns 历史数组
+     */
     getHistory(): SentenceEditRecord[] {
         return this.interactionHistory;
     }
 
+    /**
+     * 刷新静态上下文。
+     */
     async refreshStaticContext(): Promise<void> {
         if (!this.snapshot) return;
         try {
@@ -2537,16 +2597,34 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
     // ============================================================
     // C3：连贯 / 冗余轻审查（同步，不走 AI）
+    /**
+     * 检查正文连贯性。
+     *
+     * @param body - 参数
+     * @returns 检查报告
+     */
     checkCoherence(body: string): CoherenceReport {
         return analyzeCoherence(body);
     }
 
     // C1：逻辑一致性轻审查（同步，不走 AI）
+    /**
+     * 检查逻辑一致性。
+     *
+     * @param body - 参数
+     * @returns 检查报告
+     */
     checkLogicConsistency(body: string): LogicConsistencyReport {
         return analyzeLogicConsistency(body);
     }
 
     // C4：敏感 / 违和内容预警（同步，不走 AI）
+    /**
+     * 检查内容安全。
+     *
+     * @param body - 参数
+     * @returns 检查报告
+     */
     checkContentSafety(body: string): ContentSafetyReport {
         return analyzeContentSafety(body);
     }

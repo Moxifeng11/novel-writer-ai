@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 121510 | 1532 | 617 | 40% |
+| `engine/` | 289 | 121827 | 1532 | 617 | 40% |
 | `services/` | 28 | 10440 | 151 | 75 | 50% |
 | `shared/` | 164 | 32350 | 1512 | 468 | 31% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -86,7 +86,7 @@
 | `engine/character-context.ts` | 39 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 448 | 1 | 0 |
 | `engine/character-soul.ts` | 243 | 10 | 6 |
-| `engine/co-writer-engine.ts` | 3633 | 9 | 4 |
+| `engine/co-writer-engine.ts` | 3711 | 9 | 4 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/co-writer-types.ts` | 89 | 6 | 0 |
 | `engine/co-writer/create-session-store.ts` | 243 | 4 | 2 |
@@ -148,7 +148,7 @@
 | `engine/fingerprint-stats.ts` | 107 | 4 | 0 |
 | `engine/foreshadow-config-manager.ts` | 213 | 2 | 0 |
 | `engine/foreshadow-context.ts` | 142 | 6 | 3 |
-| `engine/foreshadow-manager.ts` | 1190 | 8 | 1 |
+| `engine/foreshadow-manager.ts` | 1276 | 8 | 1 |
 | `engine/generation-checkpoint-vault.ts` | 78 | 1 | 0 |
 | `engine/generation-checkpoint.ts` | 124 | 6 | 0 |
 | `engine/genre/genre-config-registry.ts` | 136 | 2 | 0 |
@@ -297,7 +297,7 @@
 | `engine/stream-text-reader.ts` | 279 | 3 | 0 |
 | `engine/streaming/simulated-stream.ts` | 146 | 2 | 0 |
 | `engine/streaming/stream-parser.ts` | 305 | 8 | 0 |
-| `engine/style-fingerprint-library.ts` | 1946 | 7 | 2 |
+| `engine/style-fingerprint-library.ts` | 2099 | 7 | 2 |
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
 | `engine/style-vector-store.ts` | 587 | 11 | 0 |

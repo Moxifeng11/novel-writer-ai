@@ -187,6 +187,11 @@ export class StyleFingerprintLibrary {
         if (shared) this.setEmbeddingClient(shared);
     }
 
+    /**
+     * 注入向量客户端。
+     *
+     * @param client - 参数
+     */
     setEmbeddingClient(client: EmbeddingProvider): void {
         this.embeddingClient = client;
         this.styleVectorStoreGlobal = undefined;
@@ -206,6 +211,11 @@ export class StyleFingerprintLibrary {
         return this.project;
     }
 
+    /**
+     * 切换当前项目（可传空）。
+     *
+     * @param project? - 参数
+     */
     setProject(project?: string): void {
         if (this.project === project) return;
         this.project = project;
@@ -324,6 +334,10 @@ export class StyleFingerprintLibrary {
         }
     }
 
+    /**
+     * 加载模板指纹。
+     * @returns 指纹数组
+     */
     async loadTemplate(): Promise<StyleFingerprint[]> {
         // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
         await this.migrateV1ToV2Dimensions('template').catch(() => undefined);
@@ -338,12 +352,22 @@ export class StyleFingerprintLibrary {
         return Array.from(this.templateFingerprints.values());
     }
 
+    /**
+     * 新增模板指纹。
+     *
+     * @param fp - 参数
+     */
     async addTemplate(fp: StyleFingerprint): Promise<void> {
         this.templateFingerprints.set(fp.id, fp);
         await this.saveTemplate();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
+    /**
+     * 更新模板指纹。
+     *
+     * @param fp - 参数
+     */
     async updateTemplate(fp: StyleFingerprint): Promise<void> {
         if (!this.templateFingerprints.has(fp.id)) return;
         this.templateFingerprints.set(fp.id, fp);
@@ -379,6 +403,11 @@ export class StyleFingerprintLibrary {
         ]);
     }
 
+    /**
+     * 删除模板指纹。
+     *
+     * @param id - 参数
+     */
     async deleteTemplate(id: string): Promise<void> {
         this.templateFingerprints.delete(id);
         this.v2Fingerprints.delete(id);
@@ -386,14 +415,29 @@ export class StyleFingerprintLibrary {
         await this.deleteVectorIndex(id, 'template');
     }
 
+    /**
+     * 取模板指纹。
+     *
+     * @param id - 参数
+     * @returns 指纹或 undefined
+     */
     getTemplate(id: string): StyleFingerprint | undefined {
         return this.templateFingerprints.get(id);
     }
 
+    /**
+     * 列出模板指纹。
+     * @returns 指纹数组
+     */
     listTemplate(): StyleFingerprint[] {
         return Array.from(this.templateFingerprints.values());
     }
 
+    /**
+     * 启用模板指纹。
+     *
+     * @param id - 参数
+     */
     async enableTemplate(id: string): Promise<void> {
         const fp = this.templateFingerprints.get(id);
         if (!fp) return;
@@ -401,6 +445,11 @@ export class StyleFingerprintLibrary {
         await this.saveTemplate();
     }
 
+    /**
+     * 停用模板指纹。
+     *
+     * @param id - 参数
+     */
     async disableTemplate(id: string): Promise<void> {
         const fp = this.templateFingerprints.get(id);
         if (!fp) return;
@@ -423,6 +472,10 @@ export class StyleFingerprintLibrary {
     // Global 层方法
     // ============================================================
 
+    /**
+     * 加载全局指纹。
+     * @returns 指纹数组
+     */
     async loadGlobal(): Promise<StyleFingerprint[]> {
         // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
         await this.migrateV1ToV2Dimensions('global').catch(() => undefined);
@@ -437,12 +490,22 @@ export class StyleFingerprintLibrary {
         return Array.from(this.globalFingerprints.values());
     }
 
+    /**
+     * 新增全局指纹。
+     *
+     * @param fp - 参数
+     */
     async addGlobal(fp: StyleFingerprint): Promise<void> {
         this.globalFingerprints.set(fp.id, fp);
         await this.saveGlobal();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
+    /**
+     * 更新全局指纹。
+     *
+     * @param fp - 参数
+     */
     async updateGlobal(fp: StyleFingerprint): Promise<void> {
         if (!this.globalFingerprints.has(fp.id)) return;
         this.globalFingerprints.set(fp.id, fp);
@@ -450,6 +513,11 @@ export class StyleFingerprintLibrary {
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
+    /**
+     * 删除全局指纹。
+     *
+     * @param id - 参数
+     */
     async deleteGlobal(id: string): Promise<void> {
         this.globalFingerprints.delete(id);
         this.v2Fingerprints.delete(id);
@@ -457,14 +525,29 @@ export class StyleFingerprintLibrary {
         await this.deleteVectorIndex(id, 'global');
     }
 
+    /**
+     * 取全局指纹。
+     *
+     * @param id - 参数
+     * @returns 指纹或 undefined
+     */
     getGlobal(id: string): StyleFingerprint | undefined {
         return this.globalFingerprints.get(id);
     }
 
+    /**
+     * 列出全局指纹。
+     * @returns 指纹数组
+     */
     listGlobal(): StyleFingerprint[] {
         return Array.from(this.globalFingerprints.values());
     }
 
+    /**
+     * 启用全局指纹。
+     *
+     * @param id - 参数
+     */
     async enableGlobal(id: string): Promise<void> {
         const fp = this.globalFingerprints.get(id);
         if (!fp) return;
@@ -472,6 +555,11 @@ export class StyleFingerprintLibrary {
         await this.saveGlobal();
     }
 
+    /**
+     * 停用全局指纹。
+     *
+     * @param id - 参数
+     */
     async disableGlobal(id: string): Promise<void> {
         const fp = this.globalFingerprints.get(id);
         if (!fp) return;
@@ -494,6 +582,10 @@ export class StyleFingerprintLibrary {
     // Project 层方法
     // ============================================================
 
+    /**
+     * 加载项目指纹。
+     * @returns 指纹数组
+     */
     async loadProject(): Promise<StyleFingerprint[]> {
         if (!this.project) return [];
         // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
@@ -509,6 +601,11 @@ export class StyleFingerprintLibrary {
         return Array.from(this.projectFingerprints.values());
     }
 
+    /**
+     * 新增项目指纹。
+     *
+     * @param fp - 参数
+     */
     async addProject(fp: StyleFingerprint): Promise<void> {
         if (!this.project) return;
         this.projectFingerprints.set(fp.id, fp);
@@ -524,6 +621,11 @@ export class StyleFingerprintLibrary {
         await this.addProject(fingerprint);
     }
 
+    /**
+     * 更新项目指纹。
+     *
+     * @param fp - 参数
+     */
     async updateProject(fp: StyleFingerprint): Promise<void> {
         if (!this.project || !this.projectFingerprints.has(fp.id)) return;
         this.projectFingerprints.set(fp.id, fp);
@@ -531,6 +633,11 @@ export class StyleFingerprintLibrary {
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
 
+    /**
+     * 删除项目指纹。
+     *
+     * @param id - 参数
+     */
     async deleteProject(id: string): Promise<void> {
         if (!this.project) return;
         this.projectFingerprints.delete(id);
@@ -539,14 +646,29 @@ export class StyleFingerprintLibrary {
         await this.deleteVectorIndex(id, 'project');
     }
 
+    /**
+     * 取项目指纹。
+     *
+     * @param id - 参数
+     * @returns 指纹或 undefined
+     */
     getProject(id: string): StyleFingerprint | undefined {
         return this.projectFingerprints.get(id);
     }
 
+    /**
+     * 列出项目指纹。
+     * @returns 指纹数组
+     */
     listProject(): StyleFingerprint[] {
         return Array.from(this.projectFingerprints.values());
     }
 
+    /**
+     * 启用项目指纹。
+     *
+     * @param id - 参数
+     */
     async enableProject(id: string): Promise<void> {
         const fp = this.projectFingerprints.get(id);
         if (!fp) return;
@@ -554,6 +676,11 @@ export class StyleFingerprintLibrary {
         await this.saveProject();
     }
 
+    /**
+     * 停用项目指纹。
+     *
+     * @param id - 参数
+     */
     async disableProject(id: string): Promise<void> {
         const fp = this.projectFingerprints.get(id);
         if (!fp) return;
@@ -585,6 +712,12 @@ export class StyleFingerprintLibrary {
     // GlobalFingerprintStateStore - 项目级全局指纹启用状态
     // ============================================================
 
+    /**
+     * 加载项目的全局指纹启用状态。
+     *
+     * @param project? - 参数
+     * @returns id→启用
+     */
     async loadGlobalState(project?: string): Promise<Record<string, boolean>> {
         const targetProject = project ?? this.project;
         if (!targetProject) return {};
@@ -600,6 +733,12 @@ export class StyleFingerprintLibrary {
         }
     }
 
+    /**
+     * 保存项目的全局指纹启用状态。
+     *
+     * @param project? - 参数
+     * @param state? - 参数
+     */
     async saveGlobalState(project?: string, state?: Record<string, boolean>): Promise<void> {
         const targetProject = project ?? this.project;
         if (!targetProject) return;
@@ -617,6 +756,13 @@ export class StyleFingerprintLibrary {
         });
     }
 
+    /**
+     * 判断全局指纹在项目内是否启用。
+     *
+     * @param globalFpId - 参数
+     * @param project? - 参数
+     * @returns 布尔值
+     */
     isGlobalEnabledForProject(globalFpId: string, project?: string): boolean {
         const targetProject = project ?? this.project;
         if (!targetProject) {
@@ -631,6 +777,13 @@ export class StyleFingerprintLibrary {
         return fp?.enabled ?? true;
     }
 
+    /**
+     * 设置全局指纹在项目内的启用状态。
+     *
+     * @param globalFpId - 参数
+     * @param enabled - 参数
+     * @param project? - 参数
+     */
     async setGlobalEnabledForProject(globalFpId: string, enabled: boolean, project?: string): Promise<void> {
         const targetProject = project ?? this.project;
         if (!targetProject) return;

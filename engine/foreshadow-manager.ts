@@ -63,6 +63,9 @@ export class ForeshadowManager {
         return parseForeshadowTableFallbackLegacy(content);
     }
 
+    /**
+     * 刷新信息债。
+     */
     async refreshInfoDebt(): Promise<void> {
         const projects = await this.detectProjects();
         
@@ -71,10 +74,19 @@ export class ForeshadowManager {
         }
     }
 
+    /**
+     * 扫描可识别项目。
+     * @returns 项目数组
+     */
     async detectProjects(): Promise<string[]> {
         return detectProjects(this.app);
     }
 
+    /**
+     * 生成信息债看板。
+     *
+     * @param project - 参数
+     */
     async generateInfoDebtBoard(project: string): Promise<void> {
         let unrevealed = 0, revealed = 0, abandoned = 0;
         
@@ -188,6 +200,12 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         }
     }
 
+    /**
+     * 读取未揭示伏笔。
+     *
+     * @param project - 参数
+     * @returns {items,count}
+     */
     async getUnrevealedForeshadows(project: string): Promise<{ items: ForeshadowItem[], count: number }> {
         const items: ForeshadowItem[] = [];
         
@@ -212,6 +230,13 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         return { items, count: items.length };
     }
 
+    /**
+     * 计算强制揭示项。
+     *
+     * @param project - 参数
+     * @param currentChapter? - 参数
+     * @returns 名称数组
+     */
     async calculateForceReveal(project: string, currentChapter?: number): Promise<string[]> {
         const { items, count } = await this.getUnrevealedForeshadows(project);
 
@@ -297,6 +322,15 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         }
     }
 
+    /**
+     * 新增伏笔。
+     *
+     * @param project - 参数
+     * @param name - 参数
+     * @param chapter - 参数
+     * @param importance - 参数
+     * @param plannedReveal - 参数
+     */
     async addForeshadow(project: string, name: string, chapter: string, importance: string = '中', plannedReveal: string = '待定'): Promise<void> {
         try {
             const fp = pjForeshadowDB(project);
@@ -678,6 +712,13 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         });
     }
 
+    /**
+     * 读取逾期伏笔。
+     *
+     * @param currentChapter - 参数
+     * @param thresholdChapters - 参数
+     * @returns 伏笔数组
+     */
     getOverdueForeshadows(currentChapter: number, thresholdChapters: number = 15): TrackedForeshadowItem[] {
         if (!this.tracker) return [];
 
@@ -692,6 +733,13 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         });
     }
 
+    /**
+     * 标记伏笔已回收。
+     *
+     * @param id - 参数
+     * @param chapter - 参数
+     * @param way? - 参数
+     */
     markResolved(id: string, chapter: number, way?: string): void {
         if (!this.tracker) return;
         const item = this.tracker.items.find(i => i.id === id);
@@ -704,6 +752,12 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         }
     }
 
+    /**
+     * 新增追踪项。
+     *
+     * @param item - 参数
+     * @returns 追踪项
+     */
     addItem(item: Omit<TrackedForeshadowItem, 'id' | 'autoDetected' | 'confidence'>): TrackedForeshadowItem {
         if (!this.tracker) {
             this.tracker = {
@@ -727,6 +781,11 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         return newItem;
     }
 
+    /**
+     * 移除追踪项。
+     *
+     * @param id - 参数
+     */
     removeItem(id: string): void {
         if (!this.tracker) return;
         const idx = this.tracker.items.findIndex(i => i.id === id);
@@ -737,6 +796,12 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         }
     }
 
+    /**
+     * 更新追踪项。
+     *
+     * @param id - 参数
+     * @param updates - 参数
+     */
     updateItem(id: string, updates: Partial<TrackedForeshadowItem>): void {
         if (!this.tracker) return;
         const item = this.tracker.items.find(i => i.id === id);
@@ -747,6 +812,12 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         }
     }
 
+    /**
+     * 加载追踪器。
+     *
+     * @param projectPath - 参数
+     * @returns 追踪器
+     */
     async loadTracker(projectPath: string): Promise<ForeshadowTracker> {
         try {
             const fp = pjForeshadowTracker(projectPath);
@@ -776,6 +847,12 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         }
     }
 
+    /**
+     * 保存追踪器。
+     *
+     * @param projectPath - 参数
+     * @param tracker? - 参数
+     */
     async saveTracker(projectPath: string, tracker?: ForeshadowTracker): Promise<void> {
         try {
             const data = tracker || this.tracker;
@@ -967,10 +1044,19 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
         return lines.join('\n');
     }
 
+    /**
+     * 取当前追踪器。
+     * @returns 追踪器或 null
+     */
     getTracker(): ForeshadowTracker | null {
         return this.tracker;
     }
 
+    /**
+     * 设置当前追踪器。
+     *
+     * @param tracker - 参数
+     */
     setTracker(tracker: ForeshadowTracker): void {
         this.tracker = tracker;
     }
