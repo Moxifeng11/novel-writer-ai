@@ -92,10 +92,19 @@ if (uncoveredSteps.length > 0) {
     log.warn('[StreamlinedNav] 阶段表未覆盖以下步骤:', uncoveredSteps.map((s) => `${s.index}:${navStepKey(s)}`).join(', '));
 }
 
+/**
+ * getStreamlinedPhases 函数。
+ * @returns 结果数组
+ */
 export function getStreamlinedPhases(): StreamlinedPhase[] {
     return STREAMLINED_PHASES;
 }
 
+/**
+ * getPhaseForStep 函数。
+ * @param stepKey - 步骤键
+  * @returns StreamlinedPhase 或 null
+ */
 export function getPhaseForStep(stepKey: string): StreamlinedPhase | null {
     for (const phase of STREAMLINED_PHASES) {
         if (phase.steps.includes(stepKey)) return phase;
@@ -103,6 +112,11 @@ export function getPhaseForStep(stepKey: string): StreamlinedPhase | null {
     return null;
 }
 
+/**
+ * getPhaseForStepIndex 函数。
+ * @param stepIndex - 步骤索引
+  * @returns StreamlinedPhase 或 null
+ */
 export function getPhaseForStepIndex(stepIndex: number): StreamlinedPhase | null {
     for (const phase of STREAMLINED_PHASES) {
         if (phase.stepIndexes.includes(stepIndex)) return phase;
@@ -110,6 +124,16 @@ export function getPhaseForStepIndex(stepIndex: number): StreamlinedPhase | null
     return null;
 }
 
+/**
+ * getPhaseStatusDescriptor 函数。
+ * @param phase - 阶段
+ * @param currentStepIndex - 当前步骤索引
+ * @param stepCompleted - 步骤完成状态
+ * @param stepResults - 步骤结果列表
+ * @param staleSteps - 陈旧步骤
+ * @param stepLevels - 步骤层级
+  * @returns PhaseStatusDescriptor 实例
+ */
 export function getPhaseStatusDescriptor(
     phase: StreamlinedPhase,
     currentStepIndex: number,
@@ -171,6 +195,13 @@ export function getPhaseStatusDescriptor(
     return { icon: '○', cls: 'novel-writer-fw-step-pending', title: '待执行', status: 'pending' };
 }
 
+/**
+ * isPhaseClickable 函数。
+ * @param phase - 阶段
+ * @param currentStepIndex - 当前步骤索引
+ * @param stepCompleted - 步骤完成状态
+ * @returns 是否成功
+ */
 export function isPhaseClickable(
     phase: StreamlinedPhase,
     currentStepIndex: number,
@@ -197,10 +228,21 @@ function isPlanningComplete(stepCompleted: Set<string>): boolean {
     return planningSteps.some(s => stepCompleted.has(s));
 }
 
+/**
+ * getFirstStepOfPhase 函数。
+ * @param phase - 阶段
+ * @returns 文本结果
+ */
 export function getFirstStepOfPhase(phase: StreamlinedPhase): string {
     return phase.steps[0];
 }
 
+/**
+ * mapStreamlinedPhaseToStepIndex 函数。
+ * @param phaseKey - 阶段键
+ * @param stepCompleted - 步骤完成状态
+ * @returns 数值结果
+ */
 export function mapStreamlinedPhaseToStepIndex(phaseKey: StreamlinedPhaseKey, stepCompleted: Set<string>): number {
     const phase = STREAMLINED_PHASES.find(p => p.key === phaseKey);
     if (!phase) return 0;
@@ -218,6 +260,11 @@ export function mapStreamlinedPhaseToStepIndex(phaseKey: StreamlinedPhaseKey, st
     return phase.stepIndexes[phase.stepIndexes.length - 1];
 }
 
+/**
+ * getAllStepKeysForPhase 函数。
+ * @param phaseKey - 阶段键
+ * @returns 结果数组
+ */
 export function getAllStepKeysForPhase(phaseKey: StreamlinedPhaseKey): string[] {
     const phase = STREAMLINED_PHASES.find(p => p.key === phaseKey);
     return phase ? phase.steps : [];

@@ -13,10 +13,16 @@ export interface WorkbenchChapterContext {
     chapDir: string;
 }
 
+/**
+ * 活动章节目标结构定义。
+ */
 export interface ActiveChapterTarget extends WorkbenchChapterContext {
     bodyPath: string;
 }
 
+/**
+ * 解析章节目标输入结构定义。
+ */
 export interface ResolveChapterTargetInput {
     /** 工作台写入的当前章节上下文 */
     workbench: WorkbenchChapterContext | null;
@@ -47,6 +53,11 @@ export function volumeNumber(volume: string): number {
     return parseInt(volume.match(/第(\d+)卷/)?.[1] || '0', 10);
 }
 
+/**
+ * 解析活动章节目标。
+ * @param input - 输入
+  * @returns ActiveChapterTarget 或 null
+ */
 export function resolveActiveChapterTarget(input: ResolveChapterTargetInput): ActiveChapterTarget | null {
     const { workbench, activeFilePath } = input;
 

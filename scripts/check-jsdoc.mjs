@@ -117,6 +117,7 @@ function inspectFile(rel) {
         incomplete: 0,
         missingExports: [],
         missingMethods: [],
+        incompleteNames: [],
     };
 
     const visit = (node) => {
@@ -132,7 +133,13 @@ function inspectFile(rel) {
             const doc = lastJsDoc(node);
             if (doc) {
                 stats.documented++;
-                if (isIncomplete(node, doc)) stats.incomplete++;
+                if (isIncomplete(node, doc)) {
+                    stats.incomplete++;
+                    const n = ts.isVariableStatement(node)
+                        ? node.declarationList.declarations[0]?.name?.getText?.() ?? ''
+                        : node.name?.getText?.() ?? '';
+                    if (n) stats.incompleteNames.push('E:' + n);
+                }
             } else {
                 const name = ts.isVariableStatement(node)
                     ? node.declarationList.declarations[0]?.name?.getText?.() ?? ''
@@ -152,7 +159,10 @@ function inspectFile(rel) {
                 const doc = lastJsDoc(member);
                 if (doc) {
                     stats.methodsDocumented++;
-                    if (isIncomplete(member, doc)) stats.incomplete++;
+                    if (isIncomplete(member, doc)) {
+                        stats.incomplete++;
+                        stats.incompleteNames.push('M:' + name);
+                    }
                 } else {
                     stats.missingMethods.push(name);
                 }
@@ -236,8 +246,8 @@ function main() {
 
     if (LIST_MISSING) {
         for (const [rel, stats] of Object.entries(files).sort((a, b) => a[0].localeCompare(b[0], 'en'))) {
-            if (stats.missingExports.length === 0 && stats.missingMethods.length === 0) continue;
-            console.log(`${rel}\n  E:${stats.missingExports.join(',')}\n  M:${stats.missingMethods.join(',')}`);
+            if (stats.missingExports.length === 0 && stats.missingMethods.length === 0 && stats.incompleteNames.length === 0) continue;
+            console.log(`${rel}\n  E:${stats.missingExports.join(',')}\n  M:${stats.missingMethods.join(',')}\n  I:${stats.incompleteNames.join(',')}`);
         }
     }
 

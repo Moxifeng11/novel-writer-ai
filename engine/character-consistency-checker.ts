@@ -3,6 +3,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('CharacterConsistencyChecker');
+/**
+ * InconsistencyItem 类型定义。
+ */
 export interface InconsistencyItem {
     type: 'personality' | 'behavior' | 'ability' | 'appearance';
     severity: 'low' | 'medium' | 'high';
@@ -12,6 +15,9 @@ export interface InconsistencyItem {
     confidence: number;
 }
 
+/**
+ * ConsistencyCheckResult 类型定义。
+ */
 export interface ConsistencyCheckResult {
     overallScore: number;
     characterResults: Record<string, {
@@ -85,6 +91,9 @@ const ABILITY_KEYWORDS = [
     '擅长', '精通', '掌握', '炼成', '练成', '习得', '学会'
 ];
 
+/**
+ * 角色一致性检查器。
+ */
 export class CharacterConsistencyChecker {
     private vectorEnhancer?: VectorEnhancer;
     private threshold: number;
@@ -101,6 +110,12 @@ export class CharacterConsistencyChecker {
         this.abilityKeywordSet = new Set(ABILITY_KEYWORDS);
     }
 
+    /**
+     * 检查。
+     * @param chapterText - 参数值
+     * @param characterInfos - 参数值
+      * @returns ConsistencyCheckResult 实例
+     */
     async check(
         chapterText: string,
         characterInfos: CharacterInfo[]

@@ -32,6 +32,7 @@ export class ChapterStateManager {
      * 旧实现只删 stepCompleted，stepLevels 仍是 complete，导致导航仍显示「已完成」，
      * 与「待重做」的提示自相矛盾。所有「上游变更 → 下游失效」都必须走这里。
      * @param stepKeys - 步骤键列表
+     * @param markStale - 是否标记陈旧
      */
     invalidateSteps(stepKeys: string[], markStale = true): void {
         for (const key of stepKeys) {

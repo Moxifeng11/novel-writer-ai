@@ -37,8 +37,14 @@ const log = createLogger('BodyWriter');
 const BACKUP_THROTTLE_MS = 5 * 60_000;
 const backupStamp = new Map<string, number>();
 
+/**
+ * BodyWritingMode 类型定义。
+ */
 export type BodyWritingMode = 'co-writer' | 'pipeline' | 'batch' | 'auto' | 'continue' | 'manual' | 'scene';
 
+/**
+ * BodyWriteRequest 类型定义。
+ */
 export interface BodyWriteRequest {
     /** 正文文件的 vault 全路径 */
     path: string;
@@ -74,6 +80,9 @@ export interface BodyWriteRequest {
     backupBeforeOverwrite?: boolean;
 }
 
+/**
+ * BodyWriteResult 类型定义。
+ */
 export interface BodyWriteResult {
     path: string;
     created: boolean;
@@ -83,6 +92,9 @@ export interface BodyWriteResult {
     title: string;
 }
 
+/**
+ * 正文写入器选项列表结构定义。
+ */
 export interface BodyWriterOptions {
     app?: App;
     fs?: FileSystemPort;
@@ -116,6 +128,9 @@ export function extractChapterTitle(content: string, chapterNum?: number): strin
     return title.replace(/^《|》$/g, '').replace(/[。！？!?]$/, '').slice(0, 30);
 }
 
+/**
+ * 正文写入器。
+ */
 export class BodyWriter {
     private app: App | undefined;
     private fs: FileSystemPort | null;
@@ -446,6 +461,14 @@ export function mergeFrontmatterRaw(fmRaw: string, patch: Record<string, unknown
     return out.join('\n');
 }
 
+/**
+ * defaultBodyPath 函数。
+ * @param project - 项目（路径或对象）
+ * @param volumeNum - 卷编号
+ * @param chapterNum - 章号
+ * @param chapterName - 章节名
+ * @returns 文本结果
+ */
 export function defaultBodyPath(project: string, volumeNum: number, chapterNum: number, chapterName?: string): string {
     if (volumeNum > 0) return pjBodyFile(project, volumeNum, chapterNum);
     return `${project}/${getChapterFileName(chapterName || `第${chapterNum}章`, CHAPTER_FILE_TYPES.body)}`;

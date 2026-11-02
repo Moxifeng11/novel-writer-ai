@@ -1,3 +1,6 @@
+/**
+ * ChartType 类型定义。
+ */
 export type ChartType =
     | 'radar'
     | 'bar'
@@ -14,8 +17,14 @@ export type ChartType =
     | 'timeline'
     | 'wordCloud';
 
+/**
+ * ChartDensity 类型定义。
+ */
 export type ChartDensity = 'compact' | 'normal' | 'spacious';
 
+/**
+ * ChartConfig 类型定义。
+ */
 export interface ChartConfig {
     type: ChartType;
     availableTypes: ChartType[];
@@ -27,6 +36,9 @@ export interface ChartConfig {
     interactive: boolean;
 }
 
+/**
+ * SmartChartOptions 类型定义。
+ */
 export interface SmartChartOptions {
     data: any;
     preferredType?: ChartType;
@@ -37,6 +49,9 @@ export interface SmartChartOptions {
     context?: string;
 }
 
+/**
+ * ChartToolbarOptions 类型定义。
+ */
 export interface ChartToolbarOptions {
     currentType: ChartType;
     availableTypes: ChartType[];
@@ -47,6 +62,9 @@ export interface ChartToolbarOptions {
     onSortChange?: (sort: 'asc' | 'desc' | 'none') => void;
 }
 
+/**
+ * CHART_TYPE_LABELS 常量。
+ */
 export const CHART_TYPE_LABELS: Record<ChartType, string> = {
     radar: '雷达图',
     bar: '柱状图',

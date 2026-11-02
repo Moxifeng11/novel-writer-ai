@@ -30,6 +30,9 @@ import { nextFrame } from '../../shared/yield';
 
 
 const log = createLogger('WizardStepExecutors');
+/**
+ * WizardStepExecutors 类。
+ */
 export class WizardStepExecutors {
     private app: App;
     private plugin: NovelWriterPlugin;
@@ -63,6 +66,11 @@ export class WizardStepExecutors {
         this.getTabContent = getTabContent;
     }
 
+    /**
+     * executeWizardStep 方法。
+     * @param tab - 页签
+     * @param step - 步骤
+     */
     async executeWizardStep(tab: WizardTab, step: WizardStep): Promise<void> {
         // writing_style/outline/chapters 均为"打开弹窗"步骤：AI 生成由弹窗内部按钮触发，
         // 需用户在弹窗内二次确认，不能进入 executing 状态，否则 nav bar 会误导性显示"生成中...请等待 AI 返回"。

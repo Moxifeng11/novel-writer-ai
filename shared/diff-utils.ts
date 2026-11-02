@@ -10,6 +10,9 @@ import { countCjkAndWords } from './word-count';
 /**
  * 计算两个数组的最长公共子序列 (LCS) 长度矩阵
  * 使用动态规划实现
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 结果数组
  */
 function lcsMatrix<T>(a: T[], b: T[]): number[][] {
     const m = a.length;
@@ -31,6 +34,12 @@ function lcsMatrix<T>(a: T[], b: T[]): number[][] {
 
 /**
  * 从 LCS 矩阵回溯，生成 diff 操作序列
+ * @param dp - 数值位数
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @param i - 索引
+ * @param j - 索引
+ * @param result - 结果
  */
 function backtrackLcs<T>(
     dp: number[][],

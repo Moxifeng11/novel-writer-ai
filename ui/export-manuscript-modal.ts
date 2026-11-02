@@ -72,6 +72,9 @@ const FORMAT_OPTIONS: Record<ExportFormat, {
     },
 };
 
+/**
+ * ExportManuscriptModal 类。
+ */
 export class ExportManuscriptModal extends Modal {
     private plugin: NovelWriterPlugin;
     private project: string;
@@ -105,6 +108,9 @@ export class ExportManuscriptModal extends Modal {
         this.project = project;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope', 'nw-modal');
         this.titleEl.setText('📦 成稿导出');
@@ -221,6 +227,9 @@ export class ExportManuscriptModal extends Modal {
         this.refreshHint();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }
@@ -442,6 +451,11 @@ const NON_PROJECT_ROOTS = new Set([
     'deepseek-harness', 'node_modules', 'apps',
 ]);
 
+/**
+ * 列出项目列表。
+ * @param app - Obsidian 应用实例
+ * @returns 结果数组
+ */
 export function listProjects(app: App): string[] {
     const root = app.vault.getRoot();
     const projects: string[] = [];

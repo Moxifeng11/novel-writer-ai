@@ -11,6 +11,9 @@ export interface BehaviorTrait {
     trait: string;     // 性格标签，如"幽默"
 }
 
+/**
+ * 题材配置结构定义。
+ */
 export interface GenreConfig {
     genreId: string;                       // 题材 ID，如 "cultivation"
     displayName: string;                   // 显示名，如"修仙"
@@ -51,6 +54,9 @@ export interface WaveRhythmKeywords {
     bigClimax: string[];        // 大型高潮词（期望间隔 15 章）
 }
 
+/**
+ * GenreDetectionResult 类型定义。
+ */
 export interface GenreDetectionResult {
     genreId: string;
     confidence: number;       // 0-1

@@ -8,7 +8,9 @@
  *   链1: full-writer-view → unified-workspace → write-chapter-modal → extractWorldviewMeta → full-writer-view
  *   链2: full-writer-view → sidebar-component → write-chapter-modal → extractWorldviewMeta → full-writer-view
  *   链3: full-writer-view → sidebar-component → batch-chapters-modal → extractWorldviewMeta → full-writer-view
+ *
  * @param rawWorldview - 原始世界观
+ * @returns 世界观元信息
  */
 
 export function extractWorldviewMeta(rawWorldview: string): {

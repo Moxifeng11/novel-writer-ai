@@ -7,6 +7,9 @@
 import { setIcon } from 'obsidian';
 import { TOOL_GROUPS, type ToolButton, type ToolGroup } from './tool-catalog';
 
+/**
+ * ProjectQuickAction 类型定义。
+ */
 export interface ProjectQuickAction {
     label: string;
     icon: string;
@@ -15,6 +18,9 @@ export interface ProjectQuickAction {
     onClick: () => void;
 }
 
+/**
+ * QuickToolsPanelOptions 类型定义。
+ */
 export interface QuickToolsPanelOptions {
     executeCommand: (commandId: string) => void;
     /** 当前选中的项目（用于展示项目级快捷操作） */

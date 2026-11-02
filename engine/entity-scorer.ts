@@ -1,3 +1,6 @@
+/**
+ * ScoredEntity 类型定义。
+ */
 export interface ScoredEntity {
     name: string;
     fields: Record<string, string>;
@@ -5,6 +8,9 @@ export interface ScoredEntity {
     formatText: string;
 }
 
+/**
+ * 实体结果结构定义。
+ */
 export interface EntityResult {
     text: string;
     score: number;
@@ -62,6 +68,9 @@ export interface EntityTypeBudgets {
     item: number;
 }
 
+/**
+ * DEFAULT_ENTITY_TYPE_BUDGETS 常量。
+ */
 export const DEFAULT_ENTITY_TYPE_BUDGETS: EntityTypeBudgets = {
     character: 12,
     faction: 6,
@@ -92,6 +101,13 @@ export function scoreAndFilterEntitiesByType(
     return result;
 }
 
+/**
+ * scoreAndFilterEntities 函数。
+ * @param entities - 实体列表
+ * @param contextText - 上下文文本
+ * @param topN - 顶部编号
+ * @returns 结果数组
+ */
 export function scoreAndFilterEntities(
     entities: ScoredEntity[],
     contextText: string,

@@ -76,7 +76,8 @@ export function parseQualityControlReport(report: string): RevisionIssue[] {
 /**
  * 合并来自 QSE/WQE 的结构化 issues（它们通常带 dimension/severity/location）。
  *
- * @returns 结果数组
+ * @param groups - 待合并的问题分组
+ * @returns 去重并合并后的问题列表
  */
 export function mergeQualityIssues(
     ...groups: Array<Array<{

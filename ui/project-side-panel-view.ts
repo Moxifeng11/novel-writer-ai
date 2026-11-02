@@ -32,8 +32,14 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('ProjectSidePanel');
 
+/**
+ * VIEW_TYPE_PROJECT_SIDE_PANEL 常量。
+ */
 export const VIEW_TYPE_PROJECT_SIDE_PANEL = 'novel-writer-project-side-panel';
 
+/**
+ * PanelActionSpec 类型定义。
+ */
 export interface PanelActionSpec {
     id: string;
     label: string;
@@ -87,6 +93,9 @@ export function editableProperties(kind: NotebookFileKind): PropertySpec[] {
     return FRONTMATTER_SCHEMAS[kind] || [];
 }
 
+/**
+ * ProjectSidePanelView 类。
+ */
 export class ProjectSidePanelView extends ItemView {
     private readonly plugin: NovelWriterPlugin;
     private collapsed = new Set<string>();
@@ -98,18 +107,33 @@ export class ProjectSidePanelView extends ItemView {
         this.loadCollapsed();
     }
 
+    /**
+     * 获取视图类型。
+     * @returns 文本结果
+     */
     getViewType(): string {
         return VIEW_TYPE_PROJECT_SIDE_PANEL;
     }
 
+    /**
+     * getDisplayText 方法。
+     * @returns 文本结果
+     */
     getDisplayText(): string {
         return '小说工坊 · 项目速览';
     }
 
+    /**
+     * getIcon 方法。
+     * @returns 文本结果
+     */
     getIcon(): string {
         return 'sidebar-right';
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         this.contentEl.empty();
         this.contentEl.addClass('nw-scope', 'nw-side-panel');
@@ -162,6 +186,9 @@ export class ProjectSidePanelView extends ItemView {
         return body;
     }
 
+    /**
+     * 渲染。
+     */
     async render(): Promise<void> {
         const container = this.contentEl;
         container.empty();

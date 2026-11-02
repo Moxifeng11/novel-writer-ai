@@ -25,8 +25,14 @@ export type NotebookFileKind =
     | 'step'
     | 'unknown';
 
+/**
+ * PropertyValueType 类型定义。
+ */
 export type PropertyValueType = 'text' | 'number' | 'select' | 'list' | 'date';
 
+/**
+ * PropertySpec 类型定义。
+ */
 export interface PropertySpec {
     key: string;
     label: string;
@@ -43,7 +49,13 @@ export interface PropertySpec {
 
 /** 章节/单元状态的三态（与 ExecutionRunStore / 归档逻辑共用口径） */
 export const BODY_STATUS_OPTIONS = ['pending', 'written', 'settled'] as const;
+/**
+ * 实体状态选项列表常量。
+ */
 export const ENTITY_STATUS_OPTIONS = ['active', 'inactive', 'dead', 'hidden'] as const;
+/**
+ * 角色角色选项列表常量。
+ */
 export const CHARACTER_ROLE_OPTIONS = ['主角', '配角', '反派', '路人'] as const;
 
 const BODY_PROPERTIES: PropertySpec[] = [
@@ -234,6 +246,7 @@ function kindFromNamespaceTag(tag: string): NotebookFileKind | null {
 /**
  * 判定文件类型：`nw/*` 标签优先 → 旧标签 → 路径兜底 → unknown。
  * @param frontmatter - frontmatter
+ * @param path - 路径
   * @returns NotebookFileKind 实例
  */
 export function resolveFileKind(frontmatter: Record<string, unknown> | null | undefined, path = ''): NotebookFileKind {

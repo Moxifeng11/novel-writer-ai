@@ -7,6 +7,9 @@ interface ChangelogModalOptions {
     onClose?: () => void;
 }
 
+/**
+ * ChangelogModal 类。
+ */
 export class ChangelogModal extends Modal {
     private options: ChangelogModalOptions;
     private expandedVersions: Set<string> = new Set();
@@ -19,11 +22,17 @@ export class ChangelogModal extends Modal {
         }
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen() {
         this.modalEl.addClass('nw-scope');
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
         this.options.onClose?.();

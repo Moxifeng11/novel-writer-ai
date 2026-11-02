@@ -23,6 +23,10 @@ export class QwenEmbeddingProvider extends OpenAIEmbeddingProvider {
         });
     }
 
+    /**
+     * 获取提供方信息。
+      * @returns ProviderInfo 实例
+     */
     override getProviderInfo(): ProviderInfo {
         return {
             type: 'qwen',
@@ -32,6 +36,10 @@ export class QwenEmbeddingProvider extends OpenAIEmbeddingProvider {
         };
     }
 
+    /**
+     * isAvailable 方法。
+      * @returns EmbeddingAvailability 实例
+     */
     override async isAvailable(): Promise<EmbeddingAvailability> {
         const result = await super.isAvailable();
         return {

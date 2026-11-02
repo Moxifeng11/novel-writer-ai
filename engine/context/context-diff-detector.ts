@@ -37,6 +37,9 @@ import { pjForeshadowDB, pjTimelineBoard, pjWritingRules } from '../../shared/pa
 // 一、类型定义
 // ============================================================
 
+/**
+ * 变更类型结构定义。
+ */
 export type ChangeType =
     | 'character-changed'
     | 'chapter-changed'
@@ -44,6 +47,9 @@ export type ChangeType =
     | 'worldview-changed'
     | 'timeline-changed';
 
+/**
+ * 上下文变更结构定义。
+ */
 export interface ContextChange {
     /** 变更类型 */
     type: ChangeType;
@@ -55,6 +61,9 @@ export interface ContextChange {
     timestamp: number;
 }
 
+/**
+ * 上下文变更集合结构定义。
+ */
 export interface ContextChangeSet {
     /** 变更条目列表 */
     changes: ContextChange[];
@@ -103,6 +112,9 @@ export const INCREMENTAL_FALLBACK_THRESHOLD = 0.5;
 // 二、ContextDiffDetector 类
 // ============================================================
 
+/**
+ * 上下文差异检测器。
+ */
 export class ContextDiffDetector {
     /**
      * 检测两个 GatheredContext 之间的差异

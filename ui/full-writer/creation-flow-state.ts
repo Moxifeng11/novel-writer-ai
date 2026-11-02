@@ -30,6 +30,9 @@ import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } fr
 import { rememberProjectMode, resolveProjectMode } from '../../shared/project-mode';
 import { STORAGE_KEY_PREFIXES, projectScopedKey } from '../../shared/storage-keys';
 
+/**
+ * CreationFlowStateOptions 类型定义。
+ */
 export interface CreationFlowStateOptions {
     /** 向导页签当前内存里的步骤结果；不传时读 localStorage 的项目分桶 */
     wizardResults?: Record<string, string>;
@@ -37,6 +40,9 @@ export interface CreationFlowStateOptions {
     mode?: CreationMode;
 }
 
+/**
+ * CreationFlowState 类型定义。
+ */
 export interface CreationFlowState {
     mode: CreationMode;
     facts: CreationFlowFacts;

@@ -80,6 +80,9 @@ interface GenerateParams {
     name: string;
 }
 
+/**
+ * AiBuilderModal 类。
+ */
 export class AiBuilderModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -100,6 +103,9 @@ export class AiBuilderModal extends Modal {
         this.aiEngine = plugin.aiEngine;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl, modalEl } = this;
@@ -1120,6 +1126,9 @@ ${
         return '';
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

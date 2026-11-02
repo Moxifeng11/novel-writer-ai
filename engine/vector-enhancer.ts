@@ -5,23 +5,35 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('VectorEnhancer');
+/**
+ * SemanticMatchResult 类型定义。
+ */
 export interface SemanticMatchResult<T = string> {
     item: T;
     score: number;
 }
 
+/**
+ * SimilarPair 类型定义。
+ */
 export interface SimilarPair<A = string, B = string> {
     itemA: A;
     itemB: B;
     score: number;
 }
 
+/**
+ * AvailabilityResult 类型定义。
+ */
 export interface AvailabilityResult {
     available: boolean;
     reason?: string;
     model?: string;
 }
 
+/**
+ * CacheStats 类型定义。
+ */
 export interface CacheStats {
     hits: number;
     misses: number;
@@ -39,6 +51,9 @@ interface LruCacheEntry {
     lastAccessed: number;
 }
 
+/**
+ * VectorEnhancer 类。
+ */
 export class VectorEnhancer {
     private provider: EmbeddingProvider | null = null;
     private legacyClient: LegacyEmbeddingClient | null = null;
@@ -353,6 +368,14 @@ export class VectorEnhancer {
         return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
+    /**
+     * semanticMatch 方法。
+     * @param text - 文本内容
+     * @param candidates - 参数值
+     * @param topN - 参数值
+     * @param textExtractor - 参数值
+     * @returns 结果数组
+     */
     async semanticMatch<T = string>(
         text: string,
         candidates: T[],
@@ -381,6 +404,16 @@ export class VectorEnhancer {
         }
     }
 
+    /**
+     * findSimilarPairs 方法。
+     * @param textsA - 参数值
+     * @param textsB - 参数值
+     * @param threshold - 参数值
+     * @param topPerA - 参数值
+     * @param textExtractorA - 参数值
+     * @param textExtractorB - 参数值
+     * @returns 结果数组
+     */
     async findSimilarPairs<A = string, B = string>(
         textsA: A[],
         textsB: B[],

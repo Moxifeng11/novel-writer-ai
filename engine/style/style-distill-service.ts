@@ -90,6 +90,14 @@ ${sample.slice(0, 12000)}`
     return { system, user };
 }
 
+/**
+ * analyzeStyleFromSource 函数。
+ * @param aiEngine - AI 引擎
+ * @param input - 输入
+ * @param deps - 依赖
+ * @param signal - 取消信号
+  * @returns string }> 结果
+ */
 export async function analyzeStyleFromSource(
     aiEngine: AIEngine,
     input: StyleDistillInput,

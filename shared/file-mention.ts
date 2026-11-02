@@ -63,6 +63,9 @@ export function formatFileMention(path: string): string {
     return /[\s"'`]/.test(cleaned) ? `@"${cleaned}"` : `@${cleaned}`;
 }
 
+/**
+ * ParsedMention 类型定义。
+ */
 export interface ParsedMention {
     path: string;
     start: number;
@@ -114,6 +117,7 @@ export function extractMentionPaths(text: string): string[] {
  * 只做纯字符串匹配，不读库。
  * @param paths - 路径列表
  * @param query - 查询串
+ * @param limit - 上限
  * @returns 结果数组
  */
 export function filterVaultPaths(paths: readonly string[], query: string, limit = 20): string[] {

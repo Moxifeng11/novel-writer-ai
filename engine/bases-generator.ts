@@ -223,6 +223,11 @@ ${orderBlock(factionColumns, '      ')}
 /** 项目看板全集 */
 export const BASE_DIR = '.看板';
 
+/**
+ * 构建项目基础列表。
+ * @param project - 项目（路径或对象）
+ * @returns 结果数组
+ */
 export function buildProjectBases(project: string): BaseFileSpec[] {
     return [
         { relativePath: `${BASE_DIR}/章节进度.base`, content: buildChapterProgressBase(project) },

@@ -11,18 +11,27 @@ import { parseJsonObject, validateFields, type OutputContract } from './structur
 import type { AIEngine } from '../ai-engine';
 import type { CreationMode } from '../../shared/creation-mode';
 
+/**
+ * DeaiSingleCallResult 类型定义。
+ */
 export interface DeaiSingleCallResult {
     issues: string[];
     rewritten: string;
     selfCheck: string;
 }
 
+/**
+ * RefineSingleCallResult 类型定义。
+ */
 export interface RefineSingleCallResult {
     issues: string[];
     polished: string;
     selfCheck: string;
 }
 
+/**
+ * RevisionSingleCallResult 类型定义。
+ */
 export interface RevisionSingleCallResult {
     dimensions: Array<{ dimension: string; changed: boolean; note: string }>;
     body: string;
@@ -110,6 +119,9 @@ export function validateRevision(value: RevisionSingleCallResult): string[] {
     return issues;
 }
 
+/**
+ * LongNovelSingleCallTasks 类。
+ */
 export class LongNovelSingleCallTasks {
     constructor(
         private readonly ai: AIEngine,
@@ -130,6 +142,12 @@ export class LongNovelSingleCallTasks {
         });
     }
 
+    /**
+     * deai 方法。
+     * @param bodyText - 参数值
+     * @param options - 配置项
+      * @returns SingleCallResult<DeaiSingleCallResult> 实例
+     */
     async deai(
         bodyText: string,
         options?: { mode?: CreationMode; projectId?: string; writingRules?: string; signal?: AbortSignal }
@@ -167,6 +185,13 @@ ${describeContract(deaiContract)}`;
         });
     }
 
+    /**
+     * refine 方法。
+     * @param bodyText - 参数值
+     * @param contextPrompt - 参数值
+     * @param options - 配置项
+      * @returns SingleCallResult<RefineSingleCallResult> 实例
+     */
     async refine(
         bodyText: string,
         contextPrompt: string,
@@ -215,6 +240,13 @@ ${describeContract(refineContract)}`;
         });
     }
 
+    /**
+     * targetedRevision 方法。
+     * @param bodyText - 参数值
+     * @param issues - 参数值
+     * @param options - 配置项
+      * @returns SingleCallResult<RevisionSingleCallResult> 实例
+     */
     async targetedRevision(
         bodyText: string,
         issues: string[],

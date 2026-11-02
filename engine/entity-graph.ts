@@ -14,6 +14,9 @@ import { parseLinkValue } from '../shared/entity-links';
 import { parseBehaviorLog } from '../shared/behavior-log';
 import { activeContextQuotas } from '../shared/context-budget-policy';
 
+/**
+ * OwnedItemSummary 类型定义。
+ */
 export interface OwnedItemSummary {
     name: string;
     path: string;
@@ -21,6 +24,9 @@ export interface OwnedItemSummary {
     status: string;
 }
 
+/**
+ * CharacterQuickState 类型定义。
+ */
 export interface CharacterQuickState {
     name: string;
     realm: string;
@@ -91,6 +97,7 @@ export function getOwnedItems(app: App, project: string, charName: string): Owne
  * @param app - Obsidian 应用实例
  * @param project - 项目（路径或对象）
  * @param charName - 字符名称
+ * @param limit - 上限
  * @returns 结果数组
  */
 export async function getRecentBehaviors(app: App, project: string, charName: string, limit = 2): Promise<string[]> {

@@ -11,6 +11,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('EmotionCurveAnalyzer');
 
+/**
+ * EmotionCurveAnalyzer 类。
+ */
 export class EmotionCurveAnalyzer {
     /** 片段内容哈希 → 情绪点：正文只在尾部增长时，前面片段不必重新分析 */
     private segmentCache = new Map<string, EmotionPoint>();

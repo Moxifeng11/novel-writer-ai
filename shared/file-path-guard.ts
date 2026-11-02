@@ -12,6 +12,9 @@ export interface VaultPathGuardOptions {
     allowHiddenPrefixes?: string[];
 }
 
+/**
+ * VaultPathGuardResult 类型定义。
+ */
 export type VaultPathGuardResult =
     | { ok: true; path: string }
     | { ok: false; reason: string };
@@ -60,6 +63,9 @@ export function sanitizeVaultPath(raw: string, options: VaultPathGuardOptions = 
     return { ok: true, path: segments.join('/') };
 }
 
+/**
+ * 行窗口选项列表结构定义。
+ */
 export interface LineWindowOptions {
     /** 起始行（1-based，默认 1） */
     offset?: number;
@@ -69,6 +75,9 @@ export interface LineWindowOptions {
     maxChars?: number;
 }
 
+/**
+ * 行窗口结果结构定义。
+ */
 export interface LineWindowResult {
     text: string;
     startLine: number;
@@ -80,8 +89,17 @@ export interface LineWindowResult {
     charLimited: boolean;
 }
 
+/**
+ * MAX_READ_CHARS 常量。
+ */
 export const MAX_READ_CHARS = 8192;
+/**
+ * DEFAULT_READ_LINES 常量。
+ */
 export const DEFAULT_READ_LINES = 200;
+/**
+ * MAX_READ_LINES 常量。
+ */
 export const MAX_READ_LINES = 2000;
 
 /**
@@ -146,6 +164,7 @@ export function extractLineWindow(text: string, options: LineWindowOptions = {})
  * 搜索命中的一行摘要（去缩进、压空白、截断），用于 `path:line:摘要`
  *
  * @param line - 行
+ * @param maxChars - 最大字符数
  * @returns 文本结果
  */
 export function summarizeHitLine(line: string, maxChars = 120): string {

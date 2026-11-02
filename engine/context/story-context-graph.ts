@@ -696,6 +696,11 @@ function parseChineseNum(raw: string): number | null {
     return (match[1] ? 10 : 0) + (match[2] ? map[match[2]] : 0);
 }
 
+/**
+ * parseStorySceneCards 函数。
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseStorySceneCards(content: string): SceneCardFields[] {
     const raw = String(content || '');
     if (!raw.trim()) return [];
@@ -1042,6 +1047,11 @@ function linkGraph(graph: StoryContextGraph): void {
     }
 }
 
+/**
+ * 构建故事上下文图。
+ * @param source - 来源
+  * @returns StoryContextGraph 实例
+ */
 export function buildStoryContextGraph(source: StoryContextSource): StoryContextGraph {
     const nodes = new Map<string, StoryContextNode>();
     const byKind = emptyByKind<StoryContextNode>();
@@ -1072,6 +1082,12 @@ export function buildStoryContextGraph(source: StoryContextSource): StoryContext
 // 检索与预算装配
 // ============================================================
 
+/**
+ * 解析故事上下文配置档。
+ * @param tier - 层级
+ * @param maxInputTokens - 最大输入 token 数
+  * @returns StoryContextProfile 实例
+ */
 export function resolveStoryContextProfile(
     tier: StoryContextTier,
     maxInputTokens?: number,
@@ -1261,6 +1277,12 @@ function truncateAtSentence(text: string, maxTokens: number, modelId?: string): 
     return `${clipped.trimEnd()}…`;
 }
 
+/**
+ * assembleStoryContextBundle 函数。
+ * @param graph - 关系图
+ * @param request - 请求
+  * @returns StoryContextBundle 实例
+ */
 export function assembleStoryContextBundle(
     graph: StoryContextGraph,
     request: StoryContextRequest,
@@ -1423,6 +1445,12 @@ function formatNodeLine(node: StoryContextNode): string {
     return `- ${node.compactText}`;
 }
 
+/**
+ * formatStoryContextPack 函数。
+ * @param bundle - 打包结果
+ * @param mode - 模式
+ * @returns 文本结果
+ */
 export function formatStoryContextPack(
     bundle: StoryContextBundle,
     mode: 'full' | 'cross-link' = 'full',
@@ -1538,4 +1566,7 @@ export function formatStoryContextLegacyVars(bundle: StoryContextBundle): Record
     };
 }
 
+/**
+ * 故事上下文种类标签列表常量。
+ */
 export const STORY_CONTEXT_KIND_LABELS = KIND_LABELS;

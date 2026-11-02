@@ -150,6 +150,11 @@ export class ReadabilityDeconstructor {
         );
     }
 
+    /**
+     * 分析。
+     * @param text - 文本内容
+      * @returns ReadabilityAnalysisResult 实例
+     */
     async analyze(text: string): Promise<ReadabilityAnalysisResult> {
         if (!text || text.length === 0) {
             return this.getEmptyResult();
@@ -188,6 +193,11 @@ export class ReadabilityDeconstructor {
         this.showSignalSet = new Set(config.showSignalWords);
     }
 
+    /**
+     * analyzeWithVector 方法。
+     * @param text - 文本内容
+      * @returns ReadabilityAnalysisResult 实例
+     */
     async analyzeWithVector(text: string): Promise<ReadabilityAnalysisResult> {
         const baseResult = await this.analyze(text);
         await yieldToUI();
@@ -210,6 +220,13 @@ export class ReadabilityDeconstructor {
         return baseResult;
     }
 
+    /**
+     * saveAnalysisToMarkdown 方法。
+     * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param result - 结果
+     * @param baseDir - 参数值
+     */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,
@@ -230,6 +247,11 @@ export class ReadabilityDeconstructor {
         await app.vault.adapter.write(filePath, content);
     }
 
+    /**
+     * calculateShowTellRatio 方法。
+     * @param text - 文本内容
+      * @returns ShowTellResult 实例
+     */
     calculateShowTellRatio(text: string): ShowTellResult {
         const paragraphs = splitParagraphs(text);
         const segments: ShowTellSegment[] = [];
@@ -275,6 +297,11 @@ export class ReadabilityDeconstructor {
         };
     }
 
+    /**
+     * calculateAITrace 方法。
+     * @param text - 文本内容
+      * @returns AITraceResult 实例
+     */
     calculateAITrace(text: string): AITraceResult {
         const sentenceSimilarity = this.calculateSentenceSimilarity(text);
         const connectorDensity = this.calculateConnectorDensity(text);

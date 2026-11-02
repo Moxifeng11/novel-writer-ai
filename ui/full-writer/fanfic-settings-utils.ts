@@ -5,6 +5,9 @@ import { applyFanficReviewMeta } from '../../shared/fanfic-audit';
 import { ensureTemplateScaffold } from '../../shared/template-scaffold';
 import { pjFanficDir, pjProjectMeta } from '../../shared/paths';
 
+/**
+ * FanficSettingsValues 类型定义。
+ */
 export interface FanficSettingsValues {
   workName: string;
   workType: string;
@@ -17,6 +20,11 @@ export interface FanficSettingsValues {
   redlines: string;
 }
 
+/**
+ * buildFanficSettingsContent 函数。
+ * @param values - 值列表
+ * @returns 文本结果
+ */
 export function buildFanficSettingsContent(values: FanficSettingsValues): string {
   return `---
 作品名称: ${values.workName.trim()}
@@ -164,21 +172,43 @@ export async function createFanficDraftFromTemplate(
   return path;
 }
 
+/**
+ * isFanficApproved 函数。
+ * @param content - 内容
+ * @returns 是否成功
+ */
 export function isFanficApproved(content: string): boolean {
   const status = parseFanficReviewStatus(content);
   return status === 'approved' || status === 'legacy';
 }
 
+/**
+ * extractFanficWorkName 函数。
+ * @param content - 内容
+ * @param fallbackProject - 回退项目
+ * @returns 文本结果
+ */
 export function extractFanficWorkName(content: string, fallbackProject: string): string {
   const fm = content.match(/^作品名称:\s*(.+)$/m)?.[1]?.trim();
   const heading = content.match(/^#\s*(.+?)\s*同人设定\s*$/m)?.[1]?.trim();
   return sanitizeFilePart(fm || heading || fallbackProject);
 }
 
+/**
+ * getFanficSettingsPath 函数。
+ * @param project - 项目（路径或对象）
+ * @param content - 内容
+ * @param fallbackProject - 回退项目
+ * @returns 文本结果
+ */
 export function getFanficSettingsPath(project: string, content: string, fallbackProject: string): string {
   return `${pjFanficDir(project)}/${fanficSettingsFileName(extractFanficWorkName(content, fallbackProject))}`;
 }
 
+/**
+ * isFanficSettingsContentValidEnough 函数。
+ * @param content - 内容
+ */
 export function isFanficSettingsContentValidEnough(content: string) {
   // 向导口径：表单只收集 9 个字段，时间线由用户后续在设定文件里补；
   // 但占位「（待补充）」不是内容，否则绑定/保存都会误报「✅ 已…」。
@@ -243,6 +273,11 @@ export async function saveFanficSettingFile(app: App, filePath: string, content:
   await app.vault.create(filePath, content);
 }
 
+/**
+ * missingFanficValueLabels 函数。
+ * @param values - 值列表
+ * @returns 结果数组
+ */
 export function missingFanficValueLabels(values: FanficSettingsValues): string[] {
   const entries: Array<[keyof FanficSettingsValues, string]> = [
     ['workName', '作品名称'],

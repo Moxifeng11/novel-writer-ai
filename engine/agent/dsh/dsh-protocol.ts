@@ -100,6 +100,13 @@ export class DshJsonRpcClient {
         pending.resolve(record.result);
     }
 
+    /**
+     * 请求。
+     * @param method - 参数值
+     * @param params - 参数值
+     * @param timeoutMs - 超时时间（毫秒）
+      * @returns T 实例
+     */
     request<T = unknown>(method: string, params: unknown, timeoutMs = 30_000): Promise<T> {
         if (this.disposed) return Promise.reject(new Error('JSON-RPC 连接已关闭'));
         const id = this.nextId++;
@@ -131,7 +138,11 @@ export class DshJsonRpcClient {
         this.options.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
     }
 
-    /** 连接断开：所有未完成请求失败（不静默挂起） */
+    /**
+     * 连接断开：所有未完成请求失败（不静默挂起）
+     *
+     * @param reason - 原因
+     */
     dispose(reason = '连接已关闭'): void {
         this.disposed = true;
         for (const [, pending] of this.pending) {

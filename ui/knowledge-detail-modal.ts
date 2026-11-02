@@ -150,6 +150,9 @@ interface ForeshadowData {
     };
 }
 
+/**
+ * KnowledgeDetailModal 类。
+ */
 export class KnowledgeDetailModal extends Modal {
     private bookId: string;
     private knowledgeManager: KnowledgeBaseManager;
@@ -181,12 +184,18 @@ export class KnowledgeDetailModal extends Modal {
         this.baseDir = options?.baseDir;
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen() {
         this.modalEl.addClass('nw-scope');
         await this.loadData();
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
     }

@@ -18,8 +18,14 @@ import { writeVaultText } from './file-system-port';
 
 const log = createLogger('TemplateScaffold');
 
+/**
+ * 模板根路径常量。
+ */
 export const TEMPLATE_ROOT = '元文件';
 
+/**
+ * TemplateScaffoldResult 类型定义。
+ */
 export interface TemplateScaffoldResult {
     /** 本次新建的文件数 */
     created: number;

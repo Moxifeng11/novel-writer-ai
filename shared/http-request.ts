@@ -16,6 +16,9 @@ export const DEFAULT_HTTP_TIMEOUT_MS = 30000;
 /** 搜索类后端的通用策略：15s 超时 + 5xx/429/网络错误重试 1 次（超时不重试） */
 export const SEARCH_REQUEST_POLICY: HttpRequestPolicy = { timeoutMs: 15000, retries: 1, retryDelayMs: 1000 };
 
+/**
+ * HttpRequestPolicy 类型定义。
+ */
 export interface HttpRequestPolicy {
     /** 单次尝试超时（毫秒），默认 {@link DEFAULT_HTTP_TIMEOUT_MS} */
     timeoutMs?: number;
@@ -40,6 +43,9 @@ export class HttpRequestTimeoutError extends Error {
     }
 }
 
+/**
+ * RequestExecutor 类型定义。
+ */
 export type RequestExecutor<T = RequestUrlResponse> = (params: HttpRequestParams) => Promise<T>;
 
 /** 请求所需的最小参数集（`RequestUrlParam` 的子集，便于注入自定义请求函数） */
@@ -91,6 +97,10 @@ function isRetryableByDefault(error: unknown): boolean {
  * 统一执行一次 HTTP 请求：单次尝试超时 + 可选重试。
  *
  * 正常路径（未超时、未失败）的返回值与直接调用 `requestUrl` 完全一致。
+ * @param execute - 执行函数
+ * @param params - 参数集合
+ * @param policy - 策略
+  * @returns T 实例
  */
 export async function requestWithPolicy<T = RequestUrlResponse>(
     execute: RequestExecutor<T>,

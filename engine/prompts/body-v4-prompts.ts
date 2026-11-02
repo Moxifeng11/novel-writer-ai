@@ -26,6 +26,9 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V4 = `你是这场戏的录音机。�
 
 \${humanVoice}`;
 
+/**
+ * BODY_GENERATION_USER_TEMPLATE_V4 常量。
+ */
 export const BODY_GENERATION_USER_TEMPLATE_V4 = `【台词清单（按编号顺序写成连续对话；每条原样出现，允许前后加动作）】
 \${dialogueSkeleton}
 
@@ -57,4 +60,7 @@ export const BODY_GENERATION_USER_TEMPLATE_V4 = `【台词清单（按编号顺�
 3. 每场开头用具体时间或序数落地：第几分钟、第几次、第几波、三天后。
 4. 对话占全文三成以上。字数 ≥ \${baseWords} 字。`;
 
+/**
+ * BODY_GENERATION_V4_DESC 常量。
+ */
 export const BODY_GENERATION_V4_DESC = '✍️ 正文生成(V4·对话主干) — 按台词编号写成连续对话，叙述只补 1–3 句';

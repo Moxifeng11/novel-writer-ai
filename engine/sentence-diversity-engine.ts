@@ -1,3 +1,6 @@
+/**
+ * DiversityAnalysis 类型定义。
+ */
 export interface DiversityAnalysis {
     needsAdjustment: boolean;
     hints: string[];
@@ -34,7 +37,15 @@ const COMMON_VERBS = new Set([
     '变', '改', '换', '调', '转', '移', '动', '摇', '晃', '摆',
 ]);
 
+/**
+ * SentenceDiversityEngine 类。
+ */
 export class SentenceDiversityEngine {
+    /**
+     * analyzeDiversity 方法。
+     * @param sentences - 句子列表
+      * @returns DiversityAnalysis 实例
+     */
     analyzeDiversity(sentences: string[]): DiversityAnalysis {
         if (!sentences || sentences.length < 2) {
             return {

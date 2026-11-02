@@ -760,6 +760,8 @@ export class TieredInjectionBuilder {
 /**
  * 创建默认的动态注入引擎组合
  * - 三个组件无状态，可全局复用
+ *
+ * @returns 注入引擎组合
  */
 export function createDynamicInjectionEngine(): {
     analyzer: ContextAnalyzer;

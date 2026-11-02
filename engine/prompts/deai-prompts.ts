@@ -7,6 +7,9 @@
 import { HUMAN_VOICE_BLOCK } from './human-voice';
 
 // ============================================================
+/**
+ * DEAI_CHECK_SYSTEM_PROMPT 常量。
+ */
 export const DEAI_CHECK_SYSTEM_PROMPT = `你是一位专业的文本质量分析师。请分析以下小说正文的AI痕迹程度，输出检测报告。
 
 检测维度：
@@ -49,7 +52,7 @@ export const DEAI_CHECK_SYSTEM_PROMPT = `你是一位专业的文本质量分析
 ## 需改写段落
 列出最需要改写的3个段落（原文引用+改写建议）`;
 
-/*
+/**
  * DEAI 改写管道说明
  * ====================
  * ${deaiReport} 在此模板中使用，但不由 full-writer-view.ts 的 buildTemplateVars() 统一赋值。
@@ -58,6 +61,9 @@ export const DEAI_CHECK_SYSTEM_PROMPT = `你是一位专业的文本质量分析
  */
 export const DEAI_CHECK_USER_TEMPLATE = `【正文（终稿，非初稿——此文本已经过正文生成/修正/人工编辑等环节）】\n\${bodyText}`;
 
+/**
+ * DEAI_REWRITE_SYSTEM_PROMPT 常量。
+ */
 export const DEAI_REWRITE_SYSTEM_PROMPT = `上一版有 AI 痕迹：短段太碎、标点像机器、句式对称、结尾升华。现在重新写一遍。
 
 \${writingRules}
@@ -84,6 +90,9 @@ export const DEAI_REWRITE_SYSTEM_PROMPT = `上一版有 AI 痕迹：短段太碎
 
 ${HUMAN_VOICE_BLOCK}`;
 
+/**
+ * DEAI_REWRITE_USER_TEMPLATE 常量。
+ */
 export const DEAI_REWRITE_USER_TEMPLATE = `【上一版（太碎、太像分镜脚本）】\n\${bodyText}\n\n【最生硬的部分】\n\${deaiReport}\n\n现在重新写——恢复自然段，补足对话和过渡，保留全部情节。`;
 
 // ============================================================

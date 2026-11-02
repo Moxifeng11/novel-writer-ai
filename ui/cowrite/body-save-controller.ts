@@ -59,6 +59,9 @@ export interface BodySaveHost {
     scheduleAutoSave(): void;
 }
 
+/**
+ * BodySaveController 类。
+ */
 export class BodySaveController {
     private saving = false;
     /**
@@ -93,6 +96,11 @@ export class BodySaveController {
         this.host.scheduleAutoSave();
     }
 
+    /**
+     * 保存。
+     * @param showNotice - 提示函数
+     * @returns 是否成功
+     */
     async save(showNotice: boolean): Promise<boolean> {
         // 入口即快照：排队执行与 await 期间可能切章、也可能继续输入。
         // 正文与身份都必须在这一刻定下来，否则排队的保存会把新章正文写到旧章路径。

@@ -21,6 +21,9 @@ import type {
     SuggestionType,
 } from '../engine/quality/rewrite-types';
 
+/**
+ * RewriteSuggestionModal 类。
+ */
 export class RewriteSuggestionModal extends Modal {
     private plugin: NovelWriterPlugin;
     private editor: Editor;
@@ -59,6 +62,9 @@ export class RewriteSuggestionModal extends Modal {
         });
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope', 'nw-modal');
         this.titleEl.setText('✨ AI 改写建议');
@@ -114,6 +120,9 @@ export class RewriteSuggestionModal extends Modal {
         generate.onclick = () => { void this.generate(); };
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         if (this.generating) this.engine.cancel();
         this.contentEl.empty();

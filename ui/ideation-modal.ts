@@ -38,6 +38,9 @@ const GENRE_OPTIONS = [
     '奇幻', '武侠', '末世', '灵异', '游戏', '竞技', '同人'
 ];
 
+/**
+ * IdeationModal 类。
+ */
 export class IdeationModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -58,6 +61,9 @@ export class IdeationModal extends Modal {
         this.loadSavedIdeas();
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -1200,6 +1206,9 @@ ${idea.suitableGenres.join('、')}
         document.head.appendChild(style);
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

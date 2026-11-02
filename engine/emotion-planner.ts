@@ -73,6 +73,9 @@ relationship_change: 本场景导致角色间关系如何变化（如有互动�
 2. 总体情绪总变化次数 ≥ 场景数
 3. 高潮情绪等级必须 ≥ 开篇和结尾情绪等级的最大值`;
 
+/**
+ * 情绪计划用户模板常量。
+ */
 export const EMOTION_PLAN_USER_TEMPLATE = `根据以下素材，为第\${chapNum}章生成「情绪规划」。
 
 【世界观设定】

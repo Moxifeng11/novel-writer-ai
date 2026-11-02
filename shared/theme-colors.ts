@@ -18,6 +18,9 @@
 /** 界面氛围预设：决定面板/卡片相对基底的抬起幅度 */
 export type AppearancePreset = 'soft' | 'clear' | 'paper';
 
+/**
+ * 预设步骤列表结构定义。
+ */
 export interface PresetSteps {
     /** 面板相对基底抬起的百分比（0-100） */
     panel: number;
@@ -27,6 +30,9 @@ export interface PresetSteps {
     lift: string;
 }
 
+/**
+ * 预设步骤列表常量。
+ */
 export const PRESET_STEPS: Record<AppearancePreset, PresetSteps> = {
     soft: { panel: 8, card: 16, lift: '#ffffff' },
     clear: { panel: 14, card: 26, lift: '#ffffff' },
@@ -65,6 +71,11 @@ export interface DerivedPalette {
     textMuted: string;
 }
 
+/**
+ * 规范化预设。
+ * @param value - 值
+  * @returns AppearancePreset 实例
+ */
 export function normalizePreset(value: unknown): AppearancePreset {
     const text = typeof value === 'string' ? value.trim().toLowerCase() : '';
     if (text === 'clear' || text === 'paper' || text === 'soft') return text;
@@ -270,6 +281,7 @@ export const THEME_PRESET_BYTES_MAX = 2048;
  * 清洗方案名：去空白、截断、空则给默认名
  *
  * @param raw - 原始
+ * @param fallbackIndex - 回退索引
  * @returns 文本结果
  */
 export function sanitizePresetName(raw: unknown, fallbackIndex = 1): string {
@@ -340,7 +352,9 @@ export function capturePreset(
  * 只写三层 + 氛围 + 激活 id。文字色与旧面板直通值留在方案对象里，
  * 由 `resolveActivePresetInput` 在注入变量时反查叠加——如果把它们塞进
  * themeColors，三层结构就又被撑回 5 层了。
+ *
  * @param preset - 预设
+ * @returns 可直接写入设置的字段
  */
 export function presetToSettings(preset: ThemePreset): {
     theme: 'auto' | 'light' | 'dark';

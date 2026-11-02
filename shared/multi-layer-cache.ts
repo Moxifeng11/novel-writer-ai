@@ -186,6 +186,11 @@ export class MultiLayerCache {
 
     // ── 公共 API ──────────────────────────────────────────────
 
+    /**
+     * 获取。
+     * @param key - 键
+      * @returns T 或 null
+     */
     async get<T>(key: string): Promise<T | null> {
         const startTime = Date.now();
 
@@ -216,6 +221,12 @@ export class MultiLayerCache {
         return null;
     }
 
+    /**
+     * 设置。
+     * @param key - 键
+     * @param value - 值
+     * @param options - 配置项
+     */
     async set<T>(key: string, value: T, options?: CacheSetOptions): Promise<void> {
         const startTime = Date.now();
         const tier = options?.tier || 'all';

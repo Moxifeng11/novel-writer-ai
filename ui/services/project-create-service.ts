@@ -37,6 +37,9 @@ export interface ProjectCreatePluginHost {
     openFullWriterView?: () => Promise<void>;
 }
 
+/**
+ * CreateLongProjectParams 类型定义。
+ */
 export interface CreateLongProjectParams {
     projectName: string;
     genre: string;
@@ -51,6 +54,9 @@ export interface CreateLongProjectParams {
     confirmOverwrite?: () => Promise<boolean>;
 }
 
+/**
+ * CreateLongProjectResult 类型定义。
+ */
 export interface CreateLongProjectResult {
     created: boolean;
     projectId: string;
@@ -58,6 +64,12 @@ export interface CreateLongProjectResult {
     reason?: string;
 }
 
+/**
+ * writeCreationModeGuideFile 函数。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param meta - 元数据
+ */
 export async function writeCreationModeGuideFile(app: App, project: string, meta: CreationModeMeta): Promise<void> {
     const path = `${project}/00-系统模板/创作模式指南.md`;
     const { buildCreationModeGuide } = await import('../../shared/creation-mode');
@@ -68,6 +80,12 @@ export async function writeCreationModeGuideFile(app: App, project: string, meta
     }
 }
 
+/**
+ * writeStoryStructureGuideFile 函数。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param settings - 设置
+ */
 export async function writeStoryStructureGuideFile(app: App, project: string, settings: LongStorySettings): Promise<void> {
     const path = `${project}/00-系统模板/故事结构指南.md`;
     const { buildStoryStructureGuide } = await import('../../shared/story-structure');

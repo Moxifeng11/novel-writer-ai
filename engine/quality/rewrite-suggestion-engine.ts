@@ -69,10 +69,18 @@ export class RewriteSuggestionEngine {
   // 状态查询
   // ----------------------------------------------------------
 
+  /**
+   * getState 方法。
+    * @returns RewriteEngineState 实例
+   */
   getState(): RewriteEngineState {
     return this.state;
   }
 
+  /**
+   * isGenerating 方法。
+   * @returns 是否成功
+   */
   isGenerating(): boolean {
     return this.state === 'generating';
   }
@@ -232,6 +240,9 @@ export class RewriteSuggestionEngine {
   // 取消
   // ----------------------------------------------------------
 
+  /**
+   * cancel 方法。
+   */
   cancel(): void {
     if (this.currentAbort) {
       this.currentAbort.abort();
@@ -242,6 +253,9 @@ export class RewriteSuggestionEngine {
   // 缓存管理
   // ----------------------------------------------------------
 
+  /**
+   * 清空缓存。
+   */
   clearCache(): void {
     this.cache.clear();
   }

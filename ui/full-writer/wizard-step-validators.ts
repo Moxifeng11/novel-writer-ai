@@ -25,6 +25,9 @@ import { parseProjectMeta } from '../../shared/fanfic-rules';
 import { readMergedVolumeOutline } from '../../utils/helpers';
 import { parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
 
+/**
+ * WizardStepValidation 类型定义。
+ */
 export interface WizardStepValidation {
     valid: boolean;
     missingFields: string[];
@@ -68,6 +71,13 @@ async function validateChapters(app: App, project: string): Promise<WizardStepVa
     return OK;
 }
 
+/**
+ * validateWizardStepContent 函数。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param stepId - 步骤ID
+  * @returns WizardStepValidation 实例
+ */
 export async function validateWizardStepContent(
     app: App,
     project: string,

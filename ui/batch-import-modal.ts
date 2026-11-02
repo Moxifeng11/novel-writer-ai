@@ -56,6 +56,9 @@ function generateId(): string {
     return 'import_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
+/**
+ * BatchImportModal 类。
+ */
 export class BatchImportModal extends Modal {
     private options: BatchImportModalOptions;
     private currentStep: ImportStep = 1;
@@ -108,6 +111,9 @@ export class BatchImportModal extends Modal {
         this.batchManager = manager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen() {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
@@ -132,6 +138,9 @@ export class BatchImportModal extends Modal {
         });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         if (this.progressUnsubscribe) {
             this.progressUnsubscribe();

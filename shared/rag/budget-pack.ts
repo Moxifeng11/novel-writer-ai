@@ -7,6 +7,9 @@
  */
 import type { RagHit } from './neighbors';
 
+/**
+ * PackResult 类型定义。
+ */
 export interface PackResult {
     picked: RagHit[];
     /** 因预算未装入的条数 */

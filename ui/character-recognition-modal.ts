@@ -23,6 +23,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('CharacterRecognitionModal');
 
+/**
+ * CharacterRecognitionModal 类。
+ */
 export class CharacterRecognitionModal extends Modal {
     private plugin: NovelWriterPlugin;
     private suggestionManager: SuggestionManager = new SuggestionManager();
@@ -37,6 +40,9 @@ export class CharacterRecognitionModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
@@ -59,6 +65,9 @@ export class CharacterRecognitionModal extends Modal {
         this.resultEl = contentEl.createDiv({ attr: { style: 'margin-top: 12px;' } });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

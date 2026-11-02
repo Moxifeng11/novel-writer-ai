@@ -25,6 +25,7 @@ export function estimateTokens(text: string): number {
  *
  * @param windowTokens - 窗口token 列表
  * @param maxOutputTokens - 最大输出 token 数
+ * @param headroomTokens - 预留 token 数
   * @returns 数值结果 或 null
  */
 export function resolveContextBudget(
@@ -64,6 +65,10 @@ const TRIM_MARK = '[早期工具结果已裁剪以适配上下文]';
 
 /**
  * 把对话裁到预算内。system 不计入 turns，需由调用方单独加上。
+ * @param turns - 对话轮次
+ * @param budgetTokens - 预算 token 数
+ * @param systemChars - 系统字符数
+  * @returns FitContextResult<T> 实例
  */
 export function fitTurnsToBudget<T extends ContextTurn>(
     turns: readonly T[],

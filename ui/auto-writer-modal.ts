@@ -19,6 +19,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('AutoWriterModal');
 
+/**
+ * AutoWriterModal 类。
+ */
 export class AutoWriterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -30,6 +33,9 @@ export class AutoWriterModal extends Modal {
         this.contextManager = plugin.ctxManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -220,6 +226,9 @@ export class AutoWriterModal extends Modal {
         this.close();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         // 关闭 ≠ 停止：必须显式中止在途 AI 调用，已完成章节保留
         this.abortController?.abort();

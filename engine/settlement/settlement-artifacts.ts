@@ -21,6 +21,9 @@ export interface SettlementTableResult {
     settlementPartial?: boolean;
 }
 
+/**
+ * SettlementTableInput 类型定义。
+ */
 export interface SettlementTableInput {
     chapterName: string;
     /** 卷名（第N卷）；从路径取不到时传空串 */

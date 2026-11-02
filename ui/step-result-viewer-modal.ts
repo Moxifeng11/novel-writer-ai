@@ -27,6 +27,9 @@ const STATUS_COLORS: Record<StepStatus | 'unknown', { bg: string; text: string }
     unknown: { bg: 'var(--background-modifier-border)', text: 'var(--text-muted)' },
 };
 
+/**
+ * StepResultViewerModal 类。
+ */
 export class StepResultViewerModal extends Modal {
     private plugin: NovelWriterPlugin;
     private projects: string[] = [];
@@ -48,6 +51,9 @@ export class StepResultViewerModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope');
         // Rev 184：原先强行取全局上限（96vw × 90vh）导致接近全屏，改为专用小尺寸类
@@ -417,6 +423,9 @@ export class StepResultViewerModal extends Modal {
         this.app.workspace.openLinkText(file.path, '');
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.projects = [];
         this.volumes = [];

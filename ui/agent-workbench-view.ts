@@ -65,6 +65,9 @@ const TYPE_SECTIONS: Array<{ mode: CreationMode; label: string }> = [
 
 const MODE_LIBRARY_ROOTS = ['长篇小说', '短篇小说', '剧本'];
 
+/**
+ * AgentWorkbenchView 类。
+ */
 export class AgentWorkbenchView extends ItemView {
     private readonly plugin: NovelWriterPlugin;
     private harnessEngine: AgentHarnessEngine | null = null;
@@ -133,18 +136,33 @@ export class AgentWorkbenchView extends ItemView {
         this.activeProject = plugin.getActiveProject() || '';
     }
 
+    /**
+     * 获取视图类型。
+     * @returns 文本结果
+     */
     getViewType(): string {
         return VIEW_TYPE_AGENT_WORKBENCH;
     }
 
+    /**
+     * getDisplayText 方法。
+     * @returns 文本结果
+     */
     getDisplayText(): string {
         return '🤖 Agent 创作工作台';
     }
 
+    /**
+     * getIcon 方法。
+     * @returns 文本结果
+     */
     getIcon(): string {
         return 'bot';
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         applyNwScope(this);
         const { contentEl } = this;
@@ -235,6 +253,9 @@ export class AgentWorkbenchView extends ItemView {
         this.layoutResizers = [];
     }
 
+    /**
+     * onClose 方法。
+     */
     async onClose(): Promise<void> {
         this.destroyLayoutResizers();
         closeExistingPopovers();

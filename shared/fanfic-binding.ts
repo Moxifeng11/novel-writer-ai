@@ -34,6 +34,7 @@ function basenameWithoutExt(path: string): string {
  * - 去重后按文件名排序。
  * @param mdPaths - Markdown 路径列表
  * @param dirs - 目录列表
+ * @param currentPath - 当前路径
  * @returns 结果数组
  */
 export function listFanficSettingCandidates(

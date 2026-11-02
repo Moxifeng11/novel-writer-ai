@@ -57,6 +57,9 @@ const GENRE_OPTIONS = [
     '奇幻', '武侠', '末世', '灵异', '游戏', '竞技', '同人'
 ];
 
+/**
+ * GoldenOpeningModal 类。
+ */
 export class GoldenOpeningModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -93,6 +96,9 @@ export class GoldenOpeningModal extends Modal {
         this.aiEngine = plugin.aiEngine;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -1908,6 +1914,9 @@ tags: [黄金开篇, 大纲]
         document.head.appendChild(style);
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

@@ -163,6 +163,9 @@ const ENDING_HOOK_PATTERNS = [
   /明天|明日|下次|改日|来日/,
 ];
 
+/**
+ * WritingQualityEngine 类。
+ */
 export class WritingQualityEngine {
   private characterNames: string[];
   private mainlineKeywords: string[];

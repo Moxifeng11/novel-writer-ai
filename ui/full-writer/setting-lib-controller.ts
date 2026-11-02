@@ -8,6 +8,9 @@
 import { App, Notice } from 'obsidian';
 import NovelWriterPlugin from '../../main';
 
+/**
+ * SettingLibController 类。
+ */
 export class SettingLibController {
     private app: App;
     private plugin: NovelWriterPlugin;
@@ -26,6 +29,9 @@ export class SettingLibController {
         this.refresh = refresh;
     }
 
+    /**
+     * populateSettingLib 方法。
+     */
     async populateSettingLib(): Promise<void> {
         const project = this.getProject();
         if (!project) {

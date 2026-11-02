@@ -25,6 +25,9 @@ import type { DeconstructionWorkerManager, DeconstructDimension } from './decons
 import type { LLMEnhancer } from './llm-enhancer';
 import type { LLMEnhanceDimension } from './llm-prompts';
 
+/**
+ * 调度器分段选项列表结构定义。
+ */
 export interface SchedulerSegmentOptions {
     maxDirectWords?: number;
     maxSegmentWords?: number;
@@ -36,6 +39,9 @@ export interface SchedulerSegmentOptions {
     onPartialResult?: (result: PartialResult) => void;
 }
 
+/**
+ * SchedulerSegmentIntegration 类。
+ */
 export class SchedulerSegmentIntegration {
     private workerManager: DeconstructionWorkerManager;
     private breakdown: SegmentAwareBreakdown;
@@ -45,6 +51,14 @@ export class SchedulerSegmentIntegration {
         this.breakdown = new SegmentAwareBreakdown();
     }
 
+    /**
+     * analyzeWithSegments 方法。
+     * @param dimension - 参数值
+     * @param text - 文本内容
+     * @param signal - 取消信号
+     * @param options - 配置项
+      * @returns SegmentBreakdownResult<T> 实例
+     */
     async analyzeWithSegments<T>(
         dimension: DeconstructDimension,
         text: string,
@@ -194,12 +208,24 @@ export class SchedulerSegmentIntegration {
         return merged as unknown as T;
     }
 
+    /**
+     * 是否应该分段。
+     * @param text - 文本内容
+     * @param options - 配置项
+     * @returns 是否成功
+     */
     shouldSegment(text: string, options: SchedulerSegmentOptions = {}): boolean {
         const words = countCjkAndWords(text);
         const threshold = options.maxDirectWords ?? 300000;
         return words > threshold;
     }
 
+    /**
+     * estimateSegments 方法。
+     * @param text - 文本内容
+     * @param options - 配置项
+     * @returns 数值结果
+     */
     estimateSegments(text: string, options: SchedulerSegmentOptions = {}): number {
         const words = countCjkAndWords(text);
         const threshold = options.maxDirectWords ?? 300000;

@@ -8,8 +8,14 @@
 
 export type BreakdownDimension = 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow' | 'commercial' | 'readability';
 
+/**
+ * DeconstructionQualityLevel 类型定义。
+ */
 export type DeconstructionQualityLevel = 'fast' | 'standard' | 'deep';
 
+/**
+ * DeconstructionEngineSettings 类型定义。
+ */
 export interface DeconstructionEngineSettings {
     defaultQualityLevel: 'fast' | 'standard' | 'deep';
     enableAutoUpgrade: boolean;
@@ -28,6 +34,9 @@ export interface DeconstructionEngineSettings {
     sampleMode?: boolean;
 }
 
+/**
+ * DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS 常量。
+ */
 export const DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS: DeconstructionEngineSettings = {
     defaultQualityLevel: 'standard',
     enableAutoUpgrade: true,
@@ -46,10 +55,16 @@ export const DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS: DeconstructionEngineSetting
     sampleMode: false,
 };
 
+/**
+ * ALL_BREAKDOWN_DIMENSIONS 常量。
+ */
 export const ALL_BREAKDOWN_DIMENSIONS: BreakdownDimension[] = [
     'style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow', 'commercial', 'readability',
 ];
 
+/**
+ * 维度标签列表常量。
+ */
 export const DIMENSION_LABELS: Record<BreakdownDimension, string> = {
     style: '风格分析',
     rhythm: '节奏分析',

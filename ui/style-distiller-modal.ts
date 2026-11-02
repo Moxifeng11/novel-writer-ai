@@ -18,6 +18,9 @@ const DISTILL_STEPS = [
     '生成报告与保存结果',
 ];
 
+/**
+ * StyleDistillerModal 类。
+ */
 export class StyleDistillerModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -39,6 +42,9 @@ export class StyleDistillerModal extends Modal {
         this.aiEngine = plugin.aiEngine;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -464,6 +470,9 @@ ${analysis}
         new Notice(`✅ 文笔风格已存入文笔风格库 → ${fileName}`, 6000);
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         if (this.progressEmitter && this.isAnalyzing) {
             this.progressEmitter.cancel();

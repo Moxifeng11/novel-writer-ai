@@ -6,6 +6,9 @@ import { FullWriterStore } from './full-writer-store';
 import { ChapterStateManager } from '../states/chapter-state-manager';
 import { STORY_STRUCTURES, type StoryStructureId } from '../../shared/story-structure';
 
+/**
+ * StatusBarControllerDeps 类型定义。
+ */
 export interface StatusBarControllerDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -16,6 +19,9 @@ export interface StatusBarControllerDeps {
     onChangeNarrativeStructure?: (id: StoryStructureId) => void;
 }
 
+/**
+ * StatusBarController 类。
+ */
 export class StatusBarController {
     private deps: StatusBarControllerDeps;
 
@@ -23,6 +29,10 @@ export class StatusBarController {
         this.deps = deps;
     }
 
+    /**
+     * renderStatusBar 方法。
+     * @param container - 容器元素
+     */
     renderStatusBar(container: HTMLElement): void {
         const sb = container.createDiv({ cls: 'novel-writer-fw-status-bar' });
 

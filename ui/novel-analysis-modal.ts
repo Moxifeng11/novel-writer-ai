@@ -15,6 +15,9 @@ interface NovelAnalysisModalOptions {
     plugin: NovelWriterPlugin;
 }
 
+/**
+ * NovelAnalysisModal 类。
+ */
 export class NovelAnalysisModal extends Modal {
     private options: NovelAnalysisModalOptions;
     private analyzer: NovelAnalyzer;
@@ -28,6 +31,9 @@ export class NovelAnalysisModal extends Modal {
         this.analyzer = new NovelAnalyzer();
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen() {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -81,6 +87,9 @@ export class NovelAnalysisModal extends Modal {
         this.analyzeText();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
     }

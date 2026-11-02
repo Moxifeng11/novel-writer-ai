@@ -102,6 +102,9 @@ export function activeContextQuotas(): ContextQuotas {
  * 预算，异步交错时后开始的流程会污染前一个流程的切片配额（实测：小窗口模型先跑，
  * 后续云端流程仍按 120K 默认配额切上下文，或反过来把云端流程压到本地配额）。
  * 所有入口统一用这个包装，保证「谁设置、谁还原」。
+ * @param maxInputTokens - 最大输入 token 数
+ * @param fn - 函数
+  * @returns T 实例
  */
 export async function withActiveInputBudget<T>(
     maxInputTokens: number | undefined,

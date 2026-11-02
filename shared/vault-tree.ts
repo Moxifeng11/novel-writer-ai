@@ -19,10 +19,16 @@ export interface VaultTreeNode {
     children?: VaultTreeNode[];
 }
 
+/**
+ * VaultTreePort 类型定义。
+ */
 export interface VaultTreePort {
     getAbstractFileByPath(path: string): unknown;
 }
 
+/**
+ * 列出文件夹选项列表结构定义。
+ */
 export interface ListFolderOptions {
     /** 是否递归子目录（默认 false：只取当前目录） */
     recursive?: boolean;
@@ -58,6 +64,10 @@ function extensionOf(node: VaultTreeNode): string {
 /**
  * 列出目录下的文件（不包含目录本身）。
  * 目录不存在、路径指向文件、宿主没有 children 时一律返回空数组，不抛错。
+ * @param vault - 仓库（Vault）
+ * @param folderPath - 文件夹路径
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function listFolderFiles<T = VaultTreeNode>(
     vault: VaultTreePort,

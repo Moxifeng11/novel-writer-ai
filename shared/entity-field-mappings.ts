@@ -108,22 +108,53 @@ export const ENTITY_FIELD_MAPPINGS: Record<EntityCategory, CategoryMapping> = {
     },
 };
 
+/**
+ * getFieldMapping 函数。
+ * @param category - 分类
+ * @param modelKey - 模型键
+  * @returns FieldMapping 或 undefined
+ */
 export function getFieldMapping(category: EntityCategory, modelKey: string): FieldMapping | undefined {
     return ENTITY_FIELD_MAPPINGS[category]?.fields.find(f => f.modelKey === modelKey);
 }
 
+/**
+ * 获取frontmatter键。
+ * @param category - 分类
+ * @param modelKey - 模型键
+  * @returns 文本结果 或 undefined
+ */
 export function getFrontmatterKey(category: EntityCategory, modelKey: string): string | undefined {
     return getFieldMapping(category, modelKey)?.frontmatterKey;
 }
 
+/**
+ * 获取模型键。
+ * @param category - 分类
+ * @param frontmatterKey - frontmatter键
+  * @returns 文本结果 或 undefined
+ */
 export function getModelKey(category: EntityCategory, frontmatterKey: string): string | undefined {
     return ENTITY_FIELD_MAPPINGS[category]?.fields.find(f => f.frontmatterKey === frontmatterKey)?.modelKey;
 }
 
+/**
+ * 获取字段标签。
+ * @param category - 分类
+ * @param modelKey - 模型键
+  * @returns 文本结果 或 undefined
+ */
 export function getFieldLabel(category: EntityCategory, modelKey: string): string | undefined {
     return getFieldMapping(category, modelKey)?.label;
 }
 
+/**
+ * 把实体的 frontmatter 字段映射为领域模型字段。
+ *
+ * @param category - 实体分类（决定字段映射表）
+ * @param frontmatter - 原始 frontmatter
+ * @returns 领域模型对象
+ */
 export function mapFrontmatterToModel<T extends Record<string, unknown>>(
     category: EntityCategory,
     frontmatter: Record<string, unknown>,
@@ -143,6 +174,12 @@ export function mapFrontmatterToModel<T extends Record<string, unknown>>(
     return result as T;
 }
 
+/**
+ * mapModelToFrontmatter 函数。
+ * @param category - 分类
+ * @param model - 模型标识
+ * @returns 映射结果
+ */
 export function mapModelToFrontmatter(
     category: EntityCategory,
     model: Record<string, unknown>,

@@ -6,6 +6,9 @@ import { BaseEntity, type BaseEntityProps } from './base-entity';
 import { EntityStatus, Frontmatter } from '../value-objects';
 import type { EntityCategory } from './base-entity';
 
+/**
+ * ItemProps 类型定义。
+ */
 export interface ItemProps extends BaseEntityProps {
     type?: string;
     grade?: string;
@@ -14,6 +17,9 @@ export interface ItemProps extends BaseEntityProps {
     owner?: string;
 }
 
+/**
+ * 条目。
+ */
 export class Item extends BaseEntity {
     private readonly _itemProps: Omit<ItemProps, keyof BaseEntityProps>;
 
@@ -33,6 +39,13 @@ export class Item extends BaseEntity {
     get effect(): string | undefined { return this._itemProps.effect; }
     get owner(): string | undefined { return this._itemProps.owner; }
 
+    /**
+     * 创建。
+     * @param id - 标识
+     * @param name - 名称
+     * @param filePath - 文件路径
+      * @returns Item 实例
+     */
     static create(id: string, name: string, filePath: string): Item {
         return new Item({
             id,
@@ -49,10 +62,20 @@ export class Item extends BaseEntity {
         });
     }
 
+    /**
+     * 从。
+     * @param props - 属性表
+      * @returns Item 实例
+     */
     static from(props: ItemProps): Item {
         return new Item(props);
     }
 
+    /**
+     * 带状态。
+     * @param status - 状态
+      * @returns Item 实例
+     */
     withStatus(status: EntityStatus): Item {
         return new Item({
             ...this._props,
@@ -61,6 +84,11 @@ export class Item extends BaseEntity {
         } as ItemProps);
     }
 
+    /**
+     * 带名称。
+     * @param name - 名称
+      * @returns Item 实例
+     */
     withName(name: string): Item {
         return new Item({
             ...this._props,
@@ -69,6 +97,11 @@ export class Item extends BaseEntity {
         } as ItemProps);
     }
 
+    /**
+     * 带所有者。
+     * @param owner - 所有者
+      * @returns Item 实例
+     */
     withOwner(owner: string): Item {
         return new Item({
             ...this._props,
@@ -78,6 +111,10 @@ export class Item extends BaseEntity {
         } as ItemProps);
     }
 
+    /**
+     * 转换为JSON。
+     * @returns 映射结果
+     */
     toJSON(): Record<string, any> {
         return {
             ...super.toJSON(),

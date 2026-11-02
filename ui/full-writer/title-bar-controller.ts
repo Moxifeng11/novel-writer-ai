@@ -8,6 +8,9 @@ import { renderQuickToolsPanel } from './quick-tools-panel';
 import type { ChapterRunMode } from '../../shared/chapter-run';
 import { CHAPTER_QUICK_TOOL_IDS, findLongToolByCommandId } from './tool-catalog';
 
+/**
+ * TitleBarControllerDeps 类型定义。
+ */
 export interface TitleBarControllerDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -26,6 +29,9 @@ export interface TitleBarControllerDeps {
     getRemainingChapterActions: () => number;
 }
 
+/**
+ * TitleBarController 类。
+ */
 export class TitleBarController {
     private deps: TitleBarControllerDeps;
 
@@ -33,6 +39,10 @@ export class TitleBarController {
         this.deps = deps;
     }
 
+    /**
+     * renderTitleBar 方法。
+     * @param container - 容器元素
+     */
     async renderTitleBar(container: HTMLElement): Promise<void> {
         const bar = container.createDiv({ cls: 'novel-writer-fw-titlebar' });
 

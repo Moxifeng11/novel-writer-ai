@@ -30,10 +30,19 @@ export class WizardController {
         private checker: WizardChecker,
     ) {}
 
+    /**
+     * buildWizardSteps 方法。
+     * @param projectType - 项目类型
+     * @returns 结果数组
+     */
     buildWizardSteps(projectType: 'original' | 'fanfic'): WizardStep[] {
         return buildWizardStepsExternal(projectType);
     }
 
+    /**
+     * openWizardForProject 方法。
+     * @param project - 项目（路径或对象）
+     */
     async openWizardForProject(project: string): Promise<void> {
         const existingTab = this.view.tabs.find(
             (t: { type: string; project: string }) => t.type === 'wizard' && t.project === project
@@ -154,6 +163,11 @@ export class WizardController {
         await this.view.pushNav(wizardId);
     }
 
+    /**
+     * 渲染页签内容。
+     * @param tab - 页签
+     * @param skipAutoAdvance - 是否跳过自动推进
+     */
     async renderTabContent(tab: WizardTab, skipAutoAdvance = false): Promise<void> {
         // BUG-H fix: 切换步骤前关闭已打开的大纲树 Modal
         this.view.closeOutlineTreeModal();
@@ -213,6 +227,12 @@ export class WizardController {
         await this.renderCurrentStep(tab, contentArea, sidebar);
     }
 
+    /**
+     * 渲染当前步骤。
+     * @param tab - 页签
+     * @param contentArea - 内容区域
+     * @param sidebar - 侧边栏元素
+     */
     async renderCurrentStep(tab: WizardTab, contentArea: HTMLElement, sidebar: HTMLElement): Promise<void> {
         const step = tab.steps[tab.currentStepIdx];
         if (!step) return;
@@ -259,6 +279,13 @@ export class WizardController {
         this.renderNavBar(tab, step, navBar, contentArea);
     }
 
+    /**
+     * renderNavBar 方法。
+     * @param tab - 页签
+     * @param step - 步骤
+     * @param navBar - 导航栏元素
+     * @param contentArea - 内容区域
+     */
     renderNavBar(tab: WizardTab, step: WizardStep, navBar: HTMLElement, contentArea?: HTMLElement): void {
         const isStep0 = tab.currentStepIdx === 0;
         const isLastStep = tab.currentStepIdx === tab.steps.length - 1;

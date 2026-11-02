@@ -32,10 +32,18 @@ export function setExemplarLibrary(samples: ExemplarSample[]): void {
         .map((sample) => ({ book: sample.book || 'unknown', kind: sample.kind || '补充', text: sample.text.trim() }));
 }
 
+/**
+ * getExemplarLibrary 函数。
+ * @returns 结果数组
+ */
 export function getExemplarLibrary(): readonly ExemplarSample[] {
     return library;
 }
 
+/**
+ * hasExemplars 函数。
+ * @returns 是否成功
+ */
 export function hasExemplars(): boolean {
     return library.length > 0;
 }
@@ -47,6 +55,9 @@ export function clearExemplarLibrary(): void {
 
 const KIND_ORDER = ['战斗/冲突', '日常/对话', '情绪/心理'];
 
+/**
+ * SelectOptions 类型定义。
+ */
 export interface SelectOptions {
     /** 期望的场景类型（按顺序尽量覆盖） */
     kinds?: string[];

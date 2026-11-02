@@ -363,6 +363,9 @@ function chip(label: string, value: string): AgentChip {
     return { label, value };
 }
 
+/**
+ * GuideAgentEngine 类。
+ */
 export class GuideAgentEngine {
     private flow: AgentFlowId = 'root';
     private slots: AgentSlots = {};
@@ -377,14 +380,26 @@ export class GuideAgentEngine {
         private readonly port?: GuideAgentPort,
     ) {}
 
+    /**
+     * getSlots 方法。
+      * @returns Readonly<AgentSlots> 实例
+     */
     getSlots(): Readonly<AgentSlots> {
         return { ...this.slots };
     }
 
+    /**
+     * getFlow 方法。
+      * @returns AgentFlowId 实例
+     */
     getFlow(): AgentFlowId {
         return this.flow;
     }
 
+    /**
+     * 启动。
+      * @returns AgentTurnResult 实例
+     */
     start(): AgentTurnResult {
         const hasProjects = this.ctx.projects.length > 0;
         this.flow = 'root';
@@ -400,6 +415,11 @@ export class GuideAgentEngine {
         return this.collect();
     }
 
+    /**
+     * 处理。
+     * @param text - 文本内容
+      * @returns AgentTurnResult 实例
+     */
     async handle(text: string): Promise<AgentTurnResult> {
         if (this.done) return this.collect();
         const raw = String(text || '').trim();
@@ -448,6 +468,12 @@ export class GuideAgentEngine {
         return this.collect();
     }
 
+    /**
+     * 报告动作。
+     * @param kind - 参数值
+     * @param outcome - 参数值
+      * @returns AgentTurnResult 实例
+     */
     reportAction(
         kind: 'create_project' | 'create_short_project' | 'create_script_project' | 'open_wizard' | 'open_flow' | 'open_story_settings' | 'open_full_writer' | 'open_pre_research',
         outcome: { ok: boolean; detail?: string; projectId?: string },

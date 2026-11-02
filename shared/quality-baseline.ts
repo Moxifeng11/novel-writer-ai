@@ -10,6 +10,9 @@ import {
 } from './thresholds';
 import type { QualityHistoryRecord } from './quality-history';
 
+/**
+ * QualityBaselineDimensionKey 类型定义。
+ */
 export type QualityBaselineDimensionKey =
     | 'language'
     | 'rhythm'
@@ -18,6 +21,9 @@ export type QualityBaselineDimensionKey =
     | 'atmosphere'
     | 'structure';
 
+/**
+ * QUALITY_BASELINE_DIMENSION_FIELDS 常量。
+ */
 export const QUALITY_BASELINE_DIMENSION_FIELDS: Record<QualityBaselineDimensionKey, keyof QualityHistoryRecord> = {
     language: 'languageScore',
     rhythm: 'rhythmScore',
@@ -27,12 +33,18 @@ export const QUALITY_BASELINE_DIMENSION_FIELDS: Record<QualityBaselineDimensionK
     structure: 'structureScore',
 };
 
+/**
+ * QualityBaselineStats 类型定义。
+ */
 export interface QualityBaselineStats {
     mean: number;
     stdDev: number;
     count: number;
 }
 
+/**
+ * QualityBaseline 类型定义。
+ */
 export interface QualityBaseline {
     overall: QualityBaselineStats;
     dimensions: Record<QualityBaselineDimensionKey, QualityBaselineStats>;
@@ -42,8 +54,14 @@ export interface QualityBaseline {
     computedAt: number;
 }
 
+/**
+ * BaselineLevel 类型定义。
+ */
 export type BaselineLevel = 'above' | 'at' | 'below';
 
+/**
+ * BaselineDimensionComparison 类型定义。
+ */
 export interface BaselineDimensionComparison {
     current: number;
     baseline: number;
@@ -52,6 +70,9 @@ export interface BaselineDimensionComparison {
     level: BaselineLevel;
 }
 
+/**
+ * BaselineComparison 类型定义。
+ */
 export interface BaselineComparison {
     overall: BaselineDimensionComparison;
     dimensions: Partial<Record<QualityBaselineDimensionKey, BaselineDimensionComparison>>;
@@ -59,6 +80,9 @@ export interface BaselineComparison {
     level: BaselineLevel;
 }
 
+/**
+ * 当前质量快照结构定义。
+ */
 export interface CurrentQualitySnapshot {
     overallScore: number;
     dimensions?: Partial<Record<QualityBaselineDimensionKey, number>>;

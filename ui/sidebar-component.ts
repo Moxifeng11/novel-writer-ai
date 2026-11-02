@@ -4,10 +4,17 @@ import { PlanBookModal } from './plan-book-modal';
 import { CreateProjectModal } from './create-project-modal';
 import { PreResearchModal } from './pre-research-modal';
 
+/**
+ * SidebarComponent 类。
+ */
 export class SidebarComponent {
     private plugin: NovelWriterPlugin;
     constructor(plugin: NovelWriterPlugin) { this.plugin = plugin; }
 
+    /**
+     * 渲染。
+     * @param panel - 面板元素
+     */
     render(panel: HTMLElement) {
         panel.empty();
         panel.createEl('div', { text: '⚙️ 核心操作', cls: 'novel-workspace-section-title' });

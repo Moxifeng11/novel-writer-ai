@@ -23,6 +23,8 @@ function normalizeLabel(label: string): ExpectedRhythm {
 }
 
 /**
+ * 从规划文本中解析预期节奏。
+ *
  * @param texts 规划文本（大纲摘要 / 情绪规划 / chapPlan 等），按顺序扫描
  * @returns 明确的预期节奏；无标注或标注互相矛盾时返回 undefined
  */

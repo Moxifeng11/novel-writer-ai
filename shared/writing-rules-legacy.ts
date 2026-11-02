@@ -9,6 +9,9 @@
 
 export const WRITING_RULES_LEGACY_VERSION = '3.6.0-legacy';
 
+/**
+ * WRITING_RULES_LEGACY 常量。
+ */
 export const WRITING_RULES_LEGACY = `# 网络小说写作规则（引导版）
 
 > 核心理念：你不是作者在写作，你是角色在活着。用引导代替禁止。

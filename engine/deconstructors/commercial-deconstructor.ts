@@ -285,6 +285,11 @@ export class CommercialDeconstructor {
     }
   }
 
+  /**
+   * 分析。
+   * @param text - 文本内容
+    * @returns CommercialAnalysisResult 实例
+   */
   async analyze(text: string): Promise<CommercialAnalysisResult> {
     if (!text || text.length === 0) {
       return this.getEmptyResult();
@@ -331,6 +336,11 @@ export class CommercialDeconstructor {
     };
   }
 
+  /**
+   * analyzeWithVector 方法。
+   * @param text - 文本内容
+    * @returns CommercialAnalysisResult 实例
+   */
   async analyzeWithVector(text: string): Promise<CommercialAnalysisResult> {
     const baseResult = await this.analyze(text);
     await yieldToUI();
@@ -353,6 +363,13 @@ export class CommercialDeconstructor {
     return baseResult;
   }
 
+  /**
+   * saveAnalysisToMarkdown 方法。
+   * @param app - Obsidian 应用实例
+   * @param bookName - 书名
+   * @param result - 结果
+   * @param baseDir - 参数值
+   */
   async saveAnalysisToMarkdown(
     app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
     bookName: string,
@@ -373,6 +390,11 @@ export class CommercialDeconstructor {
     await app.vault.adapter.write(filePath, content);
   }
 
+  /**
+   * validateGoldenThreeChapters 方法。
+   * @param text - 文本内容
+    * @returns GoldenThreeChaptersResult 实例
+   */
   validateGoldenThreeChapters(text: string): GoldenThreeChaptersResult {
     const chapters = this.splitChapters(text);
     const firstThreeChapters = chapters.slice(0, 3);
@@ -492,6 +514,12 @@ export class CommercialDeconstructor {
     };
   }
 
+  /**
+   * validateWaveRhythm 方法。
+   * @param text - 文本内容
+   * @param rhythmResult - 节奏结果
+    * @returns WaveRhythmResult 实例
+   */
   validateWaveRhythm(text: string, rhythmResult?: any): WaveRhythmResult {
     if (!text || text.length === 0) {
       return {

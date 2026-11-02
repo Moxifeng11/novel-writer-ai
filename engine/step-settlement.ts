@@ -13,6 +13,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('StepSettlement');
 
+/**
+ * StepSettlementHost 类型定义。
+ */
 export interface StepSettlementHost {
     settlementEngine: SettlementEngine;
     /**

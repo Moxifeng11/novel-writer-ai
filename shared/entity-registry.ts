@@ -9,4 +9,7 @@ export const ENTITY_CATEGORIES = [
     { label: '物品功法', icon: '⚔️', dir: '物品功法' },
 ] as const;
 
+/**
+ * EntityCategory 类型定义。
+ */
 export type EntityCategory = typeof ENTITY_CATEGORIES[number];

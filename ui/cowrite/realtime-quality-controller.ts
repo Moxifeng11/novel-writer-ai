@@ -84,10 +84,18 @@ export class RealtimeQualityController {
 
     constructor(private readonly host: RealtimeQualityHost) {}
 
+    /**
+     * attachStatus 方法。
+     * @param el - 元素
+     */
     attachStatus(el: HTMLElement | null): void {
         this.statusEl = el;
     }
 
+    /**
+     * 是否启用。
+     * @returns 是否成功
+     */
     isEnabled(): boolean {
         return this.enabled;
     }
@@ -132,6 +140,9 @@ export class RealtimeQualityController {
         this.clearStatus();
     }
 
+    /**
+     * 释放。
+     */
     dispose(): void {
         // 关闭视图后不得再调度/渲染/落盘：旧实现只释放了 debouncer，
         // enabled 仍为 true，在途评估返回后照样写顶栏 DIV 与质量历史。

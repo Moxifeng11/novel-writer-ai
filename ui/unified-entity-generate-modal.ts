@@ -31,6 +31,9 @@ interface ManagedEntity {
 
 type GenerateStep = 'type-select' | 'basic-info' | 'params' | 'preview' | 'confirm';
 
+/**
+ * UnifiedEntityGenerateModal 类。
+ */
 export class UnifiedEntityGenerateModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -115,6 +118,9 @@ export class UnifiedEntityGenerateModal extends Modal {
         };
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -138,6 +144,9 @@ export class UnifiedEntityGenerateModal extends Modal {
         this._renderCurrentStep();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         super.onClose();
         if (this._abortController) {

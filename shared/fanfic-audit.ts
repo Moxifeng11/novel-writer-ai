@@ -20,8 +20,14 @@ import {
 } from './fanfic-rules';
 import { validateFanficSettings } from './template-validator';
 
+/**
+ * FanficAuditSeverity 类型定义。
+ */
 export type FanficAuditSeverity = 'error' | 'warning' | 'info';
 
+/**
+ * FanficAuditIssue 类型定义。
+ */
 export interface FanficAuditIssue {
     severity: FanficAuditSeverity;
     code: string;
@@ -31,6 +37,9 @@ export interface FanficAuditIssue {
     suggestion?: string;
 }
 
+/**
+ * FanficAuditStats 类型定义。
+ */
 export interface FanficAuditStats {
     missingFields: number;
     placeholderCount: number;
@@ -43,12 +52,18 @@ export interface FanficAuditStats {
     reviewStatus: string;
 }
 
+/**
+ * FanficAuditResult 类型定义。
+ */
 export interface FanficAuditResult {
     overall: 'pass' | 'warn' | 'fail';
     issues: FanficAuditIssue[];
     stats: FanficAuditStats;
 }
 
+/**
+ * FanficAuditOptions 类型定义。
+ */
 export interface FanficAuditOptions {
     /** 审核通过时记录在 frontmatter 的来源哈希；用于检测审核后修改 */
     expectedSourceHash?: string;
@@ -215,6 +230,13 @@ export function auditFanficSettings(
     };
 }
 
+/**
+ * buildFanficCompletionPrompt 函数。
+ * @param content - 内容
+ * @param missingFields - 缺失字段列表
+ * @param sources - 来源列表
+  * @returns string } 结果
+ */
 export function buildFanficCompletionPrompt(
     content: string,
     missingFields: string[],
@@ -237,6 +259,12 @@ ${formatCanonSourcesForPrompt(authoritative)}`,
     };
 }
 
+/**
+ * buildFanficAuditPrompt 函数。
+ * @param content - 内容
+ * @param sources - 来源列表
+  * @returns string } 结果
+ */
 export function buildFanficAuditPrompt(
     content: string,
     sources: CanonSource[],
@@ -360,6 +388,11 @@ function stripReviewKeys(content: string, keys: Set<string>): string {
         .trim();
 }
 
+/**
+ * isDerivativeSource 函数。
+ * @param source - 来源
+ * @returns 是否成功
+ */
 export function isDerivativeSource(source: CanonSource): boolean {
     return source.tier === 'derivative' || DERIVATIVE_SOURCE_RE.test(`${source.title}\n${source.url}`);
 }

@@ -16,6 +16,9 @@ import { ensureProtagonistMemoryShards } from './memory/memory-shard-writer';
 
 const log = createLogger('StepSpecials');
 
+/**
+ * StepSpecialsHost 类型定义。
+ */
 export interface StepSpecialsHost {
     aiEngine: AIEngine;
     app: App;
@@ -58,6 +61,12 @@ export interface StepSpecialsHost {
 /** 恢复发送按钮的 UI 动作（由 StepRunner 提供的闭包） */
 export type RestoreButtons = () => void;
 
+/**
+ * 执行角色灵魂步骤。
+ * @param host - 宿主元素
+ * @param ctx - 上下文
+ * @param restoreButtons - 恢复按钮集合
+ */
 export async function runCharacterSoulStep(
     host: StepSpecialsHost,
     ctx: StepRunCtx,
@@ -107,6 +116,13 @@ export async function runCharacterSoulStep(
     await ctx.renderInContainer(ctx.tabContent);
 }
 
+/**
+ * 执行情绪计划步骤。
+ * @param host - 宿主元素
+ * @param ctx - 上下文
+ * @param stepModel - 步骤模型
+ * @param restoreButtons - 恢复按钮集合
+ */
 export async function runEmotionPlanStep(
     host: StepSpecialsHost,
     ctx: StepRunCtx,
@@ -171,6 +187,13 @@ export async function runEmotionPlanStep(
     await ctx.renderInContainer(ctx.tabContent);
 }
 
+/**
+ * runSceneExpandStep 函数。
+ * @param host - 宿主元素
+ * @param ctx - 上下文
+ * @param stepModel - 步骤模型
+ * @param restoreButtons - 恢复按钮集合
+ */
 export async function runSceneExpandStep(
     host: StepSpecialsHost,
     ctx: StepRunCtx,

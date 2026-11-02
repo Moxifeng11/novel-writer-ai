@@ -29,6 +29,9 @@ import {
 } from '../shared/diff-utils';
 import { withWriteLock } from '../shared/write-lock';
 
+/**
+ * 保存版本选项列表结构定义。
+ */
 export interface SaveVersionOptions {
     /** 版本类型 */
     type: VersionType;
@@ -38,6 +41,9 @@ export interface SaveVersionOptions {
     note?: string;
 }
 
+/**
+ * 章节版本服务。
+ */
 export class ChapterVersionService {
     constructor(private app: App) {}
 

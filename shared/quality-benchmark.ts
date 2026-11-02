@@ -7,6 +7,9 @@
 
 export type BenchmarkLabel = 'good' | 'bad';
 
+/**
+ * BenchmarkSampleScore 类型定义。
+ */
 export interface BenchmarkSampleScore {
     id: string;
     label: BenchmarkLabel;
@@ -15,6 +18,9 @@ export interface BenchmarkSampleScore {
     dimensions: Record<string, number>;
 }
 
+/**
+ * BenchmarkDimensionSummary 类型定义。
+ */
 export interface BenchmarkDimensionSummary {
     dimension: string;
     goodMean: number;
@@ -22,6 +28,9 @@ export interface BenchmarkDimensionSummary {
     gap: number;
 }
 
+/**
+ * BenchmarkSummary 类型定义。
+ */
 export interface BenchmarkSummary {
     sampleCount: number;
     goodCount: number;
@@ -40,6 +49,11 @@ function mean(values: number[]): number {
     return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
+/**
+ * computeBenchmarkSummary 函数。
+ * @param samples - 样本
+  * @returns BenchmarkSummary 实例
+ */
 export function computeBenchmarkSummary(samples: BenchmarkSampleScore[]): BenchmarkSummary {
     const good = samples.filter(s => s.label === 'good');
     const bad = samples.filter(s => s.label === 'bad');

@@ -58,6 +58,11 @@ export type RequestUrlFn = (options: {
 
 const DEFAULT_MAX_SOURCES = 6;
 
+/**
+ * 规范化趋势配置。
+ * @param config - 配置
+  * @returns TrendResearchConfig 实例
+ */
 export function normalizeTrendConfig(config?: Partial<TrendResearchConfig>): TrendResearchConfig {
     return {
         provider: config?.provider || 'manual',
@@ -66,6 +71,13 @@ export function normalizeTrendConfig(config?: Partial<TrendResearchConfig>): Tre
     };
 }
 
+/**
+ * buildTrendQuery 函数。
+ * @param mode - 模式
+ * @param categoryOrGenre - 分类或题材
+ * @param audience - 受众
+ * @returns 文本结果
+ */
 export function buildTrendQuery(mode: 'short' | 'script', categoryOrGenre: string, audience?: string): string {
     if (mode === 'short') {
         return [

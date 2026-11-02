@@ -1,6 +1,9 @@
 import type { ChartType, ChartDensity } from '../../engine/types/chart-config';
 import { CHART_TYPE_LABELS } from '../../engine/types/chart-config';
 
+/**
+ * ChartToolbarOptions 类型定义。
+ */
 export interface ChartToolbarOptions {
 	currentType: ChartType;
 	availableTypes: ChartType[];
@@ -23,6 +26,11 @@ const DENSITY_TITLES: Record<ChartDensity, string> = {
 	spacious: '宽松型'
 };
 
+/**
+ * createChartToolbar 函数。
+ * @param container - 容器元素
+ * @param options - 配置项
+ */
 export function createChartToolbar(container: HTMLElement, options: ChartToolbarOptions): void {
 	container.innerHTML = '';
 	container.className = 'nw-chart-toolbar';

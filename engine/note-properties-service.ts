@@ -23,6 +23,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('NoteProperties');
 
+/**
+ * 标签迁移变更结构定义。
+ */
 export interface TagMigrationChange {
     path: string;
     kind: NotebookFileKind;
@@ -32,6 +35,9 @@ export interface TagMigrationChange {
     add: string[];
 }
 
+/**
+ * PropertyCompletionChange 类型定义。
+ */
 export interface PropertyCompletionChange {
     path: string;
     kind: NotebookFileKind;
@@ -39,6 +45,9 @@ export interface PropertyCompletionChange {
     fill: Array<{ key: string; value: string | number | string[] }>;
 }
 
+/**
+ * ProjectFilesScan 类型定义。
+ */
 export interface ProjectFilesScan {
     files: TFile[];
     skipped: number;

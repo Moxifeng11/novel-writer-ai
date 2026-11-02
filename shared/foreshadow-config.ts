@@ -16,11 +16,17 @@ export interface ForeshadowTypeConfig {
     color?: string;
 }
 
+/**
+ * 伏笔配置结构定义。
+ */
 export interface ForeshadowConfig {
     types: ForeshadowTypeConfig[];
     version: string;
 }
 
+/**
+ * DEFAULT_FORESHADOW_TYPES 常量。
+ */
 export const DEFAULT_FORESHADOW_TYPES: ForeshadowTypeConfig[] = [
     {
         id: 'item',
@@ -96,6 +102,9 @@ export const DEFAULT_FORESHADOW_TYPES: ForeshadowTypeConfig[] = [
     }
 ];
 
+/**
+ * DEFAULT_FORESHADOW_CONFIG 常量。
+ */
 export const DEFAULT_FORESHADOW_CONFIG: ForeshadowConfig = {
     types: [...DEFAULT_FORESHADOW_TYPES],
     version: '1.0.0'

@@ -10,6 +10,9 @@ import { pjWorldview } from './paths';
 import { validateEntityContent, type EntityKind } from './entity-persistence';
 import { ENTITY_KINDS, listEntityFiles } from './entity-reader';
 
+/**
+ * AuditedEntity 类型定义。
+ */
 export interface AuditedEntity {
     kind: EntityKind;
     name: string;

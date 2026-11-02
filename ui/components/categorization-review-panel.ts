@@ -1,6 +1,9 @@
 import { SuggestionManager } from '../../engine/suggestion-manager';
 import type { AnalysisSuggestion, SuggestionType } from '../../engine/types/analysis-suggestion';
 
+/**
+ * CategorizationReviewPanelOptions 类型定义。
+ */
 export interface CategorizationReviewPanelOptions {
     suggestionManager: SuggestionManager;
     categoryTypes: string[];
@@ -12,6 +15,9 @@ export interface CategorizationReviewPanelOptions {
 
 const CATEGORIZATION_TYPES: SuggestionType[] = ['character_role'];
 
+/**
+ * CategorizationReviewPanel 类。
+ */
 export class CategorizationReviewPanel {
     private container: HTMLElement;
     private options: CategorizationReviewPanelOptions;
@@ -23,6 +29,9 @@ export class CategorizationReviewPanel {
         this.options = options;
     }
 
+    /**
+     * 渲染。
+     */
     render(): void {
         this.container.empty();
         this.container.addClass('nw-categorization-review-panel');
@@ -31,10 +40,16 @@ export class CategorizationReviewPanel {
         this.renderBody();
     }
 
+    /**
+     * 更新。
+     */
     update(): void {
         this.render();
     }
 
+    /**
+     * 销毁。
+     */
     destroy(): void {
         this.container.empty();
     }
@@ -323,6 +338,10 @@ export class CategorizationReviewPanel {
         return `<span class="nw-confidence-badge confidence-${level}">${percentage}%</span>`;
     }
 
+    /**
+     * getCategoryStats 方法。
+      * @returns number }> 结果
+     */
     getCategoryStats(): Record<string, { pending: number; adopted: number; rejected: number; modified: number }> {
         const stats: Record<string, { pending: number; adopted: number; rejected: number; modified: number }> = {};
 

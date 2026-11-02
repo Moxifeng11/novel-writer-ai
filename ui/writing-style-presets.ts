@@ -6,6 +6,9 @@ import { validateWritingStyleOutput } from '../shared/template-validator';
 /** 内置与用户扩展共用的文笔风格预设目录（随模板自举写入 vault） */
 export const STYLE_PRESET_DIR = `${PJ_TEMPLATE_DIR}/文笔风格预设`;
 
+/**
+ * WritingStylePreset 类型定义。
+ */
 export interface WritingStylePreset {
     /** 文件名（不含扩展名） */
     id: string;
@@ -145,6 +148,9 @@ export async function loadStylePresets(app: App): Promise<WritingStylePreset[]> 
     return presets.sort((a, b) => (a.order === b.order ? a.name.localeCompare(b.name, 'zh') : a.order - b.order));
 }
 
+/**
+ * StylePresetDraft 类型定义。
+ */
 export interface StylePresetDraft {
     name: string;
     description?: string;

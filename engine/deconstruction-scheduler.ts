@@ -555,6 +555,13 @@ export class DeconstructionScheduler {
         return this.fs;
     }
 
+    /**
+     * 添加任务。
+     * @param bookId - 书籍 ID
+     * @param sourceText - 参数值
+     * @param dimensions - 参数值
+     * @returns 文本结果
+     */
     async addTask(
         bookId: string,
         sourceText: string,
@@ -833,6 +840,14 @@ export class DeconstructionScheduler {
         return this.timeEstimator;
     }
 
+    /**
+     * estimateDecompositionTime 方法。
+     * @param wordCount - 词语数量
+     * @param dimensions - 维度列表
+     * @param vectorEnabled - 向量启用
+     * @param qualityLevel - 质量档位
+      * @returns number } 结果
+     */
     estimateDecompositionTime(wordCount: number, dimensions?: BreakdownDimension[], vectorEnabled?: boolean, qualityLevel?: DeconstructionQualityLevel): { etaMin: number; etaMax: number; eta: number } {
         const dims = dimensions?.length ? dimensions : DEFAULT_DIMENSIONS;
         const level = qualityLevel ?? this.getQualityLevel();

@@ -29,6 +29,9 @@ const DIMENSION_CONFIG: { key: BreakdownDimension; label: string; icon: string }
     { key: 'foreshadow', label: '伏笔', icon: '🔮' },
 ];
 
+/**
+ * RefillModal 类。
+ */
 export class RefillModal extends Modal {
     private type: RefillType;
     
@@ -106,6 +109,9 @@ export class RefillModal extends Modal {
         }
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen() {
         this.modalEl.addClass('nw-scope');
         if (this.type === 'knowledge') {
@@ -114,6 +120,9 @@ export class RefillModal extends Modal {
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
     }

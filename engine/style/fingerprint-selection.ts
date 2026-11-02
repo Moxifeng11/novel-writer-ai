@@ -14,17 +14,29 @@
 
 import { RETRIEVAL_ABSOLUTE_MIN_SCORE } from '../../shared/thresholds';
 
+/**
+ * MAX_INJECTED_STYLE_FINGERPRINTS 常量。
+ */
 export const MAX_INJECTED_STYLE_FINGERPRINTS = 3;
 
+/**
+ * FingerprintRef 类型定义。
+ */
 export interface FingerprintRef {
     id: string;
 }
 
+/**
+ * FingerprintSearchV2 类型定义。
+ */
 export type FingerprintSearchV2 = (
     query: string,
     options: { topN: number; fingerprintIds: string[]; minScore?: number },
 ) => Promise<Array<{ fingerprintId: string }>>;
 
+/**
+ * 指纹选区选项列表结构定义。
+ */
 export interface FingerprintSelectionOptions<F extends FingerprintRef> {
     query: string;
     /** V2 12 维相似度检索；不可用时直接走 fallback */
@@ -42,6 +54,9 @@ export interface FingerprintSelectionOptions<F extends FingerprintRef> {
 /**
  * 选出本次注入使用的指纹。
  * 返回顺序：命中检索时按启用列表原顺序（稳定），回退时按 fallback 策略。
+ * @param enabled - 是否启用
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export async function selectFingerprintsForInjection<F extends FingerprintRef>(
     enabled: F[],

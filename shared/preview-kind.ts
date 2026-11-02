@@ -14,6 +14,9 @@ const TEXT_EXTENSIONS = new Set([
     'xml', 'ini', 'toml', 'log', 'py', 'sh',
 ]);
 
+/**
+ * PreviewKind 类型定义。
+ */
 export type PreviewKind = 'image' | 'audio' | 'video' | 'markdown' | 'text' | 'binary';
 
 /**

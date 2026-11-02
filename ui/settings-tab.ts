@@ -59,6 +59,9 @@ const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = [
     { id: 'about', label: 'ℹ️ 关于' },
 ];
 
+/**
+ * NovelWriterSettingTab 类。
+ */
 export class NovelWriterSettingTab extends PluginSettingTab {
     private plugin: NovelWriterPlugin;
     private activeTab: string = 'api';
@@ -126,6 +129,9 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         this.display();
     }
 
+    /**
+     * display 方法。
+     */
     display(): void {
         const { containerEl } = this;
 
@@ -223,6 +229,9 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         }
     }
 
+    /**
+     * 重置设置列表。
+     */
     async resetSettings(): Promise<void> {
         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
         await this.plugin.saveSettings();

@@ -14,12 +14,18 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('AgentSession');
 
+/**
+ * 会话根路径常量。
+ */
 export const SESSION_ROOT = '.sessions/agent';
 /** 存档体积上限：超过后重写为单行（会话日志本身已由压缩控制长度） */
 const MAX_STORE_BYTES = 512 * 1024;
 /** 写盘节流（dsh 默认 1s）：连续多个回合只写最后一次快照 */
 const SAVE_THROTTLE_MS = 1000;
 
+/**
+ * AgentSessionStore 类型定义。
+ */
 export interface AgentSessionStore {
     /**
      * 当前项目的存档路径（库内相对路径）
@@ -60,6 +66,12 @@ async function ensureFolder(app: App, folder: string): Promise<void> {
     }
 }
 
+/**
+ * createAgentSessionStore 函数。
+ * @param app - Obsidian 应用实例
+ * @param scope - 作用域
+  * @returns AgentSessionStore 实例
+ */
 export function createAgentSessionStore(app: App, scope: () => string): AgentSessionStore {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let pending: HarnessSessionSnapshot | null = null;

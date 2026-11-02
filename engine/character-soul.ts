@@ -184,6 +184,9 @@ export function formatSoulForPrompt(soul: CharacterSoul): string {
 /** 全量灵魂层注入的默认人数上限：避免几十个角色把正文 prompt 顶爆 */
 export const MAX_SOULS_IN_PROMPT = 8;
 
+/**
+ * 角色灵魂摘要选项列表结构定义。
+ */
 export interface CharacterSoulSummaryOptions {
     /** 本章相关角色名；为空时退回前 N 个角色 */
     relevantNames?: Set<string>;

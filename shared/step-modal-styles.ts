@@ -42,6 +42,9 @@ export function injectDeaiModalStyles(): void {
     document.head.appendChild(style);
 }
 
+/**
+ * injectRefineModalStyles 函数。
+ */
 export function injectRefineModalStyles(): void {
     const styleId = 'novel-writer-fw-refine-modal-styles';
     if (document.getElementById(styleId)) return;
@@ -58,6 +61,9 @@ export function injectRefineModalStyles(): void {
     document.head.appendChild(style);
 }
 
+/**
+ * injectRoundSelectStyles 函数。
+ */
 export function injectRoundSelectStyles(): void {
     const styleId = 'novel-writer-fw-round-select-styles';
     if (document.getElementById(styleId)) return;

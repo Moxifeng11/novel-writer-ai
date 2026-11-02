@@ -158,6 +158,9 @@ function generateId(): string {
     return 'fp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
+/**
+ * StyleFingerprintLibrary 类。
+ */
 export class StyleFingerprintLibrary {
     private app: App;
     private project?: string;
@@ -1388,6 +1391,9 @@ export class StyleFingerprintLibrary {
         return { success: true, migrated: totalMigrated };
     }
 
+    /**
+     * migrateV1toV2 方法。
+     */
     async migrateV1toV2(): Promise<void> {
         const fs = this.getFS();
 

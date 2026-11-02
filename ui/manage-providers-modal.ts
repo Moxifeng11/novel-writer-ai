@@ -38,6 +38,9 @@ export class ManageProvidersModal extends Modal {
         this.onChanged = onChanged;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.render();
@@ -464,6 +467,9 @@ export class ManageProvidersModal extends Modal {
         const app = this.app;
 
         new (class extends Modal {
+            /**
+             * onOpen 方法。
+             */
             onOpen(): void {
                 this.modalEl.addClass('nw-scope');
                 const { contentEl } = this;
@@ -543,6 +549,9 @@ export class ManageProvidersModal extends Modal {
         const app = this.app;
 
         new (class extends Modal {
+            /**
+             * onOpen 方法。
+             */
             onOpen(): void {
                 this.modalEl.addClass('nw-scope');
                 const { contentEl } = this;
@@ -595,6 +604,9 @@ export class ManageProvidersModal extends Modal {
         })(app).open();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

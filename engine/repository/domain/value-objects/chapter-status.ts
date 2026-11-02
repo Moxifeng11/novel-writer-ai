@@ -141,10 +141,18 @@ export class ChapterStatus {
         return this.value === other.value;
     }
 
+    /**
+     * toString 方法。
+     * @returns 文本结果
+     */
     toString(): string {
         return this.value;
     }
 
+    /**
+     * 转换为JSON。
+      * @returns ChapterStatusValue 实例
+     */
     toJSON(): ChapterStatusValue {
         return this.value;
     }

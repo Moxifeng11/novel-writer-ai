@@ -11,6 +11,9 @@
  * - 原始类型：值比较
  * - 对象/数组：第一层属性值比较
  * - 引用相同：直接返回 true
+ * @param objA - 对象 A
+ * @param objB - 对象 B
+ * @returns 是否成功
  */
 export function shallow<T>(objA: T, objB: T): boolean {
     if (Object.is(objA, objB)) {

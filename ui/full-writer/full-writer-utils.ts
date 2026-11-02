@@ -5,6 +5,11 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('FullWriterUtils');
+/**
+ * calcResumeStepIndex 函数。
+ * @param stepCompleted - 步骤完成状态
+ * @returns 数值结果
+ */
 export function calcResumeStepIndex(stepCompleted: Set<string>): number {
     for (const step of ALL_FULL_STEPS) {
         if (step.index === 0 || step.auto) continue;
@@ -17,6 +22,14 @@ export function calcResumeStepIndex(stepCompleted: Set<string>): number {
     return 7;
 }
 
+/**
+ * rebuildChapDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param chapterName - 章节名
+ * @param volume - 卷
+ * @param chapterNum - 章号
+ * @returns 文本结果
+ */
 export function rebuildChapDir(
     project: string,
     chapterName: string,
@@ -34,7 +47,9 @@ export function rebuildChapDir(
  * 章节路径反解（工作台用）。
  * 标准路径交给 shared/paths.parseChapterLocation；无法识别时退回“项目 + 空章节”，
  * 项目仍走 projectIdFromPath，避免 v4 结构下把「长篇小说」当项目（B2）。
- * @param path - 路径
+ *
+ * @param path - 章节路径
+ * @returns 项目名与章节名
  */
 export function parseChapterFromPath(path: string): {
     project: string;
@@ -52,6 +67,14 @@ export function parseChapterFromPath(path: string): {
     };
 }
 
+/**
+ * estimateTotalChars 函数。
+ * @param context - 上下文
+ * @param stepResults - 步骤结果列表
+ * @param systemPromptEl - 系统提示词元素
+ * @param userPromptEl - 用户提示词元素
+ * @returns 数值结果
+ */
 export function estimateTotalChars(
     context: any,
     stepResults: Record<string, string>,
@@ -70,10 +93,20 @@ export function estimateTotalChars(
     return total;
 }
 
+/**
+ * findStepByIndex 函数。
+ * @param logicalIndex - 逻辑索引
+  * @returns FullStep 或 undefined
+ */
 export function findStepByIndex(logicalIndex: number): FullStep | undefined {
     return ALL_FULL_STEPS.find(s => s.index === logicalIndex);
 }
 
+/**
+ * 抽取章节数值。
+ * @param chapterName - 章节名
+ * @returns 数值结果
+ */
 export function extractChapterNumber(chapterName: string): number {
     const match = chapterName.match(/\d+/);
     return match ? parseInt(match[0], 10) : 0;

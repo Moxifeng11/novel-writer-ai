@@ -29,6 +29,9 @@ import { creativeRandomizer } from '../engine/harness/creative-randomizer';
 type ResearchMode = Extract<CreationMode, 'short' | 'script'>;
 type FieldElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
+/**
+ * PreResearchModalOptions 类型定义。
+ */
 export interface PreResearchModalOptions {
     /** 已有项目：编辑当前项目的前期调研 */
     project?: string;
@@ -37,6 +40,9 @@ export interface PreResearchModalOptions {
     onCreated?: (project: string) => void | Promise<void>;
 }
 
+/**
+ * PreResearchModal 类。
+ */
 export class PreResearchModal extends Modal {
     private readonly mode: ResearchMode;
     private readonly options: PreResearchModalOptions;
@@ -58,6 +64,9 @@ export class PreResearchModal extends Modal {
         this.options = options;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope', 'nw-modal', 'nw-pre-research-modal');
         this.titleEl.setText(this.mode === 'short' ? '📚 短篇前期调研' : '🎬 剧本前期调研');
@@ -687,6 +696,9 @@ export class PreResearchModal extends Modal {
         });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

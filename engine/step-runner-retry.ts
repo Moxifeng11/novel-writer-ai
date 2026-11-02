@@ -19,6 +19,9 @@ const log = createLogger('StepRunnerRetry');
  * 故此层从 3 降为 2（保留 1 次业务重试），最坏网络请求 3×3=9 → 2×3=6，常规业务失败仅 2 次调用。
  */
 export const STEP_RUNNER_MAX_RETRIES = 2;
+/**
+ * STEP_RUNNER_RETRY_DELAY_MS 常量。
+ */
 export const STEP_RUNNER_RETRY_DELAY_MS = 1000;
 
 /** 重试原语依赖的最小宿主能力 */
@@ -28,6 +31,19 @@ export interface StepRunnerRetryHost {
     showNotice(message: string, duration?: number): void;
 }
 
+/**
+ * callAIWithRetry 函数。
+ * @param host - 宿主元素
+ * @param systemPrompt - 系统提示词
+ * @param userPrompt - 用户提示词
+ * @param model - 模型标识
+ * @param temperature - 采样温度
+ * @param maxTokens - 最大 token 数
+ * @param stepLabel - 步骤标签
+ * @param signal - 取消信号
+ * @param options - 配置项
+  * @returns APIResponse 实例
+ */
 export async function callAIWithRetry(
     host: StepRunnerRetryHost,
     systemPrompt: string,
@@ -90,6 +106,20 @@ export async function callAIWithRetry(
     throw lastError || new Error('AI 调用失败');
 }
 
+/**
+ * callAIStreamWithRetry 函数。
+ * @param host - 宿主元素
+ * @param systemPrompt - 系统提示词
+ * @param userPrompt - 用户提示词
+ * @param model - 模型标识
+ * @param temperature - 采样温度
+ * @param maxTokens - 最大 token 数
+ * @param stepLabel - 步骤标签
+ * @param onChunk - 流式分片回调
+ * @param signal - 取消信号
+ * @param options - 配置项
+  * @returns APIResponse 实例
+ */
 export async function callAIStreamWithRetry(
     host: StepRunnerRetryHost,
     systemPrompt: string,

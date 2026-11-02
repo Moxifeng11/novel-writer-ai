@@ -25,6 +25,9 @@ export interface ChunkCandidate {
  * 原文按 400 字/40 字重叠分块，相邻块有 40 字重复；检索命中多条相邻块时
  * 同时注入会让同一段文字重复占 prompt 预算。结果需按相关度降序传入，
  * 保留先出现（分数更高）的块。
+ * @param results - 结果列表
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function dedupeAdjacentChunks<T extends ChunkCandidate>(
     results: T[],

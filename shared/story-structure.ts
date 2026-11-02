@@ -115,10 +115,20 @@ export const STORY_STRUCTURES: StoryStructureSpec[] = [
     },
 ];
 
+/**
+ * 获取故事结构。
+ * @param id - 标识
+  * @returns StoryStructureSpec 实例
+ */
 export function getStoryStructure(id: StoryStructureId | string | undefined): StoryStructureSpec {
     return STORY_STRUCTURES.find(item => item.id === id) || STORY_STRUCTURES[0];
 }
 
+/**
+ * 获取结构阶段摘要。
+ * @param id - 标识
+ * @returns 文本结果
+ */
 export function getStructureStageSummary(id: StoryStructureId | string | undefined): string {
     return getStoryStructure(id).stages.map(stage => `${stage.name} ${stage.ratio}%`).join(' · ');
 }
@@ -297,15 +307,32 @@ export const STORY_OPTION_GROUPS: StoryOptionGroup[] = [
     },
 ];
 
+/**
+ * 获取故事选项分组。
+ * @param key - 键
+  * @returns StoryOptionGroup 实例
+ */
 export function getStoryOptionGroup(key: StoryOptionCategory): StoryOptionGroup {
     return STORY_OPTION_GROUPS.find(group => group.key === key) || STORY_OPTION_GROUPS[0];
 }
 
+/**
+ * 查找故事选项。
+ * @param key - 键
+ * @param value - 值
+  * @returns StoryOption 或 undefined
+ */
 export function findStoryOption(key: StoryOptionCategory, value: string): StoryOption | undefined {
     const group = getStoryOptionGroup(key);
     return group.options.find(option => option.id === value || option.label === value);
 }
 
+/**
+ * 获取故事选项标签。
+ * @param key - 键
+ * @param value - 值
+ * @returns 文本结果
+ */
 export function getStoryOptionLabel(key: StoryOptionCategory, value: string): string {
     return findStoryOption(key, value)?.label || value || '未选择';
 }
@@ -328,6 +355,11 @@ export interface LongStorySettings {
     randomSeed: string;
 }
 
+/**
+ * createDefaultStorySettings 函数。
+ * @param structureId - 结构 ID
+  * @returns LongStorySettings 实例
+ */
 export function createDefaultStorySettings(structureId: StoryStructureId = 'qichengzhuanhe'): LongStorySettings {
     return {
         structureId,
@@ -345,6 +377,11 @@ export function createDefaultStorySettings(structureId: StoryStructureId = 'qich
     };
 }
 
+/**
+ * 校验故事设置列表。
+ * @param settings - 设置
+ * @returns 结果数组
+ */
 export function validateStorySettings(settings: Partial<LongStorySettings>): string[] {
     const issues: string[] = [];
     const structure = getStoryStructure(settings.structureId);
@@ -516,6 +553,11 @@ const FIELD_LABELS: Array<{ key: keyof LongStorySettings; label: string }> = [
     { key: 'randomSeed', label: '随机种子' },
 ];
 
+/**
+ * parseStorySettingsFromProjectMeta 函数。
+ * @param meta - 元数据
+  * @returns LongStorySettings 或 null
+ */
 export function parseStorySettingsFromProjectMeta(meta: string): LongStorySettings | null {
     const structureRaw = meta.match(/^##\s*故事结构\s*\r?\n\s*(\S.*)$/m)?.[1]?.trim();
     if (!structureRaw) return null;
@@ -550,6 +592,11 @@ function removeSection(meta: string, title: string): string {
     return meta.replace(re, '').replace(/\n{3,}/g, '\n\n').trimEnd();
 }
 
+/**
+ * 构建故事设置列表元数据分区。
+ * @param settings - 设置
+ * @returns 文本结果
+ */
 export function buildStorySettingsMetaSection(settings: LongStorySettings): string {
     const structure = getStoryStructure(settings.structureId);
     const lines = [
@@ -570,12 +617,23 @@ export function buildStorySettingsMetaSection(settings: LongStorySettings): stri
     return lines.join('\n');
 }
 
+/**
+ * upsertStorySettingsInProjectMeta 函数。
+ * @param meta - 元数据
+ * @param settings - 设置
+ * @returns 文本结果
+ */
 export function upsertStorySettingsInProjectMeta(meta: string, settings: LongStorySettings): string {
     let next = removeSection(meta, '故事结构');
     next = removeSection(next, '故事创作设置');
     return `${next.trimEnd()}\n\n${buildStorySettingsMetaSection(settings)}\n`;
 }
 
+/**
+ * buildLongStoryPromptBlock 函数。
+ * @param settings - 设置
+ * @returns 文本结果
+ */
 export function buildLongStoryPromptBlock(settings: LongStorySettings): string {
     const structure = getStoryStructure(settings.structureId);
     const stages = structure.stages
@@ -600,6 +658,11 @@ ${stages}
 - 所有章节必须服务当前结构阶段；不得提前解决核心冲突，也不得用新设定硬解既有矛盾。`;
 }
 
+/**
+ * buildStoryStructureGuide 函数。
+ * @param settings - 设置
+ * @returns 文本结果
+ */
 export function buildStoryStructureGuide(settings: LongStorySettings): string {
     const structure = getStoryStructure(settings.structureId);
     const stageLines = structure.stages.map(stage =>

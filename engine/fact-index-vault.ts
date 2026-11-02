@@ -34,6 +34,10 @@ export class VaultFactStorage implements FactStoragePort {
         private readonly indexPath: string,
     ) {}
 
+    /**
+     * 加载。
+      * @returns PersistedFactIndex 或 null
+     */
     async load(): Promise<PersistedFactIndex | null> {
         try {
             if (!(await this.fs.exists(this.indexPath))) return null;
@@ -44,6 +48,10 @@ export class VaultFactStorage implements FactStoragePort {
         }
     }
 
+    /**
+     * 保存。
+     * @param data - 数据
+     */
     async save(data: PersistedFactIndex): Promise<void> {
         await this.fs.write(this.indexPath, JSON.stringify(data, null, 2));
     }
@@ -61,6 +69,10 @@ export class VaultFactWriter implements FactWriter {
         private readonly project: string,
     ) {}
 
+    /**
+     * 写入事实。
+     * @param fact - 事实
+     */
     async writeFact(fact: PendingFact): Promise<void> {
         const path = this.targetPath(fact);
         const existing = await this.safeRead(path);

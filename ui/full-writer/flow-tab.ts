@@ -6,14 +6,32 @@
 import type { CreationMode } from '../../shared/creation-mode';
 import type { FullWriterStore, WriterTab } from './full-writer-store';
 
+/**
+ * projectShortName 函数。
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function projectShortName(project: string): string {
     return project.split('/').pop() || project;
 }
 
+/**
+ * flowTabId 函数。
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function flowTabId(project: string): string {
     return `flow:${project}`;
 }
 
+/**
+ * ensureFlowTab 函数。
+ * @param state - 状态
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @param activate - 激活回调
+  * @returns WriterTab 实例
+ */
 export function ensureFlowTab(
     state: FullWriterStore,
     project: string,

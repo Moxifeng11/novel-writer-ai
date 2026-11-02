@@ -21,6 +21,9 @@ import type {
 import type { CharacterSoul } from './character-soul';
 import type { StoryLinkage } from './story-linkage';
 
+/**
+ * 上下文输入条目结构定义。
+ */
 export interface ContextInputItem {
     key: string;
     label: string;
@@ -34,6 +37,9 @@ export interface ContextInputItem {
     detail: string;
 }
 
+/**
+ * ContextReadiness 类型定义。
+ */
 export interface ContextReadiness {
     items: ContextInputItem[];
     readyCount: number;

@@ -24,6 +24,9 @@ import { createLongNovelProject } from './services/project-create-service';
 
 const log = createLogger('CreateProjectModal');
 
+/**
+ * CreateProjectPrefill 类型定义。
+ */
 export interface CreateProjectPrefill {
     name?: string;
     genre?: string;
@@ -36,6 +39,9 @@ export interface CreateProjectPrefill {
     onCreated?: (projectName: string) => void | Promise<void>;
 }
 
+/**
+ * 创建项目弹窗。
+ */
 export class CreateProjectModal extends Modal {
     private plugin: NovelWriterPlugin;
     private adapter: DataAdapter;
@@ -48,6 +54,9 @@ export class CreateProjectModal extends Modal {
         this.adapter = app.vault.adapter;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope', 'nw-modal', 'nw-create-project-modal');
         const { contentEl } = this;
@@ -462,6 +471,9 @@ ${preferredGenre
     }
 
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         if (this.fanficSettingsOutsideClickHandler) {
             document.removeEventListener('click', this.fanficSettingsOutsideClickHandler);

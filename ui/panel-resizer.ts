@@ -61,6 +61,9 @@ export interface PanelResizerOptions {
     ariaLabel?: string;
 }
 
+/**
+ * PanelResizerHandle 类型定义。
+ */
 export interface PanelResizerHandle {
     /** 分隔条元素 */
     el: HTMLElement;

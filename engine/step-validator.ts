@@ -23,8 +23,14 @@ const DIALOGUE_QUOTE_CLASS = '[“”‘’「」『』"]';
 const DIALOGUE_PATTERN = new RegExp(`${DIALOGUE_QUOTE_CLASS}.+${DIALOGUE_QUOTE_CLASS}`);
 const DIALOGUE_TEST = new RegExp(DIALOGUE_QUOTE_CLASS);
 
+/**
+ * 步骤层级结构定义。
+ */
 export type StepLevel = 'empty' | 'skeleton' | 'partial' | 'complete';
 
+/**
+ * StepValidationResult 类型定义。
+ */
 export type StepValidationResult = {
     valid: boolean;       // 是否达到"走完"标准（= complete）
     missing: string[];    // 缺失的必填模块
@@ -222,6 +228,7 @@ export function stripPlaceholderLines(content: string): string {
  * - 不是纯占位符（待补充、待定、省略号等）
  * - 键值对格式时，值不能为空
  * @param text - 文本内容
+ * @param minChars - 最小字符
  * @returns 是否成功
  */
 function hasMeaningfulContent(text: string, minChars = 15): boolean {
@@ -236,6 +243,7 @@ function hasMeaningfulContent(text: string, minChars = 15): boolean {
  * 检查某个标题下是否有实质内容（组合版，一步到位）
  * @param content - 内容
  * @param headingPattern - 标题匹配模式
+ * @param minChars - 最小字符
  * @returns 是否成功
  */
 function sectionContentValid(content: string, headingPattern: RegExp, minChars = 20): boolean {
@@ -542,6 +550,7 @@ function validateSceneExpandWrapper(content: string): StepValidationResult {
  *             此校验函数保留用于兼容旧数据和句级写作完成后的正文完整性检查。
  *             两条路径共享同一正文文件格式，校验规则一致。
  * @param content - 内容
+ * @param minWords - 最小词表
   * @returns StepValidationResult 实例
  */
 function validateBodyGeneration(content: string, minWords = 2100): StepValidationResult {

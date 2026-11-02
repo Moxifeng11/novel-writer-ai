@@ -191,6 +191,10 @@ export class WritingStatsService {
         this.schedulePersist();
     }
 
+    /**
+     * 获取数据。
+      * @returns WritingStatsData 实例
+     */
     getData(): WritingStatsData {
         return this.data;
     }
@@ -204,6 +208,10 @@ export class WritingStatsService {
         this.deps.onUpdated = listener;
     }
 
+    /**
+     * 获取报告。
+      * @returns StatsReport 实例
+     */
     getReport(): StatsReport {
         return buildReport(this.data, this.now());
     }
@@ -217,6 +225,9 @@ export class WritingStatsService {
         return this.getReport().global.today;
     }
 
+    /**
+     * 释放。
+     */
     dispose(): void {
         if (this.persistTimer) {
             clearTimeout(this.persistTimer);

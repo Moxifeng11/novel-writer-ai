@@ -6,6 +6,9 @@ import { ItemView, WorkspaceLeaf } from "obsidian";
 import { applyNwScope } from '../utils/helpers';
 import type NovelWriterPlugin from "../main";
 
+/**
+ * 面板布局配置结构定义。
+ */
 export interface PanelLayoutConfig {
   id: string;
   position: { x: number; y: number };
@@ -13,6 +16,9 @@ export interface PanelLayoutConfig {
   collapsed: boolean;
 }
 
+/**
+ * DraggablePanel 类。
+ */
 export class DraggablePanel extends ItemView {
   protected plugin: NovelWriterPlugin;
   protected panelId: string;
@@ -46,16 +52,31 @@ export class DraggablePanel extends ItemView {
     this.panelIcon = panelIcon;
   }
 
+  /**
+   * 获取视图类型。
+   * @returns 文本结果
+   */
   getViewType(): string {
     return `nw-float-${this.panelId}`;
   }
+  /**
+   * getDisplayText 方法。
+   * @returns 文本结果
+   */
   getDisplayText(): string {
     return this.panelTitle;
   }
+  /**
+   * getIcon 方法。
+   * @returns 文本结果
+   */
   getIcon(): string {
     return this.panelIcon;
   }
 
+  /**
+   * onOpen 方法。
+   */
   async onOpen(): Promise<void> {
     const { contentEl } = this;
     contentEl.empty();
@@ -107,6 +128,9 @@ export class DraggablePanel extends ItemView {
     this.restoreLayout();
   }
 
+  /**
+   * onClose 方法。
+   */
   async onClose(): Promise<void> {
     document.removeEventListener("pointermove", this.boundDragMove);
     document.removeEventListener("pointerup", this.boundDragEnd);

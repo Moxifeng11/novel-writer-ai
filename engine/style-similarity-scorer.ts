@@ -2,6 +2,9 @@ import { VectorEnhancer } from './vector-enhancer';
 import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { getDegradationNotifier } from '../shared/degradation-notifier';
 
+/**
+ * SimilarityScore 类型定义。
+ */
 export interface SimilarityScore {
     passed: boolean;
     score: number | null;
@@ -10,12 +13,21 @@ export interface SimilarityScore {
     referenceSamples?: string[];
 }
 
+/**
+ * StyleSimilarityScorer 类。
+ */
 export class StyleSimilarityScorer {
     constructor(
         private vectorEnhancer: VectorEnhancer | undefined,
         private knowledgeVectorStore: KnowledgeVectorStore | undefined
     ) {}
 
+    /**
+     * 分数。
+     * @param candidateSentence - 参数值
+     * @param options - 配置项
+      * @returns SimilarityScore 实例
+     */
     async score(
         candidateSentence: string,
         options?: {
@@ -93,6 +105,12 @@ export class StyleSimilarityScorer {
         };
     }
 
+    /**
+     * cosineSimilarity 方法。
+     * @param a - 参与比较的值
+     * @param b - 参与比较的值
+     * @returns 数值结果
+     */
     cosineSimilarity(a: number[], b: number[]): number {
         if (a.length !== b.length) {
             return 0;

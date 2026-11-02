@@ -12,6 +12,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('PlotRedundancyChecker');
+/**
+ * 情节冗余问题结构定义。
+ */
 export interface PlotRedundancyIssue {
     type: 'repeated_phrase' | 'repeated_scene_word' | 'repeated_conflict_word';
     message: string;
@@ -19,6 +22,9 @@ export interface PlotRedundancyIssue {
     count: number;
 }
 
+/**
+ * 情节冗余报告结构定义。
+ */
 export interface PlotRedundancyReport {
     issues: PlotRedundancyIssue[];
     comparedChapters: number;
@@ -71,6 +77,12 @@ function repeatedWordIssues(current: string, previous: string, words: string[], 
     return issues.slice(0, 3);
 }
 
+/**
+ * 分析情节冗余。
+ * @param currentBody - 当前正文
+ * @param previousBodies - 前文正文列表
+  * @returns PlotRedundancyReport 实例
+ */
 export function analyzePlotRedundancy(currentBody: string, previousBodies: string[]): PlotRedundancyReport {
     const previous = previousBodies.join('\n\n').slice(-20000);
     const issues: PlotRedundancyIssue[] = [
@@ -81,6 +93,15 @@ export function analyzePlotRedundancy(currentBody: string, previousBodies: strin
     return { issues: issues.slice(0, 8), comparedChapters: previousBodies.length, checkedAt: Date.now() };
 }
 
+/**
+ * loadPreviousChapterBodies 函数。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param volume - 卷
+ * @param chapterNum - 章号
+ * @param limit - 上限
+ * @returns 结果数组
+ */
 export async function loadPreviousChapterBodies(app: App, project: string, volume: string, chapterNum: number, limit = 10): Promise<string[]> {
     const bodies: string[] = [];
     const start = Math.max(1, chapterNum - limit);

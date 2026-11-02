@@ -143,18 +143,39 @@ export function createDefaultPreResearch(mode: CreationMode, name = ''): PreRese
     };
 }
 
+/**
+ * preResearchDir 函数。
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function preResearchDir(project: string): string {
     return `${resolveProjectRoot(project)}/${PRE_RESEARCH_DIR}`;
 }
 
+/**
+ * preResearchDataPath 函数。
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function preResearchDataPath(project: string): string {
     return `${preResearchDir(project)}/${PRE_RESEARCH_DATA_FILE}`;
 }
 
+/**
+ * preResearchReportPath 函数。
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function preResearchReportPath(project: string): string {
     return `${preResearchDir(project)}/${PRE_RESEARCH_REPORT_FILE}`;
 }
 
+/**
+ * preResearchModeDocPath 函数。
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @returns 文本结果
+ */
 export function preResearchModeDocPath(project: string, mode: CreationMode): string {
     const fileName = mode === 'script' ? '剧本定位.md' : mode === 'short' ? '五维分类.md' : '长篇定位.md';
     return `${preResearchDir(project)}/${fileName}`;
@@ -201,6 +222,11 @@ function buildInsightBlock(data: PreResearchData): string {
     ].join('\n');
 }
 
+/**
+ * buildPreResearchReport 函数。
+ * @param data - 数据
+ * @returns 文本结果
+ */
 export function buildPreResearchReport(data: PreResearchData): string {
     const now = new Date().toISOString();
     if (data.mode === 'short') {
@@ -290,6 +316,11 @@ ${buildInsightBlock(data)}
 `;
 }
 
+/**
+ * buildPreResearchModeDoc 函数。
+ * @param data - 数据
+ * @returns 文本结果
+ */
 export function buildPreResearchModeDoc(data: PreResearchData): string {
     if (data.mode === 'short') {
         return `# 短篇五维分类
@@ -347,6 +378,12 @@ async function backupIfExists(adapter: DataAdapter, path: string): Promise<void>
     }
 }
 
+/**
+ * writePreResearchFiles 函数。
+ * @param adapter - 适配器
+ * @param project - 项目（路径或对象）
+ * @param data - 数据
+ */
 export async function writePreResearchFiles(
     adapter: DataAdapter,
     project: string,
@@ -363,6 +400,12 @@ export async function writePreResearchFiles(
     await adapter.write(modePath, buildPreResearchModeDoc(data));
 }
 
+/**
+ * readPreResearchData 函数。
+ * @param adapter - 适配器
+ * @param project - 项目（路径或对象）
+  * @returns PreResearchData 或 null
+ */
 export async function readPreResearchData(
     adapter: DataAdapter,
     project: string

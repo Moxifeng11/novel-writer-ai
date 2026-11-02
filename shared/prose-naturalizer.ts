@@ -10,6 +10,9 @@
  */
 import { splitProseSentences } from './prose-metrics';
 
+/**
+ * NaturalizeOptions 类型定义。
+ */
 export interface NaturalizeOptions {
     /** 单个自然段的最大字数（超过就不再合并） */
     maxParagraphChars?: number;
@@ -23,6 +26,9 @@ export interface NaturalizeOptions {
     indent?: string;
 }
 
+/**
+ * NaturalizeResult 类型定义。
+ */
 export interface NaturalizeResult {
     text: string;
     paragraphsBefore: number;

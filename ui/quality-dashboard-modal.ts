@@ -62,6 +62,9 @@ interface IssueRow {
     file: TFile;
 }
 
+/**
+ * QualityDashboardModal 类。
+ */
 export class QualityDashboardModal extends Modal {
     private plugin: NovelWriterPlugin;
     private engine: QualityScoreEngine;
@@ -87,6 +90,9 @@ export class QualityDashboardModal extends Modal {
         this.engine = engine ?? new QualityScoreEngine({ v1Engine: new WritingQualityEngine() });
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
@@ -438,6 +444,9 @@ export class QualityDashboardModal extends Modal {
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

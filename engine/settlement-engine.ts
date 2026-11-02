@@ -64,6 +64,9 @@ function chapterNameOf(ctx: SettleContext): string {
     return ctx.chapName || (num ? `第${num}章` : '');
 }
 
+/**
+ * 结算选项列表结构定义。
+ */
 export interface SettlementOptions {
     forceReveal?: string[];
     involvedChars?: string[];
@@ -72,6 +75,9 @@ export interface SettlementOptions {
     involvedItems?: string[];
 }
 
+/**
+ * 结算结果结构定义。
+ */
 export interface SettlementResult {
     /** 回滚统计（仅 hasPartialFailure 时出现） */
     rollback?: { reverted: number; failed: number };
@@ -125,6 +131,9 @@ interface SettlementEngineDeps {
     notifier?: Notifier;
 }
 
+/**
+ * 结算引擎。
+ */
 export class SettlementEngine {
     private app: import('obsidian').App;
     private notifier: Notifier;
@@ -243,6 +252,15 @@ export class SettlementEngine {
         }
     }
 
+    /**
+     * settleLight 方法。
+     * @param project - 项目（路径或对象）
+     * @param chapDir - 参数值
+     * @param chapName - 参数值
+     * @param bodyText - 参数值
+     * @param options - 配置项
+      * @returns SettlementResult 实例
+     */
     async settleLight(
         project: string,
         chapDir: string,
@@ -1684,6 +1702,11 @@ tags: [看板]
     // ================================================================
 
     // v3.5.0: 结算后生成叙事总览
+    /**
+     * generateNarrativeOverview 方法。
+     * @param project - 项目（路径或对象）
+     * @returns 文本结果
+     */
     async generateNarrativeOverview(project: string): Promise<string> {
         const baseDir = pjOutlineDir(project);
         const charDir = entityDir(project, 'characters');

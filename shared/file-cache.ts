@@ -80,6 +80,11 @@ export class FileCache {
 
     // ── 公共 API ──────────────────────────────────────────────
 
+    /**
+     * 获取。
+     * @param key - 键
+      * @returns T 或 null
+     */
     async get<T>(key: string): Promise<T | null> {
         await this.ensureIndexLoaded();
 
@@ -108,6 +113,12 @@ export class FileCache {
         }
     }
 
+    /**
+     * 设置。
+     * @param key - 键
+     * @param value - 值
+     * @param options - 配置项
+     */
     async set<T>(key: string, value: T, options?: { sourcePath?: string; sourceMtime?: number }): Promise<void> {
         await this.ensureIndexLoaded();
 
@@ -204,6 +215,11 @@ export class FileCache {
         this.persistIndex();
     }
 
+    /**
+     * deleteByPrefix 方法。
+     * @param prefix - 前缀
+     * @returns 数值结果
+     */
     async deleteByPrefix(prefix: string): Promise<number> {
         await this.ensureIndexLoaded();
 
@@ -224,6 +240,11 @@ export class FileCache {
         return count;
     }
 
+    /**
+     * invalidateBySourcePath 方法。
+     * @param sourcePath - 源路径
+     * @returns 数值结果
+     */
     invalidateBySourcePath(sourcePath: string): number {
         let count = 0;
         for (const [key, entry] of this.index) {
@@ -239,6 +260,10 @@ export class FileCache {
         return count;
     }
 
+    /**
+     * pruneExpired 方法。
+     * @returns 数值结果
+     */
     async pruneExpired(): Promise<number> {
         await this.ensureIndexLoaded();
 
@@ -271,6 +296,10 @@ export class FileCache {
         return total;
     }
 
+    /**
+     * 键列表。
+     * @returns 结果数组
+     */
     keys(): string[] {
         return Array.from(this.index.keys());
     }
@@ -444,6 +473,9 @@ export class FileCache {
         this.heapPos.set(this.heap[b].key, b);
     }
 
+    /**
+     * flush 方法。
+     */
     async flush(): Promise<void> {
         await Promise.all(this.writeQueue.values());
     }

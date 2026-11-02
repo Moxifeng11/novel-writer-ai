@@ -11,6 +11,9 @@ export type LogicIssueType =
     | 'location_jump'
     | 'identity_conflict';
 
+/**
+ * LogicConsistencyIssue 类型定义。
+ */
 export interface LogicConsistencyIssue {
     type: LogicIssueType;
     severity: 'low' | 'medium' | 'high';
@@ -19,6 +22,9 @@ export interface LogicConsistencyIssue {
     suggestion: string;
 }
 
+/**
+ * LogicConsistencyReport 类型定义。
+ */
 export interface LogicConsistencyReport {
     issues: LogicConsistencyIssue[];
     paragraphCount: number;
@@ -58,6 +64,11 @@ function pushIssue(issues: LogicConsistencyIssue[], issue: LogicConsistencyIssue
     issues.push(issue);
 }
 
+/**
+ * analyzeLogicConsistency 函数。
+ * @param body - 正文
+  * @returns LogicConsistencyReport 实例
+ */
 export function analyzeLogicConsistency(body: string): LogicConsistencyReport {
     const paragraphs = splitParagraphs(body);
     const issues: LogicConsistencyIssue[] = [];

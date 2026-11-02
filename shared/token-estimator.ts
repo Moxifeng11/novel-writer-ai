@@ -11,6 +11,9 @@
 import { TOKEN_ESTIMATE_CN_DIVISOR, TOKEN_ESTIMATE_EN_DIVISOR } from './thresholds';
 import { findModelCapability, type ModelSourceKind } from './model-capabilities';
 
+/**
+ * TokenEstimate 类型定义。
+ */
 export interface TokenEstimate {
     input: number;
     maxOutput: number;
@@ -116,6 +119,9 @@ export function getModelMaxOutput(modelId: string, source?: ModelSourceKind): nu
     return findModelCapability(modelId, source).maxOutput;
 }
 
+/**
+ * ModelLimitOverrides 类型定义。
+ */
 export interface ModelLimitOverrides {
     maxContext?: number;
     maxOutput?: number;

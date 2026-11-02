@@ -121,6 +121,11 @@ export class Character extends BaseEntity {
         return new Character(props);
     }
 
+    /**
+     * 带状态。
+     * @param status - 状态
+      * @returns Character 实例
+     */
     withStatus(status: EntityStatus): Character {
         return new Character({
             ...this._props,
@@ -129,6 +134,11 @@ export class Character extends BaseEntity {
         } as CharacterProps);
     }
 
+    /**
+     * 带名称。
+     * @param name - 名称
+      * @returns Character 实例
+     */
     withName(name: string): Character {
         return new Character({
             ...this._props,
@@ -179,6 +189,10 @@ export class Character extends BaseEntity {
         } as CharacterProps);
     }
 
+    /**
+     * 转换为JSON。
+     * @returns 映射结果
+     */
     toJSON(): Record<string, any> {
         return {
             ...super.toJSON(),

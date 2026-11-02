@@ -85,6 +85,9 @@ export const DEFAULT_MAX_OUTPUT = 8192;
  */
 export const LOCAL_FALLBACK_CAPABILITY: ModelCapability = { maxContext: 8192, maxOutput: 4096 };
 
+/**
+ * 模型来源种类结构定义。
+ */
 export type ModelSourceKind = 'local' | 'cloud';
 
 /**
@@ -93,6 +96,11 @@ export type ModelSourceKind = 'local' | 'cloud';
  */
 const detectedCapabilities = new Map<string, ModelCapability>();
 
+/**
+ * registerDetectedModelCapability 函数。
+ * @param modelId - 模型ID
+ * @param capability - 能力信息
+ */
 export function registerDetectedModelCapability(modelId: string, capability: ModelCapability): void {
     const key = (modelId || '').trim().toLowerCase();
     if (!key) return;
@@ -103,10 +111,18 @@ export function registerDetectedModelCapability(modelId: string, capability: Mod
     });
 }
 
+/**
+ * getDetectedModelCapability 函数。
+ * @param modelId - 模型ID
+  * @returns ModelCapability 或 null
+ */
 export function getDetectedModelCapability(modelId: string): ModelCapability | null {
     return detectedCapabilities.get((modelId || '').trim().toLowerCase()) ?? null;
 }
 
+/**
+ * clearDetectedModelCapabilities 函数。
+ */
 export function clearDetectedModelCapabilities(): void {
     detectedCapabilities.clear();
 }

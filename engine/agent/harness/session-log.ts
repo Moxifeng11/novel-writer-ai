@@ -130,6 +130,7 @@ export class AgentSessionLog {
      * - tool_call 与对应 tool_result 合并为一行工具交互，避免把 JSON 参数原文塞给模型两次；
      * - tool_result 超预算时保留头/尾、裁剪中段（dsh pruner）；
      * - turn_marker 不进转写。
+     * @param limitTurns - 最大轮数
      * @returns 结果数组
      */
     derive(limitTurns = 24): DerivedTurn[] {
@@ -190,6 +191,7 @@ export class AgentSessionLog {
     /**
      * 当前投影的总字符数（会话压缩的压力信号，dsh token-meter 的精简版）
      *
+     * @param limitTurns - 最大轮数
      * @returns 数值结果
      */
     derivedChars(limitTurns = 24): number {

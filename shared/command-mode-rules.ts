@@ -11,8 +11,17 @@
 import { CommandIds } from './command-ids';
 import type { CreationMode } from './creation-mode';
 
+/**
+ * LONG_ONLY 常量。
+ */
 export const LONG_ONLY: CreationMode[] = ['long'];
+/**
+ * SHORT_ONLY 常量。
+ */
 export const SHORT_ONLY: CreationMode[] = ['short'];
+/**
+ * SCRIPT_ONLY 常量。
+ */
 export const SCRIPT_ONLY: CreationMode[] = ['script'];
 /** 与项目结构无关的通用能力：实体/设定/标签/文笔，三种模式都有同一份目录结构 */
 export const ALL_MODES: CreationMode[] = ['long', 'short', 'script'];
@@ -120,6 +129,12 @@ export function commandAllowedModes(commandId: string): CreationMode[] | null {
     return COMMAND_MODE_RULES[commandId] ?? null;
 }
 
+/**
+ * isCommandAllowedInMode 函数。
+ * @param commandId - 命令ID
+ * @param mode - 模式
+  * @returns 是否成功 或 null
+ */
 export function isCommandAllowedInMode(commandId: string, mode: CreationMode): boolean | null {
     const allowed = commandAllowedModes(commandId);
     if (!allowed) return null;

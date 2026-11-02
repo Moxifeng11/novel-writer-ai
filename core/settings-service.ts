@@ -324,6 +324,9 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * - undefined 不覆盖默认值
  * - null 不覆盖对象默认值：data.json 里 `"modelOverrides": null`（手工编辑/旧版损坏）
  *   会让设置页 `settings.modelOverrides[endpoint]` 直接抛 TypeError。
+ * @param base - 基础
+ * @param override - 覆盖配置
+  * @returns T 实例
  */
 export function deepMergeSettings<T>(base: T, override: unknown): T {
     if (!isPlainObject(base) || !isPlainObject(override)) {

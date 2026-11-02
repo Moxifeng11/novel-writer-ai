@@ -6,6 +6,9 @@ import { ContextManager } from '../engine/context-manager';
 import { AIEngine } from '../engine/ai-engine';
 import { readMergedVolumeOutline } from '../utils/helpers';
 
+/**
+ * NovelTagsModal 类。
+ */
 export class NovelTagsModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -20,6 +23,9 @@ export class NovelTagsModal extends Modal {
         this.aiEngine = plugin.aiEngine;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -309,6 +315,9 @@ ${result.content}
         return parts.join('\n');
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

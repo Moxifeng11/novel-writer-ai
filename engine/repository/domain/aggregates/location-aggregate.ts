@@ -6,6 +6,9 @@ import { BaseEntity, type BaseEntityProps } from './base-entity';
 import { EntityStatus, Frontmatter } from '../value-objects';
 import type { EntityCategory } from './base-entity';
 
+/**
+ * LocationProps 类型定义。
+ */
 export interface LocationProps extends BaseEntityProps {
     alias?: string;
     type?: string;
@@ -16,6 +19,9 @@ export interface LocationProps extends BaseEntityProps {
     worldRegion?: string;
 }
 
+/**
+ * 地点。
+ */
 export class Location extends BaseEntity {
     private readonly _locationProps: Omit<LocationProps, keyof BaseEntityProps>;
 
@@ -37,6 +43,13 @@ export class Location extends BaseEntity {
     get inhabitants(): string | undefined { return this._locationProps.inhabitants; }
     get worldRegion(): string | undefined { return this._locationProps.worldRegion; }
 
+    /**
+     * 创建。
+     * @param id - 标识
+     * @param name - 名称
+     * @param filePath - 文件路径
+      * @returns Location 实例
+     */
     static create(id: string, name: string, filePath: string): Location {
         return new Location({
             id,
@@ -53,10 +66,20 @@ export class Location extends BaseEntity {
         });
     }
 
+    /**
+     * 从。
+     * @param props - 属性表
+      * @returns Location 实例
+     */
     static from(props: LocationProps): Location {
         return new Location(props);
     }
 
+    /**
+     * 带状态。
+     * @param status - 状态
+      * @returns Location 实例
+     */
     withStatus(status: EntityStatus): Location {
         return new Location({
             ...this._props,
@@ -65,6 +88,11 @@ export class Location extends BaseEntity {
         } as LocationProps);
     }
 
+    /**
+     * 带名称。
+     * @param name - 名称
+      * @returns Location 实例
+     */
     withName(name: string): Location {
         return new Location({
             ...this._props,
@@ -73,6 +101,10 @@ export class Location extends BaseEntity {
         } as LocationProps);
     }
 
+    /**
+     * 转换为JSON。
+     * @returns 映射结果
+     */
     toJSON(): Record<string, any> {
         return {
             ...super.toJSON(),

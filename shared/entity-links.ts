@@ -12,6 +12,9 @@
 
 export type LinkCardinality = 'single' | 'list';
 
+/**
+ * LinkFieldPolicy 类型定义。
+ */
 export interface LinkFieldPolicy {
     /** frontmatter 字段名 */
     key: string;

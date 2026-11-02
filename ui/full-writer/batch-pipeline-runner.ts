@@ -37,8 +37,14 @@ export type { BatchChapterTarget };
 
 const log = createLogger('BatchPipeline');
 
+/**
+ * BatchChapterStatus 类型定义。
+ */
 export type BatchChapterStatus = 'done' | 'skipped' | 'failed';
 
+/**
+ * BatchChapterResult 类型定义。
+ */
 export interface BatchChapterResult {
     target: BatchChapterTarget;
     status: BatchChapterStatus;
@@ -47,6 +53,9 @@ export interface BatchChapterResult {
     error?: string;
 }
 
+/**
+ * BatchPipelineOptions 类型定义。
+ */
 export interface BatchPipelineOptions {
     /** 只补缺失步骤，已完成的跳过（默认 true） */
     resume?: boolean;
@@ -59,6 +68,9 @@ export interface BatchPipelineOptions {
     onChapterDone?: (result: BatchChapterResult) => void;
 }
 
+/**
+ * BatchPipelineRunner 类。
+ */
 export class BatchPipelineRunner {
     private readonly stepRunner: StepRunner;
     private lastError = '';
@@ -81,6 +93,13 @@ export class BatchPipelineRunner {
         });
     }
 
+    /**
+     * 执行。
+     * @param project - 项目（路径或对象）
+     * @param targets - 参数值
+     * @param options - 配置项
+     * @returns 结果数组
+     */
     async run(
         project: string,
         targets: BatchChapterTarget[],

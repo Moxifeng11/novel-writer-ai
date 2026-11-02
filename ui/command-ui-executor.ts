@@ -68,6 +68,9 @@ const log = createLogger('CommandUiExecutor');
 
 
 
+/**
+ * CommandUiExecutorDeps 类型定义。
+ */
 export interface CommandUiExecutorDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -79,6 +82,9 @@ export interface CommandUiExecutorDeps {
     getVersionService(): ChapterVersionService | null;
 }
 
+/**
+ * CommandUiExecutor 类。
+ */
 export class CommandUiExecutor implements CommandUiPort {
     private readonly legacyCommandWarned = new Set<string>();
 

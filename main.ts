@@ -1596,6 +1596,7 @@ export default class NovelWriterPlugin extends Plugin {
     /**
      * 最近的长流程执行记录（诊断/E2E/Agent 端口共用；新→旧）
      *
+     * @param limit - 上限
      * @returns 结果数组
      */
     getExecutionLedgerRecords(limit = 20): Array<Record<string, unknown>> {

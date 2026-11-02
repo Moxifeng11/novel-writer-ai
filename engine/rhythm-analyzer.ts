@@ -11,6 +11,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('RhythmAnalyzer');
 
+/**
+ * 节奏分析器。
+ */
 export class RhythmAnalyzer {
      /**
       * 分析文本节奏

@@ -76,6 +76,9 @@ function cleanForeshadow(text: string): string {
     return text.replace(/^(埋设|回收)[:：]\s*/, '').trim();
 }
 
+/**
+ * VolumeOutlineSummarizer 类。
+ */
 export class VolumeOutlineSummarizer {
     /**
      * 从单卷 Markdown 大纲中提取结构化摘要。

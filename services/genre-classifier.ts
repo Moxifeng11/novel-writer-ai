@@ -2,6 +2,9 @@ import type { EmbeddingProvider } from '../shared/embedding-provider';
 import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig } from '../shared/webnovel-knowledge-base';
 import { GenrePreferenceMemory } from './genre-preference-memory';
 
+/**
+ * GenreClassificationResult 类型定义。
+ */
 export interface GenreClassificationResult {
   channel: { id: 'male' | 'female' | 'neutral'; name: string; confidence: number };
   primaryGenre: { id: string; name: string; confidence: number };
@@ -85,6 +88,9 @@ const CANDIDATE_THRESHOLD = 0.3;
 const SECONDARY_GENRE_THRESHOLD = 0.6;
 const MAX_SECONDARY_GENRES = 3;
 
+/**
+ * 题材分类器。
+ */
 export class GenreClassifier {
   private kb: WebnovelKnowledgeBase;
   private embeddingProvider?: EmbeddingProvider;
@@ -100,10 +106,19 @@ export class GenreClassifier {
     this.preferenceMemory = preferenceMemory;
   }
 
+  /**
+   * setPreferenceMemory 方法。
+   * @param memory - 记忆
+   */
   setPreferenceMemory(memory: GenrePreferenceMemory): void {
     this.preferenceMemory = memory;
   }
 
+  /**
+   * classify 方法。
+   * @param bookInfo - 书籍信息
+    * @returns GenreClassificationResult 实例
+   */
   async classify(bookInfo: BookInfo): Promise<GenreClassificationResult> {
     const combinedText = this.combineBookInfo(bookInfo);
     const lowerText = combinedText.toLowerCase();
@@ -790,6 +805,11 @@ export class GenreClassifier {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
+  /**
+   * classifyBatch 方法。
+   * @param books - 书籍列表
+   * @returns 结果数组
+   */
   async classifyBatch(books: BookInfo[]): Promise<GenreClassificationResult[]> {
     const results: GenreClassificationResult[] = [];
     for (const book of books) {
@@ -798,6 +818,13 @@ export class GenreClassifier {
     return results;
   }
 
+  /**
+   * getTopKeywords 方法。
+   * @param text - 文本内容
+   * @param genreId - 题材ID
+   * @param limit - 上限
+   * @returns 结果数组
+   */
   getTopKeywords(text: string, genreId: string, limit: number = 10): { keyword: string; count: number }[] {
     const genre = this.kb.getGenre(genreId);
     if (!genre) return [];

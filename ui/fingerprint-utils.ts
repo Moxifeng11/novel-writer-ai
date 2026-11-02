@@ -6,6 +6,11 @@ import {
     DimensionStatus,
 } from '../engine/style/style-dimensions-v2';
 
+/**
+ * 格式化词语数量。
+ * @param count - 数量
+ * @returns 文本结果
+ */
 export function formatWordCount(count: number): string {
     if (count >= 10000) {
         const wan = count / 10000;
@@ -14,10 +19,18 @@ export function formatWordCount(count: number): string {
     return `${count}字`;
 }
 
+/**
+ * 格式化日期时间。
+ * @param timestamp - 时间戳
+ * @returns 文本结果
+ */
 export function formatDateTime(timestamp: number): string {
     return new Date(timestamp).toLocaleString('zh-CN');
 }
 
+/**
+ * 指纹列表选项列表结构定义。
+ */
 export interface FingerprintListOptions {
     showDelete?: boolean;
     onToggle?: (fp: StyleFingerprint) => void;
@@ -39,6 +52,12 @@ export function isSourceOnlyFingerprintScope(scope: StyleFingerprint['scope']): 
     return scope === 'template';
 }
 
+/**
+ * 渲染指纹列表。
+ * @param container - 容器元素
+ * @param fingerprints - 指纹集合
+ * @param options - 配置项
+ */
 export function renderFingerprintList(
     container: HTMLElement,
     fingerprints: StyleFingerprint[],
@@ -122,6 +141,9 @@ export function renderFingerprintList(
     });
 }
 
+/**
+ * 特征维度列表常量。
+ */
 export const FEATURE_DIMENSIONS: Array<{ key: keyof StyleFingerprint['features']; label: string }> = [
     { key: 'sentenceRhythm', label: '句式节奏' },
     { key: 'wordPreference', label: '用词偏好' },

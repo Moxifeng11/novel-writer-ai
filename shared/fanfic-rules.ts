@@ -7,6 +7,9 @@
 import { App, TFile } from 'obsidian';
 import { pjProjectMeta } from './paths';
 
+/**
+ * FanficRules 类型定义。
+ */
 export interface FanficRules {
     /** 是否同人项目 */
     isFanfic: boolean;
@@ -55,6 +58,9 @@ export interface FanficRules {
     loadError?: FanficRulesLoadError;
 }
 
+/**
+ * FanficCharacter 类型定义。
+ */
 export interface FanficCharacter {
     name: string;
     /** 原作定位 */
@@ -63,8 +69,14 @@ export interface FanficCharacter {
     change: string;
 }
 
+/**
+ * FanficReviewStatus 类型定义。
+ */
 export type FanficReviewStatus = 'approved' | 'pending' | 'rejected' | 'legacy';
 
+/**
+ * FanficRulesLoadError 类型定义。
+ */
 export type FanficRulesLoadError = 'missing-path' | 'missing-file' | 'read-failed' | 'unreviewed';
 
 const EMPTY_RULES: FanficRules = {
@@ -308,6 +320,12 @@ export function parseFanficReviewStatus(content: string): FanficReviewStatus {
     return 'legacy';
 }
 
+/**
+ * 解析同人审校元数据。
+ *
+ * @param content - 待解析文本
+ * @returns 审校状态、审校人与来源哈希
+ */
 export function parseFanficReviewMeta(content: string): {
     reviewStatus: FanficReviewStatus;
     reviewedBy?: string;

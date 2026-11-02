@@ -16,6 +16,9 @@ const log = createLogger('PlanBookModal');
 /** 单个实体 frontmatter 摘要注入大纲上下文时的长度上限，防止超长字段拖垮 prompt（不裁剪实体数量） */
 const MAX_ENTITY_SUMMARY_LENGTH = 400;
 
+/**
+ * 计划书籍弹窗。
+ */
 export class PlanBookModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -35,6 +38,9 @@ export class PlanBookModal extends Modal {
         this.preferredProject = preferredProject;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -377,6 +383,9 @@ ${worldviewResult.content}`;
                     super(app);
                 }
 
+                /**
+                 * onOpen 方法。
+                 */
                 onOpen(): void {
     this.modalEl.addClass('nw-scope');
                     const { contentEl } = this;
@@ -428,6 +437,9 @@ ${worldviewResult.content}`;
                     themeInput.addEventListener('keydown', handleEnter);
                 }
 
+                /**
+                 * onClose 方法。
+                 */
                 onClose(): void {
                     const { contentEl } = this;
                     contentEl.empty();
@@ -674,6 +686,9 @@ ${worldviewResult.content}`;
         return Array.from(projectDirs).sort();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

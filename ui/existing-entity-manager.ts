@@ -55,6 +55,9 @@ export class ExistingEntityManagerModal extends Modal {
         this.displayLabel = displayLabel;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { modalEl } = this;
@@ -62,6 +65,9 @@ export class ExistingEntityManagerModal extends Modal {
         this._loadAndRender();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         // v3.4.9 P0-3: 关闭前提示未保存的改名
         if (this.renameMap.size > 0) {

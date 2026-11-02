@@ -7,6 +7,9 @@
 
 import type { ContentType, VersionMeta, VersionType } from './version-types';
 
+/**
+ * 章节版本端口结构定义。
+ */
 export interface ChapterVersionPort {
     saveVersion(
         project: string,

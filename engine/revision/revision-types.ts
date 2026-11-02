@@ -9,8 +9,14 @@ export type RevisionDimension =
     | 'continuity'
     | 'style';
 
+/**
+ * RevisionSeverity 类型定义。
+ */
 export type RevisionSeverity = 'high' | 'medium' | 'low';
 
+/**
+ * 修订问题结构定义。
+ */
 export interface RevisionIssue {
     dimension: RevisionDimension;
     severity: RevisionSeverity;
@@ -21,11 +27,17 @@ export interface RevisionIssue {
     source?: 'quality-report' | 'quality-score' | 'manual';
 }
 
+/**
+ * 修订计划结构定义。
+ */
 export interface RevisionPlan {
     passes: RevisionDimension[];
     reason: string;
 }
 
+/**
+ * RevisionPassResult 类型定义。
+ */
 export interface RevisionPassResult {
     dimension: RevisionDimension;
     changed: boolean;
@@ -33,12 +45,18 @@ export interface RevisionPassResult {
     error?: string;
 }
 
+/**
+ * TargetedRevisionResult 类型定义。
+ */
 export interface TargetedRevisionResult {
     body: string;
     passes: RevisionPassResult[];
     changed: boolean;
 }
 
+/**
+ * 修订维度标签列表常量。
+ */
 export const REVISION_DIMENSION_LABELS: Record<RevisionDimension, string> = {
     dialogue: '对话',
     rhythm: '节奏',

@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-02T01:11:52.350Z",
+  "generatedAt": "2026-11-02T01:24:44.341Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 1175,
+      "documented": 1508,
       "methods": 1253,
-      "methodsDocumented": 1097,
-      "incomplete": 38
+      "methodsDocumented": 1253,
+      "incomplete": 0
     },
     "services": {
       "files": 28,
       "exports": 151,
-      "documented": 120,
+      "documented": 151,
       "methods": 202,
-      "methodsDocumented": 165,
-      "incomplete": 1
+      "methodsDocumented": 202,
+      "incomplete": 0
     },
     "shared": {
       "files": 163,
       "exports": 1517,
-      "documented": 1170,
+      "documented": 1517,
       "methods": 149,
-      "methodsDocumented": 138,
-      "incomplete": 52
+      "methodsDocumented": 149,
+      "incomplete": 0
     },
     "core": {
       "files": 6,
@@ -32,7 +32,7 @@
       "documented": 23,
       "methods": 48,
       "methodsDocumented": 48,
-      "incomplete": 5
+      "incomplete": 0
     },
     "domains": {
       "files": 11,
@@ -45,10 +45,10 @@
     "ui": {
       "files": 189,
       "exports": 493,
-      "documented": 235,
+      "documented": 493,
       "methods": 632,
-      "methodsDocumented": 380,
-      "incomplete": 9
+      "methodsDocumented": 632,
+      "incomplete": 0
     }
   },
   "files": {
@@ -61,9 +61,9 @@
     },
     "engine/agent/conversation-engine.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/agent/dsh/dsh-launch.ts": {
@@ -75,24 +75,24 @@
     },
     "engine/agent/dsh/dsh-process.ts": {
       "exports": 7,
-      "documented": 6,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/agent/dsh/dsh-protocol.ts": {
       "exports": 4,
       "documented": 4,
       "methods": 4,
-      "methodsDocumented": 3,
-      "incomplete": 1
+      "methodsDocumented": 4,
+      "incomplete": 0
     },
     "engine/agent/dsh/dsh-session.ts": {
       "exports": 7,
       "documented": 7,
       "methods": 5,
       "methodsDocumented": 5,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/agent/harness/agent-adapter.ts": {
       "exports": 2,
@@ -113,7 +113,7 @@
       "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 2
+      "incomplete": 0
     },
     "engine/agent/harness/creation-plan.ts": {
       "exports": 6,
@@ -155,7 +155,7 @@
       "documented": 1,
       "methods": 10,
       "methodsDocumented": 10,
-      "incomplete": 2
+      "incomplete": 0
     },
     "engine/agent/harness/session-snapshot.ts": {
       "exports": 8,
@@ -189,7 +189,7 @@
       "exports": 1,
       "documented": 1,
       "methods": 5,
-      "methodsDocumented": 4,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/ai-batch-entity-generator.ts": {
@@ -197,7 +197,7 @@
       "documented": 1,
       "methods": 4,
       "methodsDocumented": 4,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/ai-chapter-helpers.ts": {
       "exports": 1,
@@ -217,8 +217,8 @@
       "exports": 2,
       "documented": 2,
       "methods": 33,
-      "methodsDocumented": 32,
-      "incomplete": 1
+      "methodsDocumented": 33,
+      "incomplete": 0
     },
     "engine/ai-entity-generator.ts": {
       "exports": 1,
@@ -259,7 +259,7 @@
       "exports": 2,
       "documented": 2,
       "methods": 2,
-      "methodsDocumented": 1,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/ai-types.ts": {
@@ -280,12 +280,12 @@
       "exports": 1,
       "documented": 1,
       "methods": 5,
-      "methodsDocumented": 4,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/analysis-session-manager.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 17,
       "methodsDocumented": 17,
       "incomplete": 0
@@ -294,12 +294,12 @@
       "exports": 6,
       "documented": 6,
       "methods": 7,
-      "methodsDocumented": 6,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "engine/bases-generator.ts": {
       "exports": 8,
-      "documented": 7,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -315,12 +315,12 @@
       "exports": 3,
       "documented": 3,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/body-writer.ts": {
       "exports": 8,
-      "documented": 2,
+      "documented": 8,
       "methods": 3,
       "methodsDocumented": 3,
       "incomplete": 0
@@ -330,7 +330,7 @@
       "documented": 6,
       "methods": 25,
       "methodsDocumented": 25,
-      "incomplete": 2
+      "incomplete": 0
     },
     "engine/chapter-brief.ts": {
       "exports": 9,
@@ -355,7 +355,7 @@
     },
     "engine/chapter-state-snapshot-service.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -369,16 +369,16 @@
     },
     "engine/character-arc.ts": {
       "exports": 9,
-      "documented": 2,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/character-consistency-checker.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/character-context.ts": {
@@ -390,45 +390,45 @@
     },
     "engine/character-recognition-pipeline.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/character-soul.ts": {
       "exports": 10,
-      "documented": 9,
+      "documented": 10,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/co-writer/co-writer-types.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/co-writer/create-session-store.ts": {
       "exports": 4,
-      "documented": 2,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/co-writer/session-state.ts": {
       "exports": 34,
-      "documented": 32,
+      "documented": 34,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/co-writer-engine.ts": {
       "exports": 8,
-      "documented": 5,
+      "documented": 8,
       "methods": 45,
-      "methodsDocumented": 44,
-      "incomplete": 1
+      "methodsDocumented": 45,
+      "incomplete": 0
     },
     "engine/co-writer-state-sync.ts": {
       "exports": 1,
@@ -439,7 +439,7 @@
     },
     "engine/coherence-checker.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -453,14 +453,14 @@
     },
     "engine/content-safety-checker.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/context/context-diff-detector.ts": {
       "exports": 5,
-      "documented": 1,
+      "documented": 5,
       "methods": 3,
       "methodsDocumented": 3,
       "incomplete": 0
@@ -474,21 +474,21 @@
     },
     "engine/context/incremental-updater.ts": {
       "exports": 6,
-      "documented": 5,
+      "documented": 6,
       "methods": 9,
       "methodsDocumented": 9,
       "incomplete": 0
     },
     "engine/context/story-context-graph.ts": {
       "exports": 7,
-      "documented": 1,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/context/story-context-service.ts": {
       "exports": 8,
-      "documented": 3,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -502,28 +502,28 @@
     },
     "engine/context-compressor.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/context-manager.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 43,
-      "methodsDocumented": 42,
-      "incomplete": 1
+      "methodsDocumented": 43,
+      "incomplete": 0
     },
     "engine/context-readiness.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/craft-constraints.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -539,19 +539,19 @@
       "exports": 16,
       "documented": 16,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/deconstruction-scheduler.ts": {
       "exports": 8,
       "documented": 8,
       "methods": 33,
-      "methodsDocumented": 31,
+      "methodsDocumented": 33,
       "incomplete": 0
     },
     "engine/deconstruction-worker-manager.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 21,
       "methodsDocumented": 21,
       "incomplete": 0
@@ -560,28 +560,28 @@
       "exports": 14,
       "documented": 14,
       "methods": 8,
-      "methodsDocumented": 1,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "engine/deconstructors/commercial-deconstructor.ts": {
       "exports": 5,
       "documented": 5,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/deconstructors/foreshadow-deconstructor.ts": {
       "exports": 17,
       "documented": 17,
       "methods": 15,
-      "methodsDocumented": 14,
+      "methodsDocumented": 15,
       "incomplete": 0
     },
     "engine/deconstructors/readability-deconstructor.ts": {
       "exports": 7,
       "documented": 7,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/deconstructors/rhythm-deconstructor.ts": {
@@ -595,14 +595,14 @@
       "exports": 12,
       "documented": 12,
       "methods": 4,
-      "methodsDocumented": 0,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "engine/deconstructors/style-deconstructor.ts": {
       "exports": 14,
       "documented": 14,
       "methods": 5,
-      "methodsDocumented": 1,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/deconstructors/technique-deconstructor.ts": {
@@ -614,7 +614,7 @@
     },
     "engine/dimension-keywords.ts": {
       "exports": 9,
-      "documented": 7,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -623,7 +623,7 @@
       "exports": 2,
       "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/embedding/embedding-fingerprint.ts": {
@@ -658,14 +658,14 @@
       "exports": 4,
       "documented": 4,
       "methods": 5,
-      "methodsDocumented": 1,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/embedding/qwen-provider.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/emotion-auditor.ts": {
@@ -677,21 +677,21 @@
     },
     "engine/emotion-curve-analyzer.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/emotion-planner.ts": {
       "exports": 7,
-      "documented": 6,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/ending-traction-engine.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 4,
       "methodsDocumented": 4,
       "incomplete": 0
@@ -700,40 +700,40 @@
       "exports": 13,
       "documented": 13,
       "methods": 34,
-      "methodsDocumented": 27,
-      "incomplete": 2
+      "methodsDocumented": 34,
+      "incomplete": 0
     },
     "engine/entity-context-engine.ts": {
       "exports": 10,
-      "documented": 9,
+      "documented": 10,
       "methods": 8,
       "methodsDocumented": 8,
       "incomplete": 0
     },
     "engine/entity-graph.ts": {
       "exports": 6,
-      "documented": 4,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/entity-link-migrator.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/entity-scorer.ts": {
       "exports": 6,
-      "documented": 2,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/entity-state-manager.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 6,
       "methodsDocumented": 6,
       "incomplete": 0
@@ -768,35 +768,35 @@
     },
     "engine/fact-index-manager.ts": {
       "exports": 9,
-      "documented": 7,
+      "documented": 9,
       "methods": 7,
-      "methodsDocumented": 5,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "engine/fact-index-vault.ts": {
       "exports": 3,
       "documented": 3,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "engine/fingerprint-extractor.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 2,
-      "methodsDocumented": 1,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/fingerprint-stats.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/foreshadow-config-manager.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 17,
       "methodsDocumented": 17,
       "incomplete": 0
@@ -817,44 +817,44 @@
     },
     "engine/generation-checkpoint-vault.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 4,
-      "methodsDocumented": 1,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "engine/generation-checkpoint.ts": {
       "exports": 6,
-      "documented": 4,
+      "documented": 6,
       "methods": 4,
       "methodsDocumented": 4,
       "incomplete": 0
     },
     "engine/genre/genre-config-registry.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 9,
-      "methodsDocumented": 8,
+      "methodsDocumented": 9,
       "incomplete": 0
     },
     "engine/genre/genre-detector.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/genre/types.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/harness/ai-assisted-premise-service.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/harness/call-ledger.ts": {
@@ -866,30 +866,30 @@
     },
     "engine/harness/creative-frameworks.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/harness/creative-randomizer.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "engine/harness/domain-profile.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/harness/long-novel-tasks.ts": {
       "exports": 5,
-      "documented": 1,
+      "documented": 5,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "engine/harness/rule-engine.ts": {
@@ -903,26 +903,26 @@
       "exports": 7,
       "documented": 7,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/harness/structured-output.ts": {
       "exports": 6,
-      "documented": 1,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/harness/tool-registry.ts": {
       "exports": 6,
-      "documented": 5,
+      "documented": 6,
       "methods": 6,
-      "methodsDocumented": 5,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "engine/harness/trend-research-service.ts": {
       "exports": 8,
-      "documented": 6,
+      "documented": 8,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
@@ -943,14 +943,14 @@
     },
     "engine/knowledge-base-config.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 23,
       "methodsDocumented": 23,
       "incomplete": 0
     },
     "engine/knowledge-injector.ts": {
       "exports": 13,
-      "documented": 6,
+      "documented": 13,
       "methods": 23,
       "methodsDocumented": 23,
       "incomplete": 0
@@ -964,14 +964,14 @@
     },
     "engine/knowledge-to-fingerprint-converter.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 4,
-      "methodsDocumented": 3,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "engine/knowledge-usage.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -981,14 +981,14 @@
       "documented": 5,
       "methods": 13,
       "methodsDocumented": 13,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/llm-enhancer.ts": {
       "exports": 7,
-      "documented": 5,
+      "documented": 7,
       "methods": 7,
       "methodsDocumented": 7,
-      "incomplete": 2
+      "incomplete": 0
     },
     "engine/llm-prompts.ts": {
       "exports": 7,
@@ -999,14 +999,14 @@
     },
     "engine/local-vector-store.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 4,
-      "methodsDocumented": 1,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "engine/logic-consistency-checker.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1016,7 +1016,7 @@
       "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/memory/memory-shard-writer.ts": {
       "exports": 5,
@@ -1027,30 +1027,30 @@
     },
     "engine/memory-trigger.ts": {
       "exports": 13,
-      "documented": 12,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/mode-unit-writer.ts": {
       "exports": 16,
-      "documented": 12,
+      "documented": 16,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/note-properties-service.ts": {
       "exports": 12,
-      "documented": 9,
+      "documented": 12,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/novel-analyzer.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/outline-contract.ts": {
@@ -1058,21 +1058,21 @@
       "documented": 21,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/outline-to-text-expander.ts": {
       "exports": 8,
-      "documented": 7,
+      "documented": 8,
       "methods": 6,
-      "methodsDocumented": 4,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "engine/planning-combined.ts": {
       "exports": 9,
-      "documented": 6,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/planning-step-advance.ts": {
       "exports": 5,
@@ -1083,28 +1083,28 @@
     },
     "engine/plot-completion-engine.ts": {
       "exports": 6,
-      "documented": 1,
+      "documented": 6,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/plot-divergence-engine.ts": {
       "exports": 8,
       "documented": 8,
       "methods": 7,
-      "methodsDocumented": 0,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "engine/plot-redundancy-checker.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/preference-memory.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 9,
       "methodsDocumented": 9,
       "incomplete": 0
@@ -1118,23 +1118,23 @@
     },
     "engine/promise-ledger.ts": {
       "exports": 11,
-      "documented": 7,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/prompt-builder.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 25,
       "methodsDocumented": 25,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/prompt-cache.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 3,
-      "methodsDocumented": 2,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "engine/prompt-hash.ts": {
@@ -1142,7 +1142,7 @@
       "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/prompt-manager.ts": {
       "exports": 4,
@@ -1153,21 +1153,21 @@
     },
     "engine/prompts/body-v2-prompts.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/prompts/body-v3-prompts.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/prompts/body-v4-prompts.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1177,18 +1177,18 @@
       "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 3
+      "incomplete": 0
     },
     "engine/prompts/co-write-prompts.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/prompts/deai-prompts.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1202,14 +1202,14 @@
     },
     "engine/prompts/human-voice.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/prompts/memory-prompts.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1223,28 +1223,28 @@
     },
     "engine/prompts/soul-driven-prompts.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/prompts/style-exemplars.ts": {
       "exports": 8,
-      "documented": 5,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/prompts/template-utils.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/prompts/writing-rules-format.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1288,7 +1288,7 @@
       "exports": 2,
       "documented": 2,
       "methods": 6,
-      "methodsDocumented": 2,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "engine/quality/rewrite-types.ts": {
@@ -1300,9 +1300,9 @@
     },
     "engine/quality-gate.ts": {
       "exports": 5,
-      "documented": 1,
+      "documented": 5,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/quality-scorer.ts": {
@@ -1317,7 +1317,7 @@
       "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/relationship-engine.ts": {
       "exports": 8,
@@ -1358,42 +1358,42 @@
       "exports": 3,
       "documented": 3,
       "methods": 13,
-      "methodsDocumented": 10,
+      "methodsDocumented": 13,
       "incomplete": 0
     },
     "engine/repository/domain/aggregates/character-aggregate.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 8,
-      "methodsDocumented": 5,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "engine/repository/domain/aggregates/faction-aggregate.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 6,
-      "methodsDocumented": 0,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "engine/repository/domain/aggregates/item-aggregate.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 6,
-      "methodsDocumented": 0,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "engine/repository/domain/aggregates/location-aggregate.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/repository/domain/aggregates/project-aggregate.ts": {
       "exports": 3,
       "documented": 3,
       "methods": 6,
-      "methodsDocumented": 3,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "engine/repository/domain/serializers/entity-factory.ts": {
@@ -1415,28 +1415,28 @@
       "documented": 4,
       "methods": 9,
       "methodsDocumented": 9,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/repository/domain/value-objects/chapter-status.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 12,
-      "methodsDocumented": 10,
+      "methodsDocumented": 12,
       "incomplete": 0
     },
     "engine/repository/domain/value-objects/entity-status.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 10,
-      "methodsDocumented": 8,
+      "methodsDocumented": 10,
       "incomplete": 0
     },
     "engine/repository/domain/value-objects/frontmatter.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 16,
-      "methodsDocumented": 15,
-      "incomplete": 1
+      "methodsDocumented": 16,
+      "incomplete": 0
     },
     "engine/repository/domain/value-objects/word-count.ts": {
       "exports": 2,
@@ -1482,9 +1482,9 @@
     },
     "engine/review-agent.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/revision/quality-issue-parser.ts": {
@@ -1492,7 +1492,7 @@
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/revision/revision-guard.ts": {
       "exports": 7,
@@ -1503,28 +1503,28 @@
     },
     "engine/revision/revision-prompts.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/revision/revision-types.ts": {
       "exports": 7,
-      "documented": 1,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/revision/targeted-revision.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/rhythm-analyzer.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
@@ -1538,44 +1538,44 @@
     },
     "engine/scene-expander.ts": {
       "exports": 11,
-      "documented": 9,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/scene-generation-loop.ts": {
       "exports": 7,
-      "documented": 4,
+      "documented": 7,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/scheduler-segment-integration.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "engine/segment-aware-breakdown.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "engine/semantic-analyzer.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 23,
       "methodsDocumented": 23,
       "incomplete": 0
     },
     "engine/sentence-diversity-engine.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "engine/settlement/markdown-table-utils.ts": {
@@ -1594,21 +1594,21 @@
     },
     "engine/settlement/settle-context.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/settlement/settlement-artifacts.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/settlement/settlement-coordinator.ts": {
       "exports": 6,
-      "documented": 1,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1629,9 +1629,9 @@
     },
     "engine/settlement-engine.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 3,
-      "methodsDocumented": 1,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "engine/step-definitions.ts": {
@@ -1643,21 +1643,21 @@
     },
     "engine/step-modal-controller.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 7,
-      "methodsDocumented": 3,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "engine/step-prompt-assembly.ts": {
       "exports": 5,
-      "documented": 1,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/step-result-saver.ts": {
       "exports": 5,
-      "documented": 2,
+      "documented": 5,
       "methods": 3,
       "methodsDocumented": 3,
       "incomplete": 0
@@ -1671,7 +1671,7 @@
     },
     "engine/step-runner-retry.ts": {
       "exports": 6,
-      "documented": 3,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1685,28 +1685,28 @@
     },
     "engine/step-sequential.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/step-settlement.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/step-specials.ts": {
       "exports": 5,
-      "documented": 1,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/step-validator.ts": {
       "exports": 7,
-      "documented": 5,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1720,7 +1720,7 @@
     },
     "engine/story-linkage-writer.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1743,19 +1743,19 @@
       "exports": 3,
       "documented": 3,
       "methods": 6,
-      "methodsDocumented": 5,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "engine/streaming/simulated-stream.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/streaming/stream-parser.ts": {
       "exports": 9,
-      "documented": 8,
+      "documented": 9,
       "methods": 4,
       "methodsDocumented": 4,
       "incomplete": 0
@@ -1765,7 +1765,7 @@
       "documented": 10,
       "methods": 3,
       "methodsDocumented": 3,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/style/fingerprint-blender-v2.ts": {
       "exports": 6,
@@ -1779,18 +1779,18 @@
       "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/style/fingerprint-selection.ts": {
       "exports": 5,
-      "documented": 1,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/style/style-deconstructor-v2.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
@@ -1804,7 +1804,7 @@
     },
     "engine/style/style-distill-service.ts": {
       "exports": 6,
-      "documented": 5,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1821,7 +1821,7 @@
       "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 2
+      "incomplete": 0
     },
     "engine/style/style-vector-store-v2.ts": {
       "exports": 6,
@@ -1839,23 +1839,23 @@
     },
     "engine/style-fingerprint-library.ts": {
       "exports": 7,
-      "documented": 6,
+      "documented": 7,
       "methods": 65,
-      "methodsDocumented": 64,
+      "methodsDocumented": 65,
       "incomplete": 0
     },
     "engine/style-learner.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 5,
       "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/style-similarity-scorer.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/style-vector-store.ts": {
@@ -1867,7 +1867,7 @@
     },
     "engine/suggestion-manager.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 13,
       "methodsDocumented": 13,
       "incomplete": 0
@@ -1881,7 +1881,7 @@
     },
     "engine/text-segmenter.ts": {
       "exports": 10,
-      "documented": 6,
+      "documented": 10,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
@@ -1909,49 +1909,49 @@
     },
     "engine/types/chart-config.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/vector-enhancer.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 20,
-      "methodsDocumented": 18,
+      "methodsDocumented": 20,
       "incomplete": 0
     },
     "engine/volume-outline-summarizer.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/world-state-snapshot.ts": {
       "exports": 7,
-      "documented": 1,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "engine/writing-profile.ts": {
       "exports": 8,
       "documented": 8,
       "methods": 7,
-      "methodsDocumented": 5,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "engine/writing-quality-engine.ts": {
       "exports": 13,
-      "documented": 12,
+      "documented": 13,
       "methods": 8,
       "methodsDocumented": 8,
       "incomplete": 0
     },
     "services/api-connectivity-service.ts": {
       "exports": 8,
-      "documented": 7,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1960,19 +1960,19 @@
       "exports": 7,
       "documented": 7,
       "methods": 4,
-      "methodsDocumented": 2,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "services/chapter-recognizer.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 5,
       "methodsDocumented": 5,
       "incomplete": 0
     },
     "services/chapter-version-service.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 15,
       "methodsDocumented": 15,
       "incomplete": 0
@@ -1989,7 +1989,7 @@
       "documented": 10,
       "methods": 8,
       "methodsDocumented": 8,
-      "incomplete": 1
+      "incomplete": 0
     },
     "services/font-manager.ts": {
       "exports": 13,
@@ -2000,28 +2000,28 @@
     },
     "services/genre-classifier.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 4,
-      "methodsDocumented": 0,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "services/genre-preference-memory.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 14,
-      "methodsDocumented": 13,
+      "methodsDocumented": 14,
       "incomplete": 0
     },
     "services/knowledge-base-manager.ts": {
       "exports": 5,
-      "documented": 1,
+      "documented": 5,
       "methods": 35,
-      "methodsDocumented": 32,
+      "methodsDocumented": 35,
       "incomplete": 0
     },
     "services/knowledge-original-chunker.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2035,7 +2035,7 @@
     },
     "services/model-discovery.ts": {
       "exports": 5,
-      "documented": 2,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2044,56 +2044,56 @@
       "exports": 9,
       "documented": 9,
       "methods": 22,
-      "methodsDocumented": 19,
+      "methodsDocumented": 22,
       "incomplete": 0
     },
     "services/project-rename-service.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "services/prompt-manager.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 30,
-      "methodsDocumented": 25,
+      "methodsDocumented": 30,
       "incomplete": 0
     },
     "services/prompt-templates-default.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "services/quality-history-store.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "services/rules-registry.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "services/rules-service.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 8,
-      "methodsDocumented": 2,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "services/synopsis-store.ts": {
       "exports": 5,
       "documented": 5,
       "methods": 8,
-      "methodsDocumented": 0,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "services/update-checker.ts": {
@@ -2112,9 +2112,9 @@
     },
     "services/worker-manager.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 6,
-      "methodsDocumented": 5,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "services/worker-protocol.ts": {
@@ -2126,7 +2126,7 @@
     },
     "services/worker-runtime.ts": {
       "exports": 8,
-      "documented": 7,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2142,26 +2142,26 @@
       "exports": 6,
       "documented": 6,
       "methods": 9,
-      "methodsDocumented": 6,
+      "methodsDocumented": 9,
       "incomplete": 0
     },
     "shared/adaptive-debounce-manager.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 9,
       "methodsDocumented": 9,
       "incomplete": 0
     },
     "shared/ai-credentials.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/api-format.ts": {
       "exports": 16,
-      "documented": 12,
+      "documented": 16,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2182,56 +2182,56 @@
     },
     "shared/auto-context-block.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/behavior-log.ts": {
       "exports": 7,
-      "documented": 5,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/body-format.ts": {
       "exports": 9,
-      "documented": 7,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/body-path.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/budget-telemetry.ts": {
       "exports": 6,
-      "documented": 2,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/canon-source.ts": {
       "exports": 18,
-      "documented": 16,
+      "documented": 18,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/changelog-data.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/chapter-progress.ts": {
       "exports": 7,
-      "documented": 4,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2245,7 +2245,7 @@
     },
     "shared/chapter-status.ts": {
       "exports": 6,
-      "documented": 5,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2259,49 +2259,49 @@
     },
     "shared/chapter-target.ts": {
       "exports": 5,
-      "documented": 2,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/chapter-version-port.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/co-writer-types.ts": {
       "exports": 9,
-      "documented": 3,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/command-ids.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/command-mode-rules.ts": {
       "exports": 8,
-      "documented": 4,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/command-ui-port.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/content-classifier.ts": {
       "exports": 11,
-      "documented": 6,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2311,28 +2311,28 @@
       "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/context-hygiene.ts": {
       "exports": 11,
-      "documented": 6,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/contrast-library.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/creation-flow.ts": {
       "exports": 11,
-      "documented": 3,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/creation-mode.ts": {
       "exports": 20,
@@ -2350,7 +2350,7 @@
     },
     "shared/deconstruction-settings.ts": {
       "exports": 6,
-      "documented": 1,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2378,14 +2378,14 @@
     },
     "shared/divergence-trend.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/embedding-provider.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2399,42 +2399,42 @@
     },
     "shared/entity-audit.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/entity-field-mappings.ts": {
       "exports": 10,
-      "documented": 4,
+      "documented": 10,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/entity-integrity.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/entity-links.ts": {
       "exports": 9,
-      "documented": 8,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/entity-models.ts": {
       "exports": 34,
-      "documented": 26,
+      "documented": 34,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/entity-persistence.ts": {
       "exports": 9,
-      "documented": 3,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2448,49 +2448,49 @@
     },
     "shared/entity-reader.ts": {
       "exports": 8,
-      "documented": 6,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/entity-registry.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/entity-templates.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/execution-events.ts": {
       "exports": 8,
-      "documented": 1,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/export-file.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/export-precheck.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/fanfic-audit.ts": {
       "exports": 11,
-      "documented": 3,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2500,11 +2500,11 @@
       "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/fanfic-rules.ts": {
       "exports": 25,
-      "documented": 20,
+      "documented": 25,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2513,22 +2513,22 @@
       "exports": 3,
       "documented": 3,
       "methods": 10,
-      "methodsDocumented": 3,
+      "methodsDocumented": 10,
       "incomplete": 0
     },
     "shared/file-mention.ts": {
       "exports": 9,
-      "documented": 8,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/file-path-guard.ts": {
       "exports": 10,
-      "documented": 4,
+      "documented": 10,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/file-system-port.ts": {
       "exports": 8,
@@ -2539,35 +2539,35 @@
     },
     "shared/foreshadow-config.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/foreshadow-loop.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/format-constants.ts": {
       "exports": 65,
-      "documented": 57,
+      "documented": 65,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/frontmatter-schema.ts": {
       "exports": 13,
-      "documented": 9,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/frontmatter.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2581,28 +2581,28 @@
     },
     "shared/github-repo.ts": {
       "exports": 9,
-      "documented": 2,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/http-request.ts": {
       "exports": 7,
-      "documented": 5,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/human-feature-rubric.ts": {
       "exports": 7,
-      "documented": 4,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/human-similarity.ts": {
       "exports": 11,
-      "documented": 7,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2623,21 +2623,21 @@
     },
     "shared/injection-ledger.ts": {
       "exports": 12,
-      "documented": 6,
+      "documented": 12,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/internal-registry.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 3,
-      "methodsDocumented": 1,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "shared/iterative-refine.ts": {
       "exports": 6,
-      "documented": 2,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2654,25 +2654,25 @@
       "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/knowledge-position.ts": {
       "exports": 3,
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/local-ai-queue.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/logger.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2686,14 +2686,14 @@
     },
     "shared/memory-rank.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 2
+      "incomplete": 0
     },
     "shared/mode-content.ts": {
       "exports": 19,
-      "documented": 16,
+      "documented": 19,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2707,7 +2707,7 @@
     },
     "shared/model-capabilities.ts": {
       "exports": 11,
-      "documented": 7,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2723,33 +2723,33 @@
       "exports": 6,
       "documented": 6,
       "methods": 16,
-      "methodsDocumented": 14,
+      "methodsDocumented": 16,
       "incomplete": 0
     },
     "shared/novel-format.ts": {
       "exports": 12,
-      "documented": 11,
+      "documented": 12,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/paths.ts": {
       "exports": 189,
-      "documented": 181,
+      "documented": 189,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 23
+      "incomplete": 0
     },
     "shared/plot-eval-throttle.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/plugin-cache.ts": {
       "exports": 6,
-      "documented": 2,
+      "documented": 6,
       "methods": 24,
       "methodsDocumented": 24,
       "incomplete": 0
@@ -2770,7 +2770,7 @@
     },
     "shared/pre-research.ts": {
       "exports": 17,
-      "documented": 9,
+      "documented": 17,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2784,7 +2784,7 @@
     },
     "shared/preview-kind.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2798,7 +2798,7 @@
     },
     "shared/previous-chapter-window.ts": {
       "exports": 11,
-      "documented": 6,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2812,21 +2812,21 @@
     },
     "shared/project-mode.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/project-name.ts": {
       "exports": 5,
-      "documented": 2,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/prompt-budget.ts": {
       "exports": 18,
-      "documented": 11,
+      "documented": 18,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2840,14 +2840,14 @@
     },
     "shared/prose-metrics.ts": {
       "exports": 10,
-      "documented": 3,
+      "documented": 10,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/prose-naturalizer.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2861,59 +2861,59 @@
     },
     "shared/provider-detection.ts": {
       "exports": 4,
-      "documented": 2,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/quality-baseline.ts": {
       "exports": 10,
-      "documented": 2,
+      "documented": 10,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/quality-benchmark.ts": {
       "exports": 6,
-      "documented": 2,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/quality-grade.ts": {
       "exports": 9,
-      "documented": 6,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/quality-history.ts": {
       "exports": 14,
-      "documented": 10,
+      "documented": 14,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/rag/budget-pack.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/rag/diversity.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/rag/eval-score.ts": {
       "exports": 9,
-      "documented": 7,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 2
+      "incomplete": 0
     },
     "shared/rag/neighbors.ts": {
       "exports": 3,
@@ -2924,42 +2924,42 @@
     },
     "shared/rag/query-plan.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/rag-sources.ts": {
       "exports": 10,
-      "documented": 6,
+      "documented": 10,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/retrieval-filter.ts": {
       "exports": 6,
-      "documented": 3,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 2
+      "incomplete": 0
     },
     "shared/rhythm-intent.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/scene-body-merge.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/scene-card.ts": {
       "exports": 9,
-      "documented": 5,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2969,39 +2969,39 @@
       "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/secret-redaction.ts": {
       "exports": 3,
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/serialized-writer.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 7,
       "methodsDocumented": 7,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/settings-migrator.ts": {
       "exports": 7,
-      "documented": 2,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/step-frontmatter.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/step-modal-styles.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3043,7 +3043,7 @@
     },
     "shared/store/middleware/persist.ts": {
       "exports": 5,
-      "documented": 3,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3060,7 +3060,7 @@
       "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/store/types.ts": {
       "exports": 20,
@@ -3071,7 +3071,7 @@
     },
     "shared/story-structure.ts": {
       "exports": 23,
-      "documented": 11,
+      "documented": 23,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3085,14 +3085,14 @@
     },
     "shared/tag-taxonomy.ts": {
       "exports": 8,
-      "documented": 7,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/task-budget-engine.ts": {
       "exports": 13,
-      "documented": 7,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3106,7 +3106,7 @@
     },
     "shared/template-scaffold.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3127,21 +3127,21 @@
     },
     "shared/theme-colors.ts": {
       "exports": 25,
-      "documented": 22,
+      "documented": 25,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 2
+      "incomplete": 0
     },
     "shared/theme-gallery.ts": {
       "exports": 12,
-      "documented": 6,
+      "documented": 12,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/thresholds.ts": {
       "exports": 124,
-      "documented": 121,
+      "documented": 124,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3162,14 +3162,14 @@
     },
     "shared/token-estimator.ts": {
       "exports": 8,
-      "documented": 6,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/true-random.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3183,17 +3183,17 @@
     },
     "shared/validators/normalizers-entity.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/vault-tree.ts": {
       "exports": 6,
-      "documented": 4,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "shared/version-types.ts": {
       "exports": 10,
@@ -3204,7 +3204,7 @@
     },
     "shared/versioned-registry.ts": {
       "exports": 11,
-      "documented": 8,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3225,35 +3225,35 @@
     },
     "shared/volume-plan.ts": {
       "exports": 6,
-      "documented": 1,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/webnovel-knowledge-base.ts": {
       "exports": 7,
-      "documented": 0,
+      "documented": 7,
       "methods": 14,
       "methodsDocumented": 14,
       "incomplete": 0
     },
     "shared/word-count.ts": {
       "exports": 7,
-      "documented": 6,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/write-lock.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "shared/writing-rules-legacy.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3267,7 +3267,7 @@
     },
     "shared/writing-rules.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3277,7 +3277,7 @@
       "documented": 25,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 3
+      "incomplete": 0
     },
     "shared/yield.ts": {
       "exports": 2,
@@ -3312,14 +3312,14 @@
       "documented": 4,
       "methods": 21,
       "methodsDocumented": 21,
-      "incomplete": 4
+      "incomplete": 0
     },
     "core/settings-service.ts": {
       "exports": 4,
       "documented": 4,
       "methods": 7,
       "methodsDocumented": 7,
-      "incomplete": 1
+      "incomplete": 0
     },
     "core/theme-manager.ts": {
       "exports": 3,
@@ -3407,114 +3407,114 @@
     },
     "ui/add-fanfic-setting-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/agent-workbench-view.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 6,
-      "methodsDocumented": 1,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "ui/ai-builder-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/appearance-settings.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/auto-writer-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/backup-yuan-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/batch-chapters-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/batch-create-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/batch-deconstruct-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/batch-import-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/batch-novels-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/changelog-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/chapter-outline-tree-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/chapter-settlement-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/chapter-version-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/character-recognition-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/co-write-floating-panel.ts": {
@@ -3526,14 +3526,14 @@
     },
     "ui/co-writing-view.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 103,
       "methodsDocumented": 103,
       "incomplete": 0
     },
     "ui/command-ui-executor.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
@@ -3554,28 +3554,28 @@
     },
     "ui/components/categorization-review-panel.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 4,
-      "methodsDocumented": 0,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/components/character-review-panel.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 4,
-      "methodsDocumented": 0,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/components/chart-toolbar.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/components/emotion-curve-view.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
@@ -3598,7 +3598,7 @@
       "exports": 2,
       "documented": 2,
       "methods": 5,
-      "methodsDocumented": 3,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "ui/components/progress/progress-bar.ts": {
@@ -3624,142 +3624,142 @@
     },
     "ui/components/smart-chart.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 6,
-      "methodsDocumented": 0,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "ui/context-injector-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/continue-chapters-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/cowrite/body-save-controller.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 3,
-      "methodsDocumented": 2,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/cowrite/cowrite-mappers.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/cowrite/history-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/cowrite/insert-range.ts": {
       "exports": 4,
-      "documented": 1,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/cowrite/iterate-instruction-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/cowrite/live-analysis-controller.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 8,
-      "methodsDocumented": 4,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "ui/cowrite/memory-manager-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/cowrite/realtime-quality-controller.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 7,
-      "methodsDocumented": 4,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "ui/cowrite/suggestion-edit-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/cowrite/suggestion-history-store.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/create-project-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/cross-volume-state-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/diagnose-writer-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/draggable-panel.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "ui/existing-entity-manager.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/expand-text-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/export-manuscript-modal.ts": {
       "exports": 4,
-      "documented": 2,
+      "documented": 4,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/fanfic-prompt-notice.ts": {
@@ -3771,23 +3771,23 @@
     },
     "ui/fanfic-review-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/fingerprint-blend-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/fingerprint-detail-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/fingerprint-embedding.ts": {
@@ -3799,37 +3799,37 @@
     },
     "ui/fingerprint-intensity-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/fingerprint-library-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/fingerprint-utils.ts": {
       "exports": 11,
-      "documented": 6,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/font-manager-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/full-writer/batch-pipeline-runner.ts": {
       "exports": 4,
-      "documented": 0,
+      "documented": 4,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/full-writer/batch-step-retry.ts": {
@@ -3841,94 +3841,94 @@
     },
     "ui/full-writer/batch-targets.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/chapter-orchestrator.ts": {
       "exports": 9,
-      "documented": 8,
+      "documented": 9,
       "methods": 4,
       "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/full-writer/context-loader-controller.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/full-writer/cover-picker-controller.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/full-writer/creation-flow-state.ts": {
       "exports": 4,
-      "documented": 2,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/entity-state-controller.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/full-writer/execution-panels.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 6,
       "methodsDocumented": 6,
       "incomplete": 0
     },
     "ui/full-writer/execution-run-store.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 16,
       "methodsDocumented": 16,
       "incomplete": 0
     },
     "ui/full-writer/fanfic-settings-utils.ts": {
       "exports": 13,
-      "documented": 6,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/flow-panel-controller.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/full-writer/flow-tab.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/full-writer-store.ts": {
       "exports": 5,
-      "documented": 0,
+      "documented": 5,
       "methods": 17,
-      "methodsDocumented": 16,
+      "methodsDocumented": 17,
       "incomplete": 0
     },
     "ui/full-writer/full-writer-utils.ts": {
       "exports": 6,
-      "documented": 1,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "ui/full-writer/fw-styles.ts": {
       "exports": 1,
@@ -3939,56 +3939,56 @@
     },
     "ui/full-writer/intervention-controller.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/full-writer/project-selector-controller.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 6,
-      "methodsDocumented": 3,
-      "incomplete": 1
+      "methodsDocumented": 6,
+      "incomplete": 0
     },
     "ui/full-writer/quick-tools-panel.ts": {
       "exports": 3,
-      "documented": 1,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/scene-outline-controller.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 5,
       "methodsDocumented": 5,
       "incomplete": 0
     },
     "ui/full-writer/setting-lib-controller.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/full-writer/status-bar-controller.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/full-writer/step-render-controller.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/full-writer/streamlined-nav-presenter.ts": {
       "exports": 12,
-      "documented": 4,
+      "documented": 12,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4002,37 +4002,37 @@
     },
     "ui/full-writer/template-vars-builder.ts": {
       "exports": 7,
-      "documented": 2,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/title-bar-controller.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/full-writer/unit-tab.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/unit-writer-controller.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/full-writer/wizard-controller.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "ui/full-writer/wizard-results-store.ts": {
@@ -4044,9 +4044,9 @@
     },
     "ui/full-writer/wizard-step-executors.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/full-writer/wizard-step-renderers.ts": {
@@ -4058,114 +4058,114 @@
     },
     "ui/full-writer/wizard-step-validators.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/wizard-types.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer/wizard-view-access.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/full-writer-view.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 25,
-      "methodsDocumented": 24,
+      "methodsDocumented": 25,
       "incomplete": 0
     },
     "ui/generate-character-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/generate-faction-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/generate-item-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/generate-location-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/generate-worldview-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/golden-opening-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/humanize-report-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/ideation-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/knowledge-detail-format.ts": {
       "exports": 4,
-      "documented": 2,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "ui/knowledge-detail-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/knowledge-folder-navigation.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/knowledge-monitor-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/knowledge-rebuild-action.ts": {
@@ -4179,112 +4179,112 @@
       "exports": 1,
       "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/memory-preview.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/mini-settings-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/mode-document-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/model-picker-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/model-picker-popover.ts": {
       "exports": 4,
-      "documented": 2,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/model-quick-switcher.ts": {
       "exports": 13,
-      "documented": 9,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "ui/monitor-panel-a.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 3,
       "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/monitor-panel-b.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 14,
       "methodsDocumented": 14,
       "incomplete": 0
     },
     "ui/novel-analysis-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/novel-tags-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/outline-expand-modal.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 3,
-      "methodsDocumented": 0,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/panel-resizer.ts": {
       "exports": 4,
-      "documented": 3,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/password-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 4,
-      "methodsDocumented": 2,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/plan-book-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/plot-canvas-modal.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/plot-canvas-parser.ts": {
@@ -4296,23 +4296,23 @@
     },
     "ui/polish-editor.ts": {
       "exports": 6,
-      "documented": 4,
+      "documented": 6,
       "methods": 4,
-      "methodsDocumented": 2,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/pre-research-modal.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/project-side-panel-view.ts": {
       "exports": 5,
-      "documented": 2,
+      "documented": 5,
       "methods": 5,
-      "methodsDocumented": 0,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "ui/project-utils.ts": {
@@ -4320,48 +4320,48 @@
       "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 2
+      "incomplete": 0
     },
     "ui/prompt-manager-settings.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/protect-yuan-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/quality-dashboard-modal.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/rebuild-chapters-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/refill-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/rename-project-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/rendering/context-panel.ts": {
@@ -4373,35 +4373,35 @@
     },
     "ui/review-chapter-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/rewrite-suggestion-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/scene-confirm-modal.ts": {
       "exports": 5,
-      "documented": 4,
+      "documented": 5,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/services/agent-port.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/services/agent-session-store.ts": {
       "exports": 3,
-      "documented": 0,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4411,13 +4411,13 @@
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "ui/services/co-write-facade.ts": {
       "exports": 2,
       "documented": 2,
       "methods": 58,
-      "methodsDocumented": 57,
+      "methodsDocumented": 58,
       "incomplete": 0
     },
     "ui/services/human-sample-loader.ts": {
@@ -4429,51 +4429,51 @@
     },
     "ui/services/humanness-scorer.ts": {
       "exports": 3,
-      "documented": 2,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/services/project-create-service.ts": {
       "exports": 6,
-      "documented": 2,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/settings/agent-section.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/settings/api-section.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/settings/deconstruction-section.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/settings/fingerprint-section.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/settings/foreshadow-section.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/settings/general-sections.ts": {
@@ -4485,14 +4485,14 @@
     },
     "ui/settings/knowledge-section.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/settings/section-base.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4506,23 +4506,23 @@
     },
     "ui/settings-tab.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 4,
-      "methodsDocumented": 2,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/settings-utils.ts": {
       "exports": 2,
-      "documented": 1,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/sidebar-component.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/states/chapter-state-manager.ts": {
@@ -4530,41 +4530,41 @@
       "documented": 1,
       "methods": 5,
       "methodsDocumented": 5,
-      "incomplete": 1
+      "incomplete": 0
     },
     "ui/step-result-viewer-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/story-linkage-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/story-settings-form.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 4,
-      "methodsDocumented": 0,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/story-settings-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 1,
-      "methodsDocumented": 0,
+      "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui/style-distiller-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/svg-charts.ts": {
@@ -4583,23 +4583,23 @@
     },
     "ui/tomato-rank-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/unified-entity-generate-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/unified-entity-manager-modal.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/utils/worldview-utils.ts": {
@@ -4607,7 +4607,7 @@
       "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 1
+      "incomplete": 0
     },
     "ui/vector-rebuild-action.ts": {
       "exports": 1,
@@ -4620,7 +4620,7 @@
       "exports": 2,
       "documented": 2,
       "methods": 10,
-      "methodsDocumented": 0,
+      "methodsDocumented": 10,
       "incomplete": 0
     },
     "ui/views/knowledge-base-modals.ts": {
@@ -4639,7 +4639,7 @@
     },
     "ui/views/knowledge-detail-state.ts": {
       "exports": 6,
-      "documented": 4,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4648,82 +4648,82 @@
       "exports": 3,
       "documented": 3,
       "methods": 8,
-      "methodsDocumented": 0,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "ui/volume-intro-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/welcome-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/wizard-checker.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 9,
       "methodsDocumented": 9,
       "incomplete": 0
     },
     "ui/workspace-manager.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 6,
       "methodsDocumented": 6,
       "incomplete": 0
     },
     "ui/write-chapter-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 4,
-      "methodsDocumented": 1,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/writing-pet.ts": {
       "exports": 2,
-      "documented": 0,
+      "documented": 2,
       "methods": 4,
-      "methodsDocumented": 2,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/writing-stats-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/writing-stats-settings.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/writing-style-modal.ts": {
       "exports": 1,
-      "documented": 0,
+      "documented": 1,
       "methods": 2,
-      "methodsDocumented": 0,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "ui/writing-style-paths.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/writing-style-presets.ts": {
       "exports": 8,
-      "documented": 6,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

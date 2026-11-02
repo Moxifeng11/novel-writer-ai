@@ -17,6 +17,9 @@ import {
 } from '../shared/rag-sources';
 import { listFolderFiles, type VaultTreePort } from '../shared/vault-tree';
 
+/**
+ * KnowledgeUsageAppLike 类型定义。
+ */
 export interface KnowledgeUsageAppLike {
     /** 只需要目录索引：按项目目录遍历，不调用 getFiles() 扫全库 */
     vault: VaultTreePort;

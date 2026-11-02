@@ -123,6 +123,9 @@ export function countTotalChars(text: string): number {
     return count;
 }
 
+/**
+ * SharedWordCountMode 类型定义。
+ */
 export type SharedWordCountMode = 'cjk_only' | 'cjk_words' | 'cjk_words_numbers' | 'platform' | 'total';
 
 /**

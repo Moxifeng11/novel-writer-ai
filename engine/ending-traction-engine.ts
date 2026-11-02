@@ -15,6 +15,9 @@ import { createLogger } from '../shared/logger';
  
 
 const log = createLogger('EndingTractionEngine');
+/**
+ * PlotThread 类型定义。
+ */
  export interface PlotThread {
      id: string;
      name: string;
@@ -26,6 +29,9 @@ const log = createLogger('EndingTractionEngine');
      status: 'active' | 'dormant' | 'resolved' | 'abandoned';
  }
  
+/**
+ * 情节节点结构定义。
+ */
  export interface PlotNode {
      description: string;
      volume: number;
@@ -33,6 +39,9 @@ const log = createLogger('EndingTractionEngine');
      completed: boolean;
  }
  
+/**
+ * EndingTractionState 类型定义。
+ */
  export interface EndingTractionState {
      threads: PlotThread[];
      overallProgress: number;
@@ -40,6 +49,9 @@ const log = createLogger('EndingTractionEngine');
      recommendations: string[];
  }
  
+/**
+ * TractionSuggestion 类型定义。
+ */
  export interface TractionSuggestion {
      threadId: string;
      threadName: string;
@@ -47,12 +59,18 @@ const log = createLogger('EndingTractionEngine');
      priority: number;
  }
  
+/**
+ * 结尾牵引力引擎选项列表结构定义。
+ */
  export interface EndingTractionEngineOptions {
     app: App;
     aiEngine: AIEngine;
     plugin: NovelWriterSettingsAPI;
 }
 
+/**
+ * 结尾牵引力引擎。
+ */
 export class EndingTractionEngine {
     private app: App;
     private aiEngine: AIEngine;

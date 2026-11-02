@@ -14,11 +14,17 @@ import {
     KB_ORIGINAL_CHUNK_SIZE,
 } from '../shared/thresholds';
 
+/**
+ * 原始文本分块结构定义。
+ */
 export interface OriginalTextChunk {
     sample: string;
     position: number;
 }
 
+/**
+ * 分块原始文本选项列表结构定义。
+ */
 export interface ChunkOriginalTextOptions {
     chunkSize?: number;
     minChunkSize?: number;

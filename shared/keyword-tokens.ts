@@ -4,6 +4,7 @@
  * 用于向量检索后的关键词重排。不引入分词依赖，保证指纹库与知识库
  * 在任何运行环境（含移动端）都能用同一套规则，且结果稳定可测试。
  * @param text - 文本内容
+ * @param limit - 上限
  * @returns 结果数组
  */
 export function extractKeywordTokens(text: string, limit = 80): string[] {

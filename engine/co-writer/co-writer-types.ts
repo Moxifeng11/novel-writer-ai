@@ -9,8 +9,14 @@ import type { CharacterPairRelation } from '../relationship-engine';
 import type { OOCCheckResult } from '../../shared/co-writer-types';
 import type { EntityStateChange } from '../entity-state-manager';
 
+/**
+ * WritingMode 类型定义。
+ */
 export type WritingMode = 'continue' | 'rewrite' | 'dialogue' | 'action';
 
+/**
+ * 情节节点结构定义。
+ */
 export interface PlotNode {
     id: string;
     index: number;
@@ -23,6 +29,9 @@ export interface PlotNode {
     completed: boolean;
 }
 
+/**
+ * PlotProgress 类型定义。
+ */
 export interface PlotProgress {
     totalNodes: number;
     completedNodes: number;
@@ -32,6 +41,9 @@ export interface PlotProgress {
     allCompleted: boolean;
 }
 
+/**
+ * Suggestion 类型定义。
+ */
 export interface Suggestion {
     id: string;
     text: string;
@@ -40,6 +52,9 @@ export interface Suggestion {
     style: 'default' | 'creative' | 'conservative';
 }
 
+/**
+ * 上下文快照结构定义。
+ */
 export interface ContextSnapshot {
     project: string;
     chapterName: string;
@@ -81,6 +96,9 @@ export interface ContextSnapshot {
     dirtyFields: Set<string>;
 }
 
+/**
+ * SettingGuardReport 类型定义。
+ */
 export interface SettingGuardReport {
     oocResult: OOCCheckResult | null;
     entityChanges: EntityStateChange[];

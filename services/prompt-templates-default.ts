@@ -40,6 +40,9 @@ function createTemplate(
     };
 }
 
+/**
+ * DEFAULT_PROMPT_TEMPLATES 常量。
+ */
 export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
     createTemplate(
         'info-plan',

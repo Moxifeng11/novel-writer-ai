@@ -4,6 +4,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('BackupYuanModal');
+/**
+ * BackupYuanModal 类。
+ */
 export class BackupYuanModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -12,6 +15,9 @@ export class BackupYuanModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -111,6 +117,9 @@ export class BackupYuanModal extends Modal {
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

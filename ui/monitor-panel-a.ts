@@ -10,8 +10,14 @@ import { RhythmAnalyzer } from "../engine/rhythm-analyzer";
 import { EmotionCurveView } from "./components/emotion-curve-view";
 import { CoWriteFacade } from "./services/co-write-facade";
 
+/**
+ * VIEW_TYPE_MONITOR_A 常量。
+ */
 export const VIEW_TYPE_MONITOR_A = "nw-float-monitor-a";
 
+/**
+ * MonitorPanelA 类。
+ */
 export class MonitorPanelA extends DraggablePanel {
   private emotionAnalyzer: EmotionCurveAnalyzer | null = null;
   private rhythmAnalyzer: RhythmAnalyzer | null = null;

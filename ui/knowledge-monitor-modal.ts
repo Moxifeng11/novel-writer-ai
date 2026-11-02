@@ -33,6 +33,9 @@ const STATUS_ICONS: Record<string, string> = {
     cancelled: '⏸️',
 };
 
+/**
+ * KnowledgeMonitorModal 类。
+ */
 export class KnowledgeMonitorModal extends Modal {
     private scheduler: DeconstructionScheduler;
     private knowledgeManager: KnowledgeBaseManager;
@@ -53,6 +56,9 @@ export class KnowledgeMonitorModal extends Modal {
         this.knowledgeManager = knowledgeManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen() {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
@@ -62,6 +68,9 @@ export class KnowledgeMonitorModal extends Modal {
         this.startRefreshTimer();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.stopRefreshTimer();
         this.cleanupCallbacks();

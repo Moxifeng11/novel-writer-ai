@@ -12,6 +12,9 @@ import {
     type BatchChapterResult,
 } from './full-writer/batch-pipeline-runner';
 
+/**
+ * BatchNovelsModal 类。
+ */
 export class BatchNovelsModal extends Modal {
     private project = '';
     private volumeNum = 1;
@@ -35,6 +38,9 @@ export class BatchNovelsModal extends Modal {
         this.startChapter = defaults?.startChapter || this.detectNextChapter();
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
@@ -135,6 +141,9 @@ export class BatchNovelsModal extends Modal {
         });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.abortController?.abort();
         this.contentEl.empty();

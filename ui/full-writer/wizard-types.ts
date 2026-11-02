@@ -20,6 +20,9 @@ export type WizardStepStatus = 'pending' | 'active' | 'executing' | 'done' | 'sk
 /** 子步骤状态 — 向导子步骤专用，比主步骤少几个状态 */
 export type WizardSubStepStatus = 'pending' | 'active' | 'done' | 'skipped';
 
+/**
+ * WizardStep 类型定义。
+ */
 export interface WizardStep {
     id: string;
     label: string;

@@ -21,7 +21,13 @@ export interface RagSource {
     excerpt: string;
 }
 
+/**
+ * RAG_SOURCE_LIMIT 常量。
+ */
 export const RAG_SOURCE_LIMIT = 8;
+/**
+ * RAG_EXCERPT_MAX 常量。
+ */
 export const RAG_EXCERPT_MAX = 60;
 
 function normalizeExcerpt(sample: string): string {
@@ -80,6 +86,9 @@ export function summarizeRagSources(list: readonly RagSource[]): string {
 
 // ─── 使用统计（G2-3b）────────────────────────────────────────────
 
+/**
+ * RagUsageRecord 类型定义。
+ */
 export interface RagUsageRecord {
     /** 文件路径（步骤结果或正文） */
     path: string;
@@ -88,6 +97,9 @@ export interface RagUsageRecord {
     sources: RagSource[];
 }
 
+/**
+ * RagUsageSummary 类型定义。
+ */
 export interface RagUsageSummary {
     /** 扫描到的承载文件数（步骤结果 + 正文） */
     stepsTotal: number;

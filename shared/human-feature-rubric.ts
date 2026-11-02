@@ -32,6 +32,9 @@ export interface HumanFeatureMetrics {
     timeAnchors: number;
 }
 
+/**
+ * RubricIssue 类型定义。
+ */
 export interface RubricIssue {
     key: string;
     label: string;
@@ -41,6 +44,9 @@ export interface RubricIssue {
     message: string;
 }
 
+/**
+ * RubricResult 类型定义。
+ */
 export interface RubricResult {
     metrics: HumanFeatureMetrics;
     /** 0–1，命中项越多越高 */
@@ -65,6 +71,11 @@ function splitSentences(text: string): string[] {
     return text.split(/[。！？!?…]+/).map((s) => s.replace(/\s+/g, '')).filter((s) => s.length > 0);
 }
 
+/**
+ * analyzeHumanFeatures 函数。
+ * @param raw - 原始
+  * @returns HumanFeatureMetrics 实例
+ */
 export function analyzeHumanFeatures(raw: string): HumanFeatureMetrics {
     const text = String(raw || '').replace(/^---[\s\S]*?---\s*/, '').trim();
     const chars = Math.max(1, text.replace(/\s+/g, '').length);

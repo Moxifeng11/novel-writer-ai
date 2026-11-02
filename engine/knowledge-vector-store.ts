@@ -241,6 +241,7 @@ export class KnowledgeVectorStore {
      * @param bookIds - 书籍 ID 列表
      * @param dimension - 维度
      * @param positions - 位置列表
+     * @param radius - 半径
      * @returns 结果数组
      */
     async getNeighbors(

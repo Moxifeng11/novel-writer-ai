@@ -43,6 +43,9 @@ export function bigramSimilarity(a: string, b: string): number {
     return intersection / (setA.size + setB.size - intersection);
 }
 
+/**
+ * MmrOptions 类型定义。
+ */
 export interface MmrOptions {
     /** 相关性权重（默认 0.7；越低越强调多样性） */
     lambda?: number;

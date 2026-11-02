@@ -64,6 +64,11 @@ export interface PreprocessResult {
     charCount: number;
 }
 
+/**
+ * 规范化文本。
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 export function normalizeText(text: string): string {
     if (!text) {
         return '';
@@ -80,6 +85,11 @@ export function normalizeText(text: string): string {
     return normalized;
 }
 
+/**
+ * preprocess 函数。
+ * @param text - 文本内容
+  * @returns PreprocessResult 实例
+ */
 export function preprocess(text: string): PreprocessResult {
     const normalized = normalizeText(text);
     const trimmed = normalized.trim();
@@ -464,6 +474,11 @@ export class TextSegmenter {
     }
 }
 
+/**
+ * 数量总字符列表。
+ * @param text - 文本内容
+ * @returns 数值结果
+ */
 export function countTotalChars(text: string): number {
     return sharedTotalChars(text);
 }
@@ -473,6 +488,12 @@ export function countTotalChars(text: string): number {
  */
 export type WordCountMode = 'total' | 'chinese_only' | 'platform';
 
+/**
+ * 数量词语列表。
+ * @param text - 文本内容
+ * @param mode - 模式
+ * @returns 数值结果
+ */
 export function countWords(text: string, mode: WordCountMode = 'platform'): number {
     if (!text) return 0;
     switch (mode) {

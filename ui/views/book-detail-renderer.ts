@@ -66,6 +66,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 风格分析 Tab ----
+    /**
+     * 渲染书籍文风页签。
+     * @param container - 容器元素
+     */
     public renderBookStyleTab(container: HTMLElement): void {
         const data = this.deps.getStyleData();
         if (!data) {
@@ -280,6 +284,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 节奏分析 Tab ----
+    /**
+     * 渲染书籍节奏页签。
+     * @param container - 容器元素
+     */
     public renderBookRhythmTab(container: HTMLElement): void {
         const data = this.deps.getRhythmData();
         if (!data || (!data.emotionPoints && !data.coolPoints && !data.plotStages && !data.structureMatches && !data.chapterRhythm)) {
@@ -578,6 +586,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 结构拆解 Tab ----
+    /**
+     * 渲染书籍结构页签。
+     * @param container - 容器元素
+     */
     public renderBookStructureTab(container: HTMLElement): void {
         const data = this.deps.getStructureData();
         if (!data || (!data.qcchSegments && !data.rhythmUnits && !data.threeLineStructure && !data.structureType)) {
@@ -712,6 +724,11 @@ export class BookDetailRenderer {
     }
 
     // ---- 概览 Tab ----
+    /**
+     * renderBookOverviewTab 方法。
+     * @param container - 容器元素
+     * @param book - 书籍
+     */
     public renderBookOverviewTab(container: HTMLElement, book: BookBasicInfo): void {
         const infoSection = this.createDetailSection(container, '基本信息');
         const infoGrid = infoSection.createDiv({
@@ -1074,6 +1091,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 人设 Tab ----
+    /**
+     * 渲染书籍角色页签。
+     * @param container - 容器元素
+     */
     public renderBookCharacterTab(container: HTMLElement): void {
         const data = this.deps.getCharacterData();
 
@@ -1575,6 +1596,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 伏笔 Tab ----
+    /**
+     * 渲染书籍伏笔页签。
+     * @param container - 容器元素
+     */
     public renderBookForeshadowTab(container: HTMLElement): void {
         const data = this.deps.getForeshadowData();
 
@@ -1769,6 +1794,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 商业 Tab ----
+    /**
+     * 渲染书籍商业页签。
+     * @param container - 容器元素
+     */
     public renderBookCommercialTab(container: HTMLElement): void {
         const data = this.deps.getCommercialData();
         if (!data || (!data.overallScore && !data.goldenThreeChapters && !data.waveRhythm)) {
@@ -1926,6 +1955,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 可读性 Tab ----
+    /**
+     * 渲染书籍可读性页签。
+     * @param container - 容器元素
+     */
     public renderBookReadabilityTab(container: HTMLElement): void {
         const data = this.deps.getReadabilityData();
         if (!data || (!data.overallScore && !data.showTell && !data.aiTrace)) {
@@ -2148,6 +2181,10 @@ export class BookDetailRenderer {
     }
 
     // ---- 技巧 Tab ----
+    /**
+     * 渲染书籍技法页签。
+     * @param container - 容器元素
+     */
     public renderBookTechniqueTab(container: HTMLElement): void {
         const data = this.deps.getTechniqueData();
 
@@ -2266,6 +2303,11 @@ export class BookDetailRenderer {
     }
 
     // ---- 标签 Tab ----
+    /**
+     * 渲染书籍标签列表页签。
+     * @param container - 容器元素
+     * @param book - 书籍
+     */
     public renderBookTagsTab(container: HTMLElement, book: BookBasicInfo): void {
         const themeSection = this.createDetailSection(container, '主题标签');
         const themeWrap = themeSection.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px' });

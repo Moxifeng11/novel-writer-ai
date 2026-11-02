@@ -154,7 +154,11 @@ export class DshSession {
         return String(result?.messageId || '');
     }
 
-    /** 等待该会话回到 idle（dsh 没有 per-prompt 结果，只能看 agent 级状态） */
+    /**
+     * 等待该会话回到 idle（dsh 没有 per-prompt 结果，只能看 agent 级状态）
+     *
+     * @param timeoutMs - 超时时间（毫秒）
+     */
     waitForIdle(timeoutMs = 120_000): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.disposed) {

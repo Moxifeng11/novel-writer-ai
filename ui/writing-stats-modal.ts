@@ -20,6 +20,9 @@ const TAB_LABELS: Record<StatsTab, string> = {
     month: '按月',
 };
 
+/**
+ * WritingStatsModal 类。
+ */
 export class WritingStatsModal extends Modal {
     private plugin: NovelWriterPlugin;
     private tab: StatsTab;
@@ -30,12 +33,18 @@ export class WritingStatsModal extends Modal {
         this.tab = initialTab;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-stats-modal');
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

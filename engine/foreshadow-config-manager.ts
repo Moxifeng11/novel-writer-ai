@@ -13,6 +13,9 @@ export type { ForeshadowConfig, ForeshadowTypeConfig };
 export { DEFAULT_FORESHADOW_CONFIG, DEFAULT_FORESHADOW_TYPES };
 
 
+/**
+ * 伏笔配置管理器。
+ */
 export class ForeshadowConfigManager {
     private config: ForeshadowConfig;
     private onConfigChange?: () => void;

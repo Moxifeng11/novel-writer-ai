@@ -36,6 +36,9 @@ import { createLogger } from '../shared/logger';
 const log = createLogger('WizardChecker');
 export type { WizardTab, WizardStep };
 
+/**
+ * WizardChecker 类。
+ */
 export class WizardChecker {
     private app: App;
 

@@ -28,6 +28,9 @@ const CONFIDENCE_THRESHOLD = 0.4;
 // 次题材命中数 / 主题材命中数 >= 此比例时视为"confidence 相近"，填充 secondary
 const SECONDARY_RATIO_THRESHOLD = 0.7;
 
+/**
+ * 题材检测器。
+ */
 export class GenreDetector {
     private registry: GenreConfigRegistry;
 

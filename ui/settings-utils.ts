@@ -1,3 +1,6 @@
+/**
+ * 分区标题按钮结构定义。
+ */
 export interface SectionHeaderButton {
     text: string;
     onClick: () => void;

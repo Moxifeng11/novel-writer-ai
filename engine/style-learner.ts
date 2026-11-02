@@ -16,6 +16,9 @@ import { createLogger } from '../shared/logger';
  
 
 const log = createLogger('StyleLearner');
+/**
+ * StylePattern 类型定义。
+ */
  export interface StylePattern {
      id: string;
      type: 'vocabulary' | 'sentence' | 'paragraph' | 'tone';
@@ -26,10 +29,16 @@ const log = createLogger('StyleLearner');
      learnedAt: number;
  }
  
+/**
+ * 文风差异结构定义。
+ */
  export interface StyleDiff {
      changes: TextChange[];
  }
  
+/**
+ * 文本变更结构定义。
+ */
  export interface TextChange {
      type: 'replace' | 'add' | 'delete';
      original: string;
@@ -37,11 +46,17 @@ const log = createLogger('StyleLearner');
      context: string;
  }
  
+/**
+ * StyleLearningResult 类型定义。
+ */
  export interface StyleLearningResult {
      newPatterns: StylePattern[];
      totalPatterns: number;
  }
  
+/**
+ * StyleLearnerOptions 类型定义。
+ */
  export interface StyleLearnerOptions {
      app: App;
      aiEngine: AIEngine;
@@ -49,6 +64,9 @@ const log = createLogger('StyleLearner');
      project: string;
  }
  
+/**
+ * StyleLearner 类。
+ */
  export class StyleLearner {
     private app: App;
     private aiEngine: AIEngine;

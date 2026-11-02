@@ -14,6 +14,9 @@
 import { Menu, Notice } from 'obsidian';
 import type NovelWriterPlugin from '../main';
 
+/**
+ * ModelSwitcherProviderOption 类型定义。
+ */
 export interface ModelSwitcherProviderOption {
     id: string;
     name: string;
@@ -23,6 +26,9 @@ export interface ModelSwitcherProviderOption {
     isPreset: boolean;
 }
 
+/**
+ * ModelSwitcherSnapshot 类型定义。
+ */
 export interface ModelSwitcherSnapshot {
     providerId: string | null;
     providerName: string;
@@ -30,6 +36,9 @@ export interface ModelSwitcherSnapshot {
     defaultModel: string;
 }
 
+/**
+ * ModelQuickSwitcherHandle 类型定义。
+ */
 export interface ModelQuickSwitcherHandle {
     refresh: () => void;
     destroy: () => void;
@@ -103,7 +112,13 @@ export function formatModelSwitcherLabel(snapshot: ModelSwitcherSnapshot): strin
     return `🔌 ${provider} · ${model}`;
 }
 
-/** 供应商排序：当前在前 → 预设在前 → 名称升序 */
+/**
+ * 供应商排序：当前在前 → 预设在前 → 名称升序
+ *
+ * @param providers - 提供方列表
+ * @param currentId - 当前ID
+ * @returns 结果数组
+ */
 export function sortProviderOptions<T extends { id: string; name: string; isPreset?: boolean }>(
     providers: T[],
     currentId: string | null,
@@ -163,6 +178,9 @@ export function registerModelSwitcherRefresher(refresh: () => void): () => void 
     return () => refreshers.delete(refresh);
 }
 
+/**
+ * refreshAllModelSwitchers 函数。
+ */
 export function refreshAllModelSwitchers(): void {
     for (const refresh of refreshers) refresh();
 }

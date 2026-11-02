@@ -8,6 +8,12 @@
 import { Setting } from 'obsidian';
 import type NovelWriterPlugin from '../main';
 
+/**
+ * renderWritingStatsAndPetSettings 函数。
+ * @param container - 容器元素
+ * @param plugin - 插件实例
+ * @param rerender - 是否重渲染
+ */
 export function renderWritingStatsAndPetSettings(
     container: HTMLElement,
     plugin: NovelWriterPlugin,

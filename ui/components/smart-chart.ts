@@ -129,6 +129,9 @@ const CHART_META: Record<ChartType, ChartMeta> = {
 	}
 };
 
+/**
+ * SmartChart 类。
+ */
 export class SmartChart {
 	private container: HTMLElement;
 	private chartContainer: HTMLElement;
@@ -168,12 +171,19 @@ export class SmartChart {
 		this.render();
 	}
 
+	/**
+	 * 渲染。
+	 */
 	render(): void {
 		if (this.destroyed) return;
 		this.renderToolbar();
 		this.renderChart();
 	}
 
+	/**
+	 * 设置类型。
+	 * @param type - 类型
+	 */
 	setType(type: ChartType): void {
 		if (this.currentType === type) return;
 		const available = this.getAvailableTypes();
@@ -183,6 +193,10 @@ export class SmartChart {
 		this.render();
 	}
 
+	/**
+	 * setDensity 方法。
+	 * @param density - 密度
+	 */
 	setDensity(density: ChartDensity): void {
 		if (this.currentDensity === density) return;
 		this.currentDensity = density;
@@ -190,11 +204,18 @@ export class SmartChart {
 		this.render();
 	}
 
+	/**
+	 * 设置数据。
+	 * @param data - 数据
+	 */
 	setData(data: any): void {
 		this.data = data;
 		this.render();
 	}
 
+	/**
+	 * 销毁。
+	 */
 	destroy(): void {
 		this.destroyed = true;
 		this.container.innerHTML = '';
@@ -320,6 +341,12 @@ export class SmartChart {
 		}
 	}
 
+	/**
+	 * recommendType 方法。
+	 * @param data - 数据
+	 * @param context - 上下文
+	 * @returns 结果数组
+	 */
 	static recommendType(data: any, context?: string): ChartType[] {
 		const scores: { type: ChartType; score: number }[] = [];
 

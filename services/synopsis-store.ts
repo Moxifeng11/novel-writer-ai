@@ -63,6 +63,11 @@ export interface SynopsisSnapshot {
 export class SynopsisStore {
     constructor(private readonly app: App) {}
 
+    /**
+     * 加载。
+     * @param project - 项目（路径或对象）
+      * @returns SynopsisSnapshot 实例
+     */
     async load(project: string): Promise<SynopsisSnapshot> {
         await this.importLegacy(project);
         const index = await this.readIndex(project);
@@ -78,6 +83,13 @@ export class SynopsisStore {
         };
     }
 
+    /**
+     * saveVariant 方法。
+     * @param project - 项目（路径或对象）
+     * @param variant - 参数值
+     * @param options - 配置项
+      * @returns SynopsisVersionMeta 实例
+     */
     async saveVariant(
         project: string,
         variant: SynopsisVariant,
@@ -107,6 +119,13 @@ export class SynopsisStore {
         return meta;
     }
 
+    /**
+     * updateVariantText 方法。
+     * @param project - 项目（路径或对象）
+     * @param id - 标识
+     * @param text - 文本内容
+     * @param title - 标题
+     */
     async updateVariantText(project: string, id: string, text: string, title?: string): Promise<void> {
         const index = await this.readIndex(project);
         const item = index.items.find(entry => entry.id === id);
@@ -118,6 +137,11 @@ export class SynopsisStore {
         if (index.activeId === id) await this.writeAdopted(project, item, text);
     }
 
+    /**
+     * saveDraft 方法。
+     * @param project - 项目（路径或对象）
+     * @param text - 文本内容
+     */
     async saveDraft(project: string, text: string): Promise<void> {
         await this.ensureDir(project);
         const content = `---
@@ -131,6 +155,11 @@ ${text.trim()}
         await this.adapter().write(pjSynopsisDraftFile(project), content);
     }
 
+    /**
+     * readDraft 方法。
+     * @param project - 项目（路径或对象）
+     * @returns 文本结果
+     */
     async readDraft(project: string): Promise<string> {
         try {
             const adapter = this.adapter();
@@ -142,6 +171,11 @@ ${text.trim()}
         }
     }
 
+    /**
+     * 设置活动。
+     * @param project - 项目（路径或对象）
+     * @param id - 标识
+     */
     async setActive(project: string, id: string): Promise<void> {
         const index = await this.readIndex(project);
         const item = index.items.find(entry => entry.id === id);
@@ -151,6 +185,11 @@ ${text.trim()}
         await this.adopt(project, id);
     }
 
+    /**
+     * 删除版本。
+     * @param project - 项目（路径或对象）
+     * @param id - 标识
+     */
     async deleteVersion(project: string, id: string): Promise<void> {
         const index = await this.readIndex(project);
         const item = index.items.find(entry => entry.id === id);
@@ -166,6 +205,11 @@ ${text.trim()}
         await this.writeIndex(project, index);
     }
 
+    /**
+     * adopt 方法。
+     * @param project - 项目（路径或对象）
+     * @param id - 标识
+     */
     async adopt(project: string, id: string): Promise<void> {
         const index = await this.readIndex(project);
         const item = index.items.find(entry => entry.id === id);

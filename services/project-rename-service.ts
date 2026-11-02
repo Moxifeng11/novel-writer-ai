@@ -14,6 +14,9 @@ import {
 import { projectDisplayName } from '../domains/kernel/project-locator';
 import { writeVaultText } from '../shared/file-system-port';
 
+/**
+ * ProjectRenameResult 类型定义。
+ */
 export interface ProjectRenameResult {
     success: boolean;
     oldProject: string;
@@ -21,9 +24,18 @@ export interface ProjectRenameResult {
     warnings: string[];
 }
 
+/**
+ * ProjectRenameService 类。
+ */
 export class ProjectRenameService {
     constructor(private readonly app: App) {}
 
+    /**
+     * rename 方法。
+     * @param oldProject - 旧项目
+     * @param newName - 新名称
+      * @returns ProjectRenameResult 实例
+     */
     async rename(oldProject: string, newName: string): Promise<ProjectRenameResult> {
         const warnings: string[] = [];
         const parent = oldProject.includes('/')

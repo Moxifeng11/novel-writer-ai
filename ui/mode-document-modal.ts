@@ -12,6 +12,9 @@ import { modeDocPath, modeDocStarter } from '../shared/mode-content';
 import { resolveProjectMode } from '../shared/project-mode';
 import { writeVaultText } from '../shared/file-system-port';
 
+/**
+ * ModeDocumentKind 类型定义。
+ */
 export type ModeDocumentKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
 
 const TITLES: Record<CreationMode, Partial<Record<ModeDocumentKind, string>>> = {
@@ -34,6 +37,9 @@ const DESCRIPTIONS: Record<ModeDocumentKind, string> = {
     storyboard: '按镜号组织画面、景别、运镜、动作、台词与音效；用于拍摄/剪辑。',
 };
 
+/**
+ * ModeDocumentModal 类。
+ */
 export class ModeDocumentModal extends Modal {
     constructor(
         app: App,
@@ -45,6 +51,9 @@ export class ModeDocumentModal extends Modal {
         super(app);
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope', 'nw-modal');
         this.titleEl.setText(TITLES[this.mode]?.[this.kind] || '模式文档');
@@ -112,6 +121,9 @@ export class ModeDocumentModal extends Modal {
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

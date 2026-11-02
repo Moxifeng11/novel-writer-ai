@@ -16,6 +16,9 @@ export interface MarkdownContent {
     sections: MarkdownSection[];
 }
 
+/**
+ * MarkdownSection 类型定义。
+ */
 export interface MarkdownSection {
     title: string;
     level: number;

@@ -93,6 +93,9 @@ export interface PromptSnapshot {
     storyContextTelemetry?: unknown;
 }
 
+/**
+ * 提示词构建器。
+ */
 export class PromptBuilder {
     private knowledgeVectorStore?: KnowledgeVectorStore | null;
     private knowledgeManager?: KnowledgeBaseManager | null;
@@ -857,6 +860,7 @@ export class PromptBuilder {
     /**
      * 故事上下文总线提供的完整/压缩信息包。
      * 有信息包时，实体/设定/时间线/伏笔/情绪走这一条，旧的分段注入只保留关系与跨卷。
+     * @param compact - 精简结果
      * @returns 结果数组
      */
     getStoryContextPackParts(compact = false): string[] {

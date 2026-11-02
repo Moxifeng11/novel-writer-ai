@@ -1,6 +1,9 @@
 ﻿import { Modal, Setting, Notice } from 'obsidian';
 
 // B2: 迭代指令输入弹窗
+/**
+ * IterateInstructionModal 类。
+ */
 export class IterateInstructionModal extends Modal {
     private onResolve: (value: string | null) => void;
     private resolved = false;
@@ -10,6 +13,9 @@ export class IterateInstructionModal extends Modal {
         this.onResolve = onResolve;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         this.titleEl.setText('↻ 迭代改写此候选');
@@ -37,6 +43,9 @@ export class IterateInstructionModal extends Modal {
                 }));
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
         if (!this.resolved) this.onResolve(null);

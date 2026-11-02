@@ -2,6 +2,9 @@ import { App, Modal, Notice } from 'obsidian';
 import NovelWriterPlugin from '../main';
 import { ReviewAgent } from '../engine/review-agent';
 
+/**
+ * ReviewChapterModal 类。
+ */
 export class ReviewChapterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private reviewAgent: ReviewAgent;
@@ -12,6 +15,9 @@ export class ReviewChapterModal extends Modal {
         this.reviewAgent = plugin.reviewAgent;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -53,6 +59,9 @@ export class ReviewChapterModal extends Modal {
         };
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

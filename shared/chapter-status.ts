@@ -12,6 +12,9 @@
 /** 表示「已结算」的状态值：新值 settled，旧值兼容 */
 export const SETTLED_STATUS_VALUES = ['settled', '已结算', '已完稿'] as const;
 
+/**
+ * 章节状态结构定义。
+ */
 export type ChapterStatus = 'settled' | 'written' | 'draft' | 'unknown';
 
 /**

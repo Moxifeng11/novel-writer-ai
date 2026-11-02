@@ -154,6 +154,11 @@ export class Project extends BaseEntity {
         return new Project(props);
     }
 
+    /**
+     * 带状态。
+     * @param status - 状态
+      * @returns Project 实例
+     */
     withStatus(status: EntityStatus): Project {
         return new Project({
             ...this._props,
@@ -162,6 +167,11 @@ export class Project extends BaseEntity {
         });
     }
 
+    /**
+     * 带名称。
+     * @param name - 名称
+      * @returns Project 实例
+     */
     withName(name: string): Project {
         return new Project({
             ...this._props,
@@ -189,6 +199,10 @@ export class Project extends BaseEntity {
         });
     }
 
+    /**
+     * 转换为JSON。
+     * @returns 映射结果
+     */
     toJSON(): Record<string, any> {
         return {
             ...super.toJSON(),

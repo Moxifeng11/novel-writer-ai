@@ -114,10 +114,18 @@ export class EntityStatus {
         return this.value === other.value;
     }
 
+    /**
+     * toString 方法。
+     * @returns 文本结果
+     */
     toString(): string {
         return this.value;
     }
 
+    /**
+     * 转换为JSON。
+      * @returns EntityStatusValue 实例
+     */
     toJSON(): EntityStatusValue {
         return this.value;
     }

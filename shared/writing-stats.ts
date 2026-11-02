@@ -226,6 +226,7 @@ export function findBestDay(days: DayMap): DayPoint | null {
  *
  * @param days - 天数
  * @param now - 当前时间
+ * @param count - 数量
  * @returns 结果数组
  */
 export function dailySeries(days: DayMap, now: Date | number = Date.now(), count = 7): DayPoint[] {
@@ -243,6 +244,7 @@ export function dailySeries(days: DayMap, now: Date | number = Date.now(), count
  *
  * @param days - 天数
  * @param now - 当前时间
+ * @param count - 数量
  * @returns 结果数组
  */
 export function weeklySeries(days: DayMap, now: Date | number = Date.now(), count = 8): DayPoint[] {
@@ -262,6 +264,7 @@ export function weeklySeries(days: DayMap, now: Date | number = Date.now(), coun
  *
  * @param days - 天数
  * @param now - 当前时间
+ * @param count - 数量
  * @returns 结果数组
  */
 export function monthlySeries(days: DayMap, now: Date | number = Date.now(), count = 6): DayPoint[] {

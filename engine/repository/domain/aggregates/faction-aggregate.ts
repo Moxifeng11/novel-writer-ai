@@ -6,6 +6,9 @@ import { BaseEntity, type BaseEntityProps } from './base-entity';
 import { EntityStatus, Frontmatter } from '../value-objects';
 import type { EntityCategory } from './base-entity';
 
+/**
+ * FactionProps 类型定义。
+ */
 export interface FactionProps extends BaseEntityProps {
     alias?: string;
     type?: string;
@@ -14,6 +17,9 @@ export interface FactionProps extends BaseEntityProps {
     rank?: string;
 }
 
+/**
+ * 势力。
+ */
 export class Faction extends BaseEntity {
     private readonly _factionProps: Omit<FactionProps, keyof BaseEntityProps>;
 
@@ -33,6 +39,13 @@ export class Faction extends BaseEntity {
     get leader(): string | undefined { return this._factionProps.leader; }
     get rank(): string | undefined { return this._factionProps.rank; }
 
+    /**
+     * 创建。
+     * @param id - 标识
+     * @param name - 名称
+     * @param filePath - 文件路径
+      * @returns Faction 实例
+     */
     static create(id: string, name: string, filePath: string): Faction {
         return new Faction({
             id,
@@ -49,10 +62,20 @@ export class Faction extends BaseEntity {
         });
     }
 
+    /**
+     * 从。
+     * @param props - 属性表
+      * @returns Faction 实例
+     */
     static from(props: FactionProps): Faction {
         return new Faction(props);
     }
 
+    /**
+     * 带状态。
+     * @param status - 状态
+      * @returns Faction 实例
+     */
     withStatus(status: EntityStatus): Faction {
         return new Faction({
             ...this._props,
@@ -61,6 +84,11 @@ export class Faction extends BaseEntity {
         } as FactionProps);
     }
 
+    /**
+     * 带名称。
+     * @param name - 名称
+      * @returns Faction 实例
+     */
     withName(name: string): Faction {
         return new Faction({
             ...this._props,
@@ -69,6 +97,11 @@ export class Faction extends BaseEntity {
         } as FactionProps);
     }
 
+    /**
+     * 带负责人。
+     * @param leader - 负责人
+      * @returns Faction 实例
+     */
     withLeader(leader: string): Faction {
         return new Faction({
             ...this._props,
@@ -78,6 +111,10 @@ export class Faction extends BaseEntity {
         } as FactionProps);
     }
 
+    /**
+     * 转换为JSON。
+     * @returns 映射结果
+     */
     toJSON(): Record<string, any> {
         return {
             ...super.toJSON(),

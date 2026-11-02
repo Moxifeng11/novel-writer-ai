@@ -4,6 +4,9 @@ import { AIEngine } from '../engine/ai-engine';
 import { GLOBAL_RANK_DIR, globalRankFile } from '../shared/paths';
 import { mkdirp } from '../utils/helpers';
 
+/**
+ * TomatoRankModal 类。
+ */
 export class TomatoRankModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -16,6 +19,9 @@ export class TomatoRankModal extends Modal {
         this.aiEngine = plugin.aiEngine;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -118,6 +124,9 @@ ${result.content}
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

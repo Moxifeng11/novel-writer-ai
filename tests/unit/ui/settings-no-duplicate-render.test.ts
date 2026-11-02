@@ -13,7 +13,8 @@ describe('规则版本：重新检查不得重复渲染模块', () => {
         const source = read('ui/settings/general-sections.ts');
         const fnIndex = source.indexOf('export class RulesSection');
         expect(fnIndex).toBeGreaterThan(-1);
-        const body = source.slice(fnIndex, fnIndex + 260);
+        // 只截到 mountRulesSection 定义前，避免把挂载函数内部的 createEl 算进 render 范围
+        const body = source.slice(fnIndex, source.indexOf('private async mountRulesSection(', fnIndex));
 
         // 只创建一个 section，且立刻交给挂载函数
         expect(body).toContain("container.createEl('section')");

@@ -20,6 +20,9 @@ import { writeVaultText } from '../shared/file-system-port';
 
 const log = createLogger('StorySettingsModal');
 
+/**
+ * 故事设置列表弹窗。
+ */
 export class StorySettingsModal extends Modal {
     private editor: StorySettingsEditor | null = null;
     private genre = '';
@@ -33,6 +36,9 @@ export class StorySettingsModal extends Modal {
         super(app);
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope', 'nw-modal', 'nw-story-settings-modal');
         const { contentEl } = this;

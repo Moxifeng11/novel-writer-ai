@@ -99,6 +99,11 @@ export type SingleCallResult<T> = SingleCallSuccess<T> | SingleCallFailure;
 export class SingleCallRunner {
     private ruleEngine = new RuleEngine();
 
+    /**
+     * 执行。
+     * @param input - 输入
+      * @returns SingleCallResult<T> 实例
+     */
     async run<T>(input: SingleCallTaskInput<T>): Promise<SingleCallResult<T>> {
         const started = Date.now();
         const ledgerKey = callLedger.start(input.taskId, input.projectId);

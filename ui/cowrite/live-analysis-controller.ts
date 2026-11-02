@@ -26,6 +26,9 @@ export interface GuardSummary {
   checkedAt: number;
 }
 
+/**
+ * LiveAnalysisController 类。
+ */
 export class LiveAnalysisController {
   view: CoWritingView;
   private debounceManager = new AdaptiveDebounceManager({ debug: false });
@@ -77,6 +80,10 @@ export class LiveAnalysisController {
     this.view.tractionContainer?.empty();
   }
 
+  /**
+   * scheduleRefresh 方法。
+   * @param trigger - 触发器
+   */
   scheduleRefresh(trigger: RefreshTrigger) {
     const view = this.view;
     if (!view.rightEditor?.value?.trim())
@@ -101,6 +108,10 @@ export class LiveAnalysisController {
     }
   }
 
+  /**
+   * refresh 方法。
+   * @param trigger - 触发器
+   */
   async refresh(trigger: RefreshTrigger) {
     const view = this.view;
     const body = view.rightEditor?.value || "";
@@ -112,6 +123,9 @@ export class LiveAnalysisController {
     await this.renderTractionPanel();
   }
 
+  /**
+   * 渲染牵引力面板。
+   */
   async renderTractionPanel() {
     const view = this.view;
     if (!view.tractionContainer || !view.tractionEngine)
@@ -154,6 +168,10 @@ export class LiveAnalysisController {
     view.warningContainer.createDiv({ cls: "novel-writer-cowrite-empty", text: "\u{1F6E1}\uFE0F \u6B63\u5728\u68C0\u67E5\u89D2\u8272\u4E00\u81F4\u6027\u4E0E\u5B9E\u4F53\u72B6\u6001\u53D8\u66F4\u2026\u2026" });
   }
 
+  /**
+   * inspectSettingGuard 方法。
+   * @param trigger - 触发器
+   */
   async inspectSettingGuard(trigger: GuardTrigger) {
     const view = this.view;
     if (this.isInspectingGuard) {

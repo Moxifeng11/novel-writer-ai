@@ -13,6 +13,9 @@ import {
     parseChapterRow,
 } from './chapter-table';
 
+/**
+ * 卷计划结构定义。
+ */
 export interface VolumePlan {
     /** 卷号（第N卷 → N） */
     volumeNumber: number;
@@ -27,12 +30,18 @@ export interface VolumePlan {
     rawSection: string;
 }
 
+/**
+ * 卷计划问题结构定义。
+ */
 export interface VolumePlanIssue {
     level: 'error' | 'warning';
     volumeNumber?: number;
     message: string;
 }
 
+/**
+ * VolumePlanParseResult 类型定义。
+ */
 export interface VolumePlanParseResult {
     volumes: VolumePlan[];
     issues: VolumePlanIssue[];
@@ -278,10 +287,20 @@ function checkCrossVolumeRanges(volumes: VolumePlan[], issues: VolumePlanIssue[]
     }
 }
 
+/**
+ * hasBlockingIssues 函数。
+ * @param result - 结果
+ * @returns 是否成功
+ */
 export function hasBlockingIssues(result: VolumePlanParseResult): boolean {
     return result.issues.some(i => i.level === 'error');
 }
 
+/**
+ * countPlannedChapters 函数。
+ * @param result - 结果
+ * @returns 数值结果
+ */
 export function countPlannedChapters(result: VolumePlanParseResult): number {
     return result.volumes.reduce((sum, v) => sum + v.chapterNumbers.length, 0);
 }

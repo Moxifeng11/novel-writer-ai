@@ -26,6 +26,9 @@ function sanitizeFileName(name: string): string {
     return name.replace(/[\\/:*?"<>|]/g, '_');
 }
 
+/**
+ * 导出文件选项列表结构定义。
+ */
 export interface ExportFileOptions {
     /** MIME 类型，默认 text/plain;charset=utf-8 */
     mime?: string;
@@ -38,6 +41,9 @@ export interface ExportFileOptions {
     preferVault?: boolean;
 }
 
+/**
+ * 导出文件结果结构定义。
+ */
 export interface ExportFileResult {
     ok: boolean;
     mode: 'download' | 'vault';

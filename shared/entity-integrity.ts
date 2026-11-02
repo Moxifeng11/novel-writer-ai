@@ -6,6 +6,9 @@
  */
 import { validateEntityContent, type EntityKind } from './entity-persistence';
 
+/**
+ * EntityIntegrityResult 类型定义。
+ */
 export interface EntityIntegrityResult {
     /** 补全后的内容（未补全时为原内容） */
     content: string;
@@ -17,6 +20,9 @@ export interface EntityIntegrityResult {
     repaired: boolean;
 }
 
+/**
+ * EntityRepairRequest 类型定义。
+ */
 export interface EntityRepairRequest {
     kind: EntityKind;
     name: string;
@@ -24,8 +30,19 @@ export interface EntityRepairRequest {
     missingFields: string[];
 }
 
+/**
+ * EntityRepairHandler 类型定义。
+ */
 export type EntityRepairHandler = (request: EntityRepairRequest) => Promise<string | null>;
 
+/**
+ * ensureEntityIntegrity 函数。
+ * @param kind - 种类
+ * @param name - 名称
+ * @param content - 内容
+ * @param repair - 修复建议
+  * @returns EntityIntegrityResult 实例
+ */
 export async function ensureEntityIntegrity(
     kind: EntityKind,
     name: string,

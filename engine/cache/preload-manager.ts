@@ -332,6 +332,7 @@ export class PreloadManager {
      * 懒加载实体（带缓存）
      * @param entityType 实体类型
      * @param entityId 实体 ID
+      * @returns T 或 null
      */
     async lazyLoadEntity<T>(entityType: string, entityId: string): Promise<T | null> {
         if (!this.options.enabled) {
@@ -368,6 +369,7 @@ export class PreloadManager {
      * 批量懒加载实体
      * @param entityType 实体类型
      * @param entityIds 实体 ID 列表
+     * @returns 结果数组
      */
     async lazyLoadEntities<T>(entityType: string, entityIds: string[]): Promise<T[]> {
         const results = await Promise.all(

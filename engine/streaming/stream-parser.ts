@@ -300,6 +300,14 @@ export class StreamParser {
     }
 }
 
+/**
+ * 把 ReadableStream 解析为文本分片。
+ *
+ * @param reader - 字节流读取器
+ * @param format - 流格式（SSE / JSON / 自动）
+ * @param signal - 取消信号
+ * @returns 逐块产出文本，最终返回内容与用量
+ */
 export async function* parseReadableStream(
     reader: ReadableStreamDefaultReader<Uint8Array>,
     format: StreamFormat = 'auto',

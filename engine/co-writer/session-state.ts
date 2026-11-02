@@ -371,6 +371,9 @@ export interface AllActionCreators
         MetricsActionCreators,
         UiActionCreators {}
 
+/**
+ * 全部动作列表常量。
+ */
 export const allActions: AllActionCreators = {
     ...chapterActions,
     ...suggestionActions,
@@ -483,6 +486,9 @@ export function isMemoryOnlyField(key: string): boolean {
 // 十一、Thunk Action Types
 // ============================================================
 
+/**
+ * ThunkDependencies 类型定义。
+ */
 export interface ThunkDependencies {
     chapterRepository?: {
         loadChapter: (project: string, volume: number, chapter: number) => Promise<{

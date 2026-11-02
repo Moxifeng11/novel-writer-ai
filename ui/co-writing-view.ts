@@ -106,6 +106,9 @@ import { isImeComposing } from '../shared/keyboard';
 
 
 const log = createLogger('CoWritingView');
+/**
+ * 质量问题结构定义。
+ */
 export interface QualityIssue {
     id: string;
     priority: 'high' | 'medium' | 'low';
@@ -116,8 +119,14 @@ export interface QualityIssue {
     severity: '❌' | '⚠️' | '✅';
 }
 
+/**
+ * VIEW_TYPE_CO_WRITE 常量。
+ */
 export const VIEW_TYPE_CO_WRITE = 'novel-writer-co-writing';
 
+/**
+ * CoWritingView 类。
+ */
 export class CoWritingView extends ItemView {
   plugin: NovelWriterPlugin;
   engine: CoWriterEngine;

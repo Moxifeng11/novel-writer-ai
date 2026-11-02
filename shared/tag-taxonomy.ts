@@ -58,6 +58,9 @@ export const KIND_NAMESPACE_TAG: Partial<Record<NotebookFileKind, string>> = {
     timeline: 'nw/设定/时间线',
 };
 
+/**
+ * NAMESPACE_PREFIX 常量。
+ */
 export const NAMESPACE_PREFIX = 'nw/';
 
 /**

@@ -41,6 +41,9 @@ interface TimerEntry {
     lastAccessed: number;
 }
 
+/**
+ * AdaptiveDebounceManager 类。
+ */
 export class AdaptiveDebounceManager {
     private readonly fastDelay: number;
     private readonly mediumDelay: number;

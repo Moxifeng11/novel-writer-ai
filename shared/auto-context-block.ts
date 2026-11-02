@@ -7,6 +7,9 @@
  */
 
 export const AUTO_CONTEXT_START = '<!-- nw:auto-context:start -->';
+/**
+ * AUTO_CONTEXT_END 常量。
+ */
 export const AUTO_CONTEXT_END = '<!-- nw:auto-context:end -->';
 
 function escapeRe(s: string): string {

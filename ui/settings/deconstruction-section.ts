@@ -15,6 +15,9 @@ import type { DeconstructionEngineSettings } from '../../main';
 import { OperationConfirmModal } from '../components/progress';
 import { SettingsSection } from './section-base';
 
+/**
+ * DeconstructionSection 类。
+ */
 export class DeconstructionSection extends SettingsSection {
     private getDeconstructionEngineSettings(): DeconstructionEngineSettings {
         const userDe = this.plugin.settings.deconstructionEngine;
@@ -40,6 +43,10 @@ export class DeconstructionSection extends SettingsSection {
         await this.plugin.saveSettings();
     }
 
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         section.createEl('h3', { text: '🧬 拆解引擎' });

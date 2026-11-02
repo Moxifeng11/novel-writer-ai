@@ -131,6 +131,7 @@ export async function vectorizeFingerprintSamplesBatch(
  * @param project - 项目（路径或对象）
  * @param fingerprints - 指纹集合
  * @param query - 查询串
+ * @param limit - 上限
   * @returns StyleSampleSelection 实例
  */
 export async function selectBodyStyleSamples(
@@ -203,6 +204,7 @@ export async function selectBodyStyleSamples(
  * 格式化为正文 system prompt 片段（限长 1500 字）。
  *
  * @param selection - 选区
+ * @param maxChars - 最大字符数
  * @returns 文本结果
  */
 export function formatStyleSamplesForPrompt(

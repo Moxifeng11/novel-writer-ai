@@ -124,6 +124,11 @@ interface ContextCacheEntry {
 /** 默认缓存 TTL：300 秒（5 分钟） */
 const DEFAULT_CONTEXT_CACHE_TTL_MS = 300_000;
 
+/**
+ * 检测项目列表。
+ * @param app - Obsidian 应用实例
+ * @returns 结果数组
+ */
 export function detectProjects(app: App): string[] {
     const projects: string[] = [];
     const visited = new Set<string>();
@@ -175,7 +180,14 @@ export function detectProjects(app: App): string[] {
     return projects.sort();
 }
 
+/**
+ * 上下文管理器。
+ */
 export class ContextManager {
+    /**
+     * 获取当前章节目录。
+     * @returns 文本结果
+     */
     public getCurrentChapterDir(): string {
         const app = this.getApp();
         const file = app.workspace.getActiveFile();
@@ -329,7 +341,11 @@ export class ContextManager {
         }
     }
 
-    /** 获取性能统计信息（用于调试） */
+    /**
+     * 获取性能统计信息（用于调试）。
+     *
+     * @returns 各阶段耗时与命中次数
+     */
     getPerfStats(): {
         totalAccesses: number;
         repoHits: number;

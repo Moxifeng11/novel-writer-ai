@@ -32,7 +32,8 @@ function fnv1a32(input: string, seed: number): string {
  * @param model - 模型标识
  * @param temperature - 采样温度
  * @param maxTokens - 最大 token 数
- * @returns 文本结果
+ * @param scope - 供应商/端点/思考参数等附加作用域，避免同模型名跨渠道命中同一缓存
+ * @returns 十六进制哈希
  */
 export function computePromptHash(
     systemPrompt: string,

@@ -29,6 +29,9 @@ const DEFAULT_MAX_CANDIDATES = 100;
 const CONTEXT_WINDOW = 100;
 const MAX_EVIDENCE_PER_CHARACTER = 5;
 
+/**
+ * CharacterRecognitionPipeline 类。
+ */
 export class CharacterRecognitionPipeline {
     private deconstructor: CharacterDeconstructor;
     private suggestionManager: SuggestionManager;

@@ -102,4 +102,7 @@ export const CommandIds = {
     POPULATE_SETTING_LIB_INTERNAL: 'populate-setting-lib',
 } as const;
 
+/**
+ * 命令ID结构定义。
+ */
 export type CommandId = typeof CommandIds[keyof typeof CommandIds];

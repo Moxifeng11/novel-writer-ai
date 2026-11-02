@@ -14,6 +14,9 @@ import { isImeComposing } from '../shared/keyboard';
 
 const log = createLogger('RenameProjectModal');
 
+/**
+ * RenameProjectModal 类。
+ */
 export class RenameProjectModal extends Modal {
     private value: string;
     private submitting = false;
@@ -27,6 +30,9 @@ export class RenameProjectModal extends Modal {
         this.value = project;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
@@ -52,6 +58,9 @@ export class RenameProjectModal extends Modal {
             .addButton((btn) => btn.setButtonText('重命名').setCta().onClick(() => void this.submit()));
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

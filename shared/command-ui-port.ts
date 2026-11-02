@@ -23,6 +23,9 @@ export interface CommandUiPayload {
     versionContext?: VersionFileContext;
 }
 
+/**
+ * CommandUiPort 类型定义。
+ */
 export interface CommandUiPort {
     /**
      * 执行一个 UI 类命令。

@@ -22,6 +22,9 @@
 /** 内置新版的版本号（文件版本、账本、消融实验都用它做锚点） */
 export const WRITING_RULES_BUILTIN_VERSION = '3.6.0';
 
+/**
+ * WRITING_RULES 常量。
+ */
 export const WRITING_RULES = `# 网络小说写作规则（引导版）
 
 > 核心理念：你不是作者在写作，你是角色在活着。用引导代替禁止。

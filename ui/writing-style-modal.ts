@@ -27,6 +27,9 @@ const WS_SECTIONS = [
     { key: 'platform', label: '九、番茄小说格式要求', hint: '每段开头缩进、对话独立成段、标题格式等', rows: 2 },
 ];
 
+/**
+ * WritingStyleModal 类。
+ */
 export class WritingStyleModal extends Modal {
     private plugin: NovelWriterPlugin;
     private project: string;
@@ -40,6 +43,9 @@ export class WritingStyleModal extends Modal {
         this.onSaved = onSaved;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -574,6 +580,9 @@ ${nl(values['platform'])}
 `;
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

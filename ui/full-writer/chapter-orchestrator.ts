@@ -157,6 +157,13 @@ export function buildChapterRunPlan(
     };
 }
 
+/**
+ * countRemainingChapterActions 函数。
+ * @param completed - 完成状态
+ * @param bodyText - 正文文本
+ * @param analysisReport - 分析报告
+ * @returns 数值结果
+ */
 export function countRemainingChapterActions(
     completed: Set<string>,
     bodyText: string,

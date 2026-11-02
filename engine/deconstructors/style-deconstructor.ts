@@ -424,6 +424,12 @@ export class StyleDeconstructor {
         this.llmEnhancer = llmEnhancer;
     }
 
+    /**
+     * 分析。
+     * @param text - 文本内容
+     * @param genreConfig - 题材配置
+      * @returns StyleAnalysisResult 实例
+     */
     async analyze(text: string, genreConfig?: GenreConfig): Promise<StyleAnalysisResult> {
         if (!text || text.length === 0) {
             return this.getEmptyResult();
@@ -496,6 +502,12 @@ export class StyleDeconstructor {
         return result;
     }
 
+    /**
+     * analyzeWithVector 方法。
+     * @param text - 文本内容
+     * @param genreConfig - 题材配置
+      * @returns StyleAnalysisResult 实例
+     */
     async analyzeWithVector(text: string, genreConfig?: GenreConfig): Promise<StyleAnalysisResult> {
         const baseResult = await this.analyze(text, genreConfig);
         await yieldToUI();
@@ -548,6 +560,12 @@ export class StyleDeconstructor {
         return enhancedResult;
     }
 
+    /**
+     * analyzeTwoPhase 方法。
+     * @param text - 文本内容
+     * @param genreConfig - 题材配置
+      * @returns TwoPhaseStyleResult 实例
+     */
     async analyzeTwoPhase(text: string, genreConfig?: GenreConfig): Promise<TwoPhaseStyleResult> {
         const ruleBased = await this.analyze(text, genreConfig);
 
@@ -895,6 +913,13 @@ export class StyleDeconstructor {
         };
     }
 
+    /**
+     * saveAnalysisToMarkdown 方法。
+     * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param result - 结果
+     * @param baseDir - 参数值
+     */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,

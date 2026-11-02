@@ -11,6 +11,9 @@ import type {
     SuggestionStatus,
 } from './types/analysis-suggestion';
 
+/**
+ * SuggestionManager 类。
+ */
 export class SuggestionManager {
     private suggestions: Map<string, AnalysisSuggestion>;
 

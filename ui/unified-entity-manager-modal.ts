@@ -88,6 +88,9 @@ export class UnifiedEntityManagerModal extends Modal {
         };
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -112,6 +115,9 @@ export class UnifiedEntityManagerModal extends Modal {
         this._loadEntities();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
         this.entities = [];

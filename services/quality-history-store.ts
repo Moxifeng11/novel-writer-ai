@@ -16,6 +16,11 @@ import {
 } from '../shared/quality-history';
 import { QUALITY_HISTORY_MAX_RECORDS } from '../shared/thresholds';
 
+/**
+ * 质量历史路径。
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function qualityHistoryPath(project: string): string {
     return `${pjControlDir(project)}/质量历史.json`;
 }

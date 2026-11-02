@@ -31,6 +31,9 @@ const REQUIRED_CHECKS = [
     '所有「待核实」字段已确认保留或补全',
 ];
 
+/**
+ * FanficReviewModal 类。
+ */
 export class FanficReviewModal extends Modal {
     private sources: CanonSource[] = [];
     private sourceService: CanonResearchService;
@@ -54,6 +57,9 @@ export class FanficReviewModal extends Modal {
         this.sourceService = new CanonResearchService(app, plugin);
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope', 'nw-modal-lg');
         const { contentEl } = this;
@@ -398,6 +404,9 @@ export class FanficReviewModal extends Modal {
         await adapter.write(`${dir}/${this.workName}_审核记录.md`, lines.join('\n'));
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

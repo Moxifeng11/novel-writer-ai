@@ -27,6 +27,9 @@ interface ManagedEntity {
     validated: boolean;
 }
 
+/**
+ * 生成角色弹窗。
+ */
 export class GenerateCharacterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -43,6 +46,9 @@ export class GenerateCharacterModal extends Modal {
         this.contextManager = plugin.ctxManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -62,6 +68,9 @@ export class GenerateCharacterModal extends Modal {
         this._renderInputForm();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         super.onClose();
         // 取消正在进行的AI调用

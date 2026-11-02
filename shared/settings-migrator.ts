@@ -19,6 +19,11 @@ export { GITHUB_REPO_SLUG as DEFAULT_UPDATE_GITHUB_REPO } from './github-repo';
 
 import { GITHUB_REPO_SLUG, normalizeGitHubRepo } from './github-repo';
 
+/**
+ * normalizeUpdateGithubRepo 函数。
+ * @param value - 值
+ * @returns 文本结果
+ */
 export function normalizeUpdateGithubRepo(value?: string): string {
     const repo = normalizeGitHubRepo(value);
     if (!repo || repo === 'trae-ai/novel-writer-ai') return GITHUB_REPO_SLUG;
@@ -45,6 +50,9 @@ const DEFAULT_PROVIDERS_TEMPLATE: Record<string, MigrationCustomProvider> = {
     sensenova: { id: 'sensenova', name: '日日新/SenseNova', endpoint: 'https://token.sensenova.cn/v1/chat/completions',        models: ['sensenova-6.7-flash-lite', 'deepseek-v4-flash'],                   maxContext: 262144,  maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
 };
 
+/**
+ * VersionedData 类型定义。
+ */
 export interface VersionedData {
     schemaVersion?: number;
     [key: string]: unknown;
@@ -212,6 +220,9 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [ 
     },
 ];
 
+/**
+ * MigrationOutcome 类型定义。
+ */
 export interface MigrationOutcome {
     data: Record<string, unknown>;
     /** 是否已完整升级到 CURRENT_SCHEMA_VERSION */
@@ -269,10 +280,20 @@ export function migrateSettingsWithStatus(rawData: Record<string, unknown>): Mig
     return { data, completed, fromVersion, toVersion: currentVersion, error };
 }
 
+/**
+ * migrateSettings 函数。
+ * @param rawData - 原始数据
+ * @returns 映射结果
+ */
 export function migrateSettings(rawData: Record<string, unknown>): Record<string, unknown> {
     return migrateSettingsWithStatus(rawData).data;
 }
 
+/**
+ * 带当前版本。
+ * @param data - 数据
+ * @returns 映射结果
+ */
 export function withCurrentVersion(data: Record<string, unknown>): Record<string, unknown> {
     return {
         ...data,

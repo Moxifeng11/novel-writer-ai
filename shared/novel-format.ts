@@ -11,6 +11,9 @@ import {
   normalizeBodyText,
 } from './body-format';
 
+/**
+ * TextEdit 类型定义。
+ */
 export interface TextEdit {
   text: string;
   selectionStart: number;

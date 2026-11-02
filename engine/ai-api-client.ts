@@ -1257,6 +1257,17 @@ export class AIApiClient {
         }
     }
 
+    /**
+     * 发起流式调用并返回异步迭代器。
+     *
+     * @param systemPrompt - 系统提示词
+     * @param userPrompt - 用户提示词
+     * @param model - 模型标识
+     * @param temperature - 采样温度
+     * @param maxTokens - 最大 token 数
+     * @param options - 调用选项
+     * @returns 逐块产出文本，最终返回完整响应
+     */
     async *callAIAsyncIterator(
         systemPrompt: string,
         userPrompt: string,

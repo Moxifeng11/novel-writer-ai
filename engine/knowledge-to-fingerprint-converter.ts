@@ -31,6 +31,9 @@ const SAMPLE_MIN_TOTAL = 15;
 const SAMPLE_MAX_TOTAL = 30;
 const PER_DIMENSION_SAMPLE_COUNT = 5;
 
+/**
+ * KnowledgeToFingerprintConverter 类。
+ */
 export class KnowledgeToFingerprintConverter {
     private app: App;
     private embeddingClient?: EmbeddingProvider;
@@ -40,6 +43,10 @@ export class KnowledgeToFingerprintConverter {
         this.embeddingClient = embeddingClient ?? getSharedEmbeddingProvider() ?? undefined;
     }
 
+    /**
+     * 设置向量客户端。
+     * @param client - 客户端实例
+     */
     setEmbeddingClient(client: EmbeddingProvider): void {
         this.embeddingClient = client;
     }

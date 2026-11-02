@@ -17,6 +17,9 @@ export interface PlotCompletionDimension {
   suggestions: string[];
 }
 
+/**
+ * 情节完成度结果结构定义。
+ */
 export interface PlotCompletionResult {
   sceneCompletion: PlotCompletionDimension;
   goalCompletion: PlotCompletionDimension;
@@ -29,6 +32,9 @@ export interface PlotCompletionResult {
   wordCount: number;
 }
 
+/**
+ * 情节完成度引擎选项列表结构定义。
+ */
 export interface PlotCompletionEngineOptions {
   characterNames?: string[];
   mainlineKeywords?: string[];
@@ -117,6 +123,9 @@ const STRONG_EMOTION_WORDS = [
   '怒发冲冠', '毛骨悚然', '惊心动魄',
 ];
 
+/**
+ * 情节完成度引擎。
+ */
 export class PlotCompletionEngine {
   private characterNames: string[];
   private mainlineKeywords: string[];
@@ -132,6 +141,10 @@ export class PlotCompletionEngine {
     this.foreshadowRevealed = options.foreshadowRevealed || 0;
   }
 
+  /**
+   * 更新选项列表。
+   * @param options - 配置项
+   */
   updateOptions(options: Partial<PlotCompletionEngineOptions>): void {
     if (options.characterNames !== undefined) this.characterNames = options.characterNames;
     if (options.mainlineKeywords !== undefined) this.mainlineKeywords = options.mainlineKeywords;
@@ -140,6 +153,11 @@ export class PlotCompletionEngine {
     if (options.foreshadowRevealed !== undefined) this.foreshadowRevealed = options.foreshadowRevealed;
   }
 
+  /**
+   * evaluate 方法。
+   * @param text - 文本内容
+    * @returns PlotCompletionResult 实例
+   */
   evaluate(text: string): PlotCompletionResult {
     const startTime = Date.now();
     const cleanText = text.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
@@ -761,12 +779,22 @@ export class PlotCompletionEngine {
   }
 }
 
+/**
+ * getScoreColorClass 函数。
+ * @param score - 分数
+ * @returns 文本结果
+ */
 export function getScoreColorClass(score: number): string {
   if (score >= 70) return 'nw-float-ok';
   if (score >= 40) return 'nw-float-warn-text';
   return 'nw-float-danger';
 }
 
+/**
+ * 获取分数标签。
+ * @param score - 分数
+ * @returns 文本结果
+ */
 export function getScoreLabel(score: number): string {
   if (score >= 85) return '优秀';
   if (score >= 70) return '良好';

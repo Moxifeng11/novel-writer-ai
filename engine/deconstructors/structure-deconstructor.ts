@@ -354,6 +354,11 @@ export class StructureDeconstructor {
         this.vectorEnhancer = vectorEnhancer;
     }
 
+    /**
+     * 分析。
+     * @param text - 文本内容
+      * @returns StructureAnalysisResult 实例
+     */
     async analyze(text: string): Promise<StructureAnalysisResult> {
         if (!text || text.length === 0) {
             return this.getEmptyResult();
@@ -399,6 +404,11 @@ export class StructureDeconstructor {
         };
     }
 
+    /**
+     * analyzeWithVector 方法。
+     * @param text - 文本内容
+      * @returns StructureAnalysisResult 实例
+     */
     async analyzeWithVector(text: string): Promise<StructureAnalysisResult> {
         const baseResult = await this.analyze(text);
         await yieldToUI();
@@ -715,6 +725,12 @@ export class StructureDeconstructor {
         return baseResult.structureType;
     }
 
+    /**
+     * saveToMarkdown 方法。
+     * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param baseDir - 参数值
+     */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,
@@ -735,6 +751,13 @@ export class StructureDeconstructor {
         await app.vault.adapter.write(filePath, content);
     }
 
+    /**
+     * saveAnalysisToMarkdown 方法。
+     * @param app - Obsidian 应用实例
+     * @param bookName - 书名
+     * @param result - 结果
+     * @param baseDir - 参数值
+     */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,

@@ -5,6 +5,9 @@ import { readOnlyManualHint, setPathReadOnly } from '../shared/desktop-shell';
 
 
 const log = createLogger('ProtectYuanModal');
+/**
+ * ProtectYuanModal 类。
+ */
 export class ProtectYuanModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -13,6 +16,9 @@ export class ProtectYuanModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -74,6 +80,9 @@ export class ProtectYuanModal extends Modal {
         this.close();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

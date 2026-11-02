@@ -96,6 +96,9 @@ export const CHARACTER_FILE_EXCLUDE = '人物模板';
 // 三、大纲摘要完整性检查（Outline Integrity）
 // ============================================================
 
+/**
+ * OUTLINE_CHECK_FIELDS 常量。
+ */
 export const OUTLINE_CHECK_FIELDS = [
     { label: '本章在全书中的位置', minLen: 10 },
     { label: '关键场景', minLen: 3 },
@@ -108,6 +111,9 @@ export const OUTLINE_CHECK_FIELDS = [
 // 四、信息规划完整性检查（Info Plan Integrity）
 // ============================================================
 
+/**
+ * INFOPLAN_CHECK_FIELDS 常量。
+ */
 export const INFOPLAN_CHECK_FIELDS = [
     '章名',
     '核心冲突',
@@ -153,7 +159,13 @@ export const TIMELINE_TABLE_HEADER = '| # | 事件名称 | 时间 | 地点 | 涉
 
 /** 伏笔区块分类关键词 */
 export const FORESHADOW_SECTION_UNREVEALED = '未回收';
+/**
+ * FORESHADOW_SECTION_REVEALED 常量。
+ */
 export const FORESHADOW_SECTION_REVEALED = '已回收';
+/**
+ * FORESHADOW_SECTION_ABANDONED 常量。
+ */
 export const FORESHADOW_SECTION_ABANDONED = '废弃';
 
 // ============================================================
@@ -172,6 +184,9 @@ export const CHAPTER_STATUS = {
     REVISE: '需修改',
 } as const;
 
+/**
+ * 章节状态结构定义。
+ */
 export type ChapterStatus = typeof CHAPTER_STATUS[keyof typeof CHAPTER_STATUS];
 
 // ============================================================
@@ -368,6 +383,9 @@ export const CHARACTER_BODY_SECTIONS = [
 // 十三、地点 fields（对应 元文件/00-系统模板/地点模板.md）
 // ============================================================
 
+/**
+ * 地点frontmatter键列表常量。
+ */
 export const LOCATION_FRONTMATTER_KEYS = [
     'tags',
     '名称',
@@ -395,6 +413,9 @@ export const LOCATION_REQUIRED_VALUE_KEYS = [
 // 十四、势力 fields（对应 元文件/00-系统模板/势力模板.md）
 // ============================================================
 
+/**
+ * 势力frontmatter键列表常量。
+ */
 export const FACTION_FRONTMATTER_KEYS = [
     'tags',
     '名称',
@@ -420,6 +441,9 @@ export const FACTION_REQUIRED_VALUE_KEYS = [
 // 十五、物品功法 fields（对应 元文件/00-系统模板/物品功法模板.md）
 // ============================================================
 
+/**
+ * 条目frontmatter键列表常量。
+ */
 export const ITEM_FRONTMATTER_KEYS = [
     'tags',
     '名称',

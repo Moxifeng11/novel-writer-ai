@@ -12,6 +12,9 @@
 
 export type VersionedSource = 'builtin' | 'vault' | 'project' | 'custom';
 
+/**
+ * VersionedDoc 类型定义。
+ */
 export interface VersionedDoc {
     /** 稳定 id，格式建议 `builtin:v3.6.0` / `project:写作规则@v3.6.0` */
     id: string;
@@ -120,6 +123,9 @@ export function extractVersion(text: string): string {
     return match ? match[1] : '';
 }
 
+/**
+ * SelectOptions 类型定义。
+ */
 export interface SelectOptions {
     /** 期望生效的版本 id；找不到时按 fallback 顺序回退 */
     activeId?: string;
@@ -127,6 +133,9 @@ export interface SelectOptions {
     mode?: string;
 }
 
+/**
+ * SelectResult 类型定义。
+ */
 export interface SelectResult<T extends VersionedDoc = VersionedDoc> {
     doc: T | null;
     /** 实际生效的 id（可能因回退而不同） */

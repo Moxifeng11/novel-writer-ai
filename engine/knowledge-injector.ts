@@ -29,6 +29,9 @@ const FINGERPRINT_FIELD_CHAR_LIMIT = 200;
 
 
 const log = createLogger('KnowledgeInjector');
+/**
+ * 注入上下文结构定义。
+ */
 export interface InjectionContext {
     projectPath: string;
     chapterIndex?: number;
@@ -133,6 +136,9 @@ function defaultRelevanceMatcher(candidate: OnDemandCandidate, context: Injectio
     return haystack.includes(candidate.name);
 }
 
+/**
+ * InjectionSwitches 类型定义。
+ */
 export interface InjectionSwitches {
     style: boolean;
     rhythm: boolean;
@@ -161,6 +167,9 @@ const DEFAULT_SWITCHES: InjectionSwitches = {
     kbRhythm: true,
 };
 
+/**
+ * ReferenceBookConfig 类型定义。
+ */
 export interface ReferenceBookConfig {
     bookId: string;
     bookName: string;
@@ -168,6 +177,9 @@ export interface ReferenceBookConfig {
     isPrimary: boolean;
 }
 
+/**
+ * 知识维度权重列表结构定义。
+ */
 export interface KnowledgeDimensionWeights {
     character: number;
     worldview: number;
@@ -176,6 +188,9 @@ export interface KnowledgeDimensionWeights {
     rhythm: number;
 }
 
+/**
+ * DEFAULT_DIMENSION_WEIGHTS 常量。
+ */
 export const DEFAULT_DIMENSION_WEIGHTS: KnowledgeDimensionWeights = {
     character: 0.8,
     worldview: 0.6,
@@ -184,6 +199,9 @@ export const DEFAULT_DIMENSION_WEIGHTS: KnowledgeDimensionWeights = {
     rhythm: 0.5,
 };
 
+/**
+ * SceneCategory 类型定义。
+ */
 export type SceneCategory = 'battle' | 'daily' | 'emotion' | 'suspense' | 'transition' | 'climax' | 'unknown';
 
 const SCENE_TYPE_KEYWORDS: Record<SceneCategory, string[]> = {
@@ -225,6 +243,9 @@ const PERSPECTIVE_LABELS: Record<string, string> = {
     third_person_limited: '第三人称限知视角',
 };
 
+/**
+ * 知识注入器。
+ */
 export class KnowledgeInjector {
     private app: App;
     private vectorEnhancer?: VectorEnhancer;

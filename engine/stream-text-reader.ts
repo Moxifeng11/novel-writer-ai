@@ -179,6 +179,11 @@ export class StreamTextReader {
         return null;
     }
 
+    /**
+     * 按分段异步迭代文本。
+     *
+     * @returns 文本分段迭代器
+     */
     async *[Symbol.asyncIterator](): AsyncGenerator<TextSegment> {
         let segment: TextSegment | null;
         while ((segment = await this.readNext()) !== null) {

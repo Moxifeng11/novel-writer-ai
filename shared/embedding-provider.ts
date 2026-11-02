@@ -12,6 +12,9 @@ export interface EmbeddingAvailability {
     dimensions?: number;
 }
 
+/**
+ * 提供方信息结构定义。
+ */
 export interface ProviderInfo {
     type: string;
     name: string;
@@ -19,10 +22,16 @@ export interface ProviderInfo {
     dimensions?: number;
 }
 
+/**
+ * 向量选项列表结构定义。
+ */
 export interface EmbeddingOptions {
     signal?: AbortSignal;
 }
 
+/**
+ * 向量提供方结构定义。
+ */
 export interface EmbeddingProvider {
     embed(text: string, options?: EmbeddingOptions): Promise<number[]>;
     embedBatch(texts: string[], options?: EmbeddingOptions): Promise<number[][]>;

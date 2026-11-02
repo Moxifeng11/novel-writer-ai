@@ -7,7 +7,13 @@
  */
 import type { LinkageForeshadow, LinkageTimelineEvent } from './story-linkage';
 
+/**
+ * LINKAGE_BEGIN 常量。
+ */
 export const LINKAGE_BEGIN = '<!-- NW-LINKAGE:BEGIN 由小说工坊自动生成，请勿手改 -->';
+/**
+ * 联动结束常量。
+ */
 export const LINKAGE_END = '<!-- NW-LINKAGE:END -->';
 
 function escapeCell(value: string): string {

@@ -63,8 +63,14 @@ export interface FactWriter {
     writeFact(fact: PendingFact): Promise<void>;
 }
 
+/**
+ * 事实索引版本常量。
+ */
 export const FACT_INDEX_VERSION = 1;
 
+/**
+ * 事实索引管理器。
+ */
 export class FactIndexManager {
     private pending: PendingFact[] = [];
     private confirmed: ConfirmedFact[] = [];
@@ -137,10 +143,18 @@ export class FactIndexManager {
         await this.persist();
     }
 
+    /**
+     * listPending 方法。
+     * @returns 结果数组
+     */
     listPending(): PendingFact[] {
         return [...this.pending];
     }
 
+    /**
+     * listConfirmed 方法。
+     * @returns 结果数组
+     */
     listConfirmed(): ConfirmedFact[] {
         return [...this.confirmed];
     }

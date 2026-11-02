@@ -15,6 +15,9 @@ import {
     unregisterFont,
 } from '../services/font-manager';
 
+/**
+ * 字体管理器弹窗。
+ */
 export class FontManagerModal extends Modal {
     private readonly plugin: NovelWriterPlugin;
     private listEl: HTMLElement | null = null;
@@ -24,6 +27,9 @@ export class FontManagerModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
@@ -101,6 +107,9 @@ export class FontManagerModal extends Modal {
         await this.renderList();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

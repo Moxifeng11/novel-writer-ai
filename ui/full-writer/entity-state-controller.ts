@@ -10,6 +10,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('EntityStateController');
+/**
+ * EntityStateControllerDeps 类型定义。
+ */
 export interface EntityStateControllerDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -21,6 +24,9 @@ export interface EntityStateControllerDeps {
     estimateTotalChars: () => number;
 }
 
+/**
+ * EntityStateController 类。
+ */
 export class EntityStateController {
     private deps: EntityStateControllerDeps;
 
@@ -28,6 +34,9 @@ export class EntityStateController {
         this.deps = deps;
     }
 
+    /**
+     * syncInvolvedEntitiesToPlugin 方法。
+     */
     syncInvolvedEntitiesToPlugin(): void {
         this.deps.plugin._involvedChars = new Set<string>();
         this.deps.plugin._involvedLocs = new Set<string>();
@@ -52,6 +61,10 @@ export class EntityStateController {
         }
     }
 
+    /**
+     * detectAndUpdateEntityStates 方法。
+     * @param bodyContent - 正文内容
+     */
     async detectAndUpdateEntityStates(bodyContent: string): Promise<void> {
         if (!this.deps.state.project || !this.deps.state.chapterNum) return;
 
@@ -99,6 +112,9 @@ export class EntityStateController {
         }
     }
 
+    /**
+     * refreshContextBar 方法。
+     */
     refreshContextBar(): void {
         try {
             const workspace = this.deps.getWorkspace();

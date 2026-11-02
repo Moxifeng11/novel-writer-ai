@@ -10,6 +10,11 @@ export interface SceneBodyLike {
     body: string;
 }
 
+/**
+ * mergeSceneBodies 函数。
+ * @param scenes - 场景列表
+ * @returns 文本结果
+ */
 export function mergeSceneBodies(scenes: readonly SceneBodyLike[]): string {
     return scenes
         .map((scene) => (scene.body || '').trim())

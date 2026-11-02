@@ -347,6 +347,12 @@ function isActiveState(states: string[]): boolean {
  * 跨卷大纲校验器。
  */
 export class CrossVolumeOutlineValidator {
+    /**
+     * 校验。
+     * @param volumes - 卷列表
+     * @param blueprint - 全局蓝图
+      * @returns CrossVolumeValidationReport 实例
+     */
     validate(volumes: string[], blueprint: GlobalStorylineBlueprint): CrossVolumeValidationReport {
         const criticalIssues: ValidationIssue[] = [];
         const warningIssues: ValidationIssue[] = [];
@@ -638,6 +644,13 @@ export class CrossVolumeOutlineValidator {
         }
     }
 
+    /**
+     * detectVolumeConflict 方法。
+     * @param existingVolumes - 已有卷
+     * @param newVolumeCount - 新卷数量
+     * @param newChaptersPerVolume - 每卷新增章数
+      * @returns VolumeConflictInfo 实例
+     */
     detectVolumeConflict(existingVolumes: number, newVolumeCount: number, newChaptersPerVolume: number): VolumeConflictInfo {
         if (existingVolumes !== newVolumeCount) {
             const totalNewChapters = newVolumeCount * newChaptersPerVolume;

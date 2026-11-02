@@ -17,8 +17,14 @@ export interface ContextBlock {
     text: string;
 }
 
+/**
+ * HygieneIssueType 类型定义。
+ */
 export type HygieneIssueType = 'duplicate' | 'staleChapter' | 'conflict';
 
+/**
+ * HygieneIssue 类型定义。
+ */
 export interface HygieneIssue {
     type: HygieneIssueType;
     severity: 'high' | 'medium' | 'low';
@@ -27,6 +33,9 @@ export interface HygieneIssue {
     message: string;
 }
 
+/**
+ * HygieneResult 类型定义。
+ */
 export interface HygieneResult {
     issues: HygieneIssue[];
     /** 命中重复、建议清空的变量（保留优先级更高的那个） */
@@ -209,6 +218,9 @@ export function hasParagraphAnchor(rulesText: string): boolean {
     return /自然段\s*[2２][–\-~—]\s*6\s*句|80\s*[–\-~—]\s*220\s*字/.test(String(rulesText || ''));
 }
 
+/**
+ * StyleConflictResult 类型定义。
+ */
 export interface StyleConflictResult {
     /** 命中的冲突标签 */
     conflicts: string[];
@@ -222,6 +234,12 @@ export interface StyleConflictResult {
     rulesLackAnchor: boolean;
 }
 
+/**
+ * resolveStyleConflicts 函数。
+ * @param styleText - 文风文本
+ * @param rulesText - 规则集文本
+  * @returns StyleConflictResult 实例
+ */
 export function resolveStyleConflicts(styleText: string, rulesText: string): StyleConflictResult {
     const text = String(styleText || '');
     const anchor = hasParagraphAnchor(rulesText);

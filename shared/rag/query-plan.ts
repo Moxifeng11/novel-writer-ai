@@ -14,6 +14,9 @@ export interface RagQuery {
     weight: number;
 }
 
+/**
+ * RagQuerySource 类型定义。
+ */
 export interface RagQuerySource {
     outline?: string;
     emotionPlan?: string;

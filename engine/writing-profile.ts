@@ -211,6 +211,11 @@ export class WritingProfileManager {
         return this.fs;
     }
 
+    /**
+     * 获取配置文件路径。
+     * @param projectPath - 项目路径
+     * @returns 文本结果
+     */
     static getConfigFilePath(projectPath: string): string {
         return `${projectPath}/${CONFIG_FILE_NAME}`;
     }
@@ -281,6 +286,13 @@ export class WritingProfileManager {
         }
     }
 
+    /**
+     * generateDefault 方法。
+     * @param genre - 题材
+     * @param projectName - 项目名
+     * @param projectType - 参数值
+      * @returns WritingProfile 实例
+     */
     generateDefault(
         genre: string,
         projectName: string,

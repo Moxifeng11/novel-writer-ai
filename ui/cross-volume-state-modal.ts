@@ -10,6 +10,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('CrossVolumeStateModal');
+/**
+ * CrossVolumeStateModal 类。
+ */
 export class CrossVolumeStateModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -18,6 +21,9 @@ export class CrossVolumeStateModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -216,6 +222,9 @@ ${timeline || '（无时间线事件）'}
         this.close();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

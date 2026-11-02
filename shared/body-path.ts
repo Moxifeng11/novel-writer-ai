@@ -16,6 +16,11 @@ function normalizePath(path: string): string {
     return String(path || '').split(String.fromCharCode(92)).join('/');
 }
 
+/**
+ * 是否章节正文路径。
+ * @param path - 路径
+ * @returns 是否成功
+ */
 export function isChapterBodyPath(path: string): boolean {
     const normalized = normalizePath(path);
     if (!normalized) return false;
@@ -35,6 +40,8 @@ export const BODY_CONTENT_ROOTS = ['长篇小说', '短篇创作', '剧本创作
  * 列出三个内容根下的全部章节正文。
  * 用目录树遍历（getAbstractFileByPath + children）而不是 vault.getFiles()：
  * 前者只碰项目目录，后者每次都要构造整库文件数组。
+ * @param vault - 仓库（Vault）
+ * @returns 结果数组
  */
 export function listChapterBodyFiles<T extends { path: string }>(vault: VaultTreePort): T[] {
     const seen = new Set<string>();

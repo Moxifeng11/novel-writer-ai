@@ -18,6 +18,9 @@ import {
 } from '../shared/prose-metrics';
 import { naturalizeBodyText, type NaturalizeResult } from '../shared/prose-naturalizer';
 
+/**
+ * HumanizeReportModalOptions 类型定义。
+ */
 export interface HumanizeReportModalOptions {
     /** 当前正文（可含 `# 第X章` 标题行） */
     bodyText: string;
@@ -42,6 +45,9 @@ const LEVEL_LABEL: Record<ProseRiskReport['level'], string> = {
     high: '高',
 };
 
+/**
+ * HumanizeReportModal 类。
+ */
 export class HumanizeReportModal extends Modal {
     private readonly options: HumanizeReportModalOptions;
     private parts: BodyParts;
@@ -55,6 +61,9 @@ export class HumanizeReportModal extends Modal {
         this.parts = splitTitle(options.bodyText || '');
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
@@ -94,6 +103,9 @@ export class HumanizeReportModal extends Modal {
         closeBtn.onclick = () => this.close();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

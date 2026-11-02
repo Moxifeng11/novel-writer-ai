@@ -174,6 +174,13 @@ export function countUnitWords(text: string): number {
 // 提示词
 // ============================================================
 
+/**
+ * buildUnitPrompt 函数。
+ * @param ctx - 上下文
+ * @param action - 动作
+ * @param options - 配置项
+  * @returns string } 结果
+ */
 export function buildUnitPrompt(
     ctx: UnitWriterContext,
     action: UnitWriteAction,
@@ -265,6 +272,14 @@ async function readText(adapter: { exists(p: string): Promise<boolean>; read(p: 
     }
 }
 
+/**
+ * loadUnitWriterContext 函数。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @param unitNumber - 单元号
+  * @returns UnitWriterContext 实例
+ */
 export async function loadUnitWriterContext(
     app: App,
     project: string,
@@ -334,6 +349,14 @@ function temperatureFor(action: UnitWriteAction): number {
     return 0.88;
 }
 
+/**
+ * generateUnitText 函数。
+ * @param ai - AI 实例
+ * @param ctx - 上下文
+ * @param action - 动作
+ * @param options - 配置项
+ * @returns 文本结果
+ */
 export async function generateUnitText(
     ai: UnitAIEngine,
     ctx: UnitWriterContext,
@@ -388,6 +411,14 @@ export interface SaveUnitOptions {
     title?: string;
 }
 
+/**
+ * saveUnitBody 函数。
+ * @param port - 端口
+ * @param path - 路径
+ * @param bodyText - 正文文本
+ * @param options - 配置项
+  * @returns number }> 结果
+ */
 export async function saveUnitBody(
     port: UnitFilePort,
     path: string,

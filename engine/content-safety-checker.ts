@@ -1,6 +1,15 @@
+/**
+ * 内容安全问题类型结构定义。
+ */
 export type ContentSafetyIssueType = 'draft_artifact' | 'tone_break' | 'modern_term' | 'platform_risk';
+/**
+ * ContentSafetySeverity 类型定义。
+ */
 export type ContentSafetySeverity = 'high' | 'medium' | 'low';
 
+/**
+ * 内容安全问题结构定义。
+ */
 export interface ContentSafetyIssue {
     type: ContentSafetyIssueType;
     severity: ContentSafetySeverity;
@@ -9,6 +18,9 @@ export interface ContentSafetyIssue {
     suggestion: string;
 }
 
+/**
+ * 内容安全报告结构定义。
+ */
 export interface ContentSafetyReport {
     issues: ContentSafetyIssue[];
     paragraphCount: number;
@@ -60,6 +72,11 @@ const RULES: Rule[] = [
     }
 ];
 
+/**
+ * 分析内容安全。
+ * @param body - 正文
+  * @returns ContentSafetyReport 实例
+ */
 export function analyzeContentSafety(body: string): ContentSafetyReport {
     const paragraphs = body
         .split(/\n+/)

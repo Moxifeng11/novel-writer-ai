@@ -22,6 +22,9 @@ const log = createLogger('EntityStateManager');
 /** 实体变化类型（Task 12 六类扩展：人物状态/新地点/新道具/关系/新伏笔/已完成节点） */
 export type EntityChangeType = 'character' | 'location' | 'prop' | 'relationship' | 'foreshadow' | 'plotNode';
 
+/**
+ * EntityStateChange 类型定义。
+ */
 export interface EntityStateChange {
     /** 实体名称（人物名/地名/道具名等） */
     entityName: string;
@@ -35,6 +38,9 @@ export interface EntityStateChange {
     entityType?: EntityChangeType;
 }
 
+/**
+ * EntityStateManagerOptions 类型定义。
+ */
 export interface EntityStateManagerOptions {
     app: App;
     plugin: NovelWriterPluginAPI;
@@ -44,6 +50,9 @@ export interface EntityStateManagerOptions {
     engineRegistry?: EngineRegistry | null;
 }
 
+/**
+ * EntityStateManager 类。
+ */
 export class EntityStateManager {
     private app: App;
     private plugin: NovelWriterPluginAPI;

@@ -415,6 +415,8 @@ export class ProviderManager {
     }
 
     /**
+     * 隐藏预设（兼容旧接口）。
+     *
      * @deprecated 请使用 setHidden(id, true)
      *
      * @param presetId - 预设 ID
@@ -426,6 +428,8 @@ export class ProviderManager {
     }
 
     /**
+     * 恢复预设显示（兼容旧接口）。
+     *
      * @deprecated 请使用 setHidden(id, false)
      *
      * @param presetId - 预设 ID
@@ -458,7 +462,11 @@ export class ProviderManager {
         }
     }
 
-    /** @deprecated 请使用 restoreDefaultProviders() */
+    /**
+     * 恢复全部预设（兼容旧接口）。
+     *
+     * @deprecated 请使用 restoreDefaultProviders()
+     */
     restoreAllPresets(): void {
         log.warn('[ProviderManager] 警告: restoreAllPresets() 已废弃，请使用 restoreDefaultProviders()');
         this.restoreDefaultProviders();
@@ -500,6 +508,8 @@ export class ProviderManager {
     }
 
     /**
+     * 覆盖预设的模型与端点信息（兼容旧接口）。
+     *
      * @deprecated 请使用 updateProvider()
      *
      * @param presetId - 预设 ID

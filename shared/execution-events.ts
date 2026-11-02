@@ -7,6 +7,9 @@
 
 export type ExecutionLevel = 'debug' | 'info' | 'success' | 'warning' | 'error';
 
+/**
+ * StepFailureKind 类型定义。
+ */
 export type StepFailureKind =
     | 'validation'
     | 'api'
@@ -17,6 +20,9 @@ export type StepFailureKind =
     | 'exception'
     | 'cancelled';
 
+/**
+ * ExecutionEventInput 类型定义。
+ */
 export interface ExecutionEventInput {
     /** 事件类型：run-start / run-progress / step-start / step-complete / step-error ... */
     type: string;
@@ -29,6 +35,9 @@ export interface ExecutionEventInput {
     debug?: Record<string, string | number | boolean | undefined>;
 }
 
+/**
+ * DiagnosticInput 类型定义。
+ */
 export interface DiagnosticInput {
     level: ExecutionLevel;
     scope: 'step' | 'run' | 'api' | 'save' | 'prompt' | 'ui';
@@ -39,6 +48,9 @@ export interface DiagnosticInput {
     stack?: string;
 }
 
+/**
+ * StepFailure 类型定义。
+ */
 export interface StepFailure {
     stepKey: string;
     stepLabel: string;
@@ -72,6 +84,11 @@ const KIND_BY_PATTERN: Array<{ pattern: RegExp; kind: StepFailureKind }> = [
     { pattern: /取消|cancel|abort/i, kind: 'cancelled' },
 ];
 
+/**
+ * classifyStepFailure 函数。
+ * @param message - 消息
+  * @returns StepFailureKind 实例
+ */
 export function classifyStepFailure(message: string): StepFailureKind {
     const text = String(message || '');
     for (const rule of KIND_BY_PATTERN) {
@@ -80,6 +97,12 @@ export function classifyStepFailure(message: string): StepFailureKind {
     return 'exception';
 }
 
+/**
+ * suggestionForFailure 函数。
+ * @param kind - 种类
+ * @param missing - 缺失
+ * @returns 文本结果
+ */
 export function suggestionForFailure(kind: StepFailureKind, missing: string[] = []): string {
     if (missing.length > 0) {
         return `缺少：${missing.slice(0, 6).join('、')}。${SUGGESTIONS[kind]}`;
@@ -87,6 +110,11 @@ export function suggestionForFailure(kind: StepFailureKind, missing: string[] = 
     return SUGGESTIONS[kind];
 }
 
+/**
+ * createStepFailure 函数。
+ * @param input - 输入
+  * @returns StepFailure 实例
+ */
 export function createStepFailure(input: {
     stepKey: string;
     stepLabel: string;

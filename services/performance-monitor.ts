@@ -167,6 +167,11 @@ export class PerformanceMonitor {
         this.options = { ...DEFAULT_OPTIONS, ...options };
     }
 
+    /**
+     * getInstance 方法。
+     * @param options - 配置项
+      * @returns PerformanceMonitor 实例
+     */
     static getInstance(options?: Partial<PerformanceMonitorOptions>): PerformanceMonitor {
         if (!PerformanceMonitor.instance) {
             PerformanceMonitor.instance = new PerformanceMonitor(options);
@@ -300,6 +305,14 @@ export class PerformanceMonitor {
         return mark.duration;
     }
 
+    /**
+     * wrap 方法。
+     * @param name - 名称
+     * @param fn - 参数值
+     * @param category - 分类
+     * @param metadata - 参数值
+      * @returns T 实例
+     */
     wrap<T>(name: string, fn: () => T, category: PerformanceCategory = 'other', metadata?: Record<string, unknown>): T {
         const markId = this.start(name, category, undefined, metadata);
         try {
@@ -312,6 +325,14 @@ export class PerformanceMonitor {
         }
     }
 
+    /**
+     * wrapAsync 方法。
+     * @param name - 名称
+     * @param fn - 参数值
+     * @param category - 分类
+     * @param metadata - 参数值
+      * @returns T 实例
+     */
     async wrapAsync<T>(name: string, fn: () => Promise<T>, category: PerformanceCategory = 'other', metadata?: Record<string, unknown>): Promise<T> {
         const markId = this.start(name, category, undefined, metadata);
         try {

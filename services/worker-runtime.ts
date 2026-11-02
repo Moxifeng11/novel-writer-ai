@@ -140,6 +140,11 @@ export function getRegisteredTaskTypes(): string[] {
     return Array.from(taskHandlers.keys());
 }
 
+/**
+ * createInlineWorkerCode 函数。
+ * @param customHandlers - 自定义回调集合
+ * @returns 文本结果
+ */
 export function createInlineWorkerCode(customHandlers?: Record<string, string>): string {
     const handlersCode = customHandlers
         ? Object.entries(customHandlers)

@@ -21,6 +21,9 @@ export const BATCH_STEP_KEYS = [
     'analysisReport',
 ] as const;
 
+/**
+ * BatchChapterTarget 类型定义。
+ */
 export interface BatchChapterTarget {
     volume: string;
     volumeNum: number;

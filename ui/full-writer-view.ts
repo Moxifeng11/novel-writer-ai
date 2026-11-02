@@ -94,6 +94,9 @@ import { ensureTemplateScaffold } from '../shared/template-scaffold';
 
 
 const log = createLogger('FullWriterView');
+/**
+ * 视图类型常量。
+ */
 export const VIEW_TYPE = 'novel-writer-full-writer';
 
 /**
@@ -116,6 +119,9 @@ const WORKBENCH_ROOT_VARS: Record<string, string> = {
     '--nw-card-pad': '16px',
 };
 
+/**
+ * 完整写入器视图。
+ */
 export class FullWriterView extends ItemView {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -2396,6 +2402,9 @@ export class FullWriterView extends ItemView {
         await this.wizardController.openWizardForProject(project);
     }
 
+    /**
+     * refreshContextBar 方法。
+     */
     public refreshContextBar(): void {
         this.entityStateController.refreshContextBar();
     }

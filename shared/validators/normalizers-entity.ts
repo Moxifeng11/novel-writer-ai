@@ -21,6 +21,9 @@ import {
 // 仅在 validate 校验仍失败时调用，非主要修复路径
 // ============================================================
 
+/**
+ * 规范化结果结构定义。
+ */
 export interface NormalizeResult {
     normalized: string;
     filledCount: number;

@@ -108,6 +108,12 @@ export function buildDshChildEnv(
     return env;
 }
 
+/**
+ * createDshProcessTransport 函数。
+ * @param plan - 计划
+ * @param options - 配置项
+  * @returns DshTransport 实例
+ */
 export async function createDshProcessTransport(
     plan: DshLaunchPlan,
     options: DshProcessOptions,
@@ -199,6 +205,7 @@ export interface DshProbeResult {
  * 超时/退出码非 0/命令不存在都返回结构化错误，交给设置页展示。
  * @param plan - 计划
  * @param options - 配置项
+ * @param timeoutMs - 超时时间（毫秒）
   * @returns DshProbeResult 实例
  */
 export async function probeDshVersion(

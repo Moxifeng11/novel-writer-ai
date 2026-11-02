@@ -33,6 +33,9 @@ function cryptoRandomInt(maxExclusive: number): number {
     return buffer[0] % maxExclusive;
 }
 
+/**
+ * trueRandom 常量。
+ */
 export const trueRandom: RandomSource = {
     nextFloat(): number {
         return cryptoRandomInt(4294967296) / 4294967296;

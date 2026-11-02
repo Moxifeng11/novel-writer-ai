@@ -13,6 +13,9 @@ export interface WritingRuleItem {
     points?: string[];
 }
 
+/**
+ * WritingRulesLike 类型定义。
+ */
 export interface WritingRulesLike {
     mandatory?: WritingRuleItem[];
     checklist?: string[];

@@ -13,6 +13,9 @@ import { ENGINE_NAMES } from '../shared/engine-names';
 
 
 const log = createLogger('DiagnoseWriterModal');
+/**
+ * DiagnoseWriterModal 类。
+ */
 export class DiagnoseWriterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -23,6 +26,9 @@ export class DiagnoseWriterModal extends Modal {
         this.contextManager = plugin.ctxManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -345,6 +351,9 @@ export class DiagnoseWriterModal extends Modal {
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

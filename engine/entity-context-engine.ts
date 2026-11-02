@@ -185,6 +185,9 @@ const DETAIL_LEVEL_CONFIG = {
 // EntityContextEngine 主类
 // ============================================================
 
+/**
+ * 实体上下文引擎。
+ */
 export class EntityContextEngine {
     private appearanceCache: Map<string, Map<string, EntityAppearanceRecord>> = new Map();
 

@@ -144,6 +144,10 @@ export class PlotDivergenceEngine {
     this.ignoredIssues = new Set(options.ignoredIssues || []);
   }
 
+  /**
+   * 更新选项列表。
+   * @param options - 配置项
+   */
   updateOptions(options: Partial<PlotDivergenceEngineOptions>): void {
     if (options.chapterOutline !== undefined) this.chapterOutline = options.chapterOutline;
     if (options.mainlineKeywords !== undefined) this.mainlineKeywords = options.mainlineKeywords;
@@ -157,6 +161,11 @@ export class PlotDivergenceEngine {
     if (options.ignoredIssues !== undefined) this.ignoredIssues = new Set(options.ignoredIssues);
   }
 
+  /**
+   * evaluate 方法。
+   * @param text - 文本内容
+    * @returns DivergenceResult 实例
+   */
   evaluate(text: string): DivergenceResult {
     const startTime = Date.now();
     const cleanText = text.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
@@ -755,14 +764,26 @@ export class PlotDivergenceEngine {
     return now - lastTime < this.ALERT_COOLDOWN_MS;
   }
 
+  /**
+   * ignoreIssue 方法。
+   * @param issueKey - 问题键
+   */
   ignoreIssue(issueKey: string): void {
     this.ignoredIssues.add(issueKey);
   }
 
+  /**
+   * unignoreIssue 方法。
+   * @param issueKey - 问题键
+   */
   unignoreIssue(issueKey: string): void {
     this.ignoredIssues.delete(issueKey);
   }
 
+  /**
+   * getIgnoredIssues 方法。
+   * @returns 结果数组
+   */
   getIgnoredIssues(): string[] {
     return Array.from(this.ignoredIssues);
   }
@@ -774,10 +795,17 @@ export class PlotDivergenceEngine {
     });
   }
 
+  /**
+   * 获取偏离历史。
+   * @returns 结果数组
+   */
   getDivergenceHistory(): number[] {
     return [...this.divergenceHistory];
   }
 
+  /**
+   * 清空历史。
+   */
   clearHistory(): void {
     this.divergenceHistory = [];
     this.divergenceHistoryAt = [];

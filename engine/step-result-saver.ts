@@ -26,6 +26,9 @@ import { projectIdFromPath } from '../shared/paths';
 
 
 const log = createLogger('StepResultSaver');
+/**
+ * 实体名称列表结构定义。
+ */
 export interface EntityNames {
     chars: string[];
     factions: string[];
@@ -33,6 +36,9 @@ export interface EntityNames {
     items: string[];
 }
 
+/**
+ * StepResultSaverDeps 类型定义。
+ */
 export interface StepResultSaverDeps {
     getPlugin?: () => { settings?: { defaultModel?: string; naturalParagraphMode?: boolean } };
     showNotice?: (msg: string, duration?: number) => void;
@@ -74,6 +80,9 @@ export interface StepResultSaverOptions {
     deps?: StepResultSaverDeps;
 }
 
+/**
+ * StepResultSaver 类。
+ */
 export class StepResultSaver {
     private app: App | undefined;
     private fs: FileSystemPort | null = null;

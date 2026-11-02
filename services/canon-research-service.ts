@@ -92,6 +92,10 @@ export class CanonResearchService {
         private readonly host: CanonResearchHost,
     ) {}
 
+    /**
+     * 获取配置。
+      * @returns CanonResearchConfig 实例
+     */
     getConfig(): CanonResearchConfig {
         return { ...DEFAULT_CONFIG, ...(this.host.settings?.canonResearch || {}) };
     }
@@ -193,6 +197,12 @@ export class CanonResearchService {
         return result;
     }
 
+    /**
+     * 加载缓存。
+     * @param project - 项目（路径或对象）
+     * @param workName - 作品名
+      * @returns CanonResearchResult 或 null
+     */
     async loadCache(project: string, workName: string): Promise<CanonResearchResult | null> {
         const path = `${pjFanficResearchDir(project, workName)}/sources.json`;
         try {

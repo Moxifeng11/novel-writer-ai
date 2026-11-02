@@ -20,6 +20,9 @@ import { AntiAIDetector } from './anti-ai-detector';
 import type { AIDetectionResult } from './anti-ai-detector';
 import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
 
+/**
+ * QualityGateLayer 类型定义。
+ */
 export type QualityGateLayer = 'rule' | 'structure' | 'model';
 
 /** 模型层评审结果（由调用方组装 QualityScoreEngine/emotionAuditor 产出） */
@@ -29,6 +32,9 @@ export interface QualityGateModelReview {
     source?: string;
 }
 
+/**
+ * 质量闸门报告结构定义。
+ */
 export interface QualityGateReport {
     passed: boolean;
     layers: {
@@ -44,6 +50,9 @@ export interface QualityGateReport {
     summary: string;
 }
 
+/**
+ * 质量闸门选项列表结构定义。
+ */
 export interface QualityGateOptions {
     beats?: StoryBeat[];
     /** 跳过指定层（逐层独立跳过） */
@@ -62,11 +71,21 @@ const REPEAT_PREFIX_LEN = 16;
 /** 结尾钩子检测的尾段窗口长度（默认值，可由 options 覆盖） */
 const ENDING_HOOK_WINDOW = 200;
 
+/**
+ * 质量闸门。
+ */
 export class QualityGate {
     private verifier = new BeatVerifier();
     private detector = new ConflictDetector();
     private antiAI = new AntiAIDetector();
 
+    /**
+     * 执行。
+     * @param body - 正文
+     * @param snapshot - 快照
+     * @param options - 配置项
+      * @returns QualityGateReport 实例
+     */
     async run(body: string, snapshot: ChapterStateSnapshot, options: QualityGateOptions = {}): Promise<QualityGateReport> {
         const skip = new Set(options.skipLayers || []);
         const skippedLayers = options.skipLayers || [];

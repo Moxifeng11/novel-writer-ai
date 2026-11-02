@@ -66,10 +66,22 @@ export function modeContentRoot(mode: CreationMode): string {
     return '03-大纲与章节';
 }
 
+/**
+ * 模式内容目录。
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @returns 文本结果
+ */
 export function modeContentDir(project: string, mode: CreationMode): string {
     return `${resolveProjectRoot(project)}/${modeContentRoot(mode)}`;
 }
 
+/**
+ * 模式正文目录。
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @returns 文本结果
+ */
 export function modeBodyDir(project: string, mode: CreationMode): string {
     if (mode === 'short') return `${project}/${SHORT_CONTENT_ROOT}/${SHORT_DIRS.body}`;
     if (mode === 'script') return `${project}/${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.body}`;
@@ -109,6 +121,13 @@ export function modeUnitDisplay(number: number, mode: CreationMode): string {
     return `第${number}${modeUnitLabel(mode)}`;
 }
 
+/**
+ * modeDocPath 函数。
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ * @param doc - 文档
+ * @returns 文本结果
+ */
 export function modeDocPath(project: string, mode: CreationMode, doc: 'storyCore' | 'outline' | 'bible' | 'storyboard'): string {
     if (mode === 'short') {
         if (doc === 'storyCore') return `${project}/${SHORT_CONTENT_ROOT}/${SHORT_DIRS.storyCore}/故事核.md`;

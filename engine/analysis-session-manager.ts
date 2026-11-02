@@ -40,6 +40,9 @@ interface SessionCreateOptions {
     metadata: SessionMetadata;
 }
 
+/**
+ * 分析会话管理器。
+ */
 export class AnalysisSessionManager {
     private sessions: Map<string, AnalysisSession> = new Map();
     private vault: any;

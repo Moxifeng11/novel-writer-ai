@@ -16,6 +16,9 @@ import type { Instructions } from './settlement-types';
 import type { SettlementOptions, SettlementResult } from '../settlement-engine';
 import { SettlementJournal } from './settlement-journal';
 
+/**
+ * SettleContext 类型定义。
+ */
 export interface SettleContext {
     /** 项目名 */
     project: string;

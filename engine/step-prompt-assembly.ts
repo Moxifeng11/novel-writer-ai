@@ -13,6 +13,9 @@ import type { StepRunCtx } from './step-definitions';
 
 const log = createLogger('StepPromptAssembly');
 
+/**
+ * StepPromptAssemblyHost 类型定义。
+ */
 export interface StepPromptAssemblyHost {
     /**
      * 大纲摘要步骤的知识注入（宿主内部完成画像读取与失败降级，非 outline 步骤不调用）
@@ -47,6 +50,9 @@ export interface StepBudgetHint {
     maxOutput?: number;
 }
 
+/**
+ * StepBudgetLimits 类型定义。
+ */
 export interface StepBudgetLimits {
     maxContext: number;
     maxOutput: number;
@@ -54,6 +60,9 @@ export interface StepBudgetLimits {
     maxInputTokens?: number;
 }
 
+/**
+ * StepPromptAssemblyResult 类型定义。
+ */
 export interface StepPromptAssemblyResult {
     /** 经预算闸门处理后实际发送给模型的 system prompt */
     effectiveSystemPrompt: string;
@@ -73,6 +82,17 @@ export interface StepPromptAssemblyResult {
     overBudget: boolean;
 }
 
+/**
+ * assembleStepPrompt 函数。
+ * @param host - 宿主元素
+ * @param ctx - 上下文
+ * @param stepKey - 步骤键
+ * @param systemPrompt - 系统提示词
+ * @param userPrompt - 用户提示词
+ * @param stepModel - 步骤模型
+ * @param budget - 预算
+  * @returns StepPromptAssemblyResult 实例
+ */
 export async function assembleStepPrompt(
     host: StepPromptAssemblyHost,
     ctx: StepRunCtx,

@@ -4,6 +4,9 @@
  */
 import type { App } from 'obsidian';
 
+/**
+ * WizardTabData 类型定义。
+ */
 export interface WizardTabData {
     id: string;
     label: string;
@@ -17,6 +20,9 @@ export interface WizardTabData {
     volume?: string;
 }
 
+/**
+ * WizardViewAccess 类型定义。
+ */
 export interface WizardViewAccess {
     app: App;
     tabs: WizardTabData[];

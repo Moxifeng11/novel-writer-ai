@@ -14,6 +14,9 @@ export interface OutputField {
     description: string;
 }
 
+/**
+ * 输出契约结构定义。
+ */
 export interface OutputContract<T = unknown> {
     id: string;
     format: 'json' | 'delimited';
@@ -33,6 +36,12 @@ function extractJsonBlock(raw: string): string | null {
     return text.slice(start, end + 1);
 }
 
+/**
+ * 从模型输出中提取并解析 JSON 对象。
+ *
+ * @param raw - 模型原始输出（可含代码块与解释文字）
+ * @returns 解析结果；无 JSON 块或解析失败时为 null
+ */
 export function parseJsonObject<T = Record<string, unknown>>(raw: string): T | null {
     try {
         const block = extractJsonBlock(raw);
@@ -44,6 +53,12 @@ export function parseJsonObject<T = Record<string, unknown>>(raw: string): T | n
     }
 }
 
+/**
+ * parseDelimitedSections 函数。
+ * @param raw - 原始
+ * @param delimiters - 分隔符集合
+ * @returns 映射结果
+ */
 export function parseDelimitedSections(raw: string, delimiters: Record<string, string>): Record<string, string> | null {
     const result: Record<string, string> = {};
     const entries = Object.entries(delimiters);
@@ -58,12 +73,24 @@ export function parseDelimitedSections(raw: string, delimiters: Record<string, s
     return Object.keys(result).length === entries.length ? result : null;
 }
 
+/**
+ * describeJsonFields 函数。
+ * @param fields - 字段表
+ * @returns 文本结果
+ */
 export function describeJsonFields(fields: OutputField[]): string {
     return fields
         .map(field => `- ${field.key} (${field.type}${field.required ? ', required' : ''}): ${field.description}`)
         .join('\n');
 }
 
+/**
+ * 校验字段列表。
+ *
+ * @param value - 待校验对象
+ * @param fields - 字段契约
+ * @returns 问题列表；空数组表示通过
+ */
 export function validateFields<T extends Record<string, unknown>>(value: T, fields: OutputField[]): string[] {
     const issues: string[] = [];
     for (const field of fields) {

@@ -16,6 +16,9 @@ export interface EvalQuery {
     ranked: string[];
 }
 
+/**
+ * EvalQueryRow 类型定义。
+ */
 export interface EvalQueryRow {
     id: string;
     /** top-k 内是否命中任一 relevant */
@@ -26,6 +29,9 @@ export interface EvalQueryRow {
     duplicateRatio: number;
 }
 
+/**
+ * EvalReport 类型定义。
+ */
 export interface EvalReport {
     queries: number;
     k: number;
@@ -91,6 +97,7 @@ export function overlapSimilarity(a: string, b: string): number {
  * `texts` 可选：给出时按文本相似度判定，否则只按 id 判重（id 相同即重复）。
  * @param ranked - 排序后
  * @param texts - 文本列表
+ * @param threshold - 阈值
  * @returns 数值结果
  */
 export function duplicateRatioOf(ranked: readonly string[], texts?: readonly string[], threshold = DEFAULT_DUPLICATE_THRESHOLD): number {
@@ -114,6 +121,8 @@ export function duplicateRatioOf(ranked: readonly string[], texts?: readonly str
  *
  * @param query - 查询串
  * @param texts - 文本列表
+ * @param k - 键或索引
+ * @param duplicateThreshold - 重复阈值
   * @returns EvalQueryRow 实例
  */
 export function scoreQuery(query: EvalQuery, k = DEFAULT_K, texts?: readonly string[], duplicateThreshold = DEFAULT_DUPLICATE_THRESHOLD): EvalQueryRow {

@@ -11,6 +11,9 @@
 
 export type BudgetSource = 'api' | 'chapter' | 'scene' | 'cowrite';
 
+/**
+ * 预算快照结构定义。
+ */
 export interface BudgetSnapshot {
     at: number;
     source: BudgetSource;
@@ -28,6 +31,9 @@ export interface BudgetSnapshot {
 const MAX_SNAPSHOTS = 20;
 let snapshots: BudgetSnapshot[] = [];
 
+/**
+ * 预算快照输入结构定义。
+ */
 export type BudgetSnapshotInput = Omit<
     BudgetSnapshot,
     'at' | 'droppedSections' | 'trimmedSections'
@@ -37,6 +43,10 @@ export type BudgetSnapshotInput = Omit<
     trimmedSections?: string[];
 };
 
+/**
+ * recordBudgetSnapshot 函数。
+ * @param input - 输入
+ */
 export function recordBudgetSnapshot(input: BudgetSnapshotInput): void {
     snapshots.push({
         ...input,
@@ -62,6 +72,9 @@ export function getBudgetSnapshots(): BudgetSnapshot[] {
     }));
 }
 
+/**
+ * 清空预算快照列表。
+ */
 export function clearBudgetSnapshots(): void {
     snapshots = [];
 }

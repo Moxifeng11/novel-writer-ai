@@ -14,6 +14,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('ContextLoaderController');
+/**
+ * 上下文加载器控制器依赖列表结构定义。
+ */
 export interface ContextLoaderControllerDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -32,6 +35,9 @@ export interface ContextLoaderControllerDeps {
     reportNotice?: (level: 'success' | 'warning' | 'error', message: string) => void;
 }
 
+/**
+ * 上下文加载器控制器。
+ */
 export class ContextLoaderController {
     private deps: ContextLoaderControllerDeps;
 
@@ -39,6 +45,9 @@ export class ContextLoaderController {
         this.deps = deps;
     }
 
+    /**
+     * 加载上下文。
+     */
     async loadContext(): Promise<void> {
         if (!this.deps.state.project) {
             await this.deps.activateTab('project-selector');

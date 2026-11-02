@@ -13,11 +13,17 @@
 
 export type EntityTemplateKind = 'faction' | 'location' | 'item';
 
+/**
+ * 实体模板选项列表结构定义。
+ */
 export interface EntityTemplateOptions {
     /** 物品功法的扁平标签名（默认「物品功法」） */
     itemTag?: string;
 }
 
+/**
+ * EntityTemplateBlock 类型定义。
+ */
 export interface EntityTemplateBlock {
     /** 示例 YAML frontmatter（含首尾 `---`） */
     frontmatter: string;
@@ -25,6 +31,12 @@ export interface EntityTemplateBlock {
     body: string;
 }
 
+/**
+ * buildEntityTemplateBlock 函数。
+ * @param kind - 种类
+ * @param options - 配置项
+  * @returns EntityTemplateBlock 实例
+ */
 export function buildEntityTemplateBlock(
     kind: EntityTemplateKind,
     options?: EntityTemplateOptions,

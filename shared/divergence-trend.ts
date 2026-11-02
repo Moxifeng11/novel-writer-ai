@@ -11,12 +11,17 @@
 
 import { DIVERGENCE_RISING_MIN_WINDOW_MS } from './thresholds';
 
+/**
+ * 偏离样本结构定义。
+ */
 export interface DivergenceSample {
     value: number;
     at: number;
 }
 
 /**
+ * 判断偏离度是否持续上升。
+ *
  * @param samples 按时间顺序排列的评估样本（至少 3 条才可能判定）
  * @param now 当前时间戳
  * @returns 是否成功

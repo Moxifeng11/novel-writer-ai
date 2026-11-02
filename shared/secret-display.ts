@@ -32,7 +32,9 @@ export const SECRET_LOCKED_PLACEHOLDER = '已加密 · 输入口令解锁后可�
  * 决定密钥输入框该如何显示：
  * - 密文 → 输入框留空（不泄露密文），给出提示与说明
  * - 明文 → 直接显示
- * @param value - 值
+ *
+ * @param value - 原始密钥值
+ * @returns 输入框显示文案与提示
  */
 export function describeSecretForInput(value: unknown): {
     /** 输入框应显示的值 */

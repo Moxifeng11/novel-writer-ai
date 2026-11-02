@@ -39,6 +39,9 @@ export interface ExpandedScene {
     cliffhanger?: string;    // 结尾钩子（最后一个场景）
 }
 
+/**
+ * SCENE_EXPAND_SYSTEM_PROMPT 常量。
+ */
 export const SCENE_EXPAND_SYSTEM_PROMPT = `你就是主角本人。现在你需要把你的记忆碎片和当前场景揉在一起——不是规划，是在头脑里预演即将发生的事。
 
 \${protagonistSoul}
@@ -110,6 +113,9 @@ dialogue_beats:
 - 场景之间切换必须有过渡（时间推移/空间移动/视角转移），不得凭空换场
 - 只演出【信息规划】与【大纲】已确定的事件，不得自行新增情节节点或反转`;
 
+/**
+ * SCENE_EXPAND_USER_TEMPLATE 常量。
+ */
 export const SCENE_EXPAND_USER_TEMPLATE = `你是\${protagonistName}本人。现在预演你即将经历的第\${chapNum}章。
 
 【世界观设定】

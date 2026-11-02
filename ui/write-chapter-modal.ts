@@ -44,6 +44,9 @@ import { getExecutionLedger, summarizeSettlement } from '../services/execution-l
 
 
 const log = createLogger('WriteChapterModal');
+/**
+ * 写入章节弹窗。
+ */
 export class WriteChapterModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -60,6 +63,9 @@ export class WriteChapterModal extends Modal {
         this.reviewAgent = plugin.reviewAgent;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -116,6 +122,11 @@ export class WriteChapterModal extends Modal {
         };
     }
 
+    /**
+     * runBackground 方法。
+     * @param app - Obsidian 应用实例
+     * @param plugin - 插件实例
+     */
     static async runBackground(app: App, plugin: NovelWriterPlugin): Promise<void> {
         const target = plugin.getActiveChapterTarget();
         if (!target) {
@@ -867,6 +878,9 @@ ${reportResult.content}
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

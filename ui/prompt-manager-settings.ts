@@ -10,6 +10,9 @@ import type {
 import { OperationConfirmModal } from './components/progress';
 import { exportTextFile } from '../shared/export-file';
 
+/**
+ * 提示词管理器设置列表。
+ */
 export class PromptManagerSettings {
     private plugin: NovelWriterPlugin;
     private app: App;
@@ -30,6 +33,9 @@ export class PromptManagerSettings {
         return this.plugin.promptManager!;
     }
 
+    /**
+     * 渲染。
+     */
     render(): void {
         this.container.empty();
 

@@ -19,6 +19,9 @@ const WRITTEN_STATUSES = new Set(['written', 'settled']);
 /** 显式占位状态：明确标记未写，即便文件被撑大也不算完成 */
 const PLACEHOLDER_STATUSES = new Set(['pending', 'draft']);
 
+/**
+ * ChapterProgressInput 类型定义。
+ */
 export interface ChapterProgressInput {
     chapter: string;
     status: string;
@@ -28,6 +31,9 @@ export interface ChapterProgressInput {
     size: number;
 }
 
+/**
+ * ChapterProgressSummary 类型定义。
+ */
 export interface ChapterProgressSummary {
     /** 章节条目总数（已写 + 骨架） */
     total: number;
@@ -73,6 +79,9 @@ export function chapterNumber(chapter: string): number {
     return matched ? parseInt(matched[1], 10) : 0;
 }
 
+/**
+ * SummarizeChapterOptions 类型定义。
+ */
 export interface SummarizeChapterOptions {
     /** 「建议续写」的单位名；短篇传「节」、剧本传「集」，默认「章」 */
     unitLabel?: string;

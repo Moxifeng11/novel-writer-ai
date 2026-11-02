@@ -16,8 +16,17 @@ import {
     QUALITY_SCORE_WARNING,
 } from './thresholds';
 
+/**
+ * QualityGrade 类型定义。
+ */
 export type QualityGrade = 'S' | 'A' | 'B' | 'C' | 'D';
+/**
+ * 质量分数层级结构定义。
+ */
 export type QualityScoreLevel = 'good' | 'warning' | 'danger';
+/**
+ * 偏离层级结构定义。
+ */
 export type DivergenceLevel = 'normal' | 'warning' | 'danger';
 
 /**

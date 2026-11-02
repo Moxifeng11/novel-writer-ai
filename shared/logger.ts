@@ -45,6 +45,9 @@ export function getGlobalLogLevel(): LogLevel {
     return globalLogLevel;
 }
 
+/**
+ * Logger 类型定义。
+ */
 export interface Logger {
     /** 调试信息（仅 debug 级别开启时输出） */
     debug(...args: unknown[]): void;

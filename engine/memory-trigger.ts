@@ -95,6 +95,12 @@ export function getMemoryDir(project: string): string {
   return pjMemoryShardsDir(project);
 }
 
+/**
+ * 获取角色记忆路径。
+ * @param project - 项目（路径或对象）
+ * @param characterName - 角色名称
+ * @returns 文本结果
+ */
 export function getCharacterMemoryPath(project: string, characterName: string): string {
   return `${getMemoryDir(project)}/${characterName}_记忆碎片.md`;
 }

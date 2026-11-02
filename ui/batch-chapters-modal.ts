@@ -25,6 +25,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('BatchChaptersModal');
 
+/**
+ * BatchChaptersModal 类。
+ */
 export class BatchChaptersModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -37,6 +40,9 @@ export class BatchChaptersModal extends Modal {
         this.contextManager = plugin.ctxManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -319,6 +325,9 @@ ${charMiss > 0 ? `- ⚠️ ${charMiss}个人物未填写当前状态` : ''}
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         // A6: 关闭 ≠ 停止，必须显式取消在途 AI 调用，并让循环在下次检查时退出
         this.abortController?.abort();

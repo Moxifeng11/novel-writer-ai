@@ -268,8 +268,10 @@ export class DomainValidator {
     }
 
     /**
-     * 合并多个验证结果
-      * @returns ValidationResult 实例
+     * 合并多个验证结果。
+     *
+     * @param results - 待合并的验证结果
+     * @returns ValidationResult 实例
      */
     static mergeResults(...results: ValidationResult[]): ValidationResult {
         const merged = createEmptyResult();

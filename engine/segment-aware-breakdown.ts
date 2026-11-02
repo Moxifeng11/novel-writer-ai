@@ -20,12 +20,18 @@ import { countCjkAndWords } from '../shared/word-count';
 import { StreamTextReader } from './stream-text-reader';
 import { yieldToUI } from '../shared/yield';
 
+/**
+ * SegmentBreakdownOptions 类型定义。
+ */
 export interface SegmentBreakdownOptions {
     maxDirectWords?: number;
     maxSegmentWords?: number;
     onSegmentProgress?: (segmentIndex: number, totalSegments: number, segmentProgress: number) => void;
 }
 
+/**
+ * SegmentBreakdownResult 类型定义。
+ */
 export interface SegmentBreakdownResult<T> {
     segments: T[];
     combinedResult: T;
@@ -40,6 +46,9 @@ const DEFAULT_OPTIONS: Required<Omit<SegmentBreakdownOptions, 'onSegmentProgress
 type ResolvedSegmentBreakdownOptions = Required<Omit<SegmentBreakdownOptions, 'onSegmentProgress'>> & Pick<SegmentBreakdownOptions, 'onSegmentProgress'>;
 
 
+/**
+ * SegmentAwareBreakdown 类。
+ */
 export class SegmentAwareBreakdown {
     private options: ResolvedSegmentBreakdownOptions;
 
@@ -47,6 +56,14 @@ export class SegmentAwareBreakdown {
         this.options = { ...DEFAULT_OPTIONS, ...options };
     }
 
+    /**
+     * 执行。
+     * @param text - 文本内容
+     * @param analyzeSegment - 参数值
+     * @param combine - 参数值
+     * @param signal - 取消信号
+      * @returns SegmentBreakdownResult<T> 实例
+     */
     async run<T>(
         text: string,
         analyzeSegment: (segment: TextSegment) => Promise<T>,
@@ -112,10 +129,20 @@ export class SegmentAwareBreakdown {
         };
     }
 
+    /**
+     * shouldUseSegmented 方法。
+     * @param text - 文本内容
+     * @returns 是否成功
+     */
     shouldUseSegmented(text: string): boolean {
         return countCjkAndWords(text) > this.options.maxDirectWords;
     }
 
+    /**
+     * estimateSegments 方法。
+     * @param text - 文本内容
+     * @returns 数值结果
+     */
     estimateSegments(text: string): number {
         const words = countCjkAndWords(text);
         if (words <= this.options.maxDirectWords) {

@@ -118,6 +118,9 @@ export function extractPlainTextFromEditor(
 // PolishEditor 类
 // ============================================================
 
+/**
+ * PolishEditor 类。
+ */
 export class PolishEditor {
     private stepRunner: StepRunner;
     private plugin: NovelWriterPlugin;
@@ -470,6 +473,9 @@ const POLISH_STYLE_HINTS: Record<PolishStyle, string> = {
     '节奏优化': '调整叙事节奏，优化段落长短搭配，增强阅读韵律',
 };
 
+/**
+ * PolishAIPolishModal 类。
+ */
 export class PolishAIPolishModal extends Modal {
     private plugin: NovelWriterPlugin;
     private fullText: string;
@@ -501,11 +507,17 @@ export class PolishAIPolishModal extends Modal {
         this.projectPath = projectPath;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.renderInputForm();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

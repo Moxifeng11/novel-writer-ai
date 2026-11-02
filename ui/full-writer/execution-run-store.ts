@@ -11,16 +11,25 @@ import type {
     StepFailure,
 } from '../../shared/execution-events';
 
+/**
+ * ExecutionEvent 类型定义。
+ */
 export interface ExecutionEvent extends ExecutionEventInput {
     id: number;
     at: number;
 }
 
+/**
+ * ExecutionLogEntry 类型定义。
+ */
 export interface ExecutionLogEntry extends DiagnosticInput {
     id: number;
     at: number;
 }
 
+/**
+ * ExecutionStoreChange 类型定义。
+ */
 export type ExecutionStoreChange = 'event' | 'log' | 'failure' | 'status' | 'reset';
 
 const LEVEL_WEIGHT: Record<ExecutionLevel, number> = {
@@ -34,6 +43,9 @@ const LEVEL_WEIGHT: Record<ExecutionLevel, number> = {
 const MAX_EVENTS = 300;
 const MAX_LOGS = 800;
 
+/**
+ * ExecutionRunStore 类。
+ */
 export class ExecutionRunStore {
     private events: ExecutionEvent[] = [];
     private logs: ExecutionLogEntry[] = [];
@@ -253,6 +265,11 @@ export class ExecutionRunStore {
     }
 }
 
+/**
+ * 格式化时间。
+ * @param at - 时间点
+ * @returns 文本结果
+ */
 export function formatTime(at: number): string {
     return new Date(at).toLocaleTimeString('zh-CN', { hour12: false });
 }

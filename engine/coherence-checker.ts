@@ -16,6 +16,9 @@ export interface CoherenceIssue {
     count: number;
 }
 
+/**
+ * 连贯性报告结构定义。
+ */
 export interface CoherenceReport {
     issues: CoherenceIssue[];
     sentenceCount: number;
@@ -35,6 +38,12 @@ function normalize(sentence: string): string {
     return sentence.replace(/[\s\u3000\uff0c\u3001\u201c\u201d\u2018\u2019\uff08\uff09\u2014\u2026]/g, '').trim();
 }
 
+/**
+ * 分析连贯性。
+ * @param body - 正文
+ * @param recentWindow - 最近窗口
+  * @returns CoherenceReport 实例
+ */
 export function analyzeCoherence(body: string, recentWindow = 1500): CoherenceReport {
     const issues: CoherenceIssue[] = [];
     const text = (body || '').slice(-recentWindow);

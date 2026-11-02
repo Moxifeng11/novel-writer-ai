@@ -6,10 +6,20 @@
  */
 import type { StyleFingerprintStats } from './style-fingerprint-library';
 
+/**
+ * round1 函数。
+ * @param value - 值
+ * @returns 数值结果
+ */
 export function round1(value: number): number {
     return Math.round(value * 10) / 10;
 }
 
+/**
+ * round3 函数。
+ * @param value - 值
+ * @returns 数值结果
+ */
 export function round3(value: number): number {
     return Math.round(value * 1000) / 1000;
 }
@@ -49,6 +59,11 @@ export function countDialogueChars(text: string): number {
     return count;
 }
 
+/**
+ * computeFingerprintStats 函数。
+ * @param text - 文本内容
+  * @returns StyleFingerprintStats 实例
+ */
 export function computeFingerprintStats(text: string): StyleFingerprintStats {
     const wordCount = text.replace(/\s/g, '').length;
 

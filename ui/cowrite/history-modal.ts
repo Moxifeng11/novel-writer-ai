@@ -2,6 +2,9 @@
 import { SentenceEditRecord } from '../../shared/types';
 
 // B3: 历史建议回溯弹窗
+/**
+ * 历史弹窗。
+ */
 export class HistoryModal extends Modal {
     private records: SentenceEditRecord[];
     private onInsert: (text: string) => void;
@@ -12,6 +15,9 @@ export class HistoryModal extends Modal {
         this.onInsert = onInsert;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         this.titleEl.setText('\u{1F558} 历史建议回溯（最近 20 条）');
@@ -40,6 +46,9 @@ export class HistoryModal extends Modal {
         new Setting(contentEl).addButton(btn => btn.setButtonText('关闭').onClick(() => this.close()));
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

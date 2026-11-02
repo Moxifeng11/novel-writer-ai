@@ -8,6 +8,9 @@ import { MonitorPanelB, VIEW_TYPE_MONITOR_B } from "./monitor-panel-b";
 import { CoWriteFloatingPanel, VIEW_TYPE_FLOAT_COWRITE } from "./co-write-floating-panel";
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from "./co-writing-view";
 
+/**
+ * FLOAT_VIEW_TYPES 常量。
+ */
 export const FLOAT_VIEW_TYPES = [
   VIEW_TYPE_CO_WRITE,
   VIEW_TYPE_FLOAT_COWRITE,
@@ -15,6 +18,9 @@ export const FLOAT_VIEW_TYPES = [
   VIEW_TYPE_MONITOR_B,
 ];
 
+/**
+ * FloatWorkspaceManager 类。
+ */
 export class FloatWorkspaceManager {
   private plugin: NovelWriterPlugin;
 

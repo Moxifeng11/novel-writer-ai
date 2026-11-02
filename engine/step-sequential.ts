@@ -14,6 +14,9 @@ export interface SequentialStepInputs {
     temperatureSlider: HTMLInputElement;
 }
 
+/**
+ * SequentialStepHost 类型定义。
+ */
 export interface SequentialStepHost {
     executeStep(ctx: StepRunCtx): Promise<void>;
     /** 为当前步骤装配真实 system/user prompt；不提供时沿用宿主输入区。 */
@@ -21,12 +24,23 @@ export interface SequentialStepHost {
     createStepInputs(): SequentialStepInputs;
 }
 
+/**
+ * SequentialStepOptions 类型定义。
+ */
 export interface SequentialStepOptions {
     onStepStart?: (stepKey: string) => void;
     onStepComplete?: (stepKey: string, content: string) => void;
     onStepError?: (stepKey: string, error: string) => void;
 }
 
+/**
+ * executeStepsSequential 函数。
+ * @param host - 宿主元素
+ * @param stepKeys - 步骤键列表
+ * @param baseCtx - 基础上下文
+ * @param options - 配置项
+  * @returns number }> 结果
+ */
 export async function executeStepsSequential(
     host: SequentialStepHost,
     stepKeys: string[],

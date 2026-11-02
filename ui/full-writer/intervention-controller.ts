@@ -15,6 +15,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('InterventionController');
+/**
+ * InterventionReport 类型定义。
+ */
 export interface InterventionReport {
     summary: string;
     actions: Array<{
@@ -27,6 +30,9 @@ export interface InterventionReport {
     warnings?: string[];
 }
 
+/**
+ * InterventionDeps 类型定义。
+ */
 export interface InterventionDeps {
     getVars: () => Record<string, any>;
     setVar: (key: string, value: any) => void;
@@ -41,6 +47,9 @@ export interface InterventionDeps {
     getFlashModel: () => string;
 }
 
+/**
+ * InterventionController 类。
+ */
 export class InterventionController {
     private app: App;
     private plugin: NovelWriterPlugin;

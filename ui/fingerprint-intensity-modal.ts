@@ -37,6 +37,9 @@ import {
     STYLE_DIMENSION_LABELS_V2,
 } from '../engine/style/style-dimensions-v2';
 
+/**
+ * FingerprintIntensityModalOptions 类型定义。
+ */
 export interface FingerprintIntensityModalOptions {
     /** 目标指纹 */
     fingerprint: StyleFingerprint;
@@ -48,6 +51,9 @@ export interface FingerprintIntensityModalOptions {
     onSaved?: (config: StyleIntensityConfig) => void;
 }
 
+/**
+ * FingerprintIntensityModal 类。
+ */
 export class FingerprintIntensityModal extends Modal {
     private options: FingerprintIntensityModalOptions;
     /** 当前编辑中的配置（未保存） */
@@ -65,12 +71,18 @@ export class FingerprintIntensityModal extends Modal {
         };
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

@@ -162,6 +162,13 @@ export class ExecutionTimelinePanel {
     }
 }
 
+/**
+ * renderStepFailureCard 函数。
+ * @param container - 容器元素
+ * @param failure - 失败信息
+ * @param handlers - 回调集合
+  * @returns HTMLElement 实例
+ */
 export function renderStepFailureCard(
     container: HTMLElement,
     failure: StepFailure,

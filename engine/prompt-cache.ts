@@ -16,6 +16,9 @@ export interface PromptCacheEntry {
     model: string;
 }
 
+/**
+ * 提示词缓存。
+ */
 export class PromptCache {
     private entries = new Map<string, PromptCacheEntry>();
 
@@ -52,6 +55,9 @@ export class PromptCache {
         }
     }
 
+    /**
+     * 清空。
+     */
     clear(): void {
         this.entries.clear();
     }
@@ -64,6 +70,10 @@ export class PromptCache {
 /** 模块级单例：api-client 与 EngineRegistry（registerLazy 返回此实例）共享同一实例 */
 let sharedInstance: PromptCache | null = null;
 
+/**
+ * 获取提示词缓存。
+  * @returns PromptCache 实例
+ */
 export function getPromptCache(): PromptCache {
     if (!sharedInstance) sharedInstance = new PromptCache();
     return sharedInstance;

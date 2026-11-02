@@ -7,6 +7,9 @@
 
 import { activeContextQuotas } from './context-budget-policy';
 
+/**
+ * SceneCardFields 类型定义。
+ */
 export interface SceneCardFields {
     num: number;
     name: string;
@@ -61,6 +64,9 @@ export const SCENE_CARD_FIELD_MAP = {
     characters: 'characters',
 } as const;
 
+/**
+ * SceneCardFieldKey 类型定义。
+ */
 export type SceneCardFieldKey = keyof typeof SCENE_CARD_FIELD_MAP;
 
 /**
@@ -106,6 +112,12 @@ export function parseDialogueBeats(block: string): string[] {
     return beats.filter((beat) => beat.length > 0);
 }
 
+/**
+ * parseSceneCardFields 函数。
+ * @param block - 文本块
+ * @param base - 基础
+  * @returns SceneCardFields 实例
+ */
 export function parseSceneCardFields(
     block: string,
     base: Pick<SceneCardFields, 'num' | 'name'>,
@@ -123,6 +135,12 @@ export function parseSceneCardFields(
     return result;
 }
 
+/**
+ * emptySceneCard 函数。
+ * @param num - 编号
+ * @param name - 名称
+  * @returns SceneCardFields 实例
+ */
 export function emptySceneCard(num: number, name = ''): SceneCardFields {
     return {
         num,

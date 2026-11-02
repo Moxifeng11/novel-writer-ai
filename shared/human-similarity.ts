@@ -28,6 +28,9 @@ export interface DistributionHistogram {
     dialogueRatio: number;
 }
 
+/**
+ * TextDistribution 类型定义。
+ */
 export interface TextDistribution extends DistributionHistogram {
     sentenceCount: number;
     paragraphCount: number;
@@ -170,6 +173,7 @@ function ratioSimilarity(actual: number, reference: number): number {
  * 用纯相对误差会把「同一批真人文本」判成低分。容差带让指标对样本长度更稳。
  * @param actual - 实际
  * @param reference - 参考文本
+ * @param tolerance - 容差
  * @returns 数值结果
  */
 function bandedRatioSimilarity(actual: number, reference: number, tolerance = 0.35): number {
@@ -181,6 +185,9 @@ function bandedRatioSimilarity(actual: number, reference: number, tolerance = 0.
     return Math.max(0, 1 - Math.min(1, decay));
 }
 
+/**
+ * HumanSimilarityDetail 类型定义。
+ */
 export interface HumanSimilarityDetail {
     /** 总相似度 0–1 */
     score: number;
@@ -215,6 +222,9 @@ export function humanSimilarity(text: string, baseline: DistributionHistogram): 
     return { score, sentence, paragraph, punctuation, dialogue };
 }
 
+/**
+ * FidelityCheck 类型定义。
+ */
 export interface FidelityCheck {
     /** 长度比 candidate / original */
     lengthRatio: number;
@@ -275,6 +285,9 @@ export function checkFidelity(original: string, candidate: string): FidelityChec
     };
 }
 
+/**
+ * HumanityScore 类型定义。
+ */
 export interface HumanityScore {
     /** AI 味 0–100（越低越好，来自 AntiAIDetector） */
     antiAI: number;

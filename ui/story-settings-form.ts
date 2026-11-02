@@ -15,11 +15,17 @@ import {
     type StoryOptionCategory,
 } from '../shared/story-structure';
 
+/**
+ * StorySettingsEditorOptions 类型定义。
+ */
 export interface StorySettingsEditorOptions {
     getGenre?: () => string;
     onChange?: (settings: LongStorySettings) => void;
 }
 
+/**
+ * StorySettingsEditor 类。
+ */
 export class StorySettingsEditor {
     private settings: LongStorySettings;
     private root: HTMLElement | null = null;
@@ -43,19 +49,36 @@ export class StorySettingsEditor {
         this.render();
     }
 
+    /**
+     * 获取值。
+      * @returns LongStorySettings 实例
+     */
     getValue(): LongStorySettings {
         return { ...this.settings };
     }
 
+    /**
+     * 设置题材。
+     * @param _genre - 题材
+     */
     setGenre(_genre: string): void {
         this.refreshWarning();
     }
 
+    /**
+     * 设置设置列表。
+     * @param next - 下一个
+     */
     setSettings(next: Partial<LongStorySettings>): void {
         this.settings = { ...this.settings, ...next };
         this.render();
     }
 
+    /**
+     * randomize 方法。
+     * @param lockStructure - 是否锁定结构
+      * @returns LongStorySettings 实例
+     */
     randomize(lockStructure = this.lockStructure): LongStorySettings {
         const generated = generateRandomStorySettings({
             genre: this.genreProvider(),

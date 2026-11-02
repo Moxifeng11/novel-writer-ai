@@ -15,6 +15,9 @@ import { createLogger } from './logger';
 
 
 const log = createLogger('PluginCache');
+/**
+ * 面板布局缓存结构定义。
+ */
 export interface PanelLayoutCache {
     panels: Array<{
         id: string;
@@ -26,6 +29,9 @@ export interface PanelLayoutCache {
     lastWorkspaceOpen: boolean;
 }
 
+/**
+ * ModelOverrideHistoryEntry 类型定义。
+ */
 export interface ModelOverrideHistoryEntry {
     timestamp: string;
     providerId: string;
@@ -35,6 +41,9 @@ export interface ModelOverrideHistoryEntry {
     newValue: number;
 }
 
+/**
+ * PluginCacheData 类型定义。
+ */
 export interface PluginCacheData {
     panelLayout?: PanelLayoutCache;
     modelOverrideHistory?: ModelOverrideHistoryEntry[];
@@ -63,6 +72,9 @@ export interface EntityCacheEntry {
 
 const CACHE_FILE = `${pluginDataDir()}/cache.json`;
 
+/**
+ * PluginCacheManager 类。
+ */
 export class PluginCacheManager {
     private data: PluginCacheData = {};
     private writer = new SerializedWriter({ debug: false });

@@ -20,8 +20,14 @@ import {
     type ThemeMode,
 } from '../shared/theme-gallery';
 
+/**
+ * DEFAULT_APPEARANCE_PRESET 常量。
+ */
 export const DEFAULT_APPEARANCE_PRESET: AppearancePreset = 'soft';
 
+/**
+ * AppearanceSectionOptions 类型定义。
+ */
 export interface AppearanceSectionOptions {
     compact?: boolean;
     rerender: () => void;
@@ -50,6 +56,12 @@ function renderThemePreview(parent: HTMLElement, compact: boolean): void {
     }
 }
 
+/**
+ * renderAppearanceSettings 函数。
+ * @param container - 容器元素
+ * @param plugin - 插件实例
+ * @param opts - 选项
+ */
 export function renderAppearanceSettings(
     container: HTMLElement,
     plugin: NovelWriterPlugin,

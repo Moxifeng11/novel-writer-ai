@@ -20,6 +20,9 @@ interface BaselineFile {
     distribution?: DistributionHistogram;
 }
 
+/**
+ * HumannessScorer 类型定义。
+ */
 export interface HumannessScorer {
     /**
      * 对话占比（引号内字符 / 全文；判断是否要补一轮对话改写）

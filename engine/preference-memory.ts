@@ -14,6 +14,9 @@ import { createLogger } from '../shared/logger';
  
 
 const log = createLogger('PreferenceMemory');
+/**
+ * UserPreference 类型定义。
+ */
  export interface UserPreference {
      id: string;
      category: 'character' | 'plot' | 'style' | 'pacing' | 'dialogue' | 'description';
@@ -25,12 +28,18 @@ const log = createLogger('PreferenceMemory');
      usageCount: number;
  }
  
+/**
+ * PreferenceMemoryOptions 类型定义。
+ */
  export interface PreferenceMemoryOptions {
      app: App;
      plugin: NovelWriterPluginAPI;
      project: string;
  }
  
+/**
+ * PreferenceMemory 类。
+ */
  export class PreferenceMemory {
     private app: App;
     private plugin: NovelWriterPluginAPI;

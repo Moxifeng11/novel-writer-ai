@@ -7,6 +7,9 @@
  */
 import type { CreationMode } from '../../shared/creation-mode';
 
+/**
+ * 框架节拍结构定义。
+ */
 export interface FrameworkBeat {
     id: string;
     title: string;
@@ -15,6 +18,9 @@ export interface FrameworkBeat {
     qualityGate: string;
 }
 
+/**
+ * CreativeFramework 类型定义。
+ */
 export interface CreativeFramework {
     id: string;
     mode: CreationMode;
@@ -25,6 +31,9 @@ export interface CreativeFramework {
     hardConstraints: string[];
 }
 
+/**
+ * SHORT_STORY_FRAMEWORK 常量。
+ */
 export const SHORT_STORY_FRAMEWORK: CreativeFramework = {
     id: 'short.fanqie.v1',
     mode: 'short',
@@ -88,6 +97,9 @@ export const SHORT_STORY_FRAMEWORK: CreativeFramework = {
     ],
 };
 
+/**
+ * SCRIPT_FRAMEWORK 常量。
+ */
 export const SCRIPT_FRAMEWORK: CreativeFramework = {
     id: 'script.hongguo.v1',
     mode: 'script',
@@ -151,12 +163,23 @@ export const SCRIPT_FRAMEWORK: CreativeFramework = {
     ],
 };
 
+/**
+ * 获取框架。
+ * @param mode - 模式
+  * @returns CreativeFramework 或 null
+ */
 export function getFramework(mode: CreationMode): CreativeFramework | null {
     if (mode === 'short') return SHORT_STORY_FRAMEWORK;
     if (mode === 'script') return SCRIPT_FRAMEWORK;
     return null;
 }
 
+/**
+ * frameworkPromptBlock 函数。
+ * @param mode - 模式
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
 export function frameworkPromptBlock(mode: CreationMode, project?: string): string {
     const framework = getFramework(mode);
     if (!framework) return '';

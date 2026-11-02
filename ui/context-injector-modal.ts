@@ -8,6 +8,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('ContextInjectorModal');
+/**
+ * 上下文注入器弹窗。
+ */
 export class ContextInjectorModal extends Modal {
     private plugin: NovelWriterPlugin;
 
@@ -16,6 +19,9 @@ export class ContextInjectorModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -198,6 +204,9 @@ export class ContextInjectorModal extends Modal {
         this.close();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

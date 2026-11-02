@@ -46,11 +46,17 @@ const log = createLogger('KnowledgeBaseManager');
 const MAX_SOURCE_TEXT_LENGTH = 20_000_000; // 2000 万字：仅作内存安全上限，非功能性截断；正常全本（含数百万字长篇）不会触发
 const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+/**
+ * BreakdownStatus 类型定义。
+ */
 export type BreakdownStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'interrupted';
 
 /** 拆解后的向量化状态：拆解完成 ≠ 检索可用（A5） */
 export type VectorStatus = 'pending' | 'done' | 'failed';
 
+/**
+ * 质量分数列表结构定义。
+ */
 export interface QualityScores {
     overall: number;
     style: number;
@@ -64,6 +70,9 @@ export interface QualityScores {
     vectorEnabled: boolean;
 }
 
+/**
+ * BookBasicInfo 类型定义。
+ */
 export interface BookBasicInfo {
     id: string;
     name: string;
@@ -124,6 +133,9 @@ interface KnowledgeBaseCacheOptions {
     multiLayerCache?: MultiLayerCache;
 }
 
+/**
+ * 知识基础管理器。
+ */
 export class KnowledgeBaseManager {
     private app: App;
     private baseDir?: string;
@@ -432,6 +444,12 @@ export class KnowledgeBaseManager {
         return `${baseName} (${Date.now()})`;
     }
 
+    /**
+     * 添加书籍。
+     * @param info - 参数值
+     * @param options - 配置项
+      * @returns BookBasicInfo 实例
+     */
     async addBook(
         info: Omit<BookBasicInfo, 'id' | 'createdAt' | 'updatedAt' | 'breakdownStatus'>,
         options?: { autoClassify?: boolean }
@@ -1262,6 +1280,11 @@ export class KnowledgeBaseManager {
         return result;
     }
 
+    /**
+     * 更新书籍题材。
+     * @param bookId - 书籍 ID
+     * @param updates - 参数值
+     */
     async updateBookGenre(
         bookId: string,
         updates: {
@@ -1355,6 +1378,11 @@ export class KnowledgeBaseManager {
         return this.classifyBatch(uncategorized.map(b => b.id));
     }
 
+    /**
+     * recordGenreCorrection 方法。
+     * @param bookId - 书籍 ID
+     * @param corrections - 参数值
+     */
     async recordGenreCorrection(
         bookId: string,
         corrections: {

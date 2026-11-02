@@ -21,7 +21,12 @@ import { coverMediaTypeForExt, type BookCover } from '../engine/export/epub-buil
 
 
 const log = createLogger('ProjectUtils');
-/** 按章号数字排序 */
+/**
+ * 按章号数字排序
+ *
+ * @param chapters - 章节列表
+ * @returns 结果数组
+ */
 export function sortChaptersByNumber<T extends { chapter: string }>(chapters: T[]): T[] {
     return chapters.sort((a, b) => {
         const numA = parseInt(a.chapter.match(/\d+/)?.[0] || '0');
@@ -30,7 +35,12 @@ export function sortChaptersByNumber<T extends { chapter: string }>(chapters: T[
     });
 }
 
-/** 获取下一章待写章节 */
+/**
+ * 获取下一章待写章节
+ *
+ * @param sortedChapters - 排序后的章节
+  * @returns T 或 null
+ */
 export function getNextChapter<T extends { chapter: string; status: string }>(
     sortedChapters: T[],
 ): T | null {

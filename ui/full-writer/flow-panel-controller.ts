@@ -15,8 +15,14 @@ import { collectCreationFlowState, type CreationFlowState } from './creation-flo
 
 const log = createLogger('CreationFlowPanel');
 
+/**
+ * FlowDocKind 类型定义。
+ */
 export type FlowDocKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
 
+/**
+ * FlowPanelDeps 类型定义。
+ */
 export interface FlowPanelDeps {
     app: App;
     /** 向导页签内存里的步骤结果（有则优先于 localStorage）；项目不是当前导航项目时返回 undefined */
@@ -49,6 +55,9 @@ function docKindFor(stageId: string, mode: CreationMode): FlowDocKind {
     return mode === 'short' ? 'storyCore' : 'bible';
 }
 
+/**
+ * FlowPanelController 类。
+ */
 export class FlowPanelController {
     private container: HTMLElement | null = null;
     private project = '';
@@ -62,6 +71,12 @@ export class FlowPanelController {
 
     constructor(private readonly deps: FlowPanelDeps) {}
 
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     * @param project - 项目（路径或对象）
+     * @param mode - 模式
+     */
     async render(container: HTMLElement, project: string, mode: CreationMode): Promise<void> {
         this.detachListeners();
         this.destroyed = false;
@@ -76,6 +91,9 @@ export class FlowPanelController {
         await this.refresh();
     }
 
+    /**
+     * 释放。
+     */
     dispose(): void {
         this.destroyed = true;
         this.detachListeners();

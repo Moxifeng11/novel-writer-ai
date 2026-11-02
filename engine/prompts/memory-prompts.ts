@@ -38,6 +38,9 @@ time_context: 七岁那年冬天
 ## m002 记忆标题
 ...`;
 
+/**
+ * MEMORY_GENERATION_USER_TEMPLATE 常量。
+ */
 export const MEMORY_GENERATION_USER_TEMPLATE = `请为「\${characterName}」生成 5-8 个记忆碎片。
 
 姓名：\${characterName}
@@ -50,6 +53,9 @@ export const MEMORY_GENERATION_USER_TEMPLATE = `请为「\${characterName}」生
 
 请输出所有记忆碎片。`;
 
+/**
+ * MEMORY_GENERATION_PROMPTS 常量。
+ */
 export const MEMORY_GENERATION_PROMPTS = {
     description: '角色记忆碎片生成',
     systemPrompt: MEMORY_GENERATION_SYSTEM_PROMPT,

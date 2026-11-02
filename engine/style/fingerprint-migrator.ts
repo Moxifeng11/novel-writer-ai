@@ -591,8 +591,10 @@ export function validateV2Fingerprint(v2: unknown): v2 is V2Fingerprint {
 }
 
 /**
- * 统计 V2 指纹维度状态
- * @param v2 - 版本 2 的值
+ * 统计 V2 指纹维度状态。
+ *
+ * @param v2 - 版本 2 指纹
+ * @returns 各维度状态汇总
  */
 export function getDimensionStatusSummary(v2: V2Fingerprint): {
     complete: number;

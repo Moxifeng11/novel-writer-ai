@@ -293,7 +293,19 @@ export class EngineRegistry {
      * @param options - 作用域/依赖/初始化回调等元数据
      */
     register<K extends EngineToken>(name: K, instance: EngineServiceMap[K], options?: EngineRegisterOptions): void;
+    /**
+     * 注册。
+     * @param name - 名称
+     * @param instance - 引擎实例
+     * @param options - 配置项
+     */
     register<T>(name: string, instance: T, options?: EngineRegisterOptions): void;
+    /**
+     * 注册。
+     * @param name - 名称
+     * @param instance - 引擎实例
+     * @param options - 配置项
+     */
     register<T>(name: string, instance: T, options?: EngineRegisterOptions): void {
         if (this.instances.has(name)) {
             log.warn(`[EngineRegistry] 引擎 "${name}" 已注册，跳过重复注册`);
@@ -327,11 +339,23 @@ export class EngineRegistry {
         factory: () => EngineServiceMap[K] | Promise<EngineServiceMap[K]>,
         options?: EngineRegisterOptions,
     ): void;
+    /**
+     * registerLazy 方法。
+     * @param name - 名称
+     * @param factory - 实例工厂
+     * @param options - 配置项
+     */
     registerLazy<T>(
         name: string,
         factory: () => T | Promise<T>,
         options?: EngineRegisterOptions,
     ): void;
+    /**
+     * registerLazy 方法。
+     * @param name - 名称
+     * @param factory - 实例工厂
+     * @param options - 配置项
+     */
     registerLazy<T>(
         name: string,
         factory: () => T | Promise<T>,
@@ -396,7 +420,17 @@ export class EngineRegistry {
      * @throws 未注册且无工厂时抛出
      */
     get<K extends EngineToken>(name: K): EngineServiceMap[K];
+    /**
+     * 获取。
+     * @param name - 名称
+      * @returns T 实例
+     */
     get<T>(name: string): T;
+    /**
+     * 获取。
+     * @param name - 名称
+      * @returns T 实例
+     */
     get<T>(name: string): T {
         if (this.instances.has(name)) {
             return this.instances.get(name) as T;
@@ -461,6 +495,11 @@ export class EngineRegistry {
      * @throws 未注册且无工厂时抛出
      */
     getOrNull<K extends EngineToken>(name: K): EngineServiceMap[K] | null;
+    /**
+     * getOrNull 方法。
+     * @param name - 名称
+      * @returns T 或 null
+     */
     getOrNull<T>(name: string): T | null;
     /**
      * 获取实例；未注册/懒加载失败时返回 null，不抛错。
@@ -533,6 +572,9 @@ export class EngineRegistry {
      * - 同一 projectKey 共享同一实例
      * - 切换 projectKey 后旧实例可由 disposeProject 释放
      * - 仅对 scope=ProjectScoped 注册的引擎有意义
+     * @param name - 名称
+     * @param projectKey - 项目键
+      * @returns T 实例
      */
     getProject<T>(name: string, projectKey: string): T {
         if (this.destroyed.has(name)) {
@@ -566,6 +608,8 @@ export class EngineRegistry {
     /** 获取瞬态实例（每次创建新实例，调用方负责 dispose）
      *
      * 仅对 scope=Transient 注册的引擎有意义。
+     * @param name - 名称
+      * @returns T 实例
      */
     getTransient<T>(name: string): T {
         if (this.destroyed.has(name)) {

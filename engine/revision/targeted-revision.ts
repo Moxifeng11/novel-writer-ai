@@ -19,10 +19,16 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('TargetedRevision');
 
+/**
+ * RevisionCallAI 类型定义。
+ */
 export interface RevisionCallAI {
     (systemPrompt: string, userPrompt: string): Promise<{ content: string; error?: string }>;
 }
 
+/**
+ * 修订上下文结构定义。
+ */
 export interface RevisionContext {
     sceneCard?: string;
     score?: (body: string) => number;
@@ -134,6 +140,11 @@ function validateReplacement(original: string, revised: string): string | null {
     return null;
 }
 
+/**
+ * runTargetedRevision 函数。
+ * @param input - 输入
+  * @returns TargetedRevisionResult 实例
+ */
 export async function runTargetedRevision(input: {
     body: string;
     issues: RevisionIssue[];

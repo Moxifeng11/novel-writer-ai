@@ -611,24 +611,56 @@ export function entityFromFrontmatter(
     rawContent?: string,
     filePath?: string,
 ): CharacterDomainModel;
+/**
+ * entityFromFrontmatter 函数。
+ * @param category - 分类
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns FactionDomainModel 实例
+ */
 export function entityFromFrontmatter(
     category: 'faction',
     fm: FactionFrontmatter,
     rawContent?: string,
     filePath?: string,
 ): FactionDomainModel;
+/**
+ * entityFromFrontmatter 函数。
+ * @param category - 分类
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns LocationDomainModel 实例
+ */
 export function entityFromFrontmatter(
     category: 'location',
     fm: LocationFrontmatter,
     rawContent?: string,
     filePath?: string,
 ): LocationDomainModel;
+/**
+ * entityFromFrontmatter 函数。
+ * @param category - 分类
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns ItemDomainModel 实例
+ */
 export function entityFromFrontmatter(
     category: 'item',
     fm: ItemFrontmatter,
     rawContent?: string,
     filePath?: string,
 ): ItemDomainModel;
+/**
+ * entityFromFrontmatter 函数。
+ * @param category - 分类
+ * @param fm - frontmatter 文本
+ * @param rawContent - 原始内容
+ * @param filePath - 文件路径
+  * @returns AnyEntityDomainModel 实例
+ */
 export function entityFromFrontmatter(
     category: EntityCategory,
     fm: Record<string, unknown>,
@@ -660,21 +692,49 @@ export function entityFromMarkdown(
     content: string,
     filePath?: string,
 ): CharacterDomainModel;
+/**
+ * entityFromMarkdown 函数。
+ * @param category - 分类
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns FactionDomainModel 实例
+ */
 export function entityFromMarkdown(
     category: 'faction',
     content: string,
     filePath?: string,
 ): FactionDomainModel;
+/**
+ * entityFromMarkdown 函数。
+ * @param category - 分类
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns LocationDomainModel 实例
+ */
 export function entityFromMarkdown(
     category: 'location',
     content: string,
     filePath?: string,
 ): LocationDomainModel;
+/**
+ * entityFromMarkdown 函数。
+ * @param category - 分类
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns ItemDomainModel 实例
+ */
 export function entityFromMarkdown(
     category: 'item',
     content: string,
     filePath?: string,
 ): ItemDomainModel;
+/**
+ * entityFromMarkdown 函数。
+ * @param category - 分类
+ * @param content - 内容
+ * @param filePath - 文件路径
+  * @returns AnyEntityDomainModel 实例
+ */
 export function entityFromMarkdown(
     category: EntityCategory,
     content: string,

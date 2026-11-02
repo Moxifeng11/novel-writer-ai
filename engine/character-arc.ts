@@ -14,9 +14,18 @@ export interface CharacterArcRow {
     updatedChapter: string;
 }
 
+/**
+ * ARC_TABLE_HEADER 常量。
+ */
 export const ARC_TABLE_HEADER = '| 角色 | 想要(want) | 需要(need) | 谎言/信念(lie) | 弧线阶段 | 本章推进 | 最近更新 |';
+/**
+ * ARC_TABLE_SEPARATOR 常量。
+ */
 export const ARC_TABLE_SEPARATOR = '|---|---|---|---|---|---|---|';
 
+/**
+ * DEFAULT_CHARACTER_ARC_TABLE 常量。
+ */
 export const DEFAULT_CHARACTER_ARC_TABLE = `# 角色弧线
 
 > want=角色以为自己要的；need=角色真正需要的；lie=角色相信的错误信念。
@@ -26,6 +35,11 @@ ${ARC_TABLE_HEADER}
 ${ARC_TABLE_SEPARATOR}
 `;
 
+/**
+ * parseCharacterArcTable 函数。
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parseCharacterArcTable(content: string): CharacterArcRow[] {
     if (!content) return [];
     const rows: CharacterArcRow[] = [];
@@ -47,6 +61,11 @@ export function parseCharacterArcTable(content: string): CharacterArcRow[] {
     return rows;
 }
 
+/**
+ * formatCharacterArcTable 函数。
+ * @param rows - 行列表
+ * @returns 文本结果
+ */
 export function formatCharacterArcTable(rows: CharacterArcRow[]): string {
     const body = rows.map(r =>
         `| ${r.name} | ${r.want} | ${r.need} | ${r.lie} | ${r.stage} | ${r.chapterChange} | ${r.updatedChapter} |`,
@@ -76,6 +95,13 @@ export function buildArcRowsFromCharacters(
         }));
 }
 
+/**
+ * applyArcInstruction 函数。
+ * @param rows - 行列表
+ * @param arc - 弧线
+ * @param chapter - 章节
+ * @returns 结果数组
+ */
 export function applyArcInstruction(
     rows: CharacterArcRow[],
     arc: { name: string; from: string; to: string; trigger: string; visible: string },
@@ -94,6 +120,13 @@ export function applyArcInstruction(
     return next;
 }
 
+/**
+ * formatArcsForPrompt 函数。
+ * @param rows - 行列表
+ * @param relevantNames - 相关名称列表
+ * @param limit - 上限
+ * @returns 文本结果
+ */
 export function formatArcsForPrompt(rows: CharacterArcRow[], relevantNames: Set<string>, limit = 6): string {
     const selected = rows
         .filter(r => relevantNames.size === 0 || relevantNames.has(r.name))

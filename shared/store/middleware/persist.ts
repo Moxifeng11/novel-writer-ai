@@ -30,6 +30,9 @@ import type {
 // 一、Obsidian 插件设置存储适配器
 // ============================================================
 
+/**
+ * ObsidianPluginSettingStorageOptions 类型定义。
+ */
 export interface ObsidianPluginSettingStorageOptions {
     plugin: {
         settings: Record<string, unknown>;
@@ -90,6 +93,9 @@ export function createObsidianSettingStorage<S extends State>(
 // 二、IndexedDB 存储适配器
 // ============================================================
 
+/**
+ * IndexedDbStorageOptions 类型定义。
+ */
 export interface IndexedDbStorageOptions {
     dbName?: string;
     storeName?: string;

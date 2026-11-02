@@ -15,6 +15,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('ContinueChaptersModal');
 
+/**
+ * ContinueChaptersModal 类。
+ */
 export class ContinueChaptersModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -25,6 +28,9 @@ export class ContinueChaptersModal extends Modal {
         this.contextManager = plugin.ctxManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -538,6 +544,9 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
         return parts.join('\n\n');
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

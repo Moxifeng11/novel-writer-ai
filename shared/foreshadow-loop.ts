@@ -19,6 +19,9 @@ export interface ForeshadowPlan {
     plant: string[];
 }
 
+/**
+ * ForeshadowLoopCheck 类型定义。
+ */
 export interface ForeshadowLoopCheck {
     /** 结算指令中推进/揭示的伏笔数（回收侧） */
     recycledCount: number;

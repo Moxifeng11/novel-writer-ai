@@ -27,6 +27,9 @@ import { createEmptyState } from './components/empty-state';
 type DiffViewMode = 'side-by-side' | 'inline';
 type DiffGranularity = 'line' | 'char';
 
+/**
+ * 章节版本弹窗选项列表结构定义。
+ */
 export interface ChapterVersionModalOptions {
     project: string;
     contentType: ContentType;
@@ -37,6 +40,9 @@ export interface ChapterVersionModalOptions {
     onSaveVersion?: () => Promise<VersionMeta | null>;
 }
 
+/**
+ * 章节版本弹窗。
+ */
 export class ChapterVersionModal extends Modal {
     private options: ChapterVersionModalOptions;
     private service: ChapterVersionService;
@@ -60,6 +66,9 @@ export class ChapterVersionModal extends Modal {
             ?? new ChapterVersionService(app);
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('novel-writer-version-modal');
@@ -507,6 +516,9 @@ export class ChapterVersionModal extends Modal {
         }));
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }
@@ -532,6 +544,9 @@ class RollbackConfirmModal extends Modal {
         this.onConfirm = onConfirm;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.titleEl.setText('⚠️ 确认回滚');
@@ -632,6 +647,9 @@ class RollbackConfirmModal extends Modal {
             });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

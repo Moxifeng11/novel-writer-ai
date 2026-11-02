@@ -1,7 +1,20 @@
+/**
+ * normalizeDetailNumber 函数。
+ * @param value - 值
+ * @param fallback - 回退值
+ * @returns 数值结果
+ */
 export function normalizeDetailNumber(value: unknown, fallback = 0): number {
     return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
+/**
+ * formatDetailNumber 函数。
+ * @param value - 值
+ * @param digits - 位数
+ * @param suffix - 后缀
+ * @returns 文本结果
+ */
 export function formatDetailNumber(value: unknown, digits: number, suffix = ''): string {
     if (typeof value !== 'number' || !Number.isFinite(value)) return '数据缺失';
     return `${value.toFixed(digits)}${suffix}`;
@@ -11,6 +24,8 @@ export function formatDetailNumber(value: unknown, digits: number, suffix = ''):
  * 0–1 比例 → 百分比文案；旧数据/AI 漏字段不会抛异常
  *
  * @param value - 值
+ * @param digits - 位数
+ * @param suffix - 后缀
  * @returns 文本结果
  */
 export function formatDetailPercent(value: unknown, digits = 0, suffix = '%'): string {

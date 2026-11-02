@@ -32,6 +32,9 @@ const log = createLogger('LlmEnhancer');
 /** 降级标记 Symbol：enhanceResult 降级时附加在结果对象上，调用方可检查感知 */
 export const LLM_DEGRADED = Symbol('llm_degraded');
 
+/**
+ * LLMCallOptions 类型定义。
+ */
 export interface LLMCallOptions {
     endpoint?: string;
     apiKey?: string;
@@ -110,6 +113,9 @@ interface CacheEntry<T> {
     timestamp: number;
 }
 
+/**
+ * LLMEnhancer 类。
+ */
 export class LLMEnhancer {
     private caller: LLMCaller;
     private options: LLMEnhancerOptions;
@@ -133,6 +139,8 @@ export class LLMEnhancer {
      * 4. 失败时返回 existingResult（fallbackUsed=true）
      *
      * 异常处理：任何异常（网络/解析/超时）都降级返回 existingResult，记录警告。
+     * @param context - 上下文
+      * @returns LLMEnhanceResult<T> 实例
      */
     async enhanceWithLLM<T = unknown>(context: LLMEnhanceContext): Promise<LLMEnhanceResult<T>> {
         const { dimension, text, genreConfig, existingResult } = context;
@@ -211,6 +219,11 @@ export class LLMEnhancer {
      *
      * 调用 enhanceWithLLM，成功时浅合并 data 到 result，失败时原样返回 result。
      * 适用于 deconstructor 在 analyze 末尾的可选调用。
+     * @param result - 结果
+     * @param text - 文本内容
+     * @param dimension - 维度
+     * @param genreConfig - 题材配置
+      * @returns T 实例
      */
     async enhanceResult<T extends object>(
         result: T,

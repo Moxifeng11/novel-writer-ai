@@ -42,6 +42,9 @@ import {
 } from './soul-driven-prompts';
 
 // ============================================================
+/**
+ * 提示词模板结构定义。
+ */
 export interface PromptTemplate {
     description: string;
     systemPrompt: string;

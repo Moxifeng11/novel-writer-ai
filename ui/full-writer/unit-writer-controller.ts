@@ -28,6 +28,9 @@ const log = createLogger('UnitWriterController');
 
 const AUTOSAVE_DELAY_MS = 800;
 
+/**
+ * UnitWriterDeps 类型定义。
+ */
 export interface UnitWriterDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -45,6 +48,9 @@ interface RewriteSelection {
     originalText: string;
 }
 
+/**
+ * UnitWriterController 类。
+ */
 export class UnitWriterController {
     private container: HTMLElement | null = null;
     /** tabContent 本体；类加在子容器上，切换单元时仍需复用这层 */
@@ -74,6 +80,11 @@ export class UnitWriterController {
         this.port = createObsidianUnitFilePort(deps.app);
     }
 
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     * @param tab - 页签
+     */
     async render(container: HTMLElement, tab: WriterTab): Promise<void> {
         // 控制器会跨单元/跨页签复用：先落盘，否则重新 render 会用磁盘旧内容
         // 覆盖未保存的编辑，或让旧定时器把正文写到错误路径。
@@ -111,6 +122,9 @@ export class UnitWriterController {
         }
     }
 
+    /**
+     * 释放。
+     */
     dispose(): void {
         this.destroyed = true;
         this.abortController?.abort();
@@ -126,6 +140,9 @@ export class UnitWriterController {
         this.tab = null;
     }
 
+    /**
+     * cancelActiveGeneration 方法。
+     */
     cancelActiveGeneration(): void {
         if (!this.running && !this.abortController) return;
         this.abortController?.abort();

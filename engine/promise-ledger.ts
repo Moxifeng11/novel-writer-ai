@@ -64,6 +64,11 @@ function normalizeType(raw: string): PromiseType {
     return '其他';
 }
 
+/**
+ * 解析承诺账本。
+ * @param content - 内容
+ * @returns 结果数组
+ */
 export function parsePromiseLedger(content: string): PromiseItem[] {
     if (!content) return [];
     const items: PromiseItem[] = [];
@@ -90,6 +95,11 @@ export function parsePromiseLedger(content: string): PromiseItem[] {
     return items;
 }
 
+/**
+ * 格式化承诺账本。
+ * @param items - 条目列表
+ * @returns 文本结果
+ */
 export function formatPromiseLedger(items: PromiseItem[]): string {
     const rows = [...items]
         .sort((a, b) => a.id - b.id)
@@ -97,6 +107,12 @@ export function formatPromiseLedger(items: PromiseItem[]): string {
     return `# 承诺账本\n\n> 记录角色承诺、读者问题、悬念与约定。分析报告会按 PROMISE_* 指令更新，规划时会注入未兑现项。\n\n${PROMISE_TABLE_HEADER}\n${PROMISE_TABLE_SEPARATOR}\n${rows.join('\n')}\n`;
 }
 
+/**
+ * applyPromiseInstruction 函数。
+ * @param items - 条目列表
+ * @param instruction - 指令
+ * @returns 结果数组
+ */
 export function applyPromiseInstruction(
     items: PromiseItem[],
     instruction: {
@@ -156,6 +172,7 @@ function chapterNumber(chapter: string): number | null {
  *
  * @param items - 条目列表
  * @param currentChapter - 当前章节
+ * @param idleWindow - 空闲窗口
  * @returns 结果数组
  */
 export function getPromiseWarnings(items: PromiseItem[], currentChapter: number, idleWindow = 5): string[] {
@@ -174,6 +191,13 @@ export function getPromiseWarnings(items: PromiseItem[], currentChapter: number,
     return warnings;
 }
 
+/**
+ * formatOpenPromisesForPrompt 函数。
+ * @param items - 条目列表
+ * @param currentChapter - 当前章节
+ * @param limit - 上限
+ * @returns 文本结果
+ */
 export function formatOpenPromisesForPrompt(items: PromiseItem[], currentChapter: number, limit = 8): string {
     const open = items
         .filter(i => i.status === 'open' || i.status === 'advanced')

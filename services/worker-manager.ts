@@ -67,6 +67,9 @@ interface CancelablePromise<T> extends Promise<T> {
 let taskIdCounter = 0;
 const generateTaskId = (): string => `task-${Date.now()}-${++taskIdCounter}`;
 
+/**
+ * WorkerManager 类。
+ */
 export class WorkerManager {
     private options: Omit<Required<WorkerManagerOptions>, 'workerUrl'> & { workerUrl?: string };
     private workers: WorkerWrapper[] = [];
@@ -126,6 +129,13 @@ export class WorkerManager {
         this.fallbackHandlers.set(taskType, handler);
     }
 
+    /**
+     * executeTask 方法。
+     * @param taskType - 参数值
+     * @param input - 输入
+     * @param onProgress - 参数值
+      * @returns CancelablePromise<R> 实例
+     */
     executeTask<P = any, R = any>(
         taskType: string,
         input: P,

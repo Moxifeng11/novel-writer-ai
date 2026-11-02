@@ -35,6 +35,9 @@ const VOLUME_COLORS = [
     '--color-pink',
 ];
 
+/**
+ * PlotCanvasModal 类。
+ */
 export class PlotCanvasModal extends Modal {
     private plugin: NovelWriterPlugin;
     private project: string;
@@ -49,6 +52,9 @@ export class PlotCanvasModal extends Modal {
         this.project = project;
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         const { contentEl } = this;
         contentEl.empty();
@@ -69,6 +75,9 @@ export class PlotCanvasModal extends Modal {
         this.renderCanvas(contentEl);
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

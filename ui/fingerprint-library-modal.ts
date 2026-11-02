@@ -19,6 +19,9 @@ const PHASE_LABELS: Record<string, string> = {
     'complete': '完成',
 };
 
+/**
+ * 添加指纹弹窗。
+ */
 export class AddFingerprintModal extends Modal {
     private options: AddFingerprintModalOptions;
     private nameValue = '';
@@ -37,11 +40,17 @@ export class AddFingerprintModal extends Modal {
         this.options = options;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen() {
         this.modalEl.addClass('nw-scope');
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         if (this.abortController) {
             this.abortController.abort();

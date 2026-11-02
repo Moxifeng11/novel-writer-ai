@@ -37,7 +37,13 @@ function similarity(a: string, b: string): number {
     return hit / (setA.size + setB.size - hit);
 }
 
-/** 合并近重复事实：同类别且「名称+内容」相似度 ≥ threshold 时保留信息更全的一条 */
+/**
+ * 合并近重复事实：同类别且「名称+内容」相似度 ≥ threshold 时保留信息更全的一条
+ *
+ * @param facts - 事实
+ * @param threshold - 阈值
+ * @returns 结果数组
+ */
 export function dedupeFacts<T extends RankableFact>(facts: T[], threshold = 0.85): T[] {
     const kept: T[] = [];
     for (const fact of facts) {
@@ -56,6 +62,9 @@ export function dedupeFacts<T extends RankableFact>(facts: T[], threshold = 0.85
     return kept;
 }
 
+/**
+ * RankOptions 类型定义。
+ */
 export interface RankOptions {
     /** 当前上下文（章纲/大纲/情绪弧），用于相关度打分 */
     query?: string;
@@ -69,6 +78,9 @@ export interface RankOptions {
  * 相关度排序：
  *   score = relevanceWeight × bigram(query, name+content) + recencyWeight × normalizedRecency
  * 无 query 时退化为纯新近度排序（保持确定性，不改变「取前 N 条」的候选集合）。
+ * @param facts - 事实
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function rankFacts<T extends RankableFact>(facts: T[], options: RankOptions = {}): T[] {
     const query = String(options.query || '').trim();

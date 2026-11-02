@@ -11,6 +11,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('ReviewAgent');
+/**
+ * ReviewAgent 类。
+ */
 export class ReviewAgent {
     private plugin: NovelWriterPlugin;
     private app: App;
@@ -48,6 +51,11 @@ export class ReviewAgent {
         return this.vaultMeta;
     }
 
+    /**
+     * reviewChapter 方法。
+     * @param project - 项目（路径或对象）
+     * @param chapterPath - 章节路径
+     */
     async reviewChapter(project: string, chapterPath: string): Promise<void> {
         const activeFile = this.getVaultMeta().getAbstractFileByPath(chapterPath);
         if (!(activeFile instanceof TFile)) {
@@ -249,6 +257,11 @@ ${result.content}
         return { selected, skipped: chapters.length - selected.length, isSampled: true };
     }
 
+    /**
+     * reviewVolume 方法。
+     * @param project - 项目（路径或对象）
+     * @param volume - 卷
+     */
     async reviewVolume(project: string, volume: string): Promise<void> {
         const hideProgressVol = this.notifier.showProgress?.('⏳ 收集整卷上下文数据...');
 

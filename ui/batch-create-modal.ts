@@ -40,6 +40,9 @@ interface WrittenFile {
     path: string;
 }
 
+/**
+ * BatchCreateModal 类。
+ */
 export class BatchCreateModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
@@ -56,6 +59,9 @@ export class BatchCreateModal extends Modal {
         this.preferredProject = preferredProject;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -498,6 +504,9 @@ export class BatchCreateModal extends Modal {
         return Array.from(projectDirs).sort();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this._plan = null;
         const { contentEl } = this;

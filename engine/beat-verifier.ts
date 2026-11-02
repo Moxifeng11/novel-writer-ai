@@ -22,6 +22,12 @@ export interface BeatVerifyResult {
  * 命中策略：description 整串或其子短语（按标点切分，长度≥2）出现在正文即视为完成。
  */
 export class BeatVerifier {
+    /**
+     * verify 方法。
+     * @param body - 正文
+     * @param beats - 节拍列表
+      * @returns BeatVerifyResult 实例
+     */
     verify(body: string, beats: StoryBeat[]): BeatVerifyResult {
         const text = typeof body === 'string' ? body : '';
         const list = Array.isArray(beats) ? beats : [];

@@ -154,6 +154,11 @@ ${context.foreshadows || '无'}
         return this.apiClient.callAI(systemPrompt, userPrompt, this.plugin.settings.flashModel, 0.7, this.plugin.settings.maxOutput);
     }
 
+    /**
+     * 解析场景列表。
+     * @param response - 响应
+     * @returns 结果数组
+     */
     parseScenes(response: APIResponse): SceneNode[] {
         const result: SceneNode[] = [];
 

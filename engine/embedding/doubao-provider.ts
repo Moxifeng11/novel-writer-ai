@@ -23,6 +23,10 @@ export class DoubaoEmbeddingProvider extends OpenAIEmbeddingProvider {
         });
     }
 
+    /**
+     * 获取提供方信息。
+      * @returns ProviderInfo 实例
+     */
     override getProviderInfo(): ProviderInfo {
         return {
             type: 'doubao',
@@ -32,6 +36,10 @@ export class DoubaoEmbeddingProvider extends OpenAIEmbeddingProvider {
         };
     }
 
+    /**
+     * isAvailable 方法。
+      * @returns EmbeddingAvailability 实例
+     */
     override async isAvailable(): Promise<EmbeddingAvailability> {
         const result = await super.isAvailable();
         return {

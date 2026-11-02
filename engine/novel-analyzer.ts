@@ -70,7 +70,15 @@ const STOP_WORDS = new Set([
 
 const CHINESE_PUNCTUATIONS = '。，、；：？！\u201c\u201d\u2018\u2019「」『』（）《》【】……—·';
 
+/**
+ * NovelAnalyzer 类。
+ */
 export class NovelAnalyzer {
+    /**
+     * 分析。
+     * @param text - 文本内容
+      * @returns NovelAnalysisResult 实例
+     */
     analyze(text: string): NovelAnalysisResult {
         if (!text || text.length === 0) {
             return this.getEmptyResult();

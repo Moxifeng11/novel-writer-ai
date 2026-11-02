@@ -164,6 +164,12 @@ function buildHeaders(config: ApiConnectivityConfig, format: ApiFormat): Record<
     };
 }
 
+/**
+ * testProviderConnectivity 函数。
+ * @param config - 配置
+ * @param request - 请求
+  * @returns ApiConnectivityResult 实例
+ */
 export async function testProviderConnectivity(
     config: ApiConnectivityConfig,
     request: RequestUrlFn = requestUrl as unknown as RequestUrlFn

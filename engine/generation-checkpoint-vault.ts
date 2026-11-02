@@ -13,6 +13,9 @@ import type { FileSystemPort } from '../shared/file-system-port';
 import { pjCheckpointDir } from '../shared/paths';
 import type { CheckpointStoragePort, GenerationCheckpoint } from './generation-checkpoint';
 
+/**
+ * VaultCheckpointStorage 类。
+ */
 export class VaultCheckpointStorage implements CheckpointStoragePort {
     constructor(private readonly fs: FileSystemPort) {}
 
@@ -28,6 +31,11 @@ export class VaultCheckpointStorage implements CheckpointStoragePort {
         return `${pjCheckpointDir(projectId)}/${safe}.json`;
     }
 
+    /**
+     * 写入。
+     * @param key - 键
+     * @param json - JSON
+     */
     async write(key: string, json: string): Promise<void> {
         // 断点目录（04-项目总控/断点）是新建目录，首次落盘时可能不存在，
         // 先确保目录存在（Obsidian vault.create 要求父目录已存在），幂等兜底。
@@ -35,6 +43,11 @@ export class VaultCheckpointStorage implements CheckpointStoragePort {
         await this.fs.write(this.keyToPath(key), json);
     }
 
+    /**
+     * 读取。
+     * @param key - 键
+      * @returns 文本结果 或 null
+     */
     async read(key: string): Promise<string | null> {
         try {
             return await this.fs.read(this.keyToPath(key));
@@ -43,6 +56,10 @@ export class VaultCheckpointStorage implements CheckpointStoragePort {
         }
     }
 
+    /**
+     * 移除。
+     * @param key - 键
+     */
     async remove(key: string): Promise<void> {
         try {
             await this.fs.delete(this.keyToPath(key));

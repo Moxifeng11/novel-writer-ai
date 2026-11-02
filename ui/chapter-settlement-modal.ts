@@ -24,6 +24,9 @@ interface SettlementTargetChapter {
     bodyPath: string;
 }
 
+/**
+ * 章节结算弹窗。
+ */
 export class ChapterSettlementModal extends Modal {
     private plugin: NovelWriterPlugin;
     private settlementEngine: SettlementEngine;
@@ -42,6 +45,9 @@ export class ChapterSettlementModal extends Modal {
         this.initialChapterName = initial?.chapterName;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -377,6 +383,9 @@ export class ChapterSettlementModal extends Modal {
         this.close();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

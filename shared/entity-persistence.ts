@@ -22,11 +22,17 @@ import {
  */
 export type EntityKind = 'characters' | 'factions' | 'locations' | 'items';
 
+/**
+ * EntitySaveInput 类型定义。
+ */
 export interface EntitySaveInput {
     name: string;
     content: string;
 }
 
+/**
+ * EntitySaveOutcome 类型定义。
+ */
 export interface EntitySaveOutcome {
     /** 新建成功的实体名 */
     saved: string[];
@@ -58,6 +64,9 @@ const MAX_DUPLICATE_INDEX = 100;
 /** 单次保存上限，防止误触发导致大量文件落盘 */
 const MAX_SAVE_COUNT = 200;
 
+/**
+ * SaveEntitiesOptions 类型定义。
+ */
 export interface SaveEntitiesOptions {
     /** 是否拒绝不完整实体（默认 true：缺字段/空分节一律不落盘） */
     requireComplete?: boolean;
@@ -81,6 +90,11 @@ export function validateEntityContent(kind: EntityKind, content: string): Valida
     return VALIDATORS[kind](content);
 }
 
+/**
+ * 获取实体种类标签。
+ * @param kind - 种类
+ * @returns 文本结果
+ */
 export function getEntityKindLabel(kind: EntityKind): string {
     return KIND_META[kind].label;
 }
@@ -99,6 +113,12 @@ export function normalizeEntityContent(content: string, name: string, kind: Enti
     return `---\ntags: [${meta.tag}]\n${meta.nameKey}: ${JSON.stringify(name)}\n---\n\n${content}`;
 }
 
+/**
+ * formatSaveOutcome 函数。
+ * @param outcome - 结果
+ * @param kind - 种类
+ * @returns 文本结果
+ */
 export function formatSaveOutcome(outcome: EntitySaveOutcome, kind: EntityKind): string {
     const label = KIND_META[kind].label;
     const parts: string[] = [`已新增 ${outcome.saved.length} 个${label}`];
@@ -120,6 +140,15 @@ export function formatSaveOutcome(outcome: EntitySaveOutcome, kind: EntityKind):
     return parts.join('，');
 }
 
+/**
+ * saveEntities 函数。
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param kind - 种类
+ * @param entities - 实体列表
+ * @param options - 配置项
+  * @returns EntitySaveOutcome 实例
+ */
 export async function saveEntities(
     app: App,
     project: string,

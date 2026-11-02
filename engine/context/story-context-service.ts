@@ -24,6 +24,9 @@ import type {
 
 const log = createLogger('StoryContext');
 
+/**
+ * 故事上下文层级设置列表结构定义。
+ */
 export interface StoryContextTierSettings {
     storyContextTier?: 'auto' | 'local' | 'cloud';
     coWriteModelMode?: 'local' | 'cloud';
@@ -65,6 +68,9 @@ export function resolveStoryContextTier(
     return 'cloud';
 }
 
+/**
+ * 构建故事上下文选项列表结构定义。
+ */
 export interface BuildStoryContextOptions {
     context: GatheredContext;
     chapterName: string;
@@ -82,11 +88,19 @@ export interface BuildStoryContextOptions {
     storyLinkage?: StoryLinkage | null;
 }
 
+/**
+ * 故事上下文结果结构定义。
+ */
 export interface StoryContextResult {
     graph: StoryContextGraph;
     bundle: StoryContextBundle;
 }
 
+/**
+ * 构建故事上下文。
+ * @param options - 配置项
+  * @returns StoryContextResult 实例
+ */
 export function buildStoryContext(options: BuildStoryContextOptions): StoryContextResult {
     const graph = buildStoryContextGraph({
         project: options.context.project,
@@ -177,6 +191,11 @@ export function attachStoryContextToSnapshot(
     snapshot.storyContextTelemetry = bundle.telemetry;
 }
 
+/**
+ * logStoryContextSummary 函数。
+ * @param result - 结果
+ * @param label - 标签
+ */
 export function logStoryContextSummary(
     result: StoryContextResult,
     label: string,

@@ -13,6 +13,9 @@
 import type { CreationMode } from './creation-mode';
 import { modeUnitLabel } from './mode-content';
 
+/**
+ * CreationFlowAction 类型定义。
+ */
 export type CreationFlowAction =
     | 'wizard'
     | 'research'
@@ -22,8 +25,14 @@ export type CreationFlowAction =
     | 'settle'
     | 'export';
 
+/**
+ * CreationFlowStageState 类型定义。
+ */
 export type CreationFlowStageState = 'done' | 'active' | 'todo' | 'blocked';
 
+/**
+ * CreationFlowStage 类型定义。
+ */
 export interface CreationFlowStage {
     id: string;
     label: string;
@@ -35,6 +44,9 @@ export interface CreationFlowStage {
     dependsOn?: string[];
 }
 
+/**
+ * CreationFlowDocFacts 类型定义。
+ */
 export interface CreationFlowDocFacts {
     storyCore?: boolean;
     outline?: boolean;
@@ -42,6 +54,9 @@ export interface CreationFlowDocFacts {
     storyboard?: boolean;
 }
 
+/**
+ * CreationFlowFacts 类型定义。
+ */
 export interface CreationFlowFacts {
     /** 短篇/剧本：前期调研是否已填写 */
     preResearchDone: boolean;
@@ -59,6 +74,9 @@ export interface CreationFlowFacts {
     exportExists: boolean;
 }
 
+/**
+ * CreationFlowStageStatus 类型定义。
+ */
 export interface CreationFlowStageStatus extends CreationFlowStage {
     state: CreationFlowStageState;
     /** 0..1 */
@@ -71,6 +89,9 @@ export interface CreationFlowStageStatus extends CreationFlowStage {
     blockedBy?: string;
 }
 
+/**
+ * CreationFlowSnapshot 类型定义。
+ */
 export interface CreationFlowSnapshot {
     mode: CreationMode;
     unitLabel: string;
@@ -193,6 +214,11 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
     ],
 };
 
+/**
+ * getCreationFlowStages 函数。
+ * @param mode - 模式
+ * @returns 结果数组
+ */
 export function getCreationFlowStages(mode: CreationMode): CreationFlowStage[] {
     // 存量配置可能持久化了已删除的模式字符串，缺表时回退长篇而不是抛 TypeError
     const stages = STAGE_LABELS[mode] ?? STAGE_LABELS.long;
@@ -509,6 +535,7 @@ function countSubstantiveLines(content: string): number {
  *   - 比 starter 多出 20 字符以上 → 已填写
  *   - 否则至少有 2 行实质内容（排除标题、引用、空字段）
  * @param content - 内容
+ * @param starter - 起始值
  * @returns 是否成功
  */
 export function hasMeaningfulDocContent(content: string, starter = ''): boolean {

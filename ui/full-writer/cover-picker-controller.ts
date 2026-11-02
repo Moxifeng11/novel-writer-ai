@@ -11,6 +11,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('CoverPickerController');
+/**
+ * CoverPickerController 类。
+ */
 export class CoverPickerController {
     private app: App;
 

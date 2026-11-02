@@ -10,7 +10,14 @@ import { SettingsSection } from './section-base';
 import { buildDshLaunchPlan } from '../../engine/agent/dsh/dsh-launch';
 import { probeDshVersion } from '../../engine/agent/dsh/dsh-process';
 
+/**
+ * AgentBackendSection 类。
+ */
 export class AgentBackendSection extends SettingsSection {
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         section.createEl('h3', { text: '🤖 Agent 对话后端' });

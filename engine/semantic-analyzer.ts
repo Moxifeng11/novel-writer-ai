@@ -14,8 +14,14 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('SemanticAnalyzer');
 
+/**
+ * 词语类型结构定义。
+ */
 export type WordType = 'noun' | 'verb' | 'adjective' | 'adverb' | 'function' | 'unknown';
 
+/**
+ * 词语分析结构定义。
+ */
 export interface WordAnalysis {
     word: string;
     type: WordType;
@@ -23,6 +29,9 @@ export interface WordAnalysis {
     subType?: string;
 }
 
+/**
+ * SemanticMatchResult 类型定义。
+ */
 export interface SemanticMatchResult {
     similarity: number;
     normalizedWord1: string;
@@ -31,6 +40,9 @@ export interface SemanticMatchResult {
     matchType: 'exact' | 'alias' | 'partial' | 'semantic';
 }
 
+/**
+ * 实体分组结构定义。
+ */
 export interface EntityGroup {
     canonicalName: string;
     aliases: string[];
@@ -194,6 +206,9 @@ const SURNAMES = new Set([
 
 const CULTIVATION_WORDS = new Set(['修炼', '修练', '修行', '修持']);
 
+/**
+ * SemanticAnalyzer 类。
+ */
 export class SemanticAnalyzer {
     /**
      * 分析单词的词性与置信度。

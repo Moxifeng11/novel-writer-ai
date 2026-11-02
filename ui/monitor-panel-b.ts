@@ -49,6 +49,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('MonitorPanelB');
+/**
+ * VIEW_TYPE_MONITOR_B 常量。
+ */
 export const VIEW_TYPE_MONITOR_B = "nw-float-monitor-b";
 
 interface CompletionHistoryEntry {
@@ -78,6 +81,9 @@ interface DivergenceHistoryEntry {
 /** 质量历史条目与落盘记录同构，避免两套结构漂移 */
 type QualityHistoryEntry = QualityHistoryRecord;
 
+/**
+ * MonitorPanelB 类。
+ */
 export class MonitorPanelB extends DraggablePanel {
   private completionEngine: PlotCompletionEngine | null = null;
   private divergenceEngine: PlotDivergenceEngine | null = null;

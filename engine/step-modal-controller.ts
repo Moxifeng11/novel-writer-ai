@@ -28,6 +28,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('StepModalController');
+/**
+ * 步骤弹窗依赖列表结构定义。
+ */
 export interface StepModalDeps {
     getAIEngine: () => AIEngine;
     getPlugin: () => any;
@@ -38,6 +41,9 @@ export interface StepModalDeps {
     invalidateSteps?: (stepKeys: string[]) => void;
 }
 
+/**
+ * 步骤弹窗控制器。
+ */
 export class StepModalController {
     private app: import('obsidian').App;
     private deps: StepModalDeps;
@@ -584,6 +590,17 @@ export class StepModalController {
         };
     }
 
+    /**
+     * showRoundSelectModal 方法。
+     * @param result - 结果
+     * @param stepResults - 参数值
+     * @param renderInContainer - 参数值
+     * @param tabContent - 参数值
+     * @param chapDir - 参数值
+     * @param chapterName - 章节名
+     * @param volume - 卷
+     * @param stepCompleted - 参数值
+     */
     showRoundSelectModal(
         result: { finalBody: string; rounds: number; diffs: string[]; roundBodies: string[] },
         stepResults: Record<string, string>,
@@ -642,14 +659,23 @@ export class StepModalController {
     // ============================================================
     // 模态框样式注入
     // ============================================================
+    /**
+     * injectDeaiModalStyles 方法。
+     */
     injectDeaiModalStyles(): void {
         _injectDeai();
     }
 
+    /**
+     * injectRefineModalStyles 方法。
+     */
     injectRefineModalStyles(): void {
         _injectRefine();
     }
 
+    /**
+     * injectRoundSelectStyles 方法。
+     */
     injectRoundSelectStyles(): void {
         _injectRound();
     }

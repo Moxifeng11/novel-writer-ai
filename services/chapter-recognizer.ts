@@ -140,6 +140,12 @@ function extractChapterTitle(line: string, format: 'txt' | 'md' | 'unknown'): st
     return title;
 }
 
+/**
+ * recognizeChapters 函数。
+ * @param content - 内容
+ * @param filename - 文件名
+  * @returns BookRecognitionResult 实例
+ */
 export function recognizeChapters(
     content: string,
     filename: string = ''
@@ -216,6 +222,12 @@ export function recognizeChapters(
     };
 }
 
+/**
+ * 获取章节文本。
+ * @param content - 内容
+ * @param chapter - 章节
+ * @returns 文本结果
+ */
 export function getChapterText(content: string, chapter: ChapterInfo): string {
     const lines = content.split('\n');
     return lines.slice(chapter.startIndex, chapter.endIndex + 1).join('\n');

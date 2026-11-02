@@ -151,6 +151,11 @@ export class AntiAIDetector {
         return [...extraAiHighFreqWords];
     }
 
+    /**
+     * buildAntiAIConstraints 方法。
+     * @param context - 上下文
+      * @returns AntiAIConstraints 实例
+     */
     buildAntiAIConstraints(context: {
         recentSentences: string[];
         currentText?: string;

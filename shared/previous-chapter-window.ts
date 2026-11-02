@@ -15,26 +15,41 @@ export const PREVIOUS_CHAPTER_CHAR_LIMIT = 12000;
 /** 全部前文章节的字符上限 */
 export const PREVIOUS_CHAPTER_TOTAL_CHAR_LIMIT = 30000;
 
+/**
+ * BodyFileRef 类型定义。
+ */
 export interface BodyFileRef {
     path: string;
     name: string;
 }
 
+/**
+ * PreviousChapterFile 类型定义。
+ */
 export interface PreviousChapterFile {
     chapterNum: number;
     path: string;
 }
 
+/**
+ * PreviousChapterSource 类型定义。
+ */
 export interface PreviousChapterSource {
     chapterNum: number;
     raw: string;
 }
 
+/**
+ * PreviousChapterSlice 类型定义。
+ */
 export interface PreviousChapterSlice {
     chapterNum: number;
     text: string;
 }
 
+/**
+ * PreviousChapterWindowOptions 类型定义。
+ */
 export interface PreviousChapterWindowOptions {
     perChapterLimit?: number;
     totalLimit?: number;

@@ -20,6 +20,9 @@ import { isImeComposing } from '../shared/keyboard';
 const EMPTY_FORESHADOW_TEXT = '无';
 const EMPTY_TIMELINE_TEXT = '本章暂无时间线事件';
 
+/**
+ * 故事联动弹窗。
+ */
 export class StoryLinkageModal extends Modal {
     private plugin: NovelWriterPlugin;
     private project = '';
@@ -43,6 +46,9 @@ export class StoryLinkageModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         const root = this.contentEl;
         root.empty();
@@ -73,6 +79,9 @@ export class StoryLinkageModal extends Modal {
         await this.scan();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         if (this.writeBackTimer !== null) window.clearTimeout(this.writeBackTimer);
         this.closeChapterPanel();

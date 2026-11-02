@@ -223,6 +223,7 @@ export class ExecutionLedger {
     /**
      * 最近 N 条（新的在前；不传则全部，最多 20）
      *
+     * @param limit - 上限
      * @returns 结果数组
      */
     getRecent(limit = MAX_RECORDS): CommandRunRecord[] {

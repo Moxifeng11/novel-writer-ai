@@ -35,6 +35,9 @@ import {
 
 type ProjectMeta = Awaited<ReturnType<typeof getProjectMeta>>;
 
+/**
+ * 章节条目结构定义。
+ */
 export type ChapterItem = {
     chapter: string;
     volume: string;
@@ -56,6 +59,9 @@ function formatUnitDisplay(text: string, unitLabel: string): string {
     return text.replace(/第(\d+)章/g, `第$1${unitLabel}`);
 }
 
+/**
+ * ProjectSelectorDeps 类型定义。
+ */
 export interface ProjectSelectorDeps {
     getContextManager: () => ContextManager;
     getCoverPicker: () => CoverPickerController;
@@ -73,6 +79,9 @@ export interface ProjectSelectorDeps {
     executeCommand: (commandId: string) => void;
 }
 
+/**
+ * ProjectSelectorController 类。
+ */
 export class ProjectSelectorController {
     private app: App;
     private plugin: NovelWriterPlugin;
@@ -93,6 +102,10 @@ export class ProjectSelectorController {
         this.deps = deps;
     }
 
+    /**
+     * refresh 方法。
+     * @param maxRetries - 最大重试次数
+     */
     async refresh(maxRetries = 2): Promise<void> {
         if (!this.container) return;
         await this.render(this.container);
@@ -106,6 +119,10 @@ export class ProjectSelectorController {
         }
     }
 
+    /**
+     * highlightProject 方法。
+     * @param projectName - 项目名
+     */
     async highlightProject(projectName: string): Promise<void> {
         this.highlightedProject = projectName;
         if (this.container) {
@@ -214,6 +231,10 @@ export class ProjectSelectorController {
         }
     }
 
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     */
     async render(container: HTMLElement): Promise<void> {
         if (this.cleanup) {
             this.cleanup();
@@ -746,6 +767,8 @@ export class ProjectSelectorController {
      * 自适应网格 + 限定高度滚动」，并补图例与空态。
      * @param project - 项目（路径或对象）
      * @param chapters - 章节列表
+     * @param unitLabel - 单元标签
+     * @param openDirectly - 是否直接打开
      */
     showAllChapters(project: string, chapters: ChapterItem[], unitLabel = '章', openDirectly = false): void {
         // Rev 192：章节来源是「正文 ∪ 骨架目录」，顺序不保证；先按全书章号排序再分组

@@ -422,51 +422,156 @@ export const PJ_CONTROL_DIR = '元文件/04-项目总控';
  * 路径常量 PJ_FANFIC_DIR：`'元文件/05-同人设定库'`。
  */
 export const PJ_FANFIC_DIR = '元文件/05-同人设定库';
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjCharTemplate() { return `${PJ_TEMPLATE_DIR}/人物模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjLocTemplate() { return `${PJ_TEMPLATE_DIR}/地点模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjFactionTemplate() { return `${PJ_TEMPLATE_DIR}/势力模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjWritingStyleTemplate() { return `${PJ_TEMPLATE_DIR}/文笔风格模板.md`; }
 
 /** v4.0 新模板 */
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjBodyTemplate() { return `${PJ_TEMPLATE_DIR}/正文模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjInfoPlanTemplate() { return `${PJ_TEMPLATE_DIR}/信息规划模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjPlotDistillTemplate() { return `${PJ_TEMPLATE_DIR}/情节蒸馏模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjOutlineTemplate() { return `${PJ_TEMPLATE_DIR}/大纲摘要模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjAnalysisTemplate() { return `${PJ_TEMPLATE_DIR}/分析报告模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjSettlementTemplate() { return `${PJ_TEMPLATE_DIR}/结算表模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjVolumeOutlineTemplate() { return `${PJ_TEMPLATE_DIR}/分卷大纲模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjWorldviewTemplate() { return `${PJ_TEMPLATE_DIR}/世界观模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjItemTemplate() { return `${PJ_TEMPLATE_DIR}/物品模板.md`; }
 
 /** V2 步骤模板 */
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjContinuityReviewTemplate() { return `${PJ_TEMPLATE_DIR}/连贯性审查模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjSelfCheckTemplate() { return `${PJ_TEMPLATE_DIR}/自检报告模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjFixTemplate() { return `${PJ_TEMPLATE_DIR}/修正记录模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjFinalFixTemplate() { return `${PJ_TEMPLATE_DIR}/最终修正模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjQualityControlTemplate() { return `${PJ_TEMPLATE_DIR}/质量控制模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjEmotionPlanTemplate() { return `${PJ_TEMPLATE_DIR}/情绪规划模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjSceneExpandTemplate() { return `${PJ_TEMPLATE_DIR}/Scene展开模板.md`; }
-/** @deprecated */
+/**
+ * 旧版模板路径（兼容保留）。
+ *
+ * @deprecated
+ * @returns 模板文件路径
+ */
 export function pjCharacterSoulTemplate() { return `${PJ_TEMPLATE_DIR}/角色灵魂模板.md`; }
 
 // ============================================================
@@ -731,24 +836,66 @@ export const SUBDIR_CONTROL = '04-项目总控';
  */
 export const SUBDIR_FANFIC = '05-同人设定库';
 
+/**
+ * isInCharsDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
+ * @returns 是否成功
+ */
 export function isInCharsDir(project: string, filePath: string): boolean {
     return filePath.startsWith(`${project}/${SUBDIR_CHARS}/`);
 }
+/**
+ * isInLocsDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
+ * @returns 是否成功
+ */
 export function isInLocsDir(project: string, filePath: string): boolean {
     return filePath.startsWith(`${project}/${SUBDIR_LOCS}/`);
 }
+/**
+ * isInFactionsDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
+ * @returns 是否成功
+ */
 export function isInFactionsDir(project: string, filePath: string): boolean {
     return filePath.startsWith(`${project}/${SUBDIR_FACTIONS}/`);
 }
+/**
+ * isInItemsDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
+ * @returns 是否成功
+ */
 export function isInItemsDir(project: string, filePath: string): boolean {
     return filePath.startsWith(`${project}/${SUBDIR_ITEMS}/`);
 }
+/**
+ * isInOutlineDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
+ * @returns 是否成功
+ */
 export function isInOutlineDir(project: string, filePath: string): boolean {
     return filePath.startsWith(`${project}/03-大纲与章节/`);
 }
+/**
+ * isInBodyDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
+ * @returns 是否成功
+ */
 export function isInBodyDir(project: string, filePath: string): boolean {
     return filePath.startsWith(`${project}/${SUBDIR_BODY_ROOT}/`);
 }
+/**
+ * isInStepDir 函数。
+ * @param project - 项目（路径或对象）
+ * @param filePath - 文件路径
+ * @returns 是否成功
+ */
 export function isInStepDir(project: string, filePath: string): boolean {
     return filePath.startsWith(`${project}/${SUBDIR_STEP_ROOT}/`);
 }
@@ -998,6 +1145,12 @@ export function kbIndexFile(baseDir?: string): string { return `${kbKnowledgeBas
  * @returns 拼接后的 vault/插件相对路径
  */
 export function kbTagSystemFile(baseDir?: string): string { return `${kbKnowledgeBaseDir(baseDir)}/${KB_TAG_SYSTEM_FILE}`; }
+/**
+ * kbBookDir 函数。
+ * @param bookName - 书名
+ * @param baseDir - 基础目录
+ * @returns 文本结果
+ */
 export function kbBookDir(bookName: string, baseDir?: string): string {
     // F5：sanitizeName 在原字符替换基础上补 `..` 段剥离，防止书名逃逸出知识库目录
     const safeBookName = sanitizeName(bookName);
@@ -1118,6 +1271,7 @@ export const ROLLBACK_HISTORY_FILE = 'rollback-history.json';
  * 项目内版本根目录
  *
  * @param project - 项目（路径或对象）
+ * @returns 版本目录路径
  */
 export function pjVersionsDir(project: string): string { return `${project}/${PROJECT_VERSIONS_DIR}`; }
 
@@ -1249,6 +1403,10 @@ export function pjRollbackHistoryFile(project: string): string {
     return `${pjVersionsDir(project)}/${ROLLBACK_HISTORY_FILE}`;
 }
 
-/** 插件数据目录中的版本目录（备用存储位置） */
+/**
+ * 插件数据目录中的版本目录（备用存储位置）。
+ *
+ * @returns 版本目录路径
+ */
 export function pluginVersionsDir(): string { return `${pluginDataDir()}/versions`; }
 

@@ -26,6 +26,9 @@ import {
 import { applyFanficReviewMeta, auditFanficSettings } from '../shared/fanfic-audit';
 import { FanficReviewModal } from './fanfic-review-modal';
 
+/**
+ * AddFanficSettingModal 类。
+ */
 export class AddFanficSettingModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -46,6 +49,9 @@ export class AddFanficSettingModal extends Modal {
         this.sourceService = new CanonResearchService(app, plugin);
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -508,6 +514,9 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

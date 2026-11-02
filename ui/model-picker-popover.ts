@@ -14,6 +14,9 @@ import { ManageProvidersModal } from './manage-providers-modal';
 import { applyModelChoice, formatModelSwitcherLabel, resolveProviderDisplayName, type ModelSwitcherPluginLike } from './model-quick-switcher';
 import { nearestThinkingLevel, THINKING_LEVELS, clampThinkingIntensity, thinkingLevelSpec } from '../shared/task-model';
 
+/**
+ * ModelPickerHandle 类型定义。
+ */
 export interface ModelPickerHandle {
     close: () => void;
 }
@@ -30,6 +33,13 @@ interface PickerProvider {
 /** 弹层根容器 class；外部点击检测用 */
 const POPOVER_CLASS = 'nw-model-picker';
 
+/**
+ * openModelPickerPopover 函数。
+ * @param anchor - 锚点
+ * @param plugin - 插件实例
+ * @param onApplied - 应用回调
+  * @returns ModelPickerHandle 实例
+ */
 export function openModelPickerPopover(
     anchor: HTMLElement,
     plugin: NovelWriterPlugin,

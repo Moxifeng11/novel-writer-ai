@@ -1439,6 +1439,16 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         };
     }
 
+    /**
+     * 流式生成下一句建议。
+     *
+     * @param precedingText - 前文
+     * @param cursorHint - 光标位置提示
+     * @param mode - 写作模式
+     * @param directionIndex - 方向索引
+     * @param signal - 取消信号
+     * @returns 逐块产出建议文本，最终返回建议记录
+     */
     async *suggestStream(
         precedingText: string,
         cursorHint: string = '',
@@ -3386,6 +3396,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * 本地协同模式下可能静默打云端。
      * @param systemPrompt - 系统提示词
      * @param userPrompt - 用户提示词
+     * @param temperature - 采样温度
+     * @param maxTokens - 最大 token 数
       * @returns string }> 结果
      */
     async callCoWriteForUi(
@@ -3797,6 +3809,10 @@ export function dedupeModels(models: string[]): string[] {
     return Array.from(new Set(models));
 }
 
+/**
+ * fetchOllamaModels 函数。
+  * @returns 结果数组 或 null
+ */
 export async function fetchOllamaModels(): Promise<string[] | null> {
     const now = Date.now();
     if (ollamaModelCache && now - ollamaCacheTime < OLLAMA_CACHE_TTL) {
@@ -3833,11 +3849,21 @@ export async function fetchOllamaModels(): Promise<string[] | null> {
     }
 }
 
+/**
+ * getFallbackLocalModels 函数。
+ * @param settings - 设置
+ * @returns 结果数组
+ */
 export function getFallbackLocalModels(settings: any): string[] {
     if (!settings || !Array.isArray(settings.availableModels)) return [];
     return settings.availableModels.filter((m: string) => isLocalModel(m, settings));
 }
 
+/**
+ * getOllamaModelsWithFallback 函数。
+ * @param settings - 设置
+ * @returns 结果数组
+ */
 export async function getOllamaModelsWithFallback(settings: any): Promise<string[]> {
     const ollamaModels = await fetchOllamaModels();
     if (ollamaModels && ollamaModels.length > 0) {

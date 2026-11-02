@@ -38,6 +38,9 @@ import {
 import { OperationConfirmModal } from '../components/progress';
 import { SettingsSection } from './section-base';
 
+/**
+ * ApiSection 类。
+ */
 export class ApiSection extends SettingsSection {
     private getCurrentProviderModels(): string[] {
         const customProviders = this.plugin.settings.customProviders || [];
@@ -68,6 +71,10 @@ export class ApiSection extends SettingsSection {
         return (this.plugin.settings.customProviders || []).find(provider => provider.id === id);
     }
 
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         const providers = this.plugin.getAllProviders();

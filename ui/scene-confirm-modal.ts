@@ -205,6 +205,9 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
     }).open();
 }
 
+/**
+ * SceneConfirmModal 类。
+ */
 export class SceneConfirmModal extends Modal {
     private loop: SceneGenerationLoop;
     private options: SceneLoopOptions;
@@ -227,6 +230,9 @@ export class SceneConfirmModal extends Modal {
         this.hooks = hooks;
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         const { contentEl } = this;
         contentEl.empty();
@@ -451,6 +457,9 @@ export class SceneConfirmModal extends Modal {
         closeBtn.onclick = () => this.close();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

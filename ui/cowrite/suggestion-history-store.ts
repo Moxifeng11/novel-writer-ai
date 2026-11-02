@@ -14,6 +14,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('SuggestionHistoryStore');
+/**
+ * SuggestionHistoryStore 类。
+ */
 export class SuggestionHistoryStore {
   view: CoWritingView;
   /** 串行化写盘：并发 persist 会同时判定「文件不存在」→ 后者 create 抛错被吞，静默少写一批 */
@@ -23,6 +26,9 @@ export class SuggestionHistoryStore {
     this.view = view;
   }
 
+  /**
+   * 获取历史路径。
+   */
   getHistoryPath() {
     const view = this.view;
     if (!view.project || !view.volume || !view.chapterNum)
@@ -33,6 +39,9 @@ export class SuggestionHistoryStore {
     return `${pjStepDir(view.project, volN, view.chapterNum)}/协同历史.json`;
   }
 
+  /**
+   * loadSuggestionHistory 方法。
+   */
   async loadSuggestionHistory() {
     const view = this.view;
     if (view.historyLoaded || !view.project || !view.volume || !view.chapterNum)
@@ -57,6 +66,9 @@ export class SuggestionHistoryStore {
     }
   }
 
+  /**
+   * persistSuggestionHistory 方法。
+   */
   async persistSuggestionHistory() {
     this.persistChain = this.persistChain.then(() => this.doPersist()).catch(() => {});
     return this.persistChain;

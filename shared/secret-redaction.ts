@@ -34,7 +34,12 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** 深拷贝并把密钥字段替换为占位符 */
+/**
+ * 深拷贝并把密钥字段替换为占位符
+ *
+ * @param input - 输入
+  * @returns T 实例
+ */
 export function redactSecrets<T>(input: T): T {
     const walk = (value: unknown): unknown => {
         if (Array.isArray(value)) return value.map(walk);

@@ -16,6 +16,9 @@ export interface MemoryPreviewHost {
     app: App;
 }
 
+/**
+ * MemoryPreview 类。
+ */
 export class MemoryPreview {
     private container: HTMLElement;
     private host: MemoryPreviewHost;

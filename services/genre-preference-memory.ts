@@ -1,6 +1,9 @@
 import { createLogger } from '../shared/logger';
 
 const log = createLogger('GenrePreferenceMemory');
+/**
+ * GenreCorrectionRecord 类型定义。
+ */
 export interface GenreCorrectionRecord {
     bookId: string;
     bookTitle: string;
@@ -14,6 +17,9 @@ export interface GenreCorrectionRecord {
     bookKeywords?: string[];
 }
 
+/**
+ * GenrePreferenceData 类型定义。
+ */
 export interface GenrePreferenceData {
     corrections: GenreCorrectionRecord[];
     genreBias: Record<string, number>;
@@ -38,6 +44,9 @@ const MAX_CORRECTIONS = 200;
 const BIAS_DECAY = 0.95;
 const CORRECTION_WEIGHT = 0.15;
 
+/**
+ * GenrePreferenceMemory 类。
+ */
 export class GenrePreferenceMemory {
     private data: GenrePreferenceData;
     private saveCallback?: (data: GenrePreferenceData) => Promise<void>;
@@ -227,6 +236,12 @@ export class GenrePreferenceMemory {
         };
     }
 
+    /**
+     * findSimilarCorrections 方法。
+     * @param keywords - 参数值
+     * @param limit - 上限
+     * @returns 结果数组
+     */
     findSimilarCorrections(
         keywords: string[],
         limit: number = 5

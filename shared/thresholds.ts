@@ -306,11 +306,19 @@ export const INFO_DEBT_MAX = 15;
  * 信息债实际用的是这个常量。默认不变；设置非法值时回落内置。
  */
 let infoDebtMaxRuntime = INFO_DEBT_MAX;
+/**
+ * setInfoDebtMax 函数。
+ * @param value - 值
+ */
 export function setInfoDebtMax(value: number | undefined): void {
     const n = Number(value);
     if (!Number.isFinite(n) || n < 1 || n > 200) return;
     infoDebtMaxRuntime = Math.round(n);
 }
+/**
+ * getInfoDebtMax 函数。
+ * @returns 数值结果
+ */
 export function getInfoDebtMax(): number {
     return infoDebtMaxRuntime;
 }
@@ -867,6 +875,9 @@ export const BUSINESS_THRESHOLD_DEFAULTS = {
     promptSplitRatio: PROMPT_SPLIT_RATIO,
 } as const;
 
+/**
+ * BusinessThresholdKey 类型定义。
+ */
 export type BusinessThresholdKey = keyof typeof BUSINESS_THRESHOLD_DEFAULTS;
 
 const businessThresholdOverrides = new Map<BusinessThresholdKey, number>();

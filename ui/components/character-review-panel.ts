@@ -1,6 +1,9 @@
 import { SuggestionManager } from '../../engine/suggestion-manager';
 import type { AnalysisSuggestion, SuggestionType, SuggestionStatus } from '../../engine/types/analysis-suggestion';
 
+/**
+ * CharacterReviewPanelOptions 类型定义。
+ */
 export interface CharacterReviewPanelOptions {
     suggestionManager: SuggestionManager;
     onAdopt: (suggestion: AnalysisSuggestion) => void;
@@ -11,6 +14,9 @@ export interface CharacterReviewPanelOptions {
 
 type TabKey = 'characters' | 'merges' | 'all';
 
+/**
+ * CharacterReviewPanel 类。
+ */
 export class CharacterReviewPanel {
     private container: HTMLElement;
     private options: CharacterReviewPanelOptions;
@@ -27,6 +33,9 @@ export class CharacterReviewPanel {
         this.options = options;
     }
 
+    /**
+     * 渲染。
+     */
     render(): void {
         this.container.empty();
         this.container.addClass('nw-character-review-panel');
@@ -37,17 +46,27 @@ export class CharacterReviewPanel {
         this.renderBatchActions();
     }
 
+    /**
+     * 更新。
+     */
     update(): void {
         this.renderHeaderStats();
         this.renderContent();
         this.renderBatchActions();
     }
 
+    /**
+     * 销毁。
+     */
     destroy(): void {
         this.container.empty();
         this.expandedEvidence.clear();
     }
 
+    /**
+     * getStats 方法。
+      * @returns number } 结果
+     */
     getStats(): { total: number; pending: number; adopted: number; rejected: number } {
         const stats = this.options.suggestionManager.getStats();
         return {

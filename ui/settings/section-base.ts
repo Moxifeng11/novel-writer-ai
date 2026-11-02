@@ -13,6 +13,9 @@
 import type { App } from 'obsidian';
 import type NovelWriterPlugin from '../../main';
 
+/**
+ * SettingsSectionHost 类型定义。
+ */
 export interface SettingsSectionHost {
     app: App;
     plugin: NovelWriterPlugin;
@@ -22,6 +25,9 @@ export interface SettingsSectionHost {
     reopen(): void;
 }
 
+/**
+ * 设置列表分区。
+ */
 export abstract class SettingsSection {
     constructor(protected host: SettingsSectionHost) {}
 

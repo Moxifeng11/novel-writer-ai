@@ -96,6 +96,7 @@ function toRagHit(result: KnowledgeSearchResult, label: string, weight: number):
  * 合并多查询结果：key 用 book|dimension|position|sample 前缀，保留最高分并合并标签
  *
  * @param groups - 分组列表
+ * @returns 合并后的命中与遥测
  */
 export function mergeQueryResults(groups: Array<{ label: string; weight: number; results: KnowledgeSearchResult[] }>): {
     hits: RagHit[];

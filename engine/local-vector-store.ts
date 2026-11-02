@@ -18,6 +18,12 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('LocalVectorStore');
+/**
+ * cosineSimilarity 函数。
+ * @param a - 参与比较的值
+ * @param b - 参与比较的值
+ * @returns 数值结果
+ */
 export function cosineSimilarity(a: number[], b: number[]): number {
     if (a.length !== b.length) {
         throw new Error(`Vector dimension mismatch: ${a.length} vs ${b.length}`);
@@ -62,6 +68,9 @@ export interface FingerprintVectorModelMismatch {
     reason?: EmbeddingMismatchReason;
 }
 
+/**
+ * LocalVectorStore 类。
+ */
 export class LocalVectorStore implements VectorStore {
     private app: App;
     private scope: 'global' | 'project';
@@ -245,6 +254,11 @@ export class LocalVectorStore implements VectorStore {
         }
     }
 
+    /**
+     * 添加。
+     * @param fingerprintId - 指纹ID
+     * @param samples - 样本
+     */
     async add(fingerprintId: string, samples: string[]): Promise<void> {
         await this.ensureLoaded();
 
@@ -262,6 +276,12 @@ export class LocalVectorStore implements VectorStore {
         await this.saveToDisk(fingerprintId);
     }
 
+    /**
+     * search 方法。
+     * @param query - 查询串
+     * @param topN - 顶部编号
+      * @returns string }>> 结果
+     */
     async search(query: string, topN: number = 3): Promise<Array<{ sample: string; score: number; fingerprintId?: string }>> {
         await this.ensureLoaded();
 
@@ -290,6 +310,10 @@ export class LocalVectorStore implements VectorStore {
         return filterRetrievalResults(results).slice(0, topN);
     }
 
+    /**
+     * 删除。
+     * @param fingerprintId - 指纹ID
+     */
     async delete(fingerprintId: string): Promise<void> {
         await this.ensureLoaded();
 

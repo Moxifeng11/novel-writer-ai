@@ -37,6 +37,9 @@ export interface SceneOutlineControllerDeps {
     onSceneChange?: () => void;
 }
 
+/**
+ * 场景大纲控制器。
+ */
 export class SceneOutlineController {
     private deps: SceneOutlineControllerDeps;
     private scenes: ExtendedSceneData[] = [];

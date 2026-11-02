@@ -51,6 +51,9 @@ import { createLogger } from '../shared/logger';
 const log = createLogger('FingerprintBlendModal');
 type FingerprintScope = 'template' | 'global' | 'project';
 
+/**
+ * FingerprintBlendModalOptions 类型定义。
+ */
 export interface FingerprintBlendModalOptions {
     /** 当前作用域下所有可选指纹 */
     fingerprints: StyleFingerprint[];
@@ -69,6 +72,9 @@ interface SelectedSource {
     weight: number;
 }
 
+/**
+ * FingerprintBlendModal 类。
+ */
 export class FingerprintBlendModal extends Modal {
     private options: FingerprintBlendModalOptions;
     /** 已选指纹（1-3 个） */
@@ -90,12 +96,18 @@ export class FingerprintBlendModal extends Modal {
         }
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

@@ -18,6 +18,9 @@ import {
 } from './trend-research-service';
 import type { CreationMode } from '../../shared/creation-mode';
 
+/**
+ * AiPremiseInput 类型定义。
+ */
 export interface AiPremiseInput {
     mode: 'short' | 'script';
     project?: string;
@@ -27,6 +30,9 @@ export interface AiPremiseInput {
     signal?: AbortSignal;
 }
 
+/**
+ * AiPremiseResult 类型定义。
+ */
 export interface AiPremiseResult {
     mode: 'short' | 'script';
     frameworkBlock: string;
@@ -45,12 +51,20 @@ export interface AiPremiseResult {
     }[];
 }
 
+/**
+ * AiAssistedPremiseService 类。
+ */
 export class AiAssistedPremiseService {
     constructor(
         private readonly ai: AIEngine,
         private readonly trendConfig?: Partial<TrendResearchConfig>,
     ) {}
 
+    /**
+     * 生成。
+     * @param input - 输入
+      * @returns AiPremiseResult 实例
+     */
     async generate(input: AiPremiseInput): Promise<AiPremiseResult> {
         const frameworkBlock = frameworkPromptBlock(input.mode, input.project);
         const randomBrief = creativeRandomizer.brief(input.mode);

@@ -23,6 +23,9 @@ interface ManagedEntity {
     validated: boolean;
 }
 
+/**
+ * 生成势力弹窗。
+ */
 export class GenerateFactionModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -37,6 +40,9 @@ export class GenerateFactionModal extends Modal {
         this.contextManager = plugin.ctxManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -56,6 +62,9 @@ export class GenerateFactionModal extends Modal {
         this._renderInputForm();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         super.onClose();
         this.plugin._entityModalJustClosed = true;

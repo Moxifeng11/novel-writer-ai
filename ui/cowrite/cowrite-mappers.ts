@@ -8,6 +8,11 @@
 import { SuggestionRecord, SuggestionDirection, PlotCompletionMetrics } from '../../shared/types';
 import { AssociationSuggestion } from '../../shared/co-writer-types';
 
+/**
+ * associationTypeToDirection 函数。
+ * @param type - 类型
+  * @returns SuggestionDirection 实例
+ */
 export function associationTypeToDirection(type: string): SuggestionDirection {
   if (type === "entity-action")
     return "action";
@@ -20,6 +25,11 @@ export function associationTypeToDirection(type: string): SuggestionDirection {
   return "emotion";
 }
 
+/**
+ * 获取关联标签。
+ * @param type - 类型
+ * @returns 文本结果
+ */
 export function getAssociationLabel(type: string): string {
   const labels: Record<string, string> = {
     "entity-action": "\u{1F3AD} \u89D2\u8272\u52A8\u4F5C",
@@ -31,6 +41,12 @@ export function getAssociationLabel(type: string): string {
   return labels[type] || "\u2728 \u8054\u60F3";
 }
 
+/**
+ * associationToSuggestion 函数。
+ * @param association - 关联
+ * @param index - 索引
+  * @returns SuggestionRecord 实例
+ */
 export function associationToSuggestion(association: AssociationSuggestion, index: number): SuggestionRecord {
   return {
     // 同毫秒生成两批建议时 Date.now()+index 会碰撞，导致 chosenSuggestionId 指错条目
@@ -44,6 +60,11 @@ export function associationToSuggestion(association: AssociationSuggestion, inde
   };
 }
 
+/**
+ * getDirectionLabel 函数。
+ * @param direction - 方向
+ * @returns 文本结果
+ */
 export function getDirectionLabel(direction: string): string {
   const labels: Record<string, string> = {
     action: "\u2694\uFE0F \u52A8\u4F5C",
@@ -58,6 +79,11 @@ export function getDirectionLabel(direction: string): string {
   return labels[direction] || direction;
 }
 
+/**
+ * 获取文风标签。
+ * @param style - 文风
+ * @returns 文本结果
+ */
 export function getStyleLabel(style: string): string {
   if (style === "creative")
     return "\u521B\u610F";
@@ -66,6 +92,10 @@ export function getStyleLabel(style: string): string {
   return "\u9ED8\u8BA4";
 }
 
+/**
+ * emptyMetrics 函数。
+  * @returns PlotCompletionMetrics 实例
+ */
 export function emptyMetrics(): PlotCompletionMetrics {
   return {
     sceneObjectivesMet: 0,

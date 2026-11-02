@@ -35,6 +35,7 @@ const CATEGORY_LABELS: Record<FactCategory, string> = {
  * @param facts - 事实
  * @param maxPerCategory - 单类上限
  * @param options - 配置项
+ * @param query - 查询串
  * @returns 文本结果
  */
 export function formatConfirmedFacts(

@@ -21,6 +21,9 @@ export interface RefineRoundScore {
     composite: number;
 }
 
+/**
+ * RefineRoundRecord 类型定义。
+ */
 export interface RefineRoundRecord extends RefineRoundScore {
     round: number;
     accepted: boolean;
@@ -30,6 +33,9 @@ export interface RefineRoundRecord extends RefineRoundScore {
     networkCalls: number;
 }
 
+/**
+ * IterativeRefineOptions 类型定义。
+ */
 export interface IterativeRefineOptions {
     /** 原始正文（评分与保真的参照） */
     original: string;
@@ -46,6 +52,9 @@ export interface IterativeRefineOptions {
     signal?: AbortSignal;
 }
 
+/**
+ * IterativeRefineResult 类型定义。
+ */
 export interface IterativeRefineResult {
     /** 最好的一版（可能是原文） */
     best: string;
@@ -59,6 +68,11 @@ export interface IterativeRefineResult {
 /** 分数提升阈值：低于这个幅度视为「没变好」（避免噪声轮次） */
 const MIN_GAIN = 0.005;
 
+/**
+ * runIterativeRefine 函数。
+ * @param options - 配置项
+  * @returns IterativeRefineResult 实例
+ */
 export async function runIterativeRefine(options: IterativeRefineOptions): Promise<IterativeRefineResult> {
     const rounds = Math.max(0, Math.min(5, Math.round(options.rounds)));
     const patience = Math.max(1, options.patience ?? 2);

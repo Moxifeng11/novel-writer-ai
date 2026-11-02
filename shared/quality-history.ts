@@ -6,6 +6,9 @@
  */
 import { QUALITY_CHAPTER_TREND, QUALITY_HISTORY_MAX_RECORDS, QUALITY_LIVE_PERSIST_MIN_CHARS } from './thresholds';
 
+/**
+ * QualityHistoryRecord 类型定义。
+ */
 export interface QualityHistoryRecord {
     /** 章节键（如「第3章」），用于区分不同章节的曲线 */
     chapterKey: string;
@@ -22,6 +25,9 @@ export interface QualityHistoryRecord {
     trend: string;
 }
 
+/**
+ * 质量历史文件结构定义。
+ */
 export interface QualityHistoryFile {
     version: 1;
     entries: QualityHistoryRecord[];
@@ -101,6 +107,11 @@ export function parseQualityHistoryFile(raw: string): QualityHistoryRecord[] {
     }
 }
 
+/**
+ * serializeQualityHistoryFile 函数。
+ * @param entries - 记录集合
+ * @returns 文本结果
+ */
 export function serializeQualityHistoryFile(entries: QualityHistoryRecord[]): string {
     const payload: QualityHistoryFile = {
         version: 1,
@@ -221,6 +232,9 @@ export function aggregateQualityHistoryByChapter(
     return [...standalone, ...latestByChapter.values()].sort((a, b) => a.timestamp - b.timestamp);
 }
 
+/**
+ * 质量章节趋势结构定义。
+ */
 export type QualityChapterTrend = 'rising' | 'falling' | 'stable';
 
 /**

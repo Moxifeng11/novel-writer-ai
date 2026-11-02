@@ -39,6 +39,9 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('StepRenderController');
+/**
+ * StepRenderDeps 类型定义。
+ */
 export interface StepRenderDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -61,6 +64,9 @@ export interface StepRenderDeps {
     reportStepError?: (stepKey: string, message: string) => void;
 }
 
+/**
+ * StepRenderController 类。
+ */
 export class StepRenderController {
     private deps: StepRenderDeps;
     /** 已自动触发过结算的章节键（失败后不自动重试，避免「失败→重渲染→再失败」死循环） */
@@ -70,6 +76,10 @@ export class StepRenderController {
         this.deps = deps;
     }
 
+    /**
+     * renderStepNav 方法。
+     * @param workspace - 工作区
+     */
     renderStepNav(workspace: HTMLElement): void {
         const d = this.deps;
         const cs = d.chapterState;
@@ -249,6 +259,11 @@ export class StepRenderController {
         }
     }
 
+    /**
+     * renderAutoStep 方法。
+     * @param area - 区域
+     * @param step - 步骤
+     */
     renderAutoStep(area: HTMLElement, step: FullStep): void {
         const d = this.deps;
         const cs = d.chapterState;
@@ -354,6 +369,11 @@ export class StepRenderController {
         return [];
     }
 
+    /**
+     * renderResultArea 方法。
+     * @param area - 区域
+     * @param stepKey - 步骤键
+     */
     renderResultArea(area: HTMLElement, stepKey: string): void {
         const d = this.deps;
         const cs = d.chapterState;

@@ -1,3 +1,6 @@
+/**
+ * SubGenreFeatureConfig 类型定义。
+ */
 export interface SubGenreFeatureConfig {
   characterTypes: string[];
   sceneTypes: string[];
@@ -5,6 +8,9 @@ export interface SubGenreFeatureConfig {
   coolPointTypes: string[];
 }
 
+/**
+ * SubGenreWeights 类型定义。
+ */
 export interface SubGenreWeights {
   keyword: number;
   character: number;
@@ -13,6 +19,9 @@ export interface SubGenreWeights {
   vector: number;
 }
 
+/**
+ * SubGenreConfig 类型定义。
+ */
 export interface SubGenreConfig {
   id: string;
   name: string;
@@ -23,6 +32,9 @@ export interface SubGenreConfig {
   weights?: SubGenreWeights;
 }
 
+/**
+ * 题材配置结构定义。
+ */
 export interface GenreConfig {
   id: string;
   name: string;
@@ -45,6 +57,9 @@ export interface GenreConfig {
   isCustom?: boolean;
 }
 
+/**
+ * TechniqueDef 类型定义。
+ */
 export interface TechniqueDef {
   id: string;
   name: string;
@@ -55,6 +70,9 @@ export interface TechniqueDef {
   genreWeight: number;
 }
 
+/**
+ * ForeshadowCategoryDef 类型定义。
+ */
 export interface ForeshadowCategoryDef {
   id: 'item' | 'skill' | 'character' | 'setting' | 'event';
   name: string;
@@ -2563,6 +2581,9 @@ const GENRES: GenreConfig[] = [
   KONGBU_JINGSONG
 ];
 
+/**
+ * WebnovelKnowledgeBase 类。
+ */
 export class WebnovelKnowledgeBase {
   private genres: Map<string, GenreConfig>;
   private customGenres: Map<string, GenreConfig>;

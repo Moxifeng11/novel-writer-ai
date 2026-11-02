@@ -83,6 +83,12 @@ export function selectContrastPair(pairs: ContrastPair[], sceneType?: string): C
     return null;
 }
 
+/**
+ * formatContrastPairForPrompt 函数。
+ * @param pair - 配对
+ * @param maxChars - 最大字符数
+ * @returns 文本结果
+ */
 export function formatContrastPairForPrompt(pair: ContrastPair | null, maxChars = 900): string {
     if (!pair) return '';
     const text = [

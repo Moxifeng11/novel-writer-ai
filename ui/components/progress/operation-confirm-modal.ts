@@ -71,6 +71,9 @@ export class OperationConfirmModal extends Modal {
 		localStorage.removeItem(STORAGE_KEY_PREFIXES.operationConfirm + rememberKey);
 	}
 
+	/**
+	 * onOpen 方法。
+	 */
 	onOpen(): void {
 		this.modalEl.addClass('nw-scope');
 
@@ -88,6 +91,9 @@ export class OperationConfirmModal extends Modal {
 		this.render();
 	}
 
+	/**
+	 * onClose 方法。
+	 */
 	onClose(): void {
 		this.contentEl.empty();
 		if (this.resolve) {

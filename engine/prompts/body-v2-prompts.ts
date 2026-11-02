@@ -59,6 +59,9 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `你的镜头贴着 \${protagoni
 你在记录他刚刚经历过的、真实的、有质感的每一刻。
 每个场景至少 2–3 处关键身体感觉；段落可以平淡地过渡，不必逐段打卡。`;
 
+/**
+ * BODY_GENERATION_USER_TEMPLATE_V2 常量。
+ */
 export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事——大纲】
 \${outlineContent}
 
@@ -129,6 +132,9 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 从身体第一刻感受到的东西开始。
 字数 ≥ \${baseWords} 字。`;
 
+/**
+ * BODY_GENERATION_V2_DESC 常量。
+ */
 export const BODY_GENERATION_V2_DESC = '✍️ 正文生成(V2·小说家模式) — 灵魂驱动：每一段都有身体感觉+情绪变化';
 
 // ============================================================

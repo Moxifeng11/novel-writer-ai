@@ -16,6 +16,9 @@
 /** 支持的 API 协议格式 */
 export type ApiFormat = 'openai-chat' | 'anthropic-messages' | 'openai-responses';
 
+/**
+ * ApiFormatOption 类型定义。
+ */
 export interface ApiFormatOption {
     value: ApiFormat;
     /** 下拉里显示的短名（不含路径，避免窄面板被截断） */
@@ -141,6 +144,9 @@ export function resolveModelsUrl(endpoint: string, format: ApiFormat): string {
     return `${root}/models`;
 }
 
+/**
+ * ChatRequestInput 类型定义。
+ */
 export interface ChatRequestInput {
     model: string;
     systemPrompt: string;
@@ -222,6 +228,9 @@ export function buildAuthHeaders(format: ApiFormat, apiKey: string): Record<stri
     return headers;
 }
 
+/**
+ * ParsedChatReply 类型定义。
+ */
 export interface ParsedChatReply {
     /** 正文文本；无正文时为空串 */
     content: string;
@@ -310,6 +319,9 @@ export function parseChatResponse(format: ApiFormat, payload: unknown): ParsedCh
     };
 }
 
+/**
+ * SseUpdate 类型定义。
+ */
 export interface SseUpdate {
     /** 本帧新增正文 */
     delta?: string;

@@ -18,6 +18,9 @@ export interface PendingRewriteRange {
     originalText: string;
 }
 
+/**
+ * ResolveInsertRangeInput 类型定义。
+ */
 export interface ResolveInsertRangeInput {
     /** 当前正文 */
     text: string;
@@ -29,6 +32,9 @@ export interface ResolveInsertRangeInput {
     pendingRewrite?: PendingRewriteRange | null;
 }
 
+/**
+ * ResolvedInsertRange 类型定义。
+ */
 export interface ResolvedInsertRange {
     start: number;
     end: number;
@@ -38,6 +44,11 @@ export interface ResolvedInsertRange {
     staleRewrite: boolean;
 }
 
+/**
+ * resolveInsertRange 函数。
+ * @param input - 输入
+  * @returns ResolvedInsertRange 实例
+ */
 export function resolveInsertRange(input: ResolveInsertRangeInput): ResolvedInsertRange {
     const { text, selectionStart, selectionEnd, pendingRewrite } = input;
     const length = text.length;

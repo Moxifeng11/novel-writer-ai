@@ -286,6 +286,16 @@ export class CoWriteFacade {
         return this.engine.suggestProgress;
     }
 
+    /**
+     * 流式生成写作建议。
+     *
+     * @param precedingText - 前文
+     * @param cursorHint - 光标位置提示
+     * @param mode - 写作模式
+     * @param directionIndex - 方向索引
+     * @param signal - 取消信号
+     * @returns 逐块产出建议文本，最终返回建议记录
+     */
     async *suggestStream(
         precedingText: string,
         cursorHint: string,

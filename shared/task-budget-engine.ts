@@ -30,6 +30,9 @@ export interface BudgetLimits {
 /** 预算档位：越靠后越舍得花 token */
 export type BudgetTier = 'lean' | 'balanced' | 'generous' | 'extreme';
 
+/**
+ * BudgetTierSpec 类型定义。
+ */
 export interface BudgetTierSpec {
     value: BudgetTier;
     label: string;
@@ -61,6 +64,9 @@ export const TASK_CATEGORY: Record<string, TaskCategory> = {
     fingerprint: 'analysis',
 };
 
+/**
+ * 预算层级列表常量。
+ */
 export const BUDGET_TIERS: readonly BudgetTierSpec[] = [
     {
         value: 'lean',
@@ -94,12 +100,22 @@ export const BUDGET_TIERS: readonly BudgetTierSpec[] = [
 
 const TIER_VALUES = new Set<string>(BUDGET_TIERS.map(t => t.value));
 
+/**
+ * 规范化预算层级。
+ * @param value - 值
+  * @returns BudgetTier 实例
+ */
 export function normalizeBudgetTier(value: unknown): BudgetTier {
     const text = typeof value === 'string' ? value.trim().toLowerCase() : '';
     if (TIER_VALUES.has(text)) return text as BudgetTier;
     return 'balanced';
 }
 
+/**
+ * budgetTierSpec 函数。
+ * @param tier - 层级
+  * @returns BudgetTierSpec 实例
+ */
 export function budgetTierSpec(tier: BudgetTier | undefined): BudgetTierSpec {
     const normalized = normalizeBudgetTier(tier);
     return BUDGET_TIERS.find(t => t.value === normalized) ?? BUDGET_TIERS[1];
@@ -118,6 +134,9 @@ export function effectiveIntensity(tier: BudgetTier | undefined, intensity: numb
     return Math.max(0, Math.min(100, value));
 }
 
+/**
+ * 预算计划输入结构定义。
+ */
 export interface BudgetPlanInput {
     /** 任务类别 */
     category: TaskCategory;
@@ -137,6 +156,9 @@ export interface BudgetPlanInput {
     };
 }
 
+/**
+ * 预算计划结构定义。
+ */
 export interface BudgetPlan {
     maxContext: number;
     maxInput: number;

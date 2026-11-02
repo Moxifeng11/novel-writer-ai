@@ -102,18 +102,30 @@ export class WritingFingerprintView extends ItemView {
         this.plugin = plugin;
     }
 
+    /**
+     * 获取视图类型。
+     */
     getViewType() {
         return VIEW_TYPE_WRITING_FINGERPRINT;
     }
 
+    /**
+     * getDisplayText 方法。
+     */
     getDisplayText() {
         return '🔍 写作指纹库';
     }
 
+    /**
+     * getIcon 方法。
+     */
     getIcon() {
         return 'fingerprint';
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen() {
         applyNwScope(this);
         await this.initLibrary();
@@ -126,6 +138,9 @@ export class WritingFingerprintView extends ItemView {
         this.renderDetailPanel();
     }
 
+    /**
+     * onClose 方法。
+     */
     async onClose() {
         this.modelSwitcher?.destroy();
         this.modelSwitcher = null;
@@ -1595,6 +1610,10 @@ export class WritingFingerprintView extends ItemView {
         }).open();
     }
 
+    /**
+     * refreshForProject 方法。
+     * @param project - 项目（路径或对象）
+     */
     public async refreshForProject(project: string): Promise<void> {
         if (this.fingerprintLibrary) {
             this.fingerprintLibrary.setProject(project);
@@ -1626,6 +1645,9 @@ class EditFingerprintModal extends Modal {
         this.tagsValue = fingerprint.tags.join(', ');
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen() {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -1675,6 +1697,9 @@ class EditFingerprintModal extends Modal {
         });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
     }
@@ -1700,6 +1725,9 @@ export class ExtractFromChaptersModal extends Modal {
         this.fingerprintName = `章节指纹_${new Date().toLocaleDateString()}`;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
@@ -1825,6 +1853,9 @@ export class ExtractFromChaptersModal extends Modal {
     private renderChapterList(): void {
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }
@@ -1841,6 +1872,9 @@ class KnowledgeBookPickerModal extends Modal {
         this.onSelect = onSelect;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
@@ -1874,6 +1908,9 @@ class KnowledgeBookPickerModal extends Modal {
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

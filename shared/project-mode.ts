@@ -29,10 +29,19 @@ export function modeFromPathPrefix(project: string): CreationMode | null {
     return null;
 }
 
+/**
+ * rememberProjectMode 函数。
+ * @param project - 项目（路径或对象）
+ * @param mode - 模式
+ */
 export function rememberProjectMode(project: string, mode: CreationMode): void {
     if (project) MODE_CACHE.set(project, mode);
 }
 
+/**
+ * forgetProjectMode 函数。
+ * @param project - 项目（路径或对象）
+ */
 export function forgetProjectMode(project: string): void {
     MODE_CACHE.delete(project);
 }

@@ -25,6 +25,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('ChapterStateSnapshot');
 
+/**
+ * 写入章节快照输入结构定义。
+ */
 export interface WriteChapterSnapshotInput {
     project: string;
     chapterNum: number;
@@ -127,6 +130,12 @@ async function readOpenPromises(app: App, project: string): Promise<string[]> {
     }
 }
 
+/**
+ * writeChapterStateSnapshot 函数。
+ * @param app - Obsidian 应用实例
+ * @param input - 输入
+  * @returns ChapterWorldStateSnapshot 或 null
+ */
 export async function writeChapterStateSnapshot(
     app: App,
     input: WriteChapterSnapshotInput,

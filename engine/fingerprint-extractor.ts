@@ -19,14 +19,23 @@ import { computeFingerprintStats } from './fingerprint-stats';
 
 const log = createLogger('FingerprintExtractor');
 
+/**
+ * ExtractionPhase 类型定义。
+ */
 export type ExtractionPhase = 'preprocessing' | 'feature-extraction' | 'sample-selection' | 'vectorization' | 'complete';
 
+/**
+ * ExtractionProgress 类型定义。
+ */
 export interface ExtractionProgress {
     phase: ExtractionPhase;
     percent: number;
     message: string;
 }
 
+/**
+ * ExtractionOptions 类型定义。
+ */
 export interface ExtractionOptions {
     name: string;
     source: string;
@@ -36,6 +45,9 @@ export interface ExtractionOptions {
     onProgress?: (progress: ExtractionProgress) => void;
 }
 
+/**
+ * FingerprintExtractor 类。
+ */
 export class FingerprintExtractor {
     private aiEngine: AIEngine;
     private embeddingProvider: EmbeddingProvider;
@@ -51,6 +63,12 @@ export class FingerprintExtractor {
         this.vectorStore = vectorStore;
     }
 
+    /**
+     * 抽取。
+     * @param text - 文本内容
+     * @param options - 配置项
+      * @returns StyleFingerprint 实例
+     */
     async extract(text: string, options: ExtractionOptions): Promise<StyleFingerprint> {
         const { name, source, scope, signal, onProgress } = options;
 

@@ -2,6 +2,9 @@ import type { StepStatus } from './types';
 
 export type { StepStatus };
 
+/**
+ * 构建步骤frontmatter选项列表结构定义。
+ */
 export interface BuildStepFrontmatterOptions {
     tag: string;
     volume?: string;
@@ -12,6 +15,9 @@ export interface BuildStepFrontmatterOptions {
     extra?: Record<string, unknown>;
 }
 
+/**
+ * ParsedStepFrontmatter 类型定义。
+ */
 export interface ParsedStepFrontmatter {
     tags: string[];
     volume?: string;
@@ -29,6 +35,11 @@ function yamlEscape(value: unknown): string {
     return `"${str.replace(/"/g, '\\"')}"`;
 }
 
+/**
+ * 构建步骤frontmatter。
+ * @param options - 配置项
+ * @returns 文本结果
+ */
 export function buildStepFrontmatter(options: BuildStepFrontmatterOptions): string {
     const {
         tag,
@@ -66,6 +77,11 @@ export function buildStepFrontmatter(options: BuildStepFrontmatterOptions): stri
     return lines.join('\n');
 }
 
+/**
+ * 解析步骤frontmatter。
+ * @param content - 内容
+  * @returns ParsedStepFrontmatter 或 null
+ */
 export function parseStepFrontmatter(content: string): ParsedStepFrontmatter | null {
     const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!fm) {

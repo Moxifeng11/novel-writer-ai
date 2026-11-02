@@ -75,6 +75,9 @@ function looksLikeWritingRules(style: string): boolean {
     return hits >= 2;
 }
 
+/**
+ * TemplateVarsDeps 类型定义。
+ */
 export interface TemplateVarsDeps {
     app: App;
     plugin: NovelWriterPlugin;
@@ -91,6 +94,12 @@ export interface TemplateVarsDeps {
 /** 上下文数据快捷别名（GatheredContext.data 结构松散，按需取字段）。 */
 type ContextData = GatheredContext['data'];
 
+/**
+ * buildEntityVars 函数。
+ * @param deps - 依赖
+ * @param vars - 变量表
+ * @param d - 参与比较的值
+ */
 export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<string, string>, d: ContextData): Promise<void> {
   let contextText = "";
   const outlineForContext = d.outline?.raw || "";
@@ -305,6 +314,12 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
   contextCharCount += vars["allItems"]?.length || 0;
   vars["_contextTokens"] = String(Math.floor(contextCharCount / CHAR_TO_TOKEN_RATIO));
 }
+/**
+ * buildContextVars 函数。
+ * @param deps - 依赖
+ * @param vars - 变量表
+ * @param d - 参与比较的值
+ */
 export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<string, string>, d: ContextData): Promise<void> {
   const compressed = d.compressed;
   if (compressed) {
@@ -685,6 +700,11 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "_injectionLedger",
 ] as const;
 
+/**
+ * buildTemplateVars 函数。
+ * @param deps - 依赖
+ * @returns 映射结果
+ */
 export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<string, string>> {
   const vars: Record<string, string> = {};
   // v4.18：模式硬约束只追加到 system prompt；长篇 block 为空，行为不变。
@@ -1040,6 +1060,11 @@ ${vars["allItems"]}`);
   }
   return vars;
 }
+/**
+ * buildSceneStyleHint 函数。
+ * @param deps - 依赖
+ * @param vars - 变量表
+ */
 export async function buildSceneStyleHint(deps: TemplateVarsDeps, vars: Record<string, string>): Promise<void> {
   try {
     const wsFile = await findWritingStyleFile(deps.app, deps.project, { allowPlaceholder: true });

@@ -73,6 +73,9 @@ export function builtinRulesDocs(): VersionedDoc[] {
     return docs;
 }
 
+/**
+ * RulesVersionListing 类型定义。
+ */
 export interface RulesVersionListing {
     docs: VersionedDoc[];
     active: SelectResult;

@@ -15,6 +15,9 @@ import { listFolderFiles } from './vault-tree';
 /** 四类实体（与 shared/entity-persistence.ts 的 EntityKind 保持一致） */
 export type EntityKind = 'characters' | 'factions' | 'locations' | 'items';
 
+/**
+ * 实体种类列表常量。
+ */
 export const ENTITY_KINDS: readonly EntityKind[] = ['characters', 'factions', 'locations', 'items'];
 
 /** 面向日志/提示的中文类别名（上下文注入与调试信息共用，避免各处自造字符串） */
@@ -68,6 +71,9 @@ export function listEntityFiles(app: App, project: string, kind: EntityKind): TF
         .sort((a, b) => a.path.localeCompare(b.path));
 }
 
+/**
+ * ProjectEntityStats 类型定义。
+ */
 export interface ProjectEntityStats {
     worldview: number;
     characters: number;

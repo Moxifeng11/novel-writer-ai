@@ -9,6 +9,9 @@ interface WelcomeModalOptions {
     onDontShowAgain?: () => void;
 }
 
+/**
+ * WelcomeModal 类。
+ */
 export class WelcomeModal extends Modal {
     private options: WelcomeModalOptions;
 
@@ -17,11 +20,17 @@ export class WelcomeModal extends Modal {
         this.options = options;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen() {
         this.modalEl.addClass('nw-scope');
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
     }

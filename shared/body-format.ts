@@ -22,6 +22,9 @@ export type BodySeparator = '\n' | '\n\n';
 /** 段首缩进：无 / 两个全角空格 / 制表符 */
 export type BodyIndent = '' | '\u3000\u3000' | '\t';
 
+/**
+ * 正文格式契约结构定义。
+ */
 export interface BodyFormatContract {
     separator: BodySeparator;
     indent: BodyIndent;
@@ -82,6 +85,9 @@ export function deriveBodyFormat(writingRules: string): BodyFormatContract {
     return { separator, indent, allowTitle: false, source: 'writing-rules' };
 }
 
+/**
+ * 规范化正文选项列表结构定义。
+ */
 export interface NormalizeBodyOptions {
     /** 是否剥离模型写在首行的「好的，我将…」类元叙述，默认 true */
     stripLeadingMeta?: boolean;

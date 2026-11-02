@@ -36,6 +36,9 @@ export interface OutlineExpandChapterContext {
     chapterNum: number;
 }
 
+/**
+ * OutlineExpandModal 类。
+ */
 export class OutlineExpandModal extends Modal {
     private plugin: NovelWriterPlugin;
     private expander: OutlineToTextExpander;
@@ -103,6 +106,9 @@ export class OutlineExpandModal extends Modal {
         );
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal-xl');
@@ -874,10 +880,17 @@ export class OutlineExpandModal extends Modal {
         this.close();
     }
 
+    /**
+     * getExpandedText 方法。
+     * @returns 文本结果
+     */
     getExpandedText(): string {
         return this.expandedText;
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

@@ -57,8 +57,14 @@ export interface ProseMetrics {
     shortestSentence: string;
 }
 
+/**
+ * ProseRiskLevel 类型定义。
+ */
 export type ProseRiskLevel = 'low' | 'medium' | 'high';
 
+/**
+ * ProseIssue 类型定义。
+ */
 export interface ProseIssue {
     id: string;
     severity: ProseRiskLevel;
@@ -68,6 +74,9 @@ export interface ProseIssue {
     penalty: number;
 }
 
+/**
+ * ProseRiskReport 类型定义。
+ */
 export interface ProseRiskReport {
     score: number;
     level: ProseRiskLevel;
@@ -148,6 +157,11 @@ export function splitProseParagraphs(raw: string): string[] {
         .filter((block) => !HEADING_RE.test(block) && !CHAPTER_TITLE_RE.test(block));
 }
 
+/**
+ * splitProseSentences 函数。
+ * @param raw - 原始
+ * @returns 结果数组
+ */
 export function splitProseSentences(raw: string): string[] {
     const text = normalizeText(raw).replace(/\n+/g, ' ');
     if (!text) return [];
@@ -215,6 +229,11 @@ function per1000(count: number, chars: number): number {
     return chars > 0 ? round((count / chars) * 1000) : 0;
 }
 
+/**
+ * analyzeProse 函数。
+ * @param raw - 原始
+  * @returns ProseMetrics 实例
+ */
 export function analyzeProse(raw: string): ProseMetrics {
     const text = normalizeText(raw);
     const paragraphs = splitProseParagraphs(text);
@@ -520,6 +539,11 @@ export function scoreProseRisk(metrics: ProseMetrics): ProseRiskReport {
     return { score, level, issues, metrics };
 }
 
+/**
+ * formatProseMetrics 函数。
+ * @param metrics - 指标
+ * @returns 文本结果
+ */
 export function formatProseMetrics(metrics: ProseMetrics): string {
     const lines = [
         `字数 ${metrics.chars}｜句 ${metrics.sentences}｜段 ${metrics.paragraphs}`,
@@ -534,6 +558,9 @@ export function formatProseMetrics(metrics: ProseMetrics): string {
     return lines.join('\n');
 }
 
+/**
+ * PROSE_METRIC_LABELS 常量。
+ */
 export const PROSE_METRIC_LABELS = {
     avgSentenceLength: '平均句长',
     avgNarrativeParagraphLength: '平均叙述段长',

@@ -38,6 +38,9 @@
  // F3: 情绪曲线
  // ============================================================
  
+/**
+ * EmotionPoint 类型定义。
+ */
  export interface EmotionPoint {
      position: number;
      emotion: string;
@@ -45,6 +48,9 @@
      text: string;
  }
  
+/**
+ * EmotionCurve 类型定义。
+ */
  export interface EmotionCurve {
      points: EmotionPoint[];
      dominantEmotion: string;
@@ -56,6 +62,9 @@
  // C2: 节奏检测
  // ============================================================
  
+/**
+ * 节奏分段结构定义。
+ */
  export interface RhythmSegment {
      start: number;
      end: number;
@@ -66,6 +75,9 @@
      issues: string[];
  }
  
+/**
+ * 节奏分析结构定义。
+ */
  export interface RhythmAnalysis {
      segments: RhythmSegment[];
      overallPace: string;
@@ -78,6 +90,9 @@
  // B1: 联想输入
  // ============================================================
  
+/**
+ * AssociationHint 类型定义。
+ */
  export interface AssociationHint {
      type: 'entity-action' | 'escalate' | 'foreshadow' | 'emotion' | 'dialogue';
      entity?: string;
@@ -86,6 +101,9 @@
      confidence: number;
  }
  
+/**
+ * AssociationSuggestion 类型定义。
+ */
  export interface AssociationSuggestion {
      text: string;
      type: string;

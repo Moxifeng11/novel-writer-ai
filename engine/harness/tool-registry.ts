@@ -106,6 +106,13 @@ export class ToolRegistry {
         return mode ? all.filter(tool => tool.mode === 'all' || tool.mode === mode) : all;
     }
 
+    /**
+     * execute 方法。
+     * @param id - 标识
+     * @param input - 输入
+     * @param ctx - 上下文
+      * @returns ToolResult<Output> 实例
+     */
     async execute<Output = unknown>(id: string, input: unknown, ctx: ToolContext = {}): Promise<ToolResult<Output>> {
         const started = Date.now();
         const tool = this.tools.get(id) as HarnessTool | undefined;
@@ -136,6 +143,11 @@ export class ToolRegistry {
     }
 }
 
+/**
+ * createTool 函数。
+ * @param tool - 工具
+  * @returns HarnessTool<Input, Output> 实例
+ */
 export function createTool<Input, Output>(tool: HarnessTool<Input, Output>): HarnessTool<Input, Output> {
     return tool;
 }

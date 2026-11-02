@@ -12,6 +12,9 @@ import { validateProjectName } from '../shared/project-name';
 
 
 const log = createLogger('GenerateWorldviewModal');
+/**
+ * 生成世界观弹窗。
+ */
 export class GenerateWorldviewModal extends Modal {
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
@@ -25,6 +28,9 @@ export class GenerateWorldviewModal extends Modal {
         this.contextManager = plugin.ctxManager;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -273,6 +279,9 @@ ${result.content}`;
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

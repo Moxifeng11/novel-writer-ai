@@ -80,6 +80,11 @@ export interface BookClassificationInput {
 
 const CLASSIFICATION_PREFIX = '分类:';
 
+/**
+ * isClassificationTag 函数。
+ * @param tag - 标签
+ * @returns 是否成功
+ */
 export function isClassificationTag(tag: string): boolean {
     return String(tag || '').startsWith(CLASSIFICATION_PREFIX);
 }
@@ -115,6 +120,11 @@ function defaultStats(stats?: FingerprintStatsLike): Required<FingerprintStatsLi
     };
 }
 
+/**
+ * classifyFingerprint 函数。
+ * @param fp - 文风指纹
+  * @returns ClassificationResult 实例
+ */
 export function classifyFingerprint(fp: ClassifiableFingerprint): ClassificationResult {
     const stats = defaultStats(fp.stats);
     const text = `${fp.name} ${fp.source || ''} ${(fp.tags || []).join(' ')} ${featureText(fp)}`;
@@ -170,16 +180,32 @@ function pickPrimary(tags: ClassificationTag[]): string {
     return '未分类';
 }
 
+/**
+ * classificationTagNames 函数。
+ * @param result - 结果
+ * @returns 结果数组
+ */
 export function classificationTagNames(result: ClassificationResult): string[] {
     return result.tags.map(tag => `${CLASSIFICATION_PREFIX}${tag.label}`);
 }
 
+/**
+ * mergeClassificationTags 函数。
+ * @param existing - 已有
+ * @param result - 结果
+ * @returns 结果数组
+ */
 export function mergeClassificationTags(existing: string[], result: ClassificationResult): string[] {
     const generated = classificationTagNames(result);
     const kept = existing.filter(tag => !isClassificationTag(tag));
     return [...new Set([...kept, ...generated])].slice(0, 30);
 }
 
+/**
+ * classifyBook 函数。
+ * @param input - 输入
+  * @returns ClassificationResult 实例
+ */
 export function classifyBook(input: BookClassificationInput): ClassificationResult {
     const tags: ClassificationTag[] = [];
     const theme = input.themeTags || [];

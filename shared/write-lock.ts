@@ -30,6 +30,12 @@ const queues = new Map<string, LockQueue>();
  */
 export const KNOWLEDGE_VECTOR_STATE_LOCK = 'knowledge-vectors:state';
 
+/**
+ * withWriteLock 函数。
+ * @param filePath - 文件路径
+ * @param fn - 函数
+  * @returns T 实例
+ */
 export async function withWriteLock<T>(
     filePath: string,
     fn: () => Promise<T>,

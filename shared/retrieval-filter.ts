@@ -19,10 +19,16 @@ import {
     RETRIEVAL_RELATIVE_MIN_SCORE,
 } from './thresholds';
 
+/**
+ * ScoredRetrievalItem 类型定义。
+ */
 export interface ScoredRetrievalItem {
     score: number;
 }
 
+/**
+ * RetrievalFilterOptions 类型定义。
+ */
 export interface RetrievalFilterOptions {
     /** 相对最高分的最低比例，默认 `RETRIEVAL_RELATIVE_MIN_SCORE` */
     relativeRatio?: number;
@@ -34,6 +40,9 @@ export interface RetrievalFilterOptions {
  * 过滤低相关检索结果，返回按分数降序的新数组（不修改入参）。
  *
  * 注意：调用方已完成维度/书籍/维度名等业务筛选，这里只处理分数。
+ * @param results - 结果列表
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function filterRetrievalResults<T extends ScoredRetrievalItem>(
     results: T[],
@@ -59,6 +68,9 @@ export function filterRetrievalResults<T extends ScoredRetrievalItem>(
 /** 过滤范围：全局共用最高分 / 每个维度各自用最高分 */
 export type RetrievalFilterScope = 'global' | 'perDimension';
 
+/**
+ * DimensionScoredItem 类型定义。
+ */
 export interface DimensionScoredItem extends ScoredRetrievalItem {
     dimension?: string;
 }
@@ -67,6 +79,10 @@ export interface DimensionScoredItem extends ScoredRetrievalItem {
  * 按范围过滤检索结果。
  * - global：保持历史行为（所有维度共用一个最高分）；
  * - perDimension：按 `dimension` 分组各自过滤，再按分数降序合并。
+ * @param results - 结果列表
+ * @param scope - 作用域
+ * @param options - 配置项
+ * @returns 结果数组
  */
 export function filterRetrievalResultsByScope<T extends DimensionScoredItem>(
     results: T[],

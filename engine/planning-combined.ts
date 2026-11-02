@@ -8,8 +8,14 @@
 /** 合并规划覆盖的步骤 key（顺序即输出分隔符的解析顺序） */
 export const COMBINED_PLANNING_STEP_KEYS = ['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand'] as const;
 
+/**
+ * CombinedPlanningStepKey 类型定义。
+ */
 export type CombinedPlanningStepKey = typeof COMBINED_PLANNING_STEP_KEYS[number];
 
+/**
+ * COMBINED_PLANNING_SYSTEM_PROMPT 常量。
+ */
 export const COMBINED_PLANNING_SYSTEM_PROMPT = `你是一位资深小说编辑。请为第\${chapNum}章一次性生成完整的章节规划，包含5个模块。
 
 【输出格式——严格遵循，用分隔符划分5个模块】
@@ -85,6 +91,9 @@ craft_notes: 可选
 - 关键场景3-5个
 - 必须有结尾钩子（悬念式/反转式/预告式/前置冲突）`;
 
+/**
+ * COMBINED_PLANNING_USER_PROMPT 常量。
+ */
 export const COMBINED_PLANNING_USER_PROMPT = `根据以下素材，为第\${chapNum}章一次性生成完整的章节规划（5个模块）。
 
 【分卷规划】
@@ -166,6 +175,7 @@ export const COMBINED_PLANNING_MIN_MODULE_CHARS = 50;
  * @param parsed - 解析结果
  * @param completed - 完成状态
  * @param isValid - 是否有效
+ * @param minChars - 最小字符
   * @returns boolean } 结果
  */
 export function evaluateCombinedPlanning(

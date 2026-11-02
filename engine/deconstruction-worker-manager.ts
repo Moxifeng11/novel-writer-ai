@@ -30,8 +30,14 @@ import { AntiAIDetector } from './anti-ai-detector';
 
 const log = createLogger('DeconstructionWorkerManager');
 
+/**
+ * DeconstructDimension 类型定义。
+ */
 export type DeconstructDimension = 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow' | 'commercial' | 'readability';
 
+/**
+ * DeconstructionWorkerManagerOptions 类型定义。
+ */
 export interface DeconstructionWorkerManagerOptions {
     maxWorkers?: number;
     workerUrl?: string;
@@ -42,6 +48,9 @@ interface CancelablePromise<T> extends Promise<T> {
     cancel: () => void;
 }
 
+/**
+ * DeconstructionWorkerManager 类。
+ */
 export class DeconstructionWorkerManager {
     private workerManager: WorkerManager | null = null;
     private options: Required<Omit<DeconstructionWorkerManagerOptions, 'workerUrl'>> & { workerUrl?: string };

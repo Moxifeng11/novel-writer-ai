@@ -39,6 +39,9 @@ import { renderCollapsibleSection } from './settings-utils';
 
 
 const log = createLogger('MiniSettingsModal');
+/**
+ * MiniSettingsModal 类。
+ */
 export class MiniSettingsModal extends Modal {
     private plugin: NovelWriterPlugin;
     private proDropdown: DropdownComponent | null = null;
@@ -90,6 +93,9 @@ export class MiniSettingsModal extends Modal {
         return [...this.plugin.settings.availableModels];
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen() {
         this.modalEl.addClass('nw-scope', 'nw-modal-xl');
         this.modalEl.style.setProperty('margin', 'auto', 'important');
@@ -175,6 +181,9 @@ export class MiniSettingsModal extends Modal {
         });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
     }
@@ -2095,6 +2104,9 @@ export class MiniSettingsModal extends Modal {
                 const rules = await rulesService.getWritingRules();
                 const modal = new (class extends Modal {
                     constructor(app: App) { super(app); }
+                    /**
+                     * onOpen 方法。
+                     */
                     onOpen() {
                         const { contentEl } = this;
                         contentEl.createEl('h3', { text: '写作规则内容' });

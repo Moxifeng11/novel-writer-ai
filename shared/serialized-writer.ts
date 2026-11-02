@@ -12,6 +12,9 @@
 
 import { createLogger, Logger } from './logger';
 
+/**
+ * SerializedWriterOptions 类型定义。
+ */
 export interface SerializedWriterOptions {
     /** 队列满时的最大等待时间 (ms)，超时后丢弃旧操作 */
     maxWaitMs?: number;
@@ -19,6 +22,9 @@ export interface SerializedWriterOptions {
     debug?: boolean;
 }
 
+/**
+ * SerializedWriter 类。
+ */
 export class SerializedWriter {
     private queue: Promise<void> = Promise.resolve();
     private _isDirty = false;
@@ -154,6 +160,8 @@ export class SerializedWriter {
     /**
      * 创建带有自动脏标记管理的包装器
      * 操作成功完成后自动清除脏标记
+     * @param operation - 操作名
+      * @returns T 实例
      */
     enqueueAutoClean<T>(operation: () => Promise<T>): Promise<T> {
         return this.enqueue(async () => {
@@ -175,6 +183,10 @@ export class SerializedWriter {
  */
 let globalWriter: SerializedWriter | null = null;
 
+/**
+ * getGlobalSerializedWriter 函数。
+  * @returns SerializedWriter 实例
+ */
 export function getGlobalSerializedWriter(): SerializedWriter {
     if (!globalWriter) {
         globalWriter = new SerializedWriter({

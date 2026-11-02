@@ -23,6 +23,9 @@ const log = createLogger('ModelDiscovery');
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const TIMEOUT_MS = 15_000;
 
+/**
+ * DiscoveredModel 类型定义。
+ */
 export interface DiscoveredModel {
     /** 请求时可用的模型 ID */
     id: string;
@@ -34,10 +37,16 @@ export interface DiscoveredModel {
     maxTokens?: number;
 }
 
+/**
+ * DiscoveryResult 类型定义。
+ */
 export type DiscoveryResult =
     | { kind: 'ok'; models: DiscoveredModel[]; url: string }
     | { kind: 'error'; message: string; url: string };
 
+/**
+ * DiscoverRequestUrlFn 类型定义。
+ */
 export type DiscoverRequestUrlFn = (options: {
     url: string;
     method: string;

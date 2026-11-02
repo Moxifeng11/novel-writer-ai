@@ -25,6 +25,9 @@ interface FingerprintDetailModalOptions {
     onOpenIntensity?: (fp: StyleFingerprint) => void;
 }
 
+/**
+ * FingerprintDetailModal 类。
+ */
 export class FingerprintDetailModal extends Modal {
     private options: FingerprintDetailModalOptions;
     private expandedFeatures: Record<string, boolean> = {};
@@ -44,11 +47,17 @@ export class FingerprintDetailModal extends Modal {
         }
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen() {
         this.modalEl.addClass('nw-scope');
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         this.contentEl.empty();
     }

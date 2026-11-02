@@ -18,6 +18,9 @@ import {
     PLOT_EVAL_MIN_INTERVAL_MS,
 } from './thresholds';
 
+/**
+ * PlotEvalGateState 类型定义。
+ */
 export interface PlotEvalGateState {
     /** 评估时的章节身份（项目 + 章号），换章后不再沿用旧章节的门槛状态 */
     chapterKey: string;
@@ -27,6 +30,9 @@ export interface PlotEvalGateState {
     at: number;
 }
 
+/**
+ * PlotEvalGateInput 类型定义。
+ */
 export interface PlotEvalGateInput {
     /** 章节身份（项目 + 章号），换章后即使正文相同也要重新评估 */
     chapterKey: string;
@@ -37,6 +43,9 @@ export interface PlotEvalGateInput {
     force?: boolean;
 }
 
+/**
+ * PlotEvalGateDecision 类型定义。
+ */
 export interface PlotEvalGateDecision {
     run: boolean;
     next: PlotEvalGateState;
@@ -57,10 +66,21 @@ function hashText(text: string): string {
     return (hash >>> 0).toString(36);
 }
 
+/**
+ * buildPlotEvalSignature 函数。
+ * @param chapterKey - 章节键
+ * @param text - 文本内容
+ * @returns 文本结果
+ */
 export function buildPlotEvalSignature(chapterKey: string, text: string): string {
     return `${chapterKey}#${text.length}#${hashText(text)}`;
 }
 
+/**
+ * shouldRunPlotEval 函数。
+ * @param input - 输入
+  * @returns PlotEvalGateDecision 实例
+ */
 export function shouldRunPlotEval(input: PlotEvalGateInput): PlotEvalGateDecision {
     const { chapterKey, text, last, now } = input;
     const signature = buildPlotEvalSignature(chapterKey, text);

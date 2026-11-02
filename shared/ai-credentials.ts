@@ -11,6 +11,9 @@
 
 import { resolveProviderSourceType } from './model-source';
 
+/**
+ * AiCredentialSettingsLike 类型定义。
+ */
 export interface AiCredentialSettingsLike {
     apiKey?: string;
     apiEndpoint?: string;

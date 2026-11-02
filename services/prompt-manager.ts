@@ -11,11 +11,17 @@ import type {
 import { DEFAULT_PROMPT_MANAGER_CONFIG } from '../shared/prompt-manager-types';
 import { DEFAULT_PROMPT_TEMPLATES } from './prompt-templates-default';
 
+/**
+ * 提示词管理器依赖列表结构定义。
+ */
 export interface PromptManagerDeps {
     getConfig(): Partial<PromptManagerConfig>;
     setConfig(config: Partial<PromptManagerConfig>): Promise<void>;
 }
 
+/**
+ * 提示词管理器。
+ */
 export class PromptManager {
     private deps: PromptManagerDeps;
     private defaultTemplates: PromptTemplate[];
@@ -132,6 +138,13 @@ export class PromptManager {
         return template.versions.find(v => v.version === version) || null;
     }
 
+    /**
+     * 渲染提示词。
+     * @param templateId - 参数值
+     * @param variables - 参数值
+     * @param version - 参数值
+      * @returns string } 结果 或 null
+     */
     renderPrompt(
         templateId: string,
         variables: Record<string, string>,
@@ -249,6 +262,12 @@ export class PromptManager {
         return true;
     }
 
+    /**
+     * 添加版本。
+     * @param templateId - 参数值
+     * @param versionData - 参数值
+      * @returns PromptTemplateVersion 或 null
+     */
     async addVersion(
         templateId: string,
         versionData: Omit<PromptTemplateVersion, 'createdAt'>
@@ -343,6 +362,11 @@ export class PromptManager {
         ) || null;
     }
 
+    /**
+     * createABTest 方法。
+     * @param data - 数据
+      * @returns ABTest 实例
+     */
     async createABTest(data: {
         name: string;
         description?: string;
@@ -437,6 +461,12 @@ export class PromptManager {
         return rand < test.trafficSplit.a ? 'a' : 'b';
     }
 
+    /**
+     * getPromptWithABTest 方法。
+     * @param templateId - 参数值
+     * @param variables - 参数值
+      * @returns 'a' 结果 或 null
+     */
     getPromptWithABTest(
         templateId: string,
         variables: Record<string, string>
@@ -460,6 +490,10 @@ export class PromptManager {
         return this.renderPrompt(templateId, variables);
     }
 
+    /**
+     * recordUsage 方法。
+     * @param record - 记录
+     */
     async recordUsage(record: Omit<PromptUsageRecord, 'id' | 'timestamp'> & { timestamp?: number }): Promise<void> {
         const usageRecord: PromptUsageRecord = {
             id: `usage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -611,6 +645,9 @@ export class PromptManager {
     }
 }
 
+/**
+ * PROMPT_CATEGORY_LABELS 常量。
+ */
 export const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {
     character: '👤 人设生成',
     chapter: '📖 章节生成',

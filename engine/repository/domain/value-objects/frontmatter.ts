@@ -36,6 +36,9 @@ export class Frontmatter {
 
     /**
      * 获取指定字段的值
+     * @param key - 键
+     * @param defaultValue - 默认值
+      * @returns T 实例
      */
     get<T = any>(key: string, defaultValue?: T): T {
         const value = this.data[key];
@@ -173,6 +176,10 @@ export class Frontmatter {
         return true;
     }
 
+    /**
+     * 转换为JSON。
+     * @returns 映射结果
+     */
     toJSON(): Record<string, any> {
         return { ...this.data };
     }

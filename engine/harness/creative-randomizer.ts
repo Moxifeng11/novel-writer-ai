@@ -11,6 +11,9 @@
 import { trueRandom, type RandomSource } from './true-random';
 import type { CreationMode } from '../../shared/creation-mode';
 
+/**
+ * RandomFactorSet 类型定义。
+ */
 export interface RandomFactorSet {
     seed: string;
     layers: {
@@ -74,6 +77,9 @@ const FORBIDDEN_PATTERN_GROUPS: string[][] = [
     ['车祸失忆开局', '真假千金开局无新变量', '重生复仇只靠先知记忆'],
 ];
 
+/**
+ * RandomizedBrief 类型定义。
+ */
 export interface RandomizedBrief {
     mode: CreationMode;
     seed: string;
@@ -81,9 +87,17 @@ export interface RandomizedBrief {
     promptBlock: string;
 }
 
+/**
+ * CreativeRandomizer 类。
+ */
 export class CreativeRandomizer {
     constructor(private readonly random: RandomSource = trueRandom) {}
 
+    /**
+     * buildFactors 方法。
+     * @param mode - 模式
+      * @returns RandomFactorSet 实例
+     */
     buildFactors(mode: CreationMode): RandomFactorSet {
         const scope = mode === 'short' ? 'short' : mode === 'script' ? 'script' : 'shared';
         const pickLayer = (key: keyof typeof PREMISE_FACTORS): string[] => {
@@ -108,6 +122,11 @@ export class CreativeRandomizer {
         };
     }
 
+    /**
+     * promptBlock 方法。
+     * @param factors - 因子列表
+     * @returns 文本结果
+     */
     promptBlock(factors: RandomFactorSet): string {
         return [
             '【多层真随机创作因子】',
@@ -133,10 +152,18 @@ export class CreativeRandomizer {
         ].join('\n');
     }
 
+    /**
+     * 简报。
+     * @param mode - 模式
+      * @returns RandomizedBrief 实例
+     */
     brief(mode: CreationMode): RandomizedBrief {
         const factors = this.buildFactors(mode);
         return { mode, seed: factors.seed, factors, promptBlock: this.promptBlock(factors) };
     }
 }
 
+/**
+ * creativeRandomizer 常量。
+ */
 export const creativeRandomizer = new CreativeRandomizer();

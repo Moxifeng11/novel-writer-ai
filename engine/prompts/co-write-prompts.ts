@@ -15,6 +15,9 @@ export type CoWriteDirection =
     | 'resolution'
     | 'surprise';
 
+/**
+ * CO_WRITE_DIRECTION_PROMPTS 常量。
+ */
 export const CO_WRITE_DIRECTION_PROMPTS: Record<CoWriteDirection, string> = {
     action: '接下来写一段动作或冲突场景，聚焦身体动作和外部变化。',
     emotion: '接下来写一句内心感受或情绪波动，从身体感觉出发。',
@@ -28,6 +31,9 @@ export const CO_WRITE_DIRECTION_PROMPTS: Record<CoWriteDirection, string> = {
 
 import { HUMAN_VOICE_SHORT } from './human-voice';
 
+/**
+ * CO_WRITE_PROMPTS 常量。
+ */
 export const CO_WRITE_PROMPTS = {
     sentenceSystem: `镜头贴着主角。只写正在发生的一两秒，不解释、不总结、不站在作者角度。场景描写必须落在具体地点、时间与至少一个感官细节上，优先使用场景卡提供的 sensory_hook 与 body_reaction。${HUMAN_VOICE_SHORT}`,
     buildSentenceUserPrompt(precedingText: string, directionPrompt: string, cursorHint = ''): string {
@@ -79,6 +85,9 @@ export const CO_WRITE_PROMPTS = {
     }
 };
 
+/**
+ * PRECISION_MODE_SYSTEM_APPEND 常量。
+ */
 export const PRECISION_MODE_SYSTEM_APPEND = `
 【精准风格约束】
 你正在模仿特定作家的写作风格。请严格遵守以下约束：

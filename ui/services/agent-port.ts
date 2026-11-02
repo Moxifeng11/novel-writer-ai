@@ -40,6 +40,12 @@ import { listProjects } from '../export-manuscript-modal';
 
 const log = createLogger('AgentPort');
 
+/**
+ * getAgentContext 函数。
+ * @param app - Obsidian 应用实例
+ * @param plugin - 插件实例
+  * @returns AgentContext 实例
+ */
 export function getAgentContext(app: App, plugin: NovelWriterPlugin): AgentContext {
     return { projects: listProjects(app), activeProject: plugin.getActiveProject() };
 }
@@ -68,6 +74,12 @@ function toChapterSummary(entry: ChapterListEntry): AgentChapterSummary {
     };
 }
 
+/**
+ * createAgentPort 函数。
+ * @param app - Obsidian 应用实例
+ * @param plugin - 插件实例
+  * @returns GuideAgentPort 实例
+ */
 export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgentPort {
     /** 打开短篇/剧本的单元写作页签（异步落位，失败时提示） */
     const openUnitTab = async (project: string, unitNumber: number): Promise<boolean> => {

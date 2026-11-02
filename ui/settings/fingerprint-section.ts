@@ -19,6 +19,9 @@ import { createLogger } from '../../shared/logger';
 
 const log = createLogger('SettingsTab');
 
+/**
+ * 指纹分区。
+ */
 export class FingerprintSection extends SettingsSection {
     private fingerprintLibrary: StyleFingerprintLibrary | null = null;
     /** 当前库实例绑定的项目：项目切换后需 setProject 重建，否则写进旧项目 */
@@ -28,6 +31,10 @@ export class FingerprintSection extends SettingsSection {
     private projectFingerprints: StyleFingerprint[] = [];
     private fingerprintLoading = false;
 
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     */
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
         section.createEl('h3', { text: '🔍 写作指纹库' });

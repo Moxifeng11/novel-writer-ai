@@ -223,6 +223,11 @@ export class Chapter extends BaseEntity {
         return new Chapter(props);
     }
 
+    /**
+     * 带状态。
+     * @param status - 状态
+      * @returns Chapter 实例
+     */
     withStatus(status: EntityStatus): Chapter {
         return new Chapter({
             ...this._props,
@@ -231,6 +236,11 @@ export class Chapter extends BaseEntity {
         });
     }
 
+    /**
+     * 带名称。
+     * @param name - 名称
+      * @returns Chapter 实例
+     */
     withName(name: string): Chapter {
         return new Chapter({
             ...this._props,
@@ -380,6 +390,10 @@ export class Chapter extends BaseEntity {
         });
     }
 
+    /**
+     * 转换为JSON。
+     * @returns 映射结果
+     */
     toJSON(): Record<string, any> {
         return {
             ...super.toJSON(),

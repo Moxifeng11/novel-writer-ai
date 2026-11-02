@@ -7,6 +7,9 @@ import { createLogger } from '../shared/logger';
 
 
 const log = createLogger('RulesService');
+/**
+ * 规则列表配置结构定义。
+ */
 export interface RulesConfig {
     version: string;
     lastModified: number;
@@ -21,6 +24,9 @@ export interface RulesConfig {
     warnings?: string[];
 }
 
+/**
+ * 规则列表服务。
+ */
 export class RulesService {
     private static instance: RulesService | null = null;
     private app: App;
@@ -36,6 +42,11 @@ export class RulesService {
         this.app = app;
     }
 
+    /**
+     * getInstance 方法。
+     * @param app - Obsidian 应用实例
+      * @returns RulesService 实例
+     */
     static getInstance(app: App): RulesService {
         if (!RulesService.instance) {
             RulesService.instance = new RulesService(app);
@@ -43,6 +54,10 @@ export class RulesService {
         return RulesService.instance;
     }
 
+    /**
+     * getWritingRules 方法。
+     * @returns 文本结果
+     */
     async getWritingRules(): Promise<string> {
         const now = Date.now();
         if (this.cachedRules && now - this.cacheTime < RulesService.CACHE_TTL) {
@@ -55,6 +70,10 @@ export class RulesService {
         return rules.content;
     }
 
+    /**
+     * 获取规则列表配置。
+      * @returns RulesConfig 实例
+     */
     async getRulesConfig(): Promise<RulesConfig> {
         const now = Date.now();
         if (this.cachedRules && now - this.cacheTime < RulesService.CACHE_TTL) {
@@ -124,11 +143,18 @@ export class RulesService {
         this.invalidateCache();
     }
 
+    /**
+     * invalidateCache 方法。
+     */
     invalidateCache(): void {
         this.cachedRules = null;
         this.cacheTime = 0;
     }
 
+    /**
+     * 检查规则列表版本。
+      * @returns Promise< 实例
+     */
     async checkRulesVersion(): Promise<{
         current: string;
         expected: string;
@@ -148,6 +174,10 @@ export class RulesService {
         };
     }
 
+    /**
+     * isRulesFilePresent 方法。
+     * @returns 是否成功
+     */
     async isRulesFilePresent(): Promise<boolean> {
         // 只要有任意版本可用就算存在（内置也算，避免「未检测到规则文件」误导）
         const listing = await listRulesVersions(this.app, { activeVersion: this.activeVersion, project: this.project });

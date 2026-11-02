@@ -14,8 +14,14 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('KnowledgeBaseConfig');
 
+/**
+ * 自定义题材结构定义。
+ */
 export type CustomGenre = GenreConfig & { isCustom: boolean };
 
+/**
+ * LegacyCustomGenre 类型定义。
+ */
 export interface LegacyCustomGenre {
     id: string;
     name: string;
@@ -24,6 +30,9 @@ export interface LegacyCustomGenre {
     isCustom: boolean;
 }
 
+/**
+ * 自定义技法结构定义。
+ */
 export interface CustomTechnique {
     id: string;
     name: string;
@@ -34,6 +43,9 @@ export interface CustomTechnique {
     genreWeight: number;
 }
 
+/**
+ * 知识基础配置结构定义。
+ */
 export interface KnowledgeBaseConfig {
     customGenres: CustomGenre[];
     customPersonalityTags: Record<string, string[]>;
@@ -80,6 +92,9 @@ function convertLegacyToFull(legacy: LegacyCustomGenre): CustomGenre {
     };
 }
 
+/**
+ * 知识基础配置管理器。
+ */
 export class KnowledgeBaseConfigManager {
     private app: App;
     private baseDir?: string;

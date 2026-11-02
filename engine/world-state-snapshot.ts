@@ -8,6 +8,9 @@
  */
 import type { SceneTask } from './scene-generation-loop';
 
+/**
+ * CharacterWorldState 类型定义。
+ */
 export interface CharacterWorldState {
     name: string;
     status: string;
@@ -19,6 +22,9 @@ export interface CharacterWorldState {
     items: string;
 }
 
+/**
+ * RelationshipWorldState 类型定义。
+ */
 export interface RelationshipWorldState {
     a: string;
     b: string;
@@ -30,6 +36,9 @@ export interface RelationshipWorldState {
     status: string;
 }
 
+/**
+ * ChapterWorldStateSnapshot 类型定义。
+ */
 export interface ChapterWorldStateSnapshot {
     chapterNum: number;
     chapterName: string;
@@ -42,6 +51,9 @@ export interface ChapterWorldStateSnapshot {
     unresolvedForeshadows: string[];
 }
 
+/**
+ * BuildWorldStateSnapshotInput 类型定义。
+ */
 export interface BuildWorldStateSnapshotInput {
     chapterNum: number;
     chapterName: string;
@@ -67,6 +79,11 @@ function trimCell(value: string, max = 80): string {
     return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
+/**
+ * buildChapterWorldStateSnapshot 函数。
+ * @param input - 输入
+  * @returns ChapterWorldStateSnapshot 实例
+ */
 export function buildChapterWorldStateSnapshot(input: BuildWorldStateSnapshotInput): ChapterWorldStateSnapshot {
     const scenes = input.scenes || [];
     const lastScene = scenes[scenes.length - 1];
@@ -123,6 +140,11 @@ export function buildChapterWorldStateSnapshot(input: BuildWorldStateSnapshotInp
     };
 }
 
+/**
+ * formatChapterStateSnapshot 函数。
+ * @param snapshot - 快照
+ * @returns 文本结果
+ */
 export function formatChapterStateSnapshot(snapshot: ChapterWorldStateSnapshot): string {
     const lines: string[] = [];
     lines.push('---');
@@ -178,6 +200,7 @@ export function formatChapterStateSnapshot(snapshot: ChapterWorldStateSnapshot):
  * 供下一章 prompt 使用的紧凑摘要（≤1800 字）。
  *
  * @param snapshot - 快照
+ * @param maxChars - 最大字符数
  * @returns 文本结果
  */
 export function formatSnapshotForPrompt(snapshot: ChapterWorldStateSnapshot, maxChars = 1800): string {

@@ -7,6 +7,9 @@
 
 import type { CreationMode } from './creation-mode';
 
+/**
+ * ExportPrecheckInput 类型定义。
+ */
 export interface ExportPrecheckInput {
     mode: CreationMode;
     /** 长篇：正文 frontmatter status 未到 settled 的章 */

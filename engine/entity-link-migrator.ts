@@ -23,6 +23,9 @@ import { createLogger } from '../shared/logger';
 
 const log = createLogger('EntityLinkMigrator');
 
+/**
+ * EntityLinkChange 类型定义。
+ */
 export interface EntityLinkChange {
     path: string;
     entity: string;
@@ -32,6 +35,9 @@ export interface EntityLinkChange {
     to: string | string[];
 }
 
+/**
+ * EntityLinkMigrationPlan 类型定义。
+ */
 export interface EntityLinkMigrationPlan {
     /** 扫描的实体文件数 */
     scanned: number;

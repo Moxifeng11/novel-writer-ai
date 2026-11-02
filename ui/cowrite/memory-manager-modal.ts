@@ -1,6 +1,9 @@
 ﻿import { Modal, Setting, Notice } from 'obsidian';
 
 // E1/E3: 风格自学习 / 偏好记忆管理弹窗
+/**
+ * 记忆管理器弹窗。
+ */
 export class MemoryManagerModal extends Modal {
     private snapshot: any;
     private onAddPreference: (category: any, key: string, value: string) => Promise<void>;
@@ -11,6 +14,9 @@ export class MemoryManagerModal extends Modal {
         this.onAddPreference = onAddPreference;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
         this.titleEl.setText('🧠 风格 / 偏好记忆');
@@ -113,6 +119,9 @@ export class MemoryManagerModal extends Modal {
         });
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

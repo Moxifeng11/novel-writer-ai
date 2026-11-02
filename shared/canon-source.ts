@@ -219,6 +219,12 @@ export function selectAuthoritativeSources(sources: CanonSource[]): CanonSource[
     return sources.filter(s => isAuthoritativeSource(s.tier) && s.excerpt.trim().length > 0);
 }
 
+/**
+ * formatCanonSourcesForPrompt 函数。
+ * @param sources - 来源列表
+ * @param maxChars - 最大字符数
+ * @returns 文本结果
+ */
 export function formatCanonSourcesForPrompt(sources: CanonSource[], maxChars = 12000): string {
     const selected = selectAuthoritativeSources(sources);
     if (selected.length === 0) return '（没有可用的官方原著来源；所有字段必须写“待核实（未找到可靠原作来源）”）';
@@ -235,6 +241,11 @@ export function formatCanonSourcesForPrompt(sources: CanonSource[], maxChars = 1
     return lines.join('\n\n');
 }
 
+/**
+ * extractCitationIds 函数。
+ * @param text - 文本内容
+ * @returns 结果数组
+ */
 export function extractCitationIds(text: string): string[] {
     const ids = new Set<string>();
     for (const match of text.matchAll(/\[(S\d+)\]/g)) ids.add(match[1]);

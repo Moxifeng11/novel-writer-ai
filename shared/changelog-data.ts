@@ -16,6 +16,9 @@ export interface ChangelogEntry {
     }[];
 }
 
+/**
+ * BUILTIN_CHANGELOG 常量。
+ */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
         version: '4.24.0',

@@ -10,6 +10,9 @@ import NovelWriterPlugin from '../main';
 
 type ExpandStyle = '细节丰富' | '情节推进' | '情感深化' | '场景描写';
 
+/**
+ * 扩写文本弹窗。
+ */
 export class ExpandTextModal extends Modal {
     private plugin: NovelWriterPlugin;
     private selectedText: string;
@@ -26,6 +29,9 @@ export class ExpandTextModal extends Modal {
         this.editor = editor;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -219,6 +225,9 @@ ${this.selectedText}
         }
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();

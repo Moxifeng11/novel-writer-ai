@@ -24,6 +24,9 @@ import { describeSecretForInput } from '../../shared/secret-display';
 
 const log = createLogger('SettingsTab');
 
+/**
+ * 知识分区。
+ */
 export class KnowledgeSection extends SettingsSection {
     private knowledgeBaseManager: KnowledgeBaseManager | null = null;
     private knowledgeTagManager: KnowledgeTagManager | null = null;
@@ -35,6 +38,10 @@ export class KnowledgeSection extends SettingsSection {
     /** 搜索框重建节流句柄：整分区 refresh 会销毁输入框，必须防抖 + 恢复焦点 */
     private knowledgeSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
+    /**
+     * 渲染。
+     * @param container - 容器元素
+     */
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
         section.createEl('h3', { text: '📚 写作知识库' });

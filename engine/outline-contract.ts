@@ -534,6 +534,7 @@ export function chunkRanges(
  * @param content - 内容
  * @param start - 起始位置
  * @param end - 结束位置
+ * @param extraRows - 额外行列表
  * @returns 文本结果
  */
 export function consolidateChapterTable(

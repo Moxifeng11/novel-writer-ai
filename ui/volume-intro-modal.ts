@@ -39,6 +39,9 @@ interface VolumeData {
     chapters: { num: number; conflict: string }[];
 }
 
+/**
+ * VolumeIntroModal 类。
+ */
 export class VolumeIntroModal extends Modal {
     private aiEngine: AIEngine;
     private store: SynopsisStore;
@@ -63,6 +66,9 @@ export class VolumeIntroModal extends Modal {
         this.currentProject = initialProject || plugin.getActiveProject() || '';
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope', 'nw-modal-lg');
         this.contentEl.addClass('nw-form-stack');
@@ -489,6 +495,9 @@ export class VolumeIntroModal extends Modal {
         return parts.join('\n').slice(0, 6000);
     }
 
+    /**
+     * onClose 方法。
+     */
     async onClose(): Promise<void> {
         await this.flushDraft();
         this.contentEl.empty();

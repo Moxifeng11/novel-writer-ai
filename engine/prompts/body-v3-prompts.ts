@@ -38,6 +38,9 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V3 = `你是小说家，写中文长�
 每场戏填四格：谁要什么 / 谁在拦 / 交换了什么 / 离场时谁变了。
 排不出来就把这场戏合并掉。`;
 
+/**
+ * BODY_GENERATION_USER_TEMPLATE_V3 常量。
+ */
 export const BODY_GENERATION_USER_TEMPLATE_V3 = `【台词清单——按顺序写进正文，每条都要出现；可微调字词，不许删条、不许改成转述】
 \${dialogueSkeleton}
 
@@ -88,4 +91,7 @@ export const BODY_GENERATION_USER_TEMPLATE_V3 = `【台词清单——按顺序�
 对话占三成以上；每两三条对话之间最多插 1–3 句叙述。
 字数 ≥ \${baseWords} 字。`;
 
+/**
+ * BODY_GENERATION_V3_DESC 常量。
+ */
 export const BODY_GENERATION_V3_DESC = '✍️ 正文生成(V3·节拍先行) — 台词清单前置：信息由人物说出，段落跟动作走';

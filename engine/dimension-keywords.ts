@@ -411,6 +411,11 @@ export const NARRATIVE_TEMPORALITY_WORDS = {
   ]
 };
 
+/**
+ * getKeywordsForDimension 函数。
+ * @param dimension - 维度
+ * @returns 映射结果
+ */
 export function getKeywordsForDimension(dimension: string): Record<string, string[]> {
   switch (dimension) {
     case 'emotion':
@@ -435,6 +440,10 @@ export function getKeywordsForDimension(dimension: string): Record<string, strin
   }
 }
 
+/**
+ * getAllKeywordGroups 函数。
+ * @returns 结果数组
+ */
 export function getAllKeywordGroups(): string[] {
   return [
     'emotion',

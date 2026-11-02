@@ -12,6 +12,9 @@
 import { App, Modal } from 'obsidian';
 
 
+/**
+ * PasswordModal 类。
+ */
 export class PasswordModal extends Modal {
     private readonly mode: 'ask' | 'set';
     private resolved = false;
@@ -49,6 +52,9 @@ export class PasswordModal extends Modal {
         });
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -124,6 +130,9 @@ export class PasswordModal extends Modal {
         inputEl.focus();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         // 用户直接关闭弹窗（Esc / 点遮罩）视同取消
         if (!this.resolved) {

@@ -14,8 +14,14 @@
 import type { AppearancePreset, ThemePreset } from './theme-colors';
 import { isHexColor } from './theme-colors';
 
+/**
+ * 主题模式结构定义。
+ */
 export type ThemeMode = 'light' | 'dark';
 
+/**
+ * GalleryVariant 类型定义。
+ */
 export interface GalleryVariant {
     /** L1 基底色 */
     base: string;
@@ -27,6 +33,9 @@ export interface GalleryVariant {
     preset: AppearancePreset;
 }
 
+/**
+ * GalleryTheme 类型定义。
+ */
 export interface GalleryTheme {
     id: string;
     /** 主题名（用于按钮与提示） */
@@ -100,10 +109,21 @@ export const BUILTIN_THEMES: readonly GalleryTheme[] = [
     },
 ];
 
+/**
+ * findBuiltinTheme 函数。
+ * @param id - 标识
+  * @returns GalleryTheme 或 undefined
+ */
 export function findBuiltinTheme(id: string): GalleryTheme | undefined {
     return BUILTIN_THEMES.find(theme => theme.id === id);
 }
 
+/**
+ * builtinPresetId 函数。
+ * @param themeId - 主题ID
+ * @param mode - 模式
+ * @returns 文本结果
+ */
 export function builtinPresetId(themeId: string, mode: ThemeMode): string {
     return `${BUILTIN_PRESET_PREFIX}${themeId}:${mode}`;
 }
@@ -126,6 +146,11 @@ export function parseBuiltinPresetId(activePresetId: string | undefined): { them
     return { themeId, mode };
 }
 
+/**
+ * isBuiltinPresetId 函数。
+ * @param activePresetId - 当前预设 ID
+ * @returns 是否成功
+ */
 export function isBuiltinPresetId(activePresetId: string | undefined): boolean {
     return parseBuiltinPresetId(activePresetId) !== null;
 }

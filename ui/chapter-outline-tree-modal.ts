@@ -55,6 +55,9 @@ interface OutlineSource {
     lines: string[];
 }
 
+/**
+ * ChapterOutlineTreeModal 类。
+ */
 export class ChapterOutlineTreeModal extends Modal {
     private plugin: NovelWriterAI;
     /** v4.0：项目名，按卷归档读取分卷大纲；旧版单文件用 legacyPath 兜底 */
@@ -99,6 +102,9 @@ export class ChapterOutlineTreeModal extends Modal {
         }
     }
 
+    /**
+     * onOpen 方法。
+     */
     async onOpen() {
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
@@ -126,6 +132,9 @@ export class ChapterOutlineTreeModal extends Modal {
         this.render();
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose() {
         const { contentEl } = this;
         contentEl.empty();

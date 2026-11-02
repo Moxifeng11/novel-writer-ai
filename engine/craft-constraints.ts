@@ -7,7 +7,13 @@
 import { AI_LEXICON } from './ai-lexicon';
 import { AntiAIDetector } from './anti-ai-detector';
 
+/**
+ * CRAFT_CONSTRAINT_MAX_CHARS 常量。
+ */
 export const CRAFT_CONSTRAINT_MAX_CHARS = 1200;
+/**
+ * NEGATIVE_LIST_MAX_CHARS 常量。
+ */
 export const NEGATIVE_LIST_MAX_CHARS = 600;
 
 /**

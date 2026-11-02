@@ -1,4 +1,7 @@
 
+/**
+ * SimulatedStreamOptions 类型定义。
+ */
 export interface SimulatedStreamOptions {
     chunkDelayMs?: number;
     minDelayMs?: number;
@@ -50,6 +53,12 @@ function splitByChar(text: string, chunkSize: number = 1): string[] {
     return chunks;
 }
 
+/**
+ * splitTextIntoChunks 函数。
+ * @param text - 文本内容
+ * @param options - 配置项
+ * @returns 结果数组
+ */
 export function splitTextIntoChunks(text: string, options: SimulatedStreamOptions = {}): string[] {
     const opts = { ...DEFAULT_OPTIONS, ...options };
     switch (opts.splitBy) {
@@ -67,6 +76,13 @@ function randomDelay(min: number, max: number): number {
     return min + Math.random() * (max - min);
 }
 
+/**
+ * 按分块延迟模拟流式输出。
+ *
+ * @param fullText - 完整文本
+ * @param options - 分块与延迟选项
+ * @returns 逐块产出文本，最终返回完整文本
+ */
 export async function* createSimulatedStream(
     fullText: string,
     options: SimulatedStreamOptions = {}
@@ -96,6 +112,14 @@ export async function* createSimulatedStream(
     return accumulated;
 }
 
+/**
+ * 带取消信号的模拟流式输出。
+ *
+ * @param fullText - 完整文本
+ * @param signal - 取消信号
+ * @param options - 分块与延迟选项
+ * @returns 逐块产出文本，最终返回完整文本
+ */
 export async function* createSimulatedStreamWithSignal(
     fullText: string,
     signal?: AbortSignal,

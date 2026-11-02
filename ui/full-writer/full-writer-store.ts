@@ -6,8 +6,14 @@ import type { CreationMode } from '../../shared/creation-mode';
 
 
 const log = createLogger('FullWriterStore');
+/**
+ * 页签类型结构定义。
+ */
 export type TabType = 'selector' | 'chapter' | 'wizard' | 'flow' | 'unit';
 
+/**
+ * 写入器页签结构定义。
+ */
 export interface WriterTab {
     id: string;
     label: string;
@@ -29,6 +35,9 @@ export interface WriterTab {
     unitName?: string;
 }
 
+/**
+ * FullWriterStateSnapshot 类型定义。
+ */
 export interface FullWriterStateSnapshot {
     project: string;
     chapterName: string;
@@ -44,6 +53,9 @@ export interface FullWriterStateSnapshot {
 
 type StateChangeListener = (snapshot: FullWriterStateSnapshot) => void;
 
+/**
+ * 完整写入器存储结构定义。
+ */
 export interface FullWriterStore {
     project: string;
     chapterName: string;
@@ -75,6 +87,10 @@ export interface FullWriterStore {
     activateTab(tabId: string): void;
 
     resetNavState(): void;
+    /**
+     * setNavigationState 方法。
+     * @param partial - 部分结果
+     */
     setNavigationState(partial: Partial<{
         project: string;
         chapterName: string;
@@ -87,6 +103,9 @@ export interface FullWriterStore {
     subscribe(listener: StateChangeListener): () => void;
 }
 
+/**
+ * FullWriterStoreImpl 类。
+ */
 export class FullWriterStoreImpl implements FullWriterStore {
     private _project = '';
     private _chapterName = '';
@@ -308,6 +327,10 @@ export class FullWriterStoreImpl implements FullWriterStore {
         this.scheduleNotify();
     }
 
+    /**
+     * setNavigationState 方法。
+     * @param partial - 部分结果
+     */
     setNavigationState(partial: Partial<{
         project: string;
         chapterName: string;

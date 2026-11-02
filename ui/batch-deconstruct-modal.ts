@@ -28,6 +28,9 @@ interface BatchTask {
     error?: string;
 }
 
+/**
+ * BatchDeconstructModal 类。
+ */
 export class BatchDeconstructModal extends Modal {
     private plugin: NovelWriterPlugin;
     private tasks: BatchTask[] = [];
@@ -41,6 +44,9 @@ export class BatchDeconstructModal extends Modal {
         this.plugin = plugin;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;

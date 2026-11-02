@@ -74,6 +74,11 @@ export class EmbeddingProviderFactory {
         });
     }
 
+    /**
+     * 创建。
+     * @param config - 配置
+      * @returns EmbeddingProvider 实例
+     */
     static create(config: ProviderFactoryConfig): EmbeddingProvider {
         const providerType = config.vectorProviderType || this.inferProviderType(config);
 
@@ -125,6 +130,11 @@ export class EmbeddingProviderFactory {
         return new QwenEmbeddingProvider({ apiKey, baseUrl, model });
     }
 
+    /**
+     * createWithFallback 方法。
+     * @param config - 配置
+      * @returns EmbeddingProvider 实例
+     */
     static async createWithFallback(config: ProviderFactoryConfig): Promise<EmbeddingProvider> {
         const primaryProvider = this.create(config);
         const primaryAvailable = await primaryProvider.isAvailable();
@@ -173,10 +183,19 @@ export class EmbeddingProviderFactory {
         return allTypes.filter(t => t !== primaryType);
     }
 
+    /**
+     * 获取全部提供方类型列表。
+     * @returns 结果数组
+     */
     static getAllProviderTypes(): VectorProviderType[] {
         return ['ollama', 'openai', 'doubao', 'qwen'];
     }
 
+    /**
+     * 获取提供方标签。
+     * @param type - 类型
+     * @returns 文本结果
+     */
     static getProviderLabel(type: VectorProviderType): string {
         const labels: Record<VectorProviderType, string> = {
             ollama: '本地 Ollama',

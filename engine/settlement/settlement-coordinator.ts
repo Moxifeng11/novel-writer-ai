@@ -18,8 +18,14 @@ import {
     type SettlementTableResult,
 } from './settlement-artifacts';
 
+/**
+ * SettlementArtifactMode 类型定义。
+ */
 export type SettlementArtifactMode = 'full' | 'light' | 'empty';
 
+/**
+ * SettlementArtifactInput 类型定义。
+ */
 export interface SettlementArtifactInput {
     chapterName: string;
     volume: string;
@@ -31,6 +37,9 @@ export interface SettlementArtifactInput {
     timestamp?: string;
 }
 
+/**
+ * SettlementArtifactPorts 类型定义。
+ */
 export interface SettlementArtifactPorts {
     /** 写结算表（包含标记正文 settled / 打开文件等既有副作用） */
     writeSettlementTable?: (text: string) => Promise<void>;
@@ -40,6 +49,9 @@ export interface SettlementArtifactPorts {
     refreshNarrativeOverview?: () => Promise<void>;
 }
 
+/**
+ * SettlementArtifactReport 类型定义。
+ */
 export interface SettlementArtifactReport {
     /** 成功执行的产物名，顺序与执行顺序一致 */
     written: Array<'table' | 'snapshot' | 'overview'>;
@@ -49,6 +61,12 @@ export interface SettlementArtifactReport {
 
 const LABEL = { table: '结算表', snapshot: '章节快照', overview: '叙事总览' } as const;
 
+/**
+ * writeSettlementArtifacts 函数。
+ * @param input - 输入
+ * @param ports - 端口集合
+  * @returns SettlementArtifactReport 实例
+ */
 export async function writeSettlementArtifacts(
     input: SettlementArtifactInput,
     ports: SettlementArtifactPorts,

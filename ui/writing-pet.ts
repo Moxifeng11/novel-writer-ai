@@ -14,6 +14,9 @@
 import type NovelWriterPlugin from '../main';
 import { formatWords, type StatsSummary } from '../shared/writing-stats';
 
+/**
+ * WritingPetDeps 类型定义。
+ */
 export interface WritingPetDeps {
     plugin: NovelWriterPlugin;
     getSummary: () => StatsSummary | null;
@@ -43,6 +46,9 @@ const PET_SVG = `
     <path class="nw-pet-pen" d="M84 60l9-9 5 5-9 9-6 1z"/>
 </svg>`;
 
+/**
+ * WritingPet 类。
+ */
 export class WritingPet {
     private deps: WritingPetDeps;
     private root: HTMLElement | null = null;
@@ -67,6 +73,9 @@ export class WritingPet {
         return !!this.root && this.root.isConnected;
     }
 
+    /**
+     * 挂载。
+     */
     mount(): void {
         if (this.isMounted) return;
         const root = document.body.createDiv({ cls: 'nw-pet', attr: { 'data-nw-pet': '1' } });
@@ -159,6 +168,9 @@ export class WritingPet {
         }, 1200);
     }
 
+    /**
+     * 销毁。
+     */
     destroy(): void {
         if (this.pulseTimer) {
             clearTimeout(this.pulseTimer);

@@ -48,6 +48,9 @@ import type {
 // V2 结果接口
 // ============================================================
 
+/**
+ * StyleAnalysisResultV2 类型定义。
+ */
 export interface StyleAnalysisResultV2 {
     /** V2 12 维特征 */
     features: StyleFingerprintFeaturesV2;
@@ -263,6 +266,9 @@ const NARRATIVE_FAR_WORDS = [
 // V2 风格拆解器
 // ============================================================
 
+/**
+ * StyleDeconstructorV2 类。
+ */
 export class StyleDeconstructorV2 {
     private v1Deconstructor: StyleDeconstructor;
     private vectorEnhancer?: VectorEnhancer;

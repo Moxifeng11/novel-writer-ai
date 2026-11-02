@@ -28,6 +28,11 @@ const RESERVED_NAMES = new Set([
 const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 const ALLOWED_RE = /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/;
 
+/**
+ * 规范化项目名称。
+ * @param raw - 原始
+ * @returns 文本结果
+ */
 export function normalizeProjectName(raw: string): string {
     return (raw || '')
         .normalize('NFKC')
@@ -37,12 +42,23 @@ export function normalizeProjectName(raw: string): string {
         .replace(/[.\s]+$/, '');
 }
 
+/**
+ * sanitizeProjectName 函数。
+ * @param raw - 原始
+ * @returns 文本结果
+ */
 export function sanitizeProjectName(raw: string): string {
     return normalizeProjectName(raw)
         .replace(/[\/:*?"<>|，。！？、；：“”‘’（）【】《》!?.,;:'"\s]/g, '')
         .slice(0, 20);
 }
 
+/**
+ * 校验项目名称。
+ * @param raw - 原始
+ * @param existing - 已有
+  * @returns ProjectNameValidation 实例
+ */
 export function validateProjectName(raw: string, existing: string[] = []): ProjectNameValidation {
     const normalized = normalizeProjectName(raw);
     if (!normalized) return { valid: false, normalized, error: '项目名不能为空' };

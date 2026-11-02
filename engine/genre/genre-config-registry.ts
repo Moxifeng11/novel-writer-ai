@@ -37,8 +37,14 @@ const BUILTIN_PRESETS: GenreConfig[] = [
     genericPreset,
 ].map(p => ({ ...p }) as unknown as GenreConfig);
 
+/**
+ * 自定义配置加载器结构定义。
+ */
 export type CustomConfigLoader = () => GenreConfig[] | Promise<GenreConfig[]>;
 
+/**
+ * 题材配置注册表。
+ */
 export class GenreConfigRegistry {
     private static instance: GenreConfigRegistry | null = null;
 
@@ -52,6 +58,10 @@ export class GenreConfigRegistry {
         }
     }
 
+    /**
+     * getInstance 方法。
+      * @returns GenreConfigRegistry 实例
+     */
     static getInstance(): GenreConfigRegistry {
         if (!GenreConfigRegistry.instance) {
             GenreConfigRegistry.instance = new GenreConfigRegistry();

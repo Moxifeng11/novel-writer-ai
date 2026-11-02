@@ -24,7 +24,13 @@ export interface BehaviorRow {
     summary: string;
 }
 
+/**
+ * BEHAVIOR_LOG_TITLE 常量。
+ */
 export const BEHAVIOR_LOG_TITLE = '# 角色出场记录';
+/**
+ * BEHAVIOR_LOG_COLUMNS 常量。
+ */
 export const BEHAVIOR_LOG_COLUMNS = ['章节', '角色', '本章行为摘要'] as const;
 
 function parseChapterNum(chapter: string): number {

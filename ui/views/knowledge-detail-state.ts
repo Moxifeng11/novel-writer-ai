@@ -19,6 +19,9 @@ export const DETAIL_DATA_KEYS = [
     'readabilityData',
 ] as const;
 
+/**
+ * DetailDataKey 类型定义。
+ */
 export type DetailDataKey = typeof DETAIL_DATA_KEYS[number];
 
 /**
@@ -39,6 +42,9 @@ export function emptyDetailData(): Record<DetailDataKey, null> {
     };
 }
 
+/**
+ * DetailErrorInput 类型定义。
+ */
 export interface DetailErrorInput {
     /** 书籍在列表里已不存在（被删除 / 列表过期） */
     missing?: boolean;

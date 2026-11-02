@@ -294,6 +294,7 @@ ${description ? `【补充要求】\n${description}` : ''}
      * @param name - 名称
      * @param content - 内容
      * @param missingFields - 缺失字段列表
+     * @param worldview - 世界观
       * @returns 文本结果 或 null
      */
     async repairEntity(

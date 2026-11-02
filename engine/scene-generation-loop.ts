@@ -65,6 +65,9 @@ export interface SceneFailure {
     error: string;
 }
 
+/**
+ * SceneLoopResult 类型定义。
+ */
 export interface SceneLoopResult {
     scenes: SceneLoopItem[];
     failedScenes: SceneFailure[];
@@ -72,6 +75,9 @@ export interface SceneLoopResult {
     aborted: boolean;
 }
 
+/**
+ * SceneLoopOptions 类型定义。
+ */
 export interface SceneLoopOptions {
     expansionText: string;
     snapshot: ChapterStateSnapshot;
@@ -161,10 +167,18 @@ export function parseSceneBlocks(content: string): SceneTask[] {
 /** 上一场景结尾注入长度（衔接上下文用，避免整段重注入） */
 const PREV_ENDING_SLICE = 400;
 
+/**
+ * SceneGenerationLoop 类。
+ */
 export class SceneGenerationLoop {
     private verifier = new BeatVerifier();
     private detector = new ConflictDetector();
 
+    /**
+     * 执行。
+     * @param options - 配置项
+      * @returns SceneLoopResult 实例
+     */
     async run(options: SceneLoopOptions): Promise<SceneLoopResult> {
         const tasks = parseSceneBlocks(options.expansionText);
         const result: SceneLoopResult = { scenes: [], failedScenes: [], completedAll: true, aborted: false };

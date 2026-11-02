@@ -3,6 +3,9 @@ import { SuggestionRecord } from '../../shared/types';
 
 // 编辑并验证浮窗（非遮挡抽屉式，Task 3 重构）
 // 保留类名 SuggestionEditModal 与 open() 方法以兼容调用方
+/**
+ * SuggestionEditModal 类。
+ */
 export class SuggestionEditModal {
     private suggestion: SuggestionRecord;
     private initialText: string;
@@ -20,6 +23,9 @@ export class SuggestionEditModal {
         this.onSubmit = onSubmit;
     }
 
+    /**
+     * 打开。
+     */
     open(): void {
         const drawer = document.body.createDiv({ cls: 'nw-suggestion-drawer' });
         this.modalEl = drawer;
@@ -71,6 +77,9 @@ export class SuggestionEditModal {
         });
     }
 
+    /**
+     * 关闭。
+     */
     close(): void {
         if (!this.modalEl) return;
         const el = this.modalEl;

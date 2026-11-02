@@ -23,6 +23,9 @@ export type ContextKind =
     | 'random-factor'
     | 'user-preference';
 
+/**
+ * DomainHarnessProfile 类型定义。
+ */
 export interface DomainHarnessProfile {
     mode: CreationMode;
     label: string;
@@ -36,6 +39,11 @@ export interface DomainHarnessProfile {
     qualityGates: string[];
 }
 
+/**
+ * validateDomainProfile 函数。
+ * @param profile - 配置档
+ * @returns 结果数组
+ */
 export function validateDomainProfile(profile: DomainHarnessProfile): string[] {
     const issues: string[] = [];
     if (!profile.mode) issues.push('missing mode');

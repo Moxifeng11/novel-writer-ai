@@ -1,3 +1,6 @@
+/**
+ * CompressedContext 类型定义。
+ */
 export interface CompressedContext {
     worldView: string;
     settingLib: string;
@@ -233,6 +236,17 @@ function applyHardTruncation(
 
 // ---------- 主入口 ----------
 
+/**
+ * compressWorldContext 函数。
+ * @param worldView - 世界观
+ * @param settingLib - 设定库
+ * @param foreshadowLib - 伏笔库
+ * @param timelineRaw - 时间线原始
+ * @param outlineText - 大纲文本
+ * @param currentChapter - 当前章节
+ * @param maxContext - 最大上下文
+  * @returns CompressedContext 实例
+ */
 export function compressWorldContext(
     worldView: string,
     settingLib: string,

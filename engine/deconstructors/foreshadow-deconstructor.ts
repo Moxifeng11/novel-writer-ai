@@ -1716,6 +1716,11 @@ export class ForeshadowDeconstructor {
         }
     }
 
+    /**
+     * 计算质量分数。
+     * @param result - 结果
+      * @returns ForeshadowQualityScore 实例
+     */
     calculateQualityScore(result: {
         foreshadows: Foreshadow[];
         typeDistribution: Record<ForeshadowType, number>;

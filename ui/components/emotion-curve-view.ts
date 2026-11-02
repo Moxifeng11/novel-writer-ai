@@ -16,6 +16,9 @@ import {
 	LineChartOptions
 } from '../svg-charts';
 
+/**
+ * EmotionCurveView 类。
+ */
 export class EmotionCurveView {
     private container: HTMLElement | null = null;
     private width: number = 600;

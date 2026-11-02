@@ -10,8 +10,14 @@
  */
 
 export type ProviderApiStyle = 'openai' | 'ollama' | 'custom';
+/**
+ * 提供方来源类型结构定义。
+ */
 export type ProviderSourceType = 'cloud' | 'local';
 
+/**
+ * ProviderDetection 类型定义。
+ */
 export interface ProviderDetection {
     /** URL 是否可解析 */
     valid: boolean;

@@ -50,6 +50,9 @@ import type {
 // 一、Store 实例类型
 // ============================================================
 
+/**
+ * CoWritingSessionStore 类型定义。
+ */
 export type CoWritingSessionStore =
     & StoreApi<CoWritingSessionState>
     & PersistApi<CoWritingSessionState>
@@ -65,6 +68,9 @@ export type CoWritingSessionStore =
 // 二、Store 工厂配置
 // ============================================================
 
+/**
+ * CreateCoWritingSessionStoreOptions 类型定义。
+ */
 export interface CreateCoWritingSessionStoreOptions {
     plugin?: {
         settings: Record<string, unknown>;

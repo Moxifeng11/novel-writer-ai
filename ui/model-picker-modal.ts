@@ -11,6 +11,9 @@
 import { App, Modal, Setting } from 'obsidian';
 import type { DiscoveredModel } from '../services/model-discovery';
 
+/**
+ * ModelPickerResult 类型定义。
+ */
 export interface ModelPickerResult {
     /** 确认后的模型 id 列表（保持原有顺序，新项追加在后） */
     models: string[];
@@ -18,6 +21,9 @@ export interface ModelPickerResult {
     capacities: Array<{ id: string; contextWindow?: number; maxTokens?: number }>;
 }
 
+/**
+ * ModelPickerModal 类。
+ */
 export class ModelPickerModal extends Modal {
     private readonly candidates: DiscoveredModel[];
     private readonly configured: string[];
@@ -42,6 +48,9 @@ export class ModelPickerModal extends Modal {
         this.onConfirm = onConfirm;
     }
 
+    /**
+     * onOpen 方法。
+     */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-model-fetch-modal');
@@ -175,6 +184,9 @@ export class ModelPickerModal extends Modal {
         this.confirmBtn.addEventListener('click', () => this.confirm());
     }
 
+    /**
+     * onClose 方法。
+     */
     onClose(): void {
         this.contentEl.empty();
     }

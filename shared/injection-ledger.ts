@@ -31,6 +31,9 @@ export type InjectionCategory =
     | '章纲'
     | '流程';
 
+/**
+ * InjectionSegmentSpec 类型定义。
+ */
 export interface InjectionSegmentSpec {
     /** 模板变量名（${key}） */
     key: string;
@@ -43,6 +46,9 @@ export interface InjectionSegmentSpec {
     placement: 'system' | 'user' | 'both';
 }
 
+/**
+ * InjectionLedgerEntry 类型定义。
+ */
 export interface InjectionLedgerEntry extends InjectionSegmentSpec {
     /** 段落字符数（空段为 0） */
     chars: number;
@@ -56,6 +62,9 @@ export interface InjectionLedgerEntry extends InjectionSegmentSpec {
     strength?: string;
 }
 
+/**
+ * 注入账本结构定义。
+ */
 export interface InjectionLedger {
     entries: InjectionLedgerEntry[];
     /** 全部段合计字符数（不含空段？含——空段也是信息） */
@@ -77,12 +86,18 @@ export interface InjectionLedger {
     hygiene?: InjectionHygiene;
 }
 
+/**
+ * InjectionHygiene 类型定义。
+ */
 export interface InjectionHygiene {
     issues: Array<{ type: string; severity: string; blocks: string[]; message: string }>;
     /** 被自动清空的变量 */
     dropped?: string[];
 }
 
+/**
+ * 注入版本列表结构定义。
+ */
 export interface InjectionVersions {
     /** 写作规则 id / 版本 / 内容哈希 / 来源路径 */
     rulesId?: string;
@@ -143,6 +158,9 @@ export const BODY_INJECTION_SEGMENTS: InjectionSegmentSpec[] = [
 
 /** 指纹分层的账本段（由 PromptBuilder/引擎运行时填充，不在静态表里） */
 export const FINGERPRINT_LEDGER_KEY = 'fingerprintTiers';
+/**
+ * 知识账本键常量。
+ */
 export const KNOWLEDGE_LEDGER_KEY = 'knowledgeHits';
 
 function estimateTokens(chars: number): number {

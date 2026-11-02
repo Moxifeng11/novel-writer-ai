@@ -52,6 +52,14 @@ ${DIMENSION_RULES[dimension]}
 ${buildCraftConstraintBlock()}`;
 }
 
+/**
+ * 构建修订用户提示词。
+ * @param dimension - 维度
+ * @param excerpt - 摘录
+ * @param issues - 问题列表
+ * @param context - 上下文
+ * @returns 文本结果
+ */
 export function buildRevisionUserPrompt(
     dimension: RevisionDimension,
     excerpt: string,

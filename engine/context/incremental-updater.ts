@@ -86,6 +86,9 @@ export interface IncrementalStats {
 // 二、IncrementalUpdater 类
 // ============================================================
 
+/**
+ * IncrementalUpdater 类。
+ */
 export class IncrementalUpdater {
     private deps: Required<Omit<IncrementalUpdaterDeps, 'multiLayerCache'>>;
     private multiLayerCache: MultiLayerCache | null;

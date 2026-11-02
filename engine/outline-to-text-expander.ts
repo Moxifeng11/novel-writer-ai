@@ -141,6 +141,9 @@ export function splitParagraphsByContract(content: string, separator: BodySepara
     return grouped.map((text, i) => ({ index: i + 1, content: text }));
 }
 
+/**
+ * OutlineToTextExpander 类。
+ */
 export class OutlineToTextExpander {
     private aiEngine: AIEngine;
     private knowledgeInjector?: KnowledgeInjector;
@@ -648,10 +651,20 @@ ${paragraph}`;
         return scenes;
     }
 
+    /**
+     * getStrategyLabel 方法。
+     * @param strategy - 策略
+     * @returns 文本结果
+     */
     static getStrategyLabel(strategy: ExpansionStrategy): string {
         return STRATEGY_LABELS[strategy];
     }
 
+    /**
+     * getStrategyDescription 方法。
+     * @param strategy - 策略
+     * @returns 文本结果
+     */
     static getStrategyDescription(strategy: ExpansionStrategy): string {
         return STRATEGY_DESCRIPTIONS[strategy];
     }

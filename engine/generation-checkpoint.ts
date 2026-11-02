@@ -47,6 +47,9 @@ export interface CheckpointStoragePort {
     list?(projectId: string): Promise<GenerationCheckpoint[]>;
 }
 
+/**
+ * 检查点版本常量。
+ */
 export const CHECKPOINT_VERSION = 1;
 
 /**
@@ -67,6 +70,9 @@ export function makeCheckpointKey(
     return `${projectId}::${chapter}::${sceneNum}::${promptHash}`;
 }
 
+/**
+ * GenerationCheckpointStore 类。
+ */
 export class GenerationCheckpointStore {
     constructor(private readonly port: CheckpointStoragePort) {}
 

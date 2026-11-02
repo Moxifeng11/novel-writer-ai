@@ -14,6 +14,9 @@
 import { estimateInputTokens, estimateTokens } from './token-estimator';
 import { PROMPT_SPLIT_RATIO, TOKEN_SAFE_BUFFER } from './thresholds';
 
+/**
+ * 提示词分区结构定义。
+ */
 export interface PromptSection {
     /** 片段标识，用于日志/测试断言 */
     key: string;
@@ -26,6 +29,9 @@ export interface PromptSection {
     mustKeep?: boolean;
 }
 
+/**
+ * 提示词预算输入结构定义。
+ */
 export interface PromptBudgetInput {
     systemPrompt: string;
     sections: PromptSection[];
@@ -35,6 +41,9 @@ export interface PromptBudgetInput {
     modelId?: string;
 }
 
+/**
+ * 提示词预算结果结构定义。
+ */
 export interface PromptBudgetResult {
     system: string;
     user: string;
@@ -146,6 +155,9 @@ export const DEFAULT_PRECEDING_CHARS = 800;
 /** 「已写内容」最大字符上限，与 `snapshot.precedingText` 保留的 2000 字对齐 */
 export const MAX_PRECEDING_CHARS = 2000;
 
+/**
+ * PrecedingLimitOptions 类型定义。
+ */
 export interface PrecedingLimitOptions {
     minChars?: number;
     maxChars?: number;
@@ -176,6 +188,9 @@ export function resolvePrecedingCharLimit(
     return Math.min(maxChars, Math.max(minChars, charBudget));
 }
 
+/**
+ * BudgetLimits 类型定义。
+ */
 export interface BudgetLimits {
     maxContext: number;
     maxOutput: number;
@@ -276,6 +291,9 @@ export function assemblePromptWithinBudget(input: PromptBudgetInput): PromptBudg
     };
 }
 
+/**
+ * PromptFitInput 类型定义。
+ */
 export interface PromptFitInput {
     systemPrompt: string;
     userPrompt: string;
@@ -306,6 +324,9 @@ export interface PromptFitInput {
     sectionAware?: boolean;
 }
 
+/**
+ * PromptFitResult 类型定义。
+ */
 export interface PromptFitResult {
     user: string;
     estimatedTokens: number;

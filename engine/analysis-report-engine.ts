@@ -277,6 +277,12 @@ export class AnalysisReportEngine {
         return Object.values(instructions).some(value => Array.isArray(value) && value.length > 0);
     }
 
+    /**
+     * 检查角色一致性。
+     * @param chapterText - 参数值
+     * @param characterInfos - 参数值
+      * @returns ConsistencyCheckResult 实例
+     */
     async checkCharacterConsistency(
         chapterText: string,
         characterInfos: Array<{
