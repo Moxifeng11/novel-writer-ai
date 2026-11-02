@@ -2577,10 +2577,22 @@ export class WebnovelKnowledgeBase {
     this.foreshadowCategories = [...FORESHADOW_CATEGORIES];
   }
 
+  /**
+   * 新增自定义题材。
+   *
+   * @param genre - 参数
+   */
   addCustomGenre(genre: GenreConfig): void {
     this.customGenres.set(genre.id, { ...genre, isCustom: true });
   }
 
+  /**
+   * 更新自定义题材。
+   *
+   * @param id - 参数
+   * @param updates - 参数
+   * @returns 是否更新
+   */
   updateCustomGenre(id: string, updates: Partial<GenreConfig>): boolean {
     const existing = this.customGenres.get(id);
     if (!existing) return false;
@@ -2588,14 +2600,30 @@ export class WebnovelKnowledgeBase {
     return true;
   }
 
+  /**
+   * 删除自定义题材。
+   *
+   * @param id - 参数
+   * @returns 是否删除
+   */
   deleteCustomGenre(id: string): boolean {
     return this.customGenres.delete(id);
   }
 
+  /**
+   * 读取自定义题材。
+   * @returns 题材数组
+   */
   getCustomGenres(): GenreConfig[] {
     return Array.from(this.customGenres.values());
   }
 
+  /**
+   * 是否自定义题材。
+   *
+   * @param id - 参数
+   * @returns 布尔值
+   */
   isCustomGenre(id: string): boolean {
     return this.customGenres.has(id);
   }
@@ -2608,6 +2636,12 @@ export class WebnovelKnowledgeBase {
     return merged;
   }
 
+  /**
+   * 取题材定义。
+   *
+   * @param id - 参数
+   * @returns 题材或 undefined
+   */
   getGenre(id: string): GenreConfig | undefined {
     if (this.customGenres.has(id)) {
       return this.customGenres.get(id);
@@ -2615,33 +2649,70 @@ export class WebnovelKnowledgeBase {
     return this.genres.get(id);
   }
 
+  /**
+   * 读取全部题材。
+   * @returns 题材数组
+   */
   getAllGenres(): GenreConfig[] {
     return Array.from(this.getMergedGenres().values());
   }
 
+  /**
+   * 读取题材 id/名称。
+   * @returns {id,name} 数组
+   */
   getGenreNames(): { id: string; name: string }[] {
     return Array.from(this.getMergedGenres().values()).map(g => ({ id: g.id, name: g.name }));
   }
 
+  /**
+   * 按性别向分类取题材。
+   *
+   * @param category - 参数
+   * @returns 题材数组
+   */
   getGenresByCategory(category: 'male' | 'female' | 'neutral'): GenreConfig[] {
     return Array.from(this.getMergedGenres().values()).filter(g => g.category === category);
   }
 
+  /**
+   * 读取子题材。
+   *
+   * @param genreId - 参数
+   * @returns 子题材数组
+   */
   getSubGenres(genreId: string): SubGenreConfig[] {
     const genre = this.getGenre(genreId);
     return genre?.subGenres ?? [];
   }
 
+  /**
+   * 取子题材。
+   *
+   * @param genreId - 参数
+   * @param subGenreId - 参数
+   * @returns 子题材或 null
+   */
   getSubGenre(genreId: string, subGenreId: string): SubGenreConfig | null {
     const genre = this.getGenre(genreId);
     if (!genre?.subGenres) return null;
     return genre.subGenres.find(sg => sg.id === subGenreId) ?? null;
   }
 
+  /**
+   * 读取伏笔分类定义。
+   * @returns 分类数组
+   */
   getForeshadowCategories(): ForeshadowCategoryDef[] {
     return [...this.foreshadowCategories];
   }
 
+  /**
+   * 按关键词匹配题材。
+   *
+   * @param text - 参数
+   * @returns {genreId,score} 数组
+   */
   matchGenreByKeywords(text: string): { genreId: string; score: number }[] {
     const results: { genreId: string; score: number }[] = [];
     const lowerText = text.toLowerCase();
@@ -2690,6 +2761,10 @@ export class WebnovelKnowledgeBase {
     return results;
   }
 
+  /**
+   * 默认题材。
+   * @returns 题材
+   */
   getDefaultGenre(): GenreConfig {
     return this.getGenre('xuanhuan_xianxia')!;
   }

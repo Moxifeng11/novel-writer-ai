@@ -71,6 +71,13 @@ export class PromptManager {
         this.invalidateCache(key);
     }
 
+    /**
+     * 取模板（可指定版本）。
+     *
+     * @param key - 参数
+     * @param version? - 参数
+     * @returns 模板或 null
+     */
     getTemplate(key: string, version?: string): PromptTemplate | null {
         const versions = this.templates.get(key);
         if (!versions || versions.length === 0) return null;
@@ -89,6 +96,13 @@ export class PromptManager {
         return versions[0]?.template ?? null;
     }
 
+    /**
+     * 切换模板生效版本。
+     *
+     * @param key - 参数
+     * @param version - 参数
+     * @returns 是否切换
+     */
     setCurrentVersion(key: string, version: string): boolean {
         const versions = this.templates.get(key);
         if (!versions) return false;
@@ -102,11 +116,22 @@ export class PromptManager {
         return false;
     }
 
+    /**
+     * 读取模板版本列表。
+     *
+     * @param key - 参数
+     * @returns 版本数组
+     */
     getVersions(key: string): string[] {
         const versions = this.templates.get(key);
         return versions?.map(v => v.version) || [];
     }
 
+    /**
+     * 删除模板。
+     *
+     * @param key - 参数
+     */
     deleteTemplate(key: string): void {
         this.templates.delete(key);
         this.currentVersions.delete(key);
@@ -114,14 +139,33 @@ export class PromptManager {
         this.invalidateCache(key);
     }
 
+    /**
+     * 注册模板变量定义。
+     *
+     * @param key - 参数
+     * @param variables - 参数
+     */
     registerVariables(key: string, variables: PromptVariable[]): void {
         this.variableDefinitions.set(key, variables);
     }
 
+    /**
+     * 读取模板变量定义。
+     *
+     * @param key - 参数
+     * @returns 变量数组
+     */
     getVariables(key: string): PromptVariable[] {
         return this.variableDefinitions.get(key) || [];
     }
 
+    /**
+     * 校验变量是否齐全。
+     *
+     * @param key - 参数
+     * @param vars - 参数
+     * @returns {valid,errors}
+     */
     validateVariables(key: string, vars: Record<string, string>): { valid: boolean; errors: string[] } {
         const variables = this.getVariables(key);
         const errors: string[] = [];
@@ -145,6 +189,14 @@ export class PromptManager {
         return { valid: errors.length === 0, errors };
     }
 
+    /**
+     * 渲染模板（变量替换）。
+     *
+     * @param key - 参数
+     * @param vars - 参数
+     * @param version? - 参数
+     * @returns 渲染文本或 null
+     */
     fillTemplate(key: string, vars: Record<string, string>, version?: string): string | null {
         const template = this.getTemplate(key, version);
         if (!template) return null;
@@ -217,10 +269,20 @@ export class PromptManager {
         return true;
     }
 
+    /**
+     * 读取全部模板键。
+     * @returns 键数组
+     */
     getAllTemplateKeys(): string[] {
         return Array.from(this.templates.keys());
     }
 
+    /**
+     * 读取模板信息摘要。
+     *
+     * @param key - 参数
+     * @returns 信息对象
+     */
     getTemplateInfo(key: string): {
         key: string;
         currentVersion: string | null;
@@ -241,6 +303,11 @@ export class PromptManager {
         };
     }
 
+    /**
+     * 失效模板缓存。
+     *
+     * @param key? - 参数
+     */
     invalidateCache(key?: string): void {
         if (key) {
             for (const cacheKey of this.cache.keys()) {
@@ -253,6 +320,10 @@ export class PromptManager {
         }
     }
 
+    /**
+     * 读取缓存统计。
+     * @returns 统计
+     */
     getCacheStats(): { size: number; enabled: boolean; ttl: number } {
         return {
             size: this.cache.size,

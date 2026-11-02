@@ -143,32 +143,62 @@ export class FullWriterStoreImpl implements FullWriterStore {
     get wizardStepResults(): Record<string, string> { return this._wizardStepResults; }
     get wizardStepExecuting(): Set<string> { return this._wizardStepExecuting; }
 
+    /**
+     * 设置单个变量。
+     *
+     * @param key - 参数
+     * @param value - 参数
+     */
     setVar(key: string, value: string): void {
         this._vars[key] = value;
         this.scheduleNotify();
     }
 
+    /**
+     * 删除变量。
+     *
+     * @param key - 参数
+     */
     deleteVar(key: string): void {
         delete this._vars[key];
         this.scheduleNotify();
     }
 
+    /**
+     * 覆盖变量集合。
+     *
+     * @param newVars - 参数
+     */
     setVars(newVars: Record<string, string>): void {
         this._vars = { ...newVars };
         this.scheduleNotify();
     }
 
+    /**
+     * 合并变量集合。
+     *
+     * @param additionalVars - 参数
+     */
     mergeVars(additionalVars: Record<string, string>): void {
         this._vars = { ...this._vars, ...additionalVars };
         this.scheduleNotify();
     }
 
+    /**
+     * 压入导航栈。
+     *
+     * @param tabId - 参数
+     */
     pushNav(tabId: string): void {
         this._navStack.push(this._activeTabId);
         this._activeTabId = tabId;
         this.scheduleNotify();
     }
 
+    /**
+     * 弹出导航栈。
+     * @returns 标签 id 或 undefined
+     */
     popNav(): string | undefined {
         const prev = this._navStack.pop();
         if (prev) {
@@ -178,19 +208,42 @@ export class FullWriterStoreImpl implements FullWriterStore {
         return prev;
     }
 
+    /**
+     * 跳转到标签页。
+     *
+     * @param tabId - 参数
+     */
     navigateTo(tabId: string): void {
         this._activeTabId = tabId;
         this.scheduleNotify();
     }
 
+    /**
+     * 按 id 查找标签页。
+     *
+     * @param id - 参数
+     * @returns 标签页或 undefined
+     */
     findTab(id: string): WriterTab | undefined {
         return this._tabs.find(t => t.id === id);
     }
 
+    /**
+     * 按章节键查找标签页。
+     *
+     * @param chapterKey - 参数
+     * @returns 标签页或 undefined
+     */
     findTabByChapterKey(chapterKey: string): WriterTab | undefined {
         return this._tabs.find(t => t.chapterKey === chapterKey);
     }
 
+    /**
+     * 新增标签页。
+     *
+     * @param tab - 参数
+     * @param activate = true - 参数
+     */
     addTab(tab: WriterTab, activate = true): void {
         this._tabs.push(tab);
         if (activate) {
@@ -199,6 +252,11 @@ export class FullWriterStoreImpl implements FullWriterStore {
         this.scheduleNotify();
     }
 
+    /**
+     * 移除标签页。
+     *
+     * @param tabId - 参数
+     */
     removeTab(tabId: string): void {
         const idx = this._tabs.findIndex(t => t.id === tabId);
         if (idx >= 0) {
@@ -211,6 +269,12 @@ export class FullWriterStoreImpl implements FullWriterStore {
         this.scheduleNotify();
     }
 
+    /**
+     * 更新标签页。
+     *
+     * @param tabId - 参数
+     * @param updates - 参数
+     */
     updateTab(tabId: string, updates: Partial<WriterTab>): void {
         const tab = this._tabs.find(t => t.id === tabId);
         if (tab) {
@@ -219,6 +283,11 @@ export class FullWriterStoreImpl implements FullWriterStore {
         }
     }
 
+    /**
+     * 激活标签页。
+     *
+     * @param tabId - 参数
+     */
     activateTab(tabId: string): void {
         if (this._tabs.some(t => t.id === tabId)) {
             this._activeTabId = tabId;
@@ -226,6 +295,9 @@ export class FullWriterStoreImpl implements FullWriterStore {
         }
     }
 
+    /**
+     * 重置导航状态。
+     */
     resetNavState(): void {
         this._project = '';
         this._chapterName = '';
@@ -257,6 +329,12 @@ export class FullWriterStoreImpl implements FullWriterStore {
         this.scheduleNotify();
     }
 
+    /**
+     * 订阅状态变化。
+     *
+     * @param listener - 参数
+     * @returns 取消订阅函数
+     */
     subscribe(listener: StateChangeListener): () => void {
         this._listeners.add(listener);
         return () => this._listeners.delete(listener);
@@ -279,6 +357,10 @@ export class FullWriterStoreImpl implements FullWriterStore {
         }
     }
 
+    /**
+     * 导出状态快照。
+     * @returns 快照
+     */
     snapshot(): FullWriterStateSnapshot {
         return {
             project: this._project,

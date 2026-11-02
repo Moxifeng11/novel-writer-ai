@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T00:22:12.667Z",
+  "generatedAt": "2026-11-02T00:25:57.462Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -7,7 +7,7 @@
       "exports": 1508,
       "documented": 938,
       "methods": 1253,
-      "methodsDocumented": 750,
+      "methodsDocumented": 770,
       "incomplete": 739
     },
     "services": {
@@ -23,7 +23,7 @@
       "exports": 1517,
       "documented": 1021,
       "methods": 149,
-      "methodsDocumented": 118,
+      "methodsDocumented": 132,
       "incomplete": 457
     },
     "core": {
@@ -47,7 +47,7 @@
       "exports": 493,
       "documented": 183,
       "methods": 632,
-      "methodsDocumented": 206,
+      "methodsDocumented": 222,
       "incomplete": 161
     }
   },
@@ -1148,7 +1148,7 @@
       "exports": 4,
       "documented": 0,
       "methods": 16,
-      "methodsDocumented": 0,
+      "methodsDocumented": 12,
       "incomplete": 0
     },
     "engine/prompts/body-v2-prompts.ts": {
@@ -1946,7 +1946,7 @@
       "exports": 13,
       "documented": 0,
       "methods": 8,
-      "methodsDocumented": 0,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "services/api-connectivity-service.ts": {
@@ -3234,7 +3234,7 @@
       "exports": 7,
       "documented": 0,
       "methods": 14,
-      "methodsDocumented": 0,
+      "methodsDocumented": 14,
       "incomplete": 0
     },
     "shared/word-count.ts": {
@@ -3920,7 +3920,7 @@
       "exports": 5,
       "documented": 0,
       "methods": 17,
-      "methodsDocumented": 0,
+      "methodsDocumented": 16,
       "incomplete": 0
     },
     "ui/full-writer/full-writer-utils.ts": {

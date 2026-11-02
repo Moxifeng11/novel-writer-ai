@@ -168,6 +168,11 @@ export class WritingQualityEngine {
     this.styleFingerprint = options.styleFingerprint || {};
   }
 
+  /**
+   * 更新评估选项。
+   *
+   * @param options - 参数
+   */
   updateOptions(options: Partial<WritingQualityEngineOptions>): void {
     if (options.characterNames !== undefined) this.characterNames = options.characterNames;
     if (options.mainlineKeywords !== undefined) this.mainlineKeywords = options.mainlineKeywords;
@@ -178,6 +183,12 @@ export class WritingQualityEngine {
     if (options.styleFingerprint !== undefined) this.styleFingerprint = options.styleFingerprint;
   }
 
+  /**
+   * 评估正文写作质量。
+   *
+   * @param text - 参数
+   * @returns 质量结果
+   */
   evaluate(text: string): WritingQualityResult {
     const startTime = Date.now();
     const cleanText = text.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
@@ -1136,27 +1147,54 @@ export class WritingQualityEngine {
     return undefined;
   }
 
+  /**
+   * 分数对应的等级。
+   *
+   * @param score - 参数
+   * @returns 等级
+   */
   getGrade(score: number): QualityGrade {
     // 分界统一在 shared/thresholds.ts，禁止在此另写 90/80/70/60
     return gradeFromScore(score);
   }
 
+  /**
+   * 读取分数历史。
+   * @returns 分数数组
+   */
   getScoreHistory(): number[] {
     return [...this.scoreHistory];
   }
 
+  /**
+   * 忽略一条建议。
+   *
+   * @param suggestionId - 参数
+   */
   ignoreSuggestion(suggestionId: string): void {
     this.ignoredSuggestions.add(suggestionId);
   }
 
+  /**
+   * 取消忽略。
+   *
+   * @param suggestionId - 参数
+   */
   unignoreSuggestion(suggestionId: string): void {
     this.ignoredSuggestions.delete(suggestionId);
   }
 
+  /**
+   * 读取已忽略建议。
+   * @returns id 数组
+   */
   getIgnoredSuggestions(): string[] {
     return Array.from(this.ignoredSuggestions);
   }
 
+  /**
+   * 清空分数历史。
+   */
   clearHistory(): void {
     this.scoreHistory = [];
     this.lastMilestone = 0;

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 121853 | 1532 | 617 | 40% |
+| `engine/` | 289 | 121962 | 1532 | 617 | 40% |
 | `services/` | 28 | 10515 | 151 | 75 | 50% |
-| `shared/` | 164 | 32574 | 1512 | 505 | 33% |
+| `shared/` | 164 | 32649 | 1512 | 505 | 33% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 93024 | 500 | 110 | 22% |
+| `ui/` | 191 | 93106 | 500 | 110 | 22% |
 
 ## 文件清单
 
@@ -198,7 +198,7 @@
 | `engine/prompt-builder.ts` | 1350 | 2 | 0 |
 | `engine/prompt-cache.ts` | 60 | 3 | 0 |
 | `engine/prompt-hash.ts` | 38 | 1 | 1 |
-| `engine/prompt-manager.ts` | 277 | 4 | 0 |
+| `engine/prompt-manager.ts` | 348 | 4 | 0 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v2-prompts.ts` | 136 | 3 | 1 |
 | `engine/prompts/body-v3-prompts.ts` | 92 | 3 | 1 |
@@ -323,7 +323,7 @@
 | `engine/volume-outline-summarizer.ts` | 172 | 2 | 1 |
 | `engine/world-state-snapshot.ts` | 198 | 7 | 0 |
 | `engine/writing-profile.ts` | 505 | 8 | 0 |
-| `engine/writing-quality-engine.ts` | 1281 | 14 | 0 |
+| `engine/writing-quality-engine.ts` | 1319 | 14 | 0 |
 | `services/api-connectivity-service.ts` | 311 | 8 | 7 |
 | `services/canon-research-service.ts` | 435 | 7 | 6 |
 | `services/chapter-recognizer.ts` | 244 | 5 | 1 |
@@ -508,7 +508,7 @@
 | `shared/view-types.ts` | 7 | 1 | 0 |
 | `shared/volume-conflict-detector.ts` | 241 | 7 | 2 |
 | `shared/volume-plan.ts` | 257 | 6 | 0 |
-| `shared/webnovel-knowledge-base.ts` | 2697 | 7 | 0 |
+| `shared/webnovel-knowledge-base.ts` | 2772 | 7 | 0 |
 | `shared/word-count.ts` | 115 | 7 | 0 |
 | `shared/write-lock.ts` | 61 | 2 | 1 |
 | `shared/writing-rules-legacy.ts` | 221 | 2 | 1 |
@@ -591,7 +591,7 @@
 | `ui/full-writer/fanfic-settings-utils.ts` | 238 | 13 | 3 |
 | `ui/full-writer/flow-panel-controller.ts` | 317 | 3 | 0 |
 | `ui/full-writer/flow-tab.ts` | 41 | 3 | 0 |
-| `ui/full-writer/full-writer-store.ts` | 296 | 5 | 0 |
+| `ui/full-writer/full-writer-store.ts` | 378 | 5 | 0 |
 | `ui/full-writer/full-writer-utils.ts` | 80 | 6 | 1 |
 | `ui/full-writer/fw-styles.ts` | 15 | 1 | 1 |
 | `ui/full-writer/intervention-controller.ts` | 391 | 3 | 0 |
