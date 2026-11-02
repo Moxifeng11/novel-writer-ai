@@ -464,6 +464,9 @@ export interface TieredBuildStats {
     truncatedParagraph: boolean;
 }
 
+/**
+ * 分层注入构建器。
+ */
 export class TieredInjectionBuilder {
     /**
      * 构建分级注入片段

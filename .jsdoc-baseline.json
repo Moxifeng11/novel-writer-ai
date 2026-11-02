@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-02T00:02:16.521Z",
+  "generatedAt": "2026-11-02T00:04:45.981Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 271,
       "exports": 1508,
-      "documented": 791,
+      "documented": 824,
       "methods": 1253,
       "methodsDocumented": 610,
       "incomplete": 740
@@ -131,7 +131,7 @@
     },
     "engine/agent/harness/harness-types.ts": {
       "exports": 14,
-      "documented": 3,
+      "documented": 14,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1762,7 +1762,7 @@
     },
     "engine/style/dynamic-injection-engine.ts": {
       "exports": 10,
-      "documented": 9,
+      "documented": 10,
       "methods": 3,
       "methodsDocumented": 3,
       "incomplete": 4
@@ -1776,7 +1776,7 @@
     },
     "engine/style/fingerprint-migrator.ts": {
       "exports": 13,
-      "documented": 12,
+      "documented": 13,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 7
@@ -1797,14 +1797,14 @@
     },
     "engine/style/style-dimensions-v2.ts": {
       "exports": 26,
-      "documented": 14,
+      "documented": 26,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/style/style-distill-service.ts": {
       "exports": 6,
-      "documented": 0,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1818,14 +1818,14 @@
     },
     "engine/style/style-sample-service.ts": {
       "exports": 8,
-      "documented": 6,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 5
     },
     "engine/style/style-vector-store-v2.ts": {
       "exports": 6,
-      "documented": 5,
+      "documented": 6,
       "methods": 21,
       "methodsDocumented": 21,
       "incomplete": 20

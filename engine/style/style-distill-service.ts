@@ -7,24 +7,42 @@
 import type { AIEngine } from '../ai-engine';
 import { resolveTaskModelConfig, type TaskModelSettings } from '../../shared/task-model';
 
+/**
+ * 文风提炼来源模式。
+ */
 export type StyleSourceMode = 'name' | 'paste' | 'project' | 'file';
 
+/**
+ * 提炼输入。
+ */
 export interface StyleDistillInput {
     mode: StyleSourceMode;
     label: string;
     sampleText?: string;
 }
 
+/**
+ * 提炼依赖。
+ */
 export interface StyleDistillDeps {
     settings: TaskModelSettings;
     resolveLimits: (model: string, endpoint?: string) => { maxContext: number; maxOutput: number };
 }
 
+/**
+ * 提炼提示词。
+ */
 export interface StyleDistillPrompts {
     system: string;
     user: string;
 }
 
+/**
+ * 构建文风提炼提示词。
+ *
+ * @param input - 参数
+ * @returns 提示词集合
+ */
 export function buildStyleDistillPrompts(input: StyleDistillInput): StyleDistillPrompts {
     const sample = (input.sampleText || '').trim();
     const hasSample = input.mode !== 'name' && sample.length > 0;

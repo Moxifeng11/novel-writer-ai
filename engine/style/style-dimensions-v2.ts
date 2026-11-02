@@ -38,6 +38,9 @@ export type FingerprintVersion = 'v1' | 'v2';
 // 1. RhythmStats — 节奏（对应 V1 sentenceRhythm + paragraphStructure 部分）
 // ============================================================
 
+/**
+ * 节奏统计。
+ */
 export interface RhythmStats {
     // ── 定量统计 ──
     /** 句长分布（短/中/长占比，0-1） */
@@ -64,6 +67,9 @@ export interface RhythmStats {
 // 2. SentencePatternStats — 句式（新增维度）
 // ============================================================
 
+/**
+ * 句式统计。
+ */
 export interface SentencePatternStats {
     // ── 定量统计 ──
     /** 倒装句密度（每千字） */
@@ -88,6 +94,9 @@ export interface SentencePatternStats {
 // 3. WordChoiceStats — 用词（对应 V1 wordPreference）
 // ============================================================
 
+/**
+ * 用词统计。
+ */
 export interface WordChoiceStats {
     // ── 定量统计 ──
     /** 常用词比例（0-1） */
@@ -112,6 +121,9 @@ export interface WordChoiceStats {
 // 4. RhetoricStatsV2 — 修辞（对应 V1 rhetoric）
 // ============================================================
 
+/**
+ * 修辞统计（v2）。
+ */
 export interface RhetoricStatsV2 {
     // ── 定量统计 ──
     /** 比喻密度（每千字） */
@@ -138,6 +150,9 @@ export interface RhetoricStatsV2 {
 // 5. PerspectiveStats — 视角（对应 V1 narrativeStyle）
 // ============================================================
 
+/**
+ * 视角统计。
+ */
 export interface PerspectiveStats {
     // ── 定量统计 ──
     /** 人称分布（第一/第二/第三人称占比） */
@@ -158,6 +173,9 @@ export interface PerspectiveStats {
 // 6. EmotionStats — 情绪（新增维度）
 // ============================================================
 
+/**
+ * 情绪统计。
+ */
 export interface EmotionStats {
     // ── 定量统计 ──
     /** 情绪基调（如：压抑/昂扬/平静/激越） */
@@ -180,6 +198,9 @@ export interface EmotionStats {
 // 7. TensionStats — 张力（新增维度）
 // ============================================================
 
+/**
+ * 张力统计。
+ */
 export interface TensionStats {
     // ── 定量统计 ──
     /** 悬念密度（每千字悬念标记数） */
@@ -204,6 +225,9 @@ export interface TensionStats {
 // 8. InfoDensityStats — 信息量（新增维度）
 // ============================================================
 
+/**
+ * 信息密度统计。
+ */
 export interface InfoDensityStats {
     // ── 定量统计 ──
     /** 信息密度（每百字新信息单元数） */
@@ -226,6 +250,9 @@ export interface InfoDensityStats {
 // 9. DialogueStatsV2 — 对话（对应 V1 dialogueStyle）
 // ============================================================
 
+/**
+ * 对话统计（v2）。
+ */
 export interface DialogueStatsV2 {
     // ── 定量统计 ──
     /** 对话占比（0-1） */
@@ -248,6 +275,9 @@ export interface DialogueStatsV2 {
 // 10. DescriptionStats — 描写（新增维度）
 // ============================================================
 
+/**
+ * 描写统计。
+ */
 export interface DescriptionStats {
     // ── 定量统计 ──
     /** 环境描写占比（0-1） */
@@ -268,6 +298,9 @@ export interface DescriptionStats {
 // 11. NarrationStats — 叙事（对应 V1 paragraphStructure）
 // ============================================================
 
+/**
+ * 叙述统计。
+ */
 export interface NarrationStats {
     // ── 定量统计 ──
     /** 叙事速度（每千字推进的剧情节点数） */
@@ -288,6 +321,9 @@ export interface NarrationStats {
 // 12. LanguageTextureStats — 语言质感（对应 V1 overallTone）
 // ============================================================
 
+/**
+ * 语言质感统计。
+ */
 export interface LanguageTextureStats {
     // ── 定量统计 ──
     /** 书面化程度（0-1，越高越书面化） */

@@ -92,6 +92,9 @@ export interface V1StyleFingerprint {
 // 迁移结果类型
 // ============================================================
 
+/**
+ * v1→v2 迁移结果。
+ */
 export interface MigrationResult {
     success: boolean;
     fingerprint?: V2Fingerprint;

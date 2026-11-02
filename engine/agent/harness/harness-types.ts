@@ -23,6 +23,9 @@ export interface HarnessEventMeta {
     readonly seq?: number;
 }
 
+/**
+ * Agent 会话事件联合类型。
+ */
 export type AgentSessionEvent =
     | ({ readonly type: 'system_message'; readonly text: string } & HarnessEventMeta)
     | ({ readonly type: 'user_message'; readonly text: string } & HarnessEventMeta)
@@ -55,6 +58,9 @@ export interface DerivedTurn {
 // 工具（dsh ToolDefinition 的精简移植：schema + 受守卫执行）
 // ============================================================
 
+/**
+ * 工具参数定义。
+ */
 export interface HarnessToolParameter {
     type: 'string' | 'number' | 'boolean' | 'object' | 'array';
     description: string;
@@ -65,6 +71,9 @@ export interface HarnessToolParameter {
     required?: boolean;
 }
 
+/**
+ * 工具执行结果。
+ */
 export interface HarnessToolResult {
     ok: boolean;
     /** 给模型看的文本结果（会写回会话日志） */
@@ -73,6 +82,9 @@ export interface HarnessToolResult {
     data?: Record<string, unknown>;
 }
 
+/**
+ * 工具执行上下文。
+ */
 export interface HarnessToolContext {
     /** 当前记忆状态（含 slots；只读快照） */
     memory: { slots: Readonly<Record<string, unknown>> };
@@ -92,6 +104,9 @@ export interface HarnessApprovalRequest {
     reason: string;
 }
 
+/**
+ * Harness 工具定义。
+ */
 export interface HarnessTool {
     name: string;
     description: string;
@@ -114,6 +129,9 @@ export interface HarnessTool {
 // 模型适配器（dsh LLM adapter seam 的移植）
 // ============================================================
 
+/**
+ * 模型适配器请求。
+ */
 export interface HarnessAdapterRequest {
     system: string;
     turns: DerivedTurn[];
@@ -122,6 +140,9 @@ export interface HarnessAdapterRequest {
     signal?: AbortSignal;
 }
 
+/**
+ * 助手回合输出。
+ */
 export interface HarnessAssistantTurn {
     /** 给用户看的回复文本（raw 缺失时的兜底来源） */
     reply?: string;
@@ -135,6 +156,9 @@ export interface HarnessAssistantTurn {
     usage?: { prompt?: number; completion?: number; total?: number };
 }
 
+/**
+ * 模型适配器接口。
+ */
 export interface HarnessAdapter {
     /** 返回 null 表示适配失败（网络/凭据/解析全部失败），由 loop 决定降级 */
     complete(request: HarnessAdapterRequest): Promise<HarnessAssistantTurn | null>;
@@ -144,6 +168,9 @@ export interface HarnessAdapter {
 // 记忆（dsh memory 的移植：槽位 + update_memory 工具）
 // ============================================================
 
+/**
+ * Harness 记忆状态。
+ */
 export interface HarnessMemoryState {
     slots: Record<string, unknown>;
 }
@@ -152,6 +179,9 @@ export interface HarnessMemoryState {
 // 回合结果（与既有 AgentTurnResult 对齐的对外表面）
 // ============================================================
 
+/**
+ * 选择卡（用户可选项）。
+ */
 export interface HarnessChip {
     label: string;
     value: string;
@@ -161,6 +191,9 @@ export interface HarnessChip {
     preview?: string;
 }
 
+/**
+ * 回合结果（文本/工具/状态）。
+ */
 export interface HarnessTurnOutcome {
     messages: Array<{ role: 'agent' | 'system'; text: string; chips?: HarnessChip[] }>;
     chips: HarnessChip[];

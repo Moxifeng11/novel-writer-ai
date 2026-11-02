@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 120651 | 1532 | 470 | 31% |
+| `engine/` | 289 | 120753 | 1532 | 503 | 33% |
 | `services/` | 28 | 10228 | 151 | 14 | 9% |
 | `shared/` | 164 | 32164 | 1512 | 448 | 30% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
@@ -46,7 +46,7 @@
 | `engine/agent/harness/context-fit.ts` | 111 | 6 | 3 |
 | `engine/agent/harness/creation-plan.ts` | 49 | 6 | 1 |
 | `engine/agent/harness/harness-engine.ts` | 517 | 7 | 0 |
-| `engine/agent/harness/harness-types.ts` | 175 | 14 | 1 |
+| `engine/agent/harness/harness-types.ts` | 208 | 14 | 12 |
 | `engine/agent/harness/host-tools.ts` | 859 | 6 | 0 |
 | `engine/agent/harness/prompt-sections.ts` | 136 | 2 | 0 |
 | `engine/agent/harness/session-log.ts` | 222 | 1 | 0 |
@@ -301,16 +301,16 @@
 | `engine/style-learner.ts` | 294 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 118 | 2 | 0 |
 | `engine/style-vector-store.ts` | 587 | 11 | 0 |
-| `engine/style/dynamic-injection-engine.ts` | 774 | 10 | 4 |
+| `engine/style/dynamic-injection-engine.ts` | 777 | 10 | 5 |
 | `engine/style/fingerprint-blender-v2.ts` | 652 | 6 | 1 |
-| `engine/style/fingerprint-migrator.ts` | 610 | 13 | 12 |
+| `engine/style/fingerprint-migrator.ts` | 613 | 13 | 13 |
 | `engine/style/fingerprint-selection.ts` | 86 | 5 | 1 |
 | `engine/style/style-deconstructor-v2.ts` | 2007 | 2 | 0 |
-| `engine/style/style-dimensions-v2.ts` | 538 | 26 | 0 |
-| `engine/style/style-distill-service.ts` | 103 | 6 | 0 |
+| `engine/style/style-dimensions-v2.ts` | 574 | 26 | 12 |
+| `engine/style/style-distill-service.ts` | 121 | 6 | 5 |
 | `engine/style/style-intensity-engine.ts` | 331 | 8 | 2 |
-| `engine/style/style-sample-service.ts` | 190 | 8 | 2 |
-| `engine/style/style-vector-store-v2.ts` | 1015 | 6 | 0 |
+| `engine/style/style-sample-service.ts` | 196 | 8 | 4 |
+| `engine/style/style-vector-store-v2.ts` | 1018 | 6 | 1 |
 | `engine/style/v2-quantitative-extractor.ts` | 147 | 2 | 2 |
 | `engine/suggestion-manager.ts` | 276 | 1 | 0 |
 | `engine/template-service.ts` | 726 | 2 | 0 |

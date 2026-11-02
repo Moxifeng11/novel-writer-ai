@@ -126,6 +126,9 @@ interface V1VectorsFile {
 // 二、StyleVectorStoreV2 主类
 // ============================================================
 
+/**
+ * v2 文风向量库。
+ */
 export class StyleVectorStoreV2 {
     private app: App;
     private scope: 'global' | 'project';

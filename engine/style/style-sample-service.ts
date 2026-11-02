@@ -20,6 +20,9 @@ export interface StyleSampleFingerprint {
     samples: string[];
 }
 
+/**
+ * 单条样文选择。
+ */
 export interface StyleSamplePick {
     text: string;
     score?: number;
@@ -27,6 +30,9 @@ export interface StyleSamplePick {
     fingerprintName?: string;
 }
 
+/**
+ * 样文选择结果。
+ */
 export interface StyleSampleSelection {
     samples: StyleSamplePick[];
     source: 'vector' | 'fallback' | 'none';
