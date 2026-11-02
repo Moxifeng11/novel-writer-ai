@@ -52,22 +52,39 @@ export class GenrePreferenceMemory {
         this.saveCallback = saveCallback;
     }
 
+    /**
+     * 读取偏好数据。
+     * @returns 数据
+     */
     getData(): GenrePreferenceData {
         return { ...this.data };
     }
 
+    /**
+     * 写入偏好数据。
+     *
+     * @param data - 参数
+     */
     async setData(data: GenrePreferenceData): Promise<void> {
         this.data = { ...data };
         this.markDirty();
         await this.scheduleSave();
     }
 
+    /**
+     * 记录一次自动分类。
+     */
     recordAutoClassify(): void {
         this.data.autoClassifyCount++;
         this.markDirty();
         this.scheduleSave().catch((e: unknown) => log.warn('[GenrePreferenceMemory] 保存失败:', e));
     }
 
+    /**
+     * 记录一次用户纠正。
+     *
+     * @param record - 参数
+     */
     recordCorrection(record: Omit<GenreCorrectionRecord, 'timestamp'>): void {
         const correctionRecord: GenreCorrectionRecord = {
             ...record,
@@ -136,25 +153,52 @@ export class GenrePreferenceMemory {
         }
     }
 
+    /**
+     * 题材偏置。
+     *
+     * @param genreId - 参数
+     * @returns 偏置值
+     */
     getGenreBias(genreId: string): number {
         return this.data.genreBias[genreId] || 0;
     }
 
+    /**
+     * 子题材偏置。
+     *
+     * @param genreId - 参数
+     * @param subGenreId - 参数
+     * @returns 偏置值
+     */
     getSubGenreBias(genreId: string, subGenreId: string): number {
         const key = `${genreId}:${subGenreId}`;
         return this.data.subGenreBias[key] || 0;
     }
 
+    /**
+     * 频道偏置。
+     *
+     * @param channel - 参数
+     * @returns 偏置值
+     */
     getChannelBias(channel: 'male' | 'female' | 'neutral'): number {
         return this.data.channelBias[channel] || 0;
     }
 
+    /**
+     * 分类准确率。
+     * @returns 准确率
+     */
     getAccuracy(): number {
         if (this.data.autoClassifyCount === 0) return 1;
         const correctCount = this.data.autoClassifyCount - this.data.manualCorrectionCount;
         return Math.max(0, Math.min(1, correctCount / this.data.autoClassifyCount));
     }
 
+    /**
+     * 读取统计。
+     * @returns 统计对象
+     */
     getStats(): {
         autoClassifyCount: number;
         manualCorrectionCount: number;
@@ -210,10 +254,20 @@ export class GenrePreferenceMemory {
             .map(s => s.corr);
     }
 
+    /**
+     * 导出偏好 JSON。
+     * @returns JSON 文本
+     */
     exportConfig(): string {
         return JSON.stringify(this.data, null, 2);
     }
 
+    /**
+     * 导入偏好 JSON。
+     *
+     * @param jsonStr - 参数
+     * @returns 是否成功
+     */
     async importConfig(jsonStr: string): Promise<boolean> {
         try {
             const data = JSON.parse(jsonStr) as GenrePreferenceData;
@@ -235,6 +289,9 @@ export class GenrePreferenceMemory {
         }
     }
 
+    /**
+     * 重置偏好。
+     */
     reset(): void {
         this.data = { ...DEFAULT_PREFERENCE_DATA };
         this.markDirty();
@@ -267,6 +324,9 @@ export class GenrePreferenceMemory {
         });
     }
 
+    /**
+     * 刷盘。
+     */
     async flush(): Promise<void> {
         if (this.saveTimer) {
             clearTimeout(this.saveTimer);

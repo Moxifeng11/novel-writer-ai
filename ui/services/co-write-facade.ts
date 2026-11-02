@@ -220,6 +220,17 @@ export class CoWriteFacade {
         return this.engine.getHistory();
     }
 
+    /**
+     * 生成下一句建议。
+     *
+     * @param precedingText - 参数
+     * @param cursorHint - 参数
+     * @param mode - 参数
+     * @param count - 参数
+     * @param signal? - 参数
+     * @param onChunk? - 参数
+     * @returns 建议结果
+     */
     async suggestNext(
         precedingText: string,
         cursorHint: string,
@@ -251,6 +262,16 @@ export class CoWriteFacade {
         return yield* this.engine.suggestStream(precedingText, cursorHint, mode as any, directionIndex, signal);
     }
 
+    /**
+     * 对建议做迭代精修。
+     *
+     * @param suggestion - 参数
+     * @param instruction - 参数
+     * @param precedingText - 参数
+     * @param cursorHint - 参数
+     * @param signal? - 参数
+     * @returns 迭代结果
+     */
     async iterateSuggestion(
         suggestion: SuggestionRecord,
         instruction: string,
@@ -261,6 +282,17 @@ export class CoWriteFacade {
         return this.engine.iterateSuggestion(suggestion, instruction, precedingText, cursorHint, signal);
     }
 
+    /**
+     * 对选中文本做定向改写。
+     *
+     * @param selectedText - 参数
+     * @param beforeContext - 参数
+     * @param afterContext - 参数
+     * @param cursorHint - 参数
+     * @param count - 参数
+     * @param onChunk? - 参数
+     * @returns 改写结果
+     */
     async rewriteSelection(
         selectedText: string,
         beforeContext: string,
@@ -273,6 +305,15 @@ export class CoWriteFacade {
         return this.engine.rewriteSelection(selectedText, beforeContext, afterContext, cursorHint, count, onChunk, signal);
     }
 
+    /**
+     * 生成联想建议。
+     *
+     * @param cursor - 参数
+     * @param text - 参数
+     * @param trigger - 参数
+     * @param signal? - 参数
+     * @returns 联想结果
+     */
     async suggestAssociation(
         cursor: number,
         text: string,
@@ -282,6 +323,15 @@ export class CoWriteFacade {
         return this.engine.suggestAssociation(cursor, text, trigger as any, signal);
     }
 
+    /**
+     * 校验编辑是否可采纳。
+     *
+     * @param modifiedText - 参数
+     * @param suggestion - 参数
+     * @param context - 参数
+     * @param signal? - 参数
+     * @returns 校验结果
+     */
     async validateEdit(
         modifiedText: string,
         suggestion: SuggestionRecord,
@@ -291,6 +341,13 @@ export class CoWriteFacade {
         return this.engine.validateEdit(modifiedText, suggestion, context, signal);
     }
 
+    /**
+     * 评估情节完成度。
+     *
+     * @param currentBody - 参数
+     * @param signal? - 参数
+     * @returns 指标
+     */
     async evaluatePlotComplete(
         currentBody: string,
         signal?: AbortSignal
@@ -321,6 +378,13 @@ export class CoWriteFacade {
         return this.engine.getMemorySnapshot();
     }
 
+    /**
+     * 记录显式偏好。
+     *
+     * @param category - 参数
+     * @param key - 参数
+     * @param value - 参数
+     */
     async addExplicitPreference(
         category: Parameters<PreferenceMemory['recordPreference']>[0],
         key: string,

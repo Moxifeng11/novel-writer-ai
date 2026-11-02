@@ -6,21 +6,17 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 15 | 65% | 48 | 48 | 100% | 43 |
 | `domains/` | 11 | 30 | 20 | 67% | 1 | 1 | 100% | 0 |
-| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 831 | 66% | 743 |
-| `services/` | 28 | 151 | 110 | 73% | 202 | 136 | 67% | 66 |
+| `engine/` | 271 | 1508 | 938 | 62% | 1253 | 847 | 68% | 743 |
+| `services/` | 28 | 151 | 110 | 73% | 202 | 149 | 74% | 66 |
 | `shared/` | 163 | 1517 | 1093 | 72% | 149 | 132 | 89% | 457 |
-| `ui/` | 189 | 493 | 183 | 37% | 632 | 237 | 38% | 161 |
+| `ui/` | 189 | 493 | 183 | 37% | 632 | 286 | 45% | 162 |
 
 ## 缺口最大的文件（按未注释导出数）
 
 | 文件 | 导出 | 未注释 | 公开方法 | 未注释 |
 |---|---:|---:|---:|---:|
-| `ui/co-writing-view.ts` | 3 | 3 | 103 | 56 |
-| `engine/deconstruction-worker-manager.ts` | 3 | 3 | 21 | 16 |
+| `ui/co-writing-view.ts` | 3 | 3 | 103 | 29 |
 | `engine/style-fingerprint-library.ts` | 7 | 5 | 65 | 14 |
-| `ui/full-writer-view.ts` | 2 | 2 | 25 | 16 |
-| `services/genre-preference-memory.ts` | 3 | 3 | 14 | 14 |
-| `ui/services/co-write-facade.ts` | 2 | 2 | 58 | 15 |
 | `ui/views/knowledge-base-view.ts` | 10 | 10 | 5 | 5 |
 | `engine/co-writer-engine.ts` | 8 | 4 | 45 | 10 |
 | `engine/knowledge-tags.ts` | 2 | 2 | 12 | 12 |
@@ -45,3 +41,7 @@
 | `ui/settings/general-sections.ts` | 6 | 6 | 7 | 6 |
 | `ui/settings/writing-sections.ts` | 6 | 6 | 6 | 6 |
 | `ui/views/book-detail-renderer.ts` | 2 | 2 | 10 | 10 |
+| `ui/views/knowledge-base-modals.ts` | 4 | 4 | 8 | 8 |
+| `engine/knowledge-vector-store.ts` | 5 | 4 | 13 | 7 |
+| `engine/step-runner.ts` | 1 | 0 | 17 | 11 |
+| `shared/canon-source.ts` | 18 | 11 | 0 | 0 |

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 122383 | 1532 | 617 | 40% |
-| `services/` | 28 | 10515 | 151 | 75 | 50% |
+| `engine/` | 289 | 122495 | 1532 | 617 | 40% |
+| `services/` | 28 | 10575 | 151 | 75 | 50% |
 | `shared/` | 164 | 32962 | 1512 | 577 | 38% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
-| `ui/` | 191 | 93175 | 500 | 110 | 22% |
+| `ui/` | 191 | 93416 | 500 | 110 | 22% |
 
 ## 文件清单
 
@@ -108,7 +108,7 @@
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 655 | 16 | 14 |
 | `engine/deconstruction-scheduler.ts` | 2790 | 9 | 8 |
-| `engine/deconstruction-worker-manager.ts` | 567 | 3 | 0 |
+| `engine/deconstruction-worker-manager.ts` | 679 | 3 | 0 |
 | `engine/deconstructors/character-deconstructor.ts` | 4028 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2019 | 5 | 5 |
 | `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
@@ -332,7 +332,7 @@
 | `services/execution-ledger.ts` | 266 | 10 | 3 |
 | `services/font-manager.ts` | 160 | 13 | 4 |
 | `services/genre-classifier.ts` | 831 | 2 | 0 |
-| `services/genre-preference-memory.ts` | 285 | 3 | 0 |
+| `services/genre-preference-memory.ts` | 345 | 3 | 0 |
 | `services/knowledge-base-manager.ts` | 1506 | 5 | 0 |
 | `services/knowledge-original-chunker.ts` | 99 | 3 | 1 |
 | `services/local-model-probe.ts` | 171 | 6 | 4 |
@@ -533,7 +533,7 @@
 | `ui/chapter-version-modal.ts` | 639 | 2 | 0 |
 | `ui/character-recognition-modal.ts` | 216 | 1 | 0 |
 | `ui/co-write-floating-panel.ts` | 895 | 2 | 0 |
-| `ui/co-writing-view.ts` | 5296 | 3 | 0 |
+| `ui/co-writing-view.ts` | 5406 | 3 | 0 |
 | `ui/command-ui-executor.ts` | 618 | 2 | 0 |
 | `ui/components/ai-detection-report.ts` | 97 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 282 | 1 | 1 |
@@ -577,7 +577,7 @@
 | `ui/fingerprint-library-modal.ts` | 298 | 1 | 0 |
 | `ui/fingerprint-utils.ts` | 182 | 11 | 6 |
 | `ui/font-manager-modal.ts` | 108 | 1 | 0 |
-| `ui/full-writer-view.ts` | 2568 | 2 | 0 |
+| `ui/full-writer-view.ts` | 2635 | 2 | 0 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 443 | 5 | 0 |
 | `ui/full-writer/batch-step-retry.ts` | 21 | 2 | 0 |
 | `ui/full-writer/batch-targets.ts` | 55 | 4 | 2 |
@@ -662,7 +662,7 @@
 | `ui/services/agent-port.ts` | 521 | 2 | 0 |
 | `ui/services/agent-session-store.ts` | 135 | 3 | 0 |
 | `ui/services/agent-spill-store.ts` | 99 | 3 | 2 |
-| `ui/services/co-write-facade.ts` | 763 | 2 | 0 |
+| `ui/services/co-write-facade.ts` | 827 | 2 | 0 |
 | `ui/services/human-sample-loader.ts` | 66 | 2 | 0 |
 | `ui/services/humanness-scorer.ts` | 100 | 3 | 1 |
 | `ui/services/project-create-service.ts` | 413 | 6 | 0 |

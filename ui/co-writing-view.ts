@@ -2632,6 +2632,11 @@ ${text}`;
       void this.refreshPreview(false);
     }, delay);
   }
+  /**
+   * 刷新预览。
+   *
+   * @param force - 参数
+   */
   async refreshPreview(force: boolean) {
     const now = Date.now();
     if (!force && now - this.lastPreviewAt < 500) {
@@ -2724,6 +2729,11 @@ ${text}`;
       }
     }
   }
+  /**
+   * 刷新指标。
+   *
+   * @param force - 参数
+   */
   async refreshMetrics(force: boolean) {
     this.updateNextNodeButton();
     const now = Date.now();
@@ -2775,6 +2785,11 @@ ${text}`;
       }
     }
   }
+  /**
+   * 渲染情节完成度指标。
+   *
+   * @param metrics - 参数
+   */
   renderMetrics(metrics: PlotCompletionMetrics) {
     this.metricsContainer.empty();
     const isEvaluating = this.metricsStatus === 'evaluating';
@@ -2902,6 +2917,9 @@ ${text}`;
     this.clearStreamingPreview();
   }
 
+  /**
+   * 渲染建议加载态。
+   */
   renderSuggestionLoading() {
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = "生成中...";
@@ -3102,6 +3120,11 @@ ${text}`;
     return card;
   }
 
+  /**
+   * 流式生成建议。
+   *
+   * @param directionIndex - 参数
+   */
   async handleStreamSuggestion(directionIndex: number = 0) {
     if (this.isSuggesting) return;
     if (this.suggestAbortController) {
@@ -3258,6 +3281,11 @@ ${text}`;
 
   // ==================== 知识库 Tab 相关方法 ====================
 
+  /**
+   * 切换右栏页签。
+   *
+   * @param tab - 参数
+   */
   switchRightTab(tab: 'overview' | 'knowledge') {
     this.activeRightTab = tab;
     this.facade.syncRightPanelTab(tab);
@@ -3274,6 +3302,9 @@ ${text}`;
     }
   }
 
+  /**
+   * 渲染知识库页签。
+   */
   renderKnowledgeTab() {
     const container = this.knowledgeTabContent;
     container.empty();
@@ -3302,6 +3333,11 @@ ${text}`;
     this.renderKbAdviceTab();
   }
 
+  /**
+   * 切换知识库子页签。
+   *
+   * @param tab - 参数
+   */
   switchKbSubTab(tab: 'books' | 'match' | 'quote' | 'advice') {
     this.activeKbSubTab = tab;
     const headers = this.knowledgeTabContent.querySelectorAll('.nw-kb-subtab-header');
@@ -3350,6 +3386,9 @@ ${text}`;
     openFullBtn.addEventListener("click", () => this.openKnowledgePanel());
   }
 
+  /**
+   * 加载知识库书籍。
+   */
   async loadKbBooks() {
     if (!this.facade.knowledgeBaseManager) return;
     try {
@@ -3514,6 +3553,13 @@ ${text}`;
     return card;
   }
 
+  /**
+   * 启用/停用参考书。
+   *
+   * @param bookId - 参数
+   * @param bookName - 参数
+   * @param enable - 参数
+   */
   toggleReferenceBook(bookId: string, bookName: string, enable: boolean): void {
     const currentRefs = this.facade.getReferenceBooks();
     if (enable) {
@@ -3557,6 +3603,11 @@ ${text}`;
     ).catch(e => log.warn('[CoWritingView] 应用参考书籍权重失败:', e));
   }
 
+  /**
+   * 设置主参考书。
+   *
+   * @param bookId - 参数
+   */
   setPrimaryReference(bookId: string): void {
     const currentRefs = this.facade.getReferenceBooks();
     const index = currentRefs.indexOf(bookId);
@@ -3608,6 +3659,9 @@ ${text}`;
     this.refreshChapterMatch();
   }
 
+  /**
+   * 刷新本章匹配。
+   */
   refreshChapterMatch() {
     if (!this.kbMatchContainer) return;
     this.kbMatchContainer.empty();
@@ -3744,6 +3798,9 @@ ${text}`;
     this.refreshQuotePanel();
   }
 
+  /**
+   * 刷新技法引用面板。
+   */
   refreshQuotePanel() {
     if (!this.kbQuoteContainer) return;
     this.kbQuoteContainer.empty();
@@ -3799,12 +3856,22 @@ ${text}`;
     hint.createSpan({ text: "💡 点击标签即可插入到编辑器光标位置" });
   }
 
+  /**
+   * 插入技法示例。
+   *
+   * @param tech - 参数
+   */
   insertTechniqueExample(tech: { name: string; description: string }) {
     const exampleText = `【${tech.name}】${tech.description}`;
     this.quickInsertText(exampleText);
     new Notice(`已插入：${tech.name}`, 1500);
   }
 
+  /**
+   * 快速插入文本。
+   *
+   * @param text - 参数
+   */
   quickInsertText(text: string) {
     const editor = this.rightEditor;
     if (!editor) return;
@@ -3829,6 +3896,9 @@ ${text}`;
     this.refreshWritingAdvice();
   }
 
+  /**
+   * 刷新写作建议。
+   */
   refreshWritingAdvice() {
     if (!this.kbAdviceContainer) return;
     this.kbAdviceContainer.empty();
@@ -4001,6 +4071,11 @@ ${text}`;
 
   // ==================== 知识库 Tab 方法结束 ====================
 
+  /**
+   * 设置幽灵建议。
+   *
+   * @param suggestion - 参数
+   */
   setGhostSuggestion(suggestion: SuggestionRecord | null) {
     this.ghostSuggestion = suggestion;
     if (!this.ghostSuggestionContainer)
@@ -4023,6 +4098,9 @@ ${text}`;
       void this.refreshGhostAssociation();
     }, 2500);
   }
+  /**
+   * 刷新幽灵联想。
+   */
   async refreshGhostAssociation() {
     if (!this.isGhostAssociationEnabled()) {
       this.setGhostSuggestion(null);
@@ -4087,6 +4165,9 @@ ${text}`;
       this.isAssociating = false;
     }
   }
+  /**
+   * 刷新状态栏。
+   */
   refreshStatusBar() {
     if (!this.statusBar)
       return;
@@ -4101,6 +4182,11 @@ ${text}`;
       this.wordGoalDisplay.setText(`\u76EE\u6807: ${goal} \xB7 ${progress}%`);
     }
   }
+  /**
+   * 更新控件状态。
+   *
+   * @param state - 参数
+   */
   updateControlState(state: string) {
     this.refreshStatusBar();
     if (this.saveStateDisplay) {
@@ -4206,6 +4292,12 @@ ${text}`;
       }
     }
   }
+  /**
+   * 保存正文。
+   *
+   * @param showNotice - 参数
+   * @returns 是否成功
+   */
   async saveBody(showNotice: boolean): Promise<boolean> {
     // D2：保存管线已抽到 body-save-controller，方法签名保持不变
     return this.bodySaveController.save(showNotice);
@@ -4279,6 +4371,9 @@ ${text}`;
       }).catch(() => {});
     } catch { /* 静默忽略 */ }
   }
+  /**
+   * 标记本章已写。
+   */
   async markAsWritten() {
     if (!this.project || !this.volume || !this.chapterNum) {
       new Notice("⚠️ 未绑定章节，请先在左侧选择卷/章", 3e3);
@@ -4309,6 +4404,9 @@ ${text}`;
       new Notice("⚠️ 标记完稿失败", 4000);
     }
   }
+  /**
+   * 完成本章（触发结算/后续流程）。
+   */
   async handleComplete() {
     // 保存失败仍弹结算：结算读的是磁盘正文，会和编辑器里看到的不一致
     const saved = await this.saveBody(true);
@@ -4345,6 +4443,9 @@ ${text}`;
     }
   }
 
+  /**
+   * 打开分析报告弹窗。
+   */
   openAnalysisModal() {
     const text = this.rightEditor?.value || '';
     new NovelAnalysisModal(this.app, {
@@ -4859,6 +4960,9 @@ ${text}`;
     );
   }
 
+  /**
+   * 渲染全部面板。
+   */
   async renderAllPanels() {
     const jobs: Array<() => Promise<void> | void> = [
       () => this.renderBriefPanel(),
@@ -4882,6 +4986,9 @@ ${text}`;
     }
   }
 
+  /**
+   * 打开历史。
+   */
   handleOpenHistory() {
     const records = this.engine?.getHistory?.() || this.engine?.getSession()?.interactions || [];
     new HistoryModal(this.app, records.slice(-20).reverse(), (text: string) => {
@@ -4893,6 +5000,9 @@ ${text}`;
       void this.refreshPreview(true);
     }).open();
   }
+  /**
+   * 打开记忆管理。
+   */
   handleOpenMemoryManager() {
     const snapshot = this.engine?.getMemorySnapshot?.() || { styleGuide: '', stylePatterns: [], preferencePrompt: '', preferences: [] };
     new MemoryManagerModal(this.app, snapshot, async (category: any, key: string, value: string) => {

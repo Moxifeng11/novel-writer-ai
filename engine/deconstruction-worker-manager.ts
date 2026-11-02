@@ -321,6 +321,13 @@ export class DeconstructionWorkerManager {
         this.foreshadowDeconstructor?.setLLMEnhancer(llmEnhancer);
     }
 
+    /**
+     * 拆解文风（Worker/主线程）。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeStyle(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -328,6 +335,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:style', text, onProgress);
     }
 
+    /**
+     * 带向量增强的文风拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeStyleWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -335,6 +349,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:style:vector', text, onProgress);
     }
 
+    /**
+     * 拆解节奏。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeRhythm(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -342,6 +363,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:rhythm', text, onProgress);
     }
 
+    /**
+     * 带向量增强的节奏拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeRhythmWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -349,6 +377,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:rhythm:vector', text, onProgress);
     }
 
+    /**
+     * 拆解技法。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeTechnique(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -356,6 +391,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:technique', text, onProgress);
     }
 
+    /**
+     * 带向量增强的技法拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeTechniqueWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -363,6 +405,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:technique:vector', text, onProgress);
     }
 
+    /**
+     * 拆解结构。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeStructure(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -370,6 +419,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:structure', text, onProgress);
     }
 
+    /**
+     * 带向量增强的结构拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeStructureWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -377,6 +433,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:structure:vector', text, onProgress);
     }
 
+    /**
+     * 拆解人物。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeCharacter(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -384,6 +447,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:character', text, onProgress);
     }
 
+    /**
+     * 带向量增强的人物拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeCharacterWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -391,6 +461,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:character:vector', text, onProgress);
     }
 
+    /**
+     * 拆解伏笔。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeForeshadow(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -398,6 +475,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:foreshadow', text, onProgress);
     }
 
+    /**
+     * 带向量增强的伏笔拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeForeshadowWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -405,6 +489,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:foreshadow:vector', text, onProgress);
     }
 
+    /**
+     * 商业性拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeCommercial(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -412,6 +503,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:commercial', text, onProgress);
     }
 
+    /**
+     * 带向量增强的商业性拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeCommercialWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -419,6 +517,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:commercial:vector', text, onProgress);
     }
 
+    /**
+     * 可读性拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeReadability(
         text: string,
         onProgress?: (progress: number, message?: string) => void
@@ -426,6 +531,13 @@ export class DeconstructionWorkerManager {
         return this.executeTask('deconstruct:readability', text, onProgress);
     }
 
+    /**
+     * 带向量增强的可读性拆解。
+     *
+     * @param text - 参数
+     * @param onProgress? - 参数
+     * @returns 分析结果
+     */
     analyzeReadabilityWithVector(
         text: string,
         onProgress?: (progress: number, message?: string) => void

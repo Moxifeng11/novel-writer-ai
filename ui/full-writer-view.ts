@@ -835,18 +835,33 @@ export class FullWriterView extends ItemView {
         return rebuildChapDir(project, chapterName, volume, chapterNum);
     }
 
+    /**
+     * 视图类型标识。
+     * @returns 类型
+     */
     getViewType(): string {
         return VIEW_TYPE;
     }
 
+    /**
+     * 标签页显示名。
+     * @returns 名称
+     */
     getDisplayText(): string {
         return '📖 完整写作工作台';
     }
 
+    /**
+     * 视图图标。
+     * @returns 图标
+     */
     getIcon(): string {
         return 'book-open';
     }
 
+    /**
+     * 视图打开：渲染壳层与恢复状态。
+     */
     async onOpen(): Promise<void> {
         const { contentEl } = this;
         contentEl.empty();
@@ -1043,6 +1058,9 @@ export class FullWriterView extends ItemView {
         await this.renderInContainer(this.tabContent);
     }
 
+    /**
+     * 视图关闭：释放资源。
+     */
     async onClose(): Promise<void> {
         // 一键任务不随视图关闭而停止：不取消会继续调 AI 并往已销毁的容器里渲染
         if (this.chapterOrchestrator?.isRunning) {
@@ -1127,10 +1145,18 @@ export class FullWriterView extends ItemView {
     // ============================================================
     // Tab 系统（委托给 TabController）
     // ============================================================
+    /**
+     * 压入导航栈。
+     *
+     * @param tabId - 参数
+     */
     async pushNav(tabId: string): Promise<void> {
         await this.tabController.pushNav(tabId);
     }
 
+    /**
+     * 弹出导航栈。
+     */
     popNav(): void {
         this.tabController.popNav();
     }
@@ -1156,6 +1182,9 @@ export class FullWriterView extends ItemView {
         await this.activateTab('project-selector');
     }
 
+    /**
+     * 关闭大纲树弹窗。
+     */
     closeOutlineTreeModal(): void {
         if (this.outlineTreeModal) {
             this.outlineTreeModal.close();
@@ -1163,6 +1192,11 @@ export class FullWriterView extends ItemView {
         }
     }
 
+    /**
+     * 关闭页签。
+     *
+     * @param tabId - 参数
+     */
     closeTab(tabId: string): void {
         this.tabController.closeTab(tabId);
     }
@@ -2299,6 +2333,9 @@ export class FullWriterView extends ItemView {
     // ============================================================
     // 从世界观生成设定库
     // ============================================================
+    /**
+     * 回填设定库。
+     */
     async populateSettingLib(): Promise<void> {
         return this.settingLibController.populateSettingLib();
     }
@@ -2532,6 +2569,12 @@ export class FullWriterView extends ItemView {
         return this.wizardChecker.restoreWizardStepStatus(tab, skipAutoAdvance);
     }
 
+    /**
+     * 世界观是否完整。
+     *
+     * @param project - 参数
+     * @returns 布尔值
+     */
     async checkWorldviewComplete(project: string): Promise<boolean> {
         return this.wizardChecker.checkWorldviewComplete(project);
     }
@@ -2544,18 +2587,42 @@ export class FullWriterView extends ItemView {
         return this.wizardChecker.renameProjectFolder(oldPath, newName);
     }
 
+    /**
+     * 设定库是否完整。
+     *
+     * @param project - 参数
+     * @returns 布尔值
+     */
     async checkSettingLibComplete(project: string): Promise<boolean> {
         return this.wizardChecker.checkSettingLibComplete(project);
     }
 
+    /**
+     * 文笔风格是否完整。
+     *
+     * @param project - 参数
+     * @returns 布尔值
+     */
     async checkWritingStyleComplete(project: string): Promise<boolean> {
         return this.wizardChecker.checkWritingStyleComplete(project);
     }
 
+    /**
+     * 实体是否完整。
+     *
+     * @param project - 参数
+     * @returns 布尔值
+     */
     async checkEntitiesComplete(project: string): Promise<boolean> {
         return this.wizardChecker.checkEntitiesComplete(project);
     }
 
+    /**
+     * 大纲是否完整。
+     *
+     * @param project - 参数
+     * @returns 布尔值
+     */
     async checkOutlineComplete(project: string): Promise<boolean> {
         return this.wizardChecker.checkOutlineComplete(project);
     }
