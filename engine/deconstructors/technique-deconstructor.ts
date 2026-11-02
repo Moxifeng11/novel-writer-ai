@@ -18,8 +18,14 @@ import { createLogger } from '../../shared/logger';
 
 
 const log = createLogger('TechniqueDeconstructor');
+/**
+ * 技法分类。
+ */
 export type TechniqueCategory = 'structure' | 'cool_point' | 'emotion' | 'rhythm' | 'genre' | 'style';
 
+/**
+ * 质量分解。
+ */
 export interface QualityBreakdown {
     overall: number;
     exampleScore: number;
@@ -29,6 +35,9 @@ export interface QualityBreakdown {
     contextScore: number;
 }
 
+/**
+ * 写作技法。
+ */
 export interface WritingTechnique {
     id: string;
     name: string;
@@ -53,6 +62,9 @@ export interface WritingTechnique {
     }>;
 }
 
+/**
+ * 技法分析结果。
+ */
 export interface TechniqueAnalysisResult {
     techniques: WritingTechnique[];
     categoryDistribution: Record<TechniqueCategory, number>;
@@ -453,6 +465,9 @@ const GENRE_DEPENDENT_PATTERNS: TechniquePattern[] = [
     ...GENRE_SPECIFIC_TECHNIQUE_PATTERNS
 ];
 
+/**
+ * 技法拆解器。
+ */
 export class TechniqueDeconstructor {
     private patternMap: Map<string, TechniquePattern>;
     private vectorEnhancer?: VectorEnhancer;
@@ -665,16 +680,32 @@ export class TechniqueDeconstructor {
         return overlap / Math.min(keywordsA.length, keywordsB.length);
     }
 
+    /**
+     * 技法权重。
+     *
+     * @param techniqueId - 参数
+     * @returns 权重
+     */
     getTechniqueWeight(techniqueId: string): number {
         const pattern = this.patternMap.get(techniqueId);
         if (!pattern) return 1.0;
         return pattern.genreWeight ?? 1.0;
     }
 
+    /**
+     * 题材技法数量。
+     * @returns 数量
+     */
     getGenreTechniquesCount(): number {
         return this.patternMap.size;
     }
 
+    /**
+     * 分析技法。
+     *
+     * @param text - 参数
+     * @returns 分析结果
+     */
     async analyze(text: string): Promise<TechniqueAnalysisResult> {
         if (!text || text.length === 0) {
             return this.getEmptyResult();
@@ -899,6 +930,12 @@ export class TechniqueDeconstructor {
         return result;
     }
 
+    /**
+     * 带向量增强的技法分析。
+     *
+     * @param text - 参数
+     * @returns 分析结果
+     */
     async analyzeWithVector(text: string): Promise<TechniqueAnalysisResult> {
         const baseResult = await this.analyze(text);
         await yieldToUI();
@@ -1086,6 +1123,16 @@ export class TechniqueDeconstructor {
         return this.clamp01(genreAdjusted);
     }
 
+    /**
+     * 计算质量分。
+     *
+     * @param exampleCount - 参数
+     * @param avgConfidence - 参数
+     * @param totalCount - 参数
+     * @param genreWeight - 参数
+     * @param contextScore - 参数
+     * @returns 分数
+     */
     calculateQualityScore(
         exampleCount: number,
         avgConfidence: number,
@@ -1510,6 +1557,11 @@ export class TechniqueDeconstructor {
         return code >= 48 && code <= 57;
     }
 
+    /**
+     * 保存技法到 Markdown。
+     *
+     * @param app - 参数
+     */
     async saveToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,
@@ -1530,6 +1582,11 @@ export class TechniqueDeconstructor {
         await app.vault.adapter.write(filePath, content);
     }
 
+    /**
+     * 保存分析到 Markdown。
+     *
+     * @param app - 参数
+     */
     async saveAnalysisToMarkdown(
         app: { vault: { adapter: { exists: (p: string) => Promise<boolean>; mkdir: (p: string) => Promise<void>; write: (p: string, d: string) => Promise<void> } } },
         bookName: string,

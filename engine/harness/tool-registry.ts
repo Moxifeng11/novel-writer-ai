@@ -6,8 +6,14 @@
  */
 import type { CreationMode } from '../../shared/creation-mode';
 
+/**
+ * 工具权限。
+ */
 export type ToolPermission = 'read' | 'write-project' | 'write-vault' | 'network' | 'danger';
 
+/**
+ * 工具上下文。
+ */
 export interface ToolContext {
     projectId?: string;
     taskId?: string;
@@ -17,6 +23,9 @@ export interface ToolContext {
     confirmDanger?: boolean;
 }
 
+/**
+ * 工具结果。
+ */
 export interface ToolResult<T = unknown> {
     ok: boolean;
     toolId: string;
@@ -25,6 +34,9 @@ export interface ToolResult<T = unknown> {
     durationMs: number;
 }
 
+/**
+ * Harness 工具定义。
+ */
 export interface HarnessTool<Input = unknown, Output = unknown> {
     id: string;
     mode: CreationMode | 'all';
@@ -37,27 +49,58 @@ export interface HarnessTool<Input = unknown, Output = unknown> {
     run(input: Input, ctx: ToolContext): Promise<Output>;
 }
 
+/**
+ * 工具注册表。
+ */
 export class ToolRegistry {
     private tools = new Map<string, HarnessTool>();
 
+    /**
+     * 注册工具。
+     *
+     * @param tool - 参数
+     */
     register(tool: HarnessTool): void {
         if (!tool.id.trim()) throw new Error('ToolRegistry: tool.id 不能为空');
         if (this.tools.has(tool.id)) throw new Error(`ToolRegistry: 工具 ${tool.id} 已注册`);
         this.tools.set(tool.id, tool);
     }
 
+    /**
+     * 批量注册。
+     *
+     * @param tools - 参数
+     */
     registerAll(tools: HarnessTool[]): void {
         for (const tool of tools) this.register(tool);
     }
 
+    /**
+     * 是否存在。
+     *
+     * @param id - 参数
+     * @returns 布尔值
+     */
     has(id: string): boolean {
         return this.tools.has(id);
     }
 
+    /**
+     * 取工具。
+     *
+     * @param id - 参数
+     * @returns 工具或 undefined
+     */
     get(id: string): HarnessTool | undefined {
         return this.tools.get(id);
     }
 
+    /**
+     * 按模式列出工具。
+     *
+     * @param mode? - 参数
+     * @returns 工具数组
+     */
     list(mode?: CreationMode): HarnessTool[] {
         const all = [...this.tools.values()];
         return mode ? all.filter(tool => tool.mode === 'all' || tool.mode === mode) : all;

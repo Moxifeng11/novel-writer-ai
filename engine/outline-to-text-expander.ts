@@ -23,9 +23,18 @@ import {
 import { parseSceneHeadings } from './scene-expander';
 import { fitPromptToContext } from '../shared/prompt-budget';
 
+/**
+ * 扩写层级。
+ */
 export type ExpansionLevel = 'chapter-to-scenes' | 'scene-to-paragraphs' | 'paragraph-expand';
+/**
+ * 扩写策略。
+ */
 export type ExpansionStrategy = 'conservative' | 'standard' | 'aggressive';
 
+/**
+ * 扩写选项。
+ */
 export interface ExpansionOptions {
     level: ExpansionLevel;
     strategy: ExpansionStrategy;
@@ -43,6 +52,9 @@ export interface ExpansionOptions {
     bodyFormat?: BodyFormatContract;
 }
 
+/**
+ * 场景大纲。
+ */
 export interface SceneOutline {
     index: number;
     name: string;
@@ -53,12 +65,18 @@ export interface SceneOutline {
     isKeyScene?: boolean;
 }
 
+/**
+ * 段落大纲。
+ */
 export interface ParagraphOutline {
     index: number;
     content: string;
     purpose?: string;
 }
 
+/**
+ * 扩写结果。
+ */
 export interface ExpansionResult {
     success: boolean;
     content: string;
@@ -137,6 +155,14 @@ export class OutlineToTextExpander {
         this.notifier = options?.notifier || NOOP_NOTIFIER;
     }
 
+    /**
+     * 章纲→场景。
+     *
+     * @param chapterOutline - 参数
+     * @param options - 参数
+     * @param context? - 参数
+     * @returns 扩写结果
+     */
     async expandChapterToScenes(
         chapterOutline: string,
         options: Partial<ExpansionOptions> = {},
@@ -177,6 +203,14 @@ export class OutlineToTextExpander {
         }
     }
 
+    /**
+     * 场景→段落。
+     *
+     * @param sceneOutline - 参数
+     * @param options - 参数
+     * @param context? - 参数
+     * @returns 扩写结果
+     */
     async expandSceneToParagraphs(
         sceneOutline: string,
         options: Partial<ExpansionOptions> = {},
@@ -220,6 +254,14 @@ export class OutlineToTextExpander {
         }
     }
 
+    /**
+     * 段落扩写。
+     *
+     * @param paragraph - 参数
+     * @param options - 参数
+     * @param context? - 参数
+     * @returns 扩写结果
+     */
     async expandParagraph(
         paragraph: string,
         options: Partial<ExpansionOptions> = {},
@@ -260,6 +302,14 @@ export class OutlineToTextExpander {
         }
     }
 
+    /**
+     * 整章扩写。
+     *
+     * @param chapterOutline - 参数
+     * @param options - 参数
+     * @param context? - 参数
+     * @returns 扩写结果
+     */
     async expandFullChapter(
         chapterOutline: string,
         options: Partial<ExpansionOptions> = {},

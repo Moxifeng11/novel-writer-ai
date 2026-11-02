@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 122964 | 1532 | 673 | 44% |
+| `engine/` | 289 | 123192 | 1532 | 689 | 45% |
 | `services/` | 28 | 10575 | 151 | 75 | 50% |
-| `shared/` | 164 | 33168 | 1512 | 620 | 41% |
+| `shared/` | 164 | 33247 | 1512 | 640 | 42% |
 | `core/` | 7 | 2375 | 28 | 3 | 11% |
 | `domains/` | 11 | 724 | 30 | 12 | 40% |
 | `ui/` | 191 | 93548 | 500 | 110 | 22% |
@@ -117,7 +117,7 @@
 | `engine/deconstructors/rhythm-deconstructor.ts` | 2834 | 21 | 21 |
 | `engine/deconstructors/structure-deconstructor.ts` | 1848 | 12 | 12 |
 | `engine/deconstructors/style-deconstructor.ts` | 2297 | 14 | 14 |
-| `engine/deconstructors/technique-deconstructor.ts` | 1767 | 5 | 0 |
+| `engine/deconstructors/technique-deconstructor.ts` | 1824 | 5 | 5 |
 | `engine/dimension-keywords.ts` | 428 | 9 | 0 |
 | `engine/embedding/doubao-provider.ts` | 43 | 2 | 2 |
 | `engine/embedding/embedding-fingerprint.ts` | 95 | 7 | 2 |
@@ -164,7 +164,7 @@
 | `engine/harness/rule-engine.ts` | 148 | 8 | 0 |
 | `engine/harness/single-call-runner.ts` | 196 | 7 | 0 |
 | `engine/harness/structured-output.ts` | 91 | 6 | 1 |
-| `engine/harness/tool-registry.ts` | 98 | 6 | 0 |
+| `engine/harness/tool-registry.ts` | 141 | 6 | 5 |
 | `engine/harness/trend-research-service.ts` | 158 | 8 | 0 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
 | `engine/heavy-task-worker-manager.ts` | 284 | 2 | 0 |
@@ -186,7 +186,7 @@
 | `engine/note-properties-service.ts` | 229 | 12 | 0 |
 | `engine/novel-analyzer.ts` | 419 | 2 | 1 |
 | `engine/outline-contract.ts` | 647 | 21 | 12 |
-| `engine/outline-to-text-expander.ts` | 606 | 8 | 1 |
+| `engine/outline-to-text-expander.ts` | 656 | 8 | 7 |
 | `engine/planning-combined.ts` | 215 | 9 | 2 |
 | `engine/planning-step-advance.ts` | 52 | 5 | 2 |
 | `engine/plot-completion-engine.ts` | 778 | 6 | 1 |
@@ -241,7 +241,7 @@
 | `engine/repository/domain/aggregates/location-aggregate.ts` | 83 | 2 | 0 |
 | `engine/repository/domain/aggregates/project-aggregate.ts` | 166 | 3 | 3 |
 | `engine/repository/domain/index.ts` | 12 | 0 | 0 |
-| `engine/repository/domain/serializers/entity-factory.ts` | 474 | 1 | 1 |
+| `engine/repository/domain/serializers/entity-factory.ts` | 552 | 1 | 1 |
 | `engine/repository/domain/serializers/frontmatter-serializer.ts` | 230 | 1 | 1 |
 | `engine/repository/domain/serializers/index.ts` | 7 | 0 | 0 |
 | `engine/repository/domain/validators/domain-validator.ts` | 261 | 4 | 4 |
@@ -362,7 +362,7 @@
 | `shared/body-format.ts` | 211 | 9 | 4 |
 | `shared/body-path.ts` | 52 | 3 | 2 |
 | `shared/budget-telemetry.ts` | 64 | 6 | 1 |
-| `shared/canon-source.ts` | 188 | 18 | 1 |
+| `shared/canon-source.ts` | 234 | 18 | 10 |
 | `shared/changelog-data.ts` | 906 | 3 | 2 |
 | `shared/chapter-progress.ts` | 117 | 7 | 0 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -450,7 +450,7 @@
 | `shared/project-mode.ts` | 61 | 5 | 0 |
 | `shared/project-name.ts` | 72 | 5 | 1 |
 | `shared/prompt-budget.ts` | 494 | 18 | 8 |
-| `shared/prompt-manager-types.ts` | 106 | 11 | 0 |
+| `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prose-metrics.ts` | 532 | 10 | 2 |
 | `shared/prose-naturalizer.ts` | 229 | 3 | 1 |
 | `shared/protagonist.ts` | 30 | 2 | 0 |

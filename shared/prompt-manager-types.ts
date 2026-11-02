@@ -1,3 +1,6 @@
+/**
+ * 提示词分类。
+ */
 export type PromptCategory =
     | 'character'
     | 'chapter'
@@ -10,6 +13,9 @@ export type PromptCategory =
     | 'entity'
     | 'other';
 
+/**
+ * 提示词变量。
+ */
 export interface PromptVariable {
     name: string;
     type: 'string' | 'number' | 'boolean';
@@ -18,6 +24,9 @@ export interface PromptVariable {
     required?: boolean;
 }
 
+/**
+ * 模板版本。
+ */
 export interface PromptTemplateVersion {
     version: string;
     createdAt: number;
@@ -27,6 +36,9 @@ export interface PromptTemplateVersion {
     isActive: boolean;
 }
 
+/**
+ * 提示词模板。
+ */
 export interface PromptTemplate {
     id: string;
     name: string;
@@ -41,6 +53,9 @@ export interface PromptTemplate {
     tags?: string[];
 }
 
+/**
+ * A/B 指标。
+ */
 export interface ABTestMetrics {
     totalCalls: number;
     avgRating: number;
@@ -51,14 +66,23 @@ export interface ABTestMetrics {
     modificationCount: number;
 }
 
+/**
+ * A/B 变体。
+ */
 export interface ABTestVariant {
     templateId: string;
     version: string;
     metrics: ABTestMetrics;
 }
 
+/**
+ * A/B 状态。
+ */
 export type ABTestStatus = 'draft' | 'running' | 'paused' | 'completed';
 
+/**
+ * A/B 实验。
+ */
 export interface ABTest {
     id: string;
     name: string;
@@ -75,6 +99,9 @@ export interface ABTest {
     notes?: string;
 }
 
+/**
+ * 使用记录。
+ */
 export interface PromptUsageRecord {
     id: string;
     templateId: string;
@@ -90,6 +117,9 @@ export interface PromptUsageRecord {
     metadata?: Record<string, any>;
 }
 
+/**
+ * 管理器配置。
+ */
 export interface PromptManagerConfig {
     customTemplates: PromptTemplate[];
     abTests: ABTest[];
@@ -97,6 +127,9 @@ export interface PromptManagerConfig {
     abTestingEnabled: boolean;
 }
 
+/**
+ * 默认配置。
+ */
 export const DEFAULT_PROMPT_MANAGER_CONFIG: PromptManagerConfig = {
     customTemplates: [],
     abTests: [],

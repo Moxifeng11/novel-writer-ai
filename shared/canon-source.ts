@@ -5,8 +5,14 @@
  * 这里不发起网络请求，只负责把 URL/标题/手工标注变成可审计的来源层级。
  */
 
+/**
+ * 考据来源等级。
+ */
 export type CanonSourceTier = 'official' | 'official-wiki' | 'reference' | 'derivative' | 'unknown';
 
+/**
+ * 考据来源。
+ */
 export interface CanonSource {
     id: string;
     url: string;
@@ -21,6 +27,9 @@ export interface CanonSource {
     citationCount?: number;
 }
 
+/**
+ * 来源输入。
+ */
 export interface CanonSourceInput {
     url: string;
     title?: string;
@@ -30,6 +39,9 @@ export interface CanonSourceInput {
     id?: string;
 }
 
+/**
+ * 等级中文名。
+ */
 export const CANON_TIER_LABEL: Record<CanonSourceTier, string> = {
     official: '官方原著',
     'official-wiki': '官方 Wiki',
@@ -47,6 +59,12 @@ const REFERENCE_HOST_RE = /(^|\.)(wikipedia\.org|baike\.baidu\.com|zhihu\.com)$/
 const OFFICIAL_HINT_RE = /(官方|原著|作者|出版社|设定集|official|author|publisher)/i;
 const OFFICIAL_WIKI_RE = /(官方\s*wiki|official\s*wiki|官方资料站)/i;
 
+/**
+ * 规范化来源 URL。
+ *
+ * @param raw - 参数
+ * @returns URL 或 null
+ */
 export function normalizeSourceUrl(raw: string): string | null {
     const value = (raw || '').trim();
     if (!value) return null;
@@ -60,6 +78,12 @@ export function normalizeSourceUrl(raw: string): string | null {
     }
 }
 
+/**
+ * 取来源域名。
+ *
+ * @param url - 参数
+ * @returns 域名
+ */
 export function sourceDomain(url: string): string {
     try {
         return new URL(url).hostname.replace(/^www\./i, '').toLowerCase();
@@ -83,10 +107,23 @@ export function classifyCanonSource(input: Pick<CanonSourceInput, 'url' | 'title
     return 'unknown';
 }
 
+/**
+ * 是否权威来源。
+ *
+ * @param tier - 参数
+ * @returns 布尔值
+ */
 export function isAuthoritativeSource(tier: CanonSourceTier): boolean {
     return AUTHORITATIVE_TIERS.has(tier);
 }
 
+/**
+ * 创建来源记录。
+ *
+ * @param input - 参数
+ * @param index - 参数
+ * @returns 来源
+ */
 export function createCanonSource(input: CanonSourceInput, index: number): CanonSource {
     const url = normalizeSourceUrl(input.url) || input.url || '';
     const excerpt = (input.excerpt || '').trim();
@@ -103,6 +140,12 @@ export function createCanonSource(input: CanonSourceInput, index: number): Canon
     };
 }
 
+/**
+ * 计算文本哈希。
+ *
+ * @param text - 参数
+ * @returns 哈希
+ */
 export function hashText(text: string): string {
     let hash = 0x811c9dc5;
     for (let i = 0; i < text.length; i++) {
@@ -121,6 +164,9 @@ export function computeCanonSourceHash(sources: CanonSource[]): string {
     return hashText(stable);
 }
 
+/**
+ * 来源校验结果。
+ */
 export interface CanonSourceValidation {
     valid: boolean;
     errors: string[];

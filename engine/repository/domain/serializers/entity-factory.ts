@@ -46,11 +46,24 @@ export class EntityFactory {
     // Character
     // ============================================================
 
+    /**
+     * 角色 Markdown→实体。
+     *
+     * @param content - 参数
+     * @param filePath - 参数
+     * @returns 角色
+     */
     static characterFromMarkdown(content: string, filePath: string = ''): Character {
         const domainModel = characterFromMarkdown(content, filePath);
         return EntityFactory.characterFromDomainModel(domainModel);
     }
 
+    /**
+     * 角色实体→Markdown。
+     *
+     * @param character - 参数
+     * @returns Markdown
+     */
     static characterToMarkdown(character: Character): string {
         const domainModel = EntityFactory.characterToDomainModel(character);
         const fm = characterToFrontmatter(domainModel);
@@ -142,11 +155,24 @@ export class EntityFactory {
     // Faction
     // ============================================================
 
+    /**
+     * 势力 Markdown→实体。
+     *
+     * @param content - 参数
+     * @param filePath - 参数
+     * @returns 势力
+     */
     static factionFromMarkdown(content: string, filePath: string = ''): Faction {
         const domainModel = factionFromMarkdown(content, filePath);
         return EntityFactory.factionFromDomainModel(domainModel);
     }
 
+    /**
+     * 势力实体→Markdown。
+     *
+     * @param faction - 参数
+     * @returns Markdown
+     */
     static factionToMarkdown(faction: Faction): string {
         const domainModel = EntityFactory.factionToDomainModel(faction);
         const fm = factionToFrontmatter(domainModel);
@@ -204,11 +230,24 @@ export class EntityFactory {
     // Location
     // ============================================================
 
+    /**
+     * 地点 Markdown→实体。
+     *
+     * @param content - 参数
+     * @param filePath - 参数
+     * @returns 地点
+     */
     static locationFromMarkdown(content: string, filePath: string = ''): Location {
         const domainModel = locationFromMarkdown(content, filePath);
         return EntityFactory.locationFromDomainModel(domainModel);
     }
 
+    /**
+     * 地点实体→Markdown。
+     *
+     * @param location - 参数
+     * @returns Markdown
+     */
     static locationToMarkdown(location: Location): string {
         const domainModel = EntityFactory.locationToDomainModel(location);
         const fm = locationToFrontmatter(domainModel);
@@ -270,11 +309,24 @@ export class EntityFactory {
     // Item
     // ============================================================
 
+    /**
+     * 物品 Markdown→实体。
+     *
+     * @param content - 参数
+     * @param filePath - 参数
+     * @returns 物品
+     */
     static itemFromMarkdown(content: string, filePath: string = ''): Item {
         const domainModel = itemFromMarkdown(content, filePath);
         return EntityFactory.itemFromDomainModel(domainModel);
     }
 
+    /**
+     * 物品实体→Markdown。
+     *
+     * @param item - 参数
+     * @returns Markdown
+     */
     static itemToMarkdown(item: Item): string {
         const domainModel = EntityFactory.itemToDomainModel(item);
         const fm = itemToFrontmatter(domainModel);
@@ -332,6 +384,13 @@ export class EntityFactory {
     // Chapter
     // ============================================================
 
+    /**
+     * 章节 Markdown→实体。
+     *
+     * @param content - 参数
+     * @param filePath - 参数
+     * @returns 章节
+     */
     static chapterFromMarkdown(content: string, filePath: string = ''): Chapter {
         const { frontmatter, body } = FrontmatterSerializer.parse(content);
         const fm = frontmatter.toObject();
@@ -393,6 +452,12 @@ export class EntityFactory {
         return Chapter.from(props);
     }
 
+    /**
+     * 章节实体→Markdown。
+     *
+     * @param chapter - 参数
+     * @returns Markdown
+     */
     static chapterToMarkdown(chapter: Chapter): string {
         const fm: Record<string, any> = {
             '卷': chapter.volume,
@@ -421,6 +486,13 @@ export class EntityFactory {
     // Project
     // ============================================================
 
+    /**
+     * 项目 Markdown→实体。
+     *
+     * @param content - 参数
+     * @param filePath - 参数
+     * @returns 项目
+     */
     static projectFromMarkdown(content: string, filePath: string = ''): Project {
         const fm = parseFrontmatter(content);
         const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
@@ -445,6 +517,12 @@ export class EntityFactory {
         return Project.create(id, name, filePath, projectMeta);
     }
 
+    /**
+     * 项目实体→Markdown。
+     *
+     * @param project - 参数
+     * @returns Markdown
+     */
     static projectToMarkdown(project: Project): string {
         const meta = project.projectMeta;
         const lines: string[] = ['---'];
