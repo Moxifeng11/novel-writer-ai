@@ -170,7 +170,7 @@ describe('buildUserPrompt - 请求构建', () => {
         const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
         expect(prompt).toContain('第10章');
         expect(prompt).toContain('# 第10章 标题');
-        expect(prompt).toContain('2-15字概括本章');
+        expect(prompt).toContain('标题 2-15 字');
     });
 
     it('包含世界观和设定库', () => {
@@ -205,16 +205,18 @@ describe('buildUserPrompt - 请求构建', () => {
         expect(prompt).toContain('【本章必须揭示的伏笔】');
         expect(prompt).toContain('神秘玉佩');
         expect(prompt).toContain('身世之谜');
-        expect(prompt).toContain('不要埋新伏笔');
+        expect(prompt).toContain('本章优先揭示以下伏笔');
     });
 
     it('包含最后指令和自查清单', () => {
         const ctx = makeChapterContext();
         const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
-        expect(prompt).toContain('【最后指令——必须遵守】');
-        expect(prompt).toContain('【⚠️ 输出前自查——逐条核对，违者重写】');
-        expect(prompt).toContain('字数≥2000字');
+        expect(prompt).toContain('【最后指令】');
+        expect(prompt).toContain('【输出前检查】');
+        expect(prompt).toContain('标题必须完整');
         expect(prompt).toContain('每段开头空两格');
+        // v4.26：不再把字数写死进自查项
+        expect(prompt).not.toContain('字数≥2000字');
     });
 
     it('前文摘要和分卷规划正确拼接', () => {

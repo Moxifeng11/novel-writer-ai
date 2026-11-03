@@ -75,6 +75,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   /** 用户通过「临时指令」输入框（Enter 应用）设置的方向提示，随下次建议/改写传入引擎 */
   private cursorHint: string = '';
   private suggestBtn: HTMLButtonElement | null = null;
+  private actionButtons: HTMLButtonElement[] = [];
 
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
     super(leaf, plugin, "cowrite", "\u270D\uFE0F \u534F\u540C\u5199\u4F5C\u6D6E\u7A97", "pen-nib");
@@ -140,17 +141,25 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     });
 
     const actionsRow = controlPanel.createDiv({ cls: "nw-cowrite-control-actions" });
-    const actions: Array<{ text: string; cls: string; action: () => void | Promise<void> }> = [
+    const actions: Array<{ text: string; cls: string; action: () => void | Promise<unknown> }> = [
       { text: "\u21E5 \u5EFA\u8BAE", cls: "nw-btn-primary", action: () => this.handleTabSuggest() },
       { text: "\u2728 \u8054\u60F3", cls: "nw-btn-ghost", action: () => this.handleAssociationSuggest() },
       { text: "\u2702 \u6539\u5199", cls: "nw-btn-ghost", action: () => this.handleRewriteSelection() },
       { text: "\uD83D\uDD0D \u903B\u8F91\u68C0\u67E5", cls: "nw-btn-ghost", action: () => this.handleLogicCheck() },
+      { text: "\uD83E\uDDFE \u5267\u60C5\u5197\u4F59", cls: "nw-btn-ghost", action: () => this.handleRedundancyCheck() },
       { text: "\uD83D\uDCA1 \u4FDD\u5B58", cls: "nw-btn-ghost", action: () => this.saveBody() },
       { text: "\u2705 \u7ED3\u7B97", cls: "nw-btn-primary", action: () => this.handleComplete() },
     ];
+    this.actionButtons = [];
     for (const a of actions) {
       const btn = actionsRow.createEl("button", { text: a.text, cls: `nw-btn ${a.cls}` });
-      btn.addEventListener("click", () => a.action());
+      btn.addEventListener("click", () => {
+        void Promise.resolve(a.action()).catch((e) => {
+          log.warn("[CoWriteFloating] 操作失败:", e);
+          new Notice(`操作失败：${e instanceof Error ? e.message : String(e)}`, 5000);
+        });
+      });
+      this.actionButtons.push(btn);
       if (a.text.includes("\u5EFA\u8BAE")) {
         this.suggestBtn = btn;
       }
@@ -164,6 +173,13 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
     // === 事件绑定 ===
     this.bindEditorEvents();
+  }
+
+  /** 统一设置底部操作按钮的忙碌态（建议按钮文案由 suggest 流程单独维护） */
+  private setActionsBusy(busy: boolean): void {
+    for (const btn of this.actionButtons) {
+      btn.disabled = busy;
+    }
   }
 
   /** 绑定编辑器事件 */
@@ -262,9 +278,9 @@ export class CoWriteFloatingPanel extends DraggablePanel {
    * 保存正文。
    * @returns 是否成功
    */
-  async saveBody(): Promise<void> {
+  async saveBody(): Promise<boolean> {
     const content = this.rightEditor.value;
-    if (!content.trim()) return;
+    if (!content.trim()) return false;
     const path = this.getBodyPath();
     try {
       // 与主视图共用同一落盘入口：保留 frontmatter 原文、统一标题、按格式契约规整。
@@ -280,10 +296,12 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       });
       this.updateSaveState("\u5DF2\u4FDD\u5B58");
       await this.renderFlowPanel();
+      return true;
     } catch (e) {
       log.warn("[CoWriteFloating] \u4FDD\u5B58\u5931\u8D25:", e);
       this.updateSaveState("\u4FDD\u5B58\u5931\u8D25");
       new Notice(`\u26A0\uFE0F \u4FDD\u5B58\u5931\u8D25\uFF1A${e instanceof Error ? e.message : String(e)}`, 6000);
+      return false;
     }
   }
 
@@ -311,6 +329,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     const signal = this.suggestAbortController.signal;
 
     this.isSuggesting = true;
+    this.setActionsBusy(true);
     if (this.suggestBtn) {
       this.suggestBtn.disabled = true;
       this.suggestBtn.setText("⏳ 生成中...");
@@ -416,6 +435,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
           this.suggestBtn.disabled = false;
           this.suggestBtn.setText("⇥ 建议");
         }
+        this.setActionsBusy(false);
       }
     }
   }
@@ -667,6 +687,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   async handleAssociationSuggest(): Promise<void> {
     if (this.isSuggesting) return;
     this.isSuggesting = true;
+    this.setActionsBusy(true);
     // Phase 3.2: 联想与建议共用中止控制器，关闭浮窗/新请求都会取消在途联想
     if (this.suggestAbortController) {
       this.suggestAbortController.abort();
@@ -694,6 +715,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
         this.suggestAbortController = null;
       }
       this.isSuggesting = false;
+      this.setActionsBusy(false);
     }
   }
 
@@ -710,6 +732,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     }
     if (this.isSuggesting) return;
     this.isSuggesting = true;
+    this.setActionsBusy(true);
     const selectedText = this.rightEditor.value.slice(start, end);
     const beforeContext = this.rightEditor.value.slice(0, start);
     const afterContext = this.rightEditor.value.slice(end);
@@ -727,6 +750,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       new Notice("选区改写失败，请稍后重试");
     } finally {
       this.isSuggesting = false;
+      this.setActionsBusy(false);
     }
   }
 
@@ -734,8 +758,17 @@ export class CoWriteFloatingPanel extends DraggablePanel {
    * 处理完成本章。
    */
   async handleComplete(): Promise<void> {
-    await this.saveBody();
-    new Notice("\u2705 \u7AE0\u8282\u4FDD\u5B58\u5DF2\u5B8C\u6210\uFF0C\u8BF7\u5728\u5168\u672C\u5199\u4F5C\u89C6\u56FE\u4E2D\u6267\u884C\u7ED3\u7B97");
+    this.setActionsBusy(true);
+    try {
+      const saved = await this.saveBody();
+      if (!saved) {
+        new Notice("\u26A0\uFE0F \u6B63\u6587\u672A\u4FDD\u5B58\uFF0C\u672C\u6B21\u7ED3\u7B97\u5DF2\u53D6\u6D88");
+        return;
+      }
+      new Notice("\u2705 \u7AE0\u8282\u4FDD\u5B58\u5DF2\u5B8C\u6210\uFF0C\u8BF7\u5728\u5168\u672C\u5199\u4F5C\u89C6\u56FE\u4E2D\u6267\u884C\u7ED3\u7B97");
+    } finally {
+      this.setActionsBusy(false);
+    }
   }
 
   // === 逻辑检查（人设一致性） ===
@@ -760,6 +793,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     }
 
     new Notice("\uD83D\uDD0D \u6B63\u5728\u6267\u884C\u903B\u8F91\u68C0\u67E5...");
+    this.setActionsBusy(true);
 
     try {
       const ctxData = await this.plugin.ctxManager.gatherCharacterState(this.project);
@@ -782,6 +816,57 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     } catch (e) {
       log.warn("[CoWriteFloating] \u903B\u8F91\u68C0\u67E5\u5931\u8D25:", e);
       new Notice("\u26A0\uFE0F \u903B\u8F91\u68C0\u67E5\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+    } finally {
+      this.setActionsBusy(false);
+    }
+  }
+
+  /**
+   * 剧情冗余检查：比较本章与已写章节的场景/冲突/短语重复。
+   * 引擎已有 checkPlotRedundancy，此前没有 UI 入口，属于「有核心能力但不可用」。
+   */
+  async handleRedundancyCheck(): Promise<void> {
+    const body = this.rightEditor.value;
+    if (!body.trim()) {
+      new Notice("\u26A0\uFE0F \u6B63\u6587\u4E3A\u7A7A\uFF0C\u65E0\u6CD5\u68C0\u67E5\u5197\u4F59");
+      return;
+    }
+    this.setActionsBusy(true);
+    try {
+      const report = await this.engine.checkPlotRedundancy(body);
+      this.renderRedundancyResult(report);
+      new Notice(
+        report.issues.length > 0
+          ? `\u2705 \u5197\u4F59\u68C0\u67E5\u5B8C\u6210\uFF0C\u53D1\u73B0 ${report.issues.length} \u5904\u91CD\u590D`
+          : "\u2705 \u5197\u4F59\u68C0\u67E5\u5B8C\u6210\uFF0C\u672A\u53D1\u73B0\u660E\u663E\u91CD\u590D",
+        5000,
+      );
+    } catch (e) {
+      log.warn("[CoWriteFloating] \u5197\u4F59\u68C0\u67E5\u5931\u8D25:", e);
+      new Notice("\u26A0\uFE0F \u5197\u4F59\u68C0\u67E5\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+    } finally {
+      this.setActionsBusy(false);
+    }
+  }
+
+  private renderRedundancyResult(report: { issues: Array<{ message: string; sample: string; count: number }>; comparedChapters: number }): void {
+    this.logicCheckContainer.empty();
+    this.logicCheckContainer.style.display = "block";
+    const header = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-header" });
+    header.createSpan({ text: `\uD83E\uDDFE \u5267\u60C5\u5197\u4F59\uFF08\u5BF9\u6BD4 ${report.comparedChapters} \u7AE0\uFF09` });
+    const closeBtn = header.createEl("button", { text: "\u2715", cls: "nw-btn nw-btn-ghost" });
+    closeBtn.addEventListener("click", () => { this.logicCheckContainer.style.display = "none"; });
+    if (report.issues.length === 0) {
+      this.logicCheckContainer.createDiv({ text: "\u672A\u53D1\u73B0\u4E0E\u524D\u6587\u91CD\u590D\u7684\u573A\u666F\u3001\u51B2\u7A81\u6216\u77ED\u8BED\u3002", cls: "nw-u-fs-12px-2" });
+      return;
+    }
+    const list = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-list" });
+    for (const issue of report.issues.slice(0, 20)) {
+      const row = list.createDiv({ cls: "nw-logic-check-item" });
+      row.createDiv({ text: `\u2022 ${issue.message} \u00D7${issue.count}` });
+      if (issue.sample) {
+        row.createDiv({ text: `\u300C${issue.sample}\u300D`, cls: "nw-u-fs-11px-2 nw-u-c-text-muted-2" });
+      }
     }
   }
 
@@ -895,7 +980,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
   private applyHint(): void {
     const hint = this.hintInput.value.trim();
-    if (!hint) return;
+    if (!hint) {
+      new Notice("请先输入临时指令或方向", 3000);
+      return;
+    }
     // 修复死代码：原先 Enter 仅 Notice 展示、从未真正应用指令。
     // 现在把方向提示存到 cursorHint，供 suggestNext / rewriteSelection 实际传入引擎。
     this.cursorHint = hint;

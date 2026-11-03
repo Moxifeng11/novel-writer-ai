@@ -86,6 +86,8 @@ export interface ChapterOrchestratorDeps {
     onProgress?: (progress: ChapterRunProgress) => void;
     /** 可重试错误的等待时长（毫秒）；缺省 3000。测试注入 0 用。 */
     retryDelayMs?: number;
+    /** 单步硬超时（毫秒）；缺省 8 分钟。超时会中止请求并给出可重试错误，避免流程无限滞留。 */
+    stepTimeoutMs?: number;
 }
 
 /**
@@ -428,7 +430,21 @@ export class ChapterOrchestrator {
 
     private async runOneStep(stepKey: string, ctx: any, tabContent: HTMLElement): Promise<void> {
         await this.activateStep(stepKey, ctx);
-        await this.deps.stepRunner.executeStepsSequential([stepKey], ctx);
+        // 单步看门狗：网络/模型无响应时不再无限停留，超时主动取消并抛可重试错误。
+        const timeoutMs = this.deps.stepTimeoutMs ?? 8 * 60_000;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const work = this.deps.stepRunner.executeStepsSequential([stepKey], ctx);
+        const timeout = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+                this.abortController?.abort();
+                reject(new Error(`步骤 ${stepKey} 超时（${Math.round(timeoutMs / 60000)} 分钟），已中止请求`));
+            }, timeoutMs);
+        });
+        try {
+            await Promise.race([work, timeout]);
+        } finally {
+            if (timer) clearTimeout(timer);
+        }
         await this.deps.render(tabContent);
         if (!this.deps.state.stepCompleted.has(stepKey)) {
             // v4.25 流程缺陷修复：只有「必须步骤」（正文）不完整才中止一键成文。

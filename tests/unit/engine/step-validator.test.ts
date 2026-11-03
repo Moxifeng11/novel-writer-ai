@@ -395,3 +395,15 @@ relationship_change: 与围观人群的关系彻底改变。`;
         expect(r.level).toBe('complete');
     });
 });
+
+
+describe('正文标题完整性（v4.26）', () => {
+    it('只有「# 第3章」没有章名时判不完整并点名「标题完整」', () => {
+        const body = `# 第3章
+
+${'他低声说：「走。」然后收声。'.repeat(120)}`;
+        const result = validateStepResult('bodyGeneration', body);
+        expect(result.valid).toBe(false);
+        expect(result.missing).toContain('标题完整');
+    });
+});

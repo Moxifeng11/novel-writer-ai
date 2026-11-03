@@ -560,6 +560,8 @@ function validateBodyGeneration(content: string, minWords = 2100): StepValidatio
     const required = [
         { key: '字数达标', pattern: wordCount >= minWords ? /./ : /^$/, desc: `${wordCount}/${minWords}字` },
         { key: '章节开头', pattern: /^#|^第.+章|^\s*第.+节/ },
+        // v4.26：标题行不能只有「# 第N章」没有章名（模型漏写标题）
+        { key: '标题完整', pattern: /^#\s*第[0-9一二三四五六七八九十百千]+章[ 	]+\S/ },
         // 实测缺陷：写作规范输出中文弯引号“”，旧正则只认 ASCII " 与「」，
         // 于是含 18 对对话的正文被判「缺少 对话描写」，一键成文中断在本步。
         { key: '对话描写', pattern: DIALOGUE_PATTERN },

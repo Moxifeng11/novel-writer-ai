@@ -17,6 +17,7 @@
  *   4. `status` 不降级：已 settled 的章节不会被写回 written / draft
  */
 import { App, TFile } from 'obsidian';
+import { parseFrontmatter } from '@/shared/frontmatter';
 import {
     FileSystemPort, FrontmatterPort, ObsidianFileSystem, ObsidianFrontmatter,
 } from '@/shared/file-system-port';
@@ -102,7 +103,7 @@ export interface BodyWriterOptions {
 }
 
 const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
-const CHAPTER_TITLE_INLINE = /^#{0,6}\s*第[0-9一二三四五六七八九十百千]+章[\s：:]+《?(.+?)》?\s*$/m;
+const CHAPTER_TITLE_INLINE = /^#{0,6}[ 	]*第[0-9一二三四五六七八九十百千]+章[ 	：:]+《?(.+?)》?[ 	]*$/m;
 const CHAPTER_NUM_FROM_NAME = /第([0-9一二三四五六七八九十百千]+)章/;
 
 function stripFrontmatterBlock(content: string): { fmRaw: string; body: string } {
@@ -260,7 +261,7 @@ export class BodyWriter {
         const contract = req.contract ?? await this.resolveContract(req.project);
 
         // 1. 先取标题（normalize 会剥离标题行）
-        const title = (req.title || extractChapterTitle(req.raw, chapterNum)).trim();
+        let title = (req.title || extractChapterTitle(req.raw, chapterNum)).trim();
 
         // 2. 读旧文件：frontmatter 原文保留，正文重新规整
         const existed = await fs.exists(req.path);
@@ -269,6 +270,13 @@ export class BodyWriter {
             try {
                 const oldRaw = await fs.read(req.path);
                 fmRaw = stripFrontmatterBlock(oldRaw).fmRaw;
+                // 模型漏写标题行时，用旧 frontmatter 的「标题」兜底，避免写回 `# 第N章 ` 空标题
+                if (!title && fmRaw.trim()) {
+                    const oldFm = parseFrontmatter(`---
+${fmRaw}
+---`);
+                    title = String(oldFm['标题'] || oldFm['title'] || '').trim();
+                }
                 // P0-3（v4.27）：覆盖前自动备份正文版本。
                 // 旧实现只有「定向修订」会存版本，pipeline/batch/auto/cowriter/manual
                 // 全部入口直接整篇覆盖——重新生成一章即永久丢原稿。
@@ -277,6 +285,10 @@ export class BodyWriter {
             } catch (e) {
                 log.warn('[BodyWriter] 读取旧正文失败，将按新建处理:', e);
             }
+        }
+
+        if (!title && chapterName) {
+            title = chapterName.replace(/^第[0-9一二三四五六七八九十百千]+章\s*/, '').trim();
         }
 
         // 3. 规整正文（先剥离模型自带的 frontmatter，避免 status/step_status 行落进正文）

@@ -140,7 +140,9 @@ export class WritingStatsService {
                 if (snapshot && mtime > 0 && snapshot.mtime === mtime) {
                     continue; // 未变化：跳过
                 }
-                const count = await this.resolveCount(file);
+                // v4.26：变更文件按正文实算，不再信 frontmatter 里可能过期的 word_count；
+                // 正文读不到（空文件/权限）时退回 frontmatter 兜底。
+                const count = await this.resolveCountForScan(file);
                 if (count === null) continue;
                 recordFileWords(this.data, file.path, projectOfFile(file.path), count, mtime, this.now());
             }
@@ -234,6 +236,17 @@ export class WritingStatsService {
             this.persistTimer = null;
         }
         if (this.dirty) void this.persistNow();
+    }
+
+    /** 扫描用：正文优先，读不到时退回 frontmatter 的 word_count */
+    private async resolveCountForScan(file: StatsFileLike): Promise<number | null> {
+        try {
+            const content = await this.readFile(file);
+            if (content && content.trim()) return countBodyChars(content);
+        } catch {
+            // 正文读取失败，走 frontmatter 兜底
+        }
+        return this.resolveCount(file);
     }
 
     private async resolveCount(file: StatsFileLike): Promise<number | null> {

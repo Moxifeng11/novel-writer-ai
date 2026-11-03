@@ -103,7 +103,9 @@ describe('describeBodyFormat', () => {
     it('单换行契约要求自然段，而不是一句一段', () => {
         const text = describeBodyFormat(DEFAULT_BODY_FORMAT);
         expect(text).toContain('一个自然段写成一行');
-        expect(text).toContain('2–6 句');
+        // v4.26 引导版：不再给 2–6 句硬指标
+        expect(text).not.toContain('2–6 句');
+        expect(text).toContain('一句成段也可以');
         expect(text).toContain('不要留空行');
     });
 

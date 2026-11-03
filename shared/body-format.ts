@@ -197,9 +197,9 @@ export function normalizeBodyText(
  * @returns 文本结果
  */
 export function describeBodyFormat(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): string {
-    const parts: string[] = ['【输出格式（硬性约束）】'];
+    const parts: string[] = ['【输出格式】'];
     if (contract.separator === '\n') {
-        parts.push('- 一个自然段写成一行。每段 2–6 句、80–220 字，段内不要换行；只有强调、转折或对话交锋时才一句话独立成段。');
+        parts.push('- 一个自然段写成一行；段落长短跟着镜头的呼吸走，一句成段也可以。');
         parts.push('- 段与段之间只用一个换行，不要留空行，不要用两个回车。');
     } else {
         parts.push('- 每个段落之间空一行。');

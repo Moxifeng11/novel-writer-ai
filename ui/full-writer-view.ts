@@ -2125,42 +2125,55 @@ export class FullWriterView extends ItemView {
 
     /** 步骤完成后的附加按钮区（消痕/精修/定向修订/人味体检 + 继续下一步） */
     private renderStepExtras(area: HTMLElement, currentStep: FullStep, stepKey: string): void {
-        // 步骤4完成后：显示消痕和迭代按钮
-        if (stepKey === 'bodyGeneration' && this.stepCompleted.has('bodyGeneration')) {
+        // 正文完成后：在正文及其后的质控/分析/结算步骤都保留消痕与迭代入口
+        // （旧实现只在当前步骤正好是 bodyGeneration 时显示，自动推进后按钮立刻消失）
+        if (currentStep.index >= 7 && this.stepCompleted.has('bodyGeneration')) {
             const deaiBtnRow = area.createDiv({ cls: 'novel-writer-fw-btn-row' });
             
             const deaiBtn = deaiBtnRow.createEl('button', {
                 text: '🧹 AI 消痕改写',
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary'
             });
-            deaiBtn.onclick = () => this.stepRunner.executeDeaiRewrite(
-                this.stepResults,
-                (c) => this.renderInContainer(c),
-                this.tabContent,
-                (v) => { this.isLoading = v; },
-                this.chapDir,
-                this.chapterName,
-                this.volume,
-                this.stepCompleted,
-            );
+            deaiBtn.onclick = () => {
+                deaiBtn.disabled = true;
+                void this.stepRunner.executeDeaiRewrite(
+                    this.stepResults,
+                    (c) => this.renderInContainer(c),
+                    this.tabContent,
+                    (v) => { this.isLoading = v; },
+                    this.chapDir,
+                    this.chapterName,
+                    this.volume,
+                    this.stepCompleted,
+                ).catch((e) => {
+                    log.error('[小说工坊] 消痕入口失败:', e);
+                    new Notice(`消痕失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                }).finally(() => { deaiBtn.disabled = false; });
+            };
 
             const refineBtn = deaiBtnRow.createEl('button', {
                 text: '🔁 自动迭代精修',
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary'
             });
-            refineBtn.onclick = () => this.stepRunner.executeIterativeRefine(
-                this.stepResults,
-                this.vars,
-                this.chapterNum,
-                () => this.buildTemplateVars(),
-                (c) => this.renderInContainer(c),
-                this.tabContent,
-                (v) => { this.isLoading = v; },
-                undefined,
-                undefined,
-                undefined,
-                this.stepCompleted,
-            );
+            refineBtn.onclick = () => {
+                refineBtn.disabled = true;
+                void this.stepRunner.executeIterativeRefine(
+                    this.stepResults,
+                    this.vars,
+                    this.chapterNum,
+                    () => this.buildTemplateVars(),
+                    (c) => this.renderInContainer(c),
+                    this.tabContent,
+                    (v) => { this.isLoading = v; },
+                    this.chapDir,
+                    this.chapterName,
+                    this.volume,
+                    this.stepCompleted,
+                ).catch((e) => {
+                    log.error('[小说工坊] 迭代精修入口失败:', e);
+                    new Notice(`迭代精修失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                }).finally(() => { refineBtn.disabled = false; });
+            };
 
             const targetedBtn = deaiBtnRow.createEl('button', {
                 text: '🎯 定向修订',
@@ -2234,13 +2247,39 @@ export class FullWriterView extends ItemView {
 
     // v3.4.9 委托: renderPolishEditor → PolishEditor 模块
     private async renderPolishEditor(area: HTMLElement): Promise<void> {
-        await this.polishEditor.render(
-            area, this.stepResults, this.project, this.chapDir, this.chapterName, this.volume,
-            () => {
-                // A7: 润色自动保存写回正文 → 下游审查/分析/结算失效（与手动保存正文口径一致）
-                this.chapterStateManager.invalidateSteps([...BODY_CHANGE_INVALIDATED_STEPS]);
-            },
-        );
+        try {
+            // 打开已结算章节时，内存里可能没有 bodyGeneration：从正文文件回填，
+            // 否则 PolishEditor 会静默 return，用户看到的就是「润色完全失效」。
+            if (!this.stepResults['bodyGeneration'] && this.project) {
+                const volN = parseInt(this.volume.match(/\d+/)?.[0] || '0', 10);
+                const bodyFile = findBodyFileV4(this.app, this.project, volN, this.chapterNum);
+                if (bodyFile instanceof TFile) {
+                    this.stepResults['bodyGeneration'] = await this.app.vault.read(bodyFile);
+                }
+            }
+            if (!this.stepResults['bodyGeneration']) {
+                area.createEl('p', {
+                    text: '⚠️ 未找到正文内容，无法打开润色编辑器。请先完成正文生成或打开本章正文。',
+                    cls: 'novel-writer-fw-error-text',
+                });
+                return;
+            }
+            await this.polishEditor.render(
+                area, this.stepResults, this.project, this.chapDir, this.chapterName, this.volume,
+                () => {
+                    // A7: 润色自动保存写回正文 → 下游审查/分析/结算失效（与手动保存正文口径一致）
+                    this.chapterStateManager.invalidateSteps([...BODY_CHANGE_INVALIDATED_STEPS]);
+                },
+            );
+        } catch (e) {
+            log.error('[小说工坊] 渲染润色编辑器失败:', e);
+            new Notice(`润色编辑器加载失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            const retry = area.createEl('button', { text: '🔄 重试加载润色编辑器', cls: 'novel-writer-fw-btn' });
+            retry.onclick = () => {
+                retry.disabled = true;
+                void this.renderPolishEditor(area).finally(() => { retry.disabled = false; });
+            };
+        }
     }
 
     private renderExecutionStatus(area: HTMLElement, stepKey: string): void {

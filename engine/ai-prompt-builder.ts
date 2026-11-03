@@ -205,21 +205,22 @@ export function buildUserPrompt(
         userContent += `【人物状态】${ctx.characters.slice(0, 2000)}\n`;
     }
 
-    userContent += `\n请撰写第${ctx.chapterNumber}章正文，输出完整 .md 格式，标题行格式：# 第${ctx.chapterNumber}章 标题（2-15字概括本章）
+    userContent += `
+请撰写第${ctx.chapterNumber}章正文，第一行写标题：# 第${ctx.chapterNumber}章 标题（标题 2-15 字），正文从下一行开始。
 
-【最后指令——必须遵守】
-- 字数 ≥ ${settings.minWordCount} 字
+【最后指令】
 ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}
-- 标题行 '# 第X章' 后面只写标题（2-15字），正文从下一行开始
-- 标点规范：破折号≤3处、感叹号≤3个、禁分号/省略号、禁一逗到底
-- 对话驱动，人物行为符合核心动机
-- ${ctx.forcedReveal && ctx.forcedReveal.length > 0 ? `本章必须揭示以下伏笔：${ctx.forcedReveal.join("、")}，不要埋新伏笔` : "每章至少回收1个旧伏笔、埋下1个新伏笔"}
-- 首句自然衔接上一章结束的场景，但不得重复上一章末尾的词语
-- 时间跳跃须在开头50字内明确交代
+- 标题必须完整：不能只写「# 第${ctx.chapterNumber}章」而没有章名
+- 镜头贴着主角，只写他能感知的信息；其他角色的心思用动作与语气暗示
+- 对话推动信息，人物行为符合核心动机
+- ${ctx.forcedReveal && ctx.forcedReveal.length > 0 ? `本章优先揭示以下伏笔：${ctx.forcedReveal.join("、")}` : "有合适的机会就回收旧伏笔、埋下新伏笔；没有就不硬凑"}
+- 首句自然承接上一章结束的场景，不重复上一章末尾的词语
+- 时间跳跃在开头交代清楚
 
-【⚠️ 输出前自查——逐条核对，违者重写】
-① 全文对话必须加引号"" ② 破折号≤3处 ③ 感叹号≤3个 ④ 禁分号、省略号 ⑤ 无一逗到底（连续3逗号后必须句号）
-⑥ 分段与缩进符合【输出格式（硬性约束）】 ⑦ 字数≥${settings.minWordCount}字 ⑧ 标题行'# 第X章'后跟2-15字标题`;
+【输出前检查】
+① 标题行是否完整（第几章 + 章名）
+② 是否始终是同一个镜头，没有写镜头外的心声
+③ 对话是否加了引号并独立成段`;
 
     return userContent;
 }

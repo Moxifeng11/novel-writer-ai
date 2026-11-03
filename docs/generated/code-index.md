@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 130194 | 1533 | 1302 | 85% |
-| `services/` | 28 | 11368 | 154 | 137 | 89% |
-| `shared/` | 165 | 37264 | 1521 | 1269 | 83% |
+| `engine/` | 289 | 130209 | 1533 | 1302 | 85% |
+| `services/` | 28 | 11381 | 154 | 137 | 89% |
+| `shared/` | 165 | 37298 | 1521 | 1269 | 83% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 765 | 30 | 22 | 73% |
-| `ui/` | 192 | 96786 | 501 | 463 | 92% |
+| `ui/` | 192 | 96929 | 501 | 463 | 92% |
 
 ## 文件清单
 
@@ -62,7 +62,7 @@
 | `engine/ai-entity-generator.ts` | 227 | 1 | 1 |
 | `engine/ai-lexicon.ts` | 97 | 3 | 3 |
 | `engine/ai-outline-generator.ts` | 1414 | 1 | 1 |
-| `engine/ai-prompt-builder.ts` | 226 | 5 | 5 |
+| `engine/ai-prompt-builder.ts` | 227 | 5 | 5 |
 | `engine/ai-scene-expander.ts` | 286 | 2 | 2 |
 | `engine/ai-scene-generator.ts` | 289 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
@@ -73,7 +73,7 @@
 | `engine/bases-generator.ts` | 249 | 8 | 6 |
 | `engine/batch-import-manager.ts` | 853 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 502 | 8 | 8 |
+| `engine/body-writer.ts` | 514 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/chapter-brief.ts` | 343 | 9 | 6 |
@@ -289,7 +289,7 @@
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 205 | 3 | 3 |
 | `engine/step-specials.ts` | 262 | 5 | 4 |
-| `engine/step-validator.ts` | 807 | 7 | 7 |
+| `engine/step-validator.ts` | 809 | 7 | 7 |
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
 | `engine/story-linkage-writer.ts` | 161 | 5 | 5 |
 | `engine/story-linkage.ts` | 416 | 14 | 12 |
@@ -351,7 +351,7 @@
 | `services/worker-protocol.ts` | 107 | 11 | 11 |
 | `services/worker-runtime.ts` | 262 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
-| `services/writing-stats-service.ts` | 312 | 6 | 6 |
+| `services/writing-stats-service.ts` | 325 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 55 | 2 | 2 |
 | `shared/api-format.ts` | 418 | 16 | 15 |
@@ -363,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 982 | 3 | 3 |
+| `shared/changelog-data.ts` | 1016 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -533,7 +533,7 @@
 | `ui/chapter-settlement-modal.ts` | 395 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
-| `ui/co-write-floating-panel.ts` | 930 | 2 | 2 |
+| `ui/co-write-floating-panel.ts` | 1018 | 2 | 2 |
 | `ui/co-writing-view.ts` | 5589 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 631 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |
@@ -578,11 +578,11 @@
 | `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2669 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2708 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 462 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
-| `ui/full-writer/chapter-orchestrator.ts` | 474 | 10 | 9 |
+| `ui/full-writer/chapter-orchestrator.ts` | 490 | 10 | 9 |
 | `ui/full-writer/context-loader-controller.ts` | 256 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 241 | 4 | 4 |

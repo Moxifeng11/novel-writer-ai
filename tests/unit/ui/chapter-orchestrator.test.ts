@@ -186,3 +186,19 @@ describe('ChapterOrchestrator — 推荐模式', () => {
         expect(bodyAttempts).toBe(1);
     });
 });
+
+describe('ChapterOrchestrator — 单步看门狗', () => {
+    it('步骤长时间无响应时超时中止，不再无限滞留', async () => {
+        const h = makeHarness();
+        h.deps.stepTimeoutMs = 20;
+        h.stepRunner.executeStepsSequential = vi.fn(() => new Promise(() => undefined)) as never;
+        const orchestrator = new ChapterOrchestrator(h.deps);
+        const ctx = { setCurrentStepIndex: vi.fn(), getAbortController: () => null };
+
+        await expect(
+            (orchestrator as unknown as {
+                runOneStep: (key: string, ctx: unknown, tab: unknown) => Promise<void>;
+            }).runOneStep('bodyGeneration', ctx, {}),
+        ).rejects.toThrow('超时');
+    });
+});

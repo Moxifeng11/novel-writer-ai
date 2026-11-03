@@ -66,10 +66,28 @@ describe('BodyWriter', () => {
         expect(res.body.split('\n').every(l => l.startsWith(INDENT_TWO_FULL_WIDTH))).toBe(true);
     });
 
+    it('模型漏写标题时，用旧 frontmatter 标题兜底（避免 `# 第3章 ` 空标题）', async () => {
+        await fs.write(PATH, '---\n标题: 旧章名\n---\n\n# 第3章 旧章名\n\n旧正文。');
+        const res = await writer.write({
+            path: PATH,
+            raw: `# 第3章
+
+${longCompleteBody()}`,
+            chapterNum: 3,
+            chapterName: '第3章',
+            volume: '第1卷',
+            writingMode: 'pipeline',
+            contract: DEFAULT_BODY_FORMAT,
+        });
+        expect(res.title).toBe('旧章名');
+        const content = await fs.read(PATH);
+        expect(content).toContain('# 第3章 旧章名');
+    });
+
     it('不变量字段：完整正文 → status=written + step_status=generated', async () => {
         await writer.write({
             path: PATH,
-            raw: longCompleteBody(),
+            raw: '# 第3章 试炼\n\n' + longCompleteBody(),
             chapterNum: 3,
             chapterName: '第3章',
             volume: '第1卷',

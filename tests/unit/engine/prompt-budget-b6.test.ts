@@ -56,7 +56,7 @@ describe('B6 — buildChapterPrompts 预算闸门', () => {
         expect(prompts.user).not.toContain('风格样本风格样本');
         // system 承载输出硬约束，必须完整
         expect(prompts.system).toContain('本章镜头');
-        expect(prompts.user).toContain('【最后指令——必须遵守】');
+        expect(prompts.user).toContain('【最后指令】');
     });
 });
 
