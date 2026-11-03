@@ -6,8 +6,9 @@
  */
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile, Menu } from 'obsidian';
-import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '@/shared/paths';
-import { CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
+import { volumeNumber } from '@/shared/chapter-target';
+import { CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
 
 import NovelWriterPlugin from '@/main';
 import { CoWriterEngine, resolveCoWriteLocalModel } from '@/engine/co-writer-engine';
@@ -4293,10 +4294,11 @@ ${text}`;
    * @returns 路径
    */
   getBodyPath() {
-    // v4.5.1 fix: 必须用 "第N章" 前缀，与 pjBodyFile/findBodyFileV4 规范一致
-    // 之前用 chapterName（如"初始之痕"）导致 findBodyFileV4 找不到正文文件
-    const chapterPrefix = `第${this.chapterNum}章`;
-    return `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/\u6B63\u6587/${this.volume}/${chapterPrefix}_\u6B63\u6587.md`;
+    // 已存在的正文可能带标题（第3章_风起_正文.md）：先查真实文件，再回退标准裸路径。
+    // 旧实现永远拼裸路径，标题化章节会读空、保存时又新建第二个正文文件。
+    const volN = volumeNumber(this.volume) || 1;
+    return findBodyFileV4(this.app, this.project, volN, this.chapterNum)?.path
+      ?? pjBodyFile(this.project, volN, this.chapterNum);
   }
   /**
    * 取正文目录。

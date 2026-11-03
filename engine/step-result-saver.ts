@@ -55,6 +55,7 @@ export interface StepSaveMeta {
     /** v4.23 归因：模板/规则/人味版本与实验分组（写入步骤 frontmatter） */
     templateId?: string;
     templateVersion?: string;
+    templateHash?: string;
     rulesVersion?: string;
     rulesHash?: string;
     voiceMode?: string;
@@ -510,6 +511,7 @@ export class StepResultSaver {
         const fields: Array<[string, string | undefined]> = [
             ['step_template_id', meta?.templateId],
             ['step_template_version', meta?.templateVersion],
+            ['step_template_hash', meta?.templateHash],
             ['step_rules_version', meta?.rulesVersion],
             ['step_rules_hash', meta?.rulesHash],
             ['step_voice_mode', meta?.voiceMode],

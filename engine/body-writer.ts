@@ -25,7 +25,8 @@ import {
     BodyFormatContract, DEFAULT_BODY_FORMAT, deriveBodyFormat, normalizeBodyText,
 } from '@/shared/body-format';
 import { naturalizeBodyText } from '@/shared/prose-naturalizer';
-import { pjBodyFile, pjWritingRules } from '@/shared/paths';
+import { pjBodyFile } from '@/shared/paths';
+import { VAULT_RULES_PATH } from '@/services/rules-registry';
 import { projectIdFromPath, projectIdentityExists } from '@/shared/project-catalog';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { validateStepResult } from './step-validator';
@@ -198,7 +199,9 @@ export class BodyWriter {
         // 用规则文件 mtime+size 做指纹，每次解析都校验，变了就重新推导；
         // 这样多个 BodyWriter 实例（ai-engine / step-result-saver / 续写弹窗）
         // 各自持有的缓存都能自愈，不需要把实例逐个登记到失效通道。
-        const rulesPath = pjWritingRules(project);
+        // v4 写作规则唯一来源是 vault 元文件；项目内副本已被迁移删除。
+        // 旧实现读项目内规则副本，stamp 恒为 missing，用户改规则永远不影响落盘契约。
+        const rulesPath = VAULT_RULES_PATH;
         let stamp = '';
         let canValidate = false;
         if (fs.getFileStamp) {

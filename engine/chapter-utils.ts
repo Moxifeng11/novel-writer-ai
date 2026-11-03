@@ -1,6 +1,6 @@
 import { App, TFile, TFolder } from 'obsidian';
 import { ChapterFrontmatter } from '@/shared/types';
-import { pjBodyDir } from '@/shared/paths';
+import { pjBodyDir, pjBodyFile } from '@/shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { createLogger } from '@/shared/logger';
@@ -394,6 +394,23 @@ export function findBodyFileV4(app: App, project: string, volN: number, chapNum:
         f.name.startsWith(prefix)
         && f.name.endsWith('_正文.md')
     );
+}
+
+/**
+ * 解析正文文件路径：优先返回已存在的文件（支持 `第N章_标题_正文.md`），
+ * 只有确实不存在时才回退到标准裸路径（新建章节用）。
+ *
+ * 所有“读/写/结算/审查/导出”正文的入口都应调用它，禁止自己拼裸路径；
+ * 否则同章会同时存在裸文件与标题化文件，出现协同空白、结算读错、导出漏章。
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目 ID
+ * @param volN - 卷号
+ * @param chapNum - 章号
+ * @returns vault 相对路径
+ */
+export function resolveBodyFilePath(app: App, project: string, volN: number, chapNum: number): string {
+    return findBodyFileV4(app, project, volN, chapNum)?.path ?? pjBodyFile(project, volN, chapNum);
 }
 
 /** 正文文件类型（不与步骤文件混在一处） */

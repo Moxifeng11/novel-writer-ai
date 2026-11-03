@@ -743,11 +743,11 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
   }
   // v4.23：规则按版本载入——项目内规则优先、设置里可切换生效版本（旧的硬读 vault 路径已废弃）
   const rulesService = RulesService.getInstance(deps.plugin.app);
-  rulesService.setProject(deps.project);
+  // 显式传 project，避免单例的 project 状态被其他调用串改；setProject 仅保留兼容。
   rulesService.setActiveVersion(deps.plugin.settings.activeRulesVersion);
-  const writingRules = await rulesService.getWritingRules();
+  const writingRules = await rulesService.getWritingRules(deps.project);
   vars["writingRules"] = writingRules;
-  const rulesConfig = await rulesService.getRulesConfig();
+  const rulesConfig = await rulesService.getRulesConfig(deps.project);
   vars["_rulesMeta"] = JSON.stringify({
     id: rulesConfig.id || '',
     version: rulesConfig.version || '',

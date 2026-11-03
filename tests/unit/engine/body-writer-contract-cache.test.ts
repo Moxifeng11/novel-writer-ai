@@ -9,10 +9,10 @@ import { describe, it, expect } from 'vitest';
 import { BodyWriter } from '../../../engine/body-writer';
 import { MockFileSystem } from '../../../shared/file-system-port';
 import { INDENT_TWO_FULL_WIDTH } from '../../../shared/body-format';
-import { pjWritingRules } from '../../../shared/paths';
+import { VAULT_RULES_PATH } from '../../../services/rules-registry';
 
 const PROJECT = '长篇小说/缓存测试';
-const RULES = pjWritingRules(PROJECT);
+const RULES = VAULT_RULES_PATH;
 
 class StampFileSystem extends MockFileSystem {
     mtime = 1;

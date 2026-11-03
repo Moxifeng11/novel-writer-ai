@@ -27,6 +27,7 @@ import { BODY_CHANGE_INVALIDATED_STEPS } from './step-definitions';
 import { createLogger } from '@/shared/logger';
 
 
+import { projectIdFromPath } from '@/shared/project-catalog';
 const log = createLogger('StepModalController');
 /**
  * 步骤弹窗依赖列表结构定义。
@@ -127,7 +128,7 @@ export class StepModalController {
                 user: DEAI_CHECK_USER_TEMPLATE,
             }),
             templateService.getCustomPrompt('deaiRewrite', {
-                system: DEAI_REWRITE_SYSTEM_PROMPT.replace('${writingRules}', await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules()),
+                system: DEAI_REWRITE_SYSTEM_PROMPT.replace('${writingRules}', await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules(projectIdFromPath(chapDir))),
                 user: DEAI_REWRITE_USER_TEMPLATE,
             }),
         ]);
@@ -238,7 +239,7 @@ export class StepModalController {
             detectBtn.setText('⏳ 单次消痕中...');
             try {
                 const tasks = this.createTasks();
-                const writingRules = await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules();
+                const writingRules = await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules(projectIdFromPath(chapDir));
                 const result = await tasks.deai(bodyText, { writingRules });
 
                 reportEl.setText([

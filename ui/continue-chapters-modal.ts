@@ -7,6 +7,7 @@ import { TemplateService } from '@/engine/template-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { RE_VOLUME_HEADER, RE_RANGE_NUMBERS, RE_OUTLINE_TABLE_ROW } from '@/shared/format-constants';
 import { pjBodyDir, pjBodyFile, pjStepDir, pjVolumeOutlineFile, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjVolumeOutlineDir } from '@/shared/paths';
+import { resolveBodyFilePath } from '@/engine/chapter-utils';
 import { BodyWriter } from '@/engine/body-writer';
 import { describeBodyFormat } from '@/shared/body-format';
 import { listFolderFiles } from '@/shared/vault-tree';
@@ -104,7 +105,7 @@ export class ContinueChaptersModal extends Modal {
                 // v4.0: 正文文件直接通过 pjBodyFile 查找
                 const vmN = vol.match(/第(\d+)卷/);
                 const vN = vmN ? parseInt(vmN[1], 10) : 0;
-                const bodyPath = vN > 0 ? pjBodyFile(project, vN, chapter.num) : '';
+                const bodyPath = vN > 0 ? resolveBodyFilePath(this.app, project, vN, chapter.num) : '';
                 const bodyFile = bodyPath ? (this.app.vault.getAbstractFileByPath(bodyPath) as TFile | null) : null;
                 if (bodyFile) {
                     lastChapterFile = chapter.num;
@@ -151,7 +152,7 @@ export class ContinueChaptersModal extends Modal {
             for (const vol of this.getVolumes(project)) {
                 const vmN = vol.match(/第(\d+)卷/);
                 const vN = vmN ? parseInt(vmN[1], 10) : 0;
-                const bodyPath = vN > 0 ? pjBodyFile(project, vN, chapter.num) : '';
+                const bodyPath = vN > 0 ? resolveBodyFilePath(this.app, project, vN, chapter.num) : '';
                 const bodyFile = bodyPath ? (this.app.vault.getAbstractFileByPath(bodyPath) as TFile | null) : null;
                 if (bodyFile) lastChapterFile = chapter.num;
             }
@@ -276,7 +277,7 @@ export class ContinueChaptersModal extends Modal {
                     for (const vol of this.getVolumes(project)) {
                         const vmN = vol.match(/第(\d+)卷/);
                         const vN = vmN ? parseInt(vmN[1], 10) : 0;
-                        const bodyPath = vN > 0 ? pjBodyFile(project, vN, chapter.num) : '';
+                        const bodyPath = vN > 0 ? resolveBodyFilePath(this.app, project, vN, chapter.num) : '';
                         const bodyFile = bodyPath ? (this.app.vault.getAbstractFileByPath(bodyPath) as TFile | null) : null;
                         if (bodyFile) {
                             try {
@@ -429,7 +430,7 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
             const vmN = vol.match(/第(\d+)卷/);
             const vN = vmN ? parseInt(vmN[1], 10) : 0;
             if (vN <= 0) continue;
-            const bodyPath = pjBodyFile(project, vN, prevNum);
+            const bodyPath = resolveBodyFilePath(this.app, project, vN, prevNum);
             const bodyFile = this.app.vault.getAbstractFileByPath(bodyPath) as TFile | null;
             if (bodyFile) {
                 try {

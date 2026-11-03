@@ -39,6 +39,9 @@ import { CoWritingView } from '@/ui/co-writing-view';
 import { listProjectIds, removeProjectDirectory } from '@/shared/project-catalog';
 import { MODE_LIBRARY_ROOT_LIST } from '@/shared/creation-mode';
 import { writeVaultText } from '@/shared/file-system-port';
+import { BodyWriter } from '@/engine/body-writer';
+import { isChapterBodyPath } from '@/shared/body-path';
+import { projectIdFromPath } from '@/shared/paths';
 
 const log = createLogger('AgentPort');
 
@@ -530,6 +533,22 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
             }
             if (new TextEncoder().encode(content).length > MAX_WRITE_FILE_BYTES) {
                 throw new Error(`单次写入超过 ${Math.round(MAX_WRITE_FILE_BYTES / 1024)}KB，请拆分或改用命令生成`);
+            }
+            // 长篇正文必须走 BodyWriter：保留 frontmatter、标题、格式契约，并阻止删除项目后复活。
+            if (isChapterBodyPath(guard.path) && guard.path.includes('/03-大纲与章节/正文/')) {
+                if (options?.append) throw new Error('正文不支持追加写入；请整篇提交或使用写作命令');
+                const match = guard.path.match(/\/03-大纲与章节\/正文\/(第\d+卷)\/第(\d+)章/);
+                if (!match) throw new Error(`无法识别正文章节路径：${guard.path}`);
+                await new BodyWriter({ app }).write({
+                    path: guard.path,
+                    raw: content,
+                    chapterNum: parseInt(match[2], 10),
+                    chapterName: `第${match[2]}章`,
+                    volume: match[1],
+                    project: projectIdFromPath(guard.path),
+                    writingMode: 'manual',
+                });
+                return { path: guard.path, created: false, bytes: new TextEncoder().encode(content).length };
             }
             const existed = await app.vault.adapter.exists(guard.path);
             let next = content;

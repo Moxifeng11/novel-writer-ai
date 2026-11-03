@@ -8,6 +8,7 @@
 import type { App } from 'obsidian';
 import type { AIEngine } from './ai-engine';
 import { generateEmotionPlan, validateEmotionPlan } from './emotion-planner';
+import { resolveStepPrompt } from './prompt-resolver';
 import { generateSceneExpansion, validateSceneExpansion } from './scene-expander';
 import { NOTICE_CRITICAL } from '@/shared/thresholds';
 import { createLogger } from '@/shared/logger';
@@ -55,7 +56,7 @@ export interface StepSpecialsHost {
      */
     injectSceneExpandKnowledge(ctx: StepRunCtx): Promise<string>;
     /** 项目自定义 sceneExpand prompt；不存在时返回 null */
-    getSceneExpandCustomPrompt?(): Promise<{ systemPrompt: string; userPrompt: string } | null>;
+    getSceneExpandCustomPrompt?(vars: Record<string, string>): Promise<{ systemPrompt: string; userPrompt: string } | null>;
 }
 
 /** 恢复发送按钮的 UI 动作（由 StepRunner 提供的闭包） */
@@ -137,6 +138,9 @@ export async function runEmotionPlanStep(
     }
 
     const emotionLimits = host.resolveStepBudgetLimits(stepModel);
+    // 情绪规划此前是特例：直接读内置常量，模板管理改了也不生效。
+    // 现在与普通步骤走同一 resolver（vault > 用户覆盖 > 内置）。
+    const resolvedEmotion = await resolveStepPrompt(host.app, 'emotionPlan', varsWithInjection);
     const emoContent = await generateEmotionPlan(
         host.aiEngine,
         host.app,
@@ -146,6 +150,9 @@ export async function runEmotionPlanStep(
         {
             maxTokens: emotionLimits.maxOutput,
             signal: ctx.getAbortController?.()?.signal,
+            prompt: resolvedEmotion
+                ? { system: resolvedEmotion.systemPrompt, user: resolvedEmotion.userPrompt }
+                : undefined,
         },
     );
     const validation = validateEmotionPlan(emoContent);
@@ -209,7 +216,7 @@ export async function runSceneExpandStep(
 
     // B6：sceneExpand 此前直接 return，完全绕过 prompt 预算闸门；
     // 这里按本步实际模型传入窗口，知识注入作为可丢弃的增强层。
-    const customPrompt = await host.getSceneExpandCustomPrompt?.();
+    const customPrompt = await host.getSceneExpandCustomPrompt?.(varsWithInjection);
     const sceneContent = await generateSceneExpansion(
         host.aiEngine,
         varsWithInjection,

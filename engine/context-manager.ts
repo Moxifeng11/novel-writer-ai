@@ -565,7 +565,7 @@ export class ContextManager {
         const settingLibPath = getSettingLibPath(project);
         const foreshadowPath = pjForeshadowDB(project);
         const timelinePath = pjTimelineBoard(project);
-        const writingRulesPath = pjWritingRules(project);
+        const writingRulesPath = pjWritingRulesTemplate();
         const writingStylePath = getWritingStylePath(project);
         const legacyWritingStylePath = getLegacyWritingStylePath(project);
         const fanficPath = pjFanficFile(project, '');
@@ -1617,15 +1617,11 @@ export class ContextManager {
      */
     async gatherWritingRules(project: string): Promise<ContextData> {
         try {
-            let path = pjWritingRules(project);
-            let file = this.getVaultMeta().getAbstractFileByPath(path);
+            // v4：写作规则唯一来源是 vault 元文件；不再读项目内副本（迁移时已删除）。
+            const path = pjWritingRulesTemplate();
+            const file = this.getVaultMeta().getAbstractFileByPath(path);
 
-            if (!file) {
-                path = pjWritingRulesTemplate();
-                file = this.getVaultMeta().getAbstractFileByPath(path);
-            }
-
-                if (file instanceof TFile) {
+            if (file instanceof TFile) {
                     const content = await this.app.vault.cachedRead(file);
                     return { writing_rules: this.parseWritingRules(content) };
             }

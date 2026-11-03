@@ -31,6 +31,7 @@ import {
 } from './prompt-templates';
 import { RulesService } from '@/services/rules-service';
 import { createLogger } from '@/shared/logger';
+import { TEMPLATE_SCAFFOLD_FILES } from '@/shared/template-scaffold-assets.generated';
 
 
 const log = createLogger('TemplateService');
@@ -516,7 +517,9 @@ export class TemplateService {
      */
     async getTemplate(type: string, vars: TemplateVariables = {}): Promise<string> {
         const templatePathFn = TEMPLATE_PATH_MAP[type];
-        let content = DEFAULT_TEMPLATES[type] || '';
+        // 默认内容优先用构建期生成的脚手架同源文本，避免 DEFAULT_TEMPLATES
+        // 与 assets 长期漂移（审计实测 20 个模板中 17 个不一致）。
+        let content = this.defaultTemplateContent(type);
 
         if (templatePathFn) {
             const path = templatePathFn();
@@ -533,6 +536,22 @@ export class TemplateService {
         }
 
         return this.replaceVariables(content, vars);
+    }
+
+    /** 缺模板时的默认内容：assets 生成物 > 内置兜底 */
+    private defaultTemplateContent(type: string): string {
+        const mapped = TEMPLATE_PATH_MAP[type]?.() || '';
+        const key = mapped.startsWith('元文件/') ? mapped.slice('元文件/'.length) : '';
+        const asset = key ? TEMPLATE_SCAFFOLD_FILES[key] || '' : '';
+        const builtin = DEFAULT_TEMPLATES[type] || '';
+        if (!asset) return builtin;
+        // assets 是「正文内容」，DEFAULT_TEMPLATES 是「带 frontmatter 的骨架」。
+        // 缺文件时保留骨架 frontmatter，再接 assets 正文，避免步骤文件丢 status/step_status。
+        if (asset.trimStart().startsWith('---')) return asset;
+        const nl = String.fromCharCode(10);
+        const fmEnd = builtin.startsWith('---') ? builtin.indexOf(`${nl}---`, 3) : -1;
+        const frontmatter = fmEnd >= 0 ? builtin.slice(0, fmEnd + 4) : '';
+        return frontmatter ? `${frontmatter}${nl}${asset}` : asset;
     }
 
     /** 同一路径只告警一次，避免缺模板时日志刷屏 */
@@ -743,10 +762,12 @@ writing_mode: pipeline
 
     /**
      * 取写作规则文本。
+     *
+     * @param project - 项目 ID；用于拼接创作模式附录
      * @returns 规则文本
      */
-    async getWritingRules(): Promise<string> {
-        return RulesService.getInstance(this.app).getWritingRules();
+    async getWritingRules(project?: string): Promise<string> {
+        return RulesService.getInstance(this.app).getWritingRules(project);
     }
 
     /**

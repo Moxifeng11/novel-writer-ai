@@ -2645,7 +2645,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         // v4.26：规则唯一来源 RulesService（含模式附录全文）
         let cachedRulesText = '';
         try {
-            cachedRulesText = await RulesService.getInstance(this.app).getWritingRules();
+            cachedRulesText = await RulesService.getInstance(this.app).getWritingRules(project);
         } catch (e) {
             log.warn('[CoWriterEngine] 读取写作规则失败，规则块为空:', e);
         }

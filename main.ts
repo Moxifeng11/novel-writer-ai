@@ -88,10 +88,12 @@ import { SerializedWriter } from './shared/serialized-writer';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
-import { resolveActiveChapterTarget, type ActiveChapterTarget, type WorkbenchChapterContext } from './shared/chapter-target';
+import { resolveActiveChapterTarget, volumeNumber, type ActiveChapterTarget, type WorkbenchChapterContext } from './shared/chapter-target';
+import { resolveBodyFilePath } from '@/engine/chapter-utils';
 import { LEGACY_STORAGE_KEYS } from './shared/storage-keys';
 import { ensureTemplateScaffold } from './shared/template-scaffold';
 import { RulesService } from './services/rules-service';
+import { getPromptCache } from './engine/prompt-cache';
 import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
 
 // ─── core 服务层（从 main.ts 拆出）───
@@ -689,6 +691,10 @@ export default class NovelWriterPlugin extends Plugin {
         return resolveActiveChapterTarget({
             workbench: this._workbenchContext,
             activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
+            // 已有标题化正文（第3章_风起_正文.md）时必须命中真实文件；
+            // 只有新建章节才回退 `第N章_正文.md`。
+            resolveBodyPath: (project, volume, chapterNum) =>
+                resolveBodyFilePath(this.app, project, volumeNumber(volume), chapterNum),
         });
     }
 
@@ -1841,6 +1847,9 @@ export default class NovelWriterPlugin extends Plugin {
         );
         // 清理缓存管理器
         this._cacheManager?.dispose();
+        // 内存响应缓存与规则单例持有 App/整章文本，卸载时不能留给下一次热重载
+        getPromptCache().clear();
+        RulesService.resetInstance();
         // 冲刷知识库 / 批量导入的串行写队列：这两个管理器持有 SerializedWriter，
         // 不在这里 flush，卸载瞬间的最后一批索引/书籍元数据会丢。
         void Promise.allSettled([

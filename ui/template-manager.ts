@@ -494,32 +494,41 @@ class TemplateEditModal extends Modal {
 
     private async saveTemplate(systemContent: string, userContent: string): Promise<void> {
         try {
+            if (!systemContent.trim() && !userContent.trim()) {
+                new Notice('⚠️ 系统提示词与用户提示词都为空，未保存', 5000);
+                return;
+            }
             // 确保目录存在
             const dir = this.app.vault.getAbstractFileByPath(PJ_PROMPT_TEMPLATE_DIR);
             if (!dir) {
                 await this.app.vault.createFolder(PJ_PROMPT_TEMPLATE_DIR);
             }
 
-            // 保存 System Prompt
+            // 保存 System Prompt；清空则删除覆盖文件，回退内置模板（旧实现空内容直接跳过，
+            // 用户以为清空成功，实际旧覆盖仍生效）。
+            const systemPath = this.template.systemPath;
+            const existingSystem = this.app.vault.getAbstractFileByPath(systemPath);
             if (systemContent.trim()) {
-                const systemPath = this.template.systemPath;
-                const existingSystem = this.app.vault.getAbstractFileByPath(systemPath);
                 if (existingSystem instanceof TFile) {
                     await this.app.vault.modify(existingSystem, systemContent);
                 } else {
                     await this.app.vault.create(systemPath, systemContent);
                 }
+            } else if (existingSystem instanceof TFile) {
+                await this.app.vault.delete(existingSystem, true);
             }
 
             // 保存 User Prompt
+            const userPath = this.template.userPath;
+            const existingUser = this.app.vault.getAbstractFileByPath(userPath);
             if (userContent.trim()) {
-                const userPath = this.template.userPath;
-                const existingUser = this.app.vault.getAbstractFileByPath(userPath);
                 if (existingUser instanceof TFile) {
                     await this.app.vault.modify(existingUser, userContent);
                 } else {
                     await this.app.vault.create(userPath, userContent);
                 }
+            } else if (existingUser instanceof TFile) {
+                await this.app.vault.delete(existingUser, true);
             }
 
             new Notice(`✅ 已保存 ${this.template.name} 模板`);
@@ -688,6 +697,11 @@ class TemplateImportModal extends Modal {
                 }
             }
 
+            if (count === 0) {
+                statusDiv.setText('❌ 未识别到可导入的模板片段（文件名需包含 -template）');
+                new Notice('❌ 未导入任何模板：文件格式不正确', 6000);
+                return;
+            }
             statusDiv.setText(`✅ 已导入 ${count} 个模板文件`);
             new Notice(`✅ 已导入 ${count} 个模板`);
 

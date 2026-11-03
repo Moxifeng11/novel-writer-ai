@@ -737,7 +737,7 @@ export class AIEngine {
         // v4.26：规则文本唯一来源 RulesService（含模式附录），不再内嵌第二份
         let writingRules = '';
         try {
-            writingRules = await RulesService.getInstance(this.plugin.app).getWritingRules();
+            writingRules = await RulesService.getInstance(this.plugin.app).getWritingRules(context.project);
         } catch (e) {
             log.warn('[AIEngine] 读取写作规则失败，使用镜头兜底:', e);
         }

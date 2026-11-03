@@ -28,9 +28,14 @@ export interface ResolveChapterTargetInput {
     workbench: WorkbenchChapterContext | null;
     /** 当前活动文件路径（无活动文件时为 null） */
     activeFilePath: string | null;
+    /**
+     * 可选：把「项目+卷+章」解析成已存在的正文文件路径。
+     * 命令层传入 vault 查询，纯函数层保持无 Obsidian 依赖。
+     */
+    resolveBodyPath?: (project: string, volume: string, chapterNum: number) => string | null;
 }
 
-const BODY_PATH_RE = /^(.+?)\/03-大纲与章节\/正文\/(第\d+卷)\/(第\d+章)_正文\.md$/;
+const BODY_PATH_RE = /^(.+?)\/03-大纲与章节\/正文\/(第\d+卷)\/(第\d+章)[^/]*_正文\.md$/;
 const STEP_DIR_RE = /^(.+?)\/03-大纲与章节\/步骤结果\/(第\d+卷)\/(第\d+章)/;
 
 /**
@@ -64,7 +69,8 @@ export function resolveActiveChapterTarget(input: ResolveChapterTargetInput): Ac
     if (workbench?.project && workbench.chapterNum > 0 && volumeNumber(workbench.volume) > 0) {
         return {
             ...workbench,
-            bodyPath: `${workbench.project}/03-大纲与章节/正文/${workbench.volume}/${workbench.chapterName}_正文.md`,
+            bodyPath: input.resolveBodyPath?.(workbench.project, workbench.volume, workbench.chapterNum)
+                ?? `${workbench.project}/03-大纲与章节/正文/${workbench.volume}/第${workbench.chapterNum}章_正文.md`,
         };
     }
 
@@ -101,7 +107,8 @@ export function resolveActiveChapterTarget(input: ResolveChapterTargetInput): Ac
                 chapterName,
                 chapterNum,
                 chapDir: `${project}/03-大纲与章节/步骤结果/${volume}/${chapterName}`,
-                bodyPath: `${project}/03-大纲与章节/正文/${volume}/${chapterName}_正文.md`,
+                bodyPath: input.resolveBodyPath?.(project, volume, chapterNum)
+                    ?? `${project}/03-大纲与章节/正文/${volume}/${chapterNum ? `第${chapterNum}章` : chapterName}_正文.md`,
             };
         }
     }

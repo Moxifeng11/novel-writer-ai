@@ -50,6 +50,8 @@ export class RulesService {
     private app: App;
     private cachedRules: RulesConfig | null = null;
     private cacheTime = 0;
+    /** 缓存对应的项目（空 = 未指定）；避免 A 项目的模式附录污染 B 项目 */
+    private cachedProject = '';
     private static readonly CACHE_TTL = 5000;
     /** v4 起不再有多版本可选；字段保留以兼容旧调用方（写入不影响解析） */
     private activeVersion = '';
@@ -58,6 +60,11 @@ export class RulesService {
 
     private constructor(app: App) {
         this.app = app;
+    }
+
+    /** 插件卸载/测试隔离：释放单例持有 App 的引用 */
+    static resetInstance(): void {
+        RulesService.instance = null;
     }
 
     /**
@@ -74,32 +81,31 @@ export class RulesService {
 
     /**
      * getWritingRules 方法：主文档 + 当前项目的模式附录。
+     *
+     * @param project - 显式项目；省略时用 setProject 的当前项目
      * @returns 文本结果
      */
-    async getWritingRules(): Promise<string> {
-        const now = Date.now();
-        if (this.cachedRules && now - this.cacheTime < RulesService.CACHE_TTL) {
-            return this.cachedRules.content;
-        }
-
-        const rules = await this.loadWritingRules();
-        this.cachedRules = rules;
-        this.cacheTime = now;
+    async getWritingRules(project?: string): Promise<string> {
+        const rules = await this.getRulesConfig(project);
         return rules.content;
     }
 
     /**
      * 获取规则列表配置。
-      * @returns RulesConfig 实例
+     *
+     * @param project - 显式项目；省略时用 setProject 的当前项目
+     * @returns RulesConfig
      */
-    async getRulesConfig(): Promise<RulesConfig> {
+    async getRulesConfig(project?: string): Promise<RulesConfig> {
+        const target = String(project ?? this.project ?? '').trim();
         const now = Date.now();
-        if (this.cachedRules && now - this.cacheTime < RulesService.CACHE_TTL) {
+        if (this.cachedRules && this.cachedProject === target && now - this.cacheTime < RulesService.CACHE_TTL) {
             return this.cachedRules;
         }
 
-        const rules = await this.loadWritingRules();
+        const rules = await this.loadWritingRules(target);
         this.cachedRules = rules;
+        this.cachedProject = target;
         this.cacheTime = now;
         return rules;
     }
@@ -107,7 +113,7 @@ export class RulesService {
     /**
      * 读取生效规则：vault 唯一文件 → 内置模板兜底；再按项目模式拼附录。
      */
-    private async loadWritingRules(): Promise<RulesConfig> {
+    private async loadWritingRules(project = this.project): Promise<RulesConfig> {
         const listing = await listRulesVersions(this.app);
         const doc = listing.active.doc || {
             id: 'builtin:fallback',
@@ -117,9 +123,9 @@ export class RulesService {
             source: 'builtin' as const,
         };
         let mode: CreationMode = 'long';
-        if (this.project) {
+        if (project) {
             try {
-                mode = await resolveProjectMode(this.app, this.project);
+                mode = await resolveProjectMode(this.app, project);
             } catch (e) {
                 log.warn('[RulesService] 解析项目创作模式失败，按长篇处理:', e);
             }
@@ -167,9 +173,11 @@ export class RulesService {
 
     /**
      * 规则状态（v4：唯一来源的版本与路径；无「期望版本」概念）。
+     *
+     * @param project - 显式项目；用于模式附录与缓存键
       * @returns 版本与路径
      */
-    async checkRulesVersion(): Promise<{
+    async checkRulesVersion(project?: string): Promise<{
         version: string;
         sourcePath: string;
         lastModified: number;
@@ -180,7 +188,7 @@ export class RulesService {
         currentId: string;
         warnings: string[];
     }> {
-        const config = await this.getRulesConfig();
+        const config = await this.getRulesConfig(project);
         return {
             version: config.version,
             sourcePath: config.path || `(内置模板 ${WRITING_RULES_BUILTIN_VERSION})`,

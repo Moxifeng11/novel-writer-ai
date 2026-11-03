@@ -21,6 +21,9 @@ import { TimeEstimator } from "@/shared/time-estimator";
 import { createLogger } from '@/shared/logger';
 import { resolveCursorPosition } from '@/shared/cursor-position';
 import { BodyWriter } from '@/engine/body-writer';
+import { findBodyFileV4 } from '@/engine/chapter-utils';
+import { pjBodyFile } from '@/shared/paths';
+import { volumeNumber } from '@/shared/chapter-target';
 import { isImeComposing } from '@/shared/keyboard';
 
 
@@ -268,12 +271,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
   // === 保存 ===
   private getBodyPath(): string {
-    const chapDir = this.chapterName.match(/^\u7B2C\d+\u7AE0/)
-      ? `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/\u6B63\u6587/${this.volume}/${this.chapterName}_\u6B63\u6587.md`
-      : `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/\u6B63\u6587/${this.volume}/${this.chapterName}.md`;
-    return chapDir;
+    const volN = volumeNumber(this.volume) || 1;
+    return findBodyFileV4(this.app, this.project, volN, this.chapterNum)?.path
+      ?? pjBodyFile(this.project, volN, this.chapterNum);
   }
-
   /**
    * 保存正文。
    * @returns 是否成功

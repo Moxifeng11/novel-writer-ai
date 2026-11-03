@@ -2,6 +2,29 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.26.4（2026-11-04）
+
+### 🧵 模板流转单一入口
+
+- 新增 `engine/prompt-resolver.ts#resolveStepPrompt`：固定优先级 **vault 自定义 > 用户覆盖 > 内置**，返回 `source / templateId / templateVersion / templateHash / unresolved`。
+- 交互式单步、批量流水线、继续生成、情绪规划、Scene 展开全部改走同一 resolver；模板变量统一支持 `${var}` 与 `{{var}}`，未解析变量显式告警。
+- 合并规划检测到 5 个规划步骤存在自定义模板时，自动切换为分步执行，不再静默忽略自定义模板。
+- 步骤结果写入实际模板 id/version/hash（正文不再固定记成 V1）与规则版本/hash；`step_template_hash` 新增落盘字段。
+- `TemplateService` 缺模板兜底改用构建期 `assets/template-scaffold` 生成物，并保留骨架 frontmatter；`TemplateManager` 清空模板会删除覆盖文件，导入 0 个片段不再提示成功。
+
+### 🧭 数据源与路径统一
+
+- `BodyWriter` 格式契约改为读取 vault 唯一写作规则；`ContextManager` / 上下文差异检测同步监听 vault 规则路径；`RulesService` 支持显式 project，缓存不再串项目。
+- 新增 `resolveBodyFilePath()`：先查已存在的标题化正文（`第3章_风起_正文.md`），再回退裸路径；协同视图/浮窗、结算、审查、导出、续写、批量续跑全部接入。
+- 导出章节正则支持标题化正文，修复标题化章节漏导。
+- `projectIdFromPath` 收敛到 `shared/project-catalog`（`shared/paths` 保留薄包装）。
+- `onunload` 清理 `PromptCache` 与 `RulesService` 单例，避免热重载残留整章文本/旧 App。
+
+### 🧪 测试
+
+- 新增 `prompt-resolver`、`template-flow`、标题化章节目标等回归。
+- 全量单测 **534 文件 / 5910 用例** 通过。
+
 ## v4.26.3（2026-11-03）
 
 ### 🧭 项目来源统一

@@ -1302,22 +1302,16 @@ export function pjContentVersionsDir(project: string, contentType: string, conte
     return `${pjContentTypeVersionsDir(project, contentType)}/${safeKey}`;
 }
 
+// 项目 ID 唯一实现：shared/project-catalog.ts。保留薄包装兼容既有 import。
+import { projectIdFromPath as projectIdFromPathImpl } from './project-catalog';
 /**
  * 从项目内任意路径推断项目 ID。
  *
- * 结构有两代：v4+ 为「长篇小说/书名/03-…」，旧版为「书名/03-…」。
- * 直接 `split('/')[0]` 在 v4 结构下会把「长篇小说」当项目，导致版本历史/项目级缓存落到错误目录。
- * 规则：定位已知子目录（03-大纲与章节 等），取它前面最多两段；找不到就退回前两段。
- * @param filePath - 文件路径
- * @returns 文本结果
+ * @param filePath - vault 相对路径
+ * @returns 项目 ID
  */
 export function projectIdFromPath(filePath: string): string {
-    const parts = String(filePath || '').replace(/\\/g, '/').split('/').filter(Boolean);
-    if (parts.length === 0) return '';
-    const markers = ['03-大纲与章节', '03-正文', '04-项目总控', '02-时间线与伏笔', '01-设定库', '00-系统模板'];
-    const idx = parts.findIndex(part => markers.includes(part));
-    if (idx > 0) return parts.slice(Math.max(0, idx - 2), idx).join('/');
-    return parts.length >= 2 ? parts.slice(0, 2).join('/') : parts[0];
+    return projectIdFromPathImpl(filePath);
 }
 
 /** 从正文/步骤路径反解出的章节定位 */

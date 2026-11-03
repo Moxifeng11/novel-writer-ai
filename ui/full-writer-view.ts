@@ -46,7 +46,7 @@ import { AIEngine, APIResponse } from '@/engine/ai-engine';
 import { ContextManager, GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '@/engine/context-manager';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { showProgress, hideProgress, showSuccess, showError, mkdirp, stripFrontmatter, applyNwScope } from '@/utils/helpers';
-import { getStepTemplateAuto, fillTemplate } from '@/engine/prompt-templates';
+import { resolveStepPrompt } from '@/engine/prompt-resolver';
 import { TemplateService } from '@/engine/template-service';
 import { getForeshadowWarnings } from '@/engine/foreshadow-manager';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '@/engine/chapter-context-builder';
@@ -2065,20 +2065,14 @@ export class FullWriterView extends ItemView {
             return;
         }
 
-        const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);
-        // 只有项目确实存在自定义 prompt 时才覆盖默认模板；
-        // 旧实现 getStepPrompt 总会返回内置模板，导致正文 V2 模板永远不可达。
-        const hasCustomTemplate = await templateService.hasCustomPrompt(stepKey);
-        const customTemplate = hasCustomTemplate ? await templateService.getStepPrompt(stepKey) : null;
-
         // 检查前置步骤是否完成，未完成则显示提醒（独立区域：步骤完成后可单独刷新移除）
         this.renderStepNotice(this.stepRegion(area, 'notice'), currentStep);
 
         const vars = await this.buildTemplateVars();
         this.vars = vars;
 
-        // V2：正文步骤在有角色灵魂数据时自动切到小说家模板
-        const template = customTemplate || getStepTemplateAuto(stepKey, vars);
+        // 唯一解析入口：vault 自定义 > 用户覆盖 > 内置；正文 V2/V3/V4 由 resolver 统一选择。
+        const template = await resolveStepPrompt(this.app, stepKey, vars);
         if (!template) {
             area.createEl('h3', { text: currentStep.label });
             area.createEl('p', { text: '未知步骤', cls: 'novel-writer-fw-error-text' });
@@ -2113,8 +2107,8 @@ export class FullWriterView extends ItemView {
         // 结果优先展示：先让用户看到本步实际产出，再决定是否展开提示词编辑。
         this.renderResultArea(this.stepRegion(area, 'result'), stepKey);
 
-        const systemPromptValue = fillTemplate(template.systemPrompt, vars);
-        const userPromptValue = fillTemplate(template.userPrompt, vars);
+        const systemPromptValue = template.systemPrompt;
+        const userPromptValue = template.userPrompt;
         this.systemPromptEl = this.renderPromptEditor(area, '系统提示词', systemPromptValue, 12);
         this.userPromptEl = this.renderPromptEditor(area, '用户提示词', userPromptValue, 15);
 

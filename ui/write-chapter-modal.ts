@@ -36,6 +36,7 @@ import { FIX_PROMPTS, fillTemplate } from '@/engine/prompt-templates';
 import { SettlementEngine, SettlementResult } from '@/engine/settlement-engine';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { pjBodyDir, pjBodyFile, pjForeshadowDB, pjStepDir, pjVolumeOutlineFile, SUBDIR_STEP_ROOT } from '@/shared/paths';
+import { resolveBodyFilePath } from '@/engine/chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '@/shared/format-constants';
 import { buildStepFrontmatter } from '@/shared/step-frontmatter';
 import { BodyWriter } from '@/engine/body-writer';
@@ -232,7 +233,7 @@ export class WriteChapterModal extends Modal {
             }
             if (n === chapNum - 1) {
                 // v4.0：上一章正文文件位于 正文/第V卷/ 而非步骤结果目录
-                const prevBodyPath = pjBodyFile(project, volN, n);
+                const prevBodyPath = resolveBodyFilePath(app, project, volN, n);
                 let prevBody: TFile | undefined;
                 const pbf = app.vault.getAbstractFileByPath(prevBodyPath);
                 if (pbf instanceof TFile) prevBody = pbf;
@@ -868,7 +869,7 @@ ${reportResult.content}
     private static async isBodySettledOnDisk(app: App, chapterTarget: { project: string; volume: string; chapterName: string }): Promise<boolean> {
         try {
             const volN = parseInt(chapterTarget.volume.match(/第(\d+)卷/)?.[1] || '0', 10) || 1;
-            const bodyPath = pjBodyFile(chapterTarget.project, volN, parseInt(chapterTarget.chapterName.match(/第(\d+)章/)?.[1] || '0', 10));
+            const bodyPath = resolveBodyFilePath(app, chapterTarget.project, volN, parseInt(chapterTarget.chapterName.match(/第(\d+)章/)?.[1] || '0', 10));
             const file = app.vault.getAbstractFileByPath(bodyPath);
             if (!(file instanceof TFile)) return false;
             const raw = await app.vault.read(file);

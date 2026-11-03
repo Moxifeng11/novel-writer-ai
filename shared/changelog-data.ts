@@ -21,6 +21,32 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.26.4',
+        date: '2026-11-04',
+        title: '模板流转单一入口与正文路径统一',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧵 模板流转',
+                items: [
+                    '新增 resolveStepPrompt 单一入口：vault > 用户覆盖 > 内置',
+                    '单步/批量/继续/合并规划/情绪/Scene 全部接入；未解析变量显式告警',
+                    '步骤结果记录实际模板 id/version/hash 与规则版本/hash',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🧭 数据源',
+                items: [
+                    'BodyWriter 改用 vault 唯一写作规则，修复规则改动不影响落盘格式',
+                    '标题化正文（第3章_风起_正文.md）在协同/结算/审查/导出/续写中可被正确解析',
+                    'TemplateService 缺模板兜底改用 assets 生成物；清空模板会真正回退内置',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.26.3',
         date: '2026-11-03',
         title: '项目来源统一与 Agent 全权限',

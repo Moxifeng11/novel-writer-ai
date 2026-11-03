@@ -36,6 +36,16 @@ describe('resolveActiveChapterTarget — 命令层章节上下文', () => {
         });
     });
 
+    it('活动文件是带标题正文时，bodyPath 保持真实文件', () => {
+        const r = resolveActiveChapterTarget({
+            workbench: null,
+            activeFilePath: '某书/03-大纲与章节/正文/第2卷/第3章_风起_正文.md',
+        });
+        expect(r?.chapterName).toBe('第3章');
+        expect(r?.chapterNum).toBe(3);
+        expect(r?.bodyPath).toBe('某书/03-大纲与章节/正文/第2卷/第3章_风起_正文.md');
+    });
+
     it('从步骤结果目录解析并推导正文路径', () => {
         const r = resolveActiveChapterTarget({
             workbench: null,

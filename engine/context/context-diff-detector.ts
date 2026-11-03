@@ -31,7 +31,7 @@ import {
     SUBDIR_STEP_ROOT,
     SUBDIR_TIMELINE,
 } from '@/shared/paths';
-import { pjForeshadowDB, pjTimelineBoard, pjWritingRules } from '@/shared/paths';
+import { pjForeshadowDB, pjTimelineBoard, pjWritingRulesTemplate } from '@/shared/paths';
 
 // ============================================================
 // 一、类型定义
@@ -366,7 +366,7 @@ export class ContextDiffDetector {
         }
 
         // 写作规则
-        if (filePath === pjWritingRules(project)) {
+        if (filePath === pjWritingRulesTemplate()) {
             return {
                 type: 'worldview-changed',
                 sections: ['writing_rules'],

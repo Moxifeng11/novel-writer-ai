@@ -433,8 +433,15 @@ export class SettlementEngine {
             const v4Proj = v4Match[1];
             const v4VolN = parseInt(v4Match[2], 10);
             const v4ChapN = parseInt(v4Match[3], 10);
-            const targetPath = pjBodyFile(v4Proj, v4VolN, v4ChapN);
-            const tf = this.getVaultMeta().getAbstractFileByPath(targetPath);
+            // 与主结算一致：优先命中「第N章_标题_正文.md」，不能只查裸文件名。
+            const bodyDir = pjBodyDir(v4Proj, v4VolN);
+            const existingBody = findBodyFileByChapterNum(
+                listFolderFiles<TFile>(this.getVaultMeta(), bodyDir),
+                `${bodyDir}/`,
+                v4ChapN,
+                chapName,
+            );
+            const tf = existingBody ?? this.getVaultMeta().getAbstractFileByPath(pjBodyFile(v4Proj, v4VolN, v4ChapN));
             if (tf instanceof TFile) {
                 bodyFile = tf;
             }

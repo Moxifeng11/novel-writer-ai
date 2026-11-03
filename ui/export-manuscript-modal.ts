@@ -462,7 +462,7 @@ export function listProjects(app: App): string[] {
 export function listChapterFiles(app: App, project: string): TFile[] {
     const prefix = `${project}/03-大纲与章节/正文/`;
     return app.vault.getFiles().filter(
-        (file) => file.path.startsWith(prefix) && /第\d+章_正文\.md$/.test(file.name)
+        (file) => file.path.startsWith(prefix) && /第\d+章[^/]*_正文\.md$/.test(file.name)
     );
 }
 
@@ -478,7 +478,7 @@ export async function collectChapters(app: App, project: string): Promise<Manusc
     const chapters: ManuscriptChapter[] = [];
 
     for (const file of files) {
-        const match = file.path.match(/\/正文\/(第\d+卷)\/(第(\d+)章)_正文\.md$/);
+        const match = file.path.match(/\/正文\/(第\d+卷)\/(第(\d+)章)[^/]*_正文\.md$/);
         if (!match) continue;
         const cache = app.metadataCache.getFileCache(file);
         const title = cache?.frontmatter?.['标题'];

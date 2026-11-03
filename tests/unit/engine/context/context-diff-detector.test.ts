@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ContextDiffDetector, INCREMENTAL_FALLBACK_THRESHOLD } from '../../../../engine/context/context-diff-detector';
 import type { ContextChangeSet } from '../../../../engine/context/context-diff-detector';
 import type { GatheredContext } from '../../../../engine/context/context-types';
-import { pjTimelineBoard, pjForeshadowDB, pjWritingRules } from '../../../../shared/paths';
+import { pjTimelineBoard, pjForeshadowDB, pjWritingRulesTemplate } from '../../../../shared/paths';
 
 describe('ContextDiffDetector', () => {
     let detector: ContextDiffDetector;
@@ -330,7 +330,7 @@ describe('ContextDiffDetector', () => {
         });
 
         it('写作规则文件路径映射到 worldview-changed', () => {
-            const paths = [pjWritingRules(project)];
+            const paths = [pjWritingRulesTemplate()];
             const changeSet = detector.createChangeSetFromPaths(paths, project);
             expect(changeSet.changes[0].type).toBe('worldview-changed');
             expect(changeSet.affectedSections).toContain('writing_rules');

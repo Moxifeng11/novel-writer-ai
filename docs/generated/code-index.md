@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 130124 | 1541 | 1304 | 85% |
-| `services/` | 28 | 11391 | 154 | 137 | 89% |
-| `shared/` | 166 | 37551 | 1528 | 1276 | 84% |
+| `engine/` | 290 | 130397 | 1546 | 1307 | 85% |
+| `services/` | 28 | 11399 | 154 | 137 | 89% |
+| `shared/` | 166 | 37578 | 1528 | 1276 | 84% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 765 | 30 | 22 | 73% |
-| `ui/` | 194 | 97113 | 511 | 471 | 92% |
+| `ui/` | 194 | 97152 | 511 | 471 | 92% |
 
 ## 文件清单
 
@@ -75,14 +75,14 @@
 | `engine/bases-generator.ts` | 249 | 8 | 6 |
 | `engine/batch-import-manager.ts` | 853 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 522 | 8 | 8 |
+| `engine/body-writer.ts` | 525 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/chapter-brief.ts` | 343 | 9 | 6 |
 | `engine/chapter-context-builder.ts` | 141 | 3 | 3 |
 | `engine/chapter-snapshot-builder.ts` | 142 | 2 | 1 |
 | `engine/chapter-state-snapshot-service.ts` | 182 | 2 | 2 |
-| `engine/chapter-utils.ts` | 465 | 20 | 18 |
+| `engine/chapter-utils.ts` | 482 | 21 | 19 |
 | `engine/character-arc.ts` | 141 | 9 | 9 |
 | `engine/character-consistency-checker.ts` | 556 | 3 | 3 |
 | `engine/character-context.ts` | 46 | 1 | 1 |
@@ -98,7 +98,7 @@
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 316 | 2 | 2 |
-| `engine/context-manager.ts` | 2668 | 3 | 3 |
+| `engine/context-manager.ts` | 2664 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
 | `engine/context/context-types.ts` | 279 | 16 | 15 |
@@ -200,6 +200,7 @@
 | `engine/prompt-builder.ts` | 1476 | 2 | 1 |
 | `engine/prompt-cache.ts` | 81 | 3 | 2 |
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
+| `engine/prompt-resolver.ts` | 164 | 4 | 2 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v2-prompts.ts` | 138 | 3 | 3 |
 | `engine/prompts/body-v3-prompts.ts` | 99 | 3 | 3 |
@@ -257,7 +258,7 @@
 | `engine/repository/item-repository.ts` | 117 | 1 | 1 |
 | `engine/repository/location-repository.ts` | 117 | 1 | 1 |
 | `engine/repository/project-repository.ts` | 145 | 1 | 1 |
-| `engine/review-agent.ts` | 429 | 1 | 1 |
+| `engine/review-agent.ts` | 430 | 1 | 1 |
 | `engine/revision/quality-issue-parser.ts` | 141 | 3 | 3 |
 | `engine/revision/revision-guard.ts` | 194 | 7 | 6 |
 | `engine/revision/revision-prompts.ts` | 99 | 2 | 2 |
@@ -271,7 +272,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 1850 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1857 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 131 | 2 | 2 |
@@ -280,15 +281,15 @@
 | `engine/settlement/settlement-journal.ts` | 197 | 6 | 6 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 264 | 13 | 11 |
-| `engine/step-modal-controller.ts` | 683 | 2 | 2 |
+| `engine/step-modal-controller.ts` | 684 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 166 | 5 | 4 |
-| `engine/step-result-saver.ts` | 556 | 5 | 4 |
+| `engine/step-result-saver.ts` | 558 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 157 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 1977 | 2 | 1 |
+| `engine/step-runner.ts` | 2031 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 205 | 3 | 3 |
-| `engine/step-specials.ts` | 262 | 5 | 4 |
+| `engine/step-specials.ts` | 269 | 5 | 4 |
 | `engine/step-validator.ts` | 809 | 7 | 7 |
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
 | `engine/story-linkage-writer.ts` | 161 | 5 | 5 |
@@ -313,7 +314,7 @@
 | `engine/style/style-vector-store-v2.ts` | 1085 | 6 | 1 |
 | `engine/style/v2-quantitative-extractor.ts` | 171 | 2 | 2 |
 | `engine/suggestion-manager.ts` | 285 | 1 | 1 |
-| `engine/template-service.ts` | 798 | 2 | 2 |
+| `engine/template-service.ts` | 819 | 2 | 2 |
 | `engine/text-segmenter.ts` | 509 | 10 | 10 |
 | `engine/token-bucket-rate-limiter.ts` | 285 | 3 | 3 |
 | `engine/types/analysis-session.ts` | 109 | 8 | 8 |
@@ -343,7 +344,7 @@
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 128 | 4 | 4 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
-| `services/rules-service.ts` | 262 | 3 | 2 |
+| `services/rules-service.ts` | 270 | 3 | 2 |
 | `services/synopsis-store.ts` | 332 | 5 | 5 |
 | `services/update-checker.ts` | 391 | 9 | 2 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
@@ -363,12 +364,12 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1083 | 3 | 3 |
+| `shared/changelog-data.ts` | 1109 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
 | `shared/chapter-table.ts` | 115 | 7 | 7 |
-| `shared/chapter-target.ts` | 111 | 5 | 5 |
+| `shared/chapter-target.ts` | 118 | 5 | 5 |
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
 | `shared/command-ids.ts` | 109 | 2 | 2 |
@@ -436,7 +437,7 @@
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
-| `shared/paths.ts` | 1416 | 189 | 183 |
+| `shared/paths.ts` | 1410 | 189 | 183 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 404 | 6 | 4 |
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
@@ -531,11 +532,11 @@
 | `ui/batch-novels-modal.ts` | 208 | 1 | 1 |
 | `ui/changelog-modal.ts` | 193 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1321 | 1 | 1 |
-| `ui/chapter-settlement-modal.ts` | 395 | 1 | 1 |
+| `ui/chapter-settlement-modal.ts` | 397 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
-| `ui/co-write-floating-panel.ts` | 1018 | 2 | 2 |
-| `ui/co-writing-view.ts` | 5429 | 3 | 3 |
+| `ui/co-write-floating-panel.ts` | 1019 | 2 | 2 |
+| `ui/co-writing-view.ts` | 5431 | 3 | 3 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
 | `ui/command-ui-executor.ts` | 631 | 2 | 2 |
@@ -554,7 +555,7 @@
 | `ui/components/progress/task-card.ts` | 338 | 2 | 2 |
 | `ui/components/smart-chart.ts` | 470 | 1 | 1 |
 | `ui/context-injector-modal.ts` | 215 | 1 | 1 |
-| `ui/continue-chapters-modal.ts` | 561 | 1 | 1 |
+| `ui/continue-chapters-modal.ts` | 562 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 255 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 55 | 1 | 1 |
@@ -581,8 +582,8 @@
 | `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2708 | 2 | 2 |
-| `ui/full-writer/batch-pipeline-runner.ts` | 462 | 5 | 4 |
+| `ui/full-writer-view.ts` | 2702 | 2 | 2 |
+| `ui/full-writer/batch-pipeline-runner.ts` | 467 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
 | `ui/full-writer/chapter-orchestrator.ts` | 490 | 10 | 9 |
@@ -663,7 +664,7 @@
 | `ui/review-chapter-modal.ts` | 70 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
-| `ui/services/agent-port.ts` | 605 | 2 | 2 |
+| `ui/services/agent-port.ts` | 624 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 155 | 3 | 3 |
 | `ui/services/agent-spill-store.ts` | 104 | 3 | 2 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
@@ -690,7 +691,7 @@
 | `ui/story-settings-modal.ts` | 109 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 488 | 1 | 1 |
 | `ui/svg-charts.ts` | 2321 | 49 | 49 |
-| `ui/template-manager.ts` | 711 | 5 | 1 |
+| `ui/template-manager.ts` | 725 | 5 | 1 |
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 1089 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 951 | 1 | 1 |
@@ -705,7 +706,7 @@
 | `ui/welcome-modal.ts` | 218 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
 | `ui/workspace-manager.ts` | 143 | 2 | 2 |
-| `ui/write-chapter-modal.ts` | 889 | 1 | 1 |
+| `ui/write-chapter-modal.ts` | 890 | 1 | 1 |
 | `ui/writing-pet.ts` | 279 | 2 | 2 |
 | `ui/writing-stats-modal.ts` | 244 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |

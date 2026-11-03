@@ -34,7 +34,9 @@ import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } 
 import { runCharacterSoulStep, runEmotionPlanStep, runSceneExpandStep, type StepSpecialsHost } from './step-specials';
 import { executeSettlement as executeSettlementPrimitive, type StepSettlementHost } from './step-settlement';
 import { executeStepsSequential as executeStepsSequentialPrimitive } from './step-sequential';
-import { getStepTemplateAuto, fillTemplate } from './prompts/template-utils';
+import { resolveStepPrompt } from './prompt-resolver';
+import { RulesService } from '@/services/rules-service';
+import { hashContent } from '@/shared/versioned-registry';
 import { assembleStepPrompt, type StepPromptAssemblyHost } from './step-prompt-assembly';
 import type { NovelWriterPluginAPI } from '@/plugin-api';
 
@@ -97,6 +99,8 @@ export class StepRunner {
     private vaultMeta: VaultMetaPort | null = null;
     /** 在途结算（按 项目+章节目录 合并并发触发） */
     private settlementInFlight = new Map<string, Promise<void>>();
+    /** 最近一次实际渲染的模板归因（由 resolver 写入，保存步骤结果时消费） */
+    private promptMetaByStep = new Map<string, { templateId: string; templateVersion: string; templateHash: string }>();
     /** 结算原语（测试可注入） */
     private settlementPrimitive: typeof executeSettlementPrimitive;
 
@@ -129,16 +133,12 @@ export class StepRunner {
             resolveStepBudgetLimits: (model: string) => this.resolveStepBudgetLimits(model),
             injectEmotionPlanKnowledge: (ctx: StepRunCtx) => this.injectEmotionPlanKnowledge(ctx),
             injectSceneExpandKnowledge: (ctx: StepRunCtx) => this.injectSceneExpandKnowledge(ctx),
-            getSceneExpandCustomPrompt: async () => {
+            getSceneExpandCustomPrompt: async (vars) => {
                 try {
-                    const svc = this.plugin.engineRegistry.get<{
-                        hasCustomPrompt(key: string): Promise<boolean>;
-                        getCustomPrompt(key: string): Promise<{ system: string; user: string }>;
-                    }>(ENGINE_NAMES.TEMPLATE_SERVICE);
-                    if (!svc?.hasCustomPrompt || !(await svc.hasCustomPrompt('sceneExpand'))) return null;
-                    const prompt = await svc.getCustomPrompt('sceneExpand');
-                    if (!prompt?.system && !prompt?.user) return null;
-                    return { systemPrompt: prompt.system || '', userPrompt: prompt.user || '' };
+                    // 与普通步骤同一 resolver：vault 自定义 > 用户覆盖 > 内置。
+                    const resolved = await resolveStepPrompt(this.app, 'sceneExpand', vars);
+                    if (!resolved || resolved.source === 'builtin') return null;
+                    return { systemPrompt: resolved.systemPrompt, userPrompt: resolved.userPrompt };
                 } catch (e) {
                     log.warn('[StepRunner] 读取自定义 sceneExpand prompt 失败，使用内置模板:', e);
                     return null;
@@ -551,22 +551,33 @@ export class StepRunner {
         // 否则事后无法判断「这段结果是用哪版规则生成的」。
         const enriched: StepSaveMeta = {
             ...meta,
-            ...this.versionMetaForStep(stepKey),
+            ...await this.versionMetaForStep(stepKey, chapDir),
         };
         return this.resultSaver.saveStepResult(stepKey, content, chapDir, chapterName, volume, enriched);
     }
 
     /** 当前生效的模板/规则/人味版本（保存与账本共用） */
-    private versionMetaForStep(stepKey: string): StepSaveMeta {
+    private async versionMetaForStep(stepKey: string, chapDir: string): Promise<StepSaveMeta> {
         const settings = this.plugin.settings;
-        const stepTemplateKey = stepKey === 'bodyGeneration' ? 'bodyGeneration' : stepKey;
-        const variant = promptVariantOf(stepTemplateKey);
+        const captured = this.promptMetaByStep.get(stepKey);
+        const variant = promptVariantOf(stepKey);
+        let rulesVersion = String(settings.activeRulesVersion || '') || 'auto';
+        let rulesHash = '';
+        try {
+            const project = projectIdFromPath(chapDir);
+            const status = await RulesService.getInstance(this.app).checkRulesVersion(project);
+            rulesVersion = status.version || rulesVersion;
+            rulesHash = status.currentHash || '';
+        } catch (e) {
+            log.warn('[StepRunner] 读取规则版本归因失败:', e);
+        }
         const voiceMode = settings.humanVoiceMode === 'quota' ? 'quota' : 'exemplar';
         return {
-            templateId: variant?.id || '',
-            templateVersion: variant?.version || '',
-            rulesVersion: String(settings.activeRulesVersion || '') || 'auto',
-            rulesHash: '',
+            templateId: captured?.templateId || variant?.id || '',
+            templateVersion: captured?.templateVersion || variant?.version || '',
+            templateHash: captured?.templateHash || '',
+            rulesVersion,
+            rulesHash,
             voiceMode: stepKey === 'bodyGeneration' ? voiceMode : '',
             experimentGroup: String(settings.experimentGroup || ''),
         };
@@ -886,6 +897,19 @@ export class StepRunner {
         const systemPrompt = ctx.systemPromptEl?.value || '';
         const userPrompt = ctx.userPromptEl?.value || '';
         const temperature = Math.max(0, Math.min(2, parseFloat(ctx.temperatureSlider?.value || '1.4') || 1.4));
+
+        // 归因用「实际发送的文本」+ resolver 的模板来源/版本；用户手改 prompt 也能追溯。
+        try {
+            const resolved = await resolveStepPrompt(this.app, stepKey, ctx.vars || {});
+            this.promptMetaByStep.set(stepKey, {
+                templateId: resolved?.templateId || stepKey,
+                templateVersion: resolved?.templateVersion || '',
+                templateHash: hashContent(`${systemPrompt}
+${userPrompt}`),
+            });
+        } catch (e) {
+            log.warn('[StepRunner] 记录模板归因失败:', e);
+        }
 
         if (!userPrompt.trim()) {
             const message = '用户提示词不能为空';
@@ -1759,10 +1783,19 @@ export class StepRunner {
         }
         const vars = await ctx.buildTemplateVars();
         Object.assign(ctx.vars, vars);
-        const template = getStepTemplateAuto(stepKey, vars);
+        // 唯一解析入口：vault 自定义 > 用户覆盖 > 内置；变量在此处统一渲染。
+        const template = await resolveStepPrompt(this.app, stepKey, vars);
         if (!template) throw new Error(`缺少步骤模板: ${stepKey}`);
-        ctx.systemPromptEl.value = fillTemplate(template.systemPrompt, vars);
-        ctx.userPromptEl.value = fillTemplate(template.userPrompt, vars);
+        if (template.unresolved.length > 0) {
+            this.callbacks.showNotice(`⚠️ 模板存在未替换变量：${template.unresolved.join('、')}`, NOTICE_WARNING);
+        }
+        this.promptMetaByStep.set(stepKey, {
+            templateId: template.templateId,
+            templateVersion: template.templateVersion,
+            templateHash: template.templateHash,
+        });
+        ctx.systemPromptEl.value = template.systemPrompt;
+        ctx.userPromptEl.value = template.userPrompt;
     }
 
     /**
@@ -1784,6 +1817,27 @@ export class StepRunner {
         if (options.signal?.aborted) return { success: false, error: 'aborted' };
 
         const vars = await ctx.buildTemplateVars();
+
+        // 合并规划使用固定分隔符格式；若用户自定义了任一规划步骤模板，
+        // 继续用合并常量会静默忽略自定义模板。此时改为分步执行（同一 resolver），
+        // 保证“模板管理改了 → 一键流程也生效”，代价是 5 次调用而非 1 次。
+        const customizedPlanning: string[] = [];
+        for (const key of COMBINED_PLANNING_STEP_KEYS) {
+            const resolved = await resolveStepPrompt(this.app, key, vars);
+            if (resolved && resolved.source !== 'builtin') customizedPlanning.push(key);
+        }
+        if (customizedPlanning.length > 0) {
+            this.callbacks.showNotice(
+                `检测到自定义规划模板（${customizedPlanning.join('、')}），合并规划已切换为分步执行`,
+                NOTICE_WARNING,
+            );
+            const result = await this.executeStepsSequential([...COMBINED_PLANNING_STEP_KEYS], ctx);
+            return {
+                success: !result.failed,
+                error: result.failed ? `分步规划在 ${result.failed} 失败` : undefined,
+            };
+        }
+
         const { system: sysFilled, user: userFilled } = buildCombinedPlanningPrompts(vars);
 
         // 合一规划也要吃指纹知识：单步路径会分别注入大纲/情绪/Scene 知识，一键路径此前完全没有

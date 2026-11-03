@@ -179,7 +179,7 @@ export async function generateEmotionPlan(
     vars: Record<string, string>,
     model?: string,
     notifier: Notifier = NOOP_NOTIFIER,
-    options?: { maxTokens?: number; signal?: AbortSignal },
+    options?: { maxTokens?: number; signal?: AbortSignal; prompt?: { system?: string; user?: string } },
 ): Promise<string> {
     const systemPrompt = EMOTION_PLAN_SYSTEM_PROMPT.replace(/\${characterSouls}/g, vars.characterCores || '无角色灵魂层数据。');
     const userPrompt = EMOTION_PLAN_USER_TEMPLATE

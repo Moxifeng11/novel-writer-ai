@@ -113,7 +113,7 @@ export class ChapterSettlementModal extends Modal {
 
         const path = activeFile.path;
         const project = projectIdFromPath(path);
-        const bodyMatch = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第\d+卷)\/(第\d+章)_正文\.md$/);
+        const bodyMatch = path.match(/^(.+?)\/03-大纲与章节\/正文\/(第\d+卷)\/(第\d+章)[^/]*_正文\.md$/);
         if (bodyMatch) {
             const volume = bodyMatch[2];
             const chapName = bodyMatch[3];
@@ -133,7 +133,7 @@ export class ChapterSettlementModal extends Modal {
                 project,
                 chapDir: `${project}/${SUBDIR_STEP_ROOT}/${volume}/${chapName}`,
                 chapName,
-                bodyPath: `${project}/${SUBDIR_BODY_ROOT}/${volume}/${chapName}_正文.md`
+                bodyPath: resolveBodyFilePath(this.app, project, volumeNumber(volume), parseInt(chapName.match(/\d+/)?.[0] || '0', 10))
             };
         }
 
@@ -392,3 +392,6 @@ export class ChapterSettlementModal extends Modal {
     }
 }
 import { projectIdFromPath } from '@/shared/paths';
+
+import { resolveBodyFilePath } from '@/engine/chapter-utils';
+import { volumeNumber } from '@/shared/chapter-target';

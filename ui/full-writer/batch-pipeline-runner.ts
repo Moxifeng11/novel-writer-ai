@@ -13,12 +13,13 @@ import { writeSettlementArtifacts } from '@/engine/settlement/settlement-coordin
 import type NovelWriterPlugin from '@/main';
 import { ALL_FULL_STEPS, StepRunner } from '@/engine/step-runner';
 import type { StepRunCtx } from '@/engine/step-definitions';
-import { getStepTemplateAuto, fillTemplate } from '@/engine/prompts/template-utils';
+import { resolveStepPrompt } from '@/engine/prompt-resolver';
 import { CHAPTER_FILE_TYPES, findChapterFile } from '@/engine/chapter-utils';
 import { SettlementEngine } from '@/engine/settlement-engine';
 import { writeChapterStateSnapshot } from '@/engine/chapter-state-snapshot-service';
 import { ENGINE_NAMES } from '@/engine/engine-registry';
-import { pjStepDir, pjNarrativeOverview, pjBodyFile } from '@/shared/paths';
+import { pjStepDir, pjNarrativeOverview } from '@/shared/paths';
+import { resolveBodyFilePath } from '@/engine/chapter-utils';
 import { stripFrontmatter } from '@/utils/helpers';
 import { isTemplateSkeleton, isStepResultComplete } from '@/engine/step-validator';
 import { createLogger } from '@/shared/logger';
@@ -271,10 +272,14 @@ export class BatchPipelineRunner {
             // 角色灵魂步骤不经过模板（由 StepRunner 内部处理）
             return;
         }
-        const template = getStepTemplateAuto(stepKey, vars);
+        // 与交互式单步同一解析入口：vault 自定义 > 用户覆盖 > 内置。
+        const template = await resolveStepPrompt(this.app, stepKey, vars);
         if (!template) throw new Error(`缺少步骤模板: ${stepKey}`);
-        ctx.systemPromptEl.value = fillTemplate(template.systemPrompt, vars);
-        ctx.userPromptEl.value = fillTemplate(template.userPrompt, vars);
+        if (template.unresolved.length > 0) {
+            log.warn(`[BatchPipeline] ${stepKey} 模板存在未替换变量：${template.unresolved.join('、')}`);
+        }
+        ctx.systemPromptEl.value = template.systemPrompt;
+        ctx.userPromptEl.value = template.userPrompt;
     }
 
     private async buildCtx(
@@ -398,7 +403,7 @@ export class BatchPipelineRunner {
         // 旧实现只在 chapDir 里找，导致续跑读不到正文并重新生成/结算失败。
         let bodyFile: TFile | null = null;
         if (project && volumeNum > 0 && chapterNum > 0) {
-            const v4File = this.app.vault.getAbstractFileByPath(pjBodyFile(project, volumeNum, chapterNum));
+            const v4File = this.app.vault.getAbstractFileByPath(resolveBodyFilePath(this.app, project, volumeNum, chapterNum));
             if (v4File instanceof TFile) bodyFile = v4File;
         }
         if (!bodyFile) {

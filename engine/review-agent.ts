@@ -10,6 +10,7 @@ import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL, NOTICE_SUCCESS } from '@
 import { createLogger } from '@/shared/logger';
 
 
+import { resolveBodyFilePath } from './chapter-utils';
 const log = createLogger('ReviewAgent');
 /**
  * ReviewAgent 类。
@@ -110,7 +111,7 @@ export class ReviewAgent {
         let previousChapter = '';
         try {
             // v4.0: 路径形如 .../03-大纲与章节/正文/第X卷/第Y章_正文.md
-            const pathMatch = activeFile.path.match(/^(.*?)\/03-大纲与章节\/正文\/(第\d+卷)\/第(\d+)章_正文\.md$/);
+            const pathMatch = activeFile.path.match(/^(.*?)\/03-大纲与章节\/正文\/(第\d+卷)\/第(\d+)章[^/]*_正文\.md$/);
             if (pathMatch) {
                 const proj = pathMatch[1];
                 const volume = pathMatch[2];
@@ -124,7 +125,7 @@ export class ReviewAgent {
                         previousChapter = await this.getFS().read(prevChapterFile.path);
                     } else {
                         // 精确按文件名查找上一章正文
-                        const prevPath = pjBodyFile(proj, volN, currentChapterNum - 1);
+                        const prevPath = resolveBodyFilePath(this.app, proj, volN, currentChapterNum - 1);
                         const prevFile = this.getVaultMeta().getAbstractFileByPath(prevPath);
                         if (prevFile instanceof TFile) previousChapter = await this.getFS().read(prevPath);
                     }
@@ -155,7 +156,7 @@ export class ReviewAgent {
         }
 
         // v4.0: 单章审查报告写入 03-大纲与章节/步骤结果/第N卷/第M章/
-        const v4Match = activeFile.path.match(/^(.*?)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章_正文\.md$/);
+        const v4Match = activeFile.path.match(/^(.*?)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章[^/]*_正文\.md$/);
         if (!v4Match) {
             this.notifier.showNotice('❌ 无法确定章节目录（需在正文文件中执行审查）', NOTICE_ERROR);
             return;
