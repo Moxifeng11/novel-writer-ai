@@ -6,11 +6,11 @@
  */
 
 import { App, Modal, Notice, Setting, TFolder } from 'obsidian';
-import { createLogger } from '../shared/logger';
-import { validateProjectName } from '../shared/project-name';
-import { ProjectRenameService } from '../services/project-rename-service';
-import { MODE_LIBRARY_ROOT_LIST, projectDisplayName } from '../domains/kernel/project-locator';
-import { isImeComposing } from '../shared/keyboard';
+import { createLogger } from '@/shared/logger';
+import { validateProjectName } from '@/shared/project-name';
+import { ProjectRenameService } from '@/services/project-rename-service';
+import { MODE_LIBRARY_ROOT_LIST, projectDisplayName } from '@/domains/kernel/project-locator';
+import { isImeComposing } from '@/shared/keyboard';
 
 const log = createLogger('RenameProjectModal');
 

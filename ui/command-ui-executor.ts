@@ -8,16 +8,16 @@
  */
 
 import { App, Editor, MarkdownView, Notice } from 'obsidian';
-import type NovelWriterPlugin from '../main';
-import { CommandIds } from '../shared/command-ids';
-import type { CreationMode } from '../shared/creation-mode';
-import { getCreationModeLabel } from '../shared/creation-mode';
-import { COMMAND_MODE_LABELS, commandAllowedModes } from '../shared/command-mode-rules';
-import { resolveProjectMode } from '../shared/project-mode';
-import type { CommandUiPayload, CommandUiPort, VersionFileContext } from '../shared/command-ui-port';
-import { createLogger } from '../shared/logger';
-import { getExecutionLedger } from '../services/execution-ledger';
-import type { ChapterVersionService } from '../services/chapter-version-service';
+import type NovelWriterPlugin from '@/main';
+import { CommandIds } from '@/shared/command-ids';
+import type { CreationMode } from '@/shared/creation-mode';
+import { getCreationModeLabel } from '@/shared/creation-mode';
+import { COMMAND_MODE_LABELS, commandAllowedModes } from '@/shared/command-mode-rules';
+import { resolveProjectMode } from '@/shared/project-mode';
+import type { CommandUiPayload, CommandUiPort, VersionFileContext } from '@/shared/command-ui-port';
+import { createLogger } from '@/shared/logger';
+import { getExecutionLedger } from '@/services/execution-ledger';
+import type { ChapterVersionService } from '@/services/chapter-version-service';
 import { ChapterVersionModal } from './chapter-version-modal';
 import { RenameProjectModal } from './rename-project-modal';
 import { CreateProjectModal } from './create-project-modal';
@@ -100,7 +100,7 @@ export class CommandUiExecutor implements CommandUiPort {
             new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
             return;
         }
-        const { scanEntityLinkMigration, applyEntityLinkMigration } = await import('../engine/entity-link-migrator');
+        const { scanEntityLinkMigration, applyEntityLinkMigration } = await import('@/engine/entity-link-migrator');
         const plan = scanEntityLinkMigration(app, project);
         if (plan.changes.length === 0) {
             new Notice(`✅ 「${project}」共扫描 ${plan.scanned} 个实体，归属字段已是 wiki-link，无需迁移`, 6000);
@@ -133,7 +133,7 @@ export class CommandUiExecutor implements CommandUiPort {
         const ledger = getExecutionLedger();
         const runId = ledger.begin({ commandId: 'novel-writer-generate-bases', project, source: 'ui', label: '生成项目看板' });
         try {
-            const { writeProjectBases } = await import('../engine/note-properties-service');
+            const { writeProjectBases } = await import('@/engine/note-properties-service');
             const written = await writeProjectBases(app, project);
             ledger.finish(runId, { status: 'done', detail: `已生成 ${written.length} 个看板` });
             new Notice(`✅ 已生成 ${written.length} 个看板到「${project}/.看板/」；可拖到右侧栏使用`, 7000);
@@ -151,7 +151,7 @@ export class CommandUiExecutor implements CommandUiPort {
             new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
             return;
         }
-        const { scanTagMigration, applyTagMigration } = await import('../engine/note-properties-service');
+        const { scanTagMigration, applyTagMigration } = await import('@/engine/note-properties-service');
         const changes = scanTagMigration(app, project);
         if (changes.length === 0) {
             new Notice(`✅ 「${project}」的笔记已含层级标签，无需迁移`, 5000);
@@ -182,7 +182,7 @@ export class CommandUiExecutor implements CommandUiPort {
             new Notice('请先选择一个项目（工作台项目卡或正文页）', 6000);
             return;
         }
-        const { scanPropertyCompletion, applyPropertyCompletion } = await import('../engine/note-properties-service');
+        const { scanPropertyCompletion, applyPropertyCompletion } = await import('@/engine/note-properties-service');
         const changes = scanPropertyCompletion(app, project);
         if (changes.length === 0) {
             new Notice(`✅ 「${project}」的笔记属性已完整`, 5000);

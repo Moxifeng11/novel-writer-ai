@@ -1,9 +1,9 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine, BatchEntityResult } from '../engine/ai-engine';
-import { ContextManager } from '../engine/context-manager';
-import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '../utils/helpers';
-import { ENTITY_CATEGORIES } from '../shared/entity-registry';
+import NovelWriterPlugin from '@/main';
+import { AIEngine, BatchEntityResult } from '@/engine/ai-engine';
+import { ContextManager } from '@/engine/context-manager';
+import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '@/utils/helpers';
+import { ENTITY_CATEGORIES } from '@/shared/entity-registry';
 import {
     SUBDIR_CHARS,
     SUBDIR_LOCS,
@@ -11,14 +11,14 @@ import {
     SUBDIR_ITEMS,
     pjWorldview,
     pjSettingLib,
-} from '../shared/paths';
+} from '@/shared/paths';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import type { EntityCategory as ModelCategory } from '../shared/entity-models';
-import { saveEntities, formatSaveOutcome, type EntityKind } from '../shared/entity-persistence';
-import { ensureEntityIntegrity } from '../shared/entity-integrity';
-import { mergeFanficRequirement } from '../shared/fanfic-rules';
+import type { EntityCategory as ModelCategory } from '@/shared/entity-models';
+import { saveEntities, formatSaveOutcome, type EntityKind } from '@/shared/entity-persistence';
+import { ensureEntityIntegrity } from '@/shared/entity-integrity';
+import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('UnifiedEntityGenerateModal');

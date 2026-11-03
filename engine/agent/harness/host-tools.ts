@@ -5,8 +5,8 @@
  * 模型可调用的受守卫工具。工具只做「参数整理 + 端口调用 + 结果摘要」，
  * 业务校验仍由端口背后的创建服务负责。
  */
-import type { GuideAgentPort } from '../agent-types';
-import type { AgentContext } from '../agent-types';
+import type { GuideAgentPort } from '@/engine/agent/agent-types';
+import type { AgentContext } from '@/engine/agent/agent-types';
 import type { HarnessMemoryState, HarnessTool } from './harness-types';
 import { parsePlanSteps, summarizePlanUpdate, type PlanStep } from './creation-plan';
 import {
@@ -14,10 +14,10 @@ import {
     generateRandomStorySettings,
     STORY_STRUCTURES,
     type StoryStructureId,
-} from '../../../shared/story-structure';
-import { SCRIPT_GENRES, SHORT_STORY_CATEGORIES, getCreationModeLabel } from '../../../shared/creation-mode';
-import { commandAllowedModes } from '../../../shared/command-mode-rules';
-import { DEFAULT_READ_LINES } from '../../../shared/file-path-guard';
+} from '@/shared/story-structure';
+import { SCRIPT_GENRES, SHORT_STORY_CATEGORIES, getCreationModeLabel } from '@/shared/creation-mode';
+import { commandAllowedModes } from '@/shared/command-mode-rules';
+import { DEFAULT_READ_LINES } from '@/shared/file-path-guard';
 
 /** 记忆槽位白名单：update_memory 只能写这些键 */
 const MEMORY_KEYS = [

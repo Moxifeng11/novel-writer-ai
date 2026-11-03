@@ -10,10 +10,10 @@
  */
 import { Modal, Setting, Notice, ButtonComponent } from 'obsidian';
 import type { App } from 'obsidian';
-import { ChapterVersionService } from '../services/chapter-version-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import type { EngineRegistry } from '../engine/engine-registry';
-import type { VersionMeta, ContentType, DiffStats, LineDiff } from '../shared/version-types';
+import { ChapterVersionService } from '@/services/chapter-version-service';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import type { EngineRegistry } from '@/engine/engine-registry';
+import type { VersionMeta, ContentType, DiffStats, LineDiff } from '@/shared/version-types';
 import {
     formatVersionTime,
     VERSION_TYPE_LABELS,
@@ -21,7 +21,7 @@ import {
     lineDiff,
     computeDiffStats,
     charDiff,
-} from '../shared/diff-utils';
+} from '@/shared/diff-utils';
 import { createEmptyState } from './components/empty-state';
 
 type DiffViewMode = 'side-by-side' | 'inline';

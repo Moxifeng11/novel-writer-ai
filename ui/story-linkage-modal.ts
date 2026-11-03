@@ -11,11 +11,11 @@
  * 并提供「回写关联索引」，把结果写入 伏笔库.md / 时间线看板.md 的标记块。
  */
 import { App, Modal, Notice } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import type { StoryLinkage } from '../engine/story-linkage';
-import type { LinkageForeshadow, LinkageTimelineEvent } from '../engine/story-linkage';
+import NovelWriterPlugin from '@/main';
+import type { StoryLinkage } from '@/engine/story-linkage';
+import type { LinkageForeshadow, LinkageTimelineEvent } from '@/engine/story-linkage';
 import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from './project-utils';
-import { isImeComposing } from '../shared/keyboard';
+import { isImeComposing } from '@/shared/keyboard';
 
 const EMPTY_FORESHADOW_TEXT = '无';
 const EMPTY_TIMELINE_TEXT = '本章暂无时间线事件';

@@ -1,11 +1,11 @@
-import { kbBookReadabilityAnalysisFile } from '../../shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
-import { VectorEnhancer } from '../vector-enhancer';
-import { yieldToUI } from '../../shared/yield';
-import { SHOW_TELL_WORDS, EMOTION_WORDS } from '../dimension-keywords';
-import { AntiAIDetector } from '../anti-ai-detector';
-import { GenreDetector, GenreConfigRegistry } from '../genre';
-import { createLogger } from '../../shared/logger';
+import { kbBookReadabilityAnalysisFile } from '@/shared/paths';
+import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { yieldToUI } from '@/shared/yield';
+import { SHOW_TELL_WORDS, EMOTION_WORDS } from '@/engine/dimension-keywords';
+import { AntiAIDetector } from '@/engine/anti-ai-detector';
+import { GenreDetector, GenreConfigRegistry } from '@/engine/genre';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ReadabilityDeconstructor');

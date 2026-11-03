@@ -32,7 +32,7 @@
  */
 
 import { validateStepResult } from './step-validator';
-import { getBusinessThreshold } from '../shared/thresholds';
+import { getBusinessThreshold } from '@/shared/thresholds';
 
 /**
  * A7: 正文/修正被改写后必须失效的下游步骤。

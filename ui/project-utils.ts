@@ -8,16 +8,16 @@
  */
 
 import { App, TFile, TFolder, Notice } from 'obsidian';
-import { readTitle, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { readTitle, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
-import { readProjectMeta } from '../shared/paths';
-import { readMergedVolumeOutline, extractVolumeFromPath } from '../utils/helpers';
-import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS } from '../shared/format-constants';
-import { createLogger } from '../shared/logger';
-import { CREATION_MODE_SPECS, getCreationModeLabel, parseCreationModeMeta, type CreationMode } from '../shared/creation-mode';
-import { isChapterWritten } from '../shared/chapter-progress';
-import { getStoryStructure } from '../shared/story-structure';
-import { coverMediaTypeForExt, type BookCover } from '../engine/export/epub-builder';
+import { readProjectMeta } from '@/shared/paths';
+import { readMergedVolumeOutline, extractVolumeFromPath } from '@/utils/helpers';
+import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS } from '@/shared/format-constants';
+import { createLogger } from '@/shared/logger';
+import { CREATION_MODE_SPECS, getCreationModeLabel, parseCreationModeMeta, type CreationMode } from '@/shared/creation-mode';
+import { isChapterWritten } from '@/shared/chapter-progress';
+import { getStoryStructure } from '@/shared/story-structure';
+import { coverMediaTypeForExt, type BookCover } from '@/engine/export/epub-builder';
 
 
 const log = createLogger('ProjectUtils');

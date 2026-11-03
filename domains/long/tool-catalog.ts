@@ -1,7 +1,7 @@
 /**
  * domains/long/tool-catalog.ts — 长篇小说专属工具目录
  */
-import type { ToolGroup } from '../kernel/tool-catalog-types';
+import type { ToolGroup } from '@/domains/kernel/tool-catalog-types';
 
 /**
  * 工具分组表。

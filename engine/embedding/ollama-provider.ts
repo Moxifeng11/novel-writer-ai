@@ -1,5 +1,5 @@
 import type { EmbeddingProvider, EmbeddingAvailability, ProviderInfo, EmbeddingOptions } from './embedding-provider';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('OllamaProvider');

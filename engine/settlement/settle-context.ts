@@ -13,7 +13,7 @@
  */
 import type { TFile } from 'obsidian';
 import type { Instructions } from './settlement-types';
-import type { SettlementOptions, SettlementResult } from '../settlement-engine';
+import type { SettlementOptions, SettlementResult } from '@/engine/settlement-engine';
 import { SettlementJournal } from './settlement-journal';
 
 /**

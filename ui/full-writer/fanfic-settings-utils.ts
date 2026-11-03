@@ -1,9 +1,9 @@
 import { App, TFile } from 'obsidian';
-import { isFanficValueFilled, validateFanficSettings } from '../../shared/template-validator';
-import { parseFanficReviewStatus } from '../../shared/fanfic-rules';
-import { applyFanficReviewMeta } from '../../shared/fanfic-audit';
-import { ensureTemplateScaffold } from '../../shared/template-scaffold';
-import { pjFanficDir, pjProjectMeta } from '../../shared/paths';
+import { isFanficValueFilled, validateFanficSettings } from '@/shared/template-validator';
+import { parseFanficReviewStatus } from '@/shared/fanfic-rules';
+import { applyFanficReviewMeta } from '@/shared/fanfic-audit';
+import { ensureTemplateScaffold } from '@/shared/template-scaffold';
+import { pjFanficDir, pjProjectMeta } from '@/shared/paths';
 
 /**
  * FanficSettingsValues 类型定义。

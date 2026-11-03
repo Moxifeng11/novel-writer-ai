@@ -5,47 +5,47 @@
  * （viewVars），构建用于提示词模板填充的变量字典 Record<string,string>。
  */
 import { App, TFile } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { GatheredContext, CharacterData } from '../../engine/context-manager';
-import { getForeshadowWarnings } from '../../engine/foreshadow-manager';
-import { RulesService } from '../../services/rules-service';
-import { filterForeshadowsByChapter, getInvolvedEntities } from '../../engine/chapter-context-builder';
-import { scoreAndFilterEntitiesByType, ScoredEntity } from '../../engine/entity-scorer';
-import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../../engine/character-soul';
-import { parseInfoPlanFields, formatInfoPlanPromptBlock } from '../../shared/info-plan-fields';
-import { buildEntityRelationsBlock } from '../../engine/entity-graph';
-import { buildInjectionLedger } from '../../shared/injection-ledger';
-import { auditContextBlocks, resolveStyleConflicts } from '../../shared/context-hygiene';
-import { buildTimeContextMessage } from '../../shared/time-context';
-import { extractWorldviewMeta } from '../utils/worldview-utils';
-import { chapterOutlineSection, volumeSectionSlice } from '../../shared/format-constants';
-import { stripFrontmatter, readMergedVolumeOutline } from '../../utils/helpers';
-import { findBodyFileV4 } from '../../engine/chapter-utils';
-import { deriveBodyFormat, describeBodyFormat } from '../../shared/body-format';
-import { readFanficPromptBlockWithNotice } from '../fanfic-prompt-notice';
-import { ObsidianFileSystem } from '../../shared/file-system-port';
-import { loadLongTermMemory } from '../../engine/long-term-memory';
-import { findWritingStyleFile } from '../writing-style-paths';
-import { createLogger } from '../../shared/logger';
-import { parseSceneBlocks } from '../../engine/scene-generation-loop';
-import { formatDialogueSkeleton, formatSceneCardDigest } from '../../shared/scene-card';
-import { pjPromiseLedger, pjCharacterArcTable, readProjectMeta } from '../../shared/paths';
-import { parsePromiseLedger, formatOpenPromisesForPrompt } from '../../engine/promise-ledger';
-import { parseCharacterArcTable, formatArcsForPrompt } from '../../engine/character-arc';
-import { getCreationModeLabel, getCreationModePromptBlock, getCreationUnitLabel, parseCreationModeMeta } from '../../shared/creation-mode';
-import { getStoryStructure, getStructureStageSummary } from '../../shared/story-structure';
-import { buildHumanVoiceBlock } from '../../engine/prompts/human-voice';
-import { formatExemplarBlock, selectExemplars } from '../../engine/prompts/style-exemplars';
-import { voiceVariantMeta } from '../../engine/prompts/prompt-registry';
+import NovelWriterPlugin from '@/main';
+import { GatheredContext, CharacterData } from '@/engine/context-manager';
+import { getForeshadowWarnings } from '@/engine/foreshadow-manager';
+import { RulesService } from '@/services/rules-service';
+import { filterForeshadowsByChapter, getInvolvedEntities } from '@/engine/chapter-context-builder';
+import { scoreAndFilterEntitiesByType, ScoredEntity } from '@/engine/entity-scorer';
+import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '@/engine/character-soul';
+import { parseInfoPlanFields, formatInfoPlanPromptBlock } from '@/shared/info-plan-fields';
+import { buildEntityRelationsBlock } from '@/engine/entity-graph';
+import { buildInjectionLedger } from '@/shared/injection-ledger';
+import { auditContextBlocks, resolveStyleConflicts } from '@/shared/context-hygiene';
+import { buildTimeContextMessage } from '@/shared/time-context';
+import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
+import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
+import { stripFrontmatter, readMergedVolumeOutline } from '@/utils/helpers';
+import { findBodyFileV4 } from '@/engine/chapter-utils';
+import { deriveBodyFormat, describeBodyFormat } from '@/shared/body-format';
+import { readFanficPromptBlockWithNotice } from '@/ui/fanfic-prompt-notice';
+import { ObsidianFileSystem } from '@/shared/file-system-port';
+import { loadLongTermMemory } from '@/engine/long-term-memory';
+import { findWritingStyleFile } from '@/ui/writing-style-paths';
+import { createLogger } from '@/shared/logger';
+import { parseSceneBlocks } from '@/engine/scene-generation-loop';
+import { formatDialogueSkeleton, formatSceneCardDigest } from '@/shared/scene-card';
+import { pjPromiseLedger, pjCharacterArcTable, readProjectMeta } from '@/shared/paths';
+import { parsePromiseLedger, formatOpenPromisesForPrompt } from '@/engine/promise-ledger';
+import { parseCharacterArcTable, formatArcsForPrompt } from '@/engine/character-arc';
+import { getCreationModeLabel, getCreationModePromptBlock, getCreationUnitLabel, parseCreationModeMeta } from '@/shared/creation-mode';
+import { getStoryStructure, getStructureStageSummary } from '@/shared/story-structure';
+import { buildHumanVoiceBlock } from '@/engine/prompts/human-voice';
+import { formatExemplarBlock, selectExemplars } from '@/engine/prompts/style-exemplars';
+import { voiceVariantMeta } from '@/engine/prompts/prompt-registry';
 import {
   applyStoryContextToVars,
   buildStoryContext,
   logStoryContextSummary,
   resolveStoryContextTier,
-} from '../../engine/context/story-context-service';
+} from '@/engine/context/story-context-service';
 
 const log = createLogger('TemplateVarsBuilder');
-import { setActiveInputBudget } from '../../shared/context-budget-policy';
+import { setActiveInputBudget } from '@/shared/context-budget-policy';
 import {
     CHAR_TO_TOKEN_RATIO,
     getInfoDebtMax,
@@ -57,7 +57,7 @@ import {
     FORCED_REVEAL_OVER_5,
     FORCED_REVEAL_WINDOW_FORWARD,
     FORCED_REVEAL_WINDOW_BACKWARD,
-} from '../../shared/thresholds';
+} from '@/shared/thresholds';
 
 /** buildTemplateVars 所需依赖（由 full-writer-view 注入）。 */
 /**

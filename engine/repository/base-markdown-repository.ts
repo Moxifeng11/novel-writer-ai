@@ -26,10 +26,10 @@
  *   }
  */
 
-import type { FileSystemPort } from '../../shared/file-system-port';
-import { LruCache } from '../../shared/lru-cache';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import { LruCache } from '@/shared/lru-cache';
 import type { IRepository, IBulkRepository, BulkResult, BulkFailure } from './interfaces';
-import type { MultiLayerCache } from '../cache';
+import type { MultiLayerCache } from '@/engine/cache';
 
 // ============================================================
 // 一、配置选项

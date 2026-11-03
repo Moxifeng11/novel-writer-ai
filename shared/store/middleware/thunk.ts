@@ -5,7 +5,7 @@
  * 提供 dispatch 方法来执行 thunk 函数。
  */
 
-import type { State, StoreApi, ThunkApi, ThunkDispatch } from '../types';
+import type { State, StoreApi, ThunkApi, ThunkDispatch } from '@/shared/store/types';
 
 /**
  * Thunk 中间件

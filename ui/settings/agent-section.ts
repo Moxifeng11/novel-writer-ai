@@ -7,8 +7,8 @@
  */
 import { Notice, Platform, Setting } from 'obsidian';
 import { SettingsSection } from './section-base';
-import { buildDshLaunchPlan } from '../../engine/agent/dsh/dsh-launch';
-import { probeDshVersion } from '../../engine/agent/dsh/dsh-process';
+import { buildDshLaunchPlan } from '@/engine/agent/dsh/dsh-launch';
+import { probeDshVersion } from '@/engine/agent/dsh/dsh-process';
 
 /**
  * AgentBackendSection 类。

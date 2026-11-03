@@ -7,10 +7,10 @@
  * 调用方退化为「不评分、只跑单次」的旧行为（绝不因此报错）。
  */
 import type { App } from 'obsidian';
-import { AntiAIDetector } from '../../engine/anti-ai-detector';
-import { analyzeDistribution, scoreHumanity, type DistributionHistogram } from '../../shared/human-similarity';
-import type { RefineRoundScore } from '../../shared/iterative-refine';
-import { createLogger } from '../../shared/logger';
+import { AntiAIDetector } from '@/engine/anti-ai-detector';
+import { analyzeDistribution, scoreHumanity, type DistributionHistogram } from '@/shared/human-similarity';
+import type { RefineRoundScore } from '@/shared/iterative-refine';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('HumannessScorer');
 

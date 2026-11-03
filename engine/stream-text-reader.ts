@@ -11,9 +11,9 @@
  */
 
 import type { TextSegment } from './text-segmenter';
-import { countCjkAndWords } from '../shared/word-count';
+import { countCjkAndWords } from '@/shared/word-count';
 import { TextSegmenter } from './text-segmenter';
-import type { FileSystemPort } from '../shared/file-system-port';
+import type { FileSystemPort } from '@/shared/file-system-port';
 
 /**
  * 流读取状态。

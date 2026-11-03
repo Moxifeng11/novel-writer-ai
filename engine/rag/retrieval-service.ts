@@ -8,12 +8,12 @@
  *
  * 输出带 citation（书名·维度）与完整遥测，供注入账本与「知识注入」段展示。
  */
-import type { KnowledgeSearchResult, KnowledgeVectorStore } from '../knowledge-vector-store';
-import { buildQueryPlan, type RagQuery, type RagQuerySource } from '../../shared/rag/query-plan';
-import { mergeNeighborHits, type RagHit } from '../../shared/rag/neighbors';
-import { mmrSelect } from '../../shared/rag/diversity';
-import { packByBudget, sampleBudgetOf } from '../../shared/rag/budget-pack';
-import { createLogger } from '../../shared/logger';
+import type { KnowledgeSearchResult, KnowledgeVectorStore } from '@/engine/knowledge-vector-store';
+import { buildQueryPlan, type RagQuery, type RagQuerySource } from '@/shared/rag/query-plan';
+import { mergeNeighborHits, type RagHit } from '@/shared/rag/neighbors';
+import { mmrSelect } from '@/shared/rag/diversity';
+import { packByBudget, sampleBudgetOf } from '@/shared/rag/budget-pack';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('RagRetrieval');
 

@@ -12,11 +12,11 @@
  */
 
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { PartialResult } from '../engine/incremental-result-aggregator';
-import { SchedulerSegmentIntegration, SchedulerSegmentOptions } from '../engine/scheduler-segment-integration';
-import { CheckpointManager } from '../services/checkpoint-manager';
-import type { DeconstructDimension } from '../engine/deconstruction-worker-manager';
+import NovelWriterPlugin from '@/main';
+import { PartialResult } from '@/engine/incremental-result-aggregator';
+import { SchedulerSegmentIntegration, SchedulerSegmentOptions } from '@/engine/scheduler-segment-integration';
+import { CheckpointManager } from '@/services/checkpoint-manager';
+import type { DeconstructDimension } from '@/engine/deconstruction-worker-manager';
 
 interface BatchTask {
     id: string;

@@ -4,7 +4,7 @@
  * （情节牵引由协同写作主视图的「🎯 情节牵引」卡展示，面板不再重复创建引擎）
  */
 import { WorkspaceLeaf, Notice } from "obsidian";
-import NovelWriterPlugin from "../main";
+import NovelWriterPlugin from "@/main";
 import { DraggablePanel } from "./draggable-panel";
 import {
   PlotCompletionEngine,
@@ -12,7 +12,7 @@ import {
   PlotCompletionEngineOptions,
   getScoreColorClass,
   getScoreLabel,
-} from "../engine/plot-completion-engine";
+} from "@/engine/plot-completion-engine";
 import {
   PlotDivergenceEngine,
   DivergenceResult,
@@ -21,7 +21,7 @@ import {
   getDivergenceLevelLabel,
   getDivergenceLevelIcon,
   DivergenceLevel,
-} from "../engine/plot-divergence-engine";
+} from "@/engine/plot-divergence-engine";
 import {
   WritingQualityEngine,
   WritingQualityResult,
@@ -32,20 +32,20 @@ import {
   getQualityTrendLabel,
   getPriorityColor,
   getPriorityLabel,
-} from "../engine/writing-quality-engine";
-import { AdaptiveDebounceManager } from "../shared/adaptive-debounce-manager";
-import { divergenceLevelFromScore, qualityScoreColor } from "../shared/quality-grade";
-import { loadQualityHistory, appendQualityHistory } from "../services/quality-history-store";
-import { aggregateQualityHistoryByChapter, computeChapterTrend, mergeQualityHistory, normalizeChapterKey, type QualityHistoryRecord } from "../shared/quality-history";
+} from "@/engine/writing-quality-engine";
+import { AdaptiveDebounceManager } from "@/shared/adaptive-debounce-manager";
+import { divergenceLevelFromScore, qualityScoreColor } from "@/shared/quality-grade";
+import { loadQualityHistory, appendQualityHistory } from "@/services/quality-history-store";
+import { aggregateQualityHistoryByChapter, computeChapterTrend, mergeQualityHistory, normalizeChapterKey, type QualityHistoryRecord } from "@/shared/quality-history";
 import {
   compareToBaseline,
   computeQualityBaseline,
   type BaselineComparison,
-} from "../shared/quality-baseline";
-import { DEVIATION_MIN_EVALUABLE_CHARS, PLOT_COMPLETION_MIN_EVALUABLE_CHARS, QUALITY_HISTORY_MAX_RECORDS, QUALITY_MIN_EVALUABLE_CHARS } from '../shared/thresholds';
-import { isQualitySampleUsable } from '../shared/quality-history';
+} from "@/shared/quality-baseline";
+import { DEVIATION_MIN_EVALUABLE_CHARS, PLOT_COMPLETION_MIN_EVALUABLE_CHARS, QUALITY_HISTORY_MAX_RECORDS, QUALITY_MIN_EVALUABLE_CHARS } from '@/shared/thresholds';
+import { isQualitySampleUsable } from '@/shared/quality-history';
 import { CoWriteFacade } from "./services/co-write-facade";
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('MonitorPanelB');

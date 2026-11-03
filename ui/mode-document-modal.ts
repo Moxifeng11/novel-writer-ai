@@ -5,12 +5,12 @@
  * 只读写 短篇创作/ 或 剧本创作/，不触碰长篇 03-大纲与章节。
  */
 import { App, Modal, Notice } from 'obsidian';
-import type NovelWriterPlugin from '../main';
-import type { CreationMode } from '../shared/creation-mode';
-import { getCreationModeLabel } from '../shared/creation-mode';
-import { modeDocPath, modeDocStarter } from '../shared/mode-content';
-import { resolveProjectMode } from '../shared/project-mode';
-import { writeVaultText } from '../shared/file-system-port';
+import type NovelWriterPlugin from '@/main';
+import type { CreationMode } from '@/shared/creation-mode';
+import { getCreationModeLabel } from '@/shared/creation-mode';
+import { modeDocPath, modeDocStarter } from '@/shared/mode-content';
+import { resolveProjectMode } from '@/shared/project-mode';
+import { writeVaultText } from '@/shared/file-system-port';
 
 /**
  * ModeDocumentKind 类型定义。

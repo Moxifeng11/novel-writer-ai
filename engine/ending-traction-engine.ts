@@ -7,11 +7,11 @@
  
 import { App, TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
-import { extractJsonArray, extractResponseText, stripThinkingBlock } from '../shared/api-response-utils';
-import { pjOutlineDir, pjVolumeOutlineDir } from '../shared/paths';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import type { NovelWriterSettingsAPI } from '../plugin-api';
-import { createLogger } from '../shared/logger';
+import { extractJsonArray, extractResponseText, stripThinkingBlock } from '@/shared/api-response-utils';
+import { pjOutlineDir, pjVolumeOutlineDir } from '@/shared/paths';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import type { NovelWriterSettingsAPI } from '@/plugin-api';
+import { createLogger } from '@/shared/logger';
  
 
 const log = createLogger('EndingTractionEngine');

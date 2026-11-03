@@ -6,17 +6,17 @@
 import { App, TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
 import { getInvolvedEntities } from './chapter-context-builder';
-import { CharacterFrontmatter, Notifier, NOOP_NOTIFIER } from '../shared/types';
-import { entityDir } from '../shared/entity-reader';
-import { NOTICE_ERROR, NOTICE_WARNING } from '../shared/thresholds';
-import { withWriteLock } from '../shared/write-lock';
-import { pjCharsDir } from '../shared/paths';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import type { NovelWriterPluginAPI } from '../plugin-api';
+import { CharacterFrontmatter, Notifier, NOOP_NOTIFIER } from '@/shared/types';
+import { entityDir } from '@/shared/entity-reader';
+import { NOTICE_ERROR, NOTICE_WARNING } from '@/shared/thresholds';
+import { withWriteLock } from '@/shared/write-lock';
+import { pjCharsDir } from '@/shared/paths';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import type { NovelWriterPluginAPI } from '@/plugin-api';
 import type { CharacterRepository } from './repository';
 import type { EngineRegistry } from './engine-registry';
-import { createLogger } from '../shared/logger';
-import { setFrontmatterValue } from '../shared/frontmatter';
+import { createLogger } from '@/shared/logger';
+import { setFrontmatterValue } from '@/shared/frontmatter';
 
 
 const log = createLogger('EntityStateManager');

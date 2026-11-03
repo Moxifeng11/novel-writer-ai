@@ -1,5 +1,5 @@
 import { Notice } from 'obsidian';
-import { SuggestionRecord } from '../../shared/types';
+import { SuggestionRecord } from '@/shared/types';
 
 // 编辑并验证浮窗（非遮挡抽屉式，Task 3 重构）
 // 保留类名 SuggestionEditModal 与 open() 方法以兼容调用方

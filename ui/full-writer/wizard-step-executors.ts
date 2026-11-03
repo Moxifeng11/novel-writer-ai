@@ -7,26 +7,26 @@
  * renderTab / checkChaptersComplete）。
  */
 import { App, Notice } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { AIEngine } from '../../engine/ai-engine';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
 import { WizardTab, WizardStep } from './wizard-types';
 import {
     validateFanficSettings,
     validateOutlineOutput,
     validateSettingLibOutput,
     validateWorldviewOutput,
-} from '../../shared/template-validator';
+} from '@/shared/template-validator';
 import { validateWizardStepContent } from './wizard-step-validators';
-import { readMergedVolumeOutline } from '../../utils/helpers';
-import { WritingStyleModal } from '../writing-style-modal';
-import { PlanBookModal } from '../plan-book-modal';
-import { BatchCreateModal } from '../batch-create-modal';
+import { readMergedVolumeOutline } from '@/utils/helpers';
+import { WritingStyleModal } from '@/ui/writing-style-modal';
+import { PlanBookModal } from '@/ui/plan-book-modal';
+import { BatchCreateModal } from '@/ui/batch-create-modal';
 import { attachFanficPathToProject, getFanficSettingsPath, isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
-import { parseProjectMeta } from '../../shared/fanfic-rules';
-import { readProjectMeta, pjFanficDir, SUBDIR_BODY_ROOT } from '../../shared/paths';
-import { StorySettingsModal } from '../story-settings-modal';
-import { createLogger } from '../../shared/logger';
-import { nextFrame } from '../../shared/yield';
+import { parseProjectMeta } from '@/shared/fanfic-rules';
+import { readProjectMeta, pjFanficDir, SUBDIR_BODY_ROOT } from '@/shared/paths';
+import { StorySettingsModal } from '@/ui/story-settings-modal';
+import { createLogger } from '@/shared/logger';
+import { nextFrame } from '@/shared/yield';
 
 
 const log = createLogger('WizardStepExecutors');

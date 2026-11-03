@@ -4,7 +4,7 @@
  * 封装章节状态的枚举值和转换逻辑。
  */
 
-import type { BodyStatus } from '../../../../shared/types';
+import type { BodyStatus } from '@/shared/types';
 
 /** 章节状态枚举 */
 export type ChapterStatusValue = 'pending' | 'written' | 'settled';

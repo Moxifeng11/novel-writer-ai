@@ -1,18 +1,18 @@
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     CHARACTER_MANDATORY_FIELDS,
     CHARACTER_BODY_SECTIONS_V2,
     CHARACTER_NESTED_FIELD_GROUPS,
-} from '../shared/format-constants';
+} from '@/shared/format-constants';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import { TemplateService } from './template-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { stripCodeFence } from '../shared/api-response-utils';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { stripCodeFence } from '@/shared/api-response-utils';
 
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { createLogger } from '../shared/logger';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('AiCharacterGenerator');
 /**

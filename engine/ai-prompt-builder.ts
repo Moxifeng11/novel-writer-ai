@@ -3,13 +3,13 @@
  * 从 ai-engine.ts 提取，独立于类实例
  */
 import type { ChapterContext } from './ai-types';
-import { PREV_SUMMARY_SLICE, TOKEN_SAFE_BUFFER } from '../shared/thresholds';
+import { PREV_SUMMARY_SLICE, TOKEN_SAFE_BUFFER } from '@/shared/thresholds';
 import {
     BodyFormatContract, DEFAULT_BODY_FORMAT, describeBodyFormat,
-} from '../shared/body-format';
-import { assemblePromptWithinBudget, type PromptSection } from '../shared/prompt-budget';
-import { recordBudgetSnapshot } from '../shared/budget-telemetry';
-import { estimateInputTokens } from '../shared/token-estimator';
+} from '@/shared/body-format';
+import { assemblePromptWithinBudget, type PromptSection } from '@/shared/prompt-budget';
+import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
+import { estimateInputTokens } from '@/shared/token-estimator';
 
 /**
  * 系统提示词（写作引导）

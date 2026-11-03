@@ -1,24 +1,24 @@
 import { ItemView, WorkspaceLeaf, Notice, Modal, App } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { KnowledgeBaseManager, type BookBasicInfo, type BreakdownStatus, type QualityScores } from '../../services/knowledge-base-manager';
-import { WebnovelKnowledgeBase, type GenreConfig } from '../../shared/webnovel-knowledge-base';
-import { KnowledgeBaseConfigManager } from '../../engine/knowledge-base-config';
-import { applyNwScope } from '../../utils/helpers';
-import { AdaptiveDebounceManager } from '../../shared/adaptive-debounce-manager';
-import { radarChart, barChart, donutChart, attachChartInteractions } from '../svg-charts';
-import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgress, type BreakdownTask, type BreakdownDimension } from '../../engine/deconstruction-scheduler';
-import { BatchImportModal } from '../batch-import-modal';
-import { MiniSettingsModal } from '../mini-settings-modal';
-import { OperationConfirmModal, TaskCardComponent } from '../components/progress';
-import { createEmptyState } from '../components/empty-state';
-import { createLogger } from '../../shared/logger';
-import { classifyBook, isClassificationTag, mergeClassificationTags, type ClassificationResult } from '../../shared/content-classifier';
-import { exportTextFile } from '../../shared/export-file';
+import NovelWriterPlugin from '@/main';
+import { KnowledgeBaseManager, type BookBasicInfo, type BreakdownStatus, type QualityScores } from '@/services/knowledge-base-manager';
+import { WebnovelKnowledgeBase, type GenreConfig } from '@/shared/webnovel-knowledge-base';
+import { KnowledgeBaseConfigManager } from '@/engine/knowledge-base-config';
+import { applyNwScope } from '@/utils/helpers';
+import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
+import { radarChart, barChart, donutChart, attachChartInteractions } from '@/ui/svg-charts';
+import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgress, type BreakdownTask, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
+import { BatchImportModal } from '@/ui/batch-import-modal';
+import { MiniSettingsModal } from '@/ui/mini-settings-modal';
+import { OperationConfirmModal, TaskCardComponent } from '@/ui/components/progress';
+import { createEmptyState } from '@/ui/components/empty-state';
+import { createLogger } from '@/shared/logger';
+import { classifyBook, isClassificationTag, mergeClassificationTags, type ClassificationResult } from '@/shared/content-classifier';
+import { exportTextFile } from '@/shared/export-file';
 import { ImportBookModal, EditBookModal, GenreEditModal, BatchOperationsModal } from './knowledge-base-modals';
 import { canRefreshBookList, detailErrorMessage, emptyDetailData } from './knowledge-detail-state';
 import { BookDetailRenderer } from './book-detail-renderer';
-import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
-import { yieldToUI } from '../../shared/yield';
+import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
+import { yieldToUI } from '@/shared/yield';
 
 const log = createLogger('KnowledgeBaseView');
 import {
@@ -30,7 +30,7 @@ import {
     kbBookForeshadowDBFile,
     kbBookCommercialAnalysisFile,
     kbBookReadabilityAnalysisFile,
-} from '../../shared/paths';
+} from '@/shared/paths';
 
 /**
  * 知识库视图类型常量。

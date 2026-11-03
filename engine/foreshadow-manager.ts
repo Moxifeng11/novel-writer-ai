@@ -1,19 +1,19 @@
 import { App, TFile, Vault } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import { entityDir } from '../shared/entity-reader';
-import NovelWriterPlugin from '../main';
-import { getNextRowNum, hasTableSeparator, appendAfterSeparator, moveForeshadowToRevealed, mkdirp, showSuccess, showError } from '../utils/helpers';
+import { splitTableCells } from '@/shared/chapter-table';
+import { entityDir } from '@/shared/entity-reader';
+import NovelWriterPlugin from '@/main';
+import { getNextRowNum, hasTableSeparator, appendAfterSeparator, moveForeshadowToRevealed, mkdirp, showSuccess, showError } from '@/utils/helpers';
 import { detectProjects } from './context-manager';
 import { CHAPTER_FILE_TYPES } from './chapter-utils';
-import { getInfoDebtMax, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_REVEAL_OVER_10, FORCED_REVEAL_OVER_5, FORCED_REVEAL_WINDOW_FORWARD, FORCED_REVEAL_WINDOW_BACKWARD, FORESHADOW_APPROACHING_CHAPTERS, NOTICE_ERROR, NOTICE_SUCCESS } from '../shared/thresholds';
-import { pjForeshadowDB, pjForeshadowTracker, pjTimelineDir, pjInfoDebtBoard, pjControlDir, isInCharsDir } from '../shared/paths';
-import type { Notifier } from '../shared/types';
-import { withWriteLock } from '../shared/write-lock';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { getInfoDebtMax, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_REVEAL_OVER_10, FORCED_REVEAL_OVER_5, FORCED_REVEAL_WINDOW_FORWARD, FORCED_REVEAL_WINDOW_BACKWARD, FORESHADOW_APPROACHING_CHAPTERS, NOTICE_ERROR, NOTICE_SUCCESS } from '@/shared/thresholds';
+import { pjForeshadowDB, pjForeshadowTracker, pjTimelineDir, pjInfoDebtBoard, pjControlDir, isInCharsDir } from '@/shared/paths';
+import type { Notifier } from '@/shared/types';
+import { withWriteLock } from '@/shared/write-lock';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { VectorEnhancer } from './vector-enhancer';
-import { createLogger } from '../shared/logger';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 
 
 const log = createLogger('ForeshadowManager');

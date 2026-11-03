@@ -13,9 +13,9 @@
  * - 降级模式下直接实例化拆解器并调用，保证功能完整性
  */
 
-import { WorkerManager } from '../services/worker-manager';
-import { createLogger } from '../shared/logger';
-import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
+import { WorkerManager } from '@/services/worker-manager';
+import { createLogger } from '@/shared/logger';
+import { notifyWorkerUnavailable } from '@/shared/plugin-worker-url';
 import { VectorEnhancer } from './vector-enhancer';
 import { LLMEnhancer } from './llm-enhancer';
 import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';

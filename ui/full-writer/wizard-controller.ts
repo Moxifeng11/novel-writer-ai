@@ -1,15 +1,15 @@
 import { App, TFile, Notice, Modal } from 'obsidian';
-import { pjVolumeOutlineDir, getSettingLibPath, getWorldviewPath, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_OUTLINE_ROOT } from '../../shared/paths';
+import { pjVolumeOutlineDir, getSettingLibPath, getWorldviewPath, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_OUTLINE_ROOT } from '@/shared/paths';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './wizard-types';
 import { WizardStepRenderers } from './wizard-step-renderers';
 import { WizardStepExecutors } from './wizard-step-executors';
-import { WizardChecker } from '../wizard-checker';
-import { getWritingStyleCandidatePaths } from '../writing-style-paths';
+import { WizardChecker } from '@/ui/wizard-checker';
+import { getWritingStyleCandidatePaths } from '@/ui/writing-style-paths';
 import type { WizardViewAccess } from './wizard-view-access';
 import { isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
-import { parseProjectMeta } from '../../shared/fanfic-rules';
+import { parseProjectMeta } from '@/shared/fanfic-rules';
 import { validateWizardStepContent } from './wizard-step-validators';
-import { parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
+import { parseStorySettingsFromProjectMeta } from '@/shared/story-structure';
 
 /**
  * WizardController — 向导子系统控制器

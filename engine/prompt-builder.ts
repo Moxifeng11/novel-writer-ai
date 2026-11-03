@@ -5,23 +5,23 @@
 
 import type { StyleLearner } from './style-learner';
 import type { PreferenceMemory } from './preference-memory';
-import type { SuggestionDirection } from '../shared/types';
-import type { AssociationHint } from '../shared/co-writer-types';
+import type { SuggestionDirection } from '@/shared/types';
+import type { AssociationHint } from '@/shared/co-writer-types';
 import type { CharacterSoul } from './character-soul';
 import type { StyleFingerprint, StyleFingerprintLibrary, VectorStore } from './style-fingerprint-library';
-import type { KnowledgeBaseManager } from '../services/knowledge-base-manager';
+import type { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import type { KnowledgeSearchResult, KnowledgeVectorStore } from './knowledge-vector-store';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 import {
     BodyFormatContract,
     DEFAULT_BODY_FORMAT,
     deriveBodyFormat,
     describeBodyFormat,
-} from '../shared/body-format';
-import { assemblePromptWithinBudget, resolvePrecedingCharLimit, type PromptSection } from '../shared/prompt-budget';
-import { recordBudgetSnapshot } from '../shared/budget-telemetry';
-import { dedupeAdjacentChunks } from '../shared/knowledge-position';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
+} from '@/shared/body-format';
+import { assemblePromptWithinBudget, resolvePrecedingCharLimit, type PromptSection } from '@/shared/prompt-budget';
+import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
+import { dedupeAdjacentChunks } from '@/shared/knowledge-position';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { StyleIntensityEngine, type StyleIntensityConfig } from './style/style-intensity-engine';
 import { selectFingerprintsForInjection } from './style/fingerprint-selection';
 
@@ -32,7 +32,7 @@ import {
     TieredInjectionBuilder,
     TieredBuildStats,
 } from './style/dynamic-injection-engine';
-import type { InjectionLedger, InjectionLedgerEntry, InjectionCategory, InjectionInfluence } from '../shared/injection-ledger';
+import type { InjectionLedger, InjectionLedgerEntry, InjectionCategory, InjectionInfluence } from '@/shared/injection-ledger';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
 const intensityEngine = new StyleIntensityEngine();

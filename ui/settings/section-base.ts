@@ -11,7 +11,7 @@
  * - 分区之间的方法调用为零；跨分区共享状态请上提到宿主 `NovelWriterSettingTab`。
  */
 import type { App } from 'obsidian';
-import type NovelWriterPlugin from '../../main';
+import type NovelWriterPlugin from '@/main';
 
 /**
  * SettingsSectionHost 类型定义。

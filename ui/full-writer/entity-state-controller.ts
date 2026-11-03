@@ -1,12 +1,12 @@
 import { App, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { AIEngine } from '../../engine/ai-engine';
-import { EntityStateManager } from '../../engine/entity-state-manager';
-import { findBodyFileV4 } from '../../engine/chapter-utils';
-import { getInvolvedEntities } from '../../engine/chapter-context-builder';
-import { ContextPanel } from '../rendering/context-panel';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { EntityStateManager } from '@/engine/entity-state-manager';
+import { findBodyFileV4 } from '@/engine/chapter-utils';
+import { getInvolvedEntities } from '@/engine/chapter-context-builder';
+import { ContextPanel } from '@/ui/rendering/context-panel';
 import { FullWriterStore } from './full-writer-store';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('EntityStateController');

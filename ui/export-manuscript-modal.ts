@@ -6,26 +6,26 @@
  */
 
 import { App, Modal, Notice, Setting, TFolder, TFile } from 'obsidian';
-import { isChapterSettledText } from '../shared/chapter-status';
-import type NovelWriterPlugin from '../main';
+import { isChapterSettledText } from '@/shared/chapter-status';
+import type NovelWriterPlugin from '@/main';
 import {
     compileManuscript,
     type ManuscriptChapter,
     type ManuscriptFormat,
-} from '../engine/export/manuscript-compiler';
-import { buildEpub } from '../engine/export/epub-builder';
-import { buildDocx } from '../engine/export/docx-builder';
-import type { BuiltBook, BookBuildOptions } from '../engine/export/epub-builder';
-import { exportBinaryFile, exportTextFile } from '../shared/export-file';
-import { createLogger } from '../shared/logger';
-import { pjStepDir } from '../shared/paths';
-import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+} from '@/engine/export/manuscript-compiler';
+import { buildEpub } from '@/engine/export/epub-builder';
+import { buildDocx } from '@/engine/export/docx-builder';
+import type { BuiltBook, BookBuildOptions } from '@/engine/export/epub-builder';
+import { exportBinaryFile, exportTextFile } from '@/shared/export-file';
+import { createLogger } from '@/shared/logger';
+import { pjStepDir } from '@/shared/paths';
+import { getChapterFileName, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { getProjectMeta, findProjectCoverFile, loadProjectCover } from './project-utils';
-import type { CreationMode } from '../shared/creation-mode';
-import { collectModeManuscript, listModeUnits } from '../shared/mode-content';
-import { formatExportPrecheck } from '../shared/export-precheck';
-import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
-import { getExecutionLedger } from '../services/execution-ledger';
+import type { CreationMode } from '@/shared/creation-mode';
+import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
+import { formatExportPrecheck } from '@/shared/export-precheck';
+import { MODE_LIBRARY_ROOT_LIST } from '@/domains/kernel/project-locator';
+import { getExecutionLedger } from '@/services/execution-ledger';
 
 const log = createLogger('ExportManuscriptModal');
 

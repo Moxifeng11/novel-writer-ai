@@ -1,25 +1,25 @@
 import { App, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     WV_SECTIONS,
     WV_SECTION_FIELDS,
     WV_PROSE_MAX_LENGTH,
-} from '../shared/format-constants';
-import { validateWorldviewOutput } from '../shared/template-validator';
-import { getWorldviewPath, getSettingLibPath, pjFanficDir, pjProjectMeta } from '../shared/paths';
-import { parseProjectMeta } from '../shared/fanfic-rules';
+} from '@/shared/format-constants';
+import { validateWorldviewOutput } from '@/shared/template-validator';
+import { getWorldviewPath, getSettingLibPath, pjFanficDir, pjProjectMeta } from '@/shared/paths';
+import { parseProjectMeta } from '@/shared/fanfic-rules';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import { TemplateService } from './template-service';
-import { WorldviewCacheService } from '../services/worldview-cache-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
+import { WorldviewCacheService } from '@/services/worldview-cache-service';
+import { ENGINE_NAMES } from '@/shared/engine-names';
 
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { NOTICE_ERROR } from '../shared/thresholds';
-import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
-import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { createLogger } from '../shared/logger';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { NOTICE_ERROR } from '@/shared/thresholds';
+import type { FileSystemPort, VaultMetaPort } from '@/shared/file-system-port';
+import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('AiWorldviewGenerator');

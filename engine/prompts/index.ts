@@ -4,8 +4,8 @@
  *
  * 拆分历史（v4.5.1 之后）：
  *   原 prompt-templates.ts (1097 行) → 7 个职责文件 + 此 barrel。
- *   外部仍可通过 `import { ... } from '../engine/prompt-templates'` 访问（原文件改为 re-export）。
- *   新代码建议直接 `import { ... } from '../engine/prompts'`。
+ *   外部仍可通过 `import { ... } from '@/engine/engine/prompt-templates'` 访问（原文件改为 re-export）。
+ *   新代码建议直接 `import { ... } from '@/engine/engine/prompts'`。
  *
  * 子文件职责：
  *   - writing-rules.ts        全局写作规则（16 心法 + 格式参考；与元文件/00-系统模板/写作规则.md 同结构）

@@ -7,20 +7,20 @@
  */
 import type { App } from 'obsidian';
 import { Notice } from 'obsidian';
-import type NovelWriterPlugin from '../../main';
-import type { AIEngine } from '../../engine/ai-engine';
-import type { CreationMode } from '../../shared/creation-mode';
-import { getCreationModeLabel } from '../../shared/creation-mode';
+import type NovelWriterPlugin from '@/main';
+import type { AIEngine } from '@/engine/ai-engine';
+import type { CreationMode } from '@/shared/creation-mode';
+import { getCreationModeLabel } from '@/shared/creation-mode';
 import {
     listModeUnits,
     modeUnitDisplay,
     modeUnitLabel,
     type ModeUnitInfo,
-} from '../../shared/mode-content';
-import { countUnitWords, createObsidianUnitFilePort, generateUnitText, loadUnitWriterContext, saveUnitBody, type UnitFilePort, type UnitGenerateOptions, type UnitWriteAction, type UnitWriterContext } from '../../engine/mode-unit-writer';
-import { analyzeProse, scoreProseRisk } from '../../shared/prose-metrics';import { HumanizeReportModal } from '../humanize-report-modal';
-import { OperationConfirmModal } from '../components/progress/operation-confirm-modal';
-import { createLogger } from '../../shared/logger';
+} from '@/shared/mode-content';
+import { countUnitWords, createObsidianUnitFilePort, generateUnitText, loadUnitWriterContext, saveUnitBody, type UnitFilePort, type UnitGenerateOptions, type UnitWriteAction, type UnitWriterContext } from '@/engine/mode-unit-writer';
+import { analyzeProse, scoreProseRisk } from '@/shared/prose-metrics';import { HumanizeReportModal } from '@/ui/humanize-report-modal';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
+import { createLogger } from '@/shared/logger';
 import type { WriterTab } from './full-writer-store';
 import type { FlowDocKind } from './flow-panel-controller';
 

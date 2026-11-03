@@ -5,8 +5,8 @@
  * 章节 ID 格式：v{volN}-c{chapN}，如 v1-c1 表示第1卷第1章
  */
 
-import type { FileSystemPort } from '../../shared/file-system-port';
-import { pjBodyFile, pjBodyDir } from '../../shared/paths';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import { pjBodyFile, pjBodyDir } from '@/shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Chapter } from './domain/aggregates';

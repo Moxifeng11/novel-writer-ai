@@ -1,10 +1,10 @@
 import { Modal, App, Notice, Setting, TFile } from 'obsidian';
-import { KnowledgeBaseManager, type BookBasicInfo } from '../../services/knowledge-base-manager';
-import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '../../shared/webnovel-knowledge-base';
-import { kbBookDir } from '../../shared/paths';
-import { createLogger } from '../../shared/logger';
-import { OperationConfirmModal } from '../components/progress';
-import { isImeComposing } from '../../shared/keyboard';
+import { KnowledgeBaseManager, type BookBasicInfo } from '@/services/knowledge-base-manager';
+import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '@/shared/webnovel-knowledge-base';
+import { kbBookDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { OperationConfirmModal } from '@/ui/components/progress';
+import { isImeComposing } from '@/shared/keyboard';
 
 const log = createLogger('KnowledgeBaseModals');
 

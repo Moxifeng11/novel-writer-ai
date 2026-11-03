@@ -5,12 +5,12 @@
  * structured parsing + local validation. It never makes a second AI call;
  * failures are returned for the caller/user to retry explicitly.
  */
-import type { AIEngine } from '../ai-engine';
-import type { CreationMode } from '../../shared/creation-mode';
+import type { AIEngine } from '@/engine/ai-engine';
+import type { CreationMode } from '@/shared/creation-mode';
 import type { Rule, RuleViolation, RuleValidationContext } from './rule-engine';
 import { RuleEngine } from './rule-engine';
 import { callLedger } from './call-ledger';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('SingleCallRunner');
 

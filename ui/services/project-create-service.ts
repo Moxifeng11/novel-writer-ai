@@ -6,7 +6,7 @@
  * 交互（覆盖确认）通过回调注入，方便 Agent 以对话形式确认。
  */
 import { App, Notice, TFile } from 'obsidian';
-import { WritingProfileManager } from '../../engine/writing-profile';
+import { WritingProfileManager } from '@/engine/writing-profile';
 import {
     SUBDIR_SETTING_LIB_FILE,
     SUBDIR_WRITING_STYLE_FILE,
@@ -20,14 +20,14 @@ import {
     templateFingerprintsFile,
     projectFingerprintsFile,
     projectFingerprintLibraryDir,
-} from '../../shared/paths';
-import { createLogger } from '../../shared/logger';
-import { ensureTemplateScaffold } from '../../shared/template-scaffold';
-import { writeVaultText } from '../../shared/file-system-port';
-import { newProjectPath } from '../../domains/kernel/project-locator';
-import { fanficSettingsFileName, isFanficApproved } from '../full-writer/fanfic-settings-utils';
-import { buildCreationModeMetaSection, type CreationModeMeta } from '../../shared/creation-mode';
-import type { LongStorySettings } from '../../shared/story-structure';
+} from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { ensureTemplateScaffold } from '@/shared/template-scaffold';
+import { writeVaultText } from '@/shared/file-system-port';
+import { newProjectPath } from '@/domains/kernel/project-locator';
+import { fanficSettingsFileName, isFanficApproved } from '@/ui/full-writer/fanfic-settings-utils';
+import { buildCreationModeMetaSection, type CreationModeMeta } from '@/shared/creation-mode';
+import type { LongStorySettings } from '@/shared/story-structure';
 
 const log = createLogger('ProjectCreateService');
 
@@ -72,7 +72,7 @@ export interface CreateLongProjectResult {
  */
 export async function writeCreationModeGuideFile(app: App, project: string, meta: CreationModeMeta): Promise<void> {
     const path = `${project}/00-系统模板/创作模式指南.md`;
-    const { buildCreationModeGuide } = await import('../../shared/creation-mode');
+    const { buildCreationModeGuide } = await import('@/shared/creation-mode');
     try {
         await writeVaultText(app, path, buildCreationModeGuide(meta));
     } catch (e) {
@@ -88,7 +88,7 @@ export async function writeCreationModeGuideFile(app: App, project: string, meta
  */
 export async function writeStoryStructureGuideFile(app: App, project: string, settings: LongStorySettings): Promise<void> {
     const path = `${project}/00-系统模板/故事结构指南.md`;
-    const { buildStoryStructureGuide } = await import('../../shared/story-structure');
+    const { buildStoryStructureGuide } = await import('@/shared/story-structure');
     try {
         await writeVaultText(app, path, buildStoryStructureGuide(settings));
     } catch (e) {

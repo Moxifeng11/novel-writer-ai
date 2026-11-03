@@ -8,13 +8,13 @@
  * 消除独立 polyline + circle 实现，统一交互与动画行为。
  */
 
-import { EmotionCurve } from '../../shared/co-writer-types';
+import { EmotionCurve } from '@/shared/co-writer-types';
 import {
 	lineChart,
 	attachChartInteractions,
 	LineChartSeries,
 	LineChartOptions
-} from '../svg-charts';
+} from '@/ui/svg-charts';
 
 /**
  * EmotionCurveView 类。

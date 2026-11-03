@@ -1,9 +1,9 @@
 import { App, TFile, TFolder } from 'obsidian';
-import { ChapterFrontmatter } from '../shared/types';
-import { pjBodyDir } from '../shared/paths';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { listFolderFiles } from '../shared/vault-tree';
-import { createLogger } from '../shared/logger';
+import { ChapterFrontmatter } from '@/shared/types';
+import { pjBodyDir } from '@/shared/paths';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { listFolderFiles } from '@/shared/vault-tree';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ChapterUtils');

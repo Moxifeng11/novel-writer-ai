@@ -6,15 +6,15 @@
  */
 
 import { Notice } from 'obsidian';
-import type { NovelWriterSettings, CustomProvider, ModelSourceType } from '../main';
-import { DEFAULT_PROVIDERS, resolveProviderSourceType } from '../main';
+import type { NovelWriterSettings, CustomProvider, ModelSourceType } from '@/main';
+import { DEFAULT_PROVIDERS, resolveProviderSourceType } from '@/main';
 import {
     findModelCapability,
     getDetectedModelCapability,
     lookupModelCapability,
     type ModelSourceKind,
-} from '../shared/model-capabilities';
-import { createLogger } from '../shared/logger';
+} from '@/shared/model-capabilities';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ProviderManager');

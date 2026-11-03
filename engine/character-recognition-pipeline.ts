@@ -20,8 +20,8 @@ import type { VectorEnhancer } from './vector-enhancer';
 import type { LLMEnhancer } from './llm-enhancer';
 import { CharacterDeconstructor } from './deconstructors/character-deconstructor';
 import { SuggestionManager } from './suggestion-manager';
-import { createLogger } from '../shared/logger';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 
 const log = createLogger('CharacterRecognitionPipeline');
 

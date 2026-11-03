@@ -12,18 +12,18 @@ import {
     pjVolumeOutlineDir,
     SUBDIR_BODY_ROOT,
     SUBDIR_OUTLINE_ROOT,
-} from '../../shared/paths';
+} from '@/shared/paths';
 import {
     validateOutlineOutput,
     validateSettingLibOutput,
     validateWorldviewOutput,
     validateWritingStyleOutput,
-} from '../../shared/template-validator';
+} from '@/shared/template-validator';
 import { isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
-import { findWritingStyleFile } from '../writing-style-paths';
-import { parseProjectMeta } from '../../shared/fanfic-rules';
-import { readMergedVolumeOutline } from '../../utils/helpers';
-import { parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
+import { findWritingStyleFile } from '@/ui/writing-style-paths';
+import { parseProjectMeta } from '@/shared/fanfic-rules';
+import { readMergedVolumeOutline } from '@/utils/helpers';
+import { parseStorySettingsFromProjectMeta } from '@/shared/story-structure';
 
 /**
  * WizardStepValidation 类型定义。

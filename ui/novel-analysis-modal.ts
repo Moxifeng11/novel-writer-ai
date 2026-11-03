@@ -1,11 +1,11 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import { NovelAnalyzer, NovelAnalysisResult } from '../engine/novel-analyzer';
+import { NovelAnalyzer, NovelAnalysisResult } from '@/engine/novel-analyzer';
 import { barChart, donutChart, wordCloud } from './svg-charts';
 import { AddFingerprintModal } from './fingerprint-library-modal';
-import { FingerprintExtractor } from '../engine/fingerprint-extractor';
+import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
-import NovelWriterPlugin from '../main';
-import { createLogger } from '../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('NovelAnalysisModal');

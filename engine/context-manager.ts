@@ -1,28 +1,28 @@
 import { App, TFile, TFolder } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
+import { splitTableCells } from '@/shared/chapter-table';
 import { getChapterFile, getChapterFileName, CHAPTER_FILE_TYPES, findBodyFileV4, findBodyFileByChapterNum } from './chapter-utils';
-import NovelWriterPlugin from '../main';
-import { extractVolumeFromPath, showProgress, showError, readMergedVolumeOutline } from '../utils/helpers';
+import NovelWriterPlugin from '@/main';
+import { extractVolumeFromPath, showProgress, showError, readMergedVolumeOutline } from '@/utils/helpers';
 import { compressWorldContext, CompressedContext } from './context-compressor';
-import { parseFrontmatter as parseFm, parseMarkdownContent as parseMdContent } from '../shared/frontmatter';
-import { CharacterFrontmatter, FactionFrontmatter, LocationFrontmatter, ItemFrontmatter, Notifier, NOOP_NOTIFIER } from '../shared/types';
-import { CHARACTER_DISPLAY_KEYS, CHARACTER_FILE_EXCLUDE, WRITING_RULE_TITLES, TIMELINE_TABLE_HEADER, FORESHADOW_SECTION_UNREVEALED, FORESHADOW_SECTION_REVEALED, FORESHADOW_SECTION_ABANDONED, WRITING_RULES_PATH_PROJECT, WRITING_RULES_PATH_TEMPLATE, chapterOutlineSection } from '../shared/format-constants';
-import { detectTimelineStrategy, loadFanficRules, parseCanonTimelineTable, parseFanTimelineTable, TimelineStrategy, FanficRules, TimelineRow } from '../shared/template-validator';
+import { parseFrontmatter as parseFm, parseMarkdownContent as parseMdContent } from '@/shared/frontmatter';
+import { CharacterFrontmatter, FactionFrontmatter, LocationFrontmatter, ItemFrontmatter, Notifier, NOOP_NOTIFIER } from '@/shared/types';
+import { CHARACTER_DISPLAY_KEYS, CHARACTER_FILE_EXCLUDE, WRITING_RULE_TITLES, TIMELINE_TABLE_HEADER, FORESHADOW_SECTION_UNREVEALED, FORESHADOW_SECTION_REVEALED, FORESHADOW_SECTION_ABANDONED, WRITING_RULES_PATH_PROJECT, WRITING_RULES_PATH_TEMPLATE, chapterOutlineSection } from '@/shared/format-constants';
+import { detectTimelineStrategy, loadFanficRules, parseCanonTimelineTable, parseFanTimelineTable, TimelineStrategy, FanficRules, TimelineRow } from '@/shared/template-validator';
 import { getWorldviewPath, getSettingLibPath, getWritingStylePath, getLegacyWritingStylePath, readProjectMeta,
     pjCharsDir,
     pjForeshadowDB, pjTimelineBoard, pjMemoryShardsDir,
     pjFanficFile, pjBodyFile, pjStepDir, pjStepFile, pjWritingRules, pjWritingRulesTemplate,
     pjChapterStateSnapshot,
     pjChapterStateSnapshotDir,
-    isInOutlineDir, matchProjectFromPath, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyDir } from '../shared/paths';
-import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRITICAL } from '../shared/thresholds';
+    isInOutlineDir, matchProjectFromPath, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyDir } from '@/shared/paths';
+import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRITICAL } from '@/shared/thresholds';
 import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromContent } from './character-soul';
 import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { MODE_LIBRARY_ROOT_LIST } from '../domains/kernel/project-locator';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { MODE_LIBRARY_ROOT_LIST } from '@/domains/kernel/project-locator';
 import { buildStoryLinkage, type StoryLinkage } from './story-linkage';
 import { buildForeshadowIndexBlock, buildTimelineIndexBlock, upsertLinkageBlock, LINKAGE_BEGIN, LINKAGE_END } from './story-linkage-writer';
-import { PluginCapabilities } from '../shared/plugin-capabilities';
+import { PluginCapabilities } from '@/shared/plugin-capabilities';
 import type {
     CharacterRepository,
     ChapterRepository,
@@ -88,15 +88,15 @@ import type {
     EntitySelectionReason,
 } from './context/context-types';
 import type { MultiLayerCache } from './cache';
-import type { AnyEntityDomainModel } from '../shared/entity-models';
+import type { AnyEntityDomainModel } from '@/shared/entity-models';
 import type { CharacterPairRelation } from './relationship-engine';
 import { ContextDiffDetector } from './context/context-diff-detector';
 import type { ContextChangeSet } from './context/context-diff-detector';
 import { IncrementalUpdater } from './context/incremental-updater';
-import { createLogger } from '../shared/logger';
-import { listEntityFiles, entityDir, ENTITY_KIND_LABEL, type EntityKind } from '../shared/entity-reader';
-import { activeContextQuotas } from '../shared/context-budget-policy';
-import { withWriteLock } from '../shared/write-lock';
+import { createLogger } from '@/shared/logger';
+import { listEntityFiles, entityDir, ENTITY_KIND_LABEL, type EntityKind } from '@/shared/entity-reader';
+import { activeContextQuotas } from '@/shared/context-budget-policy';
+import { withWriteLock } from '@/shared/write-lock';
 
 const log = createLogger('ContextManager');
 import type {
@@ -2213,7 +2213,7 @@ export class ContextManager {
         options: SmartEntityContextOptions,
     ): Promise<SmartEntityContextResult> {
         const { getEntityContextEngine } = await import('./entity-context-engine');
-        const { entityFromFrontmatter } = await import('../shared/entity-models');
+        const { entityFromFrontmatter } = await import('@/shared/entity-models');
         const { loadRelationshipStates } = await import('./relationship-engine');
         const engine = getEntityContextEngine();
 

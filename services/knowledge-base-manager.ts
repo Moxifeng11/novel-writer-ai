@@ -13,7 +13,7 @@
  */
 
 import { App } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import {
     kbKnowledgeBaseDir,
     kbIndexFile,
@@ -28,18 +28,18 @@ import {
     kbBookCommercialAnalysisFile,
     kbBookReadabilityAnalysisFile,
     kbVectorsDir,
-} from '../shared/paths';
-import type { BreakdownDimension } from '../shared/deconstruction-settings';
-import { SerializedWriter } from '../shared/serialized-writer';
-import { WebnovelKnowledgeBase } from '../shared/webnovel-knowledge-base';
+} from '@/shared/paths';
+import type { BreakdownDimension } from '@/shared/deconstruction-settings';
+import { SerializedWriter } from '@/shared/serialized-writer';
+import { WebnovelKnowledgeBase } from '@/shared/webnovel-knowledge-base';
 import { GenreClassifier, type GenreClassificationResult } from './genre-classifier';
 import { GenrePreferenceMemory, type GenrePreferenceData } from './genre-preference-memory';
-import type { EmbeddingProvider } from '../shared/embedding-provider';
-import { kbConfigDir } from '../shared/paths';
-import { LruCache } from '../shared/lru-cache';
-import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '../shared/write-lock';
-import type { MultiLayerCache } from '../shared/multi-layer-cache';
-import { createLogger } from '../shared/logger';
+import type { EmbeddingProvider } from '@/shared/embedding-provider';
+import { kbConfigDir } from '@/shared/paths';
+import { LruCache } from '@/shared/lru-cache';
+import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '@/shared/write-lock';
+import type { MultiLayerCache } from '@/shared/multi-layer-cache';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('KnowledgeBaseManager');

@@ -14,8 +14,8 @@ import {
     type RagSource,
     type RagUsageRecord,
     type RagUsageSummary,
-} from '../shared/rag-sources';
-import { listFolderFiles, type VaultTreePort } from '../shared/vault-tree';
+} from '@/shared/rag-sources';
+import { listFolderFiles, type VaultTreePort } from '@/shared/vault-tree';
 
 /**
  * KnowledgeUsageAppLike 类型定义。

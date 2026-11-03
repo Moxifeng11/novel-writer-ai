@@ -6,7 +6,7 @@
  */
 
 import { App } from 'obsidian';
-import { ensureTemplateScaffold } from '../shared/template-scaffold';
+import { ensureTemplateScaffold } from '@/shared/template-scaffold';
 
 /**
  * 内置示例项目名称。

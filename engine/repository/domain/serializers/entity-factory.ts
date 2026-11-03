@@ -5,7 +5,7 @@
  * 复用并封装现有 shared/entity-models.ts 的转换逻辑。
  */
 
-import { parseMarkdownContent } from '../../../../shared/frontmatter';
+import { parseMarkdownContent } from '@/shared/frontmatter';
 import {
     characterFromMarkdown,
     factionFromMarkdown,
@@ -15,15 +15,15 @@ import {
     factionToFrontmatter,
     locationToFrontmatter,
     itemToFrontmatter,
-} from '../../../../shared/entity-models';
+} from '@/shared/entity-models';
 import type {
     CharacterDomainModel,
     FactionDomainModel,
     LocationDomainModel,
     ItemDomainModel,
-} from '../../../../shared/entity-models';
+} from '@/shared/entity-models';
 
-import { Character, Faction, Location, Item, Chapter, Project } from '../aggregates';
+import { Character, Faction, Location, Item, Chapter, Project } from '@/engine/repository/domain/aggregates';
 import type {
     CharacterProps,
     FactionProps,
@@ -31,11 +31,11 @@ import type {
     ItemProps,
     ChapterProps,
     ProjectProps,
-} from '../aggregates';
+} from '@/engine/repository/domain/aggregates';
 import { FrontmatterSerializer } from './frontmatter-serializer';
-import { EntityStatus, Frontmatter, ChapterStatus, WordCount } from '../value-objects';
-import type { WritingMode } from '../../../../shared/types';
-import { parseFrontmatter } from '../../../../shared/frontmatter';
+import { EntityStatus, Frontmatter, ChapterStatus, WordCount } from '@/engine/repository/domain/value-objects';
+import type { WritingMode } from '@/shared/types';
+import { parseFrontmatter } from '@/shared/frontmatter';
 
 /**
  * 实体工厂

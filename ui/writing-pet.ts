@@ -11,8 +11,8 @@
  * - 写完一章：main 调用 notifyDelta()，宠物做一个短暂的「开心」动作
  */
 
-import type NovelWriterPlugin from '../main';
-import { formatWords, type StatsSummary } from '../shared/writing-stats';
+import type NovelWriterPlugin from '@/main';
+import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 
 /**
  * WritingPetDeps 类型定义。

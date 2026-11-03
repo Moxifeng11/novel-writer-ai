@@ -6,14 +6,14 @@
  * 与本弹窗列表都会出现该字体（附带预览文字）。
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     FONT_DIR,
     fontFileFormat,
     registerFont,
     scanFontFolder,
     unregisterFont,
-} from '../services/font-manager';
+} from '@/services/font-manager';
 
 /**
  * 字体管理器弹窗。

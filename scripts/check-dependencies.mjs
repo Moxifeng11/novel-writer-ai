@@ -155,6 +155,8 @@ function parseImports(filePath) {
 }
 
 function isExternalImport(importPath) {
+    // 统一路径别名：`@/layer/file` 是仓内引用，不是外部包
+    if (importPath.startsWith('@/')) return false;
     for (const ext of EXTERNAL_IMPORTS) {
         if (importPath === ext || importPath.startsWith(ext + '/') || importPath.startsWith('node:')) {
             return true;
@@ -171,7 +173,9 @@ function resolveImportPath(filePath, importPath) {
     const fileDir = dirname(filePath);
 
     let resolved;
-    if (importPath.startsWith('.')) {
+    if (importPath.startsWith('@/')) {
+        resolved = join(PROJECT_ROOT, importPath.slice(2));
+    } else if (importPath.startsWith('.')) {
         resolved = join(fileDir, importPath);
     } else {
         resolved = join(PROJECT_ROOT, importPath);

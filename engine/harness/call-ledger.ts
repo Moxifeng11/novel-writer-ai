@@ -5,7 +5,7 @@
  * stream; those are networkCalls. logicalCalls must stay 1 for single-call
  * features.
  */
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('CallLedger');
 

@@ -7,16 +7,16 @@
  * 依赖：宿主提供的 app/plugin/refresh/reopen（见 section-base.ts）。
  */
 import { Setting, Notice } from 'obsidian';
-import { renderAppearanceSettings } from '../appearance-settings';
-import { renderWritingStatsAndPetSettings } from '../writing-stats-settings';
-import { TemplateManager } from '../template-manager';
-import { getOllamaModelsWithFallback } from '../../engine/co-writer-engine';
-import { ProjectMigrationService } from '../../engine/project-migration-service';
-import { AntiAIDetector } from '../../engine/anti-ai-detector';
-import { PromptManagerSettings } from '../prompt-manager-settings';
-import { ENGINE_NAMES } from '../../shared/engine-names';
-import { OperationConfirmModal } from '../components/progress';
-import { setBusinessThresholdOverrides } from '../../shared/thresholds';
+import { renderAppearanceSettings } from '@/ui/appearance-settings';
+import { renderWritingStatsAndPetSettings } from '@/ui/writing-stats-settings';
+import { TemplateManager } from '@/ui/template-manager';
+import { getOllamaModelsWithFallback } from '@/engine/co-writer-engine';
+import { ProjectMigrationService } from '@/engine/project-migration-service';
+import { AntiAIDetector } from '@/engine/anti-ai-detector';
+import { PromptManagerSettings } from '@/ui/prompt-manager-settings';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { OperationConfirmModal } from '@/ui/components/progress';
+import { setBusinessThresholdOverrides } from '@/shared/thresholds';
 import { SettingsSection } from './section-base';
 
 /**
@@ -252,6 +252,18 @@ export class WritingSection extends SettingsSection {
         };
 
         group('篇幅与字数', '每章的目标字数与上下限；质量控制与字数校验都使用这三个值。');
+        let wordRangeHint: HTMLElement | null = null;
+        const validateWordRange = (): void => {
+            if (!wordRangeHint) return;
+            const min = Number(this.plugin.settings.minWordCount) || 0;
+            const def = Number(this.plugin.settings.defaultWordCount) || 0;
+            const max = Number(this.plugin.settings.maxWordCount) || 0;
+            const problems: string[] = [];
+            if (min > def) problems.push('最小字数大于默认字数');
+            if (def > max) problems.push('默认字数大于最大字数');
+            if (min > max) problems.push('最小字数大于最大字数');
+            wordRangeHint.setText(problems.length > 0 ? `⚠️ ${problems.join('；')}` : '');
+        };
         new Setting(section)
             .setName('默认字数')
             .setDesc('每章目标字数（默认 3000）。')
@@ -261,6 +273,7 @@ export class WritingSection extends SettingsSection {
                 .onChange(async (value) => {
                     this.plugin.settings.defaultWordCount = parseInt(value) || 3000;
                     await this.plugin.saveSettings();
+                    validateWordRange();
                 }));
 
         new Setting(section)
@@ -272,6 +285,7 @@ export class WritingSection extends SettingsSection {
                 .onChange(async (value) => {
                     this.plugin.settings.minWordCount = parseInt(value) || 2500;
                     await this.plugin.saveSettings();
+                    validateWordRange();
                 }));
 
         new Setting(section)
@@ -283,7 +297,11 @@ export class WritingSection extends SettingsSection {
                 .onChange(async (value) => {
                     this.plugin.settings.maxWordCount = parseInt(value) || 5000;
                     await this.plugin.saveSettings();
+                    validateWordRange();
                 }));
+
+        wordRangeHint = section.createDiv({ cls: 'nw-warning-text nw-u-fs-12px' });
+        validateWordRange();
 
         group('正文形态', '决定生成时如何断段、使用哪套正文模板，以及注入哪些人味约束。');
         new Setting(section)

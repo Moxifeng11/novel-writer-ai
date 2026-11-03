@@ -1,10 +1,10 @@
-import { registerTaskHandler, startWorkerRuntime } from '../../services/worker-runtime';
+import { registerTaskHandler, startWorkerRuntime } from '@/services/worker-runtime';
 import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality-score-engine';
-import { WritingQualityEngine } from '../writing-quality-engine';
+import { WritingQualityEngine } from '@/engine/writing-quality-engine';
 import { DeviationDetector, DeviationReport, DeviationContext } from './deviation-detector';
-import { CharacterConsistencyChecker } from '../character-consistency-checker';
-import { PlotDivergenceEngine } from '../plot-divergence-engine';
-import { createLogger } from '../../shared/logger';
+import { CharacterConsistencyChecker } from '@/engine/character-consistency-checker';
+import { PlotDivergenceEngine } from '@/engine/plot-divergence-engine';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('QualityWorker');

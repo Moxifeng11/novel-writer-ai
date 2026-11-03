@@ -11,19 +11,19 @@
  * 行为与外迁前逐行等价，不改变写作流程。
  */
 import { App, TFile } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { StepRunner, ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
-import { downstreamStepsAfterPlanningChange } from '../../engine/planning-step-advance';
-import { BODY_CHANGE_INVALIDATED_STEPS } from '../../engine/step-definitions';
-import { assessContextReadiness } from '../../engine/context-readiness';
-import { buildStoryContext, resolveStoryContextTier } from '../../engine/context/story-context-service';
-import { STORY_CONTEXT_KIND_LABELS } from '../../engine/context/story-context-graph';
-import { isTemplateSkeleton } from '../../engine/step-validator';
-import { STEP_FILE_TYPES, getChapterFileName } from '../../engine/chapter-utils';
-import { pjBodyFile } from '../../shared/paths';
-import { normalizeRagSources, summarizeRagSources, type RagSource } from '../../shared/rag-sources';
-import type { GatheredContext } from '../../engine/context-manager';
-import { ChapterStateManager } from '../states/chapter-state-manager';
+import NovelWriterPlugin from '@/main';
+import { StepRunner, ALL_FULL_STEPS, FullStep } from '@/engine/step-runner';
+import { downstreamStepsAfterPlanningChange } from '@/engine/planning-step-advance';
+import { BODY_CHANGE_INVALIDATED_STEPS } from '@/engine/step-definitions';
+import { assessContextReadiness } from '@/engine/context-readiness';
+import { buildStoryContext, resolveStoryContextTier } from '@/engine/context/story-context-service';
+import { STORY_CONTEXT_KIND_LABELS } from '@/engine/context/story-context-graph';
+import { isTemplateSkeleton } from '@/engine/step-validator';
+import { STEP_FILE_TYPES, getChapterFileName } from '@/engine/chapter-utils';
+import { pjBodyFile } from '@/shared/paths';
+import { normalizeRagSources, summarizeRagSources, type RagSource } from '@/shared/rag-sources';
+import type { GatheredContext } from '@/engine/context-manager';
+import { ChapterStateManager } from '@/ui/states/chapter-state-manager';
 import {
     getStreamlinedPhases,
     getPhaseStatusDescriptor,
@@ -31,11 +31,11 @@ import {
     mapStreamlinedPhaseToStepIndex,
     StreamlinedPhase,
 } from './streamlined-nav-presenter';
-import { showError, showSuccess, showWarning } from '../../utils/helpers';
+import { showError, showSuccess, showWarning } from '@/utils/helpers';
 import { SceneOutlineController } from './scene-outline-controller';
-import { openSceneConfirmWizard } from '../scene-confirm-modal';
-import { AnalysisReportPanel } from '../components/analysis-report-panel';
-import { createLogger } from '../../shared/logger';
+import { openSceneConfirmWizard } from '@/ui/scene-confirm-modal';
+import { AnalysisReportPanel } from '@/ui/components/analysis-report-panel';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('StepRenderController');

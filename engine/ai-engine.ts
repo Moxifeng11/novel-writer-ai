@@ -1,12 +1,12 @@
 import { App } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import type { ChapterContext, ReviewContext, OutlineSettings, WorldElements } from './ai-types';
 import { buildChapterPrompts as buildChapterPromptsFn, buildUserPrompt as buildUserPromptFn } from './ai-prompt-builder';
-import { clampBudgetToModelLimits } from '../shared/prompt-budget';
-import { DEFAULT_CONTEXT_WINDOW } from '../shared/thresholds';
+import { clampBudgetToModelLimits } from '@/shared/prompt-budget';
+import { DEFAULT_CONTEXT_WINDOW } from '@/shared/thresholds';
 import { BodyWriter } from './body-writer';
-import { RulesService } from '../services/rules-service';
-import type { BodyFormatContract } from '../shared/body-format';
+import { RulesService } from '@/services/rules-service';
+import type { BodyFormatContract } from '@/shared/body-format';
 import { AIApiClient } from './ai-api-client';
 import { ChapterHelpers } from './ai-chapter-helpers';
 import { WorldviewGenerator } from './ai-worldview-generator';
@@ -15,17 +15,17 @@ import { OutlineGenerator } from './ai-outline-generator';
 import { CharacterGenerator } from './ai-character-generator';
 import { EntityGenerator } from './ai-entity-generator';
 import { BatchEntityGenerator } from './ai-batch-entity-generator';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { WorldviewCacheService } from '../services/worldview-cache-service';
-import { createLogger } from '../shared/logger';
-import type { ThinkingMode } from '../shared/task-model';
-import type { APIResponse } from '../shared/api-types';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { WorldviewCacheService } from '@/services/worldview-cache-service';
+import { createLogger } from '@/shared/logger';
+import type { ThinkingMode } from '@/shared/task-model';
+import type { APIResponse } from '@/shared/api-types';
 
-export type { APIResponse } from '../shared/api-types';
+export type { APIResponse } from '@/shared/api-types';
 
 
 const log = createLogger('AiEngine');

@@ -5,8 +5,8 @@
  * 从 main.ts 拆分而来
  */
 
-import type { NovelWriterSettings } from '../main';
-import { derivePalette, paletteToCssVars, resolveActivePresetInput } from '../shared/theme-colors';
+import type { NovelWriterSettings } from '@/main';
+import { derivePalette, paletteToCssVars, resolveActivePresetInput } from '@/shared/theme-colors';
 
 /** ThemeManager 所需的最小设置接口 */
 export interface ThemeSettings {

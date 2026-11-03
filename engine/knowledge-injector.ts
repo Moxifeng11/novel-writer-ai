@@ -5,21 +5,21 @@ import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
 import type { StyleFingerprintLibrary, StyleFingerprint, StyleFingerprintFeatures } from './style-fingerprint-library';
 import type { ForeshadowManager, ForeshadowItem } from './foreshadow-manager';
 import type { VectorEnhancer } from './vector-enhancer';
-import type { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
+import type { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
 import type { KnowledgeVectorStore, KnowledgeSearchResult } from './knowledge-vector-store';
-import { assemblePromptWithinBudget } from '../shared/prompt-budget';
-import { recordBudgetSnapshot } from '../shared/budget-telemetry';
-import { formatKnowledgeChunkLabel, dedupeAdjacentChunks } from '../shared/knowledge-position';
+import { assemblePromptWithinBudget } from '@/shared/prompt-budget';
+import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
+import { formatKnowledgeChunkLabel, dedupeAdjacentChunks } from '@/shared/knowledge-position';
 import { StyleIntensityEngine } from './style/style-intensity-engine';
 import {
     MAX_INJECTED_STYLE_FINGERPRINTS,
     selectFingerprintsForInjection,
 } from './style/fingerprint-selection';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
-import { createLogger } from '../shared/logger';
-import type { RagSource } from '../shared/rag-sources';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import { createLogger } from '@/shared/logger';
+import type { RagSource } from '@/shared/rag-sources';
 import { retrieve, type RetrievalTelemetry } from './rag/retrieval-service';
-import { activeContextQuotas } from '../shared/context-budget-policy';
+import { activeContextQuotas } from '@/shared/context-budget-policy';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
 const intensityEngine = new StyleIntensityEngine();

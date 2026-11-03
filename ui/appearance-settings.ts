@@ -1,5 +1,5 @@
 import { Setting, Notice, Modal } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     capturePreset,
     normalizePreset,
@@ -9,7 +9,7 @@ import {
     upsertPreset,
     type AppearancePreset,
     type ThemePreset,
-} from '../shared/theme-colors';
+} from '@/shared/theme-colors';
 import {
     BUILTIN_THEMES,
     activeBuiltinTheme,
@@ -18,7 +18,7 @@ import {
     isGalleryThemeValid,
     type GalleryTheme,
     type ThemeMode,
-} from '../shared/theme-gallery';
+} from '@/shared/theme-gallery';
 
 /**
  * DEFAULT_APPEARANCE_PRESET 常量。

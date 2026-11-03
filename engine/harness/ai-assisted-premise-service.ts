@@ -7,7 +7,7 @@
  * 3) live/hot-topic research when a search provider is configured; otherwise
  *    an AI research draft explicitly marked as unverified.
  */
-import type { AIEngine } from '../ai-engine';
+import type { AIEngine } from '@/engine/ai-engine';
 import { creativeRandomizer, type RandomizedBrief } from './creative-randomizer';
 import { frameworkPromptBlock } from './creative-frameworks';
 import {
@@ -16,7 +16,7 @@ import {
     type TrendResearchConfig,
     type TrendResearchResult,
 } from './trend-research-service';
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 
 /**
  * AiPremiseInput 类型定义。

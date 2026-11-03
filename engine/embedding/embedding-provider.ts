@@ -9,4 +9,4 @@ export type {
     ProviderInfo,
     EmbeddingOptions,
     EmbeddingProvider,
-} from '../../shared/embedding-provider';
+} from '@/shared/embedding-provider';

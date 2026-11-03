@@ -6,8 +6,8 @@
  * 零副作用：不修改任何全局状态，仅操作传入的 container；不引入新依赖（复用现有 radarChart）。
  */
 
-import { AntiAIDetector } from '../../engine/anti-ai-detector';
-import { radarChart } from '../svg-charts';
+import { AntiAIDetector } from '@/engine/anti-ai-detector';
+import { radarChart } from '@/ui/svg-charts';
 
 type ScoreLevel = 'low' | 'medium' | 'high';
 

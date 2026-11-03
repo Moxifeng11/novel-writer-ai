@@ -1,10 +1,10 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine } from '../engine/ai-engine';
-import { createLogger } from '../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { createLogger } from '@/shared/logger';
 import { CreateProjectModal } from './create-project-modal';
-import { pjControlDir } from '../shared/paths';
-import { STORAGE_KEYS } from '../shared/storage-keys';
+import { pjControlDir } from '@/shared/paths';
+import { STORAGE_KEYS } from '@/shared/storage-keys';
 
 
 const log = createLogger('IdeationModal');

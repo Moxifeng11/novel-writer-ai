@@ -23,29 +23,29 @@ import { App, Modal, Notice } from 'obsidian';
 import {
     StyleFingerprintLibrary,
     StyleFingerprint,
-} from '../engine/style-fingerprint-library';
-import { migrateV1ToV2 } from '../engine/style/fingerprint-migrator';
+} from '@/engine/style-fingerprint-library';
+import { migrateV1ToV2 } from '@/engine/style/fingerprint-migrator';
 import {
     BlendSource,
     BlendOptions,
     BlendResult,
     BlendedFingerprint,
-} from '../engine/style/fingerprint-blender-v2';
+} from '@/engine/style/fingerprint-blender-v2';
 import {
     V2Fingerprint,
     StyleDimensionKeyV2,
     STYLE_DIMENSIONS_V2,
     STYLE_DIMENSION_LABELS_V2,
-} from '../engine/style/style-dimensions-v2';
+} from '@/engine/style/style-dimensions-v2';
 import {
     StyleIntensityConfig,
     INTENSITY_PRESETS,
     INTENSITY_PRESET_LABELS,
     IntensityPreset,
-} from '../engine/style/style-intensity-engine';
+} from '@/engine/style/style-intensity-engine';
 import { radarChart } from './svg-charts';
 import { getDimensionScore } from './fingerprint-utils';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('FingerprintBlendModal');

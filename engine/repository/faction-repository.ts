@@ -4,9 +4,9 @@
  * 负责势力实体的持久化和查询，继承 BaseMarkdownRepository。
  */
 
-import type { FileSystemPort } from '../../shared/file-system-port';
-import { entityDir } from '../../shared/entity-reader';
-import { pjFactionFile } from '../../shared/paths';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import { entityDir } from '@/shared/entity-reader';
+import { pjFactionFile } from '@/shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Faction } from './domain/aggregates';

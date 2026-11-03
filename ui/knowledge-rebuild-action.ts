@@ -8,7 +8,7 @@
 
 import { App, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('KnowledgeRebuildAction');

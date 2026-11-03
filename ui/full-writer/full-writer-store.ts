@@ -1,8 +1,8 @@
 import { TFile } from 'obsidian';
 import { WizardStep } from './wizard-types';
 import { createPersistentWizardResults } from './wizard-results-store';
-import { createLogger } from '../../shared/logger';
-import type { CreationMode } from '../../shared/creation-mode';
+import { createLogger } from '@/shared/logger';
+import type { CreationMode } from '@/shared/creation-mode';
 
 
 const log = createLogger('FullWriterStore');

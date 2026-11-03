@@ -18,11 +18,11 @@ import {
     kbBookStructureBreakdownFile,
     kbBookCharacterExtractionFile,
     kbBookForeshadowDBFile,
-} from '../shared/paths';
+} from '@/shared/paths';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { getSharedEmbeddingProvider } from './embedding/embedding-service';
 import { StyleVectorStore, STYLE_DIMENSIONS, STYLE_DIMENSION_LABELS } from './style-vector-store';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('KnowledgeToFingerprintConverter');

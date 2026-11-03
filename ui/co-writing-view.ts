@@ -6,21 +6,21 @@
  */
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile, Menu } from 'obsidian';
-import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
-import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '@/shared/paths';
+import { CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 
-import NovelWriterPlugin from '../main';
-import { CoWriterEngine, resolveCoWriteLocalModel } from '../engine/co-writer-engine';
-import type { ChapterBriefInput } from '../engine/chapter-brief';
+import NovelWriterPlugin from '@/main';
+import { CoWriterEngine, resolveCoWriteLocalModel } from '@/engine/co-writer-engine';
+import type { ChapterBriefInput } from '@/engine/chapter-brief';
 import { CoWriteFacade } from './services/co-write-facade';
-import type { BookBasicInfo } from '../services/knowledge-base-manager';
-import { WebnovelKnowledgeBase } from '../shared/webnovel-knowledge-base';
-import { EndingTractionEngine } from '../engine/ending-traction-engine';
+import type { BookBasicInfo } from '@/services/knowledge-base-manager';
+import { WebnovelKnowledgeBase } from '@/shared/webnovel-knowledge-base';
+import { EndingTractionEngine } from '@/engine/ending-traction-engine';
 import { EmotionCurveView } from './components/emotion-curve-view';
 import { createEmptyState } from './components/empty-state';
 import { renderAIDetectionReport } from './components/ai-detection-report';
-import { ChapterSnapshotBuilder } from '../engine/chapter-snapshot-builder';
-import { ConflictDetector } from '../engine/conflict-detector';
+import { ChapterSnapshotBuilder } from '@/engine/chapter-snapshot-builder';
+import { ConflictDetector } from '@/engine/conflict-detector';
 import { ChapterSettlementModal } from './chapter-settlement-modal';
 import { SuggestionEditModal } from './cowrite/suggestion-edit-modal';
 import { IterateInstructionModal } from './cowrite/iterate-instruction-modal';
@@ -29,21 +29,21 @@ import { MemoryManagerModal } from './cowrite/memory-manager-modal';
 import { RefillModal } from './refill-modal';
 import { OutlineExpandModal } from './outline-expand-modal';
 import { LiveAnalysisController } from './cowrite/live-analysis-controller';
-import { shouldRunPlotEval, type PlotEvalGateState } from '../shared/plot-eval-throttle';
-import { captureScrollSnapshot, resolveRestoredScrollTop } from '../shared/preview-scroll';
-import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
-import { getCustomFontFamilies, registerAllCustomFonts, SYSTEM_FONT_PRESETS } from '../services/font-manager';
+import { shouldRunPlotEval, type PlotEvalGateState } from '@/shared/plot-eval-throttle';
+import { captureScrollSnapshot, resolveRestoredScrollTop } from '@/shared/preview-scroll';
+import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
+import { getCustomFontFamilies, registerAllCustomFonts, SYSTEM_FONT_PRESETS } from '@/services/font-manager';
 import { FontManagerModal } from './font-manager-modal';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from './model-quick-switcher';
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
 import { BodySaveController } from './cowrite/body-save-controller';
 import { resolveInsertRange, type PendingRewriteRange } from './cowrite/insert-range';
-import { BodyWriter } from '../engine/body-writer';
+import { BodyWriter } from '@/engine/body-writer';
 import {
     DEFAULT_BODY_FORMAT,
     INDENT_TWO_FULL_WIDTH,
     type BodyFormatContract,
-} from '../shared/body-format';
+} from '@/shared/body-format';
 import {
     countParagraphs,
     convertToChineseQuotes,
@@ -57,8 +57,8 @@ import {
     toggleLinePrefix,
     wrapSelection,
     type TextEdit,
-} from '../shared/novel-format';
-import { applyNwScope } from '../utils/helpers';
+} from '@/shared/novel-format';
+import { applyNwScope } from '@/utils/helpers';
 import {
     associationTypeToDirection,
     getAssociationLabel,
@@ -77,32 +77,32 @@ import {
     EditValidation,
     PlotCompletionMetrics,
     SentenceEditRecord
-} from '../shared/types';
+} from '@/shared/types';
 import { VIEW_TYPE_MONITOR_B } from './monitor-panel-b';
-import { AssociationSuggestion } from '../shared/co-writer-types';
-import { ProgressEmitter, type ProgressState } from '../shared/progress-emitter';
+import { AssociationSuggestion } from '@/shared/co-writer-types';
+import { ProgressEmitter, type ProgressState } from '@/shared/progress-emitter';
 import { StepListComponent } from './components/progress/step-list';
-import { TimeEstimator } from '../shared/time-estimator';
-import { RealtimeMonitor } from '../engine/quality/realtime-monitor';
-import { QualityScoreEngine, type CharacterContextInfo } from '../engine/quality/quality-score-engine';
-import { toCharacterContextInfos } from '../engine/character-context';
-import { toForeshadowTrackings, applyPlannedRevealChapters } from '../engine/foreshadow-context';
-import { WritingQualityEngine } from '../engine/writing-quality-engine';
-import { PlotDivergenceEngine } from '../engine/plot-divergence-engine';
-import { CharacterConsistencyChecker } from '../engine/character-consistency-checker';
+import { TimeEstimator } from '@/shared/time-estimator';
+import { RealtimeMonitor } from '@/engine/quality/realtime-monitor';
+import { QualityScoreEngine, type CharacterContextInfo } from '@/engine/quality/quality-score-engine';
+import { toCharacterContextInfos } from '@/engine/character-context';
+import { toForeshadowTrackings, applyPlannedRevealChapters } from '@/engine/foreshadow-context';
+import { WritingQualityEngine } from '@/engine/writing-quality-engine';
+import { PlotDivergenceEngine } from '@/engine/plot-divergence-engine';
+import { CharacterConsistencyChecker } from '@/engine/character-consistency-checker';
 import {
     DeviationDetector,
     type ForeshadowTracking,
-} from '../engine/quality/deviation-detector';
-import { createLogger } from '../shared/logger';
+} from '@/engine/quality/deviation-detector';
+import { createLogger } from '@/shared/logger';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
-import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '../shared/thresholds';
-import { shouldRequestGhostAssociationByInterval } from '../shared/ghost-trigger';
-import { resolveCursorPosition } from '../shared/cursor-position';
-import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck } from '../shared/prereq-check';
-import { buildQualityChapterKey } from '../shared/quality-history';
+import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '@/shared/thresholds';
+import { shouldRequestGhostAssociationByInterval } from '@/shared/ghost-trigger';
+import { resolveCursorPosition } from '@/shared/cursor-position';
+import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck } from '@/shared/prereq-check';
+import { buildQualityChapterKey } from '@/shared/quality-history';
 import { RealtimeQualityController } from './cowrite/realtime-quality-controller';
-import { isImeComposing } from '../shared/keyboard';
+import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('CoWritingView');

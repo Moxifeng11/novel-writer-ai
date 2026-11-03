@@ -9,8 +9,8 @@
 
 import { App } from 'obsidian';
 import type { AIEngine } from './ai-engine';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
 
 /** 情绪等级 0-10 */
 export type EmotionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;

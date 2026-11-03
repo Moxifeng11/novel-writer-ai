@@ -14,7 +14,7 @@
  *     需要新鲜数据请点分区内的刷新按钮或重开设置页。
  */
 import { App, Notice, PluginSettingTab } from 'obsidian';
-import NovelWriterPlugin, { DEFAULT_SETTINGS } from '../main';
+import NovelWriterPlugin, { DEFAULT_SETTINGS } from '@/main';
 import type { SettingsSectionHost } from './settings/section-base';
 import { ApiSection } from './settings/api-section';
 import { KnowledgeSection } from './settings/knowledge-section';
@@ -38,11 +38,13 @@ import {
     SuggestionsSection,
 } from './settings/general-sections';
 import { AgentBackendSection } from './settings/agent-section';
+import { ModeSection } from './settings/mode-section';
 
 const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = [
     { id: 'api', label: '🔌 API 配置' },
     { id: 'cowrite', label: '🖥 协同写作' },
     { id: 'writing', label: '✍️ 写作配置' },
+    { id: 'modes', label: '📚 创作模式' },
     { id: 'recognition', label: '🎭 角色识别' },
     { id: 'suggestions', label: '💡 建议设置' },
     { id: 'template', label: '📋 模板管理' },
@@ -77,6 +79,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     private foreshadow: ForeshadowSection;
     private coWrite: CoWriteSection;
     private writing: WritingSection;
+    private modes: ModeSection;
     private template: TemplateSection;
     private appearance: AppearanceSection;
     private projectLibrary: ProjectLibrarySection;
@@ -106,6 +109,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         this.foreshadow = new ForeshadowSection(host);
         this.coWrite = new CoWriteSection(host);
         this.writing = new WritingSection(host);
+        this.modes = new ModeSection(host);
         this.template = new TemplateSection(host);
         this.appearance = new AppearanceSection(host);
         this.projectLibrary = new ProjectLibrarySection(host);
@@ -212,6 +216,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'api': this.api.render(container); break;
             case 'cowrite': this.coWrite.render(container); break;
             case 'writing': this.writing.render(container); break;
+            case 'modes': this.modes.render(container); break;
             case 'recognition': this.recognition.render(container); break;
             case 'suggestions': this.suggestions.render(container); break;
             case 'fingerprint': void this.fingerprint.render(container); break;

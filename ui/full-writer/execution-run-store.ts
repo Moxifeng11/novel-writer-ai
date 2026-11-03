@@ -9,7 +9,7 @@ import type {
     ExecutionEventInput,
     ExecutionLevel,
     StepFailure,
-} from '../../shared/execution-events';
+} from '@/shared/execution-events';
 
 /**
  * ExecutionEvent 类型定义。

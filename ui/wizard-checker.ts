@@ -16,22 +16,22 @@
  */
 
 import { App, TFile, Notice } from 'obsidian';
-import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { extractWorldviewMeta } from './utils/worldview-utils';
 import { findWritingStyleFile } from './writing-style-paths';
 import {
     pjWorldview, pjSettingLib, pjOutlineDir,
     pjVolumeOutlineFile, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir,
-} from '../shared/paths';
+} from '@/shared/paths';
 import {
     NOTICE_INFO, NOTICE_ERROR, CHAPTER_SPOT_CHECK_MAX,
-} from '../shared/thresholds';
-import { WV_SECTIONS } from '../shared/format-constants';
-import { entityDir } from '../shared/entity-reader';
+} from '@/shared/thresholds';
+import { WV_SECTIONS } from '@/shared/format-constants';
+import { entityDir } from '@/shared/entity-reader';
 
 // WizardTab/WizardStep 接口由 full-writer/wizard-types 统一定义，避免重复（v6.0 去重）
 import { WizardTab, WizardStep } from './full-writer/wizard-types';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('WizardChecker');
 export type { WizardTab, WizardStep };

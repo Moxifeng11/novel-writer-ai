@@ -7,11 +7,11 @@
  */
 
 import { App, Notice } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { AIEngine } from '../../engine/ai-engine';
-import { StepRunner, ALL_FULL_STEPS } from '../../engine/step-runner';
-import { showProgress, hideProgress, showError } from '../../utils/helpers';
-import { createLogger } from '../../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { StepRunner, ALL_FULL_STEPS } from '@/engine/step-runner';
+import { showProgress, hideProgress, showError } from '@/utils/helpers';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('InterventionController');

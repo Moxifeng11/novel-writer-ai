@@ -1,9 +1,9 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine } from '../engine/ai-engine';
-import { mkdirp } from '../utils/helpers';
-import { pjFanficDir, pjFanficPendingDir } from '../shared/paths';
-import { listFanficSettingCandidates } from '../shared/fanfic-binding';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { mkdirp } from '@/utils/helpers';
+import { pjFanficDir, pjFanficPendingDir } from '@/shared/paths';
+import { listFanficSettingCandidates } from '@/shared/fanfic-binding';
 import {
     attachFanficPathToProject,
     buildFanficSettingsContent,
@@ -13,7 +13,7 @@ import {
     isFanficSettingsContentValidEnough,
     saveFanficSettingFile,
 } from './full-writer/fanfic-settings-utils';
-import { CanonResearchService } from '../services/canon-research-service';
+import { CanonResearchService } from '@/services/canon-research-service';
 import {
     CanonSource,
     CanonSourceTier,
@@ -22,8 +22,8 @@ import {
     formatCanonSourcesForPrompt,
     selectAuthoritativeSources,
     validateCanonSources,
-} from '../shared/canon-source';
-import { applyFanficReviewMeta, auditFanficSettings } from '../shared/fanfic-audit';
+} from '@/shared/canon-source';
+import { applyFanficReviewMeta, auditFanficSettings } from '@/shared/fanfic-audit';
 import { FanficReviewModal } from './fanfic-review-modal';
 
 /**

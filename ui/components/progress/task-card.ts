@@ -1,6 +1,6 @@
-import { ProgressEmitter, type ProgressState } from '../../../shared/progress-emitter';
+import { ProgressEmitter, type ProgressState } from '@/shared/progress-emitter';
 import { ProgressBarComponent } from './progress-bar';
-import { createLogger } from '../../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('TaskCard');

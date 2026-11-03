@@ -1,7 +1,7 @@
-import { ProgressEmitter, type ProgressState, type ProgressStep } from '../../../shared/progress-emitter';
+import { ProgressEmitter, type ProgressState, type ProgressStep } from '@/shared/progress-emitter';
 import { ProgressBarComponent } from './progress-bar';
 import { StepListComponent } from './step-list';
-import { createLogger } from '../../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('LoadingOverlay');

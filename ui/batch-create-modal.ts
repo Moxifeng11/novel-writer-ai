@@ -1,24 +1,24 @@
 import { App, Modal, Notice, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { getChapterFileName, findChapterFile, normalizeChapterFiles, CHAPTER_FILE_TYPES, findBodyFileV4 } from '../engine/chapter-utils';
-import { readMergedVolumeOutline } from '../utils/helpers';
-import { pjBodyDir, pjBodyFile, pjStepDir } from '../shared/paths';
-import { mkdirp } from '../utils/helpers';
-import { TemplateService } from '../engine/template-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { countPlannedChapters, hasBlockingIssues, parseVolumePlan, VolumePlan, VolumePlanParseResult } from '../shared/volume-plan';
-import { createLogger } from '../shared/logger';
-import { writeVaultText } from '../shared/file-system-port';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { getChapterFileName, findChapterFile, normalizeChapterFiles, CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
+import { readMergedVolumeOutline } from '@/utils/helpers';
+import { pjBodyDir, pjBodyFile, pjStepDir } from '@/shared/paths';
+import { mkdirp } from '@/utils/helpers';
+import { TemplateService } from '@/engine/template-service';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { countPlannedChapters, hasBlockingIssues, parseVolumePlan, VolumePlan, VolumePlanParseResult } from '@/shared/volume-plan';
+import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 import { getProjectMeta } from './project-utils';
-import { getCreationModeLabel, type CreationMode } from '../shared/creation-mode';
+import { getCreationModeLabel, type CreationMode } from '@/shared/creation-mode';
 import {
     buildScriptUnitSkeleton,
     buildShortUnitSkeleton,
     ensureModeContentStructure,
     modeBodyDir,
     modeUnitFileName,
-} from '../shared/mode-content';
+} from '@/shared/mode-content';
 
 
 const log = createLogger('BatchCreateModal');

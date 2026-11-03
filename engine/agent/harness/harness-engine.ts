@@ -16,7 +16,7 @@ import type {
     HarnessMemoryState,
     HarnessTurnOutcome,
 } from './harness-types';
-import type { AgentContext, AgentIntent } from '../agent-types';
+import type { AgentContext, AgentIntent } from '@/engine/agent/agent-types';
 import { formatPlanForPrompt, type PlanStep } from './creation-plan';
 import type { SpillPolicy, SpillSink } from './spill-store';
 import {
@@ -25,7 +25,7 @@ import {
     sessionTitleOf,
     type HarnessSessionSnapshot,
 } from './session-snapshot';
-import { buildTimeContextMessage, timeContextKey } from '../../../shared/time-context';
+import { buildTimeContextMessage, timeContextKey } from '@/shared/time-context';
 import { resolveCompactionCharThreshold } from './context-fit';
 import type { DerivedTurn } from './harness-types';
 

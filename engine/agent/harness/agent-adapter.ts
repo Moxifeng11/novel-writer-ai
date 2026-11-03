@@ -12,7 +12,7 @@ import type {
     HarnessAssistantTurn,
 } from './harness-types';
 import { parseAssistantTurn } from './agent-loop';
-import { extractResponseText } from '../../../shared/api-response-utils';
+import { extractResponseText } from '@/shared/api-response-utils';
 
 /** 引擎层不依赖插件类型：注入最小调用面 */
 export type CallAIFn = (

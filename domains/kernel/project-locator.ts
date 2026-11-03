@@ -7,21 +7,24 @@
  *
  * 所有路径仍可直接 `${projectId}/...` 拼接；display 名称取最后一段。
  */
-import type { CreationMode } from '../../shared/creation-mode';
+import {
+    MODE_LIBRARY_ROOTS as CREATION_MODE_LIBRARY_ROOTS,
+    MODE_LIBRARY_ROOT_LIST as CREATION_MODE_LIBRARY_ROOT_LIST,
+    type CreationMode,
+} from '@/shared/creation-mode';
 
 /**
- * 各创作模式的项目库根路径。
+ * 各创作模式的项目库根路径（唯一来源：shared/creation-mode）。
  */
-export const MODE_LIBRARY_ROOTS: Record<Exclude<CreationMode, never>, string> = {
-    long: '长篇小说',
-    short: '短篇小说',
-    script: '剧本',
-};
+export const MODE_LIBRARY_ROOTS = CREATION_MODE_LIBRARY_ROOTS;
 
 /**
  * 项目库根路径列表（用于遍历）。
  */
-export const MODE_LIBRARY_ROOT_LIST = Object.values(MODE_LIBRARY_ROOTS);
+/**
+ * 项目库根路径列表（遍历用）。
+ */
+export const MODE_LIBRARY_ROOT_LIST = CREATION_MODE_LIBRARY_ROOT_LIST;
 
 /**
  * 模式对应的模式库根目录名。

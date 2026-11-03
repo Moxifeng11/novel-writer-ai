@@ -7,28 +7,28 @@
  * summarizeChapterProgress / readPreResearchData），不另建一套进度口径。
  */
 import type { App } from 'obsidian';
-import type { CreationMode } from '../../shared/creation-mode';
-import { CREATION_MODE_SPECS, parseCreationModeMeta } from '../../shared/creation-mode';
-import { readProjectMeta } from '../../shared/paths';
+import type { CreationMode } from '@/shared/creation-mode';
+import { CREATION_MODE_SPECS, parseCreationModeMeta } from '@/shared/creation-mode';
+import { readProjectMeta } from '@/shared/paths';
 import {
     listModeUnits,
     modeDocPath,
     modeDocStarter,
     type ModeUnitInfo,
-} from '../../shared/mode-content';
-import { isPreResearchComplete, readPreResearchData } from '../../shared/pre-research';
+} from '@/shared/mode-content';
+import { isPreResearchComplete, readPreResearchData } from '@/shared/pre-research';
 import {
     resolveCreationFlow,
     hasMeaningfulDocContent,
     type CreationFlowDocFacts,
     type CreationFlowFacts,
     type CreationFlowSnapshot,
-} from '../../shared/creation-flow';
-import { isChapterWritten } from '../../shared/chapter-progress';
-import { EXPORT_FALLBACK_DIR } from '../../shared/export-file';
-import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '../project-utils';
-import { rememberProjectMode, resolveProjectMode } from '../../shared/project-mode';
-import { STORAGE_KEY_PREFIXES, projectScopedKey } from '../../shared/storage-keys';
+} from '@/shared/creation-flow';
+import { isChapterWritten } from '@/shared/chapter-progress';
+import { EXPORT_FALLBACK_DIR } from '@/shared/export-file';
+import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '@/ui/project-utils';
+import { rememberProjectMode, resolveProjectMode } from '@/shared/project-mode';
+import { STORAGE_KEY_PREFIXES, projectScopedKey } from '@/shared/storage-keys';
 
 /**
  * CreationFlowStateOptions 类型定义。

@@ -13,9 +13,9 @@
  * - 外科手术式：不修改现有代码，通过新增方式集成
  */
 
-import type { CharacterDomainModel, FactionDomainModel, LocationDomainModel, ItemDomainModel, AnyEntityDomainModel } from '../shared/entity-models';
+import type { CharacterDomainModel, FactionDomainModel, LocationDomainModel, ItemDomainModel, AnyEntityDomainModel } from '@/shared/entity-models';
 import type { CharacterPairRelation } from './relationship-engine';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('EntityContextEngine');

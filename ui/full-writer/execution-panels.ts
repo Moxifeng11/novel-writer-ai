@@ -3,7 +3,7 @@
  *
  * 三块 UI 共用 ExecutionRunStore，不读写执行逻辑，也不影响步骤完成判定。
  */
-import type { StepFailure } from '../../shared/execution-events';
+import type { StepFailure } from '@/shared/execution-events';
 import type { ExecutionEvent, ExecutionLogEntry, ExecutionRunStore } from './execution-run-store';
 import { formatTime } from './execution-run-store';
 

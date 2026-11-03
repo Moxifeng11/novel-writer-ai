@@ -6,8 +6,8 @@
  * 因此模型可以按定位符取回原文；超过保留期的存档在会话启动时清理。
  */
 import type { App } from 'obsidian';
-import type { SpillSink } from '../../engine/agent/harness/spill-store';
-import { createLogger } from '../../shared/logger';
+import type { SpillSink } from '@/engine/agent/harness/spill-store';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('AgentSpill');
 

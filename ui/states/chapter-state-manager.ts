@@ -1,8 +1,8 @@
 import { App, Notice, TFolder, TFile } from 'obsidian';
-import { getChapterFile, CHAPTER_FILE_TYPES, normalizeChapterFiles, findBodyFileV4 } from '../../engine/chapter-utils';
-import { ALL_FULL_STEPS, migrateStepIndex } from '../../engine/step-definitions';
-import { validateStepResult, isTemplateSkeleton, StepLevel } from '../../engine/step-validator';
-import { createLogger } from '../../shared/logger';
+import { getChapterFile, CHAPTER_FILE_TYPES, normalizeChapterFiles, findBodyFileV4 } from '@/engine/chapter-utils';
+import { ALL_FULL_STEPS, migrateStepIndex } from '@/engine/step-definitions';
+import { validateStepResult, isTemplateSkeleton, StepLevel } from '@/engine/step-validator';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ChapterStateManager');

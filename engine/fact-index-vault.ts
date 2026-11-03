@@ -6,13 +6,13 @@
  * 通过注入 FileSystemPort 保持平台无关可测。
  */
 
-import type { FileSystemPort } from '../shared/file-system-port';
+import type { FileSystemPort } from '@/shared/file-system-port';
 import {
     pjFactIndexFile,
     pjCharFile,
     pjWorldview,
     pjNarrativeOverview,
-} from '../shared/paths';
+} from '@/shared/paths';
 import type {
     PersistedFactIndex,
     FactStoragePort,

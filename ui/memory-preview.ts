@@ -9,7 +9,7 @@
  */
 
 import type { App } from 'obsidian';
-import { TriggeredMemory, MemoryShard, getCharacterMemoryPath, loadCharacterMemories, markMemoryRevealed } from '../engine/memory-trigger';
+import { TriggeredMemory, MemoryShard, getCharacterMemoryPath, loadCharacterMemories, markMemoryRevealed } from '@/engine/memory-trigger';
 
 /** 记忆预览宿主：仅需 app 即可标记已揭示 */
 export interface MemoryPreviewHost {

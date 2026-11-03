@@ -18,16 +18,16 @@
  *   - 评估结果缓存（复用 LruCache）
  */
 
-import { LruCache } from '../../shared/lru-cache';
-import { WritingQualityEngine, type WritingQualityResult } from '../writing-quality-engine';
-import { analyzeCoherence, CoherenceReport } from '../coherence-checker';
+import { LruCache } from '@/shared/lru-cache';
+import { WritingQualityEngine, type WritingQualityResult } from '@/engine/writing-quality-engine';
+import { analyzeCoherence, CoherenceReport } from '@/engine/coherence-checker';
 import {
   QUALITY_MIN_EVALUABLE_CHARS,
   QSE_CALIBRATION,
   QSE_DIMENSION_WEIGHTS,
   QSE_SUB_WEIGHTS,
-} from '../../shared/thresholds';
-import { createLogger } from '../../shared/logger';
+} from '@/shared/thresholds';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('QualityScoreEngine');
 

@@ -5,7 +5,7 @@
  * / Planner（guide-flow 阶段定义）/ Runner（ConversationEngine）。
  * 引擎层不依赖 Obsidian 与 UI：宿主能力通过 GuideAgentPort 注入。
  */
-import type { LongStorySettings, StoryStructureId } from '../../shared/story-structure';
+import type { LongStorySettings, StoryStructureId } from '@/shared/story-structure';
 
 /**
  * Agent 引导流程 id。

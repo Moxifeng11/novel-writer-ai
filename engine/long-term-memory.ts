@@ -8,13 +8,13 @@
  */
 
 import type { TFile } from 'obsidian';
-import type { FileSystemPort } from '../shared/file-system-port';
-import { pjVolumeOutlineDir } from '../shared/paths';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import { pjVolumeOutlineDir } from '@/shared/paths';
 import { projectFactIndexPath, VaultFactStorage } from './fact-index-vault';
 import type { ConfirmedFact, FactCategory } from './fact-index-manager';
 import { VolumeOutlineSummarizer, type VolumeSummary } from './volume-outline-summarizer';
-import { dedupeFacts, rankFacts } from '../shared/memory-rank';
-import { activeContextQuotas } from '../shared/context-budget-policy';
+import { dedupeFacts, rankFacts } from '@/shared/memory-rank';
+import { activeContextQuotas } from '@/shared/context-budget-policy';
 
 /** 每个类别默认最多注入的事实条数（控制本地小窗口预算） */
 export const LONG_TERM_MEMORY_MAX_PER_CATEGORY = 12;

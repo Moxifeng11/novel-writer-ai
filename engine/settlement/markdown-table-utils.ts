@@ -1,4 +1,4 @@
-import { splitTableCells } from '../../shared/chapter-table';
+import { splitTableCells } from '@/shared/chapter-table';
 /**
  * engine/settlement/markdown-table-utils.ts
  * Markdown 表格通用工具 — 纯函数，无副作用，可单测。

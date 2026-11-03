@@ -11,7 +11,7 @@
  * - 加载时读取索引，按需加载具体会话
  */
 
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 import type {
     AnalysisSession,
     SessionAction,

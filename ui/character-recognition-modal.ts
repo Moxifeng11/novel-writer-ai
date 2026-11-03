@@ -9,17 +9,17 @@
  */
 
 import { App, Modal, Notice, TFile } from 'obsidian';
-import type NovelWriterPlugin from '../main';
-import { CharacterDeconstructor } from '../engine/deconstructors/character-deconstructor';
-import { CharacterRecognitionPipeline } from '../engine/character-recognition-pipeline';
-import { SuggestionManager } from '../engine/suggestion-manager';
-import { VectorEnhancer } from '../engine/vector-enhancer';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import type { AnalysisSuggestion } from '../engine/types/analysis-suggestion';
+import type NovelWriterPlugin from '@/main';
+import { CharacterDeconstructor } from '@/engine/deconstructors/character-deconstructor';
+import { CharacterRecognitionPipeline } from '@/engine/character-recognition-pipeline';
+import { SuggestionManager } from '@/engine/suggestion-manager';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import type { AnalysisSuggestion } from '@/engine/types/analysis-suggestion';
 import { CharacterReviewPanel } from './components/character-review-panel';
 import { CategorizationReviewPanel } from './components/categorization-review-panel';
 import { createEmptyState } from './components/empty-state';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('CharacterRecognitionModal');
 

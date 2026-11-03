@@ -12,7 +12,7 @@
  *   发降级事件（协同选 'all' 保住风格约束，11 步选 'firstN' 保住预算上限）。
  */
 
-import { RETRIEVAL_ABSOLUTE_MIN_SCORE } from '../../shared/thresholds';
+import { RETRIEVAL_ABSOLUTE_MIN_SCORE } from '@/shared/thresholds';
 
 /**
  * MAX_INJECTED_STYLE_FINGERPRINTS 常量。

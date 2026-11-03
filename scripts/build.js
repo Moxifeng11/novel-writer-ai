@@ -37,6 +37,8 @@ const buildOptions = {
     },
     bundle: true,
     external: ['obsidian'],
+    // 统一路径别名：跨目录引用一律 `@/layer/file`，不再出现 ../../.. 的深嵌套
+    alias: { '@': rootDir },
     format: 'cjs',
     platform: 'node',
     outdir: rootDir,

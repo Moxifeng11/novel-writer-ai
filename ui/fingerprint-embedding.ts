@@ -1,9 +1,9 @@
 import { App } from 'obsidian';
-import { LocalVectorStore } from '../engine/local-vector-store';
-import { EmbeddingProviderFactory } from '../engine/embedding/provider-factory';
-import { getSharedEmbeddingProvider } from '../engine/embedding/embedding-service';
-import type { ProviderFactoryConfig } from '../engine/embedding/provider-factory';
-import type { EmbeddingProvider } from '../engine/embedding/embedding-provider';
+import { LocalVectorStore } from '@/engine/local-vector-store';
+import { EmbeddingProviderFactory } from '@/engine/embedding/provider-factory';
+import { getSharedEmbeddingProvider } from '@/engine/embedding/embedding-service';
+import type { ProviderFactoryConfig } from '@/engine/embedding/provider-factory';
+import type { EmbeddingProvider } from '@/engine/embedding/embedding-provider';
 
 /**
  * 指纹提取/重提的 embedding 与向量存储必须成对构造，且统一跟随「向量提供商」设置。

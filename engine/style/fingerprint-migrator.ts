@@ -19,7 +19,7 @@
  * 性能：单次迁移 < 5ms（纯内存操作，无 IO）
  */
 
-import type { FileSystemPort } from '../../shared/file-system-port';
+import type { FileSystemPort } from '@/shared/file-system-port';
 import type {
     V2Fingerprint,
     V1FingerprintBackup,

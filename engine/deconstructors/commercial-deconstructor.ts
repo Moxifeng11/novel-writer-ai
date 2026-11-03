@@ -1,12 +1,12 @@
-import { kbBookCommercialAnalysisFile } from '../../shared/paths';
-import { isChineseChar } from '../../shared/text-utils';
-import { countCjkWordsAndNumbers } from '../../shared/word-count';
-import { yieldToUI } from '../../shared/yield';
-import { HOOK_WORDS, GOLDEN_FINGER_WORDS, WORLDVIEW_WORDS } from '../dimension-keywords';
-import { GenreDetector, GenreConfigRegistry } from '../genre';
-import type { GenreConfig, WaveRhythmKeywords } from '../genre';
-import { createLogger } from '../../shared/logger';
-import { countTotalChars, countWords } from '../text-segmenter';
+import { kbBookCommercialAnalysisFile } from '@/shared/paths';
+import { isChineseChar } from '@/shared/text-utils';
+import { countCjkWordsAndNumbers } from '@/shared/word-count';
+import { yieldToUI } from '@/shared/yield';
+import { HOOK_WORDS, GOLDEN_FINGER_WORDS, WORLDVIEW_WORDS } from '@/engine/dimension-keywords';
+import { GenreDetector, GenreConfigRegistry } from '@/engine/genre';
+import type { GenreConfig, WaveRhythmKeywords } from '@/engine/genre';
+import { createLogger } from '@/shared/logger';
+import { countTotalChars, countWords } from '@/engine/text-segmenter';
 
 
 const log = createLogger('CommercialDeconstructor');

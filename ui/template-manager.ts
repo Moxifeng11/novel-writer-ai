@@ -7,10 +7,10 @@
  */
 
 import { App, Modal, Notice, TFile, Menu } from 'obsidian';
-import { PJ_PROMPT_TEMPLATE_DIR } from '../shared/paths';
-import { getStepTemplate } from '../engine/prompt-templates';
-import { createLogger } from '../shared/logger';
-import { exportTextFile } from '../shared/export-file';
+import { PJ_PROMPT_TEMPLATE_DIR } from '@/shared/paths';
+import { getStepTemplate } from '@/engine/prompt-templates';
+import { createLogger } from '@/shared/logger';
+import { exportTextFile } from '@/shared/export-file';
 import { OperationConfirmModal } from './components/progress';
 
 

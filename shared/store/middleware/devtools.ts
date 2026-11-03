@@ -4,8 +4,8 @@
  * 支持 Redux DevTools Extension，有就支持，没有就跳过。
  */
 
-import type { State, StoreApi, DevtoolsOptions } from '../types';
-import { createLogger } from '../../logger';
+import type { State, StoreApi, DevtoolsOptions } from '@/shared/store/types';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('Devtools');

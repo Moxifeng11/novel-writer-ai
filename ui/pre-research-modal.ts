@@ -6,13 +6,13 @@
  * 调研结果写入项目内独立的 `00-前期调研/`，与长篇 11 步完全分离。
  */
 import { App, Modal, Notice } from 'obsidian';
-import type NovelWriterPlugin from '../main';
+import type NovelWriterPlugin from '@/main';
 import {
     CREATION_MODE_SPECS,
     SCRIPT_GENRES,
     SHORT_STORY_CATEGORIES,
     type CreationMode,
-} from '../shared/creation-mode';
+} from '@/shared/creation-mode';
 import {
     createDefaultPreResearch,
     readPreResearchData,
@@ -20,11 +20,11 @@ import {
     type PreResearchData,
     type ScriptPreResearch,
     type ShortPreResearch,
-} from '../shared/pre-research';
-import { DomainProjectFactory } from '../domains/kernel/domain-project-factory';
+} from '@/shared/pre-research';
+import { DomainProjectFactory } from '@/domains/kernel/domain-project-factory';
 import { getProjectMeta } from './project-utils';
-import { AiAssistedPremiseService, type AiPremiseResult } from '../engine/harness/ai-assisted-premise-service';
-import { creativeRandomizer } from '../engine/harness/creative-randomizer';
+import { AiAssistedPremiseService, type AiPremiseResult } from '@/engine/harness/ai-assisted-premise-service';
+import { creativeRandomizer } from '@/engine/harness/creative-randomizer';
 
 type ResearchMode = Extract<CreationMode, 'short' | 'script'>;
 type FieldElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;

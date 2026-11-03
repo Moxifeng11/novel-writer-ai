@@ -16,11 +16,11 @@
  */
 
 import { App, TFile } from 'obsidian';
-import { pjMemoryShardsDir } from '../shared/paths';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { createLogger } from '../shared/logger';
+import { pjMemoryShardsDir } from '@/shared/paths';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('MemoryTrigger');

@@ -5,9 +5,9 @@
  * 从 co-writer-engine.ts 文件头迁移而来。
  * 原 co-writer-engine.ts 通过 `export type` 重新导出，外部 3 个 import 路径不变。
  */
-import type { CharacterPairRelation } from '../relationship-engine';
-import type { OOCCheckResult } from '../../shared/co-writer-types';
-import type { EntityStateChange } from '../entity-state-manager';
+import type { CharacterPairRelation } from '@/engine/relationship-engine';
+import type { OOCCheckResult } from '@/shared/co-writer-types';
+import type { EntityStateChange } from '@/engine/entity-state-manager';
 
 /**
  * WritingMode 类型定义。

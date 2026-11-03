@@ -1,5 +1,5 @@
-import type { ChartType, ChartDensity } from '../../engine/types/chart-config';
-import { CHART_TYPE_LABELS } from '../../engine/types/chart-config';
+import type { ChartType, ChartDensity } from '@/engine/types/chart-config';
+import { CHART_TYPE_LABELS } from '@/engine/types/chart-config';
 
 /**
  * ChartToolbarOptions 类型定义。

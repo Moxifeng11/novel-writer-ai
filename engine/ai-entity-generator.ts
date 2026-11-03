@@ -6,21 +6,21 @@
  * 保留原签名，prompt 文本按字符级保持原样（行为零变化，由
  * `tests/unit/engine/entity-generator-prompt-parity.test.ts` 钉住）。
  */
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     FACTION_FRONTMATTER_KEYS,
     LOCATION_FRONTMATTER_KEYS,
     ITEM_FRONTMATTER_KEYS,
     ENTITY_BODY_SECTIONS,
-} from '../shared/format-constants';
+} from '@/shared/format-constants';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import { TemplateService } from './template-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { buildEntityTemplateBlock } from '../shared/entity-templates';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { buildEntityTemplateBlock } from '@/shared/entity-templates';
 
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
 
 type EntityKind = 'faction' | 'location' | 'item';
 

@@ -7,7 +7,7 @@
  * 注意：由于 esbuild 单文件打包，此文件通过内联方式加载到 Worker 中
  */
 
-import { registerTaskHandler, startWorkerRuntime } from '../../services/worker-runtime';
+import { registerTaskHandler, startWorkerRuntime } from '@/services/worker-runtime';
 import { StyleDeconstructor, StyleAnalysisResult } from './style-deconstructor';
 import { RhythmDeconstructor, RhythmAnalysisResult } from './rhythm-deconstructor';
 import { TechniqueDeconstructor, TechniqueAnalysisResult } from './technique-deconstructor';
@@ -16,8 +16,8 @@ import { CharacterDeconstructor, CharacterAnalysisResult } from './character-dec
 import { ForeshadowDeconstructor, ForeshadowAnalysisResult } from './foreshadow-deconstructor';
 import { CommercialDeconstructor, CommercialAnalysisResult } from './commercial-deconstructor';
 import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from './readability-deconstructor';
-import { VectorEnhancer } from '../vector-enhancer';
-import { AntiAIDetector } from '../anti-ai-detector';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { AntiAIDetector } from '@/engine/anti-ai-detector';
 
 let styleDeconstructor: StyleDeconstructor | null = null;
 let rhythmDeconstructor: RhythmDeconstructor | null = null;

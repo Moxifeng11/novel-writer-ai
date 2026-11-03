@@ -1,23 +1,23 @@
 import { App, Modal, Notice, DataAdapter, TFile } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { WritingProfileManager } from '../engine/writing-profile';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE, SUBDIR_WORLD_ARCH, PJ_FANFIC_DIR, PJ_WORLD_ARCH_DIR, PJ_TEMPLATE_DIR, PJ_OUTLINE_DIR, pjFanficDir, pjProjectMeta, templateFingerprintsFile, projectFingerprintsFile, projectFingerprintLibraryDir } from '../shared/paths';
-import { createLogger } from '../shared/logger';
-import { ensureTemplateScaffold } from '../shared/template-scaffold';
-import { newProjectPath } from '../domains/kernel/project-locator';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { WritingProfileManager } from '@/engine/writing-profile';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE, SUBDIR_WORLD_ARCH, PJ_FANFIC_DIR, PJ_WORLD_ARCH_DIR, PJ_TEMPLATE_DIR, PJ_OUTLINE_DIR, pjFanficDir, pjProjectMeta, templateFingerprintsFile, projectFingerprintsFile, projectFingerprintLibraryDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { ensureTemplateScaffold } from '@/shared/template-scaffold';
+import { newProjectPath } from '@/domains/kernel/project-locator';
 import { fanficSettingsFileName, isFanficApproved } from './full-writer/fanfic-settings-utils';
-import { suggestProjectName, validateProjectName } from '../shared/project-name';
+import { suggestProjectName, validateProjectName } from '@/shared/project-name';
 import {
     CREATION_MODE_SPECS,
     buildCreationModeGuide,
     buildCreationModeMetaSection,
     type CreationMode,
     type CreationModeMeta,
-} from '../shared/creation-mode';
-import { buildStoryStructureGuide } from '../shared/story-structure';
+} from '@/shared/creation-mode';
+import { buildStoryStructureGuide } from '@/shared/story-structure';
 import { StorySettingsEditor } from './story-settings-form';
 import { createLongNovelProject } from './services/project-create-service';
 

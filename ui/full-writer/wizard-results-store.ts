@@ -1,6 +1,6 @@
 import { Notice } from 'obsidian';
-import { createLogger } from '../../shared/logger';
-import { STORAGE_KEY_PREFIXES, projectScopedKey } from '../../shared/storage-keys';
+import { createLogger } from '@/shared/logger';
+import { STORAGE_KEY_PREFIXES, projectScopedKey } from '@/shared/storage-keys';
 
 
 const log = createLogger('WizardResultsStore');

@@ -18,8 +18,8 @@
 
 import type { GenreConfig, GenreDetectionResult } from './types';
 import { GenreConfigRegistry } from './genre-config-registry';
-import { LLMEnhancer, type LLMCaller } from '../llm-enhancer';
-import { createLogger } from '../../shared/logger';
+import { LLMEnhancer, type LLMCaller } from '@/engine/llm-enhancer';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('GenreDetector');

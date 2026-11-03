@@ -1,14 +1,14 @@
 import { App, Notice, Modal, Setting, TextComponent } from 'obsidian';
-import type NovelWriterPlugin from '../main';
-import { PromptManager, PROMPT_CATEGORY_LABELS } from '../services/prompt-manager';
+import type NovelWriterPlugin from '@/main';
+import { PromptManager, PROMPT_CATEGORY_LABELS } from '@/services/prompt-manager';
 import type {
     PromptTemplate,
     PromptCategory,
     ABTest,
     PromptTemplateVersion,
-} from '../shared/prompt-manager-types';
+} from '@/shared/prompt-manager-types';
 import { OperationConfirmModal } from './components/progress';
-import { exportTextFile } from '../shared/export-file';
+import { exportTextFile } from '@/shared/export-file';
 
 /**
  * 提示词管理器设置列表。

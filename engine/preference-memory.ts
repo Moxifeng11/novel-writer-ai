@@ -6,11 +6,11 @@
  */
  
  import { App } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
-import { pluginDataDir, pluginPreferenceFile } from '../shared/paths';
-import { SerializedWriter } from '../shared/serialized-writer';
-import type { NovelWriterPluginAPI } from '../plugin-api';
-import { createLogger } from '../shared/logger';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
+import { pluginDataDir, pluginPreferenceFile } from '@/shared/paths';
+import { SerializedWriter } from '@/shared/serialized-writer';
+import type { NovelWriterPluginAPI } from '@/plugin-api';
+import { createLogger } from '@/shared/logger';
  
 
 const log = createLogger('PreferenceMemory');

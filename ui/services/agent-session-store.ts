@@ -9,8 +9,8 @@ import type { App } from 'obsidian';
 import {
     parseSnapshotFromJsonl,
     type HarnessSessionSnapshot,
-} from '../../engine/agent/harness/session-snapshot';
-import { createLogger } from '../../shared/logger';
+} from '@/engine/agent/harness/session-snapshot';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('AgentSession');
 

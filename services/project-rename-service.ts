@@ -10,9 +10,9 @@ import {
     pjWorldview,
     pluginPreferenceFile,
     pluginStylePatternsFile,
-} from '../shared/paths';
-import { projectDisplayName } from '../domains/kernel/project-locator';
-import { writeVaultText } from '../shared/file-system-port';
+} from '@/shared/paths';
+import { projectDisplayName } from '@/domains/kernel/project-locator';
+import { writeVaultText } from '@/shared/file-system-port';
 
 /**
  * ProjectRenameResult 类型定义。

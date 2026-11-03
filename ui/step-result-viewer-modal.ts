@@ -1,9 +1,9 @@
 import { App, Modal, Notice, Platform, TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { parseStepFrontmatter, ParsedStepFrontmatter } from '../shared/step-frontmatter';
-import { SUBDIR_STEP_ROOT } from '../shared/paths';
-import { detectProjects } from '../engine/context-manager';
-import type { StepStatus } from '../shared/types';
+import NovelWriterPlugin from '@/main';
+import { parseStepFrontmatter, ParsedStepFrontmatter } from '@/shared/step-frontmatter';
+import { SUBDIR_STEP_ROOT } from '@/shared/paths';
+import { detectProjects } from '@/engine/context-manager';
+import type { StepStatus } from '@/shared/types';
 
 interface StepFileInfo {
     file: TFile;

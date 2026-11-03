@@ -10,8 +10,8 @@
  * 同时沿用 Obsidian 原生属性与标签面板（双标签 + Bases 看板）。
  */
 import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
-import type NovelWriterPlugin from '../main';
-import { STORAGE_KEYS } from '../shared/storage-keys';
+import type NovelWriterPlugin from '@/main';
+import { STORAGE_KEYS } from '@/shared/storage-keys';
 import {
     FILE_KIND_LABELS,
     FRONTMATTER_SCHEMAS,
@@ -20,15 +20,15 @@ import {
     resolveFileKind,
     type NotebookFileKind,
     type PropertySpec,
-} from '../shared/frontmatter-schema';
-import { isNamespaceTag } from '../shared/tag-taxonomy';
+} from '@/shared/frontmatter-schema';
+import { isNamespaceTag } from '@/shared/tag-taxonomy';
 import {
     applyPropertyCompletion,
     planPropertyCompletionForFile,
     writeProjectBases,
-} from '../engine/note-properties-service';
-import { CommandIds } from '../shared/command-ids';
-import { createLogger } from '../shared/logger';
+} from '@/engine/note-properties-service';
+import { CommandIds } from '@/shared/command-ids';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('ProjectSidePanel');
 

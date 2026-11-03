@@ -5,7 +5,7 @@
  * are layered on top by creative-randomizer.ts; frameworks never change with
  * randomness.
  */
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 
 /**
  * 框架节拍结构定义。

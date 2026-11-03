@@ -6,9 +6,9 @@
 
 import { App, TFile } from 'obsidian';
 import { findBodyFileV4 } from './chapter-utils';
-import { pjBodyFile } from '../shared/paths';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { createLogger } from '../shared/logger';
+import { pjBodyFile } from '@/shared/paths';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('PlotRedundancyChecker');

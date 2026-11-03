@@ -9,20 +9,20 @@
  */
 
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     OutlineToTextExpander,
     type ExpansionStrategy,
     type SceneOutline,
     type ParagraphOutline,
     type ExpansionResult,
-} from '../engine/outline-to-text-expander';
-import { lineDiff, countWords } from '../shared/diff-utils';
-import { createLogger } from '../shared/logger';
-import { pjStepFile } from '../shared/paths';
-import { BodyWriter } from '../engine/body-writer';
-import { DEFAULT_BODY_FORMAT, type BodyFormatContract } from '../shared/body-format';
-import { splitSceneSections } from '../engine/scene-expander';
+} from '@/engine/outline-to-text-expander';
+import { lineDiff, countWords } from '@/shared/diff-utils';
+import { createLogger } from '@/shared/logger';
+import { pjStepFile } from '@/shared/paths';
+import { BodyWriter } from '@/engine/body-writer';
+import { DEFAULT_BODY_FORMAT, type BodyFormatContract } from '@/shared/body-format';
+import { splitSceneSections } from '@/engine/scene-expander';
 
 
 const log = createLogger('OutlineExpandModal');

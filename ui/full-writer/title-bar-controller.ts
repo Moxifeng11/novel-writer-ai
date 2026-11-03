@@ -1,11 +1,11 @@
 import { App, TFile } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { ContextManager } from '../../engine/context-manager';
-import type { ChapterListEntry } from '../project-utils';
-import { MiniSettingsModal } from '../mini-settings-modal';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import type { ChapterListEntry } from '@/ui/project-utils';
+import { MiniSettingsModal } from '@/ui/mini-settings-modal';
 import { FullWriterStore } from './full-writer-store';
 import { renderQuickToolsPanel } from './quick-tools-panel';
-import type { ChapterRunMode } from '../../shared/chapter-run';
+import type { ChapterRunMode } from '@/shared/chapter-run';
 import { CHAPTER_QUICK_TOOL_IDS, findLongToolByCommandId } from './tool-catalog';
 
 /**
@@ -175,7 +175,7 @@ export class TitleBarController {
             const verBtn = secondaryRow.createEl('button', { text: '📜 版本', cls: 'novel-writer-settings-btn' });
             verBtn.setAttribute('title', '查看当前章节的正文版本历史（含覆盖前自动备份），可回滚');
             verBtn.onclick = async () => {
-                const { ChapterVersionModal } = await import('../chapter-version-modal');
+                const { ChapterVersionModal } = await import('@/ui/chapter-version-modal');
                 new ChapterVersionModal(this.deps.app, {
                     project: this.deps.state.project,
                     contentType: 'chapter' as const,

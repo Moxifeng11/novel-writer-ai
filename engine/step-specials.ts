@@ -9,8 +9,8 @@ import type { App } from 'obsidian';
 import type { AIEngine } from './ai-engine';
 import { generateEmotionPlan, validateEmotionPlan } from './emotion-planner';
 import { generateSceneExpansion, validateSceneExpansion } from './scene-expander';
-import { NOTICE_CRITICAL } from '../shared/thresholds';
-import { createLogger } from '../shared/logger';
+import { NOTICE_CRITICAL } from '@/shared/thresholds';
+import { createLogger } from '@/shared/logger';
 import type { StepRunCtx } from './step-definitions';
 import { ensureProtagonistMemoryShards } from './memory/memory-shard-writer';
 

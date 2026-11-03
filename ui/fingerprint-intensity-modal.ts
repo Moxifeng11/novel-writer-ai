@@ -19,8 +19,8 @@
  */
 
 import { App, Modal, Notice } from 'obsidian';
-import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
-import { createLogger } from '../shared/logger';
+import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('FingerprintIntensityModal');
 import {
@@ -30,12 +30,12 @@ import {
     INTENSITY_PRESETS,
     INTENSITY_PRESET_LABELS,
     DEFAULT_INTENSITY_CONFIG,
-} from '../engine/style/style-intensity-engine';
+} from '@/engine/style/style-intensity-engine';
 import {
     StyleDimensionKeyV2,
     STYLE_DIMENSIONS_V2,
     STYLE_DIMENSION_LABELS_V2,
-} from '../engine/style/style-dimensions-v2';
+} from '@/engine/style/style-dimensions-v2';
 
 /**
  * FingerprintIntensityModalOptions 类型定义。

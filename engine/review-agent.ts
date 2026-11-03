@@ -1,13 +1,13 @@
 import { App, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import type { AIEngine } from './ai-engine';
 import { findChapterFile, getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
-import { pjBodyDir, pjBodyFile, pjStepDir, pjStepFile, pjSettingLib, pjWorldview, pjCharsDir, pjForeshadowDB, pjLocsDir, pjFactionsDir, pjItemsDir, isInCharsDir } from '../shared/paths';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL, NOTICE_SUCCESS } from '../shared/thresholds';
-import { createLogger } from '../shared/logger';
+import { pjBodyDir, pjBodyFile, pjStepDir, pjStepFile, pjSettingLib, pjWorldview, pjCharsDir, pjForeshadowDB, pjLocsDir, pjFactionsDir, pjItemsDir, isInCharsDir } from '@/shared/paths';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL, NOTICE_SUCCESS } from '@/shared/thresholds';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ReviewAgent');

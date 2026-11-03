@@ -1,4 +1,4 @@
-import type { ToolGroup, ToolButton } from '../kernel/tool-catalog-types';
+import type { ToolGroup, ToolButton } from '@/domains/kernel/tool-catalog-types';
 
 /** 剧本项目专属快捷工具：不出现卷/章/全书规划/章节结算等长篇动作 */
 export const SCRIPT_TOOL_GROUPS: ToolGroup[] = [

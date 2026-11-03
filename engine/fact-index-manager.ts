@@ -11,7 +11,7 @@
  * - 纯逻辑队列管理，零 AI、零 Obsidian 依赖
  */
 
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('FactIndexManager');
 

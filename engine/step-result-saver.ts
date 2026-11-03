@@ -14,15 +14,15 @@
 import { App, TFile } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { BodyWriter } from './body-writer';
-import { pjBodyFile, pjBodyDir, pjItemsDir } from '../shared/paths';
-import { entityDir } from '../shared/entity-reader';
+import { pjBodyFile, pjBodyDir, pjItemsDir } from '@/shared/paths';
+import { entityDir } from '@/shared/entity-reader';
 import { findBodyFileByChapterNum } from './chapter-utils';
-import { listFolderFiles } from '../shared/vault-tree';
-import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
+import { listFolderFiles } from '@/shared/vault-tree';
+import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { validateStepResult } from './step-validator';
-import { createLogger } from '../shared/logger';
-import { projectIdFromPath } from '../shared/paths';
+import { createLogger } from '@/shared/logger';
+import { projectIdFromPath } from '@/shared/paths';
 
 
 const log = createLogger('StepResultSaver');

@@ -5,9 +5,9 @@
  */
 
 import { BaseEntity, type BaseEntityProps } from './base-entity';
-import { ChapterStatus, EntityStatus, Frontmatter, WordCount } from '../value-objects';
+import { ChapterStatus, EntityStatus, Frontmatter, WordCount } from '@/engine/repository/domain/value-objects';
 import type { EntityCategory } from './base-entity';
-import type { WritingMode, SceneNode } from '../../../../shared/types';
+import type { WritingMode, SceneNode } from '@/shared/types';
 
 /**
  * 章节元数据

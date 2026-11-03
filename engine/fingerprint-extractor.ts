@@ -10,10 +10,10 @@ import type { EmbeddingProvider } from './embedding/embedding-provider';
 import type { VectorStore, StyleFingerprint, StyleFingerprintStats, StyleFingerprintFeatures } from './style-fingerprint-library';
 import { calculateRhythmStats, calculatePerspectiveStats } from './style/v2-quantitative-extractor';
 import type { RhythmStats, PerspectiveStats } from './style/style-dimensions-v2';
-import { extractResponseText } from '../shared/api-response-utils';
-import { resolveTaskModelConfig } from '../shared/task-model';
-import { resolveProviderSourceType } from '../shared/model-source';
-import { createLogger } from '../shared/logger';
+import { extractResponseText } from '@/shared/api-response-utils';
+import { resolveTaskModelConfig } from '@/shared/task-model';
+import { resolveProviderSourceType } from '@/shared/model-source';
+import { createLogger } from '@/shared/logger';
 import { computeFingerprintStats } from './fingerprint-stats';
 
 

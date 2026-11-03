@@ -4,7 +4,7 @@
  * Tools are local / ai / io. IO tools must declare a permission; danger tools
  * require explicit confirmation from the caller.
  */
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 
 /**
  * 工具权限。

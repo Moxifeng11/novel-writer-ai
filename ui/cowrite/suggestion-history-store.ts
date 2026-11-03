@@ -7,10 +7,10 @@
  */
 
 import { TFile } from 'obsidian';
-import type { CoWritingView } from '../co-writing-view';
-import { SentenceEditRecord } from '../../shared/types';
-import { pjStepDir } from '../../shared/paths';
-import { createLogger } from '../../shared/logger';
+import type { CoWritingView } from '@/ui/co-writing-view';
+import { SentenceEditRecord } from '@/shared/types';
+import { pjStepDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('SuggestionHistoryStore');

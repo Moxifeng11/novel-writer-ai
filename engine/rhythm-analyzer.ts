@@ -5,8 +5,8 @@
  * 对应优化方向：C2
  */
  
-import { RhythmSegment, RhythmAnalysis } from '../shared/co-writer-types';
-import { createLogger } from '../shared/logger';
+import { RhythmSegment, RhythmAnalysis } from '@/shared/co-writer-types';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('RhythmAnalyzer');

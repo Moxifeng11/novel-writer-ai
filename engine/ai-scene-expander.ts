@@ -1,10 +1,10 @@
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER, SceneNode, SCENE_TYPE_LABELS } from '../shared/types';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER, SceneNode, SCENE_TYPE_LABELS } from '@/shared/types';
 import { BodyWriter } from './body-writer';
-import { describeBodyFormat } from '../shared/body-format';
+import { describeBodyFormat } from '@/shared/body-format';
 
 /**
  * 场景扩写上下文。

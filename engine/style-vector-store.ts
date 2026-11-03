@@ -1,9 +1,9 @@
 import { App } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import {
     globalFingerprintVectorsDir,
     projectFingerprintVectorsDir,
-} from '../shared/paths';
+} from '@/shared/paths';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import {
     detectEmbeddingMismatch,
@@ -14,7 +14,7 @@ import {
 } from './embedding/embedding-fingerprint';
 import { cosineSimilarity } from './local-vector-store';
 import type { StyleFingerprint, StyleFingerprintFeatures } from './style-fingerprint-library';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('StyleVectorStore');

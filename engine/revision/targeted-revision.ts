@@ -15,7 +15,7 @@ import type {
 } from './revision-types';
 import { buildRevisionPlan } from './quality-issue-parser';
 import { buildRevisionSystemPrompt, buildRevisionUserPrompt } from './revision-prompts';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('TargetedRevision');
 

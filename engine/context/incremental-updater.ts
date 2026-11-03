@@ -17,8 +17,8 @@
 import type { GatheredContext, ContextData } from './context-types';
 import type { ContextChangeSet } from './context-diff-detector';
 import { INCREMENTAL_FALLBACK_THRESHOLD } from './context-diff-detector';
-import type { MultiLayerCache } from '../cache';
-import { createLogger } from '../../shared/logger';
+import type { MultiLayerCache } from '@/engine/cache';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('IncrementalUpdater');

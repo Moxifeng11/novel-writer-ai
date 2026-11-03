@@ -1,11 +1,11 @@
 import { App, Modal, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
-import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
-import { DeconstructionScheduler } from '../engine/deconstruction-scheduler';
-import { VectorEnhancer } from '../engine/vector-enhancer';
-import { EmbeddingProviderFactory } from '../engine/embedding/provider-factory';
-import { KnowledgeToFingerprintConverter } from '../engine/knowledge-to-fingerprint-converter';
-import { StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
+import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
+import { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { EmbeddingProviderFactory } from '@/engine/embedding/provider-factory';
+import { KnowledgeToFingerprintConverter } from '@/engine/knowledge-to-fingerprint-converter';
+import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import {
     kbBookStyleFingerprintFile,
     kbBookRhythmAnalysisFile,
@@ -14,14 +14,14 @@ import {
     kbBookCharacterExtractionFile,
     kbBookForeshadowDBFile,
     kbBookDir,
-} from '../shared/paths';
+} from '@/shared/paths';
 import { radarChart, barChart, donutChart, lineChart, scatterChart, timelineChart } from './svg-charts';
 import { RefillModal } from './refill-modal';
 import { KnowledgeMonitorModal } from './knowledge-monitor-modal';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 import { normalizeDetailNumber } from './knowledge-detail-format';
 import { openKnowledgeFolder } from './knowledge-folder-navigation';
-import { escapeHtml } from '../utils/helpers';
+import { escapeHtml } from '@/utils/helpers';
 
 
 const log = createLogger('KnowledgeDetailModal');

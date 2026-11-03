@@ -7,15 +7,15 @@
  * 性能：10万字取样 + async 协作式让出，避免长文本阻塞主线程
  */
 
-import { kbBookStyleFingerprintFile } from '../../shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
-import { VectorEnhancer } from '../vector-enhancer';
-import { yieldToUI } from '../../shared/yield';
-import { FIVE_SENSES_WORDS } from '../dimension-keywords';
-import { GenreDetector, GenreConfigRegistry } from '../genre';
-import type { GenreConfig } from '../genre';
-import { LLMEnhancer } from '../llm-enhancer';
-import { createLogger } from '../../shared/logger';
+import { kbBookStyleFingerprintFile } from '@/shared/paths';
+import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { yieldToUI } from '@/shared/yield';
+import { FIVE_SENSES_WORDS } from '@/engine/dimension-keywords';
+import { GenreDetector, GenreConfigRegistry } from '@/engine/genre';
+import type { GenreConfig } from '@/engine/genre';
+import { LLMEnhancer } from '@/engine/llm-enhancer';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('StyleDeconstructor');

@@ -27,10 +27,10 @@
  */
 
 import { App, TFile } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import { entityDir } from '../shared/entity-reader';
+import { splitTableCells } from '@/shared/chapter-table';
+import { entityDir } from '@/shared/entity-reader';
 import { AIEngine } from './ai-engine';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import { ContextManager } from './context-manager';
 import { StyleLearner } from './style-learner';
 import { PreferenceMemory } from './preference-memory';
@@ -38,15 +38,15 @@ import { PromptBuilder, type PromptSnapshot } from './prompt-builder';
 import { StyleFingerprintLibrary } from './style-fingerprint-library';
 import { EmbeddingProviderFactory } from './embedding/provider-factory';
 import { getSharedEmbeddingProvider } from './embedding/embedding-service';
-import { ensureLocalModelCapability } from '../services/local-model-probe';
+import { ensureLocalModelCapability } from '@/services/local-model-probe';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { LocalVectorStore } from './local-vector-store';
-import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
+import { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { RulesService } from '../services/rules-service';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { RulesService } from '@/services/rules-service';
 import {
     attachStoryContextToSnapshot,
     buildStoryContext,
@@ -54,14 +54,14 @@ import {
     resolveStoryContextTier,
 } from './context/story-context-service';
 import type { GatheredContext } from './context/context-types';
-import type { SceneCardFields } from '../shared/scene-card';
+import type { SceneCardFields } from '@/shared/scene-card';
 import { entityStateChangesToFacts } from './co-writer-state-sync';
 import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
 import { buildEntityRelationsBlock } from './entity-graph';
-import { formatInjectionLedger } from '../shared/injection-ledger';
+import { formatInjectionLedger } from '@/shared/injection-ledger';
 import { CrossVolumeIntegrator } from './cross-volume-integration';
 import { loadLongTermMemory } from './long-term-memory';
-import { formatFanficRulesForPrompt, formatFanficRulesLoadWarning, readFanficRulesFromFS, type FanficRules } from '../shared/fanfic-rules';
+import { formatFanficRulesForPrompt, formatFanficRulesLoadWarning, readFanficRulesFromFS, type FanficRules } from '@/shared/fanfic-rules';
 import { analyzeCoherence, CoherenceReport } from './coherence-checker';
 import { analyzePlotRedundancy, loadPreviousChapterBodies, PlotRedundancyReport } from './plot-redundancy-checker';
 import { analyzeLogicConsistency, LogicConsistencyReport } from './logic-consistency-checker';
@@ -71,8 +71,8 @@ import { SentenceDiversityEngine } from './sentence-diversity-engine';
 import { StyleSimilarityScorer } from './style-similarity-scorer';
 import { VectorEnhancer } from './vector-enhancer';
 import { PRECISION_MODE_SYSTEM_APPEND } from './prompts/co-write-prompts';
-import { readProjectMeta } from '../shared/paths';
-import { getCreationModePromptBlock, parseCreationModeMeta } from '../shared/creation-mode';
+import { readProjectMeta } from '@/shared/paths';
+import { getCreationModePromptBlock, parseCreationModeMeta } from '@/shared/creation-mode';
 import { splitSceneSections } from './scene-expander';
 import {
     formatEntityBrief,
@@ -91,7 +91,7 @@ import {
      extractCharacterCoreFromContent
  } from './character-soul';
  import { EntityStateManager, EntityStateChange } from './entity-state-manager';
- import { OOCCheckResult, EmotionCurve, RhythmAnalysis, AssociationSuggestion } from '../shared/co-writer-types';
+ import { OOCCheckResult, EmotionCurve, RhythmAnalysis, AssociationSuggestion } from '@/shared/co-writer-types';
 import {
     SuggestionRecord,
     SuggestionDirection,
@@ -99,22 +99,22 @@ import {
     PlotCompletionMetrics,
     SentenceEditRecord,
     CoWritingSession
-} from '../shared/types';
-import { extractJsonArray, extractJsonObject, extractResponseText, isPlanningOutput, sanitizeStoryText, stripCodeFence, stripThinkingBlock } from '../shared/api-response-utils';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+} from '@/shared/types';
+import { extractJsonArray, extractJsonObject, extractResponseText, isPlanningOutput, sanitizeStoryText, stripCodeFence, stripThinkingBlock } from '@/shared/api-response-utils';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import type { EngineRegistry } from './engine-registry';
 import type { CharacterRepository, ChapterRepository } from './repository';
 import { FrontmatterSerializer } from './repository/domain/serializers';
-import { createLogger } from '../shared/logger';
-import { deriveBodyFormat, describeBodyFormat } from '../shared/body-format';
-import { resolveProviderSourceType } from '../shared/model-source';
-import { CO_WRITE_MAX_TOKENS_CAP, EDIT_VALIDATION_PASS_SCORE } from '../shared/thresholds';
-import { countRetainedPromptParts } from '../shared/prompt-budget';
-import { roleIndicatesProtagonist } from '../shared/protagonist';
-import { withActiveInputBudget } from '../shared/context-budget-policy';
-import { findModelCapability } from '../shared/model-capabilities';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
-import { acquireLocalAiSlot } from '../shared/local-ai-queue';
+import { createLogger } from '@/shared/logger';
+import { deriveBodyFormat, describeBodyFormat } from '@/shared/body-format';
+import { resolveProviderSourceType } from '@/shared/model-source';
+import { CO_WRITE_MAX_TOKENS_CAP, EDIT_VALIDATION_PASS_SCORE } from '@/shared/thresholds';
+import { countRetainedPromptParts } from '@/shared/prompt-budget';
+import { roleIndicatesProtagonist } from '@/shared/protagonist';
+import { withActiveInputBudget } from '@/shared/context-budget-policy';
+import { findModelCapability } from '@/shared/model-capabilities';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import { acquireLocalAiSlot } from '@/shared/local-ai-queue';
 
 
 const log = createLogger('CoWriterEngine');
@@ -3634,8 +3634,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     /**
      * 分析联想上下文
      */
-    private async analyzeAssociationContext(text: string): Promise<import('../shared/co-writer-types').AssociationHint[]> {
-        const hints: import('../shared/co-writer-types').AssociationHint[] = [];
+    private async analyzeAssociationContext(text: string): Promise<import('@/shared/co-writer-types').AssociationHint[]> {
+        const hints: import('@/shared/co-writer-types').AssociationHint[] = [];
         
         // 检测最后提及的实体
         const recentEntities = this.extractRecentEntities(text);
@@ -3698,7 +3698,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      */
     private async generateAssociationText(
         context: string, 
-        hint: import('../shared/co-writer-types').AssociationHint,
+        hint: import('@/shared/co-writer-types').AssociationHint,
         signal?: AbortSignal
     ): Promise<string> {
         let knowledgeParts: string[] = [];

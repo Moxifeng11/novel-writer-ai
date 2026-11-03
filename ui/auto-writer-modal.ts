@@ -8,13 +8,13 @@
  * 章范围以「已建骨架」为准，不再只取已有正文，否则新章永远无法被选中。
  */
 import { App, Modal, Notice } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { listChapterNumbers } from '../engine/chapter-utils';
-import { showSuccess, showError } from '../utils/helpers';
-import { pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '../shared/paths';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { listChapterNumbers } from '@/engine/chapter-utils';
+import { showSuccess, showError } from '@/utils/helpers';
+import { pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT } from '@/shared/paths';
 import { WriteChapterModal } from './write-chapter-modal';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('AutoWriterModal');

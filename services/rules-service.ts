@@ -1,10 +1,10 @@
 import { App, TFile } from 'obsidian';
-import { WRITING_RULES, WRITING_RULES_BUILTIN_VERSION } from '../shared/writing-rules';
+import { WRITING_RULES, WRITING_RULES_BUILTIN_VERSION } from '@/shared/writing-rules';
 import { VAULT_RULES_PATH, BUILTIN_RULES_VERSION, listRulesVersions } from './rules-registry';
-import { composeWritingRules } from '../shared/writing-rules-mode-addons';
-import { resolveProjectMode } from '../shared/project-mode';
-import type { CreationMode } from '../shared/creation-mode';
-import { createLogger } from '../shared/logger';
+import { composeWritingRules } from '@/shared/writing-rules-mode-addons';
+import { resolveProjectMode } from '@/shared/project-mode';
+import type { CreationMode } from '@/shared/creation-mode';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('RulesService');
 

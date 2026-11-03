@@ -13,15 +13,15 @@
  */
 
 import { App, Modal, Notice } from 'obsidian';
-import { StepRunner } from '../engine/step-runner';
-import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
-import NovelWriterPlugin from '../main';
-import { RhythmAnalyzer } from '../engine/rhythm-analyzer';
-import { StyleLearner } from '../engine/style-learner';
-import type { RhythmAnalysis } from '../shared/co-writer-types';
-import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
-import { StyleIntensityEngine } from '../engine/style/style-intensity-engine';
-import { createLogger } from '../shared/logger';
+import { StepRunner } from '@/engine/step-runner';
+import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
+import NovelWriterPlugin from '@/main';
+import { RhythmAnalyzer } from '@/engine/rhythm-analyzer';
+import { StyleLearner } from '@/engine/style-learner';
+import type { RhythmAnalysis } from '@/shared/co-writer-types';
+import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
+import { StyleIntensityEngine } from '@/engine/style/style-intensity-engine';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('PolishEditor');

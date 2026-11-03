@@ -1,16 +1,16 @@
 import { App, Notice, TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { ContextManager, GatheredContext } from '../../engine/context-manager';
-import { showProgress, hideProgress, showSuccess, showError } from '../../utils/helpers';
-import { CrossVolumeIntegrator } from '../../engine/cross-volume-integration';
-import { formatSoulForPrompt, type CharacterSoul } from '../../engine/character-soul';
-import { assessContextReadiness } from '../../engine/context-readiness';
-import { getChapterFile, CHAPTER_FILE_TYPES } from '../../engine/chapter-utils';
-import { isTemplateSkeleton, validateStepResult } from '../../engine/step-validator';
+import NovelWriterPlugin from '@/main';
+import { ContextManager, GatheredContext } from '@/engine/context-manager';
+import { showProgress, hideProgress, showSuccess, showError } from '@/utils/helpers';
+import { CrossVolumeIntegrator } from '@/engine/cross-volume-integration';
+import { formatSoulForPrompt, type CharacterSoul } from '@/engine/character-soul';
+import { assessContextReadiness } from '@/engine/context-readiness';
+import { getChapterFile, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import { isTemplateSkeleton, validateStepResult } from '@/engine/step-validator';
 import { FullWriterStore } from './full-writer-store';
-import { ChapterStateManager } from '../states/chapter-state-manager';
+import { ChapterStateManager } from '@/ui/states/chapter-state-manager';
 import { EntityStateController } from './entity-state-controller';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ContextLoaderController');

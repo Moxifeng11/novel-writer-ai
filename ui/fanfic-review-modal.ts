@@ -7,9 +7,9 @@
  * - AI 只能辅助补全，且只能引用已选官方来源。
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { CanonResearchService } from '../services/canon-research-service';
-import { CanonSource, CANON_TIER_LABEL, computeCanonSourceHash } from '../shared/canon-source';
+import NovelWriterPlugin from '@/main';
+import { CanonResearchService } from '@/services/canon-research-service';
+import { CanonSource, CANON_TIER_LABEL, computeCanonSourceHash } from '@/shared/canon-source';
 import {
     applyFanficReviewMeta,
     auditFanficSettings,
@@ -17,10 +17,10 @@ import {
     buildFanficCompletionPrompt,
     buildFanficAuditPrompt,
     FanficAuditResult,
-} from '../shared/fanfic-audit';
+} from '@/shared/fanfic-audit';
 import { extractFanficWorkName, saveFanficSettingFile, attachFanficPathToProject } from './full-writer/fanfic-settings-utils';
-import { pjFanficApprovedFile, pjFanficAuditDir } from '../shared/paths';
-import { createLogger } from '../shared/logger';
+import { pjFanficApprovedFile, pjFanficAuditDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('FanficReviewModal');
 

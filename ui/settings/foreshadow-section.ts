@@ -6,8 +6,8 @@
  * 来源：`ui/settings-tab.ts` L3204-3469。
  */
 import { Setting, Notice, Modal } from 'obsidian';
-import { ForeshadowConfigManager, ForeshadowTypeConfig } from '../../engine/foreshadow-config-manager';
-import { OperationConfirmModal } from '../components/progress';
+import { ForeshadowConfigManager, ForeshadowTypeConfig } from '@/engine/foreshadow-config-manager';
+import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
 
 /**

@@ -1,10 +1,10 @@
 import { App } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { ALL_FULL_STEPS } from '../../engine/step-runner';
+import NovelWriterPlugin from '@/main';
+import { ALL_FULL_STEPS } from '@/engine/step-runner';
 import { findStepByIndex } from './full-writer-utils';
 import { FullWriterStore } from './full-writer-store';
-import { ChapterStateManager } from '../states/chapter-state-manager';
-import { STORY_STRUCTURES, type StoryStructureId } from '../../shared/story-structure';
+import { ChapterStateManager } from '@/ui/states/chapter-state-manager';
+import { STORY_STRUCTURES, type StoryStructureId } from '@/shared/story-structure';
 
 /**
  * StatusBarControllerDeps 类型定义。

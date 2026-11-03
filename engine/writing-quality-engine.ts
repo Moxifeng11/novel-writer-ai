@@ -6,19 +6,19 @@
  * 不依赖 AI 调用，保证实时性（< 100ms / 万字）
  */
 
-import { splitParagraphs, splitSentences } from '../shared/text-utils';
+import { splitParagraphs, splitSentences } from '@/shared/text-utils';
 import {
   gradeFromScore,
   qualityGradeColor,
   qualityGradeLabel,
   type QualityGrade,
-} from '../shared/quality-grade';
+} from '@/shared/quality-grade';
 import {
   QUALITY_MIN_EVALUABLE_CHARS,
   WQE_CALIBRATION,
   WQE_DIMENSION_WEIGHTS,
   WQE_SUB_WEIGHTS,
-} from '../shared/thresholds';
+} from '@/shared/thresholds';
 
 export type { QualityGrade };
 /**

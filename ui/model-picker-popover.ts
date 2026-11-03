@@ -9,10 +9,10 @@
  * 点击外部关闭。选模型复用 model-quick-switcher 的 applyModelChoice。
  */
 import { Notice } from 'obsidian';
-import type NovelWriterPlugin from '../main';
+import type NovelWriterPlugin from '@/main';
 import { ManageProvidersModal } from './manage-providers-modal';
 import { applyModelChoice, formatModelSwitcherLabel, resolveProviderDisplayName, type ModelSwitcherPluginLike } from './model-quick-switcher';
-import { nearestThinkingLevel, THINKING_LEVELS, clampThinkingIntensity, thinkingLevelSpec } from '../shared/task-model';
+import { nearestThinkingLevel, THINKING_LEVELS, clampThinkingIntensity, thinkingLevelSpec } from '@/shared/task-model';
 
 /**
  * ModelPickerHandle 类型定义。

@@ -6,7 +6,7 @@
  */
 
 import { App, Editor, Modal, Notice } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 
 type ExpandStyle = '细节丰富' | '情节推进' | '情感深化' | '场景描写';
 

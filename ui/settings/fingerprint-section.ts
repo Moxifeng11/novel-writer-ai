@@ -7,15 +7,15 @@
  */
 import { Notice } from 'obsidian';
 import { SettingsSection } from './section-base';
-import { StyleFingerprintLibrary, StyleFingerprint } from '../../engine/style-fingerprint-library';
-import { FingerprintExtractor } from '../../engine/fingerprint-extractor';
-import { createFingerprintEmbedding } from '../fingerprint-embedding';
-import { AddFingerprintModal } from '../fingerprint-library-modal';
-import { FingerprintDetailModal } from '../fingerprint-detail-modal';
-import { renderFingerprintList } from '../fingerprint-utils';
-import { RefillModal } from '../refill-modal';
-import { OperationConfirmModal } from '../components/progress';
-import { createLogger } from '../../shared/logger';
+import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
+import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
+import { createFingerprintEmbedding } from '@/ui/fingerprint-embedding';
+import { AddFingerprintModal } from '@/ui/fingerprint-library-modal';
+import { FingerprintDetailModal } from '@/ui/fingerprint-detail-modal';
+import { renderFingerprintList } from '@/ui/fingerprint-utils';
+import { RefillModal } from '@/ui/refill-modal';
+import { OperationConfirmModal } from '@/ui/components/progress';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('SettingsTab');
 

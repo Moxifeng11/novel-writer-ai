@@ -6,9 +6,9 @@
  * 本服务统一负责：样章向量化 + 正文侧样章检索（检索失败回退到原始样章）。
  */
 import type { App } from 'obsidian';
-import { LocalVectorStore } from '../local-vector-store';
-import { getSharedEmbeddingProvider } from '../embedding/embedding-service';
-import { createLogger } from '../../shared/logger';
+import { LocalVectorStore } from '@/engine/local-vector-store';
+import { getSharedEmbeddingProvider } from '@/engine/embedding/embedding-service';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('StyleSampleService');
 

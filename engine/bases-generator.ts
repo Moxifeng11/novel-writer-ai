@@ -8,8 +8,8 @@
  *  - 零依赖：手写 YAML 字符串，纯函数可测；
  *  - 原生折叠：Bases 视图可拖到右侧栏，随窗口折叠。
  */
-import { KIND_NAMESPACE_TAG } from '../shared/tag-taxonomy';
-import { FRONTMATTER_SCHEMAS } from '../shared/frontmatter-schema';
+import { KIND_NAMESPACE_TAG } from '@/shared/tag-taxonomy';
+import { FRONTMATTER_SCHEMAS } from '@/shared/frontmatter-schema';
 
 /** 看板文件（相对项目根） */
 export interface BaseFileSpec {

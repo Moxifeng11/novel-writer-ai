@@ -4,13 +4,13 @@
  * 纯函数模块：不访问 Obsidian，不写文件，只消费 GatheredContext 的结构化数据。
  * 同一张图同时服务一键生成与协同写作；区别只在 request.mode / tier / 预算。
  */
-import { estimateTokens } from '../../shared/token-estimator';
-import { extractKeywordTokens, keywordOverlapRatio } from '../../shared/keyword-tokens';
-import { truncateTextToTokens } from '../../shared/prompt-budget';
-import { parseSceneCardFields, parseSceneField, type SceneCardFields } from '../../shared/scene-card';
-import type { StoryLinkage } from '../story-linkage';
+import { estimateTokens } from '@/shared/token-estimator';
+import { extractKeywordTokens, keywordOverlapRatio } from '@/shared/keyword-tokens';
+import { truncateTextToTokens } from '@/shared/prompt-budget';
+import { parseSceneCardFields, parseSceneField, type SceneCardFields } from '@/shared/scene-card';
+import type { StoryLinkage } from '@/engine/story-linkage';
 import type { GatheredContext } from './context-types';
-import { activeContextQuotas } from '../../shared/context-budget-policy';
+import { activeContextQuotas } from '@/shared/context-budget-policy';
 import type {
     StoryContextBundle,
     StoryContextGraph,

@@ -13,7 +13,7 @@
  * 结算期间用户或其它入口的合法写入不会被误伤。
  */
 
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('SettlementJournal');
 

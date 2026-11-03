@@ -1,12 +1,12 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import { entityDir } from '../shared/entity-reader';
-import NovelWriterPlugin from '../main';
-import { CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
-import { listFolderFiles } from '../shared/vault-tree';
-import { pjBodyDir, pjControlDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
-import { mkdirp } from '../utils/helpers';
-import { createLogger } from '../shared/logger';
+import { splitTableCells } from '@/shared/chapter-table';
+import { entityDir } from '@/shared/entity-reader';
+import NovelWriterPlugin from '@/main';
+import { CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import { listFolderFiles } from '@/shared/vault-tree';
+import { pjBodyDir, pjControlDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '@/shared/paths';
+import { mkdirp } from '@/utils/helpers';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CrossVolumeStateModal');
@@ -230,4 +230,4 @@ ${timeline || '（无时间线事件）'}
         contentEl.empty();
     }
 }
-import { projectIdFromPath } from '../shared/paths';
+import { projectIdFromPath } from '@/shared/paths';

@@ -4,8 +4,8 @@
  * 短篇/剧本以「节 / 集」为单位，每个单元一个页签；
  * 同一项目同一单元只保留一个页签，重复点击只激活。
  */
-import type { CreationMode } from '../../shared/creation-mode';
-import { modeUnitDisplay } from '../../shared/mode-content';
+import type { CreationMode } from '@/shared/creation-mode';
+import { modeUnitDisplay } from '@/shared/mode-content';
 import type { FullWriterStore, WriterTab } from './full-writer-store';
 
 /**

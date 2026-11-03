@@ -1,4 +1,4 @@
-import type { DomainHarnessProfile } from '../../engine/harness/domain-profile';
+import type { DomainHarnessProfile } from '@/engine/harness/domain-profile';
 
 /**
  * 短篇模式 Harness 配置档。

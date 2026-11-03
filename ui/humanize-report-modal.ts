@@ -15,8 +15,8 @@ import {
     type ProseIssue,
     type ProseMetrics,
     type ProseRiskReport,
-} from '../shared/prose-metrics';
-import { naturalizeBodyText, type NaturalizeResult } from '../shared/prose-naturalizer';
+} from '@/shared/prose-metrics';
+import { naturalizeBodyText, type NaturalizeResult } from '@/shared/prose-naturalizer';
 
 /**
  * HumanizeReportModalOptions 类型定义。

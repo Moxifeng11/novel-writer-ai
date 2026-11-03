@@ -9,7 +9,7 @@
  *   - 不允许把列表清空（空列表会让上游回退到端点默认行为）。
  */
 import { App, Modal, Setting } from 'obsidian';
-import type { DiscoveredModel } from '../services/model-discovery';
+import type { DiscoveredModel } from '@/services/model-discovery';
 
 /**
  * ModelPickerResult 类型定义。

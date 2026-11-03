@@ -1,9 +1,9 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine } from '../engine/ai-engine';
-import { createLogger } from '../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { createLogger } from '@/shared/logger';
 import { CreateProjectModal } from './create-project-modal';
-import { pjControlDir } from '../shared/paths';
+import { pjControlDir } from '@/shared/paths';
 
 
 const log = createLogger('GoldenOpeningModal');

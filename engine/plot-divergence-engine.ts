@@ -1,7 +1,7 @@
-import { createLogger } from '../shared/logger';
-import { splitParagraphs, splitSentences } from '../shared/text-utils';
-import { DEVIATION_MIN_EVALUABLE_CHARS } from '../shared/thresholds';
-import { isRisingDivergence } from '../shared/divergence-trend';
+import { createLogger } from '@/shared/logger';
+import { splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { DEVIATION_MIN_EVALUABLE_CHARS } from '@/shared/thresholds';
+import { isRisingDivergence } from '@/shared/divergence-trend';
 
 const log = createLogger('PlotDivergenceEngine');
 /**

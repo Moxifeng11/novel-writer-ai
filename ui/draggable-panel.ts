@@ -3,8 +3,8 @@
  * 提供可拖动、缩放、折叠、自动保存位置的浮动面板基类
  */
 import { ItemView, WorkspaceLeaf } from "obsidian";
-import { applyNwScope } from '../utils/helpers';
-import type NovelWriterPlugin from "../main";
+import { applyNwScope } from '@/utils/helpers';
+import type NovelWriterPlugin from "@/main";
 
 /**
  * 面板布局配置结构定义。

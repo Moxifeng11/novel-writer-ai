@@ -1,13 +1,13 @@
 import { App, TFile } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import { listEntityFiles } from '../shared/entity-reader';
-import { RE_VOLUME_HEADER, RE_CHAPTER_RANGE } from '../shared/format-constants';
-import { readMergedVolumeOutline } from '../utils/helpers';
-import { pjForeshadowDB, pjTimelineBoard, pjControlDir, pjVolumeOutlineDir } from '../shared/paths';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { createLogger } from '../shared/logger';
+import { splitTableCells } from '@/shared/chapter-table';
+import { listEntityFiles } from '@/shared/entity-reader';
+import { RE_VOLUME_HEADER, RE_CHAPTER_RANGE } from '@/shared/format-constants';
+import { readMergedVolumeOutline } from '@/utils/helpers';
+import { pjForeshadowDB, pjTimelineBoard, pjControlDir, pjVolumeOutlineDir } from '@/shared/paths';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CrossVolumeIntegration');

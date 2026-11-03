@@ -6,13 +6,13 @@
  * 性能：10万字取样 + async 协作式让出，避免长文本阻塞主线程
  */
 
-import { kbBookStructureBreakdownFile } from '../../shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
-import { countCjkWordsAndNumbers } from '../../shared/word-count';
-import { VectorEnhancer } from '../vector-enhancer';
-import { yieldToUI } from '../../shared/yield';
-import { NARRATIVE_TEMPORALITY_WORDS, SHOW_TELL_WORDS } from '../dimension-keywords';
-import { createLogger } from '../../shared/logger';
+import { kbBookStructureBreakdownFile } from '@/shared/paths';
+import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { countCjkWordsAndNumbers } from '@/shared/word-count';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { yieldToUI } from '@/shared/yield';
+import { NARRATIVE_TEMPORALITY_WORDS, SHOW_TELL_WORDS } from '@/engine/dimension-keywords';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('StructureDeconstructor');

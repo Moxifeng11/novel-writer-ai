@@ -9,7 +9,7 @@
  * 纯函数实现，不依赖 Obsidian；章节读取由调用方完成。
  */
 
-import { countWords } from '../../shared/diff-utils';
+import { countWords } from '@/shared/diff-utils';
 
 /**
  * 成稿格式。

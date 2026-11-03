@@ -1,4 +1,4 @@
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     DEAI_CHECK_SYSTEM_PROMPT,
     DEAI_CHECK_USER_TEMPLATE,
@@ -11,8 +11,8 @@ import type { ChapterContext, ReviewContext } from './ai-types';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
 /**
  * 单章 AI 辅助集合（审校/章纲/分析/改写）。
  */

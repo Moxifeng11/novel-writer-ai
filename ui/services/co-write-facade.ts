@@ -10,19 +10,19 @@
  * - 只封装数据访问，不包含 UI 渲染逻辑
  */
 
-import type NovelWriterPlugin from '../../main';
-import type { EngineRegistry } from '../../engine/engine-registry';
-import { ENGINE_NAMES } from '../../engine/engine-registry';
-import type { CoWriterEngine } from '../../engine/co-writer-engine';
-import type { ChapterBrief, ChapterBriefInput } from '../../engine/chapter-brief';
+import type NovelWriterPlugin from '@/main';
+import type { EngineRegistry } from '@/engine/engine-registry';
+import { ENGINE_NAMES } from '@/engine/engine-registry';
+import type { CoWriterEngine } from '@/engine/co-writer-engine';
+import type { ChapterBrief, ChapterBriefInput } from '@/engine/chapter-brief';
 import type {
     SuggestionRecord,
     SuggestionDirection,
     EditValidation,
     PlotCompletionMetrics,
     SentenceEditRecord,
-} from '../../shared/types';
-import type { AssociationSuggestion } from '../../shared/co-writer-types';
+} from '@/shared/types';
+import type { AssociationSuggestion } from '@/shared/co-writer-types';
 import type {
     CharacterRepository,
     ChapterRepository,
@@ -30,19 +30,19 @@ import type {
     FactionRepository,
     LocationRepository,
     ItemRepository,
-} from '../../engine/repository';
-import { EmotionCurveAnalyzer } from '../../engine/emotion-curve-analyzer';
-import { RhythmAnalyzer } from '../../engine/rhythm-analyzer';
-import { EndingTractionEngine } from '../../engine/ending-traction-engine';
-import type { KnowledgeBaseManager } from '../../services/knowledge-base-manager';
-import type { StyleLearner } from '../../engine/style-learner';
-import type { PreferenceMemory } from '../../engine/preference-memory';
-import type { BookBasicInfo } from '../../services/knowledge-base-manager';
-import { createCoWritingSessionStore } from '../../engine/co-writer';
-import type { CoWritingSessionStore } from '../../engine/co-writer';
-import type { CoWritingSessionState } from '../../engine/co-writer/session-state';
-import type { StateListener } from '../../shared/store/types';
-import { createLogger } from '../../shared/logger';
+} from '@/engine/repository';
+import { EmotionCurveAnalyzer } from '@/engine/emotion-curve-analyzer';
+import { RhythmAnalyzer } from '@/engine/rhythm-analyzer';
+import { EndingTractionEngine } from '@/engine/ending-traction-engine';
+import type { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
+import type { StyleLearner } from '@/engine/style-learner';
+import type { PreferenceMemory } from '@/engine/preference-memory';
+import type { BookBasicInfo } from '@/services/knowledge-base-manager';
+import { createCoWritingSessionStore } from '@/engine/co-writer';
+import type { CoWritingSessionStore } from '@/engine/co-writer';
+import type { CoWritingSessionState } from '@/engine/co-writer/session-state';
+import type { StateListener } from '@/shared/store/types';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CoWriteFacade');

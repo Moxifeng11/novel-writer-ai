@@ -1,7 +1,7 @@
 import type { EmbeddingProvider, EmbeddingAvailability } from './embedding/embedding-provider';
 import type { TokenBucketRateLimiter } from './token-bucket-rate-limiter';
 import type { CharacterCandidate, AnalysisSuggestion } from './types/analysis-suggestion';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('VectorEnhancer');

@@ -8,7 +8,7 @@
  * - 保持向后兼容：旧 import 路径（shared/types.ts）仍然有效
  *
  * 用法：
- *   import { CharacterDomainModel, characterFromFrontmatter } from '../shared/entity-models';
+ *   import { CharacterDomainModel, characterFromFrontmatter } from '@/shared/entity-models';
  */
 
 import type {

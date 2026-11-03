@@ -12,29 +12,29 @@
  * 双引擎：有凭据走 AI Harness（模型+工具），无凭据/失败一键降级规则引擎。
  */
 import { ItemView, MarkdownRenderer, Menu, Notice, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { applyNwScope } from '../utils/helpers';
+import NovelWriterPlugin from '@/main';
+import { applyNwScope } from '@/utils/helpers';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
 import { Platform } from 'obsidian';
-import { DshSession } from '../engine/agent/dsh/dsh-session';
-import { buildDshLaunchPlan, buildSandboxPatch } from '../engine/agent/dsh/dsh-launch';
-import { createDshProcessTransport } from '../engine/agent/dsh/dsh-process';
+import { DshSession } from '@/engine/agent/dsh/dsh-session';
+import { buildDshLaunchPlan, buildSandboxPatch } from '@/engine/agent/dsh/dsh-launch';
+import { createDshProcessTransport } from '@/engine/agent/dsh/dsh-process';
 import { OperationConfirmModal } from './components/progress';
-import { GuideAgentEngine } from '../engine/agent/conversation-engine';
-import { AgentHarnessEngine, type HarnessTelemetry } from '../engine/agent/harness/harness-engine';
-import { createCallAIAdapter } from '../engine/agent/harness/agent-adapter';
-import type { AgentChip, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '../engine/agent/agent-types';
-import type { HarnessTurnOutcome } from '../engine/agent/harness/harness-types';
+import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
+import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
+import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
+import type { AgentChip, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
+import type { HarnessTurnOutcome } from '@/engine/agent/harness/harness-types';
 import { createAgentPort, getAgentContext } from './services/agent-port';
 import { listProjects } from './export-manuscript-modal';
-import type { CreationMode } from '../shared/creation-mode';
-import { resolveProjectMode as resolveModeFromShared } from '../shared/project-mode';
+import type { CreationMode } from '@/shared/creation-mode';
+import { resolveProjectMode as resolveModeFromShared } from '@/shared/project-mode';
 import { openModelPickerPopover, formatWorkbenchModelBadge, closeExistingPopovers } from './model-picker-popover';
-import { VIEW_TYPE_AGENT_WORKBENCH } from '../shared/view-types';
-import { classifyPreviewKind } from '../shared/preview-kind';
+import { VIEW_TYPE_AGENT_WORKBENCH } from '@/shared/view-types';
+import { classifyPreviewKind } from '@/shared/preview-kind';
 import { createVaultSpillSink, pruneSpillArchive } from './services/agent-spill-store';
 import { createAgentSessionStore, type AgentSessionStore } from './services/agent-session-store';
-import { findModelCapability } from '../shared/model-capabilities';
+import { findModelCapability } from '@/shared/model-capabilities';
 import {
     activeAtToken,
     buildMentionBlock,
@@ -43,8 +43,8 @@ import {
     formatFileMention,
     stripMentionMarkers,
     type MentionToken,
-} from '../shared/file-mention';
-import { isImeComposing } from '../shared/keyboard';
+} from '@/shared/file-mention';
+import { isImeComposing } from '@/shared/keyboard';
 
 const STAGES: Array<{ key: string; label: string; hint: string }> = [
     { key: 'create', label: '① 新建项目', hint: '长篇/短篇/剧本' },

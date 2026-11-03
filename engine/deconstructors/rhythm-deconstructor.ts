@@ -6,14 +6,14 @@
  * 性能：10万字取样 + async 协作式让出，避免长文本阻塞主线程
  */
 
-import { kbBookRhythmAnalysisFile } from '../../shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
-import { countCjkWordsAndNumbers } from '../../shared/word-count';
-import { yieldToUI } from '../../shared/yield';
-import { EMOTION_WORDS, HOOK_WORDS } from '../dimension-keywords';
-import { LLMEnhancer, LLM_DEGRADED } from '../llm-enhancer';
-import { GenreDetector, GenreConfigRegistry, GenreConfig, TensionKeywords } from '../genre';
-import { createLogger } from '../../shared/logger';
+import { kbBookRhythmAnalysisFile } from '@/shared/paths';
+import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { countCjkWordsAndNumbers } from '@/shared/word-count';
+import { yieldToUI } from '@/shared/yield';
+import { EMOTION_WORDS, HOOK_WORDS } from '@/engine/dimension-keywords';
+import { LLMEnhancer, LLM_DEGRADED } from '@/engine/llm-enhancer';
+import { GenreDetector, GenreConfigRegistry, GenreConfig, TensionKeywords } from '@/engine/genre';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('RhythmDeconstructor');

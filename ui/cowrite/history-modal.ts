@@ -1,5 +1,5 @@
 ﻿import { Modal, Setting, Notice } from 'obsidian';
-import { SentenceEditRecord } from '../../shared/types';
+import { SentenceEditRecord } from '@/shared/types';
 
 // B3: 历史建议回溯弹窗
 /**

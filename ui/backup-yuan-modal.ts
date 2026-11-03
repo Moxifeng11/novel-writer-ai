@@ -1,6 +1,6 @@
 import { App, Modal, Notice } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { createLogger } from '../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('BackupYuanModal');

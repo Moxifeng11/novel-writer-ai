@@ -23,14 +23,14 @@ import {
     pjPromptSystemTemplate,
     pjPromptUserTemplate,
     pjWritingRulesPromptTemplate,
-} from '../shared/paths';
+} from '@/shared/paths';
 import { CHAPTER_FILE_TYPES } from './chapter-utils';
 import {
     getStepTemplate,
     type PromptTemplate,
 } from './prompt-templates';
-import { RulesService } from '../services/rules-service';
-import { createLogger } from '../shared/logger';
+import { RulesService } from '@/services/rules-service';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('TemplateService');

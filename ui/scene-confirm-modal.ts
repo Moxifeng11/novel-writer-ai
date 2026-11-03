@@ -10,30 +10,30 @@
  */
 
 import { App, Modal, Notice } from 'obsidian';
-import { SceneGenerationLoop } from '../engine/scene-generation-loop';
+import { SceneGenerationLoop } from '@/engine/scene-generation-loop';
 import type {
     SceneLoopOptions,
     SceneLoopItem,
     SceneLoopResult,
     SceneTask,
-} from '../engine/scene-generation-loop';
-import { GenerationCheckpointStore } from '../engine/generation-checkpoint';
-import type { GenerationCheckpoint } from '../engine/generation-checkpoint';
-import { ChapterSnapshotBuilder } from '../engine/chapter-snapshot-builder';
-import { StoryBeatExtractor } from '../engine/story-beat-extractor';
-import { createSceneBodyGenerator } from '../engine/scene-body-generator';
-import { BodyWriter, defaultBodyPath } from '../engine/body-writer';
-import { findProtagonistName } from '../shared/protagonist';
-import { findBodyFileV4 } from '../engine/chapter-utils';
-import { mergeSceneBodies } from '../shared/scene-body-merge';
-import { SceneExpander } from '../engine/ai-scene-expander';
-import { AIApiClient } from '../engine/ai-api-client';
-import { resolveTaskModelConfig } from '../shared/task-model';
-import { ContextManager } from '../engine/context-manager';
-import type { SceneNode } from '../shared/types';
-import { computePromptHash } from '../engine/prompt-hash';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import type NovelWriterPlugin from '../main';
+} from '@/engine/scene-generation-loop';
+import { GenerationCheckpointStore } from '@/engine/generation-checkpoint';
+import type { GenerationCheckpoint } from '@/engine/generation-checkpoint';
+import { ChapterSnapshotBuilder } from '@/engine/chapter-snapshot-builder';
+import { StoryBeatExtractor } from '@/engine/story-beat-extractor';
+import { createSceneBodyGenerator } from '@/engine/scene-body-generator';
+import { BodyWriter, defaultBodyPath } from '@/engine/body-writer';
+import { findProtagonistName } from '@/shared/protagonist';
+import { findBodyFileV4 } from '@/engine/chapter-utils';
+import { mergeSceneBodies } from '@/shared/scene-body-merge';
+import { SceneExpander } from '@/engine/ai-scene-expander';
+import { AIApiClient } from '@/engine/ai-api-client';
+import { resolveTaskModelConfig } from '@/shared/task-model';
+import { ContextManager } from '@/engine/context-manager';
+import type { SceneNode } from '@/shared/types';
+import { computePromptHash } from '@/engine/prompt-hash';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import type NovelWriterPlugin from '@/main';
 
 /** 断点恢复配置（可选注入；提供后失败场景保存断点，重试时展示恢复选项） */
 export interface SceneConfirmCheckpointConfig {

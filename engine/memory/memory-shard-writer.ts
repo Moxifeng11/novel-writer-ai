@@ -9,11 +9,11 @@
  * 解析/写盘分离：解析是纯函数可单测；写盘走 vault。
  */
 import type { App } from 'obsidian';
-import { MEMORY_GENERATION_PROMPTS } from '../prompts/memory-prompts';
-import { fillTemplate } from '../prompts/template-utils';
-import { pjMemoryShardsDir } from '../../shared/paths';
-import { mkdirp } from '../../utils/helpers';
-import { createLogger } from '../../shared/logger';
+import { MEMORY_GENERATION_PROMPTS } from '@/engine/prompts/memory-prompts';
+import { fillTemplate } from '@/engine/prompts/template-utils';
+import { pjMemoryShardsDir } from '@/shared/paths';
+import { mkdirp } from '@/utils/helpers';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('MemoryShards');
 

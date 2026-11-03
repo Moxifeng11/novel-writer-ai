@@ -6,7 +6,7 @@
  * 让 Agent 能覆盖从新建项目到导出成稿的全部插件功能。
  */
 import { App, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../../main';
+import NovelWriterPlugin from '@/main';
 import type {
     AgentChapterSummary,
     AgentCommandRunRecord,
@@ -16,27 +16,27 @@ import type {
     AgentProjectStatus,
     AgentVaultSearchHit,
     GuideAgentPort,
-} from '../../engine/agent/agent-types';
-import { extractLineWindow, sanitizeVaultPath, summarizeHitLine } from '../../shared/file-path-guard';
-import { getExecutionLedger } from '../../services/execution-ledger';
+} from '@/engine/agent/agent-types';
+import { extractLineWindow, sanitizeVaultPath, summarizeHitLine } from '@/shared/file-path-guard';
+import { getExecutionLedger } from '@/services/execution-ledger';
 import { createLongNovelProject } from './project-create-service';
-import { StorySettingsModal } from '../story-settings-modal';
-import { OperationConfirmModal } from '../components/progress';
-import { DomainProjectFactory } from '../../domains/kernel/domain-project-factory';
-import { createDefaultPreResearch, writePreResearchFiles, type ScriptPreResearch, type ShortPreResearch } from '../../shared/pre-research';
-import { PreResearchModal } from '../pre-research-modal';
-import { CREATION_MODE_SPECS, getCreationModeLabel, parseCreationModeMeta, type CreationModeMeta } from '../../shared/creation-mode';
-import { getProjectModeSync, resolveProjectMode } from '../../shared/project-mode';
-import { ModeDocumentModal } from '../mode-document-modal';
-import { getStoryStructure } from '../../shared/story-structure';
-import { createLogger } from '../../shared/logger';
-import { FullWriterView } from '../full-writer-view';
-import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '../project-utils';
-import { isChapterWritten, summarizeChapterProgress } from '../../shared/chapter-progress';
-import { listModeUnits, modeUnitLabel, type ModeUnitInfo } from '../../shared/mode-content';
-import { readProjectMeta } from '../../shared/paths';
-import { CoWritingView } from '../co-writing-view';
-import { listProjects } from '../export-manuscript-modal';
+import { StorySettingsModal } from '@/ui/story-settings-modal';
+import { OperationConfirmModal } from '@/ui/components/progress';
+import { DomainProjectFactory } from '@/domains/kernel/domain-project-factory';
+import { createDefaultPreResearch, writePreResearchFiles, type ScriptPreResearch, type ShortPreResearch } from '@/shared/pre-research';
+import { PreResearchModal } from '@/ui/pre-research-modal';
+import { CREATION_MODE_SPECS, getCreationModeLabel, parseCreationModeMeta, type CreationModeMeta } from '@/shared/creation-mode';
+import { getProjectModeSync, resolveProjectMode } from '@/shared/project-mode';
+import { ModeDocumentModal } from '@/ui/mode-document-modal';
+import { getStoryStructure } from '@/shared/story-structure';
+import { createLogger } from '@/shared/logger';
+import { FullWriterView } from '@/ui/full-writer-view';
+import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '@/ui/project-utils';
+import { isChapterWritten, summarizeChapterProgress } from '@/shared/chapter-progress';
+import { listModeUnits, modeUnitLabel, type ModeUnitInfo } from '@/shared/mode-content';
+import { readProjectMeta } from '@/shared/paths';
+import { CoWritingView } from '@/ui/co-writing-view';
+import { listProjects } from '@/ui/export-manuscript-modal';
 
 const log = createLogger('AgentPort');
 

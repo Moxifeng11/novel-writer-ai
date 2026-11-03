@@ -6,7 +6,7 @@
  * 不回调 view 的 private 成员（避免 TS2341）。
  */
 import { App, Notice } from 'obsidian';
-import NovelWriterPlugin from '../../main';
+import NovelWriterPlugin from '@/main';
 
 /**
  * SettingLibController 类。

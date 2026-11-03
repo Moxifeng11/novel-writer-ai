@@ -1,16 +1,16 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { mkdirp, showSuccess, showError, stripFrontmatter } from '../utils/helpers';
-import { getChapterFileName, getChapterFile, findChapterFile, findBodyFileByChapterNum, normalizeChapterFiles, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
-import { TemplateService } from '../engine/template-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { RE_VOLUME_HEADER, RE_RANGE_NUMBERS, RE_OUTLINE_TABLE_ROW } from '../shared/format-constants';
-import { pjBodyDir, pjBodyFile, pjStepDir, pjVolumeOutlineFile, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjVolumeOutlineDir } from '../shared/paths';
-import { BodyWriter } from '../engine/body-writer';
-import { describeBodyFormat } from '../shared/body-format';
-import { listFolderFiles } from '../shared/vault-tree';
-import { createLogger } from '../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { mkdirp, showSuccess, showError, stripFrontmatter } from '@/utils/helpers';
+import { getChapterFileName, getChapterFile, findChapterFile, findBodyFileByChapterNum, normalizeChapterFiles, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import { TemplateService } from '@/engine/template-service';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { RE_VOLUME_HEADER, RE_RANGE_NUMBERS, RE_OUTLINE_TABLE_ROW } from '@/shared/format-constants';
+import { pjBodyDir, pjBodyFile, pjStepDir, pjVolumeOutlineFile, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjVolumeOutlineDir } from '@/shared/paths';
+import { BodyWriter } from '@/engine/body-writer';
+import { describeBodyFormat } from '@/shared/body-format';
+import { listFolderFiles } from '@/shared/vault-tree';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ContinueChaptersModal');

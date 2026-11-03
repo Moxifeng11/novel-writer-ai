@@ -5,14 +5,14 @@
  */
 import { Notice, TFolder } from 'obsidian';
 import { detectProjects } from './context-manager';
-import { readProjectMeta } from '../shared/paths';
-import { parseCreationModeMeta } from '../shared/creation-mode';
+import { readProjectMeta } from '@/shared/paths';
+import { parseCreationModeMeta } from '@/shared/creation-mode';
 import {
     MODE_LIBRARY_ROOTS,
     modeFromLibraryPath,
     projectDisplayName,
-} from '../domains/kernel/project-locator';
-import { createLogger } from '../shared/logger';
+} from '@/domains/kernel/project-locator';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('ProjectMigration');
 

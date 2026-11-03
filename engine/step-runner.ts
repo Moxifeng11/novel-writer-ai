@@ -1,42 +1,42 @@
 import { App, TFile } from 'obsidian';
-import { isChapterSettledText } from '../shared/chapter-status';
+import { isChapterSettledText } from '@/shared/chapter-status';
 import { AIEngine, APIResponse } from './ai-engine';
 import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
 import { findChapterFile, findBodyFileByChapterNum } from './chapter-utils';
-import { mkdirp, stripFrontmatter } from '../utils/helpers';
+import { mkdirp, stripFrontmatter } from '@/utils/helpers';
 import { SettlementEngine } from './settlement-engine';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { NOTICE_WARNING, NOTICE_CRITICAL, getBusinessThreshold } from '../shared/thresholds';
-import { fitPromptToContext } from '../shared/prompt-budget';
-import { resolveTaskForStep, resolveTaskModelConfig, type ThinkingMode } from '../shared/task-model';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { NOTICE_WARNING, NOTICE_CRITICAL, getBusinessThreshold } from '@/shared/thresholds';
+import { fitPromptToContext } from '@/shared/prompt-budget';
+import { resolveTaskForStep, resolveTaskModelConfig, type ThinkingMode } from '@/shared/task-model';
 import { auditEmotions } from './emotion-auditor';
 import { KnowledgeInjector } from './knowledge-injector';
-import { buildInjectionLedger, formatInjectionLedger, type InjectionLedgerEntry } from '../shared/injection-ledger';
+import { buildInjectionLedger, formatInjectionLedger, type InjectionLedgerEntry } from '@/shared/injection-ledger';
 import { WritingProfileManager } from './writing-profile';
-import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '../shared/paths';
+import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '@/shared/paths';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { StepResultSaver, type StepSaveMeta } from './step-result-saver';
 import { StepModalController } from './step-modal-controller';
 import { AnalysisSessionManager } from './analysis-session-manager';
 import { StyleFingerprintLibrary } from './style-fingerprint-library';
 import { selectBodyStyleSamples, formatStyleSamplesForPrompt } from './style/style-sample-service';
-import { parseContrastLibrary, selectContrastPair, formatContrastPairForPrompt } from '../shared/contrast-library';
+import { parseContrastLibrary, selectContrastPair, formatContrastPairForPrompt } from '@/shared/contrast-library';
 import { writeChapterStateSnapshot } from './chapter-state-snapshot-service';
 import { writeSettlementArtifacts } from './settlement/settlement-coordinator';
-import { pjNarrativeOverview } from '../shared/paths';
+import { pjNarrativeOverview } from '@/shared/paths';
 import { parseQualityControlReport } from './revision/quality-issue-parser';
 import { runTargetedRevision } from './revision/targeted-revision';
 import { evaluateRevision, extractCharacterNames, recheckRevision } from './revision/revision-guard';
-import { ChapterVersionService } from '../services/chapter-version-service';
+import { ChapterVersionService } from '@/services/chapter-version-service';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
-import { pjContrastLibrary } from '../shared/paths';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { pjContrastLibrary } from '@/shared/paths';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { runCharacterSoulStep, runEmotionPlanStep, runSceneExpandStep, type StepSpecialsHost } from './step-specials';
 import { executeSettlement as executeSettlementPrimitive, type StepSettlementHost } from './step-settlement';
 import { executeStepsSequential as executeStepsSequentialPrimitive } from './step-sequential';
 import { getStepTemplateAuto, fillTemplate } from './prompts/template-utils';
 import { assembleStepPrompt, type StepPromptAssemblyHost } from './step-prompt-assembly';
-import type { NovelWriterPluginAPI } from '../plugin-api';
+import type { NovelWriterPluginAPI } from '@/plugin-api';
 
 // ============================================================
 // 步骤定义（从 step-definitions.ts 重新导出，保持外部零修改）
@@ -44,7 +44,7 @@ import type { NovelWriterPluginAPI } from '../plugin-api';
 export { ALL_FULL_STEPS, STEP_INDEX_MIGRATION_MAP, migrateStepIndex, preCheckQualityControl } from './step-definitions';
 export type { FullStep, StepRunCtx, ModelStrategy, PreValidationFn, PostValidationFn } from './step-definitions';
 import type { StepRunCtx, StepRunMeta } from './step-definitions';
-import { formatRagSources, pushRagSource, type RagSource } from '../shared/rag-sources';
+import { formatRagSources, pushRagSource, type RagSource } from '@/shared/rag-sources';
 import { ALL_FULL_STEPS, preCheckQualityControl } from './step-definitions';
 import { calcStepIndexAfterPlanning, downstreamStepsAfterPlanningChange } from './planning-step-advance';
 import {
@@ -59,11 +59,11 @@ import {
     evaluateCombinedPlanning,
     parseCombinedPlanning,
 } from './planning-combined';
-import { createLogger } from '../shared/logger';
-import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
+import { createLogger } from '@/shared/logger';
+import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
 import { QualityGate } from './quality-gate';
 import { buildGateSnapshotFromVars } from './quality/gate-snapshot';
-import { createStepFailure, type StepFailureKind } from '../shared/execution-events';
+import { createStepFailure, type StepFailureKind } from '@/shared/execution-events';
 import { validateStepResult } from './step-validator';
 import { promptVariantOf } from './prompts/prompt-registry';
 
@@ -1973,4 +1973,4 @@ export class StepRunner {
     }
 
 }
-import { projectIdFromPath } from '../shared/paths';
+import { projectIdFromPath } from '@/shared/paths';

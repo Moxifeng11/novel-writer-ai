@@ -1,10 +1,10 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import { SUBDIR_OUTLINE_ROOT, pjVolumeOutlineDir } from '../shared/paths';
+import { SUBDIR_OUTLINE_ROOT, pjVolumeOutlineDir } from '@/shared/paths';
 
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { AIEngine } from '../engine/ai-engine';
-import { readMergedVolumeOutline } from '../utils/helpers';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { AIEngine } from '@/engine/ai-engine';
+import { readMergedVolumeOutline } from '@/utils/helpers';
 
 /**
  * NovelTagsModal 类。

@@ -6,7 +6,7 @@
  */
 
 import { BaseEntity, type BaseEntityProps } from './base-entity';
-import { Frontmatter, EntityStatus } from '../value-objects';
+import { Frontmatter, EntityStatus } from '@/engine/repository/domain/value-objects';
 import type { EntityCategory } from './base-entity';
 
 /**

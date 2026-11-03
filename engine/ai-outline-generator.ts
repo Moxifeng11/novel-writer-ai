@@ -1,12 +1,12 @@
 
 import { TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { OUTLINE_TABLE_HEADER } from '../shared/format-constants';
-import { WORLDVIEW_SLICE } from '../shared/thresholds';
+import NovelWriterPlugin from '@/main';
+import { OUTLINE_TABLE_HEADER } from '@/shared/format-constants';
+import { WORLDVIEW_SLICE } from '@/shared/thresholds';
 import type { OutlineSettings, WorldElements } from './ai-types';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
-import { pjControlDir, pjVolumeOutlineDir } from '../shared/paths';
+import { pjControlDir, pjVolumeOutlineDir } from '@/shared/paths';
 import {
     OUTLINE_VOLUME_REQUIRED_KEYS,
     buildBlueprintRepairHint,
@@ -24,8 +24,8 @@ import {
     type NormalizedOutlineSettings,
 } from './outline-contract';
 
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
 import { VolumeOutlineSummarizer, type VolumeSummary } from './volume-outline-summarizer';
 import {
     CrossVolumeOutlineValidator,
@@ -35,7 +35,7 @@ import {
     type GlobalStorylineBlueprint as ValidatorBlueprint,
 } from './cross-volume-outline-validator';
 import { CrossVolumeIntegrator, type CrossVolumeSnapshot } from './cross-volume-integration';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('AiOutlineGenerator');
 

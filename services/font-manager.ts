@@ -16,8 +16,8 @@
  *   （b）常见中文系统字体预设栈、（c）自定义载入字体 三类来源。
  */
 import { Notice, TFile } from 'obsidian';
-import type NovelWriterPlugin from '../main';
-import { createLogger } from '../shared/logger';
+import type NovelWriterPlugin from '@/main';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('FontManager');
 

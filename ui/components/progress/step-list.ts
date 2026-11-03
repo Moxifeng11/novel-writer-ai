@@ -1,4 +1,4 @@
-import { ProgressEmitter, type ProgressState, type ProgressStep } from '../../../shared/progress-emitter';
+import { ProgressEmitter, type ProgressState, type ProgressStep } from '@/shared/progress-emitter';
 
 /**
  * 步骤列表组件

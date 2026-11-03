@@ -1,5 +1,5 @@
 
-import type NovelWriterPlugin from '../main';
+import type NovelWriterPlugin from '@/main';
 import { computePromptHash } from './prompt-hash';
 import { getPromptCache } from './prompt-cache';
 import {
@@ -12,17 +12,17 @@ import {
     NOTICE_CRITICAL,
     NOTICE_SUCCESS,
     getTimeoutForModel,
-} from '../shared/thresholds';
-import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '../shared/token-estimator';
-import { resolveProviderSourceType } from '../shared/model-source';
-import type { ThinkingMode } from '../shared/task-model';
+} from '@/shared/thresholds';
+import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '@/shared/token-estimator';
+import { resolveProviderSourceType } from '@/shared/model-source';
+import type { ThinkingMode } from '@/shared/task-model';
 import type { APIResponse } from './ai-engine';
 
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { performanceMonitor } from '../services/performance-monitor';
-import { ensureLocalModelCapability } from '../services/local-model-probe';
-import { recordBudgetSnapshot } from '../shared/budget-telemetry';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { performanceMonitor } from '@/services/performance-monitor';
+import { ensureLocalModelCapability } from '@/services/local-model-probe';
+import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import {
     buildAuthHeaders,
     buildChatRequestBody,
@@ -32,8 +32,8 @@ import {
     resolveRequestUrl,
     usesDoneSentinel,
     type ApiFormat,
-} from '../shared/api-format';
-import { createLogger } from '../shared/logger';
+} from '@/shared/api-format';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('AiApiClient');

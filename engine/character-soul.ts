@@ -8,7 +8,7 @@
  */
 
 import { TFile, Vault } from 'obsidian';
-import { CHARACTER_SOUL_FIELDS } from '../shared/format-constants';
+import { CHARACTER_SOUL_FIELDS } from '@/shared/format-constants';
 
 /** 角色灵魂层数据 */
 export interface CharacterSoul {

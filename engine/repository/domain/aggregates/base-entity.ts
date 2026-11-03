@@ -5,8 +5,8 @@
  * 与 shared/entity-models.ts 中的 BaseEntity 接口保持兼容。
  */
 
-import { EntityStatus, Frontmatter } from '../value-objects';
-import type { MarkdownContent } from '../../../../shared/frontmatter';
+import { EntityStatus, Frontmatter } from '@/engine/repository/domain/value-objects';
+import type { MarkdownContent } from '@/shared/frontmatter';
 
 /**
  * 实体分类

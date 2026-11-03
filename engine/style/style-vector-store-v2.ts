@@ -17,21 +17,21 @@
  */
 
 import { App } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../../shared/file-system-port';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import {
     globalFingerprintVectorsDir,
     projectFingerprintVectorsDir,
-} from '../../shared/paths';
-import type { EmbeddingProvider } from '../embedding/embedding-provider';
+} from '@/shared/paths';
+import type { EmbeddingProvider } from '@/engine/embedding/embedding-provider';
 import {
     detectEmbeddingMismatch,
     getEmbeddingDimensionHint,
     getEmbeddingFingerprint,
     getEmbeddingModelName,
     type EmbeddingMismatchReason,
-} from '../embedding/embedding-fingerprint';
-import { cosineSimilarity } from '../local-vector-store';
-import { createLogger } from '../../shared/logger';
+} from '@/engine/embedding/embedding-fingerprint';
+import { cosineSimilarity } from '@/engine/local-vector-store';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('StyleVectorStoreV2');
 import {

@@ -12,7 +12,7 @@
  * 命令面板「切换 AI 提供商」也复用同一份菜单逻辑。
  */
 import { Menu, Notice } from 'obsidian';
-import type NovelWriterPlugin from '../main';
+import type NovelWriterPlugin from '@/main';
 
 /**
  * ModelSwitcherProviderOption 类型定义。

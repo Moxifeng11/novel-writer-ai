@@ -2,15 +2,15 @@
  * chapter-state-snapshot-service.ts — 读取实体/关系/伏笔并写入每章状态快照
  */
 import { App, TFile } from 'obsidian';
-import { ObsidianFileSystem } from '../shared/file-system-port';
-import { entityDir } from '../shared/entity-reader';
+import { ObsidianFileSystem } from '@/shared/file-system-port';
+import { entityDir } from '@/shared/entity-reader';
 import {
     pjCharsDir,
     pjForeshadowDB,
     pjChapterStateSnapshot,
     pjChapterStateSnapshotDir,
     pjPromiseLedger,
-} from '../shared/paths';
+} from '@/shared/paths';
 import { loadRelationshipStates, type CharacterPairRelation } from './relationship-engine';
 import { parseSceneBlocks, type SceneTask } from './scene-generation-loop';
 import {
@@ -21,7 +21,7 @@ import {
     type RelationshipWorldState,
 } from './world-state-snapshot';
 import { parsePromiseLedger } from './promise-ledger';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('ChapterStateSnapshot');
 

@@ -1,9 +1,9 @@
 import { TFile } from 'obsidian';
-import { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
-import { getWorldviewPath, getSettingLibPath, pjItemsDir } from '../shared/paths';
-import { entityDir } from '../shared/entity-reader';
+import { FileSystemPort, VaultMetaPort } from '@/shared/file-system-port';
+import { getWorldviewPath, getSettingLibPath, pjItemsDir } from '@/shared/paths';
+import { entityDir } from '@/shared/entity-reader';
 import { performanceMonitor } from './performance-monitor';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('WorldviewCacheService');

@@ -9,8 +9,8 @@
  * 通过注入 FileSystemPort 保持平台无关可测（测试用 MockFileSystem）。
  */
 
-import type { FileSystemPort } from '../shared/file-system-port';
-import { pjCheckpointDir } from '../shared/paths';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import { pjCheckpointDir } from '@/shared/paths';
 import type { CheckpointStoragePort, GenerationCheckpoint } from './generation-checkpoint';
 
 /**

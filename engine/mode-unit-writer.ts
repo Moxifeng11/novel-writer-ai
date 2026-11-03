@@ -10,20 +10,20 @@
  */
 import type { App } from 'obsidian';
 import { TFile } from 'obsidian';
-import type { CreationMode } from '../shared/creation-mode';
-import { getCreationModePromptBlock, getCreationModeLabel, parseCreationModeMeta } from '../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
+import { getCreationModePromptBlock, getCreationModeLabel, parseCreationModeMeta } from '@/shared/creation-mode';
 import {
     listModeUnits,
     modeBodyDir,
     modeDocPath,
     modeUnitDisplay,
     modeUnitFileName,
-} from '../shared/mode-content';
-import { extractUnitOutlineSection } from '../shared/mode-unit-outline';
-import { readPreResearchData } from '../shared/pre-research';
-import { readProjectMeta } from '../shared/paths';
+} from '@/shared/mode-content';
+import { extractUnitOutlineSection } from '@/shared/mode-unit-outline';
+import { readPreResearchData } from '@/shared/pre-research';
+import { readProjectMeta } from '@/shared/paths';
 import { HUMAN_VOICE_SHORT } from './prompts/human-voice';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('ModeUnitWriter');
 

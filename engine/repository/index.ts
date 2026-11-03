@@ -2,8 +2,8 @@
  * repository/index.ts — 统一导出
  *
  * 用法：
- *   import { IRepository, IBulkRepository, BaseMarkdownRepository, LruCache } from '../repository';
- *   import { Project, Chapter, Character, DomainValidator, EntityFactory } from '../repository/domain';
+ *   import { IRepository, IBulkRepository, BaseMarkdownRepository, LruCache } from '@/engine/repository';
+ *   import { Project, Chapter, Character, DomainValidator, EntityFactory } from '@/engine/repository/domain';
  */
 
 export type {
@@ -13,8 +13,8 @@ export type {
     BulkFailure,
 } from './interfaces';
 
-export { LruCache } from '../../shared/lru-cache';
-export type { LruCacheOptions } from '../../shared/lru-cache';
+export { LruCache } from '@/shared/lru-cache';
+export type { LruCacheOptions } from '@/shared/lru-cache';
 
 export { BaseMarkdownRepository } from './base-markdown-repository';
 export type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';

@@ -1,26 +1,26 @@
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     FACTION_FRONTMATTER_KEYS,
     LOCATION_FRONTMATTER_KEYS,
     ITEM_FRONTMATTER_KEYS,
     ENTITY_BODY_SECTIONS,
-} from '../shared/format-constants';
+} from '@/shared/format-constants';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse, BatchEntityResult } from './ai-engine';
-import { stripCodeFence } from '../shared/api-response-utils';
-import { buildEntityTemplateBlock } from '../shared/entity-templates';
+import { stripCodeFence } from '@/shared/api-response-utils';
+import { buildEntityTemplateBlock } from '@/shared/entity-templates';
 import {
     validateFactionOutput,
     validateLocationOutput,
     validateItemOutput,
     type ValidationResult,
-} from '../shared/template-validator';
+} from '@/shared/template-validator';
 
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
 import { Notice } from 'obsidian';
-import { NOTICE_ERROR } from '../shared/thresholds';
-import { createLogger } from '../shared/logger';
+import { NOTICE_ERROR } from '@/shared/thresholds';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('AiBatchEntityGenerator');
 /**

@@ -1,7 +1,7 @@
 import { App, TFile } from 'obsidian';
-import { RealtimeMonitor } from '../../engine/quality/realtime-monitor';
-import type { QualityScore } from '../../engine/quality/quality-score-engine';
-import type { CharacterContextInfo } from '../../engine/quality/quality-score-engine';
+import { RealtimeMonitor } from '@/engine/quality/realtime-monitor';
+import type { QualityScore } from '@/engine/quality/quality-score-engine';
+import type { CharacterContextInfo } from '@/engine/quality/quality-score-engine';
 import {
     getDeviationSeverityLabel,
     getDeviationTypeLabel,
@@ -9,29 +9,29 @@ import {
     type DeviationContext,
     type ForeshadowTracking,
     type PreviousChapterContext,
-} from '../../engine/quality/deviation-detector';
-import type { ChapterBrief } from '../../engine/chapter-brief';
-import { AdaptiveDebounceManager } from '../../shared/adaptive-debounce-manager';
+} from '@/engine/quality/deviation-detector';
+import type { ChapterBrief } from '@/engine/chapter-brief';
+import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import {
     DEVIATION_CHARACTER_INFO_TTL_MS,
     QUALITY_LIVE_PERSIST_INTERVAL_MS,
     QUALITY_MIN_EVALUABLE_CHARS,
-} from '../../shared/thresholds';
+} from '@/shared/thresholds';
 import {
     buildQualityChapterKey,
     isQualitySampleUsable,
     isSameQualityEvalTarget,
     normalizeChapterKey,
-} from '../../shared/quality-history';
-import { appendQualityHistory } from '../../services/quality-history-store';
-import { parseExpectedRhythm } from '../../shared/rhythm-intent';
+} from '@/shared/quality-history';
+import { appendQualityHistory } from '@/services/quality-history-store';
+import { parseExpectedRhythm } from '@/shared/rhythm-intent';
 import {
     buildPreviousChapterWindow,
     selectPreviousChapterFiles,
     type PreviousChapterSource,
-} from '../../shared/previous-chapter-window';
-import { SUBDIR_BODY_ROOT } from '../../shared/paths';
-import { createLogger } from '../../shared/logger';
+} from '@/shared/previous-chapter-window';
+import { SUBDIR_BODY_ROOT } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('RealtimeQuality');
 

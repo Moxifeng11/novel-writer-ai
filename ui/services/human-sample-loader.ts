@@ -8,8 +8,8 @@
  * 版权说明：样文来自已出版网文，仅本机使用，不随插件分发、不进仓库。
  */
 import type { App } from 'obsidian';
-import { setExemplarLibrary, clearExemplarLibrary, type ExemplarSample } from '../../engine/prompts/style-exemplars';
-import { createLogger } from '../../shared/logger';
+import { setExemplarLibrary, clearExemplarLibrary, type ExemplarSample } from '@/engine/prompts/style-exemplars';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('HumanSamples');
 

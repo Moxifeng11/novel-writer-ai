@@ -4,8 +4,8 @@
  * 提供领域模型的验证逻辑，确保数据完整性和业务规则一致性。
  */
 
-import { BaseEntity, Project, Chapter, Character, Faction, Location, Item } from '../aggregates';
-import type { EntityCategory } from '../aggregates';
+import { BaseEntity, Project, Chapter, Character, Faction, Location, Item } from '@/engine/repository/domain/aggregates';
+import type { EntityCategory } from '@/engine/repository/domain/aggregates';
 
 /**
  * 验证结果

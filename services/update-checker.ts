@@ -9,8 +9,8 @@
  * - 记录上次检查时间，避免频繁检查
  */
 
-import { PluginCacheManager } from '../shared/plugin-cache';
-import { GITHUB_REPO_SLUG, buildGitHubLatestReleaseApi, normalizeGitHubRepo } from '../shared/github-repo';
+import { PluginCacheManager } from '@/shared/plugin-cache';
+import { GITHUB_REPO_SLUG, buildGitHubLatestReleaseApi, normalizeGitHubRepo } from '@/shared/github-repo';
 
 /** 更新检查源类型 */
 export type UpdateSourceType = 'github' | 'custom';

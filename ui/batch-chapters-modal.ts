@@ -9,18 +9,18 @@
  * 「findChapterFile(整卷目录)」串章隐患随自造逻辑一并移除。
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import { entityDir } from '../shared/entity-reader';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { listChapterNumbers } from '../engine/chapter-utils';
-import { showSuccess, showError, showWarning } from '../utils/helpers';
+import { splitTableCells } from '@/shared/chapter-table';
+import { entityDir } from '@/shared/entity-reader';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { listChapterNumbers } from '@/engine/chapter-utils';
+import { showSuccess, showError, showWarning } from '@/utils/helpers';
 import {
     pjStepDir, pjControlDir, pjForeshadowDB, pjInfoDebtBoard,
     SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT,
-} from '../shared/paths';
+} from '@/shared/paths';
 import { WriteChapterModal } from './write-chapter-modal';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('BatchChaptersModal');

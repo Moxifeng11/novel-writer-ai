@@ -5,8 +5,8 @@
  * 对应优化方向：F3
  */
  
-import { EmotionPoint, EmotionCurve } from '../shared/co-writer-types';
-import { createLogger } from '../shared/logger';
+import { EmotionPoint, EmotionCurve } from '@/shared/co-writer-types';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('EmotionCurveAnalyzer');

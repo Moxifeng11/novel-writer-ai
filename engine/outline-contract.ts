@@ -21,14 +21,14 @@
 import {
     OUTLINE_REQUIRED_KEYS,
     OUTLINE_TABLE_HEADER,
-} from '../shared/format-constants';
+} from '@/shared/format-constants';
 import {
     extractChapterTableRows,
     isChapterTableHeaderLine,
     isTableSeparatorLine,
     parseChapterRow,
-} from '../shared/chapter-table';
-import { validateOutlineOutput } from '../shared/template-validator';
+} from '@/shared/chapter-table';
+import { validateOutlineOutput } from '@/shared/template-validator';
 import type { GlobalStorylineBlueprint as ValidatorBlueprint } from './cross-volume-outline-validator';
 
 // ============================================================

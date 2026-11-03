@@ -14,7 +14,7 @@ import {
     FACTION_FRONTMATTER_KEYS,
     LOCATION_FRONTMATTER_KEYS,
     ITEM_FRONTMATTER_KEYS,
-} from '../format-constants';
+} from '@/shared/format-constants';
 
 // ============================================================
 // normalize 函数 —— 安全网：对确实缺失的字段补入默认值

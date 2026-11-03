@@ -4,7 +4,7 @@
  * 封装实体状态的枚举值和转换逻辑。
  */
 
-import type { EntityStatus as EntityStatusType } from '../../../../shared/types';
+import type { EntityStatus as EntityStatusType } from '@/shared/types';
 
 /** 实体状态枚举值 */
 export type EntityStatusValue = 'active' | 'inactive' | 'dead' | 'hidden';

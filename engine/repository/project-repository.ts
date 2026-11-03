@@ -5,8 +5,8 @@
  * 项目元数据存储在各项目目录下的 .project 文件中。
  */
 
-import type { FileSystemPort } from '../../shared/file-system-port';
-import { pjProjectMeta } from '../../shared/paths';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import { pjProjectMeta } from '@/shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Project } from './domain/aggregates';

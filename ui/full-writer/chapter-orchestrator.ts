@@ -5,11 +5,11 @@
  * 所有步骤仍走 StepRunner.executeCurrentStep / executeStepsSequential，
  * 因此步骤文件、校验、截断标记、失效传播、手动重生成全部保留。
  */
-import { ALL_FULL_STEPS } from '../../engine/step-definitions';
+import { ALL_FULL_STEPS } from '@/engine/step-definitions';
 import { isBodySettled } from './batch-targets';
-import type { ChapterRunMode } from '../../shared/chapter-run';
+import type { ChapterRunMode } from '@/shared/chapter-run';
 
-export type { ChapterRunMode } from '../../shared/chapter-run';
+export type { ChapterRunMode } from '@/shared/chapter-run';
 
 /** 仅描述编排器实际用到的 StepRunner 能力，避免 UI -> engine 的运行时/类型环。 */
 interface ChapterStepRunner {

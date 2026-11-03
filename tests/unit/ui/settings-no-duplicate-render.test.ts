@@ -168,3 +168,21 @@ describe('写作配置与写作规则的分工', () => {
         expect(read('ui/settings/general-sections.ts')).toContain("setName('实验分组标签')");
     });
 });
+
+describe('创作模式设置与字数校验', () => {
+    it('设置页有「创作模式」分区，并展示三类项目的根目录', () => {
+        const tab = read('ui/settings-tab.ts');
+        const mode = read('ui/settings/mode-section.ts');
+        expect(tab).toContain("id: 'modes'");
+        expect(tab).toContain('new ModeSection');
+        expect(mode).toContain('MODE_LIBRARY_ROOTS');
+        expect(mode).toContain('项目库根目录');
+    });
+
+    it('写作配置对字数上下限做实时一致性提示', () => {
+        const writing = read('ui/settings/writing-sections.ts');
+        expect(writing).toContain('validateWordRange');
+        expect(writing).toContain('最小字数大于默认字数');
+        expect(writing).toContain('默认字数大于最大字数');
+    });
+});

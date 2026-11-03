@@ -3,7 +3,7 @@ import { OllamaEmbeddingProvider } from './ollama-provider';
 import { OpenAIEmbeddingProvider } from './openai-provider';
 import { DoubaoEmbeddingProvider } from './doubao-provider';
 import { QwenEmbeddingProvider } from './qwen-provider';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('ProviderFactory');

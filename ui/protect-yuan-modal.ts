@@ -1,7 +1,7 @@
 import { App, Modal, Notice, FileSystemAdapter, Platform } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { createLogger } from '../shared/logger';
-import { readOnlyManualHint, setPathReadOnly } from '../shared/desktop-shell';
+import NovelWriterPlugin from '@/main';
+import { createLogger } from '@/shared/logger';
+import { readOnlyManualHint, setPathReadOnly } from '@/shared/desktop-shell';
 
 
 const log = createLogger('ProtectYuanModal');

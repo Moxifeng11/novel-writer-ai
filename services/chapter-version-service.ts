@@ -12,22 +12,22 @@ import type {
     ContentType,
     RollbackRecord,
     DiffStats,
-} from '../shared/version-types';
+} from '@/shared/version-types';
 import {
     pjContentVersionsDir,
     pjVersionIndexFile,
     pjVersionContentFile,
     pjRollbackHistoryFile,
     pjVersionsDir,
-} from '../shared/paths';
+} from '@/shared/paths';
 import {
     lineDiff,
     charDiff,
     computeDiffStats,
     countWords,
     generateVersionId,
-} from '../shared/diff-utils';
-import { withWriteLock } from '../shared/write-lock';
+} from '@/shared/diff-utils';
+import { withWriteLock } from '@/shared/write-lock';
 
 /**
  * 保存版本选项列表结构定义。

@@ -18,7 +18,7 @@
  */
 
 import { SegmentAwareBreakdown, SegmentBreakdownResult } from './segment-aware-breakdown';
-import { countCjkAndWords } from '../shared/word-count';
+import { countCjkAndWords } from '@/shared/word-count';
 import { TextSegment } from './text-segmenter';
 import { IncrementalResultAggregator, PartialResult, type AnalysisResult } from './incremental-result-aggregator';
 import type { DeconstructionWorkerManager, DeconstructDimension } from './deconstruction-worker-manager';

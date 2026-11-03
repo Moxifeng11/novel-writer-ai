@@ -25,9 +25,9 @@
  * 性能：12 维拆解不超过 V1 的 1.5 倍耗时
  */
 
-import { StyleDeconstructor, type StyleAnalysisResult } from '../deconstructors/style-deconstructor';
-import { isChineseChar } from '../../shared/text-utils';
-import type { VectorEnhancer } from '../vector-enhancer';
+import { StyleDeconstructor, type StyleAnalysisResult } from '@/engine/deconstructors/style-deconstructor';
+import { isChineseChar } from '@/shared/text-utils';
+import type { VectorEnhancer } from '@/engine/vector-enhancer';
 import type {
     StyleFingerprintFeaturesV2,
     RhythmStats,

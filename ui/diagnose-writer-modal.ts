@@ -1,15 +1,15 @@
 import { App, Modal, Notice, Platform, TFile } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
-import { pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB } from '../shared/paths';
-import { diagnoseOutline } from '../shared/info-debt';
-import { createLogger } from '../shared/logger';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
-import { exportTextFile } from '../shared/export-file';
-import { getBudgetSnapshots } from '../shared/budget-telemetry';
-import { ENGINE_NAMES } from '../shared/engine-names';
+import { splitTableCells } from '@/shared/chapter-table';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import { pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB } from '@/shared/paths';
+import { diagnoseOutline } from '@/shared/info-debt';
+import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import { exportTextFile } from '@/shared/export-file';
+import { getBudgetSnapshots } from '@/shared/budget-telemetry';
+import { ENGINE_NAMES } from '@/shared/engine-names';
 
 
 const log = createLogger('DiagnoseWriterModal');

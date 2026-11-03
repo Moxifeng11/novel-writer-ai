@@ -1,4 +1,4 @@
-import { countCjkAndWords } from '../shared/word-count';
+import { countCjkAndWords } from '@/shared/word-count';
 /**
  * chapter-recognizer.ts — 智能章节识别服务
  *

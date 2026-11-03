@@ -5,10 +5,10 @@
  * 可丢弃的增强尾部，再做头尾截断。知识注入与预算解析由宿主提供，本模块只负责装配。
  */
 
-import { fitPromptToContext } from '../shared/prompt-budget';
-import { getBusinessThreshold } from '../shared/thresholds';
-import { withActiveInputBudget } from '../shared/context-budget-policy';
-import { createLogger } from '../shared/logger';
+import { fitPromptToContext } from '@/shared/prompt-budget';
+import { getBusinessThreshold } from '@/shared/thresholds';
+import { withActiveInputBudget } from '@/shared/context-budget-policy';
+import { createLogger } from '@/shared/logger';
 import type { StepRunCtx } from './step-definitions';
 
 const log = createLogger('StepPromptAssembly');

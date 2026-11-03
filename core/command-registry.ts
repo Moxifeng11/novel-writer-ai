@@ -6,16 +6,16 @@
  */
 
 import { App, Editor, ItemView, MarkdownFileInfo, MarkdownView, Notice, TFile } from 'obsidian';
-import { InternalRegistry } from '../shared/internal-registry';
-import type { ChapterVersionPort } from '../shared/chapter-version-port';
+import { InternalRegistry } from '@/shared/internal-registry';
+import type { ChapterVersionPort } from '@/shared/chapter-version-port';
 import { importExampleProject } from './example-project-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { parseChapterLocation, pjNarrativeOverview } from '../shared/paths';
-import { createLogger } from '../shared/logger';
-import { NOOP_COMMAND_UI_PORT, type CommandUiPort } from '../shared/command-ui-port';
-import type { CreationMode } from '../shared/creation-mode';
-import { getProjectModeSync } from '../shared/project-mode';
-import { LONG_ONLY, SCRIPT_ONLY, SHORT_ONLY } from '../shared/command-mode-rules';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { parseChapterLocation, pjNarrativeOverview } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { NOOP_COMMAND_UI_PORT, type CommandUiPort } from '@/shared/command-ui-port';
+import type { CreationMode } from '@/shared/creation-mode';
+import { getProjectModeSync } from '@/shared/project-mode';
+import { LONG_ONLY, SCRIPT_ONLY, SHORT_ONLY } from '@/shared/command-mode-rules';
 
 
 const log = createLogger('CommandRegistry');
@@ -23,7 +23,7 @@ const log = createLogger('CommandRegistry');
  * 命令 ID 常量枚举
  * 避免魔法字符串，提供类型安全的命令 ID 引用
  */
-import { CommandIds, type CommandId } from '../shared/command-ids';
+import { CommandIds, type CommandId } from '@/shared/command-ids';
 export { CommandIds, type CommandId };
 
 /** 命令分组 */
@@ -184,7 +184,7 @@ export interface CommandRegistryDeps {
     /** UI 执行端口：Modal / 视图类命令由 ui 层实现，core 只按 id 委托 */
     ui?: CommandUiPort;
     /** 插件实例引用（实体 Modal 需要 access settings 和回调槽） */
-    plugin: import('../main').default;
+    plugin: import('@/main').default;
     /**
      * 获取当前活动项目名
      *
@@ -565,7 +565,7 @@ export class CommandRegistry {
 
     private async getCurrentFileContext(): Promise<{
         project: string;
-        contentType: import('../shared/version-types').ContentType;
+        contentType: import('@/shared/version-types').ContentType;
         contentKey: string;
         sourcePath: string;
         content: string;
@@ -584,7 +584,7 @@ export class CommandRegistry {
         }
 
         const chapterCtx = parseChapterFromPath(path);
-        let contentType: import('../shared/version-types').ContentType = 'chapter';
+        let contentType: import('@/shared/version-types').ContentType = 'chapter';
         let contentKey = activeFile.basename;
 
         if (chapterCtx) {
@@ -651,4 +651,4 @@ export class CommandRegistry {
 export function parseChapterFromPath(path: string): { project: string; volume: string; chapterNum: number; chapterName: string } | null {
     return parseChapterLocation(path);
 }
-import { projectIdFromPath } from '../shared/paths';
+import { projectIdFromPath } from '@/shared/paths';

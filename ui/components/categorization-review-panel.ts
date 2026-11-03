@@ -1,5 +1,5 @@
-import { SuggestionManager } from '../../engine/suggestion-manager';
-import type { AnalysisSuggestion, SuggestionType } from '../../engine/types/analysis-suggestion';
+import { SuggestionManager } from '@/engine/suggestion-manager';
+import type { AnalysisSuggestion, SuggestionType } from '@/engine/types/analysis-suggestion';
 
 /**
  * CategorizationReviewPanelOptions 类型定义。

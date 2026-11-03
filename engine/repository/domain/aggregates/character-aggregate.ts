@@ -6,14 +6,14 @@
  */
 
 import { BaseEntity, type BaseEntityProps } from './base-entity';
-import { EntityStatus, Frontmatter } from '../value-objects';
+import { EntityStatus, Frontmatter } from '@/engine/repository/domain/value-objects';
 import type { EntityCategory } from './base-entity';
 import type {
     CharacterSoulData,
     PersonalityLayers,
     CharacterArc,
     CharacterRelation,
-} from '../../../../shared/entity-models';
+} from '@/shared/entity-models';
 
 /**
  * 人物特定属性

@@ -4,7 +4,7 @@
  * Rules are first-class objects with id/scope/severity/source. Prompt text is
  * injected once per task; validators are pure functions and never call AI.
  */
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 
 /**
  * 规则作用域。

@@ -11,10 +11,10 @@
  */
 
 import { App, Modal, Notice, TFile } from 'obsidian';
-import type NovelWriterPlugin from '../main';
-import { pjVolumeOutlineDir, pjStepDir } from '../shared/paths';
-import { createLogger } from '../shared/logger';
-import { writeVaultText } from '../shared/file-system-port';
+import type NovelWriterPlugin from '@/main';
+import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 import { parseVolumeOutline, type VolumeNode, type ChapterNode } from './plot-canvas-parser';
 
 const log = createLogger('PlotCanvasModal');

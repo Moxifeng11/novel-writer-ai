@@ -5,7 +5,7 @@
  * auto-writer / batch-chapters / continue-chapters 三条简化链路。
  */
 import { App, Modal, Notice, Setting } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     BatchPipelineRunner,
     buildBatchTargets,

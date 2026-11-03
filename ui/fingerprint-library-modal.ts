@@ -1,7 +1,7 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
-import { FingerprintExtractor, ExtractionProgress } from '../engine/fingerprint-extractor';
-import { StyleFingerprint } from '../engine/style-fingerprint-library';
-import { createLogger } from '../shared/logger';
+import { FingerprintExtractor, ExtractionProgress } from '@/engine/fingerprint-extractor';
+import { StyleFingerprint } from '@/engine/style-fingerprint-library';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('FingerprintLibraryModal');

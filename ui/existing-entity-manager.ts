@@ -1,9 +1,9 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { showSuccess, showError, showWarning } from '../utils/helpers';
-import { createLogger } from '../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { showSuccess, showError, showWarning } from '@/utils/helpers';
+import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from './components/progress';
-import { isImeComposing } from '../shared/keyboard';
+import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('ExistingEntityManager');

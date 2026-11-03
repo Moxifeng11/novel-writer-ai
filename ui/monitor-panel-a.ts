@@ -3,10 +3,10 @@
  * 节奏(C2) + 情绪曲线(F3) + OOC警告(A1) + 实体追踪(D1)
  */
 import { WorkspaceLeaf, Notice } from "obsidian";
-import NovelWriterPlugin from "../main";
+import NovelWriterPlugin from "@/main";
 import { DraggablePanel } from "./draggable-panel";
-import { EmotionCurveAnalyzer } from "../engine/emotion-curve-analyzer";
-import { RhythmAnalyzer } from "../engine/rhythm-analyzer";
+import { EmotionCurveAnalyzer } from "@/engine/emotion-curve-analyzer";
+import { RhythmAnalyzer } from "@/engine/rhythm-analyzer";
 import { EmotionCurveView } from "./components/emotion-curve-view";
 import { CoWriteFacade } from "./services/co-write-facade";
 

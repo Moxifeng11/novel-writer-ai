@@ -1,14 +1,14 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine, WorldElements } from '../engine/ai-engine';
-import { ContextManager } from '../engine/context-manager';
-import { writeVolumeOutlines } from '../utils/helpers';
-import { pjWorldview, pjForeshadowDB, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_WORLDVIEW_FILE } from '../shared/paths';
+import NovelWriterPlugin from '@/main';
+import { AIEngine, WorldElements } from '@/engine/ai-engine';
+import { ContextManager } from '@/engine/context-manager';
+import { writeVolumeOutlines } from '@/utils/helpers';
+import { pjWorldview, pjForeshadowDB, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_WORLDVIEW_FILE } from '@/shared/paths';
 import { ChapterOutlineTreeModal } from './chapter-outline-tree-modal';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from './components/progress';
-import { scanExistingVolumes, detectVolumeConflict } from '../shared/volume-conflict-detector';
-import { isImeComposing } from '../shared/keyboard';
+import { scanExistingVolumes, detectVolumeConflict } from '@/shared/volume-conflict-detector';
+import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('PlanBookModal');

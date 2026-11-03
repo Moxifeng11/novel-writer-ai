@@ -19,17 +19,17 @@
 import { App, TFile } from 'obsidian';
 import {
     FileSystemPort, FrontmatterPort, ObsidianFileSystem, ObsidianFrontmatter,
-} from '../shared/file-system-port';
+} from '@/shared/file-system-port';
 import {
     BodyFormatContract, DEFAULT_BODY_FORMAT, deriveBodyFormat, normalizeBodyText,
-} from '../shared/body-format';
-import { naturalizeBodyText } from '../shared/prose-naturalizer';
-import { pjBodyFile, pjWritingRules } from '../shared/paths';
+} from '@/shared/body-format';
+import { naturalizeBodyText } from '@/shared/prose-naturalizer';
+import { pjBodyFile, pjWritingRules } from '@/shared/paths';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { validateStepResult } from './step-validator';
-import { withWriteLock } from '../shared/write-lock';
-import { ChapterVersionService } from '../services/chapter-version-service';
-import { createLogger } from '../shared/logger';
+import { withWriteLock } from '@/shared/write-lock';
+import { ChapterVersionService } from '@/services/chapter-version-service';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('BodyWriter');
 

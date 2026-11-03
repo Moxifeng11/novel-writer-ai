@@ -1,10 +1,10 @@
-import { StyleFingerprint } from '../engine/style-fingerprint-library';
+import { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import {
     StyleDimensionKeyV2,
     StyleDimensionMetaV2,
     STYLE_DIMENSIONS_V2,
     DimensionStatus,
-} from '../engine/style/style-dimensions-v2';
+} from '@/engine/style/style-dimensions-v2';
 
 /**
  * 格式化词语数量。

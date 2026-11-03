@@ -10,8 +10,8 @@
  * 3. 按字数硬切 —— 超长单段的兜底策略
  */
 
-import { yieldToUI } from '../shared/yield';
-import { countCjkAndWords, countPlatformWords, countTotalChars as sharedTotalChars, countCjkChars } from '../shared/word-count';
+import { yieldToUI } from '@/shared/yield';
+import { countCjkAndWords, countPlatformWords, countTotalChars as sharedTotalChars, countCjkChars } from '@/shared/word-count';
 
 /**
  * 文本分段。

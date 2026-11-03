@@ -15,11 +15,11 @@ import {
     hashText,
     isAuthoritativeSource,
     normalizeSourceUrl,
-} from '../shared/canon-source';
-import { pjFanficResearchDir } from '../shared/paths';
-import { createLogger } from '../shared/logger';
-import { GITHUB_REPO_URL } from '../shared/github-repo';
-import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '../shared/http-request';
+} from '@/shared/canon-source';
+import { pjFanficResearchDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { GITHUB_REPO_URL } from '@/shared/github-repo';
+import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '@/shared/http-request';
 
 const log = createLogger('CanonResearch');
 

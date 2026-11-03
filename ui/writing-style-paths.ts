@@ -1,5 +1,5 @@
 import { App, TFile, TFolder } from 'obsidian';
-import { getLegacyWritingStylePath, getWritingStylePath, SUBDIR_WORLD_ARCH } from '../shared/paths';
+import { getLegacyWritingStylePath, getWritingStylePath, SUBDIR_WORLD_ARCH } from '@/shared/paths';
 
 /**
  * getWritingStyleCandidatePaths 函数。

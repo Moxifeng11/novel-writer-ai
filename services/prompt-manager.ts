@@ -7,8 +7,8 @@ import type {
     ABTestVariant,
     PromptUsageRecord,
     PromptManagerConfig,
-} from '../shared/prompt-manager-types';
-import { DEFAULT_PROMPT_MANAGER_CONFIG } from '../shared/prompt-manager-types';
+} from '@/shared/prompt-manager-types';
+import { DEFAULT_PROMPT_MANAGER_CONFIG } from '@/shared/prompt-manager-types';
 import { DEFAULT_PROMPT_TEMPLATES } from './prompt-templates-default';
 
 /**

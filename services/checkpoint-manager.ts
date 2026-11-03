@@ -11,8 +11,8 @@
  * - 支持流式恢复（从字节偏移继续）
  */
 
-import { FileSystemPort } from '../shared/file-system-port';
-import { yieldToUI } from '../shared/yield';
+import { FileSystemPort } from '@/shared/file-system-port';
+import { yieldToUI } from '@/shared/yield';
 
 /**
  * 检查点状态。

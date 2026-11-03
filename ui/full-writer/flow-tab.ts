@@ -3,7 +3,7 @@
  *
  * 一个项目只保留一个流程页签；重复点击入口只激活，不再堆叠副本。
  */
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 import type { FullWriterStore, WriterTab } from './full-writer-store';
 
 /**

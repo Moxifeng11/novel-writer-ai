@@ -21,8 +21,8 @@ import type { InjectionContext, LayeredInjectionOptions } from './knowledge-inje
 import type { APIResponse } from './ai-engine';
 import {
     BodyFormatContract, DEFAULT_BODY_FORMAT, describeBodyFormat,
-} from '../shared/body-format';
-import { getModelContextWindow } from '../shared/token-estimator';
+} from '@/shared/body-format';
+import { getModelContextWindow } from '@/shared/token-estimator';
 import { buildCraftSystemBlock } from './craft-constraints';
 
 /** 知识注入段可占模型窗口的比例：其余留给任务卡、正文与输出 */

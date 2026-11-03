@@ -23,14 +23,14 @@
  
  /** 待确认的实体状态变更 */
  export interface PendingEntityChange {
-     change: import('../engine/entity-state-manager').EntityStateChange;
+     change: import('@/engine/entity-state-manager').EntityStateChange;
      confirmed: boolean;
      reviewedAt?: number;
  }
  
  /** CoWriting 会话扩展（含灵魂数据和状态变更） */
  export interface CoWritingSessionExtended {
-     soulData: import('../engine/character-soul').CharacterSoulSummary | null;
+     soulData: import('@/engine/character-soul').CharacterSoulSummary | null;
      pendingStateChanges: PendingEntityChange[];
  }
  

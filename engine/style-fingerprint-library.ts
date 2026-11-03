@@ -13,7 +13,7 @@
  */
 
 import { App } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import {
     globalFingerprintsFile,
     globalFingerprintLibraryDir,
@@ -23,8 +23,8 @@ import {
     templateFingerprintLibraryDir,
     projectGlobalFingerprintStateFile,
     projectFingerprintIntensityFile,
-} from '../shared/paths';
-import { SerializedWriter } from '../shared/serialized-writer';
+} from '@/shared/paths';
+import { SerializedWriter } from '@/shared/serialized-writer';
 import { StyleVectorStore, type StyleSimilarityResult, type StyleBlendOptions, type StyleInterpolationOptions, type StyleDimension, STYLE_DIMENSIONS } from './style-vector-store';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { getSharedEmbeddingProvider } from './embedding/embedding-service';
@@ -40,8 +40,8 @@ import {
     type StyleSimilarityResultV2,
     type StyleVectorModelMismatch,
 } from './style/style-vector-store-v2';
-import { createLogger } from '../shared/logger';
-import { extractKeywordTokens } from '../shared/keyword-tokens';
+import { createLogger } from '@/shared/logger';
+import { extractKeywordTokens } from '@/shared/keyword-tokens';
 
 const log = createLogger('StyleFingerprintLibrary');
 import {

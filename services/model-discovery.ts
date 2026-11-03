@@ -13,9 +13,9 @@
  *   - 失败要给出可读原因（鉴权失败 / 不是模型列表 / 网络不通），而不是静默返回空数组。
  */
 import { requestUrl } from 'obsidian';
-import { createLogger } from '../shared/logger';
-import type { ApiFormat } from '../shared/api-format';
-import { buildAuthHeaders, resolveModelsUrl } from '../shared/api-format';
+import { createLogger } from '@/shared/logger';
+import type { ApiFormat } from '@/shared/api-format';
+import { buildAuthHeaders, resolveModelsUrl } from '@/shared/api-format';
 
 const log = createLogger('ModelDiscovery');
 

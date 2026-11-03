@@ -1,13 +1,13 @@
 import { App, Modal, Notice, TFolder, TFile } from 'obsidian';
-import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
-import { DeconstructionScheduler, type BreakdownDimension } from '../engine/deconstruction-scheduler';
-import { KnowledgeTagManager } from '../engine/knowledge-tags';
-import { BatchImportManager, type ImportBookPreview, type ImportHistoryItem, type ImportBatchSettings, type ImportPreset, type BatchImportProgress, type ImportTask } from '../engine/batch-import-manager';
-import { type BookRecognitionResult } from '../services/chapter-recognizer';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import type { EngineRegistry } from '../engine/engine-registry';
-import { createLogger } from '../shared/logger';
-import { isImeComposing } from '../shared/keyboard';
+import { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
+import { DeconstructionScheduler, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
+import { KnowledgeTagManager } from '@/engine/knowledge-tags';
+import { BatchImportManager, type ImportBookPreview, type ImportHistoryItem, type ImportBatchSettings, type ImportPreset, type BatchImportProgress, type ImportTask } from '@/engine/batch-import-manager';
+import { type BookRecognitionResult } from '@/services/chapter-recognizer';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import type { EngineRegistry } from '@/engine/engine-registry';
+import { createLogger } from '@/shared/logger';
+import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('BatchImportModal');

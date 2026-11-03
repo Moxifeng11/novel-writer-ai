@@ -9,14 +9,14 @@
 import { App, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
-import { StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
+import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import {
     rebuildAllVectors,
     type VectorRebuildFingerprintTarget,
     type VectorRebuildReport,
     type VectorRebuildSectionReport,
-} from '../services/vector-rebuild-service';
-import { createLogger } from '../shared/logger';
+} from '@/services/vector-rebuild-service';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('VectorRebuildAction');

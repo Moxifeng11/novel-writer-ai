@@ -1,17 +1,17 @@
 import { App, Modal, Notice, TFile, MarkdownRenderer } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { ENTITY_CATEGORIES } from '../shared/entity-registry';
+import NovelWriterPlugin from '@/main';
+import { ENTITY_CATEGORIES } from '@/shared/entity-registry';
 import {
     SUBDIR_CHARS,
     SUBDIR_LOCS,
     SUBDIR_FACTIONS,
     SUBDIR_ITEMS,
-} from '../shared/paths';
+} from '@/shared/paths';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
 import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
-import { ensureEntityIntegrity } from '../shared/entity-integrity';
-import { auditEntityFiles, overwriteEntityIfComplete, readProjectWorldview } from '../shared/entity-audit';
-import { createLogger } from '../shared/logger';
+import { ensureEntityIntegrity } from '@/shared/entity-integrity';
+import { auditEntityFiles, overwriteEntityIfComplete, readProjectWorldview } from '@/shared/entity-audit';
+import { createLogger } from '@/shared/logger';
 import { createEmptyState } from './components/empty-state';
 
 const log = createLogger('UnifiedEntityManagerModal');
@@ -22,9 +22,9 @@ import {
     itemFromMarkdown,
     type AnyEntityDomainModel,
     type EntityCategory as ModelCategory,
-} from '../shared/entity-models';
-import { ENTITY_FIELD_MAPPINGS } from '../shared/entity-field-mappings';
-import { listEntityFiles, type EntityKind } from '../shared/entity-reader';
+} from '@/shared/entity-models';
+import { ENTITY_FIELD_MAPPINGS } from '@/shared/entity-field-mappings';
+import { listEntityFiles, type EntityKind } from '@/shared/entity-reader';
 
 /** 实体管理器分类 → 实体读取器目录类别 */
 const KIND_BY_CATEGORY: Record<ModelCategory, EntityKind> = {

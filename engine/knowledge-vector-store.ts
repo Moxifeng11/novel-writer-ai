@@ -1,6 +1,6 @@
 import { App } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
-import { kbBookDir, kbKnowledgeBaseDir, kbVectorsDir } from '../shared/paths';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
+import { kbBookDir, kbKnowledgeBaseDir, kbVectorsDir } from '@/shared/paths';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { cosineSimilarity } from './local-vector-store';
 import {
@@ -10,11 +10,11 @@ import {
     getEmbeddingModelName,
     type EmbeddingMismatchReason,
 } from './embedding/embedding-fingerprint';
-import { performanceMonitor } from '../services/performance-monitor';
-import { filterRetrievalResults, filterRetrievalResultsByScope, type RetrievalFilterScope } from '../shared/retrieval-filter';
-import { createLogger } from '../shared/logger';
-import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '../shared/write-lock';
-import { extractKeywordTokens, keywordOverlapRatio } from '../shared/keyword-tokens';
+import { performanceMonitor } from '@/services/performance-monitor';
+import { filterRetrievalResults, filterRetrievalResultsByScope, type RetrievalFilterScope } from '@/shared/retrieval-filter';
+import { createLogger } from '@/shared/logger';
+import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '@/shared/write-lock';
+import { extractKeywordTokens, keywordOverlapRatio } from '@/shared/keyword-tokens';
 
 
 const log = createLogger('KnowledgeVectorStore');

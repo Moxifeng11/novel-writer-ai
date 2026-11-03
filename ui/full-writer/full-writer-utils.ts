@@ -1,7 +1,7 @@
 import { TFile } from 'obsidian';
-import { ALL_FULL_STEPS, FullStep } from '../../engine/step-runner';
-import { parseChapterLocation, pjStepDir, projectIdFromPath } from '../../shared/paths';
-import { createLogger } from '../../shared/logger';
+import { ALL_FULL_STEPS, FullStep } from '@/engine/step-runner';
+import { parseChapterLocation, pjStepDir, projectIdFromPath } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('FullWriterUtils');

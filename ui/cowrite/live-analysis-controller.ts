@@ -8,10 +8,10 @@
  */
 
 import { Notice } from 'obsidian';
-import type { CoWritingView } from '../co-writing-view';
-import { AdaptiveDebounceManager } from '../../shared/adaptive-debounce-manager';
-import { createLogger } from '../../shared/logger';
-import { GUARD_INPUT_COOLDOWN_MS, GUARD_INPUT_MIN_GROWTH_CHARS } from '../../shared/thresholds';
+import type { CoWritingView } from '@/ui/co-writing-view';
+import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
+import { createLogger } from '@/shared/logger';
+import { GUARD_INPUT_COOLDOWN_MS, GUARD_INPUT_MIN_GROWTH_CHARS } from '@/shared/thresholds';
 
 
 const log = createLogger('LiveAnalysisController');

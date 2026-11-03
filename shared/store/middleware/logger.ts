@@ -4,7 +4,7 @@
  * 状态变更时输出日志，便于调试。
  */
 
-import type { State, StoreApi, LoggerOptions } from '../types';
+import type { State, StoreApi, LoggerOptions } from '@/shared/store/types';
 /**
  * Logger 中间件
  *

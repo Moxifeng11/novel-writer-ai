@@ -1,12 +1,12 @@
 import { App, Modal, Notice } from 'obsidian';
-import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
-import { DeconstructionScheduler, BreakdownDimension, BreakdownProgress } from '../engine/deconstruction-scheduler';
-import { StyleFingerprint, StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
-import { FingerprintExtractor } from '../engine/fingerprint-extractor';
-import type { ProviderFactoryConfig } from '../engine/embedding/provider-factory';
+import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
+import { DeconstructionScheduler, BreakdownDimension, BreakdownProgress } from '@/engine/deconstruction-scheduler';
+import { StyleFingerprint, StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
+import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
+import type { ProviderFactoryConfig } from '@/engine/embedding/provider-factory';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
-import type { AIEngine } from '../engine/ai-engine';
-import { createLogger } from '../shared/logger';
+import type { AIEngine } from '@/engine/ai-engine';
+import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from './components/progress';
 
 

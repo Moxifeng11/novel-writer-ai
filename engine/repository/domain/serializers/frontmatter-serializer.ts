@@ -4,7 +4,7 @@
  * 统一 frontmatter 解析和序列化逻辑，集中管理 frontmatter 格式。
  */
 
-import { Frontmatter } from '../value-objects';
+import { Frontmatter } from '@/engine/repository/domain/value-objects';
 
 /**
  * Frontmatter 序列化器

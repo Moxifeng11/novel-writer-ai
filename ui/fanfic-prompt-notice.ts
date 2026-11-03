@@ -1,5 +1,5 @@
 import { App, Notice } from 'obsidian';
-import { formatFanficRulesForPrompt, formatFanficRulesLoadWarning, readFanficRules } from '../shared/fanfic-rules';
+import { formatFanficRulesForPrompt, formatFanficRulesLoadWarning, readFanficRules } from '@/shared/fanfic-rules';
 
 /**
  * 实体生成入口统一读取同人约束块：设定未绑定 / 文件不存在 / 读取失败 / 内容全空时弹一次提示。

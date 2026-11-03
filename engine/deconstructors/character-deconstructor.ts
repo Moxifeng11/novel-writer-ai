@@ -6,16 +6,16 @@
  * 性能：10万字取样 + async 协作式让出，避免长文本阻塞主线程
  */
 
-import { kbBookCharacterExtractionFile } from '../../shared/paths';
-import { isChineseChar } from '../../shared/text-utils';
-import { VectorEnhancer } from '../vector-enhancer';
-import { WebnovelKnowledgeBase, GenreConfig } from '../../shared/webnovel-knowledge-base';
-import { yieldToUI } from '../../shared/yield';
-import { EMOTION_WORDS } from '../dimension-keywords';
-import { GenreConfig as AdaptiveGenreConfig, GenreConfigRegistry } from '../genre';
-import { LLMEnhancer } from '../llm-enhancer';
-import { SemanticAnalyzer } from '../semantic-analyzer';
-import { createLogger } from '../../shared/logger';
+import { kbBookCharacterExtractionFile } from '@/shared/paths';
+import { isChineseChar } from '@/shared/text-utils';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { WebnovelKnowledgeBase, GenreConfig } from '@/shared/webnovel-knowledge-base';
+import { yieldToUI } from '@/shared/yield';
+import { EMOTION_WORDS } from '@/engine/dimension-keywords';
+import { GenreConfig as AdaptiveGenreConfig, GenreConfigRegistry } from '@/engine/genre';
+import { LLMEnhancer } from '@/engine/llm-enhancer';
+import { SemanticAnalyzer } from '@/engine/semantic-analyzer';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CharacterDeconstructor');

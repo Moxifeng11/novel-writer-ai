@@ -5,7 +5,7 @@
  * 历史是持续增长的数据，混进插件设置会导致设置文件不断膨胀。
  */
 import { App, TFile } from 'obsidian';
-import { pjControlDir } from '../shared/paths';
+import { pjControlDir } from '@/shared/paths';
 import {
     aggregateQualityHistoryByChapter,
     computeChapterTrend,
@@ -13,8 +13,8 @@ import {
     parseQualityHistoryFile,
     serializeQualityHistoryFile,
     type QualityHistoryRecord,
-} from '../shared/quality-history';
-import { QUALITY_HISTORY_MAX_RECORDS } from '../shared/thresholds';
+} from '@/shared/quality-history';
+import { QUALITY_HISTORY_MAX_RECORDS } from '@/shared/thresholds';
 
 /**
  * 质量历史路径。

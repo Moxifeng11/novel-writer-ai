@@ -10,8 +10,8 @@
  *   4. 不能原样返回，也不能是 JSON/代码块（模型没照做）
  */
 
-import { analyzeHumanFeatures } from '../../shared/human-feature-rubric';
-import { AntiAIDetector } from '../anti-ai-detector';
+import { analyzeHumanFeatures } from '@/shared/human-feature-rubric';
+import { AntiAIDetector } from '@/engine/anti-ai-detector';
 
 /**
  * 修订闸门结果。

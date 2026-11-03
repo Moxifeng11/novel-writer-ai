@@ -6,9 +6,9 @@
  */
 
 import type { AIEngine, APIResponse } from './ai-engine';
-import { NOTICE_CRITICAL } from '../shared/thresholds';
-import { createLogger } from '../shared/logger';
-import type { ThinkingMode } from '../shared/task-model';
+import { NOTICE_CRITICAL } from '@/shared/thresholds';
+import { createLogger } from '@/shared/logger';
+import type { ThinkingMode } from '@/shared/task-model';
 
 const log = createLogger('StepRunnerRetry');
 

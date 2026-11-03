@@ -8,10 +8,10 @@
  */
 
 import { App, TFile } from 'obsidian';
-import { SUBDIR_WORLD_ARCH } from '../shared/paths';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
+import { SUBDIR_WORLD_ARCH } from '@/shared/paths';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 
 /** 关系维度 */
 export interface RelationshipState {

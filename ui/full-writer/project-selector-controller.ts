@@ -8,21 +8,21 @@
  */
 
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../../main';
-import { ContextManager } from '../../engine/context-manager';
-import { escapeHtml } from '../../utils/helpers';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { escapeHtml } from '@/utils/helpers';
 import { CoverPickerController } from './cover-picker-controller';
 import { renderQuickToolsPanel, type ProjectQuickAction } from './quick-tools-panel';
-import { WritingStyleModal } from '../writing-style-modal';
-import { CreateProjectModal } from '../create-project-modal';
-import { PreResearchModal } from '../pre-research-modal';
-import { ModeDocumentModal } from '../mode-document-modal';
-import { getToolCatalogForMode, getToolGroupsForMode, getModeToolTitle } from '../../domains/kernel/tool-catalog-aggregator';
-import type { CreationMode } from '../../shared/creation-mode';
+import { WritingStyleModal } from '@/ui/writing-style-modal';
+import { CreateProjectModal } from '@/ui/create-project-modal';
+import { PreResearchModal } from '@/ui/pre-research-modal';
+import { ModeDocumentModal } from '@/ui/mode-document-modal';
+import { getToolCatalogForMode, getToolGroupsForMode, getModeToolTitle } from '@/domains/kernel/tool-catalog-aggregator';
+import type { CreationMode } from '@/shared/creation-mode';
 import { collectCreationFlowState } from './creation-flow-state';
-import { findNextModeUnit, listModeUnits, modeUnitLabel } from '../../shared/mode-content';
-import { projectDisplayName } from '../../domains/kernel/project-locator';
-import { RenameProjectModal } from '../rename-project-modal';
+import { findNextModeUnit, listModeUnits, modeUnitLabel } from '@/shared/mode-content';
+import { projectDisplayName } from '@/domains/kernel/project-locator';
+import { RenameProjectModal } from '@/ui/rename-project-modal';
 import {
     getProjectCover,
     getProjectMeta,
@@ -31,7 +31,7 @@ import {
     sortChaptersByNumber,
     getNextChapter,
     deleteProject,
-} from '../project-utils';
+} from '@/ui/project-utils';
 
 type ProjectMeta = Awaited<ReturnType<typeof getProjectMeta>>;
 

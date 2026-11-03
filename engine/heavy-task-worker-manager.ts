@@ -1,7 +1,7 @@
-import { WorkerManager } from '../services/worker-manager';
-import { createLogger } from '../shared/logger';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
-import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
+import { WorkerManager } from '@/services/worker-manager';
+import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import { notifyWorkerUnavailable } from '@/shared/plugin-worker-url';
 import { VectorEnhancer } from './vector-enhancer';
 import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';
 import { StyleDeconstructorV2, StyleAnalysisResultV2 } from './style/style-deconstructor-v2';

@@ -7,14 +7,14 @@
  * 来源：原 settings-tab.ts，方法体逐行搬移，无逻辑改动。
  */
 import { Setting, Notice, Modal, TFile } from 'obsidian';
-import { performanceMonitor } from '../../services/performance-monitor';
-import { ENGINE_NAMES } from '../../shared/engine-names';
-import { ChangelogModal } from '../changelog-modal';
-import { PromptManagerSettings } from '../prompt-manager-settings';
-import { RulesService } from '../../services/rules-service';
-import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '../../shared/github-repo';
-import { exportTextFile } from '../../shared/export-file';
-import { OperationConfirmModal } from '../components/progress';
+import { performanceMonitor } from '@/services/performance-monitor';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { ChangelogModal } from '@/ui/changelog-modal';
+import { PromptManagerSettings } from '@/ui/prompt-manager-settings';
+import { RulesService } from '@/services/rules-service';
+import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '@/shared/github-repo';
+import { exportTextFile } from '@/shared/export-file';
+import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
 
 /**
@@ -509,7 +509,7 @@ export class RulesSection extends SettingsSection {
                 attr: { type: 'button' },
             });
             openBtn.addEventListener('click', async () => {
-                const { VAULT_RULES_PATH } = await import('../../services/rules-registry');
+                const { VAULT_RULES_PATH } = await import('@/services/rules-registry');
                 const file = this.app.vault.getAbstractFileByPath(VAULT_RULES_PATH);
                 if (file) {
                     await this.app.workspace.getLeaf('tab').openFile(file as TFile);

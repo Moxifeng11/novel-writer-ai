@@ -9,12 +9,12 @@
 import { TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
-import { injectDeaiModalStyles as _injectDeai, injectRefineModalStyles as _injectRefine, injectRoundSelectStyles as _injectRound } from '../shared/step-modal-styles';
+import { injectDeaiModalStyles as _injectDeai, injectRefineModalStyles as _injectRefine, injectRoundSelectStyles as _injectRound } from '@/shared/step-modal-styles';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import { TemplateService } from './template-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { NOTICE_ERROR } from '../shared/thresholds';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { NOTICE_ERROR } from '@/shared/thresholds';
 import {
     DEAI_CHECK_SYSTEM_PROMPT,
     DEAI_CHECK_USER_TEMPLATE,
@@ -22,9 +22,9 @@ import {
     DEAI_REWRITE_USER_TEMPLATE,
     SELF_CHECK_PROMPTS,
 } from './prompt-templates';
-import { RulesService } from '../services/rules-service';
+import { RulesService } from '@/services/rules-service';
 import { BODY_CHANGE_INVALIDATED_STEPS } from './step-definitions';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('StepModalController');
@@ -472,8 +472,8 @@ export class StepModalController {
                 const tasks = this.createTasks();
                 // v4.22 真迭代：多轮改写 + 每轮打分（AI 味/人味相似度/保真），只接受更优版本。
                 // 旧实现只调一次，refineRounds 是死配置，且没有任何「变好了」的判定。
-                const { createHumannessScorer } = await import('../ui/services/humanness-scorer');
-                const { runIterativeRefine, formatRefineRounds } = await import('../shared/iterative-refine');
+                const { createHumannessScorer } = await import('@/ui/services/humanness-scorer');
+                const { runIterativeRefine, formatRefineRounds } = await import('@/shared/iterative-refine');
                 const scorer = await createHumannessScorer(this.deps.getPlugin().app);
                 const roundLines: string[] = [];
                 const iterative = await runIterativeRefine({

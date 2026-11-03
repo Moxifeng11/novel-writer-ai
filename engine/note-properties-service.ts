@@ -15,11 +15,11 @@ import {
     FRONTMATTER_SCHEMAS,
     readTagList,
     type NotebookFileKind,
-} from '../shared/frontmatter-schema';
-import { formatTagArray, missingNamespaceTags, withNamespaceTags } from '../shared/tag-taxonomy';
+} from '@/shared/frontmatter-schema';
+import { formatTagArray, missingNamespaceTags, withNamespaceTags } from '@/shared/tag-taxonomy';
 import { BASE_DIR, baseFilePath, buildProjectBases } from './bases-generator';
-import { withWriteLock } from '../shared/write-lock';
-import { createLogger } from '../shared/logger';
+import { withWriteLock } from '@/shared/write-lock';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('NoteProperties');
 

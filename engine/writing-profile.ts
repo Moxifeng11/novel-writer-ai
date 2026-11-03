@@ -1,9 +1,9 @@
 import { App, parseYaml, stringifyYaml } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
-import { createLogger } from '../shared/logger';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
+import { createLogger } from '@/shared/logger';
 
 
-import type { CreationMode } from '../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 
 const log = createLogger('WritingProfile');
 /**

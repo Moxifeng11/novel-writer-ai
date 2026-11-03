@@ -9,7 +9,7 @@
  * All randomness comes from CSPRNG; frameworks stay deterministic.
  */
 import { trueRandom, type RandomSource } from './true-random';
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 
 /**
  * RandomFactorSet 类型定义。

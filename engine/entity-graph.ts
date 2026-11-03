@@ -10,9 +10,9 @@
  * 协同写作 init（PromptSnapshot.entityRelationsContext）。
  */
 import type { App, TFile } from 'obsidian';
-import { parseLinkValue } from '../shared/entity-links';
-import { parseBehaviorLog } from '../shared/behavior-log';
-import { activeContextQuotas } from '../shared/context-budget-policy';
+import { parseLinkValue } from '@/shared/entity-links';
+import { parseBehaviorLog } from '@/shared/behavior-log';
+import { activeContextQuotas } from '@/shared/context-budget-policy';
 
 /**
  * OwnedItemSummary 类型定义。

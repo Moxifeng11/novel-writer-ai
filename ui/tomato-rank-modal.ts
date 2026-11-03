@@ -1,8 +1,8 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine } from '../engine/ai-engine';
-import { GLOBAL_RANK_DIR, globalRankFile } from '../shared/paths';
-import { mkdirp } from '../utils/helpers';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { GLOBAL_RANK_DIR, globalRankFile } from '@/shared/paths';
+import { mkdirp } from '@/utils/helpers';
 
 /**
  * TomatoRankModal 类。

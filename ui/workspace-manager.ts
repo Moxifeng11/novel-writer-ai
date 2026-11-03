@@ -2,7 +2,7 @@
  * workspace-manager.ts — v5.5 浮窗管理器
  * 管理所有浮动面板的创建、销毁、布局恢复
  */
-import type NovelWriterPlugin from "../main";
+import type NovelWriterPlugin from "@/main";
 import { MonitorPanelA, VIEW_TYPE_MONITOR_A } from "./monitor-panel-a";
 import { MonitorPanelB, VIEW_TYPE_MONITOR_B } from "./monitor-panel-b";
 import { CoWriteFloatingPanel, VIEW_TYPE_FLOAT_COWRITE } from "./co-write-floating-panel";

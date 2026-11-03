@@ -88,8 +88,11 @@ describe('三域物理隔离', () => {
 
     it('项目定位服务支持模式库与 legacy 根目录', () => {
         const src = read('domains/kernel/project-locator.ts');
-        expect(src).toContain("long: '长篇小说'");
-        expect(src).toContain("short: '短篇小说'");
-        expect(src).toContain("script: '剧本'");
+        // v4.26：模式根目录唯一来源在 shared/creation-mode，locator 只做再导出
+        expect(src).toContain('MODE_LIBRARY_ROOTS');
+        const spec = read('shared/creation-mode.ts');
+        expect(spec).toContain("rootDir: '长篇小说'");
+        expect(spec).toContain("rootDir: '短篇小说'");
+        expect(spec).toContain("rootDir: '剧本'");
     });
 });

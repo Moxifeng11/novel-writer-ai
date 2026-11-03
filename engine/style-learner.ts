@@ -7,12 +7,12 @@
  
 import { App } from 'obsidian';
 import { AIEngine } from './ai-engine';
-import { extractResponseText } from '../shared/api-response-utils';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
-import { pluginDataDir, pluginStylePatternsFile } from '../shared/paths';
-import { SerializedWriter } from '../shared/serialized-writer';
-import type { NovelWriterPluginAPI } from '../plugin-api';
-import { createLogger } from '../shared/logger';
+import { extractResponseText } from '@/shared/api-response-utils';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
+import { pluginDataDir, pluginStylePatternsFile } from '@/shared/paths';
+import { SerializedWriter } from '@/shared/serialized-writer';
+import type { NovelWriterPluginAPI } from '@/plugin-api';
+import { createLogger } from '@/shared/logger';
  
 
 const log = createLogger('StyleLearner');

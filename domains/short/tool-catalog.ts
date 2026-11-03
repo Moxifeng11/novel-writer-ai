@@ -1,4 +1,4 @@
-import type { ToolGroup, ToolButton } from '../kernel/tool-catalog-types';
+import type { ToolGroup, ToolButton } from '@/domains/kernel/tool-catalog-types';
 
 /** 短篇项目专属快捷工具：不出现卷/章/全书规划/章节结算等长篇动作 */
 export const SHORT_TOOL_GROUPS: ToolGroup[] = [

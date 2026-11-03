@@ -2,7 +2,7 @@
  * revision-prompts.ts — 定向修订的维度提示词
  */
 import type { RevisionDimension, RevisionIssue } from './revision-types';
-import { buildCraftConstraintBlock } from '../craft-constraints';
+import { buildCraftConstraintBlock } from '@/engine/craft-constraints';
 
 const DIMENSION_RULES: Record<RevisionDimension, string> = {
     dialogue: `只改对话：

@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 289 | 130194 | 1533 | 1302 | 85% |
 | `services/` | 28 | 11368 | 154 | 137 | 89% |
-| `shared/` | 165 | 37252 | 1519 | 1269 | 84% |
+| `shared/` | 165 | 37264 | 1521 | 1269 | 83% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
-| `domains/` | 11 | 762 | 30 | 22 | 73% |
-| `ui/` | 191 | 96683 | 500 | 462 | 92% |
+| `domains/` | 11 | 765 | 30 | 22 | 73% |
+| `ui/` | 192 | 96786 | 501 | 463 | 92% |
 
 ## 文件清单
 
@@ -26,7 +26,7 @@
 | `core/theme-manager.ts` | 211 | 3 | 2 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 167 | 2 | 0 |
-| `domains/kernel/project-locator.ts` | 131 | 9 | 9 |
+| `domains/kernel/project-locator.ts` | 134 | 9 | 9 |
 | `domains/kernel/tool-catalog-aggregator.ts` | 94 | 6 | 5 |
 | `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
@@ -379,7 +379,7 @@
 | `shared/context-hygiene.ts` | 282 | 11 | 11 |
 | `shared/contrast-library.ts` | 104 | 4 | 4 |
 | `shared/creation-flow.ts` | 563 | 11 | 11 |
-| `shared/creation-mode.ts` | 429 | 20 | 18 |
+| `shared/creation-mode.ts` | 441 | 22 | 18 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
 | `shared/deconstruction-settings.ts` | 78 | 6 | 6 |
 | `shared/degradation-notifier.ts` | 188 | 7 | 2 |
@@ -667,7 +667,7 @@
 | `ui/services/human-sample-loader.ts` | 71 | 2 | 1 |
 | `ui/services/humanness-scorer.ts` | 124 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 441 | 6 | 5 |
-| `ui/settings-tab.ts` | 242 | 1 | 1 |
+| `ui/settings-tab.ts` | 247 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 123 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1245 | 1 | 1 |
@@ -676,8 +676,9 @@
 | `ui/settings/foreshadow-section.ts` | 288 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1163 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 809 | 1 | 1 |
+| `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 50 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 782 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 800 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 404 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 445 | 1 | 1 |

@@ -11,7 +11,7 @@
  *
  * v4.1.1: 从 step-runner.ts 外迁 DOM/Notice 逻辑
  */
-import type { DiagnosticInput, ExecutionEventInput, StepFailure } from '../shared/execution-events';
+import type { DiagnosticInput, ExecutionEventInput, StepFailure } from '@/shared/execution-events';
 
 /** DEAI 消痕改写弹窗参数 */
 export interface DeaiModalParams {

@@ -13,7 +13,7 @@ import {
     validateStorySettings,
     type LongStorySettings,
     type StoryOptionCategory,
-} from '../shared/story-structure';
+} from '@/shared/story-structure';
 
 /**
  * StorySettingsEditorOptions 类型定义。

@@ -1,10 +1,10 @@
 import { App, Menu, Modal, Notice, Setting } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
-import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '../shared/api-format';
-import { discoverModels } from '../services/model-discovery';
+import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared/api-format';
+import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from './model-picker-modal';
-import { describeSecretForInput, isStoredCiphertext } from '../shared/secret-display';
-import { lookupModelCapability } from '../shared/model-capabilities';
+import { describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
+import { lookupModelCapability } from '@/shared/model-capabilities';
 
 interface ManageProvidersPlugin {
     settings: any;

@@ -1,8 +1,8 @@
 import { App, Modal, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
-import { StyleFingerprint, StyleFingerprintLibrary } from '../engine/style-fingerprint-library';
-import { migrateV1ToV2 } from '../engine/style/fingerprint-migrator';
-import { V2Fingerprint, StyleDimensionKeyV2, DimensionStatus } from '../engine/style/style-dimensions-v2';
+import { StyleFingerprint, StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
+import { migrateV1ToV2 } from '@/engine/style/fingerprint-migrator';
+import { V2Fingerprint, StyleDimensionKeyV2, DimensionStatus } from '@/engine/style/style-dimensions-v2';
 import { formatWordCount, formatDateTime, FEATURE_DIMENSIONS, FEATURE_DIMENSIONS_V2, DIMENSION_STATUS_LABELS, getDimensionScore } from './fingerprint-utils';
 import { radarChart, barChart, donutChart } from './svg-charts';
 

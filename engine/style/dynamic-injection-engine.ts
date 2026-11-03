@@ -19,8 +19,8 @@
  *   - V1 指纹无 V2 12 维 features，强度仅作用于 samples 数量
  */
 
-import type { SuggestionDirection } from '../../shared/types';
-import type { StyleFingerprint } from '../style-fingerprint-library';
+import type { SuggestionDirection } from '@/shared/types';
+import type { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import type { StyleIntensityConfig } from './style-intensity-engine';
 import { DEFAULT_INTENSITY_CONFIG, StyleIntensityEngine } from './style-intensity-engine';
 

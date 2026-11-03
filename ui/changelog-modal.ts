@@ -1,5 +1,5 @@
 import { App, Modal } from 'obsidian';
-import { BUILTIN_CHANGELOG, ChangelogEntry } from '../shared/changelog-data';
+import { BUILTIN_CHANGELOG, ChangelogEntry } from '@/shared/changelog-data';
 
 interface ChangelogModalOptions {
     highlightVersion?: string;

@@ -11,7 +11,7 @@
  * 纯函数、无 Obsidian 依赖，可被 UI / ContextManager / 单测直接复用。
  * 重复数据只做合并与告警，不改写原文件（用户选择「只提示不修改」）。
  */
-import { chapterOutlineSection } from '../shared/format-constants';
+import { chapterOutlineSection } from '@/shared/format-constants';
 
 /**
  * 计划范围。

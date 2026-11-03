@@ -1,10 +1,10 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import type NovelWriterAI from '../main';
-import { pjVolumeOutlineDir, pjStepDir } from '../shared/paths';
-import { createLogger } from '../shared/logger';
-import { writeVaultText } from '../shared/file-system-port';
-import { isImeComposing } from '../shared/keyboard';
-import { projectIdFromPath } from '../shared/paths';
+import type NovelWriterAI from '@/main';
+import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
+import { isImeComposing } from '@/shared/keyboard';
+import { projectIdFromPath } from '@/shared/paths';
 
 
 const log = createLogger('ChapterOutlineTreeModal');

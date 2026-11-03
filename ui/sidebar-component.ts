@@ -1,5 +1,5 @@
 import { Notice } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import { PlanBookModal } from './plan-book-modal';
 import { CreateProjectModal } from './create-project-modal';
 import { PreResearchModal } from './pre-research-modal';

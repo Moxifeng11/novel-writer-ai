@@ -17,7 +17,7 @@
  */
 
 import { Notice } from 'obsidian';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CryptoService');

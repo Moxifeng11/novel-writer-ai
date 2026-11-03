@@ -6,16 +6,16 @@
  */
 import type { DataAdapter } from 'obsidian';
 import { Notice } from 'obsidian';
-import type NovelWriterPlugin from '../../main';
-import type { CreationMode, CreationModeMeta } from '../../shared/creation-mode';
-import { CREATION_MODE_SPECS, buildCreationModeGuide, buildCreationModeMetaSection } from '../../shared/creation-mode';
-import { ensureModeContentStructure } from '../../shared/mode-content';
-import { pjProjectMeta } from '../../shared/paths';
-import { WritingProfileManager } from '../../engine/writing-profile';
+import type NovelWriterPlugin from '@/main';
+import type { CreationMode, CreationModeMeta } from '@/shared/creation-mode';
+import { CREATION_MODE_SPECS, buildCreationModeGuide, buildCreationModeMetaSection } from '@/shared/creation-mode';
+import { ensureModeContentStructure } from '@/shared/mode-content';
+import { pjProjectMeta } from '@/shared/paths';
+import { WritingProfileManager } from '@/engine/writing-profile';
 // 只取名字常量：从 engine-registry 引会连带加载整个引擎图（其中 ai-engine 等 runtime import main）
-import { ENGINE_NAMES } from '../../shared/engine-names';
+import { ENGINE_NAMES } from '@/shared/engine-names';
 import { newProjectPath } from './project-locator';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('DomainProjectFactory');
 

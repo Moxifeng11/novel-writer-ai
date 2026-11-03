@@ -12,9 +12,9 @@ import {
     pjSynopsisDraftFile,
     pjSynopsisIndexFile,
     pjSynopsisVersionFile,
-} from '../shared/paths';
-import { countChars, SynopsisStyle, SynopsisVariant, styleLabel } from '../shared/synopsis-spec';
-import { createLogger } from '../shared/logger';
+} from '@/shared/paths';
+import { countChars, SynopsisStyle, SynopsisVariant, styleLabel } from '@/shared/synopsis-spec';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('SynopsisStore');
 const MAX_VERSIONS = 20;

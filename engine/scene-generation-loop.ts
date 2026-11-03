@@ -23,7 +23,7 @@ import type { Conflict } from './conflict-detector';
 import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
 import type { GenerationCheckpoint } from './generation-checkpoint';
 import { SCENE_HEADING_SOURCE } from './scene-expander';
-import { parseSceneCardFields } from '../shared/scene-card';
+import { parseSceneCardFields } from '@/shared/scene-card';
 
 /** 单个场景任务（从 sceneExpand 规划文本解析） */
 export interface SceneTask {

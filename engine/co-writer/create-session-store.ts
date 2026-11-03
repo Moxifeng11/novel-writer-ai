@@ -1,4 +1,4 @@
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('CreateSessionStore');
 /**
@@ -25,7 +25,7 @@ import {
     createObsidianSettingStorage,
     subscribeWithSelector,
     shallow,
-} from '../../shared/store';
+} from '@/shared/store';
 import type {
     StoreApi,
     PersistApi,
@@ -33,7 +33,7 @@ import type {
     DevtoolsApi,
     PersistStorage,
     SubscribeWithSelector,
-} from '../../shared/store/types';
+} from '@/shared/store/types';
 import {
     initialCoWritingSessionState,
     partializeCoWritingState,

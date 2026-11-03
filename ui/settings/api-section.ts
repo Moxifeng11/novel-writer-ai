@@ -8,14 +8,14 @@
  * 以及 api-format、model-discovery、task-model、task-budget-engine 等共享模块。
  */
 import { Setting, Notice, Modal, Menu } from 'obsidian';
-import { CustomProvider } from '../../main';
-import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '../../shared/api-format';
-import { discoverModels } from '../../services/model-discovery';
-import { ModelPickerModal } from '../model-picker-modal';
-import { PasswordModal } from '../password-modal';
-import { describeSecretForInput, isStoredCiphertext } from '../../shared/secret-display';
-import { lookupModelCapability } from '../../shared/model-capabilities';
-import { testProviderConnectivity } from '../../services/api-connectivity-service';
+import { CustomProvider } from '@/main';
+import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared/api-format';
+import { discoverModels } from '@/services/model-discovery';
+import { ModelPickerModal } from '@/ui/model-picker-modal';
+import { PasswordModal } from '@/ui/password-modal';
+import { describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
+import { lookupModelCapability } from '@/shared/model-capabilities';
+import { testProviderConnectivity } from '@/services/api-connectivity-service';
 import {
     resolveTaskModelConfig,
     THINKING_LEVELS,
@@ -27,15 +27,15 @@ import {
     type AiTask,
     type TaskBudgetOverride,
     type ThinkingLevel,
-} from '../../shared/task-model';
+} from '@/shared/task-model';
 import {
     BUDGET_TIERS,
     budgetTierSpec,
     normalizeBudgetTier,
     TASK_CATEGORY,
     type BudgetTier,
-} from '../../shared/task-budget-engine';
-import { OperationConfirmModal } from '../components/progress';
+} from '@/shared/task-budget-engine';
+import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
 
 /**

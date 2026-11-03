@@ -1,5 +1,5 @@
-import type { EmbeddingProvider } from '../shared/embedding-provider';
-import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig } from '../shared/webnovel-knowledge-base';
+import type { EmbeddingProvider } from '@/shared/embedding-provider';
+import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig } from '@/shared/webnovel-knowledge-base';
 import { GenrePreferenceMemory } from './genre-preference-memory';
 
 /**

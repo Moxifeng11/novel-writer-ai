@@ -1,6 +1,6 @@
-import { ALL_FULL_STEPS, FullStep } from '../../engine/step-definitions';
-import { StepLevel } from '../../engine/step-validator';
-import { createLogger } from '../../shared/logger';
+import { ALL_FULL_STEPS, FullStep } from '@/engine/step-definitions';
+import { StepLevel } from '@/engine/step-validator';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('StreamlinedNav');
 

@@ -16,9 +16,9 @@
  */
 
 import { TextSegment } from './text-segmenter';
-import { countCjkAndWords } from '../shared/word-count';
+import { countCjkAndWords } from '@/shared/word-count';
 import { StreamTextReader } from './stream-text-reader';
-import { yieldToUI } from '../shared/yield';
+import { yieldToUI } from '@/shared/yield';
 
 /**
  * SegmentBreakdownOptions 类型定义。

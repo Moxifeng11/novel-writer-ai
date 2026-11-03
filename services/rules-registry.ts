@@ -10,15 +10,15 @@
  *   RulesService 组合规则文本时拼接，不进入本文件。
  */
 import { App, TFile } from 'obsidian';
-import { WRITING_RULES, WRITING_RULES_BUILTIN_VERSION } from '../shared/writing-rules';
+import { WRITING_RULES, WRITING_RULES_BUILTIN_VERSION } from '@/shared/writing-rules';
 import {
     builtinId,
     canonicalContent,
     extractVersion,
     hashContent,
     type VersionedDoc,
-} from '../shared/versioned-registry';
-import { createLogger } from '../shared/logger';
+} from '@/shared/versioned-registry';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('RulesRegistry');
 

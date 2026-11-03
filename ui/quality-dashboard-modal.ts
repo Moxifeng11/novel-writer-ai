@@ -10,25 +10,25 @@
 
 import { App, Modal, TFile, Notice } from 'obsidian';
 import type { Editor } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import {
     QualityScoreEngine,
     DIMENSION_LABELS,
     QUALITY_DIMENSIONS,
-} from '../engine/quality/quality-score-engine';
-import type { QualityScore, EvaluationContext } from '../engine/quality/quality-score-engine';
-import { WritingQualityEngine } from '../engine/writing-quality-engine';
-import { exportTextFile } from '../shared/export-file';
+} from '@/engine/quality/quality-score-engine';
+import type { QualityScore, EvaluationContext } from '@/engine/quality/quality-score-engine';
+import { WritingQualityEngine } from '@/engine/writing-quality-engine';
+import { exportTextFile } from '@/shared/export-file';
 import { radarChart } from './svg-charts';
 import type { RadarDataItem } from './svg-charts';
 import { getChaptersForProject } from './project-utils';
 import { createEmptyState } from './components/empty-state';
-import { toCharacterContextInfos } from '../engine/character-context';
-import { findChapterFile, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
-import { pjStepDir } from '../shared/paths';
-import { DEVIATION_CHARACTER_INFO_TTL_MS } from '../shared/thresholds';
-import { stripFrontmatter } from '../utils/helpers';
-import { createLogger } from '../shared/logger';
+import { toCharacterContextInfos } from '@/engine/character-context';
+import { findChapterFile, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import { pjStepDir } from '@/shared/paths';
+import { DEVIATION_CHARACTER_INFO_TTL_MS } from '@/shared/thresholds';
+import { stripFrontmatter } from '@/utils/helpers';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('QualityDashboard');
 const CHAPTER_OUTLINE_MAX_CHARS = 1200;

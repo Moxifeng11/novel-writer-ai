@@ -6,10 +6,10 @@
  */
 
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
-import { isChapterSettledText } from '../shared/chapter-status';
+import { isChapterSettledText } from '@/shared/chapter-status';
 import type { SettlementEngine, SettlementResult } from './settlement-engine';
-import { NOTICE_ERROR } from '../shared/thresholds';
-import { createLogger } from '../shared/logger';
+import { NOTICE_ERROR } from '@/shared/thresholds';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('StepSettlement');
 

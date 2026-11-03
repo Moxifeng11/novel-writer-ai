@@ -7,19 +7,19 @@
 
 import { App, Editor, Modal, Notice } from 'obsidian';
 import type { EditorPosition } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { RewriteSuggestionEngine } from '../engine/quality/rewrite-suggestion-engine';
+import NovelWriterPlugin from '@/main';
+import { RewriteSuggestionEngine } from '@/engine/quality/rewrite-suggestion-engine';
 import {
     SUGGESTION_TYPES,
     SUGGESTION_TYPE_LABELS,
     SUGGESTION_TYPE_DESC,
-} from '../engine/quality/rewrite-types';
+} from '@/engine/quality/rewrite-types';
 import type {
     RewriteContext,
     RewriteResult,
     RewriteSuggestion,
     SuggestionType,
-} from '../engine/quality/rewrite-types';
+} from '@/engine/quality/rewrite-types';
 
 /**
  * RewriteSuggestionModal 类。

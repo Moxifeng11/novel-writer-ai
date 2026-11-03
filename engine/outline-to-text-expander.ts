@@ -14,14 +14,14 @@
 import type { AIEngine, APIResponse } from './ai-engine';
 import type { KnowledgeInjector, InjectionContext } from './knowledge-injector';
 import type { WritingProfile } from './writing-profile';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { countWords } from '../shared/diff-utils';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { countWords } from '@/shared/diff-utils';
 import {
     BodyFormatContract, BodySeparator, DEFAULT_BODY_FORMAT, describeBodyFormat,
-} from '../shared/body-format';
+} from '@/shared/body-format';
 import { parseSceneHeadings } from './scene-expander';
-import { fitPromptToContext } from '../shared/prompt-budget';
+import { fitPromptToContext } from '@/shared/prompt-budget';
 
 /**
  * 扩写层级。

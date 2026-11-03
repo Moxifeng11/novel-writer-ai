@@ -1,6 +1,6 @@
 import { VectorEnhancer } from './vector-enhancer';
 import { KnowledgeVectorStore } from './knowledge-vector-store';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 
 /**
  * SimilarityScore 类型定义。

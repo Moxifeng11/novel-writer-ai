@@ -1,18 +1,18 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
-import { isChapterSettledText } from '../shared/chapter-status';
-import { buildSettlementTable } from '../engine/settlement/settlement-artifacts';
-import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '../shared/paths';
-import { writeVaultText } from '../shared/file-system-port';
-import { settlementArtifactNotice, writeSettlementArtifacts } from '../engine/settlement/settlement-coordinator';
+import { isChapterSettledText } from '@/shared/chapter-status';
+import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
+import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
+import { writeVaultText } from '@/shared/file-system-port';
+import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 
-import NovelWriterPlugin from '../main';
-import { getChapterFileName, CHAPTER_FILE_TYPES } from '../engine/chapter-utils';
+import NovelWriterPlugin from '@/main';
+import { getChapterFileName, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './full-writer-view';
-import { SettlementEngine } from '../engine/settlement-engine';
-import { writeChapterStateSnapshot } from '../engine/chapter-state-snapshot-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { createLogger } from '../shared/logger';
-import { getExecutionLedger, summarizeSettlement } from '../services/execution-ledger';
+import { SettlementEngine } from '@/engine/settlement-engine';
+import { writeChapterStateSnapshot } from '@/engine/chapter-state-snapshot-service';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { createLogger } from '@/shared/logger';
+import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
 import { OperationConfirmModal } from './components/progress';
 
 
@@ -391,4 +391,4 @@ export class ChapterSettlementModal extends Modal {
         contentEl.empty();
     }
 }
-import { projectIdFromPath } from '../shared/paths';
+import { projectIdFromPath } from '@/shared/paths';

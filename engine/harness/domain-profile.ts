@@ -3,7 +3,7 @@
  *
  * Kernel only knows this interface; concrete profiles live in domains/*.
  */
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 /** 上下文证据的八类（原 context-pack 的类型，此处内联避免死模块引用） */
 export type ContextKind =
     | 'worldview'

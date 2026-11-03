@@ -5,8 +5,8 @@
  * 标签、空指标占位。这些函数不依赖视图实例，便于复用与单测。
  */
 
-import { SuggestionRecord, SuggestionDirection, PlotCompletionMetrics } from '../../shared/types';
-import { AssociationSuggestion } from '../../shared/co-writer-types';
+import { SuggestionRecord, SuggestionDirection, PlotCompletionMetrics } from '@/shared/types';
+import { AssociationSuggestion } from '@/shared/co-writer-types';
 
 /**
  * associationTypeToDirection 函数。

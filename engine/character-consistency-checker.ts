@@ -1,5 +1,5 @@
 import { VectorEnhancer } from './vector-enhancer';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CharacterConsistencyChecker');

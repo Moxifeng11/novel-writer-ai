@@ -24,8 +24,8 @@
  * - 旧的 repositoryInstances / styleLearnerInstances 保留，行为不变
  */
 import { Notice } from 'obsidian';
-import type { SerializedWriter } from '../shared/serialized-writer';
-import type NovelWriterPlugin from '../main';
+import type { SerializedWriter } from '@/shared/serialized-writer';
+import type NovelWriterPlugin from '@/main';
 
 // ─── 增强类型定义 ───
 
@@ -110,24 +110,24 @@ export interface DependencyCheckResult {
 }
 
 // 引擎类导入（用于实例化）
-import { InternalRegistry } from '../shared/internal-registry';
-import { PluginCacheManager } from '../shared/plugin-cache';
-import { CryptoService } from '../core/crypto-service';
-import { ProviderManager } from '../core/provider-manager';
-import { ThemeManager } from '../core/theme-manager';
-import { SettingsService } from '../core/settings-service';
+import { InternalRegistry } from '@/shared/internal-registry';
+import { PluginCacheManager } from '@/shared/plugin-cache';
+import { CryptoService } from '@/core/crypto-service';
+import { ProviderManager } from '@/core/provider-manager';
+import { ThemeManager } from '@/core/theme-manager';
+import { SettingsService } from '@/core/settings-service';
 import { ContextManager } from './context-manager';
 import { ForeshadowManager } from './foreshadow-manager';
 import { ReviewAgent } from './review-agent';
-import { CommandRegistry } from '../core/command-registry';
+import { CommandRegistry } from '@/core/command-registry';
 import { KnowledgeTagManager } from './knowledge-tags';
-import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
+import { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { VectorEnhancer } from './vector-enhancer';
 import { TokenBucketRateLimiter } from './token-bucket-rate-limiter';
 import { EmbeddingProviderFactory } from './embedding/provider-factory';
 import { setSharedEmbeddingProvider, getSharedEmbeddingProvider } from './embedding/embedding-service';
-import { GITHUB_REPO_SLUG } from '../shared/github-repo';
+import { GITHUB_REPO_SLUG } from '@/shared/github-repo';
 import type { EmbeddingProvider } from './embedding/embedding-provider';
 import { DeconstructionScheduler } from './deconstruction-scheduler';
 import { BatchImportManager } from './batch-import-manager';
@@ -150,17 +150,17 @@ import { getPromptCache } from './prompt-cache';
 import { CharacterGenerator } from './ai-character-generator';
 import { AIApiClient } from './ai-api-client';
 import { StyleLearner } from './style-learner';
-import { WorldviewCacheService } from '../services/worldview-cache-service';
-import { UpdateChecker } from '../services/update-checker';
-import { WritingStatsService, type StatsFileLike, type WritingStatsAppLike } from '../services/writing-stats-service';
-import { isChapterBodyPath, listChapterBodyFiles } from '../shared/body-path';
-import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { pjFactIndexFile } from '../shared/paths';
-import { resolvePluginWorkerUrl } from '../shared/plugin-worker-url';
+import { WorldviewCacheService } from '@/services/worldview-cache-service';
+import { UpdateChecker } from '@/services/update-checker';
+import { WritingStatsService, type StatsFileLike, type WritingStatsAppLike } from '@/services/writing-stats-service';
+import { isChapterBodyPath, listChapterBodyFiles } from '@/shared/body-path';
+import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { pjFactIndexFile } from '@/shared/paths';
+import { resolvePluginWorkerUrl } from '@/shared/plugin-worker-url';
 import { TemplateService } from './template-service';
-import { ChapterVersionService } from '../services/chapter-version-service';
-import { createLogger } from '../shared/logger';
-import { ENGINE_NAMES } from '../shared/engine-names';
+import { ChapterVersionService } from '@/services/chapter-version-service';
+import { createLogger } from '@/shared/logger';
+import { ENGINE_NAMES } from '@/shared/engine-names';
 
 const log = createLogger('EngineRegistry');
 import {
@@ -1024,7 +1024,7 @@ export class EngineRegistry {
     private getProjectScopedRepository<T>(
         repoName: string,
         project: string,
-        factory: (fs: import('../shared/file-system-port').FileSystemPort, project: string) => T,
+        factory: (fs: import('@/shared/file-system-port').FileSystemPort, project: string) => T,
     ): T {
         if (!this.plugin) {
             throw new Error(`[EngineRegistry] 未初始化，无法创建 ${repoName}`);

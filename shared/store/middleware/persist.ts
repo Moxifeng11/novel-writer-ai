@@ -1,4 +1,4 @@
-import { createLogger } from '../../logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('Persist');
 /**
@@ -24,7 +24,7 @@ import type {
     PersistApi,
     PersistStorage,
     PersistStorageValue,
-} from '../types';
+} from '@/shared/store/types';
 
 // ============================================================
 // 一、Obsidian 插件设置存储适配器

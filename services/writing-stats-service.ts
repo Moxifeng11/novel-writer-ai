@@ -18,8 +18,8 @@ import {
     recordFileWords,
     type StatsReport,
     type WritingStatsData,
-} from '../shared/writing-stats';
-import { createLogger } from '../shared/logger';
+} from '@/shared/writing-stats';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('WritingStats');
 

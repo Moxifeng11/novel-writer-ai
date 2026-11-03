@@ -1,4 +1,4 @@
-import { kbTagSystemFile } from '../shared/paths';
+import { kbTagSystemFile } from '@/shared/paths';
 
 /**
  * 知识库标签。

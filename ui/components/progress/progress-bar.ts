@@ -1,4 +1,4 @@
-import { ProgressEmitter, type ProgressState } from '../../../shared/progress-emitter';
+import { ProgressEmitter, type ProgressState } from '@/shared/progress-emitter';
 
 /**
  * 进度条组件选项

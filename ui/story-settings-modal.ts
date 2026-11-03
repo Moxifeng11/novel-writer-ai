@@ -5,18 +5,18 @@
  * 并同步 00-系统模板/故事结构指南.md 与创作模式指南，使后续提示词立即生效。
  */
 import { App, Modal, Notice } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { readProjectMeta } from '../shared/paths';
+import NovelWriterPlugin from '@/main';
+import { readProjectMeta } from '@/shared/paths';
 import {
     buildStoryStructureGuide,
     parseStorySettingsFromProjectMeta,
     upsertStorySettingsInProjectMeta,
     type LongStorySettings,
-} from '../shared/story-structure';
-import { buildCreationModeGuide, parseCreationModeMeta } from '../shared/creation-mode';
+} from '@/shared/story-structure';
+import { buildCreationModeGuide, parseCreationModeMeta } from '@/shared/creation-mode';
 import { StorySettingsEditor } from './story-settings-form';
-import { createLogger } from '../shared/logger';
-import { writeVaultText } from '../shared/file-system-port';
+import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 
 const log = createLogger('StorySettingsModal');
 

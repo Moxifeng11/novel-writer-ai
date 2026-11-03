@@ -20,9 +20,9 @@
  */
 
 import type { QualityScoreEngine, QualityScore, EvaluationContext } from './quality-score-engine';
-import { countCjkWordsAndNumbers } from '../../shared/word-count';
+import { countCjkWordsAndNumbers } from '@/shared/word-count';
 import type { DeviationDetector, DeviationReport, DeviationContext } from './deviation-detector';
-import { createLogger } from '../../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('RealtimeMonitor');

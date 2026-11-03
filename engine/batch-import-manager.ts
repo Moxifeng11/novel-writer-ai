@@ -5,13 +5,13 @@
  */
 
 import { App } from 'obsidian';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
-import { kbImportHistoryFile, kbImportPresetsFile, kbBookDir } from '../shared/paths';
-import { KnowledgeBaseManager } from '../services/knowledge-base-manager';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
+import { kbImportHistoryFile, kbImportPresetsFile, kbBookDir } from '@/shared/paths';
+import { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler, type BreakdownDimension } from './deconstruction-scheduler';
-import { ChapterRecognizer, type BookRecognitionResult } from '../services/chapter-recognizer';
-import { SerializedWriter } from '../shared/serialized-writer';
-import { createLogger } from '../shared/logger';
+import { ChapterRecognizer, type BookRecognitionResult } from '@/services/chapter-recognizer';
+import { SerializedWriter } from '@/shared/serialized-writer';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('BatchImportManager');

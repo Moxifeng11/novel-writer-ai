@@ -4,12 +4,12 @@
  * Each task uses exactly one logical AI call. Local validators may reject the
  * result, but the runner never makes a hidden second AI call.
  */
-import { buildHumanVoiceBlock } from '../prompts/human-voice';
-import { formatExemplarBlock, selectExemplars, type ExemplarSample } from '../prompts/style-exemplars';
+import { buildHumanVoiceBlock } from '@/engine/prompts/human-voice';
+import { formatExemplarBlock, selectExemplars, type ExemplarSample } from '@/engine/prompts/style-exemplars';
 import { singleCallRunner, type SingleCallResult } from './single-call-runner';
 import { parseJsonObject, validateFields, type OutputContract } from './structured-output';
-import type { AIEngine } from '../ai-engine';
-import type { CreationMode } from '../../shared/creation-mode';
+import type { AIEngine } from '@/engine/ai-engine';
+import type { CreationMode } from '@/shared/creation-mode';
 
 /**
  * DeaiSingleCallResult 类型定义。

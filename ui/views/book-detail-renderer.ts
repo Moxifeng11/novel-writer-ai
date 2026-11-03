@@ -1,12 +1,12 @@
 import type { App } from 'obsidian';
-import type { KnowledgeBaseManager, BookBasicInfo, BreakdownStatus } from '../../services/knowledge-base-manager';
-import type { WebnovelKnowledgeBase } from '../../shared/webnovel-knowledge-base';
-import { radarChart, barChart, donutChart, wordCloud, lineChart, timelineChart, attachChartInteractions } from '../svg-charts';
-import { SmartChart } from '../components/smart-chart';
-import { createEmptyState } from '../components/empty-state';
-import { createLogger } from '../../shared/logger';
-import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '../knowledge-detail-format';
-import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '../../engine/deconstruction-scheduler';
+import type { KnowledgeBaseManager, BookBasicInfo, BreakdownStatus } from '@/services/knowledge-base-manager';
+import type { WebnovelKnowledgeBase } from '@/shared/webnovel-knowledge-base';
+import { radarChart, barChart, donutChart, wordCloud, lineChart, timelineChart, attachChartInteractions } from '@/ui/svg-charts';
+import { SmartChart } from '@/ui/components/smart-chart';
+import { createEmptyState } from '@/ui/components/empty-state';
+import { createLogger } from '@/shared/logger';
+import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
+import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '@/engine/deconstruction-scheduler';
 import type {
     StyleData,
     RhythmData,
@@ -17,7 +17,7 @@ import type {
     CommercialData,
     ReadabilityData,
 } from './knowledge-base-view';
-import { isImeComposing } from '../../shared/keyboard';
+import { isImeComposing } from '@/shared/keyboard';
 
 const log = createLogger('BookDetailRenderer');
 

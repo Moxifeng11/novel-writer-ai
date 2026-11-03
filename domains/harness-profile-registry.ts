@@ -1,5 +1,5 @@
-import type { CreationMode } from '../shared/creation-mode';
-import type { DomainHarnessProfile } from '../engine/harness/domain-profile';
+import type { CreationMode } from '@/shared/creation-mode';
+import type { DomainHarnessProfile } from '@/engine/harness/domain-profile';
 import { LONG_HARNESS_PROFILE } from './long/harness-profile';
 import { SHORT_HARNESS_PROFILE } from './short/harness-profile';
 import { SCRIPT_HARNESS_PROFILE } from './script/harness-profile';

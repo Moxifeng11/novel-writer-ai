@@ -15,11 +15,11 @@ import {
     formatListLinkValue,
     formatSingleLinkValue,
     parseLinkValue,
-} from '../shared/entity-links';
-import { ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
-import { withWriteLock } from '../shared/write-lock';
-import { pjCharsDir, pjFactionsDir, pjItemsDir, pjLocsDir } from '../shared/paths';
-import { createLogger } from '../shared/logger';
+} from '@/shared/entity-links';
+import { ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { withWriteLock } from '@/shared/write-lock';
+import { pjCharsDir, pjFactionsDir, pjItemsDir, pjLocsDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('EntityLinkMigrator');
 

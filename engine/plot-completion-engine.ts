@@ -1,6 +1,6 @@
-import { createLogger } from '../shared/logger';
-import { splitParagraphs, splitSentences } from '../shared/text-utils';
-import { PLOT_COMPLETION_MIN_EVALUABLE_CHARS } from '../shared/thresholds';
+import { createLogger } from '@/shared/logger';
+import { splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { PLOT_COMPLETION_MIN_EVALUABLE_CHARS } from '@/shared/thresholds';
 
 const log = createLogger('PlotCompletionEngine');
 /**

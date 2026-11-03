@@ -6,16 +6,16 @@
  * - 最前端先选创作类型，再进入长篇原创/长篇同人/短篇/剧本四条专属路径。
  * - 纯逻辑、可测试：不依赖 Obsidian/AI；自由文本优先端口 aiParse，失败回退 chips/序号。
  */
-import { validateProjectName } from '../../shared/project-name';
-import { trueRandom } from '../harness/true-random';
-import { SHORT_STORY_CATEGORIES, SCRIPT_GENRES } from '../../shared/creation-mode';
-import { modeFromPathPrefix } from '../../shared/project-mode';
+import { validateProjectName } from '@/shared/project-name';
+import { trueRandom } from '@/engine/harness/true-random';
+import { SHORT_STORY_CATEGORIES, SCRIPT_GENRES } from '@/shared/creation-mode';
+import { modeFromPathPrefix } from '@/shared/project-mode';
 import {
     STORY_STRUCTURES,
     createDefaultStorySettings,
     generateRandomStorySettings,
     getStoryStructure,
-} from '../../shared/story-structure';
+} from '@/shared/story-structure';
 import type {
     AgentChip,
     AgentContext,

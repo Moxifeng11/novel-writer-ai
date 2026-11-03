@@ -5,17 +5,17 @@
  * 从 main.ts 拆分而来
  */
 
-import type { NovelWriterSettings, CustomProvider } from '../main';
-import { DEFAULT_PROVIDERS } from '../main';
-import { migrateSettingsWithStatus, withCurrentVersion, CURRENT_SCHEMA_VERSION, DEFAULT_UPDATE_GITHUB_REPO, normalizeUpdateGithubRepo } from '../shared/settings-migrator';
+import type { NovelWriterSettings, CustomProvider } from '@/main';
+import { DEFAULT_PROVIDERS } from '@/main';
+import { migrateSettingsWithStatus, withCurrentVersion, CURRENT_SCHEMA_VERSION, DEFAULT_UPDATE_GITHUB_REPO, normalizeUpdateGithubRepo } from '@/shared/settings-migrator';
 import type { CryptoService } from './crypto-service';
 import type { ProviderManager } from './provider-manager';
-import type { PluginCacheManager } from '../shared/plugin-cache';
-import type { SerializedWriter } from '../shared/serialized-writer';
-import { DEFAULT_PROMPT_MANAGER_CONFIG } from '../shared/prompt-manager-types';
-import { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '../shared/deconstruction-settings';
-import { DEFAULT_FORESHADOW_CONFIG } from '../shared/foreshadow-config';
-import { createLogger } from '../shared/logger';
+import type { PluginCacheManager } from '@/shared/plugin-cache';
+import type { SerializedWriter } from '@/shared/serialized-writer';
+import { DEFAULT_PROMPT_MANAGER_CONFIG } from '@/shared/prompt-manager-types';
+import { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS } from '@/shared/deconstruction-settings';
+import { DEFAULT_FORESHADOW_CONFIG } from '@/shared/foreshadow-config';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('SettingsService');
 /** v2 密文前缀（与 crypto-service 保持一致） */

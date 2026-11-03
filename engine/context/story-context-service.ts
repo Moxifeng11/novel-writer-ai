@@ -6,9 +6,9 @@
  *   - applyStoryContextToVars：一键生成（模板变量）；
  *   - attachStoryContextToSnapshot：协同写作（PromptSnapshot）。
  */
-import type { SceneCardFields } from '../../shared/scene-card';
-import { createLogger } from '../../shared/logger';
-import type { StoryLinkage } from '../story-linkage';
+import type { SceneCardFields } from '@/shared/scene-card';
+import { createLogger } from '@/shared/logger';
+import type { StoryLinkage } from '@/engine/story-linkage';
 import type { GatheredContext } from './context-types';
 import {
     assembleStoryContextBundle,

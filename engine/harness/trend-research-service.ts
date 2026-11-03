@@ -6,8 +6,8 @@
  * model memory is a live search result.
  */
 import { requestUrl } from 'obsidian';
-import { createLogger } from '../../shared/logger';
-import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '../../shared/http-request';
+import { createLogger } from '@/shared/logger';
+import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '@/shared/http-request';
 
 const log = createLogger('TrendResearch');
 

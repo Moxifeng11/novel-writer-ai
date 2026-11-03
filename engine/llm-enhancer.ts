@@ -25,7 +25,7 @@ import {
     type TitleAliasResult,
 } from './llm-prompts';
 import type { CharacterCandidate, AnalysisSuggestion } from './types/analysis-suggestion';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('LlmEnhancer');

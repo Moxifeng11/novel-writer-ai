@@ -1,37 +1,37 @@
 import { App, Modal, Setting, DropdownComponent, Notice, TFolder } from 'obsidian';
-import NovelWriterPlugin, { CustomProvider, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from '../main';
-import type { DeconstructionEngineSettings } from '../main';
-import { describeSecretForInput, resolveSecretInput } from '../shared/secret-display';
+import NovelWriterPlugin, { CustomProvider, DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from '@/main';
+import type { DeconstructionEngineSettings } from '@/main';
+import { describeSecretForInput, resolveSecretInput } from '@/shared/secret-display';
 import { renderAppearanceSettings } from './appearance-settings';
 import { ManageProvidersModal } from './manage-providers-modal';
 import { TemplateManager } from './template-manager';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { getOllamaModelsWithFallback } from '../engine/co-writer-engine';
-import { StyleFingerprintLibrary, StyleFingerprint } from '../engine/style-fingerprint-library';
-import { FingerprintExtractor } from '../engine/fingerprint-extractor';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { getOllamaModelsWithFallback } from '@/engine/co-writer-engine';
+import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
+import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
 import { AddFingerprintModal } from './fingerprint-library-modal';
 import { FingerprintDetailModal } from './fingerprint-detail-modal';
 import { renderFingerprintList } from './fingerprint-utils';
-import { KnowledgeBaseManager, BookBasicInfo } from '../services/knowledge-base-manager';
-import { KnowledgeTagManager } from '../engine/knowledge-tags';
-import { DeconstructionScheduler } from '../engine/deconstruction-scheduler';
-import { performanceMonitor } from '../services/performance-monitor';
-import { VectorEnhancer } from '../engine/vector-enhancer';
-import { UpdateChecker } from '../services/update-checker';
+import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
+import { KnowledgeTagManager } from '@/engine/knowledge-tags';
+import { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
+import { performanceMonitor } from '@/services/performance-monitor';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { UpdateChecker } from '@/services/update-checker';
 import { ChangelogModal } from './changelog-modal';
-import { BUILTIN_CHANGELOG } from '../shared/changelog-data';
-import { RulesService } from '../services/rules-service';
+import { BUILTIN_CHANGELOG } from '@/shared/changelog-data';
+import { RulesService } from '@/services/rules-service';
 import { RefillModal } from './refill-modal';
-import { WorldviewCacheService } from '../services/worldview-cache-service';
+import { WorldviewCacheService } from '@/services/worldview-cache-service';
 import { BatchImportModal } from './batch-import-modal';
 import { KnowledgeMonitorModal } from './knowledge-monitor-modal';
 import { KnowledgeDetailModal } from './knowledge-detail-modal';
-import { kbKnowledgeBaseDir } from '../shared/paths';
+import { kbKnowledgeBaseDir } from '@/shared/paths';
 import { openKnowledgeFolder } from './knowledge-folder-navigation';
-import { createLogger } from '../shared/logger';
-import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '../shared/github-repo';
-import { exportTextFile } from '../shared/export-file';
+import { createLogger } from '@/shared/logger';
+import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '@/shared/github-repo';
+import { exportTextFile } from '@/shared/export-file';
 import { OperationConfirmModal } from './components/progress';
 import { rebuildKnowledgeIndexWithConfirm } from './knowledge-rebuild-action';
 import { rebuildAllVectorsWithConfirm } from './vector-rebuild-action';
@@ -1305,7 +1305,7 @@ export class MiniSettingsModal extends Modal {
                         try {
                             // 用户可能刚输入了密钥还没点保存：先记到 settings 再检测
                             this.applyPendingVectorKeys();
-                            const { EmbeddingProviderFactory } = await import('../engine/embedding/provider-factory');
+                            const { EmbeddingProviderFactory } = await import('@/engine/embedding/provider-factory');
                             const provider = EmbeddingProviderFactory.create({
                                 vectorProviderType: this.plugin.settings.vectorProviderType as 'ollama' | 'openai' | 'doubao' | 'qwen',
                                 vectorOllamaBaseUrl: this.plugin.settings.vectorOllamaBaseUrl,

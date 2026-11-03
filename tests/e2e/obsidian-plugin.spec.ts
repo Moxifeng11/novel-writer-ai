@@ -416,6 +416,14 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const rulesText = await activeText();
         expect(rulesText).toContain('实验分组标签');
         expect(rulesText).toContain('重新检查');
+
+        // 三模式路径总览
+        await expect.poll(() => switchTab('创作模式'), { timeout: 15_000 }).toBe(true);
+        await expect.poll(activeText, { timeout: 15_000 }).toContain('项目库根目录');
+        const modesText = await activeText();
+        for (const label of ['长篇小说', '短篇小说', '短剧剧本']) {
+            expect(modesText).toContain(label);
+        }
     });
 
     test('外观设置是三层结构且配色方案可保存', async () => {

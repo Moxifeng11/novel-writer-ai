@@ -7,15 +7,15 @@
  *
  * 拆分原则：纯类型零运行时，无副作用，可被任意模块安全 import。
  */
-import type NovelWriterPlugin from '../../main';
-import type { PluginCapabilities } from '../../shared/plugin-capabilities';
-import type { FileSystemPort } from '../../shared/file-system-port';
-import type { Notifier, CharacterFrontmatter, LocationFrontmatter, FactionFrontmatter, ItemFrontmatter } from '../../shared/types';
-import type { TimelineRow, FanficRules } from '../../shared/template-validator';
-import type { CompressedContext } from '../context-compressor';
-import type { CharacterSoul } from '../character-soul';
-import type { MemoryShard, TriggeredMemory } from '../memory-trigger';
-import type { StoryLinkage } from '../story-linkage';
+import type NovelWriterPlugin from '@/main';
+import type { PluginCapabilities } from '@/shared/plugin-capabilities';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import type { Notifier, CharacterFrontmatter, LocationFrontmatter, FactionFrontmatter, ItemFrontmatter } from '@/shared/types';
+import type { TimelineRow, FanficRules } from '@/shared/template-validator';
+import type { CompressedContext } from '@/engine/context-compressor';
+import type { CharacterSoul } from '@/engine/character-soul';
+import type { MemoryShard, TriggeredMemory } from '@/engine/memory-trigger';
+import type { StoryLinkage } from '@/engine/story-linkage';
 import type {
     CharacterRepository,
     ChapterRepository,
@@ -23,9 +23,9 @@ import type {
     FactionRepository,
     LocationRepository,
     ItemRepository,
-} from '../repository';
-import type { EngineRegistry } from '../engine-registry';
-import type { MultiLayerCache } from '../cache';
+} from '@/engine/repository';
+import type { EngineRegistry } from '@/engine/engine-registry';
+import type { MultiLayerCache } from '@/engine/cache';
 
 // ============================================================
 // 构造选项
@@ -275,4 +275,4 @@ export type {
     EntityAppearanceRecord,
     CharacterImportance,
     EntitySelectionReason,
-} from '../entity-context-engine';
+} from '@/engine/entity-context-engine';

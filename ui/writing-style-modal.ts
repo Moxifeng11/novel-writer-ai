@@ -1,5 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
+import NovelWriterPlugin from '@/main';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
 import {
     loadStylePresets,
@@ -9,7 +9,7 @@ import {
     type StylePresetDraft,
     type WritingStylePreset,
 } from './writing-style-presets';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('WritingStyleModal');

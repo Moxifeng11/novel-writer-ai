@@ -1,24 +1,24 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { AIEngine } from '../engine/ai-engine';
-import { mkdirp } from '../utils/helpers';
-import { CHARACTER_BODY_SECTIONS } from '../shared/format-constants';
-import { validateCharacterOutput } from '../shared/template-validator';
-import { createLogger } from '../shared/logger';
-import { ProjectRenameService } from '../services/project-rename-service';
-import { validateProjectName } from '../shared/project-name';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { AIEngine } from '@/engine/ai-engine';
+import { mkdirp } from '@/utils/helpers';
+import { CHARACTER_BODY_SECTIONS } from '@/shared/format-constants';
+import { validateCharacterOutput } from '@/shared/template-validator';
+import { createLogger } from '@/shared/logger';
+import { ProjectRenameService } from '@/services/project-rename-service';
+import { validateProjectName } from '@/shared/project-name';
 
 const log = createLogger('AiBuilderModal');
 import {
     pjWorldview, pjSettingLib,
     pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir,
     SUBDIR_CHARS,
-} from '../shared/paths';
-import { saveEntities, type EntityKind } from '../shared/entity-persistence';
-import { ensureEntityIntegrity } from '../shared/entity-integrity';
-import { countProjectEntities } from '../shared/entity-reader';
-import { mergeFanficRequirement } from '../shared/fanfic-rules';
+} from '@/shared/paths';
+import { saveEntities, type EntityKind } from '@/shared/entity-persistence';
+import { ensureEntityIntegrity } from '@/shared/entity-integrity';
+import { countProjectEntities } from '@/shared/entity-reader';
+import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
 

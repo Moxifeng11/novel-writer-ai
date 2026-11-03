@@ -1,17 +1,17 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine } from '../engine/ai-engine';
-import { showSuccess, showError } from '../utils/helpers';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { showSuccess, showError } from '@/utils/helpers';
 import {
     pjCharsDir,
     pjPromiseLedger,
     pjVolumeOutlineDir,
     pjWorldview,
     readProjectMeta,
-} from '../shared/paths';
-import { parsePromiseLedger, formatOpenPromisesForPrompt } from '../engine/promise-ledger';
-import { resolveTaskModelConfig } from '../shared/task-model';
-import { entityDir } from '../shared/entity-reader';
+} from '@/shared/paths';
+import { parsePromiseLedger, formatOpenPromisesForPrompt } from '@/engine/promise-ledger';
+import { resolveTaskModelConfig } from '@/shared/task-model';
+import { entityDir } from '@/shared/entity-reader';
 import {
     buildSynopsisPrompts,
     parseSynopsisVariants,
@@ -21,9 +21,9 @@ import {
     SynopsisLength,
     SynopsisStyle,
     SynopsisVariant,
-} from '../shared/synopsis-spec';
-import { SynopsisStore, SynopsisSnapshot } from '../services/synopsis-store';
-import { createLogger } from '../shared/logger';
+} from '@/shared/synopsis-spec';
+import { SynopsisStore, SynopsisSnapshot } from '@/services/synopsis-store';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('VolumeIntroModal');
 

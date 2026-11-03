@@ -38,6 +38,8 @@ export interface CreationModeSpec {
     label: string;
     icon: string;
     description: string;
+    /** 模式库根目录名（`长篇小说` / `短篇小说` / `剧本`），项目 ID 的第一段 */
+    rootDir: string;
     unitLabel: string;
     unitPlural: string;
     targetWords: { min: number; max: number; default: number };
@@ -49,27 +51,37 @@ export interface CreationModeSpec {
  */
 export const CREATION_MODE_SPECS: Record<CreationMode, CreationModeSpec> = {
     long: {
-        mode: 'long', label: '长篇小说', icon: '📖',
+        mode: 'long', label: '长篇小说', icon: '📖', rootDir: '长篇小说',
         description: '分卷、多章、11 步流水线；面向长篇连载。',
         unitLabel: '章', unitPlural: '章',
         targetWords: { min: 100000, max: 5000000, default: 1000000 },
         targetUnits: { min: 10, max: 5000, default: 200 },
     },
     short: {
-        mode: 'short', label: '短篇小说', icon: '📄',
+        mode: 'short', label: '短篇小说', icon: '📄', rootDir: '短篇小说',
         description: '番茄短篇 5–10 万字，快开篇、高密度反转、单线强情绪。',
         unitLabel: '节', unitPlural: '节',
         targetWords: { min: 50000, max: 100000, default: 80000 },
         targetUnits: { min: 8, max: 40, default: 20 },
     },
     script: {
-        mode: 'script', label: '短剧剧本', icon: '🎬',
+        mode: 'script', label: '短剧剧本', icon: '🎬', rootDir: '剧本',
         description: '红果短剧快车道规格：分集、场次、强钩子与可拍对白。',
         unitLabel: '集', unitPlural: '集',
         targetWords: { min: 50000, max: 100000, default: 80000 },
         targetUnits: { min: 40, max: 120, default: 80 },
     },
 };
+
+/** 三个模式库根目录的唯一来源（路径/项目识别/设置页都从这里取）。 */
+export const MODE_LIBRARY_ROOTS: Record<CreationMode, string> = {
+    long: CREATION_MODE_SPECS.long.rootDir,
+    short: CREATION_MODE_SPECS.short.rootDir,
+    script: CREATION_MODE_SPECS.script.rootDir,
+};
+
+/** 模式库根目录列表（遍历用）。 */
+export const MODE_LIBRARY_ROOT_LIST: string[] = Object.values(MODE_LIBRARY_ROOTS);
 
 /**
  * 短篇题材。

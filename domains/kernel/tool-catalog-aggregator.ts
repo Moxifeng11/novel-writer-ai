@@ -1,9 +1,9 @@
-import type { CreationMode } from '../../shared/creation-mode';
+import type { CreationMode } from '@/shared/creation-mode';
 import type { ToolGroup } from './tool-catalog-types';
-import { TOOL_GROUPS } from '../long/tool-catalog';
-import { SHORT_TOOL_GROUPS } from '../short/tool-catalog';
-import { SCRIPT_TOOL_GROUPS } from '../script/tool-catalog';
-import { isCommandAllowedInMode } from '../../shared/command-mode-rules';
+import { TOOL_GROUPS } from '@/domains/long/tool-catalog';
+import { SHORT_TOOL_GROUPS } from '@/domains/short/tool-catalog';
+import { SCRIPT_TOOL_GROUPS } from '@/domains/script/tool-catalog';
+import { isCommandAllowedInMode } from '@/shared/command-mode-rules';
 
 /**
  * 按模式过滤工具按钮（v4.23 修复）。

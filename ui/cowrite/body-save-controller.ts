@@ -1,6 +1,6 @@
 import { App, Notice } from 'obsidian';
-import { BodyWriter } from '../../engine/body-writer';
-import { createLogger } from '../../shared/logger';
+import { BodyWriter } from '@/engine/body-writer';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('BodySaveController');
 

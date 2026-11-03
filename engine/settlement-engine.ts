@@ -10,22 +10,22 @@
  */
 
 import { TFile, TFolder } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import { mkdirp } from '../utils/helpers';
+import { splitTableCells } from '@/shared/chapter-table';
+import { mkdirp } from '@/utils/helpers';
 import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
-import { CHARACTER_DISPLAY_KEYS } from '../shared/format-constants';
-import { withWriteLock } from '../shared/write-lock';
+import { CHARACTER_DISPLAY_KEYS } from '@/shared/format-constants';
+import { withWriteLock } from '@/shared/write-lock';
 import type { SettlementJournal } from './settlement/settlement-journal';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates, getRelationshipFilePath } from './relationship-engine';
-import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '../shared/paths';
+import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '@/shared/paths';
 import { DEFAULT_PROMISE_LEDGER, applyPromiseInstruction, formatPromiseLedger, parsePromiseLedger } from './promise-ledger';
 import { applyArcInstruction, buildArcRowsFromCharacters, formatCharacterArcTable, parseCharacterArcTable } from './character-arc';
-import type { Notifier } from '../shared/types';
-import { NOOP_NOTIFIER } from '../shared/types';
-import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '../shared/file-system-port';
-import { listFolderFiles } from '../shared/vault-tree';
-import { entityDir, listEntityFiles } from '../shared/entity-reader';
-import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '../shared/thresholds';
+import type { Notifier } from '@/shared/types';
+import { NOOP_NOTIFIER } from '@/shared/types';
+import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { listFolderFiles } from '@/shared/vault-tree';
+import { entityDir, listEntityFiles } from '@/shared/entity-reader';
+import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '@/shared/thresholds';
 import type { Instructions, FrontMatter } from './settlement/settlement-types';
 import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealNames } from './settlement/report-parser';
 import {
@@ -37,21 +37,21 @@ import {
     getNextRowNumInSection,
 } from './settlement/markdown-table-utils';
 import { createSettleContext, type SettleContext } from './settlement/settle-context';
-import { parseInfoPlanFields } from '../shared/info-plan-fields';
-import { getValidFrontmatterKeys } from '../shared/entity-field-mappings';
-import { getLinkPolicy, formatSingleLinkValue, formatListLinkValue, parseLinkValue } from '../shared/entity-links';
-import type { EntityCategory } from '../shared/entity-models';
-import { verifyForeshadowLoop, type ForeshadowLoopCheck } from '../shared/foreshadow-loop';
+import { parseInfoPlanFields } from '@/shared/info-plan-fields';
+import { getValidFrontmatterKeys } from '@/shared/entity-field-mappings';
+import { getLinkPolicy, formatSingleLinkValue, formatListLinkValue, parseLinkValue } from '@/shared/entity-links';
+import type { EntityCategory } from '@/shared/entity-models';
+import { verifyForeshadowLoop, type ForeshadowLoopCheck } from '@/shared/foreshadow-loop';
 import {
     parseBehaviorLog,
     mergeBehaviorRows,
     formatBehaviorLog,
     buildChapterBehaviorRows,
     type BehaviorRow,
-} from '../shared/behavior-log';
+} from '@/shared/behavior-log';
 import { CHAPTER_FILE_TYPES } from './chapter-utils';
-import { createLogger } from '../shared/logger';
-import { evaluateHumanFeatures } from '../shared/human-feature-rubric';
+import { createLogger } from '@/shared/logger';
+import { evaluateHumanFeatures } from '@/shared/human-feature-rubric';
 
 
 const log = createLogger('SettlementEngine');

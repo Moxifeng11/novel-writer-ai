@@ -6,7 +6,7 @@
  */
 import type { DataAdapter } from 'obsidian';
 import type { CreationMode } from './creation-mode';
-import { resolveProjectRoot } from '../domains/kernel/project-locator';
+import { resolveProjectRoot } from '@/domains/kernel/project-locator';
 
 /**
  * 前期调研目录。

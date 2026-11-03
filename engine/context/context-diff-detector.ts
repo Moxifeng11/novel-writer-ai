@@ -30,8 +30,8 @@ import {
     SUBDIR_BODY_ROOT,
     SUBDIR_STEP_ROOT,
     SUBDIR_TIMELINE,
-} from '../../shared/paths';
-import { pjForeshadowDB, pjTimelineBoard, pjWritingRules } from '../../shared/paths';
+} from '@/shared/paths';
+import { pjForeshadowDB, pjTimelineBoard, pjWritingRules } from '@/shared/paths';
 
 // ============================================================
 // 一、类型定义

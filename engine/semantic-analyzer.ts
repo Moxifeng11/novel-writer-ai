@@ -10,7 +10,7 @@
  * 所有实现均基于规则，不依赖外部 NLP 库。
  */
 
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 const log = createLogger('SemanticAnalyzer');
 

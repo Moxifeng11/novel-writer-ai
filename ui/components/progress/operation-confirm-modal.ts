@@ -1,5 +1,5 @@
 import { App, Modal } from 'obsidian';
-import { STORAGE_KEY_PREFIXES } from '../../../shared/storage-keys';
+import { STORAGE_KEY_PREFIXES } from '@/shared/storage-keys';
 
 /**
  * 操作确认弹窗配置选项

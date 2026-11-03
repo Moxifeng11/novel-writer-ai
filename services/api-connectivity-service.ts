@@ -5,14 +5,14 @@
  * 使用 Obsidian requestUrl 绕开 CORS；不记录密钥，不把响应正文写入日志。
  */
 import { requestUrl } from 'obsidian';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 import {
     buildAuthHeaders,
     buildChatRequestBody,
     normalizeApiFormat,
     resolveRequestUrl,
     type ApiFormat,
-} from '../shared/api-format';
+} from '@/shared/api-format';
 
 const log = createLogger('ApiConnectivity');
 

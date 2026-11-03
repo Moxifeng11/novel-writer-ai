@@ -1,10 +1,10 @@
 import { App, Notice, TFile, Modal } from 'obsidian';
 import { FullWriterStore, WriterTab } from './full-writer-store';
 import { WizardTab } from './wizard-types';
-import NovelWriterPlugin from '../../main';
-import { pjStepDir } from '../../shared/paths';
-import { createLogger } from '../../shared/logger';
-import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '../model-quick-switcher';
+import NovelWriterPlugin from '@/main';
+import { pjStepDir } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 
 
 const log = createLogger('TabController');

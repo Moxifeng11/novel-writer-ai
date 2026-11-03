@@ -19,7 +19,7 @@ import type {
     SuggestionDirection,
     PlotCompletionMetrics,
     SentenceEditRecord,
-} from '../../shared/types';
+} from '@/shared/types';
 import type { Suggestion } from './co-writer-types';
 
 // ============================================================
@@ -508,8 +508,8 @@ export interface ThunkDependencies {
 // 十二、异步 Thunk Action Creators
 // ============================================================
 
-import type { StoreApi, PartialState } from '../../shared/store/types';
-import { createLogger } from '../../shared/logger';
+import type { StoreApi, PartialState } from '@/shared/store/types';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('SessionState');

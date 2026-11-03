@@ -14,11 +14,11 @@
  */
 
 import { App, Notice } from 'obsidian';
-import { KnowledgeBaseManager, type VectorStatus } from '../services/knowledge-base-manager';
-import { FileSystemPort, ObsidianFileSystem } from '../shared/file-system-port';
+import { KnowledgeBaseManager, type VectorStatus } from '@/services/knowledge-base-manager';
+import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import { VectorEnhancer } from './vector-enhancer';
 import { LLMEnhancer, type LLMCaller, type LLMCallOptions } from './llm-enhancer';
-import { resolveProviderSourceType } from '../shared/model-source';
+import { resolveProviderSourceType } from '@/shared/model-source';
 import {
     ALL_BREAKDOWN_DIMENSIONS,
     DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS,
@@ -26,7 +26,7 @@ import {
     type BreakdownDimension,
     type DeconstructionEngineSettings,
     type DeconstructionQualityLevel,
-} from '../shared/deconstruction-settings';
+} from '@/shared/deconstruction-settings';
 import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';
 import { RhythmDeconstructor, RhythmAnalysisResult } from './deconstructors/rhythm-deconstructor';
 import { TechniqueDeconstructor, TechniqueAnalysisResult } from './deconstructors/technique-deconstructor';
@@ -39,15 +39,15 @@ import { DeconstructionWorkerManager } from './deconstruction-worker-manager';
 import { SchedulerSegmentIntegration } from './scheduler-segment-integration';
 import { SegmentAwareBreakdown } from './segment-aware-breakdown';
 import { countTotalChars } from './text-segmenter';
-import { ProgressEmitter } from '../shared/progress-emitter';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
-import { resolvePluginWorkerUrl } from '../shared/plugin-worker-url';
-import { TimeEstimator, refineEstimate } from '../shared/time-estimator';
-import { AdaptiveDebounceManager } from '../shared/adaptive-debounce-manager';
+import { ProgressEmitter } from '@/shared/progress-emitter';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import { resolvePluginWorkerUrl } from '@/shared/plugin-worker-url';
+import { TimeEstimator, refineEstimate } from '@/shared/time-estimator';
+import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { QualityScorer, QualityScoringInput } from './quality-scorer';
-import { yieldToUI } from '../shared/yield';
-import { createLogger } from '../shared/logger';
-import { chunkOriginalText } from '../services/knowledge-original-chunker';
+import { yieldToUI } from '@/shared/yield';
+import { createLogger } from '@/shared/logger';
+import { chunkOriginalText } from '@/services/knowledge-original-chunker';
 
 const log = createLogger('DeconstructionScheduler');
 import {
@@ -61,7 +61,7 @@ import {
     kbBookForeshadowDBFile,
     kbBookCommercialAnalysisFile,
     kbBookReadabilityAnalysisFile,
-} from '../shared/paths';
+} from '@/shared/paths';
 
 // 维度类型与默认配置已下沉到 shared/deconstruction-settings.ts（core 生成 DEFAULT_SETTINGS 需要），
 // 此处仅再导出以兼容既有 ui / main 引用。

@@ -60,15 +60,15 @@ export interface PluginCapabilities {
     /** 插件设置 */
     settings: PluginSettings;
     /** AI 引擎实例 */
-    aiEngine?: import('../engine/ai-engine').AIEngine;
+    aiEngine?: import('@/engine/ai-engine').AIEngine;
     /** AI API 客户端实例 */
-    aiApiClient?: import('../engine/ai-api-client').AIApiClient;
+    aiApiClient?: import('@/engine/ai-api-client').AIApiClient;
     /** 上下文管理器实例 */
-    contextManager?: import('../engine/context-manager').ContextManager;
+    contextManager?: import('@/engine/context-manager').ContextManager;
     /** 伏笔管理器实例 */
-    foreshadowManager?: import('../engine/foreshadow-manager').ForeshadowManager;
+    foreshadowManager?: import('@/engine/foreshadow-manager').ForeshadowManager;
     /** 审查代理实例 */
-    reviewAgent?: import('../engine/review-agent').ReviewAgent;
+    reviewAgent?: import('@/engine/review-agent').ReviewAgent;
     /** 文件系统抽象（可选，已有懒加载兜底） */
     fs?: import('./file-system-port').FileSystemPort;
     /** Vault 元数据抽象（可选，已有懒加载兜底） */
@@ -85,8 +85,8 @@ export interface PluginCapabilities {
 export function extractPluginCapabilities(plugin: {
     app: import('obsidian').App;
     settings: PluginSettings;
-    aiEngine?: import('../engine/ai-engine').AIEngine;
-    contextManager?: import('../engine/context-manager').ContextManager;
+    aiEngine?: import('@/engine/ai-engine').AIEngine;
+    contextManager?: import('@/engine/context-manager').ContextManager;
 }): PluginCapabilities {
     return {
         app: plugin.app,

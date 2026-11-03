@@ -19,7 +19,7 @@ import type { ForeshadowAnalysisResult } from './deconstructors/foreshadow-decon
 import type { CommercialAnalysisResult } from './deconstructors/commercial-deconstructor';
 import type { ReadabilityAnalysisResult } from './deconstructors/readability-deconstructor';
 import type { DeconstructDimension } from './deconstruction-worker-manager';
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('IncrementalResultAggregator');

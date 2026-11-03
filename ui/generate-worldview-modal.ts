@@ -1,14 +1,14 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
-import NovelWriterPlugin from '../main';
-import { AIEngine } from '../engine/ai-engine';
-import { ContextManager } from '../engine/context-manager';
-import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '../utils/helpers';
-import { validateWorldviewOutput } from '../shared/template-validator';
-import { pjWorldview, pjSettingLib, SUBDIR_WORLD_ARCH } from '../shared/paths';
-import { createLogger } from '../shared/logger';
-import { ProjectRenameService } from '../services/project-rename-service';
-import { validateProjectName } from '../shared/project-name';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
+import { ContextManager } from '@/engine/context-manager';
+import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '@/utils/helpers';
+import { validateWorldviewOutput } from '@/shared/template-validator';
+import { pjWorldview, pjSettingLib, SUBDIR_WORLD_ARCH } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
+import { ProjectRenameService } from '@/services/project-rename-service';
+import { validateProjectName } from '@/shared/project-name';
 
 
 const log = createLogger('GenerateWorldviewModal');

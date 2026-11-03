@@ -1,16 +1,16 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine } from '../engine/ai-engine';
+import NovelWriterPlugin from '@/main';
+import { AIEngine } from '@/engine/ai-engine';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleBackupPath, getWritingStyleWritePath } from './writing-style-paths';
 import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
 import { LoadingOverlayComponent } from './components/progress/loading-overlay';
-import { ProgressEmitter } from '../shared/progress-emitter';
-import { isImeComposing } from '../shared/keyboard';
+import { ProgressEmitter } from '@/shared/progress-emitter';
+import { isImeComposing } from '@/shared/keyboard';
 import {
     analyzeStyleFromSource,
     StyleDistillInput,
     StyleSourceMode,
-} from '../engine/style/style-distill-service';
+} from '@/engine/style/style-distill-service';
 
 const DISTILL_STEPS = [
     '读取样本与预处理',

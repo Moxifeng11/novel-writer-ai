@@ -1,7 +1,7 @@
 import { App } from 'obsidian';
-import { AnalysisReportEngine } from '../../engine/analysis-report-engine';
-import { FullAnalysisReport } from '../../shared/types';
-import { createLogger } from '../../shared/logger';
+import { AnalysisReportEngine } from '@/engine/analysis-report-engine';
+import { FullAnalysisReport } from '@/shared/types';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('AnalysisReportPanel');

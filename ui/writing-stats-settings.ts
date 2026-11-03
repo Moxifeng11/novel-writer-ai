@@ -6,7 +6,7 @@
  */
 
 import { Setting } from 'obsidian';
-import type NovelWriterPlugin from '../main';
+import type NovelWriterPlugin from '@/main';
 
 /**
  * renderWritingStatsAndPetSettings 函数。

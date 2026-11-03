@@ -4,7 +4,7 @@ import { App, ItemView, WorkspaceLeaf, TFile, TFolder, Modal, Notice } from 'obs
 import { AddFanficSettingModal } from './add-fanfic-setting-modal';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './full-writer/wizard-types';
 import { buildTemplateVars as buildTemplateVarsExternal } from './full-writer/template-vars-builder';
-import { extractCharacterNames } from '../engine/revision/revision-guard';
+import { extractCharacterNames } from '@/engine/revision/revision-guard';
 import { FullWriterStoreImpl, type WriterTab } from './full-writer/full-writer-store';
 import { TabController } from './full-writer/tab-controller';
 import { EntityStateController } from './full-writer/entity-state-controller';
@@ -18,10 +18,10 @@ import { StepRenderController } from './full-writer/step-render-controller';
 import { ChapterOrchestrator, countRemainingChapterActions } from './full-writer/chapter-orchestrator';
 import { ExecutionRunStore } from './full-writer/execution-run-store';
 import { ExecutionLogPanel, ExecutionTimelinePanel, renderStepFailureCard } from './full-writer/execution-panels';
-import { writeVaultText } from '../shared/file-system-port';
-import { createStepFailure } from '../shared/execution-events';
-import type { DiagnosticInput, ExecutionEventInput, StepFailure } from '../shared/execution-events';
-import type { ChapterRunMode } from '../shared/chapter-run';
+import { writeVaultText } from '@/shared/file-system-port';
+import { createStepFailure } from '@/shared/execution-events';
+import type { DiagnosticInput, ExecutionEventInput, StepFailure } from '@/shared/execution-events';
+import type { ChapterRunMode } from '@/shared/chapter-run';
 import { WizardController } from './full-writer/wizard-controller';
 import { ProjectSelectorController } from './full-writer/project-selector-controller';
 import { FlowPanelController } from './full-writer/flow-panel-controller';
@@ -29,39 +29,39 @@ import { UnitWriterController } from './full-writer/unit-writer-controller';
 import { ensureFlowTab, flowTabId } from './full-writer/flow-tab';
 import { ensureUnitTab, unitTabId } from './full-writer/unit-tab';
 import { markFlowExported } from './full-writer/creation-flow-state';
-import { resolveProjectMode, rememberProjectMode } from '../shared/project-mode';
-import { isChapterBodyPath } from '../shared/body-path';
+import { resolveProjectMode, rememberProjectMode } from '@/shared/project-mode';
+import { isChapterBodyPath } from '@/shared/body-path';
 import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { ExportManuscriptModal } from './export-manuscript-modal';
-import { listModeUnits, modeUnitLabel } from '../shared/mode-content';
-import type { CreationMode } from '../shared/creation-mode';
+import { listModeUnits, modeUnitLabel } from '@/shared/mode-content';
+import type { CreationMode } from '@/shared/creation-mode';
 import { InterventionController } from './full-writer/intervention-controller';
 import type { WizardViewAccess } from './full-writer/wizard-view-access';
 import { WizardStepRenderers } from './full-writer/wizard-step-renderers';
 import { WizardStepExecutors } from './full-writer/wizard-step-executors';
 import { injectFullWriterStyles } from './full-writer/fw-styles';
-import NovelWriterPlugin from '../main';
-import { AIEngine, APIResponse } from '../engine/ai-engine';
-import { ContextManager, GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '../engine/context-manager';
+import NovelWriterPlugin from '@/main';
+import { AIEngine, APIResponse } from '@/engine/ai-engine';
+import { ContextManager, GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '@/engine/context-manager';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { showProgress, hideProgress, showSuccess, showError, mkdirp, stripFrontmatter, applyNwScope } from '../utils/helpers';
-import { getStepTemplateAuto, fillTemplate } from '../engine/prompt-templates';
-import { TemplateService } from '../engine/template-service';
-import { getForeshadowWarnings } from '../engine/foreshadow-manager';
-import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '../engine/chapter-context-builder';
-import { scoreAndFilterEntities, ScoredEntity } from '../engine/entity-scorer';
-import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '../engine/character-soul';  // V2 P0-1
-import { getChapterFile, getChapterFileName, findBodyFileV4 } from '../engine/chapter-utils';
+import { showProgress, hideProgress, showSuccess, showError, mkdirp, stripFrontmatter, applyNwScope } from '@/utils/helpers';
+import { getStepTemplateAuto, fillTemplate } from '@/engine/prompt-templates';
+import { TemplateService } from '@/engine/template-service';
+import { getForeshadowWarnings } from '@/engine/foreshadow-manager';
+import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '@/engine/chapter-context-builder';
+import { scoreAndFilterEntities, ScoredEntity } from '@/engine/entity-scorer';
+import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '@/engine/character-soul';  // V2 P0-1
+import { getChapterFile, getChapterFileName, findBodyFileV4 } from '@/engine/chapter-utils';
 import { MiniSettingsModal } from './mini-settings-modal';
-import { EntityStateManager } from '../engine/entity-state-manager';
-import { SettlementEngine } from '../engine/settlement-engine';
-import { ENGINE_NAMES } from '../shared/engine-names';
+import { EntityStateManager } from '@/engine/entity-state-manager';
+import { SettlementEngine } from '@/engine/settlement-engine';
+import { ENGINE_NAMES } from '@/shared/engine-names';
 import { ChapterStateManager } from './states/chapter-state-manager';
 import { extractWorldviewMeta } from './utils/worldview-utils';
-import { StepRunner, ALL_FULL_STEPS, FullStep, StepRunCtx } from '../engine/step-runner';
-import { BODY_CHANGE_INVALIDATED_STEPS } from '../engine/step-definitions';
-import { buildCreationModeGuide, parseCreationModeMeta } from '../shared/creation-mode';
+import { StepRunner, ALL_FULL_STEPS, FullStep, StepRunCtx } from '@/engine/step-runner';
+import { BODY_CHANGE_INVALIDATED_STEPS } from '@/engine/step-definitions';
+import { buildCreationModeGuide, parseCreationModeMeta } from '@/shared/creation-mode';
 import {
     buildStoryStructureGuide,
     createDefaultStorySettings,
@@ -70,13 +70,13 @@ import {
     STORY_STRUCTURES,
     upsertStorySettingsInProjectMeta,
     type StoryStructureId,
-} from '../shared/story-structure';
+} from '@/shared/story-structure';
 
-import { CrossVolumeIntegrator } from '../engine/cross-volume-integration';
+import { CrossVolumeIntegrator } from '@/engine/cross-volume-integration';
 import { ContextPanel } from './rendering/context-panel';
-import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS, chapterOutlineSection, CHAPTER_STATUS } from '../shared/format-constants';
-import { validateWorldviewOutput, validateOutlineOutput, validateFanficSettings } from '../shared/template-validator';
-import { getWorldviewPath, getSettingLibPath, pjVolumeOutlineDir, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, SUBDIR_OUTLINE_ROOT, SUBDIR_TIMELINE, SUBDIR_CONTROL, SUBDIR_FANFIC, SUBDIR_VOLUME_OUTLINE } from '../shared/paths';
+import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS, chapterOutlineSection, CHAPTER_STATUS } from '@/shared/format-constants';
+import { validateWorldviewOutput, validateOutlineOutput, validateFanficSettings } from '@/shared/template-validator';
+import { getWorldviewPath, getSettingLibPath, pjVolumeOutlineDir, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, SUBDIR_OUTLINE_ROOT, SUBDIR_TIMELINE, SUBDIR_CONTROL, SUBDIR_FANFIC, SUBDIR_VOLUME_OUTLINE } from '@/shared/paths';
 import { PlanBookModal } from './plan-book-modal';
 import { BatchCreateModal } from './batch-create-modal';
 import { WritingStyleModal } from './writing-style-modal';
@@ -85,12 +85,12 @@ import { PolishEditor } from './polish-editor';
 import { WizardChecker } from './wizard-checker';
 import { pjSettingLib, pjWritingStyle, pjStepDir,
     SUBDIR_WORLD_ARCH, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS,
-    SUBDIR_WORLDVIEW_FILE, SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE } from '../shared/paths';
+    SUBDIR_WORLDVIEW_FILE, SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE } from '@/shared/paths';
 import { getWritingStyleCandidatePaths } from './writing-style-paths';
 import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta, type ChapterListEntry } from './project-utils';
-import { CHAR_TO_TOKEN_RATIO, getInfoDebtMax, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '../shared/thresholds';
-import { createLogger } from '../shared/logger';
-import { ensureTemplateScaffold } from '../shared/template-scaffold';
+import { CHAR_TO_TOKEN_RATIO, getInfoDebtMax, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '@/shared/thresholds';
+import { createLogger } from '@/shared/logger';
+import { ensureTemplateScaffold } from '@/shared/template-scaffold';
 
 
 const log = createLogger('FullWriterView');
@@ -488,7 +488,7 @@ export class FullWriterView extends ItemView {
         if (!this.plugin.settings.activeRulesVersion) {
             void (async () => {
                 try {
-                    const { RulesService } = await import('../services/rules-service');
+                    const { RulesService } = await import('@/services/rules-service');
                     const cfg = await RulesService.getInstance(this.app).getRulesConfig();
                     infoSpan.setText(
                         `📐 ${bodyVariant} | 📜 ${cfg.version}${cfg.path ? '' : '（内置）'} | 🗣 ${voiceMode}`,

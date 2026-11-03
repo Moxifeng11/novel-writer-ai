@@ -1,10 +1,10 @@
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 import {
     DEFAULT_FORESHADOW_CONFIG,
     DEFAULT_FORESHADOW_TYPES,
     type ForeshadowConfig,
     type ForeshadowTypeConfig,
-} from '../shared/foreshadow-config';
+} from '@/shared/foreshadow-config';
 
 const log = createLogger('ForeshadowConfigManager');
 

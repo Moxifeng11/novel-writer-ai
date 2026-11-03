@@ -5,22 +5,22 @@
  * 来源：原 settings-tab.ts L2166-L3203（方法不连续，见清单）。
  */
 import { Setting, Notice } from 'obsidian';
-import { KnowledgeBaseManager, BookBasicInfo } from '../../services/knowledge-base-manager';
-import { KnowledgeTagManager } from '../../engine/knowledge-tags';
-import { DeconstructionScheduler } from '../../engine/deconstruction-scheduler';
-import { BatchImportModal } from '../batch-import-modal';
-import { KnowledgeMonitorModal } from '../knowledge-monitor-modal';
-import { KnowledgeDetailModal } from '../knowledge-detail-modal';
-import { RefillModal } from '../refill-modal';
-import { kbKnowledgeBaseDir } from '../../shared/paths';
-import { openKnowledgeFolder } from '../knowledge-folder-navigation';
-import { ENGINE_NAMES } from '../../shared/engine-names';
-import { createLogger } from '../../shared/logger';
-import { OperationConfirmModal } from '../components/progress';
-import { rebuildKnowledgeIndexWithConfirm } from '../knowledge-rebuild-action';
-import { rebuildAllVectorsWithConfirm } from '../vector-rebuild-action';
+import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
+import { KnowledgeTagManager } from '@/engine/knowledge-tags';
+import { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
+import { BatchImportModal } from '@/ui/batch-import-modal';
+import { KnowledgeMonitorModal } from '@/ui/knowledge-monitor-modal';
+import { KnowledgeDetailModal } from '@/ui/knowledge-detail-modal';
+import { RefillModal } from '@/ui/refill-modal';
+import { kbKnowledgeBaseDir } from '@/shared/paths';
+import { openKnowledgeFolder } from '@/ui/knowledge-folder-navigation';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { createLogger } from '@/shared/logger';
+import { OperationConfirmModal } from '@/ui/components/progress';
+import { rebuildKnowledgeIndexWithConfirm } from '@/ui/knowledge-rebuild-action';
+import { rebuildAllVectorsWithConfirm } from '@/ui/vector-rebuild-action';
 import { SettingsSection } from './section-base';
-import { describeSecretForInput } from '../../shared/secret-display';
+import { describeSecretForInput } from '@/shared/secret-display';
 
 const log = createLogger('SettingsTab');
 
@@ -756,7 +756,7 @@ export class KnowledgeSection extends SettingsSection {
                         this.vectorConnectionStatus = 'checking';
                         updateStatusDisplay();
                         try {
-                            const { EmbeddingProviderFactory } = await import('../../engine/embedding/provider-factory');
+                            const { EmbeddingProviderFactory } = await import('@/engine/embedding/provider-factory');
                             const provider = EmbeddingProviderFactory.create({
                                 vectorProviderType: this.plugin.settings.vectorProviderType as 'ollama' | 'openai' | 'doubao' | 'qwen',
                                 vectorOllamaBaseUrl: this.plugin.settings.vectorOllamaBaseUrl,

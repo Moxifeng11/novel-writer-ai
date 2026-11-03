@@ -1,6 +1,6 @@
 import { App, Modal, Notice } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { ReviewAgent } from '../engine/review-agent';
+import NovelWriterPlugin from '@/main';
+import { ReviewAgent } from '@/engine/review-agent';
 
 /**
  * ReviewChapterModal 类。

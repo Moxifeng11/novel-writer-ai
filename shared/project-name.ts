@@ -11,15 +11,15 @@ export interface ProjectNameValidation {
     error?: string;
 }
 
+import { MODE_LIBRARY_ROOT_LIST } from './creation-mode';
+
 const RESERVED_NAMES = new Set([
     '元文件',
     '文笔风格库',
     '写作知识库',
     '00-系统模板',
     '04-项目总控',
-    '长篇小说',
-    '短篇小说',
-    '剧本',
+    ...MODE_LIBRARY_ROOT_LIST,
     '.obsidian',
     '.trash',
     '.git',

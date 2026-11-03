@@ -1,14 +1,14 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { ContextManager } from '../engine/context-manager';
-import { AIEngine } from '../engine/ai-engine';
-import { mkdirp } from '../utils/helpers';
-import { TemplateService } from '../engine/template-service';
-import { ENGINE_NAMES } from '../shared/engine-names';
-import { getChapterFileName, CHAPTER_FILE_TYPES, normalizeChapterFiles, getChapterFile, findChapterFile } from '../engine/chapter-utils';
-import { readMergedVolumeOutline } from '../utils/helpers';
-import { pjBodyDir, pjBodyFile, pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '../shared/paths';
-import { createLogger } from '../shared/logger';
+import NovelWriterPlugin from '@/main';
+import { ContextManager } from '@/engine/context-manager';
+import { AIEngine } from '@/engine/ai-engine';
+import { mkdirp } from '@/utils/helpers';
+import { TemplateService } from '@/engine/template-service';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { getChapterFileName, CHAPTER_FILE_TYPES, normalizeChapterFiles, getChapterFile, findChapterFile } from '@/engine/chapter-utils';
+import { readMergedVolumeOutline } from '@/utils/helpers';
+import { pjBodyDir, pjBodyFile, pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '@/shared/paths';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('RebuildChaptersModal');

@@ -5,13 +5,13 @@
  * 读取真实的 `*.context_length`，注册到 `shared/model-capabilities` 的运行时缓存，
  * 让预算计算/num_ctx 不再依赖「未登记即 8192」的猜测。
  */
-import { createLogger } from '../shared/logger';
+import { createLogger } from '@/shared/logger';
 import {
     getDetectedModelCapability,
     lookupModelCapability,
     registerDetectedModelCapability,
     type ModelCapability,
-} from '../shared/model-capabilities';
+} from '@/shared/model-capabilities';
 
 const log = createLogger('LocalModelProbe');
 

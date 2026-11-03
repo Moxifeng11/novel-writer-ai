@@ -9,20 +9,20 @@
  * 不依赖 FullWriterView 的 DOM 状态：每个步骤执行前用模板重新填充 prompt。
  */
 import { App, TFile } from 'obsidian';
-import { writeSettlementArtifacts } from '../../engine/settlement/settlement-coordinator';
-import type NovelWriterPlugin from '../../main';
-import { ALL_FULL_STEPS, StepRunner } from '../../engine/step-runner';
-import type { StepRunCtx } from '../../engine/step-definitions';
-import { getStepTemplateAuto, fillTemplate } from '../../engine/prompts/template-utils';
-import { CHAPTER_FILE_TYPES, findChapterFile } from '../../engine/chapter-utils';
-import { SettlementEngine } from '../../engine/settlement-engine';
-import { writeChapterStateSnapshot } from '../../engine/chapter-state-snapshot-service';
-import { ENGINE_NAMES } from '../../engine/engine-registry';
-import { pjStepDir, pjNarrativeOverview, pjBodyFile } from '../../shared/paths';
-import { stripFrontmatter } from '../../utils/helpers';
-import { isTemplateSkeleton, isStepResultComplete } from '../../engine/step-validator';
-import { createLogger } from '../../shared/logger';
-import { writeVaultText } from '../../shared/file-system-port';
+import { writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
+import type NovelWriterPlugin from '@/main';
+import { ALL_FULL_STEPS, StepRunner } from '@/engine/step-runner';
+import type { StepRunCtx } from '@/engine/step-definitions';
+import { getStepTemplateAuto, fillTemplate } from '@/engine/prompts/template-utils';
+import { CHAPTER_FILE_TYPES, findChapterFile } from '@/engine/chapter-utils';
+import { SettlementEngine } from '@/engine/settlement-engine';
+import { writeChapterStateSnapshot } from '@/engine/chapter-state-snapshot-service';
+import { ENGINE_NAMES } from '@/engine/engine-registry';
+import { pjStepDir, pjNarrativeOverview, pjBodyFile } from '@/shared/paths';
+import { stripFrontmatter } from '@/utils/helpers';
+import { isTemplateSkeleton, isStepResultComplete } from '@/engine/step-validator';
+import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 import { buildTemplateVars } from './template-vars-builder';
 import {
     BATCH_STEP_KEYS,

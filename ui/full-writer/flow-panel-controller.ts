@@ -6,10 +6,10 @@
  * 这里用一个可停留、可点击、会跟着磁盘变化自动刷新的面板替代。
  */
 import type { App, EventRef } from 'obsidian';
-import type { CreationMode } from '../../shared/creation-mode';
-import { getCreationModeLabel } from '../../shared/creation-mode';
-import type { CreationFlowStageStatus, CreationFlowSnapshot } from '../../shared/creation-flow';
-import { createLogger } from '../../shared/logger';
+import type { CreationMode } from '@/shared/creation-mode';
+import { getCreationModeLabel } from '@/shared/creation-mode';
+import type { CreationFlowStageStatus, CreationFlowSnapshot } from '@/shared/creation-flow';
+import { createLogger } from '@/shared/logger';
 import { projectShortName } from './flow-tab';
 import { collectCreationFlowState, type CreationFlowState } from './creation-flow-state';
 

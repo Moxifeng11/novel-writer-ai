@@ -1,7 +1,7 @@
 import { App, TFile, TFolder } from 'obsidian';
-import { PJ_TEMPLATE_DIR, sanitizeName } from '../shared/paths';
-import { mkdirp } from '../utils/helpers';
-import { validateWritingStyleOutput } from '../shared/template-validator';
+import { PJ_TEMPLATE_DIR, sanitizeName } from '@/shared/paths';
+import { mkdirp } from '@/utils/helpers';
+import { validateWritingStyleOutput } from '@/shared/template-validator';
 
 /** 内置与用户扩展共用的文笔风格预设目录（随模板自举写入 vault） */
 export const STYLE_PRESET_DIR = `${PJ_TEMPLATE_DIR}/文笔风格预设`;

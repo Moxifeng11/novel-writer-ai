@@ -10,7 +10,7 @@
  */
 
 import { splitSceneSections } from './scene-expander';
-import { countWords } from '../shared/diff-utils';
+import { countWords } from '@/shared/diff-utils';
 
 /** 单个场景的写作简报 */
 export interface BriefScene {

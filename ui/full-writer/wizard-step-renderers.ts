@@ -7,20 +7,20 @@
  * executeWizardStep / renderTab）。
  */
 import { App, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../../main';
+import NovelWriterPlugin from '@/main';
 import { WizardTab, WizardStep } from './wizard-types';
-import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjProjectMeta, pjFanficDir, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '../../shared/paths';
-import { findWritingStyleFile } from '../writing-style-paths';
-import { ChapterOutlineTreeModal } from '../chapter-outline-tree-modal';
-import { openPlotCanvas } from '../plot-canvas-modal';
-import { UnifiedEntityManagerModal } from '../unified-entity-manager-modal';
-import { readMergedVolumeOutline } from '../../utils/helpers';
-import { WV_SECTIONS, SL_SECTIONS } from '../../shared/format-constants';
+import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjProjectMeta, pjFanficDir, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '@/shared/paths';
+import { findWritingStyleFile } from '@/ui/writing-style-paths';
+import { ChapterOutlineTreeModal } from '@/ui/chapter-outline-tree-modal';
+import { openPlotCanvas } from '@/ui/plot-canvas-modal';
+import { UnifiedEntityManagerModal } from '@/ui/unified-entity-manager-modal';
+import { readMergedVolumeOutline } from '@/utils/helpers';
+import { WV_SECTIONS, SL_SECTIONS } from '@/shared/format-constants';
 import { attachFanficPathToProject, buildFanficSettingsContent, getFanficSettingsPath, isFanficSettingsContentValidEnough, missingFanficValueLabels, type FanficSettingsValues } from './fanfic-settings-utils';
-import { extractFanficRuleValue, parseProjectMeta } from '../../shared/fanfic-rules';
-import { listFanficSettingCandidates } from '../../shared/fanfic-binding';
-import { getStoryStructure, getStructureStageSummary, getStoryOptionLabel, parseStorySettingsFromProjectMeta } from '../../shared/story-structure';
-import { StorySettingsModal } from '../story-settings-modal';
+import { extractFanficRuleValue, parseProjectMeta } from '@/shared/fanfic-rules';
+import { listFanficSettingCandidates } from '@/shared/fanfic-binding';
+import { getStoryStructure, getStructureStageSummary, getStoryOptionLabel, parseStorySettingsFromProjectMeta } from '@/shared/story-structure';
+import { StorySettingsModal } from '@/ui/story-settings-modal';
 
 /**
  * 创作向导各步骤渲染器。

@@ -5,15 +5,15 @@
  *       重要程度评估、回收检测等多维度伏笔分析结果
  */
 
-import { kbBookForeshadowDBFile } from '../../shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '../../shared/text-utils';
-import { WebnovelKnowledgeBase, ForeshadowCategoryDef } from '../../shared/webnovel-knowledge-base';
-import { yieldToUI } from '../../shared/yield';
-import { WORLDVIEW_WORDS } from '../dimension-keywords';
-import type { GenreConfig } from '../genre/types';
-import { LLMEnhancer } from '../llm-enhancer';
-import { createLogger } from '../../shared/logger';
-import { ForeshadowConfigManager, ForeshadowTypeConfig } from '../foreshadow-config-manager';
+import { kbBookForeshadowDBFile } from '@/shared/paths';
+import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { WebnovelKnowledgeBase, ForeshadowCategoryDef } from '@/shared/webnovel-knowledge-base';
+import { yieldToUI } from '@/shared/yield';
+import { WORLDVIEW_WORDS } from '@/engine/dimension-keywords';
+import type { GenreConfig } from '@/engine/genre/types';
+import { LLMEnhancer } from '@/engine/llm-enhancer';
+import { createLogger } from '@/shared/logger';
+import { ForeshadowConfigManager, ForeshadowTypeConfig } from '@/engine/foreshadow-config-manager';
 
 
 const log = createLogger('ForeshadowDeconstructor');

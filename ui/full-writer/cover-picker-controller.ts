@@ -6,8 +6,8 @@
  * 控制器自管内部状态，不回调 view 的 private 成员（避免 TS2341）。
  */
 import { App, Notice } from 'obsidian';
-import { getProjectCover } from '../project-utils';
-import { createLogger } from '../../shared/logger';
+import { getProjectCover } from '@/ui/project-utils';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CoverPickerController');

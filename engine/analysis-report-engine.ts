@@ -1,6 +1,6 @@
 import { App, TFile } from 'obsidian';
-import { splitTableCells } from '../shared/chapter-table';
-import { listEntityFiles } from '../shared/entity-reader';
+import { splitTableCells } from '@/shared/chapter-table';
+import { listEntityFiles } from '@/shared/entity-reader';
 import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
 import { 
@@ -9,7 +9,7 @@ import {
     ForeshadowChange, 
     TimelineEvent, 
     EmotionCurvePoint 
-} from '../shared/types';
+} from '@/shared/types';
 import {
     pjCharsDir,
     pjLocsDir,
@@ -17,22 +17,22 @@ import {
     pjItemsDir,
     pjForeshadowDB,
     pjTimelineBoard
-} from '../shared/paths';
+} from '@/shared/paths';
 import { CharacterConsistencyChecker, ConsistencyCheckResult } from './character-consistency-checker';
-import { withWriteLock } from '../shared/write-lock';
+import { withWriteLock } from '@/shared/write-lock';
 import { VectorEnhancer } from './vector-enhancer';
 import { 
     hasTableSeparator, 
     appendAfterSeparator, 
     getNextRowNum, 
     mkdirp 
-} from '../utils/helpers';
-import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
-import { setFrontmatterValue } from '../shared/frontmatter';
-import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
-import { createLogger } from '../shared/logger';
-import { resolveTaskModelConfig } from '../shared/task-model';
-import { resolveProviderSourceType } from '../shared/model-source';
+} from '@/utils/helpers';
+import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { setFrontmatterValue } from '@/shared/frontmatter';
+import type { FileSystemPort, VaultMetaPort } from '@/shared/file-system-port';
+import { createLogger } from '@/shared/logger';
+import { resolveTaskModelConfig } from '@/shared/task-model';
+import { resolveProviderSourceType } from '@/shared/model-source';
 import { parseReport } from './settlement/report-parser';
 
 

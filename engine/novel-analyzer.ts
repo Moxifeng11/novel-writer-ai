@@ -1,5 +1,5 @@
-import { countCjkWordsAndNumbers } from '../shared/word-count';
-import { isChineseChar, splitParagraphs, splitSentences } from '../shared/text-utils';
+import { countCjkWordsAndNumbers } from '@/shared/word-count';
+import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
 /**
  * novel-analyzer.ts — 小说内容分析引擎（纯统计）
  *

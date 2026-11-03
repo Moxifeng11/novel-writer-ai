@@ -4,9 +4,9 @@
  * 负责物品功法实体的持久化和查询，继承 BaseMarkdownRepository。
  */
 
-import type { FileSystemPort } from '../../shared/file-system-port';
-import { entityDir } from '../../shared/entity-reader';
-import { pjItemFile } from '../../shared/paths';
+import type { FileSystemPort } from '@/shared/file-system-port';
+import { entityDir } from '@/shared/entity-reader';
+import { pjItemFile } from '@/shared/paths';
 import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Item } from './domain/aggregates';

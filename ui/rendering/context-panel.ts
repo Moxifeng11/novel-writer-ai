@@ -1,15 +1,15 @@
 import { App, MarkdownRenderer, TFile, Component } from 'obsidian';
-import { GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '../../engine/context-manager';
-import { CompressedContext } from '../../engine/context-compressor';
-import { LocationFrontmatter, FactionFrontmatter, ItemFrontmatter } from '../../shared/types';
-import { TimelineRow, FanficRules } from '../../shared/template-validator';
-import { getWritingStylePath, getLegacyWritingStylePath } from '../../shared/paths';
-import { findWritingStyleFile, getWritingStyleCandidatePaths } from '../writing-style-paths';
-import { mkdirp, readMergedVolumeOutline } from '../../utils/helpers';
-import type { NovelWriterPluginAPI } from '../../plugin-api';
-import { parseSceneHeadings } from '../../engine/scene-expander';
-import { createLogger } from '../../shared/logger';
-import { MemoryPreview } from '../memory-preview';
+import { GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '@/engine/context-manager';
+import { CompressedContext } from '@/engine/context-compressor';
+import { LocationFrontmatter, FactionFrontmatter, ItemFrontmatter } from '@/shared/types';
+import { TimelineRow, FanficRules } from '@/shared/template-validator';
+import { getWritingStylePath, getLegacyWritingStylePath } from '@/shared/paths';
+import { findWritingStyleFile, getWritingStyleCandidatePaths } from '@/ui/writing-style-paths';
+import { mkdirp, readMergedVolumeOutline } from '@/utils/helpers';
+import type { NovelWriterPluginAPI } from '@/plugin-api';
+import { parseSceneHeadings } from '@/engine/scene-expander';
+import { createLogger } from '@/shared/logger';
+import { MemoryPreview } from '@/ui/memory-preview';
 
 
 const log = createLogger('ContextPanel');

@@ -12,16 +12,16 @@
  */
 
 import { App, TFile, Notice } from 'obsidian';
-import { ExtendedSceneData, createDefaultScene, SceneStatus } from '../../shared/types';
-import { pjStepDir, pjStepFile } from '../../shared/paths';
-import { parseSceneHeadings } from '../../engine/scene-expander';
-import { createLogger } from '../../shared/logger';
-import { OperationConfirmModal } from '../components/progress';
-import type NovelWriterPlugin from '../../main';
-import { SceneGenerator } from '../../engine/ai-scene-generator';
-import { AIApiClient } from '../../engine/ai-api-client';
-import { ContextManager } from '../../engine/context-manager';
-import { stripFrontmatter } from '../../utils/helpers';
+import { ExtendedSceneData, createDefaultScene, SceneStatus } from '@/shared/types';
+import { pjStepDir, pjStepFile } from '@/shared/paths';
+import { parseSceneHeadings } from '@/engine/scene-expander';
+import { createLogger } from '@/shared/logger';
+import { OperationConfirmModal } from '@/ui/components/progress';
+import type NovelWriterPlugin from '@/main';
+import { SceneGenerator } from '@/engine/ai-scene-generator';
+import { AIApiClient } from '@/engine/ai-api-client';
+import { ContextManager } from '@/engine/context-manager';
+import { stripFrontmatter } from '@/utils/helpers';
 
 
 const log = createLogger('SceneOutlineController');

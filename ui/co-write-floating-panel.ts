@@ -7,21 +7,21 @@
  * 注册类型：nw-float-cowrite
  */
 import { WorkspaceLeaf, Notice, TFile } from "obsidian";
-import NovelWriterPlugin from "../main";
+import NovelWriterPlugin from "@/main";
 import { DraggablePanel } from "./draggable-panel";
-import { CoWriterEngine } from "../engine/co-writer-engine";
-import { SuggestionRecord, SentenceEditRecord } from "../shared/types";
-import { AssociationSuggestion } from "../shared/co-writer-types";
+import { CoWriterEngine } from "@/engine/co-writer-engine";
+import { SuggestionRecord, SentenceEditRecord } from "@/shared/types";
+import { AssociationSuggestion } from "@/shared/co-writer-types";
 import { associationToSuggestion, getDirectionLabel, getStyleLabel } from "./cowrite/cowrite-mappers";
-import { CharacterConsistencyChecker, ConsistencyCheckResult } from "../engine/character-consistency-checker";
-import { toCharacterContextInfos } from "../engine/character-context";
-import { ProgressEmitter, type ProgressState } from "../shared/progress-emitter";
+import { CharacterConsistencyChecker, ConsistencyCheckResult } from "@/engine/character-consistency-checker";
+import { toCharacterContextInfos } from "@/engine/character-context";
+import { ProgressEmitter, type ProgressState } from "@/shared/progress-emitter";
 import { StepListComponent } from "./components/progress/step-list";
-import { TimeEstimator } from "../shared/time-estimator";
-import { createLogger } from '../shared/logger';
-import { resolveCursorPosition } from '../shared/cursor-position';
-import { BodyWriter } from '../engine/body-writer';
-import { isImeComposing } from '../shared/keyboard';
+import { TimeEstimator } from "@/shared/time-estimator";
+import { createLogger } from '@/shared/logger';
+import { resolveCursorPosition } from '@/shared/cursor-position';
+import { BodyWriter } from '@/engine/body-writer';
+import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('CoWriteFloatingPanel');

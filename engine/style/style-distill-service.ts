@@ -4,8 +4,8 @@
  * 旧实现只输入书名，模型凭记忆写报告，无法验证。这里把“样本分析”和
  * “书名推测”分开：样本模式必须引用原文证据；书名模式必须标注不确定性。
  */
-import type { AIEngine } from '../ai-engine';
-import { resolveTaskModelConfig, type TaskModelSettings } from '../../shared/task-model';
+import type { AIEngine } from '@/engine/ai-engine';
+import { resolveTaskModelConfig, type TaskModelSettings } from '@/shared/task-model';
 
 /**
  * 文风提炼来源模式。

@@ -10,7 +10,7 @@
  * - 正文有两套模板（V1/V2），人味块有两个版本（quota/exemplar），所以正文的
  *   `templateVersion` 是「模板版本 + 人味版本」的组合标识。
  */
-import { hashContent } from '../../shared/versioned-registry';
+import { hashContent } from '@/shared/versioned-registry';
 import {
     BODY_GENERATION_SYSTEM_PROMPT,
     BODY_GENERATION_USER_TEMPLATE,

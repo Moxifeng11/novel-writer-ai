@@ -1,18 +1,18 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
-import NovelWriterPlugin from '../main';
-import { AIEngine, BatchEntityResult } from '../engine/ai-engine';
-import { ContextManager } from '../engine/context-manager';
-import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '../utils/helpers';
-import { validateLocationOutput } from '../shared/template-validator';
-import { entityDir } from '../shared/entity-reader';
-import { mergeFanficRequirement } from '../shared/fanfic-rules';
+import NovelWriterPlugin from '@/main';
+import { AIEngine, BatchEntityResult } from '@/engine/ai-engine';
+import { ContextManager } from '@/engine/context-manager';
+import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '@/utils/helpers';
+import { validateLocationOutput } from '@/shared/template-validator';
+import { entityDir } from '@/shared/entity-reader';
+import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { pjWorldview, pjSettingLib, SUBDIR_LOCS } from '../shared/paths';
-import { saveEntities, formatSaveOutcome } from '../shared/entity-persistence';
-import { createLogger } from '../shared/logger';
-import { nextFrame } from '../shared/yield';
-import { isImeComposing } from '../shared/keyboard';
+import { pjWorldview, pjSettingLib, SUBDIR_LOCS } from '@/shared/paths';
+import { saveEntities, formatSaveOutcome } from '@/shared/entity-persistence';
+import { createLogger } from '@/shared/logger';
+import { nextFrame } from '@/shared/yield';
+import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('GenerateLocationModal');

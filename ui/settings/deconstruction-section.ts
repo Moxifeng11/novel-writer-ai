@@ -10,9 +10,9 @@ import {
     DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS,
     ALL_BREAKDOWN_DIMENSIONS,
     DIMENSION_LABELS,
-} from '../../main';
-import type { DeconstructionEngineSettings } from '../../main';
-import { OperationConfirmModal } from '../components/progress';
+} from '@/main';
+import type { DeconstructionEngineSettings } from '@/main';
+import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
 
 /**

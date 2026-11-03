@@ -11,8 +11,8 @@
  *   4. StoryContextBundle：检索与预算裁剪后的结果 + 覆盖度遥测。
  */
 
-import type { SceneCardFields } from '../../shared/scene-card';
-import type { StoryLinkage } from '../story-linkage';
+import type { SceneCardFields } from '@/shared/scene-card';
+import type { StoryLinkage } from '@/engine/story-linkage';
 import type { GatheredContext } from './context-types';
 
 /**

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T18:14:47.307Z",
+  "generatedAt": "2026-11-03T08:25:55.067Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -20,8 +20,8 @@
     },
     "shared": {
       "files": 164,
-      "exports": 1524,
-      "documented": 1524,
+      "exports": 1526,
+      "documented": 1526,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 189,
-      "exports": 493,
-      "documented": 493,
-      "methods": 632,
-      "methodsDocumented": 632,
+      "files": 190,
+      "exports": 494,
+      "documented": 494,
+      "methods": 633,
+      "methodsDocumented": 633,
       "incomplete": 0
     }
   },
@@ -2351,8 +2351,8 @@
       "incomplete": 0
     },
     "shared/creation-mode.ts": {
-      "exports": 20,
-      "documented": 20,
+      "exports": 22,
+      "documented": 22,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4551,6 +4551,13 @@
       "incomplete": 0
     },
     "ui/settings/knowledge-section.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 1,
+      "methodsDocumented": 1,
+      "incomplete": 0
+    },
+    "ui/settings/mode-section.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 1,

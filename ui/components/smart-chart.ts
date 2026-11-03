@@ -1,4 +1,4 @@
-import type { ChartType, ChartDensity, SmartChartOptions } from '../../engine/types/chart-config';
+import type { ChartType, ChartDensity, SmartChartOptions } from '@/engine/types/chart-config';
 import { createChartToolbar } from './chart-toolbar';
 import {
 	radarChart,
@@ -16,7 +16,7 @@ import {
 	violinChart,
 	scatterToHistogram,
 	attachChartInteractions
-} from '../svg-charts';
+} from '@/ui/svg-charts';
 import type {
 	RadarDataItem,
 	BarDataItem,
@@ -31,7 +31,7 @@ import type {
 	DensityPoint,
 	HorizontalBarItem,
 	ViolinDataItem
-} from '../svg-charts';
+} from '@/ui/svg-charts';
 
 type ChartRenderer = (data: any, options?: any) => string;
 

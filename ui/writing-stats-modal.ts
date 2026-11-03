@@ -6,11 +6,11 @@
  */
 
 import { Modal, type App } from 'obsidian';
-import type NovelWriterPlugin from '../main';
+import type NovelWriterPlugin from '@/main';
 import { barChart, attachChartInteractions } from './svg-charts';
-import { formatWords, type DayPoint, type StatsSummary } from '../shared/writing-stats';
-import { collectKnowledgeUsage } from '../engine/knowledge-usage';
-import { summarizeRagSources } from '../shared/rag-sources';
+import { formatWords, type DayPoint, type StatsSummary } from '@/shared/writing-stats';
+import { collectKnowledgeUsage } from '@/engine/knowledge-usage';
+import { summarizeRagSources } from '@/shared/rag-sources';
 
 type StatsTab = 'day' | 'week' | 'month';
 

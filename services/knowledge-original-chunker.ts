@@ -12,7 +12,7 @@ import {
     KB_ORIGINAL_CHUNK_MAX,
     KB_ORIGINAL_CHUNK_MIN,
     KB_ORIGINAL_CHUNK_SIZE,
-} from '../shared/thresholds';
+} from '@/shared/thresholds';
 
 /**
  * 原始文本分块结构定义。

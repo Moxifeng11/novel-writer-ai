@@ -7,7 +7,7 @@
  *
  * 字段缺失一律给安全默认值（空数组/空串），门禁按「无信息」处理而不是报错。
  */
-import type { ChapterStateSnapshot, CharacterStateBrief, StoryBeat } from '../story-state-types';
+import type { ChapterStateSnapshot, CharacterStateBrief, StoryBeat } from '@/engine/story-state-types';
 
 /**
  * 从 `${allChars}` 行抽「- 名字：…」并读取若干字段

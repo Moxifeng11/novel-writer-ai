@@ -19,9 +19,9 @@
  *   const result = await task; // 获取结果
  */
 
-import { createLogger } from '../shared/logger';
-import { getDegradationNotifier } from '../shared/degradation-notifier';
-import { notifyWorkerUnavailable } from '../shared/plugin-worker-url';
+import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import { notifyWorkerUnavailable } from '@/shared/plugin-worker-url';
 import type {
     WorkerMessage,
     WorkerManagerOptions,

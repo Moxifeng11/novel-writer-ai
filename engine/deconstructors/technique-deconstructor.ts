@@ -6,15 +6,15 @@
  * 性能：10万字取样 + async 协作式让出，避免长文本阻塞主线程（向量增强为异步）
  */
 
-import { kbBookWritingTechniquesFile } from '../../shared/paths';
-import { isChineseChar } from '../../shared/text-utils';
-import { countCjkWordsAndNumbers } from '../../shared/word-count';
-import { VectorEnhancer } from '../vector-enhancer';
-import { WebnovelKnowledgeBase, TechniqueDef, GenreConfig } from '../../shared/webnovel-knowledge-base';
-import { GenreDetector, GenreConfigRegistry } from '../genre';
-import type { GenreConfig as FrameworkGenreConfig } from '../genre';
-import { yieldToUI } from '../../shared/yield';
-import { createLogger } from '../../shared/logger';
+import { kbBookWritingTechniquesFile } from '@/shared/paths';
+import { isChineseChar } from '@/shared/text-utils';
+import { countCjkWordsAndNumbers } from '@/shared/word-count';
+import { VectorEnhancer } from '@/engine/vector-enhancer';
+import { WebnovelKnowledgeBase, TechniqueDef, GenreConfig } from '@/shared/webnovel-knowledge-base';
+import { GenreDetector, GenreConfigRegistry } from '@/engine/genre';
+import type { GenreConfig as FrameworkGenreConfig } from '@/engine/genre';
+import { yieldToUI } from '@/shared/yield';
+import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('TechniqueDeconstructor');
