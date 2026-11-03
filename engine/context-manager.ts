@@ -19,7 +19,7 @@ import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRI
 import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromContent } from './character-soul';
 import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
-import { MODE_LIBRARY_ROOT_LIST } from '@/domains/kernel/project-locator';
+import { listProjectIds } from '@/shared/project-catalog';
 import { buildStoryLinkage, type StoryLinkage } from './story-linkage';
 import { buildForeshadowIndexBlock, buildTimelineIndexBlock, upsertLinkageBlock, LINKAGE_BEGIN, LINKAGE_END } from './story-linkage-writer';
 import { PluginCapabilities } from '@/shared/plugin-capabilities';
@@ -126,58 +126,14 @@ const DEFAULT_CONTEXT_CACHE_TTL_MS = 300_000;
 
 /**
  * 检测项目列表。
+ *
+ * 唯一实现在 `shared/project-catalog.ts`；与 Agent 工作台、导出、项目卡同源。
+ *
  * @param app - Obsidian 应用实例
- * @returns 结果数组
+ * @returns 项目 ID 数组
  */
 export function detectProjects(app: App): string[] {
-    const projects: string[] = [];
-    const visited = new Set<string>();
-    const vaultMeta = new ObsidianVaultMeta(app);
-
-    const isProjectMarker = (projectId: string, path: string): boolean =>
-        path === `${projectId}/.project` ||
-        path === `${projectId}/作品信息.md` ||
-        path === `${projectId}/世界观总览.md` ||
-        path.startsWith(`${projectId}/${SUBDIR_WORLD_ARCH}/`) ||
-        path.startsWith(`${projectId}/短篇创作/`) ||
-        path.startsWith(`${projectId}/剧本创作/`);
-
-    for (const file of vaultMeta.getFiles()) {
-        const path = file.path;
-        if (path.startsWith('元文件')) continue;
-        if (path.startsWith('.')) continue;
-
-        const parts = path.split('/');
-        // 模式库项目：`长篇小说/项目名/...`；项目 ID 使用前两段
-        for (const libraryRoot of MODE_LIBRARY_ROOT_LIST) {
-            if (!path.startsWith(`${libraryRoot}/`)) continue;
-            const relative = path.slice(libraryRoot.length + 1);
-            const name = relative.split('/')[0];
-            if (!name) continue;
-            const projectId = `${libraryRoot}/${name}`;
-            if (visited.has(projectId)) break;
-            if (isProjectMarker(projectId, path)) {
-                projects.push(projectId);
-                visited.add(projectId);
-            }
-            break;
-        }
-        if (MODE_LIBRARY_ROOT_LIST.includes(parts[0])) continue;
-
-        const projectName = parts[0];
-
-        // 小说项目的标志：存在 .project、作品信息.md、世界观总览.md、01-世界架构，
-// 或短篇/剧本独立内容目录。刚创建的模式项目只有 .project 和空目录，也必须能被检测到。
-        if (projectName && !visited.has(projectName)) {
-            if (isProjectMarker(projectName, path)) {
-                // 确认为小说项目
-                projects.push(projectName);
-                visited.add(projectName);
-            }
-        }
-    }
-
-    return projects.sort();
+    return listProjectIds(app);
 }
 
 /**

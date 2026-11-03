@@ -83,6 +83,7 @@ UI 事件/命令
 4. **幂等**：重复结算/重复生成不得重复追加（按章名/内容去重）。
 5. **设置唯一源**：`main.ts#NovelWriterSettings` + `core/settings-service.ts` 默认值 + `shared/settings-migrator.ts` 迁移；不要在模块里私存配置。
 6. **进度唯一源**：`docs/progress/program-status.json`，报告由 `program:render` 生成。
+7. **项目发现唯一源**：`shared/project-catalog.ts#listProjectIds`。UI/Engine 不得再自己遍历 `vault.getRoot().children` 判断项目；项目身份只认 `作品信息.md`、`世界观总览.md`、`00-系统模板`、`01-世界架构`、`.project` 等标志，**不认**单独的 `03-大纲与章节`（删除残留会被它复活）。
 
 ---
 
@@ -98,7 +99,7 @@ UI 事件/命令
 | `engine/quality/` | 质控与闸门 | 质量闭环 |
 | `engine/style/`、`engine/embedding/` | 风格/向量 | RAG 与风格 |
 | `services/` | `rules-service`、`chapter-version-service`、`worker-manager` | 跨引擎协调 |
-| `shared/` | `paths`、`file-system-port`、`write-lock`、`versioned-registry` | 跨层原语 |
+| `shared/` | `project-catalog`、`paths`、`file-system-port`、`write-lock`、`versioned-registry` | 跨层原语；项目发现/删除唯一入口 |
 | `core/` | `settings-service`、`command-registry`、`plugin-cache` | 插件级基础设施 |
 | `ui/` | `full-writer-view`、`co-writing-view`、`agent-workbench-view` | 视图与交互 |
 

@@ -35,6 +35,7 @@ describe('BodyWriter — 覆盖前备份（P0-3）', () => {
         const { BodyWriter } = await import('../../../engine/body-writer');
         const { MockFileSystem } = await import('../../../shared/file-system-port');
         const fs = new MockFileSystem();
+        fs.setFile('书/作品信息.md', '# 书');
         fs.setFile('书/03-大纲与章节/正文/第1卷/第1章_正文.md', '---\nstatus: written\n---\n\n# 第1章 旧稿\n\n旧正文内容足够长。');
         const writer = new BodyWriter({ fs });
         const result = await writer.write({
@@ -54,6 +55,7 @@ describe('BodyWriter — 覆盖前备份（P0-3）', () => {
         const { BodyWriter } = await import('../../../engine/body-writer');
         const { MockFileSystem } = await import('../../../shared/file-system-port');
         const fs = new MockFileSystem();
+        fs.setFile('书/作品信息.md', '# 书');
         fs.setFile('书/正文/第1章_正文.md', '旧正文内容足够长。');
         const app = {} as never;
         const writer = new BodyWriter({ app, fs });

@@ -5,7 +5,7 @@
  * HTML 带打印样式，可在浏览器中打印为 PDF；EPUB/DOCX 由本地构建器生成二进制。
  */
 
-import { App, Modal, Notice, Setting, TFolder, TFile } from 'obsidian';
+import { App, Modal, Notice, Setting, TFile } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import type NovelWriterPlugin from '@/main';
 import {
@@ -24,8 +24,8 @@ import { getProjectMeta, findProjectCoverFile, loadProjectCover } from './projec
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
 import { formatExportPrecheck } from '@/shared/export-precheck';
-import { MODE_LIBRARY_ROOT_LIST } from '@/domains/kernel/project-locator';
 import { getExecutionLedger } from '@/services/execution-ledger';
+import { listProjectIds } from '@/shared/project-catalog';
 
 const log = createLogger('ExportManuscriptModal');
 
@@ -440,54 +440,16 @@ export class ExportManuscriptModal extends Modal {
     }
 }
 
-/** 列出长篇/短篇/剧本三库中的项目目录 */
 /**
- * 非项目根目录：模板、导出产物、协同草稿、资料库等。
- * 它们可能带上「03-大纲与章节」之类的子目录（模板骨架会被复制进去），
- * 不能按「有章节目录就是项目」的旧判据识别，否则会出现在项目卡里。
- */
-const NON_PROJECT_ROOTS = new Set([
-    '元文件', '导出文件', '协同文件', '写作知识库', '指纹资料库',
-    'deepseek-harness', 'node_modules', 'apps',
-]);
-
-/**
- * 判断目录是否为真实项目：至少有一个项目标志文件/目录。
+ * 列出长篇/短篇/剧本三库中的项目目录。
  *
- * 不能只看「是模式库下的子目录」：`长篇小说/_versions` 是章节版本存储，
- * 不是项目；模板骨架、缓存目录也可能被误判。
- */
-function isProjectFolder(app: App, path: string): boolean {
-    const markers = ['.project', '作品信息.md', '世界观总览.md', '03-大纲与章节', '01-世界架构', '短篇创作', '剧本创作'];
-    return markers.some((marker) => app.vault.getAbstractFileByPath(`${path}/${marker}`) != null);
-}
-
-/**
- * 列出项目列表。
+ * 唯一实现在 `shared/project-catalog.ts`；这里保留原函数名供既有调用方使用。
+ *
  * @param app - Obsidian 应用实例
- * @returns 结果数组
+ * @returns 项目 ID 数组
  */
 export function listProjects(app: App): string[] {
-    const root = app.vault.getRoot();
-    const projects: string[] = [];
-    for (const folder of root.children) {
-        if (!(folder instanceof TFolder)) continue;
-        if (NON_PROJECT_ROOTS.has(folder.name)) continue;
-        if (folder.name.startsWith('.') || folder.name.startsWith('_')) continue;
-        if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
-            for (const child of folder.children) {
-                if (!(child instanceof TFolder)) continue;
-                if (NON_PROJECT_ROOTS.has(child.name)) continue;
-                if (child.name.startsWith('.') || child.name.startsWith('_')) continue;
-                if (isProjectFolder(app, child.path)) projects.push(child.path);
-            }
-            continue;
-        }
-        if (isProjectFolder(app, folder.path)) {
-            projects.push(folder.path);
-        }
-    }
-    return projects.sort();
+    return listProjectIds(app);
 }
 
 /**

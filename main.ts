@@ -147,7 +147,8 @@ import { MODEL_CAPABILITIES, findModelCapability } from './shared/model-capabili
 import type { AiTask, TaskBudgetOverride, ThinkingMode, ThinkingLevel } from './shared/task-model';
 export type { AiTask, TaskBudgetOverride, ThinkingMode, ThinkingLevel } from './shared/task-model';
 import { hasUsableAiCredentials } from './shared/ai-credentials';
-import { MODE_LIBRARY_ROOT_LIST, projectFromFilePath } from './domains/kernel/project-locator';
+import { projectFromFilePath } from './domains/kernel/project-locator';
+import { listProjectIds } from '@/shared/project-catalog';
 import { createLogger } from './shared/logger';
 
 const log = createLogger('Main');
@@ -651,26 +652,18 @@ export default class NovelWriterPlugin extends Plugin {
     getActiveProject(): string | null {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
-            const candidates = this.app.vault
-                .getRoot()
-                .children
-                .filter((child): child is TFolder => child instanceof TFolder)
-                .flatMap(folder => {
-                    if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
-                        return folder.children
-                            .filter((child): child is TFolder => child instanceof TFolder)
-                            .map(child => `${folder.name}/${child.name}`);
-                    }
-                    return [folder.path];
-                });
+            // 项目候选与 Agent 工作台/导出/项目卡同源：只用 shared/project-catalog。
+            // 旧实现把模式库下所有子目录都当候选，`_versions`、删除残留的
+            // `03-大纲与章节` 空骨架都会被识别成活动项目。
+            const candidates = listProjectIds(this.app);
             const project = projectFromFilePath(activeFile.path, candidates);
-            if (project && project !== '元文件' && project !== '文笔风格库' && !project.startsWith('.')) {
-                return project;
-            }
+            if (project) return project;
         }
         // 工作台/项目页激活时没有 activeFile：回退到界面当前选中的项目，
         // 否则快捷工具里的实体管理、批量生成等会拿不到项目。
-        return this._workbenchContext?.project || null;
+        const fallback = this._workbenchContext?.project;
+        if (fallback && listProjectIds(this.app).includes(fallback)) return fallback;
+        return null;
     }
 
     /**

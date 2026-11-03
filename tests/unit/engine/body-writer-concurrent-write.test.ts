@@ -82,6 +82,7 @@ class NoopFrontmatter {
 describe('BodyWriter — 同一路径写入串行', () => {
     it('两个并发写入不会互相穿插（同一路径最多一个写入者）', async () => {
         const fs = new SlowFileSystem();
+        fs.files.set('项目/作品信息.md', '# 项目');
         const writer = new BodyWriter({ fs: fs as any, frontmatter: new NoopFrontmatter() as any });
         const bodyA = '他抬手。'.repeat(40);
         const bodyB = '风从袖口灌进来。'.repeat(40);

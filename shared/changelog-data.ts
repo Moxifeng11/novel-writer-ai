@@ -21,6 +21,32 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.26.3',
+        date: '2026-11-03',
+        title: '项目来源统一与 Agent 全权限',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🧭 项目同步',
+                items: [
+                    '新增 shared/project-catalog 单一来源：Agent 工作台/导出/项目卡/getActiveProject 共用',
+                    '只有 03-大纲与章节 的删除残留不再被识别为项目',
+                    'BodyWriter 拒绝写入已删除项目，避免自动保存重建目录',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🤖 Agent 工作台',
+                items: [
+                    '监听 vault 增删改，项目列表/chip/文件树/Agent 上下文实时同步',
+                    '新增写文件、删文件、移动文件、删除项目工具；危险操作二次确认',
+                    '删除项目后立即刷新会话项目快照，不再显示已删项目',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.26.2',
         date: '2026-11-03',
         title: '类型债预算、大文件切片与跨平台门禁',

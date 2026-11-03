@@ -689,6 +689,101 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         },
     });
 
+    // ─── 文件/项目写操作（Agent 全权限：写文件、删文件、移动、删项目）───
+    tools.push({
+        name: 'write_file',
+        description: '创建/覆盖/追加库内文本文件（md/txt/json/yaml 等）。用于写设定、大纲、笔记、配置或用户明确要求直接改正文；写正文优先走写作命令以保留 frontmatter/格式契约。路径必须是库内相对路径。',
+        parameters: {
+            path: { type: 'string', description: '库内相对路径（如「长篇小说/书A/01-世界架构/设定库.md」）', required: true },
+            content: { type: 'string', description: '完整文本内容（追加模式下为追加片段）', required: true },
+            append: { type: 'boolean', description: 'true = 追加到文件末尾；默认覆盖' },
+        },
+        required: ['path', 'content'],
+        sideEffect: 'write', timeoutMs: 20_000,
+        execute: async (args) => {
+            if (!port.writeFile) return { ok: false, content: '当前环境不支持写文件' };
+            const path = String(args.path || '').trim();
+            if (!path) return { ok: false, content: '缺少文件路径' };
+            const result = await port.writeFile(path, String(args.content ?? ''), { append: args.append === true });
+            return {
+                ok: true,
+                content: `${result.created ? '已创建' : '已写入'}「${result.path}」（${result.bytes} 字节）`,
+                data: { ...result },
+            };
+        },
+    });
+    tools.push({
+        name: 'delete_file',
+        description: '删除库内单个文件。默认进系统回收站；permanent=true 时永久删除。删除前必须向用户说明路径；目录请用 delete_project 或 run_command。',
+        parameters: {
+            path: { type: 'string', description: '库内相对路径', required: true },
+            permanent: { type: 'boolean', description: 'true = 永久删除（不进回收站）' },
+        },
+        required: ['path'],
+        sideEffect: 'dangerous', timeoutMs: 20_000,
+        execute: async (args) => {
+            if (!port.deleteFile) return { ok: false, content: '当前环境不支持删除文件' };
+            const path = String(args.path || '').trim();
+            if (!path) return { ok: false, content: '缺少文件路径' };
+            const result = await port.deleteFile(path, { permanent: args.permanent === true });
+            if (!result.deleted) return { ok: false, content: `文件不存在或无法删除：${result.path}` };
+            return {
+                ok: true,
+                content: `${result.trashed ? '已移入回收站' : '已永久删除'}「${result.path}」`,
+                data: { ...result },
+            };
+        },
+    });
+    tools.push({
+        name: 'move_file',
+        description: '移动或重命名库内文件。用于整理章节/设定/导出稿；目标目录会自动创建。',
+        parameters: {
+            from: { type: 'string', description: '源路径（库内相对路径）', required: true },
+            to: { type: 'string', description: '目标路径（库内相对路径）', required: true },
+        },
+        required: ['from', 'to'],
+        sideEffect: 'write', timeoutMs: 20_000,
+        execute: async (args) => {
+            if (!port.moveFile) return { ok: false, content: '当前环境不支持移动文件' };
+            const from = String(args.from || '').trim();
+            const to = String(args.to || '').trim();
+            if (!from || !to) return { ok: false, content: '需要源路径与目标路径' };
+            const result = await port.moveFile(from, to);
+            return { ok: true, content: `已移动「${result.from}」→「${result.to}」`, data: { ...result } };
+        },
+    });
+    tools.push({
+        name: 'delete_project',
+        description: '彻底删除一个项目及其全部文件（正文、大纲、设定、版本、会话存档不在删除范围内）。删除前必须向用户说明项目名并获得确认；这是不可恢复操作。',
+        parameters: {
+            project: { type: 'string', description: '项目 ID 或名称，可留空用当前项目' },
+        },
+        required: [],
+        sideEffect: 'dangerous', timeoutMs: 60_000,
+        execute: async (args, toolCtx) => {
+            if (!port.deleteProject) return { ok: false, content: '当前环境不支持删除项目' };
+            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const requested = typeof args.project === 'string' ? args.project.trim() : '';
+            // 已从项目列表消失、但目录仍残留的项目（ghost）允许用完整路径直接删除；
+            // 只给显示名时仍走会话快照，避免误删同名目录。
+            const project = resolveProject(args, mem, ctx) || (requested.includes('/') ? requested : '');
+            if (!project) return { ok: false, content: '没有指定项目，也没有已选中的项目；清理残留请给出完整路径（如 长篇小说/旧项目）' };
+            const result = await port.deleteProject(project);
+            if (!result.deleted) {
+                return { ok: false, content: `未删除「${project}」：${result.reason || '未知原因'}` };
+            }
+            // 同一会话里的项目快照必须立即刷新，否则后续 list_projects / get_project_status
+            // 仍会看到已删除项目（Agent 工作台与其他视图不同步的根因之一）。
+            ctx.projects = port.listProjects?.() ?? ctx.projects.filter(item => item !== project);
+            if (ctx.activeProject === project) ctx.activeProject = null;
+            return {
+                ok: true,
+                content: `已彻底删除项目「${project}」及其全部文件`,
+                data: { ...result, projects: ctx.projects },
+            };
+        },
+    });
+
     // ─── 长流程执行结果（v4.21：run_command 之后的闭环）───
     tools.push({
         name: 'get_execution_status',

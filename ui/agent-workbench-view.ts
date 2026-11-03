@@ -23,10 +23,10 @@ import { OperationConfirmModal } from './components/progress';
 import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
-import type { AgentChip, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
+import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
 import type { HarnessTurnOutcome } from '@/engine/agent/harness/harness-types';
 import { createAgentPort, getAgentContext } from './services/agent-port';
-import { listProjects } from './export-manuscript-modal';
+import { listProjectIds } from '@/shared/project-catalog';
 import type { CreationMode } from '@/shared/creation-mode';
 import { resolveProjectMode as resolveModeFromShared } from '@/shared/project-mode';
 import { openModelPickerPopover, formatWorkbenchModelBadge, closeExistingPopovers } from './model-picker-popover';
@@ -76,6 +76,12 @@ export class AgentWorkbenchView extends ItemView {
     private busy = false;
     /** 当前聚焦项目（文件树/项目卡高亮/项目 chip 用） */
     private activeProject = '';
+    /** 当前 Agent 上下文（项目列表变化时同步，供 list_projects 等工具使用） */
+    private agentCtx: AgentContext | null = null;
+    /** 项目目录增删改后的刷新防抖 */
+    private projectRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    /** vault 事件只绑定一次（restart 会重复 onOpen） */
+    private projectEventsBound = false;
     /** 项目 → 创作类型缓存 */
     private projectTypeCache = new Map<string, CreationMode>();
     /** 文件树展开的目录集合 */
@@ -191,6 +197,16 @@ export class AgentWorkbenchView extends ItemView {
         this.renderRightPanel(right);
         this.initLayoutResizers(layout, left, center, right);
 
+        // 项目删除/重命名/新建后，左栏与 Agent 上下文必须跟着刷新；
+        // 旧实现只在 boot 与 Agent 回合后刷新，其他视图删除项目后这里仍显示旧项目。
+        if (!this.projectEventsBound) {
+            this.projectEventsBound = true;
+            const schedule = () => this.scheduleProjectRefresh();
+            this.registerEvent(this.app.vault.on('create', schedule));
+            this.registerEvent(this.app.vault.on('delete', schedule));
+            this.registerEvent(this.app.vault.on('rename', schedule));
+        }
+
         void this.boot();
     }
 
@@ -258,6 +274,10 @@ export class AgentWorkbenchView extends ItemView {
      */
     async onClose(): Promise<void> {
         this.destroyLayoutResizers();
+        if (this.projectRefreshTimer !== null) {
+            clearTimeout(this.projectRefreshTimer);
+            this.projectRefreshTimer = null;
+        }
         closeExistingPopovers();
         // 会话代次 +1 并中止在途回合：否则关闭后模型调用/工具仍在跑，
         // 完成后还会往已脱离的 DOM 写消息。
@@ -392,13 +412,33 @@ export class AgentWorkbenchView extends ItemView {
         }
     }
 
+    /** 延迟刷新项目列表/文件树（vault 批量删除会连发多个事件） */
+    private scheduleProjectRefresh(): void {
+        if (this.projectRefreshTimer !== null) clearTimeout(this.projectRefreshTimer);
+        this.projectRefreshTimer = setTimeout(() => {
+            this.projectRefreshTimer = null;
+            void this.refreshProjectList();
+            this.refreshProjectChip();
+            this.refreshFileTree();
+        }, 250);
+    }
+
     /**
      * 两级项目分类：长篇小说/短篇小说/剧本 三个类型分组（可折叠）→ 类型下项目卡。
      * 类型判定：路径前缀优先，其次读 .project 的创作模式（带缓存）。
      */
     private async refreshProjectList(): Promise<void> {
         if (!this.projectListEl) return;
-        const projects = listProjects(this.app);
+        const projects = listProjectIds(this.app);
+        // Agent 上下文与左栏共用同一份列表；删除项目后 list_projects 立刻一致。
+        if (this.agentCtx) this.agentCtx.projects = projects;
+        if (this.activeProject && !projects.includes(this.activeProject)) {
+            this.activeProject = projects[0] || '';
+            if (this.agentCtx) this.agentCtx.activeProject = this.activeProject || null;
+            this.harnessEngine?.updateContext({ projects, activeProject: this.activeProject || null });
+            this.previewedPath = '';
+            this.previewSeq++;
+        }
         // 每回合都会重建列表：保留滚动位置与分组折叠态（旧实现两者都被重置）
         const scrollTop = this.projectListEl.scrollTop;
         const grouped: Record<CreationMode, string[]> = { long: [], short: [], script: [] };
@@ -478,8 +518,13 @@ export class AgentWorkbenchView extends ItemView {
 
     private setActiveProject(project: string): void {
         this.activeProject = project;
+        const projects = listProjectIds(this.app);
+        if (this.agentCtx) {
+            this.agentCtx.projects = projects;
+            this.agentCtx.activeProject = project || null;
+        }
         this.harnessEngine?.updateContext({
-            projects: listProjects(this.app),
+            projects,
             activeProject: project,
         });
         // 切项目必须清掉旧预览：右栏会继续显示上一个项目的文件内容，
@@ -695,7 +740,7 @@ export class AgentWorkbenchView extends ItemView {
     /** 项目 chip 的快捷菜单：三个类型分组 → 项目（原生 Menu，分组标题用禁用项承载） */
     private openProjectChipMenu(event: MouseEvent): void {
         const menu = new Menu();
-        const projects = listProjects(this.app);
+        const projects = listProjectIds(this.app);
         const groups: Record<string, string[]> = { 长篇小说: [], 短篇小说: [], 剧本: [], 其他: [] };
         for (const project of projects) {
             const prefix = project.split('/')[0];
@@ -913,6 +958,7 @@ export class AgentWorkbenchView extends ItemView {
         // 清理过期 spill 存档（只动 .sessions/spill/agent 下超过 7 天的自己的文件）
         void pruneSpillArchive(this.app);
         const ctx = getAgentContext(this.app, this.plugin);
+        this.agentCtx = ctx;
         this.activeProject = ctx.activeProject || this.activeProject;
         this.setModeBadge(this.plugin.hasAiCredentials);
         // 会话存档按项目分文件；切换项目后重启会话会读/写各自的档
@@ -1135,6 +1181,7 @@ export class AgentWorkbenchView extends ItemView {
         // 可能与用户在左栏选的项目不一致，后续创建/打开会作用到错误项目。
         const ctx = getAgentContext(this.app, this.plugin);
         if (this.activeProject) ctx.activeProject = this.activeProject;
+        this.agentCtx = ctx;
         this.ruleEngine = new GuideAgentEngine(ctx, this.port);
         this.setModeBadge(false);
         this.renderTurn(this.ruleEngine.start());

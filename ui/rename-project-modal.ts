@@ -5,11 +5,12 @@
  * 子文件路径与内部链接；同时同步 .project 的标题，避免元数据与目录名不一致。
  */
 
-import { App, Modal, Notice, Setting, TFolder } from 'obsidian';
+import { App, Modal, Notice, Setting } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import { validateProjectName } from '@/shared/project-name';
 import { ProjectRenameService } from '@/services/project-rename-service';
-import { MODE_LIBRARY_ROOT_LIST, projectDisplayName } from '@/domains/kernel/project-locator';
+import { projectDisplayName } from '@/domains/kernel/project-locator';
+import { listProjectIds } from '@/shared/project-catalog';
 import { isImeComposing } from '@/shared/keyboard';
 
 const log = createLogger('RenameProjectModal');
@@ -68,16 +69,8 @@ export class RenameProjectModal extends Modal {
     private async submit(): Promise<void> {
         if (this.submitting) return;
         const oldDisplayName = projectDisplayName(this.project);
-        const existing = this.app.vault.getRoot().children
-            .filter((child): child is TFolder => child instanceof TFolder)
-            .flatMap(folder => {
-                if (MODE_LIBRARY_ROOT_LIST.includes(folder.name)) {
-                    return folder.children
-                        .filter((child): child is TFolder => child instanceof TFolder)
-                        .map(child => child.name);
-                }
-                return [folder.name];
-            })
+        const existing = listProjectIds(this.app)
+            .map(projectDisplayName)
             .filter(name => name !== oldDisplayName);
         const validation = validateProjectName(this.value, existing);
         if (!validation.valid) {

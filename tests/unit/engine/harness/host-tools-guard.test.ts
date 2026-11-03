@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { createHostTools, isMemoryKey, isDangerousCommand } from '../../../../engine/agent/harness/host-tools';
-import type { GuideAgentPort } from '../../../../engine/agent/agent-types';
+import type { AgentContext, GuideAgentPort } from '../../../../engine/agent/agent-types';
 
 interface ToolResult { ok: boolean; content: string; data?: unknown }
 
@@ -18,7 +18,7 @@ function makeHarness(options: {
     const memory = { slots: {} as Record<string, unknown> };
     if (options.pickedProject) memory.slots.pickedProject = options.pickedProject;
     const plan = { steps: [] as Array<{ step: string; status: 'pending' | 'in_progress' | 'done' }> };
-    const ctx = { projects: options.projects ?? [], mode: 'long' } as never;
+    const ctx = { projects: options.projects ?? [], activeProject: null, mode: 'long' } as unknown as AgentContext;
     const port = {
         listCommands: () => [],
         readFile: vi.fn(async () => null),
@@ -35,7 +35,7 @@ function makeHarness(options: {
         if (!tool) throw new Error(`工具不存在: ${name}`);
         return await tool.execute(args, { memory, plan } as never) as ToolResult;
     };
-    return { tools, call, port, memory, plan };
+    return { tools, call, port, memory, plan, ctx };
 }
 
 describe('命令白名单与危险确认', () => {
@@ -184,5 +184,62 @@ describe('update_memory / update_plan', () => {
         expect(good.ok).toBe(true);
         expect(h.plan.steps).toHaveLength(2);
         expect(good.content).toContain('[in_progress] 写第2章');
+    });
+});
+
+describe('全权限工具：写文件 / 删文件 / 移动 / 删项目', () => {
+    it('注册了文件与项目写操作工具', () => {
+        const h = makeHarness();
+        const names = h.tools.map(tool => tool.name);
+        expect(names).toEqual(expect.arrayContaining(['write_file', 'delete_file', 'move_file', 'delete_project']));
+        expect(h.tools.find(tool => tool.name === 'delete_project')?.sideEffect).toBe('dangerous');
+        expect(h.tools.find(tool => tool.name === 'delete_file')?.sideEffect).toBe('dangerous');
+        expect(h.tools.find(tool => tool.name === 'write_file')?.sideEffect).toBe('write');
+    });
+
+    it('write_file 透传路径/内容/追加模式', async () => {
+        const writeFile = vi.fn(async () => ({ path: '长篇小说/书A/设定.md', created: true, bytes: 3 }));
+        const h = makeHarness({ port: { writeFile } as never });
+        const result = await h.call('write_file', { path: '长篇小说/书A/设定.md', content: '内容', append: true });
+        expect(result.ok).toBe(true);
+        expect(writeFile).toHaveBeenCalledWith('长篇小说/书A/设定.md', '内容', { append: true });
+    });
+
+    it('delete_project 成功后刷新会话项目快照并清空当前项目', async () => {
+        const deleteProject = vi.fn(async () => ({ project: '长篇小说/书A', deleted: true }));
+        const h = makeHarness({
+            projects: ['长篇小说/书A', '长篇小说/书B'],
+            pickedProject: '长篇小说/书A',
+            port: {
+                deleteProject,
+                listProjects: () => ['长篇小说/书B'],
+            } as never,
+        });
+        h.ctx.activeProject = '长篇小说/书A';
+        const result = await h.call('delete_project', { project: '书A' });
+        expect(result.ok).toBe(true);
+        expect(deleteProject).toHaveBeenCalledWith('长篇小说/书A');
+        expect(h.ctx.projects).toEqual(['长篇小说/书B']);
+        expect(h.ctx.activeProject).toBeNull();
+    });
+
+    it('删除已从快照消失的残留项目时可用完整路径', async () => {
+        const deleteProject = vi.fn(async () => ({ project: '长篇小说/已删项目', deleted: true }));
+        const h = makeHarness({ projects: [], port: { deleteProject } as never });
+        const result = await h.call('delete_project', { project: '长篇小说/已删项目' });
+        expect(result.ok).toBe(true);
+        expect(deleteProject).toHaveBeenCalledWith('长篇小说/已删项目');
+    });
+
+    it('delete_project 失败时保留项目快照', async () => {
+        const h = makeHarness({
+            projects: ['长篇小说/书A'],
+            pickedProject: '长篇小说/书A',
+            port: { deleteProject: vi.fn(async () => ({ project: '长篇小说/书A', deleted: false, reason: '被占用' })) } as never,
+        });
+        const result = await h.call('delete_project', { project: '书A' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('被占用');
+        expect(h.ctx.projects).toEqual(['长篇小说/书A']);
     });
 });

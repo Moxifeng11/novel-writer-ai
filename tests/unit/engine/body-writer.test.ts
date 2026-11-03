@@ -41,6 +41,7 @@ describe('BodyWriter', () => {
 
     beforeEach(() => {
         fs = new MockFileSystem();
+        fs.setFile('项目/作品信息.md', '# 项目');
         frontmatter = new FakeFrontmatter();
         writer = new BodyWriter({ fs, frontmatter });
     });
@@ -244,6 +245,20 @@ ${longCompleteBody()}`,
 
         expect(res.body).toContain('他抬手。风从袖口灌进来。');
         expect(res.body).toContain('“走。”沈铁山没回头。沈砚把背挺了挺。');
+    });
+
+    it('项目已删除时拒绝写入，避免自动保存重建空项目', async () => {
+        const path = '长篇小说/已删项目/03-大纲与章节/正文/第1卷/第1章_正文.md';
+        await expect(writer.write({
+            path,
+            raw: '# 第1章 试炼\n\n他抬手。',
+            chapterNum: 1,
+            chapterName: '第1章',
+            volume: '第1卷',
+            project: '长篇小说/已删项目',
+            writingMode: 'co-writer',
+        })).rejects.toThrow('已不存在');
+        expect(await fs.exists(path)).toBe(false);
     });
 
     it('naturalize=false 时保留模型原始分行', async () => {

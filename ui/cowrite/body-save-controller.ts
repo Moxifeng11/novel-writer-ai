@@ -57,6 +57,8 @@ export interface BodySaveHost {
     takePendingAutoSave(): boolean;
     /** 排一次自动保存（视图负责 2s 防抖） */
     scheduleAutoSave(): void;
+    /** 项目已被删除：视图清空章节绑定，避免自动保存反复写回并重建目录 */
+    onProjectMissing?(): void;
 }
 
 /**
@@ -170,6 +172,14 @@ export class BodySaveController {
             return true;
         } catch (e) {
             log.warn("[CoWritingView] 保存失败:", e);
+            const message = e instanceof Error ? e.message : String(e);
+            // 项目已被删除：继续自动保存会在旧路径重建 03-大纲与章节 与 _versions，
+            // 把已删除项目“复活”。清空绑定并停止后续写入。
+            if (message.includes('已不存在') || message.includes('缺少项目标志')) {
+                this.host.onProjectMissing?.();
+                if (showNotice) new Notice("⚠️ 项目已删除，已停止保存并清空章节绑定", 6e3);
+                return false;
+            }
             // 状态栏不能停在「保存中...」，否则用户会以为仍在保存/已保存
             if (this.host.isSameChapterIdentity(identity)) {
                 this.host.updateControlState("保存失败");

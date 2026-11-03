@@ -20,6 +20,7 @@ import { getStoryStructure } from '@/shared/story-structure';
 import { coverMediaTypeForExt, type BookCover } from '@/engine/export/epub-builder';
 
 
+import { removeProjectDirectory } from '@/shared/project-catalog';
 const log = createLogger('ProjectUtils');
 /**
  * 按章号数字排序
@@ -155,30 +156,17 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
     new Notice(`✅ 已为「${projectName}」添加参考样本章节`, 4000);
 }
 
-/** 递归删除项目目录（不可逆）
- * v73: 修复「删除未真正生效」——.project 等点文件不入 vault 索引。
- * 旧实现遗留两个隐患：① 残留点文件时 rmdir 可能失败被静默吞掉；② 删除后无校验，UI 直接提示成功。
- * 现改为：逐项删除 adapter.list 返回的全部文件（含点文件），递归删子目录后删目录本身，
+/**
+ * 递归删除项目目录（不可逆）。
+ *
+ * 唯一实现在 `shared/project-catalog.ts`（含点文件、删除后校验）；这里只做参数校验与提示。
+ *
  * @param app - Obsidian 应用实例
- * @param projectName - 项目名
- * 最后校验目录确已消失，否则抛出明确错误，杜绝「假删除」。 */
+ * @param projectName - 项目 ID
+ */
 export async function deleteProject(app: App, projectName: string): Promise<void> {
-    // 防线：空串/根路径会让 adapter.list('') 列出 vault 根并递归删光整库
     const target = String(projectName || '').trim().replace(/^\/+|\/+$/g, '');
-    if (!target || target === '.' || target === '..' || target.split('/').some(seg => seg === '..' || seg === '.')) {
-        throw new Error(`拒绝删除非法项目路径：${JSON.stringify(projectName)}`);
-    }
-    const adapter = app.vault.adapter;
-    const removeDir = async (dirPath: string) => {
-        const list = await adapter.list(dirPath);
-        for (const f of list.files) await adapter.remove(f);
-        for (const d of list.folders) await removeDir(d);
-        await adapter.rmdir(dirPath, true);
-    };
-    await removeDir(target);
-    if (await adapter.exists(target)) {
-        throw new Error(`项目「${target}」删除后仍存在，可能有文件被占用或权限不足`);
-    }
+    await removeProjectDirectory(app, target);
     new Notice(`✅ 项目「${target}」已删除`);
 }
 

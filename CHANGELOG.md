@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.26.3（2026-11-03）
+
+### 🧭 项目来源统一
+
+- 新增 `shared/project-catalog.ts`，项目发现/身份/删除只有一个实现：
+  - `listProjectIds()` 供 Agent 工作台、导出、项目卡、`getActiveProject()` 共用；
+  - `detectProjects()` 改为直接委托，不再维护第二套文件扫描；
+  - 重命名查重也改用同一份项目列表。
+- 项目身份不再认单独的 `03-大纲与章节`：删除项目后残留的空章节目录不会被当成项目；项目标志只认 `作品信息.md`、`世界观总览.md`、`写作配置.md`、`00-系统模板`、`01-世界架构`、`短篇创作`、`剧本创作`、`.project`。
+- `BodyWriter` 写入前校验项目身份：项目已删除时拒绝写入，避免打开中的协同/工作台自动保存把 `03-大纲与章节`、`_versions` 重建出来；协同保存命中该错误时清空章节绑定并提示。
+
+### 🤖 Agent 工作台
+
+- **项目列表实时同步**：监听 vault 的 create/delete/rename，防抖刷新左栏、项目 chip、文件树与 `AgentContext.projects`；其他视图删除项目后 `list_projects` 不再返回旧项目。
+- **Agent 全权限工具**：新增 `write_file`、`delete_file`、`move_file`、`delete_project`；配合已有 `run_command`，Agent 可完成新建/写入/整理/删除项目与文件。`delete_file` / `delete_project` 仍走危险操作二次确认。
+- `delete_project` 成功后立即刷新会话项目快照并清空当前项目；项目删除不会留下“Agent 仍能操作已删项目”的状态。
+
+### 🧪 测试
+
+- 新增项目目录单源回归（`_versions`、`.hidden`、空目录、只有 `03-大纲与章节` 的残留均排除）、BodyWriter 删除保护、Agent 写/删/移动/删项目工具测试。
+- 全量单测 **532 文件 / 5900 用例** 通过。
+
 ## v4.26.2（2026-11-03）
 
 ### 🧹 类型债与门禁

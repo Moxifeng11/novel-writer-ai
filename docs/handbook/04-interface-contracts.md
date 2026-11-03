@@ -70,10 +70,21 @@
 ### 2.7 路径与存储
 
 - 路径一律通过 `shared/paths.ts` 的 `pj*` 函数生成，不手拼字符串。
+- 项目列表/项目身份/项目删除一律走 `shared/project-catalog.ts`；`listProjects`、`detectProjects`、`getActiveProject` 已统一委托，禁止新增第二套扫描。
 - 插件数据目录与 vault 内容分离；会话/缓存不得写入用户正文目录。
 - 配置目录/点开头隐藏目录不在 vault 索引内时，使用 `writeVaultText` 的分流或显式 `adapter` 并注明理由。
 
-### 2.8 外部接口
+### 2.8 Agent 工具权限面
+
+- 内置 Harness 的宿主工具在 `engine/agent/harness/host-tools.ts`，权限声明在 `sideEffect`：
+  - `none`：只读；
+  - `write`：写文件/移动文件（默认放行，重复调用会被拦截）；
+  - `dangerous`：删除项目/删除文件/批量命令（必须用户确认，未提供确认端口一律拒绝）。
+- 全权限工具：`write_file`、`delete_file`、`move_file`、`delete_project`、`run_command`。写正文仍优先走写作命令，避免绕过 `BodyWriter` 的 frontmatter/格式契约。
+- 工具执行后必须同步 `AgentContext.projects`；项目删除走 `delete_project` 时由工具本身刷新，其他视图删除由 Agent 工作台的 vault 事件刷新。
+- 新增/删除工具必须同步本节与 `tests/unit/engine/harness/host-tools-guard.test.ts`。
+
+### 2.9 外部接口
 
 - AI 端点、模型能力、协议（OpenAI/Anthropic/DeepSeek）在 `engine/ai-api-client.ts` 与 `shared/model-*` 收口。
 - 新增供应商/协议必须补请求契约测试（参考 `tests/unit/engine/embedding-provider-contract.test.ts`）。

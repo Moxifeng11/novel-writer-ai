@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 130031 | 1538 | 1304 | 85% |
+| `engine/` | 289 | 130124 | 1541 | 1304 | 85% |
 | `services/` | 28 | 11391 | 154 | 137 | 89% |
-| `shared/` | 165 | 37339 | 1521 | 1269 | 83% |
+| `shared/` | 166 | 37551 | 1528 | 1276 | 84% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 765 | 30 | 22 | 73% |
-| `ui/` | 194 | 97039 | 511 | 470 | 92% |
+| `ui/` | 194 | 97113 | 511 | 471 | 92% |
 
 ## 文件清单
 
@@ -35,7 +35,7 @@
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 42 | 1 | 1 |
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
-| `engine/agent/agent-types.ts` | 330 | 20 | 17 |
+| `engine/agent/agent-types.ts` | 364 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
 | `engine/agent/dsh/dsh-launch.ts` | 84 | 5 | 5 |
 | `engine/agent/dsh/dsh-process.ts` | 271 | 7 | 7 |
@@ -47,7 +47,7 @@
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/harness-engine.ts` | 589 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 213 | 14 | 12 |
-| `engine/agent/harness/host-tools.ts` | 890 | 6 | 6 |
+| `engine/agent/harness/host-tools.ts` | 985 | 6 | 6 |
 | `engine/agent/harness/prompt-sections.ts` | 147 | 2 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 163 | 8 | 8 |
@@ -75,7 +75,7 @@
 | `engine/bases-generator.ts` | 249 | 8 | 6 |
 | `engine/batch-import-manager.ts` | 853 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 514 | 8 | 8 |
+| `engine/body-writer.ts` | 522 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/chapter-brief.ts` | 343 | 9 | 6 |
@@ -98,7 +98,7 @@
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 316 | 2 | 2 |
-| `engine/context-manager.ts` | 2712 | 3 | 3 |
+| `engine/context-manager.ts` | 2668 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
 | `engine/context/context-types.ts` | 279 | 16 | 15 |
@@ -363,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1057 | 3 | 3 |
+| `shared/changelog-data.ts` | 1083 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -436,7 +436,7 @@
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
-| `shared/paths.ts` | 1413 | 189 | 183 |
+| `shared/paths.ts` | 1416 | 189 | 183 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 404 | 6 | 4 |
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
@@ -447,6 +447,7 @@
 | `shared/preview-scroll.ts` | 59 | 4 | 3 |
 | `shared/previous-chapter-window.ts` | 140 | 11 | 9 |
 | `shared/progress-emitter.ts` | 551 | 5 | 1 |
+| `shared/project-catalog.ts` | 183 | 7 | 7 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
 | `shared/project-name.ts` | 93 | 5 | 5 |
 | `shared/prompt-budget.ts` | 541 | 18 | 16 |
@@ -518,7 +519,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 524 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1608 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1655 | 1 | 1 |
 | `ui/ai-builder-modal.ts` | 1137 | 1 | 1 |
 | `ui/appearance-settings.ts` | 573 | 3 | 3 |
 | `ui/auto-writer-modal.ts` | 239 | 1 | 1 |
@@ -534,7 +535,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1018 | 2 | 2 |
-| `ui/co-writing-view.ts` | 5417 | 3 | 3 |
+| `ui/co-writing-view.ts` | 5429 | 3 | 3 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
 | `ui/command-ui-executor.ts` | 631 | 2 | 2 |
@@ -554,7 +555,7 @@
 | `ui/components/smart-chart.ts` | 470 | 1 | 1 |
 | `ui/context-injector-modal.ts` | 215 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 561 | 1 | 1 |
-| `ui/cowrite/body-save-controller.ts` | 245 | 3 | 2 |
+| `ui/cowrite/body-save-controller.ts` | 255 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 55 | 1 | 1 |
 | `ui/cowrite/insert-range.ts` | 86 | 4 | 4 |
@@ -570,7 +571,7 @@
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 553 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 535 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 497 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 417 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |
@@ -651,24 +652,24 @@
 | `ui/polish-editor.ts` | 822 | 6 | 5 |
 | `ui/pre-research-modal.ts` | 706 | 2 | 2 |
 | `ui/project-side-panel-view.ts` | 412 | 5 | 5 |
-| `ui/project-utils.ts` | 375 | 11 | 9 |
+| `ui/project-utils.ts` | 363 | 11 | 10 |
 | `ui/prompt-manager-settings.ts` | 1142 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 90 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 482 | 2 | 2 |
 | `ui/rebuild-chapters-modal.ts` | 323 | 1 | 1 |
 | `ui/refill-modal.ts` | 713 | 1 | 1 |
-| `ui/rename-project-modal.ts` | 112 | 1 | 1 |
+| `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 941 | 1 | 1 |
 | `ui/review-chapter-modal.ts` | 70 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
-| `ui/services/agent-port.ts` | 538 | 2 | 2 |
+| `ui/services/agent-port.ts` | 605 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 155 | 3 | 3 |
 | `ui/services/agent-spill-store.ts` | 104 | 3 | 2 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/human-sample-loader.ts` | 71 | 2 | 1 |
 | `ui/services/humanness-scorer.ts` | 124 | 3 | 3 |
-| `ui/services/project-create-service.ts` | 441 | 6 | 5 |
+| `ui/services/project-create-service.ts` | 436 | 6 | 5 |
 | `ui/settings-tab.ts` | 247 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 123 | 1 | 1 |

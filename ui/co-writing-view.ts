@@ -321,6 +321,10 @@ export class CoWritingView extends ItemView {
         return hasPending;
       },
       scheduleAutoSave: () => this.scheduleAutoSave(),
+      onProjectMissing: () => {
+        new Notice("⚠️ 项目已被删除，已清空章节绑定；未保存内容不会重建项目", 8e3);
+        void this.clearChapterBinding({ skipFlush: true });
+      },
     });
     // D2：评估管线收敛到 controller；视图只提供数据与 DOM 句柄
     this.realtimeQuality = new RealtimeQualityController({
@@ -456,16 +460,24 @@ export class CoWritingView extends ItemView {
    * 视图是单例：无显式上下文的入口若只 revealLeaf，上一本书/上一章的
    * project/chapterNum 会继续被保存、建议与面板使用（跨书串数据）。
    */
-  async clearChapterBinding(): Promise<void> {
+  /**
+   * 清空当前章节绑定。
+   *
+   * @param options.skipFlush - 项目已删除时跳过落盘冲刷（写入保护会拒绝保存）
+   */
+  async clearChapterBinding(options?: { skipFlush?: boolean }): Promise<void> {
     if (!this.project && !this.chapterName) {
       this.statusBar?.setText("未绑定章节");
       return;
     }
-    // 未落盘的旧正文先按旧身份保存；失败则中止清空，避免丢字
-    const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
-    if (!flushed) {
-      new Notice("⚠️ 上一章正文未能保存，已取消清空章节绑定", 4e3);
-      return;
+    // 未落盘的旧正文先按旧身份保存；失败则中止清空，避免丢字。
+    // 项目已删除时不能 flush：写入保护会拒绝，且 flush 失败会阻止清空绑定。
+    if (!options?.skipFlush) {
+      const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
+      if (!flushed) {
+        new Notice("⚠️ 上一章正文未能保存，已取消清空章节绑定", 4e3);
+        return;
+      }
     }
     this.clearPreviewTimer();
     this.beginSuggestionEpoch();

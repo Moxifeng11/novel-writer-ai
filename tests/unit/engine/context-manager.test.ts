@@ -30,92 +30,92 @@ function makeMockPlugin(app?: App) {
     } as any;
 }
 
+function folder(path: string, children: TFolder[] = []): TFolder {
+    return Object.assign(new TFolder(), {
+        path,
+        name: path.split('/').pop() || '',
+        children,
+    });
+}
+
+/** 用项目目录树构造 app；markers 是 `项目/身份文件` 的集合 */
+function projectApp(projects: Record<string, string[]>, extras: string[] = []): App {
+    const app = makeMockApp();
+    const root = folder('');
+    const markers = new Set<string>();
+    const ensureFolder = (path: string): TFolder => {
+        let parent = root;
+        let current = '';
+        for (const segment of path.split('/')) {
+            current = current ? `${current}/${segment}` : segment;
+            let child = parent.children.find(item => item instanceof TFolder && item.name === segment) as TFolder | undefined;
+            if (!child) {
+                child = folder(current);
+                parent.children.push(child);
+            }
+            parent = child;
+        }
+        return parent;
+    };
+    for (const [project, identities] of Object.entries(projects)) {
+        ensureFolder(project);
+        for (const marker of identities) markers.add(`${project}/${marker}`);
+    }
+    for (const extra of extras) ensureFolder(extra);
+    (app.vault as unknown as {
+        getRoot: () => TFolder;
+        getAbstractFileByPath: (path: string) => unknown;
+    }).getRoot = () => root;
+    (app.vault as unknown as { getAbstractFileByPath: (path: string) => unknown }).getAbstractFileByPath =
+        (path: string) => (markers.has(path) ? {} : null);
+    return app;
+}
+
 describe('detectProjects - 项目检测', () => {
     it('空 vault 返回空数组', () => {
-        const app = makeMockApp();
-        const result = detectProjects(app as any);
-        expect(result).toEqual([]);
+        expect(detectProjects(projectApp({}) as never)).toEqual([]);
     });
 
     it('通过 .project 文件检测项目', () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: '我的小说/.project' },
-            { path: '我的小说/01-世界架构/人物/主角.md' },
-        ];
-        const result = detectProjects(app as any);
-        expect(result).toContain('我的小说');
-        expect(result.length).toBe(1);
+        const result = detectProjects(projectApp({ '我的小说': ['.project', '01-世界架构'] }) as never);
+        expect(result).toEqual(['我的小说']);
     });
 
     it('通过世界观总览.md 检测项目', () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: '玄幻世界/世界观总览.md' },
-        ];
-        const result = detectProjects(app as any);
-        expect(result).toContain('玄幻世界');
+        const result = detectProjects(projectApp({ '玄幻世界': ['世界观总览.md'] }) as never);
+        expect(result).toEqual(['玄幻世界']);
     });
 
     it('通过 01-世界架构 子目录检测项目', () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: '都市传说/01-世界架构/地点/学校.md' },
-        ];
-        const result = detectProjects(app as any);
-        expect(result).toContain('都市传说');
+        const result = detectProjects(projectApp({ '都市传说': ['01-世界架构'] }) as never);
+        expect(result).toEqual(['都市传说']);
     });
 
     it('多个项目返回排序后的数组', () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: 'B项目/.project' },
-            { path: 'A项目/世界观总览.md' },
-            { path: 'C项目/01-世界架构/人物/x.md' },
-        ];
-        const result = detectProjects(app as any);
+        const result = detectProjects(projectApp({
+            'B项目': ['.project'],
+            'A项目': ['世界观总览.md'],
+            'C项目': ['01-世界架构'],
+        }) as never);
         expect(result).toEqual(['A项目', 'B项目', 'C项目']);
     });
 
     it('跳过元文件和点文件开头的路径', () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: '元文件/模板.md' },
-            { path: '.obsidian/plugins/x.md' },
-            { path: '正常项目/.project' },
-        ];
-        const result = detectProjects(app as any);
+        const result = detectProjects(projectApp({ '正常项目': ['.project'] }, ['元文件']) as never);
         expect(result).toEqual(['正常项目']);
     });
 
     it('普通文件不被误判为项目', () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: '笔记/读书心得.md' },
-            { path: '日记/2024-01-01.md' },
-        ];
-        const result = detectProjects(app as any);
-        expect(result).toEqual([]);
+        expect(detectProjects(projectApp({}, ['笔记', '日记']) as never)).toEqual([]);
     });
 
     it('同一项目只出现一次（去重）', () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: '同一项目/.project' },
-            { path: '同一项目/世界观总览.md' },
-            { path: '同一项目/01-世界架构/人物/a.md' },
-            { path: '同一项目/01-世界架构/人物/b.md' },
-        ];
-        const result = detectProjects(app as any);
-        expect(result).toHaveLength(1);
-        expect(result[0]).toBe('同一项目');
+        const result = detectProjects(projectApp({ '同一项目': ['.project', '世界观总览.md', '01-世界架构'] }) as never);
+        expect(result).toEqual(['同一项目']);
+    });
+
+    it('只有 03-大纲与章节 的残留目录不算项目', () => {
+        expect(detectProjects(projectApp({ '长篇小说/已删项目': ['03-大纲与章节'] }) as never)).toEqual([]);
     });
 });
 
@@ -407,19 +407,15 @@ describe('ContextManager - 缓存机制', () => {
 
 describe('ContextManager - detectProjects 实例方法', () => {
     it('实例方法调用 detectProjects 纯函数', async () => {
-        const app = makeMockApp();
-        const vault = app.vault as any;
-        vault.getFiles = () => [
-            { path: '测试项目/.project' },
-        ];
+        const app = projectApp({ '测试项目': ['.project'] });
         const plugin = makeMockPlugin(app);
         const cm = new ContextManager({ plugin });
         const result = await cm.detectProjects();
-        expect(result).toContain('测试项目');
+        expect(result).toEqual(['测试项目']);
     });
 
     it('空 vault 返回空数组', async () => {
-        const plugin = makeMockPlugin();
+        const plugin = makeMockPlugin(projectApp({}));
         const cm = new ContextManager({ plugin });
         const result = await cm.detectProjects();
         expect(result).toEqual([]);

@@ -36,7 +36,9 @@ import { isChapterWritten, summarizeChapterProgress } from '@/shared/chapter-pro
 import { listModeUnits, modeUnitLabel, type ModeUnitInfo } from '@/shared/mode-content';
 import { readProjectMeta } from '@/shared/paths';
 import { CoWritingView } from '@/ui/co-writing-view';
-import { listProjects } from '@/ui/export-manuscript-modal';
+import { listProjectIds, removeProjectDirectory } from '@/shared/project-catalog';
+import { MODE_LIBRARY_ROOT_LIST } from '@/shared/creation-mode';
+import { writeVaultText } from '@/shared/file-system-port';
 
 const log = createLogger('AgentPort');
 
@@ -47,7 +49,7 @@ const log = createLogger('AgentPort');
   * @returns AgentContext 实例
  */
 export function getAgentContext(app: App, plugin: NovelWriterPlugin): AgentContext {
-    return { projects: listProjects(app), activeProject: plugin.getActiveProject() };
+    return { projects: listProjectIds(app), activeProject: plugin.getActiveProject() };
 }
 
 void CoWritingView;
@@ -519,6 +521,70 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
             }
             return hits;
         },
+        listProjects: () => listProjectIds(app),
+        writeFile: async (path, content, options) => {
+            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: ['.sessions/'] });
+            if (!guard.ok) throw new Error(guard.reason);
+            if (!isTextPath(guard.path)) {
+                throw new Error(`只支持写入文本文件（md/txt/json/yaml 等）：${guard.path}`);
+            }
+            if (new TextEncoder().encode(content).length > MAX_WRITE_FILE_BYTES) {
+                throw new Error(`单次写入超过 ${Math.round(MAX_WRITE_FILE_BYTES / 1024)}KB，请拆分或改用命令生成`);
+            }
+            const existed = await app.vault.adapter.exists(guard.path);
+            let next = content;
+            if (options?.append && existed) {
+                next = `${await app.vault.adapter.read(guard.path)}${content}`;
+            }
+            await writeVaultText(app, guard.path, next);
+            return { path: guard.path, created: !existed, bytes: new TextEncoder().encode(next).length };
+        },
+        deleteFile: async (path, options) => {
+            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: ['.sessions/'] });
+            if (!guard.ok) throw new Error(guard.reason);
+            const file = app.vault.getAbstractFileByPath(guard.path);
+            if (file instanceof TFile) {
+                if (options?.permanent) await app.vault.delete(file, true);
+                else await app.vault.trash(file, true);
+                return { path: guard.path, deleted: true, trashed: !options?.permanent };
+            }
+            if (await app.vault.adapter.exists(guard.path)) {
+                await app.vault.adapter.remove(guard.path);
+                return { path: guard.path, deleted: true, trashed: false };
+            }
+            return { path: guard.path, deleted: false, trashed: false };
+        },
+        moveFile: async (from, to) => {
+            const source = sanitizeVaultPath(from, { allowHiddenPrefixes: ['.sessions/'] });
+            const target = sanitizeVaultPath(to, { allowHiddenPrefixes: ['.sessions/'] });
+            if (!source.ok) throw new Error(source.reason);
+            if (!target.ok) throw new Error(target.reason);
+            const file = app.vault.getAbstractFileByPath(source.path);
+            if (file instanceof TFile) {
+                await app.fileManager.renameFile(file, target.path);
+            } else if (await app.vault.adapter.exists(source.path)) {
+                const parent = target.path.substring(0, target.path.lastIndexOf('/'));
+                if (parent) await app.vault.adapter.mkdir(parent);
+                await app.vault.adapter.rename(source.path, target.path);
+            } else {
+                throw new Error(`文件不存在：${source.path}`);
+            }
+            return { from: source.path, to: target.path };
+        },
+        deleteProject: async (project) => {
+            const guard = sanitizeVaultPath(project);
+            if (!guard.ok) return { project, deleted: false, reason: guard.reason };
+            const target = guard.path;
+            const known = listProjectIds(app).includes(target);
+            // 允许删除「已从列表消失但目录仍残留」的模式库项目（ghost），
+            // 但模式库根、_versions、隐藏目录由 removeProjectDirectory 再拦一次。
+            const underLibrary = MODE_LIBRARY_ROOT_LIST.some(root => target.startsWith(`${root}/`));
+            if (!known && !underLibrary) {
+                return { project: target, deleted: false, reason: '不是可识别的项目目录' };
+            }
+            await removeProjectDirectory(app, target);
+            return { project: target, deleted: true };
+        },
     };
 }
 
@@ -532,6 +598,7 @@ function isTextPath(path: string): boolean {
 
 /** 单文件读取上限：超过就要求改用检索（避免一次把整本书塞进上下文） */
 const MAX_READ_FILE_BYTES = 512 * 1024;
+const MAX_WRITE_FILE_BYTES = 1024 * 1024;
 const SEARCH_MAX_FILE_BYTES = 512 * 1024;
 const SEARCH_MAX_FILES = 3000;
 const SEARCH_DEFAULT_LIMIT = 20;

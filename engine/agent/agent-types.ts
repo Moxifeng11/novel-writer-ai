@@ -247,6 +247,30 @@ export interface AgentFileReadResult {
     size: number;
 }
 
+/** write_file 的写入结果 */
+export interface AgentFileWriteResult {
+    path: string;
+    /** true = 新建，false = 覆盖/追加已有文件 */
+    created: boolean;
+    /** 写入后的字节数（UTF-8 近似） */
+    bytes: number;
+}
+
+/** delete_file 的删除结果 */
+export interface AgentFileDeleteResult {
+    path: string;
+    deleted: boolean;
+    /** true = 进系统回收站，false = 永久删除 */
+    trashed: boolean;
+}
+
+/** delete_project 的删除结果 */
+export interface AgentProjectDeleteResult {
+    project: string;
+    deleted: boolean;
+    reason?: string;
+}
+
 /** search_vault 的一条命中 */
 export interface AgentVaultSearchHit {
     path: string;
@@ -300,6 +324,16 @@ export interface GuideAgentPort {
     readFile?(path: string, options?: { offset?: number; limit?: number }): Promise<AgentFileReadResult | null>;
     /** 在库内做关键词检索（只搜文本文件），返回命中的行 */
     searchVault?(query: string, options?: { limit?: number; folder?: string }): Promise<AgentVaultSearchHit[]>;
+    /** 当前可识别项目（删除/创建后重新读取；不传则用会话开始时的快照） */
+    listProjects?(): string[];
+    /** 创建/覆盖/追加库内文本文件；完整权限入口 */
+    writeFile?(path: string, content: string, options?: { append?: boolean }): Promise<AgentFileWriteResult>;
+    /** 删除库内文件（默认进系统回收站） */
+    deleteFile?(path: string, options?: { permanent?: boolean }): Promise<AgentFileDeleteResult>;
+    /** 移动/重命名库内文件 */
+    moveFile?(from: string, to: string): Promise<{ from: string; to: string }>;
+    /** 彻底删除项目目录（含点文件）；调用方必须已确认 */
+    deleteProject?(project: string): Promise<AgentProjectDeleteResult>;
     // ─── 长流程执行登记表（v4.21）───
     /** 最近的命令执行记录（新→旧），供 Agent 汇报「刚才那次跑得怎么样」 */
     getExecutionLedger?(limit?: number): AgentCommandRunRecord[];

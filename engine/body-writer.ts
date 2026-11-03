@@ -26,6 +26,7 @@ import {
 } from '@/shared/body-format';
 import { naturalizeBodyText } from '@/shared/prose-naturalizer';
 import { pjBodyFile, pjWritingRules } from '@/shared/paths';
+import { projectIdFromPath, projectIdentityExists } from '@/shared/project-catalog';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { validateStepResult } from './step-validator';
 import { withWriteLock } from '@/shared/write-lock';
@@ -255,6 +256,13 @@ export class BodyWriter {
 
     private async writeLocked(req: BodyWriteRequest): Promise<BodyWriteResult> {
         const fs = this.getFS();
+
+        // 删除项目后，打开中的协同/工作台可能还有待自动保存；若直接写会重建
+        // 03-大纲与章节 与 _versions，把已删除项目“复活”。写入前必须确认项目身份还在。
+        const projectId = String(req.project || '').trim() || projectIdFromPath(req.path);
+        if (projectId && !(await projectIdentityExists(fs, projectId))) {
+            throw new Error(`项目「${projectId}」已不存在或缺少项目标志，已阻止写入以避免重建已删除项目`);
+        }
 
         const chapterNum = req.chapterNum ?? this.parseChapterNum(req.chapterName);
         const chapterName = req.chapterName || (chapterNum ? `第${chapterNum}章` : '');

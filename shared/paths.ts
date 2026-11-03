@@ -64,7 +64,10 @@ export async function readProjectMeta(
 }
 
 /**
- * 同步判断项目是否存在：用项目文件夹（被索引）替代不被索引的 `.project` 点文件
+ * 同步判断「目录存在」——注意它不校验项目身份。
+ *
+ * @deprecated 项目发现/身份判断请用 `shared/project-catalog.ts#isProjectDirectory`；
+ * 本函数只回答「这个路径是不是一个已索引目录」，会把删除残留的章节目录也算存在。
  *
  * @param app - Obsidian 应用实例
  * @param project - 项目（路径或对象）

@@ -25,6 +25,7 @@ import { createLogger } from '@/shared/logger';
 import { ensureTemplateScaffold } from '@/shared/template-scaffold';
 import { writeVaultText } from '@/shared/file-system-port';
 import { newProjectPath } from '@/domains/kernel/project-locator';
+import { removeProjectDirectory } from '@/shared/project-catalog';
 import { fanficSettingsFileName, isFanficApproved } from '@/ui/full-writer/fanfic-settings-utils';
 import { buildCreationModeMetaSection, type CreationModeMeta } from '@/shared/creation-mode';
 import type { LongStorySettings } from '@/shared/story-structure';
@@ -146,13 +147,7 @@ export async function createLongNovelProject(
             return { created: false, projectId, fileCount: 0, reason: '用户取消覆盖已有项目' };
         }
 
-        const removeDir = async (dirPath: string): Promise<void> => {
-            const list = await adapter.list(dirPath);
-            for (const f of list.files) await adapter.remove(f);
-            for (const d of list.folders) await removeDir(d);
-            await adapter.rmdir(dirPath, true);
-        };
-        try { await removeDir(projectId); } catch (e) { log.warn('[ProjectCreate] 操作失败:', e); }
+        try { await removeProjectDirectory(app, projectId); } catch (e) { log.warn('[ProjectCreate] 覆盖前删除旧目录失败:', e); }
         await new Promise(r => setTimeout(r, 300));
     }
 
