@@ -458,3 +458,73 @@ export function stringifyYaml(obj: any): string {
     }
     return lines.join('\n') + '\n';
 }
+
+/** 设置行（UI 测试用最小实现；链式 API 与 Obsidian 保持一致） */
+export class Setting {
+    settingEl: HTMLElement;
+    nameEl: HTMLElement;
+    descEl: HTMLElement;
+    controlEl: HTMLElement;
+    components: any[] = [];
+
+    constructor(containerEl: HTMLElement) {
+        this.settingEl = document.createElement('div');
+        this.nameEl = document.createElement('div');
+        this.descEl = document.createElement('div');
+        this.controlEl = document.createElement('div');
+        this.settingEl.append(this.nameEl, this.descEl, this.controlEl);
+        containerEl?.append?.(this.settingEl);
+    }
+
+    setName(name: string): this { this.nameEl.textContent = name; return this; }
+    setDesc(desc: string): this { this.descEl.textContent = desc; return this; }
+    setClass(cls: string): this { this.settingEl.className = cls; return this; }
+    setHeading(): this { return this; }
+    setDisabled(disabled: boolean): this {
+        this.settingEl.toggleAttribute('disabled', disabled);
+        return this;
+    }
+    setTooltip(): this { return this; }
+    clear(): this { this.components = []; return this; }
+    then(cb: (value: this) => unknown): this { cb(this); return this; }
+
+    private component(extra: Record<string, unknown> = {}): any {
+        const inputEl = document.createElement('input');
+        const component: any = {
+            inputEl,
+            selectEl: document.createElement('select'),
+            buttonEl: document.createElement('button'),
+            setPlaceholder() { return component; },
+            setValue() { return component; },
+            setLimits() { return component; },
+            setDynamicTooltip() { return component; },
+            setDisabled() { return component; },
+            onChange() { return component; },
+            addOption() { return component; },
+            addOptions() { return component; },
+            addButton() { return component; },
+            setButtonText() { return component; },
+            setCta() { return component; },
+            onClick() { return component; },
+            ...extra,
+        };
+        this.components.push(component);
+        this.controlEl.append(inputEl);
+        return component;
+    }
+
+    addText(cb?: (component: any) => unknown): this { if (cb) cb(this.component()); return this; }
+    addTextArea(cb?: (component: any) => unknown): this { if (cb) cb(this.component()); return this; }
+    addToggle(cb?: (component: any) => unknown): this {
+        const component = this.component({ setValue() { return component; } });
+        if (cb) cb(component);
+        return this;
+    }
+    addDropdown(cb?: (component: any) => unknown): this { return this.addText(cb); }
+    addButton(cb?: (component: any) => unknown): this { return this.addText(cb); }
+    addExtraButton(cb?: (component: any) => unknown): this { return this.addText(cb); }
+    addSlider(cb?: (component: any) => unknown): this { return this.addText(cb); }
+    addColorPicker(cb?: (component: any) => unknown): this { return this.addText(cb); }
+    addSearch(cb?: (component: any) => unknown): this { return this.addText(cb); }
+    addMomentFormat(cb?: (component: any) => unknown): this { return this.addText(cb); }
+}

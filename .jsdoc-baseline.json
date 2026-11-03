@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-03T08:25:55.067Z",
+  "generatedAt": "2026-11-03T11:23:45.405Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
-      "files": 271,
-      "exports": 1509,
-      "documented": 1509,
-      "methods": 1253,
-      "methodsDocumented": 1253,
+      "files": 270,
+      "exports": 1505,
+      "documented": 1505,
+      "methods": 1237,
+      "methodsDocumented": 1237,
       "incomplete": 0
     },
     "services": {
@@ -46,8 +46,8 @@
       "files": 190,
       "exports": 494,
       "documented": 494,
-      "methods": 633,
-      "methodsDocumented": 633,
+      "methods": 634,
+      "methodsDocumented": 634,
       "incomplete": 0
     }
   },
@@ -1152,13 +1152,6 @@
       "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
-    },
-    "engine/prompt-manager.ts": {
-      "exports": 4,
-      "documented": 4,
-      "methods": 16,
-      "methodsDocumented": 16,
       "incomplete": 0
     },
     "engine/prompts/body-v2-prompts.ts": {
@@ -3559,8 +3552,8 @@
     "ui/co-write-floating-panel.ts": {
       "exports": 2,
       "documented": 2,
-      "methods": 8,
-      "methodsDocumented": 8,
+      "methods": 9,
+      "methodsDocumented": 9,
       "incomplete": 0
     },
     "ui/co-writing-view.ts": {

@@ -45,6 +45,15 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
             },
             {
                 type: 'improved',
+                label: '🧹 技术债与依赖',
+                items: [
+                    'Vitest 4 / Vite 7 / esbuild 0.25 / Playwright 1.64 / obsidian 类型 1.14 升级',
+                    '依赖漏洞 39 → 23，critical/high 清零',
+                    '移除无调用方的 engine/prompt-manager 与旧规则兼容壳',
+                ],
+            },
+            {
+                type: 'improved',
                 label: '🤝 协同写作',
                 items: [
                     '新增剧情冗余检查入口',

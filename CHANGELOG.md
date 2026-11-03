@@ -20,6 +20,14 @@
 - 新增「🧾 剧情冗余」入口：调用已有 `checkPlotRedundancy`，对比前文场景/冲突/短语重复。
 - 底部操作栏统一忙碌态与异常捕获；保存失败时「结算」不再提示成功；空指令输入给出提示。
 
+### 🧹 技术债清理与依赖
+
+- **依赖升级**：Vitest 1.6→4.1.12（含 coverage-v8、Vite 7）、esbuild 0.19→0.25.12、Playwright 1.61→1.64.1、obsidian 类型 1.13→1.14.4、TypeScript-ESLint 8.72.1、wait-on 9.5.1。
+- **漏洞收敛**：`npm audit` 由 39 条（3 critical / 9 high）降至 23 条（0 critical / 0 high）；剩余均为开发期 `eslint-plugin-obsidianmd` 内嵌 moment 的中危告警，无可用修复。
+- **死代码删除**：移除无调用方的 `engine/prompt-manager.ts`（395 行）与 `engine/prompts/writing-rules-legacy.ts` 兼容壳。
+- **测试基建适配 Vitest 4**：补 `obsidian` mock 的 `Setting`；修正 spy 未恢复导致的用例串扰；更新 `vi.fn` 泛型。
+- **覆盖率口径**：Vitest 4 AST-aware remapping 使同一批测试的统计值变化，按新口径重取分域阈值（全局 lines 64 / branches 55；shared 85/77），未删减测试。
+
 ### 🧪 测试
 
 - 单测 **529 文件 / 5879 用例** 全绿（标题兜底、标题完整性、字数统计、单步看门狗、润色入口参数等新增回归）。

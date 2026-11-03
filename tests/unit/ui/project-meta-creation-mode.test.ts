@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-const readProjectMeta = vi.fn<[], Promise<string | null>>();
+const readProjectMeta = vi.fn<() => Promise<string | null>>();
 
 vi.mock('../../../shared/paths', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../shared/paths')>();

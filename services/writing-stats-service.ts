@@ -133,6 +133,7 @@ export class WritingStatsService {
         try {
             const files = this.deps.listBodyFiles().filter(file => this.deps.isBodyPath(file.path));
             const existing = new Set<string>();
+            const changed: StatsFileLike[] = [];
             for (const file of files) {
                 existing.add(file.path);
                 const snapshot = this.data.files[file.path];
@@ -140,11 +141,20 @@ export class WritingStatsService {
                 if (snapshot && mtime > 0 && snapshot.mtime === mtime) {
                     continue; // 未变化：跳过
                 }
-                // v4.26：变更文件按正文实算，不再信 frontmatter 里可能过期的 word_count；
-                // 正文读不到（空文件/权限）时退回 frontmatter 兜底。
-                const count = await this.resolveCountForScan(file);
-                if (count === null) continue;
-                recordFileWords(this.data, file.path, projectOfFile(file.path), count, mtime, this.now());
+                changed.push(file);
+            }
+            // 首次扫描/批量改动可能涉及数百章：并发读正文（上限 6），
+            // 避免逐文件串行 await 把打开统计页拖成数秒。
+            const CONCURRENCY = 6;
+            for (let i = 0; i < changed.length; i += CONCURRENCY) {
+                const batch = changed.slice(i, i + CONCURRENCY);
+                const counts = await Promise.all(batch.map(file => this.resolveCountForScan(file)));
+                for (let j = 0; j < batch.length; j++) {
+                    const count = counts[j];
+                    if (count === null) continue;
+                    const file = batch[j];
+                    recordFileWords(this.data, file.path, projectOfFile(file.path), count, file.stat?.mtime ?? 0, this.now());
+                }
             }
             pruneMissingFiles(this.data, existing);
             this.schedulePersist();

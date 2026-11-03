@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MockFileSystem } from '../../../../shared/file-system-port';
 import { BaseMarkdownRepository } from '../../../../engine/repository/base-markdown-repository';
 import { parseFrontmatter } from '../../../../shared/frontmatter';
@@ -174,7 +174,6 @@ describe('BaseMarkdownRepository', () => {
 
     describe('LRU 缓存', () => {
         let cachedRepo: TestRepository;
-        let readSpy: () => void;
 
         beforeEach(() => {
             cachedRepo = new TestRepository(fs, {
@@ -183,12 +182,6 @@ describe('BaseMarkdownRepository', () => {
                 cacheTtlMs: 0,
             });
 
-            readSpy = () => {};
-            const originalRead = fs.read.bind(fs);
-            vi.spyOn(fs, 'read').mockImplementation(async (path: string) => {
-                readSpy();
-                return originalRead(path);
-            });
         });
 
         it('首次读取从文件系统加载', async () => {
@@ -378,4 +371,9 @@ describe('BaseMarkdownRepository', () => {
             expect(exists).toBe(true);
         });
     });
+});
+
+
+afterEach(() => {
+    vi.restoreAllMocks();
 });

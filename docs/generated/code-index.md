@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 289 | 130209 | 1533 | 1302 | 85% |
-| `services/` | 28 | 11381 | 154 | 137 | 89% |
-| `shared/` | 165 | 37298 | 1521 | 1269 | 83% |
+| `engine/` | 287 | 129806 | 1529 | 1298 | 85% |
+| `services/` | 28 | 11391 | 154 | 137 | 89% |
+| `shared/` | 165 | 37307 | 1521 | 1269 | 83% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 765 | 30 | 22 | 73% |
 | `ui/` | 192 | 96929 | 501 | 463 | 92% |
@@ -198,7 +198,6 @@
 | `engine/prompt-builder.ts` | 1476 | 2 | 1 |
 | `engine/prompt-cache.ts` | 81 | 3 | 2 |
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
-| `engine/prompt-manager.ts` | 395 | 4 | 4 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v2-prompts.ts` | 138 | 3 | 3 |
 | `engine/prompts/body-v3-prompts.ts` | 99 | 3 | 3 |
@@ -215,7 +214,6 @@
 | `engine/prompts/style-exemplars.ts` | 134 | 8 | 7 |
 | `engine/prompts/template-utils.ts` | 176 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
-| `engine/prompts/writing-rules-legacy.ts` | 8 | 0 | 0 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
 | `engine/quality-gate.ts` | 180 | 5 | 4 |
 | `engine/quality-scorer.ts` | 380 | 5 | 4 |
@@ -351,7 +349,7 @@
 | `services/worker-protocol.ts` | 107 | 11 | 11 |
 | `services/worker-runtime.ts` | 262 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
-| `services/writing-stats-service.ts` | 325 | 6 | 6 |
+| `services/writing-stats-service.ts` | 335 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 55 | 2 | 2 |
 | `shared/api-format.ts` | 418 | 16 | 15 |
@@ -363,7 +361,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1016 | 3 | 3 |
+| `shared/changelog-data.ts` | 1025 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |

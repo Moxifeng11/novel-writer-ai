@@ -209,6 +209,7 @@ describe('BodySaveController — 切章前冲刷排队保存', () => {
         const write = vi.spyOn(BodyWriter.prototype, 'write').mockResolvedValue({
             path: '/A书/正文/第1章.md', created: false, body: '', wordCount: 0, title: '',
         });
+        write.mockClear();
 
         await expect(controller.flushBeforeChapterSwitch()).resolves.toBe(true);
 
@@ -217,6 +218,7 @@ describe('BodySaveController — 切章前冲刷排队保存', () => {
     });
 
     it('没有待执行保存时不写盘', async () => {
+        vi.restoreAllMocks();
         const { controller } = makeHarness();
         const write = vi.spyOn(BodyWriter.prototype, 'write').mockResolvedValue({
             path: '/A书/正文/第1章.md', created: false, body: '', wordCount: 0, title: '',
@@ -235,6 +237,7 @@ describe('BodySaveController — 切章前冲刷排队保存', () => {
         const write = vi.spyOn(BodyWriter.prototype, 'write').mockResolvedValue({
             path: '', created: false, body: '', wordCount: 0, title: '',
         });
+        write.mockClear();
 
         await expect(controller.flushBeforeChapterSwitch()).resolves.toBe(true);
 

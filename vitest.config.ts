@@ -30,37 +30,39 @@ export default defineConfig({
                 'shared/template-scaffold-assets.generated.ts',
             ],
             // 阈值按核心域分别设定（FR-E-05）。
-            // 2026-11-01（G7-7）把 shared/ 纳入口径后重取基线：
-            //   全局 lines 76.7 / branches 78.7 / funcs 73.0
-            //   shared lines 93.3 / branches 85.5 / funcs 83.9
-            // 各域阈值取实测值下浮约 3-5 个点，任一域低于阈值即失败（CI test:cov 阻断）。
+            // 2026-11-03：Vitest 1.6 → 4.1 后 @vitest/coverage-v8 改用 AST-aware
+            // remapping，分支/语句口径更严格（同一批测试从 lines 76.7 变为 65.6），
+            // 这是度量口径变化，不是测试或代码回退。按新口径重取基线并下浮约 1-2 个点：
+            //   全局 lines 65.6 / statements 64.3 / branches 56.7 / funcs 66.7
+            //   engine branches 53.6 / services branches 41.5 / core branches 50.7
+            //   shared lines 85.9 / statements 84.6 / branches 77.7
             thresholds: {
-                lines: 30,
-                statements: 30,
-                branches: 60,
-                functions: 15,
+                lines: 64,
+                statements: 62,
+                branches: 55,
+                functions: 65,
                 'engine/**/*.ts': {
                     lines: 52,
                     statements: 52,
-                    branches: 74,
+                    branches: 52,
                     functions: 40,
                 },
                 'services/**/*.ts': {
                     lines: 36,
                     statements: 36,
-                    branches: 67,
+                    branches: 40,
                     functions: 26,
                 },
                 'core/**/*.ts': {
                     lines: 45,
                     statements: 45,
-                    branches: 74,
+                    branches: 49,
                     functions: 14,
                 },
                 'shared/**/*.ts': {
-                    lines: 90,
-                    statements: 90,
-                    branches: 82,
+                    lines: 85,
+                    statements: 84,
+                    branches: 77,
                     functions: 80,
                 },
             },

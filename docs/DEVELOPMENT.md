@@ -1308,7 +1308,7 @@ npm run audit:deps     # 生产依赖安全审计
 
 E2E（FR-E-10）使用 Playwright `_electron` 启动本机 Obsidian，临时 vault 中安装构建产物并启用插件，覆盖「创建项目 → 打开完整写作工作台」。未设置 `OBSIDIAN_PATH` 或路径不存在时用例显式 skip；CI 中的 `e2e-obsidian` job 仅在配置该仓库变量后运行。详见 `tests/e2e/README.md`。
 
-覆盖率口径（FR-E-05）：统计 `engine/` `services/` `core/`，排除 `*.d.ts`、测试与 `*-worker.ts` 入口；阈值分域设定，低于阈值时 Vitest 以非零码退出，CI 的 `test:cov` 步骤据此阻断合并。
+覆盖率口径（FR-E-05）：统计 `engine/` `services/` `core/` `shared/`，排除 `*.d.ts`、测试、`*-worker.ts` 与生成模板资产；阈值分域设定，低于阈值时 Vitest 以非零码退出，CI 的 `test:cov` 步骤据此阻断合并。2026-11-03 起使用 Vitest 4 的 AST-aware remapping 口径，数值已重取（见 `vitest.config.ts` 注释）。
 
 ### 当前验证状态
 
