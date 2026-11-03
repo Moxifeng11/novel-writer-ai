@@ -15,7 +15,7 @@ function snapshot(overrides: Partial<PromptSnapshot> = {}): PromptSnapshot {
         timeline: '旧时间线内容',
         foreshadows: {
             unrevealed: [
-                { name: '旧伏笔', plannedReveal: '第1章' },
+                { id: 'f1', name: '旧伏笔', plannedReveal: '第1章' },
             ],
         },
         ...overrides,

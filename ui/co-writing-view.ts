@@ -95,6 +95,8 @@ import {
     type ForeshadowTracking,
 } from '@/engine/quality/deviation-detector';
 import { createLogger } from '@/shared/logger';
+import { calculateHumanRate, renderHumanRate, type HumanRateScores } from '@/ui/co-writing/human-rate';
+import { getAssetStatus, getCompletenessIcon, renderAssetStatusBar } from '@/ui/co-writing/asset-status';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
 import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '@/shared/thresholds';
 import { shouldRequestGhostAssociationByInterval } from '@/shared/ghost-trigger';
@@ -1920,63 +1922,8 @@ export class CoWritingView extends ItemView {
    *
     * @returns number } 结果
    */
-  calculateHumanRate(): { overall: number; style: number; sentenceLength: number; opening: number; punctuation: number; aiWords: number } {
-    const text = this.rightEditor?.value || '';
-
-    const sentences = text.split(/[。！？；.!?;]/).filter(s => s.trim().length > 0);
-    const recent3 = sentences.slice(-3);
-    const recent5 = sentences.slice(-5);
-
-    let sentenceLength = 100;
-    if (recent3.length >= 2) {
-      const lengths = recent3.map(s => s.length);
-      const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
-      const variance = lengths.reduce((sum, l) => sum + (l - mean) ** 2, 0) / lengths.length;
-      const stdDev = Math.sqrt(variance);
-      const cv = mean > 0 ? stdDev / mean : 0;
-      sentenceLength = Math.max(0, Math.min(100, Math.round(100 - cv * 100)));
-    }
-
-    let opening = 100;
-    if (recent3.length >= 2) {
-      const openings = recent3.map(s => s.trim().slice(0, 2)).filter(o => o.length >= 1);
-      const unique = new Set(openings);
-      const diversity = openings.length > 0 ? unique.size / openings.length : 1;
-      opening = Math.round(diversity * 100);
-    }
-
-    let punctuation = 100;
-    if (recent5.length >= 2) {
-      const punctTypes = new Set<string>();
-      let totalPunct = 0;
-      for (const s of recent5) {
-        const matches = s.match(/[，。！？、；：""''《》…—,\.!\?;:'"\-]/g);
-        if (matches) {
-          totalPunct += matches.length;
-          matches.forEach(m => punctTypes.add(m));
-        }
-      }
-      const variety = totalPunct > 0 ? punctTypes.size / Math.min(totalPunct, 10) : 0;
-      punctuation = Math.max(30, Math.min(100, Math.round(variety * 100)));
-    }
-
-    let aiWords = 100;
-    const aiHighFreqWords = ['然而', '于是', '随后', '紧接着', '与此同时', '不知为何', '仿佛', '似乎', '某种', '莫名', '陡然', '蓦地', '倏地', '旋即', '不由得'];
-    const recentText = recent5.join('');
-    let aiWordCount = 0;
-    for (const word of aiHighFreqWords) {
-      if (recentText.includes(word)) aiWordCount++;
-    }
-    aiWords = Math.max(40, Math.min(100, Math.round(100 - aiWordCount * 12)));
-
-    // 风格分只能由指纹比对/AI 评估得出，输入时同步计算会阻塞编辑，
-    // 因此这里返回 -1 表示「未评估」，并从总分权重中剔除，避免用常数 75 冒充真实分。
-    const style = -1;
-
-    const measured = sentenceLength * 0.20 + opening * 0.15 + punctuation * 0.15 + aiWords * 0.10;
-    const overall = Math.round(measured / 0.60);
-
-    return { overall, style, sentenceLength, opening, punctuation, aiWords };
+  calculateHumanRate(): HumanRateScores {
+    return calculateHumanRate(this.rightEditor?.value || '');
   }
 
   /**
@@ -1984,25 +1931,9 @@ export class CoWritingView extends ItemView {
    *
    * @param scores - 分数表
    */
-  renderHumanRateInto(scores: { overall: number; style: number; sentenceLength: number; opening: number; punctuation: number; aiWords: number }) {
+  renderHumanRateInto(scores: HumanRateScores) {
     if (!this.humanRateDashboard) return;
-    this.humanRateDashboard.empty();
-
-    const colorClass = scores.overall >= 85 ? 'nw-hr-high' : scores.overall >= 60 ? 'nw-hr-mid' : 'nw-hr-low';
-
-    const header = this.humanRateDashboard.createDiv({ cls: 'nw-hr-header' });
-    header.createSpan({ cls: 'nw-hr-label', text: '人工率' });
-    header.createSpan({ cls: `nw-hr-score ${colorClass}`, text: `${scores.overall}%` });
-
-    const bar = this.humanRateDashboard.createDiv({ cls: 'nw-hr-bar' });
-    bar.createDiv({ cls: `nw-hr-bar-fill ${colorClass}`, attr: { style: `width: ${scores.overall}%` } });
-
-    const details = this.humanRateDashboard.createDiv({ cls: 'nw-hr-details' });
-    details.createSpan({ text: scores.style < 0 ? '风格 未评估' : `风格 ${scores.style}%` });
-    details.createSpan({ text: `句长 ${scores.sentenceLength}%` });
-    details.createSpan({ text: `开头 ${scores.opening}%` });
-    details.createSpan({ text: `标点 ${scores.punctuation}%` });
-    details.createSpan({ text: `AI词 ${scores.aiWords}%` });
+    renderHumanRate(this.humanRateDashboard, scores);
   }
 
   /** 更新人工率仪表盘 */
@@ -5444,121 +5375,18 @@ ${text}`;
     });
   }
 
-  private async getAssetStatus(): Promise<{
-    knowledgeBase: { completed: number; total: number; completeness: number };
-    fingerprint: { completed: number; total: number; completeness: number };
-  }> {
-    const kbResult = await this.calculateKnowledgeBaseCompleteness();
-    const fpResult = await this.calculateFingerprintCompleteness();
-    return {
-      knowledgeBase: kbResult,
-      fingerprint: fpResult,
-    };
-  }
-
-  private async calculateKnowledgeBaseCompleteness(): Promise<{ completed: number; total: number; completeness: number }> {
-    if (!this.facade.knowledgeBaseManager) {
-      return { completed: 0, total: 0, completeness: 0 };
-    }
-    try {
-      const books = await this.facade.knowledgeBaseManager.getAllBooks();
-      const total = books.length;
-      let completed = 0;
-      for (const book of books) {
-        if (book.breakdownStatus === 'completed') {
-          completed++;
-        }
-      }
-      const completeness = total > 0 ? Math.round((completed / total) * 100) : 0;
-      return { completed, total, completeness };
-    } catch {
-      return { completed: 0, total: 0, completeness: 0 };
-    }
-  }
-
-  private async calculateFingerprintCompleteness(): Promise<{ completed: number; total: number; completeness: number }> {
-    const fpLibrary = this.facade.getFingerprintLibrary();
-    if (!fpLibrary) {
-      return { completed: 0, total: 0, completeness: 0 };
-    }
-    try {
-      await fpLibrary.loadGlobal();
-      await fpLibrary.loadProject();
-      const projectFps = fpLibrary.listProject();
-      const globalFps = fpLibrary.listGlobal();
-      const allFps = [...projectFps, ...globalFps];
-      const enabledFps = allFps.filter(fp => fp.enabled);
-      const total = enabledFps.length;
-      let completed = 0;
-      for (const fp of enabledFps) {
-        const features = fp.features;
-        const featureKeys = ['sentenceRhythm', 'wordPreference', 'narrativeStyle', 'rhetoric', 'dialogueStyle', 'paragraphStructure', 'overallTone'] as const;
-        const filledFeatures = featureKeys.filter(k => features[k] && features[k].length > 0).length;
-        const hasSamples = fp.samples.length >= 15;
-        const hasSource = fp.sourceText && fp.sourceText.length > 0;
-        const score = Math.round((filledFeatures / 7) * 40) + (hasSamples ? 30 : fp.samples.length > 0 ? Math.round((fp.samples.length / 15) * 30) : 0) + (hasSource ? 30 : 0);
-        if (score >= 85) {
-          completed++;
-        }
-      }
-      const completeness = total > 0 ? Math.round((completed / total) * 100) : 0;
-      return { completed, total, completeness };
-    } catch {
-      return { completed: 0, total: 0, completeness: 0 };
-    }
+  private async getAssetStatus() {
+    return getAssetStatus(this.facade.knowledgeBaseManager, this.facade.getFingerprintLibrary());
   }
 
   private getCompletenessIcon(completeness: number): { icon: string; color: string } {
-    if (completeness >= 100) {
-      return { icon: '✓', color: 'var(--text-success, #10b981)' };
-    } else if (completeness >= 60) {
-      return { icon: '⚠', color: 'var(--text-warning, #f59e0b)' };
-    } else {
-      return { icon: '✗', color: 'var(--text-error, #ef4444)' };
-    }
+    return getCompletenessIcon(completeness);
   }
 
   private async renderAssetStatusBar(): Promise<void> {
     if (!this.assetStatusBar) return;
-    this.assetStatusBar.empty();
-
     const status = await this.getAssetStatus();
-
-    const kbIcon = this.getCompletenessIcon(status.knowledgeBase.completeness);
-    const fpIcon = this.getCompletenessIcon(status.fingerprint.completeness);
-
-    const badge = this.assetStatusBar.createDiv({
-      cls: 'nw-asset-status-badge',
-      attr: {
-        style: 'display:flex;align-items:center;gap:12px;padding:6px 12px;border-radius:6px;background:var(--background-secondary);cursor:pointer;transition:background 0.2s;'
-      }
-    });
-
-    const kbPart = badge.createDiv({
-      attr: { style: 'display:flex;align-items:center;gap:4px;' }
-    });
-    kbPart.createSpan({ text: '📚', attr: { style: 'font-size:14px;' } });
-    kbPart.createSpan({ text: `知识库 ${status.knowledgeBase.completed}/${status.knowledgeBase.total}`, attr: { style: 'font-size:12px;color:var(--text-muted);' } });
-    kbPart.createSpan({ text: kbIcon.icon, attr: { style: `font-size:12px;color:${kbIcon.color};font-weight:600;` } });
-
-    badge.createSpan({ text: '|', attr: { style: 'color:var(--background-modifier-border);' } });
-
-    const fpPart = badge.createDiv({
-      attr: { style: 'display:flex;align-items:center;gap:4px;' }
-    });
-    fpPart.createSpan({ text: '🎨', attr: { style: 'font-size:14px;' } });
-    fpPart.createSpan({ text: `指纹 ${status.fingerprint.completed}/${status.fingerprint.total}`, attr: { style: 'font-size:12px;color:var(--text-muted);' } });
-    fpPart.createSpan({ text: fpIcon.icon, attr: { style: `font-size:12px;color:${fpIcon.color};font-weight:600;` } });
-
-    badge.addEventListener('mouseenter', () => {
-      badge.style.background = 'var(--background-secondary-alt)';
-    });
-    badge.addEventListener('mouseleave', () => {
-      badge.style.background = 'var(--background-secondary)';
-    });
-    badge.addEventListener('click', () => {
-      this.openRefillModal('knowledge');
-    });
+    renderAssetStatusBar(this.assetStatusBar, status, () => this.openRefillModal('knowledge'));
   }
 
   private openRefillModal(type: 'knowledge' | 'fingerprint'): void {

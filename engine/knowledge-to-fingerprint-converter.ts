@@ -31,6 +31,13 @@ const SAMPLE_MIN_TOTAL = 15;
 const SAMPLE_MAX_TOTAL = 30;
 const PER_DIMENSION_SAMPLE_COUNT = 5;
 
+/** 把 unknown 收窄成普通对象，缺失/数组/原始值一律视为空对象 */
+function asRecord(value: unknown): Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+}
+
 /**
  * KnowledgeToFingerprintConverter 类。
  */
@@ -168,13 +175,13 @@ export class KnowledgeToFingerprintConverter {
      * frontmatter 由 style-deconstructor 的 buildFrontmatter 生成，
      * 结构为完整的 StyleAnalysisResult 嵌套对象。
      */
-    private buildStats(fm: Record<string, any>): StyleFingerprint['stats'] {
-        const sentenceRhythm = (fm.sentenceRhythm || {}) as Record<string, any>;
-        const paragraphStructure = (fm.paragraphStructure || {}) as Record<string, any>;
-        const narrativeStyle = (fm.narrativeStyle || {}) as Record<string, any>;
-        const dialogueStyle = (fm.dialogueStyle || {}) as Record<string, any>;
-        const stats = (fm.stats || {}) as Record<string, any>;
-        const descriptionRatio = (narrativeStyle.descriptionRatio || {}) as Record<string, any>;
+    private buildStats(fm: Record<string, unknown>): StyleFingerprint['stats'] {
+        const sentenceRhythm = asRecord(fm.sentenceRhythm);
+        const paragraphStructure = asRecord(fm.paragraphStructure);
+        const narrativeStyle = asRecord(fm.narrativeStyle);
+        const dialogueStyle = asRecord(fm.dialogueStyle);
+        const stats = asRecord(fm.stats);
+        const descriptionRatio = asRecord(narrativeStyle.descriptionRatio);
 
         return {
             avgSentenceLength: this.toNumber(sentenceRhythm.avgSentenceLength),
@@ -263,11 +270,11 @@ export class KnowledgeToFingerprintConverter {
      * 解析 Markdown frontmatter。风格拆解文件由 saveAnalysisToMarkdown 生成，
      * frontmatter 内容为 JSON 字符串（非标准 YAML key:value）。
      */
-    private parseFrontmatter(content: string): Record<string, any> {
+    private parseFrontmatter(content: string): Record<string, unknown> {
         const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
         if (!fmMatch) return {};
         try {
-            return JSON.parse(fmMatch[1]) as Record<string, any>;
+            return JSON.parse(fmMatch[1]) as Record<string, unknown>;
         } catch {
             return {};
         }

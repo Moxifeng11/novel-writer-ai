@@ -6,10 +6,10 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 23 | 23 | 100% | 48 | 48 | 100% | 0 |
 | `domains/` | 11 | 30 | 30 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 270 | 1505 | 1505 | 100% | 1237 | 1237 | 100% | 0 |
+| `engine/` | 272 | 1515 | 1515 | 100% | 1238 | 1238 | 100% | 0 |
 | `services/` | 28 | 154 | 154 | 100% | 203 | 203 | 100% | 0 |
 | `shared/` | 164 | 1526 | 1526 | 100% | 149 | 149 | 100% | 0 |
-| `ui/` | 190 | 494 | 494 | 100% | 634 | 634 | 100% | 0 |
+| `ui/` | 192 | 504 | 504 | 100% | 634 | 634 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -34,7 +34,9 @@
 | `engine/agent/harness/spill-store.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/tool-registry.ts` | 5 | 0 | 6 | 0 |
 | `engine/agent/harness/tool-result-pruner.ts` | 5 | 0 | 0 | 0 |
+| `engine/ai-api-client-shared.ts` | 6 | 0 | 0 | 0 |
 | `engine/ai-api-client.ts` | 1 | 0 | 5 | 0 |
+| `engine/ai-api-stream.ts` | 4 | 0 | 0 | 0 |
 | `engine/ai-batch-entity-generator.ts` | 1 | 0 | 4 | 0 |
 | `engine/ai-chapter-helpers.ts` | 1 | 0 | 7 | 0 |
 | `engine/ai-character-generator.ts` | 1 | 0 | 2 | 0 |
@@ -43,8 +45,6 @@
 | `engine/ai-lexicon.ts` | 3 | 0 | 0 | 0 |
 | `engine/ai-outline-generator.ts` | 1 | 0 | 3 | 0 |
 | `engine/ai-prompt-builder.ts` | 5 | 0 | 0 | 0 |
-| `engine/ai-scene-expander.ts` | 2 | 0 | 3 | 0 |
-| `engine/ai-scene-generator.ts` | 2 | 0 | 2 | 0 |
 
 ## @example 覆盖（公共入口）
 

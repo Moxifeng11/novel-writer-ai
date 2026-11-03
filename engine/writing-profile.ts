@@ -6,6 +6,16 @@ import { createLogger } from '@/shared/logger';
 import type { CreationMode } from '@/shared/creation-mode';
 
 const log = createLogger('WritingProfile');
+
+/** 普通对象判定（YAML 解析结果窄化） */
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** 只保留字符串项 */
+function stringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
 /**
  * 题材配置。
  */
@@ -349,9 +359,9 @@ export class WritingProfileManager {
      * @param fieldPath - 字段路径
      * @param value - 值
      */
-    async updateField(projectPath: string, fieldPath: string, value: any): Promise<void> {
+    async updateField(projectPath: string, fieldPath: string, value: unknown): Promise<void> {
         const profile = await this.load(projectPath);
-        this.setNestedValue(profile, fieldPath, value);
+        this.setNestedValue(profile as unknown as Record<string, unknown>, fieldPath, value);
         await this.save(projectPath, profile);
     }
 
@@ -429,8 +439,8 @@ export class WritingProfileManager {
         if (!fmMatch) return null;
 
         try {
-            const fmData = parseYaml(fmMatch[1]) as Record<string, any>;
-            if (!fmData || typeof fmData !== 'object') return null;
+            const fmData: unknown = parseYaml(fmMatch[1]);
+            if (!isRecord(fmData)) return null;
             return this.normalizeProfile(fmData);
         } catch {
             return null;
@@ -438,12 +448,12 @@ export class WritingProfileManager {
     }
 
     private serializeProfile(profile: WritingProfile): string {
-        const fmYaml = stringifyYaml(profile as any).trim();
+        const fmYaml = stringifyYaml(profile).trim();
         return `---\n${fmYaml}\n---\n\n${BODY_TEMPLATE}`;
     }
 
-    private normalizeProfile(data: Record<string, any>): WritingProfile {
-        const empty = this.getEmptyProfile(data.projectName || '未命名项目');
+    private normalizeProfile(data: Record<string, unknown>): WritingProfile {
+        const empty = this.getEmptyProfile(typeof data.projectName === 'string' ? data.projectName : '未命名项目');
 
         return {
             projectName: typeof data.projectName === 'string' ? data.projectName : empty.projectName,
@@ -460,29 +470,25 @@ export class WritingProfileManager {
             rhythm: this.normalizeRhythm(data.rhythm, empty.rhythm),
             techniques: this.normalizeTechniques(data.techniques, empty.techniques),
             fingerprint: this.normalizeFingerprint(data.fingerprint, empty.fingerprint),
-            customRules: Array.isArray(data.customRules) ? data.customRules.filter((x: any) => typeof x === 'string') : [],
+            customRules: stringArray(data.customRules),
             consistency: this.normalizeConsistency(data.consistency, empty.consistency),
             version: typeof data.version === 'number' ? data.version : CURRENT_VERSION,
         };
     }
 
-    private normalizeGenre(data: any, fallback: GenreConfig): GenreConfig {
-        if (!data || typeof data !== 'object') return fallback;
+    private normalizeGenre(data: unknown, fallback: GenreConfig): GenreConfig {
+        if (!isRecord(data)) return fallback;
         return {
             primary: typeof data.primary === 'string' ? data.primary : fallback.primary,
-            secondary: Array.isArray(data.secondary)
-                ? data.secondary.filter((x: any) => typeof x === 'string')
-                : fallback.secondary,
-            tags: Array.isArray(data.tags)
-                ? data.tags.filter((x: any) => typeof x === 'string')
-                : fallback.tags,
+            secondary: Array.isArray(data.secondary) ? stringArray(data.secondary) : fallback.secondary,
+            tags: Array.isArray(data.tags) ? stringArray(data.tags) : fallback.tags,
         };
     }
 
-    private normalizeStyle(data: any, fallback: StyleConfig): StyleConfig {
-        if (!data || typeof data !== 'object') return fallback;
+    private normalizeStyle(data: unknown, fallback: StyleConfig): StyleConfig {
+        if (!isRecord(data)) return fallback;
         const validPerspectives = ['first_person', 'third_person_omniscient', 'third_person_limited'];
-        const perspective = validPerspectives.includes(data.perspective)
+        const perspective = typeof data.perspective === 'string' && validPerspectives.includes(data.perspective)
             ? data.perspective as StyleConfig['perspective']
             : fallback.perspective;
         return {
@@ -496,10 +502,10 @@ export class WritingProfileManager {
         };
     }
 
-    private normalizeRhythm(data: any, fallback: RhythmConfig): RhythmConfig {
-        if (!data || typeof data !== 'object') return fallback;
+    private normalizeRhythm(data: unknown, fallback: RhythmConfig): RhythmConfig {
+        if (!isRecord(data)) return fallback;
         const validPaces = ['fast', 'medium', 'slow'];
-        const pace = validPaces.includes(data.pace)
+        const pace = typeof data.pace === 'string' && validPaces.includes(data.pace)
             ? data.pace as RhythmConfig['pace']
             : fallback.pace;
         return {
@@ -512,15 +518,11 @@ export class WritingProfileManager {
         };
     }
 
-    private normalizeTechniques(data: any, fallback: TechniquesConfig): TechniquesConfig {
-        if (!data || typeof data !== 'object') return fallback;
+    private normalizeTechniques(data: unknown, fallback: TechniquesConfig): TechniquesConfig {
+        if (!isRecord(data)) return fallback;
         return {
-            enabled: Array.isArray(data.enabled)
-                ? data.enabled.filter((x: any) => typeof x === 'string')
-                : fallback.enabled,
-            disabled: Array.isArray(data.disabled)
-                ? data.disabled.filter((x: any) => typeof x === 'string')
-                : fallback.disabled,
+            enabled: Array.isArray(data.enabled) ? stringArray(data.enabled) : fallback.enabled,
+            disabled: Array.isArray(data.disabled) ? stringArray(data.disabled) : fallback.disabled,
             dialogueRatio: typeof data.dialogueRatio === 'number'
                 ? Math.max(0, Math.min(1, data.dialogueRatio))
                 : fallback.dialogueRatio,
@@ -530,21 +532,19 @@ export class WritingProfileManager {
         };
     }
 
-    private normalizeFingerprint(data: any, fallback: FingerprintConfig): FingerprintConfig {
-        if (!data || typeof data !== 'object') return fallback;
+    private normalizeFingerprint(data: unknown, fallback: FingerprintConfig): FingerprintConfig {
+        if (!isRecord(data)) return fallback;
         // 旧画像里的 enabledProject / enabledGlobal 直接忽略：启用状态只认指纹库
         return {
-            templateInherited: Array.isArray(data.templateInherited)
-                ? data.templateInherited.filter((x: any) => typeof x === 'string')
-                : fallback.templateInherited,
+            templateInherited: Array.isArray(data.templateInherited) ? stringArray(data.templateInherited) : fallback.templateInherited,
             injectionStrength: typeof data.injectionStrength === 'number'
                 ? Math.max(0.1, Math.min(1.0, data.injectionStrength))
                 : fallback.injectionStrength,
         };
     }
 
-    private normalizeConsistency(data: any, fallback: ConsistencyConfig): ConsistencyConfig {
-        if (!data || typeof data !== 'object') return fallback;
+    private normalizeConsistency(data: unknown, fallback: ConsistencyConfig): ConsistencyConfig {
+        if (!isRecord(data)) return fallback;
         return {
             characterCheck: typeof data.characterCheck === 'boolean' ? data.characterCheck : fallback.characterCheck,
             foreshadowCheck: typeof data.foreshadowCheck === 'boolean' ? data.foreshadowCheck : fallback.foreshadowCheck,
@@ -552,15 +552,13 @@ export class WritingProfileManager {
         };
     }
 
-    private setNestedValue(obj: any, path: string, value: any): void {
+    private setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
         const keys = path.split('.');
-        let current = obj;
+        let current: Record<string, unknown> = obj;
         for (let i = 0; i < keys.length - 1; i++) {
             const key = keys[i];
-            if (!current[key] || typeof current[key] !== 'object') {
-                current[key] = {};
-            }
-            current = current[key];
+            if (!isRecord(current[key])) current[key] = {};
+            current = current[key] as Record<string, unknown>;
         }
         current[keys[keys.length - 1]] = value;
     }

@@ -78,7 +78,7 @@ describe('Frontmatter 值对象', () => {
         it('返回正确的键值', () => {
             const fm = Frontmatter.from({ a: 1, b: 2 });
             expect(fm.keys().sort()).toEqual(['a', 'b']);
-            expect(fm.values().sort((a, b) => a - b)).toEqual([1, 2]);
+            expect(fm.values().map(Number).sort((a, b) => a - b)).toEqual([1, 2]);
             expect(fm.entries().length).toBe(2);
         });
     });

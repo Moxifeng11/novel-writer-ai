@@ -8,6 +8,7 @@
 import type { CharacterPairRelation } from '@/engine/relationship-engine';
 import type { OOCCheckResult } from '@/shared/co-writer-types';
 import type { EntityStateChange } from '@/engine/entity-state-manager';
+import type { ForeshadowData } from '@/engine/context/context-types';
 
 /**
  * WritingMode 类型定义。
@@ -62,10 +63,8 @@ export interface ContextSnapshot {
     allFactions: string;
     allLocs: string;
     allItems: string;
-    /**
-     * 伏笔库聚合数据。结构由 gatherAll 返回的 ForeshadowData 决定（详见 ../context/context-types.ts）。
-     */
-    foreshadows: unknown;
+    /** 伏笔库聚合数据（gatherAll 的 ForeshadowData）。 */
+    foreshadows: ForeshadowData;
     relationshipStates: CharacterPairRelation[];
     crossVolumeContext: string;
     /** 长篇记忆：事实索引中已确认的人物/世界观/剧情事实（空表示无） */

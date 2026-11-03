@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    groups:
+      dev-minor-patch:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      prod-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Obsidian 的类型包跟随宿主版本；大版本升级必须人工验证 minAppVersion 与 API 兼容。
+      - dependency-name: obsidian
+        update-types:
+          - version-update:semver-major
+      # TypeScript 7 / ESLint 10 尚未验证，见 docs/handbook/11-dependency-and-platform-compatibility.md
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major

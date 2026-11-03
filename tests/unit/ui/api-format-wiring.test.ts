@@ -91,7 +91,8 @@ describe('设置页 API 格式与模型获取的接线', () => {
     });
 
     it('AIApiClient 四条调用路径都按格式解析端点', () => {
-        const source = read('engine/ai-api-client.ts');
+        // 流式/非流式已拆到两个模块，四条调用路径合计仍必须按格式解析端点
+        const source = read('engine/ai-api-client.ts') + read('engine/ai-api-stream.ts');
         expect(source).toContain('resolveApiFormat(endpoint)');
         expect((source.match(/resolveRequestEndpoint\(endpoint, apiFormat\)/g) ?? []).length).toBe(4);
         expect(source).toContain('buildAuthHeaders(apiFormat, apiKey)');

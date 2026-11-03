@@ -57,6 +57,8 @@ jobs:
         run: |
           npm run gen:docs -- --check
           npm run check:jsdoc
+          npm run check:any
+          npm run check:changelog
           npm run check:docs
 
       - name: Typecheck

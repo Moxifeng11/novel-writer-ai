@@ -9,9 +9,9 @@
  * 不可变，封装 frontmatter 数据的安全访问
  */
 export class Frontmatter {
-    private readonly data: Record<string, any>;
+    private readonly data: Record<string, unknown>;
 
-    private constructor(data: Record<string, any>) {
+    private constructor(data: Record<string, unknown>) {
         this.data = { ...data };
     }
 
@@ -30,7 +30,7 @@ export class Frontmatter {
      * @param data - 数据
       * @returns Frontmatter 实例
      */
-    static from(data: Record<string, any> | undefined | null): Frontmatter {
+    static from(data: Record<string, unknown> | undefined | null): Frontmatter {
         return new Frontmatter(data || {});
     }
 
@@ -40,7 +40,7 @@ export class Frontmatter {
      * @param defaultValue - 默认值
       * @returns T 实例
      */
-    get<T = any>(key: string, defaultValue?: T): T {
+    get<T = unknown>(key: string, defaultValue?: T): T {
         const value = this.data[key];
         return value !== undefined ? (value as T) : (defaultValue as T);
     }
@@ -60,7 +60,7 @@ export class Frontmatter {
      * @param value - 值
       * @returns Frontmatter 实例
      */
-    set(key: string, value: any): Frontmatter {
+    set(key: string, value: unknown): Frontmatter {
         const newData = { ...this.data };
         if (value === undefined) {
             delete newData[key];
@@ -75,7 +75,7 @@ export class Frontmatter {
      * @param patch - 补丁
       * @returns Frontmatter 实例
      */
-    merge(patch: Record<string, any>): Frontmatter {
+    merge(patch: Record<string, unknown>): Frontmatter {
         const newData = { ...this.data };
         for (const [key, value] of Object.entries(patch)) {
             if (value === undefined) {
@@ -110,7 +110,7 @@ export class Frontmatter {
      * 获取所有 values
      * @returns 结果数组
      */
-    values(): any[] {
+    values(): unknown[] {
         return Object.values(this.data);
     }
 
@@ -118,7 +118,7 @@ export class Frontmatter {
      * 获取所有 entries
      * @returns 结果数组
      */
-    entries(): [string, any][] {
+    entries(): [string, unknown][] {
         return Object.entries(this.data);
     }
 
@@ -126,7 +126,7 @@ export class Frontmatter {
      * 转换为普通对象（深拷贝）
      * @returns 映射结果
      */
-    toObject(): Record<string, any> {
+    toObject(): Record<string, unknown> {
         return { ...this.data };
     }
 

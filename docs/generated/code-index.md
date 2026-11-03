@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 287 | 129806 | 1529 | 1298 | 85% |
+| `engine/` | 289 | 130031 | 1538 | 1304 | 85% |
 | `services/` | 28 | 11391 | 154 | 137 | 89% |
-| `shared/` | 165 | 37307 | 1521 | 1269 | 83% |
+| `shared/` | 165 | 37339 | 1521 | 1269 | 83% |
 | `core/` | 7 | 2623 | 28 | 13 | 46% |
 | `domains/` | 11 | 765 | 30 | 22 | 73% |
-| `ui/` | 192 | 96929 | 501 | 463 | 92% |
+| `ui/` | 194 | 97039 | 511 | 470 | 92% |
 
 ## 文件清单
 
@@ -54,7 +54,9 @@
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
 | `engine/agent/harness/tool-registry.ts` | 295 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
-| `engine/ai-api-client.ts` | 1721 | 1 | 1 |
+| `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
+| `engine/ai-api-client.ts` | 883 | 1 | 1 |
+| `engine/ai-api-stream.ts` | 921 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
@@ -86,9 +88,9 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3880 | 9 | 8 |
+| `engine/co-writer-engine.ts` | 3912 | 9 | 8 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
-| `engine/co-writer/co-writer-types.ts` | 107 | 6 | 6 |
+| `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
 | `engine/co-writer/session-state.ts` | 679 | 34 | 27 |
@@ -170,9 +172,9 @@
 | `engine/heavy-task-worker-manager.ts` | 337 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 509 | 5 | 5 |
-| `engine/knowledge-injector.ts` | 2111 | 13 | 7 |
+| `engine/knowledge-injector.ts` | 2123 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 617 | 2 | 2 |
-| `engine/knowledge-to-fingerprint-converter.ts` | 338 | 1 | 1 |
+| `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
 | `engine/knowledge-vector-store.ts` | 727 | 5 | 4 |
 | `engine/llm-enhancer.ts` | 633 | 7 | 3 |
@@ -216,7 +218,7 @@
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
 | `engine/quality-gate.ts` | 180 | 5 | 4 |
-| `engine/quality-scorer.ts` | 380 | 5 | 4 |
+| `engine/quality-scorer.ts` | 384 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2068 | 26 | 22 |
 | `engine/quality/gate-snapshot.ts` | 121 | 2 | 2 |
 | `engine/quality/quality-score-engine.ts` | 2037 | 15 | 12 |
@@ -239,7 +241,7 @@
 | `engine/repository/domain/aggregates/location-aggregate.ts` | 115 | 2 | 2 |
 | `engine/repository/domain/aggregates/project-aggregate.ts` | 213 | 3 | 3 |
 | `engine/repository/domain/index.ts` | 12 | 0 | 0 |
-| `engine/repository/domain/serializers/entity-factory.ts` | 552 | 1 | 1 |
+| `engine/repository/domain/serializers/entity-factory.ts` | 556 | 1 | 1 |
 | `engine/repository/domain/serializers/frontmatter-serializer.ts` | 239 | 1 | 1 |
 | `engine/repository/domain/serializers/index.ts` | 7 | 0 | 0 |
 | `engine/repository/domain/validators/domain-validator.ts` | 288 | 4 | 4 |
@@ -320,7 +322,7 @@
 | `engine/vector-enhancer.ts` | 901 | 5 | 5 |
 | `engine/volume-outline-summarizer.ts` | 197 | 2 | 2 |
 | `engine/world-state-snapshot.ts` | 226 | 7 | 7 |
-| `engine/writing-profile.ts` | 568 | 8 | 8 |
+| `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
 | `services/canon-research-service.ts` | 464 | 7 | 7 |
@@ -361,7 +363,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1025 | 3 | 3 |
+| `shared/changelog-data.ts` | 1057 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -532,7 +534,9 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1018 | 2 | 2 |
-| `ui/co-writing-view.ts` | 5589 | 3 | 3 |
+| `ui/co-writing-view.ts` | 5417 | 3 | 3 |
+| `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
+| `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
 | `ui/command-ui-executor.ts` | 631 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
@@ -661,7 +665,7 @@
 | `ui/services/agent-port.ts` | 538 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 155 | 3 | 3 |
 | `ui/services/agent-spill-store.ts` | 104 | 3 | 2 |
-| `ui/services/co-write-facade.ts` | 902 | 2 | 2 |
+| `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/human-sample-loader.ts` | 71 | 2 | 1 |
 | `ui/services/humanness-scorer.ts` | 124 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 441 | 6 | 5 |

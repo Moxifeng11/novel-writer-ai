@@ -118,6 +118,33 @@ import { acquireLocalAiSlot } from '@/shared/local-ai-queue';
 
 
 const log = createLogger('CoWriterEngine');
+
+/** 协同模型判定只依赖这些设置字段，避免把整个 settings 传成 any */
+interface CoWriteProviderLike {
+    id: string;
+    endpoint: string;
+    sourceType?: string;
+    models: string[];
+}
+
+interface CoWriteModelSettings {
+    customProviders?: CoWriteProviderLike[];
+    coWriteModel?: string;
+    proModel?: string;
+    defaultModel?: string;
+    flashModel?: string;
+    availableModels?: string[];
+}
+
+/** 外部配置里的 sourceType 是字符串；只接受两个合法字面量 */
+function normalizeSourceType(value: string | undefined): 'local' | 'cloud' | undefined {
+    return value === 'local' || value === 'cloud' ? value : undefined;
+}
+
+/** 运行时 JSON 窄化（Ollama /api/tags 等外部响应） */
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
 let ollamaModelCache: string[] | null = null;
 let ollamaCacheTime: number = 0;
 const OLLAMA_CACHE_TTL = 5 * 60 * 1000;
@@ -498,8 +525,8 @@ export class CoWriterEngine {
             // 其次从 plugin 获取
             if (!registry) {
                 const plugin = this.aiEngine.getPlugin();
-                if (plugin && (plugin as any).engineRegistry) {
-                    registry = (plugin as any).engineRegistry as EngineRegistry;
+                if (plugin?.engineRegistry) {
+                    registry = plugin.engineRegistry;
                     this.engineRegistry = registry;
                 }
             }
@@ -1004,7 +1031,7 @@ export class CoWriterEngine {
         try {
             if (this.knowledgeInjector && this.writingProfileManager && this.session) {
                 if (this.fingerprintLibrary) {
-                    (this.knowledgeInjector as any).fingerprintLibrary = this.fingerprintLibrary;
+                    this.knowledgeInjector.setFingerprintLibrary(this.fingerprintLibrary);
                 }
                 if (this.knowledgeManager && this.knowledgeVectorStore) {
                     this.knowledgeInjector.setKnowledgeBase(this.knowledgeManager, this.knowledgeVectorStore);
@@ -1491,7 +1518,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         try {
             if (this.knowledgeInjector && this.writingProfileManager && this.session) {
                 if (this.fingerprintLibrary) {
-                    (this.knowledgeInjector as any).fingerprintLibrary = this.fingerprintLibrary;
+                    this.knowledgeInjector.setFingerprintLibrary(this.fingerprintLibrary);
                 }
                 if (this.knowledgeManager && this.knowledgeVectorStore) {
                     this.knowledgeInjector.setKnowledgeBase(this.knowledgeManager, this.knowledgeVectorStore);
@@ -2613,8 +2640,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 私有方法：构建 Snapshot
     // ============================================================
 
-    private async buildSnapshot(ctx: any, project: string, chapterName: string): Promise<ContextSnapshot> {
-        const data = ctx?.data || {};
+    private async buildSnapshot(ctx: GatheredContext, project: string, chapterName: string): Promise<ContextSnapshot> {
+        const data = ctx.data;
         // v4.26：规则唯一来源 RulesService（含模式附录全文）
         let cachedRulesText = '';
         try {
@@ -2622,7 +2649,11 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         } catch (e) {
             log.warn('[CoWriterEngine] 读取写作规则失败，规则块为空:', e);
         }
-        const getRaw = (obj: any) => obj?.raw || '';
+        const getRaw = (obj: unknown): string => {
+            if (!obj || typeof obj !== 'object' || !('raw' in obj)) return '';
+            const raw = (obj as { raw?: unknown }).raw;
+            return typeof raw === 'string' ? raw : '';
+        };
         const getEntitySummary = (list: unknown, maxChars = 3000) => {
             if (!Array.isArray(list) || list.length === 0) return '';
             // 实体文件使用中文字段（姓名/名称、人物背景/描述、当前状态），统一走真实字段映射
@@ -2780,8 +2811,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             if (!text) return suggestion;
 
             // 1. 未揭示伏笔被提前点名（高风险）
-            const fs: any = this.snapshot?.foreshadows;
-            const unrevealed: any[] = Array.isArray(fs?.unrevealed) ? fs.unrevealed : [];
+            const unrevealed = this.snapshot?.foreshadows?.unrevealed ?? [];
             for (const item of unrevealed) {
                 const name = (item?.name || '').trim();
                 if (name.length >= 2 && text.includes(name)) {
@@ -3162,9 +3192,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     private buildEvaluationPrompt(body: string, progress: PlotProgress): string {
         const wordCount = body.length;
         const chapterPlan = this.snapshot?.chapPlan || '';
-        const fs: any = this.snapshot?.foreshadows;
-        const unrevealed: any[] = Array.isArray(fs?.unrevealed) ? fs.unrevealed : [];
-        const revealed: any[] = Array.isArray(fs?.revealed) ? fs.revealed : [];
+        const unrevealed = this.snapshot?.foreshadows?.unrevealed ?? [];
+        const revealed = this.snapshot?.foreshadows?.revealed ?? [];
 
         const nodeList = this.plotNodes.map((node, i) => {
             const status = i < progress.currentIndex ? '✓ 已完成' : (i === progress.currentIndex ? '→ 进行中' : '○ 未开始');
@@ -3176,13 +3205,13 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             const lines: string[] = ['【伏笔库（请交叉比对正文中的伏笔埋设与回收情况）】'];
             if (unrevealed.length > 0) {
                 lines.push('未揭示伏笔（应埋设/铺垫，尚未回收）：');
-                unrevealed.slice(0, 10).forEach((item: any, i: number) => {
+                unrevealed.slice(0, 10).forEach((item, i) => {
                     lines.push(`  ${i + 1}. ${item?.name || '未命名'}（计划揭示：${item?.plannedReveal || '未定'}）`);
                 });
             }
             if (revealed.length > 0) {
                 lines.push('已揭示伏笔（已回收）：');
-                revealed.slice(0, 5).forEach((item: any, i: number) => {
+                revealed.slice(0, 5).forEach((item, i) => {
                     lines.push(`  ${i + 1}. ${item?.name || '未命名'}（揭示章节：${item?.revealChapter || '?'}）`);
                 });
             }
@@ -3489,8 +3518,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             let registry = this.engineRegistry;
             if (!registry) {
                 const plugin = this.aiEngine.getPlugin();
-                if (plugin && (plugin as any).engineRegistry) {
-                    registry = (plugin as any).engineRegistry as EngineRegistry;
+                if (plugin?.engineRegistry) {
+                    registry = plugin.engineRegistry;
                     this.engineRegistry = registry;
                 }
             }
@@ -3755,12 +3784,12 @@ export function isLocalProviderEndpoint(endpoint: string): boolean {
  * @param settings 可选，插件 settings，用于检查模型所属 provider
  * @returns 是否成功
  */
-export function isLocalModel(modelName: string, settings?: any): boolean {
+export function isLocalModel(modelName: string, settings?: CoWriteModelSettings): boolean {
     if (!modelName) return false;
     const providers = settings?.customProviders || [];
-    const owner = providers.find((p: any) => Array.isArray(p.models) && p.models.includes(modelName));
+    const owner = providers.find(p => Array.isArray(p.models) && p.models.includes(modelName));
     if (owner) {
-        return resolveProviderSourceType({ id: owner.id, endpoint: owner.endpoint, sourceType: owner.sourceType }) === 'local';
+        return resolveProviderSourceType({ id: owner.id, endpoint: owner.endpoint, sourceType: normalizeSourceType(owner.sourceType) }) === 'local';
     }
     const lower = modelName.toLowerCase();
     return lower.includes(':') || lower.includes('local');
@@ -3776,13 +3805,13 @@ export function isLocalModel(modelName: string, settings?: any): boolean {
  * @param settings - 设置
   * @returns 文本结果 或 undefined
  */
-export function resolveCoWriteLocalModel(settings: any): string | undefined {
+export function resolveCoWriteLocalModel(settings: CoWriteModelSettings): string | undefined {
     if (!settings) return undefined;
     const providers = settings.customProviders || [];
     const isLocalProvider = (model: string): boolean => {
-        const owner = providers.find((p: any) => Array.isArray(p.models) && p.models.includes(model));
+        const owner = providers.find(p => Array.isArray(p.models) && p.models.includes(model));
         if (owner) {
-            return resolveProviderSourceType({ id: owner.id, endpoint: owner.endpoint, sourceType: owner.sourceType }) === 'local';
+            return resolveProviderSourceType({ id: owner.id, endpoint: owner.endpoint, sourceType: normalizeSourceType(owner.sourceType) }) === 'local';
         }
         return isLocalModel(model, settings);
     };
@@ -3840,8 +3869,11 @@ export async function fetchOllamaModels(): Promise<string[] | null> {
             return null;
         }
 
-        const data = await response.json();
-        const models: string[] = (data.models || []).map((m: any) => m.name).filter(Boolean);
+        const data: unknown = await response.json();
+        const rawModels = isRecord(data) && Array.isArray(data.models) ? data.models : [];
+        const models = rawModels
+            .filter((m): m is { name: string } => isRecord(m) && typeof m.name === 'string')
+            .map(m => m.name);
 
         ollamaModelCache = models;
         ollamaCacheTime = now;
@@ -3860,7 +3892,7 @@ export async function fetchOllamaModels(): Promise<string[] | null> {
  * @param settings - 设置
  * @returns 结果数组
  */
-export function getFallbackLocalModels(settings: any): string[] {
+export function getFallbackLocalModels(settings: CoWriteModelSettings): string[] {
     if (!settings || !Array.isArray(settings.availableModels)) return [];
     return settings.availableModels.filter((m: string) => isLocalModel(m, settings));
 }
@@ -3870,7 +3902,7 @@ export function getFallbackLocalModels(settings: any): string[] {
  * @param settings - 设置
  * @returns 结果数组
  */
-export async function getOllamaModelsWithFallback(settings: any): Promise<string[]> {
+export async function getOllamaModelsWithFallback(settings: CoWriteModelSettings): Promise<string[]> {
     const ollamaModels = await fetchOllamaModels();
     if (ollamaModels && ollamaModels.length > 0) {
         return ollamaModels;

@@ -15,7 +15,7 @@ export interface CacheEntry {
     project: string;
     filePath: string;
     rawText: string;
-    parsedData?: Record<string, any>;
+    parsedData?: Record<string, unknown>;
     mtime: number;
     size: number;
     lastAccessed: number;
@@ -90,7 +90,7 @@ export class WorldviewCacheService {
         return `${project}:${filePath}`;
     }
 
-    private estimateSize(text: string, parsedData?: Record<string, any>): number {
+    private estimateSize(text: string, parsedData?: Record<string, unknown>): number {
         let size = text.length * 2;
         if (parsedData) {
             try {
@@ -175,8 +175,8 @@ export class WorldviewCacheService {
     async get(
         project: string,
         filePath: string,
-        parser?: (text: string) => Record<string, any>
-    ): Promise<{ rawText: string; parsedData?: Record<string, any>; fromCache: boolean }> {
+        parser?: (text: string) => Record<string, unknown>
+    ): Promise<{ rawText: string; parsedData?: Record<string, unknown>; fromCache: boolean }> {
         const perfId = performanceMonitor.start('cacheGet', 'cacheRead', undefined, { project, filePath });
         try {
             const key = this.makeKey(project, filePath);
@@ -215,7 +215,7 @@ export class WorldviewCacheService {
                 return { rawText: '', fromCache: false };
             }
 
-            let parsedData: Record<string, any> | undefined;
+            let parsedData: Record<string, unknown> | undefined;
             if (parser) {
                 try {
                     parsedData = parser(rawText);
@@ -278,7 +278,7 @@ export class WorldviewCacheService {
         project: string,
         filePath: string,
         rawText: string,
-        parsedData?: Record<string, any>
+        parsedData?: Record<string, unknown>
     ): Promise<void> {
         const perfId = performanceMonitor.start('cacheSet', 'cacheWrite', undefined, { project, filePath });
         try {
@@ -460,7 +460,7 @@ export class WorldviewCacheService {
      * @param any> - 参数
      * @returns {rawText,parsedData,fromCache}
      */
-    async getWorldview(project: string, parser?: (text: string) => Record<string, any>): Promise<{ rawText: string; parsedData?: Record<string, any>; fromCache: boolean }> {
+    async getWorldview(project: string, parser?: (text: string) => Record<string, unknown>): Promise<{ rawText: string; parsedData?: Record<string, unknown>; fromCache: boolean }> {
         const filePath = getWorldviewPath(project);
         return this.get(project, filePath, parser);
     }
@@ -473,7 +473,7 @@ export class WorldviewCacheService {
      * @param any> - 参数
      * @returns {rawText,parsedData,fromCache}
      */
-    async getSettingLib(project: string, parser?: (text: string) => Record<string, any>): Promise<{ rawText: string; parsedData?: Record<string, any>; fromCache: boolean }> {
+    async getSettingLib(project: string, parser?: (text: string) => Record<string, unknown>): Promise<{ rawText: string; parsedData?: Record<string, unknown>; fromCache: boolean }> {
         const filePath = getSettingLibPath(project);
         return this.get(project, filePath, parser);
     }
@@ -485,7 +485,7 @@ export class WorldviewCacheService {
      * @param rawText - 原始文本
      * @param parsedData - 参数
      */
-    async setWorldview(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
+    async setWorldview(project: string, rawText: string, parsedData?: Record<string, unknown>): Promise<void> {
         const filePath = getWorldviewPath(project);
         return this.set(project, filePath, rawText, parsedData);
     }
@@ -497,7 +497,7 @@ export class WorldviewCacheService {
      * @param rawText - 原始文本
      * @param parsedData - 参数
      */
-    async setSettingLib(project: string, rawText: string, parsedData?: Record<string, any>): Promise<void> {
+    async setSettingLib(project: string, rawText: string, parsedData?: Record<string, unknown>): Promise<void> {
         const filePath = getSettingLibPath(project);
         return this.set(project, filePath, rawText, parsedData);
     }
@@ -552,7 +552,7 @@ export class WorldviewCacheService {
         entityType: 'characters' | 'locations' | 'factions' | 'items',
         name: string,
         content: string,
-        parsedData?: Record<string, any>
+        parsedData?: Record<string, unknown>
     ): Promise<void> {
         const pathMap: Record<string, (p: string, n: string) => string> = {
             characters: (p, n) => `${entityDir(p, 'characters')}/${n}.md`,

@@ -21,6 +21,38 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.26.2',
+        date: '2026-11-03',
+        title: '类型债预算、大文件切片与跨平台门禁',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 类型债与门禁',
+                items: [
+                    '新增 any 预算棘轮：运行时代码 any 463 → 309，单文件与新增文件都不许回涨',
+                    '新增 CHANGELOG 版本节点门禁：顶部版本必须唯一，禁止再堆积 Unreleased',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '📦 大文件切片',
+                items: [
+                    'ai-api-client 1720 → 882 行，流式调用拆到 ai-api-stream，公开 API 不变',
+                    '协同写作人工率与资产状态拆成独立模块，并补 9 个纯函数单测',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🗂️ 文档与兼容',
+                items: [
+                    '49 段历史 Unreleased 归档到 docs/changelog/archive-unreleased.md',
+                    'CI 新增 Windows/macOS 矩阵；新增依赖与平台兼容手册、Dependabot 月度分组',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.26.1',
         date: '2026-11-03',
         title: '润色恢复、步骤看门狗、统计与标题完整性修复',

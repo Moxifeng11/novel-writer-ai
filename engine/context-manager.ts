@@ -455,7 +455,7 @@ export class ContextManager {
         id: string;
         name: string;
         filePath: string;
-        frontmatter: { toObject(): Record<string, any> };
+        frontmatter: { toObject(): Record<string, unknown> };
     }): CharacterData {
         const fm = character.frontmatter.toObject();
         const fileName = character.filePath.split('/').pop() || '';
@@ -475,7 +475,7 @@ export class ContextManager {
         id: string;
         name: string;
         filePath: string;
-        frontmatter: { toObject(): Record<string, any> };
+        frontmatter: { toObject(): Record<string, unknown> };
     }): FactionFrontmatter {
         const fm = faction.frontmatter.toObject();
         return {
@@ -491,7 +491,7 @@ export class ContextManager {
         id: string;
         name: string;
         filePath: string;
-        frontmatter: { toObject(): Record<string, any> };
+        frontmatter: { toObject(): Record<string, unknown> };
     }): LocationFrontmatter {
         const fm = location.frontmatter.toObject();
         return {
@@ -507,7 +507,7 @@ export class ContextManager {
         id: string;
         name: string;
         filePath: string;
-        frontmatter: { toObject(): Record<string, any> };
+        frontmatter: { toObject(): Record<string, unknown> };
     }): ItemFrontmatter {
         const fm = item.frontmatter.toObject();
         return {
@@ -963,8 +963,8 @@ export class ContextManager {
 
     /** 获取实体缓存管理器（如果可用） */
     private getEntityCache(): {
-        getEntry: (project: string, path: string) => { mtime: number; frontmatter: Record<string, any> } | undefined;
-        updateEntry: (project: string, path: string, mtime: number, frontmatter: Record<string, any>, entityType: string) => void;
+        getEntry: (project: string, path: string) => { mtime: number; frontmatter: Record<string, unknown> } | undefined;
+        updateEntry: (project: string, path: string, mtime: number, frontmatter: Record<string, unknown>, entityType: string) => void;
         cleanup: (project: string, existingPaths: Set<string>) => void;
     } | null {
         if (this.plugin && this.plugin.cacheManager) {
@@ -981,8 +981,8 @@ export class ContextManager {
         return null;
     }
 
-    private async gatherEntityRecords(project: string, kind: EntityKind): Promise<Record<string, string>[]> {
-        const items: Record<string, string>[] = [];
+    private async gatherEntityRecords(project: string, kind: EntityKind): Promise<Record<string, unknown>[]> {
+        const items: Record<string, unknown>[] = [];
         // P0-3：文件清单统一走 entity-reader（排除模板 + 路径升序），与统计/实体管理同口径
         const files = listEntityFiles(this.app, project, kind);
         const entityType = ENTITY_KIND_LABEL[kind];
@@ -995,7 +995,7 @@ export class ContextManager {
 
         for (const file of files) {
             try {
-                let fm: Record<string, any> | null = null;
+                let fm: Record<string, unknown> | null = null;
                 const mtime = file.stat?.mtime || 0;
 
                 if (project && cache) {
@@ -1011,7 +1011,7 @@ export class ContextManager {
 
                 if (!fm || Object.keys(fm).length === 0) {
                     const content = await this.app.vault.cachedRead(file);
-                    fm = parseFm(content) as Record<string, any>;
+                    fm = parseFm(content) as Record<string, unknown>;
                 }
 
                 if (!fm || !Object.keys(fm).length) continue;
@@ -1020,7 +1020,7 @@ export class ContextManager {
                     cache.updateEntry(project, file.path, mtime, fm, entityType);
                 }
 
-                const item: Record<string, string> = { name: file.name.replace('.md', '') };
+                const item: Record<string, unknown> = { name: file.name.replace('.md', '') };
                 for (const [key, value] of Object.entries(fm)) {
                     if (key !== 'tags') {
                         item[key] = value;
@@ -1105,7 +1105,7 @@ export class ContextManager {
                 }
 
                 if (cache && mtime > 0) {
-                    cache.updateEntry(project, file.path, mtime, data as Record<string, any>, 'character');
+                    cache.updateEntry(project, file.path, mtime, data as Record<string, unknown>, 'character');
                 }
 
                 data.fileName = file.name;
@@ -2229,14 +2229,14 @@ export class ContextManager {
         const chars = charData.character_state as CharacterData[] || [];
         for (const ch of chars) {
             try {
-                const model = entityFromFrontmatter('character', ch as any, '', ch.filePath || '');
+                const model = entityFromFrontmatter('character', ch as unknown as Record<string, unknown>, '', ch.filePath || '');
                 allEntities.push(model);
             } catch (e) {
                 log.warn('[ContextManager] 人物实体转换失败:', ch.name || ch.姓名, e);
             }
         }
 
-        const locs = locData.locations as Record<string, any>[] || [];
+        const locs = locData.locations as Record<string, unknown>[] || [];
         for (const loc of locs) {
             try {
                 const model = entityFromFrontmatter('location', loc, '', '');
@@ -2246,7 +2246,7 @@ export class ContextManager {
             }
         }
 
-        const factions = facData.factions as Record<string, any>[] || [];
+        const factions = facData.factions as Record<string, unknown>[] || [];
         for (const fac of factions) {
             try {
                 const model = entityFromFrontmatter('faction', fac, '', '');
@@ -2256,7 +2256,7 @@ export class ContextManager {
             }
         }
 
-        const items = itemData.items as Record<string, any>[] || [];
+        const items = itemData.items as Record<string, unknown>[] || [];
         for (const item of items) {
             try {
                 const model = entityFromFrontmatter('item', item, '', '');
@@ -2313,12 +2313,12 @@ export class ContextManager {
         const opts = { ...DEFAULT_PROMPT_OPTIONS, ...options };
         const max = opts.maxCharsPerSection;
 
-        const tasks: Promise<any>[] = [];
+        const tasks: Promise<unknown>[] = [];
         let worldView = '', writingStyle = '', settingLib = '';
         let characters: CharacterData[] = [];
-        let locations: Record<string, string>[] = [];
-        let factions: Record<string, string>[] = [];
-        let items: Record<string, string>[] = [];
+        let locations: Record<string, unknown>[] = [];
+        let factions: Record<string, unknown>[] = [];
+        let items: Record<string, unknown>[] = [];
         let timeline: TimelineEvent[] = [];
         let fanficCanonTimeline: TimelineRow[] = [];
         let fanficFanTimeline: TimelineRow[] = [];
@@ -2366,9 +2366,9 @@ export class ContextManager {
             factions: ContextManager.formatEntities(factions, 'faction'),
             items: ContextManager.formatEntities(items, 'item'),
             rawCharacters: characters,
-            rawLocations: locations,
-            rawFactions: factions,
-            rawItems: items,
+            rawLocations: locations as unknown as LocationFrontmatter[],
+            rawFactions: factions as unknown as FactionFrontmatter[],
+            rawItems: items as unknown as ItemFrontmatter[],
             rawTimeline: timeline,
             fanficCanonTimeline: ContextManager.formatFanficCanonTimeline(fanficCanonTimeline),
             fanficFanTimeline: ContextManager.formatFanficFanTimeline(fanficFanTimeline),
@@ -2617,7 +2617,7 @@ ${usable}`;
      * @param type - 类型
      * @returns 文本结果
      */
-    static formatEntities(entities: Record<string, string>[], type: 'location' | 'faction' | 'item'): string {
+    static formatEntities(entities: Record<string, unknown>[], type: 'location' | 'faction' | 'item'): string {
         if (!entities || entities.length === 0) return '';
 
         const labelMap: Record<string, string[]> = {
@@ -2628,10 +2628,10 @@ ${usable}`;
         const labels = labelMap[type];
 
         return entities.map(e => {
-            const name = e.name || '';
+            const name = typeof e.name === 'string' ? e.name : '';
             if (!name) return '';
             const parts = labels.map(k => {
-                const v = e[k] || '—';
+                const v = e[k] === undefined || e[k] === null || e[k] === '' ? '—' : String(e[k]);
                 return `${k}=${v}`;
             });
             return `\n- ${name}：${parts.join('，')}`;

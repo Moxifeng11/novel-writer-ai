@@ -6,12 +6,15 @@ import type {
 
 export type { BreakdownDimension, DeconstructionQualityLevel, DimensionQualityScore };
 
-/**
- * 质量评分输入。
- */
+/** 普通对象判定（拆解结果是各维度异构 JSON） */
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** 质量评分输入。 */
 export interface QualityScoringInput {
     dimension: BreakdownDimension;
-    result: any;
+    result: unknown;
     textLength: number;
     usedLevel: DeconstructionQualityLevel;
     elapsedTime?: number;
@@ -165,7 +168,7 @@ export class QualityScorer {
      * @param results - 结果列表
      * @returns 结果
      */
-    crossValidate(results: Partial<Record<BreakdownDimension, any>>): CrossValidationResult[] {
+    crossValidate(results: Partial<Record<BreakdownDimension, unknown>>): CrossValidationResult[] {
         const out: CrossValidationResult[] = [];
         for (const rule of CROSS_VALIDATION_RULES) {
             const objA = results[rule.dimensionA];
@@ -242,8 +245,8 @@ export class QualityScorer {
         return score.usedLevel;
     }
 
-    private calculateCompleteness(dimension: BreakdownDimension, result: any): number {
-        if (!result || typeof result !== 'object') return 30;
+    private calculateCompleteness(dimension: BreakdownDimension, result: unknown): number {
+        if (!isRecord(result)) return 30;
         const requiredFields = DIMENSION_REQUIRED_FIELDS[dimension] || [];
         if (requiredFields.length === 0) return 70;
 
@@ -262,41 +265,42 @@ export class QualityScorer {
         const missingRatio = missingCount / total;
 
         const allKeys = Object.keys(result);
-        const nonEmptyTopKeys = allKeys.filter(k => this.isNonEmpty((result as any)[k])).length;
+        const nonEmptyTopKeys = allKeys.filter(k => this.isNonEmpty(result[k])).length;
         const diversity = allKeys.length > 0 ? nonEmptyTopKeys / allKeys.length : 0.5;
 
         return Math.round(100 * (0.5 * coverage + 0.3 * (1 - missingRatio) + 0.2 * diversity));
     }
 
-    private calculateConsistency(dimension: BreakdownDimension, result: any): number {
-        if (!result || typeof result !== 'object') return 50;
+    private calculateConsistency(dimension: BreakdownDimension, result: unknown): number {
+        const record = isRecord(result) ? result : null;
+        if (!record) return 50;
 
         let selfConsistency = 0.7;
         let stability = 0.7;
 
         if (dimension === 'character') {
-            const chars = result.characters;
-            const stats = result.stats;
-            if (Array.isArray(chars) && stats && typeof stats.totalCharacters === 'number') {
+            const chars = record.characters;
+            const stats = record.stats;
+            if (Array.isArray(chars) && isRecord(stats) && typeof stats.totalCharacters === 'number') {
                 selfConsistency = chars.length === stats.totalCharacters ? 1.0 : 0.5;
             }
         } else if (dimension === 'commercial') {
-            const score = result.overallScore;
-            const level = result.overallLevel;
+            const score = record.overallScore;
+            const level = record.overallLevel;
             if (typeof score === 'number' && typeof level === 'string') {
                 const expectedLevel = score >= 90 ? 'S' : score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 60 ? 'C' : 'D';
                 selfConsistency = expectedLevel === level ? 1.0 : 0.5;
             }
         } else if (dimension === 'foreshadow') {
-            const fs = result.foreshadows;
-            const stats = result.stats;
-            if (Array.isArray(fs) && stats && typeof stats.totalForeshadows === 'number') {
+            const fs = record.foreshadows;
+            const stats = record.stats;
+            if (Array.isArray(fs) && isRecord(stats) && typeof stats.totalForeshadows === 'number') {
                 selfConsistency = fs.length === stats.totalForeshadows ? 1.0 : 0.5;
             }
         } else if (dimension === 'technique') {
-            const dist = result.categoryDistribution;
-            if (dist && typeof dist === 'object') {
-                const sum = Object.values(dist).reduce((s: number, v: any) => s + (typeof v === 'number' ? v : 0), 0);
+            const dist = record.categoryDistribution;
+            if (isRecord(dist)) {
+                const sum = Object.values(dist).reduce((s: number, v: unknown) => s + (typeof v === 'number' ? v : 0), 0);
                 if (sum > 0) {
                     stability = (sum >= 0.95 && sum <= 1.05) ? 1.0 : 0.6;
                 }
@@ -313,7 +317,7 @@ export class QualityScorer {
         return Math.round(100 * (0.5 * selfConsistency + 0.5 * stability));
     }
 
-    private calculateConfidence(usedLevel: DeconstructionQualityLevel, result: any): number {
+    private calculateConfidence(usedLevel: DeconstructionQualityLevel, result: unknown): number {
         let base: number;
         if (usedLevel === 'fast') {
             base = 40;
@@ -324,7 +328,7 @@ export class QualityScorer {
         }
 
         let bonus = 0;
-        if (result && typeof result === 'object') {
+        if (isRecord(result)) {
             const keys = Object.keys(result);
             if (keys.length >= 8) bonus = 10;
             else if (keys.length >= 5) bonus = 5;
@@ -333,22 +337,22 @@ export class QualityScorer {
         return Math.min(95, base + bonus);
     }
 
-    private getFieldByPath(obj: any, path: string): any {
+    private getFieldByPath(obj: unknown, path: string): unknown {
         if (obj === null || obj === undefined || !path) return undefined;
         const parts = path.split('.');
-        let current: any = obj;
+        let current: unknown = obj;
         for (const part of parts) {
             if (current === null || current === undefined) return undefined;
-            if (typeof current !== 'object' && !Array.isArray(current)) return undefined;
+            if (typeof current !== 'object' && typeof current !== 'string') return undefined;
             if (part === 'length' && (Array.isArray(current) || typeof current === 'string')) {
                 return current.length;
             }
-            current = current[part];
+            current = (current as Record<string, unknown>)[part];
         }
         return current;
     }
 
-    private isNonEmpty(value: any): boolean {
+    private isNonEmpty(value: unknown): boolean {
         if (value === null || value === undefined) return false;
         if (typeof value === 'number') return value !== 0;
         if (typeof value === 'string') return value.length > 0;
@@ -357,7 +361,7 @@ export class QualityScorer {
         return true;
     }
 
-    private toNumber(value: any): number | null {
+    private toNumber(value: unknown): number | null {
         if (typeof value === 'number') return isFinite(value) ? value : null;
         if (typeof value === 'string') {
             const n = parseFloat(value);

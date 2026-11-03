@@ -11,6 +11,7 @@ import type { CharacterSoul } from './character-soul';
 import type { StyleFingerprint, StyleFingerprintLibrary, VectorStore } from './style-fingerprint-library';
 import type { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import type { KnowledgeSearchResult, KnowledgeVectorStore } from './knowledge-vector-store';
+import type { ForeshadowItem } from './context/context-types';
 import { createLogger } from '@/shared/logger';
 import {
     BodyFormatContract,
@@ -51,7 +52,7 @@ const DIRECTION_PROMPTS: Record<SuggestionDirection, string> = {
 /** ContextSnapshot 的最小接口（避免循环依赖） */
 export interface PromptSnapshot {
     emotionPlan?: string;
-    foreshadows?: { unrevealed?: any[] };
+    foreshadows?: { unrevealed?: ForeshadowItem[] };
     chapterName?: string;
     relationshipStates?: Array<{
         charA: string;
@@ -666,8 +667,7 @@ export class PromptBuilder {
      * @returns 结果数组
      */
     getForeshadowTriggerPromptParts(precedingText: string): string[] {
-        const fs: any = this.getSnapshot()?.foreshadows;
-        const unrevealed: any[] = Array.isArray(fs?.unrevealed) ? fs.unrevealed : [];
+        const unrevealed = this.getSnapshot()?.foreshadows?.unrevealed ?? [];
         if (unrevealed.length === 0) return [];
         const tail = (precedingText || '').slice(-400);
         const lines: string[] = [];
@@ -690,17 +690,17 @@ export class PromptBuilder {
     getUnrevealedForeshadowReminderPromptParts(): string[] {
         const snap = this.getSnapshot();
         if (!snap) return [];
-        const unrevealed: any[] = Array.isArray(snap.foreshadows?.unrevealed) ? snap.foreshadows.unrevealed : [];
+        const unrevealed = snap.foreshadows?.unrevealed ?? [];
         if (unrevealed.length === 0) return [];
         const m = (snap.chapterName || '').match(/第(\d+)章/);
         if (!m) return [];
         const currentChapter = parseInt(m[1], 10);
-        const due = unrevealed.filter((item: any) => {
+        const due = unrevealed.filter(item => {
             const p = (item?.plannedReveal || '').match(/第(\d+)章/);
             return p ? parseInt(p[1], 10) <= currentChapter : false;
         });
         if (due.length === 0) return [];
-        const lines = due.slice(0, 10).map((item: any, i: number) => {
+        const lines = due.slice(0, 10).map((item, i) => {
             const name = (item?.name || '').trim() || '（未命名）';
             return `${i + 1}. ${name} (计划回收: ${item?.plannedReveal || '未定'})`;
         });

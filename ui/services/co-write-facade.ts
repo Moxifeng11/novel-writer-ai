@@ -39,13 +39,17 @@ import type { StyleLearner } from '@/engine/style-learner';
 import type { PreferenceMemory } from '@/engine/preference-memory';
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { createCoWritingSessionStore } from '@/engine/co-writer';
-import type { CoWritingSessionStore } from '@/engine/co-writer';
+import type { CoWritingSessionStore, WritingMode } from '@/engine/co-writer';
+import type { CreateCoWritingSessionStoreOptions } from '@/engine/co-writer';
 import type { CoWritingSessionState } from '@/engine/co-writer/session-state';
 import type { StateListener } from '@/shared/store/types';
 import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('CoWriteFacade');
+
+/** 联想触发来源（与 CoWriterEngine.suggestAssociation 保持一致） */
+type AssociationTrigger = 'space' | 'enter' | 'period' | 'manual';
 /**
  * 协同门面选项。
  */
@@ -76,9 +80,10 @@ export class CoWriteFacade {
 
     private _initSessionStore(): void {
         try {
-            const isDev = (this.plugin as any)._isDevMode || false;
+            // 插件没有运行期 dev 标记；日志/devtools 默认关闭，需要时在构建期打开。
+            const isDev = false;
             this._sessionStore = createCoWritingSessionStore({
-                plugin: this.plugin as any,
+                plugin: this.plugin as unknown as CreateCoWritingSessionStoreOptions['plugin'],
                 enableLogger: isDev,
                 enableDevtools: isDev,
             });
@@ -104,7 +109,7 @@ export class CoWriteFacade {
 
     get registry(): EngineRegistry | null {
         if (!this._registry) {
-            const registry = (this.plugin as any).engineRegistry as EngineRegistry | undefined;
+            const registry = this.plugin.engineRegistry;
             this._registry = registry || null;
             if (this._registry && this._sessionStore) {
                 this._tryRegisterStore();
@@ -267,12 +272,12 @@ export class CoWriteFacade {
     async suggestNext(
         precedingText: string,
         cursorHint: string,
-        mode: string,
+        mode: WritingMode,
         count: number,
         signal?: AbortSignal,
         onChunk?: (index: number, cumulativeText: string) => void
     ): Promise<SuggestionRecord[]> {
-        return this.engine.suggestNext(precedingText, cursorHint, mode as any, count, signal, onChunk);
+        return this.engine.suggestNext(precedingText, cursorHint, mode, count, signal, onChunk);
     }
 
     /**
@@ -306,11 +311,11 @@ export class CoWriteFacade {
     async *suggestStream(
         precedingText: string,
         cursorHint: string,
-        mode: string,
+        mode: WritingMode,
         directionIndex: number,
         signal?: AbortSignal
     ): AsyncGenerator<string, SuggestionRecord | null, unknown> {
-        return yield* this.engine.suggestStream(precedingText, cursorHint, mode as any, directionIndex, signal);
+        return yield* this.engine.suggestStream(precedingText, cursorHint, mode, directionIndex, signal);
     }
 
     /**
@@ -369,10 +374,10 @@ export class CoWriteFacade {
     async suggestAssociation(
         cursor: number,
         text: string,
-        trigger: string,
+        trigger: AssociationTrigger,
         signal?: AbortSignal
     ): Promise<AssociationSuggestion[]> {
-        return this.engine.suggestAssociation(cursor, text, trigger as any, signal);
+        return this.engine.suggestAssociation(cursor, text, trigger, signal);
     }
 
     /**
@@ -512,7 +517,7 @@ export class CoWriteFacade {
      * @returns 指标
      */
     getPlotProgress(body: string) {
-        return (this.engine as any).getPlotProgress?.(body) || { totalNodes: 0, completedNodes: 0, completionPercent: 0 };
+        return this.engine.getPlotProgress(body);
     }
 
     /**
@@ -520,14 +525,14 @@ export class CoWriteFacade {
      * @returns 统计
      */
     getRepositoryPerfStats() {
-        return (this.engine as any).getRepositoryPerfStats?.() || {};
+        return this.engine.getRepositoryPerfStats();
     }
 
     /**
      * 重置 Repository 性能统计。
      */
     resetRepositoryPerfStats(): void {
-        (this.engine as any).resetRepositoryPerfStats?.();
+        this.engine.resetRepositoryPerfStats();
     }
 
     /**
@@ -896,6 +901,6 @@ export class CoWriteFacade {
      * @returns 项目路径
      */
     getActiveProject(): string {
-        return (this.plugin as any).getActiveProject?.() || '';
+        return this.plugin.getActiveProject() ?? '';
     }
 }

@@ -6,12 +6,15 @@
 
 | 命令 | 说明 |
 |---|---|
+| `npm run any:baseline` | — |
 | `npm run audit:deps` | 生产依赖安全审计 |
 | `npm run bench:hotpath` | getFiles 热路径基准 |
 | `npm run build` | 版本同步 + 模板生成 + CSS 拼接 + esbuild 打包 |
 | `npm run build:release` | 本地发布构建（preflight:release） |
 | `npm run build:styles` | 拼接 styles-src → styles.css |
 | `npm run check-engines` | EngineRegistry 实例白名单/超限检查 |
+| `npm run check:any` | — |
+| `npm run check:changelog` | — |
 | `npm run check:css` | CSS 预算与命名棘轮 |
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
 | `npm run check:docs` | 文档索引/链接/版本/编码检查 |
@@ -71,9 +74,11 @@
 14. npm run check:linked-scenarios
 15. npm run check:dsh-isolation
 16. npm run check:jsdoc
-17. npm run check:docs
-18. npm run build
-19. npm run check:release
+17. npm run check:any
+18. npm run check:changelog
+19. npm run check:docs
+20. npm run build
+21. npm run check:release
 ```
 
 ## 说明

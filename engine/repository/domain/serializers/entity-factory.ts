@@ -126,28 +126,28 @@ export class EntityFactory {
             frontmatter: fm,
             body: character.body,
             content: character.content,
-            age: (character as any).age,
-            identity: (character as any).identity,
-            gender: (character as any).gender,
-            firstAppearance: (character as any).firstAppearance,
-            coreMotivation: (character as any).coreMotivation,
-            coreWeakness: (character as any).coreWeakness,
-            habit: (character as any).habit,
-            currentStatus: (character as any).currentStatus,
-            currentEmotion: (character as any).currentEmotion,
-            currentLocation: (character as any).currentLocation,
-            personalityTags: (character as any).personalityTags,
-            specialAbility: (character as any).specialAbility,
-            skillTree: (character as any).skillTree,
-            cultivationLevel: (character as any).cultivationLevel,
-            faction: (character as any).faction,
-            background: (character as any).background,
-            appearance: (character as any).appearance,
-            currentGoal: (character as any).currentGoal,
-            soul: (character as any).soul,
-            personality: (character as any).personality,
-            arc: (character as any).arc,
-            relations: (character as any).relations,
+            age: character.age,
+            identity: character.identity,
+            gender: character.gender,
+            firstAppearance: character.firstAppearance,
+            coreMotivation: character.coreMotivation,
+            coreWeakness: character.coreWeakness,
+            habit: character.habit,
+            currentStatus: character.currentStatus,
+            currentEmotion: character.currentEmotion,
+            currentLocation: character.currentLocation,
+            personalityTags: character.personalityTags,
+            specialAbility: character.specialAbility,
+            skillTree: character.skillTree,
+            cultivationLevel: character.cultivationLevel,
+            faction: character.faction,
+            background: character.background,
+            appearance: character.appearance,
+            currentGoal: character.currentGoal,
+            soul: character.soul,
+            personality: character.personality,
+            arc: character.arc,
+            relations: character.relations,
         };
     }
 
@@ -218,11 +218,11 @@ export class EntityFactory {
             frontmatter: fm,
             body: faction.body,
             content: faction.content,
-            alias: (faction as any).alias,
-            type: (faction as any).type,
-            description: (faction as any).description,
-            leader: (faction as any).leader,
-            rank: (faction as any).rank,
+            alias: faction.alias,
+            type: faction.type,
+            description: faction.description,
+            leader: faction.leader,
+            rank: faction.rank,
         };
     }
 
@@ -295,13 +295,13 @@ export class EntityFactory {
             frontmatter: fm,
             body: location.body,
             content: location.content,
-            alias: (location as any).alias,
-            type: (location as any).type,
-            description: (location as any).description,
-            importance: (location as any).importance,
-            geography: (location as any).geography,
-            inhabitants: (location as any).inhabitants,
-            worldRegion: (location as any).worldRegion,
+            alias: location.alias,
+            type: location.type,
+            description: location.description,
+            importance: location.importance,
+            geography: location.geography,
+            inhabitants: location.inhabitants,
+            worldRegion: location.worldRegion,
         };
     }
 
@@ -372,11 +372,11 @@ export class EntityFactory {
             frontmatter: fm,
             body: item.body,
             content: item.content,
-            type: (item as any).type,
-            grade: (item as any).grade,
-            description: (item as any).description,
-            effect: (item as any).effect,
-            owner: (item as any).owner,
+            type: item.type,
+            grade: item.grade,
+            description: item.description,
+            effect: item.effect,
+            owner: item.owner,
         };
     }
 
@@ -398,9 +398,11 @@ export class EntityFactory {
 
         const volume = parseInt(String(fm['卷'] || fm['volume'] || '0'), 10);
         const chapter = parseInt(String(fm['章'] || fm['chapter'] || '0'), 10);
-        const title = fm['标题'] || fm['title'] || '';
-        const status = ChapterStatus.from(fm['status'] || fm['状态']);
-        const writingMode = (fm['writing_mode'] || fm['写作模式']) as WritingMode | undefined;
+        const title = String(fm['标题'] ?? fm['title'] ?? '');
+        const statusRaw = fm['status'] ?? fm['状态'];
+        const status = ChapterStatus.from(typeof statusRaw === 'string' ? statusRaw : undefined);
+        const writingModeRaw = fm['writing_mode'] ?? fm['写作模式'];
+        const writingMode = typeof writingModeRaw === 'string' ? (writingModeRaw as WritingMode) : undefined;
         const wordCount = WordCount.create(
             parseInt(String(fm['word_count'] || fm['字数'] || '0'), 10),
             parseInt(String(fm['total_words'] || '0'), 10),
@@ -412,9 +414,9 @@ export class EntityFactory {
         const factionsRaw = fm['涉及势力'] || fm['factions'];
         const itemsRaw = fm['涉及物品功法'] || fm['items'];
 
-        const toArray = (v: any): string[] => {
+        const toArray = (v: unknown): string[] => {
             if (!v) return [];
-            if (Array.isArray(v)) return v.filter(Boolean);
+            if (Array.isArray(v)) return v.filter((item): item is string => typeof item === 'string' && item.length > 0);
             if (typeof v === 'string') return v.split(',').map(s => s.trim()).filter(Boolean);
             return [];
         };
@@ -427,8 +429,8 @@ export class EntityFactory {
             filePath,
             tags: frontmatter.getTags(),
             entityStatus: EntityStatus.ACTIVE,
-            createdAt: fm['created_at'] || null,
-            lastChangedAt: fm['updated_at'] || null,
+            createdAt: typeof fm['created_at'] === 'string' ? fm['created_at'] : null,
+            lastChangedAt: typeof fm['updated_at'] === 'string' ? fm['updated_at'] : null,
             lastChangedReason: null,
             frontmatter,
             body,
@@ -444,8 +446,10 @@ export class EntityFactory {
                 locations: toArray(locsRaw),
                 factions: toArray(factionsRaw),
                 items: toArray(itemsRaw),
-                reviewTime: fm['审查时间'] || fm['review_time'],
-                scenes: fm['scenes'] || [],
+                reviewTime: typeof (fm['审查时间'] ?? fm['review_time']) === 'string'
+                    ? String(fm['审查时间'] ?? fm['review_time'])
+                    : undefined,
+                scenes: Array.isArray(fm['scenes']) ? fm['scenes'] : [],
             },
         };
 

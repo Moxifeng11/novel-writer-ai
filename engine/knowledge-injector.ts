@@ -300,6 +300,18 @@ export class KnowledgeInjector {
     }
 
     /**
+     * 注入/替换文风指纹库。
+     *
+     * 协同引擎在构造之后才会拿到 fingerprintLibrary；此前只能 `as any` 直接写私有字段，
+     * 既绕过类型检查，也会在字段改名时静默失效。这里提供正式入口。
+     *
+     * @param library - 指纹库实例；传 undefined 解除注入
+     */
+    setFingerprintLibrary(library?: StyleFingerprintLibrary): void {
+        this.fingerprintLibrary = library;
+    }
+
+    /**
      * 注入知识库与向量库实例（可传空解除）。
      *
      * @param manager - 参数

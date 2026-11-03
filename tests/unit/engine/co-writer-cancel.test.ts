@@ -20,7 +20,7 @@ function makeSnapshot(overrides: Partial<ContextSnapshot> = {}): ContextSnapshot
         allFactions: '',
         allLocs: '',
         allItems: '',
-        foreshadows: {},
+        foreshadows: { unrevealed: [], revealed: [], abandoned: [] },
         relationshipStates: [],
         crossVolumeContext: '',
         worldView: '',
