@@ -26,6 +26,10 @@ export interface BookMetadata {
     date?: Date;
     /** 不传则按书名+作者+时间生成稳定 urn */
     identifier?: string;
+    /** 平台投稿简介（EPUB dc:description；短篇/剧本导出时填） */
+    description?: string;
+    /** 平台标签（EPUB dc:subject） */
+    subject?: string[];
     /** 封面图；存在时生成 cover.xhtml、properties="cover-image" 与 EPUB2 兼容 meta */
     cover?: BookCover;
 }
@@ -188,6 +192,16 @@ function buildContentOpf(
     const creator = metadata.author?.trim()
         ? `    <dc:creator>${escapeXml(metadata.author.trim())}</dc:creator>\n`
         : '';
+    const description = metadata.description?.trim()
+        ? `    <dc:description>${escapeXml(metadata.description.trim())}</dc:description>
+`
+        : '';
+    const subjects = (metadata.subject ?? [])
+        .map(subject => String(subject || '').trim())
+        .filter(Boolean)
+        .map(subject => `    <dc:subject>${escapeXml(subject)}</dc:subject>
+`)
+        .join('');
     // 封面：EPUB3 用 properties="cover-image"，EPUB2 老阅读器只认 <meta name="cover">
     const cover = metadata.cover;
     const coverManifest = cover
@@ -205,7 +219,7 @@ function buildContentOpf(
     <dc:identifier id="bookid">${escapeXml(identifier)}</dc:identifier>
     <dc:title>${escapeXml(metadata.title)}</dc:title>
     <dc:language>${escapeXml(metadata.language || 'zh-CN')}</dc:language>
-${creator}${coverMeta}    <meta property="dcterms:modified">${modified}</meta>
+${creator}${description}${subjects}${coverMeta}    <meta property="dcterms:modified">${modified}</meta>
   </metadata>
   <manifest>
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>

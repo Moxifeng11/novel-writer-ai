@@ -18,7 +18,13 @@ import {
     type ModeUnitInfo,
 } from '@/shared/mode-content';
 import { countUnitWords, createObsidianUnitFilePort, generateUnitText, loadUnitWriterContext, saveUnitBody, type UnitFilePort, type UnitGenerateOptions, type UnitWriteAction, type UnitWriterContext } from '@/engine/mode-unit-writer';
-import { analyzeProse, scoreProseRisk } from '@/shared/prose-metrics';import { HumanizeReportModal } from '@/ui/humanize-report-modal';
+import { HumanizeReportModal } from '@/ui/humanize-report-modal';
+import { evaluateModeUnitQuality, saveUnitQualityReport } from '@/engine/mode-unit-quality';
+import { settleModeUnit } from '@/engine/mode-unit-settlement';
+import { evaluateRevision } from '@/engine/revision/revision-guard';
+import { modeRevisionOptions } from '@/shared/quality-profile';
+import { namesFromEntitySummary } from '@/engine/mode-runtime';
+import { ENGINE_NAMES } from '@/shared/engine-names';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import { createLogger } from '@/shared/logger';
 import type { WriterTab } from './full-writer-store';
@@ -287,9 +293,11 @@ export class UnitWriterController {
         make(hasBody ? '🤖 重新生成本节' : '🤖 AI 生成本节', !hasBody, () => { void this.runAI('generate'); });
         make('✨ 续写', false, () => { void this.runAI('continue'); });
         make('✂️ 改写选区', false, () => { void this.runAI('rewrite'); });
-        make('🧪 质量检查', false, () => { void this.runQualityCheck(); });
+        const qualityLabel = (this.ctx?.mode ?? 'short') === 'script' ? '🎬 可拍质检' : '🧪 六维质检';
+        make(qualityLabel, false, () => { void this.runQualityCheck(); });
         make('🫧 人味体检', false, () => this.openHumanizeReport());
         const complete = make(`✅ 完成本${modeUnitLabel(this.ctx?.mode ?? 'short')}`, false, () => { void this.completeUnit(); });
+        make(`🧾 单元结算`, false, () => { void this.settleCurrentUnit(); });
         complete.addClass('nw-unit-complete');
     }
 
@@ -522,7 +530,15 @@ export class UnitWriterController {
 
             if (action === 'rewrite' && selection) {
                 const current = this.getBody();
-                if (current.slice(selection.start, selection.end) !== selection.originalText) {
+                const gate = evaluateRevision(
+                    selection.originalText,
+                    streamed,
+                    modeRevisionOptions(ctx.mode, namesFromEntitySummary(ctx.entities ?? '')),
+                );
+                if (!gate.accept) {
+                    new Notice(`改写未应用：${gate.reasons.join('；')}`, 8000);
+                    this.setAiStatus('改写未通过修订闸门，正文未改动');
+                } else if (current.slice(selection.start, selection.end) !== selection.originalText) {
                     new Notice('正文已改动，改写结果未应用；请重新选中后再试', 6000);
                 } else {
                     this.setBody(
@@ -566,62 +582,124 @@ export class UnitWriterController {
     // ============================================================
 
     /**
-     * 本单元质量检查：用纯本地的 prose-metrics（不调 AI、不引入第二个质量引擎实例）。
-     * 六维模型评分仍可从「质量仪表盘」查看；这里给的是写作当下最快的语感反馈。
+     * 本单元六维质检：复用 QualityScoreEngine + 模式专属检查（开篇钩子/可拍性），
+     * 结果写回单元 frontmatter 与 `04-质检`/`05-质检` 报告。不调 AI。
      */
     private async runQualityCheck(): Promise<void> {
-        if (!this.qualityEl) return;
+        if (!this.qualityEl || !this.ctx) return;
         const body = this.getBody();
         if (countUnitWords(body) < 100) {
             new Notice('正文太短，先写够 100 字再检查', 4000);
             return;
         }
+        const heavy = this.deps.plugin.engineRegistry.getOrNull(ENGINE_NAMES.HEAVY_TASK_WORKER_MANAGER);
+        if (!heavy) {
+            new Notice('质量引擎未初始化，请重启插件后再试', 6000);
+            return;
+        }
         this.qualityEl.empty();
+        this.qualityEl.createDiv({ cls: 'nw-unit-quality-loading', text: '正在做六维质检…' });
         try {
-            const metrics = analyzeProse(body);
-            const report = scoreProseRisk(metrics);
+            const report = await evaluateModeUnitQuality({
+                mode: this.ctx.mode,
+                body,
+                title: this.ctx.unitName,
+                outline: this.ctx.outlineSection,
+                characterNames: namesFromEntitySummary(this.ctx.entities ?? ''),
+                evaluator: {
+                    evaluate: (text, context, _signal) => heavy.evaluateQuality(text, context).catch(error => {
+                        throw error;
+                    }),
+                },
+            });
             if (!this.qualityEl) return;
             this.qualityEl.empty();
 
             const head = this.qualityEl.createDiv({ cls: 'nw-unit-quality-head' });
-            head.createSpan({ cls: 'nw-unit-quality-score', text: String(report.score) });
-            head.createSpan({ cls: 'nw-unit-quality-unit', text: '/100 风险分' });
-            head.createSpan({
-                cls: 'nw-unit-quality-level',
-                text: report.level === 'high' ? '偏高' : report.level === 'medium' ? '中等' : '较低',
-            });
+            head.createSpan({ cls: 'nw-unit-quality-score', text: String(report.overallScore) });
+            head.createSpan({ cls: 'nw-unit-quality-unit', text: '/100' });
+            head.createSpan({ cls: `nw-unit-quality-result ${report.passed ? 'nw-is-pass' : 'nw-is-fail'}`, text: report.passed ? '通过' : '未通过' });
+            head.createSpan({ cls: 'nw-unit-quality-level', text: report.grade });
 
-            const cells: Array<[string, string]> = [
-                ['平均句长', `${metrics.avgSentenceLength.toFixed(1)} 字`],
-                ['短句占比', `${Math.round(metrics.shortSentenceRatio * 100)}%`],
-                ['对话占比', `${Math.round(metrics.dialogueCharsRatio * 100)}%`],
-                ['段落', String(metrics.paragraphs)],
-                ['单句段', `${Math.round(metrics.singleSentenceParagraphRatio * 100)}%`],
-                ['句首重复', String(metrics.repeatedStarts.length)],
-            ];
             const grid = this.qualityEl.createDiv({ cls: 'nw-unit-quality-grid' });
-            for (const [label, value] of cells) {
+            for (const item of report.dimensions) {
                 const cell = grid.createDiv({ cls: 'nw-unit-quality-cell' });
-                cell.createSpan({ cls: 'nw-unit-quality-label', text: label });
-                cell.createSpan({ cls: 'nw-unit-quality-value', text: value });
+                cell.createSpan({ cls: 'nw-unit-quality-label', text: item.label });
+                cell.createSpan({
+                    cls: `nw-unit-quality-value${item.score < 55 ? ' nw-is-low' : ''}`,
+                    text: String(item.score),
+                });
+            }
+
+            const extras = this.qualityEl.createDiv({ cls: 'nw-unit-quality-extras' });
+            for (const item of report.extras) {
+                extras.createDiv({
+                    cls: `nw-unit-quality-extra${item.passed ? '' : ' nw-is-warn'}`,
+                    text: `${item.passed ? '✅' : '⚠️'} ${item.label}：${item.value}`,
+                });
             }
 
             if (report.issues.length > 0) {
                 const issues = this.qualityEl.createDiv({ cls: 'nw-unit-quality-issues' });
                 issues.createDiv({ cls: 'nw-unit-quality-issues-title', text: '主要问题' });
-                for (const issue of report.issues.slice(0, 5)) {
-                    issues.createDiv({ cls: 'nw-unit-quality-issue', text: `· ${issue.title}：${issue.detail}` });
+                for (const issue of report.issues.slice(0, 6)) {
+                    issues.createDiv({ cls: 'nw-unit-quality-issue', text: `· ${issue}` });
                 }
             } else {
-                this.qualityEl.createDiv({ cls: 'nw-unit-quality-empty', text: '未发现明显语感问题' });
+                this.qualityEl.createDiv({ cls: 'nw-unit-quality-empty', text: '未发现明显问题' });
             }
+
+            const path = await saveUnitQualityReport(
+                this.deps.app,
+                this.ctx.project,
+                this.ctx.unitPath,
+                this.ctx.unitName,
+                report,
+            );
+            this.qualityEl.createDiv({ cls: 'nw-unit-quality-saved', text: `已保存：${path}` });
+            this.setAiStatus(`${report.passed ? '质检通过' : '质检未通过'} · ${report.overallScore} 分`);
         } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            new Notice(`质量检查失败：${message}`, 8000);
             if (!this.qualityEl) return;
             this.qualityEl.empty();
             this.qualityEl.createDiv({
                 cls: 'nw-unit-error-detail',
-                text: `质量检查失败：${e instanceof Error ? e.message : String(e)}`,
+                text: `质量检查失败：${message}`,
             });
+        }
+    }
+
+    /** 单元结算：出场确认 + status=settled；失败给可见原因。 */
+    private async settleCurrentUnit(): Promise<void> {
+        if (!this.ctx) return;
+        const body = this.getBody();
+        if (countUnitWords(body) < 50) {
+            new Notice('正文太短，先写够 50 字再结算', 5000);
+            return;
+        }
+        const saved = await this.flushSave({ markWritten: true });
+        if (!saved) return;
+        const settlement = this.deps.plugin.engineRegistry.getOrNull(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        if (!settlement) {
+            new Notice('结算引擎未初始化，请重启插件后再试', 6000);
+            return;
+        }
+        try {
+            const result = await settleModeUnit(
+                this.deps.app,
+                settlement,
+                this.ctx.project,
+                this.ctx.unitPath,
+                this.ctx.unitName,
+                this.ctx.mode,
+                body,
+            );
+            new Notice(`✅ ${this.ctx.unitName} 已结算（更新 ${result.updated} 个实体）`, 5000);
+            this.setAiStatus(`已结算：${result.reportPath}`);
+            this.updateHeaderMeta();
+        } catch (e) {
+            new Notice(`单元结算失败：${e instanceof Error ? e.message : String(e)}`, 8000);
         }
     }
 

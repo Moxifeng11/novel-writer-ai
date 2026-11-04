@@ -1,12 +1,12 @@
 {
   "program": "全系统业务板块优化专项",
   "rev": "v5-plan-1",
-  "updatedAt": "2026-11-04",
+  "updatedAt": "2026-11-05",
   "baseline": {
-    "version": "4.28.0",
+    "version": "4.29.0",
     "tests": {
-      "files": 539,
-      "cases": 5925
+      "files": 542,
+      "cases": 5933
     },
     "e2e": 25,
     "gates": [

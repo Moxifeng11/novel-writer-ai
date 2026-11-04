@@ -351,3 +351,65 @@
     font-size: 12px;
     word-break: break-all;
 }
+
+/* ── 单元质检（六维/可拍） ── */
+
+.nw-unit-quality-loading,
+.nw-unit-quality-saved {
+    padding: 6px 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-unit-quality-result {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nw-unit-quality-result.nw-is-pass {
+    color: var(--text-success);
+    background: var(--background-modifier-success);
+}
+
+.nw-unit-quality-result.nw-is-fail {
+    color: var(--text-error);
+    background: var(--background-modifier-error);
+}
+
+.nw-unit-quality-extras {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.nw-unit-quality-extra {
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-unit-quality-extra.nw-is-warn {
+    color: var(--text-warning);
+}
+
+.nw-unit-quality-value.nw-is-low {
+    color: var(--text-warning);
+}
+
+/* ── 模式文档 AI 生成 ── */
+
+.nw-mode-doc-ai-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.nw-mode-doc-instruction {
+    flex: 1;
+}

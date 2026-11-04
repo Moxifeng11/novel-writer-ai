@@ -21,6 +21,37 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.29.0',
+        date: '2026-11-05',
+        title: '短篇/剧本闭环：AI 文档、质检、结算与平台包',
+        sections: [
+            {
+                type: 'added',
+                label: '🧩 模式上下文',
+                items: [
+                    'ModeRuntime 统一故事核/场景圣经/大纲/分镜/调研/实体/文笔风格',
+                    '故事核、大纲、场景圣经、分镜表支持 AI 生成；短篇开篇三屏约束',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🧪 质检与结算',
+                items: [
+                    '短篇六维质检 / 剧本可拍质检，报告与 frontmatter 落盘',
+                    '单元轻量结算：实体出场确认 + status=settled + 结算记录',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '📦 导出',
+                items: [
+                    '番茄短篇/红果短剧平台包：简介、标签、字数、文件名前缀',
+                    '敏感词预检；TXT/Markdown 平台头，EPUB/DOCX 元数据',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.28.0',
         date: '2026-11-04',
         title: '统一创作主页、任务中心与首启向导',

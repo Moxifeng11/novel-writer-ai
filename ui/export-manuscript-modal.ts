@@ -28,6 +28,9 @@ import { getExecutionLedger } from '@/services/execution-ledger';
 import type { JobRunContext } from '@/services/job-service';
 import { yieldToUI } from '@/shared/yield';
 import { listProjectIds } from '@/shared/project-catalog';
+import { readPreResearchData } from '@/shared/pre-research';
+import { buildPlatformPackage, type PlatformPackageInfo } from '@/shared/platform-export';
+import { countCjkChars } from '@/shared/word-count';
 
 const log = createLogger('ExportManuscriptModal');
 
@@ -384,6 +387,23 @@ export class ExportManuscriptModal extends Modal {
             precheck = formatExportPrecheck({ mode: this.creationMode, unfinished });
         }
         this.throwIfAborted(ctx);
+        let platformPackage: PlatformPackageInfo | null = null;
+        if (this.creationMode === 'short' || this.creationMode === 'script') {
+            const preResearch = await readPreResearchData(this.app.vault.adapter, this.project);
+            const platformWordCount = chapters.reduce((sum, chapter) => sum + countCjkChars(chapter.content), 0);
+            platformPackage = buildPlatformPackage({
+                mode: this.creationMode,
+                project: this.project,
+                preResearch,
+                chapters,
+                wordCount: platformWordCount,
+            });
+            if (platformPackage.hits.length > 0) {
+                const hits = platformPackage.hits.map(hit => `${hit.term}×${hit.count}（${hit.category}）`).join('、');
+                precheck = `${precheck ? `${precheck}
+` : ''}⚠️ 平台敏感词预检：${hits}。建议导出前替换或确认上下文。`;
+            }
+        }
         if (precheck) new Notice(precheck, 8000);
 
         const bookTitle = this.project.split('/').pop() || this.project;
@@ -396,13 +416,17 @@ export class ExportManuscriptModal extends Modal {
                 title: bookTitle,
                 author: this.author || undefined,
                 language: 'zh-CN',
+                description: platformPackage?.synopsis || undefined,
+                subject: platformPackage?.tags,
             },
         };
 
         const option = FORMAT_OPTIONS[this.format];
         const date = new Date().toISOString().slice(0, 10);
         const modeSuffix = this.creationMode === 'short' ? '短篇' : this.creationMode === 'script' ? '剧本' : '全稿';
-        const filename = `${this.project}-${modeSuffix}-${date}.${option.ext}`;
+        const filename = platformPackage
+            ? `${platformPackage.platform.filenamePrefix}_${bookTitle}_${date}.${option.ext}`
+            : `${this.project}-${modeSuffix}-${date}.${option.ext}`;
 
         let chapterCount = 0;
         let wordCount = 0;
@@ -436,9 +460,12 @@ export class ExportManuscriptModal extends Modal {
             chapterCount = compiled.chapterCount;
             wordCount = compiled.wordCount;
             emptyChapters = compiled.emptyChapters;
+            const header = platformPackage && (this.format === 'text' || this.format === 'markdown')
+                ? platformPackage.header
+                : '';
             const content = this.format === 'text' && this.textBom
-                ? `\uFEFF${compiled.content}`
-                : compiled.content;
+                ? `\uFEFF${header}${compiled.content}`
+                : `${header}${compiled.content}`;
             result = await exportTextFile(this.app, filename, content, { mime: option.mime });
         }
 
@@ -447,7 +474,7 @@ export class ExportManuscriptModal extends Modal {
 
         const emptyNote = emptyChapters > 0 ? `，其中 ${emptyChapters} ${this.unitLabel}为空` : '';
         new Notice(
-            `✅ 已导出 ${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}`,
+            `✅ 已导出 ${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}${platformPackage ? `（${platformPackage.platform.name}）` : ''}`,
             6000
         );
         log.info('[ExportManuscript] 导出完成:', {

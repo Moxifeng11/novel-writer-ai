@@ -11,6 +11,8 @@ import { getCreationModeLabel } from '@/shared/creation-mode';
 import { modeDocPath, modeDocStarter } from '@/shared/mode-content';
 import { resolveProjectMode } from '@/shared/project-mode';
 import { writeVaultText } from '@/shared/file-system-port';
+import { generateModeDocument } from '@/engine/mode-document-writer';
+import { OperationConfirmModal } from './components/progress';
 
 /**
  * ModeDocumentKind 类型定义。
@@ -90,6 +92,16 @@ export class ModeDocumentModal extends Modal {
         textarea.value = modeDocStarter(this.project, this.mode, this.kind);
         void this.load(textarea);
 
+        const aiRow = contentEl.createDiv({ cls: 'nw-mode-doc-ai-row' });
+        const instruction = aiRow.createEl('input', {
+            cls: 'nw-input nw-mode-doc-instruction',
+            attr: { type: 'text', placeholder: '可选：例如更偏悬疑、每集 2 分钟、加强结尾钩子' },
+        });
+        const aiBtn = aiRow.createEl('button', { text: '🤖 AI 生成', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button' } });
+        aiBtn.onclick = () => {
+            void this.generateWithAI(textarea, instruction.value, aiBtn);
+        };
+
         const footer = contentEl.createDiv({ cls: 'nw-modal-footer' });
         const cancel = footer.createEl('button', { text: '取消', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button' } });
         cancel.onclick = () => this.close();
@@ -106,6 +118,49 @@ export class ModeDocumentModal extends Modal {
             }
         } catch (e) {
             new Notice(`读取文档失败：${e instanceof Error ? e.message : String(e)}`, 5000);
+        }
+    }
+
+    private async generateWithAI(
+        textarea: HTMLTextAreaElement,
+        instruction: string,
+        button: HTMLButtonElement,
+    ): Promise<void> {
+        if (!this.project || button.disabled) return;
+        const existing = textarea.value.trim();
+        if (existing.length > 80) {
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '覆盖编辑区内容？',
+                description: 'AI 生成会替换当前编辑区内容（尚未保存）。',
+                warning: '如需保留，请先取消并保存现有版本。',
+                confirmText: '继续生成',
+                cancelText: '取消',
+            });
+            if (!confirmed) return;
+        }
+        button.disabled = true;
+        button.setText('生成中…');
+        try {
+            const text = await generateModeDocument(
+                this.app,
+                this.plugin.aiEngine,
+                this.project,
+                this.mode,
+                this.kind,
+                {
+                    model: this.plugin.settings.proModel || this.plugin.settings.defaultModel || '',
+                    maxTokens: this.plugin.settings.maxOutput || 4096,
+                    instruction: instruction.trim(),
+                    existingText: existing,
+                },
+            );
+            textarea.value = text;
+            new Notice('✅ 已生成，请检查后点击保存', 5000);
+        } catch (e) {
+            new Notice(`AI 生成失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+        } finally {
+            button.disabled = false;
+            button.setText('🤖 AI 生成');
         }
     }
 

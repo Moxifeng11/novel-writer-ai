@@ -62,6 +62,12 @@ export default defineConfig({
     },
 
     {
+      name: 'mode-journey',
+      testMatch: /mode-journey\.spec\.ts/,
+      timeout: 180_000,
+    },
+
+    {
       name: 'button-states',
       testMatch: /button-states\.spec\.ts/,
       timeout: 180_000,

@@ -2,6 +2,44 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.29.0（2026-11-05）
+
+### 🧩 ModeRuntime：短篇/剧本上下文
+
+- 新增 `engine/mode-runtime.ts`：统一读取故事核/场景圣经、分节/分集大纲、剧本分镜表、前期调研、人物/地点/势力/物品状态与项目文笔风格。
+- 单元写作提示词接入上述上下文；剧本不再漏掉分镜表，短篇/剧本不再只读 4 个文档。
+- 修复单元提示词的「本节大纲」硬编码，剧本显示「本集大纲」。
+
+### 🤖 模式文档 AI 生成
+
+- 故事核、分节大纲、场景圣经、分集大纲、分镜表全部支持「🤖 AI 生成」：基于前期调研 + 现有文档 + 实体状态生成，编辑区确认后手动保存。
+- 短篇分节大纲强制「开篇三屏」：第 1 屏立人物/困境，第 2 屏升级冲突，第 3 屏抛出主悬念；单元写作前 3 节同步约束。
+- 覆盖已有编辑区内容前使用 `OperationConfirmModal` 二次确认。
+
+### 🧪 六维/可拍质检与修订闸门
+
+- 新增 `shared/quality-profile.ts`：三模式通过线、维度、额外检查与修订闸门参数集中配置。
+- 新增 `engine/mode-unit-quality.ts`：复用 `QualityScoreEngine` 六维评分，短篇追加开篇钩子/结尾兑现，剧本追加场次可拍/对白占比/动作行。
+- 质检结果写入单元 frontmatter（`quality_score/grade/passed/checked_at`）与 `04-质检`/`05-质检` 报告；UI 显示六维、模式检查与问题列表。
+- 改写选区接入 `evaluateRevision`，按模式使用不同长度/对话跌幅阈值；未通过则保留原稿并提示原因。
+
+### 🧾 单元结算
+
+- 新增 `engine/mode-unit-settlement.ts`：复用 `settleLight` 做人物/地点/势力/物品出场确认，自动从正文匹配实体名；单元标记 `status: settled`，写 `_结算.md` 记录。
+- 单元工具条新增「🧾 单元结算」；结算失败有可见原因。
+
+### 📦 平台导出包
+
+- 新增 `shared/platform-export.ts`：番茄短篇 / 红果短剧的平台名、文件名前缀、简介、标签、字数/单元数与敏感词预检。
+- 短篇/剧本 TXT/Markdown 导出自动加「平台投稿信息」头；EPUB/DOCX 写入 `dc:description` / `dc:subject`；文件名改为 `番茄短篇_书名_日期` / `红果短剧_书名_日期`。
+- 导出前敏感词命中以 Notice 提示（不阻断），便于作者决定是否替换。
+
+### 🧪 测试
+
+- 新增模式质检、平台包、模式文档提示词回归。
+- 新增 `mode-journey` E2E：短篇/剧本各一条「AI 生成 → 质检 → 结算 → 平台包导出」真实 Obsidian + mock AI 旅程。
+- 全量单测 542 文件 / 5933 用例；mock E2E 12 passed。
+
 ## v4.28.0（2026-11-04）
 
 ### 🏠 统一入口

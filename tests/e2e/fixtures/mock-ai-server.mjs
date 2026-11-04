@@ -107,6 +107,8 @@ function detectKind(system, user) {
     if (/地点卡/.test(all)) return 'location';
     if (/物品功法卡|物品卡/.test(all)) return 'item';
     if (/人物卡|角色卡/.test(all)) return 'character';
+    if (/故事核编辑|分节大纲编辑|场景圣经编辑|分集大纲编辑|分镜表编辑|短篇小说策划编辑|短剧剧本策划编辑/.test(system)) return 'modeDocument';
+    if (/短篇小说写作引擎|短剧剧本写作引擎|【本[节集]大纲】/.test(all)) return 'unitBody';
     if (/世界观|世界层级体系/.test(all)) return 'worldview';
     if (/结算表|章节结算|结算结果/.test(all)) return 'settlement';
     return 'generic';
@@ -115,6 +117,127 @@ function detectKind(system, user) {
 function chapterNumberFrom(text) {
     const match = String(text || '').match(/第\s*(\d+)\s*章/);
     return match ? parseInt(match[1], 10) : 1;
+}
+
+function unitNumberFrom(text) {
+    const match = String(text || '').match(/第\s*(\d+)\s*([节集])/);
+    return { number: match ? parseInt(match[1], 10) : 1, label: match ? match[2] : '节' };
+}
+
+function buildUnitBody(system, user) {
+    const isScript = /短剧剧本写作引擎|【本集大纲】|第\s*\d+\s*集/.test(`${system}
+${user}`);
+    const { number, label } = unitNumberFrom(`${system}
+${user}`);
+    if (isScript) {
+        return `# 第${number}集 测试集
+
+第1场 日 内 咖啡馆
+△ 林晚推门而入，把合同拍在桌上。
+林晚：（压着声音）签字，或者我现在就走。
+顾沉：（抬眼）你确定要在这个时间点撕破脸？
+△ 顾沉把手机推到桌边，屏幕亮起录音界面。
+
+第2场 夜 外 天台
+△ 风把两人的衣角吹得猎猎作响。
+顾沉：你想要的从来不是合同。
+林晚：（停顿）我想要的是你亲口承认。
+△ 远处霓虹熄灭，只剩安全出口的绿光。
+
+第3场 日 内 电梯
+△ 电梯门合上前，林晚伸手挡住。
+林晚：明天之前，给我答案。
+△ 门合上，顾沉的表情被切成两半。
+`;
+    }
+    return `# 第${number}${label} 测试${label}
+
+林晚把那份合同推到桌子中央时，咖啡馆的暖气正嗡嗡作响。她没有看顾沉，只盯着杯沿那道细小的缺口，像盯着一件已经决定的事。
+
+“签字。”她说。
+
+顾沉没有动。他的手指搭在杯壁上，指节因为用力而发白。窗外有人撑伞走过，雨声把两个人的沉默填得很满。
+
+“你确定？”他问。
+
+林晚终于抬眼。她看见他眼底那一点没藏好的疲惫，也看见他身后的玻璃上，自己那张过分平静的脸。她想起三年前同样的雨天，他把伞偏到她这边，自己半边肩膀湿透。那时候她以为，有些事可以一直不说。
+
+“我不是来商量的。”她说。
+
+顾沉笑了一下，笑意没有到眼睛里。他把合同翻到最后一页，那里空着一行签名。他拿起笔，又放下。
+
+“如果我签了，”他说，“你是不是就再也不回来？”
+
+林晚没有回答。她伸手把合同抽回来，折好，放进包里。动作很慢，像在给彼此留最后一点反悔的时间。
+
+“明天之前，”她站起来，“给我答案。”
+
+她走到门口时，听见身后椅子轻轻一动。她没有回头。雨还在下，玻璃门映出两个人一坐一站的影子，中间隔着一张空桌子。
+
+直到她推开门，冷风灌进来，她才听见他很轻地说了一句什么。雨声太大，她没有听清。
+`;
+}
+
+function buildModeDocument(system, user) {
+    const all = `${system}
+${user}`;
+    if (/编写故事核|故事核编辑/.test(system)) {
+        return `## 一句话前提
+一个替人收拾残局的女人，在最后一次交易里发现委托人正是三年前不告而别的人。
+
+## 核心冲突
+她想拿钱走人，他想让她留下；两人都不肯先承认当年的真相。
+
+## 主角欲望与阻力
+欲望：完成交易，离开这座城市。阻力：对方掌握她最不想被翻出的旧事。
+
+## 情绪曲线
+克制 → 试探 → 撕开 → 短暂和解 → 再次选择。
+
+## 关键反转
+合同最后一页不是签名，而是一张旧车票。
+
+## 结尾兑现
+她烧掉车票，却把回程日期改成了明天。
+`;
+    }
+    if (/编写分镜表|分镜表编辑/.test(system)) {
+        return `## 第1集
+
+### 第1场 日 内 咖啡馆
+- 画面：雨窗、合同、两杯未动的咖啡
+- 动作：林晚推合同；顾沉按住纸角
+- 台词：林晚“签字。”
+- 时长：35s
+
+### 第2场 夜 外 天台
+- 画面：霓虹、风声、两人隔着一步
+- 动作：顾沉递出旧车票
+- 台词：顾沉“你想要的从来不是合同。”
+- 时长：45s
+`;
+    }
+    if (/编写场景圣经|场景圣经编辑/.test(system)) {
+        return `## 主要人物
+- 林晚：替人处理麻烦的中间人，嘴硬，怕被看穿。
+- 顾沉：表面温和的委托人，习惯用沉默逼人先开口。
+
+## 核心场景
+- 咖啡馆：雨窗、暖光、靠角落的桌子；两人始终隔桌而坐。
+- 天台：夜、霓虹、安全出口绿光；风把对话吹碎。
+
+## 视觉与表演规则
+- 不用大哭大闹；情绪压在停顿和手上。
+- 每场至少一个可拍的动作细节（推合同、按纸角、挡电梯门）。
+
+## 反复意象
+- 旧车票、雨、两杯未动的咖啡。
+`;
+    }
+    return `第1节：雨夜咖啡馆，林晚替人送合同，发现委托人是三年前的旧识；结尾对方拒签，她拿走合同。
+第2节：林晚查旧车票，确认当年离开的真相；顾沉跟踪她到天台，两人第一次正面冲突。
+第3节：合同最后一页被翻开，林晚必须在拿钱走人和留下对质之间选择；结尾她改签了回程票。
+`;
 }
 
 function buildInfoPlan() {
@@ -694,6 +817,8 @@ function buildContent(kind, system, user) {
         case 'item': return buildItem();
         case 'characterSoul': return buildCharacterSoul();
         case 'settlement': return buildSettlement();
+        case 'unitBody': return buildUnitBody(system, user);
+        case 'modeDocument': return buildModeDocument(system, user);
         default: return buildGeneric();
     }
 }

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 290 | 130431 | 1547 | 1307 | 84% |
+| `engine/` | 294 | 131129 | 1565 | 1317 | 84% |
 | `services/` | 30 | 12006 | 168 | 140 | 83% |
-| `shared/` | 166 | 37722 | 1528 | 1276 | 84% |
+| `shared/` | 168 | 38024 | 1539 | 1280 | 83% |
 | `core/` | 7 | 2680 | 28 | 13 | 46% |
 | `domains/` | 11 | 767 | 30 | 22 | 73% |
-| `ui/` | 201 | 95710 | 523 | 479 | 92% |
+| `ui/` | 201 | 95870 | 523 | 479 | 92% |
 
 ## 文件清单
 
@@ -140,8 +140,8 @@
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
 | `engine/entity-scorer.ts` | 182 | 6 | 5 |
 | `engine/entity-state-manager.ts` | 519 | 4 | 3 |
-| `engine/export/docx-builder.ts` | 227 | 1 | 1 |
-| `engine/export/epub-builder.ts` | 399 | 7 | 7 |
+| `engine/export/docx-builder.ts` | 231 | 1 | 1 |
+| `engine/export/epub-builder.ts` | 413 | 7 | 7 |
 | `engine/export/manuscript-compiler.ts` | 288 | 12 | 12 |
 | `engine/export/zip-writer.ts` | 157 | 4 | 4 |
 | `engine/fact-index-manager.ts` | 217 | 9 | 2 |
@@ -184,7 +184,11 @@
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
 | `engine/memory/memory-shard-writer.ts` | 141 | 5 | 5 |
-| `engine/mode-unit-writer.ts` | 493 | 16 | 16 |
+| `engine/mode-document-writer.ts` | 146 | 5 | 2 |
+| `engine/mode-runtime.ts` | 189 | 6 | 5 |
+| `engine/mode-unit-quality.ts` | 242 | 5 | 2 |
+| `engine/mode-unit-settlement.ts` | 96 | 2 | 1 |
+| `engine/mode-unit-writer.ts` | 500 | 16 | 16 |
 | `engine/note-properties-service.ts` | 286 | 12 | 12 |
 | `engine/novel-analyzer.ts` | 427 | 2 | 2 |
 | `engine/outline-contract.ts` | 737 | 21 | 20 |
@@ -366,7 +370,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1205 | 3 | 3 |
+| `shared/changelog-data.ts` | 1236 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -440,6 +444,7 @@
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/paths.ts` | 1410 | 189 | 183 |
+| `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 405 | 6 | 4 |
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
@@ -463,6 +468,7 @@
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
 | `shared/quality-history.ts` | 307 | 14 | 13 |
+| `shared/quality-profile.ts` | 98 | 5 | 2 |
 | `shared/rag-sources.ts` | 182 | 10 | 10 |
 | `shared/rag/budget-pack.ts` | 86 | 4 | 3 |
 | `shared/rag/diversity.ts` | 102 | 4 | 4 |
@@ -576,7 +582,7 @@
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 553 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 542 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 569 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 418 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |
@@ -616,7 +622,7 @@
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 684 | 2 | 2 |
+| `ui/full-writer/unit-writer-controller.ts` | 762 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 420 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 350 | 1 | 1 |
@@ -642,7 +648,7 @@
 | `ui/manage-providers-modal.ts` | 614 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/mini-settings-modal.ts` | 88 | 1 | 0 |
-| `ui/mode-document-modal.ts` | 131 | 2 | 2 |
+| `ui/mode-document-modal.ts` | 186 | 2 | 2 |
 | `ui/model-picker-modal.ts` | 196 | 2 | 2 |
 | `ui/model-picker-popover.ts` | 291 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 319 | 13 | 12 |

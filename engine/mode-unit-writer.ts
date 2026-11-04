@@ -11,17 +11,15 @@
 import type { App } from 'obsidian';
 import { TFile } from 'obsidian';
 import type { CreationMode } from '@/shared/creation-mode';
-import { getCreationModePromptBlock, getCreationModeLabel, parseCreationModeMeta } from '@/shared/creation-mode';
+import { getCreationModeLabel } from '@/shared/creation-mode';
 import {
     listModeUnits,
     modeBodyDir,
-    modeDocPath,
     modeUnitDisplay,
     modeUnitFileName,
 } from '@/shared/mode-content';
 import { extractUnitOutlineSection } from '@/shared/mode-unit-outline';
-import { readPreResearchData } from '@/shared/pre-research';
-import { readProjectMeta } from '@/shared/paths';
+import { loadModeRuntimeContext, modeOutlineLabel } from './mode-runtime';
 import { HUMAN_VOICE_SHORT } from './prompts/human-voice';
 import { createLogger } from '@/shared/logger';
 
@@ -45,6 +43,14 @@ export interface UnitWriterContext {
     outlineSection: string;
     outlineDoc: string;
     storyDoc: string;
+    /** 剧本分镜表（短篇/旧上下文可为空） */
+    storyboardDoc?: string;
+    /** 前期调研摘要 */
+    preResearchDigest?: string;
+    /** 人物/地点/势力/物品状态摘要 */
+    entities?: string;
+    /** 项目文笔风格摘录 */
+    styleGuide?: string;
     characters: string;
     previousTail: string;
     modeGuide: string;
@@ -210,14 +216,21 @@ export function buildUnitPrompt(
         ctx.mode === 'script'
             ? '- 本单元结尾留下推动下一集的钩子；'
             : '- 本单元结尾留下推动下一节的钩子；',
+        ctx.mode === 'short' && ctx.unitNumber <= 3
+            ? '- 本节属于「开篇三屏」：第一屏立人物/困境，第二屏升级冲突，第三屏抛出主悬念。'
+            : '',
         formatRule,
         HUMAN_VOICE_SHORT,
         options.instruction ? `本次额外要求：${options.instruction}` : '',
     ].filter(Boolean).join('\n');
 
     const contextBlock = [
-        ctx.outlineSection ? `【本节大纲】\n${ctx.outlineSection}` : '',
+        ctx.outlineSection ? `【${modeOutlineLabel(ctx.mode)}】\n${ctx.outlineSection}` : '',
         ctx.storyDoc ? `【${ctx.mode === 'script' ? '场景圣经' : '故事核'}】\n${ctx.storyDoc}` : '',
+        ctx.storyboardDoc ? `【分镜表】\n${ctx.storyboardDoc}` : '',
+        ctx.preResearchDigest ? `【前期调研】\n${ctx.preResearchDigest}` : '',
+        ctx.entities ? `【实体状态】\n${ctx.entities}` : '',
+        ctx.styleGuide ? `【文笔风格】\n${ctx.styleGuide}` : '',
         ctx.characters ? `【人物】\n${ctx.characters}` : '',
         ctx.previousTail ? `【上一${ctx.mode === 'script' ? '集' : '节'}结尾】\n${ctx.previousTail}` : '',
     ].filter(Boolean).join('\n\n');
@@ -293,20 +306,10 @@ export async function loadUnitWriterContext(
     const unitName = unit?.unitName || modeUnitDisplay(unitNumber, mode);
     const unitPath = unit?.file?.path || `${modeBodyDir(project, mode)}/${modeUnitFileName(mode, unitNumber)}`;
 
-    const meta = parseCreationModeMeta((await readProjectMeta(app, project)) || '');
-    const targetTotal = meta.mode === mode ? meta.targetUnits : 0;
-    const wordTotal = meta.mode === mode ? meta.targetWords : 0;
-    const targetWords = targetTotal > 0 && wordTotal > 0
-        ? Math.max(600, Math.round(wordTotal / targetTotal))
-        : (mode === 'script' ? 900 : 3000);
-
-    const outlineDoc = await readText(adapter, modeDocPath(project, mode, 'outline'));
-    const storyDoc = await readText(
-        adapter,
-        modeDocPath(project, mode, mode === 'script' ? 'bible' : 'storyCore'),
-    );
-
-    const preResearch = await readPreResearchData(adapter, project);
+    const runtime = await loadModeRuntimeContext(app, project, mode);
+    const outlineDoc = runtime.outlineDoc;
+    const storyDoc = runtime.storyDoc;
+    const preResearch = runtime.preResearch;
     const characters = preResearch
         ? (preResearch.mode === 'script' ? preResearch.characters : preResearch.characterCore)
         : '';
@@ -331,11 +334,15 @@ export async function loadUnitWriterContext(
         unitPath,
         outlineSection: extractUnitOutlineSection(outlineDoc, mode, unitNumber),
         outlineDoc,
-        storyDoc: storyDoc.slice(0, 4000),
+        storyDoc,
+        storyboardDoc: runtime.storyboardDoc,
+        preResearchDigest: runtime.preResearchDigest,
+        entities: runtime.entities,
+        styleGuide: runtime.styleGuide,
         characters: String(characters || '').slice(0, 1500),
         previousTail,
-        modeGuide: getCreationModePromptBlock(mode, meta),
-        targetWords,
+        modeGuide: runtime.modeGuide,
+        targetWords: runtime.targetWords,
         existingBody,
     };
 }
