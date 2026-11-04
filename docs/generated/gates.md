@@ -29,6 +29,7 @@
 | `npm run check:silent-failures` | 用户操作型静默失败检查 |
 | `npm run check:styles` | 校验 styles.css 与 styles-src 一致 |
 | `npm run check:templates` | 校验模板生成物与 assets 一致 |
+| `npm run check:write-entry` | — |
 | `npm run css:baseline` | 更新 CSS 基线 |
 | `npm run css:cleanup` | CSS 清理审计 |
 | `npm run css:stats` | CSS 统计 |
@@ -71,14 +72,15 @@
 11. npm run check:relationship-authority
 12. npm run check:silent-failures
 13. npm run check:hotpaths
-14. npm run check:linked-scenarios
-15. npm run check:dsh-isolation
-16. npm run check:jsdoc
-17. npm run check:any
-18. npm run check:changelog
-19. npm run check:docs
-20. npm run build
-21. npm run check:release
+14. npm run check:write-entry
+15. npm run check:linked-scenarios
+16. npm run check:dsh-isolation
+17. npm run check:jsdoc
+18. npm run check:any
+19. npm run check:changelog
+20. npm run check:docs
+21. npm run build
+22. npm run check:release
 ```
 
 ## 说明

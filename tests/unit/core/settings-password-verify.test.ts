@@ -10,11 +10,13 @@ vi.mock('../../../main', () => ({
 import { SettingsService } from '../../../core/settings-service';
 
 function service(canDecrypt: (pw: string, stored: string) => Promise<boolean>, rawKey: string) {
+    let current: Record<string, unknown> = {};
     return new SettingsService({
         crypto: {
             decryptWithoutPrompt: async (value: string) => value,
             hasSessionPassword: () => true,
             encrypt: async (value: string) => value,
+            encryptStrict: async (value: string) => `enc:${value}`,
             canDecryptWith: canDecrypt,
         } as never,
         providerManager: {
@@ -27,8 +29,8 @@ function service(canDecrypt: (pw: string, stored: string) => Promise<boolean>, r
             write: async () => {},
             enqueueAutoClean: async (fn: () => Promise<void>) => fn(),
         } as never,
-        getSettings: () => ({}) as never,
-        setSettings: () => {},
+        getSettings: () => current as never,
+        setSettings: (value) => { current = value as unknown as Record<string, unknown>; },
         loadData: async () => ({ apiKey: rawKey }),
         saveData: async () => {},
     });

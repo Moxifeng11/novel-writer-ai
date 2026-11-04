@@ -13,6 +13,7 @@ import { VectorEnhancer } from '@/engine/vector-enhancer';
 import { yieldToUI } from '@/shared/yield';
 import { NARRATIVE_TEMPORALITY_WORDS, SHOW_TELL_WORDS } from '@/engine/dimension-keywords';
 import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 
 
 const log = createLogger('StructureDeconstructor');
@@ -743,12 +744,8 @@ export class StructureDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     /**
@@ -770,12 +767,8 @@ export class StructureDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     private getEmptyResult(): StructureAnalysisResult {

@@ -222,7 +222,7 @@ export async function createLongNovelProject(
             const destPath = srcPath.replace('元文件', projectRootId);
             try {
                 const content = await adapter.read(srcPath);
-                await adapter.write(destPath, content);
+                await writeVaultText(app, destPath, content);
                 count++;
             } catch (fileErr) {
                 log.warn(`复制失败: ${srcPath}`, fileErr);
@@ -264,7 +264,7 @@ export async function createLongNovelProject(
                 }
                 if (templateFilePath) {
                     const content = await adapter.read(templateFilePath);
-                    await adapter.write(dst, content);
+                    await writeVaultText(app, dst, content);
                     count++;
                     continue;
                 }
@@ -276,7 +276,7 @@ export async function createLongNovelProject(
                     log.warn('[ProjectCreate] 跳过根级文件复制：未找到任何模板源', { dst, srcs });
                     continue;
                 }
-                await adapter.write(dst, srcContent);
+                await writeVaultText(app, dst, srcContent);
                 count++;
             } catch (e) { log.warn('复制根级文件失败:', dst, e); }
         }
@@ -311,6 +311,7 @@ export async function createLongNovelProject(
                         await adapter.mkdir(projFpDir);
                     }
                     const projFpPath = projectFingerprintsFile(projectRootId);
+                    // write-entry-allow: 项目指纹库是 JSON。
                     await adapter.write(projFpPath, JSON.stringify(projectFps, null, 2));
                     count += enabledFps.length;
                 }
@@ -353,11 +354,7 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
             const dstPath = `${pjFanficDir(projectRootId)}/${fanficTargetFileName}`;
             try {
                 const content = await adapter.read(fanficSettingPath);
-                const dstDir = dstPath.substring(0, dstPath.lastIndexOf('/'));
-                if (!(await adapter.exists(dstDir))) {
-                    await adapter.mkdir(dstDir);
-                }
-                await adapter.write(dstPath, content);
+                await writeVaultText(app, dstPath, content);
                 count++;
             } catch (e) {
                 log.warn('Failed to copy fanfic settings:', e);

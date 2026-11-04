@@ -1181,6 +1181,20 @@ export class EngineRegistry {
             setSettings: (s) => { plugin.settings = s; },
             loadData: () => plugin.loadData(),
             saveData: (d) => plugin.saveData(d),
+            // 迁移/回写前保留一份 data.json.bak（仅插件目录内，不含任何用户正文）
+            backupSettings: async (reason) => {
+                const dir = plugin.manifest.dir;
+                if (!dir) return;
+                const source = `${dir}/data.json`;
+                const adapter = plugin.app.vault.adapter;
+                if (!(await adapter.exists(source))) return;
+                try {
+                    await adapter.write(`${dir}/data.json.bak`, await adapter.read(source));
+                    log.info(`[EngineRegistry] 已备份设置：${reason}`);
+                } catch (e) {
+                    log.warn('[EngineRegistry] 设置备份失败（继续迁移）:', e);
+                }
+            },
         });
         this.register(ENGINE_NAMES.SETTINGS_SERVICE, settingsService);
         // 回填给 CryptoService 的延迟绑定回调

@@ -654,12 +654,14 @@ export class ApiSection extends SettingsSection {
     private renderKeyEncryptionRows(container: HTMLElement): void {
         const service = this.plugin.getSettingsService?.();
         const locked = service?.lockedSecretCount?.() ?? 0;
+        const legacy = service?.legacySecretCount?.() ?? 0;
+        const legacyHint = legacy > 0 ? ` 另有 ${legacy} 项旧版加密条目，下次保存时自动升级。` : '';
 
         const row = new Setting(container)
             .setName('密钥加密')
-            .setDesc(locked > 0
+            .setDesc((locked > 0
                 ? `磁盘上有 ${locked} 项密钥处于加密状态。重启或更新后需要输入口令才能读取（修复后不会再让你「重设」口令）。`
-                : '磁盘上没有加密的密钥条目。设定口令后，保存的密钥会用口令加密。');
+                : '磁盘上没有加密的密钥条目。设定口令后，保存的密钥会用口令加密。') + legacyHint);
 
         row.addButton(btn => btn
             .setButtonText(locked > 0 ? '🔓 输入口令解锁' : '🔐 设定口令')

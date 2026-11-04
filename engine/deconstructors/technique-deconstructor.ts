@@ -15,6 +15,7 @@ import { GenreDetector, GenreConfigRegistry } from '@/engine/genre';
 import type { GenreConfig as FrameworkGenreConfig } from '@/engine/genre';
 import { yieldToUI } from '@/shared/yield';
 import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 
 
 const log = createLogger('TechniqueDeconstructor');
@@ -1576,12 +1577,8 @@ export class TechniqueDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     /**
@@ -1604,12 +1601,8 @@ export class TechniqueDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     private buildFrontmatter(result: TechniqueAnalysisResult): string {

@@ -1007,8 +1007,19 @@ export class AgentWorkbenchView extends ItemView {
                     };
                 }),
                 portDeps: { port: this.port, ctx },
-                // 工具审批：危险工具一律询问（没有确认端口 = 拒绝）；写工具默认放行
+                // 默认 ask：覆盖已有文件前确认；显式 allow 才自动放行（用户可在设置中改）
+                writeApproval: this.plugin.settings.agentWriteApproval === 'allow' ? 'allow' : 'ask',
+                // 工具审批：危险工具一律询问（没有确认端口 = 拒绝）；
+                // write_file 新建文件自动放行，覆盖/追加已有文件才确认。
                 requestApproval: async (request) => {
+                    if (request.sideEffect === 'write' && request.tool === 'write_file') {
+                        const target = String(request.args.path || '').trim();
+                        if (target) {
+                            try {
+                                if (!(await this.app.vault.adapter.exists(target))) return true;
+                            } catch { /* 路径异常时走确认 */ }
+                        }
+                    }
                     const confirm = this.port.confirmDangerousAction;
                     if (!confirm) return false;
                     return this.withApprovalTimeout(
@@ -1108,12 +1119,28 @@ export class AgentWorkbenchView extends ItemView {
             const patchPath = `${home}/sandbox.yml`;
             if (adapter.write) await adapter.write(`${relHome}/sandbox.yml`, buildSandboxPatch(sandbox, base));
 
+            // 口令锁定时 settings.apiKey 可能是 aes256... 密文；必须解密后再注入子进程。
+            let dshApiKey = this.plugin.settings.apiKey || '';
+            if (dshApiKey) {
+                try {
+                    dshApiKey = await this.plugin.decryptKey(dshApiKey);
+                } catch (e) {
+                    new Notice(`无法解锁 dsh 所需 API Key：${e instanceof Error ? e.message : String(e)}`, 8000);
+                    return false;
+                }
+                // decryptKey 在用户取消/口令错误时会原样返回密文；不能把密文当 Key 注入。
+                if (dshApiKey.startsWith('aes256v2:') || dshApiKey.startsWith('aes256:')) {
+                    new Notice('Dsh 需要可读取的 API key：请先在设置中解锁密钥口令', 8000);
+                    return false;
+                }
+            }
             const plan = buildDshLaunchPlan({
                 home,
                 workspace: base,
                 sandbox,
                 sandboxPatchPath: patchPath,
-                apiKey: this.plugin.settings.apiKey || '',
+                packageVersion: this.plugin.settings.dshVersion,
+                apiKey: dshApiKey,
                 env: {
                     PATH: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.PATH || '',
                     Path: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.Path || '',

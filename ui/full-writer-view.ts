@@ -1671,7 +1671,7 @@ export class FullWriterView extends ItemView {
             for (const { src, dst } of templateCopies) {
                 if (!(await adapter.exists(dst)) && await adapter.exists(src)) {
                     const content = await adapter.read(src);
-                    await adapter.write(dst, content);
+                    await writeVaultText(this.app, dst, content);
                 }
             }
 

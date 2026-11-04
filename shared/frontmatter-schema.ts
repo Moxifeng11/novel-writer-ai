@@ -186,10 +186,11 @@ const TAG_TO_KIND: Record<string, NotebookFileKind> = {
 
 /** 路径兜底（旧文件没有标签时） */
 const PATH_RULES: Array<{ test: RegExp; kind: NotebookFileKind }> = [
-    // 顶层目录（短篇创作/、剧本创作/）路径可能没有前导斜杠，用 (^|/) 兼容
+    // 内容目录位于项目目录之下（`短篇小说/书名/短篇创作/03-正文/`），
+    // 匹配任意层级，兼容顶层与嵌套两种放置方式。
     { test: /(^|\/)03-大纲与章节\/正文\//, kind: 'body' },
-    { test: /(^|\/)短篇创作\/.*\/03-正文\//, kind: 'body' },
-    { test: /(^|\/)剧本创作\/.*\/03-剧本\//, kind: 'body' },
+    { test: /(^|\/)短篇创作\/(?:.*\/)?03-正文\//, kind: 'body' },
+    { test: /(^|\/)剧本创作\/(?:.*\/)?03-剧本\//, kind: 'body' },
     { test: /(^|\/)03-大纲与章节\/步骤结果\//, kind: 'step' },
     { test: /(^|\/)01-世界架构\/人物\//, kind: 'character' },
     { test: /(^|\/)01-世界架构\/地点\//, kind: 'location' },

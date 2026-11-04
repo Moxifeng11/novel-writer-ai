@@ -5,6 +5,7 @@
  * 版本存储在项目目录下的 _versions/ 文件夹中
  */
 import { App, TFile, Notice } from 'obsidian';
+import { writeVaultText } from '@/shared/file-system-port';
 import type {
     VersionMeta,
     VersionIndex,
@@ -562,15 +563,22 @@ export class ChapterVersionService {
     }
 
     private async writeFile(path: string, content: string): Promise<void> {
+        // 回滚正文是用户可见 Markdown：走索引写入；版本索引等 JSON 保持 adapter。
+        if (path.endsWith('.md')) {
+            await writeVaultText(this.app, path, content);
+            return;
+        }
         const exists = await this.app.vault.adapter.exists(path);
         if (exists) {
             const file = this.app.vault.getAbstractFileByPath(path);
             if (file instanceof TFile) {
                 await this.app.vault.modify(file, content);
             } else {
+                // write-entry-allow: 非 .md 版本索引/内容 JSON，不在 vault 索引。
                 await this.app.vault.adapter.write(path, content);
             }
         } else {
+            // write-entry-allow: 非 .md 版本索引/内容 JSON，不在 vault 索引。
             await this.app.vault.adapter.write(path, content);
         }
     }

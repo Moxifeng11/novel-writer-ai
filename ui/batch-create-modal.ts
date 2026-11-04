@@ -254,7 +254,7 @@ export class BatchCreateModal extends Modal {
         const failures: string[] = [];
 
         try {
-            await ensureModeContentStructure(this.app.vault.adapter, project, mode);
+            await ensureModeContentStructure(this.app.vault.adapter, project, mode, this.app);
             const dir = modeBodyDir(project, mode);
             if (!(await this.app.vault.adapter.exists(dir))) await this.app.vault.adapter.mkdir(dir);
 

@@ -1,7 +1,7 @@
 # 开发文档总索引
 
 > 本文件是 `docs/` 的唯一入口。新增文档必须在这里登记，否则 `npm run check:docs` 会失败。
-> 版本：v4.27.0 · 2026-11-02 · 对应插件版本以 `package.json` 为准。
+> 版本：v4.27.1 · 2026-11-04 · 对应插件版本以 `package.json` 为准。
 
 ---
 
@@ -22,6 +22,9 @@
 | 维护文档本身 | [handbook/10-documentation-policy.md](handbook/10-documentation-policy.md) |
 | 依赖升级 / 平台兼容 | [handbook/11-dependency-and-platform-compatibility.md](handbook/11-dependency-and-platform-compatibility.md) |
 | 模板加载/渲染/缓存/销毁 | [handbook/12-template-lifecycle.md](handbook/12-template-lifecycle.md) |
+| 产品定位与用户 | [PRODUCT.md](PRODUCT.md) |
+| 下一阶段排期 | [roadmap/ROADMAP.md](roadmap/ROADMAP.md) |
+| 当前架构审计与问题清单 | [audits/v4.27.0-architecture-and-roadmap.md](audits/v4.27.0-architecture-and-roadmap.md) |
 | 查术语 | [glossary.md](glossary.md) |
 
 ---

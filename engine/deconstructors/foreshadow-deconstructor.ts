@@ -14,6 +14,7 @@ import type { GenreConfig } from '@/engine/genre/types';
 import { LLMEnhancer } from '@/engine/llm-enhancer';
 import { createLogger } from '@/shared/logger';
 import { ForeshadowConfigManager, ForeshadowTypeConfig } from '@/engine/foreshadow-config-manager';
+import { writeVaultText } from '@/shared/file-system-port';
 
 
 const log = createLogger('ForeshadowDeconstructor');
@@ -1789,12 +1790,8 @@ export class ForeshadowDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     /**
@@ -1817,12 +1814,8 @@ export class ForeshadowDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     private getEmptyResult(): ForeshadowAnalysisResult {

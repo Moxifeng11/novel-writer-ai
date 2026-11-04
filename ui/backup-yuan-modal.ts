@@ -1,6 +1,7 @@
 import { App, Modal, Notice } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 
 
 const log = createLogger('BackupYuanModal');
@@ -96,7 +97,7 @@ export class BackupYuanModal extends Modal {
             for (const f of src.files) {
                 try {
                     const content = await adapter.read(f);
-                    await adapter.write(f.replace('元文件', backupName), content);
+                    await writeVaultText(this.app, f.replace('元文件', backupName), content);
                     count++;
                 } catch (e) {
                     failed++;

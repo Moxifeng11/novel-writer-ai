@@ -185,10 +185,10 @@ describe('启动参数', () => {
             workspace: 'C:/vault',
             sandbox: 'read-only',
             apiKey: 'sk-test',
-            commandArgs: ['-y', '@deepseek-ai/dsh'],
+            commandArgs: ['-y', '@deepseek-ai/dsh@0.2.1-rc.5'],
         });
         expect(plan.command).toBe('npx');
-        expect(plan.args).toEqual(['-y', '@deepseek-ai/dsh', '--profile', 'sdk']);
+        expect(plan.args).toEqual(['-y', '@deepseek-ai/dsh@0.2.1-rc.5', '--profile', 'sdk']);
         expect(plan.env.DSH_HOME).toBe('C:/plugin/data/dsh');
         expect(plan.env.DEEPSEEK_API_KEY).toBe('sk-test');
         // 不继承整个 process.env
@@ -200,27 +200,42 @@ describe('启动参数', () => {
             home: '/h', workspace: '/v', sandbox: 'read-only',
             sandboxPatchPath: '/h/sandbox.yml',
         });
-        expect(plan.args).toEqual(['-y', '@deepseek-ai/dsh', '--profile', 'sdk', '--patch', '/h/sandbox.yml']);
+        expect(plan.args).toEqual(['-y', '@deepseek-ai/dsh@0.2.1-rc.5', '--profile', 'sdk', '--patch', '/h/sandbox.yml']);
         expect(buildSandboxPatch('read-only', '/v')).toContain('mode: read-only');
         expect(buildSandboxPatch('workspace-write', '/v')).toContain('workspaceRoot: "/v"');
+    });
+
+    it('未显式传 commandArgs 时使用固定版本；非法版本回落默认值', () => {
+        const fixed = buildDshLaunchPlan({ home: '/h', workspace: '/v', sandbox: 'read-only' });
+        expect(fixed.args[1]).toBe('@deepseek-ai/dsh@0.2.1-rc.5');
+
+        const custom = buildDshLaunchPlan({
+            home: '/h', workspace: '/v', sandbox: 'read-only', packageVersion: '0.3.0',
+        });
+        expect(custom.args[1]).toBe('@deepseek-ai/dsh@0.3.0');
+
+        const injected = buildDshLaunchPlan({
+            home: '/h', workspace: '/v', sandbox: 'read-only', packageVersion: '1.0.0 && calc',
+        });
+        expect(injected.args[1]).toBe('@deepseek-ai/dsh@0.2.1-rc.5');
     });
 });
 
 describe('子进程启动（Windows shim）', () => {
     it('POSIX 原样 spawn', () => {
-        expect(buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh'], 'linux'))
-            .toEqual({ command: 'npx', args: ['-y', '@deepseek-ai/dsh'] });
+        expect(buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh@0.2.1-rc.5'], 'linux'))
+            .toEqual({ command: 'npx', args: ['-y', '@deepseek-ai/dsh@0.2.1-rc.5'] });
     });
 
     it('Windows 上 npx 经 ComSpec 执行（spawn npx 会 ENOENT）', () => {
-        const spec = buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh', '--profile', 'sdk'], 'win32', 'C:\\Windows\\System32\\cmd.exe');
+        const spec = buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh@0.2.1-rc.5', '--profile', 'sdk'], 'win32', 'C:\\Windows\\System32\\cmd.exe');
         expect(spec.command).toBe('C:\\Windows\\System32\\cmd.exe');
         expect(spec.args.slice(0, 3)).toEqual(['/d', '/s', '/c']);
-        expect(spec.args[3]).toBe('npx -y @deepseek-ai/dsh --profile sdk');
+        expect(spec.args[3]).toBe('npx -y @deepseek-ai/dsh@0.2.1-rc.5 --profile sdk');
     });
 
     it('含空格的路径被引号包裹，.exe 保持直连', () => {
-        const spec = buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh', '--patch', 'C:\\a b\\sandbox.yml'], 'win32', 'cmd.exe');
+        const spec = buildDshSpawnSpec('npx', ['-y', '@deepseek-ai/dsh@0.2.1-rc.5', '--patch', 'C:\\a b\\sandbox.yml'], 'win32', 'cmd.exe');
         expect(spec.args[3]).toContain('"C:\\a b\\sandbox.yml"');
         expect(buildDshSpawnSpec('C:\\nodejs\\node.exe', ['x'], 'win32', 'cmd.exe'))
             .toEqual({ command: 'C:\\nodejs\\node.exe', args: ['x'] });

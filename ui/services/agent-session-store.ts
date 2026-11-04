@@ -96,8 +96,10 @@ export function createAgentSessionStore(app: App, scope: () => string): AgentSes
             const line = `${JSON.stringify(snapshot)}\n`;
             if (size > 0 && size + line.length > MAX_STORE_BYTES) {
                 // 只留最新一行：旧快照对恢复没有价值，继续追加会让文件无限增长
+                // write-entry-allow: Agent 会话 JSONL，位于 .sessions 点目录。
                 await app.vault.adapter.write(path, line);
             } else {
+                // write-entry-allow: Agent 会话 JSONL，位于 .sessions 点目录。
                 await app.vault.adapter.append(path, line);
             }
         } catch (e) {

@@ -8,6 +8,7 @@ import type { App, DataAdapter } from 'obsidian';
 import { TFile } from 'obsidian';
 import type { CreationMode } from './creation-mode';
 import { resolveProjectRoot } from '@/domains/kernel/project-locator';
+import { writeVaultText } from './file-system-port';
 
 /**
  * 短篇内容根目录。
@@ -291,16 +292,24 @@ export function modeDocStarter(project: string, mode: CreationMode, doc: 'storyC
  * @param adapter - 适配器
  * @param project - 项目（路径或对象）
  * @param mode - 模式
+ * @param app - 传入时起始文档走 vault 索引写入（生产路径必须传）
  */
 export async function ensureModeContentStructure(
     adapter: DataAdapter,
     project: string,
-    mode: CreationMode
+    mode: CreationMode,
+    app?: App
 ): Promise<void> {
     const writeIfMissing = async (path: string, content: string): Promise<void> => {
+        if (await adapter.exists(path)) return;
+        if (app) {
+            await writeVaultText(app, path, content);
+            return;
+        }
         const dir = path.substring(0, path.lastIndexOf('/'));
         if (!(await adapter.exists(dir))) await adapter.mkdir(dir);
-        if (!(await adapter.exists(path))) await adapter.write(path, content);
+        // write-entry-allow: 无 App 的测试/兼容分支；生产调用方传 app 走 writeVaultText。
+        await adapter.write(path, content);
     };
 
     if (mode === 'short') {

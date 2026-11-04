@@ -5,10 +5,13 @@
  * - SDK profile 用 stdio JSON-RPC（stdout 只走协议）；
  * - DSH_HOME 指向插件数据目录，会话不落在 vault；
  * - 默认 read-only sandbox，写入必须由用户先在设置中显式放开；
- * - 不自动安装/升级 dsh：命令不存在时由健康检查给出可执行提示。
+ * - 不自动升级 dsh：默认固定 @deepseek-ai/dsh@0.2.1-rc.5；命令不存在时由健康检查给出提示。
  */
 
 export type DshSandboxMode = 'read-only' | 'workspace-write';
+
+/** 默认 dsh 版本：固定版本，避免 npx 运行时拉取最新包 */
+export const DSH_PACKAGE_VERSION = '0.2.1-rc.5';
 
 /**
  * dsh 启动参数。
@@ -16,8 +19,10 @@ export type DshSandboxMode = 'read-only' | 'workspace-write';
 export interface DshLaunchOptions {
     /** 可执行文件（默认 npx）；支持用户改成绝对路径 */
     command?: string;
-    /** 传给可执行文件的参数（默认 -y @deepseek-ai/dsh --profile sdk） */
+    /** 传给可执行文件的参数（默认 -y @deepseek-ai/dsh@<version> --profile sdk） */
     commandArgs?: string[];
+    /** 固定 dsh 版本；默认 DSH_PACKAGE_VERSION（仅在未显式传 commandArgs 时生效） */
+    packageVersion?: string;
     profile?: string;
     /** DSH_HOME：插件数据目录下的独立 home */
     home: string;
@@ -64,9 +69,12 @@ export function buildSandboxPatch(mode: DshSandboxMode, workspaceRoot: string): 
  */
 export function buildDshLaunchPlan(options: DshLaunchOptions): DshLaunchPlan {
     const command = (options.command || 'npx').trim();
+    // 版本号来自设置，只允许 semver 安全字符：Windows 走 ComSpec 时防止参数注入/拼接失败。
+    const rawVersion = String(options.packageVersion || '').trim();
+    const version = /^[0-9A-Za-z][0-9A-Za-z._-]*$/.test(rawVersion) ? rawVersion : DSH_PACKAGE_VERSION;
     const baseArgs = options.commandArgs && options.commandArgs.length > 0
         ? [...options.commandArgs]
-        : ['-y', '@deepseek-ai/dsh'];
+        : ['-y', `@deepseek-ai/dsh@${version}`];
     const args = [...baseArgs, '--profile', options.profile || 'sdk'];
     if (options.sandboxPatchPath) {
         args.push('--patch', options.sandboxPatchPath);

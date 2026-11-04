@@ -290,8 +290,12 @@ export interface NovelWriterSettings {
     dshProvider?: string;
     /** dsh 模型名（空 = 跟随 defaultModel） */
     dshModel?: string;
+    /** dsh 固定包版本（默认 0.2.1-rc.5；不允许 npx 拉 latest） */
+    dshVersion?: string;
     /** dsh 单回合最长等待（ms，默认 10 分钟；0 = 沿用旧 180s） */
     dshTurnTimeoutMs?: number;
+    /** Agent 写工具审批：ask=覆盖/写入前确认（默认）；allow=自动放行 */
+    agentWriteApproval?: 'ask' | 'allow';
     /**
      * 是否允许 dsh 本会话写入 vault。
      * SDK 协议没有逐次审批通道：开启等于整会话 workspace-write，启动前会再确认一次。
@@ -1252,9 +1256,10 @@ export default class NovelWriterPlugin extends Plugin {
      *
       * @returns boolean } 结果 或 null
      */
-    getSettingsService(): { lockedSecretCount(): number; hasEncryptedSecrets(): boolean } | null {
+    getSettingsService(): { lockedSecretCount(): number; legacySecretCount(): number; hasEncryptedSecrets(): boolean } | null {
         const service = this.engineRegistry.getOrNull<{
             lockedSecretCount(): number;
+            legacySecretCount(): number;
             hasEncryptedSecrets(): boolean;
         }>(ENGINE_NAMES.SETTINGS_SERVICE);
         return service ?? null;

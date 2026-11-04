@@ -474,12 +474,17 @@ export class KnowledgeTagManager {
     async save(): Promise<void> {
         const filePath = kbTagSystemFile(this.baseDir);
         const content = this.serializeToMarkdown();
+        // 生产侧拿到完整 App：走 vault 索引写入，标签页能收到 metadataCache 更新。
+        // 单测的最小端口没有 getAbstractFileByPath，退回 adapter（测试不依赖索引）。
+        if (typeof (this.app.vault as { getAbstractFileByPath?: unknown }).getAbstractFileByPath === 'function') {
+            await writeVaultText(this.app as unknown as import('obsidian').App, filePath, content);
+            return;
+        }
         const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
         if (!(await this.app.vault.adapter.exists(dirPath))) {
             await this.app.vault.adapter.mkdir(dirPath);
         }
-        // 该管理器只拿到最小 vault 端口（测试用内存实现），无法走 App 级 writeVaultText；
-        // 写入后由标签页重载兜底。生产侧不依赖 metadataCache 即时刷新。
+        // write-entry-allow: 仅单测最小端口走到这里；生产分支已走 writeVaultText。
         await this.app.vault.adapter.write(filePath, content);
     }
 

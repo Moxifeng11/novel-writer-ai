@@ -16,6 +16,7 @@ import { GenreConfig as AdaptiveGenreConfig, GenreConfigRegistry } from '@/engin
 import { LLMEnhancer } from '@/engine/llm-enhancer';
 import { SemanticAnalyzer } from '@/engine/semantic-analyzer';
 import { createLogger } from '@/shared/logger';
+import { writeVaultText } from '@/shared/file-system-port';
 
 
 const log = createLogger('CharacterDeconstructor');
@@ -706,12 +707,8 @@ export class CharacterDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     /**
@@ -733,12 +730,8 @@ export class CharacterDeconstructor {
         const body = this.buildMarkdownBody(result, bookName);
         const content = `---\n${frontmatter}\n---\n\n${body}`;
 
-        const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-        if (!(await app.vault.adapter.exists(dirPath))) {
-            await app.vault.adapter.mkdir(dirPath);
-        }
-
-        await app.vault.adapter.write(filePath, content);
+        // 用户可见分析报告：必须走 vault 索引写入，adapter.write 不触发 metadataCache。
+        await writeVaultText(app as unknown as import('obsidian').App, filePath, content);
     }
 
     private getEmptyResult(): CharacterAnalysisResult {
@@ -1070,7 +1063,7 @@ export class CharacterDeconstructor {
         }
 
         // 中主体：同一句子中角色名在行为词之前
-        const sentences = paragraph.split(/(?<=[。！？；])/u);
+        const sentences = paragraph.match(/[^。！？；]+[。！？；]?/gu) || [];
         for (const sentence of sentences) {
             const nameIdx = sentence.indexOf(name);
             const wordIdx = sentence.indexOf(behaviorWord);

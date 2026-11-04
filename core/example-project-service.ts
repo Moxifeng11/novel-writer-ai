@@ -7,6 +7,7 @@
 
 import { App } from 'obsidian';
 import { ensureTemplateScaffold } from '@/shared/template-scaffold';
+import { writeVaultText } from '@/shared/file-system-port';
 
 /**
  * 内置示例项目名称。
@@ -304,7 +305,8 @@ export async function importExampleProject(app: App): Promise<ImportExampleResul
     }
 
     for (const file of EXAMPLE_FILES) {
-        await adapter.write(`${project}/${file.path}`, file.content);
+        // 示例项目全是用户可见 Markdown：走 vault 索引，导入后立即可见/可读。
+        await writeVaultText(app, `${project}/${file.path}`, file.content);
     }
 
     return { created: true, project };

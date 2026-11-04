@@ -4,9 +4,10 @@
  * 与长篇创建流程分离：短篇、剧本先完成本模块的调研，再创建项目；
  * 调研结果写入项目内独立的 `00-前期调研/`，不混入长篇 11 步目录。
  */
-import type { DataAdapter } from 'obsidian';
+import type { App, DataAdapter } from 'obsidian';
 import type { CreationMode } from './creation-mode';
 import { resolveProjectRoot } from '@/domains/kernel/project-locator';
+import { writeVaultText } from './file-system-port';
 
 /**
  * 前期调研目录。
@@ -368,11 +369,13 @@ ${data.genre || '（未选择）'}
 `;
 }
 
-async function backupIfExists(adapter: DataAdapter, path: string): Promise<void> {
+async function backupIfExists(adapter: DataAdapter, path: string, app?: App): Promise<void> {
     if (!(await adapter.exists(path))) return;
     try {
         const old = await adapter.read(path);
-        await adapter.write(path.replace(/\.md$/, `.备份-${Date.now()}.md`), old);
+        const backupPath = path.replace(/\.md$/, `.备份-${Date.now()}.md`);
+        if (app) await writeVaultText(app, backupPath, old);
+        else await adapter.write(backupPath, old); // write-entry-allow: 无 App 的兼容分支。
     } catch {
         // 备份失败不阻断主写入；调用方仍会写新内容
     }
@@ -383,21 +386,31 @@ async function backupIfExists(adapter: DataAdapter, path: string): Promise<void>
  * @param adapter - 适配器
  * @param project - 项目（路径或对象）
  * @param data - 数据
+ * @param app - 传入时 Markdown 走 vault 索引写入（生产路径必须传）
  */
 export async function writePreResearchFiles(
     adapter: DataAdapter,
     project: string,
-    data: PreResearchData
+    data: PreResearchData,
+    app?: App
 ): Promise<void> {
     const dir = preResearchDir(project);
     if (!(await adapter.exists(dir))) await adapter.mkdir(dir);
     const reportPath = preResearchReportPath(project);
     const modePath = preResearchModeDocPath(project, data.mode);
-    await backupIfExists(adapter, reportPath);
-    await backupIfExists(adapter, modePath);
+    await backupIfExists(adapter, reportPath, app);
+    await backupIfExists(adapter, modePath, app);
+    // write-entry-allow: 调研数据是 JSON。
     await adapter.write(preResearchDataPath(project), JSON.stringify(data, null, 2));
-    await adapter.write(reportPath, buildPreResearchReport(data));
-    await adapter.write(modePath, buildPreResearchModeDoc(data));
+    if (app) {
+        await writeVaultText(app, reportPath, buildPreResearchReport(data));
+        await writeVaultText(app, modePath, buildPreResearchModeDoc(data));
+    } else {
+        // write-entry-allow: 无 App 的兼容分支；生产传 app 走 writeVaultText。
+        await adapter.write(reportPath, buildPreResearchReport(data));
+        // write-entry-allow: 无 App 的兼容分支；生产传 app 走 writeVaultText。
+        await adapter.write(modePath, buildPreResearchModeDoc(data));
+    }
 }
 
 /**

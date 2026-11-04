@@ -21,6 +21,38 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.27.1',
+        date: '2026-11-04',
+        title: '可信门禁、Agent 写入确认与密钥迁移',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🚦 门禁',
+                items: [
+                    'ESLint flat config 修复，no-unused-vars / no-explicit-any 等规则真实生效',
+                    '新增 check:write-entry：用户可见 Markdown 禁止裸 adapter 写入',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🔐 安全',
+                items: [
+                    'Agent 覆盖已有文件默认需要确认；设置页可显式放行',
+                    'dsh 固定 0.2.1-rc.5；Key 解密后再注入子进程',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '💾 数据',
+                items: [
+                    'v1 密文在有口令时自动升级 v2；设置迁移前写 data.json.bak',
+                    '修正短篇/剧本正文根目录与路径识别',
+                    '拆解报告/审核记录/模板复制改走 writeVaultText',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.27.0',
         date: '2026-11-04',
         title: '全流程阻塞修复与数据可靠性加固',

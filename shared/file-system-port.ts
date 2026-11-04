@@ -464,6 +464,21 @@ export async function writeVaultText(
     path: string,
     content: string,
 ): Promise<void> {
+    const vault = app?.vault as (import('obsidian').Vault & { getAbstractFileByPath?: unknown; create?: unknown }) | undefined;
+    const adapter = vault?.adapter;
+    if (!vault || !adapter) {
+        throw new Error('writeVaultText 需要带 adapter 的 Obsidian App');
+    }
+    // 单测/兼容环境可能只提供最小 adapter 端口：没有索引能力时退回 adapter，
+    // 生产 App 永远走下面的索引分支（vault.modify / vault.create）。
+    if (typeof vault.getAbstractFileByPath !== 'function' || typeof vault.create !== 'function') {
+        const fallbackDir = path.substring(0, path.lastIndexOf('/'));
+        if (fallbackDir) {
+            try { await adapter.mkdir(fallbackDir); } catch { /* 目录已存在 */ }
+        }
+        await adapter.write(path, content);
+        return;
+    }
     const fs = new ObsidianFileSystem(app);
     const dir = path.substring(0, path.lastIndexOf('/'));
     if (dir) await fs.mkdir(dir);

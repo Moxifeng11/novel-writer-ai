@@ -27,6 +27,18 @@ export class AgentBackendSection extends SettingsSection {
         });
 
         new Setting(section)
+            .setName('Agent 写入确认')
+            .setDesc('默认开启：覆盖/追加已有笔记前确认，新建文件自动放行；关闭后写操作全部自动放行（危险操作仍会确认）')
+            .addDropdown(dropdown => dropdown
+                .addOption('ask', '每次确认（推荐）')
+                .addOption('allow', '自动放行')
+                .setValue(this.plugin.settings.agentWriteApproval === 'allow' ? 'allow' : 'ask')
+                .onChange(async (value) => {
+                    this.plugin.settings.agentWriteApproval = value === 'allow' ? 'allow' : 'ask';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
             .setName('后端')
             .setDesc('切换后需重新打开 Agent 工作台生效')
             .addDropdown(dropdown => dropdown
@@ -55,6 +67,17 @@ export class AgentBackendSection extends SettingsSection {
                 .setValue(this.plugin.settings.dshProvider || '')
                 .onChange(async (value) => {
                     this.plugin.settings.dshProvider = value.trim() || 'deepseek-official';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
+            .setName('Dsh 固定版本')
+            .setDesc('插件用 npx 启动固定版本，不会自动拉取 latest；升级需手动改这里。')
+            .addText(text => text
+                .setPlaceholder('0.2.1-rc.5')
+                .setValue(this.plugin.settings.dshVersion || '0.2.1-rc.5')
+                .onChange(async (value) => {
+                    this.plugin.settings.dshVersion = value.trim() || '0.2.1-rc.5';
                     await this.plugin.saveSettings();
                 }));
 

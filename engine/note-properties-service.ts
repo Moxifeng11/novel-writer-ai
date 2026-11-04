@@ -268,6 +268,7 @@ export async function writeProjectBases(app: App, project: string): Promise<stri
         // 不收录它，`getAbstractFileByPath` 永远返回 null → 第二次生成会走 vault.create
         // 并以「File already exists」失败（实测：同一项目连跑两次必挂）。
         // adapter 层不受 vault 索引限制，且 write 自带覆盖语义，天然幂等。
+        // write-entry-allow: `.看板/` 点目录不在 vault 索引，只能走 adapter。
         await adapter.write(path, spec.content);
         written.push(path);
     }

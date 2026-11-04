@@ -318,6 +318,7 @@ export class WritingStatsService {
             if (dir && !(await this.deps.app.vault.adapter.exists(dir))) {
                 await this.deps.app.vault.adapter.mkdir(dir);
             }
+            // write-entry-allow: 字数台账是 JSON，位于插件数据目录。
             await this.deps.app.vault.adapter.write(this.deps.ledgerPath, JSON.stringify(this.data));
         } catch (e) {
             log.warn('[WritingStats] 台账写入失败:', e);

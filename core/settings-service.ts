@@ -51,6 +51,13 @@ export interface SettingsServiceDeps {
      * @param data - 数据
      */
     saveData(data: any): Promise<void>;
+    /**
+     * 迁移/回写前备份当前 data.json（可选；实现方负责写 `<pluginDir>/data.json.bak`）。
+     * 只在本次确实要写盘时调用，避免每次启动都覆盖备份。
+     *
+     * @param reason - 备份原因（日志用）
+     */
+    backupSettings?(reason: string): Promise<void>;
 }
 
 /**
@@ -112,6 +119,8 @@ export class SettingsService {
 
     /** v4.27：最近一次启动时未完成的设置迁移（null = 正常） */
     private migrationIncomplete: { fromVersion: number; toVersion: number; error?: string } | null = null;
+    /** 磁盘上仍为 v1（`aes256:`）的密钥条数：下次有口令时自动升级为 v2 */
+    private legacySecretCountValue = 0;
 
     /**
      * 磁盘上仍处于密文状态、且本次会话未能解开的条目数（UI 用）
@@ -122,6 +131,16 @@ export class SettingsService {
         return Object.values(this.rawSecrets).filter(
             v => typeof v === 'string' && v.startsWith('aes256v2:'),
         ).length;
+    }
+
+    /**
+     * 磁盘上仍为 v1 密文的密钥条数（v1 seed 是公开常量，等同混淆）。
+     * 有会话口令时保存会自动升级为 v2；无口令时保持旧密文，不降级明文。
+     *
+     * @returns 数值结果
+     */
+    legacySecretCount(): number {
+        return this.legacySecretCountValue;
     }
 
     /** 加载设置：迁移 → 解密 → 同步自定义模型 */
@@ -163,6 +182,12 @@ export class SettingsService {
 
         // 记录磁盘原始值（解密前），保存时用于「拿不到口令就保留旧密文」
         this.rawSecrets = this.collectRawSecrets(migratedData);
+        this.legacySecretCountValue = Object.values(this.rawSecrets).filter(
+            v => typeof v === 'string' && v.startsWith('aes256:'),
+        ).length;
+        if (this.legacySecretCountValue > 0) {
+            log.warn(`[SettingsService] 检测到 ${this.legacySecretCountValue} 项 v1 密文，保存时将升级为 v2`);
+        }
 
         // 解密所有密钥（启动期静默：未解锁时保留密文，避免弹口令阻塞 onload）
         settings.apiKey = await this.deps.crypto.decryptWithoutPrompt(settings.apiKey);
@@ -195,7 +220,13 @@ export class SettingsService {
             log.warn('[SettingsService] 设置迁移未完成，跳过回写以保留原始数据:', outcome.error || `停在 v${outcome.toVersion}`);
             return;
         }
-        if (rawVersion !== CURRENT_SCHEMA_VERSION || missingDefaultKeys.length > 0 || updateRepoChanged) {
+        // v1 密文只在已有会话口令时自动升级；无口令时保存会触发口令框，
+        // 不能放在启动路径上（会阻塞 onload），留给用户下次保存设置时处理。
+        const migrateLegacy = this.legacySecretCountValue > 0 && this.deps.crypto.hasSessionPassword();
+        if (rawVersion !== CURRENT_SCHEMA_VERSION || missingDefaultKeys.length > 0 || updateRepoChanged || migrateLegacy) {
+            await this.deps.backupSettings?.(
+                migrateLegacy ? 'v1 密钥升级 v2' : `设置迁移 v${String(rawVersion ?? '?')} → v${CURRENT_SCHEMA_VERSION}`,
+            );
             await this.saveSettings();
         }
     }
@@ -254,8 +285,9 @@ export class SettingsService {
             return encrypted ?? this.previousCipherOf(field, value);
         }
         const previous = this.rawSecrets[field];
-        if (typeof previous === 'string' && previous.startsWith(V2_PREFIX_LOCAL)) {
-            // 磁盘上原本有密文：必须加密后才能落盘
+        if (typeof previous === 'string' && (previous.startsWith(V2_PREFIX_LOCAL) || previous.startsWith('aes256:'))) {
+            // 磁盘上原本有密文（v2 或 v1）：必须加密后才能落盘。
+            // v1 → v2 的升级也走这里；拿不到口令时保留旧密文，绝不降级明文。
             const encrypted = await this.deps.crypto.encryptStrict(value);
             if (encrypted) return encrypted;
             log.warn(`[小说工坊] 未能解锁口令，${field} 保留原密文不写明文`);
@@ -267,7 +299,8 @@ export class SettingsService {
     /** 拿不到口令时的兜底：有旧密文就用旧密文，否则返回空串（不泄露明文） */
     private previousCipherOf(field: string, plaintext: string): string {
         const previous = this.rawSecrets[field];
-        if (typeof previous === 'string' && previous.startsWith(V2_PREFIX_LOCAL)) return previous;
+        if (typeof previous === 'string'
+            && (previous.startsWith(V2_PREFIX_LOCAL) || previous.startsWith('aes256:'))) return previous;
         return plaintext;
     }
 
@@ -309,7 +342,15 @@ export class SettingsService {
         if (this.deps.cacheManager && settings.panelLayout) {
             this.deps.cacheManager.setPanelLayout(settings.panelLayout);
         }
-        return this.deps.settingsWriter.enqueueAutoClean(() => this.deps.saveData(dataToSave));
+        return this.deps.settingsWriter.enqueueAutoClean(async () => {
+            await this.deps.saveData(dataToSave);
+            // 写盘成功后刷新快照：v1 → v2 升级后 legacySecretCount 归零，
+            // 后续保存也不会再拿旧密文当兜底。
+            this.rawSecrets = this.collectRawSecrets(dataToSave);
+            this.legacySecretCountValue = Object.values(this.rawSecrets).filter(
+                v => typeof v === 'string' && v.startsWith('aes256:'),
+            ).length;
+        });
     }
 }
 
@@ -399,8 +440,10 @@ export function getDefaultSettings(): NovelWriterSettings {
         agentBackend: 'native',
         dshProvider: 'deepseek-official',
         dshModel: '',
+        dshVersion: '0.2.1-rc.5',
         dshTurnTimeoutMs: 600_000,
         dshAllowVaultWrite: false,
+        agentWriteApproval: 'ask',
         storyContextTier: 'auto',
         /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */
         fingerprintInjectionBudget: 2000,

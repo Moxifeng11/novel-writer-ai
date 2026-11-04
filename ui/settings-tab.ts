@@ -13,7 +13,7 @@
  *   - 异步加载类分区（知识库 / 指纹库 / 规则版本）命中缓存时不会自动重新拉数据，
  *     需要新鲜数据请点分区内的刷新按钮或重开设置页。
  */
-import { App, Notice, PluginSettingTab } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import NovelWriterPlugin, { DEFAULT_SETTINGS } from '@/main';
 import type { SettingsSectionHost } from './settings/section-base';
 import { ApiSection } from './settings/api-section';
@@ -124,7 +124,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: '📖 小说工坊 AI 设置' });
+        new Setting(containerEl).setName('📖 设置').setHeading();
 
         this.performance.renderBanner(containerEl);
 

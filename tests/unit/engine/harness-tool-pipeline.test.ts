@@ -136,7 +136,7 @@ describe('审批', () => {
         expect(seen).toEqual([true]);
     });
 
-    it('writeApproval=ask 时写工具也要审批；默认 allow 不询问', async () => {
+    it('writeApproval=ask 时写工具也要审批；显式 allow 不询问', async () => {
         const registry = new HarnessToolRegistry();
         registry.register(tool({
             name: 'write_tool',
@@ -165,6 +165,7 @@ describe('审批', () => {
             memory: { slots: {} },
             projects: [],
             activeProject: null,
+            writeApproval: 'allow',
         });
         expect(allowed.toolCalls[0].ok).toBe(true);
     });

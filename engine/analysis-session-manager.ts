@@ -621,6 +621,7 @@ export class AnalysisSessionManager {
     }
 
     private async writeFile(path: string, content: string): Promise<void> {
+        // write-entry-allow: 分析会话文件是 JSON，位于插件数据目录，不在 vault 索引。
         await this.vault.adapter.write(path, content);
     }
 

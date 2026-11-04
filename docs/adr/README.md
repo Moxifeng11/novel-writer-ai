@@ -16,6 +16,11 @@
 | ADR-005 | 不引入 jsdom 做 DOM 测试 | Accepted | 2026-11-01 | [design/g7-4-dom-testing-decision.md](../design/g7-4-dom-testing-decision.md) |
 | ADR-006 | dsh 作为可选后端：默认只读、写入整会话放开 | Accepted | 2026-11-02 | [research/deepseek-harness/integration-dsh.md](../research/deepseek-harness/integration-dsh.md) |
 | ADR-007 | 规则/提示词版本化与内容身份（frontmatter + 规范化哈希） | Accepted | 2026-11-02 | `shared/versioned-registry.ts`、`services/rules-registry.ts` |
+| ADR-008 | 门禁必须“真的能拦住” | Accepted | 2026-11-04 | [008-trustworthy-gates.md](008-trustworthy-gates.md)、`eslint.config.mjs`、`scripts/check-write-entry.mjs` |
+| ADR-009 | Agent 覆盖已有文件默认需要确认 | Accepted | 2026-11-04 | [009-agent-write-approval.md](009-agent-write-approval.md)、`engine/agent/harness/agent-loop.ts` |
+| ADR-010 | ModeRuntime：三模式共用上下文与结算 | Accepted（M3 实施） | 2026-11-04 | [010-mode-runtime.md](010-mode-runtime.md)、`shared/creation-mode.ts` |
+| ADR-011 | AssetRegistry：模板/提示词/规则/风格/指纹统一为资产 | Accepted（M4 实施） | 2026-11-04 | [011-asset-registry.md](011-asset-registry.md)、`engine/prompt-resolver.ts` |
+| ADR-012 | JobService：长任务统一注册、可取消、可重试 | Accepted（M2 实施） | 2026-11-04 | [012-job-service.md](012-job-service.md)、`engine/execution-ledger.ts` |
 
 ## 状态定义
 

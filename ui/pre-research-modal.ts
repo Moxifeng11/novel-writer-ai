@@ -654,7 +654,7 @@ export class PreResearchModal extends Modal {
 
         if (this.options.project) {
             try {
-                await writePreResearchFiles(this.app.vault.adapter, this.options.project, data);
+                await writePreResearchFiles(this.app.vault.adapter, this.options.project, data, this.app);
                 new Notice('✅ 前期调研已保存到 00-前期调研/', 5000);
                 this.close();
             } catch (e) {
@@ -674,7 +674,7 @@ export class PreResearchModal extends Modal {
             scriptGenre: data.mode === 'script' ? data.genre : '',
             onCreated: async (project) => {
                 try {
-                    await writePreResearchFiles(this.app.vault.adapter, project, data);
+                    await writePreResearchFiles(this.app.vault.adapter, project, data, this.app);
                     new Notice(`✅ 项目已创建：${project}。下一步在「创作流程」里写大纲与正文`, 6000);
                     await this.options.onCreated?.(project);
                     // 创建即断头是旧流程最大的问题：写完调研必须把用户送到下一步。

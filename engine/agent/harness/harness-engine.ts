@@ -64,7 +64,7 @@ export interface AgentHarnessEngineOptions {
     spillPolicy?: SpillPolicy;
     /** 工具审批（dangerous 工具 fail-closed）；未提供时 dangerous 一律拒绝 */
     requestApproval?: (request: import('./harness-types').HarnessApprovalRequest) => Promise<boolean>;
-    /** 写工具是否需要询问（默认 allow，保持既有行为） */
+    /** 写工具是否需要询问（Harness 默认 allow；工作台传 ask） */
     writeApproval?: 'allow' | 'ask';
     /**
      * 会话变化回调（dsh session-persistence-jsonl）：

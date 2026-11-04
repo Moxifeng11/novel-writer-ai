@@ -62,7 +62,7 @@ export interface HarnessLoopOptions {
     spillPolicy?: SpillPolicy;
     /**
      * 工具审批（dsh approval 的移植）。dangerous 工具没有审批端口时一律拒绝；
-     * write 工具是否询问由 `writeApproval` 决定（默认 allow，保持既有行为）。
+     * write 工具是否询问由 `writeApproval` 决定（Harness 默认 allow；Agent 工作台默认传入 ask）。
      */
     requestApproval?: (request: HarnessApprovalRequest) => Promise<boolean>;
     writeApproval?: 'allow' | 'ask';
@@ -450,7 +450,7 @@ export async function runHarnessTurn(options: HarnessLoopOptions): Promise<Harne
                 }
             }
 
-            // 审批：dangerous 一律 fail-closed；write 按会话策略（默认 allow）
+            // 审批：dangerous 一律 fail-closed；write 按会话策略（工作台默认 ask）。
             const needsApproval = sideEffect === 'dangerous'
                 || (sideEffect === 'write' && options.writeApproval === 'ask');
             if (needsApproval) {

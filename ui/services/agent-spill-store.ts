@@ -55,6 +55,7 @@ export function createVaultSpillSink(app: App, scope: () => string): SpillSink {
                 while (await app.vault.adapter.exists(path)) {
                     path = `${folder}/${base}-${stamp}-${seq++}.md`;
                 }
+                // write-entry-allow: Agent 溢出缓存，位于 .sessions 点目录。
                 await app.vault.adapter.write(path, content);
                 return path;
             } catch (e) {

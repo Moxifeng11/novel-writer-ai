@@ -2,6 +2,45 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.27.1（2026-11-04）
+
+### 🚦 门禁可信化
+
+- **ESLint 空转修复**：`eslint.config.mjs` 改用 `ruleConfigs.recommended`，显式注册 `typescript-eslint`；`no-unused-vars` / `no-explicit-any` 等规则真实生效。存量 1,894 条先按 warn 收敛，`lint` 设 1,900 上限，0 error。
+- 修复设置页标题触发 `no-problematic-settings-headings`；移除角色拆解里 iOS 不安全的 lookbehind。
+- 新增 `check:write-entry` 并接入 `preflight`：用户可见 Markdown 禁止裸 `adapter.write/append`，索引外文件需显式豁免标记。
+
+### 🔐 Agent 写入确认
+
+- 新增 `agentWriteApproval` 设置（默认 `ask`），设置页提供「Agent 写入确认」。
+- Agent 工作台显式传 `writeApproval`：覆盖已有文件需确认，新建文件放行；`dangerous` 操作始终确认。
+- Harness 库级默认保持 `allow`，安全策略由宿主决定，避免破坏既有调用方。
+
+### 📦 dsh 供应链与密钥
+
+- 默认固定 `@deepseek-ai/dsh@0.2.1-rc.5`，不再 `npx` 拉 latest；设置页可显式配置 `dshVersion`。
+- 启动 dsh 前用 `decryptKey` 解密 `settings.apiKey`；解密失败可见提示，不把密文传给子进程。
+
+### 💾 数据可靠性
+
+- v1 密文自动升级 v2：有会话口令时启动迁移自动重加密并计数；无口令时保留旧密文，不降级明文。
+- 设置迁移/回写前写 `data.json.bak`；迁移失败仍保留原文件。
+- `BODY_CONTENT_ROOTS` 从 `MODE_LIBRARY_ROOTS` 派生，修正短篇/剧本统计扫错顶层目录；`isChapterBodyPath` 支持 `03-正文/第N节` 与 `03-剧本/第N集`。
+- `frontmatter-schema` 路径兜底同步修正。
+- 拆解报告、协同审核记录、备份元文件、示例项目、项目创建模板复制改走 `writeVaultText`，进入 vault 索引。
+
+### 📚 文档
+
+- 新增完整架构审计 `docs/audits/v4.27.0-architecture-and-roadmap.md`。
+- 新增 `docs/PRODUCT.md`、`docs/roadmap/ROADMAP.md`。
+- 新增 ADR-008~012：可信门禁、Agent 写审批、ModeRuntime、AssetRegistry、JobService。
+- 补齐 v4.25.0 / v4.26.0 / v4.26.1 发布说明。
+
+### 🧪 测试
+
+- 新增 v1 密钥迁移/备份回归、短/剧正文根目录回归、设置口令验证适配。
+- 完整单测与 mock AI E2E 在提交前执行（数字以 `preflight` 输出为准）。
+
 ## v4.27.0（2026-11-04）
 
 ### 🚦 全流程阻塞点

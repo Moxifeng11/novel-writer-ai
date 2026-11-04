@@ -16,6 +16,7 @@
 import { App, Notice } from 'obsidian';
 import { KnowledgeBaseManager, type VectorStatus } from '@/services/knowledge-base-manager';
 import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
+import { writeVaultText } from '@/shared/file-system-port';
 import { VectorEnhancer } from './vector-enhancer';
 import { LLMEnhancer, type LLMCaller, type LLMCallOptions } from './llm-enhancer';
 import { resolveProviderSourceType } from '@/shared/model-source';
@@ -1475,7 +1476,8 @@ export class DeconstructionScheduler {
         const entries = Array.from(this.pendingWrites.entries());
         this.pendingWrites.clear();
         await Promise.all(entries.map(([path, content]) =>
-            this.app.vault.adapter.write(path, content).catch(e =>
+            // 注入质量分的对象是用户可见分析报告：走索引写入，避免 metadataCache 陈旧。
+            writeVaultText(this.app, path, content).catch(e =>
                 log.warn(`[DeconstructionScheduler] 批量写入失败 ${path}:`, e)
             )
         ));

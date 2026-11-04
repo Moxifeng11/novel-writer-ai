@@ -113,6 +113,7 @@ export class ProjectRenameService {
         for (const [oldPath, newPath] of pairs) {
             if (!(await adapter.exists(oldPath))) continue;
             if (await adapter.exists(newPath)) continue;
+            // write-entry-allow: 插件偏好/风格指纹是 .json，位于插件数据目录。
             await adapter.write(newPath, await adapter.read(oldPath));
             await adapter.remove(oldPath);
         }

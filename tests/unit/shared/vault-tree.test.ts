@@ -138,16 +138,22 @@ describe('listChapterBodyFiles', () => {
                 ]),
             ]),
         ]),
-        folder('短篇创作', [
-            folder('短篇创作/短篇A', [
-                folder('短篇创作/短篇A/03-正文', [
-                    file('短篇创作/短篇A/03-正文/第1节_开篇.md'),
+        folder('短篇小说', [
+            folder('短篇小说/短篇A', [
+                folder('短篇小说/短篇A/短篇创作', [
+                    folder('短篇小说/短篇A/短篇创作/03-正文', [
+                        file('短篇小说/短篇A/短篇创作/03-正文/第1节_开篇.md'),
+                    ]),
                 ]),
             ]),
         ]),
-        folder('剧本创作', [
-            folder('剧本创作/剧本A', [
-                folder('剧本创作/剧本A/03-剧本', [file('剧本创作/剧本A/03-剧本/第1集.md')]),
+        folder('剧本', [
+            folder('剧本/剧本A', [
+                folder('剧本/剧本A/剧本创作', [
+                    folder('剧本/剧本A/剧本创作/03-剧本', [
+                        file('剧本/剧本A/剧本创作/03-剧本/第1集.md'),
+                    ]),
+                ]),
             ]),
         ]),
         folder('其它', [file('其它/第1章_正文.md')]),
@@ -159,7 +165,8 @@ describe('listChapterBodyFiles', () => {
 
         expect(paths).toEqual([
             '长篇小说/书A/03-大纲与章节/正文/第1卷/第1章_正文.md',
-            '短篇创作/短篇A/03-正文/第1节_开篇.md',
+            '短篇小说/短篇A/短篇创作/03-正文/第1节_开篇.md',
+            '剧本/剧本A/剧本创作/03-剧本/第1集.md',
         ]);
         // 只查询三个内容根：不会碰「其它」或整库
         expect(getAbstractFileByPath.mock.calls.map(call => call[0])).toEqual([...BODY_CONTENT_ROOTS]);

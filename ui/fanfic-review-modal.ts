@@ -402,7 +402,7 @@ export class FanficReviewModal extends Modal {
             '## 来源',
             ...this.sources.map(source => `- [${source.id}] ${source.title} (${CANON_TIER_LABEL[source.tier]}) ${source.url}`),
         ];
-        await adapter.write(`${dir}/${this.workName}_审核记录.md`, lines.join('\n'));
+        await writeVaultText(this.app, `${dir}/${this.workName}_审核记录.md`, lines.join('\n'));
     }
 
     /**

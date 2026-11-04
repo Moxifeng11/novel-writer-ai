@@ -4,12 +4,14 @@
  * 用途：工作台的 `file-open` 只应在「打开正文」时切换章节上下文；
  * 打开设定/大纲/旁注等笔记不能重置当前章节（P1-13）。
  *
- * 覆盖两种结构：
- *   - 长篇：`<项目>/03-大纲与章节/正文/<第N卷>/第N章[_标题]_正文.md`
- *   - 短篇/剧本（新）：`<项目>/03-正文/第N节.md`、`第N集.md`
- *   - 短篇/剧本（旧兼容）：沿用长篇结构
+ * 覆盖三种结构：
+ *   - 长篇：`长篇小说/<项目>/03-大纲与章节/正文/<第N卷>/第N章[_标题]_正文.md`
+ *   - 短篇：`短篇小说/<项目>/短篇创作/03-正文/第N节[_标题].md`
+ *   - 剧本：`剧本/<项目>/剧本创作/03-剧本/第N集[_标题].md`
+ *   - 旧兼容：短篇/剧本沿用长篇结构时按长篇规则识别
  */
 
+import { MODE_LIBRARY_ROOT_LIST } from './creation-mode';
 import { listFolderFiles, type VaultTreePort } from './vault-tree';
 
 function normalizePath(path: string): string {
@@ -25,16 +27,18 @@ export function isChapterBodyPath(path: string): boolean {
     const normalized = normalizePath(path);
     if (!normalized) return false;
     if (/\/03-大纲与章节\/正文\/[^/]+\/第\d+章[^/]*_正文\.md$/.test(normalized)) return true;
-    if (/\/03-正文\/第\d+(?:节|集)[^/]*\.md$/.test(normalized)) return true;
+    if (/\/03-正文\/第\d+节[^/]*\.md$/.test(normalized)) return true;
+    if (/\/03-剧本\/第\d+集[^/]*\.md$/.test(normalized)) return true;
     return false;
 }
 
 /**
- * 正文可能所在的顶层内容根（当前布局）。
+ * 正文可能所在的顶层内容根（当前布局，唯一来源 `MODE_LIBRARY_ROOTS`）。
  * 统计扫描只进这三棵树，不再对整库 getFiles()——用户 vault 里的其它笔记与插件无关。
- * 旧版「书名直接当项目根」的布局不在扫描范围：其变更仍由 vault 事件增量记账。
+ * 注意根是项目库根（`长篇小说`/`短篇小说`/`剧本`）；短篇/剧本的内容目录
+ * （`短篇创作`/`剧本创作`）位于项目目录之下，不能再当顶层根。
  */
-export const BODY_CONTENT_ROOTS = ['长篇小说', '短篇创作', '剧本创作'] as const;
+export const BODY_CONTENT_ROOTS: readonly string[] = MODE_LIBRARY_ROOT_LIST;
 
 /**
  * 列出三个内容根下的全部章节正文。

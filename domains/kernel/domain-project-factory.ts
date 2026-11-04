@@ -10,6 +10,7 @@ import type NovelWriterPlugin from '@/main';
 import type { CreationMode, CreationModeMeta } from '@/shared/creation-mode';
 import { CREATION_MODE_SPECS, buildCreationModeGuide, buildCreationModeMetaSection } from '@/shared/creation-mode';
 import { ensureModeContentStructure } from '@/shared/mode-content';
+import { writeVaultText } from '@/shared/file-system-port';
 import { pjProjectMeta } from '@/shared/paths';
 import { WritingProfileManager } from '@/engine/writing-profile';
 // 只取名字常量：从 engine-registry 引会连带加载整个引擎图（其中 ai-engine 等 runtime import main）
@@ -101,8 +102,10 @@ ${input.description ? `## 描述\n${input.description}\n\n` : ''}${buildCreation
 ## 内容结构
 ${spec.label}独立内容目录，不使用长篇 03-大纲与章节。
 `;
+        // `.project` 是点文件、不在 vault 索引内，保持 adapter；用户可见 Markdown 走索引写入。
+        // write-entry-allow: `.project` 点文件不在 vault 索引。
         await this.adapter.write(pjProjectMeta(projectId), projectContent);
-        await this.adapter.write(`${projectId}/作品信息.md`, `# ${input.name}
+        await writeVaultText(this.app, `${projectId}/作品信息.md`, `# ${input.name}
 
 - 创作类型：${spec.label}
 - 题材：${input.genre}
@@ -111,7 +114,7 @@ ${spec.label}独立内容目录，不使用长篇 03-大纲与章节。
 ${meta.shortCategory ? `- 短篇分类：${meta.shortCategory}\n` : ''}${meta.scriptGenre ? `- 剧本类型：${meta.scriptGenre}\n` : ''}
 `);
 
-        await ensureModeContentStructure(this.adapter, projectId, input.mode);
+        await ensureModeContentStructure(this.adapter, projectId, input.mode, this.app);
         await this.writeModeGuide(projectId, meta);
 
         try {
@@ -157,8 +160,7 @@ ${meta.shortCategory ? `- 短篇分类：${meta.shortCategory}\n` : ''}${meta.sc
         const dir = `${project}/00-系统模板`;
         const path = `${dir}/创作模式指南.md`;
         try {
-            if (!(await this.adapter.exists(dir))) await this.adapter.mkdir(dir);
-            await this.adapter.write(path, buildCreationModeGuide(meta));
+            await writeVaultText(this.app, path, buildCreationModeGuide(meta));
         } catch (e) {
             log.warn('写创作模式指南失败:', e);
         }

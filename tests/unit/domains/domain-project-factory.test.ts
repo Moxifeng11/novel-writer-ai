@@ -44,7 +44,7 @@ function makeFactory(adapter: unknown) {
     const plugin = {
         engineRegistry: { get: () => { throw new Error('测试不初始化写作配置'); } },
     };
-    return new DomainProjectFactory({} as never, plugin as never, adapter as never);
+    return new DomainProjectFactory({ vault: { adapter } } as never, plugin as never, adapter as never);
 }
 
 const BASE_INPUT = {

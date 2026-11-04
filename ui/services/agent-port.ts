@@ -239,7 +239,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                     shortCategory: data.primaryCategory,
                     projectType: 'original',
                     onCreated: async (pid: string) => {
-                        await writePreResearchFiles(app.vault.adapter, pid, data);
+                        await writePreResearchFiles(app.vault.adapter, pid, data, app);
                         // 导航失败不能让「项目已创建」变成失败
                         await plugin.openCreationFlow(pid).catch(e => log.warn('[AgentPort] 打开创作流程失败:', e));
                     },
@@ -275,7 +275,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                     scriptGenre: data.genre,
                     projectType: 'original',
                     onCreated: async (pid: string) => {
-                        await writePreResearchFiles(app.vault.adapter, pid, data);
+                        await writePreResearchFiles(app.vault.adapter, pid, data, app);
                         // 导航失败不能让「项目已创建」变成失败
                         await plugin.openCreationFlow(pid).catch(e => log.warn('[AgentPort] 打开创作流程失败:', e));
                     },
