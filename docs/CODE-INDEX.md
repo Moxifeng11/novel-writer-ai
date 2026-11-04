@@ -1,6 +1,6 @@
 # 代码索引（Code Index）
 
-> 版本：v4.33.0 · 更新：2026-11-02
+> 版本：v4.34.0 · 更新：2026-11-02
 > **文件清单与规模已改为生成物**：[generated/code-index.md](generated/code-index.md)（`npm run gen:docs`）。
 > 本文只保留「按功能/按问题查找」的人工导航；不再维护逐文件清单与计数，避免漂移。
 

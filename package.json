@@ -1,6 +1,6 @@
 {
   "name": "novel-writer-ai",
-  "version": "4.33.0",
+  "version": "4.34.0",
   "description": "Obsidian plugin for AI-powered novel writing",
   "main": "main.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "check:release": "node scripts/check-release.mjs",
     "build": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js",
     "build:release": "npm run preflight:release",
-    "preflight": "npm run typecheck && npm run lint && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json --require-baseline && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures && npm run check:hotpaths && npm run check:write-entry && npm run check:linked-scenarios && npm run check:dsh-isolation && npm run check:jsdoc && npm run check:any && npm run check:changelog && npm run check:docs && npm run build && npm run check:release",
+    "preflight": "npm run typecheck && npm run lint && npm run test && npm run check:templates && npm run check:styles && npm run check:css && npm run check:inline-styles && npm run check:deps -- --baseline .arch-baseline.json --require-baseline && npm run check-engines && npm run check:program && npm run check:relationship-authority && npm run check:silent-failures && npm run check:hotpaths && npm run check:write-entry && npm run check:linked-scenarios && npm run check:dsh-isolation && npm run check:jsdoc && npm run check:any && npm run check:changelog && npm run check:docs && npm run build && npm run check:bundle && npm run check:release",
     "preflight:release": "npm run preflight && npm run test:cov",
     "dev": "node scripts/sync-version.js && node scripts/generate-template-assets.mjs && node scripts/build-styles.mjs && node scripts/build.js --watch",
     "build:styles": "node scripts/build-styles.mjs",
@@ -25,6 +25,7 @@
     "check-engines": "node scripts/scan-engine-instances.mjs --check --baseline .arch-baseline.json --require-baseline",
     "check:deps": "node scripts/check-dependencies.mjs",
     "check:css": "node scripts/check-css.js",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "check:inline-styles": "node scripts/check-inline-styles.mjs",
     "css:baseline": "node scripts/check-css.js --update-baseline",
     "inline:baseline": "node scripts/check-inline-styles.mjs --update-baseline",

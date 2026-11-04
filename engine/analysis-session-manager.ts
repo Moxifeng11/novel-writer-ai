@@ -214,6 +214,20 @@ export class AnalysisSessionManager {
         return sessions.length > 0 ? sessions[0] : undefined;
     }
 
+    /**
+     * 列出磁盘上的全部分析会话文件（保留策略用）
+     *
+     * 遍历 `.sessions/` 目录下的 `*.json`，排除索引文件 `_index.json`；
+     * mtime 取自 adapter.stat，stat 失败时省略（保留策略视为最旧）。
+     * 只读目录、不加载会话内容；目录不存在或列举失败时返回空数组（防御式，
+     * 与本类 fileExists 等封装一致），不抛错、不改变任何现有状态。
+     *
+     * @returns 会话文件列表（路径 + 可选 mtime）
+     */
+    async listSessionFiles(): Promise<Array<{ path: string; mtime?: number }>> {
+        return listAnalysisSessionFiles(this.vault, this.sessionsDir, this.indexPath);
+    }
+
     // ============================================================
     // 操作日志
     // ============================================================
@@ -675,5 +689,47 @@ export class AnalysisSessionManager {
         }
 
         return names;
+    }
+}
+
+/**
+ * 列举分析会话文件（独立函数：让保留清理等调用方无需实例化管理器，
+ * 避免 main.ts 为了一次目录列举再 new 一个 AnalysisSessionManager）。
+ *
+ * 遍历 `.sessions/` 目录下的 `*.json`，排除索引文件；mtime 取自 adapter.stat，
+ * 失败省略。目录不存在或列举失败时返回空数组（防御式，不抛错）。
+ *
+ * @param vault - 最小 vault 端口（list/stat）
+ * @param sessionsDir - 会话目录
+ * @param indexPath - 索引文件路径（排除）
+ * @returns 会话文件列表（路径 + 可选 mtime）
+ *
+ * @example
+ * ```ts
+ * const files = await listAnalysisSessionFiles(app.vault, `${pluginDir}/.sessions`, `${pluginDir}/.sessions/_index.json`);
+ * ```
+ */
+export async function listAnalysisSessionFiles(
+    vault: { adapter: { list(p: string): Promise<{ files?: string[]; folders?: string[] }>; stat(p: string): Promise<{ mtime?: number } | null> } },
+    sessionsDir: string,
+    indexPath: string,
+): Promise<Array<{ path: string; mtime?: number }>> {
+    try {
+        const listing = await vault.adapter.list(sessionsDir);
+        const files: Array<{ path: string; mtime?: number }> = [];
+        for (const path of listing.files ?? []) {
+            if (!path.endsWith('.json')) continue;
+            if (path === indexPath) continue;
+            try {
+                const stat = await vault.adapter.stat(path);
+                files.push(stat?.mtime !== undefined ? { path, mtime: stat.mtime } : { path });
+            } catch {
+                files.push({ path });
+            }
+        }
+        return files;
+    } catch (err) {
+        log.warn('列举分析会话文件失败（按空目录处理）:', err);
+        return [];
     }
 }

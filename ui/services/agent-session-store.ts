@@ -55,6 +55,60 @@ function slug(text: string): string {
         .slice(0, 60);
 }
 
+/**
+ * 计算指定作用域（项目名）的 Agent 会话存档路径。
+ *
+ * 与 createAgentSessionStore 内部的 path() 同源（同一 slug 规则），
+ * 供保留策略把「当前活跃项目的会话」加入 keep 豁免列表。
+ *
+ * @param scope - 作用域（通常是项目名）
+ * @returns 会话存档的库内相对路径
+ *
+ * @example
+ * ```ts
+ * const active = plugin.getActiveProject();
+ * const keep = active ? [agentSessionPathFor(active)] : [];
+ * ```
+ */
+export function agentSessionPathFor(scope: string): string {
+    return `${SESSION_ROOT}/${slug(scope) || 'default'}.jsonl`;
+}
+
+/**
+ * 列出 `.sessions/agent/` 下的全部会话存档文件（保留策略用）。
+ *
+ * 只读目录、不解析内容；目录不存在或列举失败时返回空数组（防御式），
+ * 不抛错。mtime 取自 adapter.stat，stat 失败时省略（保留策略视为最旧）。
+ *
+ * @param app - Obsidian 应用实例
+ * @returns 会话存档文件列表（路径 + 可选 mtime）
+ *
+ * @example
+ * ```ts
+ * const files = await listAgentSessionFiles(app);
+ * // → [{ path: '.sessions/agent/我的项目.jsonl', mtime: 1730000000000 }, ...]
+ * ```
+ */
+export async function listAgentSessionFiles(app: App): Promise<Array<{ path: string; mtime?: number }>> {
+    try {
+        const listing = await app.vault.adapter.list(SESSION_ROOT);
+        const files: Array<{ path: string; mtime?: number }> = [];
+        for (const path of listing.files ?? []) {
+            if (!path.endsWith('.jsonl')) continue;
+            try {
+                const stat = await app.vault.adapter.stat(path);
+                files.push(stat?.mtime !== undefined ? { path, mtime: stat.mtime } : { path });
+            } catch {
+                files.push({ path });
+            }
+        }
+        return files;
+    } catch (e) {
+        log.warn('[AgentSession] 列举会话存档失败（按空目录处理）:', e);
+        return [];
+    }
+}
+
 async function ensureFolder(app: App, folder: string): Promise<void> {
     const parts = folder.split('/').filter(Boolean);
     let current = '';
@@ -77,7 +131,7 @@ export function createAgentSessionStore(app: App, scope: () => string): AgentSes
     let pending: HarnessSessionSnapshot | null = null;
     let writing: Promise<void> = Promise.resolve();
 
-    const pathOf = (): string => `${SESSION_ROOT}/${slug(scope()) || 'default'}.jsonl`;
+    const pathOf = (): string => agentSessionPathFor(scope());
 
     const doFlush = async (): Promise<void> => {
         if (!pending) return;

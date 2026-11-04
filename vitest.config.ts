@@ -13,7 +13,9 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'text-summary', 'html'],
             reportsDirectory: './coverage',
-            // 覆盖率口径覆盖核心域（FR-E-05），排除类型声明、测试与 Worker 入口
+            // 覆盖率口径覆盖核心域（FR-E-05），排除类型声明、测试与 Worker 入口。
+            // 注意：include 匹配是「子串包含」语义（picomatch contains:true），
+            // `services/**/*.ts` 会连带命中 `ui/services/`（相对路径含 `services/` 即命中）。
             include: [
                 'engine/**/*.ts',
                 'services/**/*.ts',
@@ -21,6 +23,10 @@ export default defineConfig({
                 // G7-7：shared/ 是跨层原语（路径/预算/缓存/体检），此前完全不算覆盖率，
                 // 导致「70%」只代表约一半源码；纳入后数字会下降，但那是真话。
                 'shared/**/*.ts',
+                // 2026-11-05（G7-7 续）：纳入 ui/ 与 domains/。此前全部 ui 文件
+                // （含 ui/services）与 domains 游离在门禁之外，报告数字不代表全仓源码。
+                'ui/**/*.ts',
+                'domains/**/*.ts',
             ],
             exclude: [
                 '**/*.d.ts',
@@ -28,19 +34,23 @@ export default defineConfig({
                 'engine/**/*-worker.ts',
                 // 构建期嵌入的模板资产：纯字符串常量，测不到也没有行为
                 'shared/template-scaffold-assets.generated.ts',
+                // 纯类型声明文件（零运行时代码，无可覆盖语句）：
+                'ui/full-writer/wizard-view-access.ts',
+                'domains/kernel/tool-catalog-types.ts',
             ],
-            // 阈值按核心域分别设定（FR-E-05）。
+            // 阈值按域分别设定（FR-E-05）。
             // 2026-11-03：Vitest 1.6 → 4.1 后 @vitest/coverage-v8 改用 AST-aware
             // remapping，分支/语句口径更严格（同一批测试从 lines 76.7 变为 65.6），
-            // 这是度量口径变化，不是测试或代码回退。按新口径重取基线并下浮约 1-2 个点：
-            //   全局 lines 65.6 / statements 64.3 / branches 56.7 / funcs 66.7
-            //   engine branches 53.6 / services branches 41.5 / core branches 50.7
-            //   shared lines 85.9 / statements 84.6 / branches 77.7
+            // 这是度量口径变化，不是测试或代码回退。按新口径重取基线并下浮约 1-2 个点。
+            // 2026-11-05：第二次口径扩展，纳入 ui/ 与 domains/，同时移除全局阈值、
+            // 全部改为 per-glob。原因：ui 纳入后全局并集从 ~65% 掉到 ~40%，全局阈值
+            // 既不能代表任何单一域（被 ui 摊薄），也永远压不住新纳入的低覆盖目录
+            // （继续维持只会逼人造数字）；per-glob 让每个域对自己的真实基线负责。
+            // 语义注意：threshold glob 按 `relative(root, file)` 精确匹配（无子串语义），
+            // 因此 `services/**` 阈值只管 services/ 真目录；被 include 连带进来的
+            // ui/services/ 由 `ui/**` 阈值接管。
+            // 纪律：per-glob 阈值是棘轮，只升不降；下调必须在 PR 里说明理由。
             thresholds: {
-                lines: 64,
-                statements: 62,
-                branches: 55,
-                functions: 65,
                 'engine/**/*.ts': {
                     lines: 52,
                     statements: 52,
@@ -64,6 +74,24 @@ export default defineConfig({
                     statements: 84,
                     branches: 77,
                     functions: 80,
+                },
+                // 2026-11-05 首期基线：domains 实测 lines 86.91 / statements 84.03 /
+                // branches 72.41 / functions 72.72，各下浮约 2 点取整（棘轮起点）。
+                'domains/**/*.ts': {
+                    lines: 84,
+                    statements: 82,
+                    branches: 70,
+                    functions: 70,
+                },
+                // 2026-11-05 首期基线：ui 实测仅 lines 5.97 / statements 5.9 /
+                // branches 6.14 / functions 5.38——这是讲真话：全部 ui 文件此前
+                // 游离在门禁之外，现状就是接近零覆盖。各下浮约 2 点取整作为
+                // 首期棘轮起点，后续只升不降。
+                'ui/**/*.ts': {
+                    lines: 3,
+                    statements: 3,
+                    branches: 4,
+                    functions: 3,
                 },
             },
         },

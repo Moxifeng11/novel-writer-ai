@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.34.0',
+        date: '2026-11-05',
+        title: '体积预算、CI 加固、覆盖率扩展与会话保留',
+        sections: [
+            {
+                type: 'added',
+                label: '📦 门禁与 CI',
+                items: [
+                    'check:bundle 体积棘轮接入 preflight（main.js ≤5MB 目标内）',
+                    'Actions 锚定 SHA；发布资产生成 SHA256SUMS.txt',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧪 覆盖率与治理',
+                items: [
+                    'ui/domains 纳入覆盖率 per-glob 棘轮（ui 首期诚实基线）',
+                    '会话保留清理：分析/Agent 会话各保留最近 30 个，活跃项目豁免',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.33.0',
         date: '2026-11-05',
         title: '卸载契约、分层门禁收口',

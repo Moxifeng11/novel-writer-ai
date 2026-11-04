@@ -14,6 +14,7 @@
 | `npm run build:styles` | 拼接 styles-src → styles.css |
 | `npm run check-engines` | EngineRegistry 实例白名单/超限检查 |
 | `npm run check:any` | — |
+| `npm run check:bundle` | — |
 | `npm run check:changelog` | — |
 | `npm run check:css` | CSS 预算与命名棘轮 |
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
@@ -80,7 +81,8 @@
 19. npm run check:changelog
 20. npm run check:docs
 21. npm run build
-22. npm run check:release
+22. npm run check:bundle
+23. npm run check:release
 ```
 
 ## 说明

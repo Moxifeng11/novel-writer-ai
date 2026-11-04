@@ -15,10 +15,10 @@ jobs:
       ELECTRON_SKIP_BINARY_DOWNLOAD: 1
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0（v4 浮动 tag 当前指向，SHA 锚定）
 
       - name: 安装 Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0（v4 浮动 tag 当前指向，SHA 锚定）
         with:
           node-version: 20
           cache: npm
@@ -84,6 +84,16 @@ jobs:
           zip -r "$ZIP" main.js manifest.json styles.css workers
           echo "ZIP=$ZIP" >> "$GITHUB_ENV"
 
+      - name: 生成发布资产校验和（SHA256SUMS.txt）
+        run: |
+          set -euo pipefail
+          # 校验和覆盖全部发布资产（与下方 ASSETS 清单一致，含 zip）。
+          # runner 为 ubuntu-latest（bash），故使用 sha256sum；Windows/macOS runner 才需换用 Get-FileHash/shasum。
+          # 文件内使用相对文件名，便于下载方在任意目录核对。
+          sha256sum main.js manifest.json styles.css versions.json \
+            workers/deconstruction-worker.js workers/quality-worker.js "$ZIP" \
+            > SHA256SUMS.txt
+
       - name: 发布 GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,7 +101,8 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           NOTES="docs/releases/${TAG}.md"
-          ASSETS=(main.js manifest.json styles.css versions.json workers/deconstruction-worker.js workers/quality-worker.js "$ZIP")
+          # SHA256SUMS.txt 为校验和清单，不属于 check-release.mjs 的 worker/versions 比对范围（该脚本按前缀过滤）
+          ASSETS=(main.js manifest.json styles.css versions.json workers/deconstruction-worker.js workers/quality-worker.js "$ZIP" SHA256SUMS.txt)
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG 已存在，覆盖上传资产"

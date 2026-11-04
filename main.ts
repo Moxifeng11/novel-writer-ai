@@ -167,6 +167,10 @@ import { hasUsableAiCredentials } from './shared/ai-credentials';
 import { projectFromFilePath } from './domains/kernel/project-locator';
 import { listProjectIds } from '@/shared/project-catalog';
 import { createLogger } from './shared/logger';
+import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
+import type { RetentionTarget } from './shared/session-retention';
+import { listAnalysisSessionFiles } from './engine/analysis-session-manager';
+import { listAgentSessionFiles, agentSessionPathFor } from './ui/services/agent-session-store';
 
 const log = createLogger('Main');
 export { MODEL_CAPABILITIES, findModelCapability };
@@ -955,11 +959,68 @@ export default class NovelWriterPlugin extends Plugin {
             // v7.8: 版本管理 - 静默检查更新 + 欢迎引导 + 数据迁移验证
             this.handleVersionManagement();
 
+            // 审计 P2：会话落点统一保留策略 —— 启动后台修剪一次（按数量上限）
+            this._scheduleSessionRetentionPrune();
+
             log.info('[小说工坊] 插件加载完成！');
         } catch (error: any) {
             log.error('[小说工坊] 插件加载失败:', error.message);
             log.error('[小说工坊] 错误堆栈:', error.stack);
             new Notice(`❌ 小说工坊插件加载失败: ${error.message}`);
+        }
+    }
+
+    /**
+     * 启动后修剪一次会话文件（审计 P2：会话落点统一保留策略，按数量上限）
+     *
+     * 覆盖两套会话落点（协同 settings 历史已在 v4.27.0 截断到 10 条，不在其中）：
+     * - 分析会话：插件目录 `.sessions/*.json`（AnalysisSessionManager.listSessionFiles，排除索引）；
+     * - Agent 会话：库根 `.sessions/agent/*.jsonl`（listAgentSessionFiles）。
+     * 各保留最近 SESSION_RETENTION_DEFAULTS 个；Agent 会话把当前活跃项目的存档
+     * 加入 keep 豁免，防止误删正在使用的会话。
+     * 延迟到布局就绪 + setTimeout 之后执行，不阻塞启动；不在 onunload 调用
+     * （卸载窗口宝贵）。任何异常 log.warn 吞掉，绝不影响主流程。
+     */
+    private _scheduleSessionRetentionPrune(): void {
+        this.app.workspace.onLayoutReady(() => {
+            window.setTimeout(() => {
+                void this._pruneSessionsOnce();
+            }, 0);
+        });
+    }
+
+    /**
+     * 执行一次会话保留修剪（由 _scheduleSessionRetentionPrune 调度）
+     */
+    private async _pruneSessionsOnce(): Promise<void> {
+        try {
+            const adapter = this.app.vault.adapter;
+            // 与 step-runner 同源：manifest.dir 理论上必有，兜底走 configDir 拼装
+            const pluginDir = this.manifest.dir
+                ?? `${this.app.vault.configDir}/plugins/novel-writer-ai`;
+            // 独立列举函数：避免为了一次目录列举再实例化 AnalysisSessionManager（引擎守卫）
+            const analysisPort: RetentionTarget = {
+                list: () => listAnalysisSessionFiles(this.app.vault, `${pluginDir}/.sessions`, `${pluginDir}/.sessions/_index.json`),
+                remove: (p) => adapter.remove(p),
+            };
+            const activeProject = this.getActiveProject();
+            const agentPort: RetentionTarget = {
+                list: () => listAgentSessionFiles(this.app),
+                remove: (p) => adapter.remove(p),
+                // 当前活跃项目的会话豁免：工作台正在使用，删了会丢恢复点
+                keep: activeProject ? [agentSessionPathFor(activeProject)] : [],
+            };
+            const results = await pruneSessions([
+                { label: 'analysisSessions', port: analysisPort, maxCount: SESSION_RETENTION_DEFAULTS.analysisSessions },
+                { label: 'agentSessions', port: agentPort, maxCount: SESSION_RETENTION_DEFAULTS.agentSessions },
+            ]);
+            for (const r of results) {
+                if (r.removed.length > 0) {
+                    log.info(`[小说工坊] 会话保留修剪 [${r.label}]: 已删除 ${r.removed.length} 个旧会话文件`);
+                }
+            }
+        } catch (e) {
+            log.warn('[小说工坊] 会话保留修剪失败（忽略，不影响使用）:', e);
         }
     }
 

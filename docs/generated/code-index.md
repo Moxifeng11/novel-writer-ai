@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 297 | 131691 | 1577 | 1319 | 84% |
+| `engine/` | 297 | 131747 | 1578 | 1320 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 171 | 38318 | 1547 | 1284 | 83% |
+| `shared/` | 172 | 38516 | 1553 | 1290 | 83% |
 | `core/` | 7 | 2737 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 210 | 96858 | 540 | 495 | 92% |
+| `ui/` | 210 | 96912 | 542 | 497 | 92% |
 
 ## 文件清单
 
@@ -70,7 +70,7 @@
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
 | `engine/analysis-report-engine.ts` | 1395 | 1 | 1 |
-| `engine/analysis-session-manager.ts` | 680 | 1 | 1 |
+| `engine/analysis-session-manager.ts` | 736 | 2 | 2 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
 | `engine/bases-generator.ts` | 249 | 8 | 6 |
@@ -375,7 +375,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1343 | 3 | 3 |
+| `shared/changelog-data.ts` | 1366 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -490,6 +490,7 @@
 | `shared/secret-display.ts` | 76 | 4 | 3 |
 | `shared/secret-redaction.ts` | 87 | 3 | 3 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
+| `shared/session-retention.ts` | 175 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
 | `shared/step-modal-styles.ts` | 83 | 3 | 3 |
@@ -694,7 +695,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-port.ts` | 624 | 2 | 2 |
-| `ui/services/agent-session-store.ts` | 157 | 3 | 3 |
+| `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 105 | 3 | 2 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/human-sample-loader.ts` | 71 | 2 | 1 |

@@ -2,6 +2,29 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.34.0（2026-11-05）
+
+### 📦 体积预算门禁（P2，子代理协作交付）
+
+- 新增 `check:bundle` 并接入 preflight：main.js/styles.css 只降不升的体积棘轮（LF 口径，与 CSS 基线一致）；基线 main.js 4,830,770 B（≤5MB 目标内）、styles.css 475,563 B；本次因新增会话保留等代码 +2,291B，note 已说明原因。
+- 新增「Actions 锚定 SHA」：checkout/setup-node/upload-artifact 全部锚定到具体 commit（行尾注释保留版本号）。
+- 新增「发布资产校验和」：release.yml 生成 SHA256SUMS.txt 并随 Release 上传（check-release 解析器零改动，worker+versions 校验不受影响）。
+
+### 🧪 覆盖率门禁扩展（P2）
+
+- `ui/**` 与 `domains/**` 纳入覆盖率统计并建立 per-glob 棘轮：domains 84/82/70/70，ui 首期诚实基线 3/3/4/3（实测 ~6%，只升不降）。
+- 全局阈值移除（并入 ui 后失真），engine/services/core/shared 的 per-glob 原值保持；关键发现：include 与 threshold 的 glob 语义不同，ui/services 由 ui/** 阈值接管。
+- 覆盖率口径文档（handbook 05）与 config 逐项对齐，清除长期不一致的旧数字。
+
+### 🗑 会话保留清理（P2）
+
+- 新增 `shared/session-retention.ts` + onload 延迟修剪：分析会话（`.sessions/*.json`）与 Agent 会话（`.sessions/agent/*.jsonl`）各保留最近 30 个（mtime 降序，缺失视为最旧）；当前活跃项目的 Agent 存档永不删；删除走注入 port、失败继续。
+- 保守 MVP：只按数量不按天数、无用户可见入口（日志可见），为未来开关/命令预留。
+
+### 🧪 测试
+
+- 全量单测 547 文件 / 5965 用例；lint 维持 1875。
+
 ## v4.33.0（2026-11-05）
 
 ### 🧹 卸载清理契约（审计 P1-4）
