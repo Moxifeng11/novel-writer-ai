@@ -63,6 +63,7 @@ import {
 } from './planning-combined';
 import { createLogger } from '@/shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
+import { pushUsageScope } from '@/services/usage-ledger';
 import { QualityGate } from './quality-gate';
 import { buildGateSnapshotFromVars } from './quality/gate-snapshot';
 import { createStepFailure, type StepFailureKind } from '@/shared/execution-events';
@@ -878,9 +879,37 @@ export class StepRunner {
 
     /**
      * 执行当前步骤的 AI 请求（策略驱动分发）
+     *
+     * 用量归因：入口处 pushUsageScope 挂上 source=step + project + stepKey，
+     * 本步所有 AI 调用写进用量账本时都会带上该归因（ai-api-client 读栈顶 scope）；
+     * try/finally 覆盖执行体的全部提前 return 与异常，保证 scope 一定退出。
      * @param ctx - 上下文
      */
     async executeCurrentStep(ctx: StepRunCtx): Promise<void> {
+        // D3：重试按钮依赖「最近一次执行的上下文」，必须在入口记录，
+        // 且要在任何早退分支之前——否则请求失败后按钮拿到的永远是 null。
+        this._lastCtx = ctx;
+
+        if (ctx.isLoading) return;
+
+        const currentStep = ALL_FULL_STEPS.find(s => s.index === ctx.currentStepIndex);
+        if (!currentStep) return;
+        const stepKey = currentStep.key;
+        if (!stepKey) return;
+
+        const exitUsage = pushUsageScope({ source: 'step', project: ctx.project, stepKey });
+        try {
+            await this.executeCurrentStepInner(ctx);
+        } finally {
+            exitUsage();
+        }
+    }
+
+    /**
+     * executeCurrentStep 的执行体（原逻辑不变；拆出以便用量 scope 包裹整个函数）。
+     * @param ctx - 上下文
+     */
+    private async executeCurrentStepInner(ctx: StepRunCtx): Promise<void> {
         // D3：重试按钮依赖「最近一次执行的上下文」，必须在入口记录，
         // 且要在任何早退分支之前——否则请求失败后按钮拿到的永远是 null。
         this._lastCtx = ctx;

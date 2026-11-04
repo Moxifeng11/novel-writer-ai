@@ -11,6 +11,7 @@ import { projectDisplayName } from '@/domains/kernel/project-locator';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { collectBackupCenter, type BackupCenterEntry, type BackupCenterReport } from '@/services/backup-center-service';
 import type { ChapterVersionService } from '@/services/chapter-version-service';
+import { ChapterVersionModal } from './chapter-version-modal';
 import { OperationConfirmModal } from './components/progress';
 
 const KIND_LABEL: Record<BackupCenterEntry['kind'], string> = {
@@ -139,6 +140,9 @@ export class BackupCenterModal extends Modal {
         if (entry.version) {
             const rollback = row.createEl('button', { cls: 'nw-btn nw-btn-primary', text: '回滚' });
             rollback.addEventListener('click', () => { void this.rollback(entry); });
+
+            const history = row.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '📜 历史' });
+            history.addEventListener('click', () => { void this.openVersionHistory(entry); });
         }
     }
 
@@ -171,5 +175,68 @@ export class BackupCenterModal extends Modal {
         } catch (error) {
             new Notice(`回滚失败：${error instanceof Error ? error.message : String(error)}`, 8000);
         }
+    }
+
+    /**
+     * 打开版本历史弹窗（复用 ChapterVersionModal），支持版本对比与恢复。
+     *
+     * 读取 sourcePath 当前内容作为对比基准；回滚/保存版本均以落盘的最新内容为准，
+     * 回滚成功后刷新备份列表。
+     *
+     * @param entry - 备份中心条目（须包含 version 元数据）
+     */
+    private async openVersionHistory(entry: BackupCenterEntry): Promise<void> {
+        const version = entry.version;
+        if (!version?.sourcePath) return;
+        const service = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.CHAPTER_VERSION_SERVICE)
+            ?? null as ChapterVersionService | null;
+        if (!service) {
+            new Notice('版本服务未初始化，请重启插件后再试', 6000);
+            return;
+        }
+        let current: string;
+        try {
+            current = await this.app.vault.adapter.read(version.sourcePath);
+        } catch (error) {
+            new Notice(`读取当前文件失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+            return;
+        }
+        new ChapterVersionModal(this.app, {
+            project: version.project,
+            contentType: version.contentType,
+            contentKey: version.contentKey,
+            sourcePath: version.sourcePath,
+            currentContent: current,
+            onRollback: async (v) => {
+                try {
+                    const latest = await this.app.vault.adapter.read(version.sourcePath);
+                    const result = await service.rollbackToVersion(v, latest);
+                    if (!result.success) {
+                        throw new Error('写入被拒绝');
+                    }
+                    new Notice(`✅ 已回滚到 v${v.version}（当前内容已自动备份）`, 5000);
+                    await this.load();
+                } catch (error) {
+                    new Notice(`回滚失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                    throw error;
+                }
+            },
+            onSaveVersion: async () => {
+                try {
+                    const latest = await this.app.vault.adapter.read(version.sourcePath);
+                    return await service.saveVersion(
+                        version.project,
+                        version.contentType,
+                        version.contentKey,
+                        version.sourcePath,
+                        latest,
+                        { type: 'manual' },
+                    );
+                } catch (error) {
+                    new Notice(`保存版本失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                    return null;
+                }
+            },
+        }, this.plugin.engineRegistry).open();
     }
 }

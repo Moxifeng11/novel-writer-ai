@@ -43,6 +43,23 @@ export interface UsageModelSummary {
     durationMs: number;
 }
 
+/** 按项目聚合（无归因的记录归入 `(未归因)` 一行）。 */
+export interface UsageProjectSummary {
+    project: string;
+    calls: number;
+    okCalls: number;
+    failedCalls: number;
+    totalTokens: number;
+    durationMs: number;
+}
+
+/** 按来源聚合（ai/step/unit/agent/document）。 */
+export interface UsageSourceSummary {
+    source: UsageSource;
+    calls: number;
+    totalTokens: number;
+}
+
 /** 汇总结果。 */
 export interface UsageSummary {
     totalCalls: number;
@@ -53,6 +70,10 @@ export interface UsageSummary {
     totalTokens: number;
     durationMs: number;
     byModel: UsageModelSummary[];
+    /** 按项目聚合，token 总量降序；空 project 归 `(未归因)`。 */
+    byProject: UsageProjectSummary[];
+    /** 按来源聚合，token 总量降序。 */
+    bySource: UsageSourceSummary[];
 }
 
 /**
@@ -67,6 +88,51 @@ function ledgerPath(app: App): string {
 }
 const MAX_RECORDS = 500;
 
+// ============================================================
+// 调用归因 scope（Obsidian 单线程：用栈保存嵌套作用域即可）
+// ============================================================
+
+/** 一次 AI 调用群的归因信息（谁发起、哪个项目/步骤）。 */
+export interface UsageScope {
+    source?: UsageSource;
+    project?: string;
+    stepKey?: string;
+}
+
+const usageScopeStack: UsageScope[] = [];
+
+/**
+ * 进入一个用量归因作用域；返回退出函数（必须调用，建议 try/finally）。
+ *
+ * @param scope - 归因信息（source/project/stepKey）
+ * @returns 退出函数
+ *
+ * @example
+ * ```ts
+ * const exit = pushUsageScope({ source: 'step', project, stepKey });
+ * try { await callAI(...); } finally { exit(); }
+ * ```
+ */
+export function pushUsageScope(scope: UsageScope): () => void {
+    usageScopeStack.push(scope);
+    return (): void => {
+        const index = usageScopeStack.lastIndexOf(scope);
+        if (index >= 0) usageScopeStack.splice(index, 1);
+    };
+}
+
+/**
+ * 当前生效的归因信息（栈顶；空栈返回空对象）。
+ *
+ * @returns 当前 scope
+ */
+export function currentUsageScope(): UsageScope {
+    return usageScopeStack.length > 0 ? usageScopeStack[usageScopeStack.length - 1] : {};
+}
+
+/** 项目未归因（record.project 为空）时在 byProject 里使用的占位名。 */
+const UNATTRIBUTED_PROJECT = '(未归因)';
+
 function emptyModelSummary(model: string): UsageModelSummary {
     return {
         model,
@@ -80,8 +146,33 @@ function emptyModelSummary(model: string): UsageModelSummary {
     };
 }
 
+function emptyProjectSummary(project: string): UsageProjectSummary {
+    return {
+        project,
+        calls: 0,
+        okCalls: 0,
+        failedCalls: 0,
+        totalTokens: 0,
+        durationMs: 0,
+    };
+}
+
+function emptySourceSummary(source: UsageSource): UsageSourceSummary {
+    return {
+        source,
+        calls: 0,
+        totalTokens: 0,
+    };
+}
+
 /**
  * 汇总用量记录（纯函数，便于测试与 UI 复用）。
+ *
+ * 除总计与按模型分布外，还给出按项目与按来源两个维度：
+ * - `byProject` 依赖调用方的 pushUsageScope 归因（step/unit/agent 三条链），
+ *   未归因（project 为空）的记录统一归入 `(未归因)`，用于发现漏挂 scope 的调用点；
+ * - `bySource` 按发起方（ai/step/unit/agent/document）聚合，看哪条链最烧 token。
+ * 两个列表均按 totalTokens 降序。
  *
  * @param records - 记录列表
  * @returns 汇总结果
@@ -90,10 +181,15 @@ function emptyModelSummary(model: string): UsageModelSummary {
  * ```ts
  * const summary = summarizeUsage(ledger.list());
  * console.log(summary.totalTokens);
+ * console.log(summary.byModel[0]?.model, summary.byModel[0]?.totalTokens);
+ * console.log(summary.byProject[0]?.project, summary.byProject[0]?.calls);
+ * console.log(summary.bySource.map((s) => `${s.source}:${s.calls}`).join(','));
  * ```
  */
 export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
     const byModel = new Map<string, UsageModelSummary>();
+    const byProject = new Map<string, UsageProjectSummary>();
+    const bySource = new Map<UsageSource, UsageSourceSummary>();
     const summary: UsageSummary = {
         totalCalls: 0,
         okCalls: 0,
@@ -103,6 +199,8 @@ export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
         totalTokens: 0,
         durationMs: 0,
         byModel: [],
+        byProject: [],
+        bySource: [],
     };
     for (const record of records) {
         summary.totalCalls += 1;
@@ -123,8 +221,26 @@ export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
         model.totalTokens += record.totalTokens;
         model.durationMs += record.durationMs;
         byModel.set(key, model);
+
+        // 按项目：project 缺失（未挂 scope 或链路未覆盖）时归入「未归因」桶
+        const projectKey = record.project || UNATTRIBUTED_PROJECT;
+        const project = byProject.get(projectKey) ?? emptyProjectSummary(projectKey);
+        project.calls += 1;
+        if (record.status === 'ok') project.okCalls += 1;
+        else project.failedCalls += 1;
+        project.totalTokens += record.totalTokens;
+        project.durationMs += record.durationMs;
+        byProject.set(projectKey, project);
+
+        // 按来源：source 由 client 兜底为 'ai'，必然有值
+        const source = bySource.get(record.source) ?? emptySourceSummary(record.source);
+        source.calls += 1;
+        source.totalTokens += record.totalTokens;
+        bySource.set(record.source, source);
     }
     summary.byModel = [...byModel.values()].sort((a, b) => b.totalTokens - a.totalTokens);
+    summary.byProject = [...byProject.values()].sort((a, b) => b.totalTokens - a.totalTokens);
+    summary.bySource = [...bySource.values()].sort((a, b) => b.totalTokens - a.totalTokens);
     return summary;
 }
 

@@ -30,6 +30,7 @@ import {
     type SpillPolicy,
     type SpillSink,
 } from './spill-store';
+import { pushUsageScope } from '@/services/usage-ledger';
 
 /**
  * Harness 循环选项。
@@ -301,10 +302,28 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
 /**
  * 运行一个用户回合。日志里应已包含本回合的 user_message（由引擎层写入）。
  * 返回最终回复与遥测；适配器失败时 failed=true，由宿主决定降级。
+ *
+ * 用量归因：回合最外层 pushUsageScope 挂上 source=agent + 当前项目，
+ * 本回合所有模型调用的用量记录都会带上该归因；try/finally 覆盖回合内
+ * 全部提前 return 与异常，保证 scope 一定退出。
  * @param options - 配置项
-  * @returns HarnessLoopTurnResult 实例
+ * @returns HarnessLoopTurnResult 实例
  */
 export async function runHarnessTurn(options: HarnessLoopOptions): Promise<HarnessLoopTurnResult> {
+    const exitUsage = pushUsageScope({ source: 'agent', project: options.activeProject ?? undefined });
+    try {
+        return await runHarnessTurnInner(options);
+    } finally {
+        exitUsage();
+    }
+}
+
+/**
+ * runHarnessTurn 的执行体（原逻辑不变；拆出以便用量 scope 包裹整个回合）。
+ * @param options - 配置项
+ * @returns HarnessLoopTurnResult 实例
+ */
+async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<HarnessLoopTurnResult> {
     const {
         adapter, registry, log, memory, plan,
         projects, activeProject,

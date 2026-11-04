@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 297 | 131580 | 1577 | 1319 | 84% |
-| `services/` | 32 | 12417 | 180 | 144 | 80% |
-| `shared/` | 169 | 38108 | 1542 | 1280 | 83% |
+| `engine/` | 297 | 131651 | 1577 | 1319 | 84% |
+| `services/` | 32 | 12533 | 185 | 146 | 79% |
+| `shared/` | 169 | 38138 | 1542 | 1280 | 83% |
 | `core/` | 7 | 2686 | 28 | 13 | 46% |
 | `domains/` | 11 | 767 | 30 | 22 | 73% |
-| `ui/` | 205 | 96378 | 528 | 484 | 92% |
+| `ui/` | 206 | 96578 | 530 | 486 | 92% |
 
 ## 文件清单
 
@@ -42,7 +42,7 @@
 | `engine/agent/dsh/dsh-protocol.ts` | 159 | 4 | 4 |
 | `engine/agent/dsh/dsh-session.ts` | 283 | 7 | 7 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
-| `engine/agent/harness/agent-loop.ts` | 543 | 6 | 6 |
+| `engine/agent/harness/agent-loop.ts` | 562 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/harness-engine.ts` | 589 | 7 | 4 |
@@ -55,7 +55,7 @@
 | `engine/agent/harness/tool-registry.ts` | 295 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 936 | 1 | 1 |
+| `engine/ai-api-client.ts` | 945 | 1 | 1 |
 | `engine/ai-api-stream.ts` | 921 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
@@ -186,7 +186,7 @@
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
 | `engine/memory/memory-shard-writer.ts` | 141 | 5 | 5 |
-| `engine/mode-document-writer.ts` | 146 | 5 | 2 |
+| `engine/mode-document-writer.ts` | 160 | 5 | 2 |
 | `engine/mode-injection.ts` | 117 | 3 | 1 |
 | `engine/mode-runtime.ts` | 189 | 6 | 5 |
 | `engine/mode-unit-quality.ts` | 242 | 5 | 2 |
@@ -293,7 +293,7 @@
 | `engine/step-result-saver.ts` | 558 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 157 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2035 | 2 | 1 |
+| `engine/step-runner.ts` | 2064 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 205 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -357,7 +357,7 @@
 | `services/rules-service.ts` | 270 | 3 | 2 |
 | `services/synopsis-store.ts` | 332 | 5 | 5 |
 | `services/update-checker.ts` | 391 | 9 | 2 |
-| `services/usage-ledger.ts` | 257 | 8 | 3 |
+| `services/usage-ledger.ts` | 373 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 547 | 1 | 1 |
 | `services/worker-protocol.ts` | 107 | 11 | 11 |
@@ -375,7 +375,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1267 | 3 | 3 |
+| `shared/changelog-data.ts` | 1297 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -539,7 +539,7 @@
 | `ui/appearance-settings.ts` | 573 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/auto-writer-modal.ts` | 239 | 1 | 1 |
-| `ui/backup-center-modal.ts` | 176 | 1 | 1 |
+| `ui/backup-center-modal.ts` | 243 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 128 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 338 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 520 | 1 | 1 |
@@ -631,7 +631,7 @@
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 766 | 2 | 2 |
+| `ui/full-writer/unit-writer-controller.ts` | 778 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 420 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 350 | 1 | 1 |
@@ -657,7 +657,7 @@
 | `ui/manage-providers-modal.ts` | 614 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/mini-settings-modal.ts` | 88 | 1 | 0 |
-| `ui/mode-document-modal.ts` | 186 | 2 | 2 |
+| `ui/mode-document-modal.ts` | 200 | 2 | 2 |
 | `ui/model-picker-modal.ts` | 196 | 2 | 2 |
 | `ui/model-picker-popover.ts` | 291 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 319 | 13 | 12 |
@@ -719,12 +719,13 @@
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 1089 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 951 | 1 | 1 |
-| `ui/usage-ledger-modal.ts` | 129 | 1 | 1 |
+| `ui/usage-ledger-modal.ts` | 171 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 138 | 1 | 1 |
 | `ui/views/book-detail-renderer.ts` | 2452 | 2 | 2 |
+| `ui/views/kb-book-card.ts` | 170 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3733 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3628 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 1918 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |

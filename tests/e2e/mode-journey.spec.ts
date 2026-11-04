@@ -101,10 +101,10 @@ test.describe('Novel Writer AI · 短篇/剧本闭环（mock AI）', () => {
 
             if (mode === 'short') {
                 await write(`${project}/短篇创作/01-故事核/故事核.md`, '## 一句话前提\n替人收拾残局的女人最后一次交易遇到旧识。\n');
-                await write(`${project}/短篇创作/02-分节大纲/分节大纲.md`, '第1节：雨夜咖啡馆，林晚送合同，发现委托人是旧识；结尾对方拒签。\n');
+                await write(`${project}/短篇创作/02-分节大纲/分节大纲.md`, '第1节：雨夜咖啡馆，林晚送合同，发现委托人是旧识；结尾对方拒签。\n第2节：林晚查旧车票，确认当年离开的真相。\n第3节：合同最后一页被翻开，她必须在走与留之间选择。\n');
             } else {
                 await write(`${project}/剧本创作/01-人物与场景/场景圣经.md`, '## 主要人物\n- 林晚：中间人\n- 顾沉：委托人\n');
-                await write(`${project}/剧本创作/02-分集大纲/分集大纲.md`, '第1集：雨夜咖啡馆，合同与旧车票；结尾林晚改签回程。\n');
+                await write(`${project}/剧本创作/02-分集大纲/分集大纲.md`, '第1集：雨夜咖啡馆，合同与旧车票；结尾林晚改签回程。\n第2集：顾沉追到天台，两人第一次正面冲突。\n第3集：旧车票揭开当年离开的真相。\n');
                 await write(`${project}/剧本创作/04-分镜/分镜表.md`, '## 第1集\n### 第1场 日 内 咖啡馆\n- 画面：雨窗、合同\n- 台词：林晚“签字。”\n');
             }
 
@@ -132,9 +132,12 @@ test.describe('Novel Writer AI · 短篇/剧本闭环（mock AI）', () => {
         const modalPage = await waitForModalPage(page, 15_000);
         const modal = modalPage.locator('.modal-container').last();
         await expect(modal).toBeVisible();
-        await modal.getByRole('button', { name: /AI 生成/ }).click();
+        const aiButton = modal.getByRole('button', { name: /AI 生成/ });
+        await aiButton.click();
+        // 生成中按钮禁用：等它恢复再校验输出，避免在生成完成前点保存写回种子文本
+        await expect(aiButton).toBeEnabled({ timeout: 30_000 });
         await expect.poll(async () => modal.locator('.nw-mode-doc-editor').inputValue(), { timeout: 30_000 })
-            .toContain('第');
+            .toContain('第2');
         await modal.getByRole('button', { name: '保存', exact: true }).click();
         await expect(modal).toBeHidden({ timeout: 10_000 });
         await expect(page.locator('.nw-flow-next-title')).not.toHaveText(title, { timeout: 10_000 });

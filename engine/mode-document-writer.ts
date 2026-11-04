@@ -8,6 +8,7 @@ import type { App } from 'obsidian';
 import type { CreationMode } from '@/shared/creation-mode';
 import { modeUnitLabel } from '@/shared/mode-content';
 import { loadModeRuntimeContext, type ModeRuntimeContext } from './mode-runtime';
+import { collectModeInjection, type ModeInjectionDeps, type ModeInjectionResult } from './mode-injection';
 
 /** 可生成的模式文档。 */
 export type ModeDocumentKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
@@ -20,6 +21,8 @@ export interface ModeDocumentGenerateOptions {
     instruction?: string;
     /** 编辑区现有内容（重写时作为参考） */
     existingText?: string;
+    /** 知识库/指纹注入依赖；传入时生成前先做 RAG 检索与指纹挑选，失败自动降级为空 */
+    injectionDeps?: ModeInjectionDeps;
     signal?: AbortSignal;
     onDelta?: (chunk: string) => void;
 }
@@ -68,6 +71,7 @@ const KIND_RULES: Record<ModeDocumentKind, string> = {
  * @param kind - 文档类型
  * @param runtime - 模式上下文
  * @param options - 生成选项
+ * @param injection - 可选的知识库/指纹注入文本；knowledge 已自带「参考知识」表头，直接原文追加
  * @returns system/user 提示词
  */
 export function buildModeDocumentPrompt(
@@ -75,6 +79,7 @@ export function buildModeDocumentPrompt(
     kind: ModeDocumentKind,
     runtime: ModeRuntimeContext,
     options: ModeDocumentGenerateOptions = { model: '', maxTokens: 0 },
+    injection?: ModeInjectionResult,
 ): { system: string; user: string } {
     const label = DOC_LABEL[mode][kind];
     const unit = modeUnitLabel(mode);
@@ -97,6 +102,9 @@ export function buildModeDocumentPrompt(
         runtime.storyboardDoc && kind !== 'storyboard' ? `【现有分镜】\n${runtime.storyboardDoc}` : '',
         runtime.entities ? `【实体状态】\n${runtime.entities}` : '',
         runtime.styleGuide ? `【文笔风格】\n${runtime.styleGuide}` : '',
+        injection?.fingerprints ? `【文笔指纹】\n${injection.fingerprints}` : '',
+        // knowledge 已由 formatRetrievalHits 带「参考知识」表头，这里直接追加原文，不再包一层
+        injection?.knowledge || '',
         options.existingText && options.existingText.trim()
             ? `【编辑区现有内容（可重写/扩写）】\n${options.existingText.slice(0, 4000)}`
             : '',
@@ -117,7 +125,7 @@ export function buildModeDocumentPrompt(
  * @param project - 项目 ID
  * @param mode - 创作模式
  * @param kind - 文档类型
- * @param options - 模型与生成选项
+ * @param options - 模型与生成选项；injectionDeps 传入时启用知识库/指纹注入
  * @returns 生成的 Markdown 文本
  */
 export async function generateModeDocument(
@@ -129,7 +137,13 @@ export async function generateModeDocument(
     options: ModeDocumentGenerateOptions,
 ): Promise<string> {
     const runtime = await loadModeRuntimeContext(app, project, mode);
-    const { system, user } = buildModeDocumentPrompt(mode, kind, runtime, options);
+    // 注入查询：优先用编辑区现有内容，其次前期调研，最后大纲；失败由 collectModeInjection 内部降级为空串
+    let injection: ModeInjectionResult | undefined;
+    if (options.injectionDeps) {
+        const query = (options.existingText || runtime.preResearchDigest || runtime.outlineDoc || '').slice(0, 1200);
+        injection = await collectModeInjection({ ...options.injectionDeps, project }, query);
+    }
+    const { system, user } = buildModeDocumentPrompt(mode, kind, runtime, options, injection);
     const result = await ai.callAI(
         system,
         user,

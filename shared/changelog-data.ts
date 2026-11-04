@@ -21,6 +21,36 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.31.0',
+        date: '2026-11-05',
+        title: '注入全链路、用量归因与备份对比',
+        sections: [
+            {
+                type: 'added',
+                label: '🧠 注入与归因',
+                items: [
+                    '模式文档 AI 生成接入知识库 RAG 与文笔指纹',
+                    '用量账本按步骤/单元/Agent/文档归因，UI 增按项目/来源汇总',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🗂 备份与切片',
+                items: [
+                    '备份中心版本条目支持行级对比与恢复（复用版本弹窗）',
+                    '知识库书卡抽出；co-writer/co-writing 持续瘦身',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧭 规划',
+                items: [
+                    'M5 平台化评估：四项均不实施，冻结重评条件',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.30.0',
         date: '2026-11-05',
         title: '资产总览、全模式注入与用量账本',

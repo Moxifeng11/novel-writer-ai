@@ -1,8 +1,8 @@
 /**
  * usage-ledger-modal.ts — AI 用量账本
  *
- * 展示最近 AI 调用的 token/耗时/状态汇总与按模型分布；数据来自
- * services/usage-ledger（插件数据目录，不进用户 vault）。
+ * 展示最近 AI 调用的 token/耗时/状态汇总，以及按模型/按项目/按来源分布；
+ * 数据来自 services/usage-ledger（插件数据目录，不进用户 vault）。
  */
 import { App, Modal } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
@@ -100,6 +100,37 @@ export class UsageLedgerModal extends Modal {
             }
         }
 
+        // 按项目：依赖调用链挂的 usage scope；「(未归因)」行偏大说明有调用点漏挂归因
+        if (summary.byProject.length > 0) {
+            const projects = this.bodyEl.createDiv({ cls: 'nw-usage-projects' });
+            projects.createEl('h4', { text: '按项目' });
+            const table = projects.createEl('table', { cls: 'nw-usage-table' });
+            const headRow = table.createEl('tr');
+            for (const label of ['项目', '调用', 'Token', '耗时']) headRow.createEl('th', { text: label });
+            for (const project of summary.byProject) {
+                const row = table.createEl('tr');
+                row.createEl('td', { text: project.project });
+                row.createEl('td', { text: `${project.okCalls}✓ / ${project.failedCalls}✗` });
+                row.createEl('td', { text: formatTokens(project.totalTokens) });
+                row.createEl('td', { text: formatDuration(project.durationMs) });
+            }
+        }
+
+        // 按来源：哪条链（步骤/单元写作/Agent/裸 AI）最烧 token 一目了然
+        if (summary.bySource.length > 0) {
+            const sources = this.bodyEl.createDiv({ cls: 'nw-usage-sources' });
+            sources.createEl('h4', { text: '按来源' });
+            const table = sources.createEl('table', { cls: 'nw-usage-table' });
+            const headRow = table.createEl('tr');
+            for (const label of ['来源', '调用', 'Token']) headRow.createEl('th', { text: label });
+            for (const source of summary.bySource) {
+                const row = table.createEl('tr');
+                row.createEl('td', { text: source.source });
+                row.createEl('td', { text: String(source.calls) });
+                row.createEl('td', { text: formatTokens(source.totalTokens) });
+            }
+        }
+
         if (records.length === 0) {
             const empty = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
             empty.createDiv({ cls: 'nw-empty-state-icon', text: '💰' });
@@ -120,9 +151,20 @@ export class UsageLedgerModal extends Modal {
             cls: 'nw-usage-status',
             text: record.status === 'ok' ? '✅' : record.status === 'aborted' ? '⏹ 已取消' : '❌',
         });
+        // 归因徽标：来源必有；项目/步骤仅在实际归因到时展示（对应三条调用链的 scope）
+        const attribution: string[] = [`来源 ${record.source}`];
+        if (record.project) {
+            attribution.push(record.stepKey ? `${record.project} · ${record.stepKey}` : record.project);
+        }
+        const meta = [
+            new Date(record.at).toLocaleString(),
+            `${formatTokens(record.totalTokens)} tok`,
+            formatDuration(record.durationMs),
+            ...attribution,
+        ];
         row.createDiv({
             cls: 'nw-usage-meta',
-            text: `${new Date(record.at).toLocaleString()} · ${formatTokens(record.totalTokens)} tok · ${formatDuration(record.durationMs)}${record.error ? ` · ${record.error}` : ''}`,
+            text: `${meta.join(' · ')}${record.error ? ` · ${record.error}` : ''}`,
         });
     }
 }

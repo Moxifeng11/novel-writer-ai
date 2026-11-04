@@ -12,6 +12,9 @@ import { modeDocPath, modeDocStarter } from '@/shared/mode-content';
 import { resolveProjectMode } from '@/shared/project-mode';
 import { writeVaultText } from '@/shared/file-system-port';
 import { generateModeDocument } from '@/engine/mode-document-writer';
+import { ENGINE_NAMES } from '@/shared/engine-names';
+import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
+import { pushUsageScope } from '@/services/usage-ledger';
 import { OperationConfirmModal } from './components/progress';
 
 /**
@@ -141,21 +144,32 @@ export class ModeDocumentModal extends Modal {
         button.disabled = true;
         button.setText('生成中…');
         try {
-            const text = await generateModeDocument(
-                this.app,
-                this.plugin.aiEngine,
-                this.project,
-                this.mode,
-                this.kind,
-                {
-                    model: this.plugin.settings.proModel || this.plugin.settings.defaultModel || '',
-                    maxTokens: this.plugin.settings.maxOutput || 4096,
-                    instruction: instruction.trim(),
-                    existingText: existing,
-                },
-            );
-            textarea.value = text;
-            new Notice('✅ 已生成，请检查后点击保存', 5000);
+            // 归因到用量账本：本次 AI 调用记在 document / doc:<kind> 名下
+            const exitUsage = pushUsageScope({ source: 'document', project: this.project, stepKey: `doc:${this.kind}` });
+            try {
+                const text = await generateModeDocument(
+                    this.app,
+                    this.plugin.aiEngine,
+                    this.project,
+                    this.mode,
+                    this.kind,
+                    {
+                        model: this.plugin.settings.proModel || this.plugin.settings.defaultModel || '',
+                        maxTokens: this.plugin.settings.maxOutput || 4096,
+                        instruction: instruction.trim(),
+                        existingText: existing,
+                        injectionDeps: {
+                            vectorStore: this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.KNOWLEDGE_VECTOR_STORE),
+                            fingerprintLibrary: StyleFingerprintLibrary.get(this.app, this.project),
+                            project: this.project,
+                        },
+                    },
+                );
+                textarea.value = text;
+                new Notice('✅ 已生成，请检查后点击保存', 5000);
+            } finally {
+                exitUsage();
+            }
         } catch (e) {
             new Notice(`AI 生成失败：${e instanceof Error ? e.message : String(e)}`, 8000);
         } finally {

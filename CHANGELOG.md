@@ -2,6 +2,32 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.31.0（2026-11-05）
+
+### 🧠 全链路注入与归因（M4 第二批，子代理协作交付）
+
+- **模式文档注入**：故事核/分节大纲/场景圣经/分集大纲/分镜表的 AI 生成接入知识库 RAG 与文笔指纹（`injectionDeps` 可选传入，失败降级为空）；提示词在【文笔风格】后追加【文笔指纹】与「参考知识」块。
+- **用量归因落线**：`UsageScope`（source/project/stepKey）+ `pushUsageScope` 三条链路挂接——
+  - 步骤链：`executeCurrentStep` 按步骤挂 `source:'step'`（薄壳+执行体，全部 return/异常路径保证退出）；
+  - 单元链：`runAI` 按单元+动作挂 `source:'unit'`；
+  - Agent 链：`runHarnessTurn` 按回合挂 `source:'agent'`；模式文档生成挂 `source:'document'`。
+  - AI client 三入口自动合并当前 scope；未挂 scope 的调用归入「(未归因)」桶（可观测漏挂点）。
+- **账本 UI**：新增「按项目」「按来源」汇总表；调用记录显示来源/项目/stepKey 徽标。
+- **备份中心**：版本条目新增「📜 历史」——复用 ChapterVersionModal 做行级对比与恢复，onRollback/onSaveVersion 完整接线，回滚后刷新备份列表。
+
+### 🪓 大文件切片（续）
+
+- `ui/views/knowledge-base-view.ts` 3732 → 3627：`createBookCard` 抽到 `ui/views/kb-book-card.ts`（宿主接口注入选中态/格式化/详情回调，DOM 逐行等价）。
+
+### 🧪 测试
+
+- 新增模式文档注入、scope 栈语义、byProject/bySource 聚合回归。
+- 全量单测 545 文件 / 5946 用例；lint 保持上限 1890。
+
+### 🧭 M5 平台化评估
+
+- 新增 `docs/audits/m5-platform-assessment.md`：公共插件 API / MCP / 模板市场 / 云协作四项**均不实施**，冻结重评条件（外部需求信号、契约稳定、安全基线、M4 收尾指标、专人维护）。
+
 ## v4.30.0（2026-11-05）
 
 ### 🧩 资产总览（AssetRegistry）

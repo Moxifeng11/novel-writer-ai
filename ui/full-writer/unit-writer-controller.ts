@@ -28,6 +28,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import { createLogger } from '@/shared/logger';
+import { pushUsageScope } from '@/services/usage-ledger';
 import type { WriterTab } from './full-writer-store';
 import type { FlowDocKind } from './flow-panel-controller';
 
@@ -530,7 +531,18 @@ export class UnitWriterController {
             } else if (action === 'continue') {
                 buffer = originalBody.replace(/\s+$/, '');
             }
-            await generateUnitText(this.deps.aiEngine, ctx, action, options);
+            // 用量归因：本次生成/续写/改写挂到 source=unit + 项目 + 「单元#动作」，
+            // 账本记录不再全部混进「ai」来源；嵌套 try/finally 保证 scope 一定退出。
+            const exitUsage = pushUsageScope({
+                source: 'unit',
+                project: ctx.project,
+                stepKey: `${ctx.unitName}#${action}`,
+            });
+            try {
+                await generateUnitText(this.deps.aiEngine, ctx, action, options);
+            } finally {
+                exitUsage();
+            }
 
             if (action === 'rewrite' && selection) {
                 const current = this.getBody();
