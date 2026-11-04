@@ -168,7 +168,7 @@ import { projectFromFilePath } from './domains/kernel/project-locator';
 import { listProjectIds } from '@/shared/project-catalog';
 import { createLogger } from './shared/logger';
 import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
-import type { RetentionTarget } from './shared/session-retention';
+import type { PruneResult, RetentionTarget } from './shared/session-retention';
 import { listAnalysisSessionFiles } from './engine/analysis-session-manager';
 import { listAgentSessionFiles, agentSessionPathFor } from './ui/services/agent-session-store';
 
@@ -346,6 +346,12 @@ export interface NovelWriterSettings {
     storyContextTier?: 'auto' | 'local' | 'cloud';
     /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */
     fingerprintInjectionBudget?: number;
+    /**
+     * v4.34.0: 启动时自动清理旧会话的开关（会话保留策略的用户入口）。
+     * 默认 true；读取处用 `!== false` 兼容旧设置缺字段（core/settings-service 的
+     * 默认清单不在此处维护）。关闭后启动不再自动修剪，仍可手动执行「清理旧会话」命令。
+     */
+    sessionRetentionEnabled?: boolean;
     availableModels: string[];
     maxContext: number;   // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
     maxOutput: number;    // v6.2: 当前生效值（由 modelOverrides 或 MODEL_CAPABILITIES 决定）
@@ -567,6 +573,12 @@ export type { DeconstructionEngineSettings } from './engine/deconstruction-sched
 export { DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS, ALL_BREAKDOWN_DIMENSIONS, DIMENSION_LABELS } from './engine/deconstruction-scheduler';
 
 export const DEFAULT_SETTINGS: NovelWriterSettings = getDefaultSettings();
+
+/** v4.34.0: 修剪结果标签 → 中文文案（手动清理的 Notice 汇总用） */
+const PRUNE_RESULT_LABELS: Record<string, string> = {
+    analysisSessions: '分析会话',
+    agentSessions: 'Agent 会话',
+};
 
 // 主题 CSS 变量已迁移至 core/theme-manager.ts
 
@@ -978,21 +990,35 @@ export default class NovelWriterPlugin extends Plugin {
      * - Agent 会话：库根 `.sessions/agent/*.jsonl`（listAgentSessionFiles）。
      * 各保留最近 SESSION_RETENTION_DEFAULTS 个；Agent 会话把当前活跃项目的存档
      * 加入 keep 豁免，防止误删正在使用的会话。
-     * 延迟到布局就绪 + setTimeout 之后执行，不阻塞启动；不在 onunload 调用
-     * （卸载窗口宝贵）。任何异常 log.warn 吞掉，绝不影响主流程。
+     * v4.34.0：受设置开关 sessionRetentionEnabled 控制——关闭时自动路径完全不调用
+     * prune（手动入口 runSessionPrune 不受此限制）。延迟到布局就绪 + setTimeout
+     * 之后执行，不阻塞启动；不在 onunload 调用（卸载窗口宝贵）。
+     * 任何异常 log.warn 吞掉，绝不影响主流程。
      */
     private _scheduleSessionRetentionPrune(): void {
         this.app.workspace.onLayoutReady(() => {
             window.setTimeout(() => {
+                // v4.34.0：开关关闭时自动路径直接短路，不发起任何列举/删除
+                if (this.settings.sessionRetentionEnabled === false) {
+                    log.info('[小说工坊] 启动会话自动清理已关闭，跳过本次修剪');
+                    return;
+                }
                 void this._pruneSessionsOnce();
             }, 0);
         });
     }
 
     /**
-     * 执行一次会话保留修剪（由 _scheduleSessionRetentionPrune 调度）
+     * 执行一次会话保留修剪（由 _scheduleSessionRetentionPrune 调度；runSessionPrune 复用）
+     *
+     * v4.34.0：返回各目标修剪结果供手动入口汇总 Notice；两个目标各带 enabled
+     * （`sessionRetentionEnabled !== false`），开关关闭时目标在 pruneSessions 内被
+     * 跳过（返回 removed: []）。
+     *
+     * @param force - 强制修剪（手动入口传 true）：忽略开关，自动清理关闭后仍可手动执行
+     * @returns 各目标的修剪结果（label + removed）；整体异常时返回空数组
      */
-    private async _pruneSessionsOnce(): Promise<void> {
+    private async _pruneSessionsOnce(force = false): Promise<PruneResult[]> {
         try {
             const adapter = this.app.vault.adapter;
             // 与 step-runner 同源：manifest.dir 理论上必有，兜底走 configDir 拼装
@@ -1010,18 +1036,45 @@ export default class NovelWriterPlugin extends Plugin {
                 // 当前活跃项目的会话豁免：工作台正在使用，删了会丢恢复点
                 keep: activeProject ? [agentSessionPathFor(activeProject)] : [],
             };
+            // 手动清理（force）忽略开关；自动路径由设置开关控制（缺省视为开启）
+            const enabled = force || this.settings.sessionRetentionEnabled !== false;
             const results = await pruneSessions([
-                { label: 'analysisSessions', port: analysisPort, maxCount: SESSION_RETENTION_DEFAULTS.analysisSessions },
-                { label: 'agentSessions', port: agentPort, maxCount: SESSION_RETENTION_DEFAULTS.agentSessions },
+                { label: 'analysisSessions', port: analysisPort, maxCount: SESSION_RETENTION_DEFAULTS.analysisSessions, enabled },
+                { label: 'agentSessions', port: agentPort, maxCount: SESSION_RETENTION_DEFAULTS.agentSessions, enabled },
             ]);
             for (const r of results) {
                 if (r.removed.length > 0) {
                     log.info(`[小说工坊] 会话保留修剪 [${r.label}]: 已删除 ${r.removed.length} 个旧会话文件`);
                 }
             }
+            return results;
         } catch (e) {
             log.warn('[小说工坊] 会话保留修剪失败（忽略，不影响使用）:', e);
+            return [];
         }
+    }
+
+    /**
+     * 手动执行一次会话保留清理（「🧹 清理旧会话」命令入口，v4.34.0 用户入口）。
+     *
+     * 复用 _pruneSessionsOnce 的修剪管线；与启动自动修剪的差异：
+     * - manual=true 时忽略 sessionRetentionEnabled 开关（关闭自动清理后仍可手动清理）；
+     * - 结束后用 Notice 汇总各落点的删除数；全部为 0 时提示「没有需要清理的旧会话」。
+     *
+     * @param manual - 是否用户手动触发；true 强制清理（默认 false，保持受开关控制）
+     */
+    async runSessionPrune(manual = false): Promise<void> {
+        const results = await this._pruneSessionsOnce(manual);
+        const total = results.reduce((sum, r) => sum + r.removed.length, 0);
+        if (total === 0) {
+            new Notice('✅ 没有需要清理的旧会话', 4000);
+            return;
+        }
+        const detail = results
+            .filter((r) => r.removed.length > 0)
+            .map((r) => `${PRUNE_RESULT_LABELS[r.label] ?? r.label} ${r.removed.length} 个`)
+            .join('、');
+        new Notice(`🧹 会话清理完成：${detail}`, 5000);
     }
 
     /**

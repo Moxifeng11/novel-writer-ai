@@ -150,6 +150,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', group: CommandGroup.Tools, description: '时间线/伏笔 ↔ 设定库/全书规划 的关联视图与回写' },
     { id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', group: CommandGroup.Tools, description: '批量拆解多本书的写作风格' },
     { id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', group: CommandGroup.Tools, description: '编译全书为 Markdown / TXT / HTML 稿件' },
+    { id: CommandIds.PRUNE_SESSIONS, name: '🧹 清理旧会话', group: CommandGroup.Tools, description: '手动清理超出保留上限的旧分析会话与 Agent 会话（最近各 30 个以内不动）' },
 
     // ─── 视图类 ───
     { id: CommandIds.OPEN_HOME, name: '🏠 创作主页', group: CommandGroup.Views, description: '三个创作模式、最近项目、下一步建议与任务入口' },
@@ -511,6 +512,14 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.OPEN_KNOWLEDGE_BASE, name: '📚 打开知识库管理界面', callback: exec(CommandIds.OPEN_KNOWLEDGE_BASE) });
         addCommand({ id: CommandIds.SWITCH_PROVIDER, name: '快速切换 AI 提供商', callback: exec(CommandIds.SWITCH_PROVIDER) });
         addCommand({ id: CommandIds.OPEN_SETTINGS, name: '⚙️ 打开插件设置', callback: exec(CommandIds.OPEN_SETTINGS) });
+        // v4.34.0：手动会话清理。不进 InternalRegistry（registerInternalCommands 的
+        // 注册集合被 command-registry.test.ts 快照钉死），与 RENAME_PROJECT 同模式：
+        // 直接委托 UI 执行器，由 command-ui-executor 的 switch 分支调用 runSessionPrune
+        addCommand({
+            id: CommandIds.PRUNE_SESSIONS,
+            name: '🧹 清理旧会话',
+            callback: () => { void this.ui.executeCommand(CommandIds.PRUNE_SESSIONS); },
+        });
         addCommand({ id: CommandIds.EXTRACT_ELEMENTS, name: 'AI 元素提取', checkCallback: execGuarded(CommandIds.EXTRACT_ELEMENTS, LONG_ONLY) });
         addCommand({
             id: CommandIds.EXPAND_TEXT,

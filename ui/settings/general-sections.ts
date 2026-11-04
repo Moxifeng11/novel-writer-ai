@@ -44,6 +44,18 @@ export class PerformanceSection extends SettingsSection {
                 })
             );
 
+        // v4.34.0：会话保留清理的用户入口（开关 + 手动命令「🧹 清理旧会话」）
+        new Setting(section)
+            .setName('启动时清理旧会话')
+            .setDesc('Agent 会话与分析会话各保留最近 30 个，当前项目存档不受影响。关闭后仍可手动执行「清理旧会话」命令。')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.sessionRetentionEnabled !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.sessionRetentionEnabled = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
         if (!performanceMonitor.isEnabled()) {
             section.createEl('div', {
                 text: '⚠️  性能监控已关闭',

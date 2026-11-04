@@ -27,6 +27,7 @@ import { namesFromEntitySummary } from '@/engine/mode-runtime';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { createLogger } from '@/shared/logger';
 import { pushUsageScope } from '@/services/usage-ledger';
 import type { WriterTab } from './full-writer-store';
@@ -269,7 +270,7 @@ export class UnitWriterController {
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
                 event.preventDefault();
                 void this.flushSave().then(ok => {
-                    if (ok) new Notice('已保存', 1500);
+                    if (ok) showSuccessNotice('已保存', { timeout: 1500 });
                 });
             }
         });
@@ -439,7 +440,7 @@ export class UnitWriterController {
         } catch (e) {
             this.dirty = true;
             this.setSaveState('保存失败');
-            new Notice(`保存失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 6000 });
         } finally {
             this.saving = null;
         }
@@ -552,10 +553,10 @@ export class UnitWriterController {
                     modeRevisionOptions(ctx.mode, namesFromEntitySummary(ctx.entities ?? '')),
                 );
                 if (!gate.accept) {
-                    new Notice(`改写未应用：${gate.reasons.join('；')}`, 8000);
+                    showWarningNotice(gate.reasons.join('；'), { title: '改写未应用', timeout: 8000 });
                     this.setAiStatus('改写未通过修订闸门，正文未改动');
                 } else if (current.slice(selection.start, selection.end) !== selection.originalText) {
-                    new Notice('正文已改动，改写结果未应用；请重新选中后再试', 6000);
+                    showWarningNotice('正文已改动，改写结果未应用；请重新选中后再试', { timeout: 6000 });
                 } else {
                     this.setBody(
                         `${current.slice(0, selection.start)}${streamed}${current.slice(selection.end)}`,
@@ -583,7 +584,7 @@ export class UnitWriterController {
                 const message = e instanceof Error ? e.message : String(e);
                 log.warn('[单元写作] 生成失败:', message);
                 this.setAiStatus(`生成失败：${message}`);
-                new Notice(`生成失败：${message}`, 8000);
+                showErrorNotice(message, { title: '生成失败', timeout: 8000 });
             }
         } finally {
             if (flushTimer !== null) window.clearTimeout(flushTimer);
@@ -676,7 +677,7 @@ export class UnitWriterController {
             this.setAiStatus(`${report.passed ? '质检通过' : '质检未通过'} · ${report.overallScore} 分`);
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
-            new Notice(`质量检查失败：${message}`, 8000);
+            showErrorNotice(message, { title: '质量检查失败', timeout: 8000 });
             if (!this.qualityEl) return;
             this.qualityEl.empty();
             this.qualityEl.createDiv({
@@ -711,11 +712,11 @@ export class UnitWriterController {
                 this.ctx.mode,
                 body,
             );
-            new Notice(`✅ ${this.ctx.unitName} 已结算（更新 ${result.updated} 个实体）`, 5000);
+            showSuccessNotice(`${this.ctx.unitName} 已结算（更新 ${result.updated} 个实体）`, { timeout: 5000 });
             this.setAiStatus(`已结算：${result.reportPath}`);
             this.updateHeaderMeta();
         } catch (e) {
-            new Notice(`单元结算失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '单元结算失败', timeout: 8000 });
         }
     }
 
@@ -730,7 +731,7 @@ export class UnitWriterController {
             onApply: async (nextText: string) => {
                 this.setBody(nextText);
                 await this.flushSave();
-                new Notice('已应用自然段重排', 3000);
+                showSuccessNotice('已应用自然段重排', { timeout: 3000 });
             },
         }).open();
     }
@@ -743,7 +744,7 @@ export class UnitWriterController {
         }
         const saved = await this.flushSave({ markWritten: true });
         if (!saved) return;
-        new Notice(`✅ ${this.ctx.unitName} 已标记为已写`, 4000);
+        showSuccessNotice(`${this.ctx.unitName} 已标记为已写`, { timeout: 4000 });
 
         const current = this.ctx.unitNumber;
         const next = this.units.find(unit => unit.number > current);

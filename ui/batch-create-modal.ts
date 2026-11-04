@@ -11,6 +11,7 @@ import { countPlannedChapters, hasBlockingIssues, parseVolumePlan, VolumePlan, V
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
 import { getProjectMeta } from './project-utils';
+import { showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { getCreationModeLabel, type CreationMode } from '@/shared/creation-mode';
 import {
     buildScriptUnitSkeleton,
@@ -293,11 +294,11 @@ export class BatchCreateModal extends Modal {
         });
 
         if (failures.length === 0 && invalid.length === 0) {
-            new Notice(`✅ 已创建 ${total - failures.length} ${unit}骨架（${created} 个新文件），落盘校验通过`, 6000);
+            showSuccessNotice(`已创建 ${total - failures.length} ${unit}骨架（${created} 个新文件），落盘校验通过`, { timeout: 6000 });
             this.close();
             return;
         }
-        new Notice(`⚠️ 建${unit}完成但存在问题：失败 ${failures.length} ${unit}，落盘异常 ${invalid.length} 项。详见弹窗清单`, 12000);
+        showWarningNotice(`失败 ${failures.length} ${unit}，落盘异常 ${invalid.length} 项。详见弹窗清单`, { title: `建${unit}完成但存在问题`, timeout: 12000 });
     }
 
     private async batchCreateAll(project: string, volumes: VolumePlan[], planBox: HTMLElement): Promise<void> {
@@ -406,22 +407,25 @@ export class BatchCreateModal extends Modal {
         });
 
         if (!hasProblem) {
-            new Notice(
+            showSuccessNotice(
                 isLong
-                    ? `✅ 已按全书规划创建 ${sortedVolumes.length} 卷 / ${createdChapters} 章（${createdFiles} 个新文件），落盘校验通过`
-                    : `✅ 已创建 ${createdChapters} ${unit}骨架（${createdFiles} 个新文件），落盘校验通过`,
-                6000
+                    ? `已按全书规划创建 ${sortedVolumes.length} 卷 / ${createdChapters} 章（${createdFiles} 个新文件），落盘校验通过`
+                    : `已创建 ${createdChapters} ${unit}骨架（${createdFiles} 个新文件），落盘校验通过`,
+                { timeout: 6000 }
             );
             this.close();
             return;
         }
 
         // 有失败/校验异常时不关闭弹窗，保留清单供用户修复后重试（重试会跳过已存在文件）
-        new Notice(
+        showWarningNotice(
             isLong
-                ? `⚠️ 建章完成但存在问题：成功 ${createdChapters}/${totalChapters} 章，失败 ${failures.length} 章，落盘异常 ${invalidFiles.length} 项。详见弹窗清单`
-                : `⚠️ 建${unit}完成但存在问题：成功 ${createdChapters}/${totalChapters} ${unit}，失败 ${failures.length} ${unit}，落盘异常 ${invalidFiles.length} 项。详见弹窗清单`,
-            12000
+                ? `成功 ${createdChapters}/${totalChapters} 章，失败 ${failures.length} 章，落盘异常 ${invalidFiles.length} 项。详见弹窗清单`
+                : `成功 ${createdChapters}/${totalChapters} ${unit}，失败 ${failures.length} ${unit}，落盘异常 ${invalidFiles.length} 项。详见弹窗清单`,
+            {
+                title: isLong ? '建章完成但存在问题' : `建${unit}完成但存在问题`,
+                timeout: 12000,
+            }
         );
     }
 

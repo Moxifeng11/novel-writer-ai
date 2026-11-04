@@ -11,6 +11,7 @@ import {
     buildBatchTargets,
     type BatchChapterResult,
 } from './full-writer/batch-pipeline-runner';
+import { showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 
 /**
  * BatchNovelsModal 类。
@@ -196,7 +197,12 @@ export class BatchNovelsModal extends Modal {
             });
         }
         const skippedNotice = skipped > 0 ? `，跳过 ${skipped} 章` : '';
-        new Notice(`批量生成结束：成功 ${done} 章${skippedNotice}，失败 ${failed.length} 章`, 6000);
+        const summaryMessage = `成功 ${done} 章${skippedNotice}，失败 ${failed.length} 章`;
+        if (failed.length > 0) {
+            showWarningNotice(summaryMessage, { title: '批量生成结束', timeout: 6000 });
+        } else {
+            showSuccessNotice(summaryMessage, { title: '批量生成结束', timeout: 6000 });
+        }
     }
 
     private detectProject(): string {

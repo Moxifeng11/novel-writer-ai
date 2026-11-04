@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.35.0',
+        date: '2026-11-05',
+        title: '体积门禁进 CI、Notice 统一与会话修剪入口',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧪 门禁与提示',
+                items: [
+                    'check:bundle 进 CI；check-release 解析器零改动',
+                    'Notice 统一助手在 6 个关键路径铺开 29 处（失败/成功/告警三类）',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🗂 切片与入口',
+                items: [
+                    '知识库视图 3627→3368：统计面板/详情操作抽出',
+                    '会话修剪补用户入口：性能监控开关 + 「清理旧会话」命令',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.34.0',
         date: '2026-11-05',
         title: '体积预算、CI 加固、覆盖率扩展与会话保留',

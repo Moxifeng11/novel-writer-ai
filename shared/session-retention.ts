@@ -75,6 +75,13 @@ export interface PruneTargetConfig {
     port: RetentionTarget;
     /** 数量上限：按 mtime 降序保留前 maxCount 个，其余删除 */
     maxCount: number;
+    /**
+     * 是否对该目标执行修剪（v4.34.0：会话清理开关的用户入口）。
+     * - 缺省视为 true（向后兼容：既有调用点不传此字段，行为不变）；
+     * - 显式 false 时整个目标直接跳过：不调用 port.list()、不删除任何文件，
+     *   返回结果中该目标仍占位（`{ label, removed: [] }`），不影响其它目标。
+     */
+    enabled?: boolean;
 }
 
 /**
@@ -96,10 +103,11 @@ export const SESSION_RETENTION_DEFAULTS = {
  * 按数量上限修剪多个会话落点。
  *
  * 语义（对每个 target 独立执行）：
- * 1. 取 port.list()，按 mtime 降序排序，mtime 缺失视为最旧（排最后）；
- * 2. 保留集 = 排序后前 maxCount 个 ∪ port.keep 豁免集；
- * 3. 其余文件逐个 port.remove：单条失败 log.warn 并继续，不计入 removed；
- * 4. list() 本身失败视为该目标整体不可修剪：log.warn 后返回
+ * 1. enabled 为 false 的目标直接跳过（不列举、不删除，结果占位 `{ label, removed: [] }`）；
+ * 2. 取 port.list()，按 mtime 降序排序，mtime 缺失视为最旧（排最后）；
+ * 3. 保留集 = 排序后前 maxCount 个 ∪ port.keep 豁免集；
+ * 4. 其余文件逐个 port.remove：单条失败 log.warn 并继续，不计入 removed；
+ * 5. list() 本身失败视为该目标整体不可修剪：log.warn 后返回
  *    `{ label, removed: [] }`，不影响其它目标。
  *
  * @param targets - 修剪目标列表（标签 + 端口 + 上限）
@@ -137,6 +145,9 @@ export async function pruneSessions(targets: PruneTargetConfig[]): Promise<Prune
     for (const target of targets) {
         const result: PruneResult = { label: target.label, removed: [] };
         results.push(result);
+
+        // enabled === false：该目标被关闭（v4.34.0 用户开关），直接跳过且不触碰端口
+        if (target.enabled === false) continue;
 
         let entries: RetentionFileInfo[];
         try {

@@ -2,6 +2,33 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.35.0（2026-11-05）
+
+### 🧪 check:bundle 进 CI（P2 尾巴）
+
+- ci.yml verify job 在「构建」之后插入「校验构建产物体积预算」（`npm run check:bundle`），远程门禁与本地 preflight 对齐。
+
+### 🧯 Notice 统一（P2）
+
+- 新增 `ui/components/notice-helpers.ts`：`showErrorNotice / showSuccessNotice / showWarningNotice`（加粗标题行 + 消息 + 灰色 detail；DocumentFragment 渲染，单测环境自动降级纯文本，绝不抛错）。
+- 关键用户路径铺开 29 处（导出/批量生成/模式文档/单元写作/结算/批量建章 6 文件），失败/成功/告警三类格式统一；守卫类提示与复合预检文案按例外保留普通 Notice。
+- DOM 能力探测降级：单测环境（document 垫片只有 createElement）回退纯文本多行，85 个 ui 测试文件全绿。
+
+### 🗂 知识库视图切片（第四批）
+
+- `ui/views/knowledge-base-view.ts` 3,627 → 3,368（-259）：`renderStatsTab` → `kb-stats-panel.ts`（3 成员宿主）、`renderDetailActionButtons` → `kb-detail-actions.ts`（10 成员宿主，含强制取消确认流）；`renderConfigTab` 因含两个可写状态字段按范式放弃，留待后续。
+- 视图收敛 `refreshDetailIfSelected` 承接两处重复刷新判定；eslint 净减 1 条（App 未用导入随清理消除）。
+
+### 🧹 会话修剪用户入口
+
+- 设置「📈 性能监控」新增「启动时清理旧会话」开关（默认开，`sessionRetentionEnabled`，关闭后启动完全不发起列举/删除）。
+- 新增命令「🧹 清理旧会话」：手动触发、不受开关限制、必有 Notice 汇总（各目标删除数 / 无需清理）；活跃项目 Agent 存档豁免两条路径都保留。
+- `pruneSessions` targets 支持 `enabled`（缺省 true 向后兼容）。
+
+### 🧪 测试
+
+- 全量单测 547 文件 / 5967 用例；lint 警告 1875 → 1873。
+
 ## v4.34.0（2026-11-05）
 
 ### 📦 体积预算门禁（P2，子代理协作交付）

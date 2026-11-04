@@ -43,9 +43,9 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 208,
-      "exports": 531,
-      "documented": 531,
+      "files": 209,
+      "exports": 534,
+      "documented": 534,
       "methods": 651,
       "methodsDocumented": 651,
       "incomplete": 0
@@ -3851,6 +3851,15 @@
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1
+    },
+    "ui/components/notice-helpers.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0,
+      "exampleTargets": 3,
+      "examplesDocumented": 3
     },
     "ui/components/progress/loading-overlay.ts": {
       "exports": 2,

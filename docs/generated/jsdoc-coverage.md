@@ -9,7 +9,7 @@
 | `engine/` | 280 | 1554 | 1553 | 100% | 1243 | 1243 | 100% | 0 |
 | `services/` | 32 | 186 | 186 | 100% | 221 | 221 | 100% | 0 |
 | `shared/` | 171 | 1558 | 1558 | 100% | 149 | 149 | 100% | 0 |
-| `ui/` | 208 | 533 | 533 | 100% | 651 | 651 | 100% | 0 |
+| `ui/` | 211 | 540 | 540 | 100% | 651 | 651 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -74,6 +74,7 @@
 | `ui/components/emotion-curve-view.ts` | 1 | 1 | 100% | — |
 | `ui/components/empty-state.ts` | 1 | 1 | 100% | — |
 | `ui/components/error-state.ts` | 1 | 1 | 100% | — |
+| `ui/components/notice-helpers.ts` | 3 | 3 | 100% | — |
 | `ui/components/progress/loading-overlay.ts` | 1 | 1 | 100% | — |
 | `ui/components/progress/operation-confirm-modal.ts` | 1 | 1 | 100% | — |
 | `ui/components/progress/progress-bar.ts` | 1 | 1 | 100% | — |

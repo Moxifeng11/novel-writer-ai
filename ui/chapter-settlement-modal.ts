@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, Modal, TFile, TFolder } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
@@ -14,6 +14,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import { createLogger } from '@/shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
 import { OperationConfirmModal } from './components/progress';
+import { showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 
 
 const log = createLogger('ChapterSettlementModal');
@@ -197,7 +198,7 @@ export class ChapterSettlementModal extends Modal {
                 status: 'done',
                 detail: `${target.chapName} 分析报告无可应用指令，未执行结算`,
             });
-            new Notice('⚠️ 分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），本次未执行结算；请检查报告，或改用轻结算', 8000);
+            showWarningNotice('分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），本次未执行结算；请检查报告，或改用轻结算', { timeout: 8000 });
             return;
         }
         // 执行登记表：Agent 通过 get_execution_status 读取本次结算回写量
@@ -227,8 +228,9 @@ export class ChapterSettlementModal extends Modal {
             },
         });
         const artifactWarning = settlementArtifactNotice(artifactReport);
-        if (artifactWarning) new Notice(artifactWarning, 8000);
-        new Notice(`✅ 结算完成：更新${totalUpdated}项，新建${totalCreated}项`, 8000);
+        // settlementArtifactNotice 文案自带「⚠️ 」前缀，助手标题行会再渲染一次，这里去掉避免重复
+        if (artifactWarning) showWarningNotice(artifactWarning.replace(/^⚠️\s*/u, ''), { timeout: 8000 });
+        showSuccessNotice(`更新${totalUpdated}项，新建${totalCreated}项`, { title: '结算完成', timeout: 8000 });
         await this.refreshWorkspaceAndClose();
     }
 
@@ -264,10 +266,11 @@ export class ChapterSettlementModal extends Modal {
             writeSnapshot: () => this.writeStateSnapshot(target, bodyText, lightResult.chars),
         });
         const lightWarning = settlementArtifactNotice(lightReport);
-        if (lightWarning) new Notice(lightWarning, 8000);
+        // 同 artifactWarning：去掉自带前缀后交给告警助手统一渲染
+        if (lightWarning) showWarningNotice(lightWarning.replace(/^⚠️\s*/u, ''), { timeout: 8000 });
 
         const totalUpdated = lightResult.updated;
-        new Notice(`✅ 轻量结算完成：基于正文 frontmatter 更新${totalUpdated}项实体状态；补跑分析报告后可执行完整结算`, 8000);
+        showSuccessNotice(`基于正文 frontmatter 更新${totalUpdated}项实体状态；补跑分析报告后可执行完整结算`, { title: '轻量结算完成', timeout: 8000 });
         await this.refreshWorkspaceAndClose();
     }
 
@@ -354,7 +357,7 @@ export class ChapterSettlementModal extends Modal {
             });
         } catch (e) {
             log.warn('[ChapterSettlementModal] 回写正文 settled 状态失败:', e);
-            new Notice('⚠️ 结算表已生成，但正文状态回写失败，请检查 frontmatter');
+            showWarningNotice('结算表已生成，但正文状态回写失败，请检查 frontmatter');
         }
     }
 

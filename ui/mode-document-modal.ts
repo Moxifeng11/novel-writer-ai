@@ -4,7 +4,7 @@
  * 用于故事核、分节大纲、场景圣经、分集大纲、分镜表等模式内文档。
  * 只读写 短篇创作/ 或 剧本创作/，不触碰长篇 03-大纲与章节。
  */
-import { App, Modal, Notice } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import type { CreationMode } from '@/shared/creation-mode';
 import { getCreationModeLabel } from '@/shared/creation-mode';
@@ -16,6 +16,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { pushUsageScope } from '@/services/usage-ledger';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
 /**
  * ModeDocumentKind 类型定义。
@@ -120,7 +121,7 @@ export class ModeDocumentModal extends Modal {
                 textarea.value = await this.app.vault.adapter.read(path);
             }
         } catch (e) {
-            new Notice(`读取文档失败：${e instanceof Error ? e.message : String(e)}`, 5000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '读取文档失败', timeout: 5000 });
         }
     }
 
@@ -166,12 +167,12 @@ export class ModeDocumentModal extends Modal {
                     },
                 );
                 textarea.value = text;
-                new Notice('✅ 已生成，请检查后点击保存', 5000);
+                showSuccessNotice('已生成，请检查后点击保存', { timeout: 5000 });
             } finally {
                 exitUsage();
             }
         } catch (e) {
-            new Notice(`AI 生成失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: 'AI 生成失败', timeout: 8000 });
         } finally {
             button.disabled = false;
             button.setText('🤖 AI 生成');
@@ -183,10 +184,10 @@ export class ModeDocumentModal extends Modal {
         try {
             const path = modeDocPath(this.project, this.mode, this.kind);
             await writeVaultText(this.app, path, content);
-            new Notice('✅ 已保存', 3000);
+            showSuccessNotice('已保存', { timeout: 3000 });
             this.close();
         } catch (e) {
-            new Notice(`保存失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 6000 });
         }
     }
 

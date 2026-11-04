@@ -8,16 +8,16 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 297 | 131747 | 1578 | 1320 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 172 | 38516 | 1553 | 1290 | 83% |
-| `core/` | 7 | 2737 | 28 | 13 | 46% |
+| `shared/` | 172 | 38552 | 1553 | 1290 | 83% |
+| `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 210 | 96912 | 542 | 497 | 92% |
+| `ui/` | 213 | 97238 | 549 | 504 | 92% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 672 | 6 | 2 |
+| `core/command-registry.ts` | 681 | 6 | 2 |
 | `core/crypto-service.ts` | 379 | 3 | 1 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -375,7 +375,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1366 | 3 | 3 |
+| `shared/changelog-data.ts` | 1389 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -383,7 +383,7 @@
 | `shared/chapter-target.ts` | 118 | 5 | 5 |
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 116 | 2 | 2 |
+| `shared/command-ids.ts` | 118 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
@@ -490,7 +490,7 @@
 | `shared/secret-display.ts` | 76 | 4 | 3 |
 | `shared/secret-redaction.ts` | 87 | 3 | 3 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
-| `shared/session-retention.ts` | 175 | 6 | 6 |
+| `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
 | `shared/step-modal-styles.ts` | 83 | 3 | 3 |
@@ -545,14 +545,14 @@
 | `ui/backup-center-modal.ts` | 243 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 128 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 338 | 1 | 1 |
-| `ui/batch-create-modal.ts` | 520 | 1 | 1 |
+| `ui/batch-create-modal.ts` | 524 | 1 | 1 |
 | `ui/batch-deconstruct-modal.ts` | 410 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1868 | 1 | 1 |
-| `ui/batch-novels-modal.ts` | 230 | 1 | 1 |
+| `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 193 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1321 | 1 | 1 |
-| `ui/chapter-settlement-modal.ts` | 397 | 1 | 1 |
+| `ui/chapter-settlement-modal.ts` | 400 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1019 | 2 | 2 |
@@ -564,7 +564,7 @@
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
 | `ui/co-writing/quality-report.ts` | 129 | 2 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 652 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 656 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 442 | 2 | 2 |
@@ -573,6 +573,7 @@
 | `ui/components/emotion-curve-view.ts` | 131 | 1 | 1 |
 | `ui/components/empty-state.ts` | 145 | 3 | 1 |
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
+| `ui/components/notice-helpers.ts` | 156 | 3 | 3 |
 | `ui/components/progress/index.ts` | 28 | 4 | 0 |
 | `ui/components/progress/loading-overlay.ts` | 230 | 2 | 2 |
 | `ui/components/progress/operation-confirm-modal.ts` | 325 | 2 | 2 |
@@ -598,7 +599,7 @@
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 553 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 569 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 570 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 418 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |
@@ -638,7 +639,7 @@
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 778 | 2 | 2 |
+| `ui/full-writer/unit-writer-controller.ts` | 779 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 420 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 350 | 1 | 1 |
@@ -664,7 +665,7 @@
 | `ui/manage-providers-modal.ts` | 614 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/mini-settings-modal.ts` | 88 | 1 | 0 |
-| `ui/mode-document-modal.ts` | 200 | 2 | 2 |
+| `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-picker-modal.ts` | 196 | 2 | 2 |
 | `ui/model-picker-popover.ts` | 291 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 319 | 13 | 12 |
@@ -708,7 +709,7 @@
 | `ui/settings/deconstruction-section.ts` | 333 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 288 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1163 | 6 | 6 |
+| `ui/settings/general-sections.ts` | 1175 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 809 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
@@ -731,8 +732,10 @@
 | `ui/vector-rebuild-action.ts` | 138 | 1 | 1 |
 | `ui/views/book-detail-renderer.ts` | 2452 | 2 | 2 |
 | `ui/views/kb-book-card.ts` | 170 | 2 | 2 |
+| `ui/views/kb-detail-actions.ts` | 200 | 2 | 2 |
+| `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3628 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3369 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 1918 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |

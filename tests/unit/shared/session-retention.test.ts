@@ -197,5 +197,41 @@ describe('session-retention', () => {
             expect(existingPaths()).toEqual(['keep.jsonl']);
             expect(removed).toEqual(['a.jsonl']);
         });
+
+        it('enabled 为 false 时跳过该目标（不列举不删除，结果占位 removed: []）', async () => {
+            const files = [
+                { path: 'a.jsonl', mtime: 100 },
+                { path: 'b.jsonl', mtime: 50 },
+            ];
+            const { port, existingPaths, removed } = createMemoryPort(files);
+            const results = await pruneSessions([
+                { label: 'disabled', port, maxCount: 0, enabled: false },
+            ]);
+
+            // maxCount 为 0 本应删光，但 enabled=false 直接跳过：文件原样保留
+            expect(results).toEqual([{ label: 'disabled', removed: [] }]);
+            expect(removed).toEqual([]);
+            expect(existingPaths().sort()).toEqual(['a.jsonl', 'b.jsonl']);
+        });
+
+        it('enabled 缺省视为 true（向后兼容），enabled 显式 true 正常修剪', async () => {
+            const implicit = createMemoryPort([
+                { path: 'i1.jsonl', mtime: 100 },
+                { path: 'i2.jsonl', mtime: 50 },
+            ]);
+            const explicit = createMemoryPort([
+                { path: 'e1.jsonl', mtime: 100 },
+                { path: 'e2.jsonl', mtime: 50 },
+            ]);
+            const results = await pruneSessions([
+                { label: 'implicit', port: implicit.port, maxCount: 1 },
+                { label: 'explicit', port: explicit.port, maxCount: 1, enabled: true },
+            ]);
+
+            expect(results).toEqual([
+                { label: 'implicit', removed: ['i2.jsonl'] },
+                { label: 'explicit', removed: ['e2.jsonl'] },
+            ]);
+        });
     });
 });

@@ -1,11 +1,11 @@
-import { ItemView, WorkspaceLeaf, Notice, Modal, App } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, Modal } from 'obsidian';
 import NovelWriterPlugin from '@/main';
-import { KnowledgeBaseManager, type BookBasicInfo, type BreakdownStatus, type QualityScores } from '@/services/knowledge-base-manager';
+import { KnowledgeBaseManager, type BookBasicInfo, type BreakdownStatus } from '@/services/knowledge-base-manager';
 import { WebnovelKnowledgeBase, type GenreConfig } from '@/shared/webnovel-knowledge-base';
 import { KnowledgeBaseConfigManager } from '@/engine/knowledge-base-config';
 import { applyNwScope } from '@/utils/helpers';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
-import { radarChart, barChart, donutChart, attachChartInteractions } from '@/ui/svg-charts';
+import { attachChartInteractions } from '@/ui/svg-charts';
 import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgress, type BreakdownTask, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
 import { BatchImportModal } from '@/ui/batch-import-modal';
 import { MiniSettingsModal } from '@/ui/mini-settings-modal';
@@ -18,6 +18,8 @@ import { ImportBookModal, EditBookModal, GenreEditModal, BatchOperationsModal } 
 import { canRefreshBookList, detailErrorMessage, emptyDetailData } from './knowledge-detail-state';
 import { BookDetailRenderer } from './book-detail-renderer';
 import { buildKbBookCard } from './kb-book-card';
+import { buildKbStatsPanel } from './kb-stats-panel';
+import { buildKbDetailActionButtons } from './kb-detail-actions';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 
@@ -2876,163 +2878,17 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     // ============== Tab 4: 质量统计 ==============
+    /**
+     * 渲染质量统计页签。
+     *
+     * DOM 构建细节已抽到 kb-stats-panel.ts 的 buildKbStatsPanel，本方法只负责
+     * 把书籍数据与图表挂载、题材命名能力注入宿主回调。
+     */
     private renderStatsTab(): void {
-        // 同 renderTasksTab：任务完成回调会直接调用它，必须先清空再重建
-        this.rightContentEl.empty();
-        const content = this.rightContentEl.createDiv({
-            cls: "nw-kb-stats-tab nw-u-p-16px nw-u-ovy-auto nw-u-h-100",
-            attr: {}
-        });
-
-        content.createEl('h2', { text: '质量统计', cls: 'nw-u-m-0-0-20px-0 nw-u-fs-18px' });
-
-        const completedBooks = this.allBooks.filter(b => b.breakdownStatus === 'completed' && b.qualityScores);
-
-        const overviewGrid = content.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-12px nw-u-marginbottom-24px'
-        });
-        const overviewItems = [
-            { label: '书籍总数', value: this.allBooks.length, icon: '📚', color: 'var(--interactive-accent)' },
-            { label: '已拆解', value: completedBooks.length, icon: '✅', color: '#2ecc71' },
-            { label: '拆解中', value: this.allBooks.filter(b => b.breakdownStatus === 'processing').length, icon: '⏳', color: '#3b82f6' },
-            {
-                label: '平均质量分',
-                value: completedBooks.length > 0
-                    ? (completedBooks.reduce((sum, b) => sum + (b.qualityScores?.overall ?? 0), 0) / completedBooks.length).toFixed(1)
-                    : '-',
-                icon: '⭐',
-                color: '#f59e0b'
-            },
-        ];
-        overviewItems.forEach(item => {
-            const card = overviewGrid.createDiv({
-                cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px nw-u-ta-center'
-            });
-            card.createDiv({ text: item.icon, cls: 'nw-u-fs-28px nw-u-marginbottom-8px' });
-            card.createDiv({ text: item.value.toString(), attr: { style: `font-size:24px;font-weight:700;color:${item.color};margin-bottom:4px;` } });
-            card.createDiv({ text: item.label, cls: 'nw-text-sm-muted' });
-        });
-
-        if (completedBooks.length > 0) {
-            const qualitySection = content.createDiv({
-                cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
-            });
-            qualitySection.createEl('h3', { text: '各维度质量分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
-
-            const dimensions: { key: Exclude<keyof QualityScores, 'overall' | 'vectorEnabled'>; label: string }[] = [
-                { key: 'character', label: '人设' },
-                { key: 'foreshadow', label: '伏笔' },
-                { key: 'technique', label: '技巧' },
-                { key: 'style', label: '风格' },
-                { key: 'rhythm', label: '节奏' },
-                { key: 'structure', label: '结构' },
-            ];
-
-            const chartWrap = qualitySection.createDiv({
-                cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
-            });
-
-            const radarData = dimensions.map(d => ({
-                label: d.label,
-                value: completedBooks.reduce((sum, b) => sum + (b.qualityScores?.[d.key] as number ?? 0), 0) / completedBooks.length
-            }));
-            const radarCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-280px nw-u-d-flex nw-u-jc-center' });
-            this.renderChart(radarCard, radarChart(radarData, { size: 280, title: '平均质量雷达图' }));
-
-            const avgCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
-            dimensions.forEach(d => {
-                const avg = completedBooks.reduce((sum, b) => sum + (b.qualityScores?.[d.key] as number ?? 0), 0) / completedBooks.length;
-                const item = avgCard.createDiv({ cls: 'nw-u-marginbottom-14px' });
-                const top = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px' });
-                top.createSpan({ text: d.label, cls: 'nw-u-fs-13px nw-u-c-text-normal' });
-                top.createSpan({ text: avg.toFixed(1) + '分', cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-fwt-500' });
-                const bar = item.createDiv({
-                    cls: 'nw-u-h-8px nw-u-bg-background-primary nw-u-brd-4px nw-u-ov-hidden'
-                });
-                bar.createDiv({
-                    attr: { style: `height:100%;width:${avg}%;background:var(--interactive-accent);border-radius:4px;` }
-                });
-            });
-        }
-
-        const genreSection = content.createDiv({
-            cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
-        });
-        genreSection.createEl('h3', { text: '题材分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
-
-        const genreCounts: Record<string, number> = {};
-        this.allBooks.forEach(book => {
-            if (book.primaryGenre) {
-                genreCounts[book.primaryGenre] = (genreCounts[book.primaryGenre] || 0) + 1;
-            }
-        });
-
-        const genreData = Object.entries(genreCounts)
-            .map(([id, count]) => ({
-                label: this.getGenreName(id),
-                value: count
-            }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 10);
-
-        if (genreData.length > 0) {
-            const chartCard = genreSection.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
-            this.renderChart(chartCard, barChart(genreData, { width: 500, height: 300, title: 'Top 10 题材分布' }));
-        } else {
-            genreSection.createDiv({
-                text: '暂无题材数据',
-                cls: 'nw-u-ta-center nw-u-p-40px nw-u-c-text-muted'
-            });
-        }
-
-        const statusSection = content.createDiv({
-            cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
-        });
-        statusSection.createEl('h3', { text: '拆解状态分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
-
-        const statusCounts = {
-            pending: this.allBooks.filter(b => b.breakdownStatus === 'pending').length,
-            processing: this.allBooks.filter(b => b.breakdownStatus === 'processing').length,
-            completed: this.allBooks.filter(b => b.breakdownStatus === 'completed').length,
-            failed: this.allBooks.filter(b => b.breakdownStatus === 'failed').length,
-            interrupted: this.allBooks.filter(b => b.breakdownStatus === 'interrupted').length,
-        };
-
-        const donutData = [
-            { label: '待拆解', value: statusCounts.pending, color: '#f59e0b' },
-            { label: '拆解中', value: statusCounts.processing, color: '#3b82f6' },
-            { label: '已完成', value: statusCounts.completed, color: '#2ecc71' },
-            { label: '失败', value: statusCounts.failed, color: '#e74c3c' },
-            { label: '拆解中断', value: statusCounts.interrupted, color: '#f97316' },
-        ].filter(d => d.value > 0);
-
-        const statusWrap = statusSection.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
-        });
-
-        if (donutData.length > 0) {
-            const donutCard = statusWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px nw-u-d-flex nw-u-jc-center' });
-            this.renderChart(donutCard, donutChart(donutData, { size: 220, title: '状态分布' }));
-        }
-
-        const statusList = statusWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
-        const statusItems = [
-            { label: '待拆解', value: statusCounts.pending, color: '#f59e0b' },
-            { label: '拆解中', value: statusCounts.processing, color: '#3b82f6' },
-            { label: '已完成', value: statusCounts.completed, color: '#2ecc71' },
-            { label: '失败', value: statusCounts.failed, color: '#e74c3c' },
-            { label: '拆解中断', value: statusCounts.interrupted, color: '#f97316' },
-        ];
-        statusItems.forEach(item => {
-            const row = statusList.createDiv({
-                attr: { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}' }
-            });
-            const left = row.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px' });
-            left.createSpan({
-                attr: { style: `width:10px;height:10px;border-radius:50%;background:${item.color};` }
-            });
-            left.createSpan({ text: item.label, cls: 'nw-u-fs-13px nw-u-c-text-normal' });
-            row.createSpan({ text: item.value.toString(), cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-c-text-normal' });
+        buildKbStatsPanel(this.rightContentEl, {
+            allBooks: this.allBooks,
+            renderChart: (container, svgHtml) => this.renderChart(container, svgHtml),
+            getGenreName: genreId => this.getGenreName(genreId),
         });
     }
 
@@ -3124,156 +2980,41 @@ export class KnowledgeBaseView extends ItemView {
         }).open();
     }
 
+    /**
+     * 渲染详情页操作按钮区。
+     *
+     * DOM 构建细节已抽到 kb-detail-actions.ts 的 buildKbDetailActionButtons，
+     * 本方法只负责把视图的拆解控制、弹窗与详情刷新能力注入宿主回调。
+     *
+     * @param book 当前详情书籍
+     * @param actionsEl 操作按钮容器
+     */
     private renderDetailActionButtons(book: BookBasicInfo, actionsEl: HTMLElement): void {
-        actionsEl.empty();
+        buildKbDetailActionButtons(book, actionsEl, {
+            app: this.app,
+            kbManager: this.kbManager,
+            deconstructionScheduler: this.deconstructionScheduler,
+            isStartingDeconstruction: this.isStartingDeconstruction,
+            startDeconstruction: b => this.handleStartDeconstruction(b),
+            restartDeconstruction: b => this.handleRestartDeconstruction(b),
+            refreshDetailIfSelected: b => this.refreshDetailIfSelected(b),
+            applyDimensionTags: b => this.handleApplyDimensionTags(b),
+            openEditModal: b => this.openEditModal(b),
+            deleteBook: b => this.handleDeleteBook(b),
+        });
+    }
 
-        if (book.breakdownStatus === 'pending') {
-            const startBtn = actionsEl.createEl('button', {
-                text: this.isStartingDeconstruction ? '⏳ 准备中...' : '🚀 开始拆解',
-                cls: 'nw-btn nw-btn-primary nw-btn-sm',
-                attr: { 'data-action': 'start-deconstruction', title: '拆解本书：分段 + 统计 + 向量增强，提取多维度写作特征' }
-            });
-            startBtn.disabled = this.isStartingDeconstruction;
-            startBtn.style.opacity = this.isStartingDeconstruction ? '0.7' : '1';
-            startBtn.style.cursor = this.isStartingDeconstruction ? 'not-allowed' : 'pointer';
-            startBtn.addEventListener('click', () => {
-                this.handleStartDeconstruction(book).catch(err => {
-                    log.error('开始拆解失败:', err);
-                });
-            });
-        } else if (book.breakdownStatus === 'failed') {
-            const retryBtn = actionsEl.createEl('button', {
-                text: this.isStartingDeconstruction ? '⏳ 准备中...' : '🔄 重新拆解',
-                cls: 'nw-btn nw-btn-primary nw-btn-sm',
-                attr: { 'data-action': 'restart-deconstruction', title: '上次拆解失败，重新开始拆解' }
-            });
-            retryBtn.disabled = this.isStartingDeconstruction;
-            retryBtn.style.opacity = this.isStartingDeconstruction ? '0.7' : '1';
-            retryBtn.style.cursor = this.isStartingDeconstruction ? 'not-allowed' : 'pointer';
-            retryBtn.addEventListener('click', () => {
-                this.handleRestartDeconstruction(book).catch(err => {
-                    log.error('重新拆解失败:', err);
-                });
-            });
-        } else if (book.breakdownStatus === 'completed') {
-            const reBtn = actionsEl.createEl('button', {
-                text: this.isStartingDeconstruction ? '⏳ 准备中...' : '🔄 重新拆解',
-                cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                attr: { 'data-action': 'restart-deconstruction', title: '清除已有拆解结果，重新拆解' }
-            });
-            reBtn.disabled = this.isStartingDeconstruction;
-            reBtn.style.opacity = this.isStartingDeconstruction ? '0.7' : '1';
-            reBtn.style.cursor = this.isStartingDeconstruction ? 'not-allowed' : 'pointer';
-            reBtn.addEventListener('click', () => {
-                this.handleRestartDeconstruction(book).catch(err => {
-                    log.error('重新拆解失败:', err);
-                });
-            });
-        } else if (book.breakdownStatus === 'processing') {
-            const processingBtn = actionsEl.createEl('button', {
-                text: '⏳ 拆解中...',
-                cls: 'nw-btn nw-btn-secondary nw-btn-sm'
-            });
-            processingBtn.disabled = true;
-            processingBtn.style.opacity = '0.7';
-            processingBtn.style.cursor = 'not-allowed';
-
-            const forceCancelBtn = actionsEl.createEl('button', {
-                text: '⚠️ 强制取消',
-                cls: 'nw-btn nw-btn-sm',
-                attr: { style: 'margin-left: 8px; font-size: 12px; color: var(--nw-danger-soft);', title: '中断当前拆解任务（已完成维度保留）' }
-            });
-            forceCancelBtn.onclick = async () => {
-                try {
-                    const confirmed = await OperationConfirmModal.confirm(this.app, {
-                        title: '强制取消拆解',
-                        description: '强制取消将中断当前拆解任务。已完成的维度会保留，但未完成的维度需要重新拆解。\n\n确定要强制取消吗？',
-                        confirmText: '强制取消',
-                        cancelText: '不取消',
-                        rememberKey: 'force-cancel-deconstruction'
-                    });
-                    if (confirmed) {
-                        if (!this.kbManager) return;
-                        const activeTasks = this.deconstructionScheduler?.getActiveTasks() || [];
-                        const bookTask = activeTasks.find(t => t.bookId === book.id);
-                        if (bookTask) {
-                            await this.deconstructionScheduler?.cancelTask(bookTask.id);
-                        }
-                        await this.kbManager.setBreakdownStatus(book.id, 'interrupted', book.breakdownProgress);
-                        if (!this.viewClosed && this.selectedBookId === book.id) {
-                            this.refreshDetailActionButtons();
-                            this.renderBookDetail();
-                        }
-                    }
-                } catch (e) {
-                    log.error('强制取消拆解失败:', e);
-                    new Notice(`强制取消失败: ${e instanceof Error ? e.message : String(e)}`);
-                }
-            };
-        } else if (book.breakdownStatus === 'interrupted') {
-            const resumeBtn = actionsEl.createEl('button', {
-                text: '🔄 恢复拆解',
-                cls: 'nw-btn nw-btn-warning nw-btn-sm',
-                attr: { title: '从上次中断处继续拆解（已完成的段不再重跑）' }
-            });
-            resumeBtn.onclick = async () => {
-                try {
-                    if (!this.kbManager) return;
-                    await this.kbManager.setBreakdownStatus(book.id, 'pending');
-                    await this.handleStartDeconstruction(book);
-                } catch (e) {
-                    log.error('恢复拆解失败:', e);
-                    new Notice(`恢复拆解失败: ${e instanceof Error ? e.message : String(e)}`);
-                }
-            };
-
-            const clearBtn = actionsEl.createEl('button', {
-                text: '🗑️ 清除状态',
-                cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                attr: { title: '清除拆解状态与进度（不删除书籍）' }
-            });
-            clearBtn.onclick = async () => {
-                try {
-                    if (!this.kbManager) return;
-                    await this.kbManager.setBreakdownStatus(book.id, 'pending', undefined, undefined);
-                    book.breakdownProgress = undefined;
-                    book.breakdownError = undefined;
-                    if (!this.viewClosed && this.selectedBookId === book.id) {
-                        this.refreshDetailActionButtons();
-                        this.renderBookDetail();
-                    }
-                } catch (e) {
-                    log.error('清除状态失败:', e);
-                    new Notice(`清除状态失败: ${e instanceof Error ? e.message : String(e)}`);
-                }
-            };
+    /**
+     * 拆解状态变更后的刷新入口：仅当视图未关闭且该书仍被选中时，
+     * 重建操作按钮区并整页刷新详情。
+     *
+     * @param book 状态发生变化的书籍
+     */
+    private refreshDetailIfSelected(book: BookBasicInfo): void {
+        if (!this.viewClosed && this.selectedBookId === book.id) {
+            this.refreshDetailActionButtons();
+            this.renderBookDetail();
         }
-
-        const editBtn = actionsEl.createEl('button', {
-            text: '🏷️ 维度归类',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-            attr: { title: '按本地规则生成题材/节奏/情绪等维度标签并写入自定义标签' }
-        });
-        editBtn.addEventListener('click', () => {
-            void this.handleApplyDimensionTags(book);
-        });
-
-        const editInfoBtn = actionsEl.createEl('button', {
-            text: '✏️ 编辑',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-            attr: { title: '编辑书籍信息' }
-        });
-        editInfoBtn.addEventListener('click', () => this.openEditModal(book));
-        const deleteBtn = actionsEl.createEl('button', {
-            text: '🗑️ 删除',
-            cls: 'nw-btn nw-btn-danger nw-btn-sm',
-            attr: { title: '删除该书籍及其拆解数据' }
-        });
-        deleteBtn.addEventListener('click', () => {
-            this.handleDeleteBook(book).catch(err => { // silent-ok: handleDeleteBook 内部已有失败 Notice
-                log.error('删除书籍失败:', err);
-            });
-        });
     }
 
     private refreshDetailActionButtons(): void {

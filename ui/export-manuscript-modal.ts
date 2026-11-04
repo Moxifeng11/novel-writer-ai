@@ -21,6 +21,7 @@ import { createLogger } from '@/shared/logger';
 import { pjStepDir } from '@/shared/paths';
 import { getChapterFileName, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { getProjectMeta, findProjectCoverFile, loadProjectCover } from './project-utils';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
 import { formatExportPrecheck } from '@/shared/export-precheck';
@@ -242,7 +243,7 @@ export class ExportManuscriptModal extends Modal {
                 const final = await jobs.waitFor(job.id);
                 if (final.status === 'failed') {
                     log.error('[Export] 导出失败:', final.error);
-                    new Notice(`❌ 导出失败：${final.error || '未知错误'}`, 8000);
+                    showErrorNotice(final.error || '未知错误', { title: '导出失败', timeout: 8000 });
                 }
             } finally {
                 this.activeJobId = '';
@@ -438,7 +439,7 @@ export class ExportManuscriptModal extends Modal {
             if (this.format === 'epub') {
                 const cover = this.includeCover ? await loadProjectCover(this.app, this.project) : undefined;
                 if (this.includeCover && !cover) {
-                    new Notice('未找到项目封面（封面/cover.png 等），已生成无封面 EPUB', 4000);
+                    showWarningNotice('未找到项目封面（封面/cover.png 等），已生成无封面 EPUB', { timeout: 4000 });
                 }
                 bookOptions.metadata.cover = cover;
             }
@@ -473,9 +474,9 @@ export class ExportManuscriptModal extends Modal {
         if (!result.ok) return;
 
         const emptyNote = emptyChapters > 0 ? `，其中 ${emptyChapters} ${this.unitLabel}为空` : '';
-        new Notice(
-            `✅ 已导出 ${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}${platformPackage ? `（${platformPackage.platform.name}）` : ''}`,
-            6000
+        showSuccessNotice(
+            `已导出 ${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}${platformPackage ? `（${platformPackage.platform.name}）` : ''}`,
+            { timeout: 6000 }
         );
         log.info('[ExportManuscript] 导出完成:', {
             project: this.project,
