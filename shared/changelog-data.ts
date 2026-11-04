@@ -47,6 +47,7 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 items: [
                     '按钮 busy 统一防连点；命令定义/面板集合一致',
                     'MiniSettingsModal 与设置页共用分区，消除双份字段维护',
+                    '删除项目卡改为两步确认，不再要求输入项目名',
                 ],
             },
         ],

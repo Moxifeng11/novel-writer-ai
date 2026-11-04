@@ -31,10 +31,11 @@
 - 知识库视图 `viewClosed` 在 onOpen 复位，close→open 后刷新不再永久短路。
 - 命令面板：补 `WRITING_STATS`/`TOGGLE_PET`/`CHARACTER_RECOGNITION` 定义与注册，硬编码 ID 改常量；新增「addCommand 集合 === 非 internalOnly 定义集合」测试。
 - **设置双 UI 收敛**：`ui/settings/section-factory.ts` 成为 tab→分区唯一装配表；`MiniSettingsModal` 由 2755 行瘦身为薄壳，与设置页共用同一批 Section；新增 `render()` 抽象契约与弹窗样式。
+- **删除项目卡改二次确认**：不再要求手动输入项目名；连续两次确认（继续删除 → 最终确认）后才执行删除。
 
 ### 🧪 测试
 
-- 全量单测 **535 文件 / 5913 用例** 通过。
+- 全量单测 **536 文件 / 5915 用例** 通过。
 - 新增项目级指纹库单例、命令集合一致性、协同持久化瘦身、设置分区等回归。
 - 新增生产环境模拟 E2E（mock AI 全旅程、按钮忙碌态、视图生命周期）。
 

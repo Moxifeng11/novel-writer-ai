@@ -23,6 +23,7 @@ import { collectCreationFlowState } from './creation-flow-state';
 import { findNextModeUnit, listModeUnits, modeUnitLabel } from '@/shared/mode-content';
 import { projectDisplayName } from '@/domains/kernel/project-locator';
 import { RenameProjectModal } from '@/ui/rename-project-modal';
+import { OperationConfirmModal } from '@/ui/components/progress';
 import {
     getProjectCover,
     getProjectMeta,
@@ -899,47 +900,39 @@ export class ProjectSelectorController {
     }
 
     /**
-     * 显示删除项目确认弹窗
+     * 显示删除项目确认弹窗。
+     *
+     * 旧实现要求用户手动输入项目名；改为两步确认（继续删除 → 最终确认），
+     * 降低误触成本，同时不再让用户复制/输入项目名。
+     *
      * @param projectName - 项目名
      */
     showDeleteProjectModal(projectName: string): void {
-        const modal = new Modal(this.app);
-        modal.titleEl.setText('⚠️ 删除项目');
+        void this.confirmDeleteProject(projectName);
+    }
 
-        const content = modal.contentEl.createDiv({ attr: { style: 'padding: 20px;' } });
-        content.createEl('p', {
-            text: `确定要删除项目「${projectName}」吗？`,
-            attr: { style: 'font-size: 1.1em; font-weight: 600; color: #3d3070; margin-bottom: 8px;' }
+    private async confirmDeleteProject(projectName: string): Promise<void> {
+        const displayName = projectDisplayName(projectName);
+        const first = await OperationConfirmModal.confirm(this.app, {
+            title: '⚠️ 删除项目',
+            description: `确定要删除项目「${displayName}」吗？`,
+            warning: '此操作不可撤销，将删除所有章节、大纲、设定、人物数据。',
+            confirmText: '继续删除',
+            cancelText: '取消',
         });
-        content.createEl('p', {
-            text: '此操作不可撤销，将删除所有章节、大纲、设定、人物数据。',
-            attr: { style: 'color: #ef4444; font-size: 0.9em; margin-bottom: 16px;' }
+        if (!first) return;
+
+        const second = await OperationConfirmModal.confirm(this.app, {
+            title: '🚨 最终确认',
+            description: `即将永久删除「${displayName}」及其全部数据。`,
+            warning: '删除后无法恢复；如仍需保留，请先备份或取消。',
+            confirmText: '确认删除',
+            cancelText: '取消',
         });
+        if (!second) return;
 
-        content.createEl('label', { text: '请输入项目名确认：' });
-        const input = content.createEl('input', {
-            attr: { type: 'text', placeholder: projectName, style: 'width: 100%; margin: 8px 0 16px 0; padding: 8px 12px; border-radius: 8px; border: 1px solid #e8e0f0; font-size: 0.9em;' }
-        });
-
-        const btnRow = content.createDiv({ attr: { style: 'display: flex; gap: 8px; justify-content: flex-end;' } });
-        const cancelBtn = btnRow.createEl('button', { text: '取消' });
-        const confirmBtn = btnRow.createEl('button', {
-            text: '确认删除',
-            attr: { style: 'background: #ef4444; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;' }
-        });
-
-        cancelBtn.onclick = () => modal.close();
-        confirmBtn.onclick = async () => {
-            if (input.value.trim() !== projectName) {
-                new Notice('项目名不匹配，取消删除');
-                return;
-            }
-            modal.close();
-            await deleteProject(this.app, projectName);
-            this.deps.onDeleteProject?.();
-        };
-
-        modal.open();
+        await deleteProject(this.app, projectName);
+        this.deps.onDeleteProject?.();
     }
 
     /**

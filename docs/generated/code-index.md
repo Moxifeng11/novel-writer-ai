@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 290 | 130440 | 1546 | 1307 | 85% |
 | `services/` | 28 | 11409 | 154 | 137 | 89% |
-| `shared/` | 166 | 37610 | 1528 | 1276 | 84% |
+| `shared/` | 166 | 37611 | 1528 | 1276 | 84% |
 | `core/` | 7 | 2627 | 28 | 13 | 46% |
 | `domains/` | 11 | 765 | 30 | 22 | 73% |
-| `ui/` | 196 | 94695 | 515 | 472 | 92% |
+| `ui/` | 196 | 94688 | 515 | 472 | 92% |
 
 ## 文件清单
 
@@ -364,7 +364,7 @@
 | `shared/body-path.ts` | 59 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1141 | 3 | 3 |
+| `shared/changelog-data.ts` | 1142 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -601,7 +601,7 @@
 | `ui/full-writer/full-writer-utils.ts` | 114 | 6 | 6 |
 | `ui/full-writer/fw-styles.ts` | 15 | 1 | 1 |
 | `ui/full-writer/intervention-controller.ts` | 401 | 3 | 3 |
-| `ui/full-writer/project-selector-controller.ts` | 956 | 3 | 3 |
+| `ui/full-writer/project-selector-controller.ts` | 949 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
 | `ui/full-writer/scene-outline-controller.ts` | 1147 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
