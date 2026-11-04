@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.36.0',
+        date: '2026-11-05',
+        title: '切片收尾、Notice 第二批与 ui 覆盖率爬坡',
+        sections: [
+            {
+                type: 'improved',
+                label: '✂️ 切片收尾',
+                items: [
+                    '协同引擎 -191：AI 响应解析/剧情节点抽出；配置面板 -142（写状态留视图）',
+                    'co-writer-engine 3556 / knowledge-base-view 3226',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧯 Notice 与覆盖',
+                items: [
+                    'Notice 第二批：7 文件 30 处（守卫/进度例外口径不变）',
+                    'ui 覆盖率 5.99%→12.04%（113 个行为用例），棘轮收紧 10/9/10/8',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.35.0',
         date: '2026-11-05',
         title: '体积门禁进 CI、Notice 统一与会话修剪入口',

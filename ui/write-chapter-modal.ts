@@ -12,7 +12,7 @@
  * 计划：在下个大版本（v5.x）评估完全移除，迁移用户到 FullWriterView。
  * 维护原则：仅修 Bug，不再加新特性。
  */
-import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, TFile } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
 import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
@@ -28,6 +28,7 @@ import { ReviewAgent } from '@/engine/review-agent';
 import { scoreAndFilterEntities, ScoredEntity } from '@/engine/entity-scorer';
 import { stripFrontmatter, showProgress, hideProgress, showSuccess, showError, showWarning } from '@/utils/helpers';
 import { extractWorldviewMeta } from './utils/worldview-utils';
+import { showWarningNotice } from './components/notice-helpers';
 import { getChapterFileName, findChapterFile, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { ActiveChapterTarget } from '@/shared/chapter-target';
 import { isInfoPlanComplete, isOutlineComplete } from '@/shared/info-debt';
@@ -770,7 +771,8 @@ ${reportResult.content}
                 },
             });
             const artifactWarning = settlementArtifactNotice(artifactReport);
-            if (artifactWarning) new Notice(artifactWarning, 8000);
+            // settlementArtifactNotice 文案自带「⚠️ 」前缀，助手标题行会再渲染一次，这里去掉避免重复
+            if (artifactWarning) showWarningNotice(artifactWarning.replace(/^⚠️\s*/u, ''), { timeout: 8000 });
             if (aborted()) return;
             showProgress('⏳ 正在执行连贯性审查...');
             await reviewAgent.reviewChapter(project, bodyFile.path);

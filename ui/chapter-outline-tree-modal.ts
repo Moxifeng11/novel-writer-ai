@@ -1,10 +1,11 @@
-import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, TFile } from 'obsidian';
 import type NovelWriterAI from '@/main';
 import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
 import { isImeComposing } from '@/shared/keyboard';
 import { projectIdFromPath } from '@/shared/paths';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
 
 const log = createLogger('ChapterOutlineTreeModal');
@@ -797,7 +798,7 @@ export class ChapterOutlineTreeModal extends Modal {
             if (newVal) {
                 chap.conflict = newVal;
                 displaySpan.textContent = newVal.length > 70 ? newVal.substring(0, 70) + '...' : newVal;
-                new Notice('✅ 冲突已修改（点击"保存所有修改"写入文件）', 2000);
+                showSuccessNotice('冲突已修改（点击"保存所有修改"写入文件）', { timeout: 2000 });
             }
             this.finishEdit(container, displaySpan);
         });
@@ -840,7 +841,7 @@ export class ChapterOutlineTreeModal extends Modal {
             if (newVal) {
                 scene.sceneName = newVal;
                 displaySpan.textContent = newVal;
-                new Notice('✅ 场景名已修改（点击"保存所有修改"写入文件）', 2000);
+                showSuccessNotice('场景名已修改（点击"保存所有修改"写入文件）', { timeout: 2000 });
             }
             this.finishSceneEdit(container, displaySpan);
         });
@@ -881,7 +882,7 @@ export class ChapterOutlineTreeModal extends Modal {
             cliffhanger: '',
         };
         chap.scenes.push(newScene);
-        new Notice(`✅ 已添加场景${newSceneNum}（点击"保存所有修改"写入文件）`, 2000);
+        showSuccessNotice(`已添加场景${newSceneNum}（点击"保存所有修改"写入文件）`, { timeout: 2000 });
         this.render();
     }
 
@@ -890,7 +891,7 @@ export class ChapterOutlineTreeModal extends Modal {
         const scene = chap.scenes[sceneIndex];
         chap.scenes.splice(sceneIndex, 1);
         this.reindexScenes(chap);
-        new Notice(`✅ 已删除场景${scene.sceneNum}（点击"保存所有修改"写入文件）`, 2000);
+        showSuccessNotice(`已删除场景${scene.sceneNum}（点击"保存所有修改"写入文件）`, { timeout: 2000 });
         this.render();
     }
 
@@ -970,7 +971,7 @@ export class ChapterOutlineTreeModal extends Modal {
         if (draggedVolIndex < 0 || draggedChapIndex < 0 || draggedSceneIndex < 0) return;
 
         if (draggedChapIndex !== targetChapIndex || draggedVolIndex !== targetVolIndex) {
-            new Notice('❌ 场景只能在同一章节内移动', 2000);
+            showErrorNotice('场景只能在同一章节内移动', { timeout: 2000 });
             return;
         }
 
@@ -993,7 +994,7 @@ export class ChapterOutlineTreeModal extends Modal {
         chap.scenes.splice(newIndex, 0, scene);
 
         this.reindexScenes(chap);
-        new Notice(`✅ 场景已重新排序（点击"保存所有修改"写入文件）`, 2000);
+        showSuccessNotice(`场景已重新排序（点击"保存所有修改"写入文件）`, { timeout: 2000 });
         this.render();
     }
 
@@ -1110,7 +1111,7 @@ export class ChapterOutlineTreeModal extends Modal {
         this.updateAllChapterNumbers();
 
         const volName = this.volumes[targetVolIndex].volName || '(未命名)';
-        new Notice(`✅ 已移动章节到第${this.volumes[targetVolIndex].volNum}卷"${volName}"第${newIndex + 1}位，章号已自动更新（点击"保存所有修改"写入文件）`, 3000);
+        showSuccessNotice(`已移动章节到第${this.volumes[targetVolIndex].volNum}卷"${volName}"第${newIndex + 1}位，章号已自动更新（点击"保存所有修改"写入文件）`, { timeout: 3000 });
         this.render();
     }
 
@@ -1204,13 +1205,13 @@ export class ChapterOutlineTreeModal extends Modal {
             await this.loadOutline();
             this.render();
 
-            const message = sceneSaves > 0 
-                ? `✅ 已保存 ${totalEdits} 处章节修改，${sceneSaves} 个场景文件` 
-                : `✅ 已保存 ${totalEdits} 处修改到分卷大纲`;
-            new Notice(message, 3000);
+            const message = sceneSaves > 0
+                ? `已保存 ${totalEdits} 处章节修改，${sceneSaves} 个场景文件`
+                : `已保存 ${totalEdits} 处修改到分卷大纲`;
+            showSuccessNotice(message, { timeout: 3000 });
         } catch (e) {
             log.error('[OutlineTree] 保存失败:', e);
-            new Notice('❌ 保存失败: ' + (e as Error).message, 5000);
+            showErrorNotice((e as Error).message, { title: '保存失败', timeout: 5000 });
         }
     }
 

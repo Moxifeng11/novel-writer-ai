@@ -12,6 +12,7 @@ import { BodyWriter } from '@/engine/body-writer';
 import { describeBodyFormat } from '@/shared/body-format';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { createLogger } from '@/shared/logger';
+import { showErrorNotice } from './components/notice-helpers';
 
 
 const log = createLogger('ContinueChaptersModal');
@@ -386,12 +387,12 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
                 );
 
                 if (result.error) {
-                    new Notice(`❌ 第${chapter.num}章生成失败：${result.error}`, 8000);
+                    showErrorNotice(result.error, { title: `第${chapter.num}章生成失败`, timeout: 8000 });
                     continue;
                 }
 
                 if (!result.content || result.content.trim().length < 100) {
-                    new Notice(`❌ 第${chapter.num}章生成内容为空`, 8000);
+                    showErrorNotice(`第${chapter.num}章生成内容为空`, { timeout: 8000 });
                     continue;
                 }
 

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 297 | 131747 | 1578 | 1320 | 84% |
+| `engine/` | 299 | 131883 | 1584 | 1326 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 172 | 38552 | 1553 | 1290 | 83% |
+| `shared/` | 172 | 38575 | 1553 | 1290 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 213 | 97238 | 549 | 504 | 92% |
+| `ui/` | 214 | 97332 | 552 | 507 | 92% |
 
 ## 文件清单
 
@@ -89,12 +89,14 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3748 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3557 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
+| `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
 | `engine/co-writer/local-model-utils.ts` | 193 | 9 | 7 |
+| `engine/co-writer/plot-nodes.ts` | 141 | 2 | 2 |
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
@@ -375,7 +377,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1389 | 3 | 3 |
+| `shared/changelog-data.ts` | 1412 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -551,7 +553,7 @@
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 193 | 1 | 1 |
-| `ui/chapter-outline-tree-modal.ts` | 1321 | 1 | 1 |
+| `ui/chapter-outline-tree-modal.ts` | 1322 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 400 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
@@ -582,7 +584,7 @@
 | `ui/components/progress/task-card.ts` | 338 | 2 | 2 |
 | `ui/components/smart-chart.ts` | 470 | 1 | 1 |
 | `ui/context-injector-modal.ts` | 215 | 1 | 1 |
-| `ui/continue-chapters-modal.ts` | 562 | 1 | 1 |
+| `ui/continue-chapters-modal.ts` | 563 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 55 | 1 | 1 |
@@ -674,7 +676,7 @@
 | `ui/novel-analysis-modal.ts` | 269 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 338 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 300 | 1 | 1 |
-| `ui/outline-expand-modal.ts` | 899 | 2 | 1 |
+| `ui/outline-expand-modal.ts` | 900 | 2 | 1 |
 | `ui/panel-resizer.ts` | 238 | 4 | 3 |
 | `ui/password-modal.ts` | 145 | 1 | 1 |
 | `ui/plan-book-modal.ts` | 697 | 1 | 1 |
@@ -688,8 +690,8 @@
 | `ui/prompt-manager-settings.ts` | 1142 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 90 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 482 | 2 | 2 |
-| `ui/rebuild-chapters-modal.ts` | 324 | 1 | 1 |
-| `ui/refill-modal.ts` | 713 | 1 | 1 |
+| `ui/rebuild-chapters-modal.ts` | 325 | 1 | 1 |
+| `ui/refill-modal.ts` | 714 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 941 | 1 | 1 |
 | `ui/review-chapter-modal.ts` | 70 | 1 | 1 |
@@ -732,17 +734,18 @@
 | `ui/vector-rebuild-action.ts` | 138 | 1 | 1 |
 | `ui/views/book-detail-renderer.ts` | 2452 | 2 | 2 |
 | `ui/views/kb-book-card.ts` | 170 | 2 | 2 |
+| `ui/views/kb-config-panel.ts` | 229 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 200 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3369 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3227 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 1918 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 234 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
 | `ui/workspace-manager.ts` | 143 | 2 | 2 |
-| `ui/write-chapter-modal.ts` | 890 | 1 | 1 |
+| `ui/write-chapter-modal.ts` | 892 | 1 | 1 |
 | `ui/writing-pet.ts` | 279 | 2 | 2 |
 | `ui/writing-stats-modal.ts` | 244 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |

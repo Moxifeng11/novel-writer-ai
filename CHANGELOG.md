@@ -2,6 +2,26 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.36.0（2026-11-05）
+
+### ✂️ 切片收尾（协同引擎 + 知识库配置）
+
+- `engine/co-writer-engine.ts` 3,747 → 3,556（-191）：AI 响应解析簇（`parseValidationResponse`/`parseEvaluationResponse`/`buildDegradedValidation`/`getEmptyMetrics`）→ `co-writer/ai-response-parse.ts`；剧情节点提取簇（`extractPlotNodes`/`extractSection`）→ `co-writer/plot-nodes.ts`（快照字段显式参数化）。
+- `ui/views/knowledge-base-view.ts` 3,368 → 3,226（-142）：`renderConfigTab` 按「写状态留视图」模式切片 → `kb-config-panel.ts`（分类切换/流派选中写入留视图，DOM/事件逐行等价）。
+
+### 🧯 Notice 第二批铺开
+
+- 7 个文件（写章/续写/重建/大纲树/补全/扩写）替换 30 处，守卫/进度/预检例外口径与第一批一致；两个文件迁移后移除未用的 `Notice` 导入。
+
+### 🧪 ui 覆盖率爬坡
+
+- 新增 `tests/unit/ui/pure-helpers-coverage.test.ts`：113 个带真实断言的行为用例（质检报告解析/章节匹配/写作建议/Notice 降级路径/svg-charts/wizard-checker/template-vars 等）。
+- ui/** lines **5.99% → 12.04%**；ui per-glob 棘轮按纪律收紧为 10/9/10/8（实际值-2 内）。
+
+### 🧪 测试
+
+- 全量单测 548 文件 / 6080 用例（+113）；lint 维持 1872。
+
 ## v4.35.0（2026-11-05）
 
 ### 🧪 check:bundle 进 CI（P2 尾巴）

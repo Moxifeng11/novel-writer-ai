@@ -23,6 +23,7 @@ import { pjStepFile } from '@/shared/paths';
 import { BodyWriter } from '@/engine/body-writer';
 import { DEFAULT_BODY_FORMAT, type BodyFormatContract } from '@/shared/body-format';
 import { splitSceneSections } from '@/engine/scene-expander';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 
 
 const log = createLogger('OutlineExpandModal');
@@ -167,7 +168,7 @@ export class OutlineExpandModal extends Modal {
             new Notice('📋 已载入本章 Scene 展开作为扩写来源', 3000);
         } catch (e) {
             log.warn('[OutlineExpand] 读取 Scene 展开失败:', e);
-            new Notice('⚠️ 读取 Scene 展开失败，请检查文件权限');
+            showWarningNotice('读取 Scene 展开失败，请检查文件权限');
         }
     }
 
@@ -638,12 +639,12 @@ export class OutlineExpandModal extends Modal {
                 this.originalText = this.sourceOutline;
                 this.refreshSceneList();
                 this.updateEditorContent();
-                new Notice('✅ 场景拆分完成');
+                showSuccessNotice('场景拆分完成');
             } else {
-                new Notice('❌ 扩写失败: ' + (result.error || '未知错误'));
+                showErrorNotice(result.error || '未知错误', { title: '扩写失败' });
             }
         } catch (e) {
-            new Notice('❌ 扩写出错: ' + (e instanceof Error ? e.message : String(e)));
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '扩写出错' });
         } finally {
             this.isExpanding = false;
             this.hideProgress();
@@ -683,12 +684,12 @@ export class OutlineExpandModal extends Modal {
                 this.originalText = sceneText;
                 this.refreshParagraphList();
                 this.updateEditorContent();
-                new Notice(`✅ 场景${scene.index}扩写完成`);
+                showSuccessNotice(`场景${scene.index}扩写完成`);
             } else {
-                new Notice('❌ 扩写失败: ' + (result.error || '未知错误'));
+                showErrorNotice(result.error || '未知错误', { title: '扩写失败' });
             }
         } catch (e) {
-            new Notice('❌ 扩写出错: ' + (e instanceof Error ? e.message : String(e)));
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '扩写出错' });
         } finally {
             this.isExpanding = false;
             this.hideProgress();
@@ -750,7 +751,7 @@ export class OutlineExpandModal extends Modal {
 
         this.isExpanding = false;
         this.hideProgress();
-        new Notice('✅ 全部场景扩写完成');
+        showSuccessNotice('全部场景扩写完成');
     }
 
     private async expandSelectedParagraphs(): Promise<void> {
@@ -804,7 +805,7 @@ export class OutlineExpandModal extends Modal {
 
         this.isExpanding = false;
         this.hideProgress();
-        new Notice('✅ 选中段落扩写完成');
+        showSuccessNotice('选中段落扩写完成');
     }
 
     private async runExpansion(): Promise<void> {
@@ -876,7 +877,7 @@ export class OutlineExpandModal extends Modal {
             new Notice('没有可应用的内容');
             return;
         }
-        new Notice('✅ 已应用扩写结果');
+        showSuccessNotice('已应用扩写结果');
         this.close();
     }
 

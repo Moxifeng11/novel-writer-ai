@@ -27,7 +27,6 @@
  */
 
 import { App, TFile } from 'obsidian';
-import { splitTableCells } from '@/shared/chapter-table';
 import { entityDir } from '@/shared/entity-reader';
 import { AIEngine } from './ai-engine';
 import NovelWriterPlugin from '@/main';
@@ -73,7 +72,6 @@ import { VectorEnhancer } from './vector-enhancer';
 import { PRECISION_MODE_SYSTEM_APPEND } from './prompts/co-write-prompts';
 import { readProjectMeta } from '@/shared/paths';
 import { getCreationModePromptBlock, parseCreationModeMeta } from '@/shared/creation-mode';
-import { splitSceneSections } from './scene-expander';
 import {
     formatEntityBrief,
     buildChapterBrief,
@@ -100,7 +98,7 @@ import {
     SentenceEditRecord,
     CoWritingSession
 } from '@/shared/types';
-import { extractJsonArray, extractJsonObject, extractResponseText, isPlanningOutput, sanitizeStoryText, stripCodeFence, stripThinkingBlock } from '@/shared/api-response-utils';
+import { extractJsonArray, extractResponseText, isPlanningOutput, sanitizeStoryText, stripThinkingBlock } from '@/shared/api-response-utils';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import type { EngineRegistry } from './engine-registry';
 import type { CharacterRepository, ChapterRepository } from './repository';
@@ -108,7 +106,7 @@ import { FrontmatterSerializer } from './repository/domain/serializers';
 import { createLogger } from '@/shared/logger';
 import { deriveBodyFormat, describeBodyFormat } from '@/shared/body-format';
 import { resolveProviderSourceType } from '@/shared/model-source';
-import { CO_WRITE_MAX_TOKENS_CAP, EDIT_VALIDATION_PASS_SCORE } from '@/shared/thresholds';
+import { CO_WRITE_MAX_TOKENS_CAP } from '@/shared/thresholds';
 import { countRetainedPromptParts } from '@/shared/prompt-budget';
 import { roleIndicatesProtagonist } from '@/shared/protagonist';
 import { withActiveInputBudget } from '@/shared/context-budget-policy';
@@ -596,7 +594,7 @@ export class CoWriterEngine {
                 chapterNum,
                 startedAt: Date.now(),
                 interactions: [],
-                currentMetrics: this.getEmptyMetrics(),
+                currentMetrics: getEmptyMetrics(),
                 totalWordCount: 0
             };
 
@@ -646,7 +644,7 @@ export class CoWriterEngine {
                 chapterNum,
                 startedAt: Date.now(),
                 interactions: [],
-                currentMetrics: this.getEmptyMetrics(),
+                currentMetrics: getEmptyMetrics(),
                 totalWordCount: 0
             };
         }
@@ -912,7 +910,7 @@ export class CoWriterEngine {
 
         // ===== v6.4: 提取剧情节点，初始化进度追踪 =====
         try {
-            this.plotNodes = this.extractPlotNodes();
+            this.plotNodes = extractPlotNodes(this.snapshot?.chapPlan || '', this.snapshot?.sceneExpansion || '');
             log.info('[CoWriterEngine] v6.4: 剧情节点提取完成，共', this.plotNodes.length, '个节点');
         } catch (e) {
             log.warn('[CoWriterEngine] v6.4: 剧情节点提取失败:', e);
@@ -1911,7 +1909,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         signal?: AbortSignal,
     ): Promise<EditValidation> {
         if (signal?.aborted) {
-            return this.buildDegradedValidation('验证已取消');
+            return buildDegradedValidation('验证已取消');
         }
         if (!this.hasCoWriteModel()) {
             return {
@@ -1975,12 +1973,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
      * @returns 指标
      */
     async evaluatePlotComplete(currentBody: string, signal?: AbortSignal): Promise<PlotCompletionMetrics> {
-        if (!this.snapshot || !this.hasCoWriteModel()) return this.getEmptyMetrics();
+        if (!this.snapshot || !this.hasCoWriteModel()) return getEmptyMetrics();
 
         const nodeProgress = this.computePlotProgress(currentBody);
 
         if (nodeProgress.totalNodes === 0) {
-            return this.getEmptyMetrics();
+            return getEmptyMetrics();
         }
 
         // 正文过短时评估没有意义：之前每次打开章节都会发一次 ~9.6k token 的请求，
@@ -2006,7 +2004,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             const response = await this.callCoWriteAI({ system: '', user: prompt }, 0, signal);
 
             const raw = extractResponseText(response);
-            const aiMetrics = this.parseEvaluationResponse(raw);
+            const aiMetrics = parseEvaluationResponse(raw);
 
             const baseCompletion = nodeProgress.completionPercent;
             const aiAdjustment = (aiMetrics.overallCompletion - 50) * 0.2;
@@ -2052,7 +2050,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                 }
                 return fallbackMetrics;
             }
-            return this.session?.currentMetrics || this.getEmptyMetrics();
+            return this.session?.currentMetrics || getEmptyMetrics();
         }
     }
 
@@ -2821,109 +2819,10 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     private plotNodes: PlotNode[] = [];
     private currentNodeIndex: number = 0;
 
-    /** 从大纲摘要和Scene展开中提取剧情节点 */
-    private extractPlotNodes(): PlotNode[] {
-        const nodes: PlotNode[] = [];
-        const outline = this.snapshot?.chapPlan || '';
-        const sceneExp = this.snapshot?.sceneExpansion || '';
-
-        // 1. 从大纲摘要的"关键场景"表格提取
-        const keySceneSection = this.extractSection(outline, /##\s*关键场景/i);
-        if (keySceneSection) {
-            const tableRows = keySceneSection.match(/^\|\s*\d+\s*\|.*$/gm) || [];
-            for (const row of tableRows) {
-                const cells = splitTableCells(row);
-                if (cells.length >= 3) {
-                    nodes.push({
-                        id: `outline_${nodes.length + 1}`,
-                        index: nodes.length + 1,
-                        location: cells[1] || '',
-                        characters: cells[2] || '',
-                        conflict: cells[3] || '',
-                        goal: cells[4] || cells[3] || '',
-                        infoIncrement: cells[5] || '',
-                        source: 'outline',
-                        completed: false
-                    });
-                }
-            }
-        }
-
-        // 2. 从Scene展开中提取场景（兼容 ##/### 与 场景N/sceneN 标题）
-        if (sceneExp) {
-            for (const { heading, body } of splitSceneSections(sceneExp)) {
-                const title = heading.name || `场景${heading.index}`;
-                const locationMatch = body.match(/(?:location|场景地点|地点)\s*[：:]\s*([^\n]+)/i);
-                const charMatch = body.match(/(?:characters|出场人物|人物)\s*[：:]\s*([^\n]+)/i);
-                const goalMatch = body.match(/(?:objective|叙事目标|场景目标|核心事件)\s*[：:]\s*([^\n]+)/i);
-                const conflictMatch = body.match(/conflict\s*[：:]\s*([^\n]+)/i);
-                const infoMatch = body.match(/(?:info_increment|信息增量)\s*[：:]\s*([^\n]+)/i);
-
-                nodes.push({
-                    id: `scene_${heading.index}`,
-                    index: nodes.length + 1,
-                    location: locationMatch ? locationMatch[1].trim() : '',
-                    characters: charMatch ? charMatch[1].trim() : '',
-                    conflict: conflictMatch ? conflictMatch[1].trim() : '',
-                    goal: goalMatch ? goalMatch[1].trim() : title,
-                    infoIncrement: infoMatch ? infoMatch[1].trim() : '',
-                    source: 'scene_expand',
-                    completed: false
-                });
-            }
-        }
-
-        // 3. 如果都没有，从情节蒸馏的"情节节点规划"提取
-        if (nodes.length === 0) {
-            const plotDistill = this.snapshot?.chapPlan || '';
-            const nodeSection = this.extractSection(plotDistill, /##\s*情节节点规划/i);
-            if (nodeSection) {
-                const nodeMatches = nodeSection.match(/^-\s*节点\d+[：:]\s*.+$/gm) || [];
-                let idx = 0;
-                for (const m of nodeMatches) {
-                    idx++;
-                    const text = m.replace(/^-\s*节点\d+[：:]\s*/, '').trim();
-                    nodes.push({
-                        id: `node_${idx}`,
-                        index: idx,
-                        location: '',
-                        characters: '',
-                        conflict: '',
-                        goal: text,
-                        infoIncrement: '',
-                        source: 'plot_distill',
-                        completed: false
-                    });
-                }
-            }
-        }
-
-        return nodes;
-    }
-
-    /** 提取Markdown中指定标题下的内容 */
-    private extractSection(content: string, headingRegex: RegExp): string | null {
-        const lines = content.split('\n');
-        let start = -1;
-        for (let i = 0; i < lines.length; i++) {
-            if (headingRegex.test(lines[i])) {
-                start = i + 1;
-                break;
-            }
-        }
-        if (start < 0) return null;
-        const result: string[] = [];
-        for (let i = start; i < lines.length; i++) {
-            if (/^##+\s+/.test(lines[i])) break;
-            result.push(lines[i]);
-        }
-        return result.join('\n').trim();
-    }
-
     /** 计算当前剧情进度：已完成哪些节点，下一个目标是什么 */
     private computePlotProgress(currentBody: string): PlotProgress {
         if (this.plotNodes.length === 0) {
-            this.plotNodes = this.extractPlotNodes();
+            this.plotNodes = extractPlotNodes(this.snapshot?.chapPlan || '', this.snapshot?.sceneExpansion || '');
         }
 
         const bodyLower = currentBody.toLowerCase();
@@ -3222,119 +3121,17 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     }
 
     // ============================================================
-    // 私有方法：解析 AI 返回
+    // 私有方法：解析 AI 返回（实现已抽至 engine/co-writer/ai-response-parse.ts）
     // ============================================================
-
-    private parseValidationResponse(raw: string): EditValidation {
-        try {
-            // 思考型模型会带 <think> 前缀与围栏解释，必须先剥离再提取 JSON，
-            // 否则必然 parse 失败、落入「默认通过」分支，等于没有校验。
-            const cleaned = stripCodeFence(stripThinkingBlock(raw)).trim();
-            const jsonText = extractJsonObject(cleaned);
-            if (!jsonText) {
-                return this.buildDegradedValidation('AI 返回中找不到校验 JSON');
-            }
-
-            const json = JSON.parse(jsonText) as Record<string, unknown>;
-            const consistencyScore = Number(json.consistencyScore) || 0;
-            const styleScore = Number(json.styleScore) || 0;
-            const plotAlignmentScore = Number(json.plotAlignmentScore) || 0;
-
-            return {
-                isValid: consistencyScore >= EDIT_VALIDATION_PASS_SCORE
-                    && styleScore >= EDIT_VALIDATION_PASS_SCORE
-                    && plotAlignmentScore >= EDIT_VALIDATION_PASS_SCORE,
-                consistencyScore,
-                styleScore,
-                plotAlignmentScore,
-                overallScore: Math.round((consistencyScore + styleScore + plotAlignmentScore) / 3),
-                warnings: Array.isArray(json.warnings) ? json.warnings as string[] : [],
-                suggestions: Array.isArray(json.suggestions) ? json.suggestions as string[] : [],
-                validatedAt: Date.now()
-            };
-        } catch (e) {
-            log.warn('[CoWriterEngine] 验证结果 JSON 解析失败:', e);
-            return this.buildDegradedValidation('校验结果解析失败');
-        }
-    }
 
     /**
-     * 校验未真正完成时的返回值：不拦截用户继续使用，但必须显式标记 degraded，
-     * 由 UI 显示「校验未完成」，不能用 70 分伪装成通过。
+     * 兼容保留的薄委托：解析逻辑已抽至 engine/co-writer/ai-response-parse.ts。
+     * 既有测试（tests/unit/engine/co-writer-validation.test.ts）经实例访问本方法，故保留入口。
      */
-    private buildDegradedValidation(reason: string): EditValidation {
-        return {
-            isValid: true,
-            consistencyScore: 0,
-            styleScore: 0,
-            plotAlignmentScore: 0,
-            overallScore: 0,
-            warnings: [`${reason}，本次未完成校验`],
-            suggestions: ['可重试验证，或直接检查内容后继续使用'],
-            validatedAt: Date.now(),
-            degraded: true,
-            degradedReason: reason
-        };
+    private parseValidationResponse(raw: string): EditValidation {
+        return parseValidationResponse(raw);
     }
 
-    private parseEvaluationResponse(raw: string): PlotCompletionMetrics {
-        try {
-            // 思考型模型会带 <think> 前缀与尾部解释，直接 parse 必然失败（面板恒 0 并刷警告）
-            const cleaned = stripCodeFence(stripThinkingBlock(raw)).trim();
-            const jsonText = extractJsonObject(cleaned);
-            if (!jsonText) {
-                log.warn('[CoWriterEngine] 完成度响应中找不到 JSON 对象，使用默认值');
-                return this.getEmptyMetrics();
-            }
-
-            const json = JSON.parse(jsonText) as Partial<PlotCompletionMetrics>;
-
-            const scores = [
-                Number(json.sceneObjectivesMet) || 0,
-                Number(json.characterArcsAdvanced) || 0,
-                Number(json.foreshadowingSeeded) || 0,
-                Number(json.emotionalArcProgress) || 0
-            ];
-
-            const aiOverall = Number(json.overallCompletion);
-            const avgOverall = Math.round(scores.reduce((a, b) => a + b, 0) / 4);
-            const overallCompletion = !isNaN(aiOverall) && aiOverall > 0 ? aiOverall : avgOverall;
-
-            return {
-                sceneObjectivesMet: scores[0],
-                characterArcsAdvanced: scores[1],
-                foreshadowingSeeded: scores[2],
-                emotionalArcProgress: scores[3],
-                overallCompletion,
-                suggestionAdvice: json.suggestionAdvice || '',
-                nextDirectionHints: Array.isArray(json.nextDirectionHints)
-                    ? json.nextDirectionHints as SuggestionDirection[]
-                    : ['action', 'emotion', 'dialogue'],
-                evaluatedAt: Date.now()
-            };
-        } catch (e) {
-            log.warn('[CoWriterEngine] 完成度 JSON 解析失败，使用默认值:', e);
-            return this.getEmptyMetrics();
-        }
-    }
-
-    // ============================================================
-   // 私有方法：空指标
-   // ============================================================
-
-   private getEmptyMetrics(): PlotCompletionMetrics {
-       return {
-           sceneObjectivesMet: 0,
-           characterArcsAdvanced: 0,
-           foreshadowingSeeded: 0,
-           emotionalArcProgress: 0,
-           overallCompletion: 0,
-           suggestionAdvice: '尚未评估',
-           nextDirectionHints: ['action', 'emotion', 'dialogue'],
-           evaluatedAt: Date.now()
-       };
-   }
-    
     // ============================================================
     // A1: OOC 检测方法
     // ============================================================
@@ -3728,6 +3525,18 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     }
 }
 
+
+// ============================================================
+// AI 响应解析与剧情节点提取（已抽到 engine/co-writer/ 下模块）
+// ============================================================
+
+import {
+    buildDegradedValidation,
+    getEmptyMetrics,
+    parseEvaluationResponse,
+    parseValidationResponse,
+} from './co-writer/ai-response-parse';
+import { extractPlotNodes } from './co-writer/plot-nodes';
 
 // ============================================================
 // 本地模型工具（已抽到 engine/co-writer/local-model-utils.ts）

@@ -87,11 +87,15 @@ export default defineConfig({
                 // branches 6.14 / functions 5.38——这是讲真话：全部 ui 文件此前
                 // 游离在门禁之外，现状就是接近零覆盖。各下浮约 2 点取整作为
                 // 首期棘轮起点，后续只升不降。
+                // 2026-11-05 棘轮第一次上拧：pure-helpers-coverage.test.ts（纯函数
+                // + fake-DOM 组件测试）把 ui/** 递归实测抬到 lines 12.04 /
+                // statements 11.95 / branches 12.52 / functions 10.1（分母 40842
+                // 行）。按「实际值-2 以内」收紧：10 / 9 / 10 / 8。
                 'ui/**/*.ts': {
-                    lines: 3,
-                    statements: 3,
-                    branches: 4,
-                    functions: 3,
+                    lines: 10,
+                    statements: 9,
+                    branches: 10,
+                    functions: 8,
                 },
             },
         },

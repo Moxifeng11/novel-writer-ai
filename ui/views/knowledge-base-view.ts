@@ -20,6 +20,7 @@ import { BookDetailRenderer } from './book-detail-renderer';
 import { buildKbBookCard } from './kb-book-card';
 import { buildKbStatsPanel } from './kb-stats-panel';
 import { buildKbDetailActionButtons } from './kb-detail-actions';
+import { buildKbConfigPanel } from './kb-config-panel';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 
@@ -1843,186 +1844,43 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     // ============== Tab 2: 知识参考库配置 ==============
+    /**
+     * 渲染知识参考库配置页签。
+     *
+     * DOM 构建细节已抽到 kb-config-panel.ts 的 buildKbConfigPanel，本方法只负责
+     * 把可写状态回调（分类切换 / 题材选中）与其余宿主能力注入面板。
+     *
+     * 可写状态保留在视图：configCategory 的切换写入与 selectedGenreId 的选中
+     * 写入均由下方 host 回调完成，面板自身不持有任何状态。
+     */
     private renderConfigTab(): void {
-        const content = this.rightContentEl.createDiv({
-            cls: "nw-kb-config-tab nw-u-d-flex nw-u-h-100",
-            attr: {}
-        });
-
-        const categoryPanel = content.createDiv({
-            cls: "nw-kb-config-category-panel nw-u-w-160px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column",
-            attr: {}
-        });
-
-        const categoryHeader = categoryPanel.createDiv({
-            cls: 'nw-section-header'
-        });
-        categoryHeader.createEl('h3', { text: '频道分类', cls: 'nw-u-m-0 nw-u-fs-14px' });
-
-        const categories: { key: ConfigCategoryKey; label: string; icon: string }[] = [
-            { key: 'male', label: '男频', icon: '♂️' },
-            { key: 'female', label: '女频', icon: '♀️' },
-            { key: 'neutral', label: '中性', icon: '⚧️' },
-        ];
-
-        categories.forEach(cat => {
-            const item = categoryPanel.createDiv({
-                attr: {
-                    style: `padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;border-left:3px solid ${
-                        this.configCategory === cat.key ? 'var(--interactive-accent)' : 'transparent'
-                    };background:${this.configCategory === cat.key ? 'var(--background-secondary-alt)' : 'transparent'};color:${
-                        this.configCategory === cat.key ? 'var(--text-normal)' : 'var(--text-muted)'
-                    };`
-                }
-            });
-            item.createSpan({ text: cat.icon });
-            item.createSpan({ text: cat.label });
-            item.addEventListener('click', () => {
-                this.configCategory = cat.key;
+        buildKbConfigPanel(this.rightContentEl, {
+            configCategory: this.configCategory,
+            kb: this.kb,
+            isSelectedGenre: genreId => genreId === this.selectedGenreId,
+            getChannelLabel: channel => this.getChannelLabel(channel),
+            switchCategory: category => {
+                this.configCategory = category;
                 this.selectedGenreId = null;
                 this.renderRightPanel();
-            });
-        });
-
-        const mainContent = content.createDiv({
-            cls: "nw-kb-config-main nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-minw-0",
-            attr: {}
-        });
-
-        const toolbar = mainContent.createDiv({
-            cls: "nw-section-header nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-gap-12px nw-u-fwr-wrap", attr: {}
-        });
-        toolbar.createEl('h3', { text: `${this.getChannelLabel(this.configCategory)}题材配置`, cls: 'nw-u-m-0 nw-u-fs-15px' });
-
-        const actions = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
-        const addGenreBtn = actions.createEl('button', {
-            text: '➕ 新增题材',
-            cls: 'nw-btn nw-btn-primary nw-btn-sm'
-        });
-        addGenreBtn.addEventListener('click', () => this.handleAddGenre());
-        const importBtn = actions.createEl('button', {
-            text: '📥 导入',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm'
-        });
-        importBtn.addEventListener('click', () => this.handleImportConfig());
-        const exportBtn = actions.createEl('button', {
-            text: '📤 导出',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm'
-        });
-        exportBtn.addEventListener('click', () => { void this.handleExportConfig(); });
-        const resetBtn = actions.createEl('button', {
-            text: '↺ 恢复默认',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm'
-        });
-        resetBtn.addEventListener('click', () => {
-            this.handleResetConfig().catch(err => {
-                log.error('恢复默认配置失败:', err);
-            });
-        });
-
-        const configContent = mainContent.createDiv({
-            cls: "nw-kb-config-content nw-u-flex-1 nw-u-ovy-auto nw-u-p-16px",
-            attr: {}
-        });
-
-        const genres = this.kb?.getGenresByCategory(this.configCategory) || [];
-
-        if (genres.length === 0) {
-            configContent.createDiv({
-                cls: 'nw-u-ta-center nw-u-p-60px nw-u-c-text-muted'
-            }).createSpan({ text: '暂无题材配置' });
-            return;
-        }
-
-        const grid = configContent.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-2 nw-u-gap-12px'
-        });
-
-        genres.forEach(genre => {
-            const isCustom = genre.isCustom || this.kb?.isCustomGenre(genre.id);
-            const card = grid.createDiv({
-                attr: {
-                    style: `border:1px solid var(--background-modifier-border);border-radius:8px;padding:16px;cursor:pointer;background:var(--background-primary);transition:all 0.15s;position:relative;${
-                        this.selectedGenreId === genre.id ? 'border-color:var(--interactive-accent);box-shadow:0 0 0 2px rgba(var(--interactive-accent-rgb),0.1);' : ''
-                    }`
-                }
-            });
-            card.addEventListener('mouseenter', () => {
-                card.style.borderColor = 'var(--interactive-accent)';
-            });
-            card.addEventListener('mouseleave', () => {
-                if (this.selectedGenreId !== genre.id) {
-                    card.style.borderColor = 'var(--background-modifier-border)';
-                }
-            });
-
-            const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
-            const titleWrap = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
-            const titleRow = titleWrap.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-fwr-wrap' });
-            titleRow.createDiv({ text: genre.name, cls: 'nw-u-fs-15px nw-u-fwt-600' });
-            if (isCustom) {
-                titleRow.createSpan({
-                    text: '自定义',
-                    cls: 'nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-rgba-46-204-113-0-15 nw-u-c-2ecc71 nw-u-brd-8px nw-u-fsh-0'
-                });
-            }
-
-            const actions = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-fsh-0' });
-            if (isCustom) {
-                const deleteIcon = actions.createSpan({
-                    text: '🗑️',
-                    cls: 'nw-u-fs-14px nw-u-c-text-muted nw-u-cur-pointer nw-u-p-2px',
-                    attr: { 'aria-label': '删除这个题材', role: 'button', tabindex: '0' }
-                });
-                deleteIcon.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.handleDeleteGenre(genre.id).catch(err => { // silent-ok: handleDeleteGenre 内部已有失败 Notice
-                        log.error('删除题材失败:', err);
-                    });
-                });
-            }
-
-            card.createDiv({
-                text: genre.description,
-                cls: "nw-text-sm-muted nw-u-lh-1-5 nw-u-marginbottom-12px nw-u-d-webkit-box nw-u-webkitlineclamp-2 nw-u-webkitboxorient-vertical nw-u-ov-hidden", attr: {}
-            });
-
-            const stats = card.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-repeat-3-1fr nw-u-gap-8px' });
-            const statItems = [
-                { label: '性格标签', value: genre.personalityTags.length },
-                { label: '能力类型', value: genre.abilityTypes.length },
-                { label: '写作技巧', value: genre.techniques.length },
-            ];
-            statItems.forEach(s => {
-                const statItem = stats.createDiv({
-                    cls: 'nw-u-ta-center nw-u-p-8px nw-u-bg-background-secondary nw-u-brd-6px'
-                });
-                statItem.createDiv({ text: s.value.toString(), cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-interactive-accent' });
-                statItem.createDiv({ text: s.label, cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-margintop-2px' });
-            });
-
-            if (genre.subGenres && genre.subGenres.length > 0) {
-                const subSection = card.createDiv({ cls: 'nw-u-margintop-12px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m' });
-                subSection.createDiv({ text: `细分题材 (${genre.subGenres.length})`, cls: "nw-text-sm-muted nw-u-marginbottom-6px", attr: {} });
-                const subTags = subSection.createDiv({ cls: 'nw-flex-wrap-sm' });
-                genre.subGenres.slice(0, 5).forEach(sub => {
-                    subTags.createSpan({
-                        text: sub.name,
-                        cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-brd-10px nw-u-c-text-muted'
-                    });
-                });
-                if (genre.subGenres.length > 5) {
-                    subTags.createSpan({
-                        text: `+${genre.subGenres.length - 5}`,
-                        cls: "nw-text-muted-11 nw-u-p-2px-8px", attr: {}
-                    });
-                }
-            }
-
-            card.addEventListener('click', () => {
+            },
+            selectGenre: genre => {
                 this.selectedGenreId = genre.id;
                 this.openGenreEditModal(genre);
-            });
+            },
+            addGenre: () => this.handleAddGenre(),
+            importConfig: () => this.handleImportConfig(),
+            exportConfig: () => this.handleExportConfig(),
+            resetConfig: () => {
+                this.handleResetConfig().catch(err => {
+                    log.error('恢复默认配置失败:', err);
+                });
+            },
+            deleteGenre: genreId => {
+                this.handleDeleteGenre(genreId).catch(err => { // silent-ok: handleDeleteGenre 内部已有失败 Notice
+                    log.error('删除题材失败:', err);
+                });
+            },
         });
     }
 

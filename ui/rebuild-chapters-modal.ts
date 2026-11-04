@@ -9,6 +9,7 @@ import { getChapterFileName, CHAPTER_FILE_TYPES, normalizeChapterFiles, getChapt
 import { readMergedVolumeOutline } from '@/utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
+import { showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 
 
 import { ObsidianFrontmatter } from '@/shared/file-system-port';
@@ -271,7 +272,7 @@ export class RebuildChaptersModal extends Modal {
                 }
 
                 done++;
-                new Notice(`✅ ${chapName}完成（${done}/${total}）${bodyExists ? '〔正文已保留〕' : ''}`, 5000);
+                showSuccessNotice(`${chapName}完成（${done}/${total}）${bodyExists ? '〔正文已保留〕' : ''}`, { timeout: 5000 });
             } catch (e) {
                 log.warn('重建失败:', chapName, e);
                 failures.push(chapName);
@@ -281,9 +282,9 @@ export class RebuildChaptersModal extends Modal {
         mainNotice.hide();
         // U7：失败项汇总反馈（截取前 5 个避免 Notice 过长，完整原因见控制台日志）
         if (failures.length > 0) {
-            new Notice(`⚠️ 重建完成：成功 ${done}/${total} 章，失败 ${failures.length} 章（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, 10000);
+            showWarningNotice(`成功 ${done}/${total} 章，失败 ${failures.length} 章（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, { title: '重建完成', timeout: 10000 });
         } else {
-            new Notice(`✅ 重建完成：${done}/${total} 章${preserved > 0 ? `（保留 ${preserved} 章已有正文）` : ''}`, 8000);
+            showSuccessNotice(`${done}/${total} 章${preserved > 0 ? `（保留 ${preserved} 章已有正文）` : ''}`, { title: '重建完成', timeout: 8000 });
         }
         this.close();
     }

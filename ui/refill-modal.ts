@@ -8,6 +8,7 @@ import { createFingerprintEmbedding } from './fingerprint-embedding';
 import type { AIEngine } from '@/engine/ai-engine';
 import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
 
 const log = createLogger('RefillModal');
@@ -620,12 +621,12 @@ export class RefillModal extends Modal {
 
                 if (progress.status === 'completed') {
                     unsubscribe();
-                    new Notice(`✅ 《${this.bookName}》拆解完成！`);
+                    showSuccessNotice(`《${this.bookName}》拆解完成！`);
                     this.isRunning = false;
                     this.loadDimensionStatus().then(() => this.render());
                 } else if (progress.status === 'failed') {
                     unsubscribe();
-                    new Notice(`❌ 《${this.bookName}》拆解失败：${progress.error || '未知错误'}`);
+                    showErrorNotice(progress.error || '未知错误', { title: `《${this.bookName}》拆解失败` });
                     this.isRunning = false;
                     this.loadDimensionStatus().then(() => this.render());
                 } else if (progress.status === 'cancelled') {
@@ -638,7 +639,7 @@ export class RefillModal extends Modal {
             await this.deconstructionScheduler.addTask(this.bookId, sourceText, dimensions);
         } catch (error) {
             log.error('[RefillModal] 拆解失败:', error);
-            new Notice(`❌ 拆解失败：${error instanceof Error ? error.message : String(error)}`);
+            showErrorNotice(error instanceof Error ? error.message : String(error), { title: '拆解失败' });
             this.isRunning = false;
             this.render();
         }
@@ -699,13 +700,13 @@ export class RefillModal extends Modal {
                 onProgress
             );
 
-            new Notice(`✅ 指纹「${this.fingerprint.name}」重新提取完成！`);
+            showSuccessNotice(`指纹「${this.fingerprint.name}」重新提取完成！`);
             this.isRunning = false;
             this.fingerprint = this.fingerprintLibrary.getFingerprint(this.fingerprint.id, this.fingerprint.scope);
             this.render();
         } catch (error) {
             log.error('[RefillModal] 指纹重新提取失败:', error);
-            new Notice(`❌ 重新提取失败：${error instanceof Error ? error.message : String(error)}`);
+            showErrorNotice(error instanceof Error ? error.message : String(error), { title: '重新提取失败' });
             this.isRunning = false;
             this.render();
         }
