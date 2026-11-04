@@ -294,12 +294,27 @@ export class BatchDeconstructModal extends Modal {
         const controller = new AbortController();
         this.abortControllers.set(taskId, controller);
 
+        const jobs = this.plugin.getJobService();
+        const job = jobs.start({
+            kind: 'deconstruction',
+            title: `拆解 ${task.file.name}`,
+            project: '',
+            onCancel: () => controller.abort(),
+            run: async (ctx) => {
+                ctx.signal.addEventListener('abort', () => controller.abort(), { once: true });
+                await this.processFile(task, controller.signal);
+            },
+        });
         try {
-            await this.processFile(task, controller.signal);
-        } catch (error) {
-            task.status = 'failed';
-            task.message = '拆解失败';
-            task.error = error instanceof Error ? error.message : '未知错误';
+            const final = await jobs.waitFor(job.id);
+            if (final.status === 'failed') {
+                task.status = 'failed';
+                task.message = '拆解失败';
+                task.error = final.error || '未知错误';
+            } else if (final.status === 'cancelled') {
+                task.status = 'cancelled';
+                task.message = '已取消';
+            }
         } finally {
             this.abortControllers.delete(taskId);
             this.renderTaskList();

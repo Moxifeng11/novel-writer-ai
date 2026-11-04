@@ -21,6 +21,37 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.28.0',
+        date: '2026-11-04',
+        title: '统一创作主页、任务中心与首启向导',
+        sections: [
+            {
+                type: 'added',
+                label: '🏠 入口',
+                items: [
+                    '创作主页：三模式卡片、最近项目、下一步建议',
+                    '主 Ribbon 收敛为 主页/任务中心/Agent/项目速览，其余命令保留深链',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🧵 任务中心',
+                items: [
+                    'JobService 统一任务状态、进度、取消、重试',
+                    '批量生成、章节一键完成、导出、批量拆解接入',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🚀 引导与体检',
+                items: [
+                    '首启向导：提供商 → Key → 连通性 → 示例项目',
+                    '项目体检：重复正文/未结算/frontmatter/孤儿文件',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.27.1',
         date: '2026-11-04',
         title: '可信门禁、Agent 写入确认与密钥迁移',

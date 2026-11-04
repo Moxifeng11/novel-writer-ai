@@ -1,27 +1,27 @@
 {
-  "generatedAt": "2026-11-03T11:23:45.405Z",
+  "generatedAt": "2026-11-04T15:19:14.215Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
-      "files": 270,
-      "exports": 1505,
-      "documented": 1505,
-      "methods": 1237,
-      "methodsDocumented": 1237,
+      "files": 273,
+      "exports": 1524,
+      "documented": 1524,
+      "methods": 1242,
+      "methodsDocumented": 1242,
       "incomplete": 0
     },
     "services": {
-      "files": 28,
-      "exports": 154,
-      "documented": 154,
-      "methods": 203,
-      "methodsDocumented": 203,
+      "files": 30,
+      "exports": 168,
+      "documented": 168,
+      "methods": 214,
+      "methodsDocumented": 214,
       "incomplete": 0
     },
     "shared": {
-      "files": 164,
-      "exports": 1526,
-      "documented": 1526,
+      "files": 165,
+      "exports": 1533,
+      "documented": 1533,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
@@ -30,8 +30,8 @@
       "files": 6,
       "exports": 23,
       "documented": 23,
-      "methods": 48,
-      "methodsDocumented": 48,
+      "methods": 49,
+      "methodsDocumented": 49,
       "incomplete": 0
     },
     "domains": {
@@ -43,18 +43,18 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 190,
-      "exports": 494,
-      "documented": 494,
-      "methods": 634,
-      "methodsDocumented": 634,
+      "files": 199,
+      "exports": 516,
+      "documented": 516,
+      "methods": 646,
+      "methodsDocumented": 646,
       "incomplete": 0
     }
   },
   "files": {
     "engine/agent/agent-types.ts": {
-      "exports": 20,
-      "documented": 20,
+      "exports": 23,
+      "documented": 23,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -67,8 +67,8 @@
       "incomplete": 0
     },
     "engine/agent/dsh/dsh-launch.ts": {
-      "exports": 5,
-      "documented": 5,
+      "exports": 6,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -185,6 +185,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "engine/ai-api-client-shared.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "engine/ai-api-client.ts": {
       "exports": 1,
       "documented": 1,
@@ -193,6 +200,13 @@
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1
+    },
+    "engine/ai-api-stream.ts": {
+      "exports": 4,
+      "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
     },
     "engine/ai-batch-entity-generator.ts": {
       "exports": 1,
@@ -311,8 +325,8 @@
     "engine/batch-import-manager.ts": {
       "exports": 9,
       "documented": 9,
-      "methods": 32,
-      "methodsDocumented": 32,
+      "methods": 33,
+      "methodsDocumented": 33,
       "incomplete": 0
     },
     "engine/beat-verifier.ts": {
@@ -367,8 +381,8 @@
       "incomplete": 0
     },
     "engine/chapter-utils.ts": {
-      "exports": 20,
-      "documented": 20,
+      "exports": 21,
+      "documented": 21,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -553,8 +567,8 @@
     "engine/deconstruction-scheduler.ts": {
       "exports": 8,
       "documented": 8,
-      "methods": 33,
-      "methodsDocumented": 33,
+      "methods": 34,
+      "methodsDocumented": 34,
       "incomplete": 0
     },
     "engine/deconstruction-worker-manager.ts": {
@@ -961,8 +975,8 @@
     "engine/knowledge-injector.ts": {
       "exports": 13,
       "documented": 13,
-      "methods": 23,
-      "methodsDocumented": 23,
+      "methods": 24,
+      "methodsDocumented": 24,
       "incomplete": 0
     },
     "engine/knowledge-tags.ts": {
@@ -1150,6 +1164,13 @@
     "engine/prompt-hash.ts": {
       "exports": 1,
       "documented": 1,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/prompt-resolver.ts": {
+      "exports": 4,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1845,8 +1866,8 @@
     "engine/style-fingerprint-library.ts": {
       "exports": 7,
       "documented": 7,
-      "methods": 65,
-      "methodsDocumented": 65,
+      "methods": 67,
+      "methodsDocumented": 67,
       "incomplete": 0
     },
     "engine/style-learner.ts": {
@@ -2017,11 +2038,18 @@
       "methodsDocumented": 14,
       "incomplete": 0
     },
+    "services/job-service.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 9,
+      "methodsDocumented": 9,
+      "incomplete": 0
+    },
     "services/knowledge-base-manager.ts": {
       "exports": 5,
       "documented": 5,
-      "methods": 35,
-      "methodsDocumented": 35,
+      "methods": 36,
+      "methodsDocumented": 36,
       "incomplete": 0
     },
     "services/knowledge-original-chunker.ts": {
@@ -2050,6 +2078,13 @@
       "documented": 9,
       "methods": 22,
       "methodsDocumented": 22,
+      "incomplete": 0
+    },
+    "services/project-health-service.ts": {
+      "exports": 5,
+      "documented": 5,
+      "methods": 0,
+      "methodsDocumented": 0,
       "incomplete": 0
     },
     "services/project-rename-service.ts": {
@@ -2092,8 +2127,8 @@
     "services/rules-service.ts": {
       "exports": 3,
       "documented": 3,
-      "methods": 9,
-      "methodsDocumented": 9,
+      "methods": 10,
+      "methodsDocumented": 10,
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1
@@ -2825,6 +2860,13 @@
       "exampleTargets": 1,
       "examplesDocumented": 1
     },
+    "shared/project-catalog.ts": {
+      "exports": 7,
+      "documented": 7,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/project-mode.ts": {
       "exports": 5,
       "documented": 5,
@@ -3349,8 +3391,8 @@
     "core/settings-service.ts": {
       "exports": 4,
       "documented": 4,
-      "methods": 7,
-      "methodsDocumented": 7,
+      "methods": 8,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "core/theme-manager.ts": {
@@ -3514,6 +3556,13 @@
       "methodsDocumented": 2,
       "incomplete": 0
     },
+    "ui/button-busy.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/changelog-modal.ts": {
       "exports": 1,
       "documented": 1,
@@ -3554,6 +3603,20 @@
       "documented": 2,
       "methods": 9,
       "methodsDocumented": 9,
+      "incomplete": 0
+    },
+    "ui/co-writing/asset-status.ts": {
+      "exports": 7,
+      "documented": 7,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/co-writing/human-rate.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/co-writing-view.ts": {
@@ -3625,6 +3688,15 @@
       "examplesDocumented": 1
     },
     "ui/components/empty-state.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
+    },
+    "ui/components/error-state.ts": {
       "exports": 3,
       "documented": 3,
       "methods": 0,
@@ -4184,6 +4256,13 @@
       "methodsDocumented": 2,
       "incomplete": 0
     },
+    "ui/home-view.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 5,
+      "methodsDocumented": 5,
+      "incomplete": 0
+    },
     "ui/humanize-report-modal.ts": {
       "exports": 2,
       "documented": 2,
@@ -4192,6 +4271,13 @@
       "incomplete": 0
     },
     "ui/ideation-modal.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
+    "ui/job-center-modal.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,
@@ -4310,6 +4396,13 @@
       "methodsDocumented": 2,
       "incomplete": 0
     },
+    "ui/onboarding-modal.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
     "ui/outline-expand-modal.ts": {
       "exports": 2,
       "documented": 2,
@@ -4362,6 +4455,13 @@
     "ui/pre-research-modal.ts": {
       "exports": 2,
       "documented": 2,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
+    "ui/project-health-modal.ts": {
+      "exports": 1,
+      "documented": 1,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
@@ -4560,6 +4660,13 @@
     "ui/settings/section-base.ts": {
       "exports": 2,
       "documented": 2,
+      "methods": 1,
+      "methodsDocumented": 1,
+      "incomplete": 0
+    },
+    "ui/settings/section-factory.ts": {
+      "exports": 3,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

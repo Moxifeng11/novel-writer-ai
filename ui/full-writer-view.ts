@@ -159,6 +159,8 @@ export class FullWriterView extends ItemView {
     private interventionController: InterventionController;
     private chapterOrchestrator: ChapterOrchestrator | null = null;
     private chapterRunStrip: HTMLElement | null = null;
+    /** 当前一键任务把章节进度同步给任务中心 */
+    private activeJobProgress: ((p: { current: number; total: number; message: string }) => void) | null = null;
     private _statusInfoEl: HTMLElement | null = null;
     private readonly executionStore = new ExecutionRunStore();
     private timelinePanel: ExecutionTimelinePanel | null = null;
@@ -391,6 +393,7 @@ export class FullWriterView extends ItemView {
                 this.executionStore.addEvent({ type: 'run-complete', level: 'success', message });
             },
             onProgress: (p) => {
+                this.activeJobProgress?.(p);
                 const message = `${p.message}（${p.current}/${p.total} 步，预计 ${p.aiCalls} 次 AI）`;
                 this.executionStore.setStatus(p.message, p.current, p.total, p.aiCalls);
                 const status = this.chapterRunStrip?.querySelector('.nw-chapter-run-status') as HTMLElement | null;
@@ -432,8 +435,38 @@ export class FullWriterView extends ItemView {
             message: mode === 'recommended' ? '开始一键完成本章（合并规划）' : '开始逐步完成本章',
         });
         this.showChapterRunStrip(orchestrator, mode);
+        const jobs = this.plugin.getJobService();
+        const job = jobs.start({
+            kind: 'chapter-run',
+            title: `完成本章 · ${this.chapterName}`,
+            project: this.project,
+            onCancel: () => orchestrator.cancel(),
+            run: async (ctx) => {
+                this.activeJobProgress = p => ctx.update({ current: p.current, total: p.total, label: p.message });
+                ctx.update({ current: 0, total: 1, label: '准备开始' });
+                const runResult = await orchestrator.run({ mode, pauseBetweenSteps: false });
+                if (runResult.status === 'cancelled') {
+                    const error = new Error('章节生成已取消') as Error & { jobResult?: unknown };
+                    error.name = 'AbortError';
+                    error.jobResult = runResult;
+                    throw error;
+                }
+                if (runResult.status === 'failed') {
+                    const error = new Error(runResult.message || '章节生成失败') as Error & { jobResult?: unknown };
+                    error.jobResult = runResult;
+                    throw error;
+                }
+                ctx.update({ current: 1, total: 1, label: '已完成' });
+                return runResult;
+            },
+        });
         try {
-            const result = await orchestrator.run({ mode, pauseBetweenSteps: false });
+            const final = await jobs.waitFor(job.id);
+            const result = (final.result ?? {
+                status: final.status === 'cancelled' ? 'cancelled' : 'failed',
+                message: final.error || '章节生成失败',
+                aiCalls: 0,
+            }) as Awaited<ReturnType<ChapterOrchestrator['run']>>;
             if (result.status === 'failed') {
                 const failedStep = result.failedStep ? this.executionStore.getFailure(result.failedStep) : undefined;
                 if (!failedStep) {
@@ -462,6 +495,7 @@ export class FullWriterView extends ItemView {
                 });
             }
         } finally {
+            this.activeJobProgress = null;
             this.hideChapterRunStrip();
             this.executionStore.clearStatus();
             if (this.tabContent) await this.renderInContainer(this.tabContent);

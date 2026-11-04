@@ -24,8 +24,9 @@ export class BatchNovelsModal extends Modal {
     private runSettlement = true;
 
     private running = false;
-    private abortController: AbortController | null = null;
     private progressEl: HTMLElement | null = null;
+    private currentJobId = '';
+    private jobUnsubscribe: (() => void) | null = null;
 
     constructor(
         app: App,
@@ -97,47 +98,65 @@ export class BatchNovelsModal extends Modal {
 
         this.progressEl = contentEl.createDiv();
 
-        startBtn.addEventListener('click', async () => {
+        startBtn.addEventListener('click', () => {
             if (this.running) return;
             if (!this.project) {
                 new Notice('⚠️ 未检测到项目，请先填写项目文件夹名');
                 return;
             }
-            this.running = true;
-            startBtn.disabled = true;
-            cancelBtn.style.display = '';
-            this.abortController = new AbortController();
-            cancelBtn.addEventListener('click', () => this.abortController?.abort());
-
             const targets = buildBatchTargets(
                 `第${this.volumeNum}卷`,
                 this.volumeNum,
                 this.startChapter,
                 this.count,
             );
+            this.running = true;
+            startBtn.disabled = true;
+            cancelBtn.style.display = '';
             this.renderProgress(`准备生成 ${targets.length} 章...`);
 
-            const runner = new BatchPipelineRunner(this.app, this.plugin);
-            try {
-                const results = await runner.run(this.project, targets, {
-                    resume: this.resume,
-                    runSettlement: this.runSettlement,
-                    signal: this.abortController.signal,
-                    onChapterStart: (target, index, total) => {
-                        this.renderProgress(`第 ${index + 1}/${total} 章 · ${target.chapterName} · 准备中`);
-                    },
-                    onStepStart: (target, stepKey) => {
-                        this.appendProgress(`${target.chapterName} → ${stepKey}`);
-                    },
-                });
-                this.renderSummary(results);
-            } catch (e) {
-                this.renderProgress(`❌ 批量生成异常：${e instanceof Error ? e.message : String(e)}`);
-            } finally {
-                this.running = false;
-                startBtn.disabled = false;
-                cancelBtn.style.display = 'none';
-            }
+            const jobs = this.plugin.getJobService();
+            const job = jobs.start({
+                kind: 'batch',
+                title: `批量生成 ${targets.length} 章`,
+                project: this.project,
+                run: async (ctx) => {
+                    ctx.update({ current: 0, total: targets.length, label: '准备中' });
+                    const runner = new BatchPipelineRunner(this.app, this.plugin);
+                    const results = await runner.run(this.project, targets, {
+                        resume: this.resume,
+                        runSettlement: this.runSettlement,
+                        signal: ctx.signal,
+                        onChapterStart: (target, index, total) => {
+                            ctx.update({ current: index, total, label: `${target.chapterName} · 准备中` });
+                            this.renderProgress(`第 ${index + 1}/${total} 章 · ${target.chapterName} · 准备中`);
+                        },
+                        onStepStart: (target, stepKey) => {
+                            ctx.update({ label: `${target.chapterName} → ${stepKey}` });
+                            this.appendProgress(`${target.chapterName} → ${stepKey}`);
+                        },
+                    });
+                    this.renderSummary(results);
+                    return results;
+                },
+            });
+            this.currentJobId = job.id;
+            const onCancel = () => jobs.cancel(job.id);
+            cancelBtn.addEventListener('click', onCancel);
+            this.jobUnsubscribe = jobs.subscribe(event => {
+                if (event.job.id !== job.id) return;
+                if (event.job.status === 'failed') {
+                    this.renderProgress(`❌ 批量生成异常：${event.job.error || '未知错误'}`);
+                }
+                if (event.type === 'finished' || event.type === 'cancelled') {
+                    this.running = false;
+                    startBtn.disabled = false;
+                    cancelBtn.style.display = 'none';
+                    cancelBtn.removeEventListener('click', onCancel);
+                    this.jobUnsubscribe?.();
+                    this.jobUnsubscribe = null;
+                }
+            });
         });
     }
 
@@ -145,7 +164,10 @@ export class BatchNovelsModal extends Modal {
      * onClose 方法。
      */
     onClose(): void {
-        this.abortController?.abort();
+        // 关闭弹窗视为放弃本次批量：任务中心仍保留取消记录
+        if (this.currentJobId) this.plugin.getJobService().cancel(this.currentJobId);
+        this.jobUnsubscribe?.();
+        this.jobUnsubscribe = null;
         this.contentEl.empty();
     }
 

@@ -61,6 +61,10 @@ import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project
 import { openModelSwitcherMenu, refreshAllModelSwitchers } from './ui/model-quick-switcher';
 import { registerAllCustomFonts } from './services/font-manager';
 import { WelcomeModal } from './ui/welcome-modal';
+import { HomeView, VIEW_TYPE_HOME } from './ui/home-view';
+import { JobCenterModal } from './ui/job-center-modal';
+import { OnboardingModal } from './ui/onboarding-modal';
+import { ProjectHealthModal } from './ui/project-health-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
 import { PromptManager } from './services/prompt-manager';
@@ -86,6 +90,7 @@ import { AntiAIDetector } from './engine/anti-ai-detector';
 import { setBusinessThresholdOverrides, setInfoDebtMax } from './shared/thresholds';
 import { SerializedWriter } from './shared/serialized-writer';
 import { migrateSettings, withCurrentVersion, CURRENT_SCHEMA_VERSION } from './shared/settings-migrator';
+import type { JobService } from './services/job-service';
 import { PluginCacheManager } from './shared/plugin-cache';
 import { pjNarrativeOverview } from './shared/paths';
 import { resolveActiveChapterTarget, volumeNumber, type ActiveChapterTarget, type WorkbenchChapterContext } from './shared/chapter-target';
@@ -832,28 +837,14 @@ export default class NovelWriterPlugin extends Plugin {
             void registerAllCustomFonts(this).catch(err => log.warn('[小说工坊] 自定义字体恢复失败:', err));
 
             log.info('[小说工坊] 添加侧边栏图标...');
-            this.addRibbonIcon('book-open', '小说工坊 · 项目与章节', () => {
-                this.openFullWriterHome().catch(err => log.error('[小说工坊] 打开项目与章节失败:', err));
+            // 主入口收敛为「创作主页」；项目/流程/协同/知识库/指纹库保留命令深链
+            this.addRibbonIcon('home', '小说工坊 · 创作主页', () => {
+                void this.openHomeView();
             });
 
-            // 创作流程：当前项目「进行到哪、下一步做什么」的总入口
-            this.addRibbonIcon('list-checks', '小说工坊 · 创作流程', () => {
-                this.openCreationFlow().catch(err => log.error('[小说工坊] 打开创作流程失败:', err));
-            });
-
-            // v6.0: 第二个 Ribbon 图标，直达句级协同写作工作台（解决「找不到入口」）
-            this.addRibbonIcon('pen-line', '小说工坊 · 句级协同写作', () => {
-                this.registry.execute('novel-writer-co-writing');
-            });
-
-            // 第三个 Ribbon 图标，知识库管理
-            this.addRibbonIcon('library', '小说工坊 · 知识库', () => {
-                this.openKnowledgeBaseView();
-            });
-
-            // 第四个 Ribbon 图标，写作指纹库
-            this.addRibbonIcon('fingerprint', '小说工坊 · 写作指纹库', () => {
-                this.registry.execute('novel-writer-fingerprint-library');
+            // 长任务统一入口
+            this.addRibbonIcon('list-checks', '小说工坊 · 任务中心', () => {
+                this.openJobCenter();
             });
 
             // 第五个 Ribbon 图标，Agent 创作工作台（交互革命主入口）
@@ -867,6 +858,10 @@ export default class NovelWriterPlugin extends Plugin {
             });
 
             log.info('[小说工坊] 注册视图...');
+            this.registerView(
+                VIEW_TYPE_HOME,
+                (leaf) => new HomeView(leaf, this)
+            );
             this.registerView(
                 FULL_WRITER_VIEW_TYPE,
                 (leaf) => new FullWriterView(leaf, this)
@@ -1037,6 +1032,39 @@ export default class NovelWriterPlugin extends Plugin {
      * 用户点击后看不到任何变化。这里补一次显式路由：不在项目页 → 切页；
      * 已在项目页 → 重新扫描项目列表并提示，保证点击必有反馈。
      */
+    /**
+     * 打开创作主页（统一入口）。
+     */
+    public async openHomeView(): Promise<void> {
+        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOME);
+        if (existing.length > 0) {
+            await this.app.workspace.revealLeaf(existing[0]);
+            return;
+        }
+        const leaf = this.app.workspace.getLeaf('tab');
+        await leaf.setViewState({ type: VIEW_TYPE_HOME, active: true });
+        await this.app.workspace.revealLeaf(leaf);
+    }
+
+    /** 打开任务中心。 */
+    public openJobCenter(): void {
+        new JobCenterModal(this.app, this).open();
+    }
+
+    /** 打开首启向导。 */
+    public openOnboarding(): void {
+        new OnboardingModal(this.app, this).open();
+    }
+
+    /**
+     * 打开项目体检。
+     *
+     * @param project - 项目 ID；空时取当前项目或第一个项目
+     */
+    public openProjectHealth(project?: string): void {
+        new ProjectHealthModal(this.app, this, project).open();
+    }
+
     public async openFullWriterHome(): Promise<void> {
         const reused = this.app.workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE).length > 0;
         await this.openFullWriterView();
@@ -1256,6 +1284,15 @@ export default class NovelWriterPlugin extends Plugin {
      *
       * @returns boolean } 结果 或 null
      */
+    /**
+     * 任务服务（任务中心 / 长任务取消重试）。
+     *
+     * @returns JobService 实例
+     */
+    getJobService(): JobService {
+        return this.engineRegistry.get(ENGINE_NAMES.JOB_SERVICE);
+    }
+
     getSettingsService(): { lockedSecretCount(): number; legacySecretCount(): number; hasEncryptedSecrets(): boolean } | null {
         const service = this.engineRegistry.getOrNull<{
             lockedSecretCount(): number;
@@ -1824,6 +1861,9 @@ export default class NovelWriterPlugin extends Plugin {
             },
             onStartWriting: () => {
                 this.openFullWriterView();
+            },
+            onStartOnboarding: () => {
+                this.openOnboarding();
             },
             onChangelog: () => {
                 new ChangelogModal(this.app, {

@@ -2,6 +2,42 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.28.0（2026-11-04）
+
+### 🏠 统一入口
+
+- 新增「创作主页」视图：长篇/短篇/剧本三卡、最近项目、下一步建议、任务中心与项目体检入口。
+- 主 Ribbon 收敛为「创作主页 / 任务中心 / Agent / 项目速览」；项目与章节、创作流程、句级协同、知识库、指纹库仍保留命令深链，不再各占一个主入口。
+- 新增命令：`🏠 创作主页`、`🧵 任务中心`、`🩺 项目体检`、`🚀 首启引导`。
+
+### 🧵 任务中心
+
+- 新增 `services/job-service.ts`：统一任务模型（queued/running/succeeded/failed/cancelled）、进度、取消、重试、订阅与 `waitFor`；失败保留错误与结果现场，重试创建新记录。
+- 新增任务中心弹窗：进行中可取消，失败/取消可重试，显示阶段、进度、项目与错误原因；关闭弹窗不丢任务记录。
+- 接入：批量生成章节（`BatchNovelsModal`）、章节一键完成（`ChapterOrchestrator`）、成稿导出（`ExportManuscriptModal`）、批量拆解（`BatchDeconstructModal`）。
+- 导出在章节收集/编译/写入之间检查取消信号；章节一键完成的取消会同步到 orchestrator。
+
+### 🚀 首启向导
+
+- 新增 5 步向导：选择提供商 → 填写/保存 Key → 连通性测试 → 导入示例项目 → 进入主页/流程/工作台。
+- 新装欢迎弹窗主按钮改为「3 分钟开始」并保留「直接进入工作台」；完成/跳过写 `firstRunComplete`。
+- Key 走现有 providerKeys + saveSettings 加密链路；测试复用 `testProviderConnectivity`。
+
+### 🩺 项目体检与错误态
+
+- 新增 `services/project-health-service.ts`：重复正文、未结算、frontmatter 未闭合/重复键、正文目录孤儿文件四类问题；只报告不自动修改。
+- 新增项目体检弹窗：按严重度展示问题、跳转文件、重新体检。
+- 新增 `ui/components/error-state.ts` 统一错误态（标题 + 原因 + 修复动作），体检失败已接入。
+
+### 🎨 样式
+
+- 新增 `styles-src/17-home-jobs-health.css`：主页、任务中心、向导、体检样式；状态类统一 `nw-is-*`；CSS 基线 +7046B（只增不减门禁已按流程更新 note）。
+
+### 🧪 测试
+
+- 新增 JobService 生命周期/取消/重试/历史淘汰、项目体检四类问题回归。
+- 全量单测 539 文件 / 5925 用例通过（最终数字以 `preflight` 为准）。
+
 ## v4.27.1（2026-11-04）
 
 ### 🚦 门禁可信化

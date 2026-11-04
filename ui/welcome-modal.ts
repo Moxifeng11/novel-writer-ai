@@ -5,6 +5,8 @@ interface WelcomeModalOptions {
     isNewInstall?: boolean;
     onOpenSettings?: () => void;
     onStartWriting?: () => void;
+    /** 新装时优先打开 3 分钟向导；缺省时回落到 onStartWriting */
+    onStartOnboarding?: () => void;
     onChangelog?: () => void;
     onDontShowAgain?: () => void;
 }
@@ -87,7 +89,9 @@ export class WelcomeModal extends Modal {
         });
 
         const primaryBtn = mainActions.createEl('button', {
-            text: this.options.isNewInstall ? '🚀 开始创作' : '✨ 查看更新内容',
+            text: this.options.isNewInstall
+                ? (this.options.onStartOnboarding ? '🚀 3 分钟开始' : '🚀 开始创作')
+                : '✨ 查看更新内容',
             attr: {
                 type: 'button',
                 style: 'padding:10px 24px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:8px;font-size:14px;font-weight:600;'
@@ -96,11 +100,23 @@ export class WelcomeModal extends Modal {
         primaryBtn.addEventListener('click', () => {
             this.close();
             if (this.options.isNewInstall) {
-                this.options.onStartWriting?.();
+                if (this.options.onStartOnboarding) this.options.onStartOnboarding();
+                else this.options.onStartWriting?.();
             } else {
                 this.options.onChangelog?.();
             }
         });
+
+        if (this.options.isNewInstall && this.options.onStartOnboarding) {
+            const directBtn = mainActions.createEl('button', {
+                text: '📖 直接进入工作台',
+                cls: 'nw-btn nw-btn-secondary',
+            });
+            directBtn.addEventListener('click', () => {
+                this.close();
+                this.options.onStartWriting?.();
+            });
+        }
 
         const secondaryBtn = mainActions.createEl('button', {
             text: '⚙️ 打开设置',

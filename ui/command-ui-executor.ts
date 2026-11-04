@@ -495,6 +495,18 @@ export class CommandUiExecutor implements CommandUiPort {
                 return true;
 
             // ── 视图类 ──
+            case CommandIds.OPEN_HOME:
+                void plugin.openHomeView();
+                return true;
+            case CommandIds.JOB_CENTER:
+                plugin.openJobCenter();
+                return true;
+            case CommandIds.PROJECT_HEALTH:
+                plugin.openProjectHealth(resolveProject());
+                return true;
+            case CommandIds.OPEN_ONBOARDING:
+                plugin.openOnboarding();
+                return true;
             case CommandIds.FULL_WRITER:
                 await plugin.openFullWriterHome();
                 return true;

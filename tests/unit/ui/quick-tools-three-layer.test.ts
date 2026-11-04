@@ -124,11 +124,12 @@ describe('快捷工具三层契约 — 目录 / 注册 / 执行分支', () => {
         expect(block).toContain('openFullWriterHome');
     });
 
-    it('左侧 ribbon 的「项目与章节」入口与命令层一致', () => {
+    it('左侧 ribbon 主入口收敛到创作主页', () => {
         const src = read('main.ts');
-        const start = src.indexOf("addRibbonIcon('book-open'");
+        const start = src.indexOf("addRibbonIcon('home'");
         expect(start).toBeGreaterThan(-1);
-        const block = src.slice(start, src.indexOf("addRibbonIcon('pen-line'", start));
-        expect(block).toContain('openFullWriterHome');
+        const block = src.slice(start, src.indexOf("addRibbonIcon('bot'", start));
+        expect(block).toContain('openHomeView');
+        expect(block).toContain('openJobCenter');
     });
 });

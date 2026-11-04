@@ -14,6 +14,7 @@ export const ENGINE_NAMES = {
     PROVIDER_MANAGER: 'providerManager',
     THEME_MANAGER: 'themeManager',
     SETTINGS_SERVICE: 'settingsService',
+    JOB_SERVICE: 'jobService',
     CONTEXT_MANAGER: 'contextManager',
     FORESHADOW_MANAGER: 'foreshadowManager',
     REVIEW_AGENT: 'reviewAgent',

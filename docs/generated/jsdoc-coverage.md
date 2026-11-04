@@ -7,9 +7,9 @@
 | `core/` | 6 | 23 | 23 | 100% | 49 | 49 | 100% | 0 |
 | `domains/` | 11 | 30 | 30 | 100% | 1 | 1 | 100% | 0 |
 | `engine/` | 273 | 1524 | 1524 | 100% | 1242 | 1242 | 100% | 0 |
-| `services/` | 28 | 154 | 154 | 100% | 205 | 205 | 100% | 0 |
+| `services/` | 30 | 168 | 168 | 100% | 214 | 214 | 100% | 0 |
 | `shared/` | 165 | 1533 | 1533 | 100% | 149 | 149 | 100% | 0 |
-| `ui/` | 194 | 508 | 508 | 100% | 635 | 635 | 100% | 0 |
+| `ui/` | 199 | 516 | 516 | 100% | 646 | 646 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -73,6 +73,7 @@
 | `ui/components/chart-toolbar.ts` | 1 | 1 | 100% | — |
 | `ui/components/emotion-curve-view.ts` | 1 | 1 | 100% | — |
 | `ui/components/empty-state.ts` | 1 | 1 | 100% | — |
+| `ui/components/error-state.ts` | 1 | 1 | 100% | — |
 | `ui/components/progress/loading-overlay.ts` | 1 | 1 | 100% | — |
 | `ui/components/progress/operation-confirm-modal.ts` | 1 | 1 | 100% | — |
 | `ui/components/progress/progress-bar.ts` | 1 | 1 | 100% | — |

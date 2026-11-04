@@ -76,6 +76,9 @@ export const CommandIds = {
     STORY_LINKAGE_BOARD: 'novel-writer-story-linkage',
 
     // ─── 视图类 ───
+    OPEN_HOME: 'novel-writer-open-home',
+    JOB_CENTER: 'novel-writer-job-center',
+    PROJECT_HEALTH: 'novel-writer-project-health',
     FULL_WRITER: 'novel-writer-full-writer',
     CREATION_FLOW: 'novel-writer-open-flow',
     MIGRATE_ENTITY_LINKS: 'novel-writer-migrate-entity-links',
@@ -93,8 +96,9 @@ export const CommandIds = {
     WRITING_STATS: 'novel-writer-writing-stats',
     TOGGLE_PET: 'novel-writer-toggle-pet',
 
-    // ─── 设置 ───
+    // ─── 设置 / 引导 ───
     OPEN_SETTINGS: 'novel-writer-open-settings',
+    OPEN_ONBOARDING: 'novel-writer-onboarding',
 
     // ─── 内部调试命令（不暴露到 Obsidian 命令面板） ───
     CLEAR_WORLDVIEW_CACHE: 'clear-worldview-cache',

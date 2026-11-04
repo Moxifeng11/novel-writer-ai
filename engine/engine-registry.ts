@@ -116,6 +116,7 @@ import { CryptoService } from '@/core/crypto-service';
 import { ProviderManager } from '@/core/provider-manager';
 import { ThemeManager } from '@/core/theme-manager';
 import { SettingsService } from '@/core/settings-service';
+import { JobService } from '@/services/job-service';
 import { ContextManager } from './context-manager';
 import { ForeshadowManager } from './foreshadow-manager';
 import { ReviewAgent } from './review-agent';
@@ -189,6 +190,7 @@ export interface EngineServiceMap {
     [ENGINE_NAMES.PROVIDER_MANAGER]: ProviderManager;
     [ENGINE_NAMES.THEME_MANAGER]: ThemeManager;
     [ENGINE_NAMES.SETTINGS_SERVICE]: SettingsService;
+    [ENGINE_NAMES.JOB_SERVICE]: JobService;
     [ENGINE_NAMES.CONTEXT_MANAGER]: ContextManager;
     [ENGINE_NAMES.FORESHADOW_MANAGER]: ForeshadowManager;
     [ENGINE_NAMES.REVIEW_AGENT]: ReviewAgent;
@@ -1197,6 +1199,8 @@ export class EngineRegistry {
             },
         });
         this.register(ENGINE_NAMES.SETTINGS_SERVICE, settingsService);
+        // 长任务统一账本：只保存内存状态，不写用户 vault
+        this.register(ENGINE_NAMES.JOB_SERVICE, new JobService());
         // 回填给 CryptoService 的延迟绑定回调
         settingsServiceRef = settingsService;
         log.info('[EngineRegistry] Phase 2 完成');

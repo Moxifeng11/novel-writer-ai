@@ -152,6 +152,9 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', group: CommandGroup.Tools, description: '编译全书为 Markdown / TXT / HTML 稿件' },
 
     // ─── 视图类 ───
+    { id: CommandIds.OPEN_HOME, name: '🏠 创作主页', group: CommandGroup.Views, description: '三个创作模式、最近项目、下一步建议与任务入口' },
+    { id: CommandIds.JOB_CENTER, name: '🧵 任务中心', group: CommandGroup.Tools, description: '查看进行中/已完成任务，取消或重试长任务' },
+    { id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', group: CommandGroup.Tools, description: '检查重复正文、未结算、frontmatter 异常与正文目录孤儿文件' },
     { id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', group: CommandGroup.Views, description: '打开流程规划工作台的项目与章节页' },
     { id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', group: CommandGroup.Views, description: '打开当前项目的创作流程：阶段进度与下一步动作' },
     { id: CommandIds.MIGRATE_ENTITY_LINKS, name: '🔗 实体链接迁移（存量关系图谱化）', group: CommandGroup.Tools, description: '把存量实体的归属类字段（所属势力/当前位置/所属归属）转为 wiki-link（先预览再执行）' },
@@ -165,7 +168,8 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.VERSION_HISTORY, name: '📜 版本历史与回滚', group: CommandGroup.Version, description: '查看版本历史与回滚' },
     { id: CommandIds.SAVE_VERSION, name: '💾 保存当前版本', group: CommandGroup.Version, description: '保存当前版本' },
 
-    // ─── 设置 ───
+    // ─── 设置 / 引导 ───
+    { id: CommandIds.OPEN_ONBOARDING, name: '🚀 首启引导（3 分钟）', group: CommandGroup.Tools, description: '选择提供商、测试 Key、导入示例项目' },
     { id: CommandIds.OPEN_SETTINGS, name: '⚙️ 打开插件设置', group: CommandGroup.Tools, description: '打开「小说工坊 AI」插件设置页' },
     { id: CommandIds.WRITING_STATS, name: '📊 写作统计（日/周/月）', group: CommandGroup.Tools, description: '查看写作字数台账与日均/周均产出' },
     { id: CommandIds.TOGGLE_PET, name: '🐾 显示/隐藏桌面宠物', group: CommandGroup.Tools, description: '切换桌面写作宠物显示' },
@@ -482,6 +486,10 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', checkCallback: execGuarded(CommandIds.BATCH_DECONSTRUCT, LONG_ONLY) });
         addCommand({ id: CommandIds.CHARACTER_RECOGNITION, name: '👤 角色识别审核', callback: exec(CommandIds.CHARACTER_RECOGNITION) });
         addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
+        addCommand({ id: CommandIds.OPEN_HOME, name: '🏠 创作主页', callback: exec(CommandIds.OPEN_HOME) });
+        addCommand({ id: CommandIds.JOB_CENTER, name: '🧵 任务中心', callback: exec(CommandIds.JOB_CENTER) });
+        addCommand({ id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', callback: exec(CommandIds.PROJECT_HEALTH) });
+        addCommand({ id: CommandIds.OPEN_ONBOARDING, name: '🚀 首启引导（3 分钟）', callback: exec(CommandIds.OPEN_ONBOARDING) });
         addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
         addCommand({ id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', callback: exec(CommandIds.CREATION_FLOW) });
         addCommand({ id: CommandIds.MIGRATE_ENTITY_LINKS, name: '🔗 实体链接迁移（存量关系图谱化）', callback: exec(CommandIds.MIGRATE_ENTITY_LINKS) });

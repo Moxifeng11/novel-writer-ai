@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-04T12:21:00.034Z",
-  "note": "2026-11-04 v4.27：设置弹窗收敛为与设置页共用分区，新增 nw-mini-settings-* 6 个类与容器布局样式（+1039B）。",
-  "bytes": 464671,
+  "generatedAt": "2026-11-04T15:24:45.031Z",
+  "note": "2026-11-04 v4.28.0 M2：新增创作主页/任务中心/首启向导/项目体检样式（nw-home-*、nw-job-*、nw-onboarding-*、nw-project-health-*，状态类统一 nw-is-*）。",
+  "bytes": 471511,
   "important": 164,
   "hardcodedHex": 154,
   "rgbHsl": 182,
-  "uniqueClasses": 2399,
+  "uniqueClasses": 2452,
   "otherClasses": 87,
   "maxSelectorDepth": 4
 }

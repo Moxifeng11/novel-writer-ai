@@ -25,6 +25,7 @@ import type { CreationMode } from '@/shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
 import { formatExportPrecheck } from '@/shared/export-precheck';
 import { getExecutionLedger } from '@/services/execution-ledger';
+import type { JobRunContext } from '@/services/job-service';
 import { yieldToUI } from '@/shared/yield';
 import { listProjectIds } from '@/shared/project-catalog';
 
@@ -97,6 +98,7 @@ export class ExportManuscriptModal extends Modal {
     private bomRowEl: HTMLElement | null = null;
     private coverRowEl: HTMLElement | null = null;
     private coverSettingRef: Setting | null = null;
+    private activeJobId = '';
 
     constructor(
         app: App,
@@ -205,7 +207,10 @@ export class ExportManuscriptModal extends Modal {
             cls: 'nw-btn nw-btn-secondary',
             attr: { type: 'button' },
         });
-        cancel.onclick = () => this.close();
+        cancel.onclick = () => {
+            if (this.activeJobId) this.plugin.getJobService().cancel(this.activeJobId);
+            this.close();
+        };
 
         const exportBtn = footer.createEl('button', {
             text: '导出',
@@ -213,14 +218,31 @@ export class ExportManuscriptModal extends Modal {
             attr: { type: 'button' },
         });
         exportBtn.onclick = async () => {
+            if (this.activeJobId) return;
             exportBtn.disabled = true;
             exportBtn.setText('正在编译...');
+            const jobs = this.plugin.getJobService();
+            const bookTitle = this.project.split('/').pop() || this.project;
+            const job = jobs.start({
+                kind: 'export',
+                title: `导出《${bookTitle}》· ${this.format.toUpperCase()}`,
+                project: this.project,
+                run: async (ctx) => {
+                    ctx.update({ current: 0, total: 1, label: '编译中' });
+                    await this.exportManuscript(ctx);
+                    ctx.update({ current: 1, total: 1, label: '完成' });
+                    return true;
+                },
+            });
+            this.activeJobId = job.id;
             try {
-                await this.exportManuscript();
-            } catch (e) {
-                log.error('[Export] 导出失败:', e);
-                new Notice(`❌ 导出失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+                const final = await jobs.waitFor(job.id);
+                if (final.status === 'failed') {
+                    log.error('[Export] 导出失败:', final.error);
+                    new Notice(`❌ 导出失败：${final.error || '未知错误'}`, 8000);
+                }
             } finally {
+                this.activeJobId = '';
                 exportBtn.disabled = false;
                 exportBtn.setText('导出');
             }
@@ -318,10 +340,12 @@ export class ExportManuscriptModal extends Modal {
         );
     }
 
-    private async exportManuscript(): Promise<void> {
+    private async exportManuscript(ctx?: JobRunContext): Promise<void> {
+        this.throwIfAborted(ctx);
         const chapters = this.creationMode === 'long'
             ? await collectChapters(this.app, this.project)
             : await collectModeManuscript(this.app, this.project, this.creationMode);
+        this.throwIfAborted(ctx);
         if (chapters.length === 0) {
             new Notice('⚠️ 未找到可导出的正文');
             return;
@@ -359,6 +383,7 @@ export class ExportManuscriptModal extends Modal {
                 .map(unit => `${unit.unitName}${unit.title ? ` ${unit.title}` : ''}`);
             precheck = formatExportPrecheck({ mode: this.creationMode, unfinished });
         }
+        this.throwIfAborted(ctx);
         if (precheck) new Notice(precheck, 8000);
 
         const bookTitle = this.project.split('/').pop() || this.project;
@@ -384,6 +409,7 @@ export class ExportManuscriptModal extends Modal {
         let emptyChapters = 0;
         let result;
 
+        this.throwIfAborted(ctx);
         if (this.format === 'epub' || this.format === 'docx') {
             if (this.format === 'epub') {
                 const cover = this.includeCover ? await loadProjectCover(this.app, this.project) : undefined;
@@ -416,6 +442,7 @@ export class ExportManuscriptModal extends Modal {
             result = await exportTextFile(this.app, filename, content, { mime: option.mime });
         }
 
+        this.throwIfAborted(ctx);
         if (!result.ok) return;
 
         const emptyNote = emptyChapters > 0 ? `，其中 ${emptyChapters} ${this.unitLabel}为空` : '';
@@ -441,6 +468,13 @@ export class ExportManuscriptModal extends Modal {
         // 流程页用它标记「导出阶段完成」；只在真正成功时回调，取消/失败不算
         this.options.onExported?.();
         this.close();
+    }
+
+    private throwIfAborted(ctx?: JobRunContext): void {
+        if (!ctx?.signal.aborted) return;
+        const error = new Error('导出已取消');
+        error.name = 'AbortError';
+        throw error;
     }
 }
 
