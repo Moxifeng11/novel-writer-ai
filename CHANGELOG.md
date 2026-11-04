@@ -2,6 +2,42 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.27.0（2026-11-04）
+
+### 🚦 全流程阻塞点
+
+- **步骤双击双发**：`executeCurrentStep` 在模板解析前先置 busy，快速连点不会并行两次 AI 调用竞写同一步骤。
+- **保存/切章超时**：协同保存、外部修改检测、切章前冲刷全部加 10–35s 上限；同步盘锁定时不再永久停在「保存中」。
+- **批量步级看门狗**：批量生成每步 8 分钟超时并 abort，不再让模态框无限等待。
+- **暂停自动恢复**：一键流程暂停 10 分钟无操作自动继续；Agent 危险审批/ dsh 写入确认 10 分钟无响应默认拒绝。
+- **导出**：捕获异常并提示；章节读取并发 6 批 + 分批让出主线程；大项目不再静默失败/长时间冻结。
+- **切章重入**：`openChapter` 增加代次，快速连切两章时旧链在关键 await 后退出。
+- **项目选择器**：高亮未命中不再默认连渲 3 遍。
+- **后台实体重检**：新编辑取消旧检测、禁止弹密钥框、传 AbortSignal，减少与协同建议争抢本地模型。
+- **流式并发槽**：等待期间感知 abort，取消后不再空转轮询。
+
+### 🔐 数据可靠性
+
+- 6 处 frontmatter 直写改走 `ObsidianFrontmatter`（重复键自愈），结算完稿/重建/属性补齐不再因历史重复键整体失败。
+- 协同持久化移除 `chapterContent`（只写不读），data.json 不再携带整章正文；编辑历史截断 10 条。
+- 指纹库改为项目级单例（`StyleFingerprintLibrary.get`），同项目共享实例，卸载统一 `flushAll`，避免多实例后写覆盖。
+- 实体仓储 `save()`、`.project` 故事结构/叙事结构读改写加 `withWriteLock`。
+- 拆解调度器 `dispose()` 先冲刷待写队列；知识库/批量导入补 `dispose()`。
+- 用户可见 Markdown（上下文注入、同人审核/向导、Fanfic 设定）改走 `writeVaultText`，进入 vault 索引。
+
+### 🧭 交互与设置
+
+- 新增 `ui/button-busy.ts`，协同「更多工具」、场景/联想/扩写/改写、结算/节点推进统一防连点。
+- 知识库视图 `viewClosed` 在 onOpen 复位，close→open 后刷新不再永久短路。
+- 命令面板：补 `WRITING_STATS`/`TOGGLE_PET`/`CHARACTER_RECOGNITION` 定义与注册，硬编码 ID 改常量；新增「addCommand 集合 === 非 internalOnly 定义集合」测试。
+- **设置双 UI 收敛**：`ui/settings/section-factory.ts` 成为 tab→分区唯一装配表；`MiniSettingsModal` 由 2755 行瘦身为薄壳，与设置页共用同一批 Section；新增 `render()` 抽象契约与弹窗样式。
+
+### 🧪 测试
+
+- 全量单测 **535 文件 / 5913 用例** 通过。
+- 新增项目级指纹库单例、命令集合一致性、协同持久化瘦身、设置分区等回归。
+- 新增生产环境模拟 E2E（mock AI 全旅程、按钮忙碌态、视图生命周期）。
+
 ## v4.26.4（2026-11-04）
 
 ### 🧵 模板流转单一入口

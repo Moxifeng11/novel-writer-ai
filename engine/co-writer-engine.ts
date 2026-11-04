@@ -833,7 +833,7 @@ export class CoWriterEngine {
 
             // ===== E4: 初始化写作指纹库 =====
             try {
-                this.fingerprintLibrary = new StyleFingerprintLibrary(this.app, project);
+                this.fingerprintLibrary = StyleFingerprintLibrary.get(this.app, project);
                 await this.fingerprintLibrary.loadGlobal();
                 await this.fingerprintLibrary.loadProject();
                 await this.fingerprintLibrary.loadGlobalState(project);

@@ -21,6 +21,7 @@ import { BASE_DIR, baseFilePath, buildProjectBases } from './bases-generator';
 import { withWriteLock } from '@/shared/write-lock';
 import { createLogger } from '@/shared/logger';
 
+import { ObsidianFrontmatter } from '@/shared/file-system-port';
 const log = createLogger('NoteProperties');
 
 /**
@@ -149,22 +150,9 @@ export function scanPropertyCompletion(app: App, project: string): PropertyCompl
 }
 
 function processFrontmatter(app: App, file: TFile, mutate: (fm: Record<string, unknown>) => void): Promise<void> {
-    const manager = app.fileManager as unknown as {
-        processFrontMatter?: (target: TFile, fn: (fm: Record<string, unknown>) => void) => Promise<void>;
-    };
-    if (typeof manager.processFrontMatter === 'function') {
-        return manager.processFrontMatter(file, mutate);
-    }
-    // 兜底：直接改写文本头部（测试/老版本）
-    return (async () => {
-        const raw = await app.vault.read(file);
-        const next = applyFrontmatterTextPatch(raw, (fm) => {
-            const draft: Record<string, unknown> = { ...fm };
-            mutate(draft);
-            return draft;
-        });
-        await app.vault.modify(file, next);
-    })();
+    // 唯一 frontmatter 入口：重复键自愈（旧实现直接 fileManager.processFrontMatter，
+    // 历史文件有重复顶层键时会抛 Map keys must be unique，属性补齐整体失败）。
+    return new ObsidianFrontmatter(app).processFrontmatter(file, mutate);
 }
 
 /**

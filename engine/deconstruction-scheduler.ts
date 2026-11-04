@@ -2783,6 +2783,20 @@ export class DeconstructionScheduler {
     }
 
     /**
+     * 释放资源（EngineRegistry.disposeAll 契约）：先冲刷待写队列，再销毁定时器/Worker。
+     *
+     * @returns 无
+     */
+    async dispose(): Promise<void> {
+        try {
+            await this.flushBatchWrites();
+        } catch (e) {
+            log.warn('[DeconstructionScheduler] 销毁前冲刷待写队列失败:', e);
+        }
+        this.destroy();
+    }
+
+    /**
      * 销毁调度器并清理资源。
      */
     destroy(): void {

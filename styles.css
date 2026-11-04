@@ -4795,6 +4795,15 @@ select.nw-select {
 .nw-float-monitor-body { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 16px; }
 .nw-float-monitor-section { border: 1px solid var(--nw-card-border,var(--background-modifier-border)); border-radius: 8px; padding: 12px; }
 
+
+/* v4.27：设置弹窗复用设置页分区（nw-mini-settings-*） */
+.nw-settings-modal { width: min(980px, 92vw); }
+.nw-mini-settings { display: flex; flex-direction: column; gap: 12px; max-height: 70vh; }
+.nw-mini-settings-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--nw-card-border, var(--background-modifier-border)); }
+.nw-mini-settings-tab { padding: 5px 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--nw-text-secondary, var(--text-muted)); font-size: 12px; cursor: pointer; }
+.nw-mini-settings-tab:hover { background: var(--background-modifier-hover); color: var(--nw-text-primary, var(--text-normal)); }
+.nw-mini-settings-tab.is-active { background: var(--nw-accent-muted, rgba(124,58,237,0.12)); color: var(--nw-accent, var(--interactive-accent)); border-color: var(--nw-accent, var(--interactive-accent)); font-weight: 600; }
+.nw-mini-settings-content { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 2px 12px; }
 /* ========== v6.0: 协同写作缺失类补全（Task 2） ========== */
 
 /* ----- SubTask 2.1: Modal 相关类 ----- */

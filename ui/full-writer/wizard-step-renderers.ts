@@ -22,6 +22,7 @@ import { listFanficSettingCandidates } from '@/shared/fanfic-binding';
 import { getStoryStructure, getStructureStageSummary, getStoryOptionLabel, parseStorySettingsFromProjectMeta } from '@/shared/story-structure';
 import { StorySettingsModal } from '@/ui/story-settings-modal';
 
+import { writeVaultText } from '@/shared/file-system-port';
 /**
  * 创作向导各步骤渲染器。
  */
@@ -215,10 +216,7 @@ export class WizardStepRenderers {
             }
             const content = buildFanficSettingsContent(values);
             const path = getFanficSettingsPath(tab.project, content, tab.project);
-            const dir = path.substring(0, path.lastIndexOf('/'));
-            const adapter = this.app.vault.adapter;
-            if (!(await adapter.exists(dir))) await adapter.mkdir(dir);
-            await adapter.write(path, content);
+            await writeVaultText(this.app, path, content);
             await attachFanficPathToProject(this.app, tab.project, path);
             this.wizardStepResults[fanficResultKey] = content;
             new Notice(`✅ 同人设定已保存: ${path}`, 3000);

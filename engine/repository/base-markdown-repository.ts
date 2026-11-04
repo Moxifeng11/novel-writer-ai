@@ -28,6 +28,7 @@
 
 import type { FileSystemPort } from '@/shared/file-system-port';
 import { LruCache } from '@/shared/lru-cache';
+import { withWriteLock } from '@/shared/write-lock';
 import type { IRepository, IBulkRepository, BulkResult, BulkFailure } from './interfaces';
 import type { MultiLayerCache } from '@/engine/cache';
 
@@ -188,19 +189,21 @@ export abstract class BaseMarkdownRepository<T, TId = string>
         const id = this.idFromEntity(entity);
         const filePath = this.filePathFromId(id);
         const mlcKey = `${this.cacheKeyPrefix}${filePath}`;
-        const content = this.serialize(entity);
+        // 实体卡可能被批量生成、识别流水线、结算同时写；旧实现无锁，
+        // 两次「读旧 → 整篇写」会互相覆盖（丢字段/丢更新）。
+        return withWriteLock(filePath, async () => {
+            const content = this.serialize(entity);
+            await this.ensureParentDir(filePath);
+            await this.fs.write(filePath, content);
 
-        await this.ensureParentDir(filePath);
-        await this.fs.write(filePath, content);
-
-        if (this.cache) {
-            this.cache.set(filePath, entity);
-        }
-        if (this.multiLayerCache) {
-            await this.multiLayerCache.set(mlcKey, entity);
-        }
-
-        return entity;
+            if (this.cache) {
+                this.cache.set(filePath, entity);
+            }
+            if (this.multiLayerCache) {
+                await this.multiLayerCache.set(mlcKey, entity);
+            }
+            return entity;
+        });
     }
 
     /**

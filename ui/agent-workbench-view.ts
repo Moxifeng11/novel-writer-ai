@@ -953,6 +953,24 @@ export class AgentWorkbenchView extends ItemView {
 
     // ─── 引擎装配与消息处理 ─────────────────────────────────
 
+    /** 审批弹窗 10 分钟无响应默认拒绝，避免整个 Agent 回合永久挂起 */
+    private async withApprovalTimeout(decision: Promise<boolean>, label: string): Promise<boolean> {
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        try {
+            return await Promise.race([
+                decision,
+                new Promise<boolean>(resolve => {
+                    timer = setTimeout(() => {
+                        new Notice(`⏱️ ${label}超过 10 分钟未响应，已默认拒绝`, 8000);
+                        resolve(false);
+                    }, 10 * 60_000);
+                }),
+            ]);
+        } finally {
+            if (timer !== null) clearTimeout(timer);
+        }
+    }
+
     private async boot(): Promise<void> {
         const session = this.sessionSeq;
         // 清理过期 spill 存档（只动 .sessions/spill/agent 下超过 7 天的自己的文件）
@@ -993,10 +1011,13 @@ export class AgentWorkbenchView extends ItemView {
                 requestApproval: async (request) => {
                     const confirm = this.port.confirmDangerousAction;
                     if (!confirm) return false;
-                    return confirm.call(this.port, {
-                        title: `Agent 请求执行「${request.tool}」`,
-                        detail: request.reason,
-                    });
+                    return this.withApprovalTimeout(
+                        confirm.call(this.port, {
+                            title: `Agent 请求执行「${request.tool}」`,
+                            detail: request.reason,
+                        }),
+                        `Agent 审批「${request.tool}」`,
+                    );
                 },
                 // 会话压缩（dsh compaction 思路）：30 轮触发，保留最近 12 轮
                 compaction: { thresholdTurns: 30, keepTurns: 12 },
@@ -1081,7 +1102,7 @@ export class AgentWorkbenchView extends ItemView {
                     confirmText: '仍要允许写入',
                     cancelText: '改为只读',
                 });
-                allowWrite = confirmed;
+                allowWrite = await this.withApprovalTimeout(Promise.resolve(confirmed), 'dsh 写入确认');
             }
             const sandbox = allowWrite ? 'workspace-write' : 'read-only';
             const patchPath = `${home}/sandbox.yml`;
@@ -1152,7 +1173,7 @@ export class AgentWorkbenchView extends ItemView {
         this.showTyping();
         try {
             await dsh.prompt(text);
-            await dsh.waitForIdle(180_000);
+            await dsh.waitForIdle(this.plugin.settings.dshTurnTimeoutMs || 180_000);
             if (session !== this.sessionSeq) return;
             const collected = this.dshTurnCollector;
             this.dshTurnCollector = null;

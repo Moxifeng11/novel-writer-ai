@@ -164,3 +164,15 @@ describe('CommandRegistry 注册与 UI 委托', () => {
         expect(ui.executeCommand).not.toHaveBeenCalled();
     });
 });
+
+describe('命令面板与定义表一致', () => {
+    it('addCommand 注册集合 === 非 internalOnly 定义集合', () => {
+        const { registry } = makeHarness();
+        const ids: string[] = [];
+        registry.registerObsidianCommands(cmd => { ids.push(cmd.id); });
+        const expected = registry.getAllCommands()
+            .filter(cmd => !cmd.internalOnly)
+            .map(cmd => cmd.id);
+        expect(new Set(ids)).toEqual(new Set(expected));
+    });
+});

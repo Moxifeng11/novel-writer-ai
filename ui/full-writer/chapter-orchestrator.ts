@@ -186,6 +186,7 @@ export class ChapterOrchestrator {
     private abortController: AbortController | null = null;
     private pauseRequested = false;
     private resumeResolver: (() => void) | null = null;
+    private resumeTimer: ReturnType<typeof setTimeout> | null = null;
     private running = false;
     private _retriedThisRun = false;
 
@@ -207,6 +208,10 @@ export class ChapterOrchestrator {
      */
     resume(): void {
         this.pauseRequested = false;
+        if (this.resumeTimer !== null) {
+            clearTimeout(this.resumeTimer);
+            this.resumeTimer = null;
+        }
         const resolver = this.resumeResolver;
         this.resumeResolver = null;
         resolver?.();
@@ -469,9 +474,16 @@ export class ChapterOrchestrator {
 
     private async waitIfPaused(): Promise<void> {
         if (!this.pauseRequested) return;
-        this.deps.showNotice('⏸️ 已在当前步骤结束后暂停；点击“继续”恢复', 6000);
+        this.deps.showNotice('⏸️ 已在当前步骤结束后暂停；点击“继续”恢复（10 分钟无操作将自动继续）', 6000);
         await new Promise<void>(resolve => {
             this.resumeResolver = resolve;
+            this.resumeTimer = setTimeout(() => {
+                this.resumeTimer = null;
+                this.pauseRequested = false;
+                this.resumeResolver = null;
+                this.deps.showNotice('⏱️ 暂停已超过 10 分钟，自动继续后续步骤', 8000);
+                resolve();
+            }, 10 * 60_000);
         });
     }
 

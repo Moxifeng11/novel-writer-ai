@@ -1524,6 +1524,16 @@ export class KnowledgeBaseManager {
      * 把待写数据刷盘。
      * @returns 无
      */
+    /** EngineRegistry 卸载契约：冲刷串行写队列 */
+    async dispose(): Promise<void> {
+        await this.flush();
+    }
+
+    /**
+     * 冲刷串行写队列（卸载/测试隔离用）。
+     *
+     * @returns 无
+     */
     async flush(): Promise<void> {
         await this.indexWriter.flush();
         await this.bookWriter.flush();

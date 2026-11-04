@@ -78,6 +78,27 @@ describe('模块名 — 行为域', () => {
 
 未设置 `OBSIDIAN_PATH` 时 Electron 用例会 skip 且退出码 0（**假绿**），CI 用 `playwright test --list` 只做解析校验。
 
+### 5.1 生产环境模拟（mock AI）
+
+新增 `tests/e2e/fixtures/mock-ai-server.mjs` + `utils/mock-ai.ts`：临时 vault 的 `data.json` 指向本地 OpenAI 兼容 mock，
+可无 API 额度跑完整「创建 → 规划 → 正文 → 质控 → 分析 → 结算 → 导出」旅程。
+
+| spec | project | 覆盖 |
+|---|---|---|
+| `full-journey.spec.ts` | `full-journey` | 长篇全链路、落盘/frontmatter/导出断言、禁用重启用数据保留 |
+| `button-states.spec.ts` | `button-states` | 结算/步骤/协同工具/Agent 发送的忙碌态与防连点 |
+| `view-lifecycle.spec.ts` | `view-lifecycle` | 生成中关闭视图、快速连切章节、监控面板重开 |
+
+运行：
+
+```bash
+OBSIDIAN_PATH=... npx playwright test --project=full-journey
+OBSIDIAN_PATH=... npx playwright test --project=button-states
+OBSIDIAN_PATH=... npx playwright test --project=view-lifecycle
+```
+
+没有 `OBSIDIAN_PATH` 时这些用例同样显式 skip；不要把 skip 当通过。真实 API 仍只由 `E2E_REAL_AI=1` 的 `real-ai` project 触发。
+
 ## 6. 测试与文档的分工
 
 - 测试 = **行为契约**：输入/输出/失败/边界。

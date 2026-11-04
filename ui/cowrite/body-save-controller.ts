@@ -4,6 +4,10 @@ import { createLogger } from '@/shared/logger';
 
 const log = createLogger('BodySaveController');
 
+/** 单次保存/冲刷上限：文件被同步盘锁定时不能让切章/关视图永久等待 */
+const SAVE_TIMEOUT_MS = 30_000;
+const FLUSH_TIMEOUT_MS = 35_000;
+
 /** D2：一次保存的章节身份快照，await 期间切章不影响写盘 */
 export interface ChapterSaveIdentity {
     project: string;
@@ -98,6 +102,20 @@ export class BodySaveController {
         this.host.scheduleAutoSave();
     }
 
+    private async withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        try {
+            return await Promise.race([
+                promise,
+                new Promise<T>((_, reject) => {
+                    timer = setTimeout(() => reject(new Error(`${label}超时（${Math.round(ms / 1000)}s），请检查文件是否被同步盘占用`)), ms);
+                }),
+            ]);
+        } finally {
+            if (timer !== null) clearTimeout(timer);
+        }
+    }
+
     /**
      * 保存。
      * @param showNotice - 提示函数
@@ -134,9 +152,13 @@ export class BodySaveController {
         this.saving = true;
         this.host.updateControlState("保存中...");
         try {
-            const chapterTitle = await this.host.getChapterTitle(identity);
+            const chapterTitle = await this.withTimeout(this.host.getChapterTitle(identity), 10_000, '读取章节标题');
             // 外部写入检测（P0-6）：只在本视图写过的路径上生效，首次保存不拦截
-            const conflict = await this.detectExternalOverwrite(identity.bodyPath, body);
+            const conflict = await this.withTimeout(
+                this.detectExternalOverwrite(identity.bodyPath, body),
+                15_000,
+                '检查外部修改',
+            );
             if (conflict) {
                 this.host.updateControlState("外部已修改");
                 if (!this.conflictNotified.has(identity.bodyPath)) {
@@ -151,7 +173,7 @@ export class BodySaveController {
             }
             // 统一落盘入口：保留旧 frontmatter、统一标题与缩进、status 不降级
             const writer = new BodyWriter({ app: this.host.app });
-            await writer.write({
+            await this.withTimeout(writer.write({
                 path: identity.bodyPath,
                 raw: body,
                 chapterNum: identity.chapterNum,
@@ -160,7 +182,7 @@ export class BodySaveController {
                 volume: identity.volume,
                 project: identity.project,
                 writingMode: "co-writer",
-            });
+            }), SAVE_TIMEOUT_MS, '保存正文');
             this.lastWritten.set(identity.bodyPath, body);
             this.conflictNotified.delete(identity.bodyPath);
             // 写盘期间已切章：不要把「已保存」与结算提醒写到新章界面
@@ -185,7 +207,7 @@ export class BodySaveController {
                 this.host.updateControlState("保存失败");
             }
             if (showNotice)
-                new Notice("⚠️ 保存失败，请检查章节路径或文件权限", 4e3);
+                new Notice(`⚠️ 保存失败：${message || '请检查章节路径或文件权限'}`, 6e3);
             return false;
         } finally {
             this.saving = false;
@@ -228,8 +250,13 @@ export class BodySaveController {
      */
     async flushBeforeChapterSwitch(): Promise<boolean> {
         const hasPending = this.host.takePendingAutoSave();
-        const inFlight = this.chain;
-        await inFlight;
+        try {
+            await this.withTimeout(this.chain, FLUSH_TIMEOUT_MS, '等待上一次保存');
+        } catch (e) {
+            log.warn('[BodySaveController] 切章前等待保存超时:', e);
+            new Notice('⚠️ 上一次保存超时，已中止切章以避免丢字；请稍后重试', 6e3);
+            return false;
+        }
         const identity = this.host.getIdentity();
         if (!identity.project || !identity.volume || !identity.chapterNum) return true;
         if (!hasPending) return true;

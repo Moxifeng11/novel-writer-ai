@@ -108,6 +108,8 @@ import { RealtimeQualityController } from './cowrite/realtime-quality-controller
 import { isImeComposing } from '@/shared/keyboard';
 
 
+import { ObsidianFrontmatter } from '@/shared/file-system-port';
+import { withButtonBusy } from './button-busy';
 const log = createLogger('CoWritingView');
 /**
  * 质量问题结构定义。
@@ -172,6 +174,8 @@ export class CoWritingView extends ItemView {
   // v5.1 引擎实例
   tractionEngine: EndingTractionEngine | null = null;
   project = "";
+  /** openChapter 代次：快速连切两章时，旧链在关键 await 后必须退出 */
+  private openChapterSeq = 0;
   chapterName = "";
   chapterNum = 1;
   volume = "\u7B2C1\u5377";
@@ -518,6 +522,7 @@ export class CoWritingView extends ItemView {
    * @param chapterNum - 章号
    */
   async openChapter(project: string, chapterName2: string, volume2?: string, chapterNum?: number) {
+    const seq = ++this.openChapterSeq;
     // 只传 2 个参数时旧默认值是「第1卷/第1章」，会把第 3 卷第 12 章绑定成第 1 卷第 1 章、
     // 保存直接写错文件。缺失参数时按章名推定章号，并按正文实际位置反查卷。
     const parsedChapterNum = parseInt(chapterName2.match(/第(\d+)章/)?.[1] || '', 10);
@@ -530,6 +535,7 @@ export class CoWritingView extends ItemView {
     // 上一章排队中的自动保存必须先用「旧身份」落盘：下面一旦改写 project/chapterNum，
     // 2s 防抖里的保存就会用新章路径写入旧章正文（静默串章）。
     const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
+    if (seq !== this.openChapterSeq) return;
     if (!flushed) {
       new Notice("⚠️ 上一章正文未能保存，已取消切章", 4e3);
       return;
@@ -563,6 +569,7 @@ export class CoWritingView extends ItemView {
 
     // P0: 前置规划完整性检查 — 确保 AI 建议生成时有充分上下文
     await this.checkPrerequisites(project, chapterName2, volume2);
+    if (seq !== this.openChapterSeq) return;
 
     if (!this.rightEditor)
       return;
@@ -594,9 +601,12 @@ export class CoWritingView extends ItemView {
     this.renderMetrics(emptyMetrics());
     if (this.realtimeQuality.isEnabled()) this.scheduleQualityMonitor();
     await this.historyStore.loadSuggestionHistory();
+    if (seq !== this.openChapterSeq) return;
     await this.refreshPreview(true);
+    if (seq !== this.openChapterSeq) return;
     try {
       await this.facade.initEngine(project, chapterName2, volume2, chapterNum);
+      if (seq !== this.openChapterSeq) return;
       // 同人设定缺失/损坏时协同会以「空规则」继续写作：必须让用户看见，而不是只写日志
       this.warnFanficRulesOnce();
       // 承接规划成果：从磁盘读取本章 6 个规划文件 → ChapterBrief
@@ -888,7 +898,7 @@ export class CoWritingView extends ItemView {
     coreSection.createDiv({ cls: "nw-cowrite-action-section-title", text: "🎯 核心创作" });
     const coreRow = coreSection.createDiv({ cls: "nw-cowrite-action-row" });
     const nextBtn = coreRow.createEl("button", { text: "⏭ 节点 -/-", cls: "nw-btn nw-btn-primary", attr: { title: "推进到下一剧情节点，生成针对性建议" } });
-    nextBtn.addEventListener("click", () => this.handleAdvanceNextNode());
+    nextBtn.addEventListener("click", () => { void withButtonBusy(nextBtn, "⏳ 推进中...", () => this.handleAdvanceNextNode()); });
     this.nextNodeBtn = nextBtn;
     const suggestBtn = coreRow.createEl("button", { text: "\u21E5 建议", cls: "nw-btn nw-btn-primary", attr: { title: "基于上文生成续写建议（方向可在上方临时指令填写）" } });
     suggestBtn.addEventListener("click", () => this.handleTabSuggest(true));
@@ -902,18 +912,18 @@ export class CoWritingView extends ItemView {
       void this.handleTabSuggest(true);
     });
     const completeBtn = coreRow.createEl("button", { text: "📊 结算", cls: "nw-btn nw-btn-primary", attr: { title: "结算本章：更新事实/伏笔/时间线" } });
-    completeBtn.addEventListener("click", () => this.handleComplete());
+    completeBtn.addEventListener("click", () => { void withButtonBusy(completeBtn, "⏳ 结算中...", () => this.handleComplete()); });
 
     // —— ✨ 辅助润色 ——
     const assistSection = actionsArea.createDiv({ cls: "nw-cowrite-action-section" });
     assistSection.createDiv({ cls: "nw-cowrite-action-section-title", text: "✨ 辅助润色" });
     const assistRow = assistSection.createDiv({ cls: "nw-cowrite-action-row" });
     const assocBtn = assistRow.createEl("button", { text: "✨ 联想", cls: "nw-btn nw-btn-ghost", attr: { title: "联想后续情节走向" } });
-    assocBtn.addEventListener("click", () => this.handleAssociationSuggest());
+    assocBtn.addEventListener("click", () => { void withButtonBusy(assocBtn, "⏳ 联想中...", () => this.handleAssociationSuggest()); });
     const expandBtn = assistRow.createEl("button", { text: "✍️ 扩写", cls: "nw-btn nw-btn-ghost", attr: { title: "扩写选中段落" } });
-    expandBtn.addEventListener("click", () => this.handleOutlineExpand());
+    expandBtn.addEventListener("click", () => { void withButtonBusy(expandBtn, "⏳ 扩写中...", () => this.handleOutlineExpand()); });
     const rewriteBtn = assistRow.createEl("button", { text: "✂ 改写", cls: "nw-btn nw-btn-ghost", attr: { title: "改写选中段落（降 AI 痕迹 / 换文风）" } });
-    rewriteBtn.addEventListener("click", () => this.handleRewriteSelection());
+    rewriteBtn.addEventListener("click", () => { void withButtonBusy(rewriteBtn, "⏳ 改写中...", () => this.handleRewriteSelection()); });
 
     // —— ⚙ 更多工具（可折叠）——
     const toolsSection = actionsArea.createDiv({ cls: "nw-cowrite-action-section" });
@@ -927,7 +937,7 @@ export class CoWritingView extends ItemView {
       { text: "📊 监控", action: () => this.openKnowledgeMonitorModal() },
       { text: "🔬 分析", action: () => this.openAnalysisModal() },
       { text: "🛡 检查", action: () => this.liveAnalysis.inspectSettingGuard("manual") },
-      { text: "📋 质检", action: () => void this.loadQualityReport() },
+      { text: "📋 质检", action: () => this.loadQualityReport() },
       { text: "💾 保存", action: () => this.saveBody(true) },
       { text: "✅ 标记完稿", action: () => this.markAsWritten() },
     ];
@@ -936,7 +946,7 @@ export class CoWritingView extends ItemView {
       el.addEventListener("click", () => {
         toolsPanel.removeClass("is-open");
         toolsToggle.setText("⚙ 更多工具");
-        btn.action();
+        void withButtonBusy(el, "⏳ 处理中...", () => btn.action());
       });
     }
 
@@ -4500,7 +4510,7 @@ ${text}`;
       const bodyPath = this.getBodyPath();
       const file = this.app.vault.getAbstractFileByPath(bodyPath);
       if (file instanceof TFile) {
-        await this.app.fileManager.processFrontMatter(file, (fm) => {
+        await new ObsidianFrontmatter(this.app).processFrontmatter(file, (fm) => {
           if (fm["status"] !== "settled") {
             fm["status"] = "written";
           }

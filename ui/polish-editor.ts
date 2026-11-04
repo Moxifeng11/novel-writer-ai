@@ -693,7 +693,7 @@ ${targetText}
         if (!this.projectPath) return '';
 
         try {
-            const fingerprintLibrary = new StyleFingerprintLibrary(this.app, this.projectPath);
+            const fingerprintLibrary = StyleFingerprintLibrary.get(this.app, this.projectPath);
             await fingerprintLibrary.loadGlobal();
             await fingerprintLibrary.loadProject();
             await fingerprintLibrary.loadGlobalState(this.projectPath);

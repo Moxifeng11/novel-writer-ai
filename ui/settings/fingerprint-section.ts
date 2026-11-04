@@ -55,7 +55,7 @@ export class FingerprintSection extends SettingsSection {
         const activeProject = this.plugin.getActiveProject();
 
         if (!this.fingerprintLibrary) {
-            this.fingerprintLibrary = new StyleFingerprintLibrary(this.app, activeProject || undefined);
+            this.fingerprintLibrary = StyleFingerprintLibrary.get(this.app, activeProject || undefined);
             await this.loadTemplateFingerprints();
             await this.loadGlobalFingerprints();
             await this.loadProjectFingerprints();

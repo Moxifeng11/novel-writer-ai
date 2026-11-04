@@ -81,7 +81,7 @@ export async function rebuildAllVectorsWithConfirm(app: App, plugin: unknown): P
 
     new Notice('⏳ 正在重向量化，请勿关闭 Obsidian…', 5000);
     try {
-        const library = new StyleFingerprintLibrary(app, activeProject || undefined);
+        const library = StyleFingerprintLibrary.get(app, activeProject || undefined);
         const report = await rebuildAllVectors({
             listBooks: async () => {
                 const books = await manager.listBooks();

@@ -31,6 +31,14 @@ export interface SettingsSectionHost {
 export abstract class SettingsSection {
     constructor(protected host: SettingsSectionHost) {}
 
+    /**
+     * 渲染当前分区到容器（两个宿主统一契约）。
+     *
+     * @param container - 目标容器
+     * @returns 无或异步完成
+     */
+    abstract render(container: HTMLElement): void | Promise<void>;
+
     protected get app(): App {
         return this.host.app;
     }

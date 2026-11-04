@@ -1,5 +1,6 @@
 import { kbTagSystemFile } from '@/shared/paths';
 
+import { writeVaultText } from '@/shared/file-system-port';
 /**
  * 知识库标签。
  */
@@ -477,6 +478,8 @@ export class KnowledgeTagManager {
         if (!(await this.app.vault.adapter.exists(dirPath))) {
             await this.app.vault.adapter.mkdir(dirPath);
         }
+        // 该管理器只拿到最小 vault 端口（测试用内存实现），无法走 App 级 writeVaultText；
+        // 写入后由标签页重载兜底。生产侧不依赖 metadataCache 即时刷新。
         await this.app.vault.adapter.write(filePath, content);
     }
 

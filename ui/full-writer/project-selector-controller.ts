@@ -106,15 +106,15 @@ export class ProjectSelectorController {
      * refresh 方法。
      * @param maxRetries - 最大重试次数
      */
-    async refresh(maxRetries = 2): Promise<void> {
+    async refresh(maxRetries = 0): Promise<void> {
         if (!this.container) return;
         await this.render(this.container);
-        // 如果有高亮项目但未在列表中找到，重试
+        // 高亮未命中时最多再渲染一次（旧实现默认重试 2 次，大库开页会连渲 3 遍）。
         if (this.highlightedProject && maxRetries > 0) {
             const hasProject = this.projectGrid?.querySelector(`[data-project="${this.highlightedProject}"]`);
             if (!hasProject) {
-                await new Promise(r => setTimeout(r, 300));
-                await this.refresh(maxRetries - 1);
+                await new Promise(r => setTimeout(r, 200));
+                await this.render(this.container);
             }
         }
     }

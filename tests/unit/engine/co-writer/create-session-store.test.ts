@@ -131,7 +131,7 @@ describe('createCoWritingSessionStore 工厂函数', () => {
             const saved = storedData.get('test-store');
             expect(saved).toBeDefined();
             expect(saved.state.currentProject).toBe('持久化项目');
-            expect(saved.state.chapterContent).toBe('持久化内容');
+            expect(saved.state).not.toHaveProperty('chapterContent');
             expect(saved.state.wordCount).toBe(100);
         });
 

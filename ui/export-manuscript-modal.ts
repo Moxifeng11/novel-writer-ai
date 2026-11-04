@@ -25,6 +25,7 @@ import type { CreationMode } from '@/shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
 import { formatExportPrecheck } from '@/shared/export-precheck';
 import { getExecutionLedger } from '@/services/execution-ledger';
+import { yieldToUI } from '@/shared/yield';
 import { listProjectIds } from '@/shared/project-catalog';
 
 const log = createLogger('ExportManuscriptModal');
@@ -216,6 +217,9 @@ export class ExportManuscriptModal extends Modal {
             exportBtn.setText('正在编译...');
             try {
                 await this.exportManuscript();
+            } catch (e) {
+                log.error('[Export] 导出失败:', e);
+                new Notice(`❌ 导出失败：${e instanceof Error ? e.message : String(e)}`, 8000);
             } finally {
                 exportBtn.disabled = false;
                 exportBtn.setText('导出');
@@ -475,21 +479,28 @@ export function listChapterFiles(app: App, project: string): TFile[] {
  */
 export async function collectChapters(app: App, project: string): Promise<ManuscriptChapter[]> {
     const files = listChapterFiles(app, project);
-    const chapters: ManuscriptChapter[] = [];
+    const matched = files
+        .map(file => ({ file, match: file.path.match(/\/正文\/(第\d+卷)\/(第(\d+)章)[^/]*_正文\.md$/) }))
+        .filter((item): item is { file: TFile; match: RegExpMatchArray } => item.match !== null);
+    const chapters: ManuscriptChapter[] = new Array(matched.length);
 
-    for (const file of files) {
-        const match = file.path.match(/\/正文\/(第\d+卷)\/(第(\d+)章)[^/]*_正文\.md$/);
-        if (!match) continue;
-        const cache = app.metadataCache.getFileCache(file);
-        const title = cache?.frontmatter?.['标题'];
-        chapters.push({
-            volume: match[1],
-            chapter: match[2],
-            chapterNum: parseInt(match[3], 10),
-            title: typeof title === 'string' ? title.trim() : '',
-            content: await app.vault.read(file),
-            path: file.path,
-        });
+    // 400 章项目串行读盘会造成明显停顿；并发 6 批并在批次间让出主线程。
+    for (let start = 0; start < matched.length; start += 6) {
+        const batch = matched.slice(start, start + 6);
+        await Promise.all(batch.map(async (item, offset) => {
+            const { file, match } = item;
+            const cache = app.metadataCache.getFileCache(file);
+            const title = cache?.frontmatter?.['标题'];
+            chapters[start + offset] = {
+                volume: match[1],
+                chapter: match[2],
+                chapterNum: parseInt(match[3], 10),
+                title: typeof title === 'string' ? title.trim() : '',
+                content: await app.vault.read(file),
+                path: file.path,
+            };
+        }));
+        if (start % 30 === 0) await yieldToUI();
     }
 
     return chapters;

@@ -1,6 +1,6 @@
 {
-  "total": 309,
-  "generatedAt": "2026-11-03",
+  "total": 307,
+  "generatedAt": "2026-11-04",
   "files": {
     "engine/deconstruction-scheduler.ts": 22,
     "ui/components/smart-chart.ts": 16,
@@ -86,7 +86,6 @@
     "services/performance-monitor.ts": 1,
     "shared/prompt-manager-types.ts": 1,
     "shared/store/middleware/logger.ts": 1,
-    "ui/chapter-settlement-modal.ts": 1,
     "ui/character-recognition-modal.ts": 1,
     "ui/components/character-review-panel.ts": 1,
     "ui/cowrite/history-modal.ts": 1,
@@ -106,7 +105,6 @@
     "ui/generate-worldview-modal.ts": 1,
     "ui/ideation-modal.ts": 1,
     "ui/knowledge-rebuild-action.ts": 1,
-    "ui/mini-settings-modal.ts": 1,
     "ui/outline-expand-modal.ts": 1,
     "ui/plan-book-modal.ts": 1,
     "ui/rendering/context-panel.ts": 1,

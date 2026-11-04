@@ -812,11 +812,13 @@ export class AIApiClient {
 
 
     /** 获取一个流式并发槽；返回幂等 release。 */
-    private async acquireStreamSlot(modelId: string): Promise<() => void> {
+    private async acquireStreamSlot(modelId: string, signal?: AbortSignal): Promise<() => void> {
         const maxConcurrent = AIApiClient.getMaxConcurrent(modelId);
         while (AIApiClient.activeStreams >= maxConcurrent) {
+            if (signal?.aborted) throw new Error('aborted');
             await new Promise(r => setTimeout(r, STREAM_SEMAPHORE_POLL_MS));
         }
+        if (signal?.aborted) throw new Error('aborted');
         AIApiClient.activeStreams++;
         let released = false;
         return () => {

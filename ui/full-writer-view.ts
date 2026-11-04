@@ -93,6 +93,7 @@ import { createLogger } from '@/shared/logger';
 import { ensureTemplateScaffold } from '@/shared/template-scaffold';
 
 
+import { withWriteLock } from '@/shared/write-lock';
 const log = createLogger('FullWriterView');
 /**
  * 视图类型常量。
@@ -319,11 +320,16 @@ export class FullWriterView extends ItemView {
         }
         const structure = getStoryStructure(id);
         try {
-            const meta = await readProjectMeta(this.app, this.project) || '';
-            const settings = parseStorySettingsFromProjectMeta(meta) || createDefaultStorySettings(id);
-            settings.structureId = id;
-            const nextMeta = upsertStorySettingsInProjectMeta(meta, settings);
-            await this.app.vault.adapter.write(`${this.project}/.project`, nextMeta);
+            const saved = await withWriteLock(`${this.project}/.project`, async () => {
+                const meta = await readProjectMeta(this.app, this.project) || '';
+                const mergedSettings = parseStorySettingsFromProjectMeta(meta) || createDefaultStorySettings(id);
+                mergedSettings.structureId = id;
+                const mergedMeta = upsertStorySettingsInProjectMeta(meta, mergedSettings);
+                await this.app.vault.adapter.write(`${this.project}/.project`, mergedMeta);
+                return { settings: mergedSettings, nextMeta: mergedMeta };
+            });
+            const settings = saved.settings;
+            const nextMeta = saved.nextMeta;
 
             const guideDir = `${this.project}/00-系统模板`;
             await writeVaultText(this.app, `${guideDir}/故事结构指南.md`, buildStoryStructureGuide(settings));

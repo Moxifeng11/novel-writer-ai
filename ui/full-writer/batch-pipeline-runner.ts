@@ -72,6 +72,29 @@ export interface BatchPipelineOptions {
 /**
  * BatchPipelineRunner 类。
  */
+/** 单步批量执行的墙钟上限（与一键流程 chapter-orchestrator 的 8 分钟一致） */
+const BATCH_STEP_TIMEOUT_MS = 8 * 60_000;
+
+async function withBatchStepTimeout<T>(promise: Promise<T>, controller?: AbortController, label = '步骤'): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    try {
+        return await Promise.race([
+            promise,
+            new Promise<T>((_, reject) => {
+                timer = setTimeout(() => {
+                    controller?.abort();
+                    reject(new Error(`${label}超时（${Math.round(BATCH_STEP_TIMEOUT_MS / 60000)} 分钟），已中止`));
+                }, BATCH_STEP_TIMEOUT_MS);
+            }),
+        ]);
+    } finally {
+        if (timer !== null) clearTimeout(timer);
+    }
+}
+
+/**
+ * 批量流水线执行器：逐章逐步执行规划/正文/分析，并在每步加墙钟看门狗。
+ */
 export class BatchPipelineRunner {
     private readonly stepRunner: StepRunner;
     private lastError = '';
@@ -236,7 +259,7 @@ export class BatchPipelineRunner {
             const step = ALL_FULL_STEPS.find(s => s.key === stepKey);
             if (!step) throw new Error(`未找到步骤定义: ${stepKey}`);
             ctx.currentStepIndex = step.index;
-            await this.stepRunner.executeCurrentStep(ctx);
+            await withBatchStepTimeout(this.stepRunner.executeCurrentStep(ctx), ctx.getAbortController?.() ?? undefined, stepKey);
         } catch (e) {
             this.lastError = e instanceof Error ? e.message : String(e);
             return { ok: false, error: this.lastError };

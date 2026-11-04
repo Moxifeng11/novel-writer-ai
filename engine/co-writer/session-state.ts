@@ -386,8 +386,8 @@ export const allActions: AllActionCreators = {
 // 十、持久化策略配置
 // ============================================================
 
-/** 持久化状态类型（chapter + metrics + ui） */
-export type PersistedCoWritingState = ChapterState & MetricsState & UiState;
+/** 持久化状态类型（chapter + metrics + ui；整章正文不入 settings） */
+export type PersistedCoWritingState = Omit<ChapterState, 'chapterContent'> & MetricsState & UiState;
 
 /**
  * 从完整状态中提取需要持久化的部分
@@ -405,7 +405,6 @@ export function partializeCoWritingState(
         currentVolume,
         currentChapter,
         chapterTitle,
-        chapterContent,
         wordCount,
         chapterStatus,
         plotCompletion,
@@ -422,12 +421,11 @@ export function partializeCoWritingState(
         currentVolume,
         currentChapter,
         chapterTitle,
-        chapterContent,
         wordCount,
         chapterStatus,
         plotCompletion,
         qualityScore,
-        editHistory: editHistory.slice(0, MAX_EDIT_HISTORY),
+        editHistory: editHistory.slice(0, Math.min(10, MAX_EDIT_HISTORY)),
         sessionWordCount,
         rightPanelTab,
         isPanelExpanded,
@@ -447,7 +445,6 @@ export function isPersistedField(key: string): boolean {
         'currentVolume',
         'currentChapter',
         'chapterTitle',
-        'chapterContent',
         'wordCount',
         'chapterStatus',
         'plotCompletion',
@@ -478,6 +475,7 @@ export function isMemoryOnlyField(key: string): boolean {
         'selectedText',
         'isEditing',
         'editBuffer',
+        'chapterContent',
     ];
     return memoryKeys.includes(key);
 }

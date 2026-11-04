@@ -22,6 +22,7 @@ import { extractFanficWorkName, saveFanficSettingFile, attachFanficPathToProject
 import { pjFanficApprovedFile, pjFanficAuditDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 
+import { writeVaultText } from '@/shared/file-system-port';
 const log = createLogger('FanficReviewModal');
 
 const REQUIRED_CHECKS = [

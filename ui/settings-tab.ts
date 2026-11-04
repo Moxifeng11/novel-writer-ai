@@ -39,27 +39,10 @@ import {
 } from './settings/general-sections';
 import { AgentBackendSection } from './settings/agent-section';
 import { ModeSection } from './settings/mode-section';
+import { SETTINGS_TAB_DEFINITIONS } from './settings/section-factory';
 
-const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = [
-    { id: 'api', label: '🔌 API 配置' },
-    { id: 'cowrite', label: '🖥 协同写作' },
-    { id: 'writing', label: '✍️ 写作配置' },
-    { id: 'modes', label: '📚 创作模式' },
-    { id: 'recognition', label: '🎭 角色识别' },
-    { id: 'suggestions', label: '💡 建议设置' },
-    { id: 'template', label: '📋 模板管理' },
-    { id: 'fingerprint', label: '🔍 写作指纹库' },
-    { id: 'knowledge', label: '📚 写作知识库' },
-    { id: 'deconstruction', label: '🧬 拆解引擎' },
-    { id: 'foreshadow', label: '🔮 伏笔管理' },
-    { id: 'rules', label: '📜 写作规则' },
-    { id: 'appearance', label: '🎨 外观设置' },
-    { id: 'layout', label: '🧩 工作台布局' },
-    { id: 'projects', label: '🗂 项目库迁移' },
-    { id: 'performance', label: '📈 性能监控' },
-    { id: 'agent', label: '🤖 Agent 后端' },
-    { id: 'about', label: 'ℹ️ 关于' },
-];
+const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = SETTINGS_TAB_DEFINITIONS.map(({ id, label }) => ({ id, label }));
+
 
 /**
  * NovelWriterSettingTab 类。

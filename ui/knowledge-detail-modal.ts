@@ -343,7 +343,7 @@ export class KnowledgeDetailModal extends Modal {
                 return;
             }
 
-            const library = new StyleFingerprintLibrary(this.app, activeProject);
+            const library = StyleFingerprintLibrary.get(this.app, activeProject);
             await library.addFromKnowledge(fingerprint);
 
             new Notice(`已将《${this.bookInfo.name}》拆解结果转为项目写作指纹`);

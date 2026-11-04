@@ -30,6 +30,7 @@ import {
 import { CommandIds } from '@/shared/command-ids';
 import { createLogger } from '@/shared/logger';
 
+import { ObsidianFrontmatter } from '@/shared/file-system-port';
 const log = createLogger('ProjectSidePanel');
 
 /**
@@ -325,15 +326,7 @@ export class ProjectSidePanelView extends ItemView {
 
     private async writeProperty(file: TFile, key: string, value: string | number | string[]): Promise<void> {
         try {
-            const manager = this.app.fileManager as unknown as {
-                processFrontMatter?: (target: TFile, fn: (fm: Record<string, unknown>) => void) => Promise<void>;
-            };
-            if (typeof manager.processFrontMatter === 'function') {
-                await manager.processFrontMatter(file, (fm) => { fm[key] = value; });
-            } else {
-                new Notice('当前环境不支持直接编辑属性，请在笔记属性面板修改', 5000);
-                return;
-            }
+            await new ObsidianFrontmatter(this.app).processFrontmatter(file, (fm) => { fm[key] = value; });
             new Notice(`已更新「${key}」`, 2000);
         } catch (e) {
             log.warn('[ProjectSidePanel] 写入属性失败:', e);

@@ -18,6 +18,7 @@ import { StorySettingsEditor } from './story-settings-form';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
 
+import { withWriteLock } from '@/shared/write-lock';
 const log = createLogger('StorySettingsModal');
 
 /**
@@ -87,9 +88,14 @@ export class StorySettingsModal extends Modal {
         if (!this.editor) return;
         const settings = this.editor.getValue();
         try {
-            const meta = await readProjectMeta(this.app, this.project) || '';
-            const nextMeta = upsertStorySettingsInProjectMeta(meta, settings);
-            await this.app.vault.adapter.write(`${this.project}/.project`, nextMeta);
+            // .project 是两个入口（故事结构弹窗/工作台切换）共同读改写的点文件，
+            // 无锁时后保存会覆盖先保存的叙述结构/创作模式字段。
+            const nextMeta = await withWriteLock(`${this.project}/.project`, async () => {
+                const meta = await readProjectMeta(this.app, this.project) || '';
+                const merged = upsertStorySettingsInProjectMeta(meta, settings);
+                await this.app.vault.adapter.write(`${this.project}/.project`, merged);
+                return merged;
+            });
 
             const guideDir = `${this.project}/00-系统模板`;
             await writeVaultText(this.app, `${guideDir}/故事结构指南.md`, buildStoryStructureGuide(settings));

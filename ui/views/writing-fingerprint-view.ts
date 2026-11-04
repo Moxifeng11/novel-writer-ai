@@ -158,7 +158,7 @@ export class WritingFingerprintView extends ItemView {
         this.filter.activeScope = project ? 'project' : 'global';
         log.info(`[WritingFingerprintView] 初始化作用域: project=${project ?? '(none)'}, scope=${this.filter.activeScope}`);
 
-        this.fingerprintLibrary = new StyleFingerprintLibrary(this.app, project || undefined);
+        this.fingerprintLibrary = StyleFingerprintLibrary.get(this.app, project || undefined);
 
         try {
             const aiEngine = this.plugin.engineRegistry.get(ENGINE_NAMES.AI_ENGINE);
@@ -1618,7 +1618,7 @@ export class WritingFingerprintView extends ItemView {
         if (this.fingerprintLibrary) {
             this.fingerprintLibrary.setProject(project);
         } else {
-            this.fingerprintLibrary = new StyleFingerprintLibrary(this.app, project);
+            this.fingerprintLibrary = StyleFingerprintLibrary.get(this.app, project);
         }
         await this.loadAllFingerprints();
         this.selectedFingerprintId = null;

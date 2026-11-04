@@ -379,7 +379,7 @@ describe('协同写作会话状态模型', () => {
             expect(persisted).toHaveProperty('currentVolume');
             expect(persisted).toHaveProperty('currentChapter');
             expect(persisted).toHaveProperty('chapterTitle');
-            expect(persisted).toHaveProperty('chapterContent');
+            expect(persisted).not.toHaveProperty('chapterContent');
             expect(persisted).toHaveProperty('wordCount');
             expect(persisted).toHaveProperty('chapterStatus');
             expect(persisted).toHaveProperty('plotCompletion');
@@ -404,7 +404,7 @@ describe('协同写作会话状态模型', () => {
         it('持久化字段值正确', () => {
             const persisted = partializeCoWritingState(fullState);
             expect(persisted.currentProject).toBe('测试项目');
-            expect(persisted.chapterContent).toBe('章节内容');
+            expect(persisted).not.toHaveProperty('chapterContent');
             expect(persisted.qualityScore).toBe(80);
             expect(persisted.fontSize).toBe(16);
         });
@@ -412,6 +412,7 @@ describe('协同写作会话状态模型', () => {
         it('isPersistedField 判断持久化字段正确', () => {
             expect(isPersistedField('currentProject')).toBe(true);
             expect(isPersistedField('wordCount')).toBe(true);
+            expect(isPersistedField('chapterContent')).toBe(false);
             expect(isPersistedField('plotCompletion')).toBe(true);
             expect(isPersistedField('rightPanelTab')).toBe(true);
             expect(isPersistedField('suggestions')).toBe(false);

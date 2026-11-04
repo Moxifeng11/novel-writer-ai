@@ -208,6 +208,33 @@ export class StyleFingerprintLibrary {
         if (shared) this.setEmbeddingClient(shared);
     }
 
+    /** 项目级单例：同一项目共享一个库实例，避免多实例并发读改写互相覆盖 */
+    private static readonly instances = new Map<string, StyleFingerprintLibrary>();
+
+    /**
+     * 取项目级指纹库（单例）。
+     *
+     * @param app - Obsidian 应用实例
+     * @param project - 项目 ID；省略为全局作用域
+     * @returns StyleFingerprintLibrary 实例
+     */
+    static get(app: App, project?: string): StyleFingerprintLibrary {
+        const key = String(project || '').trim() || '__global__';
+        let instance = StyleFingerprintLibrary.instances.get(key);
+        if (!instance) {
+            instance = new StyleFingerprintLibrary(app, project);
+            StyleFingerprintLibrary.instances.set(key, instance);
+        }
+        return instance;
+    }
+
+    /** 插件卸载/热重载：冲刷全部实例并释放引用 */
+    static async flushAll(): Promise<void> {
+        const instances = [...StyleFingerprintLibrary.instances.values()];
+        StyleFingerprintLibrary.instances.clear();
+        await Promise.all(instances.map(instance => instance.flush().catch(() => undefined)));
+    }
+
     /**
      * 注入向量客户端。
      *
@@ -1042,7 +1069,7 @@ export class StyleFingerprintLibrary {
         // 目标项目 ≠ 当前绑定项目时，必须交给目标项目的实例落盘：
         // 直接写 this.projectFingerprints 会被 saveProject 写到当前项目文件里。
         if (targetScope === 'project' && effectiveTargetProject !== this.project) {
-            const target = new StyleFingerprintLibrary(this.app, effectiveTargetProject);
+            const target = StyleFingerprintLibrary.get(this.app, effectiveTargetProject);
             await target.loadProject();
             if (v2Copy) target.v2Fingerprints.set(newFp.id, v2Copy);
             await target.addProject(newFp);

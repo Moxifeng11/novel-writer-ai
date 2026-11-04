@@ -21,6 +21,38 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.27.0',
+        date: '2026-11-04',
+        title: '全流程阻塞修复与数据可靠性加固',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🚦 稳定性',
+                items: [
+                    '步骤双击、保存/切章超时、批量步级看门狗、暂停自动恢复',
+                    '导出异常提示与并发读盘；流式槽位感知取消',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🔐 数据',
+                items: [
+                    'frontmatter 直写收编到自愈入口；协同不再把整章正文写进 data.json',
+                    '指纹库项目级单例 + flush；实体/.project 写锁；dispose 契约补齐',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧭 交互',
+                items: [
+                    '按钮 busy 统一防连点；命令定义/面板集合一致',
+                    'MiniSettingsModal 与设置页共用分区，消除双份字段维护',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.26.4',
         date: '2026-11-04',
         title: '模板流转单一入口与正文路径统一',

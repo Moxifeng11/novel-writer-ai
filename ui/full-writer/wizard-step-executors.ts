@@ -29,6 +29,7 @@ import { createLogger } from '@/shared/logger';
 import { nextFrame } from '@/shared/yield';
 
 
+import { writeVaultText } from '@/shared/file-system-port';
 const log = createLogger('WizardStepExecutors');
 /**
  * WizardStepExecutors 类。
@@ -156,7 +157,7 @@ export class WizardStepExecutors {
         }
 
         const filePath = getFanficSettingsPath(tab.project, content, tab.project);
-        await adapter.write(filePath, content);
+        await writeVaultText(this.app, filePath, content);
         await attachFanficPathToProject(this.app, tab.project, filePath);
         this.wizardStepResults[fanficResultKey] = content;
 

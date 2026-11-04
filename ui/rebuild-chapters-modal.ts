@@ -11,6 +11,7 @@ import { pjBodyDir, pjBodyFile, pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, p
 import { createLogger } from '@/shared/logger';
 
 
+import { ObsidianFrontmatter } from '@/shared/file-system-port';
 const log = createLogger('RebuildChaptersModal');
 /**
  * RebuildChaptersModal 类。
@@ -213,7 +214,7 @@ export class RebuildChaptersModal extends Modal {
                         bodyExists = true;
                         preserved++;
                         // 有实质内容但无完稿标记 → 设 draft 状态（协同写作逻辑一致）
-                        await this.app.fileManager.processFrontMatter(bodyFile, (fm) => {
+                        await new ObsidianFrontmatter(this.app).processFrontmatter(bodyFile, (fm) => {
                             if (!fm['status'] || fm['status'] === 'pending' || fm['status'] === 'draft') {
                                 fm['status'] = 'draft';
                             }

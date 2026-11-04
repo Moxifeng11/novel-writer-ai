@@ -25,6 +25,7 @@ import { readProjectMeta } from '@/shared/paths';
 import { HUMAN_VOICE_SHORT } from './prompts/human-voice';
 import { createLogger } from '@/shared/logger';
 
+import { ObsidianFrontmatter } from '@/shared/file-system-port';
 const log = createLogger('ModeUnitWriter');
 
 /**
@@ -460,15 +461,7 @@ export function createObsidianUnitFilePort(app: App): UnitFilePort {
         updateFrontmatter: async (path: string, patch: Record<string, unknown>) => {
             const file = app.vault.getAbstractFileByPath(path);
             if (!(file instanceof TFile)) return;
-            const manager = app.fileManager as unknown as {
-                processFrontMatter?: (file: TFile, fn: (fm: Record<string, unknown>) => void) => Promise<void>;
-            } | undefined;
-            if (typeof manager?.processFrontMatter === 'function') {
-                await manager.processFrontMatter(file, (fm) => { Object.assign(fm, patch); });
-                return;
-            }
-            const raw = await app.vault.read(file);
-            await app.vault.modify(file, patchFrontmatterText(raw, patch));
+            await new ObsidianFrontmatter(app).processFrontmatter(file, (fm) => { Object.assign(fm, patch); });
         },
     };
 }

@@ -10,13 +10,14 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 const root = path.resolve(__dirname, '../../..');
-const source = fs.readFileSync(path.join(root, 'ui/mini-settings-modal.ts'), 'utf8');
+// v4.27：向量密钥字段随设置分区收敛到 knowledge-section
+const source = fs.readFileSync(path.join(root, 'ui/settings/knowledge-section.ts'), 'utf8');
 
 describe('向量密钥字段', () => {
     it('三个 provider 都走 describeSecretForInput', () => {
-        expect(source).toContain('describeSecretForInput(this.plugin.settings.vectorOpenaiApiKey)');
-        expect(source).toContain('describeSecretForInput(this.plugin.settings.vectorDoubaoApiKey)');
-        expect(source).toContain('describeSecretForInput(this.plugin.settings.vectorQwenApiKey)');
+        expect(source).toContain("describeSecretForInput(this.plugin.settings.vectorOpenaiApiKey || '')");
+        expect(source).toContain("describeSecretForInput(this.plugin.settings.vectorDoubaoApiKey || '')");
+        expect(source).toContain("describeSecretForInput(this.plugin.settings.vectorQwenApiKey || '')");
     });
 
     it('不再把 settings 值直接 setValue 到输入框', () => {
@@ -25,12 +26,10 @@ describe('向量密钥字段', () => {
         expect(source).not.toContain("setValue(this.plugin.settings.vectorQwenApiKey");
     });
 
-    it('输入只记到 pending，保存/检测时统一合并（空 = 未修改）', () => {
-        expect(source).toContain('this.pendingVectorKeys.openai = value');
-        expect(source).toContain('this.pendingVectorKeys.doubao = value');
-        expect(source).toContain('this.pendingVectorKeys.qwen = value');
-        expect(source).toContain('this.applyPendingVectorKeys()');
-        // 合并逻辑必须用 resolveSecretInput（由单测锁定语义）
-        expect(source).toContain('resolveSecretInput(pending, current)');
+    it('空输入不覆盖已保存密钥（密文锁定态）', () => {
+        expect(source).toContain('if (!next) return;');
+        expect(source).toContain('this.plugin.settings.vectorOpenaiApiKey = next');
+        expect(source).toContain('this.plugin.settings.vectorDoubaoApiKey = next');
+        expect(source).toContain('this.plugin.settings.vectorQwenApiKey = next');
     });
 });

@@ -399,6 +399,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         agentBackend: 'native',
         dshProvider: 'deepseek-official',
         dshModel: '',
+        dshTurnTimeoutMs: 600_000,
         dshAllowVaultWrite: false,
         storyContextTier: 'auto',
         /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */

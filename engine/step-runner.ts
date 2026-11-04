@@ -240,7 +240,7 @@ export class StepRunner {
         const extra = await this.loadBodyKnowledge(ctx);
         const blocks: string[] = [];
         try {
-            const library = new StyleFingerprintLibrary(this.app, ctx.project);
+            const library = StyleFingerprintLibrary.get(this.app, ctx.project);
             await library.loadGlobal();
             await library.loadProject();
             await library.loadGlobalState(ctx.project);
@@ -894,6 +894,11 @@ export class StepRunner {
         const stepLabel = currentStep.label;
         this.emitEvent('step-start', 'info', `开始执行：${stepLabel}`, stepKey, stepLabel);
 
+        // 先占位再解析模板：resolveStepPrompt 是异步的，若等它结束才置 busy，
+        // 用户在这段时间内二次点击会并行发起两次 AI 调用并竞写同一步骤文件。
+        ctx.setIsLoading(true);
+        this.callbacks.showProgress(`⏳ 执行中: ${currentStep.label}...`);
+
         const systemPrompt = ctx.systemPromptEl?.value || '';
         const userPrompt = ctx.userPromptEl?.value || '';
         const temperature = Math.max(0, Math.min(2, parseFloat(ctx.temperatureSlider?.value || '1.4') || 1.4));
@@ -915,11 +920,10 @@ ${userPrompt}`),
             const message = '用户提示词不能为空';
             this.reportFailure({ stepKey, stepLabel, message, kind: 'validation' });
             this.callbacks.showError(message);
+            ctx.setIsLoading(false);
+            this.callbacks.hideProgress();
             return;
         }
-
-        ctx.setIsLoading(true);
-        this.callbacks.showProgress(`⏳ 执行中: ${currentStep.label}...`);
 
         const sendBtns = ctx.tabContent.querySelectorAll('.novel-writer-fw-btn-primary, .nw-step-action-primary');
         const originalTexts: string[] = [];

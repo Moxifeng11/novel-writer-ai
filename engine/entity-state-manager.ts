@@ -190,6 +190,7 @@ export class EntityStateManager {
                 apiKey?: string;
                 disableFallback?: boolean;
                 numCtx?: number;
+                allowKeyPrompt?: boolean;
             };
         },
     ): Promise<EntityStateChange[]> {

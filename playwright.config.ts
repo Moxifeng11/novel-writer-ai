@@ -44,13 +44,33 @@ export default defineConfig({
 
     {
       name: 'lifecycle',
-      testMatch: /lifecycle\.spec\.ts/,
+      // 只匹配 lifecycle.spec.ts，避免把 view-lifecycle.spec.ts 一并吸入
+      testMatch: /(?<!view-)lifecycle\.spec\.ts$/,
     },
 
     {
       name: 'perf-smoke',
       testMatch: /perf-smoke\.spec\.ts/,
       timeout: 120_000,
+    },
+
+    /* 用户生产环境模拟：真实 Obsidian + 临时 vault + 本地 mock AI（不访问真实 API） */
+    {
+      name: 'full-journey',
+      testMatch: /full-journey\.spec\.ts/,
+      timeout: 180_000,
+    },
+
+    {
+      name: 'button-states',
+      testMatch: /button-states\.spec\.ts/,
+      timeout: 180_000,
+    },
+
+    {
+      name: 'view-lifecycle',
+      testMatch: /view-lifecycle\.spec\.ts/,
+      timeout: 180_000,
     },
 
     /* 真实 AI 链路：打开真实 vault、消耗 API 额度，默认跳过（需 E2E_REAL_AI=1） */

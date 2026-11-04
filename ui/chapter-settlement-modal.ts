@@ -2,7 +2,7 @@ import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
-import { writeVaultText } from '@/shared/file-system-port';
+import { ObsidianFrontmatter, writeVaultText } from '@/shared/file-system-port';
 import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 
 import NovelWriterPlugin from '@/main';
@@ -349,7 +349,7 @@ export class ChapterSettlementModal extends Modal {
         }
 
         try {
-            await this.app.fileManager.processFrontMatter(bodyFile, (fm: any) => {
+            await new ObsidianFrontmatter(this.app).processFrontmatter(bodyFile, (fm) => {
                 fm['status'] = 'settled';
             });
         } catch (e) {

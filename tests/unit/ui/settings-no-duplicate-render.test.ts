@@ -151,7 +151,7 @@ describe('写作配置与写作规则的分工', () => {
     it('写作规则版本只在「写作规则」页渲染，写作配置不再重复', () => {
         const writing = read('ui/settings/writing-sections.ts');
         const general = read('ui/settings/general-sections.ts');
-        const tab = read('ui/settings-tab.ts');
+        const tab = read('ui/settings/section-factory.ts');
         expect(writing).not.toContain("setName('写作规则版本')");
         // v4.26：规则页不再有版本下拉（唯一来源），改为来源卡片 + 打开按钮
         expect(general).toContain("唯一来源:");
@@ -171,7 +171,7 @@ describe('写作配置与写作规则的分工', () => {
 
 describe('创作模式设置与字数校验', () => {
     it('设置页有「创作模式」分区，并展示三类项目的根目录', () => {
-        const tab = read('ui/settings-tab.ts');
+        const tab = read('ui/settings/section-factory.ts');
         const mode = read('ui/settings/mode-section.ts');
         expect(tab).toContain("id: 'modes'");
         expect(tab).toContain('new ModeSection');

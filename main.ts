@@ -94,6 +94,7 @@ import { LEGACY_STORAGE_KEYS } from './shared/storage-keys';
 import { ensureTemplateScaffold } from './shared/template-scaffold';
 import { RulesService } from './services/rules-service';
 import { getPromptCache } from './engine/prompt-cache';
+import { StyleFingerprintLibrary } from './engine/style-fingerprint-library';
 import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
 
 // ─── core 服务层（从 main.ts 拆出）───
@@ -289,6 +290,8 @@ export interface NovelWriterSettings {
     dshProvider?: string;
     /** dsh 模型名（空 = 跟随 defaultModel） */
     dshModel?: string;
+    /** dsh 单回合最长等待（ms，默认 10 分钟；0 = 沿用旧 180s） */
+    dshTurnTimeoutMs?: number;
     /**
      * 是否允许 dsh 本会话写入 vault。
      * SDK 协议没有逐次审批通道：开启等于整会话 workspace-write，启动前会再确认一次。
@@ -1593,17 +1596,27 @@ export default class NovelWriterPlugin extends Plugin {
     private _recheckHashes = new Map<string, string>();
     /** 实体检测失败提示只弹一次（离线时避免每个文件一条 Notice） */
     private _entityRecheckNoticeShown = false;
+    /** 每个正文路径的在途实体重检；新编辑到来时取消上一轮，避免排队抢本地模型 */
+    private _entityRecheckAbort = new Map<string, AbortController>();
 
     private handleBodyFileModify(file: TFile): void {
         const path = file.path;
         this._debounceManager.debounceFixed(`body-modify:${path}`, () => {
-            this.runEntityStateRecheck(file).catch(e =>
-                log.warn('[小说工坊] 正文编辑实体状态重检失败:', e)
-            );
+            const previous = this._entityRecheckAbort.get(path);
+            previous?.abort();
+            const controller = new AbortController();
+            this._entityRecheckAbort.set(path, controller);
+            this.runEntityStateRecheck(file, controller.signal)
+                .catch(e => log.warn('[小说工坊] 正文编辑实体状态重检失败:', e))
+                .finally(() => {
+                    if (this._entityRecheckAbort.get(path) === controller) {
+                        this._entityRecheckAbort.delete(path);
+                    }
+                });
         }, 3000);
     }
 
-    private async runEntityStateRecheck(file: TFile): Promise<void> {
+    private async runEntityStateRecheck(file: TFile, signal?: AbortSignal): Promise<void> {
         try {
             // 正文可能被重命名为「第N章_标题_正文.md」，正则必须覆盖标题段
             const pathMatch = file.path.match(/^([^/]+\/[^/]+)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章[^/]*_正文\.md$/);
@@ -1635,8 +1648,10 @@ export default class NovelWriterPlugin extends Plugin {
                 content,
                 project,
                 chapN,
-                `第${chapN}章`
+                `第${chapN}章`,
+                { callOptions: { signal, allowKeyPrompt: false } },
             );
+            if (signal?.aborted) return;
 
             if (changes.length > 0) {
                 await manager.applyStateChanges(project, changes, chapN, `第${chapN}章`);
@@ -1855,6 +1870,7 @@ export default class NovelWriterPlugin extends Plugin {
         void Promise.allSettled([
             this.knowledgeBaseManager?.flush(),
             this.batchImportManager?.flush(),
+            StyleFingerprintLibrary.flushAll(),
         ]).then(() => undefined);
         // P0-14/16: 不再向 localStorage 保存恢复状态。
         // 热重载恢复完全通过内存态 _pendingReloadState 传递（按钮 handler 在 disable 前设置）。

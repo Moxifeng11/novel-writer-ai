@@ -49,7 +49,7 @@ export interface AIStreamHost {
     plugin: NovelWriterPlugin;
     notifier: Notifier;
     /** 获取流式并发槽；返回幂等的 release */
-    acquireStreamSlot(modelId: string): Promise<() => void>;
+    acquireStreamSlot(modelId: string, signal?: AbortSignal): Promise<() => void>;
     buildFallbackModels(effectiveModel: string, availableModels: string[], fallbackEnabled: boolean, includeAllWhenMissing?: boolean): string[];
     buildRequestBody(
         isOllamaNative: boolean,
@@ -123,7 +123,7 @@ export async function callAIStream(
         }
         const finalMaxTokens = safeMaxTokens;
 
-        const releaseSemaphore = await host.acquireStreamSlot(effectiveModel);
+        const releaseSemaphore = await host.acquireStreamSlot(effectiveModel, externalSignal);
 
         try {
             const apiKey = options?.apiKey || host.plugin.settings.apiKey;

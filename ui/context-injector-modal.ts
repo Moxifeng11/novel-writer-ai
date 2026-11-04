@@ -7,6 +7,7 @@ import { upsertAutoContext } from '@/shared/auto-context-block';
 import { createLogger } from '@/shared/logger';
 
 
+import { writeVaultText } from '@/shared/file-system-port';
 const log = createLogger('ContextInjectorModal');
 /**
  * 上下文注入器弹窗。
@@ -190,10 +191,9 @@ export class ContextInjectorModal extends Modal {
         const newContent = upsertAutoContext(content, body, marker);
 
         try {
-            await adapter.write(filePath, newContent);
-            const touchPath = (filePath.substring(0, filePath.lastIndexOf('/')) || projectRoot) + `/.touch_${Date.now()}`;
-            await adapter.write(touchPath, ' ').catch(() => {});
-            await adapter.remove(touchPath).catch(() => {});
+            // 走 vault 索引写入，让 metadataCache 立即重解析；旧 adapter.write + .touch_
+            // 临时文件是在索引外改正文，属性/字数/链接都会短时间陈旧。
+            await writeVaultText(this.app, filePath, newContent);
         } catch (e) {
             new Notice(`❌ 写入失败: ${(e as Error).message || e}`);
             return;

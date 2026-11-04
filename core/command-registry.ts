@@ -167,6 +167,8 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
 
     // ─── 设置 ───
     { id: CommandIds.OPEN_SETTINGS, name: '⚙️ 打开插件设置', group: CommandGroup.Tools, description: '打开「小说工坊 AI」插件设置页' },
+    { id: CommandIds.WRITING_STATS, name: '📊 写作统计（日/周/月）', group: CommandGroup.Tools, description: '查看写作字数台账与日均/周均产出' },
+    { id: CommandIds.TOGGLE_PET, name: '🐾 显示/隐藏桌面宠物', group: CommandGroup.Tools, description: '切换桌面写作宠物显示' },
 
     // ─── 内部调试命令 ───
     { id: CommandIds.CLEAR_WORLDVIEW_CACHE, name: '清空世界观缓存', group: CommandGroup.Internal, description: '清空世界观缓存', internalOnly: true },
@@ -449,7 +451,7 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.PLAN_BOOK, name: 'AI全书规划', checkCallback: execGuarded(CommandIds.PLAN_BOOK, LONG_ONLY) });
         addCommand({ id: CommandIds.VOLUME_INTRO, name: '全书简介', checkCallback: execGuarded(CommandIds.VOLUME_INTRO, LONG_ONLY) });
         addCommand({ id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', checkCallback: execGuarded(CommandIds.CONTINUE_CHAPTERS, LONG_ONLY) });
-        addCommand({ id: 'novel-writer-diagnose', name: '流程诊断', callback: exec('novel-writer-diagnose') });
+        addCommand({ id: CommandIds.DIAGNOSE, name: '流程诊断', callback: exec(CommandIds.DIAGNOSE) });
         addCommand({ id: CommandIds.TOMATO_RANK, name: '番茄榜单分析', callback: exec(CommandIds.TOMATO_RANK) });
         addCommand({ id: CommandIds.REBUILD_CHAPTERS, name: '重建章节', checkCallback: execGuarded(CommandIds.REBUILD_CHAPTERS, LONG_ONLY) });
         addCommand({ id: CommandIds.BACKUP_META, name: '备份元文件', callback: exec(CommandIds.BACKUP_META) });
@@ -473,11 +475,12 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.STYLE_DISTILLER, name: '文笔风格蒸馏', checkCallback: execGuarded(CommandIds.STYLE_DISTILLER, LONG_ONLY) });
         addCommand({ id: CommandIds.CONTEXT_INJECTOR, name: '上下文注入', checkCallback: execGuarded(CommandIds.CONTEXT_INJECTOR, LONG_ONLY) });
         addCommand({ id: CommandIds.CHAPTER_SETTLEMENT, name: '章节结算', checkCallback: execGuarded(CommandIds.CHAPTER_SETTLEMENT, LONG_ONLY) });
-        addCommand({ id: 'novel-writer-ideation', name: '💡 脑洞构思工坊', callback: exec('novel-writer-ideation') });
+        addCommand({ id: CommandIds.IDEATION, name: '💡 脑洞构思工坊', callback: exec(CommandIds.IDEATION) });
         addCommand({ id: CommandIds.GOLDEN_OPENING, name: '🌟 黄金开篇工坊', callback: exec(CommandIds.GOLDEN_OPENING) });
         addCommand({ id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', checkCallback: execGuarded(CommandIds.STEP_RESULT_VIEWER, LONG_ONLY) });
         addCommand({ id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', checkCallback: execGuarded(CommandIds.STORY_LINKAGE_BOARD, LONG_ONLY) });
         addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', checkCallback: execGuarded(CommandIds.BATCH_DECONSTRUCT, LONG_ONLY) });
+        addCommand({ id: CommandIds.CHARACTER_RECOGNITION, name: '👤 角色识别审核', callback: exec(CommandIds.CHARACTER_RECOGNITION) });
         addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
         addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
         addCommand({ id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', callback: exec(CommandIds.CREATION_FLOW) });
@@ -490,7 +493,7 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.TOGGLE_PET, name: '🐾 显示/隐藏桌面宠物', callback: exec(CommandIds.TOGGLE_PET) });
         addCommand({ id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', checkCallback: execGuarded(CommandIds.CO_WRITING, LONG_ONLY) });
         addCommand({ id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', checkCallback: execGuarded(CommandIds.BATCH_NOVELS, LONG_ONLY) });
-        addCommand({ id: 'novel-writer-fingerprint-library', name: '🔍 打开写作指纹库', callback: exec('novel-writer-fingerprint-library') });
+        addCommand({ id: CommandIds.FINGERPRINT_LIBRARY, name: '🔍 打开写作指纹库', callback: exec(CommandIds.FINGERPRINT_LIBRARY) });
         addCommand({ id: CommandIds.OPEN_KNOWLEDGE_BASE, name: '📚 打开知识库管理界面', callback: exec(CommandIds.OPEN_KNOWLEDGE_BASE) });
         addCommand({ id: CommandIds.SWITCH_PROVIDER, name: '快速切换 AI 提供商', callback: exec(CommandIds.SWITCH_PROVIDER) });
         addCommand({ id: CommandIds.OPEN_SETTINGS, name: '⚙️ 打开插件设置', callback: exec(CommandIds.OPEN_SETTINGS) });
