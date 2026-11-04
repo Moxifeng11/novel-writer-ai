@@ -155,6 +155,9 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.OPEN_HOME, name: '🏠 创作主页', group: CommandGroup.Views, description: '三个创作模式、最近项目、下一步建议与任务入口' },
     { id: CommandIds.JOB_CENTER, name: '🧵 任务中心', group: CommandGroup.Tools, description: '查看进行中/已完成任务，取消或重试长任务' },
     { id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', group: CommandGroup.Tools, description: '检查重复正文、未结算、frontmatter 异常与正文目录孤儿文件' },
+    { id: CommandIds.ASSET_REGISTRY, name: '🧩 资产总览', group: CommandGroup.Tools, description: '查看规则/提示词/指纹/知识库的来源、版本与生效状态' },
+    { id: CommandIds.USAGE_LEDGER, name: '💰 AI 用量账本', group: CommandGroup.Tools, description: '查看模型调用的 token/耗时/状态统计' },
+    { id: CommandIds.BACKUP_CENTER, name: '🗂 版本与备份中心', group: CommandGroup.Tools, description: '按项目查看版本快照、步骤/结算产物与配置备份' },
     { id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', group: CommandGroup.Views, description: '打开流程规划工作台的项目与章节页' },
     { id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', group: CommandGroup.Views, description: '打开当前项目的创作流程：阶段进度与下一步动作' },
     { id: CommandIds.MIGRATE_ENTITY_LINKS, name: '🔗 实体链接迁移（存量关系图谱化）', group: CommandGroup.Tools, description: '把存量实体的归属类字段（所属势力/当前位置/所属归属）转为 wiki-link（先预览再执行）' },
@@ -489,6 +492,9 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.OPEN_HOME, name: '🏠 创作主页', callback: exec(CommandIds.OPEN_HOME) });
         addCommand({ id: CommandIds.JOB_CENTER, name: '🧵 任务中心', callback: exec(CommandIds.JOB_CENTER) });
         addCommand({ id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', callback: exec(CommandIds.PROJECT_HEALTH) });
+        addCommand({ id: CommandIds.ASSET_REGISTRY, name: '🧩 资产总览', callback: exec(CommandIds.ASSET_REGISTRY) });
+        addCommand({ id: CommandIds.USAGE_LEDGER, name: '💰 AI 用量账本', callback: exec(CommandIds.USAGE_LEDGER) });
+        addCommand({ id: CommandIds.BACKUP_CENTER, name: '🗂 版本与备份中心', callback: exec(CommandIds.BACKUP_CENTER) });
         addCommand({ id: CommandIds.OPEN_ONBOARDING, name: '🚀 首启引导（3 分钟）', callback: exec(CommandIds.OPEN_ONBOARDING) });
         addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
         addCommand({ id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', callback: exec(CommandIds.CREATION_FLOW) });

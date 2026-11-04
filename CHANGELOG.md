@@ -2,6 +2,39 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.30.0（2026-11-05）
+
+### 🧩 资产总览（AssetRegistry）
+
+- 新增 `engine/asset-registry.ts`：统一聚合写作规则、提示词模板（vault 覆盖 + PromptManager 自建）、文笔指纹、知识库、写作配置的来源/版本/生效状态与影响范围。
+- 新增「🧩 资产总览」弹窗与命令：按资产种类分组，显示「生效/未生效」，可跳转对应文件；主页入口同步加入。
+- `ALL_TEMPLATE_DEFS` 下沉到 `shared/prompt-template-catalog.ts`，UI 保留 re-export。
+
+### 🧠 全模式知识/指纹注入
+
+- 新增 `engine/mode-injection.ts`：短篇/剧本单元写作接入知识库 RAG（`retrieve` + `formatRetrievalHits`）与文笔指纹（`selectFingerprintsForInjection`，上限 3），失败降级为空。
+- 单元写作上下文新增 `knowledge/fingerprints`；提示词新增【参考知识】【文笔指纹】块，与长篇 11 步共用同一套检索与选择策略。
+
+### 💰 AI 用量账本
+
+- 新增 `services/usage-ledger.ts`：在 `AIApiClient` 的非流式/流式/异步迭代器三个入口统一记账（模型、token、耗时、状态），落盘到插件数据目录（不进用户 vault），上限 500 条。
+- 新增「💰 AI 用量账本」弹窗与命令：总量卡片、按模型表格、最近调用列表；主页入口同步加入。
+
+### 🗂 版本与备份中心
+
+- 新增 `services/backup-center-service.ts`：按项目聚合 `_versions/` 版本快照、步骤/结算/质检产物与插件 `data.json.bak`。
+- 新增「🗂 版本与备份中心」弹窗与命令：版本条目可一键回滚（当前内容自动存为 rollback 版本），产物/备份可打开查看；主页入口同步加入。
+
+### 🪓 大文件切片（第一批）
+
+- `ui/co-writing-view.ts` 5440 → 5393：Markdown 工具条抽到 `ui/co-writing/markdown-toolbar.ts`（宿主接口注入编辑器/契约/排版回调）。
+- `engine/co-writer-engine.ts` 3911 → 3750：本地模型判定与 Ollama 探测抽到 `engine/co-writer/local-model-utils.ts`，原入口保留 re-export；顺手清理 4 个未用导入，lint 警告 1892 → 1890。
+
+### 🧪 测试
+
+- 新增资产总览、用量账本、备份中心、单元提示词注入回归。
+- 全量单测 545 文件 / 5940 用例；lint 上限降至 1890。
+
 ## v4.29.0（2026-11-05）
 
 ### 🧩 ModeRuntime：短篇/剧本上下文

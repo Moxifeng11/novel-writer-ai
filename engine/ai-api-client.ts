@@ -23,6 +23,7 @@ import { NOOP_NOTIFIER } from '@/shared/types';
 import { performanceMonitor } from '@/services/performance-monitor';
 import { ensureLocalModelCapability } from '@/services/local-model-probe';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
+import { getUsageLedger } from '@/services/usage-ledger';
 import {
     buildAuthHeaders,
     buildChatRequestBody,
@@ -430,6 +431,30 @@ export class AIApiClient {
      * @returns 模型返回文本
      */
     async callAI(
+        systemPrompt: string,
+        userPrompt: string,
+        model?: string,
+        temperature: number = 0.7,
+        maxTokens: number = 4096,
+        options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
+    ): Promise<APIResponse> {
+        const startedAt = Date.now();
+        const result = await this.callAIInternal(systemPrompt, userPrompt, model, temperature, maxTokens, options);
+        void getUsageLedger(this.plugin.app).record({
+            at: startedAt,
+            source: 'ai',
+            model: model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo',
+            promptTokens: result.usage?.prompt ?? 0,
+            completionTokens: result.usage?.completion ?? 0,
+            totalTokens: result.usage?.total ?? 0,
+            durationMs: Date.now() - startedAt,
+            status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
+            error: result.error,
+        });
+        return result;
+    }
+
+    private async callAIInternal(
         systemPrompt: string,
         userPrompt: string,
         model?: string,
@@ -852,7 +877,20 @@ export class AIApiClient {
         onChunk?: (text: string, done: boolean) => void,
         options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): Promise<APIResponse> {
-        return runCallAIStream(this.streamHost, systemPrompt, userPrompt, model, temperature, maxTokens, onChunk, options);
+        const startedAt = Date.now();
+        const result = await runCallAIStream(this.streamHost, systemPrompt, userPrompt, model, temperature, maxTokens, onChunk, options);
+        void getUsageLedger(this.plugin.app).record({
+            at: startedAt,
+            source: 'ai',
+            model: model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo',
+            promptTokens: result.usage?.prompt ?? 0,
+            completionTokens: result.usage?.completion ?? 0,
+            totalTokens: result.usage?.total ?? 0,
+            durationMs: Date.now() - startedAt,
+            status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
+            error: result.error,
+        });
+        return result;
     }
 
     /**
@@ -874,7 +912,20 @@ export class AIApiClient {
         maxTokens: number = 4096,
         options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; forceSimulated?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): AsyncGenerator<string, APIResponse, unknown> {
-        return yield* runCallAIAsyncIterator(this.streamHost, systemPrompt, userPrompt, model, temperature, maxTokens, options);
+        const startedAt = Date.now();
+        const result = yield* runCallAIAsyncIterator(this.streamHost, systemPrompt, userPrompt, model, temperature, maxTokens, options);
+        void getUsageLedger(this.plugin.app).record({
+            at: startedAt,
+            source: 'ai',
+            model: model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo',
+            promptTokens: result.usage?.prompt ?? 0,
+            completionTokens: result.usage?.completion ?? 0,
+            totalTokens: result.usage?.total ?? 0,
+            durationMs: Date.now() - startedAt,
+            status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
+            error: result.error,
+        });
+        return result;
     }
 
     /** 流式模块的宿主视图；运行期就是本实例，私有成员在 JS 中仍是普通属性。 */

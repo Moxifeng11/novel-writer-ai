@@ -38,6 +38,7 @@ import { FontManagerModal } from './font-manager-modal';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from './model-quick-switcher';
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
 import { BodySaveController } from './cowrite/body-save-controller';
+import { buildMarkdownToolbar } from './co-writing/markdown-toolbar';
 import { resolveInsertRange, type PendingRewriteRange } from './cowrite/insert-range';
 import { BodyWriter } from '@/engine/body-writer';
 import {
@@ -47,13 +48,9 @@ import {
 } from '@/shared/body-format';
 import {
     countParagraphs,
-    convertToChineseQuotes,
     describeContractShort,
     formatNovelManuscript,
     indentParagraphs,
-    insertBlock,
-    mergeSelectedParagraphs,
-    splitParagraphAtCursor,
     toggleFirstLineIndent,
     toggleLinePrefix,
     wrapSelection,
@@ -1249,60 +1246,12 @@ export class CoWritingView extends ItemView {
 
   private buildMarkdownToolbar(wrap: HTMLElement): void {
     this.buildFontPicker(wrap);
-    const toolbar = wrap.createDiv({ cls: 'nw-cowrite-md-toolbar' });
-    let group = toolbar.createDiv({ cls: 'nw-cowrite-md-group' });
-    const addSeparator = () => {
-      toolbar.createDiv({ cls: 'nw-cowrite-md-sep' });
-      group = toolbar.createDiv({ cls: 'nw-cowrite-md-group' });
-    };
-    const addButton = (label: string, title: string, handler: () => void, cls = '') => {
-      const button = group.createEl('button', {
-        text: label,
-        cls: `nw-cowrite-md-btn ${cls}`.trim(),
-        attr: { type: 'button', title, 'aria-label': title },
-      });
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        handler();
-      });
-    };
-    const selection = () => ({
-      start: this.rightEditor?.selectionStart ?? 0,
-      end: this.rightEditor?.selectionEnd ?? 0,
+    buildMarkdownToolbar(wrap, {
+      getEditor: () => this.rightEditor,
+      getContract: () => this.editorContract,
+      applyTextEdit: (edit) => this.applyTextEdit(edit),
+      applyNovelFormat: () => this.applyNovelFormat(),
     });
-    const indent = () => this.editorContract.indent || INDENT_TWO_FULL_WIDTH;
-    const applyEdit = (fn: (text: string, start: number, end: number) => TextEdit) => {
-      const editor = this.rightEditor;
-      if (!editor) return;
-      const { start, end } = selection();
-      this.applyTextEdit(fn(editor.value, start, end));
-    };
-
-    addButton('B', '加粗（Ctrl+B）', () => applyEdit((text, s, e) => wrapSelection(text, s, e, '**')));
-    addButton('I', '斜体（Ctrl+I）', () => applyEdit((text, s, e) => wrapSelection(text, s, e, '*')));
-    addButton('H', '二级标题（Ctrl+Alt+2）', () => applyEdit((text, s, e) => toggleLinePrefix(text, s, e, '## ')));
-    addButton('❝', '引用（Ctrl+Alt+Q）', () => applyEdit((text, s, e) => toggleLinePrefix(text, s, e, '> ')));
-    addButton('•', '无序列表（Ctrl+Alt+L）', () => applyEdit((text, s, e) => toggleLinePrefix(text, s, e, '- ')));
-    addButton('―', '分隔线', () => {
-      const { start } = selection();
-      const editor = this.rightEditor;
-      if (editor) this.applyTextEdit(insertBlock(editor.value, start, '---'));
-    });
-
-    addSeparator();
-    addButton('⇥', '首行缩进/取消（Ctrl+Alt+I）', () => applyEdit((text, s, e) => toggleFirstLineIndent(text, s, e, indent())));
-    addButton('↹', '增加段落缩进（Ctrl+]）', () => applyEdit((text, s, e) => indentParagraphs(text, s, e, indent(), 1)));
-    addButton('⇤', '减少段落缩进（Ctrl+[）', () => applyEdit((text, s, e) => indentParagraphs(text, s, e, indent(), -1)));
-    addButton('¶', '合并选中段落', () => applyEdit((text, s, e) => mergeSelectedParagraphs(text, s, e)));
-    addButton('↵', '在光标处拆分段落', () => {
-      const { start } = selection();
-      const editor = this.rightEditor;
-      if (editor) this.applyTextEdit(splitParagraphAtCursor(editor.value, start, this.editorContract));
-    });
-    addButton('“”', '选中文本转中文引号', () => applyEdit((text, s, e) => convertToChineseQuotes(text, s, e)));
-
-    addSeparator();
-    addButton('⚡ 一键排版', '按项目写作规则排版全文（Ctrl+Alt+F）', () => void this.applyNovelFormat(), 'is-primary');
   }
 
   /** 编辑器底部：Markdown / 格式契约 / 字数 / 段落 */

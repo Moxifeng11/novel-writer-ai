@@ -1,27 +1,27 @@
 {
-  "generatedAt": "2026-11-04T15:19:14.215Z",
+  "generatedAt": "2026-11-04T17:34:16.832Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
-      "files": 273,
-      "exports": 1524,
-      "documented": 1524,
+      "files": 280,
+      "exports": 1553,
+      "documented": 1552,
       "methods": 1242,
       "methodsDocumented": 1242,
       "incomplete": 0
     },
     "services": {
-      "files": 30,
-      "exports": 168,
-      "documented": 168,
-      "methods": 214,
-      "methodsDocumented": 214,
+      "files": 32,
+      "exports": 180,
+      "documented": 180,
+      "methods": 221,
+      "methodsDocumented": 221,
       "incomplete": 0
     },
     "shared": {
-      "files": 165,
-      "exports": 1533,
-      "documented": 1533,
+      "files": 168,
+      "exports": 1547,
+      "documented": 1547,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 199,
-      "exports": 516,
-      "documented": 516,
-      "methods": 646,
-      "methodsDocumented": 646,
+      "files": 203,
+      "exports": 520,
+      "documented": 520,
+      "methods": 652,
+      "methodsDocumented": 652,
       "incomplete": 0
     }
   },
@@ -315,6 +315,13 @@
       "methodsDocumented": 7,
       "incomplete": 0
     },
+    "engine/asset-registry.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "engine/bases-generator.ts": {
       "exports": 8,
       "documented": 8,
@@ -438,6 +445,13 @@
       "exampleTargets": 2,
       "examplesDocumented": 2
     },
+    "engine/co-writer/local-model-utils.ts": {
+      "exports": 9,
+      "documented": 8,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "engine/co-writer/session-state.ts": {
       "exports": 34,
       "documented": 34,
@@ -446,8 +460,8 @@
       "incomplete": 0
     },
     "engine/co-writer-engine.ts": {
-      "exports": 8,
-      "documented": 8,
+      "exports": 1,
+      "documented": 1,
       "methods": 45,
       "methodsDocumented": 45,
       "incomplete": 0
@@ -1052,6 +1066,41 @@
     "engine/memory-trigger.ts": {
       "exports": 13,
       "documented": 13,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/mode-document-writer.ts": {
+      "exports": 5,
+      "documented": 5,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/mode-injection.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/mode-runtime.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/mode-unit-quality.ts": {
+      "exports": 5,
+      "documented": 5,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/mode-unit-settlement.ts": {
+      "exports": 2,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -1982,6 +2031,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "services/backup-center-service.ts": {
+      "exports": 4,
+      "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "services/canon-research-service.ts": {
       "exports": 7,
       "documented": 7,
@@ -2145,6 +2201,13 @@
       "documented": 9,
       "methods": 9,
       "methodsDocumented": 9,
+      "incomplete": 0
+    },
+    "services/usage-ledger.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 7,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "services/vector-rebuild-service.ts": {
@@ -2788,6 +2851,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/platform-export.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/plot-eval-throttle.ts": {
       "exports": 5,
       "documented": 5,
@@ -2895,6 +2965,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/prompt-template-catalog.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/prose-metrics.ts": {
       "exports": 10,
       "documented": 10,
@@ -2947,6 +3024,13 @@
     "shared/quality-history.ts": {
       "exports": 14,
       "documented": 14,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/quality-profile.ts": {
+      "exports": 5,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3507,7 +3591,21 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/asset-registry-modal.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
     "ui/auto-writer-modal.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
+    "ui/backup-center-modal.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,
@@ -3615,6 +3713,13 @@
     "ui/co-writing/human-rate.ts": {
       "exports": 3,
       "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/co-writing/markdown-toolbar.ts": {
+      "exports": 2,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4749,8 +4854,8 @@
       "incomplete": 0
     },
     "ui/template-manager.ts": {
-      "exports": 5,
-      "documented": 5,
+      "exports": 4,
+      "documented": 4,
       "methods": 9,
       "methodsDocumented": 9,
       "incomplete": 0
@@ -4770,6 +4875,13 @@
       "incomplete": 0
     },
     "ui/unified-entity-manager-modal.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
+    "ui/usage-ledger-modal.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,

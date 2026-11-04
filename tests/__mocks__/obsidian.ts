@@ -12,6 +12,7 @@ export class Component {
 }
 
 export class Vault {
+    configDir = '.obsidian';
     private _store: Map<string, string> = new Map();
     private _folders: Set<string> = new Set();
     adapter: DataAdapter;

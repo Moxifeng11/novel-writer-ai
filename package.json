@@ -1,6 +1,6 @@
 {
   "name": "novel-writer-ai",
-  "version": "4.29.0",
+  "version": "4.30.0",
   "description": "Obsidian plugin for AI-powered novel writing",
   "main": "main.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "css:cleanup": "node scripts/cleanup-css.js",
     "css:stats": "node scripts/stats-css.js",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
-    "lint": "eslint . --max-warnings 1892",
+    "lint": "eslint . --max-warnings 1890",
     "eval:quality": "vitest run --config vitest.benchmark.config.ts --reporter=json --outputFile=benchmarks/quality/last-report.json",
     "eval:cowrite-local": "node scripts/eval-cowrite-local.mjs",
     "program:render": "node scripts/program-status.mjs",

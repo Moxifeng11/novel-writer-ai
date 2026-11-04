@@ -205,6 +205,17 @@ describe('mode-unit-writer — 保存', () => {
         expect(port.patches[0]).not.toHaveProperty('status');
     });
 
+    it('提示词注入参考知识与文笔指纹块', () => {
+        const prompt = buildUnitPrompt(context({
+            knowledge: '1. 〔参考书·技巧〕钩子要落在动作上',
+            fingerprints: '- 项目指纹：句式 短句为主',
+        }), 'generate');
+        expect(prompt.user).toContain('【参考知识】');
+        expect(prompt.user).toContain('〔参考书·技巧〕');
+        expect(prompt.user).toContain('【文笔指纹】');
+        expect(prompt.user).toContain('项目指纹');
+    });
+
     it('完成本单元时写入 status=written', async () => {
         const port = createPort(SKELETON);
         await saveUnitBody(port, 'a.md', '正文', { markWritten: true, title: '开局' });

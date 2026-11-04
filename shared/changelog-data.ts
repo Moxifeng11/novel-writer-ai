@@ -21,6 +21,37 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.30.0',
+        date: '2026-11-05',
+        title: '资产总览、全模式注入与用量账本',
+        sections: [
+            {
+                type: 'added',
+                label: '🧩 资产与注入',
+                items: [
+                    '资产总览：规则/模板/指纹/知识库来源与生效状态',
+                    '短篇/剧本单元写作接入知识库 RAG 与文笔指纹',
+                ],
+            },
+            {
+                type: 'added',
+                label: '💰 账本与备份',
+                items: [
+                    'AI 用量账本：token/耗时/状态按模型统计',
+                    '版本与备份中心：版本快照回滚 + 步骤产物 + 配置备份',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🪓 切片',
+                items: [
+                    '协同 Markdown 工具条、本地模型工具抽出',
+                    'lint 警告 1892 → 1890',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.29.0',
         date: '2026-11-05',
         title: '短篇/剧本闭环：AI 文档、质检、结算与平台包',

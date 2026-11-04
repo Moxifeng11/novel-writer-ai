@@ -65,6 +65,9 @@ import { HomeView, VIEW_TYPE_HOME } from './ui/home-view';
 import { JobCenterModal } from './ui/job-center-modal';
 import { OnboardingModal } from './ui/onboarding-modal';
 import { ProjectHealthModal } from './ui/project-health-modal';
+import { AssetRegistryModal } from './ui/asset-registry-modal';
+import { UsageLedgerModal } from './ui/usage-ledger-modal';
+import { BackupCenterModal } from './ui/backup-center-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
 import { PromptManager } from './services/prompt-manager';
@@ -1063,6 +1066,21 @@ export default class NovelWriterPlugin extends Plugin {
      */
     public openProjectHealth(project?: string): void {
         new ProjectHealthModal(this.app, this, project).open();
+    }
+
+    /** 打开资产总览。 */
+    public openAssetRegistry(project?: string): void {
+        new AssetRegistryModal(this.app, this, project).open();
+    }
+
+    /** 打开 AI 用量账本。 */
+    public openUsageLedger(): void {
+        new UsageLedgerModal(this.app, this).open();
+    }
+
+    /** 打开版本与备份中心。 */
+    public openBackupCenter(project?: string): void {
+        new BackupCenterModal(this.app, this, project).open();
     }
 
     public async openFullWriterHome(): Promise<void> {

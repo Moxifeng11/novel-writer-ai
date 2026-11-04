@@ -504,6 +504,15 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.PROJECT_HEALTH:
                 plugin.openProjectHealth(resolveProject());
                 return true;
+            case CommandIds.ASSET_REGISTRY:
+                plugin.openAssetRegistry(resolveProject());
+                return true;
+            case CommandIds.USAGE_LEDGER:
+                plugin.openUsageLedger();
+                return true;
+            case CommandIds.BACKUP_CENTER:
+                plugin.openBackupCenter(resolveProject());
+                return true;
             case CommandIds.OPEN_ONBOARDING:
                 plugin.openOnboarding();
                 return true;

@@ -112,6 +112,15 @@ export class HomeView extends ItemView {
         this.actionButton(actions, '🩺 项目体检', 'nw-btn-secondary', () => {
             this.plugin.openProjectHealth();
         });
+        this.actionButton(actions, '🧩 资产总览', 'nw-btn-secondary', () => {
+            this.plugin.openAssetRegistry();
+        });
+        this.actionButton(actions, '💰 用量账本', 'nw-btn-secondary', () => {
+            this.plugin.openUsageLedger();
+        });
+        this.actionButton(actions, '🗂 备份中心', 'nw-btn-secondary', () => {
+            this.plugin.openBackupCenter();
+        });
         this.actionButton(actions, '🚀 首启引导', 'nw-btn-secondary', () => {
             this.plugin.openOnboarding();
         });

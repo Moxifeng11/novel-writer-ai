@@ -20,6 +20,7 @@ import {
 } from '@/shared/mode-content';
 import { extractUnitOutlineSection } from '@/shared/mode-unit-outline';
 import { loadModeRuntimeContext, modeOutlineLabel } from './mode-runtime';
+import { collectModeInjection, type ModeInjectionDeps } from './mode-injection';
 import { HUMAN_VOICE_SHORT } from './prompts/human-voice';
 import { createLogger } from '@/shared/logger';
 
@@ -51,6 +52,10 @@ export interface UnitWriterContext {
     entities?: string;
     /** 项目文笔风格摘录 */
     styleGuide?: string;
+    /** 知识库 RAG 命中（可能为空） */
+    knowledge?: string;
+    /** 文笔指纹要点（可能为空） */
+    fingerprints?: string;
     characters: string;
     previousTail: string;
     modeGuide: string;
@@ -231,6 +236,8 @@ export function buildUnitPrompt(
         ctx.preResearchDigest ? `【前期调研】\n${ctx.preResearchDigest}` : '',
         ctx.entities ? `【实体状态】\n${ctx.entities}` : '',
         ctx.styleGuide ? `【文笔风格】\n${ctx.styleGuide}` : '',
+        ctx.knowledge ? `【参考知识】\n${ctx.knowledge}` : '',
+        ctx.fingerprints ? `【文笔指纹】\n${ctx.fingerprints}` : '',
         ctx.characters ? `【人物】\n${ctx.characters}` : '',
         ctx.previousTail ? `【上一${ctx.mode === 'script' ? '集' : '节'}结尾】\n${ctx.previousTail}` : '',
     ].filter(Boolean).join('\n\n');
@@ -292,6 +299,7 @@ async function readText(adapter: { exists(p: string): Promise<boolean>; read(p: 
  * @param project - 项目（路径或对象）
  * @param mode - 模式
  * @param unitNumber - 单元号
+ * @param injectionDeps - 知识库/指纹注入依赖（可选；缺省跳过注入）
   * @returns UnitWriterContext 实例
  */
 export async function loadUnitWriterContext(
@@ -299,6 +307,7 @@ export async function loadUnitWriterContext(
     project: string,
     mode: CreationMode,
     unitNumber: number,
+    injectionDeps?: ModeInjectionDeps,
 ): Promise<UnitWriterContext> {
     const adapter = app.vault.adapter;
     const units = listModeUnits(app, project, mode);
@@ -325,6 +334,11 @@ export async function loadUnitWriterContext(
     }
 
     const existingBody = splitFrontmatter(await readText(adapter, unitPath)).body;
+    const outlineSection = extractUnitOutlineSection(outlineDoc, mode, unitNumber);
+    const injection = await collectModeInjection(
+        { ...(injectionDeps ?? {}), project },
+        outlineSection || storyDoc,
+    );
 
     return {
         mode,
@@ -332,13 +346,15 @@ export async function loadUnitWriterContext(
         unitNumber,
         unitName,
         unitPath,
-        outlineSection: extractUnitOutlineSection(outlineDoc, mode, unitNumber),
+        outlineSection,
         outlineDoc,
         storyDoc,
         storyboardDoc: runtime.storyboardDoc,
         preResearchDigest: runtime.preResearchDigest,
         entities: runtime.entities,
         styleGuide: runtime.styleGuide,
+        knowledge: injection.knowledge,
+        fingerprints: injection.fingerprints,
         characters: String(characters || '').slice(0, 1500),
         previousTail,
         modeGuide: runtime.modeGuide,

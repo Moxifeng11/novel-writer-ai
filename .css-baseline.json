@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-04T16:24:12.770Z",
-  "note": "2026-11-05 v4.29.0 M3：新增短篇/剧本单元质检（六维/可拍）、模式文档 AI 生成行样式、主页/任务中心/向导/体检样式；状态类统一 nw-is-*。",
-  "bytes": 472667,
+  "generatedAt": "2026-11-04T17:20:46.867Z",
+  "note": "2026-11-05 v4.30.0 M4：新增资产总览（nw-asset-*）、AI 用量账本（nw-usage-*）样式；主页入口扩展。",
+  "bytes": 475563,
   "important": 164,
   "hardcodedHex": 154,
   "rgbHsl": 182,
-  "uniqueClasses": 2461,
+  "uniqueClasses": 2485,
   "otherClasses": 87,
   "maxSelectorDepth": 4
 }

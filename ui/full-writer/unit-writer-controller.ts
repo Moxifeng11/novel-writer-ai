@@ -25,6 +25,7 @@ import { evaluateRevision } from '@/engine/revision/revision-guard';
 import { modeRevisionOptions } from '@/shared/quality-profile';
 import { namesFromEntitySummary } from '@/engine/mode-runtime';
 import { ENGINE_NAMES } from '@/shared/engine-names';
+import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import { createLogger } from '@/shared/logger';
 import type { WriterTab } from './full-writer-store';
@@ -113,7 +114,10 @@ export class UnitWriterController {
         try {
             const mode = tab.mode ?? 'short';
             this.units = listModeUnits(this.deps.app, tab.project, mode);
-            this.ctx = await loadUnitWriterContext(this.deps.app, tab.project, mode, tab.unitNumber);
+            this.ctx = await loadUnitWriterContext(this.deps.app, tab.project, mode, tab.unitNumber, {
+                vectorStore: this.deps.plugin.engineRegistry.getOrNull(ENGINE_NAMES.KNOWLEDGE_VECTOR_STORE),
+                fingerprintLibrary: StyleFingerprintLibrary.get(this.deps.app, tab.project),
+            });
             if (this.destroyed) return;
             loading.remove();
             this.renderLayout();
