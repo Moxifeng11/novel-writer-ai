@@ -24,6 +24,7 @@ import { performanceMonitor } from '@/services/performance-monitor';
 import { ensureLocalModelCapability } from '@/services/local-model-probe';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { currentUsageScope, getUsageLedger } from '@/services/usage-ledger';
+import { estimateCostYuan, lookupModelPricing } from '@/shared/model-pricing';
 import {
     buildAuthHeaders,
     buildChatRequestBody,
@@ -441,18 +442,23 @@ export class AIApiClient {
         const startedAt = Date.now();
         const result = await this.callAIInternal(systemPrompt, userPrompt, model, temperature, maxTokens, options);
         const scope = currentUsageScope();
+        // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
+        const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const pricing = lookupModelPricing(usageModel, this.plugin.settings);
+        const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
             at: startedAt,
             source: scope.source ?? 'ai',
             project: scope.project,
             stepKey: scope.stepKey,
-            model: model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo',
+            model: usageModel,
             promptTokens: result.usage?.prompt ?? 0,
             completionTokens: result.usage?.completion ?? 0,
             totalTokens: result.usage?.total ?? 0,
             durationMs: Date.now() - startedAt,
             status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
             error: result.error,
+            costYuan: costYuan ?? undefined,
         });
         return result;
     }
@@ -883,18 +889,23 @@ export class AIApiClient {
         const startedAt = Date.now();
         const result = await runCallAIStream(this.streamHost, systemPrompt, userPrompt, model, temperature, maxTokens, onChunk, options);
         const scope = currentUsageScope();
+        // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
+        const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const pricing = lookupModelPricing(usageModel, this.plugin.settings);
+        const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
             at: startedAt,
             source: scope.source ?? 'ai',
             project: scope.project,
             stepKey: scope.stepKey,
-            model: model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo',
+            model: usageModel,
             promptTokens: result.usage?.prompt ?? 0,
             completionTokens: result.usage?.completion ?? 0,
             totalTokens: result.usage?.total ?? 0,
             durationMs: Date.now() - startedAt,
             status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
             error: result.error,
+            costYuan: costYuan ?? undefined,
         });
         return result;
     }
@@ -921,18 +932,23 @@ export class AIApiClient {
         const startedAt = Date.now();
         const result = yield* runCallAIAsyncIterator(this.streamHost, systemPrompt, userPrompt, model, temperature, maxTokens, options);
         const scope = currentUsageScope();
+        // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
+        const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
+        const pricing = lookupModelPricing(usageModel, this.plugin.settings);
+        const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
             at: startedAt,
             source: scope.source ?? 'ai',
             project: scope.project,
             stepKey: scope.stepKey,
-            model: model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo',
+            model: usageModel,
             promptTokens: result.usage?.prompt ?? 0,
             completionTokens: result.usage?.completion ?? 0,
             totalTokens: result.usage?.total ?? 0,
             durationMs: Date.now() - startedAt,
             status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
             error: result.error,
+            costYuan: costYuan ?? undefined,
         });
         return result;
     }

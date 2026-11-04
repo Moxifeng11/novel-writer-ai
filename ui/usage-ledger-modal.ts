@@ -21,6 +21,13 @@ function formatDuration(ms: number): string {
 }
 
 /**
+ * 费用聚合展示（元）：有任何已计费记录时显示金额，否则（未配置单价）显示 '—'。
+ */
+function formatCostYuan(value: number): string {
+    return value > 0 ? `¥${value.toFixed(4)}` : '—';
+}
+
+/**
  * AI 用量账本弹窗。
  */
 export class UsageLedgerModal extends Modal {
@@ -78,6 +85,7 @@ export class UsageLedgerModal extends Modal {
             ['调用', `${summary.okCalls} 成功 / ${summary.failedCalls} 失败`],
             ['Token', `${formatTokens(summary.totalTokens)}（入 ${formatTokens(summary.promptTokens)} / 出 ${formatTokens(summary.completionTokens)}）`],
             ['总耗时', formatDuration(summary.durationMs)],
+            ['费用(元)', formatCostYuan(summary.costYuan)],
         ];
         for (const [label, value] of cards) {
             const card = summaryEl.createDiv({ cls: 'nw-usage-card' });
@@ -90,13 +98,14 @@ export class UsageLedgerModal extends Modal {
             models.createEl('h4', { text: '按模型' });
             const table = models.createEl('table', { cls: 'nw-usage-table' });
             const headRow = table.createEl('tr');
-            for (const label of ['模型', '调用', 'Token', '耗时']) headRow.createEl('th', { text: label });
+            for (const label of ['模型', '调用', 'Token', '耗时', '费用(元)']) headRow.createEl('th', { text: label });
             for (const model of summary.byModel) {
                 const row = table.createEl('tr');
                 row.createEl('td', { text: model.model });
                 row.createEl('td', { text: `${model.okCalls}✓ / ${model.failedCalls}✗` });
                 row.createEl('td', { text: formatTokens(model.totalTokens) });
                 row.createEl('td', { text: formatDuration(model.durationMs) });
+                row.createEl('td', { text: formatCostYuan(model.costYuan) });
             }
         }
 
@@ -161,6 +170,8 @@ export class UsageLedgerModal extends Modal {
             `${formatTokens(record.totalTokens)} tok`,
             formatDuration(record.durationMs),
             ...attribution,
+            // 配置了单价的记录追加估算费用；未配置不显示（避免误导为 0 元）
+            ...(record.costYuan !== undefined ? [`¥${record.costYuan.toFixed(4)}`] : []),
         ];
         row.createDiv({
             cls: 'nw-usage-meta',

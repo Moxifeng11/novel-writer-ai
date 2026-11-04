@@ -142,7 +142,13 @@ export interface CustomProvider {
      * v4.21: 端点披露的模型元数据（上下文窗口/输出上限/是否支持图片）。
      * 只作为展示与默认值，不覆盖用户手填的全局上限。
      */
-    modelMeta?: Record<string, { contextWindow?: number; maxTokens?: number; vision?: boolean }>;
+    modelMeta?: Record<string, {
+        contextWindow?: number; maxTokens?: number; vision?: boolean;
+        /** 输入单价（元/百万 tokens）；留空不参与费用估算 */
+        inputPricePerM?: number;
+        /** 输出单价（元/百万 tokens）；留空不参与费用估算 */
+        outputPricePerM?: number;
+    }>;
     /** v4.15: URL 自动识别出的预设供应商 ID；仅用于提示，不覆盖用户设置 */
     providerIdHint?: string;
     isDefault?: boolean; // 标记是否为初始默认供应商

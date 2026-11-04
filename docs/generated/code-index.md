@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 297 | 131651 | 1577 | 1319 | 84% |
-| `services/` | 32 | 12533 | 185 | 146 | 79% |
-| `shared/` | 169 | 38138 | 1542 | 1280 | 83% |
+| `engine/` | 297 | 131691 | 1577 | 1319 | 84% |
+| `services/` | 32 | 12553 | 185 | 146 | 79% |
+| `shared/` | 170 | 38247 | 1545 | 1282 | 83% |
 | `core/` | 7 | 2686 | 28 | 13 | 46% |
 | `domains/` | 11 | 767 | 30 | 22 | 73% |
-| `ui/` | 206 | 96578 | 530 | 486 | 92% |
+| `ui/` | 208 | 96732 | 535 | 491 | 92% |
 
 ## 文件清单
 
@@ -42,7 +42,7 @@
 | `engine/agent/dsh/dsh-protocol.ts` | 159 | 4 | 4 |
 | `engine/agent/dsh/dsh-session.ts` | 283 | 7 | 7 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
-| `engine/agent/harness/agent-loop.ts` | 562 | 6 | 6 |
+| `engine/agent/harness/agent-loop.ts` | 586 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/harness-engine.ts` | 589 | 7 | 4 |
@@ -55,7 +55,7 @@
 | `engine/agent/harness/tool-registry.ts` | 295 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 945 | 1 | 1 |
+| `engine/ai-api-client.ts` | 961 | 1 | 1 |
 | `engine/ai-api-stream.ts` | 921 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
@@ -357,7 +357,7 @@
 | `services/rules-service.ts` | 270 | 3 | 2 |
 | `services/synopsis-store.ts` | 332 | 5 | 5 |
 | `services/update-checker.ts` | 391 | 9 | 2 |
-| `services/usage-ledger.ts` | 373 | 13 | 5 |
+| `services/usage-ledger.ts` | 393 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 547 | 1 | 1 |
 | `services/worker-protocol.ts` | 107 | 11 | 11 |
@@ -375,7 +375,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1297 | 3 | 3 |
+| `shared/changelog-data.ts` | 1320 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -445,6 +445,7 @@
 | `shared/mode-content.ts` | 445 | 19 | 19 |
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
 | `shared/model-capabilities.ts` | 168 | 11 | 9 |
+| `shared/model-pricing.ts` | 86 | 3 | 2 |
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
@@ -553,10 +554,12 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1019 | 2 | 2 |
-| `ui/co-writing-view.ts` | 5390 | 3 | 3 |
+| `ui/co-writing-view.ts` | 5153 | 3 | 3 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
+| `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
+| `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 652 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
@@ -697,7 +700,7 @@
 | `ui/settings-tab.ts` | 230 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 146 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1247 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1270 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 333 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 288 | 1 | 1 |
@@ -719,7 +722,7 @@
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 1089 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 951 | 1 | 1 |
-| `ui/usage-ledger-modal.ts` | 171 | 1 | 1 |
+| `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 138 | 1 | 1 |
 | `ui/views/book-detail-renderer.ts` | 2452 | 2 | 2 |

@@ -562,6 +562,8 @@ export class ApiSection extends SettingsSection {
                 let contextValue = String(initialMeta.contextWindow ?? fallback?.maxContext ?? '');
                 let outputValue = String(initialMeta.maxTokens ?? fallback?.maxOutput ?? '');
                 let visionValue = !!initialMeta.vision;
+                let inputPriceValue = initialMeta.inputPricePerM !== undefined ? String(initialMeta.inputPricePerM) : '';
+                let outputPriceValue = initialMeta.outputPricePerM !== undefined ? String(initialMeta.outputPricePerM) : '';
 
                 new Setting(contentEl)
                     .setName('模型 ID')
@@ -584,6 +586,22 @@ export class ApiSection extends SettingsSection {
                     .addText(text => text
                         .setValue(outputValue)
                         .onChange(value => { outputValue = value.trim(); }));
+
+                new Setting(contentEl)
+                    .setName('输入单价 (元/百万 tokens)')
+                    .setDesc('用于「AI 用量账本」的费用估算')
+                    .addText(text => text
+                        .setValue(inputPriceValue)
+                        .setPlaceholder('元/百万 tokens，留空不计费')
+                        .onChange(value => { inputPriceValue = value.trim(); }));
+
+                new Setting(contentEl)
+                    .setName('输出单价 (元/百万 tokens)')
+                    .setDesc('用于「AI 用量账本」的费用估算')
+                    .addText(text => text
+                        .setValue(outputPriceValue)
+                        .setPlaceholder('元/百万 tokens，留空不计费')
+                        .onChange(value => { outputPriceValue = value.trim(); }));
 
                 new Setting(contentEl)
                     .setName('支持图片输入')
@@ -617,11 +635,16 @@ export class ApiSection extends SettingsSection {
 
                     const meta = { ...(current.modelMeta || {}) };
                     if (!isNew && idValue !== modelId) delete meta[modelId];
-                    const nextMeta: { contextWindow?: number; maxTokens?: number; vision?: boolean } = {};
+                    const nextMeta: { contextWindow?: number; maxTokens?: number; vision?: boolean; inputPricePerM?: number; outputPricePerM?: number } = {};
                     const context = parseInt(contextValue, 10);
                     const output = parseInt(outputValue, 10);
+                    const inputPrice = parseFloat(inputPriceValue);
+                    const outputPrice = parseFloat(outputPriceValue);
                     if (Number.isFinite(context) && context > 0) nextMeta.contextWindow = context;
                     if (Number.isFinite(output) && output > 0) nextMeta.maxTokens = output;
+                    // 单价：留空/非法值不写回（不计费），0 视为免费模型也照常记录
+                    if (Number.isFinite(inputPrice) && inputPrice >= 0) nextMeta.inputPricePerM = inputPrice;
+                    if (Number.isFinite(outputPrice) && outputPrice >= 0) nextMeta.outputPricePerM = outputPrice;
                     if (visionValue) nextMeta.vision = true;
                     if (Object.keys(nextMeta).length > 0) meta[idValue] = nextMeta;
                     else delete meta[idValue];

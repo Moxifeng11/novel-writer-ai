@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AgentSessionLog } from '../../../engine/agent/harness/session-log';
 import { HarnessToolRegistry, validateArgs, TOOL_CANCELLED_CODE } from '../../../engine/agent/harness/tool-registry';
 import { runHarnessTurn } from '../../../engine/agent/harness/agent-loop';
+import { currentUsageScope } from '@/services/usage-ledger';
 import type {
     HarnessAdapter,
     HarnessAssistantTurn,
@@ -231,5 +232,66 @@ describe('结构化结果与取消', () => {
         const result = await registry.execute('hang', {}, ctx(controller.signal));
         expect(result.ok).toBe(false);
         expect(result.data?.errorCode).toBe(TOOL_CANCELLED_CODE);
+    });
+});
+
+describe('用量归因（步骤级 + 工具级 scope）', () => {
+    it('模型调用期间 currentUsageScope 为 source=agent + stepKey=turn:<step>，回合结束退出', async () => {
+        const registry = new HarnessToolRegistry();
+        registry.register(tool({ name: 'reader' }));
+        // 行为级验证：无法 spy 模块内函数，改在 adapter.complete 里读当前 scope
+        const seen: Array<{ source?: string; project?: string; stepKey?: string }> = [];
+        const adapter: HarnessAdapter = {
+            complete: async () => {
+                const scope = currentUsageScope();
+                seen.push({ source: scope.source, project: scope.project, stepKey: scope.stepKey });
+                return FINAL;
+            },
+        };
+
+        const result = await runHarnessTurn({
+            adapter,
+            registry,
+            log: new AgentSessionLog(),
+            memory: { slots: {} },
+            projects: [],
+            activeProject: '小说甲',
+        });
+
+        expect(result.reply).toBe('完成');
+        // 嵌套 scope 必须重述 source/project（栈顶整体生效），stepKey 细化到步骤
+        expect(seen).toEqual([{ source: 'agent', project: '小说甲', stepKey: 'turn:0' }]);
+        // 回合结束（含全部提前 return 路径）scope 必须退出：栈空 → 空对象
+        expect(currentUsageScope()).toEqual({});
+    });
+
+    it('工具执行期间 currentUsageScope 为 stepKey=tool:<name>，并重述 source/project', async () => {
+        const registry = new HarnessToolRegistry();
+        registry.register(tool({
+            name: 'scope_probe',
+            execute: async () => {
+                const scope = currentUsageScope();
+                return {
+                    ok: true,
+                    content: '探针完成',
+                    data: { source: scope.source, project: scope.project, stepKey: scope.stepKey },
+                };
+            },
+        }));
+
+        const result = await runHarnessTurn({
+            adapter: scripted([{ tool: { name: 'scope_probe', args: {} } }, FINAL]),
+            registry,
+            log: new AgentSessionLog(),
+            memory: { slots: {} },
+            projects: [],
+            activeProject: '小说甲',
+        });
+
+        expect(result.toolCalls[0].data).toEqual({
+            source: 'agent',
+            project: '小说甲',
+            stepKey: 'tool:scope_probe',
+        });
     });
 });

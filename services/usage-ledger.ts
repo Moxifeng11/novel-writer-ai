@@ -26,6 +26,8 @@ export interface UsageRecord {
     durationMs: number;
     status: 'ok' | 'error' | 'aborted';
     error?: string;
+    /** 估算费用（元）；模型未配置单价时缺省（不计费） */
+    costYuan?: number;
     /** 可选上下文（项目 / 步骤） */
     project?: string;
     stepKey?: string;
@@ -41,6 +43,8 @@ export interface UsageModelSummary {
     completionTokens: number;
     totalTokens: number;
     durationMs: number;
+    /** 估算费用合计（元）；无单价记录按 0 计 */
+    costYuan: number;
 }
 
 /** 按项目聚合（无归因的记录归入 `(未归因)` 一行）。 */
@@ -51,6 +55,8 @@ export interface UsageProjectSummary {
     failedCalls: number;
     totalTokens: number;
     durationMs: number;
+    /** 估算费用合计（元）；无单价记录按 0 计 */
+    costYuan: number;
 }
 
 /** 按来源聚合（ai/step/unit/agent/document）。 */
@@ -58,6 +64,8 @@ export interface UsageSourceSummary {
     source: UsageSource;
     calls: number;
     totalTokens: number;
+    /** 估算费用合计（元）；无单价记录按 0 计 */
+    costYuan: number;
 }
 
 /** 汇总结果。 */
@@ -69,6 +77,8 @@ export interface UsageSummary {
     completionTokens: number;
     totalTokens: number;
     durationMs: number;
+    /** 估算费用合计（元）；全部记录都未配置单价时为 0 */
+    costYuan: number;
     byModel: UsageModelSummary[];
     /** 按项目聚合，token 总量降序；空 project 归 `(未归因)`。 */
     byProject: UsageProjectSummary[];
@@ -143,6 +153,7 @@ function emptyModelSummary(model: string): UsageModelSummary {
         completionTokens: 0,
         totalTokens: 0,
         durationMs: 0,
+        costYuan: 0,
     };
 }
 
@@ -154,6 +165,7 @@ function emptyProjectSummary(project: string): UsageProjectSummary {
         failedCalls: 0,
         totalTokens: 0,
         durationMs: 0,
+        costYuan: 0,
     };
 }
 
@@ -162,6 +174,7 @@ function emptySourceSummary(source: UsageSource): UsageSourceSummary {
         source,
         calls: 0,
         totalTokens: 0,
+        costYuan: 0,
     };
 }
 
@@ -181,6 +194,7 @@ function emptySourceSummary(source: UsageSource): UsageSourceSummary {
  * ```ts
  * const summary = summarizeUsage(ledger.list());
  * console.log(summary.totalTokens);
+ * console.log(summary.costYuan); // 估算费用合计（元）；未配置单价的记录按 0 计
  * console.log(summary.byModel[0]?.model, summary.byModel[0]?.totalTokens);
  * console.log(summary.byProject[0]?.project, summary.byProject[0]?.calls);
  * console.log(summary.bySource.map((s) => `${s.source}:${s.calls}`).join(','));
@@ -198,6 +212,7 @@ export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
         completionTokens: 0,
         totalTokens: 0,
         durationMs: 0,
+        costYuan: 0,
         byModel: [],
         byProject: [],
         bySource: [],
@@ -208,6 +223,8 @@ export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
         summary.completionTokens += record.completionTokens;
         summary.totalTokens += record.totalTokens;
         summary.durationMs += record.durationMs;
+        // 未配置单价的记录 costYuan 缺省，按 0 计入费用合计
+        summary.costYuan += record.costYuan ?? 0;
         if (record.status === 'ok') summary.okCalls += 1;
         else summary.failedCalls += 1;
 
@@ -220,6 +237,7 @@ export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
         model.completionTokens += record.completionTokens;
         model.totalTokens += record.totalTokens;
         model.durationMs += record.durationMs;
+        model.costYuan += record.costYuan ?? 0;
         byModel.set(key, model);
 
         // 按项目：project 缺失（未挂 scope 或链路未覆盖）时归入「未归因」桶
@@ -230,12 +248,14 @@ export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
         else project.failedCalls += 1;
         project.totalTokens += record.totalTokens;
         project.durationMs += record.durationMs;
+        project.costYuan += record.costYuan ?? 0;
         byProject.set(projectKey, project);
 
         // 按来源：source 由 client 兜底为 'ai'，必然有值
         const source = bySource.get(record.source) ?? emptySourceSummary(record.source);
         source.calls += 1;
         source.totalTokens += record.totalTokens;
+        source.costYuan += record.costYuan ?? 0;
         bySource.set(record.source, source);
     }
     summary.byModel = [...byModel.values()].sort((a, b) => b.totalTokens - a.totalTokens);

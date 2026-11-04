@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.32.0',
+        date: '2026-11-05',
+        title: '模型单价、Agent 细粒度归因与协同切片',
+        sections: [
+            {
+                type: 'added',
+                label: '💰 费用',
+                items: [
+                    '模型单价（元/百万 tokens）可配置；账本汇总/按模型/单条记录显示费用',
+                    '未配置单价不计费，避免误导性 0 元',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🎯 归因与切片',
+                items: [
+                    'Agent 归因细化到 turn:<step> 与 tool:<name>',
+                    '协同视图 5389→5152：参考卡/写作建议抽出',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.31.0',
         date: '2026-11-05',
         title: '注入全链路、用量归因与备份对比',

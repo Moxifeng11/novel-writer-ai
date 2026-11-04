@@ -95,7 +95,35 @@ describe('usage-ledger — AI 用量账本', () => {
         expect(summary.bySource.map((s) => s.source)).toEqual(['step', 'agent', 'ai']);
         expect(summary.bySource[0].calls).toBe(2);
         expect(summary.bySource[0].totalTokens).toBe(500);
-        expect(summary.bySource[1]).toEqual({ source: 'agent', calls: 1, totalTokens: 300 });
+        expect(summary.bySource[1]).toEqual({ source: 'agent', calls: 1, totalTokens: 300, costYuan: 0 });
+    });
+
+    it('costYuan 聚合到总计/byModel/byProject/bySource，未配置按 0 计', () => {
+        const summary = summarizeUsage([
+            record({ model: 'm1', project: '项目A', totalTokens: 300, costYuan: 0.5 }) as UsageRecord,
+            record({ model: 'm1', project: '项目A', status: 'error', totalTokens: 100, promptTokens: 50, completionTokens: 50, costYuan: 0.25 }) as UsageRecord,
+            record({ model: 'm2', project: '项目B', totalTokens: 300 }) as UsageRecord,
+        ]);
+        // 合计：0.5 + 0.25 + 未配置(0)
+        expect(summary.costYuan).toBeCloseTo(0.75, 6);
+        // byModel 按 token 降序：m1(400) > m2(300)；费用只落在 m1 上
+        expect(summary.byModel[0].model).toBe('m1');
+        expect(summary.byModel[0].costYuan).toBeCloseTo(0.75, 6);
+        expect(summary.byModel[1].model).toBe('m2');
+        expect(summary.byModel[1].costYuan).toBe(0);
+        // byProject：项目A(0.75) > 项目B(0) > —
+        expect(summary.byProject[0].project).toBe('项目A');
+        expect(summary.byProject[0].costYuan).toBeCloseTo(0.75, 6);
+        expect(summary.byProject[1].costYuan).toBe(0);
+        // bySource：全部来源 ai，费用随记录累加
+        expect(summary.bySource[0].source).toBe('ai');
+        expect(summary.bySource[0].costYuan).toBeCloseTo(0.75, 6);
+    });
+
+    it('空记录的费用合计为 0（空 summary 工厂补 0）', () => {
+        const summary = summarizeUsage([]);
+        expect(summary.costYuan).toBe(0);
+        expect(summary.byModel).toHaveLength(0);
     });
 
     it('pushUsageScope 嵌套时栈顶优先，退出后回退到外层', () => {

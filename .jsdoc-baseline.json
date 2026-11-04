@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T17:34:16.832Z",
+  "generatedAt": "2026-11-04T18:43:18.766Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -12,16 +12,16 @@
     },
     "services": {
       "files": 32,
-      "exports": 180,
-      "documented": 180,
+      "exports": 185,
+      "documented": 185,
       "methods": 221,
       "methodsDocumented": 221,
       "incomplete": 0
     },
     "shared": {
-      "files": 168,
-      "exports": 1547,
-      "documented": 1547,
+      "files": 169,
+      "exports": 1550,
+      "documented": 1550,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 203,
-      "exports": 520,
-      "documented": 520,
-      "methods": 652,
-      "methodsDocumented": 652,
+      "files": 206,
+      "exports": 527,
+      "documented": 527,
+      "methods": 651,
+      "methodsDocumented": 651,
       "incomplete": 0
     }
   },
@@ -2204,8 +2204,8 @@
       "incomplete": 0
     },
     "services/usage-ledger.ts": {
-      "exports": 8,
-      "documented": 8,
+      "exports": 13,
+      "documented": 13,
       "methods": 7,
       "methodsDocumented": 7,
       "incomplete": 0
@@ -2817,6 +2817,13 @@
     "shared/model-capabilities.ts": {
       "exports": 11,
       "documented": 11,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/model-pricing.ts": {
+      "exports": 3,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3717,6 +3724,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/co-writing/kb-reference-card.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/co-writing/markdown-toolbar.ts": {
       "exports": 2,
       "documented": 2,
@@ -3724,11 +3738,18 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/co-writing/writing-advice.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/co-writing-view.ts": {
       "exports": 3,
       "documented": 3,
-      "methods": 103,
-      "methodsDocumented": 103,
+      "methods": 102,
+      "methodsDocumented": 102,
       "incomplete": 0
     },
     "ui/command-ui-executor.ts": {
@@ -4907,6 +4928,13 @@
       "documented": 2,
       "methods": 10,
       "methodsDocumented": 10,
+      "incomplete": 0
+    },
+    "ui/views/kb-book-card.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
       "incomplete": 0
     },
     "ui/views/knowledge-base-modals.ts": {

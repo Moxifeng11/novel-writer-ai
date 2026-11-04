@@ -39,6 +39,8 @@ import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from './model
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
 import { BodySaveController } from './cowrite/body-save-controller';
 import { buildMarkdownToolbar } from './co-writing/markdown-toolbar';
+import { buildKbReferenceCard } from './co-writing/kb-reference-card';
+import { generateWritingAdvice } from './co-writing/writing-advice';
 import { resolveInsertRange, type PendingRewriteRange } from './cowrite/insert-range';
 import { BodyWriter } from '@/engine/body-writer';
 import {
@@ -3416,131 +3418,28 @@ ${text}`;
   /**
    * 创建书籍卡片。
    *
+   * DOM 构建细节已抽到 co-writing/kb-reference-card.ts 的 buildKbReferenceCard，
+   * 本方法只负责把视图的展开状态、流派名解析、标签插入与参考书操作能力注入宿主回调。
+   *
    * @param book - 书籍
    * @returns 元素
    */
   createKbBookCard(book: BookBasicInfo): HTMLElement {
-    const isExpanded = this.expandedBookId === book.id;
-    const card = createDiv({
-      cls: `nw-kb-mini-card${isExpanded ? ' is-expanded' : ''}`,
-      attr: { "data-book-id": book.id }
+    return buildKbReferenceCard(book, {
+      isBookExpanded: id => this.expandedBookId === id,
+      toggleBookExpanded: id => {
+        this.expandedBookId = this.expandedBookId === id ? null : id;
+        this.renderKbBookList();
+      },
+      getGenreName: id => this.facade.knowledgeBaseManager?.getKnowledgeBase()?.getGenre(id)?.name || '',
+      getBookTopCharacters: b => this.getBookTopCharacters(b),
+      getBookTopTechniques: b => this.getBookTopTechniques(b),
+      quickInsertText: text => this.quickInsertText(text),
+      getActiveReferenceBookIds: () => this.facade.getReferenceBooks(),
+      toggleReferenceBook: (id, name, enable) => this.toggleReferenceBook(id, name, enable),
+      setPrimaryReference: id => this.setPrimaryReference(id),
+      adjustReferenceWeight: (id, weight) => this.adjustReferenceWeight(id, weight),
     });
-
-    const header = card.createDiv({ cls: "nw-kb-mini-card-header" });
-    const titleInfo = header.createDiv({ cls: "nw-kb-mini-card-title" });
-    titleInfo.createSpan({ cls: "nw-kb-mini-card-name", text: book.name });
-    if (book.author) {
-      titleInfo.createSpan({ cls: "nw-kb-mini-card-author", text: book.author });
-    }
-
-    const quality = book.qualityScores?.overall;
-    if (quality !== undefined) {
-      header.createSpan({ cls: "nw-kb-mini-card-score", text: `⭐ ${quality.toFixed(0)}` });
-    }
-
-    const toggle = header.createSpan({
-      cls: "nw-kb-mini-card-toggle",
-      text: isExpanded ? '▼' : '▶'
-    });
-
-    header.addEventListener("click", () => {
-      this.expandedBookId = isExpanded ? null : book.id;
-      this.renderKbBookList();
-    });
-
-    if (isExpanded) {
-      const body = card.createDiv({ cls: "nw-kb-mini-card-body" });
-
-      if (book.primaryGenre) {
-        const genreRow = body.createDiv({ cls: "nw-kb-mini-row" });
-        genreRow.createSpan({ cls: "nw-kb-mini-label", text: "题材：" });
-        const kb = this.facade.knowledgeBaseManager?.getKnowledgeBase();
-        const genreName = kb?.getGenre(book.primaryGenre)?.name || book.primaryGenre;
-        genreRow.createSpan({ cls: "nw-kb-tag nw-kb-tag-genre", text: genreName });
-      }
-
-      if (book.qualityScores) {
-        const scoreRow = body.createDiv({ cls: "nw-kb-mini-row" });
-        scoreRow.createSpan({ cls: "nw-kb-mini-label", text: "质量：" });
-        scoreRow.createSpan({ text: `${book.qualityScores.overall.toFixed(0)}分` });
-      }
-
-      const topChars = this.getBookTopCharacters(book);
-      if (topChars.length > 0) {
-        const charRow = body.createDiv({ cls: "nw-kb-mini-section" });
-        charRow.createDiv({ cls: "nw-kb-mini-section-title", text: "🏷 主要人设 Top 5" });
-        const tagsWrap = charRow.createDiv({ cls: "nw-kb-mini-tags" });
-        topChars.forEach(tag => {
-          const tagEl = tagsWrap.createSpan({
-            cls: "nw-kb-tag nw-kb-tag-character nw-kb-tag-clickable",
-            text: tag
-          });
-          tagEl.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.quickInsertText(tag);
-          });
-        });
-      }
-
-      const topTechniques = this.getBookTopTechniques(book);
-      if (topTechniques.length > 0) {
-        const techRow = body.createDiv({ cls: "nw-kb-mini-section" });
-        techRow.createDiv({ cls: "nw-kb-mini-section-title", text: "💡 核心技巧 Top 5" });
-        const tagsWrap = techRow.createDiv({ cls: "nw-kb-mini-tags" });
-        topTechniques.forEach(tag => {
-          const tagEl = tagsWrap.createSpan({
-            cls: "nw-kb-tag nw-kb-tag-technique nw-kb-tag-clickable",
-            text: tag
-          });
-          tagEl.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.quickInsertText(tag);
-          });
-        });
-      }
-
-      const actionRow = body.createDiv({ cls: "nw-kb-mini-section nw-kb-action-row" });
-      const activeRefs = this.facade.getReferenceBooks();
-      const isActive = activeRefs.includes(book.id);
-      const isPrimary = activeRefs.indexOf(book.id) === 0;
-
-      const toggleBtn = actionRow.createEl("button", {
-        cls: `nw-btn nw-btn-sm ${isActive ? 'nw-btn-primary' : 'nw-btn-ghost'}`,
-        text: isActive ? '✓ 已启用参考' : '启用参考'
-      });
-      toggleBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.toggleReferenceBook(book.id, book.name, !isActive);
-      });
-
-      if (isActive) {
-        const primaryBtn = actionRow.createEl("button", {
-          cls: `nw-btn nw-btn-sm ${isPrimary ? 'nw-btn-accent' : 'nw-btn-ghost'}`,
-          text: isPrimary ? '★ 主参考' : '设为主参考'
-        });
-        primaryBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          this.setPrimaryReference(book.id);
-        });
-
-        if (activeRefs.length > 1) {
-          const weightWrap = actionRow.createDiv({ cls: "nw-kb-weight-wrap" });
-          weightWrap.createSpan({ cls: "nw-kb-weight-label", text: "权重:" });
-          const weightSlider = weightWrap.createEl("input", {
-            type: "range",
-            cls: "nw-kb-weight-slider",
-            attr: { min: "10", max: "100", value: String(isPrimary ? 100 : 50) }
-          });
-          weightSlider.addEventListener("input", (e) => {
-            e.stopPropagation();
-            const value = parseInt(weightSlider.value, 10);
-            this.adjustReferenceWeight(book.id, value / 100);
-          });
-        }
-      }
-    }
-
-    return card;
   }
 
   /**
@@ -3933,7 +3832,12 @@ ${text}`;
     header.createSpan({ text: "💡 写作建议" });
     header.createSpan({ cls: "nw-kb-section-desc", text: "基于内容和参考书籍" });
 
-    const adviceList = this.generateWritingAdvice();
+    const adviceList = generateWritingAdvice({
+      text: this.rightEditor?.value || '',
+      books: this.kbBooksCache,
+      activeRefIds: this.facade.getReferenceBooks(),
+      getGenre: id => this.facade.knowledgeBaseManager?.getKnowledgeBase()?.getGenre(id),
+    });
     if (adviceList.length === 0) {
       this.kbAdviceContainer.createDiv({
         cls: "nw-kb-empty",
@@ -3956,147 +3860,6 @@ ${text}`;
         });
       }
     });
-  }
-
-  /**
-   * 生成写作建议。
-   * @returns 建议数组
-   */
-  generateWritingAdvice(): Array<{ icon: string; title: string; desc: string; source?: string; category?: string }> {
-    const text = this.rightEditor?.value || '';
-    const advice: Array<{ icon: string; title: string; desc: string; source?: string; category?: string }> = [];
-    const kb = this.facade.knowledgeBaseManager?.getKnowledgeBase();
-
-    if (text.length < 300) {
-      advice.push({
-        icon: "📝",
-        title: "继续充实内容",
-        desc: `当前 ${text.length} 字，建议至少写到 500 字让情节展开。`,
-        category: "general"
-      });
-    }
-
-    const completedBooks = this.kbBooksCache.filter(b => b.breakdownStatus === 'completed');
-    const activeRefs = this.facade.getReferenceBooks();
-    
-    if (completedBooks.length > 0) {
-      for (const refBook of completedBooks.slice(0, 2)) {
-        const genre = kb && refBook.primaryGenre ? kb.getGenre(refBook.primaryGenre) : null;
-        if (genre) {
-          const isActive = activeRefs.includes(refBook.id);
-          const sourceLabel = isActive ? `《${refBook.name}》（启用中）` : `《${refBook.name}》`;
-
-          const rhythmTech = genre.techniques.find(t => t.category === 'rhythm');
-          if (rhythmTech) {
-            advice.push({
-              icon: "📈",
-              title: `节奏建议：${rhythmTech.name}`,
-              desc: rhythmTech.description,
-              source: sourceLabel,
-              category: "rhythm"
-            });
-          }
-
-          const coolTech = genre.techniques.find(t => t.category === 'cool_point');
-          if (coolTech) {
-            advice.push({
-              icon: "🔥",
-              title: `爽点建议：${coolTech.name}`,
-              desc: coolTech.description,
-              source: sourceLabel,
-              category: "technique"
-            });
-          }
-
-          const emotionTech = genre.techniques.find(t => t.category === 'emotion');
-          if (emotionTech) {
-            advice.push({
-              icon: "💖",
-              title: `情感建议：${emotionTech.name}`,
-              desc: emotionTech.description,
-              source: sourceLabel,
-              category: "emotion"
-            });
-          }
-
-          if (genre.personalityTags.length > 0) {
-            const charTag = genre.personalityTags[0];
-            advice.push({
-              icon: "🎭",
-              title: `人设参考：${charTag}`,
-              desc: `可借鉴${sourceLabel}中「${charTag}」类型的角色塑造方式，让人物更立体。`,
-              source: sourceLabel,
-              category: "character"
-            });
-          }
-        }
-      }
-    } else if (this.kbBooksCache.length > 0) {
-      const first = this.kbBooksCache[0];
-      advice.push({
-        icon: "⏳",
-        title: "等待书籍拆解完成",
-        desc: `《${first.name}》正在拆解中，完成后可获得更多建议。`,
-        category: "general"
-      });
-    } else {
-      advice.push({
-        icon: "📚",
-        title: "添加参考书籍",
-        desc: "导入参考书籍并拆解后，可获得个性化写作建议。",
-        category: "general"
-      });
-    }
-
-    const sentenceCount = (text.match(/[。！？.!?]/g) || []).length;
-    if (sentenceCount > 0 && text.length / sentenceCount > 40) {
-      advice.push({
-        icon: "✂️",
-        title: "句子偏长，建议拆分",
-        desc: "当前平均句长较长，适当使用短句可以加快节奏。",
-        category: "style"
-      });
-    }
-
-    const dialogueCount = (text.match(/["""「『]/g) || []).length;
-    if (sentenceCount > 5 && dialogueCount < sentenceCount * 0.1) {
-      advice.push({
-        icon: "💬",
-        title: "增加对话互动",
-        desc: "对话可以让场景更生动，人物更鲜活，建议适当增加。",
-        category: "dialogue"
-      });
-    }
-
-    const battleKeywords = ['战斗', '打斗', '交手', '对战', '攻击', '防御'];
-    let battleScore = 0;
-    for (const kw of battleKeywords) if (text.includes(kw)) battleScore++;
-    if (battleScore >= 2 && completedBooks.length > 0) {
-      const refBook = completedBooks[0];
-      advice.push({
-        icon: "⚔️",
-        title: "战斗场景优化",
-        desc: `当前是战斗场景，可参考《${refBook.name}》的战斗节奏和动作描写方式。`,
-        source: `《${refBook.name}》`,
-        category: "scene"
-      });
-    }
-
-    const emotionKeywords = ['伤心', '感动', '愤怒', '恐惧', '喜悦', '悲伤', '思念'];
-    let emotionScore = 0;
-    for (const kw of emotionKeywords) if (text.includes(kw)) emotionScore++;
-    if (emotionScore >= 2 && completedBooks.length > 0) {
-      const refBook = completedBooks[0];
-      advice.push({
-        icon: "💕",
-        title: "情感场景深化",
-        desc: `当前是情感场景，可借鉴《${refBook.name}》的情感表达方式，让情绪更有层次。`,
-        source: `《${refBook.name}》`,
-        category: "scene"
-      });
-    }
-
-    return advice.slice(0, 6);
   }
 
   // ==================== 知识库 Tab 方法结束 ====================

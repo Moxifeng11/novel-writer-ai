@@ -2,6 +2,30 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.32.0（2026-11-05）
+
+### 💰 模型单价与费用估算（M4 第三批，子代理协作交付）
+
+- 新增 `shared/model-pricing.ts`：`lookupModelPricing`（从 customProviders 的 `modelMeta` 精确匹配）+ `estimateCostYuan`（元/百万 tokens，6 位小数）；不内置价格表，未配置不计费。
+- `CustomProvider.modelMeta` 新增 `inputPricePerM/outputPricePerM`；模型编辑弹窗（API 设置）可直接填写单价，留空不计费。
+- `UsageRecord/UsageSummary` 及 byModel/byProject/bySource 全维度累计 `costYuan`；AI client 三入口记录时估算。
+- 用量账本 UI：汇总卡新增「费用(元)」、按模型表新增费用列、单条记录显示 `¥x.xxxx`（未配置不显示，避免误读为 0 元）。
+
+### 🎯 Agent 归因细化到步骤/工具
+
+- 回合内模型调用挂 `stepKey: 'turn:<step>'`；工具执行挂 `stepKey: 'tool:<name>'`（嵌套 scope 重述 source/project，栈顶生效）。
+- 今天 host tools 不调 AI，此归因为未来「会话内生成类工具」预留精确计费口径；新增行为级 scope 断言测试。
+
+### 🪓 协同视图切片（第二批）
+
+- `ui/co-writing-view.ts` 5,389 → 5,152（-237）：知识库参考卡抽到 `ui/co-writing/kb-reference-card.ts`（10 成员宿主接口），写作建议抽到 `ui/co-writing/writing-advice.ts`（纯函数化）。
+- lint 警告 1890 → 1889。
+
+### 🧪 测试
+
+- 新增单价命中/估算公式、costYuan 聚合、agent scope 行为级断言。
+- 全量单测 546 文件 / 5955 用例。
+
 ## v4.31.0（2026-11-05）
 
 ### 🧠 全链路注入与归因（M4 第二批，子代理协作交付）

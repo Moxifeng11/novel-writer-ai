@@ -305,7 +305,8 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
  *
  * 用量归因：回合最外层 pushUsageScope 挂上 source=agent + 当前项目，
  * 本回合所有模型调用的用量记录都会带上该归因；try/finally 覆盖回合内
- * 全部提前 return 与异常，保证 scope 一定退出。
+ * 全部提前 return 与异常，保证 scope 一定退出。回合内再嵌套更细的 scope：
+ * 每次模型调用挂 turn:<step>，每次工具执行挂 tool:<name>（见 runHarnessTurnInner）。
  * @param options - 配置项
  * @returns HarnessLoopTurnResult 实例
  */
@@ -394,7 +395,19 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
 
         let assistant;
         try {
-            assistant = await adapter.complete({ system, turns, temperature, maxTokens, signal });
+            // 步骤级归因：本次模型调用的用量记到 turn:<step>。
+            // 嵌套 scope 栈顶整体生效（不字段合并），必须重述 source/project；
+            // push 紧贴本次调用，finally 保证退出，且不改外层 try/catch 语义。
+            const exitStepUsage = pushUsageScope({
+                source: 'agent',
+                project: options.activeProject ?? undefined,
+                stepKey: `turn:${step}`,
+            });
+            try {
+                assistant = await adapter.complete({ system, turns, temperature, maxTokens, signal });
+            } finally {
+                exitStepUsage();
+            }
         } catch (e) {
             result.failed = true;
             result.failReason = e instanceof Error ? e.message : String(e);
@@ -498,7 +511,18 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
                     approvalGranted,
                 };
                 const startedAt = Date.now();
-                toolResult = await toolset.execute(tool.name, tool.args, toolCtx);
+                // 工具级归因：工具执行期间（含未来工具内部的 AI 调用）的用量记到 tool:<name>。
+                // 同样重述 source/project（嵌套栈顶整体生效）；只包住本次 execute，不改控制流。
+                const exitToolUsage = pushUsageScope({
+                    source: 'agent',
+                    project: options.activeProject ?? undefined,
+                    stepKey: `tool:${tool.name}`,
+                });
+                try {
+                    toolResult = await toolset.execute(tool.name, tool.args, toolCtx);
+                } finally {
+                    exitToolUsage();
+                }
                 toolDurationMs = Date.now() - startedAt;
                 result.toolMs += toolDurationMs;
             }
