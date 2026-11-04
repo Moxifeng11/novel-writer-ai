@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T18:43:18.766Z",
+  "generatedAt": "2026-11-04T19:07:56.714Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -12,16 +12,16 @@
     },
     "services": {
       "files": 32,
-      "exports": 185,
-      "documented": 185,
+      "exports": 186,
+      "documented": 186,
       "methods": 221,
       "methodsDocumented": 221,
       "incomplete": 0
     },
     "shared": {
-      "files": 169,
-      "exports": 1550,
-      "documented": 1550,
+      "files": 170,
+      "exports": 1552,
+      "documented": 1552,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
@@ -30,22 +30,22 @@
       "files": 6,
       "exports": 23,
       "documented": 23,
-      "methods": 49,
-      "methodsDocumented": 49,
+      "methods": 50,
+      "methodsDocumented": 50,
       "incomplete": 0
     },
     "domains": {
       "files": 11,
-      "exports": 30,
-      "documented": 30,
+      "exports": 28,
+      "documented": 28,
       "methods": 1,
       "methodsDocumented": 1,
       "incomplete": 0
     },
     "ui": {
-      "files": 206,
-      "exports": 527,
-      "documented": 527,
+      "files": 208,
+      "exports": 531,
+      "documented": 531,
       "methods": 651,
       "methodsDocumented": 651,
       "incomplete": 0
@@ -2074,8 +2074,8 @@
       "incomplete": 0
     },
     "services/font-manager.ts": {
-      "exports": 13,
-      "documented": 13,
+      "exports": 14,
+      "documented": 14,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2958,6 +2958,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/project-root.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/prompt-budget.ts": {
       "exports": 18,
       "documented": 18,
@@ -3489,8 +3496,8 @@
     "core/theme-manager.ts": {
       "exports": 3,
       "documented": 3,
-      "methods": 3,
-      "methodsDocumented": 3,
+      "methods": 4,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "domains/harness-profile-registry.ts": {
@@ -3508,8 +3515,8 @@
       "incomplete": 0
     },
     "domains/kernel/project-locator.ts": {
-      "exports": 9,
-      "documented": 9,
+      "exports": 7,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3717,6 +3724,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/co-writing/chapter-match.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/co-writing/human-rate.ts": {
       "exports": 3,
       "documented": 3,
@@ -3738,6 +3752,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/co-writing/quality-report.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/co-writing/writing-advice.ts": {
       "exports": 3,
       "documented": 3,
@@ -3746,8 +3767,8 @@
       "incomplete": 0
     },
     "ui/co-writing-view.ts": {
-      "exports": 3,
-      "documented": 3,
+      "exports": 2,
+      "documented": 2,
       "methods": 102,
       "methodsDocumented": 102,
       "incomplete": 0

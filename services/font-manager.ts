@@ -178,6 +178,30 @@ export async function unregisterFont(plugin: NovelWriterPlugin, family: string):
     await plugin.saveSettings();
 }
 
+/**
+ * 注销全部已注册的自定义字体（插件卸载时调用）
+ *
+ * 遍历模块级 registeredFonts 注册表，逐个从 document.fonts 移除 FontFace，
+ * 最后清空注册表。与 unregisterFont 的区别：本函数只释放运行时资源，
+ * 不动 settings.customFonts——卸载仅移除 FontFace，清单保留供下次启动
+ * 由 registerAllCustomFonts 恢复。
+ *
+ * @example
+ * ```ts
+ * // 插件 onunload 的同步清理区调用，避免热重载后 document.fonts 残留重复字体
+ * unregisterAllCustomFonts();
+ * ```
+ */
+export function unregisterAllCustomFonts(): void {
+    const count = registeredFonts.size;
+    if (count === 0) return;
+    for (const font of registeredFonts.values()) {
+        document.fonts.delete(font);
+    }
+    registeredFonts.clear();
+    log.info(`[FontManager] 卸载清理：已注销 ${count} 个自定义字体 FontFace`);
+}
+
 /** 系统字体预设（常见中文字体栈；浏览器无法枚举系统字体，用预设 + 主题变量） */
 export const SYSTEM_FONT_PRESETS: Array<{ label: string; value: string }> = [
     { label: '跟随主题正文', value: 'var(--font-text)' },

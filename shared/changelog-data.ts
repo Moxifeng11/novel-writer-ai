@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.33.0',
+        date: '2026-11-05',
+        title: '卸载契约、分层门禁收口',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🧹 卸载',
+                items: [
+                    'onunload 顺序化：flush（2s 期限）先于 disposeAll（3s 期限），不再互相竞争',
+                    '自定义字体卸载时释放 FontFace；ThemeManager 补 dispose 契约并清理布局变量',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧭 门禁与切片',
+                items: [
+                    'domains/utils 纳入分层门禁（出向只许依赖 shared）；路径逻辑下沉 shared/project-root',
+                    '协同视图 5152→4986：质检报告/章节匹配/匹配卡抽出',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.32.0',
         date: '2026-11-05',
         title: '模型单价、Agent 细粒度归因与协同切片',

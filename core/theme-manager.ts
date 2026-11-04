@@ -28,6 +28,33 @@ export interface LayoutSizeSettings {
 }
 
 /**
+ * ThemeManager 注入到 documentElement 的全部布局 CSS 变量名（单一事实来源）。
+ *
+ * injectLayoutVariables 的 set 与 dispose 的 remove 都引用这份清单，
+ * 保证「注入过什么就清理什么」严格对称，插件卸载后不残留 --nw-* 布局变量。
+ */
+const THEME_LAYOUT_VARS = [
+    '--nw-wizard-sidebar-w',
+    '--nw-entity-tree-w',
+    '--nw-modal-max-w',
+    '--nw-modal-max-h',
+    '--nw-modal-md-w',
+    '--nw-project-selector-w',
+    '--nw-step-min-h',
+    '--nw-scroll-max-h',
+    '--nw-scroll-md-h',
+    '--nw-grid-3col',
+    '--nw-grid-2col-fm',
+    '--nw-panel-nav',
+    '--nw-panel-context',
+    '--nw-panel-pad',
+    '--nw-card-pad',
+] as const;
+
+/** 布局变量名 → 取值；键类型受 THEME_LAYOUT_VARS 约束，遗漏成员会在编译期报错 */
+type ThemeLayoutVarMap = Record<(typeof THEME_LAYOUT_VARS)[number], string>;
+
+/**
  * 主题管理：内置主题、配色派生与样式注入。
  */
 export class ThemeManager {
@@ -76,17 +103,6 @@ export class ThemeManager {
     /** 注入布局 CSS 变量（全插件生命周期可用） */
     injectLayoutVariables(): void {
         const root = document.documentElement;
-        root.style.setProperty('--nw-wizard-sidebar-w', 'clamp(200px, 14vw, 240px)');
-        root.style.setProperty('--nw-entity-tree-w', 'min(240px, 16vw)');
-        root.style.setProperty('--nw-modal-max-w', '96vw');
-        root.style.setProperty('--nw-modal-max-h', '92vh');
-        root.style.setProperty('--nw-modal-md-w', 'min(1000px, 85vw)');
-        root.style.setProperty('--nw-project-selector-w', 'min(900px, 80vw)');
-        root.style.setProperty('--nw-step-min-h', 'max(320px, calc(100vh - 380px))');
-        root.style.setProperty('--nw-scroll-max-h', 'max(400px, 50vh)');
-        root.style.setProperty('--nw-scroll-md-h', 'max(240px, 30vh)');
-        root.style.setProperty('--nw-grid-3col', 'minmax(120px, 160px) 1fr minmax(180px, 240px)');
-        root.style.setProperty('--nw-grid-2col-fm', 'auto 1fr');
         // 工作台三栏：左右宽度来自设置（可在「工作台布局」页调），中栏自适应。
         // 旧实现这里与 full-writer-view 各注入一套不同值（140/220 vs 160/240），
         // 谁后执行谁生效，导致宽度「看起来随机」。
@@ -94,16 +110,51 @@ export class ThemeManager {
         const sizes = this.getLayoutSizes?.() ?? {};
         const left = Math.max(100, Math.min(400, sizes.fwStepNav ?? 140));
         const right = Math.max(160, Math.min(560, sizes.fwRightPanel ?? 220));
-        root.style.setProperty('--nw-panel-nav', `${left}px`);
-        root.style.setProperty('--nw-panel-context', `${right}px`);
-        root.style.setProperty('--nw-panel-pad', '16px');
-        root.style.setProperty('--nw-card-pad', '12px');
+        const values: ThemeLayoutVarMap = {
+            '--nw-wizard-sidebar-w': 'clamp(200px, 14vw, 240px)',
+            '--nw-entity-tree-w': 'min(240px, 16vw)',
+            '--nw-modal-max-w': '96vw',
+            '--nw-modal-max-h': '92vh',
+            '--nw-modal-md-w': 'min(1000px, 85vw)',
+            '--nw-project-selector-w': 'min(900px, 80vw)',
+            '--nw-step-min-h': 'max(320px, calc(100vh - 380px))',
+            '--nw-scroll-max-h': 'max(400px, 50vh)',
+            '--nw-scroll-md-h': 'max(240px, 30vh)',
+            '--nw-grid-3col': 'minmax(120px, 160px) 1fr minmax(180px, 240px)',
+            '--nw-grid-2col-fm': 'auto 1fr',
+            '--nw-panel-nav': `${left}px`,
+            '--nw-panel-context': `${right}px`,
+            '--nw-panel-pad': '16px',
+            '--nw-card-pad': '12px',
+        };
+        for (const name of THEME_LAYOUT_VARS) {
+            root.style.setProperty(name, values[name]);
+        }
     }
 
     /** 清理所有注入的样式 */
     cleanup(): void {
         const allStyles = document.querySelectorAll('style[id^="novel-writer-"]');
         allStyles.forEach(el => el.remove());
+    }
+
+    /**
+     * 释放 ThemeManager 注入的全部 DOM 资源（满足 EngineRegistry 的 Disposable 契约）。
+     *
+     * - 移除注入的 style[id^="novel-writer-"] 标签（cleanup()）；
+     * - 从 documentElement 逐个移除 injectLayoutVariables set 过的 --nw-* 布局变量
+     *   （set 与 remove 共用 THEME_LAYOUT_VARS，保证对称）。
+     *
+     * 此前只有 cleanup()（生产零调用），布局变量从不移除，导致
+     * EngineRegistry.disposeAll() 的 isDisposable 检查静默跳过 ThemeManager；
+     * 现在插件卸载时会经由 disposeAll 自动调用本方法。
+     */
+    dispose(): void {
+        this.cleanup();
+        const root = document.documentElement;
+        for (const name of THEME_LAYOUT_VARS) {
+            root.style.removeProperty(name);
+        }
     }
 }
 

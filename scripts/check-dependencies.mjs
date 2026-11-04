@@ -2,9 +2,11 @@
  * check-dependencies.mjs — 分层依赖检查脚本
  *
  * 检查规则：
- * - UI 层 (ui/) → 可依赖 engine / services / shared
- * - engine 层 (engine/) → 可依赖 services / shared / repository
- * - services 层 (services/) → 可依赖 shared
+ * - UI 层 (ui/) → 可依赖 engine / services / domains / utils / shared / core
+ * - engine 层 (engine/) → 可依赖 services / domains / utils / shared / repository
+ * - services 层 (services/) → 可依赖 domains / shared / core
+ * - Domains 领域层 (domains/) → 只可依赖 shared
+ * - Utils 工具层 (utils/) → 只可依赖 shared
  * - shared 层 (shared/) → 不可依赖其他业务层
  * - 禁止循环依赖
  *
@@ -32,20 +34,28 @@ const PROJECT_ROOT = join(__dirname, '..');
 // 一、分层配置
 // ============================================================
 
+// 分层说明：
+// - main.ts 是组合根（composition root），显式不参与分层：它负责装配所有模块，
+//   imports 不做分层检查；getFileLayer 未命中即返回 null 跳过检查。
+// - repository 目录未单独建层，engine.allowed 中的 'repository' 是 dead allowance
+//   （repository 文件 getFileLayer 为 null 本就被跳过），因历史原因保留不动。
+// - ui/engine/services → domains/utils 是既有合法的「入站」依赖：domains（项目定位、
+//   工具目录、领域工厂等领域内核）与 utils（helpers）被所有上层运行时消费；
+//   反向约束（domains/utils 只允许依赖 shared）正是本次修补 P1-7 盲区新增的门禁。
 const LAYERS = {
     ui: {
         dirs: ['ui/'],
-        allowed: ['engine', 'services', 'shared', 'core'],
+        allowed: ['engine', 'services', 'domains', 'utils', 'shared', 'core'],
         label: 'UI 层',
     },
     engine: {
         dirs: ['engine/'],
-        allowed: ['services', 'shared', 'core', 'repository'],
+        allowed: ['services', 'domains', 'utils', 'shared', 'core', 'repository'],
         label: 'Engine 层',
     },
     services: {
         dirs: ['services/'],
-        allowed: ['shared', 'core'],
+        allowed: ['domains', 'shared', 'core'],
         label: 'Services 层',
     },
     shared: {
@@ -57,6 +67,16 @@ const LAYERS = {
         dirs: ['core/'],
         allowed: ['shared'],
         label: 'Core 层',
+    },
+    domains: {
+        dirs: ['domains/'],
+        allowed: ['shared'],
+        label: 'Domains 领域层',
+    },
+    utils: {
+        dirs: ['utils/'],
+        allowed: ['shared'],
+        label: 'Utils 工具层',
     },
 };
 

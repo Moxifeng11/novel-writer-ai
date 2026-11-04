@@ -7,7 +7,7 @@
 import type { App, DataAdapter } from 'obsidian';
 import { TFile } from 'obsidian';
 import type { CreationMode } from './creation-mode';
-import { resolveProjectRoot } from '@/domains/kernel/project-locator';
+import { resolveProjectRoot } from '@/shared/project-root';
 import { writeVaultText } from './file-system-port';
 
 /**

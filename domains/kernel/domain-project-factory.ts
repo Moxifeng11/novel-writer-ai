@@ -12,7 +12,8 @@ import { CREATION_MODE_SPECS, buildCreationModeGuide, buildCreationModeMetaSecti
 import { ensureModeContentStructure } from '@/shared/mode-content';
 import { writeVaultText } from '@/shared/file-system-port';
 import { pjProjectMeta } from '@/shared/paths';
-import { WritingProfileManager } from '@/engine/writing-profile';
+// WritingProfileManager 实例经 plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER) 获取
+// （类型由 EngineServiceMap 令牌映射推导），不直接 import engine 模块，避免 domains→engine 运行时依赖。
 // 只取名字常量：从 engine-registry 引会连带加载整个引擎图（其中 ai-engine 等 runtime import main）
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { newProjectPath } from './project-locator';

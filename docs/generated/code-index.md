@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 297 | 131691 | 1577 | 1319 | 84% |
-| `services/` | 32 | 12553 | 185 | 146 | 79% |
-| `shared/` | 170 | 38247 | 1545 | 1282 | 83% |
-| `core/` | 7 | 2686 | 28 | 13 | 46% |
-| `domains/` | 11 | 767 | 30 | 22 | 73% |
-| `ui/` | 208 | 96732 | 535 | 491 | 92% |
+| `services/` | 32 | 12577 | 186 | 147 | 79% |
+| `shared/` | 171 | 38318 | 1547 | 1284 | 83% |
+| `core/` | 7 | 2737 | 28 | 13 | 46% |
+| `domains/` | 11 | 740 | 28 | 20 | 71% |
+| `ui/` | 210 | 96858 | 540 | 495 | 92% |
 
 ## 文件清单
 
@@ -23,10 +23,10 @@
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
 | `core/settings-service.ts` | 538 | 4 | 3 |
-| `core/theme-manager.ts` | 211 | 3 | 2 |
+| `core/theme-manager.ts` | 262 | 3 | 2 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
-| `domains/kernel/domain-project-factory.ts` | 169 | 2 | 0 |
-| `domains/kernel/project-locator.ts` | 134 | 9 | 9 |
+| `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
+| `domains/kernel/project-locator.ts` | 106 | 7 | 7 |
 | `domains/kernel/tool-catalog-aggregator.ts` | 94 | 6 | 5 |
 | `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
@@ -339,7 +339,7 @@
 | `services/chapter-version-service.ts` | 600 | 2 | 2 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
-| `services/font-manager.ts` | 195 | 13 | 11 |
+| `services/font-manager.ts` | 219 | 14 | 12 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 360 | 3 | 3 |
 | `services/job-service.ts` | 364 | 9 | 1 |
@@ -375,7 +375,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1320 | 3 | 3 |
+| `shared/changelog-data.ts` | 1343 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -464,6 +464,7 @@
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
 | `shared/project-name.ts` | 93 | 5 | 5 |
+| `shared/project-root.ts` | 48 | 2 | 2 |
 | `shared/prompt-budget.ts` | 541 | 18 | 16 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 50 | 3 | 0 |
@@ -554,11 +555,13 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1019 | 2 | 2 |
-| `ui/co-writing-view.ts` | 5153 | 3 | 3 |
+| `ui/co-writing-view.ts` | 4987 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
+| `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
 | `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
 | `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
+| `ui/co-writing/quality-report.ts` | 129 | 2 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 652 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |

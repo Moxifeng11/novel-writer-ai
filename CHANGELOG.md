@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.33.0（2026-11-05）
+
+### 🧹 卸载清理契约（审计 P1-4）
+
+- `onunload` 顺序化：三个 flush（设置写入器 dispose、知识库、批量导入、指纹库）先于 `disposeAll`，各自带 2s/3s 卸载期限（`withUnloadDeadline`，超时只告警不阻塞卸载）——修复 flush 与引擎销毁互相竞争的问题。
+- 自定义字体补 `unregisterAllCustomFonts()`：卸载时释放全部 FontFace（注册表保留清单供下次启动恢复）。
+- `ThemeManager` 补 `dispose()` 契约：移除主题样式 + 对称清理 15 个 `--nw-*` 布局变量（`THEME_LAYOUT_VARS` 单一事实来源，set/remove 对称）；`disposeAll()` 不再静默跳过它。顺带消除 14 条存量 style 警告（lint 1889 → 1875）。
+
+### 🧭 分层门禁收口（审计 P1-7）
+
+- `domains/`、`utils/` 纳入 `check-dependencies` LAYERS：**出向门禁**（只许依赖 shared）是本轮新增的真实约束；`ui/engine/services → domains/utils` 作为既有合法入站依赖显式声明。
+- 修根因零违规：`resolveProjectRoot/modeFromLibraryPath` 下沉到 `shared/project-root.ts`（project-locator 保留 re-export，~30 个 import 站点不动）；删除 `domain-project-factory` 中未使用的 `WritingProfileManager` 运行时 import。
+- `main.ts` 在门禁中显式登记为组合根（不参与分层）；基线零播种，7 层全部 0 违规。
+
+### 🪓 协同视图切片（第三批）
+
+- `ui/co-writing-view.ts` 5,152 → 4,986（-166）：`parseQualityReport`（纯函数）+ `QualityIssue` 接口 → `quality-report.ts`；`calculateChapterMatches` + `buildMatchCard` + `ChapterMatch` 类型 → `chapter-match.ts`（三处重复内联形状统一命名）。
+
+### 🧪 测试
+
+- 全量单测 546 文件 / 5955 用例；lint 警告 1889 → 1875。
+
 ## v4.32.0（2026-11-05）
 
 ### 💰 模型单价与费用估算（M4 第三批，子代理协作交付）

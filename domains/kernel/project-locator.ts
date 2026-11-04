@@ -6,12 +6,20 @@
  * - 模式库：`长篇小说/项目名`、`短篇小说/项目名`、`剧本/项目名`
  *
  * 所有路径仍可直接 `${projectId}/...` 拼接；display 名称取最后一段。
+ *
+ * `resolveProjectRoot` / `modeFromLibraryPath` 已迁至 shared/project-root.ts
+ * （纯路径计算属于 shared 能力，修除 shared→domains 逆向依赖），此处保留
+ * re-export 兼容既有 import 站点。
  */
 import {
     MODE_LIBRARY_ROOTS as CREATION_MODE_LIBRARY_ROOTS,
     MODE_LIBRARY_ROOT_LIST as CREATION_MODE_LIBRARY_ROOT_LIST,
     type CreationMode,
 } from '@/shared/creation-mode';
+import { modeFromLibraryPath } from '@/shared/project-root';
+
+// 兼容 re-export：resolveProjectRoot / modeFromLibraryPath 的实现与唯一来源在 shared/project-root.ts
+export { resolveProjectRoot, modeFromLibraryPath } from '@/shared/project-root';
 
 /**
  * 各创作模式的项目库根路径（唯一来源：shared/creation-mode）。
@@ -37,21 +45,6 @@ export function modeLibraryRoot(mode: CreationMode): string {
 }
 
 /**
- * 从路径推断所属模式库；路径恰好等于库根时返回 null（它不是一个项目）。
- *
- * @param path - vault 相对路径
- * @returns 模式或 null
- */
-export function modeFromLibraryPath(path: string): CreationMode | null {
-    const normalized = String(path || '').replace(/\\/g, '/');
-    for (const [mode, root] of Object.entries(MODE_LIBRARY_ROOTS) as Array<[CreationMode, string]>) {
-        if (normalized === root) return null;
-        if (normalized.startsWith(`${root}/`)) return mode;
-    }
-    return null;
-}
-
-/**
  * 项目显示名：模式库项目取最后一段；legacy 项目取完整 ID。
  *
  * @param projectId - 项目 ID（vault 相对路径）
@@ -61,27 +54,6 @@ export function projectDisplayName(projectId: string): string {
     const normalized = String(projectId || '').replace(/\\/g, '/');
     const mode = modeFromLibraryPath(normalized);
     return mode ? normalized.split('/').pop() || normalized : normalized;
-}
-
-/**
- * 项目路径定位：模式项目必须在模式库中；legacy 项目允许根目录。
- *
- * @param project - 项目 ID 或名称
- * @param mode - 目标模式；配合 requireLibrary 时用于补全库根
- * @param options.requireLibrary - 为 true 且未带库根时，强制补全到模式库
- * @returns 规范化后的项目路径；空输入返回空串
- */
-export function resolveProjectRoot(
-    project: string,
-    mode?: CreationMode,
-    options?: { requireLibrary?: boolean }
-): string {
-    const normalized = String(project || '').replace(/\\/g, '/').replace(/\/+$/, '');
-    if (!normalized) return '';
-    const inferred = modeFromLibraryPath(normalized);
-    if (inferred) return normalized;
-    if (mode && options?.requireLibrary) return `${MODE_LIBRARY_ROOTS[mode]}/${normalized}`;
-    return normalized;
 }
 
 /**

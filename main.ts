@@ -59,7 +59,7 @@ import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
 import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project-side-panel-view';
 import { openModelSwitcherMenu, refreshAllModelSwitchers } from './ui/model-quick-switcher';
-import { registerAllCustomFonts } from './services/font-manager';
+import { registerAllCustomFonts, unregisterAllCustomFonts } from './services/font-manager';
 import { WelcomeModal } from './ui/welcome-modal';
 import { HomeView, VIEW_TYPE_HOME } from './ui/home-view';
 import { JobCenterModal } from './ui/job-center-modal';
@@ -1915,8 +1915,12 @@ export default class NovelWriterPlugin extends Plugin {
 
     /**
      * 插件卸载入口：销毁宠物/统计/调度器等持有资源，避免重载后重复实例与定时器泄漏。
+     *
+     * P1-4：Obsidian 不会 await 本方法，卸载窗口有限，因此异步清理按
+     * 「flush → disposeAll」顺序在限时窗口内尽力完成（withUnloadDeadline）；
+     * 超时或失败只告警不抛出，卸载流程永不失败。
      */
-    onunload() {
+    async onunload() {
         // 清理拆解调度器资源（定时器、看门狗、事件监听器）
         this._writingPet?.destroy();
         this._writingPet = null;
@@ -1925,22 +1929,26 @@ export default class NovelWriterPlugin extends Plugin {
         this.deconstructionScheduler?.destroy();
         // 清理防抖管理器
         this._debounceManager.dispose();
-        // 等待设置写入队列完成（不阻塞卸载，尽力而为）
-        this._settingsWriter.flush().catch(e =>
-            log.warn('[小说工坊] 卸载时设置写入失败:', e)
-        );
+        // P1-4：冲刷各串行写队列，从 fire-and-forget 改为在 2s 卸载窗口内 await。
+        // settingsWriter 改用 dispose()（flush+reset 原子收尾）替代 flush().catch；
+        // 知识库 / 批量导入管理器持有 SerializedWriter、指纹库为静态队列，
+        // 不在这里 flush，卸载瞬间的最后一批索引/书籍元数据会丢。
+        // allSettled 保证单个失败不拖累其他；flush 在 disposeAll 之前顺序完成，不再竞争。
+        try {
+            await this.withUnloadDeadline(2000, Promise.allSettled([
+                this._settingsWriter.dispose(),
+                this.knowledgeBaseManager?.flush(),
+                this.batchImportManager?.flush(),
+                StyleFingerprintLibrary.flushAll(),
+            ]));
+        } catch (e) {
+            log.warn('[小说工坊] 卸载时冲刷设置/知识库/批量导入写队列失败:', e);
+        }
         // 清理缓存管理器
         this._cacheManager?.dispose();
         // 内存响应缓存与规则单例持有 App/整章文本，卸载时不能留给下一次热重载
         getPromptCache().clear();
         RulesService.resetInstance();
-        // 冲刷知识库 / 批量导入的串行写队列：这两个管理器持有 SerializedWriter，
-        // 不在这里 flush，卸载瞬间的最后一批索引/书籍元数据会丢。
-        void Promise.allSettled([
-            this.knowledgeBaseManager?.flush(),
-            this.batchImportManager?.flush(),
-            StyleFingerprintLibrary.flushAll(),
-        ]).then(() => undefined);
         // P0-14/16: 不再向 localStorage 保存恢复状态。
         // 热重载恢复完全通过内存态 _pendingReloadState 传递（按钮 handler 在 disable 前设置）。
         // 这样 Obsidian 正常关闭→启动时不会有任何残留，工作台默认不打开。
@@ -1956,16 +1964,60 @@ export default class NovelWriterPlugin extends Plugin {
         // 清理所有注入的样式标签（匹配 novel-writer 前缀）
         const allStyles = document.querySelectorAll('style[id^="novel-writer-"]');
         allStyles.forEach(el => el.remove());
-        // M1（技术审计）：释放 EngineRegistry 全部实例（含 HeavyTaskWorkerManager 的 Worker 池等）。
+        // P1-4：注销全部自定义 FontFace（同步清理），避免热重载后 document.fonts 残留重复字体；
+        // settings.customFonts 清单保留，下次启动 registerAllCustomFonts 可恢复。
+        unregisterAllCustomFonts();
+        // M1（技术审计）：释放 EngineRegistry 全部实例（含 HeavyTaskWorkerManager 的 Worker 池、
+        // ThemeManager 注入的样式标签与 --nw-* 布局变量等）。
         // 此前 disposeAll 生产代码零调用，插件卸载/禁用后 Worker 与重资源残留。
         // disposeAll 按依赖逆序逐个释放，单个失败不影响其他；同步清理在前，故置于末尾。
-        this.engineRegistry?.disposeAll().catch(e =>
-            log.warn('[小说工坊] 卸载时释放引擎实例失败:', e)
-        );
+        // P1-4：改为在 3s 卸载窗口内 await，且位于写队列 flush 之后，不再与 flush 竞争。
+        try {
+            await this.withUnloadDeadline(3000, this.engineRegistry?.disposeAll() ?? Promise.resolve());
+        } catch (e) {
+            log.warn('[小说工坊] 卸载时释放引擎实例失败:', e);
+        }
         log.info('Novel Writer AI plugin unloaded');
         // 卸载后 window.novelAI 会指向已销毁的 registry，外部脚本调用只会报错
         if (window.novelAI === this.registry) {
             delete window.novelAI;
+        }
+    }
+
+    /**
+     * 在限时窗口内等待卸载清理任务完成（P1-4）。
+     *
+     * Obsidian 卸载插件时不 await onunload，宿主可能在任意时刻回收资源，
+     * 异步清理只能在有限窗口内「尽力而为」：任务超时或失败均只告警，
+     * 不向上抛错，由调用方继续执行后续清理步骤。
+     *
+     * @param ms - 最长等待毫秒数
+     * @param task - 卸载清理任务
+     */
+    private async withUnloadDeadline<T>(ms: number, task: Promise<T>): Promise<void> {
+        let timer: number | undefined;
+        let timedOut = false;
+        try {
+            // 预挂 no-op catch：超时放弃等待后，task 迟到的 rejection 不能变成 unhandled
+            void task.catch(() => undefined);
+            await Promise.race([
+                task,
+                new Promise<void>(resolve => {
+                    timer = window.setTimeout(() => {
+                        timedOut = true;
+                        resolve();
+                    }, ms);
+                }),
+            ]);
+        } catch (e) {
+            // 卸载窗口有限：清理失败只告警，不让 onunload 抛错
+            log.warn(`[小说工坊] 卸载清理任务失败（卸载窗口有限，忽略后继续）:`, e);
+            return;
+        } finally {
+            if (timer !== undefined) window.clearTimeout(timer);
+        }
+        if (timedOut) {
+            log.warn(`[小说工坊] 卸载清理任务超过 ${ms}ms 窗口仍未完成（卸载窗口有限，放弃等待继续）`);
         }
     }
 }

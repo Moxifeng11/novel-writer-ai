@@ -41,6 +41,8 @@ import { BodySaveController } from './cowrite/body-save-controller';
 import { buildMarkdownToolbar } from './co-writing/markdown-toolbar';
 import { buildKbReferenceCard } from './co-writing/kb-reference-card';
 import { generateWritingAdvice } from './co-writing/writing-advice';
+import { buildMatchCard, calculateChapterMatches, type ChapterMatch } from './co-writing/chapter-match';
+import { parseQualityReport, type QualityIssue } from './co-writing/quality-report';
 import { resolveInsertRange, type PendingRewriteRange } from './cowrite/insert-range';
 import { BodyWriter } from '@/engine/body-writer';
 import {
@@ -110,18 +112,9 @@ import { isImeComposing } from '@/shared/keyboard';
 import { ObsidianFrontmatter } from '@/shared/file-system-port';
 import { withButtonBusy } from './button-busy';
 const log = createLogger('CoWritingView');
-/**
- * 质量问题结构定义。
- */
-export interface QualityIssue {
-    id: string;
-    priority: 'high' | 'medium' | 'low';
-    category: string;
-    problem: string;
-    suggestion: string;
-    locationText: string;
-    severity: '❌' | '⚠️' | '✅';
-}
+
+/** 质量问题结构定义（实现见 co-writing/quality-report.ts；保留本文件既有导出路径兼容外部引用）。 */
+export type { QualityIssue } from './co-writing/quality-report';
 
 /**
  * VIEW_TYPE_CO_WRITE 常量。
@@ -3596,114 +3589,31 @@ ${text}`;
 
   /**
    * 计算本章与书籍匹配度。
-   * @returns 匹配数组
+   *
+   * 匹配算法已抽到 co-writing/chapter-match.ts 的 calculateChapterMatches，
+   * 本方法只负责把右侧编辑器正文、书籍缓存与知识库实例传给纯函数。
+   *
+   * @returns 匹配数组（按匹配分降序）
    */
-  calculateChapterMatches(): Array<{ book: BookBasicInfo; score: number; topChars: string[]; topTechs: string[] }> {
-    const text = this.rightEditor?.value || '';
-    if (!text || this.kbBooksCache.length === 0) return [];
-
-    const results: Array<{ book: BookBasicInfo; score: number; topChars: string[]; topTechs: string[] }> = [];
-    const kb = this.facade.knowledgeBaseManager?.getKnowledgeBase();
-
-    for (const book of this.kbBooksCache) {
-      let score = 0;
-      const topChars: string[] = [];
-      const topTechs: string[] = [];
-
-      const genre = kb && book.primaryGenre ? kb.getGenre(book.primaryGenre) : null;
-
-      if (genre) {
-        for (const tag of genre.personalityTags) {
-          const count = (text.match(new RegExp(tag, 'g')) || []).length;
-          if (count > 0) {
-            score += count * 2;
-            if (topChars.length < 3) topChars.push(tag);
-          }
-        }
-        for (const tech of genre.techniques) {
-          for (const kw of tech.keywords) {
-            const count = (text.match(new RegExp(kw, 'g')) || []).length;
-            if (count > 0) {
-              score += count;
-              if (topTechs.length < 3 && !topTechs.includes(tech.name)) {
-                topTechs.push(tech.name);
-              }
-              break;
-            }
-          }
-        }
-      }
-
-      for (const tag of book.themeTags) {
-        const count = (text.match(new RegExp(tag, 'g')) || []).length;
-        if (count > 0) score += count;
-      }
-
-      if (score > 0 || book.breakdownStatus === 'completed') {
-        results.push({
-          book,
-          score: Math.round(score + (book.qualityScores?.overall || 0) * 0.1),
-          topChars: topChars.length > 0 ? topChars : genre?.personalityTags.slice(0, 3) || [],
-          topTechs: topTechs.length > 0 ? topTechs : genre?.techniques.slice(0, 3).map(t => t.name) || []
-        });
-      }
-    }
-
-    results.sort((a, b) => b.score - a.score);
-    return results;
+  calculateChapterMatches(): ChapterMatch[] {
+    return calculateChapterMatches(
+      this.rightEditor?.value || '',
+      this.kbBooksCache,
+      this.facade.knowledgeBaseManager?.getKnowledgeBase() ?? null
+    );
   }
 
   /**
    * 创建匹配卡片。
    *
+   * DOM 构建细节已抽到 co-writing/chapter-match.ts 的 buildMatchCard，
+   * 本方法只负责把「标签插入右侧编辑器」能力以回调注入。
+   *
    * @param match - 匹配结果
    * @returns 元素
    */
-  createMatchCard(match: { book: BookBasicInfo; score: number; topChars: string[]; topTechs: string[] }): HTMLElement {
-    const card = createDiv({ cls: "nw-kb-match-card" });
-
-    const header = card.createDiv({ cls: "nw-kb-match-header" });
-    const title = header.createDiv({ cls: "nw-kb-match-title" });
-    title.createSpan({ cls: "nw-kb-match-name", text: match.book.name });
-    const matchPct = Math.min(95, Math.round(match.score * 3 + 20));
-    header.createSpan({
-      cls: "nw-kb-match-score",
-      text: `${matchPct}%`
-    });
-
-    const bar = card.createDiv({ cls: "nw-kb-match-bar" });
-    bar.createDiv({
-      cls: "nw-kb-match-bar-fill",
-      attr: { style: `width: ${matchPct}%` }
-    });
-
-    if (match.topChars.length > 0) {
-      const chars = card.createDiv({ cls: "nw-kb-match-section" });
-      chars.createSpan({ cls: "nw-kb-match-label", text: "相关人设：" });
-      const tags = chars.createDiv({ cls: "nw-kb-mini-tags" });
-      match.topChars.forEach(tag => {
-        const tagEl = tags.createSpan({
-          cls: "nw-kb-tag nw-kb-tag-character nw-kb-tag-clickable",
-          text: tag
-        });
-        tagEl.addEventListener("click", () => this.quickInsertText(tag));
-      });
-    }
-
-    if (match.topTechs.length > 0) {
-      const techs = card.createDiv({ cls: "nw-kb-match-section" });
-      techs.createSpan({ cls: "nw-kb-match-label", text: "相关技巧：" });
-      const tags = techs.createDiv({ cls: "nw-kb-mini-tags" });
-      match.topTechs.forEach(tag => {
-        const tagEl = tags.createSpan({
-          cls: "nw-kb-tag nw-kb-tag-technique nw-kb-tag-clickable",
-          text: tag
-        });
-        tagEl.addEventListener("click", () => this.quickInsertText(tag));
-      });
-    }
-
-    return card;
+  createMatchCard(match: ChapterMatch): HTMLElement {
+    return buildMatchCard(match, tag => this.quickInsertText(tag));
   }
 
   // ========== 子 Tab 3: 快速引用 ==========
@@ -4469,85 +4379,9 @@ ${text}`;
     }
   }
 
-  /** v6.4: 解析质量控制报告 markdown 为结构化问题列表 */
+  /** v6.4: 解析质量控制报告 markdown 为结构化问题列表（实现见 co-writing/quality-report.ts） */
   private parseQualityReport(content: string): QualityIssue[] {
-    if (!content || content.length < 50) return [];
-    const issues: QualityIssue[] = [];
-    const lines = content.split('\n');
-    let currentCategory = '';
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-
-      if (/^#{1,3}\s+/.test(line)) {
-        currentCategory = line.replace(/^#+\s*/, '').trim();
-        continue;
-      }
-
-      let severity: '\u274C' | '\u26A0\uFE0F' | '\u2705' | null = null;
-      if (line.startsWith('\u274C')) severity = '\u274C';
-      else if (line.startsWith('\u26A0\uFE0F')) severity = '\u26A0\uFE0F';
-      else if (line.startsWith('\u2705')) severity = '\u2705';
-      if (!severity) continue;
-
-      const priority: 'high' | 'medium' | 'low' = severity === '\u274C' ? 'high' : severity === '\u26A0\uFE0F' ? 'medium' : 'low';
-
-      const problemText = line.replace(/^[\u274C\u26A0\u2705]\s*/, '').trim();
-
-      if (severity === '\u2705') continue;
-
-      const locationMatch = problemText.match(/\u7B2C(\d+)\u6BB5|\u7B2C(\d+)\u5B57|\u300C([^\u300D]+)\u300D|\u3010([^\u3011]+)\u3011/);
-      const locationText = locationMatch
-        ? (locationMatch[3] || locationMatch[4] || problemText.slice(0, 20))
-        : '';
-
-      const nextLines = lines.slice(i + 1, Math.min(i + 4, lines.length));
-      let suggestion = nextLines
-        .filter(l => l.trim() && !l.trim().startsWith('\u274C') && !l.trim().startsWith('\u26A0') && !l.trim().startsWith('\u2705'))
-        .map(l => l.trim())
-        .join(' ');
-
-      if (!suggestion && problemText.length > 10) {
-        suggestion = problemText;
-      }
-
-      issues.push({
-        id: `qc_${issues.length + 1}`,
-        priority,
-        category: currentCategory,
-        problem: problemText,
-        suggestion: suggestion.slice(0, 120) + (suggestion.length > 120 ? '...' : ''),
-        locationText: locationText || (problemText.length > 8 ? problemText.slice(0, 8) : problemText),
-        severity,
-      });
-    }
-
-    if (issues.length === 0) {
-      const sugMatch = content.match(/\u3010[\u4FEE\u6539\u5EFA\u8BAE\u6C47\u603B|\u4FEE\u6539\u5EFA\u8BAE|\u5EFA\u8BAE].*?\u3011\s*([\s\S]*)/i);
-      if (sugMatch) {
-        const sugLines = sugMatch[1].split('\n').filter(l => l.trim());
-        for (const s of sugLines) {
-          const trimmed = s.trim();
-          if (!trimmed || trimmed.startsWith('---')) continue;
-          const hasPriority = trimmed.includes('\uD83D\uDD34') || trimmed.includes('\uD83D\uDFE1') || trimmed.includes('\uD83D\uDFE2');
-          if (!hasPriority) continue;
-          const priority: 'high' | 'medium' | 'low' = trimmed.includes('\uD83D\uDD34') ? 'high' : trimmed.includes('\uD83D\uDFE1') ? 'medium' : 'low';
-          const text = trimmed.replace(/^-\s*/, '').replace(/[\uD83D\uDD34\uD83D\uDFE1\uD83D\uDFE2]/g, '').trim();
-          if (text.length < 5) continue;
-          issues.push({
-            id: `qc_sum_${issues.length + 1}`,
-            priority,
-            category: '\u4FEE\u6539\u5EFA\u8BAE',
-            problem: text.slice(0, 80),
-            suggestion: text,
-            locationText: '',
-            severity: priority === 'high' ? '\u274C' : '\u26A0\uFE0F',
-          });
-        }
-      }
-    }
-
-    return issues;
+    return parseQualityReport(content);
   }
 
   /** v6.4: 浮窗显示问题详情 */
