@@ -6,7 +6,7 @@ import { OperationConfirmModal } from './components/progress/operation-confirm-m
 import { LoadingOverlayComponent } from './components/progress/loading-overlay';
 import { ProgressEmitter } from '@/shared/progress-emitter';
 import { isImeComposing } from '@/shared/keyboard';
-import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import {
     analyzeStyleFromSource,
     StyleDistillInput,
@@ -171,7 +171,7 @@ export class StyleDistillerModal extends Modal {
             }
             const file = this.app.vault.getAbstractFileByPath(this.selectedProjectPath);
             if (!(file instanceof TFile)) {
-                new Notice('❌ 章节文件不存在', 5000);
+                showErrorNotice('章节文件不存在', { timeout: 5000 });
                 return null;
             }
             const text = await this.app.vault.read(file);
@@ -280,7 +280,7 @@ export class StyleDistillerModal extends Modal {
             const err = error as Error;
             if (err.name === 'AbortError' || err.message === 'Aborted' || this.progressEmitter?.getState().status === 'cancelled') {
                 this.progressEmitter?.cancel();
-                new Notice('⚠️ 已取消分析', 3000);
+                showWarningNotice('已取消分析', { timeout: 3000 });
             } else {
                 this.progressEmitter?.fail(err.message);
                 this.showErrorNotification(err);

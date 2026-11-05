@@ -279,7 +279,7 @@ export class ManageProvidersModal extends Modal {
                 syncTitle();
                 this.plugin.updateProvider(raw.id, { apiFormat: normalizeApiFormat(select.value) });
                 await this.plugin.saveSettings();
-                new Notice(`已切换为 ${API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value}`);
+                showSuccessNotice(`已切换为 ${API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value}`);
             });
         }, `请求路径：${API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('；')}。Anthropic 协议改用 x-api-key 发送密钥`);
 
@@ -501,7 +501,7 @@ export class ManageProvidersModal extends Modal {
                 save.onclick = async () => {
                     if (!idValue) { new Notice('模型 ID 不能为空'); return; }
                     const current = (plugin.settings.customProviders || []).find((p: any) => p.id === providerId);
-                    if (!current) { new Notice('该供应商已不存在'); return; }
+                    if (!current) { showErrorNotice('该供应商已不存在'); return; }
 
                     const models = [...current.models];
                     if (isNew) {
@@ -509,7 +509,7 @@ export class ManageProvidersModal extends Modal {
                         models.push(idValue);
                     } else if (idValue !== modelId) {
                         const at = models.indexOf(modelId);
-                        if (at < 0) { new Notice('原模型已不在列表中'); return; }
+                        if (at < 0) { showErrorNotice('原模型已不在列表中'); return; }
                         if (models.includes(idValue)) { new Notice('该模型已在列表中'); return; }
                         models[at] = idValue;
                     }

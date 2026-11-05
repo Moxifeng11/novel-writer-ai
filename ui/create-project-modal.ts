@@ -1,5 +1,6 @@
 import { App, Modal, Notice, DataAdapter, TFile } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { WritingProfileManager } from '@/engine/writing-profile';
@@ -126,12 +127,12 @@ ${preferredGenre
                     { bypassCache: true }
                 );
                 if (result.error) {
-                    new Notice(`❌ AI 构思失败：${result.error}`, 8000);
+                    showErrorNotice(`AI 构思失败：${result.error}`, { timeout: 8000 });
                     return;
                 }
                 const matched = result.content.replace(/```json|```/g, '').match(/\{[\s\S]*\}/);
                 if (!matched) {
-                    new Notice('❌ AI 返回格式异常，请重试', 6000);
+                    showErrorNotice('AI 返回格式异常，请重试', { timeout: 6000 });
                     return;
                 }
                 const data = JSON.parse(matched[0]) as { name?: string; genre?: string; description?: string };
@@ -144,10 +145,10 @@ ${preferredGenre
                     storyEditor.setGenre(genreInput.value);
                 }
                 if (data.description) descriptionInput.value = String(data.description).trim();
-                new Notice('✅ 已生成随机项目构思', 3000);
+                showSuccessNotice('已生成随机项目构思', { timeout: 3000 });
             } catch (e) {
                 log.warn('[CreateProject] AI 随机构思失败:', e);
-                new Notice('❌ AI 构思失败，请检查网络或模型配置', 8000);
+                showErrorNotice('AI 构思失败，请检查网络或模型配置', { timeout: 8000 });
             } finally {
                 aiRandomBtn.disabled = false;
                 aiRandomBtn.textContent = originalText;
@@ -432,7 +433,7 @@ ${preferredGenre
             } catch (e) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[小说工坊] 创建项目失败:', e);
-                new Notice(`❌ 创建项目失败: ${errMsg}`, 8000);
+                showErrorNotice(`创建项目失败: ${errMsg}`, { timeout: 8000 });
             } finally {
                 createButton.disabled = false;
                 createButton.setText('创建项目');
@@ -458,14 +459,14 @@ ${preferredGenre
             }),
         });
         if (!result.created) {
-            if (result.reason) new Notice(`❌ 未创建项目：${result.reason}`, 6000);
+            if (result.reason) showErrorNotice(`未创建项目：${result.reason}`, { timeout: 6000 });
             return;
         }
         try {
             await this.prefill?.onCreated?.(result.projectId);
         } catch (e) {
             log.warn('[小说工坊] 预填项目创建后回调失败:', e);
-            new Notice('项目已创建，但后续写入创意资料失败；请手动保存', 8000);
+            showWarningNotice('项目已创建，但后续写入创意资料失败；请手动保存', { timeout: 8000 });
         }
         this.close();
     }

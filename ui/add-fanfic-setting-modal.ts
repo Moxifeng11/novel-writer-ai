@@ -385,7 +385,7 @@ export class AddFanficSettingModal extends Modal {
             }
             const file = this.app.vault.getAbstractFileByPath(selectedPath);
             if (!(file instanceof TFile)) {
-                new Notice('❌ 文件不存在，可能已被移动或删除', 6000);
+                showErrorNotice('文件不存在，可能已被移动或删除', { timeout: 6000 });
                 return;
             }
             let content = '';
