@@ -2,6 +2,22 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.44.0（2026-11-06）
+
+### 📐 StyleDeconstructor v1/v2 单入口设计定稿（P1-6 收口前置）
+
+- 新增 `docs/design/style-deconstructor-v2-single-entry.md`：实测确认 V2（2,016 行）是**零调用方死端点**——唯一入口 `analyzeStyleV2()` 无生产引用、Worker 未注册、12 维特征从未落盘；推荐方案 A「下线 V2」并给出实施清单与验收口径，**待用户批准后单提交实施**。
+- 本版只设计不实施（不与 Notice 混提交）。
+
+### 🧯 Notice 第十三批（4 文件 13 处，Trae 协作）
+
+- create-project-modal 9→2、manage-providers-modal 10→7、style-distiller-modal 9→7、add-fanfic-setting-modal 12→11。
+- **co-writing-view 余 20 处全部为守卫/预检/无变化/进度类，确认无可替换**，从候选名单移除；剩余可替换存量集中在 manage-providers（7）等少数文件。
+
+### 🧪 测试与门禁
+
+- 全量单测 **561 文件 / 6,133 用例**（无新增）；`preflight:release` 全绿；lint 0 error / **1,868** warnings（持平）。
+
 ## v4.43.0（2026-11-06）
 
 ### ✂️ 协同引擎切片第六批（co-writer-engine 3,299 → 3,254）

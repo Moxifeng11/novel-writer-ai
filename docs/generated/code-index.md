@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132524 | 1606 | 1345 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38798 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38820 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 218 | 97661 | 570 | 522 | 92% |
+| `ui/` | 218 | 97662 | 570 | 522 | 92% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1574 | 3 | 3 |
+| `shared/changelog-data.ts` | 1596 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -606,7 +606,7 @@
 | `ui/cowrite/realtime-quality-controller.ts` | 455 | 2 | 1 |
 | `ui/cowrite/suggestion-edit-modal.ts` | 155 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
-| `ui/create-project-modal.ts` | 487 | 2 | 2 |
+| `ui/create-project-modal.ts` | 488 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 234 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 366 | 1 | 1 |
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |

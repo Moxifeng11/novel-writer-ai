@@ -21,6 +21,28 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.44.0',
+        date: '2026-11-06',
+        title: 'V2 拆解器下线设计与 Notice 第十三批',
+        sections: [
+            {
+                type: 'improved',
+                label: '📐 设计',
+                items: [
+                    'StyleDeconstructor v1/v2 单入口设计定稿：V2 为零调用方死端点，推荐下线',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧯 提示收敛',
+                items: [
+                    'Notice 第十三批：4 文件 13 处（Trae 协作）',
+                    'co-writing-view 剩余 20 处确认为守卫类，收敛完成',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.43.0',
         date: '2026-11-06',
         title: '协同引擎切片第六批与 Notice 第十二批',

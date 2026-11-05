@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-05",
   "baseline": {
-    "version": "4.43.0",
+    "version": "4.44.0",
     "tests": {
       "files": 561,
       "cases": 6133
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 76,
+    "localCommitsAhead": 79,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G5",
+      "summary": "v4.44.0 第十三批：co-writing-view / add-fanfic-setting-modal / manage-providers-modal / style-distiller-modal / create-project-modal 五个文件 Notice 13 处（成功/失败/告警），60→47；co-writing-view 余 20 处均为守卫/预检/无变化/进度，确认无可替换",
+      "evidence": "ui/co-writing-view.ts + ui/add-fanfic-setting-modal.ts + ui/manage-providers-modal.ts + ui/style-distiller-modal.ts + ui/create-project-modal.ts"
+    },
     {
       "date": "2026-11-05",
       "group": "G5",
