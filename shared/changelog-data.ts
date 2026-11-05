@@ -21,6 +21,28 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.51.0',
+        date: '2026-11-06',
+        title: '协同视图切片第九批收口（内聚优先）',
+        sections: [
+            {
+                type: 'improved',
+                label: '✂️ 切片',
+                items: [
+                    '四片分片交付：metrics-refresh / chapter-context 扩展 / layout-assembly / control-panel',
+                    'co-writing-view 3581→3363；主指标切为 net-bundle + 内聚度（sliceBundleBudgetBytes=0）',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧯 提示收敛',
+                items: [
+                    'Notice 尾盘：command-ui-executor 20 处',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.50.0',
         date: '2026-11-06',
         title: 'Notice 存量扫尾（6 文件 34 处）',

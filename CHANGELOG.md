@@ -2,6 +2,21 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.51.0（2026-11-06）
+
+### ✂️ 协同视图切片第九批收口（3,581 → 3,363，内聚优先）
+
+- 四片分片交付（Trae）：metrics-refresh（刷新编排 121 行）/ chapter-context 扩展（身份推定 + 正文去壳）/ layout-assembly（布局装配 497 行）/ control-panel（右栏控制台 380 行）；新增测试 **38 用例**。
+- **指标切换（元迭代）**：切片以 net-bundle + 内聚度为准（本批 bundle +3,664B 是动因），新增 `sliceBundleBudgetBytes=0`；`co-writing-view` 3,581 → **3,363**，`renderKnowledgeTab` 留作下一个内聚单元，≤3,000 转为机会性目标。
+
+### 🧯 Notice 尾盘
+
+- `command-ui-executor` 20 处改走 notice-helpers（bundle 中性）。
+
+### 🧪 测试与门禁
+
+- 全量单测 **583 文件 / 6,275 用例**（+3 文件 / +38 用例）；`preflight:release` 全绿；lint 0 error / 1,853 warnings（持平）。
+
 ## v4.50.0（2026-11-06）
 
 ### 🧯 Notice 存量批收官前扫尾（6 文件 34 处，Trae 协作）
