@@ -92,7 +92,9 @@ Agent（harness）
 - 第十五批（v4.50.0）：`ai-builder-modal`（2）、`appearance-settings`（7）、`settings/general-sections`（6）、`settings/foreshadow-section`（6）、`settings/knowledge-section`（7）、`project-utils`（6）合计替换 **34 处**（成功/失败/告警）；`settings/api-section` 余 8 处均为校验守卫，**0 替换**，确认收敛；无新增测试，改用既有 `notice-helpers` 覆盖。
 - 切片第九批（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/metrics-refresh`（剧情完成度刷新编排：评估节流门控、在途评估中止、切章丢弃旧结果、失败态回退），并扩展 `co-writing/chapter-context`（`resolveChapterLocation` 章节身份推定 / `stripChapterBody` 正文去壳，锁定「缺参绑定错误卷」与标题重复两处历史 bug），**3,581 → 3,556 行（-25，行数口径：含空行）**；新增 1 个测试文件 7 用例 + `chapter-context` 追加 11 用例（共 18）；下一批继续渲染布局装配，目标 ≤3,300。
 - 切片第九批·第 3 片（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/layout-assembly`（顶栏导航/资源/模式装配、左栏本章简报与预览、右侧 Tab 头、字体选择器、Markdown 状态栏、布局回填、分隔条），**3,556 → 3,443 行（-113，含空行口径）**；新增 1 个测试文件 9 用例（字体选项解析/布局状态/状态栏文案）；全量 582 文件 / 6,264 用例、preflight 全绿；bundle 基线上调 +968B（纯迁移与回调装配开销，已在 `.bundle-baseline.json` note 说明）。
-- 下一步：继续 co-writing-view 第 4 片（渲染布局装配收尾），目标 ≤3,300；Notice 尾盘候选 `command-ui-executor`（20）、`knowledge-base-view`（14）、`co-write-floating-panel`（11）。
+- 切片第九批·第 4 片（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/control-panel`（右栏页签/概览卡片/写作控制台/更多工具面板/监控挂载点 + 模型按钮文案规则），**3,443 → 3,363 行（-80 净减，含空行口径；毛减 150 行，其余为宿主句柄回填与回调装配）**；新增 1 个测试文件 11 用例（页签/工具按钮/开关态/场景指令/模型文案）；preflight 全绿（582 文件 / 6,275 用例）；bundle 基线上调 +1,706B（纯迁移开销）。
+- 第九批收口 + **切片主线正式停止（2026-11-06 用户拍板）**：分解前的「控制台 ≥143 行」高估——实测 `886-993` 为 108 行、`867-993` 为 127 行；扣掉宿主句柄回填后单片净减约 80 行。本批三次切片 bundle 累计 **+3,664B**，切片对包体积是净增（审计归因：适配层 宿主回调 739B + 句柄回填 693B + handles 返回 315B ≈ 1,747B，占净增 100%）。**≤3,300 行目标废弃**，`ui/co-writing-view.ts` 保留 3,363 行现状，后续不再按行数切片；主指标改为 net-bundle + 模块内聚度。
+- 下一步主线：Notice 尾盘取最高密度文件 `command-ui-executor`（20 处）；之后按 net-bundle + 内聚度挑选 test-hardening / gate-fix 候选。知识库面板装配（`renderKnowledgeTab`）不再作为切片候选。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

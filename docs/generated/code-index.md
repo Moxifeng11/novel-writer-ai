@@ -11,7 +11,7 @@
 | `shared/` | 173 | 38937 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 237 | 100729 | 715 | 625 | 87% |
+| `ui/` | 238 | 101030 | 729 | 633 | 87% |
 
 ## 文件清单
 
@@ -565,11 +565,12 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3444 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3364 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
 | `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
+| `ui/co-writing/control-panel.ts` | 381 | 14 | 8 |
 | `ui/co-writing/dashboard-status.ts` | 180 | 9 | 7 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |

@@ -177,7 +177,6 @@ import {
     renderLeftPanel,
     renderMarkdownStatus,
     renderMarkdownToolbar,
-    renderTabHeaders,
     type MarkdownStatusHandles,
 } from './co-writing/layout-assembly';
 import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '@/shared/thresholds';
@@ -186,10 +185,13 @@ import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck
 import { buildQualityChapterKey } from '@/shared/quality-history';
 import { RealtimeQualityController } from './cowrite/realtime-quality-controller';
 import { isImeComposing } from '@/shared/keyboard';
+import {
+  renderControlPanelAssembly,
+  resolveModelToggleLabel,
+  type ControlPanelHandles,
+  type ControlToolAction,
+} from '@/ui/co-writing/control-panel';
 
-
-
-import { withButtonBusy } from './button-busy';
 const log = createLogger('CoWritingView');
 
 /** 质量问题结构定义（实现见 co-writing/quality-report.ts；保留本文件既有导出路径兼容外部引用）。 */
@@ -847,156 +849,82 @@ export class CoWritingView extends ItemView {
     this.humanRateDashboard = this.suggestionContainer.createDiv({ cls: "nw-human-rate-dashboard" });
     this.renderHumanRateDashboard();
 
-    // 右侧：Tab 化面板（概览 + 知识库）
+    // 右侧：Tab 化面板（概览 + 知识库）—— 装配见 co-writing/control-panel
     const rightPanel = mainArea.createDiv({ cls: "nw-cowrite-right" });
-    this.rightTabContainer = rightPanel.createDiv({ cls: "nw-cowrite-right-tabs" });
+    const panelHandles = this.buildRightPanel(rightPanel);
+    this.adoptRightPanelHandles(panelHandles);
 
-    // Tab 头部
-    this.rightTabHeaders = this.rightTabContainer.createDiv({ cls: "nw-cowrite-tab-headers" });
-    renderTabHeaders(this.rightTabHeaders, [
-      { id: "overview", label: "📊 概览", active: true },
-      { id: "knowledge", label: "📚 知识库", title: "内嵌知识库面板：检索与引用" },
-    ], (id) => this.switchRightTab(id));
-
-    // Tab 内容容器
-    this.rightTabContents = this.rightTabContainer.createDiv({ cls: "nw-cowrite-tab-contents" });
-
-    // Tab 1: 概览（原有内容）
-    this.overviewTabContent = this.rightTabContents.createDiv({ cls: "nw-cowrite-tab-content is-active", attr: { "data-tab": "overview" } });
-
-    const cardsArea = this.overviewTabContent.createDiv({ cls: "nw-cowrite-cards" });
-    const completionCard = cardsArea.createDiv({ cls: "nw-card" });
-    completionCard.createDiv({ cls: "nw-card-title", text: "完成度" });
-    const completionValue = completionCard.createDiv({ cls: "nw-card-value", text: "0%" });
-    const completionProgress = completionCard.createDiv({ cls: "nw-progress" });
-    completionProgress.createDiv({ cls: "nw-progress-fill", attr: { style: "width: 0%" } });
-    this.metricsContainer = completionCard;
-
-    const tractionCard = cardsArea.createDiv({ cls: "nw-card" });
-    tractionCard.createDiv({ cls: "nw-card-title", text: "情节牵引" });
-    tractionCard.createDiv({ cls: "nw-card-value", text: "45%" });
-    tractionCard.createDiv({ cls: "nw-card-sub", text: "偏离风险: 低" });
-    this.tractionContainer = tractionCard;
-
-    const wordCard = cardsArea.createDiv({ cls: "nw-card nw-cowrite-word-card" });
-    wordCard.createDiv({ cls: "nw-card-title", text: "字数" });
-    this.wordCountDisplay = wordCard.createDiv({ cls: "nw-card-value", text: "0" });
-    this.wordGoalDisplay = wordCard.createDiv({ cls: "nw-card-sub", text: "目标: 3000" });
-
-    // 写作控制台（紧凑模式）
-    const controlPanel = this.overviewTabContent.createDiv({ cls: "nw-cowrite-control-panel" });
-    const controlHead = controlPanel.createDiv({ cls: "nw-cowrite-control-head" });
-    controlHead.createDiv({ cls: "nw-cowrite-control-title", text: "控制台" });
-    // NBI-04: 临时指令「已应用」状态标识，默认隐藏
-    this.hintStateDisplay = controlHead.createDiv({
-      cls: "nw-hint-state",
-      text: "指令已应用",
-      attr: { style: "display:none;" }
-    });
-    this.saveStateDisplay = controlHead.createDiv({ cls: "nw-cowrite-control-state", text: "未保存" });
-
-    this.hintInput = controlPanel.createEl("input", {
-      type: "text",
-      cls: "nw-hint-input",
-      placeholder: "临时指令 / 方向（Enter 应用）"
-    });
-
-    // 按钮改为竖向 3 分组（核心创作 / 辅助润色 / 更多工具），每按钮带说明 tooltip
-    const actionsArea = controlPanel.createDiv({ cls: "nw-cowrite-actions-area" });
-
-    // 模式切换（顶部独立一行）
-    const modeRow = actionsArea.createDiv({ cls: "nw-cowrite-action-row" });
-    const modeBtn = modeRow.createEl("button", { text: "🖥 本地", cls: "nw-btn nw-btn-ghost", attr: { title: "切换本地/云端模型" } });
-    modeBtn.addEventListener("click", () => this.handleModelToggle());
-    this.modelToggleBtn = modeBtn;
-
-    // —— 🎯 核心创作 ——
-    const coreSection = actionsArea.createDiv({ cls: "nw-cowrite-action-section" });
-    coreSection.createDiv({ cls: "nw-cowrite-action-section-title", text: "🎯 核心创作" });
-    const coreRow = coreSection.createDiv({ cls: "nw-cowrite-action-row" });
-    const nextBtn = coreRow.createEl("button", { text: "⏭ 节点 -/-", cls: "nw-btn nw-btn-primary", attr: { title: "推进到下一剧情节点，生成针对性建议" } });
-    nextBtn.addEventListener("click", () => { void withButtonBusy(nextBtn, "⏳ 推进中...", () => this.handleAdvanceNextNode()); });
-    this.nextNodeBtn = nextBtn;
-    const suggestBtn = coreRow.createEl("button", { text: "\u21E5 建议", cls: "nw-btn nw-btn-primary", attr: { title: "基于上文生成续写建议（方向可在上方临时指令填写）" } });
-    suggestBtn.addEventListener("click", () => this.handleTabSuggest(true));
-    this.suggestBtn = suggestBtn;
-    const sceneBtn = coreRow.createEl("button", { text: "🎬 场景描写", cls: "nw-btn nw-btn-ghost", attr: { title: "用当前 Scene 卡的地点/时间/感官钩子生成环境描写，不推进剧情" } });
-    sceneBtn.addEventListener("click", () => {
-      const hint = "场景描写：必须使用当前场景卡的地点、时间、sensory_hook 与 body_reaction；只写环境与身体感受，不推进剧情、不写对白、不引入新地点。";
-      this.hintInput.value = hint;
-      this.cursorHint = hint;
-      this.facade.setCursorHint(hint);
-      void this.handleTabSuggest(true);
-    });
-    const completeBtn = coreRow.createEl("button", { text: "📊 结算", cls: "nw-btn nw-btn-primary", attr: { title: "结算本章：更新事实/伏笔/时间线" } });
-    completeBtn.addEventListener("click", () => { void withButtonBusy(completeBtn, "⏳ 结算中...", () => this.handleComplete()); });
-
-    // —— ✨ 辅助润色 ——
-    const assistSection = actionsArea.createDiv({ cls: "nw-cowrite-action-section" });
-    assistSection.createDiv({ cls: "nw-cowrite-action-section-title", text: "✨ 辅助润色" });
-    const assistRow = assistSection.createDiv({ cls: "nw-cowrite-action-row" });
-    const assocBtn = assistRow.createEl("button", { text: "✨ 联想", cls: "nw-btn nw-btn-ghost", attr: { title: "联想后续情节走向" } });
-    assocBtn.addEventListener("click", () => { void withButtonBusy(assocBtn, "⏳ 联想中...", () => this.handleAssociationSuggest()); });
-    const expandBtn = assistRow.createEl("button", { text: "✍️ 扩写", cls: "nw-btn nw-btn-ghost", attr: { title: "扩写选中段落" } });
-    expandBtn.addEventListener("click", () => { void withButtonBusy(expandBtn, "⏳ 扩写中...", () => this.handleOutlineExpand()); });
-    const rewriteBtn = assistRow.createEl("button", { text: "✂ 改写", cls: "nw-btn nw-btn-ghost", attr: { title: "改写选中段落（降 AI 痕迹 / 换文风）" } });
-    rewriteBtn.addEventListener("click", () => { void withButtonBusy(rewriteBtn, "⏳ 改写中...", () => this.handleRewriteSelection()); });
-
-    // —— ⚙ 更多工具（可折叠）——
-    const toolsSection = actionsArea.createDiv({ cls: "nw-cowrite-action-section" });
-    const toolsToggle = toolsSection.createEl("button", { text: "⚙ 更多工具", cls: "nw-btn nw-btn-ghost nw-cowrite-tools-toggle" });
-    const toolsPanel = toolsSection.createDiv({ cls: "nw-cowrite-tools-panel nw-cowrite-tools-panel-inline" });
-
-    const toolButtons = [
-      { text: "🕘 历史", action: () => this.handleOpenHistory() },
-      { text: "🧠 记忆", action: () => this.handleOpenMemoryManager() },
-      { text: "📥 批量导入", action: () => this.openBatchImportModal() },
-      { text: "📊 监控", action: () => this.openKnowledgeMonitorModal() },
-      { text: "🔬 分析", action: () => this.openAnalysisModal() },
-      { text: "🛡 检查", action: () => this.liveAnalysis.inspectSettingGuard("manual") },
-      { text: "📋 质检", action: () => this.loadQualityReport() },
-      { text: "💾 保存", action: () => this.saveBody(true) },
-      { text: "✅ 标记完稿", action: () => this.markAsWritten() },
-    ];
-    for (const btn of toolButtons) {
-      const el = toolsPanel.createEl("button", { text: btn.text, cls: "nw-btn nw-btn-ghost" });
-      el.addEventListener("click", () => {
-        toolsPanel.removeClass("is-open");
-        toolsToggle.setText("⚙ 更多工具");
-        void withButtonBusy(el, "⏳ 处理中...", () => btn.action());
-      });
-    }
-
-    // 用 class 驱动显隐（不再依赖内联 style，避免与全局点击监听/闭包引用冲突）
-    toolsToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const panel = toolsToggle.parentElement?.querySelector(".nw-cowrite-tools-panel");
-      if (!panel) return;
-      const willOpen = !panel.hasClass("is-open");
-      panel.toggleClass("is-open", willOpen);
-      toolsToggle.setText(willOpen ? "⚙ 收起工具" : "⚙ 更多工具");
-    });
-    // 点击面板外收起（幂等：查询 DOM 当前状态，不依赖闭包引用）
-    this.registerDomEvent(document, "click", () => {
-      this.mainContainer?.querySelectorAll(".nw-cowrite-tools-panel.is-open").forEach((p) => {
-        p.removeClass("is-open");
-        const t = p.parentElement?.querySelector(".nw-cowrite-tools-toggle");
-        if (t) t.setText("⚙ 更多工具");
-      });
-    });
-
-    this.updateModelToggleBtn();
-
-    // flowContainer 已整合到 metricsContainer，下方空间留给 warningContainer
-    this.warningContainer = controlPanel.createDiv({ cls: "nw-warnings" });
-    this.monitorContainer = controlPanel.createDiv({ cls: "nw-cowrite-monitor-panel" });
-    this.renderMonitorPanel();
-
-    // Tab 2: 知识库
-    this.knowledgeTabContent = this.rightTabContents.createDiv({ cls: "nw-cowrite-tab-content", attr: { "data-tab": "knowledge" } });
     this.renderKnowledgeTab();
 
     this.renderEmptySuggestions();
+  }
+
+  /**
+   * 装配右栏与控制台（实现见 `ui/co-writing/control-panel`）。
+   *
+   * @param rightPanel - 右栏容器
+   * @returns 需要回填到视图字段的元素句柄
+   * @example
+   * ```ts
+   * const handles = this.buildRightPanel(mainArea.createDiv({ cls: 'nw-cowrite-right' }));
+   * ```
+   */
+  private buildRightPanel(rightPanel: HTMLElement): ControlPanelHandles {
+    return renderControlPanelAssembly(rightPanel, {
+      switchRightTab: (tab) => this.switchRightTab(tab),
+      handleModelToggle: () => this.handleModelToggle(),
+      handleAdvanceNextNode: () => this.handleAdvanceNextNode(),
+      handleTabSuggest: () => this.handleTabSuggest(true),
+      handleComplete: () => this.handleComplete(),
+      handleAssociationSuggest: () => this.handleAssociationSuggest(),
+      handleOutlineExpand: () => this.handleOutlineExpand(),
+      handleRewriteSelection: () => this.handleRewriteSelection(),
+      runToolAction: (action) => this.runControlToolAction(action),
+      applySceneHint: (hint) => {
+        this.hintInput.value = hint;
+        this.cursorHint = hint;
+        this.facade.setCursorHint(hint);
+      },
+      updateModelToggleBtn: () => this.updateModelToggleBtn(),
+      renderMonitorPanel: () => this.renderMonitorPanel(),
+      registerDocumentClick: (handler) => this.registerDomEvent(document, "click", handler),
+    });
+  }
+
+  /** 把右栏装配产出的元素句柄回填到视图字段 */
+  private adoptRightPanelHandles(h: ControlPanelHandles): void {
+    this.rightTabContainer = h.rightTabContainer;
+    this.rightTabHeaders = h.rightTabHeaders;
+    this.rightTabContents = h.rightTabContents;
+    this.overviewTabContent = h.overviewTabContent;
+    this.knowledgeTabContent = h.knowledgeTabContent;
+    this.metricsContainer = h.metricsContainer;
+    this.tractionContainer = h.tractionContainer;
+    this.wordCountDisplay = h.wordCountDisplay;
+    this.wordGoalDisplay = h.wordGoalDisplay;
+    this.hintStateDisplay = h.hintStateDisplay;
+    this.saveStateDisplay = h.saveStateDisplay;
+    this.hintInput = h.hintInput;
+    this.modelToggleBtn = h.modelToggleBtn;
+    this.nextNodeBtn = h.nextNodeBtn;
+    this.suggestBtn = h.suggestBtn;
+    this.warningContainer = h.warningContainer;
+    this.monitorContainer = h.monitorContainer;
+  }
+
+  /** 控制台「更多工具」动作分发 */
+  private runControlToolAction(action: ControlToolAction): void {
+    switch (action) {
+      case 'history': this.handleOpenHistory(); return;
+      case 'memory': this.handleOpenMemoryManager(); return;
+      case 'batch-import': this.openBatchImportModal(); return;
+      case 'monitor': this.openKnowledgeMonitorModal(); return;
+      case 'analysis': this.openAnalysisModal(); return;
+      case 'guard': this.liveAnalysis.inspectSettingGuard('manual'); return;
+      case 'quality': this.loadQualityReport(); return;
+      case 'save': this.saveBody(true); return;
+      case 'written': this.markAsWritten(); return;
+    }
   }
   /** v6.4: 创建浮窗监控面板 */
   createFloatingPanel() {
@@ -1485,18 +1413,10 @@ export class CoWritingView extends ItemView {
     }
     showSuccessNotice(`已切换到${newMode === 'local' ? '本地' : '云端'}模型`, { timeout: 2000 });
   }
-  /** v7.2: 更新模型切换按钮文字 */
+  /** v7.2: 更新模型切换按钮文字（文案规则见 co-writing/control-panel） */
   updateModelToggleBtn() {
     if (!this.modelToggleBtn) return;
-    const settings = this.facade.settings;
-    const mode = settings.coWriteModelMode || 'local';
-    if (mode === 'cloud') {
-      const providerId = settings.coWriteCloudProvider || '';
-      const providerName = providerId ? (this.facade.settings.customProviders?.find(p => p.id === providerId)?.name || providerId) : '未配置';
-      this.modelToggleBtn.textContent = `☁ ${providerName}`;
-    } else {
-      this.modelToggleBtn.textContent = '🖥 本地';
-    }
+    this.modelToggleBtn.textContent = resolveModelToggleLabel(this.facade.settings);
   }
 
   /** 切换精准模式 */
