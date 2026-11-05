@@ -13,8 +13,9 @@ import {
   getScoreColorClass,
   getScoreLabel,
 } from "@/engine/plot-completion-engine";
+import type { PlotDivergenceEngine } from "@/engine/plot-divergence-engine";
+import type { WritingQualityEngine } from "@/engine/writing-quality-engine";
 import {
-  PlotDivergenceEngine,
   DivergenceResult,
   PlotDivergenceEngineOptions,
   getDivergenceLevelColor,
@@ -23,7 +24,6 @@ import {
   DivergenceLevel,
 } from "@/engine/plot-divergence-engine";
 import {
-  WritingQualityEngine,
   WritingQualityResult,
   QualitySuggestion,
   getQualityGradeColor,
@@ -33,6 +33,7 @@ import {
   getPriorityColor,
   getPriorityLabel,
 } from "@/engine/writing-quality-engine";
+import { createPlotDivergenceEngine, createWritingQualityEngine } from "@/engine/quality/quality-engine-factory";
 import { AdaptiveDebounceManager } from "@/shared/adaptive-debounce-manager";
 import { divergenceLevelFromScore, qualityScoreColor } from "@/shared/quality-grade";
 import { loadQualityHistory, appendQualityHistory } from "@/services/quality-history-store";
@@ -190,8 +191,8 @@ export class MonitorPanelB extends DraggablePanel {
 
     try {
       this.completionEngine = new PlotCompletionEngine();
-      this.divergenceEngine = new PlotDivergenceEngine();
-      this.qualityEngine = new WritingQualityEngine();
+      this.divergenceEngine = createPlotDivergenceEngine();
+      this.qualityEngine = createWritingQualityEngine();
     } catch (e) {
       log.warn("[MonitorPanelB] 引擎初始化失败:", e);
     }

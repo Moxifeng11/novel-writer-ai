@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.41.0（2026-11-05）
+
+### 🧩 质量引擎作用域收敛（P1-6 收口）
+
+- 新增 `engine/quality/quality-engine-factory.ts`：`create*` 为每个视图/面板创建独立实例，`getScoped*` 为 heavy-task 管理器与 Worker 线程按 scope 缓存。
+- `WritingQualityEngine` 5 处、`PlotDivergenceEngine` 4 处直接构造全部替换；引擎守卫基线收紧至 1 / 1，`engineOverLimit` 清空。
+- 新增 8 例测试锁定「create 隔离、scoped 复用、reset 重建」。
+
+### ✂️ 协同引擎切片第五批
+
+- `co-writer-engine.ts` 3,407 → 3,299（-108）：剧情进度与目标提示抽到 `co-writer/plot-progress.ts`，评估提示词抽到 `co-writer/evaluation-prompt.ts`，节点/大纲/伏笔全部显式入参。
+- 新增 10 例测试覆盖 30% 完成阈值、1500 字正文窗口、500 字大纲截断、伏笔 10/5 条上限。
+
+### 🧯 Notice 第五批
+
+- 5 个文件替换 30 处（成功 17 / 失败 8 / 告警 5）：供应商管理 7、批量导入 4、文笔蒸馏 6、世界观生成 5、全书规划 8；守卫/进度提示保留。
+- eslint 0 error / 1,870 warnings，无新增。
+
+### 🧪 测试
+
+- 全量单测 556 文件 / 6,112 用例（+18）。
+
 ## v4.40.0（2026-11-05）
 
 ### 🧩 多实例状态源收敛（P1-6）

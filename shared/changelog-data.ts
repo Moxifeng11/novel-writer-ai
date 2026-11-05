@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.41.0',
+        date: '2026-11-05',
+        title: '质量引擎作用域收敛、协同引擎第五批切片与 Notice 第五批',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧩 架构',
+                items: [
+                    '新增 quality-engine-factory：视图用 create、长期消费者用 getScoped',
+                    'WritingQualityEngine / PlotDivergenceEngine 直接构造收敛，引擎基线 5→1、4→1',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '✂️ 切片与提示',
+                items: [
+                    'co-writer-engine 3407→3299：剧情进度与评估提示词抽出，显式入参',
+                    'Notice 第五批：5 文件 30 处',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.40.0',
         date: '2026-11-05',
         title: '多实例收敛、轻量结算写锁与第四批切片',

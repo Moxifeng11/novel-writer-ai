@@ -12,6 +12,7 @@ import { validateProjectName } from '@/shared/project-name';
 
 
 const log = createLogger('GenerateWorldviewModal');
+import { showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 /**
  * 生成世界观弹窗。
  */
@@ -172,7 +173,7 @@ export class GenerateWorldviewModal extends Modal {
             // v1.3.3: 生成后验证输出质量
             const validation = validateWorldviewOutput(result.content);
             if (!validation.valid) {
-                new Notice(`⚠️ 世界观生成不完整，缺失: ${validation.missingFields.slice(0,5).join(', ')}。可在文件中手动补充。`, 8000);
+                showWarningNotice(`世界观生成不完整，缺失: ${validation.missingFields.slice(0,5).join(', ')}。可在文件中手动补充。`, { timeout: 8000 });
             }
 
             // 解析AI生成的项目名称，回退为项目文件夹名
@@ -213,7 +214,7 @@ ${result.content}`;
             if (generatedProjectName !== project) {
                 const validation = validateProjectName(generatedProjectName, [project]);
                 if (!validation.valid) {
-                    new Notice(`⚠️ AI 建议的项目名不可用：${validation.error}。保留原项目名「${project}」`, 6000);
+                    showWarningNotice(`AI 建议的项目名不可用：${validation.error}。保留原项目名「${project}」`, { timeout: 6000 });
                 } else {
                     const confirmed = await OperationConfirmModal.confirm(this.app, {
                         title: '重命名项目',
@@ -229,14 +230,14 @@ ${result.content}`;
                         try {
                             const result = await new ProjectRenameService(this.app).rename(project, validation.normalized);
                             if (result.warnings.length > 0) {
-                                new Notice(`✅ 项目已重命名；${result.warnings.join('；')}`, 10000);
+                                showSuccessNotice(`项目已重命名；${result.warnings.join('；')}`, { timeout: 10000 });
                             } else {
                                 showSuccess(`项目已重命名为「${validation.normalized}」`);
                             }
                             project = result.newProject;
                         } catch (renameErr) {
                             log.warn('[小说工坊] 项目文件夹重命名失败:', renameErr);
-                            new Notice(`⚠️ 自动重命名失败，项目名保留为「${project}」`, 5000);
+                            showWarningNotice(`自动重命名失败，项目名保留为「${project}」`, { timeout: 5000 });
                         }
                     }
                 }
@@ -264,7 +265,7 @@ ${result.content}`;
                         );
                         if (slResult?.content) {
                             await this.app.vault.modify(slFile, slResult.content);
-                            new Notice('✅ 设定库已自动填充');
+                            showSuccessNotice('设定库已自动填充');
                         }
                     }
                 } catch (e) { log.warn('[小说工坊] 自动填充设定库失败:', e); }

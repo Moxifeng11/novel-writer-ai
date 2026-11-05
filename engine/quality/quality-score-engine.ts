@@ -272,7 +272,7 @@ interface QualityScoreEngineOptions {
  * 六维质量评分引擎
  *
  * 使用方式：
- *   const engine = new QualityScoreEngine({ v1Engine: new WritingQualityEngine() });
+ *   const engine = new QualityScoreEngine({ v1Engine: createWritingQualityEngine() });
  *   const score = await engine.evaluate(text);
  *
  * 增量评估：

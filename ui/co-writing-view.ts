@@ -89,8 +89,8 @@ import { RealtimeMonitor } from '@/engine/quality/realtime-monitor';
 import { QualityScoreEngine, type CharacterContextInfo } from '@/engine/quality/quality-score-engine';
 import { toCharacterContextInfos } from '@/engine/character-context';
 import { toForeshadowTrackings, applyPlannedRevealChapters } from '@/engine/foreshadow-context';
-import { WritingQualityEngine } from '@/engine/writing-quality-engine';
-import { PlotDivergenceEngine } from '@/engine/plot-divergence-engine';
+import { createPlotDivergenceEngine, createWritingQualityEngine } from '@/engine/quality/quality-engine-factory';
+
 import { CharacterConsistencyChecker } from '@/engine/character-consistency-checker';
 import {
     DeviationDetector,
@@ -345,13 +345,13 @@ export class CoWritingView extends ItemView {
    * 质量分与协同顶栏共用同一个 WQE 内核，避免同一文本两套分。
    */
   private createRealtimeQualityMonitor(): RealtimeMonitor {
-    const kernel = new WritingQualityEngine();
+    const kernel = createWritingQualityEngine();
     return new RealtimeMonitor({
       scoreEngine: new QualityScoreEngine({ v1Engine: kernel }),
       // 与 quality-worker / heavy-task 对齐：两者都是纯计算引擎，注入后协同实时
       // 偏离才走 V1 人物一致性检测，而不是简化版关键词回退。
       deviationDetector: new DeviationDetector({
-        plotDivergenceEngine: new PlotDivergenceEngine(),
+        plotDivergenceEngine: createPlotDivergenceEngine(),
         characterChecker: new CharacterConsistencyChecker(),
       }),
     });

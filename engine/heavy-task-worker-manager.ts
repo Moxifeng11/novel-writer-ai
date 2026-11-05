@@ -6,10 +6,10 @@ import { VectorEnhancer } from './vector-enhancer';
 import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';
 import { StyleDeconstructorV2, StyleAnalysisResultV2 } from './style/style-deconstructor-v2';
 import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality/quality-score-engine';
-import { WritingQualityEngine } from './writing-quality-engine';
+import { getScopedPlotDivergenceEngine, getScopedWritingQualityEngine } from './quality/quality-engine-factory';
 import { DeviationDetector, DeviationReport, DeviationContext } from './quality/deviation-detector';
 import { CharacterConsistencyChecker } from './character-consistency-checker';
-import { PlotDivergenceEngine } from './plot-divergence-engine';
+
 
 const log = createLogger('HeavyTaskWorkerManager');
 
@@ -88,10 +88,10 @@ export class HeavyTaskWorkerManager {
         // rhythmAnalyzer / emotionAnalyzer / characterChecker 注入后不会生效，这里不再注入。
         // 人物逐条比对由下面的 DeviationDetector 负责。
         this.qualityScoreEngine = new QualityScoreEngine({
-            v1Engine: new WritingQualityEngine(),
+            v1Engine: getScopedWritingQualityEngine('heavy-task'),
         });
         this.deviationDetector = new DeviationDetector({
-            plotDivergenceEngine: new PlotDivergenceEngine(),
+            plotDivergenceEngine: getScopedPlotDivergenceEngine('heavy-task'),
             characterChecker: new CharacterConsistencyChecker(),
         });
         this.checkDeviationDetectorInjection();

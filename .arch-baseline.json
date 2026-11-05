@@ -14,8 +14,5 @@
     "ForeshadowConfigManager": 1,
     "KnowledgeBaseConfigManager": 1
   },
-  "engineOverLimit": {
-    "PlotDivergenceEngine": 4,
-    "WritingQualityEngine": 5
-  }
+  "engineOverLimit": {}
 }

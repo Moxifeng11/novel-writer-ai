@@ -17,7 +17,7 @@ import {
     QUALITY_DIMENSIONS,
 } from '@/engine/quality/quality-score-engine';
 import type { QualityScore, EvaluationContext } from '@/engine/quality/quality-score-engine';
-import { WritingQualityEngine } from '@/engine/writing-quality-engine';
+import { createWritingQualityEngine } from '@/engine/quality/quality-engine-factory';
 import { exportTextFile } from '@/shared/export-file';
 import { radarChart } from './svg-charts';
 import type { RadarDataItem } from './svg-charts';
@@ -87,7 +87,7 @@ export class QualityDashboardModal extends Modal {
     constructor(app: App, plugin: NovelWriterPlugin, engine?: QualityScoreEngine) {
         super(app);
         this.plugin = plugin;
-        this.engine = engine ?? new QualityScoreEngine({ v1Engine: new WritingQualityEngine() });
+        this.engine = engine ?? new QualityScoreEngine({ v1Engine: createWritingQualityEngine() });
     }
 
     /**

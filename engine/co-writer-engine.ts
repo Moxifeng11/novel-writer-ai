@@ -2670,54 +2670,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     private plotNodes: PlotNode[] = [];
     private currentNodeIndex: number = 0;
 
-    /** 计算当前剧情进度：已完成哪些节点，下一个目标是什么 */
+    /** 计算当前剧情进度：已完成哪些节点，下一个目标是什么（实现见 co-writer/plot-progress.ts） */
     private computePlotProgress(currentBody: string): PlotProgress {
         if (this.plotNodes.length === 0) {
             this.plotNodes = extractPlotNodes(this.snapshot?.chapPlan || '', this.snapshot?.sceneExpansion || '');
         }
-
-        const bodyLower = currentBody.toLowerCase();
-        let completedCount = 0;
-        let firstIncomplete = -1;
-
-        for (let i = 0; i < this.plotNodes.length; i++) {
-            const node = this.plotNodes[i];
-            const signals = [node.goal, node.location, node.characters, node.conflict]
-                .filter(Boolean)
-                .map(s => s.toLowerCase())
-                .filter(s => s.length >= 3);
-
-            let hitCount = 0;
-            for (const sig of signals) {
-                if (bodyLower.includes(sig)) hitCount++;
-            }
-
-            // 旧实现用 Math.min(1, ...) 把阈值钉死为 1：任一关键词命中即判节点完成。
-            // 改为「至少 30% 信号、且不少于 1 个」才有资格算完成。
-            const requiredHits = Math.max(1, Math.ceil(signals.length * 0.3));
-            const completed = signals.length > 0 && hitCount >= requiredHits;
-            node.completed = completed;
-            if (completed) {
-                completedCount++;
-            } else if (firstIncomplete < 0) {
-                firstIncomplete = i;
-            }
-        }
-
-        const total = this.plotNodes.length;
-        const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-        const nextNode = firstIncomplete >= 0 && firstIncomplete < total
-            ? this.plotNodes[firstIncomplete]
-            : null;
-
-        return {
-            totalNodes: total,
-            completedNodes: completedCount,
-            currentIndex: firstIncomplete >= 0 ? firstIncomplete : total,
-            completionPercent: percent,
-            nextNode,
-            allCompleted: firstIncomplete < 0
-        };
+        return computePlotProgressFromNodes(this.plotNodes, currentBody);
     }
 
     /**
@@ -2730,26 +2688,10 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         return this.computePlotProgress(currentBody);
     }
 
-    /** 获取当前应该推进的剧情节点描述（用于注入prompt） */
+    /** 获取当前应该推进的剧情节点描述（用于注入prompt；格式见 co-writer/plot-progress.ts） */
     private getCurrentPlotTarget(precedingText: string): string {
         const progress = this.computePlotProgress(precedingText);
-        if (!progress.nextNode) {
-            const lastNode = this.plotNodes[this.plotNodes.length - 1];
-            if (lastNode) {
-                return `本章所有剧情节点已推进完毕，当前处于收尾阶段。请为当前场景画上句号并自然过渡到章末钩子。`;
-            }
-            return '';
-        }
-
-        const node = progress.nextNode;
-        const parts: string[] = [];
-        parts.push(`当前进度：第${progress.currentIndex + 1}/${progress.totalNodes}个剧情节点（已完成${progress.completionPercent}%）`);
-        parts.push(`下一个剧情目标：${node.goal || '推进当前场景'}`);
-        if (node.location) parts.push(`地点：${node.location}`);
-        if (node.characters) parts.push(`涉及人物：${node.characters}`);
-        if (node.conflict) parts.push(`冲突焦点：${node.conflict}`);
-
-        return parts.join('\n');
+        return buildPlotTargetHint(this.plotNodes, progress);
     }
 
     /**
@@ -2909,66 +2851,14 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     }
 
     private buildEvaluationPrompt(body: string, progress: PlotProgress): string {
-        const wordCount = body.length;
-        const chapterPlan = this.snapshot?.chapPlan || '';
-        const unrevealed = this.snapshot?.foreshadows?.unrevealed ?? [];
-        const revealed = this.snapshot?.foreshadows?.revealed ?? [];
-
-        const nodeList = this.plotNodes.map((node, i) => {
-            const status = i < progress.currentIndex ? '✓ 已完成' : (i === progress.currentIndex ? '→ 进行中' : '○ 未开始');
-            return `${i + 1}. [${status}] ${node.goal}${node.location ? `（${node.location}）` : ''}`;
-        }).join('\n');
-
-        let foreshadowSection = '';
-        if (unrevealed.length > 0 || revealed.length > 0) {
-            const lines: string[] = ['【伏笔库（请交叉比对正文中的伏笔埋设与回收情况）】'];
-            if (unrevealed.length > 0) {
-                lines.push('未揭示伏笔（应埋设/铺垫，尚未回收）：');
-                unrevealed.slice(0, 10).forEach((item, i) => {
-                    lines.push(`  ${i + 1}. ${item?.name || '未命名'}（计划揭示：${item?.plannedReveal || '未定'}）`);
-                });
-            }
-            if (revealed.length > 0) {
-                lines.push('已揭示伏笔（已回收）：');
-                revealed.slice(0, 5).forEach((item, i) => {
-                    lines.push(`  ${i + 1}. ${item?.name || '未命名'}（揭示章节：${item?.revealChapter || '?'}）`);
-                });
-            }
-            foreshadowSection = lines.join('\n') + '\n';
-        }
-
-        return [
-            '你是一个小说结构分析师。所有分析和建议必须使用中文输出。请评估当前正文的剧情完成度。',
-            '',
-            '【本章剧情节点（按顺序）】',
-            nodeList || '（暂无节点信息）',
-            '',
-            '【章节目标】',
-            chapterPlan.slice(0, 500) || '（暂无章节目标信息）',
-            '',
-            foreshadowSection,
-            foreshadowSection ? '' : '',
-            `【当前正文】（约 ${wordCount} 字符）`,
-            body.slice(-1500),
-            '',
-            '请评估以下维度（各 0-100 分）：',
-            '1. sceneObjectivesMet：场景目标完成度（基于剧情节点完成情况）',
-            '2. characterArcsAdvanced：人物弧推进度（主角内心变化/成长推进了多少）',
-            '3. foreshadowingSeeded：伏笔埋设程度（对比伏笔库，正文中实际埋设/推进了多少伏笔，是否有应回收而未回收的）',
-            '4. emotionalArcProgress：情绪弧进度（情绪变化是否按预期推进）',
-            '5. overallCompletion：总体完成度（综合以上所有维度的加权平均）',
-            '',
-            '请以 JSON 格式返回（不要包含 markdown 代码块标记）：',
-            '{',
-            '  "sceneObjectivesMet": 80,',
-            '  "characterArcsAdvanced": 52,',
-            '  "foreshadowingSeeded": 30,',
-            '  "emotionalArcProgress": 65,',
-            '  "overallCompletion": 57,',
-            '  "suggestionAdvice": "一句话建议，指出当前最应该推进的内容",',
-            '  "nextDirectionHints": ["action", "dialogue", "description"]',
-            '}'
-        ].filter(Boolean).join('\n');
+        return buildEvaluationPromptFromSlice({
+            body,
+            progress,
+            plotNodes: this.plotNodes,
+            chapterPlan: this.snapshot?.chapPlan || '',
+            unrevealed: this.snapshot?.foreshadows?.unrevealed ?? [],
+            revealed: this.snapshot?.foreshadows?.revealed ?? [],
+        });
     }
 
     // ============================================================
@@ -3388,6 +3278,8 @@ import {
     parseValidationResponse,
 } from './co-writer/ai-response-parse';
 import { extractPlotNodes } from './co-writer/plot-nodes';
+import { buildEvaluationPrompt as buildEvaluationPromptFromSlice } from './co-writer/evaluation-prompt';
+import { buildPlotTargetHint, computePlotProgress as computePlotProgressFromNodes } from './co-writer/plot-progress';
 
 // ============================================================
 // 本地模型工具（已抽到 engine/co-writer/local-model-utils.ts）

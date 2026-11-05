@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 301 | 132222 | 1595 | 1337 | 84% |
+| `engine/` | 304 | 132433 | 1604 | 1344 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38729 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38752 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 214 | 97345 | 552 | 507 | 92% |
+| `ui/` | 214 | 97351 | 552 | 507 | 92% |
 
 ## 文件清单
 
@@ -89,15 +89,17 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3408 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3300 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-write-options.ts` | 265 | 9 | 9 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
+| `engine/co-writer/evaluation-prompt.ts` | 102 | 2 | 1 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
 | `engine/co-writer/local-model-utils.ts` | 193 | 9 | 7 |
 | `engine/co-writer/plot-nodes.ts` | 141 | 2 | 2 |
+| `engine/co-writer/plot-progress.ts` | 105 | 2 | 2 |
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
@@ -233,8 +235,9 @@
 | `engine/quality-scorer.ts` | 384 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2068 | 26 | 22 |
 | `engine/quality/gate-snapshot.ts` | 121 | 2 | 2 |
+| `engine/quality/quality-engine-factory.ts` | 113 | 5 | 4 |
 | `engine/quality/quality-score-engine.ts` | 2037 | 15 | 12 |
-| `engine/quality/quality-worker.ts` | 87 | 0 | 0 |
+| `engine/quality/quality-worker.ts` | 86 | 0 | 0 |
 | `engine/quality/realtime-monitor.ts` | 550 | 7 | 7 |
 | `engine/quality/rewrite-prompts.ts` | 258 | 6 | 6 |
 | `engine/quality/rewrite-suggestion-engine.ts` | 611 | 2 | 2 |
@@ -379,7 +382,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1505 | 3 | 3 |
+| `shared/changelog-data.ts` | 1528 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -552,7 +555,7 @@
 | `ui/batch-chapters-modal.ts` | 339 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 524 | 1 | 1 |
 | `ui/batch-deconstruct-modal.ts` | 410 | 1 | 1 |
-| `ui/batch-import-modal.ts` | 1868 | 1 | 1 |
+| `ui/batch-import-modal.ts` | 1869 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 193 | 1 | 1 |
@@ -656,7 +659,7 @@
 | `ui/generate-faction-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-item-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 378 | 1 | 1 |
-| `ui/generate-worldview-modal.ts` | 291 | 1 | 1 |
+| `ui/generate-worldview-modal.ts` | 292 | 1 | 1 |
 | `ui/golden-opening-modal.ts` | 1925 | 1 | 1 |
 | `ui/home-view.ts` | 230 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
@@ -667,7 +670,7 @@
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 505 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 47 | 1 | 1 |
-| `ui/manage-providers-modal.ts` | 614 | 1 | 1 |
+| `ui/manage-providers-modal.ts` | 615 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/mini-settings-modal.ts` | 88 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
@@ -675,14 +678,14 @@
 | `ui/model-picker-popover.ts` | 291 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 319 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 199 | 2 | 2 |
-| `ui/monitor-panel-b.ts` | 1908 | 2 | 2 |
+| `ui/monitor-panel-b.ts` | 1909 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 269 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 338 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 300 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 900 | 2 | 1 |
 | `ui/panel-resizer.ts` | 238 | 4 | 3 |
 | `ui/password-modal.ts` | 145 | 1 | 1 |
-| `ui/plan-book-modal.ts` | 697 | 1 | 1 |
+| `ui/plan-book-modal.ts` | 698 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 331 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 822 | 6 | 5 |
@@ -726,7 +729,7 @@
 | `ui/story-linkage-modal.ts` | 389 | 1 | 1 |
 | `ui/story-settings-form.ts` | 251 | 2 | 2 |
 | `ui/story-settings-modal.ts` | 115 | 1 | 1 |
-| `ui/style-distiller-modal.ts` | 488 | 1 | 1 |
+| `ui/style-distiller-modal.ts` | 489 | 1 | 1 |
 | `ui/svg-charts.ts` | 2321 | 49 | 49 |
 | `ui/template-manager.ts` | 709 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |

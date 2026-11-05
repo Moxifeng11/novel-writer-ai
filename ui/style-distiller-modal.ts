@@ -6,6 +6,7 @@ import { OperationConfirmModal } from './components/progress/operation-confirm-m
 import { LoadingOverlayComponent } from './components/progress/loading-overlay';
 import { ProgressEmitter } from '@/shared/progress-emitter';
 import { isImeComposing } from '@/shared/keyboard';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import {
     analyzeStyleFromSource,
     StyleDistillInput,
@@ -330,7 +331,7 @@ ${analysis}
         } else if (message.includes('timeout') || message.includes('超时')) {
             errorType = '请求超时';
         }
-        new Notice(`❌ ${errorType}: ${message}`, 8000);
+        showErrorNotice(message, { title: errorType, timeout: 8000 });
     }
 
     private handleOverlayAction(): void {
@@ -432,16 +433,16 @@ ${analysis}
                     await this.app.vault.modify(existingFile as TFile, styleContent);
                 } else {
                     await this.app.vault.create(wsPath, styleContent);
-                    new Notice('✅ 已迁移文笔风格到标准路径', 3000);
+                    showSuccessNotice('已迁移文笔风格到标准路径', { timeout: 3000 });
                 }
             } else {
                 await this.app.vault.create(wsPath, styleContent);
             }
-            new Notice(`✅ 文笔风格已写入「${projectName}」`, 5000);
+            showSuccessNotice(`文笔风格已写入「${projectName}」`, { timeout: 5000 });
             const wsFile = this.app.vault.getAbstractFileByPath(wsPath);
             if (wsFile) await this.plugin.safeOpenFile(wsFile as TFile);
         } catch (e) {
-            new Notice(`❌ 写入项目失败: ${(e as Error).message}`, 5000);
+            showErrorNotice((e as Error).message, { title: '写入项目失败', timeout: 5000 });
         }
     }
 
@@ -462,12 +463,12 @@ ${analysis}
                 await this.app.vault.create(filePath, styleContent);
             }
         } catch (e) {
-            new Notice(`❌ 保存失败: ${(e as Error).message}`, 5000);
+            showErrorNotice((e as Error).message, { title: '保存失败', timeout: 5000 });
             return;
         }
         const savedFile = this.app.vault.getAbstractFileByPath(filePath);
         if (savedFile instanceof TFile) await this.plugin.safeOpenFile(savedFile);
-        new Notice(`✅ 文笔风格已存入文笔风格库 → ${fileName}`, 6000);
+        showSuccessNotice(`文笔风格已存入文笔风格库 → ${fileName}`, { timeout: 6000 });
     }
 
     /**

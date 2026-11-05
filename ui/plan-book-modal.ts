@@ -12,6 +12,7 @@ import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('PlanBookModal');
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 
 /** 单个实体 frontmatter 摘要注入大纲上下文时的长度上限，防止超长字段拖垮 prompt（不裁剪实体数量） */
 const MAX_ENTITY_SUMMARY_LENGTH = 400;
@@ -225,7 +226,7 @@ export class PlanBookModal extends Modal {
                 genNotice.hide();
 
                 if (worldviewResult.error) {
-                    new Notice(`❌ 世界观生成失败: ${worldviewResult.error}`, 8000);
+                    showErrorNotice(worldviewResult.error, { title: '世界观生成失败', timeout: 8000 });
                     return;
                 }
 
@@ -246,9 +247,9 @@ ${worldviewResult.content}`;
                         await this.app.vault.create(worldviewPath, worldviewContent);
                     }
                     worldView = worldviewResult.content;
-                    new Notice('✅ 世界观已生成', 3000);
+                    showSuccessNotice('世界观已生成', { timeout: 3000 });
                 } catch (e) {
-                    new Notice('❌ 世界观写入失败', 5000);
+                    showErrorNotice('世界观写入失败', { timeout: 5000 });
                     return;
                 }
             } else {
@@ -265,7 +266,7 @@ ${worldviewResult.content}`;
             // 此阶段尚无新规划的每卷章节数，先只比较卷数量，避免误报章节不匹配
             const conflict = detectVolumeConflict(existingVolumes, volumes, existingVolumes.chaptersPerVolume);
             if (conflict.conflictType !== 'none') {
-                new Notice(`⚠️ 卷结构冲突：${conflict.message}`, 8000);
+                showWarningNotice(`卷结构冲突：${conflict.message}`, { timeout: 8000 });
             }
         } catch (e) {
             log.warn('[PlanBookModal] 卷冲突检测失败，跳过:', e);
@@ -305,7 +306,7 @@ ${worldviewResult.content}`;
             genNotice.hide();
 
             if (result.error) {
-                new Notice(`❌ 全书规划生成失败: ${result.error}`, 12000);
+                showErrorNotice(result.error, { title: '全书规划生成失败', timeout: 12000 });
                 return;
             }
 
@@ -316,9 +317,9 @@ ${worldviewResult.content}`;
             const content = result.content || '';
             const hasWarnings = content.includes('验证警告') || content.includes('降级生成提示');
             if (hasWarnings) {
-                new Notice(`⚠️ 大纲已生成（共 ${volCount} 卷），但存在待完善/降级内容，请检查大纲`, 8000);
+                showWarningNotice(`大纲已生成（共 ${volCount} 卷），但存在待完善/降级内容，请检查大纲`, { timeout: 8000 });
             } else {
-                new Notice(`✅ 全书规划已生成（共 ${volCount} 卷分卷大纲）`, 3000);
+                showSuccessNotice(`全书规划已生成（共 ${volCount} 卷分卷大纲）`, { timeout: 3000 });
             }
 
             // v4.2: 统一使用 ChapterOutlineTreeModal 展示完整的章节冲突预览
@@ -328,7 +329,7 @@ ${worldviewResult.content}`;
         } catch (error: any) {
             genNotice.hide();
             const errorMsg = error.message || '生成失败';
-            new Notice(`❌ 全书规划生成失败: ${errorMsg}`, 12000);
+            showErrorNotice(errorMsg, { title: '全书规划生成失败', timeout: 12000 });
             log.error('[小说工坊] 大纲生成异常:', error);
         }
     }

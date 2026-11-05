@@ -5,6 +5,7 @@ import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from './model-picker-modal';
 import { describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
 interface ManageProvidersPlugin {
     settings: any;
@@ -93,7 +94,7 @@ export class ManageProvidersModal extends Modal {
             if (!confirmed) return;
             this.plugin.restoreDefaultProviders();
             await this.plugin.saveSettings();
-            new Notice('✅ 已恢复默认供应商');
+            showSuccessNotice('已恢复默认供应商');
             this.render();
             this.onChanged();
         };
@@ -190,7 +191,7 @@ export class ManageProvidersModal extends Modal {
             this.plugin.switchProviderByEndpoint(raw.endpoint);
             await this.plugin.saveSettings();
             this.plugin.updateStatusBarText();
-            new Notice(`✅ 已切换到「${raw.name}」`);
+            showSuccessNotice(`已切换到「${raw.name}」`);
             this.onChanged();
             rerender();
         });
@@ -306,7 +307,7 @@ export class ManageProvidersModal extends Modal {
                     this.plugin.settings.apiKey = typed;
                 }
                 await this.plugin.saveSettings();
-                new Notice('✅ 密钥已保存');
+                showSuccessNotice('密钥已保存');
             });
             const eye = row.createEl('button', {
                 cls: 'nw-api-icon-btn',
@@ -338,7 +339,7 @@ export class ManageProvidersModal extends Modal {
                 const key = this.plugin.settings.providerKeys?.[raw.id] || '';
                 const result = await discoverModels(raw.endpoint, format, key);
                 if (result.kind === 'error') {
-                    new Notice(`❌ 获取模型失败：${result.message}`, 10000);
+                    showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
                     return;
                 }
                 new ModelPickerModal(this.app, result.models, raw.models, async ({ models, capacities }) => {
@@ -354,7 +355,7 @@ export class ManageProvidersModal extends Modal {
                     this.syncAvailable(raw.id);
                     await this.plugin.saveSettings();
                     this.plugin.updateStatusBarText();
-                    new Notice(`✅ 已更新模型列表（${models.length} 个）`, 4000);
+                    showSuccessNotice(`已更新模型列表（${models.length} 个）`, { timeout: 4000 });
                     this.onChanged();
                     rerender();
                 }).open();
@@ -532,7 +533,7 @@ export class ManageProvidersModal extends Modal {
                     sync(providerId);
                     await plugin.saveSettings();
                     plugin.updateStatusBarText();
-                    new Notice(isNew ? `✅ 已添加模型 ${idValue}` : `✅ 已保存 ${idValue}`);
+                    showSuccessNotice(isNew ? `已添加模型 ${idValue}` : `已保存 ${idValue}`);
                     this.close();
                     onChanged();
                     rerender();
@@ -595,7 +596,7 @@ export class ManageProvidersModal extends Modal {
                     await plugin.saveSettings();
                     plugin.updateStatusBarText();
                     this.close();
-                    new Notice('✅ 已添加供应商，可点「从 URL 获取」导入模型', 5000);
+                    showSuccessNotice('已添加供应商，可点「从 URL 获取」导入模型', { timeout: 5000 });
                     onChanged();
                     rerender();
                 };

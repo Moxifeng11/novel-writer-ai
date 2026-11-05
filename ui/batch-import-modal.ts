@@ -8,6 +8,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import type { EngineRegistry } from '@/engine/engine-registry';
 import { createLogger } from '@/shared/logger';
 import { isImeComposing } from '@/shared/keyboard';
+import { showSuccessNotice } from '@/ui/components/notice-helpers';
 
 
 const log = createLogger('BatchImportModal');
@@ -1456,7 +1457,7 @@ export class BatchImportModal extends Modal {
         void Promise.all(jobs).then(() => {
             if (addedCount > 0) {
                 this.render();
-                new Notice(`✅ 已添加 ${addedCount} 个文件`);
+                showSuccessNotice(`已添加 ${addedCount} 个文件`);
             }
         });
     }
@@ -1595,7 +1596,7 @@ export class BatchImportModal extends Modal {
             this.render();
 
             if (addedCount > 0) {
-                new Notice(`✅ 已添加 ${addedCount} 个文件`);
+                showSuccessNotice(`已添加 ${addedCount} 个文件`);
             }
         });
 
@@ -1750,7 +1751,7 @@ export class BatchImportModal extends Modal {
             this.render();
 
             if (addedCount > 0) {
-                new Notice(`✅ 已从文件夹添加 ${addedCount} 个文件`);
+                showSuccessNotice(`已从文件夹添加 ${addedCount} 个文件`);
             } else {
                 new Notice('⚠️ 没有新增文件（可能已存在）');
             }
@@ -1780,7 +1781,7 @@ export class BatchImportModal extends Modal {
         this.priority = s.priority;
         this.concurrency = s.concurrency;
         this.customTags = [...s.customTags];
-        new Notice(`✅ 已应用预设：${preset.name}`);
+        showSuccessNotice(`已应用预设：${preset.name}`);
         this.render();
     }
 
@@ -1804,7 +1805,7 @@ export class BatchImportModal extends Modal {
 
         this.batchManager.savePreset(name, settings);
         this.presetNameInput = '';
-        new Notice(`✅ 预设已保存：${name}`);
+        showSuccessNotice(`预设已保存：${name}`);
         this.render();
     }
 

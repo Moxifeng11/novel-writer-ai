@@ -1,9 +1,8 @@
 import { registerTaskHandler, startWorkerRuntime } from '@/services/worker-runtime';
 import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality-score-engine';
-import { WritingQualityEngine } from '@/engine/writing-quality-engine';
+import { getScopedPlotDivergenceEngine, getScopedWritingQualityEngine } from './quality-engine-factory';
 import { DeviationDetector, DeviationReport, DeviationContext } from './deviation-detector';
 import { CharacterConsistencyChecker } from '@/engine/character-consistency-checker';
-import { PlotDivergenceEngine } from '@/engine/plot-divergence-engine';
 import { createLogger } from '@/shared/logger';
 
 
@@ -27,15 +26,15 @@ function ensureEngines(): void {
         // rhythmAnalyzer / emotionAnalyzer / characterChecker 在注入 v1Engine 后不生效，
         // 因此这里不再注入 characterChecker（人物逐条比对由 DeviationDetector 负责）。
         qualityScoreEngine = new QualityScoreEngine({
-            v1Engine: new WritingQualityEngine(),
+            v1Engine: getScopedWritingQualityEngine('quality-worker'),
         });
     }
     if (!deviationDetector) {
         // ── 注入纯计算分析器 ──
-        // plotDivergenceEngine 与 characterChecker 均为纯计算，可在 Worker 内构造。
+        // plotDivergenceEngine 与 characterChecker 在 Worker 内按 scope 构造（本线程独立实例）。
         // rhythmAnalyzer 依赖主线程 AI 能力，保持未注入。
         deviationDetector = new DeviationDetector({
-            plotDivergenceEngine: new PlotDivergenceEngine(),
+            plotDivergenceEngine: getScopedPlotDivergenceEngine('quality-worker'),
             characterChecker: new CharacterConsistencyChecker(),
         });
         const dd = deviationDetector as any;
