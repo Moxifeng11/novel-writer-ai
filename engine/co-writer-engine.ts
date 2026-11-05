@@ -102,7 +102,6 @@ import type { EngineRegistry } from './engine-registry';
 import type { CharacterRepository, ChapterRepository } from './repository';
 import { FrontmatterSerializer } from './repository/domain/serializers';
 import { createLogger } from '@/shared/logger';
-import { deriveBodyFormat, describeBodyFormat } from '@/shared/body-format';
 import { CO_WRITE_MAX_TOKENS_CAP } from '@/shared/thresholds';
 import { countRetainedPromptParts } from '@/shared/prompt-budget';
 import { roleIndicatesProtagonist } from '@/shared/protagonist';
@@ -2740,69 +2739,23 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             ].filter(Boolean).join('\n');
         }
 
-        if (this.promptBuilder) {
-            return this.promptBuilder.buildSuggestionPrompt(
-                precedingText,
-                direction,
-                cursorHint,
-                soulInjection,
-                plotTarget,
-                fingerprintParts,
-                knowledgeParts,
-                knowledgeInjection,
-                briefParts,
-                this.getCoWriteInputBudget()
-            );
-        }
-
-        const dirPrompt = '请根据当前写作方向自然地续写一段。';
-        const snap = this.snapshot;
-        // 兜底 prompt 也必须走同一份格式契约，禁止在这里另写 Tab / 空行规则
-        const bodyFormat = describeBodyFormat(deriveBodyFormat(snap?.writingRules || ''));
-        const systemPrompt = [
-            '你是一位第三人称限知视角的叙事者。你不是在"写小说"，你是在用镜头紧贴主角，把他/她正在经历的一切原样呈现出来。',
-            '',
-            '【叙事视角规则】',
-            '- 严格第三人称限知：只写主角能看到、听到、摸到、感受到的东西。',
-            '- 不跳其他角色的内心，不写上帝视角的全局解释。',
-            '- 严禁使用第一人称「我」叙事。所有描写必须是第三人称（他/她/它），这是硬性规则，不可违反。',
-            '- 心理活动优先用自由间接引语；需要写清楚时可以用“他心想”“他觉得”，不要每段都用。',
-            '- 认知从主角的感官和处境出发；叙述者可以有人格，但不要跳到别人的脑子里。',
-            '',
-            '【怎么写才像活人写的】',
-            '- 事情在发生，不是在被讲述；但允许解释、交代和过渡，不要把必要的来龙去脉都藏掉。',
-            '- 情绪可以直接写，也可以藏在动作里；不要每段都逼着自己“藏”。',
-            '- 不用排比，不用华丽辞藻堆砌。活人眼里的世界没那么多修辞。',
-            '- 一个自然段 2–6 句，80–220 字；不要一句一段，不要把同一个动作拆成好几行。',
-            '- 对话和说话人的动作、神态放在同一段；连续对话按说话人分段。',
-            '- 允许口语、停顿、打断、答非所问和一点废话。',
-            '- “然后”“接着”“就在这时”不是禁词；该过渡时用一句带过，比硬跳更自然。',
-            '',
-            '【节奏补充】',
-            '- 句长平均 20–30 字，长句和短句交替；短句是调味，不是主菜。',
-            '- 每个场景 2–3 处关键身体感觉即可，不要逐段打卡。',
-            '',
-            bodyFormat,
-        ].filter(Boolean).join('\n');
-
-        const userParts: string[] = [
-            ...(briefParts.length > 0 ? briefParts : []),
-            '【已写内容】',
-            precedingText.slice(-800),
-            '',
-            '【写作方向】',
-            dirPrompt
-        ].filter(Boolean);
-
-        if (cursorHint) {
-            userParts.push('', '【特别指令】', cursorHint);
-        }
-
-        userParts.push('', (precedingText || '').trim().length < 10
-            ? '这是本章的开头。请根据本章大纲和设定，开始写一个自然段（80–220 字，2–6 句）。只输出正文，不要标注、不要解释、不要写标题。'
-            : '请自然地续写一个自然段（80–220 字，2–6 句），不要一句一段。只输出正文，不要标注、不要解释、不要写标题。');
-        return { system: systemPrompt, user: userParts.join('\n') };
+        // 装配逻辑已抽至 co-writer/directional-prompt.ts；状态访问（soul/简报/剧情目标/预算）留在引擎侧
+        return buildDirectionalPromptFromSlice({
+            precedingText,
+            direction,
+            cursorHint,
+            fingerprintParts,
+            knowledgeParts,
+            knowledgeInjection,
+            soulInjection,
+            plotTarget,
+            briefParts,
+            writingRules: this.snapshot?.writingRules || '',
+            promptBuilder: this.promptBuilder,
+            inputBudget: this.getCoWriteInputBudget(),
+        });
     }
+
     // D2: 跨卷一致性——注入前面卷的状态快照（人物/势力/伏笔/时间线）
     /**
      * 取跨卷上下文提示词片段。
@@ -3280,6 +3233,7 @@ import {
 import { extractPlotNodes } from './co-writer/plot-nodes';
 import { buildEvaluationPrompt as buildEvaluationPromptFromSlice } from './co-writer/evaluation-prompt';
 import { buildPlotTargetHint, computePlotProgress as computePlotProgressFromNodes } from './co-writer/plot-progress';
+import { buildDirectionalPrompt as buildDirectionalPromptFromSlice } from './co-writer/directional-prompt';
 
 // ============================================================
 // 本地模型工具（已抽到 engine/co-writer/local-model-utils.ts）
