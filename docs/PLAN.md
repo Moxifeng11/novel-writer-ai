@@ -91,7 +91,8 @@ Agent（harness）
 - 切片第八批（v4.49.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/editor-shortcuts`（快捷键决策）、`metrics-render`（指标面板/评分卡/方向文本）、`settlement-actions`（待结算提示/标记完稿/结算入口/冲突检测）、`suggestion-flow`（Tab 建议与流式建议主流程）四个模块，**3,980 → 3,581 行（-399）**；新增 4 个测试文件 22 用例；全量 580 文件 / 6,237 用例、lint 0 error / 1,853 warnings、tsc 0。
 - 第十五批（v4.50.0）：`ai-builder-modal`（2）、`appearance-settings`（7）、`settings/general-sections`（6）、`settings/foreshadow-section`（6）、`settings/knowledge-section`（7）、`project-utils`（6）合计替换 **34 处**（成功/失败/告警）；`settings/api-section` 余 8 处均为校验守卫，**0 替换**，确认收敛；无新增测试，改用既有 `notice-helpers` 覆盖。
 - 切片第九批（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/metrics-refresh`（剧情完成度刷新编排：评估节流门控、在途评估中止、切章丢弃旧结果、失败态回退），并扩展 `co-writing/chapter-context`（`resolveChapterLocation` 章节身份推定 / `stripChapterBody` 正文去壳，锁定「缺参绑定错误卷」与标题重复两处历史 bug），**3,581 → 3,556 行（-25，行数口径：含空行）**；新增 1 个测试文件 7 用例 + `chapter-context` 追加 11 用例（共 18）；下一批继续渲染布局装配，目标 ≤3,300。
-- 下一步：继续 co-writing-view 剩余纯逻辑块（渲染布局装配），目标 ≤3,300；Notice 尾盘候选 `command-ui-executor`（20）、`knowledge-base-view`（14）、`co-write-floating-panel`（11）。
+- 切片第九批·第 3 片（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/layout-assembly`（顶栏导航/资源/模式装配、左栏本章简报与预览、右侧 Tab 头、字体选择器、Markdown 状态栏、布局回填、分隔条），**3,556 → 3,443 行（-113，含空行口径）**；新增 1 个测试文件 9 用例（字体选项解析/布局状态/状态栏文案）；全量 582 文件 / 6,264 用例、preflight 全绿；bundle 基线上调 +968B（纯迁移与回调装配开销，已在 `.bundle-baseline.json` note 说明）。
+- 下一步：继续 co-writing-view 第 4 片（渲染布局装配收尾），目标 ≤3,300；Notice 尾盘候选 `command-ui-executor`（20）、`knowledge-base-view`（14）、`co-write-floating-panel`（11）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

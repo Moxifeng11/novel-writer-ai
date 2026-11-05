@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-06
-- 当前基线：v4.50.0；单测 581 文件 / 6244 用例；E2E 37 条
+- 当前基线：v4.50.0；单测 582 文件 / 6264 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-06｜G5｜v4.51.0（待发版）co-writing-view 切片第九批第 3 片：抽出 layout-assembly（顶栏导航/资源/模式装配、左栏本章简报与预览、右侧 Tab 头、字体选择器、Markdown 状态栏、布局回填、分隔条）；视图 3,556 → 3,443 行（-113，含空行口径）；新增 1 个行为测试文件 9 用例；bundle 基线上调 +968B（纯迁移开销，note 已说明）（ui/co-writing/layout-assembly.ts + ui/co-writing-view.ts + tests/unit/ui/co-writing-layout-assembly.test.ts）
 - 2026-11-06｜G5｜v4.51.0（待发版）co-writing-view 切片第九批：抽出 metrics-refresh（剧情完成度刷新编排：评估节流门控、在途评估中止、切章丢弃旧结果、失败态回退）并扩展 chapter-context（resolveChapterLocation 章节身份推定 / stripChapterBody 正文去壳，锁定「缺参绑定错误卷」与标题重复两处历史 bug）；视图 3,581 → 3,556 行（-25，含空行口径）；新增 1 个行为测试文件 7 用例 + chapter-context 追加 11 用例（ui/co-writing/metrics-refresh.ts + ui/co-writing/chapter-context.ts + ui/co-writing-view.ts + tests/unit/ui/co-writing-metrics-refresh.test.ts + tests/unit/ui/co-writing-chapter-context.test.ts）
 - 2026-11-06｜G5｜v4.50.0 第十五批 Notice：ai-builder-modal / appearance-settings / settings/general-sections / settings/foreshadow-section / settings/knowledge-section / project-utils 合计替换 34 处（成功/失败/告警）；settings/api-section 余 8 处均为校验守卫，0 替换并确认收敛；无新增测试，改用既有 notice-helpers 覆盖（ui/ai-builder-modal.ts + ui/appearance-settings.ts + ui/settings/general-sections.ts + ui/settings/foreshadow-section.ts + ui/settings/knowledge-section.ts + ui/project-utils.ts）
 - 2026-11-06｜G5｜v4.49.0（待发版）co-writing-view 切片第八批：抽出 editor-shortcuts（编辑器快捷键决策）、metrics-render（指标面板/评分卡/方向文本）、settlement-actions（待结算提示/标记完稿/结算入口/冲突检测）、suggestion-flow（Tab 建议与流式建议主流程）四个模块；视图 3,980 → 3,581 行（-399）；新增 4 个行为测试文件 22 用例（ui/co-writing/editor-shortcuts.ts + ui/co-writing/metrics-render.ts + ui/co-writing/settlement-actions.ts + ui/co-writing/suggestion-flow.ts + ui/co-writing-view.ts）

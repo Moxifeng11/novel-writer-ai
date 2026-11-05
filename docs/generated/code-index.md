@@ -11,7 +11,7 @@
 | `shared/` | 173 | 38937 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 236 | 100344 | 693 | 612 | 88% |
+| `ui/` | 237 | 100729 | 715 | 625 | 87% |
 
 ## 文件清单
 
@@ -565,7 +565,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3557 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3444 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -578,6 +578,7 @@
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
 | `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
 | `ui/co-writing/kb-reference-config.ts` | 205 | 10 | 7 |
+| `ui/co-writing/layout-assembly.ts` | 498 | 22 | 13 |
 | `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
 | `ui/co-writing/metrics-panel.ts` | 228 | 5 | 3 |

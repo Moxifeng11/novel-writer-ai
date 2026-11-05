@@ -32,12 +32,11 @@ import { LiveAnalysisController } from './cowrite/live-analysis-controller';
 import type { PlotEvalGateState } from '@/shared/plot-eval-throttle';
 import { captureScrollSnapshot, resolveRestoredScrollTop } from '@/shared/preview-scroll';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
-import { getCustomFontFamilies, registerAllCustomFonts, SYSTEM_FONT_PRESETS } from '@/services/font-manager';
+import { getCustomFontFamilies, registerAllCustomFonts } from '@/services/font-manager';
 import { FontManagerModal } from './font-manager-modal';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from './model-quick-switcher';
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
 import { BodySaveController } from './cowrite/body-save-controller';
-import { buildMarkdownToolbar } from './co-writing/markdown-toolbar';
 import { parseQualityReport, type QualityIssue } from './co-writing/quality-report';
 import {
     buildQualityFixPrompt,
@@ -75,7 +74,6 @@ import {
     type BodyFormatContract,
 } from '@/shared/body-format';
 import {
-    countParagraphs,
     describeContractShort,
     formatNovelManuscript,
     type TextEdit,
@@ -170,7 +168,18 @@ import {
     renderQuoteTabContent,
     type KbPanelHost,
 } from '@/ui/co-writing/kb-panel';
-import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
+import {
+    applyLayoutFromSettings as applyLayoutToPanel,
+    attachPanelResizer,
+    applyEditorFont as applyEditorFontTo,
+    refreshMarkdownStatus,
+    renderHeader,
+    renderLeftPanel,
+    renderMarkdownStatus,
+    renderMarkdownToolbar,
+    renderTabHeaders,
+    type MarkdownStatusHandles,
+} from './co-writing/layout-assembly';
 import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '@/shared/thresholds';
 import { resolveCursorPosition } from '@/shared/cursor-position';
 import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck } from '@/shared/prereq-check';
@@ -201,8 +210,6 @@ export class CoWritingView extends ItemView {
   mainContainer!: HTMLElement;
   centerPanel!: HTMLElement;
   resizerEl!: HTMLElement;
-  /** 统一拖拽原语句柄（第 4 轮迁移） */
-  private layoutResizer: PanelResizerHandle | null = null;
   previewContent!: HTMLElement;
   rightEditor!: HTMLTextAreaElement;
   /** 编辑器容器（前置规划警告横幅挂在此处，才真正位于编辑器上方） */
@@ -280,11 +287,7 @@ export class CoWritingView extends ItemView {
   private editorContract: BodyFormatContract = DEFAULT_BODY_FORMAT;
   private editorContractProject = '';
   private bodyWriter: BodyWriter | null = null;
-  private mdStatusEl: HTMLElement | null = null;
-  private mdStatusModeEl: HTMLElement | null = null;
-  private mdStatusContractEl: HTMLElement | null = null;
-  private mdStatusWordsEl: HTMLElement | null = null;
-  private mdStatusParagraphsEl: HTMLElement | null = null;
+  private mdStatusHandles: MarkdownStatusHandles | null = null;
   lastGhostSeed = "";
   /** 上一次自动联想请求的时间（0 = 尚未请求）：慢速打字时限频，避免每次停顿都打 AI */
   private lastGhostRequestAt = 0;
@@ -778,77 +781,38 @@ export class CoWritingView extends ItemView {
     this.mainContainer = this.contentEl.createDiv({ cls: "nw-cowrite-root" });
     const header = this.mainContainer.createDiv({ cls: "nw-cowrite-header" });
 
-    // 左区：返回 · 标题 · 章节上下文状态
-    const headerLeft = header.createDiv({ cls: "nw-cowrite-header-left" });
-    const backBtn = headerLeft.createEl("button", { text: "← 工作台", cls: "nw-float-monitor-toggle nw-cowrite-back-btn" });
-    backBtn.setAttribute("title", "返回完整写作工作台");
-    backBtn.addEventListener("click", () => { void this.plugin.openFullWriterView(); });
-    const titleDiv = headerLeft.createDiv({ cls: "nw-cowrite-title" });
-    titleDiv.createSpan({ cls: "nw-cowrite-title-icon", text: "\u{1F4DD}" });
-    titleDiv.createSpan({ text: "\u534F\u540C\u5199\u4F5C" });
-    // 空态不再显示「加载中...」，改为准确的上下文状态（openChapter 成功后会由 refreshStatusBar 覆盖）
-    this.statusBar = headerLeft.createDiv({ cls: "nw-cowrite-status", text: "未绑定章节" });
-
-    // 中区：资源引用入口（知识库 → 指纹库 → 实体，按参考资料使用频率排序）
-    const headerTools = header.createDiv({ cls: "nw-cowrite-header-tools" });
-    const kbBtn = headerTools.createEl("button", { text: "\u{1F4DA} 知识库管理", cls: "nw-float-monitor-toggle nw-btn-knowledge" });
-    kbBtn.setAttribute("title", "打开知识库管理视图");
-    kbBtn.addEventListener("click", () => { this.openKnowledgePanel(); });
-    const fpBtn = headerTools.createEl("button", { text: "🔍 指纹库", cls: "nw-float-monitor-toggle" });
-    fpBtn.setAttribute("title", "打开写作指纹库");
-    fpBtn.addEventListener("click", () => { this.plugin.executeCommand("novel-writer-fingerprint-library"); });
-    const entityBtn = headerTools.createEl("button", { text: "👥 实体", cls: "nw-float-monitor-toggle" });
-    entityBtn.setAttribute("title", "统一实体管理（人物/地点/势力/物品）");
-    entityBtn.addEventListener("click", () => {
-      if (this.project) {
-        new UnifiedEntityManagerModal(this.app, this.plugin, this.project).open();
-      } else {
-        new Notice("⚠️ 请先打开一个项目章节", 3000);
-      }
+    const headerHandles = renderHeader(header, {
+      openWriter: () => { void this.plugin.openFullWriterView(); },
+      openKnowledge: () => { this.openKnowledgePanel(); },
+      openFingerprintLibrary: () => { this.plugin.executeCommand("novel-writer-fingerprint-library"); },
+      openEntityManager: () => {
+        if (this.project) {
+          new UnifiedEntityManagerModal(this.app, this.plugin, this.project).open();
+        } else {
+          new Notice("⚠️ 请先打开一个项目章节", 3000);
+        }
+      },
+      toggleMonitor: () => { this.toggleFloatingPanel(); },
+      togglePrecisionMode: () => { this.togglePrecisionMode(); },
+      renderAssetStatus: () => { void this.renderAssetStatusBar(); },
+      attachRealtimeQuality: (el) => this.realtimeQuality.attachStatus(el),
+      toggleQualityMonitor: () => this.toggleQualityMonitor(),
+      renderModelSwitcher: (el) => renderModelQuickSwitcher(el, this.plugin),
     });
-    // 右区：视图模式（剧情监控 → 精准模式）· 资源状态
-    // v8.4: 取消原「⋯ 更多」下拉（与右侧「⚙ 更多工具」功能重复，且其全局 click 监听未随视图卸载）
-    //       将「监控 / 分析」并入右侧工具面板，顶栏只保留导航、资源与模式三类入口
-    const headerRight = header.createDiv({ cls: "nw-cowrite-header-right" });
-    // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到协同顶栏（四个主界面之一）。
-    this.modelSwitcher = renderModelQuickSwitcher(headerRight, this.plugin);
-    const monBtn = headerRight.createEl("button", { text: "\u{1F4C8} \u5267\u60C5", cls: "nw-float-monitor-toggle nw-btn-monitor" });
-    monBtn.setAttribute("title", "打开/关闭剧情监控浮窗");
-    monBtn.addEventListener("click", () => { this.toggleFloatingPanel(); });
-    const precisionBtn = headerRight.createEl("button", { text: "\uD83C\uDFAF \u7CBE\u51C6\u6A21\u5F0F", cls: "nw-precision-mode-btn nw-float-monitor-toggle", attr: { title: "\u7CBE\u51C6\u6A21\u5F0F\uFF1A\u9010\u53E5\u68C0\u7D22+\u98CE\u683C\u8BC4\u5206+\u53CDAI\u68C0\u6D4B" } });
-    precisionBtn.addEventListener("click", () => { this.togglePrecisionMode(); });
-    this.precisionModeBtn = precisionBtn;
-
-    this.assetStatusBar = headerRight.createDiv({ cls: "nw-asset-status-bar" });
-    void this.renderAssetStatusBar();
-
-    const qualityStatus = headerRight.createDiv({ cls: "nw-cowrite-status nw-quality-live" });
-    this.realtimeQuality.attachStatus(qualityStatus);
-    const qualityBtn = headerRight.createEl("button", { text: "📊 实时质量", cls: "nw-float-monitor-toggle" });
-    qualityBtn.setAttribute("title", "开启/关闭实时质量评估");
-    qualityBtn.addEventListener("click", () => this.toggleQualityMonitor());
-    this.qualityMonitorBtn = qualityBtn;
+    this.statusBar = headerHandles.statusBar;
+    this.modelSwitcher = headerHandles.modelSwitcher;
+    this.precisionModeBtn = headerHandles.precisionModeBtn;
+    this.assetStatusBar = headerHandles.assetStatusBar;
+    this.qualityMonitorBtn = headerHandles.qualityMonitorBtn;
 
     const mainArea = this.mainContainer.createDiv({ cls: "nw-cowrite-main" });
 
     // 左侧：预览区（可折叠，默认窄）
     const leftPanel = mainArea.createDiv({ cls: "nw-cowrite-left" });
-    // 本章简报：把上一步（Scene 展开/大纲/情绪/信息规划）的成果直接摆出来
-    const briefSection = leftPanel.createDiv({ cls: "nw-cowrite-brief" });
-    const briefHead = briefSection.createDiv({ cls: "nw-cowrite-brief-head" });
-    briefHead.createSpan({ cls: "nw-cowrite-brief-title", text: "📋 本章简报" });
-    briefSection.createDiv({ cls: "nw-cowrite-brief-summary", text: "等待章节规划…" });
-    this.briefSummaryEl = briefSection.querySelector(".nw-cowrite-brief-summary") as HTMLElement | null;
-    this.briefContent = briefSection.createDiv({ cls: "nw-cowrite-brief-body" });
-    const previewSection = leftPanel.createDiv({ cls: "nw-cowrite-preview" });
-    previewSection.createDiv({ cls: "nw-cowrite-preview-label", text: "预览" });
-    this.previewContent = previewSection.createDiv({ cls: "nw-cowrite-preview-content" });
-    const previewToggle = previewSection.createDiv({ cls: "nw-cowrite-preview-toggle" });
-    previewToggle.createSpan({ text: "收起 ▲" });
-    previewToggle.addEventListener("click", () => {
-        leftPanel.toggleClass("nw-cowrite-left-collapsed", !leftPanel.hasClass("nw-cowrite-left-collapsed"));
-        previewToggle.setText(leftPanel.hasClass("nw-cowrite-left-collapsed") ? "展开 ▼" : "收起 ▲");
-    });
+    const leftHandles = renderLeftPanel(leftPanel);
+    this.briefSummaryEl = leftHandles.briefSummary;
+    this.briefContent = leftHandles.briefContent;
+    this.previewContent = leftHandles.previewContent;
 
     // 中央：编辑器 + 拖拽条 + 建议面板（左右分栏）
     const centerPanel = mainArea.createDiv({ cls: "nw-cowrite-center" });
@@ -889,18 +853,10 @@ export class CoWritingView extends ItemView {
 
     // Tab 头部
     this.rightTabHeaders = this.rightTabContainer.createDiv({ cls: "nw-cowrite-tab-headers" });
-    const overviewTab = this.rightTabHeaders.createDiv({
-      cls: "nw-cowrite-tab-header is-active",
-      text: "📊 概览",
-      attr: { "data-tab": "overview" }
-    });
-    const knowledgeTab = this.rightTabHeaders.createDiv({
-      cls: "nw-cowrite-tab-header",
-      text: "📚 知识库",
-      attr: { "data-tab": "knowledge", title: "内嵌知识库面板：检索与引用" }
-    });
-    overviewTab.addEventListener("click", () => this.switchRightTab("overview"));
-    knowledgeTab.addEventListener("click", () => this.switchRightTab("knowledge"));
+    renderTabHeaders(this.rightTabHeaders, [
+      { id: "overview", label: "📊 概览", active: true },
+      { id: "knowledge", label: "📚 知识库", title: "内嵌知识库面板：检索与引用" },
+    ], (id) => this.switchRightTab(id));
 
     // Tab 内容容器
     this.rightTabContents = this.rightTabContainer.createDiv({ cls: "nw-cowrite-tab-contents" });
@@ -1264,53 +1220,18 @@ export class CoWritingView extends ItemView {
     const visible = this.appliedHint !== null && this.appliedHint !== "" && current === this.appliedHint;
     this.hintStateDisplay.style.display = visible ? "" : "none";
   }
-  /** 编辑器顶部：Markdown / 段落 / 一键排版工具条 */
-  /** 2026-10-28: 编辑器字体选择下拉 —— 主题变量 + 常见系统字体预设 + 自定义载入字体 */
-  private buildFontPicker(wrap: HTMLElement): void {
-    const saved = this.facade.settings.coWriteEditorFont || '';
-    const group = wrap.createDiv({ cls: 'nw-cowrite-md-group nw-cowrite-font-group' });
-    group.createSpan({ cls: 'nw-cowrite-font-label', text: '字体' });
-    const select = group.createEl('select', { cls: 'nw-cowrite-font-select' });
-    select.createEl('option', { value: '', text: '默认（跟随主题）' });
-    for (const preset of SYSTEM_FONT_PRESETS) {
-      select.createEl('option', { value: preset.value, text: preset.label });
-    }
-    const customFamilies = getCustomFontFamilies(this.plugin);
-    for (const family of customFamilies) {
-      select.createEl('option', {
-        value: `"${family}", sans-serif`,
-        text: `★ ${family}`,
-      });
-    }
-    select.createEl('option', { value: '__manage__', text: '⚙️ 管理自定义字体…' });
-    select.value = saved;
-    if (select.value !== saved) select.value = '';
-    select.addEventListener('change', () => {
-      const value = select.value;
-      if (value === '__manage__') {
-        select.value = this.facade.settings.coWriteEditorFont || '';
-        new FontManagerModal(this.app, this.plugin).open();
-        return;
-      }
-      this.facade.settings.coWriteEditorFont = value;
-      void this.facade.settings;
-      void this.plugin.saveSettings();
-      this.applyEditorFont(value);
-    });
-  }
-
-  /** 应用编辑器字体（空串=恢复主题默认） */
-  private applyEditorFont(fontFamily: string): void {
-    const family = fontFamily || '';
-    if (this.rightEditor) this.rightEditor.style.fontFamily = family;
-    // 幽灵建议层与预览层同步，保持视觉一致
-    if (this.ghostSuggestionContainer) this.ghostSuggestionContainer.style.fontFamily = family;
-    if (this.previewContent) this.previewContent.style.fontFamily = family;
-  }
-
+  /** 编辑器顶部：字体选择 + Markdown / 段落 / 一键排版工具条 */
   private buildMarkdownToolbar(wrap: HTMLElement): void {
-    this.buildFontPicker(wrap);
-    buildMarkdownToolbar(wrap, {
+    renderMarkdownToolbar(wrap, {
+      saved: this.facade.settings.coWriteEditorFont || '',
+      customFamilies: getCustomFontFamilies(this.plugin),
+      openManager: () => new FontManagerModal(this.app, this.plugin).open(),
+      onSelect: (value) => {
+        this.facade.settings.coWriteEditorFont = value;
+        void this.plugin.saveSettings();
+        this.applyEditorFont(value);
+      },
+    }, {
       getEditor: () => this.rightEditor,
       getContract: () => this.editorContract,
       applyTextEdit: (edit) => this.applyTextEdit(edit),
@@ -1318,25 +1239,20 @@ export class CoWritingView extends ItemView {
     });
   }
 
+  /** 应用编辑器字体（空串=恢复主题默认） */
+  private applyEditorFont(fontFamily: string): void {
+    applyEditorFontTo({ editor: this.rightEditor, ghost: this.ghostSuggestionContainer, preview: this.previewContent }, fontFamily);
+  }
+
   /** 编辑器底部：Markdown / 格式契约 / 字数 / 段落 */
   private buildMarkdownStatus(wrap: HTMLElement): void {
-    const status = wrap.createDiv({ cls: 'nw-cowrite-md-status' });
-    this.mdStatusEl = status;
-    this.mdStatusModeEl = status.createSpan({ cls: 'nw-cowrite-md-status-item', text: 'Markdown' });
-    this.mdStatusContractEl = status.createSpan({ cls: 'nw-cowrite-md-status-item nw-cowrite-md-status-contract' });
-    this.mdStatusWordsEl = status.createSpan({ cls: 'nw-cowrite-md-status-item' });
-    this.mdStatusParagraphsEl = status.createSpan({ cls: 'nw-cowrite-md-status-item' });
-    status.createSpan({ cls: 'nw-cowrite-md-status-hint', text: 'Ctrl+Alt+F 一键排版' });
+    this.mdStatusHandles = renderMarkdownStatus(wrap);
     this.updateMarkdownStatus();
   }
 
   private updateMarkdownStatus(): void {
-    if (!this.mdStatusEl) return;
-    const text = this.rightEditor?.value ?? '';
-    this.mdStatusModeEl?.setText('Markdown');
-    this.mdStatusContractEl?.setText(`格式：${describeContractShort(this.editorContract)}`);
-    this.mdStatusWordsEl?.setText(`字数 ${text.replace(/\s+/g, '').length}`);
-    this.mdStatusParagraphsEl?.setText(`段落 ${countParagraphs(text)}`);
+    if (!this.mdStatusHandles) return;
+    refreshMarkdownStatus(this.mdStatusHandles, this.rightEditor?.value ?? '', this.editorContract);
   }
 
   private getBodyWriter(): BodyWriter {
@@ -1704,50 +1620,21 @@ export class CoWritingView extends ItemView {
 
   private applyLayoutFromSettings() {
     if (!this.centerPanel) return;
-    const settings = this.facade.settings;
-    const layout = settings.coWriteLayout || 'split';
-    const ratio = settings.coWriteEditorWidthRatio || 0.65;
-    const panelVisible = settings.coWriteSuggestionPanelVisible !== false;
-
-    this.centerPanel.toggleClass('is-stacked', layout === 'stacked');
-    this.centerPanel.style.setProperty('--nw-cowrite-editor-percent', `${Math.max(40, Math.min(85, ratio * 100))}%`);
-    this.centerPanel.toggleClass('is-panel-collapsed', !panelVisible);
+    applyLayoutToPanel(this.centerPanel, this.facade.settings);
   }
 
-  /**
-   * 编辑区 / 建议区 分隔条。
-   *
-   * 2026-10-29：改用统一原语 createPanelResizer（Pointer Events +
-   * 键盘可达 + 双击复位），并复用已就位的节点以保持 DOM 顺序。
-   * 比例仍存 coWriteEditorWidthRatio，写入 --nw-cowrite-editor-percent。
-   */
+  /** 编辑区 / 建议区 分隔条（统一原语 createPanelResizer，见 layout-assembly）。 */
   private initResizer() {
     if (!this.resizerEl || !this.centerPanel) return;
-
-    const ratio = this.facade.settings.coWriteEditorWidthRatio || 0.65;
-    this.layoutResizer = createPanelResizer({
+    attachPanelResizer({
       container: this.centerPanel,
       element: this.resizerEl,
-      target: this.centerPanel,
-      orientation: 'horizontal',
-      side: 'before',
-      unit: 'percent',
-      cssVar: '--nw-cowrite-editor-percent',
-      min: 40,
-      max: 85,
-      step: 2,
-      value: Math.round(ratio * 100),
-      defaultValue: 65,
-      ariaLabel: '拖动调整编辑区宽度（方向键微调，双击复位）',
+      ratio: this.facade.settings.coWriteEditorWidthRatio || 0.65,
       onCommit: (percent) => {
         this.facade.settings.coWriteEditorWidthRatio = percent / 100;
         void this.plugin.saveSettings();
       },
-    });
-
-    this.register(() => {
-      this.layoutResizer?.destroy();
-      this.layoutResizer = null;
+      registerCleanup: (fn) => this.register(fn),
     });
   }
 
