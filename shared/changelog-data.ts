@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.42.0',
+        date: '2026-11-05',
+        title: '协同视图切片第五批与 Notice 第六~十一批',
+        sections: [
+            {
+                type: 'improved',
+                label: '✂️ 切片',
+                items: [
+                    'co-writing-view 4986→4645：Markdown 快捷键/质检高亮/友好错误/KB 面板四模块抽出',
+                    '新增 4 个测试文件 17 条',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧯 提示收敛',
+                items: [
+                    'Notice 第六~十一批：15 文件 252 处改走 notice-helpers',
+                    'lint 1870→1869；main.js −2163 B',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.41.0',
         date: '2026-11-05',
         title: '质量引擎作用域收敛、协同引擎第五批切片与 Notice 第五批',

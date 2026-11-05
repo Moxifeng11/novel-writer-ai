@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 304 | 132433 | 1604 | 1344 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38752 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38775 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 214 | 97351 | 552 | 507 | 92% |
+| `ui/` | 218 | 97657 | 570 | 522 | 92% |
 
 ## 文件清单
 
@@ -382,7 +382,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1528 | 3 | 3 |
+| `shared/changelog-data.ts` | 1551 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -544,9 +544,9 @@
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
-| `ui/add-fanfic-setting-modal.ts` | 524 | 1 | 1 |
+| `ui/add-fanfic-setting-modal.ts` | 525 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1704 | 1 | 1 |
-| `ui/ai-builder-modal.ts` | 1137 | 1 | 1 |
+| `ui/ai-builder-modal.ts` | 1141 | 1 | 1 |
 | `ui/appearance-settings.ts` | 573 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/auto-writer-modal.ts` | 239 | 1 | 1 |
@@ -563,16 +563,20 @@
 | `ui/chapter-settlement-modal.ts` | 400 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
-| `ui/co-write-floating-panel.ts` | 1019 | 2 | 2 |
-| `ui/co-writing-view.ts` | 4987 | 3 | 2 |
+| `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
+| `ui/co-writing-view.ts` | 4646 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
+| `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |
 | `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
+| `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
 | `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
+| `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
+| `ui/co-writing/quality-highlight.ts` | 102 | 3 | 2 |
 | `ui/co-writing/quality-report.ts` | 130 | 2 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 656 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 657 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 442 | 2 | 2 |
@@ -609,7 +613,7 @@
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
 | `ui/export-manuscript-modal.ts` | 570 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
-| `ui/fanfic-review-modal.ts` | 418 | 1 | 1 |
+| `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |
 | `ui/fingerprint-detail-modal.ts` | 602 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
@@ -650,7 +654,7 @@
 | `ui/full-writer/unit-writer-controller.ts` | 779 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 420 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
-| `ui/full-writer/wizard-step-executors.ts` | 350 | 1 | 1 |
+| `ui/full-writer/wizard-step-executors.ts` | 351 | 1 | 1 |
 | `ui/full-writer/wizard-step-renderers.ts` | 943 | 1 | 1 |
 | `ui/full-writer/wizard-step-validators.ts` | 148 | 2 | 2 |
 | `ui/full-writer/wizard-types.ts` | 77 | 5 | 3 |
@@ -660,7 +664,7 @@
 | `ui/generate-item-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 292 | 1 | 1 |
-| `ui/golden-opening-modal.ts` | 1925 | 1 | 1 |
+| `ui/golden-opening-modal.ts` | 1926 | 1 | 1 |
 | `ui/home-view.ts` | 230 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
 | `ui/ideation-modal.ts` | 1217 | 1 | 1 |
@@ -689,11 +693,11 @@
 | `ui/plot-canvas-modal.ts` | 331 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 822 | 6 | 5 |
-| `ui/pre-research-modal.ts` | 706 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 707 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 405 | 5 | 5 |
 | `ui/project-utils.ts` | 363 | 11 | 10 |
-| `ui/prompt-manager-settings.ts` | 1142 | 1 | 1 |
+| `ui/prompt-manager-settings.ts` | 1143 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 90 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 482 | 2 | 2 |
 | `ui/rebuild-chapters-modal.ts` | 325 | 1 | 1 |
@@ -731,7 +735,7 @@
 | `ui/story-settings-modal.ts` | 115 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 489 | 1 | 1 |
 | `ui/svg-charts.ts` | 2321 | 49 | 49 |
-| `ui/template-manager.ts` | 709 | 5 | 2 |
+| `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 1089 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 951 | 1 | 1 |
@@ -743,7 +747,7 @@
 | `ui/views/kb-config-panel.ts` | 229 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 200 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
-| `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
+| `ui/views/knowledge-base-modals.ts` | 1362 | 4 | 4 |
 | `ui/views/knowledge-base-view.ts` | 3228 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 1919 | 3 | 3 |

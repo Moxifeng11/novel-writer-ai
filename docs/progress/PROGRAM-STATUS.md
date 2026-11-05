@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-05
-- 当前基线：v4.41.0；单测 556 文件 / 6112 用例；E2E 37 条
+- 当前基线：v4.42.0；单测 560 文件 / 6129 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,12 @@
 
 ## 四、进度流水
 
+- 2026-11-05｜G5｜v4.42.0 第十一批：full-writer-view Notice 6 处（成功 1 / 失败 5），11→5；守卫、预检与带引导提示保留（ui/full-writer-view.ts）
+- 2026-11-05｜G5｜v4.42.0 第十批：prompt-manager-settings / co-write-floating-panel / wizard-step-executors / template-manager / fanfic-review-modal 五个文件 Notice 67 处（成功/失败/告警），91→24；守卫、进度、预检与无变化提示保留（ui/prompt-manager-settings.ts + ui/co-write-floating-panel.ts + ui/full-writer/wizard-step-executors.ts + ui/template-manager.ts + ui/fanfic-review-modal.ts）
+- 2026-11-05｜G5｜v4.42.0 第九批：knowledge-base-view / knowledge-base-modals / command-ui-executor / add-fanfic-setting-modal / ai-builder-modal / pre-research-modal 六个文件 Notice 87 处（成功/失败/告警），161→74；守卫、进度、预检与无变化提示保留（ui/views/knowledge-base-view.ts + ui/views/knowledge-base-modals.ts + ui/command-ui-executor.ts + ui/add-fanfic-setting-modal.ts + ui/ai-builder-modal.ts + ui/pre-research-modal.ts）
+- 2026-11-05｜G5｜v4.42.0 第三批：golden-opening-modal Notice 第八批 31 处（成功 9 / 失败 22），45→14；守卫 7 与进度 7 保留（ui/golden-opening-modal.ts）
+- 2026-11-05｜G5｜v4.42.0 第二批：writing-fingerprint-view Notice 第七批 21 处（成功 8 / 失败 10 / 告警 3），52→31；守卫、进度与无变化提示保留（ui/views/writing-fingerprint-view.ts）
+- 2026-11-05｜G5｜v4.42.0 首批：co-writing-view Notice 第六批 40 处（成功/失败/告警），守卫/进度类保留；抽出 markdown-shortcut / quality-highlight / friendly-error / kb-panel 四个模块，文件 4,986 → 4,645 行（达标 ≤4,700）（ui/co-writing-view.ts + ui/co-writing/{markdown-shortcut,quality-highlight,friendly-error,kb-panel}.ts + 4 个单测文件（17 条））
 - 2026-11-01｜G7｜建立专项台账与渲染脚本（单一数据源 + CI 可校验）（docs/progress/program-status.json）
 - 2026-11-01｜G4｜版本升级备份对密钥脱敏（apiKey/providerKeys/各向量 Key/GitHub Token/考据 Key）（shared/secret-redaction.ts）
 - 2026-11-01｜G1/G3｜盘点后修复：备份默认失效、版本索引并发锁、项目路径推导收口（7 处）、统计陈旧元数据（body-writer / chapter-version-service / shared/paths / writing-stats-service）

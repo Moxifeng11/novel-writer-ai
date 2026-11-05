@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-05",
   "baseline": {
-    "version": "4.41.0",
+    "version": "4.42.0",
     "tests": {
-      "files": 556,
-      "cases": 6112
+      "files": 560,
+      "cases": 6129
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 67,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 实测 git rev-list --count origin/master..master）"
+    "localCommitsAhead": 73,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [
     {
@@ -569,6 +569,42 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-05",
+      "group": "G5",
+      "summary": "v4.42.0 第十一批：full-writer-view Notice 6 处（成功 1 / 失败 5），11→5；守卫、预检与带引导提示保留",
+      "evidence": "ui/full-writer-view.ts"
+    },
+    {
+      "date": "2026-11-05",
+      "group": "G5",
+      "summary": "v4.42.0 第十批：prompt-manager-settings / co-write-floating-panel / wizard-step-executors / template-manager / fanfic-review-modal 五个文件 Notice 67 处（成功/失败/告警），91→24；守卫、进度、预检与无变化提示保留",
+      "evidence": "ui/prompt-manager-settings.ts + ui/co-write-floating-panel.ts + ui/full-writer/wizard-step-executors.ts + ui/template-manager.ts + ui/fanfic-review-modal.ts"
+    },
+    {
+      "date": "2026-11-05",
+      "group": "G5",
+      "summary": "v4.42.0 第九批：knowledge-base-view / knowledge-base-modals / command-ui-executor / add-fanfic-setting-modal / ai-builder-modal / pre-research-modal 六个文件 Notice 87 处（成功/失败/告警），161→74；守卫、进度、预检与无变化提示保留",
+      "evidence": "ui/views/knowledge-base-view.ts + ui/views/knowledge-base-modals.ts + ui/command-ui-executor.ts + ui/add-fanfic-setting-modal.ts + ui/ai-builder-modal.ts + ui/pre-research-modal.ts"
+    },
+    {
+      "date": "2026-11-05",
+      "group": "G5",
+      "summary": "v4.42.0 第三批：golden-opening-modal Notice 第八批 31 处（成功 9 / 失败 22），45→14；守卫 7 与进度 7 保留",
+      "evidence": "ui/golden-opening-modal.ts"
+    },
+    {
+      "date": "2026-11-05",
+      "group": "G5",
+      "summary": "v4.42.0 第二批：writing-fingerprint-view Notice 第七批 21 处（成功 8 / 失败 10 / 告警 3），52→31；守卫、进度与无变化提示保留",
+      "evidence": "ui/views/writing-fingerprint-view.ts"
+    },
+    {
+      "date": "2026-11-05",
+      "group": "G5",
+      "summary": "v4.42.0 首批：co-writing-view Notice 第六批 40 处（成功/失败/告警），守卫/进度类保留；抽出 markdown-shortcut / quality-highlight / friendly-error / kb-panel 四个模块，文件 4,986 → 4,645 行（达标 ≤4,700）",
+      "evidence": "ui/co-writing-view.ts + ui/co-writing/{markdown-shortcut,quality-highlight,friendly-error,kb-panel}.ts + 4 个单测文件（17 条）"
+    },
     {
       "date": "2026-11-01",
       "group": "G7",

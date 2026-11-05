@@ -2,6 +2,24 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.42.0（2026-11-05）
+
+### ✂️ 协同视图切片第五批（co-writing-view 4,986 → 4,645）
+
+- 新增 `ui/co-writing/markdown-shortcut.ts`（Markdown 快捷键）、`quality-highlight.ts`（质检高亮应用）、`friendly-error.ts`（友好错误文案）、`kb-panel.ts`（KB 面板四页签渲染），宿主接口注入、DOM 逐行等价。
+- 新增 4 个测试文件 17 条；`cowrite-fanfic-warning` 适配 notice-helpers 渲染文案。
+
+### 🧯 Notice 第六~十一批（15 文件，252 处）
+
+- 第六批 co-writing-view 60→20；第七批 writing-fingerprint-view 52→31；第八批 golden-opening-modal 45→14；第九批 6 文件 161→74；第十批 5 文件 91→24；第十一批 full-writer-view 11→5。
+- 守卫、进度、预检、无变化提示按口径保留普通 Notice；eslint 1,870 → **1,869**。
+
+### 🧪 测试与门禁
+
+- 全量单测 **560 文件 / 6,129 用例**（+4 文件 / +17 用例）；`preflight:release` 全绿。
+- lint 0 error / 1,869 warnings；JSDoc 724 文件 100%、`@example` 52/52；any 306/306。
+- main.js 4,838,247 → **4,836,084**（−2,163 B），体积基线按纪律收紧。
+
 ## v4.41.0（2026-11-05）
 
 ### 🧩 质量引擎作用域收敛（P1-6 收口）
