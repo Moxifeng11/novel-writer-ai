@@ -23,6 +23,7 @@ import { getStoryStructure, getStructureStageSummary, getStoryOptionLabel, parse
 import { StorySettingsModal } from '@/ui/story-settings-modal';
 
 import { writeVaultText } from '@/shared/file-system-port';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 /**
  * 创作向导各步骤渲染器。
  */
@@ -219,7 +220,7 @@ export class WizardStepRenderers {
             await writeVaultText(this.app, path, content);
             await attachFanficPathToProject(this.app, tab.project, path);
             this.wizardStepResults[fanficResultKey] = content;
-            new Notice(`✅ 同人设定已保存: ${path}`, 3000);
+            showSuccessNotice(`同人设定已保存: ${path}`, { timeout: 3000 });
             this.renderTab(tab, true);
         });
         
@@ -247,14 +248,14 @@ export class WizardStepRenderers {
                 const path = select.value;
                 const file = this.app.vault.getAbstractFileByPath(path);
                 if (!(file instanceof TFile)) {
-                    new Notice('❌ 文件不存在，可能已被移动或删除', 6000);
+                    showErrorNotice('文件不存在，可能已被移动或删除', { timeout: 6000 });
                     return;
                 }
                 let content = '';
                 try {
                     content = await this.app.vault.read(file);
                 } catch {
-                    new Notice('❌ 读取失败，请检查文件权限后重试', 6000);
+                    showErrorNotice('读取失败，请检查文件权限后重试', { timeout: 6000 });
                     return;
                 }
                 if (!content.trim()) {
@@ -264,12 +265,11 @@ export class WizardStepRenderers {
                 await attachFanficPathToProject(this.app, tab.project, path);
                 this.wizardStepResults[fanficResultKey] = content;
                 const check = isFanficSettingsContentValidEnough(content);
-                new Notice(
-                    check.valid
-                        ? `✅ 已绑定：${path}`
-                        : `⚠️ 已绑定 ${path}，但仍缺少：${check.missingFields.slice(0, 5).join('、')}。请补全后点「保存同人设定」。`,
-                    8000
-                );
+                if (check.valid) {
+                    showSuccessNotice(`已绑定：${path}`, { timeout: 8000 });
+                } else {
+                    showWarningNotice(`已绑定 ${path}，但仍缺少：${check.missingFields.slice(0, 5).join('、')}。请补全后点「保存同人设定」。`, { timeout: 8000 });
+                }
                 this.renderTab(tab, true);
             });
         }
@@ -766,11 +766,11 @@ export class WizardStepRenderers {
                     const dispatched = this.plugin.executeCommand(cfg.commandId);
                     if (!dispatched) {
                         this.entitiesExecuting.delete(cfg.id);
-                        new Notice(`❌ ${cfg.label}生成入口不可用（命令未注册）`, 5000);
+                        showErrorNotice(`${cfg.label}生成入口不可用（命令未注册）`, { timeout: 5000 });
                         this.renderTab(tab, true);
                         return;
                     }
-                    new Notice(`${cfg.label}生成窗口已打开`, 2000);
+                    showSuccessNotice(`${cfg.label}生成窗口已打开`, { timeout: 2000 });
                     if (subStep && subStep.status === 'done') subStep.status = 'pending';
                     this.renderTab(tab, true);
                     // 看门狗：弹窗未打开时关闭回调不会来，避免按钮永久禁用
@@ -815,11 +815,11 @@ export class WizardStepRenderers {
                     if (!dispatched) {
                         // 命令未注册/路由失败：不会打开任何弹窗，关闭回调永远不来
                         this.entitiesExecuting.delete(cfg.id);
-                        new Notice(`❌ ${cfg.label}生成入口不可用（命令未注册）`, 5000);
+                        showErrorNotice(`${cfg.label}生成入口不可用（命令未注册）`, { timeout: 5000 });
                         this.renderTab(tab, true);
                         return;
                     }
-                    new Notice(`${cfg.label}生成窗口已打开`, 2000);
+                    showSuccessNotice(`${cfg.label}生成窗口已打开`, { timeout: 2000 });
                     this.renderTab(tab, true);
                     // 看门狗：命令被分发但前置条件不满足时可能什么都没打开，
                     // 5 秒后若没等到弹窗关闭回调就恢复按钮，避免永久禁用。

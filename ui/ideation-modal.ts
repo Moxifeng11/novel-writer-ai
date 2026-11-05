@@ -5,6 +5,7 @@ import { createLogger } from '@/shared/logger';
 import { CreateProjectModal } from './create-project-modal';
 import { pjControlDir } from '@/shared/paths';
 import { STORAGE_KEYS } from '@/shared/storage-keys';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 
 
 const log = createLogger('IdeationModal');
@@ -532,14 +533,14 @@ export class IdeationModal extends Modal {
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 生成失败: ${result.error}`, 5000);
+                showErrorNotice(`生成失败: ${result.error}`, { timeout: 5000 });
                 this.isGenerating = false;
                 return;
             }
 
             const parsed = this.parseIdeasResponse(result.content);
             if (parsed.length === 0) {
-                new Notice('❌ 解析创意失败，请重试', 5000);
+                showErrorNotice('解析创意失败，请重试', { timeout: 5000 });
                 this.isGenerating = false;
                 return;
             }
@@ -547,11 +548,11 @@ export class IdeationModal extends Modal {
             this.ideas = parsed;
             this.currentStep = 1;
             this.render();
-            new Notice(`✅ 已生成 ${parsed.length} 个创意`, 3000);
+            showSuccessNotice(`已生成 ${parsed.length} 个创意`, { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[IdeationModal] 生成创意失败:', e);
-            new Notice('❌ 生成创意出错，请稍后重试', 5000);
+            showErrorNotice('生成创意出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isGenerating = false;
@@ -617,13 +618,13 @@ export class IdeationModal extends Modal {
         };
         this.savedIdeas.unshift(saved);
         this.persistSavedIdeas();
-        new Notice('✅ 已收藏', 2000);
+        showSuccessNotice('已收藏', { timeout: 2000 });
     }
 
     private removeFavorite(ideaId: string): void {
         this.savedIdeas = this.savedIdeas.filter(s => s.id !== ideaId);
         this.persistSavedIdeas();
-        new Notice('已取消收藏', 2000);
+        showSuccessNotice('已取消收藏', { timeout: 2000 });
     }
 
     private loadSavedIdeas(): void {
@@ -711,7 +712,7 @@ export class IdeationModal extends Modal {
             } else {
                 await this.app.vault.create(filePath, content);
             }
-            new Notice(`✅ 已保存到「${project}/04-项目总控/脑洞构思.md」`, 5000);
+            showSuccessNotice(`已保存到「${project}/04-项目总控/脑洞构思.md」`, { timeout: 5000 });
             const file = this.app.vault.getAbstractFileByPath(filePath);
             if (file instanceof TFile) {
                 const leaf = this.app.workspace.getLeaf('tab');
@@ -720,7 +721,7 @@ export class IdeationModal extends Modal {
             this.close();
         } catch (e) {
             log.error('[IdeationModal] 保存脑洞失败:', e);
-            new Notice('❌ 保存失败，请检查权限', 5000);
+            showErrorNotice('保存失败，请检查权限', { timeout: 5000 });
         }
     }
 

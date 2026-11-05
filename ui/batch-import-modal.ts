@@ -8,7 +8,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import type { EngineRegistry } from '@/engine/engine-registry';
 import { createLogger } from '@/shared/logger';
 import { isImeComposing } from '@/shared/keyboard';
-import { showSuccessNotice } from '@/ui/components/notice-helpers';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 
 
 const log = createLogger('BatchImportModal');
@@ -1444,7 +1444,7 @@ export class BatchImportModal extends Modal {
                         });
                         addedCount++;
                     } else {
-                        new Notice('⚠️ EPUB 格式暂不支持，已跳过');
+                        showWarningNotice('EPUB 格式暂不支持，已跳过');
                     }
                     resolve();
                 };
@@ -1725,7 +1725,7 @@ export class BatchImportModal extends Modal {
 
             const abstractFile = this.app.vault.getAbstractFileByPath(selectedFolderPath);
             if (!abstractFile || !(abstractFile instanceof TFolder)) {
-                new Notice('⚠️ 文件夹不存在');
+                showErrorNotice('文件夹不存在');
                 return;
             }
 

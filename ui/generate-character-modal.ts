@@ -17,6 +17,7 @@ import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { createLogger } from '@/shared/logger';
 import { nextFrame } from '@/shared/yield';
 import { isImeComposing } from '@/shared/keyboard';
+import { showErrorNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 
 
 const log = createLogger('GenerateCharacterModal');
@@ -265,7 +266,7 @@ export class GenerateCharacterModal extends Modal {
                 try {
                     result = await this.aiEngine.generateCharacters(worldView, count, effectivePrompt, undefined, isFirstCharacter, nameList, settingLib, signal, existingEntities);
                 } catch (e: any) {
-                    new Notice(`❌ AI调用失败: ${e?.message || e}`, 8000);
+                    showErrorNotice(`AI调用失败: ${e?.message || e}`, { timeout: 8000 });
                     log.error('[生成人物] AI异常:', e);
                     generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
                     return;
@@ -274,7 +275,7 @@ export class GenerateCharacterModal extends Modal {
                 if (signal.aborted) { log.info('[小说工坊] 生成已取消，跳过后续处理'); return; }
 
                 if (result.error) {
-                    new Notice(`❌ 人物生成失败: ${result.error}`, 8000);
+                    showErrorNotice(`人物生成失败: ${result.error}`, { timeout: 8000 });
                     generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
@@ -316,9 +317,9 @@ export class GenerateCharacterModal extends Modal {
                 }));
                 this._abortController = null;
                 if (this._integrityFailures.length > 0) {
-                    new Notice(
-                        `⚠️ ${this._integrityFailures.length} 个人物未通过完整性校验，已丢弃（不落盘）：\n${this._integrityFailures.slice(0, 5).join('\n')}${this._integrityFailures.length > 5 ? '\n…' : ''}`,
-                        12000
+                    showWarningNotice(
+                        `${this._integrityFailures.length} 个人物未通过完整性校验，已丢弃（不落盘）：\n${this._integrityFailures.slice(0, 5).join('\n')}${this._integrityFailures.length > 5 ? '\n…' : ''}`,
+                        { timeout: 12000 }
                     );
                 }
                 this._renderManagementPanel('人物');
@@ -554,14 +555,14 @@ export class GenerateCharacterModal extends Modal {
                         } else {
                             log.warn(`[小说工坊] 角色卡 ${name} 补全后仍不完整: ${reValidation.missingFields.join('、')}`);
                             this._integrityFailures.push(`${name}（补全后仍缺：${reValidation.missingFields.slice(0, 4).join('、')}）`);
-                            new Notice(`⚠️ 角色「${name}」补全后仍不完整，已丢弃（不落盘）`, 5000);
+                            showWarningNotice(`角色「${name}」补全后仍不完整，已丢弃（不落盘）`, { timeout: 5000 });
                             getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: `角色「${name}」补全后仍缺失字段：${reValidation.missingFields.join('、')}`, severity: 'warning', recoverable: true });
                             continue;
                         }
                     } catch (e) {
                         log.warn(`[小说工坊] 角色卡 ${name} 补全失败:`, e instanceof Error ? e.message : e);
                         this._integrityFailures.push(`${name}（补全失败：${e instanceof Error ? e.message : String(e)}）`);
-                        new Notice(`⚠️ 角色「${name}」补全失败，已丢弃（不落盘）`, 5000);
+                        showWarningNotice(`角色「${name}」补全失败，已丢弃（不落盘）`, { timeout: 5000 });
                         getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: `角色「${name}」补全异常，缺失字段：${validation.missingFields.join('、')}`, severity: 'warning', recoverable: true });
                         continue;
                     }

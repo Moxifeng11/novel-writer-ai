@@ -31,6 +31,7 @@ import { CommandIds } from '@/shared/command-ids';
 import { createLogger } from '@/shared/logger';
 
 import { ObsidianFrontmatter } from '@/shared/file-system-port';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 const log = createLogger('ProjectSidePanel');
 
 /**
@@ -243,7 +244,7 @@ export class ProjectSidePanelView extends ItemView {
                 const plan = planPropertyCompletionForFile(file.path, frontmatter);
                 if (!plan) return;
                 await applyPropertyCompletion(this.app, [plan]);
-                new Notice('✅ 已补齐缺失属性', 3000);
+                showSuccessNotice('已补齐缺失属性', { timeout: 3000 });
                 await this.render();
             });
         }
@@ -302,8 +303,8 @@ export class ProjectSidePanelView extends ItemView {
             chip.addEventListener('click', () => {
                 const query = `tag:#${normalized}`;
                 void navigator.clipboard.writeText(query).then(
-                    () => new Notice(`已复制检索式：${query}（粘贴到搜索框即可筛出同类笔记）`, 5000),
-                    () => new Notice(`检索式：${query}`, 5000),
+                    () => showSuccessNotice(`已复制检索式：${query}（粘贴到搜索框即可筛出同类笔记）`, { timeout: 5000 }),
+                    () => showWarningNotice(`检索式：${query}`, { timeout: 5000 }),
                 );
             });
         }
@@ -327,10 +328,10 @@ export class ProjectSidePanelView extends ItemView {
     private async writeProperty(file: TFile, key: string, value: string | number | string[]): Promise<void> {
         try {
             await new ObsidianFrontmatter(this.app).processFrontmatter(file, (fm) => { fm[key] = value; });
-            new Notice(`已更新「${key}」`, 2000);
+            showSuccessNotice(`已更新「${key}」`, { timeout: 2000 });
         } catch (e) {
             log.warn('[ProjectSidePanel] 写入属性失败:', e);
-            new Notice(`写入属性失败：${e instanceof Error ? e.message : String(e)}`, 5000);
+            showErrorNotice(`写入属性失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 5000 });
         }
     }
 
@@ -365,7 +366,7 @@ export class ProjectSidePanelView extends ItemView {
                     return;
                 }
                 const written = await writeProjectBases(this.app, project);
-                new Notice(`✅ 已生成 ${written.length} 个看板到「${project}/.看板/」`, 6000);
+                showSuccessNotice(`已生成 ${written.length} 个看板到「${project}/.看板/」`, { timeout: 6000 });
                 return;
             }
             case 'open-backlinks': {

@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.42.0 · 更新：2026-11-05
+> 版本：v4.43.0 · 更新：2026-11-05
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -83,7 +83,8 @@ Agent（harness）
 - 第九批：`knowledge-base-view`（42→14）、`knowledge-base-modals`（16→9）、`command-ui-executor`（26→20）、`add-fanfic-setting-modal`（29→12）、`ai-builder-modal`（27→8）、`pre-research-modal`（21→11），合计替换 **87 处**，剩余守卫/进度/预检 74 处。
 - 第十批：`prompt-manager-settings`（24→6）、`co-write-floating-panel`（22→11）、`wizard-step-executors`（18→1）、`template-manager`（14→1）、`fanfic-review-modal`（13→5），合计替换 **67 处**，剩余守卫/进度/预检/无变化 **24 处**。
 - 第十一批：`full-writer-view`（11→5），替换 **6 处**；守卫、预检与带引导提示保留 5 处。
-- 下一步：Notice 存量继续按文件分批（`batch-import-modal` 11、`generate-character-modal` 10、`ideation-modal` 10、`backup-center-modal` 10、`project-side-panel-view` 10、`wizard-step-renderers` 10）；章节上下文工具切片为可选。
+- 第十二批（v4.43.0）：`batch-import-modal`（11→9）、`generate-character-modal`（10→5）、`ideation-modal`（10→2）、`backup-center-modal`（10→2）、`project-side-panel-view`（10→4）、`wizard-step-renderers`（10→2），合计替换 **37 处**，剩余守卫/进度/预检/无变化/信息展示 **24 处**。
+- 下一步：Notice 存量继续按文件分批（`co-writing-view` 余 20、`add-fanfic-setting-modal` 余 12、`manage-providers-modal` 10、`style-distiller-modal` 9、`create-project-modal` 9）；章节上下文工具切片为可选。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

@@ -13,6 +13,7 @@ import { collectBackupCenter, type BackupCenterEntry, type BackupCenterReport } 
 import type { ChapterVersionService } from '@/services/chapter-version-service';
 import { ChapterVersionModal } from './chapter-version-modal';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
 const KIND_LABEL: Record<BackupCenterEntry['kind'], string> = {
     version: '🗂 版本快照',
@@ -133,7 +134,7 @@ export class BackupCenterModal extends Modal {
                 void this.app.workspace.getLeaf(false).openFile(file);
                 this.close();
             } else {
-                new Notice(`文件不存在或不可索引：${entry.path}`);
+                showErrorNotice(`文件不存在或不可索引：${entry.path}`);
             }
         });
 
@@ -167,13 +168,13 @@ export class BackupCenterModal extends Modal {
             const current = await this.app.vault.adapter.read(version.sourcePath);
             const result = await service.rollbackToVersion(version, current);
             if (!result.success) {
-                new Notice('回滚失败：写入被拒绝', 6000);
+                showErrorNotice('回滚失败：写入被拒绝', { timeout: 6000 });
                 return;
             }
-            new Notice(`✅ 已回滚到 v${version.version}（当前内容已自动备份）`, 5000);
+            showSuccessNotice(`已回滚到 v${version.version}（当前内容已自动备份）`, { timeout: 5000 });
             this.close();
         } catch (error) {
-            new Notice(`回滚失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+            showErrorNotice(`回滚失败：${error instanceof Error ? error.message : String(error)}`, { timeout: 8000 });
         }
     }
 
@@ -198,7 +199,7 @@ export class BackupCenterModal extends Modal {
         try {
             current = await this.app.vault.adapter.read(version.sourcePath);
         } catch (error) {
-            new Notice(`读取当前文件失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+            showErrorNotice(`读取当前文件失败：${error instanceof Error ? error.message : String(error)}`, { timeout: 8000 });
             return;
         }
         new ChapterVersionModal(this.app, {
@@ -214,10 +215,10 @@ export class BackupCenterModal extends Modal {
                     if (!result.success) {
                         throw new Error('写入被拒绝');
                     }
-                    new Notice(`✅ 已回滚到 v${v.version}（当前内容已自动备份）`, 5000);
+                    showSuccessNotice(`已回滚到 v${v.version}（当前内容已自动备份）`, { timeout: 5000 });
                     await this.load();
                 } catch (error) {
-                    new Notice(`回滚失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                    showErrorNotice(`回滚失败：${error instanceof Error ? error.message : String(error)}`, { timeout: 8000 });
                     throw error;
                 }
             },
@@ -233,7 +234,7 @@ export class BackupCenterModal extends Modal {
                         { type: 'manual' },
                     );
                 } catch (error) {
-                    new Notice(`保存版本失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                    showErrorNotice(`保存版本失败：${error instanceof Error ? error.message : String(error)}`, { timeout: 8000 });
                     return null;
                 }
             },
