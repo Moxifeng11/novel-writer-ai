@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-04T17:20:46.867Z",
-  "note": "2026-11-05 v4.30.0 M4：新增资产总览（nw-asset-*）、AI 用量账本（nw-usage-*）样式；主页入口扩展。",
-  "bytes": 475563,
+  "generatedAt": "2026-11-05T18:12:36.342Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
+  "bytes": 475721,
   "important": 164,
   "hardcodedHex": 154,
   "rgbHsl": 182,
-  "uniqueClasses": 2485,
+  "uniqueClasses": 2487,
   "otherClasses": 87,
   "maxSelectorDepth": 4
 }

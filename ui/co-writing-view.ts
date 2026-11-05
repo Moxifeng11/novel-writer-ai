@@ -6,7 +6,7 @@
  */
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile, Menu } from 'obsidian';
-import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
+import { SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
 import { volumeNumber } from '@/shared/chapter-target';
 import { CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
 
@@ -40,6 +40,17 @@ import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
 import { BodySaveController } from './cowrite/body-save-controller';
 import { buildMarkdownToolbar } from './co-writing/markdown-toolbar';
 import { parseQualityReport, type QualityIssue } from './co-writing/quality-report';
+import {
+    buildQualityFixPrompt,
+    lineTopForIndex,
+    locateQualityTarget,
+    resolveQualityFixApplication,
+} from './co-writing/quality-fix';
+import {
+    computeMetricsRenderState,
+    renderMetricsCompact,
+    renderMetricsPanel,
+} from './co-writing/metrics-panel';
 import { resolveInsertRange, type PendingRewriteRange } from './cowrite/insert-range';
 import { BodyWriter } from '@/engine/body-writer';
 import {
@@ -93,6 +104,17 @@ import { createLogger } from '@/shared/logger';
 import { calculateHumanRate, renderHumanRate, type HumanRateScores } from '@/ui/co-writing/human-rate';
 import { getAssetStatus, getCompletenessIcon, renderAssetStatusBar } from '@/ui/co-writing/asset-status';
 import { getFriendlyErrorMessage } from '@/ui/co-writing/friendly-error';
+import {
+    buildBodyDir,
+    buildStepFilePath,
+    buildStepResultDirs,
+    ensureVaultFolder,
+    extractChapterTitleFromInfoPlan,
+    extractChapterTitleFromOutline,
+    isSameChapterIdentity,
+} from '@/ui/co-writing/chapter-context';
+import { renderGhostSuggestion, resolveGhostTrigger } from '@/ui/co-writing/ghost-association';
+import { renderMonitorCards, type ForeshadowSnapshot } from '@/ui/co-writing/monitor-cards';
 import { handleMarkdownShortcut } from '@/ui/co-writing/markdown-shortcut';
 import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
 import {
@@ -108,7 +130,6 @@ import {
 } from '@/ui/co-writing/kb-panel';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
 import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '@/shared/thresholds';
-import { shouldRequestGhostAssociationByInterval } from '@/shared/ghost-trigger';
 import { resolveCursorPosition } from '@/shared/cursor-position';
 import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck } from '@/shared/prereq-check';
 import { buildQualityChapterKey } from '@/shared/quality-history';
@@ -2604,71 +2625,29 @@ ${text}`;
    * @param metrics - 指标
    */
   renderMetrics(metrics: PlotCompletionMetrics) {
-    this.metricsContainer.empty();
-    const isEvaluating = this.metricsStatus === 'evaluating';
-    const isError = this.metricsStatus === 'error';
-    const contentLength = this.rightEditor?.value?.trim().length || 0;
-    const hasAnyMetric = metrics.sceneObjectivesMet > 0 || metrics.characterArcsAdvanced > 0 ||
-      metrics.foreshadowingSeeded > 0 || metrics.emotionalArcProgress > 0 || metrics.overallCompletion > 0;
-    const isInsufficient = contentLength < 50 && !hasAnyMetric;
-
-    this.metricsContainer.createEl("h4", { text: "\u{1F4CA} \u5267\u60C5\u5B8C\u6210\u5EA6", cls: "nw-cowrite-metrics-title" });
-    // 上下文信息：项目 · 章节 · 字数 · 保存状态
-    const contextRow = this.metricsContainer.createDiv({ cls: "nw-cowrite-metrics-context" });
-    const editorText = this.rightEditor?.value || "";
-    const wordCount = editorText.trim().length;
-    const target = this.facade.settings.defaultWordCount || 3000;
-    contextRow.createSpan({ text: `${this.project || "\u672A\u7ED1\u5B9A"} \u00B7 ${this.volume || ""} ${this.chapterName || ""}` });
-    contextRow.createSpan({ text: `${wordCount}/${target}\u5B57` });
-    contextRow.createSpan({ cls: "nw-cowrite-control-state", text: this.saveStateDisplay?.textContent || "\u672A\u77E5" });
-    const rows: Array<[string, number]> = [
-      ["\u573A\u666F\u76EE\u6807", metrics.sceneObjectivesMet],
-      ["\u4EBA\u7269\u5F27", metrics.characterArcsAdvanced],
-      ["\u4F0F\u7B14\u57CB\u8BBE", metrics.foreshadowingSeeded],
-      ["\u60C5\u7EEA\u5F27", metrics.emotionalArcProgress],
-    ];
-    const grid = this.metricsContainer.createDiv({ cls: "nw-cowrite-metrics-grid" });
-    if (isEvaluating) grid.addClass("nw-cowrite-metrics-evaluating-dim");
-    rows.forEach(([label, value]: [string, number]) => {
-      const item = grid.createDiv({ cls: "nw-cowrite-metrics-item" });
-      const head = item.createDiv({ cls: "nw-cowrite-metrics-head" });
-      head.createSpan({ cls: "nw-cowrite-metrics-label", text: label });
-      head.createSpan({ cls: "nw-cowrite-metrics-value", text: `${Math.max(0, Math.min(100, Math.round(value || 0)))}%` });
-      const bar = item.createDiv({ cls: "nw-progress nw-cowrite-metrics-bar" });
-      const safe = Math.max(0, Math.min(100, Math.round(value || 0)));
-      const fill = bar.createDiv({ cls: `nw-progress-fill ${safe < 30 ? "low" : safe < 60 ? "mid" : "high"}` });
-      fill.style.width = `${safe}%`;
-    });
-    const overall = this.metricsContainer.createDiv({ cls: "nw-cowrite-metrics-overall" });
-    const overallHead = overall.createDiv({ cls: "nw-cowrite-metrics-head" });
-    overallHead.createSpan({ cls: "nw-cowrite-metrics-label", text: "\u7EFC\u5408\u5B8C\u6210\u5EA6" });
-    if (isEvaluating) {
-      overallHead.createSpan({ cls: "nw-cowrite-metrics-value nw-cowrite-metrics-overall-value nw-cowrite-metrics-evaluating", text: "\u8BC4\u4F30\u4E2D..." });
-      const overallBar = overall.createDiv({ cls: "nw-progress nw-cowrite-metrics-bar nw-cowrite-metrics-loading-bar" });
-      const overallFill = overallBar.createDiv({ cls: "nw-progress-fill" });
-      overallFill.style.width = "100%";
-    } else {
-      const overallSafe = Math.max(0, Math.min(100, Math.round(metrics.overallCompletion || 0)));
-      overallHead.createSpan({ cls: "nw-cowrite-metrics-value nw-cowrite-metrics-overall-value", text: `${overallSafe}%` });
-      const overallBar = overall.createDiv({ cls: "nw-progress nw-cowrite-metrics-bar" });
-      const overallFill = overallBar.createDiv({ cls: `nw-progress-fill ${overallSafe < 30 ? "low" : overallSafe < 60 ? "mid" : "high"}` });
-      overallFill.style.width = `${overallSafe}%`;
-    }
-    if (metrics.suggestionAdvice && !isEvaluating) {
-      this.metricsContainer.createDiv({ cls: "novel-writer-cowrite-advice", text: `\u{1F4A1} ${metrics.suggestionAdvice}` });
-    }
-    if (metrics.nextDirectionHints?.length && !isEvaluating) {
-      const labels = metrics.nextDirectionHints.map((d: SuggestionDirection) => getDirectionLabel(d)).join(" \u2192 ");
-      this.metricsContainer.createDiv({ cls: "novel-writer-cowrite-next-directions", text: `\u4E0B\u4E00\u8F6E\u65B9\u5411\uFF1A${labels}` });
-    }
-    if (isError) {
-      const errorEl = this.metricsContainer.createDiv({ cls: "nw-cowrite-metrics-error", text: "\u274C \u8BC4\u4F30\u5931\u8D25\uFF0C\u70B9\u51FB\u91CD\u8BD5" });
-      errorEl.style.cursor = "pointer";
-      errorEl.addEventListener("click", () => this.refreshMetrics(true));
-    }
-    if (isInsufficient && !isEvaluating && !isError) {
-      this.metricsContainer.createDiv({ cls: "nw-cowrite-metrics-hint", text: "\uD83D\uDCDD \u5185\u5BB9\u4E0D\u8DB3\uFF0C\u7EE7\u7EED\u5199\u4F5C\u540E\u81EA\u52A8\u8BC4\u4F30" });
-    }
+    const state = computeMetricsRenderState(
+      metrics,
+      this.rightEditor?.value?.trim().length || 0,
+      this.metricsStatus,
+    );
+    const directionText = metrics.nextDirectionHints?.length
+      ? metrics.nextDirectionHints.map((d: SuggestionDirection) => getDirectionLabel(d)).join(" \u2192 ")
+      : '';
+    renderMetricsPanel(
+      this.metricsContainer,
+      metrics,
+      state,
+      {
+        project: this.project,
+        volume: this.volume,
+        chapterName: this.chapterName,
+        wordCount: this.rightEditor?.value?.trim().length || 0,
+        targetWordCount: this.facade.settings.defaultWordCount || 3000,
+        saveStateText: this.saveStateDisplay?.textContent || "\u672A\u77E5",
+        directionText,
+      },
+      () => this.refreshMetrics(true),
+    );
   }
   /**
    * 渲染指标条。
@@ -3440,14 +3419,7 @@ ${text}`;
    */
   setGhostSuggestion(suggestion: SuggestionRecord | null) {
     this.ghostSuggestion = suggestion;
-    if (!this.ghostSuggestionContainer)
-      return;
-    this.ghostSuggestionContainer.empty();
-    this.ghostSuggestionContainer.toggleClass("is-visible", !!suggestion);
-    if (!suggestion)
-      return;
-    this.ghostSuggestionContainer.createSpan({ cls: "nw-cowrite-ghost-prefix", text: "Tab \u63A5\u53D7\u8054\u60F3\uFF1A" });
-    this.ghostSuggestionContainer.createSpan({ cls: "nw-cowrite-ghost-text", text: suggestion.text });
+    renderGhostSuggestion(this.ghostSuggestionContainer, suggestion);
   }
   private isGhostAssociationEnabled(): boolean {
     return this.plugin.settings.autoGhostAssociation !== false;
@@ -3471,26 +3443,24 @@ ${text}`;
       this.setGhostSuggestion(null);
       return;
     }
-    if (this.isAssociating || this.isSuggesting || this.currentSuggestions.length > 0)
-      return;
     const text = this.rightEditor?.value || "";
     const cursor = resolveCursorPosition(this.rightEditor?.selectionStart, text.length);
-    if (text.trim().length < 40 || cursor < text.length - 3)
-      return;
-    const seed = text.slice(Math.max(0, cursor - 160), cursor);
-    if (!seed.trim() || seed === this.lastGhostSeed)
-      return;
-    // 只在句末/段末触发：句中的每次停顿都请求会让本地模型持续排队
-    const beforeCursor = text.slice(0, cursor).trimEnd();
-    const lastChar = beforeCursor.slice(-1);
-    if (!/[。！？…]/.test(lastChar) && !beforeCursor.endsWith(String.fromCharCode(10)))
-      return;
-    // 慢速打字时尾部种子每次只多一个字，1.5s 防抖后仍会连续请求：按最小间隔限频
-    const now = Date.now();
-    if (!shouldRequestGhostAssociationByInterval(now, this.lastGhostRequestAt, GHOST_ASSOCIATION_MIN_INTERVAL_MS))
-      return;
+    const trigger = resolveGhostTrigger({
+      enabled: true,
+      isAssociating: this.isAssociating,
+      isSuggesting: this.isSuggesting,
+      suggestionCount: this.currentSuggestions.length,
+      text,
+      cursor,
+      lastSeed: this.lastGhostSeed,
+      now: Date.now(),
+      lastRequestAt: this.lastGhostRequestAt,
+      minIntervalMs: GHOST_ASSOCIATION_MIN_INTERVAL_MS,
+    });
+    if (!trigger) return;
+    const seed = trigger.seed;
     this.lastGhostSeed = seed;
-    this.lastGhostRequestAt = now;
+    this.lastGhostRequestAt = trigger.requestedAt;
     // NBI-05: 自动联想结果只在建议上下文未变化时写回
     const epoch = this.suggestionEpoch;
     // Phase 3.2: 自动联想同样可取消（关视图/切章/被新请求接管）
@@ -3596,7 +3566,7 @@ ${text}`;
    * @returns 目录
    */
   getBodyDir() {
-    return `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/\u6B63\u6587/${this.volume}`;
+    return buildBodyDir(this.project, this.volume);
   }
   /**
    * 取步骤结果目录列表。
@@ -3604,25 +3574,16 @@ ${text}`;
    */
   getStepResultDirs() {
     // v4.5.1 fix: 步骤结果目录也用 "第N章" 前缀，与 checkChaptersComplete 正则一致
-    const chapterPrefix = `第${this.chapterNum}章`;
-    return [
-      `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/\u6B65\u9AA4\u7ED3\u679C/${this.volume}/${chapterPrefix}`,
-      `${this.project}/03-\u5927\u7EB2\u4E0E\u7AE0\u8282/${this.volume}/${chapterPrefix}`
-    ];
+    return buildStepResultDirs(this.project, this.volume, this.chapterNum);
   }
   private getStepFilePath(
     stepType: string,
     identity?: { project: string; volume: string; chapterNum: number }
   ): string {
-    // 与 pjStepFile 规范一致：目录和文件名都要带「第N章」前缀。
-    // 之前文件名漏了前缀（.../第1章/信息规划.md），而磁盘上永远是 .../第1章/第1章_信息规划.md，
-    // 导致 getChapterTitle 恒为空、保存后 H1 丢标题。
     const project = identity?.project ?? this.project;
     const volume = identity?.volume ?? this.volume;
     const chapterNum = identity?.chapterNum ?? this.chapterNum;
-    const chapterPrefix = `第${chapterNum}章`;
-    const stepDir = `${project}/${SUBDIR_STEP_ROOT}/${volume}/${chapterPrefix}`;
-    return `${stepDir}/${chapterPrefix}_${stepType}.md`;
+    return buildStepFilePath(project, volume, chapterNum, stepType);
   }
   /**
    * 取章节标题。
@@ -3639,35 +3600,13 @@ ${text}`;
     try {
       const infoPlanPath = this.getStepFilePath('\u4FE1\u606F\u89C4\u5212', identity);
       const infoPlanFile = this.app.vault.getAbstractFileByPath(infoPlanPath);
-      if (infoPlanFile instanceof TFile) {
-        const content = await this.app.vault.read(infoPlanFile);
-        const body = content.replace(/^---[\s\S]*?---\s*/, '');
-        const chapterNameMatch = body.match(/##\s*\u7AE0\u540D\s*\n+([^\n#]+)/i);
-        if (chapterNameMatch && chapterNameMatch[1].trim()) {
-          return chapterNameMatch[1].trim();
-        }
-        // 步骤生成器实际写的是「**章名**：九脉逆行」，不匹配上面的 ## 标题格式，
-        // 结果保存时 H1 丢标题（只剩「# 第1章」）。
-        const boldChapterName = body.match(/^\*\*\u7AE0\u540D\*\*\s*[：:]\s*(.+)$/m);
-        if (boldChapterName && boldChapterName[1].trim()) {
-          return boldChapterName[1].trim();
-        }
-      }
+      const infoPlanContent = infoPlanFile instanceof TFile ? await this.app.vault.read(infoPlanFile) : null;
+      const infoPlanTitle = infoPlanContent ? extractChapterTitleFromInfoPlan(infoPlanContent) : '';
+      if (infoPlanTitle) return infoPlanTitle;
       const outlinePath = this.getStepFilePath('\u5927\u7EB2\u6458\u8981', identity);
       const outlineFile = this.app.vault.getAbstractFileByPath(outlinePath);
-      if (outlineFile instanceof TFile) {
-        const content = await this.app.vault.read(outlineFile);
-        const body = content.replace(/^---[\s\S]*?---\s*/, '');
-        const firstLine = body.split('\n')[0] || '';
-        const titleMatch1 = firstLine.match(/^#\s*《([^》]+)》/);
-        if (titleMatch1 && titleMatch1[1].trim()) {
-          return titleMatch1[1].trim();
-        }
-        const titleMatch2 = firstLine.match(/^#\s*\u7B2C\d+\u7AE0\s+(.+?)\s*(\u5927\u7EB2\u6458\u8981|\u5927\u7EB2|\u7AE0\u8282\u5927\u7EB2)?\s*$/);
-        if (titleMatch2 && titleMatch2[1].trim()) {
-          return titleMatch2[1].trim();
-        }
-      }
+      const outlineContent = outlineFile instanceof TFile ? await this.app.vault.read(outlineFile) : null;
+      return outlineContent ? extractChapterTitleFromOutline(outlineContent) : '';
     } catch (e) {
       log.warn('[CoWritingView] 提取章节标题失败:', e);
     }
@@ -3679,16 +3618,7 @@ ${text}`;
    * @param dirPath - 目录路径
    */
   async ensureVaultFolder(dirPath: string) {
-    if (!dirPath)
-      return;
-    const parts = dirPath.split("/").filter(Boolean);
-    let current = "";
-    for (const part of parts) {
-      current = current ? `${current}/${part}` : part;
-      if (!this.app.vault.getAbstractFileByPath(current)) {
-        await this.app.vault.createFolder(current);
-      }
-    }
+    await ensureVaultFolder(this.app.vault, dirPath);
   }
   /**
    * 保存正文。
@@ -3737,9 +3667,11 @@ ${text}`;
     chapterNum: number;
     bodyPath: string;
   }): boolean {
-    return identity.project === this.project
-      && identity.chapterNum === this.chapterNum
-      && identity.bodyPath === this.getBodyPath();
+    return isSameChapterIdentity(identity, {
+      project: this.project,
+      chapterNum: this.chapterNum,
+      bodyPath: this.getBodyPath(),
+    });
   }
 
   /**
@@ -3955,57 +3887,21 @@ ${text}`;
    * @param container - 容器元素
    */
   renderMetricsInto(metrics: PlotCompletionMetrics, container: HTMLElement) {
-    container.empty();
-    const isEvaluating = this.metricsStatus === 'evaluating';
-    const isError = this.metricsStatus === 'error';
-    const contentLength = this.rightEditor?.value?.trim().length || 0;
-    const hasAnyMetric = metrics.sceneObjectivesMet > 0 || metrics.characterArcsAdvanced > 0 ||
-      metrics.foreshadowingSeeded > 0 || metrics.emotionalArcProgress > 0 || metrics.overallCompletion > 0;
-    const isInsufficient = contentLength < 50 && !hasAnyMetric;
-
-    container.createEl("h4", { text: "\u{1F4CA} \u5267\u60C5\u5B8C\u6210\u5EA6", cls: "nw-cowrite-metrics-title" });
-    const grid = container.createDiv({ cls: "nw-cowrite-metrics-grid" });
-    if (isEvaluating) grid.addClass("nw-cowrite-metrics-evaluating-dim");
-    const labels = ['场景目标', '人物弧', '伏笔', '情绪弧'];
-    const values = [metrics.sceneObjectivesMet, metrics.characterArcsAdvanced, metrics.foreshadowingSeeded, metrics.emotionalArcProgress];
-    for (let i = 0; i < 4; i++) {
-      const item = grid.createDiv({ cls: "nw-cowrite-metrics-item" });
-      const head = item.createDiv({ cls: "nw-cowrite-metrics-head" });
-      head.createSpan({ cls: "nw-cowrite-metrics-label", text: labels[i] });
-      head.createSpan({ cls: "nw-cowrite-metrics-value", text: `${values[i]}%` });
-      const bar = item.createDiv({ cls: "nw-cowrite-metrics-bar" });
-      bar.style.cssText = `width:100%;height:4px;background:var(--background-modifier-border);border-radius:2px;margin-top:2px;`;
-      bar.createDiv({ cls: "nw-progress-fill", attr: { style: `width:${values[i]}%;height:100%;` } });
-    }
-    const overall = container.createDiv({ cls: "nw-cowrite-metrics-overall" });
-    const overallHead = overall.createDiv({ cls: "nw-cowrite-metrics-head" });
-    overallHead.createSpan({ cls: "nw-cowrite-metrics-label", text: "综合完成度" });
-    if (isEvaluating) {
-      overallHead.createSpan({ cls: "nw-cowrite-metrics-value nw-cowrite-metrics-overall-value nw-cowrite-metrics-evaluating", text: "\u8BC4\u4F30\u4E2D..." });
-      const overallBar = overall.createDiv({ cls: "nw-cowrite-metrics-bar nw-cowrite-metrics-loading-bar" });
-      overallBar.style.cssText = `width:100%;height:6px;background:var(--background-modifier-border);border-radius:3px;margin-top:4px;`;
-      overallBar.createDiv({ cls: "nw-progress-fill", attr: { style: `width:100%;height:100%;` } });
-    } else {
-      overallHead.createSpan({ cls: "nw-cowrite-metrics-value nw-cowrite-metrics-overall-value", text: `${metrics.overallCompletion}%` });
-      const overallBar = overall.createDiv({ cls: "nw-cowrite-metrics-bar" });
-      overallBar.style.cssText = `width:100%;height:6px;background:var(--background-modifier-border);border-radius:3px;margin-top:4px;`;
-      overallBar.createDiv({ cls: "nw-progress-fill", attr: { style: `width:${metrics.overallCompletion}%;height:100%;` } });
-    }
-    if (metrics.suggestionAdvice && !isEvaluating) {
-      container.createDiv({ cls: "novel-writer-cowrite-advice", text: `\u{1F4A1} ${metrics.suggestionAdvice}` });
-    }
-    if (metrics.nextDirectionHints?.length && !isEvaluating) {
-      const labels = metrics.nextDirectionHints.join('、');
-      container.createDiv({ cls: "novel-writer-cowrite-next-directions", text: `\u4E0B\u4E00\u8F6E\u65B9\u5411\uFF1A${labels}` });
-    }
-    if (isError) {
-      const errorEl = container.createDiv({ cls: "nw-cowrite-metrics-error", text: "\u274C \u8BC4\u4F30\u5931\u8D25\uFF0C\u70B9\u51FB\u91CD\u8BD5" });
-      errorEl.style.cursor = "pointer";
-      errorEl.addEventListener("click", () => this.refreshMetrics(true));
-    }
-    if (isInsufficient && !isEvaluating && !isError) {
-      container.createDiv({ cls: "nw-cowrite-metrics-hint", text: "\uD83D\uDCDD \u5185\u5BB9\u4E0D\u8DB3\uFF0C\u7EE7\u7EED\u5199\u4F5C\u540E\u81EA\u52A8\u8BC4\u4F30" });
-    }
+    const state = computeMetricsRenderState(
+      metrics,
+      this.rightEditor?.value?.trim().length || 0,
+      this.metricsStatus,
+    );
+    const directionText = metrics.nextDirectionHints?.length
+      ? metrics.nextDirectionHints.join('、')
+      : '';
+    renderMetricsCompact(
+      container,
+      metrics,
+      state,
+      directionText,
+      () => this.refreshMetrics(true),
+    );
   }
   /** v6.4: 加载质量控制报告 */
   async loadQualityReport() {
@@ -4109,10 +4005,7 @@ ${text}`;
   }
 
   private getLineTop(textarea: HTMLTextAreaElement, charIndex: number): number {
-    const text = textarea.value;
-    const lineHeight = 20;
-    const lines = text.slice(0, charIndex).split('\n');
-    return lines.length * lineHeight;
+    return lineTopForIndex(textarea.value, charIndex);
   }
 
   /**
@@ -4126,63 +4019,27 @@ ${text}`;
       return;
     }
     const fullText = this.rightEditor.value;
-    let targetStart = -1;
-    let targetEnd = -1;
-
-    if (issue.locationText && issue.locationText.length >= 2) {
-      targetStart = fullText.indexOf(issue.locationText);
-      if (targetStart >= 0) targetEnd = targetStart + issue.locationText.length;
-    }
-
-    const contextBefore = targetStart > 0 ? fullText.slice(Math.max(0, targetStart - 200), targetStart) : '';
-    const targetText = targetStart >= 0 ? fullText.slice(targetStart, targetEnd) : '';
-    const contextAfter = targetEnd > 0 ? fullText.slice(targetEnd, Math.min(fullText.length, targetEnd + 200)) : '';
+    const target = locateQualityTarget(fullText, issue.locationText);
 
     const fixingNotice = new Notice(`\uD83D\uDD27 \u6B63\u5728\u4FEE\u590D: ${issue.problem.slice(0, 30)}...`, 0);
 
     try {
-      const prompt = [
-        '\u4F60\u662F\u4E00\u4E2A\u5C0F\u8BF4\u7F16\u8F91AI\u3002\u8BF7\u6839\u636E\u8D28\u91CF\u62A5\u544A\u5BF9\u6B63\u6587\u4E2D\u7684\u95EE\u9898\u8FDB\u884C\u4FEE\u590D\u3002',
-        '',
-        '\u3010\u95EE\u9898\u3011',
-        issue.problem,
-        '',
-        '\u3010\u4FEE\u6539\u5EFA\u8BAE\u3011',
-        issue.suggestion,
-        '',
-        contextBefore ? '\u3010\u524D\u6587\u3011' : '',
-        contextBefore ? contextBefore.slice(-150) : '',
-        '',
-        targetText ? '\u3010\u9700\u4FEE\u6539\u7684\u6587\u672C\u3011' : '',
-        targetText || '\uFF08\u672A\u5B9A\u4F4D\u5230\u5177\u4F53\u6587\u672C\uFF0C\u5C06\u57FA\u4E8E\u4E0A\u4E0B\u6587\u5224\u65AD\uFF09',
-        '',
-        contextAfter ? '\u3010\u540E\u6587\u3011' : '',
-        contextAfter ? contextAfter.slice(0, 150) : '',
-        '',
-        '\u8BF7\u76F4\u63A5\u8F93\u51FA\u4FEE\u6539\u540E\u7684\u6587\u672C\u7247\u6BB5\u3002\u53EA\u8F93\u51FA\u6B63\u6587\uFF0C\u4E0D\u52A0\u89E3\u91CA\u3002',
-      ].filter(Boolean).join('\n');
+      const prompt = buildQualityFixPrompt(issue, target);
 
       const response = await this.engine.callCoWriteForUi('', prompt, 0.3, 1200);
       const fixedText = response?.content || '';
+      const application = resolveQualityFixApplication(this.rightEditor.value, target, fixedText);
 
-      if (fixedText && targetStart >= 0 && targetEnd > targetStart) {
-        // 请求期间用户可能继续输入：旧实现用请求前的全文快照重建整篇，
-        // 把这段时间的输入全部抹掉。这里只在目标区间原文未变时替换该区间。
-        const current = this.rightEditor.value;
-        const currentSlice = current.slice(targetStart, targetEnd);
-        if (currentSlice !== targetText) {
-          showWarningNotice("\u6B63\u6587\u5DF2\u6539\u52A8\uFF0C\u672C\u6B21\u4FEE\u590D\u672A\u5E94\u7528\uFF0C\u8BF7\u91CD\u65B0\u68C0\u6D4B\u540E\u518D\u8BD5", { timeout: 4000 });
-          return;
-        }
-        const newText = current.slice(0, targetStart) + fixedText + current.slice(targetEnd);
-        this.applyProgrammaticEdit(newText, targetStart + fixedText.length, 'AI 质量修复');
+      if (application.kind === 'stale') {
+        showWarningNotice("\u6B63\u6587\u5DF2\u6539\u52A8\uFF0C\u672C\u6B21\u4FEE\u590D\u672A\u5E94\u7528\uFF0C\u8BF7\u91CD\u65B0\u68C0\u6D4B\u540E\u518D\u8BD5", { timeout: 4000 });
+        return;
+      }
+      if (application.kind === 'replace') {
+        this.applyProgrammaticEdit(application.newText, application.selection, 'AI 质量修复');
         void this.refreshPreview(true);
         showSuccessNotice("\u4FEE\u590D\u5B8C\u6210", { timeout: 2000 });
-      } else if (fixedText) {
-        // 未定位到原文时只追加建议，绝不覆盖用户正文
-        const current = this.rightEditor.value;
-        const appended = current + '\n\n\u3010AI\u4FEE\u590D\u5EFA\u8BAE\u3011\n' + fixedText;
-        this.applyProgrammaticEdit(appended, appended.length, 'AI 修复建议追加');
+      } else if (application.kind === 'append') {
+        this.applyProgrammaticEdit(application.newText, application.selection, 'AI 修复建议追加');
         void this.refreshPreview(true);
         showWarningNotice("\u672A\u5B9A\u4F4D\u5230\u7CBE\u786E\u4F4D\u7F6E\uFF0C\u5EFA\u8BAE\u5DF2\u8FFD\u52A0\u5728\u672B\u5C3E", { timeout: 3000 });
       }
@@ -4378,230 +4235,31 @@ ${text}`;
 
   private renderMonitorPanel() {
     if (!this.monitorContainer) return;
-    this.monitorContainer.empty();
-
-    this.renderLedgerCard();
-    this.renderForeshadowCard();
-    this.renderEntityCard();
-    this.renderGuardCard();
-    this.renderStatusCard();
-  }
-
-  /** v4.20 注入溯源卡：本次会话各注入段的字符/预算/截断情况（结算回写 + 指纹分层） */
-  private renderLedgerCard() {
-    // Facade 有 engine getter（CoWriterEngine）；getInjectionLedgerText 定义在引擎上
-    const text = this.facade.engine.getInjectionLedgerText();
-    const card = this.monitorContainer.createDiv({ cls: "nw-cowrite-monitor-card" });
-    const header = card.createDiv({ cls: "nw-cowrite-monitor-card-header" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-icon", text: "🧾" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-title", text: "注入溯源" });
-    const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
-    const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
-
-    if (!text) {
-      body.createDiv({ cls: "nw-cowrite-monitor-summary", text: "注入账本尚未生成" });
-      return;
-    }
-    const lines = text.split("\n");
-    body.createDiv({ cls: "nw-cowrite-monitor-summary", text: lines[0] || "" });
-    const detail = body.createDiv({ cls: "nw-cowrite-monitor-detail" });
-    detail.setCssStyles({ display: 'none' });
-    const list = detail.createEl("ul", { cls: "nw-cowrite-monitor-list" });
-    for (const line of lines.slice(1)) {
-      if (line.trim()) list.createEl("li", { text: line.replace(/^- /, "") });
-    }
-
-    header.addEventListener("click", () => {
-      const isExpanded = detail.style.display === "block";
-      detail.style.display = isExpanded ? "none" : "block";
-      toggle.textContent = isExpanded ? "▶" : "▼";
-      card.toggleClass("nw-cowrite-monitor-card-expanded", !isExpanded);
+    renderMonitorCards({
+      container: this.monitorContainer,
+      getInjectionLedgerText: () => this.facade.engine.getInjectionLedgerText(),
+      getForeshadowSnapshot: () => {
+        const snapshot = (this.facade.getSession() as unknown as {
+          snapshot?: { foreshadows?: ForeshadowSnapshot };
+        } | null)?.snapshot?.foreshadows;
+        return snapshot || null;
+      },
+      getBodyPath: () => this.project && this.chapterNum ? this.getBodyPath() : '',
+      getProject: () => this.project,
+      getFile: path => {
+        const file = this.app.vault.getAbstractFileByPath(path);
+        return file instanceof TFile ? file : null;
+      },
+      getFiles: () => this.app.vault.getFiles(),
+      getFrontmatter: file => this.app.metadataCache.getFileCache(file)?.frontmatter || {},
+      getGuardSummary: () => this.liveAnalysis?.getGuardSummary?.() ?? null,
+      getEditorText: () => this.rightEditor?.value || '',
     });
   }
 
   /** 供实时分析控制器在守卫/保存后刷新监控卡（旧实现只在布局时渲染一次） */
   refreshMonitorPanel(): void {
     this.renderMonitorPanel();
-  }
-
-  private renderForeshadowCard() {
-    const foreshadows: { unrevealed: any[]; revealed: any[]; abandoned: any[] } =
-        (this.facade.getSession() as unknown as { snapshot?: { foreshadows?: { unrevealed: any[]; revealed: any[]; abandoned: any[] } } } | null)?.snapshot?.foreshadows
-        || { unrevealed: [], revealed: [], abandoned: [] };
-    const unrevealed = foreshadows.unrevealed || [];
-    const revealed = foreshadows.revealed || [];
-    const abandoned = foreshadows.abandoned || [];
-
-    const card = this.monitorContainer.createDiv({ cls: "nw-cowrite-monitor-card" });
-    const header = card.createDiv({ cls: "nw-cowrite-monitor-card-header" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-icon", text: "📌" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-title", text: "伏笔状态追踪" });
-    const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
-    const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
-
-    body.createDiv({ cls: "nw-cowrite-monitor-summary", text: `未揭示 ${unrevealed.length} · 已揭示 ${revealed.length} · 已放弃 ${abandoned.length}` });
-
-    const detail = body.createDiv({ cls: "nw-cowrite-monitor-detail" });
-    detail.setCssStyles({ display: 'none' });
-    if (unrevealed.length > 0) {
-      detail.createDiv({ cls: "nw-cowrite-monitor-detail-title", text: "未揭示伏笔:" });
-      const ul = detail.createEl("ul", { cls: "nw-cowrite-monitor-list" });
-      unrevealed.slice(0, 5).forEach((f: any) => {
-        ul.createEl("li", { text: `${f.name || f}${f.plannedReveal ? ` (预计: ${f.plannedReveal})` : ''}` });
-      });
-      if (unrevealed.length > 5) ul.createEl("li", { cls: "nw-cowrite-monitor-more", text: `...还有 ${unrevealed.length - 5} 条` });
-    }
-
-    header.addEventListener("click", () => {
-      const isExpanded = detail.style.display === "block";
-      detail.style.display = isExpanded ? "none" : "block";
-      toggle.textContent = isExpanded ? "▶" : "▼";
-      card.toggleClass("nw-cowrite-monitor-card-expanded", !isExpanded);
-    });
-  }
-
-  private renderEntityCard() {
-    const card = this.monitorContainer.createDiv({ cls: "nw-cowrite-monitor-card" });
-    const header = card.createDiv({ cls: "nw-cowrite-monitor-card-header" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-icon", text: "🧑" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-title", text: "实体动态" });
-    const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
-    const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
-
-    // 正文路径必须走 getBodyPath()：旧实现拼的是 `${project}/${volume}/${chapterName}_正文.md`，
-    // 真实落盘路径是 03-大纲与章节/正文/...，拼接结果永远不存在 → 卡片恒为全 0。
-    const bodyPath = this.project && this.chapterNum ? this.getBodyPath() : '';
-    const abstractFile = bodyPath ? this.app.vault.getAbstractFileByPath(bodyPath) : null;
-    const file = abstractFile instanceof TFile ? abstractFile : null;
-    const fm = file ? this.app.metadataCache.getFileCache(file)?.frontmatter || {} : {};
-    const chars = (fm['涉及人物'] || []) as string[];
-    const locs = (fm['涉及地点'] || []) as string[];
-    const factions = (fm['涉及势力'] || []) as string[];
-    const items = (fm['涉及物品功法'] || []) as string[];
-
-    body.createDiv({ cls: "nw-cowrite-monitor-summary", text: `人物 ${chars.length} · 地点 ${locs.length} · 势力 ${factions.length} · 物品 ${items.length}` });
-
-    const detail = body.createDiv({ cls: "nw-cowrite-monitor-detail" });
-    detail.setCssStyles({ display: 'none' });
-
-    if (chars.length > 0) {
-      detail.createDiv({ cls: "nw-cowrite-monitor-detail-title", text: "涉及人物:" });
-      const ul = detail.createEl("ul", { cls: "nw-cowrite-monitor-list" });
-      // 只在本项目的人物设定目录里找：全库 includes 匹配会把同名角色的别书状态显示出来
-      const projectPrefix = this.project ? `${this.project}/` : '';
-      chars.slice(0, 5).forEach((charName: string) => {
-        const charFile = this.app.vault.getFiles().find(f =>
-          f.path.startsWith(projectPrefix) && f.path.includes('人物设定') && f.name.includes(charName)
-        );
-        const charFm: Record<string, unknown> = charFile ? (this.app.metadataCache.getFileCache(charFile)?.frontmatter || {}) : {};
-        const status = (charFm['当前状态'] as string | undefined) || '未知';
-        const realm = (charFm['境界'] as string | undefined) || (charFm['修为'] as string | undefined) || '';
-        const lastChange = charFm['entity_last_changed_at'] ? `(${charFm['entity_last_changed_at'] as string})` : '';
-        ul.createEl("li", { text: `${charName}${realm ? ` · ${realm}` : ''} · ${status} ${lastChange}` });
-      });
-      if (chars.length > 5) ul.createEl("li", { cls: "nw-cowrite-monitor-more", text: `...还有 ${chars.length - 5} 人` });
-    }
-
-    if (locs.length > 0) {
-      detail.createDiv({ cls: "nw-cowrite-monitor-detail-title", text: "涉及地点:" });
-      detail.createDiv({ cls: "nw-cowrite-monitor-tags", text: locs.slice(0, 8).join(', ') + (locs.length > 8 ? `...` : '') });
-    }
-    if (factions.length > 0) {
-      detail.createDiv({ cls: "nw-cowrite-monitor-detail-title", text: "涉及势力:" });
-      detail.createDiv({ cls: "nw-cowrite-monitor-tags", text: factions.slice(0, 8).join(', ') + (factions.length > 8 ? `...` : '') });
-    }
-
-    header.addEventListener("click", () => {
-      const isExpanded = detail.style.display === "block";
-      detail.style.display = isExpanded ? "none" : "block";
-      toggle.textContent = isExpanded ? "▶" : "▼";
-      card.toggleClass("nw-cowrite-monitor-card-expanded", !isExpanded);
-    });
-  }
-
-  private renderGuardCard() {
-    const card = this.monitorContainer.createDiv({ cls: "nw-cowrite-monitor-card" });
-    const header = card.createDiv({ cls: "nw-cowrite-monitor-card-header" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-icon", text: "⚠️" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-title", text: "设定守卫" });
-    const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
-    const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
-
-    // 数据源是 LiveAnalysisController 的真实守卫结果。
-    // 旧实现读 `liveAnalysis.issues` —— 该字段从来没有存在过，卡片恒显示「高 0 · 中 0 · 低 0」。
-    const summary = this.liveAnalysis?.getGuardSummary?.() ?? null;
-    const oocCount = summary?.oocWarnings.length ?? 0;
-    const changeCount = summary?.entityChanges.length ?? 0;
-    const scoreText = summary?.consistencyScore != null ? `一致性 ${summary.consistencyScore}% · ` : '';
-
-    if (!summary) {
-      body.createDiv({ cls: "nw-cowrite-monitor-summary", text: "本章尚未检查（输入停顿或点「设定检查」后自动执行）" });
-      return;
-    }
-
-    body.createDiv({
-      cls: "nw-cowrite-monitor-summary",
-      text: `${scoreText}OOC ${oocCount} · 实体变更 ${changeCount}`
-    });
-
-    const detail = body.createDiv({ cls: "nw-cowrite-monitor-detail" });
-    detail.setCssStyles({ display: 'none' });
-
-    if (oocCount > 0 || changeCount > 0) {
-      const ul = detail.createEl("ul", { cls: "nw-cowrite-monitor-list" });
-      summary.oocWarnings.slice(0, 5).forEach(warning => {
-        const li = ul.createEl("li");
-        const tag = li.createSpan({ cls: "nw-cowrite-monitor-priority", text: "OOC" });
-        tag.setCssStyles({ color: '#ef4444' });
-        li.createSpan({ text: ` ${warning}` });
-      });
-      summary.entityChanges.slice(0, 5).forEach(change => {
-        const li = ul.createEl("li");
-        const tag = li.createSpan({ cls: "nw-cowrite-monitor-priority", text: "变更" });
-        tag.setCssStyles({ color: '#3b82f6' });
-        li.createSpan({ text: ` ${change.entityName} → ${change.newStatus}` });
-      });
-    }
-
-    header.addEventListener("click", () => {
-      const isExpanded = detail.style.display === "block";
-      detail.style.display = isExpanded ? "none" : "block";
-      toggle.textContent = isExpanded ? "▶" : "▼";
-      card.toggleClass("nw-cowrite-monitor-card-expanded", !isExpanded);
-    });
-  }
-
-  private renderStatusCard() {
-    const card = this.monitorContainer.createDiv({ cls: "nw-cowrite-monitor-card" });
-    const header = card.createDiv({ cls: "nw-cowrite-monitor-card-header" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-icon", text: "📊" });
-    header.createSpan({ cls: "nw-cowrite-monitor-card-title", text: "状态监控" });
-    const toggle = header.createSpan({ cls: "nw-cowrite-monitor-card-toggle", text: "▶" });
-    const body = card.createDiv({ cls: "nw-cowrite-monitor-card-body" });
-
-    const text = this.rightEditor?.value || '';
-    const paragraphs = text.split('\n').filter(p => p.trim()).length;
-    const dialogueCount = (text.match(/["“‘『」』][^"“”‘’『』]*["“”‘’『』]/g) || []).length;
-    const totalChars = text.trim().length;
-    const dialogueRatio = totalChars > 0 ? Math.round((dialogueCount * 20 / totalChars) * 100) : 0;
-
-    body.createDiv({ cls: "nw-cowrite-monitor-summary", text: `段落 ${paragraphs} · 对话 ${dialogueRatio}% · 字数 ${totalChars}` });
-
-    const detail = body.createDiv({ cls: "nw-cowrite-monitor-detail" });
-    detail.setCssStyles({ display: 'none' });
-    detail.createDiv({ cls: "nw-cowrite-monitor-detail-title", text: "详细统计:" });
-    detail.createDiv({ cls: "nw-cowrite-monitor-stat", text: `平均段落长度: ${totalChars > 0 ? Math.round(totalChars / Math.max(1, paragraphs)) : 0} 字` });
-    detail.createDiv({ cls: "nw-cowrite-monitor-stat", text: `对话片段数: ${dialogueCount}` });
-    const actionWords = ['打', '杀', '战', '攻', '守', '逃', '追', '躲', '闪', '挡'];
-    const actionCount = actionWords.reduce((acc, word) => acc + (text.match(new RegExp(word, 'g')) || []).length, 0);
-    detail.createDiv({ cls: "nw-cowrite-monitor-stat", text: `动作描写频次: ${actionCount}` });
-
-    header.addEventListener("click", () => {
-      const isExpanded = detail.style.display === "block";
-      detail.style.display = isExpanded ? "none" : "block";
-      toggle.textContent = isExpanded ? "▶" : "▼";
-      card.toggleClass("nw-cowrite-monitor-card-expanded", !isExpanded);
-    });
   }
 
   private async getAssetStatus() {

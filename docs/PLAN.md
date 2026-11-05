@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.46.0 · 更新：2026-11-05
+> 版本：v4.47.0 · 更新：2026-11-06
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -86,7 +86,8 @@ Agent（harness）
 - 第十二批（v4.43.0）：`batch-import-modal`（11→9）、`generate-character-modal`（10→5）、`ideation-modal`（10→2）、`backup-center-modal`（10→2）、`project-side-panel-view`（10→4）、`wizard-step-renderers`（10→2），合计替换 **37 处**，剩余守卫/进度/预检/无变化/信息展示 **24 处**。
 - 第十三批（v4.44.0）：`co-writing-view`（20→20，剩余全部为守卫/预检/无变化/进度）、`add-fanfic-setting-modal`（12→11）、`manage-providers-modal`（10→7）、`style-distiller-modal`（9→7）、`create-project-modal`（9→2），合计替换 **13 处**，剩余 **47 处** 均为守卫/进度/预检/无变化/信息展示。
 - 第十四批（v4.46.0）：`add-fanfic-setting-modal`（余 11）、`manage-providers-modal`（余 7）、`style-distiller-modal`（余 7）共 25 处逐条核对，全部为守卫/预检/无变化/进度，**0 替换**；三文件确认收敛完成。
-- 下一步：Notice 存量继续按文件分批（`ai-builder-modal` 8、`appearance-settings` 8、`settings/general-sections` 8、`settings/api-section` 8、`settings/foreshadow-section` 7、`settings/knowledge-section` 7、`project-utils` 7）；章节上下文工具切片为可选。
+- 切片第六批（v4.47.0）：`ui/co-writing-view.ts` 抽出 `co-writing/chapter-context`（路径/标题/章节身份）、`ghost-association`（触发判定与提示）、`quality-fix`（定位/Prompt/替换决策）、`monitor-cards`（五张监控卡）、`metrics-panel`（三态与指标渲染）五个模块，**4,645 → 4,303 行（-342）**；新增 5 个测试文件 40 用例；下一步朝 ≤3,000 的 M5 重评条件推进。
+- 下一步：Notice 存量继续按文件分批（`ai-builder-modal` 8、`appearance-settings` 8、`settings/general-sections` 8、`settings/api-section` 8、`settings/foreshadow-section` 7、`settings/knowledge-section` 7、`project-utils` 7）；co-writing-view 剩余纯逻辑块（建议卡渲染、章节切换守卫、报表刷新链）为切片候选。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
