@@ -121,7 +121,7 @@ export const DEFAULT_INTENSITY_CONFIG: StyleIntensityConfig = {
  * 风格迁移强度调节引擎
  *
  * 使用方式：
- *   const engine = new StyleIntensityEngine();
+ *   const engine = getStyleIntensityEngine();
  *
  *   // 1. 预览强度效果
  *   const preview = engine.previewIntensity({ globalIntensity: 0.5 });
@@ -330,4 +330,34 @@ export class StyleIntensityEngine {
         if (!samples || samples.length === 0) return [];
         return samples.slice(0, Math.min(maxCount, samples.length));
     }
+}
+
+// ============================================================
+// 四、模块级共享单例
+// ============================================================
+
+/** 模块级共享实例（懒加载，避免多消费方各自 new 造成实例数膨胀） */
+let sharedIntensityEngine: StyleIntensityEngine | null = null;
+
+/**
+ * 获取共享的 StyleIntensityEngine 实例。
+ *
+ * 该类无构造参数、无可变状态，所有方法均为纯计算，
+ * 因此全插件共用一个实例不会产生跨调用状态污染。
+ *
+ * @returns 全插件共享的 StyleIntensityEngine 实例
+ * @example
+ * ```ts
+ * import { getStyleIntensityEngine } from './style/style-intensity-engine';
+ *
+ * const engine = getStyleIntensityEngine();
+ * const preview = engine.previewIntensity({ globalIntensity: 0.5 });
+ * // preview.global.descriptionLength → 100
+ * ```
+ */
+export function getStyleIntensityEngine(): StyleIntensityEngine {
+    if (!sharedIntensityEngine) {
+        sharedIntensityEngine = new StyleIntensityEngine();
+    }
+    return sharedIntensityEngine;
 }

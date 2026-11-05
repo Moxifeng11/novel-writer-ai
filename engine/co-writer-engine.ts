@@ -103,7 +103,6 @@ import type { CharacterRepository, ChapterRepository } from './repository';
 import { FrontmatterSerializer } from './repository/domain/serializers';
 import { createLogger } from '@/shared/logger';
 import { deriveBodyFormat, describeBodyFormat } from '@/shared/body-format';
-import { resolveProviderSourceType } from '@/shared/model-source';
 import { CO_WRITE_MAX_TOKENS_CAP } from '@/shared/thresholds';
 import { countRetainedPromptParts } from '@/shared/prompt-budget';
 import { roleIndicatesProtagonist } from '@/shared/protagonist';
@@ -136,6 +135,12 @@ import type {
     SettingGuardReport,
 } from './co-writer/co-writer-types';
 import { buildSnapshot as buildSnapshotFromContext } from './co-writer/snapshot-builder';
+import {
+    buildCoWriteOptions,
+    resolveCoWriteLocalProvider,
+    resolveCoWriteModel,
+} from './co-writer/co-write-options';
+import type { CoWriteCallOptions, LocalProviderRoute } from './co-writer/co-write-options';
 
 // ============================================================
 // CoWriterEngine
@@ -273,15 +278,11 @@ export class CoWriterEngine {
 
     /**
      * v6.5: 获取协同写作使用的模型（强制本地，不回退远程）
+     *
+     * 兼容保留的薄委托：实现已抽至 `co-writer/co-write-options.ts`。
      */
     private getCoWriteModel(): string | undefined {
-        const settings = this.aiEngine.getPlugin()?.settings;
-        if (!settings) return undefined;
-        const mode = settings.coWriteModelMode || 'local';
-        if (mode === 'cloud') {
-            return settings.coWriteCloudModel || settings.defaultModel || undefined;
-        }
-        return resolveCoWriteLocalModel(settings);
+        return resolveCoWriteModel(this.aiEngine.getPlugin()?.settings);
     }
 
     private async callCoWriteAI(
@@ -325,106 +326,33 @@ export class CoWriterEngine {
 
     /**
      * 解析协同写作本地模型所属的 provider。
-     * 旧实现只认 id === 'ollama'：用户重命名/新增本地 provider 后 opts.endpoint 为空，
-     * callAI 会回退到全局 apiEndpoint（通常是云端），造成「本地模式静默打云端」。
+     *
+     * 兼容保留的薄委托：实现已抽至 `co-writer/co-write-options.ts`；
+     * 插件窗口解析以回调显式注入，其余逻辑只依赖 settings。
      */
-    private resolveLocalProvider(model?: string): {
-        providerId: string;
-        endpoint: string;
-        apiKey: string;
-        maxContext: number;
-    } | null {
+    private resolveLocalProvider(model?: string): LocalProviderRoute | null {
         const plugin = this.aiEngine.getPlugin();
-        const settings = plugin?.settings;
-        if (!settings) return null;
-        const providers = (settings.customProviders || []).filter(
-            p => p?.endpoint && resolveProviderSourceType({ id: p.id, endpoint: p.endpoint, sourceType: p.sourceType }) === 'local',
+        return resolveCoWriteLocalProvider(
+            plugin?.settings,
+            model,
+            (modelName, endpoint) => plugin?.resolveModelLimits(modelName, endpoint),
         );
-        const chosen = (model ? providers.find(p => p.models?.includes(model)) : undefined)
-            || providers.find(p => p.id === 'ollama')
-            || providers[0];
-        if (!chosen) return null;
-
-        const modelName = model || chosen.models?.[0] || '';
-        let maxContext = Number.isFinite(chosen.maxContext) && chosen.maxContext > 0
-            ? chosen.maxContext
-            : findModelCapability(modelName, 'local').maxContext;
-        try {
-            const resolved = plugin.resolveModelLimits(modelName, chosen.endpoint)?.maxContext;
-            if (Number.isFinite(resolved) && resolved > 0) maxContext = resolved;
-        } catch {
-            // 保留 provider 配置值
-        }
-        return {
-            providerId: chosen.id,
-            endpoint: chosen.endpoint,
-            apiKey: settings.providerKeys?.[chosen.id] || 'ollama',
-            maxContext,
-        };
     }
 
     /**
      * v6.5: 获取协同写作的 callAI options（本地模型使用 Ollama 端点 + settings 参数）
+     *
+     * 兼容保留的薄委托：实现已抽至 `co-writer/co-write-options.ts`。
+     * 既有测试（tests/unit/engine/co-writer-engine-local-model.test.ts）经实例访问本方法，
+     * 故保留入口；行为与原实现逐行等价。
      */
-    private getCoWriteOptions(base?: { signal?: AbortSignal }): {
-        signal?: AbortSignal;
-        endpoint?: string;
-        apiKey?: string;
-        disableFallback?: boolean;
-        numCtx?: number;
-        localRouteError?: string;
-    } {
-        const opts: {
-            signal?: AbortSignal;
-            endpoint?: string;
-            apiKey?: string;
-            disableFallback?: boolean;
-            numCtx?: number;
-            localRouteError?: string;
-        } = {};
-        if (base?.signal) opts.signal = base.signal;
-        const settings = this.aiEngine.getPlugin()?.settings;
-        if (!settings) return opts;
-
-        const mode = settings.coWriteModelMode || 'local';
-
-        if (mode === 'cloud') {
-            // 云端模式：根据供应商查找端点和 API Key
-            const providerId = settings.coWriteCloudProvider || '';
-            if (providerId) {
-                // 从自定义供应商查找
-                const custom = settings.customProviders?.find(p => p.id === providerId);
-                if (custom?.endpoint) {
-                    opts.endpoint = custom.endpoint;
-                }
-                // API Key
-                const apiKey = settings.providerKeys?.[providerId] || '';
-                if (apiKey) {
-                    opts.apiKey = apiKey;
-                }
-            }
-            // 云端模式允许 fallback
-            opts.disableFallback = false;
-        } else {
-            // 本地模式：按模型所属本地 provider 解析端点；找不到就阻断，绝不回退云端
-            const model = this.getCoWriteModel();
-            const local = this.resolveLocalProvider(model);
-            opts.disableFallback = true;
-            if (!local) {
-                opts.localRouteError = '未找到可用的本地模型供应商：请在设置中配置 Ollama/本地端点，或切换为云端模式';
-                // 兜底端点仅用于让调用失败而不是把本地内容发到云端
-                opts.endpoint = 'http://127.0.0.1:1/v1/chat/completions';
-                opts.apiKey = 'ollama';
-            } else {
-                opts.endpoint = local.endpoint;
-                opts.apiKey = local.apiKey;
-                const configured = settings.coWriteNumCtx && settings.coWriteNumCtx > 0
-                    ? Math.min(settings.coWriteNumCtx, local.maxContext)
-                    : local.maxContext;
-                opts.numCtx = Math.max(2048, configured);
-            }
-        }
-        return opts;
+    private getCoWriteOptions(base?: { signal?: AbortSignal }): CoWriteCallOptions {
+        const plugin = this.aiEngine.getPlugin();
+        return buildCoWriteOptions({
+            settings: plugin?.settings,
+            signal: base?.signal,
+            resolveModelLimits: (modelName, endpoint) => plugin?.resolveModelLimits(modelName, endpoint),
+        });
     }
 
     /**

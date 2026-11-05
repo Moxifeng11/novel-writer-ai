@@ -1067,7 +1067,7 @@ export class AgentWorkbenchView extends ItemView {
                 if (session !== this.sessionSeq) return;
                 console.warn('[AgentWorkbench] Harness 启动失败，回退规则引擎:', e);
                 this.harnessEngine = null;
-                new Notice('AI 引导启动失败，已切换到离线逐步引导', 5000);
+                showWarningNotice('AI 引导启动失败，已切换到离线逐步引导', { timeout: 5000 });
             }
         }
         if (session !== this.sessionSeq) return;

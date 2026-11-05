@@ -302,7 +302,7 @@ export class KnowledgeDetailModal extends Modal {
 
         if (isRef) {
             plugin.referenceBookIds = plugin.referenceBookIds.filter((id: string) => id !== this.bookId);
-            new Notice(`已取消《${bookName}》的参考`);
+            showSuccessNotice(`已取消《${bookName}》的参考`);
         } else {
             if (!plugin.referenceBookIds.includes(this.bookId)) {
                 plugin.referenceBookIds.push(this.bookId);
@@ -523,7 +523,7 @@ export class KnowledgeDetailModal extends Modal {
                 retryVectorBtn.textContent = '⏳ 向量化中…';
                 try {
                     await scheduler.revectorizeBook(book.id, book.name);
-                    new Notice(`《${book.name}》重向量化完成`);
+                    showSuccessNotice(`《${book.name}》重向量化完成`);
                     this.bookInfo = (await this.knowledgeManager.getBook(this.bookId)) ?? this.bookInfo;
                     this.render();
                 } catch (e) {
@@ -566,7 +566,7 @@ export class KnowledgeDetailModal extends Modal {
                 // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
                 await this.deconstructionScheduler?.cancelByBook(this.bookId);
                 await this.knowledgeManager.deleteBook(this.bookId);
-                new Notice('书籍已删除');
+                showSuccessNotice('书籍已删除');
                 this.close();
             } catch (e) {
                 log.error('[KnowledgeDetailModal] 删除书籍失败:', e);
@@ -1623,7 +1623,7 @@ export class KnowledgeDetailModal extends Modal {
                 } catch (e) {
                     // 源文本缺失/调度器拒绝时旧实现照样提示「已开始」并关窗
                     log.error('[KnowledgeDetailModal] 启动拆解失败:', e);
-                    new Notice(`开始拆解失败：${e instanceof Error ? e.message : String(e)}`);
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '开始拆解失败' });
                 }
             } else {
                 new Notice('拆解功能请在知识库监控面板中使用');

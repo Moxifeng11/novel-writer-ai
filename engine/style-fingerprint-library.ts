@@ -52,7 +52,8 @@ import {
     type BlendedFingerprint,
 } from './style/fingerprint-blender-v2';
 import {
-    StyleIntensityEngine,
+    getStyleIntensityEngine,
+    type StyleIntensityEngine,
     type StyleIntensityConfig,
     type StyleIntensityPreview,
     DEFAULT_INTENSITY_CONFIG,
@@ -860,7 +861,7 @@ export class StyleFingerprintLibrary {
      */
     getIntensityEngine(): StyleIntensityEngine {
         if (!this.intensityEngine) {
-            this.intensityEngine = new StyleIntensityEngine();
+            this.intensityEngine = getStyleIntensityEngine();
         }
         return this.intensityEngine;
     }

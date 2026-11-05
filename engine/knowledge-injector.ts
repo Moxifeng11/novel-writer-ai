@@ -10,7 +10,7 @@ import type { KnowledgeVectorStore, KnowledgeSearchResult } from './knowledge-ve
 import { assemblePromptWithinBudget } from '@/shared/prompt-budget';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { formatKnowledgeChunkLabel, dedupeAdjacentChunks } from '@/shared/knowledge-position';
-import { StyleIntensityEngine } from './style/style-intensity-engine';
+import { getStyleIntensityEngine } from './style/style-intensity-engine';
 import {
     MAX_INJECTED_STYLE_FINGERPRINTS,
     selectFingerprintsForInjection,
@@ -22,7 +22,7 @@ import { retrieve, type RetrievalTelemetry } from './rag/retrieval-service';
 import { activeContextQuotas } from '@/shared/context-budget-policy';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
-const intensityEngine = new StyleIntensityEngine();
+const intensityEngine = getStyleIntensityEngine();
 
 /** 指纹特征单字段字符上限（多个指纹合并后尤其容易膨胀） */
 const FINGERPRINT_FIELD_CHAR_LIMIT = 200;

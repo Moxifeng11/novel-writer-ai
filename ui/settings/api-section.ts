@@ -327,7 +327,7 @@ export class ApiSection extends SettingsSection {
                 syncTitle();
                 this.plugin.updateProvider(raw.id, { apiFormat: normalizeApiFormat(select.value) });
                 await this.plugin.saveSettings();
-                new Notice(`已切换为 ${API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value}`);
+                showSuccessNotice(`已切换为 ${API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value}`);
             });
         }, `请求路径：${API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('；')}`);
 
@@ -403,7 +403,7 @@ export class ApiSection extends SettingsSection {
                     this.syncAvailableModels(raw.id);
                     await this.plugin.saveSettings();
                     this.plugin.updateStatusBarText();
-                    new Notice(`✅ 已更新模型列表（${models.length} 个）`, 4000);
+                    showSuccessNotice(`已更新模型列表（${models.length} 个）`, { timeout: 4000 });
                     rerender();
                 }).open();
             } finally {
@@ -657,7 +657,7 @@ export class ApiSection extends SettingsSection {
                     sync(providerId);
                     await plugin.saveSettings();
                     plugin.updateStatusBarText();
-                    new Notice(isNew ? `✅ 已添加模型 ${idValue}` : `✅ 已保存 ${idValue}`);
+                    showSuccessNotice(isNew ? `已添加模型 ${idValue}` : `已保存 ${idValue}`);
                     this.close();
                     rerender();
                 };
@@ -696,13 +696,13 @@ export class ApiSection extends SettingsSection {
                     // 先验证能解开磁盘上的密文，避免「提示解锁成功、实际全是乱码」
                     const ok = await this.plugin.verifySettingsPassword?.(password);
                     if (ok === false) {
-                        new Notice('❌ 口令不正确，密钥仍未解锁', 6000);
+                        showErrorNotice('口令不正确，密钥仍未解锁', { timeout: 6000 });
                         return;
                     }
                     this.plugin.setSessionPassword?.(password);
                     await this.plugin.loadSettings();
                     this.refresh();
-                    new Notice('✅ 已解锁，密钥可正常读取');
+                    showSuccessNotice('已解锁，密钥可正常读取');
                     return;
                 }
                 const password = await PasswordModal.setup(this.app);
@@ -710,7 +710,7 @@ export class ApiSection extends SettingsSection {
                 this.plugin.setSessionPassword?.(password);
                 await this.plugin.saveSettings();
                 this.refresh();
-                new Notice('✅ 已启用密钥加密');
+                showSuccessNotice('已启用密钥加密');
             }));
 
         row.addButton(btn => btn
@@ -980,7 +980,7 @@ export class ApiSection extends SettingsSection {
                     if (!next) return; // 空值 = 未修改，避免把已加密 Key 清空
                     cfg.apiKey = next;
                     void this.plugin.saveSettings().catch(e => {
-                        new Notice(`保存搜索 API Key 失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                        showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存搜索 API Key 失败', timeout: 6000 });
                     });
                 });
             });
@@ -1263,7 +1263,7 @@ export class ApiSection extends SettingsSection {
                     this.plugin.settings.taskBudgets = {};
                     await this.plugin.saveSettings();
                     this.refresh();
-                    new Notice('✅ 已清除任务级覆盖，改由引擎分发');
+                    showSuccessNotice('已清除任务级覆盖，改由引擎分发');
                 }));
     }
 

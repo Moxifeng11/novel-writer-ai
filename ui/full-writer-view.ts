@@ -1090,7 +1090,7 @@ export class FullWriterView extends ItemView {
                         );
                         await this.renderInContainer(this.tabContent);
                     } catch (e) {
-                        new Notice(`定向修订失败：${(e as Error).message}`, 6000);
+                        showErrorNotice((e as Error).message, { title: '定向修订失败', timeout: 6000 });
                     }
                 })();
             })
@@ -1231,7 +1231,7 @@ export class FullWriterView extends ItemView {
     async showProjectSelector(): Promise<void> {
         if (this.activeTabId === 'project-selector') {
             await this.renderProjectSelectorInTab();
-            new Notice('已刷新项目与章节', 2000);
+            showSuccessNotice('已刷新项目与章节', { timeout: 2000 });
             return;
         }
         await this.activateTab('project-selector');
@@ -1770,7 +1770,7 @@ export class FullWriterView extends ItemView {
 
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!(file instanceof TFile)) {
-            new Notice(`⚠️ 文件不存在: ${filePath}`, 4000);
+            showWarningNotice(filePath, { title: '文件不存在', timeout: 4000 });
             return;
         }
         const rawContent = await this.app.vault.read(file);
@@ -2308,7 +2308,7 @@ export class FullWriterView extends ItemView {
             );
         } catch (e) {
             log.error('[小说工坊] 渲染润色编辑器失败:', e);
-            new Notice(`润色编辑器加载失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '润色编辑器加载失败', timeout: 6000 });
             const retry = area.createEl('button', { text: '🔄 重试加载润色编辑器', cls: 'novel-writer-fw-btn' });
             retry.onclick = () => {
                 retry.disabled = true;
@@ -2596,7 +2596,7 @@ export class FullWriterView extends ItemView {
                     level: 'error',
                     message: `全章规划失败：${message}`,
                 });
-                new Notice(`❌ 全章规划失败：${message}`, 8000);
+                showErrorNotice(message, { title: '全章规划失败', timeout: 8000 });
             } finally {
                 generateBtn.disabled = false;
                 generateBtn.setText('⚡ 重新生成全章规划');

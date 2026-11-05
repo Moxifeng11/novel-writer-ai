@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 300 | 131996 | 1585 | 1327 | 84% |
+| `engine/` | 301 | 132222 | 1595 | 1337 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38706 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38729 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 214 | 97344 | 552 | 507 | 92% |
+| `ui/` | 214 | 97345 | 552 | 507 | 92% |
 
 ## 文件清单
 
@@ -89,9 +89,10 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3480 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3408 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
+| `engine/co-writer/co-write-options.ts` | 265 | 9 | 9 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
@@ -282,7 +283,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 1878 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1880 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 131 | 2 | 2 |
@@ -308,7 +309,7 @@
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 2311 | 7 | 7 |
+| `engine/style-fingerprint-library.ts` | 2312 | 7 | 7 |
 | `engine/style-learner.ts` | 319 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 136 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
@@ -319,7 +320,7 @@
 | `engine/style/style-deconstructor-v2.ts` | 2017 | 2 | 2 |
 | `engine/style/style-dimensions-v2.ts` | 574 | 26 | 12 |
 | `engine/style/style-distill-service.ts` | 129 | 6 | 6 |
-| `engine/style/style-intensity-engine.ts` | 334 | 8 | 2 |
+| `engine/style/style-intensity-engine.ts` | 364 | 9 | 3 |
 | `engine/style/style-sample-service.ts` | 227 | 8 | 7 |
 | `engine/style/style-vector-store-v2.ts` | 1085 | 6 | 1 |
 | `engine/style/v2-quantitative-extractor.ts` | 171 | 2 | 2 |
@@ -378,7 +379,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1482 | 3 | 3 |
+| `shared/changelog-data.ts` | 1505 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -742,7 +743,7 @@
 | `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
 | `ui/views/knowledge-base-view.ts` | 3228 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/writing-fingerprint-view.ts` | 1918 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 1919 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 234 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |

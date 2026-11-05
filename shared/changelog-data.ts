@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.40.0',
+        date: '2026-11-05',
+        title: '多实例收敛、轻量结算写锁与第四批切片',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧩 架构',
+                items: [
+                    'StyleIntensityEngine 5 实例收敛为共享单例，引擎基线收紧 5→1',
+                    'settleLight 正文 frontmatter 回写与 BodyWriter 共用路径锁',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '✂️ 切片与提示',
+                items: [
+                    'co-writer-engine 3479→3407：写选项解析链抽出',
+                    'Notice 第四批：6 文件 34 处，累计 127 处',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.39.0',
         date: '2026-11-05',
         title: '剩余 5 处裸读改写收口',

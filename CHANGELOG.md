@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.40.0（2026-11-05）
+
+### 🧩 多实例状态源收敛（P1-6）
+
+- `StyleIntensityEngine` 由 5 个实例收敛为 1 个共享单例：新增 `getStyleIntensityEngine()`，5 个消费方（知识注入/PromptBuilder/指纹库/动态注入/润色编辑器）统一取用；该类无可变状态，行为不变。引擎守卫基线 5 → 1 并已收紧。
+
+### 🔒 轻量结算正文写锁
+
+- `settleLight` 的正文 frontmatter 回写补 `withWriteLock(bodyFile.path, …)`，与 `BodyWriter` 的整篇写入共用同一路径锁，避免轻量结算与协同自动保存并发时互相覆盖。
+
+### ✂️ 协同引擎切片第四批
+
+- `engine/co-writer-engine.ts` 3,479 → 3,407（-72）：`getCoWriteOptions` + 模型/供应商解析链抽到 `engine/co-writer/co-write-options.ts`（settings 与 resolveModelLimits 显式入参）；云/本地分支、disableFallback、numCtx 下限逐行保留。
+
+### 🧯 Notice 第四批
+
+- 6 个文件替换 34 处（API 设置/Agent 工作台/知识库详情/知识库视图/写作工作台/指纹视图）；守卫/进度/预检/带操作引导提示保留，eslint 0 新增警告。
+
+### 🧪 测试
+
+- 全量单测 553 文件 / 6094 用例（+2：StyleIntensityEngine 单例行为）。
+
 ## v4.39.0（2026-11-05）
 
 ### 🔒 剩余裸读改写收口（v4.38.0 遗留 5 项）

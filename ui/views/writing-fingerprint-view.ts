@@ -22,6 +22,7 @@ import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 
 
 const log = createLogger('WritingFingerprintView');
@@ -1021,10 +1022,10 @@ export class WritingFingerprintView extends ItemView {
             await this.loadAllFingerprints();
             this.renderFingerprintList();
             this.renderDetailPanel();
-            new Notice('✅ 重新提取完成');
+            showSuccessNotice('重新提取完成');
         } catch (e) {
             log.error('重新提取失败:', e);
-            new Notice(`重新提取失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '重新提取失败' });
         }
     }
 
@@ -1116,7 +1117,7 @@ export class WritingFingerprintView extends ItemView {
             }
         } catch (e) {
             log.error('[FingerprintView] 保存指纹失败:', e);
-            new Notice(`⚠️ 指纹保存失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '指纹保存失败', timeout: 8000 });
             return;
         }
         await this.loadAllFingerprints();
@@ -1125,7 +1126,7 @@ export class WritingFingerprintView extends ItemView {
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        new Notice(successMessage);
+        showSuccessNotice(successMessage.replace(/^✅\s*/u, ''));
     }
 
     private async handleExtractFromChapters(): Promise<void> {
@@ -1222,10 +1223,10 @@ export class WritingFingerprintView extends ItemView {
                         this.renderSearchAndFilter();
                         this.renderFingerprintList();
                         this.renderDetailPanel();
-                        new Notice('✅ 从章节提取指纹成功');
+                        showSuccessNotice('从章节提取指纹成功');
                     } catch (e) {
                         log.error('提取指纹失败:', e);
-                        new Notice(`提取失败: ${e instanceof Error ? e.message : String(e)}`);
+                        showErrorNotice(e instanceof Error ? e.message : String(e), { title: '提取失败' });
                     }
                 }
             );
@@ -1355,7 +1356,7 @@ export class WritingFingerprintView extends ItemView {
         await this.loadAllFingerprints();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        new Notice(`🩹 补样本完成：成功 ${filled}，跳过 ${skipped}`, 6000);
+        showSuccessNotice(`成功 ${filled}，跳过 ${skipped}`, { title: '补样本完成', timeout: 6000 });
     }
 
     private async handleToggleEnabled(): Promise<void> {

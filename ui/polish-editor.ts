@@ -20,14 +20,14 @@ import { RhythmAnalyzer } from '@/engine/rhythm-analyzer';
 import { StyleLearner } from '@/engine/style-learner';
 import type { RhythmAnalysis } from '@/shared/co-writer-types';
 import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
-import { StyleIntensityEngine } from '@/engine/style/style-intensity-engine';
+import { getStyleIntensityEngine } from '@/engine/style/style-intensity-engine';
 import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('PolishEditor');
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
-const intensityEngine = new StyleIntensityEngine();
+const intensityEngine = getStyleIntensityEngine();
 // ============================================================
 // 工具函数 (纯函数，无 this 依赖)
 // ============================================================

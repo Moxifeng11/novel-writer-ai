@@ -5,11 +5,11 @@
   "dependencyCycles": [],
   "engineBypass": {
     "SuggestionManager": 2,
-    "StyleIntensityEngine": 5,
-    "QualityScoreEngine": 4,
-    "AnalysisSessionManager": 1,
     "DeconstructionWorkerManager": 1,
     "WorkerManager": 2,
+    "QualityScoreEngine": 4,
+    "AnalysisSessionManager": 1,
+    "StyleIntensityEngine": 1,
     "RewriteSuggestionEngine": 1,
     "ForeshadowConfigManager": 1,
     "KnowledgeBaseConfigManager": 1

@@ -23,7 +23,7 @@ import { assemblePromptWithinBudget, resolvePrecedingCharLimit, type PromptSecti
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { dedupeAdjacentChunks } from '@/shared/knowledge-position';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
-import { StyleIntensityEngine, type StyleIntensityConfig } from './style/style-intensity-engine';
+import { getStyleIntensityEngine, type StyleIntensityConfig } from './style/style-intensity-engine';
 import { selectFingerprintsForInjection } from './style/fingerprint-selection';
 
 const log = createLogger('PromptBuilder');
@@ -36,7 +36,7 @@ import {
 import type { InjectionLedger, InjectionLedgerEntry, InjectionCategory, InjectionInfluence } from '@/shared/injection-ledger';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
-const intensityEngine = new StyleIntensityEngine();
+const intensityEngine = getStyleIntensityEngine();
 
 const DIRECTION_PROMPTS: Record<SuggestionDirection, string> = {
     action:       '现在需要一段推进情节的动作描写。写出主角此刻身体在做什么——手的动作、脚步的移动、呼吸的变化。用具体的身体动作把这一幕推向下一个节点。',

@@ -22,10 +22,10 @@
 import type { SuggestionDirection } from '@/shared/types';
 import type { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import type { StyleIntensityConfig } from './style-intensity-engine';
-import { DEFAULT_INTENSITY_CONFIG, StyleIntensityEngine } from './style-intensity-engine';
+import { DEFAULT_INTENSITY_CONFIG, getStyleIntensityEngine } from './style-intensity-engine';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
-const intensityEngine = new StyleIntensityEngine();
+const intensityEngine = getStyleIntensityEngine();
 
 // ============================================================
 // 一、上下文特征类型定义

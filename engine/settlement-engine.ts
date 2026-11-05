@@ -459,21 +459,23 @@ export class SettlementEngine {
         }
         if (bodyFile) {
             try {
-                await this.getFrontmatter().processFrontmatter(bodyFile as TFile, (fmObj: FrontMatter) => {
-                    fmObj['status'] = 'settled';
-                    if (uniqueChars.length > 0 && !fmObj['涉及人物']) {
-                        fmObj['涉及人物'] = uniqueChars;
-                    }
-                    if (uniqueLocs.length > 0 && !fmObj['涉及地点']) {
-                        fmObj['涉及地点'] = uniqueLocs;
-                    }
-                    if (uniqueFactions.length > 0 && !fmObj['涉及势力']) {
-                        fmObj['涉及势力'] = uniqueFactions;
-                    }
-                    if (uniqueItems.length > 0 && !fmObj['涉及物品功法']) {
-                        fmObj['涉及物品功法'] = uniqueItems;
-                    }
-                });
+                await withWriteLock(bodyFile.path, () =>
+                    this.getFrontmatter().processFrontmatter(bodyFile as TFile, (fmObj: FrontMatter) => {
+                        fmObj['status'] = 'settled';
+                        if (uniqueChars.length > 0 && !fmObj['涉及人物']) {
+                            fmObj['涉及人物'] = uniqueChars;
+                        }
+                        if (uniqueLocs.length > 0 && !fmObj['涉及地点']) {
+                            fmObj['涉及地点'] = uniqueLocs;
+                        }
+                        if (uniqueFactions.length > 0 && !fmObj['涉及势力']) {
+                            fmObj['涉及势力'] = uniqueFactions;
+                        }
+                        if (uniqueItems.length > 0 && !fmObj['涉及物品功法']) {
+                            fmObj['涉及物品功法'] = uniqueItems;
+                        }
+                    })
+                );
             } catch (e) {
                 log.warn('[SettlementEngine] 轻量结算 body frontmatter回写失败:', e);
             }

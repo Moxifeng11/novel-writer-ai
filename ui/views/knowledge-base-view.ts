@@ -1725,7 +1725,7 @@ export class KnowledgeBaseView extends ItemView {
             showSuccessNotice(`${result.primaryGenre.name} · ${result.primarySubGenre?.name || ''}`, { title: '分类完成' });
         } catch (e) {
             log.error('自动分类失败:', e);
-            new Notice('自动分类失败');
+            showErrorNotice('自动分类失败');
         }
     }
 
@@ -1754,7 +1754,7 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderBookListOnly();
                 this.renderBookDetail();
             }
-            new Notice(`✅ 已写入 ${result.tags.length} 个维度标签：${result.summary}`, 4000);
+            showSuccessNotice(`已写入 ${result.tags.length} 个维度标签：${result.summary}`, { timeout: 4000 });
         } catch (e) {
             log.error('[KnowledgeBaseView] 写入维度标签失败:', e);
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: '写入维度标签失败' });
@@ -1813,7 +1813,7 @@ export class KnowledgeBaseView extends ItemView {
         if (this.viewClosed) return;
         this.renderLeftSidebar();
         this.renderBookListOnly();
-        new Notice(`🏷️ 批量归类完成：更新 ${updated} 本，跳过 ${skipped} 本`, 4000);
+        showSuccessNotice(`更新 ${updated} 本，跳过 ${skipped} 本`, { title: '批量归类完成', timeout: 4000 });
     }
 
     private async applyGenreRecommendation(book: BookBasicInfo, rec: { genreId: string; subGenreId?: string; confidence: number }): Promise<void> {
@@ -1918,7 +1918,7 @@ export class KnowledgeBaseView extends ItemView {
                     this.renderRightPanel();
                 } catch (e) {
                     log.error('保存题材失败:', e);
-                    new Notice(`保存失败: ${e instanceof Error ? e.message : String(e)}`);
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败' });
                 }
             }
         ).open();
@@ -1929,7 +1929,7 @@ export class KnowledgeBaseView extends ItemView {
         try {
             await this.configManager.saveFullCustomGenre(genre);
             this.kb.addCustomGenre(genre);
-            new Notice(`✅ 已保存题材「${genre.name}」`);
+            showSuccessNotice(`已保存题材「${genre.name}」`);
         } catch (e) {
             log.error('保存题材失败:', e);
             throw e;
@@ -1994,7 +1994,7 @@ export class KnowledgeBaseView extends ItemView {
 
                 await this.processImportGenres(genres);
             } catch (err) {
-                new Notice('导入失败：文件格式错误');
+                showErrorNotice('文件格式错误', { title: '导入失败' });
             }
         });
         document.body.appendChild(input);
@@ -2106,7 +2106,7 @@ export class KnowledgeBaseView extends ItemView {
                 this.kb.addCustomGenre(genreWithCustom);
                 count++;
             }
-            new Notice(`📥 成功导入 ${count} 个题材`);
+            showSuccessNotice(`成功导入 ${count} 个题材`);
             this.renderRightPanel();
         } catch (e) {
             log.error('导入题材失败:', e);
@@ -2176,7 +2176,7 @@ export class KnowledgeBaseView extends ItemView {
                     this.renderRightPanel();
                 } catch (e) {
                     log.error('保存题材失败:', e);
-                    new Notice(`保存失败: ${e instanceof Error ? e.message : String(e)}`);
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败' });
                 }
             },
             async (id) => {
@@ -2786,7 +2786,7 @@ export class KnowledgeBaseView extends ItemView {
                         new Notice(`✅ 成功导入 ${result.success} 本书籍`);
                     }
                     if (result.failed > 0) {
-                        new Notice(`❌ ${result.failed} 本书籍导入失败`);
+                        showErrorNotice(`${result.failed} 本书籍导入失败`);
                     }
                 } catch (e) {
                     log.error('批量导入后处理失败:', e);
