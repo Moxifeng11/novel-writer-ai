@@ -42,6 +42,7 @@
     "program:render": "node scripts/program-status.mjs",
     "check:program": "node scripts/program-status.mjs --check",
     "gen:docs": "node scripts/gen-docs.mjs",
+    "handoff": "node scripts/handoff.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:jsdoc": "node scripts/check-jsdoc.mjs",
     "check:any": "node scripts/check-any-budget.mjs",
