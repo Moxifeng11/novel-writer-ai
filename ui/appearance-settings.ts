@@ -1,4 +1,5 @@
 import { Setting, Notice, Modal } from 'obsidian';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import NovelWriterPlugin from '@/main';
 import {
     capturePreset,
@@ -232,7 +233,7 @@ export function renderAppearanceSettings(
                 plugin.settings.themeColors = {};
                 await apply();
                 rerender();
-                new Notice('✅ 已恢复默认配色');
+                showSuccessNotice('已恢复默认配色');
             });
             if (!compact) btn.setWarning();
         });
@@ -257,7 +258,7 @@ async function applyGalleryTheme(
     plugin.settings.themeColors = themeColors;
     await plugin.saveSettings();
     plugin.injectThemeVariables();
-    new Notice(`✅ 已切换到「${theme.name} · ${mode === 'dark' ? '深色' : '浅色'}」`);
+    showSuccessNotice(`已切换到「${theme.name} · ${mode === 'dark' ? '深色' : '浅色'}」`);
 }
 
 /**
@@ -418,7 +419,7 @@ function renderPresetManager(
             plugin.settings.themeColors = themeColors;
             await plugin.saveSettings();
             plugin.injectThemeVariables();
-            new Notice(`✅ 已切换到「${preset.name}」`);
+            showSuccessNotice(`已切换到「${preset.name}」`);
             rerender();
         });
 
@@ -433,7 +434,7 @@ function renderPresetManager(
                 delete plugin.settings.themeColors.activePresetId;
             }
             await plugin.saveSettings();
-            new Notice(`已删除「${preset.name}」`);
+            showSuccessNotice(`已删除「${preset.name}」`);
             rerender();
         });
     }
@@ -480,7 +481,7 @@ function renderPresetManager(
                     if (!plugin.settings.themeColors) plugin.settings.themeColors = {};
                     plugin.settings.themeColors.activePresetId = next.id;
                     await plugin.saveSettings();
-                    new Notice(`✅ 已保存方案「${next.name}」`);
+                    showSuccessNotice(`已保存方案「${next.name}」`);
                     this.close();
                     rerender();
                 };
@@ -553,14 +554,14 @@ function renderPresetManager(
                 confirm.onclick = async () => {
                     const imported = parsePresetImport(area.value, plugin.settings.themePresets || []);
                     if (imported.length === 0) {
-                        new Notice('❌ 没有解析到有效方案，请检查 JSON 格式与颜色值');
+                        showErrorNotice('没有解析到有效方案，请检查 JSON 格式与颜色值', { title: '导入失败' });
                         return;
                     }
                     let merged = plugin.settings.themePresets || [];
                     for (const preset of imported) merged = upsertPreset(merged, preset);
                     plugin.settings.themePresets = merged;
                     await plugin.saveSettings();
-                    new Notice(`✅ 已导入 ${imported.length} 套方案`);
+                    showSuccessNotice(`已导入 ${imported.length} 套方案`);
                     this.close();
                     rerender();
                 };

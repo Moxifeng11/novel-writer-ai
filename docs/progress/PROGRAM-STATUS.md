@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-06
-- 当前基线：v4.49.0；单测 580 文件 / 6237 用例；E2E 37 条
+- 当前基线：v4.50.0；单测 580 文件 / 6237 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-06｜G5｜v4.49.0（待发版）第十五批 Notice：ai-builder-modal / appearance-settings / settings/general-sections / settings/foreshadow-section / settings/knowledge-section / project-utils 合计替换 34 处（成功/失败/告警）；settings/api-section 余 8 处均为校验守卫，0 替换并确认收敛；无新增测试，改用既有 notice-helpers 覆盖（ui/ai-builder-modal.ts + ui/appearance-settings.ts + ui/settings/general-sections.ts + ui/settings/foreshadow-section.ts + ui/settings/knowledge-section.ts + ui/project-utils.ts）
 - 2026-11-06｜G5｜v4.49.0（待发版）co-writing-view 切片第八批：抽出 editor-shortcuts（编辑器快捷键决策）、metrics-render（指标面板/评分卡/方向文本）、settlement-actions（待结算提示/标记完稿/结算入口/冲突检测）、suggestion-flow（Tab 建议与流式建议主流程）四个模块；视图 3,980 → 3,581 行（-399）；新增 4 个行为测试文件 22 用例（ui/co-writing/editor-shortcuts.ts + ui/co-writing/metrics-render.ts + ui/co-writing/settlement-actions.ts + ui/co-writing/suggestion-flow.ts + ui/co-writing-view.ts）
 - 2026-11-06｜G5｜v4.48.0 co-writing-view 切片第七批：抽出 suggestion-cards（建议/联想/校验/流式卡片）、suggest-feedback（错误卡/知识空态/空建议/注入提示）、brief-panel（本章简报/冷启动/按钮态）、dashboard-status（状态栏/人工率仪表盘）、kb-reference-config（参考书开关/主参考/权重）、suggestion-loading（生成中进度面板）、quality-popup（浮窗/右键菜单/编辑器定位）七个模块；视图 4,303 → 3,980 行（-323）；新增 6 个行为测试文件 27 用例（ui/co-writing/suggestion-cards.ts + ui/co-writing/suggest-feedback.ts + ui/co-writing/brief-panel.ts + ui/co-writing/dashboard-status.ts + ui/co-writing/kb-reference-config.ts + ui/co-writing/suggestion-loading.ts + ui/co-writing/quality-popup.ts + ui/co-writing-view.ts）
 - 2026-11-06｜G5｜v4.47.0 co-writing-view 切片第六批：抽出 chapter-context（路径/标题/章节身份）、ghost-association（幽灵联想触发判定与提示）、quality-fix（定位/Prompt/替换决策）、monitor-cards（五张监控卡）、metrics-panel（指标面板三态与渲染）五个模块；视图 4,645 → 4,303 行（-342）；新增 5 个行为测试文件 40 用例（ui/co-writing/chapter-context.ts + ui/co-writing/ghost-association.ts + ui/co-writing/quality-fix.ts + ui/co-writing/monitor-cards.ts + ui/co-writing/metrics-panel.ts + ui/co-writing-view.ts）

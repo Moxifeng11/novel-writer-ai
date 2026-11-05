@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-06",
   "baseline": {
-    "version": "4.49.0",
+    "version": "4.50.0",
     "tests": {
       "files": 580,
       "cases": 6237
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 93,
+    "localCommitsAhead": 95,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G5",
+      "summary": "v4.49.0（待发版）第十五批 Notice：ai-builder-modal / appearance-settings / settings/general-sections / settings/foreshadow-section / settings/knowledge-section / project-utils 合计替换 34 处（成功/失败/告警）；settings/api-section 余 8 处均为校验守卫，0 替换并确认收敛；无新增测试，改用既有 notice-helpers 覆盖",
+      "evidence": "ui/ai-builder-modal.ts + ui/appearance-settings.ts + ui/settings/general-sections.ts + ui/settings/foreshadow-section.ts + ui/settings/knowledge-section.ts + ui/project-utils.ts"
+    },
     {
       "date": "2026-11-06",
       "group": "G5",

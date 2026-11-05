@@ -6,6 +6,7 @@
  * 来源：`ui/settings-tab.ts` L3204-3469。
  */
 import { Setting, Notice, Modal } from 'obsidian';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { ForeshadowConfigManager, ForeshadowTypeConfig } from '@/engine/foreshadow-config-manager';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
@@ -114,7 +115,7 @@ export class ForeshadowSection extends SettingsSection {
         exportBtn.onclick = () => {
             const json = configManager.exportConfig();
             navigator.clipboard.writeText(json).then(() => {
-                new Notice('配置已复制到剪贴板');
+                showSuccessNotice('配置已复制到剪贴板');
             });
         };
         
@@ -141,11 +142,11 @@ export class ForeshadowSection extends SettingsSection {
                 const result = configManager.importConfig(textarea.value);
                 if (result.success) {
                     this.saveForeshadowConfig(configManager);
-                    new Notice('配置导入成功');
+                    showSuccessNotice('配置导入成功');
                     modal.close();
                     this.refresh();
                 } else {
-                    new Notice('导入失败: ' + result.errors.join(', '));
+                    showErrorNotice(result.errors.join(', '), { title: '导入失败' });
                 }
             };
             
@@ -167,7 +168,7 @@ export class ForeshadowSection extends SettingsSection {
             if (confirmed) {
                 configManager.resetToDefault();
                 this.saveForeshadowConfig(configManager);
-                new Notice('已重置为默认配置');
+                showSuccessNotice('已重置为默认配置');
                 this.refresh();
             }
         };
@@ -264,7 +265,7 @@ export class ForeshadowSection extends SettingsSection {
                     color,
                     keywords
                 });
-                new Notice('类型更新成功');
+                showSuccessNotice('类型更新成功');
             } else {
                 configManager.addType({
                     name,
@@ -274,7 +275,7 @@ export class ForeshadowSection extends SettingsSection {
                     color,
                     keywords
                 });
-                new Notice('类型添加成功');
+                showSuccessNotice('类型添加成功');
             }
             
             this.saveForeshadowConfig(configManager);

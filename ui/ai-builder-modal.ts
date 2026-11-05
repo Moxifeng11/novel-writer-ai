@@ -853,7 +853,7 @@ export class AiBuilderModal extends Modal {
         const kind = ENTITY_KIND_BY_ID[cfg.id];
         if (!kind) {
             genNotice.hide();
-            new Notice(`❌ 不支持的实体类型：${cfg.label}`, 6000);
+            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: '生成失败', timeout: 6000 });
             return;
         }
         await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
@@ -918,7 +918,7 @@ export class AiBuilderModal extends Modal {
     private async saveSingleContent(cfg: EntityTypeConfig, name: string, content: string): Promise<void> {
         const kind = ENTITY_KIND_BY_ID[cfg.id];
         if (!kind) {
-            new Notice(`❌ 不支持的实体类型：${cfg.label}`, 6000);
+            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: '保存失败', timeout: 6000 });
             return;
         }
         await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));

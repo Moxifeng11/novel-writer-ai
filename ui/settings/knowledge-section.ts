@@ -4,7 +4,8 @@
  * 职责：知识库书卡列表、检索与状态筛选、批量导入、向量增强设置。
  * 来源：原 settings-tab.ts L2166-L3203（方法不连续，见清单）。
  */
-import { Setting, Notice } from 'obsidian';
+import { Setting } from 'obsidian';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
 import { KnowledgeTagManager } from '@/engine/knowledge-tags';
 import { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
@@ -88,7 +89,7 @@ export class KnowledgeSection extends SettingsSection {
                     if (file) {
                         void openKnowledgeFolder(this.app, dirPath);
                     } else {
-                        new Notice('⚠️ 知识库目录不存在，请先导入书籍');
+                        showWarningNotice('知识库目录不存在，请先导入书籍');
                     }
                 }));
 
@@ -331,7 +332,7 @@ export class KnowledgeSection extends SettingsSection {
                 await this.knowledgeBaseManager.deleteBook(book.id);
                 await this.loadKnowledgeBooks();
                 this.refresh();
-                new Notice(`已删除「${book.name}」`);
+                showSuccessNotice(`已删除「${book.name}」`);
             }
         });
 
@@ -586,7 +587,7 @@ export class KnowledgeSection extends SettingsSection {
                         if (!next) return;
                         this.plugin.settings.vectorOpenaiApiKey = next;
                         void this.plugin.saveSettings().catch((e: unknown) => {
-                            new Notice(`保存密钥失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存密钥失败', timeout: 6000 });
                         });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
@@ -644,7 +645,7 @@ export class KnowledgeSection extends SettingsSection {
                         if (!next) return;
                         this.plugin.settings.vectorDoubaoApiKey = next;
                         void this.plugin.saveSettings().catch((e: unknown) => {
-                            new Notice(`保存密钥失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存密钥失败', timeout: 6000 });
                         });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
@@ -702,7 +703,7 @@ export class KnowledgeSection extends SettingsSection {
                         if (!next) return;
                         this.plugin.settings.vectorQwenApiKey = next;
                         void this.plugin.saveSettings().catch((e: unknown) => {
-                            new Notice(`保存密钥失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存密钥失败', timeout: 6000 });
                         });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
@@ -782,9 +783,9 @@ export class KnowledgeSection extends SettingsSection {
                         }
                         updateStatusDisplay();
                         if (this.vectorConnectionStatus === 'connected') {
-                            new Notice('✅ 向量服务连接正常');
+                            showSuccessNotice('向量服务连接正常');
                         } else {
-                            new Notice('❌ 无法连接到向量服务，请检查配置');
+                            showErrorNotice('无法连接到向量服务，请检查配置', { title: '连接失败' });
                         }
                     });
             });

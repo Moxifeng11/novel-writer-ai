@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.49.0 · 更新：2026-11-06
+> 版本：v4.50.0 · 更新：2026-11-06
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -89,7 +89,8 @@ Agent（harness）
 - 切片第六批（v4.47.0）：`ui/co-writing-view.ts` 抽出 `co-writing/chapter-context`（路径/标题/章节身份）、`ghost-association`（触发判定与提示）、`quality-fix`（定位/Prompt/替换决策）、`monitor-cards`（五张监控卡）、`metrics-panel`（三态与指标渲染）五个模块，**4,645 → 4,303 行（-342）**；新增 5 个测试文件 40 用例；下一步朝 ≤3,000 的 M5 重评条件推进。
 - 切片第七批（v4.48.0）：`ui/co-writing-view.ts` 抽出 `co-writing/suggestion-cards`（建议/联想/校验/流式卡片）、`suggest-feedback`（错误卡/知识空态/空建议/注入提示）、`brief-panel`（本章简报/冷启动/按钮态）、`dashboard-status`（状态栏/人工率仪表盘）、`kb-reference-config`（参考书开关/主参考/权重）、`suggestion-loading`（生成中进度面板）、`quality-popup`（浮窗/右键菜单/编辑器定位）七个模块，**4,303 → 3,980 行（-323）**；新增 6 个测试文件 27 用例。
 - 切片第八批（v4.49.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/editor-shortcuts`（快捷键决策）、`metrics-render`（指标面板/评分卡/方向文本）、`settlement-actions`（待结算提示/标记完稿/结算入口/冲突检测）、`suggestion-flow`（Tab 建议与流式建议主流程）四个模块，**3,980 → 3,581 行（-399）**；新增 4 个测试文件 22 用例；全量 580 文件 / 6,237 用例、lint 0 error / 1,853 warnings、tsc 0。
-- 下一步：Notice 存量继续按文件分批（`ai-builder-modal` 8、`appearance-settings` 8、`settings/general-sections` 8、`settings/api-section` 8、`settings/foreshadow-section` 7、`settings/knowledge-section` 7、`project-utils` 7）；co-writing-view 剩余纯逻辑块（章节切换守卫、报表刷新链、渲染布局装配）为切片候选。
+- 第十五批（v4.49.0 待发版）：`ai-builder-modal`（2）、`appearance-settings`（7）、`settings/general-sections`（6）、`settings/foreshadow-section`（6）、`settings/knowledge-section`（7）、`project-utils`（6）合计替换 **34 处**（成功/失败/告警）；`settings/api-section` 余 8 处均为校验守卫，**0 替换**，确认收敛；无新增测试，改用既有 `notice-helpers` 覆盖。
+- 下一步：待第八批提交后继续 co-writing-view 剩余纯逻辑块（章节切换守卫、报表刷新链、渲染布局装配）；Notice 尾盘候选 `command-ui-executor`（20）、`knowledge-base-view`（14）、`co-write-floating-panel`（11）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

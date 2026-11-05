@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132748 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38922 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38937 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 235 | 100190 | 687 | 608 | 89% |
+| `ui/` | 235 | 100195 | 687 | 608 | 89% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1698 | 3 | 3 |
+| `shared/changelog-data.ts` | 1713 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -548,7 +548,7 @@
 | `ui/add-fanfic-setting-modal.ts` | 525 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1704 | 1 | 1 |
 | `ui/ai-builder-modal.ts` | 1141 | 1 | 1 |
-| `ui/appearance-settings.ts` | 573 | 3 | 3 |
+| `ui/appearance-settings.ts` | 574 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/auto-writer-modal.ts` | 239 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 244 | 1 | 1 |
@@ -713,7 +713,7 @@
 | `ui/pre-research-modal.ts` | 707 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
-| `ui/project-utils.ts` | 363 | 11 | 10 |
+| `ui/project-utils.ts` | 364 | 11 | 10 |
 | `ui/prompt-manager-settings.ts` | 1143 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 90 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 482 | 2 | 2 |
@@ -737,9 +737,9 @@
 | `ui/settings/api-section.ts` | 1273 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 333 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
-| `ui/settings/foreshadow-section.ts` | 288 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1175 | 6 | 6 |
-| `ui/settings/knowledge-section.ts` | 809 | 1 | 1 |
+| `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
+| `ui/settings/general-sections.ts` | 1176 | 6 | 6 |
+| `ui/settings/knowledge-section.ts` | 810 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 73 | 3 | 1 |

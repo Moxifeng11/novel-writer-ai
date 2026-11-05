@@ -7,6 +7,7 @@
  * 来源：原 settings-tab.ts，方法体逐行搬移，无逻辑改动。
  */
 import { Setting, Notice, Modal, TFile } from 'obsidian';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { performanceMonitor } from '@/services/performance-monitor';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { ChangelogModal } from '@/ui/changelog-modal';
@@ -235,7 +236,7 @@ export class PerformanceSection extends SettingsSection {
             if (confirmed) {
                 performanceMonitor.clearLog();
                 this.refresh();
-                new Notice('✅ 性能日志已清空', 2000);
+                showSuccessNotice('性能日志已清空', { timeout: 2000 });
             }
         };
 
@@ -292,9 +293,9 @@ export class PerformanceSection extends SettingsSection {
         copyBtn.onclick = async () => {
             try {
                 await navigator.clipboard.writeText(report);
-                new Notice('✅ 报告已复制到剪贴板', 2000);
+                showSuccessNotice('报告已复制到剪贴板', { timeout: 2000 });
             } catch {
-                new Notice('❌ 复制失败', 2000);
+                showErrorNotice('复制失败', { timeout: 2000 });
             }
         };
         const closeBtn = btnRow.createEl('button', {
@@ -526,7 +527,7 @@ export class RulesSection extends SettingsSection {
                 if (file) {
                     await this.app.workspace.getLeaf('tab').openFile(file as TFile);
                 } else {
-                    new Notice('⚠️ 规则文件不存在，点击「重新检查」生成', 4000);
+                    showWarningNotice('规则文件不存在，点击「重新检查」生成', { timeout: 4000 });
                 }
             });
 
@@ -626,13 +627,13 @@ export class AboutSection extends SettingsSection {
                     if (result.hasUpdate) {
                         new Notice(`🎉 发现新版本 v${result.latestVersion}`, 4000);
                     } else if (result.error) {
-                        new Notice(`检查失败: ${result.error}`, 3000);
+                        showErrorNotice(`检查失败: ${result.error}`, { title: '检查更新失败', timeout: 3000 });
                     } else {
-                        new Notice('✅ 已是最新版本', 2000);
+                        showSuccessNotice('已是最新版本', { timeout: 2000 });
                     }
                 }
             } catch (e) {
-                new Notice('检查更新失败', 2000);
+                showErrorNotice('检查更新失败', { timeout: 2000 });
             }
             checkBtn.disabled = false;
             checkBtn.textContent = '🔍 检查更新';

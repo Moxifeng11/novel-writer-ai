@@ -8,6 +8,7 @@
  */
 
 import { App, TFile, TFolder, Notice } from 'obsidian';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { readTitle, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
 import { readProjectMeta } from '@/shared/paths';
@@ -120,9 +121,9 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
             const tplContent = await app.vault.adapter.read(templatePath);
             await ensureWritingStyleFolder(app, projectName);
             await app.vault.create(wsPath, tplContent);
-            new Notice(`✅ 已为「${projectName}」创建文笔风格模板`, 4000);
+            showSuccessNotice(`已为「${projectName}」创建文笔风格模板`, { timeout: 4000 });
         } catch (e) {
-            new Notice(`❌ 创建失败: ${(e as Error).message}`, 5000);
+            showErrorNotice(`创建失败: ${(e as Error).message}`, { timeout: 5000 });
         }
         return;
     }
@@ -136,14 +137,14 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
     const tplContent = await app.vault.adapter.read(templatePath);
     const sampleMatch = tplContent.match(/## 零、参考样本[\s\S]*?(?=## 一、叙事视角)/);
     if (!sampleMatch) {
-        new Notice('❌ 无法从模板中提取参考样本章节', 5000);
+        showErrorNotice('无法从模板中提取参考样本章节', { title: '更新失败', timeout: 5000 });
         return;
     }
 
     const insertMarker = '# 文笔风格';
     const markerIndex = wsContent.indexOf(insertMarker);
     if (markerIndex === -1) {
-        new Notice('❌ 文笔风格文件格式异常，无法更新', 5000);
+        showErrorNotice('文笔风格文件格式异常，无法更新', { title: '更新失败', timeout: 5000 });
         return;
     }
 
@@ -153,7 +154,7 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
 
     const newContent = wsContent.slice(0, insertPos + 1) + '\n' + sampleMatch[0] + '\n\n' + wsContent.slice(insertPos + 1);
     await app.vault.modify(wsFile as TFile, newContent);
-    new Notice(`✅ 已为「${projectName}」添加参考样本章节`, 4000);
+    showSuccessNotice(`已为「${projectName}」添加参考样本章节`, { timeout: 4000 });
 }
 
 /**
@@ -167,7 +168,7 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
 export async function deleteProject(app: App, projectName: string): Promise<void> {
     const target = String(projectName || '').trim().replace(/^\/+|\/+$/g, '');
     await removeProjectDirectory(app, target);
-    new Notice(`✅ 项目「${target}」已删除`);
+    showSuccessNotice(`项目「${target}」已删除`);
 }
 
 /** 章节列表条目：正文 ∪ 步骤结果骨架 */
