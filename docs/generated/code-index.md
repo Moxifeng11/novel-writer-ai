@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 300 | 131962 | 1585 | 1327 | 84% |
+| `engine/` | 300 | 131996 | 1585 | 1327 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38683 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38706 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 214 | 97344 | 552 | 507 | 92% |
@@ -155,7 +155,7 @@
 | `engine/fingerprint-stats.ts` | 127 | 4 | 4 |
 | `engine/foreshadow-config-manager.ts` | 310 | 2 | 1 |
 | `engine/foreshadow-context.ts` | 154 | 6 | 4 |
-| `engine/foreshadow-manager.ts` | 1323 | 8 | 8 |
+| `engine/foreshadow-manager.ts` | 1354 | 8 | 8 |
 | `engine/generation-checkpoint-vault.ts` | 100 | 1 | 1 |
 | `engine/generation-checkpoint.ts` | 154 | 6 | 3 |
 | `engine/genre/genre-config-registry.ts` | 154 | 2 | 2 |
@@ -282,7 +282,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 1875 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1878 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 131 | 2 | 2 |
@@ -378,7 +378,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1459 | 3 | 3 |
+| `shared/changelog-data.ts` | 1482 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |

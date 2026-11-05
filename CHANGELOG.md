@@ -2,6 +2,21 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.39.0（2026-11-05）
+
+### 🔒 剩余裸读改写收口（v4.38.0 遗留 5 项）
+
+- **结算回滚路径**：journal 回滚的每个文件读/写、`restoreSnapshots`、回滚清理新建文件全部按路径加锁，回滚与协同保存/其它结算并发时不再交错覆盖。
+- **伏笔库新建竞态**：`settleStep_createForeshadows` 的存在性判断移入锁内——锁外读到「不存在」后，另一写入方刚建好的库不再被基础模板整篇覆盖。
+- **新增伏笔行号**：`addForeshadow` 的存在性判断与 `getNextRowNum` 都移入锁内，并发新增不再重号，也不会覆盖刚创建的库。
+- **伏笔追踪器**：新增 `updateTracker(project, mutate)`——读→改→写整段进锁；`saveTracker` 整份覆盖写也加锁，避免与 updateTracker 交错。
+- **信息债看板**：delete+write 两步进锁，并发刷新不再出现「已删除未写入」空窗。
+- 新增回归 2 例：伏笔库不存在时并发创建两条都保留；两个并发 `updateTracker` 条目都保留。
+
+### 🧪 测试
+
+- 全量单测 552 文件 / 6092 用例（+2）。
+
 ## v4.38.0（2026-11-05）
 
 ### 🔒 核心读改写路径写锁加固（P1-3 遗留）

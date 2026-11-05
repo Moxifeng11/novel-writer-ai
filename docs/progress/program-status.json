@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-05",
   "baseline": {
-    "version": "4.38.0",
+    "version": "4.39.0",
     "tests": {
-      "files": 551,
-      "cases": 6090
+      "files": 552,
+      "cases": 6092
     },
     "e2e": 25,
     "gates": [

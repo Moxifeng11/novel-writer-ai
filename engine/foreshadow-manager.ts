@@ -192,12 +192,14 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
                 await this.getFS().mkdir(dir);
             }
             
-            const existingDebt = this.getVaultMeta().getAbstractFileByPath(debtPath);
-            if (existingDebt) {
-                await this.getFS().delete(debtPath);
-            }
-            
-            await this.getFS().write(debtPath, debtContent);
+            // v4.39：看板是 delete+write 两步，加锁避免并发刷新时读到「已删除但未写入」的空窗。
+            await withWriteLock(debtPath, async () => {
+                const existingDebt = this.getVaultMeta().getAbstractFileByPath(debtPath);
+                if (existingDebt) {
+                    await this.getFS().delete(debtPath);
+                }
+                await this.getFS().write(debtPath, debtContent);
+            });
         } catch (e) {
             log.warn('Failed to write info debt board:', e);
             this.notifier.showNotice('⚠️ 信息债看板更新失败', NOTICE_ERROR);
@@ -340,35 +342,27 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
     async addForeshadow(project: string, name: string, chapter: string, importance: string = '中', plannedReveal: string = '待定'): Promise<void> {
         try {
             const fp = pjForeshadowDB(project);
-            const ffRaw = this.getVaultMeta().getAbstractFileByPath(fp);
-            const ff = ffRaw instanceof TFile ? ffRaw : null;
-            let content = '';
-            
-            if (ff) {
-                content = await this.getFS().read(fp);
-            }
+            // 读-算-写整段进锁：行号必须基于锁内最新内容计算，否则并发新增会重号；
+            // 文件是否存在也在锁内判断，避免锁外读到「不存在」后覆盖刚被他人建好的伏笔库。
+            await withWriteLock(fp, async () => {
+                const ffRaw = this.getVaultMeta().getAbstractFileByPath(fp);
+                const exists = ffRaw instanceof TFile;
+                const content = exists ? await this.getFS().read(fp) : '';
+                const newRow = `| ${getNextRowNum(content)} | ${name} | ${importance} | ${chapter} | ${plannedReveal} | 未揭示 |`;
 
-            const newRow = `| ${getNextRowNum(content)} | ${name} | ${importance} | ${chapter} | ${plannedReveal} | 未揭示 |`;
+                if (exists && hasTableSeparator(content)) {
+                    await this.getFS().write(fp, appendAfterSeparator(content, newRow));
+                } else {
+                    await mkdirp(this.app, pjTimelineDir(project));
+                    const base = `# 伏笔库
 
-            if (ff && hasTableSeparator(content)) {
-                content = appendAfterSeparator(content, newRow);
-                // P1-1：锁内重读后再追加，避免 await 期间伏笔库被结算改动后整篇覆盖
-                await withWriteLock(fp, async () => {
-                    const fresh = await this.getFS().read(fp);
-                    const next = hasTableSeparator(fresh)
-                        ? appendAfterSeparator(fresh, newRow)
-                        : fresh;
-                    await this.getFS().write(fp, next);
-                    content = next;
-                });
-            } else {
-                await mkdirp(this.app, pjTimelineDir(project));
-                content = `# 伏笔库\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 当前状态 |\n|---|---------|---------|---------|---------|---------|\n${newRow}\n`;
-                await withWriteLock(fp, async () => {
-                    await this.getFS().write(fp, content);
-                });
-            }
-            
+| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 当前状态 |
+|---|---------|---------|---------|---------|---------|
+${newRow}
+`;
+                    await this.getFS().write(fp, base);
+                }
+            });
             await this.refreshInfoDebt();
         } catch (e) {
             log.warn('Failed to add foreshadow:', e);
@@ -887,11 +881,48 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
             }
 
             const content = this.serializeTrackerToMarkdown(data);
-            await this.getFS().write(fp, content);
+            // v4.39：整份覆盖写也进锁，避免与 updateTracker 的读改写交错。
+            await withWriteLock(fp, () => this.getFS().write(fp, content));
             this.tracker = data;
         } catch (e) {
             log.warn('[ForeshadowManager] 保存伏笔追踪失败', e);
         }
+    }
+
+    /**
+     * 原子更新追踪器（读 → 改 → 写整段进锁）。
+     *
+     * 旧的 `loadTracker → 内存修改 → saveTracker` 序列在并发调用时会丢更新：
+     * 两个调用方各自 load 到同一份旧快照，后保存者覆盖先保存者。
+     * 新代码应优先用本方法；`saveTracker` 仅用于「整份快照覆盖」场景。
+     *
+     * @param projectPath - 项目路径
+     * @param mutate - 在最新追踪器上执行的修改（可同步修改 items）
+     * @returns 更新后的追踪器
+     *
+     * @example
+     * ```ts
+     * await manager.updateTracker(project, tracker => {
+     *     tracker.items.push(newItem);
+     * });
+     * ```
+     */
+    async updateTracker(projectPath: string, mutate: (tracker: ForeshadowTracker) => void): Promise<ForeshadowTracker> {
+        const fp = pjForeshadowTracker(projectPath);
+        return withWriteLock(fp, async () => {
+            const tracker = await this.loadTracker(projectPath);
+            mutate(tracker);
+            tracker.lastUpdated = new Date().toISOString();
+            tracker.version++;
+
+            const dir = pjControlDir(projectPath);
+            if (!this.getVaultMeta().getAbstractFileByPath(dir)) {
+                await this.getFS().mkdir(dir);
+            }
+            await this.getFS().write(fp, this.serializeTrackerToMarkdown(tracker));
+            this.tracker = tracker;
+            return tracker;
+        });
     }
 
     private parseTrackerFromMarkdown(content: string): ForeshadowTracker {

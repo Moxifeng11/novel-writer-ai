@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.39.0',
+        date: '2026-11-05',
+        title: '剩余 5 处裸读改写收口',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🔒 并发安全',
+                items: [
+                    '结算回滚/journal/restoreSnapshots/清理新建文件全部按路径加锁',
+                    '伏笔库新建存在性、addForeshadow 行号移入锁内，避免覆盖与重号',
+                    '新增 updateTracker 原子读改写；信息债看板 delete+write 加锁',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🧪 回归',
+                items: [
+                    '并发创建伏笔库两条都保留；并发 updateTracker 条目都保留',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.38.0',
         date: '2026-11-05',
         title: '写锁加固、协同引擎三批与 Notice 三批',

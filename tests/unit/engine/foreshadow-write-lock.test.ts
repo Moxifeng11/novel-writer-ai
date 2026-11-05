@@ -149,6 +149,25 @@ describe('伏笔库 — 并发读改写不丢更新', () => {
         expect(content).not.toContain('待删伏笔');
     });
 
+    it('伏笔库尚不存在时并发创建：两条都要保留（存在性判断必须在锁内）', async () => {
+        const project = '长篇小说/并发锁测试-新建';
+        const h = makeHarness({});
+
+        const reportA = 'NEW_FORESHADOW: 并发甲 | 第1章 | 第9章 | 甲 | 主线';
+        const reportB = 'NEW_FORESHADOW: 并发乙 | 第1章 | 第9章 | 乙 | 支线';
+        const ctxA = createSettleContext(project, `${project}/${CHAP_DIR}`, '第1章', '', reportA, parseReport(reportA));
+        const ctxB = createSettleContext(project, `${project}/${CHAP_DIR}`, '第1章', '', reportB, parseReport(reportB));
+
+        await Promise.all([
+            createForeshadowsStep.call(h.engine, ctxA),
+            createForeshadowsStep.call(h.engine, ctxB),
+        ]);
+
+        const content = h.files.get(pjForeshadowDB(project)) || '';
+        expect(content).toContain('并发甲');
+        expect(content).toContain('并发乙');
+    });
+
     it('不同项目/不同路径互不阻塞（锁按文件路径分桶）', async () => {
         const projectA = '长篇小说/并发锁测试-路径A';
         const projectB = '长篇小说/并发锁测试-路径B';

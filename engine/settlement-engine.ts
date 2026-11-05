@@ -620,11 +620,11 @@ export class SettlementEngine {
             const file = this.getVaultMeta().getAbstractFileByPath(filePath);
             if (!file) continue;
             try {
-                await this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+                await withWriteLock(filePath, () => this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
                     for (const [field, value] of fields) {
                         fm[field] = value;
                     }
-                });
+                }));
             } catch (e) {
                 log.warn('[SettlementEngine] 回滚失败:', filePath, e);
                 this.notifier.showNotice(`⚠️ 结算回滚失败：${filePath.split('/').pop()}，数据可能处于不一致状态`, NOTICE_CRITICAL);
@@ -1076,25 +1076,27 @@ ${ni.description || '暂无描述'}
         for (const nf of ctx.instr.nfs) {
             try {
                 const fp = pjForeshadowDB(ctx.project);
-                const ff = this.getVaultMeta().getAbstractFileByPath(fp);
                 // S-1（v4.27）：伏笔库读-检查-写整段进锁
+                // v4.39：文件是否存在也必须在锁内判断，避免锁外读到「不存在」后覆盖刚建好的库
                 let created = false;
                 await withWriteLock(fp, async () => {
-                    let c = ff instanceof TFile ? await this.getFS().read(fp) : '';
+                    const fresh = this.getVaultMeta().getAbstractFileByPath(fp);
+                    const exists = fresh instanceof TFile;
+                    let c = exists ? await this.getFS().read(fp) : '';
                     if (this.foreshadowNameExistsInDb(c, nf.name)) {
                         log.info('[SettlementEngine] 伏笔已存在，跳过:', nf.name);
                         return;
                     }
                     const newRow = `| ${getNextRowNum(c)} | ${nf.name} | 中 | ${nf.chapter || ctx.chapName} | ${nf.reveal || '待定'} | ${nf.relatedChars || ''} | ${nf.relatedPlotline || ''} | 未揭示 |`;
                     ctx.journal.recordAppend(fp, newRow);
-                    if (!ff) ctx.createdFiles.push(fp);
+                    if (!exists) ctx.createdFiles.push(fp);
                     if (c.includes('未回收伏笔')) {
                         c = appendAfterSectionHeader(c, '未回收伏笔', newRow);
-                        if (ff) await this.getFS().write(fp, c);
+                        await this.getFS().write(fp, c);
                     } else {
                         const base = `# 伏笔库\n\n> 所有伏笔总览，追踪状态，避免遗漏。\n\n## 未回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 相关人物 | 关联主线 | 当前状态 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n${newRow}\n\n## 已回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 相关人物 | 关联主线 | 回收章节 | 回收方式 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n`;
-                        if (ff) await this.getFS().write(fp, base);
-                        else { await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {}); await this.getFS().write(fp, base); }
+                        if (!exists) await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {});
+                        await this.getFS().write(fp, base);
                     }
                     created = true;
                 });
@@ -1346,13 +1348,14 @@ ${ni.description || '暂无描述'}
             const journalSize = ctx.journal.size;
             if (journalSize > 0) {
                 log.warn(`[SettlementEngine] 检测到部分失败，按 journal 回滚 ${journalSize} 条`);
+                // v4.39：回滚的每个读/写都按文件加锁，避免与协同保存/其它结算交错写同一文件。
                 const fsPort = {
-                    read: (p: string) => this.getFS().read(p),
-                    write: (p: string, content: string) => this.getFS().write(p, content),
+                    read: (p: string) => withWriteLock(p, () => this.getFS().read(p)),
+                    write: (p: string, content: string) => withWriteLock(p, () => this.getFS().write(p, content)),
                     exists: (p: string) => this.getFS().exists(p),
                 };
                 const fmPort = {
-                    readField: async (path: string, field: string): Promise<string> => {
+                    readField: async (path: string, field: string): Promise<string> => withWriteLock(path, async () => {
                         const file = this.getVaultMeta().getAbstractFileByPath(path);
                         if (!(file instanceof TFile)) return '';
                         let value = '';
@@ -1360,14 +1363,14 @@ ${ni.description || '暂无描述'}
                             value = String(fm[field] ?? '');
                         });
                         return value;
-                    },
-                    restoreField: async (path: string, field: string, value: string): Promise<void> => {
+                    }),
+                    restoreField: async (path: string, field: string, value: string): Promise<void> => withWriteLock(path, async () => {
                         const file = this.getVaultMeta().getAbstractFileByPath(path);
                         if (!(file instanceof TFile)) return;
                         await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
                             fm[field] = value;
                         });
-                    },
+                    }),
                 };
                 const report = await ctx.journal.rollback(fsPort, fmPort);
                 ctx.result.rollback = { reverted: report.reverted, failed: report.failed };
@@ -1377,7 +1380,7 @@ ${ni.description || '暂无描述'}
             // 清理 NEW 操作创建的文件
             for (const fp of ctx.createdFiles) {
                 try {
-                    await this.getFS().delete(fp);
+                    await withWriteLock(fp, () => this.getFS().delete(fp));
                 } catch (e) {
                     log.warn('[SettlementEngine] 清理新建文件失败:', fp, e);
                 }
