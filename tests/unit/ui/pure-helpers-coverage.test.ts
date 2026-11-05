@@ -213,8 +213,8 @@ describe('parseQualityReport（quality-report.ts）', () => {
         expect(issues[0].severity).toBe('❌');
         expect(issues[0].category).toBe('情节节奏');
         expect(issues[0].problem).toBe('第3段节奏拖沓，建议压缩打斗铺垫');
-        // 「第N段」命中定位正则但 m[3]/m[4] 均为空 → 实际回落为问题文本前 20 字（与抽取前行为一致）
-        expect(issues[0].locationText).toBe('第3段节奏拖沓，建议压缩打斗铺垫');
+        // 「第N段」应取捕获组 1 的段号（v4.36.0 锁定的疑似 bug：旧实现忽略 m[1]/m[2]）
+        expect(issues[0].locationText).toBe('3');
         expect(issues[0].suggestion).toBe('删去重复的环境描写 合并相邻的过渡段');
 
         expect(issues[1].id).toBe('qc_2');

@@ -10,6 +10,7 @@
  */
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
+import { parseForeshadowRevealState } from '@/shared/foreshadow-status';
 import { entityDir } from '@/shared/entity-reader';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
@@ -253,9 +254,9 @@ export class BatchChaptersModal extends Modal {
                     const cols = splitTableCells(line);
                     if (cols.length === 0) continue;
                     if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '伏笔') continue;
-                    const status = cols.length >= 6 ? cols[5] : cols[1] || '';
-                    if (status.includes('未揭示') || status === '') unrevealed++;
-                    else if (status.includes('已揭示') || status.includes('揭示')) revealed++;
+                    const state = parseForeshadowRevealState(cols.length >= 6 ? cols[5] : cols[1] || '');
+                    if (state === 'unrevealed') unrevealed++;
+                    else if (state === 'revealed') revealed++;
                 }
             }
         } catch (e) { log.warn('[小说工坊] 操作失败:', e); }

@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.37.0',
+        date: '2026-11-05',
+        title: '质检解析与伏笔「未揭示」误判修复',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 解析',
+                items: [
+                    '⚠️ 变体选择符 U+FE0F 不再残留进问题/定位文本',
+                    '第N段/第N字 定位恢复为段号/字数，不再回落文本前缀',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🧭 伏笔状态',
+                items: [
+                    '新增 shared/foreshadow-status：先否定后肯定，未揭示/待揭示不再被当成已揭示',
+                    '修复上下文注入/信息债/分析报告/结算/批量建章 5 处消费方',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.36.0',
         date: '2026-11-05',
         title: '切片收尾、Notice 第二批与 ui 覆盖率爬坡',

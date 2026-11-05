@@ -1,5 +1,6 @@
 import { App, TFile, parseFrontMatterStringArray } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
+import { isForeshadowRevealed } from '@/shared/foreshadow-status';
 import { ChapterFrontmatter } from '@/shared/types';
 
 /**
@@ -102,7 +103,7 @@ export function filterForeshadowsByChapter(
 
         // 只处理未揭示的伏笔
         const status = (statusCol >= 0 && statusCol < cols.length) ? (cols[statusCol] || '') : '';
-        if (status.includes('已揭示') || status.includes('揭示')) continue;
+        if (isForeshadowRevealed(status)) continue;
 
         const plannedReveal = (planRevealCol >= 0 && planRevealCol < cols.length)
             ? (cols[planRevealCol] || '')

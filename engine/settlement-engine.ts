@@ -11,6 +11,7 @@
 
 import { TFile, TFolder } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
+import { parseForeshadowRevealState } from '@/shared/foreshadow-status';
 import { mkdirp } from '@/utils/helpers';
 import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '@/shared/format-constants';
@@ -1627,9 +1628,9 @@ ${ni.description || '暂无描述'}
                         const cols = splitTableCells(line);
                         if (cols.length === 0) continue;
                         if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '伏笔') continue;
-                        const status = cols[cols.length - 1] || '';
-                        if (status.includes('未揭示') || status === '') unrevealed++;
-                        else if (status.includes('已揭示') || status.includes('揭示') || status.includes('回收')) revealed++;
+                        const state = parseForeshadowRevealState(cols[cols.length - 1]);
+                        if (state === 'unrevealed') unrevealed++;
+                        else if (state === 'revealed') revealed++;
                         else abandoned++;
                     }
                 }

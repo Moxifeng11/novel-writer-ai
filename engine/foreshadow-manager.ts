@@ -1,5 +1,6 @@
 import { App, TFile, Vault } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
+import { isForeshadowRevealed, parseForeshadowRevealState } from '@/shared/foreshadow-status';
 import { entityDir } from '@/shared/entity-reader';
 import NovelWriterPlugin from '@/main';
 import { getNextRowNum, hasTableSeparator, appendAfterSeparator, moveForeshadowToRevealed, mkdirp, showSuccess, showError } from '@/utils/helpers';
@@ -101,9 +102,9 @@ export class ForeshadowManager {
                 const content = await this.getFS().read(fp);
                 const items = this.parseForeshadowTable(content);
                 for (const item of items) {
-                    const s = item.status || '';
-                    if (s.includes('未揭示') || s === '') unrevealed++;
-                    else if (s.includes('已揭示') || s.includes('揭示')) revealed++;
+                    const state = parseForeshadowRevealState(item.status);
+                    if (state === 'unrevealed') unrevealed++;
+                    else if (state === 'revealed') revealed++;
                     else abandoned++;
                 }
             }
@@ -220,8 +221,7 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
                 const content = await this.getFS().read(fp);
                 const all = this.parseForeshadowTable(content);
                 for (const item of all) {
-                    const s = item.status || '';
-                    if (s.includes('未揭示') || s === '') {
+                    if (parseForeshadowRevealState(item.status) === 'unrevealed') {
                         items.push(item);
                     }
                 }
@@ -1134,8 +1134,7 @@ export async function getForeshadowWarnings(
         const items = parseForeshadowTableContent(content);
 
         for (const item of items) {
-            const status = item.status || '';
-            if (status.includes('已揭示') || status.includes('揭示')) continue;
+            if (isForeshadowRevealed(item.status)) continue;
 
             const plannedChapter = parseChapterNumber(item.plannedReveal || '');
             if (plannedChapter === null) continue;

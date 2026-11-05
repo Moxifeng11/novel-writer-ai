@@ -1,5 +1,6 @@
 import { App, TFile } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
+import { isForeshadowRevealed } from '@/shared/foreshadow-status';
 import { listEntityFiles } from '@/shared/entity-reader';
 import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
@@ -1303,7 +1304,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             const l = lines[i];
             if (l.match(/^\|.*\|/)) {
                 const cols = splitTableCells(l);
-                if (cols.length >= 6 && cols[1] === name && !cols[cols.length - 1].includes('已揭示') && !cols[cols.length - 1].includes('揭示')) {
+                if (cols.length >= 6 && cols[1] === name && !isForeshadowRevealed(cols[cols.length - 1])) {
                     foundRow = i;
                     foundCols = cols;
                 }

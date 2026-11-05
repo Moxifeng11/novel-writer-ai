@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 299 | 131883 | 1584 | 1326 | 84% |
+| `engine/` | 299 | 131885 | 1584 | 1326 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 172 | 38575 | 1553 | 1290 | 83% |
+| `shared/` | 173 | 38659 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 214 | 97332 | 552 | 507 | 92% |
+| `ui/` | 214 | 97334 | 552 | 507 | 92% |
 
 ## 文件清单
 
@@ -69,7 +69,7 @@
 | `engine/ai-scene-generator.ts` | 289 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
-| `engine/analysis-report-engine.ts` | 1395 | 1 | 1 |
+| `engine/analysis-report-engine.ts` | 1396 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 736 | 2 | 2 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
@@ -80,7 +80,7 @@
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/chapter-brief.ts` | 343 | 9 | 6 |
-| `engine/chapter-context-builder.ts` | 141 | 3 | 3 |
+| `engine/chapter-context-builder.ts` | 142 | 3 | 3 |
 | `engine/chapter-snapshot-builder.ts` | 142 | 2 | 1 |
 | `engine/chapter-state-snapshot-service.ts` | 182 | 2 | 2 |
 | `engine/chapter-utils.ts` | 482 | 21 | 19 |
@@ -154,7 +154,7 @@
 | `engine/fingerprint-stats.ts` | 127 | 4 | 4 |
 | `engine/foreshadow-config-manager.ts` | 310 | 2 | 1 |
 | `engine/foreshadow-context.ts` | 154 | 6 | 4 |
-| `engine/foreshadow-manager.ts` | 1324 | 8 | 8 |
+| `engine/foreshadow-manager.ts` | 1323 | 8 | 8 |
 | `engine/generation-checkpoint-vault.ts` | 100 | 1 | 1 |
 | `engine/generation-checkpoint.ts` | 154 | 6 | 3 |
 | `engine/genre/genre-config-registry.ts` | 154 | 2 | 2 |
@@ -281,7 +281,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 1857 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1858 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 131 | 2 | 2 |
@@ -377,7 +377,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1412 | 3 | 3 |
+| `shared/changelog-data.ts` | 1435 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -424,6 +424,7 @@
 | `shared/file-system-port.ts` | 790 | 8 | 8 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
+| `shared/foreshadow-status.ts` | 61 | 3 | 2 |
 | `shared/format-constants.ts` | 503 | 65 | 13 |
 | `shared/frontmatter-schema.ts` | 308 | 13 | 9 |
 | `shared/frontmatter.ts` | 178 | 6 | 5 |
@@ -546,7 +547,7 @@
 | `ui/auto-writer-modal.ts` | 239 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 243 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 128 | 1 | 1 |
-| `ui/batch-chapters-modal.ts` | 338 | 1 | 1 |
+| `ui/batch-chapters-modal.ts` | 339 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 524 | 1 | 1 |
 | `ui/batch-deconstruct-modal.ts` | 410 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1868 | 1 | 1 |
@@ -564,7 +565,7 @@
 | `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
 | `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
-| `ui/co-writing/quality-report.ts` | 129 | 2 | 2 |
+| `ui/co-writing/quality-report.ts` | 130 | 2 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 656 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |

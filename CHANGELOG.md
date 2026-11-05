@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.37.0（2026-11-05）
+
+### 🐛 质检报告解析修复（v4.36.0 行为测试锁定）
+
+- **⚠️ 变体选择符残留**：`parseQualityReport` 剥离 emoji 时只删 U+26A0，残留 U+FE0F；修正为 `[❌⚠✅]️?`，问题文本/定位文本不再带隐藏码点。
+- **第N段/第N字 定位丢失**：正则捕获组 1/2 未被读取，导致数值定位回落成问题文本前 20 字；修正后 `第3段` → `locationText: '3'`，与文档示例一致。
+
+### 🧭 伏笔「未揭示」误判修复（影响面 5 个文件）
+
+- 新增 `shared/foreshadow-status.ts`：**先否定后肯定**的唯一判定（未揭示/待揭示/未回收/埋设 → 未揭示；已揭示/已回收/已兑现/回收 → 已揭示；其余 unknown）。
+- 修复 `status.includes('揭示')` 把「未揭示」「待揭示」误判为已揭示的 5 处消费方：
+  - 章节上下文 `filterForeshadowsByChapter`（未揭示伏笔被整行跳过）；
+  - 信息债统计与 `getUnrevealedForeshadows`；
+  - 分析报告 `moveForeshadowToRevealed` 行匹配；
+  - 结算引擎伏笔统计；
+  - 批量建章伏笔统计。
+- 新增分类器单测 5 例 + 上下文消费者回归 2 例（旧实现下必失败）。
+
+### 🧪 测试
+
+- 全量单测 550 文件 / 6087 用例（+7）。
+
 ## v4.36.0（2026-11-05）
 
 ### ✂️ 切片收尾（协同引擎 + 知识库配置）

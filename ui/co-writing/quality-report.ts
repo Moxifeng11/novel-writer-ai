@@ -74,8 +74,9 @@ export function parseQualityReport(content: string): QualityIssue[] {
         if (severity === '✅') continue;
 
         const locationMatch = problemText.match(/第(\d+)段|第(\d+)字|「([^」]+)」|【([^】]+)】/);
+        // 第N段/第N字 取捕获组 1/2；引号/方括号取 3/4；都取不到时回落问题文本前缀。
         const locationText = locationMatch
-            ? (locationMatch[3] || locationMatch[4] || problemText.slice(0, 20))
+            ? (locationMatch[1] || locationMatch[2] || locationMatch[3] || locationMatch[4] || problemText.slice(0, 20))
             : '';
 
         const nextLines = lines.slice(i + 1, Math.min(i + 4, lines.length));
