@@ -37,6 +37,13 @@ const MISSING_FILE_WARNING =
 const MISSING_PATH_WARNING =
     '⚠️ 同人项目尚未绑定设定文件：协同写作不会带原作约束。请在向导「同人设定」步骤填写，或运行命令「添加同人设定」。';
 
+/** notice-helpers 在无 DOM 垫片时退回纯文本：加粗标题行 + message 行 */
+const WARNING_HEADLINE = '⚠️ 注意';
+
+function renderedWarning(text: string): string {
+    return `${WARNING_HEADLINE}\n${text.replace(/^⚠️\s*/u, '')}`;
+}
+
 type WarningHost = {
     project: string;
     engine: { getFanficRulesWarning: () => string | null } | null;
@@ -63,7 +70,7 @@ describe('协同视图：同人设定警告在会话中复查', () => {
         const host = warningHost(MISSING_FILE_WARNING);
         warnOnce(host);
         expect(noticeLog).toHaveLength(1);
-        expect(noticeLog[0]).toEqual({ message: MISSING_FILE_WARNING, timeout: 8000 });
+        expect(noticeLog[0]).toEqual({ message: renderedWarning(MISSING_FILE_WARNING), timeout: 8000 });
         expect(host.lastFanficWarningKey).toBe(`书甲|${MISSING_FILE_WARNING}`);
     });
 
@@ -82,7 +89,7 @@ describe('协同视图：同人设定警告在会话中复查', () => {
         warnOnce(host);
         host.engine = { getFanficRulesWarning: () => MISSING_FILE_WARNING };
         warnOnce(host);
-        expect(noticeLog.map(item => item.message)).toEqual([MISSING_PATH_WARNING, MISSING_FILE_WARNING]);
+        expect(noticeLog.map(item => item.message)).toEqual([renderedWarning(MISSING_PATH_WARNING), renderedWarning(MISSING_FILE_WARNING)]);
         expect(host.lastFanficWarningKey).toBe(`书甲|${MISSING_FILE_WARNING}`);
     });
 
