@@ -21,6 +21,28 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.47.0',
+        date: '2026-11-06',
+        title: '指纹 12 维可视化与协同视图切片第六批',
+        sections: [
+            {
+                type: 'added',
+                label: '🗳️ 指纹',
+                items: [
+                    '详情面板对 V2 指纹展示十二维结构化特征（逐维描述/状态/样例）',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '✂️ 切片',
+                items: [
+                    'co-writing-view 4645→4303：章节上下文/幽灵联想/修复决策/监控卡/指标面板五模块',
+                    '指标进度条改原生 progress；新增 40 条切片测试',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.46.0',
         date: '2026-11-06',
         title: '指纹 V2 直存与 Notice 收敛收官',

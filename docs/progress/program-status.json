@@ -1,12 +1,12 @@
 {
   "program": "全系统业务板块优化专项",
   "rev": "v5-plan-1",
-  "updatedAt": "2026-11-05",
+  "updatedAt": "2026-11-06",
   "baseline": {
-    "version": "4.46.0",
+    "version": "4.47.0",
     "tests": {
-      "files": 563,
-      "cases": 6140
+      "files": 569,
+      "cases": 6183
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 83,
+    "localCommitsAhead": 86,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G5",
+      "summary": "v4.47.0 co-writing-view 切片第六批：抽出 chapter-context（路径/标题/章节身份）、ghost-association（幽灵联想触发判定与提示）、quality-fix（定位/Prompt/替换决策）、monitor-cards（五张监控卡）、metrics-panel（指标面板三态与渲染）五个模块；视图 4,645 → 4,303 行（-342）；新增 5 个行为测试文件 40 用例",
+      "evidence": "ui/co-writing/chapter-context.ts + ui/co-writing/ghost-association.ts + ui/co-writing/quality-fix.ts + ui/co-writing/monitor-cards.ts + ui/co-writing/metrics-panel.ts + ui/co-writing-view.ts"
+    },
     {
       "date": "2026-11-06",
       "group": "G5",

@@ -4,8 +4,8 @@
 > 专项计划与验收口径见 [`docs/PROGRAM.md`](../PROGRAM.md)；结构路线见 [`docs/PLAN.md`](../PLAN.md)。
 
 - 专项版本：v5-plan-1
-- 更新时间：2026-11-05
-- 当前基线：v4.46.0；单测 563 文件 / 6140 用例；E2E 37 条
+- 更新时间：2026-11-06
+- 当前基线：v4.47.0；单测 569 文件 / 6183 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-06｜G5｜v4.47.0 co-writing-view 切片第六批：抽出 chapter-context（路径/标题/章节身份）、ghost-association（幽灵联想触发判定与提示）、quality-fix（定位/Prompt/替换决策）、monitor-cards（五张监控卡）、metrics-panel（指标面板三态与渲染）五个模块；视图 4,645 → 4,303 行（-342）；新增 5 个行为测试文件 40 用例（ui/co-writing/chapter-context.ts + ui/co-writing/ghost-association.ts + ui/co-writing/quality-fix.ts + ui/co-writing/monitor-cards.ts + ui/co-writing/metrics-panel.ts + ui/co-writing-view.ts）
 - 2026-11-06｜G5｜v4.46.0 第十四批：add-fanfic-setting-modal / manage-providers-modal / style-distiller-modal 三个文件余 25 处逐条核对，全部为守卫/输入预检/无变化/常驻进度，按口径 0 替换；三文件确认收敛完成（ui/add-fanfic-setting-modal.ts + ui/manage-providers-modal.ts + ui/style-distiller-modal.ts）
 - 2026-11-06｜G5｜v4.44.0 第十三批：co-writing-view / add-fanfic-setting-modal / manage-providers-modal / style-distiller-modal / create-project-modal 五个文件 Notice 13 处（成功/失败/告警），60→47；co-writing-view 余 20 处均为守卫/预检/无变化/进度，确认无可替换（ui/co-writing-view.ts + ui/add-fanfic-setting-modal.ts + ui/manage-providers-modal.ts + ui/style-distiller-modal.ts + ui/create-project-modal.ts）
 - 2026-11-05｜G5｜v4.43.0 第十二批：batch-import-modal / generate-character-modal / ideation-modal / backup-center-modal / project-side-panel-view / wizard-step-renderers 六个文件 Notice 37 处（成功/失败/告警），61→24；守卫、进度、预检、无变化与信息展示保留（ui/batch-import-modal.ts + ui/generate-character-modal.ts + ui/ideation-modal.ts + ui/backup-center-modal.ts + ui/project-side-panel-view.ts + ui/full-writer/wizard-step-renderers.ts）

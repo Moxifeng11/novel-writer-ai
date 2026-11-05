@@ -2,6 +2,23 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.47.0（2026-11-06）
+
+### 🗳️ 指纹详情面板 12 维展示（V2 可视化补完）
+
+- 新增 `ui/views/fingerprint-v2-detail.ts`：`buildV2FeatureRows()`（纯函数装配，3 条测试）+ `renderV2FeaturesSection()`（「🧬 十二维结构化特征」小节：逐维描述、pending 维度「样本不足」标记、引号样例，全部走既有工具类）。
+- 详情面板对 `version:'v2'` 指纹在 7 维区块后追加 12 维小节；V1 指纹展示不变。
+
+### ✂️ 协同视图切片第六批（co-writing-view 4,645 → 4,303，Trae 协作）
+
+- 新增 5 个模块：`chapter-context.ts`（220 行，正文/步骤路径与章节标题提取）、`ghost-association.ts`（91 行，幽灵联想 8 步触发判定）、`quality-fix.ts`（135 行，修复决策与 Prompt）、`monitor-cards.ts`（321 行，五张监控卡）、`metrics-panel.ts`（227 行，指标三态与面板渲染）。
+- 新增 5 个测试文件 40 用例；行为逐行等价，宿主接口注入。
+- 指标面板进度条改原生 `<progress>`（accent-color 随主题），清理新代码内联样式与 cssText；新增 `nw-u-cursor-pointer-2` 工具类。
+
+### 🧪 测试与门禁
+
+- 全量单测 **569 文件 / 6,183 用例**（+6 文件 / +43 用例）；`preflight:release` 全绿；lint 0 error / 1,868 warnings 内（Trae 自检 1,863）。
+
 ## v4.46.0（2026-11-06）
 
 ### 🗳️ 指纹 V2 直存：蒸馏十二维一步入库
