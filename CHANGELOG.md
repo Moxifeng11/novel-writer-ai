@@ -2,6 +2,19 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.45.0（2026-11-06）
+
+### 🔀 V2 十二维特征并入蒸馏链（用户决策 A′）
+
+- `style-deconstructor-v2.ts` 迁为 `engine/style/style-features-v2.ts`（`StyleFeaturesAnalyzerV2`），**能力保留、能力落地**：`analyzeStyleFromSource` 样本模式本地计算十二维特征（`featuresV2`），并在报告尾部追加「## 十、十二维特征统计（本地词表计算）」小节。
+- 新增 `formatFeaturesV2Section()` 渲染器；统计失败不阻断蒸馏主流程（只少该小节）。
+- 旧零调用方端点随迁退役：`StyleDeconstructorV2` 类、heavy-task 的 `'style:analyze:v2'` 任务/fallback/`analyzeStyleV2()`；53 个既有用例全部迁至新模块并保持通过。
+- 新增 5 条蒸馏链集成测试（样本/书名/守卫模式 + 提示词区分）。
+
+### 🧪 测试与门禁
+
+- 全量单测 **562 文件 / 6,137 用例**；`preflight:release` 全绿；lint 0 error / 1,868 warnings（持平）；any 306/306；JSDoc 725 文件 100%（heavy-task 公开方法 9→8）。
+
 ## v4.44.0（2026-11-06）
 
 ### 📐 StyleDeconstructor v1/v2 单入口设计定稿（P1-6 收口前置）

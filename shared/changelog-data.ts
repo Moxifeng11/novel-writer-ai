@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.45.0',
+        date: '2026-11-06',
+        title: 'V2 十二维特征并入蒸馏链',
+        sections: [
+            {
+                type: 'improved',
+                label: '🔀 能力迁移',
+                items: [
+                    'V2 特征分析器迁为 style-features-v2，由蒸馏样本模式消费并写入报告',
+                    '旧 style:analyze:v2 死端点退役；53 个既有用例全部迁移通过',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.44.0',
         date: '2026-11-06',
         title: 'V2 拆解器下线设计与 Notice 第十三批',

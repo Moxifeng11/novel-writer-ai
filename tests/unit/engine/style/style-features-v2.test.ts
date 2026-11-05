@@ -1,5 +1,5 @@
 /**
- * style-deconstructor-v2.test.ts — V2 风格拆解器单元测试
+ * style-features-v2.test.ts — 文风十二维特征分析器单元测试（自 style-deconstructor-v2.test 迁移）
  *
  * 覆盖范围：
  * 1. 12 维统计计算正确（含 5 个新增维度）
@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { StyleDeconstructorV2, type StyleAnalysisResultV2 } from '../../../../engine/style/style-deconstructor-v2';
+import { StyleFeaturesAnalyzerV2, type StyleAnalysisResultV2 } from '../../../../engine/style/style-features-v2';
 import { StyleDeconstructor } from '../../../../engine/deconstructors/style-deconstructor';
 import type {
     StyleFingerprintFeaturesV2,
@@ -83,14 +83,14 @@ function expectAllDimensionsComplete(features: StyleFingerprintFeaturesV2): void
 // 测试用例
 // ============================================================
 
-describe('StyleDeconstructorV2', () => {
+describe('StyleFeaturesAnalyzerV2', () => {
 
     // ============================================================
     // 1. 基础结构与向后兼容
     // ============================================================
     describe('基础结构与向后兼容', () => {
         it('analyze 返回结果包含 12 维 features', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
 
             expect(result).toBeDefined();
@@ -99,7 +99,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('返回结果包含 v1Result 字段（向后兼容）', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
 
             expect(result.v1Result).toBeDefined();
@@ -113,7 +113,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('返回结果包含 stats 字段', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
 
             expect(result.stats).toBeDefined();
@@ -124,7 +124,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('analyzeV1 方法返回 V1 格式结果', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const v1Result = await decon.analyzeV1(SHORT_TEXT);
 
             expect(v1Result.sentenceRhythm).toBeDefined();
@@ -134,7 +134,7 @@ describe('StyleDeconstructorV2', () => {
 
         it('V2 内嵌的 V1 结果与直接调用 V1 一致', async () => {
             const v1Decon = new StyleDeconstructor();
-            const v2Decon = new StyleDeconstructorV2();
+            const v2Decon = new StyleFeaturesAnalyzerV2();
 
             const v1Direct = await v1Decon.analyze(SHORT_TEXT);
             const v2Result = await v2Decon.analyze(SHORT_TEXT);
@@ -144,7 +144,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('空文本返回空结果且不抛异常', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze('');
 
             expect(result.stats.totalChars).toBe(0);
@@ -165,7 +165,7 @@ describe('StyleDeconstructorV2', () => {
     // ============================================================
     describe('新增维度统计', () => {
         it('句式维度（SentencePatternStats）计算正确', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const sp = result.features.sentencePattern;
 
@@ -179,7 +179,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('设问句比例检测包含"难道"等标记词', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '难道这是真的？难道他不知道？这怎么可能？';
             const result = await decon.analyze(text);
             const sp = result.features.sentencePattern;
@@ -188,7 +188,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('情绪维度（EmotionStats）计算正确', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const em = result.features.emotion;
 
@@ -206,7 +206,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('正负向情绪比例在含负面情绪文本中检测到负向', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const em = result.features.emotion;
 
@@ -215,7 +215,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('张力维度（TensionStats）计算正确', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const tn = result.features.tension;
 
@@ -230,7 +230,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('信息量维度（InfoDensityStats）计算正确', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const id = result.features.infoDensity;
 
@@ -243,7 +243,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('描写维度（DescriptionStats）计算正确', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const desc = result.features.description;
 
@@ -263,7 +263,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('感官描写在含视觉词的文本中视觉占比高', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '他看见天空明亮，月光皎洁，远处的山川清晰可见。';
             const result = await decon.analyze(text);
             const desc = result.features.description;
@@ -277,7 +277,7 @@ describe('StyleDeconstructorV2', () => {
     // ============================================================
     describe('7 维升级精细统计', () => {
         it('节奏维度新增标点密度、段落密度、停顿频率', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const rh = result.features.rhythm;
 
@@ -292,7 +292,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('用词维度新增生僻词比例、虚词比例、词长分布', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const wc = result.features.wordChoice;
 
@@ -306,7 +306,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('修辞维度新增通感检测', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const rh = result.features.rhetoric;
 
@@ -319,7 +319,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('视角维度新增视角切换频率、叙述距离', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const ps = result.features.perspective;
 
@@ -335,7 +335,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('对话维度新增台词个性化、潜台词比例', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const dl = result.features.dialogue;
 
@@ -348,7 +348,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('叙事维度新增叙事速度、时间跳跃、场景切换', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const na = result.features.narration;
 
@@ -360,7 +360,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('语言质感维度新增古风化程度、地域特色词', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const lt = result.features.languageTexture;
 
@@ -373,7 +373,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('古风文本检测到高古风化程度', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const archaicText = '吾乃修行之人，其道深矣。所谓天道，实乃虚无。尔等凡夫，岂能知晓？此乃玄机，非尔等所能领悟也。';
             const result = await decon.analyze(archaicText);
             const lt = result.features.languageTexture;
@@ -387,7 +387,7 @@ describe('StyleDeconstructorV2', () => {
     // ============================================================
     describe('自然语言描述生成', () => {
         it('每个维度生成 50-100 字描述', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
 
             const keys: StyleDimensionKeyV2[] = [
@@ -404,7 +404,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('描述以句号结尾', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
 
             const keys: StyleDimensionKeyV2[] = [
@@ -418,7 +418,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('节奏描述包含具体数据', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
             const desc = result.features.rhythm.description;
 
@@ -427,7 +427,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('情绪基调描述包含基调词', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const desc = result.features.emotion.description;
 
@@ -441,7 +441,7 @@ describe('StyleDeconstructorV2', () => {
     // ============================================================
     describe('示例片段筛选', () => {
         it('每个维度有 0-3 段示例', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
 
             const keys: StyleDimensionKeyV2[] = [
@@ -457,7 +457,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('示例片段不超过 200 字', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
 
             const keys: StyleDimensionKeyV2[] = [
@@ -474,7 +474,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含情绪词的文本能筛选出情绪示例', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const samples = result.features.emotion.samples;
 
@@ -483,7 +483,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含对话的文本能筛选出对话示例', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
             const samples = result.features.dialogue.samples;
 
@@ -497,7 +497,7 @@ describe('StyleDeconstructorV2', () => {
     describe('性能测试', () => {
         it('V2 额外计算耗时在可接受范围内（best-of-5，含覆盖率插桩余量）', async () => {
             const v1Decon = new StyleDeconstructor();
-            const v2Decon = new StyleDeconstructorV2();
+            const v2Decon = new StyleFeaturesAnalyzerV2();
             const longText = makeLongText(RICH_TEXT, 50000);
 
             const measureBest = async (run: () => Promise<unknown>, rounds = 5): Promise<number> => {
@@ -529,7 +529,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('10 万字文本分析在合理时间内完成', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const longText = makeLongText(RICH_TEXT, 100000);
 
             const start = performance.now();
@@ -546,7 +546,7 @@ describe('StyleDeconstructorV2', () => {
     // ============================================================
     describe('V1 API 向后兼容', () => {
         it('V2 结果中 v1Result 字段完整', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
 
             expect(result.v1Result.sentenceRhythm).toBeDefined();
@@ -561,7 +561,7 @@ describe('StyleDeconstructorV2', () => {
 
         it('V1 字段值与直接调用 V1 一致', async () => {
             const v1Decon = new StyleDeconstructor();
-            const v2Decon = new StyleDeconstructorV2();
+            const v2Decon = new StyleFeaturesAnalyzerV2();
 
             const v1Direct = await v1Decon.analyze(RICH_TEXT);
             const v2Result = await v2Decon.analyze(RICH_TEXT);
@@ -576,7 +576,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('V2 复用 V1 的 stats', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(SHORT_TEXT);
 
             expect(result.stats.totalChars).toBe(result.v1Result.stats.totalChars);
@@ -585,7 +585,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('V2 可以无参数实例化（向后兼容 V1 构造函数）', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             expect(decon).toBeDefined();
             const result = await decon.analyze(SHORT_TEXT);
             expect(result).toBeDefined();
@@ -593,7 +593,7 @@ describe('StyleDeconstructorV2', () => {
 
         it('V2 可选接受 VectorEnhancer（与 V1 构造函数兼容）', async () => {
             // 不传 vectorEnhancer 也应正常工作
-            const decon = new StyleDeconstructorV2(undefined);
+            const decon = new StyleFeaturesAnalyzerV2(undefined);
             const result = await decon.analyze(SHORT_TEXT);
             expect(result).toBeDefined();
         });
@@ -604,39 +604,39 @@ describe('StyleDeconstructorV2', () => {
     // ============================================================
     describe('边界情况', () => {
         it('纯标点文本不抛异常', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze('。。。！！！？？？');
             expect(result).toBeDefined();
         });
 
         it('纯英文文本不抛异常', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze('Hello world. This is a test.');
             expect(result).toBeDefined();
         });
 
         it('单句文本不抛异常', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze('他走了。');
             expect(result).toBeDefined();
         });
 
         it('超长单段文本不抛异常', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const longPara = '他走了'.repeat(1000);
             const result = await decon.analyze(longPara);
             expect(result).toBeDefined();
         });
 
         it('含特殊字符文本不抛异常', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const specialText = '他\n\t说：「\r\n」\\""\'\'';
             const result = await decon.analyze(specialText);
             expect(result).toBeDefined();
         });
 
         it('null 输入返回空结果', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             // @ts-expect-error 测试 null 输入
             const result = await decon.analyze(null);
             expect(result.stats.totalChars).toBe(0);
@@ -648,7 +648,7 @@ describe('StyleDeconstructorV2', () => {
     // ============================================================
     describe('维度特定行为', () => {
         it('第一人称文本中 first 占比高', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '我走在路上。我看到了他。我心中一惊。我想要离开。我不敢相信。';
             const result = await decon.analyze(text);
 
@@ -656,7 +656,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含悬念词文本中悬念密度大于 0', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '突然，一阵风吹过。然而，事情没那么简单。但是，谁也没想到。';
             const result = await decon.analyze(text);
 
@@ -664,7 +664,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含转折词文本中转折句密度大于 0', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '但是，他没来。然而，她却到了。可是，谁也不知道真相。';
             const result = await decon.analyze(text);
 
@@ -672,7 +672,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含听觉词文本中听觉占比大于 0', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '他听见远处传来一阵声响，声音嘈杂喧闹。';
             const result = await decon.analyze(text);
 
@@ -680,7 +680,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含专有名词文本中专有名词密度大于 0', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '他来到玄机宗的宗门，看到一座宫殿，宫殿后面是万剑阁。';
             const result = await decon.analyze(text);
 
@@ -688,7 +688,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含设定词文本中设定植入频率大于 0', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '所谓天道，实乃虚无。据说此乃古老的法则。传说是这样的。';
             const result = await decon.analyze(text);
 
@@ -696,7 +696,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含设问词文本中设问句比例大于 0', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '难道这是真的？岂非天意？怎么会这样？这是真的吗？';
             const result = await decon.analyze(text);
 
@@ -704,7 +704,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('含时间跳跃词文本中时间跳跃频率大于 0', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '三年后，他回来了。次日清晨，他出发了。第二天天亮时分，到达目的地。';
             const result = await decon.analyze(text);
 
@@ -712,7 +712,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('伏笔标记能被检测到', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const text = '他笑了...（注：此处为伏笔）然后转身离开。...';
             const result = await decon.analyze(text);
 
@@ -720,7 +720,7 @@ describe('StyleDeconstructorV2', () => {
         });
 
         it('所有维度 status 为 complete（非空文本）', async () => {
-            const decon = new StyleDeconstructorV2();
+            const decon = new StyleFeaturesAnalyzerV2();
             const result = await decon.analyze(RICH_TEXT);
 
             const keys: StyleDimensionKeyV2[] = [

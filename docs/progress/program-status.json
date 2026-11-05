@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-05",
   "baseline": {
-    "version": "4.44.0",
+    "version": "4.45.0",
     "tests": {
-      "files": 561,
-      "cases": 6133
+      "files": 562,
+      "cases": 6137
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 79,
+    "localCommitsAhead": 80,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [

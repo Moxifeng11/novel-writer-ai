@@ -5,7 +5,10 @@
  * “书名推测”分开：样本模式必须引用原文证据；书名模式必须标注不确定性。
  */
 import type { AIEngine } from '@/engine/ai-engine';
-import { resolveTaskModelConfig, type TaskModelSettings } from '@/shared/task-model';
+import { StyleFeaturesAnalyzerV2, formatFeaturesV2Section, type StyleAnalysisResultV2 } from './style-features-v2';
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('StyleDistillService');import { resolveTaskModelConfig, type TaskModelSettings } from '@/shared/task-model';
 
 /**
  * 文风提炼来源模式。
@@ -96,14 +99,14 @@ ${sample.slice(0, 12000)}`
  * @param input - 输入
  * @param deps - 依赖
  * @param signal - 取消信号
-  * @returns string }> 结果
+ * @returns 报告正文 + 模型；样本模式额外携带本地十二维特征 featuresV2
  */
 export async function analyzeStyleFromSource(
     aiEngine: AIEngine,
     input: StyleDistillInput,
     deps: StyleDistillDeps,
     signal?: AbortSignal,
-): Promise<{ content: string; error?: string; model: string }> {
+): Promise<{ content: string; error?: string; model: string; featuresV2?: StyleAnalysisResultV2 }> {
     const prompts = buildStyleDistillPrompts(input);
     const config = resolveTaskModelConfig(
         deps.settings,
@@ -125,5 +128,19 @@ export async function analyzeStyleFromSource(
             thinkingBudget: config.thinkingBudget,
         },
     );
-    return { content: response.content || '', error: response.error, model: config.model };
+    let content = response.content || '';
+    // 样本模式追加十二维本地统计（V2 能力并入蒸馏链；失败不阻断主流程，仅缺省该小节）
+    const sample = (input.sampleText || '').trim();
+    if (input.mode !== 'name' && sample.length > 0) {
+        try {
+            const featuresV2 = await new StyleFeaturesAnalyzerV2().analyze(sample);
+            content = `${content}
+
+${formatFeaturesV2Section(featuresV2.features)}`;
+            return { content, error: response.error, model: config.model, featuresV2 };
+        } catch (e) {
+            log.warn('[style-distill] 十二维特征统计失败，报告不含该小节:', e);
+        }
+    }
+    return { content, error: response.error, model: config.model };
 }

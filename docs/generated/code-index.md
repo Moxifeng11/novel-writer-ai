@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132524 | 1606 | 1345 | 84% |
+| `engine/` | 305 | 132573 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38820 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38835 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 218 | 97662 | 570 | 522 | 92% |
@@ -178,7 +178,7 @@
 | `engine/harness/tool-registry.ts` | 153 | 6 | 6 |
 | `engine/harness/trend-research-service.ts` | 202 | 8 | 8 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
-| `engine/heavy-task-worker-manager.ts` | 337 | 2 | 2 |
+| `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 509 | 5 | 5 |
 | `engine/knowledge-injector.ts` | 2123 | 13 | 7 |
@@ -321,9 +321,9 @@
 | `engine/style/fingerprint-blender-v2.ts` | 652 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 637 | 13 | 13 |
 | `engine/style/fingerprint-selection.ts` | 101 | 5 | 5 |
-| `engine/style/style-deconstructor-v2.ts` | 2017 | 2 | 2 |
 | `engine/style/style-dimensions-v2.ts` | 574 | 26 | 12 |
-| `engine/style/style-distill-service.ts` | 129 | 6 | 6 |
+| `engine/style/style-distill-service.ts` | 146 | 6 | 6 |
+| `engine/style/style-features-v2.ts` | 2074 | 3 | 3 |
 | `engine/style/style-intensity-engine.ts` | 364 | 9 | 3 |
 | `engine/style/style-sample-service.ts` | 227 | 8 | 7 |
 | `engine/style/style-vector-store-v2.ts` | 1085 | 6 | 1 |
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1596 | 3 | 3 |
+| `shared/changelog-data.ts` | 1611 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |

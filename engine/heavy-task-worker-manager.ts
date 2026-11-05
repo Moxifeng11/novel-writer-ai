@@ -4,7 +4,6 @@ import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { notifyWorkerUnavailable } from '@/shared/plugin-worker-url';
 import { VectorEnhancer } from './vector-enhancer';
 import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';
-import { StyleDeconstructorV2, StyleAnalysisResultV2 } from './style/style-deconstructor-v2';
 import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality/quality-score-engine';
 import { getScopedPlotDivergenceEngine, getScopedWritingQualityEngine } from './quality/quality-engine-factory';
 import { DeviationDetector, DeviationReport, DeviationContext } from './quality/deviation-detector';
@@ -36,7 +35,6 @@ export class HeavyTaskWorkerManager {
     private destroyed: boolean = false;
 
     private styleDeconstructor: StyleDeconstructor | null = null;
-    private styleDeconstructorV2: StyleDeconstructorV2 | null = null;
     private qualityScoreEngine: QualityScoreEngine | null = null;
     private deviationDetector: DeviationDetector | null = null;
 
@@ -83,7 +81,6 @@ export class HeavyTaskWorkerManager {
 
     private initMainThreadEngines(): void {
         this.styleDeconstructor = new StyleDeconstructor();
-        this.styleDeconstructorV2 = new StyleDeconstructorV2();
         // C1: QSE 只保留 V1 统一内核，六维与总分全部来自 WritingQualityEngine；
         // rhythmAnalyzer / emotionAnalyzer / characterChecker 注入后不会生效，这里不再注入。
         // 人物逐条比对由下面的 DeviationDetector 负责。
@@ -134,13 +131,6 @@ export class HeavyTaskWorkerManager {
             });
         });
 
-        this.workerManager.registerFallbackHandler('style:analyze:v2', async (input, onProgress) => {
-            onProgress?.(0, '开始风格分析 V2');
-            const result = await this.styleDeconstructorV2!.analyze(input.text);
-            onProgress?.(100, '风格分析 V2 完成');
-            return result;
-        });
-
         this.workerManager.registerFallbackHandler('quality:evaluate', (input, onProgress) => {
             onProgress?.(0, '开始质量评分');
             return this.qualityScoreEngine!.evaluate(input.text, input.context).then((result) => {
@@ -184,20 +174,6 @@ export class HeavyTaskWorkerManager {
         onProgress?: (progress: number, message?: string) => void
     ): CancelablePromise<StyleAnalysisResult> {
         return this.executeTask('style:analyze:vector', { text }, onProgress);
-    }
-
-    /**
-     * 文风拆解 v2。
-     *
-     * @param text - 文本内容
-     * @param onProgress - 参数
-     * @returns 结果
-     */
-    analyzeStyleV2(
-        text: string,
-        onProgress?: (progress: number, message?: string) => void
-    ): CancelablePromise<StyleAnalysisResultV2> {
-        return this.executeTask('style:analyze:v2', { text }, onProgress);
     }
 
     /**
@@ -262,7 +238,6 @@ export class HeavyTaskWorkerManager {
                 const taskMap: Record<string, () => any> = {
                     'style:analyze': () => this.styleDeconstructor!.analyze(input.text),
                     'style:analyze:vector': () => this.styleDeconstructor!.analyzeWithVector(input.text),
-                    'style:analyze:v2': () => this.styleDeconstructorV2!.analyze(input.text),
                     'quality:evaluate': () => this.qualityScoreEngine!.evaluate(input.text, input.context),
                     'deviation:detect': () => this.deviationDetector!.detect(input.text, input.context),
                 };

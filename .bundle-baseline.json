@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-05T16:33:49.145Z",
-  "note": "2026-11-05 v4.34.0：首次建立 main.js/styles.css 体积预算（路线图目标 main.js ≤5MB）\nv4.34.0 新增会话保留清理（session-retention + 两处列举 API）等代码，主包 +2291B 自然增长；首次立基线后的首次文档化上调\nv4.34.0 会话保留：修复引擎守卫（避免二次实例化）改为独立列举函数后，同批功能合计 +2824B（4828479→4831303）；均为新增功能代码，非冗余\nv4.35.0 新增 Notice 统一助手 + 会话修剪入口/命令/设置 + KB 面板抽取等代码，主包 +3338B 自然增长；均为新增功能代码\nv4.36.0 Notice 第二批（7 文件 30 处）与 plot-nodes 路径修复 +448B 自然增长\nv4.37.0 修复质检解析与伏笔状态判定（shared/foreshadow-status + 5 消费方），主包 +487B 自然增长\nv4.38.0 写锁加固（6 处并发合并逻辑）+ snapshot-builder 抽取 + Notice 第三批，主包 +610B\nv4.39.0 收口剩余 5 处裸读改写（回滚/伏笔库新建/行号/tracker/看板加锁与 updateTracker），主包 +800B\nv4.40.0 单例收敛/轻结算写锁/写选项模块/Notice 四批，主包 +542B\nv4.41.0：新增 quality-engine-factory 与 co-writer 两个纯函数切片（+719B）；工厂收敛去掉多处重复构造，净增来自显式参数与 JSDoc 保留\nv4.42.0：Notice 收敛与协同视图切片后 main.js 下降 2163B，按「只降不升」纪律收紧基线\nv4.43.0：directional-prompt 切片为显式入参对象装配（+1049B）；v4.42.0 收紧的 -2163B 中部分被抵消，净增来自接口与 JSDoc\nv4.44.0：Notice 第十三批 helper 调用替换（+325B，create-project 等四处新增 options 对象与导入）；co-writing-view 剩余 20 处确认为守卫类不再替换",
+  "generatedAt": "2026-11-05T16:53:22.793Z",
+  "note": "2026-11-05 v4.34.0：首次建立 main.js/styles.css 体积预算（路线图目标 main.js ≤5MB）\nv4.34.0 新增会话保留清理（session-retention + 两处列举 API）等代码，主包 +2291B 自然增长；首次立基线后的首次文档化上调\nv4.34.0 会话保留：修复引擎守卫（避免二次实例化）改为独立列举函数后，同批功能合计 +2824B（4828479→4831303）；均为新增功能代码，非冗余\nv4.35.0 新增 Notice 统一助手 + 会话修剪入口/命令/设置 + KB 面板抽取等代码，主包 +3338B 自然增长；均为新增功能代码\nv4.36.0 Notice 第二批（7 文件 30 处）与 plot-nodes 路径修复 +448B 自然增长\nv4.37.0 修复质检解析与伏笔状态判定（shared/foreshadow-status + 5 消费方），主包 +487B 自然增长\nv4.38.0 写锁加固（6 处并发合并逻辑）+ snapshot-builder 抽取 + Notice 第三批，主包 +610B\nv4.39.0 收口剩余 5 处裸读改写（回滚/伏笔库新建/行号/tracker/看板加锁与 updateTracker），主包 +800B\nv4.40.0 单例收敛/轻结算写锁/写选项模块/Notice 四批，主包 +542B\nv4.41.0：新增 quality-engine-factory 与 co-writer 两个纯函数切片（+719B）；工厂收敛去掉多处重复构造，净增来自显式参数与 JSDoc 保留\nv4.42.0：Notice 收敛与协同视图切片后 main.js 下降 2163B，按「只降不升」纪律收紧基线\nv4.43.0：directional-prompt 切片为显式入参对象装配（+1049B）；v4.42.0 收紧的 -2163B 中部分被抵消，净增来自接口与 JSDoc\nv4.44.0：Notice 第十三批 helper 调用替换（+325B，create-project 等四处新增 options 对象与导入）；co-writing-view 剩余 20 处确认为守卫类不再替换\nv4.45.0：V2 分析器并入蒸馏链（+988B：formatFeaturesV2Section 渲染器 + 服务集成与守卫）；同批退役的 heavy-task V2 端点抵消部分迁移体积",
   "files": {
-    "main.js": 4837458,
+    "main.js": 4838446,
     "styles.css": 475563
   }
 }

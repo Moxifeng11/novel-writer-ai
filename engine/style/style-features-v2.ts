@@ -1,5 +1,10 @@
 /**
- * style-deconstructor-v2.ts — 文风风格拆解器 V2（12 维）
+ * style-features-v2.ts — 文风十二维特征分析器（原 StyleDeconstructorV2，并入蒸馏链）
+ *
+ * 2026-11-06 起自 style-deconstructor-v2.ts 迁入 style-distill-service 消费链：
+ * 旧 'style:analyze:v2' 任务端点已退役（全仓零调用方，见
+ * docs/design/style-deconstructor-v2-single-entry.md）；本模块保留全部
+ * 12 维统计能力，由 style-distill-service 在样本蒸馏时本地计算并写入报告。
  *
  * 设计原则：
  * - V1 完全保留不动（向后兼容）
@@ -29,6 +34,7 @@ import { StyleDeconstructor, type StyleAnalysisResult } from '@/engine/deconstru
 import { isChineseChar } from '@/shared/text-utils';
 import type { VectorEnhancer } from '@/engine/vector-enhancer';
 import type {
+    StyleDimensionKeyV2,
     StyleFingerprintFeaturesV2,
     RhythmStats,
     SentencePatternStats,
@@ -267,9 +273,9 @@ const NARRATIVE_FAR_WORDS = [
 // ============================================================
 
 /**
- * StyleDeconstructorV2 类。
+ * StyleFeaturesAnalyzerV2 类。
  */
-export class StyleDeconstructorV2 {
+export class StyleFeaturesAnalyzerV2 {
     private v1Deconstructor: StyleDeconstructor;
     private vectorEnhancer?: VectorEnhancer;
 
@@ -2013,4 +2019,55 @@ export class StyleDeconstructorV2 {
     private clamp01(v: number): number {
         return Math.max(0, Math.min(1, v));
     }
+}
+
+
+// ============================================================
+// Markdown 渲染（供 style-distill-service 追加到报告尾部）
+// ============================================================
+
+/** 十二维的中文标签（渲染顺序即此数组顺序）。 */
+const FEATURE_LABELS: ReadonlyArray<{ key: StyleDimensionKeyV2; label: string }> = [
+    { key: 'rhythm', label: '节奏' },
+    { key: 'sentencePattern', label: '句式' },
+    { key: 'wordChoice', label: '用词' },
+    { key: 'rhetoric', label: '修辞' },
+    { key: 'perspective', label: '视角' },
+    { key: 'emotion', label: '情绪' },
+    { key: 'tension', label: '张力' },
+    { key: 'infoDensity', label: '信息量' },
+    { key: 'dialogue', label: '对话' },
+    { key: 'description', label: '描写' },
+    { key: 'narration', label: '叙事' },
+    { key: 'languageTexture', label: '语言质感' },
+];
+
+/**
+ * 把十二维特征渲染为 Markdown 小节，追加在蒸馏报告尾部。
+ *
+ * @param features - analyze() 产出的十二维特征
+ * @returns 形如「## 十、十二维特征统计（本地词表计算）」的小节文本
+ *
+ * @example
+ * ```ts
+ * const features = await new StyleFeaturesAnalyzerV2().analyze(sample);
+ * content += '
+
+' + formatFeaturesV2Section(features);
+ * ```
+ */
+export function formatFeaturesV2Section(features: StyleFingerprintFeaturesV2): string {
+    const lines: string[] = [
+        '## 十、十二维特征统计（本地词表计算）',
+        '',
+        '> 与上方 AI 报告互补；样本过短时个别维度可能标记 pending。',
+        '',
+    ];
+    for (const { key, label } of FEATURE_LABELS) {
+        const dim = features[key];
+        const text = (dim.description || '').trim() || '样本未体现';
+        const suffix = dim.status === 'complete' ? '' : '（pending）';
+        lines.push(`- ${label}${suffix}：${text}`);
+    }
+    return lines.join('\n');
 }
