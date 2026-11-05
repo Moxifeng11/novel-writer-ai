@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-06
-- 当前基线：v4.47.0；单测 569 文件 / 6183 用例；E2E 37 条
+- 当前基线：v4.48.0；单测 576 文件 / 6215 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-06｜G5｜v4.48.0（待发版）co-writing-view 切片第七批：抽出 suggestion-cards（建议/联想/校验/流式卡片）、suggest-feedback（错误卡/知识空态/空建议/注入提示）、brief-panel（本章简报/冷启动/按钮态）、dashboard-status（状态栏/人工率仪表盘）、kb-reference-config（参考书开关/主参考/权重）、suggestion-loading（生成中进度面板）、quality-popup（浮窗/右键菜单/编辑器定位）七个模块；视图 4,303 → 3,980 行（-323）；新增 6 个行为测试文件 27 用例（ui/co-writing/suggestion-cards.ts + ui/co-writing/suggest-feedback.ts + ui/co-writing/brief-panel.ts + ui/co-writing/dashboard-status.ts + ui/co-writing/kb-reference-config.ts + ui/co-writing/suggestion-loading.ts + ui/co-writing/quality-popup.ts + ui/co-writing-view.ts）
 - 2026-11-06｜G5｜v4.47.0 co-writing-view 切片第六批：抽出 chapter-context（路径/标题/章节身份）、ghost-association（幽灵联想触发判定与提示）、quality-fix（定位/Prompt/替换决策）、monitor-cards（五张监控卡）、metrics-panel（指标面板三态与渲染）五个模块；视图 4,645 → 4,303 行（-342）；新增 5 个行为测试文件 40 用例（ui/co-writing/chapter-context.ts + ui/co-writing/ghost-association.ts + ui/co-writing/quality-fix.ts + ui/co-writing/monitor-cards.ts + ui/co-writing/metrics-panel.ts + ui/co-writing-view.ts）
 - 2026-11-06｜G5｜v4.46.0 第十四批：add-fanfic-setting-modal / manage-providers-modal / style-distiller-modal 三个文件余 25 处逐条核对，全部为守卫/输入预检/无变化/常驻进度，按口径 0 替换；三文件确认收敛完成（ui/add-fanfic-setting-modal.ts + ui/manage-providers-modal.ts + ui/style-distiller-modal.ts）
 - 2026-11-06｜G5｜v4.44.0 第十三批：co-writing-view / add-fanfic-setting-modal / manage-providers-modal / style-distiller-modal / create-project-modal 五个文件 Notice 13 处（成功/失败/告警），60→47；co-writing-view 余 20 处均为守卫/预检/无变化/进度，确认无可替换（ui/co-writing-view.ts + ui/add-fanfic-setting-modal.ts + ui/manage-providers-modal.ts + ui/style-distiller-modal.ts + ui/create-project-modal.ts）

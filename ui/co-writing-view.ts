@@ -5,7 +5,7 @@
  * （本文件为运行时恢复重建版，逻辑与上一个可用构建一致）
  */
 
-import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile, Menu } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
 import { SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
 import { volumeNumber } from '@/shared/chapter-target';
 import { CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
@@ -42,7 +42,6 @@ import { buildMarkdownToolbar } from './co-writing/markdown-toolbar';
 import { parseQualityReport, type QualityIssue } from './co-writing/quality-report';
 import {
     buildQualityFixPrompt,
-    lineTopForIndex,
     locateQualityTarget,
     resolveQualityFixApplication,
 } from './co-writing/quality-fix';
@@ -51,6 +50,32 @@ import {
     renderMetricsCompact,
     renderMetricsPanel,
 } from './co-writing/metrics-panel';
+import {
+    clearStreamingPreview,
+    ensureStreamingPreview,
+    renderAssociationCards,
+    renderAssociationLoading,
+    renderStreamingSuggestionCard,
+    renderSuggestionCards,
+    renderValidationResult,
+    updateStreamingPreview,
+    type SuggestionCardActions,
+} from './co-writing/suggestion-cards';
+import {
+    renderEmptySuggestionMessage,
+    renderKnowledgeEmptyNotice,
+    renderNoSuggestionMessage,
+    renderSuggestErrorCard,
+    renderValidationLoadingMessage,
+    showKnowledgeInjectionNotice as showKnowledgeNotice,
+} from './co-writing/suggest-feedback';
+import { renderSuggestionLoading } from './co-writing/suggestion-loading';
+import {
+    hideQualityPopup,
+    scrollToTextInEditor,
+    showQualityContextMenu,
+    showQualityPopup,
+} from './co-writing/quality-popup';
 import { resolveInsertRange, type PendingRewriteRange } from './cowrite/insert-range';
 import { BodyWriter } from '@/engine/body-writer';
 import {
@@ -66,11 +91,8 @@ import {
 } from '@/shared/novel-format';
 import { applyNwScope } from '@/utils/helpers';
 import {
-    associationTypeToDirection,
-    getAssociationLabel,
     associationToSuggestion,
     getDirectionLabel,
-    getStyleLabel,
     emptyMetrics
 } from './cowrite/cowrite-mappers';
 import { NovelAnalysisModal } from './novel-analysis-modal';
@@ -114,6 +136,14 @@ import {
     isSameChapterIdentity,
 } from '@/ui/co-writing/chapter-context';
 import { renderGhostSuggestion, resolveGhostTrigger } from '@/ui/co-writing/ghost-association';
+import { canColdStart, renderBriefPanel, updateStartButtonState } from '@/ui/co-writing/brief-panel';
+import { renderHumanRatePanel, renderStatusBar, updateHumanRatePanel, updateSaveStateDisplay } from '@/ui/co-writing/dashboard-status';
+import {
+    adjustReferenceWeight,
+    setPrimaryReference,
+    toggleReferenceBook,
+    type KbReferenceHost,
+} from '@/ui/co-writing/kb-reference-config';
 import { renderMonitorCards, type ForeshadowSnapshot } from '@/ui/co-writing/monitor-cards';
 import { handleMarkdownShortcut } from '@/ui/co-writing/markdown-shortcut';
 import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
@@ -1645,14 +1675,10 @@ export class CoWritingView extends ItemView {
           // 注意：上面的 empty() 已经把进度容器（含错误区与重试按钮）摘掉，
           // 旧实现继续调用 showSuggestError 会写进脱离文档的节点：
           // 用户只看到「生成失败」，既没有原因也没有重试入口。
-          const message = getFriendlyErrorMessage(engineError);
-          const box = this.suggestionContent.createDiv({ cls: "nw-cowrite-error-card" });
-          box.createDiv({ cls: "nw-cowrite-error-card__text", text: `生成失败：${message}` });
-          const actions = box.createDiv({ cls: "nw-cowrite-error-card__actions" });
-          const notNow = actions.createEl("button", { text: "知道了", cls: "nw-btn nw-btn-ghost" });
-          notNow.addEventListener("click", () => this.renderEmptySuggestions());
-          const retry = actions.createEl("button", { text: "↻ 重试", cls: "nw-btn nw-btn-primary" });
-          retry.addEventListener("click", () => this.retrySuggestion());
+          renderSuggestErrorCard(this.suggestionContent, getFriendlyErrorMessage(engineError), {
+            onDismiss: () => this.renderEmptySuggestions(),
+            onRetry: () => this.retrySuggestion(),
+          });
           return;
         }
 
@@ -1661,34 +1687,10 @@ export class CoWritingView extends ItemView {
         const allZero = directions.every(dir => (dirCounts[dir] || 0) === 0);
 
         if (allZero) {
-          const noticeBar = this.suggestionContent.createDiv({
-            cls: 'nw-knowledge-empty-notice',
-            attr: {
-              style: 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:12px;border-radius:6px;background:rgba(var(--background-modifier-warning-rgb), 0.15);border:1px solid var(--background-modifier-warning);'
-            }
-          });
-          noticeBar.createSpan({
-            text: '⚠️ 未检索到知识库参考，可能知识库未完成拆解',
-            attr: { style: 'font-size:13px;color:var(--text-warning);' }
-          });
-          const refillBtn = noticeBar.createEl('button', {
-            text: '补全知识库',
-            attr: {
-              style: 'padding:4px 12px;border-radius:4px;background:var(--interactive-accent);color:var(--text-on-accent);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:opacity 0.2s;'
-            }
-          });
-          refillBtn.addEventListener('click', () => {
-            this.openRefillModal('knowledge');
-          });
-          refillBtn.addEventListener('mouseenter', () => {
-            refillBtn.style.opacity = '0.8';
-          });
-          refillBtn.addEventListener('mouseleave', () => {
-            refillBtn.style.opacity = '1';
-          });
+          renderKnowledgeEmptyNotice(this.suggestionContent, () => this.openRefillModal('knowledge'));
         }
 
-        this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-empty", text: "\u8FD9\u6B21\u6CA1\u6709\u62FF\u5230\u5EFA\u8BAE\u3002\u53EF\u4EE5\u6362\u4E00\u6279\uFF0C\u6216\u8005\u68C0\u67E5 API \u914D\u7F6E\u3002" });
+        renderNoSuggestionMessage(this.suggestionContent);
         return;
       }
       this.renderSuggestionCards(suggestions);
@@ -1810,18 +1812,11 @@ export class CoWritingView extends ItemView {
 
   /** 渲染人工率仪表盘 */
   renderHumanRateDashboard() {
-    if (!this.humanRateDashboard) return;
-    this.humanRateDashboard.empty();
-
-    const enabled = this.facade.settings.precisionMode || false;
-    if (!enabled) {
-      this.humanRateDashboard.createDiv({ cls: 'nw-hr-header' });
-      this.humanRateDashboard.createDiv({ cls: 'nw-hr-disabled', text: '精准模式未开启' });
-      return;
-    }
-
-    const scores = this.calculateHumanRate();
-    this.renderHumanRateInto(scores);
+    renderHumanRatePanel({
+      container: this.humanRateDashboard,
+      precisionMode: this.facade.settings.precisionMode || false,
+      editorText: this.rightEditor?.value || '',
+    });
   }
 
   /**
@@ -1845,14 +1840,11 @@ export class CoWritingView extends ItemView {
 
   /** 更新人工率仪表盘 */
   updateHumanRateDashboard() {
-    if (!this.humanRateDashboard) return;
-    const enabled = this.facade.settings.precisionMode || false;
-    if (!enabled) {
-      this.renderHumanRateDashboard();
-      return;
-    }
-    const scores = this.calculateHumanRate();
-    this.renderHumanRateInto(scores);
+    updateHumanRatePanel({
+      container: this.humanRateDashboard,
+      precisionMode: this.facade.settings.precisionMode || false,
+      editorText: this.rightEditor?.value || '',
+    });
   }
   /** v6.4: 推进到下一个未完成剧情节点 */
   async handleAdvanceNextNode() {
@@ -1968,32 +1960,29 @@ export class CoWritingView extends ItemView {
     this.setGhostSuggestion(null);
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = `${suggestions.length} 条建议`;
-    this.suggestionContent.empty();
-    const row = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-card-row" });
-    suggestions.forEach((suggestion: SuggestionRecord, index: number) => {
-      const card = row.createDiv({ cls: "novel-writer-cowrite-suggestion-card" });
-      const tags = card.createDiv({ cls: "novel-writer-cowrite-card-tags" });
-      tags.createSpan({ cls: "novel-writer-cowrite-direction-tag", text: getDirectionLabel(suggestion.direction) });
-      tags.createSpan({ cls: "novel-writer-cowrite-style-tag", text: getStyleLabel(suggestion.style) });
-      tags.createSpan({ cls: "novel-writer-cowrite-index-tag", text: `Ctrl+${index + 1}` });
-      card.createDiv({ cls: "novel-writer-cowrite-suggestion-text", text: suggestion.text });
-      if (suggestion.riskLevel && suggestion.riskLevel !== "low" && (suggestion.riskWarnings?.length || 0) > 0) {
-        const riskBox = card.createDiv({ cls: `novel-writer-cowrite-risk novel-writer-cowrite-risk-${suggestion.riskLevel}` });
-        const label = suggestion.riskLevel === "high" ? "\u26A0\uFE0F \u5267\u900F\u98CE\u9669\uFF08\u9AD8\uFF09" : "\u26A0\uFE0F \u5267\u900F\u98CE\u9669\uFF08\u4E2D\uFF09";
-        riskBox.createDiv({ cls: "novel-writer-cowrite-risk-title", text: label });
-        const ul = riskBox.createEl("ul", { cls: "novel-writer-cowrite-risk-list" });
-        (suggestion.riskWarnings || []).slice(0, 3).forEach((w: string) => ul.createEl("li", { text: w }));
-      }
-      const actions = card.createDiv({ cls: "novel-writer-cowrite-card-actions" });
-      const acceptBtn = actions.createEl("button", { text: "\u2713 \u63A5\u53D7", cls: "novel-writer-cowrite-primary-btn" });
-      acceptBtn.addEventListener("click", () => this.handleAcceptSuggestion(suggestion));
-      const editBtn = actions.createEl("button", { text: "\u270F\uFE0F \u7F16\u8F91\u5E76\u9A8C\u8BC1", cls: "novel-writer-cowrite-secondary-btn" });
-      editBtn.addEventListener("click", () => this.handleEditSuggestion(suggestion));
-      const iterateBtn = actions.createEl("button", { text: "\u21BB \u8FED\u4EE3", cls: "novel-writer-cowrite-secondary-btn" });
-      iterateBtn.addEventListener("click", () => this.handleIterateSuggestion(suggestion));
-      const rejectBtn = actions.createEl("button", { text: "\xD7 \u62D2\u7EDD", cls: "novel-writer-cowrite-secondary-btn" });
-      rejectBtn.addEventListener("click", () => this.rejectSuggestion(suggestion.id));
-    });
+    renderSuggestionCards(this.suggestionContent, suggestions, this.suggestionCardActions());
+  }
+
+  /** 组装建议卡动作宿主（采纳互斥锁仍由视图持有）。 */
+  private suggestionCardActions(): SuggestionCardActions {
+    return {
+      onAccept: suggestion => this.handleAcceptSuggestion(suggestion),
+      onEdit: (suggestion, initialText) => this.handleEditSuggestion(suggestion, initialText),
+      onIterate: suggestion => this.handleIterateSuggestion(suggestion),
+      onReject: suggestionId => this.rejectSuggestion(suggestionId),
+      onContinue: async (modifiedText, suggestion, validation, editDurationMs) => {
+        await this.insertTextAndRecord(modifiedText, suggestion, validation, editDurationMs);
+      },
+      tryBeginAccept: () => {
+        if (this.acceptInFlight) return false;
+        this.acceptInFlight = true;
+        return true;
+      },
+      endAccept: () => {
+        this.acceptInFlight = false;
+      },
+      createScoreCard: (label, value) => this.createScoreCard(label, value),
+    };
   }
   // B2: 多轮迭代改写——基于单条候选做定向迭代，不重新生成整组
   /**
@@ -2262,27 +2251,7 @@ export class CoWritingView extends ItemView {
   renderAssociationCards(associations: AssociationSuggestion[], suggestions: SuggestionRecord[]) {
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = `${suggestions.length} 条联想`;
-    this.suggestionContent.empty();
-    const header = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-association-header" });
-    header.createSpan({ text: "\u2728 \u8054\u60F3\u8F93\u5165" });
-    header.createSpan({ cls: "novel-writer-cowrite-association-tip", text: "Ctrl+1/2/3 \u63D2\u5165\uFF0CCtrl+Space \u6362\u4E00\u7EC4" });
-    const row = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-card-row" });
-    suggestions.forEach((suggestion: SuggestionRecord, index: number) => {
-      const association = associations[index];
-      const card = row.createDiv({ cls: "novel-writer-cowrite-suggestion-card novel-writer-cowrite-association-card" });
-      const tags = card.createDiv({ cls: "novel-writer-cowrite-card-tags" });
-      tags.createSpan({ cls: "novel-writer-cowrite-direction-tag", text: getAssociationLabel(association.type) });
-      tags.createSpan({ cls: "novel-writer-cowrite-style-tag", text: `\u7F6E\u4FE1 ${Math.round((association.confidence || 0) * 100)}%` });
-      tags.createSpan({ cls: "novel-writer-cowrite-index-tag", text: `Ctrl+${index + 1}` });
-      card.createDiv({ cls: "novel-writer-cowrite-suggestion-text", text: association.text });
-      const actions = card.createDiv({ cls: "novel-writer-cowrite-card-actions" });
-      const acceptBtn = actions.createEl("button", { text: "\u21B5 \u63D2\u5165\u8054\u60F3", cls: "novel-writer-cowrite-primary-btn" });
-      acceptBtn.addEventListener("click", () => this.handleAcceptSuggestion(suggestion));
-      const editBtn = actions.createEl("button", { text: "\u270F\uFE0F \u7F16\u8F91", cls: "novel-writer-cowrite-secondary-btn" });
-      editBtn.addEventListener("click", () => this.handleEditSuggestion(suggestion));
-      const rejectBtn = actions.createEl("button", { text: "\xD7 \u62D2\u7EDD", cls: "novel-writer-cowrite-secondary-btn" });
-      rejectBtn.addEventListener("click", () => this.rejectSuggestion(suggestion.id));
-    });
+    renderAssociationCards(this.suggestionContent, associations, suggestions, this.suggestionCardActions());
   }
   /**
    * 渲染联想加载态。
@@ -2290,16 +2259,7 @@ export class CoWritingView extends ItemView {
   renderAssociationLoading() {
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = "联想中...";
-    this.suggestionContent.empty();
-    const header = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-association-header" });
-    header.createSpan({ text: "\u2728 \u6B63\u5728\u8054\u60F3\u4E0B\u4E00\u53E5\u2026\u2026" });
-    const row = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-card-row" });
-    for (let i = 0; i < 3; i++) {
-      const card = row.createDiv({ cls: "novel-writer-cowrite-skeleton-card novel-writer-cowrite-association-card" });
-      card.createDiv();
-      card.createDiv();
-      card.createDiv();
-    }
+    renderAssociationLoading(this.suggestionContent);
   }
   /**
    * 按序号采纳建议。
@@ -2381,43 +2341,7 @@ export class CoWritingView extends ItemView {
     if (this.suggestionStatusText) {
       this.suggestionStatusText.textContent = degraded ? "校验未完成" : (validation.isValid ? "验证通过" : "存在风险");
     }
-    this.suggestionContent.empty();
-    const panel = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-validation-panel" });
-    const statusClass = !degraded && validation.isValid ? "is-valid" : "is-warning";
-    const titleText = degraded
-      ? "\u26A0\uFE0F \u6821\u9A8C\u672A\u5B8C\u6210\uFF08\u7ED3\u679C\u65E0\u6CD5\u89E3\u6790\uFF09"
-      : (validation.isValid ? "\u2705 \u9A8C\u8BC1\u901A\u8FC7" : "\u26A0\uFE0F \u5B58\u5728\u98CE\u9669");
-    panel.createDiv({ cls: `novel-writer-cowrite-validation-title ${statusClass}`, text: titleText });
-    if (!degraded) {
-      const scores = panel.createDiv({ cls: "novel-writer-cowrite-score-grid" });
-      scores.appendChild(this.createScoreCard("\u8BBE\u5B9A\u4E00\u81F4\u6027", validation.consistencyScore));
-      scores.appendChild(this.createScoreCard("\u6587\u98CE\u5BF9\u9F50", validation.styleScore));
-      scores.appendChild(this.createScoreCard("\u5267\u60C5\u5BF9\u9F50", validation.plotAlignmentScore));
-    }
-    if (validation.warnings.length > 0) {
-      const warnings = panel.createDiv({ cls: "novel-writer-cowrite-validation-list" });
-      warnings.createEl("strong", { text: "\u26A0\uFE0F \u8B66\u544A" });
-      validation.warnings.forEach((w: string) => warnings.createDiv({ text: `\xB7 ${w}` }));
-    }
-    if (validation.suggestions.length > 0) {
-      const tips = panel.createDiv({ cls: "novel-writer-cowrite-validation-list" });
-      tips.createEl("strong", { text: "\u{1F4A1} \u6539\u8FDB\u5EFA\u8BAE" });
-      validation.suggestions.forEach((t: string) => tips.createDiv({ text: `\xB7 ${t}` }));
-    }
-    const actions = panel.createDiv({ cls: "novel-writer-cowrite-card-actions" });
-    const useBtn = actions.createEl("button", { text: "\u7EE7\u7EED\u4F7F\u7528", cls: "novel-writer-cowrite-primary-btn" });
-    // 与「✓ 接受」同一把采纳互斥锁：连点两次不能重复插入同一段校验后的文本
-    useBtn.addEventListener("click", async () => {
-      if (this.acceptInFlight) return;
-      this.acceptInFlight = true;
-      try {
-        await this.insertTextAndRecord(modifiedText, suggestion, validation, editDurationMs);
-      } finally {
-        this.acceptInFlight = false;
-      }
-    });
-    const editBtn = actions.createEl("button", { text: "\u4FEE\u6539\u540E\u518D\u9A8C\u8BC1", cls: "novel-writer-cowrite-secondary-btn" });
-    editBtn.addEventListener("click", () => this.handleEditSuggestion(suggestion, modifiedText));
+    renderValidationResult(this.suggestionContent, validation, modifiedText, suggestion, editDurationMs, this.suggestionCardActions());
   }
   /**
    * 插入文本并记录编辑交互。
@@ -2730,71 +2654,27 @@ ${text}`;
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = "生成中...";
     this.suggestionContent.empty();
     this.lastSuggestError = null;
-
-    this.suggestProgressContainer = this.suggestionContent.createDiv({
-      cls: "nw-suggest-progress-container",
-      attr: { style: "padding: 16px 20px;" }
+    renderSuggestionLoading({
+      container: this.suggestionContent,
+      onCancel: () => this.cancelSuggestion(),
+      onRetry: () => this.retrySuggestion(),
+      setProgressContainer: el => { this.suggestProgressContainer = el; },
+      setEtaDisplay: el => { this.suggestEtaDisplay = el; },
+      setStepList: el => { this.suggestStepList = el; },
+      resetStreamingCards: () => { this.streamingPreviewCards = []; },
+      setStreamingContainer: el => { this.suggestStreamingContainer = el; },
+      setCancelButton: el => { this.suggestCancelBtn = el; },
+      setRetryButton: el => { this.suggestRetryBtn = el; },
+      setErrorContainer: el => { this.suggestErrorContainer = el; },
+      bindProgressEmitter: stepList => {
+        if (this.suggestProgressEmitter) {
+          stepList.bindEmitter(this.suggestProgressEmitter);
+          this.suggestProgressEmitter.on((state: ProgressState) => {
+            this.updateSuggestProgressUI(state);
+          });
+        }
+      },
     });
-
-    const headerRow = this.suggestProgressContainer.createDiv({
-      attr: { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;" }
-    });
-    headerRow.createSpan({
-      text: "🤖 AI 正在生成建议",
-      attr: { style: "font-weight:600;font-size:14px;" }
-    });
-
-    this.suggestEtaDisplay = headerRow.createSpan({
-      text: "预估时间: 计算中...",
-      attr: { style: "font-size:12px;color:var(--text-muted);" }
-    });
-
-    const stepListContainer = this.suggestProgressContainer.createDiv({
-      attr: { style: "margin-bottom:16px;" }
-    });
-    this.suggestStepList = new StepListComponent(stepListContainer, [
-      "检索知识库内容",
-      "分析写作上下文",
-      "生成写作建议"
-    ]);
-
-    // NBI-03: 流式候选预览区（生成开始即展开骨架，非流式 provider 也仅在调用期展示）
-    this.streamingPreviewCards = [];
-    this.suggestStreamingContainer = this.suggestProgressContainer.createDiv({
-      cls: "nw-cowrite-stream-preview",
-      attr: { style: "display:none;margin-bottom:16px;" }
-    });
-
-    const actionsRow = this.suggestProgressContainer.createDiv({
-      attr: { style: "display:flex;gap:12px;justify-content:flex-end;" }
-    });
-
-    this.suggestCancelBtn = actionsRow.createEl("button", {
-      text: "✕ 取消生成",
-      cls: "nw-btn nw-btn-ghost"
-    });
-    this.suggestCancelBtn.addEventListener("click", () => this.cancelSuggestion());
-
-    this.suggestRetryBtn = actionsRow.createEl("button", {
-      text: "↻ 重试",
-      cls: "nw-btn nw-btn-primary",
-      attr: { style: "display:none;" }
-    });
-    this.suggestRetryBtn.addEventListener("click", () => this.retrySuggestion());
-
-    this.suggestErrorContainer = this.suggestProgressContainer.createDiv({
-      cls: "nw-suggest-error-container",
-      attr: {
-        style: "display:none;margin-top:12px;padding:12px;background:var(--background-secondary);border-radius:6px;border-left:3px solid var(--text-error, #ef4444);"
-      }
-    });
-
-    if (this.suggestProgressEmitter) {
-      this.suggestStepList.bindEmitter(this.suggestProgressEmitter);
-      this.suggestProgressEmitter.on((state: ProgressState) => {
-        this.updateSuggestProgressUI(state);
-      });
-    }
   }
 
   /**
@@ -2802,44 +2682,19 @@ ${text}`;
    * 首个回调（含空文本重置回调）到达时创建，容器已销毁则跳过。
    */
   private ensureStreamingPreview(): void {
-    const container = this.suggestStreamingContainer;
-    if (!container || !container.isConnected) return;
-    if (this.streamingPreviewCards.length > 0) {
-      container.style.display = "block";
-      return;
-    }
-    const row = container.createDiv({ cls: "novel-writer-cowrite-card-row nw-cowrite-stream-row" });
-    for (let i = 0; i < 3; i++) {
-      const card = row.createDiv({ cls: "novel-writer-cowrite-suggestion-card nw-cowrite-streaming-card" });
-      const tags = card.createDiv({ cls: "novel-writer-cowrite-card-tags" });
-      tags.createSpan({ cls: "novel-writer-cowrite-direction-tag", text: `候选 ${i + 1} · 生成中` });
-      const textEl = card.createDiv({ cls: "novel-writer-cowrite-suggestion-text nw-cowrite-streaming-text" });
-      textEl.createSpan({ cls: "nw-cowrite-stream-cursor", text: "▍" });
-      this.streamingPreviewCards.push(card);
-    }
-    container.style.display = "block";
+    ensureStreamingPreview(this.suggestStreamingContainer, this.streamingPreviewCards);
   }
 
   /** NBI-03: 按候选索引更新流式文本，互不干扰 */
   private updateStreamingPreview(index: number, cumulativeText: string): void {
     this.ensureStreamingPreview();
-    const card = this.streamingPreviewCards[index];
-    if (!card) return;
-    const textEl = card.querySelector<HTMLElement>(".nw-cowrite-streaming-text");
-    if (!textEl) return;
-    textEl.setText(cumulativeText);
-    if (cumulativeText.length > 0) {
-      textEl.createSpan({ cls: "nw-cowrite-stream-cursor", text: "▍" });
-    }
+    updateStreamingPreview(this.suggestStreamingContainer, this.streamingPreviewCards, index, cumulativeText);
   }
 
   /** NBI-03: 中止或异常时移除未完成的「生成中」卡片，避免 DOM 残留 */
   private clearStreamingPreview(): void {
+    clearStreamingPreview(this.suggestStreamingContainer);
     this.streamingPreviewCards = [];
-    if (this.suggestStreamingContainer?.isConnected) {
-      this.suggestStreamingContainer.empty();
-      this.suggestStreamingContainer.style.display = "none";
-    }
     this.suggestStreamingContainer = null;
   }
 
@@ -2920,19 +2775,7 @@ ${text}`;
     this.showSuggestionPanel();
     const statusText = isStreaming ? "生成中..." : `${index + 1} 条建议`;
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = statusText;
-    this.suggestionContent.empty();
-    const row = this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-card-row" });
-    const card = row.createDiv({ cls: "novel-writer-cowrite-suggestion-card" });
-    const tags = card.createDiv({ cls: "novel-writer-cowrite-card-tags" });
-    tags.createSpan({ cls: "novel-writer-cowrite-direction-tag", text: direction });
-    tags.createSpan({ cls: "novel-writer-cowrite-style-tag", text: style });
-    tags.createSpan({ cls: "novel-writer-cowrite-index-tag", text: `Ctrl+${index + 1}` });
-    const textEl = card.createDiv({ cls: "novel-writer-cowrite-suggestion-text", text: currentText });
-    if (isStreaming) {
-      const cursor = card.createSpan({ cls: "nw-streaming-cursor", text: "▋" });
-      textEl.appendChild(cursor);
-    }
-    return card;
+    return renderStreamingSuggestionCard(this.suggestionContent, direction, style, index, currentText, isStreaming);
   }
 
   /**
@@ -3073,17 +2916,7 @@ ${text}`;
   showKnowledgeInjectionNotice() {
     // 生成完成后的统一收口：同人设定可能在会话中被删除/移动，这里补一次失效复查
     this.warnFanficRulesOnce();
-    const count = this.facade.lastKnowledgeCount || 0;
-    const dropped = this.facade.lastKnowledgeDroppedCount || 0;
-    if (count > 0) {
-      showSuccessNotice(
-        dropped > 0
-          ? `已注入 ${count} 条知识库片段（另 ${dropped} 条因预算不足未注入）`
-          : `已注入 ${count} 条知识库片段`,
-      );
-    } else if (dropped > 0) {
-      showWarningNotice(`知识库片段因预算不足未注入（${dropped} 条）`);
-    }
+    showKnowledgeNotice(this.facade.lastKnowledgeCount || 0, this.facade.lastKnowledgeDroppedCount || 0);
   }
   /**
    * 渲染校验加载态。
@@ -3092,7 +2925,7 @@ ${text}`;
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = "验证中...";
     this.suggestionContent.empty();
-    this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-empty", text: "\u6B63\u5728\u9A8C\u8BC1\u4F60\u7684\u4FEE\u6539\uFF1A\u8BBE\u5B9A\u4E00\u81F4\u6027 / \u6587\u98CE\u5BF9\u9F50 / \u5267\u60C5\u5BF9\u9F50\u2026\u2026" });
+    renderValidationLoadingMessage(this.suggestionContent);
   }
   /**
    * 渲染空建议提示。
@@ -3104,7 +2937,7 @@ ${text}`;
     this.showSuggestionPanel();
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = "等待生成";
     this.suggestionContent.empty();
-    this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-empty", text: message });
+    renderEmptySuggestionMessage(this.suggestionContent, message);
   }
 
   // ==================== 知识库 Tab 相关方法 ====================
@@ -3254,46 +3087,7 @@ ${text}`;
    * @param enable - 是否启用
    */
   toggleReferenceBook(bookId: string, bookName: string, enable: boolean): void {
-    const currentRefs = this.facade.getReferenceBooks();
-    if (enable) {
-      if (currentRefs.length >= 3) {
-        new Notice('最多只能启用 3 本参考书籍', 3000);
-        return;
-      }
-      const newRefs = [...currentRefs, bookId];
-      this.persistReferenceBookIds(newRefs);
-      showSuccessNotice(`已启用《${bookName}》作为参考`, { timeout: 2000 });
-    } else {
-      const newRefs = currentRefs.filter(id => id !== bookId);
-      this.persistReferenceBookIds(newRefs);
-      showSuccessNotice(`已停用《${bookName}》的参考`, { timeout: 2000 });
-    }
-    this.renderKbBookList();
-    this.refreshChapterMatch();
-    this.refreshWritingAdvice();
-  }
-
-  /**
-   * 参考书籍的唯一写入点：设置（落盘）+ 插件镜像 + 引擎/注入器（带权重）。
-   * 旧实现只改实例字段且从不 saveSettings，重启后选择全丢。
-   */
-  private persistReferenceBookIds(newRefs: string[]): void {
-    this.plugin.referenceBookIds = newRefs;
-    this.plugin.settings.referenceBookIds = newRefs;
-    void this.plugin.saveSettings();
-    this.applyReferenceBookConfig(newRefs);
-  }
-
-  /** 把「顺序 + 权重」推给引擎与知识注入器；首位即主参考，权重固定 1 */
-  private applyReferenceBookConfig(ids: string[]): void {
-    const weights = this.plugin.settings.referenceBookWeights ?? {};
-    void this.facade.setReferenceBooksWithWeight(
-      ids.map((id, index) => ({
-        bookId: id,
-        weight: index === 0 ? 1 : (weights[id] ?? 0.5),
-        isPrimary: index === 0,
-      }))
-    ).catch(e => log.warn('[CoWritingView] 应用参考书籍权重失败:', e));
+    toggleReferenceBook(this.kbReferenceHost(), bookId, bookName, enable);
   }
 
   /**
@@ -3302,32 +3096,42 @@ ${text}`;
    * @param bookId - 书籍 ID
    */
   setPrimaryReference(bookId: string): void {
-    const currentRefs = this.facade.getReferenceBooks();
-    const index = currentRefs.indexOf(bookId);
-    if (index <= 0) return;
-
-    const newRefs = [bookId, ...currentRefs.filter(id => id !== bookId)];
-    this.persistReferenceBookIds(newRefs);
-    showSuccessNotice('已设为主参考书籍', { timeout: 2000 });
-    this.renderKbBookList();
-    this.refreshWritingAdvice();
+    setPrimaryReference(this.kbReferenceHost(), bookId);
   }
 
   /**
-   * 权重滑杆：以前只打日志，滑了等于没滑；现在写进设置并立即作用到注入器
+   * 权重滑杆：写进设置并立即作用到注入器
    *
    * @param bookId - 书籍 ID
    * @param weight - 权重
    */
   adjustReferenceWeight(bookId: string, weight: number): void {
-    const clamped = Math.max(0.1, Math.min(1, Math.round(weight * 100) / 100));
-    this.plugin.settings.referenceBookWeights = {
-      ...(this.plugin.settings.referenceBookWeights ?? {}),
-      [bookId]: clamped,
+    adjustReferenceWeight(this.kbReferenceHost(), bookId, weight);
+  }
+
+  /** 参考书配置宿主：插件镜像/设置/引擎同步的唯一接线点。 */
+  private kbReferenceHost(): KbReferenceHost {
+    return {
+      getReferences: () => this.facade.getReferenceBooks(),
+      getWeights: () => this.plugin.settings.referenceBookWeights ?? {},
+      mirrorReferences: ids => {
+        this.plugin.referenceBookIds = ids;
+        this.plugin.settings.referenceBookIds = ids;
+      },
+      setWeights: weights => {
+        this.plugin.settings.referenceBookWeights = weights;
+      },
+      saveSettings: () => { void this.plugin.saveSettings(); },
+      applyConfig: config => {
+        void this.facade.setReferenceBooksWithWeight(config)
+          .catch(e => log.warn('[CoWritingView] 应用参考书籍权重失败:', e));
+      },
+      renderBookList: () => this.renderKbBookList(),
+      refreshChapterMatch: () => this.refreshChapterMatch(),
+      refreshWritingAdvice: () => this.refreshWritingAdvice(),
+      notifySuccess: message => showSuccessNotice(message, { timeout: 2000 }),
+      notifyLimit: message => new Notice(message, 3e3),
     };
-    void this.plugin.saveSettings();
-    this.applyReferenceBookConfig(this.facade.getReferenceBooks());
-    this.refreshWritingAdvice();
   }
 
   // ========== 子 Tab 2: 当前章节匹配 ==========
@@ -3504,18 +3308,17 @@ ${text}`;
    * 刷新状态栏。
    */
   refreshStatusBar() {
-    if (!this.statusBar)
-      return;
-    const count = this.rightEditor?.value?.trim().length || 0;
-    this.statusBar.empty();
-    this.statusBar.createSpan({ text: `\u{1F4CD} ${this.project || "\u672A\u9009\u62E9\u9879\u76EE"} \xB7 ${this.volume} \xB7 ${this.chapterName || `\u7B2C${this.chapterNum}\u7AE0`} \xB7 \u5B57\u6570 ${count}` });
-    if (this.wordCountDisplay)
-      this.wordCountDisplay.setText(String(count));
-    if (this.wordGoalDisplay) {
-      const goal = this.facade.settings.defaultWordCount || 3000;
-      const progress = Math.min(100, Math.round(count / goal * 100));
-      this.wordGoalDisplay.setText(`\u76EE\u6807: ${goal} \xB7 ${progress}%`);
-    }
+    renderStatusBar({
+      statusBar: this.statusBar,
+      wordCountDisplay: this.wordCountDisplay,
+      wordGoalDisplay: this.wordGoalDisplay,
+      project: this.project,
+      volume: this.volume,
+      chapterName: this.chapterName,
+      chapterNum: this.chapterNum,
+      editorText: this.rightEditor?.value || '',
+      wordGoal: this.facade.settings.defaultWordCount || 3000,
+    });
   }
   /**
    * 更新控件状态。
@@ -3524,10 +3327,7 @@ ${text}`;
    */
   updateControlState(state: string) {
     this.refreshStatusBar();
-    if (this.saveStateDisplay) {
-      this.saveStateDisplay.setText(state);
-      this.saveStateDisplay.toggleClass("is-dirty", state !== "\u5DF2\u4FDD\u5B58" && state !== "\u5DF2\u52A0\u8F7D");
-    }
+    updateSaveStateDisplay(this.saveStateDisplay, state);
   }
   /**
    * 应用提示。
@@ -3942,70 +3742,25 @@ ${text}`;
   /** v6.4: 浮窗显示问题详情 */
   private showQualityPopup(event: MouseEvent, issue: QualityIssue) {
     this.hideQualityPopup();
-    const popup = document.body.createDiv({ cls: "nw-quality-popup" });
-    popup.style.left = `${Math.min(event.clientX + 10, window.innerWidth - 320)}px`;
-    popup.style.top = `${Math.min(event.clientY - 10, window.innerHeight - 200)}px`;
-    const header = popup.createDiv({ cls: "nw-quality-popup-header" });
-    header.createSpan({ text: `${issue.severity} ${issue.category}` });
-    const body = popup.createDiv({ cls: "nw-quality-popup-body" });
-    body.createDiv({ cls: "nw-quality-popup-label", text: "\u95EE\u9898" });
-    body.createDiv({ cls: "nw-quality-popup-text", text: issue.problem });
-    body.createDiv({ cls: "nw-quality-popup-label", text: "\u5EFA\u8BAE" });
-    body.createDiv({ cls: "nw-quality-popup-text", text: issue.suggestion });
-    if (issue.locationText) {
-      body.createDiv({ cls: "nw-quality-popup-label", text: "\u5B9A\u4F4D" });
-      body.createDiv({ cls: "nw-quality-popup-location", text: `\u9644\u8FD1\u6587\u5B57\uFF1A${issue.locationText}` });
-    }
-    this.qualityReportPopup = popup;
+    this.qualityReportPopup = showQualityPopup(issue, event);
   }
 
   private hideQualityPopup() {
-    if (this.qualityReportPopup) {
-      this.qualityReportPopup.remove();
-      this.qualityReportPopup = null;
-    }
+    hideQualityPopup(this.qualityReportPopup);
+    this.qualityReportPopup = null;
   }
 
   /** v6.4: 右键菜单：AI 修复 */
   private showQualityContextMenu(event: MouseEvent, issue: QualityIssue) {
-    const menu = new Menu();
-    menu.addItem((item) => {
-      item.setTitle("\uD83D\uDD27 AI \u4FEE\u590D\u6B64\u95EE\u9898");
-      item.setIcon("wand");
-      item.onClick(() => void this.handleQualityFix(issue));
+    showQualityContextMenu(event, issue, {
+      onFix: () => { void this.handleQualityFix(issue); },
+      onLocate: () => this.scrollToTextInEditor(issue.locationText),
     });
-    menu.addItem((item) => {
-      item.setTitle("\uD83D\uDCCD \u5B9A\u4F4D\u5230\u7F16\u8F91\u5668");
-      item.setIcon("go-to-file");
-      item.onClick(() => this.scrollToTextInEditor(issue.locationText));
-    });
-    menu.showAtMouseEvent(event);
   }
 
   /** v6.4: 在编辑器中定位到包含指定文字的段落 */
   private scrollToTextInEditor(text: string) {
-    if (!text || !this.rightEditor) return;
-    const value = this.rightEditor.value;
-    const idx = value.indexOf(text);
-    if (idx >= 0) {
-      this.rightEditor.focus();
-      this.rightEditor.setSelectionRange(idx, idx + text.length);
-      this.rightEditor.scrollTop = Math.max(0, this.getLineTop(this.rightEditor, idx) - 60);
-      return;
-    }
-    const words = text.slice(0, 6);
-    const fuzzyIdx = value.indexOf(words);
-    if (fuzzyIdx >= 0) {
-      this.rightEditor.focus();
-      this.rightEditor.setSelectionRange(fuzzyIdx, fuzzyIdx + words.length);
-      this.rightEditor.scrollTop = Math.max(0, this.getLineTop(this.rightEditor, fuzzyIdx) - 60);
-      return;
-    }
-    showWarningNotice(`\u6B63\u6587\u4E2D\u672A\u627E\u5230 "${text.slice(0, 10)}..."`, { timeout: 2000 });
-  }
-
-  private getLineTop(textarea: HTMLTextAreaElement, charIndex: number): number {
-    return lineTopForIndex(textarea.value, charIndex);
+    scrollToTextInEditor(this.rightEditor, text);
   }
 
   /**
@@ -4056,108 +3811,30 @@ ${text}`;
   /** 渲染左栏「本章简报」：大纲 + 场景列表 + 当前场景卡 + 信息释放 */
   private renderBriefPanel(): void {
     if (!this.briefContent) return;
-    const brief = this.facade.getChapterBrief();
-    this.briefContent.empty();
-
-    if (!brief || (brief.scenes.length === 0 && !brief.outlineSummary)) {
-      this.briefSummaryEl?.setText("未找到章节规划");
-      const empty = this.briefContent.createDiv({ cls: "nw-cowrite-brief-empty" });
-      empty.createDiv({ text: "未找到 Scene 展开，无法从规划直接开头。可先回工作台完成步骤 6，或直接手写第一句。" });
-      const btn = empty.createEl("button", { text: "去工作台", cls: "nw-btn nw-btn-ghost" });
-      btn.addEventListener("click", () => { void this.plugin.openFullWriterView(); });
-      return;
-    }
-
-    const total = brief.scenes.length;
-    const currentNo = total > 0 ? Math.min(brief.currentIndex + 1, total) : 0;
-    this.briefSummaryEl?.setText(
-      total > 0 ? `场景 ${currentNo}/${total} · 已写 ${brief.writtenWords} 字` : `已写 ${brief.writtenWords} 字`
-    );
-
-    if (brief.outlineSummary) {
-      const outline = this.briefContent.createDiv({ cls: "nw-cowrite-brief-outline" });
-      outline.createDiv({ cls: "nw-cowrite-brief-label", text: "本章大纲" });
-      outline.createDiv({ cls: "nw-cowrite-brief-text", text: brief.outlineSummary.slice(0, 240) });
-    }
-
-    if (total > 0) {
-      const list = this.briefContent.createDiv({ cls: "nw-cowrite-brief-scenes" });
-      brief.scenes.forEach((s, i) => {
-        const done = i < brief.currentIndex;
-        const active = i === brief.currentIndex;
-        const item = list.createDiv({
-          cls: `nw-cowrite-brief-scene${active ? " is-active" : ""}${done ? " is-done" : ""}`,
-          attr: { title: s.objective || s.name || "" },
-        });
-        item.createSpan({
-          cls: "nw-cowrite-brief-scene-name",
-          text: `${done ? "✅" : active ? "▶" : "·"} 第${s.index}场 ${s.name || "未命名"}`,
-        });
-        item.addEventListener("click", () => {
-          this.facade.setCurrentSceneIndex(i);
-          this.renderBriefPanel();
-          this.updatePlotCompletion();
-          showSuccessNotice(`已切换当前场景：第${s.index}场 ${s.name || ""}`, { timeout: 2000 });
-        });
-      });
-    }
-
-    const cur = brief.currentScene;
-    if (cur) {
-      const card = this.briefContent.createDiv({ cls: "nw-cowrite-brief-card" });
-      card.createDiv({ cls: "nw-cowrite-brief-label", text: `当前场景：${cur.name || "未命名"}` });
-      const rows: Array<[string, string]> = [
-        ["目标", cur.objective],
-        ["冲突", cur.conflict],
-        ["感官", cur.sensoryHook],
-        ["记忆", cur.memoryTrigger],
-        ["身体", cur.bodyReaction],
-        ["潜台词", cur.subtext],
-        ["关系", cur.relationshipShift],
-        ["名场面", cur.keyScene],
-      ];
-      for (const [label, value] of rows) {
-        if (!value) continue;
-        const row = card.createDiv({ cls: "nw-cowrite-brief-row" });
-        row.createSpan({ cls: "nw-cowrite-brief-row-label", text: label });
-        row.createSpan({ cls: "nw-cowrite-brief-row-value", text: value });
-      }
-      if (cur.emotionStart || cur.emotionEnd) {
-        card.createDiv({
-          cls: "nw-cowrite-brief-emotion",
-          text: `情绪：${cur.emotionStart || "—"} → ${cur.emotionEnd || "—"}${cur.emotionDelta ? `（${cur.emotionDelta}）` : ""}`,
-        });
-      }
-      if (cur.cliffhanger) {
-        card.createDiv({ cls: "nw-cowrite-brief-hook", text: `钩子：${cur.cliffhanger}` });
-      }
-    }
-
-    if (brief.infoRelease) {
-      const info = this.briefContent.createDiv({ cls: "nw-cowrite-brief-info" });
-      info.createDiv({ cls: "nw-cowrite-brief-label", text: "信息释放" });
-      info.createDiv({ cls: "nw-cowrite-brief-text", text: brief.infoRelease.slice(0, 220) });
-    }
+    renderBriefPanel({
+      container: this.briefContent,
+      summaryEl: this.briefSummaryEl,
+      getBrief: () => this.facade.getChapterBrief(),
+      openFullWriterView: () => { void this.plugin.openFullWriterView(); },
+      selectScene: index => {
+        const brief = this.facade.getChapterBrief();
+        const scene = brief?.scenes[index];
+        this.facade.setCurrentSceneIndex(index);
+        this.renderBriefPanel();
+        this.updatePlotCompletion();
+        showSuccessNotice(`已切换当前场景：第${scene?.index ?? index + 1}场 ${scene?.name || ""}`, { timeout: 2000 });
+      },
+    });
   }
 
   /** 空正文是否可以从章节规划冷启动 */
   private canColdStart(): boolean {
-    const brief = this.facade.getChapterBrief();
-    return !!brief && (brief.scenes.length > 0 || !!brief.outlineSummary);
+    return canColdStart(this.facade.getChapterBrief());
   }
 
   /** 空正文时把主按钮改为「生成开头」，避免用户找不到冷启动入口 */
   private updateStartButtonState(): void {
-    if (!this.suggestBtn) return;
-    // 生成期间按钮文案由 handleTabSuggest 维护为「⏳ 生成中...」，
-    // 重渲染（保存、切章预览等）不能把它覆盖回「✍️ 生成开头 / ⇥ 建议」。
-    if (this.isSuggesting) return;
-    const empty = !this.rightEditor?.value?.trim();
-    this.suggestBtn.textContent = empty ? "✍️ 生成开头" : "⇥ 建议";
-    this.suggestBtn.setAttribute(
-      "title",
-      empty ? "由本章 Scene 展开生成开头候选（不自动写入正文）" : "基于上文生成续写建议（方向可在上方临时指令填写）"
-    );
+    updateStartButtonState(this.suggestBtn, this.isSuggesting, this.rightEditor?.value || '');
   }
 
   /**
