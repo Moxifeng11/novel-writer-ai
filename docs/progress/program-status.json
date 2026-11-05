@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-05",
   "baseline": {
-    "version": "4.45.0",
+    "version": "4.46.0",
     "tests": {
-      "files": 562,
-      "cases": 6137
+      "files": 563,
+      "cases": 6140
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 80,
+    "localCommitsAhead": 83,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G5",
+      "summary": "v4.46.0 第十四批：add-fanfic-setting-modal / manage-providers-modal / style-distiller-modal 三个文件余 25 处逐条核对，全部为守卫/输入预检/无变化/常驻进度，按口径 0 替换；三文件确认收敛完成",
+      "evidence": "ui/add-fanfic-setting-modal.ts + ui/manage-providers-modal.ts + ui/style-distiller-modal.ts"
+    },
     {
       "date": "2026-11-06",
       "group": "G5",
