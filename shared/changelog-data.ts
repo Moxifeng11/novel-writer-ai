@@ -21,6 +21,28 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.46.0',
+        date: '2026-11-06',
+        title: '指纹 V2 直存与 Notice 收敛收官',
+        sections: [
+            {
+                type: 'added',
+                label: '🗳️ 指纹',
+                items: [
+                    'addV2Fingerprint：蒸馏十二维直接以 version v2 入库，V2 逐维向量即时可检索',
+                    '提取视图默认走 V2 直存，失败回落 V1 通道且提示可见',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧯 提示收敛',
+                items: [
+                    'Notice 第十四批：3 文件 25 处逐条核对全为守卫类，0 替换，收敛完成',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.45.0',
         date: '2026-11-06',
         title: 'V2 十二维特征并入蒸馏链',

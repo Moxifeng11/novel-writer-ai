@@ -2,6 +2,23 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.46.0（2026-11-06）
+
+### 🗳️ 指纹 V2 直存：蒸馏十二维一步入库
+
+- `StyleFingerprintLibrary.addV2Fingerprint()`：磁盘直接落 `version:'v2'` 全量 12 维（不再"先 V1 落盘、等迁移"）；合成 `v1Backup` 供 V1 消费方还原（与融合路径一致）；project 作用域无项目时拒绝且不留半写。
+- 入库同时直建 V2 逐维向量（`addOrUpdateVectors`，embedding 降级不影响入库），新指纹即时可被 `searchSimilarStylesV2` 命中。
+- 提取视图接入：`handleExtractFromText` 走 `saveExtractedFingerprintWithLocalV2`——本地十二维统计成功即 V2 直存（提示"含 12 维结构化特征"）；统计/落库失败回落 V1 通道，两处降级均有可见提示（`check:silent-failures` 抓一轮后补齐）。
+- 新增 3 条直存测试（12 维 + 投影一致 + 向量即检；重载不降级；project 拒绝半写）。
+
+### 🧯 Notice 第十四批（0 替换，收敛完成，Trae 协作）
+
+- add-fanfic-setting-modal 11、manage-providers-modal 7、style-distiller-modal 7 共 25 处逐条核对，**全部为守卫/输入预检/无变化/常驻进度**，按口径 0 替换；三文件确认收敛完成，移出候选。
+
+### 🧪 测试与门禁
+
+- 全量单测 **563 文件 / 6,140 用例**（+1 文件 / +3 用例）；`preflight:release` 全绿；lint 0 error / 1,868 warnings（持平）。
+
 ## v4.45.0（2026-11-06）
 
 ### 🔀 V2 十二维特征并入蒸馏链（用户决策 A′）
