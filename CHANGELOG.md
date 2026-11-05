@@ -2,6 +2,18 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.49.0（2026-11-06）
+
+### ✂️ 协同视图切片第八批（3,980 → 3,581，Trae 协作）
+
+- 新增 4 模块：`editor-shortcuts.ts`（86 行，键位解析纯函数：IME→Tab→Ctrl+1/2/3→Ctrl+Space→Ctrl+J/K/H→Ctrl+Shift+R 优先于 Ctrl+R→Ctrl+S→Ctrl+.→Escape）、`metrics-render.ts`（167 行，MetricsRenderHost 注入 + 方向/紧凑文案）、`settlement-actions.ts`（188 行，弹窗改 `host.openSettlementModal` 依赖倒置，避免静态 import main）、`suggestion-flow.ts`（472 行，Tab 建议 + 流式整体搬运，abort/epoch/骨架/空态/错误卡分支语义不变）。
+- 新增 4 测试文件 22 用例；`preview-render` 切片尝试后整体回退（fake this 缺 previewHost），行数仍达标。
+- co-writing-view 八批累计 5,588 → **3,581**（-2,007），距 ≤3,000 还差 ~580 行。
+
+### 🧪 测试与门禁
+
+- 全量单测 **580 文件 / 6,237 用例**（+4 文件 / +22 用例）；`preflight:release` 全绿；lint 0 error / **1,853** warnings；any **298/306**（-8）；JSDoc 742 文件 100%、`@example` 52/52。
+
 ## v4.48.0（2026-11-06）
 
 ### ⚖️ settleLight 语义决策落地（决策 3）

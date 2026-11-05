@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132748 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38907 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38922 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 231 | 99672 | 667 | 593 | 89% |
+| `ui/` | 235 | 100190 | 687 | 608 | 89% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1683 | 3 | 3 |
+| `shared/changelog-data.ts` | 1698 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -565,12 +565,13 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3981 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3582 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 221 | 12 | 9 |
 | `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
 | `ui/co-writing/dashboard-status.ts` | 180 | 9 | 7 |
+| `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |
 | `ui/co-writing/ghost-association.ts` | 92 | 4 | 2 |
 | `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
@@ -580,13 +581,16 @@
 | `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
 | `ui/co-writing/metrics-panel.ts` | 228 | 5 | 3 |
+| `ui/co-writing/metrics-render.ts` | 168 | 7 | 6 |
 | `ui/co-writing/monitor-cards.ts` | 322 | 7 | 4 |
 | `ui/co-writing/quality-fix.ts` | 136 | 6 | 4 |
 | `ui/co-writing/quality-highlight.ts` | 102 | 3 | 2 |
 | `ui/co-writing/quality-popup.ts` | 147 | 6 | 5 |
 | `ui/co-writing/quality-report.ts` | 130 | 2 | 2 |
+| `ui/co-writing/settlement-actions.ts` | 189 | 6 | 5 |
 | `ui/co-writing/suggest-feedback.ts` | 185 | 9 | 7 |
 | `ui/co-writing/suggestion-cards.ts` | 352 | 12 | 11 |
+| `ui/co-writing/suggestion-flow.ts` | 473 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 657 | 2 | 2 |

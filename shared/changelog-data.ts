@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.49.0',
+        date: '2026-11-06',
+        title: '协同视图切片第八批',
+        sections: [
+            {
+                type: 'improved',
+                label: '✂️ 切片',
+                items: [
+                    'co-writing-view 3980→3581：键位/指标渲染/结算动作/建议流四模块',
+                    'any 306→298；lint 1868→1853',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.48.0',
         date: '2026-11-06',
         title: 'settleLight 决策落地、指纹编辑 12 维与切片第七批',
