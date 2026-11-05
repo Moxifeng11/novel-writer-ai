@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.50.0",
     "tests": {
-      "files": 580,
-      "cases": 6237
+      "files": 581,
+      "cases": 6244
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -572,7 +572,13 @@
     {
       "date": "2026-11-06",
       "group": "G5",
-      "summary": "v4.49.0（待发版）第十五批 Notice：ai-builder-modal / appearance-settings / settings/general-sections / settings/foreshadow-section / settings/knowledge-section / project-utils 合计替换 34 处（成功/失败/告警）；settings/api-section 余 8 处均为校验守卫，0 替换并确认收敛；无新增测试，改用既有 notice-helpers 覆盖",
+      "summary": "v4.51.0（待发版）co-writing-view 切片第九批：抽出 metrics-refresh（剧情完成度刷新编排：评估节流门控、在途评估中止、切章丢弃旧结果、失败态回退）与 chapter-switch（章节身份推定/正文去壳，锁定「缺参绑定错误卷」与标题重复两处历史 bug）；视图 3,581 → 3,556 行（-25，含空行口径）；新增 2 个行为测试文件 18 用例",
+      "evidence": "ui/co-writing/metrics-refresh.ts + ui/co-writing/chapter-switch.ts + ui/co-writing-view.ts + tests/unit/ui/co-writing-metrics-refresh.test.ts + tests/unit/ui/co-writing-chapter-switch.test.ts"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G5",
+      "summary": "v4.50.0 第十五批 Notice：ai-builder-modal / appearance-settings / settings/general-sections / settings/foreshadow-section / settings/knowledge-section / project-utils 合计替换 34 处（成功/失败/告警）；settings/api-section 余 8 处均为校验守卫，0 替换并确认收敛；无新增测试，改用既有 notice-helpers 覆盖",
       "evidence": "ui/ai-builder-modal.ts + ui/appearance-settings.ts + ui/settings/general-sections.ts + ui/settings/foreshadow-section.ts + ui/settings/knowledge-section.ts + ui/project-utils.ts"
     },
     {

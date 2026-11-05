@@ -29,7 +29,7 @@ import { MemoryManagerModal } from './cowrite/memory-manager-modal';
 import { RefillModal } from './refill-modal';
 import { OutlineExpandModal } from './outline-expand-modal';
 import { LiveAnalysisController } from './cowrite/live-analysis-controller';
-import { shouldRunPlotEval, type PlotEvalGateState } from '@/shared/plot-eval-throttle';
+import type { PlotEvalGateState } from '@/shared/plot-eval-throttle';
 import { captureScrollSnapshot, resolveRestoredScrollTop } from '@/shared/preview-scroll';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { getCustomFontFamilies, registerAllCustomFonts, SYSTEM_FONT_PRESETS } from '@/services/font-manager';
@@ -156,6 +156,8 @@ import {
     type SuggestionFlowHost,
 } from '@/ui/co-writing/suggestion-flow';
 import { renderMonitorCards, type ForeshadowSnapshot } from '@/ui/co-writing/monitor-cards';
+import { runMetricsRefresh, type MetricsRefreshHost } from '@/ui/co-writing/metrics-refresh';
+import { resolveChapterIdentity, stripChapterBody } from '@/ui/co-writing/chapter-switch';
 import { handleMarkdownShortcut } from '@/ui/co-writing/markdown-shortcut';
 import {
     refreshAdviceInto,
@@ -584,14 +586,15 @@ export class CoWritingView extends ItemView {
   async openChapter(project: string, chapterName2: string, volume2?: string, chapterNum?: number) {
     const seq = ++this.openChapterSeq;
     // 只传 2 个参数时旧默认值是「第1卷/第1章」，会把第 3 卷第 12 章绑定成第 1 卷第 1 章、
-    // 保存直接写错文件。缺失参数时按章名推定章号，并按正文实际位置反查卷。
-    const parsedChapterNum = parseInt(chapterName2.match(/第(\d+)章/)?.[1] || '', 10);
-    const resolvedChapterNum = chapterNum && chapterNum > 0
-      ? chapterNum
-      : (Number.isFinite(parsedChapterNum) && parsedChapterNum > 0 ? parsedChapterNum : 1);
-    const resolvedVolume = volume2 || this.resolveVolumeForChapter(project, resolvedChapterNum) || "\u7B2C1\u5377";
-    volume2 = resolvedVolume;
-    chapterNum = resolvedChapterNum;
+    // 保存直接写错文件。身份推定集中在 chapter-switch：缺参按章名推定章号，并按正文实际位置反查卷。
+    const identity = resolveChapterIdentity({
+      chapterName: chapterName2,
+      volume: volume2,
+      chapterNum,
+      resolveVolume: num => this.resolveVolumeForChapter(project, num),
+    });
+    volume2 = identity.volume;
+    chapterNum = identity.chapterNum;
     // 上一章排队中的自动保存必须先用「旧身份」落盘：下面一旦改写 project/chapterNum，
     // 2s 防抖里的保存就会用新章路径写入旧章正文（静默串章）。
     const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
@@ -641,9 +644,7 @@ export class CoWritingView extends ItemView {
       const file = this.app.vault.getAbstractFileByPath(bodyPath);
       if (file instanceof TFile) {
         const fullContent = await this.app.vault.read(file);
-        bodyOnly = fullContent.replace(/^---[\s\S]*?---\s*/, '');
-        bodyOnly = bodyOnly.replace(/^#\s+第\d+章[^\n]*\n+/, '');
-        bodyOnly = bodyOnly.replace(/<!--\s*正文区域.*?-->\s*/g, '');
+        bodyOnly = stripChapterBody(fullContent);
         this.rightEditor.value = bodyOnly;
       }
     } catch (e) {
@@ -2292,55 +2293,29 @@ ${text}`;
    * @param force - 是否强制
    */
   async refreshMetrics(force: boolean) {
-    this.updateNextNodeButton();
-    const now = Date.now();
-    // `evaluatePlotComplete` 会把整章正文拼成约 9.6k token 的 prompt 发给 AI。
-    // 此前只按 10 秒节流，开着自动评估时打字期间每分钟最多 6 次请求，
-    // 而正文往往只多了几十字；这里要求「正文变过 + 新增达标或冷却到期」才评估。
-    const gate = shouldRunPlotEval({
-      chapterKey: `${this.project}|${this.chapterNum}`,
-      text: this.rightEditor?.value || '',
-      last: this.lastPlotEval,
-      now,
-      force,
-    });
-    if (!gate.run) return;
-    this.lastPlotEval = gate.next;
-    if (this.metricsAbortController) {
-      this.metricsAbortController.abort();
-      this.metricsAbortController = null;
-    }
-    this.metricsAbortController = new AbortController();
-    const signal = this.metricsAbortController.signal;
-    this.metricsStatus = 'evaluating';
-    const currentMetrics = this.facade.getSession()?.currentMetrics || emptyMetrics();
-    this.renderMetrics(currentMetrics);
-    this.renderFloatingMetrics();
-    // 完成度是异步 AI 评估：先记发起时的章节身份，返回后若已切章则丢弃
-    const evalTarget = `${this.project}|${this.chapterNum}`;
-    try {
-      const metrics = await this.facade.evaluatePlotComplete(this.rightEditor.value, signal);
-      if (signal.aborted) return;
-      if (evalTarget !== `${this.project}|${this.chapterNum}`) return;
-      const nextDirections = this.facade.adjustDirection(metrics);
-      metrics.nextDirectionHints = nextDirections;
-      this.metricsStatus = 'idle';
-      this.facade.syncPlotCompletion(metrics);
-      this.renderMetrics(metrics);
-      this.renderFloatingMetrics();
-    } catch (e) {
-      if ((e as Error).name === 'AbortError') return;
-      if (evalTarget !== `${this.project}|${this.chapterNum}`) return;
-      log.warn("[CoWritingView] \u5B8C\u6210\u5EA6\u5237\u65B0\u5931\u8D25:", e);
-      this.metricsStatus = 'error';
-      const errorMetrics = this.facade.getSession()?.currentMetrics || emptyMetrics();
-      this.renderMetrics(errorMetrics);
-      this.renderFloatingMetrics();
-    } finally {
-      if (this.metricsAbortController?.signal === signal) {
-        this.metricsAbortController = null;
-      }
-    }
+    return runMetricsRefresh(this.metricsRefreshHost(), force);
+  }
+  /** 指标刷新宿主：状态读写经 getter/setter 转发，编排逻辑在 metrics-refresh。 */
+  private metricsRefreshHost(): MetricsRefreshHost {
+    const view = this;
+    return {
+      getProject: () => view.project,
+      getChapterNum: () => view.chapterNum,
+      getEditorText: () => view.rightEditor?.value || '',
+      getLastPlotEval: () => view.lastPlotEval,
+      setLastPlotEval: state => { view.lastPlotEval = state; },
+      getAbortController: () => view.metricsAbortController,
+      setAbortController: controller => { view.metricsAbortController = controller; },
+      getMetricsStatus: () => view.metricsStatus,
+      setMetricsStatus: status => { view.metricsStatus = status; },
+      getSessionMetrics: () => view.facade.getSession()?.currentMetrics || null,
+      evaluatePlotComplete: (text, signal) => view.facade.evaluatePlotComplete(text, signal),
+      adjustDirection: metrics => view.facade.adjustDirection(metrics),
+      syncPlotCompletion: metrics => view.facade.syncPlotCompletion(metrics),
+      updateNextNodeButton: () => view.updateNextNodeButton(),
+      renderMetrics: metrics => view.renderMetrics(metrics),
+      renderFloatingMetrics: () => view.renderFloatingMetrics(),
+    };
   }
   /** 指标渲染宿主：字段通过 getter 实时读取。 */
   private metricsHost(): MetricsRenderHost {

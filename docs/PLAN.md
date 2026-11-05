@@ -89,8 +89,9 @@ Agent（harness）
 - 切片第六批（v4.47.0）：`ui/co-writing-view.ts` 抽出 `co-writing/chapter-context`（路径/标题/章节身份）、`ghost-association`（触发判定与提示）、`quality-fix`（定位/Prompt/替换决策）、`monitor-cards`（五张监控卡）、`metrics-panel`（三态与指标渲染）五个模块，**4,645 → 4,303 行（-342）**；新增 5 个测试文件 40 用例；下一步朝 ≤3,000 的 M5 重评条件推进。
 - 切片第七批（v4.48.0）：`ui/co-writing-view.ts` 抽出 `co-writing/suggestion-cards`（建议/联想/校验/流式卡片）、`suggest-feedback`（错误卡/知识空态/空建议/注入提示）、`brief-panel`（本章简报/冷启动/按钮态）、`dashboard-status`（状态栏/人工率仪表盘）、`kb-reference-config`（参考书开关/主参考/权重）、`suggestion-loading`（生成中进度面板）、`quality-popup`（浮窗/右键菜单/编辑器定位）七个模块，**4,303 → 3,980 行（-323）**；新增 6 个测试文件 27 用例。
 - 切片第八批（v4.49.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/editor-shortcuts`（快捷键决策）、`metrics-render`（指标面板/评分卡/方向文本）、`settlement-actions`（待结算提示/标记完稿/结算入口/冲突检测）、`suggestion-flow`（Tab 建议与流式建议主流程）四个模块，**3,980 → 3,581 行（-399）**；新增 4 个测试文件 22 用例；全量 580 文件 / 6,237 用例、lint 0 error / 1,853 warnings、tsc 0。
-- 第十五批（v4.49.0 待发版）：`ai-builder-modal`（2）、`appearance-settings`（7）、`settings/general-sections`（6）、`settings/foreshadow-section`（6）、`settings/knowledge-section`（7）、`project-utils`（6）合计替换 **34 处**（成功/失败/告警）；`settings/api-section` 余 8 处均为校验守卫，**0 替换**，确认收敛；无新增测试，改用既有 `notice-helpers` 覆盖。
-- 下一步：待第八批提交后继续 co-writing-view 剩余纯逻辑块（章节切换守卫、报表刷新链、渲染布局装配）；Notice 尾盘候选 `command-ui-executor`（20）、`knowledge-base-view`（14）、`co-write-floating-panel`（11）。
+- 第十五批（v4.50.0）：`ai-builder-modal`（2）、`appearance-settings`（7）、`settings/general-sections`（6）、`settings/foreshadow-section`（6）、`settings/knowledge-section`（7）、`project-utils`（6）合计替换 **34 处**（成功/失败/告警）；`settings/api-section` 余 8 处均为校验守卫，**0 替换**，确认收敛；无新增测试，改用既有 `notice-helpers` 覆盖。
+- 切片第九批（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/metrics-refresh`（剧情完成度刷新编排：评估节流门控、在途评估中止、切章丢弃旧结果、失败态回退）与 `co-writing/chapter-switch`（章节身份推定/正文去壳），**3,581 → 3,556 行（-25，行数口径：含空行）**；新增 2 个测试文件 18 用例；下一批继续渲染布局装配，目标 ≤3,300。
+- 下一步：继续 co-writing-view 剩余纯逻辑块（渲染布局装配），目标 ≤3,300；Notice 尾盘候选 `command-ui-executor`（20）、`knowledge-base-view`（14）、`co-write-floating-panel`（11）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

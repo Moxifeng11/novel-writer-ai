@@ -35,6 +35,7 @@ type MetricsCtx = {
     renderFloatingMetrics: () => void;
     refreshMetrics: (force: boolean) => Promise<void>;
     resetPlotMetricsForChapterSwitch: () => void;
+    metricsRefreshHost: () => unknown;
 };
 
 function makeCtx(project = '书甲', chapterNum = 3): MetricsCtx {
@@ -57,6 +58,25 @@ function makeCtx(project = '书甲', chapterNum = 3): MetricsCtx {
     } as unknown as MetricsCtx;
     ctx.refreshMetrics = CoWritingView.prototype['refreshMetrics'];
     ctx.resetPlotMetricsForChapterSwitch = CoWritingView.prototype['resetPlotMetricsForChapterSwitch'];
+    // 切片第九批后 refreshMetrics/reset 走 metrics-refresh 编排，宿主经 getter/setter 适配 fake 字段
+    ctx.metricsRefreshHost = () => ({
+        getProject: () => ctx.project,
+        getChapterNum: () => ctx.chapterNum,
+        getEditorText: () => ctx.rightEditor.value,
+        getLastPlotEval: () => ctx.lastPlotEval,
+        setLastPlotEval: (state: unknown) => { ctx.lastPlotEval = state; },
+        getAbortController: () => ctx.metricsAbortController,
+        setAbortController: (c: AbortController | null) => { ctx.metricsAbortController = c; },
+        getMetricsStatus: () => ctx.metricsStatus,
+        setMetricsStatus: (status: 'idle' | 'evaluating' | 'error') => { ctx.metricsStatus = status; },
+        getSessionMetrics: () => ctx.facade.getSession()?.currentMetrics ?? null,
+        evaluatePlotComplete: (text: string, signal: AbortSignal) => ctx.facade.evaluatePlotComplete(text, signal),
+        adjustDirection: (metrics: unknown) => ctx.facade.adjustDirection(metrics),
+        syncPlotCompletion: (metrics: unknown) => ctx.facade.syncPlotCompletion(metrics),
+        updateNextNodeButton: () => ctx.updateNextNodeButton(),
+        renderMetrics: (metrics: unknown) => ctx.renderMetrics(metrics),
+        renderFloatingMetrics: () => ctx.renderFloatingMetrics(),
+    });
     return ctx;
 }
 

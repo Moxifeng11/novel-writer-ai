@@ -11,7 +11,7 @@
 | `shared/` | 173 | 38937 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 235 | 100195 | 687 | 608 | 89% |
+| `ui/` | 237 | 100364 | 694 | 612 | 88% |
 
 ## 文件清单
 
@@ -565,11 +565,12 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 225 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3582 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3557 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 221 | 12 | 9 |
 | `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
+| `ui/co-writing/chapter-switch.ts` | 72 | 4 | 2 |
 | `ui/co-writing/dashboard-status.ts` | 180 | 9 | 7 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |
@@ -581,6 +582,7 @@
 | `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
 | `ui/co-writing/metrics-panel.ts` | 228 | 5 | 3 |
+| `ui/co-writing/metrics-refresh.ts` | 122 | 3 | 2 |
 | `ui/co-writing/metrics-render.ts` | 168 | 7 | 6 |
 | `ui/co-writing/monitor-cards.ts` | 322 | 7 | 4 |
 | `ui/co-writing/quality-fix.ts` | 136 | 6 | 4 |
