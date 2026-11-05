@@ -24,6 +24,7 @@ import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { renderV2FeaturesSection } from './fingerprint-v2-detail';
 
 
 const log = createLogger('WritingFingerprintView');
@@ -711,6 +712,10 @@ export class WritingFingerprintView extends ItemView {
         this.renderClassificationSection(fp);
         this.renderStatsSection(fp);
         this.renderFeaturesSection(fp);
+        const v2 = this.fingerprintLibrary?.getV2Fingerprint(fp.id);
+        if (v2 && v2.scope === fp.scope) {
+            renderV2FeaturesSection(this.rightPanel, v2);
+        }
         this.renderSamplesSection(fp);
         this.renderActionsSection(fp);
     }
