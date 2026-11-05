@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 304 | 132433 | 1604 | 1344 | 84% |
+| `engine/` | 305 | 132524 | 1606 | 1345 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38775 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38798 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 218 | 97657 | 570 | 522 | 92% |
+| `ui/` | 218 | 97661 | 570 | 522 | 92% |
 
 ## 文件清单
 
@@ -89,12 +89,13 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3300 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3254 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-write-options.ts` | 265 | 9 | 9 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
+| `engine/co-writer/directional-prompt.ts` | 137 | 2 | 1 |
 | `engine/co-writer/evaluation-prompt.ts` | 102 | 2 | 1 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
 | `engine/co-writer/local-model-utils.ts` | 193 | 9 | 7 |
@@ -382,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1551 | 3 | 3 |
+| `shared/changelog-data.ts` | 1574 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -550,7 +551,7 @@
 | `ui/appearance-settings.ts` | 573 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/auto-writer-modal.ts` | 239 | 1 | 1 |
-| `ui/backup-center-modal.ts` | 243 | 1 | 1 |
+| `ui/backup-center-modal.ts` | 244 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 128 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 339 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 524 | 1 | 1 |
@@ -659,7 +660,7 @@
 | `ui/full-writer/wizard-step-validators.ts` | 148 | 2 | 2 |
 | `ui/full-writer/wizard-types.ts` | 77 | 5 | 3 |
 | `ui/full-writer/wizard-view-access.ts` | 44 | 2 | 2 |
-| `ui/generate-character-modal.ts` | 630 | 1 | 1 |
+| `ui/generate-character-modal.ts` | 631 | 1 | 1 |
 | `ui/generate-faction-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-item-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 378 | 1 | 1 |
@@ -667,7 +668,7 @@
 | `ui/golden-opening-modal.ts` | 1926 | 1 | 1 |
 | `ui/home-view.ts` | 230 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
-| `ui/ideation-modal.ts` | 1217 | 1 | 1 |
+| `ui/ideation-modal.ts` | 1218 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1698 | 1 | 1 |
@@ -695,7 +696,7 @@
 | `ui/polish-editor.ts` | 822 | 6 | 5 |
 | `ui/pre-research-modal.ts` | 707 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
-| `ui/project-side-panel-view.ts` | 405 | 5 | 5 |
+| `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
 | `ui/project-utils.ts` | 363 | 11 | 10 |
 | `ui/prompt-manager-settings.ts` | 1143 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 90 | 1 | 1 |

@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-05",
   "baseline": {
-    "version": "4.42.0",
+    "version": "4.43.0",
     "tests": {
-      "files": 560,
-      "cases": 6129
+      "files": 561,
+      "cases": 6133
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 73,
+    "localCommitsAhead": 76,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-05",
+      "group": "G5",
+      "summary": "v4.43.0 第十二批：batch-import-modal / generate-character-modal / ideation-modal / backup-center-modal / project-side-panel-view / wizard-step-renderers 六个文件 Notice 37 处（成功/失败/告警），61→24；守卫、进度、预检、无变化与信息展示保留",
+      "evidence": "ui/batch-import-modal.ts + ui/generate-character-modal.ts + ui/ideation-modal.ts + ui/backup-center-modal.ts + ui/project-side-panel-view.ts + ui/full-writer/wizard-step-renderers.ts"
+    },
     {
       "date": "2026-11-05",
       "group": "G5",

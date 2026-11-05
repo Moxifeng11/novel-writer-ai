@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.43.0',
+        date: '2026-11-06',
+        title: '协同引擎切片第六批与 Notice 第十二批',
+        sections: [
+            {
+                type: 'improved',
+                label: '✂️ 切片',
+                items: [
+                    'co-writer-engine 3299→3254：buildDirectionalPrompt 全量显式入参抽出',
+                    '新增 directional-prompt 测试 4 条',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧯 提示收敛',
+                items: [
+                    'Notice 第十二批：6 文件 37 处（Trae 协作）',
+                    'lint 1869→1868',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.42.0',
         date: '2026-11-05',
         title: '协同视图切片第五批与 Notice 第六~十一批',

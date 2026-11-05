@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-05｜G5｜v4.43.0 第十二批：batch-import-modal / generate-character-modal / ideation-modal / backup-center-modal / project-side-panel-view / wizard-step-renderers 六个文件 Notice 37 处（成功/失败/告警），61→24；守卫、进度、预检、无变化与信息展示保留（ui/batch-import-modal.ts + ui/generate-character-modal.ts + ui/ideation-modal.ts + ui/backup-center-modal.ts + ui/project-side-panel-view.ts + ui/full-writer/wizard-step-renderers.ts）
 - 2026-11-05｜G5｜v4.42.0 第十一批：full-writer-view Notice 6 处（成功 1 / 失败 5），11→5；守卫、预检与带引导提示保留（ui/full-writer-view.ts）
 - 2026-11-05｜G5｜v4.42.0 第十批：prompt-manager-settings / co-write-floating-panel / wizard-step-executors / template-manager / fanfic-review-modal 五个文件 Notice 67 处（成功/失败/告警），91→24；守卫、进度、预检与无变化提示保留（ui/prompt-manager-settings.ts + ui/co-write-floating-panel.ts + ui/full-writer/wizard-step-executors.ts + ui/template-manager.ts + ui/fanfic-review-modal.ts）
 - 2026-11-05｜G5｜v4.42.0 第九批：knowledge-base-view / knowledge-base-modals / command-ui-executor / add-fanfic-setting-modal / ai-builder-modal / pre-research-modal 六个文件 Notice 87 处（成功/失败/告警），161→74；守卫、进度、预检与无变化提示保留（ui/views/knowledge-base-view.ts + ui/views/knowledge-base-modals.ts + ui/command-ui-executor.ts + ui/add-fanfic-setting-modal.ts + ui/ai-builder-modal.ts + ui/pre-research-modal.ts）

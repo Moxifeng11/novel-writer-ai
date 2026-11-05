@@ -2,6 +2,24 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.43.0（2026-11-06）
+
+### ✂️ 协同引擎切片第六批（co-writer-engine 3,299 → 3,254）
+
+- `buildDirectionalPrompt` 参数化后抽到 `engine/co-writer/directional-prompt.ts`：灵魂注入、剧情目标、简报片段、writingRules、PromptBuilder 实例与输入预算全部显式入参，状态访问留在引擎侧。
+- 双路径逐行保留：有 PromptBuilder → 10 参数按序透传；无 → 兜底模板（第三人称限知 + bodyFormat 契约 + 已写内容末 800 字 + 开头/续写指令切换）。
+- 新增 1 个测试文件 4 条；顺带清理引擎侧未用导入（lint 1,869 → 1,868）。
+
+### 🧯 Notice 第十二批（6 文件 37 处，Trae 协作）
+
+- batch-import-modal 11→9、generate-character-modal 10→5、ideation-modal 10→2、backup-center-modal 10→2、project-side-panel-view 10→4、wizard-step-renderers 10→2。
+- 守卫、进度、预检、无变化与信息展示提示按口径保留。
+
+### 🧪 测试与门禁
+
+- 全量单测 **561 文件 / 6,133 用例**（+1 文件 / +4 用例）；`preflight:release` 全绿。
+- lint 0 error / **1,868** warnings；JSDoc 724 文件 100%、`@example` 52/52；any 306/306。
+
 ## v4.42.0（2026-11-05）
 
 ### ✂️ 协同视图切片第五批（co-writing-view 4,986 → 4,645）
