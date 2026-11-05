@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.50.0',
+        date: '2026-11-06',
+        title: 'Notice 存量扫尾（6 文件 34 处）',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧯 提示收敛',
+                items: [
+                    '6 文件 34 处改走 notice-helpers；api-section 余 8 处确认守卫类收敛',
+                    'Notice 收敛全部完成',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.49.0',
         date: '2026-11-06',
         title: '协同视图切片第八批',

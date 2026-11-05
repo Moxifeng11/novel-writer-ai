@@ -2,6 +2,18 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.50.0（2026-11-06）
+
+### 🧯 Notice 存量批收官前扫尾（6 文件 34 处，Trae 协作）
+
+- ai-builder-modal 2、appearance-settings 7、settings-general-sections 6、settings-foreshadow-section 6、settings-knowledge-section 7、project-utils 6，全部走 notice-helpers。
+- **settings/api-section 余 8 处逐条核对均为校验守卫（不能为空/已存在/正在使用），0 替换，确认收敛**——至此 Notice 大面积收敛与零星扫尾全部完成。
+- Trae 侧循环升级为自适应迭代（动态候选池 + EV 评分 + 失败回退，af06e242）；双方约定自动化互调须经信箱协商确认。
+
+### 🧪 测试与门禁
+
+- 全量单测 **580 文件 / 6,237 用例**（持平）；`preflight:release` 全绿；lint 0 error / 1,853 warnings（持平）；main.js +73B（note 登记）。
+
 ## v4.49.0（2026-11-06）
 
 ### ✂️ 协同视图切片第八批（3,980 → 3,581，Trae 协作）
