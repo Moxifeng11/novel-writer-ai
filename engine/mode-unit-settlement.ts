@@ -64,6 +64,9 @@ export async function settleModeUnit(
             fm['settlement_at'] = settledAt;
             fm['settlement_mode'] = 'light';
             fm['settlement_updated'] = updated;
+            if (detail.lightPartial) {
+                fm['settlement_partial'] = true;
+            }
         });
     }
 
@@ -88,6 +91,12 @@ export async function settleModeUnit(
         `- 物品更新：${detail.updatedItems}`,
         `- 伏笔更新：${detail.updatedForeshadows}`,
         '',
+        ...(detail.lightPartial && detail.lightFailures
+            ? [
+                '',
+                `> ⚠️ 部分更新失败（实体 ${detail.lightFailures.entities.length} 个${detail.lightFailures.foreshadow ? '；伏笔库' : ''}${detail.lightFailures.bodyFrontmatter ? '；正文状态' : ''}）。轻结算幂等，重新执行单元结算即可修复。`,
+            ]
+            : []),
         '> 完整实体图谱/时间线结算仍由长篇流水线处理；短篇/剧本当前只做单元级出场确认。',
     ];
     await writeVaultText(app, reportPath, `${lines.join('\n')}\n`);

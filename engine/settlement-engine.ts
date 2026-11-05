@@ -85,6 +85,14 @@ export interface SettlementResult {
     /** 回滚不完整标记：产物需标 settlement_partial，提示用户手动检查 */
     settlementPartial?: boolean;
     /**
+     * 轻结算失败聚合（仅 mode=light 且发生失败时出现）。
+     * 轻结算语义为 best-effort 出场确认，不做整次事务；每次写入幂等，
+     * 失败后**直接重跑 settleLight 即可修复**。
+     */
+    lightFailures?: { entities: string[]; foreshadow: boolean; bodyFrontmatter: boolean };
+    /** 轻结算部分失败标记（与 lightFailures 同时出现） */
+    lightPartial?: boolean;
+    /**
      * 本次结算形态：
      * - full：完整结算（可写关系/伏笔/时间线/成长/情绪/账本）
      * - light：出场确认（只写 entity_status / entity_last_seen_at）
@@ -310,6 +318,8 @@ export class SettlementEngine {
         };
 
         const fm = parseFrontmatterFromText(bodyText);
+        // 轻结算失败聚合：各写入点仍独立加锁 + 幂等，这里只负责「失败可见」
+        const lightFailures = { entities: [] as string[], foreshadow: false, bodyFrontmatter: false };
 
         const involvedChars = parseFmList(fm['涉及人物']);
         const involvedLocs = parseFmList(fm['涉及地点']);
@@ -343,6 +353,7 @@ export class SettlementEngine {
                     result.chars.push(name);
                 } catch (e) {
                     log.warn('[SettlementEngine] 轻量结算更新人物失败:', name, e);
+                    lightFailures.entities.push(name);
                 }
             }
         }
@@ -364,6 +375,7 @@ export class SettlementEngine {
                     result.locs.push(name);
                 } catch (e) {
                     log.warn('[SettlementEngine] 轻量结算更新地点失败:', name, e);
+                    lightFailures.entities.push(name);
                 }
             }
         }
@@ -385,6 +397,7 @@ export class SettlementEngine {
                     result.factions.push(name);
                 } catch (e) {
                     log.warn('[SettlementEngine] 轻量结算更新势力失败:', name, e);
+                    lightFailures.entities.push(name);
                 }
             }
         }
@@ -406,6 +419,7 @@ export class SettlementEngine {
                     result.items.push(name);
                 } catch (e) {
                     log.warn('[SettlementEngine] 轻量结算更新物品失败:', name, e);
+                    lightFailures.entities.push(name);
                 }
             }
         }
@@ -431,6 +445,7 @@ export class SettlementEngine {
                     });
                 } catch (e) {
                     log.warn('[SettlementEngine] 轻量结算更新伏笔库失败:', e);
+                    lightFailures.foreshadow = true;
                 }
             }
         }
@@ -478,6 +493,7 @@ export class SettlementEngine {
                 );
             } catch (e) {
                 log.warn('[SettlementEngine] 轻量结算 body frontmatter回写失败:', e);
+                lightFailures.bodyFrontmatter = true;
             }
         }
 
@@ -490,6 +506,11 @@ export class SettlementEngine {
         result.items = [...new Set(result.items)];
         // 轻结算 = 出场确认：只有 entity_status / entity_last_seen_at，不写关系/伏笔/时间线
         result.mode = 'light';
+        if (lightFailures.entities.length > 0 || lightFailures.foreshadow || lightFailures.bodyFrontmatter) {
+            result.lightFailures = lightFailures;
+            result.lightPartial = true;
+            log.warn('[SettlementEngine] 轻结算部分失败（写入幂等，重跑 settleLight 可修复）:', JSON.stringify(lightFailures));
+        }
 
         return result;
     }

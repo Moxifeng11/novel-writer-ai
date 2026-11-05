@@ -78,6 +78,13 @@ V1 互信息**没有任何生产读取方**：只有实体生成器的提示词�
 - `hasPartialFailure` 时按 journal **逆序**回滚；任一回滚失败 → `NOTICE_CRITICAL` + 在结算表标 `settlement_partial: true`，并提示用户用版本历史恢复。
 - 本版 journal 为**内存态**（随 run 生命周期）；磁盘持久化（崩溃后可恢复）列为 P2，不阻塞本决策落地。
 
+**决策 3（2026-11-06）：`settleLight` 维持 best-effort，不做整次事务；补「失败聚合可见」**
+
+- 理由：轻结算的每次写入都是**幂等覆盖**（`entity_status` 置 active、`entity_last_seen_at`=章名、正文 `status`/涉及字段只在缺失时补）——失败后重跑无副作用；引入 SettlementJournal 只省一次重跑，却把回滚复杂度带进高频轻量路径。
+- 缺口与修复：原先各写入点仅 `log.warn`，调用方不知道哪些失败。现聚合为 `result.lightFailures = { entities: string[], foreshadow: boolean, bodyFrontmatter: boolean }` + `result.lightPartial = true`。
+- 消费方：章节结算弹窗对部分失败弹告警（列失败对象，提示"轻结算幂等，可直接重跑修复"）；单元结算（短篇/剧本）在单元 frontmatter 写 `settlement_partial: true` 并在结算报告追加失败行。
+- 验收：`tests/unit/engine/settle-light-failures.test.ts` 3 条——单实体失败记名且不影响他者；重跑即修复且幂等；无失败不携带字段。
+
 ### 2.3 实现任务与验收
 
 | 任务 | 改动 | 验收 |

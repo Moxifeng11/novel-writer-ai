@@ -270,6 +270,15 @@ export class ChapterSettlementModal extends Modal {
         if (lightWarning) showWarningNotice(lightWarning.replace(/^⚠️\s*/u, ''), { timeout: 8000 });
 
         const totalUpdated = lightResult.updated;
+        if (lightResult.lightPartial && lightResult.lightFailures) {
+            const f = lightResult.lightFailures;
+            const parts = [
+                f.entities.length > 0 ? `实体 ${f.entities.length} 个（${f.entities.slice(0, 3).join('、')}${f.entities.length > 3 ? '…' : ''}）` : '',
+                f.foreshadow ? '伏笔库' : '',
+                f.bodyFrontmatter ? '正文状态' : '',
+            ].filter(Boolean);
+            showWarningNotice(`部分更新失败：${parts.join('、')}；轻结算幂等，可直接重跑修复`, { title: '轻量结算部分完成', timeout: 10000 });
+        }
         showSuccessNotice(`基于正文 frontmatter 更新${totalUpdated}项实体状态；补跑分析报告后可执行完整结算`, { title: '轻量结算完成', timeout: 8000 });
         await this.refreshWorkspaceAndClose();
     }
