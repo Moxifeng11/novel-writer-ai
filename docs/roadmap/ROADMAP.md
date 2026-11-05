@@ -1,6 +1,6 @@
 # 路线图（ROADMAP）
 
-> 版本：v4.47.0 · 2026-11-04
+> 版本：v4.48.0 · 2026-11-04
 > 详细问题清单与证据见 [审计报告](../audits/v4.27.0-architecture-and-roadmap.md)；产品定位见 [PRODUCT.md](../PRODUCT.md)。
 
 ## 路线选择

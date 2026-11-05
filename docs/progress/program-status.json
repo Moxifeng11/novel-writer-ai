@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 90,
+    "localCommitsAhead": 91,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 本批提交前实测；提交后以 git rev-list --count origin/master..master 为准）"
   },
   "groups": [

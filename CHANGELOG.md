@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.48.0（2026-11-06）
+
+### ⚖️ settleLight 语义决策落地（决策 3）
+
+- **维持「出场确认 best-effort + 写入幂等」，不做整次事务**；补齐缺口「失败不可见」：`SettlementResult` 新增 `lightFailures`（entities/foreshadow/bodyFrontmatter）+ `lightPartial`。
+- 章节结算弹窗对部分失败弹告警（列失败对象，提示"幂等可重跑"）；单元结算（短篇/剧本）frontmatter 写 `settlement_partial` 并在结算报告追加失败行。
+- 决策记录写入 `docs/design/g1-authority-decisions.md` §2.2；新增 3 条失败聚合测试（记名不影响他者 / 重跑即修复幂等 / 无失败不携带）。
+
+### 🗳️ 指纹编辑 UI 12 维（V2 可视化闭环）
+
+- 编辑弹窗对 V2 指纹显示 12 个逐维描述 textarea（pending 维度带说明）；新增 `updateV2FingerprintFeatures()`：一次保存同步「V2 全量 / V1 投影 / v1Backup / V2 逐维向量」四方。
+- 新增 2 条测试（三方一致 + 重载不降级；id 不存在返回 null）；修复初版漏同步 v1Backup 导致"改完重载回退"的缺陷。
+
+### ✂️ 协同视图切片第七批（4,303 → 3,980，Trae 协作）
+
+- 新增 7 模块：suggestion-cards / suggest-feedback / brief-panel / dashboard-status / kb-reference-config / suggestion-loading / quality-popup；新增 6 测试文件 27 用例。
+- 六批累计 5,588 → 3,980（-1,608），距 ≤3,000 还差 ~980 行。
+
+### 🧪 测试与门禁
+
+- 全量单测 **576 文件 / 6,215 用例**（+7 文件 / +32 用例）；`preflight:release` 全绿；lint 0 error / 1,855 warnings（1,868 → 1,855）。
+
 ## v4.47.0（2026-11-06）
 
 ### 🗳️ 指纹详情面板 12 维展示（V2 可视化补完）

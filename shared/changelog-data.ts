@@ -21,6 +21,34 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.48.0',
+        date: '2026-11-06',
+        title: 'settleLight 决策落地、指纹编辑 12 维与切片第七批',
+        sections: [
+            {
+                type: 'improved',
+                label: '⚖️ 决策',
+                items: [
+                    'settleLight 维持幂等 best-effort，失败聚合可见（lightFailures/lightPartial）',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🗳️ 指纹',
+                items: [
+                    '编辑弹窗支持十二维逐维修改；updateV2FingerprintFeatures 四方同步',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '✂️ 切片',
+                items: [
+                    'co-writing-view 4303→3980：建议卡/反馈/简报/仪表盘/KB 配置/加载/浮窗七模块',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.47.0',
         date: '2026-11-06',
         title: '指纹 12 维可视化与协同视图切片第六批',

@@ -1,6 +1,6 @@
 # API 文档
 
-> **版本**: v4.47.0
+> **版本**: v4.48.0
 > **最后更新**: 2026-11-02
 > **状态**: 活跃可信 · 签名参考（契约规则见 [handbook/04-interface-contracts.md](handbook/04-interface-contracts.md)）
 > **说明**: 本文是签名索引，不定义兼容承诺；公开/内部边界与废弃策略以 handbook 04 为准。
