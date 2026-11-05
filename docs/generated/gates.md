@@ -42,6 +42,7 @@
 | `npm run eval:rag` | RAG 检索评估 |
 | `npm run gen:docs` | 生成 docs/generated/* |
 | `npm run gen:templates` | 把 assets/template-scaffold 嵌入 shared/template-scaffold-assets.generated.ts |
+| `npm run handoff` | — |
 | `npm run inline:baseline` | 更新内联样式基线 |
 | `npm run lint` | ESLint（obsidianmd 推荐规则） |
 | `npm run preflight` | 本地总门禁 |

@@ -8,7 +8,8 @@
       "files": 556,
       "cases": 6112
     },
-    "e2e": 25,
+    "e2e": 37,
+    "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
     "gates": [
       "typecheck",
       "lint",
@@ -17,7 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 0
+    "localCommitsAhead": 67,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-05 实测 git rev-list --count origin/master..master）"
   },
   "groups": [
     {

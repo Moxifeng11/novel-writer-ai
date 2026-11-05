@@ -238,7 +238,7 @@
 | ⑪三模式/生命周期 | 26 / 193 | `project-migration-service`、`domain-project-factory` 0；创建类弹窗 0 |
 | ⑫设置/密钥/主题 | 19 / 240 | 知识库/指纹/拆解/伏笔设置分区、password/mini 设置 0 |
 | ⑬统计/宠物 | 2 / 29 | 统计弹窗、宠物、设置块 0 |
-| ⑭命令与原生集成 | 7 / 49（+E2E 25） | `command-ui-executor`(617) 仅 2 引用；侧栏/Bases/plugin-api 0 |
+| ⑭命令与原生集成 | 7 / 49（+E2E，条数以 `program-status.json` 为准） | `command-ui-executor`(617) 仅 2 引用；侧栏/Bases/plugin-api 0 |
 | ⑮存储与缓存 | 21 / 299 | `serialized-writer`、`plugin-cache` 仅间接；无断电/中断恢复模拟 |
 | ⑯基础设施 | 16 / 170 | `worker-runtime`(225)、`worker-protocol` 0；`shared/` 覆盖率不可见 |
 
