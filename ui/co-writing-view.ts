@@ -20,9 +20,8 @@ import { EndingTractionEngine } from '@/engine/ending-traction-engine';
 import { EmotionCurveView } from './components/emotion-curve-view';
 import { renderAIDetectionReport } from './components/ai-detection-report';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
-import { ChapterSnapshotBuilder } from '@/engine/chapter-snapshot-builder';
-import { ConflictDetector } from '@/engine/conflict-detector';
 import { ChapterSettlementModal } from './chapter-settlement-modal';
+
 import { SuggestionEditModal } from './cowrite/suggestion-edit-modal';
 import { IterateInstructionModal } from './cowrite/iterate-instruction-modal';
 import { HistoryModal } from './cowrite/history-modal';
@@ -46,11 +45,6 @@ import {
     resolveQualityFixApplication,
 } from './co-writing/quality-fix';
 import {
-    computeMetricsRenderState,
-    renderMetricsCompact,
-    renderMetricsPanel,
-} from './co-writing/metrics-panel';
-import {
     clearStreamingPreview,
     ensureStreamingPreview,
     renderAssociationCards,
@@ -63,9 +57,6 @@ import {
 } from './co-writing/suggestion-cards';
 import {
     renderEmptySuggestionMessage,
-    renderKnowledgeEmptyNotice,
-    renderNoSuggestionMessage,
-    renderSuggestErrorCard,
     renderValidationLoadingMessage,
     showKnowledgeInjectionNotice as showKnowledgeNotice,
 } from './co-writing/suggest-feedback';
@@ -92,7 +83,6 @@ import {
 import { applyNwScope } from '@/utils/helpers';
 import {
     associationToSuggestion,
-    getDirectionLabel,
     emptyMetrics
 } from './cowrite/cowrite-mappers';
 import { NovelAnalysisModal } from './novel-analysis-modal';
@@ -144,9 +134,29 @@ import {
     toggleReferenceBook,
     type KbReferenceHost,
 } from '@/ui/co-writing/kb-reference-config';
+import { isImeComposingEvent, resolveEditorShortcut } from '@/ui/co-writing/editor-shortcuts';
+import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
+import {
+    createScoreCard as createScoreCardFn,
+    renderMetricBar as renderMetricBarFn,
+    renderMetrics as renderMetricsFn,
+    renderMetricsInto as renderMetricsIntoFn,
+    type MetricsRenderHost,
+} from '@/ui/co-writing/metrics-render';
+import {
+    checkSettlementDue as checkSettlementDueFn,
+    completeChapter,
+    markAsWritten as markAsWrittenFn,
+    runSettlementConflictCheck as runSettlementConflictCheckFn,
+    type SettlementActionsHost,
+} from '@/ui/co-writing/settlement-actions';
+import {
+    runStreamSuggestion,
+    runTabSuggest,
+    type SuggestionFlowHost,
+} from '@/ui/co-writing/suggestion-flow';
 import { renderMonitorCards, type ForeshadowSnapshot } from '@/ui/co-writing/monitor-cards';
 import { handleMarkdownShortcut } from '@/ui/co-writing/markdown-shortcut';
-import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
 import {
     refreshAdviceInto,
     refreshMatchInto,
@@ -167,7 +177,7 @@ import { RealtimeQualityController } from './cowrite/realtime-quality-controller
 import { isImeComposing } from '@/shared/keyboard';
 
 
-import { ObsidianFrontmatter } from '@/shared/file-system-port';
+
 import { withButtonBusy } from './button-busy';
 const log = createLogger('CoWritingView');
 
@@ -1426,80 +1436,45 @@ export class CoWritingView extends ItemView {
   async handleEditorKeydown(event: KeyboardEvent) {
     // P1-15（v4.27）：中文输入法组合期间不拦截任何按键，
     // 否则 Tab/数字键会被当成「接受建议」，候选词被打断。
-    if (event.isComposing || (event as KeyboardEvent & { keyCode?: number }).keyCode === 229) return;
+    if (isImeComposingEvent(event)) return;
     if (this.handleMarkdownShortcut(event)) return;
-    if (event.key === "Tab") {
-      event.preventDefault();
-      // NBI-05: 生成中不接受幽灵建议，避免绕过候选就绪守卫
-      if (this.ghostSuggestion && !this.isSuggesting) {
-        await this.handleAcceptSuggestion(this.ghostSuggestion);
-      } else if (this.currentSuggestions.length > 0) {
-        await this.acceptByIndex(0);
-      } else {
-        await this.handleTabSuggest(false);
-      }
-      return;
-    }
-    const mod = event.ctrlKey || event.metaKey;
-    if (mod && event.key === "1") {
-      event.preventDefault();
-      await this.acceptByIndex(0);
-      return;
-    }
-    if (mod && event.key === "2") {
-      event.preventDefault();
-      await this.acceptByIndex(1);
-      return;
-    }
-    if (mod && event.key === "3") {
-      event.preventDefault();
-      await this.acceptByIndex(2);
-      return;
-    }
-    if (mod && event.key === " ") {
-      event.preventDefault();
-      await this.handleAssociationSuggest();
-      return;
-    }
-    if (mod && event.key.toLowerCase() === "j") {
-      event.preventDefault();
-      await this.handleTabSuggest(true);
-      return;
-    }
-    if (mod && event.key.toLowerCase() === "k") {
-      event.preventDefault();
-      await this.handleAssociationSuggest();
-      return;
-    }
-    if (mod && event.key.toLowerCase() === "h") {
-      event.preventDefault();
-      this.handleOpenHistory();
-      return;
-    }
-    if (mod && event.shiftKey && event.key.toLowerCase() === "r") {
-      event.preventDefault();
-      this.handleRewriteSelection();
-      return;
-    }
-    if (mod && event.key.toLowerCase() === "r") {
-      event.preventDefault();
-      await this.handleTabSuggest(true);
-      return;
-    }
-    if (mod && event.key.toLowerCase() === "s") {
-      event.preventDefault();
-      await this.saveBody(true);
-      return;
-    }
-    if (mod && event.key === ".") {
-      event.preventDefault();
-      this.hintInput.focus();
-      return;
-    }
-    if (event.key === "Escape") {
-      this.currentSuggestions = [];
-      this.currentRecord = null;
-      this.renderEmptySuggestions("\u5DF2\u53D6\u6D88\u5F53\u524D\u5EFA\u8BAE\u3002\u6309 Tab / Ctrl+J \u91CD\u65B0\u751F\u6210\u3002");
+    const action = resolveEditorShortcut(event, {
+      hasGhost: !!this.ghostSuggestion,
+      isSuggesting: this.isSuggesting,
+      suggestionCount: this.currentSuggestions.length,
+    });
+    if (action.kind === 'none') return;
+    event.preventDefault();
+    switch (action.kind) {
+      case 'accept-ghost':
+        if (this.ghostSuggestion) await this.handleAcceptSuggestion(this.ghostSuggestion);
+        return;
+      case 'accept-index':
+        await this.acceptByIndex(action.index);
+        return;
+      case 'suggest':
+        await this.handleTabSuggest(action.force);
+        return;
+      case 'association':
+        await this.handleAssociationSuggest();
+        return;
+      case 'history':
+        this.handleOpenHistory();
+        return;
+      case 'rewrite':
+        this.handleRewriteSelection();
+        return;
+      case 'save':
+        await this.saveBody(true);
+        return;
+      case 'focus-hint':
+        this.hintInput.focus();
+        return;
+      case 'escape':
+        this.currentSuggestions = [];
+        this.currentRecord = null;
+        this.renderEmptySuggestions("\u5DF2\u53D6\u6D88\u5F53\u524D\u5EFA\u8BAE\u3002\u6309 Tab / Ctrl+J \u91CD\u65B0\u751F\u6210\u3002");
+        return;
     }
   }
   /**
@@ -1508,230 +1483,54 @@ export class CoWritingView extends ItemView {
    * @param force = false - 参数
    */
   async handleTabSuggest(force = false) {
-    // UX 修复：未绑定章节时 CoWriterEngine 未初始化，原逻辑会空等数十秒才显示「无建议」
-    if (!this.project || !this.volume || !this.chapterNum) {
-      new Notice("⚠️ 未绑定章节，请先在左侧选择卷/章后再生成建议", 3e3);
-      return;
-    }
-    if (!this.rightEditor?.value?.trim() && !this.canColdStart()) {
-      new Notice("⚠️ 本章还没有 Scene 展开/大纲，请先完成步骤 6「Scene 展开」，或直接手写一句再生成建议", 6000);
-      return;
-    }
-    const now = Date.now();
-    if (!force && now - this.lastSuggestAt < 500)
-      return;
-    // v6.3: 先 abort 旧请求（即使 isSuggesting=true 也允许覆盖），再设新请求
-    if (this.suggestAbortController) {
-      this.suggestAbortController.abort();
-      this.suggestAbortController = null;
-    }
-    if (this.suggestProgressEmitter) {
-      this.suggestProgressEmitter.cancel();
-      this.suggestProgressEmitter = null;
-    }
-    if (this.isSuggesting) {
-      // 旧请求刚被 abort，isSuggesting 会在其 finally 块自行清除；此处不阻塞新请求
-    }
-    this.suggestAbortController = new AbortController();
-    const signal = this.suggestAbortController.signal;
-    // NBI-05: 本次请求代次，切章或后续请求会使旧代次失效
-    const epoch = this.beginSuggestionEpoch();
+    await runTabSuggest(this.suggestionFlowHost(), force);
+  }
 
-    this.lastSuggestAt = now;
-    this.isSuggesting = true;
-    this.facade.syncSuggestionsGenerating(true);
-    // BUG-K fix: 生成期间禁用建议按钮，给出视觉反馈
-    if (this.suggestBtn) {
-      this.suggestBtn.disabled = true;
-      this.suggestBtn.textContent = "⏳ 生成中...";
-    }
-
-    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
-    const precedingText = this.rightEditor.value.slice(0, cursor);
-
-    this.lastSuggestParams = {
-      precedingText,
-      cursorHint: this.cursorHint,
-      mode: "continue",
-      count: 3
+  /** 建议流程宿主：状态通过 getter/setter 与视图字段同步。 */
+  private suggestionFlowHost(): SuggestionFlowHost {
+    const view = this;
+    return {
+      get project() { return view.project; },
+      get volume() { return view.volume; },
+      get chapterNum() { return view.chapterNum; },
+      get rightEditor() { return view.rightEditor; },
+      get cursorHint() { return view.cursorHint; },
+      canColdStart: () => view.canColdStart(),
+      get isSuggesting() { return view.isSuggesting; },
+      get lastSuggestAt() { return view.lastSuggestAt; },
+      get suggestAbortController() { return view.suggestAbortController; },
+      get suggestProgressEmitter() { return view.suggestProgressEmitter; },
+      get suggestEtaDisplay() { return view.suggestEtaDisplay ?? null; },
+      get suggestBtn() { return view.suggestBtn ?? null; },
+      get timeEstimator() { return view.timeEstimator ?? null; },
+      get facade() { return view.facade; },
+      setSuggesting: value => { view.isSuggesting = value; },
+      setLastSuggestAt: at => { view.lastSuggestAt = at; },
+      setSuggestAbortController: controller => { view.suggestAbortController = controller; },
+      setSuggestProgressEmitter: emitter => { view.suggestProgressEmitter = emitter; },
+      beginSuggestionEpoch: () => view.beginSuggestionEpoch(),
+      isCurrentSuggestionEpoch: epoch => view.isCurrentSuggestionEpoch(epoch),
+      isSuggestRequestOwner: signal => view.isSuggestRequestOwner(signal),
+      clearStaleSuggestions: () => view.clearStaleSuggestions(),
+      renderSuggestionLoading: () => view.renderSuggestionLoading(),
+      simulateStepDelay: (ms, signal) => view.simulateStepDelay(ms, signal),
+      updateStreamingPreview: (index, cumulative) => view.updateStreamingPreview(index, cumulative),
+      clearStreamingPreview: () => view.clearStreamingPreview(),
+      renderSuggestionCards: suggestions => view.renderSuggestionCards(suggestions),
+      renderStreamingSuggestionCard: (direction, style, index, currentText, isStreaming) => view.renderStreamingSuggestionCard(direction, style, index, currentText, isStreaming),
+      showKnowledgeInjectionNotice: () => view.showKnowledgeInjectionNotice(),
+      renderEmptySuggestions: message => view.renderEmptySuggestions(message),
+      retrySuggestion: () => view.retrySuggestion(),
+      openRefillModal: type => view.openRefillModal(type),
+      setCurrentSuggestions: suggestions => { view.currentSuggestions = suggestions; },
+      setCurrentRecord: record => { view.currentRecord = record; },
+      setLastSuggestParams: params => { view.lastSuggestParams = params; },
+      setLastSuggestError: error => { view.lastSuggestError = error; },
+      getSuggestionStatusText: () => view.suggestionStatusText ?? null,
+      getSuggestionContent: () => view.suggestionContent,
+      showSuggestionPanel: () => view.showSuggestionPanel(),
+      updateStartButtonState: () => view.updateStartButtonState(),
     };
-
-    this.suggestProgressEmitter = new ProgressEmitter(`suggest_${Date.now()}`, '生成建议');
-    this.suggestProgressEmitter.registerSteps([
-      '检索知识库内容',
-      '分析写作上下文',
-      '生成写作建议'
-    ]);
-
-    // RG-02: 新一轮生成开始即作废旧候选，避免中止/失败后快捷键仍能插入上一轮建议
-    this.clearStaleSuggestions();
-    this.renderSuggestionLoading();
-    this.suggestProgressEmitter.start();
-
-    const startTime = Date.now();
-    const wordCount = precedingText.length;
-    // 本地模型（Ollama）耗时高度不确定，统计 ETA 会给出「预估剩余 1 秒」这类误导信息，直接跳过
-    const isLocalModelMode = (this.facade.settings?.coWriteModelMode || 'local') !== 'cloud';
-    // 串行生成时展示「第 N/M 条」，避免单条耗时较长被误认为卡死
-    let suggestProgressTimer: number | null = null;
-    if (isLocalModelMode && this.suggestEtaDisplay) {
-      this.suggestEtaDisplay.setText("本地模型生成需要一些时间，请耐心等待…");
-      suggestProgressTimer = window.setInterval(() => {
-        const progress = this.facade.getSuggestProgress();
-        if (progress && progress.total > 0 && this.suggestEtaDisplay) {
-          this.suggestEtaDisplay.setText(`正在生成第 ${progress.current}/${progress.total} 条建议…`);
-        }
-      }, 1000);
-    }
-
-    if (this.timeEstimator && !isLocalModelMode) {
-      const est = this.timeEstimator.estimate({
-        operationType: 'co_write_suggest',
-        wordCount,
-        mode: 'statistical'
-      });
-      if (est.confidence > 0) {
-        this.suggestProgressEmitter.setProgress(1, `预计约 ${Math.ceil(est.eta / 1000)} 秒`);
-      }
-    }
-    this.currentRecord = {
-      id: `rec_${Date.now()}`,
-      triggerText: precedingText.slice(-200),
-      cursorPosition: cursor,
-      suggestions: [],
-      humanModifiedText: "",
-      editDurationMs: 0,
-      createdAt: Date.now()
-    };
-    let success = false;
-    try {
-      if (signal.aborted) return;
-      this.suggestProgressEmitter.nextStep('正在检索知识库...');
-
-      await this.simulateStepDelay(300, signal);
-      if (signal.aborted) return;
-
-      this.suggestProgressEmitter.setStepProgress(50, '正在匹配相关知识片段...');
-      await this.simulateStepDelay(200, signal);
-      if (signal.aborted) return;
-
-      this.suggestProgressEmitter.nextStep('正在分析写作上下文...');
-      this.suggestProgressEmitter.setStepProgress(30, '分析剧情进度与角色状态...');
-
-      await this.simulateStepDelay(200, signal);
-      if (signal.aborted) return;
-
-      this.suggestProgressEmitter.setStepProgress(70, '调整建议方向...');
-      await this.simulateStepDelay(200, signal);
-      if (signal.aborted) return;
-
-      this.suggestProgressEmitter.nextStep('正在生成写作建议...');
-      this.suggestProgressEmitter.setStepProgress(10, '调用 AI 模型...');
-
-      const suggestions = await this.facade.suggestNext(
-        precedingText,
-        this.cursorHint,
-        "continue",
-        3,
-        signal,
-        (index, cumulative) => {
-          if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) return;
-          this.updateStreamingPreview(index, cumulative);
-        }
-      );
-      if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) {
-        // NBI-03: 中止时引擎可能已回流空数组，这里主动清理未完成的流式骨架
-        // RG-02: 仅最新请求可清理，避免被新请求中止的旧请求误清新请求的骨架
-        // NBI-05: 切章后旧代次结果一律丢弃，不回填新章节
-        if (this.isSuggestRequestOwner(signal)) this.clearStreamingPreview();
-        return;
-      }
-
-      this.suggestProgressEmitter.setStepProgress(100, '生成完成');
-      this.suggestProgressEmitter.complete();
-
-      const duration = Date.now() - startTime;
-      if (this.timeEstimator) {
-        this.timeEstimator.record({
-          operationType: 'co_write_suggest',
-          wordCount,
-          mode: 'statistical',
-          duration
-        });
-        void this.timeEstimator.saveHistory();
-      }
-
-      this.currentSuggestions = suggestions;
-      this.currentRecord.suggestions = suggestions;
-      this.facade.syncSuggestionsReady(suggestions, 'action');
-      success = true;
-      if (suggestions.length === 0) {
-        const engineError = this.facade.getLastSuggestError();
-        if (this.suggestionStatusText) this.suggestionStatusText.textContent = engineError ? "生成失败" : "无建议";
-        this.suggestionContent.empty();
-
-        // 引擎已捕获到具体失败原因（密钥未解锁/401/超时等）时直接展示，不再误报成「知识库未拆解」
-        if (engineError) {
-          // 注意：上面的 empty() 已经把进度容器（含错误区与重试按钮）摘掉，
-          // 旧实现继续调用 showSuggestError 会写进脱离文档的节点：
-          // 用户只看到「生成失败」，既没有原因也没有重试入口。
-          renderSuggestErrorCard(this.suggestionContent, getFriendlyErrorMessage(engineError), {
-            onDismiss: () => this.renderEmptySuggestions(),
-            onRetry: () => this.retrySuggestion(),
-          });
-          return;
-        }
-
-        const dirCounts = this.facade.directionKnowledgeCounts || {};
-        const directions = ['action', 'emotion', 'dialogue'];
-        const allZero = directions.every(dir => (dirCounts[dir] || 0) === 0);
-
-        if (allZero) {
-          renderKnowledgeEmptyNotice(this.suggestionContent, () => this.openRefillModal('knowledge'));
-        }
-
-        renderNoSuggestionMessage(this.suggestionContent);
-        return;
-      }
-      this.renderSuggestionCards(suggestions);
-      this.showKnowledgeInjectionNotice();
-    } catch (e) {
-      if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) {
-        // RG-02: 旧请求（已被新请求接管）不得取消新请求的进度条或清理其骨架
-        // NBI-05: 切章后旧代次的错误也不写入新章节面板
-        if (this.isSuggestRequestOwner(signal)) {
-          if (this.suggestProgressEmitter) {
-            this.suggestProgressEmitter.cancel();
-          }
-          this.clearStreamingPreview();
-        }
-        return;
-      }
-      log.warn("[CoWritingView] 生成建议失败:", e);
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      this.lastSuggestError = errorMsg;
-      this.facade.syncSuggestionsError(errorMsg);
-
-      this.clearStreamingPreview();
-      if (this.suggestProgressEmitter) {
-        this.suggestProgressEmitter.fail(getFriendlyErrorMessage(errorMsg));
-      }
-    } finally {
-      if (suggestProgressTimer !== null) {
-        window.clearInterval(suggestProgressTimer);
-        suggestProgressTimer = null;
-      }
-      // v6.3: 仅当本次请求仍是当前 controller 时才清除状态，避免被后续请求的 abort 干扰
-      if (this.suggestAbortController?.signal === signal) {
-        this.isSuggesting = false;
-        this.suggestAbortController = null;
-        // BUG-K fix: 恢复建议按钮可用态
-        if (this.suggestBtn) {
-          this.suggestBtn.disabled = false;
-          this.updateStartButtonState();
-        }
-      }
-    }
   }
 
   private async simulateStepDelay(ms: number, signal: AbortSignal): Promise<void> {
@@ -2543,35 +2342,28 @@ ${text}`;
       }
     }
   }
+  /** 指标渲染宿主：字段通过 getter 实时读取。 */
+  private metricsHost(): MetricsRenderHost {
+    const view = this;
+    return {
+      get metricsContainer() { return view.metricsContainer; },
+      get rightEditor() { return view.rightEditor ?? null; },
+      get metricsStatus() { return view.metricsStatus; },
+      get project() { return view.project; },
+      get volume() { return view.volume; },
+      get chapterName() { return view.chapterName; },
+      get targetWordCount() { return view.facade.settings.defaultWordCount || 3000; },
+      get saveStateText() { return view.saveStateDisplay?.textContent || "\u672A\u77E5"; },
+      refreshMetrics: force => view.refreshMetrics(force),
+    };
+  }
   /**
    * 渲染情节完成度指标。
    *
    * @param metrics - 指标
    */
   renderMetrics(metrics: PlotCompletionMetrics) {
-    const state = computeMetricsRenderState(
-      metrics,
-      this.rightEditor?.value?.trim().length || 0,
-      this.metricsStatus,
-    );
-    const directionText = metrics.nextDirectionHints?.length
-      ? metrics.nextDirectionHints.map((d: SuggestionDirection) => getDirectionLabel(d)).join(" \u2192 ")
-      : '';
-    renderMetricsPanel(
-      this.metricsContainer,
-      metrics,
-      state,
-      {
-        project: this.project,
-        volume: this.volume,
-        chapterName: this.chapterName,
-        wordCount: this.rightEditor?.value?.trim().length || 0,
-        targetWordCount: this.facade.settings.defaultWordCount || 3000,
-        saveStateText: this.saveStateDisplay?.textContent || "\u672A\u77E5",
-        directionText,
-      },
-      () => this.refreshMetrics(true),
-    );
+    renderMetricsFn(this.metricsHost(), metrics);
   }
   /**
    * 渲染指标条。
@@ -2580,13 +2372,7 @@ ${text}`;
    * @param value - 值
    */
   renderMetricBar(label: string, value: number) {
-    const safe = Math.max(0, Math.min(100, Math.round(value || 0)));
-    const row = this.metricsContainer.createDiv({ cls: "novel-writer-cowrite-metric-row" });
-    row.createSpan({ cls: "novel-writer-cowrite-metric-label", text: label });
-    const bar = row.createDiv({ cls: "novel-writer-cowrite-metric-bar" });
-    const fill = bar.createDiv({ cls: `novel-writer-cowrite-metric-fill ${safe < 30 ? "low" : safe < 60 ? "mid" : "high"}` });
-    fill.style.width = `${safe}%`;
-    row.createSpan({ cls: "novel-writer-cowrite-metric-value", text: `${safe}%` });
+    renderMetricBarFn(this.metricsHost(), label, value);
   }
   /**
    * 创建评分卡。
@@ -2596,10 +2382,7 @@ ${text}`;
    * @returns 元素
    */
   createScoreCard(label: string, value: number) {
-    const card = createDiv({ cls: "novel-writer-cowrite-score-card" });
-    card.createDiv({ cls: "novel-writer-cowrite-score-value", text: `${Math.round(value || 0)}` });
-    card.createDiv({ cls: "novel-writer-cowrite-score-label", text: label });
-    return card;
+    return createScoreCardFn(label, value);
   }
   /**
    * RG-02: 新一轮生成/改写/联想开始前作废旧候选与幽灵建议。
@@ -2784,131 +2567,7 @@ ${text}`;
    * @param directionIndex - 方向索引
    */
   async handleStreamSuggestion(directionIndex: number = 0) {
-    if (this.isSuggesting) return;
-    if (this.suggestAbortController) {
-      this.suggestAbortController.abort();
-      this.suggestAbortController = null;
-    }
-    this.suggestAbortController = new AbortController();
-    const signal = this.suggestAbortController.signal;
-
-    this.isSuggesting = true;
-    this.facade.syncSuggestionsGenerating(true);
-    if (this.suggestBtn) {
-      this.suggestBtn.disabled = true;
-      this.suggestBtn.textContent = "⏳ 生成中...";
-    }
-
-    const cursor = resolveCursorPosition(this.rightEditor.selectionStart, this.rightEditor.value.length);
-    const precedingText = this.rightEditor.value.slice(0, cursor);
-
-    try {
-      if (signal.aborted) return;
-
-      const directionLabels: Record<string, string> = {
-        action: "剧情推进",
-        emotion: "情感深化",
-        dialogue: "人物对话",
-        description: "场景描写",
-        foreshadow: "伏笔铺垫",
-        conflict: "冲突升级",
-      };
-      const styleLabels = ["默认", "创意", "保守"];
-
-      let currentText = "";
-      const card = this.renderStreamingSuggestionCard(
-        "生成中...",
-        styleLabels[directionIndex] || "默认",
-        directionIndex,
-        "",
-        true
-      );
-      let textEl = card.querySelector(".novel-writer-cowrite-suggestion-text") as HTMLElement;
-
-      const stream = this.facade.suggestStream(
-        precedingText,
-        this.cursorHint,
-        "continue",
-        directionIndex,
-        signal
-      );
-
-      let finalSuggestion: SuggestionRecord | null = null;
-      let result: IteratorResult<string, SuggestionRecord | null>;
-
-      while (true) {
-        result = await stream.next();
-        if (signal.aborted) return;
-
-        if (result.done) {
-          finalSuggestion = result.value as SuggestionRecord | null;
-          break;
-        }
-
-        const chunk = result.value;
-        if (chunk) {
-          currentText += chunk;
-          if (textEl) {
-            const cursorEl = textEl.querySelector(".nw-streaming-cursor");
-            if (cursorEl) {
-              cursorEl.remove();
-            }
-            textEl.textContent = currentText;
-            const newCursor = document.createElement("span");
-            newCursor.className = "nw-streaming-cursor";
-            newCursor.textContent = "▋";
-            textEl.appendChild(newCursor);
-          }
-        }
-      }
-
-      if (signal.aborted) return;
-
-      if (finalSuggestion) {
-        currentText = finalSuggestion.text;
-        const directionLabel = directionLabels[finalSuggestion.direction] || finalSuggestion.direction;
-        const styleLabel = finalSuggestion.style === 'default' ? '默认' :
-          finalSuggestion.style === 'creative' ? '创意' : '保守';
-
-        this.currentSuggestions = [finalSuggestion];
-        this.currentRecord = {
-          id: `rec_stream_${Date.now()}`,
-          triggerText: precedingText.slice(-200),
-          cursorPosition: cursor,
-          suggestions: [finalSuggestion],
-          humanModifiedText: "",
-          editDurationMs: 0,
-          createdAt: Date.now()
-        };
-
-        this.renderSuggestionCards([finalSuggestion]);
-        this.facade.syncSuggestionsReady([finalSuggestion], finalSuggestion.direction as any);
-        this.showKnowledgeInjectionNotice();
-      } else {
-        if (this.suggestionStatusText) this.suggestionStatusText.textContent = "无建议";
-        this.suggestionContent.empty();
-        this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-empty", text: "这次没有拿到建议。可以换一批，或者检查 API 配置。" });
-      }
-    } catch (e) {
-      if (signal.aborted) return;
-      log.warn("[CoWritingView] 流式生成建议失败:", e);
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      this.facade.syncSuggestionsError(errorMsg);
-      this.showSuggestionPanel();
-      if (this.suggestionStatusText) this.suggestionStatusText.textContent = "生成失败";
-      this.suggestionContent.empty();
-      this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-error", text: "生成建议失败，请稍后重试。" });
-    } finally {
-      if (this.suggestAbortController?.signal === signal) {
-        this.isSuggesting = false;
-        this.suggestAbortController = null;
-        if (this.suggestBtn) {
-          this.suggestBtn.disabled = false;
-          this.updateStartButtonState();
-        }
-        this.facade.syncSuggestionsGenerating(false);
-      }
-    }
+    await runStreamSuggestion(this.suggestionFlowHost(), directionIndex);
   }
   /**
    * 显示知识注入提示。
@@ -3482,98 +3141,54 @@ ${text}`;
     return this.bodySaveController.flushBeforeChapterSwitch();
   }
 
+  /** 结算动作宿主：文件/弹窗/指标通过 getter 实时读取。 */
+  private settlementHost(): SettlementActionsHost {
+    const view = this;
+    return {
+      get app() { return view.app; },
+      get plugin() { return view.plugin; },
+      get project() { return view.project; },
+      get volume() { return view.volume; },
+      get chapterNum() { return view.chapterNum; },
+      get chapterName() { return view.chapterName; },
+      get rightEditor() { return view.rightEditor ?? null; },
+      get statusBar() { return view.statusBar ?? null; },
+      getBodyPath: () => view.getBodyPath(),
+      saveBody: showNotice => view.saveBody(showNotice),
+      renderMetrics: metrics => view.renderMetrics(metrics),
+      refreshMetrics: force => view.refreshMetrics(force),
+      getSessionMetrics: () => view.facade.getSession()?.currentMetrics || null,
+      handleComplete: () => view.handleComplete(),
+      openSettlementModal: () => {
+        new ChapterSettlementModal(view.app, view.plugin, {
+          project: view.project,
+          volume: view.volume,
+          chapterNum: view.chapterNum,
+          chapterName: view.chapterName || `\u7B2C${view.chapterNum}\u7AE0`
+        }).open();
+      },
+    };
+  }
   /** P1-4: 检查章节是否需要结算，在状态栏显示提醒 */
   private checkSettlementDue(): void {
-    if (!this.statusBar || !this.project || !this.chapterName) return;
-    try {
-      const bodyPath = this.getBodyPath();
-      const file = this.app.vault.getAbstractFileByPath(bodyPath);
-      if (!(file instanceof TFile)) return;
-      // 异步读取 frontmatter，不阻塞UI
-      this.app.vault.read(file).then(content => {
-        const isSettled = content.includes('status: settled');
-        const isWritten = content.includes('status: written') || content.includes('status: 已完稿');
-        if (isWritten && !isSettled && this.statusBar) {
-          this.statusBar.createSpan({
-            text: ' ⚠️ 待结算',
-            attr: { style: 'color: var(--text-warning, #f59e0b); font-weight: 600; cursor: pointer; margin-left: 8px;' },
-          }).addEventListener('click', () => {
-            this.handleComplete();
-          });
-        }
-      }).catch(() => {});
-    } catch { /* 静默忽略 */ }
+    checkSettlementDueFn(this.settlementHost());
   }
   /**
    * 标记本章已写。
    */
   async markAsWritten() {
-    if (!this.project || !this.volume || !this.chapterNum) {
-      new Notice("⚠️ 未绑定章节，请先在左侧选择卷/章", 3e3);
-      return;
-    }
-    try {
-      // 保存失败时旧实现照样把 status 改成 written 并提示成功，
-      // 结算会基于磁盘上的旧正文执行，事实/伏笔被按错误内容更新
-      const saved = await this.saveBody(false);
-      if (!saved) {
-        showErrorNotice("正文未能保存（可能为空或写入失败），未标记为完稿", { timeout: 4000 });
-        return;
-      }
-      const bodyPath = this.getBodyPath();
-      const file = this.app.vault.getAbstractFileByPath(bodyPath);
-      if (file instanceof TFile) {
-        await new ObsidianFrontmatter(this.app).processFrontmatter(file, (fm) => {
-          if (fm["status"] !== "settled") {
-            fm["status"] = "written";
-          }
-        });
-        showSuccessNotice("已标记为完稿", { timeout: 3000 });
-        this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics());
-        this.checkSettlementDue();
-      }
-    } catch (e) {
-      log.warn("[CoWritingView] 标记完稿失败:", e);
-      showErrorNotice("标记完稿失败", { timeout: 4000 });
-    }
+    await markAsWrittenFn(this.settlementHost());
   }
   /**
    * 完成本章（触发结算/后续流程）。
    */
   async handleComplete() {
-    // 保存失败仍弹结算：结算读的是磁盘正文，会和编辑器里看到的不一致
-    const saved = await this.saveBody(true);
-    if (!saved) {
-      showErrorNotice("正文未能保存，已取消结算", { timeout: 4000 });
-      return;
-    }
-    await this.refreshMetrics(true);
-    await this.runSettlementConflictCheck();
-    new ChapterSettlementModal(this.app, this.plugin, {
-      project: this.project,
-      volume: this.volume,
-      chapterNum: this.chapterNum,
-      chapterName: this.chapterName || `\u7B2C${this.chapterNum}\u7AE0`
-    }).open();
+    await completeChapter(this.settlementHost());
   }
 
   /** P0-2: 结算前冲突检测提示（复用 ConflictDetector，失败不阻塞结算） */
   private async runSettlementConflictCheck(): Promise<void> {
-    try {
-      const snapshot = new ChapterSnapshotBuilder().buildFromContext(
-        this.chapterNum,
-        await this.plugin.ctxManager.gatherAll(this.project, this.chapterName || `\u7B2C${this.chapterNum}\u7AE0`),
-      );
-      const body = this.rightEditor?.value || '';
-      if (body.trim().length === 0) return;
-      const conflicts = new ConflictDetector().detect(snapshot, body);
-      if (conflicts.length > 0) {
-        const preview = conflicts.slice(0, 3).map(c => c.message).join('\uFF1B');
-        showWarningNotice(`\u7ED3\u7B97\u524D\u68C0\u6D4B\u5230 ${conflicts.length} \u9879\u4E00\u81F4\u6027\u51B2\u7A81\uFF1A${preview}`, { timeout: 8000 });
-      }
-    } catch (e) {
-      log.warn('[CoWritingView] \u7ED3\u7B97\u524D\u51B2\u7A81\u68C0\u6D4B\u5931\u8D25:', e);
-    }
+    await runSettlementConflictCheckFn(this.settlementHost());
   }
 
   /**
@@ -3687,21 +3302,7 @@ ${text}`;
    * @param container - 容器元素
    */
   renderMetricsInto(metrics: PlotCompletionMetrics, container: HTMLElement) {
-    const state = computeMetricsRenderState(
-      metrics,
-      this.rightEditor?.value?.trim().length || 0,
-      this.metricsStatus,
-    );
-    const directionText = metrics.nextDirectionHints?.length
-      ? metrics.nextDirectionHints.join('、')
-      : '';
-    renderMetricsCompact(
-      container,
-      metrics,
-      state,
-      directionText,
-      () => this.refreshMetrics(true),
-    );
+    renderMetricsIntoFn(this.metricsHost(), metrics, container);
   }
   /** v6.4: 加载质量控制报告 */
   async loadQualityReport() {
