@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf, Notice, Modal, App, Setting, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
+import { StyleFeaturesAnalyzerV2, type StyleAnalysisResultV2 } from '@/engine/style/style-features-v2';
 import { FingerprintExtractor, ExtractionProgress } from '@/engine/fingerprint-extractor';
 import { applyNwScope } from '@/utils/helpers';
 import { AddFingerprintModal } from '@/ui/fingerprint-library-modal';
@@ -1091,7 +1092,7 @@ export class WritingFingerprintView extends ItemView {
         const modal = new AddFingerprintModal(this.app, {
             scope: this.filter.activeScope,
             extractor: this.extractor,
-            onCompleted: (fp) => this.saveExtractedFingerprint(fp, '✅ 指纹提取成功')
+            onCompleted: (fp) => void this.saveExtractedFingerprintWithLocalV2(fp, selectedText)
         });
         modal.textValue = selectedText;
         modal.open();
@@ -1120,13 +1121,59 @@ export class WritingFingerprintView extends ItemView {
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: '指纹保存失败', timeout: 8000 });
             return;
         }
+        await this.afterFingerprintSaved(fp, successMessage.replace(/^✅\s*/u, ''));
+    }
+
+    /**
+     * V2 直存路径：样本文本可用的本地十二维统计 → `addV2Fingerprint`
+     * （磁盘直接写 version:'v2' 全量特征，不再依赖「先 V1 落盘再迁移」）。
+     * 统计或落库失败时回落既有 V1 通道，绝不静默丢数据。
+     */
+    private async saveExtractedFingerprintWithLocalV2(
+        fp: StyleFingerprint,
+        sampleText: string,
+    ): Promise<void> {
+        if (!this.fingerprintLibrary) {
+            showWarningNotice('指纹库未初始化，提取结果未保存', { timeout: 8000 });
+            return;
+        }
+        let analysis: StyleAnalysisResultV2 | null = null;
+        try {
+            analysis = await new StyleFeaturesAnalyzerV2().analyze(sampleText);
+        } catch (e) {
+            log.warn('[FingerprintView] 本地十二维统计失败，按 V1 通道保存:', e);
+            showWarningNotice('本地十二维统计失败，将按基础指纹保存', { timeout: 6000 });
+        }
+        if (analysis) {
+            try {
+                const saved = await this.fingerprintLibrary.addV2Fingerprint({
+                    scope: fp.scope,
+                    name: fp.name,
+                    source: fp.source,
+                    tags: fp.tags,
+                    samples: fp.samples,
+                    sourceText: fp.sourceText ?? sampleText,
+                    analysis,
+                });
+                await this.afterFingerprintSaved(saved, '指纹提取成功（含 12 维结构化特征）');
+                return;
+            } catch (e) {
+                log.warn('[FingerprintView] V2 直存失败，回落 V1 通道:', e);
+                showWarningNotice('十二维结构化保存失败，已按基础指纹保存', { timeout: 6000 });
+            }
+        }
+        await this.saveExtractedFingerprint(fp, '✅ 指纹提取成功');
+    }
+
+    /** 保存成功后的公共收尾：刷新缓存、选中新指纹并重绘三块区域。 */
+    private async afterFingerprintSaved(fp: StyleFingerprint, successMessage: string): Promise<void> {
         await this.loadAllFingerprints();
         this.selectedFingerprintId = fp.id;
         this.selectedFingerprintScope = fp.scope as FingerprintScope;
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        showSuccessNotice(successMessage.replace(/^✅\s*/u, ''));
+        showSuccessNotice(successMessage);
     }
 
     private async handleExtractFromChapters(): Promise<void> {

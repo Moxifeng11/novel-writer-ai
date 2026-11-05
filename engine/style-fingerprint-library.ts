@@ -34,6 +34,7 @@ import {
     needsV1ToV2Migration,
 } from './style/fingerprint-migrator';
 import type { V2Fingerprint, StyleDimensionKeyV2 } from './style/style-dimensions-v2';
+import type { StyleAnalysisResultV2 } from './style/style-features-v2';
 import {
     StyleVectorStoreV2,
     type StyleFingerprintVectorsV2,
@@ -673,6 +674,102 @@ export class StyleFingerprintLibrary {
     async addFromKnowledge(fingerprint: StyleFingerprint): Promise<void> {
         fingerprint.scope = 'project';
         await this.addProject(fingerprint);
+    }
+
+    /**
+     * 以 V2 形态新增指纹（12 维结构化直存）。
+     *
+     * 与 `add*`（V1 投影入内存，落盘走 toPersistedFingerprint）不同，本入口
+     * 先登记 V2 缓存再落库：磁盘直接写 `version: 'v2'` 全量特征，避免
+     * 「先 V1 落盘再等迁移」。同时构建 V2 逐维向量（embedding 不可用时
+     * store 内部自行降级，不影响入库）。
+     *
+     * @param input - scope/名称/来源与本地十二维分析结果（StyleFeaturesAnalyzerV2.analyze 产出）
+     * @returns 内存中的 V1 投影条目（含生成的 id）
+     *
+     * @example
+     * ```ts
+     * const analysis = await new StyleFeaturesAnalyzerV2().analyze(sampleText);
+     * const fp = await library.addV2Fingerprint({
+     *     scope: 'project', name: '样本指纹', source: '蒸馏样本', analysis,
+     * });
+     * ```
+     */
+    async addV2Fingerprint(input: {
+        scope: 'template' | 'global' | 'project';
+        name: string;
+        source: string;
+        tags?: string[];
+        enabled?: boolean;
+        samples?: string[];
+        sourceText?: string;
+        analysis: StyleAnalysisResultV2;
+    }): Promise<StyleFingerprint> {
+        if (input.scope === 'project' && !this.project) {
+            throw new Error('未设置项目，无法写入项目级指纹');
+        }
+        const id = generateId();
+        const featuresV2 = input.analysis.features;
+        const v1Features = this.extractV1FeaturesFromV2(featuresV2);
+        const { stats } = input.analysis;
+        const statsV2: V2Fingerprint['stats'] = {
+            avgSentenceLength: featuresV2.rhythm.avgSentenceLength,
+            avgParagraphLength: stats.totalParagraphs > 0 ? stats.totalChars / stats.totalParagraphs : 0,
+            dialogueRatio: featuresV2.dialogue.dialogueRatio,
+            descriptionRatio: featuresV2.description.environmentDescriptionRatio,
+            wordCount: stats.totalChars,
+        };
+        const extractedAt = Date.now();
+        const v2: V2Fingerprint = {
+            id,
+            name: input.name,
+            source: input.source,
+            scope: input.scope,
+            enabled: input.enabled ?? true,
+            tags: input.tags ?? [],
+            version: 'v2',
+            stats: statsV2,
+            features: featuresV2,
+            samples: input.samples ?? [],
+            extractedAt,
+            // 新建指纹没有 V1 历史，用投影合成 v1Backup 供加载时还原 V1 视图
+            //（与 saveBlendedFingerprint 的合成方式一致）
+            v1Backup: {
+                features: v1Features as unknown as Record<string, string>,
+                extractedAt,
+                migratedAt: Date.now(),
+            },
+            ...(input.sourceText ? { sourceText: input.sourceText } : {}),
+        };
+        // 先登记 V2 缓存：save 时 toPersistedFingerprint 依据此表决定按 V2 形态落盘
+        this.v2Fingerprints.set(id, v2);
+        const fp: StyleFingerprint = {
+            id,
+            name: v2.name,
+            source: v2.source,
+            scope: v2.scope,
+            enabled: v2.enabled,
+            tags: v2.tags,
+            stats: { ...statsV2 },
+            features: v1Features,
+            samples: v2.samples,
+            extractedAt: v2.extractedAt,
+            ...(input.sourceText ? { sourceText: input.sourceText } : {}),
+        };
+        if (input.scope === 'template') {
+            await this.addTemplate(fp);
+        } else if (input.scope === 'global') {
+            await this.addGlobal(fp);
+        } else {
+            await this.addProject(fp);
+        }
+        try {
+            const store = this.getStyleVectorStoreV2ForScope(input.scope === 'project' ? 'project' : 'global');
+            await store?.addOrUpdateVectors(id, featuresV2);
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] V2 逐维向量构建失败（不影响入库）:', id, e);
+        }
+        return fp;
     }
 
     /**
