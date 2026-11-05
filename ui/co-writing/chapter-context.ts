@@ -218,3 +218,55 @@ export async function ensureVaultFolder(vault: VaultFolderPort, dirPath: string)
         }
     }
 }
+
+/** 章节位置：章号 + 卷名（不含项目）。 */
+export interface ChapterLocation {
+    chapterNum: number;
+    volume: string;
+}
+
+/**
+ * 推定章节位置：缺参时按章名解析章号，再按章号反查正文实际所在卷。
+ *
+ * 只传项目与章名时旧默认值是「第1卷/第1章」，会把第 3 卷第 12 章绑定成第 1 卷第 1 章，
+ * 保存直接写错文件。优先级：显式章号 > 章名解析 > 1；显式卷名 > 反查卷 > 第1卷。
+ *
+ * @param chapterName - 章节名，形如「第12章 夜袭」
+ * @param volume - 显式卷名（优先级最高）
+ * @param chapterNum - 显式章号（优先于章名解析）
+ * @param resolveVolume - 按章号反查正文实际所在卷；返回 null/undefined 表示查不到
+ * @returns 章号与卷名
+ * @example
+ * ```ts
+ * resolveChapterLocation('第12章 夜袭', undefined, undefined, () => '第3卷');
+ * // => { chapterNum: 12, volume: '第3卷' }
+ * ```
+ */
+export function resolveChapterLocation(
+    chapterName: string,
+    volume?: string,
+    chapterNum?: number,
+    resolveVolume?: (chapterNum: number) => string | null | undefined,
+): ChapterLocation {
+    const parsed = parseInt(chapterName.match(/第(\d+)章/)?.[1] || '', 10) || 1;
+    const resolvedChapterNum = chapterNum && chapterNum > 0 ? chapterNum : parsed;
+    const resolvedVolume = volume || resolveVolume?.(resolvedChapterNum) || '第1卷';
+    return { chapterNum: resolvedChapterNum, volume: resolvedVolume };
+}
+
+/**
+ * 去掉正文文件的章节标题行与「正文区域」标记，只留正文（frontmatter 复用 stripFrontmatter）。
+ *
+ * @param raw - 磁盘上的完整正文
+ * @returns 仅正文（含原始换行）
+ * @example
+ * ```ts
+ * stripChapterBody('---\ntitle: x\n---\n# 第1章 起\n<!-- 正文区域 -->\n正文');
+ * // => '正文'
+ * ```
+ */
+export function stripChapterBody(raw: string): string {
+    return stripFrontmatter(raw)
+        .replace(/^#\s+第\d+章[^\n]*\n+/, '')
+        .replace(/<!--\s*正文区域.*?-->\s*/g, '');
+}

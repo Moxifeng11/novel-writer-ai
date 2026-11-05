@@ -11,7 +11,7 @@
 | `shared/` | 173 | 38937 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 237 | 100364 | 694 | 612 | 88% |
+| `ui/` | 236 | 100344 | 693 | 612 | 88% |
 
 ## 文件清单
 
@@ -568,9 +568,8 @@
 | `ui/co-writing-view.ts` | 3557 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
-| `ui/co-writing/chapter-context.ts` | 221 | 12 | 9 |
+| `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
 | `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
-| `ui/co-writing/chapter-switch.ts` | 72 | 4 | 2 |
 | `ui/co-writing/dashboard-status.ts` | 180 | 9 | 7 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |

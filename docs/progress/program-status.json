@@ -572,8 +572,8 @@
     {
       "date": "2026-11-06",
       "group": "G5",
-      "summary": "v4.51.0（待发版）co-writing-view 切片第九批：抽出 metrics-refresh（剧情完成度刷新编排：评估节流门控、在途评估中止、切章丢弃旧结果、失败态回退）与 chapter-switch（章节身份推定/正文去壳，锁定「缺参绑定错误卷」与标题重复两处历史 bug）；视图 3,581 → 3,556 行（-25，含空行口径）；新增 2 个行为测试文件 18 用例",
-      "evidence": "ui/co-writing/metrics-refresh.ts + ui/co-writing/chapter-switch.ts + ui/co-writing-view.ts + tests/unit/ui/co-writing-metrics-refresh.test.ts + tests/unit/ui/co-writing-chapter-switch.test.ts"
+      "summary": "v4.51.0（待发版）co-writing-view 切片第九批：抽出 metrics-refresh（剧情完成度刷新编排：评估节流门控、在途评估中止、切章丢弃旧结果、失败态回退）并扩展 chapter-context（resolveChapterLocation 章节身份推定 / stripChapterBody 正文去壳，锁定「缺参绑定错误卷」与标题重复两处历史 bug）；视图 3,581 → 3,556 行（-25，含空行口径）；新增 1 个行为测试文件 7 用例 + chapter-context 追加 11 用例",
+      "evidence": "ui/co-writing/metrics-refresh.ts + ui/co-writing/chapter-context.ts + ui/co-writing-view.ts + tests/unit/ui/co-writing-metrics-refresh.test.ts + tests/unit/ui/co-writing-chapter-context.test.ts"
     },
     {
       "date": "2026-11-06",

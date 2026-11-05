@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
     buildBodyDir,
     buildStepFilePath,
@@ -7,7 +7,9 @@ import {
     extractChapterTitleFromInfoPlan,
     extractChapterTitleFromOutline,
     isSameChapterIdentity,
+    resolveChapterLocation,
     resolveChapterTitle,
+    stripChapterBody,
     stripFrontmatter,
 } from '../../../ui/co-writing/chapter-context';
 
@@ -84,5 +86,68 @@ describe('co-writing chapter-context 身份与目录', () => {
         await ensureVaultFolder(vault, '项目/03-大纲与章节/正文');
         expect(created).toEqual(['项目/03-大纲与章节', '项目/03-大纲与章节/正文']);
         expect(await ensureVaultFolder(vault, '')).toBeUndefined();
+    });
+});
+
+describe('章节位置推定（切章守卫）', () => {
+    it('显式章号优先于章名解析', () => {
+        const location = resolveChapterLocation('第12章 夜袭', undefined, 7);
+        expect(location.chapterNum).toBe(7);
+    });
+
+    it('缺章号时按章名解析', () => {
+        const location = resolveChapterLocation('第12章 夜袭');
+        expect(location.chapterNum).toBe(12);
+        expect(location.volume).toBe('第1卷');
+    });
+
+    it('章名不含章号时回落到第 1 章', () => {
+        const location = resolveChapterLocation('序章');
+        expect(location.chapterNum).toBe(1);
+    });
+
+    it('显式卷名优先于反查结果', () => {
+        const resolveVolume = vi.fn(() => '第3卷');
+        const location = resolveChapterLocation('第2章', '第5卷', undefined, resolveVolume);
+        expect(location.volume).toBe('第5卷');
+        expect(resolveVolume).not.toHaveBeenCalled();
+    });
+
+    it('缺卷名时按解析出的章号反查卷', () => {
+        const resolveVolume = vi.fn(() => '第3卷');
+        const location = resolveChapterLocation('第12章 夜袭', undefined, undefined, resolveVolume);
+        expect(location.volume).toBe('第3卷');
+        expect(resolveVolume).toHaveBeenCalledWith(12);
+    });
+
+    it('反查不到时回落第 1 卷', () => {
+        const location = resolveChapterLocation('第12章', undefined, undefined, () => null);
+        expect(location.volume).toBe('第1卷');
+    });
+
+    it('反查返回 undefined 时同样回落第 1 卷', () => {
+        const location = resolveChapterLocation('第12章', undefined, undefined, () => undefined);
+        expect(location.volume).toBe('第1卷');
+    });
+});
+
+describe('正文去壳', () => {
+    it('去掉 frontmatter、章节标题与正文区域标记', () => {
+        const raw = '---\ntitle: x\n---\n# 第1章 起\n<!-- 正文区域 -->\n正文';
+        expect(stripChapterBody(raw)).toBe('正文');
+    });
+
+    it('无 frontmatter 且无标题时原样返回', () => {
+        expect(stripChapterBody('正文第一段')).toBe('正文第一段');
+    });
+
+    it('只去掉首部章节标题，正文中的同名标题保留', () => {
+        const raw = '# 第1章 起\n第一段\n# 第1章 起\n第二段';
+        expect(stripChapterBody(raw)).toBe('第一段\n# 第1章 起\n第二段');
+    });
+
+    it('移除多处正文区域标记', () => {
+        const raw = '<!-- 正文区域 -->\n甲\n<!-- 正文区域 结束 -->\n乙';
+        expect(stripChapterBody(raw)).toBe('甲\n乙');
     });
 });

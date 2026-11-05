@@ -157,7 +157,7 @@ import {
 } from '@/ui/co-writing/suggestion-flow';
 import { renderMonitorCards, type ForeshadowSnapshot } from '@/ui/co-writing/monitor-cards';
 import { runMetricsRefresh, type MetricsRefreshHost } from '@/ui/co-writing/metrics-refresh';
-import { resolveChapterIdentity, stripChapterBody } from '@/ui/co-writing/chapter-switch';
+import { resolveChapterLocation, stripChapterBody } from '@/ui/co-writing/chapter-context';
 import { handleMarkdownShortcut } from '@/ui/co-writing/markdown-shortcut';
 import {
     refreshAdviceInto,
@@ -586,15 +586,15 @@ export class CoWritingView extends ItemView {
   async openChapter(project: string, chapterName2: string, volume2?: string, chapterNum?: number) {
     const seq = ++this.openChapterSeq;
     // 只传 2 个参数时旧默认值是「第1卷/第1章」，会把第 3 卷第 12 章绑定成第 1 卷第 1 章、
-    // 保存直接写错文件。身份推定集中在 chapter-switch：缺参按章名推定章号，并按正文实际位置反查卷。
-    const identity = resolveChapterIdentity({
-      chapterName: chapterName2,
-      volume: volume2,
+    // 保存直接写错文件。身份推定集中在 chapter-context：缺参按章名推定章号，并按正文实际位置反查卷。
+    const location = resolveChapterLocation(
+      chapterName2,
+      volume2,
       chapterNum,
-      resolveVolume: num => this.resolveVolumeForChapter(project, num),
-    });
-    volume2 = identity.volume;
-    chapterNum = identity.chapterNum;
+      this.resolveVolumeForChapter.bind(this, project),
+    );
+    volume2 = location.volume;
+    chapterNum = location.chapterNum;
     // 上一章排队中的自动保存必须先用「旧身份」落盘：下面一旦改写 project/chapterNum，
     // 2s 防抖里的保存就会用新章路径写入旧章正文（静默串章）。
     const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
