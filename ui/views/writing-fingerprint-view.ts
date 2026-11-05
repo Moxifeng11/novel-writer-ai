@@ -24,7 +24,8 @@ import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
-import { renderV2FeaturesSection } from './fingerprint-v2-detail';
+import { renderV2FeaturesSection, V2_FEATURE_LABELS } from './fingerprint-v2-detail';
+import type { V2Fingerprint, StyleFingerprintFeaturesV2 } from '@/engine/style/style-dimensions-v2';
 
 
 const log = createLogger('WritingFingerprintView');
@@ -1507,7 +1508,12 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private handleEditFingerprint(fp: StyleFingerprint): void {
-        new EditFingerprintModal(this.app, fp, (updated) => {
+        // V2 指纹带十二维编辑；V1 指纹仅元信息
+        const v2 = this.fingerprintLibrary?.getV2Fingerprint(fp.id) ?? null;
+        new EditFingerprintModal(
+            this.app,
+            fp,
+            (updated) => {
             // 保存失败必须让用户看见：Modal 已关闭，静默 rejection 会表现为「看起来更新成功」
             void (async () => {
                 if (!this.fingerprintLibrary) {
@@ -1531,7 +1537,29 @@ export class WritingFingerprintView extends ItemView {
                 this.renderDetailPanel();
                 showSuccessNotice('指纹已更新');
             })();
-        }).open();
+            },
+            v2,
+            async (updated, features) => {
+                // V2 路径：十二维与 V1 投影同步更新，磁盘保持 version:'v2'
+                if (!this.fingerprintLibrary) {
+                    showErrorNotice('指纹库未初始化，修改未保存');
+                    return;
+                }
+                try {
+                    const saved = await this.fingerprintLibrary.updateV2FingerprintFeatures(updated.id, fp.scope, features);
+                    if (!saved) throw new Error('V2 指纹条目不存在');
+                } catch (e) {
+                    log.error('[FingerprintView] V2 指纹更新失败:', e);
+                    showErrorNotice(`十二维更新失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 8000 });
+                    return;
+                }
+                await this.loadAllFingerprints();
+                this.renderSearchAndFilter();
+                this.renderFingerprintList();
+                this.renderDetailPanel();
+                showSuccessNotice('指纹已更新（含 12 维结构化特征）');
+            },
+        ).open();
     }
 
     private async handlePromoteToGlobal(fp: StyleFingerprint): Promise<void> {
@@ -1685,17 +1713,28 @@ export class WritingFingerprintView extends ItemView {
 class EditFingerprintModal extends Modal {
     private fingerprint: StyleFingerprint;
     private onSave: (fp: StyleFingerprint) => void;
+    /** V2 指纹的十二维可编辑副本；null 表示该指纹无 V2 数据（仅元信息编辑） */
+    private v2Features: StyleFingerprintFeaturesV2 | null;
+    private onSaveV2: ((fp: StyleFingerprint, features: StyleFingerprintFeaturesV2) => void) | null;
     private nameValue: string;
     private sourceValue: string;
     private tagsValue: string;
 
-    constructor(app: App, fingerprint: StyleFingerprint, onSave: (fp: StyleFingerprint) => void) {
+    constructor(
+        app: App,
+        fingerprint: StyleFingerprint,
+        onSave: (fp: StyleFingerprint) => void,
+        v2?: V2Fingerprint | null,
+        onSaveV2?: (fp: StyleFingerprint, features: StyleFingerprintFeaturesV2) => void,
+    ) {
         super(app);
         this.fingerprint = { ...fingerprint };
         this.onSave = onSave;
         this.nameValue = fingerprint.name;
         this.sourceValue = fingerprint.source;
         this.tagsValue = fingerprint.tags.join(', ');
+        this.v2Features = v2 ? { ...v2.features } : null;
+        this.onSaveV2 = onSaveV2 ?? null;
     }
 
     /**
@@ -1727,6 +1766,29 @@ class EditFingerprintModal extends Modal {
                 .setValue(this.tagsValue)
                 .onChange(v => this.tagsValue = v));
 
+        if (this.v2Features) {
+            const dims = contentEl.createDiv({ cls: 'nw-u-margintop-12px-2' });
+            dims.createEl('h4', {
+                text: '🧬 十二维特征（本地统计，可逐维修改描述）',
+                cls: 'nw-fp-section-h4 nw-u-m-0-2 nw-u-marginbottom-8px-2'
+            });
+            for (const { key, label } of V2_FEATURE_LABELS) {
+                const dim = this.v2Features[key];
+                const dimSetting = new Setting(dims).setName(label);
+                if (dim.status !== 'complete') dimSetting.setDesc('样本不足（pending）');
+                dimSetting.addTextArea(t => {
+                        const area = t
+                            .setValue(dim.description || '')
+                            .onChange(v => {
+                                dim.description = v;
+                                dim.status = v.trim() ? 'complete' : dim.status;
+                            });
+                        area.inputEl.addClass('nw-u-w-full-2');
+                        return area;
+                    });
+            }
+        }
+
         const btnRow = contentEl.createDiv({
             cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-margintop-20px-2'
         });
@@ -1745,7 +1807,11 @@ class EditFingerprintModal extends Modal {
             this.fingerprint.name = this.nameValue.trim() || this.fingerprint.name;
             this.fingerprint.source = this.sourceValue.trim();
             this.fingerprint.tags = this.tagsValue.split(',').map(t => t.trim()).filter(Boolean);
-            this.onSave(this.fingerprint);
+            if (this.v2Features && this.onSaveV2) {
+                this.onSaveV2(this.fingerprint, this.v2Features);
+            } else {
+                this.onSave(this.fingerprint);
+            }
             this.close();
         });
     }

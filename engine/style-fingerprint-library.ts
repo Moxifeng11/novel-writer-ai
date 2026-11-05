@@ -773,6 +773,54 @@ export class StyleFingerprintLibrary {
     }
 
     /**
+     * 更新 V2 指纹的十二维特征（编辑 UI 保存路径）。
+     *
+     * 同步做三件事，保证「V2 全量 / V1 投影 / 向量」三者一致：
+     * 1. v2 缓存条目替换 features（磁盘经 toPersistedFingerprint 维持 V2 形态）；
+     * 2. V1 内存条目重算 7 维投影（与投影一致的 same 检查才不会把 V2 降级）；
+     * 3. V2 逐维向量重建（embedding 降级不影响保存）。
+     *
+     * @param id - 指纹 id
+     * @param scope - 作用域
+     * @param features - 编辑后的十二维特征
+     * @returns 更新后的 V1 投影条目；id 不存在时返回 null
+     *
+     * @example
+     * ```ts
+     * await library.updateV2FingerprintFeatures(fp.id, 'global', editedFeatures);
+     * ```
+     */
+    async updateV2FingerprintFeatures(
+        id: string,
+        scope: 'template' | 'global' | 'project',
+        features: V2Fingerprint['features'],
+    ): Promise<StyleFingerprint | null> {
+        const v2 = this.v2Fingerprints.get(id);
+        if (!v2 || v2.scope !== scope) return null;
+        v2.features = features;
+        // v1Backup 同步刷新：加载时 V1 视图从备份还原，不同步会出现「改完重载又变回旧值」
+        const projection = this.extractV1FeaturesFromV2(features);
+        v2.v1Backup = {
+            features: projection as unknown as Record<string, string>,
+            extractedAt: v2.extractedAt,
+            migratedAt: Date.now(),
+        };
+        const fp = this.getFingerprint(id, scope);
+        if (!fp) return null;
+        fp.features = projection;
+        if (scope === 'template') await this.updateTemplate(fp);
+        else if (scope === 'global') await this.updateGlobal(fp);
+        else await this.updateProject(fp);
+        try {
+            const store = this.getStyleVectorStoreV2ForScope(scope === 'project' ? 'project' : 'global');
+            await store?.addOrUpdateVectors(id, features);
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] V2 向量更新失败（不影响保存）:', id, e);
+        }
+        return fp;
+    }
+
+    /**
      * 更新项目指纹。
      *
      * @param fp - 文风指纹

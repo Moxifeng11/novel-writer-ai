@@ -129,3 +129,54 @@ describe('StyleFingerprintLibrary — addV2Fingerprint 直存', () => {
         expect(library.listV2Fingerprints('project')).toHaveLength(0);
     });
 });
+
+
+describe('StyleFingerprintLibrary — updateV2FingerprintFeatures 编辑路径', () => {
+    let vault: Vault;
+    let library: StyleFingerprintLibrary;
+
+    beforeEach(() => {
+        vault = new Vault();
+        library = new StyleFingerprintLibrary({ vault } as any);
+        library.setEmbeddingClient(new MockEmbeddingProvider());
+    });
+
+    it('更新后 V2 / V1 投影 / 磁盘三方一致，重载不降级', async () => {
+        await library.loadGlobal();
+        const analysis = await makeAnalysis();
+        const saved = await library.addV2Fingerprint({
+            scope: 'global',
+            name: '编辑前指纹',
+            source: '蒸馏样本',
+            analysis,
+        });
+
+        const edited = {
+            ...analysis.features,
+            rhythm: { ...analysis.features.rhythm, description: '编辑后的节奏描述' },
+        };
+        const fp = await library.updateV2FingerprintFeatures(saved.id, 'global', edited);
+        expect(fp).not.toBeNull();
+        expect(fp!.features.sentenceRhythm).toBe('编辑后的节奏描述');
+        expect(library.getV2Fingerprint(saved.id)!.features.rhythm.description).toBe('编辑后的节奏描述');
+
+        // 磁盘直读：仍是 v2 且带新描述
+        const raw = await (vault as any).readByPath(globalFingerprintsFile());
+        const entry = JSON.parse(raw).find((fp: { id: string }) => fp.id === saved.id);
+        expect(entry.version).toBe('v2');
+        expect(entry.features.rhythm.description).toBe('编辑后的节奏描述');
+
+        // 重载不降级
+        const library2 = new StyleFingerprintLibrary({ vault } as any);
+        library2.setEmbeddingClient(new MockEmbeddingProvider());
+        await library2.loadGlobal();
+        expect(library2.getV2Fingerprint(saved.id)!.features.rhythm.description).toBe('编辑后的节奏描述');
+        expect(library2.getGlobal(saved.id)!.features.sentenceRhythm).toBe('编辑后的节奏描述');
+    });
+
+    it('id 不存在或作用域不符时返回 null', async () => {
+        await library.loadGlobal();
+        const analysis = await makeAnalysis();
+        await expect(library.updateV2FingerprintFeatures('fp-nope', 'global', analysis.features)).resolves.toBeNull();
+    });
+});
