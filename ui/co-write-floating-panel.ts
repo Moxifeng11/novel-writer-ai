@@ -17,6 +17,7 @@ import { CharacterConsistencyChecker, ConsistencyCheckResult } from "@/engine/ch
 import { toCharacterContextInfos } from "@/engine/character-context";
 import { ProgressEmitter, type ProgressState } from "@/shared/progress-emitter";
 import { StepListComponent } from "./components/progress/step-list";
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from "./components/notice-helpers";
 import { TimeEstimator } from "@/shared/time-estimator";
 import { createLogger } from '@/shared/logger';
 import { resolveCursorPosition } from '@/shared/cursor-position';
@@ -159,7 +160,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       btn.addEventListener("click", () => {
         void Promise.resolve(a.action()).catch((e) => {
           log.warn("[CoWriteFloating] 操作失败:", e);
-          new Notice(`操作失败：${e instanceof Error ? e.message : String(e)}`, 5000);
+          showErrorNotice(e instanceof Error ? e.message : String(e), { title: '操作失败', timeout: 5000 });
         });
       });
       this.actionButtons.push(btn);
@@ -301,7 +302,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     } catch (e) {
       log.warn("[CoWriteFloating] \u4FDD\u5B58\u5931\u8D25:", e);
       this.updateSaveState("\u4FDD\u5B58\u5931\u8D25");
-      new Notice(`\u26A0\uFE0F \u4FDD\u5B58\u5931\u8D25\uFF1A${e instanceof Error ? e.message : String(e)}`, 6000);
+      showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 6000 });
       return false;
     }
   }
@@ -710,7 +711,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     } catch (e) {
       if (signal.aborted) return;
       log.warn("[CoWriteFloating] 联想输入失败:", e);
-      new Notice("联想输入失败，请稍后重试");
+      showErrorNotice("联想输入失败，请稍后重试");
     } finally {
       if (this.suggestAbortController?.signal === signal) {
         this.suggestAbortController = null;
@@ -748,7 +749,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       this.renderSuggestions(suggestions);
     } catch (e) {
       log.warn("[CoWriteFloating] 选区改写失败:", e);
-      new Notice("选区改写失败，请稍后重试");
+      showErrorNotice("选区改写失败，请稍后重试");
     } finally {
       this.isSuggesting = false;
       this.setActionsBusy(false);
@@ -763,10 +764,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     try {
       const saved = await this.saveBody();
       if (!saved) {
-        new Notice("\u26A0\uFE0F \u6B63\u6587\u672A\u4FDD\u5B58\uFF0C\u672C\u6B21\u7ED3\u7B97\u5DF2\u53D6\u6D88");
+        showWarningNotice("正文未保存，本次结算已取消");
         return;
       }
-      new Notice("\u2705 \u7AE0\u8282\u4FDD\u5B58\u5DF2\u5B8C\u6210\uFF0C\u8BF7\u5728\u5168\u672C\u5199\u4F5C\u89C6\u56FE\u4E2D\u6267\u884C\u7ED3\u7B97");
+      showSuccessNotice("章节保存已完成，请在全本写作视图中执行结算");
     } finally {
       this.setActionsBusy(false);
     }
@@ -813,10 +814,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
       const result = await checker.check(body, characterInfos);
       this.renderLogicCheckResult(result);
-      new Notice(`\u2705 \u903B\u8F91\u68C0\u67E5\u5B8C\u6210\uFF0C\u4E00\u81F4\u6027\u5F97\u5206: ${result.overallScore}`);
+      showSuccessNotice(`逻辑检查完成，一致性得分: ${result.overallScore}`);
     } catch (e) {
       log.warn("[CoWriteFloating] \u903B\u8F91\u68C0\u67E5\u5931\u8D25:", e);
-      new Notice("\u26A0\uFE0F \u903B\u8F91\u68C0\u67E5\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+      showErrorNotice("逻辑检查失败，请稍后重试");
     } finally {
       this.setActionsBusy(false);
     }
@@ -836,15 +837,15 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     try {
       const report = await this.engine.checkPlotRedundancy(body);
       this.renderRedundancyResult(report);
-      new Notice(
+      showSuccessNotice(
         report.issues.length > 0
-          ? `\u2705 \u5197\u4F59\u68C0\u67E5\u5B8C\u6210\uFF0C\u53D1\u73B0 ${report.issues.length} \u5904\u91CD\u590D`
-          : "\u2705 \u5197\u4F59\u68C0\u67E5\u5B8C\u6210\uFF0C\u672A\u53D1\u73B0\u660E\u663E\u91CD\u590D",
-        5000,
+          ? `冗余检查完成，发现 ${report.issues.length} 处重复`
+          : "冗余检查完成，未发现明显重复",
+        { timeout: 5000 },
       );
     } catch (e) {
       log.warn("[CoWriteFloating] \u5197\u4F59\u68C0\u67E5\u5931\u8D25:", e);
-      new Notice("\u26A0\uFE0F \u5197\u4F59\u68C0\u67E5\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+      showErrorNotice("冗余检查失败，请稍后重试");
     } finally {
       this.setActionsBusy(false);
     }
@@ -989,7 +990,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     // 现在把方向提示存到 cursorHint，供 suggestNext / rewriteSelection 实际传入引擎。
     this.cursorHint = hint;
     this.hintInput.value = "";
-    new Notice(`\uD83D\uDCA1 \u5DF2\u5E94\u7528\u6307\u4EE4\uFF0C\u5C06\u5728\u4E0B\u6B21\u751F\u6210\u65F6\u751F\u6548: ${hint}`);
+    showSuccessNotice(`已应用指令，将在下次生成时生效: ${hint}`);
   }
 
   /**

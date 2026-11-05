@@ -12,6 +12,7 @@ import { getStepTemplate } from '@/engine/prompt-templates';
 import { createLogger } from '@/shared/logger';
 import { exportTextFile } from '@/shared/export-file';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
 
 const log = createLogger('TemplateManager');
@@ -255,7 +256,7 @@ export class TemplateManager {
             });
         } catch (e) {
             log.error('[TemplateManager] 导出模板失败:', e);
-            new Notice(`❌ 导出失败: ${(e as Error).message}`);
+            showErrorNotice((e as Error).message, { title: '导出失败' });
         }
     }
 
@@ -295,7 +296,7 @@ export class TemplateManager {
             });
         } catch (e) {
             log.error('[TemplateManager] 导出全部模板失败:', e);
-            new Notice(`❌ 导出失败: ${(e as Error).message}`);
+            showErrorNotice((e as Error).message, { title: '导出失败' });
         }
     }
 
@@ -342,10 +343,10 @@ export class TemplateManager {
                 }
             }
 
-            new Notice(`✅ 已删除 ${template.name} 的 ${count} 个自定义模板`);
+            showSuccessNotice(`已删除 ${template.name} 的 ${count} 个自定义模板`);
         } catch (e) {
             log.error('[TemplateManager] 重置模板失败:', e);
-            new Notice(`❌ 重置失败: ${(e as Error).message}`);
+            showErrorNotice((e as Error).message, { title: '重置失败' });
         }
     }
 
@@ -385,11 +386,11 @@ export class TemplateManager {
                 }
             }
 
-            new Notice(`✅ 已删除 ${count} 个自定义模板`);
+            showSuccessNotice(`已删除 ${count} 个自定义模板`);
             this.renderTemplateList(container);
         } catch (e) {
             log.error('[TemplateManager] 重置全部模板失败:', e);
-            new Notice(`❌ 重置失败: ${(e as Error).message}`);
+            showErrorNotice((e as Error).message, { title: '重置失败' });
         }
     }
 }
@@ -515,14 +516,14 @@ class TemplateEditModal extends Modal {
                 await this.app.vault.delete(existingUser, true);
             }
 
-            new Notice(`✅ 已保存 ${this.template.name} 模板`);
+            showSuccessNotice(`已保存 ${this.template.name} 模板`);
             this.close();
             if (this.refreshCallback) {
                 this.refreshCallback();
             }
         } catch (e) {
             log.error('[TemplateManager] 保存模板失败:', e);
-            new Notice(`❌ 保存失败: ${(e as Error).message}`);
+            showErrorNotice((e as Error).message, { title: '保存失败' });
         }
     }
 
@@ -552,14 +553,14 @@ class TemplateEditModal extends Modal {
                 }
             }
 
-            new Notice(`✅ 已删除 ${this.template.name} 的 ${count} 个自定义模板`);
+            showSuccessNotice(`已删除 ${this.template.name} 的 ${count} 个自定义模板`);
             this.close();
             if (this.refreshCallback) {
                 this.refreshCallback();
             }
         } catch (e) {
             log.error('[TemplateManager] 删除模板失败:', e);
-            new Notice(`❌ 删除失败: ${(e as Error).message}`);
+            showErrorNotice((e as Error).message, { title: '删除失败' });
         }
     }
 
@@ -683,11 +684,11 @@ class TemplateImportModal extends Modal {
 
             if (count === 0) {
                 statusDiv.setText('❌ 未识别到可导入的模板片段（文件名需包含 -template）');
-                new Notice('❌ 未导入任何模板：文件格式不正确', 6000);
+                showErrorNotice('未导入任何模板：文件格式不正确', { timeout: 6000 });
                 return;
             }
             statusDiv.setText(`✅ 已导入 ${count} 个模板文件`);
-            new Notice(`✅ 已导入 ${count} 个模板`);
+            showSuccessNotice(`已导入 ${count} 个模板`);
 
             setTimeout(() => {
                 this.close();
@@ -698,7 +699,7 @@ class TemplateImportModal extends Modal {
         } catch (e) {
             log.error('[TemplateManager] 导入模板失败:', e);
             statusDiv.setText(`❌ 导入失败: ${(e as Error).message}`);
-            new Notice(`❌ 导入失败: ${(e as Error).message}`);
+            showErrorNotice((e as Error).message, { title: '导入失败' });
         }
     }
 

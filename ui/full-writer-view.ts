@@ -1016,7 +1016,7 @@ export class FullWriterView extends ItemView {
             } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[FullWriter] onOpen 加载失败:', errMsg);
-                new Notice('⚠️ 项目加载失败，请检查项目文件是否完整', 5000);
+                showErrorNotice('项目加载失败，请检查项目文件是否完整', { title: '加载失败', timeout: 5000 });
             }
         }
 
@@ -1314,7 +1314,7 @@ export class FullWriterView extends ItemView {
     private async openChapterInCoWriting(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
         const chapterNum = parseInt(chapter.chapter.match(/\d+/)?.[0] || '0', 10);
         if (!chapterNum) {
-            new Notice('无法解析章号，请检查章节命名。', 4000);
+            showErrorNotice('无法解析章号，请检查章节命名', { title: '打开失败', timeout: 4000 });
             return;
         }
         await this.plugin.activateCoWritingView(project, chapter.chapter, chapter.volume || '第1卷', chapterNum);
@@ -1531,7 +1531,7 @@ export class FullWriterView extends ItemView {
             return;
         }
         await this.selectChapter(project, target);
-        new Notice('已定位到该章，可在步骤导航里执行「章节结算」', 4000);
+        showSuccessNotice('已定位到该章，可在步骤导航里执行「章节结算」', { timeout: 4000 });
     }
 
     // v3.4.9 委托: → project-utils.ts
@@ -1568,7 +1568,7 @@ export class FullWriterView extends ItemView {
         const normalized = String(chapterPath || '').split('\\').join('/');
         const file = this.app.vault.getAbstractFileByPath(normalized);
         if (!(file instanceof TFile)) {
-            new Notice('未找到章节文件，可能已被移动或删除');
+            showErrorNotice('未找到章节文件，可能已被移动或删除', { timeout: 5000 });
             return;
         }
         const volume = chapterPath.match(/正文\/(第\d+卷)\//)?.[1] ?? '';
@@ -2182,7 +2182,7 @@ export class FullWriterView extends ItemView {
                     this.stepCompleted,
                 ).catch((e) => {
                     log.error('[小说工坊] 消痕入口失败:', e);
-                    new Notice(`消痕失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                    showErrorNotice(`消痕失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 6000 });
                 }).finally(() => { deaiBtn.disabled = false; });
             };
 
@@ -2206,7 +2206,7 @@ export class FullWriterView extends ItemView {
                     this.stepCompleted,
                 ).catch((e) => {
                     log.error('[小说工坊] 迭代精修入口失败:', e);
-                    new Notice(`迭代精修失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+                    showErrorNotice(`迭代精修失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 6000 });
                 }).finally(() => { refineBtn.disabled = false; });
             };
 

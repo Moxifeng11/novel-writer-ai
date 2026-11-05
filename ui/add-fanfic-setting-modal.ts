@@ -14,6 +14,7 @@ import {
     saveFanficSettingFile,
 } from './full-writer/fanfic-settings-utils';
 import { CanonResearchService } from '@/services/canon-research-service';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import {
     CanonSource,
     CanonSourceTier,
@@ -181,7 +182,7 @@ export class AddFanficSettingModal extends Modal {
                 excerptInput.value = '';
                 this.renderSourceList();
             } catch (error) {
-                new Notice(`添加来源失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '添加来源失败', timeout: 8000 });
             } finally {
                 addBtn.disabled = false;
             }
@@ -208,12 +209,12 @@ export class AddFanficSettingModal extends Modal {
                 });
                 this.sources = this.mergeSources(this.sources, result.sources);
                 this.renderSourceList();
-                for (const warning of result.warnings) new Notice(warning, 6000);
+                for (const warning of result.warnings) showWarningNotice(warning, { timeout: 6000 });
                 if (result.sources.length === 0) {
-                    new Notice('没有检索到可用官方来源；请手动添加官方 URL 或原文摘录', 7000);
+                    showWarningNotice('没有检索到可用官方来源；请手动添加官方 URL 或原文摘录', { timeout: 7000 });
                 }
             } catch (error) {
-                new Notice(`检索失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '检索失败', timeout: 8000 });
             } finally {
                 searchBtn.disabled = false;
                 searchBtn.textContent = '🌐 联网检索官方资料';
@@ -282,11 +283,11 @@ export class AddFanficSettingModal extends Modal {
             const workName = nameInput.value.trim() || '新同人设定';
             try {
                 const path = await createFanficDraftFromTemplate(this.app, this.project, workName);
-                new Notice(`✅ 已从模板创建待审核草稿：${path}`, 6000);
+                showSuccessNotice(`已从模板创建待审核草稿：${path}`, { timeout: 6000 });
                 new FanficReviewModal(this.app, this.plugin, this.project, path).open();
                 this.close();
             } catch (error) {
-                new Notice(`创建模板草稿失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '创建模板草稿失败', timeout: 8000 });
             }
         };
         const restoreBtn = row.createEl('button', {
@@ -297,9 +298,9 @@ export class AddFanficSettingModal extends Modal {
             if (!this.project) return;
             try {
                 const path = await ensureFanficTemplate(this.app, this.project);
-                new Notice(`✅ 已确保模板存在：${path}`, 5000);
+                showSuccessNotice(`已确保模板存在：${path}`, { timeout: 5000 });
             } catch (error) {
-                new Notice(`恢复模板失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '恢复模板失败', timeout: 8000 });
             }
         };
     }
@@ -321,7 +322,7 @@ export class AddFanficSettingModal extends Modal {
             const review = row.createEl('button', { text: '审核', cls: 'nw-btn nw-btn-primary' });
             review.onclick = () => {
                 new FanficReviewModal(this.app, this.plugin, this.project!, file.path, (approvedPath) => {
-                    new Notice(`已通过审核：${approvedPath}`, 5000);
+                    showSuccessNotice(`已通过审核：${approvedPath}`, { timeout: 5000 });
                 }).open();
                 this.close();
             };
@@ -391,7 +392,7 @@ export class AddFanficSettingModal extends Modal {
             try {
                 content = await this.app.vault.read(file);
             } catch {
-                new Notice('❌ 读取设定文件失败', 6000);
+                showErrorNotice('读取设定文件失败', { timeout: 6000 });
                 return;
             }
             if (!content.trim()) {
@@ -401,14 +402,14 @@ export class AddFanficSettingModal extends Modal {
             try {
                 await attachFanficPathToProject(this.app, project, selectedPath);
             } catch (error) {
-                new Notice(error instanceof Error ? error.message : String(error), 8000);
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '绑定失败', timeout: 8000 });
                 return;
             }
             const check = isFanficSettingsContentValidEnough(content);
             if (check.valid) {
-                new Notice(`✅ 已绑定「${file.basename}」到项目「${project}」`, 6000);
+                showSuccessNotice(`已绑定「${file.basename}」到项目「${project}」`, { timeout: 6000 });
             } else {
-                new Notice(`⚠️ 已绑定「${file.basename}」，但缺少：${check.missingFields.slice(0, 5).join('、')}。建议补全后重新审核。`, 10000);
+                showWarningNotice(`已绑定「${file.basename}」，但缺少：${check.missingFields.slice(0, 5).join('、')}。建议补全后重新审核。`, { timeout: 10000 });
             }
             this.close();
         };
@@ -465,11 +466,11 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
             const userContent = `请为《${workName}》生成同人设定草稿。\n\n【文件骨架】\n${skeleton}`;
             const result = await this.aiEngine.callAI(systemPrompt, userContent, undefined, 0.4, 8192);
             if (result.error) {
-                new Notice(`❌ ${result.error}`, 12000);
+                showErrorNotice(result.error, { title: '生成失败', timeout: 12000 });
                 return;
             }
             if (!result.content.trim()) {
-                new Notice('❌ 模型没有返回内容，未保存', 8000);
+                showErrorNotice('模型没有返回内容，未保存', { timeout: 8000 });
                 return;
             }
 
@@ -493,12 +494,12 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
             genNotice.hide();
 
             if (audit.overall === 'fail') {
-                new Notice(
-                    `⚠️ 草稿已保存，但规则审核发现阻断问题：${audit.issues.filter(i => i.severity === 'error').slice(0, 3).map(i => i.message).join('；')}`,
-                    12000,
+                showWarningNotice(
+                    `草稿已保存，但规则审核发现阻断问题：${audit.issues.filter(i => i.severity === 'error').slice(0, 3).map(i => i.message).join('；')}`,
+                    { timeout: 12000 },
                 );
             } else {
-                new Notice('✅ 草稿已保存到「_待审核」，请在审核页逐项核对后通过', 8000);
+                showSuccessNotice('草稿已保存到「_待审核」，请在审核页逐项核对后通过', { timeout: 8000 });
             }
 
             const file = this.app.vault.getAbstractFileByPath(filePath);

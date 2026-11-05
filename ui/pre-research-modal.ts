@@ -23,6 +23,7 @@ import {
 } from '@/shared/pre-research';
 import { DomainProjectFactory } from '@/domains/kernel/domain-project-factory';
 import { getProjectMeta } from './project-utils';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { AiAssistedPremiseService, type AiPremiseResult } from '@/engine/harness/ai-assisted-premise-service';
 import { creativeRandomizer } from '@/engine/harness/creative-randomizer';
 
@@ -349,7 +350,7 @@ export class PreResearchModal extends Modal {
                 button.removeClass('is-copied');
             }, 1600);
         } catch (e) {
-            new Notice(`❌ 复制失败：${e instanceof Error ? e.message : String(e)}`, 5000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '复制失败', timeout: 5000 });
         }
     }
 
@@ -382,10 +383,10 @@ export class PreResearchModal extends Modal {
             this.applyAiResult(result);
             const sourceLabel = result.trend.verified ? '实时来源' : '模型调研草稿（未经实时核实）';
             this.aiStatusEl?.setText(`✅ AI 调研完成：${sourceLabel}，来源 ${result.trend.sources.length} 条，候选 ${result.suggestions.length} 个`);
-            new Notice(`✅ AI 前期调研完成（${sourceLabel}）`, 5000);
+            showSuccessNotice(`AI 前期调研完成（${sourceLabel}）`, { timeout: 5000 });
         } catch (e) {
             this.aiStatusEl?.setText(`❌ AI 调研失败：${e instanceof Error ? e.message : String(e)}`);
-            new Notice(`❌ AI 前期调研失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: 'AI 前期调研失败', timeout: 8000 });
         } finally {
             researchBtn.disabled = false;
             randomBtn.disabled = false;
@@ -477,7 +478,7 @@ export class PreResearchModal extends Modal {
             }
             this.loaded = true;
         } catch (e) {
-            new Notice(`读取前期调研失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '读取前期调研失败', timeout: 6000 });
             this.loaded = true;
         }
     }
@@ -655,10 +656,10 @@ export class PreResearchModal extends Modal {
         if (this.options.project) {
             try {
                 await writePreResearchFiles(this.app.vault.adapter, this.options.project, data, this.app);
-                new Notice('✅ 前期调研已保存到 00-前期调研/', 5000);
+                showSuccessNotice('前期调研已保存到 00-前期调研/', { timeout: 5000 });
                 this.close();
             } catch (e) {
-                new Notice(`❌ 保存调研失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存调研失败', timeout: 8000 });
             }
             return;
         }
@@ -675,7 +676,7 @@ export class PreResearchModal extends Modal {
             onCreated: async (project) => {
                 try {
                     await writePreResearchFiles(this.app.vault.adapter, project, data, this.app);
-                    new Notice(`✅ 项目已创建：${project}。下一步在「创作流程」里写大纲与正文`, 6000);
+                    showSuccessNotice(`项目已创建：${project}。下一步在「创作流程」里写大纲与正文`, { timeout: 6000 });
                     await this.options.onCreated?.(project);
                     // 创建即断头是旧流程最大的问题：写完调研必须把用户送到下一步。
                     // 导航失败只降级为提示，不能反过来把「项目已创建」报成失败。
@@ -683,16 +684,16 @@ export class PreResearchModal extends Modal {
                         await this.plugin.openCreationFlow(project);
                     } catch (navError) {
                         console.warn('[前期调研] 打开创作流程失败:', navError);
-                        new Notice('项目已创建，可手动打开「创作流程」继续', 6000);
+                        showSuccessNotice('项目已创建，可手动打开「创作流程」继续', { timeout: 6000 });
                     }
                 } catch (e) {
-                    new Notice(`项目已创建，但调研写入失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '调研写入失败', timeout: 8000 });
                 } finally {
                     this.close();
                 }
             },
         }).catch((e) => {
-            new Notice(`❌ 创建项目失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '创建项目失败', timeout: 8000 });
         });
     }
 

@@ -8,6 +8,7 @@ import type {
     PromptTemplateVersion,
 } from '@/shared/prompt-manager-types';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { exportTextFile } from '@/shared/export-file';
 
 /**
@@ -226,7 +227,7 @@ export class PromptManagerSettings {
                 });
                 if (confirmed) {
                     await this.promptManager.resetTemplateToDefault(template.id);
-                    new Notice('已重置为默认提示词');
+                    showSuccessNotice('已重置为默认提示词');
                     this.render();
                 }
             };
@@ -271,7 +272,7 @@ export class PromptManagerSettings {
             if (!ver.isActive) {
                 badge.onclick = async () => {
                     await this.promptManager.setActiveVersion(template.id, ver.version);
-                    new Notice(`已切换到 v${ver.version}`);
+                    showSuccessNotice(`已切换到 v${ver.version}`);
                     this.render();
                 };
             }
@@ -344,7 +345,7 @@ export class PromptManagerSettings {
         toggle.checked = this.promptManager.isABTestingEnabled();
         toggle.addEventListener('change', async () => {
             this.promptManager.setABTestingEnabled(toggle.checked);
-            new Notice(toggle.checked ? 'A/B测试已启用' : 'A/B测试已关闭');
+            showSuccessNotice(toggle.checked ? 'A/B测试已启用' : 'A/B测试已关闭');
             this.render();
         });
 
@@ -465,7 +466,7 @@ export class PromptManagerSettings {
             });
             startBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'running');
-                new Notice('测试已开始');
+                showSuccessNotice('测试已开始');
                 this.render();
             };
         }
@@ -478,7 +479,7 @@ export class PromptManagerSettings {
             });
             pauseBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'paused');
-                new Notice('测试已暂停');
+                showSuccessNotice('测试已暂停');
                 this.render();
             };
         }
@@ -493,7 +494,7 @@ export class PromptManagerSettings {
             });
             resumeBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'running');
-                new Notice('测试已继续');
+                showSuccessNotice('测试已继续');
                 this.render();
             };
         }
@@ -524,7 +525,7 @@ export class PromptManagerSettings {
             if (confirmed) {
                 await this.promptManager.deleteABTest(test.id);
                 this.selectedTestId = null;
-                new Notice('测试已删除');
+                showSuccessNotice('测试已删除');
                 this.render();
             }
         };
@@ -651,13 +652,13 @@ export class PromptManagerSettings {
             try {
                 const success = this.promptManager.importConfig(text);
                 if (success) {
-                    new Notice('✅ 配置导入成功');
+                    showSuccessNotice('配置导入成功');
                     this.render();
                 } else {
-                    new Notice('❌ 导入失败：格式错误');
+                    showErrorNotice('导入失败：格式错误');
                 }
             } catch (err) {
-                new Notice('❌ 导入失败：文件解析错误');
+                showErrorNotice('导入失败：文件解析错误');
             }
         });
     }
@@ -750,7 +751,7 @@ export class PromptManagerSettings {
                 this.promptManager['config'].customTemplates.push(template);
                 await this.promptManager['saveConfig']();
                 this.selectedTemplateId = template.id;
-                new Notice('✅ 提示词已创建');
+                showSuccessNotice('提示词已创建');
                 modal.close();
                 this.render();
             };
@@ -840,7 +841,7 @@ export class PromptManagerSettings {
                     description,
                     updatedAt: Date.now(),
                 } as any);
-                new Notice('✅ 已保存');
+                showSuccessNotice('已保存');
             } else {
                 const currentVersion = activeVersion.version;
                 const parts = currentVersion.split('.').map(Number);
@@ -858,7 +859,7 @@ export class PromptManagerSettings {
                     name,
                     description,
                 } as any);
-                new Notice(`✅ 已保存为 v${nextVersion}`);
+                showSuccessNotice(`已保存为 v${nextVersion}`);
             }
             modal.close();
             this.render();
@@ -936,7 +937,7 @@ export class PromptManagerSettings {
                 description: description || undefined,
                 isActive: true,
             });
-            new Notice(`✅ v${version} 已创建`);
+            showSuccessNotice(`v${version} 已创建`);
             modal.close();
             this.render();
         };
@@ -1074,7 +1075,7 @@ export class PromptManagerSettings {
                 variantBVersion: versionB,
                 trafficSplit: { a: splitA, b: splitB },
             });
-            new Notice('✅ 测试已创建');
+            showSuccessNotice('测试已创建');
             modal.close();
             this.render();
         };
@@ -1109,7 +1110,7 @@ export class PromptManagerSettings {
             attr: { type: 'button' }
         }).onclick = async () => {
             await this.promptManager.setWinner(test.id, 'a');
-            new Notice('🏆 A 版本获胜，已设为活跃版本');
+            showSuccessNotice('A 版本获胜，已设为活跃版本');
             modal.close();
             this.render();
         };
@@ -1120,7 +1121,7 @@ export class PromptManagerSettings {
             attr: { type: 'button' }
         }).onclick = async () => {
             await this.promptManager.setWinner(test.id, 'b');
-            new Notice('🏆 B 版本获胜，已设为活跃版本');
+            showSuccessNotice('B 版本获胜，已设为活跃版本');
             modal.close();
             this.render();
         };
@@ -1131,7 +1132,7 @@ export class PromptManagerSettings {
             attr: { type: 'button' }
         }).onclick = async () => {
             await this.promptManager.updateABTestStatus(test.id, 'completed');
-            new Notice('测试已结束');
+            showSuccessNotice('测试已结束');
             modal.close();
             this.render();
         };

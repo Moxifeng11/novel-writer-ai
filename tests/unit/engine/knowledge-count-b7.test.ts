@@ -172,18 +172,18 @@ describe('B7 — 提示文案', () => {
     it('无裁剪时文案保持原样', () => {
         noticeLog.length = 0;
         showNotice({ lastKnowledgeCount: 2, lastKnowledgeDroppedCount: 0 });
-        expect(noticeLog.map(n => n.message)).toEqual(['📚 已注入 2 条知识库片段']);
+        expect(noticeLog.map(n => n.message)).toEqual(['✅ 完成\n已注入 2 条知识库片段']);
     });
 
     it('部分裁剪时补充未注入数量', () => {
         noticeLog.length = 0;
         showNotice({ lastKnowledgeCount: 2, lastKnowledgeDroppedCount: 1 });
-        expect(noticeLog.map(n => n.message)).toEqual(['📚 已注入 2 条知识库片段（另 1 条因预算不足未注入）']);
+        expect(noticeLog.map(n => n.message)).toEqual(['✅ 完成\n已注入 2 条知识库片段（另 1 条因预算不足未注入）']);
     });
 
     it('全部被裁剪时提示不再谎称已注入', () => {
         noticeLog.length = 0;
         showNotice({ lastKnowledgeCount: 0, lastKnowledgeDroppedCount: 3 });
-        expect(noticeLog.map(n => n.message)).toEqual(['⚠️ 知识库片段因预算不足未注入（3 条）']);
+        expect(noticeLog.map(n => n.message)).toEqual(['⚠️ 注意\n知识库片段因预算不足未注入（3 条）']);
     });
 });

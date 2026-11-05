@@ -10,6 +10,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { CanonResearchService } from '@/services/canon-research-service';
 import { CanonSource, CANON_TIER_LABEL, computeCanonSourceHash } from '@/shared/canon-source';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import {
     applyFanficReviewMeta,
     auditFanficSettings,
@@ -160,7 +161,7 @@ export class FanficReviewModal extends Modal {
             const prompt = buildFanficAuditPrompt(this.content, this.sources);
             const result = await this.plugin.aiEngine.callAI(prompt.system, prompt.user, undefined, 0.2, 4096);
             if (result.error) {
-                new Notice(`AI 复核失败：${result.error}`, 8000);
+                showErrorNotice(result.error, { title: 'AI 复核失败', timeout: 8000 });
                 return;
             }
             this.aiAuditText = result.content || '（模型没有返回内容）';
@@ -308,7 +309,7 @@ export class FanficReviewModal extends Modal {
                 8192,
             );
             if (result.error) {
-                new Notice(`补全失败：${result.error}`, 8000);
+                showErrorNotice(result.error, { title: '补全失败', timeout: 8000 });
                 return;
             }
             this.completionPreview = result.content;
@@ -330,10 +331,10 @@ export class FanficReviewModal extends Modal {
             await saveFanficSettingFile(this.app, this.filePath, updated);
             this.content = updated;
             this.audit = auditFanficSettings(this.content, this.sources, { requireApproved: false });
-            new Notice('已保存补全草稿；请重新审核', 5000);
+            showSuccessNotice('已保存补全草稿；请重新审核', { timeout: 5000 });
             this.render();
         } catch (error) {
-            new Notice(`保存失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+            showErrorNotice(error instanceof Error ? error.message : String(error), { title: '保存失败', timeout: 8000 });
         }
     }
 
@@ -341,10 +342,10 @@ export class FanficReviewModal extends Modal {
         const updated = applyFanficReviewMeta(this.content, { '审核状态': 'rejected' });
         try {
             await saveFanficSettingFile(this.app, this.filePath, updated);
-            new Notice('已退回；文件保留在待审核目录', 5000);
+            showSuccessNotice('已退回；文件保留在待审核目录', { timeout: 5000 });
             this.close();
         } catch (error) {
-            new Notice(`退回失败：${error instanceof Error ? error.message : String(error)}`, 8000);
+            showErrorNotice(error instanceof Error ? error.message : String(error), { title: '退回失败', timeout: 8000 });
         }
     }
 
@@ -371,12 +372,12 @@ export class FanficReviewModal extends Modal {
             if (pending instanceof TFile && pending.path !== approvedPath) {
                 await this.app.vault.delete(pending);
             }
-            new Notice(`✅ 已通过审核并绑定：${approvedPath}`, 6000);
+            showSuccessNotice(`已通过审核并绑定：${approvedPath}`, { timeout: 6000 });
             this.onApproved?.(approvedPath);
             this.close();
         } catch (error) {
             log.error('[FanficReviewModal] 审核通过失败:', error);
-            new Notice(`审核通过失败：${error instanceof Error ? error.message : String(error)}`, 9000);
+            showErrorNotice(error instanceof Error ? error.message : String(error), { title: '审核通过失败', timeout: 9000 });
         } finally {
             this.busy = false;
         }

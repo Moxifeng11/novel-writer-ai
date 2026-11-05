@@ -22,7 +22,7 @@ import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
-import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 
 
 const log = createLogger('WritingFingerprintView');
@@ -1100,7 +1100,7 @@ export class WritingFingerprintView extends ItemView {
     /** 提取结果落库：Modal 已关闭，写失败必须兜住并提示，不能静默丢数据 */
     private async saveExtractedFingerprint(fp: StyleFingerprint, successMessage: string): Promise<void> {
         if (!this.fingerprintLibrary) {
-            new Notice('⚠️ 指纹库未初始化，提取结果未保存', 8000);
+            showWarningNotice('指纹库未初始化，提取结果未保存', { timeout: 8000 });
             return;
         }
         try {
@@ -1200,7 +1200,7 @@ export class WritingFingerprintView extends ItemView {
                         truncated = true;
                     }
                     if (truncated) {
-                        new Notice(`已截取前 ${MAX_EXTRACT_CHARS} 字用于提取（避免超时与超量计费）`, 6000);
+                        showWarningNotice(`已截取前 ${MAX_EXTRACT_CHARS} 字用于提取（避免超时与超量计费）`, { timeout: 6000 });
                     }
 
                     if (allText.length < 500) {
@@ -1233,7 +1233,7 @@ export class WritingFingerprintView extends ItemView {
             modal.open();
         } catch (e) {
             log.error('读取章节列表失败:', e);
-            new Notice('读取章节列表失败');
+            showErrorNotice('读取章节列表失败');
         }
     }
 
@@ -1257,7 +1257,7 @@ export class WritingFingerprintView extends ItemView {
             books = await knowledgeManager.getAllBooks();
         } catch (e) {
             log.error('读取知识库书籍列表失败:', e);
-            new Notice('读取知识库书籍列表失败');
+            showErrorNotice('读取知识库书籍列表失败');
             return;
         }
         if (books.length === 0) {
@@ -1287,10 +1287,10 @@ export class WritingFingerprintView extends ItemView {
                 await this.loadAllFingerprints();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
-                new Notice(`✅ 已将《${book.name}》拆解结果转为项目写作指纹（原文样本 ${originalSamples.length} 段）`);
+                showSuccessNotice(`已将《${book.name}》拆解结果转为项目写作指纹（原文样本 ${originalSamples.length} 段）`);
             } catch (e) {
                 log.error('从知识库导入指纹失败:', e);
-                new Notice(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
+                showErrorNotice(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
             }
         }).open();
     }
@@ -1374,7 +1374,7 @@ export class WritingFingerprintView extends ItemView {
 
         // 模板层仅用于复制/同步到项目，启用状态没有消费方
         if (isSourceOnlyFingerprintScope(fp.scope)) {
-            new Notice('📋 模板层指纹不参与注入：请先「复制到项目」或「从模板同步到项目」');
+            showWarningNotice('模板层指纹不参与注入：请先「复制到项目」或「从模板同步到项目」');
             return;
         }
 
@@ -1384,7 +1384,7 @@ export class WritingFingerprintView extends ItemView {
         await this.loadAllFingerprints();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        new Notice(wasEnabled ? '🔇 已禁用' : '✅ 已启用');
+        showSuccessNotice(wasEnabled ? '已禁用' : '已启用');
     }
 
     private async handleAutoClassify(): Promise<void> {
@@ -1410,10 +1410,10 @@ export class WritingFingerprintView extends ItemView {
             this.renderSearchAndFilter();
             this.renderFingerprintList();
             this.renderDetailPanel();
-            new Notice(`🏷️ 已归类：${result.summary}`, 4000);
+            showSuccessNotice(`已归类：${result.summary}`, { timeout: 4000 });
         } catch (e) {
             log.error('[WritingFingerprintView] 自动归类写入失败:', e);
-            new Notice(`自动归类失败：${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(`自动归类失败：${e instanceof Error ? e.message : String(e)}`);
         }
     }
 
@@ -1451,7 +1451,7 @@ export class WritingFingerprintView extends ItemView {
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        new Notice('🗑️ 指纹已删除');
+        showSuccessNotice('指纹已删除');
     }
 
     private handleEditFingerprint(fp: StyleFingerprint): void {
@@ -1459,7 +1459,7 @@ export class WritingFingerprintView extends ItemView {
             // 保存失败必须让用户看见：Modal 已关闭，静默 rejection 会表现为「看起来更新成功」
             void (async () => {
                 if (!this.fingerprintLibrary) {
-                    new Notice('⚠️ 指纹库未初始化，修改未保存');
+                    showErrorNotice('指纹库未初始化，修改未保存');
                     return;
                 }
                 try {
@@ -1470,14 +1470,14 @@ export class WritingFingerprintView extends ItemView {
                     }
                 } catch (e) {
                     log.error('[FingerprintView] 更新指纹失败:', e);
-                    new Notice(`⚠️ 指纹更新失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+                    showErrorNotice(`指纹更新失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 8000 });
                     return;
                 }
                 await this.loadAllFingerprints();
                 this.renderSearchAndFilter();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
-                new Notice('✅ 指纹已更新');
+                showSuccessNotice('指纹已更新');
             })();
         }).open();
     }
@@ -1486,7 +1486,7 @@ export class WritingFingerprintView extends ItemView {
         if (!this.fingerprintLibrary) return;
         const result = await this.fingerprintLibrary.copyFingerprint('project', 'global', fp.id);
         if (!result) {
-            new Notice('⚠️ 提升失败：未取到复制后的指纹，请重试');
+            showErrorNotice('提升失败：未取到复制后的指纹，请重试');
             return;
         }
         await this.loadAllFingerprints();
@@ -1497,7 +1497,7 @@ export class WritingFingerprintView extends ItemView {
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        new Notice('⬆️ 已提升为全局指纹');
+        showSuccessNotice('已提升为全局指纹');
     }
 
     private async handleCopyToProject(fp: StyleFingerprint): Promise<void> {
@@ -1514,7 +1514,7 @@ export class WritingFingerprintView extends ItemView {
             project
         );
         if (!result) {
-            new Notice('⚠️ 复制失败：未取到复制后的指纹，请重试');
+            showErrorNotice('复制失败：未取到复制后的指纹，请重试');
             return;
         }
         await this.loadAllFingerprints();
@@ -1525,7 +1525,7 @@ export class WritingFingerprintView extends ItemView {
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        new Notice('📋 已复制到项目');
+        showSuccessNotice('已复制到项目');
     }
 
     /** 打开 V2 多指纹融合预览 Modal */
@@ -1578,7 +1578,7 @@ export class WritingFingerprintView extends ItemView {
             const result = await this.fingerprintLibrary.migrateV1ToV2Dimensions(scope);
             if (result.success) {
                 if (result.migrated > 0) {
-                    new Notice(`✅ 已升级 ${result.migrated} 个指纹到 V2 格式`);
+                    showSuccessNotice(`已升级 ${result.migrated} 个指纹到 V2 格式`);
                 } else {
                     new Notice('ℹ️ 当前作用域无 V1 指纹需要升级');
                 }
@@ -1587,11 +1587,11 @@ export class WritingFingerprintView extends ItemView {
                 this.renderFingerprintList();
                 this.renderDetailPanel();
             } else {
-                new Notice(`❌ 升级失败：${result.error || '未知错误'}`);
+                showErrorNotice(`升级失败：${result.error || '未知错误'}`);
             }
         } catch (e) {
             log.warn('[WritingFingerprintView] V2 升级失败:', e);
-            new Notice(`❌ 升级失败：${(e as Error).message}`);
+            showErrorNotice(`升级失败：${(e as Error).message}`);
         }
     }
 

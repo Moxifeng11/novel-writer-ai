@@ -24,6 +24,7 @@ import { CreateProjectModal } from './create-project-modal';
 import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { PlanBookModal } from './plan-book-modal';
 import { WriteChapterModal } from './write-chapter-modal';
 import { ReviewChapterModal } from './review-chapter-modal';
@@ -120,7 +121,7 @@ export class CommandUiExecutor implements CommandUiPort {
         });
         if (!confirmed) return;
         const written = await applyEntityLinkMigration(app, project, plan);
-        new Notice(`✅ 链接迁移完成：写入 ${written} 个实体文件，共 ${plan.changes.length} 处`, 8000);
+        showSuccessNotice(`链接迁移完成：写入 ${written} 个实体文件，共 ${plan.changes.length} 处`, { timeout: 8000 });
     }
 
     /** 生成/刷新项目 Bases 看板 */
@@ -136,11 +137,11 @@ export class CommandUiExecutor implements CommandUiPort {
             const { writeProjectBases } = await import('@/engine/note-properties-service');
             const written = await writeProjectBases(app, project);
             ledger.finish(runId, { status: 'done', detail: `已生成 ${written.length} 个看板` });
-            new Notice(`✅ 已生成 ${written.length} 个看板到「${project}/.看板/」；可拖到右侧栏使用`, 7000);
+            showSuccessNotice(`已生成 ${written.length} 个看板到「${project}/.看板/」；可拖到右侧栏使用`, { timeout: 7000 });
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
             ledger.finish(runId, { status: 'failed', failure: message });
-            new Notice(`生成看板失败：${message}`, 6000);
+            showErrorNotice(message, { title: '生成看板失败', timeout: 6000 });
         }
     }
 
@@ -172,7 +173,7 @@ export class CommandUiExecutor implements CommandUiPort {
         });
         if (!confirmed) return;
         const result = await applyTagMigration(app, changes);
-        new Notice(`✅ 标签迁移完成：写入 ${result.written} 个文件，追加 ${result.added} 个标签`, 7000);
+        showSuccessNotice(`标签迁移完成：写入 ${result.written} 个文件，追加 ${result.added} 个标签`, { timeout: 7000 });
     }
 
     /** 补齐笔记属性（dry-run 预览 → 执行，只补空值） */
@@ -203,7 +204,7 @@ export class CommandUiExecutor implements CommandUiPort {
         });
         if (!confirmed) return;
         const result = await applyPropertyCompletion(app, changes);
-        new Notice(`✅ 属性补齐完成：写入 ${result.written} 个文件，补 ${result.filled} 个属性`, 7000);
+        showSuccessNotice(`属性补齐完成：写入 ${result.written} 个文件，补 ${result.filled} 个属性`, { timeout: 7000 });
     }
 
     /**
@@ -586,7 +587,7 @@ export class CommandUiExecutor implements CommandUiPort {
         }
         await leaf.setViewState({ type: VIEW_TYPE_WRITING_FINGERPRINT, active: true });
         workspace.revealLeaf(leaf);
-        new Notice('🔍 已打开写作指纹库');
+        showSuccessNotice('已打开写作指纹库');
     }
 
     private async openKnowledgeBase(): Promise<void> {

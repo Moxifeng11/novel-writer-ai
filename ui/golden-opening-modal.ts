@@ -4,6 +4,7 @@ import { AIEngine } from '@/engine/ai-engine';
 import { createLogger } from '@/shared/logger';
 import { CreateProjectModal } from './create-project-modal';
 import { pjControlDir } from '@/shared/paths';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
 
 const log = createLogger('GoldenOpeningModal');
@@ -288,7 +289,7 @@ export class GoldenOpeningModal extends Modal {
                 });
                 copyBtn.onclick = () => {
                     navigator.clipboard.writeText(hook);
-                    new Notice('✅ 已复制到剪贴板', 2000);
+                    showSuccessNotice('已复制到剪贴板', { timeout: 2000 });
                 };
 
                 hookCard.createEl('p', { text: hook, cls: 'nw-go-hook-content' });
@@ -674,7 +675,7 @@ export class GoldenOpeningModal extends Modal {
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 生成失败: ${result.error}`, 5000);
+                showErrorNotice(result.error, { title: '生成失败', timeout: 5000 });
                 this.isGeneratingChapters = false;
                 this.render();
                 return;
@@ -682,18 +683,18 @@ export class GoldenOpeningModal extends Modal {
 
             const parsed = this.parseThreeChaptersResponse(result.content);
             if (parsed.length === 0) {
-                new Notice('❌ 解析失败，请重试', 5000);
+                showErrorNotice('解析失败，请重试', { timeout: 5000 });
                 this.isGeneratingChapters = false;
                 this.render();
                 return;
             }
 
             this.threeChapters = parsed;
-            new Notice('✅ 黄金三章大纲已生成', 3000);
+            showSuccessNotice('黄金三章大纲已生成', { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 生成三章失败:', e);
-            new Notice('❌ 生成出错，请稍后重试', 5000);
+            showErrorNotice('生成出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isGeneratingChapters = false;
@@ -764,7 +765,7 @@ export class GoldenOpeningModal extends Modal {
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 生成失败: ${result.error}`, 5000);
+                showErrorNotice(result.error, { title: '生成失败', timeout: 5000 });
                 this.isGeneratingHooks = false;
                 this.render();
                 return;
@@ -772,18 +773,18 @@ export class GoldenOpeningModal extends Modal {
 
             const parsed = this.parseHooksResponse(result.content);
             if (parsed.length === 0) {
-                new Notice('❌ 解析失败，请重试', 5000);
+                showErrorNotice('解析失败，请重试', { timeout: 5000 });
                 this.isGeneratingHooks = false;
                 this.render();
                 return;
             }
 
             this.generatedHooks = parsed;
-            new Notice('✅ 开篇钩子已生成', 3000);
+            showSuccessNotice('开篇钩子已生成', { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 生成钩子失败:', e);
-            new Notice('❌ 生成出错，请稍后重试', 5000);
+            showErrorNotice('生成出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isGeneratingHooks = false;
@@ -853,7 +854,7 @@ ${this.textInput.slice(0, 1000)}
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 检测失败: ${result.error}`, 5000);
+                showErrorNotice(result.error, { title: '检测失败', timeout: 5000 });
                 this.isCheckingHooks = false;
                 this.render();
                 return;
@@ -861,18 +862,18 @@ ${this.textInput.slice(0, 1000)}
 
             const parsed = this.parseHookCheckResponse(result.content);
             if (!parsed) {
-                new Notice('❌ 解析失败，请重试', 5000);
+                showErrorNotice('解析失败，请重试', { timeout: 5000 });
                 this.isCheckingHooks = false;
                 this.render();
                 return;
             }
 
             this.hookCheckResult = parsed;
-            new Notice(`✅ 检测完成，综合评分: ${parsed.overallScore}分`, 3000);
+            showSuccessNotice(`检测完成，综合评分: ${parsed.overallScore}分`, { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 检测钩子失败:', e);
-            new Notice('❌ 检测出错，请稍后重试', 5000);
+            showErrorNotice('检测出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isCheckingHooks = false;
@@ -948,7 +949,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 分析失败: ${result.error}`, 5000);
+                showErrorNotice(result.error, { title: '分析失败', timeout: 5000 });
                 this.isAnalyzingRhythm = false;
                 this.render();
                 return;
@@ -956,18 +957,18 @@ ${this.textInput}
 
             const parsed = this.parseRhythmResponse(result.content);
             if (!parsed) {
-                new Notice('❌ 解析失败，请重试', 5000);
+                showErrorNotice('解析失败，请重试', { timeout: 5000 });
                 this.isAnalyzingRhythm = false;
                 this.render();
                 return;
             }
 
             this.rhythmResult = parsed;
-            new Notice('✅ 节奏分析完成', 3000);
+            showSuccessNotice('节奏分析完成', { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 节奏分析失败:', e);
-            new Notice('❌ 分析出错，请稍后重试', 5000);
+            showErrorNotice('分析出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isAnalyzingRhythm = false;
@@ -1041,7 +1042,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 生成失败: ${result.error}`, 5000);
+                showErrorNotice(result.error, { title: '生成失败', timeout: 5000 });
                 this.isGeneratingCharIntro = false;
                 this.render();
                 return;
@@ -1049,18 +1050,18 @@ ${this.textInput}
 
             const parsed = this.parseCharacterIntroResponse(result.content);
             if (!parsed) {
-                new Notice('❌ 解析失败，请重试', 5000);
+                showErrorNotice('解析失败，请重试', { timeout: 5000 });
                 this.isGeneratingCharIntro = false;
                 this.render();
                 return;
             }
 
             this.characterIntroResult = parsed;
-            new Notice('✅ 人物登场方案已生成', 3000);
+            showSuccessNotice('人物登场方案已生成', { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 生成人物登场失败:', e);
-            new Notice('❌ 生成出错，请稍后重试', 5000);
+            showErrorNotice('生成出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isGeneratingCharIntro = false;
@@ -1133,7 +1134,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 分析失败: ${result.error}`, 5000);
+                showErrorNotice(result.error, { title: '分析失败', timeout: 5000 });
                 this.isAnalyzingWorldbuilding = false;
                 this.render();
                 return;
@@ -1141,18 +1142,18 @@ ${this.textInput}
 
             const parsed = this.parseWorldbuildingResponse(result.content);
             if (!parsed) {
-                new Notice('❌ 解析失败，请重试', 5000);
+                showErrorNotice('解析失败，请重试', { timeout: 5000 });
                 this.isAnalyzingWorldbuilding = false;
                 this.render();
                 return;
             }
 
             this.worldbuildingResult = parsed;
-            new Notice('✅ 世界观融入分析完成', 3000);
+            showSuccessNotice('世界观融入分析完成', { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 世界观分析失败:', e);
-            new Notice('❌ 分析出错，请稍后重试', 5000);
+            showErrorNotice('分析出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isAnalyzingWorldbuilding = false;
@@ -1235,7 +1236,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                new Notice(`❌ 评分失败: ${result.error}`, 5000);
+                showErrorNotice(result.error, { title: '评分失败', timeout: 5000 });
                 this.isScoring = false;
                 this.render();
                 return;
@@ -1243,18 +1244,18 @@ ${this.textInput}
 
             const parsed = this.parseScoringResponse(result.content);
             if (!parsed) {
-                new Notice('❌ 解析失败，请重试', 5000);
+                showErrorNotice('解析失败，请重试', { timeout: 5000 });
                 this.isScoring = false;
                 this.render();
                 return;
             }
 
             this.openingScoreResult = parsed;
-            new Notice(`✅ 综合评分完成：${parsed.overall}分`, 3000);
+            showSuccessNotice(`综合评分完成：${parsed.overall}分`, { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 综合评分失败:', e);
-            new Notice('❌ 评分出错，请稍后重试', 5000);
+            showErrorNotice('评分出错，请稍后重试', { timeout: 5000 });
         }
 
         this.isScoring = false;
@@ -1369,7 +1370,7 @@ tags: [黄金开篇, 大纲]
             } else {
                 await this.app.vault.create(filePath, content);
             }
-            new Notice(`✅ 已保存到「${project}/04-项目总控/黄金开篇.md」`, 5000);
+            showSuccessNotice(`已保存到「${project}/04-项目总控/黄金开篇.md」`, { timeout: 5000 });
             const file = this.app.vault.getAbstractFileByPath(filePath);
             if (file instanceof TFile) {
                 const leaf = this.app.workspace.getLeaf('tab');
@@ -1378,7 +1379,7 @@ tags: [黄金开篇, 大纲]
             this.close();
         } catch (e) {
             log.error('[GoldenOpeningModal] 保存黄金开篇失败:', e);
-            new Notice('❌ 保存失败，请检查权限', 5000);
+            showErrorNotice('保存失败，请检查权限', { timeout: 5000 });
         }
     }
 

@@ -4,6 +4,7 @@ import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type Tech
 import { kbBookDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from '@/ui/components/progress';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { isImeComposing } from '@/shared/keyboard';
 
 const log = createLogger('KnowledgeBaseModals');
@@ -148,7 +149,7 @@ export class ImportBookModal extends Modal {
             });
             modal.open();
         } catch (e) {
-            new Notice('选择文件失败');
+            showErrorNotice('选择文件失败');
         }
     }
 
@@ -164,7 +165,7 @@ export class ImportBookModal extends Modal {
                 const name = file.name.replace(/\.(txt|md)$/i, '');
                 await this.importBook(name, '', file.name, text);
             } catch (err) {
-                new Notice('读取文件失败');
+                showErrorNotice('读取文件失败');
             }
         });
         document.body.appendChild(input);
@@ -258,7 +259,7 @@ export class ImportBookModal extends Modal {
             this.close();
         } catch (e) {
             log.error('导入失败:', e);
-            new Notice(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入失败' });
         } finally {
             this.importInFlight = false;
         }
@@ -522,10 +523,10 @@ export class EditBookModal extends Modal {
                 this.onSaved(updated);
             }
             this.close();
-            new Notice('✅ 保存成功');
+            showSuccessNotice('保存成功');
         }).catch((e: unknown) => {
             log.error('[KnowledgeBaseModals] 书籍保存失败:', e);
-            new Notice(`⚠️ 保存失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 8000 });
         });
     }
 
@@ -1328,13 +1329,13 @@ export class BatchOperationsModal extends Modal {
                 if (this.operation === 'classify') {
                     new Notice(`正在分类 ${this.selectedBooks.size} 本书籍...`);
                     await this.kbManager?.classifyBatch(Array.from(this.selectedBooks));
-                    new Notice(`✅ 批量分类完成`);
+                    showSuccessNotice('批量分类完成');
                 }
                 this.onCompleted();
                 this.close();
             } catch (e) {
                 log.error('批量操作失败:', e);
-                new Notice('批量操作失败');
+                showErrorNotice('批量操作失败');
                 this.processing = false;
                 this.render();
             }

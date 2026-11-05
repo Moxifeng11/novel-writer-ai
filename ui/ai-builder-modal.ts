@@ -21,6 +21,7 @@ import { countProjectEntities } from '@/shared/entity-reader';
 import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 
 // ── 实体类型配置 ──
 interface EntityTypeConfig {
@@ -530,7 +531,7 @@ export class AiBuilderModal extends Modal {
                 );
                 if (!skeleton || skeleton.error) {
                     genNotice.hide();
-                    new Notice(`❌ 世界观生成失败: ${skeleton?.error || '未知错误'}`, 8000);
+                    showErrorNotice(skeleton?.error || '未知错误', { title: '世界观生成失败', timeout: 8000 });
                     return;
                 }
                 const content = skeleton.content || '';
@@ -563,25 +564,25 @@ export class AiBuilderModal extends Modal {
                     const oldProjectPath = this.selectedProject;
                     const validation = validateProjectName(novelName, [oldProjectPath]);
                     if (!validation.valid) {
-                        new Notice(`⚠️ AI 建议的项目名不可用：${validation.error}。保留原项目名「${oldProjectPath}」`, 6000);
+                        showWarningNotice(`AI 建议的项目名不可用：${validation.error}。保留原项目名「${oldProjectPath}」`, { timeout: 6000 });
                     } else if (validation.normalized !== oldProjectPath) {
                         try {
                             const result = await new ProjectRenameService(this.app).rename(oldProjectPath, validation.normalized);
                             if (result.warnings.length > 0) {
-                                new Notice(`✅ 世界观已生成！项目已重命名；${result.warnings.join('；')}`, 10000);
+                                showSuccessNotice(`世界观已生成！项目已重命名；${result.warnings.join('；')}`, { timeout: 10000 });
                             } else {
-                                new Notice(`✅ 世界观已生成！项目已自动命名为「${validation.normalized}」`, 5000);
+                                showSuccessNotice(`世界观已生成！项目已自动命名为「${validation.normalized}」`, { timeout: 5000 });
                             }
                             this.selectedProject = result.newProject;
                         } catch (renameErr) {
                             log.warn('[小说工坊] 项目重命名失败:', renameErr);
-                            new Notice('✅ 世界观已生成！项目名保持不变', 5000);
+                            showSuccessNotice('世界观已生成！项目名保持不变', { timeout: 5000 });
                         }
                     } else {
-                        new Notice('✅ 世界观已生成！', 5000);
+                        showSuccessNotice('世界观已生成！', { timeout: 5000 });
                     }
                 } else {
-                    new Notice('✅ 世界观已生成！', 5000);
+                    showSuccessNotice('世界观已生成！', { timeout: 5000 });
                 }
 
                 // 刷新并返回仪表盘
@@ -596,7 +597,7 @@ export class AiBuilderModal extends Modal {
                 }
             } catch (e: any) {
                 genNotice.hide();
-                new Notice(`❌ 生成失败: ${e.message || '未知错误'}`, 8000);
+                showErrorNotice(e.message || '未知错误', { title: '生成失败', timeout: 8000 });
             }
         };
     }
@@ -756,7 +757,7 @@ export class AiBuilderModal extends Modal {
             this.renderDashboard();
         } catch (e: any) {
             genNotice.hide();
-            new Notice(`❌ ${cfg.label}生成失败: ${e.message || '未知错误'}`, 8000);
+            showErrorNotice(e.message || '未知错误', { title: `${cfg.label}生成失败`, timeout: 8000 });
             log.error(`[小说工坊] ${cfg.label}生成失败:`, e);
         }
     }
@@ -832,12 +833,12 @@ export class AiBuilderModal extends Modal {
                 generated += batchSize;
             }
             if (!allContent.trim()) {
-                new Notice(`❌ ${cfg.label}生成失败：${failedBatches} 个批次均未返回内容，详见控制台`, 6000);
+                showErrorNotice(`${failedBatches} 个批次均未返回内容，详见控制台`, { title: `${cfg.label}生成失败`, timeout: 6000 });
                 return;
             }
             await this.saveGeneratedContent(cfg, allContent, true);
             if (failedBatches > 0) {
-                new Notice(`⚠️ ${failedBatches} 个批次生成失败，其余结果已保存`, 6000);
+                showWarningNotice(`${failedBatches} 个批次生成失败，其余结果已保存`, { timeout: 6000 });
             }
             return;
         }
@@ -904,12 +905,12 @@ export class AiBuilderModal extends Modal {
         genNotice.hide();
         // U7：失败项汇总反馈（截取前 5 个避免 Notice 过长，完整原因见控制台日志）
         if (failures.length > 0) {
-            new Notice(`⚠️ 批量完成：成功 ${saved}/${n} 个，失败 ${failures.length} 个（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, 10000);
+            showWarningNotice(`批量完成：成功 ${saved}/${n} 个，失败 ${failures.length} 个（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, { timeout: 10000 });
         } else if (saved > 0) {
             const nameList = savedNames.join('、');
-            new Notice(`✅ 批量完成：${saved}/${n} 个 → ${this.selectedProject}\n${nameList}`, 6000);
+            showSuccessNotice(`批量完成：${saved}/${n} 个 → ${this.selectedProject}\n${nameList}`, { timeout: 6000 });
         } else {
-            new Notice(`❌ 批量生成失败：未能生成任何${cfg.label}`, 6000);
+            showErrorNotice(`未能生成任何${cfg.label}`, { title: '批量生成失败', timeout: 6000 });
         }
     }
 
@@ -927,22 +928,22 @@ export class AiBuilderModal extends Modal {
             this.aiEngine.repairEntity(kind, req.name, req.content, req.missingFields, this.worldContent || '')
         );
         if (!integrity.valid) {
-            new Notice(
-                `❌ 「${name}」未通过完整性校验，未保存。缺少：${integrity.missingFields.slice(0, 5).join('、')}`,
-                8000
+            showErrorNotice(
+                `「${name}」未通过完整性校验，未保存。缺少：${integrity.missingFields.slice(0, 5).join('、')}`,
+                { title: '完整性校验失败', timeout: 8000 },
             );
             return;
         }
 
         const outcome = await saveEntities(this.app, this.selectedProject, kind, [{ name, content: integrity.content }]);
         if (outcome.failed.length > 0) {
-            new Notice(`❌ 「${name}」保存失败：${outcome.failed[0].error}`, 6000);
+            showErrorNotice(`「${name}」保存失败：${outcome.failed[0].error}`, { timeout: 6000 });
             return;
         }
 
         const savedAs = outcome.renamed[0]?.savedAs ?? name;
         const renamedHint = outcome.renamed.length > 0 ? `（同名已另存为「${savedAs}」）` : '';
-        new Notice(`✅ 「${savedAs}」已保存到 ${this.selectedProject}${renamedHint}`);
+        showSuccessNotice(`「${savedAs}」已保存到 ${this.selectedProject}${renamedHint}`);
 
         // 自动打开文件
         const file = this.app.vault.getAbstractFileByPath(`${this.selectedProject}/${cfg.folder}/${savedAs}.md`);
@@ -961,7 +962,7 @@ export class AiBuilderModal extends Modal {
             // 人物批量：按 frontmatter 分割
             const blocks = content.split(/^(?=---\s*$)/m).filter(b => b.trim());
             if (blocks.length === 0) {
-                new Notice('❌ 未解析到任何角色卡（生成结果为空或不完整），未保存', 6000);
+                showErrorNotice('未解析到任何角色卡（生成结果为空或不完整），未保存', { timeout: 6000 });
                 return;
             }
             let saved = 0;
@@ -998,9 +999,12 @@ export class AiBuilderModal extends Modal {
                     saved++;
                 }
             }
-            let msg = `✅ 人物已保存：${saved} 个 → ${this.selectedProject}`;
-            if (skipped > 0) msg += `\n⚠️ ${skipped} 个角色不完整未输出（请重新生成）`;
-            new Notice(msg, 6000);
+            const msg = `人物已保存：${saved} 个 → ${this.selectedProject}`;
+            if (skipped > 0) {
+                showWarningNotice(`${msg}；${skipped} 个角色不完整未输出（请重新生成）`, { timeout: 6000 });
+            } else {
+                showSuccessNotice(msg, { timeout: 6000 });
+            }
         }
     }
 

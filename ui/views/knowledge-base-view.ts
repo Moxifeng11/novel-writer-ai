@@ -1958,12 +1958,12 @@ export class KnowledgeBaseView extends ItemView {
                 if (this.selectedGenreId === id) {
                     this.selectedGenreId = null;
                 }
-                new Notice(`🗑️ 已删除题材「${genre.name}」`);
+                showSuccessNotice(`已删除题材「${genre.name}」`);
                 this.renderRightPanel();
             }
         } catch (e) {
             log.error('删除题材失败:', e);
-            new Notice(`删除失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
         }
     }
 
@@ -2110,7 +2110,7 @@ export class KnowledgeBaseView extends ItemView {
             this.renderRightPanel();
         } catch (e) {
             log.error('导入题材失败:', e);
-            new Notice(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入失败' });
             throw e;
         }
     }
@@ -2150,11 +2150,11 @@ export class KnowledgeBaseView extends ItemView {
             }
 
             this.selectedGenreId = null;
-            new Notice('↺ 已恢复默认配置');
+            showSuccessNotice('已恢复默认配置');
             this.renderRightPanel();
         } catch (e) {
             log.error('恢复默认配置失败:', e);
-            new Notice(`恢复失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '恢复失败' });
         }
     }
 
@@ -2184,7 +2184,7 @@ export class KnowledgeBaseView extends ItemView {
                     await this.handleDeleteGenre(id);
                 } catch (e) {
                     log.error('删除题材失败:', e);
-                    new Notice(`删除失败: ${e instanceof Error ? e.message : String(e)}`);
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
                 }
             }
         ).open();
@@ -2611,7 +2611,7 @@ export class KnowledgeBaseView extends ItemView {
 
         try {
             await this.deconstructionScheduler?.cancelTask(task.id);
-            new Notice('任务已取消');
+            showSuccessNotice('任务已取消');
             this.renderRightPanel();
         } catch (e) {
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: '取消失败' });
@@ -2633,13 +2633,13 @@ export class KnowledgeBaseView extends ItemView {
             const success = await this.deconstructionScheduler?.removeTask(task.id);
             if (success) {
                 this.selectedTaskIds.delete(task.id);
-                new Notice('任务已删除');
+                showSuccessNotice('任务已删除');
                 this.renderRightPanel();
             } else {
-                new Notice('删除失败：任务正在进行中');
+                showErrorNotice('任务正在进行中', { title: '删除失败' });
             }
         } catch (e) {
-            new Notice(`删除失败：${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
         }
     }
 
@@ -2669,7 +2669,7 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         this.selectedTaskIds.clear();
-        new Notice(`已取消 ${successCount}/${tasks.length} 个任务`);
+        showSuccessNotice(`已取消 ${successCount}/${tasks.length} 个任务`);
         this.renderRightPanel();
     }
 
@@ -2700,7 +2700,7 @@ export class KnowledgeBaseView extends ItemView {
             }
         }
 
-        new Notice(`已删除 ${successCount}/${tasks.length} 个任务`);
+        showSuccessNotice(`已删除 ${successCount}/${tasks.length} 个任务`);
         this.renderRightPanel();
     }
 
@@ -2732,7 +2732,7 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         this.selectedTaskIds.clear();
-        new Notice(`已取消 ${successCount}/${tasks.length} 个任务`);
+        showSuccessNotice(`已取消 ${successCount}/${tasks.length} 个任务`);
         this.renderRightPanel();
     }
 
@@ -2758,10 +2758,10 @@ export class KnowledgeBaseView extends ItemView {
                 await this.loadBooks();
                 this.renderRightPanel();
                 this.renderLeftSidebar();
-                new Notice('✅ 书籍导入成功');
+                showSuccessNotice('书籍导入成功');
             } catch (e) {
                 log.error('书籍导入后处理失败:', e);
-                new Notice(`导入处理失败: ${e instanceof Error ? e.message : String(e)}`);
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入处理失败' });
             }
         }).open();
     }
@@ -2783,14 +2783,14 @@ export class KnowledgeBaseView extends ItemView {
                     this.renderRightPanel();
                     this.renderLeftSidebar();
                     if (result.success > 0) {
-                        new Notice(`✅ 成功导入 ${result.success} 本书籍`);
+                        showSuccessNotice(`成功导入 ${result.success} 本书籍`);
                     }
                     if (result.failed > 0) {
                         showErrorNotice(`${result.failed} 本书籍导入失败`);
                     }
                 } catch (e) {
                     log.error('批量导入后处理失败:', e);
-                    new Notice(`导入后处理失败: ${e instanceof Error ? e.message : String(e)}`);
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入后处理失败' });
                 }
             },
             onViewDetail: (bookId, bookName) => {
@@ -2818,7 +2818,7 @@ export class KnowledgeBaseView extends ItemView {
                         await this.openBookDetail(book);
                     } catch (e) {
                         log.error('[KnowledgeBaseView] 查看导入详情失败:', e);
-                        new Notice('打开详情失败，请查看控制台');
+                        showErrorNotice('打开详情失败，请查看控制台');
                     }
                 })();
             },
@@ -2834,7 +2834,7 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderLeftSidebar();
             } catch (e) {
                 log.error('批量操作后处理失败:', e);
-                new Notice(`操作后处理失败: ${e instanceof Error ? e.message : String(e)}`);
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '操作后处理失败' });
             }
         }).open();
     }
@@ -2928,11 +2928,11 @@ export class KnowledgeBaseView extends ItemView {
             }
 
             await this.deconstructionScheduler.addTask(book.id, sourceText);
-            new Notice(`已开始拆解《${book.name}》`);
+            showSuccessNotice(`已开始拆解《${book.name}》`);
             await this.refreshBookInfo();
         } catch (e) {
             log.error('开始拆解失败:', e);
-            new Notice(`开始拆解失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '开始拆解失败' });
         } finally {
             this.isStartingDeconstruction = false;
             this.refreshDetailActionButtons();
@@ -2964,11 +2964,11 @@ export class KnowledgeBaseView extends ItemView {
 
         try {
             await this.deconstructionScheduler.rerunBook(book.id);
-            new Notice(`已重新开始拆解《${book.name}》`);
+            showSuccessNotice(`已重新开始拆解《${book.name}》`);
             await this.refreshBookInfo();
         } catch (e) {
             log.error('重新拆解失败:', e);
-            new Notice(`重新拆解失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '重新拆解失败' });
         } finally {
             this.isStartingDeconstruction = false;
             this.refreshDetailActionButtons();
@@ -2990,14 +2990,14 @@ export class KnowledgeBaseView extends ItemView {
             // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
             await this.deconstructionScheduler?.cancelByBook(book.id);
             await this.kbManager?.deleteBook(book.id);
-            new Notice('书籍已删除');
+            showSuccessNotice('书籍已删除');
             this.selectedBookId = null;
             await this.loadBooks();
             this.closeBookDetail();
             this.renderLeftSidebar();
         } catch (e) {
             log.error('删除书籍失败:', e);
-            new Notice(`删除失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
         }
     }
 
@@ -3010,7 +3010,7 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderLeftSidebar();
             } catch (e) {
                 log.error('编辑书籍后处理失败:', e);
-                new Notice(`编辑处理失败: ${e instanceof Error ? e.message : String(e)}`);
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '编辑处理失败' });
             }
         }).open();
     }
@@ -3029,7 +3029,7 @@ export class KnowledgeBaseView extends ItemView {
             this.renderBookDetail();
         } catch (e) {
             log.error('添加标签失败:', e);
-            new Notice(`添加标签失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '添加标签失败' });
         }
     }
 
@@ -3043,7 +3043,7 @@ export class KnowledgeBaseView extends ItemView {
             this.renderBookDetail();
         } catch (e) {
             log.error('删除标签失败:', e);
-            new Notice(`删除标签失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除标签失败' });
         }
     }
 
