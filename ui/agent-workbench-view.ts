@@ -20,6 +20,7 @@ import { DshSession } from '@/engine/agent/dsh/dsh-session';
 import { buildDshLaunchPlan, buildSandboxPatch } from '@/engine/agent/dsh/dsh-launch';
 import { createDshProcessTransport } from '@/engine/agent/dsh/dsh-process';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showWarningNotice } from './components/notice-helpers';
 import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
@@ -1082,7 +1083,7 @@ export class AgentWorkbenchView extends ItemView {
      */
     private async bootDsh(ctx: ReturnType<typeof getAgentContext>): Promise<boolean> {
         if (Platform.isMobile) {
-            new Notice('dsh 后端仅支持桌面端，已回退到内置 Agent', 6000);
+            showWarningNotice('dsh 后端仅支持桌面端，已回退到内置 Agent', { timeout: 6000 });
             return false;
         }
         try {
@@ -1094,7 +1095,7 @@ export class AgentWorkbenchView extends ItemView {
             };
             const base = adapter.getBasePath?.() || '';
             if (!base) {
-                new Notice('无法获取 vault 路径，dsh 后端不可用', 6000);
+                showErrorNotice('无法获取 vault 路径，dsh 后端不可用', { timeout: 6000 });
                 return false;
             }
             const pluginDir = this.plugin.manifest.dir || `${this.app.vault.configDir}/plugins/novel-writer-ai`;
@@ -1125,7 +1126,7 @@ export class AgentWorkbenchView extends ItemView {
                 try {
                     dshApiKey = await this.plugin.decryptKey(dshApiKey);
                 } catch (e) {
-                    new Notice(`无法解锁 dsh 所需 API Key：${e instanceof Error ? e.message : String(e)}`, 8000);
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '无法解锁 dsh 所需 API Key', timeout: 8000 });
                     return false;
                 }
                 // decryptKey 在用户取消/口令错误时会原样返回密文；不能把密文当 Key 注入。
@@ -1186,7 +1187,7 @@ export class AgentWorkbenchView extends ItemView {
             );
             return true;
         } catch (e) {
-            new Notice(`dsh 启动失败，已回退到内置 Agent：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: 'dsh 启动失败，已回退到内置 Agent', timeout: 8000 });
             this.dshSession?.close();
             this.dshSession = null;
             return false;
@@ -1217,7 +1218,7 @@ export class AgentWorkbenchView extends ItemView {
         } catch (e) {
             if (session !== this.sessionSeq) return;
             this.hideTyping();
-            new Notice(`dsh 回合失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: 'dsh 回合失败', timeout: 8000 });
         } finally {
             if (session === this.sessionSeq) this.dshTurnCollector = null;
         }
@@ -1389,7 +1390,7 @@ export class AgentWorkbenchView extends ItemView {
             if (session !== this.sessionSeq) return;
             this.hideTyping();
             console.error('[AgentWorkbench] 处理输入失败:', e);
-            new Notice(`对话处理失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '对话处理失败', timeout: 6000 });
         } finally {
             if (session === this.sessionSeq) this.busy = false;
         }

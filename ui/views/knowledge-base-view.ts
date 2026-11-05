@@ -11,6 +11,7 @@ import { BatchImportModal } from '@/ui/batch-import-modal';
 import { MiniSettingsModal } from '@/ui/mini-settings-modal';
 import { OperationConfirmModal, TaskCardComponent } from '@/ui/components/progress';
 import { createEmptyState } from '@/ui/components/empty-state';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { createLogger } from '@/shared/logger';
 import { classifyBook, mergeClassificationTags, type ClassificationResult } from '@/shared/content-classifier';
 import { exportTextFile } from '@/shared/export-file';
@@ -1721,7 +1722,7 @@ export class KnowledgeBaseView extends ItemView {
             await this.loadBooks();
             await this.refreshBookInfo();
             this.renderBookDetail();
-            new Notice(`✅ 分类完成：${result.primaryGenre.name} · ${result.primarySubGenre?.name || ''}`);
+            showSuccessNotice(`${result.primaryGenre.name} · ${result.primarySubGenre?.name || ''}`, { title: '分类完成' });
         } catch (e) {
             log.error('自动分类失败:', e);
             new Notice('自动分类失败');
@@ -1756,7 +1757,7 @@ export class KnowledgeBaseView extends ItemView {
             new Notice(`✅ 已写入 ${result.tags.length} 个维度标签：${result.summary}`, 4000);
         } catch (e) {
             log.error('[KnowledgeBaseView] 写入维度标签失败:', e);
-            new Notice(`写入维度标签失败：${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '写入维度标签失败' });
         }
     }
 
@@ -1836,10 +1837,10 @@ export class KnowledgeBaseView extends ItemView {
             await this.refreshBookInfo();
             this.renderBookDetail();
             this.renderLeftSidebar();
-            new Notice('✅ 分类已更新');
+            showSuccessNotice('分类已更新');
         } catch (e) {
             log.error('更新分类失败:', e);
-            new Notice(`更新分类失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '更新分类失败' });
         }
     }
 
@@ -2591,10 +2592,10 @@ export class KnowledgeBaseView extends ItemView {
         try {
             const sourceText = await this.kbManager.getSourceText(task.bookId);
             await this.deconstructionScheduler.addTask(task.bookId, sourceText, task.dimensions);
-            new Notice('已重新加入拆解队列');
+            showSuccessNotice('已重新加入拆解队列');
             this.renderRightPanel();
         } catch (e) {
-            new Notice(`重试失败：${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '重试失败' });
         }
     }
 
@@ -2613,7 +2614,7 @@ export class KnowledgeBaseView extends ItemView {
             new Notice('任务已取消');
             this.renderRightPanel();
         } catch (e) {
-            new Notice(`取消失败：${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '取消失败' });
         }
     }
 

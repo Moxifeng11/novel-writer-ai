@@ -5,8 +5,9 @@
  * dsh：外部 DeepSeek Harness（仅桌面端，需用户自行安装；默认只读，
  *      打开「允许写入」后整会话 workspace-write —— 协议没有逐次审批通道）。
  */
-import { Notice, Platform, Setting } from 'obsidian';
+import { Platform, Setting } from 'obsidian';
 import { SettingsSection } from './section-base';
+import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { buildDshLaunchPlan } from '@/engine/agent/dsh/dsh-launch';
 import { probeDshVersion } from '@/engine/agent/dsh/dsh-process';
 
@@ -129,9 +130,11 @@ export class AgentBackendSection extends SettingsSection {
                         Path: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.Path || '',
                     },
                 }, 120_000);
-                new Notice(result.ok
-                    ? `✅ dsh 可用${result.version ? `：${result.version}` : ''}`
-                    : `❌ dsh 不可用：${result.error}`, 8000);
+                if (result.ok) {
+                    showSuccessNotice(`dsh 可用${result.version ? `：${result.version}` : ''}`, { timeout: 8000 });
+                } else {
+                    showErrorNotice(result.error || '未知错误', { title: 'dsh 不可用', timeout: 8000 });
+                }
             } finally {
                 probeBtn.disabled = false;
                 probeBtn.setText('🔌 检测 dsh 是否可用');

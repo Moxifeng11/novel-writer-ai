@@ -45,7 +45,6 @@ import { KnowledgeVectorStore } from './knowledge-vector-store';
 import { KnowledgeInjector } from './knowledge-injector';
 import { WritingProfileManager } from './writing-profile';
 import { ENGINE_NAMES } from '@/shared/engine-names';
-import { RulesService } from '@/services/rules-service';
 import {
     attachStoryContextToSnapshot,
     buildStoryContext,
@@ -73,7 +72,6 @@ import { PRECISION_MODE_SYSTEM_APPEND } from './prompts/co-write-prompts';
 import { readProjectMeta } from '@/shared/paths';
 import { getCreationModePromptBlock, parseCreationModeMeta } from '@/shared/creation-mode';
 import {
-    formatEntityBrief,
     buildChapterBrief,
     buildBriefPromptParts,
     type ChapterBrief,
@@ -137,6 +135,7 @@ import type {
     ContextSnapshot,
     SettingGuardReport,
 } from './co-writer/co-writer-types';
+import { buildSnapshot as buildSnapshotFromContext } from './co-writer/snapshot-builder';
 
 // ============================================================
 // CoWriterEngine
@@ -2607,88 +2606,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     // 私有方法：构建 Snapshot
     // ============================================================
 
-    private async buildSnapshot(ctx: GatheredContext, project: string, chapterName: string): Promise<ContextSnapshot> {
-        const data = ctx.data;
-        // v4.26：规则唯一来源 RulesService（含模式附录全文）
-        let cachedRulesText = '';
-        try {
-            cachedRulesText = await RulesService.getInstance(this.app).getWritingRules(project);
-        } catch (e) {
-            log.warn('[CoWriterEngine] 读取写作规则失败，规则块为空:', e);
-        }
-        const getRaw = (obj: unknown): string => {
-            if (!obj || typeof obj !== 'object' || !('raw' in obj)) return '';
-            const raw = (obj as { raw?: unknown }).raw;
-            return typeof raw === 'string' ? raw : '';
-        };
-        const getEntitySummary = (list: unknown, maxChars = 3000) => {
-            if (!Array.isArray(list) || list.length === 0) return '';
-            // 实体文件使用中文字段（姓名/名称、人物背景/描述、当前状态），统一走真实字段映射
-            const brief = formatEntityBrief(list, { maxChars });
-            if (brief) return brief;
-            // 字段完全不匹配时保留原始内容，避免提示词里只剩 “：”
-            return JSON.stringify(list).slice(0, 500);
-        };
-        const worldViewRaw = getRaw(data.world_view);
-        let worldType = '';
-        const typeMatch = worldViewRaw.match(/题材[：:]\s*([^\n]+)/);
-        if (typeMatch) worldType = typeMatch[1].trim();
-        return {
-            project,
-            chapterName,
-            allChars: getEntitySummary(data.character_state, 4000),
-            allFactions: getEntitySummary(data.factions, 2000),
-            allLocs: getEntitySummary(data.locations, 3000),
-            allItems: getEntitySummary(data.items, 2000),
-            foreshadows: data.foreshadows || { unrevealed: [], revealed: [], abandoned: [] },
-            relationshipStates: [],
-            crossVolumeContext: '',
-            longTermMemoryContext: '',
-            fanficRulesContext: '',
-            creationModeContext: '',
-            worldView: worldViewRaw,
-            worldType,
-            writingStyle: getRaw(data.writing_style),
-            // v4.26：规则唯一来源 RulesService（含模式附录全文），不再走 ContextManager 的节选渲染
-            writingRules: cachedRulesText,
-            protagonistSoulDetail: '',
-            emotionPlan: getRaw(data.emotion_plan),
-            sceneExpansion: getRaw(data.scene_expansion),
-            chapPlan: getRaw(data.outline),
-            prevChaptersSummary: (() => {
-                const prev = data.previous_chapter;
-                if (!prev) return '';
-                return [
-                    prev.bodySummary ? `【前章概要】\n${prev.bodySummary}` : '',
-                    prev.outline ? `【前章大纲】\n${prev.outline}` : '',
-                    prev.ending ? `【前章结尾】\n${prev.ending}` : '',
-                    prev.analysisReport ? `【前章分析报告】\n${prev.analysisReport}` : '',
-                ].filter(Boolean).join('\n\n');
-            })(),
-            settingLib: getRaw(data.setting_lib),
-            timeline: (() => {
-                const tl = data.timeline as Array<{ time?: string; chapter?: string; event?: string; impact?: string }>;
-                if (!Array.isArray(tl) || tl.length === 0) return '';
-                return tl.map(t => `${t.time || ''}|${t.chapter || ''}|${t.event || ''}|${t.impact || ''}`).join('\n');
-            })(),
-            characterCores: (() => {
-                const cores = data.character_cores;
-                if (!cores) return '';
-                if (typeof cores === 'string') return cores;
-                if (Array.isArray(cores)) {
-                    return cores.map((c: any) => `${c.name || ''}: ${c.coreTraits || c.summary || ''}`).join('\n');
-                }
-                return String(cores);
-            })(),
-            triggeredMemories: data.triggered_memories_prompt || (Array.isArray(data.triggered_memories)
-                ? (data.triggered_memories as Array<{ character?: string; content?: string; text?: string }>).map(m => `${m.character || ''}: ${m.content || m.text || ''}`).join('\n')
-                : ''),
-            precedingText: '',
-            cursorHint: '',
-            currentMode: 'continue',
-            gatheredAt: Date.now(),
-            dirtyFields: new Set()
-        };
+    /**
+     * 兼容保留的薄委托：构建逻辑已抽至 `co-writer/snapshot-builder.ts`。
+     * 既有测试（tests/unit/engine/co-writer-init-and-batch.test.ts）经实例访问本方法，故保留入口。
+     */
+    private buildSnapshot(ctx: GatheredContext, project: string, chapterName: string): Promise<ContextSnapshot> {
+        return buildSnapshotFromContext(this.app, ctx, project, chapterName);
     }
 
     // ============================================================

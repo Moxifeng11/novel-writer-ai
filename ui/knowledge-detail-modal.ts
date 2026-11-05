@@ -1,5 +1,6 @@
 import { App, Modal, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
 import { VectorEnhancer } from '@/engine/vector-enhancer';
@@ -306,13 +307,13 @@ export class KnowledgeDetailModal extends Modal {
             if (!plugin.referenceBookIds.includes(this.bookId)) {
                 plugin.referenceBookIds.push(this.bookId);
             }
-            new Notice(`已添加《${bookName}》为参考书籍`);
+            showSuccessNotice(`已添加《${bookName}》为参考书籍`);
         }
 
         // 只改内存镜像的话重启就回退：必须同时写 settings 并落盘
         plugin.settings.referenceBookIds = [...plugin.referenceBookIds];
         void plugin.saveSettings().catch((e: unknown) => {
-            new Notice(`参考书籍保存失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '参考书籍保存失败', timeout: 6000 });
         });
 
         this.render();
@@ -346,12 +347,12 @@ export class KnowledgeDetailModal extends Modal {
             const library = StyleFingerprintLibrary.get(this.app, activeProject);
             await library.addFromKnowledge(fingerprint);
 
-            new Notice(`已将《${this.bookInfo.name}》拆解结果转为项目写作指纹`);
+            showSuccessNotice(`已将《${this.bookInfo.name}》拆解结果转为项目写作指纹`);
             buttonEl.setText('✅ 已转为指纹');
             buttonEl.disabled = true;
         } catch (e) {
             log.error('[KnowledgeDetailModal] 转换指纹失败:', e);
-            new Notice(`转换失败: ${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '转换失败' });
         }
     }
 
@@ -527,7 +528,7 @@ export class KnowledgeDetailModal extends Modal {
                     this.render();
                 } catch (e) {
                     const message = e instanceof Error ? e.message : String(e);
-                    new Notice(`《${book.name}》重向量化失败：${message}`, 8000);
+                    showErrorNotice(message, { title: `《${book.name}》重向量化失败`, timeout: 8000 });
                     retryVectorBtn.disabled = false;
                     retryVectorBtn.textContent = '🧠 重试向量化';
                 }
@@ -569,7 +570,7 @@ export class KnowledgeDetailModal extends Modal {
                 this.close();
             } catch (e) {
                 log.error('[KnowledgeDetailModal] 删除书籍失败:', e);
-                new Notice(`删除失败：${e instanceof Error ? e.message : String(e)}`);
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
             }
         });
 

@@ -192,19 +192,22 @@ export class SettlementEngine {
         const path = pjPromiseLedger(ctx.project);
         const fs = this.getFS();
         try {
-            let content = DEFAULT_PROMISE_LEDGER;
-            if (await fs.exists(path)) content = await fs.read(path);
-            let items = parsePromiseLedger(content);
-            for (const instruction of ctx.instr.promise) {
-                items = applyPromiseInstruction(items, {
-                    ...instruction,
-                    chapter: instruction.chapter || ctx.chapName,
-                });
-            }
-            const dir = path.slice(0, path.lastIndexOf('/'));
-            await fs.mkdir(dir);
-            await this.recordWholeFileBefore(ctx, path);
-            await fs.write(path, formatPromiseLedger(items));
+            // P1-3 遗留：整表读-改-写在锁外会与协同/批量结算互相覆盖，锁内重读最新内容再合并
+            await withWriteLock(path, async () => {
+                let content = DEFAULT_PROMISE_LEDGER;
+                if (await fs.exists(path)) content = await fs.read(path);
+                let items = parsePromiseLedger(content);
+                for (const instruction of ctx.instr.promise) {
+                    items = applyPromiseInstruction(items, {
+                        ...instruction,
+                        chapter: instruction.chapter || ctx.chapName,
+                    });
+                }
+                const dir = path.slice(0, path.lastIndexOf('/'));
+                await fs.mkdir(dir);
+                await this.recordWholeFileBefore(ctx, path);
+                await fs.write(path, formatPromiseLedger(items));
+            });
             log.info(`[SettlementEngine] 承诺账本更新 ${ctx.instr.promise.length} 条`);
         } catch (e) {
             log.warn('[SettlementEngine] 承诺账本更新失败（不影响结算）:', e);
@@ -216,21 +219,25 @@ export class SettlementEngine {
         const path = pjCharacterArcTable(ctx.project);
         const fs = this.getFS();
         try {
-            let content = '';
-            if (await fs.exists(path)) content = await fs.read(path);
-            let rows = content ? parseCharacterArcTable(content) : [];
-            if (rows.length === 0) {
-                rows = buildArcRowsFromCharacters(this.readCharacterArcSeeds(ctx.project));
-            }
-            for (const arc of ctx.instr.arc || []) {
-                rows = applyArcInstruction(rows, arc, ctx.chapName);
-            }
-            if (rows.length === 0) return;
-            const dir = path.slice(0, path.lastIndexOf('/'));
-            await fs.mkdir(dir);
-            await this.recordWholeFileBefore(ctx, path);
-            await fs.write(path, formatCharacterArcTable(rows));
-            if (ctx.instr.arc?.length) {
+            // P1-3 遗留：弧线表是整表覆盖写，必须锁内重读后再合并，否则并发结算丢条目
+            const written = await withWriteLock(path, async () => {
+                let content = '';
+                if (await fs.exists(path)) content = await fs.read(path);
+                let rows = content ? parseCharacterArcTable(content) : [];
+                if (rows.length === 0) {
+                    rows = buildArcRowsFromCharacters(this.readCharacterArcSeeds(ctx.project));
+                }
+                for (const arc of ctx.instr.arc || []) {
+                    rows = applyArcInstruction(rows, arc, ctx.chapName);
+                }
+                if (rows.length === 0) return false;
+                const dir = path.slice(0, path.lastIndexOf('/'));
+                await fs.mkdir(dir);
+                await this.recordWholeFileBefore(ctx, path);
+                await fs.write(path, formatCharacterArcTable(rows));
+                return true;
+            });
+            if (written && ctx.instr.arc?.length) {
                 log.info(`[SettlementEngine] 角色弧线更新 ${ctx.instr.arc.length} 条`);
             }
         } catch (e) {
@@ -1407,16 +1414,20 @@ ${ni.description || '暂无描述'}
         try {
             const changes = extractRelationshipChanges(ctx.report);
             if (changes.length > 0) {
-                const relations = await loadRelationshipStates(this.app, ctx.project);
-                const outcome = applyRelationshipChanges(relations, changes, ctx.chapName);
-                // 关系状态是整表覆盖写入：先记整文件前值，失败时可整体恢复
-                await this.recordWholeFileBefore(ctx, getRelationshipFilePath(ctx.project));
-                await saveRelationshipStates(this.app, ctx.project, outcome.relations, ctx.chapName);
-                v2RelationCount = outcome.applied;
-                if (outcome.skipped > 0) {
-                    log.info(`[SettlementEngine] V2 关系幂等跳过 ${outcome.skipped} 条（同章同原因，重跑结算不二次累加）`);
-                }
-                log.info(`[SettlementEngine] V2 关系更新: ${outcome.applied}/${changes.length} 条变更已写入关系状态.md`);
+                // P1-3 遗留：关系状态.md 是整表覆盖写，load→apply→save 必须同锁，
+                // 否则并发结算会用旧快照覆盖对方刚写入的关系条目。
+                await withWriteLock(getRelationshipFilePath(ctx.project), async () => {
+                    const relations = await loadRelationshipStates(this.app, ctx.project);
+                    const outcome = applyRelationshipChanges(relations, changes, ctx.chapName);
+                    // 关系状态是整表覆盖写入：先记整文件前值，失败时可整体恢复
+                    await this.recordWholeFileBefore(ctx, getRelationshipFilePath(ctx.project));
+                    await saveRelationshipStates(this.app, ctx.project, outcome.relations, ctx.chapName);
+                    v2RelationCount = outcome.applied;
+                    if (outcome.skipped > 0) {
+                        log.info(`[SettlementEngine] V2 关系幂等跳过 ${outcome.skipped} 条（同章同原因，重跑结算不二次累加）`);
+                    }
+                });
+                log.info(`[SettlementEngine] V2 关系更新: ${v2RelationCount}/${changes.length} 条变更已写入关系状态.md`);
             }
         } catch (e) {
             log.warn('[SettlementEngine] V2 关系状态更新失败（已跳过）:', e);
@@ -1567,30 +1578,36 @@ ${ni.description || '暂无描述'}
                 const fp = pjForeshadowDB(project);
                 const ff = this.getVaultMeta().getAbstractFileByPath(fp);
                 if (ff instanceof TFile) {
-                    const fc = await this.getFS().read(fp);
-                    const lines = fc.split('\n');
-                    const targetIdx = lines.findIndex(line =>
-                        line.startsWith('|') && line.includes(`| ${entityName} |`)
-                    );
-                    if (targetIdx !== -1) {
-                        lines.splice(targetIdx, 1);
-                        await this.getFS().write(fp, lines.join('\n'));
-                        log.info(`[SettlementEngine] 从伏笔库删除: ${entityName}`);
-                    }
+                    // P1-3 遗留：删行也是读-改-写，锁内重读可避免把并发新增的伏笔行一起覆盖掉
+                    await withWriteLock(fp, async () => {
+                        const fc = await this.getFS().read(fp);
+                        const lines = fc.split('\n');
+                        const targetIdx = lines.findIndex(line =>
+                            line.startsWith('|') && line.includes(`| ${entityName} |`)
+                        );
+                        if (targetIdx !== -1) {
+                            lines.splice(targetIdx, 1);
+                            await this.getFS().write(fp, lines.join('\n'));
+                            log.info(`[SettlementEngine] 从伏笔库删除: ${entityName}`);
+                        }
+                    });
                 }
             } else if (entityType === '时间线') {
                 const fp = pjTimelineBoard(project);
                 const ff = this.getVaultMeta().getAbstractFileByPath(fp);
                 if (ff instanceof TFile) {
-                    const fc = await this.getFS().read(fp);
-                    const lines = fc.split('\n');
-                    const targetIdx = lines.findIndex(line =>
-                        line.startsWith('|') && line.includes(entityName)
-                    );
-                    if (targetIdx !== -1) {
-                        lines.splice(targetIdx, 1);
-                        await this.getFS().write(fp, lines.join('\n'));
-                    }
+                    // P1-3 遗留：同上，时间线看板删行与结算/分析报告追加共用一把锁
+                    await withWriteLock(fp, async () => {
+                        const fc = await this.getFS().read(fp);
+                        const lines = fc.split('\n');
+                        const targetIdx = lines.findIndex(line =>
+                            line.startsWith('|') && line.includes(entityName)
+                        );
+                        if (targetIdx !== -1) {
+                            lines.splice(targetIdx, 1);
+                            await this.getFS().write(fp, lines.join('\n'));
+                        }
+                    });
                 }
             } else if (entityType === '地点') {
                 const fp = pjLocFile(project, entityName);

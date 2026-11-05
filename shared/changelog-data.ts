@@ -21,6 +21,30 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.38.0',
+        date: '2026-11-05',
+        title: '写锁加固、协同引擎三批与 Notice 三批',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🔒 数据安全',
+                items: [
+                    '补齐 6 处核心读改写整段锁；锁内重读再合并，避免整表覆盖丢条目',
+                    '确认 withWriteLock 不可重入，既有 13 处锁不重复加',
+                    '并发回归 3 例（去锁必失败）',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '✂️ 切片与提示',
+                items: [
+                    'co-writer-engine 3556→3479：buildSnapshot 显式入参抽出；any 307→306',
+                    'Notice 第三批：6 文件 34 处，eslint 1872→1870',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.37.0',
         date: '2026-11-05',
         title: '质检解析与伏笔「未揭示」误判修复',

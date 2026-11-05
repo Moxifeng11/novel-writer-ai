@@ -1204,20 +1204,24 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             if (!targetFile) return false;
 
             const filePath = targetFile.path;
-            let content = await this.getFS().read(filePath);
-            const now = new Date().toISOString();
+            // P1-3 遗留：人物卡「读 fm → 改 fm → 写盘」整段进锁，
+            // 否则与结算/协同保存并发时会用旧内容覆盖对方的字段更新。
+            await withWriteLock(filePath, async () => {
+                let content = await this.getFS().read(filePath);
+                const now = new Date().toISOString();
 
-            content = this.updateFrontmatterField(content, '当前状态', change.newValue || '');
-            content = this.updateFrontmatterField(content, 'entity_last_changed_at', change.context || `第${change.name}章`);
-            content = this.updateFrontmatterField(content, 'entity_last_changed_reason', change.context || '');
-            if (!content.match(/^entity_status:/m)) {
-                content = this.updateFrontmatterField(content, 'entity_status', 'active');
-            }
-            if (!content.match(/^entity_created_at:/m)) {
-                content = this.updateFrontmatterField(content, 'entity_created_at', now);
-            }
+                content = this.updateFrontmatterField(content, '当前状态', change.newValue || '');
+                content = this.updateFrontmatterField(content, 'entity_last_changed_at', change.context || `第${change.name}章`);
+                content = this.updateFrontmatterField(content, 'entity_last_changed_reason', change.context || '');
+                if (!content.match(/^entity_status:/m)) {
+                    content = this.updateFrontmatterField(content, 'entity_status', 'active');
+                }
+                if (!content.match(/^entity_created_at:/m)) {
+                    content = this.updateFrontmatterField(content, 'entity_created_at', now);
+                }
 
-            await this.getFS().write(filePath, content);
+                await this.getFS().write(filePath, content);
+            });
             return true;
         } catch (e) {
             log.warn('[AnalysisReportEngine] 人物状态更新失败:', change.name, e);

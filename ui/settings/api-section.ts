@@ -36,6 +36,7 @@ import {
     type BudgetTier,
 } from '@/shared/task-budget-engine';
 import { OperationConfirmModal } from '@/ui/components/progress';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { SettingsSection } from './section-base';
 
 /**
@@ -130,7 +131,7 @@ export class ApiSection extends SettingsSection {
             if (!confirmed) return;
             this.plugin.restoreDefaultProviders();
             await this.plugin.saveSettings();
-            new Notice('✅ 已恢复默认供应商');
+            showSuccessNotice('已恢复默认供应商');
             this.refresh();
         };
 
@@ -219,7 +220,7 @@ export class ApiSection extends SettingsSection {
                 this.plugin.switchProviderByEndpoint(raw.endpoint);
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
-                new Notice(`✅ 已切换到「${raw.name}」`);
+                showSuccessNotice(`已切换到「${raw.name}」`);
                 this.apiSelectedProviderId = providerId;
                 rerender();
                 return;
@@ -257,14 +258,14 @@ export class ApiSection extends SettingsSection {
                 if (!confirmed) return;
                 if (isPreset) this.plugin.setHidden(raw.id, true);
                 else if (!this.plugin.removeCustomProvider(raw.id)) {
-                    new Notice('删除失败：该供应商不存在或属于预设项', 5000);
+                    showErrorNotice('该供应商不存在或属于预设项', { title: '删除失败', timeout: 5000 });
                     return;
                 }
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.apiSelectedProviderId = null;
                 rerender();
-                new Notice(`已删除「${raw.name}」`);
+                showSuccessNotice(`已删除「${raw.name}」`);
             }));
             menu.showAtMouseEvent(event);
         };
@@ -354,7 +355,7 @@ export class ApiSection extends SettingsSection {
                     this.plugin.settings.apiKey = typed;
                 }
                 await this.plugin.saveSettings();
-                new Notice('✅ 密钥已保存');
+                showSuccessNotice('密钥已保存');
             });
             const eye = row.createEl('button', {
                 cls: 'nw-api-icon-btn',
@@ -386,7 +387,7 @@ export class ApiSection extends SettingsSection {
                 const key = this.plugin.settings.providerKeys?.[raw.id] || '';
                 const result = await discoverModels(raw.endpoint, format, key);
                 if (result.kind === 'error') {
-                    new Notice(`❌ 获取模型失败：${result.message}`, 10000);
+                    showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
                     return;
                 }
                 new ModelPickerModal(this.app, result.models, raw.models, async ({ models, capacities }) => {
@@ -730,12 +731,14 @@ export class ApiSection extends SettingsSection {
                 const result = await this.plugin.resetKeyPassword?.(password)
                     ?? { reencrypted: 0, cleared: [] };
                 this.refresh();
-                new Notice(
-                    result.cleared.length > 0
-                        ? `⚠️ 已重设口令：重新加密 ${result.reencrypted} 项；${result.cleared.join('、')} 需要重新填写`
-                        : `✅ 已重设口令：重新加密 ${result.reencrypted} 项`,
-                    10000,
-                );
+                if (result.cleared.length > 0) {
+                    showWarningNotice(
+                        `已重设口令：重新加密 ${result.reencrypted} 项；${result.cleared.join('、')} 需要重新填写`,
+                        { timeout: 10000 },
+                    );
+                } else {
+                    showSuccessNotice(`已重设口令：重新加密 ${result.reencrypted} 项`, { timeout: 10000 });
+                }
             }));
     }
 
@@ -836,7 +839,7 @@ export class ApiSection extends SettingsSection {
             }
             await this.plugin.saveSettings();
             this.plugin.updateStatusBarText();
-            new Notice('✅ API 设置已保存');
+            showSuccessNotice('API 设置已保存');
             this.refresh();
         };
         footer.createEl('button', {
@@ -905,7 +908,7 @@ export class ApiSection extends SettingsSection {
                     await plugin.saveSettings();
                     plugin.updateStatusBarText();
                     this.close();
-                    new Notice('✅ 已添加供应商，可点「从 URL 获取」导入模型', 5000);
+                    showSuccessNotice('已添加供应商，可点「从 URL 获取」导入模型', { timeout: 5000 });
                     rerender();
                 };
             }

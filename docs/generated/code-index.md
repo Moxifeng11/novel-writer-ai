@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 299 | 131885 | 1584 | 1326 | 84% |
+| `engine/` | 300 | 131962 | 1585 | 1327 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38659 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38683 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 214 | 97334 | 552 | 507 | 92% |
+| `ui/` | 214 | 97344 | 552 | 507 | 92% |
 
 ## 文件清单
 
@@ -69,7 +69,7 @@
 | `engine/ai-scene-generator.ts` | 289 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
-| `engine/analysis-report-engine.ts` | 1396 | 1 | 1 |
+| `engine/analysis-report-engine.ts` | 1400 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 736 | 2 | 2 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
@@ -89,7 +89,7 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3557 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3480 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
@@ -98,6 +98,7 @@
 | `engine/co-writer/local-model-utils.ts` | 193 | 9 | 7 |
 | `engine/co-writer/plot-nodes.ts` | 141 | 2 | 2 |
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
+| `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
@@ -281,7 +282,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 1858 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1875 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 131 | 2 | 2 |
@@ -377,7 +378,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1435 | 3 | 3 |
+| `shared/changelog-data.ts` | 1459 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -540,7 +541,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 524 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1703 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1704 | 1 | 1 |
 | `ui/ai-builder-modal.ts` | 1137 | 1 | 1 |
 | `ui/appearance-settings.ts` | 573 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
@@ -612,7 +613,7 @@
 | `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2742 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2743 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 490 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
@@ -661,7 +662,7 @@
 | `ui/ideation-modal.ts` | 1217 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
-| `ui/knowledge-detail-modal.ts` | 1697 | 1 | 1 |
+| `ui/knowledge-detail-modal.ts` | 1698 | 1 | 1 |
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 505 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 47 | 1 | 1 |
@@ -707,8 +708,8 @@
 | `ui/services/project-create-service.ts` | 433 | 6 | 5 |
 | `ui/settings-tab.ts` | 230 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
-| `ui/settings/agent-section.ts` | 146 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1270 | 1 | 1 |
+| `ui/settings/agent-section.ts` | 149 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1273 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 333 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 288 | 1 | 1 |
@@ -739,7 +740,7 @@
 | `ui/views/kb-detail-actions.ts` | 200 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1361 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3227 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3228 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 1918 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |

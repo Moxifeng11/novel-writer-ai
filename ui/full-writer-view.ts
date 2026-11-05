@@ -1,6 +1,7 @@
 import { SidebarComponent } from './sidebar-component';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
 import { App, ItemView, WorkspaceLeaf, TFile, TFolder, Modal, Notice } from 'obsidian';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { AddFanficSettingModal } from './add-fanfic-setting-modal';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './full-writer/wizard-types';
 import { buildTemplateVars as buildTemplateVarsExternal } from './full-writer/template-vars-builder';
@@ -1003,7 +1004,7 @@ export class FullWriterView extends ItemView {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[FullWriter] onOpen error:', errMsg);
                 // 回到项目页必须说明原因，否则用户只看到「闪一下又回去了」
-                new Notice(`⚠️ 章节加载失败，已返回项目页：${errMsg}`, 8000);
+                showErrorNotice(errMsg, { title: '章节加载失败，已返回项目页', timeout: 8000 });
                 this.activateTab('project-selector');
             }
         } else {
@@ -1641,12 +1642,12 @@ export class FullWriterView extends ItemView {
                 await this.selectChapter(project, nextChapter);
             } else {
                 // 没有章节则提示用户
-                new Notice('⚠️ 未找到章节文件，请先运行批量建章', 5000);
+                showWarningNotice('未找到章节文件，请先运行批量建章', { timeout: 5000 });
             }
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('[小说工坊] 进入写作界面失败:', errMsg);
-            new Notice('❌ 进入写作界面失败: ' + errMsg, 5000);
+            showErrorNotice(errMsg, { title: '进入写作界面失败', timeout: 5000 });
         }
     }
 
@@ -1734,11 +1735,11 @@ export class FullWriterView extends ItemView {
             await this.pushNav(wizardId);
             // pushNav 内部已调用 activateTab → renderTabBar + renderTabContent，不重复渲染
             
-            new Notice(`✅ 项目 "${projectName}" 已创建，开始引导向导`, 3000);
+            showSuccessNotice(`项目 "${projectName}" 已创建，开始引导向导`, { timeout: 3000 });
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('Quick create project failed:', errMsg);
-            new Notice('❌ 快速创建项目失败：' + errMsg, 5000);
+            showErrorNotice(errMsg, { title: '快速创建项目失败', timeout: 5000 });
         }
     }
 
