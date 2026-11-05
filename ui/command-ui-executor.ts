@@ -24,7 +24,7 @@ import { CreateProjectModal } from './create-project-modal';
 import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { OperationConfirmModal } from './components/progress';
-import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { PlanBookModal } from './plan-book-modal';
 import { WriteChapterModal } from './write-chapter-modal';
 import { ReviewChapterModal } from './review-chapter-modal';
@@ -547,7 +547,7 @@ export class CommandUiExecutor implements CommandUiPort {
         }
         const service = this.deps.getVersionService();
         if (!service) {
-            new Notice('⚠️ 版本服务未就绪，请稍后重试');
+            showWarningNotice('版本服务未就绪，请稍后重试', { title: '版本服务未就绪' });
             return;
         }
         const modal = new ChapterVersionModal(this.deps.app, {
@@ -651,6 +651,6 @@ export class CommandUiExecutor implements CommandUiPort {
         log.warn(`[小说工坊] 旧版正文命令被调用：${name}（计划于 v5.0.0 移除）`);
         if (this.legacyCommandWarned.has(name)) return;
         this.legacyCommandWarned.add(name);
-        new Notice(`⚠️「${name}」属于旧版正文链路，计划于 v5.0.0 移除；请改用协同写作工作台`, 6000);
+        showWarningNotice(`「${name}」属于旧版正文链路，计划于 v5.0.0 移除；请改用协同写作工作台`, { title: '旧版命令弃用', timeout: 6000 });
     }
 }

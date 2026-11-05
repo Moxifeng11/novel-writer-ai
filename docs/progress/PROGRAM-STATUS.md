@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-06｜G5｜v4.52.0（待发版）Notice 尾盘第十六批：command-ui-executor 20 处逐条核对——18 处为守卫/预检/进度/无变化（按口径保留），2 处告警（版本服务未就绪、旧版命令弃用）改走 showWarningNotice，文件确认收敛（20→18）；无新增测试，改用既有 notice-helpers 覆盖；同轮修复 v4.51.0 版本节点遗留的 check:bundle 红灯（changelog-data +452B 未实测 + 本轮 +32B，基线上调 4854975→4855459 并在 note 注明归因）（ui/command-ui-executor.ts + .bundle-baseline.json）
 - 2026-11-06｜G5｜切片主线正式停止（用户拍板）：≤3,300 行目标废弃，co-writing-view 保留 3,363 行现状。依据 bundle 漂移审计——三次切片累计 +3,664B，适配层（宿主回调 739B + 句柄回填 693B + handles 返回 315B ≈ 1,747B）占净增 100%，切片对包体积为净增；此前向上调基线只是让门禁继续可用，不代表体积健康。后续主指标固定为 net-bundle + 模块内聚度，主线转 Notice 尾盘（command-ui-executor 20 处）（.bundle-baseline.json note + .trae/automation/trae-loop-state.json meta.notes）
 - 2026-11-06｜G5｜v4.51.0（待发版）co-writing-view 切片第九批第 4 片：抽出 control-panel（右栏页签/概览卡片/写作控制台/更多工具面板/监控挂载点 + 模型按钮文案规则）；视图 3,443 → 3,363 行（-80 净减，含空行口径；毛减 150）；新增 1 个行为测试文件 11 用例；bundle 基线上调 +1,706B（纯迁移开销，note 已说明）。第九批收口：未达 ≤3,300（原「控制台 ≥143 行」高估，实测 886-993 为 108 行）；本批三次切片 bundle 累计 +3,664B，后续主指标改 net-bundle + 模块内聚度（ui/co-writing/control-panel.ts + ui/co-writing-view.ts + tests/unit/ui/co-writing-control-panel.test.ts）
 - 2026-11-06｜G5｜v4.51.0（待发版）co-writing-view 切片第九批第 3 片：抽出 layout-assembly（顶栏导航/资源/模式装配、左栏本章简报与预览、右侧 Tab 头、字体选择器、Markdown 状态栏、布局回填、分隔条）；视图 3,556 → 3,443 行（-113，含空行口径）；新增 1 个行为测试文件 9 用例；bundle 基线上调 +968B（纯迁移开销，note 已说明）（ui/co-writing/layout-assembly.ts + ui/co-writing-view.ts + tests/unit/ui/co-writing-layout-assembly.test.ts）

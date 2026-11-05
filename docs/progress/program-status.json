@@ -572,6 +572,12 @@
     {
       "date": "2026-11-06",
       "group": "G5",
+      "summary": "v4.52.0（待发版）Notice 尾盘第十六批：command-ui-executor 20 处逐条核对——18 处为守卫/预检/进度/无变化（按口径保留），2 处告警（版本服务未就绪、旧版命令弃用）改走 showWarningNotice，文件确认收敛（20→18）；无新增测试，改用既有 notice-helpers 覆盖；同轮修复 v4.51.0 版本节点遗留的 check:bundle 红灯（changelog-data +452B 未实测 + 本轮 +32B，基线上调 4854975→4855459 并在 note 注明归因）",
+      "evidence": "ui/command-ui-executor.ts + .bundle-baseline.json"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G5",
       "summary": "切片主线正式停止（用户拍板）：≤3,300 行目标废弃，co-writing-view 保留 3,363 行现状。依据 bundle 漂移审计——三次切片累计 +3,664B，适配层（宿主回调 739B + 句柄回填 693B + handles 返回 315B ≈ 1,747B）占净增 100%，切片对包体积为净增；此前向上调基线只是让门禁继续可用，不代表体积健康。后续主指标固定为 net-bundle + 模块内聚度，主线转 Notice 尾盘（command-ui-executor 20 处）",
       "evidence": ".bundle-baseline.json note + .trae/automation/trae-loop-state.json meta.notes"
     },

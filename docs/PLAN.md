@@ -94,7 +94,8 @@ Agent（harness）
 - 切片第九批·第 3 片（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/layout-assembly`（顶栏导航/资源/模式装配、左栏本章简报与预览、右侧 Tab 头、字体选择器、Markdown 状态栏、布局回填、分隔条），**3,556 → 3,443 行（-113，含空行口径）**；新增 1 个测试文件 9 用例（字体选项解析/布局状态/状态栏文案）；全量 582 文件 / 6,264 用例、preflight 全绿；bundle 基线上调 +968B（纯迁移与回调装配开销，已在 `.bundle-baseline.json` note 说明）。
 - 切片第九批·第 4 片（v4.51.0 待发版）：`ui/co-writing-view.ts` 抽出 `co-writing/control-panel`（右栏页签/概览卡片/写作控制台/更多工具面板/监控挂载点 + 模型按钮文案规则），**3,443 → 3,363 行（-80 净减，含空行口径；毛减 150 行，其余为宿主句柄回填与回调装配）**；新增 1 个测试文件 11 用例（页签/工具按钮/开关态/场景指令/模型文案）；preflight 全绿（582 文件 / 6,275 用例）；bundle 基线上调 +1,706B（纯迁移开销）。
 - 第九批收口 + **切片主线正式停止（2026-11-06 用户拍板）**：分解前的「控制台 ≥143 行」高估——实测 `886-993` 为 108 行、`867-993` 为 127 行；扣掉宿主句柄回填后单片净减约 80 行。本批三次切片 bundle 累计 **+3,664B**，切片对包体积是净增（审计归因：适配层 宿主回调 739B + 句柄回填 693B + handles 返回 315B ≈ 1,747B，占净增 100%）。**≤3,300 行目标废弃**，`ui/co-writing-view.ts` 保留 3,363 行现状，后续不再按行数切片；主指标改为 net-bundle + 模块内聚度。
-- 下一步主线：Notice 尾盘取最高密度文件 `command-ui-executor`（20 处）；之后按 net-bundle + 内聚度挑选 test-hardening / gate-fix 候选。知识库面板装配（`renderKnowledgeTab`）不再作为切片候选。
+- 第十六批（v4.52.0 待发版）：Notice 尾盘 `command-ui-executor` 20 处逐条核对——18 处为守卫/预检/进度/无变化（按既有口径保留），2 处告警（版本服务未就绪、旧版命令弃用）改走 `showWarningNotice`，文件确认收敛（**20→18**）；无新增测试，改用既有 `notice-helpers` 覆盖。同轮修复 v4.51.0 版本节点遗留的 `check:bundle` 红灯（`changelog-data` +452B 未实测 + 本轮 +32B，基线上调 4,854,975→4,855,459 并在 note 注明归因）。
+- 下一步主线：Notice 存量只剩各文件守卫/进度类，尾盘结束；下一批按 net-bundle + 内聚度挑选 test-hardening（`command-ui-executor` 仍无单测）/ gate-fix 候选。知识库面板装配（`renderKnowledgeTab`）不再作为切片候选。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
