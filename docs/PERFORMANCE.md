@@ -23,15 +23,21 @@
 
 ## 2. 已知热路径
 
-以下文件禁止退回 `getFiles()` 全库扫描（`scripts/check-hotpath-scans.mjs` 的 `HOT_FILES`）：
+以下文件禁止退回全库扫描（`vault.getFiles()` / `vault.getMarkdownFiles()` / `vault.getAllLoadedFiles()` 三者都是 O(全库)，门禁 `scripts/check-hotpath-scans.mjs` 逐文件检查 `HOT_FILES`）：
 
-- 正文落盘、结算、统计、上下文装配、实体读取、知识库索引等 8 个模块（以脚本清单为准）。
+- 正文落盘、结算、统计、上下文装配、实体读取、知识库索引等 8 个模块，以及 UI 侧每章/每次质量刷新各跑一次的 `ui/full-writer/batch-pipeline-runner.ts`（断点续跑读步骤结果）与 `ui/cowrite/realtime-quality-controller.ts`（前文窗口扫描）——共 10 个模块（以脚本清单为准）。
+
+门禁覆盖面（第 26 轮实测，防止「换个 API 绕过」）：
+
+- 三个 API 都按行文本检查，命中任一即失败；每文件只报首个命中行号。
+- 非测试代码中 `getMarkdownFiles()` / `getAllLoadedFiles()` 共 7 处，**全部是冷路径**：`ui/add-fanfic-setting-modal.ts:337`、`ui/batch-import-modal.ts:1622`、`ui/agent-workbench-view.ts:651`、`ui/plan-book-modal.ts:262`、`ui/full-writer/wizard-step-renderers.ts:288`、`ui/project-utils.ts:282`、`ui/project-utils.ts:312`。
+- `ui/project-utils.ts#getChaptersForProject` 一次调用 = `getFiles()` + `getAllLoadedFiles()` 两次全库遍历，但调用方全是视图渲染/弹窗/导航（`full-writer/title-bar-controller.ts:94`、`full-writer-view.ts:1510/1526/1634`、`full-writer/project-selector-controller.ts:196`、`services/agent-port.ts:297/327/347`、`full-writer/creation-flow-state.ts:217`、`quality-dashboard-modal.ts:159`、`story-linkage-modal.ts:65`），不在每章写/每次刷新的热路径内，故未纳入 `HOT_FILES`。若将来接入每章流程，必须先改为目录遍历再纳入清单。
 
 排查方法：
 
 ```bash
 npm run check:hotpaths
-rg "getFiles\(" engine services shared core domains
+rg "getFiles\(|getMarkdownFiles\(|getAllLoadedFiles\(" engine services shared core domains ui
 npm run bench:hotpath        # 200 章基准（见 scripts/bench/get-files-hotpath.mjs）
 ```
 
@@ -60,6 +66,25 @@ npm run bench:hotpath        # 200 章基准（见 scripts/bench/get-files-hotpa
 2. 用 `npm run bench:hotpath` 或监控面板取数。
 3. 改动后复测同一路径；没有数字对比不称为优化。
 4. 把关键阈值写成门禁或测试，避免回退（参考 `check:hotpaths`、性能相关单测）。
+
+### 5.1 启动加载基线（2026-11-06，第 24 轮实测）
+
+方法：用临时脚本（`tmp/measure-startup.cjs`，未入库）把 `obsidian` 模块与最小 DOM/GUI 桩替换后，在 Node 中 `require('main.js')`，只计时**模块求值**（不含 Node 进程启动）。同一条命令连跑多次取中位数。
+
+| 对象 | 字节 | 冷加载耗时 |
+|---|---|---|
+| `main.js`（v4.51.0，minify + utf8） | 4,855,409 | 105.9 / 108.0 / 109.7 / 108.0 / 107.9 ms（中位 **108.0**） |
+| 同字节副本（排除路径缓存影响） | 4,855,409 | 104.1 / 104.8 / 105.8 ms |
+| 同字节「纯字符串」对照 | 4,855,409 | 21.7 / 18.9 / 19.2 ms |
+
+结论：
+
+- 启动求值约 **108ms**；读取+解析下限约 **19ms**，其余约 **89ms** 来自真实代码的 AST 规模与顶层求值。
+- 同字节副本与原件一致 → 没有证据表明「某个 eager import 单独拖慢启动」；差异由代码体积/结构整体决定。
+- Obsidian 只加载单个 `main.js`，`import()` 懒加载不会减少已打包进同一文件的解析成本，因此「重模块 eager import 扫描」不作为可执行优化项；`check:bundle` 的包体积继续作为启动成本的代理指标。
+- 不要把「每 MB 毫秒数」当线性公式：纯字节对照已证明字节数本身不决定耗时。
+
+回归建议：`main.js` 体积变化超过 2%（约 ±97KB）时复测一次本节基线，并记录差值来源。
 
 ## 6. 相关
 

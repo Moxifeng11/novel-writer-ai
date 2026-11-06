@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132748 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38959 | 1556 | 1292 | 83% |
+| `shared/` | 173 | 38982 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 101030 | 729 | 633 | 87% |
+| `ui/` | 238 | 101033 | 729 | 633 | 87% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1735 | 3 | 3 |
+| `shared/changelog-data.ts` | 1758 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -622,7 +622,7 @@
 | `ui/cowrite/iterate-instruction-modal.ts` | 54 | 1 | 1 |
 | `ui/cowrite/live-analysis-controller.ts` | 279 | 2 | 1 |
 | `ui/cowrite/memory-manager-modal.ts` | 129 | 1 | 1 |
-| `ui/cowrite/realtime-quality-controller.ts` | 455 | 2 | 1 |
+| `ui/cowrite/realtime-quality-controller.ts` | 456 | 2 | 1 |
 | `ui/cowrite/suggestion-edit-modal.ts` | 155 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
 | `ui/create-project-modal.ts` | 488 | 2 | 2 |
@@ -642,7 +642,7 @@
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
 | `ui/full-writer-view.ts` | 2743 | 2 | 2 |
-| `ui/full-writer/batch-pipeline-runner.ts` | 490 | 5 | 4 |
+| `ui/full-writer/batch-pipeline-runner.ts` | 492 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
 | `ui/full-writer/chapter-orchestrator.ts` | 502 | 10 | 9 |
