@@ -5,6 +5,7 @@
  * 目标区间复用 `shared/creation-mode.ts` 的 CREATION_MODE_SPECS，避免第二套规格。
  */
 import { CREATION_MODE_SPECS, type CreationMode } from './creation-mode';
+import { countCjkChars } from './word-count';
 
 /**
  * 导出格式（与导出弹窗保持一致，但本模块不依赖 UI）。
@@ -49,6 +50,64 @@ export interface PublicationFacts {
     /** 导出时是否包含单元标题 */
     includeChapterTitles: boolean;
     format: PublicationFormat;
+}
+
+/**
+ * 导出正文单元（与 `collectModeManuscript` / 长篇章节收集结果对齐）。
+ */
+export interface PublicationUnitInput {
+    /** 单元名（第3章 / 第2节 / 第5集） */
+    unit: string;
+    /** 单元标题（用于重复标题统计） */
+    title?: string;
+    /** 原始正文（可含 frontmatter，空正文判定前会剥离） */
+    content: string;
+}
+
+/**
+ * 出版事实中由导出单元推导的部分之外的基础字段。
+ */
+export type PublicationFactsBase = Omit<
+    PublicationFacts,
+    'unitCount' | 'writtenCount' | 'wordCount' | 'emptyUnits' | 'duplicateTitleCount'
+>;
+
+/**
+ * 从导出正文单元推导出版检查事实（剥离 frontmatter 判空、重复标题统计、CJK 字数）。
+ *
+ * 与导出弹窗口径一致：字数统计包含原始正文（含 frontmatter），空正文只看剥离后的正文。
+ *
+ * @param units - 导出正文单元
+ * @param base - 模式、书名、作者、单元标签、格式等基础字段
+ * @returns 可直接交给 `checkPublicationReadiness` 的完整事实
+ * @example
+ * buildPublicationFacts(
+ *   [{ unit: '第1章', title: '开端', content: '---\nstatus: written\n---\n正文内容' }],
+ *   { mode: 'long', title: '示例书', author: '作者', unitLabel: '章', includeChapterTitles: true, format: 'epub' },
+ * )
+ */
+export function buildPublicationFacts(
+    units: ReadonlyArray<PublicationUnitInput>,
+    base: PublicationFactsBase,
+): PublicationFacts {
+    const bodyOf = (content: string) => content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
+    const emptyUnits = units
+        .filter(unit => bodyOf(unit.content).length === 0)
+        .map(unit => `${unit.unit}${unit.title ? ` ${unit.title}` : ''}`);
+    const titleCounts = new Map<string, number>();
+    for (const unit of units) {
+        const title = (unit.title || '').trim();
+        if (title) titleCounts.set(title, (titleCounts.get(title) || 0) + 1);
+    }
+    const duplicateTitleCount = Array.from(titleCounts.values()).filter(count => count > 1).length;
+    return {
+        ...base,
+        unitCount: units.length,
+        writtenCount: units.length - emptyUnits.length,
+        wordCount: units.reduce((sum, unit) => sum + countCjkChars(unit.content), 0),
+        emptyUnits,
+        duplicateTitleCount,
+    };
 }
 
 /**

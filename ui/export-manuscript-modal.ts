@@ -25,7 +25,7 @@ import { showErrorNotice, showSuccessNotice, showWarningNotice } from './compone
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
 import { formatExportPrecheck } from '@/shared/export-precheck';
-import { checkPublicationReadiness, formatPublicationReport } from '@/shared/publication-profile';
+import { buildPublicationFacts, checkPublicationReadiness, formatPublicationReport } from '@/shared/publication-profile';
 import { getExecutionLedger } from '@/services/execution-ledger';
 import type { JobRunContext } from '@/services/job-service';
 import { yieldToUI } from '@/shared/yield';
@@ -418,29 +418,17 @@ export class ExportManuscriptModal extends Modal {
             }
         }
         // 商业化出版检查：阻断项默认仅提示；勾选严格模式时中止导出（job 会标失败并展示原因）
-        const bodyOf = (content: string) => content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
-        const emptyUnits = chapters
-            .filter(chapter => bodyOf(chapter.content).length === 0)
-            .map(chapter => `${chapter.chapter}${chapter.title ? ` ${chapter.title}` : ''}`);
-        const titleCounts = new Map<string, number>();
-        for (const chapter of chapters) {
-            const title = (chapter.title || '').trim();
-            if (title) titleCounts.set(title, (titleCounts.get(title) || 0) + 1);
-        }
-        const duplicateTitleCount = Array.from(titleCounts.values()).filter(count => count > 1).length;
-        const publicationIssues = checkPublicationReadiness({
-            mode: this.creationMode,
-            title: this.project.split('/').pop() || this.project,
-            author: this.author,
-            unitLabel: this.unitLabel,
-            unitCount: chapters.length,
-            writtenCount: chapters.length - emptyUnits.length,
-            wordCount: chapters.reduce((sum, chapter) => sum + countCjkChars(chapter.content), 0),
-            emptyUnits,
-            duplicateTitleCount,
-            includeChapterTitles: this.includeChapterTitles,
-            format: this.format,
-        });
+        const publicationIssues = checkPublicationReadiness(buildPublicationFacts(
+            chapters.map(chapter => ({ unit: chapter.chapter, title: chapter.title, content: chapter.content })),
+            {
+                mode: this.creationMode,
+                title: this.project.split('/').pop() || this.project,
+                author: this.author,
+                unitLabel: this.unitLabel,
+                includeChapterTitles: this.includeChapterTitles,
+                format: this.format,
+            },
+        ));
         if (this.strictPublication) {
             const blockers = publicationIssues.filter(issue => issue.level === 'blocker');
             if (blockers.length > 0) {
