@@ -26,7 +26,7 @@ function makeManager() {
     return manager;
 }
 
-function makeScheduler(manager: ReturnType<typeof makeManager>, vectorStore?: unknown): DeconstructionScheduler {
+function makeScheduler(manager: ReturnType<typeof makeManager>, vectorStore?: ConstructorParameters<typeof DeconstructionScheduler>[3]): DeconstructionScheduler {
     return new DeconstructionScheduler(
         {} as any,
         manager as any,

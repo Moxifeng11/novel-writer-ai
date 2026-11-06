@@ -1,8 +1,7 @@
 {
-  "total": 298,
+  "total": 276,
   "generatedAt": "2026-11-06",
   "files": {
-    "engine/deconstruction-scheduler.ts": 22,
     "ui/components/smart-chart.ts": 16,
     "ui/full-writer/intervention-controller.ts": 9,
     "ui/views/knowledge-base-modals.ts": 9,

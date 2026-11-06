@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132748 | 1607 | 1346 | 84% |
+| `engine/` | 305 | 132753 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
 | `shared/` | 173 | 38982 | 1556 | 1292 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 101033 | 729 | 633 | 87% |
+| `ui/` | 238 | 101082 | 729 | 633 | 87% |
 
 ## 文件清单
 
@@ -118,7 +118,7 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 673 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 2838 | 9 | 8 |
+| `engine/deconstruction-scheduler.ts` | 2843 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 688 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4063 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2044 | 5 | 5 |
@@ -612,7 +612,7 @@
 | `ui/components/progress/progress-bar.ts` | 146 | 2 | 2 |
 | `ui/components/progress/step-list.ts` | 285 | 1 | 1 |
 | `ui/components/progress/task-card.ts` | 338 | 2 | 2 |
-| `ui/components/smart-chart.ts` | 470 | 1 | 1 |
+| `ui/components/smart-chart.ts` | 519 | 1 | 1 |
 | `ui/context-injector-modal.ts` | 215 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 563 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |

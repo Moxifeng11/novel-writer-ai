@@ -38,6 +38,7 @@ import { CommercialDeconstructor, CommercialAnalysisResult } from './deconstruct
 import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from './deconstructors/readability-deconstructor';
 import { DeconstructionWorkerManager } from './deconstruction-worker-manager';
 import { SchedulerSegmentIntegration } from './scheduler-segment-integration';
+import type { AnalysisResult } from './incremental-result-aggregator';
 import { SegmentAwareBreakdown } from './segment-aware-breakdown';
 import { countTotalChars } from './text-segmenter';
 import { ProgressEmitter } from '@/shared/progress-emitter';
@@ -256,13 +257,13 @@ export class DeconstructionScheduler {
     private qualityScorer: QualityScorer;
     private pendingWrites: Map<string, string> = new Map();
 
-    private dimensionCache: Map<string, { hash: string; result: any }> = new Map();
+    private dimensionCache: Map<string, { hash: string; result: unknown }> = new Map();
 
     constructor(
         app: App,
         knowledgeBaseManager: KnowledgeBaseManager,
         options?: SchedulerOptions & { baseDir?: string },
-        private vectorStore?: any,
+        private vectorStore?: { addBookSamples?(bookId: string, bookName: string, samples: unknown[]): Promise<unknown>; replaceBookSamples?(bookId: string, bookName: string, samples: unknown[]): Promise<unknown> },
         vectorEnhancer?: VectorEnhancer,
         settingsGetter?: () => DeconstructionSchedulerSettings
     ) {
@@ -943,7 +944,7 @@ export class DeconstructionScheduler {
         const degradationReasons: Array<{ dimension: string; reason: string }> = [];
         const dimensionQualityScores = new Map<BreakdownDimension, DimensionQualityScore>();
         const dimensionDurations = new Map<BreakdownDimension, number>();
-        const dimensionResults = new Map<BreakdownDimension, any>();
+        const dimensionResults = new Map<BreakdownDimension, unknown>();
         const sampleMode = this.isSampleModeEnabled();
         const sampleLimit = this.getTextSampleLimit();
         const rawWordCount = task.sourceText.length;
@@ -1161,7 +1162,7 @@ export class DeconstructionScheduler {
 
             await this.flushBatchWrites();
             await yieldToUI();
-            const crossValidationResults = this.qualityScorer.crossValidate(dimensionResults as Partial<Record<BreakdownDimension, any>>);
+            const crossValidationResults = this.qualityScorer.crossValidate(dimensionResults as unknown as Partial<Record<BreakdownDimension, unknown>>);
 
             task.status = 'completed';
             task.completedAt = Date.now();
@@ -1332,7 +1333,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: AnalysisResult | undefined }> {
         const config = this.getSegmentedBreakdownConfig();
         const useVector = vectorAvailable && this.isVectorEnhancementEnabled();
         const maxDirectWords = this.isSampleModeEnabled()
@@ -1351,7 +1352,7 @@ export class DeconstructionScheduler {
         const text = this.getEffectiveSourceText(task);
 
         try {
-            const result = await this.segmentIntegration.analyzeWithSegments(
+            const result = await this.segmentIntegration.analyzeWithSegments<AnalysisResult>(
                 dimension,
                 text,
                 signal,
@@ -1371,8 +1372,9 @@ export class DeconstructionScheduler {
                 }
             );
 
-            if (dimension === 'structure' && (result.combinedResult as any)?.stats) {
-                (result.combinedResult as any).stats.totalWordCount = countTotalChars(task.sourceText);
+            if (dimension === 'structure') {
+                const structure = result.combinedResult as StructureAnalysisResult;
+                if (structure.stats) structure.stats.totalWordCount = countTotalChars(task.sourceText);
             }
 
             await this.saveSegmentedDimensionResult(task, dimension, result.combinedResult);
@@ -1386,7 +1388,7 @@ export class DeconstructionScheduler {
                 degradedDimensions.push(dimension);
                 degradationReasons.push({ dimension, reason: error instanceof Error ? error.message : String(error) });
                 onProgress(45, `⚠️ ${DIMENSION_LABELS[dimension]} 分块向量增强失败，降级到纯统计分块`);
-                const fallback = await this.segmentIntegration.analyzeWithSegments(
+                const fallback = await this.segmentIntegration.analyzeWithSegments<AnalysisResult>(
                     dimension,
                     text,
                     signal,
@@ -1401,8 +1403,9 @@ export class DeconstructionScheduler {
                     }
                 );
 
-                if (dimension === 'structure' && (fallback.combinedResult as any)?.stats) {
-                    (fallback.combinedResult as any).stats.totalWordCount = countTotalChars(task.sourceText);
+                if (dimension === 'structure') {
+                    const structure = fallback.combinedResult as StructureAnalysisResult;
+                    if (structure.stats) structure.stats.totalWordCount = countTotalChars(task.sourceText);
                 }
 
                 await this.saveSegmentedDimensionResult(task, dimension, fallback.combinedResult);
@@ -1413,7 +1416,8 @@ export class DeconstructionScheduler {
         }
     }
 
-    private async saveSegmentedDimensionResult(task: BreakdownTask, dimension: BreakdownDimension, result: any): Promise<void> {
+    private async saveSegmentedDimensionResult(task: BreakdownTask, dimension: BreakdownDimension, result: AnalysisResult | undefined): Promise<void> {
+        if (!result) return;
         // 书已删除：不写维度文件，避免把已删除的书目录重新建出来。
         if (!(await this.knowledgeBaseManager.getBook(task.bookId))) {
             log.info(`[DeconstructionScheduler] 书籍已删除，跳过保存${DIMENSION_LABELS[dimension]}结果`);
@@ -1422,28 +1426,28 @@ export class DeconstructionScheduler {
         try {
             switch (dimension) {
                 case 'style':
-                    await this.styleDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.styleDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as StyleAnalysisResult, this.baseDir);
                     break;
                 case 'rhythm':
-                    await this.rhythmDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.rhythmDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as RhythmAnalysisResult, this.baseDir);
                     break;
                 case 'technique':
-                    await this.techniqueDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.techniqueDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as TechniqueAnalysisResult, this.baseDir);
                     break;
                 case 'structure':
-                    await this.structureDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.structureDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as StructureAnalysisResult, this.baseDir);
                     break;
                 case 'character':
-                    await this.characterDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.characterDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as CharacterAnalysisResult, this.baseDir);
                     break;
                 case 'foreshadow':
-                    await this.foreshadowDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.foreshadowDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as ForeshadowAnalysisResult, this.baseDir);
                     break;
                 case 'commercial':
-                    await this.commercialDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.commercialDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as CommercialAnalysisResult, this.baseDir);
                     break;
                 case 'readability':
-                    await this.readabilityDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result, this.baseDir);
+                    await this.readabilityDeconstructor!.saveAnalysisToMarkdown(this.app, task.bookName, result as ReadabilityAnalysisResult, this.baseDir);
                     break;
             }
         } catch (e) {
@@ -1456,7 +1460,7 @@ export class DeconstructionScheduler {
             const content = await this.app.vault.adapter.read(filePath);
             const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
             if (!match) return;
-            let frontmatter: any;
+            let frontmatter: Record<string, unknown>;
             try {
                 frontmatter = JSON.parse(match[1]);
             } catch {
@@ -1521,7 +1525,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: AnalysisResult | undefined }> {
         // 非分块路径此前从未创建 LLMEnhancer：设置里打开“LLM 增强”后，
         // initDeconstructors 的 this.llmEnhancer 永远是 undefined，增强静默不生效。
         this.ensureLlmEnhancer();
@@ -1668,7 +1672,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: StyleAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'style';
         const text = this.getEffectiveSourceText(task);
 
@@ -1748,7 +1752,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: RhythmAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'rhythm';
         const text = this.getEffectiveSourceText(task);
 
@@ -1822,7 +1826,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: TechniqueAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'technique';
         const text = this.getEffectiveSourceText(task);
 
@@ -1893,7 +1897,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: StructureAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'structure';
         const text = this.getEffectiveSourceText(task);
 
@@ -1971,7 +1975,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: CharacterAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'character';
         const text = this.getEffectiveSourceText(task);
 
@@ -2045,7 +2049,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: ForeshadowAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'foreshadow';
         const text = this.getEffectiveSourceText(task);
 
@@ -2119,7 +2123,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: CommercialAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'commercial';
         const text = this.getEffectiveSourceText(task);
 
@@ -2193,7 +2197,7 @@ export class DeconstructionScheduler {
         vectorAvailable: boolean,
         degradedDimensions: BreakdownDimension[],
         degradationReasons: Array<{ dimension: string; reason: string }>
-    ): Promise<{ usedVector: boolean; result: any }> {
+    ): Promise<{ usedVector: boolean; result: ReadabilityAnalysisResult | undefined }> {
         const dimension: BreakdownDimension = 'readability';
         const text = this.getEffectiveSourceText(task);
 
@@ -2830,8 +2834,9 @@ export class DeconstructionScheduler {
         this.completeCallbacks.clear();
         this.failedCallbacks.clear();
 
-        if (this.workerManager && typeof (this.workerManager as any).destroy === 'function') {
-            (this.workerManager as any).destroy();
+        const disposable = this.workerManager as unknown as { destroy?: () => void };
+        if (typeof disposable.destroy === 'function') {
+            disposable.destroy();
         }
     }
 }
