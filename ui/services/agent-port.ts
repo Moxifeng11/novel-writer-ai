@@ -372,7 +372,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                     // 阶段采集失败不影响基础进度：老项目/异常项目仍能看到章节统计
                     log.warn('[AgentPort] 采集创作阶段失败:', e);
                 }
-                const status: AgentProjectStatus & { flow?: CreationFlowSnapshot } = {
+                const status: AgentProjectStatus = {
                     project,
                     mode,
                     structureId: meta.storySettings ? getStoryStructure(meta.storySettings.structureId).id : '',

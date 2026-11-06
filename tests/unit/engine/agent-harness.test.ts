@@ -142,6 +142,10 @@ describe('assembleHarnessSystemPrompt', () => {
         expect(prompt).toContain('- projectName: "九霄"');
         expect(prompt).toContain('demo_tool');
         expect(prompt).toContain('输出协议');
+        // v5 B1：阶段引导以 flow 为事实源，不再让模型凭记忆套固定八阶段
+        expect(prompt).toContain('阶段事实源');
+        expect(prompt).toContain('flow.nextStageId');
+        expect(prompt).toContain('blockedReason');
         // 分段顺序：身份在工具之前
         expect(prompt.indexOf('对话引导 Agent')).toBeLessThan(prompt.indexOf('demo_tool'));
     });

@@ -1,8 +1,7 @@
 {
-  "total": 260,
+  "total": 251,
   "generatedAt": "2026-11-06",
   "files": {
-    "ui/full-writer/intervention-controller.ts": 9,
     "ui/views/knowledge-base-modals.ts": 9,
     "services/worker-manager.ts": 7,
     "ui/manage-providers-modal.ts": 7,

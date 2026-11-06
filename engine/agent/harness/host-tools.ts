@@ -589,7 +589,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'get_project_status',
-        description: '读取项目状态摘要：创作模式、故事结构、规划单元数、已写单元数、待写骨架数、最后一个已写单元、建议接下来写的单元。长篇的单位是章，短篇是节，剧本是集。用于判断真实创作进度与下一步，不要用条目总数当已完成数。',
+        description: '读取项目状态摘要：创作模式、故事结构、规划单元数、已写单元数、待写骨架数、最后一个已写单元、建议接下来写的单元，以及统一创作阶段快照（flow：stages / nextStageId / 阻塞原因）。长篇的单位是章，短篇是节，剧本是集。用于判断真实创作进度与下一步，不要用条目总数当已完成数。',
         parameters: { project: { type: 'string', description: '项目 ID 或名称，可留空用当前项目' } },
         required: [],
         sideEffect: 'none', timeoutMs: 15_000,
@@ -604,14 +604,27 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
             const unitLabel = status.mode === 'long' ? '章' : status.mode === 'short' ? '节' : '集';
             const statusText = Object.entries(status.byStatus).map(([key, count]) => `${key} ${count}`).join('、') || `无${unitLabel}`;
             const latest = status.latestWrittenChapter || `（尚无已写${unitLabel}）`;
+            const lines = [
+                `「${project}」：${modeLabel}；结构 ${status.structureId || '未设置'}`,
+                `规划 ${status.plannedChapters} ${unitLabel}；已写 ${status.writtenChapters} ${unitLabel}；待写骨架 ${status.skeletonChapters} ${unitLabel}`,
+                `最后一个已写${unitLabel}：${latest}；建议接下来写：${status.nextChapterToWrite}`,
+            ];
+            // v5 B1：阶段快照是唯一阶段事实源（shared/creation-flow），这里只做投影
+            const flow = status.flow;
+            if (flow) {
+                const percent = Math.round(flow.overallRatio * 100);
+                const nextStage = flow.stages.find(stage => stage.id === flow.nextStageId);
+                const blockedStage = flow.stages.find(stage => stage.state === 'blocked');
+                lines.push(`阶段进度：${percent}%（下一步：${nextStage ? `${nextStage.label}${nextStage.blockedReason ? `（阻塞：${nextStage.blockedReason}）` : ''}` : '全部完成'}）`);
+                if (blockedStage && blockedStage.id !== nextStage?.id) {
+                    lines.push(`当前阻塞：${blockedStage.label}${blockedStage.blockedReason ? `（${blockedStage.blockedReason}）` : ''}`);
+                }
+                lines.push(`阶段明细：${flow.stages.map(stage => `${stage.state === 'done' ? '✓' : stage.state === 'active' ? '→' : stage.state === 'blocked' ? '!' : '○'}${stage.label}`).join(' ')}`);
+            }
+            lines.push(`（状态明细：${statusText}。注意：status=pending 的是批量建${unitLabel}生成的空骨架，不算已完成。）`);
             return {
                 ok: true,
-                content: [
-                    `「${project}」：${modeLabel}；结构 ${status.structureId || '未设置'}`,
-                    `规划 ${status.plannedChapters} ${unitLabel}；已写 ${status.writtenChapters} ${unitLabel}；待写骨架 ${status.skeletonChapters} ${unitLabel}`,
-                    `最后一个已写${unitLabel}：${latest}；建议接下来写：${status.nextChapterToWrite}`,
-                    `（状态明细：${statusText}。注意：status=pending 的是批量建${unitLabel}生成的空骨架，不算已完成。）`,
-                ].join('\n'),
+                content: lines.join('\n'),
                 data: status as unknown as Record<string, unknown>,
             };
         },

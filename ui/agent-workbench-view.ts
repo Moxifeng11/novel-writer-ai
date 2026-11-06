@@ -392,7 +392,7 @@ export class AgentWorkbenchView extends ItemView {
         let flow: CreationFlowSnapshot | undefined;
         if (project && this.port.getProjectStatus) {
             try {
-                const status = await this.port.getProjectStatus(project) as (AgentProjectStatus & { flow?: CreationFlowSnapshot }) | null;
+                const status = await this.port.getProjectStatus(project) as AgentProjectStatus | null;
                 flow = status?.flow;
             } catch {
                 flow = undefined;

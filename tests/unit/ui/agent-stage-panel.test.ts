@@ -58,6 +58,53 @@ describe('buildStagePanelModel', () => {
         expect(model.nextLabel).toBe('分节写作');
     });
 
+    it('剧本：五阶段含分镜表，下一步停在分镜表', () => {
+        const flow = resolveCreationFlow('script', '剧本/示例', {
+            ...BASE_FACTS,
+            preResearchDone: true,
+            docs: { outline: true, storyboard: false },
+            unitTotal: 12,
+            unitWritten: 0,
+            nextUnitNumber: 1,
+        });
+        const model = buildStagePanelModel(flow, '剧本/示例');
+
+        expect(model.items.map(item => item.id)).toEqual(['research', 'outline', 'storyboard', 'units', 'export']);
+        expect(model.items[2].state).toBe('active');
+        expect(model.items[3].state).toBe('todo');
+        expect(model.items[4].state).toBe('blocked');
+        expect(model.nextLabel).toBe('分镜表');
+    });
+
+    it('剧本：分镜表完成后进入分集写作', () => {
+        const flow = resolveCreationFlow('script', '剧本/示例', {
+            ...BASE_FACTS,
+            preResearchDone: true,
+            docs: { outline: true, storyboard: true },
+            unitTotal: 12,
+            unitWritten: 0,
+            nextUnitNumber: 1,
+        });
+        const model = buildStagePanelModel(flow, '剧本/示例');
+
+        expect(model.items[3].state).toBe('active');
+        expect(model.nextLabel).toBe('分集写作');
+    });
+
+    it('剧本：预填话术带分集单元标签', () => {
+        const flow = resolveCreationFlow('script', '剧本/示例', {
+            ...BASE_FACTS,
+            preResearchDone: true,
+            docs: { outline: true },
+            unitTotal: 12,
+            nextUnitNumber: 1,
+        });
+        const unitStage = flow.stages.find(stage => stage.id === 'units');
+        expect(unitStage).toBeTruthy();
+        expect(buildStagePrompt(unitStage!)).toContain('继续「分集写作」');
+        expect(buildStagePrompt(unitStage!)).toContain('集');
+    });
+
     it('无项目/无快照时给出占位文案而不是硬编码阶段', () => {
         expect(buildStagePanelModel(null, '').emptyText).toContain('未选择项目');
         expect(buildStagePanelModel(undefined, '长篇小说/示例').emptyText).toContain('阶段读取失败');

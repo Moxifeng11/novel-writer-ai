@@ -5,6 +5,7 @@
  * / Planner（guide-flow 阶段定义）/ Runner（ConversationEngine）。
  * 引擎层不依赖 Obsidian 与 UI：宿主能力通过 GuideAgentPort 注入。
  */
+import type { CreationFlowSnapshot } from '@/shared/creation-flow';
 import type { LongStorySettings, StoryStructureId } from '@/shared/story-structure';
 
 /**
@@ -221,6 +222,11 @@ export interface AgentProjectStatus {
     latestWrittenChapter: string;
     /** 建议续写的章名（最新已写 + 1） */
     nextChapterToWrite: string;
+    /**
+     * 统一创作阶段快照（与 UI 创作流程同源，见 `shared/creation-flow.ts`）。
+     * 由端口投影，engine 只读不定义阶段；旧端口未提供时省略。
+     */
+    flow?: CreationFlowSnapshot;
 }
 
 /**
