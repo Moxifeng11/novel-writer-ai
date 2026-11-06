@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.60.0 · 更新：2026-11-07
+> 版本：v4.61.0 · 更新：2026-11-07
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -287,6 +287,12 @@ Agent（harness）
   - 验证：定向 `publication-profile` 20/20、`agent-stage-panel` 20/20、`agent-mode-alignment` 12/12；全量 `preflight:release` 588 文件 / 6,448 用例 exit 0；`check:any` 217/217；`check:docs` / `check:automation` 绿。
   - 元迭代：gate-fix 维持 1.90（第 44 轮回降条件未触发；提议「第 49 轮再次 gate-fix 且无测试增量、any 降幅 <6 → 回降 1.76」，待 ZCode 确认后生效）；v5-product 2.00 维持，第 52 轮评估降至 1.50。
   - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；ZCode 已随 `2a2c91f` 收单第 47 轮并把 any 基线降至 217。
+- 第 49 轮（gate-fix；ZCode 第 48 轮明确派工；纯类型收窄、零运行时行为变化）：
+  - 目标：`ui/full-writer/chapter-orchestrator.ts` any 5→0（编排器此前 `ctx` 全为 `any`，StepRunner 上下文结构漂移不会被类型层拦住）。
+  - 改动（单文件 5 处）：`import type { StepRunCtx } from '@/engine/step-definitions'`（type-only，不进 bundle）；`ChapterStepRunner.executePlanningCombined` / `executeStepsSequential` 的 `ctx: any` → `StepRunCtx`；`ChapterOrchestratorDeps.makeCtx: () => any` → `() => StepRunCtx`；`activateStep` / `runOneStep` 的 `ctx: any` → `StepRunCtx`。零逻辑改动，保留本地 `ChapterStepRunner` 窄接口（不引入运行时依赖）。
+  - 验证：`check:any` **217→212**（-5，100→99 个文件）；`typecheck` 0；定向 `chapter-orchestrator` **11/11**；`build` + `check:bundle` 通过（main.js 4,866,857 与 v4.61.0 基线一致）；零新增用例（纯类型，不造只测断言的伪用例）。
+  - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（目标 212 交 ZCode 收单批）。
+  - 同型说明：第 47/49 轮 gate-fix（第 48 轮为 v5-product 打断），按 0.8 收益递减折算；第 48 轮元迭代提议的回降条件（本轮再次 gate-fix、降幅 <6、无测试增量）已满足，但按互调机制需 ZCode 确认后才下调 1.90→1.76，本轮不自行变更。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

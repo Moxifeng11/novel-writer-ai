@@ -2,6 +2,24 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.61.0（2026-11-07）
+
+### 🐛 取消语义修复：被取消任务不再永久挂起
+
+- `WorkerManager.rejectTask` 去掉 `!task.cancelled` 守卫。根因：`cancelTask` 先置 `cancelled=true` 再调 `rejectTask`，旧守卫把 reject 吞掉 → 取消后的 Promise 永不结算；`engine/deconstruction-scheduler.ts` 的 `await taskPromise` 会永久挂起。
+- 取消路径（队列移除 / abortController / worker postMessage）都只结算一次；`resolveTask` 的守卫保留，取消后不再 resolve 成功值。
+- 新增 worker-manager 6 用例：降级成功与进度透传、处理器抛错原样拒绝、未注册处理器按类型拒绝、`cancelAll` 拒绝且不再执行 handler、`destroy` 幂等、Worker 初始化超时。
+
+### 🧪 回归与类型
+
+- scheduler abort 路径 2 用例：在途任务取消后以 `Task cancelled` 结算（100ms race 防挂起）、维度完成后 abort 不误伤已结算结果。
+- `ui/svg-charts.ts` any 5→0：新增 `TimelineLayoutItem`，删除 5 处 `as any`。
+- B3 出版边界 +3 用例：CRLF frontmatter 剥离与 trim 重复标题归并、draft 缺作者仅建议但空稿仍阻断、`written-only` 仅对成品档豁免空单元。
+
+### 🧪 测试与门禁
+
+- 全量 **588 文件 / 6,448 用例**（v4.60.0 为 586/6,437，+11）；`preflight:release` 全绿；any 基线 222→217；bundle 零增长（4,866,414）。
+
 ## v4.60.0（2026-11-07）
 
 ### 🧹 类型收窄：四个文件 any 清零（251→222）

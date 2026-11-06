@@ -21,6 +21,28 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.61.0',
+        date: '2026-11-07',
+        title: '取消挂起修复与 B3 出版边界补测',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    'cancelAll 后任务 Promise 永久挂起：rejectTask 去掉 cancelled 守卫，取消只结算一次',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧪 测试',
+                items: [
+                    'worker-manager 6 用例 + scheduler abort 2 用例 + B3 出版边界 3 用例',
+                    'svg-charts any 5→0（TimelineLayoutItem）；any 基线 222→217',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.60.0',
         date: '2026-11-07',
         title: '四个文件 any 清零（251→222）',

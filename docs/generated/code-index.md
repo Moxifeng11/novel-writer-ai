@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12575 | 186 | 147 | 79% |
-| `shared/` | 174 | 39423 | 1571 | 1307 | 83% |
+| `shared/` | 174 | 39445 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101408 | 735 | 639 | 87% |
+| `ui/` | 239 | 101409 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1893 | 3 | 3 |
+| `shared/changelog-data.ts` | 1915 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -647,7 +647,7 @@
 | `ui/full-writer/batch-pipeline-runner.ts` | 492 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
-| `ui/full-writer/chapter-orchestrator.ts` | 502 | 10 | 9 |
+| `ui/full-writer/chapter-orchestrator.ts` | 503 | 10 | 9 |
 | `ui/full-writer/context-loader-controller.ts` | 256 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 241 | 4 | 4 |

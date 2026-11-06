@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-07",
   "baseline": {
-    "version": "4.60.0",
+    "version": "4.61.0",
     "tests": {
       "files": 588,
       "cases": 6448
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 146,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 48 轮实测 git rev-list --count=ahead 146，HEAD 2a2c91f；第 47 轮 svg-charts any 5→0 与基线 222→217 已收单，v4.60.0 版本节点已提交）"
+    "localCommitsAhead": 147,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 48 轮收单后实测 git rev-list --count=ahead 147，HEAD 284e4b1；第 44–48 轮取消挂起修复/回归与 any 222→217 已收单，v4.61.0 版本节点提交后 ahead 148）"
   },
   "groups": [
     {
