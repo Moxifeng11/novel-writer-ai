@@ -98,7 +98,9 @@ Agent（harness）
 - 第十七批（v4.52.0 待发版）：test-hardening `ui/command-ui-executor.ts`——口径纠偏：该文件并非「无单测」，`pure-helpers-coverage.test.ts` 已有 3 条路由/无项目短路用例；真实缺口是执行器级守卫。本轮新增 `tests/unit/ui/command-ui-executor-guards.test.ts` 3 条（模式守卫拦截且不开弹窗、模式匹配放行、旧版命令弃用提示按命令名去重），不改源码；全量 584 文件 / 6,278 用例、lint 0 error / 1,854 warnings。
 - 第十八批（v4.52.0 待发版）：test-hardening `shared/template-validator.ts`——按覆盖率实测（st 252/339、br 155/222）挑出四类实体校验器（人物/势力/地点/物品）的未覆盖分支：未闭合 YAML 的 `PARSE_ERROR`、必填键存在但值为空（「（值为空）」区别于键缺失）、tags 缺少对应实体标签；`tests/unit/shared/template-validator.test.ts` **9 → 19 用例**，不改源码；全量 584 文件 / 6,288 用例、lint 0 error / 1,854 warnings、preflight:release 全绿（bundle 持平）。
 - 覆盖率实测附带结论（同轮）：`parseCharacterBlocks`（`template-validator.ts:883`）全仓仅有定义、无任何调用，0% 覆盖——属死代码，删除或接入需产品语义拍板，本轮未改；下一批覆盖率候选 `ui/full-writer/template-vars-builder.ts`（br 401/699）、`shared/file-system-port.ts`（br 88/133）。
-- 下一步主线：Notice 存量只剩各文件守卫/进度类，尾盘结束（notice 权重已下调至 0.75）；下一批优先 gate-fix（any 基线可 306→298 收紧，需与 ZCode 同步避免并发误伤）/ test-hardening（按未覆盖分支实测排序）。知识库面板装配（`renderKnowledgeTab`）不再作为切片候选。
+- 第十九批（v4.52.0 待发版，ZCode 派工）：①gate-fix `any` 基线 **306 → 298**——实测 298/306（消除 8 处集中在 `ui/co-writing-view.ts` 9→1），按棘轮纪律执行 `--update-baseline` 收敛，非上调；②test-hardening `ui/full-writer/template-vars-builder.ts` 上下文装配分支，`tests/unit/ui/template-vars-story-context.test.ts` **2 → 12 用例**（`buildContextVars` 7 条：非压缩透传与类型推导、设定库占位注释回退、写作规则去重开关、文笔风格原文去重、上一章汇总与跨卷快照、开篇显式标记、压缩上下文透传；`buildEntityVars` 3 条：四类实体格式与 token 估算、超 12 名额仍强制保留主角、空数据零输出）；不改源码；全量 584 文件 / 6,298 用例。
+- 测试数据发现（不改源码）：`extractWorldviewMeta` 的 `powerSystem` 正则以 `(?=\n##|\n#|%%)` 收尾，力量体系若为文末最后一段则不提取（`ui/utils/worldview-utils.ts:69`）；如需覆盖末段行为需产品确认，本轮未动。
+- 下一步主线：Notice 尾盘结束（权重 0.75）；any 已收紧至 298（余量 0），后续新增 any 需同轮消除；下一批 test-hardening 按 `shared/file-system-port.ts`（br 88/133）→ 其他 25%-90% 段未覆盖分支。知识库面板装配（`renderKnowledgeTab`）不再作为切片候选。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
