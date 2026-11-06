@@ -6,7 +6,7 @@
     "version": "4.55.0",
     "tests": {
       "files": 586,
-      "cases": 6408
+      "cases": 6415
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",

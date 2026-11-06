@@ -201,6 +201,11 @@ Agent（harness）
   - 文档核对（B5）：`docs/guides/COMMERCIAL-GUIDE.md` §2 的阻断/建议清单与代码逐条一致（书名、EPUB/DOCX 作者、无正文、空单元、低于下限一半 / 字数低于下限、单元数不足、EPUB 无标题、重复标题），无需纠偏。
   - 验证：定向 `publication-profile.test.ts` **11/11**；`npm run typecheck` 0；改动文件 lint 0 error；`check:jsdoc` / `check:any`（251/251）/ `check:inline-styles` 绿；`program:render` → `gen:docs` → `check:docs` / `check:program` 绿。全量 `preflight` 按第 30 轮协作口径由 ZCode 统一跑。
   - 边界：未动 `engine/**`、未动 ZCode 文件集、未新增路径；严格模式语义未自行调整（产品口径仍待用户拍板）。
+- 第 33 轮（test-hardening，chapter-state-manager 公共状态契约；连续两轮 v5-product 后按多样性规则换型）：
+  - 补 7 用例（`tests/unit/ui/chapter-state-recognition.test.ts`，10→17）：①`invalidateSteps` 把 complete 降为 partial、保留结果并标脏；②`markStale=false` 只降级不标脏；③`updateStepState` 结构化分级（600 字→complete、120 字→partial，同步 completed/missing/results）；④`forceComplete` 空内容也算完成（历史兼容）；⑤`reset()` 清空七项内存状态；⑥`migrateLegacyStepIndex` 12→3、无映射值原样保留；⑦历史 `source=ai-generated` 的骨架内容至少升级为 partial。
+  - 覆盖率（同口径单文件 v8）：st 73.13→87.56、br 63.12→74.46、fn 66.66→100、lines 74.19→89.24。
+  - 验证：定向 **17/17**；`typecheck` 0；`check:any` 251/251；eslint 对该测试文件在 ignore 范围，0 error。
+  - 边界：零源码改动、未动 `engine/**` 与 ZCode 文件集；新增待提交路径 1（本测试文件，`newPathBudget=1`）。ZCode 已收单第 32 轮 8 路径并发 v4.55.0（`f6822c9`），本轮开工时工作树已干净。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
