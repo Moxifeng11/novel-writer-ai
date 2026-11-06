@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-06",
   "baseline": {
-    "version": "4.55.0",
+    "version": "4.56.0",
     "tests": {
       "files": 586,
       "cases": 6415
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 126,
+    "localCommitsAhead": 129,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 29 轮实测 git rev-list --count origin/master..master=115；第 28 轮 smart-chart 与 any 基线收紧已由 ZCode 提交为 dfc8292 / eb92893，本轮 chapter-state-manager 测试仍在工作树未提交）"
   },
   "groups": [

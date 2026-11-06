@@ -21,6 +21,20 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.56.0',
+        date: '2026-11-06',
+        title: 'chapter-state 失效标脏补测',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧪 测试',
+                items: [
+                    'chapter-state 10→17 用例；单文件 br 63.12→74.46',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.55.0',
         date: '2026-11-06',
         title: 'B3 出版事实纯函数化',

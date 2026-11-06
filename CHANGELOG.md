@@ -2,6 +2,14 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.56.0（2026-11-06）
+
+### 🧪 chapter-state 失效标脏与状态机补测（+7 用例）
+
+- `tests/unit/ui/chapter-state-recognition.test.ts` 10→17：覆盖 `invalidateSteps` 降级/标脏、`updateStepState` 分级与 `forceComplete`、`reset`、`migrateLegacyStepIndex`、历史 `source=ai-generated` 兼容。
+- 单文件覆盖率：st 73.13%→87.56%、br 63.12%→74.46%、fn 66.66%→100%、lines 74.19%→89.24%；零源码改动。
+- 全量 **586 文件 / 6,415 用例**；preflight 全绿。
+
 ## v4.55.0（2026-11-06）
 
 ### 📤 B3：出版事实构建抽为纯函数（导出弹窗回归）
