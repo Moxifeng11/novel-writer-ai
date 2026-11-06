@@ -26,6 +26,8 @@ import { DomainProjectFactory } from '@/domains/kernel/domain-project-factory';
 import { createDefaultPreResearch, writePreResearchFiles, type ScriptPreResearch, type ShortPreResearch } from '@/shared/pre-research';
 import { PreResearchModal } from '@/ui/pre-research-modal';
 import { CREATION_MODE_SPECS, getCreationModeLabel, parseCreationModeMeta, type CreationModeMeta } from '@/shared/creation-mode';
+import { collectCreationFlowState } from '@/ui/full-writer/creation-flow-state';
+import type { CreationFlowSnapshot } from '@/shared/creation-flow';
 import { getProjectModeSync, resolveProjectMode } from '@/shared/project-mode';
 import { ModeDocumentModal } from '@/ui/mode-document-modal';
 import { getStoryStructure } from '@/shared/story-structure';
@@ -363,7 +365,14 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                     hasBody: chapter.hasBody,
                     size: chapter.size,
                 })), { unitLabel: modeUnitLabel(mode) });
-                return {
+                let flow: CreationFlowSnapshot | undefined;
+                try {
+                    flow = (await collectCreationFlowState(app, project, { mode })).snapshot;
+                } catch (e) {
+                    // 阶段采集失败不影响基础进度：老项目/异常项目仍能看到章节统计
+                    log.warn('[AgentPort] 采集创作阶段失败:', e);
+                }
+                const status: AgentProjectStatus & { flow?: CreationFlowSnapshot } = {
                     project,
                     mode,
                     structureId: meta.storySettings ? getStoryStructure(meta.storySettings.structureId).id : '',
@@ -374,7 +383,9 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                     byStatus: progress.byStatus,
                     latestWrittenChapter: progress.latestWrittenChapter,
                     nextChapterToWrite: progress.nextChapterToWrite,
+                    flow,
                 };
+                return status;
             } catch (e) {
                 log.warn('[AgentPort] 读取项目状态失败:', e);
                 return null;

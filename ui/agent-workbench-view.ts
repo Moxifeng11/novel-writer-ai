@@ -24,7 +24,9 @@ import { showErrorNotice, showWarningNotice } from './components/notice-helpers'
 import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
-import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
+import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentProjectStatus, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
+import type { CreationFlowSnapshot } from '@/shared/creation-flow';
+import { buildStagePanelModel } from './agent-workbench/stage-panel';
 import type { HarnessTurnOutcome } from '@/engine/agent/harness/harness-types';
 import { createAgentPort, getAgentContext } from './services/agent-port';
 import { listProjectIds } from '@/shared/project-catalog';
@@ -46,17 +48,6 @@ import {
     type MentionToken,
 } from '@/shared/file-mention';
 import { isImeComposing } from '@/shared/keyboard';
-
-const STAGES: Array<{ key: string; label: string; hint: string }> = [
-    { key: 'create', label: '① 新建项目', hint: '长篇/短篇/剧本' },
-    { key: 'research', label: '② 前期调研', hint: '短篇分类/剧本定位' },
-    { key: 'setting', label: '③ 世界观与设定', hint: '结构/角色/实体' },
-    { key: 'outline', label: '④ 大纲与规划', hint: '分卷/章节/信息规划' },
-    { key: 'body', label: '⑤ 章节正文', hint: '一键成文/协同写作' },
-    { key: 'quality', label: '⑥ 质检修订', hint: '质检/消痕/定向修订' },
-    { key: 'settle', label: '⑦ 章节结算', hint: '状态/实体/记忆' },
-    { key: 'export', label: '⑧ 导出成稿', hint: 'TXT/DOCX/发布格式' },
-];
 
 const TYPE_SECTIONS: Array<{ mode: CreationMode; label: string }> = [
     { mode: 'long', label: '长篇小说' },
@@ -91,6 +82,8 @@ export class AgentWorkbenchView extends ItemView {
     private collapsedGroups = new Set<string>();
     /** 预览中的文件路径 */
     private previewedPath = '';
+    /** 左栏「创作阶段」容器（随活动项目刷新） */
+    private stagesEl: HTMLElement | null = null;
     /** 预览代次：快速点两个文件时，先发起后返回的读取不能覆盖后点文件 */
     private previewSeq = 0;
     /** 会话代次：restart/onClose 后旧回合的回调不得写进新会话 */
@@ -373,13 +366,8 @@ export class AgentWorkbenchView extends ItemView {
         this.renderPlan();
 
         container.createEl('h4', { text: '创作阶段', cls: 'nw-awb-panel-title' });
-        const stages = container.createDiv({ cls: 'nw-awb-stages' });
-        for (const stage of STAGES) {
-            const item = stages.createDiv({ cls: 'nw-awb-stage' });
-            item.createSpan({ text: stage.label, cls: 'nw-awb-stage-label' });
-            item.createSpan({ text: stage.hint, cls: 'nw-awb-stage-hint' });
-            item.setAttr('title', `对 Agent 说「${stage.label.replace(/^[①-⑧]\s*/, '')}」即可进入该阶段`);
-        }
+        this.stagesEl = container.createDiv({ cls: 'nw-awb-stages' });
+        await this.refreshStagePanel();
 
         container.createEl('h4', { text: '界面直达', cls: 'nw-awb-panel-title' });
         const quick = container.createDiv({ cls: 'nw-awb-quick' });
@@ -393,6 +381,58 @@ export class AgentWorkbenchView extends ItemView {
             const btn = quick.createEl('button', { text: label, cls: 'nw-awb-quick-btn' });
             btn.addEventListener('click', onClick);
         }
+    }
+
+    /**
+     * 用统一阶段快照刷新左栏「创作阶段」；无快照时显示占位，不复制阶段常量。
+     */
+    private async refreshStagePanel(): Promise<void> {
+        if (!this.stagesEl) return;
+        const project = this.activeProject;
+        let flow: CreationFlowSnapshot | undefined;
+        if (project && this.port.getProjectStatus) {
+            try {
+                const status = await this.port.getProjectStatus(project) as (AgentProjectStatus & { flow?: CreationFlowSnapshot }) | null;
+                flow = status?.flow;
+            } catch {
+                flow = undefined;
+            }
+        }
+        const model = buildStagePanelModel(flow, project);
+        this.stagesEl.empty();
+        if (model.emptyText) {
+            this.stagesEl.createDiv({ cls: 'nw-awb-stage' }).createSpan({
+                cls: 'nw-awb-stage-hint',
+                text: model.emptyText,
+            });
+            return;
+        }
+        const summary = this.stagesEl.createDiv({ cls: 'nw-awb-stage' });
+        summary.createSpan({ cls: 'nw-awb-stage-label', text: `${model.modeLabel} · ${model.percent}%` });
+        summary.createSpan({ cls: 'nw-awb-stage-hint', text: `下一步：${model.nextLabel}` });
+        for (const item of model.items) {
+            const row = this.stagesEl.createDiv({ cls: 'nw-awb-stage' });
+            row.setAttr('role', 'button');
+            row.setAttr('tabindex', '0');
+            row.setAttr('title', item.tooltip);
+            row.createSpan({ cls: 'nw-awb-stage-label', text: `${item.label} · ${item.ratioPercent}%` });
+            row.createSpan({ cls: 'nw-awb-stage-hint', text: item.progressText });
+            row.addEventListener('click', () => this.prefillComposer(item.prompt));
+            row.addEventListener('keydown', (ev: KeyboardEvent) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    this.prefillComposer(item.prompt);
+                }
+            });
+        }
+    }
+
+    /** 把阶段建议预填进输入框，由用户确认后发送（不自动执行命令） */
+    private prefillComposer(text: string): void {
+        if (!this.inputEl) return;
+        this.inputEl.value = text;
+        this.autoGrowInput();
+        this.inputEl.focus();
     }
 
     /** 当前聚焦项目（供故事结构等直达按钮） */
@@ -508,6 +548,7 @@ export class AgentWorkbenchView extends ItemView {
             this.projectListEl.createDiv({ cls: 'nw-awb-project-empty', text: '还没有项目，对 Agent 说「新建长篇」开始' });
         }
         this.projectListEl.scrollTop = scrollTop;
+        void this.refreshStagePanel();
     }
 
     /** 项目 → 创作类型：统一走 shared/project-mode（与命令守卫、流程页同一口径） */
@@ -539,6 +580,7 @@ export class AgentWorkbenchView extends ItemView {
         this.refreshProjectList();
         this.refreshProjectChip();
         this.refreshFileTree();
+        void this.refreshStagePanel();
     }
 
     // ─── 中栏：对话区 + 输入条 ───────────────────────────────
