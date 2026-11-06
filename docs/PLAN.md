@@ -206,6 +206,12 @@ Agent（harness）
   - 覆盖率（同口径单文件 v8）：st 73.13→87.56、br 63.12→74.46、fn 66.66→100、lines 74.19→89.24。
   - 验证：定向 **17/17**；`typecheck` 0；`check:any` 251/251；eslint 对该测试文件在 ignore 范围，0 error。
   - 边界：零源码改动、未动 `engine/**` 与 ZCode 文件集；新增待提交路径 1（本测试文件，`newPathBudget=1`）。ZCode 已收单第 32 轮 8 路径并发 v4.55.0（`f6822c9`），本轮开工时工作树已干净。
+- 第 34 轮（v5-product，B2 工作台真机回归；ZCode 派工）：
+  - 缺口核实（先问是不是）：`refreshStagePanel` 先记下 `activeProject` 再 `await port.getProjectStatus()`，返回后未复检项目是否已切换。快速切换项目（甲→乙）时甲的快照可能晚于乙返回，从而把甲的阶段渲染到乙的项目上——真实缺口，非假设。
+  - 做法：把「请求状态 → 投影模型」抽为纯函数 `fetchStagePanelModel(project, getStatus)`（`ui/agent-workbench/stage-panel.ts`，内置 try/catch → 占位，不抛出）；视图改为 `await fetchStagePanelModel(project, this.port.getProjectStatus)`，返回后以 `this.activeProject !== project` 丢弃过期结果；删除视图内两处已失效的类型导入（`AgentProjectStatus` / `CreationFlowSnapshot`）。
+  - 新增 8 用例（`tests/unit/ui/agent-stage-panel.test.ts`，8→16）：①有项目用 port 快照渲染真实阶段；②未选择项目不请求 port 并显示占位；③切换项目晚到的旧结果仍带原项目标识（可被视图丢弃）；④port 抛错按「阶段读取失败」占位、不中断；⑤port 返回 null / 缺失同样占位；⑥⑦⑧接线契约（过期结果按 `activeProject` 丢弃、初次渲染/列表刷新/切换项目三处刷新、点击阶段只 `prefillComposer` 不自动执行）。
+  - 验证：定向 **16/16**；`npm run typecheck` 0 错误；改动文件 eslint 0 error（既有 warning 未顺手改）；`check:any` / `check:jsdoc` 绿；全量 `preflight` 按第 30 轮协作口径由 ZCode 统一跑。
+  - 边界：未动 `engine/**`、未动 ZCode 文件集、未新增待提交路径（3 个文件均为已跟踪）；B3 严格模式产品口径仍待用户拍板。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
