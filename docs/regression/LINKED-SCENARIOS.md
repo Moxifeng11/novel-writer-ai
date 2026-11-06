@@ -85,14 +85,26 @@
 | 环节 | 入口 | 产物 | 自动化覆盖 |
 |---|---|---|---|
 | 阶段快照 | 工作台左栏阶段面板 / `get_project_status` | 统一 `CreationFlowSnapshot`（三模式阶段/进度/阻塞/下一步） | `agent-stage-panel.test`、`creation-flow.test` |
-| 出版检查 | 导出弹窗「严格出版检查」 | blockers / warnings；严格模式中止导出 | `publication-profile.test`、`export-precheck.test` |
+| 端口投影降级 | `ui/services/agent-port.ts::getProjectStatus` | 采集失败时省略 `flow`，章节统计照常返回 | `agent-port-status.test` |
+| 出版检查 | 导出弹窗「交付级别」+「导出范围」 | 三档 blocker / warning；blocker 中止导出 | `publication-profile.test`、`export-precheck.test` |
 | 自动化配置 | `npm run check:automation` | 单一 loop-state + HANDOFF/版本/信箱一致 | `scripts/check-automation.mjs` |
+
+出版检查口径（v4.59.0 起为三档 + 显式范围，不再是布尔开关）：
+
+| 级别 | blocker（中止导出） | warning（仅提示） |
+|---|---|---|
+| 草稿导出 | 缺书名、完全没有正文 | 缺作者、空单元、字数不足、单元数不足、重复标题、EPUB 无标题 |
+| 成品导出（默认） | 缺书名、完全没有正文、存在空单元且未选「仅已写单元」、EPUB/DOCX 缺作者 | 字数不足、单元数不足、重复标题、EPUB 无标题 |
+| 平台投稿 | 缺书名、缺作者（所有格式）、完全没有正文、空单元未排除、字数 < 下限一半 | 字数 < 下限、单元数不足、重复标题、EPUB 无标题 |
+
+导出范围：`full` 整包（空单元参与判定）；`written-only` 先用 `splitUnitsByBody` 过滤空单元、再按过滤后事实判定（仅成品/草稿档可选）；平台投稿强制 `full` 并禁用范围选择。
 
 手工验收：
 
-1. 三模式各建一个项目，工作台阶段面板显示阶段与 `.project`/章节目录一致；点击阶段把指令预填到输入框。
+1. 三模式各建一个项目，工作台阶段面板显示阶段与 `.project`/章节目录一致；点击阶段只把指令预填到输入框，不自动执行命令。
 2. 对 Agent 说「我现在到哪一步 / 下一步做什么」，回答与阶段面板一致。
-3. 导出时分别测试：不填作者、留一个空章、字数不足；确认非严格模式给出提示，严格模式中止并说明阻断项。
+3. 阶段采集失败（如项目目录被移动/改名）时，Agent 仍回答章节进度，面板回退静态阶段且不抛错。
+4. 导出分别测试三档：草稿档（空单元/缺作者仅提示，可导出）；成品档（空单元阻断，切「仅已写单元」后通过）；投稿档（缺作者或字数 < 下限一半阻断，且范围锁定整包）。
 
 ---
 

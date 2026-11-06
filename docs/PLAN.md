@@ -321,6 +321,13 @@ Agent（harness）
   - 做法：沿用仓内「源码契约」范式（同 `agent-stage-panel.test.ts`），断言业务语义而非 UI 细节；零生产代码改动、零新增路径、未新增 `any`。
   - 验证：定向 23/23；`typecheck` 0；`tests/**` 属 eslint ignore（口径不适用）；全量 `preflight` 由 ZCode 版本节点统一跑。
   - 并发说明：执行期间工作树为 ZCode 的 v4.62.0 版本节点（20 M + 新增 release note），按 §7.4 未碰其文件集；基线用例数 6,451→6,454 已托付 ZCode 落账。
+- 第 54 轮（docs-correction；v5 收口文档口径纠偏；兑现 ZCode 第 53 轮「收口文档复核」建议）：
+  - 盘点（先问是不是）：逐项对照代码事实——`shared/publication-profile.ts` 已是 draft/finished/submission 三档（`level` 缺省走 legacy 矩阵），`ui/export-manuscript-modal.ts` 已是 `splitUnitsByBody` 先过滤、blocker `throw`、submission 强制 `full`；但三份文档仍是旧口径：`LINKED-SCENARIOS` 链 4 写「严格出版检查 / 非严格 vs 严格二档」、`docs/README.md` 写「三条联动链」而脚本校验四条、B3 设计文档 §五 仍标题「待用户拍板」。属陈旧信息污染，不是重复交付。
+  - 改动（5 路径）：①`docs/regression/LINKED-SCENARIOS.md` 链 4 重写为三档 blocker/warning 矩阵 + `full`/`written-only` 范围语义 + `agent-port` flow 降级锚点 + 四条手工验收；②`docs/README.md` 索引「三条」→「四条」；③`scripts/check-linked-scenarios.mjs` 增 `splitUnitsByBody`、`agent-port` 的 `collectCreationFlowState`、`agent-port-status.test` 三个锚点，并把「严格模式开关」措辞改为「交付级别（三档）」；④`docs/design/b3-publication-strict-mode-plan.md` 增 §〇 落地差异表（错误卡动作/摘要实时刷新/范围锁定/legacy 矩阵四处），§五 改为拍板结论；⑤本节。
+  - 验证：`check:docs` 绿（19 活跃文档 / v4.62.0）；`check:linked-scenarios` 绿（4 条链 / 锚点 32→35）；全量 `npm run preflight` exit 0（含 build/check:bundle/check:release）；零源码、零测试、零 any 变化。
+  - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；未新增路径；未改变任何运行时行为（仅文档 + 门禁脚本锚点清单）。
+  - 换型说明：第 53 轮 test-hardening → 本轮 docs-correction（换型合规）。v5-product 权重维持 1.50（ZCode 第 52 轮裁决），docs-correction 1.2 维持。仍待拍板三项（push/tag/Release、剧本 storyboard 必填语义、`E2E_REWRITE=1`）未变。
+  - 并发事实：执行期间 ZCode 已收单第 53 轮（`a20fb3d`），故收尾工作树仅本轮 5 M；`npm run preflight` 本轮实测 exit 0（main.js 4,867,168 与 v4.62.0 一致）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

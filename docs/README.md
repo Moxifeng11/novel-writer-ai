@@ -41,7 +41,7 @@
 | [API.md](API.md) | 类与接口签名参考 | 手册 04 定契约规则，签名看这里 |
 | [PLAN.md](PLAN.md) | 结构路线、里程碑、提交纪律 | 手册 06 引用其发布纪律 |
 | [PROGRAM.md](PROGRAM.md) | 专项任务组与验收口径 | 进度以 `docs/progress/program-status.json` 为准 |
-| [regression/LINKED-SCENARIOS.md](regression/LINKED-SCENARIOS.md) | 三条联动链的自动化 + 手工验收 | 手册 05/06 引用 |
+| [regression/LINKED-SCENARIOS.md](regression/LINKED-SCENARIOS.md) | 四条联动链的自动化 + 手工验收 | 手册 05/06 引用 |
 | [research/deepseek-harness/](research/deepseek-harness/) | dsh 事实档案与集成设计 | 手册 07 的 dsh 排障依据 |
 | [design/](design/) | 设计包与决策 | 决策索引见 [adr/README.md](adr/README.md) |
 | [audits/](audits/) | 历史审计与取证 | 历史快照，不作为现状 |
